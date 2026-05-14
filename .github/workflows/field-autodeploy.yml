@@ -1,0 +1,120 @@
+# .github/workflows/field-autodeploy.yml
+#
+# FIELD FULL AUTOMATION — Google Drive → GitHub → Cloudflare
+#
+# HOW IT WORKS:
+#   1. Claude saves index.html to a specific Google Drive file (public share link)
+#   2. This Action polls that Drive link every 30 minutes
+#   3. If the file has changed, it commits to main
+#   4. Cloudflare Workers CI deploys automatically (~19s)
+#
+# RESULT: Jeff does nothing after Claude generates the file.
+#
+# SETUP (one time):
+#   Step 1 — Share the Drive file publicly:
+#     a. Go to Drive → find the index.html file Claude saves to
+#     b. Right-click → Share → Change to "Anyone with link" → Viewer
+#     c. Copy the share link — it looks like:
+#        https://drive.google.com/file/d/FILE_ID_HERE/view?usp=sharing
+#     d. Extract just the FILE_ID from that URL
+#     e. The download URL will be:
+#        https://drive.google.com/uc?export=download&id=FILE_ID_HERE
+#
+#   Step 2 — Add GitHub Secret:
+#     a. Go to github.com/jeffunglesbee-create/jubilant-bassoon
+#     b. Settings → Secrets and variables → Actions → New repository secret
+#     c. Name:  DRIVE_FILE_ID
+#     d. Value: the FILE_ID from Step 1 (just the ID, not the full URL)
+#     e. Click Add secret
+#
+#   Step 3 — Add this workflow file to the repo:
+#     a. In the repo, click Add file → Create new file
+#     b. Name it: .github/workflows/field-autodeploy.yml
+#     c. Paste this entire file
+#     d. Commit to main
+#
+# MANUAL TRIGGER (from any browser or GitHub mobile app):
+#   Actions tab → FIELD Auto-Deploy → Run workflow → Run workflow
+#   Two taps. Works on Android and iPad.
+#
+# SCHEDULE: Runs every 30 minutes automatically.
+# To change frequency, edit the cron line below.
+# Common values:
+#   Every 15 min:  '*/15 * * * *'
+#   Every 30 min:  '*/30 * * * *'
+#   Every hour:    '0 * * * *'
+#   Every 6 hours: '0 */6 * * *'
+
+name: FIELD Auto-Deploy
+
+on:
+  schedule:
+    - cron: '*/30 * * * *'   # Every 30 minutes
+  workflow_dispatch:           # Manual trigger from Actions tab or GitHub mobile app
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    name: Check Drive for updates and deploy
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Download index.html from Google Drive
+        run: |
+          FILE_ID="${{ secrets.DRIVE_FILE_ID }}"
+          if [ -z "$FILE_ID" ]; then
+            echo "❌ DRIVE_FILE_ID secret not set. See setup instructions."
+            exit 1
+          fi
+          echo "Downloading from Drive (file ID: ${FILE_ID:0:8}...)"
+          # Direct download URL for files under 25MB (no virus scan warning)
+          URL="https://drive.google.com/uc?export=download&id=$FILE_ID"
+          curl -L -o index_new.html "$URL"
+          SIZE=$(wc -c < index_new.html)
+          echo "Downloaded: ${SIZE} bytes"
+          if [ "$SIZE" -lt 100000 ]; then
+            echo "❌ Downloaded file too small (${SIZE} bytes) — Drive link may be broken"
+            exit 1
+          fi
+          echo "✓ Download OK"
+
+      - name: Check if file changed
+        id: diff
+        run: |
+          if cmp -s index.html index_new.html; then
+            echo "changed=false" >> $GITHUB_OUTPUT
+            echo "No change detected — skipping deploy"
+          else
+            echo "changed=true" >> $GITHUB_OUTPUT
+            OLD_SIZE=$(wc -c < index.html)
+            NEW_SIZE=$(wc -c < index_new.html)
+            echo "Change detected: ${OLD_SIZE} → ${NEW_SIZE} bytes"
+          fi
+
+      - name: Validate new file before committing
+        if: steps.diff.outputs.changed == 'true'
+        run: |
+          grep -q '<title>FIELD' index_new.html || { echo "❌ Title missing"; exit 1; }
+          grep -q 'buildTodaySchedule' index_new.html || { echo "❌ Schedule function missing"; exit 1; }
+          grep -q '</html>' index_new.html || { echo "❌ File appears truncated"; exit 1; }
+          echo "✓ Validation passed"
+
+      - name: Replace and commit
+        if: steps.diff.outputs.changed == 'true'
+        run: |
+          mv index_new.html index.html
+          git config user.name  "FIELD Auto-Deploy"
+          git config user.email "action@github.com"
+          git add index.html
+          git commit -m "Auto-deploy from Drive $(date '+%Y-%m-%d %H:%M UTC')"
+          git push
+          echo "✓ Committed and pushed — Cloudflare deploying in ~19s"
+
+      - name: No update needed
+        if: steps.diff.outputs.changed == 'false'
+        run: echo "✓ index.html unchanged — no deploy needed"
+
