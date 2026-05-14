@@ -683,6 +683,21 @@ flex-shrink:0;white-space:nowrap;
 .crew-line{font-size:.65rem;color:var(--muted);padding:.1rem .85rem .2rem;opacity:.8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .narrative-line{font-size:.68rem;color:var(--muted);font-style:italic;padding:.05rem .85rem .15rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;opacity:.9}
 .narrative-line.narrative-hi{color:var(--accent);font-style:normal;font-weight:600;opacity:1}
+/* ATP live score situation line — injected after first render */
+.atp-situation{font-size:.63rem;color:var(--muted);font-style:italic;padding:.05rem .85rem .1rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.3;opacity:.85}
+.atp-score-live{color:var(--c-live,#f87171)!important;font-style:normal!important}
+/* Golf top-10 leaderboard — injected by injectSlashGolfLeaderNotes when tournament active */
+.golf-leaderboard{padding:.3rem .85rem .45rem;border-top:1px solid rgba(201,168,76,.12);margin-top:.25rem}
+.golf-lb-title{font-size:.58rem;color:var(--gold2);font-weight:700;letter-spacing:.06em;text-transform:uppercase;opacity:.8;margin-bottom:.2rem}
+.golf-lb-row{display:grid;grid-template-columns:1.8rem 1fr auto;font-size:.61rem;line-height:1.65;color:var(--muted);gap:0 .35rem;white-space:nowrap}
+.golf-lb-row.lb-top3{color:var(--text)}
+.golf-lb-pos{text-align:right;opacity:.55;font-family:var(--ff-mono)}
+.golf-lb-name{overflow:hidden;text-overflow:ellipsis}
+.golf-lb-score{font-family:var(--ff-mono);text-align:right;min-width:2.5rem}
+.golf-lb-score.lb-under{color:var(--c-live,#f87171)}
+.golf-lb-score.lb-even{color:var(--text);opacity:.7}
+.golf-lb-score.lb-over{color:var(--muted);opacity:.7}
+@media(max-width:600px){.golf-leaderboard{padding:.25rem .65rem .35rem}.golf-lb-row{font-size:.59rem}}
 .importance-badge{display:inline-flex;align-items:center;gap:.25rem;font-size:.6rem;font-weight:700;letter-spacing:.04em;padding:.15rem .4rem;border-radius:3px;margin:.1rem .85rem .15rem;width:fit-content}
 .importance-badge.series-deciding{background:rgba(251,191,36,.15);color:#fbbf24;border:1px solid rgba(251,191,36,.35)}
 .importance-badge.elimination{background:rgba(239,68,68,.12);color:#f87171;border:1px solid rgba(239,68,68,.3)}
@@ -1527,6 +1542,9 @@ flex-shrink:0;white-space:nowrap;
     align-items:start;
   }
   .game-card{min-width:0}
+  /* Golf / Major cards span full row — wider canvas for leaderboard */
+  .sport-section[data-sport="Golf"] .game-card,
+  .sport-section[data-sport="Golf (PGA)"] .game-card{grid-column:1 / -1;max-width:none}
   .betting-grid{grid-template-columns:repeat(2,1fr);gap:12px}
   .card-body{padding:.85rem 1.1rem .45rem .95rem}
   .card-right{padding:.85rem .95rem .85rem .5rem}
@@ -1624,7 +1642,8 @@ flex-shrink:0;white-space:nowrap;
   /* Share btn: ensure tap target */
   .share-btn{ padding:.35rem .5rem; font-size:.9rem; }
   /* Standings table button */
-  .standings-btn{ display:none; }  /* hide on mobile — table data too wide */
+  .standings-btn{ display:none; }           /* card-level: hide on mobile — table data too wide */
+  .section-standings-btn{ display:inline-flex; align-items:center; font-size:.55rem; padding:.15rem .45rem; margin-left:auto; } /* section-head: visible on mobile ✓ Portrait B+→A */
 }
 
 /* My Services modal: full-screen on mobile, larger tap targets */
@@ -1729,6 +1748,12 @@ flex-shrink:0;white-space:nowrap;
     </div>
     <div class="divider"></div>
     <div id="sport-filters"></div>
+    <input type="search" id="broadcaster-search" placeholder="🔍 ESPN, NBC…"
+      title="Filter by broadcaster or service name (T1-15)"
+      style="font-family:var(--ff-mono);font-size:.6rem;background:var(--card2);color:var(--white);
+             border:1px solid var(--edge2);border-radius:4px;padding:.18rem .5rem;width:90px;
+             outline:none;flex-shrink:0;-webkit-appearance:none;"
+      autocomplete="off">
     <button class="tz-pill" id="tz-pill" title="Change timezone"></button>
   </div>
 </nav>
@@ -2034,9 +2059,28 @@ const SR = {
   paramountuk: ["Paramount+ UK","https://www.paramountplus.com/gb/",                 "#6699ff","geo", "Paramount+ UK subscription required (~£6.99/mo). SPFL Scottish Premiership streaming in UK."],
 };
 
+// ── Wow #28: FREE badge helper — checks resolved streams for free/OTA access ─
+// auth==="free" → truly free (ION, Victory+, 7plus, etc.) → green FREE badge
+// auth==="tv" + OTA names → free over-the-air → green FREE badge
+// auth==="tv" + cable names → free with cable subscription → grey badge
+function getFreeStreamBadge(g){
+  const streams = resolveStreams(g.streams);
+  if(!streams.length) return '';
+  const OTA_NAMES  = new Set(['NBC','CBS','ABC','FOX','ION','CW','PBS']);
+  const CABL_NAMES = new Set(['ESPN','ESPN2','TNT','TBS','FS1','USA Network','NBCSN']);
+  for(const s of streams){
+    if(s.auth==='free') return '<span class="free-badge">FREE</span>';
+  }
+  for(const s of streams){
+    if(OTA_NAMES.has(s.name)) return '<span class="free-badge">FREE</span>';
+  }
+  for(const s of streams){
+    if(CABL_NAMES.has(s.name)) return '<span class="free-badge free-cable">FREE W/ CABLE</span>';
+  }
+  return '';
+}
 // ── SR URL Debug Validator (FIELD_DEBUG mode only) ────────────────────────
 // Implemented: May 11, 2026 (Session H — Hardcoded Data Optimization)
-// Runs HEAD requests against all SR URLs on page load in FIELD_DEBUG mode.
 // console.warn() for any non-200 response. Zero production impact.
 // Catches broken stream links during dev sessions before users see them.
 // Usage: localStorage.setItem('FIELD_DEBUG','1') then reload.
@@ -2281,9 +2325,9 @@ const BUNDLES = {
   MLB_PEACOCK:     ["peacock","nbcsn","youtubetv","fubo","hulu"],    // Peacock/NBCSN EXCLUSIVE games (GOTD, early SNB window) — NOT on NBC OTA or RSN
   // SUNDAY NIGHT BASEBALL — NBC+Peacock: May 31–Sep 6 (after NBA Playoffs) — NON-EXCLUSIVE in some markets
   MLB_NBC:         ["nbc","peacock","rsn","fubo","youtubetv","hulu","sling","directv"],  // SNB on NBC OTA (May 31–Sep 6): free antenna + Peacock stream; some markets RSN simulcasts
-  MLB_PEACOCK_SNB: ["peacock","nbcsn","youtubetv","fubo","hulu"],    // SNB Peacock/NBCSN-ONLY period (Mar 29–May 30 & Sep 6–20): NOT on NBC OTA or RSN
+  MLB_PEACOCK_SNB: ["peacock","nbcsn","youtubetv","hulu","sling","directv"],    // SNB Peacock-ONLY period (Mar 29–May 30 & Sep 6–20): Peacock stream + NBCSN linear (YouTube TV / Xfinity confirmed; others expanding)
   // PEACOCK GAME OF THE DAY: Peacock exclusive weekday pick, blacked out locally
-  MLB_PEACOCK_GOTD: ["peacock","nbcsn","youtubetv","fubo","hulu"],   // Peacock GOTD (weekday noon): EXCLUSIVE — NOT on local RSN or MLB.TV
+  MLB_PEACOCK_GOTD: ["peacock","nbcsn","youtubetv","hulu","sling","directv"],   // Peacock GOTD (weekday): Peacock stream + NBCSN linear simulcast
   // ESPN GAME OF THE DAY: 1 out-of-market game/day via ESPN Unlimited — non-exclusive
   //   Available on ESPN App for ESPN Unlimited subscribers; locals still carry in-market via RSN
   MLB_ESPNU_GOTD:  ["espnapp","rsn"],                                // ESPN GOTD via ESPN App + Local RSN (in-market)
@@ -2302,7 +2346,7 @@ const BUNDLES = {
   EPL:          ["peacock","usa","youtubetv","sling","fubo","hulu"],      // EPL fallback (game-specific bundles preferred): Peacock for ~60% of matches, USA Network for ~25%, NBC for marquee
   EPL_NBC:      ["nbc","peacock","fubo","youtubetv","hulu","sling","directv"],    // EPL on NBC OTA (free antenna) + Peacock stream; NBCSN does NOT carry NBC-broadcast games     // EPL marquee game on NBC OTA + Peacock stream (e.g. Man City matchups)
   EPL_USA:      ["usa","fubo","youtubetv","sling","hulu","directv"],       // EPL on USA Network cable (not on NBC OTA, not Peacock live)
-  TENNIS_FO:    ["tc","tcplus","espn","espnplus","youtubetv","fubo","hulu","sling","directv"],  // French Open: Tennis Channel (all rounds) + TC+ (streaming) + ESPN (QF/SF) + NBC (finals)
+  TENNIS_FO:    ["tc","tcplus","max","youtubetv","hulu","sling","directv"],  // French Open (Roland Garros): Tennis Channel (all rounds) + TC+ stream + Max/WBD (WBD owns TC) — Fubo excluded (no TNT/Max channels)
     EPL_PEACOCK:  ["peacock","nbcsn","youtubetv","fubo","hulu","sling","directv"],  // EPL on Peacock + NBCSN linear simulcast (YouTube TV base plan + Xfinity Popular/Ultimate; NBCSN relaunched Nov 2025 as Peacock linear counterpart; NOT on USA Network or NBC OTA)
   EFL:          ["paramount","fubo","hulu"],                               // EFL: CBS/Paramount+
   LALIGA:       ["espnplus","fubo","hulu","sling","youtubetv"],            // La Liga: ESPN+
@@ -3104,7 +3148,7 @@ const SETUP_CATALOGUE = [
       {key:"espn",    label:"ESPN"},
       {key:"abc",     label:"ABC"},
       {key:"nbc",     label:"NBC (OTA — free w/ antenna)"},
-      {key:"nbcsn",   label:"NBCSN (YouTube TV · Xfinity ch.1211)"},
+      {key:"nbcsn",   label:"NBCSN (relaunched Nov 2025 · YouTube TV base · Xfinity Popular/Ultimate — other carriers pending)"},
       {key:"fox",     label:"Fox"},
       {key:"fs1",     label:"FS1"},
       {key:"cbs",     label:"CBS"},
@@ -4104,12 +4148,12 @@ function renderAll(){
           </div>`:""}
           ${g.crew?`<div class="crew-line">🎙 ${g.crew}</div>`:""}
           ${g._gameImportance?`<div class="importance-badge ${g._gameImportance==='series_deciding'?'series-deciding':g._gameImportance==='elimination'?'elimination':g._gameImportance==='clinch'?'clinch':'playoff-impl'}">${g._importanceIcon||''} ${g.narrative?.label||''}</div>`:""}
-          ${g.narrative?.label&&!g._gameImportance?`<div class="narrative-line${(g.narrative.boost||0)>=20?' narrative-hi':''}">${g.narrative.label}</div>`:""}
+          ${g.narrative?.label?`<div class="narrative-line${(g.narrative.boost||0)>=20?' narrative-hi':''}">${g.narrative.label}</div>`:""}
         </div>
         <div class="card-right">
           ${liveBadge}
           <div class="${timeCls}">${timeStr}</div>
-          <div class="stream-row">${streamsHTMLCapped(g.streams, 3)}${(()=>{const pk=g.streams?.[0]?.key||'';return FREE_OTA.has(pk)?'<span class="free-badge">FREE</span>':FREE_CABLE.has(pk)?'<span class="free-badge free-cable">FREE W/ CABLE</span>':''})()}<button class="share-btn" aria-label="Share" title="Share this game">⬆</button></div>
+          <div class="stream-row">${streamsHTMLCapped(g.streams, 3)}${getFreeStreamBadge(g)}<button class="share-btn" aria-label="Share" title="Share this game">⬆</button></div>
           ${FD_LEAGUE_MAP[sec.sport]||ESPN_STANDINGS_MAP[sec.sport]?`<button class="standings-btn" onclick="toggleStandings(this,'${sec.sport}','2025')" title="Show league table">▼ Table</button>`:""}
         </div>
       </div>`;
@@ -4119,6 +4163,7 @@ function renderAll(){
         <div class="s-icon" style="background:${sportColor}1a;border-color:${sportColor}40">${icon}</div>
         <span class="s-name">${sec.sport}</span>
         <span class="s-count">${games.length} game${games.length!==1?"s":""}</span>
+        ${FD_LEAGUE_MAP[sec.sport]||ESPN_STANDINGS_MAP[sec.sport]?`<button class="standings-btn section-standings-btn" onclick="toggleStandings(this,'${sec.sport}','2025')" title="Show league table">▼ Table</button>`:""}
       </div>
       <div class="games-list">${cards}</div>
     </div>`;
@@ -4244,25 +4289,23 @@ function buildTodaySchedule(){
     return d.toLocaleDateString("en-CA",{timeZone:tz})===todayFresh;
   }
 
-  // ── NBA Playoffs — Monday May 11 2026 ──────────────────────────
-  // Verified May 11, 2026:
-  //   DET @ CLE G4 — 8pm ET / 00:00 UTC May 12 — NBC + Peacock (NOT ABC)
-  //     Detroit News + Yahoo Sports + Peacock confirm; DET leads 2-1
-  //   LAL home, OKC away G4 — 10:30pm ET / 02:30 UTC May 12 — Prime Video (NOT TNT)
-  //     Yahoo Sports + 1340 The Game confirm; OKC leads 3-0; played at Crypto.com Arena (LAL home for G3/G4)
-  //   NOTE: TNT is no longer an NBA rights holder as of 2025-26 season
-  //         (NBA media deal: ESPN/ABC cable+OTA, NBC/Peacock OTA+streaming, Prime Video)
+  // ── NBA Playoffs — Thursday May 14 2026 ──────────────────────────
+  // Source: DIRECTV Insider + Yahoo Sports verified May 14, 2026
+  //   SAS @ MIN G6 — 7pm ET / 23:00 UTC — Prime Video
+  //   Spurs lead series 3-2. Elimination game for Minnesota.
+  //   G5 result: Spurs 126, Timberwolves 97
   const nbaGames=[
-    // East Semis G5: CLE at DET — series tied 2-2; on ESPN at 8pm ET
-    // G5 results: SAS def MIN 126-97 (SAS leads W-Semis 3-2). Series DET/CLE tied 2-2 entering G5.
-    {home:"Detroit Pistons",       away:"Cleveland Cavaliers",    league:"NBA Playoffs – East Semis G5 · Series tied 2-2", start_time:"2026-05-14T00:00:00Z", confirmed:true, venue:"Little Caesars Arena, Detroit", streams:resolveBundle("NBA_ESPN"), crew:"Dave Pasch · Doris Burke · Cassidy Hubbarth (ESPN)"},
+    {home:"Minnesota Timberwolves", away:"San Antonio Spurs",     league:"NBA Playoffs – West Semis G6 · SAS leads 3-2", start_time:"2026-05-14T23:00:00Z", confirmed:true, venue:"Target Center, Minneapolis MN", streams:resolveBundle("NBA_PRIME"), crew:"Ian Eagle · Stan Van Gundy (Prime Video)"},
   ].filter(g=>isToday(g.start_time));
 
-  // ── NHL Playoffs — Wednesday May 13 2026 ──────────────────────────
-  // Tue results: BUF def MTL 3-2 G4 (series tied 2-2). VGK def ANA 3-2 OT G5 (VGK leads 3-2).
-  // Wed: MIN @ COL G5 8pm ET TNT/truTV (COL leads 3-1, potential series clincher)
+  // ── NHL Playoffs — Thursday May 14 2026 ──────────────────────────
+  // Source: NHL.com + DIRECTV Insider verified May 14, 2026
+  //   MTL @ BUF G5 — 7pm ET / 23:00 UTC — TNT/truTV/Max · Series tied 2-2
+  //   VGK @ ANA G6 — 9:30pm ET / 01:30 UTC May 15 — TNT/truTV/Max · VGK leads 3-2 (ANA elimination)
+  //   G5 result: COL def MIN 5-1 (COL wins series 4-1). Wild eliminated.
   const nhlGames=[
-    {home:"Colorado Avalanche",    away:"Minnesota Wild",         league:"NHL Playoffs – West Semis G5 · COL leads 3-1", start_time:"2026-05-14T00:00:00Z", confirmed:true, venue:"Ball Arena, Denver",                  streams:resolveBundle("NHL_TNT"), crew:"Brendan Burke · Eddie Olczyk · Abby Chin (TNT)"},
+    {home:"Buffalo Sabres",       away:"Montreal Canadiens",    league:"NHL Playoffs – East Semis G5 · Series tied 2-2", start_time:"2026-05-14T23:00:00Z", confirmed:true, venue:"KeyBank Center, Buffalo NY",  streams:resolveBundle("NHL_TNT"), crew:"Brendan Burke · Eddie Olczyk · Abby Chin (TNT)"},
+    {home:"Anaheim Ducks",        away:"Vegas Golden Knights",  league:"NHL Playoffs – West Semis G6 · VGK leads 3-2",   start_time:"2026-05-15T01:30:00Z", confirmed:true, venue:"Honda Center, Anaheim CA",   streams:resolveBundle("NHL_TNT"), crew:"Kenny Albert · Brian Boucher (TNT)"},
   ].filter(g=>isToday(g.start_time));  // ── MLB (May 11: Monday slate + EFL 2nd leg) ──────────────────────────────
   // ── MLB schedule: May 8 (Fri) – May 11 (Mon) ────────────────────────────────
   // isToday() filters to the viewer's local date — correct games show each day
@@ -4375,6 +4418,24 @@ function buildTodaySchedule(){
     {home:"Houston Astros",       away:"Seattle Mariners",       start_time:"2026-05-14T00:10:00Z", confirmed:true, venue:"Daikin Park, Houston"},
     {home:"Athletics",            away:"St. Louis Cardinals",    start_time:"2026-05-14T01:40:00Z", confirmed:true, venue:"Sutter Health Park, Sacramento"},
     {home:"Los Angeles Dodgers",  away:"San Francisco Giants",   start_time:"2026-05-14T02:10:00Z", confirmed:true, venue:"Dodger Stadium, Los Angeles"},
+    // ── Thursday May 14, 2026 — MLB.com + Peacock.com verified ────────────────
+    // National TV: CHC @ ATL 7pm ET Peacock GOTD — EXCLUSIVE (MLB_PEACOCK_GOTD); suppress local
+    // Source: Peacock.com/sports/mlb + MLB.com schedule verified May 14, 2026
+    {home:"Baltimore Orioles",    away:"New York Yankees",       start_time:"2026-05-14T17:05:00Z", confirmed:true, venue:"Oriole Park at Camden Yards, Baltimore",  localRsn:"MASN_ORIOLES",   localNote:"MASN (Baltimore) · YES Network (NY)"},
+    {home:"Cleveland Guardians",  away:"Los Angeles Angels",     start_time:"2026-05-14T17:10:00Z", confirmed:true, venue:"Progressive Field, Cleveland",             localRsn:"GUARDIANS_LOCAL", localNote:"CLEGuardians.TV · Angels local RSN"},
+    {home:"Pittsburgh Pirates",   away:"Colorado Rockies",       start_time:"2026-05-14T22:40:00Z", confirmed:true, venue:"PNC Park, Pittsburgh"},
+    {home:"Cincinnati Reds",      away:"Washington Nationals",   start_time:"2026-05-14T22:40:00Z", confirmed:true, venue:"Great American Ball Park, Cincinnati"},
+    {home:"Boston Red Sox",       away:"Philadelphia Phillies",  start_time:"2026-05-14T22:45:00Z", confirmed:true, venue:"Fenway Park, Boston",                      localRsn:"NESN_LOCAL",     localNote:"NESN (Boston) · NBCSP (Philly)"},
+    {home:"Toronto Blue Jays",    away:"Tampa Bay Rays",         start_time:"2026-05-14T23:07:00Z", confirmed:true, venue:"Rogers Centre, Toronto",                                             localNote:"Sportsnet 1 (Canada) · Rays.TV (Tampa)"},
+    {home:"New York Mets",        away:"Detroit Tigers",         start_time:"2026-05-14T23:10:00Z", confirmed:true, venue:"Citi Field, Queens",                       localRsn:"SNY_LOCAL",      localNote:"SNY (NY/NJ/CT) · Detroit Sports (local)"},
+    {home:"Atlanta Braves",       away:"Chicago Cubs",           start_time:"2026-05-14T23:00:00Z", confirmed:true, venue:"Truist Park, Atlanta",                     streams:resolveBundle("MLB_PEACOCK_GOTD"), peacockGOTD:true},
+    {home:"Minnesota Twins",      away:"Miami Marlins",          start_time:"2026-05-14T23:40:00Z", confirmed:true, venue:"Target Field, Minneapolis"},
+    {home:"Chicago White Sox",    away:"Kansas City Royals",     start_time:"2026-05-14T23:40:00Z", confirmed:true, venue:"Guaranteed Rate Field, Chicago"},
+    {home:"Milwaukee Brewers",    away:"San Diego Padres",       start_time:"2026-05-14T23:40:00Z", confirmed:true, venue:"American Family Field, Milwaukee"},
+    {home:"Texas Rangers",        away:"Arizona Diamondbacks",   start_time:"2026-05-15T00:05:00Z", confirmed:true, venue:"Globe Life Field, Arlington"},
+    {home:"Houston Astros",       away:"Seattle Mariners",       start_time:"2026-05-15T00:10:00Z", confirmed:true, venue:"Daikin Park, Houston"},
+    {home:"Athletics",            away:"St. Louis Cardinals",    start_time:"2026-05-15T01:40:00Z", confirmed:true, venue:"Sutter Health Park, Sacramento"},
+    {home:"Los Angeles Dodgers",  away:"San Francisco Giants",   start_time:"2026-05-15T02:10:00Z", confirmed:true, venue:"Dodger Stadium, Los Angeles"},
   ];
   const mlbGames=mlbRaw.filter(g=>isToday(g.start_time)).map(g=>{
     // Stream resolution — priority order (highest first):
@@ -4611,7 +4672,7 @@ function buildTodaySchedule(){
     if (/leads 3-1|up 3-1/.test(s))
       return {importance:'elimination', boost:18, label:'Elimination game', icon:'⚠️'};
     if (/leads 3-2|up 3-2/.test(s))
-      return {importance:'elimination', boost:22, label:'One win from elimination', icon:'⚠️'};
+      return {importance:'elimination', boost:22, label:'Elimination game', icon:'⚠️'};
     // Clinch game (team can win series)
     if (/leads 3-0/.test(s) && /game 4/i.test(g.league||''))
       return {importance:'clinch', boost:15, label:'Can sweep the series', icon:'✓'};
@@ -4708,8 +4769,12 @@ function buildTodaySchedule(){
   // ION: FREE over-the-air Friday doubleheaders. USA Network: Wed + Mon anchored.
   // Indiana Fever: all 44 games nationally televised. A'ja Wilson / LV Aces: 33 national games.
   const wnbaGames=[
-    // ── Wednesday May 13, 2026 — local broadcast / League Pass ────────────────
-    // USA Network (Wed prime window may apply — verify); ION = Fri; others = local/WNBA+
+    // ── Thursday May 14, 2026 — Prime Video Thursday Night doubleheader ─────────
+    // Source: 2026 WNBA broadcast schedule — Prime Video airs 30 games primarily Thu nights
+    // Specific matchups: verify from WNBA.com for exact confirmed games
+    // Indiana Fever: all 44 games nationally televised — likely on tonight
+    {home:"Indiana Fever",     away:"New York Liberty",      league:"WNBA – 2026 Season", start_time:"2026-05-14T23:00:00Z", confirmed:true, venue:"Gainbridge Fieldhouse, Indianapolis",   streams:resolveBundle("WNBA_PRIME")},
+    {home:"Las Vegas Aces",    away:"Seattle Storm",          league:"WNBA – 2026 Season", start_time:"2026-05-15T02:00:00Z", confirmed:true, venue:"Michelob ULTRA Arena, Las Vegas",       streams:resolveBundle("WNBA_PRIME")},
     {home:"Toronto Tempo",      away:"Seattle Storm",          league:"WNBA – 2026 Season", start_time:"2026-05-13T23:00:00Z", confirmed:true, venue:"Scotiabank Arena, Toronto",          streams:resolveBundle("WNBA_LOCAL")},
     {home:"Connecticut Sun",    away:"Las Vegas Aces",         league:"WNBA – 2026 Season", start_time:"2026-05-14T00:00:00Z", confirmed:true, venue:"Mohegan Sun Arena, Uncasville",      streams:resolveBundle("WNBA_LOCAL")},
     {home:"Golden State Valkyries", away:"Chicago Sky",        league:"WNBA – 2026 Season", start_time:"2026-05-14T02:00:00Z", confirmed:true, venue:"Chase Center, San Francisco",        streams:resolveBundle("WNBA_LOCAL")},
@@ -4818,6 +4883,18 @@ const MEDIA_WEEKDAY = [
     time:"Noon ET",
     desc:"Pat McAfee and crew with sports talk, NFL news, and daily guest interviews. Live from ESPN HQ.",
     link:"https://www.espn.com/watch/"
+  },
+  {
+    show:"Golf Central",network:"Golf Channel",chip:"ESPN",
+    time:"7:00 AM, Noon, 6:00 PM ET",
+    desc:"Golf Channel's flagship news show. PGA Tour leaderboard updates, tour news, player interviews, and preview of upcoming events. Airs three times daily. Stream on Peacock simultaneously.",
+    link:"https://www.golfchannel.com"
+  },
+  {
+    show:"Morning Drive",network:"Golf Channel",chip:"ESPN",
+    time:"6:00 AM ET",
+    desc:"Golf Channel's morning show with tournament previews, player features, equipment news, and the previous day's highlights. Peacock streams Golf Channel live — often the cheaper solo option vs. cable.",
+    link:"https://www.golfchannel.com"
   },
 ];
 
@@ -4985,7 +5062,9 @@ async function fetchBettingLines(){
   allData.sports.forEach(sec=>{
     (sec.games||[]).forEach(g=>{
       if(getStatus(g.start_time)!=="pre"&&getStatus(g.start_time)!=="live") return; // skip finished
-      games.push(`${g.away||"?"} @ ${g.home||"?"} (${sec.sport}, ${fmtTime(g.start_time)})`);
+      // T1-12: include series context (e.g. "SAS leads 3-2, G6") in the prompt
+      const seriesCtx = g.league && g.league !== sec.sport ? ` · ${g.league}` : '';
+      games.push(`${g.away||"?"} @ ${g.home||"?"} (${sec.sport}${seriesCtx}, ${fmtTime(g.start_time)})`);
     });
   });
   if(!games.length) return null;
@@ -5037,10 +5116,25 @@ async function fetchBettingLines(){
     if(parts.length) bdlCtxStr = "\n\nLive injury data:\n"+parts.join("\n");
   }catch(e){ /* BDL context optional — proceed without it */ }
 
+  // T1-13: Inject FD standings for any soccer competitions with games today
+  let fdStandingsStr = "";
+  try{
+    const soccerSports = (allData?.sports||[]).filter(s => FD_LEAGUE_MAP[s.sport] && (s.games||[]).length > 0);
+    for(const sec of soccerSports.slice(0,2)){ // max 2 competitions to keep prompt compact
+      const rows = fdStandingsCache[FD_LEAGUE_MAP[sec.sport]];
+      if(rows && rows.length){
+        const top6 = rows.slice(0,6).map(r=>`${r.pos}. ${r.team} (${r.pts}pts, GD${r.gd})`).join(', ');
+        fdStandingsStr += `\n${sec.sport} standings (top 6): ${top6}`;
+      }
+    }
+    if(fdStandingsStr) fdStandingsStr = "\n\nLeague standings:" + fdStandingsStr;
+  }catch(e){ /* standings optional */ }
+
   const hasLiveOdds = Object.keys(liveOddsMap).length > 0;
   const prompt = "Today is " + TODAY_ISO + ". Sports games today:\n"
     + games.slice(0,6).join("\n")
     + bdlCtxStr
+    + fdStandingsStr
     + liveOddsStr
     + "\n\nReturn betting intelligence as JSON only — no prose, no markdown fences.\n"
     + "Schema: " + schema + "\n"
@@ -5186,24 +5280,35 @@ function selectBettingGames(sports, maxCards=4){
 // MLB: SF @ LAD on MLB Network Showcase
 const BETTING_LINES_FALLBACK_DATA = [
   {
-    matchKey:"pistons",        // CLE @ DET G5 — East Semis tied 2-2
+    matchKey:"timberwolves",    // SAS @ MIN G6 — West Semis, SAS leads 3-2
     source:"📊 AI Estimated",
-    context:"Series perfectly tied 2-2 — DET won G1 and G2 at home, CLE won G3 and G4. The Pistons now return home to Little Caesars Arena, where they've been dominant this postseason. Home-court advantage makes DET a slight favorite, but Cleveland has proven they can win in Detroit. DET -140 at home. CLE +120 as the road team that's beaten DET twice away from Cleveland.",
+    context:"Minnesota must win at home or their season ends. Spurs dominated G5 126-97 and have all the momentum. Despite Target Center crowd, San Antonio's balance (Wembanyama + veterans) makes them a slight road favorite. MIN has won at home this series but G5 loss was demoralizing. SAS -115 to close. MIN +100 in elimination at home.",
     lines:[
-      {label:"Moneyline",items:[{t:"Detroit Pistons",o:"-140",fav:true},{t:"Cleveland Cavaliers",o:"+120",fav:false}]},
-      {label:"Spread",items:[{t:"Pistons -2.5",o:"-110",fav:true},{t:"Cavaliers +2.5",o:"-110",fav:false}]},
-      {label:"Total (O/U)",items:[{t:"Over 208",o:"-110",fav:false},{t:"Under 208",o:"-110",fav:false}]},
+      {label:"Moneyline",items:[{t:"San Antonio Spurs",o:"-115",fav:true},{t:"Minnesota Timberwolves",o:"+100",fav:false}]},
+      {label:"Spread",items:[{t:"Spurs -1.5",o:"+115",fav:false},{t:"Timberwolves +1.5",o:"-135",fav:true}]},
+      {label:"Total (O/U)",items:[{t:"Over 217",o:"-110",fav:false},{t:"Under 217",o:"-110",fav:false}]},
     ],
     books:[{name:"DraftKings",url:"https://sportsbook.draftkings.com"},{name:"FanDuel",url:"https://sportsbook.fanduel.com"},{name:"BetMGM",url:"https://sports.betmgm.com"}]
   },
   {
-    matchKey:"avalanche",      // MIN @ COL G5 — COL leads 3-1, potential series clincher
+    matchKey:"sabres",          // MTL @ BUF G5 — East Semis, Series tied 2-2
     source:"📊 AI Estimated",
-    context:"Colorado has dominated this series and can close it out tonight at Ball Arena. COL leads 3-1 — teams down 3-1 win the series less than 10% of the time. Minnesota won G3 to avoid the sweep but COL bounced back in G4. Nathan MacKinnon and the Avs at home make them heavy favorites to advance. COL -250 to clinch. MIN +200 to extend the series.",
+    context:"Perfectly balanced series — each team has won on the road. G5 at KeyBank Center with Buffalo holding home ice. Canadiens have won every road game. This series has swung wildly with the visitor winning four straight. BUF home ice slight edge. BUF -130 on home ice. MTL +110 as road team with a perfect away record this series.",
     lines:[
-      {label:"Moneyline",items:[{t:"Colorado Avalanche",o:"-250",fav:true},{t:"Minnesota Wild",o:"+200",fav:false}]},
-      {label:"Puck Line",items:[{t:"COL -1.5",o:"+105",fav:false},{t:"MIN +1.5",o:"-125",fav:true}]},
-      {label:"Total Goals",items:[{t:"Over 5.5",o:"-120",fav:true},{t:"Under 5.5",o:"+100",fav:false}]},
+      {label:"Moneyline",items:[{t:"Buffalo Sabres",o:"-130",fav:true},{t:"Montreal Canadiens",o:"+110",fav:false}]},
+      {label:"Puck Line",items:[{t:"BUF -1.5",o:"+160",fav:false},{t:"MTL +1.5",o:"-185",fav:true}]},
+      {label:"Total Goals",items:[{t:"Over 5.5",o:"-115",fav:true},{t:"Under 5.5",o:"-105",fav:false}]},
+    ],
+    books:[{name:"DraftKings",url:"https://sportsbook.draftkings.com"},{name:"FanDuel",url:"https://sportsbook.fanduel.com"},{name:"BetMGM",url:"https://sports.betmgm.com"}]
+  },
+  {
+    matchKey:"ducks",           // VGK @ ANA G6 — West Semis, VGK leads 3-2
+    source:"📊 AI Estimated",
+    context:"Anaheim must win at Honda Center to force a decisive G7. The Ducks have home ice and desperation — both historically powerful motivators. Vegas has been the better team but struggled on the road (2-1 away). This is one of the most intense atmospheres in playoff hockey. ANA -145 at home in elimination. VGK +125 to close out on the road.",
+    lines:[
+      {label:"Moneyline",items:[{t:"Anaheim Ducks",o:"-145",fav:true},{t:"Vegas Golden Knights",o:"+125",fav:false}]},
+      {label:"Puck Line",items:[{t:"ANA -1.5",o:"+175",fav:false},{t:"VGK +1.5",o:"-210",fav:true}]},
+      {label:"Total Goals",items:[{t:"Over 6",o:"-110",fav:false},{t:"Under 6",o:"-110",fav:false}]},
     ],
     books:[{name:"DraftKings",url:"https://sportsbook.draftkings.com"},{name:"FanDuel",url:"https://sportsbook.fanduel.com"},{name:"BetMGM",url:"https://sports.betmgm.com"}]
   },
@@ -6277,6 +6382,47 @@ function buildGolfLeaderNote(leaderboard){
   }).join(" · ");
 }
 
+// Build top-10 leaderboard HTML block for golf card
+// Built: May 14, 2026 — shows when tournament is active/ongoing
+// Returns: HTML string for .golf-leaderboard div, or "" if no data
+function buildGolfTop10HTML(leaderboard, roundLabel){
+  if(!leaderboard) return "";
+  const players = (leaderboard.leaderboard || leaderboard.players || [])
+    .filter(p => p.position && (p.lastName || p.playerName))
+    .sort((a,b) => (parseInt(a.position)||99) - (parseInt(b.position)||99))
+    .slice(0, 10);
+  if(!players.length) return "";
+
+  const titleHTML = roundLabel
+    ? `<div class="golf-lb-title">⛳ ${roundLabel}</div>`
+    : `<div class="golf-lb-title">⛳ Leaderboard</div>`;
+
+  const rows = players.map(p => {
+    const pos    = String(p.position || "");
+    const posNum = parseInt(pos) || 99;
+    const posStr = posNum <= 1 ? "1" : `T${pos}`;
+    const name   = p.lastName || p.playerName || "";
+    const country= p.country || p.countryCode || "";
+    const total  = String(p.total || p.totalScore || "E");
+    const today  = p.today || p.todayScore || "";
+
+    // Score colour class
+    const sc = total.startsWith("-") ? "lb-under" : total === "E" ? "lb-even" : "lb-over";
+    // Today's round score in parens if available and different from total
+    const todayStr = today && today !== total ? ` (${today})` : "";
+    const nameStr  = country ? `${name} <span style="opacity:.5">${country}</span>` : name;
+    const isTop3   = posNum <= 3;
+
+    return `<div class="golf-lb-row${isTop3 ? " lb-top3" : ""}">` +
+      `<span class="golf-lb-pos">${posStr}</span>` +
+      `<span class="golf-lb-name">${nameStr}</span>` +
+      `<span class="golf-lb-score ${sc}">${total}${todayStr}</span>` +
+    `</div>`;
+  }).join("");
+
+  return `<div class="golf-leaderboard">${titleHTML}${rows}</div>`;
+}
+
 // Find today's and upcoming active tournaments in the schedule
 function getActiveTournaments(schedule){
   if(!schedule) return [];
@@ -6377,6 +6523,30 @@ function injectSlashGolfLeaderNotes(activeTournaments, leaderboards){
         }
         if(badge) badge.textContent = roundLabel;
       }
+
+      // ── TOP 10 LEADERBOARD — inject when tournament is active ───────────
+      // Only show when lb data is available and tournament is ongoing (not upcoming)
+      const isActive = tourn.status && (
+        tourn.status.toLowerCase().includes("progress") ||
+        tourn.status.toLowerCase().includes("active") ||
+        tourn.status.toLowerCase().includes("official") ||
+        tourn.status.toLowerCase().includes("final")
+      );
+      const lbHTML = lb && isActive ? buildGolfTop10HTML(lb, roundLabel) : "";
+      let lbEl = card.querySelector(".golf-leaderboard");
+      if(lbHTML){
+        if(!lbEl){
+          lbEl = document.createElement("div");
+          // Insert after stream-row if present, else append to card-body
+          const streamRow = card.querySelector(".stream-row");
+          if(streamRow) streamRow.after(lbEl);
+          else card.querySelector(".card-body")?.appendChild(lbEl);
+        }
+        if(lbEl) lbEl.outerHTML = lbHTML; // replace with fresh HTML
+      } else if(lbEl){
+        lbEl.remove(); // hide leaderboard when tournament not active
+      }
+      // ────────────────────────────────────────────────────────────────────
     });
   });
 }
@@ -6661,7 +6831,43 @@ async function fetchESPNStandings(sportName){
 // Toggle standings panel on soccer game cards
 // Priority: FD.org (form table) → ESPN → SDB stub
 async function toggleStandings(btn, leagueId, season){
+  // Support both card-level and section-head buttons
   const card = btn.closest(".game-card");
+  const section = btn.closest(".sport-section");
+
+  // For section-head button: find or create a standings panel after the section-head
+  if(!card && section){
+    const head = section.querySelector(".section-head");
+    let panel = section.querySelector(".standings-panel.section-level");
+    if(panel){
+      const isOpen = panel.style.display !== "none";
+      panel.style.display = isOpen ? "none" : "block";
+      btn.textContent = isOpen ? "▼ Table" : "▲ Table";
+      return;
+    }
+    btn.textContent = "…";
+    panel = document.createElement("div");
+    panel.className = "standings-panel section-level";
+    panel.style.cssText = "display:block;margin:0 0 .75rem;";
+    const sportName = section.dataset.sport || "";
+
+    const fdCode = FD_LEAGUE_MAP[sportName];
+    if(fdCode){
+      try{
+        const fdRows = await fdFetchStandings(fdCode);
+        if(fdRows && fdRows.length){
+          renderFDStandingsPanel(panel, fdRows, sportName);
+          head.insertAdjacentElement("afterend", panel);
+          btn.textContent = "▲ Table";
+          return;
+        }
+      }catch(e){ if(FIELD_DEBUG) console.warn("[Standings] FD failed:", e.message); }
+    }
+    btn.textContent = "▼ Table";
+    return;
+  }
+
+  // Original card-level behavior
   if(!card) return;
   let panel = card.querySelector(".standings-panel");
   if(panel){
@@ -6734,6 +6940,169 @@ function renderESPNStandingsPanel(panel, entries, sportName){
     <tbody>${rows}</tbody>
   </table><div style="font-size:.6rem;color:var(--smoke);padding:.25rem .5rem;text-align:right">via ESPN · live</div>`;
 }
+
+// ── ATP Tour Live Scores ─────────────────────────────────────────────────────
+// Built: May 14, 2026
+// Endpoint: https://app.atptour.com/api/v2/gateway/livematches/website?scoringTournamentLevel=tour
+// CORS: Access-Control-Allow-Origin: * — fully open, no proxy needed
+// Auth: None — public GET endpoint
+// Cache: max-age=10s — poll every 10s live, 2min idle
+// If-Modified-Since: supported — only transfers data when scores change
+// Covers: all active ATP Tour events simultaneously (Masters 1000 + 500 + 250)
+// MatchStatus values: "F" = Finished, others (TBD from live test) = In Progress
+
+const ATP_ENDPOINT = 'https://app.atptour.com/api/v2/gateway/livematches/website?scoringTournamentLevel=tour';
+const ATP_REFRESH_LIVE = 10000;   // 10s when live matches active
+const ATP_REFRESH_IDLE = 120000;  // 2min when no live matches
+let atpLastModified = null;
+let atpIntervalId = null;
+
+async function fetchATPLiveScores(){
+  if(!document.querySelector('.sport-section[data-sport="Tennis"]')) {
+    // No tennis section rendered today — reschedule at idle rate, don't spam
+    atpIntervalId = setTimeout(fetchATPLiveScores, ATP_REFRESH_IDLE);
+    return;
+  }
+  try {
+    const headers = {'Accept':'application/json'};
+    if(atpLastModified) headers['If-Modified-Since'] = atpLastModified;
+    const r = await fetch(ATP_ENDPOINT, {headers, signal:AbortSignal.timeout(5000)});
+
+    if(r.status === 304){
+      // Scores unchanged — no injection needed, reschedule
+    } else if(r.ok){
+      atpLastModified = r.headers.get('Last-Modified');
+      const json = await r.json();
+      const tournaments = json?.Data?.LiveMatchesTournamentsOrdered || [];
+      injectATPScores(tournaments);
+      const hasLive = tournaments.some(t =>
+        (t.LiveMatches||[]).some(m => m.MatchStatus !== 'F')
+      );
+      if(FIELD_DEBUG) console.debug(`[ATP] ${tournaments.length} tournaments · hasLive=${hasLive}`);
+      clearTimeout(atpIntervalId);
+      atpIntervalId = setTimeout(fetchATPLiveScores, hasLive ? ATP_REFRESH_LIVE : ATP_REFRESH_IDLE);
+      return;
+    }
+  } catch(e){
+    if(FIELD_DEBUG) console.debug('[ATP] fetch failed:', e.message);
+  }
+  atpIntervalId = setTimeout(fetchATPLiveScores, ATP_REFRESH_IDLE);
+}
+
+function buildATPScore(match){
+  const p1 = match.PlayerTeam;
+  const p2 = match.OpponentTeam;
+  const p1n = p1.Player.PlayerLastName || '?';
+  const p2n = p2.Player.PlayerLastName || '?';
+  const p1s = p1.Seed ? `(${p1.Seed})` : '';
+  const p2s = p2.Seed ? `(${p2.Seed})` : '';
+
+  // Build compact set score string — only non-null sets
+  const sets = (p1.SetScores||[])
+    .map((s,i) => s.SetScore != null ? `${s.SetScore}-${(p2.SetScores[i]||{}).SetScore??'?'}` : null)
+    .filter(Boolean);
+
+  const isLive = match.MatchStatus !== 'F';
+  const isFinished = match.MatchStatus === 'F';
+
+  // Current game score + server dot during live play
+  const gameStr = isLive && p1.GameScore != null
+    ? ` ${p1.GameScore}-${p2.GameScore}`
+    : '';
+  const serverDot = isLive
+    ? (match.ServerTeam === 0 ? ' ●' : ' ○')
+    : '';
+
+  let scoreChip, situation, playerLine;
+  playerLine = `${p1n}${p1s} v ${p2n}${p2s}`;
+
+  if(isFinished && match.WinningPlayerId){
+    const winnerName = match.WinningPlayerId === p1.Player.PlayerId ? p1n : p2n;
+    scoreChip = `✓ ${winnerName} · ${sets.join(' ')}`;
+    situation = `${match.MatchTimeTotal} · Umpire: ${match.UmpireLastName||''}`.trim();
+  } else if(isLive){
+    scoreChip = `🎾 ${sets.join(' ')}${gameStr}${serverDot}`.trim();
+    situation = (match.ExtendedMessage||'').replace(/\r\n/g,' ').replace(/\s+/g,' ').trim();
+  } else {
+    // Scheduled/upcoming
+    scoreChip = `${match.RoundName} · ${match.CourtName}`;
+    situation = `${p1n}${p1s} v ${p2n}${p2s}`;
+    playerLine = match.RoundName;
+  }
+
+  return {playerLine, scoreChip, situation, isLive, isFinished};
+}
+
+function injectATPScores(tournaments){
+  if(!allData?.sports) return;
+  const tennisSections = allData.sports.filter(s => s.sport === 'Tennis');
+  if(!tennisSections.length) return;
+
+  // Flatten all matches with their tournament context
+  const allMatches = tournaments.flatMap(t =>
+    (t.LiveMatches||[]).map(m => ({...m, _tourn:t}))
+  );
+  if(!allMatches.length) return;
+
+  tennisSections.forEach(sec => {
+    (sec.games||[]).forEach(game => {
+      if(!game._id) return;
+      const gameName = (game.home||'').toLowerCase();
+
+      // Match ATP tournament to FIELD game by keyword — same fuzzy pattern as golf
+      const atpMatch = allMatches.find(m => {
+        const tWords = (m._tourn.EventTitle||'')
+          .toLowerCase().replace(/[^a-z0-9\s]/g,'').split(/\s+/).filter(w=>w.length>3);
+        return tWords.some(w => gameName.includes(w));
+      });
+      if(!atpMatch) return;
+
+      const score = buildATPScore(atpMatch);
+
+      // Update game object for any future re-render
+      game.leaderNote = score.scoreChip;
+      game._atpLive = score.isLive;
+      game._atpSituation = score.situation;
+      game._atpPlayerLine = score.playerLine;
+
+      // Update DOM directly — no re-render needed
+      const card = document.querySelector(`.game-card[data-gameid="${game._id}"]`);
+      if(!card) return;
+
+      // 1. Update event name → player matchup
+      const nameEl = card.querySelector('.event-name');
+      if(nameEl && score.playerLine) nameEl.textContent = score.playerLine;
+
+      // 2. Update/create score chip (reuse .leader-chip)
+      let chip = card.querySelector('.leader-chip');
+      if(!chip){
+        const matchupDiv = card.querySelector('.matchup');
+        if(matchupDiv){ chip = document.createElement('span'); chip.className='leader-chip'; matchupDiv.appendChild(chip); }
+      }
+      if(chip){
+        chip.textContent = score.scoreChip;
+        chip.classList.toggle('atp-score-live', score.isLive);
+      }
+
+      // 3. Update/create situation line
+      if(score.situation){
+        let sit = card.querySelector('.atp-situation');
+        if(!sit){
+          sit = document.createElement('div');
+          sit.className = 'atp-situation';
+          const leagueRow = card.querySelector('.league-row,.badge-row');
+          if(leagueRow) leagueRow.after(sit);
+          else card.querySelector('.card-body')?.appendChild(sit);
+        }
+        if(sit) sit.textContent = score.situation;
+      }
+
+      // 4. Live pulsing glow — reuse espn-live class
+      card.classList.toggle('espn-live', score.isLive);
+    });
+  });
+}
+// ─────────────────────────────────────────────────────────────────────────────
 
 // ── Game Situation Badge — live card context ────────────────────
 // Fires during live games: "3rd & 7 at DAL 22" or "Bases loaded, 2 out, 3-2 count"
@@ -7219,6 +7588,24 @@ function renderESPNScores(){
         }
       }
 
+      // Wow #31: ESPN detail string — italic situation line on all live cards
+      // e.g. "2nd & 7 at KC 28 · 4Q 2:34" or "Bases loaded, 2 out" or "3rd Period"
+      // Only show when detail adds context beyond what score/period already shows
+      if(isLive && score.detail){
+        let detEl = card.querySelector(".situation-badge.espn-detail");
+        const detText = score.detail;
+        if(!detEl){
+          detEl = document.createElement("div");
+          detEl.className = "situation-badge espn-detail";
+          const scoreWrap = card.querySelector(".score-wrap");
+          if(scoreWrap) scoreWrap.insertAdjacentElement("afterend", detEl);
+          else card.querySelector(".card-body")?.appendChild(detEl);
+        }
+        if(detEl) detEl.textContent = detText;
+      } else {
+        card.querySelector(".situation-badge.espn-detail")?.remove();
+      }
+
       // Find existing wrapper or inject fresh — single element replace, no duplicates
       // Insert score-wrap as direct child of .game-card (not inside card-body)
       // CSS grid-row:2 (mobile) / inherited position (desktop) handles placement
@@ -7330,6 +7717,7 @@ async function fetchSchedule(){
   setTimeout(fdPrefetchSoccerLive, 3000)
   setTimeout(slashGolfPrefetchAll, 3500); // Slash Golf: schedule + live leaderboard
   setTimeout(weatherPrefetchAll, 4000);  // Open-Meteo outdoor venue weather
+  setTimeout(fetchATPLiveScores, 4500);  // ATP Tour live scores (CORS open, no proxy needed)
   setTimeout(initSportsDBSchedule, 1500); // SportsDB schedule enrichment + standings (after initial render)
   setTimeout(bdlPrefetchAll, 2000);       // BallDontLie injury prefetch (after schedule renders)
   maybeShowSetup();
@@ -7360,6 +7748,52 @@ if(tzPillBtn) tzPillBtn.addEventListener("click", openSetup);
 updateTzPill();
 updateDateLabel();
 renderUsageBadge(getUsage());
+
+// ── T1-15: Broadcaster alias search ─────────────────────────────────────────
+// Filter bar text input → hide/show game cards whose chips match the query.
+// Matches against stream chip names (ESPN, NBC, Prime Video, Peacock, etc.)
+// and against the broadcaster's SR key (e.g. "espn", "nbc").
+// Resets automatically when input is cleared.
+(function initBroadcasterSearch(){
+  const input = document.getElementById("broadcaster-search");
+  if(!input) return;
+  input.addEventListener("input", ()=>{
+    const q = input.value.trim().toLowerCase();
+    const cards = document.querySelectorAll(".game-card");
+    if(!q){
+      cards.forEach(c=>{ c.style.display=""; });
+      document.querySelectorAll(".sport-section").forEach(s=>{ s.style.display=""; });
+      return;
+    }
+    // Show cards that have a chip matching the query
+    const sectionHasVisible = {};
+    cards.forEach(c=>{
+      const sport = c.dataset.sport||"";
+      const chips = [...c.querySelectorAll(".stream-chip")];
+      const match = chips.some(ch=>{
+        const name = (ch.textContent||"").toLowerCase();
+        const key  = (ch.dataset.srkey||"").toLowerCase();
+        return name.includes(q) || key.includes(q);
+      });
+      c.style.display = match ? "" : "none";
+      if(match) sectionHasVisible[sport] = true;
+    });
+    // Hide sections with no visible cards; show sections with at least one
+    document.querySelectorAll(".sport-section").forEach(s=>{
+      s.style.display = sectionHasVisible[s.dataset.sport] ? "" : "none";
+    });
+  });
+  // Clear on Escape
+  input.addEventListener("keydown", e=>{
+    if(e.key==="Escape"){
+      input.value="";
+      input.dispatchEvent(new Event("input"));
+    }
+  });
+  // Style on focus
+  input.addEventListener("focus", ()=>{ input.style.borderColor="var(--gold)"; input.style.width="120px"; });
+  input.addEventListener("blur",  ()=>{ input.style.borderColor="var(--edge2)"; if(!input.value) input.style.width="90px"; });
+})();
 
 // ── IP Geolocation (free, no key, ipapi.co) ────────────────────────────────
 // Auto-sets timezone on first load. Respects manual selection. 3s timeout.
@@ -7453,7 +7887,7 @@ const STREAMING_APPS = [
       {title:"Giro d'Italia 2026",                   meta:"Stage 3 today · all 21 stages live · US exclusive on Max",badge:"LIVE",   cls:"badge-live"},
       {title:"NHL Playoffs — TNT games",             meta:"Tuesday nights + select series · TNT/Max",badge:"LIVE",   cls:"badge-live"},
       {title:"MLB on TBS — Tuesday Nights",          meta:"Weekly Tuesday national game streams on Max",badge:"WEEKLY",cls:"badge-ongoing"},
-      {title:"Roland-Garros (French Open)",          meta:"Starts May 24 · US exclusive on Max",     badge:"UPCOMING",cls:"badge-ongoing"},
+      {title:"Roland-Garros (French Open)",          meta:"Starts May 25 · TV: Tennis Channel · Max stream (WBD rights)", badge:"UPCOMING",cls:"badge-ongoing"},
       {title:"NASCAR — select coverage",            meta:"Exclusive Driver Cam + select race events", badge:"ONGOING", cls:"badge-ongoing"},
     ]
   },
@@ -7932,23 +8366,36 @@ function maybePushFrenchOpen(sections){
   const FO_END   = "2026-06-08";
   const PREVIEW_FROM = "2026-05-15";
   if(TODAY_ISO < PREVIEW_FROM || TODAY_ISO > FO_END) return;
+
+  // Round schedule (day of month during tournament)
+  // Clay courts start 7am ET = T11:00:00Z
+  const ROLAND_GARROS_ROUNDS = {
+    25:"R128 — Day 1",26:"R128 — Day 2",27:"R64",28:"R64",
+    29:"R32",30:"R32",31:"R16",
+    1:"R16",2:"Quarterfinals",3:"Quarterfinals",
+    4:"Semifinals",5:"Women's Final",7:"Men's Final",8:"Men's Final"
+  };
+
   const isLive   = TODAY_ISO >= FO_START && TODAY_ISO <= FO_END;
   const daysAway = isLive ? 0 : Math.round((new Date(FO_START) - new Date(TODAY_ISO)) / 86400000);
+  const todayDOM = new Date(TODAY_ISO+"T12:00:00Z").getUTCDate();
+  const round    = isLive ? (ROLAND_GARROS_ROUNDS[todayDOM]||"Play") : "";
   const phaseStr = isLive
-    ? "🔴 LIVE NOW · Roland Garros"
+    ? `🔴 LIVE · ${round}`
     : `📅 Starts in ${daysAway} day${daysAway===1?"":"s"}`;
   const foGame = {
     home: "Roland Garros 2026",
     away: null,
     league: `French Open · ${phaseStr}`,
-    start_time: FO_START + "T10:00:00Z",
+    start_time: (isLive ? TODAY_ISO : FO_START) + "T11:00:00Z",
     venue: "Stade Roland Garros, Paris",
     streams: resolveBundle("TENNIS_FO"),
     _id: "fo_2026_preview",
     _sport: "Tennis",
-    leaderNote: isLive ? "Live draws · TC / TC+ / ESPN" : "May 25 – Jun 8 · TV: TC · TC+ · ESPN · NBC (finals)",
+    leaderNote: isLive
+      ? `${round} · TC / TC+ / Max (WBD)`
+      : "May 25 – Jun 8 · Tennis Channel · TC+ · Max (WBD rights)",
   };
-  // Merge into existing Tennis section or create new one
   const tennis = sections.find(s => s.sport === "Tennis");
   if(tennis){
     if(!tennis.games.some(g => g._id === "fo_2026_preview"))
@@ -8054,12 +8501,17 @@ document.addEventListener('click', e => {
 // FEATURE: PACKAGE INFERENCE — My Services auto-check when vMVPD selected
 // PRICES lookup — for coverage dashboard + Wow #32 marginal cost
 // ═══════════════════════════════════════════════════════════════════════════
+// NBCSN distribution status (as of May 2026):
+//   CONFIRMED: YouTube TV (base plan), Xfinity (Popular & Ultimate tiers)
+//   NOT YET CONFIRMED: Hulu + Live TV, Sling TV, DirecTV, DirecTV Stream, Fubo, DISH, Verizon Fios
+//   Source: CableTV.com Jan 2026 + NBCUniversal carriage announcements
+//   Update this table when new carriage deals are confirmed.
 const PACKAGE_INCLUDES = {
   youtubetv: ["espn","espn2","espnu","abc","nbc","nbcsn","cbs","fox","fs1","fs2","tnt","tbs","truv","nfln","usa","mlbn","bigten","sec","acc","cbssn","golf","bein"],
-  hulu:      ["espn","espn2","espnu","abc","nbc","nbcsn","cbs","fox","fs1","fs2","tnt","tbs","truv","nfln","usa","mlbn","bigten","sec","acc","cbssn","golf","bein","bravo"],
-  sling:     ["espn","espn2","abc","fox","nbc","nfln","usa","tnt","tbs","truv","nbcsn","golf","bravo"],
-  directv:   ["espn","espn2","espnu","abc","nbc","nbcsn","cbs","fox","fs1","fs2","tnt","tbs","truv","nfln","usa","mlbn","cbssn","bigten","sec","acc","golf","ionn"],
-  fubo:      ["espn","espn2","espnu","abc","nbc","nbcsn","cbs","fox","fs1","fs2","usa","nfln","mlbn","cbssn","bigten","sec","acc","golf","ionn"],
+  hulu:      ["espn","espn2","espnu","abc","nbc","cbs","fox","fs1","fs2","tnt","tbs","truv","nfln","usa","mlbn","bigten","sec","acc","cbssn","golf","bein","bravo"],
+  sling:     ["espn","espn2","abc","fox","nbc","nfln","usa","tnt","tbs","truv","golf","bravo"],
+  directv:   ["espn","espn2","espnu","abc","nbc","cbs","fox","fs1","fs2","tnt","tbs","truv","nfln","usa","mlbn","cbssn","bigten","sec","acc","golf","ionn"],
+  fubo:      ["espn","espn2","espnu","abc","nbc","cbs","fox","fs1","fs2","usa","nfln","mlbn","cbssn","bigten","sec","acc","golf","ionn"],
   xfinity:   ["espn","espn2","espnu","abc","nbc","nbcsn","cbs","fox","fs1","fs2","tnt","tbs","truv","nfln","usa","mlbn","cbssn","bigten","sec","acc","golf","ionn","bein","bravo"],
 };
 const PACKAGE_KEYS = new Set(Object.keys(PACKAGE_INCLUDES));
