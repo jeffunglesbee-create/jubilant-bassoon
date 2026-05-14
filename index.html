@@ -1754,6 +1754,13 @@ flex-shrink:0;white-space:nowrap;
              border:1px solid var(--edge2);border-radius:4px;padding:.18rem .5rem;width:90px;
              outline:none;flex-shrink:0;-webkit-appearance:none;"
       autocomplete="off">
+    <button id="drama-now-btn" title="Jump to hottest live game"
+      style="display:none;font-family:var(--ff-mono);font-size:.62rem;font-weight:700;
+             letter-spacing:.04em;padding:.2rem .55rem;border-radius:4px;border:1px solid;
+             cursor:pointer;flex-shrink:0;transition:all .2s;white-space:nowrap;
+             background:rgba(255,59,59,.12);color:var(--live);border-color:rgba(255,59,59,.4);">
+      ⚡ NOW
+    </button>
     <button class="tz-pill" id="tz-pill" title="Change timezone"></button>
   </div>
 </nav>
@@ -2524,6 +2531,33 @@ function gameHasFreeStream(g){
 const mvSlots = [null,null,null,null];
 const previousScores = {}; // scoreKey_h / scoreKey_a → last known score for animation
 
+// ── drama_score_peak — session-persistent peak drama per game (S2 prerequisite) ─
+// Tracks the highest drama score each live game has reached this session.
+// Key: "dp_{gameId}" in sessionStorage. Used by Wow #3 (NOW button) and Wow #26.
+// Peaks reset when the page is reloaded (sessionStorage scope).
+function getDramaPeak(gameId){
+  try{ return parseInt(sessionStorage.getItem("dp_"+gameId)||"0")||0; }
+  catch(e){ return 0; }
+}
+function setDramaPeak(gameId, score){
+  try{
+    const cur = getDramaPeak(gameId);
+    if(score > cur) sessionStorage.setItem("dp_"+gameId, String(score));
+  }catch(e){}
+}
+function getTopDramaNow(){
+  // Returns {gameId, score, game} for the highest-drama live game right now
+  if(!allData||!allData.sports) return null;
+  let best = null, bestScore = 0;
+  allData.sports.forEach(sec=>{
+    (sec.games||[]).forEach(g=>{
+      const score = g._dramaNow || 0;
+      if(score > bestScore){ bestScore = score; best = {gameId:g._id, score, game:g, sport:sec.sport}; }
+    });
+  });
+  return best && bestScore >= 40 ? best : null;
+}
+
 // ── Timezone selector init ────────────────────────────────────
 const tzSel = document.getElementById("tz-select");
 TZ_OPTIONS.forEach(o=>{
@@ -2577,7 +2611,11 @@ function getStatus(iso){
 // TODAY_ISO uses local date parts (same method as isoDate) to avoid UTC-midnight mismatch
 // e.g. a US user at 9pm ET on May 6 should see May 6, not May 7
 const _tn = new Date();
-const TODAY_ISO = _tn.getFullYear()+'-'+String(_tn.getMonth()+1).padStart(2,'0')+'-'+String(_tn.getDate()).padStart(2,'0');
+// Use Intl timezone explicitly so TODAY_ISO matches isToday() comparison.
+// getDate()/getMonth()/getFullYear() use OS timezone; Intl.DateTimeFormat uses
+// the IANA timezone — these can differ in some environments. Unifying eliminates
+// the isToday() mismatch that hid NBA/NHL/WNBA games in some browser setups.
+const TODAY_ISO = _tn.toLocaleDateString("en-CA", {timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone});
 let viewingDate  = new Date();  // The date currently being viewed
 let viewingISO   = TODAY_ISO;   // ISO string of viewing date
 
@@ -4284,9 +4322,9 @@ function buildTodaySchedule(){
   // Recomputes local date fresh to handle overnight sessions (isoDate set at page load)
   function isToday(iso){
     const d=new Date(iso); if(isNaN(d)) return false;
-    const localNow=new Date();
-    const todayFresh=localNow.getFullYear()+'-'+String(localNow.getMonth()+1).padStart(2,'0')+'-'+String(localNow.getDate()).padStart(2,'0');
-    return d.toLocaleDateString("en-CA",{timeZone:tz})===todayFresh;
+    // Compare against TODAY_ISO (set once at page load with Intl timezone)
+    // using the same Intl timezone — single reference point eliminates drift
+    return d.toLocaleDateString("en-CA",{timeZone:tz})===TODAY_ISO;
   }
 
   // ── NBA Playoffs — Thursday May 14 2026 ──────────────────────────
@@ -7722,6 +7760,8 @@ async function fetchSchedule(){
   setTimeout(bdlPrefetchAll, 2000);       // BallDontLie injury prefetch (after schedule renders)
   maybeShowSetup();
   renderLastNight();
+  // Wow #26: render hidden drama banner on initial load (doesn't need ESPN scores)
+  setTimeout(renderOneToWatch, 800);
   if(Object.keys(espnScores).length) { injectDramaBadges(); renderOneToWatch(); }
   // Media + betting rendered lazily by IntersectionObserver
 }
@@ -7749,7 +7789,46 @@ updateTzPill();
 updateDateLabel();
 renderUsageBadge(getUsage());
 
-// ── T1-15: Broadcaster alias search ─────────────────────────────────────────
+// ── Wow #3: ⚡ NOW button — jumps to hottest live game ───────────────────────
+// Appears in controls bar when any live game has drama score >= 55.
+// Shows the score: "⚡ NOW 83". Click scrolls to the card + flashes it.
+// Fades/hides when no live drama is active.
+function renderDramaNowBtn(){
+  const btn = document.getElementById("drama-now-btn");
+  if(!btn) return;
+  const top = getTopDramaNow();
+  if(!top || top.score < 55){
+    btn.style.display = "none";
+    return;
+  }
+  btn.style.display = "inline-flex";
+  btn.innerHTML = `⚡ NOW&nbsp;<span style="opacity:.8">${top.score}</span>`;
+  // Pulse animation for fire-tier games
+  if(top.score >= 80){
+    btn.style.animation = "pulse 1.2s ease-in-out infinite";
+    btn.style.background = "rgba(255,59,59,.2)";
+  } else {
+    btn.style.animation = "";
+    btn.style.background = "rgba(255,59,59,.12)";
+  }
+}
+
+document.addEventListener("click", e => {
+  const btn = e.target.closest("#drama-now-btn");
+  if(!btn) return;
+  const top = getTopDramaNow();
+  if(!top) return;
+  // Scroll to the card
+  const card = document.querySelector(`.game-card[data-gameid="${top.gameId}"]`);
+  if(card){
+    card.scrollIntoView({behavior:"smooth", block:"center"});
+    // Flash the card border briefly
+    const orig = card.style.boxShadow;
+    card.style.transition = "box-shadow .1s";
+    card.style.boxShadow = "0 0 0 3px var(--live), 0 0 24px rgba(255,59,59,.4)";
+    setTimeout(()=>{ card.style.boxShadow = orig; }, 900);
+  }
+});
 // Filter bar text input → hide/show game cards whose chips match the query.
 // Matches against stream chip names (ESPN, NBC, Prime Video, Peacock, etc.)
 // and against the broadcaster's SR key (e.g. "espn", "nbc").
@@ -8172,6 +8251,7 @@ function dramaLabel(score){
 
 // ── Inject drama badges into rendered live cards ─────────────────────────
 // Called from renderESPNScores() after updating live scores.
+// QW-1: also stores _dramaNow on game objects and updates drama_score_peak
 function injectDramaBadges(){
   const cards = document.querySelectorAll('.game-card.espn-live');
   cards.forEach(card => {
@@ -8187,8 +8267,17 @@ function injectDramaBadges(){
     if(!eData) return;
     const sport = card.dataset.sport||'';
     const score = dramaScoreLive(eData, sport);
+
+    // QW-1: Store live drama score on game object + update session peak
+    if(allData&&allData.sports){
+      allData.sports.forEach(sec=>(sec.games||[]).forEach(g=>{
+        if(g._id===gid){ g._dramaNow=score; }
+      }));
+    }
+    setDramaPeak(gid, score); // update sessionStorage peak
+
     const tier = dramaTier(score);
-    if(!tier) return;
+    if(!tier) { card.querySelectorAll('.drama-badge').forEach(b=>b.remove()); return; }
 
     // Remove existing badge
     card.querySelectorAll('.drama-badge').forEach(b=>b.remove());
@@ -8196,75 +8285,125 @@ function injectDramaBadges(){
     if(!liveEl) return;
     const badge = document.createElement('span');
     badge.className = `drama-badge drama-${tier}`;
-    badge.textContent = dramaLabel(score);
+    // QW-1: show numeric drama score alongside tier emoji
+    badge.textContent = dramaLabel(score) + ' ' + score;
+    badge.title = `Drama score: ${score}/100`;
     liveEl.insertAdjacentElement('afterend', badge);
   });
+
+  // After updating all game drama scores, refresh the NOW button
+  renderDramaNowBtn();
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// FEATURE: ONE TO WATCH — Highest-drama live game banner
+// FEATURE: ONE TO WATCH + HIDDEN DRAMA (Wow #26)
+// Live OTW: highest-drama live game (existing)
+// Hidden Drama (new): upcoming high-stakes games starting within 90 minutes
+// Two separate banners, different styles. Hidden drama dismissed independently.
 // ═══════════════════════════════════════════════════════════════════════════
 let _otwDismissed = false;
+let _hiddenDramaDismissed = false;
 
 function renderOneToWatch(){
   const banner = document.getElementById('otw-banner');
-  if(!banner || _otwDismissed) return;
+  if(!banner) return;
 
-  // Find highest-drama live game
-  let best = null, bestScore = 0;
+  // ── PART A: Live OTW (existing behavior) ─────────────────────────────────
+  if(!_otwDismissed){
+    let best = null, bestScore = 0;
+    (allData?.sports||[]).forEach(sec => {
+      (sec.games||[]).forEach(g => {
+        if(!g._id) return;
+        const s = g._dramaNow || 0; // use stored drama score from QW-1
+        if(s > bestScore){ bestScore = s; best = {g, sport: sec.sport, score: s}; }
+      });
+    });
+
+    if(best && bestScore >= 50){
+      const {g, sport, score} = best;
+      const tier = dramaTier(score);
+      const ed = Object.values(espnScores).find(v => {
+        const h = (g.home||'').toLowerCase();
+        return (v.homeName||'').toLowerCase().includes(h.split(' ').slice(-1)[0]) ||
+               h.includes((v.homeName||'').toLowerCase().split(' ').slice(-1)[0]);
+      });
+      const scoreStr = ed && ed.state==='in' ? ` ${ed.homeScore||0}–${ed.awayScore||0}` : '';
+      const clockStr = ed?.clock ? ` · ${ed.period?'Q'+ed.period+' ':''}${ed.clock}` : '';
+
+      banner.style.display = 'block';
+      banner.innerHTML = `<div class="otw-inner" id="otw-inner" role="button" tabindex="0" aria-label="Jump to live game">
+        <span class="otw-pulse"></span>
+        <span class="otw-label">One to Watch</span>
+        <span class="otw-matchup">${g.away||''} @ ${g.home||''}${scoreStr}${clockStr}</span>
+        <span class="otw-drama d-${tier}">${score} 🔥</span>
+        <button class="otw-close" id="otw-close" aria-label="Dismiss">✕</button>
+      </div>`;
+
+      document.getElementById('otw-close')?.addEventListener('click', e => {
+        e.stopPropagation(); _otwDismissed = true; banner.style.display = 'none';
+      });
+      document.getElementById('otw-inner')?.addEventListener('click', e => {
+        if(e.target.id==='otw-close') return;
+        const h = (g.home||'').replace(/[^a-z]/gi,'').toLowerCase();
+        const card = [...document.querySelectorAll('.game-card')]
+          .find(c => (c.dataset.home||'').replace(/[^a-z]/gi,'').toLowerCase()===h);
+        if(card) card.scrollIntoView({behavior:'smooth', block:'center'});
+      });
+      return; // live OTW shown — don't show hidden drama simultaneously
+    } else {
+      banner.style.display = 'none';
+    }
+  }
+
+  // ── PART B: Hidden Drama (Wow #26) — upcoming high-stakes games ──────────
+  // Shows when: no live OTW active, game starts within 90 min, preGameScore >= 35
+  if(_hiddenDramaDismissed) return;
+
+  const nowMs = Date.now();
+  const ninetyMin = 90 * 60 * 1000;
+  let hidden = null, hiddenScore = 0;
+
   (allData?.sports||[]).forEach(sec => {
     (sec.games||[]).forEach(g => {
-      if(!g._id) return;
-      // Find matching espnScores entry
-      const eKey = Object.keys(espnScores).find(k => {
-        const ed = espnScores[k];
-        if(ed.state !== 'in') return false;
-        const h = (g.home||'').toLowerCase();
-        const a = (g.away||'').toLowerCase();
-        return h.includes((ed.homeName||'').toLowerCase().split(' ').slice(-1)[0]) ||
-               (ed.homeName||'').toLowerCase().includes(h.split(' ').slice(-1)[0]);
-      });
-      if(!eKey) return;
-      const ed = espnScores[eKey];
-      const s = dramaScoreLive(ed, sec.sport);
-      if(s > bestScore){ bestScore = s; best = {g, ed, sport: sec.sport, score: s}; }
+      if(!g.start_time || !g.home || !g.away) return;
+      const startMs = new Date(g.start_time).getTime();
+      const diff = startMs - nowMs;
+      if(diff < 0 || diff > ninetyMin) return; // only upcoming within 90 min
+      const ps = preGameScore(g);
+      if(ps > hiddenScore){ hiddenScore = ps; hidden = {g, sport: sec.sport, score: ps}; }
     });
   });
 
-  if(!best || bestScore < 50){
+  if(!hidden || hiddenScore < 35){
     banner.style.display = 'none';
     return;
   }
 
-  const tier = dramaTier(bestScore);
-  const {g, ed, sport, score} = best;
-  const scoreStr = ed.state === 'in'
-    ? `${ed.homeScore||0}–${ed.awayScore||0}`
-    : '';
-  const clockStr = ed.clock
-    ? ` · ${ed.period ? 'Q'+ed.period+' ' : ''}${ed.clock}`
-    : '';
+  const {g, sport, score} = hidden;
+  const minsAway = Math.round((new Date(g.start_time).getTime() - nowMs) / 60000);
+  const timeStr  = fmtTime(g.start_time);
+  const label    = g.narrative?.label || g.league || sport;
+  const urgency  = minsAway <= 15 ? '🔴' : minsAway <= 30 ? '🟠' : '📈';
 
   banner.style.display = 'block';
-  banner.innerHTML = `<div class="otw-inner" id="otw-inner" role="button" tabindex="0" aria-label="Jump to live game">
-    <span class="otw-pulse"></span>
-    <span class="otw-label">One to Watch</span>
-    <span class="otw-matchup">${g.away||''} @ ${g.home||''} &nbsp;${scoreStr}${clockStr}</span>
-    <span class="otw-drama d-${tier}">${score}% 🔥</span>
-    <button class="otw-close" id="otw-close" aria-label="Dismiss">✕</button>
+  banner.innerHTML = `<div class="otw-inner" id="hd-inner" role="button" tabindex="0"
+    style="background:linear-gradient(135deg,rgba(139,92,246,.1),rgba(201,168,76,.08));border-color:rgba(139,92,246,.3);"
+    aria-label="Upcoming high-stakes game">
+    <span style="font-size:.85rem">${urgency}</span>
+    <span class="otw-label" style="color:var(--violet)">Worth Watching</span>
+    <span class="otw-matchup">${g.away||''} @ ${g.home||''} · ${timeStr}</span>
+    <span class="otw-drama" style="background:rgba(139,92,246,.15);color:var(--violet)">${label.split('·')[0].trim()}</span>
+    <button class="otw-close" id="hd-close" aria-label="Dismiss">✕</button>
   </div>`;
 
-  document.getElementById('otw-close')?.addEventListener('click', e => {
-    e.stopPropagation();
-    _otwDismissed = true;
-    banner.style.display = 'none';
+  document.getElementById('hd-close')?.addEventListener('click', e => {
+    e.stopPropagation(); _hiddenDramaDismissed = true; banner.style.display = 'none';
   });
-  document.getElementById('otw-inner')?.addEventListener('click', e => {
-    if(e.target.id === 'otw-close') return;
-    // Scroll to the matching card
+  document.getElementById('hd-inner')?.addEventListener('click', e => {
+    if(e.target.id==='hd-close') return;
     const h = (g.home||'').replace(/[^a-z]/gi,'').toLowerCase();
     const card = [...document.querySelectorAll('.game-card')]
-      .find(c => (c.dataset.home||'').replace(/[^a-z]/gi,'').toLowerCase() === h);
+      .find(c => (c.dataset.home||'').replace(/[^a-z]/gi,'').toLowerCase()===h);
     if(card) card.scrollIntoView({behavior:'smooth', block:'center'});
   });
 }
