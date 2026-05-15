@@ -7080,13 +7080,12 @@ async function fetchATPLiveScores(){
       return;
     }
   } catch(e){
-    if(e instanceof TypeError) {
-      // Network or CORS failure — ATP Tour API doesn't allow browser CORS.
-      // Disable polling permanently on first failure (browser already logged the error).
-      atpPollingDisabled = true;
-      return;
-    }
-    if(FIELD_DEBUG) console.debug('[ATP] fetch failed:', e.message);
+    // Any failure (CORS TypeError, AbortError from timeout, network error)
+    // means ATP Tour API is unreachable from browser — disable permanently.
+    // Browser already logged the CORS error; we just stop retrying.
+    atpPollingDisabled = true;
+    if(FIELD_DEBUG) console.debug('[ATP] polling disabled:', e.name, e.message);
+    return; // exits WITHOUT scheduling setTimeout
   }
   atpIntervalId = setTimeout(fetchATPLiveScores, ATP_REFRESH_IDLE);
 }
