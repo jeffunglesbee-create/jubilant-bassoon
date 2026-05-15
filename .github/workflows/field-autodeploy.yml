@@ -32,6 +32,20 @@
 #   Every 30 min: '*/30 * * * *'  ← current
 #   Every hour:   '0 * * * *'
 #   Every 6 hours: '0 */6 * * *'
+#
+# ── CHANGE LOG ───────────────────────────────────────────────────────────────
+# v4 (May 15 2026): Fixed merge conflict on concurrent pushes.
+#   Root cause: v3 committed THEN rebased. When both sides changed index.html
+#   the rebase hit a content conflict it couldn't auto-resolve.
+#   Fix: fetch + reset to remote HEAD *before* committing. Our commit always
+#   starts from the latest remote state — no rebase needed, no conflicts.
+#
+# v3 (May 15 2026): Added git pull --rebase before push.
+#   Fixed "rejected — fetch first" on non-fast-forward pushes.
+#
+# v2 (May 14 2026): Added permissions block + improved error messages.
+#
+# v1 (May 14 2026): Initial version.
 
 name: FIELD Auto-Deploy
 
@@ -110,14 +124,25 @@ jobs:
       - name: Replace and commit
         if: steps.diff.outputs.changed == 'true'
         run: |
-          mv index_new.html index.html
           git config user.name "FIELD Auto-Deploy"
           git config user.email "action@github.com"
+          # KEY FIX (v4): Fetch + reset to latest remote state BEFORE committing.
+          # This means our commit always starts from remote HEAD — no rebase
+          # needed and no content conflicts possible even if a manual push
+          # happened between our checkout and this step.
+          git fetch origin main
+          git reset --hard origin/main
+          # Apply the Drive version on top of the fresh remote state
+          mv index_new.html index.html
           git add index.html
-          git commit -m "Auto-deploy from Drive $(date '+%Y-%m-%d %H:%M UTC')"
-          git pull --rebase origin main
-          git push
-          echo "✓ Committed and pushed — Cloudflare deploying in ~19s"
+          # Only commit if index.html actually differs from the reset state
+          if git diff --cached --quiet; then
+            echo "✓ Drive file matches remote after fetch — no commit needed"
+          else
+            git commit -m "Auto-deploy from Drive $(date '+%Y-%m-%d %H:%M UTC')"
+            git push origin main
+            echo "✓ Committed and pushed — Cloudflare deploying in ~19s"
+          fi
 
       - name: No update needed
         if: steps.diff.outputs.changed == 'false'
