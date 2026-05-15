@@ -8217,7 +8217,7 @@ async function fetchSeriesPreviewFromClaude(g){
   if(!budget.canCall()) return null;
   const s=g._series||{};
   const stakes=s.deciding?'SERIES DECIDING (Game 7)':s.homeElim||s.awayElim?'ELIMINATION GAME':s.homeClinch||s.awayClinch?'SERIES CLINCH':g.seriesRecord||'';
-  const prompt=['Write a FIELD Series Brief for this playoff game.','Home: '+g.home+'. Away: '+g.away+'. Series: '+(g.seriesRecord||'.')+'.','Stakes: '+stakes+'.',g.league?'Context: '+g.league+'.':'',' ','Rules: 100-120 words. 2-3 sentences max. Tactical focus \u2014 what to watch tonight.','Series narrative arc. No invented stats. Second person. No markdown.'].filter(Boolean).join('\n');
+  const prompt=['Write a FIELD Series Brief for this playoff game.','Home: '+g.home+'. Away: '+g.away+'. Series: '+(g.seriesRecord||'.')+'.','Stakes: '+stakes+'.',g.league?'Context: '+g.league+'.':'',' ','Rules: 80-100 words. 2-3 sentences. Tactical focus \u2014 what to watch tonight.','Series narrative arc. No invented stats. Second person. No markdown.'].filter(Boolean).join('\n');
   try{
     const r=await fetch(CLAUDE_PROXY_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:prompt}]})});
     if(!r.ok) return null;
@@ -8248,7 +8248,7 @@ async function renderSeriesPreviewCard(gameCard){
   const cached=sessionStorage.getItem(cacheKey);
   if(cached){placeholder.querySelector('.series-preview-text').textContent=cached;placeholder.querySelector('.series-preview-text').classList.add('loaded');return;}
   const text=await fetchSeriesPreviewFromClaude(game);
-  if(text){placeholder.querySelector('.series-preview-text').textContent=text;placeholder.querySelector('.series-preview-text').classList.add('loaded');sessionStorage.setItem(cacheKey,text);}
+  if(text){placeholder.querySelector('.series-preview-text').textContent=trimToCompleteSentence(text);placeholder.querySelector('.series-preview-text').classList.add('loaded');sessionStorage.setItem(cacheKey,text);}
   else if(staticText){placeholder.querySelector('.series-preview-text').textContent=staticText;placeholder.querySelector('.series-preview-text').classList.add('loaded');}
 }
 
@@ -8257,6 +8257,31 @@ function fieldBriefCacheKey(){
   const d=new Date();const tzStr=(typeof tz==='string'?tz:'America/New_York');
   const ds=d.toLocaleDateString('en-CA',{timeZone:tzStr});return 'field_brief_'+ds;
 }
+
+// J-SERIES UTILITY: Trim AI response to last complete sentence.
+// Prevents mid-sentence truncation from appearing in cards.
+// Applies to all journalism text before display.
+function trimToCompleteSentence(text) {
+  if(!text) return text;
+  const trimmed = text.trim();
+  // Check if already ends with sentence-terminating punctuation
+  if(/[.!?]["']?$/.test(trimmed)) return trimmed;
+  // Find the last complete sentence ending
+  const lastEnd = Math.max(
+    trimmed.lastIndexOf('. ') + 1,
+    trimmed.lastIndexOf('! ') + 1,
+    trimmed.lastIndexOf('? ') + 1,
+    trimmed.lastIndexOf('."') + 2,
+    trimmed.lastIndexOf('!"') + 2,
+    trimmed.lastIndexOf('?"') + 2,
+  );
+  // Only trim if we keep at least 60% of the original
+  if(lastEnd > trimmed.length * 0.6) {
+    return trimmed.slice(0, lastEnd).trim();
+  }
+  return trimmed;
+}
+
 function buildFIELDBriefStatic(sections){
   const all=sections.flatMap(s=>(s.games||[]).map(g=>({...g,_section:s.sport})));
   const ranked=all.filter(g=>g.home&&g.away&&g.home!=='ATP/WTA Field').sort((a,b)=>preGameScore(b)-preGameScore(a));
@@ -8286,7 +8311,7 @@ async function fetchFIELDBriefFromClaude(sections){
     const free=g.streams&&g.streams[0]&&new Set(['ABC','NBC','CBS','FOX','ION']).has(g.streams[0].label);
     return ['- '+g.away+' @ '+g.home,g.seriesRecord?'  Series: '+g.seriesRecord:'','  Network: '+stream+(free?' (FREE OTA)':''),g._section?'  Sport: '+g._section:'',preGameScore(g)>70&&!isNationalGame(g)?"  [SCOUT'S PICK]":'',isNationalGame(g)&&isBigMarketGame(g)&&preGameScore(g)<35?'  [ANTI-HYPE]':''].filter(Boolean).join('\n');
   }).join('\n\n');
-  const prompt=["Write a FIELD Brief for tonight's sports slate.",'','TONIGHT\'S GAMES:',gameLines,'','RULES:','- 200-250 words. 2-3 short paragraphs. No headers.','- Lead with the most important story.','- Call out FREE over-the-air games explicitly.',"- Surface Scout's Pick if flagged.",'- Flag Anti-Hype if present.','- Be tactical. No hype. No filler.','- Plain prose only. No bullet points.','- Always complete every sentence. Never end mid-sentence.'].join('\n');
+  const prompt=["Write a FIELD Brief for tonight's sports slate.",'','TONIGHT\'S GAMES:',gameLines,'','RULES:','- 100-120 words. 2 short paragraphs. No headers.','- Lead with the most important story.','- Call out FREE over-the-air games explicitly.',"- Surface Scout's Pick if flagged.",'- Flag Anti-Hype if present.','- Be tactical. No hype. No filler.','- Plain prose only. No bullet points.','- Always complete every sentence. Never end mid-sentence.'].join('\n');
   try{
     const r=await fetch(CLAUDE_PROXY_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1500,messages:[{role:'user',content:prompt}]})});
     if(!r.ok) return null;
@@ -8313,7 +8338,7 @@ async function initFIELDBrief(sections){
   const claudeText=await fetchFIELDBriefFromClaude(sections);
   if(claudeText){
     const textEl=el.querySelector('.field-brief-text');
-    if(textEl){textEl.textContent=claudeText;textEl.classList.remove('pending');textEl.classList.add('loaded');}
+    if(textEl){textEl.textContent=trimToCompleteSentence(claudeText);textEl.classList.remove('pending');textEl.classList.add('loaded');}
     sessionStorage.setItem(cacheKey,claudeText);
   } else {
     const textEl=el.querySelector('.field-brief-text');
@@ -8410,7 +8435,7 @@ async function renderEPLMatchBriefCard(gameCard) {
   const aiText = await fetchEPLMatchBriefFromClaude(game);
   const textEl = card.querySelector('.epl-brief-text');
   if(aiText && textEl) {
-    textEl.textContent = aiText;
+    textEl.textContent = trimToCompleteSentence(aiText);
     textEl.classList.remove('pending');
     textEl.classList.add('loaded');
     sessionStorage.setItem(cacheKey, aiText);
@@ -8986,7 +9011,7 @@ async function fetchNightOwlFromClaude(topGame){
   if(!budget.canCall()) return null;
   const winner=(topGame.homeScore||0)>=(topGame.awayScore||0)?topGame.home:topGame.away;
   const score=topGame.awayScore+'\u2013'+topGame.homeScore;
-  const prompt=['Write a FIELD Night Owl recap.','Game: '+topGame.away+' @ '+topGame.home,'Final: '+score+' ('+winner+' wins)',topGame.seriesRecord?'Series: '+topGame.seriesRecord:'',topGame.dramaPeak?'Drama peak: '+Math.round(topGame.dramaPeak)+'/100':'','','Rules: 120-150 words. Tactical. Not emotional. Lead with the turning point.','Explain what tactically swung the game. Series implication. No invented stats. No cliches. Plain prose.'].filter(Boolean).join('\n');
+  const prompt=['Write a FIELD Night Owl recap.','Game: '+topGame.away+' @ '+topGame.home,'Final: '+score+' ('+winner+' wins)',topGame.seriesRecord?'Series: '+topGame.seriesRecord:'',topGame.dramaPeak?'Drama peak: '+Math.round(topGame.dramaPeak)+'/100':'','','Rules: 80-100 words. Tactical. Not emotional. Lead with the turning point.','Explain what tactically swung the game. Series implication. No invented stats. No cliches. Plain prose.'].filter(Boolean).join('\n');
   try{
     const r=await fetch(CLAUDE_PROXY_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:prompt}]})});
     if(!r.ok) return null;
@@ -9020,7 +9045,7 @@ async function renderNightOwlRecap(){
   if(cached){renderCard(cached,true);return;}
   renderCard(buildNightOwlStatic(topGame),false);
   const claudeText=await fetchNightOwlFromClaude(topGame);
-  if(claudeText){const textEl=el.querySelector('.night-owl-text');if(textEl){textEl.textContent=claudeText;textEl.classList.remove('pending');textEl.classList.add('loaded');}sessionStorage.setItem(cacheKey,claudeText);}
+  if(claudeText){const textEl=el.querySelector('.night-owl-text');if(textEl){textEl.textContent=trimToCompleteSentence(claudeText);textEl.classList.remove('pending');textEl.classList.add('loaded');}sessionStorage.setItem(cacheKey,claudeText);}
   else{const textEl=el.querySelector('.night-owl-text');if(textEl){textEl.classList.remove('pending');textEl.classList.add('loaded');}}
 }
 
