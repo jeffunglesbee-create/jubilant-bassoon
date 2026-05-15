@@ -5609,7 +5609,6 @@ const BDL_SPORT_MAP = {
   "NBA Playoffs":          { league:"nba",  injuryPath:"/nba/v1/injuries",  statsPath:"/nba/v1/stats"  },
   "NHL Playoffs":          { league:"nhl",  injuryPath:"/nhl/v1/injuries",  statsPath:"/nhl/v1/stats"  },
   "Baseball (MLB)":        { league:"mlb",  injuryPath:"/mlb/v1/injuries",  statsPath:"/mlb/v1/stats"  },
-  "Premier League":        { league:"epl",  injuryPath:"/epl/v2/injuries",  statsPath:"/epl/v2/stats"  },
   "NFL":                   { league:"nfl",  injuryPath:"/nfl/v1/injuries",  statsPath:"/nfl/v1/stats"  },
   "WNBA":                  { league:"wnba", injuryPath:"/wnba/v1/injuries", statsPath:"/wnba/v1/stats"  },
 };
@@ -6765,6 +6764,12 @@ async function buildSlashGolfGamesForToday(){
 // ══════════════════════════════════════════════════════════════════════════════
 
 async function fdFetch(path){
+  // football-data.org sets Access-Control-Allow-Origin: http://localhost only.
+  // From any deployed browser origin this always fails with CORS.
+  // Skip silently when not on localhost — standings show cached/empty state.
+  if(window.location.hostname !== 'localhost'){
+    throw new Error('FD API: CORS restricted to localhost — skipping');
+  }
   const r = await fetch(`${FD_BASE}${path}`, {
     headers:{ "X-Auth-Token": FD_KEY },
     signal: AbortSignal.timeout(6000)
