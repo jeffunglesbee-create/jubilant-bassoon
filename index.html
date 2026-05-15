@@ -1588,6 +1588,7 @@ flex-shrink:0;white-space:nowrap;
     align-items:start;
   }
   .game-card{min-width:0}
+  .sport-section[data-sport="Golf"] .game-card,.sport-section[data-sport="Golf (PGA)"] .game-card{grid-column:1/-1;max-width:none}
   .betting-grid{grid-template-columns:repeat(2,1fr);gap:12px}
   .card-body{padding:.85rem 1.1rem .45rem .95rem}
   .card-right{padding:.85rem .95rem .85rem .5rem}
@@ -1818,8 +1819,8 @@ flex-shrink:0;white-space:nowrap;
 
 <!-- MAIN CONTENT -->
 <div id="major-preview-container" style="padding:0 2rem"></div>
-<main class="main" id="main"></main>
 <div id="field-brief" style="display:none" aria-live="polite"></div>
+<main class="main" id="main"></main>
 <div id="night-owl" style="display:none" aria-live="polite"></div>
 
 <!-- ══ BETTING INTELLIGENCE SECTION ═════════════════════════ -->
@@ -2702,7 +2703,7 @@ Return {"s":[]} if no major sport games that day. CRITICAL: If you are not highl
   try{
     incrementUsage();
     if(FIELD_DEBUG) console.debug("FIELD: fetching schedule for",iso);
-    const r = await fetch("https://api.anthropic.com/v1/messages",{
+    const r = await fetch(CLAUDE_PROXY_URL,{
       method:"POST",
       headers:{"Content-Type":"application/json"},
       signal:AbortSignal.timeout(15000),
@@ -4140,8 +4141,8 @@ function renderAll(){
       ? visible.map(s=>({...s, games:(s.games||[]).filter(gameHasFreeStream)}))
       : visible;
   if(!filtered.length||filtered.every(s=>!(s.games||[]).length)){ main.innerHTML='<div class="empty-note">No '+(freeOnlyFilter?"free ":"")+'events found for this filter</div>'; return; }
-  const tonightSummaryHTML = activeFilter==="all" ? renderTonightSummary(filtered) : '';
-  main.innerHTML=tonightSummaryHTML+filtered.map((sec,si)=>{
+  // J3 FIELD Brief supersedes Tonight Summary Card — rendered in #field-brief above main
+  main.innerHTML=filtered.map((sec,si)=>{
     const games=sec.games||[];
     if(!games.length) return "";
     const icon=SPORT_ICONS[sec.sport]||SPORT_ICONS.default;
@@ -4917,7 +4918,7 @@ async function fetchSupplemental(isoDate,dayOfWeek,monthYear){
   if(!canUseAPI()) return [];
   try{
     incrementUsage();
-    const r=await fetch("https://api.anthropic.com/v1/messages",{
+    const r=await fetch(CLAUDE_PROXY_URL,{
       method:"POST",headers:{"Content-Type":"application/json"},
       signal:AbortSignal.timeout(4000),
       body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:200,
@@ -5256,7 +5257,7 @@ async function fetchBettingLines(){
   if(!canUseAPI()) return null;
   try{
     incrementUsage();
-    const r = await fetch("https://api.anthropic.com/v1/messages",{
+    const r = await fetch(CLAUDE_PROXY_URL,{
       method:"POST",
       headers:{"Content-Type":"application/json"},
       signal:AbortSignal.timeout(6000),
@@ -6353,7 +6354,7 @@ async function renderMajorPreviewCard(container){
       const prompt = `Write exactly one sentence contextualizing this upcoming golf major for a casual sports fan.\nUse only these facts: ${major.edition} ${major.name} at ${major.venue}, ${major.city}.\nDefending champion: ${major.defender} (${major.defenderNote}).\nStarts ${major.dates[0]}.\nDO NOT INVENT: no player career stats, course records, hole numbers, weather predictions, prize money figures, past tournament results, course architects, yardage, par numbers, or any specific facts beyond what is provided above. If you cannot write a sentence using only the given facts, return the string "TBD" instead.\nBe specific to the facts given, factual, and engaging.`;
       if(!canUseAPI()) throw new Error("MAX_USES reached");
       incrementUsage();
-      const resp = await fetch("https://api.anthropic.com/v1/messages",{
+      const resp = await fetch(CLAUDE_PROXY_URL,{
         method:"POST",
         headers:{"Content-Type":"application/json"},
         body:JSON.stringify({
@@ -7212,6 +7213,7 @@ function buildSituationBadge(situation){
 // Updates every 30s during live games, every 5min otherwise.
 // ═══════════════════════════════════════════════════════════════
 
+const CLAUDE_PROXY_URL = 'https://jubilant-bassoon.pages.dev/claude'; // Cloudflare Pages Function proxy
 const ESPN_BASE = "https://site.api.espn.com/apis/site/v2/sports";
 const ESPN_SPORTS = [
   {sport:"basketball",   league:"nba",             section:"NBA Playoffs",            periodPrefix:"Q"},
@@ -8209,7 +8211,7 @@ async function fetchSeriesPreviewFromClaude(g){
   const stakes=s.deciding?'SERIES DECIDING (Game 7)':s.homeElim||s.awayElim?'ELIMINATION GAME':s.homeClinch||s.awayClinch?'SERIES CLINCH':g.seriesRecord||'';
   const prompt=['Write a FIELD Series Brief for this playoff game.','Home: '+g.home+'. Away: '+g.away+'. Series: '+(g.seriesRecord||'.')+'.','Stakes: '+stakes+'.',g.league?'Context: '+g.league+'.':'',' ','Rules: 100-120 words. 2-3 sentences max. Tactical focus \u2014 what to watch tonight.','Series narrative arc. No invented stats. Second person. No markdown.'].filter(Boolean).join('\n');
   try{
-    const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:prompt}]})});
+    const r=await fetch(CLAUDE_PROXY_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:prompt}]})});
     if(!r.ok) return null;
     const data=await r.json();
     const text=(data.content||[]).filter(c=>c.type==='text').map(c=>c.text).join('');
@@ -8278,7 +8280,7 @@ async function fetchFIELDBriefFromClaude(sections){
   }).join('\n\n');
   const prompt=["Write a FIELD Brief for tonight's sports slate.",'','TONIGHT\'S GAMES:',gameLines,'','RULES:','- 200-250 words. 2-3 short paragraphs. No headers.','- Lead with the most important story.','- Call out FREE over-the-air games explicitly.',"- Surface Scout's Pick if flagged.",'- Flag Anti-Hype if present.','- Be tactical. No hype. No filler.','- Plain prose only. No bullet points.'].join('\n');
   try{
-    const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:prompt}]})});
+    const r=await fetch(CLAUDE_PROXY_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:prompt}]})});
     if(!r.ok) return null;
     const data=await r.json();
     const text=(data.content||[]).filter(c=>c.type==='text').map(c=>c.text).join('');
@@ -8861,7 +8863,7 @@ async function fetchNightOwlFromClaude(topGame){
   const score=topGame.awayScore+'\u2013'+topGame.homeScore;
   const prompt=['Write a FIELD Night Owl recap.','Game: '+topGame.away+' @ '+topGame.home,'Final: '+score+' ('+winner+' wins)',topGame.seriesRecord?'Series: '+topGame.seriesRecord:'',topGame.dramaPeak?'Drama peak: '+Math.round(topGame.dramaPeak)+'/100':'','','Rules: 120-150 words. Tactical. Not emotional. Lead with the turning point.','Explain what tactically swung the game. Series implication. No invented stats. No cliches. Plain prose.'].filter(Boolean).join('\n');
   try{
-    const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:prompt}]})});
+    const r=await fetch(CLAUDE_PROXY_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:prompt}]})});
     if(!r.ok) return null;
     const data=await r.json();
     const text=(data.content||[]).filter(c=>c.type==='text').map(c=>c.text).join('');
