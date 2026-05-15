@@ -7940,6 +7940,14 @@ let rivalsFilter   = false; // true = show only My Teams rivals
 let myTeamsFilter  = false; // true = show only My Teams games
 let _wwDismissed   = false; // Watch Window dismissed flag
 let _wwInterval    = null;  // Watch Window polling interval
+// Wow#32: Marginal Cost Display — must be before goToDate (used in chipHTML)
+const SERVICE_COST = {
+  peacock:    '$7.99', appletv:   '$9.99',  paramount:  '$7.99',
+  max:        '$9.99', fubo:      '$82.99', youtubetv:  '$72.99',
+  hulu:       '$82.99',sling:     '$40.99', directv:    '$64.99',
+  mlbtv:      '$24.99',nbatv:     '$14.99', espnplus:   '$11.99',
+  peacockpremium: '$7.99',
+};
 
 goToDate(TODAY_ISO);
 
@@ -8967,17 +8975,7 @@ document.addEventListener('click', e => {
 //   NOT YET CONFIRMED: Hulu + Live TV, Sling TV, DirecTV, DirecTV Stream, Fubo, DISH, Verizon Fios
 //   Source: CableTV.com Jan 2026 + NBCUniversal carriage announcements
 //   Update this table when new carriage deals are confirmed.
-// ── Wow#32: Marginal Cost Display ─────────────────────────────────────────
-// Monthly cost per service key — shown on chips when user doesn't have that service.
-// Keys match stream service identifiers. Prices as of May 2026; verify at service.
-const SERVICE_COST = {
-  peacock:    '$7.99', appletv:   '$9.99',  paramount:  '$7.99',
-  max:        '$9.99', fubo:      '$82.99', youtubetv:  '$72.99',
-  hulu:       '$82.99',sling:     '$40.99', directv:    '$64.99',
-  mlbtv:      '$24.99',nbatv:     '$14.99', espnplus:   '$11.99',
-  peacockpremium: '$7.99',
-};
-
+// PACKAGE_INCLUDES moved here — SERVICE_COST moved to init block before goToDate
 const PACKAGE_INCLUDES = {
   youtubetv: ["espn","espn2","espnu","abc","nbc","nbcsn","cbs","fox","fs1","fs2","tnt","tbs","truv","nfln","usa","mlbn","bigten","sec","acc","cbssn","golf","bein"],
   hulu:      ["espn","espn2","espnu","abc","nbc","cbs","fox","fs1","fs2","tnt","tbs","truv","nfln","usa","mlbn","bigten","sec","acc","cbssn","golf","bein","bravo"],
