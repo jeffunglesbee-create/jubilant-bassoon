@@ -717,6 +717,13 @@ flex-shrink:0;white-space:nowrap;
 .narrative-line.series-context{color:var(--gold2,#c9a84c);font-style:italic;opacity:.95}
 .series-preview-card{background:rgba(201,168,76,.06);border:1px solid rgba(201,168,76,.18);border-radius:10px;padding:.85rem 1rem .75rem;margin-bottom:.6rem;cursor:pointer;transition:background .2s}
 .series-preview-card:hover{background:rgba(201,168,76,.1)}
+/* EPL Match Brief card */
+.epl-match-brief-card{background:rgba(124,58,237,.06);border:1px solid rgba(124,58,237,.2);border-left:3px solid rgba(124,58,237,.5);border-radius:8px;padding:.7rem .9rem .65rem;margin-bottom:.5rem;cursor:pointer;transition:background .2s}
+.epl-match-brief-card:hover{background:rgba(124,58,237,.1)}
+.epl-brief-label{font-size:.5rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(167,139,250,.9);margin-bottom:.35rem}
+.epl-brief-text{font-size:.7rem;color:var(--text-muted,#b0b0c0);line-height:1.5;font-style:italic}
+.epl-brief-text.loaded{color:var(--fg,#e8e8f0);font-style:normal}
+.epl-brief-text.pending{opacity:.7}
 .series-preview-label{font-size:.52rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--gold2,#c9a84c);opacity:.85;margin-bottom:.45rem}
 .series-preview-text{font-size:.72rem;color:var(--text-muted,#b0b0c0);line-height:1.55;font-style:italic}
 .series-preview-text.loaded{color:var(--fg,#e8e8f0);font-style:normal}
@@ -4212,6 +4219,7 @@ function renderAll(){
   // Re-inject BDL injury badges and Squiggle tips after each render
   setTimeout(()=>{ injectBdlInjuryBadges(); injectSquiggleTips(); }, 150);
   setTimeout(initSeriesPreviews, 400);
+  setTimeout(initEPLMatchBriefs, 500);
   renderWatchWindow();
   initFIELDBrief(filtered).catch(()=>{});
   setTimeout(injectWeatherBadges, 300); // re-apply wx badges from cache after render
@@ -8278,9 +8286,9 @@ async function fetchFIELDBriefFromClaude(sections){
     const free=g.streams&&g.streams[0]&&new Set(['ABC','NBC','CBS','FOX','ION']).has(g.streams[0].label);
     return ['- '+g.away+' @ '+g.home,g.seriesRecord?'  Series: '+g.seriesRecord:'','  Network: '+stream+(free?' (FREE OTA)':''),g._section?'  Sport: '+g._section:'',preGameScore(g)>70&&!isNationalGame(g)?"  [SCOUT'S PICK]":'',isNationalGame(g)&&isBigMarketGame(g)&&preGameScore(g)<35?'  [ANTI-HYPE]':''].filter(Boolean).join('\n');
   }).join('\n\n');
-  const prompt=["Write a FIELD Brief for tonight's sports slate.",'','TONIGHT\'S GAMES:',gameLines,'','RULES:','- 200-250 words. 2-3 short paragraphs. No headers.','- Lead with the most important story.','- Call out FREE over-the-air games explicitly.',"- Surface Scout's Pick if flagged.",'- Flag Anti-Hype if present.','- Be tactical. No hype. No filler.','- Plain prose only. No bullet points.'].join('\n');
+  const prompt=["Write a FIELD Brief for tonight's sports slate.",'','TONIGHT\'S GAMES:',gameLines,'','RULES:','- 200-250 words. 2-3 short paragraphs. No headers.','- Lead with the most important story.','- Call out FREE over-the-air games explicitly.',"- Surface Scout's Pick if flagged.",'- Flag Anti-Hype if present.','- Be tactical. No hype. No filler.','- Plain prose only. No bullet points.','- Always complete every sentence. Never end mid-sentence.'].join('\n');
   try{
-    const r=await fetch(CLAUDE_PROXY_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:prompt}]})});
+    const r=await fetch(CLAUDE_PROXY_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1500,messages:[{role:'user',content:prompt}]})});
     if(!r.ok) return null;
     const data=await r.json();
     const text=(data.content||[]).filter(c=>c.type==='text').map(c=>c.text).join('');
@@ -8311,6 +8319,123 @@ async function initFIELDBrief(sections){
     const textEl=el.querySelector('.field-brief-text');
     if(textEl){textEl.classList.remove('pending');textEl.classList.add('loaded');}
   }
+}
+
+
+
+// ═══════════════════════════════════════════════════════════════════════════
+// EPL MATCH BRIEFS — FIELD Brief card above each Premier League game
+// Parallel to Series Preview (J2) but for league fixtures, not playoff series.
+// Uses matchweek + stream context for static brief; Gemini for editorial.
+// ═══════════════════════════════════════════════════════════════════════════
+
+function parseMatchweek(leagueStr) {
+  const m = (leagueStr||'').match(/Matchweek\s*(\d+)/i);
+  return m ? parseInt(m[1]) : null;
+}
+
+function buildEPLMatchBriefStatic(g) {
+  const mw = parseMatchweek(g.league);
+  const stream = g.streams?.[0]?.label || '';
+  const streamNote = stream ? ` Available on ${stream}.` : '';
+  let context = '';
+  if(mw && mw >= 37) context = 'The final matchday of the Premier League season — every result matters for titles, European spots, and relegation.';
+  else if(mw && mw >= 35) context = 'Late-season Premier League football — the table is still being decided at both ends.';
+  else if(mw && mw >= 28) context = 'The Premier League enters the decisive final stretch — points are becoming precious.';
+  else context = 'Premier League fixture — one of 38 games that shapes the final table.';
+  return `${g.away} visit ${g.home} in ${g.league||'the Premier League'}.${streamNote} ${context}`;
+}
+
+async function fetchEPLMatchBriefFromClaude(g) {
+  const budget = journalismCallsToday();
+  if(!budget.canCall()) return null;
+  const mw = parseMatchweek(g.league);
+  const stream = g.streams?.[0]?.label || '';
+  const prompt = [
+    'Write a FIELD Match Brief for this Premier League fixture.',
+    `${g.away} @ ${g.home}.`,
+    g.league ? `${g.league}.` : '',
+    stream ? `Broadcast: ${stream}.` : '',
+    mw ? `Matchweek ${mw} of 38.` : '',
+    '',
+    'Rules: 40-60 words. 1-2 sentences. Context: what this match means in the PL season.',
+    'No invented stats. No markdown. Complete every sentence.',
+  ].filter(Boolean).join('\n');
+  try {
+    const r = await fetch(CLAUDE_PROXY_URL, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:200,messages:[{role:'user',content:prompt}]})
+    });
+    if(!r.ok) return null;
+    const data = await r.json();
+    const text = (data.content||[]).filter(c=>c.type==='text').map(c=>c.text).join('');
+    if(text && text.length > 20) { budget.inc(); return text.trim(); }
+  } catch(e) {}
+  return null;
+}
+
+async function renderEPLMatchBriefCard(gameCard) {
+  const gameid = gameCard.dataset.gameid;
+  if(!gameid) return;
+  let game = null;
+  (allData?.sports||[]).forEach(s=>(s.games||[]).forEach(g=>{ if(g._id===gameid) game=g; }));
+  if(!game) return;
+
+  // Only for Premier League (and other EPL-style leagues if needed)
+  const sport = (gameCard.dataset.sport||'').toLowerCase();
+  if(!sport.includes('premier league') && !sport.includes('la liga') &&
+     !sport.includes('bundesliga') && !sport.includes('ligue 1') &&
+     !sport.includes('serie a') && !sport.includes('mls')) return;
+
+  // Don't add if already present
+  if(gameCard.previousElementSibling?.classList.contains('epl-match-brief-card')) return;
+
+  const cacheKey = 'field_epl_brief_' + gameid;
+  const cached = sessionStorage.getItem(cacheKey);
+
+  const staticText = buildEPLMatchBriefStatic(game);
+  const card = document.createElement('div');
+  card.className = 'epl-match-brief-card';
+  card.dataset.gameid = gameid;
+  card.innerHTML = '<div class="epl-brief-label">FIELD Match Brief</div>'
+    + '<div class="epl-brief-text' + (cached ? '' : ' pending') + '">'
+    + (cached || staticText)
+    + '</div>';
+  card.addEventListener('click', () => card.classList.toggle('epl-brief-collapsed'));
+  gameCard.insertAdjacentElement('beforebegin', card);
+
+  if(cached) { card.querySelector('.epl-brief-text').classList.add('loaded'); return; }
+
+  const aiText = await fetchEPLMatchBriefFromClaude(game);
+  const textEl = card.querySelector('.epl-brief-text');
+  if(aiText && textEl) {
+    textEl.textContent = aiText;
+    textEl.classList.remove('pending');
+    textEl.classList.add('loaded');
+    sessionStorage.setItem(cacheKey, aiText);
+  } else if(textEl) {
+    textEl.textContent = staticText;
+    textEl.classList.remove('pending');
+    textEl.classList.add('loaded');
+  }
+}
+
+function initEPLMatchBriefs() {
+  if(!allData) return;
+  // Fire for all soccer/league games (not playoff/cup)
+  const selectors = [
+    '.game-card[data-sport*="Premier League"]',
+    '.game-card[data-sport*="La Liga"]',
+    '.game-card[data-sport*="Bundesliga"]',
+    '.game-card[data-sport*="Ligue 1"]',
+    '.game-card[data-sport*="Serie A"]',
+    '.game-card[data-sport*="MLS"]',
+  ];
+  const cards = document.querySelectorAll(selectors.join(','));
+  cards.forEach(card => {
+    if(card.dataset.gameid) renderEPLMatchBriefCard(card).catch(()=>{});
+  });
 }
 
 
