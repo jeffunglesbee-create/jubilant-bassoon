@@ -8246,7 +8246,7 @@ async function renderSeriesPreviewCard(gameCard){
   placeholder.addEventListener('click',()=>placeholder.classList.toggle('series-preview-collapsed'));
   gameCard.insertAdjacentElement('beforebegin',placeholder);
   const cached=sessionStorage.getItem(cacheKey);
-  if(cached){placeholder.querySelector('.series-preview-text').textContent=cached;placeholder.querySelector('.series-preview-text').classList.add('loaded');return;}
+  if(cached){placeholder.querySelector('.series-preview-text').textContent=trimToCompleteSentence(cached);placeholder.querySelector('.series-preview-text').classList.add('loaded');return;}
   const text=await fetchSeriesPreviewFromClaude(game);
   if(text){placeholder.querySelector('.series-preview-text').textContent=trimToCompleteSentence(text);placeholder.querySelector('.series-preview-text').classList.add('loaded');sessionStorage.setItem(cacheKey,text);}
   else if(staticText){placeholder.querySelector('.series-preview-text').textContent=staticText;placeholder.querySelector('.series-preview-text').classList.add('loaded');}
@@ -8331,7 +8331,7 @@ async function initFIELDBrief(sections){
   const cached=sessionStorage.getItem(cacheKey);
   el.style.display='block';
   const mkCard=(text,loaded)=>`<div class="field-brief-card" id="field-brief-inner"><div class="field-brief-header"><span class="field-brief-label">FIELD Brief</span><span class="field-brief-date">${dateLabel}</span></div><div class="field-brief-text${loaded?'':' pending'}">${text}</div></div>`;
-  if(cached){el.innerHTML=mkCard(cached,true);document.getElementById('field-brief-inner')?.addEventListener('click',()=>document.getElementById('field-brief-inner')?.classList.toggle('collapsed'));return;}
+  if(cached){el.innerHTML=mkCard(trimToCompleteSentence(cached),true);document.getElementById('field-brief-inner')?.addEventListener('click',()=>document.getElementById('field-brief-inner')?.classList.toggle('collapsed'));return;}
   const staticText=buildFIELDBriefStatic(sections)||'Loading tonight\'s brief\u2026';
   el.innerHTML=mkCard(staticText,false);
   document.getElementById('field-brief-inner')?.addEventListener('click',()=>document.getElementById('field-brief-inner')?.classList.toggle('collapsed'));
@@ -8430,7 +8430,7 @@ async function renderEPLMatchBriefCard(gameCard) {
   card.addEventListener('click', () => card.classList.toggle('epl-brief-collapsed'));
   gameCard.insertAdjacentElement('beforebegin', card);
 
-  if(cached) { card.querySelector('.epl-brief-text').classList.add('loaded'); return; }
+  if(cached) { card.querySelector('.epl-brief-text').textContent=trimToCompleteSentence(cached); card.querySelector('.epl-brief-text').classList.add('loaded'); return; }
 
   const aiText = await fetchEPLMatchBriefFromClaude(game);
   const textEl = card.querySelector('.epl-brief-text');
