@@ -682,6 +682,49 @@ flex-shrink:0;white-space:nowrap;
 .gotd-badge.local-cov{color:var(--teal);border-color:rgba(0,212,170,.35);background:rgba(0,212,170,.07);cursor:help}
 .crew-line{font-size:.65rem;color:var(--muted);padding:.1rem .85rem .2rem;opacity:.8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .narrative-line{font-size:.68rem;color:var(--muted);font-style:italic;padding:.05rem .85rem .15rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;opacity:.9}
+.anti-hype-badge{display:inline-flex;align-items:center;gap:.3rem;font-size:.56rem;font-weight:600;letter-spacing:.04em;color:#b8860b;background:rgba(184,134,11,.1);border:1px solid rgba(184,134,11,.3);border-radius:4px;padding:.15rem .45rem;margin-top:.2rem}
+.game-card.scout-pick-card{border-left:3px solid var(--teal,#2dd4bf)!important}
+#watch-window{padding:.3rem 1rem;max-width:1200px;margin:0 auto}
+.ww-bar{display:flex;align-items:center;gap:.7rem;background:rgba(45,212,191,.08);border:1px solid rgba(45,212,191,.25);border-radius:8px;padding:.55rem .9rem;cursor:pointer;flex-wrap:wrap;row-gap:.3rem}
+.ww-bar:hover{background:rgba(45,212,191,.13)}
+.ww-pulse{width:7px;height:7px;border-radius:50%;background:#2dd4bf;animation:ww-blink 1.2s ease-in-out infinite;flex-shrink:0}
+@keyframes ww-blink{0%,100%{opacity:1}50%{opacity:.35}}
+.ww-soon{font-size:.58rem;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:#2dd4bf}
+.ww-game{font-size:.72rem;color:var(--fg,#e8e8f0);font-weight:600}
+.ww-net{font-size:.62rem;color:var(--muted);text-decoration:none;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:4px;padding:.1rem .35rem;white-space:nowrap}
+.ww-net:hover{background:rgba(45,212,191,.15);border-color:rgba(45,212,191,.35);color:#2dd4bf}
+.ww-close{margin-left:auto;background:none;border:none;color:var(--muted);cursor:pointer;font-size:.8rem;padding:0 .1rem;flex-shrink:0}
+#field-brief{padding:.6rem 1rem 0;max-width:1200px;margin:0 auto}
+.field-brief-card{background:rgba(201,168,76,.07);border:1px solid rgba(201,168,76,.22);border-top:2px solid var(--gold2,#c9a84c);border-radius:10px;padding:1rem 1.1rem .9rem;margin-bottom:1rem;cursor:pointer;transition:background .2s}
+.field-brief-card:hover{background:rgba(201,168,76,.12)}
+.field-brief-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:.55rem}
+.field-brief-label{font-size:.55rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--gold2,#c9a84c)}
+.field-brief-date{font-size:.52rem;color:var(--muted);opacity:.7}
+.field-brief-text{font-size:.74rem;color:var(--fg,#e8e8f0);line-height:1.6;white-space:pre-wrap}
+.field-brief-text.pending{color:var(--muted);font-style:italic;font-size:.7rem}
+#night-owl{padding:.4rem 1rem 1rem;max-width:1200px;margin:0 auto}
+.night-owl-card{background:rgba(139,92,246,.07);border:1px solid rgba(139,92,246,.22);border-top:2px solid rgba(139,92,246,.6);border-radius:10px;padding:.9rem 1.05rem .8rem;cursor:pointer}
+.night-owl-card:hover{background:rgba(139,92,246,.12)}
+.night-owl-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem}
+.night-owl-label{font-size:.54rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#a78bfa}
+.night-owl-score{font-size:.62rem;color:var(--muted);font-weight:600}
+.night-owl-text{font-size:.73rem;color:var(--fg,#e8e8f0);line-height:1.6}
+.night-owl-text.pending{color:var(--muted);font-style:italic}
+.field-note{font-size:.65rem;color:#c9a84c;font-style:italic;margin-top:.45rem;padding-top:.4rem;border-top:1px solid rgba(201,168,76,.2);line-height:1.45;opacity:.9}
+.live-sit-string{font-size:.63rem;color:var(--muted,#8888aa);font-style:italic;padding:.08rem 0 0;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px}
+.cdw-note{font-size:.6rem;color:var(--muted,#8888aa);font-style:italic;padding:.06rem .85rem .1rem;line-height:1.3;opacity:.85;border-left:2px solid rgba(96,165,250,.25);margin:.05rem 0 .05rem .6rem}
+.scout-pick-badge{display:inline-flex;align-items:center;gap:.25rem;font-size:.56rem;font-weight:700;color:#2dd4bf;background:rgba(45,212,191,.1);border:1px solid rgba(45,212,191,.3);border-radius:4px;padding:.15rem .45rem;margin-top:.2rem}
+.narrative-line.series-context{color:var(--gold2,#c9a84c);font-style:italic;opacity:.95}
+.series-preview-card{background:rgba(201,168,76,.06);border:1px solid rgba(201,168,76,.18);border-radius:10px;padding:.85rem 1rem .75rem;margin-bottom:.6rem;cursor:pointer;transition:background .2s}
+.series-preview-card:hover{background:rgba(201,168,76,.1)}
+.series-preview-label{font-size:.52rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--gold2,#c9a84c);opacity:.85;margin-bottom:.45rem}
+.series-preview-text{font-size:.72rem;color:var(--text-muted,#b0b0c0);line-height:1.55;font-style:italic}
+.series-preview-text.loaded{color:var(--fg,#e8e8f0);font-style:normal}
+.rival-badge{display:inline-flex;align-items:center;gap:.2rem;font-size:.52rem;font-weight:700;color:#f97316;background:rgba(249,115,22,.12);border:1px solid rgba(249,115,22,.3);border-radius:3px;padding:.1rem .3rem;margin-left:.25rem;vertical-align:middle}
+.game-card.rival-card{border-color:rgba(249,115,22,.25)!important}
+.game-card.rival-card .card-accent{background:#f97316!important}
+.filter-btn.rivals-btn{color:#f97316;border-color:rgba(249,115,22,.4)}
+.filter-btn.rivals-btn.active{background:rgba(249,115,22,.15)}
 .narrative-line.narrative-hi{color:var(--accent);font-style:normal;font-weight:600;opacity:1}
 /* ATP live score situation line — injected after first render */
 .atp-situation{font-size:.63rem;color:var(--muted);font-style:italic;padding:.05rem .85rem .1rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.3;opacity:.85}
@@ -705,6 +748,9 @@ flex-shrink:0;white-space:nowrap;
 .importance-badge.playoff-impl{background:rgba(99,102,241,.1);color:#a5b4fc;border:1px solid rgba(99,102,241,.25)}
 .free-badge{display:inline-block;background:#16a34a;color:#fff;font-size:.5rem;font-weight:800;letter-spacing:.06em;padding:.1rem .3rem;border-radius:3px;margin-left:.3rem;vertical-align:middle;white-space:nowrap}
 .free-badge.free-cable{background:#0d6e3f}
+.game-card.free-tonight-card{border-color:rgba(22,163,74,.35)!important}
+.free-tonight-card .card-accent{background:#16a34a!important}
+.free-tonight-badge{display:inline-flex;align-items:center;gap:.2rem;font-size:.55rem;font-weight:800;letter-spacing:.05em;color:#16a34a;background:rgba(22,163,74,.12);border:1px solid rgba(22,163,74,.3);border-radius:4px;padding:.12rem .4rem;margin-top:.18rem}
 /* ── Tonight Summary Card (Wow #23) ─────────────────────────────────── */
 .tonight-summary{background:linear-gradient(135deg,rgba(124,58,237,.08),rgba(99,102,241,.05));border:1px solid rgba(124,58,237,.2);border-radius:12px;padding:1rem 1.1rem .9rem;margin-bottom:1.1rem}
 .ts-header{display:flex;align-items:baseline;justify-content:space-between;gap:.5rem;margin-bottom:.7rem;flex-wrap:wrap}
@@ -1542,9 +1588,6 @@ flex-shrink:0;white-space:nowrap;
     align-items:start;
   }
   .game-card{min-width:0}
-  /* Golf / Major cards span full row — wider canvas for leaderboard */
-  .sport-section[data-sport="Golf"] .game-card,
-  .sport-section[data-sport="Golf (PGA)"] .game-card{grid-column:1 / -1;max-width:none}
   .betting-grid{grid-template-columns:repeat(2,1fr);gap:12px}
   .card-body{padding:.85rem 1.1rem .45rem .95rem}
   .card-right{padding:.85rem .95rem .85rem .5rem}
@@ -1642,8 +1685,7 @@ flex-shrink:0;white-space:nowrap;
   /* Share btn: ensure tap target */
   .share-btn{ padding:.35rem .5rem; font-size:.9rem; }
   /* Standings table button */
-  .standings-btn{ display:none; }           /* card-level: hide on mobile — table data too wide */
-  .section-standings-btn{ display:inline-flex; align-items:center; font-size:.55rem; padding:.15rem .45rem; margin-left:auto; } /* section-head: visible on mobile ✓ Portrait B+→A */
+  .standings-btn{ display:none; }  /* hide on mobile — table data too wide */
 }
 
 /* My Services modal: full-screen on mobile, larger tap targets */
@@ -1716,6 +1758,8 @@ flex-shrink:0;white-space:nowrap;
 <div id="offline-banner" role="alert">📡 You're offline — showing cached schedule</div>
 <!-- ── One to Watch ──────────────────────────────────────────── -->
 <div id="otw-banner" aria-live="polite"></div>
+<!-- ── Watch Window ─────────────────────────────────────────── -->
+<div id="watch-window" style="display:none" aria-live="polite"></div>
 <!-- ── Perfect Halftime Switch ──────────────────────────────── -->
 <div id="halftime-switch" aria-live="polite"></div>
 <!-- ── Share Toast ───────────────────────────────────────────── -->
@@ -1748,19 +1792,6 @@ flex-shrink:0;white-space:nowrap;
     </div>
     <div class="divider"></div>
     <div id="sport-filters"></div>
-    <input type="search" id="broadcaster-search" placeholder="🔍 ESPN, NBC…"
-      title="Filter by broadcaster or service name (T1-15)"
-      style="font-family:var(--ff-mono);font-size:.6rem;background:var(--card2);color:var(--white);
-             border:1px solid var(--edge2);border-radius:4px;padding:.18rem .5rem;width:90px;
-             outline:none;flex-shrink:0;-webkit-appearance:none;"
-      autocomplete="off">
-    <button id="drama-now-btn" title="Jump to hottest live game"
-      style="display:none;font-family:var(--ff-mono);font-size:.62rem;font-weight:700;
-             letter-spacing:.04em;padding:.2rem .55rem;border-radius:4px;border:1px solid;
-             cursor:pointer;flex-shrink:0;transition:all .2s;white-space:nowrap;
-             background:rgba(255,59,59,.12);color:var(--live);border-color:rgba(255,59,59,.4);">
-      ⚡ NOW
-    </button>
     <button class="tz-pill" id="tz-pill" title="Change timezone"></button>
   </div>
 </nav>
@@ -1788,6 +1819,8 @@ flex-shrink:0;white-space:nowrap;
 <!-- MAIN CONTENT -->
 <div id="major-preview-container" style="padding:0 2rem"></div>
 <main class="main" id="main"></main>
+<div id="field-brief" style="display:none" aria-live="polite"></div>
+<div id="night-owl" style="display:none" aria-live="polite"></div>
 
 <!-- ══ BETTING INTELLIGENCE SECTION ═════════════════════════ -->
 <section class="betting-section" id="betting-section">
@@ -2066,28 +2099,9 @@ const SR = {
   paramountuk: ["Paramount+ UK","https://www.paramountplus.com/gb/",                 "#6699ff","geo", "Paramount+ UK subscription required (~£6.99/mo). SPFL Scottish Premiership streaming in UK."],
 };
 
-// ── Wow #28: FREE badge helper — checks resolved streams for free/OTA access ─
-// auth==="free" → truly free (ION, Victory+, 7plus, etc.) → green FREE badge
-// auth==="tv" + OTA names → free over-the-air → green FREE badge
-// auth==="tv" + cable names → free with cable subscription → grey badge
-function getFreeStreamBadge(g){
-  const streams = resolveStreams(g.streams);
-  if(!streams.length) return '';
-  const OTA_NAMES  = new Set(['NBC','CBS','ABC','FOX','ION','CW','PBS']);
-  const CABL_NAMES = new Set(['ESPN','ESPN2','TNT','TBS','FS1','USA Network','NBCSN']);
-  for(const s of streams){
-    if(s.auth==='free') return '<span class="free-badge">FREE</span>';
-  }
-  for(const s of streams){
-    if(OTA_NAMES.has(s.name)) return '<span class="free-badge">FREE</span>';
-  }
-  for(const s of streams){
-    if(CABL_NAMES.has(s.name)) return '<span class="free-badge free-cable">FREE W/ CABLE</span>';
-  }
-  return '';
-}
 // ── SR URL Debug Validator (FIELD_DEBUG mode only) ────────────────────────
 // Implemented: May 11, 2026 (Session H — Hardcoded Data Optimization)
+// Runs HEAD requests against all SR URLs on page load in FIELD_DEBUG mode.
 // console.warn() for any non-200 response. Zero production impact.
 // Catches broken stream links during dev sessions before users see them.
 // Usage: localStorage.setItem('FIELD_DEBUG','1') then reload.
@@ -2296,7 +2310,7 @@ const BUNDLES = {
   // NBA
   NBA:          ["espn","fubo","youtubetv","sling","hulu","directv"],  // ESPN nights (also ESPN App with login)
   NBA_NBC:      ["nbc","peacock","youtubetv","fubo","hulu","sling","directv"],  // NBC OTA (free) + Peacock stream; NBCSN does NOT carry NBC-broadcast games
-  NBA_PEACOCK_NBCSN: ["peacock","nbcsn","youtubetv","fubo","hulu"],  // Peacock/NBCSN only — NOT on NBC OTA broadcast; cable or Peacock sub required
+  NBA_PEACOCK_NBCSN: ["peacock","nbcsn","youtubetv"],                   // Peacock/NBCSN only (fubo/hulu not confirmed) — NOT on NBC OTA broadcast; cable or Peacock sub required
   // DEPRECATED 2025-26: TNT is no longer an NBA rights holder. The 2025-26 NBA media deal
   // is ESPN/ABC + NBC/Peacock + Prime Video. Inside the NBA still produced by TNT Sports
   // but the show airs on ESPN. Bundle preserved for historical date blocks only — do not
@@ -2353,7 +2367,7 @@ const BUNDLES = {
   EPL:          ["peacock","usa","youtubetv","sling","fubo","hulu"],      // EPL fallback (game-specific bundles preferred): Peacock for ~60% of matches, USA Network for ~25%, NBC for marquee
   EPL_NBC:      ["nbc","peacock","fubo","youtubetv","hulu","sling","directv"],    // EPL on NBC OTA (free antenna) + Peacock stream; NBCSN does NOT carry NBC-broadcast games     // EPL marquee game on NBC OTA + Peacock stream (e.g. Man City matchups)
   EPL_USA:      ["usa","fubo","youtubetv","sling","hulu","directv"],       // EPL on USA Network cable (not on NBC OTA, not Peacock live)
-  TENNIS_FO:    ["tc","tcplus","max","youtubetv","hulu","sling","directv"],  // French Open (Roland Garros): Tennis Channel (all rounds) + TC+ stream + Max/WBD (WBD owns TC) — Fubo excluded (no TNT/Max channels)
+  TENNIS_FO:    ["tc","tcplus","espn","espnplus","youtubetv","fubo","hulu","sling","directv"],  // French Open: Tennis Channel (all rounds) + TC+ (streaming) + ESPN (QF/SF) + NBC (finals)
     EPL_PEACOCK:  ["peacock","nbcsn","youtubetv","fubo","hulu","sling","directv"],  // EPL on Peacock + NBCSN linear simulcast (YouTube TV base plan + Xfinity Popular/Ultimate; NBCSN relaunched Nov 2025 as Peacock linear counterpart; NOT on USA Network or NBC OTA)
   EFL:          ["paramount","fubo","hulu"],                               // EFL: CBS/Paramount+
   LALIGA:       ["espnplus","fubo","hulu","sling","youtubetv"],            // La Liga: ESPN+
@@ -2531,33 +2545,6 @@ function gameHasFreeStream(g){
 const mvSlots = [null,null,null,null];
 const previousScores = {}; // scoreKey_h / scoreKey_a → last known score for animation
 
-// ── drama_score_peak — session-persistent peak drama per game (S2 prerequisite) ─
-// Tracks the highest drama score each live game has reached this session.
-// Key: "dp_{gameId}" in sessionStorage. Used by Wow #3 (NOW button) and Wow #26.
-// Peaks reset when the page is reloaded (sessionStorage scope).
-function getDramaPeak(gameId){
-  try{ return parseInt(sessionStorage.getItem("dp_"+gameId)||"0")||0; }
-  catch(e){ return 0; }
-}
-function setDramaPeak(gameId, score){
-  try{
-    const cur = getDramaPeak(gameId);
-    if(score > cur) sessionStorage.setItem("dp_"+gameId, String(score));
-  }catch(e){}
-}
-function getTopDramaNow(){
-  // Returns {gameId, score, game} for the highest-drama live game right now
-  if(!allData||!allData.sports) return null;
-  let best = null, bestScore = 0;
-  allData.sports.forEach(sec=>{
-    (sec.games||[]).forEach(g=>{
-      const score = g._dramaNow || 0;
-      if(score > bestScore){ bestScore = score; best = {gameId:g._id, score, game:g, sport:sec.sport}; }
-    });
-  });
-  return best && bestScore >= 40 ? best : null;
-}
-
 // ── Timezone selector init ────────────────────────────────────
 const tzSel = document.getElementById("tz-select");
 TZ_OPTIONS.forEach(o=>{
@@ -2611,11 +2598,7 @@ function getStatus(iso){
 // TODAY_ISO uses local date parts (same method as isoDate) to avoid UTC-midnight mismatch
 // e.g. a US user at 9pm ET on May 6 should see May 6, not May 7
 const _tn = new Date();
-// Use Intl timezone explicitly so TODAY_ISO matches isToday() comparison.
-// getDate()/getMonth()/getFullYear() use OS timezone; Intl.DateTimeFormat uses
-// the IANA timezone — these can differ in some environments. Unifying eliminates
-// the isToday() mismatch that hid NBA/NHL/WNBA games in some browser setups.
-const TODAY_ISO = _tn.toLocaleDateString("en-CA", {timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone});
+const TODAY_ISO = _tn.getFullYear()+'-'+String(_tn.getMonth()+1).padStart(2,'0')+'-'+String(_tn.getDate()).padStart(2,'0');
 let viewingDate  = new Date();  // The date currently being viewed
 let viewingISO   = TODAY_ISO;   // ISO string of viewing date
 
@@ -4089,6 +4072,9 @@ function matchupHTML(g, sport){
 let _gid=0;
 
 // ── PREGAME SORT SCORE (global) ───────────────────────────────────────────
+const BIG_MARKET_TEAMS=new Set(['new york knicks','new york nets','new york yankees','new york mets','los angeles lakers','los angeles clippers','los angeles dodgers','boston celtics','boston red sox','chicago bulls','chicago cubs','chicago white sox','golden state warriors','dallas cowboys','dallas mavericks','miami heat','miami dolphins','philadelphia eagles','philadelphia 76ers','philadelphia phillies','houston rockets','houston astros']);
+function isBigMarketGame(g){const h=(g.home||'').toLowerCase(),a=(g.away||'').toLowerCase();for(const t of BIG_MARKET_TEAMS){if(h.includes(t)||a.includes(t))return true;}return false;}
+function isNationalGame(g){return !!(g.nationalBundle);}
 function preGameScore(g){
   const nb=g.narrative?.boost||0;
   const ib={series_deciding:30,elimination:20,clinch:15,playoff_impl:10}[g._gameImportance]||0;
@@ -4148,6 +4134,8 @@ function renderAll(){
   const visible=activeFilter==="all"?sports:sports.filter(s=>s.sport===activeFilter);
   const filtered = myTeamsFilter
     ? visible.map(s=>({...s, games:(s.games||[]).filter(g=>MY_TEAMS.has(g.home)||MY_TEAMS.has(g.away))})).filter(s=>s.games.length)
+    : rivalsFilter
+      ? visible.map(s=>({...s, games:(s.games||[]).filter(g=>typeof isRivalGame==="function"&&isRivalGame(g))})).filter(s=>s.games.length)
     : freeOnlyFilter
       ? visible.map(s=>({...s, games:(s.games||[]).filter(gameHasFreeStream)}))
       : visible;
@@ -4173,7 +4161,7 @@ function renderAll(){
             ${matchupHTML(g, sec.sport)}
           </div>
           <div class="info-row">
-            <span class="league-badge">${g.league||sec.sport}</span>${MY_TEAMS.has(g.home)||MY_TEAMS.has(g.away)?'<span class="my-team-badge">★ MY TEAM</span>':""}
+            <span class="league-badge">${g.league||sec.sport}</span>${MY_TEAMS.has(g.home)||MY_TEAMS.has(g.away)?'<span class="my-team-badge">★ MY TEAM</span>':""}${typeof isRivalGame==="function"&&MY_TEAMS.size>0&&isRivalGame(g)?'<span class="rival-badge">RIVAL</span>':""}${(()=>{const k=g.streams&&g.streams[0]&&g.streams[0].key||"";return FREE_OTA.has(k)?'<span class="free-tonight-badge">Free tonight</span>':"";})()}
             ${g.seriesRecord?`<span class="league-badge" style="color:var(--gold2);border-color:rgba(201,168,76,.3)">${g.seriesRecord}</span>`:g.venue&&!g.league?.includes("Playoffs")?`<span class="league-badge venue-badge" style="font-size:.52rem;opacity:.7">${g.venue}</span>`:""}
             <button class="watch-btn" data-id="${g._id}">+ Multiview</button>
           </div>
@@ -4186,12 +4174,12 @@ function renderAll(){
           </div>`:""}
           ${g.crew?`<div class="crew-line">🎙 ${g.crew}</div>`:""}
           ${g._gameImportance?`<div class="importance-badge ${g._gameImportance==='series_deciding'?'series-deciding':g._gameImportance==='elimination'?'elimination':g._gameImportance==='clinch'?'clinch':'playoff-impl'}">${g._importanceIcon||''} ${g.narrative?.label||''}</div>`:""}
-          ${g.narrative?.label?`<div class="narrative-line${(g.narrative.boost||0)>=20?' narrative-hi':''}">${g.narrative.label}</div>`:""}
+          ${g.narrative?.label&&!g._gameImportance?`<div class="narrative-line${(g.narrative.boost||0)>=20?' narrative-hi':''}">${g.narrative.label}</div>`:""}
         </div>
         <div class="card-right">
           ${liveBadge}
           <div class="${timeCls}">${timeStr}</div>
-          <div class="stream-row">${streamsHTMLCapped(g.streams, 3)}${getFreeStreamBadge(g)}<button class="share-btn" aria-label="Share" title="Share this game">⬆</button></div>
+          <div class="stream-row">${streamsHTMLCapped(g.streams, 3)}${(()=>{const pk=g.streams?.[0]?.key||'';return FREE_OTA.has(pk)?'<span class="free-badge">FREE</span>':FREE_CABLE.has(pk)?'<span class="free-badge free-cable">FREE W/ CABLE</span>':''})()}<button class="share-btn" aria-label="Share" title="Share this game">⬆</button></div>
           ${FD_LEAGUE_MAP[sec.sport]||ESPN_STANDINGS_MAP[sec.sport]?`<button class="standings-btn" onclick="toggleStandings(this,'${sec.sport}','2025')" title="Show league table">▼ Table</button>`:""}
         </div>
       </div>`;
@@ -4201,7 +4189,6 @@ function renderAll(){
         <div class="s-icon" style="background:${sportColor}1a;border-color:${sportColor}40">${icon}</div>
         <span class="s-name">${sec.sport}</span>
         <span class="s-count">${games.length} game${games.length!==1?"s":""}</span>
-        ${FD_LEAGUE_MAP[sec.sport]||ESPN_STANDINGS_MAP[sec.sport]?`<button class="standings-btn section-standings-btn" onclick="toggleStandings(this,'${sec.sport}','2025')" title="Show league table">▼ Table</button>`:""}
       </div>
       <div class="games-list">${cards}</div>
     </div>`;
@@ -4223,6 +4210,9 @@ function renderAll(){
   mvSyncBtns();
   // Re-inject BDL injury badges and Squiggle tips after each render
   setTimeout(()=>{ injectBdlInjuryBadges(); injectSquiggleTips(); }, 150);
+  setTimeout(initSeriesPreviews, 400);
+  renderWatchWindow();
+  initFIELDBrief(filtered).catch(()=>{});
   setTimeout(injectWeatherBadges, 300); // re-apply wx badges from cache after render
   // Runtime silent error scan — FIELD_DEBUG only, runs after async injections settle
   if(FIELD_DEBUG) setTimeout(runSilentErrorScan, 500);
@@ -4271,6 +4261,24 @@ function buildFilters(sports){
       renderAll();
     });
     c.appendChild(mtBtn);
+  }
+  if(MY_TEAMS.size>0&&typeof isRivalGame==="function"){
+    const rivalCount=sports.reduce((n,s)=>n+(s.games||[]).filter(g=>isRivalGame(g)).length,0);
+    if(rivalCount>0){
+      const rvBtn=document.createElement('button');
+      rvBtn.className='filter-btn rivals-btn'+(rivalsFilter?' active':'');
+      rvBtn.dataset.filter='rivals';
+      rvBtn.textContent='RIVALS'+(rivalCount?' ('+rivalCount+')':"");
+      rvBtn.title='Games featuring your rivals tonight';
+      rvBtn.addEventListener('click',()=>{
+        rivalsFilter=!rivalsFilter;
+        document.querySelectorAll('.filter-btn').forEach(b=>{if(b!==rvBtn)b.classList.remove('active');});
+        if(rivalsFilter){rvBtn.classList.add('active');activeFilter='all';freeOnlyFilter=false;myTeamsFilter=false;}
+        else rvBtn.classList.remove('active');
+        renderAll();
+      });
+      c.appendChild(rvBtn);
+    }
   }
   sports.filter(s=>(s.games||[]).length>0).forEach(s=>{
     const btn=document.createElement("button");
@@ -4322,28 +4330,30 @@ function buildTodaySchedule(){
   // Recomputes local date fresh to handle overnight sessions (isoDate set at page load)
   function isToday(iso){
     const d=new Date(iso); if(isNaN(d)) return false;
-    // Compare against TODAY_ISO (set once at page load with Intl timezone)
-    // using the same Intl timezone — single reference point eliminates drift
-    return d.toLocaleDateString("en-CA",{timeZone:tz})===TODAY_ISO;
+    const localNow=new Date();
+    const todayFresh=localNow.getFullYear()+'-'+String(localNow.getMonth()+1).padStart(2,'0')+'-'+String(localNow.getDate()).padStart(2,'0');
+    return d.toLocaleDateString("en-CA",{timeZone:tz})===todayFresh;
   }
 
-  // ── NBA Playoffs — Thursday May 14 2026 ──────────────────────────
-  // Source: DIRECTV Insider + Yahoo Sports verified May 14, 2026
-  //   SAS @ MIN G6 — 7pm ET / 23:00 UTC — Prime Video
-  //   Spurs lead series 3-2. Elimination game for Minnesota.
-  //   G5 result: Spurs 126, Timberwolves 97
+  // ── NBA Playoffs — Friday May 15 2026 ──────────────────────────
+  // Source: Yahoo Sports NBA Playoffs schedule verified May 15, 2026
+  //   DET @ CLE G6 — 7pm ET / 23:00 UTC — Prime Video · CLE leads 3-2
+  //   MIN @ SAS G6 — 9:30pm ET / 01:30 UTC May 16 — Prime Video · SAS leads 3-2
   const nbaGames=[
-    {home:"Minnesota Timberwolves", away:"San Antonio Spurs",     league:"NBA Playoffs – West Semis G6 · SAS leads 3-2", start_time:"2026-05-14T23:00:00Z", confirmed:true, venue:"Target Center, Minneapolis MN", streams:resolveBundle("NBA_PRIME"), crew:"Ian Eagle · Stan Van Gundy (Prime Video)"},
+    {home:"Cleveland Cavaliers",   away:"Detroit Pistons",         league:"NBA Playoffs – East Semis G6 · CLE leads 3-2", start_time:"2026-05-15T23:00:00Z", confirmed:true, venue:"Rocket Mortgage FieldHouse, Cleveland OH", streams:resolveBundle("NBA_PRIME"), crew:"Ian Eagle · Stan Van Gundy (Prime Video)", seriesRecord:"CLE leads 3-2"},
+    {home:"Minnesota Timberwolves", away:"San Antonio Spurs",       league:"NBA Playoffs – West Semis G6 · SAS leads 3-2", start_time:"2026-05-16T01:30:00Z", confirmed:true, venue:"Target Center, Minneapolis MN",            streams:resolveBundle("NBA_PRIME"), seriesRecord:"SAS leads 3-2"},
   ].filter(g=>isToday(g.start_time));
 
-  // ── NHL Playoffs — Thursday May 14 2026 ──────────────────────────
-  // Source: NHL.com + DIRECTV Insider verified May 14, 2026
-  //   MTL @ BUF G5 — 7pm ET / 23:00 UTC — TNT/truTV/Max · Series tied 2-2
-  //   VGK @ ANA G6 — 9:30pm ET / 01:30 UTC May 15 — TNT/truTV/Max · VGK leads 3-2 (ANA elimination)
-  //   G5 result: COL def MIN 5-1 (COL wins series 4-1). Wild eliminated.
+  // ── NHL Playoffs — Friday May 15 2026 ──────────────────────────
+  // Source: Yahoo Sports NHL Playoffs coverage verified May 15, 2026
+  //   MIN @ COL G6 — 8pm ET / 00:00 UTC May 16 — ESPN · series record TBD post-G5
+  //   MTL @ BUF G6 — 8pm ET / 00:00 UTC May 16 — TNT · series record TBD post-G5
   const nhlGames=[
-    {home:"Buffalo Sabres",       away:"Montreal Canadiens",    league:"NHL Playoffs – East Semis G5 · Series tied 2-2", start_time:"2026-05-14T23:00:00Z", confirmed:true, venue:"KeyBank Center, Buffalo NY",  streams:resolveBundle("NHL_TNT"), crew:"Brendan Burke · Eddie Olczyk · Abby Chin (TNT)"},
-    {home:"Anaheim Ducks",        away:"Vegas Golden Knights",  league:"NHL Playoffs – West Semis G6 · VGK leads 3-2",   start_time:"2026-05-15T01:30:00Z", confirmed:true, venue:"Honda Center, Anaheim CA",   streams:resolveBundle("NHL_TNT"), crew:"Kenny Albert · Brian Boucher (TNT)"},
+    // No NHL games May 15 — off night
+    // COL vs MIN: Colorado wins series 4-1 (clinched G5 May 13)
+    // BUF @ MTL G6: Sat May 16 8pm ET on ABC/ESPN — enters tomorrow's schedule
+    {home:"Montreal Canadiens", away:"Buffalo Sabres",   league:"NHL Playoffs – East Semis G6 · MTL leads 3-2", start_time:"2026-05-17T00:00:00Z", confirmed:true, venue:"Bell Centre, Montreal QC",   streams:resolveBundle("NHL_ABC"), crew:"Sean McDonough · Ray Ferraro · Haley Skarupa (ESPN/ABC)"},
+    // VGK @ ANA G7: TBD (likely May 16-17 on ABC/ESPN)
   ].filter(g=>isToday(g.start_time));  // ── MLB (May 11: Monday slate + EFL 2nd leg) ──────────────────────────────
   // ── MLB schedule: May 8 (Fri) – May 11 (Mon) ────────────────────────────────
   // isToday() filters to the viewer's local date — correct games show each day
@@ -4474,6 +4484,24 @@ function buildTodaySchedule(){
     {home:"Houston Astros",       away:"Seattle Mariners",       start_time:"2026-05-15T00:10:00Z", confirmed:true, venue:"Daikin Park, Houston"},
     {home:"Athletics",            away:"St. Louis Cardinals",    start_time:"2026-05-15T01:40:00Z", confirmed:true, venue:"Sutter Health Park, Sacramento"},
     {home:"Los Angeles Dodgers",  away:"San Francisco Giants",   start_time:"2026-05-15T02:10:00Z", confirmed:true, venue:"Dodger Stadium, Los Angeles"},
+    // ── Friday May 15, 2026 — Apple TV+ Friday Night Baseball + full slate ────────
+    // Source: MLB.com official schedule + Apple TV FNB schedule verified May 15, 2026
+    //   Apple TV+: TOR @ DET 6:30pm ET (MLB_APPLE exclusive) + NYY @ NYM 7pm ET (MLB_APPLE exclusive)
+    {home:"Detroit Tigers",       away:"Toronto Blue Jays",      start_time:"2026-05-15T22:30:00Z", confirmed:true, venue:"Comerica Park, Detroit MI",           nationalBundle:"MLB_APPLE"},
+    {home:"Pittsburgh Pirates",   away:"Philadelphia Phillies",  start_time:"2026-05-15T22:40:00Z", confirmed:true, venue:"PNC Park, Pittsburgh PA",              localRsn:"PHILLIES_LOCAL", localNote:"SNP (Pittsburgh) · NBC Sports Philadelphia (Philly)"},
+    {home:"Washington Nationals", away:"Baltimore Orioles",      start_time:"2026-05-15T22:45:00Z", confirmed:true, venue:"Nationals Park, Washington DC",        localRsn:"MASN_ORIOLES", localNote:"Nationals TV (DC/MD) · MASN (Baltimore)"},
+    {home:"New York Mets",        away:"New York Yankees",       start_time:"2026-05-15T23:00:00Z", confirmed:true, venue:"Citi Field, Queens NY",                 nationalBundle:"MLB_APPLE"},
+    {home:"Cleveland Guardians",  away:"Cincinnati Reds",        start_time:"2026-05-15T23:10:00Z", confirmed:true, venue:"Progressive Field, Cleveland OH",      localRsn:"GUARDIANS_LOCAL", localNote:"CLEGuardians.TV (Cleveland) · Reds.TV (Cincinnati)"},
+    {home:"Tampa Bay Rays",       away:"Miami Marlins",          start_time:"2026-05-15T23:10:00Z", confirmed:true, venue:"Tropicana Field, St. Petersburg FL",   localNote:"Rays.TV (Tampa) · Marlins.TV (Miami)"},
+    {home:"Minnesota Twins",      away:"Milwaukee Brewers",      start_time:"2026-05-15T23:10:00Z", confirmed:true, venue:"Target Field, Minneapolis MN",         localNote:"Twins.TV (Minneapolis) · Brewers.TV (Milwaukee)"},
+    {home:"Atlanta Braves",       away:"Boston Red Sox",         start_time:"2026-05-15T23:15:00Z", confirmed:true, venue:"Truist Park, Atlanta GA",              localRsn:"NESN_LOCAL", localNote:"BravesVision (Atlanta) · NESN (Boston)"},
+    {home:"Chicago White Sox",    away:"Chicago Cubs",           start_time:"2026-05-15T23:40:00Z", confirmed:true, venue:"Guaranteed Rate Field, Chicago IL",    localNote:"CHSN (White Sox) · Marquee Sports Network (Cubs)"},
+    {home:"Houston Astros",       away:"Texas Rangers",          start_time:"2026-05-16T00:10:00Z", confirmed:true, venue:"Daikin Park, Houston TX",              localNote:"Space City Home Network (Houston) · CW33 (DFW)"},
+    {home:"St. Louis Cardinals",  away:"Kansas City Royals",     start_time:"2026-05-16T00:15:00Z", confirmed:true, venue:"Busch Stadium, St. Louis MO",          localNote:"Cardinals.TV (St. Louis) · Royals.TV (Kansas City)"},
+    {home:"Colorado Rockies",     away:"Arizona Diamondbacks",   start_time:"2026-05-16T00:40:00Z", confirmed:true, venue:"Coors Field, Denver CO",               localNote:"Rockies.TV (Colorado) · ArizonaSports (Phoenix)"},
+    {home:"Los Angeles Angels",   away:"Los Angeles Dodgers",    start_time:"2026-05-16T01:38:00Z", confirmed:true, venue:"Angel Stadium, Anaheim CA",            localNote:"ABTV (Angels) · Spectrum SportsNet LA (Dodgers)"},
+    {home:"Seattle Mariners",     away:"San Diego Padres",       start_time:"2026-05-16T01:40:00Z", confirmed:true, venue:"T-Mobile Park, Seattle WA",            localNote:"Mariners.TV (Seattle) · Padres.TV (San Diego)"},
+    {home:"Athletics",            away:"San Francisco Giants",   start_time:"2026-05-16T01:40:00Z", confirmed:true, venue:"Sutter Health Park, Sacramento CA",    localNote:"Athletics.TV · NBC Sports Bay Area (SF)"},
   ];
   const mlbGames=mlbRaw.filter(g=>isToday(g.start_time)).map(g=>{
     // Stream resolution — priority order (highest first):
@@ -4699,6 +4727,54 @@ function buildTodaySchedule(){
   // ─────────────────────────────────────────────────────────────────────────
   // Parses league strings to auto-generate narrative labels + importance flags.
   // Activates: DA-03 badge · narrative.label · drama_score playoff_boost · Wow #24.
+  // QW-3 / J0-B -- Series record parser for J1/J2/J3/J4
+  function parseSeriesRecord(g) {
+    const raw = (g.seriesRecord || g.league || '').toLowerCase();
+    if(!raw) return null;
+    if(/tied 3.?3|3.3|game 7/i.test(raw))
+      return {tied:true,wins:3,losses:3,deciding:true,homeElim:false,awayElim:false,
+              homeClinch:false,awayClinch:false,leadsName:null,leadingTeam:null,totalGames:6,
+              label:'Game 7 \u2014 winner takes all',icon:'\u{1F3C6}',importance:'series_deciding',boost:30};
+    const tieMat = raw.match(/tied\s+(\d)-(\d)/);
+    if(tieMat){
+      const a=parseInt(tieMat[1]),b=parseInt(tieMat[2]);
+      const boost=a===2?12:a===1?8:0;
+      return {tied:true,wins:a,losses:b,deciding:false,homeElim:false,awayElim:false,
+              homeClinch:false,awayClinch:false,leadsName:null,leadingTeam:null,totalGames:a+b,
+              label:'Series tied '+a+'-'+b,icon:'\uD83D\uDCCA',importance:'playoff_impl',boost};
+    }
+    const leadMat = raw.match(/(\w[\w\s]+?)\s+leads?\s+(\d)-(\d)/i);
+    if(!leadMat) return null;
+    const leadsName=leadMat[1].trim(), wins=parseInt(leadMat[2]), losses=parseInt(leadMat[3]);
+    const homeName=(g.home||'').toLowerCase(), awayName=(g.away||'').toLowerCase();
+    const lastWord=leadsName.toLowerCase().split(' ').pop();
+    let leadingTeam=null;
+    if(lastWord.length>3){
+      if(homeName.includes(lastWord)) leadingTeam='home';
+      else if(awayName.includes(lastWord)) leadingTeam='away';
+    }
+    const homeLeads=leadingTeam==='home', awayLeads=leadingTeam==='away';
+    const homeElim=awayLeads&&wins===3&&losses===2, awayElim=homeLeads&&wins===3&&losses===2;
+    const homeElim31=awayLeads&&wins===3&&losses===1, awayElim31=homeLeads&&wins===3&&losses===1;
+    const homeElim30=awayLeads&&wins===3&&losses===0, awayElim30=homeLeads&&wins===3&&losses===0;
+    const homeClinch=homeLeads&&wins===3, awayClinch=awayLeads&&wins===3;
+    let importance='playoff_impl',boost=5,label='',icon='\uD83D\uDCCA';
+    if(homeElim||awayElim){ importance='elimination';boost=22;
+      label=(homeElim?g.home:g.away)+' must win to survive';icon='\u26A0\uFE0F';
+    } else if(homeElim31||awayElim31){ importance='elimination';boost=18;
+      label='Elimination game \u2014 season on the line';icon='\u26A0\uFE0F';
+    } else if(homeElim30||awayElim30){ importance='elimination';boost=22;
+      label='Facing elimination sweep';icon='\u26A0\uFE0F';
+    } else if(homeClinch||awayClinch){ importance='clinch';boost=wins===3&&losses===2?18:15;
+      label=(homeClinch?g.home:g.away)+' \u2014 one win from advancing';icon='\u2713';
+    } else if(wins===2&&losses===1){ boost=8;label='One team holds the edge';
+    } else if(wins===1&&losses===0){ boost=5;label='Early series advantage'; }
+    return {tied:false,wins,losses,deciding:false,leadsName,leadingTeam,
+            homeElim:homeElim||homeElim31||homeElim30,
+            awayElim:awayElim||awayElim31||awayElim30,
+            homeClinch,awayClinch,totalGames:wins+losses,label,icon,importance,boost};
+  }
+
   function elimination_boost(g) {
     const s = (g.league||'').toLowerCase();
     // Game 7 / deciding game
@@ -4738,12 +4814,15 @@ function buildTodaySchedule(){
   function applyNarrativeContext(games) {
     games.forEach(g => {
       if (!g.narrative) {
-        const ctx = elimination_boost(g);
+        const ctx = g.seriesRecord ? parseSeriesRecord(g) : elimination_boost(g);
         if (ctx) {
           g._gameImportance = ctx.importance;
           g._importanceIcon = ctx.icon;
           g.narrative = {boost: ctx.boost, label: ctx.label, source:'auto'};
+          g._series = ctx;
         }
+      } else if(g.seriesRecord && !g._series) {
+        g._series = parseSeriesRecord(g);
       }
     });
   }
@@ -4788,12 +4867,12 @@ function buildTodaySchedule(){
   //   Truist Championship (Signature) and Myrtle Beach Classic both finished May 10.
   //   No PGA Tour event Mon May 11 — Travelers Championship starts Thu Jun 26.
   const golfGames=[
-    // ── PGA Championship — preview card (starts May 14, within 7-day window) ─
+    // ── PGA Championship — R2 Friday May 15 (active tournament May 14-17) ─────
     {home:"PGA Championship",          away:"",
      league:"Major Championship · 108th PGA Championship",
-     start_time:"2026-05-14T12:00:00Z", confirmed:true, venue:"Aronimink Golf Club, Newtown Square PA",
+     start_time:"2026-05-15T12:00:00Z", confirmed:true, venue:"Aronimink Golf Club, Newtown Square PA",
      streams:resolveBundle("GOLF_ESPN"),
-     leaderNote:"R1 Thu May 14 · McIlroy defending · ESPN+/Golf Channel Thu-Fri · CBS Sat-Sun"},
+     leaderNote:"R2 Fri May 15 · McIlroy defending · ESPN+/Golf Channel Thu-Fri · CBS Sat-Sun"},
   ].filter(g=>isToday(g.start_time)||
     (new Date(g.start_time) > new Date() &&
      new Date(g.start_time) < new Date(Date.now() + 7*24*3600*1000) &&
@@ -4922,18 +5001,6 @@ const MEDIA_WEEKDAY = [
     desc:"Pat McAfee and crew with sports talk, NFL news, and daily guest interviews. Live from ESPN HQ.",
     link:"https://www.espn.com/watch/"
   },
-  {
-    show:"Golf Central",network:"Golf Channel",chip:"ESPN",
-    time:"7:00 AM, Noon, 6:00 PM ET",
-    desc:"Golf Channel's flagship news show. PGA Tour leaderboard updates, tour news, player interviews, and preview of upcoming events. Airs three times daily. Stream on Peacock simultaneously.",
-    link:"https://www.golfchannel.com"
-  },
-  {
-    show:"Morning Drive",network:"Golf Channel",chip:"ESPN",
-    time:"6:00 AM ET",
-    desc:"Golf Channel's morning show with tournament previews, player features, equipment news, and the previous day's highlights. Peacock streams Golf Channel live — often the cheaper solo option vs. cable.",
-    link:"https://www.golfchannel.com"
-  },
 ];
 
 // ── Weekend base template (Sat + Sun) ──────────────────────────────────────
@@ -4955,8 +5022,28 @@ const MEDIA_SPECIALS = [
     card:{
       show:"2026 NFL Schedule Release",network:"NFL Network / ESPN2",chip:"ESPN",
       time:"8:00 PM ET · Thu May 14",
-      desc:"The full 2026 NFL Schedule powered by AWS drops Thursday May 14 at 8pm ET on NFL Network, ESPN2, ESPN App and NFL+. International games (record 9 across 4 continents) announced Wednesday May 13 at 9am ET on Good Morning Football. Season opens Sep 9 in Seattle.",
+      desc:"The full 2026 NFL Schedule powered by AWS dropped Thursday May 14 at 8pm ET on NFL Network, ESPN2, ESPN App and NFL+. International games (record 9 across 4 continents) announced Wednesday May 13 at 9am ET on Good Morning Football.",
       link:"https://www.nfl.com/schedules/"
+    }
+  },
+  {
+    startDate:"2026-05-15", endDate:"2026-05-15",
+    card:{
+      show:"Friday Night Baseball on Apple TV+",network:"Apple TV+",chip:"prime",
+      time:"6:30 PM ET · Fri May 15",
+      desc:"Two-game Apple TV+ exclusive doubleheader: Toronto Blue Jays @ Detroit Tigers (6:30 PM ET) and New York Yankees @ New York Mets (7:00 PM ET). Apple TV subscription required. Free from all local broadcast restrictions — no blackouts.",
+      journalNote:"Apple TV+ Friday games are national-exclusive — local RSNs are blacked out. No cable required.",
+      link:"https://tv.apple.com/channel/tvs.sbd.4000/sports"
+    }
+  },
+  {
+    startDate:"2026-05-15", endDate:"2026-05-15",
+    card:{
+      show:"NBA Prime Video Double-Header",network:"Prime Video",chip:"prime",
+      time:"7:00 PM ET · Fri May 15",
+      desc:"Two elimination games on Prime Video tonight: Detroit @ Cleveland G6 (7 PM) and San Antonio @ Minnesota G6 (9:30 PM). CLE closes out at home; SAS tries to eliminate MIN on the road at Target Center. Amazon Prime subscription required. Conference Finals begin next week.",
+      journalNote:"Ian Eagle and Stan Van Gundy on the call — best analytical pairing in the new NBA deal. Prime Video is not on basic cable.",
+      link:"https://www.amazon.com/gp/video/storefront/sports"
     }
   },
 ];
@@ -5074,6 +5161,7 @@ function renderMedia(){
           <span class="media-time">${m.time}</span>
         </div>
         <div class="media-desc">${m.desc}</div>
+        ${m.journalNote?`<div class="field-note">${m.journalNote}</div>`:""}
         <a class="stream-chip" href="${m.link}" target="_blank" rel="noopener" style="color:${col};border-color:${col};background:${col}1a;font-size:.6rem;padding:.12rem .45rem">Watch →</a>
       </div>
     </div>`;
@@ -5100,9 +5188,7 @@ async function fetchBettingLines(){
   allData.sports.forEach(sec=>{
     (sec.games||[]).forEach(g=>{
       if(getStatus(g.start_time)!=="pre"&&getStatus(g.start_time)!=="live") return; // skip finished
-      // T1-12: include series context (e.g. "SAS leads 3-2, G6") in the prompt
-      const seriesCtx = g.league && g.league !== sec.sport ? ` · ${g.league}` : '';
-      games.push(`${g.away||"?"} @ ${g.home||"?"} (${sec.sport}${seriesCtx}, ${fmtTime(g.start_time)})`);
+      games.push(`${g.away||"?"} @ ${g.home||"?"} (${sec.sport}, ${fmtTime(g.start_time)})`);
     });
   });
   if(!games.length) return null;
@@ -5154,25 +5240,10 @@ async function fetchBettingLines(){
     if(parts.length) bdlCtxStr = "\n\nLive injury data:\n"+parts.join("\n");
   }catch(e){ /* BDL context optional — proceed without it */ }
 
-  // T1-13: Inject FD standings for any soccer competitions with games today
-  let fdStandingsStr = "";
-  try{
-    const soccerSports = (allData?.sports||[]).filter(s => FD_LEAGUE_MAP[s.sport] && (s.games||[]).length > 0);
-    for(const sec of soccerSports.slice(0,2)){ // max 2 competitions to keep prompt compact
-      const rows = fdStandingsCache[FD_LEAGUE_MAP[sec.sport]];
-      if(rows && rows.length){
-        const top6 = rows.slice(0,6).map(r=>`${r.pos}. ${r.team} (${r.pts}pts, GD${r.gd})`).join(', ');
-        fdStandingsStr += `\n${sec.sport} standings (top 6): ${top6}`;
-      }
-    }
-    if(fdStandingsStr) fdStandingsStr = "\n\nLeague standings:" + fdStandingsStr;
-  }catch(e){ /* standings optional */ }
-
   const hasLiveOdds = Object.keys(liveOddsMap).length > 0;
   const prompt = "Today is " + TODAY_ISO + ". Sports games today:\n"
     + games.slice(0,6).join("\n")
     + bdlCtxStr
-    + fdStandingsStr
     + liveOddsStr
     + "\n\nReturn betting intelligence as JSON only — no prose, no markdown fences.\n"
     + "Schema: " + schema + "\n"
@@ -5318,37 +5389,37 @@ function selectBettingGames(sports, maxCards=4){
 // MLB: SF @ LAD on MLB Network Showcase
 const BETTING_LINES_FALLBACK_DATA = [
   {
-    matchKey:"timberwolves",    // SAS @ MIN G6 — West Semis, SAS leads 3-2
+    matchKey:"cavaliers",    // DET @ CLE G6 — East Semis, CLE leads 3-2
     source:"📊 AI Estimated",
-    context:"Minnesota must win at home or their season ends. Spurs dominated G5 126-97 and have all the momentum. Despite Target Center crowd, San Antonio's balance (Wembanyama + veterans) makes them a slight road favorite. MIN has won at home this series but G5 loss was demoralizing. SAS -115 to close. MIN +100 in elimination at home.",
+    context:"Cleveland has the chance to close out Detroit at home after winning G5. The Cavaliers have been dominant at Rocket Mortgage FieldHouse this series. Donovan Mitchell eyes his first Conference Finals berth. Detroit's young core has shown fight but needs a road win in a hostile environment to stay alive. CLE -220 to close out at home.",
     lines:[
-      {label:"Moneyline",items:[{t:"San Antonio Spurs",o:"-115",fav:true},{t:"Minnesota Timberwolves",o:"+100",fav:false}]},
-      {label:"Spread",items:[{t:"Spurs -1.5",o:"+115",fav:false},{t:"Timberwolves +1.5",o:"-135",fav:true}]},
-      {label:"Total (O/U)",items:[{t:"Over 217",o:"-110",fav:false},{t:"Under 217",o:"-110",fav:false}]},
+      {label:"Moneyline",items:[{t:"Cleveland Cavaliers",o:"-220",fav:true},{t:"Detroit Pistons",o:"+185",fav:false}]},
+      {label:"Spread",items:[{t:"Cavaliers -5.5",o:"-110",fav:true},{t:"Pistons +5.5",o:"-110",fav:false}]},
+      {label:"Total (O/U)",items:[{t:"Over 214",o:"-110",fav:false},{t:"Under 214",o:"-110",fav:false}]},
     ],
     books:[{name:"DraftKings",url:"https://sportsbook.draftkings.com"},{name:"FanDuel",url:"https://sportsbook.fanduel.com"},{name:"BetMGM",url:"https://sports.betmgm.com"}]
   },
   {
-    matchKey:"sabres",          // MTL @ BUF G5 — East Semis, Series tied 2-2
+    matchKey:"spurs",       // MIN @ SAS G6 — West Semis, SAS leads 3-2
     source:"📊 AI Estimated",
-    context:"Perfectly balanced series — each team has won on the road. G5 at KeyBank Center with Buffalo holding home ice. Canadiens have won every road game. This series has swung wildly with the visitor winning four straight. BUF home ice slight edge. BUF -130 on home ice. MTL +110 as road team with a perfect away record this series.",
+    context:"Minnesota hosts San Antonio in a must-win G6 at Target Center. The Timberwolves are eliminated with a loss. Edwards must be dominant at home — he has the talent but the Spurs shut him down in G5 (Spurs won 126-97). Wembanyama has been elite all series. Home court gives MIN a slight edge but SAS brings a 3-2 series lead and all the momentum. If Ant goes off, MIN can extend it to G7.",
     lines:[
-      {label:"Moneyline",items:[{t:"Buffalo Sabres",o:"-130",fav:true},{t:"Montreal Canadiens",o:"+110",fav:false}]},
-      {label:"Puck Line",items:[{t:"BUF -1.5",o:"+160",fav:false},{t:"MTL +1.5",o:"-185",fav:true}]},
+      {label:"Moneyline",items:[{t:"Minnesota Timberwolves",o:"-120",fav:true},{t:"San Antonio Spurs",o:"+100",fav:false}]},
+      {label:"Spread",items:[{t:"Timberwolves -1.5",o:"-110",fav:true},{t:"Spurs +1.5",o:"-110",fav:false}]},
+      {label:"Total (O/U)",items:[{t:"Over 218",o:"-110",fav:false},{t:"Under 218",o:"-110",fav:false}]},
+    ],
+    books:[{name:"DraftKings",url:"https://sportsbook.draftkings.com"},{name:"FanDuel",url:"https://sportsbook.fanduel.com"},{name:"BetMGM",url:"https://sports.betmgm.com"}]
+  },
+  {
+    matchKey:"canadiens",   // BUF @ MTL G6 — NHL East Semis, Sat May 16 8pm ET, ABC/ESPN
+    source:"📊 AI Estimated",
+    context:"Montreal hosts Buffalo in a pivotal Game 6 at Bell Centre. The Canadiens lead 3-2 after winning G5 6-3, and look to close out at home. A win sends them to face Carolina in the ECF. Buffalo, ending a 14-year playoff drought, needs a road win to survive. The Bell Centre will be electric — Montreal on home ice is a steep hill for the Sabres.",
+    lines:[
+      {label:"Moneyline",items:[{t:"Montreal Canadiens",o:"-175",fav:true},{t:"Buffalo Sabres",o:"+148",fav:false}]},
+      {label:"Puck Line",items:[{t:"MTL -1.5",o:"+165",fav:false},{t:"BUF +1.5",o:"-195",fav:true}]},
       {label:"Total Goals",items:[{t:"Over 5.5",o:"-115",fav:true},{t:"Under 5.5",o:"-105",fav:false}]},
     ],
-    books:[{name:"DraftKings",url:"https://sportsbook.draftkings.com"},{name:"FanDuel",url:"https://sportsbook.fanduel.com"},{name:"BetMGM",url:"https://sports.betmgm.com"}]
-  },
-  {
-    matchKey:"ducks",           // VGK @ ANA G6 — West Semis, VGK leads 3-2
-    source:"📊 AI Estimated",
-    context:"Anaheim must win at Honda Center to force a decisive G7. The Ducks have home ice and desperation — both historically powerful motivators. Vegas has been the better team but struggled on the road (2-1 away). This is one of the most intense atmospheres in playoff hockey. ANA -145 at home in elimination. VGK +125 to close out on the road.",
-    lines:[
-      {label:"Moneyline",items:[{t:"Anaheim Ducks",o:"-145",fav:true},{t:"Vegas Golden Knights",o:"+125",fav:false}]},
-      {label:"Puck Line",items:[{t:"ANA -1.5",o:"+175",fav:false},{t:"VGK +1.5",o:"-210",fav:true}]},
-      {label:"Total Goals",items:[{t:"Over 6",o:"-110",fav:false},{t:"Under 6",o:"-110",fav:false}]},
-    ],
-    books:[{name:"DraftKings",url:"https://sportsbook.draftkings.com"},{name:"FanDuel",url:"https://sportsbook.fanduel.com"},{name:"BetMGM",url:"https://sports.betmgm.com"}]
+    books:[{name:"DraftKings",url:"https://sportsbook.draftkings.com"},{name:"FanDuel",url:"https://sportsbook.fanduel.com"},{name:"BetMGM",url:"https://sportsbook.betmgm.com"}]
   },
 ];
 
@@ -6869,43 +6940,7 @@ async function fetchESPNStandings(sportName){
 // Toggle standings panel on soccer game cards
 // Priority: FD.org (form table) → ESPN → SDB stub
 async function toggleStandings(btn, leagueId, season){
-  // Support both card-level and section-head buttons
   const card = btn.closest(".game-card");
-  const section = btn.closest(".sport-section");
-
-  // For section-head button: find or create a standings panel after the section-head
-  if(!card && section){
-    const head = section.querySelector(".section-head");
-    let panel = section.querySelector(".standings-panel.section-level");
-    if(panel){
-      const isOpen = panel.style.display !== "none";
-      panel.style.display = isOpen ? "none" : "block";
-      btn.textContent = isOpen ? "▼ Table" : "▲ Table";
-      return;
-    }
-    btn.textContent = "…";
-    panel = document.createElement("div");
-    panel.className = "standings-panel section-level";
-    panel.style.cssText = "display:block;margin:0 0 .75rem;";
-    const sportName = section.dataset.sport || "";
-
-    const fdCode = FD_LEAGUE_MAP[sportName];
-    if(fdCode){
-      try{
-        const fdRows = await fdFetchStandings(fdCode);
-        if(fdRows && fdRows.length){
-          renderFDStandingsPanel(panel, fdRows, sportName);
-          head.insertAdjacentElement("afterend", panel);
-          btn.textContent = "▲ Table";
-          return;
-        }
-      }catch(e){ if(FIELD_DEBUG) console.warn("[Standings] FD failed:", e.message); }
-    }
-    btn.textContent = "▼ Table";
-    return;
-  }
-
-  // Original card-level behavior
   if(!card) return;
   let panel = card.querySelector(".standings-panel");
   if(panel){
@@ -7626,24 +7661,6 @@ function renderESPNScores(){
         }
       }
 
-      // Wow #31: ESPN detail string — italic situation line on all live cards
-      // e.g. "2nd & 7 at KC 28 · 4Q 2:34" or "Bases loaded, 2 out" or "3rd Period"
-      // Only show when detail adds context beyond what score/period already shows
-      if(isLive && score.detail){
-        let detEl = card.querySelector(".situation-badge.espn-detail");
-        const detText = score.detail;
-        if(!detEl){
-          detEl = document.createElement("div");
-          detEl.className = "situation-badge espn-detail";
-          const scoreWrap = card.querySelector(".score-wrap");
-          if(scoreWrap) scoreWrap.insertAdjacentElement("afterend", detEl);
-          else card.querySelector(".card-body")?.appendChild(detEl);
-        }
-        if(detEl) detEl.textContent = detText;
-      } else {
-        card.querySelector(".situation-badge.espn-detail")?.remove();
-      }
-
       // Find existing wrapper or inject fresh — single element replace, no duplicates
       // Insert score-wrap as direct child of .game-card (not inside card-body)
       // CSS grid-row:2 (mobile) / inherited position (desktop) handles placement
@@ -7760,9 +7777,7 @@ async function fetchSchedule(){
   setTimeout(bdlPrefetchAll, 2000);       // BallDontLie injury prefetch (after schedule renders)
   maybeShowSetup();
   renderLastNight();
-  // Wow #26: render hidden drama banner on initial load (doesn't need ESPN scores)
-  setTimeout(renderOneToWatch, 800);
-  if(Object.keys(espnScores).length) { injectDramaBadges(); renderOneToWatch(); }
+  if(Object.keys(espnScores).length) { injectDramaBadges(); renderOneToWatch(); renderWatchWindow(); }
   // Media + betting rendered lazily by IntersectionObserver
 }
 
@@ -7788,91 +7803,6 @@ if(tzPillBtn) tzPillBtn.addEventListener("click", openSetup);
 updateTzPill();
 updateDateLabel();
 renderUsageBadge(getUsage());
-
-// ── Wow #3: ⚡ NOW button — jumps to hottest live game ───────────────────────
-// Appears in controls bar when any live game has drama score >= 55.
-// Shows the score: "⚡ NOW 83". Click scrolls to the card + flashes it.
-// Fades/hides when no live drama is active.
-function renderDramaNowBtn(){
-  const btn = document.getElementById("drama-now-btn");
-  if(!btn) return;
-  const top = getTopDramaNow();
-  if(!top || top.score < 55){
-    btn.style.display = "none";
-    return;
-  }
-  btn.style.display = "inline-flex";
-  btn.innerHTML = `⚡ NOW&nbsp;<span style="opacity:.8">${top.score}</span>`;
-  // Pulse animation for fire-tier games
-  if(top.score >= 80){
-    btn.style.animation = "pulse 1.2s ease-in-out infinite";
-    btn.style.background = "rgba(255,59,59,.2)";
-  } else {
-    btn.style.animation = "";
-    btn.style.background = "rgba(255,59,59,.12)";
-  }
-}
-
-document.addEventListener("click", e => {
-  const btn = e.target.closest("#drama-now-btn");
-  if(!btn) return;
-  const top = getTopDramaNow();
-  if(!top) return;
-  // Scroll to the card
-  const card = document.querySelector(`.game-card[data-gameid="${top.gameId}"]`);
-  if(card){
-    card.scrollIntoView({behavior:"smooth", block:"center"});
-    // Flash the card border briefly
-    const orig = card.style.boxShadow;
-    card.style.transition = "box-shadow .1s";
-    card.style.boxShadow = "0 0 0 3px var(--live), 0 0 24px rgba(255,59,59,.4)";
-    setTimeout(()=>{ card.style.boxShadow = orig; }, 900);
-  }
-});
-// Filter bar text input → hide/show game cards whose chips match the query.
-// Matches against stream chip names (ESPN, NBC, Prime Video, Peacock, etc.)
-// and against the broadcaster's SR key (e.g. "espn", "nbc").
-// Resets automatically when input is cleared.
-(function initBroadcasterSearch(){
-  const input = document.getElementById("broadcaster-search");
-  if(!input) return;
-  input.addEventListener("input", ()=>{
-    const q = input.value.trim().toLowerCase();
-    const cards = document.querySelectorAll(".game-card");
-    if(!q){
-      cards.forEach(c=>{ c.style.display=""; });
-      document.querySelectorAll(".sport-section").forEach(s=>{ s.style.display=""; });
-      return;
-    }
-    // Show cards that have a chip matching the query
-    const sectionHasVisible = {};
-    cards.forEach(c=>{
-      const sport = c.dataset.sport||"";
-      const chips = [...c.querySelectorAll(".stream-chip")];
-      const match = chips.some(ch=>{
-        const name = (ch.textContent||"").toLowerCase();
-        const key  = (ch.dataset.srkey||"").toLowerCase();
-        return name.includes(q) || key.includes(q);
-      });
-      c.style.display = match ? "" : "none";
-      if(match) sectionHasVisible[sport] = true;
-    });
-    // Hide sections with no visible cards; show sections with at least one
-    document.querySelectorAll(".sport-section").forEach(s=>{
-      s.style.display = sectionHasVisible[s.dataset.sport] ? "" : "none";
-    });
-  });
-  // Clear on Escape
-  input.addEventListener("keydown", e=>{
-    if(e.key==="Escape"){
-      input.value="";
-      input.dispatchEvent(new Event("input"));
-    }
-  });
-  // Style on focus
-  input.addEventListener("focus", ()=>{ input.style.borderColor="var(--gold)"; input.style.width="120px"; });
-  input.addEventListener("blur",  ()=>{ input.style.borderColor="var(--edge2)"; if(!input.value) input.style.width="90px"; });
-})();
 
 // ── IP Geolocation (free, no key, ipapi.co) ────────────────────────────────
 // Auto-sets timezone on first load. Respects manual selection. 3s timeout.
@@ -7966,7 +7896,7 @@ const STREAMING_APPS = [
       {title:"Giro d'Italia 2026",                   meta:"Stage 3 today · all 21 stages live · US exclusive on Max",badge:"LIVE",   cls:"badge-live"},
       {title:"NHL Playoffs — TNT games",             meta:"Tuesday nights + select series · TNT/Max",badge:"LIVE",   cls:"badge-live"},
       {title:"MLB on TBS — Tuesday Nights",          meta:"Weekly Tuesday national game streams on Max",badge:"WEEKLY",cls:"badge-ongoing"},
-      {title:"Roland-Garros (French Open)",          meta:"Starts May 25 · TV: Tennis Channel · Max stream (WBD rights)", badge:"UPCOMING",cls:"badge-ongoing"},
+      {title:"Roland-Garros (French Open)",          meta:"Starts May 24 · US exclusive on Max",     badge:"UPCOMING",cls:"badge-ongoing"},
       {title:"NASCAR — select coverage",            meta:"Exclusive Driver Cam + select race events", badge:"ONGOING", cls:"badge-ongoing"},
     ]
   },
@@ -8251,7 +8181,209 @@ function dramaLabel(score){
 
 // ── Inject drama badges into rendered live cards ─────────────────────────
 // Called from renderESPNScores() after updating live scores.
-// QW-1: also stores _dramaNow on game objects and updates drama_score_peak
+
+// J2: SERIES PREVIEW CARDS
+function journalismCallsToday(){
+  const k='field_j_calls_'+new Date().toISOString().slice(0,10);
+  return {get(){return parseInt(sessionStorage.getItem(k)||'0');},inc(){sessionStorage.setItem(k,String(this.get()+1));},canCall(){return this.get()<8;}};
+}
+function seriesPreviewCacheKey(g){
+  const norm=s=>(s||'').toLowerCase().replace(/\s+/g,'_').replace(/[^a-z0-9_]/g,'');
+  return 'field_series_preview_'+norm(g.home)+'_'+norm(g.away)+'_'+norm(g.seriesRecord);
+}
+function buildSeriesPreviewStatic(g){
+  const s=g._series;
+  if(!s) return null;
+  const rec=g.seriesRecord||'';
+  if(s.deciding) return g.home+' host a winner-take-all Game 7. Everything is on the line tonight.';
+  if(s.homeElim) return g.home+' must win at home. Down '+s.wins+'-'+s.losses+', their season ends with a loss.';
+  if(s.awayElim) return g.away+' face elimination on the road. '+g.home+' lead '+s.wins+'-'+s.losses+' and can close out tonight.';
+  if(s.homeClinch) return g.home+' can close out the series tonight. One win from advancing.';
+  if(s.awayClinch) return g.away+' can advance with a win. They lead '+s.wins+'-'+s.losses+' and look to close on the road.';
+  return rec+'. Watch who controls the pace \u2014 that has defined this series.';
+}
+async function fetchSeriesPreviewFromClaude(g){
+  const budget=journalismCallsToday();
+  if(!budget.canCall()) return null;
+  const s=g._series||{};
+  const stakes=s.deciding?'SERIES DECIDING (Game 7)':s.homeElim||s.awayElim?'ELIMINATION GAME':s.homeClinch||s.awayClinch?'SERIES CLINCH':g.seriesRecord||'';
+  const prompt=['Write a FIELD Series Brief for this playoff game.','Home: '+g.home+'. Away: '+g.away+'. Series: '+(g.seriesRecord||'.')+'.','Stakes: '+stakes+'.',g.league?'Context: '+g.league+'.':'',' ','Rules: 100-120 words. 2-3 sentences max. Tactical focus \u2014 what to watch tonight.','Series narrative arc. No invented stats. Second person. No markdown.'].filter(Boolean).join('\n');
+  try{
+    const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:prompt}]})});
+    if(!r.ok) return null;
+    const data=await r.json();
+    const text=(data.content||[]).filter(c=>c.type==='text').map(c=>c.text).join('');
+    if(text&&text.length>30){budget.inc();return text.trim();}
+  }catch(e){}
+  return null;
+}
+async function renderSeriesPreviewCard(gameCard){
+  const gameid=gameCard.dataset.gameid;
+  if(!gameid) return;
+  let game=null;
+  (allData?.sports||[]).forEach(s=>(s.games||[]).forEach(g=>{if(g._id===gameid)game=g;}));
+  if(!game||!game.seriesRecord) return;
+  if(!game._series) game._series=parseSeriesRecord(game);
+  const cacheKey=seriesPreviewCacheKey(game);
+  const sport=gameCard.dataset.sport||'';
+  if(!sport.includes('Playoffs')&&!sport.includes('playoff')) return;
+  if(gameCard.previousElementSibling?.classList.contains('series-preview-card')) return;
+  const staticText=buildSeriesPreviewStatic(game);
+  const placeholder=document.createElement('div');
+  placeholder.className='series-preview-card';
+  placeholder.dataset.gameid=gameid;
+  placeholder.innerHTML='<div class="series-preview-label">FIELD Series Brief</div><div class="series-preview-text">'+(staticText||'Loading series context\u2026')+'</div>';
+  placeholder.addEventListener('click',()=>placeholder.classList.toggle('series-preview-collapsed'));
+  gameCard.insertAdjacentElement('beforebegin',placeholder);
+  const cached=sessionStorage.getItem(cacheKey);
+  if(cached){placeholder.querySelector('.series-preview-text').textContent=cached;placeholder.querySelector('.series-preview-text').classList.add('loaded');return;}
+  const text=await fetchSeriesPreviewFromClaude(game);
+  if(text){placeholder.querySelector('.series-preview-text').textContent=text;placeholder.querySelector('.series-preview-text').classList.add('loaded');sessionStorage.setItem(cacheKey,text);}
+  else if(staticText){placeholder.querySelector('.series-preview-text').textContent=staticText;placeholder.querySelector('.series-preview-text').classList.add('loaded');}
+}
+
+// J3: FIELD BRIEF CARD
+function fieldBriefCacheKey(){
+  const d=new Date();const tzStr=(typeof tz==='string'?tz:'America/New_York');
+  const ds=d.toLocaleDateString('en-CA',{timeZone:tzStr});return 'field_brief_'+ds;
+}
+function buildFIELDBriefStatic(sections){
+  const all=sections.flatMap(s=>(s.games||[]).map(g=>({...g,_section:s.sport})));
+  const ranked=all.filter(g=>g.home&&g.away&&g.home!=='ATP/WTA Field').sort((a,b)=>preGameScore(b)-preGameScore(a));
+  if(!ranked.length) return null;
+  const top=ranked[0];
+  const totalGames=ranked.length;
+  const playoffGames=ranked.filter(g=>g._section?.includes('Playoffs')).length;
+  let lines=['Tonight on FIELD: '+totalGames+' events across '+(sections.length)+' sports.'];
+  if(playoffGames) lines.push(playoffGames+' playoff game'+(playoffGames>1?'s':'')+' on the slate.');
+  const topStream=(top.streams&&top.streams[0]&&top.streams[0].label)||'';
+  lines.push('\nTop game: '+top.away+' @ '+top.home+(top.seriesRecord?' ('+top.seriesRecord+')':'')+'.'+(topStream?' On '+topStream+'.':''));
+  const scout=ranked.find(g=>preGameScore(g)>70&&!isNationalGame(g));
+  if(scout) lines.push("Scout's Pick: "+scout.away+' @ '+scout.home+' \u2014 high drama, under the radar.');
+  const FREE_OTA_LABEL=new Set(['ABC','NBC','CBS','FOX','ION']);
+  const freeGame=ranked.find(g=>g.streams&&g.streams[0]&&FREE_OTA_LABEL.has(g.streams[0].label));
+  if(freeGame) lines.push(freeGame.away+' @ '+freeGame.home+' is on '+freeGame.streams[0].label+' \u2014 free over the air, no subscription needed.');
+  return lines.join('\n');
+}
+async function fetchFIELDBriefFromClaude(sections){
+  const budget=journalismCallsToday();
+  if(!budget.canCall()) return null;
+  const all=sections.flatMap(s=>(s.games||[]).map(g=>({...g,_section:s.sport})));
+  const ranked=all.filter(g=>g.home&&g.away&&g.home!=='ATP/WTA Field').sort((a,b)=>preGameScore(b)-preGameScore(a)).slice(0,8);
+  if(!ranked.length) return null;
+  const gameLines=ranked.map(g=>{
+    const stream=(g.streams&&g.streams[0]&&g.streams[0].label)||'local';
+    const free=g.streams&&g.streams[0]&&new Set(['ABC','NBC','CBS','FOX','ION']).has(g.streams[0].label);
+    return ['- '+g.away+' @ '+g.home,g.seriesRecord?'  Series: '+g.seriesRecord:'','  Network: '+stream+(free?' (FREE OTA)':''),g._section?'  Sport: '+g._section:'',preGameScore(g)>70&&!isNationalGame(g)?"  [SCOUT'S PICK]":'',isNationalGame(g)&&isBigMarketGame(g)&&preGameScore(g)<35?'  [ANTI-HYPE]':''].filter(Boolean).join('\n');
+  }).join('\n\n');
+  const prompt=["Write a FIELD Brief for tonight's sports slate.",'','TONIGHT\'S GAMES:',gameLines,'','RULES:','- 200-250 words. 2-3 short paragraphs. No headers.','- Lead with the most important story.','- Call out FREE over-the-air games explicitly.',"- Surface Scout's Pick if flagged.",'- Flag Anti-Hype if present.','- Be tactical. No hype. No filler.','- Plain prose only. No bullet points.'].join('\n');
+  try{
+    const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:prompt}]})});
+    if(!r.ok) return null;
+    const data=await r.json();
+    const text=(data.content||[]).filter(c=>c.type==='text').map(c=>c.text).join('');
+    if(text&&text.length>50){budget.inc();return text.trim();}
+  }catch(e){}
+  return null;
+}
+async function initFIELDBrief(sections){
+  const el=document.getElementById('field-brief');
+  if(!el) return;
+  if(activeFilter!=='all'||!sections.length){el.style.display='none';return;}
+  const d=new Date();const tzStr=(typeof tz==='string'?tz:'America/New_York');
+  const dateLabel=d.toLocaleDateString('en-US',{timeZone:tzStr,weekday:'short',month:'short',day:'numeric'});
+  const cacheKey=fieldBriefCacheKey();
+  const cached=sessionStorage.getItem(cacheKey);
+  el.style.display='block';
+  const mkCard=(text,loaded)=>`<div class="field-brief-card" id="field-brief-inner"><div class="field-brief-header"><span class="field-brief-label">FIELD Brief</span><span class="field-brief-date">${dateLabel}</span></div><div class="field-brief-text${loaded?'':' pending'}">${text}</div></div>`;
+  if(cached){el.innerHTML=mkCard(cached,true);document.getElementById('field-brief-inner')?.addEventListener('click',()=>document.getElementById('field-brief-inner')?.classList.toggle('collapsed'));return;}
+  const staticText=buildFIELDBriefStatic(sections)||'Loading tonight\'s brief\u2026';
+  el.innerHTML=mkCard(staticText,false);
+  document.getElementById('field-brief-inner')?.addEventListener('click',()=>document.getElementById('field-brief-inner')?.classList.toggle('collapsed'));
+  const claudeText=await fetchFIELDBriefFromClaude(sections);
+  if(claudeText){
+    const textEl=el.querySelector('.field-brief-text');
+    if(textEl){textEl.textContent=claudeText;textEl.classList.remove('pending');textEl.classList.add('loaded');}
+    sessionStorage.setItem(cacheKey,claudeText);
+  } else {
+    const textEl=el.querySelector('.field-brief-text');
+    if(textEl){textEl.classList.remove('pending');textEl.classList.add('loaded');}
+  }
+}
+
+
+function initSeriesPreviews(){
+  if(!allData) return;
+  const cards=document.querySelectorAll('.game-card[data-sport*="Playoffs"]');
+  cards.forEach(card=>{if(card.dataset.gameid)renderSeriesPreviewCard(card).catch(()=>{});});
+}
+
+
+// Wow #16: WATCH WINDOW + QW-6 STREAM DEEP-LINKS
+const STREAM_DEEPLINKS={prime:{ios:'aiv://',web:'https://www.amazon.com/gp/video/storefront/sports'},peacock:{ios:'nbcuniversal://',web:'https://www.peacocktv.com/sports'},espn:{ios:'sportscenter://',web:'https://www.espn.com/watch/'},espnplus:{ios:'sportscenter://',web:'https://plus.espn.com/'},apple:{ios:'videos://',web:'https://tv.apple.com/channel/tvs.sbd.4000/sports'},max:{ios:'hbomax://',web:'https://play.max.com/sports'},youtubetv:{ios:'youtubetvapp://',web:'https://tv.youtube.com/'},sling:{web:'https://watch.sling.com/'},hulu:{ios:'hulu://',web:'https://www.hulu.com/live-tv'},fubo:{ios:'fubo://',web:'https://www.fubo.tv/live-tv'},directv:{web:'https://stream.directv.com/'},mlbtv:{ios:'atbat://',web:'https://www.mlb.com/tv'},nbcsn:{web:'https://www.peacocktv.com/sports'},tnt:{web:'https://www.tntdrama.com/watchtnt'},tbs:{web:'https://www.tbs.com/watchtbs'}};
+function getDeepLink(srKey){const d=STREAM_DEEPLINKS[srKey];if(!d) return null;const isMobile=/iPhone|iPad|Android/.test(navigator.userAgent||'');if(isMobile&&d.ios&&/iPhone|iPad/.test(navigator.userAgent)) return d.ios;return d.web||null;}
+let _wwDismissed=false,_wwInterval=null;
+function renderWatchWindow(){
+  const el=document.getElementById('watch-window');
+  if(!el||_wwDismissed||!allData) return;
+  const now=Date.now(),WINDOW_MS=35*60*1000;
+  let best=null,bestScore=0;
+  (allData.sports||[]).forEach(sec=>{(sec.games||[]).forEach(g=>{if(!g.start_time) return;const startMs=new Date(g.start_time).getTime();const minsAway=(startMs-now)/60000;if(minsAway<-2||minsAway>35) return;const score=preGameScore(g);if(score>bestScore){bestScore=score;best={g,sec,minsAway};}});});
+  if(!best||bestScore<20){el.style.display='none';if(_wwInterval){clearInterval(_wwInterval);_wwInterval=null;}return;}
+  const {g,sec,minsAway}=best;
+  const minsStr=minsAway<=1?'Starting now':minsAway<=5?'Tip-off in '+Math.ceil(minsAway)+' min':'Starting in '+Math.ceil(minsAway)+' min';
+  const stream=g.streams&&g.streams[0];
+  const streamLabel=stream?stream.label:'';
+  const streamKey=stream?stream.key:'';
+  const deepLink=streamKey?getDeepLink(streamKey):null;
+  const netChip=streamLabel?'<a class="ww-net" '+(deepLink?'href="'+deepLink+'" target="_blank"':'')+'>'+streamLabel+'</a>':'';
+  const seriesInfo=g.seriesRecord?' \u00b7 '+g.seriesRecord:'';
+  el.style.display='block';
+  el.innerHTML='<div class="ww-bar" id="ww-inner"><span class="ww-pulse"></span><span class="ww-soon">'+minsStr+'</span><span class="ww-game">'+(g.away||'')+' @ '+(g.home||'')+seriesInfo+'</span>'+netChip+'<button class="ww-close" id="ww-close">\u2715</button></div>';
+  document.getElementById('ww-close')?.addEventListener('click',e=>{e.stopPropagation();_wwDismissed=true;el.style.display='none';});
+  document.getElementById('ww-inner')?.addEventListener('click',e=>{if(e.target.id==='ww-close'||e.target.closest('a')) return;const h=(g.home||'').replace(/[^a-z]/gi,'').toLowerCase();const card=[...document.querySelectorAll('.game-card')].find(c=>(c.dataset.home||'').replace(/[^a-z]/gi,'').toLowerCase()===h);if(card)card.scrollIntoView({behavior:'smooth',block:'center'});});
+  if(!_wwInterval){_wwInterval=setInterval(()=>{const startMs=new Date(best.g.start_time).getTime();if(Date.now()>startMs+5*60000)_wwDismissed=false;renderWatchWindow();},60000);}
+}
+
+
+// J7: SITUATION-ROOM CDW NOTES
+const CDW_STATS = {
+  nfl_4th_short:   '4th and short: league avg 72% go-for-it. Success rate ~68%.',
+  nfl_4th_any:     'NFL 4th down: analytics favor going for it more than coaches historically do.',
+  nfl_2min:        '2-minute drill: ~1.4 scoring opportunities remain historically.',
+  nfl_redzone:     'Red zone: NFL teams score TDs on ~58% of red zone possessions.',
+  mlb_bases_full:  'Bases loaded: historical run-scoring rate is 61% for the at-bat.',
+  mlb_bases_risp:  'Runner in scoring position: RBI rate ~28% for average hitter.',
+  mlb_full_count:  'Full count (3-2): hit 28%, walk 14%, strikeout 22%.',
+  mlb_2out_risp:   '2-out RISP: batting average drops to ~.240 historically under pressure.',
+  nba_ot:          'NBA OT: teams up 3+ at OT tipoff win 67% of the time.',
+  nhl_ot:          'NHL OT: 73% of games end within the first 5 minutes.',
+};
+function getCDWNote(score, sport){
+  const sp=(sport||'').toLowerCase();
+  const sit=score.situation||{};
+  const dn=(sit.shortDownDistanceText||sit.downDistanceText||'').toLowerCase();
+  if(sp.includes('nfl')||sp.includes('football')){
+    if(dn.includes('4th')&&(/\b[12]\b/.test(dn)||sit.isRedZone)) return CDW_STATS.nfl_4th_short;
+    if(dn.includes('4th')) return CDW_STATS.nfl_4th_any;
+    if(dn.includes('2-minute')||dn.includes('2 minute')) return CDW_STATS.nfl_2min;
+    if(sit.isRedZone) return CDW_STATS.nfl_redzone;
+  }
+  if(sp.includes('baseball')||sp.includes('mlb')){
+    const bases=[score.onFirst,score.onSecond,score.onThird].filter(Boolean).length;
+    if(bases===3) return CDW_STATS.mlb_bases_full;
+    if(score.outs===2&&(score.onSecond||score.onThird)) return CDW_STATS.mlb_2out_risp;
+    if(score.balls===3&&score.strikes===2&&(score.onSecond||score.onThird)) return CDW_STATS.mlb_full_count;
+    if(score.onSecond||score.onThird) return CDW_STATS.mlb_bases_risp;
+  }
+  if(sp.includes('nba')||sp.includes('basketball'))
+    if((score.period||0)>4) return CDW_STATS.nba_ot;
+  if(sp.includes('nhl')||sp.includes('hockey'))
+    if((score.period||0)>3) return CDW_STATS.nhl_ot;
+  return null;
+}
+
+
 function injectDramaBadges(){
   const cards = document.querySelectorAll('.game-card.espn-live');
   cards.forEach(card => {
@@ -8267,17 +8399,13 @@ function injectDramaBadges(){
     if(!eData) return;
     const sport = card.dataset.sport||'';
     const score = dramaScoreLive(eData, sport);
-
-    // QW-1: Store live drama score on game object + update session peak
-    if(allData&&allData.sports){
-      allData.sports.forEach(sec=>(sec.games||[]).forEach(g=>{
-        if(g._id===gid){ g._dramaNow=score; }
-      }));
-    }
-    setDramaPeak(gid, score); // update sessionStorage peak
-
     const tier = dramaTier(score);
-    if(!tier) { card.querySelectorAll('.drama-badge').forEach(b=>b.remove()); return; }
+    if(gid && score > 0){
+      const peakKey = 'field_drama_peak_' + gid;
+      const prevPeak = parseFloat(localStorage.getItem(peakKey)||'0');
+      if(score > prevPeak) localStorage.setItem(peakKey, score.toString());
+    }
+    if(!tier) return;
 
     // Remove existing badge
     card.querySelectorAll('.drama-badge').forEach(b=>b.remove());
@@ -8285,125 +8413,75 @@ function injectDramaBadges(){
     if(!liveEl) return;
     const badge = document.createElement('span');
     badge.className = `drama-badge drama-${tier}`;
-    // QW-1: show numeric drama score alongside tier emoji
-    badge.textContent = dramaLabel(score) + ' ' + score;
-    badge.title = `Drama score: ${score}/100`;
+    badge.textContent = dramaLabel(score);
     liveEl.insertAdjacentElement('afterend', badge);
   });
-
-  // After updating all game drama scores, refresh the NOW button
-  renderDramaNowBtn();
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// FEATURE: ONE TO WATCH + HIDDEN DRAMA (Wow #26)
-// Live OTW: highest-drama live game (existing)
-// Hidden Drama (new): upcoming high-stakes games starting within 90 minutes
-// Two separate banners, different styles. Hidden drama dismissed independently.
+// FEATURE: ONE TO WATCH — Highest-drama live game banner
 // ═══════════════════════════════════════════════════════════════════════════
 let _otwDismissed = false;
-let _hiddenDramaDismissed = false;
 
 function renderOneToWatch(){
   const banner = document.getElementById('otw-banner');
-  if(!banner) return;
+  if(!banner || _otwDismissed) return;
 
-  // ── PART A: Live OTW (existing behavior) ─────────────────────────────────
-  if(!_otwDismissed){
-    let best = null, bestScore = 0;
-    (allData?.sports||[]).forEach(sec => {
-      (sec.games||[]).forEach(g => {
-        if(!g._id) return;
-        const s = g._dramaNow || 0; // use stored drama score from QW-1
-        if(s > bestScore){ bestScore = s; best = {g, sport: sec.sport, score: s}; }
-      });
-    });
-
-    if(best && bestScore >= 50){
-      const {g, sport, score} = best;
-      const tier = dramaTier(score);
-      const ed = Object.values(espnScores).find(v => {
-        const h = (g.home||'').toLowerCase();
-        return (v.homeName||'').toLowerCase().includes(h.split(' ').slice(-1)[0]) ||
-               h.includes((v.homeName||'').toLowerCase().split(' ').slice(-1)[0]);
-      });
-      const scoreStr = ed && ed.state==='in' ? ` ${ed.homeScore||0}–${ed.awayScore||0}` : '';
-      const clockStr = ed?.clock ? ` · ${ed.period?'Q'+ed.period+' ':''}${ed.clock}` : '';
-
-      banner.style.display = 'block';
-      banner.innerHTML = `<div class="otw-inner" id="otw-inner" role="button" tabindex="0" aria-label="Jump to live game">
-        <span class="otw-pulse"></span>
-        <span class="otw-label">One to Watch</span>
-        <span class="otw-matchup">${g.away||''} @ ${g.home||''}${scoreStr}${clockStr}</span>
-        <span class="otw-drama d-${tier}">${score} 🔥</span>
-        <button class="otw-close" id="otw-close" aria-label="Dismiss">✕</button>
-      </div>`;
-
-      document.getElementById('otw-close')?.addEventListener('click', e => {
-        e.stopPropagation(); _otwDismissed = true; banner.style.display = 'none';
-      });
-      document.getElementById('otw-inner')?.addEventListener('click', e => {
-        if(e.target.id==='otw-close') return;
-        const h = (g.home||'').replace(/[^a-z]/gi,'').toLowerCase();
-        const card = [...document.querySelectorAll('.game-card')]
-          .find(c => (c.dataset.home||'').replace(/[^a-z]/gi,'').toLowerCase()===h);
-        if(card) card.scrollIntoView({behavior:'smooth', block:'center'});
-      });
-      return; // live OTW shown — don't show hidden drama simultaneously
-    } else {
-      banner.style.display = 'none';
-    }
-  }
-
-  // ── PART B: Hidden Drama (Wow #26) — upcoming high-stakes games ──────────
-  // Shows when: no live OTW active, game starts within 90 min, preGameScore >= 35
-  if(_hiddenDramaDismissed) return;
-
-  const nowMs = Date.now();
-  const ninetyMin = 90 * 60 * 1000;
-  let hidden = null, hiddenScore = 0;
-
+  // Find highest-drama live game
+  let best = null, bestScore = 0;
   (allData?.sports||[]).forEach(sec => {
     (sec.games||[]).forEach(g => {
-      if(!g.start_time || !g.home || !g.away) return;
-      const startMs = new Date(g.start_time).getTime();
-      const diff = startMs - nowMs;
-      if(diff < 0 || diff > ninetyMin) return; // only upcoming within 90 min
-      const ps = preGameScore(g);
-      if(ps > hiddenScore){ hiddenScore = ps; hidden = {g, sport: sec.sport, score: ps}; }
+      if(!g._id) return;
+      // Find matching espnScores entry
+      const eKey = Object.keys(espnScores).find(k => {
+        const ed = espnScores[k];
+        if(ed.state !== 'in') return false;
+        const h = (g.home||'').toLowerCase();
+        const a = (g.away||'').toLowerCase();
+        return h.includes((ed.homeName||'').toLowerCase().split(' ').slice(-1)[0]) ||
+               (ed.homeName||'').toLowerCase().includes(h.split(' ').slice(-1)[0]);
+      });
+      if(!eKey) return;
+      const ed = espnScores[eKey];
+      const s = dramaScoreLive(ed, sec.sport);
+      if(s > bestScore){ bestScore = s; best = {g, ed, sport: sec.sport, score: s}; }
     });
   });
 
-  if(!hidden || hiddenScore < 35){
+  if(!best || bestScore < 50){
     banner.style.display = 'none';
     return;
   }
 
-  const {g, sport, score} = hidden;
-  const minsAway = Math.round((new Date(g.start_time).getTime() - nowMs) / 60000);
-  const timeStr  = fmtTime(g.start_time);
-  const label    = g.narrative?.label || g.league || sport;
-  const urgency  = minsAway <= 15 ? '🔴' : minsAway <= 30 ? '🟠' : '📈';
+  const tier = dramaTier(bestScore);
+  const {g, ed, sport, score} = best;
+  const scoreStr = ed.state === 'in'
+    ? `${ed.homeScore||0}–${ed.awayScore||0}`
+    : '';
+  const clockStr = ed.clock
+    ? ` · ${ed.period ? 'Q'+ed.period+' ' : ''}${ed.clock}`
+    : '';
 
   banner.style.display = 'block';
-  banner.innerHTML = `<div class="otw-inner" id="hd-inner" role="button" tabindex="0"
-    style="background:linear-gradient(135deg,rgba(139,92,246,.1),rgba(201,168,76,.08));border-color:rgba(139,92,246,.3);"
-    aria-label="Upcoming high-stakes game">
-    <span style="font-size:.85rem">${urgency}</span>
-    <span class="otw-label" style="color:var(--violet)">Worth Watching</span>
-    <span class="otw-matchup">${g.away||''} @ ${g.home||''} · ${timeStr}</span>
-    <span class="otw-drama" style="background:rgba(139,92,246,.15);color:var(--violet)">${label.split('·')[0].trim()}</span>
-    <button class="otw-close" id="hd-close" aria-label="Dismiss">✕</button>
+  banner.innerHTML = `<div class="otw-inner" id="otw-inner" role="button" tabindex="0" aria-label="Jump to live game">
+    <span class="otw-pulse"></span>
+    <span class="otw-label">One to Watch</span>
+    <span class="otw-matchup">${g.away||''} @ ${g.home||''} &nbsp;${scoreStr}${clockStr}</span>
+    <span class="otw-drama d-${tier}">${score}% 🔥</span>
+    <button class="otw-close" id="otw-close" aria-label="Dismiss">✕</button>
   </div>`;
 
-  document.getElementById('hd-close')?.addEventListener('click', e => {
-    e.stopPropagation(); _hiddenDramaDismissed = true; banner.style.display = 'none';
+  document.getElementById('otw-close')?.addEventListener('click', e => {
+    e.stopPropagation();
+    _otwDismissed = true;
+    banner.style.display = 'none';
   });
-  document.getElementById('hd-inner')?.addEventListener('click', e => {
-    if(e.target.id==='hd-close') return;
+  document.getElementById('otw-inner')?.addEventListener('click', e => {
+    if(e.target.id === 'otw-close') return;
+    // Scroll to the matching card
     const h = (g.home||'').replace(/[^a-z]/gi,'').toLowerCase();
     const card = [...document.querySelectorAll('.game-card')]
-      .find(c => (c.dataset.home||'').replace(/[^a-z]/gi,'').toLowerCase()===h);
+      .find(c => (c.dataset.home||'').replace(/[^a-z]/gi,'').toLowerCase() === h);
     if(card) card.scrollIntoView({behavior:'smooth', block:'center'});
   });
 }
@@ -8505,36 +8583,23 @@ function maybePushFrenchOpen(sections){
   const FO_END   = "2026-06-08";
   const PREVIEW_FROM = "2026-05-15";
   if(TODAY_ISO < PREVIEW_FROM || TODAY_ISO > FO_END) return;
-
-  // Round schedule (day of month during tournament)
-  // Clay courts start 7am ET = T11:00:00Z
-  const ROLAND_GARROS_ROUNDS = {
-    25:"R128 — Day 1",26:"R128 — Day 2",27:"R64",28:"R64",
-    29:"R32",30:"R32",31:"R16",
-    1:"R16",2:"Quarterfinals",3:"Quarterfinals",
-    4:"Semifinals",5:"Women's Final",7:"Men's Final",8:"Men's Final"
-  };
-
   const isLive   = TODAY_ISO >= FO_START && TODAY_ISO <= FO_END;
   const daysAway = isLive ? 0 : Math.round((new Date(FO_START) - new Date(TODAY_ISO)) / 86400000);
-  const todayDOM = new Date(TODAY_ISO+"T12:00:00Z").getUTCDate();
-  const round    = isLive ? (ROLAND_GARROS_ROUNDS[todayDOM]||"Play") : "";
   const phaseStr = isLive
-    ? `🔴 LIVE · ${round}`
+    ? "🔴 LIVE NOW · Roland Garros"
     : `📅 Starts in ${daysAway} day${daysAway===1?"":"s"}`;
   const foGame = {
     home: "Roland Garros 2026",
     away: null,
     league: `French Open · ${phaseStr}`,
-    start_time: (isLive ? TODAY_ISO : FO_START) + "T11:00:00Z",
+    start_time: FO_START + "T10:00:00Z",
     venue: "Stade Roland Garros, Paris",
     streams: resolveBundle("TENNIS_FO"),
     _id: "fo_2026_preview",
     _sport: "Tennis",
-    leaderNote: isLive
-      ? `${round} · TC / TC+ / Max (WBD)`
-      : "May 25 – Jun 8 · Tennis Channel · TC+ · Max (WBD rights)",
+    leaderNote: isLive ? "Live draws · TC / TC+ / ESPN" : "May 25 – Jun 8 · TV: TC · TC+ · ESPN · NBC (finals)",
   };
+  // Merge into existing Tennis section or create new one
   const tennis = sections.find(s => s.sport === "Tennis");
   if(tennis){
     if(!tennis.games.some(g => g._id === "fo_2026_preview"))
@@ -8604,6 +8669,19 @@ function injectBaseballSitChips(){
 // ★ tap target on each card · MY TEAMS filter pill · localStorage persistence
 // Grade impact: Controls A- → A · Schedule B → B+ · Game Cards A- → A
 // ═══════════════════════════════════════════════════════════════════════════
+
+// Wow #37: MY RIVALS
+const RIVALRIES=[['boston celtics','los angeles lakers'],['chicago bulls','detroit pistons'],['new york knicks','miami heat'],['los angeles lakers','golden state warriors'],['cleveland cavaliers','chicago bulls'],['boston celtics','new york knicks'],['golden state warriors','oklahoma city thunder'],['miami heat','boston celtics'],['montreal canadiens','toronto maple leafs'],['boston bruins','montreal canadiens'],['new york rangers','new jersey devils'],['detroit red wings','colorado avalanche'],['chicago blackhawks','st. louis blues'],['pittsburgh penguins','philadelphia flyers'],['vegas golden knights','colorado avalanche'],['new york yankees','boston red sox'],['new york mets','new york yankees'],['chicago cubs','st. louis cardinals'],['los angeles dodgers','san francisco giants'],['cleveland guardians','chicago white sox'],['detroit tigers','chicago white sox'],['atlanta braves','new york mets'],['dallas cowboys','philadelphia eagles'],['new england patriots','new york jets'],['green bay packers','chicago bears'],['san francisco 49ers','seattle seahawks'],['baltimore ravens','pittsburgh steelers'],['kansas city chiefs','las vegas raiders'],['new york giants','dallas cowboys'],['manchester united','manchester city'],['arsenal','tottenham hotspur'],['liverpool','manchester united'],['real madrid','fc barcelona'],['la galaxy','lafc'],['seattle sounders','portland timbers']];
+const RIVAL_MAP=new Map();
+for(const [a,b] of RIVALRIES){if(!RIVAL_MAP.has(a))RIVAL_MAP.set(a,new Set());if(!RIVAL_MAP.has(b))RIVAL_MAP.set(b,new Set());RIVAL_MAP.get(a).add(b);RIVAL_MAP.get(b).add(a);}
+let rivalsFilter=false;
+function isRivalGame(g){
+  const h=(g.home||'').toLowerCase(),a=(g.away||'').toLowerCase();
+  for(const t of MY_TEAMS){const tl=t.toLowerCase();if(h===tl||a===tl)return false;const rivals=RIVAL_MAP.get(tl)||new Set();if(rivals.has(h)||rivals.has(a))return true;}
+  return false;
+}
+
+
 let MY_TEAMS = new Set(JSON.parse(localStorage.getItem('field_my_teams')||'[]'));
 function saveMyTeams(){ try{ localStorage.setItem('field_my_teams', JSON.stringify([...MY_TEAMS])); }catch(e){} }
 function toggleMyTeam(name){
@@ -8739,19 +8817,87 @@ function saveEspnFinal(game, eData){
     const existing = JSON.parse(localStorage.getItem(FINALS_KEY)||'[]');
     const id = game._id || (game.home+game.away);
     if(existing.some(f=>f.id===id)) return; // already saved
+    const dpKey2='field_drama_peak_'+(game._id||'');
+    const dramaPeak=parseFloat(localStorage.getItem(dpKey2)||'0');
     existing.push({
       id, home:game.home||'', away:game.away||'',
       homeScore:eData.homeScore, awayScore:eData.awayScore,
       sport:game._sport||'', league:game.league||'',
       seriesRecord: game.seriesRecord||'',
-      date: today,
+      date: today, dramaPeak,
     });
-    localStorage.setItem(FINALS_KEY, JSON.stringify(existing.slice(-20))); // keep last 20
+    localStorage.setItem(FINALS_KEY, JSON.stringify(existing.slice(-20)));
     localStorage.setItem(FINALS_DATE_KEY, today);
+    try{
+      const tnKey='field_tonight_finals_'+today;
+      const tnPool=JSON.parse(localStorage.getItem(tnKey)||'[]');
+      if(!tnPool.some(f=>f.id===id)){
+        tnPool.push({id,home:game.home||'',away:game.away||'',homeScore:eData.homeScore,awayScore:eData.awayScore,sport:game._sport||'',league:game.league||'',seriesRecord:game.seriesRecord||'',dramaPeak});
+        localStorage.setItem(tnKey,JSON.stringify(tnPool.slice(-10)));
+      }
+    }catch(e2){}
   }catch(e){}
 }
 
 // Render Last Night's Results bar above the schedule
+
+// J5: NIGHT OWL RECAP
+function loadTonightFinals(){
+  try{const tzStr=(typeof tz==='string'?tz:'America/New_York');const today=new Date().toLocaleDateString('en-CA',{timeZone:tzStr});return JSON.parse(localStorage.getItem('field_tonight_finals_'+today)||'[]');}catch(e){return [];}
+}
+function buildNightOwlStatic(f){
+  const winner=(f.homeScore||0)>=(f.awayScore||0)?f.home:f.away;
+  const loser=(f.homeScore||0)>=(f.awayScore||0)?f.away:f.home;
+  const score=f.awayScore+'\u2013'+f.homeScore;
+  let line=winner+' defeated '+loser+' '+score+'.';
+  if(f.seriesRecord) line+=' Series: '+f.seriesRecord+'.';
+  line+=' Full breakdown in tomorrow\'s FIELD Brief.';
+  return line;
+}
+async function fetchNightOwlFromClaude(topGame){
+  const budget=journalismCallsToday();
+  if(!budget.canCall()) return null;
+  const winner=(topGame.homeScore||0)>=(topGame.awayScore||0)?topGame.home:topGame.away;
+  const score=topGame.awayScore+'\u2013'+topGame.homeScore;
+  const prompt=['Write a FIELD Night Owl recap.','Game: '+topGame.away+' @ '+topGame.home,'Final: '+score+' ('+winner+' wins)',topGame.seriesRecord?'Series: '+topGame.seriesRecord:'',topGame.dramaPeak?'Drama peak: '+Math.round(topGame.dramaPeak)+'/100':'','','Rules: 120-150 words. Tactical. Not emotional. Lead with the turning point.','Explain what tactically swung the game. Series implication. No invented stats. No cliches. Plain prose.'].filter(Boolean).join('\n');
+  try{
+    const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:prompt}]})});
+    if(!r.ok) return null;
+    const data=await r.json();
+    const text=(data.content||[]).filter(c=>c.type==='text').map(c=>c.text).join('');
+    if(text&&text.length>40){budget.inc();return text.trim();}
+  }catch(e){}
+  return null;
+}
+let _nightOwlRendered=false;
+async function renderNightOwlRecap(){
+  const el=document.getElementById('night-owl');
+  if(!el||_nightOwlRendered) return;
+  const finals=loadTonightFinals();
+  if(!finals.length){el.style.display='none';return;}
+  const tzStr=(typeof tz==='string'?tz:'America/New_York');
+  const hour=parseInt(new Date().toLocaleTimeString('en-US',{timeZone:tzStr,hour:'numeric',hour12:false}));
+  if(finals.length<1||(hour<22&&finals.length<2)){el.style.display='none';return;}
+  const topGame=finals.slice().sort((a,b)=>(b.dramaPeak||0)-(a.dramaPeak||0))[0];
+  if(!topGame){el.style.display='none';return;}
+  const cacheKey='field_nightowl_'+topGame.id;
+  const cached=sessionStorage.getItem(cacheKey);
+  const winner=(topGame.homeScore||0)>=(topGame.awayScore||0)?topGame.home:topGame.away;
+  const scoreLabel=topGame.awayScore+'\u2013'+topGame.homeScore;
+  _nightOwlRendered=true;
+  el.style.display='block';
+  const renderCard=(text,loaded)=>{
+    el.innerHTML='<div class="night-owl-card" id="night-owl-inner"><div class="night-owl-header"><span class="night-owl-label">FIELD Night Owl</span><span class="night-owl-score">'+winner+' '+scoreLabel+(topGame.seriesRecord?' \u00b7 '+topGame.seriesRecord:'')+'</span></div><div class="night-owl-text'+(loaded?'':' pending')+'">'+text+'</div></div>';
+    document.getElementById('night-owl-inner')?.addEventListener('click',()=>document.getElementById('night-owl-inner')?.classList.toggle('collapsed'));
+  };
+  if(cached){renderCard(cached,true);return;}
+  renderCard(buildNightOwlStatic(topGame),false);
+  const claudeText=await fetchNightOwlFromClaude(topGame);
+  if(claudeText){const textEl=el.querySelector('.night-owl-text');if(textEl){textEl.textContent=claudeText;textEl.classList.remove('pending');textEl.classList.add('loaded');}sessionStorage.setItem(cacheKey,claudeText);}
+  else{const textEl=el.querySelector('.night-owl-text');if(textEl){textEl.classList.remove('pending');textEl.classList.add('loaded');}}
+}
+
+
 function renderLastNight(){
   const existing = document.getElementById('last-night-bar');
   if(existing) existing.remove();
@@ -8797,6 +8943,7 @@ function checkForNewFinals(){
       if(_seenFinals.has(game._id)) return;
       _seenFinals.add(game._id);
       saveEspnFinal(game, eData);
+      renderNightOwlRecap().catch(()=>{});
     });
   });
 }
