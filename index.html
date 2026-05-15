@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
+<link rel="icon" href="data:,">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,interactive-widget=resizes-content"/>
 <title>FIELD — Global Sports Intelligence</title>
 <link rel="manifest" href="data:application/manifest+json,{"name":"FIELD — Global Sports Intelligence","short_name":"FIELD","description":"Live scores, schedules, streaming, and drama scores across every sport.","start_url":".","display":"standalone","background_color":"#070710","theme_color":"#c9a84c","orientation":"portrait-primary","icons":[{"src":"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='80' fill='%23070710'/%3E%3Ccircle cx='256' cy='256' r='180' fill='none' stroke='%23c9a84c' stroke-width='24'/%3E%3Ctext x='256' y='310' font-family='serif' font-size='200' font-weight='bold' fill='%23c9a84c' text-anchor='middle'%3EF%3C/text%3E%3C/svg%3E","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}]}"/>
@@ -7041,8 +7042,10 @@ const ATP_REFRESH_LIVE = 10000;   // 10s when live matches active
 const ATP_REFRESH_IDLE = 120000;  // 2min when no live matches
 let atpLastModified = null;
 let atpIntervalId = null;
+let atpPollingDisabled = false; // stops ATP polling after first CORS/network failure
 
 async function fetchATPLiveScores(){
+  if(atpPollingDisabled) return;
   if(!document.querySelector('.sport-section[data-sport="Tennis"]')) {
     // No tennis section rendered today — reschedule at idle rate, don't spam
     atpIntervalId = setTimeout(fetchATPLiveScores, ATP_REFRESH_IDLE);
@@ -7069,6 +7072,12 @@ async function fetchATPLiveScores(){
       return;
     }
   } catch(e){
+    if(e instanceof TypeError) {
+      // Network or CORS failure — ATP Tour API doesn't allow browser CORS.
+      // Disable polling permanently on first failure (browser already logged the error).
+      atpPollingDisabled = true;
+      return;
+    }
     if(FIELD_DEBUG) console.debug('[ATP] fetch failed:', e.message);
   }
   atpIntervalId = setTimeout(fetchATPLiveScores, ATP_REFRESH_IDLE);
@@ -7852,6 +7861,10 @@ renderUsageBadge(getUsage());
     if(FIELD_DEBUG) console.debug("FIELD geo unavailable:",e.message);
   }
 })();
+
+// MY_TEAMS must be initialized before goToDate() triggers buildFilters()
+let MY_TEAMS = new Set(JSON.parse(localStorage.getItem('field_my_teams')||'[]'));
+function saveMyTeams(){ try{ localStorage.setItem('field_my_teams', JSON.stringify([...MY_TEAMS])); }catch(e){} }
 
 goToDate(TODAY_ISO);
 
@@ -8837,8 +8850,7 @@ function isRivalGame(g){
 }
 
 
-let MY_TEAMS = new Set(JSON.parse(localStorage.getItem('field_my_teams')||'[]'));
-function saveMyTeams(){ try{ localStorage.setItem('field_my_teams', JSON.stringify([...MY_TEAMS])); }catch(e){} }
+// MY_TEAMS initialized earlier (before goToDate) — see ~line before goToDate(TODAY_ISO)
 function toggleMyTeam(name){
   if(!name) return;
   MY_TEAMS.has(name) ? MY_TEAMS.delete(name) : MY_TEAMS.add(name);
