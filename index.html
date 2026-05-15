@@ -650,6 +650,7 @@ flex-shrink:0;white-space:nowrap;
   font-family:var(--ff-mono);font-size:.65rem;
   animation:fadeIn .2s ease both;
   grid-column:2 / 4;grid-row:3;
+  overflow-x:auto;
 }
 .standings-panel.open{display:block}
 .standings-table{width:100%;border-collapse:collapse}
@@ -1341,6 +1342,11 @@ flex-shrink:0;white-space:nowrap;
   font-size:.55rem;font-weight:700;color:#4ade80;
   margin-left:1px;flex-shrink:0;
 }
+/* Wow#32: Marginal cost display — shown when user doesn't have service */
+.chip-cost{
+  font-size:.5rem;font-weight:700;color:#fbbf24;opacity:.85;
+  margin-left:2px;flex-shrink:0;white-space:nowrap;
+}
 .chip-overflow{
   font-family:var(--ff-mono);font-size:.55rem;color:var(--smoke);
   border:1px solid var(--edge);border-radius:3px;padding:.1rem .3rem;
@@ -1693,8 +1699,8 @@ flex-shrink:0;white-space:nowrap;
   .watch-btn{ font-size:.58rem; padding:.15rem .35rem; }
   /* Share btn: ensure tap target */
   .share-btn{ padding:.35rem .5rem; font-size:.9rem; }
-  /* Standings table button */
-  .standings-btn{ display:none; }  /* hide on mobile — table data too wide */
+  /* Standings table button — visible on mobile, panel scrolls horizontally */
+  .standings-btn{ display:inline-flex; font-size:.5rem; padding:.15rem .3rem; }
 }
 
 /* My Services modal: full-screen on mobile, larger tap targets */
@@ -3478,7 +3484,13 @@ function chipHTML(s, srKey, forcehave){
   const hasPriceNote = tipBody.includes("$") || tipBody.includes("/mo") || tipBody.includes("/month");
   const priceNote = hasPriceNote ? "<br><em style=\"opacity:.6;font-size:.9em\">Prices as of 2026 — verify current pricing at service.</em>" : "";
   const haveClass = haveIt ? " have-access" : "";
-  const haveSpan = `<span class="chip-have">${haveIt?"✓":""}</span>`;
+  // Wow#32: Marginal Cost Display
+  const chipCost = !haveIt && auth !== 'free' && SERVICE_COST[srKey]
+    ? SERVICE_COST[srKey] + '/mo'
+    : null;
+  const haveSpan = haveIt
+    ? `<span class="chip-have">✓ Included</span>`
+    : (chipCost ? `<span class="chip-cost">${chipCost}</span>` : `<span class="chip-have"></span>`);
   const freeBadge = auth === "free" ? `<span class="chip-free-badge">FREE</span>` : "";
   // On mobile/touch: use native app deeplink if available, fall back to web
   const deeplink = APP_DEEPLINKS[srKey]||null;
@@ -4365,6 +4377,11 @@ function buildTodaySchedule(){
     // BUF @ MTL G6: Sat May 16 8pm ET on ABC/ESPN — enters tomorrow's schedule
     {home:"Montreal Canadiens", away:"Buffalo Sabres",   league:"NHL Playoffs – East Semis G6 · MTL leads 3-2", start_time:"2026-05-17T00:00:00Z", confirmed:true, venue:"Bell Centre, Montreal QC",   streams:resolveBundle("NHL_ABC"), crew:"Sean McDonough · Ray Ferraro · Haley Skarupa (ESPN/ABC)"},
     // VGK @ ANA G7: TBD (likely May 16-17 on ABC/ESPN)
+    // ── NHL Western Conference Finals — Colorado Avalanche vs Vegas Golden Knights ──
+    // VGK wins R2 4-2 (clinched May 14) · COL wins R2 4-1 (clinched May 13)
+    {home:"Colorado Avalanche",  away:"Vegas Golden Knights", league:"NHL Playoffs – West CF G1 · Series 0-0", start_time:"2026-05-21T00:00:00Z", confirmed:true, venue:"Ball Arena, Denver CO",      streams:resolveBundle("NHL_ESPN"), crew:"ESPN/ABC broadcast team", seriesRecord:"0-0"},
+    {home:"Colorado Avalanche",  away:"Vegas Golden Knights", league:"NHL Playoffs – West CF G2 · Series 0-0", start_time:"2026-05-23T00:00:00Z", confirmed:true, venue:"Ball Arena, Denver CO",      streams:resolveBundle("NHL_ESPN"), seriesRecord:"0-0"},
+    {home:"Vegas Golden Knights",away:"Colorado Avalanche",   league:"NHL Playoffs – West CF G3 · Series 0-0", start_time:"2026-05-25T00:00:00Z", confirmed:true, venue:"T-Mobile Arena, Las Vegas NV",streams:resolveBundle("NHL_ESPN"), seriesRecord:"0-0"},
   ].filter(g=>isToday(g.start_time));  // ── MLB (May 11: Monday slate + EFL 2nd leg) ──────────────────────────────
   // ── MLB schedule: May 8 (Fri) – May 11 (Mon) ────────────────────────────────
   // isToday() filters to the viewer's local date — correct games show each day
@@ -4513,6 +4530,13 @@ function buildTodaySchedule(){
     {home:"Los Angeles Angels",   away:"Los Angeles Dodgers",    start_time:"2026-05-16T01:38:00Z", confirmed:true, venue:"Angel Stadium, Anaheim CA",            localNote:"ABTV (Angels) · Spectrum SportsNet LA (Dodgers)"},
     {home:"Seattle Mariners",     away:"San Diego Padres",       start_time:"2026-05-16T01:40:00Z", confirmed:true, venue:"T-Mobile Park, Seattle WA",            localNote:"Mariners.TV (Seattle) · Padres.TV (San Diego)"},
     {home:"Athletics",            away:"San Francisco Giants",   start_time:"2026-05-16T01:40:00Z", confirmed:true, venue:"Sutter Health Park, Sacramento CA",    localNote:"Athletics.TV · NBC Sports Bay Area (SF)"},
+    // ── Saturday May 16, 2026 — FOX Rivalry Weekend ──────────────────────────────
+    // FS1 4:05pm — Battle of the Beltway (non-exclusive: NATS/MASN also carry)
+    {home:"Washington Nationals", away:"Baltimore Orioles",       start_time:"2026-05-16T20:05:00Z", confirmed:true, venue:"Nationals Park, Washington DC",           nationalBundle:"MLB_FOX", localNote:"FS1 · MASN (Baltimore) · Nationals.TV (DC)"},
+    // FOX 7:15pm — Subway Series (EXCLUSIVE: no local RSN)
+    {home:"New York Mets",        away:"New York Yankees",        start_time:"2026-05-16T23:15:00Z", confirmed:true, venue:"Citi Field, Queens NY",                   nationalBundle:"MLB_FOX", localNote:"FOX (free OTA) — Subway Series"},
+    // FOX 7:15pm — Padres @ Mariners (regional — West Coast markets)
+    {home:"Seattle Mariners",     away:"San Diego Padres",        start_time:"2026-05-16T23:15:00Z", confirmed:true, venue:"T-Mobile Park, Seattle WA",               nationalBundle:"MLB_FOX", localNote:"FOX (free OTA) — regional window"},
   ];
   const mlbGames=mlbRaw.filter(g=>isToday(g.start_time)).map(g=>{
     // Stream resolution — priority order (highest first):
@@ -8365,14 +8389,14 @@ async function fetchFIELDBriefFromClaude(sections){
     const free=g.streams&&g.streams[0]&&new Set(['ABC','NBC','CBS','FOX','ION']).has(g.streams[0].label);
     return ['- '+g.away+' @ '+g.home,g.seriesRecord?'  Series: '+g.seriesRecord:'','  Network: '+stream+(free?' (FREE OTA)':''),g._section?'  Sport: '+g._section:'',preGameScore(g)>70&&!isNationalGame(g)?"  [SCOUT'S PICK]":'',isNationalGame(g)&&isBigMarketGame(g)&&preGameScore(g)<35?'  [ANTI-HYPE]':''].filter(Boolean).join('\n');
   }).join('\n\n');
-  const prompt=["Write a FIELD Brief for tonight's sports slate.",'','TONIGHT\'S GAMES:',gameLines,'','RULES:','- 100-120 words. 2 short paragraphs. No headers.','- Lead with the most important story.','- Call out FREE over-the-air games explicitly.',"- Surface Scout's Pick if flagged.",'- Flag Anti-Hype if present.','- Be tactical. No hype. No filler.','- Plain prose only. No bullet points.','- Always complete every sentence. Never end mid-sentence.'].join('\n');
+  const prompt=["Write a FIELD Brief for tonight's sports slate.",'','TONIGHT\'S GAMES:',gameLines,'','RULES:','- 100-120 words. 2 short paragraphs. No headers.','- Lead with the most important story.','- Call out FREE over-the-air games explicitly.',"- Surface Scout's Pick if flagged.",'- If [ANTI-HYPE] appears in a game line, describe that matchup as low-stakes in plain prose — never echo the tag [ANTI-HYPE] verbatim.','- Be tactical. No hype. No filler.','- Plain prose only. No bullet points.','- Always complete every sentence. Never end mid-sentence.'].join('\n');
   try{
     const r=await fetch(CLAUDE_PROXY_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1500,messages:[{role:'user',content:prompt}]})});
     if(!r.ok) return null;
     const data=await r.json();
     const text=(data.content||[]).filter(c=>c.type==='text').map(c=>c.text).join('');
-    if(text&&text.length>50){budget.inc();return text.trim();}
-  }catch(e){if(FIELD_DEBUG)console.error('[J2 Series Preview] proxy error:',e.message);}
+    if(text&&text.length>50){budget.inc();return text.replace(/\[ANTI-HYPE\]/gi,'').replace(/\s{2,}/g,' ').trim();}
+  }catch(e){if(FIELD_DEBUG)console.error('[J3 FIELD Brief] proxy error:',e.message);}
   return null;
 }
 async function initFIELDBrief(sections){
@@ -8928,6 +8952,17 @@ document.addEventListener('click', e => {
 //   NOT YET CONFIRMED: Hulu + Live TV, Sling TV, DirecTV, DirecTV Stream, Fubo, DISH, Verizon Fios
 //   Source: CableTV.com Jan 2026 + NBCUniversal carriage announcements
 //   Update this table when new carriage deals are confirmed.
+// ── Wow#32: Marginal Cost Display ─────────────────────────────────────────
+// Monthly cost per service key — shown on chips when user doesn't have that service.
+// Keys match stream service identifiers. Prices as of May 2026; verify at service.
+const SERVICE_COST = {
+  peacock:    '$7.99', appletv:   '$9.99',  paramount:  '$7.99',
+  max:        '$9.99', fubo:      '$82.99', youtubetv:  '$72.99',
+  hulu:       '$82.99',sling:     '$40.99', directv:    '$64.99',
+  mlbtv:      '$24.99',nbatv:     '$14.99', espnplus:   '$11.99',
+  peacockpremium: '$7.99',
+};
+
 const PACKAGE_INCLUDES = {
   youtubetv: ["espn","espn2","espnu","abc","nbc","nbcsn","cbs","fox","fs1","fs2","tnt","tbs","truv","nfln","usa","mlbn","bigten","sec","acc","cbssn","golf","bein"],
   hulu:      ["espn","espn2","espnu","abc","nbc","cbs","fox","fs1","fs2","tnt","tbs","truv","nfln","usa","mlbn","bigten","sec","acc","cbssn","golf","bein","bravo"],
