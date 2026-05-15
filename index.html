@@ -5610,11 +5610,10 @@ const BDL_CACHE_TTL = 60 * 60 * 1000; // 1 hour for injuries/stats
 
 // ── Sport keys map FIELD sport names → BDL API paths ──────────
 const BDL_SPORT_MAP = {
-  "NBA Playoffs":          { league:"nba",  injuryPath:"/nba/v1/injuries",  statsPath:"/nba/v1/stats"  },
-  "NHL Playoffs":          { league:"nhl",  injuryPath:"/nhl/v1/injuries",  statsPath:"/nhl/v1/stats"  },
-  "Baseball (MLB)":        { league:"mlb",  injuryPath:"/mlb/v1/injuries",  statsPath:"/mlb/v1/stats"  },
-  "NFL":                   { league:"nfl",  injuryPath:"/nfl/v1/injuries",  statsPath:"/nfl/v1/stats"  },
-  "WNBA":                  { league:"wnba", injuryPath:"/wnba/v1/injuries", statsPath:"/wnba/v1/stats"  },
+  // NOTE May 15 2026: All /v1/injuries endpoints returning 404.
+  // Balldontlie free key does not support injury data at these paths.
+  // Re-add entries when correct API paths are verified.
+  // "NBA Playoffs": { league:"nba", injuryPath:"/nba/v1/injuries", statsPath:"/nba/v1/stats" },
 };
 
 // ── Generic BDL fetch with auth header ────────────────────────
