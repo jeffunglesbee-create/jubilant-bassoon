@@ -3413,9 +3413,24 @@ function annotateChips(){
   document.querySelectorAll(".stream-chip[data-srkey]").forEach(chip=>{
     const key = chip.dataset.srkey;
     const haveIt = MY_SERVICES.has(key);
-    const haveEl = chip.querySelector(".chip-have");
     chip.classList.toggle("have-access", haveIt);
-    if(haveEl) haveEl.textContent = haveIt ? "✓" : "";
+
+    let haveEl = chip.querySelector(".chip-have");
+    const costEl = chip.querySelector(".chip-cost");
+
+    if(haveIt){
+      // Ensure .chip-have exists (Wow#32 may have rendered .chip-cost instead)
+      if(!haveEl){
+        haveEl = document.createElement("span");
+        haveEl.className = "chip-have";
+        chip.appendChild(haveEl);
+      }
+      haveEl.textContent = "✓ Included";
+      if(costEl) costEl.style.display = "none"; // hide cost when user has service
+    } else {
+      if(haveEl) haveEl.textContent = "";
+      if(costEl) costEl.style.display = ""; // restore cost badge
+    }
   });
 }
 
