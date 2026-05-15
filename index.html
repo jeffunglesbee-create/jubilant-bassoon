@@ -4219,10 +4219,10 @@ function renderAll(){
   mvSyncBtns();
   // Re-inject BDL injury badges and Squiggle tips after each render
   setTimeout(()=>{ injectBdlInjuryBadges(); injectSquiggleTips(); }, 150);
-  setTimeout(initSeriesPreviews, 400);
-  setTimeout(initEPLMatchBriefs, 500);
+  setTimeout(initSeriesPreviews, 400);  // J2: series preview cards
+  setTimeout(initEPLMatchBriefs, 700);  // EPL: match briefs — staggered to avoid rate limits
   renderWatchWindow();
-  initFIELDBrief(filtered).catch(()=>{});
+  setTimeout(()=>initFIELDBrief(filtered).catch(()=>{}), 1000); // J3: brief last — highest value, staggered
   setTimeout(injectWeatherBadges, 300); // re-apply wx badges from cache after render
   // Runtime silent error scan — FIELD_DEBUG only, runs after async injections settle
   if(FIELD_DEBUG) setTimeout(runSilentErrorScan, 500);
@@ -5649,7 +5649,7 @@ function bdlLoad(key){
     const {data, ts} = JSON.parse(raw);
     if(Date.now() - ts < BDL_CACHE_TTL) return data; // fresh
     localStorage.removeItem("bdl_"+key);             // expired — clear it
-  }catch(e){}
+  }catch(e){if(FIELD_DEBUG)console.debug('[bdlLoad] cache error:',e.message);}
   return null;
 }
 
@@ -7477,10 +7477,37 @@ async function fetchSoccerFixtures(){
         const aN=(away.team?.displayName||"unknown").toLowerCase().replace(/[^a-z0-9]/g,"");
         const stableId = "s_"+league.replace(".","")+"_"+hN+"_"+aN;
         _gid++;
+        // ── Soccer live score extraction ──────────────────────────────────────
+        // Store in espnScores so renderESPNScores overlays score on card.
+        // Keys match findESPNScore("home|away") format.
+        const homeName  = home.team?.displayName || '?';
+        const awayName  = away.team?.displayName || '?';
+        const hScore    = parseInt(home.score || '0');
+        const aScore    = parseInt(away.score || '0');
+        const stName    = ev.status?.type?.name || '';
+        const isLive    = stName.includes('IN_PROGRESS') || stName.includes('HALFTIME') ||
+                          stName.includes('FIRST_HALF')  || stName.includes('SECOND_HALF');
+        const isFinal   = stName.includes('FULL_TIME')   || stName.includes('FINAL');
+        const sClock    = ev.status?.displayClock || '';
+        const sPeriod   = ev.status?.period || 1;
+        const sDetail   = isLive ? (stName.includes('HALFTIME') ? 'HT' : sClock ? sClock+"'" : 'LIVE')
+                        : isFinal ? 'FT' : '';
+        if((isLive || isFinal) && homeName !== '?') {
+          const scoreKey = `${homeName}|${awayName}`;
+          espnScores[scoreKey] = {
+            state: isFinal ? 'post' : 'in',
+            period: sPeriod, clock: sClock, detail: sDetail,
+            homeScore: hScore, awayScore: aScore,
+            homeName, awayName,
+            homeWinning: hScore > aScore,
+            periodPrefix: sPeriod === 1 ? '1H' : '2H',
+          };
+          espnScoreTs[scoreKey] = Date.now();
+        }
         return {
           _id:stableId, _sport:section,
-          home:home.team?.displayName||"?",
-          away:away.team?.displayName||"?",
+          home:homeName,
+          away:awayName,
           league:section, start_time:ev.date||"",
           confirmed:true,
           venue:(comp.venue?.fullName||""),
@@ -7862,9 +7889,11 @@ renderUsageBadge(getUsage());
   }
 })();
 
-// MY_TEAMS must be initialized before goToDate() triggers buildFilters()
+// Filter state vars must be initialized before goToDate() triggers buildFilters()/renderAll()
 let MY_TEAMS = new Set(JSON.parse(localStorage.getItem('field_my_teams')||'[]'));
 function saveMyTeams(){ try{ localStorage.setItem('field_my_teams', JSON.stringify([...MY_TEAMS])); }catch(e){} }
+let rivalsFilter   = false; // true = show only My Teams rivals
+let myTeamsFilter  = false; // true = show only My Teams games
 
 goToDate(TODAY_ISO);
 
@@ -8240,7 +8269,7 @@ async function fetchSeriesPreviewFromClaude(g){
     const data=await r.json();
     const text=(data.content||[]).filter(c=>c.type==='text').map(c=>c.text).join('');
     if(text&&text.length>30){budget.inc();return text.trim();}
-  }catch(e){}
+  }catch(e){if(FIELD_DEBUG)console.error('[J3 FIELD Brief] proxy error:',e.message);}
   return null;
 }
 async function renderSeriesPreviewCard(gameCard){
@@ -8334,7 +8363,7 @@ async function fetchFIELDBriefFromClaude(sections){
     const data=await r.json();
     const text=(data.content||[]).filter(c=>c.type==='text').map(c=>c.text).join('');
     if(text&&text.length>50){budget.inc();return text.trim();}
-  }catch(e){}
+  }catch(e){if(FIELD_DEBUG)console.error('[J2 Series Preview] proxy error:',e.message);}
   return null;
 }
 async function initFIELDBrief(sections){
@@ -8842,7 +8871,7 @@ function injectBaseballSitChips(){
 const RIVALRIES=[['boston celtics','los angeles lakers'],['chicago bulls','detroit pistons'],['new york knicks','miami heat'],['los angeles lakers','golden state warriors'],['cleveland cavaliers','chicago bulls'],['boston celtics','new york knicks'],['golden state warriors','oklahoma city thunder'],['miami heat','boston celtics'],['montreal canadiens','toronto maple leafs'],['boston bruins','montreal canadiens'],['new york rangers','new jersey devils'],['detroit red wings','colorado avalanche'],['chicago blackhawks','st. louis blues'],['pittsburgh penguins','philadelphia flyers'],['vegas golden knights','colorado avalanche'],['new york yankees','boston red sox'],['new york mets','new york yankees'],['chicago cubs','st. louis cardinals'],['los angeles dodgers','san francisco giants'],['cleveland guardians','chicago white sox'],['detroit tigers','chicago white sox'],['atlanta braves','new york mets'],['dallas cowboys','philadelphia eagles'],['new england patriots','new york jets'],['green bay packers','chicago bears'],['san francisco 49ers','seattle seahawks'],['baltimore ravens','pittsburgh steelers'],['kansas city chiefs','las vegas raiders'],['new york giants','dallas cowboys'],['manchester united','manchester city'],['arsenal','tottenham hotspur'],['liverpool','manchester united'],['real madrid','fc barcelona'],['la galaxy','lafc'],['seattle sounders','portland timbers']];
 const RIVAL_MAP=new Map();
 for(const [a,b] of RIVALRIES){if(!RIVAL_MAP.has(a))RIVAL_MAP.set(a,new Set());if(!RIVAL_MAP.has(b))RIVAL_MAP.set(b,new Set());RIVAL_MAP.get(a).add(b);RIVAL_MAP.get(b).add(a);}
-let rivalsFilter=false;
+// rivalsFilter: moved earlier — see before goToDate(TODAY_ISO)
 function isRivalGame(g){
   const h=(g.home||'').toLowerCase(),a=(g.away||'').toLowerCase();
   for(const t of MY_TEAMS){const tl=t.toLowerCase();if(h===tl||a===tl)return false;const rivals=RIVAL_MAP.get(tl)||new Set();if(rivals.has(h)||rivals.has(a))return true;}
@@ -8860,7 +8889,7 @@ function toggleMyTeam(name){
 }
 
 // MY TEAMS filter mode — when active, show only games featuring a My Team
-let myTeamsFilter = false;
+// myTeamsFilter: moved earlier — see before goToDate(TODAY_ISO)
 
 // ── Star button delegate ─────────────────────────────────────────────────
 document.addEventListener('click', e => {
@@ -9033,7 +9062,7 @@ async function fetchNightOwlFromClaude(topGame){
     const data=await r.json();
     const text=(data.content||[]).filter(c=>c.type==='text').map(c=>c.text).join('');
     if(text&&text.length>40){budget.inc();return text.trim();}
-  }catch(e){}
+  }catch(e){if(FIELD_DEBUG)console.error('[J5 Night Owl] proxy error:',e.message);}
   return null;
 }
 let _nightOwlRendered=false;
