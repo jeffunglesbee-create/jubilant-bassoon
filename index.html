@@ -7899,6 +7899,8 @@ let MY_TEAMS = new Set(JSON.parse(localStorage.getItem('field_my_teams')||'[]'))
 function saveMyTeams(){ try{ localStorage.setItem('field_my_teams', JSON.stringify([...MY_TEAMS])); }catch(e){} }
 let rivalsFilter   = false; // true = show only My Teams rivals
 let myTeamsFilter  = false; // true = show only My Teams games
+let _wwDismissed   = false; // Watch Window dismissed flag
+let _wwInterval    = null;  // Watch Window polling interval
 
 goToDate(TODAY_ISO);
 
@@ -8524,7 +8526,7 @@ function initSeriesPreviews(){
 // Wow #16: WATCH WINDOW + QW-6 STREAM DEEP-LINKS
 const STREAM_DEEPLINKS={prime:{ios:'aiv://',web:'https://www.amazon.com/gp/video/storefront/sports'},peacock:{ios:'nbcuniversal://',web:'https://www.peacocktv.com/sports'},espn:{ios:'sportscenter://',web:'https://www.espn.com/watch/'},espnplus:{ios:'sportscenter://',web:'https://plus.espn.com/'},apple:{ios:'videos://',web:'https://tv.apple.com/channel/tvs.sbd.4000/sports'},max:{ios:'hbomax://',web:'https://play.max.com/sports'},youtubetv:{ios:'youtubetvapp://',web:'https://tv.youtube.com/'},sling:{web:'https://watch.sling.com/'},hulu:{ios:'hulu://',web:'https://www.hulu.com/live-tv'},fubo:{ios:'fubo://',web:'https://www.fubo.tv/live-tv'},directv:{web:'https://stream.directv.com/'},mlbtv:{ios:'atbat://',web:'https://www.mlb.com/tv'},nbcsn:{web:'https://www.peacocktv.com/sports'},tnt:{web:'https://www.tntdrama.com/watchtnt'},tbs:{web:'https://www.tbs.com/watchtbs'}};
 function getDeepLink(srKey){const d=STREAM_DEEPLINKS[srKey];if(!d) return null;const isMobile=/iPhone|iPad|Android/.test(navigator.userAgent||'');if(isMobile&&d.ios&&/iPhone|iPad/.test(navigator.userAgent)) return d.ios;return d.web||null;}
-let _wwDismissed=false,_wwInterval=null;
+// _wwDismissed + _wwInterval: moved before goToDate — see init block
 function renderWatchWindow(){
   const el=document.getElementById('watch-window');
   if(!el||_wwDismissed||!allData) return;
