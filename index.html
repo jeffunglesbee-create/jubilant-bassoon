@@ -8316,9 +8316,9 @@ function fieldBriefCacheKey(){
 function trimToCompleteSentence(text) {
   if(!text) return text;
   const trimmed = text.trim();
-  // Check if already ends with sentence-terminating punctuation
+  // Already ends cleanly
   if(/[.!?]["']?$/.test(trimmed)) return trimmed;
-  // Find the last complete sentence ending
+  // Find the last complete sentence boundary
   const lastEnd = Math.max(
     trimmed.lastIndexOf('. ') + 1,
     trimmed.lastIndexOf('! ') + 1,
@@ -8327,11 +8327,13 @@ function trimToCompleteSentence(text) {
     trimmed.lastIndexOf('!"') + 2,
     trimmed.lastIndexOf('?"') + 2,
   );
-  // Only trim if we keep at least 60% of the original
-  if(lastEnd > trimmed.length * 0.6) {
+  // Trim if result is at least 30 chars (one meaningful sentence).
+  // 30% floor replaces old 60% — catches single-sentence truncations.
+  if(lastEnd >= 30 && lastEnd > trimmed.length * 0.3) {
     return trimmed.slice(0, lastEnd).trim();
   }
-  return trimmed;
+  // No complete sentence found — return '' so caller uses static fallback
+  return '';
 }
 
 function buildFIELDBriefStatic(sections){
