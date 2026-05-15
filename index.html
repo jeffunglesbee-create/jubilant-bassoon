@@ -7050,14 +7050,12 @@ const ATP_REFRESH_LIVE = 10000;   // 10s when live matches active
 const ATP_REFRESH_IDLE = 120000;  // 2min when no live matches
 let atpLastModified = null;
 let atpIntervalId = null;
-let atpPollingDisabled = false; // stops ATP polling after first CORS/network failure
+let atpPollingDisabled = true;  // ATP Tour API blocks browser CORS — permanently disabled
 
 async function fetchATPLiveScores(){
   if(atpPollingDisabled) return;
   if(!document.querySelector('.sport-section[data-sport="Tennis"]')) {
-    // No tennis section rendered today — reschedule at idle rate, don't spam
-    atpIntervalId = setTimeout(fetchATPLiveScores, ATP_REFRESH_IDLE);
-    return;
+    return; // No tennis section today — don't poll or reschedule
   }
   try {
     const headers = {'Accept':'application/json'};
