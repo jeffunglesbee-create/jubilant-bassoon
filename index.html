@@ -2265,7 +2265,7 @@ function runSilentErrorScan(){
     NBA_ESPN:"ESPN", NBA_ABC:"ABC", NBA_NBC:"NBC", NBA_PRIME:"Prime Video",
     NHL_TNT:"TNT", NHL_ESPN:"ESPN", NHL_ABC:"ABC", NHL_NBC:"NBC",
     MLS_FS1:"FS1", MLS_FOX:"FOX",
-    EPL_PEACOCK:"Peacock", EPL_NBC:"NBC",
+    EPL_PEACOCK:"Peacock", EPL_NBC:"NBC", EPL_ESPN:"ESPN",
     EFL_PLAYOFF:"Paramount+",
     TENNIS_TC:"Tennis Channel", TENNIS_FO:"Max",
     GOLF_CBS:"CBS", GOLF_NBC:"NBC",
@@ -2377,7 +2377,8 @@ const BUNDLES = {
   EPL_NBC:      ["nbc","peacock","fubo","youtubetv","hulu","sling","directv"],    // EPL on NBC OTA (free antenna) + Peacock stream; NBCSN does NOT carry NBC-broadcast games     // EPL marquee game on NBC OTA + Peacock stream (e.g. Man City matchups)
   EPL_USA:      ["usa","fubo","youtubetv","sling","hulu","directv"],       // EPL on USA Network cable (not on NBC OTA, not Peacock live)
   TENNIS_FO:    ["tc","tcplus","espn","espnplus","youtubetv","fubo","hulu","sling","directv"],  // French Open: Tennis Channel (all rounds) + TC+ (streaming) + ESPN (QF/SF) + NBC (finals)
-    EPL_PEACOCK:  ["peacock","nbcsn","youtubetv","fubo","hulu","sling","directv"],  // EPL on Peacock + NBCSN linear simulcast (YouTube TV base plan + Xfinity Popular/Ultimate; NBCSN relaunched Nov 2025 as Peacock linear counterpart; NOT on USA Network or NBC OTA)
+    EPL_PEACOCK:  ["peacock","nbcsn","youtubetv","fubo","hulu","sling","directv"],  // EPL on Peacock
+  EPL_ESPN:     ["espn","espn2","fubo","youtubetv","hulu","sling","directv"],          // FA Cup Final etc on ESPN + NBCSN linear simulcast (YouTube TV base plan + Xfinity Popular/Ultimate; NBCSN relaunched Nov 2025 as Peacock linear counterpart; NOT on USA Network or NBC OTA)
   EFL:          ["paramount","fubo","hulu"],                               // EFL: CBS/Paramount+
   LALIGA:       ["espnplus","fubo","hulu","sling","youtubetv"],            // La Liga: ESPN+
   SERIE_A:      ["paramount","fubo","hulu"],                               // Serie A: CBS/Paramount+
@@ -5014,6 +5015,9 @@ const MEDIA_WEEKDAY = [
     // MW37 Friday May 15 — rescheduled from May 17 (Villa's EUL Final May 20)
     // Both clubs on 59pts — 4th/5th — CL qualification on the line — NBC + Peacock
     {home:"Aston Villa",           away:"Liverpool",              league:"Premier League – Matchweek 37", start_time:"2026-05-15T19:00:00Z", confirmed:true, venue:"Villa Park, Birmingham",         streams:resolveBundle("EPL_NBC"),     localNote:"NBC (free) + Peacock"},
+    // FA Cup Final — Saturday May 16, 10am ET — Wembley Stadium
+    // Chelsea vs Manchester City — ESPN in US (cable/streaming, not free OTA)
+    {home:"Chelsea",              away:"Manchester City",      league:"FA Cup Final – 2025-26", start_time:"2026-05-16T14:00:00Z", confirmed:true, venue:"Wembley Stadium, London",  streams:resolveBundle("EPL_ESPN"), localNote:"ESPN"},
 ];
 
 // ── Weekend base template (Sat + Sun) ──────────────────────────────────────
