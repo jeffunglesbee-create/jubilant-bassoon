@@ -4460,8 +4460,9 @@ function buildTodaySchedule(){
     // COL vs MIN: Colorado won R2 series 4-1 (clinched May 13)
     // VGK vs ANA: Vegas won R2 series 4-2 (clinched May 14)
     // West CF: COL vs VGK begins May 20 at Ball Arena (Ball Arena, Denver)
-    // BUF vs MTL East Semis: MTL leads 3-2 — G6 TONIGHT
-    {home:"Montreal Canadiens", away:"Buffalo Sabres",   league:"NHL Playoffs – East Semis G6 · MTL leads 3-2", start_time:"2026-05-17T00:00:00Z", confirmed:true, venue:"Bell Centre, Montreal QC",   streams:resolveBundle("NHL_ABC"), crew:"Sean McDonough · Ray Ferraro · Haley Skarupa (ESPN/ABC)"},
+    // BUF vs MTL: BUF wins G6 8-3 at MTL — series TIED 3-3 → G7 Mon May 18 at Buffalo
+    {home:"Montreal Canadiens", away:"Buffalo Sabres",   league:"NHL Playoffs – East Semis G6 · BUF wins 8-3, series tied 3-3", start_time:"2026-05-17T00:00:00Z", confirmed:true, venue:"Bell Centre, Montreal QC",   streams:resolveBundle("NHL_ABC"), crew:"Sean McDonough · Ray Ferraro · Haley Skarupa (ESPN/ABC)"},
+    {home:"Buffalo Sabres",     away:"Montreal Canadiens", league:"NHL Playoffs – East Semis G7 · Series tied 3-3", start_time:"2026-05-18T23:30:00Z", confirmed:true, venue:"KeyBank Center, Buffalo NY", streams:resolveBundle("NHL_ESPN"), crew:"Sean McDonough · Ray Ferraro · Haley Skarupa (ESPN)", seriesRecord:"Tied 3-3"},
     // VGK @ ANA G7: TBD (likely May 16-17 on ABC/ESPN)
     // ── NHL Western Conference Finals — Colorado Avalanche vs Vegas Golden Knights ──
     // VGK wins R2 4-2 (clinched May 14) · COL wins R2 4-1 (clinched May 13)
@@ -5191,6 +5192,25 @@ const MEDIA_SPECIALS = [
       link:"https://www.amazon.com/gp/video/storefront/sports"
     }
   },
+  {
+    startDate:"2026-05-17", endDate:"2026-05-17",
+    card:{
+      show:"NBA on ABC — East Semis G7: Detroit vs Cleveland",network:"ABC / ESPN",chip:"ESPN",
+      time:"8:00 PM ET · Sun May 17",
+      desc:"Winner-take-all Game 7: Detroit Pistons host Cleveland Cavaliers in the Eastern Conference Semifinals. Detroit leads 62.9% win probability. Winner faces the New York Knicks in the Eastern Conference Finals. ABC broadcast with full pregame coverage.",
+      journalNote:"First NBA Game 7 of the 2026 playoffs. Little Caesars Arena will be deafening — Detroit hasn't been to the Conference Finals since 2008.",
+      link:"https://www.espn.com/watch/"
+    }
+  },
+  {
+    startDate:"2026-05-17", endDate:"2026-05-17",
+    card:{
+      show:"Italian Open — ATP Final · Foro Italico",network:"Tennis Channel",chip:"tc",
+      time:"9:00 AM ET · Sun May 17",
+      desc:"The ATP singles final at the Internazionali BNL d'Italia closes out Rome clay season. Full coverage on Tennis Channel and TC+ streaming. The WTA final was contested Saturday. This is the final clay tune-up before Roland Garros begins May 25.",
+      link:"https://www.tennischannel.com"
+    }
+  },
 ];
 
 // ── Dynamic pregame injection ───────────────────────────────────────────────
@@ -5534,24 +5554,24 @@ function selectBettingGames(sports, maxCards=4){
 // MLB: SF @ LAD on MLB Network Showcase
 const BETTING_LINES_FALLBACK_DATA = [
   {
-    matchKey:"cavaliers",    // DET @ CLE G6 — East Semis, CLE leads 3-2
+    matchKey:"pistons",    // DET vs CLE G7 — East Semis, series tied 3-3
     source:"📊 AI Estimated",
-    context:"Cleveland has the chance to close out Detroit at home after winning G5. The Cavaliers have been dominant at Rocket Mortgage FieldHouse this series. Donovan Mitchell eyes his first Conference Finals berth. Detroit's young core has shown fight but needs a road win in a hostile environment to stay alive. CLE -220 to close out at home.",
+    context:"Winner-take-all Game 7 in Detroit. The Pistons host with a 62.9% win probability. DET has home court advantage and won G6 convincingly at Cleveland (115-94). Cleveland won the previous two road games in this series, showing they can win anywhere. Donovan Mitchell vs Cade Cunningham — the series has been evenly matched. Detroit hasn't been to the Conference Finals since 2008. Home crowds matter — Little Caesars Arena will be deafening.",
     lines:[
-      {label:"Moneyline",items:[{t:"Cleveland Cavaliers",o:"-220",fav:true},{t:"Detroit Pistons",o:"+185",fav:false}]},
-      {label:"Spread",items:[{t:"Cavaliers -5.5",o:"-110",fav:true},{t:"Pistons +5.5",o:"-110",fav:false}]},
-      {label:"Total (O/U)",items:[{t:"Over 214",o:"-110",fav:false},{t:"Under 214",o:"-110",fav:false}]},
+      {label:"Moneyline",items:[{t:"Detroit Pistons",o:"-155",fav:true},{t:"Cleveland Cavaliers",o:"+130",fav:false}]},
+      {label:"Spread",items:[{t:"Pistons -3.5",o:"-110",fav:true},{t:"Cavaliers +3.5",o:"-110",fav:false}]},
+      {label:"Total (O/U)",items:[{t:"Over 212",o:"-110",fav:false},{t:"Under 212",o:"-110",fav:false}]},
     ],
     books:[{name:"DraftKings",url:"https://sportsbook.draftkings.com"},{name:"FanDuel",url:"https://sportsbook.fanduel.com"},{name:"BetMGM",url:"https://sports.betmgm.com"}]
   },
   {
-    matchKey:"spurs",       // MIN @ SAS G6 — West Semis, SAS leads 3-2
+    matchKey:"sabres",     // BUF @ MTL G7 — East Semis, series tied 3-3 (Mon May 18)
     source:"📊 AI Estimated",
-    context:"Minnesota hosts San Antonio in a must-win G6 at Target Center. The Timberwolves are eliminated with a loss. Edwards must be dominant at home — he has the talent but the Spurs shut him down in G5 (Spurs won 126-97). Wembanyama has been elite all series. Home court gives MIN a slight edge but SAS brings a 3-2 series lead and all the momentum. If Ant goes off, MIN can extend it to G7.",
+    context:"BUF obliterated MTL 8-3 in G6 at Bell Centre, turning a 3-2 series deficit into a 3-3 tie. G7 is Monday at KeyBank Center — Buffalo's home ice. The Sabres, ending a 14-year playoff drought, now have all the momentum. Montreal won three straight earlier in the series but looked completely flat in G6. Lines near even given how volatile this series has been.",
     lines:[
-      {label:"Moneyline",items:[{t:"Minnesota Timberwolves",o:"-120",fav:true},{t:"San Antonio Spurs",o:"+100",fav:false}]},
-      {label:"Spread",items:[{t:"Timberwolves -1.5",o:"-110",fav:true},{t:"Spurs +1.5",o:"-110",fav:false}]},
-      {label:"Total (O/U)",items:[{t:"Over 218",o:"-110",fav:false},{t:"Under 218",o:"-110",fav:false}]},
+      {label:"Moneyline",items:[{t:"Buffalo Sabres",o:"-130",fav:true},{t:"Montreal Canadiens",o:"+110",fav:false}]},
+      {label:"Spread",items:[{t:"Sabres -1.5",o:"+105",fav:false},{t:"Canadiens +1.5",o:"-125",fav:true}]},
+      {label:"Total (O/U)",items:[{t:"Over 5.5",o:"-115",fav:false},{t:"Under 5.5",o:"-105",fav:false}]},
     ],
     books:[{name:"DraftKings",url:"https://sportsbook.draftkings.com"},{name:"FanDuel",url:"https://sportsbook.fanduel.com"},{name:"BetMGM",url:"https://sports.betmgm.com"}]
   },
