@@ -8199,9 +8199,9 @@ function renderESPNScores(){
         periodLabel = `<span class="score-final">Final</span>`;
       }
 
-      // Baseball situation — outs + base runners
+      // Baseball situation — outs + base runners (MLB only, never soccer)
       let sitHTML = "";
-      if(isLive && score.outs !== null){
+      if(isLive && !isSoccer && score.outs != null){
         // Outs: 3 dots, filled = out recorded
         const outDots = [0,1,2].map(i=>
           `<span class="out-dot${i<score.outs?" filled":""}"></span>`
