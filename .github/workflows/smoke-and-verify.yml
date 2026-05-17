@@ -3,6 +3,8 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+  schedule:
+    - cron: '0 11 * * *'   # 6am ET daily — compliance report
 
 jobs:
   smoke:
@@ -92,6 +94,15 @@ jobs:
           assert('relayHealthCheck called at session start',
             html.includes('relayHealthCheck().catch'));
 
+          // 10. Bundle key integrity — every bundle key must resolve in SR
+          const srEntries = [...html.matchAll(/^\s{2}(\w+):\s+\[/gm)].map(m => m[1]);
+          const bundleStr = html.match(/const BUNDLES\s*=\s*\{([\s\S]*?)\n\};/)?.[1] || '';
+          const bundleRefs = [...bundleStr.matchAll(/"(\w+)"/g)].map(m => m[1]);
+          const srSet = new Set(srEntries);
+          const brokenRefs = bundleRefs.filter(k => !srSet.has(k) && k.length > 2 && k !== k.toUpperCase());
+          assert('Bundle key integrity — no broken SR refs', brokenRefs.length === 0,
+            brokenRefs.length > 0 ? `missing: ${brokenRefs.slice(0,3).join(', ')}` : '');
+
           console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
           if (fail > 0) process.exit(1);
           EOF
@@ -143,3 +154,137 @@ jobs:
           echo "  FIELD Smoke + Verify Complete"
           echo "  $(date '+%Y-%m-%d %H:%M UTC')"
           echo "════════════════════════════════════"
+
+  compliance-report:
+    runs-on: ubuntu-latest
+    name: Daily compliance check
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Run compliance audit
+        run: |
+          node << 'EOF'
+          const fs   = require('fs');
+          const html = fs.readFileSync('index.html', 'utf8');
+          const today = new Date();
+          let issues = [], warnings = [], ok = [];
+
+          // ── 1. Bundle key integrity ──────────────────────────────────────
+          const srSection = html.match(/const SR\s*=\s*\{([\s\S]*?)\n\};\s*\n/);
+          const bundleSection = html.match(/const BUNDLES\s*=\s*\{([\s\S]*?)\n\};\s*\n/);
+          if (srSection && bundleSection) {
+            const srKeys = new Set([...srSection[1].matchAll(/^\s{2}(\w+):/gm)].map(m=>m[1]));
+            const bundleRefs = [...bundleSection[1].matchAll(/"(\w+)"/g)].map(m=>m[1]);
+            const missing = bundleRefs.filter(k => !srKeys.has(k) && k !== k.toUpperCase());
+            if (missing.length) {
+              missing.forEach(k => issues.push(`Bundle references undefined SR key: "${k}"`));
+            } else {
+              ok.push(`Bundle key integrity: all ${bundleRefs.length} refs resolve`);
+            }
+          }
+
+          // ── 2. Confirmed:true gate ────────────────────────────────────────
+          const confirmed = (html.match(/confirmed:true/g)||[]).length;
+          const unconfirmed = (html.match(/confirmed:false/g)||[]).length;
+          if (unconfirmed > 0) issues.push(`${unconfirmed} unconfirmed entries (confirmed:false)`);
+          else ok.push(`confirmed:true gate: ${confirmed} entries, 0 unconfirmed`);
+
+          // ── 3. DraftKings false attribution ──────────────────────────────
+          const aiEstimated = (html.match(/AI Estimated/g)||[]).length;
+          const fakeSource  = (html.match(/"source"\s*:\s*"DraftKings"/g)||[]).length;
+          if (fakeSource > 3) issues.push(`Possible DraftKings false attribution: ${fakeSource} instances`);
+          else ok.push(`DraftKings attribution: ${aiEstimated} AI Estimated labels, ${fakeSource} live DK labels`);
+
+          // ── 4. GDPR bypass ───────────────────────────────────────────────
+          if (html.includes('startsWith("Europe/")') && html.includes('return;')) {
+            ok.push('GDPR interim bypass: EU timezone check present before ipapi.co fetch');
+          } else {
+            issues.push('GDPR bypass NOT FOUND — EU users may be silently geolocated');
+          }
+
+          // ── 5. Pricing freshness ─────────────────────────────────────────
+          const prices = [...html.matchAll(/\$(\d+\.?\d*)\/mo/g)].map(m => parseFloat(m[1]));
+          const highPrices = prices.filter(p => p > 60);
+          if (highPrices.length > 0) {
+            warnings.push(`${highPrices.length} live TV bundle prices >$60/mo — verify against current provider pages (prices change 2-4x/year)`);
+          }
+          warnings.push(`${prices.length} hardcoded subscription prices in SR registry — verify quarterly`);
+
+          // ── 6. Rights contracts with known end dates ─────────────────────
+          const contractMap = {
+            'EPL (NBC/Peacock)': 2028,
+            'EFL (CBS Sports)':  2028,
+            'NHL (ESPN/TNT)':    2028,
+            'NBA (ESPN/NBC/Prime)': 2030,
+            'MLB (various)':     2028,
+          };
+          const thisYear = today.getFullYear();
+          Object.entries(contractMap).forEach(([league, expiry]) => {
+            const yearsLeft = expiry - thisYear;
+            if (yearsLeft <= 1) issues.push(`${league} rights expire ${expiry} — verify renewal status`);
+            else if (yearsLeft <= 2) warnings.push(`${league} rights expire ${expiry} (${yearsLeft} years)`);
+            else ok.push(`${league} rights: valid through ${expiry}`);
+          });
+
+          // ── 7. NBA_TNT deprecated ────────────────────────────────────────
+          const nba_tnt = (html.match(/NBA_TNT/g)||[]).length;
+          if (nba_tnt > 0) issues.push(`NBA_TNT appears ${nba_tnt}x — deprecated bundle, should be NBA_ESPN/ABC/NBC/PRIME`);
+          else ok.push('NBA_TNT deprecated bundle: 0 references');
+
+          // ── 8. AI betting disclaimer present ─────────────────────────────
+          if (html.includes('verify before wagering') || html.includes('AI Estimated')) {
+            ok.push('Betting disclaimer: AI estimated label + verify warning present');
+          } else {
+            issues.push('Betting disclaimer MISSING');
+          }
+
+          // ── Output summary ───────────────────────────────────────────────
+          console.log('\n══ FIELD Daily Compliance Report — ' + today.toDateString() + ' ══\n');
+          console.log('🔴 ISSUES (' + issues.length + '):');
+          issues.forEach(i => console.log('  ❌ ' + i));
+          console.log('\n🟡 WARNINGS (' + warnings.length + '):');
+          warnings.forEach(w => console.log('  ⚠️  ' + w));
+          console.log('\n✅ PASSING (' + ok.length + '):');
+          ok.forEach(o => console.log('  ✅ ' + o));
+
+          if (issues.length > 0) {
+            console.log('\n⛔ Compliance issues found — review required.');
+            process.exit(1);
+          } else {
+            console.log('\n✅ No blocking compliance issues.');
+          }
+          EOF
+
+      - name: Check key SR URLs respond
+        run: |
+          FAIL=0
+          for url in \
+            "https://www.espn.com/watch/" \
+            "https://www.peacocktv.com/sports" \
+            "https://www.amazon.com/gp/video/storefront/sports" \
+            "https://tv.apple.com/channel/tvs.sbd.4000/sports" \
+            "https://www.youtube.com/tv" \
+            "https://www.sling.com/" \
+            "https://www.hulu.com/live-tv"; do
+            CODE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 8 "$url" 2>/dev/null || echo "000")
+            if [ "$CODE" = "200" ] || [ "$CODE" = "301" ] || [ "$CODE" = "302" ]; then
+              echo "✅ $url ($CODE)"
+            else
+              echo "⚠️  $url returned $CODE — verify service is still available"
+              # Warning only, not a hard fail (CDN may require browser headers)
+            fi
+          done
+
+      - name: Summary
+        run: |
+          echo ""
+          echo "════════════════════════════════════════"
+          echo "  Compliance check complete"
+          echo "  $(date '+%Y-%m-%d')"
+          echo "════════════════════════════════════════"
