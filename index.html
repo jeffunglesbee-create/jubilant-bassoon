@@ -5982,6 +5982,7 @@ async function fdPrefetchSoccerLive(){
 // Apply FD live scores to soccer game cards (parallel path to Fotmob)
 function applyFDLiveToCards(){
   if(!allData||!allData.sports) return;
+  let updated = 0;
   allData.sports.forEach(sec=>{
     const code = FD_LEAGUE_MAP[sec.sport];
     if(!code) return;
@@ -5989,47 +5990,39 @@ function applyFDLiveToCards(){
     if(!matches||!matches.length) return;
     (sec.games||[]).forEach(game=>{
       if(!game._id) return;
-      const card = document.querySelector(`.game-card[data-gameid="${game._id}"]`);
-      if(!card) return;
-      // Fuzzy match: compare FD shortName against FIELD home/away names
       const fdMatch = matches.find(m=>{
-        const h = (m.homeTeam||"").toLowerCase(), a = (m.awayTeam||"").toLowerCase();
-        const gh = (game.home||"").toLowerCase(), ga = (game.away||"").toLowerCase();
-        return (gh.includes(h)||h.includes(gh.split(" ")[0])) &&
+        const h=(m.homeTeam||"").toLowerCase(), a=(m.awayTeam||"").toLowerCase();
+        const gh=(game.home||"").toLowerCase(), ga=(game.away||"").toLowerCase();
+        return (gh.includes(h)||h.includes(gh.split(" ")[0]))&&
                (ga.includes(a)||a.includes(ga.split(" ")[0]));
       });
       if(!fdMatch) return;
       const isLive    = ["IN_PLAY","PAUSED","LIVE"].includes(fdMatch.status);
       const isFinished= fdMatch.status==="FINISHED";
       if(!isLive && !isFinished) return;
-      // Build score string with goal scorers
-      const scoreStr = fdMatch.homeScore!=null && fdMatch.awayScore!=null
-        ? `${fdMatch.homeScore} – ${fdMatch.awayScore}` : null;
-      if(!scoreStr) return;
-      // Inject into score-wrap if present, otherwise create
-      let sw = card.querySelector(".score-wrap");
-      if(!sw){
-        sw = document.createElement("div");
-        sw.className = "score-wrap";
-        card.appendChild(sw);
-      }
-      const minuteStr = fdMatch.minute ? `${fdMatch.minute}'` : (isFinished ? "FT" : "");
-      // Store FD goals in shared cache — merged display handled by soccerGoalsInjectDOM
-      const fdKey = `${game.home}|${game.away}`;
-      if(fdMatch.goals?.length) _fdGoalCache[fdKey] = fdMatch.goals;
-      sw.innerHTML = `<span class="score-val" style="color:${isLive?"var(--teal)":"var(--smoke)"}">${scoreStr}</span>`
-        + (minuteStr ? `<span class="score-min" style="font-size:.6rem;margin-left:.3rem;color:var(--smoke)">${minuteStr}</span>` : "");
-      sw.style.display = "block";
-      if(isLive){
-        card.classList.add("espn-live");
-        card.style.borderLeftColor = "var(--teal)";
-      } else {
-        card.classList.add("espn-final");
-      }
-      // Inject merged goalscorer line (FD minutes + FPL clean names)
-      soccerGoalsInjectDOM(game.home, game.away);
+      if(fdMatch.homeScore==null||fdMatch.awayScore==null) return;
+      const key  = `${game.home}|${game.away}`;
+      const mins = fdMatch.minute||0;
+      // Write into espnScores — FD is authoritative, always overwrites FPL
+      espnScores[key] = {
+        state:       isFinished?"post":"in",
+        period:      mins>45?2:1,
+        clock:       isFinished?"":(mins>0?String(mins):""),
+        detail:      isFinished?"FT":(mins>0?`${mins}'`:"LIVE"),
+        homeScore:   fdMatch.homeScore,
+        awayScore:   fdMatch.awayScore,
+        homeName:    game.home,
+        awayName:    game.away,
+        homeWinning: fdMatch.homeScore>fdMatch.awayScore,
+        periodPrefix:"'",
+        source:      "fd",
+      };
+      espnScoreTs[key] = Date.now();
+      if(fdMatch.goals?.length) _fdGoalCache[key] = fdMatch.goals;
+      updated++;
     });
   });
+  if(updated) renderESPNScores();
 }
 
 // ── Prefetch injuries for all sports visible today ─────────────
@@ -8201,6 +8194,12 @@ async function fetchFPLLiveScores() {
       const key    = `${home}|${away}`;
 
       const existing = espnScores[key];
+      // FD is authoritative — never overwrite an FD score with FPL
+      if (existing && existing.source === 'fd') {
+        // FD already has this match; still extract scorers for the merger
+        fplExtractScorers(f, home, away);
+        continue;
+      }
       if (!existing || existing.source === 'fpl' || state === 'post') {
         espnScores[key] = {
           state, period: mins > 45 ? 2 : 1, clock, detail,
@@ -8215,8 +8214,8 @@ async function fetchFPLLiveScores() {
 
       // Goalscorer names — extracted from fixture stats, merged with FD minutes in soccerGoalsInjectDOM
       fplExtractScorers(f, home, away);
-      soccerGoalsInjectDOM(home, away);
     }
+    renderESPNScores(); // render immediately — don't wait for next ESPN poll cycle
   } catch(e) {}
 }
 
