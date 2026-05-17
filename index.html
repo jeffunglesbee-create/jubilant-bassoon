@@ -658,6 +658,7 @@ flex-shrink:0;white-space:nowrap;
 .standings-table .relegation td{opacity:.7}
 .standings-table .relegation{border-left:2px solid #ef444440}
 .fd-goals{line-height:1.4}
+.soccer-goals{line-height:1.4}
 .standings-table th{
   color:var(--smoke);font-size:.58rem;letter-spacing:.06em;text-transform:uppercase;
   padding:.15rem .3rem;text-align:left;border-bottom:1px solid var(--edge);
@@ -5974,10 +5975,11 @@ function applyFDLiveToCards(){
         card.appendChild(sw);
       }
       const minuteStr = fdMatch.minute ? `${fdMatch.minute}'` : (isFinished ? "FT" : "");
-      const goalLine  = fdMatch.goals?.slice(-2).map(g=>`${g.player} ${g.minute}'`).join(" · ") || "";
+      // Store FD goals in shared cache — merged display handled by soccerGoalsInjectDOM
+      const fdKey = `${game.home}|${game.away}`;
+      if(fdMatch.goals?.length) _fdGoalCache[fdKey] = fdMatch.goals;
       sw.innerHTML = `<span class="score-val" style="color:${isLive?"var(--teal)":"var(--smoke)"}">${scoreStr}</span>`
-        + (minuteStr ? `<span class="score-min" style="font-size:.6rem;margin-left:.3rem;color:var(--smoke)">${minuteStr}</span>` : "")
-        + (goalLine  ? `<div class="fd-goals" style="font-size:.58rem;color:var(--smoke);margin-top:.1rem">${goalLine}</div>` : "");
+        + (minuteStr ? `<span class="score-min" style="font-size:.6rem;margin-left:.3rem;color:var(--smoke)">${minuteStr}</span>` : "");
       sw.style.display = "block";
       if(isLive){
         card.classList.add("espn-live");
@@ -5985,6 +5987,8 @@ function applyFDLiveToCards(){
       } else {
         card.classList.add("espn-final");
       }
+      // Inject merged goalscorer line (FD minutes + FPL clean names)
+      soccerGoalsInjectDOM(game.home, game.away);
     });
   });
 }
@@ -6163,6 +6167,10 @@ const fdLiveCache      = {}; // code → [{id,homeTeam,awayTeam,score,minute,sta
 const fdH2HCache       = {}; // "h_a" → {matches,homeWins,awayWins,draws}
 const fdLiveCacheTime  = {}; // code → timestamp of last live fetch
 const FD_LIVE_TTL      = 1800000; // 30min — matches go SCHEDULED→IN_PLAY→FINISHED
+
+// ── Shared soccer goal caches (populated by FD + FPL paths, merged for display) ──
+const _fdGoalCache  = {}; // "home|away" → [{player, minute, team}] from football-data.org
+const _fplScorerCache = {}; // "home|away" → {home:[], away:[]} from FPL fixtures stats
 
 // ══════════════════════════════════════════════════════════════════════════════
 // Open-Meteo Weather Engine
@@ -8067,49 +8075,66 @@ async function fplLoadBootstrap() {
   } catch(e) { return false; }
 }
 
-// Extract goalscorer names from a fixture's stats array
-// Returns {home:['Salah','Jota'], away:['Haaland']} or null if no goals yet
-function fplExtractScorers(fixture) {
-  if (!_fplPlayerMap || !fixture.stats?.length) return null;
-  const home = [], away = [];
+// Extract goalscorer names from a fixture's stats array → store in _fplScorerCache
+function fplExtractScorers(fixture, home, away) {
+  if (!_fplPlayerMap || !fixture.stats?.length) return;
+  const h = [], a = [];
   for (const stat of fixture.stats) {
     if (stat.identifier !== 'goals_scored') continue;
-    for (const g of (stat.h || [])) {
-      const n = _fplPlayerMap[g.element];
-      if (n) for (let i = 0; i < (g.value || 1); i++) home.push(n);
-    }
-    for (const g of (stat.a || [])) {
-      const n = _fplPlayerMap[g.element];
-      if (n) for (let i = 0; i < (g.value || 1); i++) away.push(n);
-    }
+    for (const g of (stat.h || [])) { const n = _fplPlayerMap[g.element]; if (n) for (let i = 0; i < (g.value||1); i++) h.push(n); }
+    for (const g of (stat.a || [])) { const n = _fplPlayerMap[g.element]; if (n) for (let i = 0; i < (g.value||1); i++) a.push(n); }
     break;
   }
-  return (home.length || away.length) ? { home, away } : null;
+  if (h.length || a.length) _fplScorerCache[`${home}|${away}`] = { home: h, away: a };
 }
 
-// Inject goalscorer names below the score on matching game cards
-function fplInjectScorerDOM(home, away, scorers) {
-  if (!scorers) return;
-  document.querySelectorAll('.game-card').forEach(card => {
-    const h = card.dataset.home || '';
-    const a = card.dataset.away || '';
-    if (!espnTeamMatch(h, home) || !espnTeamMatch(a, away)) return;
-    card.querySelector('.fpl-goals')?.remove();
+// Unified soccer goalscorer display — merges FD (minutes) + FPL (clean names)
+// Called from both FD and FPL paths so only one .soccer-goals div ever exists per card
+function soccerGoalsInjectDOM(home, away) {
+  const key = `${home}|${away}`;
+  const fdGoals   = _fdGoalCache[key];   // [{player:"Salah", minute:23, team:"Liverpool"}]
+  const fplScorers = _fplScorerCache[key]; // {home:["Salah"], away:["Firmino"]}
+
+  // Build display lines
+  let lines = [];
+
+  if (fdGoals && fdGoals.length) {
+    // Primary path: FD has goals with minutes — use FD minutes, prefer FPL clean names
+    const norm = s => s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z]/g,"");
+    lines = fdGoals.map(g => {
+      const fdNorm = norm(g.player);
+      // Determine which side scored (for FPL name lookup)
+      const homeNorm = norm(home), awayNorm = norm(away), teamNorm = norm(g.team||"");
+      const isHome = teamNorm && (homeNorm.includes(teamNorm) || teamNorm.includes(homeNorm.slice(0,5)));
+      const fplSide = fplScorers ? (isHome ? fplScorers.home : fplScorers.away) : [];
+      // Find matching FPL web_name by normalised surname comparison
+      const fplName = fplSide.find(n => norm(n) === fdNorm || norm(n).includes(fdNorm) || fdNorm.includes(norm(n)));
+      const displayName = fplName || g.player || "?";
+      return g.minute ? `${displayName} ${g.minute}'` : displayName;
+    });
+  } else if (fplScorers && (fplScorers.home.length || fplScorers.away.length)) {
+    // Fallback: FPL only — clean names, no minutes, deduplicate with count
     const fmt = arr => {
-      const c = {};
-      arr.forEach(n => c[n] = (c[n]||0) + 1);
-      return Object.entries(c).map(([n,v]) => v > 1 ? `${n} (${v})` : n).join(' · ');
+      const c = {}; arr.forEach(n => c[n] = (c[n]||0)+1);
+      return Object.entries(c).map(([n,v]) => v > 1 ? `${n} (${v})` : n);
     };
-    const parts = [];
-    if (scorers.home.length) parts.push(fmt(scorers.home));
-    if (scorers.away.length) parts.push(fmt(scorers.away));
-    if (!parts.length) return;
+    lines = [...fmt(fplScorers.home), ...fmt(fplScorers.away)];
+  }
+
+  if (!lines.length) return;
+
+  // Find card and inject (or update) single .soccer-goals div
+  document.querySelectorAll('.game-card').forEach(card => {
+    if (!espnTeamMatch(card.dataset.home||"", home) || !espnTeamMatch(card.dataset.away||"", away)) return;
+    card.querySelector('.soccer-goals')?.remove();
+    card.querySelector('.fd-goals')?.remove();   // clean up old FD div if present
+    card.querySelector('.fpl-goals')?.remove();  // clean up old FPL div if present
     const sw = card.querySelector('.score-wrap');
     if (!sw) return;
     const div = document.createElement('div');
-    div.className = 'fpl-goals';
+    div.className = 'soccer-goals';
     div.style.cssText = 'font-size:.6rem;color:var(--smoke);margin-top:.15rem;letter-spacing:.01em;opacity:.85';
-    div.textContent = '⚽ ' + parts.join('  ');
+    div.textContent = '⚽ ' + lines.join(' · ');
     sw.appendChild(div);
   });
 }
@@ -8149,9 +8174,9 @@ async function fetchFPLLiveScores() {
         espnScoreTs[key] = Date.now();
       }
 
-      // Goalscorer names — extracted from fixture stats array (populated live + post-match)
-      const scorers = fplExtractScorers(f);
-      if (scorers) fplInjectScorerDOM(home, away, scorers);
+      // Goalscorer names — extracted from fixture stats, merged with FD minutes in soccerGoalsInjectDOM
+      fplExtractScorers(f, home, away);
+      soccerGoalsInjectDOM(home, away);
     }
   } catch(e) {}
 }
