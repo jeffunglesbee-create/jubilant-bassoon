@@ -7727,6 +7727,10 @@ async function fetchESPNScores(){
   // Fire FPL live scores in parallel — EPL score overlay via relay worker
   fetchFPLLiveScores().catch(()=>{});
 
+  // Fire FD soccer live data in parallel — scores + goalscorer minutes via relay
+  // Called every poll cycle (not just once at page load) so relay failures self-heal
+  fdPrefetchSoccerLive().catch(()=>{});
+
   // Schedule next poll — shorter when games are live, longer otherwise
   // Uses setTimeout (not setInterval) so each poll waits for the previous to complete
   espnIntervalId = setTimeout(fetchESPNScores, hasLive ? ESPN_REFRESH_LIVE : ESPN_REFRESH_IDLE);
@@ -8515,6 +8519,9 @@ function renderESPNScores(){
       card.classList.remove("espn-live","espn-final");
       if(isLive)  card.classList.add("espn-live");
       if(isFinal) card.classList.add("espn-final");
+
+      // Soccer goalscorer line — re-inject after score-wrap replace may have erased it
+      if(isSoccer && (isLive || isFinal)) soccerGoalsInjectDOM(game.home, game.away);
     });
   });
 }
