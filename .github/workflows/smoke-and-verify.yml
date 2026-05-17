@@ -95,7 +95,7 @@ jobs:
             html.includes('relayHealthCheck().catch'));
 
           // 10. Bundle key integrity — every bundle key must resolve in SR
-          const srEntries = [...html.matchAll(/^\s{2}(\w+):\s+\[/gm)].map(m => m[1]);
+          const srEntries = [...html.matchAll(/^\s{2}(\w+):\s*\[/gm)].map(m => m[1]);
           const bundleStr = html.match(/const BUNDLES\s*=\s*\{([\s\S]*?)\n\};/)?.[1] || '';
           const bundleRefs = [...bundleStr.matchAll(/"(\w+)"/g)].map(m => m[1]);
           const srSet = new Set(srEntries);
