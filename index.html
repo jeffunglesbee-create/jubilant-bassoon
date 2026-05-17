@@ -2016,9 +2016,36 @@ const SPORT_COLORS = {
 };
 const SPORT_ICONS = {
   "NBA Playoffs":"🏀","NHL Playoffs":"🏒","Baseball (MLB)":"⚾",
-  "UEFA Champions League":"⚽","UEFA Europa League":"🟠","UEFA Conference League":"🟢","EFL Championship Playoffs":"🏆","EFL League One Playoffs":"⚽","EFL League Two Playoffs":"⚽","Premier League":"⚽","La Liga":"⚽","Serie A":"⚽","Bundesliga":"⚽","Ligue 1":"⚽","MLS Soccer":"⚽","Tennis":"🎾",
-  "MLS Soccer":"⚽","La Liga":"⚽","Bundesliga":"⚽","Serie A":"⚽","Ligue 1":"⚽",
-  "Golf":"⛳","Cricket":"🏏","IPL":"🏏","Rugby":"🏉","AFL":"🏉","Australian Football (AFL)":"🏉","Scottish Premiership":"⚽","WNBA":"🏀","NWSL":"⚽","PWHL":"🏒","Women's Basketball":"🏀","default":"🏅"
+  "UEFA Champions League":"🏆","UEFA Europa League":"🟠","UEFA Conference League":"🟢",
+  "EFL Championship Playoffs":"🏴󠁧󠁢󠁥󠁮󠁧󠁿","EFL League One Playoffs":"🏴󠁧󠁢󠁥󠁮󠁧󠁿","EFL League Two Playoffs":"🏴󠁧󠁢󠁥󠁮󠁧󠁿",
+  "Premier League":"🏴󠁧󠁢󠁥󠁮󠁧󠁿","La Liga":"🇪🇸","Serie A":"🇮🇹","Bundesliga":"🇩🇪","Ligue 1":"🇫🇷",
+  "MLS Soccer":"🇺🇸","Tennis":"🎾",
+  "Golf":"⛳","Cricket":"🏏","IPL":"🏏","Rugby":"🏉","AFL":"🏉","Australian Football (AFL)":"🏉",
+  "Scottish Premiership":"🏴󠁧󠁢󠁳󠁣󠁴󠁿","WNBA":"🏀","NWSL":"⚽","PWHL":"🏒","Women's Basketball":"🏀","default":"🏅"
+};
+
+// Short labels for filter chips — keeps the bar scannable on mobile
+const SPORT_CHIP_LABELS = {
+  "NBA Playoffs":              "NBA",
+  "NHL Playoffs":              "NHL",
+  "Baseball (MLB)":            "MLB",
+  "MLS Soccer":                "MLS",
+  "Premier League":            "EPL",
+  "La Liga":                   "La Liga",
+  "Serie A":                   "Serie A",
+  "Bundesliga":                "Bundesliga",
+  "Ligue 1":                   "Ligue 1",
+  "UEFA Champions League":     "UCL",
+  "UEFA Europa League":        "UEL",
+  "UEFA Conference League":    "UECL",
+  "EFL Championship Playoffs": "EFL Champ",
+  "EFL League One Playoffs":   "EFL L1",
+  "EFL League Two Playoffs":   "EFL L2",
+  "Scottish Premiership":      "SPL",
+  "Australian Football (AFL)": "AFL",
+  "WNBA":                      "WNBA",
+  "NWSL":                      "NWSL",
+  "PWHL":                      "PWHL",
 };
 
 // ── Stream Registry — single source of truth for all broadcasters ────────────
@@ -4361,7 +4388,8 @@ function buildFilters(sports){
     const cnt=(s.games||[]).length;
     btn.className="filter-btn"+(activeFilter===s.sport?" active":"");
     btn.dataset.filter=s.sport;
-    btn.textContent=`${SPORT_ICONS[s.sport]||"🏅"} ${s.sport} (${cnt})`;
+    const chipLabel = SPORT_CHIP_LABELS[s.sport] || s.sport;
+    btn.textContent=`${SPORT_ICONS[s.sport]||"🏅"} ${chipLabel} (${cnt})`;
     btn.addEventListener("click",()=>{
       activeFilter=s.sport;
       document.querySelectorAll(".filter-btn").forEach(b=>b.classList.remove("active"));
