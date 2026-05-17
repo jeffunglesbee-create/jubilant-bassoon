@@ -4653,8 +4653,8 @@ function buildTodaySchedule(){
     {home:"Chicago White Sox",    away:"Chicago Cubs",            start_time:"2026-05-16T23:10:00Z", matchupNote:"Crosstown Classic — interleague (NL Central vs AL Central)", confirmed:true, venue:"Guaranteed Rate Field, Chicago IL", localNote:"CHSN (White Sox) · Marquee Sports Network (Cubs)"},
     {home:"Houston Astros",       away:"Texas Rangers",           start_time:"2026-05-16T23:10:00Z", confirmed:true, venue:"Daikin Park, Houston TX",                  localNote:"Space City Home Network · CW33 (DFW)"},
     {home:"Atlanta Braves",       away:"Boston Red Sox",          start_time:"2026-05-16T23:15:00Z", confirmed:true, venue:"Truist Park, Atlanta GA",                  localRsn:"NESN_LOCAL", localNote:"BravesVision (Atlanta) · NESN (Boston)"},
-    {home:"Los Angeles Angels",   away:"Los Angeles Dodgers",     start_time:"2026-05-17T01:38:00Z", confirmed:true, venue:"Angel Stadium, Anaheim CA",                localNote:"ABTV (Angels) · Spectrum SportsNet LA (Dodgers)"},
-    {home:"Athletics",            away:"San Francisco Giants",    start_time:"2026-05-17T01:40:00Z", confirmed:true, venue:"Sutter Health Park, Sacramento CA",         localNote:"Athletics.TV · NBC Sports Bay Area (SF)"},
+    {home:"Los Angeles Angels",   away:"Los Angeles Dodgers",     start_time:"2026-05-17T01:38:00Z", confirmed:true, venue:"Angel Stadium, Anaheim CA",           streams:resolveBundle("MLB_LOCAL"), localNote:"ABTV (Angels) · Spectrum SportsNet LA (Dodgers)"},
+    {home:"Athletics",            away:"San Francisco Giants",    start_time:"2026-05-17T01:40:00Z", confirmed:true, venue:"Sutter Health Park, Sacramento CA",  streams:resolveBundle("MLB_LOCAL"), localNote:"Athletics.TV · NBC Sports Bay Area (SF)"},
   ];
   const mlbGames=mlbRaw.filter(g=>isToday(g.start_time)).map(g=>{
     // Stream resolution — priority order (highest first):
@@ -7790,7 +7790,7 @@ function normalizeMLBGame(g, date) {
     period:         normalizeMLBPeriod(g.linescore),
     margin:         Math.abs(homeScore - awayScore),
     start_time:     g.gameDate,
-    venue:          g.venue?.name ?? '',
+    confirmed:      true,   // Stats API is authoritative — confirmed source
     nationalBundle: broadcast.nationalBundle,
     localRsn:       broadcast.localBlackedOut ? null : (MLB_TEAM_RSN[homeAbbr] ?? 'MLB_LOCAL'),
     espnGOTD:       broadcast.espnGOTD,
