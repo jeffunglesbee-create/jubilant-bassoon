@@ -7844,15 +7844,30 @@ async function loadMLBSlate(date) {
   if (mlbGames) {
     return mlbGames.map(g => {
       const key = `${g.awayTeam}@${g.homeTeam}`;
+      const isEspnGOTD    = g.espnGOTD    || MLB_DAILY_OVERRIDES.espnGOTD    === key;
+      const isPeacockGOTD = g.peacockGOTD || MLB_DAILY_OVERRIDES.peacockGOTD === key;
+
+      // ESPN GOTD — NON-EXCLUSIVE: shows espnapp + local RSN chips (in-market)
+      // Doc ref: "Code Changes Log MLB Local Chip Rule May 11" — MLB_ESPNU_GOTD: ["espnapp","rsn"]
+      const streams = isEspnGOTD    ? resolveBundle('MLB_ESPNU_GOTD')
+                    : isPeacockGOTD ? resolveBundle('MLB_PEACOCK_GOTD')
+                    : g.streams;
+
+      // Peacock GOTD weekday — EXCLUSIVE: local RSN suppressed (blacked out)
+      // ESPN GOTD — NON-EXCLUSIVE: local RSN still shows (in-market viewers)
+      const localRsn = isPeacockGOTD ? null : g.localRsn;
+
       return {
         ...g,
-        espnGOTD:    g.espnGOTD    || MLB_DAILY_OVERRIDES.espnGOTD    === key,
-        peacockGOTD: g.peacockGOTD || MLB_DAILY_OVERRIDES.peacockGOTD === key,
+        espnGOTD:    isEspnGOTD,
+        peacockGOTD: isPeacockGOTD,
+        streams,
+        localRsn,
       };
     });
   }
   if (FIELD_DEBUG) console.warn('[MLB] Stats API unavailable — using ESPN fallback');
-  return null; // caller handles ESPN fallback
+  return null;
 }
 
 async function fetchMLBFixtures(){
