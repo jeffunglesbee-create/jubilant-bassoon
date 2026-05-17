@@ -5924,20 +5924,59 @@ function bdlInjuryBadge(home, away, injuries) {
   return `<div class="inj-row">${chips}</div>`;
 }
 
-// ── Prefetch FD live scores for all soccer sections visible today ──────────
+// ── Prefetch FD live scores — single batch call replaces N sequential calls ──
+// OLD: 9 sequential calls with 7s gaps = 63s minimum, 9 API quota units
+// NEW: 1 batch call via /matches?competitions=PL,PD,...  = <1s, 1 quota unit
+// Relay caches the response 60s — all users share the same upstream call
 async function fdPrefetchSoccerLive(){
   if(!allData||!allData.sports) return;
-  // Active-sport filter: only fetch live data for competitions with games today
   const soccerSections = allData.sports.filter(s => FD_LEAGUE_MAP[s.sport]);
   if(!soccerSections.length) return;
-  if(FIELD_DEBUG) console.debug(`[FD] prefetching live for ${soccerSections.length} competitions`);
-  // Sequential with 7s gaps to stay well within 10 req/min free tier
-  for(const sec of soccerSections){
-    await fdFetchLive(FD_LEAGUE_MAP[sec.sport]);
-    if(soccerSections.indexOf(sec) < soccerSections.length - 1)
-      await new Promise(r => setTimeout(r, 7000));
+
+  // Build competition code list from only the competitions active today
+  const codes = [...new Set(soccerSections.map(s => FD_LEAGUE_MAP[s.sport]))].join(',');
+  const dateStr = isoDate; // YYYY-MM-DD current viewing date
+
+  try {
+    // Single batch request: all competitions, today's date
+    const data = await fdFetch(`/matches?competitions=${codes}&dateFrom=${dateStr}&dateTo=${dateStr}`);
+    const allMatches = data.matches || [];
+
+    // Distribute matches into fdLiveCache keyed by competition code
+    const byCode = {};
+    for(const m of allMatches){
+      const code = m.competition?.code;
+      if(!code) continue;
+      if(!byCode[code]) byCode[code] = [];
+      byCode[code].push({
+        id:        m.id,
+        homeTeam:  m.homeTeam?.shortName || m.homeTeam?.name || "",
+        awayTeam:  m.awayTeam?.shortName || m.awayTeam?.name || "",
+        homeScore: m.score?.fullTime?.home ?? m.score?.halfTime?.home ?? null,
+        awayScore: m.score?.fullTime?.away ?? m.score?.halfTime?.away ?? null,
+        minute:    m.minute || null,
+        status:    m.status,
+        goals:     (m.goals||[]).map(g=>({
+          team:   g.team?.shortName || g.team?.name || "",
+          player: g.scorer?.name?.split(" ").pop() || "",
+          minute: g.minute
+        }))
+      });
+    }
+
+    // Populate cache for each competition
+    const now = Date.now();
+    for(const [code, matches] of Object.entries(byCode)){
+      fdLiveCache[code]     = matches;
+      fdLiveCacheTime[code] = now;
+    }
+    if(FIELD_DEBUG) console.debug(`[FD] batch fetched ${allMatches.length} matches across ${Object.keys(byCode).length} competitions`);
+  } catch(e){
+    if(FIELD_DEBUG) console.debug(`[FD] batch fetch failed: ${e.message}`);
+    return;
   }
-  applyFDLiveToCards(); // inject scores into DOM
+
+  applyFDLiveToCards();
 }
 
 // Apply FD live scores to soccer game cards (parallel path to Fotmob)
@@ -6137,8 +6176,9 @@ const SLASH_GOLF_ORG  = "1";  // 1 = PGA Tour, 2 = LPGA
 const slashGolfCache  = {}; // key → {data, ts}
 const SLASH_GOLF_TTL  = 3600000; // 60-min cache — optimal for 20 req/day free tier 
 const BDL_BASE = "https://api.balldontlie.io";
-const FD_KEY   = "21559ed667044b94a8b7cb0bbe303112"; // football-data.org (10 req/min free)
+const FD_KEY   = ""; // Auth token moved to relay worker (server-side) — no longer needed in browser
 const FD_BASE  = "https://api.football-data.org/v4";
+const FD_RELAY = "https://field-relay-nba.jeffunglesbee.workers.dev/fd"; // CORS bypass + auth
 
 // Football-Data.org competition codes — keyed by FIELD sport section name
 const FD_LEAGUE_MAP = {
@@ -6969,17 +7009,12 @@ async function buildSlashGolfGamesForToday(){
 // ══════════════════════════════════════════════════════════════════════════════
 
 async function fdFetch(path){
-  // football-data.org sets Access-Control-Allow-Origin: http://localhost only.
-  // From any deployed browser origin this always fails with CORS.
-  // Skip silently when not on localhost — standings show cached/empty state.
-  if(window.location.hostname !== 'localhost'){
-    throw new Error('FD API: CORS restricted to localhost — skipping');
-  }
-  const r = await fetch(`${FD_BASE}${path}`, {
-    headers:{ "X-Auth-Token": FD_KEY },
-    signal: AbortSignal.timeout(6000)
+  // Routes through relay worker — CORS bypass + X-Auth-Token added server-side
+  // Free tier: 10 req/min shared across all users via relay-level Cloudflare caching
+  const r = await fetch(`${FD_RELAY}${path}`, {
+    signal: AbortSignal.timeout(8000)
   });
-  if(!r.ok) throw new Error(`FD ${r.status} ${path}`);
+  if(!r.ok) throw new Error(`FD relay ${r.status} ${path}`);
   return r.json();
 }
 
