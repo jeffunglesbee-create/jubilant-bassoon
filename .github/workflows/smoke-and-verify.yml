@@ -103,6 +103,16 @@ jobs:
           assert('Bundle key integrity — no broken SR refs', brokenRefs.length === 0,
             brokenRefs.length > 0 ? `missing: ${brokenRefs.slice(0,3).join(', ')}` : '');
 
+          // 28. SW_VERSION constant present (cache busting)
+          assert('SW_VERSION constant present', html.includes("const SW_VERSION = '"));
+
+          // 29. QW-7: BriefCache key includes status
+          assert('QW-7: BriefCache key includes game status',
+            html.includes('field_epl_brief_') && html.includes('gameStatus'));
+
+          // 30. localStorage prune function present
+          assert('localStorage prune function present', html.includes('pruneOldFieldData'));
+
           console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
           if (fail > 0) process.exit(1);
           EOF
@@ -260,6 +270,34 @@ jobs:
             console.log('\n✅ No blocking compliance issues.');
           }
           EOF
+
+      - name: Monitor streaming price change news (RSS)
+        run: |
+          echo "Checking for streaming service price announcements..."
+          SERVICES="peacock youtubetv hulu fubo sling espn+ disneyplus max paramount"
+          FOUND=0
+          for SVC in $SERVICES; do
+            # Check Google News RSS — static HTML, curl-accessible
+            COUNT=$(curl -sL --max-time 8 \
+              "https://news.google.com/rss/search?q=${SVC}+price+increase+OR+price+change&hl=en-US&gl=US&ceid=US:en" \
+              2>/dev/null | grep -c "<item>" || echo "0")
+            if [ "$COUNT" -gt "3" ]; then
+              TITLE=$(curl -sL --max-time 8 \
+                "https://news.google.com/rss/search?q=${SVC}+price+increase+OR+price+change&hl=en-US&gl=US&ceid=US:en" \
+                2>/dev/null | grep -oP '(?<=<title>)[^<]+' | sed -n '2p')
+              echo "⚠️  ${SVC}: ${COUNT} news items — possible price change. Latest: ${TITLE}"
+              FOUND=$((FOUND+1))
+            else
+              echo "✅ ${SVC}: no price change news (${COUNT} items)"
+            fi
+          done
+          if [ "$FOUND" -gt "0" ]; then
+            echo ""
+            echo "⚠️  $FOUND service(s) have recent price news — verify SR authNote pricing"
+          else
+            echo ""
+            echo "✅ No streaming price change news detected"
+          fi
 
       - name: Check key SR URLs respond
         run: |

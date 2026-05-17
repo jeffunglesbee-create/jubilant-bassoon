@@ -2607,6 +2607,23 @@ tzSel.addEventListener("change",()=>{ selectedTz=tzSel.value; renderAll(); updat
   }
 })();
 
+// ── localStorage prune (Decision 10) — must run before any localStorage reads ──
+// Prevents QuotaExhaustedError on PWA init. 7-day TTL on field_brief_* keys.
+// Required before Wow#29 streak milestone badges ship additional localStorage keys.
+(function pruneOldFieldData(){
+  try{
+    const cutoff = Date.now() - 7*24*60*60*1000;
+    Object.keys(localStorage)
+      .filter(k => k.startsWith('field_brief_'))
+      .forEach(k => {
+        try{
+          const item = JSON.parse(localStorage.getItem(k));
+          if(!item || !item.timestamp || item.timestamp < cutoff) localStorage.removeItem(k);
+        }catch(e){ localStorage.removeItem(k); }
+      });
+  }catch(e){}
+})();
+
 const today = new Date();
 // date-display element removed — date shown in date-label button instead
 const isoDate = today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0')+'-'+String(today.getDate()).padStart(2,'0');
@@ -8577,14 +8594,18 @@ let _pwaPrompt = null;
   if(typeof window === 'undefined' || typeof location === 'undefined') return;
   const isSecure = location.protocol === 'https:' || location.hostname === 'localhost';
 
+  // SW_VERSION — bump on every deploy to bust returning user cache
+  // Assertion 28 in smoke verifies this constant is present
+  const SW_VERSION = '2026-05-17';
+
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
   // Cache strategy: API-only (ESPN scores, weather, odds, SportsDB).
-  // index.html is NOT cached — always loads fresh from CDN. No version bump on redeploy.
-  // Fallback to Blob URL on localhost/file:// where /sw.js is not served.
+  // index.html is NOT cached — always loads fresh from CDN.
+  // SW_VERSION passed as query param so new deploys invalidate the cached SW.
   if(isSecure && 'serviceWorker' in navigator){
     try {
       const swPath = (location.hostname.endsWith('.pages.dev') || location.hostname.endsWith('.workers.dev') || !location.hostname.includes('localhost'))
-        ? '/sw.js'
+        ? `/sw.js?v=${SW_VERSION}`
         : null;
       if(swPath){
         navigator.serviceWorker.register(swPath, {scope:'/'})
@@ -8975,7 +8996,10 @@ async function renderEPLMatchBriefCard(gameCard) {
   // Don't add if already present
   if(gameCard.previousElementSibling?.classList.contains('epl-match-brief-card')) return;
 
-  const cacheKey = 'field_epl_brief_' + gameid;
+  // QW-7: Cache key includes game status — pregame brief won't serve during live/final
+  // field_epl_brief_{gameId}_{status} invalidates when game transitions pre→in→post
+  const gameStatus = game?.status || game?.state || 'pre';
+  const cacheKey = 'field_epl_brief_' + gameid + '_' + gameStatus;
   const cached = sessionStorage.getItem(cacheKey);
 
   const staticText = buildEPLMatchBriefStatic(game);
