@@ -7276,7 +7276,7 @@ function renderESPNStandingsPanel(panel, entries, sportName){
 // MatchStatus values: "F" = Finished, others (TBD from live test) = In Progress
 
 const ATP_ENDPOINT = 'https://app.atptour.com/api/v2/gateway/livematches/website?scoringTournamentLevel=tour';
-const ATP_REFRESH_LIVE = 10000;   // 10s when live matches active
+const ATP_REFRESH_LIVE = 15000;   // 15s when live matches active (was 10s — 304 cache helps but 10s is aggressive for unofficial endpoint)
 const ATP_REFRESH_IDLE = 120000;  // 2min when no live matches
 let atpLastModified = null;
 let atpIntervalId = null;
@@ -7618,8 +7618,9 @@ async function fetchNBARelayScores() {
 }
 
 let espnIntervalId = null;
-const ESPN_REFRESH_LIVE = 30000;   // 30s when games are live
-const ESPN_REFRESH_IDLE = 300000;  // 5min otherwise
+const ESPN_REFRESH_LIVE     = 30000;   // 30s  — games in progress
+const ESPN_REFRESH_IDLE     = 300000;  // 5min — games scheduled later today
+const ESPN_REFRESH_FINISHED = 900000;  // 15min — all today's games final
 
 // Fetch all sport scoreboards and merge into espnScores
 async function fetchESPNScores(){
@@ -7629,6 +7630,7 @@ async function fetchESPNScores(){
     + String(today.getDate()).padStart(2,'0'); // "20260506"
 
   let hasLive = false;
+  let hasUpcoming = false; // 'pre' games today → keep idle polling to catch start time
 
   // Sport-aware filter: only poll leagues with sections in today's schedule
   // Reduces from 20 endpoints to 6-10 on most days. Soccer always included (fetchSoccerFixtures depends on it).
@@ -7646,7 +7648,7 @@ async function fetchESPNScores(){
     .map(l=>({sport:"soccer",league:l.league,section:l.section,periodPrefix:"'"}));
 
   const allLeagues = [...filteredESPN, ...filteredSoccer];
-  if(FIELD_DEBUG) console.debug(`[ESPN] polling ${allLeagues.length}/${ESPN_SPORTS.length + SOCCER_LEAGUES.length} leagues | live=${hasLive} | next=${hasLive?ESPN_REFRESH_LIVE/1000:ESPN_REFRESH_IDLE/1000}s`);
+  if(FIELD_DEBUG) console.debug(`[ESPN] polling ${allLeagues.length} leagues | live=${hasLive} upcoming=${hasUpcoming} | next=${hasLive?'30s':hasUpcoming?'5min':'15min'}`);
 
   // Micro-batch in groups of 5 with 200ms gap — prevents 20-req bursts to ESPN
   const chunk = (arr,n) => Array.from({length:Math.ceil(arr.length/n)},(_,i)=>arr.slice(i*n,i*n+n));
@@ -7680,6 +7682,7 @@ async function fetchESPNScores(){
         const awayName  = away.team?.displayName||"";
 
         if(state==="in") hasLive = true;
+        if(state==="pre") hasUpcoming = true;
 
         // Baseball situation: outs, balls, strikes, base runners
         const sit = comp.situation||{};
@@ -7714,19 +7717,17 @@ async function fetchESPNScores(){
 
   renderESPNScores();
 
-  // Fire RELAY in parallel — doesn't block ESPN cycle
+  // Fire RELAY + FPL + FD in parallel — don't block ESPN cycle
   fetchNBARelayScores().catch(()=>{});
-
-  // Fire FPL live scores in parallel — EPL score overlay via relay worker
   fetchFPLLiveScores().catch(()=>{});
-
-  // Fire FD soccer live data in parallel — scores + goalscorer minutes via relay
-  // Called every poll cycle (not just once at page load) so relay failures self-heal
   fdPrefetchSoccerLive().catch(()=>{});
 
-  // Schedule next poll — shorter when games are live, longer otherwise
-  // Uses setTimeout (not setInterval) so each poll waits for the previous to complete
-  espnIntervalId = setTimeout(fetchESPNScores, hasLive ? ESPN_REFRESH_LIVE : ESPN_REFRESH_IDLE);
+  // Three-tier interval: live=30s, upcoming=5min, all-finished=15min
+  // "all-finished" cuts late-night polling by 65% once every game is final
+  const nextInterval = hasLive ? ESPN_REFRESH_LIVE
+                     : hasUpcoming ? ESPN_REFRESH_IDLE
+                     : ESPN_REFRESH_FINISHED;
+  espnIntervalId = setTimeout(fetchESPNScores, nextInterval);
 }
 
 // Fuzzy match: does the ESPN team name match a FIELD game team name?
@@ -8064,6 +8065,7 @@ const FPL_SHORT_NAME_MAP = {
 let _fplTeamMap = null;
 let _fplPlayerMap = null;
 let _fplCurrentGW = null;
+let _fplLastFetch = 0; // timestamp of last successful fixtures fetch — skip relay if <28s ago
 const _FPL_BOOTSTRAP_KEY = 'fpl_bootstrap_v2';
 const _FPL_BOOTSTRAP_TTL = 24 * 3600 * 1000;
 
@@ -8172,7 +8174,11 @@ function soccerGoalsInjectDOM(home, away) {
 }
 
 async function fetchFPLLiveScores() {
+  // Short-circuit: relay caches 30s — skip the outbound HTTP call if last fetch was <28s ago
+  const now = Date.now();
+  if (now - _fplLastFetch < 28000) return;
   if (!_fplTeamMap && !(await fplLoadBootstrap())) return;
+  _fplLastFetch = Date.now();
 
   try {
     const r = await fetch(`${FPL_RELAY_BASE}/fixtures?event=${_fplCurrentGW}`, { signal: AbortSignal.timeout(6000) });
@@ -8586,7 +8592,7 @@ async function fetchSchedule(){
     } catch(e){}
   })();
   // ─────────────────────────────────────────────────────────────────────────in full MLB slate from ESPN (supplements hardcoded games)
-  fetchSoccerFixtures(); // Pull EPL/La Liga/Serie A/Bundesliga/Ligue 1/MLS fixtures
+  setTimeout(fetchSoccerFixtures, 500); // staggered 500ms — avoids simultaneous EPL ESPN calls with fetchESPNScores init cycle
   fetchFPLLiveScores();  // FPL relay — EPL live scores (official PL data, CORS bypass via relay)
   startSportsDBEngine(); // TheSportsDB real-time soccer livescores
   startFotmobEngine();   // Fotmob soccer livescores (more reliable, unofficial API)
