@@ -1933,7 +1933,7 @@ flex-shrink:0;white-space:nowrap;
 // ═══════════════════════════════════════════════════════════════
 // FIELD — Global Sports Intelligence
 // Debug logging: set FIELD_DEBUG=1 in localStorage to enable
-// In production: console.debug and console output are suppressed
+// In production: console.debug and console.log are suppressed
 // ═══════════════════════════════════════════════════════════════
 const FIELD_DEBUG = localStorage.getItem('FIELD_DEBUG') === '1';
 if(!FIELD_DEBUG){
@@ -2016,36 +2016,9 @@ const SPORT_COLORS = {
 };
 const SPORT_ICONS = {
   "NBA Playoffs":"🏀","NHL Playoffs":"🏒","Baseball (MLB)":"⚾",
-  "UEFA Champions League":"🏆","UEFA Europa League":"🟠","UEFA Conference League":"🟢",
-  "EFL Championship Playoffs":"🏴󠁧󠁢󠁥󠁮󠁧󠁿","EFL League One Playoffs":"🏴󠁧󠁢󠁥󠁮󠁧󠁿","EFL League Two Playoffs":"🏴󠁧󠁢󠁥󠁮󠁧󠁿",
-  "Premier League":"🏴󠁧󠁢󠁥󠁮󠁧󠁿","La Liga":"🇪🇸","Serie A":"🇮🇹","Bundesliga":"🇩🇪","Ligue 1":"🇫🇷",
-  "MLS Soccer":"🇺🇸","Tennis":"🎾",
-  "Golf":"⛳","Cricket":"🏏","IPL":"🏏","Rugby":"🏉","AFL":"🏉","Australian Football (AFL)":"🏉",
-  "Scottish Premiership":"🏴󠁧󠁢󠁳󠁣󠁴󠁿","WNBA":"🏀","NWSL":"⚽","PWHL":"🏒","Women's Basketball":"🏀","default":"🏅"
-};
-
-// Short labels for filter chips — keeps the bar scannable on mobile
-const SPORT_CHIP_LABELS = {
-  "NBA Playoffs":              "NBA",
-  "NHL Playoffs":              "NHL",
-  "Baseball (MLB)":            "MLB",
-  "MLS Soccer":                "MLS",
-  "Premier League":            "EPL",
-  "La Liga":                   "La Liga",
-  "Serie A":                   "Serie A",
-  "Bundesliga":                "Bundesliga",
-  "Ligue 1":                   "Ligue 1",
-  "UEFA Champions League":     "UCL",
-  "UEFA Europa League":        "UEL",
-  "UEFA Conference League":    "UECL",
-  "EFL Championship Playoffs": "EFL Champ",
-  "EFL League One Playoffs":   "EFL L1",
-  "EFL League Two Playoffs":   "EFL L2",
-  "Scottish Premiership":      "SPL",
-  "Australian Football (AFL)": "AFL",
-  "WNBA":                      "WNBA",
-  "NWSL":                      "NWSL",
-  "PWHL":                      "PWHL",
+  "UEFA Champions League":"⚽","UEFA Europa League":"🟠","UEFA Conference League":"🟢","EFL Championship Playoffs":"🏆","EFL League One Playoffs":"⚽","EFL League Two Playoffs":"⚽","Premier League":"⚽","La Liga":"⚽","Serie A":"⚽","Bundesliga":"⚽","Ligue 1":"⚽","MLS Soccer":"⚽","Tennis":"🎾",
+  "MLS Soccer":"⚽","La Liga":"⚽","Bundesliga":"⚽","Serie A":"⚽","Ligue 1":"⚽",
+  "Golf":"⛳","Cricket":"🏏","IPL":"🏏","Rugby":"🏉","AFL":"🏉","Australian Football (AFL)":"🏉","Scottish Premiership":"⚽","WNBA":"🏀","NWSL":"⚽","PWHL":"🏒","Women's Basketball":"🏀","default":"🏅"
 };
 
 // ── Stream Registry — single source of truth for all broadcasters ────────────
@@ -2109,7 +2082,6 @@ const SR = {
   schn:         ["SCHN",          "https://spacecityhomenetwork.com",                     "#eb6e1f","tv",  "Space City Home Network — Astros team-owned RSN (co-owned with NBA Rockets). In-market Houston. Cable: DirecTV Ch.674, Xfinity Ch.39/639/710, Fubo. SCHN+ direct streaming ~$19.99/mo. Not an MLB Local Media product."],
   espnapp:   ["ESPN App GOTD","https://www.espn.com/watch/",                      "#ff6b35","sub", "ESPN Unlimited Game of the Day — 1 non-exclusive out-of-market game/day via ESPN App. Requires ESPN Unlimited (~$29.99/mo). Blacked out in home markets. Different from MLB.TV (which covers all out-of-market games). Games also air on local RSN simultaneously."],
   espnunlimited: ["ESPN App",      "https://www.espn.com/watch/",                   "#ff6b35","sub", "ESPN App / ESPN Unlimited (~$29.99/mo). Carries WWE Premium Live Events (Backlash, SummerSlam, etc.) in US — first hour also on ESPN2. Also airs select NFL and college football games. NOT the same as espnplus (which covers ESPN linear TV + MLB GOTD). Accessed via ESPN App on smart TVs, mobile, consoles."],
-  disney:        ["Disney+",       "https://www.disneyplus.com/",                   "#1b3a6b","sub", "Disney+ (~$8/mo with ads, ~$14/mo no ads). Part of Disney Bundle (Disney+/Hulu/ESPN+). Streams ABC sports including select WNBA games and MNF. Disney Bundle includes ESPN+ which carries additional WNBA and college sports."],
   usa:       ["USA Network",  "https://www.usanetwork.com/live",                    "#1e5fa8","tv",  "Cable/streaming required. Versant-owned — separate from NBC/Peacock. Peacock does NOT simulcast USA Network live. EPL: select matches (typically one 10am ET Sat game + some Sun/midweek). WWE SmackDown (Fri 8pm). WNBA (50+ games/season). NASCAR Cup Playoffs (10 races). PROVIDERS: YouTube TV ✓, Sling Blue ✓, Hulu Live TV ✓, FuboTV ✓, DirecTV ✓. NOT on Peacock, NOT on NBCSN."],
   // ── Tennis ────────────────────────────────────────────────────────────────────
   tc:        ["Tennis Channel","https://www.tennischannel.com",                    "#8be9a0","tv",  "Cable/satellite login required"],
@@ -2326,11 +2298,11 @@ function runSilentErrorScan(){
 
   console.group(label);
   if(issues.length===0){
-    if(FIELD_DEBUG) console.log("All 9 runtime checks passed. No silent errors detected.");
+    console.log("All 9 runtime checks passed. No silent errors detected.");
     if(FIELD_DEBUG) passes.forEach(p=>console.debug(p));
   } else {
     issues.forEach(w=>console.warn(w));
-    if(FIELD_DEBUG) console.log(`— ${passes.length} checks passed, ${issues.length} issue(s) above need attention`);
+    console.log(`— ${passes.length} checks passed, ${issues.length} issue(s) above need attention`);
   }
   console.groupEnd();
 }
@@ -2605,23 +2577,6 @@ tzSel.addEventListener("change",()=>{ selectedTz=tzSel.value; renderAll(); updat
       if(opt.value===savedTz){ tzSel.value=savedTz; selectedTz=savedTz; break; }
     }
   }
-})();
-
-// ── localStorage prune (Decision 10) — must run before any localStorage reads ──
-// Prevents QuotaExhaustedError on PWA init. 7-day TTL on field_brief_* keys.
-// Required before Wow#29 streak milestone badges ship additional localStorage keys.
-(function pruneOldFieldData(){
-  try{
-    const cutoff = Date.now() - 7*24*60*60*1000;
-    Object.keys(localStorage)
-      .filter(k => k.startsWith('field_brief_'))
-      .forEach(k => {
-        try{
-          const item = JSON.parse(localStorage.getItem(k));
-          if(!item || !item.timestamp || item.timestamp < cutoff) localStorage.removeItem(k);
-        }catch(e){ localStorage.removeItem(k); }
-      });
-  }catch(e){}
 })();
 
 const today = new Date();
@@ -3114,44 +3069,6 @@ async function fetchESPNFixturesForDate(iso){
   if(FIELD_DEBUG) console.debug("FIELD: ESPN fixtures for",iso,"→",allSections.length,"sections");
   return allSections;
 }
-
-// ── MLB Stats API — constants & lookups (TDZ-safe: declared before goToDate) ──
-const MLB_STATS_BASE = 'https://statsapi.mlb.com/api/v1';
-
-const MLB_BROADCAST_CHIP_MAP = {
-  'Apple TV+': 'MLB_APPLE',
-  'FOX':       'MLB_FOX',
-  'FS1':       'MLB_FOX',
-  'TBS':       'MLB_TBS',
-  'NBC':       'MLB_NBC',
-};
-
-const PEACOCK_LEADOFF_HOUR_ET = 17; // games starting before 17:00 UTC = Leadoff noon ET window
-const SNB_NBC_CUTOFF = { month: 4, day: 31 }; // JS month 4 = May; day 31 = post-May 31
-
-const MLB_TEAM_RSN = {
-  NYY:'YES',          BAL:'MASN',              BOS:'NESN',
-  TBR:'Bally Sports', TOR:'Sportsnet',
-  CHW:'CHSN',         CLE:'Bally Sports',      DET:'Bally Sports',
-  KCR:'Bally Sports', MIN:'Bally Sports',
-  HOU:'Space City',   LAA:'KLAA',              OAK:'NBCS California',
-  SEA:'ROOT Sports',  TEX:'Bally Sports',
-  ATL:'Bally Sports', MIA:'Bally Sports',      NYM:'SNY',
-  PHI:'NBCS Philadelphia', WSN:'MASN2',
-  CHC:'MARQUEE',      CIN:'Bally Sports',      MIL:'Bally Sports',
-  PIT:'AT&T SportsNet', STL:'Bally Sports',
-  ARI:'DBACKS',       COL:'AT&T SportsNet',    LAD:'SportsNetLA',
-  SDP:'SDTV',         SFG:'NBCS Bay Area',
-};
-
-// Day-of manual overrides — ESPN GOTD and Peacock GOTD cannot be reliably
-// auto-detected from the API broadcasts array until type:'I' behavior is confirmed.
-// Enter game key as 'AWAY@HOME' (official team abbreviations) or null.
-// ~30 ESPN GOTD games/season, varies for Peacock GOTD.
-const MLB_DAILY_OVERRIDES = {
-  espnGOTD:    null, // e.g. 'NYY@BOS' — set day-of, ~2 min
-  peacockGOTD: null, // e.g. 'CHC@ATL' — set day-of, ~2 min
-};
 
 // ── Navigate to a date ─────────────────────────────────────────
 async function goToDate(iso){
@@ -4406,8 +4323,7 @@ function buildFilters(sports){
     const cnt=(s.games||[]).length;
     btn.className="filter-btn"+(activeFilter===s.sport?" active":"");
     btn.dataset.filter=s.sport;
-    const chipLabel = SPORT_CHIP_LABELS[s.sport] || s.sport;
-    btn.textContent=`${SPORT_ICONS[s.sport]||"🏅"} ${chipLabel} (${cnt})`;
+    btn.textContent=`${SPORT_ICONS[s.sport]||"🏅"} ${s.sport} (${cnt})`;
     btn.addEventListener("click",()=>{
       activeFilter=s.sport;
       document.querySelectorAll(".filter-btn").forEach(b=>b.classList.remove("active"));
@@ -4457,30 +4373,24 @@ function buildTodaySchedule(){
     return d.toLocaleDateString("en-CA",{timeZone:tz})===todayFresh;
   }
 
-  // ── NBA Playoffs — Saturday May 16 2026 ──────────────────────────
-  // Source: NBA.com verified May 16, 2026
-  //   RESULTS (May 15): DET wins G6 115-94 at CLE → East Semis TIED 3-3 → G7 Sunday
-  //   RESULTS (May 15): SAS wins G6 139-109 at MIN → SAS ADVANCES to West CF 4-2
-  //   G7 SUNDAY May 17: CLE @ DET — 8pm ET / 00:00 UTC May 18 — Prime Video (DET home = Amazon)
-  //   WEST CF G1: OKC vs SAS — Monday May 18 8:30pm ET / 00:30 UTC May 19 — ESPN
+  // ── NBA Playoffs — Friday May 15 2026 ──────────────────────────
+  // Source: Yahoo Sports NBA Playoffs schedule verified May 15, 2026
+  //   DET @ CLE G6 — 7pm ET / 23:00 UTC — Prime Video · CLE leads 3-2
+  //   MIN @ SAS G6 — 9:30pm ET / 01:30 UTC May 16 — Prime Video · SAS leads 3-2
   const nbaGames=[
-    // No NBA games Saturday May 16 — off day between semis and conference finals
-    // West CF set: OKC (1) vs SAS (2) · East CF: NYK (3) awaits CLE/DET G7 winner
-    {home:"Detroit Pistons",       away:"Cleveland Cavaliers",  league:"NBA Playoffs – East Semis G7 · Series tied 3-3", start_time:"2026-05-18T00:00:00Z", confirmed:true, venue:"Little Caesars Arena, Detroit MI",  streams:resolveBundle("NBA_PRIME"),  seriesRecord:"Series tied 3-3"},
-    {home:"Oklahoma City Thunder", away:"San Antonio Spurs",    league:"NBA Playoffs – West CF G1",                      start_time:"2026-05-19T00:30:00Z", confirmed:true, venue:"Paycom Center, Oklahoma City OK", streams:resolveBundle("NBA_ESPN"), seriesRecord:"Series 0-0"},
+    {home:"Cleveland Cavaliers",   away:"Detroit Pistons",         league:"NBA Playoffs – East Semis G6 · CLE leads 3-2", start_time:"2026-05-15T23:00:00Z", confirmed:true, venue:"Rocket Mortgage FieldHouse, Cleveland OH", streams:resolveBundle("NBA_PRIME"), crew:"Ian Eagle · Stan Van Gundy (Prime Video)", seriesRecord:"CLE leads 3-2"},
+    {home:"Minnesota Timberwolves", away:"San Antonio Spurs",       league:"NBA Playoffs – West Semis G6 · SAS leads 3-2", start_time:"2026-05-16T01:30:00Z", confirmed:true, venue:"Target Center, Minneapolis MN",            streams:resolveBundle("NBA_PRIME"), seriesRecord:"SAS leads 3-2"},
   ].filter(g=>isToday(g.start_time));
 
-  // ── NHL Playoffs — Saturday May 16 2026 ──────────────────────────
-  // Source: NHL.com verified May 16, 2026
-  //   TONIGHT: MTL vs BUF G6 — 8pm ET / 00:00 UTC May 17 — ABC/ESPN · MTL leads series 3-2
-  //   If MTL wins → MTL advances to East CF vs CAR · If BUF wins → G7 at BUF
+  // ── NHL Playoffs — Friday May 15 2026 ──────────────────────────
+  // Source: Yahoo Sports NHL Playoffs coverage verified May 15, 2026
+  //   MIN @ COL G6 — 8pm ET / 00:00 UTC May 16 — ESPN · series record TBD post-G5
+  //   MTL @ BUF G6 — 8pm ET / 00:00 UTC May 16 — TNT · series record TBD post-G5
   const nhlGames=[
-    // COL vs MIN: Colorado won R2 series 4-1 (clinched May 13)
-    // VGK vs ANA: Vegas won R2 series 4-2 (clinched May 14)
-    // West CF: COL vs VGK begins May 20 at Ball Arena (Ball Arena, Denver)
-    // BUF vs MTL: BUF wins G6 8-3 at MTL — series TIED 3-3 → G7 Mon May 18 at Buffalo
-    {home:"Montreal Canadiens", away:"Buffalo Sabres",   league:"NHL Playoffs – East Semis G6 · BUF wins 8-3, series tied 3-3", start_time:"2026-05-17T00:00:00Z", confirmed:true, venue:"Bell Centre, Montreal QC",   streams:resolveBundle("NHL_ABC"), crew:"Sean McDonough · Ray Ferraro · Haley Skarupa (ESPN/ABC)"},
-    {home:"Buffalo Sabres",     away:"Montreal Canadiens", league:"NHL Playoffs – East Semis G7 · Series tied 3-3", start_time:"2026-05-18T23:30:00Z", confirmed:true, venue:"KeyBank Center, Buffalo NY", streams:resolveBundle("NHL_ESPN"), crew:"Sean McDonough · Ray Ferraro · Haley Skarupa (ESPN)", seriesRecord:"Tied 3-3"},
+    // No NHL games May 15 — off night
+    // COL vs MIN: Colorado wins series 4-1 (clinched G5 May 13)
+    // BUF @ MTL G6: Sat May 16 8pm ET on ABC/ESPN — enters tomorrow's schedule
+    {home:"Montreal Canadiens", away:"Buffalo Sabres",   league:"NHL Playoffs – East Semis G6 · MTL leads 3-2", start_time:"2026-05-17T00:00:00Z", confirmed:true, venue:"Bell Centre, Montreal QC",   streams:resolveBundle("NHL_ABC"), crew:"Sean McDonough · Ray Ferraro · Haley Skarupa (ESPN/ABC)"},
     // VGK @ ANA G7: TBD (likely May 16-17 on ABC/ESPN)
     // ── NHL Western Conference Finals — Colorado Avalanche vs Vegas Golden Knights ──
     // VGK wins R2 4-2 (clinched May 14) · COL wins R2 4-1 (clinched May 13)
@@ -4642,37 +4552,6 @@ function buildTodaySchedule(){
     {home:"New York Mets",        away:"New York Yankees",        start_time:"2026-05-16T23:15:00Z", confirmed:true, venue:"Citi Field, Queens NY",                   nationalBundle:"MLB_FOX", matchupNote:"Subway Series — interleague (AL East vs NL East), FOX primetime", localNote:"FOX (free OTA) — Subway Series"},
     // FOX 7:15pm — Padres @ Mariners (regional — West Coast markets)
     {home:"Seattle Mariners",     away:"San Diego Padres",        start_time:"2026-05-16T23:15:00Z", confirmed:true, venue:"T-Mobile Park, Seattle WA",               nationalBundle:"MLB_FOX", localNote:"FOX (free OTA) — regional window"},
-    // Saturday May 16 — full local RSN slate
-    {home:"Toronto Blue Jays",    away:"Detroit Tigers",          start_time:"2026-05-16T17:10:00Z", confirmed:true, venue:"Rogers Centre, Toronto ON",                localNote:"Sportsnet (Canada) · Bally Sports Detroit"},
-    {home:"St. Louis Cardinals",  away:"Kansas City Royals",      start_time:"2026-05-16T18:15:00Z", confirmed:true, venue:"Busch Stadium, St. Louis MO",              localNote:"Cardinals.TV · Royals.TV"},
-    {home:"Colorado Rockies",     away:"Arizona Diamondbacks",    start_time:"2026-05-16T19:10:00Z", confirmed:true, venue:"Coors Field, Denver CO",                   localNote:"Rockies.TV · ArizonaSports"},
-    {home:"Pittsburgh Pirates",   away:"Philadelphia Phillies",   start_time:"2026-05-16T20:05:00Z", confirmed:true, venue:"PNC Park, Pittsburgh PA",                  localRsn:"PHILLIES_LOCAL", localNote:"AT&T SportsNet Pittsburgh · NBC Sports Philadelphia"},
-    {home:"Tampa Bay Rays",       away:"Miami Marlins",           start_time:"2026-05-16T20:10:00Z", confirmed:true, venue:"Tropicana Field, St. Petersburg FL",       localNote:"Rays.TV · Marlins.TV"},
-    {home:"Cleveland Guardians",  away:"Cincinnati Reds",         start_time:"2026-05-16T22:10:00Z", confirmed:true, venue:"Progressive Field, Cleveland OH",           localRsn:"GUARDIANS_LOCAL", localNote:"CLEGuardians.TV · Reds.TV"},
-    {home:"Minnesota Twins",      away:"Milwaukee Brewers",       start_time:"2026-05-16T23:10:00Z", confirmed:true, venue:"Target Field, Minneapolis MN",              localNote:"Twins.TV · Brewers.TV"},
-    {home:"Chicago White Sox",    away:"Chicago Cubs",            start_time:"2026-05-16T23:10:00Z", matchupNote:"Crosstown Classic — interleague (NL Central vs AL Central)", confirmed:true, venue:"Guaranteed Rate Field, Chicago IL", localNote:"CHSN (White Sox) · Marquee Sports Network (Cubs)"},
-    {home:"Houston Astros",       away:"Texas Rangers",           start_time:"2026-05-16T23:10:00Z", confirmed:true, venue:"Daikin Park, Houston TX",                  localNote:"Space City Home Network · CW33 (DFW)"},
-    {home:"Atlanta Braves",       away:"Boston Red Sox",          start_time:"2026-05-16T23:15:00Z", confirmed:true, venue:"Truist Park, Atlanta GA",                  localRsn:"NESN_LOCAL", localNote:"BravesVision (Atlanta) · NESN (Boston)"},
-    {home:"Los Angeles Angels",   away:"Los Angeles Dodgers",     start_time:"2026-05-17T01:38:00Z", confirmed:true, venue:"Angel Stadium, Anaheim CA",           streams:resolveBundle("MLB_LOCAL"), localNote:"ABTV (Angels) · Spectrum SportsNet LA (Dodgers)"},
-    {home:"Athletics",            away:"San Francisco Giants",    start_time:"2026-05-17T01:40:00Z", confirmed:true, venue:"Sutter Health Park, Sacramento CA",  streams:resolveBundle("MLB_LOCAL"), localNote:"Athletics.TV · NBC Sports Bay Area (SF)"},
-    // ── Sunday May 17, 2026 — MLB.com + Peacock.com verified ───────────────────
-    // Leadoff (noon ET): MIA @ TB — Peacock exclusive · GOTD (4pm): LAD @ LAA — Peacock
-    // Sunday Night Baseball (7pm): SD @ SEA — Peacock exclusive (pre-May 31 window)
-    {home:"Tampa Bay Rays",       away:"Miami Marlins",           league:"MLB — Sunday Leadoff (Peacock)", start_time:"2026-05-17T16:15:00Z", confirmed:true, venue:"Tropicana Field, St. Petersburg FL",  nationalBundle:"MLB_LEADOFF"},
-    {home:"Washington Nationals", away:"Baltimore Orioles",        start_time:"2026-05-17T17:35:00Z", matchupNote:"Battle of the Beltway — interleague (AL East vs NL East)", confirmed:true, venue:"Nationals Park, Washington DC",         localRsn:"MASN_ORIOLES", localNote:"Nationals.TV (DC/MD) · MASN (Baltimore)"},
-    {home:"Pittsburgh Pirates",   away:"Philadelphia Phillies",    start_time:"2026-05-17T17:35:00Z", confirmed:true, venue:"PNC Park, Pittsburgh PA",               localRsn:"PHILLIES_LOCAL", localNote:"AT&T SportsNet Pittsburgh (PIT) · NBC Sports Philadelphia (PHI)"},
-    {home:"Atlanta Braves",       away:"Boston Red Sox",           start_time:"2026-05-17T17:35:00Z", confirmed:true, venue:"Truist Park, Atlanta GA",               localRsn:"NESN_LOCAL", localNote:"BravesVision (Atlanta) · NESN (Boston)"},
-    {home:"New York Mets",        away:"New York Yankees",         start_time:"2026-05-17T17:40:00Z", matchupNote:"Subway Series — interleague (AL East vs NL East)", confirmed:true, venue:"Citi Field, Queens NY",                localNote:"SNY (Mets) · YES Network (Yankees)"},
-    {home:"Cleveland Guardians",  away:"Cincinnati Reds",          start_time:"2026-05-17T17:40:00Z", matchupNote:"Ohio Cup — interleague (NL Central vs AL Central)", confirmed:true, venue:"Progressive Field, Cleveland OH",       localRsn:"GUARDIANS_LOCAL", localNote:"CLEGuardians.TV · Reds.TV"},
-    {home:"Detroit Tigers",       away:"Toronto Blue Jays",        start_time:"2026-05-17T17:40:00Z", confirmed:true, venue:"Comerica Park, Detroit MI",             localNote:"Bally Sports Detroit · Sportsnet (Canada)"},
-    {home:"Minnesota Twins",      away:"Milwaukee Brewers",        start_time:"2026-05-17T18:10:00Z", confirmed:true, venue:"Target Field, Minneapolis MN",          localNote:"Twins.TV (Minneapolis) · Brewers.TV (Milwaukee)"},
-    {home:"Chicago White Sox",    away:"Chicago Cubs",             start_time:"2026-05-17T18:10:00Z", matchupNote:"Crosstown Classic — interleague (NL Central vs AL Central)", confirmed:true, venue:"Guaranteed Rate Field, Chicago IL", localNote:"CHSN (White Sox) · Marquee Sports Network (Cubs)"},
-    {home:"Houston Astros",       away:"Texas Rangers",            start_time:"2026-05-17T18:10:00Z", confirmed:true, venue:"Daikin Park, Houston TX",               localNote:"Space City Home Network · CW33 (DFW)"},
-    {home:"St. Louis Cardinals",  away:"Kansas City Royals",       start_time:"2026-05-17T18:15:00Z", confirmed:true, venue:"Busch Stadium, St. Louis MO",           localNote:"Cardinals.TV (St. Louis) · Royals.TV (Kansas City)"},
-    {home:"Colorado Rockies",     away:"Arizona Diamondbacks",     start_time:"2026-05-17T19:10:00Z", confirmed:true, venue:"Coors Field, Denver CO",                localNote:"Rockies.TV (Colorado) · ArizonaSports (Phoenix)"},
-    {home:"Athletics",            away:"San Francisco Giants",     start_time:"2026-05-17T20:05:00Z", confirmed:true, venue:"Sutter Health Park, Sacramento CA",     localNote:"Athletics.TV · NBC Sports Bay Area (SF)"},
-    {home:"Los Angeles Angels",   away:"Los Angeles Dodgers",      start_time:"2026-05-17T20:07:00Z", confirmed:true, venue:"Angel Stadium, Anaheim CA",             streams:resolveBundle("MLB_PEACOCK_GOTD"), peacockGOTD:true, localNote:"Peacock GOTD · ABTV (Angels) · Spectrum SportsNet LA (Dodgers)"},
-    {home:"Seattle Mariners",     away:"San Diego Padres",         league:"MLB — Sunday Night Baseball (Peacock)", start_time:"2026-05-17T23:20:00Z", confirmed:true, venue:"T-Mobile Park, Seattle WA",            nationalBundle:"MLB_PEACOCK_SNB"},
   ];
   const mlbGames=mlbRaw.filter(g=>isToday(g.start_time)).map(g=>{
     // Stream resolution — priority order (highest first):
@@ -4816,29 +4695,24 @@ function buildTodaySchedule(){
      streams:resolveBundle("AFL_USA")},
     // ── Round 10 starts Thu May 14 — no AFL games May 11 ──
   ].filter(g=>isToday(g.start_time));
-  // ── MLS Soccer — Saturday May 16 2026 (Matchday 14) ──────────────
-  // All MLS games on Apple TV (included w/ Apple TV sub — 2026 deal, no separate Season Pass)
-  // Sources: mlssoccer.com schedule verified May 16, 2026
+  // ── MLS Soccer — no games Monday May 11 (next weekend slate May 15-17) ──────
+  // All MLS games on Apple TV (no separate Season Pass needed since 2026)
   const mlsSoccer=[
-    // ── Saturday May 16 — 4:30pm ET complete ───────────────────────
-    {home:"CF Montréal",           away:"Chicago Fire",          league:"MLS — 2026 Season",        start_time:"2026-05-16T20:30:00Z", confirmed:true, venue:"Stade Saputo, Montreal QC",          streams:resolveBundle("MLS_SOCCER"), localNote:"TSN/RDS (Canada)"},
-    // ── Saturday May 16 — 7:30pm ET slate ──────────────────────────
-    {home:"Charlotte FC",          away:"Toronto FC",            league:"MLS — 2026 Season",        start_time:"2026-05-16T23:30:00Z", confirmed:true, venue:"Bank of America Stadium, Charlotte",  streams:resolveBundle("MLS_SOCCER")},
-    {home:"DC United",             away:"Saint Louis City SC",   league:"MLS — 2026 Season",        start_time:"2026-05-16T23:30:00Z", confirmed:true, venue:"Audi Field, Washington DC",           streams:resolveBundle("MLS_SOCCER")},
-    {home:"New England Revolution",away:"Minnesota United FC",   league:"MLS — 2026 Season",        start_time:"2026-05-16T23:30:00Z", confirmed:true, venue:"Gillette Stadium, Foxboro MA",        streams:resolveBundle("MLS_SOCCER")},
-    {home:"New York Red Bulls",    away:"New York City FC",      league:"MLS — Hudson River Derby", start_time:"2026-05-16T23:30:00Z", confirmed:true, venue:"Red Bull Arena, Harrison NJ",         streams:resolveBundle("MLS_SOCCER")},
-    {home:"Orlando City SC",       away:"Atlanta United FC",     league:"MLS — 2026 Season",        start_time:"2026-05-16T23:30:00Z", confirmed:true, venue:"Inter&Co Stadium, Orlando FL",        streams:resolveBundle("MLS_SOCCER")},
-    {home:"Philadelphia Union",    away:"Columbus Crew",         league:"MLS — 2026 Season",        start_time:"2026-05-16T23:30:00Z", confirmed:true, venue:"Subaru Park, Chester PA",             streams:resolveBundle("MLS_SOCCER")},
-    // ── Saturday May 16 — 8:30–10:30pm ET late slate ───────────────
-    {home:"Austin FC",             away:"Sporting Kansas City",  league:"MLS — 2026 Season",        start_time:"2026-05-17T00:30:00Z", confirmed:true, venue:"Q2 Stadium, Austin TX",               streams:resolveBundle("MLS_SOCCER")},
-    {home:"Houston Dynamo",        away:"Vancouver Whitecaps FC",league:"MLS — 2026 Season",        start_time:"2026-05-17T00:30:00Z", confirmed:true, venue:"Shell Energy Stadium, Houston TX",    streams:resolveBundle("MLS_SOCCER")},
-    {home:"Seattle Sounders",      away:"LA Galaxy",             league:"MLS — 2026 Season",        start_time:"2026-05-17T01:15:00Z", confirmed:true, venue:"Lumen Field, Seattle WA",             streams:resolveBundle("MLS_SOCCER")},
-    {home:"Real Salt Lake",        away:"Colorado Rapids",       league:"MLS — 2026 Season",        start_time:"2026-05-17T01:30:00Z", confirmed:true, venue:"America First Field, Sandy UT",       streams:resolveBundle("MLS_SOCCER")},
-    {home:"San Diego FC",          away:"FC Cincinnati",         league:"MLS — 2026 Season",        start_time:"2026-05-17T01:30:00Z", confirmed:true, venue:"Snapdragon Stadium, San Diego CA",    streams:resolveBundle("MLS_SOCCER")},
-    {home:"San Jose Earthquakes",  away:"FC Dallas",             league:"MLS — 2026 Season",        start_time:"2026-05-17T02:30:00Z", confirmed:true, venue:"PayPal Park, San Jose CA",            streams:resolveBundle("MLS_SOCCER")},
-    // ── Sunday May 17 ───────────────────────────────────────────────
-    {home:"Inter Miami CF",        away:"Portland Timbers",      league:"MLS — 2026 Season",        start_time:"2026-05-17T22:00:00Z", confirmed:true, venue:"Chase Stadium, Fort Lauderdale FL",   streams:resolveBundle("MLS_SOCCER")},
-    {home:"Nashville SC",          away:"Los Angeles FC",        league:"MLS — 2026 Season",        start_time:"2026-05-18T00:00:00Z", confirmed:true, venue:"GEODIS Park, Nashville TN",           streams:resolveBundle("MLS_SOCCER")},
+    // ── Wednesday May 13, 2026 — MLS Matchday 13 ─────────────────────────
+    // Primary: Apple TV (all 510 games included w/ Apple TV sub — 2026 deal, no separate Season Pass)
+    // National TV: CLT vs NYC on FS1 (7:15pm ET) — 1 of 34 FOX/FS1 games this season
+    // Canada: MTL vs POR also on TSN/RDS per weekly Canadian club rule
+    // Sources: mlssoccer.com schedule, foxsports.com MLS schedule (1 match today), Yahoo Sports FOX/FS1 list
+    {home:"Charlotte FC",           away:"New York City FC",      league:"MLS \u2014 FS1 National \u00b7 7:15pm ET", start_time:"2026-05-13T23:15:00Z", confirmed:true, venue:"Bank of America Stadium, Charlotte",  streams:resolveBundle("MLS_FS1")},
+    {home:"FC Cincinnati",          away:"Inter Miami CF",         league:"MLS \u2014 2026 Season",                  start_time:"2026-05-13T23:30:00Z", confirmed:true, venue:"TQL Stadium, Cincinnati",              streams:resolveBundle("MLS_SOCCER")},
+    {home:"DC United",              away:"Chicago Fire FC",        league:"MLS \u2014 2026 Season",                  start_time:"2026-05-13T23:30:00Z", confirmed:true, venue:"Audi Field, Washington DC",            streams:resolveBundle("MLS_SOCCER")},
+    {home:"CF Montr\u00e9al",      away:"Portland Timbers",       league:"MLS \u2014 2026 Season",                  start_time:"2026-05-13T23:30:00Z", confirmed:true, venue:"Stade Saputo, Montreal",               streams:resolveBundle("MLS_SOCCER"), localNote:"TSN/RDS (Canada)"},
+    {home:"New England Revolution", away:"Nashville SC",           league:"MLS \u2014 2026 Season",                  start_time:"2026-05-13T23:30:00Z", confirmed:true, venue:"Gillette Stadium, Foxboro",            streams:resolveBundle("MLS_SOCCER")},
+    {home:"New York Red Bulls",     away:"Columbus Crew",          league:"MLS \u2014 2026 Season",                  start_time:"2026-05-13T23:30:00Z", confirmed:true, venue:"Red Bull Arena, Harrison NJ",          streams:resolveBundle("MLS_SOCCER")},
+    {home:"Orlando City SC",        away:"Philadelphia Union",     league:"MLS \u2014 2026 Season",                  start_time:"2026-05-13T23:30:00Z", confirmed:true, venue:"Inter&Co Stadium, Orlando",            streams:resolveBundle("MLS_SOCCER")},
+    {home:"FC Dallas",              away:"Vancouver Whitecaps FC", league:"MLS \u2014 2026 Season",                  start_time:"2026-05-14T00:30:00Z", confirmed:true, venue:"Toyota Stadium, Frisco TX",            streams:resolveBundle("MLS_SOCCER")},
+    {home:"Sporting Kansas City",   away:"LA Galaxy",              league:"MLS \u2014 2026 Season",                  start_time:"2026-05-14T00:30:00Z", confirmed:true, venue:"Children's Mercy Park, Kansas City",  streams:resolveBundle("MLS_SOCCER")},
+    {home:"Minnesota United FC",    away:"Colorado Rapids",        league:"MLS \u2014 2026 Season",                  start_time:"2026-05-14T00:30:00Z", confirmed:true, venue:"Allianz Field, St. Paul MN",           streams:resolveBundle("MLS_SOCCER")},
   ].filter(g=>isToday(g.start_time));
 
   // ── Tennis: Italian Open Rome (May 6-17 2026) ──────────────────────────
@@ -4874,16 +4748,6 @@ function buildTodaySchedule(){
     {home:"West Ham United",         away:"Arsenal",                  league:"Premier League – Matchweek 36", start_time:"2026-05-10T15:30:00Z", confirmed:true, venue:"London Stadium",              streams:resolveBundle("EPL_USA"),     localNote:"USA Network (cable)"},
     // MW37 Wednesday May 13 — verified from Soccerway / ESPN schedule
     {home:"Manchester City",         away:"Crystal Palace",           league:"Premier League – Matchweek 37", start_time:"2026-05-13T18:45:00Z", confirmed:true, venue:"Etihad Stadium, Manchester",  streams:resolveBundle("EPL_PEACOCK"), localNote:"Peacock only"},
-    // MW37 Sunday May 17 — verified from NBC Sports schedule May 17, 2026
-    // Title race context: Arsenal 1st (79pts) leads Man City 2nd (77pts) by 2pts — both play next week GW37/38
-    // Relegation battle: Wolves (20th 18pts) vs Fulham (11th 48pts) — WOL effectively relegated
-    // Survival fight: West Ham (18th 36pts, in drop zone) at Newcastle (13th 46pts) — must-win for WHU
-    {home:"Manchester United",        away:"Nottingham Forest",        league:"Premier League – Matchweek 37", start_time:"2026-05-17T11:30:00Z", confirmed:true, venue:"Old Trafford, Manchester",          streams:resolveBundle("EPL_USA"),     localNote:"USA Network (cable)"},
-    {home:"Brentford",                away:"Crystal Palace",           league:"Premier League – Matchweek 37", start_time:"2026-05-17T14:00:00Z", confirmed:true, venue:"Gtech Community Stadium, London",  streams:resolveBundle("EPL_PEACOCK"), localNote:"Peacock only"},
-    {home:"Everton",                  away:"Sunderland AFC",           league:"Premier League – Matchweek 37", start_time:"2026-05-17T14:00:00Z", confirmed:true, venue:"Goodison Park, Liverpool",         streams:resolveBundle("EPL_PEACOCK"), localNote:"Peacock only"},
-    {home:"Leeds United",             away:"Brighton & Hove Albion",   league:"Premier League – Matchweek 37", start_time:"2026-05-17T14:00:00Z", confirmed:true, venue:"Elland Road, Leeds",               streams:resolveBundle("EPL_USA"),     localNote:"USA Network (cable)"},
-    {home:"Wolverhampton Wanderers",  away:"Fulham",                   league:"Premier League – Matchweek 37", start_time:"2026-05-17T14:00:00Z", matchupNote:"20th vs 11th — Wolves (18pts) are effectively relegated with 2 games left. Fulham (48pts) comfortably 11th. Arsenal lead Man City by 2pts in the title race — both play next week.", confirmed:true, venue:"Molineux, Wolverhampton",          streams:resolveBundle("EPL_PEACOCK"), localNote:"Peacock only"},
-    {home:"Newcastle United",         away:"West Ham United",          league:"Premier League – Matchweek 37", start_time:"2026-05-17T16:30:00Z", matchupNote:"Relegation battle: West Ham (18th 36pts) are in the drop zone, 2pts below Tottenham (17th 38pts). Newcastle (13th 46pts) are safe. A must-win for the Hammers with 2 games remaining.", confirmed:true, venue:"St. James' Park, Newcastle",        streams:resolveBundle("EPL_USA"),     localNote:"USA Network (cable)"},
   ].filter(g=>isToday(g.start_time));
   const eplGames = eplRaw.map((g,i)=>({...g, _id:"epl_mw36mw37_"+i, _sport:"Premier League"}));
 
@@ -5238,25 +5102,6 @@ const MEDIA_SPECIALS = [
       link:"https://www.amazon.com/gp/video/storefront/sports"
     }
   },
-  {
-    startDate:"2026-05-17", endDate:"2026-05-17",
-    card:{
-      show:"NBA on Prime Video — East Semis G7: Detroit vs Cleveland",network:"Prime Video",chip:"prime",
-      time:"8:00 PM ET · Sun May 17",
-      desc:"Winner-take-all Game 7: Detroit Pistons host Cleveland Cavaliers in the Eastern Conference Semifinals. Detroit leads 62.9% win probability. Winner faces the New York Knicks in the Eastern Conference Finals. Amazon Prime Video broadcast — pregame coverage at 7 PM ET.",
-      journalNote:"First NBA Game 7 of the 2026 playoffs. Little Caesars Arena will be deafening — Detroit hasn't been to the Conference Finals since 2008.",
-      link:"https://www.amazon.com/gp/video/storefront/sports"
-    }
-  },
-  {
-    startDate:"2026-05-17", endDate:"2026-05-17",
-    card:{
-      show:"Italian Open — ATP Final · Foro Italico",network:"Tennis Channel",chip:"tc",
-      time:"9:00 AM ET · Sun May 17",
-      desc:"The ATP singles final at the Internazionali BNL d'Italia closes out Rome clay season. Full coverage on Tennis Channel and TC+ streaming. The WTA final was contested Saturday. This is the final clay tune-up before Roland Garros begins May 25.",
-      link:"https://www.tennischannel.com"
-    }
-  },
 ];
 
 // ── Dynamic pregame injection ───────────────────────────────────────────────
@@ -5600,37 +5445,37 @@ function selectBettingGames(sports, maxCards=4){
 // MLB: SF @ LAD on MLB Network Showcase
 const BETTING_LINES_FALLBACK_DATA = [
   {
-    matchKey:"pistons",    // DET vs CLE G7 — East Semis, series tied 3-3
+    matchKey:"cavaliers",    // DET @ CLE G6 — East Semis, CLE leads 3-2
     source:"📊 AI Estimated",
-    context:"Winner-take-all Game 7 in Detroit. The Pistons host with a 62.9% win probability. DET has home court advantage and won G6 convincingly at Cleveland (115-94). Cleveland won the previous two road games in this series, showing they can win anywhere. Donovan Mitchell vs Cade Cunningham — the series has been evenly matched. Detroit hasn't been to the Conference Finals since 2008. Home crowds matter — Little Caesars Arena will be deafening.",
+    context:"Cleveland has the chance to close out Detroit at home after winning G5. The Cavaliers have been dominant at Rocket Mortgage FieldHouse this series. Donovan Mitchell eyes his first Conference Finals berth. Detroit's young core has shown fight but needs a road win in a hostile environment to stay alive. CLE -220 to close out at home.",
     lines:[
-      {label:"Moneyline",items:[{t:"Detroit Pistons",o:"-155",fav:true},{t:"Cleveland Cavaliers",o:"+130",fav:false}]},
-      {label:"Spread",items:[{t:"Pistons -3.5",o:"-110",fav:true},{t:"Cavaliers +3.5",o:"-110",fav:false}]},
-      {label:"Total (O/U)",items:[{t:"Over 212",o:"-110",fav:false},{t:"Under 212",o:"-110",fav:false}]},
+      {label:"Moneyline",items:[{t:"Cleveland Cavaliers",o:"-220",fav:true},{t:"Detroit Pistons",o:"+185",fav:false}]},
+      {label:"Spread",items:[{t:"Cavaliers -5.5",o:"-110",fav:true},{t:"Pistons +5.5",o:"-110",fav:false}]},
+      {label:"Total (O/U)",items:[{t:"Over 214",o:"-110",fav:false},{t:"Under 214",o:"-110",fav:false}]},
     ],
     books:[{name:"DraftKings",url:"https://sportsbook.draftkings.com"},{name:"FanDuel",url:"https://sportsbook.fanduel.com"},{name:"BetMGM",url:"https://sports.betmgm.com"}]
   },
   {
-    matchKey:"sabres",     // BUF vs MTL G7 — NHL East Semis, Mon May 18 7:30 PM ET, ESPN
+    matchKey:"spurs",       // MIN @ SAS G6 — West Semis, SAS leads 3-2
     source:"📊 AI Estimated",
-    context:"BUF obliterated MTL 8-3 in G6 at Bell Centre, turning a 3-2 series deficit into a 3-3 tie. G7 is Monday at KeyBank Center — Buffalo's home ice. The Sabres, ending a 14-year playoff drought, now have all the momentum. Montreal won three straight earlier in the series but looked completely flat in G6. Lines near even given how volatile this series has been.",
+    context:"Minnesota hosts San Antonio in a must-win G6 at Target Center. The Timberwolves are eliminated with a loss. Edwards must be dominant at home — he has the talent but the Spurs shut him down in G5 (Spurs won 126-97). Wembanyama has been elite all series. Home court gives MIN a slight edge but SAS brings a 3-2 series lead and all the momentum. If Ant goes off, MIN can extend it to G7.",
     lines:[
-      {label:"Moneyline",items:[{t:"Buffalo Sabres",o:"-130",fav:true},{t:"Montreal Canadiens",o:"+110",fav:false}]},
-      {label:"Spread",items:[{t:"Sabres -1.5",o:"+105",fav:false},{t:"Canadiens +1.5",o:"-125",fav:true}]},
-      {label:"Total (O/U)",items:[{t:"Over 5.5",o:"-115",fav:false},{t:"Under 5.5",o:"-105",fav:false}]},
+      {label:"Moneyline",items:[{t:"Minnesota Timberwolves",o:"-120",fav:true},{t:"San Antonio Spurs",o:"+100",fav:false}]},
+      {label:"Spread",items:[{t:"Timberwolves -1.5",o:"-110",fav:true},{t:"Spurs +1.5",o:"-110",fav:false}]},
+      {label:"Total (O/U)",items:[{t:"Over 218",o:"-110",fav:false},{t:"Under 218",o:"-110",fav:false}]},
     ],
     books:[{name:"DraftKings",url:"https://sportsbook.draftkings.com"},{name:"FanDuel",url:"https://sportsbook.fanduel.com"},{name:"BetMGM",url:"https://sports.betmgm.com"}]
   },
   {
-    matchKey:"padres",    // SD @ SEA — Sunday Night Baseball (Peacock) 7:20 PM ET
+    matchKey:"canadiens",   // BUF @ MTL G6 — NHL East Semis, Sat May 16 8pm ET, ABC/ESPN
     source:"📊 AI Estimated",
-    context:"Sunday Night Baseball at T-Mobile Park: San Diego looking to take the series after the Padres won Friday's opener here. Seattle trying to salvage the finale at home. The Mariners were 4-7 last night and the Padres took that one 7-4. Peacock-exclusive broadcast (pre-May 31 window) — Seattle has one of the best home run parks in the AL West.",
+    context:"Montreal hosts Buffalo in a pivotal Game 6 at Bell Centre. The Canadiens lead 3-2 after winning G5 6-3, and look to close out at home. A win sends them to face Carolina in the ECF. Buffalo, ending a 14-year playoff drought, needs a road win to survive. The Bell Centre will be electric — Montreal on home ice is a steep hill for the Sabres.",
     lines:[
-      {label:"Moneyline",items:[{t:"Seattle Mariners",o:"-120",fav:true},{t:"San Diego Padres",o:"+100",fav:false}]},
-      {label:"Run Line",items:[{t:"Mariners -1.5",o:"+120",fav:false},{t:"Padres +1.5",o:"-140",fav:true}]},
-      {label:"Total (O/U)",items:[{t:"Over 7.5",o:"-110",fav:false},{t:"Under 7.5",o:"-110",fav:false}]},
+      {label:"Moneyline",items:[{t:"Montreal Canadiens",o:"-175",fav:true},{t:"Buffalo Sabres",o:"+148",fav:false}]},
+      {label:"Puck Line",items:[{t:"MTL -1.5",o:"+165",fav:false},{t:"BUF +1.5",o:"-195",fav:true}]},
+      {label:"Total Goals",items:[{t:"Over 5.5",o:"-115",fav:true},{t:"Under 5.5",o:"-105",fav:false}]},
     ],
-    books:[{name:"DraftKings",url:"https://sportsbook.draftkings.com"},{name:"FanDuel",url:"https://sportsbook.fanduel.com"},{name:"BetMGM",url:"https://sports.betmgm.com"}]
+    books:[{name:"DraftKings",url:"https://sportsbook.draftkings.com"},{name:"FanDuel",url:"https://sportsbook.fanduel.com"},{name:"BetMGM",url:"https://sportsbook.betmgm.com"}]
   },
 ];
 
@@ -7244,7 +7089,7 @@ const ATP_REFRESH_LIVE = 10000;   // 10s when live matches active
 const ATP_REFRESH_IDLE = 120000;  // 2min when no live matches
 let atpLastModified = null;
 let atpIntervalId = null;
-let atpPollingDisabled = true;  // Enabled via field-relay-tennis (Session 4)
+let atpPollingDisabled = true;  // ATP Tour API blocks browser CORS — permanently disabled
 
 async function fetchATPLiveScores(){
   if(atpPollingDisabled) return;
@@ -7474,113 +7319,6 @@ const SOCCER_LEAGUES = [
 let espnScores    = {}; // { "Home|Away": scoreObj }
 let espnScoreTs   = {}; // { "Home|Away": timestamp } — for stale-entry pruning
 const ESPN_SCORE_TTL = 900000; // 15 min — entries not refreshed within window are pruned
-
-// ── RELAY — NBA CDN Proxy (Session 3 — May 16 2026) ─────────────────────────
-// field-relay-nba proxies cdn.nba.com with nba.com origin headers.
-// Runs parallel with ESPN May 23–June 2 (validation), then becomes primary.
-const RELAY_BASE = 'https://field-relay-nba.jeffunglesbee.workers.dev/nba';
-const relayNBAScores = {};
-let   RELAY_HEALTHY  = false;
-let   RELAY_PRIMARY  = false;
-const RELAY_CUTOVER_DATE = '2026-06-02';
-
-async function relayHealthCheck() {
-  try {
-    const r = await fetch(RELAY_BASE.replace('/nba','/health'), {signal:AbortSignal.timeout(4000)});
-    RELAY_HEALTHY = r.ok;
-  } catch { RELAY_HEALTHY = false; }
-  if (RELAY_HEALTHY && TODAY_ISO >= RELAY_CUTOVER_DATE) RELAY_PRIMARY = true;
-  if (FIELD_DEBUG) console.log(`[RELAY] health=${RELAY_HEALTHY} primary=${RELAY_PRIMARY}`);
-  return RELAY_HEALTHY;
-}
-
-function normalizeNBAGameRelay(g) {
-  const home = g.homeTeam, away = g.awayTeam;
-  const homeScore = Number(home.score ?? 0);
-  const awayScore = Number(away.score ?? 0);
-  const stateMap = {1:'pre', 2:'in', 3:'post'};
-  const periodMap = {1:'Q1',2:'Q2',3:'Q3',4:'4th',5:'OT',6:'2OT',7:'3OT'};
-  return {
-    state:       stateMap[g.gameStatus] ?? 'pre',
-    period:      g.period ?? 0,
-    periodLabel: periodMap[g.period] ?? g.gameStatusText ?? '',
-    clock:       g.gameClock ?? '',
-    detail:      g.gameStatusText ?? '',
-    homeScore, awayScore,
-    homeName:    home.teamName   ?? '',
-    awayName:    away.teamName   ?? '',
-    homeCity:    home.teamCity   ?? '',
-    awayCity:    away.teamCity   ?? '',
-    homeTricode: home.teamTricode ?? '',
-    awayTricode: away.teamTricode ?? '',
-    homeWinning: homeScore > awayScore,
-    seriesText:  g.seriesText ?? null,
-    gameId:      g.gameId,
-    source:      'relay',
-  };
-}
-
-async function fetchNBAScoreboardViaRelay() {
-  const r = await fetch(`${RELAY_BASE}/liveData/scoreboard/todaysScoreboard_00.json`, {signal:AbortSignal.timeout(6000)});
-  if (!r.ok) throw new Error(`RELAY scoreboard ${r.status}`);
-  const {scoreboard} = await r.json();
-  return (scoreboard.games||[]).map(normalizeNBAGameRelay);
-}
-async function fetchNBAStandingsViaRelay() {
-  const r = await fetch(`${RELAY_BASE}/liveData/standings/standings_v2.json`, {signal:AbortSignal.timeout(6000)});
-  if (!r.ok) throw new Error(`RELAY standings ${r.status}`);
-  return r.json();
-}
-async function fetchNBABoxScoreViaRelay(gameId) {
-  const r = await fetch(`${RELAY_BASE}/liveData/boxscore/boxscore_${gameId}.json`, {signal:AbortSignal.timeout(6000)});
-  if (!r.ok) throw new Error(`RELAY boxscore ${r.status}`);
-  return r.json();
-}
-async function fetchNBAChannelsViaRelay() {
-  const r = await fetch(`${RELAY_BASE}/liveData/channels/channels_00.json`, {signal:AbortSignal.timeout(6000)});
-  if (!r.ok) throw new Error(`RELAY channels ${r.status}`);
-  return r.json();
-}
-async function fetchNBAOddsViaRelay() {
-  const r = await fetch(`${RELAY_BASE}/liveData/odds_todaysGames.json`, {signal:AbortSignal.timeout(6000)});
-  if (!r.ok) throw new Error(`RELAY odds ${r.status}`);
-  return r.json();
-}
-
-// Parallel validation + primary path — fires after each ESPN poll cycle
-async function fetchNBARelayScores() {
-  if (!RELAY_HEALTHY) return;
-  try {
-    const games = await fetchNBAScoreboardViaRelay();
-    let disc = 0;
-    games.forEach(g => {
-      const homeKey = `${g.homeCity} ${g.homeName}`;
-      const awayKey = `${g.awayCity} ${g.awayName}`;
-      const key = `${homeKey}|${awayKey}`;
-      relayNBAScores[key] = g;
-      if (RELAY_PRIMARY) {
-        // Post-cutover: RELAY is source of truth
-        espnScores[key] = {
-          state: g.state, period: g.period, clock: g.clock, detail: g.detail,
-          homeScore: g.homeScore, awayScore: g.awayScore,
-          homeName: homeKey, awayName: awayKey,
-          homeWinning: g.homeWinning, periodPrefix: 'Q', source: 'relay',
-        };
-        espnScoreTs[key] = Date.now();
-      } else if (FIELD_DEBUG && espnScores[key] && g.state === 'in') {
-        const e = espnScores[key];
-        if (e.homeScore !== g.homeScore || e.awayScore !== g.awayScore) {
-          console.warn(`[RELAY≠ESPN] ${homeKey} vs ${awayKey}: R=${g.homeScore}-${g.awayScore} E=${e.homeScore}-${e.awayScore}`);
-          disc++;
-        }
-      }
-    });
-    if (FIELD_DEBUG) console.log(`[RELAY] ${games.length} games | disc=${disc} | primary=${RELAY_PRIMARY}`);
-  } catch(e) {
-    if (FIELD_DEBUG) console.warn('[RELAY] poll failed:', e.message);
-  }
-}
-
 let espnIntervalId = null;
 const ESPN_REFRESH_LIVE = 30000;   // 30s when games are live
 const ESPN_REFRESH_IDLE = 300000;  // 5min otherwise
@@ -7678,9 +7416,6 @@ async function fetchESPNScores(){
 
   renderESPNScores();
 
-  // Fire RELAY in parallel — doesn't block ESPN cycle
-  fetchNBARelayScores().catch(()=>{});
-
   // Schedule next poll — shorter when games are live, longer otherwise
   // Uses setTimeout (not setInterval) so each poll waits for the previous to complete
   espnIntervalId = setTimeout(fetchESPNScores, hasLive ? ESPN_REFRESH_LIVE : ESPN_REFRESH_IDLE);
@@ -7715,235 +7450,9 @@ function findESPNScore(game){
 
 // Fetch domestic soccer fixtures from ESPN public API — free, no key
 // Fetch any MLB games not already in the hardcoded schedule from ESPN
-// ── MLB Stats API Adapter — Session 1 (May 16 2026) ──────────────────────────
-// Source: statsapi.mlb.com (official, free, CORS-open, no key)
-// Replaces ESPN as primary MLB data source; ESPN is the fallback.
-// Broadcast chip resolution is fully automatic from API broadcasts array.
-// Only ESPN GOTD and Peacock GOTD require manual MLB_DAILY_OVERRIDES entry.
-
-function parseBroadcasts(broadcasts, gameDate, date) {
-  const result = {
-    nationalBundle:  null,
-    localBlackedOut: false,
-    espnGOTD:        false, // set by MLB_DAILY_OVERRIDES only — not auto-detected from API
-    peacockGOTD:     false, // set by MLB_DAILY_OVERRIDES only — not auto-detected from API
-    mlbnShowcase:    false,
-  };
-  const d = date instanceof Date ? date : new Date(date);
-
-  for (const b of broadcasts) {
-    const name = b.name ?? '';
-
-    // Direct chip mapping — national exclusives (automatic)
-    if (MLB_BROADCAST_CHIP_MAP[name]) {
-      result.nationalBundle  = MLB_BROADCAST_CHIP_MAP[name];
-      result.localBlackedOut = true;
-      continue;
-    }
-
-    // Peacock — time-based resolution (automatic)
-    // Leadoff (noon ET = 17:00 UTC) is NOT exclusive; local RSN still airs.
-    // SNB (7pm ET = 23:00 UTC) IS exclusive; local RSN blacked out.
-    if (name === 'Peacock') {
-      const gameHourUTC = new Date(gameDate).getUTCHours();
-      const isLeadoff   = gameHourUTC < PEACOCK_LEADOFF_HOUR_ET;
-      if (isLeadoff) {
-        result.nationalBundle  = 'MLB_LEADOFF';
-        result.localBlackedOut = false;
-      } else {
-        const isPostCutoff = (
-          d.getMonth() > SNB_NBC_CUTOFF.month ||
-          (d.getMonth() === SNB_NBC_CUTOFF.month && d.getDate() >= SNB_NBC_CUTOFF.day)
-        );
-        result.nationalBundle  = isPostCutoff ? 'MLB_NBC' : 'MLB_PEACOCK_SNB';
-        result.localBlackedOut = true;
-      }
-      continue;
-    }
-
-    // ESPN — skip; GOTD not reliably distinguishable by type field until verified.
-    // espnGOTD is set via MLB_DAILY_OVERRIDES.espnGOTD in loadMLBSlate().
-    // TODO: once type:'I' confirmed for GOTD, add: if(b.type==='I') result.espnGOTD=true;
-    if (name === 'ESPN' || name === 'ESPN+') continue;
-
-    // MLB Network — automatic blackout (covers Showcase and regular MLB Network games)
-    if (name === 'MLB Network') {
-      result.mlbnShowcase    = true;
-      result.localBlackedOut = true;
-      continue;
-    }
-  }
-  return result;
-}
-
-function normalizeMLBStatus(code) {
-  if (!code) return 'pregame';
-  if (code === 'I' || code === 'MA') return 'live';
-  if (code === 'F' || code === 'FT' || code === 'FR') return 'final';
-  if (code === 'DR') return 'postponed';
-  return 'pregame';
-}
-
-function normalizeMLBPeriod(linescore) {
-  if (!linescore?.currentInning) return '';
-  const ord  = linescore.currentInningOrd ?? `${linescore.currentInning}th`;
-  const half = linescore.inningHalf === 'Bottom' ? 'Bot' : 'Top';
-  return `${half} ${ord}`;
-}
-
-function normalizeMLBGame(g, date) {
-  const home      = g.teams.home;
-  const away      = g.teams.away;
-  const homeAbbr  = home.team.abbreviation;
-  const awayAbbr  = away.team.abbreviation;
-  const homeScore = home.score ?? 0;
-  const awayScore = away.score ?? 0;
-  const dateStr   = (date instanceof Date ? date : new Date(date))
-                      .toLocaleDateString('en-CA').replace(/-/g, '');
-  const broadcast = parseBroadcasts(g.broadcasts ?? [], g.gameDate, date);
-
-  return {
-    id:             `MLB_${homeAbbr}_${awayAbbr}_${dateStr}`,
-    sourceId:       String(g.gamePk),
-    source:         'mlb-stats',
-    home:           home.team.name,
-    away:           away.team.name,
-    homeTeam:       homeAbbr,
-    awayTeam:       awayAbbr,
-    homeScore,
-    awayScore,
-    score:          `${homeScore}-${awayScore}`,
-    league:         'MLB',
-    status:         normalizeMLBStatus(g.status?.statusCode),
-    period:         normalizeMLBPeriod(g.linescore),
-    margin:         Math.abs(homeScore - awayScore),
-    start_time:     g.gameDate,
-    confirmed:      true,   // Stats API is authoritative — confirmed source
-    nationalBundle: broadcast.nationalBundle,
-    localRsn:       broadcast.localBlackedOut ? null : (MLB_TEAM_RSN[homeAbbr] ?? 'MLB_LOCAL'),
-    espnGOTD:       broadcast.espnGOTD,
-    peacockGOTD:    broadcast.peacockGOTD,
-    mlbnShowcase:   broadcast.mlbnShowcase,
-    inning:         g.linescore?.currentInning ?? 0,
-    inningHalf:     g.linescore?.inningHalf ?? '',
-    outs:           g.linescore?.outs ?? 0,
-    streams:        broadcast.nationalBundle
-                      ? resolveBundle(broadcast.nationalBundle)
-                      : resolveBundle('MLB_LOCAL'),
-    _sport:         'Baseball (MLB)',
-  };
-}
-
-async function fetchMLBSchedule(date) {
-  const d       = date instanceof Date ? date : new Date(date);
-  const dateStr = d.toLocaleDateString('en-CA');
-  const url     = `${MLB_STATS_BASE}/schedule?sportId=1&date=${dateStr}&hydrate=broadcasts(all),team,linescore`;
-  try {
-    const r = await fetch(url);
-    if (!r.ok) throw new Error(`MLB Stats API ${r.status}`);
-    const data  = await r.json();
-    const games = data.dates?.[0]?.games ?? [];
-    return games.map(g => normalizeMLBGame(g, d));
-  } catch (err) {
-    if (FIELD_DEBUG) console.warn('[MLB Stats API] unavailable — ESPN fallback', err.message);
-    return null;
-  }
-}
-
-// fetchMLBLiveGame — Heat Index inputs (baserunners, outs, count)
-// Built here; wired into Heat Index in a subsequent session.
-async function fetchMLBLiveGame(gamePk) {
-  const url  = `${MLB_STATS_BASE.replace('v1','v1.1')}/game/${gamePk}/feed/live`;
-  const r    = await fetch(url);
-  if (!r.ok) throw new Error(`MLB live game ${r.status}`);
-  const data = await r.json();
-  const lp   = data.liveData?.linescore ?? {};
-  const play = data.liveData?.plays?.currentPlay ?? {};
-  return {
-    inning:     lp.currentInning ?? 0,
-    inningHalf: lp.inningHalf ?? '',
-    outs:       lp.outs ?? 0,
-    balls:      play.count?.balls ?? 0,
-    strikes:    play.count?.strikes ?? 0,
-    onFirst:    !!lp.offense?.first,
-    onSecond:   !!lp.offense?.second,
-    onThird:    !!lp.offense?.third,
-    awayScore:  lp.teams?.away?.runs ?? 0,
-    homeScore:  lp.teams?.home?.runs ?? 0,
-  };
-}
-
-// mlbBaserunnerBonus — wired into Heat Index in subsequent session
-function mlbBaserunnerBonus(liveState) {
-  if (!liveState) return 0;
-  const { onFirst, onSecond, onThird, outs, inning } = liveState;
-  const runnersOn = (onFirst?1:0) + (onSecond?1:0) + (onThird?1:0);
-  let bonus = runnersOn * 3;
-  if (outs === 2)   bonus += 5;
-  if (inning >= 9)  bonus += 5;
-  return Math.min(bonus, 20);
-}
-
-// loadMLBSlate — main entry point; wired into fetchMLBFixtures below
-async function loadMLBSlate(date) {
-  const mlbGames = await fetchMLBSchedule(date);
-  if (mlbGames) {
-    return mlbGames.map(g => {
-      const key = `${g.awayTeam}@${g.homeTeam}`;
-      const isEspnGOTD    = g.espnGOTD    || MLB_DAILY_OVERRIDES.espnGOTD    === key;
-      const isPeacockGOTD = g.peacockGOTD || MLB_DAILY_OVERRIDES.peacockGOTD === key;
-
-      // ESPN GOTD — NON-EXCLUSIVE: shows espnapp + local RSN chips (in-market)
-      // Doc ref: "Code Changes Log MLB Local Chip Rule May 11" — MLB_ESPNU_GOTD: ["espnapp","rsn"]
-      const streams = isEspnGOTD    ? resolveBundle('MLB_ESPNU_GOTD')
-                    : isPeacockGOTD ? resolveBundle('MLB_PEACOCK_GOTD')
-                    : g.streams;
-
-      // Peacock GOTD weekday — EXCLUSIVE: local RSN suppressed (blacked out)
-      // ESPN GOTD — NON-EXCLUSIVE: local RSN still shows (in-market viewers)
-      const localRsn = isPeacockGOTD ? null : g.localRsn;
-
-      return {
-        ...g,
-        espnGOTD:    isEspnGOTD,
-        peacockGOTD: isPeacockGOTD,
-        streams,
-        localRsn,
-      };
-    });
-  }
-  if (FIELD_DEBUG) console.warn('[MLB] Stats API unavailable — using ESPN fallback');
-  return null;
-}
-
 async function fetchMLBFixtures(){
   if(!allData||!allData.sports) return;
   const today = new Date();
-
-  // ── Try MLB Stats API first (official, free, CORS-open) ──────────────────
-  try {
-    const mlbGames = await loadMLBSlate(today);
-    if (mlbGames && mlbGames.length > 0) {
-      let mlbSec = allData.sports.find(s => s.sport === 'Baseball (MLB)');
-      if (!mlbSec) { mlbSec = {sport:'Baseball (MLB)', games:[]}; allData.sports.push(mlbSec); }
-      let added = 0;
-      mlbGames.forEach(g => {
-        const exists = (mlbSec.games||[]).some(existing =>
-          existing.home === g.home && existing.away === g.away
-        );
-        if (exists) return;
-        mlbSec.games.push(g);
-        added++;
-      });
-      if (added > 0) { buildFilters(allData.sports); scheduleRenderAll(); }
-      if (FIELD_DEBUG) console.log(`[MLB Stats API] Added ${added} games`);
-      return; // success — skip ESPN fallback
-    }
-  } catch(e) {
-    if (FIELD_DEBUG) console.warn('[MLB Stats API] error, falling back to ESPN:', e.message);
-  }
-
-  // ── ESPN fallback (original logic) ───────────────────────────────────────
   const dateStr = today.getFullYear()
     + String(today.getMonth()+1).padStart(2,"0")
     + String(today.getDate()).padStart(2,"0");
@@ -8199,9 +7708,9 @@ function renderESPNScores(){
         periodLabel = `<span class="score-final">Final</span>`;
       }
 
-      // Baseball situation — outs + base runners (MLB only, never soccer)
+      // Baseball situation — outs + base runners
       let sitHTML = "";
-      if(isLive && !isSoccer && score.outs != null){
+      if(isLive && score.outs !== null){
         // Outs: 3 dots, filled = out recorded
         const outDots = [0,1,2].map(i=>
           `<span class="out-dot${i<score.outs?" filled":""}"></span>`
@@ -8318,7 +7827,6 @@ async function fetchSchedule(){
   }).catch(()=>{ /* supplemental optional — schedule already rendered */ });
   startOddsPolling();
   fetchESPNScores(); // Start live score polling
-  relayHealthCheck().catch(()=>{}); // RELAY health check — enables parallel NBA validation
   fetchMLBFixtures();    // Fill
 
   // ── DAILY RETURN STREAK (Wow #29) ────────────────────────────────────────
@@ -8394,8 +7902,13 @@ renderUsageBadge(getUsage());
 (async function autoGeolocate(){
   try{
     if(localStorage.getItem("field_tz")) return; // Respect manual TZ
+    // GDPR interim: skip silent geo collection for users in EU/UK timezones
+    // Full consent gate: see C2 build (geo consent prompt, Master T2-09)
     const tz = Intl.DateTimeFormat().resolvedOptions().timeZone||"";
-    if(tz.startsWith("Europe/")||tz.startsWith("Atlantic/")) return;
+    if(tz.startsWith("Europe/")||tz.startsWith("Atlantic/")){
+      if(FIELD_DEBUG) console.debug("[Geo] EU timezone detected — skipping silent geo until C2 consent built");
+      return;
+    }
     const r = await fetch("https://ipapi.co/json/",{signal:AbortSignal.timeout(3000)});
     if(!r.ok) return;
     const geo = await r.json();
@@ -8622,18 +8135,14 @@ let _pwaPrompt = null;
   if(typeof window === 'undefined' || typeof location === 'undefined') return;
   const isSecure = location.protocol === 'https:' || location.hostname === 'localhost';
 
-  // SW_VERSION — bump on every deploy to bust returning user cache
-  // Assertion 28 in smoke verifies this constant is present
-  const SW_VERSION = '2026-05-17';
-
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
   // Cache strategy: API-only (ESPN scores, weather, odds, SportsDB).
-  // index.html is NOT cached — always loads fresh from CDN.
-  // SW_VERSION passed as query param so new deploys invalidate the cached SW.
+  // index.html is NOT cached — always loads fresh from CDN. No version bump on redeploy.
+  // Fallback to Blob URL on localhost/file:// where /sw.js is not served.
   if(isSecure && 'serviceWorker' in navigator){
     try {
       const swPath = (location.hostname.endsWith('.pages.dev') || location.hostname.endsWith('.workers.dev') || !location.hostname.includes('localhost'))
-        ? `/sw.js?v=${SW_VERSION}`
+        ? '/sw.js'
         : null;
       if(swPath){
         navigator.serviceWorker.register(swPath, {scope:'/'})
@@ -9015,19 +8524,16 @@ async function renderEPLMatchBriefCard(gameCard) {
   (allData?.sports||[]).forEach(s=>(s.games||[]).forEach(g=>{ if(g._id===gameid) game=g; }));
   if(!game) return;
 
-  // Only for top European leagues — MLS and Bundesliga excluded
+  // Only for Premier League (and other EPL-style leagues if needed)
   const sport = (gameCard.dataset.sport||'').toLowerCase();
   if(!sport.includes('premier league') && !sport.includes('la liga') &&
-     !sport.includes('ligue 1') &&
-     !sport.includes('serie a') && !sport.includes('uefa')) return;
+     !sport.includes('bundesliga') && !sport.includes('ligue 1') &&
+     !sport.includes('serie a') && !sport.includes('mls')) return;
 
   // Don't add if already present
   if(gameCard.previousElementSibling?.classList.contains('epl-match-brief-card')) return;
 
-  // QW-7: Cache key includes game status — pregame brief won't serve during live/final
-  // field_epl_brief_{gameId}_{status} invalidates when game transitions pre→in→post
-  const gameStatus = game?.status || game?.state || 'pre';
-  const cacheKey = 'field_epl_brief_' + gameid + '_' + gameStatus;
+  const cacheKey = 'field_epl_brief_' + gameid;
   const cached = sessionStorage.getItem(cacheKey);
 
   const staticText = buildEPLMatchBriefStatic(game);
@@ -9060,22 +8566,17 @@ async function renderEPLMatchBriefCard(gameCard) {
 function initEPLMatchBriefs() {
   if(!allData) return;
   // Fire for all soccer/league games (not playoff/cup)
-  // Only fire for top European leagues — not MLS (15+ games/week) or Bundesliga (ESPN+ niche)
-  // Max 3 briefs per league — Saturday EPL can have 10 games; we only want marquee fixtures
-  const BRIEF_LEAGUES = [
-    { selector: '.game-card[data-sport*="Premier League"]', max: 3 },
-    { selector: '.game-card[data-sport*="La Liga"]',        max: 2 },
-    { selector: '.game-card[data-sport*="Serie A"]',        max: 2 },
-    { selector: '.game-card[data-sport*="Ligue 1"]',        max: 2 },
-    { selector: '.game-card[data-sport*="UEFA Champions"]', max: 4 },
-    { selector: '.game-card[data-sport*="UEFA Europa"]',    max: 3 },
-    { selector: '.game-card[data-sport*="UEFA Conference"]',max: 2 },
+  const selectors = [
+    '.game-card[data-sport*="Premier League"]',
+    '.game-card[data-sport*="La Liga"]',
+    '.game-card[data-sport*="Bundesliga"]',
+    '.game-card[data-sport*="Ligue 1"]',
+    '.game-card[data-sport*="Serie A"]',
+    '.game-card[data-sport*="MLS"]',
   ];
-  BRIEF_LEAGUES.forEach(({ selector, max }) => {
-    const cards = [...document.querySelectorAll(selector)].slice(0, max);
-    cards.forEach(card => {
-      if(card.dataset.gameid) renderEPLMatchBriefCard(card).catch(()=>{});
-    });
+  const cards = document.querySelectorAll(selectors.join(','));
+  cards.forEach(card => {
+    if(card.dataset.gameid) renderEPLMatchBriefCard(card).catch(()=>{});
   });
 }
 
