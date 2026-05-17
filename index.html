@@ -8022,18 +8022,18 @@ const FPL_SHORT_NAME_MAP = {
 
 // In-memory team map {fplId → fieldTeamName}, current GW
 let _fplTeamMap = null;
+let _fplPlayerMap = null;
 let _fplCurrentGW = null;
-const _FPL_BOOTSTRAP_KEY = 'fpl_bootstrap_v1';
+const _FPL_BOOTSTRAP_KEY = 'fpl_bootstrap_v2';
 const _FPL_BOOTSTRAP_TTL = 24 * 3600 * 1000;
 
 async function fplLoadBootstrap() {
-  // Check sessionStorage cache first
   try {
     const raw = sessionStorage.getItem(_FPL_BOOTSTRAP_KEY);
     if (raw) {
-      const { map, gw, ts } = JSON.parse(raw);
+      const { map, players, gw, ts } = JSON.parse(raw);
       if (Date.now() - ts < _FPL_BOOTSTRAP_TTL) {
-        _fplTeamMap = map; _fplCurrentGW = gw;
+        _fplTeamMap = map; _fplPlayerMap = players; _fplCurrentGW = gw;
         return true;
       }
     }
@@ -8044,27 +8044,77 @@ async function fplLoadBootstrap() {
     if (!r.ok) return false;
     const data = await r.json();
 
-    // Build {teamId → FIELD team name} using short_name normalization map
+    // {teamId → FIELD team name}
     const map = {};
     for (const t of (data.teams || [])) {
       map[t.id] = FPL_SHORT_NAME_MAP[t.short_name] || FPL_SHORT_NAME_MAP[t.name] || t.name;
     }
     _fplTeamMap = map;
 
-    // Current GW: last event with is_current=true, else last finished event
+    // {elementId → web_name} — e.g. 302 → "Salah"
+    const players = {};
+    for (const p of (data.elements || [])) {
+      players[p.id] = p.web_name;
+    }
+    _fplPlayerMap = players;
+
     const events = data.events || [];
     const cur = events.find(e => e.is_current) || [...events].reverse().find(e => e.finished);
     _fplCurrentGW = cur ? cur.id : 37;
 
-    sessionStorage.setItem(_FPL_BOOTSTRAP_KEY, JSON.stringify({ map, gw: _fplCurrentGW, ts: Date.now() }));
+    sessionStorage.setItem(_FPL_BOOTSTRAP_KEY, JSON.stringify({ map, players, gw: _fplCurrentGW, ts: Date.now() }));
     return true;
-  } catch(e) {
-    return false;
+  } catch(e) { return false; }
+}
+
+// Extract goalscorer names from a fixture's stats array
+// Returns {home:['Salah','Jota'], away:['Haaland']} or null if no goals yet
+function fplExtractScorers(fixture) {
+  if (!_fplPlayerMap || !fixture.stats?.length) return null;
+  const home = [], away = [];
+  for (const stat of fixture.stats) {
+    if (stat.identifier !== 'goals_scored') continue;
+    for (const g of (stat.h || [])) {
+      const n = _fplPlayerMap[g.element];
+      if (n) for (let i = 0; i < (g.value || 1); i++) home.push(n);
+    }
+    for (const g of (stat.a || [])) {
+      const n = _fplPlayerMap[g.element];
+      if (n) for (let i = 0; i < (g.value || 1); i++) away.push(n);
+    }
+    break;
   }
+  return (home.length || away.length) ? { home, away } : null;
+}
+
+// Inject goalscorer names below the score on matching game cards
+function fplInjectScorerDOM(home, away, scorers) {
+  if (!scorers) return;
+  document.querySelectorAll('.game-card').forEach(card => {
+    const h = card.dataset.home || '';
+    const a = card.dataset.away || '';
+    if (!espnTeamMatch(h, home) || !espnTeamMatch(a, away)) return;
+    card.querySelector('.fpl-goals')?.remove();
+    const fmt = arr => {
+      const c = {};
+      arr.forEach(n => c[n] = (c[n]||0) + 1);
+      return Object.entries(c).map(([n,v]) => v > 1 ? `${n} (${v})` : n).join(' · ');
+    };
+    const parts = [];
+    if (scorers.home.length) parts.push(fmt(scorers.home));
+    if (scorers.away.length) parts.push(fmt(scorers.away));
+    if (!parts.length) return;
+    const sw = card.querySelector('.score-wrap');
+    if (!sw) return;
+    const div = document.createElement('div');
+    div.className = 'fpl-goals';
+    div.style.cssText = 'font-size:.6rem;color:var(--smoke);margin-top:.15rem;letter-spacing:.01em;opacity:.85';
+    div.textContent = '⚽ ' + parts.join('  ');
+    sw.appendChild(div);
+  });
 }
 
 async function fetchFPLLiveScores() {
-  // Ensure team map is loaded
   if (!_fplTeamMap && !(await fplLoadBootstrap())) return;
 
   try {
@@ -8072,9 +8122,8 @@ async function fetchFPLLiveScores() {
     if (!r.ok) return;
     const fixtures = await r.json();
 
-    let injected = 0;
     for (const f of fixtures) {
-      if (!f.started) continue; // skip pre-match
+      if (!f.started) continue;
       const home = _fplTeamMap[f.team_h];
       const away = _fplTeamMap[f.team_a];
       if (!home || !away) continue;
@@ -8082,29 +8131,31 @@ async function fetchFPLLiveScores() {
       const hScore = f.team_h_score ?? 0;
       const aScore = f.team_a_score ?? 0;
       const mins   = f.minutes || 0;
-      const period = mins > 45 ? 2 : 1;
       const state  = f.finished ? 'post' : 'in';
       const clock  = f.finished ? '' : (mins > 0 ? String(mins) : '');
       const detail = f.finished ? 'FT' : (mins > 0 ? `${mins}'` : 'LIVE');
+      const key    = `${home}|${away}`;
 
-      const key = `${home}|${away}`;
-      // Only write if no existing score, or existing is stale / lower-priority source
       const existing = espnScores[key];
       if (!existing || existing.source === 'fpl' || state === 'post') {
         espnScores[key] = {
-          state, period, clock, detail,
+          state, period: mins > 45 ? 2 : 1, clock, detail,
           homeScore: hScore, awayScore: aScore,
           homeName: home, awayName: away,
           homeWinning: hScore > aScore,
-          periodPrefix: "'", // triggers soccer clock rendering (isSoccer check)
+          periodPrefix: "'",
           source: 'fpl',
         };
         espnScoreTs[key] = Date.now();
-        injected++;
       }
+
+      // Goalscorer names — extracted from fixture stats array (populated live + post-match)
+      const scorers = fplExtractScorers(f);
+      if (scorers) fplInjectScorerDOM(home, away, scorers);
     }
   } catch(e) {}
 }
+
 
 async function fetchSoccerFixtures(){
   if(!allData||!allData.sports) return;
