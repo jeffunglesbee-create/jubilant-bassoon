@@ -4373,23 +4373,28 @@ function buildTodaySchedule(){
     return d.toLocaleDateString("en-CA",{timeZone:tz})===todayFresh;
   }
 
-  // ── NBA Playoffs — Friday May 15 2026 ──────────────────────────
-  // Source: Yahoo Sports NBA Playoffs schedule verified May 15, 2026
-  //   DET @ CLE G6 — 7pm ET / 23:00 UTC — Prime Video · CLE leads 3-2
-  //   MIN @ SAS G6 — 9:30pm ET / 01:30 UTC May 16 — Prime Video · SAS leads 3-2
+  // ── NBA Playoffs — Saturday May 16 2026 ──────────────────────────
+  // Source: NBA.com verified May 16, 2026
+  //   RESULTS (May 15): DET wins G6 115-94 at CLE → East Semis TIED 3-3 → G7 Sunday
+  //   RESULTS (May 15): SAS wins G6 139-109 at MIN → SAS ADVANCES to West CF 4-2
+  //   G7 SUNDAY May 17: CLE @ DET — 8pm ET / 00:00 UTC May 18 — ABC/ESPN
+  //   WEST CF G1: OKC vs SAS — Monday May 18 8:30pm ET / 00:30 UTC May 19 — ESPN
   const nbaGames=[
-    {home:"Cleveland Cavaliers",   away:"Detroit Pistons",         league:"NBA Playoffs – East Semis G6 · CLE leads 3-2", start_time:"2026-05-15T23:00:00Z", confirmed:true, venue:"Rocket Mortgage FieldHouse, Cleveland OH", streams:resolveBundle("NBA_PRIME"), crew:"Ian Eagle · Stan Van Gundy (Prime Video)", seriesRecord:"CLE leads 3-2"},
-    {home:"Minnesota Timberwolves", away:"San Antonio Spurs",       league:"NBA Playoffs – West Semis G6 · SAS leads 3-2", start_time:"2026-05-16T01:30:00Z", confirmed:true, venue:"Target Center, Minneapolis MN",            streams:resolveBundle("NBA_PRIME"), seriesRecord:"SAS leads 3-2"},
+    // No NBA games Saturday May 16 — off day between semis and conference finals
+    // West CF set: OKC (1) vs SAS (2) · East CF: NYK (3) awaits CLE/DET G7 winner
+    {home:"Detroit Pistons",       away:"Cleveland Cavaliers",  league:"NBA Playoffs – East Semis G7 · Series tied 3-3", start_time:"2026-05-18T00:00:00Z", confirmed:true, venue:"Little Caesars Arena, Detroit MI",  streams:resolveBundle("NBA_ABC"),  seriesRecord:"Series tied 3-3"},
+    {home:"Oklahoma City Thunder", away:"San Antonio Spurs",    league:"NBA Playoffs – West CF G1",                      start_time:"2026-05-19T00:30:00Z", confirmed:true, venue:"Paycom Center, Oklahoma City OK", streams:resolveBundle("NBA_ESPN"), seriesRecord:"Series 0-0"},
   ].filter(g=>isToday(g.start_time));
 
-  // ── NHL Playoffs — Friday May 15 2026 ──────────────────────────
-  // Source: Yahoo Sports NHL Playoffs coverage verified May 15, 2026
-  //   MIN @ COL G6 — 8pm ET / 00:00 UTC May 16 — ESPN · series record TBD post-G5
-  //   MTL @ BUF G6 — 8pm ET / 00:00 UTC May 16 — TNT · series record TBD post-G5
+  // ── NHL Playoffs — Saturday May 16 2026 ──────────────────────────
+  // Source: NHL.com verified May 16, 2026
+  //   TONIGHT: MTL vs BUF G6 — 8pm ET / 00:00 UTC May 17 — ABC/ESPN · MTL leads series 3-2
+  //   If MTL wins → MTL advances to East CF vs CAR · If BUF wins → G7 at BUF
   const nhlGames=[
-    // No NHL games May 15 — off night
-    // COL vs MIN: Colorado wins series 4-1 (clinched G5 May 13)
-    // BUF @ MTL G6: Sat May 16 8pm ET on ABC/ESPN — enters tomorrow's schedule
+    // COL vs MIN: Colorado won R2 series 4-1 (clinched May 13)
+    // VGK vs ANA: Vegas won R2 series 4-2 (clinched May 14)
+    // West CF: COL vs VGK begins May 20 at Ball Arena (Ball Arena, Denver)
+    // BUF vs MTL East Semis: MTL leads 3-2 — G6 TONIGHT
     {home:"Montreal Canadiens", away:"Buffalo Sabres",   league:"NHL Playoffs – East Semis G6 · MTL leads 3-2", start_time:"2026-05-17T00:00:00Z", confirmed:true, venue:"Bell Centre, Montreal QC",   streams:resolveBundle("NHL_ABC"), crew:"Sean McDonough · Ray Ferraro · Haley Skarupa (ESPN/ABC)"},
     // VGK @ ANA G7: TBD (likely May 16-17 on ABC/ESPN)
     // ── NHL Western Conference Finals — Colorado Avalanche vs Vegas Golden Knights ──
@@ -4552,6 +4557,19 @@ function buildTodaySchedule(){
     {home:"New York Mets",        away:"New York Yankees",        start_time:"2026-05-16T23:15:00Z", confirmed:true, venue:"Citi Field, Queens NY",                   nationalBundle:"MLB_FOX", matchupNote:"Subway Series — interleague (AL East vs NL East), FOX primetime", localNote:"FOX (free OTA) — Subway Series"},
     // FOX 7:15pm — Padres @ Mariners (regional — West Coast markets)
     {home:"Seattle Mariners",     away:"San Diego Padres",        start_time:"2026-05-16T23:15:00Z", confirmed:true, venue:"T-Mobile Park, Seattle WA",               nationalBundle:"MLB_FOX", localNote:"FOX (free OTA) — regional window"},
+    // Saturday May 16 — full local RSN slate
+    {home:"Toronto Blue Jays",    away:"Detroit Tigers",          start_time:"2026-05-16T17:10:00Z", confirmed:true, venue:"Rogers Centre, Toronto ON",                localNote:"Sportsnet (Canada) · Bally Sports Detroit"},
+    {home:"St. Louis Cardinals",  away:"Kansas City Royals",      start_time:"2026-05-16T18:15:00Z", confirmed:true, venue:"Busch Stadium, St. Louis MO",              localNote:"Cardinals.TV · Royals.TV"},
+    {home:"Colorado Rockies",     away:"Arizona Diamondbacks",    start_time:"2026-05-16T19:10:00Z", confirmed:true, venue:"Coors Field, Denver CO",                   localNote:"Rockies.TV · ArizonaSports"},
+    {home:"Pittsburgh Pirates",   away:"Philadelphia Phillies",   start_time:"2026-05-16T20:05:00Z", confirmed:true, venue:"PNC Park, Pittsburgh PA",                  localRsn:"PHILLIES_LOCAL", localNote:"AT&T SportsNet Pittsburgh · NBC Sports Philadelphia"},
+    {home:"Tampa Bay Rays",       away:"Miami Marlins",           start_time:"2026-05-16T20:10:00Z", confirmed:true, venue:"Tropicana Field, St. Petersburg FL",       localNote:"Rays.TV · Marlins.TV"},
+    {home:"Cleveland Guardians",  away:"Cincinnati Reds",         start_time:"2026-05-16T22:10:00Z", confirmed:true, venue:"Progressive Field, Cleveland OH",           localRsn:"GUARDIANS_LOCAL", localNote:"CLEGuardians.TV · Reds.TV"},
+    {home:"Minnesota Twins",      away:"Milwaukee Brewers",       start_time:"2026-05-16T23:10:00Z", confirmed:true, venue:"Target Field, Minneapolis MN",              localNote:"Twins.TV · Brewers.TV"},
+    {home:"Chicago White Sox",    away:"Chicago Cubs",            start_time:"2026-05-16T23:10:00Z", matchupNote:"Crosstown Classic — interleague (NL Central vs AL Central)", confirmed:true, venue:"Guaranteed Rate Field, Chicago IL", localNote:"CHSN (White Sox) · Marquee Sports Network (Cubs)"},
+    {home:"Houston Astros",       away:"Texas Rangers",           start_time:"2026-05-16T23:10:00Z", confirmed:true, venue:"Daikin Park, Houston TX",                  localNote:"Space City Home Network · CW33 (DFW)"},
+    {home:"Atlanta Braves",       away:"Boston Red Sox",          start_time:"2026-05-16T23:15:00Z", confirmed:true, venue:"Truist Park, Atlanta GA",                  localRsn:"NESN_LOCAL", localNote:"BravesVision (Atlanta) · NESN (Boston)"},
+    {home:"Los Angeles Angels",   away:"Los Angeles Dodgers",     start_time:"2026-05-17T01:38:00Z", confirmed:true, venue:"Angel Stadium, Anaheim CA",                localNote:"ABTV (Angels) · Spectrum SportsNet LA (Dodgers)"},
+    {home:"Athletics",            away:"San Francisco Giants",    start_time:"2026-05-17T01:40:00Z", confirmed:true, venue:"Sutter Health Park, Sacramento CA",         localNote:"Athletics.TV · NBC Sports Bay Area (SF)"},
   ];
   const mlbGames=mlbRaw.filter(g=>isToday(g.start_time)).map(g=>{
     // Stream resolution — priority order (highest first):
@@ -4695,24 +4713,29 @@ function buildTodaySchedule(){
      streams:resolveBundle("AFL_USA")},
     // ── Round 10 starts Thu May 14 — no AFL games May 11 ──
   ].filter(g=>isToday(g.start_time));
-  // ── MLS Soccer — no games Monday May 11 (next weekend slate May 15-17) ──────
-  // All MLS games on Apple TV (no separate Season Pass needed since 2026)
+  // ── MLS Soccer — Saturday May 16 2026 (Matchday 14) ──────────────
+  // All MLS games on Apple TV (included w/ Apple TV sub — 2026 deal, no separate Season Pass)
+  // Sources: mlssoccer.com schedule verified May 16, 2026
   const mlsSoccer=[
-    // ── Wednesday May 13, 2026 — MLS Matchday 13 ─────────────────────────
-    // Primary: Apple TV (all 510 games included w/ Apple TV sub — 2026 deal, no separate Season Pass)
-    // National TV: CLT vs NYC on FS1 (7:15pm ET) — 1 of 34 FOX/FS1 games this season
-    // Canada: MTL vs POR also on TSN/RDS per weekly Canadian club rule
-    // Sources: mlssoccer.com schedule, foxsports.com MLS schedule (1 match today), Yahoo Sports FOX/FS1 list
-    {home:"Charlotte FC",           away:"New York City FC",      league:"MLS \u2014 FS1 National \u00b7 7:15pm ET", start_time:"2026-05-13T23:15:00Z", confirmed:true, venue:"Bank of America Stadium, Charlotte",  streams:resolveBundle("MLS_FS1")},
-    {home:"FC Cincinnati",          away:"Inter Miami CF",         league:"MLS \u2014 2026 Season",                  start_time:"2026-05-13T23:30:00Z", confirmed:true, venue:"TQL Stadium, Cincinnati",              streams:resolveBundle("MLS_SOCCER")},
-    {home:"DC United",              away:"Chicago Fire FC",        league:"MLS \u2014 2026 Season",                  start_time:"2026-05-13T23:30:00Z", confirmed:true, venue:"Audi Field, Washington DC",            streams:resolveBundle("MLS_SOCCER")},
-    {home:"CF Montr\u00e9al",      away:"Portland Timbers",       league:"MLS \u2014 2026 Season",                  start_time:"2026-05-13T23:30:00Z", confirmed:true, venue:"Stade Saputo, Montreal",               streams:resolveBundle("MLS_SOCCER"), localNote:"TSN/RDS (Canada)"},
-    {home:"New England Revolution", away:"Nashville SC",           league:"MLS \u2014 2026 Season",                  start_time:"2026-05-13T23:30:00Z", confirmed:true, venue:"Gillette Stadium, Foxboro",            streams:resolveBundle("MLS_SOCCER")},
-    {home:"New York Red Bulls",     away:"Columbus Crew",          league:"MLS \u2014 2026 Season",                  start_time:"2026-05-13T23:30:00Z", confirmed:true, venue:"Red Bull Arena, Harrison NJ",          streams:resolveBundle("MLS_SOCCER")},
-    {home:"Orlando City SC",        away:"Philadelphia Union",     league:"MLS \u2014 2026 Season",                  start_time:"2026-05-13T23:30:00Z", confirmed:true, venue:"Inter&Co Stadium, Orlando",            streams:resolveBundle("MLS_SOCCER")},
-    {home:"FC Dallas",              away:"Vancouver Whitecaps FC", league:"MLS \u2014 2026 Season",                  start_time:"2026-05-14T00:30:00Z", confirmed:true, venue:"Toyota Stadium, Frisco TX",            streams:resolveBundle("MLS_SOCCER")},
-    {home:"Sporting Kansas City",   away:"LA Galaxy",              league:"MLS \u2014 2026 Season",                  start_time:"2026-05-14T00:30:00Z", confirmed:true, venue:"Children's Mercy Park, Kansas City",  streams:resolveBundle("MLS_SOCCER")},
-    {home:"Minnesota United FC",    away:"Colorado Rapids",        league:"MLS \u2014 2026 Season",                  start_time:"2026-05-14T00:30:00Z", confirmed:true, venue:"Allianz Field, St. Paul MN",           streams:resolveBundle("MLS_SOCCER")},
+    // ── Saturday May 16 — 4:30pm ET complete ───────────────────────
+    {home:"CF Montréal",           away:"Chicago Fire",          league:"MLS — 2026 Season",        start_time:"2026-05-16T20:30:00Z", confirmed:true, venue:"Stade Saputo, Montreal QC",          streams:resolveBundle("MLS_SOCCER"), localNote:"TSN/RDS (Canada)"},
+    // ── Saturday May 16 — 7:30pm ET slate ──────────────────────────
+    {home:"Charlotte FC",          away:"Toronto FC",            league:"MLS — 2026 Season",        start_time:"2026-05-16T23:30:00Z", confirmed:true, venue:"Bank of America Stadium, Charlotte",  streams:resolveBundle("MLS_SOCCER")},
+    {home:"DC United",             away:"Saint Louis City SC",   league:"MLS — 2026 Season",        start_time:"2026-05-16T23:30:00Z", confirmed:true, venue:"Audi Field, Washington DC",           streams:resolveBundle("MLS_SOCCER")},
+    {home:"New England Revolution",away:"Minnesota United FC",   league:"MLS — 2026 Season",        start_time:"2026-05-16T23:30:00Z", confirmed:true, venue:"Gillette Stadium, Foxboro MA",        streams:resolveBundle("MLS_SOCCER")},
+    {home:"New York Red Bulls",    away:"New York City FC",      league:"MLS — Hudson River Derby", start_time:"2026-05-16T23:30:00Z", confirmed:true, venue:"Red Bull Arena, Harrison NJ",         streams:resolveBundle("MLS_SOCCER")},
+    {home:"Orlando City SC",       away:"Atlanta United FC",     league:"MLS — 2026 Season",        start_time:"2026-05-16T23:30:00Z", confirmed:true, venue:"Inter&Co Stadium, Orlando FL",        streams:resolveBundle("MLS_SOCCER")},
+    {home:"Philadelphia Union",    away:"Columbus Crew",         league:"MLS — 2026 Season",        start_time:"2026-05-16T23:30:00Z", confirmed:true, venue:"Subaru Park, Chester PA",             streams:resolveBundle("MLS_SOCCER")},
+    // ── Saturday May 16 — 8:30–10:30pm ET late slate ───────────────
+    {home:"Austin FC",             away:"Sporting Kansas City",  league:"MLS — 2026 Season",        start_time:"2026-05-17T00:30:00Z", confirmed:true, venue:"Q2 Stadium, Austin TX",               streams:resolveBundle("MLS_SOCCER")},
+    {home:"Houston Dynamo",        away:"Vancouver Whitecaps FC",league:"MLS — 2026 Season",        start_time:"2026-05-17T00:30:00Z", confirmed:true, venue:"Shell Energy Stadium, Houston TX",    streams:resolveBundle("MLS_SOCCER")},
+    {home:"Seattle Sounders",      away:"LA Galaxy",             league:"MLS — 2026 Season",        start_time:"2026-05-17T01:15:00Z", confirmed:true, venue:"Lumen Field, Seattle WA",             streams:resolveBundle("MLS_SOCCER")},
+    {home:"Real Salt Lake",        away:"Colorado Rapids",       league:"MLS — 2026 Season",        start_time:"2026-05-17T01:30:00Z", confirmed:true, venue:"America First Field, Sandy UT",       streams:resolveBundle("MLS_SOCCER")},
+    {home:"San Diego FC",          away:"FC Cincinnati",         league:"MLS — 2026 Season",        start_time:"2026-05-17T01:30:00Z", confirmed:true, venue:"Snapdragon Stadium, San Diego CA",    streams:resolveBundle("MLS_SOCCER")},
+    {home:"San Jose Earthquakes",  away:"FC Dallas",             league:"MLS — 2026 Season",        start_time:"2026-05-17T02:30:00Z", confirmed:true, venue:"PayPal Park, San Jose CA",            streams:resolveBundle("MLS_SOCCER")},
+    // ── Sunday May 17 ───────────────────────────────────────────────
+    {home:"Inter Miami CF",        away:"Portland Timbers",      league:"MLS — 2026 Season",        start_time:"2026-05-17T22:00:00Z", confirmed:true, venue:"Chase Stadium, Fort Lauderdale FL",   streams:resolveBundle("MLS_SOCCER")},
+    {home:"Nashville SC",          away:"Los Angeles FC",        league:"MLS — 2026 Season",        start_time:"2026-05-18T00:00:00Z", confirmed:true, venue:"GEODIS Park, Nashville TN",           streams:resolveBundle("MLS_SOCCER")},
   ].filter(g=>isToday(g.start_time));
 
   // ── Tennis: Italian Open Rome (May 6-17 2026) ──────────────────────────
