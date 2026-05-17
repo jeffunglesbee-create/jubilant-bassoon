@@ -7622,6 +7622,77 @@ const ESPN_REFRESH_LIVE     = 30000;   // 30s  — games in progress
 const ESPN_REFRESH_IDLE     = 300000;  // 5min — games scheduled later today
 const ESPN_REFRESH_FINISHED = 900000;  // 15min — all today's games final
 
+// ── NHL Relay Adapter ──────────────────────────────────────────────────────
+// Source: api-web.nhle.com via /nhl/* relay route
+// CORS: blocks browser origins — relay required (confirmed broken without relay)
+// Data: /v1/scoreboard/now — live scores, period, clock, game state
+// COL vs VGK West CF starts May 20 — this adapter must be live before that
+
+const NHL_RELAY_BASE = 'https://field-relay-nba.jeffunglesbee.workers.dev/nhl';
+
+// NHL abbreviation → full team name (matches FIELD nhlGames home/away values)
+const NHL_ABBREV_MAP = {
+  'ANA':'Anaheim Ducks',       'BOS':'Boston Bruins',        'BUF':'Buffalo Sabres',
+  'CGY':'Calgary Flames',      'CAR':'Carolina Hurricanes',   'CHI':'Chicago Blackhawks',
+  'COL':'Colorado Avalanche',  'CBJ':'Columbus Blue Jackets', 'DAL':'Dallas Stars',
+  'DET':'Detroit Red Wings',   'EDM':'Edmonton Oilers',       'FLA':'Florida Panthers',
+  'LAK':'Los Angeles Kings',   'MIN':'Minnesota Wild',        'MTL':'Montreal Canadiens',
+  'NSH':'Nashville Predators', 'NJD':'New Jersey Devils',     'NYI':'New York Islanders',
+  'NYR':'New York Rangers',    'OTT':'Ottawa Senators',       'PHI':'Philadelphia Flyers',
+  'PIT':'Pittsburgh Penguins', 'SEA':'Seattle Kraken',        'SJS':'San Jose Sharks',
+  'STL':'St. Louis Blues',     'TBL':'Tampa Bay Lightning',   'TOR':'Toronto Maple Leafs',
+  'UTA':'Utah Hockey Club',    'VAN':'Vancouver Canucks',     'VGK':'Vegas Golden Knights',
+  'WSH':'Washington Capitals', 'WPG':'Winnipeg Jets',
+};
+
+async function fetchNHLRelayScores() {
+  // Only run if there's an NHL section visible today
+  if (!document.querySelector('.sport-section[data-sport="NHL Playoffs"]')) return;
+  try {
+    const r = await fetch(`${NHL_RELAY_BASE}/v1/scoreboard/now`, {
+      signal: AbortSignal.timeout(6000)
+    });
+    if (!r.ok) return;
+    const data = await r.json();
+
+    let updated = 0;
+    for (const g of (data.games || [])) {
+      const awayAbbr = g.awayTeam?.abbrev;
+      const homeAbbr = g.homeTeam?.abbrev;
+      if (!awayAbbr || !homeAbbr) continue;
+
+      // Resolve full names — use abbrev map, fall back to API name fields
+      const awayName = NHL_ABBREV_MAP[awayAbbr] || g.awayTeam?.commonName?.default || awayAbbr;
+      const homeName = NHL_ABBREV_MAP[homeAbbr] || g.homeTeam?.commonName?.default || homeAbbr;
+
+      const gameState = g.gameState || 'FUT';
+      const isLive  = ['LIVE', 'CRIT'].includes(gameState); // CRIT = last 5min
+      const isFinal = ['FINAL', 'OFF'].includes(gameState);
+      if (!isLive && !isFinal) continue;
+
+      const homeScore = g.homeTeam?.score ?? 0;
+      const awayScore = g.awayTeam?.score ?? 0;
+      const period    = g.period || 0;
+      const clock     = g.clock?.timeRemaining || '';
+      const isOT      = period > 3;
+      const detail    = isFinal ? (isOT ? 'Final/OT' : 'Final') : (clock || 'LIVE');
+
+      const key = `${homeName}|${awayName}`;
+      espnScores[key] = {
+        state:   isFinal ? 'post' : 'in',
+        period, clock, detail,
+        homeScore, awayScore, homeName, awayName,
+        homeWinning: homeScore > awayScore,
+        periodPrefix: 'P', // matches ESPN_SPORTS NHL entry
+        source: 'nhl-relay',
+      };
+      espnScoreTs[key] = Date.now();
+      updated++;
+    }
+    if (updated) renderESPNScores();
+  } catch(e) {}
+}
+
 // Fetch all sport scoreboards and merge into espnScores
 async function fetchESPNScores(){
   const today = new Date();
@@ -7719,6 +7790,7 @@ async function fetchESPNScores(){
 
   // Fire RELAY + FPL + FD in parallel — don't block ESPN cycle
   fetchNBARelayScores().catch(()=>{});
+  fetchNHLRelayScores().catch(()=>{});
   fetchFPLLiveScores().catch(()=>{});
   fdPrefetchSoccerLive().catch(()=>{});
 
