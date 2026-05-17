@@ -8824,11 +8824,11 @@ async function renderEPLMatchBriefCard(gameCard) {
   (allData?.sports||[]).forEach(s=>(s.games||[]).forEach(g=>{ if(g._id===gameid) game=g; }));
   if(!game) return;
 
-  // Only for Premier League (and other EPL-style leagues if needed)
+  // Only for top European leagues — MLS and Bundesliga excluded
   const sport = (gameCard.dataset.sport||'').toLowerCase();
   if(!sport.includes('premier league') && !sport.includes('la liga') &&
-     !sport.includes('bundesliga') && !sport.includes('ligue 1') &&
-     !sport.includes('serie a') && !sport.includes('mls')) return;
+     !sport.includes('ligue 1') &&
+     !sport.includes('serie a') && !sport.includes('uefa')) return;
 
   // Don't add if already present
   if(gameCard.previousElementSibling?.classList.contains('epl-match-brief-card')) return;
@@ -8866,17 +8866,22 @@ async function renderEPLMatchBriefCard(gameCard) {
 function initEPLMatchBriefs() {
   if(!allData) return;
   // Fire for all soccer/league games (not playoff/cup)
-  const selectors = [
-    '.game-card[data-sport*="Premier League"]',
-    '.game-card[data-sport*="La Liga"]',
-    '.game-card[data-sport*="Bundesliga"]',
-    '.game-card[data-sport*="Ligue 1"]',
-    '.game-card[data-sport*="Serie A"]',
-    '.game-card[data-sport*="MLS"]',
+  // Only fire for top European leagues — not MLS (15+ games/week) or Bundesliga (ESPN+ niche)
+  // Max 3 briefs per league — Saturday EPL can have 10 games; we only want marquee fixtures
+  const BRIEF_LEAGUES = [
+    { selector: '.game-card[data-sport*="Premier League"]', max: 3 },
+    { selector: '.game-card[data-sport*="La Liga"]',        max: 2 },
+    { selector: '.game-card[data-sport*="Serie A"]',        max: 2 },
+    { selector: '.game-card[data-sport*="Ligue 1"]',        max: 2 },
+    { selector: '.game-card[data-sport*="UEFA Champions"]', max: 4 },
+    { selector: '.game-card[data-sport*="UEFA Europa"]',    max: 3 },
+    { selector: '.game-card[data-sport*="UEFA Conference"]',max: 2 },
   ];
-  const cards = document.querySelectorAll(selectors.join(','));
-  cards.forEach(card => {
-    if(card.dataset.gameid) renderEPLMatchBriefCard(card).catch(()=>{});
+  BRIEF_LEAGUES.forEach(({ selector, max }) => {
+    const cards = [...document.querySelectorAll(selector)].slice(0, max);
+    cards.forEach(card => {
+      if(card.dataset.gameid) renderEPLMatchBriefCard(card).catch(()=>{});
+    });
   });
 }
 
