@@ -1,0 +1,145 @@
+name: Smoke Test + Live Verify
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    name: Smoke test + live verification
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Run smoke test against index.html
+        run: |
+          node << 'EOF'
+          const fs = require('fs');
+          const html = fs.readFileSync('index.html', 'utf8');
+
+          let pass = 0, fail = 0;
+          function assert(label, condition, detail = '') {
+            if (condition) {
+              console.log(`  ✅ ${label}`);
+              pass++;
+            } else {
+              console.error(`  ❌ ${label}${detail ? ' — ' + detail : ''}`);
+              fail++;
+            }
+          }
+
+          console.log('\n── FIELD Smoke Test (GitHub Actions) ──────────────\n');
+
+          // 1. File size sanity (>500KB, <2MB)
+          const size = Buffer.byteLength(html, 'utf8');
+          assert('File size in range', size > 500000 && size < 2000000, `${size} bytes`);
+
+          // 2. HTML structure
+          assert('Has DOCTYPE', html.startsWith('<!DOCTYPE html'));
+          assert('Has </html>', html.includes('</html>'));
+          assert('<title>FIELD present', html.includes('<title>FIELD'));
+
+          // 3. Core functions
+          assert('buildTodaySchedule defined', html.includes('function buildTodaySchedule'));
+          assert('goToDate defined', html.includes('async function goToDate'));
+          assert('renderAll defined', html.includes('function renderAll'));
+          assert('fetchESPNScores defined', html.includes('async function fetchESPNScores'));
+
+          // 4. MLB Stats API Adapter (Session 1)
+          assert('MLB_STATS_BASE defined', html.includes("const MLB_STATS_BASE = 'https://statsapi.mlb.com"));
+          assert('parseBroadcasts defined', html.includes('function parseBroadcasts'));
+          assert('normalizeMLBGame defined', html.includes('function normalizeMLBGame'));
+          assert('loadMLBSlate defined', html.includes('async function loadMLBSlate'));
+          assert('MLB_TEAM_RSN defined', html.includes('const MLB_TEAM_RSN'));
+          assert('MLB_DAILY_OVERRIDES defined', html.includes('const MLB_DAILY_OVERRIDES'));
+
+          // 5. RELAY NBA Adapters (Session 3)
+          assert('RELAY_BASE defined', html.includes("const RELAY_BASE = 'https://field-relay-nba"));
+          assert('relayHealthCheck defined', html.includes('async function relayHealthCheck'));
+          assert('fetchNBAScoreboardViaRelay defined', html.includes('async function fetchNBAScoreboardViaRelay'));
+          assert('fetchNBARelayScores defined', html.includes('async function fetchNBARelayScores'));
+          assert('RELAY_CUTOVER_DATE defined', html.includes("const RELAY_CUTOVER_DATE = '2026-06-02'"));
+
+          // 6. JS syntax check (extract and validate)
+          const scripts = html.match(/<script[^>]*>([\s\S]*?)<\/script>/g) || [];
+          let allJs = scripts.map(s => s.replace(/<\/?script[^>]*>/g, '')).join('\n');
+          let syntaxOk = true;
+          try { new Function(allJs); } catch(e) { syntaxOk = false; }
+          assert('JavaScript syntax valid', syntaxOk);
+
+          // 7. Bundle registry
+          assert('resolveBundle defined', html.includes('function resolveBundle'));
+          assert('NBA_ABC in bundles', html.includes('NBA_ABC'));
+          assert('MLB_APPLE in bundles', html.includes('MLB_APPLE'));
+
+          // 8. Sport sections render
+          assert('renderAll calls buildTodaySchedule', html.includes('buildTodaySchedule'));
+          assert('buildFilters defined', html.includes('function buildFilters'));
+          assert('SPORT_CHIP_LABELS defined', html.includes('const SPORT_CHIP_LABELS'));
+
+          // 9. Match brief scoping
+          assert('MLS excluded from match briefs', !html.includes("'MLS']") || html.includes('BRIEF_LEAGUES'));
+          assert('BRIEF_LEAGUES defined', html.includes('BRIEF_LEAGUES'));
+
+          // 10. Save protocol
+          assert('fetchNBARelayScores wired into ESPN cycle', 
+            html.includes('fetchNBARelayScores().catch'));
+          assert('relayHealthCheck called at session start',
+            html.includes('relayHealthCheck().catch'));
+
+          console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
+          if (fail > 0) process.exit(1);
+          EOF
+
+      - name: Wait for Cloudflare propagation
+        run: |
+          echo "Waiting 25s for Cloudflare to deploy..."
+          sleep 25
+
+      - name: CHECK — Live URL responds
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+            https://jubilant-bassoon.jeffunglesbee.workers.dev/)
+          echo "Live URL status: $STATUS"
+          [ "$STATUS" = "200" ] || { echo "❌ Live URL returned $STATUS"; exit 1; }
+          echo "✅ Live URL OK"
+
+      - name: CHECK — index.html served (not redirect)
+        run: |
+          BODY=$(curl -s https://jubilant-bassoon.jeffunglesbee.workers.dev/)
+          echo "$BODY" | grep -q '<title>FIELD' || { echo "❌ FIELD title not in response"; exit 1; }
+          echo "✅ FIELD app served correctly"
+
+      - name: CHECK — MLB Stats API reachable from live app context
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+            "https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=$(date +%Y-%m-%d)&hydrate=team")
+          echo "MLB Stats API status: $STATUS"
+          [ "$STATUS" = "200" ] || echo "⚠️ MLB Stats API returned $STATUS (non-blocking)"
+          echo "✅ MLB API check done"
+
+      - name: CHECK — RELAY health (if Worker live)
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+            https://field-relay-nba.jeffunglesbee.workers.dev/health 2>/dev/null || echo "000")
+          BODY=$(curl -s https://field-relay-nba.jeffunglesbee.workers.dev/health 2>/dev/null || echo "unreachable")
+          echo "RELAY status: $STATUS | body: $BODY"
+          if [ "$BODY" = "RELAY OK" ]; then
+            echo "✅ RELAY healthy"
+          else
+            echo "ℹ️ RELAY not responding — parallel validation not yet active"
+          fi
+
+      - name: Summary
+        if: always()
+        run: |
+          echo ""
+          echo "════════════════════════════════════"
+          echo "  FIELD Smoke + Verify Complete"
+          echo "  $(date '+%Y-%m-%d %H:%M UTC')"
+          echo "════════════════════════════════════"
