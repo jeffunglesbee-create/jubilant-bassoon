@@ -3070,6 +3070,44 @@ async function fetchESPNFixturesForDate(iso){
   return allSections;
 }
 
+// ── MLB Stats API — constants & lookups (TDZ-safe: declared before goToDate) ──
+const MLB_STATS_BASE = 'https://statsapi.mlb.com/api/v1';
+
+const MLB_BROADCAST_CHIP_MAP = {
+  'Apple TV+': 'MLB_APPLE',
+  'FOX':       'MLB_FOX',
+  'FS1':       'MLB_FOX',
+  'TBS':       'MLB_TBS',
+  'NBC':       'MLB_NBC',
+};
+
+const PEACOCK_LEADOFF_HOUR_ET = 17; // games starting before 17:00 UTC = Leadoff noon ET window
+const SNB_NBC_CUTOFF = { month: 4, day: 31 }; // JS month 4 = May; day 31 = post-May 31
+
+const MLB_TEAM_RSN = {
+  NYY:'YES',          BAL:'MASN',              BOS:'NESN',
+  TBR:'Bally Sports', TOR:'Sportsnet',
+  CHW:'CHSN',         CLE:'Bally Sports',      DET:'Bally Sports',
+  KCR:'Bally Sports', MIN:'Bally Sports',
+  HOU:'Space City',   LAA:'KLAA',              OAK:'NBCS California',
+  SEA:'ROOT Sports',  TEX:'Bally Sports',
+  ATL:'Bally Sports', MIA:'Bally Sports',      NYM:'SNY',
+  PHI:'NBCS Philadelphia', WSN:'MASN2',
+  CHC:'MARQUEE',      CIN:'Bally Sports',      MIL:'Bally Sports',
+  PIT:'AT&T SportsNet', STL:'Bally Sports',
+  ARI:'DBACKS',       COL:'AT&T SportsNet',    LAD:'SportsNetLA',
+  SDP:'SDTV',         SFG:'NBCS Bay Area',
+};
+
+// Day-of manual overrides — ESPN GOTD and Peacock GOTD cannot be reliably
+// auto-detected from the API broadcasts array until type:'I' behavior is confirmed.
+// Enter game key as 'AWAY@HOME' (official team abbreviations) or null.
+// ~30 ESPN GOTD games/season, varies for Peacock GOTD.
+const MLB_DAILY_OVERRIDES = {
+  espnGOTD:    null, // e.g. 'NYY@BOS' — set day-of, ~2 min
+  peacockGOTD: null, // e.g. 'CHC@ATL' — set day-of, ~2 min
+};
+
 // ── Navigate to a date ─────────────────────────────────────────
 async function goToDate(iso){
   viewingISO = iso;
@@ -7473,9 +7511,220 @@ function findESPNScore(game){
 
 // Fetch domestic soccer fixtures from ESPN public API — free, no key
 // Fetch any MLB games not already in the hardcoded schedule from ESPN
+// ── MLB Stats API Adapter — Session 1 (May 16 2026) ──────────────────────────
+// Source: statsapi.mlb.com (official, free, CORS-open, no key)
+// Replaces ESPN as primary MLB data source; ESPN is the fallback.
+// Broadcast chip resolution is fully automatic from API broadcasts array.
+// Only ESPN GOTD and Peacock GOTD require manual MLB_DAILY_OVERRIDES entry.
+
+function parseBroadcasts(broadcasts, gameDate, date) {
+  const result = {
+    nationalBundle:  null,
+    localBlackedOut: false,
+    espnGOTD:        false, // set by MLB_DAILY_OVERRIDES only — not auto-detected from API
+    peacockGOTD:     false, // set by MLB_DAILY_OVERRIDES only — not auto-detected from API
+    mlbnShowcase:    false,
+  };
+  const d = date instanceof Date ? date : new Date(date);
+
+  for (const b of broadcasts) {
+    const name = b.name ?? '';
+
+    // Direct chip mapping — national exclusives (automatic)
+    if (MLB_BROADCAST_CHIP_MAP[name]) {
+      result.nationalBundle  = MLB_BROADCAST_CHIP_MAP[name];
+      result.localBlackedOut = true;
+      continue;
+    }
+
+    // Peacock — time-based resolution (automatic)
+    // Leadoff (noon ET = 17:00 UTC) is NOT exclusive; local RSN still airs.
+    // SNB (7pm ET = 23:00 UTC) IS exclusive; local RSN blacked out.
+    if (name === 'Peacock') {
+      const gameHourUTC = new Date(gameDate).getUTCHours();
+      const isLeadoff   = gameHourUTC < PEACOCK_LEADOFF_HOUR_ET;
+      if (isLeadoff) {
+        result.nationalBundle  = 'MLB_LEADOFF';
+        result.localBlackedOut = false;
+      } else {
+        const isPostCutoff = (
+          d.getMonth() > SNB_NBC_CUTOFF.month ||
+          (d.getMonth() === SNB_NBC_CUTOFF.month && d.getDate() >= SNB_NBC_CUTOFF.day)
+        );
+        result.nationalBundle  = isPostCutoff ? 'MLB_NBC' : 'MLB_PEACOCK_SNB';
+        result.localBlackedOut = true;
+      }
+      continue;
+    }
+
+    // ESPN — skip; GOTD not reliably distinguishable by type field until verified.
+    // espnGOTD is set via MLB_DAILY_OVERRIDES.espnGOTD in loadMLBSlate().
+    // TODO: once type:'I' confirmed for GOTD, add: if(b.type==='I') result.espnGOTD=true;
+    if (name === 'ESPN' || name === 'ESPN+') continue;
+
+    // MLB Network — automatic blackout (covers Showcase and regular MLB Network games)
+    if (name === 'MLB Network') {
+      result.mlbnShowcase    = true;
+      result.localBlackedOut = true;
+      continue;
+    }
+  }
+  return result;
+}
+
+function normalizeMLBStatus(code) {
+  if (!code) return 'pregame';
+  if (code === 'I' || code === 'MA') return 'live';
+  if (code === 'F' || code === 'FT' || code === 'FR') return 'final';
+  if (code === 'DR') return 'postponed';
+  return 'pregame';
+}
+
+function normalizeMLBPeriod(linescore) {
+  if (!linescore?.currentInning) return '';
+  const ord  = linescore.currentInningOrd ?? `${linescore.currentInning}th`;
+  const half = linescore.inningHalf === 'Bottom' ? 'Bot' : 'Top';
+  return `${half} ${ord}`;
+}
+
+function normalizeMLBGame(g, date) {
+  const home      = g.teams.home;
+  const away      = g.teams.away;
+  const homeAbbr  = home.team.abbreviation;
+  const awayAbbr  = away.team.abbreviation;
+  const homeScore = home.score ?? 0;
+  const awayScore = away.score ?? 0;
+  const dateStr   = (date instanceof Date ? date : new Date(date))
+                      .toLocaleDateString('en-CA').replace(/-/g, '');
+  const broadcast = parseBroadcasts(g.broadcasts ?? [], g.gameDate, date);
+
+  return {
+    id:             `MLB_${homeAbbr}_${awayAbbr}_${dateStr}`,
+    sourceId:       String(g.gamePk),
+    source:         'mlb-stats',
+    home:           home.team.name,
+    away:           away.team.name,
+    homeTeam:       homeAbbr,
+    awayTeam:       awayAbbr,
+    homeScore,
+    awayScore,
+    score:          `${homeScore}-${awayScore}`,
+    league:         'MLB',
+    status:         normalizeMLBStatus(g.status?.statusCode),
+    period:         normalizeMLBPeriod(g.linescore),
+    margin:         Math.abs(homeScore - awayScore),
+    start_time:     g.gameDate,
+    venue:          g.venue?.name ?? '',
+    nationalBundle: broadcast.nationalBundle,
+    localRsn:       broadcast.localBlackedOut ? null : (MLB_TEAM_RSN[homeAbbr] ?? 'MLB_LOCAL'),
+    espnGOTD:       broadcast.espnGOTD,
+    peacockGOTD:    broadcast.peacockGOTD,
+    mlbnShowcase:   broadcast.mlbnShowcase,
+    inning:         g.linescore?.currentInning ?? 0,
+    inningHalf:     g.linescore?.inningHalf ?? '',
+    outs:           g.linescore?.outs ?? 0,
+    streams:        broadcast.nationalBundle
+                      ? resolveBundle(broadcast.nationalBundle)
+                      : resolveBundle('MLB_LOCAL'),
+    _sport:         'Baseball (MLB)',
+  };
+}
+
+async function fetchMLBSchedule(date) {
+  const d       = date instanceof Date ? date : new Date(date);
+  const dateStr = d.toLocaleDateString('en-CA');
+  const url     = `${MLB_STATS_BASE}/schedule?sportId=1&date=${dateStr}&hydrate=broadcasts(all),team,linescore`;
+  try {
+    const r = await fetch(url);
+    if (!r.ok) throw new Error(`MLB Stats API ${r.status}`);
+    const data  = await r.json();
+    const games = data.dates?.[0]?.games ?? [];
+    return games.map(g => normalizeMLBGame(g, d));
+  } catch (err) {
+    if (FIELD_DEBUG) console.warn('[MLB Stats API] unavailable — ESPN fallback', err.message);
+    return null;
+  }
+}
+
+// fetchMLBLiveGame — Heat Index inputs (baserunners, outs, count)
+// Built here; wired into Heat Index in a subsequent session.
+async function fetchMLBLiveGame(gamePk) {
+  const url  = `${MLB_STATS_BASE.replace('v1','v1.1')}/game/${gamePk}/feed/live`;
+  const r    = await fetch(url);
+  if (!r.ok) throw new Error(`MLB live game ${r.status}`);
+  const data = await r.json();
+  const lp   = data.liveData?.linescore ?? {};
+  const play = data.liveData?.plays?.currentPlay ?? {};
+  return {
+    inning:     lp.currentInning ?? 0,
+    inningHalf: lp.inningHalf ?? '',
+    outs:       lp.outs ?? 0,
+    balls:      play.count?.balls ?? 0,
+    strikes:    play.count?.strikes ?? 0,
+    onFirst:    !!lp.offense?.first,
+    onSecond:   !!lp.offense?.second,
+    onThird:    !!lp.offense?.third,
+    awayScore:  lp.teams?.away?.runs ?? 0,
+    homeScore:  lp.teams?.home?.runs ?? 0,
+  };
+}
+
+// mlbBaserunnerBonus — wired into Heat Index in subsequent session
+function mlbBaserunnerBonus(liveState) {
+  if (!liveState) return 0;
+  const { onFirst, onSecond, onThird, outs, inning } = liveState;
+  const runnersOn = (onFirst?1:0) + (onSecond?1:0) + (onThird?1:0);
+  let bonus = runnersOn * 3;
+  if (outs === 2)   bonus += 5;
+  if (inning >= 9)  bonus += 5;
+  return Math.min(bonus, 20);
+}
+
+// loadMLBSlate — main entry point; wired into fetchMLBFixtures below
+async function loadMLBSlate(date) {
+  const mlbGames = await fetchMLBSchedule(date);
+  if (mlbGames) {
+    return mlbGames.map(g => {
+      const key = `${g.awayTeam}@${g.homeTeam}`;
+      return {
+        ...g,
+        espnGOTD:    g.espnGOTD    || MLB_DAILY_OVERRIDES.espnGOTD    === key,
+        peacockGOTD: g.peacockGOTD || MLB_DAILY_OVERRIDES.peacockGOTD === key,
+      };
+    });
+  }
+  if (FIELD_DEBUG) console.warn('[MLB] Stats API unavailable — using ESPN fallback');
+  return null; // caller handles ESPN fallback
+}
+
 async function fetchMLBFixtures(){
   if(!allData||!allData.sports) return;
   const today = new Date();
+
+  // ── Try MLB Stats API first (official, free, CORS-open) ──────────────────
+  try {
+    const mlbGames = await loadMLBSlate(today);
+    if (mlbGames && mlbGames.length > 0) {
+      let mlbSec = allData.sports.find(s => s.sport === 'Baseball (MLB)');
+      if (!mlbSec) { mlbSec = {sport:'Baseball (MLB)', games:[]}; allData.sports.push(mlbSec); }
+      let added = 0;
+      mlbGames.forEach(g => {
+        const exists = (mlbSec.games||[]).some(existing =>
+          existing.home === g.home && existing.away === g.away
+        );
+        if (exists) return;
+        mlbSec.games.push(g);
+        added++;
+      });
+      if (added > 0) { buildFilters(allData.sports); scheduleRenderAll(); }
+      if (FIELD_DEBUG) console.log(`[MLB Stats API] Added ${added} games`);
+      return; // success — skip ESPN fallback
+    }
+  } catch(e) {
+    if (FIELD_DEBUG) console.warn('[MLB Stats API] error, falling back to ESPN:', e.message);
+  }
+
+  // ── ESPN fallback (original logic) ───────────────────────────────────────
   const dateStr = today.getFullYear()
     + String(today.getMonth()+1).padStart(2,"0")
     + String(today.getDate()).padStart(2,"0");
