@@ -7408,6 +7408,113 @@ const SOCCER_LEAGUES = [
 let espnScores    = {}; // { "Home|Away": scoreObj }
 let espnScoreTs   = {}; // { "Home|Away": timestamp } — for stale-entry pruning
 const ESPN_SCORE_TTL = 900000; // 15 min — entries not refreshed within window are pruned
+
+// ── RELAY — NBA CDN Proxy (Session 3 — May 16 2026) ─────────────────────────
+// field-relay-nba proxies cdn.nba.com with nba.com origin headers.
+// Runs parallel with ESPN May 23–June 2 (validation), then becomes primary.
+const RELAY_BASE = 'https://field-relay-nba.jeffunglesbee.workers.dev/nba';
+const relayNBAScores = {};
+let   RELAY_HEALTHY  = false;
+let   RELAY_PRIMARY  = false;
+const RELAY_CUTOVER_DATE = '2026-06-02';
+
+async function relayHealthCheck() {
+  try {
+    const r = await fetch(RELAY_BASE.replace('/nba','/health'), {signal:AbortSignal.timeout(4000)});
+    RELAY_HEALTHY = r.ok;
+  } catch { RELAY_HEALTHY = false; }
+  if (RELAY_HEALTHY && TODAY_ISO >= RELAY_CUTOVER_DATE) RELAY_PRIMARY = true;
+  if (FIELD_DEBUG) console.log(`[RELAY] health=${RELAY_HEALTHY} primary=${RELAY_PRIMARY}`);
+  return RELAY_HEALTHY;
+}
+
+function normalizeNBAGameRelay(g) {
+  const home = g.homeTeam, away = g.awayTeam;
+  const homeScore = Number(home.score ?? 0);
+  const awayScore = Number(away.score ?? 0);
+  const stateMap = {1:'pre', 2:'in', 3:'post'};
+  const periodMap = {1:'Q1',2:'Q2',3:'Q3',4:'4th',5:'OT',6:'2OT',7:'3OT'};
+  return {
+    state:       stateMap[g.gameStatus] ?? 'pre',
+    period:      g.period ?? 0,
+    periodLabel: periodMap[g.period] ?? g.gameStatusText ?? '',
+    clock:       g.gameClock ?? '',
+    detail:      g.gameStatusText ?? '',
+    homeScore, awayScore,
+    homeName:    home.teamName   ?? '',
+    awayName:    away.teamName   ?? '',
+    homeCity:    home.teamCity   ?? '',
+    awayCity:    away.teamCity   ?? '',
+    homeTricode: home.teamTricode ?? '',
+    awayTricode: away.teamTricode ?? '',
+    homeWinning: homeScore > awayScore,
+    seriesText:  g.seriesText ?? null,
+    gameId:      g.gameId,
+    source:      'relay',
+  };
+}
+
+async function fetchNBAScoreboardViaRelay() {
+  const r = await fetch(`${RELAY_BASE}/liveData/scoreboard/todaysScoreboard_00.json`, {signal:AbortSignal.timeout(6000)});
+  if (!r.ok) throw new Error(`RELAY scoreboard ${r.status}`);
+  const {scoreboard} = await r.json();
+  return (scoreboard.games||[]).map(normalizeNBAGameRelay);
+}
+async function fetchNBAStandingsViaRelay() {
+  const r = await fetch(`${RELAY_BASE}/liveData/standings/standings_v2.json`, {signal:AbortSignal.timeout(6000)});
+  if (!r.ok) throw new Error(`RELAY standings ${r.status}`);
+  return r.json();
+}
+async function fetchNBABoxScoreViaRelay(gameId) {
+  const r = await fetch(`${RELAY_BASE}/liveData/boxscore/boxscore_${gameId}.json`, {signal:AbortSignal.timeout(6000)});
+  if (!r.ok) throw new Error(`RELAY boxscore ${r.status}`);
+  return r.json();
+}
+async function fetchNBAChannelsViaRelay() {
+  const r = await fetch(`${RELAY_BASE}/liveData/channels/channels_00.json`, {signal:AbortSignal.timeout(6000)});
+  if (!r.ok) throw new Error(`RELAY channels ${r.status}`);
+  return r.json();
+}
+async function fetchNBAOddsViaRelay() {
+  const r = await fetch(`${RELAY_BASE}/liveData/odds_todaysGames.json`, {signal:AbortSignal.timeout(6000)});
+  if (!r.ok) throw new Error(`RELAY odds ${r.status}`);
+  return r.json();
+}
+
+// Parallel validation + primary path — fires after each ESPN poll cycle
+async function fetchNBARelayScores() {
+  if (!RELAY_HEALTHY) return;
+  try {
+    const games = await fetchNBAScoreboardViaRelay();
+    let disc = 0;
+    games.forEach(g => {
+      const homeKey = `${g.homeCity} ${g.homeName}`;
+      const awayKey = `${g.awayCity} ${g.awayName}`;
+      const key = `${homeKey}|${awayKey}`;
+      relayNBAScores[key] = g;
+      if (RELAY_PRIMARY) {
+        // Post-cutover: RELAY is source of truth
+        espnScores[key] = {
+          state: g.state, period: g.period, clock: g.clock, detail: g.detail,
+          homeScore: g.homeScore, awayScore: g.awayScore,
+          homeName: homeKey, awayName: awayKey,
+          homeWinning: g.homeWinning, periodPrefix: 'Q', source: 'relay',
+        };
+        espnScoreTs[key] = Date.now();
+      } else if (FIELD_DEBUG && espnScores[key] && g.state === 'in') {
+        const e = espnScores[key];
+        if (e.homeScore !== g.homeScore || e.awayScore !== g.awayScore) {
+          console.warn(`[RELAY≠ESPN] ${homeKey} vs ${awayKey}: R=${g.homeScore}-${g.awayScore} E=${e.homeScore}-${e.awayScore}`);
+          disc++;
+        }
+      }
+    });
+    if (FIELD_DEBUG) console.log(`[RELAY] ${games.length} games | disc=${disc} | primary=${RELAY_PRIMARY}`);
+  } catch(e) {
+    if (FIELD_DEBUG) console.warn('[RELAY] poll failed:', e.message);
+  }
+}
+
 let espnIntervalId = null;
 const ESPN_REFRESH_LIVE = 30000;   // 30s when games are live
 const ESPN_REFRESH_IDLE = 300000;  // 5min otherwise
@@ -7504,6 +7611,9 @@ async function fetchESPNScores(){
   } // end micro-batch loop
 
   renderESPNScores();
+
+  // Fire RELAY in parallel — doesn't block ESPN cycle
+  fetchNBARelayScores().catch(()=>{});
 
   // Schedule next poll — shorter when games are live, longer otherwise
   // Uses setTimeout (not setInterval) so each poll waits for the previous to complete
@@ -8127,6 +8237,7 @@ async function fetchSchedule(){
   }).catch(()=>{ /* supplemental optional — schedule already rendered */ });
   startOddsPolling();
   fetchESPNScores(); // Start live score polling
+  relayHealthCheck().catch(()=>{}); // RELAY health check — enables parallel NBA validation
   fetchMLBFixtures();    // Fill
 
   // ── DAILY RETURN STREAK (Wow #29) ────────────────────────────────────────
