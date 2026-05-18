@@ -72,14 +72,8 @@ jobs:
           FILE_ID="${{ secrets.DRIVE_FILE_ID }}"
           if [ -z "$FILE_ID" ]; then
             echo "❌ DRIVE_FILE_ID secret not set."
-            echo ""
-            echo "Setup steps:"
-            echo "  1. Upload index.html to Google Drive"
-            echo "  2. Share it: right-click → Share → Anyone with the link → Viewer"
-            echo "  3. Copy the file ID from the share URL (between /d/ and /view)"
-            echo "  4. Add GitHub Secret: Settings → Secrets → Actions → New"
-            echo "     Name: DRIVE_FILE_ID | Value: the file ID"
-            exit 1
+            echo "⏭  DRIVE_FILE_ID not configured — Drive auto-deploy disabled (using git push deploy path)"
+            exit 0
           fi
           echo "Downloading from Drive (file ID: ${FILE_ID:0:8}...)"
           URL="https://drive.google.com/uc?export=download&id=$FILE_ID"
