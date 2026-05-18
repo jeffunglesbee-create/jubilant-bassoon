@@ -4382,181 +4382,62 @@ function buildTodaySchedule(){
   // Source: Yahoo Sports NBA Playoffs schedule verified May 15, 2026
   //   DET @ CLE G6 — 7pm ET / 23:00 UTC — Prime Video · CLE leads 3-2
   //   MIN @ SAS G6 — 9:30pm ET / 01:30 UTC May 16 — Prime Video · SAS leads 3-2
+  // ── NBA Playoffs — Western Conference Finals: OKC Thunder vs San Antonio Spurs ──
+  // OKC (seed 1, 64-18, 8-0 playoffs, defending champions) vs SAS (seed 2, 62-20)
+  // OKC swept LAL 4-0 in West Semis · SAS defeated MIN 4-2 in West Semis
+  // Spurs were 4-1 vs OKC in regular season · Wembanyama vs SGA · All WCF on NBC/Peacock
+  // Sources: Yahoo Sports + NBC Sports schedule verified May 18, 2026
+  // ECF: NYK (swept PHI 4-0) awaits winner of DET Pistons@CLE Cavaliers G7 (live Sun May 17)
   const nbaGames=[
-    {home:"Cleveland Cavaliers",   away:"Detroit Pistons",         league:"NBA Playoffs – East Semis G6 · CLE leads 3-2", start_time:"2026-05-15T23:00:00Z", confirmed:true, venue:"Rocket Mortgage FieldHouse, Cleveland OH", streams:resolveBundle("NBA_PRIME"), crew:"Ian Eagle · Stan Van Gundy (Prime Video)", seriesRecord:"CLE leads 3-2"},
-    {home:"Minnesota Timberwolves", away:"San Antonio Spurs",       league:"NBA Playoffs – West Semis G6 · SAS leads 3-2", start_time:"2026-05-16T01:30:00Z", confirmed:true, venue:"Target Center, Minneapolis MN",            streams:resolveBundle("NBA_PRIME"), seriesRecord:"SAS leads 3-2"},
+    {home:"Oklahoma City Thunder",  away:"San Antonio Spurs",     league:"NBA Playoffs – West CF G1 · Series 0-0",  start_time:"2026-05-19T00:30:00Z", confirmed:true, venue:"Paycom Center, Oklahoma City OK",      streams:resolveBundle("NBA_NBC"), seriesRecord:"0-0"},
+    {home:"Oklahoma City Thunder",  away:"San Antonio Spurs",     league:"NBA Playoffs – West CF G2 · Series 0-0",  start_time:"2026-05-21T00:30:00Z", confirmed:true, venue:"Paycom Center, Oklahoma City OK",      streams:resolveBundle("NBA_NBC"), seriesRecord:"0-0"},
+    {home:"San Antonio Spurs",      away:"Oklahoma City Thunder", league:"NBA Playoffs – West CF G3 · Series 0-0",  start_time:"2026-05-23T00:30:00Z", confirmed:true, venue:"Frost Bank Center, San Antonio TX",    streams:resolveBundle("NBA_NBC"), seriesRecord:"0-0"},
+    {home:"San Antonio Spurs",      away:"Oklahoma City Thunder", league:"NBA Playoffs – West CF G4 · Series 0-0",  start_time:"2026-05-25T00:00:00Z", confirmed:true, venue:"Frost Bank Center, San Antonio TX",    streams:resolveBundle("NBA_NBC"), seriesRecord:"0-0"},
   ].filter(g=>isToday(g.start_time));
 
-  // ── NHL Playoffs — Friday May 15 2026 ──────────────────────────
-  // Source: Yahoo Sports NHL Playoffs coverage verified May 15, 2026
-  //   MIN @ COL G6 — 8pm ET / 00:00 UTC May 16 — ESPN · series record TBD post-G5
-  //   MTL @ BUF G6 — 8pm ET / 00:00 UTC May 16 — TNT · series record TBD post-G5
+  // ── NHL Playoffs — Monday May 18 2026 ──────────────────────────
+  // BUF vs MTL East Semis G7 — 7:30pm ET — ESPN — Series tied 3-3
+  //   BUF won G6 8-3 at Bell Centre (MTL) to even the series
+  //   Winner advances to ECF vs Carolina Hurricanes
+  // COL vs VGK Western Conference Finals: G1 Wed May 20 · G2 Fri May 22
+  //   COL won R2 4-1 over MIN · VGK won R2 4-2 over ANA
+  // Sources: Sabres official schedule + NHL.com verified May 18, 2026
   const nhlGames=[
-    // No NHL games May 15 — off night
-    // COL vs MIN: Colorado wins series 4-1 (clinched G5 May 13)
-    // BUF @ MTL G6: Sat May 16 8pm ET on ABC/ESPN — enters tomorrow's schedule
-    {home:"Montreal Canadiens", away:"Buffalo Sabres",   league:"NHL Playoffs – East Semis G6 · MTL leads 3-2", start_time:"2026-05-17T00:00:00Z", confirmed:true, venue:"Bell Centre, Montreal QC",   streams:resolveBundle("NHL_ABC"), crew:"Sean McDonough · Ray Ferraro · Haley Skarupa (ESPN/ABC)"},
-    // VGK @ ANA G7: TBD (likely May 16-17 on ABC/ESPN)
-    // ── NHL Western Conference Finals — Colorado Avalanche vs Vegas Golden Knights ──
-    // VGK wins R2 4-2 (clinched May 14) · COL wins R2 4-1 (clinched May 13)
-    {home:"Colorado Avalanche",  away:"Vegas Golden Knights", league:"NHL Playoffs – West CF G1 · Series 0-0", start_time:"2026-05-21T00:00:00Z", confirmed:true, venue:"Ball Arena, Denver CO",      streams:resolveBundle("NHL_ESPN"), crew:"ESPN/ABC broadcast team", seriesRecord:"0-0"},
-    {home:"Colorado Avalanche",  away:"Vegas Golden Knights", league:"NHL Playoffs – West CF G2 · Series 0-0", start_time:"2026-05-23T00:00:00Z", confirmed:true, venue:"Ball Arena, Denver CO",      streams:resolveBundle("NHL_ESPN"), seriesRecord:"0-0"},
-    {home:"Vegas Golden Knights",away:"Colorado Avalanche",   league:"NHL Playoffs – West CF G3 · Series 0-0", start_time:"2026-05-25T00:00:00Z", confirmed:true, venue:"T-Mobile Arena, Las Vegas NV",streams:resolveBundle("NHL_ESPN"), seriesRecord:"0-0"},
+    // ── East Semis G7 — TONIGHT ──────────────────────────────────────────────
+    {home:"Buffalo Sabres",     away:"Montreal Canadiens", league:"NHL Playoffs – East Semis G7 · Series Tied 3-3", start_time:"2026-05-18T23:30:00Z", confirmed:true, venue:"KeyBank Center, Buffalo NY",     streams:resolveBundle("NHL_ESPN"), crew:"Sean McDonough · Ray Ferraro · Haley Skarupa (ESPN)", seriesRecord:"Tied 3-3"},
+    // ── Western Conference Finals — Colorado Avalanche vs Vegas Golden Knights ──
+    {home:"Colorado Avalanche",  away:"Vegas Golden Knights", league:"NHL Playoffs – West CF G1 · Series 0-0",  start_time:"2026-05-21T00:00:00Z", confirmed:true, venue:"Ball Arena, Denver CO",            streams:resolveBundle("NHL_ESPN"), seriesRecord:"0-0"},
+    {home:"Colorado Avalanche",  away:"Vegas Golden Knights", league:"NHL Playoffs – West CF G2 · Series 0-0",  start_time:"2026-05-23T00:00:00Z", confirmed:true, venue:"Ball Arena, Denver CO",            streams:resolveBundle("NHL_ESPN"), seriesRecord:"0-0"},
+    {home:"Vegas Golden Knights",away:"Colorado Avalanche",   league:"NHL Playoffs – West CF G3 · Series 0-0",  start_time:"2026-05-25T00:00:00Z", confirmed:true, venue:"T-Mobile Arena, Las Vegas NV",    streams:resolveBundle("NHL_ESPN"), seriesRecord:"0-0"},
   ].filter(g=>isToday(g.start_time));  // ── MLB (May 11: Monday slate + EFL 2nd leg) ──────────────────────────────
   // ── MLB schedule: May 8 (Fri) – May 11 (Mon) ────────────────────────────────
   // isToday() filters to the viewer's local date — correct games show each day
   // Sources: MLB.com official schedule + Peacock.com GOTD listings verified May 11, 2026
+  // ── MLB — Monday May 18, 2026 — 14 games, all local/MLB_LOCAL ─────────
+  // Sources: MLB.com official schedule verified May 18, 2026
+  // No national TV broadcast today (no Apple TV+/Peacock/TBS/ESPN exclusive)
   const mlbRaw=[
-    // ── Friday May 8, 2026 — MLB.com verified schedule ────────────────────
-    {home:"Cincinnati Reds",       away:"Houston Astros",       start_time:"2026-05-08T22:10:00Z", confirmed:true, venue:"Great American Ball Park", streams:resolveBundle("MLB_LOCAL")},
-    {home:"Philadelphia Phillies", away:"Colorado Rockies",     start_time:"2026-05-08T22:40:00Z", confirmed:true, venue:"Citizens Bank Park"},
-    {home:"Baltimore Orioles",     away:"Athletics",            start_time:"2026-05-08T23:05:00Z", confirmed:true, venue:"Oriole Park, Baltimore", localRsn:"MASN_ORIOLES", localNote:"MASN: Orioles market · Athletics.TV: Oakland market"},
-    {home:"Toronto Blue Jays",     away:"Los Angeles Angels",   start_time:"2026-05-08T23:07:00Z", confirmed:true, venue:"Rogers Centre, Toronto"},
-    {home:"Boston Red Sox",        away:"Tampa Bay Rays",       start_time:"2026-05-08T23:10:00Z", confirmed:true, venue:"Fenway Park, Boston"},
-    {home:"Miami Marlins",         away:"Washington Nationals", start_time:"2026-05-08T23:10:00Z", confirmed:true, venue:"loanDepot park, Miami", localRsn:"NATIONALS_TV", localNote:"Nationals.tv for DC/MD viewers"},
-    {home:"Cleveland Guardians",   away:"Minnesota Twins",      start_time:"2026-05-08T23:15:00Z", confirmed:true, venue:"Progressive Field, Cleveland", streams:resolveBundle("MLB_APPLE")},
-    {home:"Kansas City Royals",    away:"Detroit Tigers",       start_time:"2026-05-08T23:40:00Z", confirmed:true, venue:"Kauffman Stadium, Kansas City"},
-    {home:"Chicago White Sox",     away:"Seattle Mariners",     start_time:"2026-05-08T23:40:00Z", confirmed:true, venue:"Guaranteed Rate Field, Chicago"},
-    {home:"Milwaukee Brewers",     away:"New York Yankees",     start_time:"2026-05-08T23:40:00Z", confirmed:true, venue:"American Family Field, Milwaukee", localRsn:"YANKEES_LOCAL", localNote:"YES Network for NY market"},
-    {home:"Texas Rangers",         away:"Chicago Cubs",         start_time:"2026-05-09T00:05:00Z", confirmed:true, venue:"Globe Life Field, Arlington", streams:resolveBundle("MLB_PEACOCK_GOTD"), peacockGOTD:true},
-    {home:"Arizona Diamondbacks",  away:"New York Mets",        start_time:"2026-05-09T01:40:00Z", confirmed:true, venue:"Chase Field, Phoenix", localRsn:"METS_LOCAL", localNote:"SNY for NY/CT/NJ/PA"},
-    {home:"San Diego Padres",      away:"St. Louis Cardinals",  start_time:"2026-05-09T01:45:00Z", confirmed:true, venue:"Petco Park, San Diego", streams:resolveBundle("MLB_APPLE")},
-    {home:"Los Angeles Dodgers",   away:"Atlanta Braves",       start_time:"2026-05-09T02:10:00Z", confirmed:true, venue:"Dodger Stadium, Los Angeles", localRsn:"SNLA_LOCAL", localNote:"Spectrum SportsNet LA (SNLA): Spectrum cable only · ATL: BravesVision"},
-    // ── Saturday May 9, 2026 — MLB.com verified schedule ──────────────────
-    {home:"Toronto Blue Jays",     away:"Los Angeles Angels",   start_time:"2026-05-09T19:07:00Z", confirmed:true, venue:"Rogers Centre, Toronto", localNote:"Sportsnet/SN1 (Canada) · LAA: FanDuel Sports Network West (local RSN, Angels-owned)"},
-    {home:"Baltimore Orioles",     away:"Athletics",            start_time:"2026-05-09T20:05:00Z", confirmed:true, venue:"Oriole Park, Baltimore", localRsn:"MASN_ORIOLES", localNote:"MASN: Orioles market · Athletics.TV: Oakland market"},
-    {home:"Cincinnati Reds",       away:"Houston Astros",       start_time:"2026-05-09T20:10:00Z", confirmed:true, venue:"Great American Ball Park, Cincinnati", streams:resolveBundle("MLB_FOX")},
-    {home:"Boston Red Sox",        away:"Tampa Bay Rays",       start_time:"2026-05-09T20:10:00Z", confirmed:true, venue:"Fenway Park, Boston", localRsn:"NESN_LOCAL", localNote:"NESN (Red Sox): Xfinity Ch.51/DirecTV Ch.628/Verizon Fios Ch.76/Fubo · TB: Rays.TV"},
-    {home:"Miami Marlins",         away:"Washington Nationals", start_time:"2026-05-09T20:10:00Z", confirmed:true, venue:"loanDepot park, Miami", localRsn:"NATIONALS_TV", localNote:"Nationals.tv for DC/MD viewers"},
-    {home:"Philadelphia Phillies", away:"Colorado Rockies",     start_time:"2026-05-09T22:05:00Z", confirmed:true, venue:"Citizens Bank Park, Philadelphia", localRsn:"PHILLIES_LOCAL", localNote:"NBC Sports Philadelphia (NBCSP): Xfinity Ch.846/DirecTV Ch.642/Fubo · COL: Rockies.TV"},
-    {home:"Cleveland Guardians",   away:"Minnesota Twins",      start_time:"2026-05-09T22:10:00Z", confirmed:true, venue:"Progressive Field, Cleveland", localRsn:"GUARDIANS_LOCAL", localNote:"CLEGuardians.TV for Cleveland market"},
-    {home:"Texas Rangers",         away:"Chicago Cubs",         start_time:"2026-05-09T23:05:00Z", confirmed:true, venue:"Globe Life Field, Arlington", localRsn:"RANGERS_LOCAL", localNote:"Rangers Sports Network: Spectrum/AT&T/DirecTV in DFW · CHC: Marquee Sports Network"},
-    {home:"Kansas City Royals",    away:"Detroit Tigers",       start_time:"2026-05-09T23:10:00Z", confirmed:true, venue:"Kauffman Stadium, Kansas City", localRsn:"ROYALS_TV_LOCAL", localNote:"Royals.TV: Xfinity Ch.1262, DirecTV Ch.671, Midco, Fubo · DET: DSN cable in Detroit"},
-    {home:"Chicago White Sox",     away:"Seattle Mariners",     start_time:"2026-05-09T23:10:00Z", confirmed:true, venue:"Guaranteed Rate Field, Chicago", localRsn:"CHSN_LOCAL", localNote:"CHSN (Chicago Sports Network): Xfinity/DirecTV/Fubo · SEA: Mariners.TV"},
-    {home:"Milwaukee Brewers",     away:"New York Yankees",     start_time:"2026-05-09T23:10:00Z", confirmed:true, venue:"American Family Field, Milwaukee", localRsn:"YANKEES_LOCAL", localNote:"YES Network for NY market", espnGOTD:true},
-    {home:"Arizona Diamondbacks",  away:"New York Mets",        start_time:"2026-05-09T23:15:00Z", confirmed:true, venue:"Chase Field, Phoenix", streams:resolveBundle("MLB_FOX")},
-    {home:"San Diego Padres",      away:"St. Louis Cardinals",  start_time:"2026-05-09T23:15:00Z", confirmed:true, venue:"Petco Park, San Diego",  streams:resolveBundle("MLB_FOX")},
-    {home:"San Francisco Giants",  away:"Pittsburgh Pirates",   start_time:"2026-05-10T01:05:00Z", confirmed:true, venue:"Oracle Park, San Francisco", localRsn:"ATHLETICS_LOCAL", localNote:"NBC Sports Bay Area (NBCSBA, shared Giants/A's channel): Xfinity/AT&T/DirecTV/Fubo · PIT: SportsNet Pittsburgh (SNP)"},
-    {home:"Los Angeles Dodgers",   away:"Atlanta Braves",       start_time:"2026-05-10T01:10:00Z", confirmed:true, venue:"Dodger Stadium, Los Angeles",  streams:resolveBundle("MLB_LOCAL"), localNote:"Spectrum SportsNet LA (LAD market) · Bally Sports SE (ATL market)"},
-    // ── Sunday May 10, 2026 — MLB.com verified schedule ─────────────────────
-    // Sunday Leadoff (noon ET): WSH @ MIA — Peacock exclusive
-    {home:"Miami Marlins",          away:"Washington Nationals",  start_time:"2026-05-10T16:00:00Z", confirmed:true, venue:"loanDepot park, Miami",      streams:resolveBundle("MLB_LEADOFF"), localNote:"Peacock Sunday Leadoff (noon ET) — Peacock exclusive"},
-    // Afternoon slate
-    {home:"Baltimore Orioles",      away:"Oakland Athletics",     start_time:"2026-05-10T17:35:00Z", confirmed:true, venue:"Oriole Park, Baltimore",     streams:resolveBundle("MLB_LOCAL"),   localNote:"MASN (Baltimore) · NBCSCA (Oakland)"},
-    {home:"Philadelphia Phillies",  away:"Colorado Rockies",      start_time:"2026-05-10T17:35:00Z", confirmed:true, venue:"Citizens Bank Park, Philadelphia", streams:resolveBundle("MLB_LOCAL"), localNote:"NBC Sports Philadelphia · Colorado local RSN"},
-    {home:"Toronto Blue Jays",      away:"Los Angeles Angels",    start_time:"2026-05-10T17:37:00Z", confirmed:true, venue:"Rogers Centre, Toronto",     streams:resolveBundle("MLB_LOCAL"),   localNote:"Sportsnet (Toronto) · ABTV (Angels local)"},
-    {home:"Cincinnati Reds",        away:"Houston Astros",        start_time:"2026-05-10T17:40:00Z", confirmed:true, venue:"Great American Ball Park, Cincinnati", streams:resolveBundle("MLB_LOCAL"), localNote:"Bally Sports Ohio (CIN) · Space City Home Network (HOU)"},
-    {home:"Cleveland Guardians",    away:"Minnesota Twins",       start_time:"2026-05-10T17:40:00Z", confirmed:true, venue:"Progressive Field, Cleveland", streams:resolveBundle("MLB_LOCAL"),  localNote:"CLEGuardians.TV · Twins.TV"},
-    {home:"Chicago White Sox",      away:"Seattle Mariners",      start_time:"2026-05-10T18:10:00Z", confirmed:true, venue:"Guaranteed Rate Field, Chicago", streams:resolveBundle("MLB_LOCAL"), localNote:"Chicago Sports Network · Mariners.TV"},
-    {home:"Milwaukee Brewers",      away:"New York Yankees",      start_time:"2026-05-10T18:10:00Z", confirmed:true, venue:"American Family Field, Milwaukee", streams:resolveBundle("MLB_LOCAL"), localNote:"Brewers.TV · YES Network (Yankees)"},
-    {home:"Texas Rangers",          away:"Chicago Cubs",          start_time:"2026-05-10T18:35:00Z", confirmed:true, venue:"Globe Life Field, Arlington", streams:resolveBundle("MLB_LOCAL"),  localNote:"Rangers Sports Network (DFW) · Marquee Sports Network (CHC)"},
-    {home:"San Francisco Giants",   away:"Pittsburgh Pirates",    start_time:"2026-05-10T20:05:00Z", confirmed:true, venue:"Oracle Park, San Francisco", streams:resolveBundle("MLB_LOCAL"),   localNote:"NBC Sports Bay Area · AT&T SportsNet Pittsburgh"},
-    {home:"Arizona Diamondbacks",   away:"New York Mets",         start_time:"2026-05-10T20:10:00Z", confirmed:true, venue:"Chase Field, Phoenix",       streams:resolveBundle("MLB_LOCAL"),   localNote:"Arizona local RSN · SNY (Mets)"},
-    {home:"San Diego Padres",       away:"St. Louis Cardinals",   start_time:"2026-05-10T20:10:00Z", confirmed:true, venue:"Petco Park, San Diego",      streams:resolveBundle("MLB_LOCAL"),   localNote:"Padres local RSN · Cardinals.TV"},
-    // Sunday Night Baseball (7pm ET): DET @ KC — Peacock exclusive (before May 31 = Peacock/NBCSN only)
-    {home:"Kansas City Royals",     away:"Detroit Tigers",        start_time:"2026-05-10T23:00:00Z", confirmed:true, venue:"Kauffman Stadium, Kansas City", streams:resolveBundle("MLB_PEACOCK_SNB"), localNote:"Sunday Night Baseball — Peacock exclusive (pre-May 31 window) + NBCSN"},
-    // ── Monday May 11, 2026 — MLB.com verified schedule ─────────────────────
-    // Verified May 11, 2026 against MLB.com + Lancaster Online TV listings + FOX Sports MLB on FS1 schedule:
-    //   6 games on the Monday slate (not 15 — Monday is typically the lightest MLB day of the week)
-    //   National TV: FS1 carries SEA @ HOU 8pm ET (FOX Sports Monday window) — NON-EXCLUSIVE
-    //   National TV: MLB Network carries SF @ LAD 10pm ET (MLB Network Showcase) — NON-EXCLUSIVE
-    //   No Apple TV+ (Friday only — EXCLUSIVE) / TBS (Tuesday only — NON-EXCLUSIVE) windows on Monday
-    //   No NBC Peacock SNB (Sunday only — EXCLUSIVE pre-May 31, OTA post-May 31)
-    //   No ESPN Unlimited GOTD confirmed for Monday May 11 (verify weekly via ESPN Press Room)
-    //   No Peacock GOTD for Monday May 11 (Peacock weekday GOTDs cover Tue–Fri this week)
-    //
-    // Local chip rule applied: For NON-EXCLUSIVE national games (FS1, FOX, TBS, MLB Network, ESPN GOTD),
-    //   local RSNs DO carry the game in-market — Local RSN chip should appear (with localRsn tag).
-    //   For EXCLUSIVE national games (Apple Fri, Peacock SNB, Peacock Leadoff, Netflix events),
-    //   local RSN is blacked out — Local RSN chip should NOT appear (no localRsn tag, no rsn in bundle).
-    {home:"Cleveland Guardians",  away:"Los Angeles Angels",   start_time:"2026-05-11T22:10:00Z", confirmed:true, venue:"Progressive Field, Cleveland",  localRsn:"GUARDIANS_LOCAL", localNote:"CLEGuardians.TV · Angels Bally Sports West (LAA)"},
-    {home:"Baltimore Orioles",    away:"New York Yankees",     start_time:"2026-05-11T22:35:00Z", confirmed:true, venue:"Oriole Park, Baltimore",        localRsn:"MASN_ORIOLES",    localNote:"MASN (Baltimore) · YES Network (NY market)"},
-    {home:"Toronto Blue Jays",    away:"Tampa Bay Rays",       start_time:"2026-05-11T23:07:00Z", confirmed:true, venue:"Rogers Centre, Toronto",                                    localNote:"Sportsnet 1 (Toronto) · Rays.TV (Tampa)"},
-    {home:"Texas Rangers",        away:"Arizona Diamondbacks", start_time:"2026-05-12T00:05:00Z", confirmed:true, venue:"Globe Life Field, Arlington",   localRsn:"RANGERS_LOCAL",   localNote:"Rangers Sports Network · Diamondbacks Arizona local RSN"},
-    // SEA @ HOU — FOX Sports Monday Night Baseball on FS1 (NON-EXCLUSIVE: locals also carry)
-    {home:"Houston Astros",       away:"Seattle Mariners",     start_time:"2026-05-12T00:10:00Z", confirmed:true, venue:"Daikin Park, Houston",          nationalBundle:"MLB_FOX", localNote:"FS1 national · SCHN (Houston) · Mariners.TV (Seattle)"},
-    // SF @ LAD — MLB Network Showcase (NON-EXCLUSIVE: locals also carry; MLBN feed blacked out in LA + SF)
-    {home:"Los Angeles Dodgers",  away:"San Francisco Giants", start_time:"2026-05-12T02:10:00Z", confirmed:true, venue:"Dodger Stadium, Los Angeles",   mlbnShowcase:true,        localNote:"MLB Network Showcase · Spectrum SportsNet LA (LAD) · NBC Sports Bay Area (SF)"},
-    // ── Tuesday May 12, 2026 — MLB.com verified schedule ──────────────────────
-    // National TV: CHC @ ATL 7:15pm ET on TBS — EXCLUSIVE national window (MLB_TBS); suppress local RSN
-    // No Apple TV+ (Friday only), no FOX/FS1 (Saturday window), no NBC/Peacock (Sunday only)
-    // No ESPN GOTD or Peacock GOTD confirmed for Tuesday May 12
-    {home:"Cleveland Guardians",   away:"Los Angeles Angels",     start_time:"2026-05-12T22:10:00Z", confirmed:true, venue:"Progressive Field, Cleveland"},
-    {home:"Baltimore Orioles",     away:"New York Yankees",       start_time:"2026-05-12T22:35:00Z", confirmed:true, venue:"Oriole Park at Camden Yards, Baltimore"},
-    {home:"Cincinnati Reds",       away:"Washington Nationals",   start_time:"2026-05-12T22:40:00Z", confirmed:true, venue:"Great American Ball Park, Cincinnati"},
-    {home:"Pittsburgh Pirates",    away:"Colorado Rockies",       start_time:"2026-05-12T22:40:00Z", confirmed:true, venue:"PNC Park, Pittsburgh"},
-    {home:"Boston Red Sox",        away:"Philadelphia Phillies",  start_time:"2026-05-12T22:45:00Z", confirmed:true, venue:"Fenway Park, Boston"},
-    {home:"Toronto Blue Jays",     away:"Tampa Bay Rays",         start_time:"2026-05-12T23:07:00Z", confirmed:true, venue:"Rogers Centre, Toronto"},
-    {home:"New York Mets",         away:"Detroit Tigers",         start_time:"2026-05-12T23:10:00Z", confirmed:true, venue:"Citi Field, Queens"},
-    {home:"Atlanta Braves",        away:"Chicago Cubs",           start_time:"2026-05-12T23:15:00Z", confirmed:true, venue:"Truist Park, Atlanta",              nationalBundle:"MLB_TBS"},
-    {home:"Chicago White Sox",     away:"Kansas City Royals",     start_time:"2026-05-12T23:40:00Z", confirmed:true, venue:"Guaranteed Rate Field, Chicago"},
-    {home:"Minnesota Twins",       away:"Miami Marlins",          start_time:"2026-05-12T23:40:00Z", confirmed:true, venue:"Target Field, Minneapolis"},
-    {home:"Milwaukee Brewers",     away:"San Diego Padres",       start_time:"2026-05-12T23:40:00Z", confirmed:true, venue:"American Family Field, Milwaukee"},
-    {home:"Texas Rangers",         away:"Arizona Diamondbacks",   start_time:"2026-05-13T00:05:00Z", confirmed:true, venue:"Globe Life Field, Arlington"},
-    {home:"Houston Astros",        away:"Seattle Mariners",       start_time:"2026-05-13T00:10:00Z", confirmed:true, venue:"Daikin Park, Houston"},
-    {home:"Athletics",             away:"St. Louis Cardinals",    start_time:"2026-05-13T01:40:00Z", confirmed:true, venue:"Sutter Health Park, Sacramento"},
-    {home:"Los Angeles Dodgers",   away:"San Francisco Giants",   start_time:"2026-05-13T02:10:00Z", confirmed:true, venue:"Dodger Stadium, Los Angeles"},
-    // ── Wednesday May 13, 2026 — MLB.com verified ─────────────────────────────
-    // National TV: CHC @ ATL 7:15pm ET on TBS — EXCLUSIVE (MLB_TBS); suppress local RSN
-    // No Apple TV+ (Friday only), no FOX/FS1 (Sat), no NBC/Peacock (Sunday only)
-    {home:"Baltimore Orioles",    away:"New York Yankees",       start_time:"2026-05-13T17:05:00Z", confirmed:true, venue:"Oriole Park at Camden Yards, Baltimore",  localRsn:"MASN_ORIOLES",   localNote:"MASN (Baltimore) · YES Network (NY)"},
-    {home:"Cleveland Guardians",  away:"Los Angeles Angels",     start_time:"2026-05-13T17:10:00Z", confirmed:true, venue:"Progressive Field, Cleveland",             localRsn:"GUARDIANS_LOCAL", localNote:"CLEGuardians.TV · Angels local RSN"},
-    {home:"Pittsburgh Pirates",   away:"Colorado Rockies",       start_time:"2026-05-13T22:40:00Z", confirmed:true, venue:"PNC Park, Pittsburgh"},
-    {home:"Cincinnati Reds",      away:"Washington Nationals",   start_time:"2026-05-13T22:40:00Z", confirmed:true, venue:"Great American Ball Park, Cincinnati"},
-    {home:"Boston Red Sox",       away:"Philadelphia Phillies",  start_time:"2026-05-13T22:45:00Z", confirmed:true, venue:"Fenway Park, Boston",                      localRsn:"NESN_LOCAL",     localNote:"NESN (Boston) · NBCSP (Philly)"},
-    {home:"Toronto Blue Jays",    away:"Tampa Bay Rays",         start_time:"2026-05-13T23:07:00Z", confirmed:true, venue:"Rogers Centre, Toronto",                                             localNote:"Sportsnet 1 (Canada) · Rays.TV (Tampa)"},
-    {home:"New York Mets",        away:"Detroit Tigers",         start_time:"2026-05-13T23:10:00Z", confirmed:true, venue:"Citi Field, Queens",                       localRsn:"SNY_LOCAL",      localNote:"SNY (NY/NJ/CT) · Detroit Sports (local)"},
-    {home:"Atlanta Braves",       away:"Chicago Cubs",           start_time:"2026-05-13T23:15:00Z", confirmed:true, venue:"Truist Park, Atlanta",                     nationalBundle:"MLB_TBS"},
-    {home:"Minnesota Twins",      away:"Miami Marlins",          start_time:"2026-05-13T23:40:00Z", confirmed:true, venue:"Target Field, Minneapolis"},
-    {home:"Chicago White Sox",    away:"Kansas City Royals",     start_time:"2026-05-13T23:40:00Z", confirmed:true, venue:"Guaranteed Rate Field, Chicago"},
-    {home:"Milwaukee Brewers",    away:"San Diego Padres",       start_time:"2026-05-13T23:40:00Z", confirmed:true, venue:"American Family Field, Milwaukee"},
-    {home:"Texas Rangers",        away:"Arizona Diamondbacks",   start_time:"2026-05-14T00:05:00Z", confirmed:true, venue:"Globe Life Field, Arlington"},
-    {home:"Houston Astros",       away:"Seattle Mariners",       start_time:"2026-05-14T00:10:00Z", confirmed:true, venue:"Daikin Park, Houston"},
-    {home:"Athletics",            away:"St. Louis Cardinals",    start_time:"2026-05-14T01:40:00Z", confirmed:true, venue:"Sutter Health Park, Sacramento"},
-    {home:"Los Angeles Dodgers",  away:"San Francisco Giants",   start_time:"2026-05-14T02:10:00Z", confirmed:true, venue:"Dodger Stadium, Los Angeles"},
-    // ── Thursday May 14, 2026 — MLB.com + Peacock.com verified ────────────────
-    // National TV: CHC @ ATL 7pm ET Peacock GOTD — EXCLUSIVE (MLB_PEACOCK_GOTD); suppress local
-    // Source: Peacock.com/sports/mlb + MLB.com schedule verified May 14, 2026
-    {home:"Baltimore Orioles",    away:"New York Yankees",       start_time:"2026-05-14T17:05:00Z", confirmed:true, venue:"Oriole Park at Camden Yards, Baltimore",  localRsn:"MASN_ORIOLES",   localNote:"MASN (Baltimore) · YES Network (NY)"},
-    {home:"Cleveland Guardians",  away:"Los Angeles Angels",     start_time:"2026-05-14T17:10:00Z", confirmed:true, venue:"Progressive Field, Cleveland",             localRsn:"GUARDIANS_LOCAL", localNote:"CLEGuardians.TV · Angels local RSN"},
-    {home:"Pittsburgh Pirates",   away:"Colorado Rockies",       start_time:"2026-05-14T22:40:00Z", confirmed:true, venue:"PNC Park, Pittsburgh"},
-    {home:"Cincinnati Reds",      away:"Washington Nationals",   start_time:"2026-05-14T22:40:00Z", confirmed:true, venue:"Great American Ball Park, Cincinnati"},
-    {home:"Boston Red Sox",       away:"Philadelphia Phillies",  start_time:"2026-05-14T22:45:00Z", confirmed:true, venue:"Fenway Park, Boston",                      localRsn:"NESN_LOCAL",     localNote:"NESN (Boston) · NBCSP (Philly)"},
-    {home:"Toronto Blue Jays",    away:"Tampa Bay Rays",         start_time:"2026-05-14T23:07:00Z", confirmed:true, venue:"Rogers Centre, Toronto",                                             localNote:"Sportsnet 1 (Canada) · Rays.TV (Tampa)"},
-    {home:"New York Mets",        away:"Detroit Tigers",         start_time:"2026-05-14T23:10:00Z", confirmed:true, venue:"Citi Field, Queens",                       localRsn:"SNY_LOCAL",      localNote:"SNY (NY/NJ/CT) · Detroit Sports (local)"},
-    {home:"Atlanta Braves",       away:"Chicago Cubs",           start_time:"2026-05-14T23:00:00Z", confirmed:true, venue:"Truist Park, Atlanta",                     streams:resolveBundle("MLB_PEACOCK_GOTD"), peacockGOTD:true},
-    {home:"Minnesota Twins",      away:"Miami Marlins",          start_time:"2026-05-14T23:40:00Z", confirmed:true, venue:"Target Field, Minneapolis"},
-    {home:"Chicago White Sox",    away:"Kansas City Royals",     start_time:"2026-05-14T23:40:00Z", confirmed:true, venue:"Guaranteed Rate Field, Chicago"},
-    {home:"Milwaukee Brewers",    away:"San Diego Padres",       start_time:"2026-05-14T23:40:00Z", confirmed:true, venue:"American Family Field, Milwaukee"},
-    {home:"Texas Rangers",        away:"Arizona Diamondbacks",   start_time:"2026-05-15T00:05:00Z", confirmed:true, venue:"Globe Life Field, Arlington"},
-    {home:"Houston Astros",       away:"Seattle Mariners",       start_time:"2026-05-15T00:10:00Z", confirmed:true, venue:"Daikin Park, Houston"},
-    {home:"Athletics",            away:"St. Louis Cardinals",    start_time:"2026-05-15T01:40:00Z", confirmed:true, venue:"Sutter Health Park, Sacramento"},
-    {home:"Los Angeles Dodgers",  away:"San Francisco Giants",   start_time:"2026-05-15T02:10:00Z", confirmed:true, venue:"Dodger Stadium, Los Angeles"},
-    // ── Friday May 15, 2026 — Apple TV+ Friday Night Baseball + full slate ────────
-    // Source: MLB.com official schedule + Apple TV FNB schedule verified May 15, 2026
-    //   Apple TV+: TOR @ DET 6:30pm ET (MLB_APPLE exclusive) + NYY @ NYM 7pm ET (MLB_APPLE exclusive)
-    {home:"Detroit Tigers",       away:"Toronto Blue Jays",      start_time:"2026-05-15T22:30:00Z", matchupNote:"AL East vs AL Central cross-division, early evening 6:30pm ET", confirmed:true, venue:"Comerica Park, Detroit MI",           nationalBundle:"MLB_APPLE"},
-    {home:"Pittsburgh Pirates",   away:"Philadelphia Phillies",  start_time:"2026-05-15T22:40:00Z", confirmed:true, venue:"PNC Park, Pittsburgh PA",              localRsn:"PHILLIES_LOCAL", localNote:"SNP (Pittsburgh) · NBC Sports Philadelphia (Philly)"},
-    {home:"Washington Nationals", away:"Baltimore Orioles",      start_time:"2026-05-15T22:45:00Z", matchupNote:"Battle of the Beltway — interleague (AL East vs NL East)", confirmed:true, venue:"Nationals Park, Washington DC",        localRsn:"MASN_ORIOLES", localNote:"Nationals TV (DC/MD) · MASN (Baltimore)"},
-    {home:"New York Mets",        away:"New York Yankees",       start_time:"2026-05-15T23:00:00Z", matchupNote:"Subway Series — interleague (AL East vs NL East)", confirmed:true, venue:"Citi Field, Queens NY",                 nationalBundle:"MLB_APPLE"},
-    {home:"Cleveland Guardians",  away:"Cincinnati Reds",        start_time:"2026-05-15T23:10:00Z", matchupNote:"Ohio Cup — interleague (NL Central vs AL Central)", confirmed:true, venue:"Progressive Field, Cleveland OH",      localRsn:"GUARDIANS_LOCAL", localNote:"CLEGuardians.TV (Cleveland) · Reds.TV (Cincinnati)"},
-    {home:"Tampa Bay Rays",       away:"Miami Marlins",          start_time:"2026-05-15T23:10:00Z", matchupNote:"Florida rivalry — interleague (NL East vs AL East), evening game 7:10pm ET", confirmed:true, venue:"Tropicana Field, St. Petersburg FL",   localNote:"Rays.TV (Tampa) · Marlins.TV (Miami)"},
-    {home:"Minnesota Twins",      away:"Milwaukee Brewers",      start_time:"2026-05-15T23:10:00Z", confirmed:true, venue:"Target Field, Minneapolis MN",         localNote:"Twins.TV (Minneapolis) · Brewers.TV (Milwaukee)"},
-    {home:"Atlanta Braves",       away:"Boston Red Sox",         start_time:"2026-05-15T23:15:00Z", confirmed:true, venue:"Truist Park, Atlanta GA",              localRsn:"NESN_LOCAL", localNote:"BravesVision (Atlanta) · NESN (Boston)"},
-    {home:"Chicago White Sox",    away:"Chicago Cubs",           start_time:"2026-05-15T23:40:00Z", matchupNote:"Crosstown Classic — interleague (NL Central vs AL Central)", confirmed:true, venue:"Guaranteed Rate Field, Chicago IL",    localNote:"CHSN (White Sox) · Marquee Sports Network (Cubs)"},
-    {home:"Houston Astros",       away:"Texas Rangers",          start_time:"2026-05-16T00:10:00Z", confirmed:true, venue:"Daikin Park, Houston TX",              localNote:"Space City Home Network (Houston) · CW33 (DFW)"},
-    {home:"St. Louis Cardinals",  away:"Kansas City Royals",     start_time:"2026-05-16T00:15:00Z", confirmed:true, venue:"Busch Stadium, St. Louis MO",          localNote:"Cardinals.TV (St. Louis) · Royals.TV (Kansas City)"},
-    {home:"Colorado Rockies",     away:"Arizona Diamondbacks",   start_time:"2026-05-16T00:40:00Z", confirmed:true, venue:"Coors Field, Denver CO",               localNote:"Rockies.TV (Colorado) · ArizonaSports (Phoenix)"},
-    {home:"Los Angeles Angels",   away:"Los Angeles Dodgers",    start_time:"2026-05-16T01:38:00Z", confirmed:true, venue:"Angel Stadium, Anaheim CA",            localNote:"ABTV (Angels) · Spectrum SportsNet LA (Dodgers)"},
-    {home:"Seattle Mariners",     away:"San Diego Padres",       start_time:"2026-05-16T01:40:00Z", confirmed:true, venue:"T-Mobile Park, Seattle WA",            localNote:"Mariners.TV (Seattle) · Padres.TV (San Diego)"},
-    {home:"Athletics",            away:"San Francisco Giants",   start_time:"2026-05-16T01:40:00Z", confirmed:true, venue:"Sutter Health Park, Sacramento CA",    localNote:"Athletics.TV · NBC Sports Bay Area (SF)"},
-    // ── Saturday May 16, 2026 — FOX Rivalry Weekend ──────────────────────────────
-    // FS1 4:05pm — Battle of the Beltway (non-exclusive: NATS/MASN also carry)
-    {home:"Washington Nationals", away:"Baltimore Orioles",       start_time:"2026-05-16T20:05:00Z", matchupNote:"Battle of the Beltway — interleague (AL East vs NL East), FS1 4:05pm ET", confirmed:true, venue:"Nationals Park, Washington DC",           nationalBundle:"MLB_FOX", localNote:"FS1 · MASN (Baltimore) · Nationals.TV (DC)"},
-    // FOX 7:15pm — Subway Series (EXCLUSIVE: no local RSN)
-    {home:"New York Mets",        away:"New York Yankees",        start_time:"2026-05-16T23:15:00Z", confirmed:true, venue:"Citi Field, Queens NY",                   nationalBundle:"MLB_FOX", matchupNote:"Subway Series — interleague (AL East vs NL East), FOX primetime", localNote:"FOX (free OTA) — Subway Series"},
-    // FOX 7:15pm — Padres @ Mariners (regional — West Coast markets)
-    {home:"Seattle Mariners",     away:"San Diego Padres",        start_time:"2026-05-16T23:15:00Z", confirmed:true, venue:"T-Mobile Park, Seattle WA",               nationalBundle:"MLB_FOX", localNote:"FOX (free OTA) — regional window"},
+    // 6:40 PM ET
+    {home:"Tampa Bay Rays",        away:"Baltimore Orioles",      start_time:"2026-05-18T22:40:00Z", confirmed:true, venue:"Tropicana Field, St. Petersburg FL",  streams:resolveBundle("MLB_LOCAL")},
+    {home:"Miami Marlins",         away:"Atlanta Braves",         start_time:"2026-05-18T22:40:00Z", confirmed:true, venue:"loanDepot park, Miami FL",             streams:resolveBundle("MLB_LOCAL")},
+    {home:"Cleveland Guardians",   away:"Detroit Tigers",         start_time:"2026-05-18T22:40:00Z", confirmed:true, venue:"Progressive Field, Cleveland OH",      streams:resolveBundle("MLB_LOCAL")},
+    {home:"Philadelphia Phillies", away:"Cincinnati Reds",        start_time:"2026-05-18T22:40:00Z", confirmed:true, venue:"Citizens Bank Park, Philadelphia PA",  streams:resolveBundle("MLB_LOCAL")},
+    // 6:45 PM ET
+    {home:"Washington Nationals",  away:"New York Mets",          start_time:"2026-05-18T22:45:00Z", confirmed:true, venue:"Nationals Park, Washington DC",        streams:resolveBundle("MLB_LOCAL")},
+    // 7:05 PM ET
+    {home:"New York Yankees",      away:"Toronto Blue Jays",      start_time:"2026-05-18T23:05:00Z", confirmed:true, venue:"Yankee Stadium, Bronx NY",             streams:resolveBundle("MLB_LOCAL"), localRsn:"YANKEES_LOCAL", localNote:"YES Network (NY market)"},
+    // 7:40 PM ET
+    {home:"Minnesota Twins",       away:"Houston Astros",         start_time:"2026-05-18T23:40:00Z", confirmed:true, venue:"Target Field, Minneapolis MN",         streams:resolveBundle("MLB_LOCAL")},
+    {home:"Chicago Cubs",          away:"Milwaukee Brewers",      start_time:"2026-05-18T23:40:00Z", confirmed:true, venue:"Wrigley Field, Chicago IL",            streams:resolveBundle("MLB_LOCAL")},
+    {home:"Kansas City Royals",    away:"Boston Red Sox",         start_time:"2026-05-18T23:40:00Z", confirmed:true, venue:"Kauffman Stadium, Kansas City MO",     streams:resolveBundle("MLB_LOCAL")},
+    // 8:40 PM ET
+    {home:"Colorado Rockies",      away:"Texas Rangers",          start_time:"2026-05-19T00:40:00Z", confirmed:true, venue:"Coors Field, Denver CO",               streams:resolveBundle("MLB_LOCAL")},
+    // 9:38 PM ET
+    {home:"Los Angeles Angels",    away:"Athletics",              start_time:"2026-05-19T01:38:00Z", confirmed:true, venue:"Angel Stadium, Anaheim CA",            streams:resolveBundle("MLB_LOCAL")},
+    // 9:40 PM ET
+    {home:"San Diego Padres",      away:"Los Angeles Dodgers",    start_time:"2026-05-19T01:40:00Z", confirmed:true, venue:"Petco Park, San Diego CA",             streams:resolveBundle("MLB_LOCAL")},
+    {home:"Seattle Mariners",      away:"Chicago White Sox",      start_time:"2026-05-19T01:40:00Z", confirmed:true, venue:"T-Mobile Park, Seattle WA",            streams:resolveBundle("MLB_LOCAL")},
+    {home:"Arizona Diamondbacks",  away:"San Francisco Giants",   start_time:"2026-05-19T01:40:00Z", confirmed:true, venue:"Chase Field, Phoenix AZ",              streams:resolveBundle("MLB_LOCAL")},
   ];
   const mlbGames=mlbRaw.filter(g=>isToday(g.start_time)).map(g=>{
     // Stream resolution — priority order (highest first):
@@ -5079,32 +4960,25 @@ const MEDIA_WEEKEND_BASE = [
 // Format: { startDate:"YYYY-MM-DD", endDate:"YYYY-MM-DD", card:{show,network,chip,time,desc,link} }
 const MEDIA_SPECIALS = [
   {
-    startDate:"2026-05-11", endDate:"2026-05-14",
+    // NBA Western Conference Finals G1 — overrides dynamic NBA pregame chip (which defaults ESPN)
+    startDate:"2026-05-18", endDate:"2026-05-18",
     card:{
-      show:"2026 NFL Schedule Release",network:"NFL Network / ESPN2",chip:"ESPN",
-      time:"8:00 PM ET · Thu May 14",
-      desc:"The full 2026 NFL Schedule powered by AWS dropped Thursday May 14 at 8pm ET on NFL Network, ESPN2, ESPN App and NFL+. International games (record 9 across 4 continents) announced Wednesday May 13 at 9am ET on Good Morning Football.",
-      link:"https://www.nfl.com/schedules/"
+      show:"NBA GameTime",network:"NBC / Peacock",chip:"NBC",
+      time:"8:00 PM ET",
+      desc:"Pregame coverage ahead of San Antonio Spurs @ Oklahoma City Thunder — NBA Western Conference Finals Game 1 (8:30 PM ET, NBC/Peacock). All WCF games broadcast on NBC and available to stream on Peacock. SGA vs Wembanyama. Defending champion Thunder host a Spurs team that went 4-1 vs OKC in the regular season.",
+      journalNote:"WCF is on NBC/Peacock — not ESPN. NBA GameTime pregame 30 min before tip. Peacock streaming included with subscription.",
+      link:"https://www.nbc.com/nba"
     }
   },
   {
-    startDate:"2026-05-15", endDate:"2026-05-15",
+    // NBA Western Conference Finals full series
+    startDate:"2026-05-18", endDate:"2026-06-01",
     card:{
-      show:"Friday Night Baseball on Apple TV+",network:"Apple TV+",chip:"prime",
-      time:"6:30 PM ET · Fri May 15",
-      desc:"Two-game Apple TV+ exclusive doubleheader: Toronto Blue Jays @ Detroit Tigers (6:30 PM ET) and New York Yankees @ New York Mets (7:00 PM ET). Apple TV subscription required. Free from all local broadcast restrictions — no blackouts.",
-      journalNote:"Apple TV+ Friday games are national-exclusive — local RSNs are blacked out. No cable required.",
-      link:"https://tv.apple.com/channel/tvs.sbd.4000/sports"
-    }
-  },
-  {
-    startDate:"2026-05-15", endDate:"2026-05-15",
-    card:{
-      show:"NBA Prime Video Double-Header",network:"Prime Video",chip:"prime",
-      time:"7:00 PM ET · Fri May 15",
-      desc:"Two elimination games on Prime Video tonight: Detroit @ Cleveland G6 (7 PM) and San Antonio @ Minnesota G6 (9:30 PM). CLE closes out at home; SAS tries to eliminate MIN on the road at Target Center. Amazon Prime subscription required. Conference Finals begin next week.",
-      journalNote:"Ian Eagle and Stan Van Gundy on the call — best analytical pairing in the new NBA deal. Prime Video is not on basic cable.",
-      link:"https://www.amazon.com/gp/video/storefront/sports"
+      show:"NBA Western Conference Finals",network:"NBC / Peacock",chip:"NBC",
+      time:"8:30 PM ET",
+      desc:"Oklahoma City Thunder vs San Antonio Spurs — Western Conference Finals. All games on NBC/Peacock. G1-G2 at Paycom Center (OKC); G3-G4 at Frost Bank Center (SAS). OKC is perfect 8-0 in these playoffs. Wembanyama leads a Spurs team that won 4-1 vs OKC in the regular season.",
+      journalNote:"Every WCF game is on NBC (free OTA) and Peacock (streaming). No ESPN or Prime Video.",
+      link:"https://www.nbc.com/nba"
     }
   },
 ];
@@ -5450,37 +5324,26 @@ function selectBettingGames(sports, maxCards=4){
 // MLB: SF @ LAD on MLB Network Showcase
 const BETTING_LINES_FALLBACK_DATA = [
   {
-    matchKey:"cavaliers",    // DET @ CLE G6 — East Semis, CLE leads 3-2
+    matchKey:"sabres",    // BUF vs MTL G7 — NHL East Semis, Mon May 18 7:30pm ET, ESPN
     source:"📊 AI Estimated",
-    context:"Cleveland has the chance to close out Detroit at home after winning G5. The Cavaliers have been dominant at Rocket Mortgage FieldHouse this series. Donovan Mitchell eyes his first Conference Finals berth. Detroit's young core has shown fight but needs a road win in a hostile environment to stay alive. CLE -220 to close out at home.",
+    context:"A winner-take-all Game 7 at KeyBank Center after BUF's stunning 8-3 road win forced this moment. Montreal had a 3-2 series lead and looked destined to advance — Buffalo had other plans. Home ice advantage and momentum shift favor the Sabres, ending a 14-year playoff drought run. This is the best series of the second round.",
     lines:[
-      {label:"Moneyline",items:[{t:"Cleveland Cavaliers",o:"-220",fav:true},{t:"Detroit Pistons",o:"+185",fav:false}]},
-      {label:"Spread",items:[{t:"Cavaliers -5.5",o:"-110",fav:true},{t:"Pistons +5.5",o:"-110",fav:false}]},
-      {label:"Total (O/U)",items:[{t:"Over 214",o:"-110",fav:false},{t:"Under 214",o:"-110",fav:false}]},
+      {label:"Moneyline",items:[{t:"Buffalo Sabres",o:"-130",fav:true},{t:"Montreal Canadiens",o:"+110",fav:false}]},
+      {label:"Puck Line",items:[{t:"BUF -1.5",o:"+200",fav:false},{t:"MTL +1.5",o:"-240",fav:true}]},
+      {label:"Total Goals",items:[{t:"Over 5.5",o:"-110",fav:false},{t:"Under 5.5",o:"-110",fav:false}]},
     ],
     books:[{name:"DraftKings",url:"https://sportsbook.draftkings.com"},{name:"FanDuel",url:"https://sportsbook.fanduel.com"},{name:"BetMGM",url:"https://sports.betmgm.com"}]
   },
   {
-    matchKey:"spurs",       // MIN @ SAS G6 — West Semis, SAS leads 3-2
+    matchKey:"thunder",   // OKC vs SAS WCF G1 — Mon May 18 8:30pm ET, NBC/Peacock
     source:"📊 AI Estimated",
-    context:"Minnesota hosts San Antonio in a must-win G6 at Target Center. The Timberwolves are eliminated with a loss. Edwards must be dominant at home — he has the talent but the Spurs shut him down in G5 (Spurs won 126-97). Wembanyama has been elite all series. Home court gives MIN a slight edge but SAS brings a 3-2 series lead and all the momentum. If Ant goes off, MIN can extend it to G7.",
+    context:"The defending champion Thunder open the Western Conference Finals at home against the only team that matched them stride-for-stride in the regular season (Spurs went 4-1 vs OKC). SGA is back-to-back MVP but Wembanyama has been elite all postseason. OKC is 8-0 in these playoffs. The Spurs bring momentum but walk into Paycom Center as 6.5-point dogs.",
     lines:[
-      {label:"Moneyline",items:[{t:"Minnesota Timberwolves",o:"-120",fav:true},{t:"San Antonio Spurs",o:"+100",fav:false}]},
-      {label:"Spread",items:[{t:"Timberwolves -1.5",o:"-110",fav:true},{t:"Spurs +1.5",o:"-110",fav:false}]},
-      {label:"Total (O/U)",items:[{t:"Over 218",o:"-110",fav:false},{t:"Under 218",o:"-110",fav:false}]},
+      {label:"Moneyline",items:[{t:"Oklahoma City Thunder",o:"-265",fav:true},{t:"San Antonio Spurs",o:"+215",fav:false}]},
+      {label:"Spread",items:[{t:"Thunder -6.5",o:"-110",fav:true},{t:"Spurs +6.5",o:"-110",fav:false}]},
+      {label:"Total (O/U)",items:[{t:"Over 219.5",o:"-110",fav:false},{t:"Under 219.5",o:"-110",fav:false}]},
     ],
     books:[{name:"DraftKings",url:"https://sportsbook.draftkings.com"},{name:"FanDuel",url:"https://sportsbook.fanduel.com"},{name:"BetMGM",url:"https://sports.betmgm.com"}]
-  },
-  {
-    matchKey:"canadiens",   // BUF @ MTL G6 — NHL East Semis, Sat May 16 8pm ET, ABC/ESPN
-    source:"📊 AI Estimated",
-    context:"Montreal hosts Buffalo in a pivotal Game 6 at Bell Centre. The Canadiens lead 3-2 after winning G5 6-3, and look to close out at home. A win sends them to face Carolina in the ECF. Buffalo, ending a 14-year playoff drought, needs a road win to survive. The Bell Centre will be electric — Montreal on home ice is a steep hill for the Sabres.",
-    lines:[
-      {label:"Moneyline",items:[{t:"Montreal Canadiens",o:"-175",fav:true},{t:"Buffalo Sabres",o:"+148",fav:false}]},
-      {label:"Puck Line",items:[{t:"MTL -1.5",o:"+165",fav:false},{t:"BUF +1.5",o:"-195",fav:true}]},
-      {label:"Total Goals",items:[{t:"Over 5.5",o:"-115",fav:true},{t:"Under 5.5",o:"-105",fav:false}]},
-    ],
-    books:[{name:"DraftKings",url:"https://sportsbook.draftkings.com"},{name:"FanDuel",url:"https://sportsbook.fanduel.com"},{name:"BetMGM",url:"https://sportsbook.betmgm.com"}]
   },
 ];
 
