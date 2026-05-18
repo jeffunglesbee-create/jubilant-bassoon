@@ -1969,6 +1969,9 @@ const FIELD_FEATURES = {
   'drama-arc-storage':      '2026-05-18',
   // Odds API
   'odds-relay-adapter':     '2026-05-18',
+  // Journalism enrichments
+  'drama-score-smoothing':  '2026-05-18',
+  'standings-in-prompts':   '2026-05-18',
   // J-series journalism
   'j1-anti-hype':           '2026-05-14',
   'j2-series-preview':      '2026-05-14',
@@ -6043,8 +6046,13 @@ const FD_LEAGUE_MAP = {
 // Fix: declare here so renderAll's ESPN_STANDINGS_MAP[sec.sport] lookup returns undefined (falsy)
 // instead of throwing. Add sport entries here to enable ▼ Table for that sport via ESPN.
 const ESPN_STANDINGS_MAP = {
-  // Soccer is already handled via FD_LEAGUE_MAP; ESPN entries can be added for NBA/NHL/MLB/WNBA later
-  // Example: "NBA Playoffs": {sport:"basketball", league:"nba"},
+  'Baseball (MLB)':    { sport: 'baseball',   league: 'mlb' },
+  'Basketball (NBA)':  { sport: 'basketball', league: 'nba' },
+  'Hockey (NHL)':      { sport: 'hockey',     league: 'nhl' },
+  'Football (NFL)':    { sport: 'football',   league: 'nfl' },
+  // NBA/NHL Playoffs: use regular season standings for record context
+  'NBA Playoffs':      { sport: 'basketball', league: 'nba' },
+  'NHL Playoffs':      { sport: 'hockey',     league: 'nhl' },
 };
 const espnStandingsCache = {}; // cacheKey → standings entries (populated by fetchESPNStandings)
 const fdStandingsCache = {}; // code → [{pos,team,played,won,draw,lost,gf,ga,gd,pts,form}]
@@ -9188,20 +9196,73 @@ function buildFIELDBriefStatic(sections){
   if(freeGame) lines.push(freeGame.away+' @ '+freeGame.home+' is on '+freeGame.streams[0].label+' \u2014 free over the air, no subscription needed.');
   return lines.join('\n');
 }
+// ── Standings context for journalism prompts ──────────────────────────────
+// Returns a compact standings line for a game using cached ESPN/FD data.
+// Called synchronously — only uses whatever is already in cache.
+// Pre-fetch via fetchESPNStandings() or fetchFDStandings() before calling.
+//
+// Output: "Standings: Cubs: 34-28, 3.0 GB · Cardinals: 37-25 (leads division)"
+//         "Table: Arsenal: 2★ (75pts) · Chelsea: 4 (68pts)"
+//         "" if no data available
+function buildGameStandingsContext(game) {
+  const sport = game._section || game._sport || '';
+
+  // ── Soccer: FD standings ────────────────────────────────────────────────
+  const fdCode = typeof FD_LEAGUE_MAP !== 'undefined' && FD_LEAGUE_MAP[sport];
+  if (fdCode && fdStandingsCache[fdCode]?.length) {
+    const rows = fdStandingsCache[fdCode];
+    const findFD = name => {
+      const n = (name || '').toLowerCase().split(' ').pop();
+      return rows.find(r => (r.team || '').toLowerCase().includes(n));
+    };
+    const fmt = (e, t) => !e ? '' :
+      `${t}: ${e.pos}${e.pos <= 4 ? '★' : e.pos >= 18 ? '↓' : ''} (${e.pts}pts)`;
+    const parts = [fmt(findFD(game.away), game.away), fmt(findFD(game.home), game.home)].filter(Boolean);
+    return parts.length ? 'Table: ' + parts.join(' · ') : '';
+  }
+
+  // ── US sports: ESPN standings ────────────────────────────────────────────
+  const map = ESPN_STANDINGS_MAP[sport];
+  if (!map) return '';
+  const cacheKey = map.sport + '/' + map.league;
+  const standings = espnStandingsCache[cacheKey];
+  if (!standings?.length) return '';
+
+  const findESPN = name => {
+    const n = (name || '').toLowerCase().split(' ').pop();
+    return standings.find(s =>
+      (s.team || '').toLowerCase().includes(n) ||
+      (s.abbrev || '').toLowerCase() === n
+    );
+  };
+  const fmt = (e, t) => {
+    if (!e) return '';
+    const gb = parseFloat(e.gb);
+    if (isNaN(gb) || gb === 0) return `${t}: ${e.wins}-${e.losses} (leads)`;
+    return `${t}: ${e.wins}-${e.losses}, ${e.gb} GB`;
+  };
+  const parts = [fmt(findESPN(game.away), game.away), fmt(findESPN(game.home), game.home)].filter(Boolean);
+  return parts.length ? 'Standings: ' + parts.join(' · ') : '';
+}
+
 async function fetchFIELDBriefFromClaude(sections){
   const budget=journalismCallsToday();
   if(!budget.canCall()) return null;
+  // Pre-fetch standings for tonight's sports (parallel, non-blocking, enriches prompt)
+  await Promise.allSettled(sections.slice(0, 5).map(s => fetchESPNStandings(s.sport)));
   const all=sections.flatMap(s=>(s.games||[]).map(g=>({...g,_section:s.sport})));
   const ranked=all.filter(g=>g.home&&g.away&&g.home!=='ATP/WTA Field').sort((a,b)=>preGameScore(b)-preGameScore(a)).slice(0,8);
   if(!ranked.length) return null;
   const gameLines=ranked.map(g=>{
     const stream=(g.streams&&g.streams[0]&&g.streams[0].label)||'local';
     const free=g.streams&&g.streams[0]&&new Set(['ABC','NBC','CBS','FOX','ION']).has(g.streams[0].label);
+    const standingsCtx = buildGameStandingsContext(g);
     return ['- '+g.away+' @ '+g.home,
       g.seriesRecord?'  Series: '+g.seriesRecord:'',
       '  Network: '+stream+(free?' (FREE OTA)':''),
       g.matchupNote?'  Matchup: '+g.matchupNote:'',
       g._section?'  Sport: '+g._section:'',
+      standingsCtx?'  '+standingsCtx:'',
       preGameScore(g)>70&&!isNationalGame(g)?"  [SCOUT'S PICK]":'',
       isNationalGame(g)&&isBigMarketGame(g)&&preGameScore(g)<35?'  [ANTI-HYPE]':''
     ].filter(Boolean).join('\n');
@@ -9513,6 +9574,16 @@ function getDramaPeakWithTime(gameId) {
   return hist.reduce((m, h) => h.s > m.s ? h : m, hist[0]);
 }
 
+// Rolling average of last N samples — smoothed drama score for badge decisions
+// Use this instead of raw dramaScoreLive() output for any consumer that renders to screen.
+// Raw scores go to recordDramaHistory() (preserve signal); smoothed scores drive display.
+// Prevents single-poll spikes from triggering CRUNCH TIME / EMBER / BNI prematurely.
+function getSmoothedDrama(gameId, n = 3) {
+  const recent = getRecentDrama(gameId, n);
+  if (recent.length < 2) return null; // insufficient history — caller falls back to raw
+  return Math.round(recent.reduce((sum, h) => sum + h.s, 0) / recent.length);
+}
+
 function injectDramaBadges(){
   const cards = document.querySelectorAll('.game-card.espn-live');
   cards.forEach(card => {
@@ -9548,9 +9619,16 @@ function injectDramaBadges(){
       const peakKey = 'field_drama_peak_' + gid;
       const prevPeak = parseFloat(localStorage.getItem(peakKey)||'0');
       if(score > prevPeak) localStorage.setItem(peakKey, score.toString());
-      // ── Drama Arc: record this sample to history ─────────────────────
+      // ── Drama Arc: record RAW score to history ───────────────────────
       recordDramaHistory(gid, score, eData.period);
     }
+
+    // ── Smoothing: use rolling average for display decisions ──────────
+    // Raw score preserved in history and peak key above.
+    // Badges and ViewingConditions use the smoothed score to prevent
+    // single-poll spikes from triggering CRUNCH TIME / EMBER prematurely.
+    const smoothed = getSmoothedDrama(gid) ?? score;
+    const displayTier = dramaTier(smoothed);
 
     // Remove existing badges
     card.querySelectorAll('.drama-badge,.badge-crunch,.badge-worth').forEach(b=>b.remove());
@@ -9558,6 +9636,7 @@ function injectDramaBadges(){
     if(!liveEl) return;
 
     // ── PULSE: ViewingConditions CRUNCH TIME / WORTH WATCHING badge ──────
+    // Uses smoothed score — ViewingConditions reads from drama arc history internally
     const vcResult = ViewingConditions.evaluate(gid, eData.period, margin, sport);
     if (vcResult.badge) {
       const vcBadge = document.createElement('span');
@@ -9572,11 +9651,11 @@ function injectDramaBadges(){
       return; // CRUNCH TIME/WORTH WATCHING replaces drama badge — no double-badge
     }
 
-    // Fallback: standard drama badge for games below ViewingConditions threshold
-    if(!tier) return;
+    // Fallback: standard drama badge using smoothed score
+    if(!displayTier) return;
     const badge = document.createElement('span');
-    badge.className = `drama-badge drama-${tier}`;
-    badge.textContent = dramaLabel(score);
+    badge.className = `drama-badge drama-${displayTier}`;
+    badge.textContent = dramaLabel(smoothed);
     liveEl.insertAdjacentElement('afterend', badge);
   });
 }
@@ -10020,6 +10099,9 @@ function buildNightOwlStatic(f){
 async function fetchNightOwlFromClaude(topGame){
   const budget=journalismCallsToday();
   if(!budget.canCall()) return null;
+  // Pre-fetch standings for the game's sport — enriches recap context
+  await fetchESPNStandings(topGame._section || topGame._sport || '').catch(()=>{});
+  const standingsCtx = buildGameStandingsContext(topGame);
   const winner=(topGame.homeScore||0)>=(topGame.awayScore||0)?topGame.home:topGame.away;
   const score=topGame.awayScore+'\u2013'+topGame.homeScore;
   const prompt=['Write a FIELD Night Owl recap.',
@@ -10027,6 +10109,7 @@ async function fetchNightOwlFromClaude(topGame){
       'Final: '+score+' ('+winner+' wins)',
       topGame.seriesRecord?'Series: '+topGame.seriesRecord:'',
       topGame.dramaPeak?'Drama peak: '+Math.round(topGame.dramaPeak)+'/100':'',
+      standingsCtx?standingsCtx:'',
       '','Rules: 80-100 words. Tactical. Not emotional. Lead with the turning point.',
       'Write only from the data above — never invent statistics, player tendencies, or context.',
       'Rhetorical quality: strong verbs, precise framing, zero clichés.',

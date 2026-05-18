@@ -332,6 +332,30 @@ try {
       pass('Assertion 30 — Odds relay adapter present (ODDS_RELAY_BASE + fetchOddsForSport + getGameOdds + FIELD_FEATURES)');
   }
 
+  // Assertion 31 — Drama score smoothing
+  {
+    const hasSmooth   = js.includes('getSmoothedDrama');
+    const usedInBadge = js.includes('getSmoothedDrama(gid)');
+    const inRegistry  = html.includes("'drama-score-smoothing'");
+    if (!hasSmooth || !usedInBadge || !inRegistry)
+      fail('Assertion 31 — Drama score smoothing missing (getSmoothedDrama / badge wiring / FIELD_FEATURES)');
+    else
+      pass('Assertion 31 — Drama score smoothing present and wired into injectDramaBadges');
+  }
+
+  // Assertion 32 — Standings context in J3/J5 prompts
+  {
+    const hasBuilder  = js.includes('buildGameStandingsContext');
+    const hasJ3Wire   = js.includes('standingsCtx') && js.includes('fetchFIELDBriefFromClaude');
+    const hasJ5Wire   = js.includes('fetchNightOwlFromClaude') && js.includes('buildGameStandingsContext(topGame)');
+    const hasMap      = js.includes("'Baseball (MLB)'") && js.includes("'Basketball (NBA)'");
+    const inRegistry  = html.includes("'standings-in-prompts'");
+    if (!hasBuilder || !hasJ3Wire || !hasJ5Wire || !hasMap || !inRegistry)
+      fail('Assertion 32 — Standings in prompts incomplete (buildGameStandingsContext / J3 / J5 / map / FIELD_FEATURES)');
+    else
+      pass('Assertion 32 — Standings context wired into J3 + J5 prompts (ESPN_STANDINGS_MAP populated)');
+  }
+
   // ─────────────────────────────────────────────────────────────────────
   log('---');
   log('Failures:', failures);
@@ -341,7 +365,7 @@ try {
     console.log(fs.readFileSync(LOG, 'utf8'));
     process.exit(1);
   } else {
-    console.log(`SMOKE TEST PASSED 30/30 (${sportSections} sport sections, MLB+NBA+lazy+SEP+J-series+PULSE+registry+drama-arc+odds-relay verified)`);
+    console.log(`SMOKE TEST PASSED 32/32 (${sportSections} sport sections, MLB+NBA+lazy+SEP+J-series+PULSE+registry+drama-arc+odds-relay+smoothing+standings verified)`);
     process.exit(0);
   }
 })();

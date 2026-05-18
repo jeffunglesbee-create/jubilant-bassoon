@@ -119,6 +119,11 @@ assert('localStorage prune function present', html.includes('pruneOldFieldData')
             html.includes('getGameOdds') &&
             html.includes("'odds-relay-adapter'"));
           assert('FIELD_FEATURES contains relay-nba', html.includes("'relay-nba'") || html.includes('"relay-nba"'));
+          assert('Drama score smoothing present',
+            html.includes('getSmoothedDrama') && html.includes("'drama-score-smoothing'"));
+          assert('Standings context in J3/J5 prompts',
+            html.includes('buildGameStandingsContext') && html.includes("'standings-in-prompts'") &&
+            html.includes("'Baseball (MLB)'"));
 
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);
