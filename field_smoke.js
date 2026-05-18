@@ -401,6 +401,30 @@ try {
       pass('Assertion 36 — Double Feature detection (2+ games ≥75) + drama arc localStorage cleanup');
   }
 
+  // Assertion 37 — BNI (Broadcast Narrative Index)
+  {
+    const hasBNI      = js.includes('computeBroadcastNarrativeIndex');
+    const hasStrength = js.includes('getBNIStrength');
+    const hasJ3Wire   = js.includes("'narrative-push'") && js.includes('[BNI:');
+    const inRegistry  = html.includes("'bni'");
+    if (!hasBNI || !hasStrength || !hasJ3Wire || !inRegistry)
+      fail('Assertion 37 — BNI missing (computeBroadcastNarrativeIndex / getBNIStrength / J3 wire / FIELD_FEATURES)');
+    else
+      pass('Assertion 37 — BNI: computeBroadcastNarrativeIndex + getBNIStrength wired into J3 prompts');
+  }
+
+  // Assertion 38 — Watch Window "Why" explainer
+  {
+    const hasWWR     = js.includes('buildWatchWindowReason');
+    const hasWWCss   = html.includes('ww-reason');
+    const hasWWWire  = js.includes('wwReason');
+    const inRegistry = html.includes("'watch-window-why'");
+    if (!hasWWR || !hasWWCss || !hasWWWire || !inRegistry)
+      fail('Assertion 38 — Watch Window Why missing (buildWatchWindowReason / ww-reason CSS / wire / FIELD_FEATURES)');
+    else
+      pass('Assertion 38 — Watch Window Why: buildWatchWindowReason wired into renderWatchWindow');
+  }
+
   // ─────────────────────────────────────────────────────────────────────
   log('---');
   log('Failures:', failures);
@@ -410,7 +434,7 @@ try {
     console.log(fs.readFileSync(LOG, 'utf8'));
     process.exit(1);
   } else {
-    console.log(`SMOKE TEST PASSED 36/36 (${sportSections} sport sections, MLB+NBA+lazy+SEP+J-series+PULSE+registry+drama-arc+odds-relay+smoothing+standings verified)`);
+    console.log(`SMOKE TEST PASSED 38/38 (${sportSections} sport sections, MLB+NBA+lazy+SEP+J-series+PULSE+registry+drama-arc+odds-relay+smoothing+standings verified)`);
     process.exit(0);
   }
 })();

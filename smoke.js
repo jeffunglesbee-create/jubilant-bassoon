@@ -121,6 +121,10 @@ assert('localStorage prune function present', html.includes('pruneOldFieldData')
           assert('FIELD_FEATURES contains relay-nba', html.includes("'relay-nba'") || html.includes('"relay-nba"'));
           assert('Drama score smoothing present',
             html.includes('getSmoothedDrama') && html.includes("'drama-score-smoothing'"));
+          assert('BNI present',
+            html.includes('computeBroadcastNarrativeIndex') && html.includes("'bni'"));
+          assert('Watch Window Why present',
+            html.includes('buildWatchWindowReason') && html.includes("'watch-window-why'"));
           assert('Standings context in J3/J5 prompts (relay-first)',
             html.includes('buildGameStandingsContext') && html.includes('fetchStandingsForPrompt') &&
             html.includes('_relayStandingsCache') && html.includes("'standings-in-prompts'"));
