@@ -307,6 +307,18 @@ try {
       pass('Assertion 28 — FIELD_FEATURES registry present with j-series + relay keys');
   }
 
+  // Assertion 29 — Drama Arc Storage Layer (shared temporal primitive)
+  {
+    const hasStorage   = js.includes('recordDramaHistory');
+    const hasConsumers = js.includes('getDramaHistory') && js.includes('getDramaTrend') && js.includes('getDramaSustained');
+    const hasKey       = js.includes('DRAMA_HISTORY_KEY');
+    const inRegistry   = html.includes("'drama-arc-storage'");
+    if (!hasStorage || !hasConsumers || !hasKey || !inRegistry)
+      fail('Assertion 29 — Drama Arc storage layer missing (recordDramaHistory / consumer API / FIELD_FEATURES entry)');
+    else
+      pass('Assertion 29 — Drama Arc storage + consumer API present (EMBER/J5/DRIFT/BNI/Social ready)');
+  }
+
   // ─────────────────────────────────────────────────────────────────────
   log('---');
   log('Failures:', failures);
@@ -316,7 +328,7 @@ try {
     console.log(fs.readFileSync(LOG, 'utf8'));
     process.exit(1);
   } else {
-    console.log(`SMOKE TEST PASSED 28/28 (${sportSections} sport sections, MLB+NBA+lazy+SEP+J-series+PULSE+registry verified)`);
+    console.log(`SMOKE TEST PASSED 29/29 (${sportSections} sport sections, MLB+NBA+lazy+SEP+J-series+PULSE+registry+drama-arc verified)`);
     process.exit(0);
   }
 })();

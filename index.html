@@ -1966,6 +1966,7 @@ const FIELD_FEATURES = {
   'b1plus-crunch-time':     '2026-05-18',
   'b1plus-garbage-time':    '2026-05-18',
   'b1plus-j5-isblowout':    '2026-05-18',
+  'drama-arc-storage':      '2026-05-18',
   // J-series journalism
   'j1-anti-hype':           '2026-05-14',
   'j2-series-preview':      '2026-05-14',
@@ -9362,6 +9363,80 @@ function getCDWNote(score, sport){
 }
 
 
+// ── DRAMA ARC STORAGE LAYER ──────────────────────────────────────────────────
+// Stores drama score time-series per live game. The shared temporal primitive
+// that makes EMBER, J5, DRIFT, BNI, and Social Contrarian coherent.
+//
+// KEY:  field_drama_history_{gameId} = [{t, s, p}]
+//   t: timestamp ms  s: drama score 0-100 (garbage-time-capped)  p: period/inning
+// Cap: 200 samples (~100 min at 30s resolution)
+// Gate: 25s minimum between samples (prevents double-write on fast cycles)
+//
+// CONSUMERS:
+//   EMBER (H-1):          getRecentDrama() + getDramaTrend() — recency-weighted evaluation
+//   J5 Night Owl:         getDramaHistory() sparkline + getDramaSustained() game ranking
+//   DRIFT v2.1 (A-1+):    getDramaTrend() → typed changeset dramaChanges[]
+//   BNI (E-1):            getDramaTrend() → calibrate narrative-push confidence
+//   Social Contrarian (G-1): getDramaPeakWithTime() → social buzz vs. drama timing
+//   Broadcast Context (Wow#44): getDramaHistory() → disambiguate break vs. low-drama play
+//
+const DRAMA_HISTORY_KEY = 'field_drama_history_';
+const DRAMA_HISTORY_MAX = 200;    // ~100 min at 30s
+const DRAMA_SAMPLE_MIN  = 25000;  // ms — minimum gap between samples
+
+function recordDramaHistory(gameId, score, period) {
+  if (!gameId || score < 0) return;
+  try {
+    const key = DRAMA_HISTORY_KEY + gameId;
+    const hist = JSON.parse(localStorage.getItem(key) || '[]');
+    const now = Date.now();
+    // Gate: skip if last sample was too recent
+    if (hist.length > 0 && now - hist[hist.length - 1].t < DRAMA_SAMPLE_MIN) return;
+    hist.push({ t: now, s: Math.round(score), p: period || 0 });
+    if (hist.length > DRAMA_HISTORY_MAX) hist.splice(0, hist.length - DRAMA_HISTORY_MAX);
+    localStorage.setItem(key, JSON.stringify(hist));
+  } catch(e) { /* localStorage quota or unavailable */ }
+}
+
+// ── Consumer API ─────────────────────────────────────────────────────────────
+
+// Full history array — primary access for J5 sparkline and Social timing
+function getDramaHistory(gameId) {
+  try { return JSON.parse(localStorage.getItem(DRAMA_HISTORY_KEY + gameId) || '[]'); }
+  catch(e) { return []; }
+}
+
+// Last N samples (~30s each) — EMBER current-state check
+function getRecentDrama(gameId, n = 3) {
+  return getDramaHistory(gameId).slice(-n);
+}
+
+// Trend: + = rising, - = falling, 0 = flat or insufficient data
+// Delta between oldest and newest of last N samples
+// Used by: EMBER (is buried game currently rising?), DRIFT changeset, BNI calibration
+function getDramaTrend(gameId, n = 4) {
+  const hist = getDramaHistory(gameId);
+  if (hist.length < 2) return 0;
+  const w = hist.slice(-n);
+  return w[w.length - 1].s - w[0].s;
+}
+
+// Minutes drama has been sustained above threshold in the given window
+// Used by: J5 game selection (sustained > peak), EMBER context boost
+function getDramaSustained(gameId, threshold = 65, windowMs = 30 * 60 * 1000) {
+  const cutoff = Date.now() - windowMs;
+  const inWindow = getDramaHistory(gameId).filter(h => h.t >= cutoff && h.s >= threshold);
+  return Math.round(inWindow.length * 0.5 * 10) / 10; // minutes, 1dp
+}
+
+// Peak sample with timestamp — Social Contrarian timing comparison
+// "Did social buzz arrive before or after the drama peaked?"
+function getDramaPeakWithTime(gameId) {
+  const hist = getDramaHistory(gameId);
+  if (!hist.length) return { s: 0, t: 0, p: 0 };
+  return hist.reduce((m, h) => h.s > m.s ? h : m, hist[0]);
+}
+
 function injectDramaBadges(){
   const cards = document.querySelectorAll('.game-card.espn-live');
   cards.forEach(card => {
@@ -9397,6 +9472,8 @@ function injectDramaBadges(){
       const peakKey = 'field_drama_peak_' + gid;
       const prevPeak = parseFloat(localStorage.getItem(peakKey)||'0');
       if(score > prevPeak) localStorage.setItem(peakKey, score.toString());
+      // ── Drama Arc: record this sample to history ─────────────────────
+      recordDramaHistory(gid, score, eData.period);
     }
 
     // Remove existing badges

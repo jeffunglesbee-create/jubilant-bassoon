@@ -103,7 +103,13 @@ assert('QW-7: BriefCache key includes game status',
 assert('localStorage prune function present', html.includes('pruneOldFieldData'));
 
 
-          // ── FIELD_FEATURES registry (doc-as-code, prevents drift) ──────────────────
+          // ── Drama Arc Storage Layer ────────────────────────────────────────────
+          assert('Drama Arc storage layer present',
+            html.includes('recordDramaHistory') &&
+            html.includes('getDramaHistory') &&
+            html.includes('getDramaTrend') &&
+            html.includes("'drama-arc-storage'"));
+
           assert('FIELD_FEATURES registry declared', html.includes('const FIELD_FEATURES = {'));
           assert('FIELD_FEATURES contains j-series', html.includes("'j1-anti-hype'") || html.includes('"j1-anti-hype"'));
           assert('FIELD_FEATURES contains relay-nba', html.includes("'relay-nba'") || html.includes('"relay-nba"'));
