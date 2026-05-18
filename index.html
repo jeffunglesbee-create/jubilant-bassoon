@@ -4497,31 +4497,17 @@ function buildTodaySchedule(){
   // ── MLB schedule: May 8 (Fri) – May 11 (Mon) ────────────────────────────────
   // isToday() filters to the viewer's local date — correct games show each day
   // Sources: MLB.com official schedule + Peacock.com GOTD listings verified May 11, 2026
-  // ── MLB — Monday May 18, 2026 — 14 games, all local/MLB_LOCAL ─────────
-  // Sources: MLB.com official schedule verified May 18, 2026
-  // No national TV broadcast today (no Apple TV+/Peacock/TBS/ESPN exclusive)
+  // ── MLB — Monday May 18, 2026 — mlbRaw: NATIONAL TV OVERRIDES ONLY ─────────
+  // Architecture change: fetchMLBFixtures() → loadMLBSlate() is now the PRIMARY
+  // source for MLB games (MLB Stats API, CORS-open, live broadcasts included).
+  // mlbRaw = exception/override list only:
+  //   - National TV entries (Apple Friday, Peacock Sunday, TBS Tuesday, FOX/FS1)
+  //   - Any game needing manual override (peacockGOTD, espnGOTD flags, special venues)
+  // For all-local days (Mon/Wed/Thu): mlbRaw = [] — adapter provides full slate
+  // Daily update: just verify/enter national TV exceptions, adapter handles the rest.
+  // Sources: MLB.com verified May 18, 2026
   const mlbRaw=[
-    // 6:40 PM ET
-    {home:"Tampa Bay Rays",        away:"Baltimore Orioles",      start_time:"2026-05-18T22:40:00Z", confirmed:true, venue:"Tropicana Field, St. Petersburg FL",  streams:resolveBundle("MLB_LOCAL")},
-    {home:"Miami Marlins",         away:"Atlanta Braves",         start_time:"2026-05-18T22:40:00Z", confirmed:true, venue:"loanDepot park, Miami FL",             streams:resolveBundle("MLB_LOCAL")},
-    {home:"Cleveland Guardians",   away:"Detroit Tigers",         start_time:"2026-05-18T22:40:00Z", confirmed:true, venue:"Progressive Field, Cleveland OH",      streams:resolveBundle("MLB_LOCAL")},
-    {home:"Philadelphia Phillies", away:"Cincinnati Reds",        start_time:"2026-05-18T22:40:00Z", confirmed:true, venue:"Citizens Bank Park, Philadelphia PA",  streams:resolveBundle("MLB_LOCAL")},
-    // 6:45 PM ET
-    {home:"Washington Nationals",  away:"New York Mets",          start_time:"2026-05-18T22:45:00Z", confirmed:true, venue:"Nationals Park, Washington DC",        streams:resolveBundle("MLB_LOCAL")},
-    // 7:05 PM ET
-    {home:"New York Yankees",      away:"Toronto Blue Jays",      start_time:"2026-05-18T23:05:00Z", confirmed:true, venue:"Yankee Stadium, Bronx NY",             streams:resolveBundle("MLB_LOCAL"), localRsn:"YANKEES_LOCAL", localNote:"YES Network (NY market)"},
-    // 7:40 PM ET
-    {home:"Minnesota Twins",       away:"Houston Astros",         start_time:"2026-05-18T23:40:00Z", confirmed:true, venue:"Target Field, Minneapolis MN",         streams:resolveBundle("MLB_LOCAL")},
-    {home:"Chicago Cubs",          away:"Milwaukee Brewers",      start_time:"2026-05-18T23:40:00Z", confirmed:true, venue:"Wrigley Field, Chicago IL",            streams:resolveBundle("MLB_LOCAL")},
-    {home:"Kansas City Royals",    away:"Boston Red Sox",         start_time:"2026-05-18T23:40:00Z", confirmed:true, venue:"Kauffman Stadium, Kansas City MO",     streams:resolveBundle("MLB_LOCAL")},
-    // 8:40 PM ET
-    {home:"Colorado Rockies",      away:"Texas Rangers",          start_time:"2026-05-19T00:40:00Z", confirmed:true, venue:"Coors Field, Denver CO",               streams:resolveBundle("MLB_LOCAL")},
-    // 9:38 PM ET
-    {home:"Los Angeles Angels",    away:"Athletics",              start_time:"2026-05-19T01:38:00Z", confirmed:true, venue:"Angel Stadium, Anaheim CA",            streams:resolveBundle("MLB_LOCAL")},
-    // 9:40 PM ET
-    {home:"San Diego Padres",      away:"Los Angeles Dodgers",    start_time:"2026-05-19T01:40:00Z", confirmed:true, venue:"Petco Park, San Diego CA",             streams:resolveBundle("MLB_LOCAL")},
-    {home:"Seattle Mariners",      away:"Chicago White Sox",      start_time:"2026-05-19T01:40:00Z", confirmed:true, venue:"T-Mobile Park, Seattle WA",            streams:resolveBundle("MLB_LOCAL")},
-    {home:"Arizona Diamondbacks",  away:"San Francisco Giants",   start_time:"2026-05-19T01:40:00Z", confirmed:true, venue:"Chase Field, Phoenix AZ",              streams:resolveBundle("MLB_LOCAL")},
+    // No national TV games Monday May 18 — adapter handles all 14 local games
   ];
   const mlbGames=mlbRaw.filter(g=>isToday(g.start_time)).map(g=>{
     // Stream resolution — priority order (highest first):
@@ -7867,22 +7853,38 @@ async function fetchMLBFixtures(){
   const today = new Date();
 
   // ── Try MLB Stats API first (official, free, CORS-open) ──────────────────
+  // ARCHITECTURE: Adapter is PRIMARY source. mlbRaw is the OVERRIDE/EXCEPTION list
+  // for national TV games (Apple Friday, Peacock Sunday, TBS Tuesday, FOX/FS1).
+  // For all-local days, mlbRaw = [] and adapter provides the full slate.
+  // This eliminates the need to manually enter standard local games each daily update.
   try {
     const mlbGames = await loadMLBSlate(today);
     if (mlbGames && mlbGames.length > 0) {
       let mlbSec = allData.sports.find(s => s.sport === 'Baseball (MLB)');
-      if (!mlbSec) { mlbSec = {sport:'Baseball (MLB)', games:[]}; allData.sports.push(mlbSec); }
-      let added = 0;
-      mlbGames.forEach(g => {
-        const exists = (mlbSec.games||[]).some(existing =>
-          existing.home === g.home && existing.away === g.away
-        );
-        if (exists) return;
-        mlbSec.games.push(g);
-        added++;
+
+      // Collect national TV overrides from mlbRaw (games with nationalBundle set)
+      const nationalOverrides = (mlbSec?.games || []).filter(g => g.nationalBundle);
+      const nationalKeys = new Set(nationalOverrides.map(g => `${g.home}|${g.away}`));
+
+      // REPLACE mlbSec.games: API games + preserve national TV overrides from mlbRaw
+      // API games that match a national override are replaced by the override (richer data)
+      const mergedGames = mlbGames.map(apiGame => {
+        const key = `${apiGame.home}|${apiGame.away}`;
+        return nationalKeys.has(key)
+          ? nationalOverrides.find(o => `${o.home}|${o.away}` === key)  // mlbRaw override wins
+          : apiGame;                                                      // API game
       });
-      if (added > 0) { buildFilters(allData.sports); scheduleRenderAll(); }
-      if (FIELD_DEBUG) console.log(`[MLB Stats API] Added ${added} games`);
+      // Add any national overrides not covered by the API (e.g. future confirmed entries)
+      nationalOverrides.forEach(o => {
+        const key = `${o.home}|${o.away}`;
+        if (!mlbGames.some(g => `${g.home}|${g.away}` === key)) mergedGames.push(o);
+      });
+
+      if (!mlbSec) { mlbSec = {sport:'Baseball (MLB)', games:[]}; allData.sports.push(mlbSec); }
+      mlbSec.games = mergedGames.map(g => ({...g, _sport:'Baseball (MLB)'}));
+      buildFilters(allData.sports);
+      scheduleRenderAll();
+      if (FIELD_DEBUG) console.log(`[MLB Stats API] Primary source: ${mergedGames.length} games (${nationalOverrides.length} national TV overrides)`);
       return; // success — skip ESPN fallback
     }
   } catch(e) {
