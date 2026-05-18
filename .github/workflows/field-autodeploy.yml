@@ -113,16 +113,51 @@ jobs:
 
       - name: Validate new file before committing
         if: steps.diff.outputs.changed == 'true'
+        id: validate
         run: |
-          grep -q '<title>FIELD' index_new.html || { echo "❌ Title missing"; exit 1; }
-          grep -q 'buildTodaySchedule' index_new.html || { echo "❌ Schedule function missing"; exit 1; }
-          grep -q 'renderAll' index_new.html || { echo "❌ Render function missing"; exit 1; }
-          grep -q '</html>' index_new.html || { echo "❌ File appears truncated"; exit 1; }
+          # ── Basic structure ──────────────────────────────────────────────
+          grep -q '<title>FIELD' index_new.html        || { echo "❌ Title missing"; exit 1; }
+          grep -q 'buildTodaySchedule' index_new.html  || { echo "❌ Schedule function missing"; exit 1; }
+          grep -q 'renderAll' index_new.html           || { echo "❌ Render function missing"; exit 1; }
+          grep -q '</html>' index_new.html             || { echo "❌ File appears truncated"; exit 1; }
+
+          # ── Size guard — full FIELD app must be >500KB ───────────────────
           SIZE=$(wc -c < index_new.html)
-          echo "✓ Validation passed (${SIZE} bytes)"
+          if [ "$SIZE" -lt 500000 ]; then
+            echo "❌ Drive file too small (${SIZE} bytes, need >500KB) — degraded export rejected"
+            echo "   Upload a complete index.html to Drive before auto-deploy will accept it."
+            exit 1
+          fi
+
+          # ── Critical function presence (guards against stripped exports) ─
+          MISSING=""
+          grep -q 'MLB_STATS_BASE'     index_new.html || MISSING="$MISSING MLB_STATS_BASE"
+          grep -q 'RELAY_BASE'         index_new.html || MISSING="$MISSING RELAY_BASE"
+          grep -q 'SPORT_CHIP_LABELS'  index_new.html || MISSING="$MISSING SPORT_CHIP_LABELS"
+          grep -q 'BRIEF_LEAGUES'      index_new.html || MISSING="$MISSING BRIEF_LEAGUES"
+          grep -q 'pruneOldFieldData'  index_new.html || MISSING="$MISSING pruneOldFieldData"
+          grep -q 'RELAY_CUTOVER_DATE' index_new.html || MISSING="$MISSING RELAY_CUTOVER_DATE"
+          if [ -n "$MISSING" ]; then
+            echo "❌ Drive file missing critical functions:$MISSING"
+            echo "   This is a degraded export that would break the live app. Commit blocked."
+            exit 1
+          fi
+
+          # ── Version guard — skip if Drive file is older than current repo ─
+          # SW_VERSION format: 'YYYYMMDD-N'. Lexicographic compare is safe.
+          DRIVE_VER=$(grep -oP "const SW_VERSION = '\K[^']+" index_new.html 2>/dev/null || echo "00000000-0")
+          REPO_VER=$(grep -oP "const SW_VERSION = '\K[^']+" index.html 2>/dev/null || echo "00000000-0")
+          if [[ "$DRIVE_VER" < "$REPO_VER" ]]; then
+            echo "⏭  Drive SW_VERSION ($DRIVE_VER) < repo ($REPO_VER) — Drive is stale, skipping commit"
+            echo "skip=true" >> $GITHUB_OUTPUT
+          else
+            echo "skip=false" >> $GITHUB_OUTPUT
+          fi
+
+          echo "✓ Validation passed — ${SIZE} bytes, no missing functions, SW_VERSION=$DRIVE_VER"
 
       - name: Replace and commit
-        if: steps.diff.outputs.changed == 'true'
+        if: steps.diff.outputs.changed == 'true' && steps.validate.outputs.skip != 'true'
         run: |
           git config user.name "FIELD Auto-Deploy"
           git config user.email "action@github.com"
