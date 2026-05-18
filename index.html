@@ -608,6 +608,11 @@ flex-shrink:0;white-space:nowrap;
 .drama-hot {background:rgba(232,160,32,.18);color:var(--soon)}
 .drama-warm{background:rgba(0,212,170,.15);color:var(--teal)}
 @keyframes drama-flicker{0%,100%{opacity:1}50%{opacity:.72}}
+/* ── CRUNCH TIME pulse badge (Wow#33 / Combo B-1+) ─────────────────── */
+@keyframes fieldPulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.78;transform:scale(.97)}}
+.badge-pulse{animation:fieldPulse 1.2s ease-in-out infinite}
+.badge-crunch{background:rgba(255,59,59,.22);color:var(--live);font-size:.6rem;font-weight:800;letter-spacing:.08em;padding:.15rem .38rem;border-radius:3px;margin-left:.3rem;vertical-align:middle;display:inline-flex;align-items:center}
+.badge-worth {background:rgba(232,160,32,.2);color:var(--soon);font-size:.6rem;font-weight:700;letter-spacing:.06em;padding:.15rem .38rem;border-radius:3px;margin-left:.3rem;vertical-align:middle;display:inline-flex;align-items:center}
 
 /* ── Share Button ───────────────────────────────────────────────────── */
 .share-btn{
@@ -7949,6 +7954,35 @@ const SERVICE_COST = {
   peacockpremium: '$7.99',
 };
 
+// ── PULSE: Viewing Conditions Score & Badge Engine (Wow#33 / Combo B-1+) ──
+// Replaces Delta8. Fixes '3pt' dead branch. Adds SPORT_CRUNCH_RULES.
+// isBlowout flag for J5 caller — this function does NOT suppress anything.
+// Source: PULSE spec (16pkgCd8nz9fjfK32M6qu4qYGmslyNv30jhVqjgn8lj8)
+const SPORT_CRUNCH_RULES = {
+  'Basketball': ['4th','q4'],
+  'Baseball':   ['9th'],
+  'Football':   ['4th'],
+  'Hockey':     ['3rd','ot'],
+};
+const ViewingConditions = {
+  evaluate(gameId, period, margin, sport) {
+    const dramaScorePeak = Number(localStorage.getItem('field_drama_peak_' + gameId)) || 50;
+    let score = dramaScorePeak;
+    let isCrunchTime = false;
+    if (period && sport && SPORT_CRUNCH_RULES[sport]) {
+      const p = String(period).toLowerCase();
+      isCrunchTime = SPORT_CRUNCH_RULES[sport].some(rule => p.includes(rule));
+    }
+    if (isCrunchTime && margin <= 5) score += 30;
+    if (margin > 20)                 score -= 20;
+    score = Math.max(0, Math.min(100, score));
+    const isBlowout = margin > 20;
+    if (score >= 85) return { score, badge: 'CRUNCH TIME',    color: 'var(--c-nba)', pulse: true,  isBlowout };
+    if (score >= 65) return { score, badge: 'WORTH WATCHING', color: 'var(--c-nhl)', pulse: false, isBlowout };
+    return             { score, badge: null,           color: null,          pulse: false, isBlowout };
+  }
+};
+
 goToDate(TODAY_ISO);
 
 // ── Streaming Discovery data (what's on each app beyond headline games) ───────
@@ -8667,19 +8701,51 @@ function injectDramaBadges(){
     });
     if(!eData) return;
     const sport = card.dataset.sport||'';
-    const score = dramaScoreLive(eData, sport);
+    let score = dramaScoreLive(eData, sport);
+
+    // ── Wow#41: Garbage Time cap ─────────────────────────────────────────
+    // Cap drama at 20 when game is in its final period and margin > 24.
+    // Prevents blowout games from carrying misleading high drama badges.
+    const margin = Math.abs((eData.homeScore||0) - (eData.awayScore||0));
+    const period = eData.period || 0;
+    const sp = sport.toLowerCase();
+    const isFinalPeriod = (
+      (sp.includes('basketball')||sp.includes('nba'))  ? period >= 4 :
+      (sp.includes('hockey')||sp.includes('nhl'))       ? period >= 3 :
+      (sp.includes('football')||sp.includes('nfl'))     ? period >= 4 :
+      (sp.includes('baseball')||sp.includes('mlb'))     ? period >= 9 : false
+    );
+    if (isFinalPeriod && margin > 24) score = Math.min(score, 20);
+
     const tier = dramaTier(score);
     if(gid && score > 0){
       const peakKey = 'field_drama_peak_' + gid;
       const prevPeak = parseFloat(localStorage.getItem(peakKey)||'0');
       if(score > prevPeak) localStorage.setItem(peakKey, score.toString());
     }
-    if(!tier) return;
 
-    // Remove existing badge
-    card.querySelectorAll('.drama-badge').forEach(b=>b.remove());
+    // Remove existing badges
+    card.querySelectorAll('.drama-badge,.badge-crunch,.badge-worth').forEach(b=>b.remove());
     const liveEl = card.querySelector('.live-indicator,.live-dot');
     if(!liveEl) return;
+
+    // ── PULSE: ViewingConditions CRUNCH TIME / WORTH WATCHING badge ──────
+    const vcResult = ViewingConditions.evaluate(gid, eData.period, margin, sport);
+    if (vcResult.badge) {
+      const vcBadge = document.createElement('span');
+      if (vcResult.badge === 'CRUNCH TIME') {
+        vcBadge.className = 'badge-crunch badge-pulse';
+        vcBadge.textContent = '⚡ CRUNCH TIME';
+      } else {
+        vcBadge.className = 'badge-worth';
+        vcBadge.textContent = '👀 WORTH WATCHING';
+      }
+      liveEl.insertAdjacentElement('afterend', vcBadge);
+      return; // CRUNCH TIME/WORTH WATCHING replaces drama badge — no double-badge
+    }
+
+    // Fallback: standard drama badge for games below ViewingConditions threshold
+    if(!tier) return;
     const badge = document.createElement('span');
     badge.className = `drama-badge drama-${tier}`;
     badge.textContent = dramaLabel(score);
@@ -9170,6 +9236,15 @@ async function renderNightOwlRecap(){
   };
   if(cached){renderCard(cached,true);return;}
   renderCard(buildNightOwlStatic(topGame),false);
+  // ── J5 isBlowout gate (Combo B-1+) ──────────────────────────────────
+  // Skip Claude call if the final game was a blowout — no tactical brief needed.
+  // Margin > 20 at final = blowout. Show static recap only.
+  const finalMargin = Math.abs((topGame.homeScore||0) - (topGame.awayScore||0));
+  if (finalMargin > 20) {
+    const textEl = el.querySelector('.night-owl-text');
+    if (textEl) { textEl.classList.remove('pending'); textEl.classList.add('loaded'); }
+    return;
+  }
   const claudeText=await fetchNightOwlFromClaude(topGame);
   if(claudeText){const textEl=el.querySelector('.night-owl-text');if(textEl){textEl.textContent=trimToCompleteSentence(claudeText);textEl.classList.remove('pending');textEl.classList.add('loaded');}sessionStorage.setItem(cacheKey,claudeText);}
   else{const textEl=el.querySelector('.night-owl-text');if(textEl){textEl.classList.remove('pending');textEl.classList.add('loaded');}}
