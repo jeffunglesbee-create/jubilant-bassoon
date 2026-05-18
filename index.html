@@ -1942,6 +1942,39 @@ flex-shrink:0;white-space:nowrap;
 // In production: console.debug and console output are suppressed
 // ═══════════════════════════════════════════════════════════════
 const FIELD_DEBUG = localStorage.getItem('FIELD_DEBUG') === '1';
+
+// ── FIELD Feature Registry ────────────────────────────────────────────────
+// SINGLE SOURCE OF TRUTH for what's built. Updated when features ship.
+// Drive docs are derived summaries. If unsure what's built: look here first.
+// Format: 'feature-key': 'YYYY-MM-DD' (date shipped)
+// Rule: add a line here + a smoke assertion = feature is documented as built.
+const FIELD_FEATURES = {
+  // Core infrastructure
+  'relay-nba':              '2026-05-16',
+  'relay-nhl':              '2026-05-17',
+  'relay-fpl':              '2026-05-17',
+  'relay-fd':               '2026-05-17',
+  'mlb-stats-adapter':      '2026-05-16',
+  'mlb-thin-client':        '2026-05-18',
+  'sw-version-cache-bust':  '2026-05-17',
+  'auto-deploy-guard-v5':   '2026-05-18',
+  // Quick wins
+  'qw7-briefcache':         '2026-05-16',
+  // Drama system
+  'drama-score-live':       '2026-05-11',
+  'b1plus-pulse':           '2026-05-18',
+  'b1plus-crunch-time':     '2026-05-18',
+  'b1plus-garbage-time':    '2026-05-18',
+  'b1plus-j5-isblowout':    '2026-05-18',
+  // J-series journalism
+  'j1-anti-hype':           '2026-05-14',
+  'j2-series-preview':      '2026-05-14',
+  'j3-field-brief':         '2026-05-14',
+  'j4-scouts-pick':         '2026-05-14',
+  'j5-night-owl':           '2026-05-14',
+  'j6-smt-notes':           '2026-05-14',
+  'j7-cdw-notes':           '2026-05-14',
+};
 if(!FIELD_DEBUG){
   // Suppress debug/log in production; keep warn/error for genuine issues
   const _noop = ()=>{};
