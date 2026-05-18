@@ -84,16 +84,15 @@ jobs:
           echo "Downloading from Drive (file ID: ${FILE_ID:0:8}...)"
           URL="https://drive.google.com/uc?export=download&id=$FILE_ID"
           if ! curl --fail -L -o index_new.html "$URL"; then
-            echo "❌ Download failed — check that the Drive file is shared publicly"
+            echo "⏭  Drive download failed — skipping this run (transient or file not shared)"
             echo "   URL attempted: $URL"
-            exit 1
+            exit 0
           fi
           SIZE=$(wc -c < index_new.html)
           echo "Downloaded: ${SIZE} bytes"
           if [ "$SIZE" -lt 100000 ]; then
-            echo "❌ File too small (${SIZE} bytes) — Drive link may be wrong or file not shared"
-            echo "   Tip: make sure sharing is set to 'Anyone with the link → Viewer'"
-            exit 1
+            echo "⏭  File too small (${SIZE} bytes) — Drive returned confirmation page, skipping"
+            exit 0
           fi
           echo "✓ Download OK (${SIZE} bytes)"
 
