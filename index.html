@@ -1967,6 +1967,8 @@ const FIELD_FEATURES = {
   'b1plus-garbage-time':    '2026-05-18',
   'b1plus-j5-isblowout':    '2026-05-18',
   'drama-arc-storage':      '2026-05-18',
+  // Odds API
+  'odds-relay-adapter':     '2026-05-18',
   // J-series journalism
   'j1-anti-hype':           '2026-05-14',
   'j2-series-preview':      '2026-05-14',
@@ -7982,6 +7984,80 @@ async function fetchMLBFixtures(){
 // as fetchSoccerFixtures ESPN path. periodPrefix:"'" triggers soccer clock display.
 
 const FPL_RELAY_BASE = 'https://field-relay-nba.jeffunglesbee.workers.dev/fpl';
+const ODDS_RELAY_BASE = 'https://field-relay-nba.jeffunglesbee.workers.dev/odds'; // apiKey injected server-side
+
+// ── The Odds API FIELD Adapter ────────────────────────────────────────────
+// Relay injects apiKey server-side — never in browser JS.
+// Free tier: 500 req/month. Relay 300s cache = viable with playoff slate.
+// Quota tracking: X-Requests-Remaining header forwarded by relay.
+//
+// USES:
+//   drama_bb in preGameScore()     — moneyline gap → drama bonus
+//   Pre-game EMBER trigger         — tight odds on buried RSN game
+//   BNI odds-narrative divergence  — market vs. broadcast attention
+//   J5 upset detection             — underdog win vs. opening line
+//   Totals line as pace signal     — O/U vs. current score
+//   Line movement detector         — delta between fetches
+//   Series odds for playoff EMBER  — live series implication signal
+//
+const ODDS_SPORT_MAP = {
+  'Basketball':      'basketball_nba',
+  'Baseball':        'baseball_mlb',
+  'Football':        'americanfootball_nfl',
+  'Hockey':          'icehockey_nhl',
+  'Premier League':  'soccer_epl',
+  'MLS Soccer':      'soccer_usa_mls',
+};
+// Cached odds per sport key — keyed by sport + today's date
+const _oddsCache = {};
+
+// Fetch moneyline + spreads + totals for a sport from the Odds API via relay
+// Returns array of game objects or null on error
+async function fetchOddsForSport(sport, markets = 'h2h,spreads,totals') {
+  const sportKey = ODDS_SPORT_MAP[sport];
+  if (!sportKey) return null;
+  const cacheKey = `${sportKey}_${TODAY_ISO}`;
+  if (_oddsCache[cacheKey]) return _oddsCache[cacheKey];
+  try {
+    const qs = `?regions=us&markets=${markets}&oddsFormat=american&dateFormat=iso`;
+    const r  = await fetch(`${ODDS_RELAY_BASE}/v4/sports/${sportKey}/odds${qs}`,
+                           { signal: AbortSignal.timeout(6000) });
+    if (!r.ok) { if (FIELD_DEBUG) console.warn('[ODDS] relay returned', r.status); return null; }
+    const data = await r.json();
+    _oddsCache[cacheKey] = data;
+    if (FIELD_DEBUG) console.log(`[ODDS] ${sportKey}: ${data.length} games, quota remaining: ${r.headers.get('x-requests-remaining') ?? '?'}`);
+    return data;
+  } catch(e) {
+    if (FIELD_DEBUG) console.warn('[ODDS] fetch error:', e.message);
+    return null;
+  }
+}
+
+// Find odds for a specific matchup by home/away team name substring match
+// Returns { moneylineGap, homeML, awayML, homeSpread, total } or null
+function getGameOdds(oddsData, homeTeam, awayTeam) {
+  if (!oddsData?.length) return null;
+  const h = homeTeam.toLowerCase().split(' ').pop(); // city vs name — use last word
+  const a = awayTeam.toLowerCase().split(' ').pop();
+  const game = oddsData.find(g => {
+    const ht = (g.home_team || '').toLowerCase();
+    const at = (g.away_team || '').toLowerCase();
+    return (ht.includes(h) || h.includes(ht.split(' ').pop())) &&
+           (at.includes(a) || a.includes(at.split(' ').pop()));
+  });
+  if (!game) return null;
+  const book = (game.bookmakers || []).find(b => b.key === 'draftkings' || b.key === 'fanduel') || game.bookmakers?.[0];
+  if (!book) return null;
+  const h2h  = book.markets?.find(m => m.key === 'h2h');
+  const sp   = book.markets?.find(m => m.key === 'spreads');
+  const tot  = book.markets?.find(m => m.key === 'totals');
+  const homeML = h2h?.outcomes?.find(o => o.name.toLowerCase().includes(h))?.price ?? null;
+  const awayML = h2h?.outcomes?.find(o => o.name.toLowerCase().includes(a))?.price ?? null;
+  const homeSpread = sp?.outcomes?.find(o => o.name.toLowerCase().includes(h))?.point ?? null;
+  const total = tot?.outcomes?.[0]?.point ?? null;
+  const moneylineGap = (homeML != null && awayML != null) ? Math.abs(homeML - awayML) : null;
+  return { moneylineGap, homeML, awayML, homeSpread, total, commence_time: game.commence_time };
+}
 
 // FPL short_name → FIELD team name (for names that don't fuzzy-match)
 const FPL_SHORT_NAME_MAP = {

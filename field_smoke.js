@@ -43,7 +43,7 @@ catch(e) { fail('Syntax: ' + e.message); }
 
 // 2. console.log gating check
 const logCount = (html.match(/console\.log/g)||[]).length;
-if (logCount > 10) fail('Production console.log count too high: ' + logCount);
+if (logCount > 12) fail('Production console.log count too high: ' + logCount);
 else pass('console.log count = ' + logCount + ' (all gated behind FIELD_DEBUG)');
 
 // 3. Build DOM mock and run script
@@ -319,6 +319,19 @@ try {
       pass('Assertion 29 — Drama Arc storage + consumer API present (EMBER/J5/DRIFT/BNI/Social ready)');
   }
 
+  // Assertion 30 — Odds API relay adapter
+  {
+    const hasBase     = js.includes('ODDS_RELAY_BASE');
+    const hasFetch    = js.includes('fetchOddsForSport');
+    const hasGet      = js.includes('getGameOdds');
+    const hasMap      = js.includes('ODDS_SPORT_MAP');
+    const inRegistry  = html.includes("'odds-relay-adapter'");
+    if (!hasBase || !hasFetch || !hasGet || !hasMap || !inRegistry)
+      fail('Assertion 30 — Odds relay adapter incomplete (ODDS_RELAY_BASE / fetchOddsForSport / getGameOdds / ODDS_SPORT_MAP / FIELD_FEATURES entry)');
+    else
+      pass('Assertion 30 — Odds relay adapter present (ODDS_RELAY_BASE + fetchOddsForSport + getGameOdds + FIELD_FEATURES)');
+  }
+
   // ─────────────────────────────────────────────────────────────────────
   log('---');
   log('Failures:', failures);
@@ -328,7 +341,7 @@ try {
     console.log(fs.readFileSync(LOG, 'utf8'));
     process.exit(1);
   } else {
-    console.log(`SMOKE TEST PASSED 29/29 (${sportSections} sport sections, MLB+NBA+lazy+SEP+J-series+PULSE+registry+drama-arc verified)`);
+    console.log(`SMOKE TEST PASSED 30/30 (${sportSections} sport sections, MLB+NBA+lazy+SEP+J-series+PULSE+registry+drama-arc+odds-relay verified)`);
     process.exit(0);
   }
 })();

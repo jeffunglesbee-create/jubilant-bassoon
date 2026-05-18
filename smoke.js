@@ -112,6 +112,12 @@ assert('localStorage prune function present', html.includes('pruneOldFieldData')
 
           assert('FIELD_FEATURES registry declared', html.includes('const FIELD_FEATURES = {'));
           assert('FIELD_FEATURES contains j-series', html.includes("'j1-anti-hype'") || html.includes('"j1-anti-hype"'));
+          // ── Odds API relay (pre-session work) ─────────────────────────────────
+          assert('Odds relay adapter present',
+            html.includes('ODDS_RELAY_BASE') &&
+            html.includes('fetchOddsForSport') &&
+            html.includes('getGameOdds') &&
+            html.includes("'odds-relay-adapter'"));
           assert('FIELD_FEATURES contains relay-nba', html.includes("'relay-nba'") || html.includes('"relay-nba"'));
 
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
