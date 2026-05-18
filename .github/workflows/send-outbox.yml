@@ -1,0 +1,105 @@
+# .github/workflows/send-outbox.yml
+#
+# FIELD OUTBOX — Sandbox → Email via Resend
+#
+# HOW IT WORKS:
+#   1. bash_tool writes outbox/message.json and git pushes to main
+#   2. This workflow triggers on any push touching outbox/**
+#   3. Reads message.json, sends via Resend API, cleans up
+#   4. Cleanup commit contains [skip ci] — GitHub skips all workflows on it
+#      so this workflow does NOT re-trigger on the cleanup push
+#
+# SETUP (one-time, Jeff):
+#   1. resend.com → sign up → API Keys → Create API Key → copy
+#   2. jubilant-bassoon repo → Settings → Secrets → Actions → New secret
+#      Name:  RESEND_API_KEY
+#      Value: [API key from step 1]
+#
+# SANDBOX USAGE:
+#   cat > /tmp/jubilant-bassoon/outbox/message.json << MSG
+#   {
+#     "to": "jeffunglesbee@gmail.com",
+#     "subject": "FIELD — description",
+#     "body": "content here"
+#   }
+#   MSG
+#   cd /tmp/jubilant-bassoon
+#   git add outbox/message.json
+#   git commit -m "outbox: description"
+#   git push https://[PAT]@github.com/jeffunglesbee-create/jubilant-bassoon.git main
+#
+# Email arrives ~45 seconds after push.
+# RESEND_API_KEY secret required — get free key at resend.com (3k/month)
+
+name: FIELD Outbox — Send Email
+
+on:
+  push:
+    paths:
+      - 'outbox/message.json'
+    branches:
+      - main
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    name: Send outbox message via Resend
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Verify message exists
+        run: |
+          if [ ! -f outbox/message.json ]; then
+            echo "⏭  No outbox/message.json found — skipping"
+            exit 0
+          fi
+          echo "📬 Message found:"
+          jq '.' outbox/message.json
+
+      - name: Send via Resend
+        env:
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+        run: |
+          if [ -z "$RESEND_API_KEY" ]; then
+            echo "❌ RESEND_API_KEY secret not set."
+            echo "   Setup: resend.com → API Keys → Create → add as repo secret RESEND_API_KEY"
+            exit 1
+          fi
+
+          # Build payload safely via jq — handles newlines, quotes, special chars
+          PAYLOAD=$(jq -n \
+            --arg from "FIELD <onboarding@resend.dev>" \
+            --argjson to "[\"$(jq -r .to outbox/message.json)\"]" \
+            --arg subject "$(jq -r .subject outbox/message.json)" \
+            --arg text "$(jq -r .body outbox/message.json)" \
+            '{from: $from, to: $to, subject: $subject, text: $text}')
+
+          echo "📤 Sending to: $(jq -r .to outbox/message.json)"
+          echo "📋 Subject: $(jq -r .subject outbox/message.json)"
+
+          RESPONSE=$(curl -s -w "\n%{http_code}" -X POST https://api.resend.com/emails \
+            -H "Authorization: Bearer $RESEND_API_KEY" \
+            -H "Content-Type: application/json" \
+            -d "$PAYLOAD")
+
+          HTTP_CODE=$(echo "$RESPONSE" | tail -1)
+          BODY=$(echo "$RESPONSE" | head -1)
+
+          echo "📡 Resend response ($HTTP_CODE): $BODY"
+
+          if [ "$HTTP_CODE" -lt 200 ] || [ "$HTTP_CODE" -ge 300 ]; then
+            echo "❌ Send failed with HTTP $HTTP_CODE"
+            exit 1
+          fi
+
+          echo "✅ Email sent successfully"
+
+      - name: Clean up outbox
+        run: |
+          git config user.email "jeffunglesbee@gmail.com"
+          git config user.name "FIELD CI"
+          git rm outbox/message.json
+          git commit -m "outbox: delivered [skip ci]"
+          git push https://${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git HEAD:main
