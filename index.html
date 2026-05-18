@@ -9196,7 +9196,104 @@ function buildFIELDBriefStatic(sections){
   if(freeGame) lines.push(freeGame.away+' @ '+freeGame.home+' is on '+freeGame.streams[0].label+' \u2014 free over the air, no subscription needed.');
   return lines.join('\n');
 }
-// ── Standings context for journalism prompts ──────────────────────────────
+// ── Relay-first standings for J3/J5 prompt enrichment ─────────────────────
+// Uses official/relay sources — no ESPN calls in the automated brief path.
+// ESPN_STANDINGS_MAP still controls the ▼ Table button (user-triggered, on-demand).
+// fetchStandingsForPrompt(sport) → populates _relayStandingsCache synchronously usable
+// by buildGameStandingsContext() immediately after await.
+const _relayStandingsCache = {}; // sportName → [{team, abbrev, wins, losses, pct, gb}]
+
+async function fetchMLBStandingsParsed() {
+  const key = 'Baseball (MLB)';
+  if (_relayStandingsCache[key]) return _relayStandingsCache[key];
+  try {
+    const season = new Date().getFullYear();
+    const r = await fetch(
+      `${MLB_STATS_BASE}/standings?leagueId=103,104&season=${season}&standingsTypes=regularSeason`,
+      { signal: AbortSignal.timeout(6000) }
+    );
+    if (!r.ok) return null;
+    const data = await r.json();
+    const teams = [];
+    (data.records || []).forEach(div => {
+      (div.teamRecords || []).forEach(t => {
+        teams.push({
+          team:    t.team?.name || '',
+          abbrev:  t.team?.abbreviation || '',
+          wins:    String(t.wins || 0),
+          losses:  String(t.losses || 0),
+          pct:     t.winningPercentage || '',
+          gb:      t.gamesBack || '0',
+        });
+      });
+    });
+    if (teams.length) _relayStandingsCache[key] = teams;
+    if (FIELD_DEBUG) console.log(`[Standings] MLB: ${teams.length} teams from Stats API`);
+    return teams.length ? teams : null;
+  } catch(e) { if (FIELD_DEBUG) console.warn('[Standings] MLB error:', e.message); return null; }
+}
+
+async function fetchNBAStandingsParsed() {
+  const key = 'Basketball (NBA)';
+  if (_relayStandingsCache[key]) return _relayStandingsCache[key];
+  try {
+    const data = await fetchNBAStandingsViaRelay();
+    const teams = [];
+    ['east', 'west'].forEach(conf => {
+      (data.league?.[conf]?.teams || []).forEach(t => {
+        teams.push({
+          team:   `${t.teamCity} ${t.teamName}`,
+          abbrev: t.teamTricode || t.teamAbbreviation || '',
+          wins:   String(t.wins || 0),
+          losses: String(t.losses || 0),
+          pct:    t.winPct || '',
+          gb:     t.gamesBehind ?? '0',
+        });
+      });
+    });
+    if (teams.length) {
+      _relayStandingsCache[key] = teams;
+      _relayStandingsCache['NBA Playoffs'] = teams; // reuse for playoff sport key
+    }
+    if (FIELD_DEBUG) console.log(`[Standings] NBA: ${teams.length} teams from relay`);
+    return teams.length ? teams : null;
+  } catch(e) { if (FIELD_DEBUG) console.warn('[Standings] NBA error:', e.message); return null; }
+}
+
+async function fetchNHLStandingsParsed() {
+  const key = 'Hockey (NHL)';
+  if (_relayStandingsCache[key]) return _relayStandingsCache[key];
+  try {
+    const r = await fetch(`${NHL_RELAY_BASE}/v1/standings/now`, { signal: AbortSignal.timeout(6000) });
+    if (!r.ok) return null;
+    const data = await r.json();
+    const teams = (data.standings || []).map(t => ({
+      team:   t.teamName?.default || t.teamCommonName?.default || '',
+      abbrev: t.teamAbbrev?.default || '',
+      wins:   String(t.wins || 0),
+      losses: String((t.losses || 0) + (t.otLosses || 0)), // regulation + OT losses
+      pct:    '',
+      gb:     String(Math.abs(t.pointsFromPlayoffSpot ?? 0)), // positive = above bubble
+    }));
+    if (teams.length) {
+      _relayStandingsCache[key] = teams;
+      _relayStandingsCache['NHL Playoffs'] = teams;
+    }
+    if (FIELD_DEBUG) console.log(`[Standings] NHL: ${teams.length} teams from relay`);
+    return teams.length ? teams : null;
+  } catch(e) { if (FIELD_DEBUG) console.warn('[Standings] NHL error:', e.message); return null; }
+}
+
+// Dispatcher: routes to correct source per sport, populates _relayStandingsCache
+async function fetchStandingsForPrompt(sport) {
+  if (!sport) return null;
+  if (sport.includes('Baseball') || sport.includes('MLB'))     return fetchMLBStandingsParsed();
+  if (sport.includes('Basketball') || sport.includes('NBA'))   return fetchNBAStandingsParsed();
+  if (sport.includes('Hockey') || sport.includes('NHL'))       return fetchNHLStandingsParsed();
+  // Soccer: FD already populates fdStandingsCache — buildGameStandingsContext reads it directly
+  // NFL: off-season, low urgency — ESPN on-demand via ▼ Table button is acceptable
+  return null;
+}
 // Returns a compact standings line for a game using cached ESPN/FD data.
 // Called synchronously — only uses whatever is already in cache.
 // Pre-fetch via fetchESPNStandings() or fetchFDStandings() before calling.
@@ -9221,14 +9318,16 @@ function buildGameStandingsContext(game) {
     return parts.length ? 'Table: ' + parts.join(' · ') : '';
   }
 
-  // ── US sports: ESPN standings ────────────────────────────────────────────
+  // ── US sports: relay/API standings first, ESPN on-demand as fallback ────
+  // _relayStandingsCache populated by fetchStandingsForPrompt() (MLB Stats API / NBA relay / NHL relay)
+  // espnStandingsCache populated only when user clicks ▼ Table — acceptable fallback
+  const relayRows = _relayStandingsCache[sport];
   const map = ESPN_STANDINGS_MAP[sport];
-  if (!map) return '';
-  const cacheKey = map.sport + '/' + map.league;
-  const standings = espnStandingsCache[cacheKey];
+  const espnRows = map ? espnStandingsCache[`${map.sport}/${map.league}`] : null;
+  const standings = relayRows || espnRows;
   if (!standings?.length) return '';
 
-  const findESPN = name => {
+  const findTeam = name => {
     const n = (name || '').toLowerCase().split(' ').pop();
     return standings.find(s =>
       (s.team || '').toLowerCase().includes(n) ||
@@ -9241,15 +9340,15 @@ function buildGameStandingsContext(game) {
     if (isNaN(gb) || gb === 0) return `${t}: ${e.wins}-${e.losses} (leads)`;
     return `${t}: ${e.wins}-${e.losses}, ${e.gb} GB`;
   };
-  const parts = [fmt(findESPN(game.away), game.away), fmt(findESPN(game.home), game.home)].filter(Boolean);
+  const parts = [fmt(findTeam(game.away), game.away), fmt(findTeam(game.home), game.home)].filter(Boolean);
   return parts.length ? 'Standings: ' + parts.join(' · ') : '';
 }
 
 async function fetchFIELDBriefFromClaude(sections){
   const budget=journalismCallsToday();
   if(!budget.canCall()) return null;
-  // Pre-fetch standings for tonight's sports (parallel, non-blocking, enriches prompt)
-  await Promise.allSettled(sections.slice(0, 5).map(s => fetchESPNStandings(s.sport)));
+  // Pre-fetch standings from relay/API sources (MLB Stats API, NBA relay, NHL relay — not ESPN)
+  await Promise.allSettled(sections.slice(0, 5).map(s => fetchStandingsForPrompt(s.sport)));
   const all=sections.flatMap(s=>(s.games||[]).map(g=>({...g,_section:s.sport})));
   const ranked=all.filter(g=>g.home&&g.away&&g.home!=='ATP/WTA Field').sort((a,b)=>preGameScore(b)-preGameScore(a)).slice(0,8);
   if(!ranked.length) return null;
@@ -10099,8 +10198,8 @@ function buildNightOwlStatic(f){
 async function fetchNightOwlFromClaude(topGame){
   const budget=journalismCallsToday();
   if(!budget.canCall()) return null;
-  // Pre-fetch standings for the game's sport — enriches recap context
-  await fetchESPNStandings(topGame._section || topGame._sport || '').catch(()=>{});
+  // Pre-fetch standings from relay/API — not ESPN
+  await fetchStandingsForPrompt(topGame._section || topGame._sport || '').catch(()=>{});
   const standingsCtx = buildGameStandingsContext(topGame);
   const winner=(topGame.homeScore||0)>=(topGame.awayScore||0)?topGame.home:topGame.away;
   const score=topGame.awayScore+'\u2013'+topGame.homeScore;
