@@ -701,6 +701,9 @@ flex-shrink:0;white-space:nowrap;
 .ww-soon{font-size:.58rem;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:#2dd4bf}
 .ww-game{font-size:.72rem;color:var(--fg,#e8e8f0);font-weight:600}
 .ww-reason{font-size:.58rem;color:var(--muted);opacity:.8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:180px}
+.brief-state-badge{font-size:.5rem;color:var(--muted);opacity:.5;margin-left:.4rem;vertical-align:middle}
+.brief-state-badge.updating{color:#f59e0b;opacity:.8;animation:spin .8s linear infinite}
+@keyframes spin{from{display:inline-block;transform:rotate(0)}to{display:inline-block;transform:rotate(360deg)}}
 .ww-net{font-size:.62rem;color:var(--muted);text-decoration:none;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:4px;padding:.1rem .35rem;white-space:nowrap}
 .ww-net:hover{background:rgba(45,212,191,.15);border-color:rgba(45,212,191,.35);color:#2dd4bf}
 .ww-close{margin-left:auto;background:none;border:none;color:var(--muted);cursor:pointer;font-size:.8rem;padding:0 .1rem;flex-shrink:0}
@@ -1978,6 +1981,9 @@ const FIELD_FEATURES = {
   // BNI + Watch Window Why
   'bni':                    '2026-05-18',
   'watch-window-why':       '2026-05-18',
+  // Journalism resilience
+  'compound-editorial-call':'2026-05-18',
+  'journalism-resilience':  '2026-05-18',
   'page-visibility-api':    '2026-05-18',
   'first-lead-change-burst':'2026-05-18',
   'double-feature-detection':'2026-05-18',
@@ -9205,6 +9211,143 @@ function journalismCallsToday(){
   const k='field_j_calls_'+new Date().toISOString().slice(0,10);
   return {get(){return parseInt(sessionStorage.getItem(k)||'0');},inc(){sessionStorage.setItem(k,String(this.get()+1));},canCall(){return this.get()<8;}};
 }
+
+// ── Compound Editorial Call — eliminates RPM burst ───────────────────────────
+// Replaces 5-7 simultaneous journalism calls with 1 structured JSON call.
+// Content-addressed cache: only regenerates when game context changes.
+// 429 fallback: temporal spread queue fires individual calls 3s apart.
+
+function djb2Hash(str) {
+  let h = 5381;
+  for (let i = 0; i < str.length; i++) h = ((h << 5) + h) ^ str.charCodeAt(i);
+  return (h >>> 0).toString(36);
+}
+
+function buildCompoundCacheKey(sections) {
+  const games = (sections || []).flatMap(s => s.games || []);
+  const sig = [
+    games.map(g => [g.home||'',g.away||'',g.matchupNote||'',g.seriesRecord||'',g.cdwNote||''].join('|')).join(','),
+    new Date().toISOString().slice(0,10)
+  ].join('::');
+  return 'field_compound_' + djb2Hash(sig);
+}
+
+function buildCompoundPrompt(sections) {
+  const games = (sections || []).flatMap(s => s.games || []).slice(0, 12);
+  const seriesGames = games.filter(g => g.seriesRecord);
+
+  const gameLines = games.map(g => {
+    const stream = g.streams?.[0]?.label || 'local';
+    const crewCtx = getCrewContext(g);
+    const arcType = (typeof detectArcType === 'function') ? detectArcType(g) : null;
+    const bni = computeBroadcastNarrativeIndex(g);
+    return [
+      `- ${g.away||''} @ ${g.home||''}`,
+      g.seriesRecord ? `  Series: ${g.seriesRecord}` : '',
+      `  Network: ${stream}`,
+      crewCtx ? `  Crew: ${crewCtx}` : '',
+      g.matchupNote ? `  Context: ${g.matchupNote}` : '',
+      arcType ? `  Arc: ${arcType.toUpperCase()}` : '',
+      bni ? `  [BNI: ${bni.replace(/-/g,' ').toUpperCase()}]` : '',
+      preGameScore(g) > 70 && !isNationalGame(g) ? "  [SCOUT'S PICK]" : '',
+    ].filter(Boolean).join('\n');
+  }).join('\n\n');
+
+  const seriesIds = seriesGames.map(g => `${g.home}_${g.away}`);
+
+  return `You are FIELD's sports intelligence editor. Generate the complete editorial package.
+Return ONLY valid JSON. No markdown, no backticks, no preamble.
+
+TONIGHT'S GAMES:
+${gameLines || 'No games tonight.'}
+
+Return this exact JSON structure (null for any section without sufficient data):
+{
+  "brief": "100-120 words. 2 short paragraphs. No headers. Lead with most important story. Complete sentences.",
+  "series": [${seriesIds.map(id => `{"id":"${id}","preview":null}`).join(',')}],
+  "scouts_pick": "one sentence explaining the Scout's Pick or null",
+  "bni_note": "one sentence Anti-Hype framing or null"
+}
+
+Rules:
+- Write ONLY from the data above. Never invent scores, stats, records, or player tendencies.
+- Strong verbs, precise framing, zero clichés.
+- Every sentence must be complete. Never end mid-sentence.
+- For each series entry: write 80 words focused on stakes and series arc, or null if data insufficient.
+- If [BNI] appears: describe that matchup as low-stakes in the brief — never echo the tag verbatim.
+- Plain prose only. No bullet points.`;
+}
+
+async function fetchCompoundEditorial(sections) {
+  const budget = journalismCallsToday();
+  if (!budget.canCall()) return null;
+
+  const cacheKey = buildCompoundCacheKey(sections);
+  const cached = sessionStorage.getItem(cacheKey);
+  if (cached) {
+    try { return JSON.parse(cached); } catch(e) {}
+  }
+
+  budget.inc();
+  try {
+    const r = await fetch(CLAUDE_PROXY_URL, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 2500,
+        messages: [{role: 'user', content: buildCompoundPrompt(sections)}]
+      }),
+      signal: AbortSignal.timeout(15000)
+    });
+
+    // Proxy v4 returns 429 with Retry-After — handle gracefully
+    if (r.status === 429) {
+      const retryAfter = parseInt(r.headers.get('Retry-After') || '60');
+      _compoundRetryAfter = Date.now() + retryAfter * 1000;
+      if (FIELD_DEBUG) console.log(`[COMPOUND] 429 received — retrying after ${retryAfter}s`);
+      // Return cached if available, otherwise null (falls back to individual queue)
+      return null;
+    }
+
+    if (!r.ok) return null;
+    const data = await r.json();
+    const text = data.content?.[0]?.text || '';
+    const clean = text.replace(/```json|```/g, '').trim();
+    const result = JSON.parse(clean);
+    sessionStorage.setItem(cacheKey, JSON.stringify(result));
+    return result;
+  } catch(e) {
+    if (FIELD_DEBUG) console.log('[COMPOUND] failed:', e.message);
+    return null;
+  }
+}
+
+// Retry-after timestamp for 429 backoff
+let _compoundRetryAfter = 0;
+
+// Temporal spread fallback queue — fires individual calls 3s apart
+// Called when compound editorial returns null (429 or parse fail)
+function initJournalismQueue(sections) {
+  if (Date.now() < _compoundRetryAfter) {
+    // Still in backoff window — show cached states, don't retry yet
+    const remaining = Math.ceil((_compoundRetryAfter - Date.now()) / 1000);
+    if (FIELD_DEBUG) console.log(`[QUEUE] in backoff — ${remaining}s remaining`);
+    return;
+  }
+  const QUEUE_INTERVAL = 3000; // 3s between calls — safe at 15 RPM and 30 RPM
+  let delay = 0;
+  // J3 Brief fires immediately (already handled by initFIELDBrief calling individual fetch)
+  // Series previews stagger at 3s intervals
+  if (allData) {
+    const cards = document.querySelectorAll('.game-card[data-sport*="Playoffs"]');
+    cards.forEach((card, i) => {
+      if (!card.dataset.gameid) return;
+      setTimeout(() => renderSeriesPreviewCard(card).catch(() => {}), delay);
+      delay += QUEUE_INTERVAL;
+    });
+  }
+}
 function seriesPreviewCacheKey(g){
   const norm=s=>(s||'').toLowerCase().replace(/\s+/g,'_').replace(/[^a-z0-9_]/g,'');
   return 'field_series_preview_'+norm(g.home)+'_'+norm(g.away)+'_'+norm(g.seriesRecord);
@@ -9511,11 +9654,37 @@ async function initFIELDBrief(sections){
   const cacheKey=fieldBriefCacheKey();
   const cached=sessionStorage.getItem(cacheKey);
   el.style.display='block';
-  const mkCard=(text,loaded)=>`<div class="field-brief-card" id="field-brief-inner"><div class="field-brief-header"><span class="field-brief-label">FIELD Brief</span><span class="field-brief-date">${dateLabel}</span></div><div class="field-brief-text${loaded?'':' pending'}">${text}</div></div>`;
-  if(cached){el.innerHTML=mkCard(trimToCompleteSentence(cached),true);document.getElementById('field-brief-inner')?.addEventListener('click',()=>document.getElementById('field-brief-inner')?.classList.toggle('collapsed'));return;}
+  const stateBadge=s=>s==='cached'?'<span class="brief-state-badge">○</span>':s==='updating'?'<span class="brief-state-badge updating">⟳</span>':'';
+  const mkCard=(text,loaded,state)=>`<div class="field-brief-card" id="field-brief-inner"><div class="field-brief-header"><span class="field-brief-label">FIELD Brief</span><span class="field-brief-date">${dateLabel}</span>${stateBadge(state)}</div><div class="field-brief-text${loaded?'':' pending'}">${text}</div></div>`;
+  if(cached){el.innerHTML=mkCard(trimToCompleteSentence(cached),true,'cached');document.getElementById('field-brief-inner')?.addEventListener('click',()=>document.getElementById('field-brief-inner')?.classList.toggle('collapsed'));return;}
   const staticText=buildFIELDBriefStatic(sections)||'Loading tonight\'s brief\u2026';
-  el.innerHTML=mkCard(staticText,false);
+  el.innerHTML=mkCard(staticText,false,'');
   document.getElementById('field-brief-inner')?.addEventListener('click',()=>document.getElementById('field-brief-inner')?.classList.toggle('collapsed'));
+
+  // Compound editorial call: 1 RPM covers all journalism pieces
+  const compound=await fetchCompoundEditorial(sections);
+  if(compound){
+    if(compound.brief){
+      const textEl=el.querySelector('.field-brief-text');
+      if(textEl){textEl.textContent=trimToCompleteSentence(compound.brief);textEl.classList.remove('pending');textEl.classList.add('loaded');}
+      sessionStorage.setItem(cacheKey,compound.brief);
+    }
+    // Dispatch series previews from compound result
+    if(compound.series?.length){
+      compound.series.forEach(s=>{
+        if(!s?.preview) return;
+        const card=[...document.querySelectorAll('.game-card')].find(c=>{
+          const h=(c.dataset.home||'').toLowerCase().replace(/\s+/g,'_');
+          const a=(c.dataset.away||'').toLowerCase().replace(/\s+/g,'_');
+          return s.id&&(s.id.toLowerCase().includes(h)||s.id.toLowerCase().includes(a));
+        });
+        if(card) injectSeriesPreviewText(card,s.preview);
+      });
+    }
+    return;
+  }
+
+  // Compound null (429 / parse fail): individual brief + temporal spread for series
   const claudeText=await fetchFIELDBriefFromClaude(sections);
   if(claudeText){
     const textEl=el.querySelector('.field-brief-text');
@@ -9525,6 +9694,7 @@ async function initFIELDBrief(sections){
     const textEl=el.querySelector('.field-brief-text');
     if(textEl){textEl.classList.remove('pending');textEl.classList.add('loaded');}
   }
+  setTimeout(()=>initJournalismQueue(sections),3000);
 }
 
 
@@ -9655,8 +9825,21 @@ function initEPLMatchBriefs() {
 
 function initSeriesPreviews(){
   if(!allData) return;
-  const cards=document.querySelectorAll('.game-card[data-sport*="Playoffs"]');
-  cards.forEach(card=>{if(card.dataset.gameid)renderSeriesPreviewCard(card).catch(()=>{});});
+  // Use temporal spread (3s apart) instead of simultaneous fire
+  // Compound editorial handles this when successful — queue is fallback only
+  initJournalismQueue(allData.sports||[]);
+}
+
+// Inject series preview text directly into an existing card (used by compound dispatch)
+function injectSeriesPreviewText(card, text) {
+  if (!card || !text) return;
+  let previewEl = card.querySelector('.series-preview-text');
+  if (!previewEl) {
+    previewEl = document.createElement('div');
+    previewEl.className = 'series-preview-text loaded';
+    card.appendChild(previewEl);
+  }
+  previewEl.textContent = trimToCompleteSentence(text);
 }
 
 

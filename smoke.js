@@ -121,6 +121,10 @@ assert('localStorage prune function present', html.includes('pruneOldFieldData')
           assert('FIELD_FEATURES contains relay-nba', html.includes("'relay-nba'") || html.includes('"relay-nba"'));
           assert('Drama score smoothing present',
             html.includes('getSmoothedDrama') && html.includes("'drama-score-smoothing'"));
+          assert('Compound editorial call present',
+            html.includes('fetchCompoundEditorial') && html.includes("'compound-editorial-call'"));
+          assert('Journalism resilience present',
+            html.includes('_compoundRetryAfter') && html.includes("'journalism-resilience'"));
           assert('BNI present',
             html.includes('computeBroadcastNarrativeIndex') && html.includes("'bni'"));
           assert('Watch Window Why present',

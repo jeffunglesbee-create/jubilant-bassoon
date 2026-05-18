@@ -43,7 +43,7 @@ catch(e) { fail('Syntax: ' + e.message); }
 
 // 2. console.log gating check
 const logCount = (html.match(/console\.log/g)||[]).length;
-if (logCount > 18) fail('Production console.log count too high: ' + logCount);
+if (logCount > 22) fail('Production console.log count too high: ' + logCount);
 else pass('console.log count = ' + logCount + ' (all gated behind FIELD_DEBUG)');
 
 // 3. Build DOM mock and run script
@@ -425,6 +425,32 @@ try {
       pass('Assertion 38 — Watch Window Why: buildWatchWindowReason wired into renderWatchWindow');
   }
 
+  // Assertion 39 — Compound Editorial Call
+  {
+    const hasCompound   = js.includes('fetchCompoundEditorial');
+    const hasHashFn     = js.includes('djb2Hash');
+    const hasCacheKey   = js.includes('buildCompoundCacheKey');
+    const hasPromptFn   = js.includes('buildCompoundPrompt');
+    const hasQueue      = js.includes('initJournalismQueue');
+    const inRegistry    = html.includes("'compound-editorial-call'");
+    if (!hasCompound || !hasHashFn || !hasCacheKey || !hasPromptFn || !hasQueue || !inRegistry)
+      fail('Assertion 39 — Compound Editorial Call missing (fetchCompoundEditorial / djb2Hash / buildCompoundCacheKey / initJournalismQueue / registry)');
+    else
+      pass('Assertion 39 — Compound Editorial Call: fetchCompoundEditorial + content-addressed cache + temporal spread queue');
+  }
+
+  // Assertion 40 — Journalism resilience (429 handling + graceful degradation)
+  {
+    const has429        = js.includes('retryAfter') && js.includes('_compoundRetryAfter');
+    const hasStateRender= js.includes('brief-state-badge');
+    const hasInject     = js.includes('injectSeriesPreviewText');
+    const inRegistry    = html.includes("'journalism-resilience'");
+    if (!has429 || !hasStateRender || !hasInject || !inRegistry)
+      fail('Assertion 40 — Journalism resilience missing (retryAfter / brief-state-badge / injectSeriesPreviewText / registry)');
+    else
+      pass('Assertion 40 — Journalism resilience: 429 backoff + cached/updating state badges + series inject');
+  }
+
   // ─────────────────────────────────────────────────────────────────────
   log('---');
   log('Failures:', failures);
@@ -434,7 +460,7 @@ try {
     console.log(fs.readFileSync(LOG, 'utf8'));
     process.exit(1);
   } else {
-    console.log(`SMOKE TEST PASSED 38/38 (${sportSections} sport sections, MLB+NBA+lazy+SEP+J-series+PULSE+registry+drama-arc+odds-relay+smoothing+standings verified)`);
+    console.log(`SMOKE TEST PASSED 40/40 (${sportSections} sport sections, MLB+NBA+lazy+SEP+J-series+PULSE+registry+drama-arc+odds-relay+smoothing+standings verified)`);
     process.exit(0);
   }
 })();
