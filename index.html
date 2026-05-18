@@ -612,6 +612,7 @@ flex-shrink:0;white-space:nowrap;
 @keyframes fieldPulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.78;transform:scale(.97)}}
 .badge-pulse{animation:fieldPulse 1.2s ease-in-out infinite}
 .badge-crunch{background:rgba(255,59,59,.22);color:var(--live);font-size:.6rem;font-weight:800;letter-spacing:.08em;padding:.15rem .38rem;border-radius:3px;margin-left:.3rem;vertical-align:middle;display:inline-flex;align-items:center}
+.double-feature-banner{background:rgba(212,175,55,.15);border:1px solid var(--gold);color:var(--gold2);font-size:.75rem;font-weight:700;letter-spacing:.04em;padding:.5rem 1rem;text-align:center;cursor:pointer;transition:opacity .3s}
 .badge-worth {background:rgba(232,160,32,.2);color:var(--soon);font-size:.6rem;font-weight:700;letter-spacing:.06em;padding:.15rem .38rem;border-radius:3px;margin-left:.3rem;vertical-align:middle;display:inline-flex;align-items:center}
 
 /* ── Share Button ───────────────────────────────────────────────────── */
@@ -1972,6 +1973,10 @@ const FIELD_FEATURES = {
   // Journalism enrichments
   'drama-score-smoothing':  '2026-05-18',
   'standings-in-prompts':   '2026-05-18',
+  'broadcaster-registry':   '2026-05-18',
+  'page-visibility-api':    '2026-05-18',
+  'first-lead-change-burst':'2026-05-18',
+  'double-feature-detection':'2026-05-18',
   // J-series journalism
   'j1-anti-hype':           '2026-05-14',
   'j2-series-preview':      '2026-05-14',
@@ -2664,6 +2669,16 @@ tzSel.addEventListener("change",()=>{ selectedTz=tzSel.value; renderAll(); updat
         try{
           const item = JSON.parse(localStorage.getItem(k));
           if(!item || !item.timestamp || item.timestamp < cutoff) localStorage.removeItem(k);
+        }catch(e){ localStorage.removeItem(k); }
+      });
+    // ── Drama arc cleanup: clear history older than 7 days ────────────
+    Object.keys(localStorage)
+      .filter(k => k.startsWith('field_drama_history_'))
+      .forEach(k => {
+        try{
+          const hist = JSON.parse(localStorage.getItem(k) || '[]');
+          const lastT = hist[hist.length - 1]?.t || 0;
+          if (!lastT || lastT < cutoff) localStorage.removeItem(k);
         }catch(e){ localStorage.removeItem(k); }
       });
   }catch(e){}
@@ -7482,6 +7497,21 @@ const ESPN_REFRESH_LIVE     = 30000;   // 30s  — games in progress
 const ESPN_REFRESH_IDLE     = 300000;  // 5min — games scheduled later today
 const ESPN_REFRESH_FINISHED = 900000;  // 15min — all today's games final
 
+// ── Page Visibility API ───────────────────────────────────────────────────
+// Pause polling when app is backgrounded (saves battery + API quota).
+// Resume immediately on return — stale scores fix themselves within one poll.
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden') {
+    // Pause: cancel scheduled poll
+    if (espnIntervalId) { clearTimeout(espnIntervalId); espnIntervalId = null; }
+    if (FIELD_DEBUG) console.log('[Visibility] app hidden — polling paused');
+  } else {
+    // Resume: immediate fetch + restart normal cycle
+    if (FIELD_DEBUG) console.log('[Visibility] app visible — resuming polls');
+    if (espnIntervalId === null) fetchESPNScores(); // only if we paused it
+  }
+});
+
 // ── NHL Relay Adapter ──────────────────────────────────────────────────────
 // Source: api-web.nhle.com via /nhl/* relay route
 // CORS: blocks browser origins — relay required (confirmed broken without relay)
@@ -7555,6 +7585,7 @@ async function fetchNHLRelayScores() {
 
 // Fetch all sport scoreboards and merge into espnScores
 async function fetchESPNScores(){
+  _pollCycle++; // drives lead change burst decay
   const today = new Date();
   const dateStr = today.getFullYear()
     + String(today.getMonth()+1).padStart(2,'0')
@@ -8018,6 +8049,94 @@ const ODDS_SPORT_MAP = {
 };
 // Cached odds per sport key — keyed by sport + today's date
 const _oddsCache = {};
+
+// ── First Lead Change Drama Burst ─────────────────────────────────────────
+// _leadTracker: tracks who is leading each live game across poll cycles
+// _leadChangeBurst: active burst values {gameId: {startPoll, value:15}}
+// When lead flips in isFinalPeriod → +15 burst, decays linearly over 3 polls
+const _leadTracker    = new Map(); // gameId → {leadingTeam, period}
+const _leadChangeBurst = new Map(); // gameId → {startPoll, value}
+let _pollCycle = 0; // increments each fetchESPNScores() call
+
+function getLeadChangeBurst(gameId) {
+  const b = _leadChangeBurst.get(gameId);
+  if (!b) return 0;
+  const age = _pollCycle - b.startPoll;
+  if (age >= 3) { _leadChangeBurst.delete(gameId); return 0; }
+  return Math.round(b.value * (1 - age / 3)); // linear decay over 3 polls
+}
+
+// ── DA-01: Broadcaster Registry ───────────────────────────────────────────
+// Network-level stable crew assignments, keyed by broadcast bundle label.
+// Source: official network press room announcements.
+// Per-game overrides entered during daily update for featured games.
+// Consumers: J3 FIELD Brief, J5 Night Owl, BNI (signal strength), EMBER (distribution tier)
+//            Social Contrarian (manufactured hype detection), T1-15 (find games by announcer)
+//
+// crew.tier: 'A' = marquee national (Nantz/Romo, Breen/Van Gundy) — strengthens BNI signal
+//            'B' = solid national  · 'C' = secondary/regional
+const BROADCASTER_REGISTRY = {
+  // ── NHL ─────────────────────────────────────────────────────────────────
+  'NHL_ESPN':     { pbp: 'Sean McDonough',   color: 'Ray Ferraro',         tier: 'B' },
+  'NHL_ABC':      { pbp: 'Sean McDonough',   color: 'Ray Ferraro',         tier: 'B' },
+  'NHL_TNT':      { pbp: 'Brendan Burke',    color: 'Darren Pang',         tier: 'B' },
+  // ── NBA ─────────────────────────────────────────────────────────────────
+  'NBA_ESPN':     { pbp: 'Dave Pasch',       color: 'Hubie Brown',         tier: 'B' },
+  'NBA_ABC':      { pbp: 'Mike Breen',       color: 'Jeff Van Gundy',      tier: 'A' },
+  'NBA_NBC':      { pbp: 'Mike Tirico',      color: 'Reggie Miller',       tier: 'A', sideline: 'Kristen Ledlow' },
+  'NBA_PRIME':    { pbp: 'TBD',             color: 'TBD',                  tier: 'B' },
+  // ── MLB ─────────────────────────────────────────────────────────────────
+  'MLB_ESPN':     { pbp: 'Karl Ravech',      color: 'David Cone',          tier: 'B' },
+  'MLB_FOX':      { pbp: 'Joe Davis',        color: 'John Smoltz',         tier: 'B' },
+  'MLB_TBS':      { pbp: 'Brian Anderson',   color: 'Jeff Francoeur',      tier: 'C' },
+  'MLB_APPLE':    { pbp: 'Wayne Randazzo',   color: 'Ryan Spilborghs',     tier: 'C' },
+  'MLB_NBC':      { pbp: 'Brian Anderson',   color: 'John Smoltz',         tier: 'B' },
+  // ── NFL ─────────────────────────────────────────────────────────────────
+  'NFL_CBS':      { pbp: 'Jim Nantz',        color: 'Tony Romo',           tier: 'A', sideline: 'Tracy Wolfson' },
+  'NFL_FOX':      { pbp: 'Kevin Burkhardt',  color: 'Greg Olsen',          tier: 'A' },
+  'NFL_NBC_SNF':  { pbp: 'Mike Tirico',      color: 'Cris Collinsworth',   tier: 'A' },
+  'NFL_ESPN_MNF': { pbp: 'Joe Tessitore',    color: 'Louis Riddick',       tier: 'B', sideline: 'Lisa Salters' },
+  'NFL_PRIME':    { pbp: 'Al Michaels',      color: 'Kirk Herbstreit',     tier: 'A' },
+  // ── Tennis ──────────────────────────────────────────────────────────────
+  'TENNIS_FO':    { pbp: 'Chris Fowler',     color: 'Patrick McEnroe',     tier: 'B' },
+  'TENNIS_ESPN':  { pbp: 'Chris Fowler',     color: 'Brad Gilbert',        tier: 'B' },
+};
+
+// Per-game crew overrides — set during daily update for 2-3 featured games
+// Key format: 'YYYYMMDD_{awayCity}_{homeCity}'
+// e.g.: '20260520_Thunder_Spurs': {pbp:'Mike Tirico', color:'Reggie Miller', tier:'A', network:'NBC'}
+const BROADCASTER_OVERRIDES = {};
+
+// Look up broadcast crew for a game.
+// Priority: per-game BROADCASTER_OVERRIDES > network-level BROADCASTER_REGISTRY.
+// Returns crew object or null (never blocks rendering).
+function getCrewForGame(game) {
+  // Check per-game override first
+  if (game && game.start_time && game.home && game.away) {
+    const d = (game.start_time || '').slice(0, 10).replace(/-/g, '');
+    const awayCity = (game.away || '').split(' ').pop();
+    const homeCity = (game.home || '').split(' ').pop();
+    const overrideKey = `${d}_${awayCity}_${homeCity}`;
+    if (BROADCASTER_OVERRIDES[overrideKey]) return BROADCASTER_OVERRIDES[overrideKey];
+  }
+  // Fall back to network-level registry using bundle label
+  const bundle = game?._nationalBundle || game?.nationalBundle ||
+                 game?.streams?.[0]?.label || '';
+  return BROADCASTER_REGISTRY[bundle] || null;
+}
+
+// True when game has an A-tier broadcast crew — strengthens BNI narrative-push signal
+function isMarqueeBroadcast(game) {
+  return getCrewForGame(game)?.tier === 'A';
+}
+
+// Returns formatted crew string for prompt injection: "Mike Tirico + Reggie Miller"
+// Returns null if crew unknown (caller skips injection gracefully)
+function getCrewContext(game) {
+  const crew = getCrewForGame(game);
+  if (!crew || !crew.pbp || crew.pbp === 'TBD') return null;
+  return crew.pbp + ' + ' + crew.color;
+}
 
 // Fetch moneyline + spreads + totals for a sport from the Odds API via relay
 // Returns array of game objects or null on error
@@ -8628,7 +8747,7 @@ async function fetchSchedule(){
   setTimeout(bdlPrefetchAll, 2000);       // BallDontLie injury prefetch (after schedule renders)
   maybeShowSetup();
   renderLastNight();
-  if(Object.keys(espnScores).length) { injectDramaBadges(); renderOneToWatch(); renderWatchWindow(); }
+  if(Object.keys(espnScores).length) { injectDramaBadges(); detectAndRenderDoubleFeature(); renderOneToWatch(); renderWatchWindow(); }
   // Media + betting rendered lazily by IntersectionObserver
 }
 
@@ -9356,9 +9475,11 @@ async function fetchFIELDBriefFromClaude(sections){
     const stream=(g.streams&&g.streams[0]&&g.streams[0].label)||'local';
     const free=g.streams&&g.streams[0]&&new Set(['ABC','NBC','CBS','FOX','ION']).has(g.streams[0].label);
     const standingsCtx = buildGameStandingsContext(g);
+    const crewCtx = getCrewContext(g);
     return ['- '+g.away+' @ '+g.home,
       g.seriesRecord?'  Series: '+g.seriesRecord:'',
       '  Network: '+stream+(free?' (FREE OTA)':''),
+      crewCtx?'  Crew: '+crewCtx+(isMarqueeBroadcast(g)?' (marquee)':''):'',
       g.matchupNote?'  Matchup: '+g.matchupNote:'',
       g._section?'  Sport: '+g._section:'',
       standingsCtx?'  '+standingsCtx:'',
@@ -9713,6 +9834,28 @@ function injectDramaBadges(){
     );
     if (isFinalPeriod && margin > 24) score = Math.min(score, 20);
 
+    // ── First Lead Change Drama Burst ─────────────────────────────────
+    // Detect when the leading team changes in the final period.
+    // First lead change → +15 burst to score, decays over 3 polls (~90s).
+    if (gid && isFinalPeriod) {
+      const currLeader = (eData.homeScore||0) >= (eData.awayScore||0)
+        ? (eData.home||'') : (eData.away||'');
+      const prev = _leadTracker.get(gid);
+      if (prev && prev.leadingTeam && prev.leadingTeam !== currLeader && prev.period === period) {
+        // Lead just flipped in the same period → burst
+        _leadChangeBurst.set(gid, {startPoll: _pollCycle, value: 15});
+        if (FIELD_DEBUG) console.log(`[LeadChange] ${gid} lead flipped to ${currLeader} — burst +15`);
+      }
+      _leadTracker.set(gid, {leadingTeam: currLeader, period});
+    }
+    // Reset lead tracker on period change
+    if (gid) {
+      const prev = _leadTracker.get(gid);
+      if (prev && prev.period !== period) _leadTracker.set(gid, {leadingTeam: null, period});
+    }
+    // Apply burst to score (before history recording — burst is part of the live signal)
+    score = Math.min(100, score + getLeadChangeBurst(gid || ''));
+
     const tier = dramaTier(score);
     if(gid && score > 0){
       const peakKey = 'field_drama_peak_' + gid;
@@ -9757,6 +9900,49 @@ function injectDramaBadges(){
     badge.textContent = dramaLabel(smoothed);
     liveEl.insertAdjacentElement('afterend', badge);
   });
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// FEATURE: DOUBLE FEATURE — Banner when 2+ games exceed drama 75 simultaneously
+// Cross-sport: "NBA Game (88) + NHL Game (76) both live right now"
+// Unique editorial product — no other sports app does this across leagues.
+// ═══════════════════════════════════════════════════════════════════════════
+const _doubleFeatureThreshold = 75;
+
+function detectAndRenderDoubleFeature() {
+  // Collect all live games with smoothed drama >= threshold
+  const hotGames = [];
+  Object.entries(espnScores).forEach(([gid, eData]) => {
+    if (!eData || eData.status === 'pre' || eData.status === 'post') return;
+    const smoothed = getSmoothedDrama(gid) ?? dramaScoreLive(eData, eData._sport || '');
+    if (smoothed >= _doubleFeatureThreshold) {
+      hotGames.push({gid, smoothed, label: (eData.away||'?') + ' @ ' + (eData.home||'?')});
+    }
+  });
+
+  let banner = document.getElementById('double-feature-banner');
+
+  if (hotGames.length >= 2) {
+    // Sort by score descending for display
+    hotGames.sort((a, b) => b.smoothed - a.smoothed);
+    const top2 = hotGames.slice(0, 2);
+    const text = '🎬 Double Feature — '
+      + top2[0].label + ' (' + top2[0].smoothed + ')'
+      + ' + ' + top2[1].label + ' (' + top2[1].smoothed + ')';
+
+    if (!banner) {
+      banner = document.createElement('div');
+      banner.id = 'double-feature-banner';
+      banner.className = 'double-feature-banner';
+      banner.addEventListener('click', () => banner.remove());
+      const container = document.getElementById('field-brief') || document.body;
+      container.insertAdjacentElement('beforebegin', banner);
+    }
+    banner.textContent = text;
+    banner.style.display = '';
+  } else if (banner) {
+    banner.style.display = 'none'; // auto-dismiss when count drops
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -10201,6 +10387,7 @@ async function fetchNightOwlFromClaude(topGame){
   // Pre-fetch standings from relay/API — not ESPN
   await fetchStandingsForPrompt(topGame._section || topGame._sport || '').catch(()=>{});
   const standingsCtx = buildGameStandingsContext(topGame);
+  const crewCtx = getCrewContext(topGame);
   const winner=(topGame.homeScore||0)>=(topGame.awayScore||0)?topGame.home:topGame.away;
   const score=topGame.awayScore+'\u2013'+topGame.homeScore;
   const prompt=['Write a FIELD Night Owl recap.',
@@ -10209,6 +10396,7 @@ async function fetchNightOwlFromClaude(topGame){
       topGame.seriesRecord?'Series: '+topGame.seriesRecord:'',
       topGame.dramaPeak?'Drama peak: '+Math.round(topGame.dramaPeak)+'/100':'',
       standingsCtx?standingsCtx:'',
+      crewCtx?'Broadcast crew: '+crewCtx:'',
       '','Rules: 80-100 words. Tactical. Not emotional. Lead with the turning point.',
       'Write only from the data above — never invent statistics, player tendencies, or context.',
       'Rhetorical quality: strong verbs, precise framing, zero clichés.',

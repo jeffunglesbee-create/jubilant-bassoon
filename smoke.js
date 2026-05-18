@@ -124,6 +124,16 @@ assert('localStorage prune function present', html.includes('pruneOldFieldData')
           assert('Standings context in J3/J5 prompts (relay-first)',
             html.includes('buildGameStandingsContext') && html.includes('fetchStandingsForPrompt') &&
             html.includes('_relayStandingsCache') && html.includes("'standings-in-prompts'"));
+          assert('Broadcaster Registry (DA-01)',
+            html.includes('BROADCASTER_REGISTRY') && html.includes('getCrewForGame') &&
+            html.includes("'broadcaster-registry'"));
+          assert('Page Visibility API',
+            html.includes('visibilitychange') && html.includes("'page-visibility-api'"));
+          assert('First Lead Change Drama Burst',
+            html.includes('_leadTracker') && html.includes('getLeadChangeBurst') &&
+            html.includes("'first-lead-change-burst'"));
+          assert('Double Feature Detection',
+            html.includes('detectAndRenderDoubleFeature') && html.includes("'double-feature-detection'"));
 
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);

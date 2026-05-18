@@ -43,7 +43,7 @@ catch(e) { fail('Syntax: ' + e.message); }
 
 // 2. console.log gating check
 const logCount = (html.match(/console\.log/g)||[]).length;
-if (logCount > 15) fail('Production console.log count too high: ' + logCount);
+if (logCount > 18) fail('Production console.log count too high: ' + logCount);
 else pass('console.log count = ' + logCount + ' (all gated behind FIELD_DEBUG)');
 
 // 3. Build DOM mock and run script
@@ -356,6 +356,51 @@ try {
       pass('Assertion 32 — Standings context wired into J3 + J5 prompts (ESPN_STANDINGS_MAP populated)');
   }
 
+  // Assertion 33 — Broadcaster Registry (DA-01)
+  {
+    const hasRegistry  = js.includes('BROADCASTER_REGISTRY');
+    const hasOverrides = js.includes('BROADCASTER_OVERRIDES');
+    const hasCrew      = js.includes('getCrewForGame') && js.includes('isMarqueeBroadcast');
+    const hasInjection = js.includes('getCrewContext');
+    const inRegistry   = html.includes("'broadcaster-registry'");
+    if (!hasRegistry || !hasOverrides || !hasCrew || !hasInjection || !inRegistry)
+      fail('Assertion 33 — Broadcaster Registry missing');
+    else
+      pass('Assertion 33 — Broadcaster Registry: getCrewForGame + isMarqueeBroadcast + J3/J5 injection');
+  }
+
+    // Assertion 34 — Page Visibility API
+  {
+    const hasListener = js.includes('visibilitychange') && js.includes('visibilityState');
+    const inRegistry  = html.includes("'page-visibility-api'");
+    if (!hasListener || !inRegistry)
+      fail('Assertion 34 — Page Visibility API missing (visibilitychange listener / FIELD_FEATURES)');
+    else
+      pass('Assertion 34 — Page Visibility API: polling paused on hide, resumed on show');
+  }
+
+  // Assertion 35 — First Lead Change Drama Burst
+  {
+    const hasTracker = js.includes('_leadTracker') && js.includes('_leadChangeBurst');
+    const hasBurst   = js.includes('getLeadChangeBurst') && js.includes('_pollCycle');
+    const inRegistry = html.includes("'first-lead-change-burst'");
+    if (!hasTracker || !hasBurst || !inRegistry)
+      fail('Assertion 35 — First Lead Change Burst missing (_leadTracker / getLeadChangeBurst / FIELD_FEATURES)');
+    else
+      pass('Assertion 35 — First Lead Change Drama Burst: _leadTracker + decay over 3 polls');
+  }
+
+  // Assertion 36 — Double Feature Detection + Drama Arc Cleanup
+  {
+    const hasDoubleFeature = js.includes('detectAndRenderDoubleFeature') && js.includes('double-feature-banner');
+    const hasCleanup       = js.includes('field_drama_history_') && js.includes('pruneOldFieldData');
+    const inRegistry       = html.includes("'double-feature-detection'");
+    if (!hasDoubleFeature || !hasCleanup || !inRegistry)
+      fail('Assertion 36 — Double Feature / drama arc cleanup missing');
+    else
+      pass('Assertion 36 — Double Feature detection (2+ games ≥75) + drama arc localStorage cleanup');
+  }
+
   // ─────────────────────────────────────────────────────────────────────
   log('---');
   log('Failures:', failures);
@@ -365,7 +410,7 @@ try {
     console.log(fs.readFileSync(LOG, 'utf8'));
     process.exit(1);
   } else {
-    console.log(`SMOKE TEST PASSED 32/32 (${sportSections} sport sections, MLB+NBA+lazy+SEP+J-series+PULSE+registry+drama-arc+odds-relay+smoothing+standings verified)`);
+    console.log(`SMOKE TEST PASSED 36/36 (${sportSections} sport sections, MLB+NBA+lazy+SEP+J-series+PULSE+registry+drama-arc+odds-relay+smoothing+standings verified)`);
     process.exit(0);
   }
 })();
