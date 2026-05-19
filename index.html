@@ -635,6 +635,9 @@ flex-shrink:0;white-space:nowrap;
 .drama-hot {background:rgba(232,160,32,.18);color:var(--soon)}
 .drama-warm{background:rgba(0,212,170,.15);color:var(--teal)}
 @keyframes drama-flicker{0%,100%{opacity:1}50%{opacity:.72}}
+.badge-ember{display:inline-flex;align-items:center;gap:.25rem;padding:.18rem .55rem;border-radius:.85rem;font-size:.68rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;background:rgba(201,141,40,.15);color:#c98d28;border:1px solid rgba(201,141,40,.35);cursor:default;opacity:.9;}
+/* BURIED LEAD sits — discovery tone, never pulses */
+
 /* ── CRUNCH TIME pulse badge (Wow#33 / Combo B-1+) ─────────────────── */
 @keyframes fieldPulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.78;transform:scale(.97)}}
 .badge-pulse{animation:fieldPulse 1.2s ease-in-out infinite}
@@ -4753,7 +4756,16 @@ function preGameScore(g){
       if(e?.spread){const sp=Math.abs(parseFloat(e.spread)||10);bb=sp<=1.5?10:sp<=3?7:sp<=5.5?3:0;}
     }
   } catch(e_) {}
-  return nb+ib+cb+bb;
+  // Milestone boost (ROOT 3): BDL milestone proximity → drama signal
+  // A player within 5% of a career milestone makes tonight's game more interesting
+  let mb = 0;
+  try {
+    const gameKey = g._id || `${g.home}_${g.away}`;
+    const ms = _bdlMilestonesCache?.[gameKey];
+    if (ms?.pct >= 0.98) mb = 15; // within 2% — could happen tonight
+    else if (ms?.pct >= 0.95) mb = 8; // within 5%
+  } catch(e_) {}
+  return nb+ib+cb+bb+mb;
 }
 
 // ── TONIGHT SUMMARY CARD (Wow #23 — template version, global) ────────────
@@ -8934,6 +8946,7 @@ async function fetchMLBFixtures(){
 
 const FPL_RELAY_BASE = 'https://field-relay-nba.jeffunglesbee.workers.dev/fpl';
 const ODDS_RELAY_BASE = 'https://field-relay-nba.jeffunglesbee.workers.dev/odds'; // apiKey injected server-side
+const BDL_RELAY_BASE  = 'https://field-relay-nba.jeffunglesbee.workers.dev/bdl';   // BallDontLie — apiKey injected server-side
 
 // ── The Odds API FIELD Adapter ────────────────────────────────────────────
 // Relay injects apiKey server-side — never in browser JS.
@@ -9696,6 +9709,15 @@ async function fetchSchedule(){
   setTimeout(squigglePrefetchAll, 2500); // Squiggle standings
   setTimeout(fdPrefetchSoccerLive, 3000)
   setTimeout(slashGolfPrefetchAll, 3500); // Slash Golf: schedule + live leaderboard
+  // Pre-fetch BDL milestones for tonight's NBA games (ROOT 3 — feeds drama boost + badge)
+  setTimeout(() => {
+    try {
+      (allData?.sports||[]).forEach(sec => {
+        if (!(sec.sport||'').includes('Basketball')) return;
+        (sec.games||[]).forEach(g => fetchBDLMilestones({...g, _section: sec.sport}).catch(()=>{}));
+      });
+    } catch(e_) {}
+  }, 4500);
   setTimeout(weatherPrefetchAll, 4000);  // Open-Meteo outdoor venue weather
   setTimeout(fetchATPLiveScores, 4500);  // ATP Tour live scores (CORS open, no proxy needed)
   setTimeout(initSportsDBSchedule, 1500); // SportsDB schedule enrichment + standings (after initial render)
@@ -10720,6 +10742,7 @@ function buildFIELDBriefStatic(sections){
 // fetchStandingsForPrompt(sport) → populates _relayStandingsCache synchronously usable
 // by buildGameStandingsContext() immediately after await.
 const _relayStandingsCache = {}; // sportName → [{team, abbrev, wins, losses, pct, gb}]
+const _bdlMilestonesCache = {}; // gameId → {shortLabel, playerName, stat, gap, pct}
 
 async function fetchMLBStandingsParsed() {
   const key = 'Baseball (MLB)';
@@ -10813,6 +10836,75 @@ async function fetchNBAStandingsParsed() {
     return teams.length ? teams : null;
   } catch(e) {
     if (FIELD_DEBUG) console.warn('[Standings] NBA relay CDN also failed:', e.message);
+  }
+
+  // Tertiary: BallDontLie relay (fully independent of NBA infrastructure)
+  try {
+    const r = await fetch(`${BDL_RELAY_BASE}/nba/v1/standings?season=2025`, { signal: AbortSignal.timeout(6000) });
+    if (r.ok) {
+      const d = await r.json();
+      const teams = (d.data || []).map(t => ({
+        team:   `${t.team?.city || ''} ${t.team?.name || ''}`.trim(),
+        abbrev: t.team?.abbreviation || '',
+        wins:   String(t.wins || 0),
+        losses: String(t.losses || 0),
+        pct:    t.win_percentage ? String(t.win_percentage) : '0',
+        gb:     t.games_behind != null ? String(t.games_behind) : '0',
+      })).filter(t => t.team);
+      if (teams.length) {
+        _relayStandingsCache[key] = teams;
+        _relayStandingsCache['NBA Playoffs'] = teams;
+        if (FIELD_DEBUG) console.log(`[Standings] NBA: ${teams.length} teams from BDL tertiary`);
+        return teams;
+      }
+    }
+  } catch(e) { if (FIELD_DEBUG) console.warn('[Standings] NBA BDL tertiary failed:', e.message); }
+
+  return null;
+}
+
+// ── BDL Milestone Detection (Game Notes P2C) ─────────────────────────────────
+// Fetches season averages for tonight's NBA players via BDL relay.
+// Detects proximity to round milestones (points, assists, rebounds).
+// Populates _bdlMilestonesCache[gameId] for compound badge + preGameScore boost.
+const BDL_MILESTONE_THRESHOLDS = [500,1000,1500,2000,2500,3000,4000,5000];
+const BDL_MILESTONE_STATS = ['pts','ast','reb'];
+function nearestMilestone(val, stat) {
+  const next = BDL_MILESTONE_THRESHOLDS.find(t => t > val);
+  if (!next) return null;
+  const gap = next - val;
+  const pct = val / next;
+  return pct >= 0.95 ? { next, gap, pct, stat } : null;
+}
+async function fetchBDLMilestones(game) {
+  if (!game || !game._section?.includes('Basketball')) return null;
+  const gameKey = game._id || `${game.home}_${game.away}`;
+  if (_bdlMilestonesCache[gameKey] !== undefined) return _bdlMilestonesCache[gameKey];
+  try {
+    // Season=2025 means 2025-26 season in BDL convention
+    const url = `${BDL_RELAY_BASE}/nba/v1/season_averages?season=2025&per_page=30`;
+    const r = await fetch(url, { signal: AbortSignal.timeout(5000) });
+    if (!r.ok) { _bdlMilestonesCache[gameKey] = null; return null; }
+    const d = await r.json();
+    // Find best milestone candidate across all players
+    let best = null;
+    (d.data || []).forEach(p => {
+      BDL_MILESTONE_STATS.forEach(stat => {
+        const season_total = Math.round((p[stat] || 0) * (p.games_played || 0));
+        const m = nearestMilestone(season_total, stat);
+        if (m && (!best || m.pct > best.pct)) {
+          best = {
+            shortLabel: `${p.player?.last_name || ''} −${m.gap}`,
+            playerName: `${p.player?.first_name || ''} ${p.player?.last_name || ''}`.trim(),
+            stat: m.stat, gap: m.gap, pct: m.pct, next: m.next,
+          };
+        }
+      });
+    });
+    _bdlMilestonesCache[gameKey] = best;
+    return best;
+  } catch(e) {
+    _bdlMilestonesCache[gameKey] = null;
     return null;
   }
 }
@@ -11009,6 +11101,10 @@ async function fetchGameNotes(game){
     note=await fetchMLBGameNotes(game.gamePk,game);
   } else if((sport.includes('Hockey')||sport.includes('NHL'))&&game._nhlGameId){
     note=await fetchNHLGameNotes(game._nhlGameId);
+  } else if(sport.includes('Basketball')||sport.includes('NBA')){
+    // P2C: BDL milestone note — "SGA needs 2 more pts to reach 2500"
+    const ms=await fetchBDLMilestones(game);
+    if(ms) note=`${ms.playerName} needs ${ms.gap} more ${ms.stat} to reach ${ms.next}`;
   }
   // P3: structured assembly (any sport, zero API)
   if(!note) note=assembleNoteFromContext(game);
@@ -11019,6 +11115,63 @@ async function fetchGameNotes(game){
 }
 
 
+// ── buildGameContext(g) — assembled signal object (ROOT 2) ───────────────────
+// One function, pre-assembles ALL context signals for a game.
+// Shared by: preGameScore drama_bb (already wired), J3 momentum briefs,
+// assembleNoteFromContext, EMBER context boost, OTW why-line.
+// Called once per game per render cycle — consumers read from the returned object.
+function buildGameContext(g) {
+  const gid = g._id || `${g.home}_${g.away}`;
+  const sport = g._section || g._sport || '';
+
+  // Drama trend from history (positive = rising, negative = cooling)
+  let dramaTrend = 0;
+  try { dramaTrend = getDramaTrend(gid) ?? 0; } catch(e_) {}
+
+  // Odds tightness from _oddsCache
+  let oddsLabel = null, moneylineGap = null;
+  try {
+    const sportKey = ODDS_SPORT_MAP?.[sport];
+    if (sportKey) {
+      const oddsKey = Object.keys(_oddsCache||{}).find(k => k.startsWith(sportKey));
+      if (oddsKey) {
+        const o = getGameOdds(_oddsCache[oddsKey], g.home, g.away);
+        if (o?.moneylineGap != null) {
+          moneylineGap = o.moneylineGap;
+          if (o.moneylineGap < 30)       oddsLabel = 'pick\'em';
+          else if (o.moneylineGap < 80)  oddsLabel = 'close';
+          else if (o.moneylineGap < 200) oddsLabel = 'slight favourite';
+        }
+      }
+    }
+  } catch(e_) {}
+
+  // Standings gap from _relayStandingsCache
+  let standingsGap = null;
+  try {
+    const standings = _relayStandingsCache?.[sport];
+    if (standings?.length) {
+      const hSlug = (g.home||'').toLowerCase().split(' ').pop();
+      const aSlug = (g.away||'').toLowerCase().split(' ').pop();
+      const hTeam = standings.find(t => (t.team||'').toLowerCase().includes(hSlug));
+      const aTeam = standings.find(t => (t.team||'').toLowerCase().includes(aSlug));
+      if (hTeam && aTeam) {
+        const hGB = parseFloat(hTeam.gb)||0, aGB = parseFloat(aTeam.gb)||0;
+        standingsGap = Math.abs(hGB - aGB);
+      }
+    }
+  } catch(e_) {}
+
+  // Milestone from BDL cache
+  const milestone = _bdlMilestonesCache?.[gid] || null;
+
+  // Live smoothed drama score (if available)
+  let liveDrama = null;
+  try { liveDrama = getSmoothedDrama(gid); } catch(e_) {}
+
+  return { gid, sport, dramaTrend, oddsLabel, moneylineGap, standingsGap, milestone, liveDrama };
+}
+
 async function fetchFIELDBriefFromClaude(sections){
   const budget=journalismCallsToday();
   if(!budget.canCall()) return null;
@@ -11027,6 +11180,25 @@ async function fetchFIELDBriefFromClaude(sections){
   const all=sections.flatMap(s=>(s.games||[]).map(g=>({...g,_section:s.sport})));
   const ranked=all.filter(g=>g.home&&g.away&&g.home!=='ATP/WTA Field').sort((a,b)=>preGameScore(b)-preGameScore(a)).slice(0,8);
   if(!ranked.length) return null;
+  // Brief suppression: skip Claude if top live game is cooling + late period (decided)
+  // Saves journalism tokens on games that are already over narratively.
+  try {
+    const top = ranked[0];
+    const topCtx = buildGameContext(top);
+    if (topCtx.liveDrama != null && topCtx.liveDrama < 20 && topCtx.dramaTrend < -8) {
+      const sport = (top._section||'').toLowerCase();
+      const topEData = Object.values(espnScores||{}).find(e =>
+        (e.homeName||'').toLowerCase().includes((top.home||'').toLowerCase().split(' ').pop()));
+      const period = topEData?.period || 0;
+      const isLate = sport.includes('basketball') ? period >= 4
+                   : sport.includes('hockey')     ? period >= 3
+                   : sport.includes('baseball')   ? period >= 8 : false;
+      if (isLate) {
+        if (FIELD_DEBUG) console.log('[J3] suppressed — top game cooling in final period');
+        return null;
+      }
+    }
+  } catch(e_) {}
   // Pre-fetch game notes in parallel — P1 matchupNote → P2 league editorial → P3 structured → P4 RSS
   const noteResults=await Promise.allSettled(ranked.map(g=>fetchGameNotes(g)));
   const notes=noteResults.map(r=>r.status==='fulfilled'?r.value:null);
@@ -11046,6 +11218,20 @@ async function fetchFIELDBriefFromClaude(sections){
       preGameScore(g)>70&&!isNationalGame(g)?"  [SCOUT'S PICK]":'',
       isNationalGame(g)&&isBigMarketGame(g)&&preGameScore(g)<35?'  [ANTI-HYPE]':'',
       (()=>{const b=computeBroadcastNarrativeIndex(g);return b?'  [BNI: '+b.replace(/-/g,' ').toUpperCase()+']':'';})()
+,
+      // ROOT 2: momentum + milestone context from buildGameContext()
+      (()=>{
+        try {
+          const ctx = buildGameContext(g);
+          const lines = [];
+          if (ctx.dramaTrend > 10)  lines.push('  [DRAMA: RISING — game tightening]');
+          if (ctx.dramaTrend < -10) lines.push('  [DRAMA: COOLING — pulling away]');
+          if (ctx.oddsLabel)        lines.push(`  [ODDS: ${ctx.oddsLabel}]`);
+          if (ctx.milestone)        lines.push(`  [MILESTONE: ${ctx.milestone.playerName} needs ${ctx.milestone.gap} ${ctx.milestone.stat} for ${ctx.milestone.next}]`);
+          if (ctx.standingsGap != null && ctx.standingsGap <= 2) lines.push('  [STANDINGS: teams within 2 games]');
+          return lines.join('\n');
+        } catch(e_) { return ''; }
+      })()
     ].filter(Boolean).join('\n');
   }).join('\n\n');
   const prompt=["Write a FIELD Brief for tonight's sports slate.",'','TONIGHT\'S GAMES:',gameLines,'','RULES:','- 100-120 words. 2 short paragraphs. No headers.','- Lead with the most important story.','- Call out FREE over-the-air games explicitly.',"- Surface Scout's Pick if flagged.",'- If [ANTI-HYPE] appears in a game line, describe that matchup as low-stakes in plain prose — never echo the tag [ANTI-HYPE] verbatim.','- CORRECTNESS: write only from data above. Never invent scores, stats, records, or player tendencies.','- RHETORIC: strong verbs, specific framing, no clichés. Correctness is the floor; prose quality is the ceiling.','- Plain prose only. No bullet points.','- Always complete every sentence. Never end mid-sentence.'].join('\n');
@@ -11565,6 +11751,62 @@ function getBNIStrength(game, bniType) {
   return Math.round(base * trendMod);
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+// FEATURE: EMBER — Buried Lead detector
+// Fires when a game has low broadcast distribution but high drama or rich context.
+// The distribution paradox: best game tonight ≠ most-promoted game.
+// EMBER never fires on Tier 1 (ESPN/ABC/NBC/FOX/CBS). CRUNCH TIME pulses. BURIED LEAD sits.
+// ═══════════════════════════════════════════════════════════════════════════
+const EMBER_TIER1 = new Set(['NBA_ESPN','NBA_ABC','NBA_NBC','NHL_ESPN','NHL_ABC',
+  'MLB_FOX','MLB_TBS','MLB_NBC','NFL_ESPN','NFL_ABC','NFL_NBC','NFL_FOX','NFL_CBS',
+  'EPL_NBC','UCL_CBS','MLS_FOX','MLS_FS1']);
+const EMBER_TIER2 = new Set(['NBA_PRIME','MLB_APPLE','MLB_PEACOCK_SNB','MLB_LEADOFF',
+  'EPL_PEACOCK','EFL_PARAMOUNT','AFL_FS1','MLS_APPLE']);
+// Tier 3/4 = anything else with a national bundle or streaming-only
+
+function getEmberDistributionTier(g) {
+  if (!g.nationalBundle) return 4; // local/RSN only — strongest EMBER candidate
+  if (EMBER_TIER1.has(g.nationalBundle)) return 1; // not EMBER eligible
+  if (EMBER_TIER2.has(g.nationalBundle)) return 2;
+  return 3; // cable/niche streaming
+}
+
+function getEmberThreshold(tier, sport) {
+  const sp = (sport||'').toLowerCase();
+  if (tier === 2) {
+    if (sp.includes('mls')) return 52; // MLS Season Pass fires readily
+    if (sp.includes('efl') || sp.includes('championship')) return 52;
+    return 68;
+  }
+  if (tier === 3) return 65;
+  // Tier 4: niche streaming, lowest threshold
+  if (sp.includes('afl')) return 50;
+  return 60;
+}
+
+function hasEmberContextBoost(g, sport) {
+  const sp = (sport||'').toLowerCase();
+  if (g.seriesRecord && g.seriesRecord !== '0-0') return true;
+  if (g._gameImportance && g._gameImportance !== 'none') return true;
+  if (sp.includes('baseball') && g.matchupNote?.toLowerCase().includes('no-hit')) return true; // no-hitter override
+  if (sp.includes('afl') && g.matchupNote?.toLowerCase().includes('anzac')) return true;
+  return false;
+}
+
+function evaluateEMBER(g, sport, dramaScore) {
+  const tier = getEmberDistributionTier(g);
+  if (tier === 1) return null; // national broadcast — not eligible
+  const baseThreshold = getEmberThreshold(tier, sport);
+  const contextBoost = hasEmberContextBoost(g, sport);
+  const threshold = contextBoost ? baseThreshold - 16 : baseThreshold;
+  if (dramaScore < threshold) return null;
+  return {
+    ember: true, tier,
+    channel: g.streams?.[0]?.label || g.nationalBundle || 'local',
+    dramaScore, contextFlag: contextBoost,
+  };
+}
+
 function injectDramaBadges(){
   const cards = document.querySelectorAll('.game-card.espn-live');
   cards.forEach(card => {
@@ -11651,9 +11893,27 @@ function injectDramaBadges(){
     const vcResult = ViewingConditions.evaluate(gid, eData.period, margin, sport);
     if (vcResult.badge) {
       const vcBadge = document.createElement('span');
+      // Compound badge: milestone + CRUNCH TIME (ROOT 1 + ROOT 3)
+      // When CRUNCH TIME fires AND a BDL milestone is cached for this game,
+      // show "SGA −1 · CRUNCH TIME" — first sports badge with player narrative.
+      const gameCardObj = (()=>{
+        try {
+          const h = (card.dataset.home||'').toLowerCase();
+          const a = (card.dataset.away||'').toLowerCase();
+          const sec = card.dataset.sport||'';
+          return {_id: gid, home: card.dataset.home||'', away: card.dataset.away||'', _section: sec};
+        } catch(e_) { return null; }
+      })();
+      const milestoneMs = gameCardObj ? _bdlMilestonesCache?.[gid] : null;
+
       if (vcResult.badge === 'CRUNCH TIME') {
         vcBadge.className = 'badge-crunch badge-pulse';
-        vcBadge.textContent = '⚡ CRUNCH TIME';
+        if (milestoneMs?.shortLabel) {
+          vcBadge.textContent = `⚡ ${milestoneMs.shortLabel} · CRUNCH TIME`;
+          vcBadge.title = `${milestoneMs.playerName} needs ${milestoneMs.gap} more ${milestoneMs.stat} to reach ${milestoneMs.next}`;
+        } else {
+          vcBadge.textContent = '⚡ CRUNCH TIME';
+        }
       } else {
         vcBadge.className = 'badge-worth';
         vcBadge.textContent = '👀 WORTH WATCHING';
@@ -11668,6 +11928,26 @@ function injectDramaBadges(){
     badge.className = `drama-badge drama-${displayTier}`;
     badge.textContent = dramaLabel(smoothed);
     liveEl.insertAdjacentElement('afterend', badge);
+
+    // EMBER: check after drama badge — BURIED LEAD sits below, never pulses
+    // Uses game data from card attributes + smoothed score
+    try {
+      const emberGame = {
+        _id: gid, home: card.dataset.home||'', away: card.dataset.away||'',
+        _section: card.dataset.sport||'',
+        nationalBundle: card.dataset.bundle||'',
+        seriesRecord: card.dataset.series||'',
+        streams: card.dataset.stream ? [{label: card.dataset.stream}] : [],
+      };
+      const emberResult = evaluateEMBER(emberGame, card.dataset.sport||'', smoothed);
+      if (emberResult) {
+        const eb = document.createElement('span');
+        eb.className = 'badge-ember';
+        eb.textContent = '🔍 BURIED LEAD';
+        eb.title = `Drama ${emberResult.dramaScore} on ${emberResult.channel} (Tier ${emberResult.tier})`;
+        liveEl.insertAdjacentElement('afterend', eb);
+      }
+    } catch(e_) {}
   });
 }
 
