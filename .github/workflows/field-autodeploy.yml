@@ -53,6 +53,9 @@ on:
   schedule:
     - cron: '*/30 * * * *'  # Every 30 minutes
   workflow_dispatch:          # Manual trigger from Actions tab or GitHub mobile app
+  push:
+    paths:
+      - 'outbox/.trigger-autodeploy'   # Push this file to fire immediately
 
 # Required: write permission for git push
 permissions:
