@@ -2235,6 +2235,36 @@ function injectSquiggleLiveScores(){
     if(chip){chip.textContent=scoreStr;chip.classList.toggle('atp-score-live',g.complete>0&&g.complete<100);}
     card.classList.toggle('espn-live',g.complete>0&&g.complete<100);
   });
+
+  // ── Score normalisation bridge: write live AFL games into espnScores ──────
+  // Follows the same pattern as fetchNHLRelayScores() — espnScores IS the
+  // normalised store. Everything downstream (drama scoring, OTW, dramaBadges,
+  // Night Owl) automatically picks up AFL once it's in here. Zero new callers.
+  _squiggleCache.games.forEach(sq=>{
+    if(!sq.hteam||!sq.ateam) return;
+    const live=sq.complete>0&&sq.complete<100;
+    const final_=sq.complete>=100;
+    if(!live&&!final_) return; // skip pre-game
+    // Parse Squiggle timestr "Q3 2:14" → period + clock
+    const tm=String(sq.timestr||'').match(/[Qq](\d+)\s*([\d:]+)?/);
+    const period=tm?parseInt(tm[1]):0;
+    const clock=tm&&tm[2]?tm[2]:'';
+    const key=`${sq.hteam}|${sq.ateam}`;
+    espnScores[key]={
+      state:   final_?'post':'in',
+      period, clock,
+      detail:  final_?'Final':(sq.timestr||'Live'),
+      homeScore: sq.hscore||0,
+      awayScore: sq.ascore||0,
+      homeName:  sq.hteam,
+      awayName:  sq.ateam,
+      homeWinning:(sq.hscore||0)>(sq.ascore||0),
+      periodPrefix:'Q',
+      source:'squiggle',
+      _aflComplete: sq.complete, // AFL-specific: 0-100 game completeness
+    };
+    espnScoreTs[key]=Date.now();
+  });
 }
 
 function refreshAFLSection(){
@@ -10096,6 +10126,15 @@ function dramaScoreLive(eData, sport){
     else if(period===4 && mins<2) timeBonus=18;
     else if(period===4) timeBonus=8;
     else if(period===2 && mins<2) timeBonus=5;
+  } else if(sp.includes('australian')||sp.includes('afl')){
+    // AFL: 6-pt goals make margin scale ~3x wider than NBA/NHL
+    // Calibrated: <6 = within 1 goal, ≤18 = within 3 goals, ≤36 = within 6 goals
+    base = diff===0?1.0 : diff<6?0.82 : diff<=18?0.60 : diff<=36?0.28 : 0.05;
+    // Q4 closing minutes — critical even at wider margins
+    const q=period; // period from espnScores is the quarter number (1-4)
+    if(q>=4 && mins<5) timeBonus=22;
+    else if(q>=4)      timeBonus=14;
+    else if(q===3)     timeBonus=5;
   }
 
   // ── #11a Situation Drama Bonus ────────────────────────────────────────
@@ -11723,6 +11762,7 @@ function renderOneToWatch(){
   const momentum = getOTWMomentum(g._id);
   const momentumHTML = momentum==='up' ? `<span class="otw-momentum up">\u2191</span>` : '';
   const tierLabel = OTW_TIER_LABELS[tier] || tier.toUpperCase();
+  const tierBadge = `${tierLabel} \u00b7 ${Math.round(score)}`;
 
   banner.style.display = 'block';
   banner.innerHTML = `<div class="otw-inner" id="otw-inner" role="button" tabindex="0" aria-label="Jump to live game">
@@ -11731,7 +11771,7 @@ function renderOneToWatch(){
     <span class="otw-matchup">${g.away||''} @ ${g.home||''} &nbsp;${scoreStr}</span>
     ${why?`<span class="otw-why">${why}</span>`:''}
     ${momentumHTML}
-    <span class="otw-drama d-${tier}">${tierLabel}</span>
+    <span class="otw-drama d-${tier}">${tierBadge}</span>
     <button class="otw-close" id="otw-close" aria-label="Dismiss">\u2715</button>
   </div>`;
 
