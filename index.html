@@ -2095,10 +2095,95 @@ if(!FIELD_DEBUG){
 var startOddsPolling     = function(){};
 var startSportsDBEngine  = function(){};
 var startFotmobEngine    = function(){};
-var startSquiggleEngine  = function(){};
-var squigglePrefetchAll  = function(){};
-var initSportsDBSchedule = function(){};
-var injectSquiggleTips   = function(){};
+// ── Squiggle AFL Engine — Sessions 1 & 2 ─────────────────────────────────
+// Free documented API · no key · CORS-open in browsers
+// Relay: field-relay-nba.jeffunglesbee.workers.dev/squiggle (edge cache + CORS bypass)
+// TTL enforced at relay: 30s live · 120s standings · 3600s tips
+const SQUIGGLE_RELAY='https://field-relay-nba.jeffunglesbee.workers.dev/squiggle';
+const AFL_TEAM_ABBR={
+  'Adelaide':'ADE','Brisbane Lions':'BRI','Carlton':'CAR','Collingwood':'COL',
+  'Essendon':'ESS','Fremantle':'FRE','Geelong':'GEE','Gold Coast':'GCS',
+  'Greater Western Sydney':'GWS','Hawthorn':'HAW','Melbourne':'MEL',
+  'North Melbourne':'NME','Port Adelaide':'POR','Richmond':'RIC',
+  'St Kilda':'STK','Sydney':'SYD','West Coast':'WCE','Western Bulldogs':'WBD'
+};
+let _squiggleCache={games:null,fetchedAt:0};
+
+function squiggleToFieldGame(g){
+  if(!g.hteam||!g.ateam) return null;
+  return {
+    home:g.hteam, away:g.ateam,
+    league:'AFL 2026 \u2014 '+(g.roundname||'Round '+g.round),
+    start_time:new Date(g.unixtime*1000).toISOString(),
+    confirmed:true, venue:g.venue||'',
+    streams:resolveBundle('AFL_USA'),
+    _sport:'Australian Football (AFL)',
+    _id:'afl_'+g.id, _squiggleId:g.id, _squiggle:g
+  };
+}
+
+function injectSquiggleLiveScores(){
+  if(!_squiggleCache.games) return;
+  _squiggleCache.games.forEach(g=>{
+    if(!g.hteam||g.complete===0) return;
+    const card=document.querySelector('.game-card[data-gameid="afl_'+g.id+'"]');
+    if(!card) return;
+    const ha=AFL_TEAM_ABBR[g.hteam]||g.hteam.slice(0,3).toUpperCase();
+    const aa=AFL_TEAM_ABBR[g.ateam]||g.ateam.slice(0,3).toUpperCase();
+    const hs=g.hscore??0, as_=g.ascore??0;
+    const hg=g.hgoals, hb=g.hbehinds, ag=g.agoals, ab=g.abehinds;
+    const period=g.complete>=100?'Final':(g.timestr||'Live');
+    const scoreStr=(hg!=null&&hb!=null)
+      ?ha+' '+hg+'.'+hb+' ('+hs+') \u2013 '+aa+' '+ag+'.'+ab+' ('+as_+') \u00b7 '+period
+      :ha+' '+hs+' \u2013 '+aa+' '+as_+' \u00b7 '+period;
+    let chip=card.querySelector('.leader-chip');
+    if(!chip){const m=card.querySelector('.matchup,.card-body');if(m){chip=document.createElement('span');chip.className='leader-chip';m.appendChild(chip);}}
+    if(chip){chip.textContent=scoreStr;chip.classList.toggle('atp-score-live',g.complete>0&&g.complete<100);}
+    card.classList.toggle('espn-live',g.complete>0&&g.complete<100);
+  });
+}
+
+function refreshAFLSection(){
+  if(!_squiggleCache.games||!allData) return;
+  const todayGames=_squiggleCache.games.map(squiggleToFieldGame).filter(g=>g&&isToday(g.start_time));
+  if(!todayGames.length) return;
+  const idx=allData.sports.findIndex(s=>s.sport==='Australian Football (AFL)');
+  if(idx>=0){ allData.sports[idx]={sport:'Australian Football (AFL)',games:todayGames}; }
+  else { allData.sports.push({sport:'Australian Football (AFL)',games:todayGames}); }
+  scheduleRenderAll();
+  setTimeout(injectSquiggleLiveScores,250);
+}
+
+async function squigglePrefetchAll(){
+  try{
+    const r=await fetch(SQUIGGLE_RELAY+'?q=games;year=2026;complete=0',
+      {headers:{'User-Agent':'FIELD-Global-Sports'},signal:AbortSignal.timeout(7000)});
+    if(!r.ok) return;
+    const data=await r.json();
+    _squiggleCache={games:data.games||[],fetchedAt:Date.now()};
+    if(FIELD_DEBUG) console.debug('[AFL] squiggle prefetch:',_squiggleCache.games.length,'games');
+    refreshAFLSection();
+  }catch(e){if(FIELD_DEBUG) console.debug('[AFL] prefetch failed:',e.message);}
+}
+
+async function startSquiggleEngine(){
+  injectSquiggleLiveScores();
+  async function refreshLive(){
+    try{
+      const r=await fetch(SQUIGGLE_RELAY+'?q=games;year=2026;complete=0',
+        {headers:{'User-Agent':'FIELD-Global-Sports'},signal:AbortSignal.timeout(7000)});
+      if(!r.ok) return;
+      const data=await r.json();
+      _squiggleCache={games:data.games||[],fetchedAt:Date.now()};
+      injectSquiggleLiveScores();
+    }catch(e){/* silent */}
+    const hasLive=(_squiggleCache.games||[]).some(g=>g.complete>0&&g.complete<100);
+    setTimeout(refreshLive,hasLive?30000:120000);
+  }
+  setTimeout(refreshLive,60000);
+}
+
+var injectSquiggleTips=function(){}; // Session 3 — Squiggle tips + power rankings
 // renderBetting() references (added during L1-L6 audit) — B1 (T3-01) replaces these:
 var liveOddsData         = {};               // populated by refreshLiveOdds when B1 lands
 var refreshLiveOdds      = function(){};     // no-op until B1 wires the Odds API fetcher
@@ -4821,27 +4906,18 @@ function buildTodaySchedule(){
   ].filter(g=>isToday(g.start_time));
 
   const aflGames=[
-    // ── Round 9 Saturday May 9 2026 — verified from Watch AFL match centre ──
-    {home:"North Melbourne Kangaroos", away:"Sydney Swans",
-     league:"AFL 2026 — Round 9", start_time:"2026-05-09T04:35:00Z", confirmed:true, venue:"Marvel Stadium, Melbourne",
-     streams:resolveBundle("AFL_USA")},
-    {home:"GWS Giants", away:"Essendon Bombers",
-     league:"AFL 2026 — Round 9", start_time:"2026-05-09T07:10:00Z", confirmed:true, venue:"ENGIE Stadium, Sydney",
-     streams:resolveBundle("AFL_USA")},
-    {home:"Gold Coast Suns", away:"St Kilda Saints",
-     league:"AFL 2026 — Round 9", start_time:"2026-05-09T09:40:00Z", confirmed:true, venue:"TIO Stadium, Darwin",
-     streams:resolveBundle("AFL_USA")},
-    {home:"Geelong Cats", away:"Collingwood Magpies",
-     league:"AFL 2026 — Round 9", start_time:"2026-05-09T09:35:00Z", confirmed:true, venue:"MCG, Melbourne",
-     streams:resolveBundle("AFL_USA")},
-    // ── Round 9 Sunday May 10 2026 ──
-    {home:"Melbourne Demons", away:"West Coast Eagles",
-     league:"AFL 2026 — Round 9", start_time:"2026-05-10T03:10:00Z", confirmed:true, venue:"Marvel Stadium, Melbourne",
-     streams:resolveBundle("AFL_USA")},
-    {home:"Richmond Tigers", away:"Adelaide Crows",
-     league:"AFL 2026 — Round 9", start_time:"2026-05-10T05:15:00Z", confirmed:true, venue:"MCG, Melbourne",
-     streams:resolveBundle("AFL_USA")},
-    // ── Round 10 starts Thu May 14 — no AFL games May 11 ──
+    // ── Round 11 seed — May 21-24 2026 AEST · Updated from Squiggle live data ──
+    // squigglePrefetchAll() fires at T+2500ms and replaces this with live Squiggle data.
+    // Times are UTC derived from Squiggle unixtime field. Squiggle game IDs in _id.
+    {home:"Hawthorn",             away:"Adelaide",           league:"AFL 2026 — Round 11", start_time:"2026-05-21T09:30:00Z", confirmed:true, venue:"York Park, Launceston",        streams:resolveBundle("AFL_USA"), _id:"afl_38584"},
+    {home:"Richmond",             away:"Essendon",           league:"AFL 2026 — Round 11", start_time:"2026-05-22T09:40:00Z", confirmed:true, venue:"M.C.G., Melbourne",            streams:resolveBundle("AFL_USA"), _id:"afl_38585"},
+    {home:"Fremantle",            away:"St Kilda",           league:"AFL 2026 — Round 11", start_time:"2026-05-22T10:30:00Z", confirmed:true, venue:"Perth Stadium",                streams:resolveBundle("AFL_USA"), _id:"afl_38586"},
+    {home:"North Melbourne",      away:"Gold Coast",         league:"AFL 2026 — Round 11", start_time:"2026-05-23T03:15:00Z", confirmed:true, venue:"Docklands (Marvel Stadium)",   streams:resolveBundle("AFL_USA"), _id:"afl_38587"},
+    {home:"Geelong",              away:"Sydney",             league:"AFL 2026 — Round 11", start_time:"2026-05-23T06:15:00Z", confirmed:true, venue:"Kardinia Park, Geelong",        streams:resolveBundle("AFL_USA"), _id:"afl_38588"},
+    {home:"Collingwood",          away:"West Coast",         league:"AFL 2026 — Round 11", start_time:"2026-05-23T06:35:00Z", confirmed:true, venue:"M.C.G., Melbourne",            streams:resolveBundle("AFL_USA"), _id:"afl_38589"},
+    {home:"Port Adelaide",        away:"Carlton",            league:"AFL 2026 — Round 11", start_time:"2026-05-23T09:35:00Z", confirmed:true, venue:"Adelaide Oval",                streams:resolveBundle("AFL_USA"), _id:"afl_38590"},
+    {home:"Greater Western Sydney",away:"Brisbane Lions",   league:"AFL 2026 — Round 11", start_time:"2026-05-24T02:30:00Z", confirmed:true, venue:"Sydney Showground",             streams:resolveBundle("AFL_USA"), _id:"afl_38591"},
+    {home:"Western Bulldogs",     away:"Melbourne",          league:"AFL 2026 — Round 11", start_time:"2026-05-24T05:15:00Z", confirmed:true, venue:"Docklands (Marvel Stadium)",   streams:resolveBundle("AFL_USA"), _id:"afl_38592"},
   ].filter(g=>isToday(g.start_time));
   // ── MLS Soccer — Saturday May 16 2026 (Matchday 14) ──────────────
   // All MLS games on Apple TV (included w/ Apple TV sub — 2026 deal, no separate Season Pass)
@@ -4922,6 +4998,44 @@ function buildTodaySchedule(){
      start_time:"2026-05-19T19:15:00Z", confirmed:true, venue:"Stamford Bridge, London",
      streams:resolveBundle("EPL_PEACOCK"), localNote:"Peacock only",
      matchupNote:"A derby that never needs extra stakes — but it has them. A Tottenham win at Stamford Bridge mathematically relegates West Ham before they play another minute, sending the Hammers down ahead of Sunday's final day. One of the great London rivalries, with survival and supremacy both on the table."},
+    // ── MW38 Final Day — Sun May 24 · ALL 10 games kick off simultaneously 4pm BST / 11am ET / 15:00 UTC ──
+    // Source: NBC Sports / Premier League confirmed fixture list
+    // Title: Crystal Palace vs Arsenal (potential decider if City won tonight) · City must beat Villa AND hope Arsenal drop pts
+    // Relegation: West Ham + Burnley + Wolves all fighting for survival
+    {home:"Crystal Palace",        away:"Arsenal",                 league:"Premier League \u2013 Matchweek 38 \u00b7 Final Day",
+     start_time:"2026-05-24T15:00:00Z", confirmed:true, venue:"Selhurst Park, London",
+     streams:resolveBundle("EPL_NBC"), localNote:"NBC OTA (free) + Peacock",
+     matchupNote:"If City won Tuesday, Arsenal need a point to confirm the title. A Palace win combined with a City victory would be one of the great Final Day swings — but Arsenal arrive as overwhelming favourites."},
+    {home:"Manchester City",        away:"Aston Villa",            league:"Premier League \u2013 Matchweek 38 \u00b7 Final Day",
+     start_time:"2026-05-24T15:00:00Z", confirmed:true, venue:"Etihad Stadium, Manchester",
+     streams:resolveBundle("EPL_USA"), localNote:"USA Network (cable)",
+     matchupNote:"City must win AND hope Arsenal lose at Palace to claim the title. A repeat of the 2012 Agüero moment is the only scenario — one of the sport's great Final Day narratives if the table stays close."},
+    {home:"Brighton & Hove Albion", away:"Manchester United",      league:"Premier League \u2013 Matchweek 38 \u00b7 Final Day",
+     start_time:"2026-05-24T15:00:00Z", confirmed:true, venue:"Amex Stadium, Brighton",
+     streams:resolveBundle("EPL_PEACOCK"), localNote:"Peacock only"},
+    {home:"Burnley",                away:"Wolverhampton Wanderers", league:"Premier League \u2013 Matchweek 38 \u00b7 Final Day",
+     start_time:"2026-05-24T15:00:00Z", confirmed:true, venue:"Turf Moor, Burnley",
+     streams:resolveBundle("EPL_PEACOCK"), localNote:"Peacock only",
+     matchupNote:"Both clubs in danger — Burnley and Wolves could be fighting for their Premier League lives depending on results elsewhere. Direct clash in the drop zone."},
+    {home:"Fulham",                 away:"Newcastle United",        league:"Premier League \u2013 Matchweek 38 \u00b7 Final Day",
+     start_time:"2026-05-24T15:00:00Z", confirmed:true, venue:"Craven Cottage, London",
+     streams:resolveBundle("EPL_PEACOCK"), localNote:"Peacock only"},
+    {home:"Liverpool",              away:"Brentford",               league:"Premier League \u2013 Matchweek 38 \u00b7 Final Day",
+     start_time:"2026-05-24T15:00:00Z", confirmed:true, venue:"Anfield, Liverpool",
+     streams:resolveBundle("EPL_PEACOCK"), localNote:"Peacock only"},
+    {home:"Nottingham Forest",      away:"AFC Bournemouth",         league:"Premier League \u2013 Matchweek 38 \u00b7 Final Day",
+     start_time:"2026-05-24T15:00:00Z", confirmed:true, venue:"City Ground, Nottingham",
+     streams:resolveBundle("EPL_PEACOCK"), localNote:"Peacock only"},
+    {home:"Sunderland",             away:"Chelsea",                 league:"Premier League \u2013 Matchweek 38 \u00b7 Final Day",
+     start_time:"2026-05-24T15:00:00Z", confirmed:true, venue:"Stadium of Light, Sunderland",
+     streams:resolveBundle("EPL_PEACOCK"), localNote:"Peacock only"},
+    {home:"Tottenham Hotspur",      away:"Everton",                 league:"Premier League \u2013 Matchweek 38 \u00b7 Final Day",
+     start_time:"2026-05-24T15:00:00Z", confirmed:true, venue:"Tottenham Hotspur Stadium, London",
+     streams:resolveBundle("EPL_PEACOCK"), localNote:"Peacock only"},
+    {home:"West Ham United",        away:"Leeds United",            league:"Premier League \u2013 Matchweek 38 \u00b7 Final Day",
+     start_time:"2026-05-24T15:00:00Z", confirmed:true, venue:"London Stadium",
+     streams:resolveBundle("EPL_PEACOCK"), localNote:"Peacock only",
+     matchupNote:"West Ham's season could end in relegation here. A must-win with eyes on Burnley's result — survival decided on the final whistle across multiple venues simultaneously."},
   ].filter(g=>isToday(g.start_time));
   const eplGames = eplRaw.map((g,i)=>({...g, _id:"epl_mw36mw37_"+i, _sport:"Premier League"}));
 
@@ -5286,6 +5400,17 @@ const MEDIA_SPECIALS = [
       desc:"Winner-take-all Game 7: Detroit Pistons host Cleveland Cavaliers in the Eastern Conference Semifinals. Detroit leads 62.9% win probability. Winner faces the New York Knicks in the Eastern Conference Finals. Amazon Prime Video broadcast — pregame coverage at 7 PM ET.",
       journalNote:"First NBA Game 7 of the 2026 playoffs. Little Caesars Arena will be deafening — Detroit hasn't been to the Conference Finals since 2008.",
       link:"https://www.amazon.com/gp/video/storefront/sports"
+    }
+  },
+  {
+    // Premier League Final Day — Sun May 24 · All 10 games 15:00 UTC / 11am ET
+    startDate:"2026-05-24", endDate:"2026-05-24",
+    card:{
+      show:"Premier League Final Day",network:"NBC / Peacock",chip:"nbc",
+      time:"11:00 AM ET",
+      desc:"All 10 Premier League matches kick off simultaneously at 11 AM ET. NBC has Crystal Palace vs Arsenal as the featured matchup — Arsenal need 1 point to confirm the title if City won Tuesday. City must beat Villa AND hope Arsenal slip. West Ham, Burnley, and Wolves fight for survival in the drop zone. Use Multiview to pin the title race and relegation battles at once.",
+      journalNote:"PL Final Day: all 10 games simultaneous 11am ET. Arsenal title decider on NBC/Peacock (Crystal Palace). City-Villa on USA Network. Relegation: West Ham vs Leeds, Burnley vs Wolves on Peacock.",
+      link:"https://www.peacocktv.com/sports/soccer"
     }
   },
   {
@@ -7367,12 +7492,12 @@ function renderESPNStandingsPanel(panel, entries, sportName){
 // Covers: all active ATP Tour events simultaneously (Masters 1000 + 500 + 250)
 // MatchStatus values: "F" = Finished, others (TBD from live test) = In Progress
 
-const ATP_ENDPOINT = 'https://app.atptour.com/api/v2/gateway/livematches/website?scoringTournamentLevel=tour';
-const ATP_REFRESH_LIVE = 15000;   // 15s when live matches active (was 10s — 304 cache helps but 10s is aggressive for unofficial endpoint)
+const ATP_ENDPOINT = 'https://field-relay-nba.jeffunglesbee.workers.dev/atp/livematches/website';
+const ATP_REFRESH_LIVE = 15000;   // 15s when live matches active
 const ATP_REFRESH_IDLE = 120000;  // 2min when no live matches
 let atpLastModified = null;
 let atpIntervalId = null;
-let atpPollingDisabled = true;  // Enabled via field-relay-tennis (Session 4)
+let atpPollingDisabled = false;  // Relay live — /atp/* route added to field-relay-nba
 
 async function fetchATPLiveScores(){
   if(atpPollingDisabled) return;
