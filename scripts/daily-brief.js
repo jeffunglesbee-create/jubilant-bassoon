@@ -1,8 +1,12 @@
 #!/usr/bin/env node
 /**
  * FIELD Daily Brief — Email builder & sender
- * Called by daily-brief.yml with env vars pre-set.
- * Sends via Resend API.
+ * Called by daily-brief.yml after schedule data is fetched and timing wait completes.
+ *
+ * Reads from env vars pre-set by the workflow:
+ *   TODAY, DAY, NBA_COUNT, NHL_COUNT, SOCCER_COUNT, TENNIS_NOTE,
+ *   SW_STATUS, RELAY_STATUS, EARLIEST_GAME, SEND_REASON,
+ *   NBA_GAMES_JSON, SOCCER_GAMES_JSON
  */
 
 const https = require('https');
@@ -12,75 +16,101 @@ const {
   FIELD_EMAIL,
   TODAY,
   DAY,
-  NBA_COUNT,
-  NHL_COUNT,
-  SW_STATUS,
-  RELAY_STATUS,
-  EARLIEST_GAME,
-  SEND_REASON,
-  NBA_GAMES_JSON,
+  NBA_COUNT = '0',
+  NHL_COUNT = '0',
+  SOCCER_COUNT = '0',
+  TENNIS_NOTE = '',
+  SW_STATUS = 'unknown',
+  RELAY_STATUS = 'unknown',
+  EARLIEST_GAME = 'none',
+  SEND_REASON = 'scheduled',
+  NBA_GAMES_JSON = '[]',
+  SOCCER_GAMES_JSON = '[]',
 } = process.env;
 
-const nbaGames = JSON.parse(NBA_GAMES_JSON || '[]');
-const gameLines = nbaGames.map(g =>
-  `  ${g.away} @ ${g.home} — ${g.time}`
-).join('\n') || '  (no NBA data)';
+function parseGames(jsonStr) {
+  try { return JSON.parse(jsonStr); } catch { return []; }
+}
+
+const nbaGames = parseGames(NBA_GAMES_JSON);
+const soccerGames = parseGames(SOCCER_GAMES_JSON);
+
+const nbaLines = nbaGames.length
+  ? nbaGames.map(g => `  ${g.away} @ ${g.home} — ${g.time}`).join('\n')
+  : '  (no NBA games today)';
+
+const soccerLines = soccerGames.length
+  ? soccerGames.slice(0, 6).map(g =>
+      `  ${g.away} @ ${g.home} [${g.comp}] — ${g.time}`
+    ).join('\n')
+  : '  (no tracked soccer today)';
 
 const trigger = `Run the daily FIELD update for ${TODAY}`;
 
+// ── HTML email ───────────────────────────────────────────────────────────────
 const html = `<!DOCTYPE html>
 <html>
-<body style="font-family:monospace;max-width:600px;margin:0 auto;padding:20px;background:#111;color:#e5e5e5">
+<body style="font-family:monospace;max-width:600px;margin:0 auto;padding:20px;background:#0f0f0f;color:#e5e5e5">
 
-<h1 style="color:#facc15;font-size:20px;margin:0 0 4px">⚡ FIELD Daily Brief</h1>
-<p style="color:#6b7280;margin:0 0 20px">${DAY}</p>
+<h1 style="color:#facc15;font-size:22px;margin:0 0 4px">&#9889; FIELD Daily Brief</h1>
+<p style="color:#6b7280;margin:0 0 20px;font-size:13px">${DAY}</p>
 
-<div style="background:#1c1c1c;border:1px solid #333;border-radius:8px;padding:16px;margin-bottom:16px">
-  <p style="color:#9ca3af;font-size:11px;text-transform:uppercase;margin:0 0 8px">TRIGGER — paste into Claude</p>
-  <code style="color:#4ade80;font-size:15px">${trigger}</code>
+<div style="background:#1a1a1a;border:1px solid #2a2a2a;border-radius:8px;padding:16px;margin-bottom:14px">
+  <p style="color:#9ca3af;font-size:10px;letter-spacing:1px;text-transform:uppercase;margin:0 0 10px">Trigger &mdash; paste into Claude</p>
+  <code style="color:#4ade80;font-size:14px;line-height:1.6">${trigger}</code>
 </div>
 
-<div style="background:#1c1c1c;border:1px solid #333;border-radius:8px;padding:16px;margin-bottom:16px">
-  <p style="color:#9ca3af;font-size:11px;text-transform:uppercase;margin:0 0 12px">TODAY'S SLATE</p>
-  <p style="margin:0 0 6px">🏀 NBA: <strong>${NBA_COUNT} games</strong></p>
-  <pre style="color:#d1d5db;font-size:12px;margin:0 0 12px">${gameLines}</pre>
-  <p style="margin:0">🏒 NHL: <strong>${NHL_COUNT} games</strong></p>
+<div style="background:#1a1a1a;border:1px solid #2a2a2a;border-radius:8px;padding:16px;margin-bottom:14px">
+  <p style="color:#9ca3af;font-size:10px;letter-spacing:1px;text-transform:uppercase;margin:0 0 12px">Today's Slate</p>
+  <p style="margin:0 0 6px;font-size:13px">&#127944; NBA &mdash; <strong>${NBA_COUNT} games</strong></p>
+  <pre style="color:#d1d5db;font-size:11px;margin:0 0 12px;line-height:1.5">${nbaLines}</pre>
+  <p style="margin:0 0 6px;font-size:13px">&#127944; NHL &mdash; <strong>${NHL_COUNT} games</strong></p>
+  <p style="margin:0 0 6px;font-size:13px">&#9917; Soccer &mdash; <strong>${SOCCER_COUNT} games</strong></p>
+  <pre style="color:#d1d5db;font-size:11px;margin:0 0 10px;line-height:1.5">${soccerLines}</pre>
+  ${TENNIS_NOTE ? `<p style="margin:0;font-size:13px">&#127939; Tennis &mdash; ${TENNIS_NOTE}</p>` : ''}
 </div>
 
-<div style="background:#1c1c1c;border:1px solid #333;border-radius:8px;padding:16px;margin-bottom:16px">
-  <p style="color:#9ca3af;font-size:11px;text-transform:uppercase;margin:0 0 8px">REPO STATE</p>
-  <p style="margin:0 0 4px">SW_VERSION: ${SW_STATUS}</p>
-  <p style="margin:0">Relay: ${RELAY_STATUS}</p>
+<div style="background:#1a1a1a;border:1px solid #2a2a2a;border-radius:8px;padding:16px;margin-bottom:14px">
+  <p style="color:#9ca3af;font-size:10px;letter-spacing:1px;text-transform:uppercase;margin:0 0 8px">System Health</p>
+  <p style="margin:0 0 4px;font-size:12px">SW_VERSION: ${SW_STATUS}</p>
+  <p style="margin:0;font-size:12px">Relay: ${RELAY_STATUS}</p>
 </div>
 
-<p style="color:#374151;font-size:11px;margin-top:20px">
-  Triggered by: ${SEND_REASON}<br>
+<p style="color:#374151;font-size:10px;margin-top:16px;line-height:1.7">
   Earliest game: ${EARLIEST_GAME}<br>
-  daily-brief.yml &middot; jubilant-bassoon
+  Triggered by: ${SEND_REASON}<br>
+  daily-brief.yml &middot; jubilant-bassoon &middot; ${new Date().toUTCString()}
 </p>
 
 </body>
 </html>`;
 
+// ── Plain text fallback ──────────────────────────────────────────────────────
 const text = [
   `FIELD Daily Brief — ${DAY}`,
   '',
   `TRIGGER: ${trigger}`,
   '',
-  `NBA today: ${NBA_COUNT} games`,
-  gameLines,
+  `NBA: ${NBA_COUNT} games`,
+  nbaLines,
   '',
-  `NHL today: ${NHL_COUNT} games`,
+  `NHL: ${NHL_COUNT} games`,
+  `Soccer: ${SOCCER_COUNT} games`,
+  soccerLines,
+  TENNIS_NOTE ? `Tennis: ${TENNIS_NOTE}` : '',
   '',
   `SW_VERSION: ${SW_STATUS}`,
   `Relay: ${RELAY_STATUS}`,
+  '',
+  `Earliest game: ${EARLIEST_GAME}`,
   `Triggered by: ${SEND_REASON}`,
-].join('\n');
+].filter(l => l !== undefined).join('\n');
 
+// ── Send via Resend ──────────────────────────────────────────────────────────
 const payload = JSON.stringify({
   from: 'FIELD <onboarding@resend.dev>',
   to: [FIELD_EMAIL],
-  subject: `⚡ FIELD Brief — ${DAY}`,
+  subject: `\u26A1 FIELD Brief \u2014 ${DAY}`,
   html,
   text,
 });
@@ -103,6 +133,6 @@ const req = https.request({
   });
 });
 
-req.on('error', e => { console.error(e); process.exit(1); });
+req.on('error', e => { console.error('Resend error:', e.message); process.exit(1); });
 req.write(payload);
 req.end();

@@ -2,95 +2,167 @@
 #
 # FIELD DAILY BRIEF — Smart-timed morning email
 #
-# HOW IT WORKS:
-#   1. Cron wakes at 9:30 UTC (5:30am ET) — before the 6:15am target
-#   2. Fetches today's game schedule via the relay (GitHub Actions CAN reach
-#      *.workers.dev; the sandbox restriction only applies to Claude bash_tool)
-#   3. Finds the earliest game start time across NBA + NHL
-#   4. Calculates: trigger = min(6:15am ET, earliest_game - 1hr)
-#   5. Sleeps until trigger time (max ~45min — well within the 60min timeout)
-#   6. Sends a rich HTML email via Resend with:
-#      - The trigger phrase (paste into Claude, done)
-#      - Today's NBA/NHL slate with times
-#      - SW_VERSION health check
-#      - Relay status
+# TRIGGER LOGIC (all four sports):
+#   1. Cron wakes at 9:30 UTC (5:30am ET)
+#   2. Fetches today's schedules: NBA (relay), NHL (relay), Soccer (FD relay), Tennis (FO window)
+#   3. Finds earliest game across all four sports
+#   4. trigger_time = min(6:15am ET, earliest_game − 1hr)
+#   5. Sleeps until trigger_time (max ~45min; GitHub Actions runner can reach *.workers.dev freely)
+#   6. Sends HTML email: trigger phrase, slate, SW_VERSION health, relay status
 #
-# MANUAL TRIGGER: Actions tab → FIELD Daily Brief → Run workflow
+# SPORTS COVERAGE:
+#   NBA    — NBA CDN via relay (/nba/liveData/scoreboard/todaysScoreboard_00.json)
+#   NHL    — NHL API via relay (/nhl/v1/scoreboard/now)
+#   Soccer — Football-Data.org via relay (/fd/matches?dateFrom=TODAY&dateTo=TODAY)
+#            covers EPL, EFL, UCL, UEL, UECL, La Liga, Bundesliga, Ligue 1, MLS
+#   Tennis — ATP direct fetch (CORS-open from Actions runners, no relay needed)
+#            + French Open window hardcode (May 24-Jun 7: first match 08:00 UTC = 4am ET)
 #
-# NO NEW SECRETS NEEDED: RESEND_API_KEY already set.
+# WHY ACTIONS CAN REACH *.WORKERS.DEV:
+#   GitHub Actions runners have unrestricted internet access. The *.workers.dev
+#   block only applies to Claude's bash_tool sandbox environment.
+#
+# SETUP: RESEND_API_KEY already configured. No additional secrets needed.
+# MANUAL: Actions tab → FIELD Daily Brief → Run workflow
 
 name: FIELD Daily Brief
 
 on:
   schedule:
-    - cron: '30 9 * * *'
+    - cron: '30 9 * * *'   # 9:30 UTC = 5:30am ET (EDT Apr-Nov). Cron fires BEFORE target.
   workflow_dispatch:
 
 jobs:
   brief:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 60    # Safety cap — max sleep is ~45min so this is never hit normally
 
     steps:
-      - name: Checkout
+      - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Fetch NBA + NHL schedules via relay
-        id: schedules
+      # ── Fetch schedules from all four sports ─────────────────────────────
+      - name: Fetch NBA schedule via relay
+        id: nba
         run: |
           RELAY="https://field-relay-nba.jeffunglesbee.workers.dev"
-
-          NBA=$(curl -sf --max-time 10 \
+          DATA=$(curl -sf --max-time 10 \
             "$RELAY/nba/liveData/scoreboard/todaysScoreboard_00.json" || echo '{}')
-          NHL=$(curl -sf --max-time 10 \
-            "$RELAY/nhl/v1/scoreboard/now" || echo '{}')
-          HEALTH=$(curl -sf --max-time 5 "$RELAY/health" || echo "UNREACHABLE")
-
-          echo "$NBA" > /tmp/nba.json
-          echo "$NHL" > /tmp/nhl.json
-
-          NBA_COUNT=$(jq '.scoreboard.games | length' /tmp/nba.json 2>/dev/null || echo 0)
-          NHL_COUNT=$(jq '(.games // []) | length' /tmp/nhl.json 2>/dev/null || echo 0)
-
-          # Build NBA games JSON for the email script
-          NBA_GAMES=$(jq -c '[.scoreboard.games[]? | {
+          echo "$DATA" > /tmp/nba.json
+          COUNT=$(jq '.scoreboard.games | length' /tmp/nba.json 2>/dev/null || echo 0)
+          EARLIEST=$(jq -r '.scoreboard.games[]?.gameTimeUTC // empty' /tmp/nba.json | sort | head -1)
+          GAMES=$(jq -c '[.scoreboard.games[]? | {
             away: "\(.awayTeam.teamCity) \(.awayTeam.teamName)",
             home: "\(.homeTeam.teamCity) \(.homeTeam.teamName)",
             time: .gameStatusText
           }]' /tmp/nba.json 2>/dev/null || echo '[]')
+          echo "count=$COUNT" >> $GITHUB_OUTPUT
+          echo "earliest=${EARLIEST:-}" >> $GITHUB_OUTPUT
+          echo "games_json=$GAMES" >> $GITHUB_OUTPUT
 
-          # Find earliest game UTC across both sports
-          NBA_EARLIEST=$(jq -r '.scoreboard.games[]?.gameTimeUTC // empty' /tmp/nba.json | sort | head -1)
-          NHL_EARLIEST=$(jq -r '.games[]?.startTimeUTC // empty' /tmp/nhl.json 2>/dev/null | sort | head -1)
+      - name: Fetch NHL schedule via relay
+        id: nhl
+        run: |
+          RELAY="https://field-relay-nba.jeffunglesbee.workers.dev"
+          DATA=$(curl -sf --max-time 10 "$RELAY/nhl/v1/scoreboard/now" || echo '{}')
+          echo "$DATA" > /tmp/nhl.json
+          COUNT=$(jq '(.games // []) | length' /tmp/nhl.json 2>/dev/null || echo 0)
+          EARLIEST=$(jq -r '.games[]?.startTimeUTC // empty' /tmp/nhl.json 2>/dev/null | sort | head -1)
+          echo "count=$COUNT" >> $GITHUB_OUTPUT
+          echo "earliest=${EARLIEST:-}" >> $GITHUB_OUTPUT
 
-          if [ -n "$NBA_EARLIEST" ] && [ -n "$NHL_EARLIEST" ]; then
-            EARLIEST=$(printf "%s\n%s\n" "$NBA_EARLIEST" "$NHL_EARLIEST" | sort | head -1)
-          elif [ -n "$NBA_EARLIEST" ]; then
-            EARLIEST="$NBA_EARLIEST"
-          else
-            EARLIEST="${NHL_EARLIEST:-}"
+      - name: Fetch soccer schedule via FD relay
+        id: soccer
+        run: |
+          RELAY="https://field-relay-nba.jeffunglesbee.workers.dev"
+          TODAY=$(date -u +%Y-%m-%d)
+          # FD relay whitelist: /matches? prefix is allowed
+          DATA=$(curl -sf --max-time 10 \
+            "$RELAY/fd/matches?dateFrom=${TODAY}&dateTo=${TODAY}" || echo '{"matches":[]}')
+          echo "$DATA" > /tmp/fd.json
+          COUNT=$(jq '.matches | length' /tmp/fd.json 2>/dev/null || echo 0)
+          EARLIEST=$(jq -r '.matches[]?.utcDate // empty' /tmp/fd.json | sort | head -1)
+          # Build compact game list: away @ home [competition] — HH:MM UTC
+          GAMES=$(jq -c '[.matches[]? | {
+            away: .awayTeam.shortName,
+            home: .homeTeam.shortName,
+            comp: .competition.code,
+            time: (.utcDate | split("T")[1] | split(":")[0:2] | join(":"))
+          }]' /tmp/fd.json 2>/dev/null | head -c 2000 || echo '[]')
+          echo "count=$COUNT" >> $GITHUB_OUTPUT
+          echo "earliest=${EARLIEST:-}" >> $GITHUB_OUTPUT
+          echo "games_json=$GAMES" >> $GITHUB_OUTPUT
+
+      - name: Check tennis schedule (ATP direct + French Open window)
+        id: tennis
+        run: |
+          TODAY=$(date -u +%Y-%m-%d)
+          FO_START="2026-05-24"
+          FO_END="2026-06-07"
+          EARLIEST=""
+          TENNIS_NOTE=""
+
+          # French Open window: first match always starts 10am Paris (CEST = UTC+2) = 08:00 UTC
+          # H-1 = 07:00 UTC = 3am ET → this WILL override the 6:15am default
+          if [[ "$TODAY" >= "$FO_START" && "$TODAY" <= "$FO_END" ]]; then
+            FO_FIRST="${TODAY}T08:00:00Z"
+            EARLIEST="$FO_FIRST"
+            TENNIS_NOTE="Roland Garros live (first match ~10am Paris = 4am ET)"
           fi
 
-          echo "nba_count=$NBA_COUNT" >> $GITHUB_OUTPUT
-          echo "nhl_count=$NHL_COUNT" >> $GITHUB_OUTPUT
-          echo "relay_status=$HEALTH" >> $GITHUB_OUTPUT
-          echo "earliest=${EARLIEST:-none}" >> $GITHUB_OUTPUT
-          echo "nba_games_json=$NBA_GAMES" >> $GITHUB_OUTPUT
+          # ATP live scores: CORS-open from Actions runners
+          ATP_DATA=$(curl -sf --max-time 8 \
+            "https://app.atptour.com/api/v2/gateway/livematches/website?scoringTournamentLevel=tour" \
+            -H "Accept: application/json" || echo '{}')
+          LIVE_COUNT=$(echo "$ATP_DATA" | jq '[.Data.LiveMatchesTournamentsOrdered[]?.LiveMatches[]?] | length' 2>/dev/null || echo 0)
+          if [ "$LIVE_COUNT" -gt 0 ]; then
+            TENNIS_NOTE="$LIVE_COUNT live ATP match(es) now"
+          fi
 
-      - name: Wait until trigger time
+          echo "earliest=${EARLIEST:-}" >> $GITHUB_OUTPUT
+          echo "note=${TENNIS_NOTE:-no tennis today}" >> $GITHUB_OUTPUT
+
+      - name: Relay health check
+        id: health
+        run: |
+          RELAY="https://field-relay-nba.jeffunglesbee.workers.dev"
+          STATUS=$(curl -sf --max-time 5 "$RELAY/health" || echo "RELAY UNREACHABLE")
+          echo "status=$STATUS" >> $GITHUB_OUTPUT
+
+      # ── Calculate trigger time across all sports ─────────────────────────
+      - name: Calculate trigger time and wait
         id: timing
         run: |
           NOW=$(date -u +%s)
-          # 6:15am EDT = 10:15 UTC (Apr-Nov). Change to 11:15 in winter (EST).
-          SEND_BY=$(date -u -d "today 10:15" +%s)
-          EARLIEST="${{ steps.schedules.outputs.earliest }}"
+          SEND_BY=$(date -u -d "today 10:15" +%s)   # 6:15am EDT = 10:15 UTC
+
+          # Collect all earliests
+          CANDIDATES=(
+            "${{ steps.nba.outputs.earliest }}"
+            "${{ steps.nhl.outputs.earliest }}"
+            "${{ steps.soccer.outputs.earliest }}"
+            "${{ steps.tennis.outputs.earliest }}"
+          )
+
+          EARLIEST_EPOCH=""
+          EARLIEST_STR="none"
+          for C in "${CANDIDATES[@]}"; do
+            [ -z "$C" ] && continue
+            EPOCH=$(date -u -d "$C" +%s 2>/dev/null) || continue
+            if [ -z "$EARLIEST_EPOCH" ] || [ "$EPOCH" -lt "$EARLIEST_EPOCH" ]; then
+              EARLIEST_EPOCH=$EPOCH
+              EARLIEST_STR=$C
+            fi
+          done
+
+          echo "earliest_game=$EARLIEST_STR" >> $GITHUB_OUTPUT
           REASON="6:15am ET target"
 
-          if [ "$EARLIEST" != "none" ] && [ -n "$EARLIEST" ]; then
-            H1=$(date -u -d "$EARLIEST - 1 hour" +%s 2>/dev/null || echo "")
-            if [ -n "$H1" ] && [ "$H1" -lt "$SEND_BY" ] && [ "$H1" -gt "$NOW" ]; then
+          if [ -n "$EARLIEST_EPOCH" ]; then
+            H1=$((EARLIEST_EPOCH - 3600))
+            if [ "$H1" -lt "$SEND_BY" ] && [ "$H1" -gt "$NOW" ]; then
               SEND_BY=$H1
-              REASON="H-1 before $EARLIEST"
+              REASON="H-1 before $EARLIEST_STR"
             fi
           fi
 
@@ -98,39 +170,43 @@ jobs:
 
           SLEEP=$((SEND_BY - NOW))
           if [ "$SLEEP" -gt 0 ] && [ "$SLEEP" -lt 3600 ]; then
-            echo "Sleeping ${SLEEP}s — trigger: $REASON"
+            SEND_FMT=$(date -u -d "@$SEND_BY" "+%H:%M UTC")
+            echo "Sleeping ${SLEEP}s until $SEND_FMT — reason: $REASON"
             sleep $SLEEP
           else
-            echo "Sending now — $REASON"
+            echo "Sending now — $REASON (past target or H-1 already elapsed)"
           fi
 
-      - name: Check SW_VERSION health
+      # ── SW_VERSION health check ──────────────────────────────────────────
+      - name: Check SW_VERSION
         id: sw
         run: |
           TODAY=$(date -u +%Y-%m-%d)
           SW=$(grep -oP "SW_VERSION = '\K[0-9-]+" index.html | head -1 || echo "unknown")
           if [ "$SW" = "$TODAY" ]; then
-            STATUS="✅ Current ($SW)"
+            STATUS="OK ($SW)"
           else
-            STATUS="⚠️ STALE — code has $SW, today is $TODAY"
+            STATUS="STALE — code has $SW, today is $TODAY"
           fi
           echo "status=$STATUS" >> $GITHUB_OUTPUT
           echo "today=$TODAY" >> $GITHUB_OUTPUT
 
-      - name: Build and send email
+      # ── Build and send email ─────────────────────────────────────────────
+      - name: Send daily brief email
         env:
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
           FIELD_EMAIL: jeffunglesbee@gmail.com
           TODAY: ${{ steps.sw.outputs.today }}
-          DAY: ${{ steps.sw.outputs.today }}
-          NBA_COUNT: ${{ steps.schedules.outputs.nba_count }}
-          NHL_COUNT: ${{ steps.schedules.outputs.nhl_count }}
+          NBA_COUNT: ${{ steps.nba.outputs.count }}
+          NHL_COUNT: ${{ steps.nhl.outputs.count }}
+          SOCCER_COUNT: ${{ steps.soccer.outputs.count }}
+          TENNIS_NOTE: ${{ steps.tennis.outputs.note }}
           SW_STATUS: ${{ steps.sw.outputs.status }}
-          RELAY_STATUS: ${{ steps.schedules.outputs.relay_status }}
-          EARLIEST_GAME: ${{ steps.schedules.outputs.earliest }}
+          RELAY_STATUS: ${{ steps.health.outputs.status }}
+          EARLIEST_GAME: ${{ steps.timing.outputs.earliest_game }}
           SEND_REASON: ${{ steps.timing.outputs.send_reason }}
-          NBA_GAMES_JSON: ${{ steps.schedules.outputs.nba_games_json }}
+          NBA_GAMES_JSON: ${{ steps.nba.outputs.games_json }}
+          SOCCER_GAMES_JSON: ${{ steps.soccer.outputs.games_json }}
         run: |
-          DAY=$(date -u +"%A, %B %-d, %Y")
-          export DAY
+          export DAY=$(date -u +"%A, %B %-d, %Y")
           node scripts/daily-brief.js
