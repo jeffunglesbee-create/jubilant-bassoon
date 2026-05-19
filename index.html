@@ -2107,7 +2107,62 @@ const AFL_TEAM_ABBR={
   'North Melbourne':'NME','Port Adelaide':'POR','Richmond':'RIC',
   'St Kilda':'STK','Sydney':'SYD','West Coast':'WCE','Western Bulldogs':'WBD'
 };
-let _squiggleCache={games:null,fetchedAt:0};
+let _squiggleCache={games:null,standings:null,fetchedAt:0};
+
+// ── AFL Standings (Session 4) ─────────────────────────────────────────────────
+// Squiggle ?q=standings;year=2026 → AFL ladder with top-10 finals cut line
+// 2026: TOP 10 make finals (Wildcard Round added) — NOT top 8
+async function fetchAFLStandings(){
+  if(_squiggleCache.standings&&Date.now()-_squiggleCache.fetchedAt<120000) return;
+  try{
+    const r=await fetch(SQUIGGLE_RELAY+'?q=standings;year=2026',
+      {headers:{'User-Agent':'FIELD-Global-Sports'},signal:AbortSignal.timeout(7000)});
+    if(!r.ok) return;
+    const data=await r.json();
+    if(data.standings) _squiggleCache.standings=data.standings;
+    if(FIELD_DEBUG) console.debug('[AFL] standings fetched:',data.standings?.length,'teams');
+    renderAFLStandingsWidget();
+  }catch(e){if(FIELD_DEBUG) console.debug('[AFL] standings failed:',e.message);}
+}
+
+function renderAFLStandingsWidget(){
+  const s=_squiggleCache.standings;
+  if(!s||!s.length) return;
+  const container=document.querySelector('.sport-section[data-sport="Australian Football (AFL)"] .standings-panel');
+  if(!container) return;
+
+  const rows=s.slice(0,18).map((t,i)=>{
+    const rank=i+1;
+    const finals=rank<=10; // Top 10 make finals in 2026 (Wildcard Round)
+    const cutline=rank===10;
+    const abbr=AFL_TEAM_ABBR[t.name]||(t.name||'').slice(0,3).toUpperCase();
+    const pct=t.percentage?Math.round(t.percentage)+'%':'';
+    const border=cutline?'border-bottom:2px solid var(--accent,#f97316);':'';
+    const bg=finals?'background:rgba(249,115,22,0.06);':'';
+    return `<tr style="${border}${bg}">
+      <td style="padding:2px 6px;color:${finals?'var(--accent,#f97316)':'var(--text-muted,#888)'};font-weight:${rank<=4?'bold':'normal'}">${rank}</td>
+      <td style="padding:2px 6px;font-weight:500">${abbr}</td>
+      <td style="padding:2px 6px;text-align:center">${t.wins||0}-${t.losses||0}${t.draws?'-'+t.draws:''}</td>
+      <td style="padding:2px 6px;text-align:right;color:var(--text-muted,#888)">${pct}</td>
+      <td style="padding:2px 6px;text-align:right">${t.pts||0}</td>
+    </tr>`;
+  }).join('');
+
+  container.innerHTML=`<table style="width:100%;border-collapse:collapse;font-size:0.78rem">
+    <thead><tr style="color:var(--text-muted,#888);border-bottom:1px solid var(--border,#333)">
+      <th style="padding:2px 6px;text-align:left">#</th>
+      <th style="padding:2px 6px;text-align:left">Team</th>
+      <th style="padding:2px 6px;text-align:center">W-L</th>
+      <th style="padding:2px 6px;text-align:right">%</th>
+      <th style="padding:2px 6px;text-align:right">Pts</th>
+    </tr></thead>
+    <tbody>${rows}</tbody>
+  </table>
+  <div style="font-size:0.68rem;color:var(--text-muted,#777);margin-top:4px;padding:0 4px">
+    Top 10 qualify for finals (Wildcard Round) · Orange = finals · Line = cut
+  </div>`;
+}
+
 
 function squiggleToFieldGame(g){
   if(!g.hteam||!g.ateam) return null;
@@ -2156,13 +2211,15 @@ function refreshAFLSection(){
 
 async function squigglePrefetchAll(){
   try{
-    const r=await fetch(SQUIGGLE_RELAY+'?q=games;year=2026;complete=0',
-      {headers:{'User-Agent':'FIELD-Global-Sports'},signal:AbortSignal.timeout(7000)});
-    if(!r.ok) return;
-    const data=await r.json();
-    _squiggleCache={games:data.games||[],fetchedAt:Date.now()};
-    if(FIELD_DEBUG) console.debug('[AFL] squiggle prefetch:',_squiggleCache.games.length,'games');
+    const [gR,sR]=await Promise.all([
+      fetch(SQUIGGLE_RELAY+'?q=games;year=2026;complete=0',{headers:{'User-Agent':'FIELD-Global-Sports'},signal:AbortSignal.timeout(7000)}),
+      fetch(SQUIGGLE_RELAY+'?q=standings;year=2026',{headers:{'User-Agent':'FIELD-Global-Sports'},signal:AbortSignal.timeout(7000)}),
+    ]);
+    if(gR.ok){const d=await gR.json();_squiggleCache={..._squiggleCache,games:d.games||[],fetchedAt:Date.now()};}
+    if(sR.ok){const d=await sR.json();_squiggleCache={..._squiggleCache,standings:d.standings||[]};}
+    if(FIELD_DEBUG) console.debug('[AFL] prefetch: games',_squiggleCache.games?.length,'standings',_squiggleCache.standings?.length);
     refreshAFLSection();
+    renderAFLStandingsWidget();
   }catch(e){if(FIELD_DEBUG) console.debug('[AFL] prefetch failed:',e.message);}
 }
 
@@ -2183,7 +2240,106 @@ async function startSquiggleEngine(){
   setTimeout(refreshLive,60000);
 }
 
-var injectSquiggleTips=function(){}; // Session 3 — Squiggle tips + power rankings
+// ── Squiggle Tips + Power Rankings (Session 3) ───────────────────────────────
+// GET /squiggle?q=tips;year=2026;round=N → 21-model consensus margin + confidence
+// GET /squiggle?q=power;year=2026 → power rankings vs ladder divergence alert
+let _squiggleTipsCache={tips:null,power:null,round:null,fetchedAt:0};
+
+async function fetchSquiggleTips(round){
+  if(_squiggleTipsCache.round===round&&Date.now()-_squiggleTipsCache.fetchedAt<3600000) return;
+  try{
+    const [tR,pR]=await Promise.all([
+      fetch(SQUIGGLE_RELAY+'?q=tips;year=2026;round='+round,{headers:{'User-Agent':'FIELD-Global-Sports'},signal:AbortSignal.timeout(7000)}),
+      fetch(SQUIGGLE_RELAY+'?q=power;year=2026',{headers:{'User-Agent':'FIELD-Global-Sports'},signal:AbortSignal.timeout(7000)}),
+    ]);
+    if(tR.ok){const d=await tR.json();_squiggleTipsCache.tips=d.tips||[];}
+    if(pR.ok){const d=await pR.json();_squiggleTipsCache.power=d.power||[];}
+    _squiggleTipsCache.round=round;
+    _squiggleTipsCache.fetchedAt=Date.now();
+    if(FIELD_DEBUG) console.debug('[AFL] tips fetched: round',round,_squiggleTipsCache.tips?.length,'tips');
+  }catch(e){if(FIELD_DEBUG) console.debug('[AFL] tips fetch failed:',e.message);}
+}
+
+function buildPowerDivergenceNote(teamName){
+  if(!_squiggleTipsCache.power||!_squiggleTipsCache.games) return null;
+  // Find ladder rank from standings cache
+  const standing=(_squiggleCache.games||[]).reduce((acc,g)=>{
+    if(!g.hteam||!g.ateam) return acc;
+    // This is a lightweight divergence check — full standings needed for accuracy
+    return acc;
+  },{});
+  // Find power rank for team
+  const pw=_squiggleTipsCache.power.find(p=>p.name===teamName||p.team===teamName);
+  if(!pw) return null;
+  const ladderRank=pw.rank,powerRank=pw.power_rank||pw.rank;
+  const diff=Math.abs(ladderRank-powerRank);
+  if(diff>=5){
+    const dir=ladderRank>powerRank?'underperforming':'overperforming';
+    return `Power rank ${dir}: ${ladderRank}${ladderRank===1?'st':ladderRank===2?'nd':ladderRank===3?'rd':'th'} on ladder \u00b7 ${powerRank}${powerRank===1?'st':powerRank===2?'nd':powerRank===3?'rd':'th'} by model`;
+  }
+  return null;
+}
+
+var injectSquiggleTips=async function(){
+  if(!_squiggleCache.games||!_squiggleCache.games.length) return;
+  // Determine current round from today's games
+  const todayGames=_squiggleCache.games.filter(g=>g&&isToday(new Date(g.unixtime*1000).toISOString()));
+  if(!todayGames.length) return;
+  const round=todayGames[0].round;
+  await fetchSquiggleTips(round);
+  if(!_squiggleTipsCache.tips||!_squiggleTipsCache.tips.length) return;
+
+  // Build a tips lookup: gameid → tip object
+  const tipsMap={};
+  _squiggleTipsCache.tips.forEach(t=>{ if(t.gameid) tipsMap[t.gameid]=t; });
+
+  // Inject tip chips onto AFL game cards
+  document.querySelectorAll('.game-card[data-gameid^="afl_"]').forEach(card=>{
+    const gidRaw=card.dataset.gameid; // "afl_38584"
+    const numId=parseInt(gidRaw.replace('afl_',''));
+    const tip=tipsMap[numId];
+    if(!tip) return;
+
+    // Build tip display: "Squiggle: GEE −11 (61% · 21 models)"
+    const margin=Math.abs(Math.round(tip.margin||0));
+    const conf=tip.confidence?Math.round(tip.confidence)+'%':null;
+    const models=tip.source_name||'21 models';
+    const tipTeamAbbr=AFL_TEAM_ABBR[tip.tip]||(tip.tip||'').slice(0,3).toUpperCase();
+    const confStr=conf?` (${conf} \u00b7 ${models})`:'';
+    const chipText=`Squiggle: ${tipTeamAbbr} \u2212${margin}${confStr}`;
+
+    // Insert tip chip into card
+    let tipEl=card.querySelector('.squiggle-tip-chip');
+    if(!tipEl){
+      const matchup=card.querySelector('.matchup,.card-body,.game-teams');
+      if(matchup){
+        tipEl=document.createElement('div');
+        tipEl.className='squiggle-tip-chip';
+        tipEl.style.cssText='font-size:0.72rem;color:var(--text-muted,#888);margin-top:2px;letter-spacing:0.01em;';
+        matchup.appendChild(tipEl);
+      }
+    }
+    if(tipEl) tipEl.textContent=chipText;
+
+    // Power divergence note
+    const game=_squiggleCache.games.find(g=>g.id===numId);
+    if(game){
+      const hNote=buildPowerDivergenceNote(game.hteam);
+      const aNote=buildPowerDivergenceNote(game.ateam);
+      const note=hNote||aNote;
+      if(note){
+        let powerEl=card.querySelector('.squiggle-power-note');
+        if(!powerEl&&tipEl){
+          powerEl=document.createElement('div');
+          powerEl.className='squiggle-power-note';
+          powerEl.style.cssText='font-size:0.68rem;color:var(--text-muted,#777);font-style:italic;margin-top:1px;';
+          tipEl.after(powerEl);
+        }
+        if(powerEl) powerEl.textContent=note;
+      }
+    }
+  });
+};
 // renderBetting() references (added during L1-L6 audit) — B1 (T3-01) replaces these:
 var liveOddsData         = {};               // populated by refreshLiveOdds when B1 lands
 var refreshLiveOdds      = function(){};     // no-op until B1 wires the Odds API fetcher
