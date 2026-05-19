@@ -5209,11 +5209,11 @@ function buildTodaySchedule(){
   // Standings entering May 24 Final Day. Update pts/gd/gf values in daily update
   // after May 19 results (City vs Bournemouth, Chelsea vs Spurs).
   const PL_FD={
-    ARS:{pts:82,gd:43,gf:69},   // Arsenal — no game May 19
-    MCI:{pts:77,gd:43,gf:75},   // UPDATE after City-Bournemouth (May 19)
-    BOU:{pts:55,gd:4},           // UPDATE after Bournemouth-City (May 19)
+    ARS:{pts:82,gd:43,gf:69},   // CONFIRMED CHAMPIONS 🏆 — 37 played, no game May 19
+    MCI:{pts:78,gd:43,gf:76},   // UPDATED: 77→78 — drew 1-1 vs BOU (Haaland 90+, Kroupi 39')
+    BOU:{pts:56,gd:4},           // UPDATED: 55→56 — drew 1-1 vs City. Beats Iraola's record 56pts
     BHA:{pts:53,gd:9},           // Brighton — 37 played, no game May 19
-    TOT:{pts:38,gd:-9},          // UPDATE after Chelsea-Spurs (May 19)
+    TOT:{pts:38,gd:-9},          // May need UPDATE after Chelsea-Spurs (Chelsea led 1-0 HT, live)
     WHU:{pts:36,gd:-22},         // West Ham — no game May 19
     BUR:{relegated:true},        // RELEGATED — confirmed
     WOL:{relegated:true},        // RELEGATED — confirmed
@@ -5221,47 +5221,49 @@ function buildTodaySchedule(){
   function _plTitleNote(){
     const a=PL_FD.ARS,c=PL_FD.MCI;
     const cMax=c.pts+3;
-    if(a.pts>cMax) return 'Arsenal are confirmed Premier League champions — this match is a title celebration at Selhurst Park.';
+    // Arsenal confirmed champions if their pts > City's maximum possible
+    if(a.pts>cMax) return 'Arsenal are confirmed Premier League champions 2025-26 \u2014 this match is a title celebration at Selhurst Park.';
     if(a.pts===cMax){
       if(a.gd>c.gd) return `Arsenal need a point to seal the title on GD (both hit ${cMax} if Arsenal draw and City win). A win makes it unconditional.`;
-      if(a.gd===c.gd) return `One of the all-time Final Day scenarios: if Arsenal draw AND City win, both finish ${cMax} pts and GD ${a.gd} — it goes to goals scored (Arsenal ${a.gf} vs City ${c.gf}). Arsenal need a win to be safe.`;
+      if(a.gd===c.gd) return `One of the all-time Final Day scenarios: if Arsenal draw AND City win, both finish ${cMax} pts and GD ${a.gd} \u2014 it goes to goals scored (Arsenal ${a.gf} vs City ${c.gf}). Arsenal need a win to be safe.`;
     }
     const gap=cMax-a.pts;
-    return `Arsenal need ${gap===1?'a point':'to win'} to confirm the title — City's max is ${cMax} pts.`;
+    return `Arsenal need ${gap===1?'a point':'to win'} to confirm the title \u2014 City\u2019s max is ${cMax} pts.`;
   }
   function _plCityNote(){
     const a=PL_FD.ARS,c=PL_FD.MCI;
     const cMax=c.pts+3;
-    if(cMax<a.pts) return 'Arsenal are already confirmed Premier League champions — this match is played for pride.';
-    if(cMax===a.pts+3) return `City must win AND Arsenal must lose at Palace to claim the title (City max ${cMax} pts, Arsenal current ${a.pts}).`;
-    return `City must win AND hope Arsenal slip at Palace — they trail by ${a.pts-c.pts} points with 1 game left.`;
+    if(cMax<a.pts) return `Arsenal are confirmed Premier League champions after City drew 1-1 at Bournemouth. Haaland\u2019s late equalizer kept City alive on the night but can\u2019t bridge the ${a.pts-cMax}-point gap. City finish runners-up.`;
+    if(cMax===a.pts) return `City must win AND Arsenal must lose at Palace to claim the title on goal difference \u2014 City max ${cMax} pts, Arsenal current ${a.pts}.`;
+    return `City must win AND hope Arsenal slip at Palace \u2014 they trail by ${a.pts-c.pts} points with 1 game left.`;
   }
   function _plTotNote(){
     const t=PL_FD.TOT,w=PL_FD.WHU;
-    if(w.pts+3<t.pts) return 'Tottenham are mathematically safe heading into this one — a moment to exhale after a harrowing run-in.';
+    if(w.pts+3<t.pts) return 'Tottenham are mathematically safe heading into this one \u2014 a moment to exhale after a harrowing run-in.';
     const gap=t.pts-w.pts,gdGap=t.gd-w.gd;
-    return `Spurs need a point to guarantee survival. West Ham are ${gap} pts behind with a +${gdGap} GD deficit — but a defeat here and West Ham still have a lifeline if Everton win.`;
+    return `Spurs need a point to guarantee survival. West Ham are ${gap} pts behind with a +${gdGap} GD deficit \u2014 but a defeat here and West Ham still have a lifeline if Everton win.`;
   }
   function _plWhuNote(){
     const t=PL_FD.TOT,w=PL_FD.WHU;
-    if(w.pts+3<t.pts) return 'West Ham cannot catch Tottenham on points — the battle is already settled.';
+    if(w.pts+3<t.pts) return 'West Ham cannot catch Tottenham on points \u2014 the battle is already settled.';
     const gap=t.pts-w.pts,gdGap=t.gd-w.gd;
-    return `West Ham need to win AND rely on Everton to beat Spurs at the Tottenham Hotspur Stadium simultaneously. Spurs lead by ${gap} pts and +${gdGap} GD — only maximum points across both venues saves them.`;
+    return `West Ham need to win AND rely on Everton to beat Spurs at the Tottenham Hotspur Stadium simultaneously. Spurs lead by ${gap} pts and +${gdGap} GD \u2014 only maximum points across both venues saves them.`;
   }
   function _plEuroNote(teamA,teamB){
     // 6th = Europa League · 7th = Conference League qualifying
+    // BOU now 56 pts (drew vs City), BHA still 53 pts — gap is 3
     const b=PL_FD.BOU,h=PL_FD.BHA;
     const bouIn=teamA==='AFC Bournemouth'||teamB==='AFC Bournemouth';
     const bhaIn=teamA==='Brighton & Hove Albion'||teamB==='Brighton & Hove Albion';
     const gap=b.pts-h.pts;
     if(bouIn){
-      if(gap>3) return 'Bournemouth have secured 6th place and Europa League football — this one is played with Europe already confirmed.';
-      if(gap>0) return `Bournemouth are in 6th and the Europa League spot by ${gap} pts over Brighton. A point keeps them there regardless of Brighton's result.`;
-      return `Bournemouth and Brighton are level on points for the Europa League spot — goal difference decides 6th here.`;
+      if(gap>3) return 'Bournemouth have secured 6th place and Europa League football \u2014 this one is played with Europe already confirmed.';
+      if(gap>0) return `Bournemouth hold 6th and the Europa League spot by ${gap} pts over Brighton. A point at Forest seals it regardless of Brighton\u2019s result.`;
+      return `Bournemouth and Brighton are level on points for the Europa League spot \u2014 goal difference decides 6th here.`;
     }
     if(bhaIn){
-      if(gap>3) return 'Brighton are confirmed in 7th and Conference League qualifying — Europa League is out of reach.';
-      return `Brighton need to win AND hope Bournemouth lose at Forest to take 6th and the Europa League spot. Currently ${gap} pts behind — achievable if both results go their way.`;
+      if(gap>3) return 'Brighton are confirmed in 7th and Conference League qualifying \u2014 Europa League is out of reach.';
+      return `Brighton need to win AND hope Bournemouth lose at Forest to take 6th and the Europa League spot. Currently ${gap} pts behind \u2014 achievable only if both results go their way.`;
     }
     return null;
   }
