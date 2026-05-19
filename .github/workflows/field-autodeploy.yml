@@ -93,6 +93,12 @@ jobs:
           if ! grep -q '<title>FIELD' index_new.html; then
             skip "Downloaded file is not the FIELD app — Drive returned an interstitial page"
           fi
+          if ! grep -q 'buildTodaySchedule' index_new.html; then
+            skip "Downloaded file is not the FIELD app — missing core function (wrong file in Drive?)"
+          fi
+          if ! grep -q 'renderAll' index_new.html; then
+            skip "Downloaded file is not the FIELD app — missing renderAll function"
+          fi
           echo "✓ Download OK (${SIZE} bytes)"
 
       - name: Check if file changed
