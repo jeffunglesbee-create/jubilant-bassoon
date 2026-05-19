@@ -2021,6 +2021,13 @@ const FIELD_FEATURES = {
   'per-league-polling':     '2026-05-18',  // Layer 1: each league on its own cadence
   'concurrent-espn-fetch':  '2026-05-18',  // Layer 2: no 200ms batch delays
   'tempo-adjusted-polling': '2026-05-18',  // #11b: drama-gated 20–45s live interval
+  // Drama intelligence (this session)
+  'situation-drama-bonus':    '2026-05-18',  // #11a: hockey/baseball/NFL/NBA situation bonuses
+  'period-score-extraction':  '2026-05-18',  // #18b: linescores[] + innings[] + halfTime
+  'statistical-extreme-notes':'2026-05-18',  // #18c: no-hitter/4Q-surge/comeback/HT-reversal
+  'journalism-odds-context':  '2026-05-18',  // Gap 9: full market context in J3/J5 prompts
+  'franchise-misery-index':   '2026-05-18',  // #29b: [FRANCHISE_CONTEXT] in compound prompt
+  'quiet-hour-detection':     '2026-05-18',  // Gap 8: 90s polling when all live drama < 30
   // Core infrastructure
   'relay-nba':              '2026-05-16',
   'relay-nhl':              '2026-05-17',
@@ -5939,6 +5946,8 @@ async function fdPrefetchSoccerLive(){
         awayTeam:  m.awayTeam?.shortName || m.awayTeam?.name || "",
         homeScore: m.score?.fullTime?.home ?? m.score?.halfTime?.home ?? null,
         awayScore: m.score?.fullTime?.away ?? m.score?.halfTime?.away ?? null,
+        htHome: m.score?.halfTime?.home ?? null,  // #18b soccer half-time scores
+        htAway: m.score?.halfTime?.away ?? null,  // #18b soccer half-time scores
         minute:    m.minute || null,
         status:    m.status,
         goals:     (m.goals||[]).map(g=>({
@@ -7619,6 +7628,13 @@ const ESPN_REFRESH_FINISHED = 900000;  // 15min — all today's games final
 const _espnLeagueLastPoll = {}; // league → last successful poll timestamp
 const _espnLeagueState    = {}; // league → 'live' | 'pre' | 'post'
 
+// Gap 8: Quiet Hour Detection
+let _quietLowCount    = 0;          // consecutive low-drama cycles
+let _quietHourActive  = false;      // true when all live games are boring
+const QUIET_THRESHOLD     = 30;     // drama below this = low interest
+const QUIET_CYCLES_GATE   = 3;      // cycles before quiet hour fires
+const QUIET_POLL_INTERVAL = 90000;  // 90s polling during quiet hour
+
 // ── Page Visibility API ───────────────────────────────────────────────────
 // Pause polling when app is backgrounded (saves battery + API quota).
 // Resume immediately on return — stale scores fix themselves within one poll.
@@ -7799,6 +7815,11 @@ async function fetchESPNScores(){
         const onSecond = sit.onSecond ?? false;
         const onThird  = sit.onThird  ?? false;
 
+        // #18b: Extract period-by-period linescores (zero cost — already in every ESPN response)
+        // NBA: Q1/Q2/Q3/Q4 | NHL: P1/P2/P3 | NFL: Q1-Q4 | Soccer: 1H/2H
+        const homeLS = (home.linescores||[]).map(l=>parseInt(l.value||0)).filter(v=>!isNaN(v));
+        const awayLS = (away.linescores||[]).map(l=>parseInt(l.value||0)).filter(v=>!isNaN(v));
+
         const key = `${homeName}|${awayName}`;
         const situation = comp.situation || null;
         espnScores[key] = {
@@ -7809,6 +7830,8 @@ async function fetchESPNScores(){
           outs, balls, strikes,
           onFirst, onSecond, onThird,
           situation,
+          homeLinescores: homeLS,  // #18b: period scores
+          awayLinescores: awayLS,  // #18b: period scores
         };
         espnScoreTs[key] = Date.now();
       });
@@ -7828,14 +7851,52 @@ async function fetchESPNScores(){
   fetchFPLLiveScores().catch(()=>{});
   fdPrefetchSoccerLive().catch(()=>{});
 
+  // Gap 8: Quiet Hour Detection — check if all live leagues are low-drama
+  {
+    const liveLeagues = allLeagues.filter(l => _espnLeagueState[l.league] === 'live');
+    if(liveLeagues.length > 0){
+      const allQuiet = liveLeagues.every(l => {
+        // get max drama score for this league's section
+        const sec = allData?.sports?.find(s => s.sport === l.section);
+        const maxDrama = sec ? Math.max(0, ...(sec.games||[]).map(g => preGameScore(g))) : 0;
+        return maxDrama < QUIET_THRESHOLD;
+      });
+      if(allQuiet){
+        _quietLowCount++;
+        if(_quietLowCount >= QUIET_CYCLES_GATE && !_quietHourActive){
+          _quietHourActive = true;
+          // Surface honest "quiet night" signal
+          const qBanner = document.getElementById('otw-banner');
+          if(qBanner && !qBanner.dataset.quietHour){
+            qBanner.dataset.quietHour = '1';
+            if(FIELD_DEBUG) console.debug('[QUIET HOUR] All live games low-drama — extending poll to 90s');
+          }
+        }
+      } else {
+        // Drama spiked — reset immediately
+        if(_quietHourActive){
+          _quietHourActive = false;
+          const qBanner = document.getElementById('otw-banner');
+          if(qBanner) delete qBanner.dataset.quietHour;
+        }
+        _quietLowCount = 0;
+      }
+    } else {
+      // No live leagues — reset quiet state
+      _quietLowCount = 0;
+      _quietHourActive = false;
+    }
+  }
+
   // Schedule next call at the earliest due-time across all leagues
   // #11b: live leagues use drama-adjusted interval (20–45s), not a fixed 30s
   const now2 = Date.now();
   const nextInterval = allLeagues.reduce((min, l) => {
     const state    = _espnLeagueState[l.league] || 'pre';
-    const interval = state === 'live' ? computeLiveInterval(l.section)
-                   : state === 'pre'  ? ESPN_REFRESH_IDLE
-                   : ESPN_REFRESH_FINISHED;
+    const interval = state === 'live'
+      ? (_quietHourActive ? QUIET_POLL_INTERVAL : computeLiveInterval(l.section))
+      : state === 'pre'  ? ESPN_REFRESH_IDLE
+      : ESPN_REFRESH_FINISHED;
     const last  = _espnLeagueLastPoll[l.league] || 0;
     const dueIn = Math.max(0, (last + interval) - now2);
     return Math.min(min, dueIn);
@@ -9337,28 +9398,65 @@ function dramaScoreLive(eData, sport){
     else if(period===2 && mins<2) timeBonus=5;
   }
 
-  // ── Situation modifiers (from espnScores[key].situation) ─────────────
+  // ── #11a Situation Drama Bonus ────────────────────────────────────────
+  // Reads eData.situation (ESPN) + existing period/score state.
+  // Applied BEFORE garbage-time cap in injectDramaBadges().
   let sitBonus = 0;
-  const sit = eData.situation||{};
+  const sit = eData.situation || {};
+  // (diff already declared above from homeScore/awayScore)
 
-  // MLB: base runners + count
-  if(eData.onFirst || eData.onSecond || eData.onThird){
-    const runners = [eData.onFirst,eData.onSecond,eData.onThird].filter(Boolean).length;
-    if(runners===3) sitBonus+=10;          // bases loaded
-    else if(eData.onSecond||eData.onThird) sitBonus+=5; // RISP
+  // isFinalPeriod: amplifies bonuses in final quarter/period/inning
+  const isFinalPeriod = (
+    (sp.includes('nba')||sp.includes('basketball')) && period >= 4 ||
+    (sp.includes('nhl')||sp.includes('hockey'))     && period >= 3 ||
+    (sp.includes('mlb')||sp.includes('baseball'))   && period >= 9 ||
+    (sp.includes('nfl')||sp.includes('football'))   && period >= 4
+  );
+
+  // ── HOCKEY ── (goalie pulled is valid any period — empty net)
+  if(sp.includes('nhl')||sp.includes('hockey')){
+    const homePull = sit.homeGoaliePulled||false;
+    const awayPull = sit.awayGoaliePulled||false;
+    if(homePull || awayPull) sitBonus += 22;              // goalie pulled — empty net pressure
+    else if((sit.homePowerPlay||sit.awayPowerPlay) && diff===0) sitBonus += 18; // PP + tied
+    else if((sit.homePowerPlay||sit.awayPowerPlay) && diff<=1)  sitBonus += 15; // PP + close
+    if(sit.delayedPenalty && diff<=1) sitBonus += 8;     // delayed penalty + close
   }
-  if(eData.outs===2 && (eData.onSecond||eData.onThird)) sitBonus+=5; // 2-out RISP
-  if(eData.balls===3 && eData.strikes===2) sitBonus+=3;  // full count
 
-  // NFL: field position + down + 2-minute
-  const dnDist = (sit.shortDownDistanceText||sit.downDistanceText||'').toLowerCase();
-  if(dnDist.includes('4th')) sitBonus+=8;
-  if(sit.isRedZone) sitBonus+=5;
-  if(dnDist.includes('2-minute')||dnDist.includes('2 minute')) sitBonus+=10;
+  // ── BASEBALL ── (amplified in final innings)
+  if(sp.includes('mlb')||sp.includes('baseball')){
+    const runners = [eData.onFirst,eData.onSecond,eData.onThird].filter(Boolean).length;
+    const risp    = eData.onSecond||eData.onThird;
+    if(runners===3 && eData.outs===2)  sitBonus += isFinalPeriod ? 20 : 12; // bases loaded 2 out
+    else if(runners===3)               sitBonus += isFinalPeriod ? 15 :  8; // bases loaded
+    else if(risp && eData.outs===2)    sitBonus += isFinalPeriod ? 10 :  6; // RISP 2 out
+    if(eData.balls===3 && eData.strikes===2 && risp) sitBonus += 8; // full count + RISP
+    if(eData.outs===2 && period>=7)    sitBonus += 5;    // 2-out + late innings
+  }
 
-  // Soccer: stoppage time descriptor
-  if(sp.includes('soccer')||sp.includes('league')||sp.includes('mls')){
-    if((eData.clock||'').includes('+')) sitBonus+=8; // stoppage time notation e.g. "90+2"
+  // ── BASKETBALL ── (isFinalPeriod only — bonus fouls + shot clock)
+  if(sp.includes('nba')||sp.includes('basketball')){
+    if(isFinalPeriod){
+      if((sit.homeFoulsBonus||sit.awayFoulsBonus) && diff<=5) sitBonus += 10;
+      const sc = parseFloat(sit.shotClock||'99');
+      if(sc<=8 && diff<=6) sitBonus += 8;                // shot clock pressure, close game
+    }
+  }
+
+  // ── NFL ── (amplified in final period + 2-minute drill)
+  if(sp.includes('nfl')||sp.includes('football')){
+    const dnDist = (sit.shortDownDistanceText||sit.downDistanceText||'').toLowerCase();
+    const in2min = dnDist.includes('2-minute')||dnDist.includes('2 minute');
+    if(dnDist.includes('4th') && in2min)                  sitBonus += isFinalPeriod ? 15 : 10;
+    else if(dnDist.includes('4th'))                       sitBonus += isFinalPeriod ?  8 :  5;
+    if(sit.isRedZone && in2min && diff<=7)                sitBonus += 10;
+    else if(sit.isRedZone)                                sitBonus +=  5;
+  }
+
+  // ── SOCCER ── (stoppage time marker)
+  if(sp.includes('soccer')||sp.includes('league')||sp.includes('mls')||
+     sp.includes('liga')||sp.includes('ligue')||sp.includes('premier')){
+    if((eData.clock||'').includes('+')) sitBonus += 8;   // "90+2" stoppage time
   }
 
   const raw = base*52 + timeBonus + sitBonus;
@@ -9370,6 +9468,100 @@ function dramaTier(score){
   if(score>=60) return 'hot';
   if(score>=40) return 'warm';
   return '';
+}
+
+// #18c: Ghost Note / Statistical Extremes
+// Reads homeLinescores/awayLinescores from espnScores (populated by #18b).
+// Returns {dramaBonus:0-20, note:string|null}
+// dramaBonus consumed by injectDramaBadges() in the smoothed path.
+// note consumed by getCDWNote() for J7 CDW Notes context.
+function getStatisticalExtremes(eData, sport){
+  const result = {dramaBonus: 0, note: null};
+  if(!eData || eData.state !== 'in') return result;
+  const sp = (sport||'').toLowerCase();
+  const homeLS = eData.homeLinescores || [];
+  const awayLS = eData.awayLinescores || [];
+  const diff   = Math.abs((eData.homeScore||0) - (eData.awayScore||0));
+  const period = parseInt(eData.period)||1;
+
+  // ── NBA: 4th-quarter surge ───────────────────────────────────────────
+  // Team outscoring opponent +8 in Q4, game still close → comeback signal
+  if((sp.includes('nba')||sp.includes('basketball')) && period >= 4 && homeLS.length>=4){
+    const hQ4 = homeLS[3]||0, aQ4 = awayLS[3]||0;
+    if((hQ4 - aQ4 >= 8) && diff <= 5){
+      result.dramaBonus += 12;
+      result.note = `${eData.homeName?.split(' ').pop()||'Home'} outscoring +${hQ4-aQ4} in Q4 · comeback building`;
+    } else if((aQ4 - hQ4 >= 8) && diff <= 5){
+      result.dramaBonus += 12;
+      result.note = `${eData.awayName?.split(' ').pop()||'Away'} outscoring +${aQ4-hQ4} in Q4 · comeback building`;
+    }
+  }
+
+  // ── NBA: Period shutout ───────────────────────────────────────────────
+  // Team scored 0 in consecutive periods, game still close → CDW note
+  if((sp.includes('nba')||sp.includes('basketball')) && homeLS.length>=3 && diff<=4){
+    const hLast2 = (homeLS.slice(-2)||[]).reduce((a,b)=>a+b,0);
+    const aLast2 = (awayLS.slice(-2)||[]).reduce((a,b)=>a+b,0);
+    if(hLast2===0 && period>=3){
+      result.note = result.note || `${eData.homeName?.split(' ').pop()||'Home'} scored 0 in last 2 periods`;
+    } else if(aLast2===0 && period>=3){
+      result.note = result.note || `${eData.awayName?.split(' ').pop()||'Away'} scored 0 in last 2 periods`;
+    }
+  }
+
+  // ── MLB: No-hitter / perfect game through 6+ innings ─────────────────
+  // outs null check: eData.innings populated by fetchMLBLiveGame
+  if((sp.includes('mlb')||sp.includes('baseball')) && period>=6){
+    const inns = eData.innings||[];
+    if(inns.length >= 5){
+      const homeHits = inns.reduce((s,i)=>s+(i.away?.hits||0),0); // away hits against home pitcher
+      const awayHits = inns.reduce((s,i)=>s+(i.home?.hits||0),0); // home hits against away pitcher
+      if(homeHits===0 && period>=6){
+        result.dramaBonus += 20;
+        result.note = `No-hitter through ${period} innings — ${eData.awayName?.split(' ').pop()||'Away'} pitcher`;
+      } else if(awayHits===0 && period>=6){
+        result.dramaBonus += 20;
+        result.note = `No-hitter through ${period} innings — ${eData.homeName?.split(' ').pop()||'Home'} pitcher`;
+      }
+    }
+  }
+
+  // ── MLB: Late comeback ────────────────────────────────────────────────
+  // Down 3+, within 1, inning 7+
+  if((sp.includes('mlb')||sp.includes('baseball')) && period>=7 && diff<=1 && diff>=0){
+    const inns = eData.innings||[];
+    if(inns.length>=4){
+      const mid = Math.floor(inns.length/2);
+      const earlyHomeDiff = (inns.slice(0,mid).reduce((s,i)=>s+(i.home?.runs||0),0)) -
+                            (inns.slice(0,mid).reduce((s,i)=>s+(i.away?.runs||0),0));
+      if(Math.abs(earlyHomeDiff)>=3 && diff<=1){
+        result.dramaBonus += 15;
+        result.note = result.note || `Comeback · trailed by ${Math.abs(earlyHomeDiff)}+ runs, within ${diff} in the ${period>=9?'9th':(period+'th')}`;
+      }
+    }
+  }
+
+  // ── Soccer: HT reversal ──────────────────────────────────────────────
+  // Trailed at halftime, now tied or leading
+  if(sp.includes('soccer')||sp.includes('league')||sp.includes('premier')){
+    const htHome = eData.htHome ?? null;
+    const htAway = eData.htAway ?? null;
+    if(htHome!==null && htAway!==null){
+      const htDiff = htHome - htAway;
+      const nowDiff = (eData.homeScore||0) - (eData.awayScore||0);
+      // Team that trailed at HT is now level or winning
+      if(htDiff < 0 && nowDiff >= 0){
+        result.dramaBonus += 10;
+        result.note = `${eData.homeName?.split(' ').pop()||'Home'} trailed at half · reversed in 2nd half`;
+      } else if(htDiff > 0 && nowDiff <= 0){
+        result.dramaBonus += 10;
+        result.note = `${eData.awayName?.split(' ').pop()||'Away'} trailed at half · reversed in 2nd half`;
+      }
+    }
+  }
+
+  result.dramaBonus = Math.min(20, result.dramaBonus); // cap at 20
+  return result;
 }
 
 function dramaLabel(score){
@@ -9399,6 +9591,63 @@ function djb2Hash(str) {
   return (h >>> 0).toString(36);
 }
 
+// #29b: Fan Misery Index — franchise historical context for journalism
+// Systematizes "the Sabres are ending a 14-year playoff drought" from manual → automatic.
+// Injected as [FRANCHISE_CONTEXT] in compound editorial prompt.
+// Source: verified franchise drought/suffering records as of 2026.
+const FRANCHISE_MISERY = {
+  // NHL — playoff droughts + historical suffering
+  'buffalo sabres':    'Last Stanley Cup Final: 1999 (27 years). No Cup win ever. 14-year playoff drought ended 2026.',
+  'toronto maple leafs':'Last Stanley Cup: 1967 (59 years). Longest active championship drought in major North American sports.',
+  'edmonton oilers':   'Last Stanley Cup: 1990 (36 years). Wayne Gretzky era ended; no Cup since.',
+  'minnesota wild':    'No Stanley Cup in franchise history. Minnesota hockey defined by heartbreak.',
+  'new york islanders':'Last Cup: 1983 (43 years). Four straight Cups 1980-83; nothing since.',
+  'chicago blackhawks':'Dynasty ended 2015. Cap-era collapse from three Cups to rebuild.',
+  // NBA
+  'sacramento kings':  'Last NBA Finals: never. Last conference finals: 2002 (24 years). "We believe" era still unfulfilled.',
+  'indiana pacers':    'Last Finals: 2000 (26 years). Reggie Miller era never got a ring.',
+  'phoenix suns':      'Last Finals: 2021 (5 years). Never won an NBA title.',
+  'denver nuggets':    'First championship: 2023. Still building new dynasty expectations.',
+  'oklahoma city thunder':'Return to Finals would be first since 2012. Post-Durant rebuilding complete.',
+  'san antonio spurs': 'Post-dynasty rebuild. Wembanyama era begins. Five titles from 1999-2014.',
+  // MLB
+  'chicago cubs':      'Ended 108-year drought in 2016. Still building toward second title.',
+  'cleveland guardians':'Last title: 1948 (78 years). Former Indians; longest current MLB drought.',
+  'seattle mariners':  'Never reached World Series. Last playoff win: 2000 (26 years).',
+  'texas rangers':     'First World Series title: 2023. Young dynasty building.',
+  'colorado rockies':  'Only World Series appearance: 2007 (19 years). One of MLB weakest franchises.',
+  'miami marlins':     'Two World Series titles (1997, 2003) — both followed by fire sales. Cycle of suffering.',
+  'san diego padres':  'Never won World Series. Last pennant: 1998 (28 years). Browns of MLB.',
+  'baltimore orioles': 'Last World Series: 1983 (43 years). Rebuilding from historic losing streak ended 2023.',
+  'toronto blue jays': 'Last World Series: 1993 (33 years). Longest current drought of a champion.',
+  'pittsburgh pirates':'Last winning season above .500 for 20 years (1993-2012). Perennial small-market struggle.',
+  // NFL
+  'cleveland browns':  'Last NFL title: 1964 (62 years). No Super Bowl appearance ever. Gold standard of NFL suffering.',
+  'detroit lions':     'No Super Bowl appearance ever. One playoff win in last 65 years. 0-16 in 2008.',
+  'jacksonville jaguars':'Never won AFC Championship. Two Super Bowl appearances, zero wins.',
+  'new york jets':     'Last Super Bowl: 1969 (57 years). Defined by near-misses and dysfunction.',
+  'los angeles chargers':'Multiple Super Bowl near-misses. One title (1963 AFL). San Diego never won.',
+  'carolina panthers': 'Never won Super Bowl. Two appearances (1996, 2003, 2015); lost all.',
+  'arizona cardinals': 'Last NFL title: 1947 (79 years). Oldest active title drought in North American sports.',
+  // Soccer
+  'arsenal':           'Last Premier League title: 2004 (22 years). The Invincibles era defined standards they have struggled to meet.',
+  'tottenham hotspur': 'Last league title: 1961 (65 years). The club defined by near-misses.',
+  'everton':           'Last league title: 1987 (39 years). Relegated and promoted under intense fan suffering.',
+  'leeds united':      'Last top division title: 1992 (34 years). Financial collapse, two relegations, long rebuild.',
+  'aston villa':       'Last league title: 1981 (45 years). European Cup winners 1982; long decline since.',
+};
+
+function getFranchiseMisery(teamName){
+  if(!teamName) return null;
+  const lower = teamName.toLowerCase();
+  // Direct lookup
+  if(FRANCHISE_MISERY[lower]) return FRANCHISE_MISERY[lower];
+  // Partial match (last word of team name)
+  const last = lower.split(' ').pop();
+  const match = Object.keys(FRANCHISE_MISERY).find(k => k.includes(last) || last.includes(k.split(' ').pop()));
+  return match ? FRANCHISE_MISERY[match] : null;
+}
+
 function buildCompoundCacheKey(sections) {
   const games = (sections || []).flatMap(s => s.games || []);
   const sig = [
@@ -9422,11 +9671,33 @@ function buildCompoundPrompt(sections) {
     const stream = g.streams?.[0]?.label || 'local';
     const crewCtx = getCrewContext(g);
     const arcType = (typeof detectArcType === 'function') ? detectArcType(g) : null;
+    // #29b: Fan Misery Index — franchise historical context
+    const homeMisery = getFranchiseMisery(g.home||'');
+    const awayMisery = getFranchiseMisery(g.away||'');
     const bni = computeBroadcastNarrativeIndex(g);
     const standingsCtx = buildGameStandingsContext(g);
     const sportKey = typeof ODDS_SPORT_MAP !== 'undefined' ? ODDS_SPORT_MAP[g._sport||g._section||''] : null;
+    // Gap 9: Full market context in journalism prompts — not just even-money flag
+    // Model now knows: who the market favors, how much, implied probability
     const oddsCtx = (sportKey && typeof _oddsCache !== 'undefined') ?
-      (() => { const ok = Object.keys(_oddsCache||{}).find(k=>k.startsWith(sportKey)); const odds = ok ? getGameOdds(_oddsCache[ok], g.home, g.away) : null; return odds && odds.moneylineGap < 80 ? `near even-money (gap ${odds.moneylineGap})` : null; })() : null;
+      (() => {
+        const ok = Object.keys(_oddsCache||{}).find(k=>k.startsWith(sportKey));
+        if(!ok) return null;
+        const odds = getGameOdds(_oddsCache[ok], g.home, g.away);
+        if(!odds?.homeML || !odds?.awayML) return null;
+        const hML = odds.homeML, aML = odds.awayML;
+        const hPct = Math.round(hML < 0 ? (-hML/(-hML+100))*100 : (100/(hML+100))*100);
+        const aPct = 100 - hPct;
+        const favTeam  = hML < aML ? (g.home||'').split(' ').pop() : (g.away||'').split(' ').pop();
+        const dogTeam  = hML < aML ? (g.away||'').split(' ').pop() : (g.home||'').split(' ').pop();
+        const favML    = hML < aML ? hML : aML;
+        const dogML    = hML < aML ? aML : hML;
+        const dogPct   = hML < aML ? aPct : hPct;
+        const favPct   = 100 - dogPct;
+        const isClose  = Math.abs(hML - aML) < 80;
+        if(isClose) return `Market: even-money · ${(g.home||'').split(' ').pop()} ${hML>0?'+':''}${hML} (${hPct}%) vs ${(g.away||'').split(' ').pop()} ${aML>0?'+':''}${aML} (${aPct}%)`;
+        return `Market: ${favTeam} favored ${favML} (${favPct}% probability) · ${dogTeam} +${Math.abs(dogML)} underdog`;
+      })() : null;
     return [
       `- ${g.away||''} @ ${g.home||''}`,
       g.seriesRecord ? `  Series: ${g.seriesRecord}` : '',
@@ -9438,6 +9709,8 @@ function buildCompoundPrompt(sections) {
       bni ? `  [BNI: ${bni.replace(/-/g,' ').toUpperCase()}]` : '',
       oddsCtx ? `  Odds: ${oddsCtx}` : '',
       preGameScore(g) > 70 && !isNationalGame(g) ? "  [SCOUT'S PICK]" : '',
+      homeMisery  ? `  [FRANCHISE_CONTEXT:${(g.home||'').split(' ').pop()}] ${homeMisery}` : '',
+      awayMisery  ? `  [FRANCHISE_CONTEXT:${(g.away||'').split(' ').pop()}] ${awayMisery}` : '',
     ].filter(Boolean).join('\n');
   }).join('\n\n');
 
@@ -10142,6 +10415,8 @@ const CDW_STATS = {
   nba_ot:          'NBA OT: teams up 3+ at OT tipoff win 67% of the time.',
   nhl_ot:          'NHL OT: 73% of games end within the first 5 minutes.',
 };
+// getCDWNote: checks #18c statistical extremes first, then inline detection
+// #18c extremes: no-hitter, 4Q surge, comeback, HT reversal
 function getCDWNote(score, sport){
   const sp=(sport||'').toLowerCase();
   const sit=score.situation||{};
@@ -10327,6 +10602,14 @@ function injectDramaBadges(){
       (sp.includes('baseball')||sp.includes('mlb'))     ? period >= 9 : false
     );
     if (isFinalPeriod && margin > 24) score = Math.min(score, 20);
+
+    // ── #18c Statistical Extremes bonus ──────────────────────────────────
+    // Applied AFTER garbage time cap so extremes can't rescue blowouts.
+    // No-hitter, 4Q surge, comeback, HT reversal. Max +20.
+    if(score > 20){  // skip if already capped by garbage time
+      const extremes = getStatisticalExtremes(eData, sport);
+      if(extremes.dramaBonus > 0) score = Math.min(100, score + extremes.dramaBonus);
+    }
 
     // ── First Lead Change Drama Burst ─────────────────────────────────
     // Detect when the leading team changes in the final period.

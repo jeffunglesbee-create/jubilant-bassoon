@@ -479,3 +479,33 @@ else fail('Assertion 42 — Layer 2: batch delay still present or leaguesToPoll 
 const hasTempo = html.includes('computeLiveInterval') && html.includes('tempo-adjusted-polling');
 if(hasTempo) pass('Assertion 43 — #11b tempo-adjusted polling: computeLiveInterval declared + FIELD_FEATURES entry');
 else fail('Assertion 43 — #11b tempo-adjusted polling missing');
+
+// Assertion 44 — #18b period score extraction
+const hasLinescores = html.includes('homeLinescores') && html.includes('awayLinescores') && html.includes('l.value||0');
+if(hasLinescores) pass('Assertion 44 — #18b period score extraction: homeLinescores/awayLinescores in ESPN loop');
+else fail('Assertion 44 — #18b period score extraction missing');
+
+// Assertion 45 — #11a situation drama bonus
+const hasSitBonus = html.includes('homeGoaliePulled') && html.includes('isFinalPeriod') && html.includes('sitBonus += 22');
+if(hasSitBonus) pass('Assertion 45 — #11a situation drama bonus: hockey/baseball/NBA/NFL cases + isFinalPeriod');
+else fail('Assertion 45 — #11a situation drama bonus missing or incomplete');
+
+// Assertion 46 — #18c statistical extremes
+const hasExtremes = html.includes('getStatisticalExtremes') && html.includes('No-hitter through') && html.includes('dramaBonus');
+if(hasExtremes) pass('Assertion 46 — #18c statistical extremes: no-hitter, 4Q surge, comeback, HT reversal');
+else fail('Assertion 46 — #18c statistical extremes missing');
+
+// Assertion 47 — #29b franchise misery index
+const hasMisery = html.includes('FRANCHISE_MISERY') && html.includes('getFranchiseMisery') && html.includes('FRANCHISE_CONTEXT');
+if(hasMisery) pass('Assertion 47 — #29b franchise misery index: FRANCHISE_MISERY + getFranchiseMisery + FRANCHISE_CONTEXT in prompt');
+else fail('Assertion 47 — #29b franchise misery index missing');
+
+// Assertion 48 — Gap 9 journalism odds context
+const hasOddsCtx = html.includes('journalism-odds-context') && html.includes('favored') && html.includes('underdog');
+if(hasOddsCtx) pass('Assertion 48 — Gap 9 journalism odds context: full market context in compound prompt');
+else fail('Assertion 48 — Gap 9 journalism odds context missing');
+
+// Assertion 49 — Gap 8 quiet hour detection
+const hasQuiet = html.includes('_quietHourActive') && html.includes('QUIET_POLL_INTERVAL') && html.includes('QUIET_CYCLES_GATE');
+if(hasQuiet) pass('Assertion 49 — Gap 8 quiet hour detection: state vars + interval extension wired');
+else fail('Assertion 49 — Gap 8 quiet hour detection missing');
