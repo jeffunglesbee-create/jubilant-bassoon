@@ -4967,6 +4967,7 @@ function buildTodaySchedule(){
     ARS:{pts:82,gd:43,gf:69},   // Arsenal — no game May 19
     MCI:{pts:77,gd:43,gf:75},   // UPDATE after City-Bournemouth (May 19)
     BOU:{pts:55,gd:4},           // UPDATE after Bournemouth-City (May 19)
+    BHA:{pts:53,gd:9},           // Brighton — 37 played, no game May 19
     TOT:{pts:38,gd:-9},          // UPDATE after Chelsea-Spurs (May 19)
     WHU:{pts:36,gd:-22},         // West Ham — no game May 19
     BUR:{relegated:true},        // RELEGATED — confirmed
@@ -5001,6 +5002,23 @@ function buildTodaySchedule(){
     if(w.pts+3<t.pts) return 'West Ham cannot catch Tottenham on points — the battle is already settled.';
     const gap=t.pts-w.pts,gdGap=t.gd-w.gd;
     return `West Ham need to win AND rely on Everton to beat Spurs at the Tottenham Hotspur Stadium simultaneously. Spurs lead by ${gap} pts and +${gdGap} GD — only maximum points across both venues saves them.`;
+  }
+  function _plEuroNote(teamA,teamB){
+    // 6th = Europa League · 7th = Conference League qualifying
+    const b=PL_FD.BOU,h=PL_FD.BHA;
+    const bouIn=teamA==='AFC Bournemouth'||teamB==='AFC Bournemouth';
+    const bhaIn=teamA==='Brighton & Hove Albion'||teamB==='Brighton & Hove Albion';
+    const gap=b.pts-h.pts;
+    if(bouIn){
+      if(gap>3) return 'Bournemouth have secured 6th place and Europa League football — this one is played with Europe already confirmed.';
+      if(gap>0) return `Bournemouth are in 6th and the Europa League spot by ${gap} pts over Brighton. A point keeps them there regardless of Brighton's result.`;
+      return `Bournemouth and Brighton are level on points for the Europa League spot — goal difference decides 6th here.`;
+    }
+    if(bhaIn){
+      if(gap>3) return 'Brighton are confirmed in 7th and Conference League qualifying — Europa League is out of reach.';
+      return `Brighton need to win AND hope Bournemouth lose at Forest to take 6th and the Europa League spot. Currently ${gap} pts behind — achievable if both results go their way.`;
+    }
+    return null;
   }
 
   // ── Premier League MW36 + MW37 (hardcoded fallback — fetchSoccerFixtures provides live data) ─────
@@ -5055,7 +5073,8 @@ function buildTodaySchedule(){
      matchupNote:_plCityNote()},
     {home:"Brighton & Hove Albion", away:"Manchester United",      league:"Premier League \u2013 Matchweek 38 \u00b7 Final Day",
      start_time:"2026-05-24T15:00:00Z", confirmed:true, venue:"Amex Stadium, Brighton",
-     streams:resolveBundle("EPL_PEACOCK"), localNote:"Peacock only"},
+     streams:resolveBundle("EPL_PEACOCK"), localNote:"Peacock only",
+     matchupNote:_plEuroNote("Brighton & Hove Albion","Manchester United")},
     {home:"Burnley",                away:"Wolverhampton Wanderers", league:"Premier League \u2013 Matchweek 38 \u00b7 Final Day",
      start_time:"2026-05-24T15:00:00Z", confirmed:true, venue:"Turf Moor, Burnley",
      streams:resolveBundle("EPL_PEACOCK"), localNote:"Peacock only",
@@ -5068,7 +5087,8 @@ function buildTodaySchedule(){
      streams:resolveBundle("EPL_PEACOCK"), localNote:"Peacock only"},
     {home:"Nottingham Forest",      away:"AFC Bournemouth",         league:"Premier League \u2013 Matchweek 38 \u00b7 Final Day",
      start_time:"2026-05-24T15:00:00Z", confirmed:true, venue:"City Ground, Nottingham",
-     streams:resolveBundle("EPL_PEACOCK"), localNote:"Peacock only"},
+     streams:resolveBundle("EPL_PEACOCK"), localNote:"Peacock only",
+     matchupNote:_plEuroNote("Nottingham Forest","AFC Bournemouth")},
     {home:"Sunderland",             away:"Chelsea",                 league:"Premier League \u2013 Matchweek 38 \u00b7 Final Day",
      start_time:"2026-05-24T15:00:00Z", confirmed:true, venue:"Stadium of Light, Sunderland",
      streams:resolveBundle("EPL_PEACOCK"), localNote:"Peacock only"},
@@ -5475,8 +5495,8 @@ const MEDIA_SPECIALS = [
     card:{
       show:"Premier League Final Day",network:"NBC / Peacock",chip:"nbc",
       time:"11:00 AM ET",
-      desc:"All 10 Premier League matches kick off simultaneously at 11 AM ET. NBC has Crystal Palace vs Arsenal as the featured matchup. Arsenal need 1 point to confirm the title if City win tonight — or are already champions if City slip. City must beat Villa AND hope Arsenal lose at Palace. Relegation: only 1 spot left — Tottenham vs West Ham, decided tonight at Chelsea or on Final Day simultaneously. Burnley and Wolves are already down. Use Multiview to pin Arsenal-Palace (NBC) + City-Villa (USA) + the Spurs-Everton/West Ham-Leeds pair at once.",
-      journalNote:"PL Final Day 11am ET. Arsenal title on NBC/Peacock (Crystal Palace). City-Villa on USA. Relegation: Spurs-Everton + West Ham-Leeds on Peacock (simultaneous). Burnley-Wolves: dead rubber, both relegated.",
+      desc:"All 10 Premier League matches kick off simultaneously at 11 AM ET. Title: Arsenal need 1 point at Palace if City win tonight (NBC/Peacock). City must beat Villa AND Arsenal must lose. European: Bournemouth hold 6th (Europa League) by 2 pts over Brighton — Forest vs Bournemouth + Brighton vs United both matter. Relegation: 1 spot left, Spurs vs West Ham — settled tonight at Chelsea or goes to Final Day (Spurs vs Everton + West Ham vs Leeds simultaneously). Burnley and Wolves are already down. Use Multiview to pin all four live battles at once.",
+      journalNote:"PL Final Day four live battles: (1) Title — Arsenal-Palace NBC/Peacock, City-Villa USA; (2) Europa League — Bournemouth at Forest, Brighton vs United Peacock; (3) Relegation — Spurs-Everton + West Ham-Leeds Peacock; (4) Burnley-Wolves dead rubber. All 15:00 UTC.",
       link:"https://www.peacocktv.com/sports/soccer"
     }
   },
