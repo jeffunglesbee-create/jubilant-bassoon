@@ -4960,6 +4960,49 @@ function buildTodaySchedule(){
     }]});
   }
 
+  // ── Premier League Final Day Calculator ──────────────────────────────────────
+  // Standings entering May 24 Final Day. Update pts/gd/gf values in daily update
+  // after May 19 results (City vs Bournemouth, Chelsea vs Spurs).
+  const PL_FD={
+    ARS:{pts:82,gd:43,gf:69},   // Arsenal — no game May 19
+    MCI:{pts:77,gd:43,gf:75},   // UPDATE after City-Bournemouth (May 19)
+    BOU:{pts:55,gd:4},           // UPDATE after Bournemouth-City (May 19)
+    TOT:{pts:38,gd:-9},          // UPDATE after Chelsea-Spurs (May 19)
+    WHU:{pts:36,gd:-22},         // West Ham — no game May 19
+    BUR:{relegated:true},        // RELEGATED — confirmed
+    WOL:{relegated:true},        // RELEGATED — confirmed
+  };
+  function _plTitleNote(){
+    const a=PL_FD.ARS,c=PL_FD.MCI;
+    const cMax=c.pts+3;
+    if(a.pts>cMax) return 'Arsenal are confirmed Premier League champions — this match is a title celebration at Selhurst Park.';
+    if(a.pts===cMax){
+      if(a.gd>c.gd) return `Arsenal need a point to seal the title on GD (both hit ${cMax} if Arsenal draw and City win). A win makes it unconditional.`;
+      if(a.gd===c.gd) return `One of the all-time Final Day scenarios: if Arsenal draw AND City win, both finish ${cMax} pts and GD ${a.gd} — it goes to goals scored (Arsenal ${a.gf} vs City ${c.gf}). Arsenal need a win to be safe.`;
+    }
+    const gap=cMax-a.pts;
+    return `Arsenal need ${gap===1?'a point':'to win'} to confirm the title — City's max is ${cMax} pts.`;
+  }
+  function _plCityNote(){
+    const a=PL_FD.ARS,c=PL_FD.MCI;
+    const cMax=c.pts+3;
+    if(cMax<a.pts) return 'Arsenal are already confirmed Premier League champions — this match is played for pride.';
+    if(cMax===a.pts+3) return `City must win AND Arsenal must lose at Palace to claim the title (City max ${cMax} pts, Arsenal current ${a.pts}).`;
+    return `City must win AND hope Arsenal slip at Palace — they trail by ${a.pts-c.pts} points with 1 game left.`;
+  }
+  function _plTotNote(){
+    const t=PL_FD.TOT,w=PL_FD.WHU;
+    if(w.pts+3<t.pts) return 'Tottenham are mathematically safe heading into this one — a moment to exhale after a harrowing run-in.';
+    const gap=t.pts-w.pts,gdGap=t.gd-w.gd;
+    return `Spurs need a point to guarantee survival. West Ham are ${gap} pts behind with a +${gdGap} GD deficit — but a defeat here and West Ham still have a lifeline if Everton win.`;
+  }
+  function _plWhuNote(){
+    const t=PL_FD.TOT,w=PL_FD.WHU;
+    if(w.pts+3<t.pts) return 'West Ham cannot catch Tottenham on points — the battle is already settled.';
+    const gap=t.pts-w.pts,gdGap=t.gd-w.gd;
+    return `West Ham need to win AND rely on Everton to beat Spurs at the Tottenham Hotspur Stadium simultaneously. Spurs lead by ${gap} pts and +${gdGap} GD — only maximum points across both venues saves them.`;
+  }
+
   // ── Premier League MW36 + MW37 (hardcoded fallback — fetchSoccerFixtures provides live data) ─────
   // These games appear if ESPN soccer API returns empty. Merged/deduped by fetchSoccerFixtures.
   // MW36: Sat May 9 (complete) · Sun May 10 (complete) · MW37: Wed May 13 (1 midweek makeup)
@@ -5005,18 +5048,18 @@ function buildTodaySchedule(){
     {home:"Crystal Palace",        away:"Arsenal",                 league:"Premier League \u2013 Matchweek 38 \u00b7 Final Day",
      start_time:"2026-05-24T15:00:00Z", confirmed:true, venue:"Selhurst Park, London",
      streams:resolveBundle("EPL_NBC"), localNote:"NBC OTA (free) + Peacock",
-     matchupNote:"If City won Tuesday, Arsenal need a point to confirm the title. A Palace win combined with a City victory would be one of the great Final Day swings — but Arsenal arrive as overwhelming favourites."},
+     matchupNote:_plTitleNote()},
     {home:"Manchester City",        away:"Aston Villa",            league:"Premier League \u2013 Matchweek 38 \u00b7 Final Day",
      start_time:"2026-05-24T15:00:00Z", confirmed:true, venue:"Etihad Stadium, Manchester",
      streams:resolveBundle("EPL_USA"), localNote:"USA Network (cable)",
-     matchupNote:"City must win AND hope Arsenal lose at Palace to claim the title. A repeat of the 2012 Agüero moment is the only scenario — one of the sport's great Final Day narratives if the table stays close."},
+     matchupNote:_plCityNote()},
     {home:"Brighton & Hove Albion", away:"Manchester United",      league:"Premier League \u2013 Matchweek 38 \u00b7 Final Day",
      start_time:"2026-05-24T15:00:00Z", confirmed:true, venue:"Amex Stadium, Brighton",
      streams:resolveBundle("EPL_PEACOCK"), localNote:"Peacock only"},
     {home:"Burnley",                away:"Wolverhampton Wanderers", league:"Premier League \u2013 Matchweek 38 \u00b7 Final Day",
      start_time:"2026-05-24T15:00:00Z", confirmed:true, venue:"Turf Moor, Burnley",
      streams:resolveBundle("EPL_PEACOCK"), localNote:"Peacock only",
-     matchupNote:"Both clubs in danger — Burnley and Wolves could be fighting for their Premier League lives depending on results elsewhere. Direct clash in the drop zone."},
+     matchupNote:"Both clubs are already relegated — this match is played for pride and next season's Championship preparation."},
     {home:"Fulham",                 away:"Newcastle United",        league:"Premier League \u2013 Matchweek 38 \u00b7 Final Day",
      start_time:"2026-05-24T15:00:00Z", confirmed:true, venue:"Craven Cottage, London",
      streams:resolveBundle("EPL_PEACOCK"), localNote:"Peacock only"},
@@ -5031,11 +5074,12 @@ function buildTodaySchedule(){
      streams:resolveBundle("EPL_PEACOCK"), localNote:"Peacock only"},
     {home:"Tottenham Hotspur",      away:"Everton",                 league:"Premier League \u2013 Matchweek 38 \u00b7 Final Day",
      start_time:"2026-05-24T15:00:00Z", confirmed:true, venue:"Tottenham Hotspur Stadium, London",
-     streams:resolveBundle("EPL_PEACOCK"), localNote:"Peacock only"},
+     streams:resolveBundle("EPL_PEACOCK"), localNote:"Peacock only",
+     matchupNote:_plTotNote()},
     {home:"West Ham United",        away:"Leeds United",            league:"Premier League \u2013 Matchweek 38 \u00b7 Final Day",
      start_time:"2026-05-24T15:00:00Z", confirmed:true, venue:"London Stadium",
      streams:resolveBundle("EPL_PEACOCK"), localNote:"Peacock only",
-     matchupNote:"West Ham's season could end in relegation here. A must-win with eyes on Burnley's result — survival decided on the final whistle across multiple venues simultaneously."},
+     matchupNote:_plWhuNote()},
   ].filter(g=>isToday(g.start_time));
   const eplGames = eplRaw.map((g,i)=>({...g, _id:"epl_mw36mw37_"+i, _sport:"Premier League"}));
 
@@ -5408,8 +5452,8 @@ const MEDIA_SPECIALS = [
     card:{
       show:"Premier League Final Day",network:"NBC / Peacock",chip:"nbc",
       time:"11:00 AM ET",
-      desc:"All 10 Premier League matches kick off simultaneously at 11 AM ET. NBC has Crystal Palace vs Arsenal as the featured matchup — Arsenal need 1 point to confirm the title if City won Tuesday. City must beat Villa AND hope Arsenal slip. West Ham, Burnley, and Wolves fight for survival in the drop zone. Use Multiview to pin the title race and relegation battles at once.",
-      journalNote:"PL Final Day: all 10 games simultaneous 11am ET. Arsenal title decider on NBC/Peacock (Crystal Palace). City-Villa on USA Network. Relegation: West Ham vs Leeds, Burnley vs Wolves on Peacock.",
+      desc:"All 10 Premier League matches kick off simultaneously at 11 AM ET. NBC has Crystal Palace vs Arsenal as the featured matchup. Arsenal need 1 point to confirm the title if City win tonight — or are already champions if City slip. City must beat Villa AND hope Arsenal lose at Palace. Relegation: only 1 spot left — Tottenham vs West Ham, decided tonight at Chelsea or on Final Day simultaneously. Burnley and Wolves are already down. Use Multiview to pin Arsenal-Palace (NBC) + City-Villa (USA) + the Spurs-Everton/West Ham-Leeds pair at once.",
+      journalNote:"PL Final Day 11am ET. Arsenal title on NBC/Peacock (Crystal Palace). City-Villa on USA. Relegation: Spurs-Everton + West Ham-Leeds on Peacock (simultaneous). Burnley-Wolves: dead rubber, both relegated.",
       link:"https://www.peacocktv.com/sports/soccer"
     }
   },
