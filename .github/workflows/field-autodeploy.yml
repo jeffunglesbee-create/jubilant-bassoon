@@ -88,6 +88,12 @@ jobs:
             echo "⏭  File too small (${SIZE} bytes) — Drive returned confirmation page, skipping"
             exit 0
           fi
+          # Guard: if Drive returned a Google interstitial/confirm page instead of the app,
+          # the file will be large but won't contain the FIELD title.
+          if ! grep -q '<title>FIELD' index_new.html; then
+            echo "⏭  Downloaded file is not FIELD app (no <title>FIELD found) — Drive returned interstitial page, skipping"
+            exit 0
+          fi
           echo "✓ Download OK (${SIZE} bytes)"
 
       - name: Check if file changed
