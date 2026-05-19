@@ -1230,8 +1230,60 @@ flex-shrink:0;white-space:nowrap;
   border-left:2px solid rgba(74,222,128,.25);
   margin-left:1px;
 }
-/* Live odds updates */
-.odds-header{display:flex;align-items:center;justify-content:space-between;gap:.5rem;padding:.3rem .7rem;border-bottom:1px solid var(--edge);background:rgba(74,222,128,.04)}
+/* ── Probability bars (new betting UI) ───────────────────────── */
+.prob-section{padding:.7rem 1rem .5rem}
+.prob-row{display:flex;align-items:center;gap:.6rem;margin:.25rem 0}
+.prob-team{width:44px;font-size:.7rem;color:var(--platinum);text-align:right;flex-shrink:0;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.prob-bar-track{flex:1;height:5px;background:rgba(255,255,255,.06);border-radius:3px;overflow:hidden}
+.prob-bar-fill{height:100%;border-radius:3px;transition:width .4s ease}
+.prob-bar-fill.fav{background:linear-gradient(90deg,#4ade80,#22c55e)}
+.prob-bar-fill.dog{background:linear-gradient(90deg,#f87171,#ef4444)}
+.prob-bar-fill.even{background:linear-gradient(90deg,var(--gold2),var(--gold))}
+.prob-pct{font-family:var(--ff-mono);font-size:.75rem;font-weight:700;width:30px;flex-shrink:0}
+.prob-pct.fav{color:#4ade80}.prob-pct.dog{color:#f87171}.prob-pct.even{color:var(--gold)}
+.prob-ml{font-family:var(--ff-mono);font-size:.68rem;color:var(--smoke);width:44px;flex-shrink:0}
+
+/* ── Compact lines row ────────────────────────────────────────── */
+.bet-lines-compact{
+  display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;
+  padding:.35rem 1rem .5rem;border-top:1px solid var(--edge);
+}
+.bet-line-pill{
+  display:inline-flex;align-items:center;gap:.3rem;
+  font-family:var(--ff-mono);font-size:.68rem;
+  background:var(--card3);border:1px solid var(--edge);
+  border-radius:4px;padding:.2rem .55rem;white-space:nowrap;
+}
+.bet-line-pill-label{color:var(--smoke);font-size:.62rem;letter-spacing:.06em;text-transform:uppercase}
+.bet-line-pill-val{color:var(--white);font-weight:600}
+
+/* ── Competitive context badge ────────────────────────────────── */
+.comp-badge{
+  display:inline-flex;align-items:center;gap:.25rem;
+  font-family:var(--ff-cond);font-size:.58rem;font-weight:700;letter-spacing:.1em;
+  padding:.12rem .5rem;border-radius:3px;text-transform:uppercase;flex-shrink:0;
+}
+.comp-badge.pickem{color:#2dd4bf;background:rgba(45,212,191,.12);border:1px solid rgba(45,212,191,.35)}
+.comp-badge.close-line{color:#7dd3b0;background:rgba(45,212,191,.07);border:1px solid rgba(45,212,191,.2)}
+.comp-badge.lean{color:var(--gold2);background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.25)}
+.comp-badge.heavy{color:var(--smoke);background:rgba(255,255,255,.04);border:1px solid var(--edge)}
+
+/* ── FIELD vs market signal ───────────────────────────────────── */
+.field-signal{
+  padding:.45rem 1rem .5rem .85rem;font-size:.72rem;line-height:1.5;
+  color:var(--gold2);border-left:2px solid rgba(201,168,76,.4);
+  margin-left:1px;border-top:1px solid var(--edge);
+  background:rgba(201,168,76,.04);
+}
+.field-signal strong{color:var(--gold3)}
+
+/* ── Bet card header revised ──────────────────────────────────── */
+.bet-card-head-top{
+  display:flex;align-items:flex-start;justify-content:space-between;gap:.5rem;
+}
+.bet-card-head{padding:.7rem 1rem .6rem;border-bottom:1px solid var(--edge);}
+.bet-links{display:flex;flex-wrap:wrap;gap:.4rem;padding:.5rem 1rem .7rem}
 .odds-live-badge{display:inline-flex;align-items:center;gap:4px;font-family:var(--ff-mono);font-size:.6rem;color:#4ade80}
 .odds-live-dot{width:5px;height:5px;border-radius:50%;background:#4ade80;animation:pulse 2s ease-in-out infinite}
 .odds-updated{font-family:var(--ff-mono);font-size:.6rem;color:var(--smoke)}
@@ -5562,6 +5614,63 @@ function getBettingFallback(){
 
 
 // renderBetting is now async — fetches fresh lines daily, falls back to hardcoded
+function toImpliedNum(oddsStr){
+  if(!oddsStr) return null;
+  const s = String(oddsStr).trim();
+  if(["EV","PK","EVEN","+0","0"].includes(s.toUpperCase())) return 50;
+  const n = parseInt(s);
+  if(isNaN(n)) return null;
+  return n < 0 ? (-n / (-n + 100)) * 100 : (100 / (n + 100)) * 100;
+}
+
+function compBadge(moneylineGap){
+  if(!moneylineGap && moneylineGap !== 0) return '';
+  if(moneylineGap < 35)  return `<span class="comp-badge pickem">Pick'em</span>`;
+  if(moneylineGap < 110) return `<span class="comp-badge close-line">Close Line</span>`;
+  if(moneylineGap < 220) return `<span class="comp-badge lean">Lean</span>`;
+  return `<span class="comp-badge heavy">Heavy Fav</span>`;
+}
+
+function fieldVsMarket(game, homeML, awayML){
+  if(!game || !homeML || !awayML) return '';
+  const gap = Math.abs(homeML - awayML);
+  const drama = typeof preGameScore === 'function' ? preGameScore(game) : 0;
+  if(gap > 180 && drama > 68)
+    return `<div class="field-signal">FIELD sees this as more competitive than the line suggests — drama score <strong>${Math.round(drama)}</strong> despite the spread.</div>`;
+  if(gap < 45 && drama < 35)
+    return `<div class="field-signal">Market says pick'em — FIELD rates entertainment value low here <strong>(${Math.round(drama)})</strong>. May not be the game the number implies.</div>`;
+  return '';
+}
+
+function buildProbBars(homeTeam, awayTeam, homeML, awayML){
+  if(!homeML || !awayML) return '';
+  const homeP = toImpliedNum(homeML);
+  const awayP = toImpliedNum(awayML);
+  if(!homeP || !awayP) return '';
+  const homeCls = homeML < 0 ? 'fav' : homeML > 0 ? 'dog' : 'even';
+  const awayCls = awayML < 0 ? 'fav' : awayML > 0 ? 'dog' : 'even';
+  const homeAbbr = (homeTeam||'').split(' ').pop().slice(0,4).toUpperCase();
+  const awayAbbr = (awayTeam||'').split(' ').pop().slice(0,4).toUpperCase();
+  const homePct = Math.round(homeP);
+  const awayPct = Math.round(awayP);
+  const homeML_ = homeML > 0 ? '+'+homeML : String(homeML);
+  const awayML_ = awayML > 0 ? '+'+awayML : String(awayML);
+  return `<div class="prob-section">
+    <div class="prob-row">
+      <span class="prob-team">${homeAbbr}</span>
+      <div class="prob-bar-track"><div class="prob-bar-fill ${homeCls}" style="width:${homePct}%"></div></div>
+      <span class="prob-pct ${homeCls}">${homePct}%</span>
+      <span class="prob-ml">${homeML_}</span>
+    </div>
+    <div class="prob-row">
+      <span class="prob-team">${awayAbbr}</span>
+      <div class="prob-bar-track"><div class="prob-bar-fill ${awayCls}" style="width:${awayPct}%"></div></div>
+      <span class="prob-pct ${awayCls}">${awayPct}%</span>
+      <span class="prob-ml">${awayML_}</span>
+    </div>
+  </div>`;
+}
+
 function toImplied(oddsStr){
   if(!oddsStr) return null;
   const s = String(oddsStr).trim();
@@ -5594,77 +5703,90 @@ async function renderBetting(){
   }
 
   grid.innerHTML = BETTING_LINES.map(b=>{
-    // Resolve game ID for live odds lookup — must be declared before liveForCard check
-    let _gid_bet="";
+    // Resolve game ID for live odds lookup
+    let _gid_bet="", _game_obj=null;
     if(typeof allData!=="undefined"&&allData&&allData.sports){
       const bname=b.game.toLowerCase();
       allData.sports.forEach(sec=>(sec.games||[]).forEach(g=>{
         const homeWords=(g.home||"").toLowerCase().split(" ").filter(w=>w.length>3);
         const awayWords=(g.away||"").toLowerCase().split(" ").filter(w=>w.length>3);
-        const homeMatch=homeWords.some(w=>bname.includes(w));
-        const awayMatch=awayWords.some(w=>bname.includes(w));
-        if(homeMatch&&awayMatch) _gid_bet=g._id||"";
+        if(homeWords.some(w=>bname.includes(w))&&awayWords.some(w=>bname.includes(w))){
+          _gid_bet=g._id||""; _game_obj=g;
+        }
       }));
     }
-    // Prefer live Odds API data when available, fall back to AI-generated lines
+
     const liveForCard = _gid_bet && liveOddsData[_gid_bet];
-    let linesHtml;
+    const hasLiveOdds = !!(liveForCard);
+
+    // Extract moneyline for probability bars + badge
+    let homeML=null, awayML=null, spreadVal=null, totalVal=null, mlGap=null;
     if(liveForCard){
-      const markets=[
-        {label:"Moneyline",  data:liveForCard.ml},
-        {label:"Spread",     data:liveForCard.spread},
-        {label:"Total (O/U)",data:liveForCard.total},
-      ].filter(m=>m.data&&m.data.length);
-      linesHtml = markets.map(m=>`
-        <div class="bet-line">
-          <div class="bet-line-label">${m.label}</div>
-          <div class="bet-line-vals">
-            ${m.data.map(i=>`
-              <div class="bet-line-item">
-                <span class="bet-team">${i.t}</span>
-                <span class="bet-odd ${i.o.startsWith("-")?"fav":i.o==="+100"||i.o==="EV"?"even":"dog"}">${i.o}</span><span class="implied-prob">${toImplied(i.o)||""}</span>
-              </div>`).join("")}
-          </div>
-        </div>`).join("");
+      const mlData = liveForCard.ml||[];
+      const homeItem = mlData.find(i=>(i.t||'').toLowerCase().includes((_game_obj?.home||'').split(' ').pop().toLowerCase()));
+      const awayItem = mlData.find(i=>(i.t||'').toLowerCase().includes((_game_obj?.away||'').split(' ').pop().toLowerCase()));
+      if(homeItem) homeML = parseInt(homeItem.o);
+      if(awayItem) awayML = parseInt(awayItem.o);
+      if(liveForCard.spread?.length) spreadVal = liveForCard.spread[0];
+      if(liveForCard.total?.length) totalVal = liveForCard.total[0];
+      if(homeML&&awayML) mlGap = Math.abs(homeML - awayML);
     } else {
-      linesHtml = b.lines.map(l=>`
-        <div class="bet-line">
-          <div class="bet-line-label">${l.label}</div>
-          <div class="bet-line-vals">
-            ${l.items.map(i=>`
-              <div class="bet-line-item">
-                <span class="bet-team">${i.t}</span>
-                <span class="bet-odd ${i.fav?"fav":i.o==="+100"||i.o==="EV"?"even":"dog"}">${i.o}</span><span class="implied-prob">${toImplied(i.o)||""}</span>
-              </div>`).join("")}
-          </div>
-        </div>`).join("");
+      // Extract from AI lines
+      const mlLine = b.lines?.find(l=>l.label==="Moneyline");
+      if(mlLine?.items){
+        const hItem = mlLine.items.find(i=>i.fav);
+        const aItem = mlLine.items.find(i=>!i.fav);
+        if(hItem) homeML = parseInt(hItem.o);
+        if(aItem) awayML = parseInt(aItem.o);
+        if(homeML&&awayML) mlGap = Math.abs(homeML - awayML);
+      }
     }
-    // L1 (May 11): Book link labeling depends on whether odds are real or AI-generated.
-    // For verified live Odds API data: "[Book] →" (accurate attribution)
-    // For AI-generated odds: "Verify at [Book] →" (links go to real book to check actual lines,
-    //   makes clear our displayed values did NOT come from that book)
-    const hasLiveOdds = _gid_bet && liveOddsData[_gid_bet];
-    const linkPrefix = hasLiveOdds ? "" : "Verify at ";
-    const booksHtml = b.books.map(bk=>`<a class="bet-link" href="${bk.url}" target="_blank" rel="noopener">${linkPrefix}${bk.name} →</a>`).join("");
-    // Mark source for UI labeling: AI-generated vs live from Odds API
-    const sourceLabel = hasLiveOdds
-      ? `<span class="odds-source-live">⚡ Live · DraftKings</span>`
-      : `<span class="odds-source-ai">🤖 AI Estimated · verify before wagering</span>`;
+
+    // Probability bars (only when we have both MLs)
+    const probHTML = (homeML && awayML && _game_obj)
+      ? buildProbBars(_game_obj.home, _game_obj.away, homeML, awayML) : '';
+
+    // Compact spread + total pills
+    let pillsHTML = '';
+    if(liveForCard){
+      const pills = [];
+      if(spreadVal) pills.push(`<span class="bet-line-pill"><span class="bet-line-pill-label">Spread</span><span class="bet-line-pill-val">${spreadVal.t?.split(' ').pop()||''} ${spreadVal.o||''}</span></span>`);
+      if(totalVal) pills.push(`<span class="bet-line-pill"><span class="bet-line-pill-label">O/U</span><span class="bet-line-pill-val">${totalVal.line||''}</span></span>`);
+      const srcPill = `<span class="bet-line-pill"><span class="prob-ml">⚡ Live</span></span>`;
+      if(pills.length) pillsHTML = `<div class="bet-lines-compact">${pills.join('')}${srcPill}</div>`;
+    } else if(b.lines?.length){
+      const pills = b.lines.filter(l=>l.label!=="Moneyline").map(l=>{
+        const v = l.items?.[0];
+        return v ? `<span class="bet-line-pill"><span class="bet-line-pill-label">${l.label}</span><span class="bet-line-pill-val">${v.t?.split(' ').pop()||''} ${v.o||''}</span></span>` : '';
+      }).filter(Boolean);
+      const aiPill = `<span class="bet-line-pill"><span class="prob-ml">🤖 Est.</span></span>`;
+      if(pills.length) pillsHTML = `<div class="bet-lines-compact">${pills.join('')}${aiPill}</div>`;
+    }
+
+    // FIELD vs market signal
+    const signalHTML = fieldVsMarket(_game_obj, homeML, awayML);
+
+    const booksHtml = b.books.map(bk=>`<a class="bet-link" href="${bk.url}" target="_blank" rel="noopener">${hasLiveOdds?'':' Verify at '}${bk.name} →</a>`).join('');
+
     return `<div class="bet-card" data-game-id="${_gid_bet}"><div class="bet-accent"></div><div class="bet-inner">
       <div class="bet-card-head">
-        <div class="bet-head-left">
-          <div class="bet-game">${b.game}</div>
-          <div class="bet-meta-row">
-            <span class="bet-league">${b.league}</span>
-            ${sourceLabel}
+        <div class="bet-card-head-top">
+          <div class="bet-head-left" style="min-width:0;flex:1">
+            <div class="bet-game">${b.game}</div>
+            <div class="bet-meta-row" style="margin-top:.2rem">
+              <span class="bet-league">${b.league}</span>
+            </div>
           </div>
+          ${mlGap!=null ? compBadge(mlGap) : ''}
         </div>
       </div>
-      <div class="bet-lines">${linesHtml}</div>
+      ${probHTML}
+      ${pillsHTML}
+      ${signalHTML}
       <div class="bet-context">${b.context}</div>
       <div class="bet-links">${booksHtml}</div>
     </div></div>`;
-  }).join("");
+  }).join('');
 
   // Inject any live odds already available, then again after 3s for in-flight fetches
   updateOddsUI();
