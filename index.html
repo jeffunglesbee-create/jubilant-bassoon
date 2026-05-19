@@ -4344,12 +4344,26 @@ function preGameScore(g){
   const ib={series_deciding:30,elimination:20,clinch:15,playoff_impl:10}[g._gameImportance]||0;
   const nationalKeys=new Set(['NBA_ESPN','NBA_ABC','NBA_NBC','NBA_PRIME','NHL_ESPN','NHL_ABC','NHL_TNT','MLB_TBS','MLB_FOX','MLB_APPLE','MLB_NBC','MLB_PEACOCK_SNB','NFL_PRIME','NFL_NBC','NFL_ESPN','NFL_ABC','NFL_CBS','NFL_FOX','MLS_FOX','MLS_FS1']);
   const cb=nationalKeys.has(g.nationalBundle)?5:0;
-  let bb=0;
-  if(typeof BETTING_LINES_FALLBACK_DATA!=='undefined'){
-    const hl=(g.home||'').toLowerCase(),al=(g.away||'').toLowerCase();
-    const e=BETTING_LINES_FALLBACK_DATA.find(b=>{const mk=(b.matchKey||'').toLowerCase();return hl.includes(mk)||al.includes(mk)||mk.includes(hl.split(' ').pop())||mk.includes(al.split(' ').pop());});
-    if(e?.spread){const sp=Math.abs(parseFloat(e.spread)||10);bb=sp<=1.5?10:sp<=3?7:sp<=5.5?3:0;}
-  }
+  // #20 proxy: real odds from _oddsCache (moneyline gap → competitive pre-game drama)
+  // Tight ML = competitive game = higher drama. Replaces manual BETTING_LINES_FALLBACK spread.
+  let bb = 0;
+  try {
+    const sportKey = typeof ODDS_SPORT_MAP !== 'undefined' ? ODDS_SPORT_MAP[g._sport||g._section||''] : null;
+    if(sportKey && typeof _oddsCache !== 'undefined') {
+      const oddsKey = Object.keys(_oddsCache||{}).find(k => k.startsWith(sportKey));
+      if(oddsKey) {
+        const odds = getGameOdds(_oddsCache[oddsKey], g.home, g.away);
+        if(odds?.moneylineGap != null)
+          bb = odds.moneylineGap < 35 ? 10 : odds.moneylineGap < 100 ? 7 : odds.moneylineGap < 200 ? 3 : 0;
+      }
+    }
+    // Fallback to BETTING_LINES_FALLBACK_DATA spread if no live odds
+    if(!bb && typeof BETTING_LINES_FALLBACK_DATA !== 'undefined') {
+      const hl=(g.home||'').toLowerCase(), al=(g.away||'').toLowerCase();
+      const e=BETTING_LINES_FALLBACK_DATA.find(b=>{const mk=(b.matchKey||'').toLowerCase();return hl.includes(mk)||al.includes(mk)||mk.includes(hl.split(' ').pop())||mk.includes(al.split(' ').pop());});
+      if(e?.spread){const sp=Math.abs(parseFloat(e.spread)||10);bb=sp<=1.5?10:sp<=3?7:sp<=5.5?3:0;}
+    }
+  } catch(e_) {}
   return nb+ib+cb+bb;
 }
 
@@ -7727,7 +7741,12 @@ async function fetchNHLRelayScores() {
 function computeLiveInterval(sectionSport) {
   if(!allData?.sports) return ESPN_REFRESH_LIVE;
   const sec = allData.sports.find(s => s.sport === sectionSport);
-  const drama = sec ? Math.max(0, ...(sec.games||[]).map(g => preGameScore(g))) : 0;
+  // Use smoothed live drama when available (incorporates #11a situation bonus)
+  // Falls back to preGameScore() for pre-game sections
+  const drama = sec ? Math.max(0, ...(sec.games||[]).map(g => {
+    const smoothed = g._id ? getSmoothedDrama(g._id) : null;
+    return smoothed != null ? smoothed : preGameScore(g);
+  })) : 0;
   if(drama > 75) return 20000;  // 20s — critical game, tight score, final period
   if(drama > 50) return 25000;  // 25s — elevated drama
   if(drama > 30) return 30000;  // 30s — normal live game
@@ -9674,6 +9693,10 @@ function buildCompoundPrompt(sections) {
     // #29b: Fan Misery Index — franchise historical context
     const homeMisery = getFranchiseMisery(g.home||'');
     const awayMisery = getFranchiseMisery(g.away||'');
+    // #18c: statistical extreme note for live games (no-hitter, Q4 surge, comeback)
+    const liveScoreForExtreme = typeof findESPNScore === 'function' ? findESPNScore(g) : null;
+    const extremeNote = (liveScoreForExtreme?.state === 'in')
+      ? getStatisticalExtremes(liveScoreForExtreme, g._sport||'').note : null;
     const bni = computeBroadcastNarrativeIndex(g);
     const standingsCtx = buildGameStandingsContext(g);
     const sportKey = typeof ODDS_SPORT_MAP !== 'undefined' ? ODDS_SPORT_MAP[g._sport||g._section||''] : null;
@@ -9711,6 +9734,7 @@ function buildCompoundPrompt(sections) {
       preGameScore(g) > 70 && !isNationalGame(g) ? "  [SCOUT'S PICK]" : '',
       homeMisery  ? `  [FRANCHISE_CONTEXT:${(g.home||'').split(' ').pop()}] ${homeMisery}` : '',
       awayMisery  ? `  [FRANCHISE_CONTEXT:${(g.away||'').split(' ').pop()}] ${awayMisery}` : '',
+      extremeNote ? `  [LIVE EXTREME] ${extremeNote}` : '',
     ].filter(Boolean).join('\n');
   }).join('\n\n');
 
@@ -10356,8 +10380,26 @@ function getDeepLink(srKey){const d=STREAM_DEEPLINKS[srKey];if(!d) return null;c
 // Template-assembled from verified data: no LLM, no new API calls.
 // Output: "OKC leads WCF 3-2 · drama 88 · Spurs +215 underdogs" or ""
 function buildWatchWindowReason(game) {
+  // #18c: extreme note dominates Watch Window — no-hitter in progress beats all other reasons
+  const liveScoreWWR = typeof findESPNScore === 'function' ? findESPNScore(game) : null;
+  if(liveScoreWWR?.state === 'in') {
+    const extremes = getStatisticalExtremes(liveScoreWWR, game._sport||'');
+    if(extremes.note) return extremes.note; // override — this IS the reason to watch
+  }
+
   const parts = [];
   if (game.seriesRecord) parts.push(game.seriesRecord);
+
+  // #29b: franchise misery context (abbreviated) — "14yr drought" fits the chip
+  const homeMiseryWWR = getFranchiseMisery(game.home||'');
+  const awayMiseryWWR = getFranchiseMisery(game.away||'');
+  // Only inject if no other parts yet and it has a duration ("X-year")
+  const getMiseryChip = (misery) => {
+    if(!misery) return null;
+    const m = misery.match(/(\d+)[-\s]year/);
+    return m ? m[1]+'yr drought' : null;
+  };
+  const miseryChip = getMiseryChip(homeMiseryWWR) || getMiseryChip(awayMiseryWWR);
   const gid = game._id;
   if (gid) {
     const smoothed = getSmoothedDrama(gid);
@@ -10375,6 +10417,7 @@ function buildWatchWindowReason(game) {
       }
     }
   }
+  if(miseryChip && parts.length < 2) parts.push(miseryChip);
   return parts.slice(0, 3).join('\u00a0\u00b7\u00a0');
 }
 
@@ -10418,6 +10461,10 @@ const CDW_STATS = {
 // getCDWNote: checks #18c statistical extremes first, then inline detection
 // #18c extremes: no-hitter, 4Q surge, comeback, HT reversal
 function getCDWNote(score, sport){
+  // #18c: check statistical extremes first — most specific and dramatic signals
+  const extremes = getStatisticalExtremes(score, sport);
+  if(extremes.note) return extremes.note;
+
   const sp=(sport||'').toLowerCase();
   const sit=score.situation||{};
   const dn=(sit.shortDownDistanceText||sit.downDistanceText||'').toLowerCase();
@@ -10538,6 +10585,18 @@ function getSmoothedDrama(gameId, n = 3) {
 // getDramaTrend() calibrates strength for live games (rising = weaker BNI)
 function computeBroadcastNarrativeIndex(game) {
   if (!isNationalGame(game)) return null; // BNI only applies to national broadcasts
+
+  // #11a: suppress BNI when situation is genuinely exciting (not manufactured hype)
+  // Goalie pulled, bases loaded, 4th & short in final 2 min — real drama, not media push
+  const liveScore = typeof findESPNScore === 'function' ? findESPNScore(game) : null;
+  if(liveScore?.state === 'in') {
+    const sit = liveScore.situation || {};
+    if(sit.homeGoaliePulled || sit.awayGoaliePulled) return null;        // goalie pulled = real
+    const runners = [liveScore.onFirst, liveScore.onSecond, liveScore.onThird].filter(Boolean).length;
+    if(runners === 3) return null;                                         // bases loaded = real
+    if(runners >= 1 && liveScore.outs === 2 && (liveScore.period||0)>=7) return null; // late RISP
+  }
+
   const pgScore = preGameScore(game);
   const marquee  = isMarqueeBroadcast(game);
 
