@@ -405,8 +405,10 @@ flex-shrink:0;white-space:nowrap;
 /* ── Team logos (ESPN CDN + SportsDB) ── */
 .team-logo{
   width:22px;height:22px;object-fit:contain;flex-shrink:0;
-  border-radius:3px;background:transparent;
-  filter:drop-shadow(0 1px 2px rgba(0,0,0,.5));
+  border-radius:4px;
+  background:rgba(255,255,255,0.92);
+  padding:2px;
+  filter:drop-shadow(0 1px 2px rgba(0,0,0,.4));
   transition:transform .2s;
 }
 
@@ -864,21 +866,21 @@ flex-shrink:0;white-space:nowrap;
 /* ── Live scores from ESPN API ── */
 .score-wrap{margin-top:2px;min-width:0;max-width:100%;overflow:hidden;width:100%}
 .score-block{
-  display:flex;align-items:center;gap:5px;flex-wrap:wrap;
-  font-family:var(--ff-mono);font-size:.82rem;font-weight:700;
+  display:flex;align-items:center;gap:6px;flex-wrap:wrap;
+  font-family:var(--ff-mono);font-size:1.1rem;font-weight:800;
   min-width:0;
 }
 .score-home,.score-away{
-  color:var(--white);letter-spacing:-.01em;white-space:nowrap;
+  color:var(--white);letter-spacing:-.02em;white-space:nowrap;font-size:1.15rem;
 }
-.score-sep{color:var(--platinum);font-size:.7rem;font-weight:400;margin:0 1px}
+.score-sep{color:var(--platinum);font-size:.85rem;font-weight:400;margin:0 2px}
 .score-period{
-  font-family:var(--ff-cond);font-size:.6rem;letter-spacing:.08em;
-  text-transform:uppercase;color:var(--live);margin-left:2px;white-space:nowrap;
+  font-family:var(--ff-cond);font-size:.65rem;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--live);margin-left:3px;white-space:nowrap;
 }
 .score-final{
-  font-family:var(--ff-cond);font-size:.58rem;letter-spacing:.1em;
-  text-transform:uppercase;color:var(--platinum);margin-left:2px;white-space:nowrap;
+  font-family:var(--ff-cond);font-size:.62rem;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--platinum);margin-left:3px;white-space:nowrap;
 }
 /* Baseball situation display */
 .baseball-sit{
@@ -1545,7 +1547,8 @@ flex-shrink:0;white-space:nowrap;
   .card-accent{grid-row:1 / 4} /* span all 3 rows */
   .team-name{font-size:.88rem}
   .game-time{font-size:.75rem}
-  .score-block{font-size:.78rem;gap:5px;flex-wrap:nowrap}
+  .score-block{font-size:.95rem;gap:5px;flex-wrap:nowrap}
+  .score-home,.score-away{font-size:1rem}
   .baseball-sit{margin-top:2px}
   .out-dot{width:6px;height:6px}
   .diamond-wrap{width:18px;height:18px}
@@ -1594,11 +1597,13 @@ flex-shrink:0;white-space:nowrap;
   .mv-grid{grid-template-columns:repeat(2,1fr)}
   .betting-section,.media-section,.streaming-section{padding:0 1.25rem}
   .streaming-grid{grid-template-columns:repeat(2,1fr)}
-  .media-grid{grid-template-columns:repeat(2,1fr)}
-  .bet-grid{grid-template-columns:repeat(2,1fr)}
+  .media-grid{grid-template-columns:1fr}  /* single column up to 768px — phones too narrow for 2-col */
   .betting-grid{grid-template-columns:repeat(2,1fr)}
-  .score-block{font-size:.78rem}
+  .score-block{font-size:.95rem}
   .card-right{min-width:80px;max-width:150px}
+}
+@media(min-width:768px) and (max-width:900px){
+  .media-grid{grid-template-columns:repeat(2,1fr)}  /* 2-col only on wider tablets */
 }
 /* ── iPad landscape (>=768px, <=900px) — 2-col games ── */
 @media(min-width:768px) and (max-width:900px){
@@ -5088,12 +5093,6 @@ const MEDIA_WEEKDAY = [
     desc:"Pat McAfee and crew with sports talk, NFL news, and daily guest interviews. Live from ESPN HQ.",
     link:"https://www.espn.com/watch/"
   },
-    // MW37 Friday May 15 — rescheduled from May 17 (Villa's EUL Final May 20)
-    // Both clubs on 59pts — 4th/5th — CL qualification on the line — NBC + Peacock
-    {home:"Aston Villa",           away:"Liverpool",              league:"Premier League – Matchweek 37", start_time:"2026-05-15T19:00:00Z", confirmed:true, venue:"Villa Park, Birmingham",         streams:resolveBundle("EPL_NBC"),     localNote:"NBC (free) + Peacock"},
-    // FA Cup Final — Saturday May 16, 10am ET — Wembley Stadium
-    // Chelsea vs Manchester City — ESPN in US (cable/streaming, not free OTA)
-    {home:"Chelsea",              away:"Manchester City",      league:"FA Cup Final – 2025-26", start_time:"2026-05-16T14:00:00Z", confirmed:true, venue:"Wembley Stadium, London",  streams:resolveBundle("EPL_ESPN"), localNote:"ESPN"},
 ];
 
 // ── Weekend base template (Sat + Sun) ──────────────────────────────────────
@@ -5255,7 +5254,7 @@ function renderMedia(){
   };
   const grid = document.getElementById("media-grid");
   if(!grid) return;
-  grid.innerHTML = MEDIA_TODAY.map(m=>{
+  grid.innerHTML = MEDIA_TODAY.filter(m => m.show && m.network && m.time).map(m=>{
     const col = MEDIA_CHIP_COLORS[m.chip]||MEDIA_CHIP_COLORS.default;
     return `<div class="media-card">
       <div class="media-accent" style="background:${col}55"></div>
