@@ -4871,9 +4871,25 @@ function buildTodaySchedule(){
   //   RESULT (May 19): ECF G1 CLE @ NYK — result from last night
   //   TONIGHT: WCF G2 — SAS @ OKC — 8:30 PM ET — NBC/Peacock · Paycom Center
   //   SAS leads WCF 1-0 (G1: SAS 122 OKC 115 2OT — Wembanyama 41/24/3blk)
+  // ── NBA Finals shell (June 5 est.) ─────────────────────────────────
+  //   TEAMS TBD: WCF winner (SAS or OKC) vs ECF winner (NYK or CLE)
+  //   All games: NBC/Peacock. NBA_NBC chip confirmed for 2025-26 Finals.
+  //   UPDATE: replace placeholder names + venue once CF series end (~June 3)
+  //   G1 venue: home of Eastern Conference champion
+  //   Dates: G1 June 5 · G2 June 8 · G3 June 11 · G4 June 13
+  //          G5 June 15* · G6 June 18* · G7 June 20* (* = if necessary)
   const nbaGames=[
     {home:"New York Knicks",       away:"Cleveland Cavaliers",  league:"NBA Playoffs \u2013 East CF G1 \u00b7 Series 0-0",       start_time:"2026-05-20T00:00:00Z", confirmed:true, venue:"Madison Square Garden, New York NY",  streams:resolveBundle("NBA_ESPN"), seriesRecord:"0-0", matchupNote:"Knicks 8 days rest (swept PHI 4-0). Cavs won classic 7-game G7 vs DET. OG Anunoby (hamstring) says he'll be ready."},
     {home:"Oklahoma City Thunder", away:"San Antonio Spurs",    league:"NBA Playoffs \u2013 West CF G2 \u00b7 SAS leads 1-0",   start_time:"2026-05-21T00:30:00Z", confirmed:true, venue:"Paycom Center, Oklahoma City OK",       streams:resolveBundle("NBA_NBC"), seriesRecord:"SAS leads 1-0", matchupNote:"Wembanyama 41/24/3blk in 2OT road win G1. Fox (ankle) day-to-day for G2. Thunder first loss of playoffs."},
+    // ── NBA Finals 2026 — All games NBC/Peacock ─────────────────────
+    // UPDATE team names + venues once ECF/WCF conclude (~June 3)
+    {home:"TBD \u2014 Eastern Champion", away:"TBD \u2014 Western Champion", league:"NBA Finals 2026 \u2013 G1 \u00b7 Series 0-0",  start_time:"2026-06-06T00:30:00Z", confirmed:true, venue:"TBD \u2014 Home of Eastern Champion", streams:resolveBundle("NBA_NBC"), seriesRecord:"0-0", matchupNote:"NBA Finals 2026 on NBC/Peacock. Teams TBD \u2014 update once Conference Finals conclude."},
+    {home:"TBD \u2014 Eastern Champion", away:"TBD \u2014 Western Champion", league:"NBA Finals 2026 \u2013 G2 \u00b7 Series 0-0",  start_time:"2026-06-09T00:30:00Z", confirmed:true, venue:"TBD \u2014 Home of Eastern Champion", streams:resolveBundle("NBA_NBC"), seriesRecord:"0-0"},
+    {home:"TBD \u2014 Western Champion", away:"TBD \u2014 Eastern Champion", league:"NBA Finals 2026 \u2013 G3 \u00b7 Series 0-0",  start_time:"2026-06-12T00:30:00Z", confirmed:true, venue:"TBD \u2014 Home of Western Champion", streams:resolveBundle("NBA_NBC"), seriesRecord:"0-0"},
+    {home:"TBD \u2014 Western Champion", away:"TBD \u2014 Eastern Champion", league:"NBA Finals 2026 \u2013 G4 \u00b7 Series 0-0",  start_time:"2026-06-14T00:30:00Z", confirmed:true, venue:"TBD \u2014 Home of Western Champion", streams:resolveBundle("NBA_NBC"), seriesRecord:"0-0"},
+    {home:"TBD \u2014 Eastern Champion", away:"TBD \u2014 Western Champion", league:"NBA Finals 2026 \u2013 G5 \u00b7 Series 0-0",  start_time:"2026-06-16T00:30:00Z", confirmed:true, venue:"TBD \u2014 Home of Eastern Champion", streams:resolveBundle("NBA_NBC"), seriesRecord:"0-0"},
+    {home:"TBD \u2014 Western Champion", away:"TBD \u2014 Eastern Champion", league:"NBA Finals 2026 \u2013 G6 \u00b7 Series 0-0",  start_time:"2026-06-19T00:30:00Z", confirmed:true, venue:"TBD \u2014 Home of Western Champion", streams:resolveBundle("NBA_NBC"), seriesRecord:"0-0"},
+    {home:"TBD \u2014 Eastern Champion", away:"TBD \u2014 Western Champion", league:"NBA Finals 2026 \u2013 G7 \u00b7 Series 0-0",  start_time:"2026-06-21T00:30:00Z", confirmed:true, venue:"TBD \u2014 Home of Eastern Champion", streams:resolveBundle("NBA_NBC"), seriesRecord:"0-0"},
   ].filter(g=>isToday(g.start_time));
 
   // ── NHL Playoffs — Saturday May 16 2026 ──────────────────────────
@@ -5669,6 +5685,28 @@ const MEDIA_SPECIALS = [
       time:"8:30 PM ET",
       desc:"San Antonio Spurs vs Oklahoma City Thunder — Western Conference Finals. SAS leads series 1-0 after Wembanyama's 41-pt 2OT road win (SAS 122, OKC 115). G2 Wednesday May 20. All games on NBC/Peacock. G1-G2 at Paycom Center (OKC); G3-G4 at Frost Bank Center (SAS).",
       journalNote:"WCF is on NBC (free OTA) and Peacock (streaming) — not ESPN. De'Aaron Fox (ankle) day-to-day for G2.",
+      link:"https://www.nbc.com/nba"
+    }
+  },
+  {
+    // NBA Finals 2026 preview window (June 2–5 pre-series)
+    startDate:"2026-06-02", endDate:"2026-06-04",
+    card:{
+      show:"NBA Finals 2026 — Preview",network:"NBC / Peacock",chip:"NBC",
+      time:"G1 est. June 5, 8:30 PM ET",
+      desc:"The 2026 NBA Finals tip off on NBC/Peacock. Teams TBD — update when Conference Finals conclude. All Finals games air on NBC (free OTA) and Peacock (streaming). NBC's first NBA Finals since 2002. G1-G2 at Eastern champion's home; G3-G4 at Western champion's home.",
+      journalNote:"NBA Finals on NBC for first time since 2002. All games free on NBC OTA + Peacock stream. No ESPN/ABC involvement in the Finals.",
+      link:"https://www.nbc.com/nba"
+    }
+  },
+  {
+    // NBA Finals 2026 — full series run (June 5–21 est.)
+    startDate:"2026-06-05", endDate:"2026-06-21",
+    card:{
+      show:"NBA Finals 2026",network:"NBC / Peacock",chip:"NBC",
+      time:"8:30 PM ET \u00b7 G1 June 5 (est.)",
+      desc:"NBA Finals 2026 on NBC/Peacock. All games free over-the-air on NBC and streaming on Peacock. Teams TBD — update once ECF and WCF conclude. G1-G2 at Eastern champion's arena; G3-G4 at Western champion's arena; G5-G7 follow home-away pattern.",
+      journalNote:"NBA Finals back on NBC for first time since 2002. NBC/Peacock hold all Finals rights 2025-26. UPDATE team names in nbaGames entries once CFs end.",
       link:"https://www.nbc.com/nba"
     }
   },
