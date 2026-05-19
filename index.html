@@ -2425,9 +2425,9 @@ const BUNDLES = {
   NBA_ESPN:     ["espn","espnplus","fubo","youtubetv","sling","hulu","directv"],  // NBA games on ESPN cable (select regular season + some playoff games)
   NBA_ABC:      ["abc","espn","espnplus","fubo","youtubetv","sling","hulu","directv"],  // ABC/ESPN Saturday nights and NBA Finals
   // NHL
-  NHL_ESPN:     ["espn","espnplus","max","fubo","sling","youtubetv","directv"],  // ESPN + ESPN2 games; stream via ESPN Unlimited or Max
-  NHL_TNT:      ["tnt","trutv","max","sling","youtubetv","fubo","directv"],  // TNT/truTV simulcast + Max stream
-  NHL_ABC:      ["abc","espn","max","fubo"],
+  NHL_ESPN:     ["espn","espnplus","fubo","sling","youtubetv","directv"],      // ESPN games; stream via ESPN app or ESPN+. NOT Max (Max = WBD/TNT only)
+  NHL_TNT:      ["tnt","trutv","max","sling","youtubetv","fubo","directv"],  // TNT/truTV simulcast + Max stream (WBD properties)
+  NHL_ABC:      ["abc","espn","fubo"],
   // ── MLB 2026 verified broadcast windows ──────────────────────────────────
   // KEY: Truly EXCLUSIVE windows (no local RSN, no MLB.TV) vs NON-EXCLUSIVE (locals also carry).
   //   EXCLUSIVE: MLB_APPLE, MLB_LEADOFF, MLB_PEACOCK, MLB_PEACOCK_SNB, MLB_PEACOCK_GOTD, MLB_NETFLIX
@@ -8616,12 +8616,18 @@ function renderESPNScores(){
       }
 
       // Wrap everything in .score-wrap so we can replace it atomically on update
+      // Soccer: European convention = home score left, away score right (Home 2–1 Away)
+      // All other sports: American convention = away score left, home score right (Away 2–1 Home)
+      const leftScore  = isSoccer ? displayHomeScore : displayAwayScore;
+      const rightScore = isSoccer ? displayAwayScore : displayHomeScore;
+      const leftLeads  = leftScore  > rightScore;
+      const rightLeads = rightScore > leftScore;
       const scoreHTML =
         `<div class="score-wrap">` +
           `<div class="score-block">` +
-          `<span class="score-away${awayLeads?" score-leader":""}">${displayAwayScore}</span>` +
+          `<span class="${isSoccer?"score-home":"score-away"}${leftLeads?" score-leader":""}">${leftScore}</span>` +
           `<span class="score-sep">–</span>` +
-          `<span class="score-home${homeLeads?" score-leader":""}">${displayHomeScore}</span>` +
+          `<span class="${isSoccer?"score-away":"score-home"}${rightLeads?" score-leader":""}">${rightScore}</span>` +
           periodLabel +
           `</div>` +
           sitHTML +
