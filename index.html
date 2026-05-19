@@ -579,31 +579,40 @@ flex-shrink:0;white-space:nowrap;
 
 /* ── One to Watch Banner ────────────────────────────────────────────── */
 #otw-banner{
-  display:none;margin:0 auto .5rem;max-width:1400px;padding:0 2rem;
+  margin:0 auto .35rem;max-width:1400px;padding:0 2rem;
+  position:sticky;top:106px;z-index:24;min-height:44px;
 }
+@media(max-width:600px){#otw-banner{top:130px}}
 .otw-inner{
   background:var(--card);border:1px solid var(--edge);
   border-left:3px solid var(--violet,#8b5cf6);
-  border-radius:10px;padding:.65rem 1rem;
+  border-radius:10px;padding:.55rem 1rem;min-height:36px;
   display:flex;align-items:center;gap:.75rem;
-  cursor:pointer;transition:background .18s,border-color .18s;
+  cursor:pointer;transition:background .18s,border-color .18s,opacity .25s;
 }
 .otw-inner:hover{background:var(--card2);border-color:rgba(139,92,246,.5)}
 .otw-inner.otw-pregame{border-left-color:var(--gold2,#c9a84c)}
 .otw-inner.otw-pregame:hover{border-color:rgba(201,168,76,.5)}
+.otw-inner.otw-live{border-left-color:var(--teal,#2dd4bf)}
+.otw-inner.otw-live:hover{border-color:rgba(45,212,191,.5)}
+.otw-inner.otw-quiet{opacity:.28;border-left-color:transparent;cursor:default;pointer-events:none}
 .otw-pulse{
   width:8px;height:8px;border-radius:50%;background:var(--live);flex-shrink:0;
   animation:otw-pulse 1.4s ease-in-out infinite;
 }
 .otw-pulse.otw-pulse-pre{background:var(--gold2,#c9a84c);animation:none}
+.otw-pulse.otw-pulse-live{background:var(--teal,#2dd4bf);animation:otw-pulse 2.5s ease-in-out infinite}
 @keyframes otw-pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.45;transform:scale(1.4)}}
-.otw-label{font-size:.58rem;font-weight:800;letter-spacing:.12em;color:var(--violet,#8b5cf6);text-transform:uppercase;flex-shrink:0}
+.otw-label{font-size:.56rem;font-weight:800;letter-spacing:.12em;color:var(--violet,#8b5cf6);text-transform:uppercase;flex-shrink:0}
 .otw-inner.otw-pregame .otw-label{color:var(--gold2,#c9a84c)}
+.otw-inner.otw-live    .otw-label{color:var(--teal,#2dd4bf)}
+.otw-inner.otw-quiet   .otw-label{color:var(--smoke)}
 .otw-matchup{font-size:.8rem;font-weight:700;color:var(--white);flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.otw-why{font-size:.63rem;color:var(--muted);flex-shrink:0;white-space:nowrap;overflow:hidden;max-width:220px;text-overflow:ellipsis}
-.otw-momentum{font-size:.58rem;font-weight:700;letter-spacing:.06em;flex-shrink:0;margin-right:-.15rem}
+.otw-inner.otw-quiet .otw-matchup{font-weight:400;color:var(--smoke);font-size:.75rem}
+.otw-why{font-size:.62rem;color:var(--muted);flex-shrink:0;white-space:nowrap;overflow:hidden;max-width:200px;text-overflow:ellipsis}
+.otw-countdown{font-size:.65rem;font-weight:700;color:var(--gold2,#c9a84c);font-variant-numeric:tabular-nums;flex-shrink:0}
+.otw-momentum{font-size:.58rem;font-weight:700;letter-spacing:.06em;flex-shrink:0;margin-right:-.1rem}
 .otw-momentum.up{color:var(--live)}
-.otw-momentum.down{color:var(--smoke)}
 .otw-drama{
   font-size:.6rem;font-weight:800;letter-spacing:.07em;text-transform:uppercase;
   padding:.18rem .42rem;border-radius:4px;flex-shrink:0;
@@ -612,7 +621,7 @@ flex-shrink:0;white-space:nowrap;
 .otw-drama.d-hot{background:rgba(232,160,32,.22);color:var(--soon)}
 .otw-drama.d-warm{background:rgba(0,212,170,.16);color:var(--teal)}
 .otw-drama.d-pregame{background:rgba(201,168,76,.18);color:var(--gold2,#c9a84c)}
-.otw-close{background:none;border:none;color:var(--smoke);cursor:pointer;font-size:.85rem;padding:.1rem .2rem;flex-shrink:0;opacity:.6;transition:opacity .15s}
+.otw-close{background:none;border:none;color:var(--smoke);cursor:pointer;font-size:.8rem;padding:.1rem .2rem;flex-shrink:0;opacity:.55;transition:opacity .15s}
 .otw-close:hover{color:var(--white);opacity:1}
 
 /* ── Drama Score Badge ──────────────────────────────────────────────── */
@@ -1885,7 +1894,7 @@ flex-shrink:0;white-space:nowrap;
 <!-- ── Offline Banner ────────────────────────────────────────── -->
 <div id="offline-banner" role="alert">📡 You're offline — showing cached schedule</div>
 <!-- ── One to Watch ──────────────────────────────────────────── -->
-<div id="otw-banner" aria-live="polite"></div>
+<div id="otw-banner" aria-live="polite"><div class="otw-inner otw-quiet" aria-hidden="true"><span class="otw-label">Loading</span><span class="otw-matchup">Fetching today\u2019s schedule\u2026</span></div></div>
 <!-- ── Watch Window ─────────────────────────────────────────── -->
 <div id="watch-window" style="display:none" aria-live="polite"></div>
 <!-- ── Perfect Halftime Switch ──────────────────────────────── -->
@@ -11637,31 +11646,25 @@ function detectAndRenderDoubleFeature() {
 // ═══════════════════════════════════════════════════════════════════════════
 // FEATURE: ONE TO WATCH — Highest-drama live game banner
 // ═══════════════════════════════════════════════════════════════════════════
-// ── One to Watch banner ───────────────────────────────────────────────────────
-// Tier labels — human-readable, not a raw number
+// ── One to Watch — omnipresent five-state banner ─────────────────────────────
+// State priority: FIRE (≥50 live) → LIVE (<50 live) → SOON (<2hr) → TONIGHT → QUIET
+// Banner always renders — never display:none. State drives content + accent colour.
+// Dismiss is per-state-key: dismissing one game doesn't kill the banner.
+
 const OTW_TIER_LABELS = { fire:'FIRE GAME', hot:'MUST WATCH', warm:'COMPELLING' };
 
-// Contextual why-line — surfaces the specific reason for high drama
 function buildOTWWhyLine(g, ed, sport, isPreGame){
   if(isPreGame){
     const parts=[];
-    if(g.start_time){
-      try{const t=new Date(g.start_time).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',timeZone:'America/New_York',hour12:true});parts.push(t+' ET');}catch(e){}
-    }
+    if(g.start_time){try{const t=new Date(g.start_time).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',timeZone:'America/New_York',hour12:true});parts.push(t+' ET');}catch(e){}}
     const net=g.streams?.[0]?.label;if(net) parts.push(net);
     if(g.seriesRecord&&g.seriesRecord!=='0-0') parts.push(g.seriesRecord);
     if(g.matchupNote) parts.push(g.matchupNote.split('.')[0].slice(0,45));
     return parts.slice(0,3).join(' \u00b7 ');
   }
   const parts=[];
-  // Period label
-  if(ed.period){
-    const p=ed.period;
-    const pl=sport.includes('Basketball')?`Q${p}`:sport.includes('Hockey')?`P${p}`:sport.includes('Football')?`Q${p}`:`T${p}`;
-    parts.push(pl);
-  }
+  if(ed.period){const p=ed.period;const pl=sport.includes('Basketball')?`Q${p}`:sport.includes('Hockey')?`P${p}`:sport.includes('Football')?`Q${p}`:`T${p}`;parts.push(pl);}
   if(ed.clock) parts.push(ed.clock);
-  // Score gap — what's actually at stake
   const hS=parseInt(ed.homeScore)||0,aS=parseInt(ed.awayScore)||0,gap=Math.abs(hS-aS);
   if(gap===0) parts.push('tied');
   else if(gap===1) parts.push('1 back');
@@ -11670,122 +11673,155 @@ function buildOTWWhyLine(g, ed, sport, isPreGame){
   return parts.slice(0,4).join(' \u00b7 ');
 }
 
-// Momentum: rising drama (>10pts in last 2 records) = "↑ heating up"
 function getOTWMomentum(gameId){
-  try{
-    const raw=localStorage.getItem('field_drama_history_'+gameId);
-    if(!raw) return null;
-    const hist=JSON.parse(raw);
-    if(!Array.isArray(hist)||hist.length<2) return null;
-    const last=hist[hist.length-1]?.s||0, prev=hist[hist.length-2]?.s||0;
-    if(last-prev>=10) return 'up';
-    if(prev-last>=10) return 'down';
-    return null;
-  }catch(e){return null;}
+  try{const raw=localStorage.getItem('field_drama_history_'+gameId);if(!raw) return null;const hist=JSON.parse(raw);if(!Array.isArray(hist)||hist.length<2) return null;const last=hist[hist.length-1]?.s||0,prev=hist[hist.length-2]?.s||0;if(last-prev>=10) return 'up';return null;}catch(e){return null;}
 }
 
-// Per-game dismiss — banner re-appears if a different (better) game goes live
-let _otwDismissedId = null;
+function buildOTWCountdown(startTime){
+  const ms=new Date(startTime)-Date.now();
+  if(ms<=0) return 'starting';
+  const m=Math.floor(ms/60000);
+  if(m<60) return `in ${m}m`;
+  return `in ${Math.floor(m/60)}h ${m%60}m`;
+}
 
-function renderOneToWatch(){
-  const banner = document.getElementById('otw-banner');
-  if(!banner) return;
+// Dismiss keys: game._id for live/soon, 'tonight' for tonight state
+let _otwDismissedId=null;
+let _otwCountdownTimer=null;
 
-  // ── Live game search ────────────────────────────────────────────────────
-  let best = null, bestScore = 0;
-  (allData?.sports||[]).forEach(sec => {
-    (sec.games||[]).forEach(g => {
+function _otwFindLiveGame(minScore){
+  let best=null,bestScore=0;
+  (allData?.sports||[]).forEach(sec=>{
+    (sec.games||[]).forEach(g=>{
       if(!g._id) return;
-      const eKey = Object.keys(espnScores).find(k => {
-        const ed = espnScores[k];
-        if(ed.state !== 'in') return false;
-        const hN = (g.home||'').toLowerCase().replace(/[^a-z]/g,'');
-        const eH = (ed.homeName||'').toLowerCase().replace(/[^a-z]/g,'');
-        // Exact suffix match OR last-word match
-        const hLast = hN.split(/\s+/).slice(-1)[0];
-        const eLast = eH.split(/\s+/).slice(-1)[0];
-        return hLast && eLast && (hLast===eLast || eH.endsWith(hN) || hN.endsWith(eLast));
+      const eKey=Object.keys(espnScores).find(k=>{
+        const ed=espnScores[k];
+        if(ed.state!=='in') return false;
+        const hN=(g.home||'').toLowerCase().replace(/[^a-z]/g,'');
+        const eH=(ed.homeName||'').toLowerCase().replace(/[^a-z]/g,'');
+        const hL=hN.split(/\s+/).slice(-1)[0],eL=eH.split(/\s+/).slice(-1)[0];
+        return hL&&eL&&(hL===eL||eH.endsWith(hN)||hN.endsWith(eL));
       });
       if(!eKey) return;
-      const ed = espnScores[eKey];
-      const s = dramaScoreLive(ed, sec.sport);
-      if(s > bestScore){ bestScore = s; best = {g, ed, sport: sec.sport, score: s, eKey}; }
+      const ed=espnScores[eKey];
+      const s=dramaScoreLive(ed,sec.sport);
+      if(s>=minScore&&s>bestScore){bestScore=s;best={g,ed,sport:sec.sport,score:s};}
     });
   });
+  return best;
+}
 
-  // ── If live game is dismissed, still check if a better one came along ──
-  if(best && best.g._id === _otwDismissedId && bestScore > 0){
-    banner.style.display = 'none'; return;
-  }
+function renderOneToWatch(){
+  const banner=document.getElementById('otw-banner');
+  if(!banner) return;
+  if(_otwCountdownTimer){clearInterval(_otwCountdownTimer);_otwCountdownTimer=null;}
+  banner.style.display='block'; // always visible
 
-  // ── Pre-game fallback: no qualifying live game → show top upcoming game ─
-  if(!best || bestScore < 50){
-    if(_otwDismissedId === 'pregame'){ banner.style.display='none'; return; }
-    let topPre = null, topPreScore = 0;
-    (allData?.sports||[]).forEach(sec => {
-      (sec.games||[]).forEach(g => {
-        if(!g.home||!g.away) return;
-        const s = preGameScore(g);
-        if(s > topPreScore){ topPreScore=s; topPre={g,sport:sec.sport,score:s}; }
-      });
-    });
-    if(!topPre || topPreScore < 60){ banner.style.display='none'; return; }
-    const {g, sport} = topPre;
-    const why = buildOTWWhyLine(g, {}, sport, true);
-    banner.style.display = 'block';
-    banner.innerHTML = `<div class="otw-inner otw-pregame" id="otw-inner" role="button" tabindex="0" aria-label="Jump to top game">
-      <span class="otw-pulse otw-pulse-pre"></span>
-      <span class="otw-label">Tonight</span>
-      <span class="otw-matchup">${g.away||''} @ ${g.home||''}</span>
-      ${why?`<span class="otw-why">${why}</span>`:''}
-      <span class="otw-drama d-pregame">TOP PICK</span>
-      <button class="otw-close" id="otw-close" aria-label="Dismiss">\u2715</button>
-    </div>`;
-    document.getElementById('otw-close')?.addEventListener('click', e=>{
-      e.stopPropagation(); _otwDismissedId='pregame'; banner.style.display='none';
-    });
-    document.getElementById('otw-inner')?.addEventListener('click', e=>{
+  const dismissBtn=()=>`<button class="otw-close" id="otw-close" aria-label="Dismiss">\u2715</button>`;
+  const wire=(dismissId,scrollGame)=>{
+    document.getElementById('otw-close')?.addEventListener('click',e=>{e.stopPropagation();_otwDismissedId=dismissId;renderOneToWatch();});
+    document.getElementById('otw-inner')?.addEventListener('click',e=>{
       if(e.target.id==='otw-close') return;
-      const h=(g.home||'').replace(/[^a-z]/gi,'').toLowerCase();
+      if(!scrollGame) return;
+      const h=(scrollGame.home||'').replace(/[^a-z]/gi,'').toLowerCase();
       const card=[...document.querySelectorAll('.game-card')].find(c=>(c.dataset.home||'').replace(/[^a-z]/gi,'').toLowerCase()===h);
       if(card) card.scrollIntoView({behavior:'smooth',block:'center'});
     });
-    return;
+  };
+
+  // ── STATE 1: FIRE — high-drama live game ──────────────────────────────────
+  const fire=_otwFindLiveGame(50);
+  if(fire&&fire.g._id!==_otwDismissedId){
+    const {g,ed,sport,score}=fire;
+    const tier=dramaTier(score)||'warm';
+    const tierBadge=`${OTW_TIER_LABELS[tier]||tier.toUpperCase()} \u00b7 ${Math.round(score)}`;
+    const scoreStr=`${ed.homeScore||0}\u2013${ed.awayScore||0}`;
+    const why=buildOTWWhyLine(g,ed,sport,false);
+    const momentum=getOTWMomentum(g._id);
+    banner.innerHTML=`<div class="otw-inner" id="otw-inner" role="button" tabindex="0">
+      <span class="otw-pulse"></span>
+      <span class="otw-label">One to Watch</span>
+      <span class="otw-matchup">${g.away||''} @ ${g.home||''} \u00a0${scoreStr}</span>
+      ${why?`<span class="otw-why">${why}</span>`:''}
+      ${momentum==='up'?'<span class="otw-momentum up">\u2191</span>':''}
+      <span class="otw-drama d-${tier}">${tierBadge}</span>
+      ${dismissBtn()}
+    </div>`;
+    wire(g._id,g); return;
   }
 
-  // ── Live game render ────────────────────────────────────────────────────
-  const tier = dramaTier(bestScore);
-  if(!tier){ banner.style.display='none'; return; }
-  const {g, ed, sport, score} = best;
-  const scoreStr = `${ed.homeScore||0}\u2013${ed.awayScore||0}`;
-  const why = buildOTWWhyLine(g, ed, sport, false);
-  const momentum = getOTWMomentum(g._id);
-  const momentumHTML = momentum==='up' ? `<span class="otw-momentum up">\u2191</span>` : '';
-  const tierLabel = OTW_TIER_LABELS[tier] || tier.toUpperCase();
-  const tierBadge = `${tierLabel} \u00b7 ${Math.round(score)}`;
+  // ── STATE 2: LIVE — any live game, low drama ──────────────────────────────
+  const live=_otwFindLiveGame(0);
+  if(live&&live.g._id!==_otwDismissedId){
+    const {g,ed,sport}=live;
+    const scoreStr=`${ed.homeScore||0}\u2013${ed.awayScore||0}`;
+    const why=buildOTWWhyLine(g,ed,sport,false);
+    banner.innerHTML=`<div class="otw-inner otw-live" id="otw-inner" role="button" tabindex="0">
+      <span class="otw-pulse otw-pulse-live"></span>
+      <span class="otw-label">Live</span>
+      <span class="otw-matchup">${g.away||''} @ ${g.home||''} \u00a0${scoreStr}</span>
+      ${why?`<span class="otw-why">${why}</span>`:''}
+      ${dismissBtn()}
+    </div>`;
+    wire(g._id,g); return;
+  }
 
-  banner.style.display = 'block';
-  banner.innerHTML = `<div class="otw-inner" id="otw-inner" role="button" tabindex="0" aria-label="Jump to live game">
-    <span class="otw-pulse"></span>
-    <span class="otw-label">One to Watch</span>
-    <span class="otw-matchup">${g.away||''} @ ${g.home||''} &nbsp;${scoreStr}</span>
-    ${why?`<span class="otw-why">${why}</span>`:''}
-    ${momentumHTML}
-    <span class="otw-drama d-${tier}">${tierBadge}</span>
-    <button class="otw-close" id="otw-close" aria-label="Dismiss">\u2715</button>
+  // ── STATE 3: SOON — game starting in <2 hours ─────────────────────────────
+  let soon=null;
+  const now=Date.now();
+  (allData?.sports||[]).forEach(sec=>{(sec.games||[]).forEach(g=>{
+    if(!g.start_time||!g.home||!g.away) return;
+    const ms=new Date(g.start_time)-now;
+    if(ms>0&&ms<7200000&&(!soon||(new Date(g.start_time)-now)<(new Date(soon.g.start_time)-now)))
+      soon={g,sport:sec.sport};
+  });});
+  if(soon&&_otwDismissedId!=='soon_'+soon.g._id){
+    const {g}=soon;
+    const net=g.streams?.[0]?.label||'';
+    const cd=buildOTWCountdown(g.start_time);
+    const startRender=()=>{
+      const el=document.getElementById('otw-countdown');
+      if(el) el.textContent=buildOTWCountdown(g.start_time);
+    };
+    banner.innerHTML=`<div class="otw-inner otw-pregame" id="otw-inner" role="button" tabindex="0">
+      <span class="otw-pulse otw-pulse-pre"></span>
+      <span class="otw-label">Soon</span>
+      <span class="otw-matchup">${g.away||''} @ ${g.home||''}</span>
+      <span class="otw-countdown" id="otw-countdown">${cd}</span>
+      ${net?`<span class="otw-drama d-pregame">${net}</span>`:''}
+      ${dismissBtn()}
+    </div>`;
+    _otwCountdownTimer=setInterval(startRender,30000);
+    wire('soon_'+g._id,g); return;
+  }
+
+  // ── STATE 4: TONIGHT — best upcoming game today ───────────────────────────
+  if(_otwDismissedId!=='tonight'){
+    let top=null,topS=0;
+    (allData?.sports||[]).forEach(sec=>{(sec.games||[]).forEach(g=>{
+      if(!g.home||!g.away) return;
+      const s=preGameScore(g);if(s>topS){topS=s;top={g,sport:sec.sport,score:s};}
+    });});
+    if(top&&topS>=55){
+      const {g}=top;
+      const why=buildOTWWhyLine(g,{},top.sport,true);
+      banner.innerHTML=`<div class="otw-inner otw-pregame" id="otw-inner" role="button" tabindex="0">
+        <span class="otw-pulse otw-pulse-pre"></span>
+        <span class="otw-label">Tonight</span>
+        <span class="otw-matchup">${g.away||''} @ ${g.home||''}</span>
+        ${why?`<span class="otw-why">${why}</span>`:''}
+        <span class="otw-drama d-pregame">TOP PICK</span>
+        ${dismissBtn()}
+      </div>`;
+      wire('tonight',g); return;
+    }
+  }
+
+  // ── STATE 5: QUIET — nothing notable ─────────────────────────────────────
+  banner.innerHTML=`<div class="otw-inner otw-quiet" aria-hidden="true">
+    <span class="otw-label">Quiet</span>
+    <span class="otw-matchup">No live games right now</span>
   </div>`;
-
-  document.getElementById('otw-close')?.addEventListener('click', e=>{
-    e.stopPropagation();
-    _otwDismissedId = g._id; // dismiss this specific game only
-    banner.style.display = 'none';
-  });
-  document.getElementById('otw-inner')?.addEventListener('click', e=>{
-    if(e.target.id==='otw-close') return;
-    const h=(g.home||'').replace(/[^a-z]/gi,'').toLowerCase();
-    const card=[...document.querySelectorAll('.game-card')].find(c=>(c.dataset.home||'').replace(/[^a-z]/gi,'').toLowerCase()===h);
-    if(card) card.scrollIntoView({behavior:'smooth',block:'center'});
-  });
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
