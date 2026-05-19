@@ -5693,13 +5693,20 @@ async function renderBetting(){
   }
 
   // Match every scheduled game to its odds entry
+  // Priority: _oddsCache (in-memory) → localStorage sticky (pre-game lines saved before game started)
   const cards = [];
   (allData?.sports||[]).forEach(sec => {
     const sportKey = ODDS_SPORT_MAP[sec.sport];
     if(!sportKey) return;
-    const cacheKey = Object.keys(_oddsCache).find(k => k.startsWith(sportKey));
-    if(!cacheKey) return;
-    const oddsData = _oddsCache[cacheKey];
+    const cacheKey = `${sportKey}_${TODAY_ISO}`;
+    let oddsData = _oddsCache[cacheKey];
+    if(!oddsData) {
+      try {
+        const lsRaw = localStorage.getItem(`field_odds_${cacheKey}`);
+        if(lsRaw) oddsData = JSON.parse(lsRaw);
+      } catch(e) {}
+    }
+    if(!oddsData) return;
     (sec.games||[]).forEach(g => {
       if(!g.home || !g.away) return;
       const odds = getGameOdds(oddsData, g.home, g.away);
@@ -8255,6 +8262,14 @@ async function fetchOddsForSport(sport, markets = 'h2h,spreads,totals') {
   if (!sportKey) return null;
   const cacheKey = `${sportKey}_${TODAY_ISO}`;
   if (_oddsCache[cacheKey]) return _oddsCache[cacheKey];
+  // Try localStorage sticky cache first — pre-game odds saved before game started
+  try {
+    const lsRaw = localStorage.getItem(`field_odds_${cacheKey}`);
+    if (lsRaw) {
+      const lsData = JSON.parse(lsRaw);
+      if (lsData?.length) { _oddsCache[cacheKey] = lsData; return lsData; }
+    }
+  } catch(e) {}
   try {
     const qs = `?regions=us&markets=${markets}&oddsFormat=american&dateFormat=iso`;
     const r  = await fetch(`${ODDS_RELAY_BASE}/v4/sports/${sportKey}/odds${qs}`,
@@ -8262,6 +8277,8 @@ async function fetchOddsForSport(sport, markets = 'h2h,spreads,totals') {
     if (!r.ok) { if (FIELD_DEBUG) console.warn('[ODDS] relay returned', r.status); return null; }
     const data = await r.json();
     _oddsCache[cacheKey] = data;
+    // Persist to localStorage — survives page reload and game-start cutoff
+    try { localStorage.setItem(`field_odds_${cacheKey}`, JSON.stringify(data)); } catch(e) {}
     if (FIELD_DEBUG) console.log(`[ODDS] ${sportKey}: ${data.length} games, quota remaining: ${r.headers.get('x-requests-remaining') ?? '?'}`);
     return data;
   } catch(e) {
@@ -8822,6 +8839,12 @@ async function fetchSchedule(){
     }
   }).catch(()=>{ /* supplemental optional — schedule already rendered */ });
   startOddsPolling();
+  // Pre-fetch odds at page load so betting section has data even after games start
+  // The Odds API clears pre-game lines once a game goes live — this captures them early
+  setTimeout(() => {
+    const sportsToFetch = [...new Set((allData?.sports||[]).map(s=>s.sport).filter(s=>ODDS_SPORT_MAP[s]))];
+    sportsToFetch.forEach(s => fetchOddsForSport(s).catch(()=>{}));
+  }, 800);
   fetchESPNScores(); // Start live score polling
   relayHealthCheck().catch(()=>{}); // RELAY health check — enables parallel NBA validation
   fetchMLBFixtures();    // Fill
