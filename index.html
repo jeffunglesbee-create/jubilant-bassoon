@@ -2056,6 +2056,8 @@ const FIELD_FEATURES = {
   // BNI + Watch Window Why
   'bni':                    '2026-05-18',
   'watch-window-why':       '2026-05-18',
+  // Game Notes Layer (Item 38) — P1 curation → P2 MLB/NHL editorial → P3 structured → P4 RSS
+  'game-notes-layer':       '2026-05-20',
   // Journalism resilience
   'compound-editorial-call':'2026-05-18',
   'journalism-resilience':  '2026-05-18',
@@ -10584,6 +10586,124 @@ function buildGameStandingsContext(game) {
   return parts.length ? 'Standings: ' + parts.join(' · ') : '';
 }
 
+// ── Game Notes Layer (Item 38) ────────────────────────────────────────────────
+// Priority stack: P1 manual → P2 official league editorial → P3 structured → P4 RSS
+// Replaces ESPN notes dependency entirely. All sources are official, free, CORS-open.
+// P1: game.matchupNote / cdwNotes (daily update curation) — return immediately, zero API
+// P2A: MLB Stats API game content (milestone > IL transaction > headline)
+// P2B: NHL relay landing (gameInfo.gameNight.matchupEditorial.title)
+// P3: structured assembly from _relayStandingsCache + _oddsCache + seriesRecord — zero calls
+// P4: official league RSS (nba/nhl/mlb/nfl first-party feeds — legally clean)
+
+// P3: assemble note from data FIELD already holds — zero API calls
+function assembleNoteFromContext(game){
+  const parts=[];
+  const sport=game._section||game._sport||'';
+  if(game.seriesRecord) parts.push(game.seriesRecord);
+  // Odds tightness signal
+  try{
+    const sportKey=typeof ODDS_SPORT_MAP!=='undefined'?ODDS_SPORT_MAP[sport]:null;
+    if(sportKey&&typeof _oddsCache!=='undefined'){
+      const ok=Object.keys(_oddsCache||{}).find(k=>k.startsWith(sportKey));
+      if(ok){
+        const o=getGameOdds(_oddsCache[ok],game.home,game.away);
+        if(o&&o.moneylineGap!=null&&o.moneylineGap<30)
+          parts.push(`Market: near even-money (${o.homeML}/${o.awayML})`);
+      }
+    }
+  }catch(e){}
+  return parts.length?parts.join(' \u00b7 '):null;
+}
+
+// P2A: MLB editorial + IL transactions
+async function fetchMLBGameNotes(gamePk,game){
+  if(!gamePk) return null;
+  try{
+    const [cR,tR]=await Promise.allSettled([
+      fetch(`${MLB_STATS_BASE}/game/${gamePk}/content`,{signal:AbortSignal.timeout(4000)}),
+      fetch(`${MLB_STATS_BASE}/transactions?sportId=1&date=${TODAY_ISO}`,{signal:AbortSignal.timeout(4000)}),
+    ]);
+    const content=cR.status==='fulfilled'&&cR.value.ok?await cR.value.json():null;
+    const milestone=content?.media?.milestones?.items?.[0]?.description;
+    if(milestone) return milestone.slice(0,150);
+    if(tR.status==='fulfilled'&&tR.value.ok){
+      const td=await tR.value.json();
+      const hn=game?.home?.split(' ').pop()||'';
+      const an=game?.away?.split(' ').pop()||'';
+      const tx=(td.transactions||[]).find(t=>
+        t.typeCode==='DL'&&
+        (t.team?.name?.includes(hn)||t.team?.name?.includes(an))
+      );
+      if(tx) return `${tx.player?.fullName||'Player'} placed on IL (${tx.description||'injury'})`;
+    }
+    const headline=content?.editorial?.preview?.articles?.home?.headline;
+    return headline?headline.slice(0,150):null;
+  }catch(e){return null;}
+}
+
+// P2B: NHL relay landing
+async function fetchNHLGameNotes(gameId){
+  if(!gameId) return null;
+  try{
+    const r=await fetch(`${NHL_RELAY_BASE}/v1/gamecenter/${gameId}/landing`,{signal:AbortSignal.timeout(4000)});
+    if(!r.ok) return null;
+    const d=await r.json();
+    return (d.gameInfo?.gameNight?.matchupEditorial?.title||'').slice(0,150)||null;
+  }catch(e){return null;}
+}
+
+// P4: official first-party league RSS (legally clean — no Google News, no ESPN)
+const LEAGUE_RSS={
+  'Basketball':'https://www.nba.com/feeds/rss/nba_articles.rss',
+  'Hockey':    'https://www.nhl.com/news/rss.xml',
+  'Baseball':  'https://www.mlb.com/feeds/news/rss.xml',
+  'Football':  'https://www.nfl.com/feeds/rss/news.rss',
+};
+async function fetchLeagueRSS(sport,home,away){
+  const feedUrl=Object.entries(LEAGUE_RSS).find(([k])=>sport.includes(k))?.[1];
+  if(!feedUrl) return null;
+  try{
+    const r=await fetch(feedUrl,{signal:AbortSignal.timeout(4000)});
+    if(!r.ok) return null;
+    const doc=new DOMParser().parseFromString(await r.text(),'text/xml');
+    const cutoff=Date.now()-86400000;
+    const h=(home||'').split(' ').pop().toLowerCase();
+    const a=(away||'').split(' ').pop().toLowerCase();
+    for(const item of doc.querySelectorAll('item')){
+      const title=item.querySelector('title')?.textContent||'';
+      const pub=new Date(item.querySelector('pubDate')?.textContent||0).getTime();
+      if(pub<cutoff) continue;
+      if(title.toLowerCase().includes(h)||title.toLowerCase().includes(a))
+        return title.slice(0,150);
+    }
+    return null;
+  }catch(e){return null;}
+}
+
+// Master dispatcher — P1→P2→P3→P4
+async function fetchGameNotes(game){
+  const sport=game._section||game._sport||'';
+  // P1: manual curation — return immediately, no API
+  if(game.matchupNote) return game.matchupNote;
+  // Cache check
+  const cKey='field_game_notes_'+(game._id||`${game.home}_${game.away}`);
+  try{const cached=localStorage.getItem(cKey);if(cached) return cached;}catch(e){}
+  let note=null;
+  // P2: official league editorial
+  if((sport.includes('Baseball')||sport.includes('MLB'))&&game.gamePk){
+    note=await fetchMLBGameNotes(game.gamePk,game);
+  } else if((sport.includes('Hockey')||sport.includes('NHL'))&&game._nhlGameId){
+    note=await fetchNHLGameNotes(game._nhlGameId);
+  }
+  // P3: structured assembly (any sport, zero API)
+  if(!note) note=assembleNoteFromContext(game);
+  // P4: official league RSS fallback
+  if(!note&&game.home&&game.away) note=await fetchLeagueRSS(sport,game.home,game.away);
+  try{if(note) localStorage.setItem(cKey,note);}catch(e){}
+  return note;
+}
+
+
 async function fetchFIELDBriefFromClaude(sections){
   const budget=journalismCallsToday();
   if(!budget.canCall()) return null;
@@ -10592,7 +10712,10 @@ async function fetchFIELDBriefFromClaude(sections){
   const all=sections.flatMap(s=>(s.games||[]).map(g=>({...g,_section:s.sport})));
   const ranked=all.filter(g=>g.home&&g.away&&g.home!=='ATP/WTA Field').sort((a,b)=>preGameScore(b)-preGameScore(a)).slice(0,8);
   if(!ranked.length) return null;
-  const gameLines=ranked.map(g=>{
+  // Pre-fetch game notes in parallel — P1 matchupNote → P2 league editorial → P3 structured → P4 RSS
+  const noteResults=await Promise.allSettled(ranked.map(g=>fetchGameNotes(g)));
+  const notes=noteResults.map(r=>r.status==='fulfilled'?r.value:null);
+  const gameLines=ranked.map((g,i)=>{
     const stream=(g.streams&&g.streams[0]&&g.streams[0].label)||'local';
     const free=g.streams&&g.streams[0]&&new Set(['ABC','NBC','CBS','FOX','ION']).has(g.streams[0].label);
     const standingsCtx = buildGameStandingsContext(g);
@@ -10601,6 +10724,7 @@ async function fetchFIELDBriefFromClaude(sections){
       g.seriesRecord?'  Series: '+g.seriesRecord:'',
       '  Network: '+stream+(free?' (FREE OTA)':''),
       crewCtx?'  Crew: '+crewCtx+(isMarqueeBroadcast(g)?' (marquee)':''):'',
+      notes[i]&&!g.matchupNote?'  Context: '+notes[i]:'',
       g.matchupNote?'  Matchup: '+g.matchupNote:'',
       g._section?'  Sport: '+g._section:'',
       standingsCtx?'  '+standingsCtx:'',
@@ -11764,6 +11888,7 @@ async function fetchNightOwlFromClaude(topGame){
   if(!budget.canCall()) return null;
   // Pre-fetch standings from relay/API — not ESPN
   await fetchStandingsForPrompt(topGame._section || topGame._sport || '').catch(()=>{});
+  const note=await fetchGameNotes(topGame).catch(()=>null);
   const standingsCtx = buildGameStandingsContext(topGame);
   const crewCtx = getCrewContext(topGame);
   const winner=(topGame.homeScore||0)>=(topGame.awayScore||0)?topGame.home:topGame.away;
@@ -11773,6 +11898,7 @@ async function fetchNightOwlFromClaude(topGame){
       'Final: '+score+' ('+winner+' wins)',
       topGame.seriesRecord?'Series: '+topGame.seriesRecord:'',
       topGame.dramaPeak?'Drama peak: '+Math.round(topGame.dramaPeak)+'/100':'',
+      note&&!topGame.matchupNote?'Context: '+note:'',
       standingsCtx?standingsCtx:'',
       crewCtx?'Broadcast crew: '+crewCtx:'',
       '','Rules: 80-100 words. Tactical. Not emotional. Lead with the turning point.',

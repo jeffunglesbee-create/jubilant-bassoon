@@ -509,3 +509,14 @@ else fail('Assertion 48 — Gap 9 journalism odds context missing');
 const hasQuiet = html.includes('_quietHourActive') && html.includes('QUIET_POLL_INTERVAL') && html.includes('QUIET_CYCLES_GATE');
 if(hasQuiet) pass('Assertion 49 — Gap 8 quiet hour detection: state vars + interval extension wired');
 else fail('Assertion 49 — Gap 8 quiet hour detection missing');
+
+
+// Assertion 50 — Game Notes Layer (Item 38)
+const hasGameNotes = html.includes('fetchGameNotes') &&
+  html.includes('assembleNoteFromContext') &&
+  html.includes('fetchMLBGameNotes') &&
+  html.includes('fetchNHLGameNotes') &&
+  html.includes('fetchLeagueRSS') &&
+  html.includes("'game-notes-layer'");
+if(hasGameNotes) pass('Assertion 50 — Game Notes Layer: P1-P4 stack + dispatcher + FIELD_FEATURES entry');
+else fail('Assertion 50 — Game Notes Layer missing (fetchGameNotes/assembleNoteFromContext/fetchMLBGameNotes)');
