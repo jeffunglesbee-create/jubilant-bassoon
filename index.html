@@ -631,6 +631,12 @@ flex-shrink:0;white-space:nowrap;
   margin-left:auto;  /* push to far right of stream-row */
 }
 .share-btn:hover{color:var(--white);opacity:1;background:rgba(255,255,255,.07)}
+.cal-btn{
+  background:none;border:none;color:var(--smoke);cursor:pointer;
+  font-size:.78rem;padding:.2rem .35rem;border-radius:4px;
+  transition:.12s;opacity:.6;line-height:1;flex-shrink:0;
+}
+.cal-btn:hover{color:var(--accent,#f97316);opacity:1;background:rgba(255,255,255,.07)}
 .share-toast{
   position:fixed;bottom:4.5rem;left:50%;transform:translateX(-50%) translateY(8px);
   background:var(--card2);border:1px solid var(--gold);color:var(--white);
@@ -4682,7 +4688,7 @@ function renderAll(){
       const isLive=st==="live";
       const timeCls=isLive?"game-time live-t":"game-time";
       const liveBadge=isLive?'<div class="live-badge"><span class="live-dot"></span>LIVE</div>':"";
-      return `<div class="game-card ${st}${isLive?" espn-live":""}${MY_TEAMS.has(g.home)||MY_TEAMS.has(g.away)?" my-team-card":""}" data-gameid="${g._id}" data-sport="${sec.sport}" data-home="${(g.home||"").replace(/"/g,"")}" data-away="${(g.away||"").replace(/"/g,"")}" data-starttime="${g.start_time||""}" data-confirmed="${g.confirmed===true?'true':'false'}" style="animation-delay:${gi*40}ms">
+      return `<div class="game-card ${st}${isLive?" espn-live":""}${MY_TEAMS.has(g.home)||MY_TEAMS.has(g.away)?" my-team-card":""}" data-gameid="${g._id}" data-sport="${sec.sport}" data-home="${(g.home||"").replace(/"/g,"")}" data-away="${(g.away||"").replace(/"/g,"")}" data-starttime="${g.start_time||""}" data-venue="${(g.venue||"").replace(/"/g,"")}" data-confirmed="${g.confirmed===true?'true':'false'}" style="animation-delay:${gi*40}ms">
         <div class="card-accent"></div>
         <button class="star-btn ${MY_TEAMS.has(g.home)||MY_TEAMS.has(g.away)?"starred":""}" aria-label="Follow team" title="${MY_TEAMS.has(g.home)?"Unfollow "+g.home:MY_TEAMS.has(g.away)?"Unfollow "+g.away:"Follow "+g.home}">★</button>
         <div class="card-body">
@@ -4708,7 +4714,7 @@ function renderAll(){
         <div class="card-right">
           ${liveBadge}
           <div class="${timeCls}">${timeStr}</div>
-          <div class="stream-row">${streamsHTMLCapped(g.streams, 3)}${(()=>{const pk=g.streams?.[0]?.key||'';return FREE_OTA.has(pk)?'<span class="free-badge">FREE</span>':FREE_CABLE.has(pk)?'<span class="free-badge free-cable">FREE W/ CABLE</span>':''})()}<button class="share-btn" aria-label="Share" title="Share this game">⬆</button></div>
+          <div class="stream-row">${streamsHTMLCapped(g.streams, 3)}${(()=>{const pk=g.streams?.[0]?.key||'';return FREE_OTA.has(pk)?'<span class="free-badge">FREE</span>':FREE_CABLE.has(pk)?'<span class="free-badge free-cable">FREE W/ CABLE</span>':''})()}<button class="cal-btn" aria-label="Add to calendar" title="Add to calendar" data-game-id="${g._id||''}">📅</button><button class="share-btn" aria-label="Share" title="Share this game">⬆</button></div>
           ${FD_LEAGUE_MAP[sec.sport]||ESPN_STANDINGS_MAP[sec.sport]?`<button class="standings-btn" onclick="toggleStandings(this,'${sec.sport}','2025')" title="Show ${FD_LEAGUE_MAP[sec.sport]?'table':'standings'}">▼ ${FD_LEAGUE_MAP[sec.sport]?'Table':'Standings'}</button>`:""}
         </div>
       </div>`;
@@ -11494,6 +11500,50 @@ function renderOneToWatch(){
 // ═══════════════════════════════════════════════════════════════════════════
 // FEATURE: SHARE GAME CARD (Web Share API + clipboard fallback)
 // ═══════════════════════════════════════════════════════════════════════════
+// ── ICS Export — Add to Calendar ──────────────────────────────────────────────
+// Generates a .ics file for any game card. Works with Apple Calendar, Google
+// Calendar (import), Outlook, and any standards-compliant calendar app.
+// Duration: 2h30m default (covers most games; user can adjust in calendar)
+function generateICS(game){
+  const start=new Date(game.start_time);
+  const end=new Date(start.getTime()+150*60000); // +2h30m
+  const fmt=d=>d.toISOString().replace(/[-:]/g,'').split('.')[0]+'Z';
+  const esc=s=>(s||'').replace(/[,;\\]/g,'\\$&').replace(/\n/g,'\\n');
+  const title=`${game.away||'Game'} @ ${game.home||'TBD'}`;
+  const network=(game.streams&&game.streams[0]&&game.streams[0].label)||'';
+  const desc=esc([
+    game.league||'',
+    network?`Watch on ${network}`:'',
+    game.matchupNote||'',
+    'Added from FIELD Global Sports Intelligence'
+  ].filter(Boolean).join(' · '));
+  const ics=[
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//FIELD Global Sports//EN',
+    'CALSCALE:GREGORIAN',
+    'METHOD:PUBLISH',
+    'BEGIN:VEVENT',
+    `DTSTART:${fmt(start)}`,
+    `DTEND:${fmt(end)}`,
+    `SUMMARY:${esc(title)}`,
+    `DESCRIPTION:${desc}`,
+    game.venue?`LOCATION:${esc(game.venue)}`:'',
+    `UID:field-${game._id||Date.now()}@jubilant-bassoon.jeffunglesbee.workers.dev`,
+    `DTSTAMP:${fmt(new Date())}`,
+    'END:VEVENT',
+    'END:VCALENDAR'
+  ].filter(Boolean).join('\r\n');
+
+  const blob=new Blob([ics],{type:'text/calendar;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  const safeTitle=title.replace(/[^a-z0-9]+/gi,'-').toLowerCase().slice(0,40);
+  a.href=url; a.download=`field-${safeTitle}.ics`;
+  document.body.appendChild(a); a.click();
+  setTimeout(()=>{URL.revokeObjectURL(url);a.remove();},1000);
+}
+
 async function shareGame(home, away, time, league, streams){
   const svcNames = (streams||[]).slice(0,2).map(k=>{
     const sr = (typeof SR!=='undefined'&&SR[k])||null;
@@ -11546,6 +11596,34 @@ document.addEventListener('click', e => {
   shareGame(home, away, time, league, streams);
 });
 
+// ── Delegate calendar button clicks ──────────────────────────────────────
+document.addEventListener('click', e => {
+  const btn = e.target.closest('.cal-btn');
+  if(!btn) return;
+  e.stopPropagation();
+  const card = btn.closest('.game-card');
+  if(!card) return;
+  // Reconstruct minimal game object from card data attributes
+  const game = {
+    home:   card.dataset.home||'',
+    away:   card.dataset.away||'',
+    _id:    card.dataset.gameid||btn.dataset.gameId||Date.now(),
+    start_time: card.dataset.starttime||'',
+    league: card.querySelector('.league-badge')?.textContent||card.dataset.sport||'',
+    venue:  card.dataset.venue||'',
+    streams: [],
+    matchupNote: ''
+  };
+  // Enrich from live allData if available
+  if(typeof allData!=='undefined'&&allData.sports){
+    const id=card.dataset.gameId||card.dataset.gameid;
+    const found=(allData.sports||[]).flatMap(s=>s.games||[]).find(g=>g._id===id);
+    if(found) Object.assign(game,found);
+  }
+  if(!game.start_time){showShareToast('\u274c No time data for this game');return;}
+  generateICS(game);
+  showShareToast('\u2705 .ics downloaded \u2014 open to add to calendar');
+});
 
 
 // ── iOS Safari "Add to Home Screen" prompt ──────────────────────────────────
