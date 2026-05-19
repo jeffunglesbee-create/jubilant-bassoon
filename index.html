@@ -7348,24 +7348,39 @@ function slashGolfBudgetOk(){
 }
 
 // Generic fetch with cache + daily budget guard
+// Layer 1: in-memory (instant, reset on reload)
+// Layer 2: localStorage (survives reloads, respects TTL — fixes per-reload budget burn)
 async function slashGolfFetch(path, cacheKey, ttl){
-  const cached = slashGolfCache[cacheKey];
-  if(cached && Date.now() - cached.ts < ttl) return cached.data; // cache hit — free
+  const memCached = slashGolfCache[cacheKey];
+  if(memCached && Date.now() - memCached.ts < ttl) return memCached.data;
+  // localStorage layer — survives page reloads
+  try{
+    const lsRaw = localStorage.getItem('field_sg_'+cacheKey);
+    if(lsRaw){
+      const lsParsed = JSON.parse(lsRaw);
+      if(Date.now() - lsParsed.ts < ttl){
+        slashGolfCache[cacheKey] = lsParsed; // warm in-memory
+        return lsParsed.data;
+      }
+    }
+  }catch(e){}
   if(!slashGolfBudgetOk()){
-    if(FIELD_DEBUG) console.warn("[SlashGolf] daily budget exhausted — using stale cache");
-    return cached?.data || null; // return stale cache rather than exceed limit
+    if(FIELD_DEBUG) console.warn('[SlashGolf] daily budget exhausted — using stale cache');
+    return memCached?.data || null;
   }
   try{
     const r = await fetch(`${SLASH_GOLF_BASE}${path}`,
       {headers: slashGolfHeaders(), signal: AbortSignal.timeout(8000)});
     if(!r.ok) throw new Error(`SlashGolf HTTP ${r.status}`);
     const data = await r.json();
-    slashGolfCache[cacheKey] = {data, ts: Date.now()};
-    slashGolfBumpCount(); // count only successful API calls
+    const entry = {data, ts: Date.now()};
+    slashGolfCache[cacheKey] = entry;
+    try{ localStorage.setItem('field_sg_'+cacheKey, JSON.stringify(entry)); }catch(e){}
+    slashGolfBumpCount();
     return data;
   }catch(e){
-    if(FIELD_DEBUG) console.warn("[SlashGolf]", e.message);
-    return cached?.data || null; // return stale on error
+    if(FIELD_DEBUG) console.warn('[SlashGolf]', e.message);
+    return memCached?.data || null;
   }
 }
 
