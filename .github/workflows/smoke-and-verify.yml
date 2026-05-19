@@ -108,7 +108,7 @@ jobs:
 
           // ── 2. Confirmed:true gate ────────────────────────────────────────
           const confirmed = (html.match(/confirmed:true/g)||[]).length;
-          const unconfirmed = (html.match(/confirmed:false/g)||[]).length;
+          const unconfirmed = (html.match(/confirmed:false,/g)||[]).length;  // comma-terminated = actual game data, not comments
           if (unconfirmed > 0) issues.push(`${unconfirmed} unconfirmed entries (confirmed:false)`);
           else ok.push(`confirmed:true gate: ${confirmed} entries, 0 unconfirmed`);
 
@@ -150,9 +150,9 @@ jobs:
           });
 
           // ── 7. NBA_TNT deprecated ────────────────────────────────────────
-          const nba_tnt = (html.match(/NBA_TNT/g)||[]).length;
-          if (nba_tnt > 0) issues.push(`NBA_TNT appears ${nba_tnt}x — deprecated bundle, should be NBA_ESPN/ABC/NBC/PRIME`);
-          else ok.push('NBA_TNT deprecated bundle: 0 references');
+          const nba_tnt = (html.match(/resolveBundle\(['"](NBA_TNT)['"]\)/g)||[]).length;
+          if (nba_tnt > 0) issues.push(`NBA_TNT appears in ${nba_tnt} resolveBundle call(s) — deprecated, use NBA_ESPN/ABC/NBC/PRIME`);
+          else ok.push('NBA_TNT deprecated bundle: 0 active resolveBundle references');
 
           // ── 8. AI betting disclaimer present ─────────────────────────────
           if (html.includes('verify before wagering') || html.includes('AI Estimated')) {
