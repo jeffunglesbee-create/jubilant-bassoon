@@ -763,6 +763,13 @@ flex-shrink:0;white-space:nowrap;
 .field-brief-text.pending{color:var(--muted);font-style:italic;font-size:.7rem}
 #night-owl{padding:.4rem 1rem 1rem;max-width:1200px;margin:0 auto}
 .night-owl-card{background:rgba(139,92,246,.07);border:1px solid rgba(139,92,246,.22);border-top:2px solid rgba(139,92,246,.6);border-radius:10px;padding:.9rem 1.05rem .8rem;cursor:pointer}
+.drama-sparkline{display:block;margin:.3rem 0 .2rem;opacity:.8}
+.series-margins{display:flex;align-items:center;gap:.22rem;margin-top:.18rem}
+.series-margin-dot{width:.55rem;height:.55rem;border-radius:50%;display:inline-block;flex-shrink:0}
+.series-margin-dot.tight{background:#34d399}
+.series-margin-dot.close{background:#fbbf24}
+.series-margin-dot.decided{background:rgba(255,255,255,.2)}
+.series-margin-dot.upcoming{background:transparent;border:1px solid rgba(255,255,255,.2)}
 .night-owl-card:hover{background:rgba(139,92,246,.12)}
 .night-owl-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem}
 .night-owl-label{font-size:.54rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#a78bfa}
@@ -2113,6 +2120,19 @@ const FIELD_FEATURES = {
   'page-visibility-api':    '2026-05-18',
   'first-lead-change-burst':'2026-05-18',
   'double-feature-detection':'2026-05-18',
+  // Experience & Polish
+  'ics-export':             '2026-05-20',  // generateICS() + .cal-btn handler — add-to-calendar
+  'afl-drama-v5':           '2026-05-20',  // AFL 6-pt calibration, Q4 1.4× multiplier, Top-10 bracket
+  'atp-live-scores':        '2026-05-20',  // ATP polling enabled, relay endpoint live
+  // Drama-Aware Journalism ($14 session)
+  'ember-buried-lead':      '2026-05-20',  // evaluateEMBER() — distribution tier + drama threshold
+  'bdl-relay':              '2026-05-20',  // BDL /bdl/* relay — player stats + standings tertiary
+  'bdl-milestones-p2c':     '2026-05-20',  // NBA milestone notes via BDL season_averages
+  'build-game-context':     '2026-05-20',  // buildGameContext() — shared signal object
+  'j3-momentum-briefs':     '2026-05-20',  // [DRAMA: RISING/COOLING], [ODDS], [MILESTONE] in J3
+  // Playoff Intelligence Trilogy ($9.50 session)
+  'drama-sparkline':        '2026-05-21',  // Wow#45 Stage 2 — inline SVG arc in J5 Night Owl
+  'series-margins':         '2026-05-21',  // Series margin dots on playoff game cards
   // J-series journalism
   'j1-anti-hype':           '2026-05-14',
   'j2-series-preview':      '2026-05-14',
@@ -4841,7 +4861,7 @@ function renderAll(){
           </div>
           <div class="info-row">
             <span class="league-badge">${g.league||sec.sport}</span>${MY_TEAMS.has(g.home)||MY_TEAMS.has(g.away)?'<span class="my-team-badge">★ MY TEAM</span>':""}${typeof isRivalGame==="function"&&MY_TEAMS.size>0&&isRivalGame(g)?'<span class="rival-badge">RIVAL</span>':""}${(()=>{const k=g.streams&&g.streams[0]&&g.streams[0].key||"";return FREE_OTA.has(k)?'<span class="free-tonight-badge">Free tonight</span>':"";})()}
-            ${g.seriesRecord?`<span class="league-badge" style="color:var(--gold2);border-color:rgba(201,168,76,.3)">${g.seriesRecord}</span>`:g.venue&&!g.league?.includes("Playoffs")?`<span class="league-badge venue-badge" style="font-size:.52rem;opacity:.7">${g.venue}</span>`:""}
+            ${g.seriesRecord?`<span class="league-badge" style="color:var(--gold2);border-color:rgba(201,168,76,.3)">${g.seriesRecord}</span>`:g.venue&&!g.league?.includes("Playoffs")?`<span class="league-badge venue-badge" style="font-size:.52rem;opacity:.7">${g.venue}</span>`:""}${buildSeriesMarginsDots(g)}
             <button class="watch-btn" data-id="${g._id}">+ Multiview</button>
           </div>
           ${(g.espnGOTD||g.peacockGOTD||g.mlbnShowcase||g.localNote||g.gotdStreams)?`<div class="badge-row">
@@ -5030,7 +5050,7 @@ function buildTodaySchedule(){
   //          G5 June 15* · G6 June 18* · G7 June 20* (* = if necessary)
   const nbaGames=[
     {home:"New York Knicks",       away:"Cleveland Cavaliers",  league:"NBA Playoffs \u2013 East CF G1 \u00b7 Series 0-0",       start_time:"2026-05-20T00:00:00Z", confirmed:true, venue:"Madison Square Garden, New York NY",  streams:resolveBundle("NBA_ESPN"), seriesRecord:"0-0", matchupNote:"Knicks 8 days rest (swept PHI 4-0). Cavs won classic 7-game G7 vs DET. OG Anunoby (hamstring) says he'll be ready."},
-    {home:"Oklahoma City Thunder", away:"San Antonio Spurs",    league:"NBA Playoffs \u2013 West CF G2 \u00b7 SAS leads 1-0",   start_time:"2026-05-21T00:30:00Z", confirmed:true, venue:"Paycom Center, Oklahoma City OK",       streams:resolveBundle("NBA_NBC"), seriesRecord:"SAS leads 1-0", matchupNote:"Wembanyama 41/24/3blk in 2OT road win G1. Fox (ankle) day-to-day for G2. Thunder first loss of playoffs."},
+    {home:"Oklahoma City Thunder", away:"San Antonio Spurs",    league:"NBA Playoffs \u2013 West CF G2 \u00b7 SAS leads 1-0",   start_time:"2026-05-21T00:30:00Z", confirmed:true, venue:"Paycom Center, Oklahoma City OK",       streams:resolveBundle("NBA_NBC"), seriesRecord:"SAS leads 1-0", seriesMargins:[7,-1,-1,-1,-1,-1,-1], matchupNote:"Wembanyama 41/24/3blk in 2OT road win G1. Fox (ankle) day-to-day for G2. Thunder first loss of playoffs."},
     // ── NBA Finals 2026 — All games NBC/Peacock ─────────────────────
     // UPDATE team names + venues once ECF/WCF conclude (~June 3)
     {home:"TBD \u2014 Eastern Champion", away:"TBD \u2014 Western Champion", league:"NBA Finals 2026 \u2013 G1 \u00b7 Series 0-0",  start_time:"2026-06-06T00:30:00Z", confirmed:true, venue:"TBD \u2014 Home of Eastern Champion", streams:resolveBundle("NBA_NBC"), seriesRecord:"0-0", matchupNote:"NBA Finals 2026 on NBC/Peacock. Teams TBD \u2014 update once Conference Finals conclude."},
@@ -12746,6 +12766,51 @@ async function fetchNightOwlFromClaude(topGame){
   }catch(e){if(FIELD_DEBUG)console.error('[J5 Night Owl] proxy error:',e.message);}
   return null;
 }
+
+// ── Wow#45 Stage 2: Drama Sparkline ──────────────────────────────────────────
+// Inline SVG showing the drama arc for a completed/live game.
+// Reads from getDramaHistory() — the drama arc storage layer (already shipping).
+// Used in J5 Night Owl card: "shape of the game" at a glance.
+function buildDramaSparklineSVG(gameId, w=140, h=28) {
+  try {
+    const hist = getDramaHistory(gameId);
+    if (!hist?.length || hist.length < 3) return '';
+    const n = hist.length;
+    const pts = hist.map((d, i) => {
+      const x = ((i / (n - 1)) * (w - 4) + 2).toFixed(1);
+      const y = (h - 2 - ((d.s / 100) * (h - 4))).toFixed(1);
+      return `${x},${y}`;
+    }).join(' ');
+    const peak = Math.max(...hist.map(d => d.s));
+    const stroke = peak >= 85 ? 'var(--c-nba,#f97316)'
+                 : peak >= 65 ? 'var(--c-nhl,#00b4d8)'
+                 : 'rgba(255,255,255,.35)';
+    // Peak marker — dot at highest drama point
+    const peakIdx = hist.findIndex(d => d.s === peak);
+    const px = ((peakIdx / (n - 1)) * (w - 4) + 2).toFixed(1);
+    const py = (h - 2 - ((peak / 100) * (h - 4))).toFixed(1);
+    return `<svg class="drama-sparkline" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" aria-label="Drama arc — peak ${Math.round(peak)}">
+  <polyline points="${pts}" fill="none" stroke="${stroke}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity=".85"/>
+  <circle cx="${px}" cy="${py}" r="2.5" fill="${stroke}" opacity=".9"/>
+</svg>`;
+  } catch(e) { return ''; }
+}
+
+// ── Series Margins Display ────────────────────────────────────────────────────
+// Renders compact margin dots for a playoff series — shows game-by-game tightness.
+// game.seriesMargins = [7, 3, 15, 1] — margins per game (0 = ongoing, -1 = not yet played)
+// Dot colours: ≤3=green(tight) · 4-12=amber(close) · >12=gray(decided) · -1=upcoming(empty ring)
+function buildSeriesMarginsDots(game) {
+  if (!game?.seriesMargins?.length) return '';
+  const dots = game.seriesMargins.map(m => {
+    if (m < 0) return '<span class="series-margin-dot upcoming" title="Upcoming"></span>';
+    if (m <= 3) return `<span class="series-margin-dot tight" title="Decided by ${m}"></span>`;
+    if (m <= 12) return `<span class="series-margin-dot close" title="Decided by ${m}"></span>`;
+    return `<span class="series-margin-dot decided" title="Decided by ${m}"></span>`;
+  }).join('');
+  return `<div class="series-margins" title="Game margins: ${game.seriesMargins.filter(m=>m>=0).join(', ')}">${dots}</div>`;
+}
+
 let _nightOwlRendered=false;
 async function renderNightOwlRecap(){
   const el=document.getElementById('night-owl');
@@ -12764,7 +12829,8 @@ async function renderNightOwlRecap(){
   _nightOwlRendered=true;
   el.style.display='block';
   const renderCard=(text,loaded)=>{
-    el.innerHTML='<div class="night-owl-card" id="night-owl-inner"><div class="night-owl-header"><span class="night-owl-label">FIELD Night Owl</span><span class="night-owl-score">'+winner+' '+scoreLabel+(topGame.seriesRecord?' \u00b7 '+topGame.seriesRecord:'')+'</span></div><div class="night-owl-text'+(loaded?'':' pending')+'">'+text+'</div></div>';
+    const sparkSVG = buildDramaSparklineSVG(topGame.id||topGame._id||'');
+    el.innerHTML='<div class="night-owl-card" id="night-owl-inner"><div class="night-owl-header"><span class="night-owl-label">FIELD Night Owl</span><span class="night-owl-score">'+winner+' '+scoreLabel+(topGame.seriesRecord?' \u00b7 '+topGame.seriesRecord:'')+'</span></div>'+(sparkSVG?sparkSVG:'')+'<div class="night-owl-text'+(loaded?'':' pending')+'">'+text+'</div></div>';
     document.getElementById('night-owl-inner')?.addEventListener('click',()=>document.getElementById('night-owl-inner')?.classList.toggle('collapsed'));
   };
   if(cached){renderCard(cached,true);return;}
