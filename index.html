@@ -5640,24 +5640,34 @@ function selectBettingGames(sports, maxCards=4){
 // MLB: SF @ LAD on MLB Network Showcase
 const BETTING_LINES_FALLBACK_DATA = [
   {
-    matchKey:"sabres",    // BUF vs MTL G7 — NHL East Semis, Mon May 18 7:30pm ET, ESPN
+    matchKey:"knicks",    // NYK vs CLE ECF G1 — Tue May 19 8pm ET, ESPN
     source:"📊 AI Estimated",
-    context:"Winner-take-all Game 7 at KeyBank Center after BUF's stunning 8-3 road win forced this moment. BUF obliterated MTL at Bell Centre — momentum entirely with the Sabres. Montreal won 3-in-a-row earlier in the series but looked completely flat in G6. Home ice and momentum shift both favor Buffalo. The Sabres are ending a 14-year playoff drought run.",
+    context:"Knicks host Game 1 with a massive rest advantage — 8 days off after sweeping Philly, while the Cavs just survived a brutal 7-game G7 war against Detroit. OG Anunoby says his hamstring is ready. MSG will be deafening. Cleveland's fatigue and travel are the story; New York's home floor and freshness make them comfortable favourites in this opener.",
     lines:[
-      {label:"Moneyline",items:[{t:"Buffalo Sabres",o:"-130",fav:true},{t:"Montreal Canadiens",o:"+110",fav:false}]},
-      {label:"Puck Line",items:[{t:"BUF -1.5",o:"+200",fav:false},{t:"MTL +1.5",o:"-240",fav:true}]},
-      {label:"Total Goals",items:[{t:"Over 5.5",o:"-110",fav:false},{t:"Under 5.5",o:"-110",fav:false}]},
+      {label:"Moneyline",items:[{t:"New York Knicks",o:"-185",fav:true},{t:"Cleveland Cavaliers",o:"+155",fav:false}]},
+      {label:"Spread",items:[{t:"Knicks -4.5",o:"-110",fav:true},{t:"Cavs +4.5",o:"-110",fav:false}]},
+      {label:"Total (O/U)",items:[{t:"Over 214.5",o:"-110",fav:false},{t:"Under 214.5",o:"-110",fav:false}]},
     ],
     books:[{name:"DraftKings",url:"https://sportsbook.draftkings.com"},{name:"FanDuel",url:"https://sportsbook.fanduel.com"},{name:"BetMGM",url:"https://sports.betmgm.com"}]
   },
   {
-    matchKey:"thunder",   // OKC vs SAS WCF G1 — Mon May 18 8:30pm ET, NBC/Peacock
+    matchKey:"thunder",   // OKC vs SAS WCF G2 — Wed May 20 8:30pm ET, NBC/Peacock
     source:"📊 AI Estimated",
-    context:"The defending champion Thunder open the Western Conference Finals at home against the only team that matched them stride-for-stride in the regular season (Spurs went 4-1 vs OKC). SGA is back-to-back MVP but Wembanyama has been elite all postseason. OKC is 8-0 in these playoffs. The Spurs bring momentum but walk into Paycom Center as 6.5-point dogs.",
+    context:"Wembanyama stole G1 on the road — 41/24/3blk in double overtime. Fox is day-to-day with an ankle. OKC now desperate at home having never lost a playoff game this postseason until G1. The Thunder will come out swinging; Spurs need to prove the road win wasn't a fluke. OKC remains the favourite in the series but this G2 has must-win energy for the home side.",
     lines:[
-      {label:"Moneyline",items:[{t:"Oklahoma City Thunder",o:"-265",fav:true},{t:"San Antonio Spurs",o:"+215",fav:false}]},
-      {label:"Spread",items:[{t:"Thunder -6.5",o:"-110",fav:true},{t:"Spurs +6.5",o:"-110",fav:false}]},
-      {label:"Total (O/U)",items:[{t:"Over 219.5",o:"-110",fav:false},{t:"Under 219.5",o:"-110",fav:false}]},
+      {label:"Moneyline",items:[{t:"Oklahoma City Thunder",o:"-200",fav:true},{t:"San Antonio Spurs",o:"+168",fav:false}]},
+      {label:"Spread",items:[{t:"Thunder -5",o:"-110",fav:true},{t:"Spurs +5",o:"-110",fav:false}]},
+      {label:"Total (O/U)",items:[{t:"Over 217.5",o:"-110",fav:false},{t:"Under 217.5",o:"-110",fav:false}]},
+    ],
+    books:[{name:"DraftKings",url:"https://sportsbook.draftkings.com"},{name:"FanDuel",url:"https://sportsbook.fanduel.com"},{name:"BetMGM",url:"https://sports.betmgm.com"}]
+  },
+  {
+    matchKey:"city",      // Bournemouth vs Man City — Tue May 19 7:30pm BST, USA Network
+    source:"📊 AI Estimated",
+    context:"Title decider in a beach town. City must win or Arsenal are champions tonight, confirmed before the final day. Bournemouth are safe in mid-table with nothing to lose — historically dangerous opponents for top-six visitors. City are heavy favourites but the pressure all sits on Guardiola's bench.",
+    lines:[
+      {label:"Match Result",items:[{t:"Bournemouth",o:"+450",fav:false},{t:"Draw",o:"+310",fav:false},{t:"Man City",o:"-180",fav:true}]},
+      {label:"Both Teams Score",items:[{t:"Yes",o:"-130",fav:true},{t:"No",o:"+108",fav:false}]},
     ],
     books:[{name:"DraftKings",url:"https://sportsbook.draftkings.com"},{name:"FanDuel",url:"https://sportsbook.fanduel.com"},{name:"BetMGM",url:"https://sports.betmgm.com"}]
   },
