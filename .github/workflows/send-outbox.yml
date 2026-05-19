@@ -69,12 +69,26 @@ jobs:
           fi
 
           # Build payload safely via jq — handles newlines, quotes, special chars
-          PAYLOAD=$(jq -n \
-            --arg from "FIELD <onboarding@resend.dev>" \
-            --argjson to "[\"$(jq -r .to outbox/message.json)\"]" \
-            --arg subject "$(jq -r .subject outbox/message.json)" \
-            --arg text "$(jq -r .body outbox/message.json)" \
-            '{from: $from, to: $to, subject: $subject, text: $text}')
+          # Supports optional "html" field for rich emails; falls back to "body" as plain text
+          HTML=$(jq -r '.html // empty' outbox/message.json)
+          TEXT=$(jq -r '.body // ""' outbox/message.json)
+
+          if [ -n "$HTML" ]; then
+            PAYLOAD=$(jq -n \
+              --arg from "FIELD <onboarding@resend.dev>" \
+              --argjson to "[\"$(jq -r .to outbox/message.json)\"]" \
+              --arg subject "$(jq -r .subject outbox/message.json)" \
+              --arg html "$HTML" \
+              --arg text "$TEXT" \
+              '{from: $from, to: $to, subject: $subject, html: $html, text: $text}')
+          else
+            PAYLOAD=$(jq -n \
+              --arg from "FIELD <onboarding@resend.dev>" \
+              --argjson to "[\"$(jq -r .to outbox/message.json)\"]" \
+              --arg subject "$(jq -r .subject outbox/message.json)" \
+              --arg text "$TEXT" \
+              '{from: $from, to: $to, subject: $subject, text: $text}')
+          fi
 
           echo "📤 Sending to: $(jq -r .to outbox/message.json)"
           echo "📋 Subject: $(jq -r .subject outbox/message.json)"
