@@ -1914,7 +1914,7 @@ flex-shrink:0;white-space:nowrap;
     <span class="betting-title">Betting Intelligence</span>
   </div>
   <div class="betting-disclaimer">
-    AI-estimated lines for entertainment purposes only. Not sourced from any sportsbook. Verify current lines before wagering. Must be 21+ and in eligible state. Sports betting may be illegal in your jurisdiction. Problem gambling: <a href="tel:18004262537" style="color:inherit">1-800-GAMBLER</a>.
+    Lines sourced from The Odds API. For entertainment purposes only. Verify current lines before wagering. Must be 21+ and in eligible state. Sports betting may be illegal in your jurisdiction. Problem gambling: <a href="tel:18004262537" style="color:inherit">1-800-GAMBLER</a>.
   </div>
   <div class="betting-grid" id="betting-grid"></div>
 </section>
@@ -5683,113 +5683,80 @@ async function renderBetting(){
   const grid = document.getElementById("betting-grid");
   if(!grid) return;
 
-  const BETTING_LINES = await loadBettingLines();
-
-  // Pre-fetch live odds for today's betting games if not already loaded
-  if(ODDS_API_KEY && Object.keys(liveOddsData).length === 0){
-    refreshLiveOdds(); // fire-and-forget; updateOddsUI() will inject when ready
+  // Fetch real odds from The Odds API relay for tonight's sports
+  // DO NOT INVENT: all numbers come exclusively from The Odds API. Never AI-generated.
+  const activeSports = [...new Set(
+    (allData?.sports||[]).map(s => s.sport).filter(s => ODDS_SPORT_MAP[s])
+  )];
+  if(activeSports.length){
+    await Promise.allSettled(activeSports.map(s => fetchOddsForSport(s)));
   }
 
-  // Graceful empty state: BETTING_LINES_FALLBACK_DATA matchKeys didn't match today's
-  // schedule (stale file) OR API fetch returned no cards (no auth in standalone mode).
-  // Show a message rather than leaving the grid invisibly empty.
-  if(!BETTING_LINES||!BETTING_LINES.length){
-    grid.innerHTML = `<div style="padding:1rem 0;color:var(--smoke);font-size:.8rem;letter-spacing:.03em">
-      Lines are updated daily — check back after the day's schedule is confirmed, or open in the claude.ai preview for AI-generated lines.
-    </div>`;
+  // Match every scheduled game to its odds entry
+  const cards = [];
+  (allData?.sports||[]).forEach(sec => {
+    const sportKey = ODDS_SPORT_MAP[sec.sport];
+    if(!sportKey) return;
+    const cacheKey = Object.keys(_oddsCache).find(k => k.startsWith(sportKey));
+    if(!cacheKey) return;
+    const oddsData = _oddsCache[cacheKey];
+    (sec.games||[]).forEach(g => {
+      if(!g.home || !g.away) return;
+      const odds = getGameOdds(oddsData, g.home, g.away);
+      if(!odds?.homeML || !odds?.awayML) return;
+      cards.push({game: g, sport: sec.sport, odds});
+    });
+  });
+
+  // Sort by pre-game drama score, show top 4
+  cards.sort((a,b) => preGameScore(b.game) - preGameScore(a.game));
+  const top = cards.slice(0,4);
+
+  if(!top.length){
+    grid.innerHTML = `<p style="padding:1rem 0;color:var(--smoke);font-size:.8rem;line-height:1.5">
+      Live odds are not yet available for tonight&#39;s games.<br>
+      Check back closer to game time, or verify directly at your preferred sportsbook.
+    </p>`;
     return;
   }
 
-  grid.innerHTML = BETTING_LINES.map(b=>{
-    // Resolve game ID for live odds lookup
-    let _gid_bet="", _game_obj=null;
-    if(typeof allData!=="undefined"&&allData&&allData.sports){
-      const bname=b.game.toLowerCase();
-      allData.sports.forEach(sec=>(sec.games||[]).forEach(g=>{
-        const homeWords=(g.home||"").toLowerCase().split(" ").filter(w=>w.length>3);
-        const awayWords=(g.away||"").toLowerCase().split(" ").filter(w=>w.length>3);
-        if(homeWords.some(w=>bname.includes(w))&&awayWords.some(w=>bname.includes(w))){
-          _gid_bet=g._id||""; _game_obj=g;
-        }
-      }));
-    }
-
-    const liveForCard = _gid_bet && liveOddsData[_gid_bet];
-    const hasLiveOdds = !!(liveForCard);
-
-    // Extract moneyline for probability bars + badge
-    let homeML=null, awayML=null, spreadVal=null, totalVal=null, mlGap=null;
-    if(liveForCard){
-      const mlData = liveForCard.ml||[];
-      const homeItem = mlData.find(i=>(i.t||'').toLowerCase().includes((_game_obj?.home||'').split(' ').pop().toLowerCase()));
-      const awayItem = mlData.find(i=>(i.t||'').toLowerCase().includes((_game_obj?.away||'').split(' ').pop().toLowerCase()));
-      if(homeItem) homeML = parseInt(homeItem.o);
-      if(awayItem) awayML = parseInt(awayItem.o);
-      if(liveForCard.spread?.length) spreadVal = liveForCard.spread[0];
-      if(liveForCard.total?.length) totalVal = liveForCard.total[0];
-      if(homeML&&awayML) mlGap = Math.abs(homeML - awayML);
-    } else {
-      // Extract from AI lines
-      const mlLine = b.lines?.find(l=>l.label==="Moneyline");
-      if(mlLine?.items){
-        const hItem = mlLine.items.find(i=>i.fav);
-        const aItem = mlLine.items.find(i=>!i.fav);
-        if(hItem) homeML = parseInt(hItem.o);
-        if(aItem) awayML = parseInt(aItem.o);
-        if(homeML&&awayML) mlGap = Math.abs(homeML - awayML);
-      }
-    }
-
-    // Probability bars (only when we have both MLs)
-    const probHTML = (homeML && awayML && _game_obj)
-      ? buildProbBars(_game_obj.home, _game_obj.away, homeML, awayML) : '';
-
-    // Compact spread + total pills
-    let pillsHTML = '';
-    if(liveForCard){
-      const pills = [];
-      if(spreadVal) pills.push(`<span class="bet-line-pill"><span class="bet-line-pill-label">Spread</span><span class="bet-line-pill-val">${spreadVal.t?.split(' ').pop()||''} ${spreadVal.o||''}</span></span>`);
-      if(totalVal) pills.push(`<span class="bet-line-pill"><span class="bet-line-pill-label">O/U</span><span class="bet-line-pill-val">${totalVal.line||''}</span></span>`);
-      const srcPill = `<span class="bet-line-pill"><span class="prob-ml">⚡ Live</span></span>`;
-      if(pills.length) pillsHTML = `<div class="bet-lines-compact">${pills.join('')}${srcPill}</div>`;
-    } else if(b.lines?.length){
-      const pills = b.lines.filter(l=>l.label!=="Moneyline").map(l=>{
-        const v = l.items?.[0];
-        return v ? `<span class="bet-line-pill"><span class="bet-line-pill-label">${l.label}</span><span class="bet-line-pill-val">${v.t?.split(' ').pop()||''} ${v.o||''}</span></span>` : '';
-      }).filter(Boolean);
-      const aiPill = `<span class="bet-line-pill"><span class="prob-ml">🤖 Est.</span></span>`;
-      if(pills.length) pillsHTML = `<div class="bet-lines-compact">${pills.join('')}${aiPill}</div>`;
-    }
-
-    // FIELD vs market signal
-    const signalHTML = fieldVsMarket(_game_obj, homeML, awayML);
-
-    const booksHtml = b.books.map(bk=>`<a class="bet-link" href="${bk.url}" target="_blank" rel="noopener">${hasLiveOdds?'':' Verify at '}${bk.name} →</a>`).join('');
-
-    return `<div class="bet-card" data-game-id="${_gid_bet}"><div class="bet-accent"></div><div class="bet-inner">
+  grid.innerHTML = top.map(({game, sport, odds}) => {
+    const gameLabel = `${game.away||''} @ ${game.home||''}`;
+    const gameTime  = game.start_time ? fmtTime(game.start_time) : '';
+    const probHTML  = buildProbBars(game.home, game.away, odds.homeML, odds.awayML);
+    const pills = [];
+    if(odds.homeSpread != null) pills.push(
+      `<span class="bet-line-pill"><span class="bet-line-pill-label">Spread</span><span class="bet-line-pill-val">${odds.homeSpread>0?'+':''}${odds.homeSpread}</span></span>`);
+    if(odds.total != null) pills.push(
+      `<span class="bet-line-pill"><span class="bet-line-pill-label">O/U</span><span class="bet-line-pill-val">${odds.total}</span></span>`);
+    pills.push(`<span class="bet-line-pill" style="opacity:.55"><span class="prob-ml">⚡ The Odds API</span></span>`);
+    const seriesCtx = game.seriesRecord
+      ? `<div style="font-size:.7rem;color:var(--platinum);padding:.25rem 1rem;border-bottom:1px solid var(--edge)">${game.seriesRecord}</div>` : '';
+    return `<div class="bet-card"><div class="bet-accent"></div><div class="bet-inner">
       <div class="bet-card-head">
         <div class="bet-card-head-top">
           <div class="bet-head-left" style="min-width:0;flex:1">
-            <div class="bet-game">${b.game}</div>
+            <div class="bet-game">${gameLabel}</div>
             <div class="bet-meta-row" style="margin-top:.2rem">
-              <span class="bet-league">${b.league}</span>
+              <span class="bet-league">${sport} · ${gameTime} ET</span>
             </div>
           </div>
-          ${mlGap!=null ? compBadge(mlGap) : ''}
+          ${odds.moneylineGap!=null ? compBadge(odds.moneylineGap) : ''}
         </div>
       </div>
+      ${seriesCtx}
       ${probHTML}
-      ${pillsHTML}
-      ${signalHTML}
-      <div class="bet-context">${b.context}</div>
-      <div class="bet-links">${booksHtml}</div>
+      <div class="bet-lines-compact">${pills.join('')}</div>
+      ${fieldVsMarket(game, odds.homeML, odds.awayML)}
+      <div class="bet-links">
+        <a class="bet-link" href="https://sportsbook.draftkings.com" target="_blank" rel="noopener">DraftKings &#8594;</a>
+        <a class="bet-link" href="https://sportsbook.fanduel.com" target="_blank" rel="noopener">FanDuel &#8594;</a>
+        <a class="bet-link" href="https://sports.betmgm.com" target="_blank" rel="noopener">BetMGM &#8594;</a>
+      </div>
     </div></div>`;
   }).join('');
-
-  // Inject any live odds already available, then again after 3s for in-flight fetches
-  updateOddsUI();
-  setTimeout(updateOddsUI, 3000);
 }
+
 
 // ═══════════════════════════════════════════════════════════════
 // BALLDONTLIE ENGINE — Injuries, Stats, Live Game Data
@@ -8174,12 +8141,21 @@ const ODDS_RELAY_BASE = 'https://field-relay-nba.jeffunglesbee.workers.dev/odds'
 //   Series odds for playoff EMBER  — live series implication signal
 //
 const ODDS_SPORT_MAP = {
+  // Exact section sport names used in allData.sports
+  'NBA Playoffs':    'basketball_nba',
+  'NBA':             'basketball_nba',
+  'WNBA':            'basketball_wnba',
+  'NHL Playoffs':    'icehockey_nhl',
+  'NHL':             'icehockey_nhl',
+  'Baseball (MLB)':  'baseball_mlb',
+  'NFL':             'americanfootball_nfl',
+  'Premier League':  'soccer_epl',
+  'MLS Soccer':      'soccer_usa_mls',
+  // Legacy generic keys (kept for any code using generic names)
   'Basketball':      'basketball_nba',
   'Baseball':        'baseball_mlb',
   'Football':        'americanfootball_nfl',
   'Hockey':          'icehockey_nhl',
-  'Premier League':  'soccer_epl',
-  'MLS Soccer':      'soccer_usa_mls',
 };
 // Cached odds per sport key — keyed by sport + today's date
 const _oddsCache = {};
