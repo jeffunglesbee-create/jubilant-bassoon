@@ -10742,11 +10742,48 @@ async function fetchNBAStandingsParsed() {
     });
     if (teams.length) {
       _relayStandingsCache[key] = teams;
-      _relayStandingsCache['NBA Playoffs'] = teams; // reuse for playoff sport key
+      _relayStandingsCache['NBA Playoffs'] = teams;
     }
     if (FIELD_DEBUG) console.log(`[Standings] NBA: ${teams.length} teams from relay`);
     return teams.length ? teams : null;
-  } catch(e) { if (FIELD_DEBUG) console.warn('[Standings] NBA error:', e.message); return null; }
+  } catch(e) {
+    if (FIELD_DEBUG) console.warn('[Standings] NBA relay failed:', e.message, '— trying ESPN');
+    // Fallback: ESPN standings API (CORS-open, no relay needed)
+    try {
+      const r = await fetch(
+        'https://site.api.espn.com/apis/v2/sports/basketball/nba/standings?limit=100&season=2026&seasontype=2',
+        { signal: AbortSignal.timeout(6000) }
+      );
+      if (!r.ok) return null;
+      const d = await r.json();
+      const teams = [];
+      (d.children || []).forEach(conf => {
+        (conf.standings?.entries || []).forEach(e => {
+          const sv = name => {
+            const s = (e.stats||[]).find(s=>s.name===name||s.shortDisplayName===name||s.abbreviation===name);
+            return s ? String(s.value??s.displayValue??'0') : '0';
+          };
+          teams.push({
+            team:   e.team?.displayName || '',
+            abbrev: e.team?.abbreviation || '',
+            wins:   sv('wins'),
+            losses: sv('losses'),
+            pct:    sv('winPercent')||sv('winPct'),
+            gb:     sv('gamesBehind'),
+          });
+        });
+      });
+      if (teams.length) {
+        _relayStandingsCache[key] = teams;
+        _relayStandingsCache['NBA Playoffs'] = teams;
+        if (FIELD_DEBUG) console.log(`[Standings] NBA: ${teams.length} teams from ESPN fallback`);
+      }
+      return teams.length ? teams : null;
+    } catch(e2) {
+      if (FIELD_DEBUG) console.warn('[Standings] NBA ESPN fallback failed:', e2.message);
+      return null;
+    }
+  }
 }
 
 async function fetchNHLStandingsParsed() {
