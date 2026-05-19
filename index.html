@@ -6741,8 +6741,9 @@ async function bdlContextForGame(home, away, sportName) {
 
 // ═══════════════════════════════════════════════════════════════
 
-const ODDS_API_KEY  = "bab102f4d22fb4398c4f237a9e992af2";
-const ODDS_API_BASE = "https://api.the-odds-api.com/v4";
+// ODDS_API_KEY intentionally not here — key lives in relay worker only (server-side)
+// All odds calls route through ODDS_RELAY_BASE which injects apiKey server-side
+const ODDS_API_BASE = null; // deprecated — use ODDS_RELAY_BASE
 const ODDS_DAILY_LIMIT = 14;   // 500/month free tier → ~16.7/day; ceiling at 14 with 2+ buffer
 const ODDS_CACHE_TTL   = 1800000; // 30-minute localStorage cache per game matchup
 function oddsReqCount(){
@@ -6787,7 +6788,7 @@ async function fetchGameOdds(homeTeam, awayTeam, sport){
   const sportKey = SPORT_MAP[sport];
   if(!sportKey) return null;
   try{
-    const url = `${ODDS_API_BASE}/sports/${sportKey}/odds/?apiKey=${ODDS_API_KEY}&regions=us&markets=h2h,spreads,totals&oddsFormat=american&bookmakers=draftkings`;
+    const url = `${ODDS_RELAY_BASE}/v4/sports/${sportKey}/odds?regions=us&markets=h2h,spreads,totals&oddsFormat=american&bookmakers=draftkings`;
     const r = await fetch(url, {signal:AbortSignal.timeout(8000)});
     if(!r.ok) throw new Error(`Odds API HTTP ${r.status}`);
     const events = await r.json();
@@ -10725,36 +10726,14 @@ async function fetchMLBStandingsParsed() {
 async function fetchNBAStandingsParsed() {
   const key = 'Basketball (NBA)';
   if (_relayStandingsCache[key]) return _relayStandingsCache[key];
+
+  // ESPN-first: CORS-open, no IP block, same data — relay CDN is secondary
   try {
-    const data = await fetchNBAStandingsViaRelay();
-    const teams = [];
-    ['east', 'west'].forEach(conf => {
-      (data.league?.[conf]?.teams || []).forEach(t => {
-        teams.push({
-          team:   `${t.teamCity} ${t.teamName}`,
-          abbrev: t.teamTricode || t.teamAbbreviation || '',
-          wins:   String(t.wins || 0),
-          losses: String(t.losses || 0),
-          pct:    t.winPct || '',
-          gb:     t.gamesBehind ?? '0',
-        });
-      });
-    });
-    if (teams.length) {
-      _relayStandingsCache[key] = teams;
-      _relayStandingsCache['NBA Playoffs'] = teams;
-    }
-    if (FIELD_DEBUG) console.log(`[Standings] NBA: ${teams.length} teams from relay`);
-    return teams.length ? teams : null;
-  } catch(e) {
-    if (FIELD_DEBUG) console.warn('[Standings] NBA relay failed:', e.message, '— trying ESPN');
-    // Fallback: ESPN standings API (CORS-open, no relay needed)
-    try {
-      const r = await fetch(
-        'https://site.api.espn.com/apis/v2/sports/basketball/nba/standings?limit=100&season=2026&seasontype=2',
-        { signal: AbortSignal.timeout(6000) }
-      );
-      if (!r.ok) return null;
+    const r = await fetch(
+      'https://site.api.espn.com/apis/v2/sports/basketball/nba/standings?limit=100&season=2026&seasontype=2',
+      { signal: AbortSignal.timeout(6000) }
+    );
+    if (r.ok) {
       const d = await r.json();
       const teams = [];
       (d.children || []).forEach(conf => {
@@ -10776,13 +10755,37 @@ async function fetchNBAStandingsParsed() {
       if (teams.length) {
         _relayStandingsCache[key] = teams;
         _relayStandingsCache['NBA Playoffs'] = teams;
-        if (FIELD_DEBUG) console.log(`[Standings] NBA: ${teams.length} teams from ESPN fallback`);
+        if (FIELD_DEBUG) console.log(`[Standings] NBA: ${teams.length} teams from ESPN`);
+        return teams;
       }
-      return teams.length ? teams : null;
-    } catch(e2) {
-      if (FIELD_DEBUG) console.warn('[Standings] NBA ESPN fallback failed:', e2.message);
-      return null;
     }
+  } catch(e) { if (FIELD_DEBUG) console.warn('[Standings] NBA ESPN failed:', e.message); }
+
+  // Secondary: NBA CDN relay (may be blocked by cdn.nba.com IP rules)
+  try {
+    const data = await fetchNBAStandingsViaRelay();
+    const teams = [];
+    ['east', 'west'].forEach(conf => {
+      (data.league?.[conf]?.teams || []).forEach(t => {
+        teams.push({
+          team:   `${t.teamCity} ${t.teamName}`,
+          abbrev: t.teamTricode || t.teamAbbreviation || '',
+          wins:   String(t.wins || 0),
+          losses: String(t.losses || 0),
+          pct:    t.winPct || '',
+          gb:     t.gamesBehind ?? '0',
+        });
+      });
+    });
+    if (teams.length) {
+      _relayStandingsCache[key] = teams;
+      _relayStandingsCache['NBA Playoffs'] = teams;
+    }
+    if (FIELD_DEBUG) console.log(`[Standings] NBA: ${teams.length} teams from relay CDN`);
+    return teams.length ? teams : null;
+  } catch(e) {
+    if (FIELD_DEBUG) console.warn('[Standings] NBA relay CDN also failed:', e.message);
+    return null;
   }
 }
 
