@@ -5272,16 +5272,39 @@ function buildTodaySchedule(){
   // ION: FREE over-the-air Friday doubleheaders. USA Network: Wed + Mon anchored.
   // Indiana Fever: all 44 games nationally televised. A'ja Wilson / LV Aces: 33 national games.
   const wnbaGames=[
-    // ── Thursday May 14, 2026 — Prime Video Thursday Night doubleheader ─────────
-    // Source: 2026 WNBA broadcast schedule — Prime Video airs 30 games primarily Thu nights
-    // Specific matchups: verify from WNBA.com for exact confirmed games
-    // Indiana Fever: all 44 games nationally televised — likely on tonight
-    {home:"Indiana Fever",     away:"New York Liberty",      league:"WNBA – 2026 Season", start_time:"2026-05-14T23:00:00Z", confirmed:true, venue:"Gainbridge Fieldhouse, Indianapolis",   streams:resolveBundle("WNBA_PRIME")},
-    {home:"Las Vegas Aces",    away:"Seattle Storm",          league:"WNBA – 2026 Season", start_time:"2026-05-15T02:00:00Z", confirmed:true, venue:"Michelob ULTRA Arena, Las Vegas",       streams:resolveBundle("WNBA_PRIME")},
-    {home:"Toronto Tempo",      away:"Seattle Storm",          league:"WNBA – 2026 Season", start_time:"2026-05-13T23:00:00Z", confirmed:true, venue:"Scotiabank Arena, Toronto",          streams:resolveBundle("WNBA_LOCAL")},
-    {home:"Connecticut Sun",    away:"Las Vegas Aces",         league:"WNBA – 2026 Season", start_time:"2026-05-14T00:00:00Z", confirmed:true, venue:"Mohegan Sun Arena, Uncasville",      streams:resolveBundle("WNBA_LOCAL")},
-    {home:"Golden State Valkyries", away:"Chicago Sky",        league:"WNBA – 2026 Season", start_time:"2026-05-14T02:00:00Z", confirmed:true, venue:"Chase Center, San Francisco",        streams:resolveBundle("WNBA_LOCAL")},
-    {home:"Los Angeles Sparks", away:"Indiana Fever",          league:"WNBA – 2026 Season", start_time:"2026-05-14T02:30:00Z", confirmed:true, venue:"Crypto.com Arena, Los Angeles",      streams:resolveBundle("WNBA_LOCAL")},
+    // ── WNBA 2026 Season — Week of May 19-25 ─────────────────────────────────
+    // Source: WNBA.com schedule + Sports Media Watch + Flashscore 2026
+    // Broadcast pattern: ION Fri doubleheaders · ESPN Tue · USA Wed+Mon · Prime Thu
+    //                    ABC Sat · NBC Sun prime · NBCSN Mon/select nights · CBS Sat prime
+    // Indiana Fever: 44 national games · Dallas Wings: 36 national games
+    // Portland Fire + Toronto Tempo: 2 expansion teams, debut season
+    //
+    // ── Monday May 18 (complete) ────────────────────────────────────────────
+    // No national games
+    //
+    // ── Tuesday May 19 ──────────────────────────────────────────────────────
+    {home:"Washington Mystics",  away:"Dallas Wings",        league:"WNBA – 2026 Season", start_time:"2026-05-19T23:00:00Z", confirmed:true, venue:"Entertainment & Sports Arena, Washington DC", streams:resolveBundle("WNBA_NBCSN"),  localNote:"NBCSN / Peacock"},
+    {home:"Connecticut Sun",     away:"Portland Fire",       league:"WNBA – 2026 Season", start_time:"2026-05-20T01:00:00Z", confirmed:true, venue:"Mohegan Sun Arena, Uncasville CT",             streams:resolveBundle("WNBA_NBCSN"),  localNote:"NBCSN / Peacock"},
+    //
+    // ── Wednesday May 20 ─────────────────────────────────────────────────────
+    {home:"Toronto Tempo",       away:"Phoenix Mercury",     league:"WNBA – 2026 Season", start_time:"2026-05-20T23:30:00Z", confirmed:true, venue:"Scotiabank Arena, Toronto",                  streams:resolveBundle("WNBA_USA"),    localNote:"USA Network"},
+    //
+    // ── Thursday May 21 — Prime Video Thursday Night ─────────────────────────
+    {home:"Portland Fire",       away:"Indiana Fever",       league:"WNBA – 2026 Season", start_time:"2026-05-22T00:00:00Z", confirmed:true, venue:"Moda Center, Portland OR",                   streams:resolveBundle("WNBA_PRIME"),  localNote:"Prime Video"},
+    {home:"Dallas Wings",        away:"Chicago Sky",         league:"WNBA – 2026 Season", start_time:"2026-05-22T00:00:00Z", confirmed:true, venue:"College Park Center, Arlington TX",           streams:resolveBundle("WNBA_PRIME"),  localNote:"Prime Video"},
+    {home:"Connecticut Sun",     away:"Seattle Storm",       league:"WNBA – 2026 Season", start_time:"2026-05-22T00:30:00Z", confirmed:true, venue:"Mohegan Sun Arena, Uncasville CT",            streams:resolveBundle("WNBA_ESPN"),   localNote:"ESPN"},
+    //
+    // ── Friday May 22 — ION Friday doubleheader ──────────────────────────────
+    {home:"Golden State Valkyries",away:"New York Liberty",  league:"WNBA – 2026 Season", start_time:"2026-05-23T00:00:00Z", confirmed:true, venue:"Chase Center, San Francisco CA",             streams:resolveBundle("WNBA_ION"),    localNote:"ION (free OTA)"},
+    {home:"Toronto Tempo",       away:"Minnesota Lynx",      league:"WNBA – 2026 Season", start_time:"2026-05-23T01:30:00Z", confirmed:true, venue:"Scotiabank Arena, Toronto",                  streams:resolveBundle("WNBA_ION"),    localNote:"ION (free OTA)"},
+    //
+    // ── Saturday May 23 ──────────────────────────────────────────────────────
+    {home:"Dallas Wings",        away:"Atlanta Dream",       league:"WNBA – 2026 Season", start_time:"2026-05-23T20:00:00Z", confirmed:true, venue:"College Park Center, Arlington TX",           streams:resolveBundle("WNBA_CBS"),    localNote:"CBS / Paramount+"},
+    {home:"Golden State Valkyries",away:"Indiana Fever",     league:"WNBA – 2026 Season", start_time:"2026-05-23T22:00:00Z", confirmed:true, venue:"Chase Center, San Francisco CA",             streams:resolveBundle("WNBA_CBS"),    localNote:"CBS / Paramount+"},
+    //
+    // ── Sunday May 24 ────────────────────────────────────────────────────────
+    {home:"Los Angeles Sparks",  away:"Las Vegas Aces",      league:"WNBA – 2026 Season", start_time:"2026-05-24T20:00:00Z", confirmed:true, venue:"Crypto.com Arena, Los Angeles CA",            streams:resolveBundle("WNBA_NBC"),    localNote:"NBC / Peacock"},
+    {home:"Dallas Wings",        away:"New York Liberty",    league:"WNBA – 2026 Season", start_time:"2026-05-24T22:30:00Z", confirmed:true, venue:"College Park Center, Arlington TX",           streams:resolveBundle("WNBA_NBC"),    localNote:"NBC / Peacock"},
   ].filter(g=>isToday(g.start_time));
   if(wnbaGames.length) sections.push({sport:"WNBA", games:wnbaGames});
 
