@@ -6744,8 +6744,9 @@ async function bdlContextForGame(home, away, sportName) {
 // ODDS_API_KEY intentionally not here — key lives in relay worker only (server-side)
 // All odds calls route through ODDS_RELAY_BASE which injects apiKey server-side
 const ODDS_API_BASE = null; // deprecated — use ODDS_RELAY_BASE
-const ODDS_DAILY_LIMIT = 14;   // 500/month free tier → ~16.7/day; ceiling at 14 with 2+ buffer
-const ODDS_CACHE_TTL   = 1800000; // 30-minute localStorage cache per game matchup
+const ODDS_DAILY_LIMIT = 6;     // 500/month ÷ 31 days = 16.1/day; limit to 6 for headroom
+                                 // fetchGameOdds reuses _oddsCache → no separate calls
+const ODDS_CACHE_TTL   = 43200000; // 12-hour localStorage cache (was 30min — daily fetch is enough)
 function oddsReqCount(){
   const today = new Date().toISOString().split("T")[0];
   const s = JSON.parse(localStorage.getItem("odds_req")||"{}");
@@ -6762,72 +6763,75 @@ function oddsBumpCount(){
 function oddsBudgetOk(){ return oddsReqCount() < ODDS_DAILY_LIMIT; }
 
 // Fetch live odds for a single game from The Odds API
-// cacheKey: "odds_{homeSlug}_{awaySlug}_{date}"
+// Zero-credit path: reuses _oddsCache populated by fetchOddsForSport().
+// fetchOddsForSport() is called on page load for each active sport — its
+// data lives in _oddsCache[sportKey_date] and localStorage.
+// fetchGameOdds() just searches that data — no separate relay call ever.
 // Returns {moneyline:{home,away}, spread:{line,home,away}, total:{line,over,under}} or null
 async function fetchGameOdds(homeTeam, awayTeam, sport){
-  const today = new Date().toISOString().split("T")[0];
-  const slug = (s)=>s.toLowerCase().replace(/[^a-z0-9]/g,"").slice(0,12);
-  const cacheKey = `odds_${slug(homeTeam)}_${slug(awayTeam)}_${today}`;
-  // Layer 2: localStorage cache
+  const today = new Date().toISOString().split('T')[0];
+  const slug = (s)=>s.toLowerCase().replace(/[^a-z0-9]/g,'').slice(0,12);
+  const gameKey = `odds_${slug(homeTeam)}_${slug(awayTeam)}_${today}`;
+  // Layer 1: game-level localStorage (parsed result — fast path)
   try{
-    const raw = localStorage.getItem(cacheKey);
-    if(raw){
-      const {data,ts} = JSON.parse(raw);
-      if(Date.now()-ts < ODDS_CACHE_TTL){ if(FIELD_DEBUG) console.debug("[Odds] cache hit:",cacheKey); return data; }
-    }
+    const raw = localStorage.getItem(gameKey);
+    if(raw){ const {data,ts}=JSON.parse(raw); if(Date.now()-ts < ODDS_CACHE_TTL) return data; }
   }catch(e){}
-  // Budget check
-  if(!oddsBudgetOk()){ if(FIELD_DEBUG) console.warn("[Odds] daily budget exhausted"); return null; }
-  // Map FIELD sport → Odds API sport key
+  // Map sport → Odds API sport key
   const SPORT_MAP = {
-    "NBA Playoffs":"basketball_nba", "Baseball (MLB)":"baseball_mlb",
-    "NHL Playoffs":"icehockey_nhl", "Premier League":"soccer_epl",
-    "WNBA":"basketball_wnba", "Golf":"golf_masters_tournament_winner",
-    "UFC/MMA":"mma_mixed_martial_arts",
+    'NBA Playoffs':'basketball_nba', 'Baseball (MLB)':'baseball_mlb',
+    'NHL Playoffs':'icehockey_nhl', 'Premier League':'soccer_epl',
+    'WNBA':'basketball_wnba', 'Golf':'golf_masters_tournament_winner',
+    'UFC/MMA':'mma_mixed_martial_arts',
   };
   const sportKey = SPORT_MAP[sport];
   if(!sportKey) return null;
-  try{
-    const url = `${ODDS_RELAY_BASE}/v4/sports/${sportKey}/odds?regions=us&markets=h2h,spreads,totals&oddsFormat=american&bookmakers=draftkings`;
-    const r = await fetch(url, {signal:AbortSignal.timeout(8000)});
-    if(!r.ok) throw new Error(`Odds API HTTP ${r.status}`);
-    const events = await r.json();
-    oddsBumpCount();
-    // Find matching game
-    const homeSlug = slug(homeTeam), awaySlug = slug(awayTeam);
-    const match = events.find(ev=>{
-      const h=slug(ev.home_team||""), a=slug(ev.away_team||"");
-      return (h.includes(homeSlug)||homeSlug.includes(h)) &&
-             (a.includes(awaySlug)||awaySlug.includes(a));
-    });
-    if(!match) return null;
-    const dk = (match.bookmakers||[]).find(b=>b.key==="draftkings");
-    if(!dk) return null;
-    const result = {source:"DraftKings", verified:true};
-    (dk.markets||[]).forEach(mkt=>{
-      if(mkt.key==="h2h"){
-        const home=mkt.outcomes.find(o=>slug(o.name).includes(homeSlug));
-        const away=mkt.outcomes.find(o=>slug(o.name).includes(awaySlug));
-        if(home&&away) result.moneyline={home:home.price,away:away.price};
-      }
-      if(mkt.key==="spreads"){
-        const home=mkt.outcomes.find(o=>slug(o.name).includes(homeSlug));
-        if(home) result.spread={line:home.point,home:home.price,away:mkt.outcomes.find(o=>!slug(o.name).includes(homeSlug))?.price};
-      }
-      if(mkt.key==="totals"){
-        const over=mkt.outcomes.find(o=>o.name==="Over");
-        const under=mkt.outcomes.find(o=>o.name==="Under");
-        if(over) result.total={line:over.point,over:over.price,under:under?.price};
-      }
-    });
-    // Cache to localStorage
-    try{ localStorage.setItem(cacheKey, JSON.stringify({data:result,ts:Date.now()})); }catch(e){}
-    if(FIELD_DEBUG) console.debug("[Odds] fetched:",homeTeam,"vs",awayTeam,"→",result);
-    return result;
-  }catch(e){
-    if(FIELD_DEBUG) console.warn("[Odds]",e.message);
-    return null;
+  // Layer 2: reuse sport-level data already loaded by fetchOddsForSport()
+  // This costs ZERO additional API credits — data is already in memory/localStorage
+  const sportCacheKey = `${sportKey}_${today}`;
+  let events = _oddsCache[sportCacheKey];
+  if(!events){
+    // Not in memory — try localStorage sport cache
+    try{
+      const lsRaw = localStorage.getItem(`field_odds_${sportCacheKey}`);
+      if(lsRaw){ const d=JSON.parse(lsRaw); if(d?.length) events=d; }
+    }catch(e){}
   }
+  if(!events){
+    // Sport data not loaded yet — trigger fetchOddsForSport (budget-checked)
+    events = await fetchOddsForSport(sport);
+  }
+  if(!events?.length) return null;
+  // Find matching game
+  const homeSlug=slug(homeTeam), awaySlug=slug(awayTeam);
+  const match = events.find(ev=>{
+    const h=slug(ev.home_team||''), a=slug(ev.away_team||'');
+    return (h.includes(homeSlug)||homeSlug.includes(h)) &&
+           (a.includes(awaySlug)||awaySlug.includes(a));
+  });
+  if(!match) return null;
+  const dk = (match.bookmakers||[]).find(b=>b.key==='draftkings');
+  if(!dk) return null;
+  const result = {source:'DraftKings', verified:true};
+  (dk.markets||[]).forEach(mkt=>{
+    if(mkt.key==='h2h'){
+      const home=mkt.outcomes.find(o=>slug(o.name).includes(homeSlug));
+      const away=mkt.outcomes.find(o=>slug(o.name).includes(awaySlug));
+      if(home&&away) result.moneyline={home:home.price,away:away.price};
+    }
+    if(mkt.key==='spreads'){
+      const home=mkt.outcomes.find(o=>slug(o.name).includes(homeSlug));
+      if(home) result.spread={line:home.point,home:home.price,away:mkt.outcomes.find(o=>!slug(o.name).includes(homeSlug))?.price};
+    }
+    if(mkt.key==='totals'){
+      const over=mkt.outcomes.find(o=>o.name==='Over');
+      const under=mkt.outcomes.find(o=>o.name==='Under');
+      if(over) result.total={line:over.point,over:over.price,under:under?.price};
+    }
+  });
+  try{ localStorage.setItem(gameKey, JSON.stringify({data:result,ts:Date.now()})); }catch(e){}
+  if(FIELD_DEBUG) console.debug('[Odds] fetched:',homeTeam,'vs',awayTeam,'→',result);
+  return result;
 }
 const BDL_KEY  = "4c881f4b-3845-4542-841f-a0e685c9f10e";
 const SLASH_GOLF_KEY  = "1d6ac6f06bmshf789a26fcf28816p135cdbjsn2eedede3efec";
@@ -9053,16 +9057,25 @@ async function fetchOddsForSport(sport, markets = 'h2h,spreads,totals') {
       if (lsData?.length) { _oddsCache[cacheKey] = lsData; return lsData; }
     }
   } catch(e) {}
+  // Budget check — prevents relay calls when daily limit hit
+  if (!oddsBudgetOk()) { if (FIELD_DEBUG) console.warn('[ODDS] daily budget exhausted, skipping', sportKey); return null; }
+  // Auto-pause if account quota is nearly exhausted (read from last relay response)
+  const remaining = parseInt(localStorage.getItem('odds_remaining') || '500');
+  if (remaining < 5) { if (FIELD_DEBUG) console.warn('[ODDS] account quota critical (<5 remaining), pausing'); return null; }
   try {
     const qs = `?regions=us&markets=${markets}&oddsFormat=american&dateFormat=iso`;
     const r  = await fetch(`${ODDS_RELAY_BASE}/v4/sports/${sportKey}/odds${qs}`,
                            { signal: AbortSignal.timeout(6000) });
     if (!r.ok) { if (FIELD_DEBUG) console.warn('[ODDS] relay returned', r.status); return null; }
+    // Track account-level quota remaining from relay response header
+    const rem = r.headers.get('x-requests-remaining');
+    if (rem !== null) try { localStorage.setItem('odds_remaining', rem); } catch(e) {}
     const data = await r.json();
+    oddsBumpCount();
     _oddsCache[cacheKey] = data;
     // Persist to localStorage — survives page reload and game-start cutoff
     try { localStorage.setItem(`field_odds_${cacheKey}`, JSON.stringify(data)); } catch(e) {}
-    if (FIELD_DEBUG) console.log(`[ODDS] ${sportKey}: ${data.length} games, quota remaining: ${r.headers.get('x-requests-remaining') ?? '?'}`);
+    if (FIELD_DEBUG) console.log(`[ODDS] ${sportKey}: ${data.length} games · quota remaining: ${rem ?? '?'}`);
     return data;
   } catch(e) {
     if (FIELD_DEBUG) console.warn('[ODDS] fetch error:', e.message);
