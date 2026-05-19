@@ -875,12 +875,12 @@ flex-shrink:0;white-space:nowrap;
 }
 .score-sep{color:var(--platinum);font-size:.85rem;font-weight:400;margin:0 2px}
 .score-period{
-  font-family:var(--ff-cond);font-size:.65rem;letter-spacing:.08em;
-  text-transform:uppercase;color:var(--live);margin-left:3px;white-space:nowrap;
+  font-family:var(--ff-cond);font-size:.82rem;letter-spacing:.06em;
+  text-transform:uppercase;color:var(--live);margin-left:4px;white-space:nowrap;
 }
 .score-final{
-  font-family:var(--ff-cond);font-size:.62rem;letter-spacing:.1em;
-  text-transform:uppercase;color:var(--platinum);margin-left:3px;white-space:nowrap;
+  font-family:var(--ff-cond);font-size:.78rem;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--platinum);margin-left:4px;white-space:nowrap;
 }
 /* Baseball situation display */
 .baseball-sit{
@@ -4377,7 +4377,7 @@ function renderAll(){
           ${liveBadge}
           <div class="${timeCls}">${timeStr}</div>
           <div class="stream-row">${streamsHTMLCapped(g.streams, 3)}${(()=>{const pk=g.streams?.[0]?.key||'';return FREE_OTA.has(pk)?'<span class="free-badge">FREE</span>':FREE_CABLE.has(pk)?'<span class="free-badge free-cable">FREE W/ CABLE</span>':''})()}<button class="share-btn" aria-label="Share" title="Share this game">⬆</button></div>
-          ${FD_LEAGUE_MAP[sec.sport]||ESPN_STANDINGS_MAP[sec.sport]?`<button class="standings-btn" onclick="toggleStandings(this,'${sec.sport}','2025')" title="Show league table">▼ Table</button>`:""}
+          ${FD_LEAGUE_MAP[sec.sport]||ESPN_STANDINGS_MAP[sec.sport]?`<button class="standings-btn" onclick="toggleStandings(this,'${sec.sport}','2025')" title="Show ${FD_LEAGUE_MAP[sec.sport]?'table':'standings'}">▼ ${FD_LEAGUE_MAP[sec.sport]?'Table':'Standings'}</button>`:""}
         </div>
       </div>`;
     }).join("");
@@ -7079,15 +7079,18 @@ async function fetchESPNStandings(sportName){
 async function toggleStandings(btn, leagueId, season){
   const card = btn.closest(".game-card");
   if(!card) return;
+  const sportName = card.dataset.sport || "";
+  const isSoccerSport = !!FD_LEAGUE_MAP[sportName];
+  const openLabel  = isSoccerSport ? "▼ Table"     : "▼ Standings";
+  const closeLabel = isSoccerSport ? "▲ Table"     : "▲ Standings";
   let panel = card.querySelector(".standings-panel");
   if(panel){
     const isOpen = panel.style.display !== "none";
     panel.style.display = isOpen ? "none" : "block";
-    btn.textContent = isOpen ? "▼ Table" : "▲ Table";
+    btn.textContent = isOpen ? openLabel : closeLabel;
     return;
   }
   btn.textContent = "…";
-  const sportName = card.dataset.sport || "";
   panel = document.createElement("div");
   panel.className = "standings-panel";
   panel.style.display = "block";
@@ -7100,7 +7103,7 @@ async function toggleStandings(btn, leagueId, season){
       if(fdRows && fdRows.length){
         renderFDStandingsPanel(panel, fdRows, sportName);
         card.appendChild(panel);
-        btn.textContent = "▲ Table";
+        btn.textContent = closeLabel;
         return;
       }
     }catch(e){ if(FIELD_DEBUG) console.warn("[Standings] FD failed:", e.message); }
@@ -7112,13 +7115,13 @@ async function toggleStandings(btn, leagueId, season){
     if(espnEntries && espnEntries.length){
       renderESPNStandingsPanel(panel, espnEntries, sportName);
       card.appendChild(panel);
-      btn.textContent = "▲ Table";
+      btn.textContent = closeLabel;
       return;
     }
   }catch(e){ if(FIELD_DEBUG) console.warn("[Standings] ESPN failed:", e.message); }
 
   // ── Final stub — silently restore; no error card expansion ────────────────
-  btn.textContent = "▼ Table";  // restore — no cascade
+  btn.textContent = openLabel;  // restore — no cascade
   if(FIELD_DEBUG) console.debug("[Standings] all sources failed for", leagueId);
 }
 
@@ -8575,13 +8578,18 @@ function renderESPNScores(){
       const homeLeads = displayHomeScore > displayAwayScore;
       const awayLeads = displayAwayScore > displayHomeScore;
 
-      const isSoccer = (score.periodPrefix==="'");
+      const isSoccer   = (score.periodPrefix === "'");
+      const isBaseball = (score.periodPrefix === "T"); // innings have no game clock
       let periodLabel = "";
       if(isLive){
         if(isSoccer){
           const half = score.period===1?"1H":"2H";
           const min  = score.clock||"";
           periodLabel = `<span class="score-period">${half}${min?" "+min:""}</span>`;
+        } else if(isBaseball){
+          // Baseball: show inning only — no clock (pitch clock is separate mechanic)
+          const pLabel = espnPeriodLabel("T", score.period||0, "");
+          periodLabel = `<span class="score-period">${pLabel}</span>`;
         } else {
           const clockStr = score.clock ? ` ${score.clock}` : "";
           const pLabel = espnPeriodLabel(score.periodPrefix||"Q", score.period||0, score.clock);
