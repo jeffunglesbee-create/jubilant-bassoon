@@ -11167,12 +11167,15 @@ async function renderEPLMatchBriefCard(gameCard) {
   const existingWrapper = gameCard.closest('.game-brief-pair');
   if(existingWrapper){
     existingWrapper.insertAdjacentElement('afterbegin', card);
-  } else {
+  } else if(gameCard.parentNode) {
     const pair = document.createElement('div');
     pair.className = 'game-brief-pair';
     gameCard.parentNode.insertBefore(pair, gameCard);
     pair.appendChild(card);
     pair.appendChild(gameCard);
+  } else {
+    // Fallback: card detached from DOM — insert before game card directly
+    gameCard.insertAdjacentElement('beforebegin', card);
   }
 
   if(cached) { card.querySelector('.epl-brief-text').textContent=trimToCompleteSentence(cached); card.querySelector('.epl-brief-text').classList.add('loaded'); return; }
