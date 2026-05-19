@@ -297,14 +297,14 @@ flex-shrink:0;white-space:nowrap;
 .mv-streams{display:flex;gap:3px;flex-wrap:wrap;margin-top:3px}
 
 /* ── MAIN ── */
-.main{max-width:1400px;margin:0 auto;padding:1.5rem 2rem 5rem;position:relative;z-index:5}
+.main{max-width:1400px;margin:0 auto;padding:1.25rem 2rem 2.5rem;position:relative;z-index:5}
 
 /* ── SPORT SECTION ── */
-.sport-section{margin-bottom:2.8rem;animation:fadeUp .4s ease both;content-visibility:auto;contain-intrinsic-size:auto 380px}
+.sport-section{margin-bottom:1.6rem;animation:fadeUp .4s ease both;content-visibility:auto;contain-intrinsic-size:auto 380px}
 @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
 .section-head{
   display:flex;align-items:center;gap:.75rem;
-  margin-bottom:1rem;padding-bottom:.65rem;
+  margin-bottom:.55rem;padding-bottom:.5rem;
   border-bottom:1px solid var(--edge);
   position:sticky;top:54px;z-index:30;
   background:var(--obsidian);
@@ -672,7 +672,15 @@ flex-shrink:0;white-space:nowrap;
   grid-column:2 / 4;grid-row:3;
   overflow-x:auto;
 }
-.standings-panel.open{display:block}
+.standings-panel.open{
+  display:block;
+  max-height:280px;
+  overflow-y:auto;
+  scrollbar-width:thin;
+  scrollbar-color:var(--edge2) transparent;
+}
+.standings-panel.open::-webkit-scrollbar{width:3px}
+.standings-panel.open::-webkit-scrollbar-thumb{background:var(--edge2);border-radius:3px}
 .standings-table{width:100%;border-collapse:collapse}
 .standings-table .highlight td{color:var(--gold2)}
 .standings-table .relegation td{opacity:.7}
@@ -747,7 +755,7 @@ flex-shrink:0;white-space:nowrap;
 .series-preview-card{background:rgba(201,168,76,.06);border:1px solid rgba(201,168,76,.18);border-radius:10px;padding:.85rem 1rem .75rem;margin-bottom:.6rem;cursor:pointer;transition:background .2s}
 .series-preview-card:hover{background:rgba(201,168,76,.1)}
 /* EPL Match Brief card */
-.epl-match-brief-card{background:rgba(124,58,237,.06);border:1px solid rgba(124,58,237,.2);border-left:3px solid rgba(124,58,237,.5);border-radius:8px;padding:.7rem .9rem .65rem;margin-bottom:.5rem;cursor:pointer;transition:background .2s}
+.epl-match-brief-card{background:rgba(124,58,237,.06);border:1px solid rgba(124,58,237,.2);border-left:3px solid rgba(124,58,237,.5);border-radius:8px;padding:.45rem .75rem .4rem;margin-bottom:.35rem;cursor:pointer;transition:background .2s}
 .epl-match-brief-card:hover{background:rgba(124,58,237,.1)}
 .epl-brief-label{font-size:.5rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(167,139,250,.9);margin-bottom:.35rem}
 .epl-brief-text{font-size:.7rem;color:var(--text-muted,#b0b0c0);line-height:1.5;font-style:italic}
@@ -1699,6 +1707,19 @@ flex-shrink:0;white-space:nowrap;
   .main,.masthead-inner,.controls-inner,
   .betting-section,.media-section,.streaming-section{
     max-width:1700px;
+  }
+}
+
+/* ── Game-brief pair: brief card stacked above its game card ── */
+.game-brief-pair{display:contents} /* transparent at mobile/tablet */
+@media(min-width:1200px){
+  .game-brief-pair{
+    display:flex;flex-direction:column;gap:6px;
+    min-width:0; /* prevent grid blowout */
+  }
+  /* Solo sections: 1 card (or 1 pair) gets capped width — no empty right column */
+  .games-list:not(:has(.game-card ~ .game-card)):not(:has(.game-brief-pair ~ .game-brief-pair)){
+    grid-template-columns:minmax(320px,640px);
   }
 }
 /* ── 3-col game grid only above 1800px ── */
@@ -11083,7 +11104,18 @@ async function renderEPLMatchBriefCard(gameCard) {
     + (cached || staticText)
     + '</div>';
   card.addEventListener('click', () => card.classList.toggle('epl-brief-collapsed'));
-  gameCard.insertAdjacentElement('beforebegin', card);
+
+  // Wrap brief + game card together so they sit in the same grid cell at ≥1200px
+  const existingWrapper = gameCard.closest('.game-brief-pair');
+  if(existingWrapper){
+    existingWrapper.insertAdjacentElement('afterbegin', card);
+  } else {
+    const pair = document.createElement('div');
+    pair.className = 'game-brief-pair';
+    gameCard.parentNode.insertBefore(pair, gameCard);
+    pair.appendChild(card);
+    pair.appendChild(gameCard);
+  }
 
   if(cached) { card.querySelector('.epl-brief-text').textContent=trimToCompleteSentence(cached); card.querySelector('.epl-brief-text').classList.add('loaded'); return; }
 
