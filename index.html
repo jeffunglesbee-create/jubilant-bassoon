@@ -4708,33 +4708,40 @@ function buildTodaySchedule(){
     return base;
   });
 
-  // ── UEFA Champions League — Final May 30 ────────────────────────
-  // Semi-finals complete. Final: Sat May 30 · Allianz Arena, Munich · kickoff 8pm CET (3pm ET)
-  // No UCL games May 11. buildDateSchedule() has UCL Final entry for May 30.
+  // ── UEFA Champions League — Final May 30 (Budapest) ─────────────────────
+  // Final: Sat May 30 · Puskás Aréna, Budapest · PSG vs Arsenal
+  // Kickoff: 18:00 CET / 16:00 UTC = NOON ET (earlier than prior years)
+  // US: CBS + Paramount+
   const uclGames=[
+    {home:"Paris Saint-Germain", away:"Arsenal",
+     league:"UEFA Champions League – Final", start_time:"2026-05-30T16:00:00Z", confirmed:true,
+     venue:"Puskás Aréna, Budapest",
+     streams:resolveBundle("UCL"),
+     matchupNote:"PSG (holders — bid to become first back-to-back winner since Real Madrid 2016-18) vs Arsenal (first UCL final since 2006). Kickoff noon ET."},
   ].filter(g=>isToday(g.start_time));
 
 
-  // ── UEFA Europa League — Finals May 21 (Bilbao) ─────────────────────────
-  // Semi-finals complete. No UEL games May 11. Final: Thu May 21 · San Mamés, Bilbao.
+  // ── UEFA Europa League — Final May 20 (Istanbul) ─────────────────────────
+  // Final: Wed May 20 · Beşiktaş Park, Istanbul · Freiburg vs Aston Villa
+  // Kickoff: 21:00 CEST / 19:00 UTC = 3pm ET · US: Paramount+ / fubo / Hulu
   const uelGames=[
-    {home:"SC Freiburg",        away:"Braga",               league:"UEFA Europa League – SF 2nd Leg",
-     start_time:"2026-05-07T19:00:00Z", confirmed:true, venue:"Europa-Park Stadion, Freiburg",
-     streams:resolveBundle("UEL")},
-    {home:"Aston Villa",        away:"Nottingham Forest",   league:"UEFA Europa League – SF 2nd Leg",
-     start_time:"2026-05-07T19:00:00Z", confirmed:true, venue:"Villa Park, Birmingham",
-     streams:resolveBundle("UEL")},
+    {home:"SC Freiburg",    away:"Aston Villa",
+     league:"UEFA Europa League – Final", start_time:"2026-05-20T19:00:00Z", confirmed:true,
+     venue:"Beşiktaş Park, Istanbul",
+     streams:resolveBundle("UEL"),
+     matchupNote:"Freiburg's first-ever continental final vs Villa's first UEFA final since winning the European Cup in 1982. Unai Emery chasing his 5th Europa League title."},
   ].filter(g=>isToday(g.start_time));
 
-  // ── UEFA Conference League — Final May 28 (Wrocław) ────────────────────
-  // Semi-finals complete. No UECL games May 11. Final: Thu May 28 · Tarczyński Arena, Wrocław.
+  // ── UEFA Conference League — Final May 27 (Leipzig) ────────────────────
+  // Final: Wed May 27 · Red Bull Arena (Leipzig Stadium), Leipzig
+  // Crystal Palace vs Rayo Vallecano · Kickoff: 21:00 CEST / 19:00 UTC = 3pm ET
+  // Palace's first continental final · Rayo's first UEFA final ever
   const ueclGames=[
-    {home:"Crystal Palace",     away:"Shakhtar Donetsk",    league:"UEFA Conference League – SF 2nd Leg",
-     start_time:"2026-05-07T19:00:00Z", confirmed:true, venue:"Selhurst Park, London",
-     streams:resolveBundle("UECL")},
-    {home:"Strasbourg",         away:"Rayo Vallecano",      league:"UEFA Conference League – SF 2nd Leg",
-     start_time:"2026-05-07T19:00:00Z", confirmed:true, venue:"Stade de la Meinau, Strasbourg",
-     streams:resolveBundle("UECL")},
+    {home:"Crystal Palace",  away:"Rayo Vallecano",
+     league:"UEFA Conference League – Final", start_time:"2026-05-27T19:00:00Z", confirmed:true,
+     venue:"Red Bull Arena, Leipzig",
+     streams:resolveBundle("UECL"),
+     matchupNote:"Crystal Palace's first-ever European final vs Rayo Vallecano's maiden UEFA decider. Palace won the FA Cup last year — can they add Europe? 3pm ET."},
   ].filter(g=>isToday(g.start_time));
 
     // ── EFL Playoffs — May 8–25 ─────────────────────────────────────────────
@@ -4764,6 +4771,30 @@ function buildTodaySchedule(){
      league:"EFL Championship Playoff SF2 – 2nd Leg", start_time:"2026-05-12T19:00:00Z", confirmed:true, venue:"St Mary's Stadium, Southampton",
      streams:resolveBundle("EFL_PLAYOFF"),
      localNote:"CBS Sports Network + Paramount+ (US); Sky Sports (UK)"},
+    // ── Championship Final — Sat May 23, 4:30pm BST (3pm ET) ──
+    {home:"Southampton",  away:"Hull City",
+     league:"EFL Championship Playoff – Final · Winner promoted to Premier League",
+     start_time:"2026-05-23T15:30:00Z", confirmed:true, venue:"Wembley Stadium, London",
+     streams:resolveBundle("EFL_PLAYOFF"),
+     matchupNote:"Southampton vs Hull City — final Premier League promotion place. 4:30pm BST / 11:30am ET. Sky Sports (UK) · CBS Sports Network + Paramount+ (US)."},
+  ].filter(g=>isToday(g.start_time));
+
+  // ── EFL League One Playoff Final — Sun May 24, 1pm BST ─────────────────
+  const eflL1Games=[
+    {home:"Stockport County",  away:"Bolton Wanderers",
+     league:"EFL League One Playoff – Final · Winner promoted to Championship",
+     start_time:"2026-05-24T12:00:00Z", confirmed:true, venue:"Wembley Stadium, London",
+     streams:resolveBundle("EFL_PLAYOFF"),
+     matchupNote:"Stockport vs Bolton — League One final. 1pm BST / 8am ET. Sky Sports (UK) · Paramount+ (US)."},
+  ].filter(g=>isToday(g.start_time));
+
+  // ── EFL League Two Playoff Final — Mon May 25, 3pm BST ─────────────────
+  const eflL2Games=[
+    {home:"Salford City",  away:"Notts County",
+     league:"EFL League Two Playoff – Final · Winner promoted to League One",
+     start_time:"2026-05-25T14:00:00Z", confirmed:true, venue:"Wembley Stadium, London",
+     streams:resolveBundle("EFL_PLAYOFF"),
+     matchupNote:"Salford vs Notts County — League Two final. 3pm BST / 10am ET. Sky Sports (UK) · Paramount+ (US)."},
   ].filter(g=>isToday(g.start_time));
 
     // ── EPL: NO games May 6 (next: May 9) ───────────────────────
@@ -5026,7 +5057,11 @@ function buildTodaySchedule(){
   uelGames.forEach(g=>g._sport="UEFA Europa League");
   ueclGames.forEach(g=>g._sport="UEFA Conference League");
   eflGames.forEach(g=>g._sport="EFL Championship Playoffs");
+  eflL1Games.forEach(g=>g._sport="EFL League One Playoffs");
+  eflL2Games.forEach(g=>g._sport="EFL League Two Playoffs");
   if(eflGames.length)  sections.push({sport:"EFL Championship Playoffs",games:eflGames});
+  if(eflL1Games.length) sections.push({sport:"EFL League One Playoffs",games:eflL1Games});
+  if(eflL2Games.length) sections.push({sport:"EFL League Two Playoffs",games:eflL2Games});
   if(uclGames.length)  sections.push({sport:"UEFA Champions League",games:uclGames});
   if(uelGames.length)  sections.push({sport:"UEFA Europa League",games:uelGames});
   if(ueclGames.length) sections.push({sport:"UEFA Conference League",games:ueclGames});
@@ -9202,11 +9237,11 @@ const STREAMING_APPS = [
     price:"Essential ~$8.99/mo", url:"https://www.paramountplus.com/sports/",
     note:"UCL, Serie A, UEFA Europa, EFL, UFC, NWSL and more",
     items:[
-      {title:"UEFA Champions League",                meta:"Final: Sat May 30 · Allianz Arena · 3pm ET",badge:"UPCOMING",cls:"badge-ongoing"},
+      {title:"UEFA Champions League Final — May 30",  meta:"PSG vs Arsenal · Puskás Aréna, Budapest · noon ET · CBS/Paramount+",badge:"UPCOMING",cls:"badge-ongoing"},
       {title:"Serie A (Italian football)",           meta:"All 380 matches live · ongoing season",   badge:"ONGOING", cls:"badge-ongoing"},
       {title:"UFC Events",                           meta:"UFC moved to Paramount+/CBS in 2026 — exclusive",badge:"ONGOING",cls:"badge-ongoing"},
-      {title:"UEFA Europa League — Final May 21",      meta:"Bilbao · SF complete · winner to Bilbao",  badge:"UPCOMING",cls:"badge-ongoing"},
-      {title:"UEFA Conference League — Final May 28",  meta:"Wrocław · SF complete",                   badge:"UPCOMING",cls:"badge-ongoing"},
+      {title:"UEFA Europa League Final — May 20",     meta:"Freiburg vs Aston Villa · Beşiktaş Park, Istanbul · 3pm ET · Paramount+",badge:"UPCOMING",cls:"badge-ongoing"},
+      {title:"UEFA Conference League Final — May 27", meta:"Crystal Palace vs Rayo Vallecano · Red Bull Arena, Leipzig · 3pm ET · Paramount+",badge:"UPCOMING",cls:"badge-ongoing"},
       {title:"EFL Championship Playoffs",            meta:"Final set: Southampton vs Hull City · May 23 Wembley",  badge:"UPCOMING",cls:"badge-ongoing"},
       {title:"EFL Championship Playoff Final",        meta:"Sat May 23 · Wembley · One spot in the Premier League",badge:"UPCOMING",cls:"badge-ongoing"},
       {title:"EFL League One & Two Playoffs",         meta:"Semi-finals May 8-15 · Finals May 24-25 at Wembley", badge:"UPCOMING",cls:"badge-ongoing"},
