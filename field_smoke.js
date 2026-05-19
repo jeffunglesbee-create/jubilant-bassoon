@@ -464,3 +464,18 @@ try {
     process.exit(0);
   }
 })();
+
+// Assertion 41 — Layer 1: per-league poll state tracking
+const hasLeagueState = html.includes('_espnLeagueState') && html.includes("_espnLeagueLastPoll");
+if(hasLeagueState) pass('Assertion 41 — Per-league ESPN state tracking: _espnLeagueState + _espnLeagueLastPoll declared');
+else fail('Assertion 41 — Per-league ESPN state tracking missing');
+
+// Assertion 42 — Layer 2: no batch delay (200ms removed)
+const noBatch = !html.includes('await new Promise(r => setTimeout(r, 200))') && html.includes('leaguesToPoll.map');
+if(noBatch) pass('Assertion 42 — Layer 2: concurrent fetch (no 200ms batch delays, leaguesToPoll.map wired)');
+else fail('Assertion 42 — Layer 2: batch delay still present or leaguesToPoll missing');
+
+// Assertion 43 — #11b: tempo-adjusted polling
+const hasTempo = html.includes('computeLiveInterval') && html.includes('tempo-adjusted-polling');
+if(hasTempo) pass('Assertion 43 — #11b tempo-adjusted polling: computeLiveInterval declared + FIELD_FEATURES entry');
+else fail('Assertion 43 — #11b tempo-adjusted polling missing');

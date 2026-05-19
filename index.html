@@ -2017,6 +2017,10 @@ const FIELD_DEBUG = localStorage.getItem('FIELD_DEBUG') === '1';
 // Format: 'feature-key': 'YYYY-MM-DD' (date shipped)
 // Rule: add a line here + a smoke assertion = feature is documented as built.
 const FIELD_FEATURES = {
+  // Polling optimization (Layer 1 + Layer 2 + #11b)
+  'per-league-polling':     '2026-05-18',  // Layer 1: each league on its own cadence
+  'concurrent-espn-fetch':  '2026-05-18',  // Layer 2: no 200ms batch delays
+  'tempo-adjusted-polling': '2026-05-18',  // #11b: drama-gated 20–45s live interval
   // Core infrastructure
   'relay-nba':              '2026-05-16',
   'relay-nhl':              '2026-05-17',
@@ -7607,9 +7611,13 @@ async function fetchNBARelayScores() {
 }
 
 let espnIntervalId = null;
-const ESPN_REFRESH_LIVE     = 30000;   // 30s  — games in progress
+const ESPN_REFRESH_LIVE     = 30000;   // baseline live — overridden by computeLiveInterval (#11b)
 const ESPN_REFRESH_IDLE     = 300000;  // 5min — games scheduled later today
 const ESPN_REFRESH_FINISHED = 900000;  // 15min — all today's games final
+
+// Layer 1: per-league state tracking — each league polls on its own cadence
+const _espnLeagueLastPoll = {}; // league → last successful poll timestamp
+const _espnLeagueState    = {}; // league → 'live' | 'pre' | 'post'
 
 // ── Page Visibility API ───────────────────────────────────────────────────
 // Pause polling when app is backgrounded (saves battery + API quota).
@@ -7697,6 +7705,19 @@ async function fetchNHLRelayScores() {
   } catch(e) {}
 }
 
+// #11b — Tempo-adjusted polling: live interval varies 20–45s by drama score
+// High-drama games poll faster; garbage-time games poll slower.
+// Drama score = max preGameScore across all live games in the section.
+function computeLiveInterval(sectionSport) {
+  if(!allData?.sports) return ESPN_REFRESH_LIVE;
+  const sec = allData.sports.find(s => s.sport === sectionSport);
+  const drama = sec ? Math.max(0, ...(sec.games||[]).map(g => preGameScore(g))) : 0;
+  if(drama > 75) return 20000;  // 20s — critical game, tight score, final period
+  if(drama > 50) return 25000;  // 25s — elevated drama
+  if(drama > 30) return 30000;  // 30s — normal live game
+  return 45000;                  // 45s — low drama / blowout / between innings
+}
+
 // Fetch all sport scoreboards and merge into espnScores
 async function fetchESPNScores(){
   _pollCycle++; // drives lead change burst decay
@@ -7705,8 +7726,7 @@ async function fetchESPNScores(){
     + String(today.getMonth()+1).padStart(2,'0')
     + String(today.getDate()).padStart(2,'0'); // "20260506"
 
-  let hasLive = false;
-  let hasUpcoming = false; // 'pre' games today → keep idle polling to catch start time
+  let _hasLive = false; let _hasUpcoming = false; // kept for relay fire-and-forget below
 
   // Sport-aware filter: only poll leagues with sections in today's schedule
   // Reduces from 20 endpoints to 6-10 on most days. Soccer always included (fetchSoccerFixtures depends on it).
@@ -7724,16 +7744,28 @@ async function fetchESPNScores(){
     .map(l=>({sport:"soccer",league:l.league,section:l.section,periodPrefix:"'"}));
 
   const allLeagues = [...filteredESPN, ...filteredSoccer];
-  if(FIELD_DEBUG) console.debug(`[ESPN] polling ${allLeagues.length} leagues | live=${hasLive} upcoming=${hasUpcoming} | next=${hasLive?'30s':hasUpcoming?'5min':'15min'}`);
 
-  // Micro-batch in groups of 5 with 200ms gap — prevents 20-req bursts to ESPN
-  const chunk = (arr,n) => Array.from({length:Math.ceil(arr.length/n)},(_,i)=>arr.slice(i*n,i*n+n));
-  const leagueBatches = chunk(allLeagues, 5);
-  for(const batch of leagueBatches){
-    await Promise.all(batch.map(async ({sport,league,periodPrefix})=>{
+  // Layer 1: only poll leagues due based on per-league state and interval
+  const now = Date.now();
+  const leaguesToPoll = allLeagues.filter(l => {
+    const last     = _espnLeagueLastPoll[l.league] || 0;
+    const state    = _espnLeagueState[l.league] || 'pre';
+    const interval = state === 'live' ? computeLiveInterval(l.section)
+                   : state === 'pre'  ? ESPN_REFRESH_IDLE
+                   : ESPN_REFRESH_FINISHED;
+    return (now - last) >= interval;
+  });
+
+  if(FIELD_DEBUG) console.debug(
+    `[ESPN] ${leaguesToPoll.length}/${allLeagues.length} due |`,
+    Object.entries(_espnLeagueState).filter(([,v])=>v==='live').map(([k])=>k).join(',') || 'none live'
+  );
+
+  // Layer 2: concurrent fetch — no batch delays
+  await Promise.all(leaguesToPoll.map(async ({sport, league, section, periodPrefix}) => {
     const url = `${ESPN_BASE}/${sport}/${league}/scoreboard?dates=${dateStr}&limit=50`;
+    let leagueHasLive = false, leagueHasPre = false;
     try{
-      // L6 (May 11): User-Agent header removed — see fetchDateSchedule note.
       const r = await fetch(url,{signal:AbortSignal.timeout(8000)});
       if(!r.ok) return;
       const data = await r.json();
@@ -7741,13 +7773,12 @@ async function fetchESPNScores(){
         const comp = (ev.competitions||[])[0];
         if(!comp) return;
         const comps = comp.competitors||[];
-        // ESPN: away is index 1, home is index 0 (by convention, but use homeAway field)
         const home = comps.find(t=>t.homeAway==="home")||comps[0];
         const away = comps.find(t=>t.homeAway==="away")||comps[1];
         if(!home||!away) return;
 
         const status = ev.status||{};
-        const state  = status.type?.state||"pre"; // "pre","in","post"
+        const state  = status.type?.state||"pre";
         const period = status.period||0;
         const clock  = status.displayClock||"";
         const detail = status.type?.shortDetail||"";
@@ -7757,12 +7788,11 @@ async function fetchESPNScores(){
         const homeName  = home.team?.displayName||"";
         const awayName  = away.team?.displayName||"";
 
-        if(state==="in") hasLive = true;
-        if(state==="pre") hasUpcoming = true;
+        if(state==="in")  leagueHasLive = true;
+        if(state==="pre") leagueHasPre  = true;
 
-        // Baseball situation: outs, balls, strikes, base runners
         const sit = comp.situation||{};
-        const outs    = sit.outs    ?? null;  // 0-2, null if not baseball/not available
+        const outs    = sit.outs    ?? null;
         const balls   = sit.balls   ?? null;
         const strikes = sit.strikes ?? null;
         const onFirst  = sit.onFirst  ?? false;
@@ -7770,7 +7800,6 @@ async function fetchESPNScores(){
         const onThird  = sit.onThird  ?? false;
 
         const key = `${homeName}|${awayName}`;
-        // Capture NFL/NBA/NHL live situation for badge display
         const situation = comp.situation || null;
         espnScores[key] = {
           state, period, clock, detail,
@@ -7779,17 +7808,17 @@ async function fetchESPNScores(){
           periodPrefix,
           outs, balls, strikes,
           onFirst, onSecond, onThird,
-          situation, // raw situation object for NFL down/distance, NBA shot clock etc.
+          situation,
         };
         espnScoreTs[key] = Date.now();
       });
     }catch(e){
       if(FIELD_DEBUG) console.debug("FIELD ESPN:",league,"–",e.message);
     }
+    // Update per-league state and timestamp after each fetch
+    _espnLeagueLastPoll[league] = Date.now();
+    _espnLeagueState[league]    = leagueHasLive ? 'live' : leagueHasPre ? 'pre' : 'post';
   }));
-    if(leagueBatches.indexOf(batch) < leagueBatches.length - 1)
-      await new Promise(r => setTimeout(r, 200));
-  } // end micro-batch loop
 
   renderESPNScores();
 
@@ -7799,12 +7828,19 @@ async function fetchESPNScores(){
   fetchFPLLiveScores().catch(()=>{});
   fdPrefetchSoccerLive().catch(()=>{});
 
-  // Three-tier interval: live=30s, upcoming=5min, all-finished=15min
-  // "all-finished" cuts late-night polling by 65% once every game is final
-  const nextInterval = hasLive ? ESPN_REFRESH_LIVE
-                     : hasUpcoming ? ESPN_REFRESH_IDLE
-                     : ESPN_REFRESH_FINISHED;
-  espnIntervalId = setTimeout(fetchESPNScores, nextInterval);
+  // Schedule next call at the earliest due-time across all leagues
+  // #11b: live leagues use drama-adjusted interval (20–45s), not a fixed 30s
+  const now2 = Date.now();
+  const nextInterval = allLeagues.reduce((min, l) => {
+    const state    = _espnLeagueState[l.league] || 'pre';
+    const interval = state === 'live' ? computeLiveInterval(l.section)
+                   : state === 'pre'  ? ESPN_REFRESH_IDLE
+                   : ESPN_REFRESH_FINISHED;
+    const last  = _espnLeagueLastPoll[l.league] || 0;
+    const dueIn = Math.max(0, (last + interval) - now2);
+    return Math.min(min, dueIn);
+  }, ESPN_REFRESH_IDLE);
+  espnIntervalId = setTimeout(fetchESPNScores, Math.max(5000, nextInterval));
 }
 
 // Fuzzy match: does the ESPN team name match a FIELD game team name?
