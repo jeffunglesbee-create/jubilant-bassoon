@@ -12,13 +12,13 @@
 const fs = require('fs');
 
 // ── PER-DAY CONFIG ────────────────────────────────────────────────────────────
-const TODAY_ISO        = '2026-05-18';   // YYYY-MM-DD in America/New_York
-const NBA_CARDS        = 1;              // OKC@SAS WCF G1 at Paycom Center
-const NBA_HOME_TEAM    = 'Oklahoma City Thunder';
-const NBA_NETWORK      = 'NBC';          // chip text from NBA_NBC bundle
-const MLB_CARDS        = 0;             // mlbRaw=[] — adapter fills from MLB Stats API at runtime
-const MLB_CHIP_HOME    = '';             // no national TV override today
-const MLB_CHIP_TEXT    = '';
+const TODAY_ISO        = '2026-05-19';   // YYYY-MM-DD in America/New_York
+const NBA_CARDS        = 1;              // CLE@NYK ECF G1 at MSG
+const NBA_HOME_TEAM    = 'New York Knicks';
+const NBA_NETWORK      = 'ESPN';         // chip text from NBA_ESPN bundle
+const MLB_CARDS        = 1;             // TOR@NYY TBS Tuesday national
+const MLB_CHIP_HOME    = 'New York Yankees';
+const MLB_CHIP_TEXT    = 'TBS';
 const NBA_SERIES_ACTIVE = true;
 const NBA_HYPE_TEST    = false;
 const MIN_SPORT_SECTIONS = 2;           // NBA + NHL (MLB section async from adapter, may be 0 in smoke)

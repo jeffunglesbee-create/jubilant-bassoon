@@ -4615,17 +4615,16 @@ function buildTodaySchedule(){
     return d.toLocaleDateString("en-CA",{timeZone:tz})===todayFresh;
   }
 
-  // ── NBA Playoffs — Saturday May 16 2026 ──────────────────────────
-  // Source: NBA.com verified May 16, 2026
-  //   RESULTS (May 15): DET wins G6 115-94 at CLE → East Semis TIED 3-3 → G7 Sunday
-  //   RESULTS (May 15): SAS wins G6 139-109 at MIN → SAS ADVANCES to West CF 4-2
-  //   G7 SUNDAY May 17: CLE @ DET — 8pm ET / 00:00 UTC May 18 — Prime Video (DET home = Amazon)
-  //   WEST CF G1: OKC vs SAS — Monday May 18 8:30pm ET / 00:30 UTC May 19 — ESPN
+  // ── NBA Playoffs — Tuesday May 19 2026 ──────────────────────────
+  // Source: NBA.com / ESPN verified May 19, 2026
+  //   RESULT (May 17): CLE 125, DET 94 (G7) — Cavaliers advance to East CF
+  //   RESULT (May 18): SAS 122, OKC 115 2OT (WCF G1) — Spurs lead series 1-0
+  //     Wembanyama: 41 pts 24 reb 3 blk · Dylan Harper steps up with Fox (ankle) out
+  //   TONIGHT: ECF G1 — CLE @ NYK — 8:00 PM ET — ESPN · MSG, New York
+  //   TOMORROW: WCF G2 — SAS @ OKC — 8:30 PM ET — NBC/Peacock · Paycom Center
   const nbaGames=[
-    // No NBA games Saturday May 16 — off day between semis and conference finals
-    // West CF set: OKC (1) vs SAS (2) · East CF: NYK (3) awaits CLE/DET G7 winner
-    {home:"Detroit Pistons",       away:"Cleveland Cavaliers",  league:"NBA Playoffs – East Semis G7 · Series tied 3-3", start_time:"2026-05-18T00:00:00Z", confirmed:true, venue:"Little Caesars Arena, Detroit MI",  streams:resolveBundle("NBA_PRIME"),  seriesRecord:"Series tied 3-3"},
-    {home:"Oklahoma City Thunder", away:"San Antonio Spurs",    league:"NBA Playoffs – West CF G1 · Series 0-0",          start_time:"2026-05-19T00:30:00Z", confirmed:true, venue:"Paycom Center, Oklahoma City OK", streams:resolveBundle("NBA_NBC"), seriesRecord:"0-0"},
+    {home:"New York Knicks",       away:"Cleveland Cavaliers",  league:"NBA Playoffs \u2013 East CF G1 \u00b7 Series 0-0",       start_time:"2026-05-20T00:00:00Z", confirmed:true, venue:"Madison Square Garden, New York NY",  streams:resolveBundle("NBA_ESPN"), seriesRecord:"0-0", matchupNote:"Knicks 8 days rest (swept PHI 4-0). Cavs won classic 7-game G7 vs DET. OG Anunoby (hamstring) says he'll be ready."},
+    {home:"Oklahoma City Thunder", away:"San Antonio Spurs",    league:"NBA Playoffs \u2013 West CF G2 \u00b7 SAS leads 1-0",   start_time:"2026-05-21T00:30:00Z", confirmed:true, venue:"Paycom Center, Oklahoma City OK",       streams:resolveBundle("NBA_NBC"), seriesRecord:"SAS leads 1-0", matchupNote:"Wembanyama 41/24/3blk in 2OT road win G1. Fox (ankle) day-to-day for G2. Thunder first loss of playoffs."},
   ].filter(g=>isToday(g.start_time));
 
   // ── NHL Playoffs — Saturday May 16 2026 ──────────────────────────
@@ -4649,7 +4648,7 @@ function buildTodaySchedule(){
   // ── MLB schedule: May 8 (Fri) – May 11 (Mon) ────────────────────────────────
   // isToday() filters to the viewer's local date — correct games show each day
   // Sources: MLB.com official schedule + Peacock.com GOTD listings verified May 11, 2026
-  // ── MLB — Monday May 18, 2026 — mlbRaw: NATIONAL TV OVERRIDES ONLY ─────────
+  // ── MLB — Tuesday May 19, 2026 — mlbRaw: NATIONAL TV OVERRIDES ONLY ─────────
   // Architecture change: fetchMLBFixtures() → loadMLBSlate() is now the PRIMARY
   // source for MLB games (MLB Stats API, CORS-open, live broadcasts included).
   // mlbRaw = exception/override list only:
@@ -4657,9 +4656,10 @@ function buildTodaySchedule(){
   //   - Any game needing manual override (peacockGOTD, espnGOTD flags, special venues)
   // For all-local days (Mon/Wed/Thu): mlbRaw = [] — adapter provides full slate
   // Daily update: just verify/enter national TV exceptions, adapter handles the rest.
-  // Sources: MLB.com verified May 18, 2026
+  // Sources: MLB.com verified May 19, 2026
   const mlbRaw=[
-    // No national TV games Monday May 18 — adapter handles all 14 local games
+    // TBS Tuesday Night Baseball — national exclusive window
+    {home:"New York Yankees", away:"Toronto Blue Jays", league:"MLB \u00b7 TBS Tuesday national exclusive", start_time:"2026-05-19T23:05:00Z", confirmed:true, venue:"Yankee Stadium, Bronx NY", nationalBundle:"MLB_TBS"},
   ];
   const mlbGames=mlbRaw.filter(g=>isToday(g.start_time)).map(g=>{
     // Stream resolution — priority order (highest first):
@@ -5191,24 +5191,35 @@ const MEDIA_WEEKEND_BASE = [
 // Format: { startDate:"YYYY-MM-DD", endDate:"YYYY-MM-DD", card:{show,network,chip,time,desc,link} }
 const MEDIA_SPECIALS = [
   {
-    // NBA Western Conference Finals G1 — overrides dynamic NBA pregame chip (which defaults ESPN)
-    startDate:"2026-05-18", endDate:"2026-05-18",
+    // NBA Eastern Conference Finals G1 pregame — May 19 only
+    startDate:"2026-05-19", endDate:"2026-05-19",
     card:{
-      show:"NBA GameTime",network:"NBC / Peacock",chip:"NBC",
-      time:"8:00 PM ET",
-      desc:"Pregame coverage ahead of San Antonio Spurs @ Oklahoma City Thunder — NBA Western Conference Finals Game 1 (8:30 PM ET, NBC/Peacock). All WCF games broadcast on NBC and available to stream on Peacock. SGA vs Wembanyama. Defending champion Thunder host a Spurs team that went 4-1 vs OKC in the regular season.",
-      journalNote:"WCF is on NBC/Peacock — not ESPN. NBA GameTime pregame 30 min before tip. Peacock streaming included with subscription.",
-      link:"https://www.nbc.com/nba"
+      show:"NBA GameTime",network:"ESPN",chip:"ESPN",
+      time:"7:00 PM ET",
+      desc:"Pre-game coverage ahead of Cleveland Cavaliers @ New York Knicks — NBA Eastern Conference Finals Game 1 (8:00 PM ET, ESPN). Knicks had 8 days off after sweeping the 76ers 4-0. Cavaliers rallied from 3-1 down to beat top-seeded Detroit in G7 (CLE 125, DET 94). OG Anunoby (hamstring) says he'll be ready.",
+      journalNote:"ECF G1 on ESPN — NBA GameTime 1 hour before tip at 7 PM. Inside the NBA airs on ESPN after the game.",
+      link:"https://www.espn.com/nba"
     }
   },
   {
-    // NBA Western Conference Finals full series
+    // NBA Eastern Conference Finals full series — ECF on ESPN through all games
+    startDate:"2026-05-19", endDate:"2026-05-31",
+    card:{
+      show:"NBA Eastern Conference Finals",network:"ESPN",chip:"ESPN",
+      time:"8:00 PM ET",
+      desc:"New York Knicks vs Cleveland Cavaliers — Eastern Conference Finals. All games on ESPN. G1-G2 at Madison Square Garden; G3-G4 at Rocket Mortgage FieldHouse. Knicks first ECF since 2013. Cavaliers knocked off top-seeded Pistons in a 7-game classic.",
+      journalNote:"ECF series on ESPN. Knicks haven't been to NBA Finals since 1999. All games stream on ESPN App/ESPN Unlimited.",
+      link:"https://www.espn.com/nba/playoffs/bracket"
+    }
+  },
+  {
+    // NBA Western Conference Finals full series — WCF on NBC/Peacock, SAS leads 1-0
     startDate:"2026-05-18", endDate:"2026-06-01",
     card:{
       show:"NBA Western Conference Finals",network:"NBC / Peacock",chip:"NBC",
       time:"8:30 PM ET",
-      desc:"Oklahoma City Thunder vs San Antonio Spurs — Western Conference Finals. All games on NBC/Peacock. G1-G2 at Paycom Center (OKC); G3-G4 at Frost Bank Center (SAS). OKC is perfect 8-0 in these playoffs. Wembanyama leads a Spurs team that won 4-1 vs OKC in the regular season.",
-      journalNote:"Every WCF game is on NBC (free OTA) and Peacock (streaming). No ESPN or Prime Video.",
+      desc:"San Antonio Spurs vs Oklahoma City Thunder — Western Conference Finals. SAS leads series 1-0 after Wembanyama's 41-pt 2OT road win (SAS 122, OKC 115). G2 Wednesday May 20. All games on NBC/Peacock. G1-G2 at Paycom Center (OKC); G3-G4 at Frost Bank Center (SAS).",
+      journalNote:"WCF is on NBC (free OTA) and Peacock (streaming) — not ESPN. De'Aaron Fox (ankle) day-to-day for G2.",
       link:"https://www.nbc.com/nba"
     }
   },
@@ -9304,7 +9315,7 @@ let _pwaPrompt = null;
 
   // SW_VERSION — bump on every deploy to bust returning user cache
   // Assertion 28 in smoke verifies this constant is present
-  const SW_VERSION = '2026-05-18';
+  const SW_VERSION = '2026-05-19';
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
   // Cache strategy: API-only (ESPN scores, weather, odds, SportsDB).
