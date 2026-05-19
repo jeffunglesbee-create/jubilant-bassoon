@@ -54,7 +54,7 @@ assert('RELAY_BASE defined', html.includes("const RELAY_BASE = 'https://field-re
 assert('relayHealthCheck defined', html.includes('async function relayHealthCheck'));
 assert('fetchNBAScoreboardViaRelay defined', html.includes('async function fetchNBAScoreboardViaRelay'));
 assert('fetchNBARelayScores defined', html.includes('async function fetchNBARelayScores'));
-assert('RELAY_CUTOVER_DATE defined', html.includes("const RELAY_CUTOVER_DATE = '2026-06-02'"));
+assert('RELAY_CUTOVER_DATE defined', html.includes("const RELAY_CUTOVER_DATE = '2026-05-19'"));
 
 // 6. JS syntax check (extract and validate)
 const scripts = html.match(/<script[^>]*>([\s\S]*?)<\/script>/g) || [];
@@ -142,6 +142,13 @@ assert('localStorage prune function present', html.includes('pruneOldFieldData')
             html.includes("'first-lead-change-burst'"));
           assert('Double Feature Detection',
             html.includes('detectAndRenderDoubleFeature') && html.includes("'double-feature-detection'"));
+          assert('NBA relay primary cutover',
+            html.includes("'nba-relay-primary'") && html.includes("RELAY_CUTOVER_DATE = '2026-05-19'"));
+          assert('French Open 2026 WBD bundle',
+            html.includes('"tnt","trutv","max"') && html.includes('TENNIS_FO') &&
+            html.includes("FO_START = \"2026-05-24\""));
+          assert('NHL ECF entries present',
+            html.includes('Carolina Hurricanes') && html.includes('East CF G1'));
 
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);

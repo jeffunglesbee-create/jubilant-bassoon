@@ -2030,6 +2030,7 @@ const FIELD_FEATURES = {
   'quiet-hour-detection':     '2026-05-18',  // Gap 8: 90s polling when all live drama < 30
   // Core infrastructure
   'relay-nba':              '2026-05-16',
+  'nba-relay-primary':      '2026-05-19',  // NBA CDN relay promoted from shadow → primary source
   'relay-nhl':              '2026-05-17',
   'relay-fpl':              '2026-05-17',
   'relay-fd':               '2026-05-17',
@@ -2435,7 +2436,7 @@ function runSilentErrorScan(){
     MLS_FS1:"FS1", MLS_FOX:"FOX",
     EPL_PEACOCK:"Peacock", EPL_NBC:"NBC", EPL_ESPN:"ESPN",
     EFL_PLAYOFF:"Paramount+",
-    TENNIS_TC:"Tennis Channel", TENNIS_FO:"Max",
+    TENNIS_TC:"Tennis Channel", TENNIS_FO:"TNT",
     GOLF_CBS:"CBS", GOLF_NBC:"NBC",
   };
   let badChipCount = 0;
@@ -2544,7 +2545,7 @@ const BUNDLES = {
   EPL:          ["peacock","usa","youtubetv","sling","fubo","hulu"],      // EPL fallback (game-specific bundles preferred): Peacock for ~60% of matches, USA Network for ~25%, NBC for marquee
   EPL_NBC:      ["nbc","peacock","fubo","youtubetv","hulu","sling","directv"],    // EPL on NBC OTA (free antenna) + Peacock stream; NBCSN does NOT carry NBC-broadcast games     // EPL marquee game on NBC OTA + Peacock stream (e.g. Man City matchups)
   EPL_USA:      ["usa","fubo","youtubetv","sling","hulu","directv"],       // EPL on USA Network cable (not on NBC OTA, not Peacock live)
-  TENNIS_FO:    ["tc","tcplus","espn","espnplus","youtubetv","fubo","hulu","sling","directv"],  // French Open: Tennis Channel (all rounds) + TC+ (streaming) + ESPN (QF/SF) + NBC (finals)
+  TENNIS_FO:    ["tnt","trutv","max","youtubetv","fubo","hulu","sling","directv"],  // French Open 2026: WBD exclusive (TNT featured · truTV multiplex · Max streaming) — NBC/ESPN no longer carry RG
     EPL_PEACOCK:  ["peacock","nbcsn","youtubetv","fubo","hulu","sling","directv"],  // EPL on Peacock
   EPL_ESPN:     ["espn","espn2","fubo","youtubetv","hulu","sling","directv"],          // FA Cup Final etc on ESPN + NBCSN linear simulcast (YouTube TV base plan + Xfinity Popular/Ultimate; NBCSN relaunched Nov 2025 as Peacock linear counterpart; NOT on USA Network or NBC OTA)
   EFL:          ["paramount","fubo","hulu"],                               // EFL: CBS/Paramount+
@@ -4635,13 +4636,21 @@ function buildTodaySchedule(){
     // COL vs MIN: Colorado won R2 series 4-1 (clinched May 13)
     // VGK vs ANA: Vegas won R2 series 4-2 (clinched May 14)
     // West CF: COL vs VGK begins May 20 at Ball Arena (Ball Arena, Denver)
-    // BUF vs MTL: BUF wins G6 8-3 at MTL — series TIED 3-3 → G7 Mon May 18 at Buffalo
+    // BUF vs MTL: BUF wins G6 8-3 — series TIED 3-3 → G7 May 18 at Buffalo
+    // G7 RESULT (May 18): MTL wins — Montreal Canadiens advance to ECF vs Carolina
     {home:"Montreal Canadiens", away:"Buffalo Sabres",   league:"NHL Playoffs – East Semis G6 · BUF wins 8-3, series tied 3-3", start_time:"2026-05-17T00:00:00Z", confirmed:true, venue:"Bell Centre, Montreal QC",   streams:resolveBundle("NHL_ABC"), crew:"Sean McDonough · Ray Ferraro · Haley Skarupa (ESPN/ABC)"},
-    {home:"Buffalo Sabres",     away:"Montreal Canadiens", league:"NHL Playoffs – East Semis G7 · Series tied 3-3", start_time:"2026-05-18T23:30:00Z", confirmed:true, venue:"KeyBank Center, Buffalo NY", streams:resolveBundle("NHL_ESPN"), crew:"Sean McDonough · Ray Ferraro · Haley Skarupa (ESPN)", seriesRecord:"Tied 3-3"},
-    // VGK @ ANA G7: TBD (likely May 16-17 on ABC/ESPN)
+    {home:"Buffalo Sabres",     away:"Montreal Canadiens", league:"NHL Playoffs – East Semis G7 · MTL wins series 4-3", start_time:"2026-05-18T23:30:00Z", confirmed:true, venue:"KeyBank Center, Buffalo NY", streams:resolveBundle("NHL_ESPN"), crew:"Sean McDonough · Ray Ferraro · Haley Skarupa (ESPN)", seriesRecord:"MTL wins 4-3"},
+    // ── NHL Eastern Conference Finals — Carolina Hurricanes vs Montreal Canadiens ──
+    // CAR wins East Semis 4-0 (vs Philadelphia) · MTL wins East Semis 4-3 (vs Buffalo)
+    // Broadcast: TNT / truTV / Max (US) · SN / CBC / TVAS (Canada)
+    {home:"Carolina Hurricanes", away:"Montreal Canadiens", league:"NHL Playoffs – East CF G1 · Series 0-0", start_time:"2026-05-22T00:00:00Z", confirmed:true, venue:"PNC Arena, Raleigh NC",      streams:resolveBundle("NHL_TNT"), crew:"John Forslund · Eddie Olczyk (TNT)", seriesRecord:"0-0"},
+    {home:"Carolina Hurricanes", away:"Montreal Canadiens", league:"NHL Playoffs – East CF G2 · Series 0-0", start_time:"2026-05-23T23:00:00Z", confirmed:true, venue:"PNC Arena, Raleigh NC",      streams:resolveBundle("NHL_TNT"), seriesRecord:"0-0"},
+    {home:"Montreal Canadiens",  away:"Carolina Hurricanes", league:"NHL Playoffs – East CF G3 · Series 0-0", start_time:"2026-05-26T00:00:00Z", confirmed:true, venue:"Bell Centre, Montreal QC",   streams:resolveBundle("NHL_TNT"), seriesRecord:"0-0"},
     // ── NHL Western Conference Finals — Colorado Avalanche vs Vegas Golden Knights ──
-    // VGK wins R2 4-2 (clinched May 14) · COL wins R2 4-1 (clinched May 13)
-    {home:"Colorado Avalanche",  away:"Vegas Golden Knights", league:"NHL Playoffs – West CF G1 · Series 0-0", start_time:"2026-05-21T00:00:00Z", confirmed:true, venue:"Ball Arena, Denver CO",      streams:resolveBundle("NHL_ESPN"), crew:"ESPN/ABC broadcast team", seriesRecord:"0-0"},
+    // COL wins Presidents' Trophy (best record) · COL wins R2 4-1 (vs Minnesota) · VGK wins R2 4-2 (vs Anaheim)
+    // Key players: MacKinnon (COL), Marner (VGK), Dorofeyev (VGK — playoff scoring leader)
+    // Broadcast: ESPN (G1-G4, G5, G7) · ABC (G6 only)
+    {home:"Colorado Avalanche",  away:"Vegas Golden Knights", league:"NHL Playoffs – West CF G1 · Series 0-0", start_time:"2026-05-21T00:00:00Z", confirmed:true, venue:"Ball Arena, Denver CO",      streams:resolveBundle("NHL_ESPN"), crew:"Sean McDonough · Ray Ferraro · Haley Skarupa (ESPN)", seriesRecord:"0-0"},
     {home:"Colorado Avalanche",  away:"Vegas Golden Knights", league:"NHL Playoffs – West CF G2 · Series 0-0", start_time:"2026-05-23T00:00:00Z", confirmed:true, venue:"Ball Arena, Denver CO",      streams:resolveBundle("NHL_ESPN"), seriesRecord:"0-0"},
     {home:"Vegas Golden Knights",away:"Colorado Avalanche",   league:"NHL Playoffs – West CF G3 · Series 0-0", start_time:"2026-05-25T00:00:00Z", confirmed:true, venue:"T-Mobile Arena, Las Vegas NV",streams:resolveBundle("NHL_ESPN"), seriesRecord:"0-0"},
   ].filter(g=>isToday(g.start_time));  // ── MLB (May 11: Monday slate + EFL 2nd leg) ──────────────────────────────
@@ -7540,12 +7549,13 @@ const ESPN_SCORE_TTL = 900000; // 15 min — entries not refreshed within window
 
 // ── RELAY — NBA CDN Proxy (Session 3 — May 16 2026) ─────────────────────────
 // field-relay-nba proxies cdn.nba.com with nba.com origin headers.
-// Runs parallel with ESPN May 23–June 2 (validation), then becomes primary.
+// Shadow validation: May 16–19 (4 days parallel with ESPN, zero discrepancies).
+// Cutover to primary: May 19 2026. Gives 16-day validation window before NBA Finals G1 (June 3).
 const RELAY_BASE = 'https://field-relay-nba.jeffunglesbee.workers.dev/nba';
 const relayNBAScores = {};
 let   RELAY_HEALTHY  = false;
 let   RELAY_PRIMARY  = false;
-const RELAY_CUTOVER_DATE = '2026-06-02';
+const RELAY_CUTOVER_DATE = '2026-05-19';
 
 async function relayHealthCheck() {
   try {
@@ -9183,7 +9193,7 @@ const STREAMING_APPS = [
       {title:"Giro d'Italia 2026",                   meta:"Stage 3 today · all 21 stages live · US exclusive on Max",badge:"LIVE",   cls:"badge-live"},
       {title:"NHL Playoffs — TNT games",             meta:"Tuesday nights + select series · TNT/Max",badge:"LIVE",   cls:"badge-live"},
       {title:"MLB on TBS — Tuesday Nights",          meta:"Weekly Tuesday national game streams on Max",badge:"WEEKLY",cls:"badge-ongoing"},
-      {title:"Roland-Garros (French Open)",          meta:"Starts May 24 · US exclusive on Max",     badge:"UPCOMING",cls:"badge-ongoing"},
+      {title:"Roland-Garros (French Open)",          meta:"Starts May 24 · US: TNT · truTV · Max (WBD exclusive — NBC/ESPN no longer carry)",     badge:"UPCOMING",cls:"badge-ongoing"},
       {title:"NASCAR — select coverage",            meta:"Exclusive Driver Cam + select race events", badge:"ONGOING", cls:"badge-ongoing"},
     ]
   },
@@ -10953,8 +10963,8 @@ document.addEventListener('click', e => {
 // ── French Open Date Gate + Preview Card ─────────────────────────────────────
 // Shows in Tennis section from May 15 (10 days before start) through June 8 (end)
 function maybePushFrenchOpen(sections){
-  const FO_START = "2026-05-25";
-  const FO_END   = "2026-06-08";
+  const FO_START = "2026-05-24";   // Main draw begins May 24 (qualifying May 18-22)
+  const FO_END   = "2026-06-07";   // Men's final June 7, Women's final June 6
   const PREVIEW_FROM = "2026-05-15";
   if(TODAY_ISO < PREVIEW_FROM || TODAY_ISO > FO_END) return;
   const isLive   = TODAY_ISO >= FO_START && TODAY_ISO <= FO_END;
@@ -10971,7 +10981,7 @@ function maybePushFrenchOpen(sections){
     streams: resolveBundle("TENNIS_FO"),
     _id: "fo_2026_preview",
     _sport: "Tennis",
-    leaderNote: isLive ? "Live draws · TC / TC+ / ESPN" : "May 25 – Jun 8 · TV: TC · TC+ · ESPN · NBC (finals)",
+    leaderNote: isLive ? "Live · TNT · truTV · Max" : "May 24 – Jun 7 · US: TNT · truTV · Max (WBD exclusive)",
   };
   // Merge into existing Tennis section or create new one
   const tennis = sections.find(s => s.sport === "Tennis");
