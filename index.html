@@ -2284,9 +2284,10 @@ const SR = {
   trutv:     ["truTV",         "https://www.trutv.com/watchtrutv",                  "#ff6b35","tv",  "truTV simulcasts all NHL games airing on TNT. Cable/satellite login required, or via Sling TV, FuboTV, YouTube TV, DirecTV Stream."],
   tbs:       ["TBS",           "https://www.tbs.com/watchtbs",                      "#0099e6","tv",  "Cable/satellite TV login required, or via Sling TV, FuboTV, YouTube TV, DirecTV Stream (~$45-83/mo). MLB: Tuesday Night Baseball (24 games all season, exclusive national window). Streams on Max/HBO Max. Also airs MLB postseason (ALDS, ALCS)."],
   max:       ["Max / HBO Max", "https://www.hbomax.com/sports",                    "#ff6b35","sub", "Max Standard or Premium plan required ($18.49–$22.99/mo). Basic with Ads does NOT include live sports. Streams NHL & MLB on TNT/TBS — NBA no longer on Max as of 2026."],
-  fox:       ["Fox",           "https://www.foxsports.com",                         "#f0c040","tv",  "Cable/satellite login required"],
+  fox:       ["Fox",           "https://www.foxsports.com",                         "#f0c040","tv",  "Free over-the-air (OTA antenna) OR cable/satellite. Fox One app streams with TV provider login. FIFA World Cup 2026: all 70 FOX matches + USMNT games. Select games free on Tubi."],
   fsp:       ["Fox Soccer Plus","https://www.foxsports.com/watch/fox-soccer-plus",   "#f0c040","tv",  "Cable/satellite login required. Streaming: YouTube TV (Sports Plus add-on +$10.99/mo) · FuboTV (Intl Sports Plus add-on +$6.99/mo) · DirecTV Stream (Sports Pack +$14.99/mo) · Sling TV (Blue/Orange+Blue). AFL coverage: 3 live games/round on FSP + 1 marquee game/round live first on FS1 or FS2 (tape-delay replay on FSP) + Grand Final live on FS1."],
-  fs1:       ["FS1",           "https://www.foxsports.com/live",                    "#f0c040","tv",  "Cable/satellite login required"],
+  fs1:       ["FS1",           "https://www.foxsports.com/live",                    "#f0c040","tv",  "Cable/satellite login required. Streams via Fox One with TV provider. FIFA World Cup 2026: 34 matches on FS1."],
+  tubi:      ["Tubi (FREE)",   "https://tubitv.com/live",                           "#f57c00","free","Free ad-supported streaming — no account or subscription required. FIFA World Cup 2026: Mexico vs South Africa (June 11) and USA vs Paraguay (June 12) simulcast live in 4K for free on Tubi."],
   cbs:       ["CBS",           "https://www.cbssports.com/live",                    "#a78bfa","tv",  "Cable/satellite login or Paramount+ Premium required ($13.99/mo) to stream local CBS live."],
   // ── Streaming / SVOD ──────────────────────────────────────────────────────────
   peacock:   ["Peacock",       "https://www.peacocktv.com/sports",                  "#00ffcc","sub", "Peacock Premium required (~$8/mo). NBCSN RULE: Peacock streams NBC OTA games AND Peacock-exclusive games; NBCSN only carries the Peacock-exclusive ones (not the NBC OTA simulcasts). USA Network rule: Peacock does NOT stream USA Network EPL games — those are Versant-owned and separate. MLB: SNB Peacock/NBCSN-only Mar 29–May 30 & Sep 6–20 (not on NBC OTA); NBC+Peacock May 31–Sep 6. Sunday Leadoff: Peacock/NBCSN exclusive. GOTD: weekday non-exclusive. NBA: NBC OTA games stream on Peacock (NBCSN not involved); Peacock-exclusive games stream on Peacock+NBCSN. EPL: ~175 games — Peacock-only games also on NBCSN; NBC games on Peacock (but NOT NBCSN); USA Network games NOT on Peacock."],
@@ -2523,6 +2524,7 @@ function runSilentErrorScan(){
     EFL_PLAYOFF:"Paramount+",
     TENNIS_TC:"Tennis Channel", TENNIS_FO:"TNT",
     GOLF_CBS:"CBS", GOLF_NBC:"NBC",
+    WC26_FOX:"FOX", WC26_FS1:"FS1", WC26_FREE:"FOX/Tubi FREE",
   };
   let badChipCount = 0;
   allGames.forEach(g=>{
@@ -2649,6 +2651,10 @@ const BUNDLES = {
   // Specialist / International
   AFL_AU:       ["kayosports","foxfooty","sevenplus"],   // Australia: Kayo, Fox Footy, 7plus free-to-air
   AFL_USA:      ["fsp","watchafl","fubo","youtubetv","directv"],  // USA: FSP (3 live/round) + FS1/FS2 (1 live/round) + Watch AFL (all games). FSP via fubo/ytv add-on; directv via Sports Pack.
+  // ── FIFA World Cup 2026 ──────────────────────────────────────────────────────
+  WC26_FOX:     ["fox","foxone","fubo","youtubetv","hulu","directv","sling"],   // FOX OTA (free antenna) + Fox One + vMVPDs — 70 WC26 matches on FOX
+  WC26_FS1:     ["fs1","foxone","fubo","youtubetv","hulu","directv"],           // FS1 cable + Fox One streaming — 34 WC26 matches on FS1
+  WC26_FREE:    ["tubi","fox","foxone","fubo","youtubetv","hulu","directv"],    // Free on Tubi + FOX OTA (opening + USMNT opener)
   WWE_ESPN:     ["espnunlimited","espn2"],               // WWE PLEs in US: ESPN Unlimited + ESPN2 (first hour simulcast)
   NETFLIX_SPORTS: ["netflix"],                             // WWE Raw, NFL Christmas, MLB events on Netflix
   USA_NETWORK:  ["usa","sling","youtubetv","directv"],   // USA Network: SmackDown, WNBA, Premier League, NASCAR
@@ -3283,6 +3289,7 @@ function buildDateSchedule(iso){
   _gid=0;
   const sections = sched[iso];
   maybePushFrenchOpen(sections);
+  maybePushWorldCup(sections);
   sections.forEach(sec=>sec.games.forEach(g=>{ g._id="g"+(++_gid); g._sport=sec.sport; }));
   return sections;
 }
@@ -5442,6 +5449,38 @@ const MEDIA_WEEKEND_BASE = [
 // ── Special events override (add ~20 times/year; remove after endDate passes) ─
 // Format: { startDate:"YYYY-MM-DD", endDate:"YYYY-MM-DD", card:{show,network,chip,time,desc,link} }
 const MEDIA_SPECIALS = [
+  {
+    // FIFA World Cup 2026 — full tournament run (June 11 – July 19)
+    startDate:"2026-06-11", endDate:"2026-07-19",
+    card:{
+      show:"FIFA World Cup Live",network:"FOX / FS1",chip:"fox",
+      time:"Daily · pre-match through tournament",
+      desc:"Daily pregame and bridge show on FOX and FS1 throughout the 2026 FIFA World Cup. 104 matches across 39 days (June 11 – July 19). All games in English on FOX (70) and FS1 (34), streaming on Fox One. Spanish-language coverage on Telemundo/Universo + Peacock.",
+      journalNote:"FIFA World Cup 2026 in progress. USMNT Group D (USA · Paraguay · Australia · Turkey). Opening match: Mexico vs South Africa, Estadio Azteca.",
+      link:"https://www.foxsports.com/soccer/fifa-world-cup"
+    }
+  },
+  {
+    // USMNT opener — USA vs Paraguay June 12 (free on Tubi)
+    startDate:"2026-06-12", endDate:"2026-06-12",
+    card:{
+      show:"FIFA World Cup 2026 — USA vs Paraguay",network:"FOX / Tubi FREE",chip:"fox",
+      time:"9:00 PM ET · SoFi Stadium, Inglewood CA",
+      desc:"USMNT World Cup opener vs Paraguay in Los Angeles. Free live 4K simulcast on Tubi (no subscription needed) and FOX OTA. 3-hour pregame show begins 6 PM ET on FOX. Pulisic, Adams and the full USMNT squad in Group D action.",
+      journalNote:"USMNT WC26 G1 free on Tubi. Group D: USA · Paraguay · Australia · Turkey. Kickoff 9 PM ET FOX/Tubi.",
+      link:"https://tubitv.com/live"
+    }
+  },
+  {
+    // World Cup Final — July 19
+    startDate:"2026-07-19", endDate:"2026-07-19",
+    card:{
+      show:"FIFA World Cup Final",network:"FOX",chip:"fox",
+      time:"3:00 PM ET · MetLife Stadium, East Rutherford NJ",
+      desc:"The 2026 FIFA World Cup Final at MetLife Stadium in New Jersey. FOX coverage begins at 12 PM ET with a special 3-hour edition of FIFA World Cup Live. The first World Cup Final hosted on US soil.",
+      link:"https://www.foxsports.com/soccer/fifa-world-cup"
+    }
+  },
   {
     // NBA Eastern Conference Finals G1 pregame — May 19 only
     startDate:"2026-05-19", endDate:"2026-05-19",
@@ -11224,7 +11263,69 @@ document.addEventListener('click', e => {
 })();
 
 
-// ── French Open Date Gate + Preview Card ─────────────────────────────────────
+// ── FIFA World Cup 2026 — Date Gate + Live Games ─────────────────────────────
+// June 11–July 19 · 48 teams · 104 matches · USA + Mexico + Canada
+// US: FOX (70 games) · FS1 (34 games) · All on Fox One app · Spanish: Telemundo/Universo/Peacock
+// Free simulcast on Tubi: Mexico-South Africa (June 11) + USA-Paraguay (June 12)
+// Key hardcoded games: USMNT all 3 group games + opening match + marquee group stage
+const wc26Raw=[
+  // ── Opening Day — June 11 ──────────────────────────────────────────────────
+  {home:"Mexico",away:"South Africa",         league:"FIFA World Cup 2026 \u2014 Group A · Opening Match",   start_time:"2026-06-11T19:00:00Z",confirmed:true,venue:"Estadio Azteca, Mexico City",   streams:resolveBundle("WC26_FREE"), nationalBundle:"WC26_FREE",  matchupNote:"Opening match of the 2026 FIFA World Cup. Host nation Mexico opens Group A. Free on Tubi (live 4K simulcast) and FOX OTA.",_id:"wc26_g11_mex_sa",  _sport:"FIFA World Cup 2026"},
+  // ── June 12 — Canada + USMNT ──────────────────────────────────────────────
+  {home:"Canada",away:"Bosnia and Herzegovina",league:"FIFA World Cup 2026 \u2014 Group B",                 start_time:"2026-06-12T19:00:00Z",confirmed:true,venue:"BMO Field, Toronto",             streams:resolveBundle("WC26_FOX"),  nationalBundle:"WC26_FOX",   _id:"wc26_g12_can_bih", _sport:"FIFA World Cup 2026"},
+  {home:"United States",away:"Paraguay",       league:"FIFA World Cup 2026 \u2014 Group D · USMNT G1",      start_time:"2026-06-13T01:00:00Z",confirmed:true,venue:"SoFi Stadium, Inglewood CA",    streams:resolveBundle("WC26_FREE"), nationalBundle:"WC26_FREE",  matchupNote:"USMNT opener at SoFi Stadium. Free on Tubi (live 4K) and FOX OTA. 3-hour pregame show begins 6 PM ET.",_id:"wc26_g12_usa_par",_sport:"FIFA World Cup 2026"},
+  // ── June 14 ────────────────────────────────────────────────────────────────
+  {home:"Germany",away:"Cura\u00e7ao",          league:"FIFA World Cup 2026 \u2014 Group C",                 start_time:"2026-06-14T17:00:00Z",confirmed:true,venue:"NRG Stadium, Houston",           streams:resolveBundle("WC26_FOX"),  nationalBundle:"WC26_FOX",   _id:"wc26_g14_ger_cur", _sport:"FIFA World Cup 2026"},
+  {home:"Netherlands",away:"Japan",             league:"FIFA World Cup 2026 \u2014 Group E",                 start_time:"2026-06-14T20:00:00Z",confirmed:true,venue:"AT&T Stadium, Arlington TX",    streams:resolveBundle("WC26_FOX"),  nationalBundle:"WC26_FOX",   _id:"wc26_g14_ned_jpn", _sport:"FIFA World Cup 2026"},
+  {home:"Ivory Coast",away:"Ecuador",           league:"FIFA World Cup 2026 \u2014 Group F",                 start_time:"2026-06-14T23:00:00Z",confirmed:true,venue:"Lincoln Financial Field, Philadelphia",streams:resolveBundle("WC26_FS1"),nationalBundle:"WC26_FS1",_id:"wc26_g14_civ_ecu",_sport:"FIFA World Cup 2026"},
+  // ── June 15 ────────────────────────────────────────────────────────────────
+  {home:"Spain",away:"Cape Verde",              league:"FIFA World Cup 2026 \u2014 Group G",                 start_time:"2026-06-15T16:00:00Z",confirmed:true,venue:"Mercedes-Benz Stadium, Atlanta", streams:resolveBundle("WC26_FOX"),  nationalBundle:"WC26_FOX",   matchupNote:"Spain (FIFA #1) open against debutants Cape Verde. Lamine Yamal leads a deep Spanish squad.",_id:"wc26_g15_esp_cpv",_sport:"FIFA World Cup 2026"},
+  {home:"Belgium",away:"Egypt",                 league:"FIFA World Cup 2026 \u2014 Group H",                 start_time:"2026-06-15T19:00:00Z",confirmed:true,venue:"Lumen Field, Seattle",           streams:resolveBundle("WC26_FOX"),  nationalBundle:"WC26_FOX",   _id:"wc26_g15_bel_egy", _sport:"FIFA World Cup 2026"},
+  // ── June 16 ────────────────────────────────────────────────────────────────
+  {home:"France",away:"Senegal",                league:"FIFA World Cup 2026 \u2014 Group I",                 start_time:"2026-06-16T19:00:00Z",confirmed:true,venue:"MetLife Stadium, East Rutherford NJ",streams:resolveBundle("WC26_FOX"),nationalBundle:"WC26_FOX",matchupNote:"Mbapp\u00e9 leads France (Group I favourites) in a heavyweight Group I opener at MetLife.",_id:"wc26_g16_fra_sen",_sport:"FIFA World Cup 2026"},
+  {home:"Argentina",away:"Algeria",             league:"FIFA World Cup 2026 \u2014 Group J · Defending Champions",start_time:"2026-06-17T01:00:00Z",confirmed:true,venue:"Arrowhead Stadium, Kansas City",streams:resolveBundle("WC26_FOX"),nationalBundle:"WC26_FOX",matchupNote:"Messi leads defending champions Argentina in their World Cup title defence. Group J opens with a heavyweight.",_id:"wc26_g16_arg_alg",_sport:"FIFA World Cup 2026"},
+  // ── June 18 ────────────────────────────────────────────────────────────────
+  {home:"Mexico",away:"South Korea",            league:"FIFA World Cup 2026 \u2014 Group A",                 start_time:"2026-06-19T01:00:00Z",confirmed:true,venue:"Estadio Akron, Guadalajara",     streams:resolveBundle("WC26_FOX"),  nationalBundle:"WC26_FOX",   _id:"wc26_g18_mex_kor", _sport:"FIFA World Cup 2026"},
+  // ── June 19 — USMNT G2 ────────────────────────────────────────────────────
+  {home:"United States",away:"Australia",       league:"FIFA World Cup 2026 \u2014 Group D · USMNT G2",      start_time:"2026-06-19T19:00:00Z",confirmed:true,venue:"Lumen Field, Seattle",           streams:resolveBundle("WC26_FOX"),  nationalBundle:"WC26_FOX",   matchupNote:"USMNT second group game at Lumen Field, Seattle. Pulisic and Adams lead Group D play.",_id:"wc26_g19_usa_aus",_sport:"FIFA World Cup 2026"},
+  {home:"Brazil",away:"Haiti",                  league:"FIFA World Cup 2026 \u2014 Group K",                 start_time:"2026-06-20T00:30:00Z",confirmed:true,venue:"Lincoln Financial Field, Philadelphia",streams:resolveBundle("WC26_FOX"),nationalBundle:"WC26_FOX",_id:"wc26_g19_bra_hai",_sport:"FIFA World Cup 2026"},
+  // ── June 25 — USMNT G3 ────────────────────────────────────────────────────
+  {home:"United States",away:"T\u00fcrkiye",    league:"FIFA World Cup 2026 \u2014 Group D · USMNT G3",      start_time:"2026-06-26T02:00:00Z",confirmed:true,venue:"SoFi Stadium, Inglewood CA",    streams:resolveBundle("WC26_FOX"),  nationalBundle:"WC26_FOX",   matchupNote:"USMNT must-or-can-clinch group finale back at SoFi. Türkiye (UEFA Playoff C winners) in Group D.",_id:"wc26_g25_usa_tur",_sport:"FIFA World Cup 2026"},
+];
+
+function maybePushWorldCup(sections){
+  const WC_START="2026-06-11", WC_END="2026-07-19", PREVIEW_FROM="2026-05-24";
+  if(TODAY_ISO<PREVIEW_FROM||TODAY_ISO>WC_END) return;
+  const isLive=TODAY_ISO>=WC_START;
+  if(!isLive){
+    const daysAway=Math.round((new Date(WC_START)-new Date(TODAY_ISO))/86400000);
+    sections.push({sport:"FIFA World Cup 2026",games:[{
+      home:"FIFA World Cup 2026",away:null,
+      league:`📅 Starts in ${daysAway} day${daysAway===1?"":"s"} \u2014 June 11, Estadio Azteca`,
+      start_time:WC_START+"T15:00:00Z",confirmed:true,
+      venue:"16 host cities \u00b7 USA \u00b7 Mexico \u00b7 Canada",
+      streams:resolveBundle("WC26_FOX"),
+      _id:"wc26_preview",_sport:"FIFA World Cup 2026",
+      leaderNote:`48 teams \u00b7 104 matches \u00b7 ${daysAway} days to kickoff \u00b7 FOX/FS1 (English) \u00b7 Telemundo/Peacock (Spanish)`,
+    }]});
+    return;
+  }
+  const todayGames=wc26Raw.filter(g=>g&&isToday(g.start_time));
+  if(todayGames.length){
+    sections.push({sport:"FIFA World Cup 2026",games:todayGames});
+  } else {
+    const day=Math.round((new Date(TODAY_ISO)-new Date(WC_START))/86400000)+1;
+    sections.push({sport:"FIFA World Cup 2026",games:[{
+      home:"FIFA World Cup 2026",away:null,
+      league:`🔴 Live \u2014 Day ${day} of 39 \u00b7 All matches on FOX \u00b7 FS1`,
+      start_time:TODAY_ISO+"T15:00:00Z",confirmed:true,
+      venue:"foxsports.com/soccer or Fox One app for today\u2019s schedule",
+      streams:resolveBundle("WC26_FOX"),
+      _id:"wc26_day_"+day,_sport:"FIFA World Cup 2026",
+      leaderNote:"Live on FOX \u00b7 FS1 \u00b7 Fox One streaming \u00b7 Spanish: Telemundo/Peacock",
+    }]});
+  }
+}
 // Shows in Tennis section from May 15 (10 days before start) through June 8 (end)
 function maybePushFrenchOpen(sections){
   const FO_START = "2026-05-24";   // Main draw begins May 24 (qualifying May 18-22)
