@@ -3028,6 +3028,67 @@ const today = new Date();
 // date-display element removed — date shown in date-label button instead
 const isoDate = today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0')+'-'+String(today.getDate()).padStart(2,'0');
 
+// ── Delta15 — 15-day rolling localStorage pruner ──────────────────────────────
+// Runs once per day at startup. Removes stale cache keys to prevent quota errors
+// and cache-poisoning from old game entries. Never touches user preferences.
+//
+// Covers:
+//   field_brief_*, field_drama_history_*, field_odds_* — timestamp-based TTL
+//   field_drama_peak_* — plain numbers, cheap to regenerate, always prune
+//   field_game_notes_*  — plain strings, cheap to regenerate (P1-P4 stack)
+//   Any key with embedded YYYY-MM-DD older than 15 days
+//
+// NEVER prunes (user preferences + permanent state):
+//   field_ios_prompt_dismissed · field_free_only · field_my_services
+//   field_setup_done · FIELD_USAGE_DATE · field_ios_visit_count
+(function delta15(){
+  try{
+    if(localStorage.getItem('field_delta15_'+isoDate)) return; // already ran today
+    const cutoff=Date.now()-15*24*60*60*1000;
+    const KEEP=new Set([
+      'field_ios_prompt_dismissed','field_free_only','field_my_services',
+      'field_setup_done','FIELD_USAGE_DATE','field_ios_visit_count',
+      'field_usage_date','field_my_teams'
+    ]);
+    let pruned=0;
+    Object.keys(localStorage).forEach(k=>{
+      if(KEEP.has(k)||k.startsWith('field_delta15_')) return;
+      // Any key with an embedded YYYY-MM-DD date older than 15 days
+      const dm=k.match(/(\d{4}-\d{2}-\d{2})/);
+      if(dm&&new Date(dm[1]).getTime()<cutoff){localStorage.removeItem(k);pruned++;return;}
+      // Keys with stored JSON containing a timestamp/fetchedAt field
+      if(k.startsWith('field_brief_')||k.startsWith('field_drama_history_')||k.startsWith('field_odds_')){
+        try{
+          const v=JSON.parse(localStorage.getItem(k)||'{}');
+          const ts=v.timestamp||v.fetchedAt||v.t||0;
+          if(!ts||ts<cutoff){localStorage.removeItem(k);pruned++;}
+        }catch(e){localStorage.removeItem(k);pruned++;}
+        return;
+      }
+      // Drama peaks: plain numbers, no timestamp — cheap to regenerate
+      if(k.startsWith('field_drama_peak_')){localStorage.removeItem(k);pruned++;return;}
+      // Game notes: plain strings from P1-P4 stack — regenerate on next view
+      if(k.startsWith('field_game_notes_')){localStorage.removeItem(k);pruned++;return;}
+      // Night Owl / series brief cache entries
+      if(k.startsWith('field_night_owl_')||k.startsWith('field_series_brief_')){
+        try{
+          const v=JSON.parse(localStorage.getItem(k)||'{}');
+          const ts=v.timestamp||v.fetchedAt||0;
+          if(!ts||ts<cutoff){localStorage.removeItem(k);pruned++;}
+        }catch(e){localStorage.removeItem(k);pruned++;}
+        return;
+      }
+    });
+    // Self-clean old run markers (keep only today's)
+    Object.keys(localStorage)
+      .filter(k=>k.startsWith('field_delta15_')&&k!=='field_delta15_'+isoDate)
+      .forEach(k=>localStorage.removeItem(k));
+    localStorage.setItem('field_delta15_'+isoDate,'1');
+    if(typeof FIELD_DEBUG!=='undefined'&&FIELD_DEBUG)
+      console.log('[Delta15] pruned',pruned,'stale localStorage keys');
+  }catch(e){}
+})();
+
 // ── Time helpers ─────────────────────────────────────────────
 function localTz(){ return Intl.DateTimeFormat().resolvedOptions().timeZone; }
 function fmtTime(iso){
