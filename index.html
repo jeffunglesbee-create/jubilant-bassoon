@@ -2200,7 +2200,7 @@ const SR = {
   tbs:       ["TBS",           "https://www.tbs.com/watchtbs",                      "#0099e6","tv",  "Cable/satellite TV login required, or via Sling TV, FuboTV, YouTube TV, DirecTV Stream (~$45-83/mo). MLB: Tuesday Night Baseball (24 games all season, exclusive national window). Streams on Max/HBO Max. Also airs MLB postseason (ALDS, ALCS)."],
   max:       ["Max / HBO Max", "https://www.hbomax.com/sports",                    "#ff6b35","sub", "Max Standard or Premium plan required ($18.49–$22.99/mo). Basic with Ads does NOT include live sports. Streams NHL & MLB on TNT/TBS — NBA no longer on Max as of 2026."],
   fox:       ["Fox",           "https://www.foxsports.com",                         "#f0c040","tv",  "Cable/satellite login required"],
-  fsp:       ["Fox Soccer Plus","https://www.foxsports.com/watch/fox-soccer-plus",   "#f0c040","tv",  "Cable/satellite required, or via YouTube TV, FuboTV, DirecTV Stream, Sling TV, Hulu Live TV. Primary US broadcaster for AFL — 3 live games per week + Grand Final on FS1."],
+  fsp:       ["Fox Soccer Plus","https://www.foxsports.com/watch/fox-soccer-plus",   "#f0c040","tv",  "Cable/satellite login required. Streaming: YouTube TV (Sports Plus add-on +$10.99/mo) · FuboTV (Intl Sports Plus add-on +$6.99/mo) · DirecTV Stream (Sports Pack +$14.99/mo) · Sling TV (Blue/Orange+Blue). AFL coverage: 3 live games/round on FSP + 1 marquee game/round live first on FS1 or FS2 (tape-delay replay on FSP) + Grand Final live on FS1."],
   fs1:       ["FS1",           "https://www.foxsports.com/live",                    "#f0c040","tv",  "Cable/satellite login required"],
   cbs:       ["CBS",           "https://www.cbssports.com/live",                    "#a78bfa","tv",  "Cable/satellite login or Paramount+ Premium required ($13.99/mo) to stream local CBS live."],
   // ── Streaming / SVOD ──────────────────────────────────────────────────────────
@@ -2563,7 +2563,7 @@ const BUNDLES = {
   TENNIS_ATP:   ["tc","tcplus"],
   // Specialist / International
   AFL_AU:       ["kayosports","foxfooty","sevenplus"],   // Australia: Kayo, Fox Footy, 7plus free-to-air
-  AFL_USA:      ["fsp","watchafl","fubo","youtubetv"],   // USA: Fox Soccer Plus (3 games/wk) + Watch AFL (every game)
+  AFL_USA:      ["fsp","watchafl","fubo","youtubetv","directv"],  // USA: FSP (3 live/round) + FS1/FS2 (1 live/round) + Watch AFL (all games). FSP via fubo/ytv add-on; directv via Sports Pack.
   WWE_ESPN:     ["espnunlimited","espn2"],               // WWE PLEs in US: ESPN Unlimited + ESPN2 (first hour simulcast)
   NETFLIX_SPORTS: ["netflix"],                             // WWE Raw, NFL Christmas, MLB events on Netflix
   USA_NETWORK:  ["usa","sling","youtubetv","directv"],   // USA Network: SmackDown, WNBA, Premier League, NASCAR
