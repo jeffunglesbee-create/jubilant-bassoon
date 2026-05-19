@@ -4911,6 +4911,17 @@ function buildTodaySchedule(){
     {home:"Leeds United",             away:"Brighton & Hove Albion",   league:"Premier League – Matchweek 37", start_time:"2026-05-17T14:00:00Z", confirmed:true, venue:"Elland Road, Leeds",               streams:resolveBundle("EPL_USA"),     localNote:"USA Network (cable)"},
     {home:"Wolverhampton Wanderers",  away:"Fulham",                   league:"Premier League – Matchweek 37", start_time:"2026-05-17T14:00:00Z", matchupNote:"20th vs 11th — Wolves (18pts) are effectively relegated with 2 games left. Fulham (48pts) comfortably 11th. Arsenal lead Man City by 2pts in the title race — both play next week.", confirmed:true, venue:"Molineux, Wolverhampton",          streams:resolveBundle("EPL_PEACOCK"), localNote:"Peacock only"},
     {home:"Newcastle United",         away:"West Ham United",          league:"Premier League – Matchweek 37", start_time:"2026-05-17T16:30:00Z", matchupNote:"Relegation battle: West Ham (18th 36pts) are in the drop zone, 2pts below Tottenham (17th 38pts). Newcastle (13th 46pts) are safe. A must-win for the Hammers with 2 games remaining.", confirmed:true, venue:"St. James' Park, Newcastle",        streams:resolveBundle("EPL_USA"),     localNote:"USA Network (cable)"},
+    // ── MW38 rearranged — Tue May 19 ──────────────────────────────────────────
+    // Arsenal beat Burnley Sunday → title gap widens. City MUST WIN at Bournemouth or it's over.
+    // Tottenham win vs Chelsea = West Ham mathematically relegated before the final day.
+    {home:"AFC Bournemouth",          away:"Manchester City",           league:"Premier League – Matchweek 38",
+     start_time:"2026-05-19T18:30:00Z", confirmed:true, venue:"Vitality Stadium, Bournemouth",
+     streams:resolveBundle("EPL_USA"), localNote:"USA Network (cable)",
+     matchupNote:"City's title is on the line tonight — anything but three points at Dean Court and Arsenal are Premier League champions, confirmed before a ball is kicked on final day. Guardiola's side cannot afford a slip."},
+    {home:"Chelsea",                  away:"Tottenham Hotspur",         league:"Premier League – Matchweek 38",
+     start_time:"2026-05-19T19:15:00Z", confirmed:true, venue:"Stamford Bridge, London",
+     streams:resolveBundle("EPL_PEACOCK"), localNote:"Peacock only",
+     matchupNote:"A derby that never needs extra stakes — but it has them. A Tottenham win at Stamford Bridge mathematically relegates West Ham before they play another minute, sending the Hammers down ahead of Sunday's final day. One of the great London rivalries, with survival and supremacy both on the table."},
   ].filter(g=>isToday(g.start_time));
   const eplGames = eplRaw.map((g,i)=>({...g, _id:"epl_mw36mw37_"+i, _sport:"Premier League"}));
 
