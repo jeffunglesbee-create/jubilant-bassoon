@@ -9709,13 +9709,12 @@ async function fetchSchedule(){
   setTimeout(squigglePrefetchAll, 2500); // Squiggle standings
   setTimeout(fdPrefetchSoccerLive, 3000)
   setTimeout(slashGolfPrefetchAll, 3500); // Slash Golf: schedule + live leaderboard
-  // Pre-fetch BDL milestones for tonight's NBA games (ROOT 3 — feeds drama boost + badge)
+  // Pre-fetch BDL season averages once (ROOT 3 — feeds milestones for all tonight's NBA games)
+  // One relay call per day covers all games — fetchBDLMilestones() reads from shared cache
   setTimeout(() => {
     try {
-      (allData?.sports||[]).forEach(sec => {
-        if (!(sec.sport||'').includes('Basketball')) return;
-        (sec.games||[]).forEach(g => fetchBDLMilestones({...g, _section: sec.sport}).catch(()=>{}));
-      });
+      const hasNBA = (allData?.sports||[]).some(s => (s.sport||'').includes('Basketball'));
+      if (hasNBA) fetchBDLSeasonAverages().catch(()=>{});
     } catch(e_) {}
   }, 4500);
   setTimeout(weatherPrefetchAll, 4000);  // Open-Meteo outdoor venue weather
@@ -10864,11 +10863,13 @@ async function fetchNBAStandingsParsed() {
 }
 
 // ── BDL Milestone Detection (Game Notes P2C) ─────────────────────────────────
-// Fetches season averages for tonight's NBA players via BDL relay.
-// Detects proximity to round milestones (points, assists, rebounds).
-// Populates _bdlMilestonesCache[gameId] for compound badge + preGameScore boost.
+// ONE relay call per day covers all games — data cached in localStorage.
+// Per-game calls (old pattern) cost N calls for N games. New pattern: 1/day.
+// Uses per_page=100 to cover top scorers — those closest to round milestones.
 const BDL_MILESTONE_THRESHOLDS = [500,1000,1500,2000,2500,3000,4000,5000];
 const BDL_MILESTONE_STATS = ['pts','ast','reb'];
+let _bdlSeasonAveragesPromise = null; // in-flight dedup — prevents concurrent requests
+
 function nearestMilestone(val, stat) {
   const next = BDL_MILESTONE_THRESHOLDS.find(t => t > val);
   if (!next) return null;
@@ -10876,37 +10877,73 @@ function nearestMilestone(val, stat) {
   const pct = val / next;
   return pct >= 0.95 ? { next, gap, pct, stat } : null;
 }
+
+// Shared season averages fetch — one call per day, shared across all games
+async function fetchBDLSeasonAverages() {
+  const lsKey = `field_bdl_seasavg_${TODAY_ISO}`;
+  // Check localStorage (per-day TTL)
+  try {
+    const raw = localStorage.getItem(lsKey);
+    if (raw) return JSON.parse(raw);
+  } catch(e) {}
+  // Dedup: if a fetch is already in-flight, reuse it
+  if (_bdlSeasonAveragesPromise) return _bdlSeasonAveragesPromise;
+  _bdlSeasonAveragesPromise = (async () => {
+    try {
+      // per_page=100 sorted by pts gives top scorers — most likely milestone candidates
+      // Two pages covers ~200 players — sufficient for NBA slate milestone detection
+      const r = await fetch(
+        `${BDL_RELAY_BASE}/nba/v1/season_averages?season=2025&per_page=100`,
+        { signal: AbortSignal.timeout(6000) }
+      );
+      if (!r.ok) return null;
+      const d = await r.json();
+      const players = d.data || [];
+      try { localStorage.setItem(lsKey, JSON.stringify(players)); } catch(e) {}
+      if (FIELD_DEBUG) console.log(`[BDL] season averages: ${players.length} players cached for ${TODAY_ISO}`);
+      return players;
+    } catch(e) {
+      if (FIELD_DEBUG) console.warn('[BDL] season averages fetch failed:', e.message);
+      return null;
+    } finally {
+      _bdlSeasonAveragesPromise = null; // clear dedup
+    }
+  })();
+  return _bdlSeasonAveragesPromise;
+}
+
+// Per-game milestone detection — reads from shared daily cache, zero extra API calls
 async function fetchBDLMilestones(game) {
   if (!game || !game._section?.includes('Basketball')) return null;
   const gameKey = game._id || `${game.home}_${game.away}`;
   if (_bdlMilestonesCache[gameKey] !== undefined) return _bdlMilestonesCache[gameKey];
-  try {
-    // Season=2025 means 2025-26 season in BDL convention
-    const url = `${BDL_RELAY_BASE}/nba/v1/season_averages?season=2025&per_page=30`;
-    const r = await fetch(url, { signal: AbortSignal.timeout(5000) });
-    if (!r.ok) { _bdlMilestonesCache[gameKey] = null; return null; }
-    const d = await r.json();
-    // Find best milestone candidate across all players
-    let best = null;
-    (d.data || []).forEach(p => {
-      BDL_MILESTONE_STATS.forEach(stat => {
-        const season_total = Math.round((p[stat] || 0) * (p.games_played || 0));
-        const m = nearestMilestone(season_total, stat);
-        if (m && (!best || m.pct > best.pct)) {
-          best = {
-            shortLabel: `${p.player?.last_name || ''} −${m.gap}`,
-            playerName: `${p.player?.first_name || ''} ${p.player?.last_name || ''}`.trim(),
-            stat: m.stat, gap: m.gap, pct: m.pct, next: m.next,
-          };
-        }
-      });
+  const players = await fetchBDLSeasonAverages();
+  if (!players?.length) { _bdlMilestonesCache[gameKey] = null; return null; }
+  // Filter to players on tonight's two teams (by team name substring match)
+  const hSlug = (game.home||'').toLowerCase().split(' ').pop();
+  const aSlug = (game.away||'').toLowerCase().split(' ').pop();
+  const gamePlayers = players.filter(p => {
+    const t = (p.team?.full_name || p.team?.name || '').toLowerCase();
+    return t.includes(hSlug) || t.includes(aSlug);
+  });
+  // Fall back to all players if team filtering yields nothing (name mismatch)
+  const pool = gamePlayers.length > 0 ? gamePlayers : players;
+  let best = null;
+  pool.forEach(p => {
+    BDL_MILESTONE_STATS.forEach(stat => {
+      const season_total = Math.round((p[stat] || 0) * (p.games_played || 0));
+      const m = nearestMilestone(season_total, stat);
+      if (m && (!best || m.pct > best.pct)) {
+        best = {
+          shortLabel: `${p.player?.last_name || p.last_name || ''} −${m.gap}`,
+          playerName: `${p.player?.first_name || p.first_name || ''} ${p.player?.last_name || p.last_name || ''}`.trim(),
+          stat: m.stat, gap: m.gap, pct: m.pct, next: m.next,
+        };
+      }
     });
-    _bdlMilestonesCache[gameKey] = best;
-    return best;
-  } catch(e) {
-    _bdlMilestonesCache[gameKey] = null;
-    return null;
-  }
+  });
+  _bdlMilestonesCache[gameKey] = best;
+  return best;
 }
 
 async function fetchNHLStandingsParsed() {
