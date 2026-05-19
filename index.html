@@ -3454,6 +3454,7 @@ function buildDateSchedule(iso){
   const sections = sched[iso];
   maybePushFrenchOpen(sections);
   maybePushWorldCup(sections);
+  maybePushAFLFinals(sections);
   sections.forEach(sec=>sec.games.forEach(g=>{ g._id="g"+(++_gid); g._sport=sec.sport; }));
   return sections;
 }
@@ -9618,11 +9619,36 @@ const SERVICE_COST = {
 // isBlowout flag for J5 caller — this function does NOT suppress anything.
 // Source: PULSE spec (16pkgCd8nz9fjfK32M6qu4qYGmslyNv30jhVqjgn8lj8)
 const SPORT_CRUNCH_RULES = {
-  'Basketball': ['4th','q4'],
-  'Baseball':   ['9th'],
-  'Football':   ['4th'],
-  'Hockey':     ['3rd','ot'],
+  'Basketball':                 ['4th','q4'],
+  'Baseball':                   ['9th'],
+  'Football':                   ['4th'],
+  'Hockey':                     ['3rd','ot'],
+  'Australian Football (AFL)':  ['q4','qt4','qtr4'], // Q4 = crunch regardless of margin
 };
+
+// AFL drama thresholds differ — 6-point goals make margin scale ~3× wider than NBA
+// margin <6  = EXTREME (less than 1 goal difference — literally 1 kick wins it)
+// margin 7-18 = HIGH (1–3 goals — anyone's game)
+// margin 19-36 = MEDIUM (4–6 goals — large but chaseable in AFL)
+// margin >36 = low (7+ goals, typically too far in last Q)
+// Q4 last 5 min: 1.4× multiplier regardless of margin
+function _aflDramaScore(margin, period, dramaScorePeak){
+  let score = dramaScorePeak;
+  const p = String(period||'').toLowerCase();
+  const isQ4 = p.includes('q4')||p.includes('qt4')||p.includes('qtr4');
+  if(isQ4){
+    if(margin < 6)   score += 35; // within 1 goal in Q4
+    else if(margin <= 18) score += 20; // within 3 goals
+    else if(margin <= 36) score += 5;
+    else score -= 15; // blowout
+  } else {
+    if(margin < 6)   score += 15;
+    else if(margin <= 18) score += 8;
+    else if(margin > 36) score -= 15;
+  }
+  return Math.max(0, Math.min(100, score));
+}
+
 const ViewingConditions = {
   evaluate(gameId, period, margin, sport) {
     const dramaScorePeak = Number(localStorage.getItem('field_drama_peak_' + gameId)) || 50;
@@ -9632,15 +9658,50 @@ const ViewingConditions = {
       const p = String(period).toLowerCase();
       isCrunchTime = SPORT_CRUNCH_RULES[sport].some(rule => p.includes(rule));
     }
-    if (isCrunchTime && margin <= 5) score += 30;
-    if (margin > 20)                 score -= 20;
-    score = Math.max(0, Math.min(100, score));
-    const isBlowout = margin > 20;
+    // AFL uses its own drama scoring (6-pt goals = wider margin scale)
+    if(sport === 'Australian Football (AFL)'){
+      score = _aflDramaScore(margin, period, dramaScorePeak);
+    } else {
+      if (isCrunchTime && margin <= 5) score += 30;
+      if (margin > 20)                 score -= 20;
+      score = Math.max(0, Math.min(100, score));
+    }
+    const isBlowout = sport === 'Australian Football (AFL)' ? margin > 36 : margin > 20;
     if (score >= 85) return { score, badge: 'CRUNCH TIME',    color: 'var(--c-nba)', pulse: true,  isBlowout };
     if (score >= 65) return { score, badge: 'WORTH WATCHING', color: 'var(--c-nhl)', pulse: false, isBlowout };
     return             { score, badge: null,           color: null,          pulse: false, isBlowout };
   }
 };
+
+// ── AFL Finals Bracket — McIntyre Final Eight (AFL S5) ───────────────────────
+// 2026 finals: Week 1 ~Sep 4–7 · Week 2 ~Sep 11–14 · Week 3 ~Sep 18–21
+// Grand Final: last Saturday September 2026 (~Sep 26) at MCG
+// 2026: Top 10 qualify (Wildcard Round added) — NOT top 8 as in prior years
+// Wildcard: 9th vs 10th → winner enters bracket as 8th seed
+const AFL_FINALS_START='2026-09-04', AFL_FINALS_END='2026-09-26';
+function maybePushAFLFinals(sections){
+  if(TODAY_ISO<AFL_FINALS_START||TODAY_ISO>AFL_FINALS_END) return;
+  const daysIn=Math.round((new Date(TODAY_ISO)-new Date(AFL_FINALS_START))/86400000);
+  const week=daysIn<7?'Week 1 \u2014 Qualifying + Elimination Finals':
+             daysIn<14?'Week 2 \u2014 Semi-Finals':
+             daysIn<21?'Week 3 \u2014 Preliminary Finals':
+                       'Grand Final Week \u2014 MCG';
+  sections.push({sport:'Australian Football (AFL)',games:[{
+    home:'AFL Finals 2026',away:null,
+    league:'AFL 2026 \u2013 Finals \u00b7 '+week,
+    start_time:TODAY_ISO+'T04:00:00Z',confirmed:true,
+    venue:'Various venues \u00b7 Grand Final: MCG, Melbourne',
+    streams:resolveBundle('AFL_USA'),
+    _id:'afl_finals_bracket',_sport:'Australian Football (AFL)',
+    matchupNote:[
+      'Wildcard: 9th vs 10th \u00b7 winner becomes 8th seed (new 2026)',
+      'QF: 1v2 + 3v4 \u00b7 EF: 5v8 + 6v7 \u00b7 losers play on in Semi-Finals',
+      'Semi-Finals \u2192 Prelim Finals \u2192 Grand Final ~Sep 26 at MCG',
+      'US: Fox Soccer Plus (3/round) + FS1 \u00b7 AU: Fox Footy + 7plus (free)'
+    ].join('\n'),
+    leaderNote:'Top 10 qualify in 2026 \u00b7 US broadcast: FSP + FS1 \u00b7 Watch AFL (streaming)'
+  }]});
+}
 
 goToDate(TODAY_ISO);
 
