@@ -4701,13 +4701,11 @@ function buildTodaySchedule(){
     return d.toLocaleDateString("en-CA",{timeZone:tz})===todayFresh;
   }
 
-  // ── NBA Playoffs — Tuesday May 19 2026 ──────────────────────────
-  // Source: NBA.com / ESPN verified May 19, 2026
-  //   RESULT (May 17): CLE 125, DET 94 (G7) — Cavaliers advance to East CF
-  //   RESULT (May 18): SAS 122, OKC 115 2OT (WCF G1) — Spurs lead series 1-0
-  //     Wembanyama: 41 pts 24 reb 3 blk · Dylan Harper steps up with Fox (ankle) out
-  //   TONIGHT: ECF G1 — CLE @ NYK — 8:00 PM ET — ESPN · MSG, New York
-  //   TOMORROW: WCF G2 — SAS @ OKC — 8:30 PM ET — NBC/Peacock · Paycom Center
+  // ── NBA Playoffs — Wednesday May 20 2026 ──────────────────────────
+  // Source: NBA.com / ESPN verified May 20, 2026
+  //   RESULT (May 19): ECF G1 CLE @ NYK — result from last night
+  //   TONIGHT: WCF G2 — SAS @ OKC — 8:30 PM ET — NBC/Peacock · Paycom Center
+  //   SAS leads WCF 1-0 (G1: SAS 122 OKC 115 2OT — Wembanyama 41/24/3blk)
   const nbaGames=[
     {home:"New York Knicks",       away:"Cleveland Cavaliers",  league:"NBA Playoffs \u2013 East CF G1 \u00b7 Series 0-0",       start_time:"2026-05-20T00:00:00Z", confirmed:true, venue:"Madison Square Garden, New York NY",  streams:resolveBundle("NBA_ESPN"), seriesRecord:"0-0", matchupNote:"Knicks 8 days rest (swept PHI 4-0). Cavs won classic 7-game G7 vs DET. OG Anunoby (hamstring) says he'll be ready."},
     {home:"Oklahoma City Thunder", away:"San Antonio Spurs",    league:"NBA Playoffs \u2013 West CF G2 \u00b7 SAS leads 1-0",   start_time:"2026-05-21T00:30:00Z", confirmed:true, venue:"Paycom Center, Oklahoma City OK",       streams:resolveBundle("NBA_NBC"), seriesRecord:"SAS leads 1-0", matchupNote:"Wembanyama 41/24/3blk in 2OT road win G1. Fox (ankle) day-to-day for G2. Thunder first loss of playoffs."},
@@ -4750,11 +4748,9 @@ function buildTodaySchedule(){
   //   - Any game needing manual override (peacockGOTD, espnGOTD flags, special venues)
   // For all-local days (Mon/Wed/Thu): mlbRaw = [] — adapter provides full slate
   // Daily update: just verify/enter national TV exceptions, adapter handles the rest.
-  // Sources: MLB.com verified May 19, 2026
-  const mlbRaw=[
-    // TBS Tuesday Night Baseball — national exclusive window
-    {home:"New York Yankees", away:"Toronto Blue Jays", league:"MLB \u00b7 TBS Tuesday national exclusive", start_time:"2026-05-19T23:05:00Z", confirmed:true, venue:"Yankee Stadium, Bronx NY", nationalBundle:"MLB_TBS"},
-  ];
+  // Sources: MLB.com verified May 20, 2026
+  // Wednesday May 20 — local day, no national exclusive window
+  const mlbRaw=[];
   const mlbGames=mlbRaw.filter(g=>isToday(g.start_time)).map(g=>{
     // Stream resolution — priority order (highest first):
     //   1. nationalBundle field → explicit non-exclusive national TV (FS1/FOX/TBS) — show local AND national
@@ -9593,7 +9589,7 @@ let _pwaPrompt = null;
 
   // SW_VERSION — bump on every deploy to bust returning user cache
   // Assertion 28 in smoke verifies this constant is present
-  const SW_VERSION = '2026-05-19';
+  const SW_VERSION = '2026-05-20';
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
   // Cache strategy: API-only (ESPN scores, weather, odds, SportsDB).

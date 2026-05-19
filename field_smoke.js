@@ -12,16 +12,16 @@
 const fs = require('fs');
 
 // ── PER-DAY CONFIG ────────────────────────────────────────────────────────────
-const TODAY_ISO        = '2026-05-19';   // YYYY-MM-DD in America/New_York
-const NBA_CARDS        = 1;              // CLE@NYK ECF G1 at MSG
-const NBA_HOME_TEAM    = 'New York Knicks';
-const NBA_NETWORK      = 'ESPN';         // chip text from NBA_ESPN bundle
-const MLB_CARDS        = 1;             // TOR@NYY TBS Tuesday national
-const MLB_CHIP_HOME    = 'New York Yankees';
-const MLB_CHIP_TEXT    = 'TBS';
+const TODAY_ISO        = '2026-05-20';   // YYYY-MM-DD in America/New_York
+const NBA_CARDS        = 1;              // WCF G2 SAS@OKC 8:30 PM ET NBC/Peacock
+const NBA_HOME_TEAM    = 'Oklahoma City Thunder';
+const NBA_NETWORK      = 'NBC';          // chip text from NBA_NBC bundle
+const MLB_CARDS        = 0;             // Wednesday local day — no national exclusive
+const MLB_CHIP_HOME    = null;
+const MLB_CHIP_TEXT    = null;
 const NBA_SERIES_ACTIVE = true;
 const NBA_HYPE_TEST    = false;
-const MIN_SPORT_SECTIONS = 2;           // NBA + NHL (MLB section async from adapter, may be 0 in smoke)
+const MIN_SPORT_SECTIONS = 2;           // NBA + NHL WCF G1 VGK@COL 8PM ESPN
 // ─────────────────────────────────────────────────────────────────────────────
 
 const LOG = '/tmp/field_smoke.log';
