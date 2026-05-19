@@ -69,30 +69,26 @@ jobs:
 
       - name: Download index.html from Google Drive
         run: |
+          # SKIP HELPER: copies current index.html → index_new.html so cmp sees
+          # "no change" and all downstream steps are cleanly bypassed.
+          skip() { cp index.html index_new.html; echo "⏭  $1"; exit 0; }
+
           FILE_ID="${{ secrets.DRIVE_FILE_ID }}"
           if [ -z "$FILE_ID" ]; then
-            echo "❌ DRIVE_FILE_ID secret not set."
-            echo "⏭  DRIVE_FILE_ID not configured — Drive auto-deploy disabled (using git push deploy path)"
-            exit 0
+            skip "DRIVE_FILE_ID not configured — Drive auto-deploy disabled (git push is canonical deploy path)"
           fi
           echo "Downloading from Drive (file ID: ${FILE_ID:0:8}...)"
           URL="https://drive.google.com/uc?export=download&id=$FILE_ID"
-          if ! curl --fail -L -o index_new.html "$URL"; then
-            echo "⏭  Drive download failed — skipping this run (transient or file not shared)"
-            echo "   URL attempted: $URL"
-            exit 0
+          if ! curl --fail -L --max-time 30 -o index_new.html "$URL"; then
+            skip "Drive download failed — skipping (transient error or file not shared). URL: $URL"
           fi
           SIZE=$(wc -c < index_new.html)
           echo "Downloaded: ${SIZE} bytes"
           if [ "$SIZE" -lt 100000 ]; then
-            echo "⏭  File too small (${SIZE} bytes) — Drive returned confirmation page, skipping"
-            exit 0
+            skip "File too small (${SIZE} bytes) — Drive returned a confirmation or error page"
           fi
-          # Guard: if Drive returned a Google interstitial/confirm page instead of the app,
-          # the file will be large but won't contain the FIELD title.
           if ! grep -q '<title>FIELD' index_new.html; then
-            echo "⏭  Downloaded file is not FIELD app (no <title>FIELD found) — Drive returned interstitial page, skipping"
-            exit 0
+            skip "Downloaded file is not the FIELD app — Drive returned an interstitial page"
           fi
           echo "✓ Download OK (${SIZE} bytes)"
 
