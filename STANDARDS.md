@@ -26,6 +26,13 @@ Add a new semantic assertion for every feature that depends on a specific variab
 5. TYPE C only: write spec (inputs / outputs / call sites) before first code change
 ```
 
+**Canonical docs** (open the relevant one before starting):
+- Build Session List: `1YMgcYTawnVB-QBa7jEZzOLnTfa5uThKi4j3TcNDQe9o`
+- Daily Update Reference: `1y_CuzSCh18YKDFjiWaaThBE1opW2LAoaupAwpvEmN58`
+- Wow Features: `1h80BrgGXbz6aq3Hgv5LbjhpFkRQjYvd87fOMNJmVMOc`
+- UI Evaluation: `1xIZnlczl2kIeslnnzJD1eJrgBu5iw6xgSk1wB1MVyAY`
+- Standards (Drive): `1A3OaKNEjR-tASC330R3Aew9TIMwSCj9E`
+
 ---
 
 ## Session types — mutually exclusive
@@ -73,3 +80,48 @@ Mark features verified in browser-only with comment:
 
 *Established May 20 2026 after session audit found 3 features that had
 never worked despite being documented as complete.*
+
+---
+
+## Rule 8 — Four canonical documents, updated in place
+
+**The four living reference documents. IDs are permanent — never create a new version file.**
+
+| Document | Current ID | Update trigger |
+|----------|-----------|----------------|
+| **Build Session List** (Master backlog) | `1YMgcYTawnVB-QBa7jEZzOLnTfa5uThKi4j3TcNDQe9o` | Every TYPE B/C session end |
+| **Wow Features** | `1h80BrgGXbz6aq3Hgv5LbjhpFkRQjYvd87fOMNJmVMOc` | Any session that implements or modifies a Wow item |
+| **UI Evaluation** | `1xIZnlczl2kIeslnnzJD1eJrgBu5iw6xgSk1wB1MVyAY` | Any session with CSS, layout, or card design changes |
+| **Daily Update Reference** | `1y_CuzSCh18YKDFjiWaaThBE1opW2LAoaupAwpvEmN58` | Any session that changes broadcast chip rules, thresholds, or update protocol |
+
+**The rule: edit the document, don't create a new one.**  
+Date-stamp changes at the top of the doc. Never append "v14", "v15" to the title.  
+If a format change is significant, add a `--- REVISED [date] ---` marker inside the doc.
+
+### What to update per session type
+
+**TYPE A (daily update):**  
+Daily Update Reference — if any broadcast rule, chip mapping, or daily protocol changed.
+
+**TYPE B (bug fix):**  
+Build Session List — if the fix closes a backlog item, mark it ✅ with date.  
+Wow Features — if the fix restores or corrects a Wow item behavior.
+
+**TYPE C (feature build):**  
+Build Session List — mark item ✅ with date and actual time spent.  
+Wow Features — if the feature is a Wow item, update its status and implementation notes.  
+UI Evaluation — if any new CSS class, layout section, or design pattern was added.  
+Daily Update Reference — if the feature adds a new daily check (e.g. new broadcast chip type).
+
+**TYPE D (audit):**  
+Build Session List — re-scope any items found to be already done or newly scoped.  
+Any doc where a gap was found — add a note at the top with the audit date and finding.
+
+### Session end checklist addition
+
+After smoke test passes and git push:
+1. Open the relevant canonical doc(s) for this session type
+2. Make the specific updates listed above
+3. Do NOT create a new document — edit the existing one
+4. The Drive ID in this table never changes
+
