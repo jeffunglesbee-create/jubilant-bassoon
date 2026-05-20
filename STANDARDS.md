@@ -1046,3 +1046,126 @@ deploy may see "SW_VERSION: STALE" in the daily brief health check.
 
 Until the hook enforces this, verify SW_VERSION = today's date before every
 `git push` that includes index.html changes.
+
+
+---
+
+## Rule 24 — Execution path contracts for live-data consumers
+
+### The class of bug this rule prevents
+
+A function can be fully built, smoke-verified, and browser-invisible — if it reads
+poll-cycle data but is never wired into the polling loop.
+
+The canonical example: `injectDramaBadges()` was built May 11 2026. Every function
+it depends on exists. Every feature it drives is registered. The smoke assertion for
+`drama-score-live` passes. And yet drama badges never updated during live games —
+because `injectDramaBadges()` was never called from `renderESPNScores()`.
+
+The async guard that was added (`if(Object.keys(espnScores).length) { injectDramaBadges() }`)
+always evaluated false because `fetchESPNScores()` was not awaited before it ran.
+That silent failure was never caught because:
+  1. The sandbox has no live ESPN polling — the condition was always false and unnoticed
+  2. The smoke assertion confirmed the function exists, not that it's called
+  3. Naive string search for "is injectDramaBadges near renderESPNScores?" returns
+     True — a false positive caused by fetchSchedule() following immediately
+     and containing its own injectDramaBadges call
+
+### What is a live-data consumer?
+
+A **live-data consumer** is any function that:
+  - Reads `espnScores`, `_oddsCache`, drama arc history, relay data, or any
+    value written by a polling function
+  - AND renders a result to the DOM or writes to localStorage/sessionStorage
+  - AND is expected to update while the user has the app open
+
+Examples: `injectDramaBadges`, `renderOneToWatch`, `detectAndRenderDoubleFeature`,
+`renderWatchWindow`, `renderScoreTicker`, `injectWeatherBadges`, `evaluateEMBER`.
+
+Non-examples: `buildCompoundPrompt` (called explicitly, not on a polling cycle),
+`renderAll` (re-render from allData, not from live poll state).
+
+### The trigger chain contract
+
+Every live-data consumer must have a documented **trigger chain** — the unbroken
+synchronous call path from the polling function that refreshes the data to the
+consumer that reads it.
+
+```
+trigger chain format:
+  [data source] → [fetch fn] → [render fn] → [consumer fn]
+
+example (after fix):
+  espnScores ← fetchESPNScores() → renderESPNScores() → injectDramaBadges()
+```
+
+The trigger chain must be verified by reading the **function body**, not by string
+search. Naive string search is unreliable because adjacent functions can produce
+false positives (the `renderESPNScores` / `fetchSchedule` example above).
+
+### Call-site smoke assertion (brace-safe)
+
+For every live-data consumer, add a semantic assertion that verifies the call site
+exists inside the correct trigger function body. Use this pattern:
+
+```javascript
+// Correct pattern: anchor between a known-preceding and known-following landmark
+// within the trigger function, not just searching the whole file.
+assert('A_NEW — injectDramaBadges wired to renderESPNScores',
+  (() => {
+    const renderStart = html.indexOf('function renderESPNScores');
+    const renderEnd   = html.indexOf('checkForNewFinals', renderStart);
+    // renderEnd is the last known call in renderESPNScores body
+    // injectDramaBadges must appear between these two anchors
+    return renderStart > 0 && renderEnd > renderStart &&
+           html.lastIndexOf('injectDramaBadges', renderEnd) > renderStart;
+  })()
+);
+```
+
+**Never use**: `html.slice(html.indexOf('function X'), html.indexOf('\nfunction ', ...))`
+This produces a false positive whenever the next function in the file happens to call
+the function you are testing. Only brace-tracked extraction or landmark-anchored search
+is reliable.
+
+### When this applies
+
+**TYPE C sessions** that build a live-data consumer must, before closing:
+
+1. State the trigger chain explicitly in the TYPE C spec:
+   `trigger chain: fetchESPNScores → renderESPNScores → [new function]`
+
+2. Add the function call at the correct trigger site (e.g. end of `renderESPNScores`)
+
+3. Add a call-site smoke assertion using the landmark-anchor pattern above
+
+4. Verify in browser that the consumer updates on each poll cycle
+   (not just that it runs once on page load)
+
+**TYPE D audits** of live-data consumers must run the brace-tracked check:
+
+```javascript
+// field_smoke.js check for any live-data consumer under audit
+const fnStart = html.indexOf('function renderESPNScores');
+const fnEnd   = html.indexOf('\n}', html.indexOf('checkForNewFinals', fnStart));
+const body    = html.slice(fnStart, fnEnd);
+assert('consumer wired to trigger', body.includes('consumerFunctionName'));
+```
+
+### The async corollary
+
+Do not use fire-and-forget async calls as a substitute for correct wiring:
+
+```javascript
+// WRONG — fetchESPNScores is async, espnScores is empty when this runs
+fetchESPNScores();
+if (Object.keys(espnScores).length) { injectDramaBadges(); } // always false
+
+// CORRECT — injectDramaBadges is called from inside renderESPNScores()
+// which is called from fetchESPNScores() after data is populated
+```
+
+If a function must run after an async operation completes, it must be called
+synchronously inside that operation's completion handler — not speculatively
+before the operation has had a chance to run.
+
