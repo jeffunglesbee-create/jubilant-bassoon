@@ -814,8 +814,81 @@ flex-shrink:0;white-space:nowrap;
 .field-brief-date{font-size:.52rem;color:var(--muted);opacity:.7}
 .field-brief-text{font-size:.74rem;color:var(--fg,#e8e8f0);line-height:1.6;white-space:pre-wrap}
 .field-brief-text.pending{color:var(--muted);font-style:italic;font-size:.7rem}
-#night-owl{padding:.4rem 1rem 1rem;max-width:1200px;margin:0 auto}
-.night-owl-card{background:rgba(139,92,246,.07);border:1px solid rgba(139,92,246,.22);border-top:2px solid rgba(139,92,246,.6);border-radius:10px;padding:.9rem 1.05rem .8rem;cursor:pointer}
+/* ── Night Owl — closing editorial section ────────────────────────────────
+   Replaces FIELD Brief as the lead story once tonight's games are final.
+   Darker background, quieter palette — the night is winding down.
+   Winner/score at readable size, sparkline as visual proof, brief as payoff.
+   ────────────────────────────────────────────────────────────────────────── */
+#night-owl{padding:.5rem 1rem .25rem;max-width:1200px;margin:0 auto}
+.night-owl-section-head{
+  display:flex;align-items:center;gap:.5rem;
+  padding:.1rem 0 .55rem;
+  border-bottom:1px solid rgba(139,92,246,.18);
+  margin-bottom:.55rem;
+}
+.night-owl-section-icon{
+  font-size:1rem;line-height:1;opacity:.9;
+}
+.night-owl-section-title{
+  font-family:var(--ff-cond);font-size:.65rem;font-weight:900;
+  letter-spacing:.14em;text-transform:uppercase;color:#a78bfa;
+}
+.night-owl-section-date{
+  font-family:var(--ff-mono);font-size:.58rem;color:var(--smoke);
+  margin-left:auto;letter-spacing:.04em;
+}
+.night-owl-card{
+  background:linear-gradient(160deg,rgba(17,15,36,.85),rgba(12,10,28,.95));
+  border:1px solid rgba(139,92,246,.2);
+  border-left:3px solid rgba(139,92,246,.7);
+  border-radius:10px;
+  padding:1rem 1.1rem .85rem;
+  cursor:pointer;
+  transition:background .2s,border-color .2s;
+  position:relative;
+  overflow:hidden;
+}
+.night-owl-card::before{
+  /* subtle glow bar at top */
+  content:'';position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(139,92,246,.45),transparent);
+}
+.night-owl-card:hover{background:linear-gradient(160deg,rgba(25,20,50,.88),rgba(15,12,35,.96));border-color:rgba(139,92,246,.35);}
+.night-owl-game{
+  display:flex;align-items:baseline;gap:.55rem;flex-wrap:wrap;
+  margin-bottom:.3rem;
+}
+.night-owl-winner{
+  font-family:var(--ff-display);font-size:1.05rem;font-weight:800;
+  color:var(--white);letter-spacing:-.015em;line-height:1.1;
+}
+.night-owl-score-big{
+  font-family:var(--ff-mono);font-size:.88rem;font-weight:700;
+  color:#a78bfa;letter-spacing:.02em;
+}
+.night-owl-meta{
+  font-size:.6rem;color:var(--smoke);letter-spacing:.04em;margin-bottom:.45rem;
+  display:flex;align-items:center;gap:.4rem;flex-wrap:wrap;
+}
+.night-owl-meta-sep{opacity:.4}
+.night-owl-text{
+  font-size:.75rem;color:var(--fg,#e8e8f0);line-height:1.65;
+  margin-top:.45rem;border-top:1px solid rgba(139,92,246,.1);padding-top:.4rem;
+}
+.night-owl-text.pending{color:var(--smoke);font-style:italic;font-size:.7rem}
+.night-owl-text.loaded{color:var(--fg,#e8e8f0)}
+.night-owl-card.collapsed .night-owl-text{display:none}
+.night-owl-expand-hint{
+  font-size:.58rem;color:var(--smoke);opacity:.6;margin-top:.3rem;
+  text-align:right;letter-spacing:.04em;
+}
+.night-owl-card.collapsed .night-owl-expand-hint::after{content:'▾ read recap'}
+.night-owl-card:not(.collapsed) .night-owl-expand-hint::after{content:'▴ collapse'}
+@media(max-width:600px){
+  #night-owl{padding:.4rem .75rem .2rem}
+  .night-owl-winner{font-size:.95rem}
+  .night-owl-score-big{font-size:.8rem}
+}
 .drama-sparkline{display:block;margin:.3rem 0 .2rem;opacity:.8}
 .series-margins{display:flex;align-items:center;gap:.22rem;margin-top:.18rem}
 .series-margin-dot{width:.55rem;height:.55rem;border-radius:50%;display:inline-block;flex-shrink:0}
@@ -823,10 +896,6 @@ flex-shrink:0;white-space:nowrap;
 .series-margin-dot.close{background:#fbbf24}
 .series-margin-dot.decided{background:rgba(255,255,255,.2)}
 .series-margin-dot.upcoming{background:transparent;border:1px solid rgba(255,255,255,.2)}
-.night-owl-card:hover{background:rgba(139,92,246,.12)}
-.night-owl-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem}
-.night-owl-label{font-size:.54rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#a78bfa}
-.night-owl-score{font-size:.62rem;color:var(--muted);font-weight:600}
 .night-owl-text{font-size:.73rem;color:var(--fg,#e8e8f0);line-height:1.6}
 .night-owl-text.pending{color:var(--muted);font-style:italic}
 .field-note{font-size:.65rem;color:#c9a84c;font-style:italic;margin-top:.45rem;padding-top:.4rem;border-top:1px solid rgba(201,168,76,.2);line-height:1.45;opacity:.9}
@@ -13785,6 +13854,8 @@ async function renderNightOwlRecap(){
   _nightOwlRendered=true;
   _nightOwlGameId=topGame.id;
   el.style.display='block';
+  // Night Owl supersedes FIELD Brief — collapse it so they don't compete
+  document.getElementById('field-brief-inner')?.classList.add('collapsed');
   // getDramaPeakWithTime — editorial context: 'peaked at 9:47 PM'
   let _owlPeakStr = '';
   try {
@@ -13794,10 +13865,50 @@ async function renderNightOwlRecap(){
       _owlPeakStr = ' · peaked '+new Date(_owlPk.t).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',timeZone:_owlTz,hour12:true});
     }
   } catch(e_){}
+  // Build section header date string
+  const _owlDate = (() => {
+    try {
+      const tz2 = document.getElementById('tz-select')?.value || 'America/New_York';
+      return new Date().toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',timeZone:tz2}).toUpperCase();
+    } catch(e_){ return ''; }
+  })();
+  const _owlLoser = (topGame.homeScore||0)>=(topGame.awayScore||0) ? topGame.away : topGame.home;
+  const _owlMargin = Math.abs((topGame.homeScore||0)-(topGame.awayScore||0));
+  const _owlSustained = (typeof getDramaSustained==='function') ? getDramaSustained(topGame.id||topGame._id||'', 65, 60*60*1000) : 0;
+  const _owlDramaCtx = _owlSustained >= 10 ? _owlSustained.toFixed(0)+' min of high drama'
+                     : topGame.dramaPeak >= 80 ? 'Peak drama '+Math.round(topGame.dramaPeak)
+                     : '';
+
   const renderCard=(text,loaded)=>{
-    const sparkSVG = buildDramaSparklineSVG(topGame.id||topGame._id||'');
-    el.innerHTML='<div class="night-owl-card" id="night-owl-inner"><div class="night-owl-header"><span class="night-owl-label">FIELD Night Owl</span><span class="night-owl-score">'+winner+' '+scoreLabel+(topGame.seriesRecord?' \u00b7 '+topGame.seriesRecord:'')+_owlPeakStr+'</span></div>'+(sparkSVG?sparkSVG:'')+'<div class="night-owl-text'+(loaded?'':' pending')+'">'+text+'</div></div>';
-    document.getElementById('night-owl-inner')?.addEventListener('click',()=>document.getElementById('night-owl-inner')?.classList.toggle('collapsed'));
+    const sparkSVG = buildDramaSparklineSVG(topGame.id||topGame._id||'', 220, 32);
+    const metaParts = [];
+    if(topGame.league) metaParts.push(topGame.league);
+    if(topGame.seriesRecord && topGame.seriesRecord !== '0-0') metaParts.push(topGame.seriesRecord);
+    if(_owlPeakStr) metaParts.push('peaked'+_owlPeakStr.replace(' · peaked',''));
+    if(_owlDramaCtx) metaParts.push(_owlDramaCtx);
+    const metaHTML = metaParts.length
+      ? metaParts.map((p,i)=>i===0?p:'<span class="night-owl-meta-sep">·</span>'+p).join(' ')
+      : '';
+    el.innerHTML =
+      '<div class="night-owl-section-head">'
+        +'<span class="night-owl-section-icon">🦉</span>'
+        +'<span class="night-owl-section-title">Night Owl</span>'
+        +'<span class="night-owl-section-date">'+_owlDate+'</span>'
+      +'</div>'
+      +'<div class="night-owl-card" id="night-owl-inner">'
+        +'<div class="night-owl-game">'
+          +'<span class="night-owl-winner">'+winner+'</span>'
+          +'<span class="night-owl-score-big">'+scoreLabel+'</span>'
+          +(_owlLoser ? '<span style="font-size:.72rem;color:var(--smoke)">def '+_owlLoser+'</span>' : '')
+        +'</div>'
+        +(metaHTML ? '<div class="night-owl-meta">'+metaHTML+'</div>' : '')
+        +(sparkSVG ? sparkSVG : '')
+        +'<div class="night-owl-text'+(loaded?' loaded':' pending')+'">'+text+'</div>'
+        +'<div class="night-owl-expand-hint"></div>'
+      +'</div>';
+    document.getElementById('night-owl-inner')?.addEventListener('click',()=>
+      document.getElementById('night-owl-inner')?.classList.toggle('collapsed')
+    );
   };
   if(cached){renderCard(cached,true);return;}
   renderCard(buildNightOwlStatic(topGame),false);
