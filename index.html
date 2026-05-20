@@ -2337,6 +2337,9 @@ const FIELD_FEATURES = {
   // BNI + Watch Window Why
   'bni':                    '2026-05-18',
   'watch-window-why':       '2026-05-18',
+  'standing-velocity':      '2026-05-20',  // recordStandingsSnapshot/getStandingVelocity — 7-day GB delta in standings context
+  'volatility-index':       '2026-05-20',  // getVolatilityIndex/getVolatilityLabel — drama swing pattern in Watch Window + prompts
+  'mlbn-live-drama-alert':  '2026-05-20',  // shouldShowMLBNAlert/buildMLBNAlertChip — MLB Big Inning chip on high-drama late-inning games
   // Game Notes Layer (Item 38) — P1 curation → P2 MLB/NHL editorial → P3 structured → P4 RSS
   'game-notes-layer':       '2026-05-20',
   // Journalism resilience
@@ -3352,6 +3355,17 @@ tzSel.addEventListener("change",()=>{ selectedTz=tzSel.value; renderAll(); updat
         try{
           const item = JSON.parse(localStorage.getItem(k));
           if(!item || !item.timestamp || item.timestamp < cutoff) localStorage.removeItem(k);
+        }catch(e){ localStorage.removeItem(k); }
+      });
+    // ── Standings velocity history: prune snapshots older than 14 days ─
+    Object.keys(localStorage)
+      .filter(k => k.startsWith('field_standings_history_'))
+      .forEach(k => {
+        try{
+          const hist = JSON.parse(localStorage.getItem(k) || '[]');
+          const last = hist[hist.length - 1];
+          if (!last || (Date.now() - new Date(last.date).getTime()) > 14*24*60*60*1000)
+            localStorage.removeItem(k);
         }catch(e){ localStorage.removeItem(k); }
       });
     // ── Drama arc cleanup: clear history older than 7 days ────────────
@@ -5180,6 +5194,122 @@ function parseSeriesRecord(g) {
           homeElim:homeElim||homeElim31||homeElim30,
           awayElim:awayElim||awayElim31||awayElim30,
           homeClinch,awayClinch,totalGames:wins+losses,label,icon,importance,boost};
+}
+
+// ── Standing Velocity (spec: 1xfpxvboLX4trAuA0Wz_KW3S0lRa60vXSaONUwRptZZ8) ──────────────
+// Records a daily standings snapshot and computes 7-day GB delta per team.
+// Enables AI to write "the Cubs have been surging" from data rather than invention.
+// Storage: field_standings_history_{sport}_{division} — capped at 14 entries.
+
+function recordStandingsSnapshot(sport, division, standings) {
+  if (!sport || !division || !standings?.length) return;
+  const key = `field_standings_history_${sport}_${division}`;
+  const today = new Date().toLocaleDateString('en-CA', {timeZone: 'America/New_York'});
+  let history = [];
+  try { history = JSON.parse(localStorage.getItem(key)) || []; } catch(e_) {}
+  if (history.length && history[history.length - 1].date === today) return; // one snapshot/day
+  history.push({ date: today, standings });
+  if (history.length > 14) history = history.slice(-14);
+  try { localStorage.setItem(key, JSON.stringify(history)); } catch(e_) {}
+}
+
+function getStandingVelocity(sport, division, teamName, windowDays = 7) {
+  if (!sport || !division || !teamName) return null;
+  const key = `field_standings_history_${sport}_${division}`;
+  let history = [];
+  try { history = JSON.parse(localStorage.getItem(key)) || []; } catch(e_) {}
+  if (history.length < 2) return null;
+  const recent = history[history.length - 1];
+  const cutoff = new Date(Date.now() - windowDays * 86400000);
+  const baseline = history.filter(h => new Date(h.date) >= cutoff)[0];
+  if (!baseline || baseline === recent) return null;
+  const findGB = snapshot => {
+    const nick = teamNick(teamName).toLowerCase();
+    const entry = (snapshot.standings || []).find(s =>
+      (s.team || '').toLowerCase().includes(nick) ||
+      (s.abbrev || '').toLowerCase() === nick
+    );
+    return entry ? (parseFloat(entry.gb) || 0) : null;
+  };
+  const gbRecent = findGB(recent), gbBase = findGB(baseline);
+  if (gbRecent === null || gbBase === null) return null;
+  const delta = Math.round((gbBase - gbRecent) * 10) / 10; // positive = gained ground
+  return Math.abs(delta) >= 0.5 ? { delta, days: windowDays } : null;
+}
+
+// ── Volatility Index (spec: 1FS71I5gJV0OJVY6i6IKKxLrmIvHX_mu4XO_gZfZ7q98) ────────────────
+// Measures how much the drama score is SWINGING — distinct from its current level.
+// High variance + high drama = CHAOTIC game. High drama + low variance = LOCKED IN.
+// Uses getDramaHistory() — no new API, no new storage.
+
+function getVolatilityIndex(gameId, windowSize = 10) {
+  const history = getDramaHistory(gameId);
+  if (!history || history.length < 3) return null;
+  const window = history.slice(-windowSize).map(h => h.score || h.s || 0);
+  if (window.length < 3) return null;
+  const mean = window.reduce((a, b) => a + b, 0) / window.length;
+  const variance = window.reduce((sum, s) => sum + Math.pow(s - mean, 2), 0) / window.length;
+  const stdDev = Math.sqrt(variance);
+  return Math.min(100, Math.round(stdDev * 3.3)); // 0-100: stdDev ~30 = maximally chaotic
+}
+
+// getVolatilityLabel: returns the game flow descriptor for Watch Window Why + prompts
+function getVolatilityLabel(gameId) {
+  const v = getVolatilityIndex(gameId);
+  const drama = typeof getSmoothedDrama === 'function' ? getSmoothedDrama(gameId) : 0;
+  if (v === null) return null;
+  if (v >= 70 && drama >= 60) return 'chaotic';      // wild swings + high stakes
+  if (v < 40  && drama >= 65) return 'locked in'; // sustained tension, steady
+  return null; // mid-range or low drama: not distinctive enough to label
+}
+
+// ── MLB Network Live Drama Alert (spec: 1Mi_Pi2O4aC915KnDSjr0bdwVFkqNVDTInSXYyW-uP1U v3) ──
+// When an MLB game reaches a high-drama threshold in late innings, surface MLB Big Inning.
+// PRIMARY: MLB Big Inning — daily, streams via MLB App / ESPN App / Apple TV (MLB.TV req).
+// SECONDARY: Strike Zone — Wed + Fri only, cable/satellite only.
+
+function shouldShowMLBNAlert(game, smoothedDrama) {
+  if (!smoothedDrama) return null;
+  const sp = (game._section || game._sport || '').toLowerCase();
+  if (!sp.includes('mlb') && !sp.includes('baseball')) return null;
+  // National broadcast = already on primary TV; Big Inning is supplementary
+  if (game.nationalBundle) return null;
+  // Need inning data from ESPN scores
+  const eData = (typeof findEspnEntry === 'function') ? findEspnEntry(game) : null;
+  const inningNum = eData ? (parseInt(eData.period) || 0) : 0;
+  if (inningNum < 7) return null; // only late game
+  // No-hitter / perfect game: force 'likely' regardless of drama
+  const extremes = (typeof getStatisticalExtremes === 'function' && eData)
+    ? getStatisticalExtremes(eData, sp) : { note: null };
+  if (extremes.note && /no.hitter|perfect.game/i.test(extremes.note) && inningNum >= 7)
+    return 'likely';
+  // Sustained drama upgrade
+  const sustained = (typeof getDramaSustained === 'function')
+    ? getDramaSustained(game._id || '', 65, 20 * 60 * 1000) : 0;
+  const effectiveDrama = sustained > 3 ? Math.max(smoothedDrama, 80) : smoothedDrama;
+  if (effectiveDrama >= 85) return 'likely';
+  if (effectiveDrama >= 75) return 'possible';
+  return null;
+}
+
+// buildMLBNAlertChip: returns HTML chip string or empty string
+function buildMLBNAlertChip(game, smoothedDrama) {
+  const tier = shouldShowMLBNAlert(game, smoothedDrama);
+  if (!tier) return '';
+  const dow = new Date().getDay(); // 0=Sun, 3=Wed, 5=Fri
+  const strikeZoneNote = (dow === 3 || dow === 5)
+    ? '<span style="font-size:.65rem;opacity:.75;display:block;margin-top:2px">Also: MLB Network Strike Zone (cable/satellite — Sports tier req)</span>'
+    : '';
+  const msg = tier === 'likely'
+    ? '📺 MLB Big Inning — live look-in likely'
+    : '📺 Check MLB Big Inning';
+  const sub = 'Available on MLB App · ESPN App · Apple TV (MLB.TV/MLB+)';
+  return `<div class="mlbn-alert${tier === 'likely' ? ' mlbn-alert-likely' : ''}" `
+    + `onclick="window.open('https://www.mlb.com/network/shows/big-inning','_blank')" `
+    + `style="cursor:pointer;border-radius:.5rem;padding:.4rem .7rem;margin:.35rem 0;font-size:.72rem;font-weight:600;`
+    + `background:${tier === 'likely' ? '#d4870a' : '#b8860b'};color:#fff;">`
+    + `${msg}<span style="font-weight:400;font-size:.65rem;display:block;opacity:.88">${sub}</span>`
+    + `${strikeZoneNote}</div>`;
 }
 
 // ── fieldFetch: fetch wrapper with AbortSignal timeout + JSON parse.
@@ -11480,6 +11610,8 @@ function buildCompoundPrompt(sections) {
       (()=>{try{const inj=bdlInjuryContextSync(g.home||'',g.away||'',g._sport||g._section||'');return inj?`  ${inj}`:''}catch(e_){return ''}})(),
       // Fix 6: Weather context in compound prompt for outdoor games
       (()=>{try{const spG=(g._sport||g._section||'').toLowerCase();const isOut=spG.includes('baseball')||spG.includes('mlb')||spG.includes('nfl')||spG.includes('soccer')||spG.includes('league')||spG.includes('mls')||spG.includes('afl');if(!isOut) return '';const wxE=Object.values(wxCache||{}).find(wx=>wx?.alert);return wxE?`  [WEATHER ALERT: ${wxE.alert}]`:''}catch(e_){return ''}})(),
+      // Volatility Index: game flow context for AI — CHAOTIC or LOCKED IN framing
+      (()=>{try{const vL=getVolatilityLabel(g._id||'');return vL?`  [GAME FLOW: ${vL.toUpperCase()} — drama swinging ${vL==='chaotic'?'significantly':'steadily'} this period]`:''}catch(e_){return ''}})(),
     ].filter(Boolean).join('\n');
   }).join('\n\n');
 
@@ -11991,7 +12123,25 @@ function buildGameStandingsContext(game) {
     return `${t}: ${e.wins}-${e.losses}, ${e.gb} GB`;
   };
   const parts = [fmt(findTeam(game.away), game.away), fmt(findTeam(game.home), game.home)].filter(Boolean);
-  return parts.length ? 'Standings: ' + parts.join(' · ') : '';
+  if (!parts.length) return '';
+  // Standing Velocity: enrich each team's line with 7-day GB momentum if available
+  const division = (standings[0]?.division || '');
+  const awayVel = getStandingVelocity(sport, division, game.away, 7);
+  const homeVel = getStandingVelocity(sport, division, game.home, 7);
+  const velNote = (vel) => {
+    if (!vel || Math.abs(vel.delta) < 0.5) return '';
+    return vel.delta > 0 ? ` · gained ${vel.delta} GB last ${vel.days}d`
+                         : ` · lost ${Math.abs(vel.delta)} GB last ${vel.days}d`;
+  };
+  // Re-build parts with velocity appended
+  const awayFmt = fmt(findTeam(game.away), game.away) + velNote(awayVel);
+  const homeFmt = fmt(findTeam(game.home), game.home) + velNote(homeVel);
+  const velParts = [awayFmt, homeFmt].filter(Boolean);
+  // Also record today's snapshot for future velocity computation
+  recordStandingsSnapshot(sport, division, standings.map(s => ({
+    team: s.team, abbrev: s.abbrev, gb: s.gb, wins: s.wins, losses: s.losses
+  })));
+  return 'Standings: ' + velParts.join(' · ');
 }
 
 // ── Game Notes Layer (Item 38) ────────────────────────────────────────────────
@@ -12661,6 +12811,11 @@ function buildWatchWindowReason(game) {
       }
     }
   }
+  // Volatility Index: add CHAOTIC / LOCKED IN label when distinctive
+  if (parts.length < 3) {
+    const volLabel = (typeof getVolatilityLabel === 'function') ? getVolatilityLabel(game._id || '') : null;
+    if (volLabel) parts.push(volLabel);
+  }
   if(miseryChip && parts.length < 2) parts.push(miseryChip);
   return parts.slice(0, 3).join('\u00a0\u00b7\u00a0');
 }
@@ -13085,6 +13240,26 @@ function injectDramaBadges(){
       } else {
         // Clear EMBER cache when game no longer qualifies
         if (gid) delete _emberResultCache[gid];
+      }
+    } catch(e_) {}
+
+    // ── MLB Network Drama Alert (shouldShowMLBNAlert + buildMLBNAlertChip) ──
+    try {
+      const gameObj = {
+        _id: gid, home: card.dataset.home||'', away: card.dataset.away||'',
+        _section: sport, _sport: sport,
+        nationalBundle: card.dataset.nationalBundle||''
+      };
+      const mlbnHtml = buildMLBNAlertChip(gameObj, smoothed);
+      if (mlbnHtml) {
+        // Remove any existing MLB alert chip before re-injecting
+        card.querySelectorAll('.mlbn-alert').forEach(el => el.remove());
+        const mlbnEl = document.createElement('div');
+        mlbnEl.innerHTML = mlbnHtml;
+        const chip = mlbnEl.firstElementChild;
+        if (chip) liveEl.insertAdjacentElement('afterend', chip);
+      } else {
+        card.querySelectorAll('.mlbn-alert').forEach(el => el.remove());
       }
     } catch(e_) {}
   });

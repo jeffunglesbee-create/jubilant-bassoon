@@ -542,6 +542,37 @@ try {
 
   // ─────────────────────────────────────────────────────────────────────
   log('---');
+// Assertion 51 — Standing Velocity (A60-A61)
+if(html.includes('function recordStandingsSnapshot') && html.includes('function getStandingVelocity'))
+  pass('Assertion 51 — standing-velocity: recordStandingsSnapshot + getStandingVelocity present');
+else fail('Assertion 51 — standing-velocity functions missing');
+
+// Assertion 52 — Volatility Index (A62)
+if(html.includes('function getVolatilityIndex') && html.includes('function getVolatilityLabel'))
+  pass('Assertion 52 — volatility-index: getVolatilityIndex + getVolatilityLabel present');
+else fail('Assertion 52 — volatility-index functions missing');
+
+// Assertion 53 — MLB Network Drama Alert (A63-A64)
+if(html.includes('function shouldShowMLBNAlert') && html.includes('function buildMLBNAlertChip'))
+  pass('Assertion 53 — mlbn-live-drama-alert: shouldShowMLBNAlert + buildMLBNAlertChip present');
+else fail('Assertion 53 — mlbn-live-drama-alert functions missing');
+
+// Assertion 54 — SMOKE-1 batch: core UI features present
+const smoke1Features = ['openBottomSheet','applyCardPulse','updateCardLifeStages',
+  'detectAndStoreStoryMoment','buildComebackProbability','bdlPrefetchAll',
+  'renderScoreTicker','pinGame','shareGame','buildDramaSparklineSVG',
+  'buildSeriesMarginsDots','evaluateEMBER','buildGameContext'];
+const smoke1Missing = smoke1Features.filter(fn => !html.includes('function ' + fn));
+if(smoke1Missing.length === 0)
+  pass('Assertion 54 — SMOKE-1: all 13 high-value feature functions present');
+else fail('Assertion 54 — SMOKE-1: missing functions: ' + smoke1Missing.join(', '));
+
+// Assertion 55 — FIELD_FEATURES contains all 3 new entries
+const ff55 = html.includes("'standing-velocity'") && html.includes("'volatility-index'") && html.includes("'mlbn-live-drama-alert'");
+if(ff55) pass('Assertion 55 — FIELD_FEATURES: standing-velocity + volatility-index + mlbn-live-drama-alert registered');
+else fail('Assertion 55 — FIELD_FEATURES: one or more new feature entries missing');
+
+
   log('Failures:', failures);
 
   if (failures > 0) {
@@ -549,7 +580,7 @@ try {
     console.log(fs.readFileSync(LOG, 'utf8'));
     process.exit(1);
   } else {
-    console.log(`SMOKE TEST PASSED 40/40 (${sportSections} sport sections, MLB+NBA+lazy+SEP+J-series+PULSE+registry+drama-arc+odds-relay+smoothing+standings verified)`);
+    console.log(`SMOKE TEST PASSED (${sportSections} sport sections — structural+feature+drama+relay+standings+velocity+volatility+mlbn verified)`);
     process.exit(0);
   }
 })();

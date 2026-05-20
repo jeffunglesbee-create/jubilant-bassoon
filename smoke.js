@@ -222,5 +222,46 @@ assert('A56 — field_utils.js loaded in index.html',
 
 
 
+
+  // ── SMOKE-1 batch: new features (A60-A64) ────────────────────────────────
+  assert('A60 — standing-velocity: recordStandingsSnapshot defined',
+    html && /function recordStandingsSnapshot\s*\(/.test(html));
+  assert('A61 — standing-velocity: getStandingVelocity defined',
+    html && /function getStandingVelocity\s*\(/.test(html));
+  assert('A62 — volatility-index: getVolatilityIndex defined',
+    html && /function getVolatilityIndex\s*\(/.test(html));
+  assert('A63 — mlbn-live-drama-alert: shouldShowMLBNAlert defined',
+    html && /function shouldShowMLBNAlert\s*\(/.test(html));
+  assert('A64 — mlbn-live-drama-alert: buildMLBNAlertChip defined',
+    html && /function buildMLBNAlertChip\s*\(/.test(html));
+
+  // ── SMOKE-1 batch: high-value pre-existing features (A65-A77) ────────────
+  assert('A65 — bottom-sheet: openBottomSheet defined',
+    html && /function openBottomSheet\s*\(/.test(html));
+  assert('A66 — card-drama-pulse: applyCardPulse defined',
+    html && /function applyCardPulse\s*\(/.test(html));
+  assert('A67 — card-life-stages: updateCardLifeStages defined',
+    html && /function updateCardLifeStages\s*\(/.test(html));
+  assert('A68 — card-story-moments: detectAndStoreStoryMoment defined',
+    html && /function detectAndStoreStoryMoment\s*\(/.test(html));
+  assert('A69 — comeback-probability: buildComebackProbability defined',
+    html && /function buildComebackProbability\s*\(/.test(html));
+  assert('A70 — bdl-relay: bdlPrefetchAll defined',
+    html && /function bdlPrefetchAll\s*\(/.test(html));
+  assert('A71 — live-score-ticker: renderScoreTicker defined',
+    html && /function renderScoreTicker\s*\(/.test(html));
+  assert('A72 — pin-floating-widget: pinGame defined',
+    html && /function pinGame\s*\(/.test(html));
+  assert('A73 — share-card: shareGame defined',
+    html && /function shareGame\s*\(/.test(html));
+  assert('A74 — drama-sparkline: buildDramaSparklineSVG defined',
+    html && /function buildDramaSparklineSVG\s*\(/.test(html));
+  assert('A75 — series-margins: buildSeriesMarginsDots defined',
+    html && /function buildSeriesMarginsDots\s*\(/.test(html));
+  assert('A76 — ember-buried-lead: evaluateEMBER defined',
+    html && /function evaluateEMBER\s*\(/.test(html));
+  assert('A77 — build-game-context: buildGameContext defined',
+    html && /function buildGameContext\s*\(/.test(html));
+
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);
