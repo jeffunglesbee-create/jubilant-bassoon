@@ -4362,6 +4362,8 @@ const AUTH_LABEL = {tv:"TV login",sub:"Subscription",geo:"Geo-restricted",free:"
 
 // Native app deeplink schemes — opens app directly on mobile, falls back to web URL
 const APP_DEEPLINKS = {
+  fox:        "foxsports://",     // Fox Sports app (FIFA World Cup, NFL, MLB on FOX)
+  fs1:        "foxsports://",     // Fox Sports app — same scheme as FOX
   trutv:      "trutv://",          // truTV simulcast of TNT NHL games
   espn:       "espn://",
   espnplus:   "espn://",
@@ -6109,8 +6111,10 @@ function buildTodaySchedule(){
   applyNarrativeContext(nhlGames);
   if(nhlGames.length)  sections.push({sport:"NHL Playoffs",games:_vGames(nhlGames,"nhlGames")});
   mlbGames.forEach(g=>g._sport="Baseball (MLB)");
+  applyNarrativeContext(mlbGames);  // QW-3/QW-5: elimination badges + narrative labels for ALCS/NLCS/WS
   if(mlbGames.length)  sections.push({sport:"Baseball (MLB)",games:_vGames(mlbGames,"mlbGames")});
   mlsSoccer.forEach(g=>g._sport="MLS Soccer");
+  applyNarrativeContext(mlsSoccer); // QW-3/QW-5: MLS Cup playoff series context
   if(mlsSoccer.length) sections.push({sport:"MLS Soccer",games:_vGames(mlsSoccer,"mlsSoccer")});
   uclGames.forEach(g=>g._sport="UEFA Champions League");
   uelGames.forEach(g=>g._sport="UEFA Europa League");
@@ -6196,7 +6200,7 @@ function buildTodaySchedule(){
     {home:"Los Angeles Sparks",  away:"Las Vegas Aces",      league:"WNBA – 2026 Season", start_time:"2026-05-24T20:00:00Z", confirmed:true, venue:"Crypto.com Arena, Los Angeles CA",            streams:resolveBundle("WNBA_NBC"),    localNote:"NBC / Peacock"},
     {home:"Dallas Wings",        away:"New York Liberty",    league:"WNBA – 2026 Season", start_time:"2026-05-24T22:30:00Z", confirmed:true, venue:"College Park Center, Arlington TX",           streams:resolveBundle("WNBA_NBC"),    localNote:"NBC / Peacock"},
   ].filter(g=>isToday(g.start_time));
-  if(wnbaGames.length) sections.push({sport:"WNBA", games:wnbaGames});
+  if(wnbaGames.length) { applyNarrativeContext(wnbaGames); sections.push({sport:"WNBA", games:wnbaGames}); }
 
   return sections;
 }
