@@ -59,6 +59,12 @@ assert('RELAY_CUTOVER_DATE defined', html.includes("const RELAY_CUTOVER_DATE = '
 // 6. JS syntax check (extract and validate)
 const scripts = html.match(/<script[^>]*>([\s\S]*?)<\/script>/g) || [];
 let allJs = scripts.map(s => s.replace(/<\/?script[^>]*>/g, '')).join('\n');
+// Prepend field_utils.js so helpers are available in syntax/execution checks
+const utilsPath = require('path').join(__dirname, 'field_utils.js');
+if (require('fs').existsSync(utilsPath)) {
+  const utilsJs = require('fs').readFileSync(utilsPath, 'utf8').replace(/if\s*\(typeof module[\s\S]*?^\}$/m, '');
+  allJs = utilsJs + '\n' + allJs;
+}
 let syntaxOk = true;
 try { new Function(allJs); } catch(e) { syntaxOk = false; }
 assert('JavaScript syntax valid', syntaxOk);

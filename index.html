@@ -5073,7 +5073,7 @@ function renderTonightSummary(sections){
   try{
     const all=sections.flatMap(s=>(s.games||[]).map(g=>({...g,_section:s.sport})));
     if(!all.length) return '';
-    const ranked=all.filter(g=>g.home&&g.away&&g.home!=='ATP/WTA Field').sort((a,b)=>preGameScore(b)-preGameScore(a));
+    const ranked=rankGamesByDrama(all);
     if(!ranked.length) return '';
     const top=ranked.slice(0,3);
     const total=all.filter(g=>g.home).length;
@@ -5092,6 +5092,73 @@ function renderTonightSummary(sections){
   }catch(e){return '';}
 }
 
+
+// ── Index.html utility helpers ────────────────────────────────────────────
+// Centralise patterns identified in duplicate-pattern audit (May 20 2026).
+// These reference globals so cannot live in field_utils.js.
+
+// fieldFetch: fetch wrapper with AbortSignal timeout + JSON parse.
+// Replaces 39 inline fetch(url, {signal:AbortSignal.timeout(n)}) patterns.
+// Returns parsed JSON or throws on network/HTTP error.
+async function fieldFetch(url, { timeoutMs=8000, headers={}, method='GET', body=null }={}) {
+  const opts = { method, headers: { 'Content-Type':'application/json', ...headers },
+    signal: AbortSignal.timeout(timeoutMs) };
+  if (body) opts.body = typeof body === 'string' ? body : JSON.stringify(body);
+  const r = await fetch(url, opts);
+  if (!r.ok) throw new Error(`HTTP ${r.status} ${url.split('?')[0]}`);
+  return r.json();
+}
+
+// forEachGame: iterate every game in allData.sports safely.
+// Replaces 32 inline (allData?.sports||[]).forEach(sec=>(sec.games||[]).forEach(g=>...))
+// patterns that each have subtly different null-safety guards.
+function forEachGame(fn) {
+  (allData?.sports || []).forEach(sec => {
+    (sec.games || []).forEach(g => fn(g, sec));
+  });
+}
+
+// allGamesFlat: returns flat array of all games across all sport sections.
+// Replaces allGamesFlat() patterns.
+function allGamesFlat() {
+  return (allData?.sports || []).flatMap(s => s.games || []);
+}
+
+// findGameById: find a game object by _id across all sport sections.
+function findGameById(id) {
+  return allGamesFlat().find(g => g._id === id);
+}
+
+// gameNetwork(g, defaultLabel) lives in field_utils.js (pure).
+// getDramaPeak: read peak drama score for a game from localStorage.
+// Replaces 4 inline localStorage.getItem('field_drama_peak_'+gameId) patterns.
+function getDramaPeak(gameId) {
+  return parseFloat(localStorage.getItem('field_drama_peak_' + gameId) || '0');
+}
+
+// findEspnEntry: find espnScores entry matching a FIELD game object.
+// Replaces 10 inline Object.values(espnScores).find(v => ...) patterns
+// that each had slightly different home/away matching logic.
+function findEspnEntry(game) {
+  if (!game) return null;
+  const h = (game.home || '').toLowerCase().replace(/[^a-z]/g, '').slice(-6);
+  const a = (game.away || '').toLowerCase().replace(/[^a-z]/g, '').slice(-6);
+  return Object.values(espnScores).find(v => {
+    const vh = (v.homeName || '').toLowerCase().replace(/[^a-z]/g, '');
+    const va = (v.awayName || '').toLowerCase().replace(/[^a-z]/g, '');
+    return vh.endsWith(h) && va.endsWith(a);
+  }) || null;
+}
+
+// rankGamesByDrama: sort games by preGameScore, excluding non-games (ATP field entries).
+// Replaces 4 inline filter/sort patterns.
+function rankGamesByDrama(games) {
+  return (games || [])
+    .filter(g => g.home && g.away && g.home !== 'ATP/WTA Field')
+    .sort((a, b) => preGameScore(b) - preGameScore(a));
+}
+
+// ─────────────────────────────────────────────────────────────────────────
 // ── scheduleRenderAll — debounced renderAll for async data arrivals ──────────
 // Problem: soccer fixtures, MLB fixtures, and supplemental data all arrive within
 // ~500ms of each other, each triggering a full renderAll() + DOM rebuild (~77KB
@@ -6263,7 +6330,7 @@ function buildDynamicPregames(){
       const pregameLabel = isWeekend ? "NBA Tip-Off presented by AT&T" : "NBA GameTime";
       const pregameOffset = isWeekend ? 30 : 60;
       const pregameTime = game.start_time
-        ? fmtTime(new Date(new Date(game.start_time).getTime() - pregameOffset*60*1000).toISOString())
+        ? fmtTime(shiftTime(game.start_time, -pregameOffset))
         : "TBD";
       // J8: surface matchupNote in SMT card for playoff editorial context
       const nbaContextLine = game.matchupNote ? ' '+game.matchupNote.split('.')[0].slice(0,80)+'.' : '';
@@ -6277,7 +6344,7 @@ function buildDynamicPregames(){
       });
       const lastGame = sec.games[sec.games.length-1];
       if(lastGame&&lastGame.start_time){
-        const postTime = fmtTime(new Date(new Date(lastGame.start_time).getTime() + 2.5*60*60*1000).toISOString());
+        const postTime = fmtTime(shiftTime(lastGame.start_time, 150));
         cards.push({
           show:"Inside the NBA", network:"ESPN", chip:"ESPN",
           time:"~"+postTime+" ET",
@@ -6294,7 +6361,7 @@ function buildDynamicPregames(){
       const srKey = game.streams&&game.streams[0]&&SR[game.streams[0]];
       const network = game.streams?.[0]?.label || (srKey ? srKey[0] : "ESPN");
       const pregameTime = game.start_time
-        ? fmtTime(new Date(new Date(game.start_time).getTime() - 30*60*1000).toISOString())
+        ? fmtTime(shiftTime(game.start_time, -30))
         : "TBD";
       // J8: matchupNote for playoff context in NHL SMT card
       const nhlContextLine = game.matchupNote ? ' '+game.matchupNote.split('.')[0].slice(0,80)+'.' : '';
@@ -10083,12 +10150,6 @@ async function fetchSoccerFixtures(){
 // Render score overlays onto existing game cards
 // Maps sport period to OT suffix when period exceeds normal game length
 // NBA: 4 quarters → OT at period 5+. NFL: 4 quarters → OT at period 5. NHL: 3 periods → OT at 4+
-const ESPN_OT_PERIODS = {
-  "Q": 4,  // NBA, WNBA, NCAA Basketball (Q5+ = OT)
-  "P": 3,  // NHL (P4+ = OT)
-  "H": 2,  // College basketball halves (H3 = OT)
-  "T": 9,  // Baseball innings (T10+ = extra innings)
-};
 function renderESPNScores(){
   if(!allData||!allData.sports) return;
   // Prune stale entries (not updated within ESPN_SCORE_TTL) to prevent yesterday's
@@ -11583,7 +11644,7 @@ function fieldBriefCacheKey(){
 // Applies to all journalism text before display.
 function buildFIELDBriefStatic(sections){
   const all=sections.flatMap(s=>(s.games||[]).map(g=>({...g,_section:s.sport})));
-  const ranked=all.filter(g=>g.home&&g.away&&g.home!=='ATP/WTA Field').sort((a,b)=>preGameScore(b)-preGameScore(a));
+  const ranked=rankGamesByDrama(all);
   if(!ranked.length) return null;
   const top=ranked[0];
   const totalGames=ranked.length;
@@ -13372,7 +13433,7 @@ document.addEventListener('click', e => {
   // Enrich from live allData if available
   if(typeof allData!=='undefined'&&allData.sports){
     const id=card.dataset.gameId||card.dataset.gameid;
-    const found=(allData.sports||[]).flatMap(s=>s.games||[]).find(g=>g._id===id);
+    const found=allGamesFlat().find(g=>g._id===id);
     if(found) Object.assign(game,found);
   }
   if(!game.start_time){showShareToast('\u274c No time data for this game');return;}
@@ -13672,7 +13733,7 @@ const PRICES = {
 
 // ── Coverage stats for tonight's schedule ───────────────────────────────────
 function computeCoverageStats(services){
-  const allGames = (allData?.sports||[]).flatMap(s=>s.games||[]).filter(g=>g.streams?.length);
+  const allGames = allGamesFlat().filter(g=>g.streams?.length);
   const total = allGames.length;
   const covered = allGames.filter(g=>g.streams.some(s=>services.has(s.key))).length;
   const uncovered = allGames.filter(g=>!g.streams.some(s=>services.has(s.key)));

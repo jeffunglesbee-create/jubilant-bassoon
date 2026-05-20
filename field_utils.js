@@ -185,6 +185,23 @@ function extractJsonBlock(text) {
 }
 
 
+// ── Time arithmetic ────────────────────────────────────────────────────────
+// shiftTime: offset an ISO timestamp by ±minutes. Returns ISO string.
+// Replaces 13 inline new Date(iso).getTime() ± n*60*1000 patterns.
+function shiftTime(iso, minutes) {
+  if (!iso) return iso;
+  return new Date(new Date(iso).getTime() + minutes * 60 * 1000).toISOString();
+}
+
+// ── Stream/network helpers ─────────────────────────────────────────────────
+// gameNetwork: primary broadcast label for a game.
+// Replaces 13 inline g.streams?.[0]?.label patterns with varying fallbacks.
+// Pass defaultLabel to override the empty-string default.
+function gameNetwork(g, defaultLabel='') {
+  return (g && g.streams && g.streams[0] && g.streams[0].label) || defaultLabel;
+}
+
+
 // Node.js compatibility — used by field_unit.js for direct imports
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
@@ -206,5 +223,7 @@ if (typeof module !== 'undefined' && module.exports) {
   teamSlugPair,
   stripJsonFences,
   extractJsonBlock,
+  shiftTime,
+  gameNetwork,
   };
 }

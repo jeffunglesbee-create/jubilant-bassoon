@@ -92,10 +92,18 @@ global.Date = class extends RealDate {
 };
 Object.setPrototypeOf(global.Date, RealDate);
 
+// Load field_utils.js into execution context so helpers are available
+const utilsJs = (() => {
+  try {
+    const raw = fs.readFileSync('/tmp/jubilant-bassoon/field_utils.js', 'utf8');
+    return raw.replace(/if\s*\(typeof module[^}]+\}[^}]+\}/s, '');
+  } catch(e) { return ''; }
+})();
+
 let bootstrapError = null;
 let evalThis;
 try {
-  const wrapped = js + ';\n;return {' +
+  const wrapped = utilsJs + '\n' + js + ';\n;return {' +
     'renderBetting: typeof renderBetting==="function"?renderBetting:null,' +
     'renderMedia:   typeof renderMedia==="function"?renderMedia:null,' +
     'renderStreaming: typeof renderStreaming==="function"?renderStreaming:null' +

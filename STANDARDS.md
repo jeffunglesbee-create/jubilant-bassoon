@@ -800,3 +800,68 @@ any architectural change is needed.
    grepping 800KB. A `src/journalism/night-owl.js` file would be
    self-documenting. Session docs compensate but shouldn't have to.
 
+
+---
+
+## Rule 20 — Duplicate inline pattern standard
+
+### What the pattern audit found (May 20 2026)
+
+192 regex uses in index.html broke into four structural issues — not a
+regex problem, a duplicate inline pattern problem expressed as regex.
+The same was true of non-regex patterns:
+
+| Pattern | Count | Now |
+|---------|-------|-----|
+| `.split(' ').pop()` — team last word | 73× | `teamNick(name)` |
+| `toLowerCase().replace(/[^a-z]/g,'').slice(n)` | 12× | `teamSlug(name, len, fromEnd)` |
+| `` replace(/^```(?:json)?...`` `` AI fence strip | 3× | `stripJsonFences(text)` |
+| `.match(/\{[\s\S]*\}/)` — find JSON block | 3× | `extractJsonBlock(text)` |
+| `AbortSignal.timeout()` every fetch | 39× | `fieldFetch(url, options)` |
+| `(allData?.sports\|\|[]).forEach` nested | 32× | `forEachGame(fn)`, `allGamesFlat()` |
+| `g.streams?.[0]?.label` | 13× | `gameNetwork(g)` |
+| `new Date(iso).getTime() ± n*60*1000` | 13× | `shiftTime(iso, minutes)` |
+| `Object.values(espnScores).find(...)` | 10× | `findEspnEntry(game)` |
+| `preGameScore sort + ATP filter` | 4× | `rankGamesByDrama(games)` |
+| `localStorage.getItem('field_drama_peak_'...)` | 4× | `getDramaPeak(gameId)` |
+
+### The ongoing standard
+
+**Before writing any inline pattern, check if a helper exists.**
+
+Helpers in `field_utils.js` (pure — importable in Node tests):
+- `teamNick`, `teamSlug`, `teamSlugPair`
+- `stripJsonFences`, `extractJsonBlock`
+- `shiftTime`, `gameNetwork`
+
+Helpers in `index.html` utility block (need globals):
+- `fieldFetch`, `forEachGame`, `allGamesFlat`, `findGameById`
+- `getDramaPeak`, `findEspnEntry`, `rankGamesByDrama`
+
+**When to add a new helper:**
+A pattern warrants a helper when:
+1. It appears 3+ times across the codebase, OR
+2. It has varying fallback behaviour across sites (gameNetwork fallbacks),
+   OR it uses a non-obvious key format (teamSlug two-strategy rule), OR
+3. It is testable in isolation — add it to field_utils.js + field_unit.js
+
+**Two slug strategies — don't mix them:**
+- `teamSlug(name, 6, false)` → first 6 chars — for cache key construction
+- `teamSlug(name, 6, true)` → last 6 chars — for `.endsWith()` fuzzy matching
+Using the wrong one creates silent key mismatches (the bug this pattern
+was introduced to fix).
+
+### TYPE D audit checklist for patterns
+
+Add to every TYPE D (audit) session:
+```
+grep -c "split(' ').pop()" index.html       # should use teamNick
+grep -c "streams?.\[0\]?.label" index.html  # should use gameNetwork
+grep -c "AbortSignal.timeout" index.html    # should use fieldFetch
+grep -c "allData?.sports" index.html        # should use forEachGame/allGamesFlat
+```
+
+If count > 3 for any pattern not yet in the helper table, it's a
+candidate for extraction. Add to field_utils.js or index.html utility
+block as appropriate, then write a unit test.
+
