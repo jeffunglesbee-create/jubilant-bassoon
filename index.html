@@ -6557,6 +6557,20 @@ async function renderBetting(){
       </div>
     </div></div>`;
   }).join('');
+
+  // Live-update odds every 3 minutes while betting section is in view
+  if (!window._bettingLiveInterval) {
+    window._bettingLiveInterval = setInterval(async () => {
+      const sec = document.getElementById('betting-section');
+      if (!sec) return;
+      const rect = sec.getBoundingClientRect();
+      if (rect.top > window.innerHeight + 400 || rect.bottom < -400) return;
+      const refreshSports = [...new Set((allData?.sports||[]).map(s=>s.sport).filter(s=>ODDS_SPORT_MAP[s]))];
+      if (refreshSports.length) await Promise.allSettled(refreshSports.map(s=>fetchOddsForSport(s)));
+      bettingRendered = false;
+      renderBetting();
+    }, 3 * 60 * 1000);
+  }
 }
 
 
@@ -7977,7 +7991,7 @@ async function fetchESPNStandings(sportName){
       });
     });
     if(entries.length) espnStandingsCache[cacheKey] = entries;
-    if(FIELD_DEBUG) console.log(`[ESPN Standings] ${sportName}: ${entries.length} teams`);
+    if(FIELD_DEBUG) console.debug(`[ESPN Standings] ${sportName}: ${entries.length} teams`);
     return entries.length ? entries : null;
   }catch(e){
     if(FIELD_DEBUG) console.warn("[ESPN Standings] failed for "+sportName+":", e.message);
@@ -8327,7 +8341,7 @@ async function relayHealthCheck() {
     RELAY_HEALTHY = r.ok;
   } catch { RELAY_HEALTHY = false; }
   if (RELAY_HEALTHY && TODAY_ISO >= RELAY_CUTOVER_DATE) RELAY_PRIMARY = true;
-  if (FIELD_DEBUG) console.log(`[RELAY] health=${RELAY_HEALTHY} primary=${RELAY_PRIMARY}`);
+  if (FIELD_DEBUG) console.debug(`[RELAY] health=${RELAY_HEALTHY} primary=${RELAY_PRIMARY}`);
   return RELAY_HEALTHY;
 }
 
@@ -8849,6 +8863,7 @@ function normalizeMLBGame(g, date) {
     inning:         g.linescore?.currentInning ?? 0,
     inningHalf:     g.linescore?.inningHalf ?? '',
     outs:           g.linescore?.outs ?? 0,
+    venue:          g.venue?.name ?? '',
     streams:        broadcast.nationalBundle
                       ? resolveBundle(broadcast.nationalBundle)
                       : resolveBundle('MLB_LOCAL'),
@@ -8861,7 +8876,7 @@ async function fetchMLBSchedule(date) {
   const dateStr = d.toLocaleDateString('en-CA');
   const url     = `${MLB_STATS_BASE}/schedule?sportId=1&date=${dateStr}&hydrate=broadcasts(all),team,linescore`;
   try {
-    const r = await fetch(url);
+    const r = await fetch(url, {signal: AbortSignal.timeout(8000)});
     if (!r.ok) throw new Error(`MLB Stats API ${r.status}`);
     const data  = await r.json();
     const games = data.dates?.[0]?.games ?? [];
@@ -10157,6 +10172,62 @@ const lazyObs=new IntersectionObserver(entries=>{
 
 
 // ═══════════════════════════════════════════════════════════════════════════
+// FEATURE: Pull-to-Refresh — touch gesture at top of page triggers reload
+// Works in standalone PWA mode where native browser PTR is suppressed.
+// ═══════════════════════════════════════════════════════════════════════════
+(function initPullToRefresh(){
+  const PTR_THRESHOLD = 72; // px to pull before triggering
+  let _ptrStart = 0, _ptrDelta = 0, _ptrActive = false, _ptrTriggered = false;
+  // Inject indicator element
+  const ind = document.createElement('div');
+  ind.id = 'ptr-indicator';
+  ind.style.cssText = 'position:fixed;top:0;left:50%;transform:translateX(-50%) translateY(-48px);z-index:9999;background:var(--panel,#1a1a2e);border:1px solid rgba(255,255,255,.12);border-radius:50%;width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;transition:transform .2s,opacity .2s;opacity:0;pointer-events:none;box-shadow:0 2px 12px rgba(0,0,0,.4)';
+  ind.textContent = '↓';
+  document.body.appendChild(ind);
+
+  document.addEventListener('touchstart', e => {
+    if (window.scrollY > 4) return; // only at very top
+    _ptrStart = e.touches[0].clientY;
+    _ptrDelta = 0;
+    _ptrActive = true;
+    _ptrTriggered = false;
+  }, {passive:true});
+
+  document.addEventListener('touchmove', e => {
+    if (!_ptrActive) return;
+    _ptrDelta = Math.max(0, e.touches[0].clientY - _ptrStart);
+    if (_ptrDelta > 8) {
+      const pull = Math.min(_ptrDelta, PTR_THRESHOLD + 20);
+      const progress = Math.min(pull / PTR_THRESHOLD, 1);
+      ind.style.opacity = String(progress);
+      ind.style.transform = `translateX(-50%) translateY(${Math.min(pull * 0.6, 44)}px)`;
+      ind.style.background = progress >= 1 ? 'var(--c-nba,#f97316)' : 'var(--panel,#1a1a2e)';
+      ind.textContent = progress >= 1 ? '↺' : '↓';
+    }
+  }, {passive:true});
+
+  document.addEventListener('touchend', async () => {
+    if (!_ptrActive) return;
+    _ptrActive = false;
+    if (_ptrDelta >= PTR_THRESHOLD && !_ptrTriggered) {
+      _ptrTriggered = true;
+      ind.style.opacity = '1';
+      ind.style.transform = `translateX(-50%) translateY(44px)`;
+      ind.textContent = '↺';
+      await fetchSchedule();
+    }
+    // Snap back
+    setTimeout(() => {
+      ind.style.opacity = '0';
+      ind.style.transform = 'translateX(-50%) translateY(-48px)';
+      ind.textContent = '↓';
+    }, 600);
+    _ptrDelta = 0;
+  }, {passive:true});
+})();
+
+
+// ═══════════════════════════════════════════════════════════════════════════
 // FEATURE: PWA — Service Worker Registration + Install Prompt
 // ═══════════════════════════════════════════════════════════════════════════
 let _pwaPrompt = null;
@@ -11043,7 +11114,7 @@ async function fetchBDLSeasonAverages() {
       const d = await r.json();
       const players = d.data || [];
       try { localStorage.setItem(lsKey, JSON.stringify(players)); } catch(e) {}
-      if (FIELD_DEBUG) console.log(`[BDL] season averages: ${players.length} players cached for ${TODAY_ISO}`);
+      if (FIELD_DEBUG) console.debug(`[BDL] season averages: ${players.length} players cached for ${TODAY_ISO}`);
       return players;
     } catch(e) {
       if (FIELD_DEBUG) console.warn('[BDL] season averages fetch failed:', e.message);
@@ -11749,7 +11820,9 @@ function renderWatchWindow(){
   (allData.sports||[]).forEach(sec=>{(sec.games||[]).forEach(g=>{if(!g.start_time) return;const startMs=new Date(g.start_time).getTime();const minsAway=(startMs-now)/60000;if(minsAway<-2||minsAway>35) return;const score=preGameScore(g);if(score>bestScore){bestScore=score;best={g,sec,minsAway};}});});
   if(!best||bestScore<20){el.style.display='none';if(_wwInterval){clearInterval(_wwInterval);_wwInterval=null;}return;}
   const {g,sec,minsAway}=best;
-  const minsStr=minsAway<=1?'Starting now':minsAway<=5?'Tip-off in '+Math.ceil(minsAway)+' min':'Starting in '+Math.ceil(minsAway)+' min';
+  const _wwSport=(sec.sport||'').toLowerCase();
+  const _wwVerb=_wwSport.includes('baseball')?'First pitch':_wwSport.includes('hockey')||_wwSport.includes('nhl')?'Puck drop':_wwSport.includes('football')||_wwSport.includes('nfl')||_wwSport.includes('soccer')||_wwSport.includes('league')||_wwSport.includes('mls')?'Kickoff':_wwSport.includes('afl')||_wwSport.includes('aussie')?'Bounce':'Tip-off';
+  const minsStr=minsAway<=1?'Starting now':minsAway<=5?_wwVerb+' in '+Math.ceil(minsAway)+' min':'Starting in '+Math.ceil(minsAway)+' min';
   const stream=g.streams&&g.streams[0];
   const streamLabel=stream?stream.label:'';
   const streamKey=stream?stream.key:'';
@@ -12952,6 +13025,9 @@ function buildLifeStageContent(game, eData, stage) {
       if (game.seriesRecord && game.seriesRecord !== '0-0') parts.push(game.seriesRecord);
       const ms = _bdlMilestonesCache?.[game._id];
       if (ms) parts.push(`${ms.playerName} needs ${ms.gap} ${ms.stat}`);
+      // Fallback for sports without matchupNote (WNBA, MLB local games): show localNote or venue
+      if (!parts.length && game.localNote) parts.push(game.localNote.slice(0,100));
+      if (!parts.length && game.venue) parts.push(game.venue.slice(0,80));
       return parts.length ? `<div class="card-stage-content">${parts.join(' · ')}</div>` : '';
     }
     case 'soon': {
@@ -12959,7 +13035,12 @@ function buildLifeStageContent(game, eData, stage) {
       const start = new Date(game.start_time||Date.now());
       const minsLeft = Math.round((start - Date.now()) / 60000);
       const net = game.streams?.[0]?.label || '';
-      return `<div class="card-stage-content card-stage-soon"><span class="stage-countdown">Tip-off in ${minsLeft} min</span>${net?' · '+net:''}</div>`;
+      const countdownLabel = sp.includes('baseball') ? 'First pitch'
+        : sp.includes('hockey') || sp.includes('nhl') ? 'Puck drop'
+        : sp.includes('football') || sp.includes('nfl') || sp.includes('soccer') || sp.includes('league') || sp.includes('epl') || sp.includes('mls') || sp.includes('ucl') || sp.includes('uel') || sp.includes('uecl') ? 'Kickoff'
+        : sp.includes('afl') || sp.includes('aussie') ? 'Bounce'
+        : 'Tip-off';
+      return `<div class="card-stage-content card-stage-soon"><span class="stage-countdown">${countdownLabel} in ${minsLeft} min</span>${net?' · '+net:''}</div>`;
     }
     case 'live': {
       // Live: story tape or current score context
@@ -13231,7 +13312,12 @@ function openBottomSheet(gameId) {
   const content = document.getElementById('bs-content');
   if (!content) return;
   const hS = eData?.homeScore ?? '', aS = eData?.awayScore ?? '';
-  const scoreStr = (hS!==''&&aS!=='') ? `${hS}–${aS}` : '';
+  // Match card orientation: American sports show Away–Home; Soccer shows Home–Away
+  const _bsIsAm = AMERICAN_SPORTS.has(sport);
+  const _bsIsSoccer = (sport||'').toLowerCase().includes('premier') || (sport||'').toLowerCase().includes('soccer') || (sport||'').toLowerCase().includes('league') || (sport||'').toLowerCase().includes('mls') || (sport||'').toLowerCase().includes('ucl') || (sport||'').toLowerCase().includes('uel');
+  const _bsL = (_bsIsSoccer||!_bsIsAm) ? hS : aS;
+  const _bsR = (_bsIsSoccer||!_bsIsAm) ? aS : hS;
+  const scoreStr = (hS!==''&&aS!=='') ? `${_bsL}–${_bsR}` : '';
   const period = eData?.period ? ` · ${eData.periodLabel||'Q'+eData.period}` : '';
   const sparkline = buildDramaSparklineSVG(gameId, 200, 32) || '';
   const cb = buildComebackProbability(gameId, eData, sport) || '';
