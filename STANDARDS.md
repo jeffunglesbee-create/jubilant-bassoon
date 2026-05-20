@@ -6,9 +6,13 @@
 
 ## Enforcement
 
-**Smoke test** (`field_smoke.js`) — runs before every push, exit 1 blocks it.  
-Assertions A51–A54 are semantic contracts: if they fail, a feature silently does nothing.  
-Add a new semantic assertion for every feature that depends on a specific variable name, key format, or call wiring.
+**Smoke test — two files, two gates:**
+- `smoke.js` — structural assertions (A1–A123). Run by CI and pre-commit. `node smoke.js index.html`.
+- `field_smoke.js` — per-day assertions (card counts, broadcast chips, rendered DOM). Run by pre-commit only. `node field_smoke.js`.
+
+The pre-commit hook runs both in sequence; either failing blocks the commit.
+Assertions A51–A54 are semantic contracts: if they fail, a feature silently does nothing.
+Add a new named assertion in `smoke.js` for every FIELD_FEATURES entry (presence check minimum).
 
 **Session type** — declare at session start. Types are mutually exclusive. No mixing.
 
@@ -416,7 +420,7 @@ WORKERS:
   W4 field-deploy      — OIDC deploy bridge (GITHUB_PAT, CI-only)
 
 GITHUB SECRETS: DRIVE_FILE_ID deleted, RESEND_API_KEY active
-SMOKE GATE: run BOTH smoke.js AND field_smoke.js before every push
+SMOKE GATE: pre-commit runs smoke.js (structural A1-A123) then field_smoke.js (per-day). Both must pass.
 ```
 
 ### When to update this document
@@ -724,10 +728,10 @@ Any move toward a build step must clear the threshold below.
 
 | File | Size | Purpose |
 |------|------|---------|
-| `index.html` | ~800KB | All app logic, data, styles |
-| `field_utils.js` | ~6KB | 13 pure utility functions |
-| `smoke.js` | ~6KB | CI structural assertions |
-| `field_smoke.js` | ~15KB | Local per-day assertions |
+| `index.html` | ~841KB | All app logic, data, styles |
+| `field_utils.js` | ~6KB | Pure utility functions (no globals) |
+| `smoke.js` | ~14KB | Structural assertions A1–A123 (CI + pre-commit) |
+| `field_smoke.js` | ~26KB | Per-day assertions (pre-commit only) |
 | `field_unit.js` | ~5KB | Unit tests for field_utils.js |
 | `field_browser.test.js` | ~5KB | Playwright browser tests |
 

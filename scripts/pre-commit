@@ -11,8 +11,14 @@ git diff --staged --stat
 echo "   Check: new variable names, removed functions, changes to shared functions."
 echo ""
 
-echo "🔍 Smoke test..."
-node "$REPO/field_smoke.js" >/dev/null 2>&1; SMOKE=$?
+echo "🔍 Smoke test (structural)..."
+node "$REPO/smoke.js" "$REPO/index.html" >/dev/null 2>&1; SMOKE_S=$?
+
+echo "🔍 Smoke test (per-day)..."
+node "$REPO/field_smoke.js" >/dev/null 2>&1; SMOKE_D=$?
+
+# Both gates must pass
+[ $SMOKE_S -eq 0 ] && [ $SMOKE_D -eq 0 ]; SMOKE=$?
 
 echo "🧪 Unit tests..."
 node "$REPO/field_unit.js" >/dev/null 2>&1; UNIT=$?
@@ -26,14 +32,16 @@ if [ $SMOKE -ne 0 ] || [ $UNIT -ne 0 ] || [ $LINT -ne 0 ]; then
   echo ""
   echo "╔══════════════════════════════════════════════════════════╗"
   echo "║  CHECKS FAILED — commit blocked                          ║"
-  [ $SMOKE -ne 0 ] && echo "║  ❌ Smoke    — run: node field_smoke.js                  ║"
+  [ $SMOKE   -ne 0 ] && echo "║  ❌ Smoke (structural) — run: node smoke.js index.html  ║"
+  [ $SMOKE_D -ne 0 ] && echo "║  ❌ Smoke (per-day)   — run: node field_smoke.js        ║"
   [ $UNIT  -ne 0 ] && echo "║  ❌ Units    — run: node field_unit.js                   ║"
   [ $LINT  -ne 0 ] && echo "║  ❌ Lint     — run: npm run lint  ($LINT_ERRORS error(s))$(printf '%*s' $((23 - ${#LINT_ERRORS})) '')║"
   echo "║                                                          ║"
   echo "║  Rule 16: bypass = git commit --no-verify                ║"
   echo "║           MUST include [no-verify: reason] in msg        ║"
   echo "╚══════════════════════════════════════════════════════════╝"
-  [ $SMOKE -ne 0 ] && node "$REPO/field_smoke.js" 2>&1 | tail -5
+  [ $SMOKE   -ne 0 ] && node "$REPO/smoke.js" "$REPO/index.html" 2>&1 | tail -5
+  [ $SMOKE_D -ne 0 ] && node "$REPO/field_smoke.js" 2>&1 | tail -5
   [ $UNIT  -ne 0 ] && node "$REPO/field_unit.js"  2>&1 | tail -5
   [ $LINT  -ne 0 ] && echo "$LINT_OUT" | grep " error " | head -5
   exit 1

@@ -223,198 +223,100 @@ assert('A56 — field_utils.js loaded in index.html',
 
 
 
-  // ── SMOKE-1 batch: new features (A60-A64) ────────────────────────────────
-  assert('A60 — standing-velocity: recordStandingsSnapshot defined',
-    html && /function recordStandingsSnapshot\s*\(/.test(html));
-  assert('A61 — standing-velocity: getStandingVelocity defined',
-    html && /function getStandingVelocity\s*\(/.test(html));
-  assert('A62 — volatility-index: getVolatilityIndex defined',
-    html && /function getVolatilityIndex\s*\(/.test(html));
-  assert('A63 — mlbn-live-drama-alert: shouldShowMLBNAlert defined',
-    html && /function shouldShowMLBNAlert\s*\(/.test(html));
-  assert('A64 — mlbn-live-drama-alert: buildMLBNAlertChip defined',
-    html && /function buildMLBNAlertChip\s*\(/.test(html));
+  // ── Feature registry guards: A60-A123 (table-driven) ────────────────────
+  // Every FIELD_FEATURES key has a named presence assertion.
+  // Schema: [id, label, check] — check is string (includes) or RegExp (test)
+  //   or [check, check, ...] for compound assertions (all must pass).
+  // Keep A51-A59 above as individual assertions — those are semantic contracts
+  // with unique, non-uniform patterns that benefit from individual visibility.
+  const chk = (c) => Array.isArray(c)
+    ? c.every(p => (p instanceof RegExp) ? p.test(html) : html.includes(p))
+    : (c instanceof RegExp) ? c.test(html) : html.includes(c);
 
-  // ── SMOKE-1 batch: high-value pre-existing features (A65-A77) ────────────
-  assert('A65 — bottom-sheet: openBottomSheet defined',
-    html && /function openBottomSheet\s*\(/.test(html));
-  assert('A66 — card-drama-pulse: applyCardPulse defined',
-    html && /function applyCardPulse\s*\(/.test(html));
-  assert('A67 — card-life-stages: updateCardLifeStages defined',
-    html && /function updateCardLifeStages\s*\(/.test(html));
-  assert('A68 — card-story-moments: detectAndStoreStoryMoment defined',
-    html && /function detectAndStoreStoryMoment\s*\(/.test(html));
-  assert('A69 — comeback-probability: buildComebackProbability defined',
-    html && /function buildComebackProbability\s*\(/.test(html));
-  assert('A70 — bdl-relay: bdlPrefetchAll defined',
-    html && /function bdlPrefetchAll\s*\(/.test(html));
-  assert('A71 — live-score-ticker: renderScoreTicker defined',
-    html && /function renderScoreTicker\s*\(/.test(html));
-  assert('A72 — pin-floating-widget: pinGame defined',
-    html && /function pinGame\s*\(/.test(html));
-  assert('A73 — share-card: shareGame defined',
-    html && /function shareGame\s*\(/.test(html));
-  assert('A74 — drama-sparkline: buildDramaSparklineSVG defined',
-    html && /function buildDramaSparklineSVG\s*\(/.test(html));
-  assert('A75 — series-margins: buildSeriesMarginsDots defined',
-    html && /function buildSeriesMarginsDots\s*\(/.test(html));
-  assert('A76 — ember-buried-lead: evaluateEMBER defined',
-    html && /function evaluateEMBER\s*\(/.test(html));
-  assert('A77 — build-game-context: buildGameContext defined',
-    html && /function buildGameContext\s*\(/.test(html));
+  const FEATURE_GUARDS = [
+    // ── A60-A64: New features (Standing Velocity, Volatility, MLBN) ─────────
+    ['A60', 'standing-velocity: recordStandingsSnapshot defined',     /function recordStandingsSnapshot\s*\(/],
+    ['A61', 'standing-velocity: getStandingVelocity defined',         /function getStandingVelocity\s*\(/],
+    ['A62', 'volatility-index: getVolatilityIndex defined',           /function getVolatilityIndex\s*\(/],
+    ['A63', 'mlbn-live-drama-alert: shouldShowMLBNAlert defined',     /function shouldShowMLBNAlert\s*\(/],
+    ['A64', 'mlbn-live-drama-alert: buildMLBNAlertChip defined',      /function buildMLBNAlertChip\s*\(/],
+    // ── A65-A77: High-value feature functions ───────────────────────────────
+    ['A65', 'bottom-sheet: openBottomSheet defined',                  /function openBottomSheet\s*\(/],
+    ['A66', 'card-drama-pulse: applyCardPulse defined',               /function applyCardPulse\s*\(/],
+    ['A67', 'card-life-stages: updateCardLifeStages defined',         /function updateCardLifeStages\s*\(/],
+    ['A68', 'card-story-moments: detectAndStoreStoryMoment defined',  /function detectAndStoreStoryMoment\s*\(/],
+    ['A69', 'comeback-probability: buildComebackProbability defined', /function buildComebackProbability\s*\(/],
+    ['A70', 'bdl-relay: bdlPrefetchAll defined',                      /function bdlPrefetchAll\s*\(/],
+    ['A71', 'live-score-ticker: renderScoreTicker defined',           /function renderScoreTicker\s*\(/],
+    ['A72', 'pin-floating-widget: pinGame defined',                   /function pinGame\s*\(/],
+    ['A73', 'share-card: shareGame defined',                          /function shareGame\s*\(/],
+    ['A74', 'drama-sparkline: buildDramaSparklineSVG defined',        /function buildDramaSparklineSVG\s*\(/],
+    ['A75', 'series-margins: buildSeriesMarginsDots defined',         /function buildSeriesMarginsDots\s*\(/],
+    ['A76', 'ember-buried-lead: evaluateEMBER defined',               /function evaluateEMBER\s*\(/],
+    ['A77', 'build-game-context: buildGameContext defined',           /function buildGameContext\s*\(/],
+    // ── A78-A87: Drama engine + ViewingConditions ────────────────────────────
+    ['A78', 'drama-score-live: dramaScoreLive defined',               /function dramaScoreLive\s*\(/],
+    ['A79', 'situation-drama-bonus: SPORT_CRUNCH_RULES + isCrunchTime', ['SPORT_CRUNCH_RULES', 'isCrunchTime']],
+    ['A80', 'statistical-extreme-notes: getStatisticalExtremes defined', /function getStatisticalExtremes\s*\(/],
+    ['A81', "b1plus-crunch-time: ViewingConditions + CRUNCH TIME",    ['ViewingConditions', "'CRUNCH TIME'"]],
+    ['A82', 'b1plus-garbage-time: isFinalPeriod + garbage-time cap',  ['isFinalPeriod', 'Math.min(score, 20)']],
+    ['A83', 'b1plus-j5-isblowout: isBlowout in ViewingConditions',    ['isBlowout', 'ViewingConditions']],
+    ['A84', 'b1plus-pulse: applyCardPulse + badge-pulse',             [/function applyCardPulse\s*\(/, 'badge-pulse']],
+    ['A85', 'weather-drama-bonus: wxCache + weather alert bonus',     ['wxCache', 'wx?.alert', 'sitBonus']],
+    ['A86', 'ember-fields-compound: EMBER BURIED LEAD in prompt',     ['[EMBER BURIED LEAD', '_emberResultCache']],
+    ['A87', 'franchise-misery-index: FRANCHISE_MISERY + getFranchiseMisery', ['FRANCHISE_MISERY', /function getFranchiseMisery\s*\(/]],
+    // ── A88-A96: J-Series journalism ─────────────────────────────────────────
+    ['A88', 'j1-anti-hype-cards: anti-hype badge present',            ['anti-hype', 'anti-hype-badge']],
+    ['A89', 'j2-series-preview: buildSeriesPreviewStatic + card',     [/function buildSeriesPreviewStatic\s*\(/, 'series-preview-card']],
+    ['A90', 'j3-field-brief: initFIELDBrief + field-brief slot',      [/function initFIELDBrief\s*\(/, 'field-brief']],
+    ['A91', "j3-momentum-briefs: DRAMA: RISING + COOLING in prompt",  ['DRAMA: RISING', 'DRAMA: COOLING']],
+    ['A92', "j4-scouts-pick: scout-pick-badge + Scout's Pick",        ['scout-pick-badge', "Scout\\'s Pick"]],
+    ['A93', 'j4-scouts-pick-cards: scout-pick-card class',            ['scout-pick-card', '.scout-pick-card']],
+    ['A94', 'j5-night-owl: renderNightOwlRecap + night-owl-card',     [/function renderNightOwlRecap\s*\(/, 'night-owl-card']],
+    ['A95', 'j6-smt-notes: MEDIA_SPECIALS array',                     ['const MEDIA_SPECIALS', 'MEDIA_SPECIALS']],
+    ['A96', 'j7-cdw-notes: cdw-notes + matchupNote',                  ['cdw-notes', 'matchupNote']],
+    // ── A97-A104: Night Owl enhancements + BDL + AFL + ATP ───────────────────
+    ['A97',  'night-owl-peak-time: getDramaPeakWithTime defined',      /function getDramaPeakWithTime\s*\(/],
+    ['A98',  'night-owl-sustained-drama: getDramaSustained defined',   /function getDramaSustained\s*\(/],
+    ['A99',  'afl-drama-v5: refreshAFLSection + _aflDramaScore',       [/function refreshAFLSection\s*\(/, '_aflDramaScore']],
+    ['A100', 'atp-live-scores: fetchATPLiveScores + atpIntervalId',    [/function fetchATPLiveScores\s*\(/, 'atpIntervalId']],
+    ['A101', 'bdl-injury-compound: bdlInjuryContextSync defined',      /function bdlInjuryContextSync\s*\(/],
+    ['A102', 'bdl-milestones-p2c: _bdlMilestonesCache present',        '_bdlMilestonesCache'],
+    ['A103', 'bni-strength-otw: getBNIStrength + computeBroadcastNarrativeIndex', [/function getBNIStrength\s*\(/, /function computeBroadcastNarrativeIndex\s*\(/]],
+    ['A104', 'detect-arc-type: detectArcType defined',                 /function detectArcType\s*\(/],
+    // ── A105-A111: Live polling + ESPN infra ─────────────────────────────────
+    ['A105', 'halftime-switch-polling: halftime-switch + _quietHourActive', ['halftime-switch', '_quietHourActive']],
+    ['A106', 'quiet-hour-detection: _quietHourActive + QUIET_CYCLES_GATE',  ['_quietHourActive', 'QUIET_CYCLES_GATE']],
+    ['A107', 'per-league-polling: _espnLeagueState + leaguesToPoll',   ['_espnLeagueState', 'leaguesToPoll']],
+    ['A108', 'concurrent-espn-fetch: Promise.all + leaguesToPoll',     ['leaguesToPoll', 'Promise.all']],
+    ['A109', 'period-score-extraction: homeLinescores + awayLinescores',['homeLinescores', 'awayLinescores']],
+    ['A110', 'ticker-trend-sort: renderScoreTicker defined',           /function renderScoreTicker\s*\(/],
+    ['A111', 'qw7-briefcache: fieldBriefCacheKey + field_brief_ key',  [/function fieldBriefCacheKey\s*\(/, 'field_brief_']],
+    // ── A112-A114: Relay constants ────────────────────────────────────────────
+    ['A112', 'relay-fd: FD_RELAY present',                             'FD_RELAY'],
+    ['A113', 'relay-fpl: FPL_RELAY_BASE present',                      'FPL_RELAY_BASE'],
+    ['A114', 'relay-nhl: NHL_RELAY_BASE present',                      'NHL_RELAY_BASE'],
+    // ── A115-A123: Misc features ─────────────────────────────────────────────
+    ['A115', 'mlb-stats-adapter: fetchMLBSchedule + MLB_STATS_BASE',   [/function fetchMLBSchedule\s*\(/, 'MLB_STATS_BASE']],
+    ['A116', 'mlb-thin-client: fetchMLBLiveGame + feed/live',          [/function fetchMLBLiveGame\s*\(/, 'feed/live']],
+    ['A117', 'my-teams-brief: buildMyTeamsBriefLine defined',          /function buildMyTeamsBriefLine\s*\(/],
+    ['A118', 'layer3-templates: buildLayer3Rules defined',             /function buildLayer3Rules\s*\(/],
+    ['A119', 'card-mini-dashboard: updatePinWidget + _pinWidgetExpanded', [/function updatePinWidget\s*\(/, '_pinWidgetExpanded']],
+    ['A120', 'ics-export: BEGIN:VCALENDAR + .ics download',            ['BEGIN:VCALENDAR', '.ics']],
+    ['A121', 'sw-version-cache-bust: SW_VERSION cache-bust query param',['SW_VERSION', '?v=${SW_VERSION}']],
+    ['A122', 'auto-deploy-guard-v5: pre-commit smoke gate in repo',    null], // file check — handled below
+    ['A123', 'scout-pick-market-tip: fieldVsMarket + scoutTitle',      [/function fieldVsMarket\s*\(/, 'scoutTitle']],
+  ];
 
+  FEATURE_GUARDS.forEach(([id, label, check]) => {
+    if (check === null) return; // handled separately below
+    assert(`${id} \u2014 ${label}`, html && chk(check));
+  });
 
-  // ── BATCH 1 — Drama Engine + ViewingConditions (A78-A87) ─────────────────
-
-  assert('A78 — drama-score-live: dramaScoreLive defined',
-    html && /function dramaScoreLive\s*\(/.test(html));
-
-  assert('A79 — situation-drama-bonus: SPORT_CRUNCH_RULES + isCrunchTime present',
-    html && html.includes('SPORT_CRUNCH_RULES') && html.includes('isCrunchTime'));
-
-  assert('A80 — statistical-extreme-notes: getStatisticalExtremes defined',
-    html && /function getStatisticalExtremes\s*\(/.test(html));
-
-  assert("A81 — b1plus-crunch-time: ViewingConditions + CRUNCH TIME badge present",
-    html && html.includes('ViewingConditions') && html.includes("'CRUNCH TIME'"));
-
-  assert('A82 — b1plus-garbage-time: isFinalPeriod + garbage-time cap present',
-    html && html.includes('isFinalPeriod') && html.includes('Math.min(score, 20)'));
-
-  assert('A83 — b1plus-j5-isblowout: isBlowout in ViewingConditions result',
-    html && html.includes('isBlowout') && html.includes('ViewingConditions'));
-
-  assert('A84 — b1plus-pulse: applyCardPulse + badge-pulse present',
-    html && /function applyCardPulse\s*\(/.test(html) && html.includes('badge-pulse'));
-
-  assert('A85 — weather-drama-bonus: wxCache + weather alert outdoor bonus in dramaScoreLive',
-    html && html.includes('wxCache') && html.includes('wx?.alert') && html.includes('sitBonus'));
-
-  assert('A86 — ember-fields-compound: EMBER BURIED LEAD in compound prompt',
-    html && html.includes('[EMBER BURIED LEAD') && html.includes('_emberResultCache'));
-
-  assert('A87 — franchise-misery-index: FRANCHISE_MISERY + getFranchiseMisery defined',
-    html && html.includes('FRANCHISE_MISERY') && /function getFranchiseMisery\s*\(/.test(html));
-
-  // ── BATCH 2 — J-Series Journalism (A88-A96) ───────────────────────────────
-
-  assert('A88 — j1-anti-hype-cards: anti-hype badge present',
-    html && html.includes('anti-hype') && html.includes('anti-hype-badge'));
-
-  assert('A89 — j2-series-preview: buildSeriesPreviewStatic + series-preview-card',
-    html && /function buildSeriesPreviewStatic\s*\(/.test(html) && html.includes('series-preview-card'));
-
-  assert('A90 — j3-field-brief: initFIELDBrief + field-brief slot present',
-    html && /function initFIELDBrief\s*\(/.test(html) && html.includes('field-brief'));
-
-  assert("A91 — j3-momentum-briefs: DRAMA: RISING + DRAMA: COOLING in compound prompt",
-    html && html.includes('DRAMA: RISING') && html.includes('DRAMA: COOLING'));
-
-  assert('A92 — j4-scouts-pick: scout-pick-badge present',
-    html && html.includes('scout-pick-badge') && html.includes('Scout\'s Pick'));
-
-  assert('A93 — j4-scouts-pick-cards: scout-pick-card CSS + DOM class present',
-    html && html.includes('scout-pick-card') && html.includes('.scout-pick-card'));
-
-  assert('A94 — j5-night-owl: renderNightOwlRecap + night-owl-card present',
-    html && /function renderNightOwlRecap\s*\(/.test(html) && html.includes('night-owl-card'));
-
-  assert('A95 — j6-smt-notes: MEDIA_SPECIALS array present',
-    html && html.includes('MEDIA_SPECIALS') && html.includes('const MEDIA_SPECIALS'));
-
-  assert('A96 — j7-cdw-notes: cdw-notes + matchupNote present',
-    html && html.includes('cdw-notes') && html.includes('matchupNote'));
-
-  // ── BATCH 3 — Night Owl Enhancements + BDL + AFL + ATP (A97-A104) ────────
-
-  assert('A97 — night-owl-peak-time: getDramaPeakWithTime defined',
-    html && /function getDramaPeakWithTime\s*\(/.test(html));
-
-  assert('A98 — night-owl-sustained-drama: getDramaSustained defined',
-    html && /function getDramaSustained\s*\(/.test(html));
-
-  assert('A99 — afl-drama-v5: refreshAFLSection + _aflDramaScore present',
-    html && /function refreshAFLSection\s*\(/.test(html) && html.includes('_aflDramaScore'));
-
-  assert('A100 — atp-live-scores: fetchATPLiveScores + atpIntervalId present',
-    html && /function fetchATPLiveScores\s*\(/.test(html) && html.includes('atpIntervalId'));
-
-  assert('A101 — bdl-injury-compound: bdlInjuryContextSync defined',
-    html && /function bdlInjuryContextSync\s*\(/.test(html));
-
-  assert('A102 — bdl-milestones-p2c: _bdlMilestonesCache present',
-    html && html.includes('_bdlMilestonesCache'));
-
-  assert('A103 — bni-strength-otw: getBNIStrength + computeBroadcastNarrativeIndex defined',
-    html && /function getBNIStrength\s*\(/.test(html) && /function computeBroadcastNarrativeIndex\s*\(/.test(html));
-
-  assert('A104 — detect-arc-type: detectArcType defined',
-    html && /function detectArcType\s*\(/.test(html));
-
-  // ── BATCH 4 — Live Polling + ESPN Infra (A105-A111) ──────────────────────
-
-  assert('A105 — halftime-switch-polling: halftime-switch DOM element present',
-    html && html.includes('halftime-switch') && html.includes('_quietHourActive'));
-
-  assert('A106 — quiet-hour-detection: _quietHourActive + QUIET_CYCLES_GATE present',
-    html && html.includes('_quietHourActive') && html.includes('QUIET_CYCLES_GATE'));
-
-  assert('A107 — per-league-polling: _espnLeagueState + leaguesToPoll present',
-    html && html.includes('_espnLeagueState') && html.includes('leaguesToPoll'));
-
-  assert('A108 — concurrent-espn-fetch: Promise.all + leaguesToPoll.map present',
-    html && html.includes('leaguesToPoll') && html.includes('Promise.all'));
-
-  assert('A109 — period-score-extraction: homeLinescores + awayLinescores present',
-    html && html.includes('homeLinescores') && html.includes('awayLinescores'));
-
-  assert('A110 — ticker-trend-sort: renderScoreTicker defined',
-    html && /function renderScoreTicker\s*\(/.test(html));
-
-  assert('A111 — qw7-briefcache: fieldBriefCacheKey + field_brief_ storage key present',
-    html && /function fieldBriefCacheKey\s*\(/.test(html) && html.includes('field_brief_'));
-
-  // ── BATCH 5 — Relay Constants (A112-A114) ────────────────────────────────
-
-  assert('A112 — relay-fd: FD_RELAY base constant present',
-    html && html.includes('FD_RELAY'));
-
-  assert('A113 — relay-fpl: FPL_RELAY_BASE present',
-    html && html.includes('FPL_RELAY_BASE'));
-
-  assert('A114 — relay-nhl: NHL_RELAY_BASE present',
-    html && html.includes('NHL_RELAY_BASE'));
-
-  // ── BATCH 6 — Misc Features (A115-A123) ──────────────────────────────────
-
-  assert('A115 — mlb-stats-adapter: fetchMLBSchedule + MLB_STATS_BASE present',
-    html && /function fetchMLBSchedule\s*\(/.test(html) && html.includes('MLB_STATS_BASE'));
-
-  assert('A116 — mlb-thin-client: fetchMLBLiveGame + feed/live endpoint present',
-    html && /function fetchMLBLiveGame\s*\(/.test(html) && html.includes('feed/live'));
-
-  assert('A117 — my-teams-brief: buildMyTeamsBriefLine defined',
-    html && /function buildMyTeamsBriefLine\s*\(/.test(html));
-
-  assert('A118 — layer3-templates: buildLayer3Rules defined',
-    html && /function buildLayer3Rules\s*\(/.test(html));
-
-  assert('A119 — card-mini-dashboard: updatePinWidget + _pinWidgetExpanded present',
-    html && /function updatePinWidget\s*\(/.test(html) && html.includes('_pinWidgetExpanded'));
-
-  assert('A120 — ics-export: BEGIN:VCALENDAR + .ics download present',
-    html && html.includes('BEGIN:VCALENDAR') && html.includes('.ics'));
-
-  assert('A121 — sw-version-cache-bust: SW_VERSION cache-bust query param present',
-    html && html.includes('SW_VERSION') && html.includes('?v=${SW_VERSION}'));
-
-  assert('A122 — auto-deploy-guard-v5: pre-commit smoke gate exists in repo',
+  // A122 requires a file-system check — not expressible as html pattern
+  assert('A122 \u2014 auto-deploy-guard-v5: pre-commit smoke gate exists',
     typeof require !== 'undefined' &&
     require('fs').existsSync(require('path').join(__dirname, 'scripts/pre-commit')));
-
-  assert('A123 — scout-pick-market-tip: fieldVsMarket + scoutTitle enrichment present',
-    html && /function fieldVsMarket\s*\(/.test(html) && html.includes('scoutTitle'));
-
 
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);
