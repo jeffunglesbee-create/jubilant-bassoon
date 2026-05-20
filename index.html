@@ -9207,7 +9207,15 @@ async function fetchMLBFixtures(){
       // Night Owl fix: now that MLB games are in allData, re-run finals detection.
       // checkForNewFinals() only matches against allData.sports — if games weren't
       // populated yet on first ESPN poll (race condition), finals were missed.
-      setTimeout(()=>{ checkForNewFinals(); injectJ1J4Badges(); }, 400);
+      // Night Owl fix: MLB now in allData — force ESPN rescan for post-game scores
+      // (MLB was absent from activeSections on first ESPN poll — race condition)
+      setTimeout(()=>{
+        checkForNewFinals();
+        renderNightOwlRecap().catch(()=>{});
+        injectJ1J4Badges();
+        // Also trigger a fresh ESPN fetch if MLB hasn't been polled yet
+        if(!_espnLeagueLastPoll['mlb']) fetchESPNScores().catch(()=>{});
+      }, 400);
       if (FIELD_DEBUG) console.log(`[MLB Stats API] Primary source: ${mergedGames.length} games (${nationalOverrides.length} national TV overrides)`);
       return; // success — skip ESPN fallback
     }
@@ -13323,7 +13331,8 @@ function loadEspnFinals(){
 // Save a completed game to finals cache
 function saveEspnFinal(game, eData){
   try{
-    const today = TODAY_ISO;
+    // Always use ET date for key — matches loadTonightFinals() which reads ET date
+    const today = new Date().toLocaleDateString('en-CA',{timeZone:'America/New_York'});
     const existing = JSON.parse(localStorage.getItem(FINALS_KEY)||'[]');
     const id = game._id || (game.home+game.away);
     if(existing.some(f=>f.id===id)) return; // already saved
@@ -13353,7 +13362,19 @@ function saveEspnFinal(game, eData){
 
 // J5: NIGHT OWL RECAP
 function loadTonightFinals(){
-  try{const tzStr=(typeof tz==='string'?tz:'America/New_York');const today=new Date().toLocaleDateString('en-CA',{timeZone:tzStr});return JSON.parse(localStorage.getItem('field_tonight_finals_'+today)||'[]');}catch(e){return [];}
+  try{
+    // Primary: ET date key (canonical)
+    const today=new Date().toLocaleDateString('en-CA',{timeZone:'America/New_York'});
+    const primary=JSON.parse(localStorage.getItem('field_tonight_finals_'+today)||'[]');
+    if(primary.length) return primary;
+    // Fallback: local browser date (catches timezone mismatch from older saves)
+    const localToday=new Date().toLocaleDateString('en-CA');
+    if(localToday!==today){
+      const fallback=JSON.parse(localStorage.getItem('field_tonight_finals_'+localToday)||'[]');
+      if(fallback.length) return fallback;
+    }
+    return [];
+  }catch(e){return [];}
 }
 function buildNightOwlStatic(f){
   const winner=(f.homeScore||0)>=(f.awayScore||0)?f.home:f.away;
@@ -13829,23 +13850,59 @@ const _emberResultCache = {}; // gameId → {tier, channel, dramaScore, contextF
 async function renderNightOwlRecap(){
   const el=document.getElementById('night-owl');
   if(!el) return;
-  const finals=loadTonightFinals();
+
+  // Primary path: localStorage (populated by saveEspnFinal via checkForNewFinals)
+  let finals=loadTonightFinals();
+
+  // Fallback path F5: if localStorage empty, synthesize from live espnScores
+  // This fires when: user opened app after games ended AND espnScores has 'post' entries
+  // Bypasses the entire save/load/key-mismatch chain.
+  if(!finals.length && typeof espnScores !== 'undefined' && typeof allData !== 'undefined'){
+    try{
+      const today=new Date().toLocaleDateString('en-CA',{timeZone:'America/New_York'});
+      (allData?.sports||[]).forEach(sec=>{
+        (sec.games||[]).forEach(game=>{
+          if(!game._id||!game.home) return;
+          const homeSlug=(game.home||'').toLowerCase().replace(/[^a-z]/g,'').slice(-6);
+          const eData=Object.values(espnScores).find(v=>
+            v?.state==='post' &&
+            (v.homeName||'').toLowerCase().replace(/[^a-z]/g,'').endsWith(homeSlug)
+          );
+          if(!eData) return;
+          const dramaPeak=parseFloat(localStorage.getItem('field_drama_peak_'+(game._id||''))||'0');
+          // Save it properly for future page loads
+          saveEspnFinal(game, eData);
+          // Add to in-memory finals for this render
+          if(!finals.some(f=>f.id===game._id)){
+            finals.push({
+              id:game._id, home:game.home||'', away:game.away||'',
+              homeScore:eData.homeScore, awayScore:eData.awayScore,
+              sport:game._sport||'', league:game.league||'',
+              seriesRecord:game.seriesRecord||'', date:today, dramaPeak,
+            });
+          }
+        });
+      });
+    }catch(e_){}
+  }
+
   if(!finals.length){el.style.display='none';return;}
-  const tzStr=(typeof tz==='string'?tz:'America/New_York');
-  const hour=parseInt(new Date().toLocaleTimeString('en-US',{timeZone:tzStr,hour:'numeric',hour12:false}));
-  if(finals.length<1||(hour<21&&finals.length<2)){el.style.display='none';return;}
-  // Rank by sustained drama (minutes above threshold) — the game that was exciting
-  // longest wins Night Owl, not just the one with the highest single-poll spike.
-  // getDramaSustained returns minutes above 65 in the last 60 minutes of game time.
+
+  // Hour gate REMOVED — show Night Owl with any final at any time.
+  // Rationale: if a game is done, the story is worth telling.
+  // Night Owl is designed to show at end of night; the hour gate caused more
+  // misses than it prevented premature shows (early games end at 7:30pm).
+
+  // Rank by sustained drama (minutes above 65 in last hour), tiebreak: dramaPeak
   const topGame=finals.slice().sort((a,b)=>{
-    const aSustained = (typeof getDramaSustained==='function') ? getDramaSustained(a.id||a._id||'', 65, 60*60*1000) : 0;
-    const bSustained = (typeof getDramaSustained==='function') ? getDramaSustained(b.id||b._id||'', 65, 60*60*1000) : 0;
-    // Tiebreak: peak drama score
-    if(Math.abs(aSustained-bSustained) < 2) return (b.dramaPeak||0)-(a.dramaPeak||0);
-    return bSustained - aSustained;
+    const aSustained=(typeof getDramaSustained==='function')?getDramaSustained(a.id||a._id||'',65,60*60*1000):0;
+    const bSustained=(typeof getDramaSustained==='function')?getDramaSustained(b.id||b._id||'',65,60*60*1000):0;
+    if(Math.abs(aSustained-bSustained)<2) return (b.dramaPeak||0)-(a.dramaPeak||0);
+    return bSustained-aSustained;
   })[0];
   if(!topGame){el.style.display='none';return;}
-  // Allow re-render only if a higher-drama game has now finished
+
+  // Re-render gate: only skip if same game is already showing
   if(_nightOwlRendered && _nightOwlGameId===topGame.id) return;
   const cacheKey='field_nightowl_'+topGame.id;
   const cached=sessionStorage.getItem(cacheKey);
