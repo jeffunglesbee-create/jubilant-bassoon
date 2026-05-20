@@ -4974,27 +4974,8 @@ function preGameScore(g){
 }
 
 // ── TONIGHT SUMMARY CARD (Wow #23 — template version, global) ────────────
-function renderTonightSummary(sections){
-  try{
-    const all=sections.flatMap(s=>(s.games||[]).map(g=>({...g,_section:s.sport})));
-    if(!all.length) return '';
-    const ranked=all.filter(g=>g.home&&g.away&&g.home!=='ATP/WTA Field').sort((a,b)=>preGameScore(b)-preGameScore(a));
-    if(!ranked.length) return '';
-    const top=ranked.slice(0,3);
-    const total=all.filter(g=>g.home).length;
-    const pGames=all.filter(g=>g._gameImportance).length;
-    const sports=[...new Set(sections.filter(s=>s.games?.length).map(s=>s.sport))];
-    const hl=pGames>0?`${pGames} playoff game${pGames>1?'s':''} tonight · ${total} total events`:`${total} events across ${sports.length} sports`;
-    const entry=(g,i)=>{
-      const t=g.start_time?new Date(g.start_time).toLocaleTimeString('en-US',{timeZone:'America/New_York',hour:'numeric',minute:'2-digit',hour12:true}):'';
-      const n=g.streams?.[0]?.label||'';
-      const b=g._gameImportance?`<span class="ts-badge ts-${g._gameImportance}">${g._importanceIcon||''} ${g.narrative?.label||''}</span>`:'';
-      return `<div class="ts-game${i===0?' ts-top':''}"><div class="ts-matchup">${g.home} vs ${g.away}</div>${b}<div class="ts-meta">${g._section} · ${t}${n?' · '+n:''}</div></div>`;
-    };
-    return `<div class="tonight-summary" id="tonight-summary"><div class="ts-header"><span class="ts-title">⚡ TONIGHT ON FIELD</span><span class="ts-count">${hl}</span></div><div class="ts-games">${top.map(entry).join('')}</div></div>`;
-  }catch(e){return '';}
-}
 // ─────────────────────────────────────────────────────────────────────────
+
 
 // ── scheduleRenderAll — debounced renderAll for async data arrivals ──────────
 // Problem: soccer fixtures, MLB fixtures, and supplemental data all arrive within
@@ -6165,22 +6146,25 @@ function buildDynamicPregames(){
       const gameTime = game.start_time ? fmtTime(game.start_time) : "TBD";
       const isWeekend = dow===0||dow===6;
       const pregameLabel = isWeekend ? "NBA Tip-Off presented by AT&T" : "NBA GameTime";
-      const pregameOffset = isWeekend ? 30 : 60; // weekend tip-off is 30min; weekday GameTime is 1hr
+      const pregameOffset = isWeekend ? 30 : 60;
       const pregameTime = game.start_time
         ? fmtTime(new Date(new Date(game.start_time).getTime() - pregameOffset*60*1000).toISOString())
         : "TBD";
+      // J8: surface matchupNote in SMT card for playoff editorial context
+      const nbaContextLine = game.matchupNote ? ' '+game.matchupNote.split('.')[0].slice(0,80)+'.' : '';
+      const nbaNet = game.streams?.[0]?.label || 'ESPN';
       cards.push({
-        show:pregameLabel,network:"ESPN",chip:"ESPN",
+        show:pregameLabel, network:nbaNet, chip:"ESPN",
         time:pregameTime+" ET",
-        desc:"Pregame coverage ahead of "+( game.away||"")+" @ "+(game.home||"")+" ("+gameTime+" ET, ESPN). Series updates, injury reports, and panel preview.",
-        link:"https://www.espn.com/watch/"
+        desc:"Pregame coverage ahead of "+(game.away||"")+" @ "+(game.home||"")+" ("+gameTime+" ET, "+nbaNet+")."+nbaContextLine+" Series updates, injury reports, panel preview.",
+        link:"https://www.espn.com/watch/",
+        journalNote: (game.seriesRecord&&game.seriesRecord!=='0-0') ? game.away+" @ "+game.home+" · "+game.seriesRecord : null,
       });
-      // Inside the NBA — airs after the final game of the night
       const lastGame = sec.games[sec.games.length-1];
       if(lastGame&&lastGame.start_time){
         const postTime = fmtTime(new Date(new Date(lastGame.start_time).getTime() + 2.5*60*60*1000).toISOString());
         cards.push({
-          show:"Inside the NBA",network:"ESPN",chip:"ESPN",
+          show:"Inside the NBA", network:"ESPN", chip:"ESPN",
           time:"~"+postTime+" ET",
           desc:"Ernie Johnson, Charles Barkley, Shaquille O'Neal, and Kenny Smith react to tonight's NBA playoff results. Produced by TNT Sports from Atlanta; airs on ESPN immediately after the final game.",
           link:"https://www.espn.com/watch/"
@@ -6193,15 +6177,18 @@ function buildDynamicPregames(){
       nhlDone=true;
       const gameTime = game.start_time ? fmtTime(game.start_time) : "TBD";
       const srKey = game.streams&&game.streams[0]&&SR[game.streams[0]];
-      const network = srKey ? srKey[0] : "ESPN";
+      const network = game.streams?.[0]?.label || (srKey ? srKey[0] : "ESPN");
       const pregameTime = game.start_time
         ? fmtTime(new Date(new Date(game.start_time).getTime() - 30*60*1000).toISOString())
         : "TBD";
+      // J8: matchupNote for playoff context in NHL SMT card
+      const nhlContextLine = game.matchupNote ? ' '+game.matchupNote.split('.')[0].slice(0,80)+'.' : '';
       cards.push({
-        show:"NHL Playoffs Pregame",network,chip:"ESPN",
+        show:"NHL Playoffs Pregame", network, chip:"ESPN",
         time:pregameTime+" ET",
-        desc:"Pregame analysis for "+(game.away||"")+" @ "+(game.home||"")+" ("+gameTime+" ET, "+network+"). Series preview and lineup reports.",
-        link:"https://www.espn.com/watch/"
+        desc:"Pregame analysis for "+(game.away||"")+" @ "+(game.home||"")+" ("+gameTime+" ET, "+network+")."+nhlContextLine+" Series preview and lineup reports.",
+        link:"https://www.espn.com/watch/",
+        journalNote: (game.seriesRecord&&game.seriesRecord!=='0-0') ? (game.league||'NHL Playoffs')+" · "+game.seriesRecord : null,
       });
     }
 
@@ -6209,7 +6196,7 @@ function buildDynamicPregames(){
     if(!golfDone&&(sport.includes("Golf")||sport.includes("PGA"))&&(dow===6||dow===0)&&game){
       golfDone=true;
       cards.push({
-        show:"CBS Sports Golf Pre-Show",network:"CBS Sports",chip:"CBS",
+        show:"CBS Sports Golf Pre-Show", network:"CBS Sports", chip:"CBS",
         time:"12:30 PM ET",
         desc:"CBS Sports preview for "+(game.home||game.away||"today's round")+". Leaderboard check, featured groups, and round preview before main coverage begins.",
         link:"https://www.cbssports.com/golf/"
@@ -6386,35 +6373,8 @@ async function fetchBettingLines(){
   }
 }
 
-// Load betting lines: cache → AI → hardcoded fallback
-async function loadBettingLines(){
-  // 1. Check localStorage cache (valid for today only — May 11 2026: was sessionStorage)
-  try{
-    if(localStorage.getItem(BET_CACHE_DATE)===TODAY_ISO){
-      const cached = localStorage.getItem(BET_LINES_KEY);
-      if(cached){
-        return JSON.parse(cached);
-      }
-    }
-  }catch(e){}
 
-  // 2. Return FALLBACK immediately (no wait), then try AI async for next reload
-  // Kick off AI fetch in background — result cached in localStorage for next open
-  fetchBettingLines().then(fresh=>{
-    if(fresh){
-      try{
-        localStorage.setItem(BET_LINES_KEY, JSON.stringify(fresh));
-        localStorage.setItem(BET_CACHE_DATE, TODAY_ISO);
-      }catch(e){}
-    }
-  }).catch(()=>{});
-
-  // 3. Return auto-selected fallback immediately (zero wait)
-  // getBettingFallback() merges live schedule game names with today's stored odds
-  return getBettingFallback();
-}
-
-// ═══════════════════════════════════════════════════════════════
+// ═/ ═══════════════════════════════════════════════════════════════
 // BETTING_LINES_FALLBACK — AUTO-GAME-SELECTION
 // Implemented: May 11, 2026 (Session H — Hardcoded Data Optimization)
 //
@@ -6692,6 +6652,31 @@ async function renderBetting(){
     pills.push(`<span class="bet-line-pill" style="opacity:.55"><span class="prob-ml">⚡ The Odds API</span></span>`);
     const seriesCtx = game.seriesRecord
       ? `<div style="font-size:.7rem;color:var(--platinum);padding:.25rem 1rem;border-bottom:1px solid var(--edge)">${game.seriesRecord}</div>` : '';
+
+    // J8: Editorial context — surfaces FALLBACK context paragraph and _gameBriefCache
+    // when live odds are active, the rich editorial context from FALLBACK_DATA is hidden.
+    // This makes it visible as a collapsible "FIELD Read" section in each betting card.
+    let editorialHTML = '';
+    try {
+      // Priority 1: compound-generated game brief for this specific game
+      const brief = (typeof _gameBriefCache !== 'undefined') ? _gameBriefCache[game._id||''] : null;
+      if(brief) {
+        editorialHTML = `<div class="bet-editorial" style="font-size:.7rem;color:var(--fg);line-height:1.55;padding:.5rem 1rem .35rem;border-top:1px solid var(--edge);opacity:.85"><span style="font-size:.56rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--gold2);display:block;margin-bottom:.3rem">FIELD Brief</span>${brief}</div>`;
+      } else {
+        // Priority 2: FALLBACK_DATA context paragraph (AI-estimated, editorial)
+        const fbKey = (game.home||'').toLowerCase();
+        const fbEntry = (typeof BETTING_LINES_FALLBACK_DATA !== 'undefined')
+          ? BETTING_LINES_FALLBACK_DATA.find(d => {
+              const k = (d.matchKey||'').toLowerCase();
+              return fbKey.includes(k) || (game.away||'').toLowerCase().includes(k);
+            })
+          : null;
+        if(fbEntry?.context) {
+          editorialHTML = `<div class="bet-editorial" style="font-size:.7rem;color:var(--fg);line-height:1.55;padding:.5rem 1rem .35rem;border-top:1px solid var(--edge);opacity:.85"><span style="font-size:.56rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--smoke);display:block;margin-bottom:.3rem">📊 FIELD Read</span>${fbEntry.context}</div>`;
+        }
+      }
+    } catch(e_) {}
+
     return `<div class="bet-card"><div class="bet-accent"></div><div class="bet-inner">
       <div class="bet-card-head">
         <div class="bet-card-head-top">
@@ -6708,6 +6693,7 @@ async function renderBetting(){
       ${probHTML}
       <div class="bet-lines-compact">${pills.join('')}</div>
       ${fieldVsMarket(game, odds.homeML, odds.awayML)}
+      ${editorialHTML}
       <div class="bet-links">
         <a class="bet-link" href="https://sportsbook.draftkings.com" target="_blank" rel="noopener">DraftKings &#8594;</a>
         <a class="bet-link" href="https://sportsbook.fanduel.com" target="_blank" rel="noopener">FanDuel &#8594;</a>
@@ -8141,34 +8127,8 @@ async function fdFetchLive(code){
 
 // Fetch H2H record between two FD team IDs
 // Returns {homeWins, awayWins, draws, lastMeetings:[{date,homeTeam,awayTeam,homeScore,awayScore}]}
-async function fdFetchH2H(matchId){
-  const cKey = String(matchId);
-  if(fdH2HCache[cKey]) return fdH2HCache[cKey];
-  try{
-    const data = await fdFetch(`/matches/${matchId}/head2head?limit=5`);
-    const agg  = data.aggregates || {};
-    const mtch = (data.matches||[]).slice(0,5).map(m=>({
-      date:      (m.utcDate||"").slice(0,10),
-      homeTeam:  m.homeTeam?.shortName || "",
-      awayTeam:  m.awayTeam?.shortName || "",
-      homeScore: m.score?.fullTime?.home,
-      awayScore: m.score?.fullTime?.away,
-    }));
-    const result = {
-      homeWins:     agg.homeTeam?.wins  ?? 0,
-      awayWins:     agg.awayTeam?.wins  ?? 0,
-      draws:        agg.homeTeam?.draws ?? 0,
-      lastMeetings: mtch
-    };
-    fdH2HCache[cKey] = result;
-    return result;
-  }catch(e){
-    if(FIELD_DEBUG) console.warn("FD H2H:", e.message);
-    return null;
-  }
-}
 
-// Render a football-data.org standings panel (richer than ESPN for soccer)
+// Render a football/ Render a football-data.org standings panel (richer than ESPN for soccer)
 // Shows: #, Team, P, W, D, L, GF, GA, GD, Pts, Form
 function renderFDStandingsPanel(panel, rows, sportName){
   const formDot = c => {
@@ -10704,10 +10664,10 @@ let _pwaPrompt = null;
     _pwaPrompt.prompt();
     const {outcome} = await _pwaPrompt.userChoice;
     _pwaPrompt = null;
-    document.getElementById('pwa-banner').style.display = 'none';
+    document.getElementById('pwa-banner')?.style && (document.getElementById('pwa-banner').style.display = 'none');
   });
   if(dismissBtn) dismissBtn.addEventListener('click', () => {
-    document.getElementById('pwa-banner').style.display = 'none';
+    document.getElementById('pwa-banner')?.style && (document.getElementById('pwa-banner').style.display = 'none');
     localStorage.setItem('field_pwa_dismissed','1');
   });
 })();
