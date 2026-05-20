@@ -223,3 +223,57 @@ should be able to start in under 60 seconds: read handoff, declare
 type, pull, smoke. If the handoff note is missing, the next session
 spends the first 10 minutes reconstructing state from docs.
 
+
+---
+
+## Rule 10 — Automation and enforcement: who does what
+
+### What requires zero user action
+
+**Pre-commit hook** (`scripts/setup.sh` installs it once after cloning):  
+`git commit` automatically runs `field_smoke.js`. If any assertion fails,  
+the commit is blocked. User cannot accidentally push broken code.  
+Emergency bypass: `git commit --no-verify` — use only when absolutely necessary.
+
+**Claude reads handoff automatically:**  
+Every session, Claude reads the latest handoff note from Drive before  
+responding to the opening message. No user request needed.
+
+**Claude infers session type:**  
+"Run daily update" = TYPE A. "Night Owl is broken" = TYPE B.  
+"Build Social Contrarian" = TYPE C. "Audit journalism" = TYPE D.  
+Claude states the inferred type and asks for confirmation if ambiguous.  
+User never needs to say "TYPE B" — just describe what they want.
+
+**Claude runs end sequence automatically on "document session":**  
+1. Runs smoke test  
+2. Pushes all changes  
+3. Copies `sportworld.html` for download  
+4. Writes session doc to Drive  
+5. Writes handoff note to Drive  
+6. Prompts for canonical doc updates  
+7. Declares SESSION END  
+
+### What requires one user action
+
+**Opening message** — declares intent ("fix Night Owl", "daily update May 21").  
+That's the session declaration. No type letter required.
+
+**"Document session"** — triggers the full end sequence. Already established.
+
+### What requires setup once
+
+After cloning the repo:
+```sh
+sh scripts/setup.sh
+```
+Installs the pre-commit hook. Never needs to run again on that machine.
+
+### What is never automated (requires human judgment)
+
+- **Diagnosis** (TYPE B): Claude writes it, user reads and approves before coding starts.  
+- **Feature spec** (TYPE C): Claude writes it, user confirms scope before coding starts.  
+- **Canonical doc content**: Claude proposes updates, user reviews before Drive write.  
+- **Session scope**: user's opening message defines what this session is for.  
+  Claude cannot override that intent.
+

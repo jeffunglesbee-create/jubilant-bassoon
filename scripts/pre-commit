@@ -1,0 +1,22 @@
+#!/bin/sh
+# FIELD pre-commit smoke hook — runs before every git commit
+# Blocks commit on any smoke failure. Use git commit --no-verify only in emergencies.
+
+SMOKE="$(git rev-parse --show-toplevel)/field_smoke.js"
+command -v node >/dev/null 2>&1 || { echo "⚠  node not found — skipping smoke"; exit 0; }
+[ -f "$SMOKE" ] || { echo "⚠  field_smoke.js not found — skipping smoke"; exit 0; }
+
+echo "🔍 Running FIELD smoke test..."
+node "$SMOKE" >/dev/null 2>&1
+if [ $? -ne 0 ]; then
+  echo ""
+  echo "╔══════════════════════════════════════════════════════════╗"
+  echo "║  SMOKE TEST FAILED — commit blocked                      ║"
+  echo "║  Run: node field_smoke.js  to see failures               ║"
+  echo "║  Fix all failures before committing.                     ║"
+  echo "╚══════════════════════════════════════════════════════════╝"
+  node "$SMOKE" 2>&1 | tail -10
+  exit 1
+fi
+echo "✅ Smoke passed"
+exit 0
