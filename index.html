@@ -2089,7 +2089,10 @@ flex-shrink:0;white-space:nowrap;
 <div id="score-ticker-wrap" style="display:none"></div>
 <div id="major-preview-container" style="padding:0 2rem"></div>
 <div id="field-brief" style="display:none" aria-live="polite"></div>
-<div id="night-owl" style="display:none" aria-live="polite"></div>
+<!-- Night Owl renders INTO #field-brief slot via renderNightOwlRecap —
+     it replaces FIELD Brief content when tonight's games are final.
+     #night-owl is kept as a no-op anchor; real output is in #field-brief. -->
+<div id="night-owl" style="display:none" aria-hidden="true"></div>
 <main class="main" id="main"></main>
 
 <!-- Bottom-sheet overlay -->
@@ -10100,6 +10103,73 @@ async function fetchSchedule(){
     setInterval(poll, 90000);  // then every 90s
   })();
 
+  // ── Night Owl MutationObserver — the fastest possible trigger ────────────
+  // Watches #main for any card getting the 'espn-final' class.
+  // Fires the moment renderESPNScores() marks a game as finished —
+  // zero dependency on the save/load/localStorage chain.
+  // Reads scores from previousScores cache (already written by renderESPNScores).
+  (function initNightOwlObserver(){
+    const main = document.getElementById('main');
+    if(!main || typeof MutationObserver === 'undefined') return;
+    let _observerDebounce = null;
+    const obs = new MutationObserver(mutations => {
+      let hasFinal = false;
+      for(const m of mutations){
+        if(m.type === 'attributes' && m.attributeName === 'class'){
+          if(m.target.classList.contains('espn-final')){ hasFinal = true; break; }
+        }
+        if(m.type === 'childList'){
+          m.addedNodes.forEach(n=>{ if(n.classList?.contains?.('espn-final')) hasFinal=true; });
+        }
+      }
+      if(!hasFinal) return;
+      // Debounce: batch multiple simultaneous card finalisations into one render
+      clearTimeout(_observerDebounce);
+      _observerDebounce = setTimeout(() => {
+        // Build finals directly from DOM — no ESPN chain needed
+        const finalCards = main.querySelectorAll('.game-card.espn-final');
+        let domFinalsAdded = 0;
+        finalCards.forEach(card => {
+          const gid   = card.dataset.gameid;
+          const home  = card.dataset.home;
+          const away  = card.dataset.away;
+          const sport = card.dataset.sport || '';
+          if(!gid || !home || !away) return;
+          // Read scores from previousScores cache (written by renderESPNScores)
+          const hScore = typeof previousScores !== 'undefined' ? (previousScores[gid+'_h'] ?? null) : null;
+          const aScore = typeof previousScores !== 'undefined' ? (previousScores[gid+'_a'] ?? null) : null;
+          if(hScore === null) return; // score not yet written
+          if(_seenFinals.has(gid)) return;
+          _seenFinals.add(gid);
+          // Build a minimal eData object and save it
+          const syntheticEData = {
+            homeScore: hScore, awayScore: aScore,
+            state: 'post', homeName: home, awayName: away,
+          };
+          // Find the full game object from allData for seriesRecord etc.
+          const fullGame = (()=>{
+            for(const sec of (allData?.sports||[])){
+              const g = (sec.games||[]).find(g=>g._id===gid);
+              if(g) return g;
+            }
+            return {_id:gid, home, away, _sport:sport};
+          })();
+          saveEspnFinal(fullGame, syntheticEData);
+          domFinalsAdded++;
+        });
+        if(domFinalsAdded > 0 || finalCards.length > 0){
+          renderNightOwlRecap().catch(()=>{});
+        }
+      }, 300);
+    });
+    obs.observe(main, {
+      attributes: true,
+      attributeFilter: ['class'],
+      subtree: true,
+      childList: true,
+    });
+  })();
+
   // ── DAILY RETURN STREAK (Wow #29) ────────────────────────────────────────
   // Duolingo-proven stickiness mechanic. localStorage. Zero backend.
   (function initStreak(){
@@ -11878,6 +11948,8 @@ async function initFIELDBrief(sections){
   const el=document.getElementById('field-brief');
   if(!el) return;
   if(activeFilter!=='all'||!sections.length){el.style.display='none';return;}
+  // Guard: if Night Owl is already rendered in this slot, don't overwrite it
+  if(el.querySelector('.night-owl-card')) return;
   const d=new Date();const tzStr=(typeof tz==='string'?tz:'America/New_York');
   const dateLabel=d.toLocaleDateString('en-US',{timeZone:tzStr,weekday:'short',month:'short',day:'numeric'});
   const cacheKey=fieldBriefCacheKey();
@@ -13916,7 +13988,10 @@ let _nightOwlGameId=null; // tracks which game is currently displayed
 const _gameBriefCache = {}; // gameId → brief text
 const _emberResultCache = {}; // gameId → {tier, channel, dramaScore, contextFlag} — live EMBER state
 async function renderNightOwlRecap(){
-  const el=document.getElementById('night-owl');
+  // Night Owl renders into #field-brief — they share the same editorial slot.
+  // FIELD Brief = pre-game context. Night Owl = post-game recap. Same position, same importance.
+  // When Night Owl fires, it replaces FIELD Brief content entirely.
+  const el = document.getElementById('field-brief') || document.getElementById('night-owl');
   if(!el) return;
 
   // Primary path: localStorage (populated by saveEspnFinal via checkForNewFinals)
@@ -13970,8 +14045,12 @@ async function renderNightOwlRecap(){
   })[0];
   if(!topGame){el.style.display='none';return;}
 
-  // Re-render gate: only skip if same game is already showing
-  if(_nightOwlRendered && _nightOwlGameId===topGame.id) return;
+  // Re-render gate: skip if same game is already in this slot
+  // Exception: re-render if the element no longer contains Night Owl markup
+  // (can happen if FIELD Brief overwrote it)
+  const alreadyRendered = _nightOwlRendered && _nightOwlGameId===topGame.id;
+  const slotHasOwl = el.querySelector('.night-owl-card') !== null;
+  if(alreadyRendered && slotHasOwl) return;
   const cacheKey='field_nightowl_'+topGame.id;
   const cached=sessionStorage.getItem(cacheKey);
   const winner=(topGame.homeScore||0)>=(topGame.awayScore||0)?topGame.home:topGame.away;
