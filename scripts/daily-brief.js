@@ -27,6 +27,7 @@ const {
   EARLIEST_GAME = 'none',
   SEND_REASON = 'scheduled',
   NBA_GAMES_JSON = '[]',
+  NHL_GAMES_JSON = '[]',
   MLB_GAMES_JSON = '[]',
   AFL_GAMES_JSON = '[]',
   SOCCER_GAMES_JSON = '[]',
@@ -37,6 +38,7 @@ function parseGames(jsonStr) {
 }
 
 const nbaGames = parseGames(NBA_GAMES_JSON);
+const nhlGames = parseGames(NHL_GAMES_JSON);
 const mlbGames = parseGames(MLB_GAMES_JSON);
 const aflGames = parseGames(AFL_GAMES_JSON);
 const soccerGames = parseGames(SOCCER_GAMES_JSON);
@@ -44,6 +46,10 @@ const soccerGames = parseGames(SOCCER_GAMES_JSON);
 const nbaLines = nbaGames.length
   ? nbaGames.map(g => `  ${g.away} @ ${g.home} — ${g.time}`).join('\n')
   : '  (no NBA games today)';
+
+const nhlLines = nhlGames.length
+  ? nhlGames.slice(0, 6).map(g => `  ${g.away} @ ${g.home} — ${g.time} UTC`).join('\n')
+  : '  (no NHL games today)';
 
 const mlbLines = mlbGames.length
   ? mlbGames.slice(0, 6).map(g => `  ${g.away} @ ${g.home} — ${g.time} UTC`).join('\n')
@@ -79,6 +85,7 @@ const html = `<!DOCTYPE html>
   <p style="margin:0 0 6px;font-size:13px">&#127944; NBA &mdash; <strong>${NBA_COUNT} games</strong></p>
   <pre style="color:#d1d5db;font-size:11px;margin:0 0 12px;line-height:1.5">${nbaLines}</pre>
   <p style="margin:0 0 6px;font-size:13px">&#127944; NHL &mdash; <strong>${NHL_COUNT} games</strong></p>
+  <pre style="color:#d1d5db;font-size:11px;margin:0 0 12px;line-height:1.5">${nhlLines}</pre>
   <p style="margin:0 0 6px;font-size:13px">&#9918; MLB &mdash; <strong>${MLB_COUNT} games</strong></p>
   <pre style="color:#d1d5db;font-size:11px;margin:0 0 12px;line-height:1.5">${mlbLines}</pre>
   <p style="margin:0 0 6px;font-size:13px">&#127944; AFL &mdash; <strong>${AFL_COUNT} games</strong></p>
@@ -113,6 +120,7 @@ const text = [
   nbaLines,
   '',
   `NHL: ${NHL_COUNT} games`,
+  nhlLines,
   '',
   `MLB: ${MLB_COUNT} games`,
   mlbLines,

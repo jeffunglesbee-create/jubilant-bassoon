@@ -65,12 +65,25 @@ jobs:
         id: nhl
         run: |
           RELAY="https://field-relay-nba.jeffunglesbee.workers.dev"
+          TODAY=$(date -u +%Y-%m-%d)
           DATA=$(curl -sf --max-time 10 "$RELAY/nhl/v1/scoreboard/now" || echo '{}')
           echo "$DATA" > /tmp/nhl.json
-          COUNT=$(jq '[.gamesByDate[]?.games[]?] | length' /tmp/nhl.json 2>/dev/null || echo 0)
-          EARLIEST=$(jq -r '[.gamesByDate[]?.games[]?.startTimeUTC] | sort | .[0] // empty' /tmp/nhl.json 2>/dev/null)
+          # gamesByDate is a 5-day window — filter to today only
+          COUNT=$(jq --arg today "$TODAY" \
+            '[.gamesByDate[] | select(.date == $today) | .games[]?] | length' \
+            /tmp/nhl.json 2>/dev/null || echo 0)
+          EARLIEST=$(jq -r --arg today "$TODAY" \
+            '[.gamesByDate[] | select(.date == $today) | .games[]?.startTimeUTC] | sort | .[0] // empty' \
+            /tmp/nhl.json 2>/dev/null)
+          GAMES=$(jq -c --arg today "$TODAY" \
+            '[.gamesByDate[] | select(.date == $today) | .games[]? | {
+              away: .awayTeam.abbrev,
+              home: .homeTeam.abbrev,
+              time: (.startTimeUTC | split("T")[1] | split(":")[0:2] | join(":"))
+            }]' /tmp/nhl.json 2>/dev/null || echo '[]')
           echo "count=$COUNT" >> $GITHUB_OUTPUT
           echo "earliest=${EARLIEST:-}" >> $GITHUB_OUTPUT
+          echo "games_json=$GAMES" >> $GITHUB_OUTPUT
 
       - name: Fetch soccer schedule via FD relay
         id: soccer
@@ -81,10 +94,10 @@ jobs:
           DATA=$(curl -sf --max-time 10 \
             "$RELAY/fd/matches?dateFrom=${TODAY}&dateTo=${TODAY}" || echo '{"matches":[]}')
           echo "$DATA" > /tmp/fd.json
-          COUNT=$(jq '[.matches[] | select(.competition.code | test("PL|ELC|CL|EL|ECRL|PD|BL1|SA|FL1|MLS|EC|PPL|DED|BSA"))] | length' /tmp/fd.json 2>/dev/null || echo 0)
-          EARLIEST=$(jq -r '[.matches[] | select(.competition.code | test("PL|ELC|CL|EL|ECRL|PD|BL1|SA|FL1|MLS|EC|PPL|DED|BSA")) | .utcDate] | sort | .[0] // empty' /tmp/fd.json)
+          COUNT=$(jq '[.matches[] | select(.competition.code | test("^(PL|ELC|CL|EL|ECRL|PD|BL1|SA|FL1|MLS|EC|PPL|DED|BSA)$"))] | length' /tmp/fd.json 2>/dev/null || echo 0)
+          EARLIEST=$(jq -r '[.matches[] | select(.competition.code | test("^(PL|ELC|CL|EL|ECRL|PD|BL1|SA|FL1|MLS|EC|PPL|DED|BSA)$")) | .utcDate] | sort | .[0] // empty' /tmp/fd.json)
           # Build compact game list: away @ home [competition] — HH:MM UTC
-          GAMES=$(jq -c '[.matches[] | select(.competition.code | test("PL|ELC|CL|EL|ECRL|PD|BL1|SA|FL1|MLS|EC|PPL|DED|BSA")) | {
+          GAMES=$(jq -c '[.matches[] | select(.competition.code | test("^(PL|ELC|CL|EL|ECRL|PD|BL1|SA|FL1|MLS|EC|PPL|DED|BSA)$")) | {
             away: .awayTeam.shortName,
             home: .homeTeam.shortName,
             comp: .competition.code,
@@ -248,6 +261,7 @@ jobs:
           TODAY: ${{ steps.sw.outputs.today }}
           NBA_COUNT: ${{ steps.nba.outputs.count }}
           NHL_COUNT: ${{ steps.nhl.outputs.count }}
+          NHL_GAMES_JSON: ${{ steps.nhl.outputs.games_json }}
           MLB_COUNT: ${{ steps.mlb.outputs.count }}
           AFL_COUNT: ${{ steps.afl.outputs.count }}
           SOCCER_COUNT: ${{ steps.soccer.outputs.count }}
