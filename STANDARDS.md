@@ -4,6 +4,18 @@
 
 ---
 
+## Enforcement
+
+**Smoke test** (`field_smoke.js`) — runs before every push, exit 1 blocks it.  
+Assertions A51–A54 are semantic contracts: if they fail, a feature silently does nothing.  
+Add a new semantic assertion for every feature that depends on a specific variable name, key format, or call wiring.
+
+**Session type** — declare at session start. Types are mutually exclusive. No mixing.
+
+**Feature freeze** — no TYPE C if Night Owl, ESPN polling, or compound prompt is broken.
+
+---
+
 ## Session start checklist
 
 ```
