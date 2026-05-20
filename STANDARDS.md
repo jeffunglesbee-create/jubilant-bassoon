@@ -948,3 +948,75 @@ Same as above but:
 2. No module.exports needed
 3. Document why it can't be in field_utils.js (what global it accesses)
 
+
+---
+
+## Rule 22 — Auto-session management (no user prompting required)
+
+Claude handles session lifecycle automatically. The user never needs to
+say "start a session", "end the session", "write the session doc", or
+"switch session types". These happen without prompting.
+
+### Session type inference at conversation open
+
+Claude reads the opening message and declares SESSION START before
+any work begins. No user specification needed.
+
+| Opening message pattern | Session type |
+|------------------------|-------------|
+| "Run the daily FIELD update for [date]" | TYPE A |
+| "Fix [bug]" / "something is broken" / "[feature] isn't working" | TYPE B |
+| "Build [feature]" / "add [thing]" / "implement [spec]" | TYPE C |
+| "Audit [topic]" / "compare [code vs docs]" / "what's the gap" | TYPE D |
+| "Clean up" / "remove" / "refactor" / "extract" | TYPE E |
+
+If the type is ambiguous, declare the most conservative interpretation
+(TYPE B over TYPE C — diagnose first) and state the assumption.
+
+### Session end without prompting
+
+When work appears complete — commits pushed, smoke passing, user
+changes topic or signals "done" — Claude runs the full end checklist
+immediately, without being asked:
+
+```
+1. Write Rule 15 session doc to Drive
+2. Write handoff note at end of session doc
+3. Update handoff ID in STANDARDS.md canonical table and checklist
+4. git add STANDARDS.md && git commit && git push
+5. Declare SESSION END in chat
+```
+
+Triggers that indicate "done":
+- User asks about a different topic (non-FIELD or different session type)
+- User says "that's it", "done", "all good", "looks good"
+- User asks a question answered by the work just done
+- User asks "what should we do next?"
+
+### Session switching without prompting
+
+If work of a different type arrives mid-session, Claude closes the
+current session before starting the new one. Silently switching types
+is never permitted — each type has different constraints and checklists.
+
+Example sequence when user asks to audit something mid-feature build:
+```
+[Claude]: Running session end for TYPE C...
+[writes session doc, updates handoff ID, commits]
+SESSION END · Type: C
+
+SESSION START · Type: D · Scope: [audit scope]
+[reads CI/Deploy ref, smoke check, begins audit]
+```
+
+### What cannot be automated
+
+Claude cannot act between conversations. The automation only covers
+within-conversation detection and handling. The memory rules (memory
+entries #19, #20, #21) carry the protocol to the next conversation so
+Claude opens correctly without prompting.
+
+If a conversation ends abruptly (no SESSION END declared), the next
+conversation's Rule 22 automation will detect the missing session end
+from the handoff note and run the close procedure before starting new work.
+
