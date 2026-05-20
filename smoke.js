@@ -194,6 +194,21 @@ assert('A56 — field_utils.js loaded in index.html',
   html.includes('field_utils.js') &&
   html.includes('<script src="field_utils.js">'));
 
+  // A57 — getEl/$/$$ DOM helpers in utility block
+  const hasDomHelpers =
+    html.includes('function getEl(id)') &&
+    html.includes('window._fieldErrors.push') &&
+    html.includes('function $(selector');
+  assert('A57 — getEl/$/$$ DOM helpers present in utility block', hasDomHelpers);
+
+  // A58 — no bare document.getElementById().property without null guard
+  const jsBlocks2 = (html.match(/<script[^>]*>([\s\S]*?)<\/script>/g)||[]).join('\n');
+  const sc2 = jsBlocks2.replace(/\/\/[^\n]*/g,'').replace(/"[^"\\]*(?:\\.[^"\\]*)*"/g,'""').replace(/'[^'\\]*(?:\\.[^'\\]*)*'/g,"''");
+  const noBareDOM2 = !/document\.(getElementById|querySelector)\s*\([^)]+\)\s*\.(style|classList|innerHTML|textContent)/.test(sc2);
+  assert('A58 — no bare document.getElementById without null guard', noBareDOM2);
+
+
+
 
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);

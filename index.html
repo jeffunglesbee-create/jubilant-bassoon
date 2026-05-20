@@ -2115,7 +2115,7 @@ flex-shrink:0;white-space:nowrap;
       <span class="mv-desc">Pin up to 4 events — click a broadcaster to open stream</span>
       <button class="mv-clear" id="mv-clear">Clear all</button>
     </div>
-    <div class="mv-hint-bar" onclick="document.getElementById('mv-panel').classList.remove('mv-collapsed')">
+    <div class="mv-hint-bar" onclick="document.getElementById('mv-panel')?.classList.remove('mv-collapsed')">
       ⬛ Multiview — Pin up to 4 games to track &nbsp;›
     </div>
     <div class="mv-grid" id="mv-grid">
@@ -4273,7 +4273,7 @@ function getSuggestedRSNs(){
 function openSetup(){
   renderSetupBody();
   renderCoverageDashboard();
-  document.getElementById("setup-overlay").style.display = "flex";
+  getEl("setup-overlay")?.style && (getEl("setup-overlay").style.display = "flex");
   // Show geo market hint banner
   const city = sessionStorage.getItem("field_geo_city")||"";
   const suggested = getSuggestedRSNs();
@@ -4294,7 +4294,7 @@ function openSetup(){
   }, 300);
 }
 function closeSetup(){
-  document.getElementById("setup-overlay").style.display = "none";
+  getEl("setup-overlay")?.style && (getEl("setup-overlay").style.display = "none");
 }
 
 // Annotate all chips currently in the DOM
@@ -4498,7 +4498,7 @@ let _pickerCacheValid = false; // invalidated by mvAdd/mvRemove/mvClear
 
 function openPicker(slotIndex){
   pickerTargetSlot = slotIndex;
-  document.getElementById("picker-slot-label").textContent = `Slot 0${slotIndex+1}`;
+  const _psl = getEl("picker-slot-label"); if(_psl) _psl.textContent = `Slot 0${slotIndex+1}`;
   renderPicker();
   const overlay = document.getElementById("picker-overlay");
   overlay.style.display = "flex";
@@ -5100,7 +5100,31 @@ function renderTonightSummary(sections){
 // Centralise patterns identified in duplicate-pattern audit (May 20 2026).
 // These reference globals so cannot live in field_utils.js.
 
-// fieldFetch: fetch wrapper with AbortSignal timeout + JSON parse.
+// getEl: null-safe getElementById — the standard DOM access pattern.
+// Replaces bare document.getElementById(id).property access that throws
+// TypeError when the element is conditionally rendered or not yet in DOM.
+// On miss: pushes to _fieldErrors (captured by Playwright + ?debug=1 panel).
+// Returns the element or null — callers use the return value safely.
+function getEl(id) {
+  const el = document.getElementById(id);
+  if (!el && typeof window !== 'undefined' && window._fieldErrors !== undefined) {
+    window._fieldErrors.push({ fn: 'getEl', err: `#${id} not found`, ts: Date.now() });
+  }
+  return el;
+}
+
+// $: querySelector shorthand with same null-safety as getEl.
+// Use for class/attribute selectors: $(".game-card") instead of querySelector.
+function $(selector, root) {
+  return (root || document).querySelector(selector);
+}
+
+// $$: querySelectorAll shorthand — always returns an array (never NodeList).
+function $$(selector, root) {
+  return [...(root || document).querySelectorAll(selector)];
+}
+
+// ── fieldFetch: fetch wrapper with AbortSignal timeout + JSON parse.
 // Replaces 39 inline fetch(url, {signal:AbortSignal.timeout(n)}) patterns.
 // Returns parsed JSON or throws on network/HTTP error.
 async function fieldFetch(url, { timeoutMs=8000, headers={}, method='GET', body=null }={}) {

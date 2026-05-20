@@ -512,6 +512,23 @@ try {
   if(hasUtils) pass('A56 — field_utils.js loaded in index.html');
   else fail('A56 — field_utils.js not loaded — pure functions missing from browser');
 
+  // A57 — getEl/$/$$ DOM helpers in utility block
+  const hasDomHelpers =
+    html.includes('function getEl(id)') &&
+    html.includes('window._fieldErrors.push') &&
+    html.includes('function $(selector');
+  if(hasDomHelpers) pass('A57 — getEl/$/$$ DOM helpers present');
+  else fail('A57 — DOM helpers missing — bare getElementById calls unguarded');
+
+  // A58 — no bare document.getElementById().property without null guard
+  // Extracts <script> blocks only, strips comments + string literals to avoid false positives
+  const jsBlocks = (html.match(/<script[^>]*>([\s\S]*?)<\/script>/g)||[]).join('\n');
+  const sc2 = jsBlocks.replace(/\/\/[^\n]*/g,'').replace(/"[^"\\]*(?:\\.[^"\\]*)*"/g,'""').replace(/'[^'\\]*(?:\\.[^'\\]*)*'/g,"''");
+  const noBareDOM2 = !/document\.(getElementById|querySelector)\s*\([^)]+\)\s*\.(style|classList|innerHTML|textContent)/.test(sc2);
+  if(noBareDOM2) pass('A58 — no bare document.getElementById without null guard');
+  else fail('A58 — bare document.getElementById will throw TypeError when element missing');
+
+
   // ─────────────────────────────────────────────────────────────────────
   log('---');
   log('Failures:', failures);
