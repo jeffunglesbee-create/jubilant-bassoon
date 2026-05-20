@@ -5048,7 +5048,7 @@ function preGameScore(g){
     // Fallback to BETTING_LINES_FALLBACK_DATA spread if no live odds
     if(!bb && typeof BETTING_LINES_FALLBACK_DATA !== 'undefined') {
       const hl=(g.home||'').toLowerCase(), al=(g.away||'').toLowerCase();
-      const e=BETTING_LINES_FALLBACK_DATA.find(b=>{const mk=(b.matchKey||'').toLowerCase();return hl.includes(mk)||al.includes(mk)||mk.includes(hl.split(' ').pop())||mk.includes(al.split(' ').pop());});
+      const e=BETTING_LINES_FALLBACK_DATA.find(b=>{const mk=(b.matchKey||'').toLowerCase();return hl.includes(mk)||al.includes(mk)||mk.includes(teamNick(hl))||mk.includes(teamNick(al));});
       if(e?.spread){const sp=Math.abs(parseFloat(e.spread)||10);bb=sp<=1.5?10:sp<=3?7:sp<=5.5?3:0;}
     }
   } catch(e_) {}
@@ -5882,7 +5882,7 @@ function buildTodaySchedule(){
     if(!leadMat) return null;
     const leadsName=leadMat[1].trim(), wins=parseInt(leadMat[2]), losses=parseInt(leadMat[3]);
     const homeName=(g.home||'').toLowerCase(), awayName=(g.away||'').toLowerCase();
-    const lastWord=leadsName.toLowerCase().split(' ').pop();
+    const lastWord=teamNick(leadsName.toLowerCase());
     let leadingTeam=null;
     if(lastWord.length>3){
       if(homeName.includes(lastWord)) leadingTeam='home';
@@ -6760,8 +6760,8 @@ function buildProbBars(homeTeam, awayTeam, homeML, awayML){
   if(!homeP || !awayP) return '';
   const homeCls = homeML < 0 ? 'fav' : homeML > 0 ? 'dog' : 'even';
   const awayCls = awayML < 0 ? 'fav' : awayML > 0 ? 'dog' : 'even';
-  const homeAbbr = (homeTeam||'').split(' ').pop().slice(0,4).toUpperCase();
-  const awayAbbr = (awayTeam||'').split(' ').pop().slice(0,4).toUpperCase();
+  const homeAbbr = teamNick(homeTeam).slice(0,4).toUpperCase();
+  const awayAbbr = teamNick(awayTeam).slice(0,4).toUpperCase();
   const homePct = Math.round(homeP);
   const awayPct = Math.round(awayP);
   const homeML_ = homeML > 0 ? '+'+homeML : String(homeML);
@@ -7248,7 +7248,7 @@ async function fdPrefetchSoccerLive(){
         status:    m.status,
         goals:     (m.goals||[]).map(g=>({
           team:   g.team?.shortName || g.team?.name || "",
-          player: g.scorer?.name?.split(" ").pop() || "",
+          player: teamNick(g.scorer?.name),
           minute: g.minute
         }))
       });
@@ -8412,7 +8412,7 @@ async function fdFetchLive(code){
       status:    m.status,   // SCHEDULED, IN_PLAY, PAUSED, FINISHED, etc.
       goals:     (m.goals||[]).map(g=>({
         team:   g.team?.shortName || g.team?.name || "",
-        player: g.scorer?.name?.split(" ").pop() || "",
+        player: teamNick(g.scorer?.name),
         minute: g.minute
       }))
     }));
@@ -9792,8 +9792,8 @@ function getCrewForGame(game) {
   // Check per-game override first
   if (game && game.start_time && game.home && game.away) {
     const d = (game.start_time || '').slice(0, 10).replace(/-/g, '');
-    const awayCity = (game.away || '').split(' ').pop();
-    const homeCity = (game.home || '').split(' ').pop();
+    const awayCity = teamNick(game.away);
+    const homeCity = teamNick(game.home);
     const overrideKey = `${d}_${awayCity}_${homeCity}`;
     if (BROADCASTER_OVERRIDES[overrideKey]) return BROADCASTER_OVERRIDES[overrideKey];
   }
@@ -9861,13 +9861,13 @@ async function fetchOddsForSport(sport, markets = 'h2h,spreads,totals') {
 // Returns { moneylineGap, homeML, awayML, homeSpread, total } or null
 function getGameOdds(oddsData, homeTeam, awayTeam) {
   if (!oddsData?.length) return null;
-  const h = homeTeam.toLowerCase().split(' ').pop(); // city vs name — use last word
-  const a = awayTeam.toLowerCase().split(' ').pop();
+  const h = teamNick(homeTeam); // city vs name — use last word
+  const a = teamNick(awayTeam);
   const game = oddsData.find(g => {
     const ht = (g.home_team || '').toLowerCase();
     const at = (g.away_team || '').toLowerCase();
-    return (ht.includes(h) || h.includes(ht.split(' ').pop())) &&
-           (at.includes(a) || a.includes(at.split(' ').pop()));
+    return (ht.includes(h) || h.includes(teamNick(ht))) &&
+           (at.includes(a) || a.includes(teamNick(at)));
   });
   if (!game) return null;
   const book = (game.bookmakers || []).find(b => b.key === 'draftkings' || b.key === 'fanduel') || game.bookmakers?.[0];
@@ -11190,10 +11190,10 @@ function getStatisticalExtremes(eData, sport){
     const hQ4 = homeLS[3]||0, aQ4 = awayLS[3]||0;
     if((hQ4 - aQ4 >= 8) && diff <= 5){
       result.dramaBonus += 12;
-      result.note = `${eData.homeName?.split(' ').pop()||'Home'} outscoring +${hQ4-aQ4} in Q4 · comeback building`;
+      result.note = `${teamNick(eData.homeName)||'Home'} outscoring +${hQ4-aQ4} in Q4 · comeback building`;
     } else if((aQ4 - hQ4 >= 8) && diff <= 5){
       result.dramaBonus += 12;
-      result.note = `${eData.awayName?.split(' ').pop()||'Away'} outscoring +${aQ4-hQ4} in Q4 · comeback building`;
+      result.note = `${teamNick(eData.awayName)||'Away'} outscoring +${aQ4-hQ4} in Q4 · comeback building`;
     }
   }
 
@@ -11203,9 +11203,9 @@ function getStatisticalExtremes(eData, sport){
     const hLast2 = (homeLS.slice(-2)||[]).reduce((a,b)=>a+b,0);
     const aLast2 = (awayLS.slice(-2)||[]).reduce((a,b)=>a+b,0);
     if(hLast2===0 && period>=3){
-      result.note = result.note || `${eData.homeName?.split(' ').pop()||'Home'} scored 0 in last 2 periods`;
+      result.note = result.note || `${teamNick(eData.homeName)||'Home'} scored 0 in last 2 periods`;
     } else if(aLast2===0 && period>=3){
-      result.note = result.note || `${eData.awayName?.split(' ').pop()||'Away'} scored 0 in last 2 periods`;
+      result.note = result.note || `${teamNick(eData.awayName)||'Away'} scored 0 in last 2 periods`;
     }
   }
 
@@ -11218,10 +11218,10 @@ function getStatisticalExtremes(eData, sport){
       const awayHits = inns.reduce((s,i)=>s+(i.home?.hits||0),0); // home hits against away pitcher
       if(homeHits===0 && period>=6){
         result.dramaBonus += 20;
-        result.note = `No-hitter through ${period} innings — ${eData.awayName?.split(' ').pop()||'Away'} pitcher`;
+        result.note = `No-hitter through ${period} innings — ${teamNick(eData.awayName)||'Away'} pitcher`;
       } else if(awayHits===0 && period>=6){
         result.dramaBonus += 20;
-        result.note = `No-hitter through ${period} innings — ${eData.homeName?.split(' ').pop()||'Home'} pitcher`;
+        result.note = `No-hitter through ${period} innings — ${teamNick(eData.homeName)||'Home'} pitcher`;
       }
     }
   }
@@ -11252,10 +11252,10 @@ function getStatisticalExtremes(eData, sport){
       // Team that trailed at HT is now level or winning
       if(htDiff < 0 && nowDiff >= 0){
         result.dramaBonus += 10;
-        result.note = `${eData.homeName?.split(' ').pop()||'Home'} trailed at half · reversed in 2nd half`;
+        result.note = `${teamNick(eData.homeName)||'Home'} trailed at half · reversed in 2nd half`;
       } else if(htDiff > 0 && nowDiff <= 0){
         result.dramaBonus += 10;
-        result.note = `${eData.awayName?.split(' ').pop()||'Away'} trailed at half · reversed in 2nd half`;
+        result.note = `${teamNick(eData.awayName)||'Away'} trailed at half · reversed in 2nd half`;
       }
     }
   }
@@ -11343,8 +11343,8 @@ function getFranchiseMisery(teamName){
   // Direct lookup
   if(FRANCHISE_MISERY[lower]) return FRANCHISE_MISERY[lower];
   // Partial match (last word of team name)
-  const last = lower.split(' ').pop();
-  const match = Object.keys(FRANCHISE_MISERY).find(k => k.includes(last) || last.includes(k.split(' ').pop()));
+  const last = teamNick(lower);
+  const match = Object.keys(FRANCHISE_MISERY).find(k => k.includes(last) || last.includes(teamNick(k)));
   return match ? FRANCHISE_MISERY[match] : null;
 }
 
@@ -11365,7 +11365,7 @@ function buildLayer3Rules(games) {
   const rules = [];
   (games||[]).forEach(g => {
     const sp = (g._section||g._sport||'').toLowerCase();
-    const name = ((g.away||'').split(' ').pop()) + ' @ ' + ((g.home||'').split(' ').pop());
+    const name = (teamNick(g.away)) + ' @ ' + (teamNick(g.home));
     if (g._gameImportance === 'elimination')
       rules.push('- ELIMINATION ['+name+']: Lead with who goes home tonight. Stakes before any stat.');
     if (g._gameImportance === 'series_deciding')
@@ -11384,7 +11384,7 @@ function buildLayer3Rules(games) {
       rules.push('- RISING ['+name+']: Drama climbing fast. Use urgency language.');
     try {
       const eData = typeof espnScores!=='undefined' ? Object.values(espnScores||{}).find(e =>
-        (e?.homeName||'').toLowerCase().includes((g.home||'').toLowerCase().split(' ').pop())) : null;
+        (e?.homeName||'').toLowerCase().includes(teamNick(g.home).toLowerCase())) : null;
       if (eData) {
         const otT = sp.includes('basketball')?4:sp.includes('hockey')?3:sp.includes('baseball')?9:4;
         if ((eData.period||0) > otT)
@@ -11442,14 +11442,14 @@ function buildCompoundPrompt(sections) {
         const hML = odds.homeML, aML = odds.awayML;
         const hPct = Math.round(hML < 0 ? (-hML/(-hML+100))*100 : (100/(hML+100))*100);
         const aPct = 100 - hPct;
-        const favTeam  = hML < aML ? (g.home||'').split(' ').pop() : (g.away||'').split(' ').pop();
-        const dogTeam  = hML < aML ? (g.away||'').split(' ').pop() : (g.home||'').split(' ').pop();
+        const favTeam  = hML < aML ? teamNick(g.home) : teamNick(g.away);
+        const dogTeam  = hML < aML ? teamNick(g.away) : teamNick(g.home);
         const favML    = hML < aML ? hML : aML;
         const dogML    = hML < aML ? aML : hML;
         const dogPct   = hML < aML ? aPct : hPct;
         const favPct   = 100 - dogPct;
         const isClose  = Math.abs(hML - aML) < 80;
-        if(isClose) return `Market: even-money · ${(g.home||'').split(' ').pop()} ${hML>0?'+':''}${hML} (${hPct}%) vs ${(g.away||'').split(' ').pop()} ${aML>0?'+':''}${aML} (${aPct}%)`;
+        if(isClose) return `Market: even-money · ${teamNick(g.home)} ${hML>0?'+':''}${hML} (${hPct}%) vs ${teamNick(g.away)} ${aML>0?'+':''}${aML} (${aPct}%)`;
         return `Market: ${favTeam} favored ${favML} (${favPct}% probability) · ${dogTeam} +${Math.abs(dogML)} underdog`;
       })() : null;
     return [
@@ -11463,8 +11463,8 @@ function buildCompoundPrompt(sections) {
       bni ? `  [BNI: ${bni.replace(/-/g,' ').toUpperCase()}]` : '',
       oddsCtx ? `  Odds: ${oddsCtx}` : '',
       preGameScore(g) > 70 && !isNationalGame(g) ? "  [SCOUT'S PICK]" : '',
-      homeMisery  ? `  [FRANCHISE_CONTEXT:${(g.home||'').split(' ').pop()}] ${homeMisery}` : '',
-      awayMisery  ? `  [FRANCHISE_CONTEXT:${(g.away||'').split(' ').pop()}] ${awayMisery}` : '',
+      homeMisery  ? `  [FRANCHISE_CONTEXT:${teamNick(g.home)}] ${homeMisery}` : '',
+      awayMisery  ? `  [FRANCHISE_CONTEXT:${teamNick(g.away)}] ${awayMisery}` : '',
       extremeNote ? `  [LIVE EXTREME] ${extremeNote}` : '',
       // Fix 7: EMBER buried lead — tier + channel context for editorial framing
       (()=>{try{const er=_emberResultCache[g._id||''];return er?`  [EMBER BURIED LEAD: Tier${er.tier} on ${er.channel} · drama ${er.dramaScore}${er.contextFlag?' · context boost':''}]`:''}catch(e_){return ''}})(),
@@ -11876,8 +11876,8 @@ async function fetchBDLMilestones(game) {
   const players = await fetchBDLSeasonAverages();
   if (!players?.length) { _bdlMilestonesCache[gameKey] = null; return null; }
   // Filter to players on tonight's two teams (by team name substring match)
-  const hSlug = (game.home||'').toLowerCase().split(' ').pop();
-  const aSlug = (game.away||'').toLowerCase().split(' ').pop();
+  const hSlug = teamNick(game.home).toLowerCase();
+  const aSlug = teamNick(game.away).toLowerCase();
   const gamePlayers = players.filter(p => {
     const t = (p.team?.full_name || p.team?.name || '').toLowerCase();
     return t.includes(hSlug) || t.includes(aSlug);
@@ -11951,7 +11951,7 @@ function buildGameStandingsContext(game) {
   if (fdCode && fdStandingsCache[fdCode]?.length) {
     const rows = fdStandingsCache[fdCode];
     const findFD = name => {
-      const n = (name || '').toLowerCase().split(' ').pop();
+      const n = teamNick(name).toLowerCase();
       return rows.find(r => (r.team || '').toLowerCase().includes(n));
     };
     const fmt = (e, t) => !e ? '' :
@@ -11970,7 +11970,7 @@ function buildGameStandingsContext(game) {
   if (!standings?.length) return '';
 
   const findTeam = name => {
-    const n = (name || '').toLowerCase().split(' ').pop();
+    const n = teamNick(name).toLowerCase();
     return standings.find(s =>
       (s.team || '').toLowerCase().includes(n) ||
       (s.abbrev || '').toLowerCase() === n
@@ -12028,8 +12028,8 @@ async function fetchMLBGameNotes(gamePk,game){
     if(milestone) return milestone.slice(0,150);
     if(tR.status==='fulfilled'&&tR.value.ok){
       const td=await tR.value.json();
-      const hn=game?.home?.split(' ').pop()||'';
-      const an=game?.away?.split(' ').pop()||'';
+      const hn=teamNick(game?.home)||'';
+      const an=teamNick(game?.away)||'';
       const tx=(td.transactions||[]).find(t=>
         t.typeCode==='DL'&&
         (t.team?.name?.includes(hn)||t.team?.name?.includes(an))
@@ -12067,8 +12067,8 @@ async function fetchLeagueRSS(sport,home,away){
     if(!r.ok) return null;
     const doc=new DOMParser().parseFromString(await r.text(),'text/xml');
     const cutoff=Date.now()-86400000;
-    const h=(home||'').split(' ').pop().toLowerCase();
-    const a=(away||'').split(' ').pop().toLowerCase();
+    const h=teamNick(home).toLowerCase();
+    const a=teamNick(away).toLowerCase();
     for(const item of doc.querySelectorAll('item')){
       const title=item.querySelector('title')?.textContent||'';
       const pub=new Date(item.querySelector('pubDate')?.textContent||0).getTime();
@@ -12144,8 +12144,8 @@ function buildGameContext(g) {
   try {
     const standings = _relayStandingsCache?.[sport];
     if (standings?.length) {
-      const hSlug = (g.home||'').toLowerCase().split(' ').pop();
-      const aSlug = (g.away||'').toLowerCase().split(' ').pop();
+      const hSlug = teamNick(g.home).toLowerCase();
+      const aSlug = teamNick(g.away).toLowerCase();
       const hTeam = standings.find(t => (t.team||'').toLowerCase().includes(hSlug));
       const aTeam = standings.find(t => (t.team||'').toLowerCase().includes(aSlug));
       if (hTeam && aTeam) {
@@ -12181,7 +12181,7 @@ async function fetchFIELDBriefFromClaude(sections){
     if (topCtx.liveDrama != null && topCtx.liveDrama < 20 && topCtx.dramaTrend < -8) {
       const sport = (top._section||'').toLowerCase();
       const topEData = Object.values(espnScores||{}).find(e =>
-        (e.homeName||'').toLowerCase().includes((top.home||'').toLowerCase().split(' ').pop()));
+        (e.homeName||'').toLowerCase().includes(teamNick(top.home).toLowerCase()));
       const period = topEData?.period || 0;
       const isLate = sport.includes('basketball') ? period >= 4
                    : sport.includes('hockey')     ? period >= 3
@@ -12252,7 +12252,7 @@ function buildMyTeamsBriefLine(sections) {
     const opp   = MY_TEAMS.has(g.home)?g.away:g.home;
     const sr    = g.seriesRecord&&g.seriesRecord!=='0-0'?' ('+g.seriesRecord+')':'';
     const net   = g.streams?.[0]?.label||'';
-    return (myTeam.split(' ').pop())+' vs '+(opp.split(' ').pop())+sr+' '+fmtTime(g.start_time)+(net?' · '+net:'');
+    return (teamNick(myTeam))+' vs '+(teamNick(opp))+sr+' '+fmtTime(g.start_time)+(net?' · '+net:'');
   }).join(' | ');
 }
 
@@ -12461,7 +12461,7 @@ async function fetchEPLMatchBriefFromClaude(g) {
     const fdCode = FD_LEAGUE_MAP[g._sport||g._section||''];
     if(fdCode && fdStandingsCache[fdCode]?.length) {
       const rows = fdStandingsCache[fdCode];
-      const find = name => { const n=(name||'').toLowerCase().split(' ').pop(); return rows.find(r=>(r.team||'').toLowerCase().includes(n)); };
+      const find = name => { const n=teamNick(name).toLowerCase(); return rows.find(r=>(r.team||'').toLowerCase().includes(n)); };
       const hRow = find(g.home), aRow = find(g.away);
       const fmtTeam = (r,t) => r ? `${t}: ${r.pos}${r.pos<=4?'★':r.pos>=18?'↓':''} (${r.pts}pts, form ${r.form||'?'})` : '';
       const parts = [fmtTeam(hRow,g.home), fmtTeam(aRow,g.away)].filter(Boolean);
@@ -12646,8 +12646,8 @@ function buildWatchWindowReason(game) {
     if (oddsKey) {
       const odds = getGameOdds(_oddsCache[oddsKey], game.home, game.away);
       if (odds) {
-        if (odds.awayML > 150)       parts.push((game.away||'').split(' ').pop()+'\u00a0+'+odds.awayML+'\u00a0dogs');
-        else if (odds.homeML > 150)  parts.push((game.home||'').split(' ').pop()+'\u00a0+'+odds.homeML+'\u00a0dogs');
+        if (odds.awayML > 150)       parts.push(teamNick(game.away)+'\u00a0+'+odds.awayML+'\u00a0dogs');
+        else if (odds.homeML > 150)  parts.push(teamNick(game.home)+'\u00a0+'+odds.homeML+'\u00a0dogs');
         else if (odds.moneylineGap < 30) parts.push('near\u00a0even-money');
       }
     }
@@ -12934,8 +12934,8 @@ function injectDramaBadges(){
       // Match by homeName+awayName against data-home/data-away
       const h = (card.dataset.home||'').toLowerCase();
       const a = (card.dataset.away||'').toLowerCase();
-      return (v.homeName||'').toLowerCase().includes(h.split(' ').pop()) ||
-             h.includes((v.homeName||'').toLowerCase().split(' ').pop());
+      return (v.homeName||'').toLowerCase().includes(teamNick(h)) ||
+             h.includes(teamNick((v.homeName||'').toLowerCase()));
     });
     if(!eData) return;
     const sport = card.dataset.sport||'';
@@ -13090,8 +13090,8 @@ function injectDramaBadges(){
     if (!gid) return;
     const eData = Object.values(espnScores).find(v => {
       const h = (card.dataset.home||'').toLowerCase();
-      return (v.homeName||'').toLowerCase().includes(h.split(' ').pop()) ||
-             h.includes((v.homeName||'').toLowerCase().split(' ').pop());
+      return (v.homeName||'').toLowerCase().includes(teamNick(h)) ||
+             h.includes(teamNick((v.homeName||'').toLowerCase()));
     });
     if (!eData) return;
     const cdwNote = getCDWNote(eData, card.dataset.sport||'');
@@ -14006,7 +14006,7 @@ function updateCardLifeStages() {
       const card = document.querySelector(`.game-card[data-gameid="${game._id}"]`);
       if (!card) return;
       const eData = Object.values(espnScores||{}).find(e => {
-        const h = (game.home||'').toLowerCase().split(' ').pop();
+        const h = teamNick(game.home).toLowerCase();
         return (e?.homeName||'').toLowerCase().includes(h) || (e?.home||'').toLowerCase().includes(h);
       });
       const stage = computeCardStage(game, eData);
@@ -14061,13 +14061,13 @@ function detectAndStoreStoryMoment(gameId, eData, sport) {
       const currLeader = home > away ? 'home' : home < away ? 'away' : 'tied';
       if (currLeader !== 'tied' && currLeader !== prevLeader) {
         const name = currLeader === 'home' ? (eData.home||'Home') : (eData.away||'Away');
-        push(`${name.split(' ').pop()} take the lead`, true);
+        push(`${teamNick(name)} take the lead`, true);
       }
     }
     // Run detection: one team scores 7+ without opponent scoring
     const homeDelta = home - prevHome, awayDelta = away - prevAway;
-    if (homeDelta >= 7 && awayDelta === 0) push(`${(eData.home||'').split(' ').pop()} on a ${homeDelta}-0 run`);
-    if (awayDelta >= 7 && homeDelta === 0) push(`${(eData.away||'').split(' ').pop()} on a ${awayDelta}-0 run`);
+    if (homeDelta >= 7 && awayDelta === 0) push(`${teamNick(eData.home)} on a ${homeDelta}-0 run`);
+    if (awayDelta >= 7 && homeDelta === 0) push(`${teamNick(eData.away)} on a ${awayDelta}-0 run`);
     // Period change
     if (period > prevPeriod && period > 1) {
       const label = sp.includes('basketball')||sp.includes('nba') ? `Q${period} starts`
@@ -14081,10 +14081,10 @@ function detectAndStoreStoryMoment(gameId, eData, sport) {
       : sp.includes('baseball')||sp.includes('mlb') ? 9 : 4;
     if (period > otThreshold && prevPeriod <= otThreshold) push('Overtime!', true);
     // Final score
-    if (isFinal && !prev.final) push(`Final: ${eData.home?.split(' ').pop()||'Home'} ${home}–${away} ${eData.away?.split(' ').pop()||'Away'}`);
+    if (isFinal && !prev.final) push(`Final: ${teamNick(eData.home)||'Home'} ${home}–${away} ${teamNick(eData.away)||'Away'}`);
   } else {
     // First detection: game is live
-    if (eData.status === 'in') push(`${eData.home?.split(' ').pop()||'Home'} ${home}–${away} ${eData.away?.split(' ').pop()||'Away'} · underway`);
+    if (eData.status === 'in') push(`${teamNick(eData.home)||'Home'} ${home}–${away} ${teamNick(eData.away)||'Away'} · underway`);
   }
   _prevEspnScores[gameId] = {homeScore: home, awayScore: away, period, final: isFinal};
 }
@@ -14126,7 +14126,7 @@ function renderScoreTicker() {
     const icon = drama >= 85 ? '🔥' : drama >= 65 ? '⚡' : '';
     const rising = trendBonus >= 8 ? ' ↑' : '';  // visible momentum indicator
     const per = e.period ? (e.periodLabel || `Q${e.period}`) : '';
-    const text = `${sp(e._sport||'')} ${(e.home||'').split(' ').pop()} ${e.homeScore||0}–${e.awayScore||0} ${(e.away||'').split(' ').pop()}${per?' · '+per:''}${icon?' '+icon:''}${rising}`;
+    const text = `${sp(e._sport||'')} ${teamNick(e.home)} ${e.homeScore||0}–${e.awayScore||0} ${teamNick(e.away)}${per?' · '+per:''}${icon?' '+icon:''}${rising}`;
     return `<div class="ticker-chip${fire}" onclick="scrollToGame('${gid}')" title="Drama ${Math.round(drama)}${trendBonus>=8?' · rising':''}">${text}</div>`;
   }).join('');
   wrap.innerHTML = `<div class="score-ticker">${chips}</div>`;
@@ -14174,7 +14174,7 @@ function updatePinWidget() {
   const period = eData?.period ? `· ${eData.periodLabel||'Q'+eData.period}` : '';
   const drama = getSmoothedDrama(_pinnedGameId) ?? 0;
   const fireIcon = drama >= 85 ? '🔥' : drama >= 65 ? '⚡' : '';
-  const title = game ? `${(game.away||'').split(' ').pop()} @ ${(game.home||'').split(' ').pop()}` : 'Pinned Game';
+  const title = game ? `${teamNick(game.away)} @ ${teamNick(game.home)}` : 'Pinned Game';
 
   let expanded = '';
   if (_pinWidgetExpanded) {
@@ -14233,7 +14233,7 @@ function buildComebackProbability(gameId, eData, sport) {
   if (pct <= 5) return null;
   const trend = getDramaTrend(gameId);
   if (trend > 10) pct = Math.min(pct + 8, 70);
-  const losingTeam = home < away ? (eData.home||'').split(' ').pop() : (eData.away||'').split(' ').pop();
+  const losingTeam = home < away ? teamNick(eData.home) : teamNick(eData.away);
   return `${losingTeam} down ${margin} · ${pct}% comeback`;
 }
 
@@ -14243,7 +14243,7 @@ function openBottomSheet(gameId) {
   (allData?.sports||[]).forEach(s=>(s.games||[]).forEach(g=>{ if(g._id===gameId){game=g;sport=s.sport;} }));
   if (!game) return;
   const eData = Object.values(espnScores||{}).find(e => {
-    const h = (game.home||'').toLowerCase().split(' ').pop();
+    const h = teamNick(game.home).toLowerCase();
     return (e.homeName||'').toLowerCase().includes(h) || (e.home||'').toLowerCase().includes(h);
   });
   const content = document.getElementById('bs-content');
@@ -14268,11 +14268,11 @@ function openBottomSheet(gameId) {
   const standings = _relayStandingsCache?.[sport];
   let standingsStr = '';
   if (standings?.length) {
-    const hSlug = (game.home||'').toLowerCase().split(' ').pop();
-    const aSlug = (game.away||'').toLowerCase().split(' ').pop();
+    const hSlug = teamNick(game.home).toLowerCase();
+    const aSlug = teamNick(game.away).toLowerCase();
     const hT = standings.find(t=>(t.team||'').toLowerCase().includes(hSlug));
     const aT = standings.find(t=>(t.team||'').toLowerCase().includes(aSlug));
-    if (hT && aT) standingsStr = `${(game.home||'').split(' ').pop()}: ${hT.wins}–${hT.losses} · ${(game.away||'').split(' ').pop()}: ${aT.wins}–${aT.losses}`;
+    if (hT && aT) standingsStr = `${teamNick(game.home)}: ${hT.wins}–${hT.losses} · ${teamNick(game.away)}: ${aT.wins}–${aT.losses}`;
   }
   const gameBrief = _gameBriefCache[gameId] || null;
   content.innerHTML = `
