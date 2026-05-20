@@ -4273,7 +4273,7 @@ function getSuggestedRSNs(){
 function openSetup(){
   renderSetupBody();
   renderCoverageDashboard();
-  getEl("setup-overlay")?.style && (getEl("setup-overlay").style.display = "flex");
+  const _ov1 = getEl("setup-overlay"); if(_ov1) _ov1.style.display = "flex";
   // Show geo market hint banner
   const city = sessionStorage.getItem("field_geo_city")||"";
   const suggested = getSuggestedRSNs();
@@ -4294,7 +4294,7 @@ function openSetup(){
   }, 300);
 }
 function closeSetup(){
-  getEl("setup-overlay")?.style && (getEl("setup-overlay").style.display = "none");
+  const _ov2 = getEl("setup-overlay"); if(_ov2) _ov2.style.display = "none";
 }
 
 // Annotate all chips currently in the DOM
@@ -11003,10 +11003,10 @@ let _pwaPrompt = null;
     _pwaPrompt.prompt();
     const {outcome} = await _pwaPrompt.userChoice;
     _pwaPrompt = null;
-    document.getElementById('pwa-banner')?.style && (document.getElementById('pwa-banner').style.display = 'none');
+    const _pb = getEl('pwa-banner'); if(_pb) _pb.style.display = 'none';
   });
   if(dismissBtn) dismissBtn.addEventListener('click', () => {
-    document.getElementById('pwa-banner')?.style && (document.getElementById('pwa-banner').style.display = 'none');
+    const _pb = getEl('pwa-banner'); if(_pb) _pb.style.display = 'none';
     localStorage.setItem('field_pwa_dismissed','1');
   });
 })();
