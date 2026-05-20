@@ -314,6 +314,23 @@ assert('A56 — field_utils.js loaded in index.html',
   });
 
   // A122 requires a file-system check — not expressible as html pattern
+
+  // ── Rule 24 call-site assertions — trigger chain verification ───────────
+  // These check that live-data consumers are called FROM their trigger function,
+  // not just that they exist somewhere in the file. Uses landmark-anchor pattern
+  // to avoid false positives from adjacent functions containing the same name.
+  // Anchor: between 'function renderESPNScores' and 'checkForNewFinals' (last
+  // known call in that function body before the POLLING CONSUMERS block).
+  assert('A124 — Rule24: injectDramaBadges wired to renderESPNScores',
+    (() => {
+      const renderStart = html.indexOf('function renderESPNScores');
+      const anchor      = html.indexOf('POLLING CONSUMERS (Rule 24)', renderStart);
+      const callPos     = html.indexOf('injectDramaBadges', anchor);
+      return renderStart > 0 && anchor > renderStart &&
+             callPos > anchor && callPos < anchor + 400;
+    })()
+  );
+
   assert('A122 \u2014 auto-deploy-guard-v5: pre-commit smoke gate exists',
     typeof require !== 'undefined' &&
     require('fs').existsSync(require('path').join(__dirname, 'scripts/pre-commit')));

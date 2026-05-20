@@ -9127,6 +9127,8 @@ async function fetchNBARelayScores() {
       }
     });
     if (FIELD_DEBUG) console.log(`[RELAY] ${games.length} games | disc=${disc} | primary=${RELAY_PRIMARY}`);
+    // Rule 24: trigger drama pipeline when relay updates espnScores (matches NHL relay pattern)
+    if (RELAY_PRIMARY && games.length) renderESPNScores();
   } catch(e) {
     if (FIELD_DEBUG) console.warn('[RELAY] poll failed:', e.message);
   }
@@ -9431,7 +9433,12 @@ async function fetchESPNScores(){
     if(liveLeagues.length > 0){
       const allQuiet = liveLeagues.every(l => {
         const sec = allData?.sports?.find(s => s.sport === l.section);
-        const maxDrama = sec ? Math.max(0, ...(sec.games||[]).map(g => preGameScore(g))) : 0;
+        const maxDrama = sec ? Math.max(0, ...(sec.games||[]).map(g => {
+          // Rule 24: use live smoothed drama when available — preGameScore is a
+          // pre-game estimate and can misfire quiet hour during live crunch time
+          const live = g._id ? getSmoothedDrama(g._id) : null;
+          return live != null ? live : preGameScore(g);
+        })) : 0;
         return maxDrama < QUIET_THRESHOLD;
       });
       if(allQuiet){
@@ -10505,6 +10512,16 @@ function renderESPNScores(){
   // Night Owl trigger: detect newly-final games on every score render cycle
   // checkForNewFinals uses _seenFinals Set to prevent double-saves
   checkForNewFinals();
+  // ── POLLING CONSUMERS (Rule 24) ─────────────────────────────────────────
+  // Every live-data consumer must be called here so poll-cycle data drives
+  // drama badges, OTW banner, Watch Window, and Double Feature on every update.
+  // Rule 24: trigger chain = fetchESPNScores → renderESPNScores → these calls.
+  if(Object.keys(espnScores).length){
+    injectDramaBadges();
+    detectAndRenderDoubleFeature();
+    renderOneToWatch();
+    renderWatchWindow();
+  }
   // J1/J4: clear pre-game badges on cards that just went live
   document.querySelectorAll('.game-card.espn-live, .game-card.espn-final').forEach(card=>{
     card.querySelector('.scout-pick-badge')?.remove();
