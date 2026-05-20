@@ -9751,6 +9751,9 @@ function renderESPNScores(){
       if(isSoccer && (isLive || isFinal)) soccerGoalsInjectDOM(game.home, game.away);
     });
   });
+  // Night Owl trigger: detect newly-final games on every score render cycle
+  // checkForNewFinals uses _seenFinals Set to prevent double-saves
+  checkForNewFinals();
 }
 
 // ── Main load ─────────────────────────────────────────────────
@@ -10678,6 +10681,12 @@ function buildCompoundPrompt(sections) {
   const games = (sections || []).flatMap(s => s.games || []).slice(0, 12);
   const seriesGames = games.filter(g => g.seriesRecord);
 
+  // Regular-season games that need per-game briefs: non-series, non-soccer, max 6
+  // Covers WNBA, MLB local, MLS, AFL, etc. — games with no matchupNote and no seriesRecord
+  const regularGames = games
+    .filter(g => !g.seriesRecord && !/premier league|la liga|serie a|ligue 1|champions|europa|conference/i.test(g._sport||''))
+    .slice(0, 6);
+
   // Soccer games for EPL briefs section (top European leagues only, max 4)
   const soccerGames = (sections || [])
     .filter(s => /premier league|la liga|serie a|ligue 1|champions/i.test(s.sport))
@@ -10738,6 +10747,15 @@ function buildCompoundPrompt(sections) {
 
   const seriesIds = seriesGames.map(g => `${g.home}_${g.away}`);
 
+  // game_briefs: regular-season non-series, non-soccer games (WNBA, MLB, MLS, AFL, etc.)
+  const regularIds = regularGames.map(g => `${(g.home||'').toLowerCase().replace(/\s+/g,'_')}_${(g.away||'').toLowerCase().replace(/\s+/g,'_')}`);
+  const regularSection = regularGames.length ? `\nREGULAR-SEASON GAMES (write a 30-40 word brief per game — venue context, standings, what's at stake):\n` +
+    regularGames.map(g => {
+      const stream = g.streams?.[0]?.label || '';
+      const venue = g.venue ? ` · ${g.venue}` : '';
+      return `- ${g.away} @ ${g.home} · ${g._sport||g.league||''}${stream ? ' · '+stream : ''}${venue}${g.localNote ? ' · '+g.localNote : ''}`;
+    }).join('\n') : '';
+
   const eplSection = soccerGames.length ? `\nSOCCER FIXTURES (write a 40-60 word match brief for each):\n` +
     soccerGames.map(g => {
       const mw = (g.league||'').match(/Matchweek\s*(\d+)/i);
@@ -10750,14 +10768,15 @@ Return ONLY valid JSON. No markdown, no backticks, no preamble.
 
 TONIGHT'S GAMES:
 ${gameLines || 'No games tonight.'}
-${eplSection}
+${eplSection}${regularSection}
 Return this exact JSON structure (null for any section without sufficient data):
 {
   "brief": "100-120 words. 2 short paragraphs. No headers. Lead with most important story. Complete sentences.",
   "series": [${seriesIds.map(id => `{"id":"${id}","preview":null}`).join(',')}],
   "scouts_pick": "one sentence explaining the Scout's Pick or null",
   "bni_note": "one sentence Anti-Hype framing or null",
-  "epl": [${eplIds.map(id => `{"id":"${id}","brief":null}`).join(',')}]
+  "epl": [${eplIds.map(id => `{"id":"${id}","brief":null}`).join(',')}],
+  "game_briefs": [${regularIds.map(id => `{"id":"${id}","brief":null}`).join(',')}]
 }
 
 Rules:
@@ -10766,6 +10785,7 @@ Rules:
 - Every sentence must be complete. Never end mid-sentence.
 - For each series entry: write 80 words focused on stakes and series arc, or null if data insufficient.
 - For each epl entry: 40-60 words, context-first (table position, season stakes), or null if data insufficient.
+- For each game_briefs entry: 30-40 words, lead with what's at stake tonight, mention the venue and broadcast, or null if data insufficient.
 - If [BNI] appears: describe that matchup as low-stakes in the brief — never echo the tag verbatim.
 - Plain prose only. No bullet points.
 ${buildLayer3Rules(games)}`;
@@ -11598,6 +11618,25 @@ async function initFIELDBrief(sections){
         }
       });
     }
+    // Fix 4: Dispatch game_briefs for regular-season WNBA/MLB/etc. into _gameBriefCache
+    // Bottom sheet reads _gameBriefCache[gameId] to show per-game editorial context
+    if(compound.game_briefs?.length){
+      compound.game_briefs.forEach(b=>{
+        if(!b?.brief||!b?.id) return;
+        // Match compound id (home_away slugs) against game objects in allData
+        const slug = b.id.toLowerCase();
+        (allData?.sports||[]).forEach(sec=>{
+          (sec.games||[]).forEach(g=>{
+            if(!g._id) return;
+            const h=(g.home||'').toLowerCase().replace(/\s+/g,'_');
+            const a=(g.away||'').toLowerCase().replace(/\s+/g,'_');
+            if(slug.includes(h.slice(-6))||slug.includes(a.slice(-6))||h.includes(slug.split('_')[0])||a.includes(slug.split('_').pop())){
+              _gameBriefCache[g._id]=trimToCompleteSentence(b.brief);
+            }
+          });
+        });
+      });
+    }
     return;
   }
 
@@ -12243,6 +12282,30 @@ function injectDramaBadges(){
   renderScoreTicker();
   updatePinWidget();
   updateCardLifeStages();
+
+  // J7: CDW Notes — inject situational stats on qualifying live cards
+  document.querySelectorAll('.game-card.espn-live').forEach(card => {
+    const gid = card.dataset.gameid;
+    if (!gid) return;
+    const eData = Object.values(espnScores).find(v => {
+      const h = (card.dataset.home||'').toLowerCase();
+      return (v.homeName||'').toLowerCase().includes(h.split(' ').pop()) ||
+             h.includes((v.homeName||'').toLowerCase().split(' ').pop());
+    });
+    if (!eData) return;
+    const cdwNote = getCDWNote(eData, card.dataset.sport||'');
+    let cdwEl = card.querySelector('.cdw-note');
+    if (cdwNote) {
+      if (!cdwEl) {
+        cdwEl = document.createElement('div');
+        cdwEl.className = 'cdw-note';
+        card.appendChild(cdwEl);
+      }
+      cdwEl.textContent = cdwNote;
+    } else {
+      cdwEl?.remove();
+    }
+  });
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -13378,13 +13441,15 @@ function openBottomSheet(gameId) {
     const aT = standings.find(t=>(t.team||'').toLowerCase().includes(aSlug));
     if (hT && aT) standingsStr = `${(game.home||'').split(' ').pop()}: ${hT.wins}–${hT.losses} · ${(game.away||'').split(' ').pop()}: ${aT.wins}–${aT.losses}`;
   }
+  const gameBrief = _gameBriefCache[gameId] || null;
   content.innerHTML = `
     <div class="bs-teams">${game.away||'?'} @ ${game.home||'?'}</div>
     <div class="bs-meta">${scoreStr?scoreStr+period:fmtTime(game.start_time)+' ET'} · ${game.venue||sport||''}${game.seriesRecord?' · '+game.seriesRecord:''}</div>
+    ${gameBrief ? `<div class="bs-section"><div class="bs-section-label">FIELD Brief</div><div class="bs-section-body" style="font-size:.74rem;line-height:1.6">${gameBrief}</div></div>` : ''}
     ${dramaStr||cb ? `<div class="bs-section"><div class="bs-section-label">Live Intelligence</div><div class="bs-section-body">${[dramaStr,cb].filter(Boolean).join(' · ')}</div></div>` : ''}
     ${sparkline ? `<div class="bs-section"><div class="bs-section-label">Drama Arc</div>${sparkline}</div>` : ''}
     ${story ? `<div class="bs-section"><div class="bs-section-label">Story</div>${story}</div>` : ''}
-    ${game.matchupNote||game.localNote||milestoneStr ? `<div class="bs-section"><div class="bs-section-label">Context</div><div class="bs-section-body">${[game.matchupNote||game.localNote, milestoneStr].filter(Boolean).join('<br>')}</div></div>` : ''}
+    ${(game.matchupNote||game.localNote||milestoneStr) ? `<div class="bs-section"><div class="bs-section-label">Context</div><div class="bs-section-body">${[game.matchupNote||game.localNote, milestoneStr].filter(Boolean).join('<br>')}</div></div>` : ''}
     ${standingsStr||seriesMargins ? `<div class="bs-section"><div class="bs-section-label">Standings</div><div class="bs-section-body">${standingsStr}</div>${seriesMargins}</div>` : ''}
     ${game.streams?.length ? `<div class="bs-section"><div class="bs-section-label">Watch On</div><div class="bs-section-body">${game.streams.slice(0,4).map(s=>s.label||s.name).filter(Boolean).join(' · ')}</div></div>` : ''}
     ${game.crew ? `<div class="bs-section"><div class="bs-section-label">Crew</div><div class="bs-section-body">${game.crew}</div></div>` : ''}
@@ -13445,6 +13510,8 @@ function buildSeriesMarginsDots(game) {
 }
 
 let _nightOwlRendered=false;
+// Per-game brief cache — populated by compound editorial dispatch for regular-season games
+const _gameBriefCache = {}; // gameId → brief text
 async function renderNightOwlRecap(){
   const el=document.getElementById('night-owl');
   if(!el||_nightOwlRendered) return;
