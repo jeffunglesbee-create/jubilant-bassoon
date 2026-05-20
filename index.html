@@ -5995,7 +5995,7 @@ async function fetchSupplemental(isoDate,dayOfWeek,monthYear){
     const data=await r.json();
     if(data.type==="error"||data.error) throw new Error(data.error?.message||"API error");
     const rawS=(data.content||[]).map(b=>b.text||"").join("").trim();
-    const cleanS=rawS.replace(/^```(?:json)?\s*/i,"").replace(/\s*```\s*$/,"").trim();
+    const cleanS=rawS;
     const mS=cleanS.match(/\{[\s\S]*\}/);
     if(!mS) throw new Error("No JSON in supplemental response");
     const parsed=JSON.parse(mS[0]);
@@ -6468,7 +6468,7 @@ async function fetchBettingLines(){
     const data = await r.json();
     if(data.type==="error"||data.error) throw new Error(data.error?.message||"API error");
     const raw = (data.content||[]).map(b=>b.text||"").join("").trim();
-    const cleaned = raw.replace(/^```(?:json)?\s*/i,"").replace(/\s*```\s*$/,"").trim();
+    const cleaned = raw;
     const m = cleaned.match(/\{[\s\S]*\}/);
     if(!m) throw new Error("No JSON in response");
     const parsed = JSON.parse(m[0]);
@@ -7381,12 +7381,12 @@ const ODDS_DAILY_LIMIT = 6;     // 500/month ÷ 31 days = 16.1/day; limit to 6 f
                                  // fetchGameOdds reuses _oddsCache → no separate calls
 const ODDS_CACHE_TTL   = 43200000; // 12-hour localStorage cache (was 30min — daily fetch is enough)
 function oddsReqCount(){
-  const today = new Date().toISOString().split("T")[0];
+  const today = TODAY_ISO;
   const s = JSON.parse(localStorage.getItem("odds_req")||"{}");
   return s.date === today ? (s.count||0) : 0;
 }
 function oddsBumpCount(){
-  const today = new Date().toISOString().split("T")[0];
+  const today = TODAY_ISO;
   const s = JSON.parse(localStorage.getItem("odds_req")||"{}");
   const count = (s.date===today ? (s.count||0) : 0) + 1;
   localStorage.setItem("odds_req", JSON.stringify({date:today, count}));
@@ -7896,13 +7896,13 @@ function slashGolfHeaders(){
 // Counter resets at midnight UTC. Stored in localStorage.
 const SLASH_GOLF_DAILY_LIMIT = 18;
 function slashGolfReqCount(){
-  const today = new Date().toISOString().split("T")[0]; // "2026-05-10"
+  const today = TODAY_ISO;
   const stored = JSON.parse(localStorage.getItem("sg_req")||"{}");
   if(stored.date !== today) return 0;
   return stored.count || 0;
 }
 function slashGolfBumpCount(){
-  const today = new Date().toISOString().split("T")[0];
+  const today = TODAY_ISO;
   const stored = JSON.parse(localStorage.getItem("sg_req")||"{}");
   const count = (stored.date === today ? (stored.count||0) : 0) + 1;
   localStorage.setItem("sg_req", JSON.stringify({date:today, count}));
@@ -8044,7 +8044,7 @@ function buildGolfTop10HTML(leaderboard, roundLabel){
 function getActiveTournaments(schedule){
   if(!schedule) return [];
   const tournaments = schedule.schedule || schedule.tournaments || schedule || [];
-  const today = new Date().toISOString().split("T")[0]; // "2026-05-10"
+  const today = TODAY_ISO;
   const nowMs = Date.now();
   const sevenDays = 7 * 24 * 3600 * 1000;
 
@@ -8214,7 +8214,7 @@ async function buildSlashGolfGamesForToday(){
     const schedule = await fetchSlashGolfSchedule();
     if(!schedule) return [];
     const active = getActiveTournaments(schedule);
-    const today = new Date().toISOString().split("T")[0];
+    const today = TODAY_ISO;
 
     return active
       .filter(t => {
@@ -11473,7 +11473,7 @@ async function fetchCompoundEditorial(sections) {
     if (!r.ok) return null;
     const data = await r.json();
     const text = data.content?.[0]?.text || '';
-    const clean = text.replace(/```json|```/g, '').trim();
+    const clean = stripJsonFences(text);
     const result = JSON.parse(clean);
     sessionStorage.setItem(cacheKey, JSON.stringify(result));
     return result;

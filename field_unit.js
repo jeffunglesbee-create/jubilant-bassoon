@@ -14,6 +14,11 @@ const {
   parseMatchweek,
   dramaTier,
   espnPeriodLabel,
+  teamNick,
+  teamSlug,
+  teamSlugPair,
+  stripJsonFences,
+  extractJsonBlock,
 } = require('./field_utils.js');
 
 let pass = 0, fail = 0;
@@ -159,6 +164,76 @@ test('espnPeriodLabel: OT label', () => {
   assert(typeof r === 'string', `got: ${r}`);
 });
 
+// ── teamNick ───────────────────────────────────────────────────────────────
+
+test('teamNick: last word of multi-word name', () => {
+  assertEqual(teamNick('New York Knicks'), 'Knicks');
+  assertEqual(teamNick('Golden State Warriors'), 'Warriors');
+  assertEqual(teamNick('Los Angeles Lakers'), 'Lakers');
+});
+
+test('teamNick: single word — unchanged', () => {
+  assertEqual(teamNick('Knicks'), 'Knicks');
+});
+
+test('teamNick: null/empty → empty string', () => {
+  assertEqual(teamNick(null), '');
+  assertEqual(teamNick(''), '');
+  assertEqual(teamNick(undefined), '');
+});
+
+// ── teamSlug ───────────────────────────────────────────────────────────────
+test('teamSlug: default last-6 for fuzzy endsWith matching', () => {
+  assertEqual(teamSlug('New York Knicks'), 'knicks');
+  assertEqual(teamSlug('Golden State Warriors'), 'rriors');
+});
+
+test('teamSlug: first-6 for cache keys', () => {
+  assertEqual(teamSlug('New York Knicks', 6, false), 'newyor');
+  assertEqual(teamSlug('Arsenal', 6, false), 'arsena');
+});
+
+test('teamSlug: strips non-alpha chars', () => {
+  assertEqual(teamSlug('Inter Miami CF', 6, false), 'intermiamicf'.slice(0,6));
+});
+
+// ── teamSlugPair ───────────────────────────────────────────────────────────
+test('teamSlugPair: produces home_away key', () => {
+  const key = teamSlugPair('Arsenal', 'Chelsea');
+  assertEqual(key, 'arsena_chelse');
+});
+
+// ── stripJsonFences ────────────────────────────────────────────────────────
+test('stripJsonFences: removes ```json ... ```', () => {
+  const input = '```json\n{"key":"value"}\n```';
+  const result = stripJsonFences(input);
+  assertEqual(result, '{"key":"value"}');
+});
+
+test('stripJsonFences: removes ``` without json', () => {
+  assertEqual(stripJsonFences('```\n{"a":1}\n```'), '{"a":1}');
+});
+
+test('stripJsonFences: passthrough when no fences', () => {
+  assertEqual(stripJsonFences('{"a":1}'), '{"a":1}');
+});
+
+test('stripJsonFences: null passthrough', () => {
+  assertEqual(stripJsonFences(null), null);
+});
+
+// ── extractJsonBlock ───────────────────────────────────────────────────────
+test('extractJsonBlock: finds JSON in prose', () => {
+  const input = 'Here is the data: {"key":"value"} as requested.';
+  assertEqual(extractJsonBlock(input), '{"key":"value"}');
+});
+
+test('extractJsonBlock: returns null when no JSON', () => {
+  assertEqual(extractJsonBlock('no json here'), null);
+  assertEqual(extractJsonBlock(null), null);
+});
+
 // ── Summary ────────────────────────────────────────────────────────────────
 console.log(`\n── Results: ${pass} passed, ${fail} failed ─────────────\n`);
 if (fail > 0) process.exit(1);
+

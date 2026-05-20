@@ -142,6 +142,49 @@ function dramaTier(score){
   return '';
 }
 
+// ── Team name helpers ──────────────────────────────────────────────────────
+// teamNick: last word of a team name — "New York Knicks" → "Knicks"
+// Replaces 73 occurrences of (name||'').split(' ').pop() across index.html.
+// Always use this instead of split/pop — it handles null/undefined safely.
+function teamNick(name) {
+  if (!name) return '';
+  return name.trim().split(/\s+/).pop() || '';
+}
+
+// teamSlug: normalized alphanumeric slug for cache keys and fuzzy matching.
+// Two strategies, both documented:
+//   teamSlug(name, 6, false)  → first 6 chars  — use for H2H cache keys (exact match)
+//   teamSlug(name, 6, true)   → last 6 chars   — use with .endsWith() for fuzzy match
+// Default: last 6 chars (consistent with resolveGameIdByHome, renderScoreTicker).
+function teamSlug(name, len=6, fromEnd=true) {
+  if (!name) return '';
+  const norm = name.toLowerCase().replace(/[^a-z]/g, '');
+  return fromEnd ? norm.slice(-len) : norm.slice(0, len);
+}
+
+// teamSlugPair: builds "home6_away6" key used by fdMatchIdCache.
+// Both sides use first-6 to match fdPrefetchSoccerLive key construction.
+function teamSlugPair(home, away) {
+  return teamSlug(home, 6, false) + '_' + teamSlug(away, 6, false);
+}
+
+// ── AI response helpers ────────────────────────────────────────────────────
+// stripJsonFences: removes ```json ... ``` fences from AI responses.
+// Replaces 3 duplicated regex patterns across compound prompt callers.
+function stripJsonFences(text) {
+  if (!text) return text;
+  return text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/, '').trim();
+}
+
+// extractJsonBlock: finds first {...} block in an AI response string.
+// Use after stripJsonFences when the AI may add prose around the JSON.
+function extractJsonBlock(text) {
+  if (!text) return null;
+  const m = text.match(/\{[\s\S]*\}/);
+  return m ? m[0] : null;
+}
+
+
 // Node.js compatibility — used by field_unit.js for direct imports
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
@@ -158,5 +201,10 @@ if (typeof module !== 'undefined' && module.exports) {
     getVenueCoords,
     espnPeriodLabel,
     dramaTier,
+  teamNick,
+  teamSlug,
+  teamSlugPair,
+  stripJsonFences,
+  extractJsonBlock,
   };
 }

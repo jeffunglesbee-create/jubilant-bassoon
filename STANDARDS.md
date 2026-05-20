@@ -627,6 +627,26 @@ Unit tests: ${pass} passed, ${fail} failed`);
 if(fail > 0) process.exit(1);
 ```
 
+
+### Helpers in field_utils.js — use instead of inline patterns
+
+These replace the most-duplicated patterns found in the May 20 audit:
+
+| Function | Replaces | Count found |
+|----------|---------|-------------|
+| `teamNick(name)` | `(name\|\|'').split(' ').pop()` | 73× |
+| `teamSlug(name, len, fromEnd)` | `toLowerCase().replace(/[^a-z]/g,'').slice(n)` | 12× |
+| `teamSlugPair(home, away)` | inline `home6_away6` key construction | 3× |
+| `stripJsonFences(text)` | `` .replace(/^```(?:json)?...`` | 3× |
+| `extractJsonBlock(text)` | `.match(/\{[\s\S]*\}/)` | 3× |
+
+**Rule**: before writing any of the above patterns inline, check field_utils.js first.
+
+**Two slug strategies — documented:**
+- `teamSlug(name, 6, false)` → first 6 chars — for cache keys (exact match)
+- `teamSlug(name, 6, true)` → last 6 chars — for fuzzy `.endsWith()` matching
+These are different operations. Using the wrong one creates silent key mismatches.
+
 ### ESLint (no-undef rule)
 
 Catches undefined variable references — the exact class of the
