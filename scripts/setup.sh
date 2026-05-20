@@ -1,14 +1,13 @@
 #!/bin/sh
-# FIELD repo setup — run once after cloning
-# Installs git hooks so smoke test gates every commit automatically
+# FIELD repo setup — run once after cloning, or use: npm install
+#
+# Sets core.hooksPath to scripts/ so git reads the pre-commit hook
+# directly from the committed scripts/pre-commit file.
+#
+# Benefit over copying: future updates to scripts/pre-commit are
+# automatically active — no need to re-run this script.
 
-REPO_ROOT="$(git rev-parse --show-toplevel)"
-HOOK_SRC="$REPO_ROOT/scripts/pre-commit"
-HOOK_DEST="$REPO_ROOT/.git/hooks/pre-commit"
-
-cp "$HOOK_SRC" "$HOOK_DEST"
-chmod +x "$HOOK_DEST"
-echo "✅ FIELD pre-commit hook installed"
+git config core.hooksPath scripts
+echo "✅ FIELD hooks configured (core.hooksPath = scripts)"
 echo "   Every commit will run field_smoke.js automatically."
-echo "   Smoke failures block the commit."
-echo "   Emergency bypass: git commit --no-verify (use rarely)"
+echo "   To bypass in emergencies only: git commit --no-verify"

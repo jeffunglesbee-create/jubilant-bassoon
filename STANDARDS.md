@@ -275,11 +275,22 @@ That's the session declaration. No type letter required.
 
 ### What requires setup once
 
-After cloning the repo:
+After cloning the repo, run either:
 ```sh
-sh scripts/setup.sh
+npm install          # preferred — runs prepare script automatically
 ```
-Installs the pre-commit hook. Never needs to run again on that machine.
+or:
+```sh
+sh scripts/setup.sh  # alternative if not using npm
+```
+
+Both run `git config core.hooksPath scripts`, which tells git to read
+hooks directly from `scripts/`. The hook file is committed to the repo,
+so any future updates to `scripts/pre-commit` are automatically active —
+no need to re-run setup.
+
+This is a one-time step per machine. It cannot be fully eliminated because
+git intentionally does not auto-run hooks from cloned repos (security boundary).
 
 ### What is never automated (requires human judgment)
 

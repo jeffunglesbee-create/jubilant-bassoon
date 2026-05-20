@@ -1,0 +1,14 @@
+{
+  "name": "jubilant-bassoon",
+  "version": "1.0.0",
+  "description": "FIELD — Global Sports Intelligence",
+  "private": true,
+  "scripts": {
+    "prepare": "git config core.hooksPath scripts",
+    "smoke": "node field_smoke.js",
+    "smoke:ci": "node smoke.js index.html"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
