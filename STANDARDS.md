@@ -19,11 +19,13 @@ Add a new semantic assertion for every feature that depends on a specific variab
 ## Session start checklist
 
 ```
-1. Declare type: A (daily update) / B (bug fix) / C (feature) / D (audit) / E (refactor)
+0. Read HANDOFF NOTE from previous session doc (first — before everything else)
+1. Declare: "SESSION START · Type: [A/B/C/D/E] · Scope: [one sentence]"
 2. git pull && cp index.html /home/claude/index.html
 3. node field_smoke.js   ← must be 0 failures before touching anything
-4. TYPE B only: write diagnosis (failure modes) before first code change
-5. TYPE C only: write spec (inputs / outputs / call sites) before first code change
+4. Open relevant canonical doc for this session type
+5. TYPE B only: write diagnosis (failure modes) before first code change
+6. TYPE C only: write spec (inputs / outputs / call sites) before first code change
 ```
 
 **Canonical docs** (open the relevant one before starting):
@@ -124,4 +126,100 @@ After smoke test passes and git push:
 2. Make the specific updates listed above
 3. Do NOT create a new document — edit the existing one
 4. The Drive ID in this table never changes
+
+
+---
+
+## Rule 9 — Explicit session start and end
+
+### Session start protocol (spoken, not just implied)
+
+Every session opens with a typed declaration before any code is touched:
+
+```
+SESSION START
+Type: [A / B / C / D / E]
+Scope: [one sentence — what this session will accomplish]
+Baseline: git pull + smoke test result
+```
+
+Example:
+```
+SESSION START
+Type: B
+Scope: Fix _weatherCache bug — weather drama bonus never fires
+Baseline: 0/50 smoke failures, commit ef09989
+```
+
+Without this declaration the session has no defined scope, and scope
+creep (the source of "too much being done at once") has no boundary.
+
+**Before any code:**
+1. `git pull && cp index.html /home/claude/index.html`
+2. `node field_smoke.js` — must be 0 failures
+3. Open relevant canonical doc for this session type
+4. TYPE B: write diagnosis. TYPE C: write spec. Both in plain text before coding.
+
+---
+
+### Session end protocol (all steps required)
+
+A session is not over until all five of these are complete:
+
+**Step 1 — Code clean**
+```
+node field_smoke.js   ← 0 failures
+git add index.html && git commit -m "[type prefix]: [description]"
+git push origin main
+cp index.html /mnt/user-data/outputs/sportworld.html
+```
+
+**Step 2 — Session documentation**
+Write session doc to Drive. Plain text. Title format:
+`FIELD App — [Date] Session Documentation`
+Covers: what was done, commits, architecture changes, bugs fixed.
+
+**Step 3 — Canonical doc updates (Rule 8)**
+Edit the relevant living documents in place for this session type.
+Do not create new versions.
+
+**Step 4 — Handoff note**
+Write a brief handoff at the end of the session doc:
+
+```
+HANDOFF
+Last commit: [hash]  File size: [KB]  Smoke: 0/50
+Clean state: yes / no — [if no, what's unresolved]
+In progress: [anything mid-flight or needs browser verification]
+Next session should: [one concrete recommendation]
+Blocked on: [anything requiring resolution before TYPE C work]
+Watch for: [any known fragile state or timing dependency]
+```
+
+This is the document the next session reads FIRST — before any code,
+before any canonical docs. It answers "where did we leave off?"
+
+**Step 5 — State the close**
+End the session with a typed declaration:
+```
+SESSION END
+```
+
+Nothing below that line is part of the session.
+
+---
+
+### Why this matters
+
+The audit that produced Rule 1 found three features documented as
+"working" that had never fired. All three were introduced in sessions
+that mixed multiple session types. A typed scope declaration at the
+start would have defined a boundary. A handoff note at the end would
+have flagged "smoke-verified only — not browser-confirmed."
+
+The handoff note is the most valuable minute of the session.
+It converts implicit context into explicit state. The next session
+should be able to start in under 60 seconds: read handoff, declare
+type, pull, smoke. If the handoff note is missing, the next session
+spends the first 10 minutes reconstructing state from docs.
 
