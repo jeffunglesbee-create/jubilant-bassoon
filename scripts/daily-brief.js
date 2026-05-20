@@ -18,6 +18,8 @@ const {
   DAY,
   NBA_COUNT = '0',
   NHL_COUNT = '0',
+  MLB_COUNT = '0',
+  AFL_COUNT = '0',
   SOCCER_COUNT = '0',
   TENNIS_NOTE = '',
   SW_STATUS = 'unknown',
@@ -25,6 +27,8 @@ const {
   EARLIEST_GAME = 'none',
   SEND_REASON = 'scheduled',
   NBA_GAMES_JSON = '[]',
+  MLB_GAMES_JSON = '[]',
+  AFL_GAMES_JSON = '[]',
   SOCCER_GAMES_JSON = '[]',
 } = process.env;
 
@@ -33,11 +37,21 @@ function parseGames(jsonStr) {
 }
 
 const nbaGames = parseGames(NBA_GAMES_JSON);
+const mlbGames = parseGames(MLB_GAMES_JSON);
+const aflGames = parseGames(AFL_GAMES_JSON);
 const soccerGames = parseGames(SOCCER_GAMES_JSON);
 
 const nbaLines = nbaGames.length
   ? nbaGames.map(g => `  ${g.away} @ ${g.home} — ${g.time}`).join('\n')
   : '  (no NBA games today)';
+
+const mlbLines = mlbGames.length
+  ? mlbGames.slice(0, 6).map(g => `  ${g.away} @ ${g.home} — ${g.time} UTC`).join('\n')
+  : '  (no MLB games today)';
+
+const aflLines = aflGames.length
+  ? aflGames.slice(0, 5).map(g => `  ${g.away} @ ${g.home} [${g.round}] — ${g.time} UTC`).join('\n')
+  : '  (no AFL games today)';
 
 const soccerLines = soccerGames.length
   ? soccerGames.slice(0, 6).map(g =>
@@ -65,6 +79,10 @@ const html = `<!DOCTYPE html>
   <p style="margin:0 0 6px;font-size:13px">&#127944; NBA &mdash; <strong>${NBA_COUNT} games</strong></p>
   <pre style="color:#d1d5db;font-size:11px;margin:0 0 12px;line-height:1.5">${nbaLines}</pre>
   <p style="margin:0 0 6px;font-size:13px">&#127944; NHL &mdash; <strong>${NHL_COUNT} games</strong></p>
+  <p style="margin:0 0 6px;font-size:13px">&#9918; MLB &mdash; <strong>${MLB_COUNT} games</strong></p>
+  <pre style="color:#d1d5db;font-size:11px;margin:0 0 12px;line-height:1.5">${mlbLines}</pre>
+  <p style="margin:0 0 6px;font-size:13px">&#127944; AFL &mdash; <strong>${AFL_COUNT} games</strong></p>
+  <pre style="color:#d1d5db;font-size:11px;margin:0 0 12px;line-height:1.5">${aflLines}</pre>
   <p style="margin:0 0 6px;font-size:13px">&#9917; Soccer &mdash; <strong>${SOCCER_COUNT} games</strong></p>
   <pre style="color:#d1d5db;font-size:11px;margin:0 0 10px;line-height:1.5">${soccerLines}</pre>
   ${TENNIS_NOTE ? `<p style="margin:0;font-size:13px">&#127939; Tennis &mdash; ${TENNIS_NOTE}</p>` : ''}
@@ -95,6 +113,13 @@ const text = [
   nbaLines,
   '',
   `NHL: ${NHL_COUNT} games`,
+  '',
+  `MLB: ${MLB_COUNT} games`,
+  mlbLines,
+  '',
+  `AFL: ${AFL_COUNT} games`,
+  aflLines,
+  '',
   `Soccer: ${SOCCER_COUNT} games`,
   soccerLines,
   TENNIS_NOTE ? `Tennis: ${TENNIS_NOTE}` : '',

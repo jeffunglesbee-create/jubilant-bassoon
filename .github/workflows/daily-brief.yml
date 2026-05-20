@@ -47,6 +47,7 @@ jobs:
         run: |
           RELAY="https://field-relay-nba.jeffunglesbee.workers.dev"
           DATA=$(curl -sf --max-time 10 \
+            -H "Cache-Control: no-cache" \
             "$RELAY/nba/liveData/scoreboard/todaysScoreboard_00.json" || echo '{}')
           echo "$DATA" > /tmp/nba.json
           COUNT=$(jq '.scoreboard.games | length' /tmp/nba.json 2>/dev/null || echo 0)
@@ -66,8 +67,8 @@ jobs:
           RELAY="https://field-relay-nba.jeffunglesbee.workers.dev"
           DATA=$(curl -sf --max-time 10 "$RELAY/nhl/v1/scoreboard/now" || echo '{}')
           echo "$DATA" > /tmp/nhl.json
-          COUNT=$(jq '(.games // []) | length' /tmp/nhl.json 2>/dev/null || echo 0)
-          EARLIEST=$(jq -r '.games[]?.startTimeUTC // empty' /tmp/nhl.json 2>/dev/null | sort | head -1)
+          COUNT=$(jq '[.gamesByDate[]?.games[]?] | length' /tmp/nhl.json 2>/dev/null || echo 0)
+          EARLIEST=$(jq -r '[.gamesByDate[]?.games[]?.startTimeUTC] | sort | .[0] // empty' /tmp/nhl.json 2>/dev/null)
           echo "count=$COUNT" >> $GITHUB_OUTPUT
           echo "earliest=${EARLIEST:-}" >> $GITHUB_OUTPUT
 
@@ -80,15 +81,60 @@ jobs:
           DATA=$(curl -sf --max-time 10 \
             "$RELAY/fd/matches?dateFrom=${TODAY}&dateTo=${TODAY}" || echo '{"matches":[]}')
           echo "$DATA" > /tmp/fd.json
-          COUNT=$(jq '.matches | length' /tmp/fd.json 2>/dev/null || echo 0)
-          EARLIEST=$(jq -r '.matches[]?.utcDate // empty' /tmp/fd.json | sort | head -1)
+          COUNT=$(jq '[.matches[] | select(.competition.code | test("PL|ELC|CL|EL|ECRL|PD|BL1|SA|FL1|MLS|EC|PPL|DED|BSA"))] | length' /tmp/fd.json 2>/dev/null || echo 0)
+          EARLIEST=$(jq -r '[.matches[] | select(.competition.code | test("PL|ELC|CL|EL|ECRL|PD|BL1|SA|FL1|MLS|EC|PPL|DED|BSA")) | .utcDate] | sort | .[0] // empty' /tmp/fd.json)
           # Build compact game list: away @ home [competition] — HH:MM UTC
-          GAMES=$(jq -c '[.matches[]? | {
+          GAMES=$(jq -c '[.matches[] | select(.competition.code | test("PL|ELC|CL|EL|ECRL|PD|BL1|SA|FL1|MLS|EC|PPL|DED|BSA")) | {
             away: .awayTeam.shortName,
             home: .homeTeam.shortName,
             comp: .competition.code,
             time: (.utcDate | split("T")[1] | split(":")[0:2] | join(":"))
           }]' /tmp/fd.json 2>/dev/null | head -c 2000 || echo '[]')
+          echo "count=$COUNT" >> $GITHUB_OUTPUT
+          echo "earliest=${EARLIEST:-}" >> $GITHUB_OUTPUT
+          echo "games_json=$GAMES" >> $GITHUB_OUTPUT
+
+      - name: Fetch MLB schedule
+        id: mlb
+        run: |
+          TODAY=$(date -u +%Y-%m-%d)
+          # MLB Stats API: public, no auth, no relay needed
+          DATA=$(curl -sf --max-time 10 \
+            "https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${TODAY}" \
+            || echo '{"dates":[]}')
+          echo "$DATA" > /tmp/mlb.json
+          COUNT=$(jq '[.dates[]?.games[]?] | length' /tmp/mlb.json 2>/dev/null || echo 0)
+          EARLIEST=$(jq -r '[.dates[]?.games[]?.gameDate] | sort | .[0] // empty' /tmp/mlb.json 2>/dev/null)
+          GAMES=$(jq -c '[.dates[]?.games[]? | {
+            away: .teams.away.team.name,
+            home: .teams.home.team.name,
+            time: (.gameDate | split("T")[1] | split(":")[0:2] | join(":"))
+          }]' /tmp/mlb.json 2>/dev/null | head -c 2000 || echo '[]')
+          echo "count=$COUNT" >> $GITHUB_OUTPUT
+          echo "earliest=${EARLIEST:-}" >> $GITHUB_OUTPUT
+          echo "games_json=$GAMES" >> $GITHUB_OUTPUT
+
+      - name: Fetch AFL schedule via Squiggle
+        id: afl
+        run: |
+          RELAY="https://field-relay-nba.jeffunglesbee.workers.dev"
+          TODAY=$(date -u +%Y-%m-%d)
+          # Squiggle: free, CORS-open, no auth. Via relay for consistency + caching.
+          # Etiquette: identify FIELD traffic with User-Agent header.
+          DATA=$(curl -sf --max-time 10 \
+            -H "User-Agent: FIELD-Global-Sports-Intelligence" \
+            "$RELAY/squiggle/?q=games;year=2026;complete=0" \
+            || echo '{"games":[]}')
+          echo "$DATA" > /tmp/afl.json
+          # Squiggle date format: "YYYY-MM-DD HH:MM:SS" UTC (space, not T)
+          # Filter to today's UTC date, convert to ISO 8601 for H-1 calc
+          COUNT=$(jq --arg today "$TODAY" '[.games[] | select(.date | startswith($today))] | length' /tmp/afl.json 2>/dev/null || echo 0)
+          EARLIEST=$(jq -r --arg today "$TODAY" '[.games[] | select(.date | startswith($today)) | ((.date | gsub(" "; "T")) + "Z")] | sort | .[0] // empty' /tmp/afl.json 2>/dev/null)
+          GAMES=$(jq -c --arg today "$TODAY" '[.games[] | select(.date | startswith($today)) | {
+            away: .ateam, home: .hteam,
+            round: .roundname,
+            time: (.date | split(" ")[1] | split(":")[0:2] | join(":"))
+          }]' /tmp/afl.json 2>/dev/null | head -c 2000 || echo '[]')
           echo "count=$COUNT" >> $GITHUB_OUTPUT
           echo "earliest=${EARLIEST:-}" >> $GITHUB_OUTPUT
           echo "games_json=$GAMES" >> $GITHUB_OUTPUT
@@ -142,6 +188,8 @@ jobs:
             "${{ steps.nhl.outputs.earliest }}"
             "${{ steps.soccer.outputs.earliest }}"
             "${{ steps.tennis.outputs.earliest }}"
+            "${{ steps.mlb.outputs.earliest }}"
+            "${{ steps.afl.outputs.earliest }}"
           )
 
           EARLIEST_EPOCH=""
@@ -149,6 +197,7 @@ jobs:
           for C in "${CANDIDATES[@]}"; do
             [ -z "$C" ] && continue
             EPOCH=$(date -u -d "$C" +%s 2>/dev/null) || continue
+            [ "$EPOCH" -le "$NOW" ] && continue   # skip games already in the past
             if [ -z "$EARLIEST_EPOCH" ] || [ "$EPOCH" -lt "$EARLIEST_EPOCH" ]; then
               EARLIEST_EPOCH=$EPOCH
               EARLIEST_STR=$C
@@ -199,6 +248,8 @@ jobs:
           TODAY: ${{ steps.sw.outputs.today }}
           NBA_COUNT: ${{ steps.nba.outputs.count }}
           NHL_COUNT: ${{ steps.nhl.outputs.count }}
+          MLB_COUNT: ${{ steps.mlb.outputs.count }}
+          AFL_COUNT: ${{ steps.afl.outputs.count }}
           SOCCER_COUNT: ${{ steps.soccer.outputs.count }}
           TENNIS_NOTE: ${{ steps.tennis.outputs.note }}
           SW_STATUS: ${{ steps.sw.outputs.status }}
@@ -206,6 +257,8 @@ jobs:
           EARLIEST_GAME: ${{ steps.timing.outputs.earliest_game }}
           SEND_REASON: ${{ steps.timing.outputs.send_reason }}
           NBA_GAMES_JSON: ${{ steps.nba.outputs.games_json }}
+          MLB_GAMES_JSON: ${{ steps.mlb.outputs.games_json }}
+          AFL_GAMES_JSON: ${{ steps.afl.outputs.games_json }}
           SOCCER_GAMES_JSON: ${{ steps.soccer.outputs.games_json }}
         run: |
           export DAY=$(date -u +"%A, %B %-d, %Y")
