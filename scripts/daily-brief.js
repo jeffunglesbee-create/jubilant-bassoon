@@ -72,8 +72,6 @@ const soccerLines = soccerGames.length
     ).join('\n')
   : '  (no tracked soccer today)';
 
-const trigger = `Run the daily FIELD update for ${TODAY}`;
-
 // ── HTML email ───────────────────────────────────────────────────────────────
 const html = `<!DOCTYPE html>
 <html>
@@ -111,8 +109,6 @@ const html = `<!DOCTYPE html>
 // ── Plain text fallback ──────────────────────────────────────────────────────
 const text = [
   `FIELD Daily Brief — ${DAY}`,
-  '',
-  `TRIGGER: ${trigger}`,
   '',
   `NBA: ${NBA_COUNT} games`,
   nbaLines,

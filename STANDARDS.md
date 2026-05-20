@@ -1020,3 +1020,25 @@ If a conversation ends abruptly (no SESSION END declared), the next
 conversation's Rule 22 automation will detect the missing session end
 from the handoff note and run the close procedure before starting new work.
 
+
+---
+
+## Rule 23 — SW_VERSION must be bumped in every index.html commit
+
+SW_VERSION is a date constant in index.html used to bust the service worker
+cache for returning users. It must match today's date on every deploy.
+
+**Rule:** Any commit that changes index.html must set SW_VERSION to today's
+date in YYYY-MM-DD format. TYPE A daily update sessions do this automatically.
+TYPE B/C/E sessions touching index.html must also bump it.
+
+```javascript
+const SW_VERSION = 'YYYY-MM-DD';  // ← must match deploy date
+```
+
+The pre-commit hook does not currently enforce this. Failure mode: a non-TYPE-A
+deploy leaves SW_VERSION showing a past date. Users who open the app after the
+deploy may see "SW_VERSION: STALE" in the daily brief health check.
+
+Until the hook enforces this, verify SW_VERSION = today's date before every
+`git push` that includes index.html changes.

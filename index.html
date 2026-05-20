@@ -5123,6 +5123,65 @@ function $$(selector, root) {
   return [...(root || document).querySelectorAll(selector)];
 }
 
+// isToday: returns true if the given ISO timestamp falls on today's local date.
+// Top-level so Squiggle/AFL functions can call it before buildTodaySchedule runs.
+// Uses localTz() for correct overnight-session handling.
+function isToday(iso) {
+  const d = new Date(iso); if (isNaN(d)) return false;
+  const tz = localTz();
+  return d.toLocaleDateString('en-CA', {timeZone: tz}) ===
+    new Date().toLocaleDateString('en-CA', {timeZone: tz});
+}
+
+// parseSeriesRecord: parses series record strings into structured objects.
+// Top-level so card rendering outside buildTodaySchedule can call it directly.
+function parseSeriesRecord(g) {
+  const raw = (g.seriesRecord || g.league || '').toLowerCase();
+  if(!raw) return null;
+  if(/tied 3.?3|3.3|game 7/i.test(raw))
+    return {tied:true,wins:3,losses:3,deciding:true,homeElim:false,awayElim:false,
+            homeClinch:false,awayClinch:false,leadsName:null,leadingTeam:null,totalGames:6,
+            label:'Game 7 \u2014 winner takes all',icon:'\u{1F3C6}',importance:'series_deciding',boost:30};
+  const tieMat = raw.match(/tied\s+(\d)-(\d)/);
+  if(tieMat){
+    const a=parseInt(tieMat[1]),b=parseInt(tieMat[2]);
+    const boost=a===2?12:a===1?8:0;
+    return {tied:true,wins:a,losses:b,deciding:false,homeElim:false,awayElim:false,
+            homeClinch:false,awayClinch:false,leadsName:null,leadingTeam:null,totalGames:a+b,
+            label:'Series tied '+a+'-'+b,icon:'\uD83D\uDCCA',importance:'playoff_impl',boost};
+  }
+  const leadMat = raw.match(/(\w[\w\s]+?)\s+leads?\s+(\d)-(\d)/i);
+  if(!leadMat) return null;
+  const leadsName=leadMat[1].trim(), wins=parseInt(leadMat[2]), losses=parseInt(leadMat[3]);
+  const homeName=(g.home||'').toLowerCase(), awayName=(g.away||'').toLowerCase();
+  const lastWord=teamNick(leadsName.toLowerCase());
+  let leadingTeam=null;
+  if(lastWord.length>3){
+    if(homeName.includes(lastWord)) leadingTeam='home';
+    else if(awayName.includes(lastWord)) leadingTeam='away';
+  }
+  const homeLeads=leadingTeam==='home', awayLeads=leadingTeam==='away';
+  const homeElim=awayLeads&&wins===3&&losses===2, awayElim=homeLeads&&wins===3&&losses===2;
+  const homeElim31=awayLeads&&wins===3&&losses===1, awayElim31=homeLeads&&wins===3&&losses===1;
+  const homeElim30=awayLeads&&wins===3&&losses===0, awayElim30=homeLeads&&wins===3&&losses===0;
+  const homeClinch=homeLeads&&wins===3, awayClinch=awayLeads&&wins===3;
+  let importance='playoff_impl',boost=5,label='',icon='\uD83D\uDCCA';
+  if(homeElim||awayElim){ importance='elimination';boost=22;
+    label=(homeElim?g.home:g.away)+' must win to survive';icon='\u26A0\uFE0F';
+  } else if(homeElim31||awayElim31){ importance='elimination';boost=18;
+    label='Elimination game \u2014 season on the line';icon='\u26A0\uFE0F';
+  } else if(homeElim30||awayElim30){ importance='elimination';boost=22;
+    label='Facing elimination sweep';icon='\u26A0\uFE0F';
+  } else if(homeClinch||awayClinch){ importance='clinch';boost=wins===3&&losses===2?18:15;
+    label=(homeClinch?g.home:g.away)+' \u2014 one win from advancing';icon='\u2713';
+  } else if(wins===2&&losses===1){ boost=8;label='One team holds the edge';
+  } else if(wins===1&&losses===0){ boost=5;label='Early series advantage'; }
+  return {tied:false,wins,losses,deciding:false,leadsName,leadingTeam,
+          homeElim:homeElim||homeElim31||homeElim30,
+          awayElim:awayElim||awayElim31||awayElim30,
+          homeClinch,awayClinch,totalGames:wins+losses,label,icon,importance,boost};
+}
+
 // ── fieldFetch: fetch wrapper with AbortSignal timeout + JSON parse.
 // Replaces 39 inline fetch(url, {signal:AbortSignal.timeout(n)}) patterns.
 // Returns parsed JSON or throws on network/HTTP error.
@@ -5405,13 +5464,7 @@ function validateGameEntry(game, source){
 function buildTodaySchedule(){
   const tz=localTz();
   // Helper: is this ISO timestamp local-today?
-  // Recomputes local date fresh to handle overnight sessions (isoDate set at page load)
-  function isToday(iso){
-    const d=new Date(iso); if(isNaN(d)) return false;
-    const localNow=new Date();
-    const todayFresh=localNow.getFullYear()+'-'+String(localNow.getMonth()+1).padStart(2,'0')+'-'+String(localNow.getDate()).padStart(2,'0');
-    return d.toLocaleDateString("en-CA",{timeZone:tz})===todayFresh;
-  }
+  // isToday() is defined at top-level utility block — accessible here and in Squiggle/AFL functions
 
   // ── NBA Playoffs — Wednesday May 20 2026 ──────────────────────────
   // Source: NBA.com / ESPN verified May 20, 2026
@@ -5862,52 +5915,7 @@ function buildTodaySchedule(){
   // Parses league strings to auto-generate narrative labels + importance flags.
   // Activates: DA-03 badge · narrative.label · drama_score playoff_boost · Wow #24.
   // QW-3 / J0-B -- Series record parser for J1/J2/J3/J4
-  function parseSeriesRecord(g) {
-    const raw = (g.seriesRecord || g.league || '').toLowerCase();
-    if(!raw) return null;
-    if(/tied 3.?3|3.3|game 7/i.test(raw))
-      return {tied:true,wins:3,losses:3,deciding:true,homeElim:false,awayElim:false,
-              homeClinch:false,awayClinch:false,leadsName:null,leadingTeam:null,totalGames:6,
-              label:'Game 7 \u2014 winner takes all',icon:'\u{1F3C6}',importance:'series_deciding',boost:30};
-    const tieMat = raw.match(/tied\s+(\d)-(\d)/);
-    if(tieMat){
-      const a=parseInt(tieMat[1]),b=parseInt(tieMat[2]);
-      const boost=a===2?12:a===1?8:0;
-      return {tied:true,wins:a,losses:b,deciding:false,homeElim:false,awayElim:false,
-              homeClinch:false,awayClinch:false,leadsName:null,leadingTeam:null,totalGames:a+b,
-              label:'Series tied '+a+'-'+b,icon:'\uD83D\uDCCA',importance:'playoff_impl',boost};
-    }
-    const leadMat = raw.match(/(\w[\w\s]+?)\s+leads?\s+(\d)-(\d)/i);
-    if(!leadMat) return null;
-    const leadsName=leadMat[1].trim(), wins=parseInt(leadMat[2]), losses=parseInt(leadMat[3]);
-    const homeName=(g.home||'').toLowerCase(), awayName=(g.away||'').toLowerCase();
-    const lastWord=teamNick(leadsName.toLowerCase());
-    let leadingTeam=null;
-    if(lastWord.length>3){
-      if(homeName.includes(lastWord)) leadingTeam='home';
-      else if(awayName.includes(lastWord)) leadingTeam='away';
-    }
-    const homeLeads=leadingTeam==='home', awayLeads=leadingTeam==='away';
-    const homeElim=awayLeads&&wins===3&&losses===2, awayElim=homeLeads&&wins===3&&losses===2;
-    const homeElim31=awayLeads&&wins===3&&losses===1, awayElim31=homeLeads&&wins===3&&losses===1;
-    const homeElim30=awayLeads&&wins===3&&losses===0, awayElim30=homeLeads&&wins===3&&losses===0;
-    const homeClinch=homeLeads&&wins===3, awayClinch=awayLeads&&wins===3;
-    let importance='playoff_impl',boost=5,label='',icon='\uD83D\uDCCA';
-    if(homeElim||awayElim){ importance='elimination';boost=22;
-      label=(homeElim?g.home:g.away)+' must win to survive';icon='\u26A0\uFE0F';
-    } else if(homeElim31||awayElim31){ importance='elimination';boost=18;
-      label='Elimination game \u2014 season on the line';icon='\u26A0\uFE0F';
-    } else if(homeElim30||awayElim30){ importance='elimination';boost=22;
-      label='Facing elimination sweep';icon='\u26A0\uFE0F';
-    } else if(homeClinch||awayClinch){ importance='clinch';boost=wins===3&&losses===2?18:15;
-      label=(homeClinch?g.home:g.away)+' \u2014 one win from advancing';icon='\u2713';
-    } else if(wins===2&&losses===1){ boost=8;label='One team holds the edge';
-    } else if(wins===1&&losses===0){ boost=5;label='Early series advantage'; }
-    return {tied:false,wins,losses,deciding:false,leadsName,leadingTeam,
-            homeElim:homeElim||homeElim31||homeElim30,
-            awayElim:awayElim||awayElim31||awayElim30,
-            homeClinch,awayClinch,totalGames:wins+losses,label,icon,importance,boost};
-  }
+  // parseSeriesRecord() moved to top-level utility block (was scope-leaking — called outside buildTodaySchedule)
 
   function elimination_boost(g) {
     const s = (g.league||'').toLowerCase();
@@ -6822,7 +6830,7 @@ function renderFieldDesk(){
       </div>`);
     }
   }catch(e_){
-    if(typeof window._fieldErrors !== 'undefined') window._fieldErrors.push({fn:'renderFieldDesk',err:e?.message||String(e),ts:Date.now()});}
+    if(typeof window._fieldErrors !== 'undefined') window._fieldErrors.push({fn:'renderFieldDesk',err:e_?.message||String(e_),ts:Date.now()});}
 
   // ── Card 2: Series previews from sessionStorage ─────────────────────────
   const seriesCards = [];
@@ -8995,6 +9003,7 @@ async function fetchNBARelayScores() {
 }
 
 let espnIntervalId = null;
+let oddsIntervalId = null;  // declared here; set when/if odds polling is wired (currently unused)
 const ESPN_REFRESH_LIVE     = 30000;   // baseline live — overridden by computeLiveInterval (#11b)
 const ESPN_REFRESH_IDLE     = 300000;  // 5min — games scheduled later today
 const ESPN_REFRESH_FINISHED = 900000;  // 15min — all today's games final
@@ -9254,7 +9263,6 @@ async function fetchESPNScores(){
           homeScore, awayScore, homeName, awayName,
           home: homeName, away: awayName,
           _sport: section,
-          _gameId, // resolved game._id for drama history lookup
           homeWinning: homeScore > awayScore,
           periodPrefix,
           outs, balls, strikes,
@@ -11660,6 +11668,7 @@ async function renderSeriesPreviewCard(gameCard){
 
 // J3: FIELD BRIEF CARD
 function fieldBriefCacheKey(){
+  const tz = localTz();
   const d=new Date();const tzStr=(typeof tz==='string'?tz:'America/New_York');
   const ds=d.toLocaleDateString('en-CA',{timeZone:tzStr});return 'field_brief_'+ds;
 }
@@ -12256,6 +12265,7 @@ function buildMyTeamsBriefLine(sections) {
 }
 
 async function initFIELDBrief(sections){
+  const tz = localTz();
   const el=document.getElementById('field-brief');
   if(!el) return;
   if(activeFilter!=='all'||!sections.length){el.style.display='none';return;}
@@ -12293,7 +12303,7 @@ async function initFIELDBrief(sections){
         });
       }
     }catch(e_){
-    if(typeof window._fieldErrors !== 'undefined') window._fieldErrors.push({fn:'initFIELDBrief',err:e?.message||String(e),ts:Date.now()});}
+    if(typeof window._fieldErrors !== 'undefined') window._fieldErrors.push({fn:'initFIELDBrief',err:e_?.message||String(e_),ts:Date.now()});}
     return;
   }
   const staticText=buildFIELDBriefStatic(sections)||'Loading tonight\'s brief\u2026';
@@ -14346,6 +14356,7 @@ let _nightOwlGameId=null; // tracks which game is currently displayed
 const _gameBriefCache = {}; // gameId → brief text
 const _emberResultCache = {}; // gameId → {tier, channel, dramaScore, contextFlag} — live EMBER state
 async function renderNightOwlRecap(){
+  const tz = localTz();
   // Night Owl renders into #field-brief — they share the same editorial slot.
   // FIELD Brief = pre-game context. Night Owl = post-game recap. Same position, same importance.
   // When Night Owl fires, it replaces FIELD Brief content entirely.
@@ -14385,7 +14396,7 @@ async function renderNightOwlRecap(){
         });
       });
     }catch(e_){
-    if(typeof window._fieldErrors !== 'undefined') window._fieldErrors.push({fn:'renderNightOwlRecap',err:e?.message||String(e),ts:Date.now()});}
+    if(typeof window._fieldErrors !== 'undefined') window._fieldErrors.push({fn:'renderNightOwlRecap',err:e_?.message||String(e_),ts:Date.now()});}
   }
 
   if(!finals.length){el.style.display='none';return;}
