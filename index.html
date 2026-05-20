@@ -379,14 +379,16 @@ flex-shrink:0;white-space:nowrap;
 @keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
 @keyframes scoreFlash{0%{background:rgba(201,168,76,.25)}60%{background:rgba(201,168,76,.12)}100%{background:transparent}}
 .score-flash{animation:scoreFlash .7s ease-out}
+@media (hover: hover) {
 .game-card:hover{
   background:var(--card2);border-color:var(--edge2);
   transform:translateY(-2px) translateX(1px);
   box-shadow:0 8px 24px rgba(0,0,0,.4),0 0 0 1px var(--edge2);
 }
 .game-card.live:hover{box-shadow:0 8px 24px rgba(0,0,0,.4),0 0 12px rgba(255,59,59,.15)}
-.game-card.soon{border-color:rgba(232,160,32,.18)}
 .game-card.soon:hover{box-shadow:0 8px 24px rgba(0,0,0,.4),0 0 12px rgba(232,160,32,.15)}
+}
+.game-card.soon{border-color:rgba(232,160,32,.18)}
 .card-accent{background:var(--edge2);width:3px}
 .game-card.live  .card-accent{background:var(--live)}
 .game-card.soon  .card-accent{background:var(--gold)}
@@ -2890,7 +2892,7 @@ function runSilentErrorScan(){
 function expandStreams(keys){
   return (keys||[]).map(k=>{
     const s=SR[k];
-    return s?{key:k,name:s[0],url:s[1],col:s[2],auth:s[3]||"sub",authNote:s[4]||"Subscription required"}:null;
+    return s?{key:k,label:s[0],name:s[0],url:s[1],col:s[2],auth:s[3]||"sub",authNote:s[4]||"Subscription required"}:null;
   }).filter(Boolean);
 }
 
@@ -8418,6 +8420,7 @@ async function fetchNBARelayScores() {
           homeScore: g.homeScore, awayScore: g.awayScore,
           homeName: homeKey, awayName: awayKey,
           home: homeKey, away: awayKey,
+          _sport: 'NBA Playoffs',
           homeWinning: g.homeWinning, periodPrefix: 'Q', source: 'relay',
         };
         espnScoreTs[key] = Date.now();
@@ -8527,6 +8530,7 @@ async function fetchNHLRelayScores() {
         period, clock, detail,
         homeScore, awayScore, homeName, awayName,
         home: homeName, away: awayName,
+        _sport: 'NHL Playoffs',
         homeWinning: homeScore > awayScore,
         periodPrefix: 'P', // matches ESPN_SPORTS NHL entry
         source: 'nhl-relay',
@@ -8648,6 +8652,7 @@ async function fetchESPNScores(){
           state, period, clock, detail,
           homeScore, awayScore, homeName, awayName,
           home: homeName, away: awayName,
+          _sport: section,
           homeWinning: homeScore > awayScore,
           periodPrefix,
           outs, balls, strikes,
@@ -12811,7 +12816,7 @@ function toggleMyTeam(name){
 // on divs even with cursor:pointer. The touchend delegate catches these cases.
 // Tap threshold: <8px movement (not a scroll). stopPropagation if child button caught it.
 (function initCardTapDelegate(){
-  let _tStartX=0,_tStartY=0;
+  let _tStartX=0,_tStartY=0,_lastCardTap=0;
   document.addEventListener('touchstart',e=>{
     _tStartX=e.touches[0].clientX; _tStartY=e.touches[0].clientY;
   },{passive:true});
@@ -12823,8 +12828,17 @@ function toggleMyTeam(name){
     if(!card) return;
     if(e.target.closest('.pin-btn,.star-btn,.cal-btn,.share-btn')) return; // let buttons handle
     const gid=card.dataset.gameid;
-    if(gid) openBottomSheet(gid);
+    if(!gid) return;
+    _lastCardTap=Date.now();
+    openBottomSheet(gid);
   },{passive:true});
+  // Suppress the synthetic click that follows touchend on Android to prevent double-open
+  document.addEventListener('click',e=>{
+    if(Date.now()-_lastCardTap<600){
+      const card=e.target.closest('.game-card');
+      if(card) e.stopImmediatePropagation();
+    }
+  },true); // capture phase — runs before inline onclick
 })();
 
 // ── Star button delegate ─────────────────────────────────────────────────
@@ -13366,13 +13380,13 @@ function openBottomSheet(gameId) {
   }
   content.innerHTML = `
     <div class="bs-teams">${game.away||'?'} @ ${game.home||'?'}</div>
-    <div class="bs-meta">${scoreStr}${period} · ${game.venue||sport||''}${game.seriesRecord?' · '+game.seriesRecord:''}</div>
+    <div class="bs-meta">${scoreStr?scoreStr+period:fmtTime(game.start_time)+' ET'} · ${game.venue||sport||''}${game.seriesRecord?' · '+game.seriesRecord:''}</div>
     ${dramaStr||cb ? `<div class="bs-section"><div class="bs-section-label">Live Intelligence</div><div class="bs-section-body">${[dramaStr,cb].filter(Boolean).join(' · ')}</div></div>` : ''}
     ${sparkline ? `<div class="bs-section"><div class="bs-section-label">Drama Arc</div>${sparkline}</div>` : ''}
     ${story ? `<div class="bs-section"><div class="bs-section-label">Story</div>${story}</div>` : ''}
-    ${game.matchupNote||milestoneStr ? `<div class="bs-section"><div class="bs-section-label">Context</div><div class="bs-section-body">${[game.matchupNote, milestoneStr].filter(Boolean).join('<br>')}</div></div>` : ''}
+    ${game.matchupNote||game.localNote||milestoneStr ? `<div class="bs-section"><div class="bs-section-label">Context</div><div class="bs-section-body">${[game.matchupNote||game.localNote, milestoneStr].filter(Boolean).join('<br>')}</div></div>` : ''}
     ${standingsStr||seriesMargins ? `<div class="bs-section"><div class="bs-section-label">Standings</div><div class="bs-section-body">${standingsStr}</div>${seriesMargins}</div>` : ''}
-    ${game.streams?.length ? `<div class="bs-section"><div class="bs-section-label">Watch On</div><div class="bs-section-body">${game.streams.slice(0,4).map(s=>s.label).join(' · ')}</div></div>` : ''}
+    ${game.streams?.length ? `<div class="bs-section"><div class="bs-section-label">Watch On</div><div class="bs-section-body">${game.streams.slice(0,4).map(s=>s.label||s.name).filter(Boolean).join(' · ')}</div></div>` : ''}
     ${game.crew ? `<div class="bs-section"><div class="bs-section-label">Crew</div><div class="bs-section-body">${game.crew}</div></div>` : ''}
     <div style="margin-top:1rem;display:flex;gap:.6rem">
       <button onclick="pinGame('${gameId}');closeBottomSheet()" style="flex:1;padding:.55rem;border-radius:.6rem;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);color:inherit;font-size:.7rem;cursor:pointer">📌 Pin game</button>
