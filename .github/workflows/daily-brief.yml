@@ -127,6 +127,27 @@ jobs:
           echo "earliest=${EARLIEST:-}" >> $GITHUB_OUTPUT
           echo "games_json=$GAMES" >> $GITHUB_OUTPUT
 
+      - name: Fetch WNBA schedule via relay
+        id: wnba
+        run: |
+          RELAY="https://field-relay-nba.jeffunglesbee.workers.dev"
+          TODAY=$(date -u +%Y-%m-%d)
+          # WNBA CDN scoreboard — same relay, different league endpoint
+          DATA=$(curl -sf --max-time 10 \
+            "$RELAY/nba/liveData/scoreboard/todaysScoreboard_00.json?leagueId=10" \
+            || echo '{}')
+          echo "$DATA" > /tmp/wnba.json
+          COUNT=$(jq '.scoreboard.games | length' /tmp/wnba.json 2>/dev/null || echo 0)
+          EARLIEST=$(jq -r '.scoreboard.games[]?.gameTimeUTC // empty' /tmp/wnba.json | sort | head -1)
+          GAMES=$(jq -c '[.scoreboard.games[]? | {
+            away: "\(.awayTeam.teamCity) \(.awayTeam.teamName)",
+            home: "\(.homeTeam.teamCity) \(.homeTeam.teamName)",
+            time: .gameStatusText
+          }]' /tmp/wnba.json 2>/dev/null || echo '[]')
+          echo "count=$COUNT" >> $GITHUB_OUTPUT
+          echo "earliest=${EARLIEST:-}" >> $GITHUB_OUTPUT
+          echo "games_json=$GAMES" >> $GITHUB_OUTPUT
+
       - name: Fetch AFL schedule via Squiggle
         id: afl
         run: |
@@ -202,6 +223,7 @@ jobs:
             "${{ steps.soccer.outputs.earliest }}"
             "${{ steps.tennis.outputs.earliest }}"
             "${{ steps.mlb.outputs.earliest }}"
+            "${{ steps.wnba.outputs.earliest }}"
             "${{ steps.afl.outputs.earliest }}"
           )
 
@@ -263,6 +285,7 @@ jobs:
           NHL_COUNT: ${{ steps.nhl.outputs.count }}
           NHL_GAMES_JSON: ${{ steps.nhl.outputs.games_json }}
           MLB_COUNT: ${{ steps.mlb.outputs.count }}
+          WNBA_COUNT: ${{ steps.wnba.outputs.count }}
           AFL_COUNT: ${{ steps.afl.outputs.count }}
           SOCCER_COUNT: ${{ steps.soccer.outputs.count }}
           TENNIS_NOTE: ${{ steps.tennis.outputs.note }}
@@ -272,6 +295,7 @@ jobs:
           SEND_REASON: ${{ steps.timing.outputs.send_reason }}
           NBA_GAMES_JSON: ${{ steps.nba.outputs.games_json }}
           MLB_GAMES_JSON: ${{ steps.mlb.outputs.games_json }}
+          WNBA_GAMES_JSON: ${{ steps.wnba.outputs.games_json }}
           AFL_GAMES_JSON: ${{ steps.afl.outputs.games_json }}
           SOCCER_GAMES_JSON: ${{ steps.soccer.outputs.games_json }}
         run: |

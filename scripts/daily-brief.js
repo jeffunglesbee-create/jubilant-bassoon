@@ -19,6 +19,7 @@ const {
   NBA_COUNT = '0',
   NHL_COUNT = '0',
   MLB_COUNT = '0',
+  WNBA_COUNT = '0',
   AFL_COUNT = '0',
   SOCCER_COUNT = '0',
   TENNIS_NOTE = '',
@@ -29,6 +30,7 @@ const {
   NBA_GAMES_JSON = '[]',
   NHL_GAMES_JSON = '[]',
   MLB_GAMES_JSON = '[]',
+  WNBA_GAMES_JSON = '[]',
   AFL_GAMES_JSON = '[]',
   SOCCER_GAMES_JSON = '[]',
 } = process.env;
@@ -40,6 +42,7 @@ function parseGames(jsonStr) {
 const nbaGames = parseGames(NBA_GAMES_JSON);
 const nhlGames = parseGames(NHL_GAMES_JSON);
 const mlbGames = parseGames(MLB_GAMES_JSON);
+const wnbaGames = parseGames(WNBA_GAMES_JSON);
 const aflGames = parseGames(AFL_GAMES_JSON);
 const soccerGames = parseGames(SOCCER_GAMES_JSON);
 
@@ -54,6 +57,10 @@ const nhlLines = nhlGames.length
 const mlbLines = mlbGames.length
   ? mlbGames.slice(0, 6).map(g => `  ${g.away} @ ${g.home} — ${g.time} UTC`).join('\n')
   : '  (no MLB games today)';
+
+const wnbaLines = wnbaGames.length
+  ? wnbaGames.slice(0, 6).map(g => `  ${g.away} @ ${g.home} — ${g.time}`).join('\n')
+  : '  (no WNBA games today)';
 
 const aflLines = aflGames.length
   ? aflGames.slice(0, 5).map(g => `  ${g.away} @ ${g.home} [${g.round}] — ${g.time} UTC`).join('\n')
@@ -76,11 +83,6 @@ const html = `<!DOCTYPE html>
 <p style="color:#6b7280;margin:0 0 20px;font-size:13px">${DAY}</p>
 
 <div style="background:#1a1a1a;border:1px solid #2a2a2a;border-radius:8px;padding:16px;margin-bottom:14px">
-  <p style="color:#9ca3af;font-size:10px;letter-spacing:1px;text-transform:uppercase;margin:0 0 10px">Trigger &mdash; paste into Claude</p>
-  <code style="color:#4ade80;font-size:14px;line-height:1.6">${trigger}</code>
-</div>
-
-<div style="background:#1a1a1a;border:1px solid #2a2a2a;border-radius:8px;padding:16px;margin-bottom:14px">
   <p style="color:#9ca3af;font-size:10px;letter-spacing:1px;text-transform:uppercase;margin:0 0 12px">Today's Slate</p>
   <p style="margin:0 0 6px;font-size:13px">&#127944; NBA &mdash; <strong>${NBA_COUNT} games</strong></p>
   <pre style="color:#d1d5db;font-size:11px;margin:0 0 12px;line-height:1.5">${nbaLines}</pre>
@@ -88,6 +90,8 @@ const html = `<!DOCTYPE html>
   <pre style="color:#d1d5db;font-size:11px;margin:0 0 12px;line-height:1.5">${nhlLines}</pre>
   <p style="margin:0 0 6px;font-size:13px">&#9918; MLB &mdash; <strong>${MLB_COUNT} games</strong></p>
   <pre style="color:#d1d5db;font-size:11px;margin:0 0 12px;line-height:1.5">${mlbLines}</pre>
+  <p style="margin:0 0 6px;font-size:13px">&#127944; WNBA &mdash; <strong>${WNBA_COUNT} games</strong></p>
+  <pre style="color:#d1d5db;font-size:11px;margin:0 0 12px;line-height:1.5">${wnbaLines}</pre>
   <p style="margin:0 0 6px;font-size:13px">&#127944; AFL &mdash; <strong>${AFL_COUNT} games</strong></p>
   <pre style="color:#d1d5db;font-size:11px;margin:0 0 12px;line-height:1.5">${aflLines}</pre>
   <p style="margin:0 0 6px;font-size:13px">&#9917; Soccer &mdash; <strong>${SOCCER_COUNT} games</strong></p>
@@ -100,12 +104,6 @@ const html = `<!DOCTYPE html>
   <p style="margin:0 0 4px;font-size:12px">SW_VERSION: ${SW_STATUS}</p>
   <p style="margin:0;font-size:12px">Relay: ${RELAY_STATUS}</p>
 </div>
-
-<p style="color:#374151;font-size:10px;margin-top:16px;line-height:1.7">
-  Earliest game: ${EARLIEST_GAME}<br>
-  Triggered by: ${SEND_REASON}<br>
-  daily-brief.yml &middot; jubilant-bassoon &middot; ${new Date().toUTCString()}
-</p>
 
 </body>
 </html>`;
@@ -125,6 +123,9 @@ const text = [
   `MLB: ${MLB_COUNT} games`,
   mlbLines,
   '',
+  `WNBA: ${WNBA_COUNT} games`,
+  wnbaLines,
+  '',
   `AFL: ${AFL_COUNT} games`,
   aflLines,
   '',
@@ -134,9 +135,6 @@ const text = [
   '',
   `SW_VERSION: ${SW_STATUS}`,
   `Relay: ${RELAY_STATUS}`,
-  '',
-  `Earliest game: ${EARLIEST_GAME}`,
-  `Triggered by: ${SEND_REASON}`,
 ].filter(l => l !== undefined).join('\n');
 
 // ── Send via Resend ──────────────────────────────────────────────────────────
