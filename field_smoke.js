@@ -499,6 +499,11 @@ try {
   if(hasFieldErrors) pass('A55 — Runtime capture: _fieldErrors + onerror + debug panel present');
   else fail('A55 — Runtime capture missing — browser errors invisible without DevTools');
 
+  // A56 — field_utils.js loaded as separate script
+  const hasUtils = html.includes('field_utils.js') && html.includes('<script src="field_utils.js">');
+  if(hasUtils) pass('A56 — field_utils.js loaded in index.html');
+  else fail('A56 — field_utils.js not loaded — pure functions missing from browser');
+
   // ─────────────────────────────────────────────────────────────────────
   log('---');
   log('Failures:', failures);

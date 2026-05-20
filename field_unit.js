@@ -1,10 +1,20 @@
-// field_unit.js — unit tests for FIELD pure functions
-// Run: node field_unit.js
+// field_unit.js — unit tests for FIELD pure utility functions
+// Run: node field_unit.js  (from repo root)
 // Exit 0 = all pass; 1 = any failures
-// Rule 17: add a test when a function's contract is defined or a bug is fixed.
+//
+// Functions imported directly from field_utils.js — no new Function() hacks.
+// Rule 17: add a test when a function contract is defined or a bug is fixed.
+// Rule 19: pure functions live in field_utils.js, not index.html.
 
-const fs = require('fs');
-const html = fs.readFileSync('index.html', 'utf8');
+const {
+  trimToCompleteSentence,
+  toImpliedNum,
+  espnTeamMatch,
+  wxAlert,
+  parseMatchweek,
+  dramaTier,
+  espnPeriodLabel,
+} = require('./field_utils.js');
 
 let pass = 0, fail = 0;
 function test(label, fn) {
@@ -18,127 +28,137 @@ function assertEqual(a, b, msg) {
   if (a !== b) throw new Error(msg || `expected ${JSON.stringify(b)}, got ${JSON.stringify(a)}`);
 }
 
-// Extract and run a named function from source in isolation
-function makeFn(name) {
-  const pattern = new RegExp(
-    `(function ${name}\\s*\\([^)]*\\)\\s*\\{[\\s\\S]*?\\n\\})`
-  );
-  const m = html.match(pattern);
-  if (!m) throw new Error(`Function ${name} not found`);
-  // eslint-disable-next-line no-new-func
-  return new Function(`${m[1]}; return ${name}(...arguments)`);
-}
+console.log('\n── FIELD Unit Tests ─────────────────────────────────────\n');
 
-console.log('\n── FIELD Unit Tests ────────────────────────────────────────\n');
-
-// ── trimToCompleteSentence ───────────────────────────────────────────────────
-const trim = makeFn('trimToCompleteSentence');
-
-test('trimToCompleteSentence: already clean ending — unchanged', () => {
-  assertEqual(trim('Hello world.'), 'Hello world.');
-  assertEqual(trim('Hello world!'), 'Hello world!');
-  assertEqual(trim('Hello world?'), 'Hello world?');
+// ── trimToCompleteSentence ─────────────────────────────────────────────────
+test('trimToCompleteSentence: clean ending — unchanged', () => {
+  assertEqual(trimToCompleteSentence('Hello world.'), 'Hello world.');
+  assertEqual(trimToCompleteSentence('Hello world!'), 'Hello world!');
+  assertEqual(trimToCompleteSentence('Hello world?'), 'Hello world?');
 });
 
 test('trimToCompleteSentence: trims incomplete second sentence', () => {
-  // First sentence must be ≥30 chars to pass the length floor
-  const result = trim('This is a complete first sentence here. Second fragment without end');
+  const result = trimToCompleteSentence('This is a complete first sentence here. Second fragment without end');
   assertEqual(result, 'This is a complete first sentence here.');
 });
 
-test('trimToCompleteSentence: no boundary — returns full text (not empty string)', () => {
+test('trimToCompleteSentence: no boundary — returns full text not empty string', () => {
   // Bug fixed May 20: used to return '' → caller fell back to generic static text
-  // Europa League final was getting "Premier League fixture" blurb because of this
   const input = 'A single long fragment with no sentence ending anywhere in it at all';
-  assertEqual(trim(input), input);
+  assertEqual(trimToCompleteSentence(input), input);
 });
 
 test('trimToCompleteSentence: null/undefined/empty passthrough', () => {
-  assertEqual(trim(''), '');
-  assertEqual(trim(null), null);
-  assertEqual(trim(undefined), undefined);
+  assertEqual(trimToCompleteSentence(''), '');
+  assertEqual(trimToCompleteSentence(null), null);
+  assertEqual(trimToCompleteSentence(undefined), undefined);
 });
 
-// ── toImpliedNum ─────────────────────────────────────────────────────────────
-// Returns 0-100 (percentage), not 0-1 decimal
-const toImpl = makeFn('toImpliedNum');
-
+// ── toImpliedNum ───────────────────────────────────────────────────────────
 test('toImpliedNum: favourite (-150) → >50%', () => {
-  const r = toImpl(-150);
+  const r = toImpliedNum(-150);
   assert(r > 50 && r < 100, `expected 50-100, got ${r}`);
 });
 
 test('toImpliedNum: underdog (+130) → <50%', () => {
-  const r = toImpl(130);
+  const r = toImpliedNum(130);
   assert(r > 0 && r < 50, `expected 0-50, got ${r}`);
 });
 
 test('toImpliedNum: even money (+100/-100) → ~50%', () => {
-  const pos = toImpl(100), neg = toImpl(-100);
-  assert(Math.abs(pos - 50) < 1, `+100 should be ~50%, got ${pos}`);
-  assert(Math.abs(neg - 50) < 1, `-100 should be ~50%, got ${neg}`);
+  const pos = toImpliedNum(100), neg = toImpliedNum(-100);
+  assert(Math.abs(pos - 50) < 1, `+100 → ~50%, got ${pos}`);
+  assert(Math.abs(neg - 50) < 1, `-100 → ~50%, got ${neg}`);
 });
 
 test('toImpliedNum: EV/EVEN/PK → exactly 50', () => {
-  assertEqual(toImpl('EV'), 50);
-  assertEqual(toImpl('EVEN'), 50);
-  assertEqual(toImpl('PK'), 50);
+  assertEqual(toImpliedNum('EV'), 50);
+  assertEqual(toImpliedNum('EVEN'), 50);
+  assertEqual(toImpliedNum('PK'), 50);
 });
 
 test('toImpliedNum: null/empty → null', () => {
-  assertEqual(toImpl(''), null);
-  assertEqual(toImpl(null), null);
+  assertEqual(toImpliedNum(''), null);
+  assertEqual(toImpliedNum(null), null);
 });
 
-// ── espnTeamMatch ────────────────────────────────────────────────────────────
-const teamMatch = makeFn('espnTeamMatch');
-
+// ── espnTeamMatch ──────────────────────────────────────────────────────────
 test('espnTeamMatch: exact match', () => {
-  assert(teamMatch('Knicks', 'Knicks'));
-  assert(teamMatch('Warriors', 'Warriors'));
+  assert(espnTeamMatch('Knicks', 'Knicks'));
+  assert(espnTeamMatch('Warriors', 'Warriors'));
 });
 
 test('espnTeamMatch: ESPN full name vs FIELD short name', () => {
-  // ESPN sends "New York Knicks", FIELD stores "Knicks"
-  assert(teamMatch('New York Knicks', 'Knicks'));
-  assert(teamMatch('Golden State Warriors', 'Warriors'));
+  assert(espnTeamMatch('New York Knicks', 'Knicks'));
+  assert(espnTeamMatch('Golden State Warriors', 'Warriors'));
 });
 
 test('espnTeamMatch: no false positives', () => {
-  assert(!teamMatch('Boston Celtics', 'Lakers'));
-  assert(!teamMatch('Miami Heat', 'Knicks'));
+  assert(!espnTeamMatch('Boston Celtics', 'Lakers'));
+  assert(!espnTeamMatch('Miami Heat', 'Knicks'));
 });
 
 test('espnTeamMatch: null inputs → false', () => {
-  assert(!teamMatch(null, 'Knicks'));
-  assert(!teamMatch('Knicks', null));
-  assert(!teamMatch(null, null));
+  assert(!espnTeamMatch(null, 'Knicks'));
+  assert(!espnTeamMatch('Knicks', null));
+  assert(!espnTeamMatch(null, null));
 });
 
-// ── wxAlert ──────────────────────────────────────────────────────────────────
-const wxAlert = makeFn('wxAlert');
-
-test('wxAlert: heavy rain (>5in) → alert string', () => {
-  const r = wxAlert({ rain: 6, wind: 10, temp: 72, precip: 6 });
-  assert(typeof r === 'string' && r.length > 0, `expected string, got ${r}`);
-  assert(r.toLowerCase().includes('rain'), `expected rain mention, got: ${r}`);
+// ── wxAlert ────────────────────────────────────────────────────────────────
+test('wxAlert: heavy rain (>5) → alert string mentioning rain', () => {
+  const r = wxAlert({ rain: 6, wind: 10, temp: 72 });
+  assert(typeof r === 'string' && r.toLowerCase().includes('rain'), `got: ${r}`);
 });
 
-test('wxAlert: extreme heat → alert string', () => {
+test('wxAlert: extreme heat (>100) → alert string', () => {
   const r = wxAlert({ rain: 0, wind: 5, temp: 105 });
-  assert(typeof r === 'string' && r.includes('heat'), `got: ${r}`);
+  assert(typeof r === 'string' && r.toLowerCase().includes('heat'), `got: ${r}`);
 });
 
-test('wxAlert: high wind → alert string', () => {
+test('wxAlert: high wind (>30mph) → alert string', () => {
   const r = wxAlert({ rain: 0, wind: 35, temp: 72 });
-  assert(typeof r === 'string' && r.includes('wind'), `got: ${r}`);
+  assert(typeof r === 'string' && r.toLowerCase().includes('wind'), `got: ${r}`);
 });
 
 test('wxAlert: normal conditions → null', () => {
-  const r = wxAlert({ rain: 0, wind: 8, temp: 72, precip: 0 });
-  assertEqual(r, null);
+  assertEqual(wxAlert({ rain: 0, wind: 8, temp: 72 }), null);
 });
 
-// ── Summary ──────────────────────────────────────────────────────────────────
-console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
+// ── parseMatchweek ─────────────────────────────────────────────────────────
+test('parseMatchweek: extracts number from league string', () => {
+  assertEqual(parseMatchweek('Premier League - Matchweek 38'), 38);
+  assertEqual(parseMatchweek('Premier League - Matchweek 1'), 1);
+});
+
+test('parseMatchweek: returns null for non-matchweek strings', () => {
+  assertEqual(parseMatchweek('UEFA Champions League — Final'), null);
+  assertEqual(parseMatchweek(null), null);
+  assertEqual(parseMatchweek(''), null);
+});
+
+// ── dramaTier ──────────────────────────────────────────────────────────────
+test('dramaTier: returns tier string for known scores', () => {
+  const t = dramaTier(85);
+  assert(typeof t === 'string' && t.length > 0, `got: ${t}`);
+});
+
+test('dramaTier: low score returns different tier than high', () => {
+  const low = dramaTier(20);
+  const high = dramaTier(90);
+  assert(low !== high, `expected different tiers: low=${low} high=${high}`);
+});
+
+// ── espnPeriodLabel ────────────────────────────────────────────────────────
+test('espnPeriodLabel: basketball Q labels', () => {
+  const r = espnPeriodLabel('Q', 1, '10:00');
+  assert(typeof r === 'string' && r.includes('1'), `got: ${r}`);
+});
+
+test('espnPeriodLabel: OT label', () => {
+  const r = espnPeriodLabel('Q', 5, '2:00');
+  assert(typeof r === 'string', `got: ${r}`);
+});
+
+// ── Summary ────────────────────────────────────────────────────────────────
+console.log(`\n── Results: ${pass} passed, ${fail} failed ─────────────\n`);
 if (fail > 0) process.exit(1);

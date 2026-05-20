@@ -184,6 +184,9 @@ assert('A55 — Runtime capture: _fieldErrors + onerror + debug panel present',
   html.includes('window.onerror') &&
   html.includes('unhandledrejection') &&
   html.includes('field-debug-panel'));
+assert('A56 — field_utils.js loaded in index.html',
+  html.includes('field_utils.js') &&
+  html.includes('<script src="field_utils.js">'));
 
 
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);

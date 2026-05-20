@@ -686,3 +686,97 @@ When a feature is confirmed: remove from list, add comment in code:
 // browser-confirmed: 2026-05-21 Samsung Galaxy A36
 ```
 
+
+---
+
+## Rule 19 — Single-file architecture: decision, costs, and threshold
+
+### The decision
+
+`index.html` is a single-file deployment. One `git push` → 19s → live.
+No bundler, no build step, no artifact management. For a solo project
+with daily updates, this simplicity is worth the tradeoffs.
+
+**This decision is intentional and not up for casual reversal.**
+Any move toward a build step must clear the threshold below.
+
+### Current state (May 20 2026)
+
+| File | Size | Purpose |
+|------|------|---------|
+| `index.html` | ~800KB | All app logic, data, styles |
+| `field_utils.js` | ~6KB | 13 pure utility functions |
+| `smoke.js` | ~6KB | CI structural assertions |
+| `field_smoke.js` | ~15KB | Local per-day assertions |
+| `field_unit.js` | ~5KB | Unit tests for field_utils.js |
+| `field_browser.test.js` | ~5KB | Playwright browser tests |
+
+### What `field_utils.js` solves
+
+Pure functions (no global state, no side effects) now live in `field_utils.js`
+and are loaded via `<script src="field_utils.js">` before the main script.
+
+**What this unlocks:**
+- `field_unit.js` uses `require('./field_utils.js')` — no more `new Function()` hacks
+- ESLint and TypeScript tooling work naturally on `.js` files
+- Dead code in utils is detectable by import analysis
+- Adding tests for a new pure function takes 30 seconds
+
+**Rule:** Pure functions belong in `field_utils.js`, not `index.html`.
+When writing a new function with no global dependencies: write it in
+`field_utils.js` first, then call it from `index.html`.
+
+**What goes in field_utils.js** (pure — no globals, no side effects):
+- String processing: `trimToCompleteSentence`, `parseMatchweek`
+- Math/probability: `toImpliedNum`, `dramaTier`
+- Team matching: `espnTeamMatch`
+- Weather: `wxAlert`, `wxDescription`, `wxIcon`, `wxWindDir`, `wxBadge`
+- Venue data: `isOutdoorVenue`, `getVenueCoords`
+- Display helpers: `espnPeriodLabel`
+
+**What stays in index.html** (impure — reads/writes globals):
+- Any function that reads `allData`, `espnScores`, `selectedTz`, `wxCache`
+- Any function that writes to `_fieldErrors`, `espnScores`, localStorage
+- Any function that touches the DOM
+
+### The size threshold
+
+`index.html` currently grows ~30KB per 10 days of active development.
+At that rate it crosses 1MB in ~2 weeks.
+
+**When `index.html` exceeds 1MB:**
+A build step becomes required before any new TYPE C (feature) work.
+
+The minimum build step is a shell script — not webpack, not a bundler:
+```sh
+# scripts/build.sh — concatenate source files into index.html
+cat src/head.html src/styles.css src/utils.js src/app.js src/tail.html > index.html
+```
+
+This preserves single-file deployment while enabling module-level
+organisation. The `git push` workflow doesn't change — only the
+source file structure does.
+
+**Do not reach 1MB without a build plan.** Audit the file for dead code
+and data staleness first (Rule 14) — the growth rate is partly from
+accumulating expired schedule entries, stale BETTING_LINES_FALLBACK_DATA,
+and past MEDIA_SPECIALS. Cleaning those should recover 20-30KB before
+any architectural change is needed.
+
+### What the single file costs (documented honestly)
+
+1. **Unit testing is second-class without field_utils.js** — functions
+   that reference globals cannot be tested in isolation. This is
+   structural, not fixable without modules or dependency injection.
+
+2. **ESLint fires false positives on browser globals** — `.eslintrc.json`
+   needs a manually-maintained `globals` list. In a `.js` file,
+   `/* global document */` handles this cleanly.
+
+3. **Dead code requires manual audit** — there's no import graph.
+   `field_unit.js` and the TYPE D audit process are the substitutes.
+
+4. **Documentation loses locality** — "where is Night Owl?" requires
+   grepping 800KB. A `src/journalism/night-owl.js` file would be
+   self-documenting. Session docs compensate but shouldn't have to.
+

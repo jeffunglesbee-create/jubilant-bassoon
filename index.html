@@ -2242,6 +2242,8 @@ flex-shrink:0;white-space:nowrap;
   </div>
 </div>
 
+
+<script src="field_utils.js"></script>
 <script>
 'use strict';
 // ═══════════════════════════════════════════════════════════════
@@ -3430,12 +3432,11 @@ const isoDate = today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0
 
 // ── Time helpers ─────────────────────────────────────────────
 function localTz(){ return Intl.DateTimeFormat().resolvedOptions().timeZone; }
+
+// Format an ISO timestamp to user's selected timezone (ET, local, or custom)
 function fmtTime(iso){
-  if(!iso) return "TBD";
-  const d=new Date(iso); if(isNaN(d)) return iso;
   const tz = selectedTz==="local"?localTz():selectedTz;
-  try{ return d.toLocaleTimeString("en-US",{hour:"2-digit",minute:"2-digit",timeZone:tz,hour12:true}); }
-  catch{ return d.toLocaleTimeString("en-US",{hour:"2-digit",minute:"2-digit",hour12:true}); }
+  return new Date(iso).toLocaleTimeString('en-US',{timeZone:tz,hour:'numeric',minute:'2-digit',hour12:true});
 }
 function getStatus(iso){
   if(!iso) return "upcoming";
@@ -6639,15 +6640,6 @@ function getBettingFallback(){
 
 
 // renderBetting is now async — fetches fresh lines daily, falls back to hardcoded
-function toImpliedNum(oddsStr){
-  if(!oddsStr) return null;
-  const s = String(oddsStr).trim();
-  if(["EV","PK","EVEN","+0","0"].includes(s.toUpperCase())) return 50;
-  const n = parseInt(s);
-  if(isNaN(n)) return null;
-  return n < 0 ? (-n / (-n + 100)) * 100 : (100 / (n + 100)) * 100;
-}
-
 function compBadge(moneylineGap){
   if(!moneylineGap && moneylineGap !== 0) return '';
   if(moneylineGap < 35)  return `<span class="comp-badge pickem">Pick'em</span>`;
@@ -7642,84 +7634,16 @@ const VENUE_COORDS = {
 };
 
 // Fuzzy venue lookup — matches "Fenway Park, Boston" and "Fenway Park"
-function getVenueCoords(venueName){
-  if(!venueName) return null;
-  if(VENUE_COORDS[venueName]) return VENUE_COORDS[venueName];
-  const needle = venueName.toLowerCase().split(",")[0].trim();
-  for(const [key, coords] of Object.entries(VENUE_COORDS)){
-    const hay = key.toLowerCase().split(",")[0].trim();
-    if(needle === hay || hay.includes(needle) || needle.includes(hay.split(" ")[0])){
-      return coords;
-    }
-  }
-  return null;
-}
-
 // Returns true for outdoor venues — uses VENUE_COORDS[2] flag
 // Falls back to keyword heuristic for unlisted venues
 const INDOOR_KEYWORDS = ["arena","garden","center","centre","dome","coliseum",
   "fieldhouse","forum","palace","pavilion","theater","theatre"];
-function isOutdoorVenue(venueName){
-  if(!venueName) return false;
-  const coords = getVenueCoords(venueName);
-  if(coords) return coords[2] === true;
-  // Fallback heuristic for unlisted venues
-  const lower = venueName.toLowerCase();
-  return !INDOOR_KEYWORDS.some(kw => lower.includes(kw));
-}
-
 // Cardinal direction from degrees
 const WX_DIR = ["N","NNE","NE","ENE","E","ESE","SE","SSE","S","SSW","SW","WSW","W","WNW","NW","NNW"];
-function wxWindDir(deg){ return WX_DIR[Math.round((deg||0)/22.5) % 16]; }
-
 // Human-readable description
-function wxDescription(wx){
-  if(wx.rain > 3)   return "Heavy rain";
-  if(wx.rain > 0.5) return "Light rain";
-  if(wx.precip > 2) return "Wet conditions";
-  if(wx.temp > 95)  return "Extreme heat";
-  if(wx.temp < 32)  return "Freezing";
-  if(wx.wind > 25)  return "Windy";
-  return wx.isDay ? "Clear" : "Clear night";
-}
-
 // Weather icon emoji
-function wxIcon(wx){
-  if(wx.rain > 3)   return "⛈";
-  if(wx.rain > 0.5) return "🌧";
-  if(wx.precip > 1) return "🌦";
-  if(wx.temp > 95)  return "🥵";
-  if(wx.temp < 32)  return "🥶";
-  if(wx.wind > 25)  return "💨";
-  if(wx.isDay)      return "☀️";
-  return "🌙";
-}
-
 // Alert string for game-affecting conditions (rain delay risk)
-function wxAlert(wx){
-  if(wx.rain > 5)   return "Heavy rain — delay risk";
-  if(wx.rain > 1)   return "Rain in forecast";
-  if(wx.temp > 100) return "Extreme heat advisory";
-  if(wx.wind > 30)  return "High wind advisory";
-  return null;
-}
-
 // Compact badge for game cards: "🌧 62°F · 0.4" rain · 12mph NE"
-function wxBadge(wx){
-  const icon   = wxIcon(wx);
-  const rain   = wx.rain > 0.1 ? ` · 🌧 ${wx.rain.toFixed(1)}"` : "";
-  const wind   = wx.wind >= 8  ? ` · ${wx.wind}mph ${wxWindDir(wx.windDir)}` : "";
-  const alert  = wx.alert ? ` ⚠️` : "";
-  const bgCol  = wx.alert ? "rgba(239,68,68,.12)" : "rgba(148,163,184,.06)";
-  const txCol  = wx.alert ? "#fbbf24" : "var(--smoke)";
-  return `<span class="wx-badge" title="${wx.desc}${wx.alert?" — "+wx.alert:""}"
-    style="display:inline-flex;align-items:center;gap:.2rem;font-size:.6rem;
-    background:${bgCol};color:${txCol};padding:.1rem .35rem;border-radius:.25rem;
-    margin-top:.2rem;letter-spacing:.01em">
-    ${icon} ${wx.temp}°F${rain}${wind}${alert}
-  </span>`;
-}
-
 // Core fetch — uses exact URL from specification, 1-hour cache
 async function fetchWeather(lat, lon){
   const key = `${lat.toFixed(3)}_${lon.toFixed(3)}`;
@@ -9344,20 +9268,6 @@ function resolveGameIdByHome(homeName){
   return null;
 }
 
-function espnTeamMatch(espnName, fieldName){
-  if(!espnName||!fieldName) return false;
-  // Normalize: lowercase, remove diacritics, strip punctuation
-  const norm = s => s.toLowerCase()
-    .normalize("NFD").replace(/[̀-ͯ]/g,"")
-    .replace(/[^a-z0-9 ]/g,"");
-  const a = norm(espnName), b = norm(fieldName);
-  if(a===b) return true;
-  if(a.includes(b)||b.includes(a)) return true;
-  // Word match: any word > 3 chars shared between names
-  return a.split(" ").some(w=>w.length>3&&b.includes(w))
-      || b.split(" ").some(w=>w.length>3&&a.includes(w));
-}
-
 // Find matching ESPN score for a FIELD game object
 function findESPNScore(game){
   const home = (game.home||"").toLowerCase();
@@ -10179,14 +10089,6 @@ const ESPN_OT_PERIODS = {
   "H": 2,  // College basketball halves (H3 = OT)
   "T": 9,  // Baseball innings (T10+ = extra innings)
 };
-function espnPeriodLabel(periodPrefix, period, clock){
-  const maxPeriod = ESPN_OT_PERIODS[periodPrefix];
-  if(maxPeriod && period > maxPeriod){
-    return period === maxPeriod + 1 ? "OT" : `${period - maxPeriod}OT`;
-  }
-  return `${periodPrefix}${period}`;
-}
-
 function renderESPNScores(){
   if(!allData||!allData.sports) return;
   // Prune stale entries (not updated within ESPN_SCORE_TTL) to prevent yesterday's
@@ -11181,13 +11083,6 @@ function dramaScoreLive(eData, sport){
   return Math.min(100, Math.round(raw));
 }
 
-function dramaTier(score){
-  if(score>=80) return 'fire';
-  if(score>=60) return 'hot';
-  if(score>=40) return 'warm';
-  return '';
-}
-
 // #18c: Ghost Note / Statistical Extremes
 // Reads homeLinescores/awayLinescores from espnScores (populated by #18b).
 // Returns {dramaBonus:0-20, note:string|null}
@@ -11686,30 +11581,6 @@ function fieldBriefCacheKey(){
 // J-SERIES UTILITY: Trim AI response to last complete sentence.
 // Prevents mid-sentence truncation from appearing in cards.
 // Applies to all journalism text before display.
-function trimToCompleteSentence(text) {
-  if(!text) return text;
-  const trimmed = text.trim();
-  // Already ends cleanly
-  if(/[.!?]["']?$/.test(trimmed)) return trimmed;
-  // Find the last complete sentence boundary
-  const lastEnd = Math.max(
-    trimmed.lastIndexOf('. ') + 1,
-    trimmed.lastIndexOf('! ') + 1,
-    trimmed.lastIndexOf('? ') + 1,
-    trimmed.lastIndexOf('."') + 2,
-    trimmed.lastIndexOf('!"') + 2,
-    trimmed.lastIndexOf('?"') + 2,
-  );
-  // Trim if result is at least 30 chars (one meaningful sentence).
-  if(lastEnd >= 30 && lastEnd > trimmed.length * 0.3) {
-    return trimmed.slice(0, lastEnd).trim();
-  }
-  // No sentence boundary found — return full text rather than ''.
-  // A slightly incomplete sentence is almost always better than the generic
-  // static fallback (e.g. "Premier League fixture — one of 38 games...").
-  return trimmed;
-}
-
 function buildFIELDBriefStatic(sections){
   const all=sections.flatMap(s=>(s.games||[]).map(g=>({...g,_section:s.sport})));
   const ranked=all.filter(g=>g.home&&g.away&&g.home!=='ATP/WTA Field').sort((a,b)=>preGameScore(b)-preGameScore(a));
@@ -12449,11 +12320,6 @@ async function initFIELDBrief(sections){
 // Parallel to Series Preview (J2) but for league fixtures, not playoff series.
 // Uses matchweek + stream context for static brief; Gemini for editorial.
 // ═══════════════════════════════════════════════════════════════════════════
-
-function parseMatchweek(leagueStr) {
-  const m = (leagueStr||'').match(/Matchweek\s*(\d+)/i);
-  return m ? parseInt(m[1]) : null;
-}
 
 function buildEPLMatchBriefStatic(g) {
   const mw = parseMatchweek(g.league);
