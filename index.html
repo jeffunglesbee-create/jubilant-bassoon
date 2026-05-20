@@ -8766,40 +8766,78 @@ function computeLiveInterval(sectionSport) {
 }
 
 // Fetch all sport scoreboards and merge into espnScores
+// ── ESPN Polling Architecture ─────────────────────────────────────────────
+// Seven failure modes fixed in this revision:
+//
+// P1 Promise.all → one uncaught throw stops ALL leagues AND kills scheduler
+//    Fix: Promise.allSettled + outer try/finally (scheduler ALWAYS restarts)
+//
+// P2 network error → league marked 'post' → 15-min blackout
+//    Fix: _espnLeagueErrors{} tracks error state separately from game state
+//         catch path: increment errors, use exponential backoff, preserve prior state
+//
+// P3 !r.ok early return → _espnLeagueLastPoll never set → rapid-fire retry
+//    Fix: always set _espnLeagueLastPoll; use error backoff for !r.ok
+//
+// P4 activeSections race condition → MLB excluded on first poll → 15-min wait
+//    Fix: _espnFirstPoll flag — first call polls ALL ESPN_SPORTS unconditionally
+//
+// P5 no outer guard → quiet-hour block / relay calls can kill scheduler
+//    Fix: outer try/finally ensures setTimeout ALWAYS fires
+//
+// P6 concurrent second call from post-MLB-load → duplicate scheduler chains
+//    Fix: field:data-ready event reschedules existing chain instead of spawning new one
+//
+// P7 nextInterval ignores never-polled leagues not yet in allLeagues
+//    Fix: after field:data-ready, reschedule to 1s if MLB still unpolled
+// ─────────────────────────────────────────────────────────────────────────
+let _espnFirstPoll = true;      // cleared after first fetchESPNScores call
+const _espnLeagueErrors = {};   // league → consecutive error count
+
 async function fetchESPNScores(){
   _pollCycle++; // drives lead change burst decay
+  if(espnIntervalId){ clearTimeout(espnIntervalId); espnIntervalId = null; } // prevent duplicate schedulers
+
   const today = new Date();
   const dateStr = today.getFullYear()
     + String(today.getMonth()+1).padStart(2,'0')
     + String(today.getDate()).padStart(2,'0'); // "20260506"
 
   let _hasLive = false; let _hasUpcoming = false; // kept for relay fire-and-forget below
+  let allLeagues = [];
+
+  try { // ── OUTER GUARD: scheduler restarts even if everything here throws ────────
 
   // Sport-aware filter: only poll leagues with sections in today's schedule
-  // Reduces from 20 endpoints to 6-10 on most days. Soccer always included (fetchSoccerFixtures depends on it).
+  // REMEDY D: first poll bypasses activeSections for never-polled leagues —
+  // guarantees MLB (loaded async by fetchMLBFixtures) gets its first poll at startup.
   const activeSections = new Set((allData?.sports||[]).map(s => s.sport));
   const filteredESPN = ESPN_SPORTS.filter(l =>
-    activeSections.has(l.section)       // only poll sports with games today
+    activeSections.has(l.section) ||               // normal filter
+    (_espnFirstPoll && !_espnLeagueLastPoll[l.league]) // REMEDY D: bootstrap — poll all unvisited
   );
-  // Soccer: EPL always polled (fetchSoccerFixtures depends on it for live fixture detection)
-  // Other soccer leagues (La Liga, Serie A, Bundesliga, Ligue 1): only when in schedule
-  // Golf: only when Golf section active — Slash Golf handles leaderboard enrichment
+  _espnFirstPoll = false; // only fires once
+
   const todayISO = new Date().toISOString().split("T")[0];
   const filteredSoccer = SOCCER_LEAGUES
-    .filter(l => (!l.endDate || l.endDate >= todayISO) &&   // endDate gating: skip ended leagues
+    .filter(l => (!l.endDate || l.endDate >= todayISO) &&
                  (l.league === "eng.1" || activeSections.has(l.section) || !allData?.sports?.length))
     .map(l=>({sport:"soccer",league:l.league,section:l.section,periodPrefix:"'"}));
 
-  const allLeagues = [...filteredESPN, ...filteredSoccer];
+  allLeagues = [...filteredESPN, ...filteredSoccer];
 
-  // Layer 1: only poll leagues due based on per-league state and interval
+  // Layer 1: only poll leagues due — respects per-league state and error backoff
   const now = Date.now();
   const leaguesToPoll = allLeagues.filter(l => {
     const last     = _espnLeagueLastPoll[l.league] || 0;
     const state    = _espnLeagueState[l.league] || 'pre';
-    const interval = state === 'live' ? computeLiveInterval(l.section)
-                   : state === 'pre'  ? ESPN_REFRESH_IDLE
-                   : ESPN_REFRESH_FINISHED;
+    const errCount = _espnLeagueErrors[l.league] || 0;
+    // REMEDY C: errored leagues use exponential backoff, not the 'post' interval
+    const interval = errCount > 0
+      ? Math.min(15000 * Math.pow(2, errCount - 1), 300000) // 15s→30s→60s→120s→300s
+      : state === 'live' ? computeLiveInterval(l.section)
+      : state === 'pre'  ? ESPN_REFRESH_IDLE
+      : ESPN_REFRESH_FINISHED;
     return (now - last) >= interval;
   });
 
@@ -8808,14 +8846,22 @@ async function fetchESPNScores(){
     Object.entries(_espnLeagueState).filter(([,v])=>v==='live').map(([k])=>k).join(',') || 'none live'
   );
 
-  // Layer 2: concurrent fetch — no batch delays
-  await Promise.all(leaguesToPoll.map(async ({sport, league, section, periodPrefix}) => {
+  // Layer 2: REMEDY A+B — Promise.allSettled prevents one league error from stopping others
+  await Promise.allSettled(leaguesToPoll.map(async ({sport, league, section, periodPrefix}) => {
     const url = `${ESPN_BASE}/${sport}/${league}/scoreboard?dates=${dateStr}&limit=50`;
     let leagueHasLive = false, leagueHasPre = false;
+    let fetchOk = false;
     try{
       const r = await fetch(url,{signal:AbortSignal.timeout(8000)});
-      if(!r.ok) return;
+      if(!r.ok){
+        // REMEDY C: !r.ok → error backoff, not rapid-fire retry
+        _espnLeagueErrors[league] = (_espnLeagueErrors[league]||0) + 1;
+        _espnLeagueLastPoll[league] = Date.now();
+        // Preserve prior state — a 4xx doesn't mean games are over
+        return;
+      }
       const data = await r.json();
+      fetchOk = true;
       (data.events||[]).forEach(ev=>{
         const comp = (ev.competitions||[])[0];
         if(!comp) return;
@@ -8846,8 +8892,6 @@ async function fetchESPNScores(){
         const onSecond = sit.onSecond ?? false;
         const onThird  = sit.onThird  ?? false;
 
-        // #18b: Extract period-by-period linescores (zero cost — already in every ESPN response)
-        // NBA: Q1/Q2/Q3/Q4 | NHL: P1/P2/P3 | NFL: Q1-Q4 | Soccer: 1H/2H
         const homeLS = (home.linescores||[]).map(l=>parseInt(l.value||0)).filter(v=>!isNaN(v));
         const awayLS = (away.linescores||[]).map(l=>parseInt(l.value||0)).filter(v=>!isNaN(v));
 
@@ -8863,15 +8907,21 @@ async function fetchESPNScores(){
           outs, balls, strikes,
           onFirst, onSecond, onThird,
           situation,
-          homeLinescores: homeLS,  // #18b: period scores
-          awayLinescores: awayLS,  // #18b: period scores
+          homeLinescores: homeLS,
+          awayLinescores: awayLS,
         };
         espnScoreTs[key] = Date.now();
       });
     }catch(e){
+      // REMEDY C: network/parse error → error backoff, NOT 'post' state
+      // Prior state is preserved — a timeout ≠ "all games finished"
       if(FIELD_DEBUG) console.debug("FIELD ESPN:",league,"–",e.message);
+      _espnLeagueErrors[league] = (_espnLeagueErrors[league]||0) + 1;
+      _espnLeagueLastPoll[league] = Date.now();
+      return; // skip normal state update below
     }
-    // Update per-league state and timestamp after each fetch
+    // Success path: clear error count, update state normally
+    _espnLeagueErrors[league] = 0;
     _espnLeagueLastPoll[league] = Date.now();
     _espnLeagueState[league]    = leagueHasLive ? 'live' : leagueHasPre ? 'pre' : 'post';
   }));
@@ -8884,12 +8934,11 @@ async function fetchESPNScores(){
   fetchFPLLiveScores().catch(()=>{});
   fdPrefetchSoccerLive().catch(()=>{});
 
-  // Gap 8: Quiet Hour Detection — check if all live leagues are low-drama
+  // Gap 8: Quiet Hour Detection
   {
     const liveLeagues = allLeagues.filter(l => _espnLeagueState[l.league] === 'live');
     if(liveLeagues.length > 0){
       const allQuiet = liveLeagues.every(l => {
-        // get max drama score for this league's section
         const sec = allData?.sports?.find(s => s.sport === l.section);
         const maxDrama = sec ? Math.max(0, ...(sec.games||[]).map(g => preGameScore(g))) : 0;
         return maxDrama < QUIET_THRESHOLD;
@@ -8898,7 +8947,6 @@ async function fetchESPNScores(){
         _quietLowCount++;
         if(_quietLowCount >= QUIET_CYCLES_GATE && !_quietHourActive){
           _quietHourActive = true;
-          // Surface honest "quiet night" signal
           const qBanner = document.getElementById('otw-banner');
           if(qBanner && !qBanner.dataset.quietHour){
             qBanner.dataset.quietHour = '1';
@@ -8906,7 +8954,6 @@ async function fetchESPNScores(){
           }
         }
       } else {
-        // Drama spiked — reset immediately
         if(_quietHourActive){
           _quietHourActive = false;
           const qBanner = document.getElementById('otw-banner');
@@ -8915,18 +8962,26 @@ async function fetchESPNScores(){
         _quietLowCount = 0;
       }
     } else {
-      // No live leagues — reset quiet state
       _quietLowCount = 0;
       _quietHourActive = false;
     }
   }
 
-  // Schedule next call at the earliest due-time across all leagues
-  // #11b: live leagues use drama-adjusted interval (20–45s), not a fixed 30s
+  } catch(outerErr) {
+    // REMEDY A/E: outer guard — nothing above should throw but if it does, we survive
+    if(FIELD_DEBUG) console.warn('[ESPN] outer error, scheduler restarting:', outerErr?.message);
+  }
+
+  // REMEDY A/E: ALWAYS schedule next call — runs even if try block threw
+  // This is the single most important guarantee: polling never dies permanently.
   const now2 = Date.now();
-  const nextInterval = allLeagues.reduce((min, l) => {
+  const safeAllLeagues = allLeagues.length ? allLeagues : ESPN_SPORTS.slice(0,3); // fallback if allLeagues empty
+  const nextInterval = safeAllLeagues.reduce((min, l) => {
+    const errCount = _espnLeagueErrors[l.league] || 0;
     const state    = _espnLeagueState[l.league] || 'pre';
-    const interval = state === 'live'
+    const interval = errCount > 0
+      ? Math.min(15000 * Math.pow(2, errCount - 1), 300000)
+      : state === 'live'
       ? (_quietHourActive ? QUIET_POLL_INTERVAL : computeLiveInterval(l.section))
       : state === 'pre'  ? ESPN_REFRESH_IDLE
       : ESPN_REFRESH_FINISHED;
@@ -9207,14 +9262,15 @@ async function fetchMLBFixtures(){
       // Night Owl fix: now that MLB games are in allData, re-run finals detection.
       // checkForNewFinals() only matches against allData.sports — if games weren't
       // populated yet on first ESPN poll (race condition), finals were missed.
-      // Night Owl fix: MLB now in allData — force ESPN rescan for post-game scores
-      // (MLB was absent from activeSections on first ESPN poll — race condition)
+      // REMEDY P6: dispatch event instead of calling fetchESPNScores() directly.
+      // Calling fetchESPNScores() here spawns a second scheduler chain — both persist,
+      // eventually causing 4+ parallel pollers. Instead, signal the existing chain
+      // to reschedule itself to 1s if MLB still hasn't been polled.
+      window.dispatchEvent(new CustomEvent('field:data-ready', {detail:{sport:'mlb'}}));
       setTimeout(()=>{
         checkForNewFinals();
         renderNightOwlRecap().catch(()=>{});
         injectJ1J4Badges();
-        // Also trigger a fresh ESPN fetch if MLB hasn't been polled yet
-        if(!_espnLeagueLastPoll['mlb']) fetchESPNScores().catch(()=>{});
       }, 400);
       if (FIELD_DEBUG) console.log(`[MLB Stats API] Primary source: ${mergedGames.length} games (${nationalOverrides.length} national TV overrides)`);
       return; // success — skip ESPN fallback
@@ -10016,6 +10072,18 @@ async function fetchSchedule(){
       .then(() => injectJ1J4Badges()); // Re-run J1/J4 after odds load — preGameScore uses odds
   }, 800);
   fetchESPNScores(); // Start live score polling
+
+  // REMEDY P6: listen for field:data-ready (dispatched by fetchMLBFixtures on completion).
+  // Reschedules the existing ESPN scheduler to fire within 1s so newly-loaded sports
+  // get their first poll immediately — without spawning a second scheduler chain.
+  window.addEventListener('field:data-ready', (ev) => {
+    const sport = ev?.detail?.sport;
+    if(sport && _espnLeagueLastPoll[sport]) return; // already polled, nothing to do
+    // Reschedule existing chain to fire in 1s — clears any long-wait timeout
+    if(espnIntervalId){ clearTimeout(espnIntervalId); espnIntervalId = null; }
+    espnIntervalId = setTimeout(fetchESPNScores, 1000);
+    if(FIELD_DEBUG) console.debug('[ESPN] field:data-ready →', sport, 'rescheduled in 1s');
+  }, {once: false});
   relayHealthCheck().catch(()=>{}); // RELAY health check — enables parallel NBA validation
   fetchMLBFixtures();    // Fill
 
