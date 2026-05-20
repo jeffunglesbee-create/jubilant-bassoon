@@ -2492,6 +2492,7 @@ function injectSquiggleLiveScores(){
     const clock=tm&&tm[2]?tm[2]:'';
     const key=`${sq.hteam}|${sq.ateam}`;
     espnScores[key]={
+      _gameId: resolveGameIdByHome(sq.hteam),
       state:   final_?'post':'in',
       period, clock,
       detail:  final_?'Final':(sq.timestr||'Live'),
@@ -7177,6 +7178,7 @@ function applyFDLiveToCards(){
       const mins = fdMatch.minute||0;
       // Write into espnScores — FD is authoritative, always overwrites FPL
       espnScores[key] = {
+        _gameId: game._id || resolveGameIdByHome(game.home),
         state:       isFinished?"post":"in",
         period:      mins>45?2:1,
         clock:       isFinished?"":(mins>0?String(mins):""),
@@ -8915,6 +8917,7 @@ async function fetchNBARelayScores() {
       if (RELAY_PRIMARY) {
         // Post-cutover: RELAY is source of truth
         espnScores[key] = {
+          _gameId: resolveGameIdByHome(homeKey),
           state: g.state, period: g.period, clock: g.clock, detail: g.detail,
           homeScore: g.homeScore, awayScore: g.awayScore,
           homeName: homeKey, awayName: awayKey,
@@ -9192,10 +9195,12 @@ async function fetchESPNScores(){
         const key = `${homeName}|${awayName}`;
         const situation = comp.situation || null;
         espnScores[key] = {
+          _gameId: resolveGameIdByHome(homeName), // for drama history lookup
           state, period, clock, detail,
           homeScore, awayScore, homeName, awayName,
           home: homeName, away: awayName,
           _sport: section,
+          _gameId, // resolved game._id for drama history lookup
           homeWinning: homeScore > awayScore,
           periodPrefix,
           outs, balls, strikes,
@@ -9287,6 +9292,21 @@ async function fetchESPNScores(){
 }
 
 // Fuzzy match: does the ESPN team name match a FIELD game team name?
+// Helper: resolve game._id from allData by home team name slug
+// Used when building espnScores entries — stores _gameId so drama history
+// functions (getDramaTrend, getSmoothedDrama) can use the correct key.
+function resolveGameIdByHome(homeName){
+  try{
+    const slug=(homeName||'').toLowerCase().replace(/[^a-z]/g,'').slice(-6);
+    for(const sec of (allData?.sports||[])){
+      for(const g of (sec.games||[])){
+        if(g._id&&g.home&&(g.home||'').toLowerCase().replace(/[^a-z]/g,'').endsWith(slug)) return g._id;
+      }
+    }
+  }catch(e_){}
+  return null;
+}
+
 function espnTeamMatch(espnName, fieldName){
   if(!espnName||!fieldName) return false;
   // Normalize: lowercase, remove diacritics, strip punctuation
@@ -11113,9 +11133,9 @@ function dramaScoreLive(eData, sport){
                     sp.includes('football')||sp.includes('soccer')||sp.includes('league')||
                     sp.includes('mls')||sp.includes('liga')||sp.includes('premier')||
                     sp.includes('afl')||sp.includes('australian');
-  if(isOutdoor && typeof _weatherCache !== 'undefined'){
+  if(isOutdoor && typeof wxCache !== 'undefined'){
     try{
-      const wxEntry = Object.values(_weatherCache||{}).find(wx=>wx?.alert);
+      const wxEntry = Object.values(wxCache||{}).find(wx=>wx?.alert);
       if(wxEntry) sitBonus += 10; // weather alert at an outdoor venue tonight
     }catch(e_){}
   }
@@ -11430,9 +11450,10 @@ function buildCompoundPrompt(sections) {
       // Fix 7: EMBER buried lead — tier + channel context for editorial framing
       (()=>{try{const er=_emberResultCache[g._id||''];return er?`  [EMBER BURIED LEAD: Tier${er.tier} on ${er.channel} · drama ${er.dramaScore}${er.contextFlag?' · context boost':''}]`:''}catch(e_){return ''}})(),
       // Fix 9: BDL injury context (sync, reads from warm bdlCache after bdlPrefetchAll)
-      (()=>{try{return bdlInjuryContextSync(g.home||'',g.away||'',g._sport||g._section||'')?`  ${bdlInjuryContextSync(g.home||'',g.away||'',g._sport||g._section||'')}`:'';}catch(e_){return ''}})(),
+      // Called once — store result to avoid double traversal of bdlCache.injuries
+      (()=>{try{const inj=bdlInjuryContextSync(g.home||'',g.away||'',g._sport||g._section||'');return inj?`  ${inj}`:''}catch(e_){return ''}})(),
       // Fix 6: Weather context in compound prompt for outdoor games
-      (()=>{try{const spG=(g._sport||g._section||'').toLowerCase();const isOut=spG.includes('baseball')||spG.includes('mlb')||spG.includes('nfl')||spG.includes('soccer')||spG.includes('league')||spG.includes('mls')||spG.includes('afl');if(!isOut) return '';const wxE=Object.values(_weatherCache||{}).find(wx=>wx?.alert);return wxE?`  [WEATHER ALERT: ${wxE.alert}]`:''}catch(e_){return ''}})(),
+      (()=>{try{const spG=(g._sport||g._section||'').toLowerCase();const isOut=spG.includes('baseball')||spG.includes('mlb')||spG.includes('nfl')||spG.includes('soccer')||spG.includes('league')||spG.includes('mls')||spG.includes('afl');if(!isOut) return '';const wxE=Object.values(wxCache||{}).find(wx=>wx?.alert);return wxE?`  [WEATHER ALERT: ${wxE.alert}]`:''}catch(e_){return ''}})(),
     ].filter(Boolean).join('\n');
   }).join('\n\n');
 
@@ -14089,15 +14110,15 @@ function buildStoryTape(gameId, maxItems=3) {
 function renderScoreTicker() {
   const wrap = document.getElementById('score-ticker-wrap');
   if (!wrap) return;
+
   const liveGames = Object.entries(espnScores)
     .filter(([,e]) => e?.status === 'in' || e?.period > 0)
     .map(([gid, e]) => {
       const drama = getSmoothedDrama(gid) ?? 0;
-      // Fix 8: momentum-aware sort — rising games bubble ahead of cooling ones
-      // getDramaTrend returns positive=rising, negative=cooling
-      const trend = (typeof getDramaTrend==='function') ? (getDramaTrend(gid)??0) : 0;
-      const momentum = (typeof getOTWMomentum==='function') ? getOTWMomentum(gid) : null;
-      // trendScore: base drama + momentum bonus (capped so a rising 60 doesn't beat a sustained 90)
+      // Use e._gameId (stored during ESPN poll) for drama history — espnScores key ≠ game._id
+      const gameId = e._gameId || gid;
+      const trend = (typeof getDramaTrend==='function') ? (getDramaTrend(gameId)??0) : 0;
+      const momentum = (typeof getOTWMomentum==='function') ? getOTWMomentum(gameId) : null;
       const trendBonus = momentum==='up' ? 12 : (trend > 8 ? 8 : trend > 3 ? 4 : 0);
       return {gid, e, drama, trendBonus, trendScore: Math.min(drama + trendBonus, drama + 15)};
     })
