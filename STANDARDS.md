@@ -19,17 +19,20 @@ Add a new semantic assertion for every feature that depends on a specific variab
 ## Session start checklist
 
 ```
-0. Read HANDOFF NOTE from previous session doc (first — before everything else)
-1. Declare: "SESSION START · Type: [A/B/C/D/E] · Scope: [one sentence]"
-2. git pull && cp index.html /home/claude/index.html
-3. node field_smoke.js   ← must be 0 failures before touching anything
-4. Open relevant canonical doc for this session type
-5. TYPE B only: write diagnosis (failure modes) before first code change
-6. TYPE C only: write spec (inputs / outputs / call sites) before first code change
+0. Read HANDOFF NOTE — Drive ID in canonical table below (first, before everything)
+1. Read CI/DEPLOY ERROR REFERENCE — Drive ID: 1OfwQn81wP1sLXFzkODTH7FEB06KaGr9v_vup9aBhg1U
+   Surface: sandbox constraints, deploy path, worker summary, secrets state
+2. Declare: "SESSION START · Type: [A/B/C/D/E] · Scope: [one sentence]"
+3. git pull && cp index.html /home/claude/index.html
+4. node field_smoke.js   ← must be 0 failures before touching anything
+5. Open relevant canonical doc for this session type
+6. TYPE B only: write diagnosis (failure modes) before first code change
+7. TYPE C only: write spec (inputs / outputs / call sites) before first code change
 ```
 
 **Canonical docs** (open the relevant one before starting):
 - Handoff Note (read first): `1tNiphm4FKqvBw-c8tqs0u_2FLc63Qd35` ← update this ID every session end
+- CI/Deploy Error Reference (read every session): `1OfwQn81wP1sLXFzkODTH7FEB06KaGr9v_vup9aBhg1U`
 - Build Session List: `1YMgcYTawnVB-QBa7jEZzOLnTfa5uThKi4j3TcNDQe9o`
 - Daily Update Reference: `1n4fiAaU1uF2X7EKRx9Gm6XpuR6wkpwoa`
 - Wow Features: `1h80BrgGXbz6aq3Hgv5LbjhpFkRQjYvd87fOMNJmVMOc`
@@ -97,6 +100,7 @@ never worked despite being documented as complete.*
 | **UI Evaluation** | `1xIZnlczl2kIeslnnzJD1eJrgBu5iw6xgSk1wB1MVyAY` | Any session with CSS, layout, or card design changes |
 | **Daily Update Reference** | `1n4fiAaU1uF2X7EKRx9Gm6XpuR6wkpwoa` | Any session that changes broadcast chip rules, thresholds, or update protocol |
 | **Handoff Note** ← update ID every session | `1tNiphm4FKqvBw-c8tqs0u_2FLc63Qd35` | Every session end — replace ID with new handoff doc |
+| **CI/Deploy Error Reference** | `1OfwQn81wP1sLXFzkODTH7FEB06KaGr9v_vup9aBhg1U` | When a new CI/deploy failure pattern is resolved |
 
 **The rule: edit the document, don't create a new one.**  
 Date-stamp changes at the top of the doc. Never append "v14", "v15" to the title.  
@@ -251,6 +255,12 @@ Emergency bypass: `git commit --no-verify` — use only when absolutely necessar
 Every session, Claude reads the latest handoff note from Drive before  
 responding to the opening message. No user request needed.
 
+**Claude reads CI/Deploy Error Reference automatically:**  
+Every session, Claude reads `1OfwQn81wP1sLXFzkODTH7FEB06KaGr9v_vup9aBhg1U`  
+and surfaces the sandbox constraints, deploy path, worker architecture,  
+and secrets state before any work begins. This prevents wasted time  
+attempting blocked operations (api.github.com, *.workers.dev).
+
 **Claude infers session type:**  
 "Run daily update" = TYPE A. "Night Owl is broken" = TYPE B.  
 "Build Social Contrarian" = TYPE C. "Audit journalism" = TYPE D.  
@@ -354,4 +364,68 @@ present but violates the broadcast chip rules established in the reference —
 wrong chips, missing GOTD flags, stale series records.
 The check takes two minutes. It prevents having to fix data errors in
 a follow-up session.
+
+
+---
+
+## Rule 12 — CI/Deploy Error Reference read at every session start
+
+**Drive ID: `1OfwQn81wP1sLXFzkODTH7FEB06KaGr9v_vup9aBhg1U`**
+
+Read this document before any code is touched in any session type.
+Not only when something is broken — every session, every type.
+
+### Why every session, not just on failure
+
+The document contains facts that change how you approach a task,
+not just how you debug a failure:
+
+**Sandbox network constraints** — these are blocked from the Claude sandbox:
+- `api.github.com` — no GitHub REST API calls
+- `*.workers.dev` — no direct Worker calls (relay, proxy, deploy, live app)
+- Trying to call these wastes 30+ minutes before realising the block.
+  Knowing beforehand prevents attempting them at all.
+
+**Canonical deploy path** — git push → GitHub Actions → Cloudflare CI (~19s).
+This is the only deploy path available from the sandbox.
+
+**5-worker architecture** — which worker does what, which secrets it holds.
+Affects feature implementation decisions (e.g. secrets cannot be set on
+Worker 1 — static host — they must go on Worker 2 or 3).
+
+**GitHub secrets state** — DRIVE_FILE_ID deleted May 19. RESEND_API_KEY kept.
+Not knowing DRIVE_FILE_ID was deleted led to CI failures #39–#45.
+
+**Quick reference** — exact steps for every known failure type. Using it
+takes 30 seconds. Debugging without it takes 30+ minutes.
+
+### What to surface at session start (the critical facts)
+
+Claude reads this document and states the following before any work:
+
+```
+SANDBOX CONSTRAINTS:
+  Blocked: api.github.com, *.workers.dev
+  Deploy path: git push → GitHub Actions → Cloudflare (~19s)
+  Trigger autodeploy: push outbox/.trigger-autodeploy
+
+WORKERS:
+  W1 jubilant-bassoon  — static host (no env vars)
+  W2 field-claude-proxy — AI journalism proxy (GEMINI_KEY, ANTHROPIC_KEY)
+  W3 field-relay-nba   — data relay all sports (BDL_API_KEY, ODDS_API_KEY)
+  W4 field-deploy      — OIDC deploy bridge (GITHUB_PAT, CI-only)
+
+GITHUB SECRETS: DRIVE_FILE_ID deleted, RESEND_API_KEY active
+SMOKE GATE: run BOTH smoke.js AND field_smoke.js before every push
+```
+
+### When to update this document
+
+When a new CI/deploy failure is encountered and resolved:
+- Add to the Incident Log with root cause and fix
+- Update Quick Reference if the failure type is new
+- Update Current Workflow State if a workflow changed
+- Date-stamp the update at the top
+
+Do not create a new version. Edit in place per Rule 8.
 
