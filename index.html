@@ -11948,8 +11948,11 @@ async function initFIELDBrief(sections){
   const el=document.getElementById('field-brief');
   if(!el) return;
   if(activeFilter!=='all'||!sections.length){el.style.display='none';return;}
-  // Guard: if Night Owl is already rendered in this slot, don't overwrite it
-  if(el.querySelector('.night-owl-card')) return;
+  // Guard: Night Owl owns this slot once rendered — FIELD Brief must not overwrite it.
+  // Check both DOM state (card present) AND the _nightOwlRendered flag
+  // (flag catches the case where Night Owl rendered while the slot was display:none,
+  //  which means querySelector would find nothing even though Night Owl is active).
+  if(el.querySelector('.night-owl-card') || (typeof _nightOwlRendered !== 'undefined' && _nightOwlRendered)) return;
   const d=new Date();const tzStr=(typeof tz==='string'?tz:'America/New_York');
   const dateLabel=d.toLocaleDateString('en-US',{timeZone:tzStr,weekday:'short',month:'short',day:'numeric'});
   const cacheKey=fieldBriefCacheKey();
