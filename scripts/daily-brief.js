@@ -115,6 +115,20 @@ const payload = JSON.stringify({
   text,
 });
 
+// Preflight checks — surface config issues before making the API call
+if (!RESEND_API_KEY) {
+  console.error('FATAL: RESEND_API_KEY is not set. Check GitHub Actions secret.');
+  process.exit(1);
+}
+if (!FIELD_EMAIL) {
+  console.error('FATAL: FIELD_EMAIL is not set in workflow env.');
+  process.exit(1);
+}
+
+console.log(`Sending to: ${FIELD_EMAIL} via Resend`);
+console.log(`From: FIELD <onboarding@resend.dev>`);
+console.log(`Subject: ⚡ FIELD Brief — ${DAY}`);
+
 const req = https.request({
   hostname: 'api.resend.com',
   path: '/emails',
@@ -128,11 +142,22 @@ const req = https.request({
   let body = '';
   res.on('data', c => body += c);
   res.on('end', () => {
-    console.log(`HTTP ${res.statusCode}: ${body}`);
-    process.exit(res.statusCode >= 200 && res.statusCode < 300 ? 0 : 1);
+    const ok = res.statusCode >= 200 && res.statusCode < 300;
+    if (ok) {
+      console.log(`✅ Sent successfully — HTTP ${res.statusCode}: ${body}`);
+    } else {
+      console.error(`❌ Resend API error — HTTP ${res.statusCode}: ${body}`);
+      if (res.statusCode === 401) console.error('→ Check RESEND_API_KEY in GitHub Secrets');
+      if (res.statusCode === 422) console.error('→ Domain restriction: onboarding@resend.dev may require a verified custom domain');
+      if (res.statusCode === 429) console.error('→ Rate limited by Resend — will self-resolve');
+    }
+    process.exit(ok ? 0 : 1);
   });
 });
 
-req.on('error', e => { console.error('Resend error:', e.message); process.exit(1); });
+req.on('error', e => {
+  console.error(`❌ Network error calling Resend API: ${e.message}`);
+  process.exit(1);
+});
 req.write(payload);
 req.end();
