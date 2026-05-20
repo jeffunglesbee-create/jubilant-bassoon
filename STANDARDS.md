@@ -429,3 +429,271 @@ When a new CI/deploy failure is encountered and resolved:
 
 Do not create a new version. Edit in place per Rule 8.
 
+
+---
+
+## Rule 13 — Code review gate: diff before commit, impact analysis before coding
+
+### Diff review (before every commit)
+
+Before running the smoke test and committing, read the full diff:
+```sh
+git diff          # unstaged changes
+git diff --staged # staged changes (after git add)
+```
+
+Claude must explicitly flag before committing:
+- Any variable that appears in the diff but is never declared in the file
+- Any function removal where the function name still appears elsewhere
+- Any change to a function called from more than one place
+- Any new key/field name that doesn't match how it's read downstream
+
+This is the cheapest quality gate. The `_weatherCache` bug would have
+been visible in the diff — a reference to a name never declared anywhere.
+
+### Impact analysis (before TYPE B fix or TYPE C spec)
+
+Before writing a diagnosis (TYPE B) or spec (TYPE C), answer these:
+
+```
+Functions this change touches: [list]
+For each function — who calls it? [list callers]
+For each function — what does it return/write? [output contract]
+Callers confirmed correct after change: yes/no for each
+```
+
+The espnScores._gameId fix touched 5 construction sites. The spec listed
+them but didn't verify every downstream consumer. Impact analysis
+would have surfaced whether getSmoothedDrama in injectDramaBadges
+needed the same fix (it didn't — it used card.dataset.gameid correctly).
+
+Add this as step 0 of every TYPE B diagnosis and TYPE C spec.
+
+---
+
+## Rule 14 — Data hygiene: expiry and cleanup triggers
+
+### What expires and when
+
+Each data category has an expiry condition. When the condition is met,
+the entry must be removed or marked past — not left to accumulate.
+
+| Data | Location | Expires when |
+|------|----------|-------------|
+| `BETTING_LINES_FALLBACK_DATA` entries | `buildTodaySchedule` | Game date has passed |
+| `MEDIA_SPECIALS` series entries | `MEDIA_SPECIALS` | Series has ended |
+| `MEDIA_SPECIALS` event entries | `MEDIA_SPECIALS` | Event date has passed |
+| EPL matchday entries | schedule data | Season has ended |
+| `MLB_DAILY_OVERRIDES` GOTD flags | `MLB_DAILY_OVERRIDES` | Date has passed |
+| `confirmed:false` game entries | anywhere | Game date has passed without confirmation |
+
+### Cleanup rule
+
+TYPE A sessions must remove expired entries for dates before TODAY_ISO.
+This is not optional — expired entries cause silent drift between what
+the code says is playing tonight and what actually is.
+
+Add to TYPE A verification checklist (Rule 11):
+```
+Expired data check: scan BETTING_LINES_FALLBACK_DATA, MEDIA_SPECIALS,
+MLB_DAILY_OVERRIDES for entries with past dates. Remove them.
+```
+
+### Smoke assertion for data freshness
+
+CI compliance-report already checks `confirmed:false` entries.
+Add to field_smoke.js per-day config: verify TODAY_ISO matches the
+date of the most recent schedule entry. If the most recent game date
+is more than 2 days before TODAY_ISO, flag as stale schedule.
+
+---
+
+## Rule 15 — Session documentation template
+
+Every session doc written to Drive must follow this structure.
+A doc that doesn't include all required sections is incomplete.
+
+```
+FIELD App — [Date] Session Documentation
+
+SESSION START
+Type: [A/B/C/D/E]
+Scope: [declared scope from session open]
+Baseline: [last commit hash + smoke result]
+
+=== PHASES / CHANGES ===
+
+[For each commit or logical unit of work:]
+
+PHASE N — [description] (commit [hash])
+  What: [what was changed]
+  Why: [root cause or user request]
+  Files: [which functions/sections touched]
+  Verified: smoke-only / browser-confirmed [date] [device]
+
+=== COMMITS ===
+[hash] — [message]
+[hash] — [message]
+
+=== ARCHITECTURE NOTES ===
+[Any new globals, changed interfaces, data flow changes]
+
+=== BROWSER-CONFIRMED PENDING ===
+[List of features that are smoke-verified only, not yet
+confirmed working in browser. Carries forward from last handoff.]
+
+HANDOFF
+Last commit: [hash]  File size: [KB]  Smoke: 0/N
+Clean state: yes/no
+In progress: [anything mid-flight]
+Browser-confirmed pending: [list — same as section above]
+Next session should: [one concrete recommendation]
+Blocked on: [anything requiring resolution before TYPE C]
+Watch for: [known fragile state]
+
+SESSION END
+```
+
+The `Browser-confirmed pending` section is the mechanism for GAP 2.
+It carries forward every session until a feature is confirmed or
+a smoke assertion is added that would catch its failure mode.
+
+---
+
+## Rule 16 — Special case handling
+
+### --no-verify bypass
+
+`git commit --no-verify` is a last resort only. When used:
+
+1. The commit message MUST include `[no-verify: reason]`
+   Example: `"Fix: urgent typo [no-verify: smoke config needs update first]"`
+2. A smoke-passing commit MUST follow within the same session
+3. The bypass and reason MUST be noted in the session doc under PHASES
+
+The pre-commit hook message already says "emergency bypass" — this rule
+makes the documentation requirement explicit.
+
+No bypass is permitted if:
+- The reason is "smoke is failing and I don't know why" (fix the smoke)
+- The reason is "I'll fix it later" (fix it now)
+
+### Compound prompt changes follow TYPE C rules
+
+Any change to `buildCompoundPrompt()` — new field, changed rule, new
+game line format, updated max_tokens, new JSON key — is a TYPE C session.
+
+Required before any compound prompt change:
+1. Spec: what field/rule is changing, what output format changes
+2. Impact: which downstream consumers read this field (dispatch code,
+   session storage cache keys, FIELD Desk, bottom sheet rendering)
+3. Smoke assertion: add a semantic assertion for the new field/rule
+   if it could silently produce wrong output without being detectable
+
+Compound prompt changes that skip this produce journalism bugs that
+are invisible until the AI returns unexpected output at runtime.
+
+---
+
+## Rule 17 — Testing: unit tests and linting
+
+### Unit tests (field_unit.js)
+
+Pure functions with deterministic outputs must have unit tests.
+File: `field_unit.js` in repo root. Run: `node field_unit.js`.
+Add to CI alongside smoke.js.
+
+Required test coverage (add as each function is confirmed stable):
+- `trimToCompleteSentence(text)` — truncation, clean endings, empty input
+- `preGameScore(game)` — known game objects produce expected score ranges
+- `espnTeamMatch(espnName, fieldName)` — fuzzy match known pairs
+- `buildH2HSummary(matchId)` — known H2H cache entries produce correct string
+- `getDramaTrend(gameId)` — known history arrays produce correct delta
+
+Test file structure:
+```js
+// field_unit.js — unit tests for pure functions
+// Run: node field_unit.js
+// Add a test when a function's contract is defined or a bug is fixed.
+let pass = 0, fail = 0;
+function test(label, fn) {
+  try { fn(); pass++; console.log('✅', label); }
+  catch(e) { fail++; console.error('❌', label, '—', e.message); }
+}
+function assert(condition, msg) { if(!condition) throw new Error(msg||'assertion failed'); }
+// ... tests ...
+console.log(`
+Unit tests: ${pass} passed, ${fail} failed`);
+if(fail > 0) process.exit(1);
+```
+
+### ESLint (no-undef rule)
+
+Catches undefined variable references — the exact class of the
+`_weatherCache` bug — at write time, not audit time.
+
+Config: `.eslintrc.json` in repo root.
+Run: `npx eslint index.html` (or add to package.json scripts).
+Add to CI smoke job as a non-blocking warning initially,
+then upgrade to blocking once false-positive baseline is known.
+
+Minimum config:
+```json
+{
+  "env": { "browser": true, "es2020": true },
+  "rules": { "no-undef": "warn", "no-unused-vars": "warn" },
+  "globals": { "allData": "readonly", "espnScores": "readonly" }
+}
+```
+
+---
+
+## Rule 18 — Runtime monitoring and browser-confirmed tracking
+
+### Runtime error capture
+
+Wrap every critical path function in a try/catch that records to
+`window._fieldErrors`:
+
+```js
+window._fieldErrors = window._fieldErrors || [];
+// In each critical function's outer catch:
+window._fieldErrors.push({ fn: 'renderNightOwlRecap', err: e.message, ts: Date.now() });
+```
+
+Critical path functions to wrap: `renderNightOwlRecap`, `fetchESPNScores`,
+`initFIELDBrief`, `renderFieldDesk`, `runCompound`.
+
+Add a debug panel at `?debug=1` URL parameter:
+```js
+if(location.search.includes('debug=1')) {
+  const panel = document.createElement('pre');
+  panel.style = 'position:fixed;bottom:0;left:0;right:0;background:#111;color:#0f0;font-size:.6rem;max-height:30vh;overflow:auto;z-index:9999;padding:.5rem';
+  panel.textContent = JSON.stringify(window._fieldErrors, null, 2) || 'No errors';
+  document.body.appendChild(panel);
+}
+```
+
+Gives the user a way to capture and report what's failing in their
+browser without requiring a screenshot at the exact right moment.
+
+### Browser-confirmed pending list
+
+Maintained in two places:
+1. Session doc `BROWSER-CONFIRMED PENDING` section (Rule 15)
+2. Handoff note `Browser-confirmed pending:` field
+
+A feature stays on the list until:
+- It is observed working in browser on Samsung Galaxy A36, OR
+- A semantic smoke assertion is added that would catch its failure mode
+
+Current pending list (as of May 20 2026):
+- Night Owl on Android (Samsung Galaxy A36) — MutationObserver path
+- FIELD Desk empty state when compound hasn't run at scroll time
+- `_nightOwlRendered` filter-change guard (sport filter active at render)
+
+When a feature is confirmed: remove from list, add comment in code:
+```js
+// browser-confirmed: 2026-05-21 Samsung Galaxy A36
+```
+

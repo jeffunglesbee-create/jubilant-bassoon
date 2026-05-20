@@ -6,7 +6,9 @@
   "scripts": {
     "prepare": "git config core.hooksPath scripts",
     "smoke": "node field_smoke.js",
-    "smoke:ci": "node smoke.js index.html"
+    "smoke:ci": "node smoke.js index.html",
+    "test": "node field_unit.js",
+    "lint": "npx eslint index.html --ext .html --no-eslintrc -c .eslintrc.json"
   },
   "engines": {
     "node": ">=18"

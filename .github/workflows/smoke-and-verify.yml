@@ -24,6 +24,12 @@ jobs:
           # Adding assertions: update smoke.js + FIELD_FEATURES in index.html
           node smoke.js index.html
 
+      - name: Run unit tests
+        run: |
+          # field_unit.js tests pure functions with known input/output contracts
+          # Rule 17: add tests when a function's contract is defined or bug is fixed
+          node field_unit.js
+
       - name: Wait for Cloudflare propagation
         run: |
           echo "Waiting 25s for Cloudflare to deploy..."

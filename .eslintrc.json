@@ -1,0 +1,36 @@
+{
+  "env": {
+    "browser": true,
+    "es2020": true
+  },
+  "parserOptions": {
+    "ecmaVersion": 2020
+  },
+  "rules": {
+    "no-undef": "warn",
+    "no-unused-vars": "off"
+  },
+  "globals": {
+    "allData": "readonly",
+    "espnScores": "readonly",
+    "espnScoreTs": "readonly",
+    "TODAY_ISO": "readonly",
+    "MY_SERVICES": "readonly",
+    "MY_TEAMS": "readonly",
+    "FIELD_DEBUG": "readonly",
+    "CLAUDE_PROXY_URL": "readonly",
+    "FD_RELAY": "readonly",
+    "OM_BASE": "readonly",
+    "SR": "readonly",
+    "BUNDLES": "readonly",
+    "PRICES": "readonly",
+    "ESPN_SPORTS": "readonly",
+    "SOCCER_LEAGUES": "readonly",
+    "FD_LEAGUE_MAP": "readonly",
+    "ESPN_STANDINGS_MAP": "readonly",
+    "ODDS_SPORT_MAP": "readonly",
+    "DRAMA_HISTORY_KEY": "readonly",
+    "RELAY_PRIMARY": "readonly",
+    "RELAY_CUTOVER_DATE": "readonly"
+  }
+}
