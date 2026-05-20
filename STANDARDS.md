@@ -865,3 +865,86 @@ If count > 3 for any pattern not yet in the helper table, it's a
 candidate for extraction. Add to field_utils.js or index.html utility
 block as appropriate, then write a unit test.
 
+
+---
+
+## Rule 21 — Upstream discipline: naming, inventory, and the check-first standard
+
+### The three upstream causes of duplicate inline patterns
+
+**1. No ubiquitous language** — domain concepts without canonical names get
+re-implemented independently. The fix: when writing ANY domain operation,
+name it first. Write the function, put it in field_utils.js (pure) or the
+index.html utility block (needs globals), then call it everywhere.
+
+**2. No function inventory** — 286 functions in 800KB with no catalog makes
+re-invention the path of least resistance. The fix: `npm run inventory`.
+Run it at the start of any session where you're writing a new operation
+that touches team names, game data, live scores, or drama history.
+
+**3. Session type mixing suppresses abstraction** — patch mode rewards
+inline code. Rule 1 (session type discipline) addresses this directly.
+
+### The check-first standard
+
+Before writing ANY inline pattern involving:
+- team name normalization or matching
+- game network / broadcast label
+- time arithmetic on ISO strings
+- allData traversal
+- ESPN scores lookup
+- drama history access
+- AI response parsing
+
+Run `npm run inventory`. If the operation exists: call it.
+If it doesn't: add it to field_utils.js or the utility block first,
+write a unit test, then call it.
+
+The 73 `.split(' ').pop()` instances accumulated because no one ran
+this check. The standard makes the check structural.
+
+### Where field_utils.js lives
+
+`<head>` — loaded before everything else. This communicates architectural
+meaning: field_utils.js is the vocabulary. It exists before the app.
+
+Because it loads first:
+- All inline `onclick` handlers can call its functions safely
+- The main `<script>` block always has access to all helpers
+- Developers reading index.html see the `<script src>` in `<head>` and
+  know to look at field_utils.js before writing domain operations
+
+### field_utils.js organization (six domain sections)
+
+```
+TEAM NAMES        teamNick, teamSlug, teamSlugPair
+GAME/SCHEDULE     gameNetwork, shiftTime, parseMatchweek, espnPeriodLabel
+VENUE/WEATHER     isOutdoorVenue, getVenueCoords, wxAlert, wxDescription,
+                  wxIcon, wxWindDir, wxBadge
+PROBABILITY       toImpliedNum, dramaTier
+TEXT/AI           trimToCompleteSentence, stripJsonFences, extractJsonBlock
+MATCHING          espnTeamMatch
+```
+
+All functions have JSDoc comments with:
+- What it does (one line)
+- What it replaces (the pattern it supersedes)
+- Parameter types and return type
+- Known bugs fixed or gotchas
+
+### Adding a new function to field_utils.js
+
+1. Determine: pure (no globals) → field_utils.js, needs globals → utility block
+2. Write the function with full JSDoc — name the concept, document the contract
+3. Add a unit test in field_unit.js
+4. Add to the `module.exports` block
+5. The inventory updates automatically on next `npm run inventory`
+6. Replace any existing inline copies in index.html with the new function
+
+### Adding a new function to the index.html utility block
+
+Same as above but:
+1. Place in the utility block near scheduleRenderAll (marked with banner comment)
+2. No module.exports needed
+3. Document why it can't be in field_utils.js (what global it accesses)
+

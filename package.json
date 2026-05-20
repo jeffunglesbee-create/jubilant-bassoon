@@ -1,7 +1,7 @@
 {
   "name": "jubilant-bassoon",
   "version": "1.0.0",
-  "description": "FIELD — Global Sports Intelligence",
+  "description": "FIELD \u2014 Global Sports Intelligence",
   "private": true,
   "scripts": {
     "prepare": "git config core.hooksPath scripts",
@@ -9,7 +9,8 @@
     "smoke:ci": "node smoke.js index.html",
     "test": "node field_unit.js",
     "test:browser": "npx playwright test field_browser.test.js",
-    "lint": "npx eslint index.html --ext .html --no-eslintrc -c .eslintrc.json"
+    "lint": "npx eslint index.html --ext .html --no-eslintrc -c .eslintrc.json",
+    "inventory": "node scripts/inventory.js"
   },
   "devDependencies": {
     "@playwright/test": "^1.44.0"
