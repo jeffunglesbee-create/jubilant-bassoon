@@ -2208,9 +2208,11 @@ const FIELD_FEATURES = {
   'layer3-templates':       '2026-05-21',
   'my-teams-brief':         '2026-05-21',
   // J-series journalism
+  'j1-anti-hype-cards':      '2026-05-19',  // per-card badge injection
   'j1-anti-hype':           '2026-05-14',
   'j2-series-preview':      '2026-05-14',
   'j3-field-brief':         '2026-05-14',
+  'j4-scouts-pick-cards':    '2026-05-19',  // per-card badge injection
   'j4-scouts-pick':         '2026-05-14',
   'j5-night-owl':           '2026-05-14',
   'j6-smt-notes':           '2026-05-14',
@@ -4988,6 +4990,7 @@ function renderAll(){
   renderWatchWindow();
   setTimeout(updateCardLifeStages, 200); // Update life stages after cards render
   setTimeout(renderScoreTicker, 250);   // Render score ticker if games are live
+  setTimeout(injectJ1J4Badges, 300);    // J1/J4: Anti-Hype + Scout's Pick per-card badges
   setTimeout(()=>initFIELDBrief(filtered).catch(()=>{}), 1000); // J3: brief last — highest value, staggered
   setTimeout(injectWeatherBadges, 300); // re-apply wx badges from cache after render
   // Runtime silent error scan — FIELD_DEBUG only, runs after async injections settle
@@ -6828,6 +6831,69 @@ async function bdlPrefetchAll() {
 }
 
 // ── Inject injury badges into already-rendered game cards ──────
+// ── J1 Anti-Hype + J4 Scout's Pick — per-card badge injection ───────────────
+// J4 Scout's Pick: preGameScore > 70 AND not a national TV game
+//   Signals: high drama potential being overlooked by broadcast calendar
+// J1 Anti-Hype (BNI): computeBroadcastNarrativeIndex returns non-null
+//   narrative-push:       market gap > 200 on national broadcast (blowout risk)
+//   elimination-inflation: series framing on genuinely low-drama game
+//   home-market:           big-market team + marquee crew + low preGameScore
+//
+// Only fires on pre-game cards. Removed automatically when game goes live/final.
+// Called from renderAll() + after odds load. Idempotent.
+function injectJ1J4Badges() {
+  if (!allData?.sports) return;
+  // Build gameId → game fast lookup
+  const gameMap = {};
+  (allData.sports||[]).forEach(sec=>(sec.games||[]).forEach(g=>{ if(g._id) gameMap[g._id]={g,sec}; }));
+
+  document.querySelectorAll('.game-card').forEach(card=>{
+    const gid = card.dataset.gameid;
+    if (!gid) return;
+    const entry = gameMap[gid];
+    if (!entry) return;
+    const { g } = entry;
+
+    // Clear existing badges + class every cycle (idempotent)
+    card.querySelector('.scout-pick-badge')?.remove();
+    card.querySelector('.anti-hype-badge')?.remove();
+    card.classList.remove('scout-pick-card');
+
+    // Badges are pre-game only — skip live and final cards
+    if (card.classList.contains('espn-live') || card.classList.contains('espn-final')) return;
+
+    const cardBody = card.querySelector('.card-body');
+    if (!cardBody) return;
+
+    // ── J4: Scout's Pick ──────────────────────────────────────────────────
+    // High pre-game drama (>70) that isn't getting national broadcast attention
+    const pgScore = preGameScore(g);
+    if (pgScore > 70 && !isNationalGame(g)) {
+      card.classList.add('scout-pick-card');
+      const badge = document.createElement('span');
+      badge.className = 'scout-pick-badge';
+      badge.textContent = '🔍 Scout\'s Pick';
+      badge.title = `Drama score ${Math.round(pgScore)} · Under-the-radar tonight`;
+      cardBody.appendChild(badge);
+    }
+
+    // ── J1: Anti-Hype (BNI) ──────────────────────────────────────────────
+    // Broadcast narrative exceeds the game's actual drama potential
+    const bni = computeBroadcastNarrativeIndex(g);
+    if (bni) {
+      const badge = document.createElement('span');
+      badge.className = 'anti-hype-badge';
+      const label = bni === 'narrative-push'         ? '⚠️ Hype Check'
+                  : bni === 'elimination-inflation'  ? '⚠️ Series Hype'
+                  :                                    '⚠️ Big Market Push';
+      badge.textContent = label;
+      const strength = getBNIStrength(g, bni);
+      badge.title = `BNI: ${bni.replace(/-/g,' ')} · Signal strength ${strength}`;
+      cardBody.appendChild(badge);
+    }
+  });
+}
+
 function injectBdlInjuryBadges() {
   document.querySelectorAll(".game-card").forEach(card => {
     if (card.querySelector(".inj-row")) return; // already injected
@@ -9755,6 +9821,12 @@ function renderESPNScores(){
   // Night Owl trigger: detect newly-final games on every score render cycle
   // checkForNewFinals uses _seenFinals Set to prevent double-saves
   checkForNewFinals();
+  // J1/J4: clear pre-game badges on cards that just went live
+  document.querySelectorAll('.game-card.espn-live, .game-card.espn-final').forEach(card=>{
+    card.querySelector('.scout-pick-badge')?.remove();
+    card.querySelector('.anti-hype-badge')?.remove();
+    card.classList.remove('scout-pick-card');
+  });
 }
 
 // ── Main load ─────────────────────────────────────────────────
@@ -9790,7 +9862,8 @@ async function fetchSchedule(){
   // The Odds API clears pre-game lines once a game goes live — this captures them early
   setTimeout(() => {
     const sportsToFetch = [...new Set((allData?.sports||[]).map(s=>s.sport).filter(s=>ODDS_SPORT_MAP[s]))];
-    sportsToFetch.forEach(s => fetchOddsForSport(s).catch(()=>{}));
+    Promise.allSettled(sportsToFetch.map(s => fetchOddsForSport(s)))
+      .then(() => injectJ1J4Badges()); // Re-run J1/J4 after odds load — preGameScore uses odds
   }, 800);
   fetchESPNScores(); // Start live score polling
   relayHealthCheck().catch(()=>{}); // RELAY health check — enables parallel NBA validation
