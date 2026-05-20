@@ -2051,6 +2051,7 @@ flex-shrink:0;white-space:nowrap;
     <div class="media-icon">📺</div>
     <span class="media-title">Sports Media Today</span>
   </div>
+  <div id="smt-note-bar" style="display:none;font-size:.7rem;color:var(--platinum);line-height:1.5;padding:.3rem 0 .6rem;border-bottom:1px solid var(--edge);margin-bottom:.5rem;opacity:.85"></div>
   <div class="media-grid" id="media-grid">
     <!-- Populated by JS -->
   </div>
@@ -10776,7 +10777,8 @@ Return this exact JSON structure (null for any section without sufficient data):
   "scouts_pick": "one sentence explaining the Scout's Pick or null",
   "bni_note": "one sentence Anti-Hype framing or null",
   "epl": [${eplIds.map(id => `{"id":"${id}","brief":null}`).join(',')}],
-  "game_briefs": [${regularIds.map(id => `{"id":"${id}","brief":null}`).join(',')}]
+  "game_briefs": [${regularIds.map(id => `{"id":"${id}","brief":null}`).join(',')}],
+  "smt_note": "one sentence about what to watch on Sports Media Today given tonight's slate — mention specific studio shows or preview coverage by name, or null"
 }
 
 Rules:
@@ -10808,10 +10810,10 @@ async function fetchCompoundEditorial(sections) {
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
-        max_tokens: 2500,
+        max_tokens: 3000,
         messages: [{role: 'user', content: buildCompoundPrompt(sections)}]
       }),
-      signal: AbortSignal.timeout(15000)
+      signal: AbortSignal.timeout(18000)
     });
 
     // Proxy v4 returns 429 with Retry-After — handle gracefully
@@ -11556,7 +11558,30 @@ async function initFIELDBrief(sections){
   el.style.display='block';
   const stateBadge=s=>s==='cached'?'<span class="brief-state-badge">○</span>':s==='updating'?'<span class="brief-state-badge updating">⟳</span>':'';
   const mkCard=(text,loaded,state)=>`<div class="field-brief-card" id="field-brief-inner"><div class="field-brief-header"><span class="field-brief-label">FIELD Brief</span><span class="field-brief-date">${dateLabel}</span>${stateBadge(state)}</div><div class="field-brief-text${loaded?'':' pending'}">${text}</div></div>`;
-  if(cached){el.innerHTML=mkCard(trimToCompleteSentence(cached),true,'cached');document.getElementById('field-brief-inner')?.addEventListener('click',()=>document.getElementById('field-brief-inner')?.classList.toggle('collapsed'));return;}
+  if(cached){
+    el.innerHTML=mkCard(trimToCompleteSentence(cached),true,'cached');
+    document.getElementById('field-brief-inner')?.addEventListener('click',()=>document.getElementById('field-brief-inner')?.classList.toggle('collapsed'));
+    // Restore game_briefs from compound cache even on brief-text cache hit
+    try{
+      const compoundKey=buildCompoundCacheKey(sections);
+      const compoundCached=sessionStorage.getItem(compoundKey);
+      if(compoundCached){
+        const c=JSON.parse(compoundCached);
+        if(c.game_briefs?.length) c.game_briefs.forEach(b=>{
+          if(!b?.brief||!b?.id) return;
+          const slug=b.id.toLowerCase();
+          (allData?.sports||[]).forEach(sec=>(sec.games||[]).forEach(g=>{
+            if(!g._id) return;
+            const h=(g.home||'').toLowerCase().replace(/\s+/g,'_');
+            const a=(g.away||'').toLowerCase().replace(/\s+/g,'_');
+            if(slug.includes(h.slice(-6))||slug.includes(a.slice(-6))||h.includes(slug.split('_')[0])||a.includes(slug.split('_').pop()))
+              _gameBriefCache[g._id]=trimToCompleteSentence(b.brief);
+          }));
+        });
+      }
+    }catch(e_){}
+    return;
+  }
   const staticText=buildFIELDBriefStatic(sections)||'Loading tonight\'s brief\u2026';
   const myTeamsLine=buildMyTeamsBriefLine(sections);
   if(myTeamsLine){const mtEl=document.getElementById('my-teams-brief-line')||(()=>{const d=document.createElement('div');d.id='my-teams-brief-line';d.style.cssText='font-size:.68rem;color:var(--gold2,#c9a84c);padding:.35rem 1rem .1rem;max-width:1200px;margin:0 auto;opacity:.85';el.insertAdjacentElement('beforebegin',d);return d;})();mtEl.textContent='★ Your teams: '+myTeamsLine;}
@@ -11636,6 +11661,11 @@ async function initFIELDBrief(sections){
           });
         });
       });
+    }
+    // J6: SMT note — inject editorial line into Sports Media Today section
+    if(compound.smt_note){
+      const smtBar=document.getElementById('smt-note-bar');
+      if(smtBar){smtBar.textContent='📋 '+trimToCompleteSentence(compound.smt_note);smtBar.style.display='block';}
     }
     return;
   }
@@ -11803,13 +11833,19 @@ function initSeriesPreviews(){
 // Inject series preview text directly into an existing card (used by compound dispatch)
 function injectSeriesPreviewText(card, text) {
   if (!card || !text) return;
-  let previewEl = card.querySelector('.series-preview-text');
-  if (!previewEl) {
-    previewEl = document.createElement('div');
-    previewEl.className = 'series-preview-text loaded';
-    card.appendChild(previewEl);
+  // Use the same series-preview-card pattern as renderSeriesPreviewCard
+  // Check if one already exists before this card
+  if (card.previousElementSibling?.classList.contains('series-preview-card')) {
+    const existing = card.previousElementSibling.querySelector('.series-preview-text');
+    if (existing) { existing.textContent = trimToCompleteSentence(text); existing.classList.add('loaded'); }
+    return;
   }
-  previewEl.textContent = trimToCompleteSentence(text);
+  const preview = document.createElement('div');
+  preview.className = 'series-preview-card';
+  preview.dataset.gameid = card.dataset.gameid || '';
+  preview.innerHTML = '<div class="series-preview-label">FIELD Series Brief</div><div class="series-preview-text loaded">' + trimToCompleteSentence(text) + '</div>';
+  preview.addEventListener('click', () => preview.classList.toggle('series-preview-collapsed'));
+  card.insertAdjacentElement('beforebegin', preview);
 }
 
 
@@ -13510,23 +13546,27 @@ function buildSeriesMarginsDots(game) {
 }
 
 let _nightOwlRendered=false;
+let _nightOwlGameId=null; // tracks which game is currently displayed
 // Per-game brief cache — populated by compound editorial dispatch for regular-season games
 const _gameBriefCache = {}; // gameId → brief text
 async function renderNightOwlRecap(){
   const el=document.getElementById('night-owl');
-  if(!el||_nightOwlRendered) return;
+  if(!el) return;
   const finals=loadTonightFinals();
   if(!finals.length){el.style.display='none';return;}
   const tzStr=(typeof tz==='string'?tz:'America/New_York');
   const hour=parseInt(new Date().toLocaleTimeString('en-US',{timeZone:tzStr,hour:'numeric',hour12:false}));
-  if(finals.length<1||(hour<22&&finals.length<2)){el.style.display='none';return;}
+  if(finals.length<1||(hour<21&&finals.length<2)){el.style.display='none';return;}
   const topGame=finals.slice().sort((a,b)=>(b.dramaPeak||0)-(a.dramaPeak||0))[0];
   if(!topGame){el.style.display='none';return;}
+  // Allow re-render only if a higher-drama game has now finished
+  if(_nightOwlRendered && _nightOwlGameId===topGame.id) return;
   const cacheKey='field_nightowl_'+topGame.id;
   const cached=sessionStorage.getItem(cacheKey);
   const winner=(topGame.homeScore||0)>=(topGame.awayScore||0)?topGame.home:topGame.away;
   const scoreLabel=topGame.awayScore+'\u2013'+topGame.homeScore;
   _nightOwlRendered=true;
+  _nightOwlGameId=topGame.id;
   el.style.display='block';
   const renderCard=(text,loaded)=>{
     const sparkSVG = buildDramaSparklineSVG(topGame.id||topGame._id||'');
