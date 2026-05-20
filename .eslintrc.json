@@ -18,9 +18,14 @@
       {
         "selector": "MemberExpression[object.type=\"CallExpression\"][object.callee.type=\"MemberExpression\"][object.callee.property.name=\"getElementById\"][property.name=/^(style|classList|innerHTML|textContent|value|checked)$/]",
         "message": "Store result first: const el = getEl(id); if (el) el.property"
+      },
+      {
+        "selector": "CallExpression[callee.property.name=\"replace\"][arguments.0.type=\"Literal\"][arguments.0.regex.pattern=/^```/]",
+        "message": "Use stripJsonFences(text) then extractJsonBlock(text) \u2014 Rule 20"
       }
     ],
-    "no-sequences": "error"
+    "no-sequences": "error",
+    "no-restricted-syntax-warn": "off"
   },
   "globals": {
     "allData": "readonly",

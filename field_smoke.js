@@ -527,7 +527,18 @@ try {
   const noBareDOM2 = !/document\.(getElementById|querySelector)\s*\([^)]+\)\s*\.(style|classList|innerHTML|textContent)/.test(sc2);
   if(noBareDOM2) pass('A58 — no bare document.getElementById without null guard');
   else fail('A58 — bare document.getElementById will throw TypeError when element missing');
-
+  // A59 — store-once: getEl() not called twice with same arg in one statement
+  // The double-call anti-pattern getEl('x')...getEl('x') defeats null safety
+  // and pushes _fieldErrors twice. Store the result: const el = getEl('x').
+  const doubleGetEl = html ? html.split('\n').some(line => {
+    const calls = line.match(/getEl\(['"][^'"]+['"]\)/g) || [];
+    if (calls.length < 2) return false;
+    // Check if any id appears more than once on this line
+    const ids = calls.map(c => c.match(/getEl\(['"](.*?)['"]\)/)?.[1]);
+    return ids.length !== new Set(ids).size;
+  }) : false;
+  if(!doubleGetEl) pass('A59 — getEl() store-once: no double-call on same line');
+  else fail('A59 — getEl() called twice for same id — use const el = getEl(id); if(el)...');
 
   // ─────────────────────────────────────────────────────────────────────
   log('---');

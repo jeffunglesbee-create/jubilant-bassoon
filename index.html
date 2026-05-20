@@ -10554,7 +10554,6 @@ async function fetchSchedule(){
   }, 4500);
   setTimeout(weatherPrefetchAll, 4000);  // Open-Meteo outdoor venue weather
   setTimeout(fetchATPLiveScores, 4500);  // ATP Tour live scores (CORS open, no proxy needed)
-  setTimeout(initSportsDBSchedule, 1500); // SportsDB schedule enrichment + standings (after initial render)
   setTimeout(bdlPrefetchAll, 2000);       // BallDontLie injury prefetch (after schedule renders)
   maybeShowSetup();
   renderLastNight();
