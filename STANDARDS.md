@@ -20,7 +20,7 @@ Add a new semantic assertion for every feature that depends on a specific variab
 
 ```
 0. Read HANDOFF NOTE — Drive ID in canonical table below (first, before everything)
-1. Read CI/DEPLOY ERROR REFERENCE — Drive ID: 1OfwQn81wP1sLXFzkODTH7FEB06KaGr9v_vup9aBhg1U
+1. Read CI/DEPLOY ERROR REFERENCE — Drive ID: 1aX65p4C3BfeKtdbQPS32wFsm_bktCuaE
    Surface: sandbox constraints, deploy path, worker summary, secrets state
 2. Declare: "SESSION START · Type: [A/B/C/D/E] · Scope: [one sentence]"
 3. git pull && cp index.html /home/claude/index.html
@@ -32,7 +32,7 @@ Add a new semantic assertion for every feature that depends on a specific variab
 
 **Canonical docs** (open the relevant one before starting):
 - Handoff Note (read first): `1tNiphm4FKqvBw-c8tqs0u_2FLc63Qd35` ← update this ID every session end
-- CI/Deploy Error Reference (read every session): `1OfwQn81wP1sLXFzkODTH7FEB06KaGr9v_vup9aBhg1U`
+- CI/Deploy Error Reference (read every session): `1aX65p4C3BfeKtdbQPS32wFsm_bktCuaE`
 - Build Session List: `1YMgcYTawnVB-QBa7jEZzOLnTfa5uThKi4j3TcNDQe9o`
 - Daily Update Reference: `1n4fiAaU1uF2X7EKRx9Gm6XpuR6wkpwoa`
 - Wow Features: `1h80BrgGXbz6aq3Hgv5LbjhpFkRQjYvd87fOMNJmVMOc`
@@ -100,7 +100,7 @@ never worked despite being documented as complete.*
 | **UI Evaluation** | `1xIZnlczl2kIeslnnzJD1eJrgBu5iw6xgSk1wB1MVyAY` | Any session with CSS, layout, or card design changes |
 | **Daily Update Reference** | `1n4fiAaU1uF2X7EKRx9Gm6XpuR6wkpwoa` | Any session that changes broadcast chip rules, thresholds, or update protocol |
 | **Handoff Note** ← update ID every session | `1tNiphm4FKqvBw-c8tqs0u_2FLc63Qd35` | Every session end — replace ID with new handoff doc |
-| **CI/Deploy Error Reference** | `1OfwQn81wP1sLXFzkODTH7FEB06KaGr9v_vup9aBhg1U` | When a new CI/deploy failure pattern is resolved |
+| **CI/Deploy Error Reference** | `1aX65p4C3BfeKtdbQPS32wFsm_bktCuaE` | When a new CI/deploy failure pattern is resolved |
 
 **The rule: edit the document, don't create a new one.**  
 Date-stamp changes at the top of the doc. Never append "v14", "v15" to the title.  
@@ -256,7 +256,7 @@ Every session, Claude reads the latest handoff note from Drive before
 responding to the opening message. No user request needed.
 
 **Claude reads CI/Deploy Error Reference automatically:**  
-Every session, Claude reads `1OfwQn81wP1sLXFzkODTH7FEB06KaGr9v_vup9aBhg1U`  
+Every session, Claude reads `1aX65p4C3BfeKtdbQPS32wFsm_bktCuaE`  
 and surfaces the sandbox constraints, deploy path, worker architecture,  
 and secrets state before any work begins. This prevents wasted time  
 attempting blocked operations (api.github.com, *.workers.dev).
@@ -370,7 +370,7 @@ a follow-up session.
 
 ## Rule 12 — CI/Deploy Error Reference read at every session start
 
-**Drive ID: `1OfwQn81wP1sLXFzkODTH7FEB06KaGr9v_vup9aBhg1U`**
+**Drive ID: `1aX65p4C3BfeKtdbQPS32wFsm_bktCuaE`**
 
 Read this document before any code is touched in any session type.
 Not only when something is broken — every session, every type.
