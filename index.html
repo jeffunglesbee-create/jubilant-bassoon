@@ -2020,8 +2020,8 @@ flex-shrink:0;white-space:nowrap;
 <div id="score-ticker-wrap" style="display:none"></div>
 <div id="major-preview-container" style="padding:0 2rem"></div>
 <div id="field-brief" style="display:none" aria-live="polite"></div>
-<main class="main" id="main"></main>
 <div id="night-owl" style="display:none" aria-live="polite"></div>
+<main class="main" id="main"></main>
 
 <!-- Bottom-sheet overlay -->
 <div id="bs-overlay" class="bottom-sheet-overlay" onclick="closeBottomSheet()"></div>
@@ -3792,8 +3792,8 @@ const MLB_TEAM_RSN = {
 // Enter game key as 'AWAY@HOME' (official team abbreviations) or null.
 // ~30 ESPN GOTD games/season, varies for Peacock GOTD.
 const MLB_DAILY_OVERRIDES = {
-  espnGOTD:    null, // e.g. 'NYY@BOS' — set day-of, ~2 min
-  peacockGOTD: null, // e.g. 'CHC@ATL' — set day-of, ~2 min
+  espnGOTD:    null,      // e.g. 'NYY@BOS' — set day-of, ~2 min
+  peacockGOTD: 'CWS@SEA', // White Sox @ Mariners — Peacock GOTD Wed May 20 · 9:40 PM ET
 };
 
 // ── Navigate to a date ─────────────────────────────────────────
@@ -4978,8 +4978,8 @@ function renderAll(){
             <button class="watch-btn" data-id="${g._id}">+ Multiview</button>
           </div>
           ${(g.espnGOTD||g.peacockGOTD||g.mlbnShowcase||g.localNote||g.gotdStreams)?`<div class="badge-row">
-            ${g.espnGOTD?'<span class="gotd-badge espn-gotd">📺 ESPN GOTD</span>':""}
-            ${g.peacockGOTD?'<span class="gotd-badge peacock-gotd">🦚 Peacock GOTD</span>':""}
+            ${g.espnGOTD?'<span class="gotd-badge espn-gotd" title="Stream free on ESPN App/ESPN Unlimited — no cable required">📺 ESPN App · Free</span>':""}
+            ${g.peacockGOTD?'<span class="gotd-badge peacock-gotd" title="Peacock Game of the Day — stream on Peacock, NBCSN simulcast. Local RSN blacked out in market.">🦚 Peacock GOTD · Free</span>':""}
             ${g.mlbnShowcase?'<span class="gotd-badge" style="color:#6699ff;border-color:rgba(102,153,255,.4);background:rgba(102,153,255,.08)">📺 MLB Network</span>':""}
             ${g.localNote?'<span class="gotd-badge local-cov" title="'+g.localNote+'">📍 Local</span>':""}
             ${g.gotdStreams?streamsHTML(g.gotdStreams):""}
@@ -9135,6 +9135,10 @@ async function fetchMLBFixtures(){
       mlbSec.games = mergedGames.map(g => ({...g, _sport:'Baseball (MLB)'}));
       buildFilters(allData.sports);
       scheduleRenderAll();
+      // Night Owl fix: now that MLB games are in allData, re-run finals detection.
+      // checkForNewFinals() only matches against allData.sports — if games weren't
+      // populated yet on first ESPN poll (race condition), finals were missed.
+      setTimeout(()=>{ checkForNewFinals(); injectJ1J4Badges(); }, 400);
       if (FIELD_DEBUG) console.log(`[MLB Stats API] Primary source: ${mergedGames.length} games (${nationalOverrides.length} national TV overrides)`);
       return; // success — skip ESPN fallback
     }
@@ -9937,6 +9941,19 @@ async function fetchSchedule(){
   fetchESPNScores(); // Start live score polling
   relayHealthCheck().catch(()=>{}); // RELAY health check — enables parallel NBA validation
   fetchMLBFixtures();    // Fill
+
+  // ── Night Owl dedicated poll ──────────────────────────────────────────────
+  // Run checkForNewFinals every 90s independent of ESPN polling interval.
+  // This catches finales even when all leagues are in ESPN_REFRESH_FINISHED (15-min)
+  // mode — the normal ESPN cycle doesn't re-check fast enough for Night Owl.
+  (function initNightOwlPoll(){
+    const poll = () => {
+      if(allData?.sports?.length) checkForNewFinals();
+      renderNightOwlRecap().catch(()=>{});
+    };
+    setTimeout(poll, 5000);    // first check: 5s after load (after MLB fills in)
+    setInterval(poll, 90000);  // then every 90s
+  })();
 
   // ── DAILY RETURN STREAK (Wow #29) ────────────────────────────────────────
   // Duolingo-proven stickiness mechanic. localStorage. Zero backend.
@@ -13343,6 +13360,9 @@ function buildLifeStageContent(game, eData, stage) {
       if (game.seriesRecord && game.seriesRecord !== '0-0') parts.push(game.seriesRecord);
       const ms = _bdlMilestonesCache?.[game._id];
       if (ms) parts.push(`${ms.playerName} needs ${ms.gap} ${ms.stat}`);
+      // GOTD surfacing in card brief — makes streaming context visible without badge-row scroll
+      if (game.peacockGOTD) parts.push('🦚 Peacock GOTD — free to stream');
+      else if (game.espnGOTD) parts.push('📺 Free on ESPN App / ESPN Unlimited');
       // Fallback for sports without matchupNote (WNBA, MLB local games): show localNote or venue
       if (!parts.length && game.localNote) parts.push(game.localNote.slice(0,100));
       if (!parts.length && game.venue) parts.push(game.venue.slice(0,80));
@@ -13675,7 +13695,7 @@ function openBottomSheet(gameId) {
     ${story ? `<div class="bs-section"><div class="bs-section-label">Story</div>${story}</div>` : ''}
     ${(game.matchupNote||game.localNote||milestoneStr) ? `<div class="bs-section"><div class="bs-section-label">Context</div><div class="bs-section-body">${[game.matchupNote||game.localNote, milestoneStr].filter(Boolean).join('<br>')}</div></div>` : ''}
     ${standingsStr||seriesMargins ? `<div class="bs-section"><div class="bs-section-label">Standings</div><div class="bs-section-body">${standingsStr}</div>${seriesMargins}</div>` : ''}
-    ${game.streams?.length ? `<div class="bs-section"><div class="bs-section-label">Watch On</div><div class="bs-section-body">${game.streams.slice(0,4).map(s=>s.label||s.name).filter(Boolean).join(' · ')}</div></div>` : ''}
+    ${game.streams?.length ? `<div class="bs-section"><div class="bs-section-label">Watch On</div><div class="bs-section-body">${game.peacockGOTD?'🦚 Peacock GOTD · Free to stream · ':game.espnGOTD?'📺 Free on ESPN App/Unlimited · ':''}${game.streams.slice(0,4).map(s=>s.label||s.name).filter(Boolean).join(' · ')}</div></div>` : ''}
     ${game.crew ? `<div class="bs-section"><div class="bs-section-label">Crew</div><div class="bs-section-body">${game.crew}</div></div>` : ''}
     <div style="margin-top:1rem;display:flex;gap:.6rem">
       <button onclick="pinGame('${gameId}');closeBottomSheet()" style="flex:1;padding:.55rem;border-radius:.6rem;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);color:inherit;font-size:.7rem;cursor:pointer">📌 Pin game</button>
