@@ -2367,8 +2367,8 @@ const FIELD_FEATURES = {
   'card-story-moments':     '2026-05-21',
   'card-life-stages':       '2026-05-21',
   'comeback-probability':   '2026-05-21',
-  'card-mini-dashboard':    '2026-05-21',
-  'layer3-templates':       '2026-05-21',
+  'card-mini-dashboard':    '2026-05-21',  // pin widget expanded state: sparkline + comeback % + story
+  'layer3-templates':       '2026-05-21',  // PARTIAL: 10/60 situation templates — 50 remaining (Doc 4 spec)
   'my-teams-brief':         '2026-05-21',
   // J-series journalism
   'j1-anti-hype-cards':      '2026-05-19',  // per-card badge injection
@@ -2692,10 +2692,9 @@ var injectSquiggleTips=async function(){
     }
   });
 };
-// renderBetting() references (added during L1-L6 audit) — B1 (T3-01) replaces these:
-var liveOddsData         = {};               // populated by refreshLiveOdds when B1 lands
-var refreshLiveOdds      = function(){};     // no-op until B1 wires the Odds API fetcher
-var updateOddsUI         = function(){};     // no-op until B1 wires the live-odds DOM updater
+// renderBetting() references (removed May 20 2026 TYPE E):
+// liveOddsData, refreshLiveOdds, updateOddsUI were no-op stubs from May 11 2026.
+// renderBetting() now uses _oddsCache + getGameOdds() directly — stubs never called.
 // ═══════════════════════════════════════════════════════════════
 // FIELD — Global Sports Intelligence
 // Verified schedule data for today with live broadcaster logic
