@@ -2209,6 +2209,17 @@ const FIELD_FEATURES = {
   'my-teams-brief':         '2026-05-21',
   // J-series journalism
   'j1-anti-hype-cards':      '2026-05-19',  // per-card badge injection
+  // Underutilization fixes (May 19 2026)
+  'detect-arc-type':         '2026-05-19',  // fix1: detectArcType() defined — was referenced but never implemented
+  'night-owl-sustained-drama':'2026-05-19', // fix2: getDramaSustained() ranks Night Owl by longest exciting game
+  'night-owl-peak-time':     '2026-05-19',  // fix3: getDramaPeakWithTime() surfaces "peaked 9:47 PM" in Night Owl header
+  'halftime-switch-polling': '2026-05-19',  // fix4: renderHalftimeSwitch() wired to ESPN poll cycle
+  'bni-strength-otw':        '2026-05-19',  // fix5: getBNIStrength() feeds OTW anti-hype framing
+  'weather-drama-bonus':     '2026-05-19',  // fix6: wxAlert feeds dramaScoreLive + compound prompt
+  'ember-fields-compound':   '2026-05-19',  // fix7: EMBER tier/channel/contextFlag in compound prompt + Night Owl
+  'ticker-trend-sort':       '2026-05-19',  // fix8: score ticker sorts by drama+trend momentum
+  'bdl-injury-compound':     '2026-05-19',  // fix9: bdlInjuryContextSync() in compound prompt gameLines
+  'scout-pick-market-tip':   '2026-05-19',  // fix10: fieldVsMarket divergence enriches J4 Scout's Pick tooltip
   'j1-anti-hype':           '2026-05-14',
   'j2-series-preview':      '2026-05-14',
   'j3-field-brief':         '2026-05-14',
@@ -4826,6 +4837,32 @@ let _gid=0;
 // ── PREGAME SORT SCORE (global) ───────────────────────────────────────────
 const BIG_MARKET_TEAMS=new Set(['new york knicks','new york nets','new york yankees','new york mets','los angeles lakers','los angeles clippers','los angeles dodgers','boston celtics','boston red sox','chicago bulls','chicago cubs','chicago white sox','golden state warriors','dallas cowboys','dallas mavericks','miami heat','miami dolphins','philadelphia eagles','philadelphia 76ers','philadelphia phillies','houston rockets','houston astros']);
 function isBigMarketGame(g){const h=(g.home||'').toLowerCase(),a=(g.away||'').toLowerCase();for(const t of BIG_MARKET_TEAMS){if(h.includes(t)||a.includes(t))return true;}return false;}
+
+// ── detectArcType — narrative arc classifier ──────────────────────────────────
+// Returns a compact string consumed by buildCompoundPrompt [Arc:] field.
+// Drives editorial framing: how should the model angle the brief?
+// Priority: game importance > BNI signal > hidden-gem > series > null
+function detectArcType(g) {
+  if (!g) return null;
+  // Importance labels override everything
+  if (g._gameImportance === 'elimination')     return 'elimination';
+  if (g._gameImportance === 'series_deciding') return 'series-deciding';
+  if (g._gameImportance === 'clinch')          return 'clinch';
+  if (g._gameImportance === 'playoff_impl')    return 'playoff-impl';
+  // BNI signal: broadcast narrative mismatches the actual game quality
+  const bni = (typeof computeBroadcastNarrativeIndex === 'function') ? computeBroadcastNarrativeIndex(g) : null;
+  if (bni === 'narrative-push')        return 'narrative-push';
+  if (bni === 'elimination-inflation') return 'elimination-inflation';
+  if (bni === 'home-market')           return 'home-market';
+  // Scout's Pick: high drama, not on national TV — hidden gem framing
+  const pgScore = (typeof preGameScore === 'function') ? preGameScore(g) : 0;
+  if (pgScore > 70 && !isNationalGame(g)) return 'hidden-gem';
+  // Series context: any active playoff/series game
+  if (g.seriesRecord && g.seriesRecord !== '0-0') return 'series';
+  // Marquee: high preGameScore on national TV (legit big game)
+  if (pgScore > 50 && isNationalGame(g)) return 'marquee';
+  return null;
+}
 function isNationalGame(g){return !!(g.nationalBundle);}
 function preGameScore(g){
   const nb=g.narrative?.boost||0;
@@ -6831,6 +6868,22 @@ async function bdlPrefetchAll() {
 }
 
 // ── Inject injury badges into already-rendered game cards ──────
+// Fix 9: Sync BDL injury context for compound prompt — reads from warm bdlCache (no await)
+// Called from buildCompoundPrompt after bdlPrefetchAll has run (data available in bdlCache)
+function bdlInjuryContextSync(home, away, sportName) {
+  try {
+    const injuries = bdlCache?.injuries?.[sportName];
+    if (!injuries?.length) return '';
+    const hW = (home||'').toLowerCase().split(' ').filter(w=>w.length>3);
+    const aW = (away||'').toLowerCase().split(' ').filter(w=>w.length>3);
+    const relevant = injuries.filter(inj=>{
+      const t=(inj.team||'').toLowerCase();
+      return hW.some(w=>t.includes(w))||aW.some(w=>t.includes(w));
+    });
+    if(!relevant.length) return '';
+    return 'Injuries: '+relevant.slice(0,3).map(i=>`${i.player} (${i.status})`).join(', ')+'.';
+  } catch(e_) { return ''; }
+}
 // ── J1 Anti-Hype + J4 Scout's Pick — per-card badge injection ───────────────
 // J4 Scout's Pick: preGameScore > 70 AND not a national TV game
 //   Signals: high drama potential being overlooked by broadcast calendar
@@ -6873,7 +6926,23 @@ function injectJ1J4Badges() {
       const badge = document.createElement('span');
       badge.className = 'scout-pick-badge';
       badge.textContent = '🔍 Scout\'s Pick';
-      badge.title = `Drama score ${Math.round(pgScore)} · Under-the-radar tonight`;
+      // Fix 10: fieldVsMarket divergence — enrich tooltip when FIELD rates game vs market
+      let scoutTitle = `Drama score ${Math.round(pgScore)} · Under-the-radar tonight`;
+      try {
+        const sportKey = ODDS_SPORT_MAP[g._sport||g._section||''];
+        if(sportKey && _oddsCache){
+          const oddsKey = Object.keys(_oddsCache).find(k=>k.startsWith(sportKey));
+          if(oddsKey){
+            const odds = getGameOdds(_oddsCache[oddsKey], g.home, g.away);
+            if(odds?.homeML && odds?.awayML){
+              const gap = Math.abs(odds.homeML - odds.awayML);
+              if(gap > 180) scoutTitle += ` · FIELD rates more competitive than ${gap} ML gap suggests`;
+              else if(gap < 45) scoutTitle += ` · Pick'em odds · drama score says it\'s real`;
+            }
+          }
+        }
+      } catch(e_) {}
+      badge.title = scoutTitle;
       cardBody.appendChild(badge);
     }
 
@@ -10509,6 +10578,21 @@ function dramaScoreLive(eData, sport){
     if((eData.clock||'').includes('+')) sitBonus += 8;   // "90+2" stoppage time
   }
 
+  // ── Fix 6: Weather drama bonus ─────────────────────────────────────────
+  // wxAlert fires for: rain > 5mm/hr, temp > 100°F, wind > 30mph
+  // Bad weather genuinely affects outdoor game outcomes — legitimate drama signal
+  // Outdoor sports only: MLB, NFL, Soccer, AFL. Indoor (NBA/NHL) ignored.
+  const isOutdoor = sp.includes('baseball')||sp.includes('mlb')||sp.includes('nfl')||
+                    sp.includes('football')||sp.includes('soccer')||sp.includes('league')||
+                    sp.includes('mls')||sp.includes('liga')||sp.includes('premier')||
+                    sp.includes('afl')||sp.includes('australian');
+  if(isOutdoor && typeof _weatherCache !== 'undefined'){
+    try{
+      const wxEntry = Object.values(_weatherCache||{}).find(wx=>wx?.alert);
+      if(wxEntry) sitBonus += 10; // weather alert at an outdoor venue tonight
+    }catch(e_){}
+  }
+
   const raw = base*52 + timeBonus + sitBonus;
   return Math.min(100, Math.round(raw));
 }
@@ -10816,6 +10900,12 @@ function buildCompoundPrompt(sections) {
       homeMisery  ? `  [FRANCHISE_CONTEXT:${(g.home||'').split(' ').pop()}] ${homeMisery}` : '',
       awayMisery  ? `  [FRANCHISE_CONTEXT:${(g.away||'').split(' ').pop()}] ${awayMisery}` : '',
       extremeNote ? `  [LIVE EXTREME] ${extremeNote}` : '',
+      // Fix 7: EMBER buried lead — tier + channel context for editorial framing
+      (()=>{try{const er=_emberResultCache[g._id||''];return er?`  [EMBER BURIED LEAD: Tier${er.tier} on ${er.channel} · drama ${er.dramaScore}${er.contextFlag?' · context boost':''}]`:''}catch(e_){return ''}})(),
+      // Fix 9: BDL injury context (sync, reads from warm bdlCache after bdlPrefetchAll)
+      (()=>{try{return bdlInjuryContextSync(g.home||'',g.away||'',g._sport||g._section||'')?`  ${bdlInjuryContextSync(g.home||'',g.away||'',g._sport||g._section||'')}`:'';}catch(e_){return ''}})(),
+      // Fix 6: Weather context in compound prompt for outdoor games
+      (()=>{try{const spG=(g._sport||g._section||'').toLowerCase();const isOut=spG.includes('baseball')||spG.includes('mlb')||spG.includes('nfl')||spG.includes('soccer')||spG.includes('league')||spG.includes('mls')||spG.includes('afl');if(!isOut) return '';const wxE=Object.values(_weatherCache||{}).find(wx=>wx?.alert);return wxE?`  [WEATHER ALERT: ${wxE.alert}]`:''}catch(e_){return ''}})(),
     ].filter(Boolean).join('\n');
   }).join('\n\n');
 
@@ -10862,6 +10952,8 @@ Rules:
 - For each epl entry: 40-60 words, context-first (table position, season stakes), or null if data insufficient.
 - For each game_briefs entry: 30-40 words, lead with what's at stake tonight, mention the venue and broadcast, or null if data insufficient.
 - If [BNI] appears: describe that matchup as low-stakes in the brief — never echo the tag verbatim.
+- If [EMBER BURIED LEAD] appears: frame that game as an overlooked gem — mention it's on a non-marquee channel and deserves attention. Never echo the tag verbatim.
+- If [WEATHER ALERT] appears: mention the weather condition briefly when relevant to game outcome.
 - Plain prose only. No bullet points.
 ${buildLayer3Rules(games)}`;
 }
@@ -12381,9 +12473,16 @@ function injectDramaBadges(){
       if (emberResult) {
         const eb = document.createElement('span');
         eb.className = 'badge-ember';
-        eb.textContent = '🔍 BURIED LEAD';
-        eb.title = `Drama ${emberResult.dramaScore} on ${emberResult.channel} (Tier ${emberResult.tier})`;
+        // Tier label: Tier 3 (pure local) is more buried than Tier 2 (regional)
+        const tierLabel = emberResult.tier === 3 ? 'Local Gem' : emberResult.tier === 2 ? 'Regional Gem' : 'Buried Lead';
+        eb.textContent = `🔍 ${tierLabel}`;
+        eb.title = `Drama ${emberResult.dramaScore} on ${emberResult.channel} (Tier ${emberResult.tier})${emberResult.contextFlag ? ' · context boost' : ''}`;
         liveEl.insertAdjacentElement('afterend', eb);
+        // Store EMBER result for compound prompt and Night Owl priority
+        if (gid) _emberResultCache[gid] = emberResult;
+      } else {
+        // Clear EMBER cache when game no longer qualifies
+        if (gid) delete _emberResultCache[gid];
       }
     } catch(e_) {}
   });
@@ -12477,7 +12576,10 @@ function buildOTWWhyLine(g, ed, sport, isPreGame){
     const net=g.streams?.[0]?.label;if(net) parts.push(net);
     if(g.seriesRecord&&g.seriesRecord!=='0-0') parts.push(g.seriesRecord);
     if(g.matchupNote) parts.push(g.matchupNote.split('.')[0].slice(0,45));
-    return parts.slice(0,3).join(' \u00b7 ');
+    // Fix 5: BNI strength → OTW pre-game anti-hype framing
+    const bniOTW=(typeof computeBroadcastNarrativeIndex==='function')?computeBroadcastNarrativeIndex(g):null;
+    if(bniOTW){const bniStr=(typeof getBNIStrength==='function')?getBNIStrength(g,bniOTW):0;if(bniStr>=65)parts.push(bniOTW==='narrative-push'?'\u26a0\ufe0f market says blowout':bniOTW==='elimination-inflation'?'\u26a0\ufe0f series hype':'\u26a0\ufe0f big market push');}
+    return parts.slice(0,4).join(' \u00b7 ');
   }
   const parts=[];
   if(ed.period){const p=ed.period;const pl=sport.includes('Basketball')?`Q${p}`:sport.includes('Hockey')?`P${p}`:sport.includes('Football')?`Q${p}`:`T${p}`;parts.push(pl);}
@@ -12487,6 +12589,9 @@ function buildOTWWhyLine(g, ed, sport, isPreGame){
   else if(gap===1) parts.push('1 back');
   else if(gap<=3) parts.push(`${gap} pts`);
   if(g.seriesRecord&&g.seriesRecord!=='0-0') parts.push(g.seriesRecord);
+  // Fix 5: BNI confirmed live blowout → surface in live why line
+  const bniLive=(typeof computeBroadcastNarrativeIndex==='function')?computeBroadcastNarrativeIndex(g):null;
+  if(bniLive==='narrative-push'){const bniLStr=(typeof getBNIStrength==='function')?getBNIStrength(g,bniLive):0;if(bniLStr>=75)parts.push('\u26a0\ufe0f hype check');}
   return parts.slice(0,4).join(' \u00b7 ');
 }
 
@@ -13389,8 +13494,17 @@ function renderScoreTicker() {
   if (!wrap) return;
   const liveGames = Object.entries(espnScores)
     .filter(([,e]) => e?.status === 'in' || e?.period > 0)
-    .map(([gid, e]) => ({gid, e, drama: getSmoothedDrama(gid) ?? 0}))
-    .sort((a,b) => b.drama - a.drama);
+    .map(([gid, e]) => {
+      const drama = getSmoothedDrama(gid) ?? 0;
+      // Fix 8: momentum-aware sort — rising games bubble ahead of cooling ones
+      // getDramaTrend returns positive=rising, negative=cooling
+      const trend = (typeof getDramaTrend==='function') ? (getDramaTrend(gid)??0) : 0;
+      const momentum = (typeof getOTWMomentum==='function') ? getOTWMomentum(gid) : null;
+      // trendScore: base drama + momentum bonus (capped so a rising 60 doesn't beat a sustained 90)
+      const trendBonus = momentum==='up' ? 12 : (trend > 8 ? 8 : trend > 3 ? 4 : 0);
+      return {gid, e, drama, trendBonus, trendScore: Math.min(drama + trendBonus, drama + 15)};
+    })
+    .sort((a,b) => b.trendScore - a.trendScore);
   if (!liveGames.length) { wrap.style.display = 'none'; return; }
   const sp = s => s?.includes('basketball')||s?.includes('nba') ? '🏀'
     : s?.includes('hockey')||s?.includes('nhl') ? '🏒'
@@ -13398,12 +13512,13 @@ function renderScoreTicker() {
     : s?.includes('football')||s?.includes('nfl') ? '🏈'
     : s?.includes('tennis') ? '🎾'
     : s?.includes('afl')||s?.includes('australian') ? '🏉' : '🏅';
-  const chips = liveGames.map(({gid, e, drama}) => {
+  const chips = liveGames.map(({gid, e, drama, trendBonus}) => {
     const fire = drama >= 65 ? ' fire' : '';
     const icon = drama >= 85 ? '🔥' : drama >= 65 ? '⚡' : '';
+    const rising = trendBonus >= 8 ? ' ↑' : '';  // visible momentum indicator
     const per = e.period ? (e.periodLabel || `Q${e.period}`) : '';
-    const text = `${sp(e._sport||'')} ${(e.home||'').split(' ').pop()} ${e.homeScore||0}–${e.awayScore||0} ${(e.away||'').split(' ').pop()}${per?' · '+per:''}${icon?' '+icon:''}`;
-    return `<div class="ticker-chip${fire}" onclick="scrollToGame('${gid}')" title="Drama ${Math.round(drama)}">${text}</div>`;
+    const text = `${sp(e._sport||'')} ${(e.home||'').split(' ').pop()} ${e.homeScore||0}–${e.awayScore||0} ${(e.away||'').split(' ').pop()}${per?' · '+per:''}${icon?' '+icon:''}${rising}`;
+    return `<div class="ticker-chip${fire}" onclick="scrollToGame('${gid}')" title="Drama ${Math.round(drama)}${trendBonus>=8?' · rising':''}">${text}</div>`;
   }).join('');
   wrap.innerHTML = `<div class="score-ticker">${chips}</div>`;
   wrap.style.display = 'block';
@@ -13620,8 +13735,8 @@ function buildSeriesMarginsDots(game) {
 
 let _nightOwlRendered=false;
 let _nightOwlGameId=null; // tracks which game is currently displayed
-// Per-game brief cache — populated by compound editorial dispatch for regular-season games
 const _gameBriefCache = {}; // gameId → brief text
+const _emberResultCache = {}; // gameId → {tier, channel, dramaScore, contextFlag} — live EMBER state
 async function renderNightOwlRecap(){
   const el=document.getElementById('night-owl');
   if(!el) return;
@@ -13630,7 +13745,16 @@ async function renderNightOwlRecap(){
   const tzStr=(typeof tz==='string'?tz:'America/New_York');
   const hour=parseInt(new Date().toLocaleTimeString('en-US',{timeZone:tzStr,hour:'numeric',hour12:false}));
   if(finals.length<1||(hour<21&&finals.length<2)){el.style.display='none';return;}
-  const topGame=finals.slice().sort((a,b)=>(b.dramaPeak||0)-(a.dramaPeak||0))[0];
+  // Rank by sustained drama (minutes above threshold) — the game that was exciting
+  // longest wins Night Owl, not just the one with the highest single-poll spike.
+  // getDramaSustained returns minutes above 65 in the last 60 minutes of game time.
+  const topGame=finals.slice().sort((a,b)=>{
+    const aSustained = (typeof getDramaSustained==='function') ? getDramaSustained(a.id||a._id||'', 65, 60*60*1000) : 0;
+    const bSustained = (typeof getDramaSustained==='function') ? getDramaSustained(b.id||b._id||'', 65, 60*60*1000) : 0;
+    // Tiebreak: peak drama score
+    if(Math.abs(aSustained-bSustained) < 2) return (b.dramaPeak||0)-(a.dramaPeak||0);
+    return bSustained - aSustained;
+  })[0];
   if(!topGame){el.style.display='none';return;}
   // Allow re-render only if a higher-drama game has now finished
   if(_nightOwlRendered && _nightOwlGameId===topGame.id) return;
@@ -13641,9 +13765,18 @@ async function renderNightOwlRecap(){
   _nightOwlRendered=true;
   _nightOwlGameId=topGame.id;
   el.style.display='block';
+  // getDramaPeakWithTime — editorial context: 'peaked at 9:47 PM'
+  let _owlPeakStr = '';
+  try {
+    const _owlPk = (typeof getDramaPeakWithTime==='function') ? getDramaPeakWithTime(topGame.id||topGame._id||'') : null;
+    if(_owlPk?.t && _owlPk.s >= 70){
+      const _owlTz=(typeof tz==='string'?tz:'America/New_York');
+      _owlPeakStr = ' · peaked '+new Date(_owlPk.t).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',timeZone:_owlTz,hour12:true});
+    }
+  } catch(e_){}
   const renderCard=(text,loaded)=>{
     const sparkSVG = buildDramaSparklineSVG(topGame.id||topGame._id||'');
-    el.innerHTML='<div class="night-owl-card" id="night-owl-inner"><div class="night-owl-header"><span class="night-owl-label">FIELD Night Owl</span><span class="night-owl-score">'+winner+' '+scoreLabel+(topGame.seriesRecord?' \u00b7 '+topGame.seriesRecord:'')+'</span></div>'+(sparkSVG?sparkSVG:'')+'<div class="night-owl-text'+(loaded?'':' pending')+'">'+text+'</div></div>';
+    el.innerHTML='<div class="night-owl-card" id="night-owl-inner"><div class="night-owl-header"><span class="night-owl-label">FIELD Night Owl</span><span class="night-owl-score">'+winner+' '+scoreLabel+(topGame.seriesRecord?' \u00b7 '+topGame.seriesRecord:'')+_owlPeakStr+'</span></div>'+(sparkSVG?sparkSVG:'')+'<div class="night-owl-text'+(loaded?'':' pending')+'">'+text+'</div></div>';
     document.getElementById('night-owl-inner')?.addEventListener('click',()=>document.getElementById('night-owl-inner')?.classList.toggle('collapsed'));
   };
   if(cached){renderCard(cached,true);return;}
