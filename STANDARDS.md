@@ -29,11 +29,12 @@ Add a new semantic assertion for every feature that depends on a specific variab
 ```
 
 **Canonical docs** (open the relevant one before starting):
+- Handoff Note (read first): `1tNiphm4FKqvBw-c8tqs0u_2FLc63Qd35` ← update this ID every session end
 - Build Session List: `1YMgcYTawnVB-QBa7jEZzOLnTfa5uThKi4j3TcNDQe9o`
-- Daily Update Reference: `1y_CuzSCh18YKDFjiWaaThBE1opW2LAoaupAwpvEmN58`
+- Daily Update Reference: `1n4fiAaU1uF2X7EKRx9Gm6XpuR6wkpwoa`
 - Wow Features: `1h80BrgGXbz6aq3Hgv5LbjhpFkRQjYvd87fOMNJmVMOc`
 - UI Evaluation: `1xIZnlczl2kIeslnnzJD1eJrgBu5iw6xgSk1wB1MVyAY`
-- Standards (Drive): `1A3OaKNEjR-tASC330R3Aew9TIMwSCj9E`
+- Standards (Drive): `1twYHSCalULEWE1XjKB5lUVDRK5lzUP-l`
 
 ---
 
@@ -94,7 +95,8 @@ never worked despite being documented as complete.*
 | **Build Session List** (Master backlog) | `1YMgcYTawnVB-QBa7jEZzOLnTfa5uThKi4j3TcNDQe9o` | Every TYPE B/C session end |
 | **Wow Features** | `1h80BrgGXbz6aq3Hgv5LbjhpFkRQjYvd87fOMNJmVMOc` | Any session that implements or modifies a Wow item |
 | **UI Evaluation** | `1xIZnlczl2kIeslnnzJD1eJrgBu5iw6xgSk1wB1MVyAY` | Any session with CSS, layout, or card design changes |
-| **Daily Update Reference** | `1y_CuzSCh18YKDFjiWaaThBE1opW2LAoaupAwpvEmN58` | Any session that changes broadcast chip rules, thresholds, or update protocol |
+| **Daily Update Reference** | `1n4fiAaU1uF2X7EKRx9Gm6XpuR6wkpwoa` | Any session that changes broadcast chip rules, thresholds, or update protocol |
+| **Handoff Note** ← update ID every session | `1tNiphm4FKqvBw-c8tqs0u_2FLc63Qd35` | Every session end — replace ID with new handoff doc |
 
 **The rule: edit the document, don't create a new one.**  
 Date-stamp changes at the top of the doc. Never append "v14", "v15" to the title.  
@@ -184,7 +186,7 @@ Edit the relevant living documents in place for this session type.
 Do not create new versions.
 
 **Step 4 — Handoff note**
-Write a brief handoff at the end of the session doc:
+Write the handoff as a **separate Drive doc** (not at the bottom of the session doc):
 
 ```
 HANDOFF
@@ -196,10 +198,20 @@ Blocked on: [anything requiring resolution before TYPE C work]
 Watch for: [any known fragile state or timing dependency]
 ```
 
-This is the document the next session reads FIRST — before any code,
-before any canonical docs. It answers "where did we leave off?"
+Title format: `FIELD App — [Date] Handoff Note`
 
-**Step 5 — State the close**
+**Step 5 — Update handoff ID in STANDARDS.md**
+Replace the Handoff Note Drive ID in the canonical docs table and checklist
+with the new doc's ID. Commit this change:
+```
+git add STANDARDS.md
+git commit -m "Standards: handoff ID → [new_id]"
+git push origin main
+```
+This is the mechanism that makes "Claude reads handoff automatically" actually work.
+The ID in STANDARDS.md is always the latest handoff. No Drive search needed.
+
+**Step 6 — State the close**
 End the session with a typed declaration:
 ```
 SESSION END
@@ -276,4 +288,59 @@ Installs the pre-commit hook. Never needs to run again on that machine.
 - **Canonical doc content**: Claude proposes updates, user reviews before Drive write.  
 - **Session scope**: user's opening message defines what this session is for.  
   Claude cannot override that intent.
+
+
+---
+
+## Rule 11 — TYPE A sessions must read Daily Update Reference first
+
+Before changing any data in a daily update, open the Daily Update Reference
+(`1n4fiAaU1uF2X7EKRx9Gm6XpuR6wkpwoa`) and verify each of the
+following. Do not update game data until every check passes.
+
+### TYPE A verification checklist
+
+**Smoke baseline**
+```
+node field_smoke.js   ← must be 0 failures before any data change
+```
+If failing: stop. This is now a TYPE B session.
+
+**Broadcast chip rules** (read from Daily Update Reference):
+- MLB GOTD: `peacockGOTD` and `espnGOTD` in `MLB_DAILY_OVERRIDES` — one or both, verified against
+  peacocktv.com/sports/mlb and ESPN Press Room for today's date
+- Apple Friday: 2 games → `MLB_APPLE`. FOX Saturday/Monday → `MLB_FOX`.
+  TBS Tuesday → `MLB_TBS`. NBC/Peacock SNB Sunday → chip depends on date vs May 31.
+- NBA broadcast rights (2025-26): ESPN/ABC, NBC/Peacock, Prime Video.
+  TNT/truTV/Max are no longer NBA rights holders. `NBA_TNT` is deprecated.
+- NHL broadcast rights: ESPN, TNT/truTV/Max, ABC/ESPN2 still active for NHL.
+
+**EPL standings** (required before any EPL matchup note or brief):
+- If any EPL game is in today's schedule: verify current table before writing
+  any `matchupNote` referencing position, points gap, or relegation/European stakes.
+- Source: BBC Sport, Sky Sports, or FD standings endpoint.
+
+**Series records** — must reflect result of most recent game:
+- Update `seriesRecord` on all active playoff series entries.
+- Update `matchupNote` to reflect last game's result if it affects the narrative.
+
+**Expired data removal**:
+- Any `BETTING_LINES_FALLBACK_DATA` entry for a game already played → remove or mark past.
+- Any `MEDIA_SPECIALS` entry for a series that has ended → remove.
+- Any `buildTodaySchedule` entry with `confirmed:false` for a game already known → update.
+
+**Smoke after data changes** (required before commit):
+```
+node field_smoke.js   ← must still be 0 failures after all changes
+```
+
+### Why this matters
+
+The Daily Update Reference contains the rules Claude uses when writing
+matchup notes, selecting broadcast chips, and verifying game data.
+A TYPE A session that skips reading it produces data that is technically
+present but violates the broadcast chip rules established in the reference —
+wrong chips, missing GOTD flags, stale series records.
+The check takes two minutes. It prevents having to fix data errors in
+a follow-up session.
 

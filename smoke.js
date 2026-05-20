@@ -150,5 +150,36 @@ assert('localStorage prune function present', html.includes('pruneOldFieldData')
           assert('NHL ECF entries present',
             html.includes('Carolina Hurricanes') && html.includes('East CF G1'));
 
+// ── SEMANTIC CONTRACT ASSERTIONS — added May 20 2026 ─────────────────────────
+// These run in CI and locally. Catch silent failures where features reference
+// wrong variable names, mismatched key formats, or incorrect call wiring.
+// Pattern: "If this assertion fails, the feature silently does nothing."
+// Rule 4 (STANDARDS.md): add one of these for every new feature with
+// a specific variable name, key format, or call wiring dependency.
+
+assert('A51 — weather bonus uses wxCache (not _weatherCache)',
+  html.includes('wxCache') &&
+  !html.includes('_weatherCache') &&
+  html.includes('sitBonus += 10'));
+
+assert('A52 — espnScores._gameId stored + used in ticker trend sort',
+  html.includes('_gameId: resolveGameIdByHome') &&
+  html.includes('function resolveGameIdByHome') &&
+  html.includes('e._gameId || gid'));
+
+assert('A53 — bdlInjuryContextSync called once per game in compound prompt',
+  (() => {
+    const m = html.match(/\/\/ Fix 9: BDL.*?\/\/ Fix 6:/s);
+    if (!m) return false;
+    return (m[0].match(/bdlInjuryContextSync/g) || []).length === 1;
+  })());
+
+assert('A54 — Night Owl save/load uses ET timezone key consistently',
+  html.includes("America/New_York") &&
+  html.includes("field_tonight_finals_") &&
+  html.includes('saveEspnFinal') &&
+  html.includes('loadTonightFinals'));
+
+
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);
