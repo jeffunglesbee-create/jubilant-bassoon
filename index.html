@@ -4977,6 +4977,33 @@ function preGameScore(g){
 // ─────────────────────────────────────────────────────────────────────────
 
 
+// ── Tonight on FIELD — drama-ranked game picker ─────────────────────────────
+// Top tonight's games by preGameScore with importance badges.
+// Used as betting section intro card — contextualizes why these games matter.
+// Called from renderBetting(); updates on every live poll cycle.
+function renderTonightSummary(sections){
+  try{
+    const all=sections.flatMap(s=>(s.games||[]).map(g=>({...g,_section:s.sport})));
+    if(!all.length) return '';
+    const ranked=all.filter(g=>g.home&&g.away&&g.home!=='ATP/WTA Field').sort((a,b)=>preGameScore(b)-preGameScore(a));
+    if(!ranked.length) return '';
+    const top=ranked.slice(0,3);
+    const total=all.filter(g=>g.home).length;
+    const pGames=all.filter(g=>g._gameImportance).length;
+    const sports=[...new Set(sections.filter(s=>s.games?.length).map(s=>s.sport))];
+    const hl=pGames>0?`${pGames} playoff game${pGames>1?'s':''} tonight · ${total} total events`:`${total} events across ${sports.length} sports`;
+    const entry=(g,i)=>{
+      const t=g.start_time?new Date(g.start_time).toLocaleTimeString('en-US',{timeZone:'America/New_York',hour:'numeric',minute:'2-digit',hour12:true}):'';
+      const n=g.streams?.[0]?.label||'';
+      const b=g._gameImportance?`<span class="ts-badge ts-${g._gameImportance}">${g._importanceIcon||''} ${g.narrative?.label||''}</span>`:'';
+      const drama=Math.round(preGameScore(g));
+      const bar=drama>0?`<span style="font-size:.56rem;color:var(--muted);margin-left:auto;opacity:.65">drama ${drama}</span>`:'';
+      return `<div class="ts-game${i===0?' ts-top':''}"><div class="ts-matchup">${g.away||''} @ ${g.home||''}</div>${b}<div class="ts-meta" style="display:flex;align-items:center">${g._section} · ${t}${n?' · '+n:''} ${bar}</div></div>`;
+    };
+    return `<div class="tonight-summary"><div class="ts-header"><span class="ts-title">⚡ Tonight on FIELD</span><span class="ts-count">${hl}</span></div><div class="ts-games">${top.map(entry).join('')}</div></div>`;
+  }catch(e){return '';}
+}
+
 // ── scheduleRenderAll — debounced renderAll for async data arrivals ──────────
 // Problem: soccer fixtures, MLB fixtures, and supplemental data all arrive within
 // ~500ms of each other, each triggering a full renderAll() + DOM rebuild (~77KB
@@ -6596,6 +6623,20 @@ async function renderBetting(){
   const grid = document.getElementById("betting-grid");
   if(!grid) return;
 
+  // Tonight on FIELD: inject drama-ranked game picker above betting grid
+  // Re-fires with renderBetting() so it stays current with live score data
+  const tonightEl = document.getElementById('betting-tonight') || (() => {
+    const el = document.createElement('div');
+    el.id = 'betting-tonight';
+    grid.parentNode.insertBefore(el, grid);
+    return el;
+  })();
+  if(allData?.sports?.length){
+    const summaryHTML = renderTonightSummary(allData.sports);
+    tonightEl.innerHTML = summaryHTML;
+    tonightEl.style.display = summaryHTML ? 'block' : 'none';
+  }
+
   // Fetch real odds from The Odds API relay for tonight's sports
   // DO NOT INVENT: all numbers come exclusively from The Odds API. Never AI-generated.
   const activeSports = [...new Set(
@@ -6871,19 +6912,22 @@ async function fdPrefetchSoccerLive(){
     const allMatches = data.matches || [];
 
     // Distribute matches into fdLiveCache keyed by competition code
+    // Also capture match IDs into fdMatchIdCache for H2H lookup
     const byCode = {};
     for(const m of allMatches){
       const code = m.competition?.code;
       if(!code) continue;
       if(!byCode[code]) byCode[code] = [];
+      const homeShort = m.homeTeam?.shortName || m.homeTeam?.name || "";
+      const awayShort = m.awayTeam?.shortName || m.awayTeam?.name || "";
       byCode[code].push({
         id:        m.id,
-        homeTeam:  m.homeTeam?.shortName || m.homeTeam?.name || "",
-        awayTeam:  m.awayTeam?.shortName || m.awayTeam?.name || "",
+        homeTeam:  homeShort,
+        awayTeam:  awayShort,
         homeScore: m.score?.fullTime?.home ?? m.score?.halfTime?.home ?? null,
         awayScore: m.score?.fullTime?.away ?? m.score?.halfTime?.away ?? null,
-        htHome: m.score?.halfTime?.home ?? null,  // #18b soccer half-time scores
-        htAway: m.score?.halfTime?.away ?? null,  // #18b soccer half-time scores
+        htHome: m.score?.halfTime?.home ?? null,
+        htAway: m.score?.halfTime?.away ?? null,
         minute:    m.minute || null,
         status:    m.status,
         goals:     (m.goals||[]).map(g=>({
@@ -6892,6 +6936,12 @@ async function fdPrefetchSoccerLive(){
           minute: g.minute
         }))
       });
+      // Store FD match ID for H2H lookup — key by "home_away" normalized
+      if(m.id && homeShort && awayShort){
+        const matchKey = homeShort.toLowerCase().replace(/[^a-z]/g,'').slice(0,6)
+          + '_' + awayShort.toLowerCase().replace(/[^a-z]/g,'').slice(0,6);
+        fdMatchIdCache[matchKey] = m.id;
+      }
     }
 
     // Populate cache for each competition
@@ -7234,7 +7284,8 @@ const ESPN_STANDINGS_MAP = {
 const espnStandingsCache = {}; // cacheKey → standings entries (populated by fetchESPNStandings)
 const fdStandingsCache = {}; // code → [{pos,team,played,won,draw,lost,gf,ga,gd,pts,form}]
 const fdLiveCache      = {}; // code → [{id,homeTeam,awayTeam,score,minute,status,goals}]
-const fdH2HCache       = {}; // "h_a" → {matches,homeWins,awayWins,draws}
+const fdH2HCache       = {}; // "h_a" → {homeWins,awayWins,draws,lastMeetings[]}
+const fdMatchIdCache   = {}; // "home6_away6" → FD match ID (populated by fdPrefetchSoccerLive)
 const fdLiveCacheTime  = {}; // code → timestamp of last live fetch
 const FD_LIVE_TTL      = 1800000; // 30min — matches go SCHEDULED→IN_PLAY→FINISHED
 
@@ -8128,7 +8179,52 @@ async function fdFetchLive(code){
 // Fetch H2H record between two FD team IDs
 // Returns {homeWins, awayWins, draws, lastMeetings:[{date,homeTeam,awayTeam,homeScore,awayScore}]}
 
-// Render a football/ Render a football-data.org standings panel (richer than ESPN for soccer)
+// ── H2H history for soccer match briefs ─────────────────────────────────────
+// fdFetchH2H: fetches last 5 meetings between two teams from football-data.org
+// Used in fetchEPLMatchBriefFromClaude() to give the AI historical context.
+// Free tier: results cached in fdH2HCache to avoid duplicate calls.
+// FD match IDs are resolved at fetch time from the daily fixtures response.
+async function fdFetchH2H(matchId){
+  const cKey = String(matchId);
+  if(fdH2HCache[cKey]) return fdH2HCache[cKey];
+  try{
+    const data = await fdFetch(`/matches/${matchId}/head2head?limit=5`);
+    const agg  = data.aggregates || {};
+    const mtch = (data.matches||[]).slice(0,5).map(m=>({
+      date:      (m.utcDate||'').slice(0,10),
+      homeTeam:  m.homeTeam?.shortName || '',
+      awayTeam:  m.awayTeam?.shortName || '',
+      homeScore: m.score?.fullTime?.home ?? '?',
+      awayScore: m.score?.fullTime?.away ?? '?',
+    }));
+    const result = {
+      homeWins:     agg.homeTeam?.wins  ?? 0,
+      awayWins:     agg.awayTeam?.wins  ?? 0,
+      draws:        agg.homeTeam?.draws ?? 0,
+      lastMeetings: mtch,
+    };
+    fdH2HCache[cKey] = result;
+    return result;
+  }catch(e){
+    if(FIELD_DEBUG) console.warn('FD H2H:', e.message);
+    return null;
+  }
+}
+
+// Build a compact H2H summary string for AI prompts (sync — uses cache only)
+// Returns '' if no H2H data available; call fdFetchH2H() first for async fetch.
+function buildH2HSummary(matchId){
+  const h = fdH2HCache[String(matchId)];
+  if(!h) return '';
+  const total = h.homeWins + h.awayWins + h.draws;
+  if(!total) return '';
+  const recentLine = h.lastMeetings.slice(0,3).map(m=>
+    `${m.date.slice(5)} ${m.homeTeam} ${m.homeScore}-${m.awayScore} ${m.awayTeam}`
+  ).join('; ');
+  return `H2H last ${total} meetings: ${h.homeWins}W-${h.draws}D-${h.awayWins}L.${recentLine?' Recent: '+recentLine+'.':''}`;
+}
+
+// Render a football-data.org standings panel (richer than ESPN for soccer)
 // Shows: #, Team, P, W, D, L, GF, GA, GD, Pts, Form
 function renderFDStandingsPanel(panel, rows, sportName){
   const formDot = c => {
@@ -12118,15 +12214,42 @@ async function fetchEPLMatchBriefFromClaude(g) {
   if(!budget.canCall()) return null;
   const mw = parseMatchweek(g.league);
   const stream = g.streams?.[0]?.label || '';
+
+  // Build H2H and form context from FD data (already cached by fdPrefetchSoccerLive)
+  // Gives AI concrete facts: table position, form string, recent meetings
+  let h2hLine = '', formLine = '';
+  try {
+    // Try to fetch H2H if we have the FD match ID
+    const homeKey = (g.home||'').toLowerCase().replace(/[^a-z]/g,'').slice(0,6);
+    const awayKey = (g.away||'').toLowerCase().replace(/[^a-z]/g,'').slice(0,6);
+    const fdId = fdMatchIdCache[homeKey+'_'+awayKey];
+    if(fdId) {
+      const h2h = await fdFetchH2H(fdId);
+      if(h2h) h2hLine = buildH2HSummary(fdId);
+    }
+    // FD standings form string — already in fdStandingsCache from fdPrefetchSoccerLive
+    const fdCode = FD_LEAGUE_MAP[g._sport||g._section||''];
+    if(fdCode && fdStandingsCache[fdCode]?.length) {
+      const rows = fdStandingsCache[fdCode];
+      const find = name => { const n=(name||'').toLowerCase().split(' ').pop(); return rows.find(r=>(r.team||'').toLowerCase().includes(n)); };
+      const hRow = find(g.home), aRow = find(g.away);
+      const fmtTeam = (r,t) => r ? `${t}: ${r.pos}${r.pos<=4?'★':r.pos>=18?'↓':''} (${r.pts}pts, form ${r.form||'?'})` : '';
+      const parts = [fmtTeam(hRow,g.home), fmtTeam(aRow,g.away)].filter(Boolean);
+      if(parts.length) formLine = 'Table: ' + parts.join('. ');
+    }
+  } catch(e_) {}
+
   const prompt = [
     'Write a FIELD Match Brief for this Premier League fixture.',
     `${g.away} @ ${g.home}.`,
     g.league ? `${g.league}.` : '',
     stream ? `Broadcast: ${stream}.` : '',
     mw ? `Matchweek ${mw} of 38.` : '',
+    formLine || '',
+    h2hLine || '',
     '',
-    'Rules: 40-60 words. 1-2 sentences. Context: what this match means in the PL season.',
-    'No invented stats. No markdown. Complete every sentence.',
+    'Rules: 40-60 words. 1-2 sentences. Use the table/form/H2H data if provided — these are concrete facts worth mentioning.',
+    'No invented stats beyond what is given. No markdown. Complete every sentence.',
   ].filter(Boolean).join('\n');
   try {
     const r = await fetch(CLAUDE_PROXY_URL, {
