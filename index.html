@@ -374,7 +374,7 @@ flex-shrink:0;white-space:nowrap;
   border-radius:var(--radius);padding:0;
   display:grid;grid-template-columns:3px 1fr minmax(90px,auto);grid-template-rows:auto auto auto;
   overflow:hidden;transition:transform .2s,box-shadow .2s,background .15s,border-color .15s;
-  cursor:default;animation:fadeIn .3s ease both;
+  cursor:pointer;touch-action:manipulation;animation:fadeIn .3s ease both;
 }
 @keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
 @keyframes scoreFlash{0%{background:rgba(201,168,76,.25)}60%{background:rgba(201,168,76,.12)}100%{background:transparent}}
@@ -1473,7 +1473,7 @@ flex-shrink:0;white-space:nowrap;
 .setup-svc{
   display:flex;align-items:center;gap:6px;
   padding:.32rem .7rem;border-radius:5px;border:1px solid var(--edge2);
-  background:var(--card2);cursor:pointer;transition:.12s;
+  background:var(--card2);cursor:pointer;touch-action:manipulation;transition:.12s;
   font-family:var(--ff-cond);font-size:.7rem;letter-spacing:.04em;
   color:var(--platinum);white-space:nowrap;user-select:none;
 }
@@ -2890,7 +2890,7 @@ function runSilentErrorScan(){
 function expandStreams(keys){
   return (keys||[]).map(k=>{
     const s=SR[k];
-    return s?{name:s[0],url:s[1],col:s[2],auth:s[3]||"sub",authNote:s[4]||"Subscription required"}:null;
+    return s?{key:k,name:s[0],url:s[1],col:s[2],auth:s[3]||"sub",authNote:s[4]||"Subscription required"}:null;
   }).filter(Boolean);
 }
 
@@ -6799,6 +6799,8 @@ function applyFDLiveToCards(){
         awayScore:   fdMatch.awayScore,
         homeName:    game.home,
         awayName:    game.away,
+        home:        game.home,
+        away:        game.away,
         homeWinning: fdMatch.homeScore>fdMatch.awayScore,
         periodPrefix:"'",
         source:      "fd",
@@ -8415,6 +8417,7 @@ async function fetchNBARelayScores() {
           state: g.state, period: g.period, clock: g.clock, detail: g.detail,
           homeScore: g.homeScore, awayScore: g.awayScore,
           homeName: homeKey, awayName: awayKey,
+          home: homeKey, away: awayKey,
           homeWinning: g.homeWinning, periodPrefix: 'Q', source: 'relay',
         };
         espnScoreTs[key] = Date.now();
@@ -8523,6 +8526,7 @@ async function fetchNHLRelayScores() {
         state:   isFinal ? 'post' : 'in',
         period, clock, detail,
         homeScore, awayScore, homeName, awayName,
+        home: homeName, away: awayName,
         homeWinning: homeScore > awayScore,
         periodPrefix: 'P', // matches ESPN_SPORTS NHL entry
         source: 'nhl-relay',
@@ -8643,6 +8647,7 @@ async function fetchESPNScores(){
         espnScores[key] = {
           state, period, clock, detail,
           homeScore, awayScore, homeName, awayName,
+          home: homeName, away: awayName,
           homeWinning: homeScore > awayScore,
           periodPrefix,
           outs, balls, strikes,
@@ -9411,6 +9416,7 @@ async function fetchFPLLiveScores() {
           state, period: mins > 45 ? 2 : 1, clock, detail,
           homeScore: hScore, awayScore: aScore,
           homeName: home, awayName: away,
+          home, away,
           homeWinning: hScore > aScore,
           periodPrefix: "'",
           source: 'fpl',
@@ -12799,6 +12805,27 @@ function toggleMyTeam(name){
 
 // MY TEAMS filter mode — when active, show only games featuring a My Team
 // myTeamsFilter: moved earlier — see before goToDate(TODAY_ISO)
+
+// ── Game-card tap delegate — belt-and-suspenders for Android/Samsung ─────────
+// Some Android browsers (Samsung Internet, Chrome on Galaxy) suppress 'click'
+// on divs even with cursor:pointer. The touchend delegate catches these cases.
+// Tap threshold: <8px movement (not a scroll). stopPropagation if child button caught it.
+(function initCardTapDelegate(){
+  let _tStartX=0,_tStartY=0;
+  document.addEventListener('touchstart',e=>{
+    _tStartX=e.touches[0].clientX; _tStartY=e.touches[0].clientY;
+  },{passive:true});
+  document.addEventListener('touchend',e=>{
+    const dx=Math.abs((e.changedTouches[0]?.clientX||0)-_tStartX);
+    const dy=Math.abs((e.changedTouches[0]?.clientY||0)-_tStartY);
+    if(dx>8||dy>8) return; // scrolled — not a tap
+    const card=e.target.closest('.game-card');
+    if(!card) return;
+    if(e.target.closest('.pin-btn,.star-btn,.cal-btn,.share-btn')) return; // let buttons handle
+    const gid=card.dataset.gameid;
+    if(gid) openBottomSheet(gid);
+  },{passive:true});
+})();
 
 // ── Star button delegate ─────────────────────────────────────────────────
 document.addEventListener('click', e => {
