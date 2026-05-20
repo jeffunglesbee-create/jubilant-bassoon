@@ -490,6 +490,15 @@ try {
   if(nightOwlETKey) pass('A54 — Night Owl save/load: ET timezone key consistent');
   else fail('A54 — Night Owl: timezone key mismatch — finals may not be found');
 
+  // A55 — Runtime error capture instrumented in index.html
+  const hasFieldErrors =
+    html.includes('window._fieldErrors') &&
+    html.includes('window.onerror') &&
+    html.includes('unhandledrejection') &&
+    html.includes('field-debug-panel');
+  if(hasFieldErrors) pass('A55 — Runtime capture: _fieldErrors + onerror + debug panel present');
+  else fail('A55 — Runtime capture missing — browser errors invisible without DevTools');
+
   // ─────────────────────────────────────────────────────────────────────
   log('---');
   log('Failures:', failures);

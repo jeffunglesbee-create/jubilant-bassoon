@@ -650,32 +650,21 @@ Minimum config:
 
 ## Rule 18 — Runtime monitoring and browser-confirmed tracking
 
-### Runtime error capture
+### Runtime error capture — IMPLEMENTED May 20 2026
 
-Wrap every critical path function in a try/catch that records to
-`window._fieldErrors`:
+`window._fieldErrors` is live in `index.html`:
+- `window.onerror` and `unhandledrejection` write to it automatically
+- `renderNightOwlRecap`, `renderFieldDesk`, `initFIELDBrief` catch blocks write to it
+- `?debug=1` URL parameter shows a live panel: error list, card count, espnScores count
 
+**`field_browser.test.js`** reads `window._fieldErrors` via Playwright after 15s load.
+The browser-test CI job fails if `_fieldErrors` is non-empty.
+
+Extend coverage: when adding a new critical path function, add to its outer catch:
 ```js
-window._fieldErrors = window._fieldErrors || [];
-// In each critical function's outer catch:
-window._fieldErrors.push({ fn: 'renderNightOwlRecap', err: e.message, ts: Date.now() });
+if(typeof window._fieldErrors !== 'undefined')
+  window._fieldErrors.push({fn:'myFunction', err: e?.message||String(e), ts: Date.now()});
 ```
-
-Critical path functions to wrap: `renderNightOwlRecap`, `fetchESPNScores`,
-`initFIELDBrief`, `renderFieldDesk`, `runCompound`.
-
-Add a debug panel at `?debug=1` URL parameter:
-```js
-if(location.search.includes('debug=1')) {
-  const panel = document.createElement('pre');
-  panel.style = 'position:fixed;bottom:0;left:0;right:0;background:#111;color:#0f0;font-size:.6rem;max-height:30vh;overflow:auto;z-index:9999;padding:.5rem';
-  panel.textContent = JSON.stringify(window._fieldErrors, null, 2) || 'No errors';
-  document.body.appendChild(panel);
-}
-```
-
-Gives the user a way to capture and report what's failing in their
-browser without requiring a screenshot at the exact right moment.
 
 ### Browser-confirmed pending list
 

@@ -179,6 +179,11 @@ assert('A54 — Night Owl save/load uses ET timezone key consistently',
   html.includes("field_tonight_finals_") &&
   html.includes('saveEspnFinal') &&
   html.includes('loadTonightFinals'));
+assert('A55 — Runtime capture: _fieldErrors + onerror + debug panel present',
+  html.includes('window._fieldErrors') &&
+  html.includes('window.onerror') &&
+  html.includes('unhandledrejection') &&
+  html.includes('field-debug-panel'));
 
 
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);

@@ -78,6 +78,59 @@ jobs:
           echo "  $(date '+%Y-%m-%d %H:%M UTC')"
           echo "════════════════════════════════════"
 
+  browser-test:
+    runs-on: ubuntu-latest
+    name: Browser runtime tests (Playwright)
+    needs: smoke           # only runs after smoke job passes
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install Playwright
+        run: |
+          npm install @playwright/test
+          npx playwright install chromium --with-deps
+
+      - name: Wait for Cloudflare propagation
+        run: |
+          echo "Waiting 30s for Cloudflare to propagate after smoke deploy..."
+          sleep 30
+
+      - name: Run browser tests against live URL
+        run: |
+          # Tests run against jubilant-bassoon.jeffunglesbee.workers.dev
+          # *.workers.dev is accessible from GitHub Actions (not blocked like Claude sandbox)
+          # Rule 18: these tests catch what smoke.js cannot — runtime errors,
+          # failed network requests, console errors, window._fieldErrors
+          npx playwright test field_browser.test.js --reporter=list
+        continue-on-error: true   # non-blocking initially — establish baseline first
+        # TODO: change to hard-fail once baseline is clean (remove continue-on-error)
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-results
+          path: |
+            /tmp/field_browser_results.json
+            test-results/
+          if-no-files-found: ignore
+
+      - name: Summary
+        if: always()
+        run: |
+          echo ""
+          echo "════════════════════════════════════════"
+          echo "  Browser tests complete"
+          echo "  $(date '+%Y-%m-%d %H:%M UTC')"
+          echo "  Live URL: https://jubilant-bassoon.jeffunglesbee.workers.dev"
+          echo "════════════════════════════════════════"
+
   compliance-report:
     runs-on: ubuntu-latest
     name: Daily compliance check

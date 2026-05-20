@@ -2251,6 +2251,42 @@ flex-shrink:0;white-space:nowrap;
 // ═══════════════════════════════════════════════════════════════
 const FIELD_DEBUG = localStorage.getItem('FIELD_DEBUG') === '1';
 
+// ── Runtime error capture (Rule 18 — field_browser.test.js reads this) ──────
+// window._fieldErrors collects errors from critical path functions.
+// Read by: Playwright browser test, ?debug=1 panel, Night Owl diagnostics.
+// Playwright CI job checks this array is empty after 15s page load.
+window._fieldErrors = window._fieldErrors || [];
+window.addEventListener('error', e => {
+  window._fieldErrors.push({ fn: 'window.onerror', err: e.message, src: e.filename, ts: Date.now() });
+});
+window.addEventListener('unhandledrejection', e => {
+  window._fieldErrors.push({ fn: 'unhandledrejection', err: String(e.reason), ts: Date.now() });
+});
+
+// ?debug=1 panel — shows _fieldErrors + key state without opening DevTools
+if (typeof location !== 'undefined' && location.search.includes('debug=1')) {
+  window.addEventListener('load', () => {
+    const panel = document.createElement('div');
+    panel.id = 'field-debug-panel';
+    panel.style.cssText = 'position:fixed;bottom:0;left:0;right:0;background:#0a0a14;color:#0f0;font-family:monospace;font-size:.6rem;max-height:40vh;overflow:auto;z-index:9999;padding:.5rem .75rem;border-top:1px solid #333;line-height:1.5';
+    const refresh = () => {
+      const errors = window._fieldErrors || [];
+      const cards = document.querySelectorAll('.game-card').length;
+      const espn = Object.keys(window.espnScores||{}).length;
+      panel.innerHTML =
+        `<b style="color:#ff0">FIELD Debug — ${new Date().toLocaleTimeString()}</b>  ` +
+        `[<a href="?debug=0" style="color:#aaa">close</a>]<br>` +
+        `game-cards: ${cards}  |  espnScores: ${espn}  |  _fieldErrors: ${errors.length}<br>` +
+        (errors.length
+          ? errors.map(e=>`<span style="color:#f88">❌ ${e.fn}: ${e.err}</span>`).join('<br>')
+          : '<span style="color:#0f0">✅ No errors captured</span>');
+    };
+    refresh();
+    setInterval(refresh, 3000);
+    document.body.appendChild(panel);
+  });
+}
+
 // ── FIELD Feature Registry ────────────────────────────────────────────────
 // SINGLE SOURCE OF TRUTH for what's built. Updated when features ship.
 // Drive docs are derived summaries. If unsure what's built: look here first.
@@ -6700,7 +6736,8 @@ function renderFieldDesk(){
         <div class="desk-card-body">${fbText.slice(0,300).trim()}${fbText.length>300?'…':''}</div>
       </div>`);
     }
-  }catch(e_){}
+  }catch(e_){
+    if(typeof window._fieldErrors !== 'undefined') window._fieldErrors.push({fn:'renderFieldDesk',err:e?.message||String(e),ts:Date.now()});}
 
   // ── Card 2: Series previews from sessionStorage ─────────────────────────
   const seriesCards = [];
@@ -12298,7 +12335,8 @@ async function initFIELDBrief(sections){
           }));
         });
       }
-    }catch(e_){}
+    }catch(e_){
+    if(typeof window._fieldErrors !== 'undefined') window._fieldErrors.push({fn:'initFIELDBrief',err:e?.message||String(e),ts:Date.now()});}
     return;
   }
   const staticText=buildFIELDBriefStatic(sections)||'Loading tonight\'s brief\u2026';
@@ -14394,7 +14432,8 @@ async function renderNightOwlRecap(){
           }
         });
       });
-    }catch(e_){}
+    }catch(e_){
+    if(typeof window._fieldErrors !== 'undefined') window._fieldErrors.push({fn:'renderNightOwlRecap',err:e?.message||String(e),ts:Date.now()});}
   }
 
   if(!finals.length){el.style.display='none';return;}

@@ -8,7 +8,11 @@
     "smoke": "node field_smoke.js",
     "smoke:ci": "node smoke.js index.html",
     "test": "node field_unit.js",
+    "test:browser": "npx playwright test field_browser.test.js",
     "lint": "npx eslint index.html --ext .html --no-eslintrc -c .eslintrc.json"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.44.0"
   },
   "engines": {
     "node": ">=18"
