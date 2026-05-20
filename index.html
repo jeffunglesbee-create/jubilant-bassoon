@@ -10567,7 +10567,7 @@ async function fetchSchedule(){
 function updateTzPill(){
   const pill = document.getElementById("tz-pill");
   if(!pill) return;
-  const tz = document.getElementById("tz-select")?.value || "";
+  const tz = getEl("tz-select")?.value || "";
   // Show short timezone: "America/New_York" → "ET", "America/Los_Angeles" → "PT"
   const abbr = {
     "America/New_York":"ET","America/Chicago":"CT","America/Denver":"MT",
@@ -12275,7 +12275,7 @@ async function initFIELDBrief(sections){
   const mkCard=(text,loaded,state)=>`<div class="field-brief-card" id="field-brief-inner"><div class="field-brief-header"><span class="field-brief-label">FIELD Brief</span><span class="field-brief-date">${dateLabel}</span>${stateBadge(state)}</div><div class="field-brief-text${loaded?'':' pending'}">${text}</div></div>`;
   if(cached){
     el.innerHTML=mkCard(trimToCompleteSentence(cached),true,'cached');
-    document.getElementById('field-brief-inner')?.addEventListener('click',()=>document.getElementById('field-brief-inner')?.classList.toggle('collapsed'));
+    document.getElementById('field-brief-inner')?.addEventListener('click',()=>getEl('field-brief-inner')?.classList.toggle('collapsed'));
     // Restore game_briefs from compound cache even on brief-text cache hit
     try{
       const compoundKey=buildCompoundCacheKey(sections);
@@ -12302,7 +12302,7 @@ async function initFIELDBrief(sections){
   const myTeamsLine=buildMyTeamsBriefLine(sections);
   if(myTeamsLine){const mtEl=document.getElementById('my-teams-brief-line')||(()=>{const d=document.createElement('div');d.id='my-teams-brief-line';d.style.cssText='font-size:.68rem;color:var(--gold2,#c9a84c);padding:.35rem 1rem .1rem;max-width:1200px;margin:0 auto;opacity:.85';el.insertAdjacentElement('beforebegin',d);return d;})();mtEl.textContent='★ Your teams: '+myTeamsLine;}
   el.innerHTML=mkCard(staticText,false,'');
-  document.getElementById('field-brief-inner')?.addEventListener('click',()=>document.getElementById('field-brief-inner')?.classList.toggle('collapsed'));
+  document.getElementById('field-brief-inner')?.addEventListener('click',()=>getEl('field-brief-inner')?.classList.toggle('collapsed'));
 
   // Pre-fetch standings so buildCompoundPrompt has relay data available
   await Promise.allSettled(sections.slice(0, 5).map(s => fetchStandingsForPrompt(s.sport)));
@@ -14291,12 +14291,12 @@ function openBottomSheet(gameId) {
       <button onclick="pinGame('${gameId}');closeBottomSheet()" style="flex:1;padding:.55rem;border-radius:.6rem;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);color:inherit;font-size:.7rem;cursor:pointer">📌 Pin game</button>
       <button onclick="navigator.share&&navigator.share({title:'${(game.away||'').replace(/'/g,'')} @ ${(game.home||'').replace(/'/g,'')}',text:'${(game.away||'').replace(/'/g,'')} @ ${(game.home||'').replace(/'/g,'')} · ${game.league||sport||''}',url:location.href}).catch(()=>{});closeBottomSheet()" style="flex:1;padding:.55rem;border-radius:.6rem;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);color:inherit;font-size:.7rem;cursor:pointer">⬆ Share</button>
     </div>`;
-  document.getElementById('bs-overlay')?.classList.add('open');
-  document.getElementById('bottom-sheet')?.classList.add('open');
+  getEl('bs-overlay')?.classList.add('open');
+  getEl('bottom-sheet')?.classList.add('open');
 }
 function closeBottomSheet() {
-  document.getElementById('bs-overlay')?.classList.remove('open');
-  document.getElementById('bottom-sheet')?.classList.remove('open');
+  getEl('bs-overlay')?.classList.remove('open');
+  getEl('bottom-sheet')?.classList.remove('open');
 }
 
 // ── Wow#45 Stage 2: Drama Sparkline ──────────────────────────────────────────
@@ -14420,7 +14420,7 @@ async function renderNightOwlRecap(){
   _nightOwlGameId=topGame.id;
   el.style.display='block';
   // Night Owl supersedes FIELD Brief — collapse it so they don't compete
-  document.getElementById('field-brief-inner')?.classList.add('collapsed');
+  getEl('field-brief-inner')?.classList.add('collapsed');
   // getDramaPeakWithTime — editorial context: 'peaked at 9:47 PM'
   let _owlPeakStr = '';
   try {
@@ -14433,7 +14433,7 @@ async function renderNightOwlRecap(){
   // Build section header date string
   const _owlDate = (() => {
     try {
-      const tz2 = document.getElementById('tz-select')?.value || 'America/New_York';
+      const tz2 = getEl('tz-select')?.value || 'America/New_York';
       return new Date().toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',timeZone:tz2}).toUpperCase();
     } catch(e_){ return ''; }
   })();
@@ -14472,7 +14472,7 @@ async function renderNightOwlRecap(){
         +'<div class="night-owl-expand-hint"></div>'
       +'</div>';
     document.getElementById('night-owl-inner')?.addEventListener('click',()=>
-      document.getElementById('night-owl-inner')?.classList.toggle('collapsed')
+      getEl('night-owl-inner')?.classList.toggle('collapsed')
     );
   };
   if(cached){renderCard(cached,true);return;}

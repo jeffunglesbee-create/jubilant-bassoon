@@ -9,11 +9,14 @@
     "smoke:ci": "node smoke.js index.html",
     "test": "node field_unit.js",
     "test:browser": "npx playwright test field_browser.test.js",
-    "lint": "npx eslint index.html --ext .html --no-eslintrc -c .eslintrc.json",
-    "inventory": "node scripts/inventory.js"
+    "lint": "eslint --plugin html index.html",
+    "inventory": "node scripts/inventory.js",
+    "lint:fix": "eslint --plugin html --fix index.html"
   },
   "devDependencies": {
-    "@playwright/test": "^1.44.0"
+    "@playwright/test": "^1.44.0",
+    "eslint": "^8.0.0",
+    "eslint-plugin-html": "^8.0.0"
   },
   "engines": {
     "node": ">=18"

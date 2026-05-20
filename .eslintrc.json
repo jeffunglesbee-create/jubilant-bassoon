@@ -8,7 +8,19 @@
   },
   "rules": {
     "no-undef": "warn",
-    "no-unused-vars": "off"
+    "no-unused-vars": "off",
+    "no-restricted-syntax": [
+      "error",
+      {
+        "selector": "AssignmentExpression > MemberExpression.left[object.type=\"CallExpression\"][object.callee.type=\"MemberExpression\"][object.callee.property.name=\"getElementById\"]",
+        "message": "Store result first: const el = getEl(id); if (el) el.property = value"
+      },
+      {
+        "selector": "MemberExpression[object.type=\"CallExpression\"][object.callee.type=\"MemberExpression\"][object.callee.property.name=\"getElementById\"][property.name=/^(style|classList|innerHTML|textContent|value|checked)$/]",
+        "message": "Store result first: const el = getEl(id); if (el) el.property"
+      }
+    ],
+    "no-sequences": "error"
   },
   "globals": {
     "allData": "readonly",
@@ -31,6 +43,40 @@
     "ODDS_SPORT_MAP": "readonly",
     "DRAMA_HISTORY_KEY": "readonly",
     "RELAY_PRIMARY": "readonly",
-    "RELAY_CUTOVER_DATE": "readonly"
-  }
+    "RELAY_CUTOVER_DATE": "readonly",
+    "teamNick": "readonly",
+    "teamSlug": "readonly",
+    "teamSlugPair": "readonly",
+    "gameNetwork": "readonly",
+    "shiftTime": "readonly",
+    "parseMatchweek": "readonly",
+    "espnPeriodLabel": "readonly",
+    "isOutdoorVenue": "readonly",
+    "getVenueCoords": "readonly",
+    "wxAlert": "readonly",
+    "wxDescription": "readonly",
+    "wxIcon": "readonly",
+    "wxWindDir": "readonly",
+    "wxBadge": "readonly",
+    "toImpliedNum": "readonly",
+    "dramaTier": "readonly",
+    "trimToCompleteSentence": "readonly",
+    "stripJsonFences": "readonly",
+    "extractJsonBlock": "readonly",
+    "espnTeamMatch": "readonly",
+    "ESPN_OT_PERIODS": "readonly",
+    "getEl": "readonly",
+    "$": "readonly",
+    "$$": "readonly",
+    "fieldFetch": "readonly",
+    "forEachGame": "readonly",
+    "allGamesFlat": "readonly",
+    "findGameById": "readonly",
+    "getDramaPeak": "readonly",
+    "findEspnEntry": "readonly",
+    "rankGamesByDrama": "readonly"
+  },
+  "plugins": [
+    "html"
+  ]
 }

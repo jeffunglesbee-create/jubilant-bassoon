@@ -1,52 +1,43 @@
 #!/bin/sh
-# FIELD pre-commit hook — runs smoke + unit tests before every commit
-# Blocks commit on any failure.
-# Rule 16: --no-verify bypass requires [no-verify: reason] in commit message.
+# FIELD pre-commit hook — runs smoke + unit tests + lint before every commit
+# Rule 16: --no-verify bypass requires [no-verify: reason] in commit message
 
 REPO="$(git rev-parse --show-toplevel)"
 command -v node >/dev/null 2>&1 || { echo "⚠  node not found — skipping checks"; exit 0; }
 
-# ── Step 1: Diff review reminder ────────────────────────────────────────────
 echo ""
-echo "📋 DIFF REVIEW (Rule 13) — scan before committing:"
+echo "📋 DIFF REVIEW (Rule 13):"
 git diff --staged --stat
-echo ""
-echo "   Check: new variable names, removed functions still referenced,"
-echo "   changes to functions called from multiple places."
+echo "   Check: new variable names, removed functions, changes to shared functions."
 echo ""
 
-# ── Step 2: Smoke test ───────────────────────────────────────────────────────
-echo "🔍 Running smoke test..."
-node "$REPO/field_smoke.js" >/dev/null 2>&1
-SMOKE_RESULT=$?
+echo "🔍 Smoke test..."
+node "$REPO/field_smoke.js" >/dev/null 2>&1; SMOKE=$?
 
-# ── Step 3: Unit tests ───────────────────────────────────────────────────────
-echo "🧪 Running unit tests..."
-node "$REPO/field_unit.js" >/dev/null 2>&1
-UNIT_RESULT=$?
+echo "🧪 Unit tests..."
+node "$REPO/field_unit.js" >/dev/null 2>&1; UNIT=$?
 
-# ── Results ──────────────────────────────────────────────────────────────────
-if [ $SMOKE_RESULT -ne 0 ] || [ $UNIT_RESULT -ne 0 ]; then
+echo "🔎 Lint (ESLint — blocks on errors, not warnings)..."
+LINT_OUT=$("$REPO/node_modules/.bin/eslint" --plugin html "$REPO/index.html" 2>&1)
+LINT_ERRORS=$(echo "$LINT_OUT" | grep -c " error ")
+LINT=$( [ "$LINT_ERRORS" -eq 0 ] && echo 0 || echo 1 )
+
+if [ $SMOKE -ne 0 ] || [ $UNIT -ne 0 ] || [ $LINT -ne 0 ]; then
   echo ""
   echo "╔══════════════════════════════════════════════════════════╗"
   echo "║  CHECKS FAILED — commit blocked                          ║"
-  if [ $SMOKE_RESULT -ne 0 ]; then
-    echo "║  ❌ Smoke test failed — run: node field_smoke.js         ║"
-  fi
-  if [ $UNIT_RESULT -ne 0 ]; then
-    echo "║  ❌ Unit tests failed — run: node field_unit.js          ║"
-  fi
+  [ $SMOKE -ne 0 ] && echo "║  ❌ Smoke    — run: node field_smoke.js                  ║"
+  [ $UNIT  -ne 0 ] && echo "║  ❌ Units    — run: node field_unit.js                   ║"
+  [ $LINT  -ne 0 ] && echo "║  ❌ Lint     — run: npm run lint  ($LINT_ERRORS error(s))$(printf '%*s' $((23 - ${#LINT_ERRORS})) '')║"
   echo "║                                                          ║"
-  echo "║  Fix all failures before committing.                     ║"
-  echo "║  Emergency bypass: git commit --no-verify                ║"
-  echo "║  Rule 16: bypass REQUIRES [no-verify: reason] in msg     ║"
-  echo "║  AND a smoke-passing commit must follow same session.    ║"
+  echo "║  Rule 16: bypass = git commit --no-verify                ║"
+  echo "║           MUST include [no-verify: reason] in msg        ║"
   echo "╚══════════════════════════════════════════════════════════╝"
-  echo ""
-  [ $SMOKE_RESULT -ne 0 ] && node "$REPO/field_smoke.js" 2>&1 | tail -5
-  [ $UNIT_RESULT -ne 0 ]  && node "$REPO/field_unit.js"  2>&1 | tail -5
+  [ $SMOKE -ne 0 ] && node "$REPO/field_smoke.js" 2>&1 | tail -5
+  [ $UNIT  -ne 0 ] && node "$REPO/field_unit.js"  2>&1 | tail -5
+  [ $LINT  -ne 0 ] && echo "$LINT_OUT" | grep " error " | head -5
   exit 1
 fi
 
-echo "✅ Smoke + unit tests passed"
+echo "✅ Smoke + units + lint passed"
 exit 0
