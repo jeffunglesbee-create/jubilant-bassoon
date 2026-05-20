@@ -451,6 +451,45 @@ try {
       pass('Assertion 40 — Journalism resilience: 429 backoff + cached/updating state badges + series inject');
   }
 
+  // ── SEMANTIC CONTRACT ASSERTIONS (May 20 2026) ──────────────────────────
+  // Catch silent failures: wrong variable names, key mismatches, double-calls.
+  // "If this assertion fails, the feature silently does nothing."
+
+  // A51 — weather drama uses wxCache (not _weatherCache)
+  const weatherUsesCorrectCache =
+    html.includes('wxCache') &&
+    !html.includes('_weatherCache') &&
+    html.includes('sitBonus += 10');
+  if(weatherUsesCorrectCache) pass('A51 — weather bonus: wxCache referenced correctly');
+  else fail('A51 — weather bonus: _weatherCache not found — weather drama silently broken');
+
+  // A52 — espnScores._gameId stored + used in ticker trend sort
+  const espnStoresGameId =
+    html.includes('_gameId: resolveGameIdByHome') &&
+    html.includes('function resolveGameIdByHome') &&
+    html.includes('e._gameId || gid');
+  if(espnStoresGameId) pass('A52 — espnScores._gameId stored + ticker uses it');
+  else fail('A52 — espnScores._gameId missing — trend sort always returns 0');
+
+  // A53 — bdlInjuryContextSync called once per game (not twice)
+  const bdlCalledOnce = (() => {
+    const m = html.match(/\/\/ Fix 9: BDL.*?\/\/ Fix 6:/s);
+    if(!m) return false;
+    const calls = (m[0].match(/bdlInjuryContextSync/g)||[]).length;
+    return calls === 1;
+  })();
+  if(bdlCalledOnce) pass('A53 — bdlInjuryContextSync called once per game');
+  else fail('A53 — bdlInjuryContextSync called multiple times — double injury cache traversal');
+
+  // A54 — Night Owl save/load uses ET timezone consistently
+  const nightOwlETKey =
+    html.includes("America/New_York") &&
+    html.includes("field_tonight_finals_") &&
+    html.includes('saveEspnFinal') &&
+    html.includes('loadTonightFinals');
+  if(nightOwlETKey) pass('A54 — Night Owl save/load: ET timezone key consistent');
+  else fail('A54 — Night Owl: timezone key mismatch — finals may not be found');
+
   // ─────────────────────────────────────────────────────────────────────
   log('---');
   log('Failures:', failures);
@@ -520,3 +559,4 @@ const hasGameNotes = html.includes('fetchGameNotes') &&
   html.includes("'game-notes-layer'");
 if(hasGameNotes) pass('Assertion 50 — Game Notes Layer: P1-P4 stack + dispatcher + FIELD_FEATURES entry');
 else fail('Assertion 50 — Game Notes Layer missing (fetchGameNotes/assembleNoteFromContext/fetchMLBGameNotes)');
+
