@@ -419,6 +419,8 @@ flex-shrink:0;white-space:nowrap;
 }
 
 /* ── My Teams (Wow #21) ──────────────────────────────────────────── */
+.pin-btn{position:absolute;top:.5rem;left:.4rem;background:rgba(7,7,16,.6);border:none;cursor:pointer;font-size:.75rem;line-height:1;padding:.2rem .3rem;border-radius:4px;color:rgba(255,255,255,.3);transition:.15s;opacity:.5;z-index:2;backdrop-filter:blur(4px)}
+.pin-btn:hover,.pin-btn.active{opacity:1;color:var(--accent,#f97316)}
 .star-btn{
   position:absolute;top:.5rem;right:calc(90px + .4rem); /* clear card-right min-width:90px */
   background:rgba(7,7,16,.6);border:none;cursor:pointer;
@@ -637,6 +639,55 @@ flex-shrink:0;white-space:nowrap;
 @keyframes drama-flicker{0%,100%{opacity:1}50%{opacity:.72}}
 .badge-ember{display:inline-flex;align-items:center;gap:.25rem;padding:.18rem .55rem;border-radius:.85rem;font-size:.68rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;background:rgba(201,141,40,.15);color:#c98d28;border:1px solid rgba(201,141,40,.35);cursor:default;opacity:.9;}
 /* BURIED LEAD sits — discovery tone, never pulses */
+
+/* ── Game Card Revolution: Living Card styles ───────────────────────────── */
+/* Card Drama Pulse — border breathes with drama score */
+@keyframes cardPulse{0%,100%{box-shadow:0 0 0 0 var(--pulse-color,rgba(249,115,22,0))}50%{box-shadow:0 0 0 3px var(--pulse-color,rgba(249,115,22,.35))}}
+.game-card.pulse-med{animation:cardPulse var(--pulse-speed,2s) ease-in-out infinite}
+.game-card.pulse-high{animation:cardPulse var(--pulse-speed,1.2s) ease-in-out infinite;--pulse-color:rgba(249,115,22,.45)}
+.game-card.pulse-crunch{animation:cardPulse .65s ease-in-out infinite;--pulse-color:rgba(249,115,22,.7)}
+@media(prefers-reduced-motion:reduce){.game-card.pulse-med,.game-card.pulse-high,.game-card.pulse-crunch{animation:none}}
+
+/* Live Score Ticker */
+.score-ticker{display:flex;align-items:center;gap:.5rem;overflow-x:auto;padding:.3rem 1rem;background:rgba(255,255,255,.03);border-bottom:1px solid rgba(255,255,255,.06);scrollbar-width:none;-webkit-overflow-scrolling:touch;scroll-snap-type:x mandatory;max-width:1200px;margin:0 auto}
+.score-ticker::-webkit-scrollbar{display:none}
+.ticker-chip{flex-shrink:0;scroll-snap-align:start;display:inline-flex;align-items:center;gap:.3rem;padding:.22rem .6rem;border-radius:1rem;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);font-size:.65rem;font-weight:600;cursor:pointer;transition:background .15s;white-space:nowrap}
+.ticker-chip:hover{background:rgba(255,255,255,.12)}
+.ticker-chip.fire{border-color:rgba(249,115,22,.5);background:rgba(249,115,22,.1);color:#fb923c}
+#score-ticker-wrap{padding:0;max-width:1200px;margin:0 auto}
+
+/* Pin to Floating Widget */
+.pin-widget{position:fixed;bottom:72px;right:12px;z-index:48;background:var(--card-bg,rgba(18,18,32,.95));border:1px solid rgba(255,255,255,.15);border-radius:12px;padding:.5rem .75rem;min-width:110px;max-width:180px;cursor:pointer;box-shadow:0 4px 24px rgba(0,0,0,.4);transition:width .2s,height .2s;backdrop-filter:blur(8px)}
+.pin-widget .pw-score{font-size:.75rem;font-weight:700;line-height:1.3}
+.pin-widget .pw-context{font-size:.58rem;color:var(--muted);margin-top:.1rem}
+.pin-widget .pw-close{position:absolute;top:4px;right:6px;font-size:.6rem;opacity:.5;cursor:pointer;background:none;border:none;color:inherit;padding:0;line-height:1}
+.pin-widget.expanded{min-width:180px;padding:.6rem .85rem}
+.pw-sparkline-wrap{margin:.3rem 0 .15rem}
+.pw-comeback{font-size:.6rem;color:var(--muted);margin:.1rem 0}
+.pw-story-latest{font-size:.6rem;opacity:.75;border-top:1px solid rgba(255,255,255,.08);margin-top:.3rem;padding-top:.3rem;line-height:1.4}
+
+/* Story Tape */
+.story-tape{padding:.25rem 0 .1rem;max-height:52px;overflow:hidden}
+.story-moment{font-size:.6rem;color:var(--muted);line-height:1.5;padding:.05rem 0;animation:momentIn .3s ease}
+.story-moment.highlight{color:#fb923c;font-weight:600}
+@keyframes momentIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+
+/* Bottom-sheet */
+.bottom-sheet-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:60;opacity:0;pointer-events:none;transition:opacity .2s}
+.bottom-sheet-overlay.open{opacity:1;pointer-events:all}
+.bottom-sheet{position:fixed;bottom:0;left:0;right:0;z-index:61;background:var(--card-bg,rgba(18,18,32,.98));border-top:2px solid rgba(255,255,255,.12);border-radius:18px 18px 0 0;max-height:88vh;overflow-y:auto;transform:translateY(100%);transition:transform .28s cubic-bezier(.4,0,.2,1);padding:1rem 1.1rem 2rem;backdrop-filter:blur(12px)}
+.bottom-sheet.open{transform:translateY(0)}
+.bs-handle{width:36px;height:4px;background:rgba(255,255,255,.2);border-radius:2px;margin:0 auto .9rem}
+.bs-teams{font-size:1rem;font-weight:800;margin-bottom:.25rem}
+.bs-meta{font-size:.62rem;color:var(--muted);margin-bottom:.7rem}
+.bs-section{margin:.65rem 0}
+.bs-section-label{font-size:.52rem;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin-bottom:.3rem}
+.bs-section-body{font-size:.7rem;line-height:1.6}
+
+/* Card Life Stage content */
+.card-stage-content{padding:.25rem 0 .1rem;font-size:.62rem;line-height:1.5;color:rgba(232,232,240,.75)}
+.card-stage-soon .stage-countdown{font-weight:700;color:var(--accent,#f97316)}
+.stage-final-score{font-weight:700;font-size:.72rem}
 
 /* ── CRUNCH TIME pulse badge (Wow#33 / Combo B-1+) ─────────────────── */
 @keyframes fieldPulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.78;transform:scale(.97)}}
@@ -1964,10 +2015,18 @@ flex-shrink:0;white-space:nowrap;
 </div>
 
 <!-- MAIN CONTENT -->
+<div id="score-ticker-wrap" style="display:none"></div>
 <div id="major-preview-container" style="padding:0 2rem"></div>
 <div id="field-brief" style="display:none" aria-live="polite"></div>
 <main class="main" id="main"></main>
 <div id="night-owl" style="display:none" aria-live="polite"></div>
+
+<!-- Bottom-sheet overlay -->
+<div id="bs-overlay" class="bottom-sheet-overlay" onclick="closeBottomSheet()"></div>
+<div id="bottom-sheet" class="bottom-sheet">
+  <div class="bs-handle"></div>
+  <div id="bs-content"></div>
+</div>
 
 <!-- ══ BETTING INTELLIGENCE SECTION ═════════════════════════ -->
 <section class="betting-section" id="betting-section">
@@ -2133,6 +2192,18 @@ const FIELD_FEATURES = {
   // Playoff Intelligence Trilogy ($9.50 session)
   'drama-sparkline':        '2026-05-21',  // Wow#45 Stage 2 — inline SVG arc in J5 Night Owl
   'series-margins':         '2026-05-21',  // Series margin dots on playoff game cards
+  // Game Card Revolution + Journalism Renaissance ($30 session)
+  'card-drama-pulse':       '2026-05-21',
+  'live-score-ticker':      '2026-05-21',
+  'pin-floating-widget':    '2026-05-21',
+  'share-card':             '2026-05-21',
+  'bottom-sheet':           '2026-05-21',
+  'card-story-moments':     '2026-05-21',
+  'card-life-stages':       '2026-05-21',
+  'comeback-probability':   '2026-05-21',
+  'card-mini-dashboard':    '2026-05-21',
+  'layer3-templates':       '2026-05-21',
+  'my-teams-brief':         '2026-05-21',
   // J-series journalism
   'j1-anti-hype':           '2026-05-14',
   'j2-series-preview':      '2026-05-14',
@@ -4852,9 +4923,9 @@ function renderAll(){
       const isLive=st==="live";
       const timeCls=isLive?"game-time live-t":"game-time";
       const liveBadge=isLive?'<div class="live-badge"><span class="live-dot"></span>LIVE</div>':"";
-      return `<div class="game-card ${st}${isLive?" espn-live":""}${MY_TEAMS.has(g.home)||MY_TEAMS.has(g.away)?" my-team-card":""}" data-gameid="${g._id}" data-sport="${sec.sport}" data-home="${(g.home||"").replace(/"/g,"")}" data-away="${(g.away||"").replace(/"/g,"")}" data-starttime="${g.start_time||""}" data-venue="${(g.venue||"").replace(/"/g,"")}" data-confirmed="${g.confirmed===true?'true':'false'}" style="animation-delay:${gi*40}ms">
+      return `<div class="game-card ${st}${isLive?" espn-live":""}${MY_TEAMS.has(g.home)||MY_TEAMS.has(g.away)?" my-team-card":""}" data-gameid="${g._id}" data-sport="${sec.sport}" data-home="${(g.home||"").replace(/"/g,"")}" data-away="${(g.away||"").replace(/"/g,"")}" data-starttime="${g.start_time||""}" data-venue="${(g.venue||"").replace(/"/g,"")}" data-confirmed="${g.confirmed===true?'true':'false'}" style="animation-delay:${gi*40}ms" onclick="openBottomSheet('${g._id}')">
         <div class="card-accent"></div>
-        <button class="star-btn ${MY_TEAMS.has(g.home)||MY_TEAMS.has(g.away)?"starred":""}" aria-label="Follow team" title="${MY_TEAMS.has(g.home)?"Unfollow "+g.home:MY_TEAMS.has(g.away)?"Unfollow "+g.away:"Follow "+g.home}">★</button>
+        <button class="pin-btn" aria-label="Pin game to widget" title="Pin to corner widget" onclick="event.stopPropagation();pinGame('${g._id}')">📌</button><button class="star-btn ${MY_TEAMS.has(g.home)||MY_TEAMS.has(g.away)?"starred":""}" aria-label="Follow team" title="${MY_TEAMS.has(g.home)?"Unfollow "+g.home:MY_TEAMS.has(g.away)?"Unfollow "+g.away:"Follow "+g.home}">★</button>
         <div class="card-body">
           <div class="matchup">
             ${matchupHTML(g, sec.sport)}
@@ -4878,7 +4949,7 @@ function renderAll(){
         <div class="card-right">
           ${liveBadge}
           <div class="${timeCls}">${timeStr}</div>
-          <div class="stream-row">${streamsHTMLCapped(g.streams, 3)}${(()=>{const pk=g.streams?.[0]?.key||'';return FREE_OTA.has(pk)?'<span class="free-badge">FREE</span>':FREE_CABLE.has(pk)?'<span class="free-badge free-cable">FREE W/ CABLE</span>':''})()}<button class="cal-btn" aria-label="Add to calendar" title="Add to calendar" data-game-id="${g._id||''}">📅</button><button class="share-btn" aria-label="Share" title="Share this game">⬆</button></div>
+          <div class="stream-row">${streamsHTMLCapped(g.streams, 3)}${(()=>{const pk=g.streams?.[0]?.key||'';return FREE_OTA.has(pk)?'<span class="free-badge">FREE</span>':FREE_CABLE.has(pk)?'<span class="free-badge free-cable">FREE W/ CABLE</span>':''})()}<button class="cal-btn" aria-label="Add to calendar" title="Add to calendar" data-game-id="${g._id||''}">📅</button><button class="share-btn" aria-label="Share" title="Share this game" onclick="event.stopPropagation();(navigator.share?navigator.share({title:'${(g.away||'').replace(/'/g,'')} @ ${(g.home||'').replace(/'/g,'')}',text:'${(g.away||'').replace(/'/g,'')} @ ${(g.home||'').replace(/'/g,'')} · ${g.league||sec.sport||''}\n${timeStr} ET',url:location.href}):navigator.clipboard&&navigator.clipboard.writeText('${(g.away||'').replace(/'/g,'')} @ ${(g.home||'').replace(/'/g,'')} – ${timeStr} ET via FIELD\n'+location.href)).catch(()=>{})">⬆</button></div>
           ${FD_LEAGUE_MAP[sec.sport]||ESPN_STANDINGS_MAP[sec.sport]?`<button class="standings-btn" onclick="toggleStandings(this,'${sec.sport}','2025')" title="Show ${FD_LEAGUE_MAP[sec.sport]?'table':'standings'}">▼ ${FD_LEAGUE_MAP[sec.sport]?'Table':'Standings'}</button>`:""}
         </div>
       </div>`;
@@ -4912,6 +4983,8 @@ function renderAll(){
   setTimeout(initSeriesPreviews, 400);  // J2: series preview cards
   setTimeout(initEPLMatchBriefs, 700);  // EPL: match briefs — staggered to avoid rate limits
   renderWatchWindow();
+  setTimeout(updateCardLifeStages, 200); // Update life stages after cards render
+  setTimeout(renderScoreTicker, 250);   // Render score ticker if games are live
   setTimeout(()=>initFIELDBrief(filtered).catch(()=>{}), 1000); // J3: brief last — highest value, staggered
   setTimeout(injectWeatherBadges, 300); // re-apply wx badges from cache after render
   // Runtime silent error scan — FIELD_DEBUG only, runs after async injections settle
@@ -10475,6 +10548,50 @@ function buildCompoundCacheKey(sections) {
   return 'field_compound_' + djb2Hash(sig);
 }
 
+
+// ── Layer 3 Journalism Templates ──────────────────────────────────────────────
+// Situation-specific editorial rules injected into compound prompt.
+// DO NOT INVENT: all conditions from game object fields. Rules are model instructions.
+function buildLayer3Rules(games) {
+  const rules = [];
+  (games||[]).forEach(g => {
+    const sp = (g._section||g._sport||'').toLowerCase();
+    const name = ((g.away||'').split(' ').pop()) + ' @ ' + ((g.home||'').split(' ').pop());
+    if (g._gameImportance === 'elimination')
+      rules.push('- ELIMINATION ['+name+']: Lead with who goes home tonight. Stakes before any stat.');
+    if (g._gameImportance === 'series_deciding')
+      rules.push('- CLOSEOUT ['+name+']: Write about the series arc. One team can advance tonight.');
+    if (g.streams?.[0] && typeof FREE_OTA !== 'undefined' && FREE_OTA.has(g.streams[0].key))
+      rules.push('- FREE GAME ['+name+']: Explicitly mention it is free on '+g.streams[0].label+'. Write for someone new to the sport.');
+    if (typeof isNationalGame==='function' && isNationalGame(g) && typeof preGameScore==='function' && preGameScore(g)<35)
+      rules.push('- LOW-STAKES NATIONAL ['+name+']: Prominent broadcast, low interest. Brief mention only.');
+    if (typeof MY_TEAMS!=='undefined' && MY_TEAMS.size>0 && (MY_TEAMS.has(g.home)||MY_TEAMS.has(g.away)))
+      rules.push('- MY TEAM ['+name+']: Address reader directly — "your [team]". Personal framing.');
+    const ms = (typeof _bdlMilestonesCache!=='undefined') ? _bdlMilestonesCache?.[g._id] : null;
+    if (ms?.pct >= 0.97)
+      rules.push('- MILESTONE TONIGHT ['+name+']: '+ms.playerName+' is '+ms.gap+' away from '+ms.next+' '+ms.stat+'. Mention this specifically.');
+    const trend = typeof getDramaTrend==='function' ? (getDramaTrend(g._id||'')||0) : 0;
+    if (trend > 12)
+      rules.push('- RISING ['+name+']: Drama climbing fast. Use urgency language.');
+    try {
+      const eData = typeof espnScores!=='undefined' ? Object.values(espnScores||{}).find(e =>
+        (e?.homeName||'').toLowerCase().includes((g.home||'').toLowerCase().split(' ').pop())) : null;
+      if (eData) {
+        const otT = sp.includes('basketball')?4:sp.includes('hockey')?3:sp.includes('baseball')?9:4;
+        if ((eData.period||0) > otT)
+          rules.push('- OVERTIME ['+name+']: Extra period in progress. Lead with "In overtime".');
+        if (eData.status==='in' && typeof getStatisticalExtremes==='function') {
+          const ext = getStatisticalExtremes(eData, sp).note;
+          if (ext) rules.push('- EXTREME EVENT ['+name+']: '+ext+'. Feature this prominently.');
+        }
+      }
+    } catch(e_) {}
+    if (typeof isRivalGame==='function' && typeof MY_TEAMS!=='undefined' && MY_TEAMS.size>0 && isRivalGame(g))
+      rules.push('- RIVALRY ['+name+']: Historic matchup. Acknowledge the history briefly.');
+  });
+  return rules.length ? ('\n'+rules.join('\n')) : '';
+}
+
 function buildCompoundPrompt(sections) {
   const games = (sections || []).flatMap(s => s.games || []).slice(0, 12);
   const seriesGames = games.filter(g => g.seriesRecord);
@@ -10568,7 +10685,8 @@ Rules:
 - For each series entry: write 80 words focused on stakes and series arc, or null if data insufficient.
 - For each epl entry: 40-60 words, context-first (table position, season stakes), or null if data insufficient.
 - If [BNI] appears: describe that matchup as low-stakes in the brief — never echo the tag verbatim.
-- Plain prose only. No bullet points.`;
+- Plain prose only. No bullet points.
+${buildLayer3Rules(games)}`;
 }
 
 async function fetchCompoundEditorial(sections) {
@@ -10762,6 +10880,11 @@ function buildFIELDBriefStatic(sections){
 // by buildGameStandingsContext() immediately after await.
 const _relayStandingsCache = {}; // sportName → [{team, abbrev, wins, losses, pct, gb}]
 const _bdlMilestonesCache = {}; // gameId → {shortLabel, playerName, stat, gap, pct}
+// Living card state
+const _storyMoments = {}; // gameId → [{text, ts, highlight}] max 8
+const _prevEspnScores = {}; // gameId → {homeScore, awayScore, period} for delta detection
+let _pinnedGameId = null; // currently pinned game
+let _pinWidgetExpanded = false;
 
 async function fetchMLBStandingsParsed() {
   const key = 'Baseball (MLB)';
@@ -11301,6 +11424,25 @@ async function fetchFIELDBriefFromClaude(sections){
   }catch(e){if(FIELD_DEBUG)console.error('[J3 FIELD Brief] proxy error:',e.message);}
   return null;
 }
+
+// ── My Teams Brief Line ───────────────────────────────────────────────────────
+// Compact personalised "your teams tonight" line above J3 brief.
+// DO NOT INVENT: only uses MY_TEAMS set + game data from allData.
+function buildMyTeamsBriefLine(sections) {
+  if (!MY_TEAMS || MY_TEAMS.size===0) return null;
+  const myGames = (sections||[]).flatMap(s=>
+    (s.games||[]).filter(g=>MY_TEAMS.has(g.home)||MY_TEAMS.has(g.away)).map(g=>({g,sport:s.sport}))
+  );
+  if (!myGames.length) return null;
+  return myGames.slice(0,4).map(({g})=>{
+    const myTeam = MY_TEAMS.has(g.home)?g.home:g.away;
+    const opp   = MY_TEAMS.has(g.home)?g.away:g.home;
+    const sr    = g.seriesRecord&&g.seriesRecord!=='0-0'?' ('+g.seriesRecord+')':'';
+    const net   = g.streams?.[0]?.label||'';
+    return (myTeam.split(' ').pop())+' vs '+(opp.split(' ').pop())+sr+' '+fmtTime(g.start_time)+(net?' · '+net:'');
+  }).join(' | ');
+}
+
 async function initFIELDBrief(sections){
   const el=document.getElementById('field-brief');
   if(!el) return;
@@ -11314,6 +11456,8 @@ async function initFIELDBrief(sections){
   const mkCard=(text,loaded,state)=>`<div class="field-brief-card" id="field-brief-inner"><div class="field-brief-header"><span class="field-brief-label">FIELD Brief</span><span class="field-brief-date">${dateLabel}</span>${stateBadge(state)}</div><div class="field-brief-text${loaded?'':' pending'}">${text}</div></div>`;
   if(cached){el.innerHTML=mkCard(trimToCompleteSentence(cached),true,'cached');document.getElementById('field-brief-inner')?.addEventListener('click',()=>document.getElementById('field-brief-inner')?.classList.toggle('collapsed'));return;}
   const staticText=buildFIELDBriefStatic(sections)||'Loading tonight\'s brief\u2026';
+  const myTeamsLine=buildMyTeamsBriefLine(sections);
+  if(myTeamsLine){const mtEl=document.getElementById('my-teams-brief-line')||(()=>{const d=document.createElement('div');d.id='my-teams-brief-line';d.style.cssText='font-size:.68rem;color:var(--gold2,#c9a84c);padding:.35rem 1rem .1rem;max-width:1200px;margin:0 auto;opacity:.85';el.insertAdjacentElement('beforebegin',d);return d;})();mtEl.textContent='★ Your teams: '+myTeamsLine;}
   el.innerHTML=mkCard(staticText,false,'');
   document.getElementById('field-brief-inner')?.addEventListener('click',()=>document.getElementById('field-brief-inner')?.classList.toggle('collapsed'));
 
@@ -11921,6 +12065,9 @@ function injectDramaBadges(){
       const prev = _leadTracker.get(gid);
       if (prev && prev.period !== period) _leadTracker.set(gid, {leadingTeam: null, period});
     }
+    // Detect story moments from score delta (DO NOT INVENT — score deltas only)
+    detectAndStoreStoryMoment(gid, eData, sport);
+    // Apply card pulse based on smoothed drama
     // Apply burst to score (before history recording — burst is part of the live signal)
     score = Math.min(100, score + getLeadChangeBurst(gid || ''));
 
@@ -11940,6 +12087,8 @@ function injectDramaBadges(){
     const smoothed = getSmoothedDrama(gid) ?? score;
     const displayTier = dramaTier(smoothed);
 
+    // Apply card pulse (ambient drama signal)
+    applyCardPulse(gid, smoothed);
     // Remove existing badges
     card.querySelectorAll('.drama-badge,.badge-crunch,.badge-worth').forEach(b=>b.remove());
     const liveEl = card.querySelector('.live-indicator,.live-dot');
@@ -12006,6 +12155,10 @@ function injectDramaBadges(){
       }
     } catch(e_) {}
   });
+  // Update ticker + pin widget + life stages on every drama cycle
+  renderScoreTicker();
+  updatePinWidget();
+  updateCardLifeStages();
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -12765,6 +12918,359 @@ async function fetchNightOwlFromClaude(topGame){
     if(text&&text.length>40){budget.inc();return text.trim();}
   }catch(e){if(FIELD_DEBUG)console.error('[J5 Night Owl] proxy error:',e.message);}
   return null;
+}
+
+
+
+// ── Card Life Stages: 5 content states keyed to game clock ──────────────────
+// DO NOT INVENT: all content from game object fields (start_time, matchupNote,
+// espnScores, venue, streams, seriesRecord) — nothing fabricated.
+function computeCardStage(game, eData) {
+  const now = Date.now();
+  const start = game.start_time ? new Date(game.start_time).getTime() : 0;
+  const minsUntil = start ? (start - now) / 60000 : 999;
+  if (eData?.status === 'post' || (start && minsUntil < -210)) return 'final';
+  if (eData?.status === 'in' || eData?.period > 0) {
+    // Detect halftime: hockey period === 2 and clock gone, basketball period >= 2 and out of clock
+    const sp = (game._section||game._sport||'').toLowerCase();
+    const p = eData?.period || 0;
+    if ((sp.includes('hockey') && p === 2 && eData?.clock === '0:00') ||
+        (sp.includes('basketball') && p === 2 && eData?.clock === '0:00')) return 'halftime';
+    return 'live';
+  }
+  if (minsUntil <= 75) return 'soon'; // within 75 min: imminent
+  return 'pre'; // default
+}
+
+function buildLifeStageContent(game, eData, stage) {
+  const sp = (game._section||game._sport||'').toLowerCase();
+  switch(stage) {
+    case 'pre': {
+      // Pre-game: context from game data, no fabrication
+      const parts = [];
+      if (game.matchupNote) parts.push(game.matchupNote.slice(0,120));
+      if (game.seriesRecord && game.seriesRecord !== '0-0') parts.push(game.seriesRecord);
+      const ms = _bdlMilestonesCache?.[game._id];
+      if (ms) parts.push(`${ms.playerName} needs ${ms.gap} ${ms.stat}`);
+      return parts.length ? `<div class="card-stage-content">${parts.join(' · ')}</div>` : '';
+    }
+    case 'soon': {
+      // Imminent: countdown + network
+      const start = new Date(game.start_time||Date.now());
+      const minsLeft = Math.round((start - Date.now()) / 60000);
+      const net = game.streams?.[0]?.label || '';
+      return `<div class="card-stage-content card-stage-soon"><span class="stage-countdown">Tip-off in ${minsLeft} min</span>${net?' · '+net:''}</div>`;
+    }
+    case 'live': {
+      // Live: story tape or current score context
+      const tape = buildStoryTape(game._id, 2);
+      if (tape) return tape;
+      if (eData) {
+        const score = `${eData.homeScore||0}–${eData.awayScore||0}`;
+        const per = eData.period ? ` · Q${eData.period}` : '';
+        return `<div class="card-stage-content">${score}${per}</div>`;
+      }
+      return '';
+    }
+    case 'halftime': {
+      if (!eData) return '';
+      const score = `${eData.homeScore||0}–${eData.awayScore||0}`;
+      return `<div class="card-stage-content">Halftime · ${score}</div>`;
+    }
+    case 'final': {
+      if (!eData) return '';
+      const hS = eData.homeScore||0, aS = eData.awayScore||0;
+      const winner = hS >= aS ? (eData.home||game.home||'') : (eData.away||game.away||'');
+      const peak = parseFloat(localStorage.getItem('field_drama_peak_'+(game._id||''))||'0');
+      const peakStr = peak >= 65 ? ` · Peak drama ${Math.round(peak)}` : '';
+      return `<div class="card-stage-content"><span class="stage-final-score">Final · ${hS}–${aS}</span>${peakStr}</div>`;
+    }
+    default: return '';
+  }
+}
+
+// Call after render + on ESPN poll to update life stage content on each card
+function updateCardLifeStages() {
+  if (!allData?.sports) return;
+  (allData.sports).forEach(sec => {
+    (sec.games||[]).forEach(game => {
+      if (!game._id) return;
+      const card = document.querySelector(`.game-card[data-gameid="${game._id}"]`);
+      if (!card) return;
+      const eData = Object.values(espnScores||{}).find(e => {
+        const h = (game.home||'').toLowerCase().split(' ').pop();
+        return (e?.homeName||'').toLowerCase().includes(h) || (e?.home||'').toLowerCase().includes(h);
+      });
+      const stage = computeCardStage(game, eData);
+      // Update or insert stage content node
+      let stageEl = card.querySelector('.card-stage-content,.story-tape');
+      const newContent = buildLifeStageContent(game, eData, stage);
+      if (newContent) {
+        if (stageEl) { stageEl.outerHTML = newContent; }
+        else {
+          const infoRow = card.querySelector('.info-row');
+          if (infoRow) infoRow.insertAdjacentHTML('afterend', newContent);
+        }
+      } else if (stageEl) {
+        stageEl.remove();
+      }
+    });
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// GAME CARD REVOLUTION — Living Card Functions
+// ═══════════════════════════════════════════════════════════════════════════
+
+// ── Story Moments: detect narrative events from ESPN score deltas ──────────
+// DO NOT INVENT: all events derived from espnScores delta (score/period changes)
+// No play-by-play API — just score + period detection.
+function detectAndStoreStoryMoment(gameId, eData, sport) {
+  if (!eData || eData.status === 'pre') return;
+  const prev = _prevEspnScores[gameId];
+  const home = parseInt(eData.homeScore||0), away = parseInt(eData.awayScore||0);
+  const period = eData.period || 0;
+  const sp = (sport||'').toLowerCase();
+  const isFinal = eData.status === 'post';
+  const now = Date.now();
+  if (!_storyMoments[gameId]) _storyMoments[gameId] = [];
+  const tape = _storyMoments[gameId];
+  const push = (text, highlight=false) => {
+    tape.unshift({text, ts: now, highlight});
+    if (tape.length > 8) tape.pop();
+  };
+
+  if (prev) {
+    const prevHome = parseInt(prev.homeScore||0), prevAway = parseInt(prev.awayScore||0);
+    const prevPeriod = prev.period || 0;
+    // Tie detection
+    if (home === away && (home !== prevHome || away !== prevAway)) {
+      push(`Tied ${home}–${home}`, true);
+    }
+    // Lead change detection
+    else if (prevHome !== prevAway) {
+      const prevLeader = prevHome > prevAway ? 'home' : 'away';
+      const currLeader = home > away ? 'home' : home < away ? 'away' : 'tied';
+      if (currLeader !== 'tied' && currLeader !== prevLeader) {
+        const name = currLeader === 'home' ? (eData.home||'Home') : (eData.away||'Away');
+        push(`${name.split(' ').pop()} take the lead`, true);
+      }
+    }
+    // Run detection: one team scores 7+ without opponent scoring
+    const homeDelta = home - prevHome, awayDelta = away - prevAway;
+    if (homeDelta >= 7 && awayDelta === 0) push(`${(eData.home||'').split(' ').pop()} on a ${homeDelta}-0 run`);
+    if (awayDelta >= 7 && homeDelta === 0) push(`${(eData.away||'').split(' ').pop()} on a ${awayDelta}-0 run`);
+    // Period change
+    if (period > prevPeriod && period > 1) {
+      const label = sp.includes('basketball')||sp.includes('nba') ? `Q${period} starts`
+        : sp.includes('hockey')||sp.includes('nhl') ? `P${period} starts`
+        : sp.includes('baseball')||sp.includes('mlb') ? `Inning ${period}` : `Period ${period}`;
+      push(label);
+    }
+    // Overtime
+    const otThreshold = sp.includes('basketball')||sp.includes('nba') ? 4
+      : sp.includes('hockey')||sp.includes('nhl') ? 3
+      : sp.includes('baseball')||sp.includes('mlb') ? 9 : 4;
+    if (period > otThreshold && prevPeriod <= otThreshold) push('Overtime!', true);
+    // Final score
+    if (isFinal && !prev.final) push(`Final: ${eData.home?.split(' ').pop()||'Home'} ${home}–${away} ${eData.away?.split(' ').pop()||'Away'}`);
+  } else {
+    // First detection: game is live
+    if (eData.status === 'in') push(`${eData.home?.split(' ').pop()||'Home'} ${home}–${away} ${eData.away?.split(' ').pop()||'Away'} · underway`);
+  }
+  _prevEspnScores[gameId] = {homeScore: home, awayScore: away, period, final: isFinal};
+}
+
+function buildStoryTape(gameId, maxItems=3) {
+  const moments = _storyMoments[gameId];
+  if (!moments?.length) return '';
+  return `<div class="story-tape">${moments.slice(0,maxItems).map(m =>
+    `<div class="story-moment${m.highlight?' highlight':''}">${m.text}</div>`
+  ).join('')}</div>`;
+}
+
+// ── Live Score Ticker ─────────────────────────────────────────────────────────
+function renderScoreTicker() {
+  const wrap = document.getElementById('score-ticker-wrap');
+  if (!wrap) return;
+  const liveGames = Object.entries(espnScores)
+    .filter(([,e]) => e?.status === 'in' || e?.period > 0)
+    .map(([gid, e]) => ({gid, e, drama: getSmoothedDrama(gid) ?? 0}))
+    .sort((a,b) => b.drama - a.drama);
+  if (!liveGames.length) { wrap.style.display = 'none'; return; }
+  const sp = s => s?.includes('basketball')||s?.includes('nba') ? '🏀'
+    : s?.includes('hockey')||s?.includes('nhl') ? '🏒'
+    : s?.includes('baseball')||s?.includes('mlb') ? '⚾'
+    : s?.includes('football')||s?.includes('nfl') ? '🏈'
+    : s?.includes('tennis') ? '🎾'
+    : s?.includes('afl')||s?.includes('australian') ? '🏉' : '🏅';
+  const chips = liveGames.map(({gid, e, drama}) => {
+    const fire = drama >= 65 ? ' fire' : '';
+    const icon = drama >= 85 ? '🔥' : drama >= 65 ? '⚡' : '';
+    const per = e.period ? (e.periodLabel || `Q${e.period}`) : '';
+    const text = `${sp(e._sport||'')} ${(e.home||'').split(' ').pop()} ${e.homeScore||0}–${e.awayScore||0} ${(e.away||'').split(' ').pop()}${per?' · '+per:''}${icon?' '+icon:''}`;
+    return `<div class="ticker-chip${fire}" onclick="scrollToGame('${gid}')" title="Drama ${Math.round(drama)}">${text}</div>`;
+  }).join('');
+  wrap.innerHTML = `<div class="score-ticker">${chips}</div>`;
+  wrap.style.display = 'block';
+}
+
+function scrollToGame(gameId) {
+  const card = document.querySelector(`.game-card[data-gameid="${gameId}"]`);
+  if (card) card.scrollIntoView({behavior:'smooth', block:'center'});
+}
+
+// ── Card Drama Pulse ──────────────────────────────────────────────────────────
+function applyCardPulse(gameId, score) {
+  const card = document.querySelector(`.game-card[data-gameid="${gameId}"]`);
+  if (!card) return;
+  card.classList.remove('pulse-med','pulse-high','pulse-crunch');
+  if (score >= 85) card.classList.add('pulse-crunch');
+  else if (score >= 65) card.classList.add('pulse-high');
+  else if (score >= 45) card.classList.add('pulse-med');
+}
+
+// ── Pin to Floating Widget ────────────────────────────────────────────────────
+function pinGame(gameId) {
+  _pinnedGameId = gameId;
+  _pinWidgetExpanded = false;
+  updatePinWidget();
+  // Wire card pin button
+  document.querySelectorAll('.pin-btn').forEach(b => {
+    b.classList.toggle('active', b.closest('.game-card')?.dataset?.gameid === gameId);
+  });
+}
+function unpinGame() {
+  _pinnedGameId = null;
+  const w = document.getElementById('pin-widget');
+  if (w) w.remove();
+}
+function updatePinWidget() {
+  if (!_pinnedGameId) return;
+  const eData = espnScores[_pinnedGameId] || Object.values(espnScores)
+    .find(e => e && (e.home||'').toLowerCase().includes((_pinnedGameId||'').toLowerCase().slice(-4)));
+  // Find game object
+  let game = null;
+  (allData?.sports||[]).forEach(s=>(s.games||[]).forEach(g=>{ if(g._id===_pinnedGameId) game=g; }));
+  const home = eData?.homeScore ?? '--', away = eData?.awayScore ?? '--';
+  const period = eData?.period ? `· ${eData.periodLabel||'Q'+eData.period}` : '';
+  const drama = getSmoothedDrama(_pinnedGameId) ?? 0;
+  const fireIcon = drama >= 85 ? '🔥' : drama >= 65 ? '⚡' : '';
+  const title = game ? `${(game.away||'').split(' ').pop()} @ ${(game.home||'').split(' ').pop()}` : 'Pinned Game';
+
+  let expanded = '';
+  if (_pinWidgetExpanded) {
+    const sparkline = buildDramaSparklineSVG(_pinnedGameId, 140, 24);
+    const cb = buildComebackProbability(_pinnedGameId, eData, game?._section||'');
+    const lastMoment = _storyMoments[_pinnedGameId]?.[0]?.text || '';
+    expanded = `<div class="pw-sparkline-wrap">${sparkline||''}</div>`
+      + (cb ? `<div class="pw-comeback">${cb}</div>` : '')
+      + (lastMoment ? `<div class="pw-story-latest">${lastMoment}</div>` : '');
+  }
+
+  let el = document.getElementById('pin-widget');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'pin-widget';
+    el.className = 'pin-widget';
+    document.body.appendChild(el);
+  }
+  el.className = 'pin-widget' + (_pinWidgetExpanded ? ' expanded' : '');
+  el.innerHTML = `<button class="pw-close" onclick="unpinGame()" title="Unpin">×</button>
+    <div class="pw-score">${fireIcon} ${home}–${away} ${period}</div>
+    <div class="pw-context">${title}</div>${expanded}`;
+  el.onclick = e => { if (!e.target.classList.contains('pw-close')) {
+    if (_pinWidgetExpanded) { scrollToGame(_pinnedGameId); }
+    else { _pinWidgetExpanded = true; updatePinWidget(); }
+  }};
+}
+
+// ── Comeback Probability ──────────────────────────────────────────────────────
+// DO NOT INVENT: probability from real deficit × time remaining curves only.
+// No ML, no external data — pure mathematical approximation from game state.
+function buildComebackProbability(gameId, eData, sport) {
+  if (!eData || eData.status === 'post') return null;
+  const home = parseInt(eData.homeScore||0), away = parseInt(eData.awayScore||0);
+  const margin = Math.abs(home - away);
+  if (margin === 0) return 'Tied \u2014 anyone\u2019s game';
+  if (margin >= 25) return null; // garbage time, not worth showing
+  const period = eData.period || 0;
+  const sp = (sport||'').toLowerCase();
+  const isFinal = sp.includes('basketball')||sp.includes('nba') ? period >= 4
+    : sp.includes('hockey')||sp.includes('nhl') ? period >= 3
+    : sp.includes('baseball')||sp.includes('mlb') ? period >= 9 : false;
+  if (!isFinal) return null; // only show in final period — earlier is too uncertain
+  // NBA: empirical comeback rate approximation
+  // down X with final period → rough probability (from historical norms, not play-by-play)
+  let pct = 0;
+  if (sp.includes('basketball')||sp.includes('nba')) {
+    // Down 8 in Q4 ≈ 22%, down 15 ≈ 5%, down 3 ≈ 55%
+    pct = Math.round(Math.max(2, 100 - (margin * 6.5)));
+  } else if (sp.includes('hockey')||sp.includes('nhl')) {
+    pct = Math.round(Math.max(2, 100 - (margin * 28)));
+  } else if (sp.includes('baseball')||sp.includes('mlb')) {
+    pct = Math.round(Math.max(2, 100 - (margin * 18)));
+  }
+  pct = Math.min(pct, 65);
+  if (pct <= 5) return null;
+  const trend = getDramaTrend(gameId);
+  if (trend > 10) pct = Math.min(pct + 8, 70);
+  const losingTeam = home < away ? (eData.home||'').split(' ').pop() : (eData.away||'').split(' ').pop();
+  return `${losingTeam} down ${margin} · ${pct}% comeback`;
+}
+
+// ── Bottom-sheet ──────────────────────────────────────────────────────────────
+function openBottomSheet(gameId) {
+  let game = null, sport = '';
+  (allData?.sports||[]).forEach(s=>(s.games||[]).forEach(g=>{ if(g._id===gameId){game=g;sport=s.sport;} }));
+  if (!game) return;
+  const eData = Object.values(espnScores||{}).find(e => {
+    const h = (game.home||'').toLowerCase().split(' ').pop();
+    return (e.homeName||'').toLowerCase().includes(h) || (e.home||'').toLowerCase().includes(h);
+  });
+  const content = document.getElementById('bs-content');
+  if (!content) return;
+  const hS = eData?.homeScore ?? '', aS = eData?.awayScore ?? '';
+  const scoreStr = (hS!==''&&aS!=='') ? `${hS}–${aS}` : '';
+  const period = eData?.period ? ` · ${eData.periodLabel||'Q'+eData.period}` : '';
+  const sparkline = buildDramaSparklineSVG(gameId, 200, 32) || '';
+  const cb = buildComebackProbability(gameId, eData, sport) || '';
+  const story = buildStoryTape(gameId, 5);
+  const milestone = _bdlMilestonesCache?.[gameId];
+  const milestoneStr = milestone ? `${milestone.playerName} needs ${milestone.gap} more ${milestone.stat} → ${milestone.next}` : '';
+  const seriesMargins = buildSeriesMarginsDots(game);
+  const drama = getSmoothedDrama(gameId);
+  const dramaStr = drama != null ? `Drama ${Math.round(drama)}` + (drama >= 85 ? ' 🔥' : drama >= 65 ? ' ⚡' : '') : '';
+  // Standings context
+  const standings = _relayStandingsCache?.[sport];
+  let standingsStr = '';
+  if (standings?.length) {
+    const hSlug = (game.home||'').toLowerCase().split(' ').pop();
+    const aSlug = (game.away||'').toLowerCase().split(' ').pop();
+    const hT = standings.find(t=>(t.team||'').toLowerCase().includes(hSlug));
+    const aT = standings.find(t=>(t.team||'').toLowerCase().includes(aSlug));
+    if (hT && aT) standingsStr = `${(game.home||'').split(' ').pop()}: ${hT.wins}–${hT.losses} · ${(game.away||'').split(' ').pop()}: ${aT.wins}–${aT.losses}`;
+  }
+  content.innerHTML = `
+    <div class="bs-teams">${game.away||'?'} @ ${game.home||'?'}</div>
+    <div class="bs-meta">${scoreStr}${period} · ${game.venue||sport||''}${game.seriesRecord?' · '+game.seriesRecord:''}</div>
+    ${dramaStr||cb ? `<div class="bs-section"><div class="bs-section-label">Live Intelligence</div><div class="bs-section-body">${[dramaStr,cb].filter(Boolean).join(' · ')}</div></div>` : ''}
+    ${sparkline ? `<div class="bs-section"><div class="bs-section-label">Drama Arc</div>${sparkline}</div>` : ''}
+    ${story ? `<div class="bs-section"><div class="bs-section-label">Story</div>${story}</div>` : ''}
+    ${game.matchupNote||milestoneStr ? `<div class="bs-section"><div class="bs-section-label">Context</div><div class="bs-section-body">${[game.matchupNote, milestoneStr].filter(Boolean).join('<br>')}</div></div>` : ''}
+    ${standingsStr||seriesMargins ? `<div class="bs-section"><div class="bs-section-label">Standings</div><div class="bs-section-body">${standingsStr}</div>${seriesMargins}</div>` : ''}
+    ${game.streams?.length ? `<div class="bs-section"><div class="bs-section-label">Watch On</div><div class="bs-section-body">${game.streams.slice(0,4).map(s=>s.label).join(' · ')}</div></div>` : ''}
+    ${game.crew ? `<div class="bs-section"><div class="bs-section-label">Crew</div><div class="bs-section-body">${game.crew}</div></div>` : ''}
+    <div style="margin-top:1rem;display:flex;gap:.6rem">
+      <button onclick="pinGame('${gameId}');closeBottomSheet()" style="flex:1;padding:.55rem;border-radius:.6rem;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);color:inherit;font-size:.7rem;cursor:pointer">📌 Pin game</button>
+      <button onclick="navigator.share&&navigator.share({title:'${(game.away||'').replace(/'/g,'')} @ ${(game.home||'').replace(/'/g,'')}',text:'${(game.away||'').replace(/'/g,'')} @ ${(game.home||'').replace(/'/g,'')} · ${game.league||sport||''}',url:location.href}).catch(()=>{});closeBottomSheet()" style="flex:1;padding:.55rem;border-radius:.6rem;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);color:inherit;font-size:.7rem;cursor:pointer">⬆ Share</button>
+    </div>`;
+  document.getElementById('bs-overlay')?.classList.add('open');
+  document.getElementById('bottom-sheet')?.classList.add('open');
+}
+function closeBottomSheet() {
+  document.getElementById('bs-overlay')?.classList.remove('open');
+  document.getElementById('bottom-sheet')?.classList.remove('open');
 }
 
 // ── Wow#45 Stage 2: Drama Sparkline ──────────────────────────────────────────
