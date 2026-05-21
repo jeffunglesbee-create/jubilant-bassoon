@@ -905,6 +905,12 @@ flex-shrink:0;white-space:nowrap;
 .narrative-line.series-context{color:var(--gold2,#c9a84c);font-style:italic;opacity:.95}
 .series-preview-card{background:rgba(201,168,76,.06);border:1px solid rgba(201,168,76,.18);border-radius:10px;padding:.85rem 1rem .75rem;margin-bottom:.6rem;cursor:pointer;transition:background .2s}
 .series-preview-card:hover{background:rgba(201,168,76,.1)}
+/* Inline series brief — big game cards (CF/Finals) show brief inside card-body */
+/* score-wrap at grid-row:2 drops below card-body so score appears below brief on go-live */
+.card-brief-inline{border-top:1px solid rgba(201,168,76,.15);margin-top:.35rem;padding-top:.45rem}
+.card-brief-inline-label{font-size:.5rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--gold2,#c9a84c);opacity:.8;margin-bottom:.3rem}
+.card-brief-inline-text{font-size:.71rem;color:var(--text-muted,#b0b0c0);line-height:1.55;font-style:italic}
+.card-brief-inline-text.loaded{color:var(--fg,#e8e8f0);font-style:normal}
 /* EPL Match Brief card */
 .epl-match-brief-card{background:rgba(124,58,237,.06);border:1px solid rgba(124,58,237,.2);border-left:3px solid rgba(124,58,237,.5);border-radius:8px;padding:.45rem .75rem .4rem;margin-bottom:.35rem;cursor:pointer;transition:background .2s}
 .epl-match-brief-card:hover{background:rgba(124,58,237,.1)}
@@ -11978,8 +11984,28 @@ async function renderSeriesPreviewCard(gameCard){
   const cacheKey=seriesPreviewCacheKey(game);
   const sport=gameCard.dataset.sport||'';
   if(!sport.includes('Playoffs')&&!sport.includes('playoff')) return;
-  if(gameCard.previousElementSibling?.classList.contains('series-preview-card')) return;
   const staticText=buildSeriesPreviewStatic(game);
+
+  // Big game (CF/Finals): inject brief INSIDE card-body, score-wrap stays at grid-row:2 below
+  const isBig=/conference finals|cf g\d|nba finals|stanley cup final|wcf|ecf/i.test(game.league||'');
+  if(isBig){
+    const cardBody=gameCard.querySelector('.card-body');
+    if(!cardBody||cardBody.querySelector('.card-brief-inline')) return;
+    const briefEl=document.createElement('div');
+    briefEl.className='card-brief-inline';
+    briefEl.innerHTML='<div class="card-brief-inline-label">FIELD Series Brief</div><div class="card-brief-inline-text">'+(staticText||'Loading series context\u2026')+'</div>';
+    cardBody.appendChild(briefEl);
+    const textEl=briefEl.querySelector('.card-brief-inline-text');
+    const cached=sessionStorage.getItem(cacheKey);
+    if(cached){textEl.textContent=trimToCompleteSentence(cached);textEl.classList.add('loaded');return;}
+    const text=await fetchSeriesPreviewFromClaude(game);
+    if(text){textEl.textContent=trimToCompleteSentence(text);textEl.classList.add('loaded');sessionStorage.setItem(cacheKey,text);}
+    else if(staticText){textEl.textContent=staticText;textEl.classList.add('loaded');}
+    return;
+  }
+
+  // Non-big-game: keep original external card before game card
+  if(gameCard.previousElementSibling?.classList.contains('series-preview-card')) return;
   const placeholder=document.createElement('div');
   placeholder.className='series-preview-card';
   placeholder.dataset.gameid=gameid;
@@ -12945,8 +12971,25 @@ function initSeriesPreviews(){
 // Inject series preview text directly into an existing card (used by compound dispatch)
 function injectSeriesPreviewText(card, text) {
   if (!card || !text) return;
-  // Use the same series-preview-card pattern as renderSeriesPreviewCard
-  // Check if one already exists before this card
+  // Big game (CF/Finals): inject inside card-body as inline brief
+  let game=null;
+  (allData?.sports||[]).forEach(s=>(s.games||[]).forEach(g=>{if(g._id===card.dataset.gameid)game=g;}));
+  const isBig=game&&/conference finals|cf g\d|nba finals|stanley cup final|wcf|ecf/i.test(game.league||'');
+  if(isBig){
+    const cardBody=card.querySelector('.card-body');
+    if(!cardBody) return;
+    let briefEl=cardBody.querySelector('.card-brief-inline');
+    if(!briefEl){
+      briefEl=document.createElement('div');
+      briefEl.className='card-brief-inline';
+      briefEl.innerHTML='<div class="card-brief-inline-label">FIELD Series Brief</div><div class="card-brief-inline-text"></div>';
+      cardBody.appendChild(briefEl);
+    }
+    const textEl=briefEl.querySelector('.card-brief-inline-text');
+    if(textEl){textEl.textContent=trimToCompleteSentence(text);textEl.classList.add('loaded');}
+    return;
+  }
+  // Non-big-game: original external card pattern
   if (card.previousElementSibling?.classList.contains('series-preview-card')) {
     const existing = card.previousElementSibling.querySelector('.series-preview-text');
     if (existing) { existing.textContent = trimToCompleteSentence(text); existing.classList.add('loaded'); }
