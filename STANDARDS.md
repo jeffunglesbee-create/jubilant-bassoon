@@ -1341,3 +1341,27 @@ Before naming a new feature, ask:
 
 Game Intelligence Pipeline spec: 1HPd4VIk4Py35iUMSXZ9D__I_1UetpiK0YoAL8Sr4et4
 Build Session List v7.6: 1kQ6O3VCbbrj6sknW--X2nYIB02obHMDLk_eEhO0r0nk
+
+## Known Issue — classifySport() isConferenceFinals false negative
+
+**Filed: May 21 2026 · Fix in Session B (Broadcast Authority) or next TYPE B**
+
+`classifySport()` builds `sp` via:
+```
+const sp = (game._sport || game._section || game.league || ...).toLowerCase();
+```
+
+Due to `||` short-circuit, when `game._sport = "NBA Playoffs"` is truthy,
+`game.league` (which contains "East CF G2", "ECF", "WCF", etc.) is never
+evaluated. `isConferenceFinals` therefore returns false for NBA/NHL CF games.
+
+**Workaround in place:** `buildLifeStageContent()` isBigNote and
+`fetchCompoundEditorial()` isBig both test `game.league` directly, bypassing
+`classifySport()` for this check. All existing consumers are correct.
+
+**Proper fix:** In `classifySport()`, test `isConferenceFinals` against
+both `sp` AND `game.league` independently:
+```javascript
+const isConferenceFinals = /conference finals|cf g\d|wcf|ecf|.../i.test(sp)
+  || /conference finals|cf g\d|wcf|ecf|.../i.test((game.league||'').toLowerCase());
+```
