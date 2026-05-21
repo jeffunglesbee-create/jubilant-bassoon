@@ -14461,8 +14461,10 @@ function buildLifeStageContent(game, eData, stage) {
   switch(stage) {
     case 'pre': {
       // Pre-game: context from game data, no fabrication
-      const _scBig = classifySport(game, null);
-      const isBigNote = _scBig.isConferenceFinals || _scBig.isFinals;
+      // Big game detection: check league string directly (contains "CF G2", "ECF", etc.)
+      // classifySport() alone is insufficient — _sport="NBA Playoffs" doesn't carry CF detail
+      const _bigRx = /conference finals|cf g\d|nba finals|stanley cup finals?|wcf|ecf/i;
+      const isBigNote = _bigRx.test(game.league||'') || _bigRx.test(game._sport||'');
       const parts = [];
       // Series record first — always readable, not at risk of truncation
       if (game.seriesRecord && game.seriesRecord !== '0-0') parts.push(game.seriesRecord);
