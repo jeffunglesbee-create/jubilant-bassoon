@@ -1,12 +1,8 @@
 name: CORS Probe
 on:
-  workflow_dispatch:
-    inputs:
-      url:
-        description: 'URL to probe'
-        required: false
   push:
     paths: ['outbox/.trigger-cors-probe']
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -16,80 +12,22 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: main
 
-      - name: Probe + schema analysis
+      - name: Fetch and save
         run: |
-          URL=$(cat outbox/.trigger-cors-probe | grep '^url=' | cut -d= -f2-)
-          [ -z "$URL" ] && URL="${{ github.event.inputs.url }}"
-          [ -z "$URL" ] && URL="https://baseballsavant.mlb.com/gf?game_pk=824274"
+          URL=$(grep '^url=' outbox/.trigger-cors-probe | cut -d= -f2-)
+          echo "Probing: $URL"
+          echo "URL: $URL" > outbox/cors-result.txt
+          echo "Date: $(date -u)" >> outbox/cors-result.txt
+          echo "=== HEADERS ===" >> outbox/cors-result.txt
+          curl -sI "$URL" >> outbox/cors-result.txt
+          echo "=== BODY ===" >> outbox/cors-result.txt
+          curl -s "$URL" >> outbox/cors-result.txt
 
-          OUT="outbox/cors-result.txt"
-          { echo "---"
-            echo "URL: $URL"
-            echo "Timestamp: $(date -u)"
-            echo "---"
-            echo ""
-            echo "=== HEADERS ==="
-            curl -sI -H "Origin: https://jubilant-bassoon.jeffunglesbee.workers.dev" "$URL"
-            echo ""
-            echo "=== SCHEMA ==="
-            curl -s -H "Origin: https://jubilant-bassoon.jeffunglesbee.workers.dev" "$URL" | \
-              python3 -c "
-import json,sys
-d=json.load(sys.stdin)
-def walk(obj, path='', depth=0):
-    if depth>3: return
-    if isinstance(obj,dict):
-        for k,v in list(obj.items())[:20]:
-            p=f'{path}.{k}' if path else k
-            if isinstance(v,(dict,list)):
-                print(f'{p}:')
-                walk(v,p,depth+1)
-            else:
-                print(f'  {p} = {str(v)[:80]}')
-    elif isinstance(obj,list) and obj:
-        print(f'  [{len(obj)} items] first:')
-        walk(obj[0],path+'[0]',depth+1)
-walk(d)
-" 2>&1
-          } > "$OUT"
-          cat "$OUT"
-
-      - name: Commit result
+      - name: Push result
         run: |
-          git config user.email "actions@github.com"
-          git config user.name "CORS Probe"
-          git fetch origin main
-          git reset --hard origin/main
-          # Re-run analysis to get fresh output after reset
-          URL=$(cat outbox/.trigger-cors-probe | grep '^url=' | cut -d= -f2-)
-          [ -z "$URL" ] && URL="https://baseballsavant.mlb.com/gf?game_pk=824274"
-          OUT="outbox/cors-result.txt"
-          { echo "---"; echo "URL: $URL"; echo "Timestamp: $(date -u)"; echo "---"; echo ""
-            echo "=== HEADERS ==="
-            curl -sI -H "Origin: https://jubilant-bassoon.jeffunglesbee.workers.dev" "$URL"
-            echo ""; echo "=== SCHEMA ==="
-            curl -s -H "Origin: https://jubilant-bassoon.jeffunglesbee.workers.dev" "$URL" | \
-              python3 -c "
-import json,sys
-d=json.load(sys.stdin)
-def walk(obj,path='',depth=0):
-    if depth>2: return
-    if isinstance(obj,dict):
-        for k,v in list(obj.items())[:20]:
-            p=f'{path}.{k}' if path else k
-            if isinstance(v,(dict,list)):
-                t='{}' if isinstance(v,dict) else f'[{len(v)}]'
-                print(f'{p} {t}')
-                walk(v,p,depth+1)
-            else:
-                print(f'  {p} = {str(v)[:80]}')
-    elif isinstance(obj,list) and obj:
-        walk(obj[0],path+'[0]',depth+1)
-walk(d)
-" 2>&1; } > "$OUT"
-          git add "$OUT"
-          git diff --staged --quiet || git commit -m "CORS result $(date -u +%Y%m%dT%H%M%SZ)"
-          git push
+          git config user.email "probe@field"
+          git config user.name "Probe"
+          git add outbox/cors-result.txt
+          git commit -m "probe $(date -u +%H%M%S)" || echo "no change"
+          git push || (git pull --rebase && git push)
