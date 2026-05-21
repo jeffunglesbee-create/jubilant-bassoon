@@ -2564,10 +2564,22 @@ function refreshAFLSection(){
   setTimeout(injectSquiggleLiveScores,250);
 }
 
+// Returns current AFL round number from today's hardcoded games, or falls back to 11.
+// Used to query Squiggle by round instead of by complete=0, which excludes in-progress games.
+function _aflCurrentRound(){
+  const afl=(allData?.sports||[]).find(s=>s.sport==='Australian Football (AFL)');
+  if(afl?.games?.length){
+    const m=(afl.games[0].league||'').match(/Round (\d+)/i);
+    if(m) return parseInt(m[1]);
+  }
+  return 11; // fallback — update with daily update
+}
+
 async function squigglePrefetchAll(){
   try{
+    const round=_aflCurrentRound();
     const [gR,sR]=await Promise.all([
-      fetch(SQUIGGLE_RELAY+'?q=games;year=2026;complete=0',{headers:{'User-Agent':'FIELD-Global-Sports'},signal:AbortSignal.timeout(7000)}),
+      fetch(SQUIGGLE_RELAY+'?q=games;year=2026;round='+round,{headers:{'User-Agent':'FIELD-Global-Sports'},signal:AbortSignal.timeout(7000)}),
       fetch(SQUIGGLE_RELAY+'?q=standings;year=2026',{headers:{'User-Agent':'FIELD-Global-Sports'},signal:AbortSignal.timeout(7000)}),
     ]);
     if(gR.ok){const d=await gR.json();_squiggleCache={..._squiggleCache,games:d.games||[],fetchedAt:Date.now()};}
@@ -2582,7 +2594,7 @@ async function startSquiggleEngine(){
   injectSquiggleLiveScores();
   async function refreshLive(){
     try{
-      const r=await fetch(SQUIGGLE_RELAY+'?q=games;year=2026;complete=0',
+      const r=await fetch(SQUIGGLE_RELAY+'?q=games;year=2026;round='+_aflCurrentRound(),
         {headers:{'User-Agent':'FIELD-Global-Sports'},signal:AbortSignal.timeout(7000)});
       if(!r.ok) return;
       const data=await r.json();
