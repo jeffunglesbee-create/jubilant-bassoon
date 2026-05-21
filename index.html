@@ -688,6 +688,7 @@ flex-shrink:0;white-space:nowrap;
 
 /* Card Life Stage content */
 .card-stage-content{padding:.25rem 0 .1rem;font-size:.62rem;line-height:1.5;color:rgba(232,232,240,.75)}
+.card-stage-content.big-game-note{font-size:.65rem;color:rgba(232,232,240,.88);line-height:1.6}
 .card-stage-soon .stage-countdown{font-weight:700;color:var(--accent,#f97316)}
 .stage-final-score{font-weight:700;font-size:.72rem}
 
@@ -14460,16 +14461,19 @@ function buildLifeStageContent(game, eData, stage) {
   switch(stage) {
     case 'pre': {
       // Pre-game: context from game data, no fabrication
+      const _scBig = classifySport(game, null);
+      const isBigNote = _scBig.isConferenceFinals || _scBig.isFinals;
       const parts = [];
       // Series record first — always readable, not at risk of truncation
       if (game.seriesRecord && game.seriesRecord !== '0-0') parts.push(game.seriesRecord);
       if (game.matchupNote) {
         const note = game.matchupNote;
-        // Truncate at word boundary (not mid-word) to avoid "Cavs must ad"-style cuts
+        // Big games (CF / Finals): show full matchupNote — card expands vertically
+        // Regular games: truncate at word boundary to keep card compact
         const limit = 120;
-        const truncated = note.length > limit
-          ? note.slice(0, limit).replace(/\s+\S*$/, '\u2026')
-          : note;
+        const truncated = isBigNote || note.length <= limit
+          ? note
+          : note.slice(0, limit).replace(/\s+\S*$/, '\u2026');
         parts.push(truncated);
       }
       const ms = _bdlMilestonesCache?.[game._id];
@@ -14480,7 +14484,7 @@ function buildLifeStageContent(game, eData, stage) {
       // Fallback for sports without matchupNote (WNBA, MLB local games): show localNote or venue
       if (!parts.length && game.localNote) parts.push(game.localNote.slice(0,100));
       if (!parts.length && game.venue) parts.push(game.venue.slice(0,80));
-      return parts.length ? `<div class="card-stage-content">${parts.join(' · ')}</div>` : '';
+      return parts.length ? `<div class="card-stage-content${isBigNote?' big-game-note':''}">${parts.join(' · ')}</div>` : '';
     }
     case 'soon': {
       // Imminent: countdown + network
