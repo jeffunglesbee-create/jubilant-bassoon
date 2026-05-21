@@ -1,0 +1,26 @@
+name = "field-betfair-relay"
+main = "src/index.js"
+compatibility_date = "2026-05-21"
+
+# SECRETS — set in Cloudflare Dashboard (never in this file)
+# Dashboard: Workers & Pages → field-betfair-relay → Settings → Variables and Secrets
+#
+#   BETFAIR_APP_KEY   → Betfair Developer Portal → My Applications → App Keys
+#                       Free delayed key: any value shown under "Delayed" column
+#                       Live key (£299 one-time): upgrades to ~40ms latency + event proxy
+#
+#   BETFAIR_USERNAME  → Betfair account email address
+#
+#   BETFAIR_PASSWORD  → Betfair account password
+#
+# To set secrets via CLI:
+#   wrangler secret put BETFAIR_APP_KEY --name field-betfair-relay
+#   wrangler secret put BETFAIR_USERNAME --name field-betfair-relay
+#   wrangler secret put BETFAIR_PASSWORD --name field-betfair-relay
+#
+# Worker URL after deploy:
+#   https://field-betfair-relay.jeffunglesbee.workers.dev
+#
+# Deploy:
+#   cd workers/field-betfair-relay && npx wrangler deploy
+#   Or push to trigger GitHub Actions (see deploy-betfair.yml)

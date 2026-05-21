@@ -1047,6 +1047,12 @@ flex-shrink:0;white-space:nowrap;
 /* ── Live scores from ESPN API ── */
 .score-wrap{margin-top:2px;min-width:0;max-width:100%;overflow:hidden;width:100%}
 .score-status{font-size:.72rem;color:var(--text-muted,#b0b0c0);margin-top:.2rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-style:italic;letter-spacing:.01em}
+/* Betfair odds chip — shown on cards when odds available */
+.bf-odds-chip{display:inline-flex;gap:.3rem;align-items:center;font-size:.52rem;font-weight:600;color:var(--text-muted);background:rgba(100,255,180,.07);border:1px solid rgba(100,255,180,.18);border-radius:3px;padding:.08rem .3rem;margin-top:.15rem;white-space:nowrap}
+.bf-odds-chip .bf-label{opacity:.6;font-weight:400}
+.bf-odds-chip .bf-price{color:#64ffb4;font-variant-numeric:tabular-nums}
+.bf-odds-chip.bf-inplay{border-color:rgba(255,180,50,.3);background:rgba(255,180,50,.06)}
+.bf-odds-chip.bf-inplay .bf-price{color:#ffb432}
 .score-block{
   display:flex;align-items:center;gap:6px;flex-wrap:wrap;
   font-family:var(--ff-mono);font-size:1.1rem;font-weight:800;
@@ -2432,6 +2438,187 @@ var startFotmobEngine    = function(){};
 // Relay: field-relay-nba.jeffunglesbee.workers.dev/squiggle (edge cache + CORS bypass)
 // TTL enforced at relay: 30s live · 120s standings · 3600s tips
 const SQUIGGLE_RELAY='https://field-relay-nba.jeffunglesbee.workers.dev/squiggle';
+
+// ── OpenF1 — Formula 1 live timing (CORS-open, no relay needed) ───────────────
+// Free: 3 req/s · 30 req/min · 21/22 endpoints free
+// Live: 30 min before session start → 30 min after session end
+// Gate: only poll during live session window (fetchOpenF1Session detects this)
+const OPENF1_BASE = 'https://api.openf1.org/v1';
+let _openF1SessionCache = {key:null,expiry:0,isLive:false};
+let _openF1PollInterval = null;
+
+async function fetchOpenF1CurrentSession(){
+  if(_openF1SessionCache.key && Date.now()<_openF1SessionCache.expiry) return _openF1SessionCache;
+  try{
+    const today=new Date().toISOString().slice(0,10);
+    const r=await fetch(`${OPENF1_BASE}/sessions?date_start>=${today}&session_type=Race,Qualifying,Sprint`,
+      {signal:AbortSignal.timeout(5000)});
+    const sessions=await r.json();
+    if(!sessions?.length){_openF1SessionCache={key:null,expiry:Date.now()+300000,isLive:false};return _openF1SessionCache;}
+    // Most recent session
+    const s=sessions[sessions.length-1];
+    const start=new Date(s.date_start).getTime(), end=new Date(s.date_end||s.date_start).getTime()+1800000;
+    const now=Date.now();
+    const isLive=now>=start-1800000&&now<=end;
+    _openF1SessionCache={key:s.session_key,name:s.session_name,location:s.location,
+      year:s.year,isLive,start,end,expiry:Date.now()+60000};
+    return _openF1SessionCache;
+  }catch(e){_openF1SessionCache={key:null,expiry:Date.now()+60000,isLive:false};return _openF1SessionCache;}
+}
+
+// Fetch all driver positions — single call returns full grid
+// Returns: [{driver_number, position, date}] sorted by position
+async function fetchOpenF1Positions(sessionKey){
+  try{
+    const r=await fetch(`${OPENF1_BASE}/position?session_key=${sessionKey}`,
+      {signal:AbortSignal.timeout(5000)});
+    const raw=await r.json();
+    // Deduplicate: keep latest entry per driver
+    const latest={};
+    (raw||[]).forEach(p=>{if(!latest[p.driver_number]||p.date>latest[p.driver_number].date) latest[p.driver_number]=p;});
+    return Object.values(latest).sort((a,b)=>a.position-b.position);
+  }catch(e){return [];}
+}
+
+// Fetch recent race control messages (safety car, flags, incidents)
+async function fetchOpenF1RaceControl(sessionKey,since){
+  try{
+    const q=since?`?session_key=${sessionKey}&date>=${since}`:`?session_key=${sessionKey}`;
+    const r=await fetch(`${OPENF1_BASE}/race_control${q}`,{signal:AbortSignal.timeout(5000)});
+    return await r.json();
+  }catch(e){return [];}
+}
+
+// Fetch driver metadata (number → name mapping) — cache per session
+let _openF1Drivers={};
+async function fetchOpenF1Drivers(sessionKey){
+  if(_openF1Drivers[sessionKey]) return _openF1Drivers[sessionKey];
+  try{
+    const r=await fetch(`${OPENF1_BASE}/drivers?session_key=${sessionKey}`,
+      {signal:AbortSignal.timeout(5000)});
+    const drivers=await r.json();
+    _openF1Drivers[sessionKey]={};
+    (drivers||[]).forEach(d=>{_openF1Drivers[sessionKey][d.driver_number]={
+      name:d.full_name,abbr:d.name_acronym,team:d.team_name,
+      teamColour:'#'+d.team_colour?.replace(/^#/,''),
+    };});
+    return _openF1Drivers[sessionKey];
+  }catch(e){return {};}
+}
+
+// window._openF1LiveData — shared live data consumed by card renderer
+window._openF1LiveData={positions:[],raceControl:[],drivers:{},sessionKey:null,lastUpdate:0};
+
+async function pollOpenF1(){
+  const session=await fetchOpenF1CurrentSession();
+  if(!session.isLive||!session.key) return;
+  // Fetch drivers once per session
+  if(!_openF1Drivers[session.key]) await fetchOpenF1Drivers(session.key);
+  const [positions,control]=await Promise.all([
+    fetchOpenF1Positions(session.key),
+    fetchOpenF1RaceControl(session.key,
+      window._openF1LiveData.lastUpdate?new Date(window._openF1LiveData.lastUpdate).toISOString():null),
+  ]);
+  window._openF1LiveData={
+    positions,raceControl:control,
+    drivers:_openF1Drivers[session.key]||{},
+    sessionKey:session.key,lastUpdate:Date.now(),
+  };
+  // Emit to Event Bus when built (field:score for P1 change)
+  if(typeof fieldEvents!=='undefined'){
+    const p1=positions[0];
+    if(p1){
+      const prev=window._openF1LiveData._prevP1;
+      if(prev&&prev!==p1.driver_number){
+        fieldEvents.dispatchEvent(new CustomEvent('field:lead_change',{detail:
+          {gameId:'f1_live',sport:{isGolf:false},newLeader:p1.driver_number,
+           source:'openf1',scoreline:`P1: #${p1.driver_number}`}}));
+      }
+      window._openF1LiveData._prevP1=p1.driver_number;
+    }
+  }
+}
+
+// Start OpenF1 polling — only during live session window (4s interval)
+// Call from app startup; gates internally on isLive
+async function startOpenF1Engine(){
+  if(_openF1PollInterval) return;
+  const session=await fetchOpenF1CurrentSession();
+  if(!session.isLive) return; // no live session — skip
+  await pollOpenF1(); // immediate first poll
+  _openF1PollInterval=setInterval(()=>pollOpenF1().catch(()=>{}),4000);
+  // Stop when session ends
+  const msLeft=session.end-Date.now();
+  if(msLeft>0) setTimeout(()=>{clearInterval(_openF1PollInterval);_openF1PollInterval=null;},msLeft+60000);
+}
+
+// ── Betfair — pre-game + in-play odds (free delayed key, ~60-90s lag) ─────────
+// Free key provides odds for display purposes only (not real-time event proxy)
+// Live key (£299 one-time) unlocks ~40ms latency for event proxy use
+// Relay: field-betfair-relay.jeffunglesbee.workers.dev (handles auth)
+const BETFAIR_RELAY='https://field-betfair-relay.jeffunglesbee.workers.dev';
+const _betfairOddsCache={}; // gameId → {homeWin,awayWin,draw,inPlay,fetchedAt}
+const BETFAIR_PRE_TTL=300000;  // 5 min pre-game (prices stable)
+const BETFAIR_LIVE_TTL=60000;  // 60s in-play (matches free key delay)
+
+// Fetch odds for a single game — returns {homeWin, awayWin, draw, inPlay} or null
+async function fetchBetfairOdds(game){
+  if(!game?.home||!game?.away) return null;
+  const key=game._id||game.home+game.away;
+  const cached=_betfairOddsCache[key];
+  const isLive=!!findESPNScore?.(game)?.state==='in';
+  const ttl=isLive?BETFAIR_LIVE_TTL:BETFAIR_PRE_TTL;
+  if(cached&&Date.now()-cached.fetchedAt<ttl) return cached;
+  const sc=classifySport(game,null);
+  const sport=sc.isSoccer?'soccer':sc.isNBA||sc.isWNBA?'basketball':
+              sc.isNHL?'ice_hockey':sc.isMLB?'baseball':sc.isAFL?'aussie_rules':null;
+  if(!sport) return null;
+  try{
+    const url=`${BETFAIR_RELAY}/betfair/odds?home=${encodeURIComponent(game.home)}&away=${encodeURIComponent(game.away)}&sport=${sport}`;
+    const r=await fetch(url,{signal:AbortSignal.timeout(6000)});
+    if(!r.ok) return null;
+    const data=await r.json();
+    if(!data?.odds?.homeWin) return null;
+    const result={...data.odds,inPlay:data.inPlay,fetchedAt:Date.now()};
+    _betfairOddsCache[key]=result;
+    return result;
+  }catch(e){return null;}
+}
+
+// Batch fetch odds for all of today's games — single relay session login
+// Call once at startup for today's slate; updates per-game when cards render
+async function batchFetchBetfairOdds(games){
+  if(!games?.length) return;
+  const toFetch=games.filter(g=>{
+    const sc=classifySport(g,null);
+    return sc.isSoccer||sc.isNBA||sc.isNHL||sc.isMLB||sc.isAFL||sc.isWNBA;
+  }).map(g=>{
+    const sc=classifySport(g,null);
+    return {home:g.home,away:g.away,
+      sport:sc.isSoccer?'soccer':sc.isNBA||sc.isWNBA?'basketball':
+            sc.isNHL?'ice_hockey':sc.isMLB?'baseball':sc.isAFL?'aussie_rules':'soccer',
+      _id:g._id};
+  }).slice(0,20); // max 20 per batch
+  if(!toFetch.length) return;
+  try{
+    const r=await fetch(`${BETFAIR_RELAY}/betfair/batch`,{method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(toFetch),signal:AbortSignal.timeout(10000)});
+    if(!r.ok) return;
+    const results=await r.json();
+    (results||[]).forEach((res,i)=>{
+      const g=toFetch[i];
+      if(res?.odds?.homeWin) _betfairOddsCache[g._id||g.home+g.away]={...res.odds,inPlay:res.inPlay,fetchedAt:Date.now()};
+    });
+  }catch(e){}
+}
+
+// Format Betfair decimal odds → display string
+// 1.5 → "1.50" · 2.2 → "2.20" (European decimal format for exchange)
+function fmtBetfairOdds(price){
+  if(!price||isNaN(price)) return null;
+  return price.toFixed(2);
+}
 const AFL_TEAM_ABBR={
   'Adelaide':'ADE','Brisbane Lions':'BRI','Carlton':'CAR','Collingwood':'COL',
   'Essendon':'ESS','Fremantle':'FRE','Geelong':'GEE','Gold Coast':'GCS',
@@ -2509,6 +2696,43 @@ function squiggleToFieldGame(g){
     _aflComplete:g.complete, // 0=pre 1-99=live 100=final — used by getStatus() to override time window
   };
 }
+
+// Inject Betfair odds chip onto a game card
+// Called lazily after card renders — checks cache first, fetches if needed
+// Chip shows: home price · away price (· draw if soccer)
+async function injectBetfairOddsChip(card, game){
+  if(!card||!game) return;
+  if(card.querySelector('.bf-odds-chip')) return; // already injected
+  const odds=await fetchBetfairOdds(game);
+  if(!odds?.homeWin) return; // no data available
+  const inPlay=!!odds.inPlay;
+  const sc=classifySport(game,null);
+  const hPrice=fmtBetfairOdds(odds.homeWin), aPrice=fmtBetfairOdds(odds.awayWin);
+  const drawPart=sc.isSoccer&&odds.draw?`<span class="bf-label">D</span><span class="bf-price">${fmtBetfairOdds(odds.draw)}</span>`:'';
+  const chip=document.createElement('div');
+  chip.className='bf-odds-chip'+(inPlay?' bf-inplay':'');
+  chip.title='Betfair Exchange odds'+(inPlay?' (in-play, ~60s delay)':' (pre-match)');
+  chip.innerHTML=
+    `<span class="bf-label">H</span><span class="bf-price">${hPrice}</span>`+
+    drawPart+
+    `<span class="bf-label">A</span><span class="bf-price">${aPrice}</span>`;
+  const stageEl=card.querySelector('.card-stage-content,.card-brief-inline');
+  if(stageEl) stageEl.after(chip);
+  else card.querySelector('.card-body')?.appendChild(chip);
+}
+
+// Inject odds on all visible cards — called after batch fetch or on scroll
+function injectAllBetfairOdds(){
+  if(!allData?.sports) return;
+  (allData.sports).forEach(sec=>{
+    (sec.games||[]).forEach(game=>{
+      if(!game._id) return;
+      const card=document.querySelector(`.game-card[data-gameid="${game._id}"]`);
+      if(card) injectBetfairOddsChip(card,game).catch(()=>{});
+    });
+  });
+}
+
 
 function injectSquiggleLiveScores(){
   if(!_squiggleCache.games) return;
@@ -10942,6 +11166,15 @@ async function fetchSchedule(){
   startFotmobEngine();   // Fotmob soccer livescores (more reliable, unofficial API)
   startSquiggleEngine(); // Squiggle AFL live scores (free documented API)
   setTimeout(squigglePrefetchAll, 2500); // Squiggle standings
+  // OpenF1 — only starts if a live F1 session is detected (self-gating)
+  startOpenF1Engine().catch(()=>{});
+  // Betfair batch odds — fires T+4s, after today's games are loaded into allData
+  setTimeout(()=>{
+    try{
+      const games=(allData?.sports||[]).flatMap(s=>s.games||[]);
+      if(games.length) batchFetchBetfairOdds(games).then(()=>injectAllBetfairOdds()).catch(()=>{});
+    }catch(e){}
+  }, 4000);
   setTimeout(fdPrefetchSoccerLive, 3000)
   setTimeout(slashGolfPrefetchAll, 3500); // Slash Golf: schedule + live leaderboard
   // Pre-fetch BDL season averages once (ROOT 3 — feeds milestones for all tonight's NBA games)
