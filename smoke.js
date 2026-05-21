@@ -246,6 +246,15 @@ assert('A56 — field_utils.js loaded in index.html',
   // A68 — renderAmbientPanel defined
   assert('A68 — Ambient panel: renderAmbientPanel function defined', html.includes('function renderAmbientPanel('));
 
+  // A69 — Arbitrage Finder: #field-arb element present
+  assert('A69 — Arbitrage Finder: #field-arb element in HTML', html.includes('id="field-arb"'));
+
+  // A70 — buildArbitrageReport defined
+  assert('A70 — Arbitrage Finder: buildArbitrageReport function defined', html.includes('function buildArbitrageReport('));
+
+  // A71 — renderArbitrageBar defined
+  assert('A71 — Arbitrage Finder: renderArbitrageBar function defined', html.includes('function renderArbitrageBar('));
+
 
 
   // ── Feature registry guards: A60-A123 (table-driven) ────────────────────

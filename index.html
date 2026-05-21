@@ -796,6 +796,29 @@ flex-shrink:0;white-space:nowrap;
 #watch-window{padding:.3rem 1rem;max-width:1200px;margin:0 auto}
 .ww-bar{display:flex;align-items:center;gap:.7rem;background:rgba(45,212,191,.08);border:1px solid rgba(45,212,191,.25);border-radius:8px;padding:.55rem .9rem;cursor:pointer;flex-wrap:wrap;row-gap:.3rem}
 .ww-bar:hover{background:rgba(45,212,191,.13)}
+/* ── Broadcast Arbitrage Finder (#field-arb) ───────────────────────────── */
+#field-arb{max-width:1200px;margin:.4rem auto 0;padding:0 1rem;
+  display:flex;flex-direction:column;gap:.4rem}
+.arb-row{display:flex;align-items:center;gap:.75rem;
+  padding:.5rem .85rem;border-radius:7px;cursor:default}
+.arb-row.arb-tap{cursor:pointer}
+.arb-row.arb-tap:hover{filter:brightness(1.08)}
+.arb-free{border-left:3px solid var(--gold2,#c9a84c);background:rgba(201,168,76,.08)}
+.arb-have{border-left:3px solid var(--teal,#2dd4bf);background:rgba(45,212,191,.07)}
+.arb-add {border-left:3px solid #8b5cf6;background:rgba(139,92,246,.07)}
+.arb-icon{font-size:.95rem;flex-shrink:0;line-height:1}
+.arb-text{flex:1;font-size:.77rem;color:var(--fg);line-height:1.4}
+.arb-text strong{color:var(--white);font-weight:700}
+.arb-svcs{display:flex;flex-wrap:wrap;gap:.3rem;margin-top:.15rem}
+.arb-svc-chip{font-size:.54rem;font-weight:700;letter-spacing:.06em;
+  padding:.1rem .4rem;border-radius:3px;border:1px solid;
+  background:rgba(255,255,255,.06);color:var(--smoke);
+  text-transform:uppercase;white-space:nowrap}
+@media(max-width:600px){
+  #field-arb{padding:0 .75rem;margin:.3rem auto 0}
+  .arb-text{font-size:.7rem}
+  .arb-row{padding:.4rem .7rem}
+}
 .ww-pulse{width:7px;height:7px;border-radius:50%;background:#2dd4bf;animation:ww-blink 1.2s ease-in-out infinite;flex-shrink:0}
 @keyframes ww-blink{0%,100%{opacity:1}50%{opacity:.35}}
 .ww-soon{font-size:.58rem;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:#2dd4bf}
@@ -1901,7 +1924,7 @@ flex-shrink:0;white-space:nowrap;
   #ambient-panel{display:flex}
   /* Push ALL page content left — every sibling of <main> must be included */
   .main,#field-brief,#night-owl,#watch-window,
-  #halftime-switch,#double-feature,#offline-banner,
+  #halftime-switch,#double-feature,#offline-banner,#field-arb,
   .betting-section,.field-desk-section,.media-section,
   .streaming-section,.legend,.page-divider{margin-right:390px}
   /* OTW banner and masthead span full width — no margin shift */
@@ -2193,6 +2216,8 @@ flex-shrink:0;white-space:nowrap;
 <div id="watch-window" style="display:none" aria-live="polite"></div>
 <!-- ── Perfect Halftime Switch ──────────────────────────────── -->
 <div id="halftime-switch" aria-live="polite"></div>
+<!-- ── Broadcast Arbitrage Finder ─────────────────────────────────────── -->
+<div id="field-arb" aria-live="polite" style="display:none"></div>
 <!-- ── Share Toast ───────────────────────────────────────────── -->
 <div class="share-toast" id="share-toast">Copied to clipboard!</div>
 
@@ -4854,6 +4879,7 @@ document.getElementById("setup-save").addEventListener("click",()=>{
   saveMyServices(MY_SERVICES);
   closeSetup();
   annotateChips();
+  renderArbitrageBar(); // update arbitrage bar with new services
   _pickerCacheValid = false;
   // Check if this is first run — if so reload to show annotations
   if(!localStorage.getItem("field_setup_done")){
@@ -6001,6 +6027,7 @@ function renderAll(){
     renderAmbientPanel(); // render ambient panel even if brief fails
   }), 1000); // J3: brief last — highest value, staggered
   setTimeout(injectWeatherBadges, 300); // re-apply wx badges from cache after render
+  setTimeout(renderArbitrageBar, 400);   // arbitrage bar — after schedule renders
   setTimeout(renderAmbientPanel, 1200); // ambient panel — after schedule renders
   // Runtime silent error scan — FIELD_DEBUG only, runs after async injections settle
   if(FIELD_DEBUG) setTimeout(runSilentErrorScan, 500);
@@ -13765,6 +13792,148 @@ function renderAmbientPanel(){
     :'';
 
   panel.innerHTML=`${otwHTML}${scoresHTML?`<div class="ap-divider"></div>${scoresHTML}`:''}${ctxHTML?`<div class="ap-divider"></div>${ctxHTML}`:''}${briefHTML?`<div class="ap-divider"></div>${briefHTML}`:''}`;
+}
+
+// ── Broadcast Arbitrage Finder ──────────────────────────────────────────────
+// Page-level "what's free tonight + what should I add" summary.
+// Reads from allData + MY_SERVICES + SR + SERVICE_COST. No new API calls.
+// Complements Wow#32 (per-chip cost) with a cross-game nightly summary.
+
+function buildArbitrageReport(){
+  if(!allData?.sports) return null;
+  const freeGames=[], haveGames=[], missGames=[];
+
+  (allData.sports||[]).forEach(sec=>{
+    (sec.games||[]).forEach(g=>{
+      if(!g.home||!g.away) return;
+      const streams=resolveStreams(g.streams||[]);
+      if(!streams.length) return;
+
+      let isFree=false, isHave=false;
+      const missKeys=[]; // cheapest covering keys for miss games
+
+      streams.forEach(s=>{
+        const key=s.key||s.srKey||'';
+        if(!key) return;
+        if(s.auth==='free'||FREE_OTA.has(key)){isFree=true;}
+        if(MY_SERVICES.has(key)&&!RSN_KEYS.has(key)){isHave=true;}
+        if(SERVICE_COST[key]) missKeys.push(key);
+      });
+
+      if(isFree){
+        const freeSvcs=streams
+          .filter(s=>s.auth==='free'||FREE_OTA.has(s.key||''))
+          .map(s=>s.name||s.label||s.key||'')
+          .filter(Boolean)
+          .slice(0,2);
+        freeGames.push({g,svcs:freeSvcs,sport:sec.sport});
+      } else if(isHave){
+        const haveSvcs=streams
+          .filter(s=>MY_SERVICES.has(s.key||'')&&!RSN_KEYS.has(s.key||''))
+          .map(s=>s.name||s.label||s.key||'')
+          .filter(Boolean)
+          .slice(0,1);
+        haveGames.push({g,svcs:haveSvcs,sport:sec.sport});
+      } else {
+        // Sort by cost for miss-game grouping
+        const sorted=missKeys.slice().sort((a,b)=>{
+          const ca=parseFloat((SERVICE_COST[a]||'999').replace('$',''));
+          const cb=parseFloat((SERVICE_COST[b]||'999').replace('$',''));
+          return ca-cb;
+        });
+        missGames.push({g,keys:sorted,sport:sec.sport});
+      }
+    });
+  });
+
+  // Find best single service to add (max games / min cost)
+  let bestAdd=null;
+  if(missGames.length){
+    const svcCount={}; // key → count of miss games it covers
+    missGames.forEach(({keys})=>{
+      const cheapest=keys[0]; // already sorted by cost
+      if(cheapest) svcCount[cheapest]=(svcCount[cheapest]||0)+1;
+    });
+    let bestScore=-1;
+    Object.entries(svcCount).forEach(([key,count])=>{
+      const costNum=parseFloat((SERVICE_COST[key]||'999').replace('$',''));
+      const score=count/costNum; // games per dollar
+      if(score>bestScore||(score===bestScore&&count>(bestAdd?.gameCount||0))){
+        bestScore=score;
+        const srEntry=SR[key];
+        bestAdd={key,name:srEntry?srEntry[0]:key.toUpperCase(),
+          cost:SERVICE_COST[key]||'?',gameCount:count,url:srEntry?srEntry[1]:null};
+      }
+    });
+  }
+
+  return {freeGames,haveGames,missGames,bestAdd,
+    totalGames:freeGames.length+haveGames.length+missGames.length,
+    freeCount:freeGames.length,haveCount:haveGames.length,missCount:missGames.length};
+}
+
+function renderArbitrageBar(){
+  const el=document.getElementById('field-arb');
+  if(!el) return;
+  const report=buildArbitrageReport();
+  if(!report||report.totalGames===0){el.style.display='none';return;}
+
+  const{freeGames,haveGames,missGames,bestAdd,
+    freeCount,haveCount,missCount,totalGames}=report;
+
+  // Nothing to show: no free games and My Services not configured
+  if(freeCount===0&&MY_SERVICES.size===0){el.style.display='none';return;}
+
+  const rows=[];
+
+  // Row 1: Free games banner (always shown when free games exist)
+  if(freeCount>0){
+    const svcSet=new Set(freeGames.flatMap(fg=>fg.svcs));
+    const svcsHTML=[...svcSet].slice(0,4)
+      .map(n=>`<span class="arb-svc-chip">${n}</span>`).join('');
+    rows.push(`<div class="arb-row arb-free arb-tap"
+      onclick="document.querySelector('.free-badge')?.closest('.game-card')?.scrollIntoView({behavior:'smooth',block:'center'})"
+      title="Tap to scroll to first free game">
+      <span class="arb-icon">🎯</span>
+      <span class="arb-text">
+        <strong>${freeCount} ${freeCount===1?'game':'games'} FREE tonight</strong> — no subscription needed
+        <div class="arb-svcs">${svcsHTML}</div>
+      </span>
+    </div>`);
+  }
+
+  // Row 2: Have/Miss split (only when My Services configured)
+  if(MY_SERVICES.size>0){
+    if(missCount===0){
+      rows.push(`<div class="arb-row arb-have">
+        <span class="arb-icon">📺</span>
+        <span class="arb-text"><strong>You're covered</strong> — your subscriptions cover all ${totalGames} games tonight</span>
+      </div>`);
+    } else {
+      rows.push(`<div class="arb-row arb-have">
+        <span class="arb-icon">📺</span>
+        <span class="arb-text">
+          <strong>${haveCount+freeCount} of ${totalGames} games</strong> covered by your subscriptions
+          ${missCount>0?`· <strong>${missCount}</strong> need a service you don't have`:''}
+        </span>
+      </div>`);
+    }
+  }
+
+  // Row 3: Best add recommendation (when miss games exist)
+  if(bestAdd&&missCount>0){
+    rows.push(`<div class="arb-row arb-add arb-tap"
+      ${bestAdd.url?`onclick="window.open('${bestAdd.url}','_blank')" title="Open ${bestAdd.name}"`:''}>
+      <span class="arb-icon">💡</span>
+      <span class="arb-text">
+        <strong>Add ${bestAdd.name}</strong> · ${bestAdd.cost}/mo → +${bestAdd.gameCount} more ${bestAdd.gameCount===1?'game':'games'} tonight
+      </span>
+    </div>`);
+  }
+
+  if(rows.length===0){el.style.display='none';return;}
+  el.style.display='flex';
+  el.innerHTML=rows.join('');
 }
 
 function renderWatchWindow(){
