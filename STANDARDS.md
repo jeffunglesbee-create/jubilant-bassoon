@@ -184,6 +184,22 @@ git push origin main
 cp index.html /mnt/user-data/outputs/sportworld.html
 ```
 
+**Step 1.5 — Unresolved questions check (required before Step 2)**
+Before writing the session doc, scan the conversation for:
+- Any question asked but not answered (e.g. "what does X mean?", "why is Y?")
+- Any screenshot shared but not fully analyzed
+- Any "let me check that" or "I'll look into that" that was never followed up
+- Any open diagnostic — e.g. waiting on a console result that came back but wasn't actioned
+- Any item flagged as "investigate later" or "deferred" that could be resolved now
+
+If any unresolved items are found:
+1. List them explicitly in chat before proceeding
+2. Ask whether to resolve now or carry forward as OPEN items
+3. Only proceed to Step 2 once the user has confirmed the disposition of each
+
+This prevents diagnostic threads, deferred questions, and mid-session pivots from
+disappearing into the session doc as silent OPEN items without the user's awareness.
+
 **Step 2 — Session documentation**
 Write session doc to Drive. Plain text. Title format:
 `FIELD App — [Date] Session Documentation`
@@ -984,11 +1000,12 @@ changes topic or signals "done" — Claude runs the full end checklist
 immediately, without being asked:
 
 ```
-1. Write Rule 15 session doc to Drive
-2. Write handoff note at end of session doc
-3. Update handoff ID in STANDARDS.md canonical table and checklist
-4. git add STANDARDS.md && git commit && git push
-5. Declare SESSION END in chat
+1. Scan conversation for unresolved questions (Step 1.5)
+2. Write Rule 15 session doc to Drive
+3. Write handoff note at end of session doc
+4. Update handoff ID in STANDARDS.md canonical table and checklist
+5. git add STANDARDS.md && git commit && git push
+6. Declare SESSION END in chat
 ```
 
 Triggers that indicate "done":
