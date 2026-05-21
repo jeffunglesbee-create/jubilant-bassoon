@@ -9303,6 +9303,7 @@ const _espnLeagueErrors = {};   // league → consecutive error count
 
 async function fetchESPNScores(){
   _pollCycle++; // drives lead change burst decay
+  console.debug('[ESPN-POLL] cycle', _pollCycle, 'FIELD_DEBUG=', FIELD_DEBUG);
   if(espnIntervalId){ clearTimeout(espnIntervalId); espnIntervalId = null; } // prevent duplicate schedulers
 
   const today = new Date();
