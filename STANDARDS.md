@@ -38,10 +38,10 @@ Add a new named assertion in `smoke.js` for every FIELD_FEATURES entry (presence
 ```
 
 **Canonical docs** (open the relevant one before starting):
-- Handoff Note (read first): `1cHaX5a3f37M3evnYMvKgFalmmLdUncL6dJ9F1GW0tWA
+- Handoff Note (read first): `HANDOFF_PENDING
 Session doc May 21: 1Rsy6dysrqhxxK_Y5M0a4qcw7HY2zWoKv5SL6p5gysKM` ← update this ID every session end
 - CI/Deploy Error Reference (read every session): `1aX65p4C3BfeKtdbQPS32wFsm_bktCuaE`
-- Build Session List: `1KwMLaJOTELx9ppnmp2fhbSrSd9SZxRzZzOtY7a6bDKI`
+- Build Session List: `1et97kUbcQHHbKWYSYarcn_co1A471j-nKR19YXaBJXM`
 - Daily Update Reference: `1n4fiAaU1uF2X7EKRx9Gm6XpuR6wkpwoa`
 - Wow Features: `1h80BrgGXbz6aq3Hgv5LbjhpFkRQjYvd87fOMNJmVMOc`
 - UI Evaluation: `1xIZnlczl2kIeslnnzJD1eJrgBu5iw6xgSk1wB1MVyAY`
@@ -103,11 +103,11 @@ never worked despite being documented as complete.*
 
 | Document | Current ID | Update trigger |
 |----------|-----------|----------------|
-| **Build Session List** (Master backlog) | `1KwMLaJOTELx9ppnmp2fhbSrSd9SZxRzZzOtY7a6bDKI` | Every TYPE B/C session end |
+| **Build Session List** (Master backlog) | `1et97kUbcQHHbKWYSYarcn_co1A471j-nKR19YXaBJXM` | Every TYPE B/C session end |
 | **Wow Features** | `1h80BrgGXbz6aq3Hgv5LbjhpFkRQjYvd87fOMNJmVMOc` | Any session that implements or modifies a Wow item |
 | **UI Evaluation** | `1xIZnlczl2kIeslnnzJD1eJrgBu5iw6xgSk1wB1MVyAY` | Any session with CSS, layout, or card design changes |
 | **Daily Update Reference** | `1n4fiAaU1uF2X7EKRx9Gm6XpuR6wkpwoa` | Any session that changes broadcast chip rules, thresholds, or update protocol |
-| **Handoff Note** ← update ID every session | `1cHaX5a3f37M3evnYMvKgFalmmLdUncL6dJ9F1GW0tWA
+| **Handoff Note** ← update ID every session | `HANDOFF_PENDING
 Session doc May 21: 1Rsy6dysrqhxxK_Y5M0a4qcw7HY2zWoKv5SL6p5gysKM` | Every session end — replace ID with new handoff doc |
 | **CI/Deploy Error Reference** | `1aX65p4C3BfeKtdbQPS32wFsm_bktCuaE` | When a new CI/deploy failure pattern is resolved |
 
@@ -589,7 +589,7 @@ PHASE N — [description] (commit [hash])
 === ARCHITECTURE NOTES ===
 [Any new globals, changed interfaces, data flow changes]
 
-=== BROWSER-CONFIRMED 1cHaX5a3f37M3evnYMvKgFalmmLdUncL6dJ9F1GW0tWA
+=== BROWSER-CONFIRMED HANDOFF_PENDING
 Session doc May 21: 1Rsy6dysrqhxxK_Y5M0a4qcw7HY2zWoKv5SL6p5gysKM ===
 [List of features that are smoke-verified only, not yet
 confirmed working in browser. Carries forward from last handoff.]
@@ -741,7 +741,7 @@ if(typeof window._fieldErrors !== 'undefined')
 ### Browser-confirmed pending list
 
 Maintained in two places:
-1. Session doc `BROWSER-CONFIRMED 1cHaX5a3f37M3evnYMvKgFalmmLdUncL6dJ9F1GW0tWA
+1. Session doc `BROWSER-CONFIRMED HANDOFF_PENDING
 Session doc May 21: 1Rsy6dysrqhxxK_Y5M0a4qcw7HY2zWoKv5SL6p5gysKM` section (Rule 15)
 2. Handoff note `Browser-confirmed pending:` field
 
@@ -1344,7 +1344,7 @@ Before naming a new feature, ask:
 ### Reference
 
 Game Intelligence Pipeline spec: 1HPd4VIk4Py35iUMSXZ9D__I_1UetpiK0YoAL8Sr4et4
-Build Session List v7.6: 1KwMLaJOTELx9ppnmp2fhbSrSd9SZxRzZzOtY7a6bDKI
+Build Session List v7.6: 1et97kUbcQHHbKWYSYarcn_co1A471j-nKR19YXaBJXM
 
 ## Known Issue — classifySport() isConferenceFinals false negative
 
@@ -1406,5 +1406,5 @@ Deduplication on (gameId, scoreline) prevents double-render.
 O(sports + consumers): new sport = one emitter, new feature = one subscriber.
 
 Reference: Update Architecture Spec v3: 1YVXFmsUblQJvQA8KtKwtrcI08vWZh5n-uokMaCLJSlM
-Build Session List v7.8: 1KwMLaJOTELx9ppnmp2fhbSrSd9SZxRzZzOtY7a6bDKI
+Build Session List v7.8: 1et97kUbcQHHbKWYSYarcn_co1A471j-nKR19YXaBJXM
 SSE Research doc: 1uNl5ua8LHXBJfG_U6DLyGrNQfVt54HhGoiPNuY0Q_PA
