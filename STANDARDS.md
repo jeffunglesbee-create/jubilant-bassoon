@@ -40,7 +40,7 @@ Add a new named assertion in `smoke.js` for every FIELD_FEATURES entry (presence
 **Canonical docs** (open the relevant one before starting):
 - Handoff Note (read first): `1JRN9My__8jSkamPB0HvIwNTHtmA4x4iB4ELyl384yfs` ← update this ID every session end
 - CI/Deploy Error Reference (read every session): `1aX65p4C3BfeKtdbQPS32wFsm_bktCuaE`
-- Build Session List: `1EZqkiDz2obo8fECw_FO_oA40CvS5dhc14iPYUjim4wg`
+- Build Session List: `1wA4ZQErHk13aeMlqobVxE0yW2bS4w7eDImunMBT2U6Y`
 - Daily Update Reference: `1n4fiAaU1uF2X7EKRx9Gm6XpuR6wkpwoa`
 - Wow Features: `1h80BrgGXbz6aq3Hgv5LbjhpFkRQjYvd87fOMNJmVMOc`
 - UI Evaluation: `1xIZnlczl2kIeslnnzJD1eJrgBu5iw6xgSk1wB1MVyAY`
@@ -102,7 +102,7 @@ never worked despite being documented as complete.*
 
 | Document | Current ID | Update trigger |
 |----------|-----------|----------------|
-| **Build Session List** (Master backlog) | `1EZqkiDz2obo8fECw_FO_oA40CvS5dhc14iPYUjim4wg` | Every TYPE B/C session end |
+| **Build Session List** (Master backlog) | `1wA4ZQErHk13aeMlqobVxE0yW2bS4w7eDImunMBT2U6Y` | Every TYPE B/C session end |
 | **Wow Features** | `1h80BrgGXbz6aq3Hgv5LbjhpFkRQjYvd87fOMNJmVMOc` | Any session that implements or modifies a Wow item |
 | **UI Evaluation** | `1xIZnlczl2kIeslnnzJD1eJrgBu5iw6xgSk1wB1MVyAY` | Any session with CSS, layout, or card design changes |
 | **Daily Update Reference** | `1n4fiAaU1uF2X7EKRx9Gm6XpuR6wkpwoa` | Any session that changes broadcast chip rules, thresholds, or update protocol |
@@ -1340,7 +1340,7 @@ Before naming a new feature, ask:
 ### Reference
 
 Game Intelligence Pipeline spec: 1HPd4VIk4Py35iUMSXZ9D__I_1UetpiK0YoAL8Sr4et4
-Build Session List v7.6: 1EZqkiDz2obo8fECw_FO_oA40CvS5dhc14iPYUjim4wg
+Build Session List v7.6: 1wA4ZQErHk13aeMlqobVxE0yW2bS4w7eDImunMBT2U6Y
 
 ## Known Issue — classifySport() isConferenceFinals false negative
 
@@ -1395,5 +1395,11 @@ the small subset of high-urgency events cleanly.
 **AFL SSE** is the proof-of-concept (Update Architecture S1).
 Once validated, NBA/NHL/MLB follow via relay (Update Arch S4).
 
-Reference: Update Architecture Spec: 1GSTPTUUjdvOdSi_malvMpxitLO7xQ3mqXeG6jKxGbs4
-Build Session List v7.7: 1EZqkiDz2obo8fECw_FO_oA40CvS5dhc14iPYUjim4wg
+**FIELD Event Bus:** fieldEvents = new EventTarget() — browser-native, ~30 lines.
+Event types: field:score / field:lead_change / field:final / field:halftime
+Emitters adapt sources (SSE, poll-detected change) → Subscribers get events.
+Deduplication on (gameId, scoreline) prevents double-render.
+O(sports + consumers): new sport = one emitter, new feature = one subscriber.
+
+Reference: Update Architecture Spec v2: 1LzTqXTEQcFnp7dQ1JpyZOuvydIcUHl--h2prgmI1zNc
+Build Session List v7.8: 1wA4ZQErHk13aeMlqobVxE0yW2bS4w7eDImunMBT2U6Y
