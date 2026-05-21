@@ -900,7 +900,7 @@ flex-shrink:0;white-space:nowrap;
 .night-owl-text.pending{color:var(--muted);font-style:italic}
 .field-note{font-size:.65rem;color:#c9a84c;font-style:italic;margin-top:.45rem;padding-top:.4rem;border-top:1px solid rgba(201,168,76,.2);line-height:1.45;opacity:.9}
 .live-sit-string{font-size:.63rem;color:var(--muted,#8888aa);font-style:italic;padding:.08rem 0 0;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px}
-.cdw-note{font-size:.6rem;color:var(--muted,#8888aa);font-style:italic;padding:.06rem .85rem .1rem;line-height:1.3;opacity:.85;border-left:2px solid rgba(96,165,250,.25);margin:.05rem 0 .05rem .6rem}
+.cdw-note{font-size:.6rem;color:var(--muted,#8888aa);font-style:italic;padding:.06rem .85rem .1rem;line-height:1.3;opacity:.85;border-left:2px solid rgba(96,165,250,.25);margin:.05rem 0 .05rem .6rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;grid-column:2 / span 2}
 .scout-pick-badge{display:inline-flex;align-items:center;gap:.25rem;font-size:.56rem;font-weight:700;color:#2dd4bf;background:rgba(45,212,191,.1);border:1px solid rgba(45,212,191,.3);border-radius:4px;padding:.15rem .45rem;margin-top:.2rem}
 .narrative-line.series-context{color:var(--gold2,#c9a84c);font-style:italic;opacity:.95}
 .series-preview-card{background:rgba(201,168,76,.06);border:1px solid rgba(201,168,76,.18);border-radius:10px;padding:.85rem 1rem .75rem;margin-bottom:.6rem;cursor:pointer;transition:background .2s}
@@ -13364,7 +13364,9 @@ function injectDramaBadges(){
       if (!cdwEl) {
         cdwEl = document.createElement('div');
         cdwEl.className = 'cdw-note';
-        card.appendChild(cdwEl);
+        // Append to .card-body (flex column) not card root (3-col grid) —
+        // bare grid children auto-place into the 3px accent column, causing per-word wrap
+        (card.querySelector('.card-body') || card).appendChild(cdwEl);
       }
       cdwEl.textContent = cdwNote;
     } else {
