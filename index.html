@@ -9512,7 +9512,7 @@ async function fetchESPNScores(){
 // Source: gambit-api-partner.fantasy.espn.com (powers Gamecast WP display)
 // CORS locked to espn.com — fetched via field-relay-nba /espn-gambit/ route
 // Polling cadence: called fire-and-forget from fetchESPNScores for live NBA games
-// Returns homeWinPercentage (0–1) or null on failure
+// Returns homeWinPercentage (0–100 scale, e.g. 62.1) or null on failure
 // Field name confirmed from ESPN summary API convention (homeWinPercentage)
 // Fallback chain guards against schema changes
 async function fetchESPNWinProb(gameId) {
@@ -11377,7 +11377,7 @@ function dramaScoreLive(eData, sport){
   const wpNow  = eData?.wp      ?? null;
   const wpPrev = eData?.wp_prev ?? null;
   if (wpNow !== null && wpPrev !== null) {
-    const wpDelta = Math.abs(wpNow - wpPrev) * 100; // convert 0-1 to 0-100 scale
+    const wpDelta = Math.abs(wpNow - wpPrev); // value is 0-100 scale (e.g. 62.1, not 0.621)
     wpBonus = Math.min(wpDelta * 1.5, 25);
   }
   return Math.min(100, Math.round(raw + wpBonus));
