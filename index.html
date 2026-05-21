@@ -9416,6 +9416,7 @@ async function fetchESPNScores(){
         espnScoreTs[key] = Date.now();
         // STEP 4: fire async WP fetch for live NBA games
         if (state === 'in' && ev.id && section === 'nba') {
+          if (FIELD_DEBUG) console.debug('[WP] firing for gameId:', ev.id);
           fetchESPNWinProb(ev.id).then(wp => {
             if (wp !== null && espnScores[key]) {
               espnScores[key].wp_prev = espnScores[key].wp;
@@ -9526,7 +9527,7 @@ async function fetchESPNWinProb(gameId) {
       d?.winprobability?.at(-1)?.homeWinPercentage ??  // primary: array of snapshots
       d?.winprobability?.[0]?.homeWinPercentage    ??  // fallback: first entry
       null;
-    if (FIELD_DEBUG && wp === null) console.debug('[WP] fetchESPNWinProb: null — top keys:', Object.keys(d||{}).join(','));
+    if (FIELD_DEBUG) console.debug('[WP] fetchESPNWinProb:', wp !== null ? wp : ('null — top keys: ' + Object.keys(d||{}).join(',')));
     return wp;
   } catch(e) {
     if (FIELD_DEBUG) console.debug('[WP] fetchESPNWinProb error:', e?.message);
