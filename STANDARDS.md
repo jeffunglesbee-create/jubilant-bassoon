@@ -24,6 +24,9 @@ Add a new named assertion in `smoke.js` for every FIELD_FEATURES entry (presence
 
 ```
 0. Read HANDOFF NOTE — Drive ID in canonical table below (first, before everything)
+   ⚠️  GEMINI QUARANTINE CHECK: if the handoff was produced by a Gemini session,
+       STOP — do not proceed. See Rule 25. Run the 4-check audit first.
+       Only use this handoff once it reaches CLEARED or PARTIALLY CLEARED status.
 1. Read CI/DEPLOY ERROR REFERENCE — Drive ID: 1aX65p4C3BfeKtdbQPS32wFsm_bktCuaE
    Surface: sandbox constraints, deploy path, worker summary, secrets state
 2. Declare: "SESSION START · Type: [A/B/C/D/E] · Scope: [one sentence]"
@@ -1212,3 +1215,86 @@ If a function must run after an async operation completes, it must be called
 synchronously inside that operation's completion handler — not speculatively
 before the operation has had a chance to run.
 
+
+## Rule 25 — Gemini session handoffs are quarantined until audited
+
+Any session document, handoff note, or commit produced by a Gemini-model
+session (identifiable by proxy model reference, session doc authorship, or
+commit author metadata indicating non-Claude origin) is **QUARANTINED** and
+must not be treated as a trusted source until a rigorous audit has been
+completed.
+
+### What quarantine means
+
+A quarantined handoff must NOT be used as the session-start reference.
+Claude must NOT act on its OPEN items, architecture decisions, code
+descriptions, or stated "current state" without independent verification.
+
+Quarantined content is treated as **untrusted input** — the same way an
+external PR from an unknown contributor would be reviewed before merging.
+
+### How to identify a Gemini handoff
+
+- Session doc title includes "Gemini" or model attribution
+- Commit author is `field-deploy` or `FIELD Deploy` on a non-standard commit
+- Handoff references features, commits, or IDs that cannot be verified in
+  the repo (`git show HASH` returns nothing or wrong content)
+- Session doc describes architectural decisions with no corresponding smoke
+  assertion or commit hash
+- Drive doc was written in a different style (more verbose, different
+  section structure, uses `"""` instead of `---` delimiters)
+
+### The required audit before lifting quarantine
+
+Before a quarantined handoff can be used, run all four checks:
+
+**1. Commit verification**
+Every commit hash cited in the session doc must exist and match its
+described purpose:
+```bash
+git show HASH --stat   # must exist and describe what the doc says it does
+```
+
+**2. Code state verification**
+Every feature the doc claims is "built" must be confirmed in index.html:
+```bash
+grep -n "functionName\|CONSTANT_NAME" index.html   # must exist
+node smoke.js && node field_smoke.js               # must pass
+```
+
+**3. Architecture claim verification**
+Every relay route, worker secret, or CI workflow change described must be
+confirmed against the actual files:
+```bash
+grep "route\|secret\|SECRET" .github/workflows/*.yml src/index.js
+```
+
+**4. No invented patterns**
+If the doc describes a coding pattern not found in STANDARDS.md and not
+verifiable in prior Claude sessions, treat it as invented. Do NOT implement
+it. Flag it explicitly in the audit report.
+
+### Audit output
+
+Write a Drive doc titled:
+`FIELD — Gemini Handoff Audit — [Date] — [QUARANTINED / CLEARED]`
+
+Status must be one of:
+- **CLEARED**: all four checks passed, handoff can be used
+- **PARTIALLY CLEARED**: some items verified, list of remaining quarantined claims
+- **REJECTED**: critical fabrications found, handoff must not be used, roll
+  back any commits it produced
+
+Until the audit doc exists and reaches CLEARED or PARTIALLY CLEARED status,
+the previous confirmed-clean Claude handoff is the authoritative session start
+reference.
+
+### Why this rule exists
+
+Gemini may produce plausible-sounding but fabricated commit hashes, feature
+descriptions, or architectural decisions. A quarantined handoff that gets
+acted on without audit can silently corrupt the FIELD codebase — changes
+built on a false baseline are harder to debug than a clean failure.
+
+The cost of a 15-minute audit is always lower than the cost of unwinding
+work built on a fabricated foundation.
