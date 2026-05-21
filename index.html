@@ -694,9 +694,9 @@ flex-shrink:0;white-space:nowrap;
 /* ── CRUNCH TIME pulse badge (Wow#33 / Combo B-1+) ─────────────────── */
 @keyframes fieldPulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.78;transform:scale(.97)}}
 .badge-pulse{animation:fieldPulse 1.2s ease-in-out infinite}
-.badge-crunch{background:rgba(255,59,59,.22);color:var(--live);font-size:.6rem;font-weight:800;letter-spacing:.08em;padding:.15rem .38rem;border-radius:3px;margin-left:.3rem;vertical-align:middle;display:inline-flex;align-items:center}
+.badge-crunch{background:rgba(255,59,59,.22);color:var(--live);font-size:.6rem;font-weight:800;letter-spacing:.08em;padding:.15rem .38rem;border-radius:3px;margin-left:.3rem;margin-right:2.2rem;vertical-align:middle;display:inline-flex;align-items:center}
 .double-feature-banner{background:rgba(212,175,55,.15);border:1px solid var(--gold);color:var(--gold2);font-size:.75rem;font-weight:700;letter-spacing:.04em;padding:.5rem 1rem;text-align:center;cursor:pointer;transition:opacity .3s}
-.badge-worth {background:rgba(232,160,32,.2);color:var(--soon);font-size:.6rem;font-weight:700;letter-spacing:.06em;padding:.15rem .38rem;border-radius:3px;margin-left:.3rem;vertical-align:middle;display:inline-flex;align-items:center}
+.badge-worth {background:rgba(232,160,32,.2);color:var(--soon);font-size:.6rem;font-weight:700;letter-spacing:.06em;padding:.15rem .38rem;border-radius:3px;margin-left:.3rem;margin-right:2.2rem;vertical-align:middle;display:inline-flex;align-items:center}
 
 /* ── Share Button ───────────────────────────────────────────────────── */
 .share-btn{
@@ -5419,7 +5419,7 @@ function renderAll(){
       const liveBadge=isLive?'<div class="live-badge"><span class="live-dot"></span>LIVE</div>':"";
       return `<div class="game-card ${st}${isLive?" espn-live":""}${MY_TEAMS.has(g.home)||MY_TEAMS.has(g.away)?" my-team-card":""}" data-gameid="${g._id}" data-sport="${sec.sport}" data-home="${(g.home||"").replace(/"/g,"")}" data-away="${(g.away||"").replace(/"/g,"")}" data-starttime="${g.start_time||""}" data-venue="${(g.venue||"").replace(/"/g,"")}" data-confirmed="${g.confirmed===true?'true':'false'}" style="animation-delay:${gi*40}ms" onclick="openBottomSheet('${g._id}')">
         <div class="card-accent"></div>
-        <button class="pin-btn" aria-label="Pin game to widget" title="Pin to corner widget" onclick="event.stopPropagation();pinGame('${g._id}')">📌</button><button class="star-btn ${MY_TEAMS.has(g.home)||MY_TEAMS.has(g.away)?"starred":""}" aria-label="Follow team" title="${MY_TEAMS.has(g.home)?"Unfollow "+g.home:MY_TEAMS.has(g.away)?"Unfollow "+g.away:"Follow "+g.home}">★</button>
+        <button class="pin-btn" aria-label="Pin game to widget" title="Pin to corner widget" onclick="event.stopPropagation();pinGame('${g._id}')">📌</button><button class="star-btn ${MY_TEAMS.has(g.home)||MY_TEAMS.has(g.away)?"starred":""}" aria-label="Follow team" title="${MY_TEAMS.has(g.away)?"Unfollow "+g.away:MY_TEAMS.has(g.home)?"Unfollow "+g.home:"Follow "+g.away+" / "+g.home}">★</button>
         <div class="card-body">
           <div class="matchup">
             ${matchupHTML(g, sec.sport)}
@@ -14258,9 +14258,15 @@ function buildLifeStageContent(game, eData, stage) {
       // Live: story tape or current score context
       const tape = buildStoryTape(game._id, 2);
       if (tape) return tape;
+      // Baseball already shows score-wrap + base diamond + CDW note — no duplicate
+      if (sp.includes('baseball') || sp.includes('mlb')) return '';
       if (eData) {
         const score = `${eData.homeScore||0}–${eData.awayScore||0}`;
-        const per = eData.period ? ` · Q${eData.period}` : '';
+        const p = eData.period||0;
+        const pfx = sp.includes('hockey')||sp.includes('nhl') ? 'P'
+                  : sp.includes('football')||sp.includes('nfl') ? 'Q'
+                  : 'Q'; // basketball default
+        const per = p ? ` · ${pfx}${p}` : '';
         return `<div class="card-stage-content">${score}${per}</div>`;
       }
       return '';
