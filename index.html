@@ -7976,7 +7976,8 @@ async function weatherPrefetchAll(){
     });
   });
   if(FIELD_DEBUG) console.log(`[Weather] fetching ${fetches.length} outdoor venues`);
-  await Promise.allSettled(fetches);
+  // Stagger 150ms apart — open-meteo has burst limits; simultaneous requests trigger 429
+  for(const f of fetches){ await f; await new Promise(r=>setTimeout(r,150)); }
   injectWeatherBadges();
 }
 
@@ -8130,6 +8131,7 @@ function slashGolfHeaders(){
 // Free tier: 20 req/day. We cap at 18 to leave 2 as buffer.
 // Counter resets at midnight UTC. Stored in localStorage.
 const SLASH_GOLF_DAILY_LIMIT = 18;
+let _slashGolf429Until = 0; // backoff timestamp — set on RapidAPI 429, clears after 60min
 function slashGolfReqCount(){
   const today = TODAY_ISO;
   const stored = JSON.parse(localStorage.getItem("sg_req")||"{}");
@@ -8145,6 +8147,7 @@ function slashGolfBumpCount(){
   return count;
 }
 function slashGolfBudgetOk(){
+  if(Date.now() < _slashGolf429Until) return false; // in 429 backoff window
   return slashGolfReqCount() < SLASH_GOLF_DAILY_LIMIT;
 }
 
@@ -8172,6 +8175,11 @@ async function slashGolfFetch(path, cacheKey, ttl){
   try{
     const r = await fetch(`${SLASH_GOLF_BASE}${path}`,
       {headers: slashGolfHeaders(), signal: AbortSignal.timeout(8000)});
+    if(r.status === 429){
+      _slashGolf429Until = Date.now() + 3600000; // back off 60min on RapidAPI rate limit
+      if(FIELD_DEBUG) console.warn('[SlashGolf] 429 — backing off 60min');
+      return memCached?.data || null;
+    }
     if(!r.ok) throw new Error(`SlashGolf HTTP ${r.status}`);
     const data = await r.json();
     const entry = {data, ts: Date.now()};
