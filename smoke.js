@@ -240,6 +240,12 @@ assert('A56 — field_utils.js loaded in index.html',
   // A66 — fetchMLBTeamMomentum defined
   assert('A66 — MLB team momentum: fetchMLBTeamMomentum defined', html.includes('async function fetchMLBTeamMomentum('));
 
+  // A67 — ambient panel HTML present
+  assert('A67 — Ambient panel: #ambient-panel element in HTML', html.includes('id="ambient-panel"'));
+
+  // A68 — renderAmbientPanel defined
+  assert('A68 — Ambient panel: renderAmbientPanel function defined', html.includes('function renderAmbientPanel('));
+
 
 
   // ── Feature registry guards: A60-A123 (table-driven) ────────────────────

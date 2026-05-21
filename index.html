@@ -1886,6 +1886,75 @@ flex-shrink:0;white-space:nowrap;
   .game-card{min-width:0}
 }
 
+/* ── Ambient Panel — iPad Couch Mode (820–1199px) ───────────────────────── */
+#ambient-panel{
+  display:none;flex-direction:column;gap:.75rem;
+  position:fixed;right:0;top:106px;
+  width:380px;height:calc(100dvh - 106px);
+  overflow-y:auto;overflow-x:hidden;
+  background:var(--card);
+  border-left:1px solid var(--edge);
+  padding:1rem 1.1rem 2rem;
+  z-index:22;
+}
+@media(min-width:820px) and (max-width:1199px){
+  #ambient-panel{display:flex}
+  /* Push main content left to make room for fixed ambient panel */
+  .main,#field-brief,#night-owl,#watch-window,
+  #halftime-switch,#double-feature,#offline-banner{margin-right:390px}
+  /* OTW banner and masthead span full width — no margin shift */
+}
+.ap-otw-fire{
+  background:rgba(255,59,59,.1);border:1px solid rgba(255,59,59,.25);
+  border-left:3px solid var(--live);border-radius:8px;
+  padding:.75rem 1rem;display:flex;flex-direction:column;gap:.3rem;
+}
+.ap-fire-badge{font-size:.56rem;font-weight:800;letter-spacing:.1em;
+  color:var(--live);text-transform:uppercase}
+.ap-fire-game{font-size:.92rem;font-weight:700;color:var(--white)}
+.ap-fire-score{font-size:1.6rem;font-weight:900;color:var(--white);
+  letter-spacing:-.02em;line-height:1.1}
+.ap-fire-clock{font-size:.64rem;color:var(--muted);margin-top:.1rem}
+.ap-no-fire{display:flex;flex-direction:column;gap:.2rem;opacity:.38;
+  padding:.5rem 0}
+.ap-quiet-label{font-size:.52rem;font-weight:800;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--violet,#8b5cf6)}
+.ap-quiet-msg{font-size:.76rem;color:var(--smoke)}
+.ap-section-label{font-size:.52rem;font-weight:800;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--gold2,#c9a84c);margin-bottom:.35rem}
+.ap-scores{display:flex;flex-direction:column;gap:.45rem}
+.ap-score-row{display:flex;justify-content:space-between;align-items:center;
+  gap:.5rem;padding:.2rem 0;border-bottom:1px solid var(--edge)}
+.ap-score-row:last-child{border-bottom:none}
+.ap-score-teams{font-size:.75rem;color:var(--fg);flex:1;min-width:0;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ap-score-num{color:var(--white);font-weight:700;margin:0 .25rem}
+.ap-score-clock{font-size:.6rem;color:var(--muted);white-space:nowrap;flex-shrink:0}
+.ap-divider{height:1px;background:var(--edge);margin:.1rem 0}
+.ap-season{padding:.25rem 0}
+.ap-ctx-pill{font-size:.62rem;font-weight:700;letter-spacing:.06em;
+  background:rgba(201,168,76,.14);color:var(--gold2,#c9a84c);
+  padding:.22rem .65rem;border-radius:5px;text-transform:uppercase;
+  display:inline-block}
+.ap-brief{display:flex;flex-direction:column;gap:.4rem}
+.ap-brief-text{font-size:.72rem;color:var(--fg);line-height:1.65;margin:0;
+  white-space:pre-wrap}
+/* Upcoming game in SOON state */
+.ap-soon{display:flex;flex-direction:column;gap:.2rem;padding:.4rem 0;
+  border-left:3px solid var(--gold2,#c9a84c);padding-left:.75rem}
+.ap-soon-label{font-size:.52rem;font-weight:800;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--gold2,#c9a84c)}
+.ap-soon-game{font-size:.86rem;font-weight:700;color:var(--white)}
+.ap-soon-meta{font-size:.64rem;color:var(--muted)}
+
+/* ── 360px Galaxy A36 / iPhone SE small fixes ───────────────────────── */
+@media(max-width:375px){
+  .otw-why{max-width:45vw} /* was 200px — clips at 360px */
+  .live-sit-string{max-width:40vw}
+  .otw-matchup{font-size:.72rem}
+  .otw-drama{font-size:.55rem;padding:.15rem .35rem}
+}
+
 /* ── Large desktop (> 1200px) — 2-col game card grid ── */
 @media(min-width:1200px){
   .games-list{
@@ -2150,6 +2219,8 @@ flex-shrink:0;white-space:nowrap;
      #night-owl is kept as a no-op anchor; real output is in #field-brief. -->
 <div id="night-owl" style="display:none" aria-hidden="true"></div>
 <main class="main" id="main"></main>
+<!-- ── iPad Ambient Panel (820–1199px couch mode) ───────────────────── -->
+<aside id="ambient-panel" aria-live="polite" aria-label="Live intelligence panel"></aside>
 
 <!-- Bottom-sheet overlay -->
 <div id="bs-overlay" class="bottom-sheet-overlay" onclick="closeBottomSheet()"></div>
@@ -5886,13 +5957,15 @@ function renderAll(){
   setTimeout(updateCardLifeStages, 200); // Update life stages after cards render
   setTimeout(renderScoreTicker, 250);   // Render score ticker if games are live
   setTimeout(injectJ1J4Badges, 300);    // J1/J4: Anti-Hype + Scout's Pick per-card badges
-  setTimeout(()=>initFIELDBrief(filtered).catch(e=>{
+  setTimeout(()=>initFIELDBrief(filtered).then(()=>renderAmbientPanel()).catch(e=>{
     captureFieldError('initFIELDBrief',e,false);
     const slot=document.getElementById('field-brief');
     if(slot&&!slot.querySelector('.field-brief-card'))
       slot.innerHTML='<div class="field-brief-card"><div class="field-brief-header"><span class="field-brief-label">FIELD Brief</span></div><div class="field-brief-text pending">Tonight\'s brief is unavailable.</div></div>';
+    renderAmbientPanel(); // render ambient panel even if brief fails
   }), 1000); // J3: brief last — highest value, staggered
   setTimeout(injectWeatherBadges, 300); // re-apply wx badges from cache after render
+  setTimeout(renderAmbientPanel, 1200); // ambient panel — after schedule renders
   // Runtime silent error scan — FIELD_DEBUG only, runs after async injections settle
   if(FIELD_DEBUG) setTimeout(runSilentErrorScan, 500);
 }
@@ -11367,7 +11440,7 @@ async function fetchSchedule(){
   setTimeout(bdlPrefetchAll, 2000);       // BallDontLie injury prefetch (after schedule renders)
   maybeShowSetup();
   renderLastNight();
-  if(Object.keys(espnScores).length) { injectDramaBadges(); detectAndRenderDoubleFeature(); renderOneToWatch(); renderWatchWindow(); }
+  if(Object.keys(espnScores).length) { injectDramaBadges(); detectAndRenderDoubleFeature(); renderOneToWatch(); renderWatchWindow(); renderAmbientPanel(); }
   // Media + betting rendered lazily by IntersectionObserver
 }
 
@@ -13562,6 +13635,98 @@ function buildWatchWindowReason(game) {
   if(miseryChip && parts.length < 2) parts.push(miseryChip);
   return parts.slice(0, 3).join('\u00a0\u00b7\u00a0');
 }
+
+// ── iPad Ambient Mode — renderAmbientPanel() ──────────────────────────────────
+// Visible only at 820–1199px. Reads existing FIELD state — no new fetches.
+// Called: on ESPN score cycle, after brief renders, on viewport resize.
+function renderAmbientPanel(){
+  const panel=document.getElementById('ambient-panel');
+  if(!panel) return;
+  const w=window.innerWidth;
+  if(w<820||w>=1200){panel.style.display='none';return;}
+  panel.style.display='flex';
+
+  // ── Section 1: OTW fire state mirror ──────────────────────────────────
+  const fire=(typeof _otwFindLiveGame==='function')?_otwFindLiveGame(50):null;
+  let otwHTML;
+  if(fire){
+    const{g,ed,score}=fire;
+    const tier=Math.round(score);
+    const scoreStr=`${ed.awayScore||0}–${ed.homeScore||0}`;
+    const period=ed.periodLabel||'';
+    const clock=ed.clock?` ${fmtESPNClock(ed.clock)}`:'';
+    otwHTML=`<div class="ap-otw-fire">
+      <span class="ap-fire-badge">🔴 FIRE ${tier}</span>
+      <span class="ap-fire-game">${g.away||''} @ ${g.home||''}</span>
+      <span class="ap-fire-score">${scoreStr}</span>
+      <span class="ap-fire-clock">${period}${clock}</span>
+    </div>`;
+  }else{
+    // Check SOON state — next game within 2hr
+    let soonGame=null;const now=Date.now();
+    (allData?.sports||[]).forEach(sec=>(sec.games||[]).forEach(g=>{
+      if(!g.start_time||!g.home||!g.away) return;
+      const ms=new Date(g.start_time)-now;
+      if(ms>0&&ms<7200000&&(!soonGame||ms<(new Date(soonGame.start_time)-now)))
+        soonGame=g;
+    }));
+    if(soonGame){
+      const net=soonGame.streams?.[0]?.label||'';
+      const cd=buildOTWCountdown(soonGame.start_time);
+      otwHTML=`<div class="ap-soon">
+        <span class="ap-soon-label">Up Next · ${cd}</span>
+        <span class="ap-soon-game">${soonGame.away} @ ${soonGame.home}</span>
+        ${net?`<span class="ap-soon-meta">${net}</span>`:''}
+      </div>`;
+    }else{
+      otwHTML=`<div class="ap-no-fire">
+        <span class="ap-quiet-label">One to Watch</span>
+        <span class="ap-quiet-msg">No fire game right now</span>
+      </div>`;
+    }
+  }
+
+  // ── Section 2: Live scores summary ────────────────────────────────────
+  const live=Object.values(espnScores||{}).filter(s=>s.state==='in');
+  let scoresHTML='';
+  if(live.length){
+    const rows=live.slice(0,5).map(s=>{
+      const away=s.awayTricode||s.awayName?.split(' ').pop()||'';
+      const home=s.homeName?.split(' ').pop()||s.homeTricode||'';
+      const period=s.periodLabel||'';
+      const clock=s.clock?` ${fmtESPNClock(s.clock)}`:'';
+      return `<div class="ap-score-row">
+        <span class="ap-score-teams">${away}<strong class="ap-score-num">${s.awayScore||0}–${s.homeScore||0}</strong>${home}</span>
+        <span class="ap-score-clock">${period}${clock}</span>
+      </div>`;
+    }).join('');
+    scoresHTML=`<div class="ap-scores"><div class="ap-section-label">Live</div>${rows}</div>`;
+  }
+
+  // ── Section 3: Season context ──────────────────────────────────────────
+  const ctx=(typeof getCalendarContext==='function')?getCalendarContext():null;
+  const ctxHTML=ctx
+    ?`<div class="ap-season"><span class="ap-ctx-pill">${ctx.label}</span></div>`
+    :'';
+
+  // ── Section 4: Tonight's brief ─────────────────────────────────────────
+  const briefEl=document.getElementById('field-brief');
+  const briefText=briefEl?.querySelector('.field-brief-text')?.textContent||'';
+  const briefHTML=briefText
+    ?`<div class="ap-brief"><div class="ap-section-label">Tonight</div><p class="ap-brief-text">${briefText}</p></div>`
+    :'';
+
+  panel.innerHTML=`${otwHTML}${scoresHTML?`<div class="ap-divider"></div>${scoresHTML}`:''}${ctxHTML?`<div class="ap-divider"></div>${ctxHTML}`:''}${briefHTML?`<div class="ap-divider"></div>${briefHTML}`:''}`;
+}
+
+// Resize listener — show/hide ambient panel on viewport change
+(function(){
+  let _apTimer=null;
+  window.addEventListener('resize',()=>{
+    clearTimeout(_apTimer);
+    _apTimer=setTimeout(renderAmbientPanel,200);
+  });
+})();
 
 function renderWatchWindow(){
   const el=document.getElementById('watch-window');
