@@ -38,7 +38,8 @@ Add a new named assertion in `smoke.js` for every FIELD_FEATURES entry (presence
 ```
 
 **Canonical docs** (open the relevant one before starting):
-- Handoff Note (read first): `1X_uRezUACfoOgRojEUcOdEMggA_8vxwV32HDET-t1Lo` ← update this ID every session end
+- Handoff Note (read first): `1X_uRezUACfoOgRojEUcOdEMggA_8vxwV32HDET-t1Lo
+Session doc May 21: 1Rsy6dysrqhxxK_Y5M0a4qcw7HY2zWoKv5SL6p5gysKM` ← update this ID every session end
 - CI/Deploy Error Reference (read every session): `1aX65p4C3BfeKtdbQPS32wFsm_bktCuaE`
 - Build Session List: `1FddRlGNc-AmVhEMa73E1ffCvlpe-x9ZlCz_OO6rs4ZM`
 - Daily Update Reference: `1n4fiAaU1uF2X7EKRx9Gm6XpuR6wkpwoa`
@@ -106,7 +107,8 @@ never worked despite being documented as complete.*
 | **Wow Features** | `1h80BrgGXbz6aq3Hgv5LbjhpFkRQjYvd87fOMNJmVMOc` | Any session that implements or modifies a Wow item |
 | **UI Evaluation** | `1xIZnlczl2kIeslnnzJD1eJrgBu5iw6xgSk1wB1MVyAY` | Any session with CSS, layout, or card design changes |
 | **Daily Update Reference** | `1n4fiAaU1uF2X7EKRx9Gm6XpuR6wkpwoa` | Any session that changes broadcast chip rules, thresholds, or update protocol |
-| **Handoff Note** ← update ID every session | `1X_uRezUACfoOgRojEUcOdEMggA_8vxwV32HDET-t1Lo` | Every session end — replace ID with new handoff doc |
+| **Handoff Note** ← update ID every session | `1X_uRezUACfoOgRojEUcOdEMggA_8vxwV32HDET-t1Lo
+Session doc May 21: 1Rsy6dysrqhxxK_Y5M0a4qcw7HY2zWoKv5SL6p5gysKM` | Every session end — replace ID with new handoff doc |
 | **CI/Deploy Error Reference** | `1aX65p4C3BfeKtdbQPS32wFsm_bktCuaE` | When a new CI/deploy failure pattern is resolved |
 
 **The rule: edit the document, don't create a new one.**  
@@ -587,7 +589,8 @@ PHASE N — [description] (commit [hash])
 === ARCHITECTURE NOTES ===
 [Any new globals, changed interfaces, data flow changes]
 
-=== BROWSER-CONFIRMED 1X_uRezUACfoOgRojEUcOdEMggA_8vxwV32HDET-t1Lo ===
+=== BROWSER-CONFIRMED 1X_uRezUACfoOgRojEUcOdEMggA_8vxwV32HDET-t1Lo
+Session doc May 21: 1Rsy6dysrqhxxK_Y5M0a4qcw7HY2zWoKv5SL6p5gysKM ===
 [List of features that are smoke-verified only, not yet
 confirmed working in browser. Carries forward from last handoff.]
 
@@ -738,7 +741,8 @@ if(typeof window._fieldErrors !== 'undefined')
 ### Browser-confirmed pending list
 
 Maintained in two places:
-1. Session doc `BROWSER-CONFIRMED 1X_uRezUACfoOgRojEUcOdEMggA_8vxwV32HDET-t1Lo` section (Rule 15)
+1. Session doc `BROWSER-CONFIRMED 1X_uRezUACfoOgRojEUcOdEMggA_8vxwV32HDET-t1Lo
+Session doc May 21: 1Rsy6dysrqhxxK_Y5M0a4qcw7HY2zWoKv5SL6p5gysKM` section (Rule 15)
 2. Handoff note `Browser-confirmed pending:` field
 
 A feature stays on the list until:
