@@ -1921,56 +1921,48 @@ flex-shrink:0;white-space:nowrap;
   z-index:22;
 }
 @media(min-width:820px) and (max-width:1199px){
-  #ambient-panel{display:flex}
+  #ambient-panel{display:flex;top:0;height:100dvh;padding-top:1rem}
   /* Push ALL page content left — every sibling of <main> must be included */
-  .main,#field-brief,#night-owl,#watch-window,
-  #halftime-switch,#double-feature,#offline-banner,#field-arb,
+  .main,#field-brief,#night-owl,#double-feature,#offline-banner,
   .betting-section,.field-desk-section,.media-section,
   .streaming-section,.legend,.page-divider{margin-right:390px}
-  /* OTW banner and masthead span full width — no margin shift */
   /* Suppress 768-900px 2-col game grid: 430px left pane too narrow for 2 cols */
   .games-list{display:block !important}
 
-  /* ── FIX 1+2: OTW bar — constrain to left pane + 2-row layout ── */
-  /* OTW was spanning full 820px and layering over ambient panel at z-index:24.
-     margin-right:390px pins it to the 430px left pane.
-     flex-wrap:wrap + flex:1 on matchup naturally creates 2 rows:
-     Row 1: [pulse][label][matchup (fills)]
-     Row 2: [why (fills)][drama badge][close] */
-  #otw-banner{margin-right:390px}
-  .otw-inner{flex-wrap:wrap;row-gap:.15rem;padding:.4rem .7rem}
-  .otw-matchup{font-size:.77rem}
-  .otw-why{flex:1 1 auto;max-width:none;font-size:.6rem}
-  .otw-countdown{flex:1 1 auto}
+  /* ── iPad: all pre-masthead intelligence → ambient panel only ──
+     #otw-banner, #watch-window, #halftime-switch, #field-arb all live
+     above the masthead in DOM flow — on iPad they're replaced by the
+     right ambient panel which owns all live intelligence. */
+  #otw-banner,#watch-window,#halftime-switch,#field-arb{display:none !important}
 
-  /* ── FIX 3: Streaming Discovery price chip — 2-row card header ── */
-  /* Forces price chip to second row, indented to align under service name */
+  /* ── Streaming Discovery price chip — 2-row card header ── */
   .app-card-head{flex-wrap:wrap}
   .app-price{
     order:3;width:100%;
-    padding-left:calc(32px + .7rem); /* align under name, offset logo+gap */
+    padding-left:calc(32px + .7rem);
     margin-left:0;margin-top:-.1rem;
     box-sizing:border-box;
   }
-
-  /* ── FIX 4: SR stream chips — smaller for 430px left pane ── */
+  /* ── SR stream chips — smaller for 430px left pane ── */
   .stream-chip{font-size:.52rem !important;padding:.07rem .3rem !important}
   .stream-row{max-width:none !important}
-
-  /* ── FIX 5: Star/fav button — bottom-right avoids drama badge at top-right ── */
+  /* ── Star/fav button — bottom-right avoids drama badge ── */
   .star-btn{top:auto;bottom:.45rem;right:.4rem}
 }
 .ap-otw-fire{
   background:rgba(255,59,59,.1);border:1px solid rgba(255,59,59,.25);
   border-left:3px solid var(--live);border-radius:8px;
-  padding:.75rem 1rem;display:flex;flex-direction:column;gap:.3rem;
+  padding:1rem 1.1rem 1.1rem;display:flex;flex-direction:column;gap:.4rem;
 }
-.ap-fire-badge{font-size:.56rem;font-weight:800;letter-spacing:.1em;
-  color:var(--live);text-transform:uppercase}
-.ap-fire-game{font-size:.92rem;font-weight:700;color:var(--white)}
-.ap-fire-score{font-size:1.6rem;font-weight:900;color:var(--white);
-  letter-spacing:-.02em;line-height:1.1}
-.ap-fire-clock{font-size:.64rem;color:var(--muted);margin-top:.1rem}
+.ap-fire-badge{font-size:.58rem;font-weight:800;letter-spacing:.1em;
+  color:var(--live);text-transform:uppercase;
+  display:flex;align-items:center;gap:.4rem}
+.ap-fire-game{font-size:1.05rem;font-weight:700;color:var(--white);
+  line-height:1.25;white-space:normal}
+.ap-fire-row3{display:flex;align-items:baseline;gap:.55rem}
+.ap-fire-score{font-size:2rem;font-weight:900;color:var(--white);
+  letter-spacing:-.02em;line-height:1}
+.ap-fire-clock{font-size:.68rem;color:var(--muted)}
 .ap-no-fire{display:flex;flex-direction:column;gap:.2rem;opacity:.38;
   padding:.5rem 0}
 .ap-quiet-label{font-size:.52rem;font-weight:800;letter-spacing:.1em;
@@ -1995,14 +1987,20 @@ flex-shrink:0;white-space:nowrap;
 .ap-brief{display:flex;flex-direction:column;gap:.4rem}
 .ap-brief-text{font-size:.72rem;color:var(--fg);line-height:1.65;margin:0;
   white-space:pre-wrap}
+/* Arbitrage summary in ambient panel (compact — #field-arb hidden on iPad) */
+.ap-arb-summary{display:flex;flex-direction:column;gap:.35rem}
+.ap-arb-line{font-size:.72rem;color:var(--fg);line-height:1.4}
+.ap-arb-line strong{color:var(--white)}
 /* Upcoming game in SOON state */
-.ap-soon{display:flex;flex-direction:column;gap:.2rem;padding:.4rem 0;
-  border-left:3px solid var(--gold2,#c9a84c);padding-left:.75rem}
-.ap-soon-label{font-size:.52rem;font-weight:800;letter-spacing:.1em;
+.ap-soon{display:flex;flex-direction:column;gap:.35rem;
+  padding:.85rem 1rem .9rem;border-radius:8px;
+  border-left:3px solid var(--gold2,#c9a84c);
+  background:rgba(201,168,76,.07);padding-left:1rem}
+.ap-soon-label{font-size:.58rem;font-weight:800;letter-spacing:.1em;
   text-transform:uppercase;color:var(--gold2,#c9a84c)}
-.ap-soon-game{font-size:.86rem;font-weight:700;color:var(--white)}
-.ap-soon-meta{font-size:.64rem;color:var(--muted);
-  /* Override any inherited chip/stream styling */
+.ap-soon-game{font-size:1.05rem;font-weight:700;color:var(--white);
+  line-height:1.25;white-space:normal}
+.ap-soon-meta{font-size:.72rem;color:var(--smoke);
   background:none !important;border:none !important;
   padding:0 !important;border-radius:0 !important;
   font-weight:400;letter-spacing:.02em}
@@ -13720,11 +13718,16 @@ function renderAmbientPanel(){
     const periodLbl=ed.periodLabel||(ed.periodPrefix&&ed.period?`${ed.periodPrefix}${ed.period}`:'');
     const isBball=ed.periodPrefix==='T'||ed.periodPrefix==='B'||/^[TB]\d/.test(periodLbl);
     const clockStr=(!isBball&&ed.clock)?` ${fmtESPNClock(ed.clock)}`:'';
+    // Row 1: FIRE badge + season context; Row 2: matchup; Row 3: score + clock
+    const _fc=typeof getCalendarContext==='function'?getCalendarContext():null;
+    const ctxSuffix=_fc?` · ${_fc.label}`:'';
     otwHTML=`<div class="ap-otw-fire">
-      <span class="ap-fire-badge">🔴 FIRE ${tier}</span>
+      <span class="ap-fire-badge">🔴 FIRE ${tier}${ctxSuffix}</span>
       <span class="ap-fire-game">${g.away||''} @ ${g.home||''}</span>
-      <span class="ap-fire-score">${scoreStr}</span>
-      <span class="ap-fire-clock">${periodLbl}${clockStr}</span>
+      <div class="ap-fire-row3">
+        <span class="ap-fire-score">${scoreStr}</span>
+        ${(periodLbl||clockStr)?`<span class="ap-fire-clock">${periodLbl}${clockStr}</span>`:''}
+      </div>
     </div>`;
   }else{
     // Check SOON state — next game within 2hr
@@ -13791,7 +13794,25 @@ function renderAmbientPanel(){
     ?`<div class="ap-brief"><div class="ap-section-label">Tonight</div><p class="ap-brief-text">${briefText}</p></div>`
     :'';
 
-  panel.innerHTML=`${otwHTML}${scoresHTML?`<div class="ap-divider"></div>${scoresHTML}`:''}${ctxHTML?`<div class="ap-divider"></div>${ctxHTML}`:''}${briefHTML?`<div class="ap-divider"></div>${briefHTML}`:''}`;
+  // ── Section 5: Arbitrage summary (free games + best add) ──────────────
+  // Shown only on iPad where #field-arb is hidden. Compact 1-2 line version.
+  let arbHTML='';
+  if(typeof buildArbitrageReport==='function'){
+    const arb=buildArbitrageReport();
+    if(arb&&(arb.freeCount>0||arb.bestAdd)){
+      const parts=[];
+      if(arb.freeCount>0){
+        const svcs=[...new Set(arb.freeGames.flatMap(fg=>fg.svcs).filter(Boolean))].slice(0,3);
+        parts.push(`🎯 <strong>${arb.freeCount}</strong> free tonight · ${svcs.join(' · ')}`);
+      }
+      if(arb.bestAdd&&arb.missCount>0){
+        parts.push(`💡 Add ${arb.bestAdd.name} · ${arb.bestAdd.cost}/mo → +${arb.bestAdd.gameCount} games`);
+      }
+      if(parts.length) arbHTML=`<div class="ap-arb-summary"><div class="ap-section-label">Watch Free</div>${parts.map(p=>`<div class="ap-arb-line">${p}</div>`).join('')}</div>`;
+    }
+  }
+
+  panel.innerHTML=`${otwHTML}${scoresHTML?`<div class="ap-divider"></div>${scoresHTML}`:''}${ctxHTML?`<div class="ap-divider"></div>${ctxHTML}`:''}${arbHTML?`<div class="ap-divider"></div>${arbHTML}`:''}${briefHTML?`<div class="ap-divider"></div>${briefHTML}`:''}`;
 }
 
 // ── Broadcast Arbitrage Finder ──────────────────────────────────────────────
