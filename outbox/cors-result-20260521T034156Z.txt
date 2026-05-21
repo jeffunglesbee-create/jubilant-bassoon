@@ -1,0 +1,21 @@
+URL: https://baseballsavant.mlb.com/gf?game_pk=824274&t=1779334910  [20260521T034156Z]
+HTTP/2 200 
+date: Thu, 21 May 2026 03:41:56 GMT
+content-type: application/json; charset=utf-8
+server: cloudflare
+x-dns-prefetch-control: off
+x-download-options: noopen
+x-content-type-options: nosniff
+x-xss-protection: 1; mode=block
+cache-control: public, max-age=5
+vary: Origin, Accept-Encoding
+set-cookie: __cflb=02DiuJFcgbX2zpcHdRusb7zVwg8RFD7sCfuS7KnYivUyJ; HttpOnly; SameSite=None; Secure; Path=/; Expires=Fri, 22 May 2026 02:41:56 GMT
+via: 1.1 google
+access-control-allow-origin: *
+access-control-allow-methods: GET, OPTIONS
+last-modified: Thu, 21 May 2026 03:41:56 GMT
+cf-cache-status: MISS
+cf-ray: 9ff0917e5eded6d4-IAD
+
+=== BODY (first 3000 chars) ===
+{"game_status_code":"S","game_status":"S","gamedayType":"P","gameDate":"5/21/2026","hasAbs":true,"scoreboard":{"gamePk":824274,"linescore":{"scheduledInnings":9,"innings":[],"teams":{"home":{},"away":{}},"defense":{"team":{"id":114,"name":"Cleveland Guardians","link":"/api/v1/teams/114"}},"offense":{"team":{"id":116,"name":"Detroit Tigers","link":"/api/v1/teams/116"}}},"stats":{"wpa":{"gameWpa":[],"lastPlays":[],"topWpaPlayers":[]},"exitVelocity":{"top":[],"lastEV":[],"xbaTeam":{},"topDistance":[]},"pitchVelocity":null},"status":{"abstractGameState":"Preview","codedGameState":"S","detailedState":"Scheduled","statusCode":"S","startTimeTBD":false,"abstractGameCode":"P"},"teams":{"away":{"springLeague":{"id":114,"name":"Cactus League","link":"/api/v1/league/114","abbreviation":"CL"},"allStarStatus":"N","id":114,"name":"Cleveland Guardians","link":"/api/v1/teams/114","season":2026,"venue":{"id":5,"name":"Progressive Field","link":"/api/v1/venues/5"},"springVenue":{"id":3834,"link":"/api/v1/venues/3834"},"teamCode":"cle","fileCode":"cle","abbreviation":"CLE","teamName":"Guardians","locationName":"Cleveland","firstYearOfPlay":"1901","league":{"id":103,"name":"American League","link":"/api/v1/league/103"},"division":{"id":202,"name":"American League Central","link":"/api/v1/divisions/202"},"sport":{"id":1,"link":"/api/v1/sports/1","name":"Major League Baseball"},"shortName":"Cleveland","record":{"gamesPlayed":47,"wildCardGamesBack":"-","leagueGamesBack":"-","springLeagueGamesBack":"-","sportGamesBack":"-","divisionGamesBack":"-","conferenceGamesBack":"-","leagueRecord":{"wins":25,"losses":22,"ties":0,"pct":".532"},"records":{},"divisionLeader":false,"wins":25,"losses":22,"winningPercentage":".532"},"franchiseName":"Cleveland","clubName":"Guardians","active":true},"home":{"springLeague":{"id":115,"name":"Grapefruit League","link":"/api/v1/league/115","abbreviation":"GL"},"allStarStatus":"N","id":116,"name":"Detroit Tigers","link":"/api/v1/teams/116","season":2026,"venue":{"id":2394,"name":"Comerica Park","link":"/api/v1/venues/2394"},"springVenue":{"id":2511,"link":"/api/v1/venues/2511"},"teamCode":"det","fileCode":"det","abbreviation":"DET","teamName":"Tigers","locationName":"Detroit","firstYearOfPlay":"1901","league":{"id":103,"name":"American League","link":"/api/v1/league/103"},"division":{"id":202,"name":"American League Central","link":"/api/v1/divisions/202"},"sport":{"id":1,"link":"/api/v1/sports/1","name":"Major League Baseball"},"shortName":"Detroit","record":{"gamesPlayed":46,"wildCardGamesBack":"-","leagueGamesBack":"-","springLeagueGamesBack":"-","sportGamesBack":"-","divisionGamesBack":"-","conferenceGamesBack":"-","leagueRecord":{"wins":20,"losses":26,"ties":0,"pct":".435"},"records":{},"divisionLeader":false,"wins":20,"losses":26,"winningPercentage":".435"},"franchiseName":"Detroit","clubName":"Tigers","active":true}},"datetime":{"dateTime":"2026-05-21T17:10:00Z","originalDate":"2026-05-21","officialDate":"2026-05-21","dayNight":"day","ti
