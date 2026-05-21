@@ -1,0 +1,58 @@
+name: CORS Probe
+on:
+  workflow_dispatch:
+    inputs:
+      url:
+        description: 'URL to probe'
+        required: true
+        default: 'https://baseballsavant.mlb.com/gf?game_pk=778507'
+  push:
+    paths: ['outbox/.trigger-cors-probe']
+
+permissions:
+  contents: write
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: CORS probe
+        run: |
+          URL="${{ github.event.inputs.url }}"
+          if [ -z "$URL" ]; then
+            URL=$(cat outbox/.trigger-cors-probe 2>/dev/null | grep '^url=' | cut -d= -f2-)
+          fi
+          if [ -z "$URL" ]; then
+            URL="https://baseballsavant.mlb.com/gf?game_pk=778507"
+          fi
+
+          echo "Probing: $URL"
+          echo "---" > outbox/cors-result.txt
+          echo "URL: $URL" >> outbox/cors-result.txt
+          echo "Timestamp: $(date -u)" >> outbox/cors-result.txt
+          echo "---" >> outbox/cors-result.txt
+
+          # Full response headers
+          curl -sI \
+            -H "Origin: https://jubilant-bassoon.jeffunglesbee.workers.dev" \
+            -H "User-Agent: Mozilla/5.0 (compatible; FIELD-CORS-probe)" \
+            "$URL" >> outbox/cors-result.txt 2>&1
+
+          echo "" >> outbox/cors-result.txt
+          echo "--- BODY PREVIEW (first 500 chars) ---" >> outbox/cors-result.txt
+          curl -s \
+            -H "Origin: https://jubilant-bassoon.jeffunglesbee.workers.dev" \
+            -H "User-Agent: Mozilla/5.0 (compatible; FIELD-CORS-probe)" \
+            "$URL" 2>&1 | head -c 500 >> outbox/cors-result.txt
+
+          cat outbox/cors-result.txt
+
+      - name: Commit result
+        run: |
+          git config user.email "actions@github.com"
+          git config user.name "CORS Probe"
+          git add outbox/cors-result.txt
+          git diff --staged --quiet || git commit -m "CORS probe result $(date -u +%Y%m%dT%H%M%SZ)"
+          git push
