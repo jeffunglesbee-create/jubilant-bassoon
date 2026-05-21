@@ -38,7 +38,7 @@ Add a new named assertion in `smoke.js` for every FIELD_FEATURES entry (presence
 ```
 
 **Canonical docs** (open the relevant one before starting):
-- Handoff Note (read first): `1ctusWMgZLhSGWTPeyoKWj59VLabImNZ_ (addendum: 7a8baf1 — Step 1.5 retroactive fixes)` ← update this ID every session end
+- Handoff Note (read first): `19iqLvrsArksTMFh14Gu7l6L6nWKoRyomhr6GJLYgktE` ← update this ID every session end
 - CI/Deploy Error Reference (read every session): `1aX65p4C3BfeKtdbQPS32wFsm_bktCuaE`
 - Build Session List: `1YMgcYTawnVB-QBa7jEZzOLnTfa5uThKi4j3TcNDQe9o`
 - Daily Update Reference: `1n4fiAaU1uF2X7EKRx9Gm6XpuR6wkpwoa`
@@ -106,7 +106,7 @@ never worked despite being documented as complete.*
 | **Wow Features** | `1h80BrgGXbz6aq3Hgv5LbjhpFkRQjYvd87fOMNJmVMOc` | Any session that implements or modifies a Wow item |
 | **UI Evaluation** | `1xIZnlczl2kIeslnnzJD1eJrgBu5iw6xgSk1wB1MVyAY` | Any session with CSS, layout, or card design changes |
 | **Daily Update Reference** | `1n4fiAaU1uF2X7EKRx9Gm6XpuR6wkpwoa` | Any session that changes broadcast chip rules, thresholds, or update protocol |
-| **Handoff Note** ← update ID every session | `1ctusWMgZLhSGWTPeyoKWj59VLabImNZ_ (addendum: 7a8baf1 — Step 1.5 retroactive fixes)` | Every session end — replace ID with new handoff doc |
+| **Handoff Note** ← update ID every session | `19iqLvrsArksTMFh14Gu7l6L6nWKoRyomhr6GJLYgktE` | Every session end — replace ID with new handoff doc |
 | **CI/Deploy Error Reference** | `1aX65p4C3BfeKtdbQPS32wFsm_bktCuaE` | When a new CI/deploy failure pattern is resolved |
 
 **The rule: edit the document, don't create a new one.**  
@@ -1288,6 +1288,12 @@ Status must be one of:
 Until the audit doc exists and reaches CLEARED or PARTIALLY CLEARED status,
 the previous confirmed-clean Claude handoff is the authoritative session start
 reference.
+
+**Standing audit record (May 21 2026):** Three Gemini docs audited, all REJECTED.
+Audit doc: `1bquWt4FD9-A_07XA2Z3O4Bih_u3kgveEXJ_qAlc-a7o`
+Rejected: `1rn6W7bnk9nhIiT0f3cUNPjlFT6UkyL7oz_69DzgUt9o` (Part 1 Architecture),
+`1hX4dY8v8FgEi_j988klSA9wfWLHeuC0ycYpgoCjpzBI` (Part 2 Dev Specs),
+`1QJu4LpSSrH8kFC2QIyDd3m9S-1vWwuqi` (May 18 Completion Handoff).
 
 ### Why this rule exists
 
