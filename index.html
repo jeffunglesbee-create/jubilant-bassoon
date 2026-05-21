@@ -1104,7 +1104,7 @@ flex-shrink:0;white-space:nowrap;
   -webkit-text-fill-color:initial;
 }
 @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.25;transform:scale(.7)}}
-.stream-row{display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end;max-width:160px}
+.stream-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px;max-width:160px}
 .stream-chip{
   font-size:.62rem;padding:.15rem .5rem;border-radius:3px;
   border:1px solid;text-decoration:none;transition:.12s;white-space:nowrap;
@@ -2513,9 +2513,11 @@ function injectSquiggleLiveScores(){
     const hs=g.hscore??0, as_=g.ascore??0;
     const hg=g.hgoals, hb=g.hbehinds, ag=g.agoals, ab=g.abehinds;
     const period=g.complete>=100?'Final':(g.timestr||'Live');
+    // Goals.behinds only — no total in parens, no "· Final" for finished games
+    const periodSuffix = (g.complete>0&&g.complete<100) ? ' \u00b7 '+period : '';
     const scoreStr=(hg!=null&&hb!=null)
-      ?ha+' '+hg+'.'+hb+' ('+hs+') \u2013 '+aa+' '+ag+'.'+ab+' ('+as_+') \u00b7 '+period
-      :ha+' '+hs+' \u2013 '+aa+' '+as_+' \u00b7 '+period;
+      ?ha+' '+hg+'.'+hb+' \u2013 '+aa+' '+ag+'.'+ab+periodSuffix
+      :ha+' '+hs+' \u2013 '+aa+' '+as_+periodSuffix;
     let chip=card.querySelector('.leader-chip');
     if(!chip){const m=card.querySelector('.matchup,.card-body');if(m){chip=document.createElement('span');chip.className='leader-chip';m.appendChild(chip);}}
     if(chip){chip.textContent=scoreStr;chip.classList.toggle('atp-score-live',g.complete>0&&g.complete<100);}
@@ -2543,6 +2545,9 @@ function injectSquiggleLiveScores(){
       detail:  final_?'Final':(sq.timestr||'Live'),
       homeScore: sq.hscore||0,
       awayScore: sq.ascore||0,
+      // AFL goals.behinds display strings — used by renderESPNScores instead of raw totals
+      _aflHomeStr: (sq.hgoals!=null&&sq.hbehinds!=null) ? sq.hgoals+'.'+sq.hbehinds : null,
+      _aflAwayStr: (sq.agoals!=null&&sq.abehinds!=null) ? sq.agoals+'.'+sq.abehinds : null,
       homeName:  sq.hteam,
       awayName:  sq.ateam,
       homeWinning:(sq.hscore||0)>(sq.ascore||0),
@@ -10529,10 +10534,15 @@ function renderESPNScores(){
 
       // Determine which team is home in FIELD (may differ from ESPN home)
       const fieldHomeIsESPNHome = espnTeamMatch(score.homeName, game.home||"");
-      const displayHomeScore = fieldHomeIsESPNHome ? score.homeScore : score.awayScore;
-      const displayAwayScore = fieldHomeIsESPNHome ? score.awayScore : score.homeScore;
-      const homeLeads = displayHomeScore > displayAwayScore;
-      const awayLeads = displayAwayScore > displayHomeScore;
+      const rawHomeScore = fieldHomeIsESPNHome ? score.homeScore : score.awayScore;
+      const rawAwayScore = fieldHomeIsESPNHome ? score.awayScore : score.homeScore;
+      const homeLeads = rawHomeScore > rawAwayScore;
+      const awayLeads = rawAwayScore > rawHomeScore;
+      // AFL: display goals.behinds format (e.g. "10.15") instead of raw total
+      const _homeAFL = fieldHomeIsESPNHome ? score._aflHomeStr : score._aflAwayStr;
+      const _awayAFL = fieldHomeIsESPNHome ? score._aflAwayStr : score._aflHomeStr;
+      const displayHomeScore = _homeAFL || rawHomeScore;
+      const displayAwayScore = _awayAFL || rawAwayScore;
 
       const isSoccer   = (score.periodPrefix === "'");
       const isBaseball = (score.periodPrefix === "T"); // innings have no game clock
@@ -14351,6 +14361,8 @@ function buildLifeStageContent(game, eData, stage) {
     }
     case 'final': {
       if (!eData) return '';
+      // AFL: leader-chip already shows goals.behinds — suppress duplicate numeric final text
+      if (eData.source === 'squiggle') return '';
       const hS = eData.homeScore||0, aS = eData.awayScore||0;
       const winner = hS >= aS ? (eData.home||game.home||'') : (eData.away||game.away||'');
       const peak = parseFloat(localStorage.getItem('field_drama_peak_'+(game._id||''))||'0');
