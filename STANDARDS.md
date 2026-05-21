@@ -40,7 +40,7 @@ Add a new named assertion in `smoke.js` for every FIELD_FEATURES entry (presence
 **Canonical docs** (open the relevant one before starting):
 - Handoff Note (read first): `1QDTsCkKs2t5ywscenQHXAZG5ejYtgTv29Nk28pH7CO4` ← update this ID every session end
 - CI/Deploy Error Reference (read every session): `1aX65p4C3BfeKtdbQPS32wFsm_bktCuaE`
-- Build Session List: `1nJwnF7J8W3ZhJr7_JyQ13BxYdQ1FnimAYtpRDTZXF8U`
+- Build Session List: `1u19DHmzI69Qv_GtEIGuTpXV6s82FM2ltGBKPSO-vGoc`
 - Daily Update Reference: `1n4fiAaU1uF2X7EKRx9Gm6XpuR6wkpwoa`
 - Wow Features: `1h80BrgGXbz6aq3Hgv5LbjhpFkRQjYvd87fOMNJmVMOc`
 - UI Evaluation: `1xIZnlczl2kIeslnnzJD1eJrgBu5iw6xgSk1wB1MVyAY`
@@ -102,7 +102,7 @@ never worked despite being documented as complete.*
 
 | Document | Current ID | Update trigger |
 |----------|-----------|----------------|
-| **Build Session List** (Master backlog) | `1nJwnF7J8W3ZhJr7_JyQ13BxYdQ1FnimAYtpRDTZXF8U` | Every TYPE B/C session end |
+| **Build Session List** (Master backlog) | `1u19DHmzI69Qv_GtEIGuTpXV6s82FM2ltGBKPSO-vGoc` | Every TYPE B/C session end |
 | **Wow Features** | `1h80BrgGXbz6aq3Hgv5LbjhpFkRQjYvd87fOMNJmVMOc` | Any session that implements or modifies a Wow item |
 | **UI Evaluation** | `1xIZnlczl2kIeslnnzJD1eJrgBu5iw6xgSk1wB1MVyAY` | Any session with CSS, layout, or card design changes |
 | **Daily Update Reference** | `1n4fiAaU1uF2X7EKRx9Gm6XpuR6wkpwoa` | Any session that changes broadcast chip rules, thresholds, or update protocol |
@@ -1340,7 +1340,7 @@ Before naming a new feature, ask:
 ### Reference
 
 Game Intelligence Pipeline spec: 1HPd4VIk4Py35iUMSXZ9D__I_1UetpiK0YoAL8Sr4et4
-Build Session List v7.6: 1nJwnF7J8W3ZhJr7_JyQ13BxYdQ1FnimAYtpRDTZXF8U
+Build Session List v7.6: 1u19DHmzI69Qv_GtEIGuTpXV6s82FM2ltGBKPSO-vGoc
 
 ## Known Issue — classifySport() isConferenceFinals false negative
 
@@ -1401,6 +1401,6 @@ Emitters adapt sources (SSE, poll-detected change) → Subscribers get events.
 Deduplication on (gameId, scoreline) prevents double-render.
 O(sports + consumers): new sport = one emitter, new feature = one subscriber.
 
-Reference: Update Architecture Spec v3: 1KVpaJzoGA9zR2nbEMO970JptOPAoS-L269RrCuejYlA
-Build Session List v7.8: 1nJwnF7J8W3ZhJr7_JyQ13BxYdQ1FnimAYtpRDTZXF8U
+Reference: Update Architecture Spec v3: 1YVXFmsUblQJvQA8KtKwtrcI08vWZh5n-uokMaCLJSlM
+Build Session List v7.8: 1u19DHmzI69Qv_GtEIGuTpXV6s82FM2ltGBKPSO-vGoc
 SSE Research doc: 1uNl5ua8LHXBJfG_U6DLyGrNQfVt54HhGoiPNuY0Q_PA
