@@ -14339,6 +14339,11 @@ function renderOneToWatch(){
   if(_otwCountdownTimer){clearInterval(_otwCountdownTimer);_otwCountdownTimer=null;}
   banner.style.display='block'; // always visible
 
+  // Calendar context — used across all OTW states
+  const _otwCalCtx=typeof getCalendarContext==='function'?getCalendarContext():null;
+  const _otwCtxLabel=_otwCalCtx?_otwCalCtx.label:null;
+  const _otwCtxHigh=_otwCalCtx&&(_otwCalCtx.urgency==='high'||_otwCalCtx.urgency==='max');
+
   const dismissBtn=()=>`<button class="otw-close" id="otw-close" aria-label="Dismiss">\u2715</button>`;
   const wire=(dismissId,scrollGame)=>{
     document.getElementById('otw-close')?.addEventListener('click',e=>{e.stopPropagation();_otwDismissedId=dismissId;renderOneToWatch();});
@@ -14407,7 +14412,7 @@ function renderOneToWatch(){
     };
     banner.innerHTML=`<div class="otw-inner otw-pregame" id="otw-inner" role="button" tabindex="0">
       <span class="otw-pulse otw-pulse-pre"></span>
-      <span class="otw-label">Soon</span>
+      <span class="otw-label">${_otwCtxHigh&&_otwCtxLabel?_otwCtxLabel:'Soon'}</span>
       <span class="otw-matchup">${g.away||''} @ ${g.home||''}</span>
       <span class="otw-countdown" id="otw-countdown">${cd}</span>
       ${net?`<span class="otw-drama d-pregame">${net}</span>`:''}
@@ -14429,10 +14434,10 @@ function renderOneToWatch(){
       const why=buildOTWWhyLine(g,{},top.sport,true);
       banner.innerHTML=`<div class="otw-inner otw-pregame" id="otw-inner" role="button" tabindex="0">
         <span class="otw-pulse otw-pulse-pre"></span>
-        <span class="otw-label">Tonight</span>
+        <span class="otw-label">${_otwCtxHigh&&_otwCtxLabel?_otwCtxLabel:'Tonight'}</span>
         <span class="otw-matchup">${g.away||''} @ ${g.home||''}</span>
         ${why?`<span class="otw-why">${why}</span>`:''}
-        <span class="otw-drama d-pregame">TOP PICK</span>
+        <span class="otw-drama d-pregame">${_otwCtxHigh&&_otwCtxLabel?'TOP PICK':'TOP PICK'}</span>
         ${dismissBtn()}
       </div>`;
       wire('tonight',g); return;
@@ -14440,10 +14445,9 @@ function renderOneToWatch(){
   }
 
   // ── STATE 5: QUIET — nothing notable ─────────────────────────────────────
-  const calCtx=getCalendarContext();
-  const quietMsg=calCtx?`${calCtx.label} season`:'No live games right now';
+  const quietMsg=_otwCalCtx?`${_otwCalCtx.label} season`:'No live games right now';
   banner.innerHTML=`<div class="otw-inner otw-quiet" aria-hidden="true">
-    <span class="otw-label">${calCtx?'Season':'Quiet'}</span>
+    <span class="otw-label">${_otwCalCtx?'Season':'Quiet'}</span>
     <span class="otw-matchup">${quietMsg}</span>
   </div>`;
 }

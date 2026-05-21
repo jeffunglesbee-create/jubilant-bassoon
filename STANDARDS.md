@@ -380,36 +380,6 @@ If failing: stop. This is now a TYPE B session.
 node field_smoke.js   ← must still be 0 failures after all changes
 ```
 
-**PENDING NEXT DAILY SESSION — complete in order, then remove each line:**
-
-Seasonal Intelligence Layer 0 — Calendar Context (~20 min, ZERO DEPENDENCIES)
-  Build getCalendarContext() and wire into bar + J3 brief.
-  Spec: 1XJyTkSckF5dXbcxBFf_cjxmmF1bN09eEvnSJk1iYKyE (see L0 section)
-  Deliverables:
-    1. getCalendarContext() → { flag, label, urgency, relevantLeagues } | null
-       Pure date logic. Known windows: playoff_race · postseason ·
-       transfer_window · draft_season · training_camp · all_star
-    2. Wire into One to Watch QUIET state:
-       "⚾ Playoff race — Cubs 3 back with 12 to play" replaces faded empty state
-    3. Wire into One to Watch TONIGHT state:
-       Append calendar context label when urgency is high
-       "🏆 ECF · Series tied 1-1 · Game 2 tonight"
-    4. Wire into J3 brief (buildCompoundPrompt):
-       Add one computed sentence to gameLines when flag is active
-       "With 12 games left, four NL Central teams are within 3 games."
-       Only adds if getCalendarContext() returns non-null for today
-  Smoke: add assertion that getCalendarContext is defined and callable
-  No new data sources. No pipeline dependencies. No API calls.
-
-PENDING LEGAL FIXES — check once, then remove this note:
-Two 10-minute fixes from Legal Position May 21 (1p2249pqBt7e_MUhiaVDj7OROIXeku3Y6vPmLNb_rDaA).
-Complete during any daily update session and delete these lines when done.
-- FD.org attribution: confirm "Soccer data: football-data.org" appears in the
-  soccer standings panel or app footer. If missing, add it (~10 min).
-- ESPN User-Agent: confirm relay requests include
-  `'User-Agent': 'FIELD-Personal-Sports-Guide/1.0 (non-commercial)'`
-  on ESPN scoreboard fetches. If missing, add to the relay worker (~10 min).
-
 ### Why this matters
 
 The Daily Update Reference contains the rules Claude uses when writing
