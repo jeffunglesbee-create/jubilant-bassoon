@@ -631,3 +631,29 @@ const hasSavantWP = html.includes('fetchSavantGameFeed') &&
   html.includes('homeTeamWinProbability');
 if(hasSavantWP) pass('Assertion 52 — Savant MLB WP: fetchSavantGameFeed + SAVANT_BASE + sourceId');
 else fail('Assertion 52 — Savant MLB WP missing (fetchSavantGameFeed/SAVANT_BASE/sourceId)');
+
+// Assertion 53 — Sport Classifier: classifySport() with all sport flags
+const hasSportClassifier = html.includes('function classifySport(') &&
+  html.includes('isNBA') && html.includes('isNHL') && html.includes('isMLB') &&
+  html.includes('isAFL') && html.includes('isSoccer') && html.includes('isConferenceFinals') &&
+  html.includes('periodPrefix:resolvedPrefix');
+if(hasSportClassifier) pass('Assertion 53 — Sport Classifier: classifySport() + all sport flags');
+else fail('Assertion 53 — Sport Classifier missing (classifySport/isNBA/isAFL/isSoccer/isConferenceFinals)');
+
+// Assertion 54 — Story Engine: computeGameNarrative() with scoreline + statusLine + enrichGame shell
+const hasStoryEngine = html.includes('function computeGameNarrative(') &&
+  html.includes('scoreline') && html.includes('statusLine') &&
+  html.includes('leaderNick') && html.includes('trailerNick') &&
+  html.includes('function enrichGame(') &&
+  html.includes('def. ') && html.includes('lead ');
+if(hasStoryEngine) pass('Assertion 54 — Story Engine: computeGameNarrative() + enrichGame shell + Story Score strings');
+else fail('Assertion 54 — Story Engine missing (computeGameNarrative/scoreline/statusLine/enrichGame)');
+
+// Assertion 55 — Story Score: .score-status CSS + scoreHTML uses _n.statusLine + previousScores uses _sl
+const hasStoryScore = html.includes('score-status') &&
+  html.includes('_n.statusLine') &&
+  html.includes('_n.scoreline') &&
+  html.includes('"_sl"') &&
+  html.includes('_n.periodLabel');
+if(hasStoryScore) pass('Assertion 55 — Story Score: score-status CSS + _n.statusLine + _n.scoreline + _sl cache key');
+else fail('Assertion 55 — Story Score wiring missing (score-status/_n.statusLine/_n.scoreline/_sl)');

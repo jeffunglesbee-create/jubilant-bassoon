@@ -1045,6 +1045,7 @@ flex-shrink:0;white-space:nowrap;
 .game-time.live-t{color:var(--live)}
 /* ── Live scores from ESPN API ── */
 .score-wrap{margin-top:2px;min-width:0;max-width:100%;overflow:hidden;width:100%}
+.score-status{font-size:.6rem;color:var(--smoke);opacity:.85;margin-top:.1rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .score-block{
   display:flex;align-items:center;gap:6px;flex-wrap:wrap;
   font-family:var(--ff-mono);font-size:1.1rem;font-weight:800;
@@ -10479,6 +10480,123 @@ async function fetchSoccerFixtures(){
   if(FIELD_DEBUG) console.debug("FIELD soccer fixtures loaded:",newSections.map(s=>s.sport).join(", "));
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+// GAME INTELLIGENCE PIPELINE — Stages 1 & 2
+// enrichGame(game, espnScore) → RichGame  (Session A: Sport Classifier + Story Engine)
+// Session B adds Stage 3 (Broadcast Authority)
+// Session C adds Stage 4 (Watch Engine)
+// ═══════════════════════════════════════════════════════════════════════════
+
+// STAGE 1 — Sport Classifier
+// Canonical sport flags — replaces 100+ scattered sp.includes() checks.
+// All downstream pipeline stages and any feature needing sport context use this.
+function classifySport(game, espnScore){
+  const sp=((game._sport||game._section||game.league||game.sport||'')).toLowerCase();
+  const pPrefix=espnScore?.periodPrefix||'';
+  const isNBA    =sp.includes('nba')||sp.includes('basketball');
+  const isNHL    =sp.includes('nhl')||sp.includes('hockey');
+  const isMLB    =sp.includes('mlb')||sp.includes('baseball');
+  const isWNBA   =sp.includes('wnba');
+  const isNFL    =sp.includes('nfl')||(sp.includes('football')&&!sp.includes('afl'));
+  const isAFL    =sp.includes('afl')||sp.includes('australian')||
+                  espnScore?._aflComplete!==undefined||game._squiggleId!=null;
+  const isSoccer =pPrefix==="'"||
+                  /premier league|bundesliga|ligue 1|serie a|la liga|mls|champions|europa|conference league|efl|uecl|ucl|uel|soccer/i.test(sp);
+  const isTennis =sp.includes('tennis')||sp.includes('atp')||sp.includes('wta');
+  const isGolf   =sp.includes('golf')||sp.includes('pga');
+  const isPlayoffs        =/playoff|playoffs/i.test(sp);
+  const isFinals          =/\bfinals?\b(?!\s*day)/i.test(sp);
+  const isConferenceFinals=/conference finals|cf g\d|wcf|ecf|stanley cup finals?|nba finals/i.test(sp);
+  const resolvedPrefix=pPrefix||(isNHL?'P':isMLB?'T':isSoccer?"'":(isNFL?'Q':'Q'));
+  return {isNBA,isNHL,isMLB,isWNBA,isNFL,isAFL,isSoccer,isTennis,isGolf,
+          isPlayoffs,isFinals,isConferenceFinals,periodPrefix:resolvedPrefix};
+}
+
+// STAGE 2 — Story Engine
+// Canonical game narrative — winner/leader-first scores, status line, period label.
+// Consumed by: renderESPNScores, buildNightOwlStatic, renderLastNight, Brief context.
+function computeGameNarrative(game, espnScore, sportClass){
+  const sc=sportClass||classifySport(game,espnScore);
+  const state=espnScore?.state||'pre';
+  const empty={leaderScore:0,trailerScore:0,leaderIsHome:true,leaderDisplay:'',trailerDisplay:'',
+    scoreline:'',statusLine:'',periodLabel:'',leaderName:game.home||'',trailerName:game.away||'',
+    leaderNick:teamNick(game.home||''),trailerNick:teamNick(game.away||''),
+    state:'pre',isTied:false,margin:0,isCollapse:null,volatility:null,wpLeader:null};
+  if(state==='pre') return empty;
+  const isLive=state==='in', isFinal=state==='post', isHalf=state==='halftime';
+
+  // Align FIELD home/away to ESPN home/away
+  const fhIsEh=espnTeamMatch(espnScore.homeName,game.home||'');
+  const rawHome=fhIsEh?espnScore.homeScore:espnScore.awayScore;
+  const rawAway=fhIsEh?espnScore.awayScore:espnScore.homeScore;
+
+  // Soccer: home always left (European convention). All others: leader left.
+  let leaderIsHome,leaderScore,trailerScore,leaderName,trailerName;
+  if(sc.isSoccer){
+    leaderIsHome=true; leaderScore=rawHome; trailerScore=rawAway;
+    leaderName=game.home||''; trailerName=game.away||'';
+  } else {
+    leaderIsHome=rawHome>=rawAway;
+    leaderScore=leaderIsHome?rawHome:rawAway; trailerScore=leaderIsHome?rawAway:rawHome;
+    leaderName=leaderIsHome?(game.home||''):(game.away||'');
+    trailerName=leaderIsHome?(game.away||''):(game.home||'');
+  }
+  const leaderNick=teamNick(leaderName), trailerNick=teamNick(trailerName);
+  const isTied=leaderScore===trailerScore, margin=Math.abs(leaderScore-trailerScore);
+
+  // Scoreline — AFL uses goals.behinds strings when available; others use numeric totals
+  let leaderDisplay,trailerDisplay;
+  if(sc.isAFL&&espnScore._aflHomeStr){
+    const hStr=espnScore._aflHomeStr, aStr=espnScore._aflAwayStr||String(rawAway);
+    leaderDisplay=leaderIsHome?hStr:aStr; trailerDisplay=leaderIsHome?aStr:hStr;
+  } else {
+    leaderDisplay=String(leaderScore); trailerDisplay=String(trailerScore);
+  }
+  const scoreline=leaderDisplay+'\u2013'+trailerDisplay;
+
+  // Period label (row 1 of score-wrap)
+  let periodLabel='';
+  if(isHalf){
+    periodLabel='<span class="score-period">Halftime</span>';
+  } else if(isLive){
+    if(sc.isSoccer){
+      const half=espnScore.period===1?'1H':'2H', min=espnScore.clock||'';
+      periodLabel=`<span class="score-period">${half}${min?' '+min:''}</span>`;
+    } else if(sc.isMLB){
+      periodLabel=`<span class="score-period">${espnPeriodLabel('T',espnScore.period||0,'')}</span>`;
+    } else {
+      const clockStr=espnScore.clock?` ${fmtESPNClock(espnScore.clock)}`:'';
+      const pLabel=espnPeriodLabel(sc.periodPrefix||'Q',espnScore.period||0,espnScore.clock);
+      periodLabel=`<span class="score-period">${pLabel}${clockStr}</span>`;
+    }
+  } else if(isFinal){
+    periodLabel='<span class="score-final">Final</span>';
+  }
+
+  // Status line (row 2 of score-wrap — the Story Score narrative)
+  let statusLine='';
+  if(isFinal&&!sc.isSoccer){
+    statusLine=`${leaderNick} def. ${trailerNick}`;
+  } else if(isLive||isHalf){
+    if(!sc.isSoccer){
+      statusLine=isTied?`Tied at ${leaderScore}`:`${leaderNick} lead ${trailerNick}`;
+    }
+  }
+
+  return {leaderScore,trailerScore,leaderIsHome,leaderDisplay,trailerDisplay,
+          scoreline,statusLine,periodLabel,leaderName,trailerName,leaderNick,trailerNick,
+          state:isHalf?'halftime':state,isTied,margin,
+          isCollapse:null,volatility:null,wpLeader:null};
+}
+
+// ─── enrichGame() shell — Stages 3+4 plugged in by Sessions B+C ─────────────
+function enrichGame(game, espnScore){
+  const sportClass=classifySport(game,espnScore);
+  const narrative=computeGameNarrative(game,espnScore,sportClass);
+  // broadcast and watchValue populated in Sessions B and C
+  return {...game,sportClass,narrative,broadcast:null,watchValue:null};
+}
+
 // Render score overlays onto existing game cards
 // Maps sport period to OT suffix when period exceeds normal game length
 // NBA: 4 quarters → OT at period 5+. NFL: 4 quarters → OT at period 5. NHL: 3 periods → OT at 4+
@@ -10542,50 +10660,20 @@ function renderESPNScores(){
         return; // Skip team-sport score block for golf
       }
 
-      // Build score HTML
-      const isLive  = score.state==="in";
-      const isFinal = score.state==="post";
+      // Build score HTML — Story Engine (Pipeline Stage 2)
+      const _sc = classifySport(game, score);
+      const _n  = computeGameNarrative(game, score, _sc);
+      const isLive    = _n.state==='in';
+      const isFinal   = _n.state==='post';
+      const isSoccer  = _sc.isSoccer;
+      const isBaseball = _sc.isMLB;
 
-      // Determine which team is home in FIELD (may differ from ESPN home)
-      const fieldHomeIsESPNHome = espnTeamMatch(score.homeName, game.home||"");
-      const rawHomeScore = fieldHomeIsESPNHome ? score.homeScore : score.awayScore;
-      const rawAwayScore = fieldHomeIsESPNHome ? score.awayScore : score.homeScore;
-      const homeLeads = rawHomeScore > rawAwayScore;
-      const awayLeads = rawAwayScore > rawHomeScore;
-      // Big score: always show raw total (AFL: sq.hscore = goals×6 + behinds×1 = 75)
-      // Goals.behinds format lives in the gold leader-chip only (injectSquiggleLiveScores)
-      const displayHomeScore = rawHomeScore;
-      const displayAwayScore = rawAwayScore;
-
-      const isSoccer   = (score.periodPrefix === "'");
-      const isBaseball = (score.periodPrefix === "T"); // innings have no game clock
-      let periodLabel = "";
-      if(isLive){
-        if(isSoccer){
-          const half = score.period===1?"1H":"2H";
-          const min  = score.clock||"";
-          periodLabel = `<span class="score-period">${half}${min?" "+min:""}</span>`;
-        } else if(isBaseball){
-          // Baseball: show inning only — no clock (pitch clock is separate mechanic)
-          const pLabel = espnPeriodLabel("T", score.period||0, "");
-          periodLabel = `<span class="score-period">${pLabel}</span>`;
-        } else {
-          const clockStr = score.clock ? ` ${fmtESPNClock(score.clock)}` : "";
-          const pLabel = espnPeriodLabel(score.periodPrefix||"Q", score.period||0, score.clock);
-          periodLabel = `<span class="score-period">${pLabel}${clockStr}</span>`;
-        }
-      } else if(isFinal){
-        periodLabel = `<span class="score-final">Final</span>`;
-      }
-
-      // Baseball situation — outs + base runners (MLB only, never soccer)
+      // Baseball situation — outs + base runners (unchanged)
       let sitHTML = "";
       if(isLive && !isSoccer && score.outs != null){
-        // Outs: 3 dots, filled = out recorded
         const outDots = [0,1,2].map(i=>
           `<span class="out-dot${i<score.outs?" filled":""}"></span>`
         ).join("");
-        // Base diamond: second on top, third left, first right
         const b2 = score.onSecond?"occupied":"";
         const b3 = score.onThird ?"occupied":"";
         const b1 = score.onFirst ?"occupied":"";
@@ -10595,27 +10683,22 @@ function renderESPNScores(){
           `<div class="base base-third  ${b3}"></div>` +
           `<div class="base base-first  ${b1}"></div>` +
           `</div>`;
-        sitHTML = `<div class="baseball-sit">` +
-          `<div class="outs-row">${outDots}</div>` +
-          diamond +
-          `</div>`;
+        sitHTML = `<div class="baseball-sit"><div class="outs-row">${outDots}</div>${diamond}</div>`;
       }
 
-      // Wrap everything in .score-wrap so we can replace it atomically on update
-      // Soccer: European convention = home score left, away score right (Home 2–1 Away)
-      // All other sports: American convention = away score left, home score right (Away 2–1 Home)
-      const leftScore  = isSoccer ? displayHomeScore : displayAwayScore;
-      const rightScore = isSoccer ? displayAwayScore : displayHomeScore;
-      const leftLeads  = leftScore  > rightScore;
-      const rightLeads = rightScore > leftScore;
+      // Story Score — row 1: leader–trailer + period. Row 2: statusLine.
+      // Soccer: home-left always. Others: leader-left, score-leader class on winning side.
+      const _leftLeader  = !_n.isTied && (isSoccer ? _n.leaderScore > _n.trailerScore : true);
+      const _rightLeader = !_n.isTied && isSoccer && _n.trailerScore > _n.leaderScore;
       const scoreHTML =
         `<div class="score-wrap">` +
           `<div class="score-block">` +
-          `<span class="${isSoccer?"score-home":"score-away"}${leftLeads?" score-leader":""}">${leftScore}</span>` +
+          `<span class="score-home${_leftLeader?" score-leader":""}">${_n.leaderDisplay}</span>` +
           `<span class="score-sep">–</span>` +
-          `<span class="${isSoccer?"score-away":"score-home"}${rightLeads?" score-leader":""}">${rightScore}</span>` +
-          periodLabel +
+          `<span class="score-away${_rightLeader?" score-leader":""}">${_n.trailerDisplay}</span>` +
+          _n.periodLabel +
           `</div>` +
+          (_n.statusLine?`<div class="score-status">${_n.statusLine}</div>`:'') +
           sitHTML +
         `</div>`;
 
@@ -10636,11 +10719,10 @@ function renderESPNScores(){
       const wrapEl = card.querySelector(".score-wrap");
 
       if(wrapEl){
-        // Check if score changed — animate if so
+        // Check if score changed — compare scoreline (catches score + direction flip)
         const scoreKey = game._id;
-        const prevHome = previousScores[scoreKey+"_h"];
-        const prevAway = previousScores[scoreKey+"_a"];
-        const changed = prevHome !== undefined && (prevHome !== displayHomeScore || prevAway !== displayAwayScore);
+        const prevSL = previousScores[scoreKey+"_sl"];
+        const changed = prevSL !== undefined && prevSL !== _n.scoreline;
         const tmp = document.createElement("div");
         tmp.innerHTML = scoreHTML;
         const newWrap = tmp.firstElementChild;
@@ -10651,18 +10733,14 @@ function renderESPNScores(){
             setTimeout(()=>newWrap.classList.remove("score-flash"), 700);
           }
         }
-        // Update cache after render
-        previousScores[scoreKey+"_h"] = displayHomeScore;
-        previousScores[scoreKey+"_a"] = displayAwayScore;
+        previousScores[scoreKey+"_sl"] = _n.scoreline;
       } else {
         const tmp = document.createElement("div");
         tmp.innerHTML = scoreHTML;
         const newWrap = tmp.firstElementChild;
         if(newWrap) card.appendChild(newWrap);
-        // Populate previousScores on first render (no animation)
         const scoreKey2 = game._id;
-        previousScores[scoreKey2+"_h"] = displayHomeScore;
-        previousScores[scoreKey2+"_a"] = displayAwayScore;
+        previousScores[scoreKey2+"_sl"] = _n.scoreline;
       }
 
       // Update card class for accent colour
@@ -11793,6 +11871,8 @@ function buildCompoundPrompt(sections) {
     return [
       `- ${g.away||''} @ ${g.home||''}`,
       g.seriesRecord ? `  Series: ${g.seriesRecord}` : '',
+      // Story Engine: live status line gives AI cleaner narrative context than raw scores
+      (()=>{try{const _bsc=classifySport(g,null);const _bsyn=findESPNScore?.(g);if(_bsyn?.state==='in'){const _bn=computeGameNarrative(g,_bsyn,_bsc);return _bn.statusLine?`  Live: ${_bn.statusLine} (${_bn.scoreline} ${_bn.periodLabel?.replace(/<[^>]+>/g,'')||''})`.trim():'';}return '';}catch(e_){return ''}})(),
       `  Network: ${stream}`,
       crewCtx ? `  Crew: ${crewCtx}` : '',
       g.matchupNote ? `  Context: ${g.matchupNote}` : '',
@@ -14313,13 +14393,11 @@ function loadTonightFinals(){
   }catch(e){return [];}
 }
 function buildNightOwlStatic(f){
-  const homeWon=(f.homeScore||0)>=(f.awayScore||0);
-  const winner=homeWon?f.home:f.away;
-  const loser=homeWon?f.away:f.home;
-  const winnerScore=homeWon?f.homeScore:f.awayScore;
-  const loserScore=homeWon?f.awayScore:f.homeScore;
-  const score=winnerScore+'\u2013'+loserScore;
-  let line=winner+' defeated '+loser+' '+score+'.';
+  // Story Engine — winner-first via computeGameNarrative
+  const _sc=classifySport(f,null);
+  const _synth={state:'post',homeScore:f.homeScore||0,awayScore:f.awayScore||0,homeName:f.home||''};
+  const _n=computeGameNarrative(f,_synth,_sc);
+  let line=_n.leaderName+' defeated '+_n.trailerName+' '+_n.scoreline+'.';
   if(f.seriesRecord) line+=' Series: '+f.seriesRecord+'.';
   line+=' Full breakdown in tomorrow\'s FIELD Brief.';
   return line;
@@ -14876,10 +14954,12 @@ async function renderNightOwlRecap(){
   if(alreadyRendered && slotHasOwl) return;
   const cacheKey='field_nightowl_'+topGame.id;
   const cached=sessionStorage.getItem(cacheKey);
-  const winner=(topGame.homeScore||0)>=(topGame.awayScore||0)?topGame.home:topGame.away;
-  const _owlWinnerScore=(topGame.homeScore||0)>=(topGame.awayScore||0)?topGame.homeScore:topGame.awayScore;
-  const _owlLoserScore=(topGame.homeScore||0)>=(topGame.awayScore||0)?topGame.awayScore:topGame.homeScore;
-  const scoreLabel=_owlWinnerScore+'\u2013'+_owlLoserScore;
+  // Story Engine — winner-first scoreLabel
+  const _owlSc=classifySport(topGame,null);
+  const _owlSynth={state:'post',homeScore:topGame.homeScore||0,awayScore:topGame.awayScore||0,homeName:topGame.home||''};
+  const _owlN=computeGameNarrative(topGame,_owlSynth,_owlSc);
+  const winner=_owlN.leaderName;
+  const scoreLabel=_owlN.scoreline;
   _nightOwlRendered=true;
   _nightOwlGameId=topGame.id;
   el.style.display='block';
@@ -14968,10 +15048,12 @@ function renderLastNight(){
   bar.className = 'last-night-bar';
 
   const results = finals.slice(0,6).map(f => {
-    const winner = (f.homeScore||0) >= (f.awayScore||0) ? f.home : f.away;
-    const loser  = (f.homeScore||0) >= (f.awayScore||0) ? f.away : f.home;
-    const ws = (f.homeScore||0) >= (f.awayScore||0) ? f.homeScore : f.awayScore;
-    const ls = (f.homeScore||0) >= (f.awayScore||0) ? f.awayScore : f.homeScore;
+    // Story Engine — winner-first for Last Night bar
+    const _lnSc=classifySport(f,null);
+    const _lnSynth={state:'post',homeScore:f.homeScore||0,awayScore:f.awayScore||0,homeName:f.home||''};
+    const _lnN=computeGameNarrative(f,_lnSynth,_lnSc);
+    const winner=_lnN.leaderName, loser=_lnN.trailerName;
+    const ws=_lnN.leaderDisplay, ls=_lnN.trailerDisplay;
     const ctx = f.seriesRecord ? `<span class="ln-ctx">(${f.seriesRecord})</span>` : '';
     return `<span class="ln-result"><strong>${winner}</strong> def ${loser} ${ws}–${ls} ${ctx}</span>`;
   }).join('');
