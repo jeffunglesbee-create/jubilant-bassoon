@@ -10495,6 +10495,9 @@ async function fetchSoccerFixtures(){
 // All downstream pipeline stages and any feature needing sport context use this.
 function classifySport(game, espnScore){
   const sp=((game._sport||game._section||game.league||game.sport||'')).toLowerCase();
+  // league checked independently: _sport short-circuits via || before league is reached
+  // e.g. _sport="NBA Playoffs" is truthy so league="NBA Playoffs – East CF G2" never runs
+  const lg=(game.league||'').toLowerCase();
   const pPrefix=espnScore?.periodPrefix||'';
   const isNBA    =sp.includes('nba')||sp.includes('basketball');
   const isNHL    =sp.includes('nhl')||sp.includes('hockey');
@@ -10507,9 +10510,10 @@ function classifySport(game, espnScore){
                   /premier league|bundesliga|ligue 1|serie a|la liga|mls|champions|europa|conference league|efl|uecl|ucl|uel|soccer/i.test(sp);
   const isTennis =sp.includes('tennis')||sp.includes('atp')||sp.includes('wta');
   const isGolf   =sp.includes('golf')||sp.includes('pga');
-  const isPlayoffs        =/playoff|playoffs/i.test(sp);
-  const isFinals          =/\bfinals?\b(?!\s*day)/i.test(sp);
-  const isConferenceFinals=/conference finals|cf g\d|wcf|ecf|stanley cup finals?|nba finals/i.test(sp);
+  const isPlayoffs        =/playoff|playoffs/i.test(sp)||/playoff|playoffs/i.test(lg);
+  const isFinals          =/\bfinals?\b(?!\s*day)/i.test(sp)||/\bfinals?\b(?!\s*day)/i.test(lg);
+  const _cfRx             =/conference finals|cf g\d|wcf|ecf|stanley cup finals?|nba finals/i;
+  const isConferenceFinals=_cfRx.test(sp)||_cfRx.test(lg);
   const resolvedPrefix=pPrefix||(isNHL?'P':isMLB?'T':isSoccer?"'":(isNFL?'Q':'Q'));
   return {isNBA,isNHL,isMLB,isWNBA,isNFL,isAFL,isSoccer,isTennis,isGolf,
           isPlayoffs,isFinals,isConferenceFinals,periodPrefix:resolvedPrefix};
@@ -14461,10 +14465,9 @@ function buildLifeStageContent(game, eData, stage) {
   switch(stage) {
     case 'pre': {
       // Pre-game: context from game data, no fabrication
-      // Big game detection: check league string directly (contains "CF G2", "ECF", etc.)
-      // classifySport() alone is insufficient — _sport="NBA Playoffs" doesn't carry CF detail
-      const _bigRx = /conference finals|cf g\d|nba finals|stanley cup finals?|wcf|ecf/i;
-      const isBigNote = _bigRx.test(game.league||'') || _bigRx.test(game._sport||'');
+      // Big game detection via Sport Classifier (now checks game.league independently)
+      const _scBig = classifySport(game, null);
+      const isBigNote = _scBig.isConferenceFinals || _scBig.isFinals;
       const parts = [];
       // Series record first — always readable, not at risk of truncation
       if (game.seriesRecord && game.seriesRecord !== '0-0') parts.push(game.seriesRecord);
