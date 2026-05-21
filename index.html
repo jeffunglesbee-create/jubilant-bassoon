@@ -10538,11 +10538,10 @@ function renderESPNScores(){
       const rawAwayScore = fieldHomeIsESPNHome ? score.awayScore : score.homeScore;
       const homeLeads = rawHomeScore > rawAwayScore;
       const awayLeads = rawAwayScore > rawHomeScore;
-      // AFL: display goals.behinds format (e.g. "10.15") instead of raw total
-      const _homeAFL = fieldHomeIsESPNHome ? score._aflHomeStr : score._aflAwayStr;
-      const _awayAFL = fieldHomeIsESPNHome ? score._aflAwayStr : score._aflHomeStr;
-      const displayHomeScore = _homeAFL || rawHomeScore;
-      const displayAwayScore = _awayAFL || rawAwayScore;
+      // Big score: always show raw total (AFL: sq.hscore = goals×6 + behinds×1 = 75)
+      // Goals.behinds format lives in the gold leader-chip only (injectSquiggleLiveScores)
+      const displayHomeScore = rawHomeScore;
+      const displayAwayScore = rawAwayScore;
 
       const isSoccer   = (score.periodPrefix === "'");
       const isBaseball = (score.periodPrefix === "T"); // innings have no game clock
