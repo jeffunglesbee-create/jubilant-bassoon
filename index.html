@@ -1899,10 +1899,14 @@ flex-shrink:0;white-space:nowrap;
 }
 @media(min-width:820px) and (max-width:1199px){
   #ambient-panel{display:flex}
-  /* Push main content left to make room for fixed ambient panel */
+  /* Push ALL page content left — every sibling of <main> must be included */
   .main,#field-brief,#night-owl,#watch-window,
-  #halftime-switch,#double-feature,#offline-banner{margin-right:390px}
+  #halftime-switch,#double-feature,#offline-banner,
+  .betting-section,.field-desk-section,.media-section,
+  .streaming-section,.legend,.page-divider{margin-right:390px}
   /* OTW banner and masthead span full width — no margin shift */
+  /* Suppress 768-900px 2-col game grid: 430px left pane too narrow for 2 cols */
+  .games-list{display:block !important}
 }
 .ap-otw-fire{
   background:rgba(255,59,59,.1);border:1px solid rgba(255,59,59,.25);
@@ -1945,7 +1949,11 @@ flex-shrink:0;white-space:nowrap;
 .ap-soon-label{font-size:.52rem;font-weight:800;letter-spacing:.1em;
   text-transform:uppercase;color:var(--gold2,#c9a84c)}
 .ap-soon-game{font-size:.86rem;font-weight:700;color:var(--white)}
-.ap-soon-meta{font-size:.64rem;color:var(--muted)}
+.ap-soon-meta{font-size:.64rem;color:var(--muted);
+  /* Override any inherited chip/stream styling */
+  background:none !important;border:none !important;
+  padding:0 !important;border-radius:0 !important;
+  font-weight:400;letter-spacing:.02em}
 
 /* ── 360px Galaxy A36 / iPhone SE small fixes ───────────────────────── */
 @media(max-width:375px){
@@ -13653,13 +13661,15 @@ function renderAmbientPanel(){
     const{g,ed,score}=fire;
     const tier=Math.round(score);
     const scoreStr=`${ed.awayScore||0}–${ed.homeScore||0}`;
-    const period=ed.periodLabel||'';
-    const clock=ed.clock?` ${fmtESPNClock(ed.clock)}`:'';
+    // Compute period label — use periodLabel if set, else build from periodPrefix+period
+    const periodLbl=ed.periodLabel||(ed.periodPrefix&&ed.period?`${ed.periodPrefix}${ed.period}`:'');
+    const isBball=ed.periodPrefix==='T'||ed.periodPrefix==='B'||/^[TB]\d/.test(periodLbl);
+    const clockStr=(!isBball&&ed.clock)?` ${fmtESPNClock(ed.clock)}`:'';
     otwHTML=`<div class="ap-otw-fire">
       <span class="ap-fire-badge">🔴 FIRE ${tier}</span>
       <span class="ap-fire-game">${g.away||''} @ ${g.home||''}</span>
       <span class="ap-fire-score">${scoreStr}</span>
-      <span class="ap-fire-clock">${period}${clock}</span>
+      <span class="ap-fire-clock">${periodLbl}${clockStr}</span>
     </div>`;
   }else{
     // Check SOON state — next game within 2hr
@@ -13687,17 +13697,27 @@ function renderAmbientPanel(){
   }
 
   // ── Section 2: Live scores summary ────────────────────────────────────
-  const live=Object.values(espnScores||{}).filter(s=>s.state==='in');
+  // Guards: only numeric non-negative scores; suppress 0:00 for baseball
+  const live=Object.values(espnScores||{}).filter(s=>
+    s.state==='in'&&
+    typeof s.homeScore==='number'&&typeof s.awayScore==='number'&&
+    s.homeScore>=0&&s.awayScore>=0
+  );
   let scoresHTML='';
   if(live.length){
     const rows=live.slice(0,5).map(s=>{
-      const away=s.awayTricode||s.awayName?.split(' ').pop()||'';
-      const home=s.homeName?.split(' ').pop()||s.homeTricode||'';
-      const period=s.periodLabel||'';
-      const clock=s.clock?` ${fmtESPNClock(s.clock)}`:'';
+      const away=s.awayTricode||(s.awayName||s.away||'').split(' ').pop()||'';
+      const home=(s.homeName||s.home||'').split(' ').pop()||s.homeTricode||'';
+      // Build period label from available fields
+      const periodLbl=s.periodLabel||(s.periodPrefix&&s.period?`${s.periodPrefix}${s.period}`:'');
+      const isBball=s.periodPrefix==='T'||s.periodPrefix==='B'||/^[TB]\d/.test(periodLbl);
+      const clockStr=(!isBball&&s.clock&&s.clock!=='0:00'&&s.clock!=='PT00M00.00S')
+        ?` ${fmtESPNClock(s.clock)}`:'';
+      const timeStr=(periodLbl||clockStr)?`${periodLbl}${clockStr}`:
+        (s.detail&&s.detail!=='0:00'&&typeof s.detail==='string'&&s.detail.length<12?s.detail:'');
       return `<div class="ap-score-row">
-        <span class="ap-score-teams">${away}<strong class="ap-score-num">${s.awayScore||0}–${s.homeScore||0}</strong>${home}</span>
-        <span class="ap-score-clock">${period}${clock}</span>
+        <span class="ap-score-teams">${away}<strong class="ap-score-num">${s.awayScore}–${s.homeScore}</strong>${home}</span>
+        ${timeStr?`<span class="ap-score-clock">${timeStr}</span>`:''}
       </div>`;
     }).join('');
     scoresHTML=`<div class="ap-scores"><div class="ap-section-label">Live</div>${rows}</div>`;
@@ -13711,22 +13731,13 @@ function renderAmbientPanel(){
 
   // ── Section 4: Tonight's brief ─────────────────────────────────────────
   const briefEl=document.getElementById('field-brief');
-  const briefText=briefEl?.querySelector('.field-brief-text')?.textContent||'';
-  const briefHTML=briefText
+  const briefText=briefEl?.querySelector('.field-brief-text')?.textContent?.trim()||'';
+  const briefHTML=briefText&&briefText.length>20
     ?`<div class="ap-brief"><div class="ap-section-label">Tonight</div><p class="ap-brief-text">${briefText}</p></div>`
     :'';
 
   panel.innerHTML=`${otwHTML}${scoresHTML?`<div class="ap-divider"></div>${scoresHTML}`:''}${ctxHTML?`<div class="ap-divider"></div>${ctxHTML}`:''}${briefHTML?`<div class="ap-divider"></div>${briefHTML}`:''}`;
 }
-
-// Resize listener — show/hide ambient panel on viewport change
-(function(){
-  let _apTimer=null;
-  window.addEventListener('resize',()=>{
-    clearTimeout(_apTimer);
-    _apTimer=setTimeout(renderAmbientPanel,200);
-  });
-})();
 
 function renderWatchWindow(){
   const el=document.getElementById('watch-window');
