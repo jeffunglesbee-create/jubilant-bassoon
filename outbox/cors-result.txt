@@ -1,25 +1,29 @@
 ---
-URL: https://baseballsavant.mlb.com/gf?game_pk=778507
-Timestamp: Thu May 21 03:27:21 UTC 2026
+URL: https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=2026-05-21&hydrate=linescore
+Timestamp: Thu May 21 03:30:20 UTC 2026
 ---
 HTTP/2 200 
-date: Thu, 21 May 2026 03:27:25 GMT
-content-type: application/json; charset=utf-8
-server: cloudflare
-x-dns-prefetch-control: off
-x-download-options: noopen
-x-content-type-options: nosniff
-x-xss-protection: 1; mode=block
-cache-control: public, max-age=600
-vary: Origin, Accept-Encoding
-via: 1.1 google
 access-control-allow-origin: *
-access-control-allow-methods: GET, OPTIONS
-set-cookie: __cflb=02DiuJFcgbX2zpcHdRusb7zVwg8RFD7sBKGAurmkENk3E; HttpOnly; SameSite=None; Secure; Path=/; Expires=Fri, 22 May 2026 02:27:25 GMT
-last-modified: Thu, 21 May 2026 03:27:25 GMT
-cf-cache-status: MISS
-cf-ray: 9ff07c20ee0f7dd1-DFW
+access-control-allow-methods: GET, POST, PUT, DELETE, OPTIONS
+access-control-allow-headers: Content-Type,X-Requested-With,accept,Origin,Access-Control-Request-Method,Access-Control-Request-Headers,Authorization
+access-control-expose-headers: Content-Type,X-Requested-With,accept,Origin,Access-Control-Request-Method,Access-Control-Request-Headers,Authorization
+access-control-allow-credentials: true
+cache-control: max-age=20, public, stale-while-revalidate=30, stale-if-error=86400
+x-content-type-options: nosniff
+x-xss-protection: 0
+x-frame-options: DENY
+content-type: application/json;charset=UTF-8
+via: 1.1 google, 1.1 varnish
+accept-ranges: bytes
+date: Thu, 21 May 2026 03:30:20 GMT
+age: 36
+x-served-by: cache-chi-kigq8000085-CHI
+x-cache: HIT
+x-cache-hits: 1
+x-timer: S1779334221.539679,VS0,VE4
+vary: accept-encoding, Accept-Encoding
+content-length: 10746
 
 
 --- BODY PREVIEW (first 500 chars) ---
-{"game_status_code":"F","game_status":"F","gamedayType":"P","gameDate":"3/31/2025","hasAbs":false,"scoreboard":{"gamePk":778507,"linescore":{"currentInning":9,"currentInningOrdinal":"9th","inningState":"Top","inningHalf":"Top","isTopInning":true,"scheduledInnings":9,"innings":[{"num":1,"ordinalNum":"1st","home":{"runs":0,"hits":0,"errors":0,"leftOnBase":0},"away":{"runs":0,"hits":0,"errors":0,"leftOnBase":1}},{"num":2,"ordinalNum":"2nd","home":{"runs":1,"hits":1,"errors":0,"leftOnBase":0},"away"
+{"copyright":"Copyright 2026 MLB Advanced Media, L.P.  Use of any content on this page acknowledges agreement to the terms posted here http://gdx.mlb.com/components/copyright.txt","totalItems":7,"totalEvents":0,"totalGames":7,"totalGamesInProgress":0,"dates":[{"date":"2026-05-21","totalItems":7,"totalEvents":0,"totalGames":7,"totalGamesInProgress":0,"games":[{"gamePk":824274,"gameGuid":"7394e796-cfda-47ff-bcd5-c40f6d6b6783","link":"/api/v1.1/game/824274/feed/live","gameType":"R","season":"2026",
