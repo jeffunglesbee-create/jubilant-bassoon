@@ -9042,6 +9042,10 @@ const RELAY_BASE = 'https://field-relay-nba.jeffunglesbee.workers.dev/nba';
 // ESPN Site API — summary endpoint relay (WP + play-by-play, public REST)
 // winprobability[].homeWinPercentage — 0-1 FRACTION scale (e.g. 0.872 = 87.2%)
 const ESPN_SUMMARY_RELAY = 'https://field-relay-nba.jeffunglesbee.workers.dev/espn-summary';
+// Baseball Savant GameFeed — CORS-open, no relay needed
+// Provides live WP (homeTeamWinProbability 0-1) + Statcast exit velocity per play
+// Confirmed CORS-open: access-control-allow-origin: * (May 21 2026)
+const SAVANT_BASE = 'https://baseballsavant.mlb.com';
 const relayNBAScores = {};
 let   RELAY_HEALTHY  = false;
 let   RELAY_PRIMARY  = false;
@@ -9432,6 +9436,23 @@ async function fetchESPNScores(){
             }
           });
         }
+        // STEP 4b: fire Savant WP fetch for live MLB games
+        // sourceId = MLB Stats API gamePk (stored on allData game as game.sourceId)
+        if (state === 'in' && sport === 'baseball' && league === 'mlb') {
+          const mlbGame = (allData?.sports || [])
+            .find(s => s.sport === 'Baseball (MLB)')?.games
+            ?.find(g => espnTeamMatch(g.home||'', homeName) || espnTeamMatch(g.away||'', homeName));
+          const sourceId = mlbGame?.sourceId;
+          if (sourceId) {
+            if (FIELD_DEBUG) console.log('[SAVANT] firing for sourceId:', sourceId);
+            fetchSavantGameFeed(sourceId).then(savant => {
+              if (savant && espnScores[key]) {
+                espnScores[key].wp_prev = espnScores[key].wp;
+                espnScores[key].wp = savant.wp;
+              }
+            });
+          }
+        }
       });
     }catch(e){
       // REMEDY C: network/parse error → error backoff, NOT 'post' state
@@ -9543,6 +9564,39 @@ async function fetchESPNWinProb(gameId) {
     return wp;
   } catch(e) {
     if (FIELD_DEBUG) console.log('[WP] fetchESPNWinProb error:', e?.message);
+    return null;
+  }
+}
+
+// ── Baseball Savant GameFeed — Live WP + Statcast for MLB ─────────────────
+// Endpoint: baseballsavant.mlb.com/gf?game_pk={mlbSourceId}
+// CORS: access-control-allow-origin: * (no relay needed)
+// gamePk = game.sourceId (MLB Stats API numeric ID, NOT ESPN event ID)
+// Returns: { wp: homeTeamWinProbability (0-1), lastWpa: homeTeamWinProbabilityAdded }
+// WP scale: 0-1 fraction (e.g. 0.72 = 72% home win prob) — same as ESPN WP
+// Confirmed live: gamePk 778507 showed homeTeamWinProbability 24x in gameWpa array
+async function fetchSavantGameFeed(sourceId) {
+  if (!sourceId) return null;
+  const url = `${SAVANT_BASE}/gf?game_pk=${sourceId}`;
+  try {
+    const r = await fetch(url, { signal: AbortSignal.timeout(5000) });
+    if (!r.ok) {
+      if (FIELD_DEBUG) console.log('[SAVANT] HTTP', r.status, 'for gamePk', sourceId);
+      return null;
+    }
+    const d = await r.json();
+    const gameWpa = d?.scoreboard?.stats?.wpa?.gameWpa;
+    if (!Array.isArray(gameWpa) || !gameWpa.length) {
+      if (FIELD_DEBUG) console.log('[SAVANT] gameWpa empty for gamePk', sourceId);
+      return null;
+    }
+    const last = gameWpa[gameWpa.length - 1];
+    const wp    = last?.homeTeamWinProbability   ?? null;
+    const wpa   = last?.homeTeamWinProbabilityAdded ?? null;
+    if (FIELD_DEBUG) console.log('[SAVANT] gamePk', sourceId, '→ wp:', wp, 'wpa:', wpa);
+    return wp !== null ? { wp, wpa } : null;
+  } catch(e) {
+    if (FIELD_DEBUG) console.log('[SAVANT] error:', e?.message);
     return null;
   }
 }
@@ -12332,8 +12386,8 @@ async function fetchGameNotes(game){
   try{const cached=localStorage.getItem(cKey);if(cached) return cached;}catch(e){}
   let note=null;
   // P2: official league editorial
-  if((sport.includes('Baseball')||sport.includes('MLB'))&&game.gamePk){
-    note=await fetchMLBGameNotes(game.gamePk,game);
+  if((sport.includes('Baseball')||sport.includes('MLB'))&&game.sourceId){
+    note=await fetchMLBGameNotes(game.sourceId,game);
   } else if((sport.includes('Hockey')||sport.includes('NHL'))&&game._nhlGameId){
     note=await fetchNHLGameNotes(game._nhlGameId);
   } else if(sport.includes('Basketball')||sport.includes('NBA')){

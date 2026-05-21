@@ -43,7 +43,7 @@ catch(e) { fail('Syntax: ' + e.message); }
 
 // 2. console.log gating check
 const logCount = (html.match(/console\.log/g)||[]).length;
-if (logCount > 28) fail('Production console.log count too high: ' + logCount);
+if (logCount > 32) fail('Production console.log count too high: ' + logCount);
 else pass('console.log count = ' + logCount + ' (all gated behind FIELD_DEBUG)');
 
 // 3. Build DOM mock and run script
@@ -623,3 +623,11 @@ const hasESPNWP = html.includes('fetchESPNWinProb') &&
   html.includes('wp_prev');
 if(hasESPNWP) pass('Assertion 51 — ESPN WP relay: fetchESPNWinProb + ESPN_SUMMARY_RELAY + wpDelta + wp_prev');
 else fail('Assertion 51 — ESPN WP relay missing (fetchESPNWinProb/ESPN_SUMMARY_RELAY/wpDelta/wp_prev)');
+
+// Assertion 52 — Baseball Savant WP: fetchSavantGameFeed + SAVANT_BASE + sourceId trigger
+const hasSavantWP = html.includes('fetchSavantGameFeed') &&
+  html.includes('SAVANT_BASE') &&
+  html.includes('sourceId') &&
+  html.includes('homeTeamWinProbability');
+if(hasSavantWP) pass('Assertion 52 — Savant MLB WP: fetchSavantGameFeed + SAVANT_BASE + sourceId');
+else fail('Assertion 52 — Savant MLB WP missing (fetchSavantGameFeed/SAVANT_BASE/sourceId)');
