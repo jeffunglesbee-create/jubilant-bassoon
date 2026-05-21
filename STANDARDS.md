@@ -1403,3 +1403,4 @@ O(sports + consumers): new sport = one emitter, new feature = one subscriber.
 
 Reference: Update Architecture Spec v2: 1LzTqXTEQcFnp7dQ1JpyZOuvydIcUHl--h2prgmI1zNc
 Build Session List v7.8: 1wA4ZQErHk13aeMlqobVxE0yW2bS4w7eDImunMBT2U6Y
+SSE Research doc: 1uNl5ua8LHXBJfG_U6DLyGrNQfVt54HhGoiPNuY0Q_PA
