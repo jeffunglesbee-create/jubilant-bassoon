@@ -10465,7 +10465,7 @@ function renderESPNScores(){
           const pLabel = espnPeriodLabel("T", score.period||0, "");
           periodLabel = `<span class="score-period">${pLabel}</span>`;
         } else {
-          const clockStr = score.clock ? ` ${score.clock}` : "";
+          const clockStr = score.clock ? ` ${fmtESPNClock(score.clock)}` : "";
           const pLabel = espnPeriodLabel(score.periodPrefix||"Q", score.period||0, score.clock);
           periodLabel = `<span class="score-period">${pLabel}${clockStr}</span>`;
         }
@@ -13435,6 +13435,18 @@ function detectAndRenderDoubleFeature() {
 
 const OTW_TIER_LABELS = { fire:'FIRE GAME', hot:'MUST WATCH', warm:'COMPELLING' };
 
+// Format ESPN clock value — handles both "9:05" and ISO "PT09M05.00S" formats
+function fmtESPNClock(clock) {
+  if (!clock) return '';
+  const iso = clock.match(/^PT(\d+)M([\d.]+)S$/);
+  if (iso) {
+    const m = parseInt(iso[1]);
+    const s = Math.floor(parseFloat(iso[2]));
+    return `${m}:${String(s).padStart(2,'0')}`;
+  }
+  return clock; // already formatted (e.g. "9:05")
+}
+
 function buildOTWWhyLine(g, ed, sport, isPreGame){
   if(isPreGame){
     const parts=[];
@@ -13448,8 +13460,8 @@ function buildOTWWhyLine(g, ed, sport, isPreGame){
     return parts.slice(0,4).join(' \u00b7 ');
   }
   const parts=[];
-  if(ed.period){const p=ed.period;const pl=sport.includes('Basketball')?`Q${p}`:sport.includes('Hockey')?`P${p}`:sport.includes('Football')?`Q${p}`:`T${p}`;parts.push(pl);}
-  if(ed.clock) parts.push(ed.clock);
+  if(ed.period){const p=ed.period;const sp2=sport.toLowerCase();const pl=sp2.includes('basketball')?`Q${p}`:sp2.includes('hockey')?`P${p}`:sp2.includes('football')?`Q${p}`:`T${p}`;parts.push(pl);}
+  if(ed.clock) parts.push(fmtESPNClock(ed.clock));
   const hS=parseInt(ed.homeScore)||0,aS=parseInt(ed.awayScore)||0,gap=Math.abs(hS-aS);
   if(gap===0) parts.push('tied');
   else if(gap===1) parts.push('1 back');
@@ -14875,7 +14887,7 @@ function renderHalftimeSwitch(){
   panel.style.display='block';
   const ed = best.eData;
   const scoreStr = `${ed.homeScore||0}–${ed.awayScore||0}`;
-  const clockStr = ed.clock ? ` · ${ed.clock}` : '';
+  const clockStr = ed.clock ? ` · ${fmtESPNClock(ed.clock)}` : '';
   panel.innerHTML = `<div class="halftime-inner" id="ht-inner">
     <span class="ht-icon">🎯</span>
     <span class="ht-label">Perfect Switch</span>
