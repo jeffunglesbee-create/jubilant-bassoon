@@ -2282,6 +2282,22 @@ window.addEventListener('unhandledrejection', e => {
   window._fieldErrors.push({ fn: 'unhandledrejection', err: String(e.reason), ts: Date.now() });
 });
 
+// captureFieldError — replace bare catch(e){} on infrastructure calls
+// silent=true: captured in _fieldErrors only (no console output)
+// silent=false: also console.warn in FIELD_DEBUG mode
+function captureFieldError(fn, err, silent=true){
+  const entry={fn, err:err?.message||String(err), ts:Date.now()};
+  (window._fieldErrors=window._fieldErrors||[]).push(entry);
+  if(!silent&&typeof FIELD_DEBUG!=='undefined'&&FIELD_DEBUG)
+    console.warn('[FIELD silent fail]',fn,entry.err);
+}
+
+// BETFAIR_RELAY_ENABLED — gates all Betfair relay calls
+// false = relay not deployed yet (prevents startup calls to nonexistent endpoint)
+// Set to true after: wrangler deploy + 3 secrets set + /betfair/health returns ok
+// See: workers/field-betfair-relay/wrangler.toml for deploy instructions
+const BETFAIR_RELAY_ENABLED = false;
+
 // ?debug=1 panel — shows _fieldErrors + key state without opening DevTools
 if (typeof location !== 'undefined' && location.search.includes('debug=1')) {
   window.addEventListener('load', () => {
@@ -2546,7 +2562,7 @@ async function startOpenF1Engine(){
   const session=await fetchOpenF1CurrentSession();
   if(!session.isLive) return; // no live session — skip
   await pollOpenF1(); // immediate first poll
-  _openF1PollInterval=setInterval(()=>pollOpenF1().catch(()=>{}),4000);
+  _openF1PollInterval=setInterval(()=>pollOpenF1().catch(e=>captureFieldError('openf1-poll',e,true)),4000);
   // Stop when session ends
   const msLeft=session.end-Date.now();
   if(msLeft>0) setTimeout(()=>{clearInterval(_openF1PollInterval);_openF1PollInterval=null;},msLeft+60000);
@@ -2563,6 +2579,7 @@ const BETFAIR_LIVE_TTL=60000;  // 60s in-play (matches free key delay)
 
 // Fetch odds for a single game — returns {homeWin, awayWin, draw, inPlay} or null
 async function fetchBetfairOdds(game){
+  if(!BETFAIR_RELAY_ENABLED) return null;
   if(!game?.home||!game?.away) return null;
   const key=game._id||game.home+game.away;
   const cached=_betfairOddsCache[key];
@@ -2610,7 +2627,7 @@ async function batchFetchBetfairOdds(games){
       const g=toFetch[i];
       if(res?.odds?.homeWin) _betfairOddsCache[g._id||g.home+g.away]={...res.odds,inPlay:res.inPlay,fetchedAt:Date.now()};
     });
-  }catch(e){}
+  }catch(e){ captureFieldError('betfair-batch-outer',e,true); }
 }
 
 // Format Betfair decimal odds → display string
@@ -2723,6 +2740,7 @@ async function injectBetfairOddsChip(card, game){
 
 // Inject odds on all visible cards — called after batch fetch or on scroll
 function injectAllBetfairOdds(){
+  if(!BETFAIR_RELAY_ENABLED) return;
   if(!allData?.sports) return;
   (allData.sports).forEach(sec=>{
     (sec.games||[]).forEach(game=>{
@@ -5738,7 +5756,12 @@ function renderAll(){
   setTimeout(updateCardLifeStages, 200); // Update life stages after cards render
   setTimeout(renderScoreTicker, 250);   // Render score ticker if games are live
   setTimeout(injectJ1J4Badges, 300);    // J1/J4: Anti-Hype + Scout's Pick per-card badges
-  setTimeout(()=>initFIELDBrief(filtered).catch(()=>{}), 1000); // J3: brief last — highest value, staggered
+  setTimeout(()=>initFIELDBrief(filtered).catch(e=>{
+    captureFieldError('initFIELDBrief',e,false);
+    const slot=document.getElementById('field-brief');
+    if(slot&&!slot.querySelector('.field-brief-card'))
+      slot.innerHTML='<div class="field-brief-card"><div class="field-brief-header"><span class="field-brief-label">FIELD Brief</span></div><div class="field-brief-text pending">Tonight\'s brief is unavailable.</div></div>';
+  }), 1000); // J3: brief last — highest value, staggered
   setTimeout(injectWeatherBadges, 300); // re-apply wx badges from cache after render
   // Runtime silent error scan — FIELD_DEBUG only, runs after async injections settle
   if(FIELD_DEBUG) setTimeout(runSilentErrorScan, 500);
@@ -9749,10 +9772,10 @@ async function fetchESPNScores(){
   renderESPNScores();
 
   // Fire RELAY + FPL + FD in parallel — don't block ESPN cycle
-  fetchNBARelayScores().catch(()=>{});
-  fetchNHLRelayScores().catch(()=>{});
-  fetchFPLLiveScores().catch(()=>{});
-  fdPrefetchSoccerLive().catch(()=>{});
+  fetchNBARelayScores().catch(e=>captureFieldError('relay-nba',e,true));
+  fetchNHLRelayScores().catch(e=>captureFieldError('relay-nhl',e,true));
+  fetchFPLLiveScores().catch(e=>captureFieldError('relay-fpl',e,true));
+  fdPrefetchSoccerLive().catch(e=>captureFieldError('relay-fd',e,true));
 
   // Gap 8: Quiet Hour Detection
   {
@@ -10157,7 +10180,7 @@ async function fetchMLBFixtures(){
       window.dispatchEvent(new CustomEvent('field:data-ready', {detail:{sport:'mlb'}}));
       setTimeout(()=>{
         checkForNewFinals();
-        renderNightOwlRecap().catch(()=>{});
+        renderNightOwlRecap().catch(e=>captureFieldError('night-owl',e,false));
         injectJ1J4Badges();
       }, 400);
       if (FIELD_DEBUG) console.log(`[MLB Stats API] Primary source: ${mergedGames.length} games (${nationalOverrides.length} national TV overrides)`);
@@ -11059,7 +11082,7 @@ async function fetchSchedule(){
   (function initNightOwlPoll(){
     const poll = () => {
       if(allData?.sports?.length) checkForNewFinals();
-      renderNightOwlRecap().catch(()=>{});
+      renderNightOwlRecap().catch(e=>captureFieldError('night-owl',e,false));
     };
     setTimeout(poll, 5000);    // first check: 5s after load (after MLB fills in)
     setInterval(poll, 90000);  // then every 90s
@@ -11120,7 +11143,7 @@ async function fetchSchedule(){
           domFinalsAdded++;
         });
         if(domFinalsAdded > 0 || finalCards.length > 0){
-          renderNightOwlRecap().catch(()=>{});
+          renderNightOwlRecap().catch(e=>captureFieldError('night-owl',e,false));
         }
       }, 300);
     });
@@ -11168,12 +11191,14 @@ async function fetchSchedule(){
   setTimeout(squigglePrefetchAll, 2500); // Squiggle standings
   // OpenF1 — only starts if a live F1 session is detected (self-gating)
   startOpenF1Engine().catch(()=>{});
-  // Betfair batch odds — fires T+4s, after today's games are loaded into allData
+  // Betfair batch odds — fires T+4s only when relay is deployed + configured
+  // BETFAIR_RELAY_ENABLED = false until: wrangler deploy + secrets set + /betfair/health ok
   setTimeout(()=>{
+    if(!BETFAIR_RELAY_ENABLED) return;
     try{
       const games=(allData?.sports||[]).flatMap(s=>s.games||[]);
-      if(games.length) batchFetchBetfairOdds(games).then(()=>injectAllBetfairOdds()).catch(()=>{});
-    }catch(e){}
+      if(games.length) batchFetchBetfairOdds(games).then(()=>injectAllBetfairOdds()).catch(e=>captureFieldError('betfair-batch',e,false));
+    }catch(e){ captureFieldError('betfair-startup',e,false); }
   }, 4000);
   setTimeout(fdPrefetchSoccerLive, 3000)
   setTimeout(slashGolfPrefetchAll, 3500); // Slash Golf: schedule + live leaderboard
@@ -12714,7 +12739,7 @@ function assembleNoteFromContext(game){
           parts.push(`Market: near even-money (${o.homeML}/${o.awayML})`);
       }
     }
-  }catch(e){}
+  }catch(e){ captureFieldError('odds-market-parts',e,true); }
   return parts.length?parts.join(' \u00b7 '):null;
 }
 
@@ -15331,7 +15356,7 @@ function checkForNewFinals(){
       if(_seenFinals.has(game._id)) return;
       _seenFinals.add(game._id);
       saveEspnFinal(game, eData);
-      renderNightOwlRecap().catch(()=>{});
+      renderNightOwlRecap().catch(e=>captureFieldError('night-owl',e,false));
     });
   });
 }
