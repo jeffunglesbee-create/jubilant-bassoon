@@ -9031,8 +9031,9 @@ const ESPN_SCORE_TTL = 900000; // 15 min — entries not refreshed within window
 // Shadow validation: May 16–19 (4 days parallel with ESPN, zero discrepancies).
 // Cutover to primary: May 19 2026. Gives 16-day validation window before NBA Finals G1 (June 3).
 const RELAY_BASE = 'https://field-relay-nba.jeffunglesbee.workers.dev/nba';
-// ESPN Gambit partner API — WP relay (CORS locked to espn.com, relay bypasses)
-const ESPN_GAMBIT_RELAY = 'https://field-relay-nba.jeffunglesbee.workers.dev/espn-gambit';
+// ESPN Site API — summary endpoint relay (WP + play-by-play, public REST)
+// winprobability[].homeWinPercentage — 0-100 scale (e.g. 77.1)
+const ESPN_SUMMARY_RELAY = 'https://field-relay-nba.jeffunglesbee.workers.dev/espn-summary';
 const relayNBAScores = {};
 let   RELAY_HEALTHY  = false;
 let   RELAY_PRIMARY  = false;
@@ -9508,30 +9509,24 @@ async function fetchESPNScores(){
   espnIntervalId = setTimeout(fetchESPNScores, Math.max(5000, nextInterval));
 }
 
-// ── ESPN Win Probability — Gambit Partner API ─────────────────────────────
-// Source: gambit-api-partner.fantasy.espn.com (powers Gamecast WP display)
-// CORS locked to espn.com — fetched via field-relay-nba /espn-gambit/ route
-// Polling cadence: called fire-and-forget from fetchESPNScores for live NBA games
-// Returns homeWinPercentage (0–100 scale, e.g. 62.1) or null on failure
-// Field name confirmed from ESPN summary API convention (homeWinPercentage)
-// Fallback chain guards against schema changes
+// ── ESPN Win Probability — Site Summary API ───────────────────────────────
+// Source: site.api.espn.com/apis/site/v2/sports/basketball/nba/summary
+// Public REST endpoint; CORS locked to espn.com — relay bypasses
+// WP array: winprobability[].homeWinPercentage — 0-100 scale (e.g. 77.1)
+// Most recent snapshot = last entry in array (.at(-1))
+// Scale confirmed: DOM shows 77.1 (OKC vs SA, 2nd Qtr, May 20 2026)
 async function fetchESPNWinProb(gameId) {
-  const url = `${ESPN_GAMBIT_RELAY}/apis/v1/challenges/281/scoreboard`
-    + `?platform=gamecast-web&competitionId=${gameId}`
-    + `&view=chui_gamecast_scoreboard_challenge`;
+  const url = `${ESPN_SUMMARY_RELAY}/sports/basketball/nba/summary?event=${gameId}`;
   try {
     const r = await fetch(url, { signal: AbortSignal.timeout(4000) });
     if (!r.ok) return null;
     const d = await r.json();
-    // Try likely field names in order — update first entry when Response tab confirmed
-    // Primary candidate: homeWinPercentage (matches ESPN summary API + R scraper evidence)
+    // winprobability is an array; most recent snapshot is last entry
     const wp =
-      d?.homeWinPercentage   ??   // ESPN standard (most likely)
-      d?.winProbability      ??   // alt flat field
-      d?.competitions?.[0]?.homeWinPercentage ??  // nested under competitions
-      d?.competitions?.[0]?.winProbability    ??  // nested alt
+      d?.winprobability?.at(-1)?.homeWinPercentage ??  // primary: array of snapshots
+      d?.winprobability?.[0]?.homeWinPercentage    ??  // fallback: first entry
       null;
-    if (FIELD_DEBUG && wp === null) console.debug('[WP] fetchESPNWinProb: null — keys:', Object.keys(d||{}).join(','));
+    if (FIELD_DEBUG && wp === null) console.debug('[WP] fetchESPNWinProb: null — top keys:', Object.keys(d||{}).join(','));
     return wp;
   } catch(e) {
     if (FIELD_DEBUG) console.debug('[WP] fetchESPNWinProb error:', e?.message);
