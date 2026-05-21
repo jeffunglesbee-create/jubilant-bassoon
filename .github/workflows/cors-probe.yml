@@ -16,117 +16,80 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: main
 
-      - name: CORS probe + Savant schema analysis
+      - name: Probe + schema analysis
         run: |
-          INPUT_URL=$(cat outbox/.trigger-cors-probe 2>/dev/null | grep '^url=' | cut -d= -f2-)
-          URL="${{ github.event.inputs.url }}"
-          [ -z "$URL" ] && URL="$INPUT_URL"
+          URL=$(cat outbox/.trigger-cors-probe | grep '^url=' | cut -d= -f2-)
+          [ -z "$URL" ] && URL="${{ github.event.inputs.url }}"
+          [ -z "$URL" ] && URL="https://baseballsavant.mlb.com/gf?game_pk=824274"
 
           OUT="outbox/cors-result.txt"
-          echo "---" > $OUT
-          echo "URL: $URL" >> $OUT
-          echo "Timestamp: $(date -u)" >> $OUT
-          echo "---" >> $OUT
-
-          if echo "$URL" | grep -q "savant"; then
-            # Deep Savant analysis: get a recent gamePk first
-            echo "Mode: Baseball Savant deep analysis" >> $OUT
-            echo "" >> $OUT
-
-            # Get today's completed games from statsapi
-            SCHEDULE=$(curl -s "https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=2026-05-21" 2>/dev/null)
-            GAMEPK=$(echo "$SCHEDULE" | python3 -c "
-import json,sys
-d=json.load(sys.stdin)
-games=d.get('dates',[{}])[0].get('games',[])
-for g in games:
-    if g.get('status',{}).get('statusCode') in ('F','O'):
-        print(g['gamePk']); break
-" 2>/dev/null)
-
-            if [ -z "$GAMEPK" ]; then
-              # Use any game from today
-              GAMEPK=$(echo "$SCHEDULE" | python3 -c "
-import json,sys
-d=json.load(sys.stdin)
-games=d.get('dates',[{}])[0].get('games',[])
-if games: print(games[0]['gamePk'])
-" 2>/dev/null)
-            fi
-
-            [ -z "$GAMEPK" ] && GAMEPK="778507"
-            echo "gamePk used: $GAMEPK" >> $OUT
-            echo "" >> $OUT
-
-            SAVANT_URL="https://baseballsavant.mlb.com/gf?game_pk=$GAMEPK"
-            echo "Savant URL: $SAVANT_URL" >> $OUT
-            echo "" >> $OUT
-            echo "=== RESPONSE HEADERS ===" >> $OUT
-            curl -sI -H "Origin: https://jubilant-bassoon.jeffunglesbee.workers.dev" "$SAVANT_URL" >> $OUT 2>&1
-
-            echo "" >> $OUT
-            echo "=== TOP-LEVEL KEYS ===" >> $OUT
-            curl -s -H "Origin: https://jubilant-bassoon.jeffunglesbee.workers.dev" "$SAVANT_URL" 2>/dev/null | \
+          { echo "---"
+            echo "URL: $URL"
+            echo "Timestamp: $(date -u)"
+            echo "---"
+            echo ""
+            echo "=== HEADERS ==="
+            curl -sI -H "Origin: https://jubilant-bassoon.jeffunglesbee.workers.dev" "$URL"
+            echo ""
+            echo "=== SCHEMA ==="
+            curl -s -H "Origin: https://jubilant-bassoon.jeffunglesbee.workers.dev" "$URL" | \
               python3 -c "
 import json,sys
 d=json.load(sys.stdin)
-print('Top keys:', list(d.keys()))
-for k,v in d.items():
-    t=type(v).__name__
-    if isinstance(v,dict):
-        print(f'  {k} (dict): {list(v.keys())[:8]}')
-    elif isinstance(v,list) and v:
-        print(f'  {k} (list[{len(v)}]): first item keys={list(v[0].keys())[:8] if isinstance(v[0],dict) else type(v[0]).__name__}')
-    else:
-        print(f'  {k} ({t}): {str(v)[:80]}')
-" >> $OUT 2>&1
-
-            echo "" >> $OUT
-            echo "=== EXIT VELOCITY / WPA FIELDS (search) ===" >> $OUT
-            curl -s -H "Origin: https://jubilant-bassoon.jeffunglesbee.workers.dev" "$SAVANT_URL" 2>/dev/null | \
-              python3 -c "
-import json,sys,re
-raw=sys.stdin.read()
-d=json.loads(raw)
-
-def search_keys(obj, targets, path=''):
-    hits=[]
+def walk(obj, path='', depth=0):
+    if depth>3: return
     if isinstance(obj,dict):
-        for k,v in obj.items():
-            full=f'{path}.{k}' if path else k
-            for t in targets:
-                if t.lower() in k.lower():
-                    hits.append(f'{full} = {str(v)[:60]}')
-            hits+=search_keys(v,targets,full)
-    elif isinstance(obj,list) and obj and len(obj)<500:
-        hits+=search_keys(obj[0],targets,path+'[0]')
-    return hits
-
-targets=['wpa','exit','launch','leverage','velocity','prob','wp','expected',
-         'spin','hard','contact','barrel','ev','la','babip','xba','xwoba']
-for hit in search_keys(d,targets)[:40]:
-    print(hit)
-" >> $OUT 2>&1
-
-          else
-            # Standard CORS probe
-            curl -sI \
-              -H "Origin: https://jubilant-bassoon.jeffunglesbee.workers.dev" \
-              "$URL" >> $OUT 2>&1
-            echo "" >> $OUT
-            echo "--- BODY PREVIEW (first 800 chars) ---" >> $OUT
-            curl -s -H "Origin: https://jubilant-bassoon.jeffunglesbee.workers.dev" \
-              "$URL" 2>&1 | head -c 800 >> $OUT
-          fi
-
-          cat $OUT
+        for k,v in list(obj.items())[:20]:
+            p=f'{path}.{k}' if path else k
+            if isinstance(v,(dict,list)):
+                print(f'{p}:')
+                walk(v,p,depth+1)
+            else:
+                print(f'  {p} = {str(v)[:80]}')
+    elif isinstance(obj,list) and obj:
+        print(f'  [{len(obj)} items] first:')
+        walk(obj[0],path+'[0]',depth+1)
+walk(d)
+" 2>&1
+          } > "$OUT"
+          cat "$OUT"
 
       - name: Commit result
         run: |
           git config user.email "actions@github.com"
           git config user.name "CORS Probe"
-          git pull --rebase
-          git add outbox/cors-result.txt
-          git diff --staged --quiet || git commit -m "CORS probe result $(date -u +%Y%m%dT%H%M%SZ)"
+          git fetch origin main
+          git reset --hard origin/main
+          # Re-run analysis to get fresh output after reset
+          URL=$(cat outbox/.trigger-cors-probe | grep '^url=' | cut -d= -f2-)
+          [ -z "$URL" ] && URL="https://baseballsavant.mlb.com/gf?game_pk=824274"
+          OUT="outbox/cors-result.txt"
+          { echo "---"; echo "URL: $URL"; echo "Timestamp: $(date -u)"; echo "---"; echo ""
+            echo "=== HEADERS ==="
+            curl -sI -H "Origin: https://jubilant-bassoon.jeffunglesbee.workers.dev" "$URL"
+            echo ""; echo "=== SCHEMA ==="
+            curl -s -H "Origin: https://jubilant-bassoon.jeffunglesbee.workers.dev" "$URL" | \
+              python3 -c "
+import json,sys
+d=json.load(sys.stdin)
+def walk(obj,path='',depth=0):
+    if depth>2: return
+    if isinstance(obj,dict):
+        for k,v in list(obj.items())[:20]:
+            p=f'{path}.{k}' if path else k
+            if isinstance(v,(dict,list)):
+                t='{}' if isinstance(v,dict) else f'[{len(v)}]'
+                print(f'{p} {t}')
+                walk(v,p,depth+1)
+            else:
+                print(f'  {p} = {str(v)[:80]}')
+    elif isinstance(obj,list) and obj:
+        walk(obj[0],path+'[0]',depth+1)
+walk(d)
+" 2>&1; } > "$OUT"
+          git add "$OUT"
+          git diff --staged --quiet || git commit -m "CORS result $(date -u +%Y%m%dT%H%M%SZ)"
           git push
