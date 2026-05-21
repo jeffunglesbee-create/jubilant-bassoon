@@ -2254,7 +2254,7 @@ flex-shrink:0;white-space:nowrap;
 // Debug logging: set FIELD_DEBUG=1 in localStorage to enable
 // In production: console.debug and console output are suppressed
 // ═══════════════════════════════════════════════════════════════
-const FIELD_DEBUG = localStorage.getItem('FIELD_DEBUG') === '1';
+let FIELD_DEBUG = localStorage.getItem('FIELD_DEBUG') === '1';
 
 // ── Runtime error capture (Rule 18 — field_browser.test.js reads this) ──────
 // window._fieldErrors collects errors from critical path functions.
