@@ -2497,7 +2497,8 @@ function squiggleToFieldGame(g){
     confirmed:true, venue:g.venue||'',
     streams:resolveBundle('AFL_USA'),
     _sport:'Australian Football (AFL)',
-    _id:'afl_'+g.id, _squiggleId:g.id, _squiggle:g
+    _id:'afl_'+g.id, _squiggleId:g.id, _squiggle:g,
+    _aflComplete:g.complete, // 0=pre 1-99=live 100=final — used by getStatus() to override time window
   };
 }
 
@@ -3466,8 +3467,14 @@ function fmtTime(iso){
   const tz = selectedTz==="local"?localTz():selectedTz;
   return new Date(iso).toLocaleTimeString('en-US',{timeZone:tz,hour:'numeric',minute:'2-digit',hour12:true});
 }
-function getStatus(iso){
+function getStatus(iso, opts){
   if(!iso) return "upcoming";
+  // If caller passes completion signal, respect it over time-based guess
+  if(opts && opts.aflComplete !== undefined){
+    if(opts.aflComplete >= 100) return "upcoming"; // complete=100 → finished, card goes post
+    if(opts.aflComplete > 0)    return "live";     // in progress
+    // complete=0 → fall through to time-based
+  }
   const diff=(new Date(iso)-Date.now())/60000; // negative = game has started
   if(diff<0&&diff>-210) return "live";   // started within last 3.5hrs → likely still live
   if(diff<0) return "upcoming";          // started > 3.5hrs ago → treat as finished/upcoming
@@ -4566,7 +4573,7 @@ function renderPicker(){
       <div class="picker-sport-label">${icon} ${sec.sport}</div>`;
     games.forEach(g=>{
       if(!g._id) g._id="g"+(++_gid);
-      const st = getStatus(g.start_time);
+      const st = getStatus(g.start_time, g._aflComplete!==undefined?{aflComplete:g._aflComplete}:undefined);
       const isLive = st==="live";
       const isSoon = st==="soon";
       // Pre-set espn-live/espn-final based on time — ESPN scores refine this
@@ -4646,7 +4653,7 @@ function mvRender(i){
     el.onclick=()=>openPicker(i);
     return;
   }
-  const st=getStatus(g.start_time);
+  const st=getStatus(g.start_time, g._aflComplete!==undefined?{aflComplete:g._aflComplete}:undefined);
   el.className="mv-slot filled"+(st==="live"?" live-s":st==="soon"?" soon-s":"");
   const timeStr=fmtTime(g.start_time);
   const timeClass=st==="live"?"mv-time live-t":"mv-time";
@@ -5424,7 +5431,7 @@ function renderAll(){
     const sportColor=SPORT_COLORS[sec.sport]||"#c9a84c";
     const cards=games.map((g,gi)=>{
       if(!g._id) g._id="g"+(++_gid);
-      const st=getStatus(g.start_time);
+      const st=getStatus(g.start_time, g._aflComplete!==undefined?{aflComplete:g._aflComplete}:undefined);
       const timeStr=fmtTime(g.start_time);
       const isLive=st==="live";
       const timeCls=isLive?"game-time live-t":"game-time";
