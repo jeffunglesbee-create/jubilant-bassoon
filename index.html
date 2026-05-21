@@ -5651,9 +5651,17 @@ function buildTodaySchedule(){
     {home:"TBD \u2014 Eastern Champion", away:"TBD \u2014 Western Champion", league:"NBA Finals 2026 \u2013 G5 \u00b7 Series 0-0",  start_time:"2026-06-16T00:30:00Z", confirmed:true, venue:"TBD \u2014 Home of Eastern Champion", streams:resolveBundle("NBA_NBC"), seriesRecord:"0-0"},
     {home:"TBD \u2014 Western Champion", away:"TBD \u2014 Eastern Champion", league:"NBA Finals 2026 \u2013 G6 \u00b7 Series 0-0",  start_time:"2026-06-19T00:30:00Z", confirmed:true, venue:"TBD \u2014 Home of Western Champion", streams:resolveBundle("NBA_NBC"), seriesRecord:"0-0"},
     {home:"TBD \u2014 Eastern Champion", away:"TBD \u2014 Western Champion", league:"NBA Finals 2026 \u2013 G7 \u00b7 Series 0-0",  start_time:"2026-06-21T00:30:00Z", confirmed:true, venue:"TBD \u2014 Home of Eastern Champion", streams:resolveBundle("NBA_NBC"), seriesRecord:"0-0"},
-  ].filter(g=>isToday(g.start_time));
-
-  // ── NHL Playoffs — Wednesday May 20 2026 ──────────────────────────
+  ].reduce((acc,g)=>{
+    // Populate global series record map from ALL games (not just today's)
+    // Night Owl uses this to override stale localStorage seriesRecord values
+    if(g.seriesRecord&&g.seriesRecord!=='0-0'){
+      const key=[teamNick(g.home||''),teamNick(g.away||'')].sort().join('|');
+      if(!window._seriesMap) window._seriesMap={};
+      window._seriesMap[key]=g.seriesRecord; // later entries (newer games) overwrite earlier
+    }
+    if(isToday(g.start_time)) acc.push(g);
+    return acc;
+  },[]);
   // Source: NHL.com verified May 20, 2026
   //   TONIGHT: VGK @ COL West CF G1 — 8pm ET — ESPN · Ball Arena, Denver
   //   TOMORROW: CAR vs MTL East CF G1 — 8pm ET — TNT/truTV
@@ -11720,6 +11728,15 @@ function buildCompoundPrompt(sections) {
   const games = (sections || []).flatMap(s => s.games || []).slice(0, 12);
   const seriesGames = games.filter(g => g.seriesRecord);
 
+  // Big game flag: Conference Finals and above get doubled brief length
+  // Rationale: high-stakes series deserve editorial depth; fan investment is much higher
+  const isBigGame = games.some(g =>
+    /conference finals|cf g\d|nba finals|stanley cup final|wcf|ecf/i.test(g.league||'')
+  );
+  const briefWords   = isBigGame ? '200-240 words. 3-4 paragraphs.' : '100-120 words. 2 short paragraphs.';
+  const seriesWords  = isBigGame ? '160 words' : '80 words';
+  const maxTokensHint = isBigGame ? 5000 : 3000; // consumed by caller
+
   // Regular-season games that need per-game briefs: non-series, non-soccer, max 6
   // Covers WNBA, MLB local, MLS, AFL, etc. — games with no matchupNote and no seriesRecord
   const regularGames = games
@@ -11819,7 +11836,7 @@ ${gameLines || 'No games tonight.'}
 ${eplSection}${regularSection}
 Return this exact JSON structure (null for any section without sufficient data):
 {
-  "brief": "100-120 words. 2 short paragraphs. No headers. Lead with most important story. Complete sentences.",
+  "brief": "${briefWords} No headers. Lead with most important story. Complete sentences.",
   "series": [${seriesIds.map(id => `{"id":"${id}","preview":null}`).join(',')}],
   "scouts_pick": "one sentence explaining the Scout's Pick or null",
   "bni_note": "one sentence Anti-Hype framing or null",
@@ -11832,7 +11849,7 @@ Rules:
 - Write ONLY from the data above. Never invent scores, stats, records, or player tendencies.
 - Strong verbs, precise framing, zero clichés.
 - Every sentence must be complete. Never end mid-sentence.
-- For each series entry: write 80 words focused on stakes and series arc, or null if data insufficient.
+- For each series entry: write ${seriesWords} focused on stakes and series arc, or null if data insufficient.
 - For each epl entry: 40-60 words, context-first (table position, season stakes), or null if data insufficient.
 - For each game_briefs entry: 30-40 words, lead with what's at stake tonight, mention the venue and broadcast, or null if data insufficient.
 - If [BNI] appears: describe that matchup as low-stakes in the brief — never echo the tag verbatim.
@@ -11859,7 +11876,7 @@ async function fetchCompoundEditorial(sections) {
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
-        max_tokens: 3000,
+        max_tokens: (sections||[]).flatMap(s=>s.games||[]).some(g=>/conference finals|cf g\d|nba finals|stanley cup final|wcf|ecf/i.test(g.league||'')) ? 5000 : 3000,
         messages: [{role: 'user', content: buildCompoundPrompt(sections)}]
       }),
       signal: AbortSignal.timeout(18000)
@@ -14797,6 +14814,16 @@ async function renderNightOwlRecap(){
     return bSustained-aSustained;
   })[0];
   if(!topGame){el.style.display='none';return;}
+
+  // Override stale localStorage seriesRecord with live schedule data
+  // Fixes: Night Owl shows "SAS leads 1-0" after OKC evened series to 1-1
+  if(window._seriesMap){
+    try{
+      const key=[teamNick(topGame.home||''),teamNick(topGame.away||'')].sort().join('|');
+      const live=window._seriesMap[key];
+      if(live&&live!=='0-0') topGame.seriesRecord=live;
+    }catch(e_){}
+  }
 
   // Re-render gate: skip if same game is already in this slot
   // Exception: re-render if the element no longer contains Night Owl markup
