@@ -29,13 +29,13 @@ name: FIELD Daily Brief
 
 on:
   schedule:
-    - cron: '30 9 * * *'   # 9:30 UTC = 5:30am ET (EDT Apr-Nov). Cron fires BEFORE target.
+    - cron: '0 7 * * *'   # 7:00 UTC = 3:00am ET (EDT Apr-Nov). Early enough for H-1 on 5:30am ET AFL games.
   workflow_dispatch:
 
 jobs:
   brief:
     runs-on: ubuntu-latest
-    timeout-minutes: 60    # Safety cap — max sleep is ~45min so this is never hit normally
+    timeout-minutes: 200   # Max wait = 10:15 UTC - 7:00 UTC = 3h15m = 195min. 200 gives headroom.
 
     steps:
       - name: Checkout repo
@@ -155,9 +155,11 @@ jobs:
           TODAY=$(date -u +%Y-%m-%d)
           # Squiggle: free, CORS-open, no auth. Via relay for consistency + caching.
           # Etiquette: identify FIELD traffic with User-Agent header.
+          # NOTE: complete=0 only returns unstarted games. AFL games that have kicked off
+          # (complete>0) are invisible. Query by round instead — same fix as index.html.
           DATA=$(curl -sf --max-time 10 \
             -H "User-Agent: FIELD-Global-Sports-Intelligence" \
-            "$RELAY/squiggle/?q=games;year=2026;complete=0" \
+            "$RELAY/squiggle/?q=games;year=2026;round=11" \
             || echo '{"games":[]}')
           echo "$DATA" > /tmp/afl.json
           # Squiggle date format: "YYYY-MM-DD HH:MM:SS" UTC (space, not T)
