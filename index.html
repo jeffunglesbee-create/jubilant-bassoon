@@ -5639,7 +5639,7 @@ function buildTodaySchedule(){
   //          G5 June 15* · G6 June 18* · G7 June 20* (* = if necessary)
   const nbaGames=[
     {home:"New York Knicks",       away:"Cleveland Cavaliers",  league:"NBA Playoffs \u2013 East CF G1 \u00b7 NYK wins 115-104",  start_time:"2026-05-20T00:00:00Z", confirmed:true, venue:"Madison Square Garden, New York NY",  streams:resolveBundle("NBA_ESPN"), seriesRecord:"NYK wins 115-104", matchupNote:"Brunson 38 pts. Knicks erased a 22-point Q4 deficit to win in OT. Sam Merrill nearly hit the buzzer-beater. NYK leads series 1-0."},
-    {home:"New York Knicks",       away:"Cleveland Cavaliers",  league:"NBA Playoffs \u2013 East CF G2 \u00b7 NYK leads 1-0",   start_time:"2026-05-22T00:00:00Z", confirmed:true, venue:"Madison Square Garden, New York NY",  streams:resolveBundle("NBA_ESPN"), seriesRecord:"NYK leads 1-0", matchupNote:"Knicks look to go up 2-0 at MSG. Brunson 38 pts in epic G1 comeback from -22. Harden targeted in mismatch — Cavs must adjust. G2 Thursday 8pm ET ESPN."},
+    {home:"New York Knicks",       away:"Cleveland Cavaliers",  league:"NBA Playoffs \u2013 East CF G2 \u00b7 NYK leads 1-0",   start_time:"2026-05-22T00:00:00Z", confirmed:true, venue:"Madison Square Garden, New York NY",  streams:resolveBundle("NBA_ESPN"), seriesRecord:"NYK leads 1-0", matchupNote:"G2 tonight. Brunson 38 pts in historic comeback from -22 in G1. Harden was mismatch target — Cavs must adjust or fall 0-2."},
     {home:"Oklahoma City Thunder", away:"San Antonio Spurs",    league:"NBA Playoffs \u2013 West CF G2 \u00b7 OKC wins 122-113, series tied 1-1", start_time:"2026-05-21T00:30:00Z", confirmed:true, venue:"Paycom Center, Oklahoma City OK",       streams:resolveBundle("NBA_NBC"), seriesRecord:"Series tied 1-1", seriesMargins:[7,-9,-1,-1,-1,-1,-1], matchupNote:"OKC evens the series at home 122-113. Spurs won G1 in double OT; Thunder respond to avoid 0-2 hole. SGA takes over on home floor. G3 Friday May 22 8:30 PM ET at Frost Bank Center, San Antonio — NBC/Peacock."},
     {home:"San Antonio Spurs",    away:"Oklahoma City Thunder", league:"NBA Playoffs \u2013 West CF G3 \u00b7 Series tied 1-1",           start_time:"2026-05-23T00:30:00Z", confirmed:true, venue:"Frost Bank Center, San Antonio TX",     streams:resolveBundle("NBA_NBC"), seriesRecord:"Series tied 1-1", matchupNote:"WCF shifts to San Antonio for G3. Wembanyama at home after 41-pt G1. Fox (ankle) status TBD. NBC/Peacock. Series tied 1-1 after OKC evened it at Paycom."},
     // ── NBA Finals 2026 — All games NBC/Peacock ─────────────────────
@@ -14253,9 +14253,12 @@ function loadTonightFinals(){
   }catch(e){return [];}
 }
 function buildNightOwlStatic(f){
-  const winner=(f.homeScore||0)>=(f.awayScore||0)?f.home:f.away;
-  const loser=(f.homeScore||0)>=(f.awayScore||0)?f.away:f.home;
-  const score=f.awayScore+'\u2013'+f.homeScore;
+  const homeWon=(f.homeScore||0)>=(f.awayScore||0);
+  const winner=homeWon?f.home:f.away;
+  const loser=homeWon?f.away:f.home;
+  const winnerScore=homeWon?f.homeScore:f.awayScore;
+  const loserScore=homeWon?f.awayScore:f.homeScore;
+  const score=winnerScore+'\u2013'+loserScore;
   let line=winner+' defeated '+loser+' '+score+'.';
   if(f.seriesRecord) line+=' Series: '+f.seriesRecord+'.';
   line+=' Full breakdown in tomorrow\'s FIELD Brief.';
@@ -14322,8 +14325,17 @@ function buildLifeStageContent(game, eData, stage) {
     case 'pre': {
       // Pre-game: context from game data, no fabrication
       const parts = [];
-      if (game.matchupNote) parts.push(game.matchupNote.slice(0,120));
+      // Series record first — always readable, not at risk of truncation
       if (game.seriesRecord && game.seriesRecord !== '0-0') parts.push(game.seriesRecord);
+      if (game.matchupNote) {
+        const note = game.matchupNote;
+        // Truncate at word boundary (not mid-word) to avoid "Cavs must ad"-style cuts
+        const limit = 120;
+        const truncated = note.length > limit
+          ? note.slice(0, limit).replace(/\s+\S*$/, '\u2026')
+          : note;
+        parts.push(truncated);
+      }
       const ms = _bdlMilestonesCache?.[game._id];
       if (ms) parts.push(`${ms.playerName} needs ${ms.gap} ${ms.stat}`);
       // GOTD surfacing in card brief — makes streaming context visible without badge-row scroll
@@ -14795,7 +14807,9 @@ async function renderNightOwlRecap(){
   const cacheKey='field_nightowl_'+topGame.id;
   const cached=sessionStorage.getItem(cacheKey);
   const winner=(topGame.homeScore||0)>=(topGame.awayScore||0)?topGame.home:topGame.away;
-  const scoreLabel=topGame.awayScore+'\u2013'+topGame.homeScore;
+  const _owlWinnerScore=(topGame.homeScore||0)>=(topGame.awayScore||0)?topGame.homeScore:topGame.awayScore;
+  const _owlLoserScore=(topGame.homeScore||0)>=(topGame.awayScore||0)?topGame.awayScore:topGame.homeScore;
+  const scoreLabel=_owlWinnerScore+'\u2013'+_owlLoserScore;
   _nightOwlRendered=true;
   _nightOwlGameId=topGame.id;
   el.style.display='block';
