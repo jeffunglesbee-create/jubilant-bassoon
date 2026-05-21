@@ -616,3 +616,10 @@ const hasGameNotes = html.includes('fetchGameNotes') &&
 if(hasGameNotes) pass('Assertion 50 — Game Notes Layer: P1-P4 stack + dispatcher + FIELD_FEATURES entry');
 else fail('Assertion 50 — Game Notes Layer missing (fetchGameNotes/assembleNoteFromContext/fetchMLBGameNotes)');
 
+// Assertion 51 — ESPN WP relay: fetchESPNWinProb + wpDelta in dramaScoreLive + ESPN_GAMBIT_RELAY
+const hasESPNWP = html.includes('fetchESPNWinProb') &&
+  html.includes('ESPN_GAMBIT_RELAY') &&
+  html.includes('wpDelta') &&
+  html.includes('wp_prev');
+if(hasESPNWP) pass('Assertion 51 — ESPN WP relay: fetchESPNWinProb + ESPN_GAMBIT_RELAY + wpDelta + wp_prev');
+else fail('Assertion 51 — ESPN WP relay missing (fetchESPNWinProb/ESPN_GAMBIT_RELAY/wpDelta/wp_prev)');

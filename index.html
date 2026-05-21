@@ -9031,6 +9031,8 @@ const ESPN_SCORE_TTL = 900000; // 15 min — entries not refreshed within window
 // Shadow validation: May 16–19 (4 days parallel with ESPN, zero discrepancies).
 // Cutover to primary: May 19 2026. Gives 16-day validation window before NBA Finals G1 (June 3).
 const RELAY_BASE = 'https://field-relay-nba.jeffunglesbee.workers.dev/nba';
+// ESPN Gambit partner API — WP relay (CORS locked to espn.com, relay bypasses)
+const ESPN_GAMBIT_RELAY = 'https://field-relay-nba.jeffunglesbee.workers.dev/espn-gambit';
 const relayNBAScores = {};
 let   RELAY_HEALTHY  = false;
 let   RELAY_PRIMARY  = false;
@@ -9393,6 +9395,7 @@ async function fetchESPNScores(){
 
         const key = `${homeName}|${awayName}`;
         const situation = comp.situation || null;
+        const _prev = espnScores[key]; // preserve async WP across polls
         espnScores[key] = {
           _gameId: resolveGameIdByHome(homeName), // for drama history lookup
           state, period, clock, detail,
@@ -9406,8 +9409,19 @@ async function fetchESPNScores(){
           situation,
           homeLinescores: homeLS,
           awayLinescores: awayLS,
+          wp:      _prev?.wp      ?? null, // populated by WP fetch cycle
+          wp_prev: _prev?.wp_prev ?? null, // set to previous wp before update
         };
         espnScoreTs[key] = Date.now();
+        // STEP 4: fire async WP fetch for live NBA games
+        if (state === 'in' && ev.id && section === 'nba') {
+          fetchESPNWinProb(ev.id).then(wp => {
+            if (wp !== null && espnScores[key]) {
+              espnScores[key].wp_prev = espnScores[key].wp;
+              espnScores[key].wp = wp;
+            }
+          });
+        }
       });
     }catch(e){
       // REMEDY C: network/parse error → error backoff, NOT 'post' state
@@ -9492,6 +9506,37 @@ async function fetchESPNScores(){
     return Math.min(min, dueIn);
   }, ESPN_REFRESH_IDLE);
   espnIntervalId = setTimeout(fetchESPNScores, Math.max(5000, nextInterval));
+}
+
+// ── ESPN Win Probability — Gambit Partner API ─────────────────────────────
+// Source: gambit-api-partner.fantasy.espn.com (powers Gamecast WP display)
+// CORS locked to espn.com — fetched via field-relay-nba /espn-gambit/ route
+// Polling cadence: called fire-and-forget from fetchESPNScores for live NBA games
+// Returns homeWinPercentage (0–1) or null on failure
+// Field name confirmed from ESPN summary API convention (homeWinPercentage)
+// Fallback chain guards against schema changes
+async function fetchESPNWinProb(gameId) {
+  const url = `${ESPN_GAMBIT_RELAY}/apis/v1/challenges/281/scoreboard`
+    + `?platform=gamecast-web&competitionId=${gameId}`
+    + `&view=chui_gamecast_scoreboard_challenge`;
+  try {
+    const r = await fetch(url, { signal: AbortSignal.timeout(4000) });
+    if (!r.ok) return null;
+    const d = await r.json();
+    // Try likely field names in order — update first entry when Response tab confirmed
+    // Primary candidate: homeWinPercentage (matches ESPN summary API + R scraper evidence)
+    const wp =
+      d?.homeWinPercentage   ??   // ESPN standard (most likely)
+      d?.winProbability      ??   // alt flat field
+      d?.competitions?.[0]?.homeWinPercentage ??  // nested under competitions
+      d?.competitions?.[0]?.winProbability    ??  // nested alt
+      null;
+    if (FIELD_DEBUG && wp === null) console.debug('[WP] fetchESPNWinProb: null — keys:', Object.keys(d||{}).join(','));
+    return wp;
+  } catch(e) {
+    if (FIELD_DEBUG) console.debug('[WP] fetchESPNWinProb error:', e?.message);
+    return null;
+  }
 }
 
 // Fuzzy match: does the ESPN team name match a FIELD game team name?
@@ -11325,7 +11370,17 @@ function dramaScoreLive(eData, sport){
   }
 
   const raw = base*52 + timeBonus + sitBonus;
-  return Math.min(100, Math.round(raw));
+  // ── WP Delta bonus (ESPN Gambit Win Probability) ─────────────────────
+  // wpDelta of 15+ pts across consecutive polls = significant swing
+  // Contribution capped at 25pts to prevent WP from dominating score
+  let wpBonus = 0;
+  const wpNow  = eData?.wp      ?? null;
+  const wpPrev = eData?.wp_prev ?? null;
+  if (wpNow !== null && wpPrev !== null) {
+    const wpDelta = Math.abs(wpNow - wpPrev) * 100; // convert 0-1 to 0-100 scale
+    wpBonus = Math.min(wpDelta * 1.5, 25);
+  }
+  return Math.min(100, Math.round(raw + wpBonus));
 }
 
 // #18c: Ghost Note / Statistical Extremes
