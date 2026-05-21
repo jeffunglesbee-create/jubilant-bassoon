@@ -380,6 +380,15 @@ If failing: stop. This is now a TYPE B session.
 node field_smoke.js   ← must still be 0 failures after all changes
 ```
 
+**PENDING LEGAL FIXES — check once, then remove this note:**
+Two 10-minute fixes from Legal Position May 21 (1p2249pqBt7e_MUhiaVDj7OROIXeku3Y6vPmLNb_rDaA).
+Complete during any daily update session and delete these lines when done.
+- FD.org attribution: confirm "Soccer data: football-data.org" appears in the
+  soccer standings panel or app footer. If missing, add it (~10 min).
+- ESPN User-Agent: confirm relay requests include
+  `'User-Agent': 'FIELD-Personal-Sports-Guide/1.0 (non-commercial)'`
+  on ESPN scoreboard fetches. If missing, add to the relay worker (~10 min).
+
 ### Why this matters
 
 The Daily Update Reference contains the rules Claude uses when writing
