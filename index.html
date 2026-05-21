@@ -5616,7 +5616,8 @@ function buildTodaySchedule(){
   const nbaGames=[
     {home:"New York Knicks",       away:"Cleveland Cavaliers",  league:"NBA Playoffs \u2013 East CF G1 \u00b7 NYK wins 115-104",  start_time:"2026-05-20T00:00:00Z", confirmed:true, venue:"Madison Square Garden, New York NY",  streams:resolveBundle("NBA_ESPN"), seriesRecord:"NYK wins 115-104", matchupNote:"Brunson 38 pts. Knicks erased a 22-point Q4 deficit to win in OT. Sam Merrill nearly hit the buzzer-beater. NYK leads series 1-0."},
     {home:"New York Knicks",       away:"Cleveland Cavaliers",  league:"NBA Playoffs \u2013 East CF G2 \u00b7 NYK leads 1-0",   start_time:"2026-05-22T00:00:00Z", confirmed:true, venue:"Madison Square Garden, New York NY",  streams:resolveBundle("NBA_ESPN"), seriesRecord:"NYK leads 1-0", matchupNote:"Knicks look to go up 2-0 at MSG. Brunson 38 pts in epic G1 comeback from -22. Harden targeted in mismatch — Cavs must adjust. G2 Thursday 8pm ET ESPN."},
-    {home:"Oklahoma City Thunder", away:"San Antonio Spurs",    league:"NBA Playoffs \u2013 West CF G2 \u00b7 SAS leads 1-0",   start_time:"2026-05-21T00:30:00Z", confirmed:true, venue:"Paycom Center, Oklahoma City OK",       streams:resolveBundle("NBA_NBC"), seriesRecord:"SAS leads 1-0", seriesMargins:[7,-1,-1,-1,-1,-1,-1], matchupNote:"Wembanyama 41/24/3blk in 2OT road win G1. Fox (ankle) game-time decision — optimism he plays (Marc Spears). Harper 24/11/6ast/7stl in G1 start. OKC first home loss of playoffs — desperate tonight."},
+    {home:"Oklahoma City Thunder", away:"San Antonio Spurs",    league:"NBA Playoffs \u2013 West CF G2 \u00b7 OKC wins 122-113, series tied 1-1", start_time:"2026-05-21T00:30:00Z", confirmed:true, venue:"Paycom Center, Oklahoma City OK",       streams:resolveBundle("NBA_NBC"), seriesRecord:"Series tied 1-1", seriesMargins:[7,-9,-1,-1,-1,-1,-1], matchupNote:"OKC evens the series at home 122-113. Spurs won G1 in double OT; Thunder respond to avoid 0-2 hole. SGA takes over on home floor. G3 Friday May 22 8:30 PM ET at Frost Bank Center, San Antonio — NBC/Peacock."},
+    {home:"San Antonio Spurs",    away:"Oklahoma City Thunder", league:"NBA Playoffs \u2013 West CF G3 \u00b7 Series tied 1-1",           start_time:"2026-05-23T00:30:00Z", confirmed:true, venue:"Frost Bank Center, San Antonio TX",     streams:resolveBundle("NBA_NBC"), seriesRecord:"Series tied 1-1", matchupNote:"WCF shifts to San Antonio for G3. Wembanyama at home after 41-pt G1. Fox (ankle) status TBD. NBC/Peacock. Series tied 1-1 after OKC evened it at Paycom."},
     // ── NBA Finals 2026 — All games NBC/Peacock ─────────────────────
     // UPDATE team names + venues once ECF/WCF conclude (~June 3)
     {home:"TBD \u2014 Eastern Champion", away:"TBD \u2014 Western Champion", league:"NBA Finals 2026 \u2013 G1 \u00b7 Series 0-0",  start_time:"2026-06-06T00:30:00Z", confirmed:true, venue:"TBD \u2014 Home of Eastern Champion", streams:resolveBundle("NBA_NBC"), seriesRecord:"0-0", matchupNote:"NBA Finals 2026 on NBC/Peacock. Teams TBD \u2014 update once Conference Finals conclude."},
@@ -5652,7 +5653,7 @@ function buildTodaySchedule(){
     // COL wins Presidents' Trophy (best record) · COL wins R2 4-1 (vs Minnesota) · VGK wins R2 4-2 (vs Anaheim)
     // Key players: MacKinnon (COL), Marner (VGK), Dorofeyev (VGK — playoff scoring leader)
     // Broadcast: ESPN (G1-G4, G5, G7) · ABC (G6 only)
-    {home:"Colorado Avalanche",  away:"Vegas Golden Knights", league:"NHL Playoffs – West CF G1 · Series 0-0", start_time:"2026-05-21T00:00:00Z", confirmed:true, venue:"Ball Arena, Denver CO",      streams:resolveBundle("NHL_ESPN"), crew:"Sean McDonough · Ray Ferraro · Haley Skarupa (ESPN)", seriesRecord:"0-0"},
+    {home:"Colorado Avalanche",  away:"Vegas Golden Knights", league:"NHL Playoffs – West CF G1 \u00b7 VGK wins 4-2, VGK leads 1-0", start_time:"2026-05-21T00:00:00Z", confirmed:true, venue:"Ball Arena, Denver CO",      streams:resolveBundle("NHL_ESPN"), crew:"Sean McDonough · Ray Ferraro · Haley Skarupa (ESPN)", seriesRecord:"VGK leads 1-0"},
     {home:"Colorado Avalanche",  away:"Vegas Golden Knights", league:"NHL Playoffs – West CF G2 · Series 0-0", start_time:"2026-05-23T00:00:00Z", confirmed:true, venue:"Ball Arena, Denver CO",      streams:resolveBundle("NHL_ESPN"), seriesRecord:"0-0"},
     {home:"Vegas Golden Knights",away:"Colorado Avalanche",   league:"NHL Playoffs – West CF G3 · Series 0-0", start_time:"2026-05-25T00:00:00Z", confirmed:true, venue:"T-Mobile Arena, Las Vegas NV",streams:resolveBundle("NHL_ESPN"), seriesRecord:"0-0"},
   ].filter(g=>isToday(g.start_time));  // ── MLB (May 11: Monday slate + EFL 2nd leg) ──────────────────────────────
@@ -6380,32 +6381,43 @@ const MEDIA_SPECIALS = [
     card:{
       show:"NBA Eastern Conference Finals",network:"ESPN",chip:"ESPN",
       time:"8:00 PM ET",
-      desc:"New York Knicks lead the Eastern Conference Finals 1-0 after Brunson's 38-point comeback win (NYK 115, CLE 104 OT). Knicks erased a 22-point Q4 deficit in one of the great playoff comebacks at MSG. G2 Thursday May 21 8 PM ET ESPN. G3-G4 at Rocket Mortgage FieldHouse.",
-      journalNote:"ECF G2 Thursday 8pm ESPN. Knicks up 1-0 after stunning comeback — Brunson targeted Harden relentlessly in the mismatch.",
+      desc:"G2 TONIGHT — New York Knicks host Cleveland Cavaliers (8:00 PM ET, ESPN). NYK leads 1-0 after one of the great playoff comebacks: Brunson 38 pts, Knicks erased a 22-point Q4 deficit to win G1 in OT (NYK 115, CLE 104). Harden exposed as mismatch target. Cavs must respond or face 0-2 hole before series shifts to Cleveland. G3 Saturday May 23 on ABC.",
+      journalNote:"ECF G2 TONIGHT 8pm ESPN. NYK 1-0. Brunson erased -22 in Q4. Harden mismatch. Must-watch.",
       link:"https://www.espn.com/nba/playoffs/bracket"
     }
   },
   {
-    // NBA Western Conference Finals full series — WCF on NBC/Peacock, SAS leads 1-0
+    // NBA Tip-Off — ECF G2 pregame — May 21 only (CLE @ NYK, 8pm ESPN)
+    startDate:"2026-05-21", endDate:"2026-05-21",
+    card:{
+      show:"NBA Tip-Off presented by AT&T",network:"ESPN",chip:"ESPN",
+      time:"7:00 PM ET",
+      desc:"Pregame coverage for ECF G2 — Cleveland Cavaliers at New York Knicks (8:00 PM ET, ESPN). Ernie Johnson, Charles Barkley, Kenny Smith, and Shaquille O'Neal break down Brunson's historic 38-point comeback win in G1. Knicks erased a 22-point Q4 deficit to win in OT. Can the Cavs adjust defensively? Harden mismatch discussion. Series: NYK leads 1-0.",
+      journalNote:"NBA Tip-Off on ESPN 7pm ET. ECF G2 preview — NYK 1-0 after Brunson's 38pt comeback. Ernie, Barkley, Kenny, Shaq.",
+      link:"https://www.espn.com/nba/playoffs"
+    }
+  },
+  {
+    // NBA Western Conference Finals full series — WCF on NBC/Peacock, series tied 1-1
     startDate:"2026-05-18", endDate:"2026-06-01",
     card:{
       show:"NBA Western Conference Finals",network:"NBC / Peacock",chip:"NBC",
       time:"8:30 PM ET",
-      desc:"San Antonio Spurs lead 1-0 after Wembanyama's 41-pt 24-reb 2OT road win (SAS 122, OKC 115). G2 tonight (Wed May 20, 8:30 PM ET, NBC/Peacock). Fox (ankle) game-time decision — optimism he plays. Harper 24/11reb/7stl in G1 start. G1-G2 Paycom Center (OKC); G3-G4 Frost Bank Center (SAS).",
-      journalNote:"WCF G2 TONIGHT on NBC (free OTA) and Peacock. Fox game-time decision. This is the must-watch game of the night.",
+      desc:"Series tied 1-1. Spurs won G1 in double overtime (SAS 122, OKC 115 — Wembanyama 41/24/3blk). Thunder evened it at home in G2 (OKC 122, SAS 113 — SGA dominant on home floor). G3 Friday May 22 at Frost Bank Center, San Antonio — 8:30 PM ET NBC/Peacock. Pregame: NBA Showtime at 7:30 PM ET on Peacock (Maria Taylor, Carmelo Anthony, Vince Carter, Tracy McGrady).",
+      journalNote:"WCF tied 1-1. G3 Fri May 22 8:30pm ET at SAS. NBC/Peacock. Wembanyama vs SGA — this series has everything.",
       link:"https://www.nbc.com/nba"
     }
   },
   {
-    // NHL Western Conference Finals full series — COL vs VGK on ESPN/ABC
-    // G1: Wed May 20 8pm ET · G2: Fri May 22 · G3: Sun May 24 · G4: Tue May 26
-    // G6 (if needed) on ABC; all others ESPN
+    // NHL Western Conference Finals full series — VGK vs COL on ESPN/ABC
+    // G1 RESULT: VGK 4, COL 2 — Golden Knights lead 1-0
+    // G2: Fri May 22 8pm ET · G3: Sun May 24 · G4: Tue May 26 · G6 on ABC; all others ESPN
     startDate:"2026-05-20", endDate:"2026-06-05",
     card:{
       show:"NHL Western Conference Finals",network:"ESPN / ABC",chip:"ESPN",
       time:"8:00 PM ET",
-      desc:"Colorado Avalanche vs Vegas Golden Knights — Western Conference Finals on ESPN. G1 tonight (Wed May 20, 8pm). MacKinnon leads Colorado (Presidents' Trophy winners); Mitch Marner and Pavel Dorofeyev (9 playoff goals, leads all scorers) power Vegas. Both teams won the Cup this decade — Avs in 2022, VGK in 2023. G6 on ABC; all others ESPN.",
-      journalNote:"NHL WCF on ESPN all series. COL vs VGK starts tonight. Dorofeyev (9 goals) is the X-factor. Best-of-7.",
+      desc:"Vegas Golden Knights lead 1-0 after winning G1 on the road 4-2 at Ball Arena. Dorofeyev leads all playoff scorers (9 goals). G2 Friday May 22 at Colorado (Ball Arena, Denver) — 8:00 PM ET ESPN. MacKinnon's Avalanche must regroup at home after dropping the opener as Presidents' Trophy winners. G6 on ABC; all other games ESPN.",
+      journalNote:"NHL WCF: VGK leads 1-0 after road win 4-2. G2 Fri 8pm ESPN at COL. Dorofeyev (9 playoff goals) is the X-factor.",
       link:"https://www.espn.com/nhl/playoffs"
     }
   },
@@ -6797,33 +6809,33 @@ const BETTING_LINES_FALLBACK_DATA = [
   {
     matchKey:"knicks",    // NYK vs CLE ECF G2 — Thu May 21 8pm ET, ESPN · NYK leads 1-0
     source:"📊 AI Estimated",
-    context:"Knicks took G1 in stunning fashion — Brunson dropped 38 and erased a 22-point deficit in the fourth quarter and OT. Cleveland's James Harden was exposed as a mismatch target. The Cavs must adjust defensively or risk going down 2-0 at MSG before the series shifts to Cleveland. New York is playing inspired basketball, but the question is whether the comeback will galvanise them or let them relax. Cavs remain capable; they just survived seven-game wars to get here.",
+    context:"Knicks took G1 in stunning fashion — Brunson dropped 38 and erased a 22-point deficit in the fourth quarter and OT. Cleveland's James Harden was exposed as a mismatch target and had more turnovers than field goals. The Cavs must adjust defensively or risk going down 2-0 at MSG before the series shifts to Cleveland. NYK -4.5 reflects MSG home advantage; over/under set conservatively after G1 overtime.",
     lines:[
-      {label:"Moneyline",items:[{t:"New York Knicks",o:"-200",fav:true},{t:"Cleveland Cavaliers",o:"+168",fav:false}]},
-      {label:"Spread",items:[{t:"Knicks -5",o:"-110",fav:true},{t:"Cavs +5",o:"-110",fav:false}]},
-      {label:"Total (O/U)",items:[{t:"Over 213.5",o:"-110",fav:false},{t:"Under 213.5",o:"-110",fav:false}]},
+      {label:"Moneyline",items:[{t:"New York Knicks",o:"-190",fav:true},{t:"Cleveland Cavaliers",o:"+160",fav:false}]},
+      {label:"Spread",items:[{t:"Knicks -4.5",o:"-110",fav:true},{t:"Cavs +4.5",o:"-110",fav:false}]},
+      {label:"Total (O/U)",items:[{t:"Over 211.5",o:"-110",fav:false},{t:"Under 211.5",o:"-110",fav:false}]},
     ],
     books:[{name:"DraftKings",url:"https://sportsbook.draftkings.com"},{name:"FanDuel",url:"https://sportsbook.fanduel.com"},{name:"BetMGM",url:"https://sports.betmgm.com"}]
   },
   {
-    matchKey:"thunder",   // OKC vs SAS WCF G2 — Wed May 20 8:30pm ET, NBC/Peacock
+    matchKey:"hurricanes",  // CAR vs MTL NHL ECF G1 — Thu May 21 8pm ET, TNT/truTV
     source:"📊 AI Estimated",
-    context:"Wembanyama stole G1 on the road — 41/24/3blk in double overtime. Fox is day-to-day with an ankle. OKC now desperate at home having never lost a playoff game this postseason until G1. The Thunder will come out swinging; Spurs need to prove the road win wasn't a fluke. OKC remains the favourite in the series but this G2 has must-win energy for the home side.",
+    context:"Carolina enters with 11 days of rest after sweeping Philadelphia in four games, posting a perfect 8-0 record through two rounds. Montreal survived Buffalo in a G7 overtime thriller (Canadiens 3, Sabres 2 OT) — the Bell Centre ran on pure emotion to get here. The rust question for Carolina is real after nearly two weeks off, but the Canes have the deeper, more rested team. Montreal's momentum is real but untested against this level of opponent. PNC Arena is a notoriously hostile building.",
     lines:[
-      {label:"Moneyline",items:[{t:"Oklahoma City Thunder",o:"-200",fav:true},{t:"San Antonio Spurs",o:"+168",fav:false}]},
-      {label:"Spread",items:[{t:"Thunder -5",o:"-110",fav:true},{t:"Spurs +5",o:"-110",fav:false}]},
-      {label:"Total (O/U)",items:[{t:"Over 217.5",o:"-110",fav:false},{t:"Under 217.5",o:"-110",fav:false}]},
+      {label:"Moneyline",items:[{t:"Carolina Hurricanes",o:"-240",fav:true},{t:"Montreal Canadiens",o:"+198",fav:false}]},
+      {label:"Spread",items:[{t:"Hurricanes -1.5",o:"+115",fav:false},{t:"Canadiens +1.5",o:"-135",fav:true}]},
+      {label:"Total (O/U)",items:[{t:"Over 5.5",o:"-115",fav:true},{t:"Under 5.5",o:"-105",fav:false}]},
     ],
     books:[{name:"DraftKings",url:"https://sportsbook.draftkings.com"},{name:"FanDuel",url:"https://sportsbook.fanduel.com"},{name:"BetMGM",url:"https://sports.betmgm.com"}]
   },
   {
-    matchKey:"avalanche",  // VGK @ COL NHL West CF G1 — Wed May 20 8pm ET, ESPN · Ball Arena Denver
+    matchKey:"avalanche",  // COL vs VGK NHL West CF G2 — Fri May 22 8pm ET, ESPN (series VGK leads 1-0)
     source:"📊 AI Estimated",
-    context:"Two Cup winners from this decade open the Western Conference Finals in Denver. Colorado won the Presidents' Trophy and steamrolled Minnesota in five; Vegas dispatched Anaheim in six. MacKinnon is the engine for the Avs, while Mitch Marner has been exceptional for Vegas (5 multi-point games this postseason). Pavel Dorofeyev leads all playoff scorers with 9 goals. Home ice matters in the playoffs, and Colorado has been dominant at Ball Arena. Avalanche are favourites to advance but this is a series.",
+    context:"Vegas stole G1 on the road 4-2 at Ball Arena, with Dorofeyev leading all playoff scorers (9 goals). Colorado's Presidents' Trophy pedigree now faces a must-respond moment at home. MacKinnon's Avalanche are heavy G2 home favourites as a correction bet — Presidents' Trophy teams rarely go down 0-2 at home. But VGK have Cup pedigree (2023 champions) and road confidence. G2 Friday May 22 8pm ET ESPN.",
     lines:[
-      {label:"Moneyline",items:[{t:"Colorado Avalanche",o:"-165",fav:true},{t:"Vegas Golden Knights",o:"+140",fav:false}]},
-      {label:"Spread",items:[{t:"Avalanche -1.5",o:"+120",fav:false},{t:"Golden Knights +1.5",o:"-140",fav:true}]},
-      {label:"Total (O/U)",items:[{t:"Over 5.5",o:"-120",fav:true},{t:"Under 5.5",o:"+100",fav:false}]},
+      {label:"Moneyline",items:[{t:"Colorado Avalanche",o:"-200",fav:true},{t:"Vegas Golden Knights",o:"+168",fav:false}]},
+      {label:"Spread",items:[{t:"Avalanche -1.5",o:"+105",fav:false},{t:"Golden Knights +1.5",o:"-125",fav:true}]},
+      {label:"Total (O/U)",items:[{t:"Over 5.5",o:"-130",fav:true},{t:"Under 5.5",o:"+110",fav:false}]},
     ],
     books:[{name:"DraftKings",url:"https://sportsbook.draftkings.com"},{name:"FanDuel",url:"https://sportsbook.fanduel.com"},{name:"BetMGM",url:"https://sports.betmgm.com"}]
   },
@@ -11233,7 +11245,7 @@ let _pwaPrompt = null;
 
   // SW_VERSION — bump on every deploy to bust returning user cache
   // Assertion 28 in smoke verifies this constant is present
-  const SW_VERSION = '2026-05-20';
+  const SW_VERSION = '2026-05-21';
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
   // Cache strategy: API-only (ESPN scores, weather, odds, SportsDB).
