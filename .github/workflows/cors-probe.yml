@@ -16,18 +16,18 @@ jobs:
       - name: Fetch and save
         run: |
           URL=$(grep '^url=' outbox/.trigger-cors-probe | cut -d= -f2-)
-          echo "Probing: $URL"
-          echo "URL: $URL" > outbox/cors-result.txt
-          echo "Date: $(date -u)" >> outbox/cors-result.txt
-          echo "=== HEADERS ===" >> outbox/cors-result.txt
-          curl -sI "$URL" >> outbox/cors-result.txt
-          echo "=== BODY ===" >> outbox/cors-result.txt
-          curl -s "$URL" >> outbox/cors-result.txt
+          TS=$(date -u +%Y%m%dT%H%M%SZ)
+          OUT="outbox/cors-result-${TS}.txt"
+          echo "URL: $URL  [$TS]" | tee "$OUT"
+          curl -sI "$URL" | tee -a "$OUT"
+          echo "=== BODY (first 3000 chars) ===" | tee -a "$OUT"
+          curl -s "$URL" | head -c 3000 | tee -a "$OUT"
+          echo "OUTFILE=$OUT" >> $GITHUB_ENV
 
       - name: Push result
         run: |
           git config user.email "probe@field"
           git config user.name "Probe"
-          git add outbox/cors-result.txt
-          git commit -m "probe $(date -u +%H%M%S)" || echo "no change"
-          git push || (git pull --rebase && git push)
+          git add "$OUTFILE"
+          git commit -m "probe $OUTFILE"
+          git push
