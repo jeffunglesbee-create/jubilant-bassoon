@@ -9303,7 +9303,7 @@ const _espnLeagueErrors = {};   // league → consecutive error count
 
 async function fetchESPNScores(){
   _pollCycle++; // drives lead change burst decay
-  console.debug('[ESPN-POLL] cycle', _pollCycle, 'FIELD_DEBUG=', FIELD_DEBUG);
+  if (FIELD_DEBUG) console.log('[ESPN-POLL] cycle', _pollCycle, 'FIELD_DEBUG=', FIELD_DEBUG);
   if(espnIntervalId){ clearTimeout(espnIntervalId); espnIntervalId = null; } // prevent duplicate schedulers
 
   const today = new Date();
@@ -9425,9 +9425,9 @@ async function fetchESPNScores(){
         espnScoreTs[key] = Date.now();
         // STEP 4: fire async WP fetch for live NBA games
         if (FIELD_DEBUG && sport === 'basketball' && league === 'nba')
-          console.debug('[WP-DIAG] sport:', sport, 'league:', league, 'state:', state, 'ev.id:', ev.id);
+          console.log('[WP-DIAG] sport:', sport, 'league:', league, 'state:', state, 'ev.id:', ev.id);
         if (state === 'in' && ev.id && sport === 'basketball' && league === 'nba') {
-          if (FIELD_DEBUG) console.debug('[WP] firing for gameId:', ev.id);
+          if (FIELD_DEBUG) console.log('[WP] firing for gameId:', ev.id);
           fetchESPNWinProb(ev.id).then(wp => {
             if (wp !== null && espnScores[key]) {
               espnScores[key].wp_prev = espnScores[key].wp;
@@ -9538,10 +9538,10 @@ async function fetchESPNWinProb(gameId) {
       d?.winprobability?.at(-1)?.homeWinPercentage ??  // primary: array of snapshots
       d?.winprobability?.[0]?.homeWinPercentage    ??  // fallback: first entry
       null;
-    if (FIELD_DEBUG) console.debug('[WP] fetchESPNWinProb:', wp !== null ? wp : ('null — top keys: ' + Object.keys(d||{}).join(',')));
+    if (FIELD_DEBUG) console.log('[WP] fetchESPNWinProb:', wp !== null ? wp : ('null — top keys: ' + Object.keys(d||{}).join(',')));
     return wp;
   } catch(e) {
-    if (FIELD_DEBUG) console.debug('[WP] fetchESPNWinProb error:', e?.message);
+    if (FIELD_DEBUG) console.log('[WP] fetchESPNWinProb error:', e?.message);
     return null;
   }
 }
