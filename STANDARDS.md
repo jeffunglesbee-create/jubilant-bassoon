@@ -1304,3 +1304,40 @@ built on a false baseline are harder to debug than a clean failure.
 
 The cost of a 15-minute audit is always lower than the cost of unwinding
 work built on a fabricated foundation.
+
+## Rule 26 — Feature naming conventions
+
+FIELD uses a consistent naming framework for canonical architectural layers.
+Names signal what a feature *does* architecturally, not just what it's about.
+
+### Naming patterns
+
+**[X] Engine** — multi-input computation that produces a structured state
+object consumed by multiple features. Complex logic, many inputs, one
+canonical output. Example: Story Engine (computeGameNarrative), Watch Engine
+(computeWatchValue).
+
+**[X] Classifier** — classification utility that takes an input and returns
+flags or categories. Single-purpose, no side effects. Example: Sport
+Classifier (classifySport → { isNBA, isSoccer, isAFL, … }).
+
+**[X] Authority** — canonical lookup from known data that returns a resolved
+value. Replaces repeated inline derivations with a single source of truth.
+Example: Broadcast Authority (resolveGameBroadcast → { isFreeOTA, isNational, … }).
+
+**Pipeline** — a composable sequence of stages where each stage consumes the
+previous stage's output. The pipeline runner function is enrichGame().
+Individual stages keep their own Engine/Classifier/Authority names.
+
+### When to apply
+
+Before naming a new feature, ask:
+- Does it compute a complex state from multiple inputs? → Engine
+- Does it classify/categorize something? → Classifier
+- Does it look up a canonical value from known data? → Authority
+- Does it combine multiple of the above sequentially? → Pipeline stage
+
+### Reference
+
+Game Intelligence Pipeline spec: 1HPd4VIk4Py35iUMSXZ9D__I_1UetpiK0YoAL8Sr4et4
+Build Session List v7.6: 1kQ6O3VCbbrj6sknW--X2nYIB02obHMDLk_eEhO0r0nk
