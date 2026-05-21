@@ -2264,7 +2264,6 @@ flex-shrink:0;white-space:nowrap;
 
 <!-- ══ STREAMING DISCOVERY ════════════════════════════════════ -->
 <div class="page-divider"><div class="divider-line"></div><div class="divider-label">Also streaming today</div><div class="divider-line"></div></div>
-<div class="page-divider"><div class="divider-line"></div><div class="divider-label">Also streaming today</div><div class="divider-line"></div></div>
 <section class="media-section" id="media-section">
   <div class="media-head">
     <div class="media-icon">📺</div>
@@ -4354,7 +4353,7 @@ function getCalendarContext(){
     return {flag:'postseason',label:'NBA & NHL Playoffs',urgency:'high',relevantLeagues:['NBA','NHL']};
 
   // World Cup 2026 (June 11 – July 19, 2026 specific)
-  if(y===2026&&((m===5&&d>=11)||m===6||(m===6&&d<=19)))
+  if(y===2026&&((m===5&&d>=11)||(m===6&&d<=19)))
     return {flag:'world_cup',label:'World Cup 2026',urgency:'max',relevantLeagues:['Soccer']};
 
   // Soccer Transfer Window (Jul 1 – Aug 31)
@@ -14448,7 +14447,7 @@ function renderOneToWatch(){
         <span class="otw-label">${_otwCtxHigh&&_otwCtxLabel?_otwCtxLabel:'Tonight'}</span>
         <span class="otw-matchup">${g.away||''} @ ${g.home||''}</span>
         ${why?`<span class="otw-why">${why}</span>`:''}
-        <span class="otw-drama d-pregame">${_otwCtxHigh&&_otwCtxLabel?'TOP PICK':'TOP PICK'}</span>
+        <span class="otw-drama d-pregame">TOP PICK</span>
         ${dismissBtn()}
       </div>`;
       wire('tonight',g); return;
