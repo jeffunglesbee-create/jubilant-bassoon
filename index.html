@@ -9040,7 +9040,7 @@ const ESPN_SCORE_TTL = 900000; // 15 min — entries not refreshed within window
 // Cutover to primary: May 19 2026. Gives 16-day validation window before NBA Finals G1 (June 3).
 const RELAY_BASE = 'https://field-relay-nba.jeffunglesbee.workers.dev/nba';
 // ESPN Site API — summary endpoint relay (WP + play-by-play, public REST)
-// winprobability[].homeWinPercentage — 0-100 scale (e.g. 77.1)
+// winprobability[].homeWinPercentage — 0-1 FRACTION scale (e.g. 0.872 = 87.2%)
 const ESPN_SUMMARY_RELAY = 'https://field-relay-nba.jeffunglesbee.workers.dev/espn-summary';
 const relayNBAScores = {};
 let   RELAY_HEALTHY  = false;
@@ -9524,9 +9524,10 @@ async function fetchESPNScores(){
 // ── ESPN Win Probability — Site Summary API ───────────────────────────────
 // Source: site.api.espn.com/apis/site/v2/sports/basketball/nba/summary
 // Public REST endpoint; CORS locked to espn.com — relay bypasses
-// WP array: winprobability[].homeWinPercentage — 0-100 scale (e.g. 77.1)
+// WP array: winprobability[].homeWinPercentage — 0-1 FRACTION (e.g. 0.872 = 87.2%)
+// ESPN Gamecast display * 100 → "87.2" in DOM (that's why DOM showed 62.1 not 0.621)
 // Most recent snapshot = last entry in array (.at(-1))
-// Scale confirmed: DOM shows 77.1 (OKC vs SA, 2nd Qtr, May 20 2026)
+// Scale confirmed live: 0.872 observed SA@OKC G2, 3rd Qtr, May 21 2026
 async function fetchESPNWinProb(gameId) {
   const url = `${ESPN_SUMMARY_RELAY}/sports/basketball/nba/summary?event=${gameId}`;
   try {
@@ -11387,7 +11388,7 @@ function dramaScoreLive(eData, sport){
   const wpNow  = eData?.wp      ?? null;
   const wpPrev = eData?.wp_prev ?? null;
   if (wpNow !== null && wpPrev !== null) {
-    const wpDelta = Math.abs(wpNow - wpPrev); // value is 0-100 scale (e.g. 62.1, not 0.621)
+    const wpDelta = Math.abs(wpNow - wpPrev) * 100; // API is 0-1 scale (e.g. 0.872 = 87.2%); convert to pct points
     wpBonus = Math.min(wpDelta * 1.5, 25);
   }
   return Math.min(100, Math.round(raw + wpBonus));
