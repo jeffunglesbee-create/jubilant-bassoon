@@ -2,25 +2,31 @@ name = "field-betfair-relay"
 main = "src/index.js"
 compatibility_date = "2026-05-21"
 
-# SECRETS — set in Cloudflare Dashboard (never in this file)
-# Dashboard: Workers & Pages → field-betfair-relay → Settings → Variables and Secrets
+# DEPLOY — manual only (no auto-deploy workflow; consistent with field-claude-proxy)
 #
-#   BETFAIR_APP_KEY   → Betfair Developer Portal → My Applications → App Keys
-#                       Free delayed key: any value shown under "Delayed" column
-#                       Live key (£299 one-time): upgrades to ~40ms latency + event proxy
+# Step 1 — Set secrets (BEFORE deploying — worker is useless without them):
+#   cd workers/field-betfair-relay
+#   npx wrangler secret put BETFAIR_APP_KEY    ← delayed free key from Developer Portal
+#   npx wrangler secret put BETFAIR_USERNAME   ← Betfair account email
+#   npx wrangler secret put BETFAIR_PASSWORD   ← Betfair account password
 #
-#   BETFAIR_USERNAME  → Betfair account email address
+# Step 2 — Deploy:
+#   cd workers/field-betfair-relay
+#   npx wrangler deploy
 #
-#   BETFAIR_PASSWORD  → Betfair account password
+# Step 3 — Verify:
+#   curl https://field-betfair-relay.jeffunglesbee.workers.dev/betfair/health
+#   Expected: {"ok":true,"sessionValid":true,...}
 #
-# To set secrets via CLI:
-#   wrangler secret put BETFAIR_APP_KEY --name field-betfair-relay
-#   wrangler secret put BETFAIR_USERNAME --name field-betfair-relay
-#   wrangler secret put BETFAIR_PASSWORD --name field-betfair-relay
+# Secrets persist across deploys — deploying new code does NOT clear them.
+# To update a secret: npx wrangler secret put BETFAIR_APP_KEY --name field-betfair-relay
 #
-# Worker URL after deploy:
-#   https://field-betfair-relay.jeffunglesbee.workers.dev
+# Live key upgrade (£299 one-time, when approved):
+#   npx wrangler secret put BETFAIR_APP_KEY --name field-betfair-relay
+#   (paste the live key; no code changes needed — worker handles both key types)
 #
-# Deploy:
-#   cd workers/field-betfair-relay && npx wrangler deploy
-#   Or push to trigger GitHub Actions (see deploy-betfair.yml)
+# Why no auto-deploy workflow?
+#   CLOUDFLARE_API_TOKEN is not a stored GitHub secret in jubilant-bassoon.
+#   The main site deploys via Cloudflare's connected-repo CI — no token needed.
+#   Worker deploys require wrangler auth, which Jeff runs locally.
+#   This is identical to how field-claude-proxy is deployed.
