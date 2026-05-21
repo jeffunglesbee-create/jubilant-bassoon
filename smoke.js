@@ -228,6 +228,18 @@ assert('A56 — field_utils.js loaded in index.html',
   // A62 — relay score fetches use captureFieldError (not bare .catch(()=>{}))
   assert('A62 — relay fetch captures: NBA relay errors captured', html.includes("captureFieldError('relay-nba'"));
 
+  // A63 — getCalendarContext defined (Seasonal Intelligence Layer 0)
+  assert('A63 — Seasonal L0: getCalendarContext defined', html.includes('function getCalendarContext('));
+
+  // A64 — calendarContextSentence defined
+  assert('A64 — Seasonal L0: calendarContextSentence defined', html.includes('function calendarContextSentence('));
+
+  // A65 — MLB probable pitcher hydration in fetchMLBSchedule
+  assert('A65 — MLB pitcher hydration: probablePitcher(stats) in schedule URL', html.includes('probablePitcher(stats)'));
+
+  // A66 — fetchMLBTeamMomentum defined
+  assert('A66 — MLB team momentum: fetchMLBTeamMomentum defined', html.includes('async function fetchMLBTeamMomentum('));
+
 
 
   // ── Feature registry guards: A60-A123 (table-driven) ────────────────────

@@ -4246,6 +4246,136 @@ const MLB_DAILY_OVERRIDES = {
   peacockGOTD: 'CWS@SEA', // White Sox @ Mariners — Peacock GOTD Wed May 20 · 9:40 PM ET
 };
 
+// MLB team IDs for MLB Stats API teamId param (fetchMLBTeamMomentum, H2H)
+const MLB_TEAM_IDS = {
+  NYY:147, BOS:111, TBR:139, TOR:141, BAL:110,
+  CLE:114, MIN:142, CHW:145, KCR:118, DET:116,
+  HOU:117, LAA:108, SEA:136, OAK:133, TEX:140,
+  NYM:121, ATL:144, PHI:143, MIA:146, WSN:120,
+  CHC:112, MIL:158, STL:138, CIN:113, PIT:134,
+  LAD:119, SFG:137, SDP:135, COL:115, ARI:109,
+};
+
+// ── Seasonal Intelligence Layer 0 — Calendar Context ─────────────────────────
+// Pure date logic. No API. No storage. Returns context for OTW bar + J3 brief.
+// Priority: finals > postseason > world_cup > playoff_race > transfer_window >
+//           nfl_playoffs > super_bowl > nfl_season > null
+function getCalendarContext(){
+  const now=new Date();
+  const m=now.getMonth(); // 0=Jan
+  const d=now.getDate();
+  const y=now.getFullYear();
+
+  // NBA/NHL Finals window (late May – late June)
+  if((m===4&&d>=28)||(m===5&&d<=22))
+    return {flag:'finals',label:'NBA & NHL Finals',urgency:'max',relevantLeagues:['NBA','NHL']};
+
+  // NBA/NHL Conference Finals / Playoffs (Apr 15 – late May)
+  if((m===3&&d>=15)||m===4)
+    return {flag:'postseason',label:'NBA & NHL Playoffs',urgency:'high',relevantLeagues:['NBA','NHL']};
+
+  // World Cup 2026 (June 11 – July 19, 2026 specific)
+  if(y===2026&&((m===5&&d>=11)||m===6||(m===6&&d<=19)))
+    return {flag:'world_cup',label:'World Cup 2026',urgency:'max',relevantLeagues:['Soccer']};
+
+  // Soccer Transfer Window (Jul 1 – Aug 31)
+  if(m===6||m===7)
+    return {flag:'transfer_window',label:'Transfer Window',urgency:'medium',relevantLeagues:['EPL','MLS','CL']};
+
+  // MLB Playoff Race (Sep 1 – Sep 28, last ~28 games)
+  if(m===8)
+    return {flag:'playoff_race',label:'MLB Playoff Race',urgency:'high',relevantLeagues:['MLB']};
+
+  // MLB Postseason (Oct)
+  if(m===9)
+    return {flag:'mlb_postseason',label:'MLB Playoffs',urgency:'high',relevantLeagues:['MLB']};
+
+  // NFL Playoffs (Jan 12 – Feb 1 approx)
+  if(m===0&&d>=12)
+    return {flag:'nfl_playoffs',label:'NFL Playoffs',urgency:'high',relevantLeagues:['NFL']};
+
+  // Super Bowl week (first full weekend of Feb)
+  if(m===1&&d<=8)
+    return {flag:'super_bowl',label:'Super Bowl',urgency:'max',relevantLeagues:['NFL']};
+
+  // NFL Regular Season (Sep 5 – Jan 11)
+  if(m===8||(m>=9&&m<=11)||(m===0&&d<=11))
+    return {flag:'nfl_season',label:'NFL Season',urgency:'medium',relevantLeagues:['NFL']};
+
+  // NBA/NHL regular season early window (Nov-Mar) — no special context
+  return null;
+}
+
+// J3 brief sentence from calendar context — one computed sentence
+function calendarContextSentence(ctx){
+  if(!ctx) return null;
+  const m={
+    finals:           'The NBA and NHL Finals are live.',
+    postseason:       'The NBA and NHL playoffs are underway.',
+    world_cup:        'The 2026 FIFA World Cup is underway.',
+    transfer_window:  'The summer transfer window is open across European soccer.',
+    playoff_race:     'The MLB playoff picture is tightening with the season winding down.',
+    mlb_postseason:   'MLB October baseball is here.',
+    nfl_playoffs:     'The NFL playoffs are underway.',
+    super_bowl:       'Super Bowl week.',
+    nfl_season:       null, // too broad to be useful in brief
+  };
+  return m[ctx.flag]||null;
+}
+
+// ── MLB Team Momentum — last-10 game form ─────────────────────────────────────
+// Queries MLB Stats API with date range. Single call, cached 6 hours.
+// Returns: { wins, losses, label, momentum, last10[] } | null
+const _mlbMomentumCache={}; // abbr → {data, ts}
+const MLB_MOMENTUM_TTL=21600000; // 6 hours
+
+async function fetchMLBTeamMomentum(abbr){
+  const cached=_mlbMomentumCache[abbr];
+  if(cached&&Date.now()-cached.ts<MLB_MOMENTUM_TTL) return cached.data;
+  const teamId=MLB_TEAM_IDS[abbr];
+  if(!teamId) return null;
+  try{
+    const end=new Date(); end.setDate(end.getDate()-1);
+    const start=new Date(); start.setDate(start.getDate()-21); // 21 days back ensures 10+ games
+    const endStr=end.toLocaleDateString('en-CA');
+    const startStr=start.toLocaleDateString('en-CA');
+    const url=`${MLB_STATS_BASE}/schedule?sportId=1&teamId=${teamId}&startDate=${startStr}&endDate=${endStr}&hydrate=linescore`;
+    const r=await fetch(url,{signal:AbortSignal.timeout(7000)});
+    if(!r.ok) return null;
+    const data=await r.json();
+    const results=[];
+    (data.dates||[]).forEach(day=>{
+      (day.games||[]).forEach(g=>{
+        if(g.status?.abstractGameState!=='Final') return;
+        const homeId=g.teams.home.team.id;
+        const teamIsHome=homeId===teamId;
+        const myScore=teamIsHome?(g.teams.home.score||0):(g.teams.away.score||0);
+        const oppScore=teamIsHome?(g.teams.away.score||0):(g.teams.home.score||0);
+        results.push(myScore>oppScore?1:0);
+      });
+    });
+    const last10=results.slice(-10);
+    const wins=last10.filter(x=>x===1).length;
+    const result={wins,losses:last10.length-wins,
+      label:`${wins}-${last10.length-wins} in last ${last10.length}`,
+      momentum:wins>=7?'up':wins<=3?'down':'flat',last10};
+    _mlbMomentumCache[abbr]={data:result,ts:Date.now()};
+    return result;
+  }catch(e){captureFieldError('mlb-momentum',e,true);return null;}
+}
+
+// ── Probable pitcher formatter ─────────────────────────────────────────────────
+// Returns: "J. Verlander (R) · 8-4 · 3.12 ERA" or "Starter TBD"
+function formatPitcher(p){
+  if(!p||!p.name) return null;
+  const nameParts=p.name.split(' ');
+  const short=(nameParts.length>1)?nameParts[0][0]+'. '+nameParts.slice(1).join(' '):p.name;
+  const hand=p.handedness?` (${p.handedness})`:'';
+  const record=(p.wins!=null&&p.losses!=null)?` · ${p.wins}-${p.losses}`:'';
+  const era=p.era?` · ${p.era} ERA`:'';
+  return `${short}${hand}${record}${era}`;
+}
+
 // ── Navigate to a date ─────────────────────────────────────────
 async function goToDate(iso){
   viewingISO = iso;
@@ -10049,13 +10179,35 @@ function normalizeMLBGame(g, date) {
                       ? resolveBundle(broadcast.nationalBundle)
                       : resolveBundle('MLB_LOCAL'),
     _sport:         'Baseball (MLB)',
+    // Probable pitchers (from probablePitcher(stats) hydration)
+    homePitcher:    normalizeMLBPitcher(home.probablePitcher),
+    awayPitcher:    normalizeMLBPitcher(away.probablePitcher),
+  };
+}
+
+// Parse probable pitcher object from MLB Stats API probablePitcher(stats) hydration
+function normalizeMLBPitcher(p){
+  if(!p) return null;
+  const season=p.stats?.find(s=>s.type?.displayName==='season');
+  const stat=season?.splits?.[0]?.stat;
+  return {
+    name:        p.fullName||p.name||'TBD',
+    id:          p.id,
+    era:         stat?.era??null,
+    wins:        stat?.wins??null,
+    losses:      stat?.losses??null,
+    whip:        stat?.whip??null,
+    kPer9:       stat?.strikeoutsPer9Inn??null,
+    ip:          stat?.inningsPitched??null,
+    handedness:  p.pitchHand?.code??null,
   };
 }
 
 async function fetchMLBSchedule(date) {
   const d       = date instanceof Date ? date : new Date(date);
   const dateStr = d.toLocaleDateString('en-CA');
-  const url     = `${MLB_STATS_BASE}/schedule?sportId=1&date=${dateStr}&hydrate=broadcasts(all),team,linescore`;
+  // probablePitcher(stats) adds ERA/W-L/WHIP/K-9 for J-Architecture keyFacts
+  const url     = `${MLB_STATS_BASE}/schedule?sportId=1&date=${dateStr}&hydrate=broadcasts(all),team,linescore,probablePitcher(stats)`;
   try {
     const r = await fetch(url, {signal: AbortSignal.timeout(8000)});
     if (!r.ok) throw new Error(`MLB Stats API ${r.status}`);
@@ -12175,9 +12327,13 @@ function buildCompoundPrompt(sections) {
     }).join('\n') : '';
   const eplIds = soccerGames.map(g => `${(g.home||'').toLowerCase().replace(/\s+/g,'_')}_${(g.away||'').toLowerCase().replace(/\s+/g,'_')}`);
 
+  // Calendar context — one computed sentence about the current sports moment
+  const _calCtx = getCalendarContext();
+  const calContextLine = _calCtx ? calendarContextSentence(_calCtx) : null;
+
   return `You are FIELD's sports intelligence editor. Generate the complete editorial package.
 Return ONLY valid JSON. No markdown, no backticks, no preamble.
-
+${calContextLine ? `\nSEASON CONTEXT: ${calContextLine}` : ''}
 TONIGHT'S GAMES:
 ${gameLines || 'No games tonight.'}
 ${eplSection}${regularSection}
@@ -14119,9 +14275,11 @@ function renderOneToWatch(){
   }
 
   // ── STATE 5: QUIET — nothing notable ─────────────────────────────────────
+  const calCtx=getCalendarContext();
+  const quietMsg=calCtx?`${calCtx.label} season`:'No live games right now';
   banner.innerHTML=`<div class="otw-inner otw-quiet" aria-hidden="true">
-    <span class="otw-label">Quiet</span>
-    <span class="otw-matchup">No live games right now</span>
+    <span class="otw-label">${calCtx?'Season':'Quiet'}</span>
+    <span class="otw-matchup">${quietMsg}</span>
   </div>`;
 }
 
