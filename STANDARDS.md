@@ -38,7 +38,7 @@ Add a new named assertion in `smoke.js` for every FIELD_FEATURES entry (presence
 ```
 
 **Canonical docs** (open the relevant one before starting):
-- Handoff Note (read first): `1QYKX6mT0DhwCWT17IUw9eq2hz-pBAy00sYhM2QQ_U3Y` ← update this ID every session end
+- Handoff Note (read first): `1mC7fnGe5MNqAiMoN880-hytKKN7l147nl9Edy8HWRUE` ← update this ID every session end
 - CI/Deploy Error Reference (read every session): `1aX65p4C3BfeKtdbQPS32wFsm_bktCuaE`
 - Build Session List: `1kQ6O3VCbbrj6sknW--X2nYIB02obHMDLk_eEhO0r0nk`
 - Daily Update Reference: `1n4fiAaU1uF2X7EKRx9Gm6XpuR6wkpwoa`
@@ -106,7 +106,7 @@ never worked despite being documented as complete.*
 | **Wow Features** | `1h80BrgGXbz6aq3Hgv5LbjhpFkRQjYvd87fOMNJmVMOc` | Any session that implements or modifies a Wow item |
 | **UI Evaluation** | `1xIZnlczl2kIeslnnzJD1eJrgBu5iw6xgSk1wB1MVyAY` | Any session with CSS, layout, or card design changes |
 | **Daily Update Reference** | `1n4fiAaU1uF2X7EKRx9Gm6XpuR6wkpwoa` | Any session that changes broadcast chip rules, thresholds, or update protocol |
-| **Handoff Note** ← update ID every session | `1QYKX6mT0DhwCWT17IUw9eq2hz-pBAy00sYhM2QQ_U3Y` | Every session end — replace ID with new handoff doc |
+| **Handoff Note** ← update ID every session | `1mC7fnGe5MNqAiMoN880-hytKKN7l147nl9Edy8HWRUE` | Every session end — replace ID with new handoff doc |
 | **CI/Deploy Error Reference** | `1aX65p4C3BfeKtdbQPS32wFsm_bktCuaE` | When a new CI/deploy failure pattern is resolved |
 
 **The rule: edit the document, don't create a new one.**  
