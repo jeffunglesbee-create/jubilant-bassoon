@@ -5425,7 +5425,7 @@ function renderAll(){
             ${matchupHTML(g, sec.sport)}
           </div>
           <div class="info-row">
-            <span class="league-badge">${g.league||sec.sport}</span>${MY_TEAMS.has(g.home)||MY_TEAMS.has(g.away)?'<span class="my-team-badge">★ MY TEAM</span>':""}${typeof isRivalGame==="function"&&MY_TEAMS.size>0&&isRivalGame(g)?'<span class="rival-badge">RIVAL</span>':""}${(()=>{const k=g.streams&&g.streams[0]&&g.streams[0].key||"";return FREE_OTA.has(k)?'<span class="free-tonight-badge">Free tonight</span>':"";})()}
+            <span class="league-badge">${g.league||sec.sport}</span>${MY_TEAMS.has(g.home)||MY_TEAMS.has(g.away)?'<span class="my-team-badge">★ MY TEAM</span>':""}${typeof isRivalGame==="function"&&MY_TEAMS.size>0&&isRivalGame(g)?'<span class="rival-badge">RIVAL</span>':""}
             ${g.seriesRecord?`<span class="league-badge" style="color:var(--gold2);border-color:rgba(201,168,76,.3)">${g.seriesRecord}</span>`:g.venue&&!g.league?.includes("Playoffs")?`<span class="league-badge venue-badge" style="font-size:.52rem;opacity:.7">${g.venue}</span>`:""}${buildSeriesMarginsDots(g)}
             <button class="watch-btn" data-id="${g._id}">+ Multiview</button>
           </div>
@@ -13460,7 +13460,7 @@ function buildOTWWhyLine(g, ed, sport, isPreGame){
     return parts.slice(0,4).join(' \u00b7 ');
   }
   const parts=[];
-  if(ed.period){const p=ed.period;const sp2=sport.toLowerCase();const pl=sp2.includes('basketball')?`Q${p}`:sp2.includes('hockey')?`P${p}`:sp2.includes('football')?`Q${p}`:`T${p}`;parts.push(pl);}
+  if(ed.period){const p=ed.period;const sp2=sport.toLowerCase();const pl=(sp2.includes('basketball')||sp2.includes('nba'))?`Q${p}`:(sp2.includes('hockey')||sp2.includes('nhl'))?`P${p}`:(sp2.includes('football')||sp2.includes('nfl'))?`Q${p}`:`T${p}`;parts.push(pl);}
   if(ed.clock) parts.push(fmtESPNClock(ed.clock));
   const hS=parseInt(ed.homeScore)||0,aS=parseInt(ed.awayScore)||0,gap=Math.abs(hS-aS);
   if(gap===0) parts.push('tied');
@@ -13535,7 +13535,7 @@ function renderOneToWatch(){
     const {g,ed,sport,score}=fire;
     const tier=dramaTier(score)||'warm';
     const tierBadge=`${OTW_TIER_LABELS[tier]||tier.toUpperCase()} \u00b7 ${Math.round(score)}`;
-    const scoreStr=`${ed.homeScore||0}\u2013${ed.awayScore||0}`;
+    const scoreStr=`${ed.awayScore||0}\u2013${ed.homeScore||0}`;
     const why=buildOTWWhyLine(g,ed,sport,false);
     const momentum=getOTWMomentum(g._id);
     banner.innerHTML=`<div class="otw-inner" id="otw-inner" role="button" tabindex="0">
@@ -13554,7 +13554,7 @@ function renderOneToWatch(){
   const live=_otwFindLiveGame(0);
   if(live&&live.g._id!==_otwDismissedId){
     const {g,ed,sport}=live;
-    const scoreStr=`${ed.homeScore||0}\u2013${ed.awayScore||0}`;
+    const scoreStr=`${ed.awayScore||0}\u2013${ed.homeScore||0}`;
     const why=buildOTWWhyLine(g,ed,sport,false);
     banner.innerHTML=`<div class="otw-inner otw-live" id="otw-inner" role="button" tabindex="0">
       <span class="otw-pulse otw-pulse-live"></span>
@@ -14258,17 +14258,7 @@ function buildLifeStageContent(game, eData, stage) {
       // Live: story tape or current score context
       const tape = buildStoryTape(game._id, 2);
       if (tape) return tape;
-      // Baseball already shows score-wrap + base diamond + CDW note — no duplicate
-      if (sp.includes('baseball') || sp.includes('mlb')) return '';
-      if (eData) {
-        const score = `${eData.homeScore||0}–${eData.awayScore||0}`;
-        const p = eData.period||0;
-        const pfx = sp.includes('hockey')||sp.includes('nhl') ? 'P'
-                  : sp.includes('football')||sp.includes('nfl') ? 'Q'
-                  : 'Q'; // basketball default
-        const per = p ? ` · ${pfx}${p}` : '';
-        return `<div class="card-stage-content">${score}${per}</div>`;
-      }
+      // score-wrap handles live score for all sports — don't duplicate here
       return '';
     }
     case 'halftime': {
@@ -14611,9 +14601,10 @@ function buildDramaSparklineSVG(gameId, w=140, h=28) {
     const peakIdx = hist.findIndex(d => d.s === peak);
     const px = ((peakIdx / (n - 1)) * (w - 4) + 2).toFixed(1);
     const py = (h - 2 - ((peak / 100) * (h - 4))).toFixed(1);
-    return `<svg class="drama-sparkline" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" aria-label="Drama arc — peak ${Math.round(peak)}">
+    return `<svg class="drama-sparkline" viewBox="0 0 ${w} ${h+10}" width="${w}" height="${h+10}" aria-label="Drama arc — peak ${Math.round(peak)}">
   <polyline points="${pts}" fill="none" stroke="${stroke}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity=".85"/>
   <circle cx="${px}" cy="${py}" r="2.5" fill="${stroke}" opacity=".9"/>
+  <text x="${Math.min(parseFloat(px)+4, w-24)}" y="${Math.max(parseFloat(py)+1, 8)}" font-size="7" fill="${stroke}" opacity=".8">${Math.round(peak)}</text>
 </svg>`;
   } catch(e) { return ''; }
 }
