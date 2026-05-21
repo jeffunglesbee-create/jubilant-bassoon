@@ -9423,7 +9423,7 @@ async function fetchESPNScores(){
         };
         espnScoreTs[key] = Date.now();
         // STEP 4: fire async WP fetch for live NBA games
-        if (state === 'in' && ev.id && section === 'nba') {
+        if (state === 'in' && ev.id && sport === 'basketball' && league === 'nba') {
           if (FIELD_DEBUG) console.debug('[WP] firing for gameId:', ev.id);
           fetchESPNWinProb(ev.id).then(wp => {
             if (wp !== null && espnScores[key]) {
