@@ -16,18 +16,20 @@ jobs:
       - name: Fetch and save
         run: |
           URL=$(grep '^url=' outbox/.trigger-cors-probe | cut -d= -f2-)
+          LIMIT=$(grep '^limit=' outbox/.trigger-cors-probe | cut -d= -f2-)
+          [ -z "$LIMIT" ] && LIMIT=8000
           TS=$(date -u +%Y%m%dT%H%M%SZ)
           OUT="outbox/cors-result-${TS}.txt"
-          echo "URL: $URL  [$TS]" | tee "$OUT"
-          curl -sI "$URL" | tee -a "$OUT"
-          echo "=== BODY (first 3000 chars) ===" | tee -a "$OUT"
-          curl -s "$URL" | head -c 3000 | tee -a "$OUT"
-          echo "OUTFILE=$OUT" >> $GITHUB_ENV
+          echo "URL: $URL  [$TS]" > "$OUT"
+          curl -sI "$URL" >> "$OUT"
+          echo "=== BODY (first ${LIMIT} chars) ===" >> "$OUT"
+          curl -s "$URL" | head -c "$LIMIT" >> "$OUT"
+          echo "OUT=$OUT" >> $GITHUB_ENV
 
       - name: Push result
         run: |
           git config user.email "probe@field"
           git config user.name "Probe"
-          git add "$OUTFILE"
-          git commit -m "probe $OUTFILE"
+          git add "$OUT"
+          git commit -m "probe $OUT"
           git push
