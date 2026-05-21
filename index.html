@@ -1907,6 +1907,35 @@ flex-shrink:0;white-space:nowrap;
   /* OTW banner and masthead span full width — no margin shift */
   /* Suppress 768-900px 2-col game grid: 430px left pane too narrow for 2 cols */
   .games-list{display:block !important}
+
+  /* ── FIX 1+2: OTW bar — constrain to left pane + 2-row layout ── */
+  /* OTW was spanning full 820px and layering over ambient panel at z-index:24.
+     margin-right:390px pins it to the 430px left pane.
+     flex-wrap:wrap + flex:1 on matchup naturally creates 2 rows:
+     Row 1: [pulse][label][matchup (fills)]
+     Row 2: [why (fills)][drama badge][close] */
+  #otw-banner{margin-right:390px}
+  .otw-inner{flex-wrap:wrap;row-gap:.15rem;padding:.4rem .7rem}
+  .otw-matchup{font-size:.77rem}
+  .otw-why{flex:1 1 auto;max-width:none;font-size:.6rem}
+  .otw-countdown{flex:1 1 auto}
+
+  /* ── FIX 3: Streaming Discovery price chip — 2-row card header ── */
+  /* Forces price chip to second row, indented to align under service name */
+  .app-card-head{flex-wrap:wrap}
+  .app-price{
+    order:3;width:100%;
+    padding-left:calc(32px + .7rem); /* align under name, offset logo+gap */
+    margin-left:0;margin-top:-.1rem;
+    box-sizing:border-box;
+  }
+
+  /* ── FIX 4: SR stream chips — smaller for 430px left pane ── */
+  .stream-chip{font-size:.52rem !important;padding:.07rem .3rem !important}
+  .stream-row{max-width:none !important}
+
+  /* ── FIX 5: Star/fav button — bottom-right avoids drama badge at top-right ── */
+  .star-btn{top:auto;bottom:.45rem;right:.4rem}
 }
 .ap-otw-fire{
   background:rgba(255,59,59,.1);border:1px solid rgba(255,59,59,.25);
