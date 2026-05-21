@@ -4124,7 +4124,9 @@ const SETUP_CATALOGUE = [
       {key:"cbs",     label:"CBS"},
       {key:"usa",     label:"USA Network (Versant, relaunched)"},
       {key:"tnt",     label:"TNT"},
+      {key:"trutv",   label:"truTV"},
       {key:"tbs",     label:"TBS"},
+      {key:"ion",     label:"ION"},
       {key:"bein",    label:"beIN Sports"},
       {key:"tc",      label:"Tennis Channel"},
       {key:"mlbn",    label:"MLB Network"},
@@ -10544,14 +10546,10 @@ function computeGameNarrative(game, espnScore, sportClass){
   const leaderNick=teamNick(leaderName), trailerNick=teamNick(trailerName);
   const isTied=leaderScore===trailerScore, margin=Math.abs(leaderScore-trailerScore);
 
-  // Scoreline — AFL uses goals.behinds strings when available; others use numeric totals
-  let leaderDisplay,trailerDisplay;
-  if(sc.isAFL&&espnScore._aflHomeStr){
-    const hStr=espnScore._aflHomeStr, aStr=espnScore._aflAwayStr||String(rawAway);
-    leaderDisplay=leaderIsHome?hStr:aStr; trailerDisplay=leaderIsHome?aStr:hStr;
-  } else {
-    leaderDisplay=String(leaderScore); trailerDisplay=String(trailerScore);
-  }
+  // Scoreline — always numeric totals, for all sports including AFL
+  // AFL goals.behinds format lives in the gold leader-chip only (injectSquiggleLiveScores)
+  // Big score = total (goals×6 + behinds×1); gold chip = "10.15 – 9.12"
+  const leaderDisplay=String(leaderScore), trailerDisplay=String(trailerScore);
   const scoreline=leaderDisplay+'\u2013'+trailerDisplay;
 
   // Period label (row 1 of score-wrap)
