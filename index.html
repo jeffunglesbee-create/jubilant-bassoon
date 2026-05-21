@@ -9531,7 +9531,10 @@ async function fetchESPNWinProb(gameId) {
   const url = `${ESPN_SUMMARY_RELAY}/sports/basketball/nba/summary?event=${gameId}`;
   try {
     const r = await fetch(url, { signal: AbortSignal.timeout(4000) });
-    if (!r.ok) return null;
+    if (!r.ok) {
+      if (FIELD_DEBUG) console.log('[WP] fetchESPNWinProb: relay HTTP', r.status, url);
+      return null;
+    }
     const d = await r.json();
     // winprobability is an array; most recent snapshot is last entry
     const wp =
