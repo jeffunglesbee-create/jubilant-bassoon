@@ -41,7 +41,7 @@ Add a new named assertion in `smoke.js` for every FIELD_FEATURES entry (presence
 ```
 
 **Canonical docs** (open the relevant one before starting):
-- Handoff Note (read first): `1TRpxKBNX82q-522V-aVLFBIBrwYwyIjkyI0h6y4n4FM` ← update this ID every session end
+- Handoff Note (read first): `1bGTcRpgA40uXE56cQ7QWWKT1HLtxrde-1v-SGhz5q7M` ← update this ID every session end
 - CI/Deploy Error Reference (read every session): `1R4c0-Qw8qOdQhGrZD5QBEW3mqn2s2kx2ghdWlAVGkyA`
 - Build Session List: `19TicpFBU2ORbypNBteCXuhwbX1FoP14Y2NGuU9e3drQ`
 - FIELD Current State: `1QD3P9eG2pSdabNTMPZYHwaMc1DawmmKpRVrv0ZqQdVs`
