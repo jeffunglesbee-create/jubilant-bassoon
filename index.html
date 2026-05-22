@@ -2018,6 +2018,58 @@ flex-shrink:0;white-space:nowrap;
 .ap-brief{display:flex;flex-direction:column;gap:.4rem}
 .ap-editorial{display:flex;flex-direction:column;gap:.35rem}
 .ap-editorial-game{font-size:.78rem;font-weight:700;color:var(--white)}
+/* Ambient panel — editorial card treatments */
+.ap-card{
+  border-radius:8px;padding:.6rem .75rem .55rem;
+  margin:.15rem 0;position:relative;overflow:hidden;
+}
+/* Night Owl / Morning Report / Game Recap card */
+.ap-card-owl{
+  background:rgba(17,15,36,.9);
+  border:1px solid rgba(139,92,246,.2);
+  border-left:3px solid rgba(139,92,246,.7);
+}
+.ap-card-owl::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(139,92,246,.4),transparent);
+}
+.ap-card-owl .ap-card-label{color:#a78bfa}
+/* FIELD Brief card */
+.ap-card-brief{
+  background:rgba(25,20,10,.85);
+  border:1px solid rgba(201,168,76,.2);
+  border-left:3px solid rgba(201,168,76,.65);
+}
+.ap-card-brief::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(201,168,76,.35),transparent);
+}
+.ap-card-brief .ap-card-label{color:var(--gold2,#c9a84c)}
+/* Arbitrage card */
+.ap-card-arb{
+  background:rgba(10,25,20,.85);
+  border:1px solid rgba(52,211,153,.18);
+  border-left:3px solid rgba(52,211,153,.6);
+}
+.ap-card-arb::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(52,211,153,.3),transparent);
+}
+.ap-card-arb .ap-card-label{color:#34d399}
+/* Shared card header */
+.ap-card-header{
+  display:flex;align-items:center;gap:.4rem;
+  margin-bottom:.3rem;
+}
+.ap-card-icon{font-size:.85rem;line-height:1}
+.ap-card-label{
+  font-size:.52rem;font-weight:800;letter-spacing:.1em;
+  text-transform:uppercase;
+}
+.ap-card-date{font-size:.5rem;color:var(--smoke);margin-left:auto;font-family:var(--ff-mono)}
+.ap-card-game{font-size:.75rem;font-weight:700;color:var(--white);margin-bottom:.2rem;line-height:1.25}
+.ap-card-text{font-size:.69rem;color:var(--fg,#e8e8f0);line-height:1.6;margin:0}
+.ap-card-arb-rows{display:flex;flex-direction:column;gap:.25rem;margin-top:.2rem}
 .ap-brief-text{font-size:.72rem;color:var(--fg);line-height:1.65;margin:0;
   white-space:pre-wrap}
 /* Arbitrage summary in ambient panel (compact — #field-arb hidden on iPad) */
@@ -6228,8 +6280,8 @@ function buildTodaySchedule(){
   //          G5 June 15* · G6 June 18* · G7 June 20* (* = if necessary)
   const nbaGames=[
     {home:"New York Knicks",       away:"Cleveland Cavaliers",  league:"NBA Playoffs \u2013 East CF G1 \u00b7 NYK wins 115-104",  start_time:"2026-05-20T00:00:00Z", confirmed:true, venue:"Madison Square Garden, New York NY",  streams:resolveBundle("NBA_ESPN"), seriesRecord:"NYK wins 115-104", matchupNote:"Brunson 38 pts. Knicks erased a 22-point Q4 deficit to win in OT. Sam Merrill nearly hit the buzzer-beater. NYK leads series 1-0."},
-    {home:"New York Knicks",       away:"Cleveland Cavaliers",  league:"NBA Playoffs \u2013 East CF G2 \u00b7 NYK leads 1-0",   start_time:"2026-05-22T00:00:00Z", confirmed:true, venue:"Madison Square Garden, New York NY",  streams:resolveBundle("NBA_ESPN"), seriesRecord:"NYK leads 1-0", matchupNote:"G2 tonight. Brunson 38 pts in historic comeback from -22 in G1. Harden was mismatch target — Cavs must adjust or fall 0-2."},
-    {home:"Oklahoma City Thunder", away:"San Antonio Spurs",    league:"NBA Playoffs \u2013 West CF G2 \u00b7 OKC wins 122-113, series tied 1-1", start_time:"2026-05-21T00:30:00Z", confirmed:true, venue:"Paycom Center, Oklahoma City OK",       streams:resolveBundle("NBA_NBC"), seriesRecord:"Series tied 1-1", seriesMargins:[7,-9,-1,-1,-1,-1,-1], matchupNote:"OKC evens the series at home 122-113. Spurs won G1 in double OT; Thunder respond to avoid 0-2 hole. SGA takes over on home floor. G3 Friday May 22 8:30 PM ET at Frost Bank Center, San Antonio — NBC/Peacock."},
+    {home:"Cleveland Cavaliers",   away:"New York Knicks",      league:"NBA Playoffs \u2013 East CF G3 \u00b7 NYK leads 2-0",   start_time:"2026-05-24T00:00:00Z", confirmed:true, venue:"Rocket Mortgage FieldHouse, Cleveland OH", streams:resolveBundle("NBA_ABC"), seriesRecord:"NYK leads 2-0", matchupNote:"NYK 109-93 G2 (Hart 26 pts, Brunson 14 ast). 18-0 run in Q3 sealed it. Cavs in 0-2 hole but beat Detroit from 0-2 (7 games). G3 Saturday at Cleveland, 8pm ET, ABC."},
+    {home:"San Antonio Spurs",     away:"Oklahoma City Thunder", league:"NBA Playoffs \u2013 West CF G3 \u00b7 Series tied 1-1",  start_time:"2026-05-23T00:30:00Z", confirmed:true, venue:"Frost Bank Center, San Antonio TX",     streams:resolveBundle("NBA_NBC"), seriesRecord:"Series tied 1-1", seriesMargins:[9,9,-1,-1,-1,-1,-1], matchupNote:"SAS won G1 2OT, OKC took G2 122-113. Dylan Harper (hamstring) questionable. Wembanyama must find rhythm on road. G3 tonight at San Antonio, 8:30pm ET, NBC/Peacock."},
     {home:"San Antonio Spurs",    away:"Oklahoma City Thunder", league:"NBA Playoffs \u2013 West CF G3 \u00b7 Series tied 1-1",           start_time:"2026-05-23T00:30:00Z", confirmed:true, venue:"Frost Bank Center, San Antonio TX",     streams:resolveBundle("NBA_NBC"), seriesRecord:"Series tied 1-1", matchupNote:"WCF shifts to San Antonio for G3. Wembanyama at home after 41-pt G1. Fox (ankle) status TBD. NBC/Peacock. Series tied 1-1 after OKC evened it at Paycom."},
     // ── NBA Finals 2026 — All games NBC/Peacock ─────────────────────
     // UPDATE team names + venues once ECF/WCF conclude (~June 3)
@@ -6267,14 +6319,14 @@ function buildTodaySchedule(){
     // ── NHL Eastern Conference Finals — Carolina Hurricanes vs Montreal Canadiens ──
     // CAR wins East Semis 4-0 (vs Philadelphia) · MTL wins East Semis 4-3 (vs Buffalo)
     // Broadcast: TNT / truTV / Max (US) · SN / CBC / TVAS (Canada)
-    {home:"Carolina Hurricanes", away:"Montreal Canadiens", league:"NHL Playoffs – East CF G1 · Series 0-0", start_time:"2026-05-22T00:00:00Z", confirmed:true, venue:"PNC Arena, Raleigh NC",      streams:resolveBundle("NHL_TNT"), crew:"John Forslund · Eddie Olczyk (TNT)", seriesRecord:"0-0", matchupNote:"CAR swept Philadelphia 4-0 (11 days rest). MTL won a dramatic G7 OT vs Buffalo to reach their first Conference Finals since 2021. Hurricanes machine vs Canadiens emotion — G1 at PNC Arena, 8pm ET, TNT/truTV/Max."},
+    {home:"Carolina Hurricanes", away:"Montreal Canadiens", league:"NHL Playoffs – East CF G2 · MTL leads 1-0", start_time:"2026-05-23T23:00:00Z", confirmed:true, venue:"PNC Arena, Raleigh NC",      streams:resolveBundle("NHL_TNT"), crew:"John Forslund · Eddie Olczyk (TNT)", seriesRecord:"MTL leads 1-0", matchupNote:"MTL stunned CAR 6-2 in G1 (Slafkovsky 2G 1A) — first CAR loss of playoffs, ending bid for perfect 16-0. G2 Saturday at PNC Arena, 7pm ET, TNT/truTV/Max."},
     {home:"Carolina Hurricanes", away:"Montreal Canadiens", league:"NHL Playoffs – East CF G2 · Series 0-0", start_time:"2026-05-23T23:00:00Z", confirmed:true, venue:"PNC Arena, Raleigh NC",      streams:resolveBundle("NHL_TNT"), seriesRecord:"0-0", matchupNote:"ECF G2 at PNC Arena. CAR can take 2-0 series lead heading to Montreal."},
     {home:"Montreal Canadiens",  away:"Carolina Hurricanes", league:"NHL Playoffs – East CF G3 · Series 0-0", start_time:"2026-05-26T00:00:00Z", confirmed:true, venue:"Bell Centre, Montreal QC",   streams:resolveBundle("NHL_TNT"), seriesRecord:"0-0", matchupNote:"Series shifts to Bell Centre for G3. Montreal faithful will be electric."},
     // ── NHL Western Conference Finals — Colorado Avalanche vs Vegas Golden Knights ──
     // COL wins Presidents' Trophy (best record) · COL wins R2 4-1 (vs Minnesota) · VGK wins R2 4-2 (vs Anaheim)
     // Key players: MacKinnon (COL), Marner (VGK), Dorofeyev (VGK — playoff scoring leader)
     // Broadcast: ESPN (G1-G4, G5, G7) · ABC (G6 only)
-    {home:"Colorado Avalanche",  away:"Vegas Golden Knights", league:"NHL Playoffs – West CF G1 \u00b7 VGK wins 4-2, VGK leads 1-0", start_time:"2026-05-21T00:00:00Z", confirmed:true, venue:"Ball Arena, Denver CO",      streams:resolveBundle("NHL_ESPN"), crew:"Sean McDonough · Ray Ferraro · Haley Skarupa (ESPN)", seriesRecord:"VGK leads 1-0"},
+    {home:"Colorado Avalanche",  away:"Vegas Golden Knights", league:"NHL Playoffs – West CF G2 · VGK leads 1-0",                     start_time:"2026-05-23T00:00:00Z", confirmed:true, venue:"Ball Arena, Denver CO",      streams:resolveBundle("NHL_ESPN"), crew:"Sean McDonough · Ray Ferraro · Haley Skarupa (ESPN)", seriesRecord:"VGK leads 1-0", matchupNote:"VGK won G1 4-2 at COL. Dorofeyev leads all 2026 playoff scorers. G2 tonight at Ball Arena, 8pm ET, ESPN."},
     {home:"Colorado Avalanche",  away:"Vegas Golden Knights", league:"NHL Playoffs – West CF G2 · Series 0-0", start_time:"2026-05-23T00:00:00Z", confirmed:true, venue:"Ball Arena, Denver CO",      streams:resolveBundle("NHL_ESPN"), seriesRecord:"0-0"},
     {home:"Vegas Golden Knights",away:"Colorado Avalanche",   league:"NHL Playoffs – West CF G3 · Series 0-0", start_time:"2026-05-25T00:00:00Z", confirmed:true, venue:"T-Mobile Arena, Las Vegas NV",streams:resolveBundle("NHL_ESPN"), seriesRecord:"0-0"},
   ].filter(g=>isToday(g.start_time));  // ── MLB (May 11: Monday slate + EFL 2nd leg) ──────────────────────────────
@@ -13970,36 +14022,51 @@ function renderAmbientPanel(){
     ?`<div class="ap-season"><span class="ap-ctx-pill" title="Filter to ${ctx.label}" onclick="(()=>{const s=document.querySelector('.game-card[data-sport*=\"${(ctx.relevantLeagues||[]).join('\"],[data-sport*=\"')}\"]');if(s)s.scrollIntoView({behavior:'smooth',block:'center'});})()" style="cursor:pointer">${ctx.label}</span></div>`
     :'';
 
-  // ── Section 3 (editorial): FIELD Brief or Night Owl/Recap ────────────────
+  // ── Section 3 (editorial): FIELD Brief or Night Owl/Recap ─────────────────
   // On iPad, #field-brief and #night-owl are hidden from left pane — ambient panel
-  // is the PRIMARY editorial surface. Mirror the brief card or owl card here.
+  // is the PRIMARY editorial surface. Renders as a styled card matching the section.
   let editorialHTML = '';
   try {
     const _owlEl = document.getElementById('night-owl');
     const _owlActive = _owlEl?.style.display === 'block' && _owlEl?.querySelector('.night-owl-card');
     const _briefEl = document.getElementById('field-brief');
     const _briefActive = _briefEl?.innerHTML?.includes('field-brief-card');
-    const _nowH2 = new Date().getHours();
-    const _editLabel = _nowH2 >= 22 || _nowH2 < 4 ? 'Night Owl'
-      : _nowH2 >= 18 ? 'Evening Wrap'
-      : _nowH2 >= 12 ? 'Game Recap' : 'Brief';
+    // Time-based label using ET timezone
+    const _etHourStr = new Date().toLocaleString('en-US',{timeZone:'America/New_York',hour:'numeric',hour12:false});
+    const _etH = parseInt(_etHourStr)||0;
+    const _owlIcon  = _etH >= 22 || _etH < 6  ? '🦉' : _etH < 14 ? '☀️' : '🎯';
+    const _owlLabel = _etH >= 22 || _etH < 6  ? 'Night Owl'
+                    : _etH < 14                ? 'Morning Report'
+                    :                            'Game Recap';
     if (_owlActive) {
-      const _owlHead = _owlEl.querySelector('.night-owl-section-head');
       const _owlCard = _owlEl.querySelector('.night-owl-card');
-      const _owlGame = _owlCard?.querySelector('.night-owl-game')?.textContent?.trim()||'';
-      const _owlTxt  = _owlCard?.querySelector('.night-owl-text')?.textContent?.trim().slice(0,180)||'';
-      editorialHTML = `<div class="ap-editorial"><div class="ap-section-label">${_editLabel}</div>`
-        + (_owlGame?`<div class="ap-editorial-game">${_owlGame}</div>`:'')
-        + (_owlTxt?`<p class="ap-brief-text" style="margin:0">${_owlTxt}${_owlTxt.length>=180?'…':''}</p>`:'')
-        + '</div>';
+      const _owlGame = _owlCard?.querySelector('.night-owl-winner')?.textContent?.trim()||
+                       _owlCard?.querySelector('.night-owl-game')?.textContent?.trim()||'';
+      const _owlScore= _owlCard?.querySelector('.night-owl-score-big')?.textContent?.trim()||'';
+      const _owlTxt  = _owlCard?.querySelector('.night-owl-text')?.textContent?.trim().slice(0,200)||'';
+      editorialHTML = `<div class="ap-card ap-card-owl">
+        <div class="ap-card-header">
+          <span class="ap-card-icon">${_owlIcon}</span>
+          <span class="ap-card-label">${_owlLabel}</span>
+        </div>
+        ${_owlGame?`<div class="ap-card-game">${_owlGame}${_owlScore?' <span style="opacity:.65;font-size:.7em">'+_owlScore+'</span>':''}</div>`:''}
+        ${_owlTxt?`<p class="ap-card-text">${_owlTxt}${_owlTxt.length>=200?'…':''}</p>`:''}
+      </div>`;
     } else if (_briefActive) {
       const _briefText = _briefEl.querySelector('.field-brief-text')?.textContent?.trim()||'';
+      const _briefDate = _briefEl.querySelector('.field-brief-date')?.textContent?.trim()||'';
       if (_briefText.length > 20) {
-        editorialHTML = `<div class="ap-editorial"><div class="ap-section-label">Tonight</div><p class="ap-brief-text" style="margin:0">${_briefText.slice(0,220)}${_briefText.length>220?'…':''}</p></div>`;
+        editorialHTML = `<div class="ap-card ap-card-brief">
+          <div class="ap-card-header">
+            <span class="ap-card-label">FIELD Brief</span>
+            ${_briefDate?`<span class="ap-card-date">${_briefDate}</span>`:''}
+          </div>
+          <p class="ap-card-text">${_briefText.slice(0,240)}${_briefText.length>240?'…':''}</p>
+        </div>`;
       }
     }
   } catch(_) {}
-  const briefHTML = editorialHTML; // briefHTML kept as alias for panel.innerHTML template below
+  const briefHTML = editorialHTML; // alias for panel.innerHTML template
 
   // ── Section 5: Arbitrage summary (free games + best add) ──────────────
   // Shown only on iPad where #field-arb is hidden. Compact 1-2 line version.
@@ -14007,15 +14074,21 @@ function renderAmbientPanel(){
   if(typeof buildArbitrageReport==='function'){
     const arb=buildArbitrageReport();
     if(arb&&(arb.freeCount>0||arb.bestAdd)){
-      const parts=[];
+      const arbRows=[];
       if(arb.freeCount>0){
         const svcs=[...new Set(arb.freeGames.flatMap(fg=>fg.svcs).filter(Boolean))].slice(0,3);
-        parts.push(`🎯 <strong>${arb.freeCount}</strong> free tonight · ${svcs.join(' · ')}`);
+        arbRows.push(`<div class="ap-arb-row">🎯 <strong>${arb.freeCount} free tonight</strong> · ${svcs.join(' · ')}</div>`);
       }
       if(arb.bestAdd&&arb.missCount>0){
-        parts.push(`💡 Add ${arb.bestAdd.name} · ${arb.bestAdd.cost}/mo → +${arb.bestAdd.gameCount} games`);
+        arbRows.push(`<div class="ap-arb-row">💡 Add <strong>${arb.bestAdd.name}</strong> · ${arb.bestAdd.cost}/mo → +${arb.bestAdd.gameCount} games</div>`);
       }
-      if(parts.length) arbHTML=`<div class="ap-arb-summary"><div class="ap-section-label">Watch Free</div>${parts.map(p=>`<div class="ap-arb-line">${p}</div>`).join('')}</div>`;
+      if(arbRows.length) arbHTML=`<div class="ap-card ap-card-arb">
+        <div class="ap-card-header">
+          <span class="ap-card-icon">📡</span>
+          <span class="ap-card-label">Watch Free</span>
+        </div>
+        <div class="ap-card-arb-rows">${arbRows.join('')}</div>
+      </div>`;
     }
   }
 
