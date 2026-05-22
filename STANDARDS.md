@@ -1727,3 +1727,85 @@ ensures the update is verified before deploy.
 When updating GOVERNANCE.json last_verified dates at session end: update
 the relevant `last_verified` fields for docs touched this session.
 The CI job updates `_last_governance_audit` automatically.
+
+---
+
+## Rule 32 — Pre-commit gate composition and the bypass pressure principle
+
+### The bypass pressure principle
+
+A governance gate that takes more than ~3 seconds will be bypassed under
+pressure. Developers are not malicious — they are iterating quickly, and
+`--no-verify` is always one flag away. Every second added to the pre-commit
+gate increases the probability that it gets skipped exactly when it matters
+most: rapid debugging, late-night fixes, mid-session pivots.
+
+**The goal of governance is not maximum check coverage at commit time.
+It is maximum probability that governance is actually followed.**
+
+A 5-second gate that is never bypassed provides better governance than
+a 5-minute gate with a 30% bypass rate.
+
+### Enforcement layer assignment
+
+Each check belongs at the layer where its cost-to-value ratio is optimal:
+
+| Layer | Location | Max time | What belongs here |
+|-------|----------|----------|-------------------|
+| Pre-commit | Local | ≤3s | Structural checks that prevent broken code entering git history |
+| CI post-push | GitHub Actions | Minutes | Quality and correctness checks that would waste CI minutes if skipped |
+| CI post-deploy | GitHub Actions | Minutes | Behavioral checks requiring a live URL |
+| Scheduled | GitHub Actions | Any | Deep analysis, compliance, AI review |
+
+### What belongs at pre-commit (mandatory)
+
+Per Rule 10 and the SMOKE GATE:
+- `smoke.js` — structural assertions. Non-negotiable. Rule 10 mandates it.
+- `field_smoke.js` — per-day data assertions. Non-negotiable. Rule 10 mandates it.
+- `field_unit.js` — pure function unit tests. Fast (~100ms). Acceptable.
+
+### What does NOT belong at pre-commit
+
+ESLint on `index.html`: Rule 17 specifies "Add to CI smoke job" — CI, not
+pre-commit. This was always the specified location. Running ESLint at
+pre-commit is additive to the rule, not required by it.
+
+At 905KB, ESLint takes ~5.6s per run without cache (19× slower than smoke.js).
+It produces zero additional governance value beyond what CI ESLint provides —
+CI catches the same issues 30 seconds after the push.
+
+If ESLint must run pre-commit: add `--cache` flag. Reduces repeat-run
+time from 5.6s to ~300ms. Cache stored in `.eslintcache` (gitignored).
+
+### How F16–F20 change this picture
+
+F16–F20 are Playwright behavioral tests. They CANNOT run at pre-commit —
+they require a live URL. They are inherently CI post-deploy checks.
+
+This is significant: the highest-value governance checks (F16–F20 test
+"does it actually behave?") live in CI by necessity. The pre-commit gate
+tests "does the code look structurally correct?" — a lower-value category.
+
+When CI has strong behavioral coverage (F16–F20 built), the argument for
+keeping slow lower-value checks at pre-commit weakens further. A CI that
+can catch "the card tap doesn't work" is a CI that earns more trust, which
+makes it more defensible to run ESLint there rather than pre-commit.
+
+**Recommended implementation sequence:**
+1. Build F16–F20 first — strengthens the CI safety net [LAYER3-EXT]
+2. Move ESLint from pre-commit to CI — removes bypass pressure [SMOKE-SPEED-A]
+3. Add `--cache` as immediate interim fix — costs nothing [SMOKE-SPEED-A]
+
+### [SMOKE-SPEED-A] — implementation
+
+Tracked: Build Session List, Tier 2 Infrastructure
+Estimate: ~10 min
+No governance conflicts (verified May 22 2026 against Rules 10, 16, 17, 31).
+
+Changes:
+1. `scripts/pre-commit`: add `--cache` to ESLint invocation (immediate, ~1 min)
+2. `scripts/pre-commit`: remove ESLint block entirely (after F16-F20 built, ~5 min)
+3. `.gitignore`: add `.eslintcache` if not already present
+
+Result: pre-commit drops from ~7s to ~1.5s. ESLint runs in CI where
+Rule 17 always said it should be.
