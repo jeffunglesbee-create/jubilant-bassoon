@@ -6632,7 +6632,7 @@ function buildTodaySchedule(){
     {home:"Manchester City",         away:"Brentford",                league:"Premier League – Matchweek 36", start_time:"2026-05-09T16:30:00Z", confirmed:true, venue:"Etihad Stadium, Manchester",  streams:resolveBundle("EPL_NBC"),     localNote:"NBC OTA (free) + Peacock"},
     // MW36 Sunday May 10 — verified per-game from NBC Sports
     {home:"Burnley",                 away:"Aston Villa",              league:"Premier League – Matchweek 36", start_time:"2026-05-10T13:00:00Z", confirmed:true, venue:"Turf Moor, Burnley",          streams:resolveBundle("EPL_PEACOCK"), localNote:"Peacock only"},
-    {home:"Crystal Palace",          away:"Everton",                  league:"Premier League – Matchweek 36", start_time:"2026-05-10T13:00:00Z", confirmed:true, venue:"Selhurst Park, London",       streams:resolveBundle("EPL_PEACOCK"), localNote:"Peacock only"},
+    {home:"Crystal Palace",          away:"Everton",                  league:"Premier League – Matchweek 36", start_time:"2026-05-10T13:00:00Z", confirmed:true, venue:"Selhurst Park, London",       streams:resolveBundle("EPL_USA"), localNote:"Syfy + Peacock"},
     {home:"Nottingham Forest",       away:"Newcastle United",         league:"Premier League – Matchweek 36", start_time:"2026-05-10T13:00:00Z", confirmed:true, venue:"City Ground, Nottingham",     streams:resolveBundle("EPL_USA"),     localNote:"USA Network (cable)"},
     {home:"West Ham United",         away:"Arsenal",                  league:"Premier League – Matchweek 36", start_time:"2026-05-10T15:30:00Z", confirmed:true, venue:"London Stadium",              streams:resolveBundle("EPL_USA"),     localNote:"USA Network (cable)"},
     // MW37 Wednesday May 13 — verified from Soccerway / ESPN schedule
@@ -6664,11 +6664,11 @@ function buildTodaySchedule(){
     // Relegation: West Ham + Burnley + Wolves all fighting for survival
     {home:"Crystal Palace",        away:"Arsenal",                 league:"Premier League \u2013 Matchweek 38 \u00b7 Final Day",
      start_time:"2026-05-24T15:00:00Z", confirmed:true, venue:"Selhurst Park, London",
-     streams:resolveBundle("EPL_NBC"), localNote:"NBC OTA (free) + Peacock",
+     streams:resolveBundle("EPL_USA"), localNote:"CNBC + Peacock",
      matchupNote:_plTitleNote()},
     {home:"Manchester City",        away:"Aston Villa",            league:"Premier League \u2013 Matchweek 38 \u00b7 Final Day",
      start_time:"2026-05-24T15:00:00Z", confirmed:true, venue:"Etihad Stadium, Manchester",
-     streams:resolveBundle("EPL_USA"), localNote:"USA Network (cable)",
+     streams:resolveBundle("EPL_PEACOCK"), localNote:"Peacock only",
      matchupNote:_plCityNote()},
     {home:"Brighton & Hove Albion", away:"Manchester United",      league:"Premier League \u2013 Matchweek 38 \u00b7 Final Day",
      start_time:"2026-05-24T15:00:00Z", confirmed:true, venue:"Amex Stadium, Brighton",
@@ -6683,7 +6683,7 @@ function buildTodaySchedule(){
      streams:resolveBundle("EPL_PEACOCK"), localNote:"Peacock only"},
     {home:"Liverpool",              away:"Brentford",               league:"Premier League \u2013 Matchweek 38 \u00b7 Final Day",
      start_time:"2026-05-24T15:00:00Z", confirmed:true, venue:"Anfield, Liverpool",
-     streams:resolveBundle("EPL_PEACOCK"), localNote:"Peacock only"},
+     streams:resolveBundle("EPL_USA"), localNote:"Syfy + Peacock"},
     {home:"Nottingham Forest",      away:"AFC Bournemouth",         league:"Premier League \u2013 Matchweek 38 \u00b7 Final Day",
      start_time:"2026-05-24T15:00:00Z", confirmed:true, venue:"City Ground, Nottingham",
      streams:resolveBundle("EPL_PEACOCK"), localNote:"Peacock only",
@@ -6693,11 +6693,11 @@ function buildTodaySchedule(){
      streams:resolveBundle("EPL_PEACOCK"), localNote:"Peacock only"},
     {home:"Tottenham Hotspur",      away:"Everton",                 league:"Premier League \u2013 Matchweek 38 \u00b7 Final Day",
      start_time:"2026-05-24T15:00:00Z", confirmed:true, venue:"Tottenham Hotspur Stadium, London",
-     streams:resolveBundle("EPL_PEACOCK"), localNote:"Peacock only",
+     streams:resolveBundle("EPL_NBC"), localNote:"NBC (free OTA) + Peacock",
      matchupNote:_plTotNote()},
     {home:"West Ham United",        away:"Leeds United",            league:"Premier League \u2013 Matchweek 38 \u00b7 Final Day",
      start_time:"2026-05-24T15:00:00Z", confirmed:true, venue:"London Stadium",
-     streams:resolveBundle("EPL_PEACOCK"), localNote:"Peacock only",
+     streams:resolveBundle("EPL_USA"), localNote:"USA Network (cable)",
      matchupNote:_plWhuNote()},
   ].filter(g=>isToday(g.start_time));
   const eplGames = eplRaw.map((g,i)=>({...g, _id:"epl_mw36mw37_"+i, _sport:"Premier League"}));
