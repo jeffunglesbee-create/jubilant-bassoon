@@ -303,6 +303,12 @@ and surfaces the sandbox constraints, deploy path, worker architecture,
 and secrets state before any work begins. This prevents wasted time  
 attempting blocked operations (api.github.com, *.workers.dev).
 
+**Claude reads FIELD Current State automatically:**  
+Every session, Claude reads `1QD3P9eG2pSdabNTMPZYHwaMc1DawmmKpRVrv0ZqQdVs`  
+after the handoff note and before any work begins. This is the canonical  
+"what FIELD does today" reference — capabilities live, active rules, known gaps.  
+No user request needed. Prevents stale-state decisions from a 4-day-old model of FIELD.
+
 **Claude infers session type:**  
 "Run daily update" = TYPE A. "Night Owl is broken" = TYPE B.  
 "Build Social Contrarian" = TYPE C. "Audit journalism" = TYPE D.  
@@ -315,8 +321,13 @@ User never needs to say "TYPE B" — just describe what they want.
 3. Copies `sportworld.html` for download  
 4. Writes session doc to Drive  
 5. Writes handoff note to Drive  
-6. Prompts for canonical doc updates  
-7. Declares SESSION END  
+6. Updates canonical docs — two tiers:  
+   AUTO (no prompting): FIELD Current State (every session — HEAD, smoke, changed sections)  
+   AUTO if features shipped: Master Improvement Ranking FIELD_FEATURES registry  
+   PROMPT for judgment: Build Session List, Wow Features, UI Evaluation,  
+   Viewport Style Guide, Daily Update Reference (require context to update correctly)  
+7. Updates handoff ID in STANDARDS.md + commits  
+8. Declares SESSION END  
 
 ### What requires one user action
 
