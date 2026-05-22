@@ -27,7 +27,7 @@ Add a new named assertion in `smoke.js` for every FIELD_FEATURES entry (presence
    ⚠️  GEMINI QUARANTINE CHECK: if the handoff was produced by a Gemini session,
        STOP — do not proceed. See Rule 25. Run the 4-check audit first.
        Only use this handoff once it reaches CLEARED or PARTIALLY CLEARED status.
-1. Read CI/DEPLOY ERROR REFERENCE — Drive ID: 1aX65p4C3BfeKtdbQPS32wFsm_bktCuaE
+1. Read CI/DEPLOY ERROR REFERENCE — Drive ID: 1R4c0-Qw8qOdQhGrZD5QBEW3mqn2s2kx2ghdWlAVGkyA
    Surface: sandbox constraints, deploy path, worker summary, secrets state
 2. Declare: "SESSION START · Type: [A/B/C/D/E] · Scope: [one sentence]"
 3. git pull && cp index.html /home/claude/index.html
@@ -39,7 +39,7 @@ Add a new named assertion in `smoke.js` for every FIELD_FEATURES entry (presence
 
 **Canonical docs** (open the relevant one before starting):
 - Handoff Note (read first): `1De2DtbQxl4gvPuSr0bA7lYD606j6fcre-yLefxVLkGo` ← update this ID every session end
-- CI/Deploy Error Reference (read every session): `1aX65p4C3BfeKtdbQPS32wFsm_bktCuaE`
+- CI/Deploy Error Reference (read every session): `1R4c0-Qw8qOdQhGrZD5QBEW3mqn2s2kx2ghdWlAVGkyA`
 - Build Session List: `1ITCe3Hs3EcVhqhOp1uPkPRtyca5Bxtrcc9953xyXZsA`
 - Daily Update Reference: `1n4fiAaU1uF2X7EKRx9Gm6XpuR6wkpwoa`
 - Wow Features: `1h80BrgGXbz6aq3Hgv5LbjhpFkRQjYvd87fOMNJmVMOc`
@@ -108,7 +108,7 @@ never worked despite being documented as complete.*
 | **Daily Update Reference** | `1n4fiAaU1uF2X7EKRx9Gm6XpuR6wkpwoa` | Any session that changes broadcast chip rules, thresholds, or update protocol |
 | **Handoff Note** ← update ID every session | `1FNKAMAYS98yfHrw7M5d2Gsb1Noy7yUSIyLQ7gVyafUw
 Session doc May 21: 1Rsy6dysrqhxxK_Y5M0a4qcw7HY2zWoKv5SL6p5gysKM` | Every session end — replace ID with new handoff doc |
-| **CI/Deploy Error Reference** | `1aX65p4C3BfeKtdbQPS32wFsm_bktCuaE` | When a new CI/deploy failure pattern is resolved |
+| **CI/Deploy Error Reference** | `1R4c0-Qw8qOdQhGrZD5QBEW3mqn2s2kx2ghdWlAVGkyA` | When a new CI/deploy failure pattern is resolved |
 
 **The rule: edit the document, don't create a new one.**  
 Date-stamp changes at the top of the doc. Never append "v14", "v15" to the title.  
@@ -280,7 +280,7 @@ Every session, Claude reads the latest handoff note from Drive before
 responding to the opening message. No user request needed.
 
 **Claude reads CI/Deploy Error Reference automatically:**  
-Every session, Claude reads `1aX65p4C3BfeKtdbQPS32wFsm_bktCuaE`  
+Every session, Claude reads `1R4c0-Qw8qOdQhGrZD5QBEW3mqn2s2kx2ghdWlAVGkyA`  
 and surfaces the sandbox constraints, deploy path, worker architecture,  
 and secrets state before any work begins. This prevents wasted time  
 attempting blocked operations (api.github.com, *.workers.dev).
@@ -394,7 +394,7 @@ a follow-up session.
 
 ## Rule 12 — CI/Deploy Error Reference read at every session start
 
-**Drive ID: `1aX65p4C3BfeKtdbQPS32wFsm_bktCuaE`**
+**Drive ID: `1R4c0-Qw8qOdQhGrZD5QBEW3mqn2s2kx2ghdWlAVGkyA`**
 
 Read this document before any code is touched in any session type.
 Not only when something is broken — every session, every type.
