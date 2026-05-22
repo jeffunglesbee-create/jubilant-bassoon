@@ -41,7 +41,7 @@ Add a new named assertion in `smoke.js` for every FIELD_FEATURES entry (presence
 ```
 
 **Canonical docs** (open the relevant one before starting):
-- Handoff Note (read first): `1ZEtaob5cFuL2Loxc8Bp68YPNFAU3Ofo6GctVR4VAEIc` ← update this ID every session end
+- Handoff Note (read first): `10TLOCxgjNFkn6nSK0UZJzmbvt3xiq5Ssn3Uox6OU5J4` ← update this ID every session end
 - CI/Deploy Error Reference (read every session): `1R4c0-Qw8qOdQhGrZD5QBEW3mqn2s2kx2ghdWlAVGkyA`
 - Build Session List: `1Drrp5eRNdGb8EKodqPNwpuLaC23XcOrlv4DO13zNot0`
 - FIELD Current State: `1QD3P9eG2pSdabNTMPZYHwaMc1DawmmKpRVrv0ZqQdVs`
@@ -115,7 +115,7 @@ never worked despite being documented as complete.*
 | **Master Improvement Ranking** | `1rW90JQ5a4ybrE9l5acrbqd0q0yl_QYmPIOnEJr__GEY` | Any session that ships a feature — add to FIELD_FEATURES registry with ship date |
 | **FIELD Current State** | `1QD3P9eG2pSdabNTMPZYHwaMc1DawmmKpRVrv0ZqQdVs` | Every session end — update HEAD, smoke state, and any changed capability sections |
 | **Daily Update Reference** | `1n4fiAaU1uF2X7EKRx9Gm6XpuR6wkpwoa` | Any session that changes broadcast chip rules, thresholds, or update protocol |
-| **Handoff Note** ← update ID every session | `1FNKAMAYS98yfHrw7M5d2Gsb1Noy7yUSIyLQ7gVyafUw
+| **Handoff Note** ← update ID every session | `10TLOCxgjNFkn6nSK0UZJzmbvt3xiq5Ssn3Uox6OU5J4
 Session doc May 21: 1Rsy6dysrqhxxK_Y5M0a4qcw7HY2zWoKv5SL6p5gysKM` | Every session end — replace ID with new handoff doc |
 | **CI/Deploy Error Reference** | `1R4c0-Qw8qOdQhGrZD5QBEW3mqn2s2kx2ghdWlAVGkyA` | When a new CI/deploy failure pattern is resolved |
 
@@ -635,7 +635,7 @@ PHASE N — [description] (commit [hash])
 === ARCHITECTURE NOTES ===
 [Any new globals, changed interfaces, data flow changes]
 
-=== BROWSER-CONFIRMED 1FNKAMAYS98yfHrw7M5d2Gsb1Noy7yUSIyLQ7gVyafUw
+=== BROWSER-CONFIRMED 10TLOCxgjNFkn6nSK0UZJzmbvt3xiq5Ssn3Uox6OU5J4
 Session doc May 21: 1Rsy6dysrqhxxK_Y5M0a4qcw7HY2zWoKv5SL6p5gysKM ===
 [List of features that are smoke-verified only, not yet
 confirmed working in browser. Carries forward from last handoff.]
@@ -787,7 +787,7 @@ if(typeof window._fieldErrors !== 'undefined')
 ### Browser-confirmed pending list
 
 Maintained in two places:
-1. Session doc `BROWSER-CONFIRMED 1FNKAMAYS98yfHrw7M5d2Gsb1Noy7yUSIyLQ7gVyafUw
+1. Session doc `BROWSER-CONFIRMED 10TLOCxgjNFkn6nSK0UZJzmbvt3xiq5Ssn3Uox6OU5J4
 Session doc May 21: 1Rsy6dysrqhxxK_Y5M0a4qcw7HY2zWoKv5SL6p5gysKM` section (Rule 15)
 2. Handoff note `Browser-confirmed pending:` field
 
