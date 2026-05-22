@@ -85,6 +85,53 @@ function dramaTierHeuristic(game) {
   return score;
 }
 
+// ── Sport-specific language helper ───────────────────────────────────────────
+// Returns sport-accurate terminology for OT labels, descriptors, and signals.
+// Centralises all sport-language decisions so they're only in one place.
+function getSportLanguage(game, diff) {
+  const sp = (game.sport || '').toLowerCase();
+  const isBB  = sp === 'baseball' || sp === 'mlb';
+  const isHK  = sp === 'hockey'   || sp === 'nhl';
+  const isSoc = sp === 'soccer'   || sp === 'football';
+  const { isOT = false, isShootout = false } = game;
+
+  let otShort   = '';   // appended to score: ' (OT)', ' (XI)', ' (SO)', ''
+  let otSubject = '';   // subject-line phrase: 'overtime', 'extra innings', 'a shootout'
+  let otSignal  = '';   // drama signal sentence opener
+  let descriptor = 'tight';
+
+  if (isShootout) {
+    otShort    = ' (SO)';
+    otSubject  = 'a shootout';
+    otSignal   = 'Game went to a shootout';
+    descriptor = 'shootout';
+  } else if (isOT) {
+    if (isBB) {
+      otShort    = ' (XI)';           // XI = extra innings (standard baseball notation)
+      otSubject  = 'extra innings';
+      otSignal   = 'Game went to extra innings';
+      descriptor = 'extra-innings';
+    } else {
+      otShort    = ' (OT)';
+      otSubject  = 'overtime';
+      otSignal   = 'Game went to overtime';
+      descriptor = 'overtime';
+    }
+  } else {
+    // Non-OT close-game descriptor — sport-specific
+    if (isBB) {
+      descriptor = diff === 1 ? 'one-run' : diff === 2 ? 'two-run' : 'tight';
+    } else if (isHK || isSoc) {
+      descriptor = diff <= 1 ? 'one-goal' : diff <= 2 ? 'two-goal' : 'tight';
+    } else {
+      // Basketball / generic
+      descriptor = diff <= 1 ? 'one-possession' : diff <= 3 ? 'close' : 'tight';
+    }
+  }
+
+  return { otShort, otSubject, otSignal, descriptor };
+}
+
 // ── Email builder ────────────────────────────────────────────────────────────
 function buildEmailHTML(game, yesterdayStr) {
   const {
@@ -102,15 +149,7 @@ function buildEmailHTML(game, yesterdayStr) {
   const diff    = Math.abs((homeScore || 0) - (awayScore || 0));
   const score   = `${awayScore}–${homeScore}`;
 
-  let descriptor = 'tight';
-  if (isOT)       descriptor = 'overtime';
-  if (isShootout) descriptor = 'shootout';
-  if (diff <= 1)  descriptor = 'one-possession';
-  if (diff === 0) descriptor = 'extra-innings';
-
-  const overtimeStr = isOT       ? ' (OT)'
-                    : isShootout ? ' (SO)'
-                    : '';
+  const { otShort, otSignal, descriptor } = getSportLanguage({ sport, isOT, isShootout }, diff);
 
   const leagueDisplay = league || sport || 'Sports';
   const seriesStr = seriesRecord ? `<br><span style="color:#94a3b8;font-size:.85em">${seriesRecord}</span>` : '';
@@ -145,12 +184,12 @@ function buildEmailHTML(game, yesterdayStr) {
 
       <!-- Score -->
       <div style="font-size:2rem;font-weight:900;color:#f1f5f9;letter-spacing:-.02em;margin-bottom:4px">
-        ${score}${overtimeStr}
+        ${score}${otShort}
       </div>
 
       <!-- Headline -->
       <div style="color:#94a3b8;font-size:.85em;line-height:1.5">
-        ${winner} ${diff <= 1 ? 'edged' : diff <= 3 ? 'held off' : 'defeated'} ${loser} ${winnerScore}–${loserScore} in a ${descriptor} finish.
+        ${winner} ${diff <= 1 ? 'edged' : diff <= 3 ? 'held off' : 'defeated'} ${loser} ${winnerScore}–${loserScore} in ${/^[aeiou]/i.test(descriptor) ? 'an' : 'a'} ${descriptor} finish.
       </div>
     </div>
 
@@ -158,7 +197,7 @@ function buildEmailHTML(game, yesterdayStr) {
     <div style="background:#0f172a;border-radius:8px;padding:14px 16px;margin-bottom:20px;color:#94a3b8;font-size:.82em;line-height:1.6">
       <span style="color:#f97316;font-weight:700">FIELD Drama Signal: </span>
       ${isOT || isShootout
-        ? `Game went to ${isShootout ? 'a shootout' : 'overtime'} — maximum late-game tension.`
+        ? `${otSignal} — maximum late-game tension.`
         : diff <= 2
         ? `Final margin of ${diff === 1 ? 'one' : 'two'} — decided in the final moments.`
         : `Close finish — ${winner} held on against ${loser}.`
@@ -251,8 +290,10 @@ async function main() {
     : 'Last Night';
 
   const diff = Math.abs((top.game.homeScore || 0) - (top.game.awayScore || 0));
+  const { otSubject } = getSportLanguage(top.game, diff);
+
   const subject = top.game.isOT || top.game.isShootout
-    ? `🦉 Night Owl: ${top.game.away} vs ${top.game.home} went to ${top.game.isShootout ? 'a shootout' : 'overtime'}`
+    ? `🦉 Night Owl: ${top.game.away} vs ${top.game.home} went to ${otSubject}`
     : diff <= 2
     ? `🦉 Night Owl: ${top.game.away} vs ${top.game.home} — decided by ${diff === 1 ? '1' : '2'}`
     : `🦉 Night Owl: Close finish — ${top.game.away} @ ${top.game.home}`;
