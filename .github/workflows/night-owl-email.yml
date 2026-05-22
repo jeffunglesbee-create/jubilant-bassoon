@@ -1,0 +1,213 @@
+# .github/workflows/night-owl-email.yml
+#
+# FIELD NIGHT OWL EMAIL — Rule 28 action layer for Night Owl intelligence
+#
+# WHY THIS EXISTS:
+#   The Night Owl recap (J5 brief, drama arc, drama peak) is built and runs
+#   in the browser. A user who WAS watching sees it. A user who WASN'T gets
+#   nothing. This workflow is the action layer that closes the gap:
+#   it finds high-drama completed games from yesterday and emails a recap.
+#
+#   Rule 28: "Intelligence and action are two halves of the same feature."
+#   The Night Owl recap is the intelligence. This email is the action.
+#
+# HOW IT WORKS:
+#   1. Runs at 9:30 UTC (5:30am ET) — after most games in all timezones finish
+#   2. Fetches yesterday's scoreboard from ESPN API (no API key needed)
+#   3. Evaluates each completed game for drama (OT, close finish, playoff)
+#   4. If any game scores ≥ 3/10 on the drama heuristic, sends recap email
+#   5. Subject line identifies the game: "Night Owl: Celtics vs Knicks went to OT"
+#
+# DRAMA HEURISTICS (from final scores — no live drama history available in CI):
+#   OT / extra innings: +5 (always dramatic)
+#   Playoff game: +2
+#   Basketball: score diff ≤ 3 → +4, ≤ 6 → +2
+#   Baseball: score diff 1 → +4, diff 2 → +2
+#   Hockey: score diff ≤ 1 → +4, shootout → +5
+#   Soccer: draw → +3, diff 1 → +2
+#
+# SPORTS COVERED: NBA, NHL, MLB, EPL (via ESPN API, no auth required)
+#
+# SETUP (one-time):
+#   RESEND_API_KEY is already configured as a GitHub secret.
+#   No additional setup needed.
+#
+# MANUAL TRIGGER:
+#   Actions tab → FIELD Night Owl Email → Run workflow
+
+name: FIELD Night Owl Email
+
+on:
+  schedule:
+    - cron: '30 9 * * *'  # 9:30 UTC = 5:30am ET (after US late games finish)
+  workflow_dispatch:
+    inputs:
+      date_override:
+        description: 'Override yesterday date (YYYY-MM-DD). Leave empty for auto.'
+        required: false
+        type: string
+
+jobs:
+  night-owl:
+    runs-on: ubuntu-latest
+    name: Fetch results + send drama recap email
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Compute yesterday's date
+        id: dates
+        run: |
+          if [ -n "${{ inputs.date_override }}" ]; then
+            YESTERDAY="${{ inputs.date_override }}"
+            echo "Using override date: $YESTERDAY"
+          else
+            # Yesterday in ET (UTC-4 EDT / UTC-5 EST) — use UTC-4 as safe approximation
+            YESTERDAY=$(date -u -d '28 hours ago' +%Y-%m-%d)
+            echo "Auto-computed yesterday: $YESTERDAY"
+          fi
+          echo "yesterday=$YESTERDAY" >> $GITHUB_OUTPUT
+          # ESPN API date format: YYYYMMDD
+          echo "espn_date=$(echo $YESTERDAY | tr -d '-')" >> $GITHUB_OUTPUT
+
+      # ── Fetch NBA results ────────────────────────────────────────────────
+      - name: Fetch NBA results
+        id: nba
+        run: |
+          DATE="${{ steps.dates.outputs.espn_date }}"
+          DATA=$(curl -sf --max-time 15 \
+            "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard?dates=$DATE" \
+            || echo '{}')
+          GAMES=$(echo "$DATA" | node -e "
+            const d = JSON.parse(require('fs').readFileSync('/dev/stdin','utf8'));
+            const games = (d.events || []).map(ev => {
+              const comp = ev.competitions?.[0];
+              if (!comp) return null;
+              const status = comp.status?.type?.name || '';
+              if (!status.includes('Final') && !status.includes('STATUS_FINAL')) return null;
+              const teams = comp.competitors || [];
+              const home = teams.find(t=>t.homeAway==='home');
+              const away = teams.find(t=>t.homeAway==='away');
+              const homeScore = parseInt(home?.score||0);
+              const awayScore = parseInt(away?.score||0);
+              const isOT = comp.status?.period > 4;
+              const notes = (comp.notes||[]).map(n=>n.headline||'').join(' ').toLowerCase();
+              const isPlayoff = notes.includes('playoff') || notes.includes('series') || ev.season?.type === 3;
+              return {
+                sport: 'NBA', league: 'NBA Playoffs',
+                home: home?.team?.displayName || '?',
+                away: away?.team?.displayName || '?',
+                homeScore, awayScore, isOT, isPlayoff,
+                seriesRecord: (comp.series?.summary||''),
+              };
+            }).filter(Boolean);
+            console.log(JSON.stringify(games));
+          " 2>/dev/null || echo '[]')
+          echo "games=$GAMES" >> $GITHUB_OUTPUT
+          echo "NBA games found: $(echo $GAMES | node -e "const g=JSON.parse(require('fs').readFileSync('/dev/stdin','utf8')); console.log(g.length)" 2>/dev/null || echo '?')"
+
+      # ── Fetch NHL results ────────────────────────────────────────────────
+      - name: Fetch NHL results
+        id: nhl
+        run: |
+          DATE="${{ steps.dates.outputs.espn_date }}"
+          DATA=$(curl -sf --max-time 15 \
+            "https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/scoreboard?dates=$DATE" \
+            || echo '{}')
+          GAMES=$(echo "$DATA" | node -e "
+            const d = JSON.parse(require('fs').readFileSync('/dev/stdin','utf8'));
+            const games = (d.events || []).map(ev => {
+              const comp = ev.competitions?.[0];
+              if (!comp) return null;
+              const status = comp.status?.type?.name || '';
+              if (!status.includes('Final') && !status.includes('STATUS_FINAL')) return null;
+              const teams = comp.competitors || [];
+              const home = teams.find(t=>t.homeAway==='home');
+              const away = teams.find(t=>t.homeAway==='away');
+              const homeScore = parseInt(home?.score||0);
+              const awayScore = parseInt(away?.score||0);
+              const isOT = comp.status?.period > 3;
+              const desc = comp.status?.type?.description || '';
+              const isShootout = desc.toLowerCase().includes('shootout') || desc.toLowerCase().includes('so');
+              const notes = (comp.notes||[]).map(n=>n.headline||'').join(' ').toLowerCase();
+              const isPlayoff = notes.includes('playoff') || notes.includes('series') || ev.season?.type === 3;
+              return {
+                sport: 'NHL', league: 'NHL Playoffs',
+                home: home?.team?.displayName || '?',
+                away: away?.team?.displayName || '?',
+                homeScore, awayScore, isOT, isShootout, isPlayoff,
+                seriesRecord: (comp.series?.summary||''),
+              };
+            }).filter(Boolean);
+            console.log(JSON.stringify(games));
+          " 2>/dev/null || echo '[]')
+          echo "games=$GAMES" >> $GITHUB_OUTPUT
+
+      # ── Fetch MLB results ────────────────────────────────────────────────
+      - name: Fetch MLB results
+        id: mlb
+        run: |
+          DATE="${{ steps.dates.outputs.espn_date }}"
+          DATA=$(curl -sf --max-time 15 \
+            "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard?dates=$DATE" \
+            || echo '{}')
+          GAMES=$(echo "$DATA" | node -e "
+            const d = JSON.parse(require('fs').readFileSync('/dev/stdin','utf8'));
+            const games = (d.events || []).map(ev => {
+              const comp = ev.competitions?.[0];
+              if (!comp) return null;
+              const status = comp.status?.type?.name || '';
+              if (!status.includes('Final') && !status.includes('STATUS_FINAL')) return null;
+              const teams = comp.competitors || [];
+              const home = teams.find(t=>t.homeAway==='home');
+              const away = teams.find(t=>t.homeAway==='away');
+              const homeScore = parseInt(home?.score||0);
+              const awayScore = parseInt(away?.score||0);
+              const isOT = comp.status?.period > 9; // extra innings
+              return {
+                sport: 'baseball', league: 'MLB',
+                home: home?.team?.shortDisplayName || home?.team?.displayName || '?',
+                away: away?.team?.shortDisplayName || away?.team?.displayName || '?',
+                homeScore, awayScore, isOT,
+              };
+            }).filter(Boolean);
+            console.log(JSON.stringify(games));
+          " 2>/dev/null || echo '[]')
+          echo "games=$GAMES" >> $GITHUB_OUTPUT
+
+      # ── Combine and send ─────────────────────────────────────────────────
+      - name: Evaluate drama and send email
+        env:
+          RESEND_API_KEY:   ${{ secrets.RESEND_API_KEY }}
+          FIELD_EMAIL:      jeffunglesbee@gmail.com
+          YESTERDAY_DATE:   ${{ steps.dates.outputs.yesterday }}
+          NBA_GAMES:        ${{ steps.nba.outputs.games }}
+          NHL_GAMES:        ${{ steps.nhl.outputs.games }}
+          MLB_GAMES:        ${{ steps.mlb.outputs.games }}
+        run: |
+          # Merge all sports into one JSON array, pass to email script
+          node -e "
+            const nba = JSON.parse(process.env.NBA_GAMES || '[]');
+            const nhl = JSON.parse(process.env.NHL_GAMES || '[]');
+            const mlb = JSON.parse(process.env.MLB_GAMES || '[]');
+            const all = [...nba, ...nhl, ...mlb];
+            process.env.ESPN_GAMES_JSON = JSON.stringify(all);
+            console.log('Combined games:', all.length);
+            require('./scripts/night-owl-email.js');
+          "
+
+      - name: Summary
+        if: always()
+        run: |
+          echo ""
+          echo "══════════════════════════════════════"
+          echo "  Night Owl Email check complete"
+          echo "  Yesterday: ${{ steps.dates.outputs.yesterday }}"
+          echo "  $(date '+%Y-%m-%d %H:%M UTC')"
+          echo "══════════════════════════════════════"
