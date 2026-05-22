@@ -285,9 +285,21 @@ jobs:
           if git diff --staged --quiet; then
             echo "No changes to current state — skipping commit"
           else
-            git commit -m "ci: update current state $(git rev-parse --short HEAD 2>/dev/null) [skip ci]"
-            git push origin main
-            echo "✅ Current state updated in repo"
+            # Stash our generated changes, fetch latest remote, restore
+            # Prevents non-fast-forward rejection when commits arrive during CI run
+            git stash
+            git fetch origin main
+            git reset --hard origin/main
+            git stash pop || true
+            # Re-stage after reset
+            git add FIELD-CURRENT-STATE.md GOVERNANCE.json
+            if git diff --staged --quiet; then
+              echo "No changes after sync — skipping commit"
+            else
+              git commit -m "ci: update current state $(git rev-parse --short HEAD 2>/dev/null) [skip ci]"
+              git push origin main
+              echo "✅ Current state updated in repo"
+            fi
           fi
 
 

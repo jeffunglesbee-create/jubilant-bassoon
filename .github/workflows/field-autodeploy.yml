@@ -183,13 +183,7 @@ jobs:
             INDEX_VER=$(grep -oP "const SW_VERSION = \'\K[^\']+" index.html 2>/dev/null || echo "")
             SW_VER=$(grep -oP "const SW_VERSION = \'\K[^\']+" sw.js 2>/dev/null || echo "")
             if [ -n "$INDEX_VER" ] && [ "$INDEX_VER" != "$SW_VER" ]; then
-              python3 -c "
-import re, sys
-content = open('sw.js').read()
-fixed = re.sub(r\"const SW_VERSION\\s*=\\s*\'[0-9-]+\'\", f\"const SW_VERSION  = '${INDEX_VER}'\", content)
-open('sw.js','w').write(fixed)
-print('sw.js SW_VERSION updated to ${INDEX_VER}')
-"
+              sed -i "s/const SW_VERSION  = '[0-9-]*'/const SW_VERSION  = '${INDEX_VER}'/" sw.js
               git add sw.js
               echo "✅ SW_VERSION synced: ${SW_VER} → ${INDEX_VER}"
             else
