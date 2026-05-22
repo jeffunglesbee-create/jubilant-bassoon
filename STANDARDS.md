@@ -24,6 +24,9 @@ Add a new named assertion in `smoke.js` for every FIELD_FEATURES entry (presence
 
 ```
 0. Read HANDOFF NOTE — Drive ID in canonical table below (first, before everything)
+   0a. Read FIELD CURRENT STATE — Drive ID: 1QD3P9eG2pSdabNTMPZYHwaMc1DawmmKpRVrv0ZqQdVs
+       What FIELD is TODAY — features live, smoke state, active rules, known gaps.
+       Read after handoff, before CI/Deploy ref. Takes 2 minutes. Prevents stale-state decisions.
    ⚠️  GEMINI QUARANTINE CHECK: if the handoff was produced by a Gemini session,
        STOP — do not proceed. See Rule 25. Run the 4-check audit first.
        Only use this handoff once it reaches CLEARED or PARTIALLY CLEARED status.
@@ -41,6 +44,8 @@ Add a new named assertion in `smoke.js` for every FIELD_FEATURES entry (presence
 - Handoff Note (read first): `1TRpxKBNX82q-522V-aVLFBIBrwYwyIjkyI0h6y4n4FM` ← update this ID every session end
 - CI/Deploy Error Reference (read every session): `1R4c0-Qw8qOdQhGrZD5QBEW3mqn2s2kx2ghdWlAVGkyA`
 - Build Session List: `19TicpFBU2ORbypNBteCXuhwbX1FoP14Y2NGuU9e3drQ`
+- FIELD Current State: `1QD3P9eG2pSdabNTMPZYHwaMc1DawmmKpRVrv0ZqQdVs`
+- Master Improvement Ranking: `1rW90JQ5a4ybrE9l5acrbqd0q0yl_QYmPIOnEJr__GEY`
 - Daily Update Reference: `1n4fiAaU1uF2X7EKRx9Gm6XpuR6wkpwoa`
 - Wow Features: `1h80BrgGXbz6aq3Hgv5LbjhpFkRQjYvd87fOMNJmVMOc`
 - UI Evaluation: `1xIZnlczl2kIeslnnzJD1eJrgBu5iw6xgSk1wB1MVyAY`
@@ -107,12 +112,20 @@ never worked despite being documented as complete.*
 | **Wow Features** | `1h80BrgGXbz6aq3Hgv5LbjhpFkRQjYvd87fOMNJmVMOc` | Any session that implements or modifies a Wow item |
 | **UI Evaluation** | `1xIZnlczl2kIeslnnzJD1eJrgBu5iw6xgSk1wB1MVyAY` | Any session with CSS, layout, or card design changes |
 | **Viewport Style Guide** | `1X_u98rkvqB4l6H5fYr1IiOZlLcZzap6cUDojgE85C2A` | Any session that changes section labels, font sizes, touch targets, or surface identifiers |
+| **Master Improvement Ranking** | `1rW90JQ5a4ybrE9l5acrbqd0q0yl_QYmPIOnEJr__GEY` | Any session that ships a feature — add to FIELD_FEATURES registry with ship date |
+| **FIELD Current State** | `1QD3P9eG2pSdabNTMPZYHwaMc1DawmmKpRVrv0ZqQdVs` | Every session end — update HEAD, smoke state, and any changed capability sections |
 | **Daily Update Reference** | `1n4fiAaU1uF2X7EKRx9Gm6XpuR6wkpwoa` | Any session that changes broadcast chip rules, thresholds, or update protocol |
 | **Handoff Note** ← update ID every session | `1FNKAMAYS98yfHrw7M5d2Gsb1Noy7yUSIyLQ7gVyafUw
 Session doc May 21: 1Rsy6dysrqhxxK_Y5M0a4qcw7HY2zWoKv5SL6p5gysKM` | Every session end — replace ID with new handoff doc |
 | **CI/Deploy Error Reference** | `1R4c0-Qw8qOdQhGrZD5QBEW3mqn2s2kx2ghdWlAVGkyA` | When a new CI/deploy failure pattern is resolved |
 
-**The rule: edit the document, don't create a new one.**  
+**The rule: edit the document, don't create a new one.**
+
+**Known stale external reference (tracked gap):**
+Architecture Index (`1SD5bjd1cZs1p7T4YyDJEpEEaJGUpc2V-Ux6zqUCvEU0`) still references
+Build Session v7.2 and Master v29.1. Update in next TYPE D (audit) session.
+The 8 Architecture docs remain valid for their content — only cross-reference
+pointers are stale.  
 Date-stamp changes at the top of the doc. Never append "v14", "v15" to the title.  
 If a format change is significant, add a `--- REVISED [date] ---` marker inside the doc.
 
@@ -130,6 +143,8 @@ Build Session List — mark item ✅ with date and actual time spent.
 Wow Features — if the feature is a Wow item, update its status and implementation notes.  
 UI Evaluation — if any new CSS class, layout section, or design pattern was added.  
 Viewport Style Guide — if the feature introduces a new named surface, section identifier, or changes how intelligence is surfaced at any viewport. Check the Three Questions Test passes at each breakpoint.  
+Master Improvement Ranking — add new FIELD_FEATURES entry with ship date.  
+FIELD Current State — update the relevant capability section and HEAD/smoke state.  
 Daily Update Reference — if the feature adds a new daily check (e.g. new broadcast chip type).
 
 **TYPE D (audit):**  
