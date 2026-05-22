@@ -2,26 +2,26 @@
 > Auto-updated by CI on each successful deploy and by Claude at session end. Commit history = changelog.
 
 <<<<<<< Updated upstream
-**HEAD:** 711a42c · **Deployed:** 2026-05-22 · **File:** ~908KB · **Smoke:** 144/0 · **L3:** 15/15
+**HEAD:** 899caab · **Deployed:** 2026-05-22 · **File:** ~908KB · **Smoke:** 144/0 · **L3:** 15/15
 =======
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
-**HEAD:** 711a42c · **Deployed:** 2026-05-22 · **File:** ~908KB · **Smoke:** 144/0 · **L3:** 15/15
+**HEAD:** 899caab · **Deployed:** 2026-05-22 · **File:** ~908KB · **Smoke:** 144/0 · **L3:** 15/15
 =======
-**HEAD:** 711a42c · **Deployed:** 2026-05-22 · **File:** ~908KB · **Smoke:** 144/0 · **L3:** 15/15
+**HEAD:** 899caab · **Deployed:** 2026-05-22 · **File:** ~908KB · **Smoke:** 144/0 · **L3:** 15/15
 =======
-**HEAD:** 711a42c · **Deployed:** 2026-05-22 · **File:** ~908KB · **Smoke:** 144/0 · **L3:** 15/15
+**HEAD:** 899caab · **Deployed:** 2026-05-22 · **File:** ~908KB · **Smoke:** 144/0 · **L3:** 15/15
 =======
-**HEAD:** 711a42c · **Deployed:** 2026-05-22 · **File:** ~908KB · **Smoke:** 144/0 · **L3:** 15/15
+**HEAD:** 899caab · **Deployed:** 2026-05-22 · **File:** ~908KB · **Smoke:** 144/0 · **L3:** 15/15
 =======
-**HEAD:** 711a42c · **Deployed:** 2026-05-22 · **File:** ~908KB · **Smoke:** 144/0 · **L3:** 15/15
+**HEAD:** 899caab · **Deployed:** 2026-05-22 · **File:** ~908KB · **Smoke:** 144/0 · **L3:** 15/15
 =======
-**HEAD:** 711a42c · **Deployed:** 2026-05-22 · **File:** ~908KB · **Smoke:** 144/0 · **L3:** 15/15
+**HEAD:** 899caab · **Deployed:** 2026-05-22 · **File:** ~908KB · **Smoke:** 144/0 · **L3:** 15/15
 =======
-**HEAD:** 711a42c · **Deployed:** 2026-05-22 · **File:** ~908KB · **Smoke:** 144/0 · **L3:** 15/15
+**HEAD:** 899caab · **Deployed:** 2026-05-22 · **File:** ~908KB · **Smoke:** 144/0 · **L3:** 15/15
 =======
-**HEAD:** 711a42c · **Deployed:** 2026-05-22 · **File:** ~908KB · **Smoke:** 144/0 · **L3:** 15/15
+**HEAD:** 899caab · **Deployed:** 2026-05-22 · **File:** ~908KB · **Smoke:** 144/0 · **L3:** 15/15
 >>>>>>> Stashed changes
 >>>>>>> Stashed changes
 >>>>>>> Stashed changes
