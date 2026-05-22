@@ -1408,3 +1408,47 @@ O(sports + consumers): new sport = one emitter, new feature = one subscriber.
 Reference: Update Architecture Spec v3: 1YVXFmsUblQJvQA8KtKwtrcI08vWZh5n-uokMaCLJSlM
 Build Session List v7.8: 1uZ0LNlpDmO0CcyRPOUcRcuyK5dMAdjD5cEkRw9WktUo
 SSE Research doc: 1uNl5ua8LHXBJfG_U6DLyGrNQfVt54HhGoiPNuY0Q_PA
+
+## Rule 28 — Intelligence-Action Pairing
+
+**The principle:** Intelligence and action are two halves of the same feature.
+Shipping intelligence without the action path is shipping the promise without the delivery.
+
+**The pattern FIELD must avoid:**
+Building the "here's what's happening" layer and deferring the
+"here's what to do about it" layer to a dependency or a later session.
+
+Examples of the gap:
+  - OTW FIRE state showed drama for weeks without a Watch button
+  - Betfair intelligence built but never deployed (BETFAIR_RELAY_ENABLED=false)
+  - Night Owl recap built; morning-after email never triggered
+  - Push notifications specced without requiring watchUrl in the payload
+
+**The test before shipping any intelligence feature:**
+Ask: "What action does this intelligence enable?"
+If the action requires unbuilt infrastructure, that infrastructure
+is a PREREQUISITE of the feature, not a downstream nice-to-have.
+
+**The rule:**
+1. When speccing a new intelligence feature, the spec must include
+   the action path or explicitly identify it as a bundled build.
+2. When building a new intelligence feature, the action path must
+   be built in the same session or the immediately following one.
+   It may NOT be deferred to Tier 4 or listed as "after Pipeline X."
+3. When auditing: if intelligence is built and action is not,
+   the action item is promoted to the same tier as the intelligence
+   and treated as incomplete work, not future work.
+
+**The audit test for existing features:**
+  "Built" means BOTH the intelligence AND the action path are live.
+  If only the intelligence shipped, the feature is 50% complete.
+
+**Immediate implications (Rule 28 audit, May 21 2026):**
+  OTW FIRE state: 50% complete — Pipeline B + Watch button is the other half
+  Night Owl recap: 50% complete — morning-after email is the other half
+  Betfair intelligence: 50% complete — deployment is the other half
+  Push notifications: must include watchUrl in payload or it's 50% on arrival
+
+Reference: Intelligence-Action Audit May 21 2026
+  (written following gap analysis observation that OTW Watch button
+  and OTW FIRE state were separate features when they are one)

@@ -627,6 +627,22 @@ flex-shrink:0;white-space:nowrap;
 .otw-drama.d-pregame{background:rgba(201,168,76,.18);color:var(--gold2,#c9a84c)}
 .otw-close{background:none;border:none;color:var(--smoke);cursor:pointer;font-size:.8rem;padding:.1rem .2rem;flex-shrink:0;opacity:.55;transition:opacity .15s}
 .otw-close:hover{color:var(--white);opacity:1}
+/* ── OTW Watch button (Pipeline B action layer) ── */
+.otw-watch-btn{
+  display:inline-flex;align-items:center;gap:.25rem;
+  background:rgba(45,212,191,.18);border:1px solid rgba(45,212,191,.38);
+  color:var(--teal,#2dd4bf);font-size:.6rem;font-weight:800;
+  letter-spacing:.07em;text-transform:uppercase;
+  padding:.2rem .5rem;border-radius:5px;
+  cursor:pointer;flex-shrink:0;white-space:nowrap;
+  min-height:30px;transition:background .15s;
+}
+.otw-watch-btn:hover{background:rgba(45,212,191,.3)}
+.otw-watch-free{
+  background:rgba(74,222,128,.15);border-color:rgba(74,222,128,.4);
+  color:#4ade80;
+}
+.otw-watch-free:hover{background:rgba(74,222,128,.27)}
 
 /* ── Drama Score Badge ──────────────────────────────────────────────── */
 .drama-badge{
@@ -11126,11 +11142,54 @@ function computeGameNarrative(game, espnScore, sportClass){
 }
 
 // ─── enrichGame() shell — Stages 3+4 plugged in by Sessions B+C ─────────────
+// ─── PIPELINE B: resolveGameBroadcast() — Stage 3 ────────────────────────────
+// Returns the best broadcast option for a game as a Broadcast object:
+//   { label, watchUrl, authType, isFreeOTA, key }
+// Priority: (1) service user has in MY_SERVICES, (2) free OTA, (3) primary national
+// Graceful degrade: returns null if no streams available.
+function resolveGameBroadcast(game){
+  if(!game||!game.streams||!game.streams.length) return null;
+  const streams=resolveStreams(game.streams);
+  if(!streams.length) return null;
+
+  // Pass 1: service user already has — best UX (no new cost)
+  for(const s of streams){
+    const key=s.key||s.srKey||'';
+    if(!key||RSN_KEYS.has(key)) continue;
+    if(MY_SERVICES.has(key)){
+      return {label:s.name||key.toUpperCase(),watchUrl:s.url||null,
+        authType:s.auth||'sub',isFreeOTA:FREE_OTA.has(key),key};
+    }
+  }
+  // Pass 2: free OTA — surfaces FIELD's independence value
+  for(const s of streams){
+    const key=s.key||s.srKey||'';
+    if(FREE_OTA.has(key)||s.auth==='free'){
+      return {label:s.name||key.toUpperCase(),watchUrl:s.url||null,
+        authType:'free',isFreeOTA:true,key};
+    }
+  }
+  // Pass 3: first national stream (skip RSN keys)
+  for(const s of streams){
+    const key=s.key||s.srKey||'';
+    if(!RSN_KEYS.has(key)&&key){
+      return {label:s.name||key.toUpperCase(),watchUrl:s.url||null,
+        authType:s.auth||'sub',isFreeOTA:false,key};
+    }
+  }
+  // Pass 4: anything
+  const s=streams[0];
+  const key=s.key||s.srKey||'';
+  return {label:s.name||key.toUpperCase(),watchUrl:s.url||null,
+    authType:s.auth||'sub',isFreeOTA:FREE_OTA.has(key),key};
+}
+
 function enrichGame(game, espnScore){
   const sportClass=classifySport(game,espnScore);
   const narrative=computeGameNarrative(game,espnScore,sportClass);
-  // broadcast and watchValue populated in Sessions B and C
-  return {...game,sportClass,narrative,broadcast:null,watchValue:null};
+  const broadcast=resolveGameBroadcast(game); // Stage 3: Pipeline B ✅
+  // watchValue populated in Session C
+  return {...game,sportClass,narrative,broadcast,watchValue:null};
 }
 
 // Render score overlays onto existing game cards
@@ -14576,8 +14635,15 @@ function renderOneToWatch(){
   const dismissBtn=()=>`<button class="otw-close" id="otw-close" aria-label="Dismiss">\u2715</button>`;
   const wire=(dismissId,scrollGame)=>{
     document.getElementById('otw-close')?.addEventListener('click',e=>{e.stopPropagation();_otwDismissedId=dismissId;renderOneToWatch();});
+    // Watch button: direct broadcast open (Pipeline B action layer)
+    document.getElementById('otw-watch')?.addEventListener('click',e=>{
+      e.stopPropagation();
+      const btn=document.getElementById('otw-watch');
+      const url=btn?.dataset.watchUrl||null;
+      if(url) window.open(url,'_blank','noopener');
+    });
     document.getElementById('otw-inner')?.addEventListener('click',e=>{
-      if(e.target.id==='otw-close') return;
+      if(e.target.id==='otw-close'||e.target.id==='otw-watch'||e.target.closest('#otw-watch')) return;
       if(!scrollGame) return;
       const h=(scrollGame.home||'').replace(/[^a-z]/gi,'').toLowerCase();
       const card=[...document.querySelectorAll('.game-card')].find(c=>(c.dataset.home||'').replace(/[^a-z]/gi,'').toLowerCase()===h);
@@ -14594,13 +14660,22 @@ function renderOneToWatch(){
     const scoreStr=`${ed.awayScore||0}\u2013${ed.homeScore||0}`;
     const why=buildOTWWhyLine(g,ed,sport,false);
     const momentum=getOTWMomentum(g._id);
-    banner.innerHTML=`<div class="otw-inner" id="otw-inner" role="button" tabindex="0">
+    // Pipeline B: resolve broadcast for Watch button
+    const bc=typeof resolveGameBroadcast==='function'?resolveGameBroadcast(g):null;
+    const watchLabel=bc?bc.label:'LIVE';
+    const watchUrl=bc?.watchUrl||null;
+    const isFree=bc?.isFreeOTA||false;
+    const watchBtn=watchUrl
+      ?`<button class="otw-watch-btn${isFree?' otw-watch-free':''}" id="otw-watch" data-watch-url="${watchUrl}">WATCH \u00b7 ${watchLabel}${isFree?' FREE':''} \u2197</button>`
+      :'';
+    banner.innerHTML=`<div class="otw-inner${watchBtn?' otw-inner-has-watch':''}" id="otw-inner" role="button" tabindex="0">
       <span class="otw-pulse"></span>
       <span class="otw-label">One to Watch</span>
       <span class="otw-matchup">${g.away||''} @ ${g.home||''} \u00a0${scoreStr}</span>
       ${why?`<span class="otw-why">${why}</span>`:''}
       ${momentum==='up'?'<span class="otw-momentum up">\u2191</span>':''}
       <span class="otw-drama d-${tier}">${tierBadge}</span>
+      ${watchBtn}
       ${dismissBtn()}
     </div>`;
     wire(g._id,g); return;

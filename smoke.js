@@ -255,6 +255,12 @@ assert('A56 — field_utils.js loaded in index.html',
   // A71 — renderArbitrageBar defined
   assert('A71 — Arbitrage Finder: renderArbitrageBar function defined', html.includes('function renderArbitrageBar('));
 
+  // A72 — Pipeline B: resolveGameBroadcast defined
+  assert('A72 — Pipeline B: resolveGameBroadcast function defined', html.includes('function resolveGameBroadcast('));
+
+  // A73 — OTW Watch button: CSS class exists
+  assert('A73 — OTW Watch button: otw-watch-btn CSS class defined', html.includes('.otw-watch-btn{'));
+
 
 
   // ── Feature registry guards: A60-A123 (table-driven) ────────────────────
