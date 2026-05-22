@@ -9,7 +9,9 @@ module.exports = defineConfig({
   testMatch: ['field_browser.test.js'],
   timeout: 60000,         // 60s per test (async data loading)
   retries: 1,             // one retry on flake — CI network can be intermittent
-  reporter: [['list'], ['json', { outputFile: '/tmp/field_browser_results.json' }]],
+  reporter: process.env.CI
+    ? [['github'], ['json', { outputFile: '/tmp/field_browser_results.json' }]]
+    : [['list'], ['json', { outputFile: '/tmp/field_browser_results.json' }]],
   use: {
     headless: true,
     screenshot: 'only-on-failure',

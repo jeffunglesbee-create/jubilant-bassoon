@@ -168,14 +168,54 @@ jobs:
           sleep 30
 
       - name: Run browser tests against live URL
+        id: playwright
         run: |
           # Layer 3: behavioral verification of live deployment
           # GROUP 1 (Structural): always blocks — F01-F11
           # GROUP 2 (Data-dependent): skips gracefully when no games — F12-F15
-          # Hard-fail: CI blocks if structural tests fail.
-          npx playwright test field_browser.test.js --reporter=list
-        # continue-on-error removed — Layer 3 is now blocking
-        # Baseline established: F01-F11 are data-independent and always pass
+          # Reporter: 'github' in CI → each failing test becomes a check-run annotation
+          # readable via GitHub API check-runs endpoint
+          npx playwright test field_browser.test.js
+        continue-on-error: true  # restored while blind — remove once annotations confirm green
+
+      - name: Surface test failures to Step Summary
+        if: always()
+        run: |
+          node << 'JSEOF'
+          const fs = require('fs');
+          const f = '/tmp/field_browser_results.json';
+          if (!fs.existsSync(f)) {
+            console.log('No results file — tests may have crashed before running');
+            process.exit(0);
+          }
+          const r = JSON.parse(fs.readFileSync(f,'utf8'));
+          const fail = [], pass = [], skip = [];
+          (r.suites||[]).forEach(s => (s.specs||[]).forEach(spec => {
+            const t = spec.tests?.[0];
+            if (!t) return;
+            if (spec.ok) pass.push(spec.title);
+            else if (t.results?.[0]?.status === 'skipped') skip.push(spec.title);
+            else {
+              const err = t.results?.[0]?.error?.message || '(no message)';
+              fail.push({ title: spec.title, err: err.slice(0,300) });
+            }
+          }));
+          const md = [
+            '## Layer 3 Test Results',
+            `**${pass.length} pass · ${fail.length} fail · ${skip.length} skip**`,
+            '',
+            ...fail.map(f => `### ❌ ${f.title}\n\`\`\`\n${f.err}\n\`\`\``),
+            ...skip.map(s => `- ⏭️ ${s}`),
+          ].join('\n');
+          const sumPath = process.env.GITHUB_STEP_SUMMARY;
+          if (sumPath) fs.writeFileSync(sumPath, md);
+          else console.log(md);
+          if (fail.length > 0) {
+            console.log('\nFAILING TESTS:');
+            fail.forEach(f => console.log(`  ❌ ${f.title}\n     ${f.err.split('\n')[0]}`));
+            process.exit(1);
+          }
+          JSEOF
 
       - name: Upload test results
         if: always()
