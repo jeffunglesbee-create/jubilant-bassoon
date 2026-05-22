@@ -1,7 +1,7 @@
 # FIELD Current State
 > Auto-updated by CI on each successful deploy and by Claude at session end. Commit history = changelog.
 
-**HEAD:** 449fd5f · **Deployed:** 2026-05-22 · **File:** ~905KB · **Smoke:** 144/0 · **L3:** 15/15
+**HEAD:** 2ffae43 · **Deployed:** 2026-05-22 · **File:** ~905KB · **Smoke:** 144/0 · **L3:** 15/15
 
 Drive doc (full narrative): https://docs.google.com/document/d/1QD3P9eG2pSdabNTMPZYHwaMc1DawmmKpRVrv0ZqQdVs
 
@@ -17,7 +17,8 @@ Drive doc (full narrative): https://docs.google.com/document/d/1QD3P9eG2pSdabNTM
 **PWA:** manifest + SW v4 + install prompt + iOS prompt ⚠️ SW_VERSION stale (see gaps)  
 **Testing:** L0 smoke (140) · L1 viewport (33) · L2 AI review (4) · L3 browser (15)  
 **Betting:** real odds only via relay — probability bars, competitive badges, FIELD vs market  
-**OTW:** 5-state banner — FIRE/LIVE/SOON/TONIGHT/QUIET + Watch button (Pipeline B)
+**OTW:** 5-state banner — FIRE/LIVE/SOON/TONIGHT/QUIET + Watch button (Pipeline B)  
+**Section identity:** Surface identifiers at viewport-correct sizes (.88→.80→.75rem). "Coming Up" on Watch Window, "Watch Free Tonight" on arb bar, "Season Context" on context pill.
 
 ## Active governance
 
@@ -37,7 +38,6 @@ Rule 31 (two-tier enforcement model — see below)
 |-----|-----------|-----|
 | F16–F20 behavioral tests not built | [LAYER3-EXT] | ~45 min |
 | Mobile intelligence layer absent | [MOBILE-INTEL-A] | TBD |
-| Section identifiers below body text | [SECTION-IDENTITY-A] | ~25 min |
 | Architecture Index stale cross-refs | Corrections doc: 1bL8se7cPNmFM9TrdLfZSZzZjq8Nnne2WeAAXiWq0u3w | ~20 min TYPE D |
 | Drama line not built | [DRAMA-LINE-A] | ~45 min |
 
