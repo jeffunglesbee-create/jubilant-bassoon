@@ -6290,8 +6290,7 @@ function buildTodaySchedule(){
   const nbaGames=[
     {home:"New York Knicks",       away:"Cleveland Cavaliers",  league:"NBA Playoffs \u2013 East CF G1 \u00b7 NYK wins 115-104",  start_time:"2026-05-20T00:00:00Z", confirmed:true, venue:"Madison Square Garden, New York NY",  streams:resolveBundle("NBA_ESPN"), seriesRecord:"NYK wins 115-104", matchupNote:"Brunson 38 pts. Knicks erased a 22-point Q4 deficit to win in OT. Sam Merrill nearly hit the buzzer-beater. NYK leads series 1-0."},
     {home:"Cleveland Cavaliers",   away:"New York Knicks",      league:"NBA Playoffs \u2013 East CF G3 \u00b7 NYK leads 2-0",   start_time:"2026-05-24T00:00:00Z", confirmed:true, venue:"Rocket Mortgage FieldHouse, Cleveland OH", streams:resolveBundle("NBA_ABC"), seriesRecord:"NYK leads 2-0", matchupNote:"NYK 109-93 G2 (Hart 26 pts, Brunson 14 ast). 18-0 run in Q3 sealed it. Cavs in 0-2 hole but beat Detroit from 0-2 (7 games). G3 Saturday at Cleveland, 8pm ET, ABC."},
-    {home:"San Antonio Spurs",     away:"Oklahoma City Thunder", league:"NBA Playoffs \u2013 West CF G3 \u00b7 Series tied 1-1",  start_time:"2026-05-23T00:30:00Z", confirmed:true, venue:"Frost Bank Center, San Antonio TX",     streams:resolveBundle("NBA_NBC"), seriesRecord:"Series tied 1-1", seriesMargins:[9,9,-1,-1,-1,-1,-1], matchupNote:"SAS won G1 2OT, OKC took G2 122-113. Dylan Harper (hamstring) questionable. Wembanyama must find rhythm on road. G3 tonight at San Antonio, 8:30pm ET, NBC/Peacock."},
-    {home:"San Antonio Spurs",    away:"Oklahoma City Thunder", league:"NBA Playoffs \u2013 West CF G3 \u00b7 Series tied 1-1",           start_time:"2026-05-23T00:30:00Z", confirmed:true, venue:"Frost Bank Center, San Antonio TX",     streams:resolveBundle("NBA_NBC"), seriesRecord:"Series tied 1-1", matchupNote:"WCF shifts to San Antonio for G3. Wembanyama at home after 41-pt G1. Fox (ankle) status TBD. NBC/Peacock. Series tied 1-1 after OKC evened it at Paycom."},
+    {home:"San Antonio Spurs",     away:"Oklahoma City Thunder", league:"NBA Playoffs \u2013 West CF G3 \u00b7 Series tied 1-1",  start_time:"2026-05-23T00:30:00Z", confirmed:true, venue:"Frost Bank Center, San Antonio TX",     streams:resolveBundle("NBA_NBC"), seriesRecord:"Series tied 1-1", seriesMargins:[9,9,-1,-1,-1,-1,-1], matchupNote:"SAS won G1 2OT (Wemby 41pts), OKC won G2 122-113. Series tied 1-1. Fox (ankle) out all series; Harper (adductor) questionable; Williams (OKC, hamstring) questionable. G3 tonight at San Antonio, 8:30pm ET, NBC/Peacock."},
     // ── NBA Finals 2026 — All games NBC/Peacock ─────────────────────
     // UPDATE team names + venues once ECF/WCF conclude (~June 3)
     {home:"TBD \u2014 Eastern Champion", away:"TBD \u2014 Western Champion", league:"NBA Finals 2026 \u2013 G1 \u00b7 Series 0-0",  start_time:"2026-06-06T00:30:00Z", confirmed:true, venue:"TBD \u2014 Home of Eastern Champion", streams:resolveBundle("NBA_NBC"), seriesRecord:"0-0", matchupNote:"NBA Finals 2026 on NBC/Peacock. Teams TBD \u2014 update once Conference Finals conclude."},
@@ -6329,30 +6328,24 @@ function buildTodaySchedule(){
     // CAR wins East Semis 4-0 (vs Philadelphia) · MTL wins East Semis 4-3 (vs Buffalo)
     // Broadcast: TNT / truTV / Max (US) · SN / CBC / TVAS (Canada)
     {home:"Carolina Hurricanes", away:"Montreal Canadiens", league:"NHL Playoffs – East CF G2 · MTL leads 1-0", start_time:"2026-05-23T23:00:00Z", confirmed:true, venue:"PNC Arena, Raleigh NC",      streams:resolveBundle("NHL_TNT"), crew:"John Forslund · Eddie Olczyk (TNT)", seriesRecord:"MTL leads 1-0", matchupNote:"MTL stunned CAR 6-2 in G1 (Slafkovsky 2G 1A) — first CAR loss of playoffs, ending bid for perfect 16-0. G2 Saturday at PNC Arena, 7pm ET, TNT/truTV/Max."},
-    {home:"Carolina Hurricanes", away:"Montreal Canadiens", league:"NHL Playoffs – East CF G2 · Series 0-0", start_time:"2026-05-23T23:00:00Z", confirmed:true, venue:"PNC Arena, Raleigh NC",      streams:resolveBundle("NHL_TNT"), seriesRecord:"0-0", matchupNote:"ECF G2 at PNC Arena. CAR can take 2-0 series lead heading to Montreal."},
     {home:"Montreal Canadiens",  away:"Carolina Hurricanes", league:"NHL Playoffs – East CF G3 · Series 0-0", start_time:"2026-05-26T00:00:00Z", confirmed:true, venue:"Bell Centre, Montreal QC",   streams:resolveBundle("NHL_TNT"), seriesRecord:"0-0", matchupNote:"Series shifts to Bell Centre for G3. Montreal faithful will be electric."},
     // ── NHL Western Conference Finals — Colorado Avalanche vs Vegas Golden Knights ──
     // COL wins Presidents' Trophy (best record) · COL wins R2 4-1 (vs Minnesota) · VGK wins R2 4-2 (vs Anaheim)
     // Key players: MacKinnon (COL), Marner (VGK), Dorofeyev (VGK — playoff scoring leader)
     // Broadcast: ESPN (G1-G4, G5, G7) · ABC (G6 only)
     {home:"Colorado Avalanche",  away:"Vegas Golden Knights", league:"NHL Playoffs – West CF G2 · VGK leads 1-0",                     start_time:"2026-05-23T00:00:00Z", confirmed:true, venue:"Ball Arena, Denver CO",      streams:resolveBundle("NHL_ESPN"), crew:"Sean McDonough · Ray Ferraro · Haley Skarupa (ESPN)", seriesRecord:"VGK leads 1-0", matchupNote:"VGK won G1 4-2 at COL. Dorofeyev leads all 2026 playoff scorers. G2 tonight at Ball Arena, 8pm ET, ESPN."},
-    {home:"Colorado Avalanche",  away:"Vegas Golden Knights", league:"NHL Playoffs – West CF G2 · Series 0-0", start_time:"2026-05-23T00:00:00Z", confirmed:true, venue:"Ball Arena, Denver CO",      streams:resolveBundle("NHL_ESPN"), seriesRecord:"0-0"},
     {home:"Vegas Golden Knights",away:"Colorado Avalanche",   league:"NHL Playoffs – West CF G3 · Series 0-0", start_time:"2026-05-25T00:00:00Z", confirmed:true, venue:"T-Mobile Arena, Las Vegas NV",streams:resolveBundle("NHL_ESPN"), seriesRecord:"0-0"},
   ].filter(g=>isToday(g.start_time));  // ── MLB (May 11: Monday slate + EFL 2nd leg) ──────────────────────────────
   // ── MLB schedule: May 8 (Fri) – May 11 (Mon) ────────────────────────────────
   // isToday() filters to the viewer's local date — correct games show each day
   // Sources: MLB.com official schedule + Peacock.com GOTD listings verified May 11, 2026
-  // ── MLB — Tuesday May 19, 2026 — mlbRaw: NATIONAL TV OVERRIDES ONLY ─────────
-  // Architecture change: fetchMLBFixtures() → loadMLBSlate() is now the PRIMARY
-  // source for MLB games (MLB Stats API, CORS-open, live broadcasts included).
-  // mlbRaw = exception/override list only:
-  //   - National TV entries (Apple Friday, Peacock Sunday, TBS Tuesday, FOX/FS1)
-  //   - Any game needing manual override (peacockGOTD, espnGOTD flags, special venues)
-  // For all-local days (Mon/Wed/Thu): mlbRaw = [] — adapter provides full slate
-  // Daily update: just verify/enter national TV exceptions, adapter handles the rest.
-  // Sources: MLB.com verified May 20, 2026
-  // Wednesday May 20 — local day, no national exclusive window
-  const mlbRaw=[];
+  // ── MLB — Friday May 22, 2026 — mlbRaw: Apple TV+ Friday Night Baseball ──────
+  // Sources: MLB.com + Apple TV verified May 22, 2026
+  // Apple exclusive (no local blackouts): HOU @ CHC 2:20pm ET, DET @ BAL 7:15pm ET
+  const mlbRaw=[
+    {home:"Chicago Cubs",     away:"Houston Astros",   start_time:"2026-05-22T18:20:00Z", confirmed:true, venue:"Wrigley Field, Chicago IL",               streams:resolveBundle("MLB_APPLE"), nationalBundle:"MLB_APPLE"},
+    {home:"Baltimore Orioles",away:"Detroit Tigers",   start_time:"2026-05-22T23:15:00Z", confirmed:true, venue:"Oriole Park at Camden Yards, Baltimore MD", streams:resolveBundle("MLB_APPLE"), nationalBundle:"MLB_APPLE"},
+  ];
   const mlbGames=mlbRaw.filter(g=>isToday(g.start_time)).map(g=>{
     // Stream resolution — priority order (highest first):
     //   1. nationalBundle field → explicit non-exclusive national TV (FS1/FOX/TBS) — show local AND national
