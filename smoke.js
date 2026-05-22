@@ -375,5 +375,38 @@ assert('A56 — field_utils.js loaded in index.html',
     typeof require !== 'undefined' &&
     require('fs').existsSync(require('path').join(__dirname, 'scripts/pre-commit')));
 
+// ── Governance assertions (Rule 31) ──────────────────────────────────────────
+// GOVERNANCE.json must exist and be valid, and FIELD-CURRENT-STATE.md must exist.
+// These are Tier A mechanical enforcement: governance metadata in the repo.
+const govPath = require('path').join(__dirname, 'GOVERNANCE.json');
+const statePath = require('path').join(__dirname, 'FIELD-CURRENT-STATE.md');
+
+assert('A141 — GOVERNANCE.json exists in repo root',
+  require('fs').existsSync(govPath),
+  'Create GOVERNANCE.json — canonical doc manifest must be in repo');
+
+assert('A142 — GOVERNANCE.json is valid JSON with canonical_docs array',
+  (() => {
+    try {
+      const gov = JSON.parse(require('fs').readFileSync(govPath, 'utf8'));
+      return Array.isArray(gov.canonical_docs) && gov.canonical_docs.length >= 8;
+    } catch(e) { return false; }
+  })(),
+  'GOVERNANCE.json malformed or missing canonical_docs');
+
+assert('A143 — FIELD-CURRENT-STATE.md exists in repo root',
+  require('fs').existsSync(statePath),
+  'Create FIELD-CURRENT-STATE.md — current state file must be in repo');
+
+assert('A144 — GOVERNANCE.json canonical doc IDs are non-empty strings',
+  (() => {
+    try {
+      const gov = JSON.parse(require('fs').readFileSync(govPath, 'utf8'));
+      return gov.canonical_docs.every(d => typeof d.id === 'string' && d.id.length > 10);
+    } catch(e) { return false; }
+  })(),
+  'All canonical docs in GOVERNANCE.json must have valid Drive IDs');
+
+
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);

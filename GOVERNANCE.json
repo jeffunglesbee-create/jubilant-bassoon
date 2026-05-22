@@ -1,0 +1,96 @@
+{
+  "_comment": "Machine-readable canonical doc manifest. Checked by smoke.js. Updated by Claude at session end when docs change.",
+  "_last_governance_audit": "2026-05-22",
+  "_governance_grade": "B",
+  "_enforcement_tier": {
+    "A_mechanical": [
+      "smoke.js",
+      "CI pipeline",
+      "GOVERNANCE.json",
+      "FIELD-CURRENT-STATE.md"
+    ],
+    "B_behavioral": [
+      "Drive doc updates",
+      "session lifecycle",
+      "staleness check",
+      "archive policy"
+    ],
+    "principle": "Move governance metadata from Tier B to Tier A. Content stays in Drive. Metadata belongs in repo."
+  },
+  "archive_folder_id": "1MOug44aTMM2gJLI0hj_pMjW0ZMzQ7wPe",
+  "canonical_docs": [
+    {
+      "name": "Build Session List",
+      "id": "19TicpFBU2ORbypNBteCXuhwbX1FoP14Y2NGuU9e3drQ",
+      "update_trigger": "every_session",
+      "staleness_days": null,
+      "exempt_from_staleness_check": true,
+      "last_verified": "2026-05-22"
+    },
+    {
+      "name": "FIELD Current State",
+      "id": "1QD3P9eG2pSdabNTMPZYHwaMc1DawmmKpRVrv0ZqQdVs",
+      "update_trigger": "every_session_end",
+      "staleness_days": 2,
+      "exempt_from_staleness_check": false,
+      "last_verified": "2026-05-22"
+    },
+    {
+      "name": "Master Improvement Ranking",
+      "id": "1rW90JQ5a4ybrE9l5acrbqd0q0yl_QYmPIOnEJr__GEY",
+      "update_trigger": "feature_shipped",
+      "staleness_days": 7,
+      "exempt_from_staleness_check": false,
+      "last_verified": "2026-05-22"
+    },
+    {
+      "name": "Wow Features",
+      "id": "1QJCiwEav5VEofrdL4ba-jKsSMrcZq7EPdFehTMX-_i8",
+      "update_trigger": "wow_item_modified",
+      "staleness_days": 7,
+      "exempt_from_staleness_check": false,
+      "last_verified": "2026-05-22"
+    },
+    {
+      "name": "UI Evaluation",
+      "id": "1D98AsQqsNJSe0UKkVaRFrPO9SwDcdTMvS_Ll81kUVqo",
+      "update_trigger": "css_or_ui_changed",
+      "staleness_days": 7,
+      "exempt_from_staleness_check": false,
+      "last_verified": "2026-05-22"
+    },
+    {
+      "name": "Viewport Style Guide",
+      "id": "1X_u98rkvqB4l6H5fYr1IiOZlLcZzap6cUDojgE85C2A",
+      "update_trigger": "viewport_or_surface_changed",
+      "staleness_days": 14,
+      "exempt_from_staleness_check": false,
+      "last_verified": "2026-05-22"
+    },
+    {
+      "name": "Daily Update Reference",
+      "id": "1n4fiAaU1uF2X7EKRx9Gm6XpuR6wkpwoa",
+      "update_trigger": "broadcast_rules_changed",
+      "staleness_days": 14,
+      "exempt_from_staleness_check": false,
+      "last_verified": "2026-05-22"
+    },
+    {
+      "name": "CI/Deploy Reference",
+      "id": "1-3XgSj3IXon-KqMrc846PmySHZSBCaheJR-6gOxd1wI",
+      "update_trigger": "ci_pattern_changed",
+      "staleness_days": null,
+      "exempt_from_staleness_check": true,
+      "last_verified": "2026-05-22"
+    },
+    {
+      "name": "Handoff Note",
+      "id": "1TRpxKBNX82q-522V-aVLFBIBrwYwyIjkyI0h6y4n4FM",
+      "update_trigger": "every_session_end",
+      "staleness_days": null,
+      "exempt_from_staleness_check": true,
+      "last_verified": "2026-05-22",
+      "_note": "ID changes every session \u2014 update this entry at each session end"
+    }
+  ]
+}

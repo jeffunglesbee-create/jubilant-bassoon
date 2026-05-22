@@ -239,6 +239,58 @@ jobs:
           echo "  Live URL: https://jubilant-bassoon.jeffunglesbee.workers.dev"
           echo "════════════════════════════════════════"
 
+  # ── Governance: update repo current-state after successful browser-test ─────
+  update-current-state:
+    name: Update FIELD current state in repo
+    runs-on: ubuntu-latest
+    needs: [browser-test]
+    if: success()
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update FIELD-CURRENT-STATE.md
+        run: |
+          HEAD=$(git rev-parse --short HEAD)
+          DATE=$(date '+%Y-%m-%d')
+          SIZE=$(wc -c < index.html | awk '{printf "%.0f", $1/1024}')
+          SMOKE=$(node smoke.js index.html 2>&1 | grep -oP '\d+ passed' | grep -oP '\d+' | head -1)
+          
+          # Update the state header line only (preserve narrative content)
+          sed -i "s/\*\*HEAD:\*\* [a-f0-9]*/\*\*HEAD:\*\* ${HEAD}/" FIELD-CURRENT-STATE.md
+          sed -i "s/\*\*Deployed:\*\* [0-9-]*/\*\*Deployed:\*\* ${DATE}/" FIELD-CURRENT-STATE.md
+          sed -i "s/\*\*File:\*\* ~[0-9]*KB/\*\*File:\*\* ~${SIZE}KB/" FIELD-CURRENT-STATE.md
+          sed -i "s/\*\*Smoke:\*\* [0-9]*\/0/\*\*Smoke:\*\* ${SMOKE}\/0/" FIELD-CURRENT-STATE.md
+          
+          # Update GOVERNANCE.json last_verified date
+          python3 -c "
+          import json, sys
+          with open('GOVERNANCE.json') as f: g = json.load(f)
+          g['_last_governance_audit'] = '${DATE}'
+          with open('GOVERNANCE.json', 'w') as f: json.dump(g, f, indent=2)
+          print('GOVERNANCE.json updated')
+          "
+          
+          echo "HEAD=${HEAD} DATE=${DATE} SIZE=${SIZE}KB SMOKE=${SMOKE}"
+
+      - name: Commit if changed
+        run: |
+          git config user.name  "FIELD Deploy"
+          git config user.email "field-deploy@users.noreply.github.com"
+          git add FIELD-CURRENT-STATE.md GOVERNANCE.json
+          if git diff --staged --quiet; then
+            echo "No changes to current state — skipping commit"
+          else
+            git commit -m "ci: update current state ${$(git rev-parse --short HEAD 2>/dev/null)} [skip ci]"
+            git push origin main
+            echo "✅ Current state updated in repo"
+          fi
+
+
   compliance-report:
     runs-on: ubuntu-latest
     name: Daily compliance check

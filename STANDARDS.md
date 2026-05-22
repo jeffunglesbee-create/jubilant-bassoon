@@ -304,10 +304,15 @@ and secrets state before any work begins. This prevents wasted time
 attempting blocked operations (api.github.com, *.workers.dev).
 
 **Claude reads FIELD Current State automatically:**  
-Every session, Claude reads `1QD3P9eG2pSdabNTMPZYHwaMc1DawmmKpRVrv0ZqQdVs`  
-after the handoff note and before any work begins. This is the canonical  
-"what FIELD does today" reference — capabilities live, active rules, known gaps.  
-No user request needed. Prevents stale-state decisions from a 4-day-old model of FIELD.
+Two sources, both read before any work begins:  
+1. `FIELD-CURRENT-STATE.md` in the repo (auto-updated by CI — always reflects last deploy)  
+2. Drive doc `1QD3P9eG2pSdabNTMPZYHwaMc1DawmmKpRVrv0ZqQdVs` (full narrative version)  
+No user request needed. The repo file gives HEAD/smoke/gaps. The Drive doc gives capability depth.
+
+**Claude reads canonical doc IDs from GOVERNANCE.json:**  
+Do not use hardcoded IDs from STANDARDS.md prose for get_file_metadata calls.  
+Read from `GOVERNANCE.json` in repo root — this is the machine-verified source of truth.  
+GOVERNANCE.json is checked by smoke assertions A141–A144 and updated by CI.
 
 **Claude runs staleness check automatically (Rule 30):**  
 After reading Current State, Claude calls get_file_metadata on each  
@@ -1645,3 +1650,80 @@ This is an acknowledged limitation — the Archive copies are the record.
 
 Archive immediately — don't wait for end of session.
 Add the archive copy ID to the session doc under "ARCHIVED THIS SESSION."
+
+
+## Rule 31 — Two-tier governance enforcement model
+
+### The asymmetry this rule addresses
+
+FIELD's code quality is enforced at Tier A: a commit that breaks smoke.js
+physically cannot be deployed. Pre-commit hook → CI → deploy is an unbroken
+mechanical chain. No Claude judgment involved.
+
+FIELD's documentation quality is enforced at Tier B: a language model with
+no persistent memory is supposed to remember to update Drive docs at session
+end. This is categorically less reliable. A stale doc can go undetected for
+days (confirmed May 22 2026: Wow Features, UI Evaluation both 4 days stale).
+
+### The two tiers
+
+**Tier A — Mechanical enforcement (cannot be bypassed without explicit override):**
+  smoke.js (A1–A144) — code structure, GOVERNANCE.json, FIELD-CURRENT-STATE.md
+  CI pipeline (L0–L3) — deploy gate, live behavioral tests
+  GOVERNANCE.json — machine-readable canonical doc manifest (repo-based)
+  FIELD-CURRENT-STATE.md — auto-updated by CI after each successful deploy
+
+**Tier B — Behavioral enforcement (Claude-enforced, session-dependent):**
+  Drive doc content (Wow Features narrative, UI Evaluation grades, etc.)
+  Session lifecycle (start/end sequence)
+  Staleness check (Rule 30 — get_file_metadata calls)
+  Archive policy (Rule 30 — orphaned doc copies)
+  Canonical doc updates (Rule 8 — judgment-based)
+
+### The upgrade principle
+
+When a governance check can be expressed as a file in the repo or a CI job,
+it belongs in Tier A. When it requires judgment, narrative, or language model
+capability, it stays in Tier B.
+
+Examples of Tier B → Tier A migrations (implemented May 22 2026):
+  Canonical doc IDs: were in STANDARDS.md prose → now in GOVERNANCE.json (smoke-checked)
+  Current deployment state: was in Drive doc → now in FIELD-CURRENT-STATE.md (CI-updated)
+  Staleness thresholds: were advisory in STANDARDS.md → now in GOVERNANCE.json (machine-readable)
+
+What stays at Tier B by necessity:
+  Narrative content (Wow Features reasoning, UI Evaluation grades) — requires judgment
+  Session type inference — requires language model reading opening message
+  Unresolved questions scan — requires language model reading conversation history
+  Drive doc quality (is the content accurate?) — requires judgment
+
+### Implementation
+
+**GOVERNANCE.json** (repo root):
+  Machine-readable manifest of all canonical docs with IDs, staleness thresholds,
+  update triggers, and last-verified dates.
+  Smoke assertions A141–A144 verify it exists and is valid.
+  CI job `update-current-state` updates `_last_governance_audit` date after each deploy.
+  Claude reads doc IDs from this file, not STANDARDS.md prose.
+
+**FIELD-CURRENT-STATE.md** (repo root):
+  Lightweight current-state file: HEAD, file size, smoke count, deploy date, key gaps.
+  Updated by CI `update-current-state` job after each successful browser-test.
+  Updated by Claude at session end (supplements CI update with narrative changes).
+  Zero Claude dependency for the mechanical parts — CI writes it regardless.
+
+**Smoke assertions A141–A144:**
+  A141: GOVERNANCE.json exists
+  A142: GOVERNANCE.json is valid JSON with canonical_docs array (≥8 docs)
+  A143: FIELD-CURRENT-STATE.md exists
+  A144: All canonical doc IDs in GOVERNANCE.json are non-empty strings
+
+### Updating GOVERNANCE.json
+
+When a canonical doc changes (new permanent ID, staleness threshold updated,
+new doc added): update GOVERNANCE.json and commit. The smoke test gate
+ensures the update is verified before deploy.
+
+When updating GOVERNANCE.json last_verified dates at session end: update
+the relevant `last_verified` fields for docs touched this session.
+The CI job updates `_last_governance_audit` automatically.
