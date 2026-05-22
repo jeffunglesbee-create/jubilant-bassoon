@@ -109,7 +109,20 @@ jobs:
         # Remove continue-on-error once first green run is confirmed.
         continue-on-error: true
 
-      - name: Upload viewport screenshots (Layer 2 raw material)
+      - name: AI Screenshot Review (Layer 2)
+        if: always()
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
+        run: |
+          # Reads viewport-screenshots/vp-{360,393,820,1200}.png (from A99/B99/C99/D99 tests)
+          # Sends each to Claude Vision via Anthropic API
+          # Qualitative review: "overlaid and sloppy?" — catches what bounding-box tests cannot
+          # Non-blocking (exit 0) until clean CI baseline is confirmed
+          # Requires: ANTHROPIC_API_KEY GitHub secret
+          node layer2_review.js
+
+      - name: Upload viewport screenshots + Layer 2 raw material
         if: always()
         uses: actions/upload-artifact@v4
         with:

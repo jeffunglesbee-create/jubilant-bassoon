@@ -23,6 +23,9 @@
 
 const { test, expect } = require('@playwright/test');
 const path = require('path');
+const fs   = require('fs');
+
+const VP_SCREENSHOT_DIR = path.join(__dirname, 'viewport-screenshots');
 
 const FILE_URL = `file://${path.resolve(__dirname, 'index.html')}`;
 
@@ -190,6 +193,12 @@ test.describe('360px — Galaxy A36 / iPhone SE', () => {
       ).toBe(false);
     }
   });
+
+  // A99 — Screenshot for Layer 2 AI review
+  test('A99 — capture screenshot for Layer 2 AI review', async ({ page }) => {
+    fs.mkdirSync(VP_SCREENSHOT_DIR, { recursive: true });
+    await page.screenshot({ path: path.join(VP_SCREENSHOT_DIR, 'vp-360.png'), fullPage: false });
+  });
 });
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -227,6 +236,12 @@ test.describe('393px — Pixel 8', () => {
   test('B04 — OTW banner and Arbitrage bar in DOM', async ({ page }) => {
     await expect(page.locator('#otw-banner')).toBeAttached();
     await expect(page.locator('#field-arb')).toBeAttached();
+  });
+
+  // B99 — Screenshot for Layer 2 AI review
+  test('B99 — capture screenshot for Layer 2 AI review', async ({ page }) => {
+    fs.mkdirSync(VP_SCREENSHOT_DIR, { recursive: true });
+    await page.screenshot({ path: path.join(VP_SCREENSHOT_DIR, 'vp-393.png'), fullPage: false });
   });
 });
 
@@ -359,6 +374,12 @@ test.describe('820px — iPad Air portrait (Ambient Mode)', () => {
       ).toBe(false);
     }
   });
+
+  // C99 — Screenshot for Layer 2 AI review
+  test('C99 — capture screenshot for Layer 2 AI review', async ({ page }) => {
+    fs.mkdirSync(VP_SCREENSHOT_DIR, { recursive: true });
+    await page.screenshot({ path: path.join(VP_SCREENSHOT_DIR, 'vp-820.png'), fullPage: false });
+  });
 });
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -400,5 +421,11 @@ test.describe('1200px — Desktop', () => {
       return c ? c.getBoundingClientRect().width : 999;
     });
     expect(w, `Card too narrow at desktop: ${w.toFixed(0)}px`).toBeGreaterThanOrEqual(400);
+  });
+
+  // D99 — Screenshot for Layer 2 AI review
+  test('D99 — capture screenshot for Layer 2 AI review', async ({ page }) => {
+    fs.mkdirSync(VP_SCREENSHOT_DIR, { recursive: true });
+    await page.screenshot({ path: path.join(VP_SCREENSHOT_DIR, 'vp-1200.png'), fullPage: false });
   });
 });
