@@ -91,6 +91,15 @@
       "exempt_from_staleness_check": true,
       "last_verified": "2026-05-22",
       "_note": "ID changes every session \u2014 update this entry at each session end"
+    },
+    {
+      "name": "Architecture Index (8-doc system)",
+      "id": "1SD5bjd1cZs1p7T4YyDJEpEEaJGUpc2V-Ux6zqUCvEU0",
+      "update_trigger": "major_architecture_change",
+      "staleness_days": 14,
+      "exempt_from_staleness_check": false,
+      "last_verified": "2026-05-22",
+      "_note": "Contains stale Build Session + Master refs. See Architecture Index Corrections doc: 1bL8se7cPNmFM9TrdLfZSZzZjq8Nnne2WeAAXiWq0u3w"
     }
   ]
 }

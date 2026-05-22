@@ -1,7 +1,7 @@
 # FIELD Current State
 > Auto-updated by CI on each successful deploy and by Claude at session end. Commit history = changelog.
 
-**HEAD:** d72ceea · **Deployed:** 2026-05-22 · **File:** ~841KB · **Smoke:** 140/0 · **L3:** 15/15
+**HEAD:** 449fd5f · **Deployed:** 2026-05-22 · **File:** ~905KB · **Smoke:** 144/0 · **L3:** 15/15
 
 Drive doc (full narrative): https://docs.google.com/document/d/1QD3P9eG2pSdabNTMPZYHwaMc1DawmmKpRVrv0ZqQdVs
 
@@ -35,11 +35,10 @@ Rule 31 (two-tier enforcement model — see below)
 
 | Gap | Tracked as | Est |
 |-----|-----------|-----|
-| SW_VERSION mismatch in sw.js | [PWA-A] | ~10 min |
 | F16–F20 behavioral tests not built | [LAYER3-EXT] | ~45 min |
 | Mobile intelligence layer absent | [MOBILE-INTEL-A] | TBD |
 | Section identifiers below body text | [SECTION-IDENTITY-A] | ~25 min |
-| Architecture Index stale cross-refs | TYPE D next session | ~20 min |
+| Architecture Index stale cross-refs | Corrections doc: 1bL8se7cPNmFM9TrdLfZSZzZjq8Nnne2WeAAXiWq0u3w | ~20 min TYPE D |
 | Drama line not built | [DRAMA-LINE-A] | ~45 min |
 
 ## Canonical doc IDs
