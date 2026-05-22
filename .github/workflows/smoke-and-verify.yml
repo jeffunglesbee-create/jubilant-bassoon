@@ -185,8 +185,8 @@ jobs:
           const fs = require('fs');
           const f = '/tmp/field_browser_results.json';
           if (!fs.existsSync(f)) {
-            console.log('No results file — tests may have crashed before running');
-            process.exit(0);
+            console.log('❌ No results file — Playwright crashed before writing JSON');
+            process.exit(1);  // fail, not silent pass
           }
           const r = JSON.parse(fs.readFileSync(f,'utf8'));
           const fail = [], pass = [], skip = [];
