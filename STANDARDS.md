@@ -105,6 +105,7 @@ never worked despite being documented as complete.*
 | **Build Session List** (Master backlog) | `1ITCe3Hs3EcVhqhOp1uPkPRtyca5Bxtrcc9953xyXZsA` | Every TYPE B/C session end |
 | **Wow Features** | `1h80BrgGXbz6aq3Hgv5LbjhpFkRQjYvd87fOMNJmVMOc` | Any session that implements or modifies a Wow item |
 | **UI Evaluation** | `1xIZnlczl2kIeslnnzJD1eJrgBu5iw6xgSk1wB1MVyAY` | Any session with CSS, layout, or card design changes |
+| **Viewport Style Guide** | `1X_u98rkvqB4l6H5fYr1IiOZlLcZzap6cUDojgE85C2A` | Any session that changes section labels, font sizes, touch targets, or surface identifiers |
 | **Daily Update Reference** | `1n4fiAaU1uF2X7EKRx9Gm6XpuR6wkpwoa` | Any session that changes broadcast chip rules, thresholds, or update protocol |
 | **Handoff Note** ← update ID every session | `1FNKAMAYS98yfHrw7M5d2Gsb1Noy7yUSIyLQ7gVyafUw
 Session doc May 21: 1Rsy6dysrqhxxK_Y5M0a4qcw7HY2zWoKv5SL6p5gysKM` | Every session end — replace ID with new handoff doc |
@@ -127,6 +128,7 @@ Wow Features — if the fix restores or corrects a Wow item behavior.
 Build Session List — mark item ✅ with date and actual time spent.  
 Wow Features — if the feature is a Wow item, update its status and implementation notes.  
 UI Evaluation — if any new CSS class, layout section, or design pattern was added.  
+Viewport Style Guide — if the feature introduces a new named surface, section identifier, or changes how intelligence is surfaced at any viewport. Check the Three Questions Test passes at each breakpoint.  
 Daily Update Reference — if the feature adds a new daily check (e.g. new broadcast chip type).
 
 **TYPE D (audit):**  
@@ -1451,3 +1453,98 @@ is a PREREQUISITE of the feature, not a downstream nice-to-have.
 Reference: Intelligence-Action Audit May 21 2026
   (written following gap analysis observation that OTW Watch button
   and OTW FIRE state were separate features when they are one)
+
+
+## Rule 29 — Viewport Style Guide: design contracts per breakpoint
+
+**Drive ID: `1X_u98rkvqB4l6H5fYr1IiOZlLcZzap6cUDojgE85C2A`**
+
+Read this document before any TYPE B/C session that changes CSS, layout,
+section labels, surface identifiers, font sizes, touch targets, or the
+intelligence layer architecture at any viewport.
+
+### The core principle
+
+Each viewport is a different information contract, not a scaled version
+of the same layout. The primary question a user is asking when they open
+FIELD differs by viewport:
+
+  360px — "Is anything live right now? Can I watch it?" (20 seconds, scan mode)
+  393px — "What's on tonight? What should I watch?" (30-60 seconds, browse mode)
+  820px — "Full picture — what's the drama level, what do I need?" (5-10 min)
+  1200px — "Give me everything, I'm here for the session." (long, deep mode)
+
+Every visual decision — size, density, surface identifier prominence,
+touch target, intelligence layer architecture — flows from that contract.
+
+### The Three Questions Test (gate check)
+
+Before declaring any CSS/layout change complete, verify that a user
+can answer their viewport's three questions by visual scan alone
+(no reading, no tapping) within the time budget:
+
+  360px (3 seconds at arm's length):
+    1. Is anything live right now?
+    2. What is it?
+    3. Can I watch it for free?
+
+  820px (5 seconds at reading distance):
+    1. What's the best game live right now?
+    2. What are all of tonight's games?
+    3. What's on free or on my services?
+
+  1200px (8 seconds at monitor distance):
+    1. What's the full tonight picture?
+    2. What are the series standings / stakes?
+    3. What should I prioritize?
+
+If the answer to any of these requires a tap to reveal, the layout has not
+met its contract. The feature is not done.
+
+### Minimum surface identifier sizes (enforcement)
+
+Surface identifiers — "One to Watch", "Night Owl", "FIELD Brief",
+"Watch Free Tonight", "Coming Up" — are headings, not labels.
+They must be readable at each viewport's viewing distance.
+
+  360px (arm's length, ~25cm):  .88rem, Barlow 700, no letter-spacing
+  393px (arm's length, ~30cm):  .85rem, Barlow 700, no letter-spacing
+  820px (reading distance, ~45cm): .80rem, Barlow 700, no letter-spacing
+  1200px (monitor, ~65cm):      .75rem, Barlow 700, no letter-spacing
+
+Current minimum (as of May 22 2026): .52rem — below body text.
+Section identifiers must not be smaller than body text.
+Body text is ~.72-.74rem. Section identifiers must meet or approach it.
+
+### Surfaces that currently have no label (as of May 22 2026)
+
+  Watch Window (#watch-window)       → needs "Coming Up" header
+  Arbitrage bar (#field-arb, left)   → needs "Watch Free Tonight" header
+  Context pill (ambient panel)       → needs "Season Context" micro-label
+
+These are [LAYER3-EXT] F19 / MOBILE-INTEL-A implications. Any session
+that touches these surfaces must add the missing header as part of the work.
+
+### Viewing distance rule
+
+Section identifier sizes do not scale linearly with viewport width.
+They scale with viewing distance. Phones are held closer than monitors.
+
+  At 360px / 25cm: .88rem minimum (nearly body text size)
+  At 1200px / 65cm: .75rem acceptable (standard desktop label size)
+
+This is counterintuitive — the smaller device needs LARGER relative
+labels, not smaller ones. The audit found FIELD uses .52rem at all
+viewports, which is unreadable at arm's length.
+
+### What triggers an update to the Viewport Style Guide
+
+- New named surface added (any viewport)
+- Intelligence layer architecture changed (e.g. ambient panel moved to phone)
+- Touch target requirements changed
+- Font stack or typeface changed
+- New breakpoint introduced
+- Three Questions Test requirements revised
+
+When updating: edit the Drive doc in place (Rule 8 — never create a new version).
+Date-stamp the change at the top of the doc.
