@@ -3018,7 +3018,8 @@ function injectSquiggleLiveScores(){
       detail:  final_?'Final':(sq.timestr||'Live'),
       homeScore: sq.hscore||0,
       awayScore: sq.ascore||0,
-      // AFL goals.behinds display strings — used by renderESPNScores instead of raw totals
+      // AFL goals.behinds display strings — set for potential future use; not currently read.
+      // Big score uses numeric totals via computeGameNarrative; gold chip uses injectSquiggleLiveScores.
       _aflHomeStr: (sq.hgoals!=null&&sq.hbehinds!=null) ? sq.hgoals+'.'+sq.hbehinds : null,
       _aflAwayStr: (sq.agoals!=null&&sq.abehinds!=null) ? sq.agoals+'.'+sq.abehinds : null,
       homeName:  sq.hteam,
@@ -7002,6 +7003,17 @@ const MEDIA_WEEKEND_BASE = [
 // ── Special events override (add ~20 times/year; remove after endDate passes) ─
 // Format: { startDate:"YYYY-MM-DD", endDate:"YYYY-MM-DD", card:{show,network,chip,time,desc,link} }
 const MEDIA_SPECIALS = [
+  {
+    // Premier League Final Day Multiview - Sun May 24 only - all 10 MW38 games 11am ET simultaneous
+    startDate:"2026-05-24", endDate:"2026-05-24",
+    card:{
+      show:"Premier League Final Day Multiview",network:"Peacock",chip:"NBC",
+      time:"11:00 AM ET - All 10 games kick off simultaneously",
+      desc:"Premier League Championship Sunday: all 10 Matchweek 38 games kick off at once (11am ET / 4pm BST). Peacock's Premier League Multiview brings the Final Day fixtures Peacock broadcasts into a single stream - watch up to four matches at once, switch audio between them, and click any match to go full-screen. Arsenal are confirmed 2025-26 champions; the Final Day drama is the European qualification race and the relegation fight. Multiview coverage is limited to the fixtures Peacock carries.",
+      journalNote:"PL Final Day - 10 games at once, 11am ET. Peacock Multiview carries the Final Day fixtures Peacock broadcasts. Arsenal champions; Europe and relegation still live.",
+      link:"https://www.peacocktv.com/sports/premier-league"
+    }
+  },
   {
     // FIFA World Cup 2026 — full tournament run (June 11 – July 19)
     startDate:"2026-06-11", endDate:"2026-07-19",
