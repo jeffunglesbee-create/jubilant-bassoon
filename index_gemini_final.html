@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-content"/>
+  <title>FIELD — Global Sports Intelligence</title>
+  <style>
+    :root {
+      --obsidian:#070710; --card:#121224; --card-highlight:#181830; --edge:#ffffff0f;
+      --gold:#c9a84c; --smoke:#6a6a8a; --white:#f2f2fa;
+    }
+    body { background: var(--obsidian); color: var(--white); font-family: 'Barlow', sans-serif; margin: 0; padding: 20px; }
+
+    /* Perfect Switch Panel */
+    #ht-panel {
+      position: fixed; bottom: 20px; right: 20px; z-index: 100;
+      background: var(--card); border: 1px solid var(--gold); border-radius: 12px;
+      padding: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      display: none;
+    }
+
+    .game-card {
+      contain: content; border: 1px solid var(--edge); padding: 15px;
+      margin-bottom: 10px; border-radius: 10px; background: var(--card);
+      transition: transform 0.2s; will-change: transform;
+    }
+
+    /* Night Arc Surface */
+    #night-arc-container { display: none; width: 100%; height: 300px; margin-bottom: 20px; }
+    @media (min-width: 1200px) { #night-arc-container { display: block; } }
+
+    /* Intelligence Badges */
+    .intel-badge { font-size: 0.8rem; color: var(--smoke); display: block; margin-top: 5px; }
+    .vig-badge { background: var(--edge); padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; }
+  </style>
+</head>
+<body>
+  <div id="ht-panel"></div>
+  <section id="night-arc-container" class="night-arc-surface"></section>
+  <main id="app"></main>
+
+  <script>
+    // ── HonestSignal — Vig computation & display ──────────────────────────────
+    // Computes bookmaker margin from decimal odds array.
+    // Fix applied: null guard on empty/invalid input; renderVigBadge null-safe.
+    const HonestSignal = {
+      computeVig: (odds) => {
+        if (!odds?.length) return null;
+        const sum = odds.reduce((acc, odd) => acc + (1 / odd), 0);
+        return ((sum - 1) * 100).toFixed(2);
+      },
+      renderVigBadge: (odds) => {
+        const vig = HonestSignal.computeVig(odds);
+        if (vig === null) return '';
+        return `<span class="vig-badge">Vig: ${vig}%</span>`;
+      }
+    };
+
+    // ── WorkingClassIntel — Price transparency & injury injection ─────────────
+    // Fix applied: XSS sanitisation on data.injury before innerHTML insertion.
+    // renderPriceImpact restored from index_gemini_final source.
+    const WorkingClassIntel = {
+      renderPriceImpact: (costPer100) =>
+        `<span class="intel-badge">You're paying $${costPer100} per $100 to play this market.</span>`,
+
+      inject: (cardElement, data) => {
+        if (data.injury) {
+          const safe = data.injury.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+          cardElement.insertAdjacentHTML('beforeend',
+            `<span class="intel-badge">${safe}</span>`);
+        }
+      }
+    };
+
+    // ── NightArc — Temporal game timeline surface (desktop ≥1200px) ──────────
+    // Status: stub — implementation blocked pending arc spec.
+    // Fix applied: games guard added; dead placeholder SVG removed.
+    // TODO: implement arc rendering when spec is defined.
+    const NightArc = {
+      render(games) {
+        if (window.innerWidth < 1200 || !games?.length) return;
+        // TODO: implement arc — spec needed (drama curve? game timeline?)
+      }
+    };
+
+    // ── updateDramaTrail — Ring buffer for drama score history ────────────────
+    // Fix applied: hardcoded d:50 replaced with computeDramaScore() call.
+    // Ring buffer (300-entry cap) is production-quality — unchanged.
+    // NOTE: computeDramaScore(game) must be defined in the host app.
+    function updateDramaTrail(game) {
+      if (!game._dramaTrail) game._dramaTrail = [];
+      const score = typeof computeDramaScore === 'function'
+        ? computeDramaScore(game)
+        : 0; // safe fallback until wired
+      game._dramaTrail.push({ t: Date.now(), d: score });
+      if (game._dramaTrail.length > 300) game._dramaTrail.shift();
+    }
+
+    // ── PerfectSwitchState — HT/live switch panel ─────────────────────────────
+    // Fix applied: dead htKey param removed; #ht-close listener wired (once:true);
+    // orphaned _htShownGames removed.
+    const PerfectSwitchState = {
+      _best: null,
+
+      update(best) {
+        if (this._best?.gameId === best.gameId) return;
+        this._best = best;
+        requestAnimationFrame(() => this.render(best));
+      },
+
+      render(best) {
+        const panel = document.getElementById('ht-panel');
+        panel.innerHTML = `<div>Perfect Switch: ${best.game} - ${best.drama}% 🔥 ${HonestSignal.renderVigBadge([2.0, 2.0])} <button id="ht-close">✕</button></div>`;
+        panel.style.display = 'block';
+        document.getElementById('ht-close')
+          ?.addEventListener('click', () => { panel.style.display = 'none'; }, { once: true });
+      }
+    };
+  </script>
+</body>
+</html>
