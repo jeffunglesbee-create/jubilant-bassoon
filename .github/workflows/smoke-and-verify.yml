@@ -285,7 +285,7 @@ jobs:
           if git diff --staged --quiet; then
             echo "No changes to current state — skipping commit"
           else
-            git commit -m "ci: update current state ${$(git rev-parse --short HEAD 2>/dev/null)} [skip ci]"
+            git commit -m "ci: update current state $(git rev-parse --short HEAD 2>/dev/null) [skip ci]"
             git push origin main
             echo "✅ Current state updated in repo"
           fi

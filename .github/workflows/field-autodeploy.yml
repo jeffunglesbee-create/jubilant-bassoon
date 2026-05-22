@@ -178,6 +178,23 @@ jobs:
           if git diff --cached --quiet; then
             echo "✓ Drive file matches remote after fetch — no commit needed"
           else
+            # Sync SW_VERSION in sw.js to match index.html (Rule 23 + PWA-A fix)
+            # sw.js hardcodes SW_VERSION — must match index.html daily for cache busting
+            INDEX_VER=$(grep -oP "const SW_VERSION = \'\K[^\']+" index.html 2>/dev/null || echo "")
+            SW_VER=$(grep -oP "const SW_VERSION = \'\K[^\']+" sw.js 2>/dev/null || echo "")
+            if [ -n "$INDEX_VER" ] && [ "$INDEX_VER" != "$SW_VER" ]; then
+              python3 -c "
+import re, sys
+content = open('sw.js').read()
+fixed = re.sub(r\"const SW_VERSION\\s*=\\s*\'[0-9-]+\'\", f\"const SW_VERSION  = '${INDEX_VER}'\", content)
+open('sw.js','w').write(fixed)
+print('sw.js SW_VERSION updated to ${INDEX_VER}')
+"
+              git add sw.js
+              echo "✅ SW_VERSION synced: ${SW_VER} → ${INDEX_VER}"
+            else
+              echo "✅ SW_VERSION already current (${SW_VER})"
+            fi
             git commit -m "Auto-deploy from Drive $(date '+%Y-%m-%d %H:%M UTC')"
             git push origin main
             echo "✓ Committed and pushed — Cloudflare deploying in ~19s"
