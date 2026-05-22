@@ -607,7 +607,7 @@ flex-shrink:0;white-space:nowrap;
 .otw-pulse.otw-pulse-pre{background:var(--gold2,#c9a84c);animation:none}
 .otw-pulse.otw-pulse-live{background:var(--teal,#2dd4bf);animation:otw-pulse 2.5s ease-in-out infinite}
 @keyframes otw-pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.45;transform:scale(1.4)}}
-.otw-label{font-size:.56rem;font-weight:800;letter-spacing:.12em;color:var(--violet,#8b5cf6);text-transform:uppercase;flex-shrink:0}
+.otw-label{font-size:.88rem;font-weight:700;letter-spacing:0;color:var(--violet,#8b5cf6);flex-shrink:0}
 .otw-inner.otw-pregame .otw-label{color:var(--gold2,#c9a84c)}
 .otw-inner.otw-live    .otw-label{color:var(--teal,#2dd4bf)}
 .otw-inner.otw-quiet   .otw-label{color:var(--smoke)}
@@ -849,11 +849,21 @@ flex-shrink:0;white-space:nowrap;
 .ww-net{font-size:.62rem;color:var(--muted);text-decoration:none;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:4px;padding:.1rem .35rem;white-space:nowrap}
 .ww-net:hover{background:rgba(45,212,191,.15);border-color:rgba(45,212,191,.35);color:#2dd4bf}
 .ww-close{margin-left:auto;background:none;border:none;color:var(--muted);cursor:pointer;font-size:.8rem;padding:0 .1rem;flex-shrink:0}
+/* Surface identifier — Watch Window "Coming Up" */
+.ww-header{font-size:.88rem;font-weight:700;letter-spacing:0;color:var(--soon,#e8a020);flex-shrink:0;margin-right:.5rem}
+/* Surface identifier — Arbitrage bar left-pane */
+.arb-header{font-size:.80rem;font-weight:700;letter-spacing:0;color:#34d399;margin-bottom:.35rem}
+/* Context pill micro-label */
+.ap-ctx-label{font-size:.52rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;opacity:.5;margin-bottom:.2rem}
+/* OTW label responsive (421-600px) */
+@media(min-width:421px) and (max-width:600px){.otw-label{font-size:.85rem}}
+/* OTW label at 820px+ */
+@media(min-width:820px){.otw-label{font-size:.80rem}}
 #field-brief{padding:.6rem 1rem 0;max-width:1200px;margin:0 auto}
 .field-brief-card{background:rgba(201,168,76,.07);border:1px solid rgba(201,168,76,.22);border-top:2px solid var(--gold2,#c9a84c);border-radius:10px;padding:1rem 1.1rem .9rem;margin-bottom:1rem;cursor:pointer;transition:background .2s}
 .field-brief-card:hover{background:rgba(201,168,76,.12)}
 .field-brief-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:.55rem}
-.field-brief-label{font-size:.55rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--gold2,#c9a84c)}
+.field-brief-label{font-size:.80rem;font-weight:700;letter-spacing:0;color:var(--gold2,#c9a84c)}
 .field-brief-date{font-size:.52rem;color:var(--muted);opacity:.7}
 .field-brief-text{font-size:.74rem;color:var(--fg,#e8e8f0);line-height:1.6;white-space:pre-wrap}
 .field-brief-text.pending{color:var(--muted);font-style:italic;font-size:.7rem}
@@ -873,8 +883,7 @@ flex-shrink:0;white-space:nowrap;
   font-size:1rem;line-height:1;opacity:.9;
 }
 .night-owl-section-title{
-  font-family:var(--ff-cond);font-size:.65rem;font-weight:900;
-  letter-spacing:.14em;text-transform:uppercase;color:#a78bfa;
+  font-size:.80rem;font-weight:700;letter-spacing:0;color:#a78bfa;
 }
 .night-owl-section-date{
   font-family:var(--ff-mono);font-size:.58rem;color:var(--smoke);
@@ -1990,14 +1999,14 @@ flex-shrink:0;white-space:nowrap;
   letter-spacing:-.04em;line-height:1}
 .ap-fire-clock{font-size:.82rem;font-weight:700;
   color:var(--teal,#2dd4bf);letter-spacing:.06em;text-transform:uppercase}
-.ap-otw-header{font-size:.68rem;font-weight:700;letter-spacing:.05em;
+.ap-otw-header{font-size:.80rem;font-weight:700;letter-spacing:0;
   text-transform:uppercase;color:rgba(255,255,255,.5);margin-bottom:.2rem}
 .ap-no-fire{display:flex;flex-direction:column;gap:.2rem;opacity:.38;
   padding:.5rem 0}
 .ap-quiet-label{font-size:.52rem;font-weight:800;letter-spacing:.1em;
   text-transform:uppercase;color:var(--violet,#8b5cf6)}
 .ap-quiet-msg{font-size:.76rem;color:var(--smoke)}
-.ap-section-label{font-size:.52rem;font-weight:800;letter-spacing:.12em;
+.ap-section-label{font-size:.62rem;font-weight:800;letter-spacing:.08em;
   text-transform:uppercase;color:var(--gold2,#c9a84c);margin-bottom:.4rem}
 .ap-scores{display:flex;flex-direction:column;gap:.35rem}
 .ap-score-row{display:flex;justify-content:space-between;align-items:center;
@@ -2063,8 +2072,7 @@ flex-shrink:0;white-space:nowrap;
 }
 .ap-card-icon{font-size:.85rem;line-height:1}
 .ap-card-label{
-  font-size:.52rem;font-weight:800;letter-spacing:.1em;
-  text-transform:uppercase;
+  font-size:.80rem;font-weight:700;letter-spacing:0;
 }
 .ap-card-date{font-size:.5rem;color:var(--smoke);margin-left:auto;font-family:var(--ff-mono)}
 .ap-card-game{font-size:.75rem;font-weight:700;color:var(--white);margin-bottom:.2rem;line-height:1.25}
@@ -14019,7 +14027,7 @@ function renderAmbientPanel(){
   const ctx=(typeof getCalendarContext==='function')?getCalendarContext():null;
   // Context pill: clickable filter — taps scroll to first game of relevant league
   const ctxHTML=ctx
-    ?`<div class="ap-season"><span class="ap-ctx-pill" title="Filter to ${ctx.label}" onclick="(()=>{const s=document.querySelector('.game-card[data-sport*=\"${(ctx.relevantLeagues||[]).join('\"],[data-sport*=\"')}\"]');if(s)s.scrollIntoView({behavior:'smooth',block:'center'});})()" style="cursor:pointer">${ctx.label}</span></div>`
+    ?`<div class="ap-season"><div class="ap-ctx-label">Season Context</div><span class="ap-ctx-pill" title="Filter to ${ctx.label}" onclick="(()=>{const s=document.querySelector('.game-card[data-sport*=\"${(ctx.relevantLeagues||[]).join('\"],[data-sport*=\"')}\"]');if(s)s.scrollIntoView({behavior:'smooth',block:'center'});})()" style="cursor:pointer">${ctx.label}</span></div>`
     :'';
 
   // ── Section 3 (editorial): FIELD Brief or Night Owl/Recap ─────────────────
@@ -14234,7 +14242,7 @@ function renderArbitrageBar(){
 
   if(rows.length===0){el.style.display='none';return;}
   el.style.display='flex';
-  el.innerHTML=rows.join('');
+  el.innerHTML='<div class="arb-header">📡 Watch Free Tonight</div>'+rows.join('');
 }
 
 function renderWatchWindow(){
@@ -14256,7 +14264,7 @@ function renderWatchWindow(){
   const seriesInfo=g.seriesRecord?' \u00b7 '+g.seriesRecord:'';
   const wwReason=buildWatchWindowReason(g);
   el.style.display='block';
-  el.innerHTML='<div class="ww-bar" id="ww-inner"><span class="ww-pulse"></span><span class="ww-soon">'+minsStr+'</span><span class="ww-game">'+(g.away||'')+' @ '+(g.home||'')+seriesInfo+'</span>'+(wwReason?'<span class="ww-reason">'+wwReason+'</span>':'')+netChip+'<button class="ww-close" id="ww-close">\u2715</button></div>';
+  el.innerHTML='<div class="ww-bar" id="ww-inner"><span class="ww-pulse"></span><span class="ww-header">Coming Up</span><span class="ww-soon">'+minsStr+'</span><span class="ww-game">'+(g.away||'')+' @ '+(g.home||'')+seriesInfo+'</span>'+(wwReason?'<span class="ww-reason">'+wwReason+'</span>':'')+netChip+'<button class="ww-close" id="ww-close">\u2715</button></div>';
   document.getElementById('ww-close')?.addEventListener('click',e=>{e.stopPropagation();_wwDismissed=true;el.style.display='none';});
   document.getElementById('ww-inner')?.addEventListener('click',e=>{if(e.target.id==='ww-close'||e.target.closest('a')) return;const h=(g.home||'').replace(/[^a-z]/gi,'').toLowerCase();const card=[...document.querySelectorAll('.game-card')].find(c=>(c.dataset.home||'').replace(/[^a-z]/gi,'').toLowerCase()===h);if(card)card.scrollIntoView({behavior:'smooth',block:'center'});});
   if(!_wwInterval){_wwInterval=setInterval(()=>{const startMs=new Date(best.g.start_time).getTime();if(Date.now()>startMs+5*60000)_wwDismissed=false;renderWatchWindow();},60000);}
