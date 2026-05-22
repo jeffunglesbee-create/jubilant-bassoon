@@ -1,0 +1,41 @@
+name: Upload to Dropbox
+on:
+  workflow_dispatch:
+    inputs:
+      filename:
+        description: 'Destination filename in Dropbox'
+        required: true
+        default: 'index_gemini.html'
+      source_file:
+        description: 'Source file in repo to upload'
+        required: true
+        default: 'index.html'
+
+jobs:
+  upload:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Upload to Dropbox
+        env:
+          DROPBOX_TOKEN: ${{ secrets.DROPBOX_TOKEN }}
+        run: |
+          echo "Uploading ${{ inputs.source_file }} to Dropbox as /${{ inputs.filename }}..."
+          RESPONSE=$(curl -s -w "\n%{http_code}" \
+            -X POST https://content.dropboxapi.com/2/files/upload \
+            --header "Authorization: Bearer ${DROPBOX_TOKEN}" \
+            --header "Dropbox-API-Arg: {\"path\":\"/${{ inputs.filename }}\",\"mode\":\"overwrite\",\"autorename\":false,\"mute\":false}" \
+            --header "Content-Type: application/octet-stream" \
+            --data-binary @${{ inputs.source_file }})
+          HTTP_CODE=$(echo "$RESPONSE" | tail -1)
+          BODY=$(echo "$RESPONSE" | head -1)
+          echo "HTTP status: $HTTP_CODE"
+          echo "Response: $BODY"
+          if [ "$HTTP_CODE" != "200" ]; then
+            echo "Upload failed"
+            exit 1
+          fi
+          echo "Upload successful!"
+          echo "$BODY" | python3 -c "import json,sys; d=json.load(sys.stdin); print('Path:', d.get('path_display')); print('Size:', d.get('size'), 'bytes'); print('Modified:', d.get('server_modified'))"
