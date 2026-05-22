@@ -1,178 +1,129 @@
 // layer2_review.js — FIELD Viewport AI Screenshot Review (Layer 2)
 //
-// Reads the 4 viewport screenshots produced by viewport_smoke.js (A99/B99/C99/D99),
-// sends each to Claude Vision via the Anthropic API, and posts a structured
-// PASS/FAIL review to the GitHub Step Summary.
+// In GitHub Actions CI: calls Courier Worker /layer2 via OIDC authentication.
+//   No ANTHROPIC_API_KEY needed in GitHub secrets.
+//   Courier (field-deploy.jeffunglesbee.workers.dev) holds its own ANTHROPIC_KEY.
+//   OIDC token auto-generated from CI context (permissions: id-token: write).
 //
-// PHILOSOPHY: Catches what Layer 1 cannot.
-//   Layer 1 (viewport_smoke.js): geometric contracts — "is element X in position Y?"
-//   Layer 2 (this script): editorial judgment — "does this look overlaid and sloppy?"
-//   A misaligned padding, poor text wrapping, or chip overflow isn't a bounding-box
-//   violation — but Claude Vision can see it and flag it.
+// Locally: calls api.anthropic.com directly.
+//   Requires: ANTHROPIC_API_KEY env var.
+//   run: ANTHROPIC_API_KEY=sk-ant-... node layer2_review.js
 //
-// REQUIRES: ANTHROPIC_API_KEY GitHub secret
-// INPUT:    viewport-screenshots/vp-{360,393,820,1200}.png
-// OUTPUT:   $GITHUB_STEP_SUMMARY (markdown) + stdout
+// Requires: ANTHROPIC_KEY set in field-deploy Cloudflare Worker secrets.
+//   dash.cloudflare.com → Workers & Pages → field-deploy → Settings → Variables and Secrets
 //
-// Non-blocking by default (exit 0). Remove the final `process.exit(0)` override
-// once a clean baseline is established.
-//
-// Run locally: ANTHROPIC_API_KEY=sk-... node layer2_review.js
-// CI: smoke-and-verify.yml viewport-smoke job, step "AI Screenshot Review"
+// Input:    viewport-screenshots/vp-{360,393,820,1200}.png (from A99/B99/C99/D99)
+// Output:   $GITHUB_STEP_SUMMARY (markdown) + stdout
 
 const fs   = require('fs');
 const path = require('path');
 
-const API_KEY         = process.env.ANTHROPIC_API_KEY;
 const SCREENSHOTS_DIR = path.join(__dirname, 'viewport-screenshots');
 const COMMIT_MSG      = (process.env.COMMIT_MESSAGE || '').slice(0, 200) || '(no commit message)';
+const IS_CI           = !!process.env.GITHUB_ACTIONS;
+const COURIER_URL     = 'https://field-deploy.jeffunglesbee.workers.dev/layer2';
 const MODEL           = 'claude-sonnet-4-20250514';
 
-// ── Viewport metadata for the review prompt ───────────────────────────────────
 const VP_META = {
-  360: {
-    label: 'Galaxy A36 / iPhone SE — small phone',
-    context: `Phone layout. Key elements:
-- OTW bar: sticky teal strip at top (VISIBLE — this is correct on phone)
-- Filter chips: small pill buttons below masthead
-- Schedule cards: single-column, full width (~340px)
-- Ambient panel: must NOT be visible
-- No horizontal scroll expected`,
-  },
-  393: {
-    label: 'Pixel 8 — standard Android phone',
-    context: `Phone layout, slightly wider than 360px. Same expectations:
-- OTW bar: sticky at top (VISIBLE)
-- Schedule cards: full width (~370px)
-- Ambient panel: must NOT be visible`,
-  },
-  820: {
-    label: 'iPad Air 4th gen portrait — AMBIENT MODE (most critical viewport)',
-    context: `CRITICAL two-pane layout:
-LEFT PANE (~430px): masthead (FIELD brand) at top, filter chips, game schedule cards below.
-  - OTW bar: must NOT be visible here — it was moved to the right panel
-  - Game cards: single-column, ~400px wide
-  - No bars or strips should appear ABOVE the masthead
-
-RIGHT PANEL (~380px, fixed position): the ambient intelligence column.
-  - Should show: season context pill, game info, live scores section
-  - Must NOT overlap the left schedule pane
-  - Should start from the top of the viewport
-
-Common problems that have occurred:
-  - OTW bar appearing in the left pane (overlapping masthead/cards) — BAD
-  - Bars stacking above the FIELD masthead logo — BAD
-  - Right panel covering left-pane game cards — BAD`,
-  },
-  1200: {
-    label: 'Desktop — wide layout',
-    context: `Desktop layout. Key elements:
-- OTW bar: sticky strip at top (VISIBLE — correct on desktop)
-- No right ambient panel
-- Wider schedule cards
-- More whitespace around content`,
-  },
+  360:  { label: 'Galaxy A36 / iPhone SE — small phone' },
+  393:  { label: 'Pixel 8 — standard Android phone' },
+  820:  { label: 'iPad Air portrait — AMBIENT MODE (critical viewport)' },
+  1200: { label: 'Desktop' },
 };
 
-// ── Call Claude Vision API ─────────────────────────────────────────────────────
-async function reviewScreenshot(width, imgPath) {
-  const imgData = fs.readFileSync(imgPath).toString('base64');
-  const meta    = VP_META[width] || { label: `${width}px`, context: 'Standard layout.' };
+// ── Get GitHub OIDC token (CI only) ──────────────────────────────────────────
+async function getOIDCToken() {
+  const reqUrl   = process.env.ACTIONS_ID_TOKEN_REQUEST_URL;
+  const reqToken = process.env.ACTIONS_ID_TOKEN_REQUEST_TOKEN;
+  if (!reqUrl || !reqToken) throw new Error('OIDC env vars missing — is permissions: id-token: write set on this job?');
+  const url = `${reqUrl}&audience=field-deploy`;
+  const r = await fetch(url, { headers: { 'Authorization': `Bearer ${reqToken}` } });
+  if (!r.ok) throw new Error(`OIDC token request failed: ${r.status} ${await r.text().catch(() => '')}`);
+  const { value } = await r.json();
+  if (!value) throw new Error('OIDC token response had no value field');
+  return value;
+}
 
-  const systemPrompt = `You are reviewing screenshots of FIELD, a sports intelligence PWA, 
-for layout and visual quality issues. Be precise and specific. 
-When you identify a problem, say exactly which element and where.
-When the layout looks correct and clean, say so clearly.`;
+// ── Load screenshots from disk ────────────────────────────────────────────────
+function loadScreenshots() {
+  const result = {};
+  for (const width of [360, 393, 820, 1200]) {
+    const p = path.join(SCREENSHOTS_DIR, `vp-${width}.png`);
+    if (fs.existsSync(p)) result[String(width)] = fs.readFileSync(p).toString('base64');
+  }
+  return result;
+}
 
-  const userPrompt = `FIELD screenshot — ${width}px viewport (${meta.label})
-
-Expected layout at this viewport:
-${meta.context}
-
-Recent changes in this commit: ${COMMIT_MSG}
-
-Review for:
-1. Elements overlapping where they shouldn't
-2. Content or text cut off in a way that loses meaning
-3. Elements appearing outside their expected container
-4. The overall impression: clean and readable, or "overlaid and sloppy"?
-5. At 820px specifically: is the two-pane layout correct (left schedule + right intelligence panel)?
-
-Respond in this exact structure — three lines only:
-VERDICT: PASS or FAIL
-ISSUES: [specific problems found, or "None"]
-NOTES: [minor observations worth tracking, or "None"]`;
-
-  const resp = await fetch('https://api.anthropic.com/v1/messages', {
+// ── CI path: call Courier Worker /layer2 via OIDC ────────────────────────────
+async function reviewViaCourier(screenshots) {
+  const token = await getOIDCToken();
+  const r = await fetch(COURIER_URL, {
     method: 'POST',
-    headers: {
-      'content-type':    'application/json',
-      'x-api-key':       API_KEY,
-      'anthropic-version': '2023-06-01',
-    },
-    body: JSON.stringify({
-      model:      MODEL,
-      max_tokens: 512,
-      system:     systemPrompt,
-      messages: [{
-        role:    'user',
-        content: [
-          { type: 'image', source: { type: 'base64', media_type: 'image/png', data: imgData } },
-          { type: 'text',  text: userPrompt },
-        ],
-      }],
-    }),
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+    body: JSON.stringify({ screenshots, commitMsg: COMMIT_MSG }),
   });
-
-  if (!resp.ok) {
-    const body = await resp.text().catch(() => '(unreadable)');
-    throw new Error(`Anthropic API ${resp.status}: ${body.slice(0, 200)}`);
+  if (!r.ok) {
+    const body = await r.text().catch(() => '');
+    throw new Error(`Courier /layer2 ${r.status}: ${body.slice(0, 300)}`);
   }
-
-  const data = await resp.json();
-  return data.content?.[0]?.text?.trim() || '(empty response)';
+  const data = await r.json();
+  if (!data.ok) throw new Error(`Courier error: ${data.error}`);
+  return data.results;
 }
 
-// ── Parse verdict from response ───────────────────────────────────────────────
-function parseVerdict(text) {
-  if (/VERDICT:\s*PASS/i.test(text))    return 'PASS';
-  if (/VERDICT:\s*FAIL/i.test(text))    return 'FAIL';
-  return 'UNKNOWN';
+// ── Local path: call api.anthropic.com directly ──────────────────────────────
+async function reviewDirect(screenshots) {
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) {
+    console.log('⚠️  ANTHROPIC_API_KEY not set — Layer 2 skipped (local run)');
+    return null;
+  }
+  const results = [];
+  for (const [widthStr, imgB64] of Object.entries(screenshots)) {
+    const width = parseInt(widthStr);
+    const meta  = VP_META[width] || { label: `${width}px` };
+    const prompt = `FIELD PWA screenshot — ${width}px (${meta.label})\nCommit: ${COMMIT_MSG}\n\nReview for: overlapping elements, truncated text, elements outside containers, "overlaid/sloppy" vs clean.\nFor 820px: is two-pane layout correct (left schedule + right ambient intelligence panel)?\n\nRespond in exactly three lines:\nVERDICT: PASS or FAIL\nISSUES: [specific problems, or "None"]\nNOTES: [minor observations, or "None"]`;
+    try {
+      const r = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'content-type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01' },
+        body: JSON.stringify({
+          model: MODEL, max_tokens: 512,
+          system: 'You are reviewing screenshots of FIELD, a sports intelligence PWA, for layout problems.',
+          messages: [{ role:'user', content: [
+            { type:'image', source:{ type:'base64', media_type:'image/png', data:imgB64 }},
+            { type:'text', text:prompt },
+          ]}],
+        }),
+      });
+      if (!r.ok) { results.push({width, verdict:'ERROR', review:`API ${r.status}`}); continue; }
+      const d   = await r.json();
+      const rev = d.content?.[0]?.text?.trim() || '(empty)';
+      const verdict = /VERDICT:\s*PASS/i.test(rev) ? 'PASS' : /VERDICT:\s*FAIL/i.test(rev) ? 'FAIL' : 'UNKNOWN';
+      results.push({ width, verdict, review: rev });
+    } catch(e) { results.push({width, verdict:'ERROR', review:e.message}); }
+    await new Promise(r => setTimeout(r, 500));
+  }
+  return results;
 }
 
-// ── Write GitHub Step Summary markdown ────────────────────────────────────────
-function buildMarkdown(results, commitMsg) {
-  const passCount = results.filter(r => r.verdict === 'PASS').length;
-  const failCount = results.filter(r => r.verdict === 'FAIL').length;
-  const skipCount = results.filter(r => r.verdict === 'SKIP').length;
-  const statusIcon = failCount > 0 ? '❌' : skipCount === results.length ? '⏭️' : '✅';
-
+// ── Step summary markdown ─────────────────────────────────────────────────────
+function buildMarkdown(results, via) {
+  const pass = results.filter(r => r.verdict === 'PASS').length;
+  const fail = results.filter(r => r.verdict === 'FAIL').length;
+  const icon = fail > 0 ? '❌' : '✅';
   const lines = [
-    `## ${statusIcon} FIELD Viewport AI Review (Layer 2)`,
-    '',
-    `**${passCount} pass · ${failCount} fail · ${skipCount} skip** — Model: \`${MODEL}\``,
-    `> Commit: \`${commitMsg.slice(0, 80)}\``,
-    '',
-    '> _Layer 2 catches qualitative issues (overlaid/sloppy layout) that Layer 1_',
-    '> _geometric invariant tests cannot detect. Non-blocking until baseline confirmed._',
-    '',
+    `## ${icon} FIELD Viewport AI Review (Layer 2)`,
+    `**${pass} pass · ${fail} fail** — via ${via} · Model: \`${MODEL}\``,
+    `> Commit: \`${COMMIT_MSG.slice(0,80)}\``, '',
+    '> _Qualitative review: "overlaid and sloppy?" — complements Layer 1 geometric invariants._', '',
   ];
-
   for (const r of results) {
-    const icon = r.verdict === 'PASS' ? '✅' : r.verdict === 'FAIL' ? '❌' : r.verdict === 'SKIP' ? '⏭️' : '⚠️';
-    const meta = VP_META[r.width] || { label: `${r.width}px` };
-    lines.push(`### ${icon} ${r.width}px — ${meta.label}`);
-    lines.push('');
-    if (r.verdict === 'SKIP' || r.verdict === 'ERROR') {
-      lines.push(`> ${r.review}`);
-    } else {
-      // Format the 3-line response as a blockquote
-      const reviewLines = r.review.split('\n').map(l => `> ${l}`).join('\n');
-      lines.push(reviewLines);
-    }
-    lines.push('');
+    const ic = r.verdict==='PASS' ? '✅' : r.verdict==='FAIL' ? '❌' : r.verdict==='SKIP' ? '⏭️' : '⚠️';
+    const meta = VP_META[r.width] || { label:`${r.width}px` };
+    lines.push(`### ${ic} ${r.width}px — ${meta.label}`, '');
+    lines.push(...r.review.split('\n').map(l => `> ${l}`), '');
   }
-
   return lines.join('\n');
 }
 
@@ -180,87 +131,58 @@ function buildMarkdown(results, commitMsg) {
 async function main() {
   console.log('\n── FIELD AI Screenshot Review (Layer 2) ────────────────────\n');
 
-  // Graceful exit if no API key
-  if (!API_KEY) {
-    console.log('⚠️  ANTHROPIC_API_KEY not configured — Layer 2 skipped');
-    console.log('   Add ANTHROPIC_API_KEY to GitHub Secrets (repo → Settings → Secrets)');
-    console.log('   to enable AI qualitative review after each push.\n');
-    process.exit(0);
-  }
-
-  // Graceful exit if no screenshots
   if (!fs.existsSync(SCREENSHOTS_DIR)) {
     console.log('⚠️  viewport-screenshots/ not found — did viewport_smoke.js run first?');
     process.exit(0);
   }
 
-  const widths  = [360, 393, 820, 1200];
-  const results = [];
-  let anyFail   = false;
+  const screenshots = loadScreenshots();
+  const found = Object.keys(screenshots).length;
+  if (found === 0) {
+    console.log('⚠️  No screenshots found in viewport-screenshots/');
+    process.exit(0);
+  }
+  console.log(`  Screenshots loaded: ${Object.keys(screenshots).join(', ')}px\n`);
 
-  for (const width of widths) {
-    const imgPath = path.join(SCREENSHOTS_DIR, `vp-${width}.png`);
-
-    if (!fs.existsSync(imgPath)) {
-      console.log(`  ⏭️  vp-${width}.png not found — skipping`);
-      results.push({ width, verdict: 'SKIP', review: 'Screenshot file not found.' });
-      continue;
+  let results;
+  let via;
+  try {
+    if (IS_CI) {
+      console.log('  CI mode → calling Courier Worker /layer2 via OIDC...');
+      results = await reviewViaCourier(screenshots);
+      via = 'Courier OIDC';
+    } else {
+      console.log('  Local mode → calling api.anthropic.com directly...');
+      results = await reviewDirect(screenshots);
+      via = 'direct API';
     }
-
-    const meta = VP_META[width] || { label: `${width}px` };
-    process.stdout.write(`  Reviewing ${width}px (${meta.label})... `);
-
-    try {
-      const review  = await reviewScreenshot(width, imgPath);
-      const verdict = parseVerdict(review);
-      if (verdict === 'FAIL') anyFail = true;
-      results.push({ width, verdict, review });
-
-      const icon = verdict === 'PASS' ? '✅' : verdict === 'FAIL' ? '❌' : '⚠️';
-      console.log(`${icon} ${verdict}`);
-
-      // Brief review excerpt to stdout
-      const issueLine = review.split('\n').find(l => /^ISSUES:/i.test(l)) || '';
-      if (issueLine && !/none/i.test(issueLine)) {
-        console.log(`         ${issueLine}`);
-      }
-
-    } catch (err) {
-      console.log(`⚠️  ERROR`);
-      console.log(`         ${err.message}`);
-      results.push({ width, verdict: 'ERROR', review: `API error: ${err.message}` });
-    }
-
-    // Pause between API calls (rate limit courtesy)
-    if (width !== widths[widths.length - 1]) {
-      await new Promise(r => setTimeout(r, 800));
-    }
+  } catch(err) {
+    console.error(`\n  ⚠️  Layer 2 error: ${err.message}`);
+    console.log('  Layer 2 review skipped — continuing (non-blocking)');
+    process.exit(0);
   }
 
-  // Write GitHub Step Summary
+  if (!results) { process.exit(0); }
+
+  for (const r of results) {
+    const ic = r.verdict==='PASS' ? '✅' : r.verdict==='FAIL' ? '❌' : '⚠️';
+    console.log(`  ${ic} ${r.width}px: ${r.verdict}`);
+    const issues = r.review.split('\n').find(l => /^ISSUES:/i.test(l)) || '';
+    if (issues && !/none/i.test(issues)) console.log(`     ${issues}`);
+  }
+
   const summaryPath = process.env.GITHUB_STEP_SUMMARY;
   if (summaryPath) {
-    try {
-      fs.writeFileSync(summaryPath, buildMarkdown(results, COMMIT_MSG));
-      console.log('\n  ✓ Written to GitHub Step Summary');
-    } catch (e) {
-      console.log(`\n  ⚠️  Could not write step summary: ${e.message}`);
-    }
+    try { fs.writeFileSync(summaryPath, buildMarkdown(results, via)); }
+    catch(e) { console.log(`  ⚠️  Step summary write failed: ${e.message}`); }
   } else {
-    // Local run — print markdown to stdout
-    console.log('\n' + buildMarkdown(results, COMMIT_MSG));
+    console.log('\n' + buildMarkdown(results, via));
   }
 
-  const pass = results.filter(r => r.verdict === 'PASS').length;
   const fail = results.filter(r => r.verdict === 'FAIL').length;
-  console.log(`\n── Layer 2 complete: ${pass} pass, ${fail} fail ────────────────\n`);
-
-  // Non-blocking until clean baseline is confirmed in CI.
-  // To harden: replace exit(0) with exit(anyFail ? 1 : 0)
-  process.exit(0);
+  const pass = results.filter(r => r.verdict === 'PASS').length;
+  console.log(`\n── Layer 2 complete: ${pass} pass, ${fail} fail (${via}) ──\n`);
+  process.exit(0); // non-blocking — remove to harden once baseline confirmed
 }
 
-main().catch(err => {
-  console.error('\nLayer 2 fatal error:', err.message);
-  process.exit(0); // non-blocking
-});
+main().catch(err => { console.error('Layer 2 fatal:', err.message); process.exit(0); });

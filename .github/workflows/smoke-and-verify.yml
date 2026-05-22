@@ -83,6 +83,9 @@ jobs:
     name: Viewport geometric invariant tests (Layer 1)
     needs: smoke           # runs after static smoke, before live browser test
     if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    permissions:
+      contents: read
+      id-token: write      # enables OIDC token for Courier /layer2 call
     steps:
       - uses: actions/checkout@v4
 
@@ -112,7 +115,6 @@ jobs:
       - name: AI Screenshot Review (Layer 2)
         if: always()
         env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
         run: |
           # Reads viewport-screenshots/vp-{360,393,820,1200}.png (from A99/B99/C99/D99 tests)
