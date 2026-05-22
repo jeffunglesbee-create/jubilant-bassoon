@@ -7,9 +7,10 @@ on:
     - cron: '0 11 * * *'   # 6am ET daily — compliance report
 
 jobs:
-  smoke:
+  # ── smoke-static: local structural checks (~14s, no network wait) ─────────
+  smoke-static:
     runs-on: ubuntu-latest
-    name: Smoke test + live verification
+    name: Smoke test (static)
     outputs:
       skip_visual: ${{ steps.committype.outputs.skip_visual }}
     steps:
@@ -22,7 +23,6 @@ jobs:
           if echo "$MSG" | grep -qE "^Daily update"; then
             echo "skip_visual=true" >> $GITHUB_OUTPUT
             echo "⏭  TYPE A commit — viewport + browser tests will be skipped"
-            echo "   Commit: $MSG"
           else
             echo "skip_visual=false" >> $GITHUB_OUTPUT
             echo "✓ Full test suite will run"
@@ -34,72 +34,66 @@ jobs:
           node-version: '22'
 
       - name: Run smoke test against index.html
-        run: |
-          # smoke.js is the single shared smoke test (CI + local both run it)
-          # Adding assertions: update smoke.js + FIELD_FEATURES in index.html
-          node smoke.js index.html
+        run: node smoke.js index.html
 
       - name: Run unit tests
-        run: |
-          # field_unit.js tests pure functions with known input/output contracts
-          # Rule 17: add tests when a function's contract is defined or bug is fixed
-          node field_unit.js
+        run: node field_unit.js
 
-      - name: Wait for Cloudflare propagation
+      - name: Summary
+        if: always()
         run: |
-          echo "Waiting 25s for Cloudflare to deploy..."
-          sleep 25
+          echo "════════════════════════════════════"
+          echo "  Smoke (static) — $(date '+%H:%M UTC')"
+          echo "════════════════════════════════════"
+
+  # ── smoke-live: Cloudflare + live URL checks (~30s, no repo checkout needed)
+  smoke-live:
+    runs-on: ubuntu-latest
+    name: Smoke test (live)
+    needs: smoke-static
+    steps:
+      - name: Wait for Cloudflare propagation
+        run: sleep 25
 
       - name: CHECK — Live URL responds
         run: |
           STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
             https://jubilant-bassoon.jeffunglesbee.workers.dev/)
-          echo "Live URL status: $STATUS"
           [ "$STATUS" = "200" ] || { echo "❌ Live URL returned $STATUS"; exit 1; }
-          echo "✅ Live URL OK"
+          echo "✅ Live URL OK ($STATUS)"
 
       - name: CHECK — index.html served (not redirect)
         run: |
           BODY=$(curl -s https://jubilant-bassoon.jeffunglesbee.workers.dev/)
-          echo "$BODY" | grep -q '<title>FIELD' || { echo "❌ FIELD title not in response"; exit 1; }
+          echo "$BODY" | grep -q '<title>FIELD' || { echo "❌ FIELD title missing"; exit 1; }
           echo "✅ FIELD app served correctly"
 
-      - name: CHECK — MLB Stats API reachable from live app context
+      - name: CHECK — MLB Stats API reachable
         run: |
           STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
             "https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=$(date +%Y-%m-%d)&hydrate=team")
-          echo "MLB Stats API status: $STATUS"
-          [ "$STATUS" = "200" ] || echo "⚠️ MLB Stats API returned $STATUS (non-blocking)"
+          [ "$STATUS" = "200" ] || echo "⚠️ MLB Stats API $STATUS (non-blocking)"
           echo "✅ MLB API check done"
 
-      - name: CHECK — RELAY health (if Worker live)
+      - name: CHECK — RELAY health
         run: |
-          STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
-            https://field-relay-nba.jeffunglesbee.workers.dev/health 2>/dev/null || echo "000")
           BODY=$(curl -s https://field-relay-nba.jeffunglesbee.workers.dev/health 2>/dev/null || echo "unreachable")
-          echo "RELAY status: $STATUS | body: $BODY"
-          if [ "$BODY" = "RELAY OK" ]; then
-            echo "✅ RELAY healthy"
-          else
-            echo "ℹ️ RELAY not responding — parallel validation not yet active"
-          fi
+          [ "$BODY" = "RELAY OK" ] && echo "✅ RELAY healthy" || echo "ℹ️ RELAY: $BODY"
 
       - name: Summary
         if: always()
         run: |
-          echo ""
           echo "════════════════════════════════════"
-          echo "  FIELD Smoke + Verify Complete"
-          echo "  $(date '+%Y-%m-%d %H:%M UTC')"
+          echo "  Smoke (live) — $(date '+%H:%M UTC')"
           echo "════════════════════════════════════"
 
   viewport-smoke:
     runs-on: ubuntu-latest
     name: Viewport geometric invariant tests (Layer 1)
-    needs: smoke           # runs after static smoke, before live browser test
+    needs: smoke-static    # only needs static smoke — runs in parallel with smoke-live
     if: >
-      needs.smoke.result == 'success' &&
-      needs.smoke.outputs.skip_visual != 'true' &&
+      needs.smoke-static.result == 'success' &&
+      needs.smoke-static.outputs.skip_visual != 'true' &&
       (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
     permissions:
       contents: read
@@ -111,6 +105,12 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22'
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-chromium-${{ hashFiles('package-lock.json') }}
 
       - name: Install Playwright Chromium
         run: |
@@ -167,8 +167,13 @@ jobs:
   browser-test:
     runs-on: ubuntu-latest
     name: Browser runtime tests (Playwright)
-    needs: viewport-smoke    # viewport geometry must pass before live browser test
-    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    needs: [smoke-static, smoke-live, viewport-smoke]
+    if: >
+      needs.smoke-static.result == 'success' &&
+      needs.smoke-static.outputs.skip_visual != 'true' &&
+      needs.smoke-live.result == 'success' &&
+      needs.viewport-smoke.result == 'success' &&
+      (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
     steps:
       - uses: actions/checkout@v4
 
@@ -177,15 +182,16 @@ jobs:
         with:
           node-version: '22'
 
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-chromium-${{ hashFiles('package-lock.json') }}
+
       - name: Install Playwright
         run: |
           npm install @playwright/test
           npx playwright install chromium --with-deps
-
-      - name: Wait for Cloudflare propagation
-        run: |
-          echo "Waiting 30s for Cloudflare to propagate after smoke deploy..."
-          sleep 30
 
       - name: Run browser tests against live URL
         id: playwright
@@ -261,10 +267,11 @@ jobs:
   update-current-state:
     name: Update FIELD current state in repo
     runs-on: ubuntu-latest
-    needs: [smoke, browser-test]
+    needs: [smoke-static, smoke-live, browser-test]
     if: >
       always() &&
-      needs.smoke.result == 'success' &&
+      needs.smoke-static.result == 'success' &&
+      needs.smoke-live.result == 'success' &&
       needs.browser-test.result != 'failure' &&
       needs.browser-test.result != 'cancelled' 
     permissions:
