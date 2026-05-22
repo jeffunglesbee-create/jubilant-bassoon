@@ -374,7 +374,7 @@ flex-shrink:0;white-space:nowrap;
   border-radius:var(--radius);padding:0;
   display:grid;grid-template-columns:3px 1fr minmax(90px,auto);grid-template-rows:auto auto auto;
   overflow:hidden;transition:transform .2s,box-shadow .2s,background .15s,border-color .15s;
-  cursor:pointer;touch-action:manipulation;animation:fadeIn .3s ease both;
+  cursor:pointer;touch-action:manipulation;user-select:none;-webkit-user-select:none;animation:fadeIn .3s ease both;
 }
 @keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
 @keyframes scoreFlash{0%{background:rgba(201,168,76,.25)}60%{background:rgba(201,168,76,.12)}100%{background:transparent}}
@@ -1955,6 +1955,8 @@ flex-shrink:0;white-space:nowrap;
   .games-list{display:block !important}
   /* All pre-masthead intelligence → ambient panel only */
   #otw-banner,#watch-window,#halftime-switch,#field-arb{display:none !important}
+  /* Editorial sections move to ambient panel on iPad */
+  #field-brief,#night-owl{display:none !important}
   /* Streaming Discovery price chip — 2-row card header */
   .app-card-head{flex-wrap:wrap}
   .app-price{
@@ -1988,8 +1990,8 @@ flex-shrink:0;white-space:nowrap;
   letter-spacing:-.04em;line-height:1}
 .ap-fire-clock{font-size:.82rem;font-weight:700;
   color:var(--teal,#2dd4bf);letter-spacing:.06em;text-transform:uppercase}
-.ap-otw-header{font-size:.52rem;font-weight:800;letter-spacing:.12em;
-  text-transform:uppercase;color:rgba(255,255,255,.35);margin-bottom:.1rem}
+.ap-otw-header{font-size:.68rem;font-weight:700;letter-spacing:.05em;
+  text-transform:uppercase;color:rgba(255,255,255,.5);margin-bottom:.2rem}
 .ap-no-fire{display:flex;flex-direction:column;gap:.2rem;opacity:.38;
   padding:.5rem 0}
 .ap-quiet-label{font-size:.52rem;font-weight:800;letter-spacing:.1em;
@@ -2014,6 +2016,8 @@ flex-shrink:0;white-space:nowrap;
   padding:.22rem .65rem;border-radius:5px;text-transform:uppercase;
   display:inline-block}
 .ap-brief{display:flex;flex-direction:column;gap:.4rem}
+.ap-editorial{display:flex;flex-direction:column;gap:.35rem}
+.ap-editorial-game{font-size:.78rem;font-weight:700;color:var(--white)}
 .ap-brief-text{font-size:.72rem;color:var(--fg);line-height:1.65;margin:0;
   white-space:pre-wrap}
 /* Arbitrage summary in ambient panel (compact — #field-arb hidden on iPad) */
@@ -4991,6 +4995,41 @@ function chipHTML(s, srKey, forcehave){
     >${s.name}${freeBadge}${haveSpan}<span class="chip-auth auth-${auth}">${icon}</span><span class="chip-tip"><strong>${tipHeader}</strong><br>${tipBody}${priceNote}</span></a>`;
 }
 
+
+// ── Mobile Smart Stream Chip ──────────────────────────────────────────────────
+// At ≤600px (phone), show ONE chip: prioritise what the user owns,
+// then free OTA, then free cable, then cheapest paid option.
+// This preserves the key decision ("can I watch this?") in minimum space.
+function buildMobileSmartChip(streams) {
+  if (!streams || !streams.length) return '';
+  const resolved = streams.map(s => {
+    const key = typeof s === 'string' ? s : (s.key || '');
+    const sr = typeof s === 'string' ? SR[s] : (SR[key] || s);
+    return { key, sr };
+  }).filter(x => x.sr);
+
+  // Priority 1: a service the user owns
+  const owned = resolved.find(({ key }) => key && MY_SERVICES.has(key));
+  if (owned) return chipHTML(owned.sr, owned.key);
+
+  // Priority 2: free OTA (NBC, ABC, CBS, FOX, CW)
+  const freeOTA = resolved.find(({ key }) => FREE_OTA.has(key));
+  if (freeOTA) return chipHTML(freeOTA.sr, freeOTA.key);
+
+  // Priority 3: free-with-cable (ESPN, TNT, etc)
+  const freeCable = resolved.find(({ key }) => FREE_CABLE.has(key));
+  if (freeCable) return chipHTML(freeCable.sr, freeCable.key);
+
+  // Priority 4: cheapest streamer — lowest SERVICE_COST
+  const paid = resolved
+    .filter(({ key }) => SERVICE_COST[key])
+    .sort((a, b) => (parseFloat(SERVICE_COST[a.key]) || 999) - (parseFloat(SERVICE_COST[b.key]) || 999));
+  if (paid.length) return chipHTML(paid[0].sr, paid[0].key);
+
+  // Fallback: first chip
+  return chipHTML(resolved[0].sr, resolved[0].key);
+}
+
 function streamsHTMLCapped(streams, cap){
   if(!streams||!streams.length) return "";
   const visible = streams.slice(0,cap);
@@ -6009,7 +6048,7 @@ function renderAll(){
         <div class="card-right">
           ${liveBadge}
           <div class="${timeCls}">${timeStr}</div>
-          <div class="stream-row">${streamsHTMLCapped(g.streams, 3)}${(()=>{const pk=g.streams?.[0]?.key||'';return FREE_OTA.has(pk)?'<span class="free-badge">FREE</span>':FREE_CABLE.has(pk)?'<span class="free-badge free-cable">FREE W/ CABLE</span>':''})()}<button class="cal-btn" aria-label="Add to calendar" title="Add to calendar" data-game-id="${g._id||''}">📅</button><button class="share-btn" aria-label="Share" title="Share this game" onclick="event.stopPropagation();(navigator.share?navigator.share({title:'${(g.away||'').replace(/'/g,'')} @ ${(g.home||'').replace(/'/g,'')}',text:'${(g.away||'').replace(/'/g,'')} @ ${(g.home||'').replace(/'/g,'')} · ${g.league||sec.sport||''}\n${timeStr} ET',url:location.href}):navigator.clipboard&&navigator.clipboard.writeText('${(g.away||'').replace(/'/g,'')} @ ${(g.home||'').replace(/'/g,'')} – ${timeStr} ET via FIELD\n'+location.href)).catch(()=>{})">⬆</button></div>
+          <div class="stream-row">${window.innerWidth<=600?buildMobileSmartChip(g.streams):(streamsHTMLCapped(g.streams,3)+(()=>{const pk=g.streams?.[0]?.key||'';return FREE_OTA.has(pk)?'<span class="free-badge">FREE</span>':FREE_CABLE.has(pk)?'<span class="free-badge free-cable">FREE W/ CABLE</span>':''})())}<button class="cal-btn" aria-label="Add to calendar" title="Add to calendar" data-game-id="${g._id||''}">📅</button><button class="share-btn" aria-label="Share" title="Share this game" onclick="event.stopPropagation();(navigator.share?navigator.share({title:'${(g.away||'').replace(/'/g,'')} @ ${(g.home||'').replace(/'/g,'')}',text:'${(g.away||'').replace(/'/g,'')} @ ${(g.home||'').replace(/'/g,'')} · ${g.league||sec.sport||''}\n${timeStr} ET',url:location.href}):navigator.clipboard&&navigator.clipboard.writeText('${(g.away||'').replace(/'/g,'')} @ ${(g.home||'').replace(/'/g,'')} – ${timeStr} ET via FIELD\n'+location.href)).catch(()=>{})">⬆</button></div>
           ${FD_LEAGUE_MAP[sec.sport]||ESPN_STANDINGS_MAP[sec.sport]?`<button class="standings-btn" onclick="toggleStandings(this,'${sec.sport}','2025')" title="Show ${FD_LEAGUE_MAP[sec.sport]?'table':'standings'}">▼ ${FD_LEAGUE_MAP[sec.sport]?'Table':'Standings'}</button>`:""}
         </div>
       </div>`;
@@ -11593,6 +11632,30 @@ function updateTzPill(){
   const short = abbr[tz] || tz.split("/").pop().replace("_"," ").slice(0,4);
   pill.textContent = "🕐 "+short;
 }
+
+// ── Android-reliable game card tap via event delegation ──────────────────────
+// Replaces per-card onclick for better reliability on Android WebView / Chrome.
+// Filters out taps on buttons, links, and stream chips.
+(function initCardTapDelegation() {
+  function handleCardTap(e) {
+    const card = e.target.closest('.game-card');
+    if (!card) return;
+    if (e.target.closest('button, a, .stream-chip, .chip-overflow, .series-preview-card, .card-brief-inline')) return;
+    const id = card.dataset.gameid;
+    if (id && typeof openBottomSheet === 'function') openBottomSheet(id);
+  }
+  // Re-attach when games re-render (MutationObserver on #main)
+  const main = document.getElementById('main');
+  if (main) {
+    main.removeEventListener('click', handleCardTap);
+    main.addEventListener('click', handleCardTap);
+  }
+  // Also expose for post-render re-init
+  window._reinitCardTaps = () => {
+    const m = document.getElementById('main');
+    if (m) { m.removeEventListener('click', handleCardTap); m.addEventListener('click', handleCardTap); }
+  };
+})();
 document.getElementById("refresh-btn").addEventListener("click",()=>goToDate(TODAY_ISO));
 const tzPillBtn = document.getElementById("tz-pill");
 if(tzPillBtn) tzPillBtn.addEventListener("click", openSetup);
@@ -13489,6 +13552,12 @@ async function initFIELDBrief(sections){
     if(textEl){textEl.classList.remove('pending');textEl.classList.add('loaded');}
   }
   setTimeout(()=>initJournalismQueue(sections),3000);
+// Re-inject scores on renderAll completion — catches cards rendered after initial ESPN poll
+// Fixes: Galaxy A36 blank scores when ESPN data was already fetched before render
+if(Object.keys(espnScores||{}).length){
+  try { injectDramaBadges(); } catch(e_) {}
+}
+
 }
 
 
@@ -13902,12 +13971,36 @@ function renderAmbientPanel(){
     ?`<div class="ap-season"><span class="ap-ctx-pill" title="Filter to ${ctx.label}" onclick="(()=>{const s=document.querySelector('.game-card[data-sport*=\"${(ctx.relevantLeagues||[]).join('\"],[data-sport*=\"')}\"]');if(s)s.scrollIntoView({behavior:'smooth',block:'center'});})()" style="cursor:pointer">${ctx.label}</span></div>`
     :'';
 
-  // ── Section 4: Tonight's brief ─────────────────────────────────────────
-  const briefEl=document.getElementById('field-brief');
-  const briefText=briefEl?.querySelector('.field-brief-text')?.textContent?.trim()||'';
-  const briefHTML=briefText&&briefText.length>20
-    ?`<div class="ap-brief"><div class="ap-section-label">Tonight</div><p class="ap-brief-text">${briefText}</p></div>`
-    :'';
+  // ── Section 3 (editorial): FIELD Brief or Night Owl/Recap ────────────────
+  // On iPad, #field-brief and #night-owl are hidden from left pane — ambient panel
+  // is the PRIMARY editorial surface. Mirror the brief card or owl card here.
+  let editorialHTML = '';
+  try {
+    const _owlEl = document.getElementById('night-owl');
+    const _owlActive = _owlEl?.style.display === 'block' && _owlEl?.querySelector('.night-owl-card');
+    const _briefEl = document.getElementById('field-brief');
+    const _briefActive = _briefEl?.innerHTML?.includes('field-brief-card');
+    const _nowH2 = new Date().getHours();
+    const _editLabel = _nowH2 >= 22 || _nowH2 < 4 ? 'Night Owl'
+      : _nowH2 >= 18 ? 'Evening Wrap'
+      : _nowH2 >= 12 ? 'Game Recap' : 'Brief';
+    if (_owlActive) {
+      const _owlHead = _owlEl.querySelector('.night-owl-section-head');
+      const _owlCard = _owlEl.querySelector('.night-owl-card');
+      const _owlGame = _owlCard?.querySelector('.night-owl-game')?.textContent?.trim()||'';
+      const _owlTxt  = _owlCard?.querySelector('.night-owl-text')?.textContent?.trim().slice(0,180)||'';
+      editorialHTML = `<div class="ap-editorial"><div class="ap-section-label">${_editLabel}</div>`
+        + (_owlGame?`<div class="ap-editorial-game">${_owlGame}</div>`:'')
+        + (_owlTxt?`<p class="ap-brief-text" style="margin:0">${_owlTxt}${_owlTxt.length>=180?'…':''}</p>`:'')
+        + '</div>';
+    } else if (_briefActive) {
+      const _briefText = _briefEl.querySelector('.field-brief-text')?.textContent?.trim()||'';
+      if (_briefText.length > 20) {
+        editorialHTML = `<div class="ap-editorial"><div class="ap-section-label">Tonight</div><p class="ap-brief-text" style="margin:0">${_briefText.slice(0,220)}${_briefText.length>220?'…':''}</p></div>`;
+      }
+    }
+  } catch(_) {}
+  const briefHTML = editorialHTML; // briefHTML kept as alias for panel.innerHTML template below
 
   // ── Section 5: Arbitrage summary (free games + best add) ──────────────
   // Shown only on iPad where #field-arb is hidden. Compact 1-2 line version.
