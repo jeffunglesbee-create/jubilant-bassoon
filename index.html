@@ -1949,8 +1949,8 @@ flex-shrink:0;white-space:nowrap;
   .betting-section,.field-desk-section,.media-section,
   .streaming-section,.legend,.page-divider,
   nav.controls,#score-ticker-wrap,.mv-panel{margin-right:390px}
-  /* Ticker: center-justify chips across the 430px left pane */
-  .score-ticker{justify-content:center;flex-wrap:wrap;gap:.4rem .35rem}
+  /* Ticker hidden on iPad — Live section in ambient panel covers this */
+  #score-ticker-wrap{display:none !important}
   /* Suppress 768-900px 2-col game grid: 430px left pane too narrow for 2 cols */
   .games-list{display:block !important}
   /* All pre-masthead intelligence → ambient panel only */
@@ -1988,6 +1988,8 @@ flex-shrink:0;white-space:nowrap;
   letter-spacing:-.04em;line-height:1}
 .ap-fire-clock{font-size:.82rem;font-weight:700;
   color:var(--teal,#2dd4bf);letter-spacing:.06em;text-transform:uppercase}
+.ap-otw-header{font-size:.52rem;font-weight:800;letter-spacing:.12em;
+  text-transform:uppercase;color:rgba(255,255,255,.35);margin-bottom:.1rem}
 .ap-no-fire{display:flex;flex-direction:column;gap:.2rem;opacity:.38;
   padding:.5rem 0}
 .ap-quiet-label{font-size:.52rem;font-weight:800;letter-spacing:.1em;
@@ -5990,7 +5992,7 @@ function renderAll(){
           </div>
           <div class="info-row">
             <span class="league-badge">${g.league||sec.sport}</span>${MY_TEAMS.has(g.home)||MY_TEAMS.has(g.away)?'<span class="my-team-badge">★ MY TEAM</span>':""}${typeof isRivalGame==="function"&&MY_TEAMS.size>0&&isRivalGame(g)?'<span class="rival-badge">RIVAL</span>':""}
-            ${g.seriesRecord?`<span class="league-badge" style="color:var(--gold2);border-color:rgba(201,168,76,.3)">${g.seriesRecord}</span>`:g.venue&&!g.league?.includes("Playoffs")?`<span class="league-badge venue-badge" style="font-size:.52rem;opacity:.7">${g.venue}</span>`:""}${buildSeriesMarginsDots(g)}
+            ${g.seriesRecord&&g.seriesRecord!=='0-0'?`<span class="league-badge" style="color:var(--gold2);border-color:rgba(201,168,76,.3)">${g.seriesRecord}</span>`:g.venue&&!g.league?.includes("Playoffs")?`<span class="league-badge venue-badge" style="font-size:.52rem;opacity:.7">${g.venue}</span>`:""}${buildSeriesMarginsDots(g)}
             <button class="watch-btn" data-id="${g._id}">+ Multiview</button>
           </div>
           ${(g.espnGOTD||g.peacockGOTD||g.mlbnShowcase||g.localNote||g.gotdStreams)?`<div class="badge-row">
@@ -11908,7 +11910,7 @@ const lazyObs=new IntersectionObserver(entries=>{
       setTimeout(renderFieldDesk, 800);
     }
   });
-},{rootMargin:"200px"});
+},{rootMargin:"800px"});  // Large margin: pre-renders betting before scroll on iPad
 ["betting-section","media-section","streaming-section","field-desk-section"].forEach(id=>{
   const el=document.getElementById(id);
   if(el) lazyObs.observe(el);
@@ -13792,6 +13794,7 @@ function renderAmbientPanel(){
     const _fc=typeof getCalendarContext==='function'?getCalendarContext():null;
     const ctxSuffix=_fc?` · ${_fc.label}`:'';
     otwHTML=`<div class="ap-otw-fire">
+      <span class="ap-otw-header">One to Watch</span>
       <span class="ap-fire-badge">🔴 FIRE ${tier}${ctxSuffix}</span>
       <span class="ap-fire-game">${g.away||''} @ ${g.home||''}</span>
       <div class="ap-fire-row3">
@@ -13812,6 +13815,7 @@ function renderAmbientPanel(){
       const net=soonGame.streams?.[0]?.label||'';
       const cd=buildOTWCountdown(soonGame.start_time);
       otwHTML=`<div class="ap-soon">
+        <span class="ap-otw-header">One to Watch</span>
         <span class="ap-soon-label">Up Next · ${cd}</span>
         <span class="ap-soon-game">${soonGame.away} @ ${soonGame.home}</span>
         ${net?`<span class="ap-soon-meta">${net}</span>`:''}
@@ -13893,8 +13897,9 @@ function renderAmbientPanel(){
 
   // ── Section 3: Season context ──────────────────────────────────────────
   const ctx=(typeof getCalendarContext==='function')?getCalendarContext():null;
+  // Context pill: clickable filter — taps scroll to first game of relevant league
   const ctxHTML=ctx
-    ?`<div class="ap-season"><span class="ap-ctx-pill">${ctx.label}</span></div>`
+    ?`<div class="ap-season"><span class="ap-ctx-pill" title="Filter to ${ctx.label}" onclick="(()=>{const s=document.querySelector('.game-card[data-sport*=\"${(ctx.relevantLeagues||[]).join('\"],[data-sport*=\"')}\"]');if(s)s.scrollIntoView({behavior:'smooth',block:'center'});})()" style="cursor:pointer">${ctx.label}</span></div>`
     :'';
 
   // ── Section 4: Tonight's brief ─────────────────────────────────────────
