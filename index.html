@@ -1937,21 +1937,18 @@ flex-shrink:0;white-space:nowrap;
   z-index:22;
 }
 @media(min-width:820px) and (max-width:1199px){
-  #ambient-panel{display:flex;top:0;height:100dvh;padding-top:1rem}
-  /* Push ALL page content left — every sibling of <main> must be included */
+  #ambient-panel{display:flex;top:0;height:100dvh;padding-top:1rem;
+    background:#0c1118;border-left:1px solid rgba(255,255,255,.09)}
+  /* Left-pane content: all scrollable sections get right margin */
   .main,#field-brief,#night-owl,#double-feature,#offline-banner,
   .betting-section,.field-desk-section,.media-section,
-  .streaming-section,.legend,.page-divider{margin-right:390px}
+  .streaming-section,.legend,.page-divider,
+  nav.controls,#score-ticker-wrap,.mv-panel{margin-right:390px}
   /* Suppress 768-900px 2-col game grid: 430px left pane too narrow for 2 cols */
   .games-list{display:block !important}
-
-  /* ── iPad: all pre-masthead intelligence → ambient panel only ──
-     #otw-banner, #watch-window, #halftime-switch, #field-arb all live
-     above the masthead in DOM flow — on iPad they're replaced by the
-     right ambient panel which owns all live intelligence. */
+  /* All pre-masthead intelligence → ambient panel only */
   #otw-banner,#watch-window,#halftime-switch,#field-arb{display:none !important}
-
-  /* ── Streaming Discovery price chip — 2-row card header ── */
+  /* Streaming Discovery price chip — 2-row card header */
   .app-card-head{flex-wrap:wrap}
   .app-price{
     order:3;width:100%;
@@ -1959,41 +1956,48 @@ flex-shrink:0;white-space:nowrap;
     margin-left:0;margin-top:-.1rem;
     box-sizing:border-box;
   }
-  /* ── SR stream chips — smaller for 430px left pane ── */
+  /* SR stream chips — smaller for 430px left pane */
   .stream-chip{font-size:.52rem !important;padding:.07rem .3rem !important}
   .stream-row{max-width:none !important}
-  /* ── Star/fav button — bottom-right avoids drama badge ── */
+  /* Star/fav button — bottom-right avoids drama badge */
   .star-btn{top:auto;bottom:.45rem;right:.4rem}
 }
 .ap-otw-fire{
-  background:rgba(255,59,59,.1);border:1px solid rgba(255,59,59,.25);
-  border-left:3px solid var(--live);border-radius:8px;
-  padding:1rem 1.1rem 1.1rem;display:flex;flex-direction:column;gap:.4rem;
+  background:rgba(255,59,59,.08);
+  border:1px solid rgba(255,59,59,.2);
+  border-left:3px solid var(--live);
+  border-radius:10px;
+  padding:1.1rem 1.15rem 1.2rem;
+  display:flex;flex-direction:column;gap:.45rem;
 }
 .ap-fire-badge{font-size:.58rem;font-weight:800;letter-spacing:.1em;
   color:var(--live);text-transform:uppercase;
   display:flex;align-items:center;gap:.4rem}
-.ap-fire-game{font-size:1.05rem;font-weight:700;color:var(--white);
-  line-height:1.25;white-space:normal}
-.ap-fire-row3{display:flex;align-items:baseline;gap:.55rem}
-.ap-fire-score{font-size:2rem;font-weight:900;color:var(--white);
-  letter-spacing:-.02em;line-height:1}
-.ap-fire-clock{font-size:.68rem;color:var(--muted)}
+.ap-fire-game{font-size:1.15rem;font-weight:700;color:var(--white);
+  line-height:1.2;white-space:normal}
+/* Score row: hero number + period stacked as scoreboard */
+.ap-fire-row3{display:flex;flex-direction:column;gap:.15rem}
+.ap-fire-score{font-size:3rem;font-weight:900;color:var(--white);
+  letter-spacing:-.04em;line-height:1}
+.ap-fire-clock{font-size:.82rem;font-weight:700;
+  color:var(--teal,#2dd4bf);letter-spacing:.06em;text-transform:uppercase}
 .ap-no-fire{display:flex;flex-direction:column;gap:.2rem;opacity:.38;
   padding:.5rem 0}
 .ap-quiet-label{font-size:.52rem;font-weight:800;letter-spacing:.1em;
   text-transform:uppercase;color:var(--violet,#8b5cf6)}
 .ap-quiet-msg{font-size:.76rem;color:var(--smoke)}
 .ap-section-label{font-size:.52rem;font-weight:800;letter-spacing:.12em;
-  text-transform:uppercase;color:var(--gold2,#c9a84c);margin-bottom:.35rem}
-.ap-scores{display:flex;flex-direction:column;gap:.45rem}
+  text-transform:uppercase;color:var(--gold2,#c9a84c);margin-bottom:.4rem}
+.ap-scores{display:flex;flex-direction:column;gap:.35rem}
 .ap-score-row{display:flex;justify-content:space-between;align-items:center;
-  gap:.5rem;padding:.2rem 0;border-bottom:1px solid var(--edge)}
+  gap:.5rem;padding:.28rem 0;border-bottom:1px solid rgba(255,255,255,.05)}
 .ap-score-row:last-child{border-bottom:none}
-.ap-score-teams{font-size:.75rem;color:var(--fg);flex:1;min-width:0;
+.ap-score-teams{font-size:.8rem;color:var(--fg);flex:1;min-width:0;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.ap-score-num{color:var(--white);font-weight:700;margin:0 .25rem}
-.ap-score-clock{font-size:.6rem;color:var(--muted);white-space:nowrap;flex-shrink:0}
+.ap-score-num{color:var(--white);font-size:.92rem;font-weight:800;
+  margin:0 .2rem;letter-spacing:-.02em}
+.ap-score-clock{font-size:.62rem;color:var(--muted);white-space:nowrap;
+  flex-shrink:0;letter-spacing:.04em;font-weight:600}
 .ap-divider{height:1px;background:var(--edge);margin:.1rem 0}
 .ap-season{padding:.25rem 0}
 .ap-ctx-pill{font-size:.62rem;font-weight:700;letter-spacing:.06em;
@@ -2009,17 +2013,17 @@ flex-shrink:0;white-space:nowrap;
 .ap-arb-line strong{color:var(--white)}
 /* Upcoming game in SOON state */
 .ap-soon{display:flex;flex-direction:column;gap:.35rem;
-  padding:.85rem 1rem .9rem;border-radius:8px;
+  padding:.9rem 1.05rem 1rem;border-radius:10px;
   border-left:3px solid var(--gold2,#c9a84c);
-  background:rgba(201,168,76,.07);padding-left:1rem}
+  background:rgba(201,168,76,.06)}
 .ap-soon-label{font-size:.58rem;font-weight:800;letter-spacing:.1em;
   text-transform:uppercase;color:var(--gold2,#c9a84c)}
-.ap-soon-game{font-size:1.05rem;font-weight:700;color:var(--white);
-  line-height:1.25;white-space:normal}
-.ap-soon-meta{font-size:.72rem;color:var(--smoke);
+.ap-soon-game{font-size:1.15rem;font-weight:700;color:var(--white);
+  line-height:1.2;white-space:normal}
+.ap-soon-meta{font-size:.75rem;color:var(--smoke);
   background:none !important;border:none !important;
   padding:0 !important;border-radius:0 !important;
-  font-weight:400;letter-spacing:.02em}
+  font-weight:500;letter-spacing:.02em}
 
 /* ── 360px Galaxy A36 / iPhone SE small fixes ───────────────────────── */
 @media(max-width:375px){
