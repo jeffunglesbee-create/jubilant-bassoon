@@ -40,7 +40,7 @@ Add a new named assertion in `smoke.js` for every FIELD_FEATURES entry (presence
 **Canonical docs** (open the relevant one before starting):
 - Handoff Note (read first): `1TRpxKBNX82q-522V-aVLFBIBrwYwyIjkyI0h6y4n4FM` ← update this ID every session end
 - CI/Deploy Error Reference (read every session): `1R4c0-Qw8qOdQhGrZD5QBEW3mqn2s2kx2ghdWlAVGkyA`
-- Build Session List: `1ITCe3Hs3EcVhqhOp1uPkPRtyca5Bxtrcc9953xyXZsA`
+- Build Session List: `1P-Di8KP6qQXBEdnuLPEUhP8512F3LSTR_dBdljWk1Qg`
 - Daily Update Reference: `1n4fiAaU1uF2X7EKRx9Gm6XpuR6wkpwoa`
 - Wow Features: `1h80BrgGXbz6aq3Hgv5LbjhpFkRQjYvd87fOMNJmVMOc`
 - UI Evaluation: `1xIZnlczl2kIeslnnzJD1eJrgBu5iw6xgSk1wB1MVyAY`
@@ -102,7 +102,7 @@ never worked despite being documented as complete.*
 
 | Document | Current ID | Update trigger |
 |----------|-----------|----------------|
-| **Build Session List** (Master backlog) | `1ITCe3Hs3EcVhqhOp1uPkPRtyca5Bxtrcc9953xyXZsA` | Every TYPE B/C session end |
+| **Build Session List** (Master backlog) | `1P-Di8KP6qQXBEdnuLPEUhP8512F3LSTR_dBdljWk1Qg` | Every TYPE B/C session end |
 | **Wow Features** | `1h80BrgGXbz6aq3Hgv5LbjhpFkRQjYvd87fOMNJmVMOc` | Any session that implements or modifies a Wow item |
 | **UI Evaluation** | `1xIZnlczl2kIeslnnzJD1eJrgBu5iw6xgSk1wB1MVyAY` | Any session with CSS, layout, or card design changes |
 | **Viewport Style Guide** | `1X_u98rkvqB4l6H5fYr1IiOZlLcZzap6cUDojgE85C2A` | Any session that changes section labels, font sizes, touch targets, or surface identifiers |
@@ -1345,7 +1345,7 @@ Before naming a new feature, ask:
 ### Reference
 
 Game Intelligence Pipeline spec: 1HPd4VIk4Py35iUMSXZ9D__I_1UetpiK0YoAL8Sr4et4
-Build Session List v7.6: 1ITCe3Hs3EcVhqhOp1uPkPRtyca5Bxtrcc9953xyXZsA
+Build Session List v7.6: 1P-Di8KP6qQXBEdnuLPEUhP8512F3LSTR_dBdljWk1Qg
 
 ## Known Issue — classifySport() isConferenceFinals false negative
 
@@ -1407,7 +1407,7 @@ Deduplication on (gameId, scoreline) prevents double-render.
 O(sports + consumers): new sport = one emitter, new feature = one subscriber.
 
 Reference: Update Architecture Spec v3: 1YVXFmsUblQJvQA8KtKwtrcI08vWZh5n-uokMaCLJSlM
-Build Session List v7.8: 1ITCe3Hs3EcVhqhOp1uPkPRtyca5Bxtrcc9953xyXZsA
+Build Session List v7.8: 1P-Di8KP6qQXBEdnuLPEUhP8512F3LSTR_dBdljWk1Qg
 SSE Research doc: 1uNl5ua8LHXBJfG_U6DLyGrNQfVt54HhGoiPNuY0Q_PA
 
 ## Rule 28 — Intelligence-Action Pairing
