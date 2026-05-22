@@ -47,8 +47,8 @@ Add a new named assertion in `smoke.js` for every FIELD_FEATURES entry (presence
 - FIELD Current State: `1QD3P9eG2pSdabNTMPZYHwaMc1DawmmKpRVrv0ZqQdVs`
 - Master Improvement Ranking: `1rW90JQ5a4ybrE9l5acrbqd0q0yl_QYmPIOnEJr__GEY`
 - Daily Update Reference: `1n4fiAaU1uF2X7EKRx9Gm6XpuR6wkpwoa`
-- Wow Features: `1h80BrgGXbz6aq3Hgv5LbjhpFkRQjYvd87fOMNJmVMOc`
-- UI Evaluation: `1xIZnlczl2kIeslnnzJD1eJrgBu5iw6xgSk1wB1MVyAY`
+- Wow Features: `1QJCiwEav5VEofrdL4ba-jKsSMrcZq7EPdFehTMX-_i8`
+- UI Evaluation: `1D98AsQqsNJSe0UKkVaRFrPO9SwDcdTMvS_Ll81kUVqo`
 - Standards (Drive): `1twYHSCalULEWE1XjKB5lUVDRK5lzUP-l`
 
 ---
@@ -109,8 +109,8 @@ never worked despite being documented as complete.*
 |----------|-----------|----------------|
 | **Build Session List** (Master backlog) | `19TicpFBU2ORbypNBteCXuhwbX1FoP14Y2NGuU9e3drQ` | Every TYPE B/C session end — edit in place, never create a new version doc |
 | *(Archive copies in Archive/ folder for major milestones only — not routine sessions)* | | |
-| **Wow Features** | `1h80BrgGXbz6aq3Hgv5LbjhpFkRQjYvd87fOMNJmVMOc` | Any session that implements or modifies a Wow item |
-| **UI Evaluation** | `1xIZnlczl2kIeslnnzJD1eJrgBu5iw6xgSk1wB1MVyAY` | Any session with CSS, layout, or card design changes |
+| **Wow Features** | `1QJCiwEav5VEofrdL4ba-jKsSMrcZq7EPdFehTMX-_i8` | Any session that implements or modifies a Wow item — edit in place, no version numbers |
+| **UI Evaluation** | `1D98AsQqsNJSe0UKkVaRFrPO9SwDcdTMvS_Ll81kUVqo` | Any session with CSS, layout, or card design changes — edit in place, no version numbers |
 | **Viewport Style Guide** | `1X_u98rkvqB4l6H5fYr1IiOZlLcZzap6cUDojgE85C2A` | Any session that changes section labels, font sizes, touch targets, or surface identifiers |
 | **Master Improvement Ranking** | `1rW90JQ5a4ybrE9l5acrbqd0q0yl_QYmPIOnEJr__GEY` | Any session that ships a feature — add to FIELD_FEATURES registry with ship date |
 | **FIELD Current State** | `1QD3P9eG2pSdabNTMPZYHwaMc1DawmmKpRVrv0ZqQdVs` | Every session end — update HEAD, smoke state, and any changed capability sections |
@@ -308,6 +308,18 @@ Every session, Claude reads `1QD3P9eG2pSdabNTMPZYHwaMc1DawmmKpRVrv0ZqQdVs`
 after the handoff note and before any work begins. This is the canonical  
 "what FIELD does today" reference — capabilities live, active rules, known gaps.  
 No user request needed. Prevents stale-state decisions from a 4-day-old model of FIELD.
+
+**Claude runs staleness check automatically (Rule 30):**  
+After reading Current State, Claude calls get_file_metadata on each  
+canonical doc whose staleness matters:  
+  Wow Features:      `1QJCiwEav5VEofrdL4ba-jKsSMrcZq7EPdFehTMX-_i8`  
+  UI Evaluation:     `1D98AsQqsNJSe0UKkVaRFrPO9SwDcdTMvS_Ll81kUVqo`  
+  Master:            `1rW90JQ5a4ybrE9l5acrbqd0q0yl_QYmPIOnEJr__GEY`  
+  Viewport Guide:    `1X_u98rkvqB4l6H5fYr1IiOZlLcZzap6cUDojgE85C2A`  
+Any doc whose modifiedTime is >7 days behind HEAD commit date is flagged  
+as potentially stale before work begins. Non-blocking — informational only.  
+Docs exempt: Build Session List (always current), Current State (auto-updated),  
+Handoff (replaced each session), CI/Deploy Ref (stable by design).
 
 **Claude infers session type:**  
 "Run daily update" = TYPE A. "Night Owl is broken" = TYPE B.  
@@ -1578,3 +1590,58 @@ viewports, which is unreadable at arm's length.
 
 When updating: edit the Drive doc in place (Rule 8 — never create a new version).
 Date-stamp the change at the top of the doc.
+
+
+## Rule 30 — Drive folder hygiene and staleness detection
+
+### Staleness detection (automated at session start)
+
+Claude checks modifiedTime for each canonical doc whose staleness matters
+using get_file_metadata immediately after reading Current State.
+
+Docs checked (IDs current as of May 22 2026):
+  Wow Features:         `1QJCiwEav5VEofrdL4ba-jKsSMrcZq7EPdFehTMX-_i8`
+  UI Evaluation:        `1D98AsQqsNJSe0UKkVaRFrPO9SwDcdTMvS_Ll81kUVqo`
+  Master:               `1rW90JQ5a4ybrE9l5acrbqd0q0yl_QYmPIOnEJr__GEY`
+  Viewport Style Guide: `1X_u98rkvqB4l6H5fYr1IiOZlLcZzap6cUDojgE85C2A`
+
+Staleness threshold: 7 days behind HEAD commit date.
+Flag format: "[DOC NAME] last updated [date] — HEAD is [date]. Features shipped
+since then may not be reflected."
+
+Non-blocking — informational. The flag surfaces before work begins so the
+session can decide whether updating the doc is required for this session type.
+
+Docs exempt from staleness check:
+  Build Session List — always current (every session)
+  FIELD Current State — auto-updated (every session end)
+  Handoff — replaced each session by design
+  CI/Deploy Reference — stable, updates only on new CI failure patterns
+
+### Orphaned doc policy
+
+When a permanent-ID replacement is created for a versioned doc, the original
+versioned doc must be copied to the FIELD — Archive folder within the same
+session. The root Drive folder is for active canonical documents only.
+
+Archive folder: `1MOug44aTMM2gJLI0hj_pMjW0ZMzQ7wPe`
+
+Archival naming convention: "ARCHIVE — [original title] (superseded)"
+
+Docs archived May 22 2026:
+  Build Session v7.23, v7.24, v7.25 (superseded by permanent Build Session List)
+  Master v29.1, v30 (superseded by permanent Master Improvement Ranking)
+
+Note: The Drive tools available to Claude support copy_file but not move_file.
+Archival is done by copying to the Archive folder + noting in session doc.
+Original files remain in root Drive until manually moved by Jeff.
+This is an acknowledged limitation — the Archive copies are the record.
+
+### What triggers a new archive entry
+
+1. Any versioned doc is superseded by a permanent-ID replacement
+2. Any spec doc that has been fully built and is no longer a build reference
+3. Any doc explicitly declared "SUPERSEDED — DO NOT BUILD"
+
+Archive immediately — don't wait for end of session.
+Add the archive copy ID to the session doc under "ARCHIVED THIS SESSION."
