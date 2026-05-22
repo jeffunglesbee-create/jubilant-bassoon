@@ -43,7 +43,7 @@ Add a new named assertion in `smoke.js` for every FIELD_FEATURES entry (presence
 **Canonical docs** (open the relevant one before starting):
 - Handoff Note (read first): `1IB5569ndT-JjsjAdb2ZDTQZw95DRACZ2pUGzM8_vOWY` ← update this ID every session end
 - CI/Deploy Error Reference (read every session): `1R4c0-Qw8qOdQhGrZD5QBEW3mqn2s2kx2ghdWlAVGkyA`
-- Build Session List: `1eH6_f8Sfu0-2S0tF1wcyA632QNKy3JIyRdSmYiI9cIQ`
+- Build Session List: `1Drrp5eRNdGb8EKodqPNwpuLaC23XcOrlv4DO13zNot0`
 - FIELD Current State: `1QD3P9eG2pSdabNTMPZYHwaMc1DawmmKpRVrv0ZqQdVs`
 - Master Improvement Ranking: `1rW90JQ5a4ybrE9l5acrbqd0q0yl_QYmPIOnEJr__GEY`
 - Daily Update Reference: `1n4fiAaU1uF2X7EKRx9Gm6XpuR6wkpwoa`
@@ -107,7 +107,7 @@ never worked despite being documented as complete.*
 
 | Document | Current ID | Update trigger |
 |----------|-----------|----------------|
-| **Build Session List** (Master backlog) | `1eH6_f8Sfu0-2S0tF1wcyA632QNKy3JIyRdSmYiI9cIQ` | Every TYPE B/C session end — edit in place, never create a new version doc |
+| **Build Session List** (Master backlog) | `1Drrp5eRNdGb8EKodqPNwpuLaC23XcOrlv4DO13zNot0` | Every TYPE B/C session end — edit in place, never create a new version doc |
 | *(Archive copies in Archive/ folder for major milestones only — not routine sessions)* | | |
 | **Wow Features** | `1QJCiwEav5VEofrdL4ba-jKsSMrcZq7EPdFehTMX-_i8` | Any session that implements or modifies a Wow item — edit in place, no version numbers |
 | **UI Evaluation** | `1D98AsQqsNJSe0UKkVaRFrPO9SwDcdTMvS_Ll81kUVqo` | Any session with CSS, layout, or card design changes — edit in place, no version numbers |
@@ -1392,7 +1392,7 @@ Before naming a new feature, ask:
 ### Reference
 
 Game Intelligence Pipeline spec: 1HPd4VIk4Py35iUMSXZ9D__I_1UetpiK0YoAL8Sr4et4
-Build Session List v7.6: 1eH6_f8Sfu0-2S0tF1wcyA632QNKy3JIyRdSmYiI9cIQ
+Build Session List v7.6: 1Drrp5eRNdGb8EKodqPNwpuLaC23XcOrlv4DO13zNot0
 
 ## Known Issue — classifySport() isConferenceFinals false negative
 
@@ -1454,7 +1454,7 @@ Deduplication on (gameId, scoreline) prevents double-render.
 O(sports + consumers): new sport = one emitter, new feature = one subscriber.
 
 Reference: Update Architecture Spec v3: 1YVXFmsUblQJvQA8KtKwtrcI08vWZh5n-uokMaCLJSlM
-Build Session List v7.8: 1eH6_f8Sfu0-2S0tF1wcyA632QNKy3JIyRdSmYiI9cIQ
+Build Session List v7.8: 1Drrp5eRNdGb8EKodqPNwpuLaC23XcOrlv4DO13zNot0
 SSE Research doc: 1uNl5ua8LHXBJfG_U6DLyGrNQfVt54HhGoiPNuY0Q_PA
 
 ## Rule 28 — Intelligence-Action Pairing
