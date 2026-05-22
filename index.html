@@ -13414,11 +13414,8 @@ async function initFIELDBrief(sections){
   const el=document.getElementById('field-brief');
   if(!el) return;
   if(activeFilter!=='all'||!sections.length){el.style.display='none';return;}
-  // Guard: Night Owl owns this slot once rendered — FIELD Brief must not overwrite it.
-  // Check both DOM state (card present) AND the _nightOwlRendered flag
-  // (flag catches the case where Night Owl rendered while the slot was display:none,
-  //  which means querySelector would find nothing even though Night Owl is active).
-  if(el.querySelector('.night-owl-card') || (typeof _nightOwlRendered !== 'undefined' && _nightOwlRendered)) return;
+  // #field-brief and #night-owl are now separate elements — no slot-contention guard needed.
+  // Night Owl renders into #night-owl; FIELD Brief renders into #field-brief independently.
   const d=new Date();const tzStr=(typeof tz==='string'?tz:'America/New_York');
   const dateLabel=d.toLocaleDateString('en-US',{timeZone:tzStr,weekday:'short',month:'short',day:'numeric'});
   const cacheKey=fieldBriefCacheKey();
@@ -13467,6 +13464,8 @@ async function initFIELDBrief(sections){
       const textEl=el.querySelector('.field-brief-text');
       if(textEl){textEl.textContent=trimToCompleteSentence(compound.brief);textEl.classList.remove('pending');textEl.classList.add('loaded');}
       sessionStorage.setItem(cacheKey,compound.brief);
+      // Brief content just resolved — re-render ambient panel so iPad editorial section shows it
+      if(typeof renderAmbientPanel==='function') setTimeout(renderAmbientPanel, 50);
     }
     // Dispatch series previews from compound result
     if(compound.series?.length){
@@ -16023,12 +16022,8 @@ async function renderNightOwlRecap(){
   _nightOwlRendered=true;
   _nightOwlGameId=topGame.id;
   el.style.display='block';
-  // Time-based section title — Night Owl is only appropriate late at night
-  const _nowH = new Date().getHours();
-  const _owlTitle = _nowH >= 22 || _nowH < 4 ? 'Night Owl'
-    : _nowH >= 18 ? 'Evening Wrap'
-    : _nowH >= 12 ? 'Game Recap'
-    : 'Overnight Recap';
+  // Night Owl branding is consistent — the owl knows no clock
+  const _owlTitle = 'Night Owl';
   // getDramaPeakWithTime — editorial context: 'peaked at 9:47 PM'
   let _owlPeakStr = '';
   try {
