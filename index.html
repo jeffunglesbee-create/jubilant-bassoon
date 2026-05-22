@@ -12541,8 +12541,13 @@ function buildLayer3Rules(games) {
         (e?.homeName||'').toLowerCase().includes(teamNick(g.home).toLowerCase())) : null;
       if (eData) {
         const otT = sp.includes('basketball')?4:sp.includes('hockey')?3:sp.includes('baseball')?9:4;
-        if ((eData.period||0) > otT)
-          rules.push('- OVERTIME ['+name+']: Extra period in progress. Lead with "In overtime".');
+        if ((eData.period||0) > otT) {
+          const isXI = sp.includes('baseball');
+          const isET = sp.includes('soccer') || sp.includes('league') || sp.includes('mls');
+          const xtLabel = isXI ? 'extra innings' : isET ? 'extra time' : 'overtime';
+          const xtKey   = isXI ? 'EXTRA INNINGS' : isET ? 'EXTRA TIME' : 'OVERTIME';
+          rules.push('- '+xtKey+' ['+name+']: Extra period in progress. Lead with "In '+xtLabel+'".');
+        }
         if (eData.status==='in' && typeof getStatisticalExtremes==='function') {
           const ext = getStatisticalExtremes(eData, sp).note;
           if (ext) rules.push('- EXTREME EVENT ['+name+']: '+ext+'. Feature this prominently.');
@@ -15546,9 +15551,20 @@ async function fetchNightOwlFromClaude(topGame){
   const crewCtx = getCrewContext(topGame);
   const winner=(topGame.homeScore||0)>=(topGame.awayScore||0)?topGame.home:topGame.away;
   const score=topGame.awayScore+'\u2013'+topGame.homeScore;
+  const _sp = (topGame._section || topGame._sport || '').toLowerCase();
+  const _terms = _sp.includes('baseball')
+    ? 'Sport: Baseball. Use runs (not points). Close game = one-run game. Extra period = extra innings (not overtime).'
+    : _sp.includes('hockey')
+    ? 'Sport: Ice Hockey. Use goals. Close game = one-goal game. Extra period = overtime or shootout.'
+    : _sp.includes('soccer') || _sp.includes('league') || _sp.includes('mls')
+    ? 'Sport: Soccer. Use goals. Close game = one-goal game. Extra period = extra time (not overtime).'
+    : _sp.includes('nfl') || _sp.includes('american football')
+    ? 'Sport: American Football. Use points. Close game = one-possession game.'
+    : 'Sport: Basketball. Use points. Close game = one-possession game. Extra period = overtime.';
   const prompt=['Write a FIELD Night Owl recap.',
       'Game: '+topGame.away+' @ '+topGame.home,
       'Final: '+score+' ('+winner+' wins)',
+      _terms,
       topGame.seriesRecord?'Series: '+topGame.seriesRecord:'',
       topGame.dramaPeak?'Drama peak: '+Math.round(topGame.dramaPeak)+'/100':'',
       note&&!topGame.matchupNote?'Context: '+note:'',
