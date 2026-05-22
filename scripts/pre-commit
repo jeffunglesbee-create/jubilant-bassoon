@@ -24,7 +24,7 @@ echo "🧪 Unit tests..."
 node "$REPO/field_unit.js" >/dev/null 2>&1; UNIT=$?
 
 echo "🔎 Lint (ESLint — blocks on errors, not warnings)..."
-LINT_OUT=$("$REPO/node_modules/.bin/eslint" --plugin html "$REPO/index.html" 2>&1)
+LINT_OUT=$("$REPO/node_modules/.bin/eslint" --cache --plugin html "$REPO/index.html" 2>&1)
 LINT_ERRORS=$(echo "$LINT_OUT" | grep -c " error ")
 LINT=$( [ "$LINT_ERRORS" -eq 0 ] && echo 0 || echo 1 )
 
