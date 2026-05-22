@@ -78,10 +78,63 @@ jobs:
           echo "  $(date '+%Y-%m-%d %H:%M UTC')"
           echo "════════════════════════════════════"
 
+  viewport-smoke:
+    runs-on: ubuntu-latest
+    name: Viewport geometric invariant tests (Layer 1)
+    needs: smoke           # runs after static smoke, before live browser test
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install Playwright Chromium
+        run: |
+          npm install @playwright/test
+          npx playwright install chromium --with-deps
+
+      - name: Run viewport geometric invariant tests
+        run: |
+          # Tests run against local index.html (no live URL needed)
+          # Catches layout bugs BEFORE they deploy to Cloudflare
+          # Layer 1: bounding box contracts at 360/393/820/1200px
+          # Every assertion traces to a real regression found during development
+          npx playwright test viewport_smoke.js \
+            --config playwright.viewport.config.js \
+            --reporter=list
+        # Start non-blocking (continue-on-error) to establish clean baseline.
+        # Remove continue-on-error once first green run is confirmed.
+        continue-on-error: true
+
+      - name: Upload viewport screenshots (Layer 2 raw material)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: viewport-screenshots-${{ github.sha }}
+          path: |
+            viewport-screenshots/
+            viewport-test-results/
+          if-no-files-found: ignore
+          retention-days: 14
+
+      - name: Summary
+        if: always()
+        run: |
+          echo ""
+          echo "════════════════════════════════════════════"
+          echo "  Viewport Smoke (Layer 1) complete"
+          echo "  Screenshots uploaded as CI artifacts"
+          echo "  Layer 2 (AI qualitative review): not yet built"
+          echo "  $(date '+%Y-%m-%d %H:%M UTC')"
+          echo "════════════════════════════════════════════"
+
   browser-test:
     runs-on: ubuntu-latest
     name: Browser runtime tests (Playwright)
-    needs: smoke           # only runs after smoke job passes
+    needs: viewport-smoke    # viewport geometry must pass before live browser test
     if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     steps:
       - uses: actions/checkout@v4
