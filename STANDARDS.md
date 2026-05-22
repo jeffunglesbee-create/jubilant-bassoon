@@ -316,18 +316,19 @@ Claude states the inferred type and asks for confirmation if ambiguous.
 User never needs to say "TYPE B" — just describe what they want.
 
 **Claude runs end sequence automatically on "document session":**  
-1. Runs smoke test  
-2. Pushes all changes  
-3. Copies `sportworld.html` for download  
-4. Writes session doc to Drive  
-5. Writes handoff note to Drive  
-6. Updates canonical docs — two tiers:  
+1. Scans conversation for unresolved questions (Step 1.5) — lists any and confirms disposition  
+2. Runs smoke test  
+3. Pushes all changes  
+4. Copies `sportworld.html` for download  
+5. Writes session doc to Drive  
+6. Writes handoff note to Drive  
+7. Updates canonical docs — two tiers:  
    AUTO (no prompting): FIELD Current State (every session — HEAD, smoke, changed sections)  
    AUTO if features shipped: Master Improvement Ranking FIELD_FEATURES registry  
    PROMPT for judgment: Build Session List, Wow Features, UI Evaluation,  
    Viewport Style Guide, Daily Update Reference (require context to update correctly)  
-7. Updates handoff ID in STANDARDS.md + commits  
-8. Declares SESSION END  
+8. Updates handoff ID in STANDARDS.md + commits  
+9. Declares SESSION END  
 
 ### What requires one user action
 
@@ -1061,11 +1062,13 @@ changes topic or signals "done" — Claude runs the full end checklist
 immediately, without being asked:
 
 ```
-1. Scan conversation for unresolved questions (Step 1.5)
+1. Scan conversation for unresolved questions (Step 1.5) — list and confirm disposition
 2. Write Rule 15 session doc to Drive
-3. Write handoff note at end of session doc
-4. Update handoff ID in STANDARDS.md canonical table and checklist
-5. git add STANDARDS.md && git commit && git push
+3. Write handoff note to Drive (separate doc)
+4. Update canonical docs:
+   AUTO: FIELD Current State (every session) + Master FIELD_FEATURES (if features shipped)
+   PROMPT: Build Session List, Wow Features, UI Evaluation, Viewport Style Guide, Daily Update Ref
+5. Update handoff ID in STANDARDS.md + git commit + git push
 6. Declare SESSION END in chat
 ```
 
