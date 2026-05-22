@@ -1809,3 +1809,86 @@ Changes:
 
 Result: pre-commit drops from ~7s to ~1.5s. ESLint runs in CI where
 Rule 17 always said it should be.
+
+## Rule 33 — Product Ethos
+
+### What FIELD is
+
+FIELD is a sports intelligence tool for fans. It is not a media company,
+a sportsbook partner, a cable industry affiliate, or a fantasy product.
+It has no commercial relationship with any broadcaster, streaming service,
+betting operator, or sports league. This independence is not incidental —
+it is the precondition for honest signal.
+
+### The four founding principles
+
+**DO NOT INVENT** — Every editorial claim, score, broadcast detail, and
+statistic is sourced. AI in FIELD is a renderer of verified facts, never
+an analyst generating its own assertions. If the data doesn't support it,
+FIELD doesn't say it.
+
+**RELAY-FIRST** — Live data comes from the most authoritative source
+available. Relay hierarchy: official league APIs > verified third-party
+feeds > ESPN unofficial. The hierarchy exists because data quality
+affects editorial quality.
+
+**FREE ARCHITECTURE** — Free and cheap viewing options are surfaced first,
+always. FIELD does not bury free options to protect paid ones. Antenna,
+free trials, and low-cost subscriptions are treated as first-class content,
+not footnotes.
+
+**HONEST SIGNAL** — Drama scores, editorial calls, and intelligence signals
+reflect actual game quality, not hype, not commercial interest, not what
+the sports media industrial complex wants fans to believe is important.
+
+### The user-side principle (Rule 33 addition, May 22 2026)
+
+FIELD is on the user's side. Not the house's side. Not the industry's side.
+
+This means:
+- The cost of every decision (subscription, bet, late night, parlay) is
+  made visible, not obscured.
+- Extractive practices — the vig, the parlay margin, the cable bundle, the
+  blackout rule — are exposed through features, not editorialising.
+- The intelligence is calibrated to context and constraints, not to salary
+  scale. A working-class fan is not less intelligent; they have different
+  constraints. The product serves both without condescending to either.
+- The voice is the friend who did the research. Not a pundit, not a tout,
+  not an analyst. Direct. Honest. Not trying to sell anything.
+
+### The shipping test
+
+Before any feature ships, run this check:
+
+  Does this leave the user better informed than they were before,
+  without making them feel stupid, sold to, or managed?
+
+If yes: ship.
+If no: fix the language or the feature before it goes out.
+
+Additional checks for betting and broadcast features:
+
+  □ Does this make the cost of something MORE visible? (Good)
+  □ Does this make betting look more attractive? (Bad — do not ship)
+  □ Does this highlight free/cheap options ahead of expensive ones? (Good)
+  □ Does this benefit the house over the user? (Bad — do not ship)
+  □ Does this contain deep links or referral paths to sportsbooks? (Remove)
+  □ Does the language use analytical register, not promotional register?
+    ("market implies" not "great value bet") (Required)
+
+### The contempt principle
+
+FIELD has structural contempt for extractive practices — the parlay margin,
+the cable bundle, the blackout rule, the fantasy platform's data asymmetry.
+This contempt is expressed through features that make those practices
+transparent. It is NOT expressed through editorial language, brand voice,
+or rhetorical positioning.
+
+The numbers do the contempt. The voice stays clean.
+
+### Enforcement
+
+Rule 33 is applied at every TYPE C session before spec approval.
+Any feature spec must include a Rule 33 checklist pass before it
+is added to the Build Session List.
+Features that fail the shipping test do not enter the build queue.
