@@ -2,9 +2,15 @@
 > Auto-updated by CI on each successful deploy and by Claude at session end. Commit history = changelog.
 
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 **HEAD:** 24dcf54 · **Deployed:** 2026-05-22 · **File:** ~907KB · **Smoke:** 144/0 · **L3:** 15/15
 =======
 **HEAD:** 24dcf54 · **Deployed:** 2026-05-22 · **File:** ~907KB · **Smoke:** 144/0 · **L3:** 15/15
+=======
+**HEAD:** 3843e45 · **Deployed:** 2026-05-22 · **File:** ~907KB · **Smoke:** 144/0 · **L3:** 15/15
+=======
+**HEAD:** 3843e45 · **Deployed:** 2026-05-22 · **File:** ~907KB · **Smoke:** 144/0 · **L3:** 15/15
+>>>>>>> Stashed changes
 >>>>>>> Stashed changes
 
 Drive doc (full narrative): https://docs.google.com/document/d/1QD3P9eG2pSdabNTMPZYHwaMc1DawmmKpRVrv0ZqQdVs
