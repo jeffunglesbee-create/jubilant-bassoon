@@ -672,6 +672,9 @@ flex-shrink:0;white-space:nowrap;
 .ticker-chip{flex-shrink:0;scroll-snap-align:start;display:inline-flex;align-items:center;gap:.3rem;padding:.22rem .6rem;border-radius:1rem;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);font-size:.65rem;font-weight:600;cursor:pointer;transition:background .15s;white-space:nowrap}
 .ticker-chip:hover{background:rgba(255,255,255,.12)}
 .ticker-chip.fire{border-color:rgba(249,115,22,.5);background:rgba(249,115,22,.1);color:#fb923c}
+.ticker-league{font-size:.52rem;font-weight:800;letter-spacing:.06em;opacity:.6;text-transform:uppercase}
+.ticker-score{font-weight:800;letter-spacing:-.02em}
+.ticker-per{font-size:.58rem;opacity:.65;font-weight:600}
 #score-ticker-wrap{padding:0;max-width:1200px;margin:0 auto}
 
 /* Pin to Floating Widget */
@@ -1939,11 +1942,15 @@ flex-shrink:0;white-space:nowrap;
 @media(min-width:820px) and (max-width:1199px){
   #ambient-panel{display:flex;top:0;height:100dvh;padding-top:1rem;
     background:#0c1118;border-left:1px solid rgba(255,255,255,.09)}
+  /* Masthead confined to left 430px — streak badge + settings stay in left pane */
+  header.masthead{margin-right:390px}
   /* Left-pane content: all scrollable sections get right margin */
   .main,#field-brief,#night-owl,#double-feature,#offline-banner,
   .betting-section,.field-desk-section,.media-section,
   .streaming-section,.legend,.page-divider,
   nav.controls,#score-ticker-wrap,.mv-panel{margin-right:390px}
+  /* Ticker: center-justify chips across the 430px left pane */
+  .score-ticker{justify-content:center;flex-wrap:wrap;gap:.4rem .35rem}
   /* Suppress 768-900px 2-col game grid: 430px left pane too narrow for 2 cols */
   .games-list{display:block !important}
   /* All pre-masthead intelligence → ambient panel only */
@@ -2294,9 +2301,9 @@ flex-shrink:0;white-space:nowrap;
 <div id="score-ticker-wrap" style="display:none"></div>
 <div id="major-preview-container" style="padding:0 2rem"></div>
 <div id="field-brief" style="display:none" aria-live="polite"></div>
-<!-- Night Owl renders INTO #field-brief slot via renderNightOwlRecap —
-     it replaces FIELD Brief content when tonight's games are final.
-     #night-owl is kept as a no-op anchor; real output is in #field-brief. -->
+<!-- Night Owl renders into its own #night-owl slot (separate from #field-brief).
+     Title adapts by time: Night Owl (10pm+), Evening Wrap (6-10pm), Game Recap (noon-6pm).
+     #field-brief and #night-owl are sibling sections, both in the left pane. -->
 <div id="night-owl" style="display:none" aria-hidden="true"></div>
 <main class="main" id="main"></main>
 <!-- ── iPad Ambient Panel (820–1199px couch mode) ───────────────────── -->
@@ -13817,11 +13824,9 @@ function renderAmbientPanel(){
     }
   }
 
-  // ── Section 2: Live scores summary ────────────────────────────────────
-  // Guards: only numeric non-negative scores; suppress 0:00 for baseball
+  // ── Section 2: Live / Soon / Upcoming ────────────────────────────────
   const live=Object.values(espnScores||{}).filter(s=>
-    s.state==='in'&&
-    typeof s.homeScore==='number'&&typeof s.awayScore==='number'&&
+    s.state==='in'&&typeof s.homeScore==='number'&&typeof s.awayScore==='number'&&
     s.homeScore>=0&&s.awayScore>=0
   );
   let scoresHTML='';
@@ -13829,11 +13834,9 @@ function renderAmbientPanel(){
     const rows=live.slice(0,5).map(s=>{
       const away=s.awayTricode||(s.awayName||s.away||'').split(' ').pop()||'';
       const home=(s.homeName||s.home||'').split(' ').pop()||s.homeTricode||'';
-      // Build period label from available fields
       const periodLbl=s.periodLabel||(s.periodPrefix&&s.period?`${s.periodPrefix}${s.period}`:'');
       const isBball=s.periodPrefix==='T'||s.periodPrefix==='B'||/^[TB]\d/.test(periodLbl);
-      const clockStr=(!isBball&&s.clock&&s.clock!=='0:00'&&s.clock!=='PT00M00.00S')
-        ?` ${fmtESPNClock(s.clock)}`:'';
+      const clockStr=(!isBball&&s.clock&&s.clock!=='0:00'&&s.clock!=='PT00M00.00S')?` ${fmtESPNClock(s.clock)}`:'';
       const timeStr=(periodLbl||clockStr)?`${periodLbl}${clockStr}`:
         (s.detail&&s.detail!=='0:00'&&typeof s.detail==='string'&&s.detail.length<12?s.detail:'');
       return `<div class="ap-score-row">
@@ -13842,6 +13845,50 @@ function renderAmbientPanel(){
       </div>`;
     }).join('');
     scoresHTML=`<div class="ap-scores"><div class="ap-section-label">Live</div>${rows}</div>`;
+  }
+
+  // SOON — games starting within 2 hours
+  const _apNow=Date.now();
+  const _apSoon=[];
+  (allData?.sports||[]).forEach(sec=>(sec.games||[]).forEach(g=>{
+    if(!g.start_time||!g.home||!g.away) return;
+    const ms=new Date(g.start_time)-_apNow;
+    if(ms>0&&ms<7200000) _apSoon.push({g,ms});
+  }));
+  _apSoon.sort((a,b)=>a.ms-b.ms);
+  let soonHTML='';
+  if(_apSoon.length){
+    const rows=_apSoon.slice(0,3).map(({g,ms})=>{
+      const mins=Math.round(ms/60000);
+      const cd=mins<=1?'now':mins<60?`${mins}m`:`${Math.floor(mins/60)}h ${mins%60}m`;
+      const net=g.streams?.[0]?.label||'';
+      return `<div class="ap-score-row">
+        <span class="ap-score-teams">${teamNick(g.away||'')} @ ${teamNick(g.home||'')}${net?` · <span style="opacity:.6">${net}</span>`:''}</span>
+        <span class="ap-score-clock">${cd}</span>
+      </div>`;
+    }).join('');
+    soonHTML=`<div class="ap-scores"><div class="ap-section-label">Soon</div>${rows}</div>`;
+  }
+
+  // UPCOMING — games later today (2h+ away)
+  const _apUp=[];
+  (allData?.sports||[]).forEach(sec=>(sec.games||[]).forEach(g=>{
+    if(!g.start_time||!g.home||!g.away) return;
+    if(new Date(g.start_time)-_apNow>=7200000) _apUp.push(g);
+  }));
+  _apUp.sort((a,b)=>new Date(a.start_time)-new Date(b.start_time));
+  let upcomingHTML='';
+  if(_apUp.length){
+    const tz2=localTz()||'America/New_York';
+    const rows=_apUp.slice(0,4).map(g=>{
+      const t=new Date(g.start_time).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',hour12:true,timeZone:tz2});
+      return `<div class="ap-score-row">
+        <span class="ap-score-teams">${teamNick(g.away||'')} @ ${teamNick(g.home||'')}</span>
+        <span class="ap-score-clock">${t}</span>
+      </div>`;
+    }).join('');
+    const more=_apUp.length>4?`<div class="ap-score-row"><span class="ap-score-teams" style="opacity:.45;font-size:.62rem">+${_apUp.length-4} more</span></div>`:'';
+    upcomingHTML=`<div class="ap-scores"><div class="ap-section-label">Upcoming</div>${rows}${more}</div>`;
   }
 
   // ── Section 3: Season context ──────────────────────────────────────────
@@ -13875,7 +13922,7 @@ function renderAmbientPanel(){
     }
   }
 
-  panel.innerHTML=`${otwHTML}${scoresHTML?`<div class="ap-divider"></div>${scoresHTML}`:''}${ctxHTML?`<div class="ap-divider"></div>${ctxHTML}`:''}${arbHTML?`<div class="ap-divider"></div>${arbHTML}`:''}${briefHTML?`<div class="ap-divider"></div>${briefHTML}`:''}`;
+  panel.innerHTML=`${otwHTML}${scoresHTML?`<div class="ap-divider"></div>${scoresHTML}`:''}${soonHTML?`<div class="ap-divider"></div>${soonHTML}`:''}${upcomingHTML?`<div class="ap-divider"></div>${upcomingHTML}`:''}${ctxHTML?`<div class="ap-divider"></div>${ctxHTML}`:''}${arbHTML?`<div class="ap-divider"></div>${arbHTML}`:''}${briefHTML?`<div class="ap-divider"></div>${briefHTML}`:''}`;
 }
 
 // ── Broadcast Arbitrage Finder ──────────────────────────────────────────────
@@ -15557,13 +15604,21 @@ function renderScoreTicker() {
   const chips = liveGames.map(({gid, e, drama, trendBonus}) => {
     const fire = drama >= 65 ? ' fire' : '';
     const icon = drama >= 85 ? '🔥' : drama >= 65 ? '⚡' : '';
-    const rising = trendBonus >= 8 ? ' ↑' : '';  // visible momentum indicator
+    const rising = trendBonus >= 8 ? ' ↑' : '';
     const sp2 = (e._sport||'').toLowerCase();
-    const pfx = (sp2.includes('hockey')||sp2.includes('nhl')) ? 'P'
-              : (sp2.includes('baseball')||sp2.includes('mlb')) ? 'T'
-              : 'Q';
+    const league = sp2.includes('nba')||sp2.includes('basketball') ? 'NBA'
+      : sp2.includes('nhl')||sp2.includes('hockey') ? 'NHL'
+      : sp2.includes('mlb')||sp2.includes('baseball') ? 'MLB'
+      : sp2.includes('nfl')||sp2.includes('football') ? 'NFL'
+      : sp2.includes('wnba') ? 'WNBA' : sp2.includes('afl') ? 'AFL' : '';
+    const pfx = sp2.includes('hockey')||sp2.includes('nhl') ? 'P'
+              : sp2.includes('baseball')||sp2.includes('mlb') ? 'T' : 'Q';
     const per = e.period ? (e.periodLabel || `${pfx}${e.period}`) : '';
-    const text = `${sp(e._sport||'')} ${teamNick(e.home)} ${e.homeScore||0}–${e.awayScore||0} ${teamNick(e.away)}${per?' · '+per:''}${icon?' '+icon:''}${rising}`;
+    const awayNick = teamNick(e.away||'');
+    const homeNick = teamNick(e.home||'');
+    const leagueTag = league ? `<span class="ticker-league">${league}</span>` : '';
+    const perTag = per ? ` <span class="ticker-per">${per}</span>` : '';
+    const text = `${leagueTag}${awayNick} <span class="ticker-score">${e.awayScore||0}–${e.homeScore||0}</span> ${homeNick}${perTag}${icon?' '+icon:''}${rising}`;
     return `<div class="ticker-chip${fire}" onclick="scrollToGame('${gid}')" title="Drama ${Math.round(drama)}${trendBonus>=8?' · rising':''}">${text}</div>`;
   }).join('');
   wrap.innerHTML = `<div class="score-ticker">${chips}</div>`;
@@ -15786,10 +15841,9 @@ const _gameBriefCache = {}; // gameId → brief text
 const _emberResultCache = {}; // gameId → {tier, channel, dramaScore, contextFlag} — live EMBER state
 async function renderNightOwlRecap(){
   const tz = localTz();
-  // Night Owl renders into #field-brief — they share the same editorial slot.
-  // FIELD Brief = pre-game context. Night Owl = post-game recap. Same position, same importance.
-  // When Night Owl fires, it replaces FIELD Brief content entirely.
-  const el = document.getElementById('field-brief') || document.getElementById('night-owl');
+  // Night Owl renders into #night-owl — kept separate from #field-brief.
+  // FIELD Brief = pre-game context. Night Owl/Recap = post-game editorial. Separate slots.
+  const el = document.getElementById('night-owl');
   if(!el) return;
 
   // Primary path: localStorage (populated by saveEspnFinal via checkForNewFinals)
@@ -15871,8 +15925,12 @@ async function renderNightOwlRecap(){
   _nightOwlRendered=true;
   _nightOwlGameId=topGame.id;
   el.style.display='block';
-  // Night Owl supersedes FIELD Brief — collapse it so they don't compete
-  getEl('field-brief-inner')?.classList.add('collapsed');
+  // Time-based section title — Night Owl is only appropriate late at night
+  const _nowH = new Date().getHours();
+  const _owlTitle = _nowH >= 22 || _nowH < 4 ? 'Night Owl'
+    : _nowH >= 18 ? 'Evening Wrap'
+    : _nowH >= 12 ? 'Game Recap'
+    : 'Overnight Recap';
   // getDramaPeakWithTime — editorial context: 'peaked at 9:47 PM'
   let _owlPeakStr = '';
   try {
@@ -15909,7 +15967,7 @@ async function renderNightOwlRecap(){
     el.innerHTML =
       '<div class="night-owl-section-head">'
         +'<span class="night-owl-section-icon">🦉</span>'
-        +'<span class="night-owl-section-title">Night Owl</span>'
+        +'<span class="night-owl-section-title">'+_owlTitle+'</span>'
         +'<span class="night-owl-section-date">'+_owlDate+'</span>'
       +'</div>'
       +'<div class="night-owl-card" id="night-owl-inner">'
@@ -15947,6 +16005,9 @@ async function renderNightOwlRecap(){
 function renderLastNight(){
   const existing = document.getElementById('last-night-bar');
   if(existing) existing.remove();
+  // Last Night scores are only relevant in the morning — hide after 10am
+  const nowHour = new Date().getHours();
+  if(nowHour >= 10) return;
   const finals = loadEspnFinals();
   if(!finals.length) return;
 
