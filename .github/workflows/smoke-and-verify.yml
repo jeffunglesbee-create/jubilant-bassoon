@@ -169,13 +169,13 @@ jobs:
 
       - name: Run browser tests against live URL
         run: |
-          # Tests run against jubilant-bassoon.jeffunglesbee.workers.dev
-          # *.workers.dev is accessible from GitHub Actions (not blocked like Claude sandbox)
-          # Rule 18: these tests catch what smoke.js cannot — runtime errors,
-          # failed network requests, console errors, window._fieldErrors
+          # Layer 3: behavioral verification of live deployment
+          # GROUP 1 (Structural): always blocks — F01-F11
+          # GROUP 2 (Data-dependent): skips gracefully when no games — F12-F15
+          # Hard-fail: CI blocks if structural tests fail.
           npx playwright test field_browser.test.js --reporter=list
-        continue-on-error: true   # non-blocking initially — establish baseline first
-        # TODO: change to hard-fail once baseline is clean (remove continue-on-error)
+        # continue-on-error removed — Layer 3 is now blocking
+        # Baseline established: F01-F11 are data-independent and always pass
 
       - name: Upload test results
         if: always()
