@@ -3832,6 +3832,17 @@ const SPORT_META = {
   NFL:    {emoji:'\u{1F3C8}', entity:'&#127944;', label:'NFL',    singular:'game',  plural:'games'},
 };
 
+// sportCountLabel — wires SPORT_META (singular/plural) to section game-count badges.
+// Primary: looks up sport name in SPORT_META. Secondary: keyword fallback for soccer
+// leagues that use geographic names (Premier League, La Liga, etc.).
+function sportCountLabel(sport, n) {
+  const meta = Object.values(SPORT_META).find(
+    m => sport.toLowerCase().includes(m.label.toLowerCase()));
+  if (meta) return n === 1 ? `1 ${meta.singular}` : `${n} ${meta.plural}`;
+  const isSoccer = /league|liga|bundesliga|ligue|champions|europa|conference|efl|mls|nwsl/i.test(sport);
+  return isSoccer ? (n === 1 ? '1 match' : `${n} matches`) : (n === 1 ? '1 game' : `${n} games`);
+}
+
 let selectedTz = "local";
 let activeFilter = "all";
 let freeOnlyFilter = localStorage.getItem("field_free_only") === "1";
@@ -6150,7 +6161,7 @@ function renderAll(){
       <div class="section-head" style="border-left:3px solid ${sportColor};padding-left:.75rem">
         <div class="s-icon" style="background:${sportColor}1a;border-color:${sportColor}40">${icon}</div>
         <span class="s-name">${sec.sport}</span>
-        <span class="s-count">${games.length} game${games.length!==1?"s":""}</span>
+        <span class="s-count">${sportCountLabel(sec.sport, games.length)}</span>
       </div>
       <div class="games-list">${cards}</div>
     </div>`;
@@ -12505,7 +12516,7 @@ let _pwaPrompt = null;
 
   // SW_VERSION — bump on every deploy to bust returning user cache
   // Assertion 28 in smoke verifies this constant is present
-  const SW_VERSION = '2026-05-23l';
+  const SW_VERSION = '2026-05-23m';
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
   // Cache strategy: API-only (ESPN scores, weather, odds, SportsDB).
