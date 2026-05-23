@@ -6637,7 +6637,20 @@ function buildTodaySchedule(){
     {home:"Western Bulldogs",     away:"Melbourne",          league:"AFL 2026 — Round 11", start_time:"2026-05-24T05:15:00Z", confirmed:true, venue:"Docklands (Marvel Stadium)",   streams:resolveBundle("AFL_USA"), _id:"afl_38592"},
   ].filter(g=>isToday(g.start_time));
   // ── MLS Soccer — live from fetchSoccerFixtures (ESPN usa.1) ────────────
-  const mlsSoccer=[];
+  const mlsSoccer=[
+    // Matchday 15, May 23 2026 — last before World Cup break (May 25–Jul 16)
+    // Sources: mlssoccer.com + team pages. fetchSoccerFixtures (ESPN usa.1) enriches + adds CO/DC.
+    {home:"St. Louis City SC",        away:"Austin FC",              league:"MLS — Matchday 15",                           start_time:"2026-05-23T17:30:00Z", confirmed:true, venue:"Energizer Park, St. Louis MO",           streams:resolveBundle("MLS_SOCCER")},
+    {home:"Minnesota United FC",       away:"Real Salt Lake",         league:"MLS — Matchday 15",                           start_time:"2026-05-23T19:30:00Z", confirmed:true, venue:"Allianz Field, St. Paul MN",             streams:resolveBundle("MLS_SOCCER")},
+    {home:"Portland Timbers",          away:"San Jose Earthquakes",   league:"MLS — Matchday 15",                           start_time:"2026-05-23T22:30:00Z", confirmed:true, venue:"Providence Park, Portland OR",           streams:resolveBundle("MLS_SOCCER")},
+    {home:"San Diego FC",              away:"Vancouver Whitecaps FC", league:"MLS — Matchday 15",                           start_time:"2026-05-23T22:30:00Z", confirmed:true, venue:"Snapdragon Stadium, San Diego CA",       streams:resolveBundle("MLS_SOCCER")},
+    {home:"Chicago Fire FC",           away:"Toronto FC",             league:"MLS — Matchday 15 · Last Before World Cup Break", start_time:"2026-05-23T23:30:00Z", confirmed:true, venue:"Soldier Field, Chicago IL",              streams:resolveBundle("MLS_SOCCER")},
+    {home:"Nashville SC",              away:"New York City FC",       league:"MLS — Matchday 15 · Last Before World Cup Break", start_time:"2026-05-23T23:30:00Z", confirmed:true, venue:"GEODIS Park, Nashville TN",              streams:resolveBundle("MLS_SOCCER")},
+    {home:"Charlotte FC",              away:"New England Revolution", league:"MLS — Matchday 15 · Last Before World Cup Break", start_time:"2026-05-23T23:30:00Z", confirmed:true, venue:"Bank of America Stadium, Charlotte",     streams:resolveBundle("MLS_SOCCER")},
+    {home:"Sporting Kansas City",      away:"New York Red Bulls",     league:"MLS — Matchday 15 · Last Before World Cup Break", start_time:"2026-05-23T23:30:00Z", confirmed:true, venue:"Children's Mercy Park, Kansas City",    streams:resolveBundle("MLS_SOCCER")},
+    {home:"LA Galaxy",                 away:"Houston Dynamo FC",      league:"MLS — Matchday 15 · Last Before World Cup Break", start_time:"2026-05-23T23:30:00Z", confirmed:true, venue:"Dignity Health Sports Park, Carson CA",  streams:resolveBundle("MLS_SOCCER")},
+    {home:"FC Cincinnati",             away:"Orlando City SC",        league:"MLS — Matchday 15 · Last Before World Cup Break", start_time:"2026-05-23T23:30:00Z", confirmed:true, venue:"TQL Stadium, Cincinnati OH",             streams:resolveBundle("MLS_SOCCER")},
+  ].filter(g=>isToday(g.start_time));
 
   // ── Tennis: Italian Open Rome (May 6-17 2026) ──────────────────────────
   const romeStart=new Date("2026-05-06T00:00:00Z"), romeEnd=new Date("2026-05-17T23:59:00Z");
@@ -8718,6 +8731,8 @@ const VENUE_COORDS = {
   "Inter&Co Stadium, Orlando":            [28.5415, -81.3893,  true],
   "GEODIS Park, Nashville TN":            [36.1307, -86.7665,  true],
   "GEODIS Park, Nashville":               [36.1307, -86.7665,  true],
+  "Soldier Field, Chicago IL":             [41.8623, -87.6167,  true],
+  "Soldier Field, Chicago":               [41.8623, -87.6167,  true],
   "CITYPARK, St. Louis":                  [38.6317, -90.2016,  true],
   "CityPark, St. Louis MO":               [38.6317, -90.2016,  true],
   "Allianz Field, St. Paul MN":           [44.9530, -93.1649,  true],
