@@ -1892,3 +1892,83 @@ Rule 33 is applied at every TYPE C session before spec approval.
 Any feature spec must include a Rule 33 checklist pass before it
 is added to the Build Session List.
 Features that fail the shipping test do not enter the build queue.
+
+---
+
+## Rule 34 — Broadcast Access Labels (HONEST-LABEL-A)
+
+FREE is reserved exclusively for content requiring no subscription
+and no account. OTA broadcasts (NBC, ABC, FOX, CBS, ION) and
+genuinely free streaming services (Tubi, free-tier where sports
+apply) may carry the FREE label and green chip treatment.
+
+Subscription services (Peacock, ESPN+, Max, Apple TV+, Amazon
+Prime Video, Paramount+, Fubo, YouTube TV, etc.) must use the
+INCLUDED label regardless of whether a user might already subscribe.
+The word "free" must not appear in any chip, copy, or Skim sentence
+referring to a subscription service.
+
+The Cheap Seats copy rule:
+  OTA game: "NBC is free over the air. An antenna receives it (~$12
+  one-time). No subscription needed."
+  Subscription game: "[Service] carries this game. $X/month — or
+  $Y/year. Skip if you already subscribe."
+
+Smoke assertion required: no FREE badge or the word "free" adjacent
+to Peacock, ESPN+, Max, Apple TV+, or Amazon in any rendered output.
+
+Violation = DO NOT SHIP.
+
+---
+
+## Rule 35 — Content Budget: JournalismBrief Field Ownership (J-BUDGET-A)
+
+Each field of JournalismBrief has a designated primary renderer.
+No field may be surfaced by two primary renderers in the same
+render pass. Secondary renderers (mobile story sheet, WHOLE FIELD
+centre column in full-depth mode) may access consumed fields only
+under explicit secondary allowance in JOURNALISM_BUDGET.
+
+Primary assignments:
+  lead           → The Skim (exclusive)
+  context        → J3 / centre column
+  stakes         → J3 / centre column
+  keyFacts[0-2]  → J3 / centre column
+  keyFacts[3-5]  → card notes
+  keyFacts[6-7]  → mobile story sheet only
+  angle/tone/target → all renderers (style, not content)
+
+Special case: the centre column headline in WHOLE FIELD mode must
+NOT repeat the lead sentence verbatim when The Skim is visible on
+the same viewport. The Skim owns the verdict sentence. The centre
+column headline is an editorial title derived from angle + context,
+not a repetition of lead.
+
+All renderers must accept a JournalismRenderBudget parameter and
+claim fields before rendering. Unclaimed fields must not be rendered.
+
+---
+
+## Rule 36 — Sentence Fingerprint Deduplication (J-DEDUP-A)
+
+All rendered journalism sentences must pass through the
+SentenceFingerprintRegistry before commitment to any surface.
+
+Duplicate detection: two sentences sharing 3 or more key entity
+tokens (TEAM, PLAYER, VENUE, NETWORK, SCORE, ARC) are considered
+duplicates regardless of wording.
+
+Handling policy by surface:
+  Card notes:    omit the duplicate sentence entirely
+  J3 / centre:   compress to data-only form before AI rendering
+  Mobile sheet:  allow (user has explicitly requested full depth)
+
+Sentences with fewer than 2 extractable entities bypass the
+registry (too short to fingerprint reliably — typically raw data).
+
+Registry scope: per render pass. Initialised fresh on page load.
+For PWA sessions: registry expires after 4 hours (SESSION_TTL).
+If restored from background after TTL, reinitialise as new session.
+
+The registry is a secondary defence. The Content Budget (Rule 35)
+is the primary structural defence against duplication.
