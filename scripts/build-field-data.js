@@ -18,7 +18,7 @@ const https = require('https');
 
 const TODAY = process.env.TODAY || new Date().toISOString().slice(0, 10);
 
-// ── NHL abbreviation → full name (mirrors index.html NHL_ABBREV_MAP) ──────
+// ── NHL abbreviation → full name ──────────────────────────────────────────
 const NHL_TEAMS = {
   ANA:'Anaheim Ducks',       BOS:'Boston Bruins',        BUF:'Buffalo Sabres',
   CGY:'Calgary Flames',      CAR:'Carolina Hurricanes',  CHI:'Chicago Blackhawks',
@@ -41,7 +41,6 @@ function nhlFullName(abbrev, fallback) {
 function parseNHL() {
   try {
     const raw = JSON.parse(fs.readFileSync('/tmp/nhl.json', 'utf8'));
-    // /v1/scoreboard/now returns data.games (today's games) OR data.gamesByDate[].games
     const games = raw.games ||
       (raw.gamesByDate || []).filter(d => d.date === TODAY).flatMap(d => d.games || []);
 
@@ -53,17 +52,29 @@ function parseNHL() {
       const home = nhlFullName(homeAbbr, g.homeTeam?.commonName?.default);
       const away = nhlFullName(awayAbbr, g.awayTeam?.commonName?.default);
 
-      // Series status — try seriesStatus.seriesAbbrev first, fall back to computing from wins
+      // Series status — check multiple field paths the NHL API uses
       const ss = g.seriesStatus;
-      let seriesRecord = ss?.seriesAbbrev || null;
+      let seriesRecord = ss?.seriesAbbrev || ss?.seriesStatusShort || null;
       if (!seriesRecord && ss != null) {
         const hw = ss.topSeedWins ?? 0, aw = ss.bottomSeedWins ?? 0;
         if (hw > aw)      seriesRecord = `${home} leads ${hw}-${aw}`;
         else if (aw > hw) seriesRecord = `${away} leads ${aw}-${hw}`;
         else if (hw > 0)  seriesRecord = `Series tied ${hw}-${aw}`;
       }
+      // Also check game.seriesStatus at top level (alternate NHL API shape)
+      if (!seriesRecord && g.seriesStatusShort) seriesRecord = g.seriesStatusShort;
 
-      return { home, away, seriesRecord, league: 'NHL' };
+      // Detect playoff context from game type or round info
+      const isPlayoff = g.gameType === 3 || g.gameType === 'P' ||
+        g.seriesStatus != null || seriesRecord != null ||
+        (g.gameSubType || '').includes('P') ||
+        (g.seasonType || '').includes('playoff');
+
+      // Round label for context
+      const round = g.seriesStatus?.round?.names?.name ||
+                    g.seriesStatus?.roundLabel || null;
+
+      return { home, away, seriesRecord, league: 'NHL', isPlayoff, round };
     }).filter(Boolean);
   } catch (e) {
     console.error('NHL parse error:', e.message); return [];
@@ -76,20 +87,42 @@ function parseNBA() {
     const raw = JSON.parse(fs.readFileSync('/tmp/nba.json', 'utf8'));
     return (raw.scoreboard?.games || [])
       .filter(g => !(g.gameStatusText || '').match(/Final/))
-      .map(g => ({
-        home: `${g.homeTeam.teamCity} ${g.homeTeam.teamName}`,
-        away: `${g.awayTeam.teamCity} ${g.awayTeam.teamName}`,
-        seriesRecord: g.seriesText || null,
-        league: 'NBA',
-      }));
+      .map(g => {
+        // seriesText may be on game or team objects
+        const seriesRecord = g.seriesText ||
+          g.homeTeam?.seriesWins != null
+            ? (() => {
+                const hw = g.homeTeam?.seriesWins ?? 0;
+                const aw = g.awayTeam?.seriesWins ?? 0;
+                const home = `${g.homeTeam.teamCity} ${g.homeTeam.teamName}`;
+                const away = `${g.awayTeam.teamCity} ${g.awayTeam.teamName}`;
+                if (hw > aw)      return `${home} leads ${hw}-${aw}`;
+                if (aw > hw)      return `${away} leads ${aw}-${hw}`;
+                if (hw > 0)       return `Series tied ${hw}-${aw}`;
+                return null;
+              })()
+            : null;
+
+        const isPlayoff = g.seasonType === 'Playoffs' ||
+          g.gameSubtype === '4' ||
+          seriesRecord != null ||
+          (g.gameLabel || '').toLowerCase().includes('playoff');
+
+        return {
+          home: `${g.homeTeam.teamCity} ${g.homeTeam.teamName}`,
+          away: `${g.awayTeam.teamCity} ${g.awayTeam.teamName}`,
+          seriesRecord: g.seriesText || seriesRecord,
+          league: 'NBA',
+          isPlayoff,
+          gameLabel: g.gameLabel || null,
+        };
+      });
   } catch (e) {
     console.error('NBA parse error:', e.message); return [];
   }
 }
 
-// ── Detect MLB postponed games from MLB Stats API ───────────────────────
-// Returns array of { home, away } for PPD games today.
-// MLB status code 'DR' = Postponed (rain, weather, etc.)
+// ── Detect MLB postponed games ────────────────────────────────────────────
 function parseMLBPostponed() {
   return new Promise((resolve) => {
     const req = https.request({
@@ -107,16 +140,10 @@ function parseMLBPostponed() {
           const ppd = games.filter(g =>
             g.status?.statusCode === 'DR' ||
             (g.status?.detailedState || '').toLowerCase().includes('postpone')
-          ).map(g => ({
-            home: g.teams.home.team.name,
-            away: g.teams.away.team.name,
-          }));
+          ).map(g => ({ home: g.teams.home.team.name, away: g.teams.away.team.name }));
           if (ppd.length) console.log(`MLB PPD today: ${ppd.map(g => g.away + ' @ ' + g.home).join(', ')}`);
           resolve(ppd);
-        } catch (e) {
-          console.warn('MLB postponed check failed:', e.message);
-          resolve([]);
-        }
+        } catch (e) { console.warn('MLB postponed check failed:', e.message); resolve([]); }
       });
     });
     req.on('error', () => resolve([]));
@@ -125,9 +152,55 @@ function parseMLBPostponed() {
   });
 }
 
-// ── Optional: generate matchupNote via Claude ─────────────────────────────
-// Only runs if ANTHROPIC_API_KEY is set. Set in repo secrets to enable.
-// Each call: ~1-2s, ~100 tokens. Total budget: ~4-8 calls per day.
+// ── Build matchupNote prompt ──────────────────────────────────────────────
+// Generates a prompt using whatever context is available.
+// Series context included when present; prompt stays useful without it.
+function buildPrompt(g) {
+  const lines = [
+    `Write a sharp 1-2 sentence FIELD sports brief matchupNote.`,
+    `Game: ${g.away} @ ${g.home} (${g.league})`,
+  ];
+  if (g.round)         lines.push(`Round: ${g.round}`);
+  if (g.seriesRecord)  lines.push(`Series: ${g.seriesRecord}`);
+  if (g.gameLabel)     lines.push(`Context: ${g.gameLabel}`);
+  if (!g.seriesRecord && !g.isPlayoff) {
+    lines.push(`Context: regular season game`);
+  }
+  lines.push(`Style: punchy sports journalism, focus on stakes and why it matters tonight.`);
+  lines.push(`No preamble. Respond with ONLY the note text.`);
+  return lines.join('\n');
+}
+
+// ── AI backends ───────────────────────────────────────────────────────────
+function callGemini(prompt) {
+  return new Promise((resolve) => {
+    const body = JSON.stringify({
+      contents: [{ parts: [{ text: prompt }] }],
+      generationConfig: { maxOutputTokens: 120, temperature: 0.4 },
+    });
+    const req = https.request({
+      hostname: 'generativelanguage.googleapis.com',
+      path: `/v1beta/models/gemini-3.1-flash-lite:generateContent?key=${process.env.GEMINI_KEY}`,
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) },
+    }, res => {
+      let data = '';
+      res.on('data', c => data += c);
+      res.on('end', () => {
+        try {
+          const parsed = JSON.parse(data);
+          // Log error details if present
+          if (parsed.error) console.warn('Gemini API error:', JSON.stringify(parsed.error));
+          resolve(parsed.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || null);
+        } catch { resolve(null); }
+      });
+    });
+    req.on('error', (e) => { console.warn('Gemini request error:', e.message); resolve(null); });
+    req.setTimeout(15000, () => { req.destroy(); resolve(null); });
+    req.write(body); req.end();
+  });
+}
+
 function callClaude(prompt) {
   return new Promise((resolve) => {
     const body = JSON.stringify({
@@ -157,33 +230,6 @@ function callClaude(prompt) {
   });
 }
 
-// ── Optional: generate matchupNote via Gemini 3.1 Flash-Lite ────────────
-// Primary AI backend — free tier, 1500 RPD. Same model as journalism proxy.
-function callGemini(prompt) {
-  return new Promise((resolve) => {
-    const body = JSON.stringify({
-      contents: [{ parts: [{ text: prompt }] }],
-      generationConfig: { maxOutputTokens: 120, temperature: 0.4 },
-    });
-    const req = https.request({
-      hostname: 'generativelanguage.googleapis.com',
-      path: `/v1beta/models/gemini-3.1-flash-lite:generateContent?key=${process.env.GEMINI_KEY}`,
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) },
-    }, res => {
-      let data = '';
-      res.on('data', c => data += c);
-      res.on('end', () => {
-        try { resolve(JSON.parse(data).candidates?.[0]?.content?.parts?.[0]?.text?.trim() || null); }
-        catch { resolve(null); }
-      });
-    });
-    req.on('error', () => resolve(null));
-    req.setTimeout(15000, () => { req.destroy(); resolve(null); });
-    req.write(body); req.end();
-  });
-}
-
 // ── Main ──────────────────────────────────────────────────────────────────
 async function main() {
   const nhlGames = parseNHL();
@@ -191,25 +237,28 @@ async function main() {
   const mlbPPD   = await parseMLBPostponed();
   console.log(`Parsed: ${nhlGames.length} NHL + ${nbaGames.length} NBA game(s) + ${mlbPPD.length} MLB PPD for ${TODAY}`);
 
+  // Log raw series data for debugging
+  [...nhlGames, ...nbaGames].forEach(g =>
+    console.log(`  ${g.league}: ${g.away} @ ${g.home} | seriesRecord=${g.seriesRecord || 'null'} | isPlayoff=${g.isPlayoff}`));
+
   const overlays = [];
   const useGemini = !!process.env.GEMINI_KEY;
   const useClaude = !!process.env.ANTHROPIC_API_KEY;
   const useAI = useGemini || useClaude;
-  if (useGemini) console.log('GEMINI_KEY present — matchupNotes via gemini-3.1-flash-lite (Claude fallback: ' + (useClaude ? 'yes' : 'no') + ')');
-  else if (useClaude) console.log('ANTHROPIC_API_KEY present — matchupNotes via Claude (no Gemini key).');
+  if (useGemini) console.log('GEMINI_KEY present — matchupNotes via gemini-3.1-flash-lite');
+  else if (useClaude) console.log('ANTHROPIC_API_KEY present — matchupNotes via Claude Sonnet 4');
+  else console.log('No AI key — overlays only (no matchupNotes)');
 
   for (const g of [...nhlGames, ...nbaGames]) {
     const ov = { _match_key: `${g.home}|${g.away}` };
     if (g.seriesRecord) ov.seriesRecord = g.seriesRecord;
 
-    if (useAI && g.seriesRecord) {
-      const prompt =
-        `Write a sharp 1-2 sentence FIELD sports brief matchupNote.\n` +
-        `Game: ${g.away} @ ${g.home} (${g.league})\n` +
-        `Series: ${g.seriesRecord}\n` +
-        `Style: punchy sports journalism, focus on stakes. No preamble. Respond with ONLY the text.`;
-      let note = null;
-      let backend = null;
+    // FIX: generate matchupNote for ANY game when AI is available —
+    // not just when seriesRecord is present. Series context is included
+    // in the prompt when available; note is useful either way.
+    if (useAI) {
+      const prompt = buildPrompt(g);
+      let note = null, backend = null;
       if (useGemini) {
         note = await callGemini(prompt);
         if (note) backend = 'gemini-3.1-flash-lite';
@@ -221,13 +270,20 @@ async function main() {
         note = await callClaude(prompt);
         if (note) backend = 'claude-sonnet-4';
       }
-      if (note) { ov.matchupNote = note; console.log(`  ✓ ${backend}: ${g.away} @ ${g.home}`); }
+      if (note) {
+        ov.matchupNote = note;
+        console.log(`  ✓ ${backend}: ${g.away} @ ${g.home}`);
+        console.log(`    "${note.slice(0, 100)}${note.length > 100 ? '...' : ''}"`);
+      } else {
+        console.warn(`  ✗ AI failed for ${g.away} @ ${g.home}`);
+      }
     }
 
-    if (Object.keys(ov).length > 1) overlays.push(ov); // skip if only _match_key
+    // Include overlay if it has any content beyond _match_key
+    if (Object.keys(ov).length > 1) overlays.push(ov);
   }
 
-  // Add _postponed:true overlays for each MLB PPD game
+  // MLB postponed overlays
   for (const g of mlbPPD) {
     const key = `${g.home}|${g.away}`;
     const existing = overlays.find(o => o._match_key === key);
