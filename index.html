@@ -10889,20 +10889,25 @@ async function fetchMLBFixtures(){
 
       // Collect national TV overrides from mlbRaw (games with nationalBundle set)
       const nationalOverrides = (mlbSec?.games || []).filter(g => g.nationalBundle);
-      const nationalKeys = new Set(nationalOverrides.map(g => `${g.home}|${g.away}`));
+      // Hour-bucket key: home|away|YYYY-MM-DDTHH prevents doubleheader games (same matchup,
+      // different hours) from collapsing onto one override. Exact start_time string match would
+      // be too brittle — minor API timing discrepancies (23:10 vs 23:15) would break the merge.
+      // Games 1+ hour apart get distinct keys; games within the same hour still merge correctly.
+      const gameHourKey = g => `${g.home}|${g.away}|${(g.start_time||'').slice(0,13)}`;
+      const nationalKeys = new Set(nationalOverrides.map(gameHourKey));
 
       // REPLACE mlbSec.games: API games + preserve national TV overrides from mlbRaw
       // API games that match a national override are replaced by the override (richer data)
       const mergedGames = mlbGames.map(apiGame => {
-        const key = `${apiGame.home}|${apiGame.away}`;
+        const key = gameHourKey(apiGame);
         return nationalKeys.has(key)
-          ? nationalOverrides.find(o => `${o.home}|${o.away}` === key)  // mlbRaw override wins
-          : apiGame;                                                      // API game
+          ? nationalOverrides.find(o => gameHourKey(o) === key)  // mlbRaw override wins
+          : apiGame;                                              // API game
       });
       // Add any national overrides not covered by the API (e.g. future confirmed entries)
       nationalOverrides.forEach(o => {
-        const key = `${o.home}|${o.away}`;
-        if (!mlbGames.some(g => `${g.home}|${g.away}` === key)) mergedGames.push(o);
+        const key = gameHourKey(o);
+        if (!mlbGames.some(g => gameHourKey(g) === key)) mergedGames.push(o);
       });
 
       if (!mlbSec) { mlbSec = {sport:'Baseball (MLB)', games:[]}; allData.sports.push(mlbSec); }
@@ -12439,7 +12444,7 @@ let _pwaPrompt = null;
 
   // SW_VERSION — bump on every deploy to bust returning user cache
   // Assertion 28 in smoke verifies this constant is present
-  const SW_VERSION = '2026-05-23f';
+  const SW_VERSION = '2026-05-23g';
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
   // Cache strategy: API-only (ESPN scores, weather, odds, SportsDB).
