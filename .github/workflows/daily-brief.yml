@@ -146,7 +146,6 @@ jobs:
         id: afl
         run: |
           RELAY="https://field-relay-nba.jeffunglesbee.workers.dev"
-          TODAY=$(date -u +%Y-%m-%d)
           # Squiggle: free, CORS-open, no auth. Via relay for consistency + caching.
           # Etiquette: identify FIELD traffic with User-Agent header.
           # NOTE: complete=0 only returns unstarted games. AFL games that have kicked off
@@ -156,15 +155,26 @@ jobs:
             "$RELAY/squiggle/?q=games;year=2026;round=11" \
             || echo '{"games":[]}')
           echo "$DATA" > /tmp/afl.json
-          # Squiggle date format: "YYYY-MM-DD HH:MM:SS" UTC (space, not T)
-          # Filter to today's UTC date, convert to ISO 8601 for H-1 calc
-          COUNT=$(jq --arg today "$TODAY" '[.games[] | select(.date | startswith($today))] | length' /tmp/afl.json 2>/dev/null || echo 0)
-          EARLIEST=$(jq -r --arg today "$TODAY" '[.games[] | select(.date | startswith($today)) | ((.date | gsub(" "; "T")) + "Z")] | sort | .[0] // empty' /tmp/afl.json 2>/dev/null)
-          GAMES=$(jq -c --arg today "$TODAY" '[.games[] | select(.date | startswith($today)) | {
-            away: .ateam, home: .hteam,
-            round: .roundname,
-            time: (.date | split(" ")[1] | split(":")[0:2] | join(":"))
-          }]' /tmp/afl.json 2>/dev/null | head -c 2000 || echo '[]')
+          # Squiggle field notes (verified May 23 2026 against live API):
+          #   date      — "YYYY-MM-DD HH:MM:SS" in AEST (UTC+10), NOT UTC.
+          #               Comparing .date against a UTC date string is wrong by ~10h —
+          #               this caused completed AFL games to appear as upcoming.
+          #   unixtime  — epoch seconds (UTC). Reliable, timezone-unambiguous. Use this.
+          #   localtime — venue local time. Not suitable for H-1 calc.
+          TODAY_START=$(date -u -d "today 00:00" +%s)
+          TODAY_END=$(date -u -d "tomorrow 00:00" +%s)
+          COUNT=$(jq --argjson ts "$TODAY_START" --argjson te "$TODAY_END" \
+            '[.games[] | select((.unixtime // -1) >= $ts and (.unixtime // -1) < $te)] | length' \
+            /tmp/afl.json 2>/dev/null || echo 0)
+          EARLIEST=$(jq -r --argjson ts "$TODAY_START" --argjson te "$TODAY_END" \
+            '[.games[] | select((.unixtime // -1) >= $ts and (.unixtime // -1) < $te) | .unixtime | strftime("%Y-%m-%dT%H:%M:%SZ")] | sort | .[0] // empty' \
+            /tmp/afl.json 2>/dev/null)
+          GAMES=$(jq -c --argjson ts "$TODAY_START" --argjson te "$TODAY_END" \
+            '[.games[] | select((.unixtime // -1) >= $ts and (.unixtime // -1) < $te) | {
+              away: .ateam, home: .hteam,
+              round: .roundname,
+              time: (.unixtime | strftime("%H:%M"))
+            }]' /tmp/afl.json 2>/dev/null | head -c 2000 || echo '[]')
           echo "count=$COUNT" >> $GITHUB_OUTPUT
           echo "earliest=${EARLIEST:-}" >> $GITHUB_OUTPUT
           echo "games_json=$GAMES" >> $GITHUB_OUTPUT
