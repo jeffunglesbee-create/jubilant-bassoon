@@ -115,7 +115,7 @@ never worked despite being documented as complete.*
 | **Master Improvement Ranking** | `1rW90JQ5a4ybrE9l5acrbqd0q0yl_QYmPIOnEJr__GEY` | Any session that ships a feature — add to FIELD_FEATURES registry with ship date |
 | **FIELD Current State** | `1w0BDWk2lf1tlSVBFBTI_P0H9N2ATyZjRTKw3XR2McUE` | Every session end — update HEAD, smoke state, and any changed capability sections |
 | **Daily Update Reference** | `1n4fiAaU1uF2X7EKRx9Gm6XpuR6wkpwoa` | Any session that changes broadcast chip rules, thresholds, or update protocol |
-| **Handoff Note** ← update ID every session | `1dZE7y4IPU8oLbFtDMW4i-P7nBAGlZPL-vATAQtbyDw0` | Every session end — replace ID with new handoff doc |
+| **Handoff Note** ← update ID every session | `1WEXk5C1_zNV2HJbQxbJFFNJmV2wSB5nhL0Ysv2bEmTg` | Every session end — replace ID with new handoff doc |
 | **CI/Deploy Error Reference** | `1ujdRL3v5YjusEUqBZ_4fDVKN6EDNFDLsBaBIfOysu6I` | When a new CI/deploy failure pattern is resolved |
 
 **The rule: edit the document, don't create a new one.**
