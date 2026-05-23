@@ -1175,7 +1175,7 @@ flex-shrink:0;white-space:nowrap;
   border:1px solid;text-decoration:none;transition:.12s;white-space:nowrap;
   font-family:var(--ff-cond);letter-spacing:.05em;font-weight:600;
   position:relative;display:inline-flex;align-items:center;gap:3px;
-  max-width:120px;overflow:hidden;text-overflow:ellipsis;
+  overflow:visible;
 }
 .watch-now-btn{
   display:inline-flex;align-items:center;gap:.35rem;
@@ -3656,12 +3656,13 @@ const BUNDLES = {
   // ── UFL 2026 (spring football — FOX/ESPN family) ──────────────────────
   UFL_FOX:   ["fox","fubo","youtubetv","sling","hulu","directv"],      // FOX OTA (free with antenna)
   UFL_FS1:   ["fs1","fubo","youtubetv","sling","hulu","directv"],
-  UFL_ABC:   ["abc","espn","espnplus","fubo","youtubetv","sling","hulu","directv"], // ABC OTA (free)
+  UFL_ABC:   ["abc","espn","fubo","youtubetv","hulu","directv"], // ABC OTA (free) + ESPN app simulcast; NOT ESPN+ (separate sub); Sling carries no ABC
   UFL_ESPN:  ["espn","espnplus","fubo","youtubetv","sling","hulu","directv"],
   UFL_ESPN2: ["espn","espnplus","fubo","youtubetv","sling","hulu","directv"],
   UFL_NFLN:  ["nfln","fubo","youtubetv","directv"],
   TENNIS_TC:    ["tc","tcplus","espnplus","fubo","youtubetv","sling"],      // Tennis Channel / TC+ / ESPN+
   EFL_PLAYOFF:  ["paramount","cbs","fubo","hulu"], // EFL Playoffs: CBS/Paramount+ (CBS Sports Network + Golazo + P+)
+  EFL_FINAL:    ["paramount"],                    // EFL Championship Play-off Final: Paramount+ exclusive (US)
   // Tennis
   TENNIS_WTA:   ["tc","fubo","sling"],
   TENNIS_ATP:   ["tc","tcplus"],
@@ -3756,7 +3757,7 @@ const VALID_NATIONAL_BUNDLES = new Set([
   "NBA_ESPN","NBA_ABC","NBA_NBC","NBA_PRIME",
   "NHL_ESPN","NHL_ABC","NHL_TNT","NHL_NBC","NHL_PRIME",
   "WNBA_ESPN","WNBA_ABC","WNBA_NBC","WNBA_PRIME","WNBA_CBS","WNBA_USA","WNBA_ION","WNBA_LOCAL",
-  "EFL_PLAYOFF","EPL_USA","EPL_PEACOCK",
+  "EFL_PLAYOFF","EFL_FINAL","EPL_USA","EPL_PEACOCK",
   "LALIGA","SERIE_A","BUNDESLIGA","LIGUE_1","EFL","EPL",
   "UFL_FOX","UFL_FS1","UFL_ABC","UFL_ESPN","UFL_ESPN2","UFL_NFLN",
   "NFL_PRIME","NFL_NBC","NFL_ESPN","NFL_ABC","NFL_CBS","NFL_FOX",
@@ -6479,7 +6480,7 @@ function buildTodaySchedule(){
     {home:"Middlesbrough", away:"Hull City",
      league:"EFL Championship Playoff – Final · Winner promoted to Premier League",
      start_time:"2026-05-23T15:30:00Z", confirmed:true, venue:"Wembley Stadium, London",
-     streams:resolveBundle("EFL_PLAYOFF"),
+     streams:resolveBundle("EFL_FINAL"),
      // SPYGATE — Southampton expelled; Middlesbrough reinstated (May 20 2026)
      // Southampton admitted unauthorised filming of Middlesbrough, Ipswich, Oxford training
      // EFL independent commission expelled Saints; appeal dismissed May 20
@@ -6487,8 +6488,7 @@ function buildTodaySchedule(){
      // Southampton: 4-point deduction applied to 2026-27 Championship table
      _angle:"SCANDAL",
      _gameImportance:"elimination",
-     matchupNote:"Middlesbrough are in the final only because Southampton were expelled — the biggest sporting scandal in the Championship in years. Saints admitted to filming Boro's training before the SF (plus Oxford in December, Ipswich in April). Expelled by the EFL. Appeal dismissed May 20. Boro boss Kim Hellberg was crestfallen after losing the SF on the pitch — now his side return to Wembley for the \u00a3270m prize of promotion. Middlesbrough last in the Premier League: 2017. Hull City beat Millwall 2-0 on aggregate to reach the final. 4:30pm BST · 11:30am ET · Sky Sports (UK) · CBS Sports Network + Paramount+ (US).",
-     localNote:"Southampton were expelled by the EFL's independent disciplinary commission after admitting multiple breaches of EFL Regulations — unauthorised filming of opponents' training sessions. Their appeal was heard and dismissed on May 20 2026. Middlesbrough were reinstated in their place. Southampton face a 4-point deduction in 2026-27."},
+     matchupNote:"Middlesbrough are in the final only because Southampton were expelled — the biggest sporting scandal in the Championship in years. Saints admitted to filming Boro's training before the SF (plus Oxford in December, Ipswich in April). Expelled by the EFL. Appeal dismissed May 20. Boro boss Kim Hellberg was crestfallen after losing the SF on the pitch — now his side return to Wembley for the \u00a3270m prize of promotion. Middlesbrough last in the Premier League: 2017. Hull City beat Millwall 2-0 on aggregate to reach the final. 4:30pm BST · 11:30am ET · Sky Sports (UK) · Paramount+ (US)."},
   ].filter(g=>isToday(g.start_time));
 
   // ── EFL League One Playoff Final — Sun May 24, 1pm BST ─────────────────
@@ -15935,7 +15935,7 @@ function buildLifeStageContent(game, eData, stage) {
         const note = game.matchupNote;
         // Big games (CF / Finals): show full matchupNote — card expands vertically
         // Regular games: truncate at word boundary to keep card compact
-        const limit = 120;
+        const limit = 220;
         const truncated = isBigNote || note.length <= limit
           ? note
           : note.slice(0, limit).replace(/\s+\S*$/, '\u2026');
