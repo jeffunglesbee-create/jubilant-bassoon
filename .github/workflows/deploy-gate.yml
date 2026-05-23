@@ -37,6 +37,7 @@ on:
 
 permissions:
   contents: read
+  deployments: write  # Required for gitHubToken deployment status reporting
 
 jobs:
   smoke-and-deploy:
@@ -56,6 +57,7 @@ jobs:
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}  # Restores CF→GitHub deployment status + commit linkage
 
       - name: Confirm
         run: |
