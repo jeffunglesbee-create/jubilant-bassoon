@@ -5788,7 +5788,7 @@ function renderTonightSummary(sections){
       const b=g._gameImportance?`<span class="ts-badge ts-${g._gameImportance}">${g._importanceIcon||''} ${g.narrative?.label||''}</span>`:'';
       const drama=Math.round(preGameScore(g));
       const bar=drama>0?`<span style="font-size:.56rem;color:var(--muted);margin-left:auto;opacity:.65">drama ${drama}</span>`:'';
-      return `<div class="ts-game${i===0?' ts-top':''}"><div class="ts-matchup">${g.away||''} @ ${g.home||''}</div>${b}<div class="ts-meta" style="display:flex;align-items:center">${g._section} · ${t}${n?' · '+n:''} ${bar}</div></div>`;
+      return `<div class="ts-game${i===0?' ts-top':''}"><div class="ts-matchup">${g.away||''} ${g.neutral?'vs':'@'} ${g.home||''}</div>${b}<div class="ts-meta" style="display:flex;align-items:center">${g._section} · ${t}${n?' · '+n:''} ${bar}</div></div>`;
     };
     return `<div class="tonight-summary"><div class="ts-header"><span class="ts-title">⚡ Tonight on FIELD</span><span class="ts-count">${hl}</span></div><div class="ts-games">${top.map(entry).join('')}</div></div>`;
   }catch(e){return '';}
@@ -6480,7 +6480,7 @@ function buildTodaySchedule(){
     // ── Championship Final — Sat May 23, 4:30pm BST (3pm ET) ──
     {home:"Middlesbrough", away:"Hull City",
      league:"EFL Championship Playoff – Final · Winner promoted to Premier League",
-     start_time:"2026-05-23T15:30:00Z", confirmed:true, venue:"Wembley Stadium, London",
+     start_time:"2026-05-23T15:30:00Z", confirmed:true, venue:"Wembley Stadium, London", neutral:true,
      streams:resolveBundle("EFL_FINAL"),
      // SPYGATE — Southampton expelled; Middlesbrough reinstated (May 20 2026)
      // Southampton admitted unauthorised filming of Middlesbrough, Ipswich, Oxford training
@@ -6496,7 +6496,7 @@ function buildTodaySchedule(){
   const eflL1Games=[
     {home:"Stockport County",  away:"Bolton Wanderers",
      league:"EFL League One Playoff – Final · Winner promoted to Championship",
-     start_time:"2026-05-24T12:00:00Z", confirmed:true, venue:"Wembley Stadium, London",
+     start_time:"2026-05-24T12:00:00Z", confirmed:true, venue:"Wembley Stadium, London", neutral:true,
      streams:resolveBundle("EFL_PLAYOFF"),
      matchupNote:"Stockport vs Bolton — League One final. 1pm BST / 8am ET. Sky Sports (UK) · Paramount+ (US)."},
   ].filter(g=>isToday(g.start_time));
@@ -6505,7 +6505,7 @@ function buildTodaySchedule(){
   const eflL2Games=[
     {home:"Salford City",  away:"Notts County",
      league:"EFL League Two Playoff – Final · Winner promoted to League One",
-     start_time:"2026-05-25T14:00:00Z", confirmed:true, venue:"Wembley Stadium, London",
+     start_time:"2026-05-25T14:00:00Z", confirmed:true, venue:"Wembley Stadium, London", neutral:true,
      streams:resolveBundle("EFL_PLAYOFF"),
      matchupNote:"Salford vs Notts County — League Two final. 3pm BST / 10am ET. Sky Sports (UK) · Paramount+ (US)."},
   ].filter(g=>isToday(g.start_time));
@@ -7797,7 +7797,7 @@ function renderFieldDesk(){
           if(text && text.length > 20){
             seriesCards.push(`<div class="desk-card type-series">
               <div class="desk-card-label"><span class="desk-card-label-icon">🏆</span>Series Brief · ${g.seriesRecord||''}</div>
-              <div class="desk-card-title">${g.away||''} @ ${g.home||''}</div>
+              <div class="desk-card-title">${g.away||''} ${g.neutral?'vs':'@'} ${g.home||''}</div>
               <div class="desk-card-body">${text.slice(0,250).trim()}${text.length>250?'…':''}</div>
             </div>`);
           }
@@ -7816,7 +7816,7 @@ function renderFieldDesk(){
         let title = gid;
         try{
           (allData?.sports||[]).forEach(sec=>(sec.games||[]).forEach(g=>{
-            if(g._id===gid) title = `${g.away||''} @ ${g.home||''}`;
+            if(g._id===gid) title = `${g.away||''} ${g.neutral?'vs':'@'} ${g.home||''}`;
           }));
         }catch(e__){}
         cards.push(`<div class="desk-card type-brief">
@@ -7874,7 +7874,7 @@ function renderFieldDesk(){
       let title = '';
       try{
         (allData?.sports||[]).forEach(sec=>(sec.games||[]).forEach(g=>{
-          if(g._id===gid) title=`${g.away||''} @ ${g.home||''}`;
+          if(g._id===gid) title=`${g.away||''} ${g.neutral?'vs':'@'} ${g.home||''}`;
         }));
       }catch(e__){}
       const isEuropa = (briefCard.closest('[data-sport]')?.dataset.sport||'').toLowerCase().includes('europa');
@@ -12444,7 +12444,7 @@ let _pwaPrompt = null;
 
   // SW_VERSION — bump on every deploy to bust returning user cache
   // Assertion 28 in smoke verifies this constant is present
-  const SW_VERSION = '2026-05-23g';
+  const SW_VERSION = '2026-05-23h';
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
   // Cache strategy: API-only (ESPN scores, weather, odds, SportsDB).
@@ -12965,7 +12965,7 @@ function buildCompoundPrompt(sections) {
         return `Market: ${favTeam} favored ${favML} (${favPct}% probability) · ${dogTeam} +${Math.abs(dogML)} underdog`;
       })() : null;
     return [
-      `- ${g.away||''} @ ${g.home||''}`,
+      `- ${g.away||''} ${g.neutral?'vs':'@'} ${g.home||''}`,
       g.seriesRecord ? `  Series: ${g.seriesRecord}` : '',
       // Story Engine: live status line gives AI cleaner narrative context than raw scores
       (()=>{try{const _bsc=classifySport(g,null);const _bsyn=findESPNScore?.(g);if(_bsyn?.state==='in'){const _bn=computeGameNarrative(g,_bsyn,_bsc);return _bn.statusLine?`  Live: ${_bn.statusLine} (${_bn.scoreline} ${_bn.periodLabel?.replace(/<[^>]+>/g,'')||''})`.trim():'';}return '';}catch(e_){return ''}})(),
@@ -14278,7 +14278,7 @@ function renderAmbientPanel(){
     otwHTML=`<div class="ap-otw-fire">
       <span class="ap-otw-header">One to Watch</span>
       <span class="ap-fire-badge">🔴 FIRE ${tier}${ctxSuffix}</span>
-      <span class="ap-fire-game">${g.away||''} @ ${g.home||''}</span>
+      <span class="ap-fire-game">${g.away||''} ${g.neutral?'vs':'@'} ${g.home||''}</span>
       <div class="ap-fire-row3">
         <span class="ap-fire-score">${scoreStr}</span>
         ${(periodLbl||clockStr)?`<span class="ap-fire-clock">${periodLbl}${clockStr}</span>`:''}
@@ -14299,7 +14299,7 @@ function renderAmbientPanel(){
       otwHTML=`<div class="ap-soon">
         <span class="ap-otw-header">One to Watch</span>
         <span class="ap-soon-label">Up Next · ${cd}</span>
-        <span class="ap-soon-game">${soonGame.away} @ ${soonGame.home}</span>
+        <span class="ap-soon-game">${soonGame.away} ${soonGame.neutral?'vs':'@'} ${soonGame.home}</span>
         ${net?`<span class="ap-soon-meta">${net}</span>`:''}
       </div>`;
     }else{
@@ -14351,7 +14351,7 @@ function renderAmbientPanel(){
       const cd=mins<=1?'now':mins<60?`${mins}m`:`${Math.floor(mins/60)}h ${mins%60}m`;
       const net=g.streams?.[0]?.label||'';
       return `<div class="ap-score-row">
-        <span class="ap-score-teams">${railName(g.away)} @ ${railName(g.home)}${net?` · <span style="opacity:.6">${net}</span>`:''}</span>
+        <span class="ap-score-teams">${railName(g.away)} ${g.neutral?'vs':'@'} ${railName(g.home)}${net?` · <span style="opacity:.6">${net}</span>`:''}</span>
         <span class="ap-score-clock">${cd}</span>
       </div>`;
     }).join('');
@@ -14371,7 +14371,7 @@ function renderAmbientPanel(){
     const rows=_apUp.slice(0,4).map(g=>{
       const t=new Date(g.start_time).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',hour12:true,timeZone:tz2});
       return `<div class="ap-score-row">
-        <span class="ap-score-teams">${railName(g.away)} @ ${railName(g.home)}</span>
+        <span class="ap-score-teams">${railName(g.away)} ${g.neutral?'vs':'@'} ${railName(g.home)}</span>
         <span class="ap-score-clock">${t}</span>
       </div>`;
     }).join('');
@@ -14620,7 +14620,7 @@ function renderWatchWindow(){
   const seriesInfo=g.seriesRecord?' \u00b7 '+g.seriesRecord:'';
   const wwReason=buildWatchWindowReason(g);
   el.style.display='block';
-  el.innerHTML='<div class="ww-bar" id="ww-inner"><span class="ww-pulse"></span><span class="ww-header">Coming Up</span><span class="ww-soon">'+minsStr+'</span><span class="ww-game">'+(g.away||'')+' @ '+(g.home||'')+seriesInfo+'</span>'+(wwReason?'<span class="ww-reason">'+wwReason+'</span>':'')+netChip+'<button class="ww-close" id="ww-close">\u2715</button></div>';
+  el.innerHTML='<div class="ww-bar" id="ww-inner"><span class="ww-pulse"></span><span class="ww-header">Coming Up</span><span class="ww-soon">'+minsStr+'</span><span class="ww-game">'+(g.away||'')+' '+(g.neutral?'vs':'@')+' '+(g.home||'')+seriesInfo+'</span>'+(wwReason?'<span class="ww-reason">'+wwReason+'</span>':'')+netChip+'<button class="ww-close" id="ww-close">\u2715</button></div>';
   document.getElementById('ww-close')?.addEventListener('click',e=>{e.stopPropagation();_wwDismissed=true;el.style.display='none';});
   document.getElementById('ww-inner')?.addEventListener('click',e=>{if(e.target.id==='ww-close'||e.target.closest('a')) return;const h=(g.home||'').replace(/[^a-z]/gi,'').toLowerCase();const card=[...document.querySelectorAll('.game-card')].find(c=>(c.dataset.home||'').replace(/[^a-z]/gi,'').toLowerCase()===h);if(card)card.scrollIntoView({behavior:'smooth',block:'center'});});
   if(!_wwInterval){_wwInterval=setInterval(()=>{const startMs=new Date(best.g.start_time).getTime();if(Date.now()>startMs+5*60000)_wwDismissed=false;renderWatchWindow();},60000);}
@@ -15256,7 +15256,7 @@ function renderOneToWatch(){
     banner.innerHTML=`<div class="otw-inner${watchBtn?' otw-inner-has-watch':''}" id="otw-inner" role="button" tabindex="0">
       <span class="otw-pulse"></span>
       <span class="otw-label">One to Watch</span>
-      <span class="otw-matchup">${g.away||''} @ ${g.home||''} \u00a0${scoreStr}</span>
+      <span class="otw-matchup">${g.away||''} ${g.neutral?'vs':'@'} ${g.home||''} \u00a0${scoreStr}</span>
       ${why?`<span class="otw-why">${why}</span>`:''}
       ${momentum==='up'?'<span class="otw-momentum up">\u2191</span>':''}
       <span class="otw-drama d-${tier}">${tierBadge}</span>
@@ -15275,7 +15275,7 @@ function renderOneToWatch(){
     banner.innerHTML=`<div class="otw-inner otw-live" id="otw-inner" role="button" tabindex="0">
       <span class="otw-pulse otw-pulse-live"></span>
       <span class="otw-label">Live</span>
-      <span class="otw-matchup">${g.away||''} @ ${g.home||''} \u00a0${scoreStr}</span>
+      <span class="otw-matchup">${g.away||''} ${g.neutral?'vs':'@'} ${g.home||''} \u00a0${scoreStr}</span>
       ${why?`<span class="otw-why">${why}</span>`:''}
       ${dismissBtn()}
     </div>`;
@@ -15302,7 +15302,7 @@ function renderOneToWatch(){
     banner.innerHTML=`<div class="otw-inner otw-pregame" id="otw-inner" role="button" tabindex="0">
       <span class="otw-pulse otw-pulse-pre"></span>
       <span class="otw-label">${_otwCtxHigh&&_otwCtxLabel?_otwCtxLabel:'Soon'}</span>
-      <span class="otw-matchup">${g.away||''} @ ${g.home||''}</span>
+      <span class="otw-matchup">${g.away||''} ${g.neutral?'vs':'@'} ${g.home||''}</span>
       <span class="otw-countdown" id="otw-countdown">${cd}</span>
       ${net?`<span class="otw-drama d-pregame">${net}</span>`:''}
       ${dismissBtn()}
@@ -15324,7 +15324,7 @@ function renderOneToWatch(){
       banner.innerHTML=`<div class="otw-inner otw-pregame" id="otw-inner" role="button" tabindex="0">
         <span class="otw-pulse otw-pulse-pre"></span>
         <span class="otw-label">${_otwCtxHigh&&_otwCtxLabel?_otwCtxLabel:'Tonight'}</span>
-        <span class="otw-matchup">${g.away||''} @ ${g.home||''}</span>
+        <span class="otw-matchup">${g.away||''} ${g.neutral?'vs':'@'} ${g.home||''}</span>
         ${why?`<span class="otw-why">${why}</span>`:''}
         <span class="otw-drama d-pregame">TOP PICK</span>
         ${dismissBtn()}
