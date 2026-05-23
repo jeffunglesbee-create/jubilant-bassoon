@@ -1,0 +1,38 @@
+=== CF API Probe [20260523T185238Z] ===
+Request: GET https://api.cloudflare.com/client/v4/accounts/b57e9af57ab46c52ca9215804e689c29/workers/scripts/jubilant-bassoon/settings
+
+{
+    "result": {
+        "placement": {},
+        "compatibility_date": "2026-05-14",
+        "compatibility_flags": [
+            "nodejs_compat"
+        ],
+        "usage_model": "standard",
+        "tags": [],
+        "tail_consumers": [],
+        "logpush": false,
+        "observability": {
+            "enabled": true,
+            "head_sampling_rate": 1,
+            "logs": {
+                "enabled": true,
+                "head_sampling_rate": 1,
+                "persist": true,
+                "invocation_logs": true
+            },
+            "traces": {
+                "enabled": false,
+                "persist": true,
+                "head_sampling_rate": 1
+            }
+        },
+        "annotations": {
+            "workers/triggered_by": "version_upload"
+        },
+        "bindings": []
+    },
+    "success": true,
+    "errors": [],
+    "messages": []
+}
