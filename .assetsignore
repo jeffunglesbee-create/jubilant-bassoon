@@ -1,0 +1,10 @@
+# Exclude everything except the 3 FIELD app files: index.html, sw.js, field_utils.js
+# .assetsignore uses gitignore syntax; negations (!) re-include files.
+
+# Exclude all files by default
+*
+
+# Re-include the 3 app files
+!index.html
+!sw.js
+!field_utils.js
