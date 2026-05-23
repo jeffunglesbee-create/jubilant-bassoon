@@ -164,7 +164,11 @@ function buildPrompt(g) {
   if (g.seriesRecord)  lines.push(`Series: ${g.seriesRecord}`);
   if (g.gameLabel)     lines.push(`Context: ${g.gameLabel}`);
   if (!g.seriesRecord && !g.isPlayoff) {
-    lines.push(`Context: regular season game`);
+    if (g.league === "MLS") {
+      lines.push(`Context: MLS regular season. Playoff spots: top 9 each conference. No relegation. Supporters\u2019 Shield awarded to best overall record.`);
+    } else {
+      lines.push(`Context: regular season game`);
+    }
   }
   lines.push(`Style: punchy sports journalism, focus on stakes and why it matters tonight.`);
   lines.push(`No preamble. Respond with ONLY the note text.`);
@@ -231,11 +235,59 @@ function callClaude(prompt) {
 }
 
 // ── Main ──────────────────────────────────────────────────────────────────
+
+// ── Fetch today's MLS fixtures from ESPN usa.1 (no auth needed) ───────────────
+// Returns [{home, away, league, start_time, venue, isPlayoff}]
+function parseMLS() {
+  return new Promise((resolve) => {
+    const dateStr = TODAY.replace(/-/g, "");
+    const req = https.request({
+      hostname: "site.api.espn.com",
+      path: `/apis/site/v2/sports/soccer/usa.1/scoreboard?dates=${dateStr}&limit=30`,
+      method: "GET",
+      headers: { "User-Agent": "FIELD-DataBot/1.0", "Accept": "application/json" },
+    }, res => {
+      let data = "";
+      res.on("data", c => data += c);
+      res.on("end", () => {
+        try {
+          const parsed = JSON.parse(data);
+          const games = (parsed.events || []).map(ev => {
+            const comp  = (ev.competitions || [])[0]; if (!comp) return null;
+            const comps = comp.competitors || [];
+            const home  = comps.find(t => t.homeAway === "home") || comps[0];
+            const away  = comps.find(t => t.homeAway === "away") || comps[1];
+            if (!home || !away) return null;
+            const isPlayoff = (ev.season?.type === 4) ||
+              (ev.name || "").toLowerCase().includes("playoff") ||
+              (ev.name || "").toLowerCase().includes("cup");
+            return {
+              home:       home.team?.displayName || "?",
+              away:       away.team?.displayName || "?",
+              league:     isPlayoff ? "MLS Cup Playoffs" : "MLS",
+              start_time: ev.date || "",
+              venue:      comp.venue?.fullName || "",
+              isPlayoff,
+              gameLabel:  ev.name || null,
+            };
+          }).filter(Boolean);
+          if (games.length) console.log(`MLS: ${games.length} game(s) for ${TODAY}`);
+          resolve(games);
+        } catch (e) { console.warn("MLS parse error:", e.message); resolve([]); }
+      });
+    });
+    req.on("error", () => resolve([]));
+    req.setTimeout(10000, () => { req.destroy(); resolve([]); });
+    req.end();
+  });
+}
+
 async function main() {
   const nhlGames = parseNHL();
   const nbaGames = parseNBA();
   const mlbPPD   = await parseMLBPostponed();
-  console.log(`Parsed: ${nhlGames.length} NHL + ${nbaGames.length} NBA game(s) + ${mlbPPD.length} MLB PPD for ${TODAY}`);
+  const mlsGames = await parseMLS();
+  console.log(`Parsed: ${nhlGames.length} NHL + ${nbaGames.length} NBA + ${mlsGames.length} MLS game(s) + ${mlbPPD.length} MLB PPD for ${TODAY}`);
 
   // Log raw series data for debugging
   [...nhlGames, ...nbaGames].forEach(g =>
@@ -249,7 +301,7 @@ async function main() {
   else if (useClaude) console.log('ANTHROPIC_API_KEY present — matchupNotes via Claude Sonnet 4');
   else console.log('No AI key — overlays only (no matchupNotes)');
 
-  for (const g of [...nhlGames, ...nbaGames]) {
+  for (const g of [...nhlGames, ...nbaGames, ...mlsGames]) {
     const ov = { _match_key: `${g.home}|${g.away}` };
     if (g.seriesRecord) ov.seriesRecord = g.seriesRecord;
 
@@ -298,7 +350,7 @@ async function main() {
       generated_at: new Date().toISOString(),
       for_date: TODAY,
       source: 'field-data workflow (automated)',
-      games_found: { nhl: nhlGames.length, nba: nbaGames.length },
+      games_found: { nhl: nhlGames.length, nba: nbaGames.length, mls: mlsGames.length },
       ai_notes: useAI,
       ai_backend: useGemini ? 'gemini-3.1-flash-lite' : (useClaude ? 'claude-sonnet-4' : 'none'),
       note: 'Auto-generated daily at 7:30 AM UTC. Manual edits persist until the next run.',

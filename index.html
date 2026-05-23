@@ -6636,30 +6636,8 @@ function buildTodaySchedule(){
     {home:"Greater Western Sydney",away:"Brisbane Lions",   league:"AFL 2026 — Round 11", start_time:"2026-05-24T02:30:00Z", confirmed:true, venue:"Sydney Showground",             streams:resolveBundle("AFL_USA"), _id:"afl_38591"},
     {home:"Western Bulldogs",     away:"Melbourne",          league:"AFL 2026 — Round 11", start_time:"2026-05-24T05:15:00Z", confirmed:true, venue:"Docklands (Marvel Stadium)",   streams:resolveBundle("AFL_USA"), _id:"afl_38592"},
   ].filter(g=>isToday(g.start_time));
-  // ── MLS Soccer — Saturday May 16 2026 (Matchday 14) ──────────────
-  // All MLS games on Apple TV (included w/ Apple TV sub — 2026 deal, no separate Season Pass)
-  // Sources: mlssoccer.com schedule verified May 16, 2026
-  const mlsSoccer=[
-    // ── Saturday May 16 — 4:30pm ET complete ───────────────────────
-    {home:"CF Montréal",           away:"Chicago Fire",          league:"MLS — 2026 Season",        start_time:"2026-05-16T20:30:00Z", confirmed:true, venue:"Stade Saputo, Montreal QC",          streams:resolveBundle("MLS_SOCCER"), localNote:"TSN/RDS (Canada)"},
-    // ── Saturday May 16 — 7:30pm ET slate ──────────────────────────
-    {home:"Charlotte FC",          away:"Toronto FC",            league:"MLS — 2026 Season",        start_time:"2026-05-16T23:30:00Z", confirmed:true, venue:"Bank of America Stadium, Charlotte",  streams:resolveBundle("MLS_SOCCER")},
-    {home:"DC United",             away:"Saint Louis City SC",   league:"MLS — 2026 Season",        start_time:"2026-05-16T23:30:00Z", confirmed:true, venue:"Audi Field, Washington DC",           streams:resolveBundle("MLS_SOCCER")},
-    {home:"New England Revolution",away:"Minnesota United FC",   league:"MLS — 2026 Season",        start_time:"2026-05-16T23:30:00Z", confirmed:true, venue:"Gillette Stadium, Foxboro MA",        streams:resolveBundle("MLS_SOCCER")},
-    {home:"New York Red Bulls",    away:"New York City FC",      league:"MLS — Hudson River Derby", start_time:"2026-05-16T23:30:00Z", confirmed:true, venue:"Red Bull Arena, Harrison NJ",         streams:resolveBundle("MLS_SOCCER")},
-    {home:"Orlando City SC",       away:"Atlanta United FC",     league:"MLS — 2026 Season",        start_time:"2026-05-16T23:30:00Z", confirmed:true, venue:"Inter&Co Stadium, Orlando FL",        streams:resolveBundle("MLS_SOCCER")},
-    {home:"Philadelphia Union",    away:"Columbus Crew",         league:"MLS — 2026 Season",        start_time:"2026-05-16T23:30:00Z", confirmed:true, venue:"Subaru Park, Chester PA",             streams:resolveBundle("MLS_SOCCER")},
-    // ── Saturday May 16 — 8:30–10:30pm ET late slate ───────────────
-    {home:"Austin FC",             away:"Sporting Kansas City",  league:"MLS — 2026 Season",        start_time:"2026-05-17T00:30:00Z", confirmed:true, venue:"Q2 Stadium, Austin TX",               streams:resolveBundle("MLS_SOCCER")},
-    {home:"Houston Dynamo",        away:"Vancouver Whitecaps FC",league:"MLS — 2026 Season",        start_time:"2026-05-17T00:30:00Z", confirmed:true, venue:"Shell Energy Stadium, Houston TX",    streams:resolveBundle("MLS_SOCCER")},
-    {home:"Seattle Sounders",      away:"LA Galaxy",             league:"MLS — 2026 Season",        start_time:"2026-05-17T01:15:00Z", confirmed:true, venue:"Lumen Field, Seattle WA",             streams:resolveBundle("MLS_SOCCER")},
-    {home:"Real Salt Lake",        away:"Colorado Rapids",       league:"MLS — 2026 Season",        start_time:"2026-05-17T01:30:00Z", confirmed:true, venue:"America First Field, Sandy UT",       streams:resolveBundle("MLS_SOCCER")},
-    {home:"San Diego FC",          away:"FC Cincinnati",         league:"MLS — 2026 Season",        start_time:"2026-05-17T01:30:00Z", confirmed:true, venue:"Snapdragon Stadium, San Diego CA",    streams:resolveBundle("MLS_SOCCER")},
-    {home:"San Jose Earthquakes",  away:"FC Dallas",             league:"MLS — 2026 Season",        start_time:"2026-05-17T02:30:00Z", confirmed:true, venue:"PayPal Park, San Jose CA",            streams:resolveBundle("MLS_SOCCER")},
-    // ── Sunday May 17 ───────────────────────────────────────────────
-    {home:"Inter Miami CF",        away:"Portland Timbers",      league:"MLS — 2026 Season",        start_time:"2026-05-17T22:00:00Z", confirmed:true, venue:"Chase Stadium, Fort Lauderdale FL",   streams:resolveBundle("MLS_SOCCER")},
-    {home:"Nashville SC",          away:"Los Angeles FC",        league:"MLS — 2026 Season",        start_time:"2026-05-18T00:00:00Z", confirmed:true, venue:"GEODIS Park, Nashville TN",           streams:resolveBundle("MLS_SOCCER")},
-  ].filter(g=>isToday(g.start_time));
+  // ── MLS Soccer — live from fetchSoccerFixtures (ESPN usa.1) ────────────
+  const mlsSoccer=[];
 
   // ── Tennis: Italian Open Rome (May 6-17 2026) ──────────────────────────
   const romeStart=new Date("2026-05-06T00:00:00Z"), romeEnd=new Date("2026-05-17T23:59:00Z");
@@ -6903,6 +6881,18 @@ function buildTodaySchedule(){
     // Playoff/cup final: single decisive match → series_deciding importance
     if (/final/i.test(s) && /playoff|cup|champions|europa|conference/i.test(s))
       return {importance:'series_deciding', boost:28, label:'Playoff Final', icon:'🏆'};
+
+    // ── MLS drama (no promotion/relegation) ──────────────────────────
+    if (/mls/i.test(s)) {
+      if (/mls.?cup.?final/i.test(s)) return {importance:"series_deciding",boost:28,label:"MLS Cup Final",icon:"🏆"};
+      if (/conference.?final|eastern.?final|western.?final/i.test(s)) return {importance:"series_deciding",boost:22,label:"Conference Final",icon:"🏆"};
+      if (/supporters.{0,15}shield|shield.{0,10}race/i.test(g.matchupNote||"")) return {importance:"series_deciding",boost:20,label:"Supporters’ Shield race",icon:"🛡️"};
+      if (/playoff.{0,20}spot|conference.{0,20}race|clinch/i.test(g.matchupNote||"")) return {importance:"playoff_impl",boost:14,label:"Playoff position race",icon:"📊"};
+      if (/el.?tráfico|el.?trafico/i.test(g.league||g.matchupNote||"")) return {importance:"series_deciding",boost:20,label:"El Tráfico — LA’s biggest derby",icon:"🔥"};
+      if (/hudson.?river.?derby/i.test(g.league||g.matchupNote||"")) return {importance:"playoff_impl",boost:15,label:"Hudson River Derby",icon:"🔥"};
+      if (/cascadia/i.test(g.league||g.matchupNote||"")) return {importance:"playoff_impl",boost:12,label:"Cascadia Derby",icon:"🔥"};
+      if (/hell.?is.?real|ohio.?cup/i.test(g.league||g.matchupNote||"")) return {importance:"playoff_impl",boost:12,label:"Regional MLS rivalry",icon:"🔥"};
+    }
 
     // ── Soccer league relegation/European stakes ─────────────────────────
     // _gameImportance set manually via overlay for known relegation/Europe battles.
@@ -8630,6 +8620,7 @@ const ESPN_STANDINGS_MAP = {
   // NBA/NHL Playoffs: use regular season standings for record context
   'NBA Playoffs':      { sport: 'basketball', league: 'nba' },
   'NHL Playoffs':      { sport: 'hockey',     league: 'nhl' },
+  'MLS Soccer':        { sport: 'soccer',     league: 'usa.1', isSoccer: true },
 };
 const espnStandingsCache = {}; // cacheKey → standings entries (populated by fetchESPNStandings)
 const fdStandingsCache = {}; // code → [{pos,team,played,won,draw,lost,gf,ga,gd,pts,form}]
@@ -8709,6 +8700,55 @@ const VENUE_COORDS = {
   "Snapdragon Stadium, San Diego":         [32.7532, -117.1214, true],
   "Stade Saputo, Montreal":                [45.5636, -73.5518,  true],
   "BMO Field, Toronto":                    [43.6333, -79.4186,  true],
+  // MLS stadiums
+  "Chase Stadium, Fort Lauderdale FL":    [26.1947, -80.1506,  true],
+  "Chase Stadium, Fort Lauderdale":       [26.1947, -80.1506,  true],
+  "Red Bull Arena, Harrison NJ":          [40.7367, -74.1503,  true],
+  "Red Bull Arena, Harrison":             [40.7367, -74.1503,  true],
+  "Subaru Park, Chester PA":              [39.8334, -75.3808,  true],
+  "Subaru Park, Chester":                 [39.8334, -75.3808,  true],
+  "Gillette Stadium, Foxboro MA":         [42.0909, -71.2643,  true],
+  "Bank of America Stadium, Charlotte":   [35.2259, -80.8529,  true],
+  "Audi Field, Washington DC":            [38.8695, -77.0125,  true],
+  "Lower.com Field, Columbus OH":         [39.9690, -83.0154,  true],
+  "Lower.com Field, Columbus":            [39.9690, -83.0154,  true],
+  "TQL Stadium, Cincinnati OH":           [39.1051, -84.5182,  true],
+  "TQL Stadium, Cincinnati":              [39.1051, -84.5182,  true],
+  "Inter&Co Stadium, Orlando FL":         [28.5415, -81.3893,  true],
+  "Inter&Co Stadium, Orlando":            [28.5415, -81.3893,  true],
+  "GEODIS Park, Nashville TN":            [36.1307, -86.7665,  true],
+  "GEODIS Park, Nashville":               [36.1307, -86.7665,  true],
+  "CITYPARK, St. Louis":                  [38.6317, -90.2016,  true],
+  "CityPark, St. Louis MO":               [38.6317, -90.2016,  true],
+  "Allianz Field, St. Paul MN":           [44.9530, -93.1649,  true],
+  "Allianz Field, St. Paul":              [44.9530, -93.1649,  true],
+  "BMO Stadium, Los Angeles CA":          [34.0130, -118.2845, true],
+  "BMO Stadium, Los Angeles":             [34.0130, -118.2845, true],
+  "Dignity Health Sports Park, Carson CA":[33.8643, -118.2611, true],
+  "Dignity Health Sports Park, Carson":   [33.8643, -118.2611, true],
+  "Dignity Health Sports Park":           [33.8643, -118.2611, true],
+  "Lumen Field, Seattle WA":              [47.5952, -122.3316, true],
+  "Lumen Field, Seattle":                 [47.5952, -122.3316, true],
+  "Providence Park, Portland OR":         [45.5215, -122.6917, true],
+  "Providence Park, Portland":            [45.5215, -122.6917, true],
+  "PayPal Park, San Jose CA":             [37.3519, -121.9254, true],
+  "PayPal Park, San Jose":                [37.3519, -121.9254, true],
+  "America First Field, Sandy UT":        [40.5830, -111.8932, true],
+  "America First Field, Sandy":           [40.5830, -111.8932, true],
+  "Dick's Sporting Goods Park, Commerce City":[39.8057,-104.8919,true],
+  "Dick's Sporting Goods Park":          [39.8057, -104.8919, true],
+  "Q2 Stadium, Austin TX":                [30.3872, -97.7180,  true],
+  "Q2 Stadium, Austin":                   [30.3872, -97.7180,  true],
+  "Shell Energy Stadium, Houston TX":     [29.7523, -95.3511,  true],
+  "Shell Energy Stadium, Houston":        [29.7523, -95.3511,  true],
+  "Children's Mercy Park, Kansas City":  [39.1225, -94.8239,  true],
+  "Children's Mercy Park":               [39.1225, -94.8239,  true],
+  "Toyota Stadium, Frisco TX":            [33.1545, -96.8353,  true],
+  "Toyota Stadium, Frisco":               [33.1545, -96.8353,  true],
+  "Snapdragon Stadium, San Diego CA":     [32.7831, -117.1199, true],
+  "Snapdragon Stadium, San Diego":        [32.7831, -117.1199, true],
+  "Stade Saputo, Montreal QC":            [45.5640, -73.5518,  true],
+  "Stade Saputo, Montreal":               [45.5640, -73.5518,  true],
   "Mercedes-Benz Stadium, Atlanta":        [33.7555, -84.4010,  false],
   "BC Place, Vancouver":                   [49.2768, -123.1118, false],
   // EPL / European Soccer ────────────────────────────────────────────────────
@@ -9765,6 +9805,10 @@ async function fetchESPNStandings(sportName){
           streak:     stats.streak      || "",
           last10:     stats.Last10      || stats.L10  || "",
           pts:        stats.points      || stats.PTS  || "",
+          played:     stats.gamesPlayed || stats.GP   || "",
+          draws:      stats.ties        || stats.D    || "",
+          gd:         stats.goalDifference != null ? String(stats.goalDifference) : "",
+          group:      g.name            || "",
         });
       });
     });
@@ -9783,7 +9827,7 @@ async function toggleStandings(btn, leagueId, season){
   const card = btn.closest(".game-card");
   if(!card) return;
   const sportName = card.dataset.sport || "";
-  const isSoccerSport = !!FD_LEAGUE_MAP[sportName];
+  const isSoccerSport = !!FD_LEAGUE_MAP[sportName] || sportName === "MLS Soccer";
   const openLabel  = isSoccerSport ? "▼ Table"     : "▼ Standings";
   const closeLabel = isSoccerSport ? "▲ Table"     : "▲ Standings";
   let panel = card.querySelector(".standings-panel");
@@ -9830,9 +9874,56 @@ async function toggleStandings(btn, leagueId, season){
 
 // Render ESPN standings into a panel — called from toggleStandings
 function renderESPNStandingsPanel(panel, entries, sportName){
-  const isSoccer = sportName.includes("Premier")||sportName.includes("Liga")||
+  const isMLS    = sportName.includes("MLS");
+  const isSoccer = isMLS || sportName.includes("Premier")||sportName.includes("Liga")||
                    sportName.includes("Bundesliga")||sportName.includes("Serie")||
-                   sportName.includes("Ligue")||sportName.includes("MLS");
+                   sportName.includes("Ligue");
+
+  if (isMLS) {
+    const confMap = {};
+    entries.forEach(e => { const g = e.group||"Conference"; if(!confMap[g]) confMap[g]=[]; confMap[g].push(e); });
+    let bodyHtml = "";
+    Object.keys(confMap).sort().forEach((conf,ci) => {
+      const rows = confMap[conf];
+      bodyHtml += `<tr><td colspan="9" style="font-size:.58rem;font-weight:700;color:var(--gold2);padding:.3rem .3rem .1rem;letter-spacing:.04em;text-transform:uppercase;border-top:${ci>0?"1px solid rgba(255,255,255,.08)":"none"}">${conf}</td></tr>`;
+      rows.forEach((r,i) => {
+        const cls  = i < 3 ? "highlight" : "";
+        const mark = i < 9 ? (i < 3 ? "★" : "·") : "";
+        const gdn  = Number(r.gd);
+        const gdVal = r.gd ? (gdn > 0 ? "+"+r.gd : r.gd) : "—";
+        bodyHtml += `<tr class="${cls}">
+          <td style="color:var(--smoke);font-size:.6rem;padding-right:.3rem">${r.rank||i+1}</td>
+          <td style="max-width:88px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.7rem">${r.team}</td>
+          <td style="text-align:right;font-size:.62rem">${r.played||"—"}</td>
+          <td style="text-align:right;font-size:.62rem">${r.wins||"—"}</td>
+          <td style="text-align:right;font-size:.62rem;color:var(--smoke)">${r.draws||"—"}</td>
+          <td style="text-align:right;font-size:.62rem">${r.losses||"—"}</td>
+          <td style="text-align:right;font-size:.62rem;color:var(--smoke)">${gdVal}</td>
+          <td style="text-align:right;color:var(--gold2);font-weight:700;font-size:.7rem">${r.pts||"—"}</td>
+          <td style="padding-left:.2rem;font-size:.55rem;color:var(--smoke)">${mark}</td>
+        </tr>`;
+      });
+    });
+    panel.innerHTML = `<table class="standings-table" style="width:100%">
+      <thead><tr>
+        <th style="font-size:.58rem">#</th><th>Team</th>
+        <th style="text-align:right;font-size:.58rem">P</th>
+        <th style="text-align:right;font-size:.58rem">W</th>
+        <th style="text-align:right;font-size:.58rem">D</th>
+        <th style="text-align:right;font-size:.58rem">L</th>
+        <th style="text-align:right;font-size:.58rem">GD</th>
+        <th style="text-align:right;font-size:.58rem">Pts</th>
+        <th></th>
+      </tr></thead>
+      <tbody>${bodyHtml}</tbody>
+    </table>
+    <div style="font-size:.55rem;color:var(--smoke);padding:.2rem .5rem .1rem;display:flex;justify-content:space-between">
+      <span>★ Top 3 · Playoff spot (top 9 per conf)</span>
+      <span>via ESPN · MLS 2026</span>
+    </div>`;
+    return;
+  }
+
   const rows = entries.slice(0,12).map((r,i)=>{
     const highlight = i<4 && isSoccer ? "highlight" : i===0 && !isSoccer ? "highlight" : "";
     const streak = r.streak ? `<td style="text-align:right;font-size:.65rem;color:var(--smoke)">${r.streak}</td>` : "";
@@ -10095,11 +10186,8 @@ const SOCCER_LEAGUES = [
   {league:"ita.1", section:"Serie A",          bundle:"SERIE_A",   endDate:"2026-05-26"},
   {league:"ger.1", section:"Bundesliga",       bundle:"BUNDESLIGA",endDate:"2026-05-18"},
   {league:"fra.1", section:"Ligue 1",          bundle:"LIGUE_1",   endDate:"2026-05-25"},
-  // MLS Soccer: covered by hardcoded mlsSoccer[] in buildTodaySchedule() — not fetched from ESPN
-  // to prevent triple duplication (hardcoded + ESPN usa.1 + SportsDB 4346)
+  {league:"usa.1", section:"MLS Soccer",       bundle:"MLS_SOCCER",endDate:"2026-10-19"},
 ];
-// Soccer endpoints use different path pattern — separate handling
-// {sport:"soccer", league:"usa.1", section:"MLS Soccer"},
 
 let espnScores    = {}; // { "Home|Away": scoreObj }
 let espnScoreTs   = {}; // { "Home|Away": timestamp } — for stale-entry pruning
@@ -13588,12 +13676,38 @@ async function fetchNHLStandingsParsed() {
   } catch(e) { if (FIELD_DEBUG) console.warn('[Standings] NHL error:', e.message); return null; }
 }
 
+async function fetchMLSStandingsParsed() {
+  const key = "MLS Soccer";
+  if (_relayStandingsCache[key]) return _relayStandingsCache[key];
+  try {
+    const r = await fetch("https://site.api.espn.com/apis/site/v2/sports/soccer/usa.1/standings",
+      { signal: AbortSignal.timeout(6000) });
+    if (!r.ok) return null;
+    const data = await r.json();
+    const teams = [];
+    (data.children || [data]).forEach(group => {
+      const confName = group.name || "";
+      (group.standings?.entries || []).forEach(e => {
+        const sv = name => { const s=(e.stats||[]).find(s=>s.name===name); return s ? String(s.displayValue??s.value??"") : ""; };
+        teams.push({ team:e.team?.displayName||"", abbrev:e.team?.abbreviation||"",
+          group:confName, rank:Number(sv("rank"))||teams.length+1,
+          pts:sv("points"), wins:sv("wins"), draws:sv("ties"),
+          losses:sv("losses"), played:sv("gamesPlayed"), gd:sv("goalDifference") });
+      });
+    });
+    if (teams.length) _relayStandingsCache[key] = teams;
+    if (FIELD_DEBUG) console.log(`[Standings] MLS: ${teams.length} teams from ESPN`);
+    return teams.length ? teams : null;
+  } catch(e) { if (FIELD_DEBUG) console.warn("[Standings] MLS error:", e.message); return null; }
+}
+
 // Dispatcher: routes to correct source per sport, populates _relayStandingsCache
 async function fetchStandingsForPrompt(sport) {
   if (!sport) return null;
   if (sport.includes('Baseball') || sport.includes('MLB'))     return fetchMLBStandingsParsed();
   if (sport.includes('Basketball') || sport.includes('NBA'))   return fetchNBAStandingsParsed();
   if (sport.includes('Hockey') || sport.includes('NHL'))       return fetchNHLStandingsParsed();
+  if (sport.includes('MLS'))                                    return fetchMLSStandingsParsed();
   // Soccer: FD already populates fdStandingsCache — buildGameStandingsContext reads it directly
   // NFL: off-season, low urgency — ESPN on-demand via ▼ Table button is acceptable
   return null;
@@ -13620,6 +13734,18 @@ function buildGameStandingsContext(game) {
       `${t}: ${e.pos}${e.pos <= 4 ? '★' : e.pos >= 18 ? '↓' : ''} (${e.pts}pts)`;
     const parts = [fmt(findFD(game.away), game.away), fmt(findFD(game.home), game.home)].filter(Boolean);
     return parts.length ? 'Table: ' + parts.join(' · ') : '';
+  }
+
+  // ── MLS Soccer: relay standings from fetchMLSStandingsParsed ─────────
+  if (sport.includes('MLS')) {
+    const mlsRows = _relayStandingsCache[sport];
+    if (mlsRows?.length) {
+      const n = name => teamNick(name).toLowerCase();
+      const findMLS = name => mlsRows.find(r => (r.team||"").toLowerCase().includes(n(name)));
+      const fmt = (e, t) => !e ? "" : `${t}: ${e.pts}pts`;
+      const parts = [fmt(findMLS(game.away), game.away), fmt(findMLS(game.home), game.home)].filter(Boolean);
+      return parts.length ? "Table: " + parts.join(" · ") : "";
+    }
   }
 
   // ── US sports: relay/API standings first, ESPN on-demand as fallback ────
