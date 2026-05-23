@@ -3298,6 +3298,7 @@ const SR = {
   fs1:       ["FS1",           "https://www.foxsports.com/live",                    "#f0c040","tv",  "Cable/satellite login required. Streams via Fox One with TV provider. FIFA World Cup 2026: 34 matches on FS1."],
   tubi:      ["Tubi (FREE)",   "https://tubitv.com/live",                           "#f57c00","free","Free ad-supported streaming — no account or subscription required. FIFA World Cup 2026: Mexico vs South Africa (June 11) and USA vs Paraguay (June 12) simulcast live in 4K for free on Tubi."],
   cbs:       ["CBS",           "https://www.cbssports.com/live",                    "#a78bfa","tv",  "Cable/satellite login or Paramount+ Premium required ($13.99/mo) to stream local CBS live."],
+  golazo:    ["CBS Sports Golazo (FREE)","https://www.cbssports.com/golazo-network/",          "#00b86b","free","CBS Sports Golazo Network — free 24/7 soccer FAST channel, no subscription or login. Carried free on Paramount+, Pluto TV, Tubi, Samsung TV Plus, The Roku Channel and Amazon. Live matches (CONCACAF, NWSL, Scottish Premiership, select UEFA early-window fixtures) plus studio shows incl. Morning Footy. Per-match carriage rotates — attach golazo only to verified fixtures."],
   // ── Streaming / SVOD ──────────────────────────────────────────────────────────
   peacock:   ["Peacock",       "https://www.peacocktv.com/sports",                  "#00ffcc","sub", "Peacock Premium required (~$8/mo). NBCSN RULE: Peacock streams NBC OTA games AND Peacock-exclusive games; NBCSN only carries the Peacock-exclusive ones (not the NBC OTA simulcasts). USA Network rule: Peacock does NOT stream USA Network EPL games — those are Versant-owned and separate. MLB: SNB Peacock/NBCSN-only Mar 29–May 30 & Sep 6–20 (not on NBC OTA); NBC+Peacock May 31–Sep 6. Sunday Leadoff: Peacock/NBCSN exclusive. GOTD: weekday non-exclusive. NBA: NBC OTA games stream on Peacock (NBCSN not involved); Peacock-exclusive games stream on Peacock+NBCSN. EPL: ~175 games — Peacock-only games also on NBCSN; NBC games on Peacock (but NOT NBCSN); USA Network games NOT on Peacock."],
   paramount: ["Paramount+",    "https://www.paramountplus.com/shows/uefa-champions-league/","#6699ff","sub", "Paramount+ Essential ($8.99/mo with ads) or Premium ($13.99/mo, ad-free + local CBS). All three UEFA competitions: Champions League, Europa League, Conference League. Also: Serie A, NFL on CBS, UFC and more."],
@@ -7082,6 +7083,18 @@ const MEDIA_WEEKDAY = [
     desc:"Pat McAfee and crew with sports talk, NFL news, and daily guest interviews. Live from ESPN HQ.",
     link:"https://www.espn.com/watch/"
   },
+  {
+    show:"Morning Footy",network:"CBS Sports Golazo",chip:"golazo",
+    time:"Weekday mornings ET",
+    desc:"CBS Sports Golazo Network's daily weekday morning soccer show — news, analysis and previews across the Champions League, Serie A, NWSL, CONCACAF and the world game. Free on the Golazo 24/7 FAST channel (Paramount+, Pluto TV, Tubi, Samsung TV Plus, The Roku Channel) — no subscription or login.",
+    link:"https://www.cbssports.com/golazo-network/"
+  },
+  {
+    show:"CBS Sports HQ",network:"CBS Sports HQ",chip:"CBS",
+    time:"Live 24/7 ET",
+    desc:"CBS Sports' free 24/7 streaming news network — live studio shows, breaking news, highlights and analysis with no subscription or login. Streams free on CBSSports.com, Paramount+, Pluto TV, Tubi, Samsung TV Plus and The Roku Channel.",
+    link:"https://www.cbssports.com/cbs-sports-hq/"
+  },
 ];
 
 // ── Weekend base template (Sat + Sun) ──────────────────────────────────────
@@ -7092,6 +7105,12 @@ const MEDIA_WEEKEND_BASE = [
     time:"8:00 AM, 10:00 AM ET",
     desc:"Weekend SportsCenter with overnight scores, highlights, and game-day previews for today's full slate.",
     link:"https://www.espn.com/watch/"
+  },
+  {
+    show:"CBS Sports HQ",network:"CBS Sports HQ",chip:"CBS",
+    time:"Live 24/7 ET",
+    desc:"CBS Sports' free 24/7 streaming news network — live studio shows, breaking news, highlights and analysis with no subscription or login. Streams free on CBSSports.com, Paramount+, Pluto TV, Tubi, Samsung TV Plus and The Roku Channel.",
+    link:"https://www.cbssports.com/cbs-sports-hq/"
   },
 ];
 
@@ -7378,7 +7397,7 @@ function renderMedia(){
   const MEDIA_CHIP_COLORS = {
     ESPN:"#ff3c3c", FS1:"#f0c040", CBS:"#a78bfa",
     TNT:"#ff6b35",  NBC:"#00b4d8", MLB:"#c9a84c",
-    prime:"#f8cf47",
+    prime:"#f8cf47", golazo:"#00b86b",
     default:"#888"
   };
   const grid = document.getElementById("media-grid");
