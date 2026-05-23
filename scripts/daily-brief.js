@@ -22,6 +22,7 @@ const {
   WNBA_COUNT = '0',
   AFL_COUNT = '0',
   SOCCER_COUNT = '0',
+  SOCCER_FEED_OK = 'true',  // 'false' when the FD relay returned an error
   TENNIS_NOTE = '',
   SW_STATUS = 'unknown',
   RELAY_STATUS = 'unknown',
@@ -72,11 +73,13 @@ const aflLines = aflGames.length
   ? aflGames.slice(0, 5).map(g => `  ${g.away} @ ${g.home} [${g.round}] — ${g.time} UTC`).join('\n')
   : '  (no AFL games today)';
 
-const soccerLines = soccerGames.length
-  ? soccerGames.slice(0, 6).map(g =>
-      `  ${g.away} @ ${g.home} [${g.comp}] — ${g.time}`
-    ).join('\n')
-  : '  (no tracked soccer today)';
+const soccerLines = SOCCER_FEED_OK === 'false'
+  ? '  (feed unavailable — FD relay error; verify /fd/ route + FD API key)'
+  : soccerGames.length
+    ? soccerGames.slice(0, 6).map(g =>
+        `  ${g.away} @ ${g.home} [${g.comp}] — ${g.time}`
+      ).join('\n')
+    : '  (no tracked soccer today)';
 
 // ── HTML email ───────────────────────────────────────────────────────────────
 const html = `<!DOCTYPE html>
@@ -98,7 +101,7 @@ const html = `<!DOCTYPE html>
   <pre style="color:#d1d5db;font-size:11px;margin:0 0 12px;line-height:1.5">${wnbaLines}</pre>
   <p style="margin:0 0 6px;font-size:13px">&#127945; AFL &mdash; <strong>${plural(AFL_COUNT)}</strong></p>
   <pre style="color:#d1d5db;font-size:11px;margin:0 0 12px;line-height:1.5">${aflLines}</pre>
-  <p style="margin:0 0 6px;font-size:13px">&#9917; Soccer &mdash; <strong>${plural(SOCCER_COUNT)}</strong></p>
+  <p style="margin:0 0 6px;font-size:13px">&#9917; Soccer &mdash; <strong>${SOCCER_FEED_OK === 'false' ? 'feed error' : plural(SOCCER_COUNT)}</strong></p>
   <pre style="color:#d1d5db;font-size:11px;margin:0 0 10px;line-height:1.5">${soccerLines}</pre>
   ${TENNIS_NOTE ? `<p style="margin:0;font-size:13px">&#127934; Tennis &mdash; ${TENNIS_NOTE}</p>` : ''}
 </div>
@@ -131,7 +134,7 @@ const text = [
   `AFL: ${plural(AFL_COUNT)}`,
   aflLines,
   '',
-  `Soccer: ${plural(SOCCER_COUNT)}`,
+  `Soccer: ${SOCCER_FEED_OK === 'false' ? 'feed error' : plural(SOCCER_COUNT)}`,
   soccerLines,
   TENNIS_NOTE ? `Tennis: ${TENNIS_NOTE}` : '',
   '',
