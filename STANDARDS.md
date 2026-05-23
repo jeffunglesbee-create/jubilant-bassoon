@@ -30,7 +30,7 @@ Add a new named assertion in `smoke.js` for every FIELD_FEATURES entry (presence
    ⚠️  GEMINI QUARANTINE CHECK: if the handoff was produced by a Gemini session,
        STOP — do not proceed. See Rule 25. Run the 4-check audit first.
        Only use this handoff once it reaches CLEARED or PARTIALLY CLEARED status.
-1. Read CI/DEPLOY ERROR REFERENCE — Drive ID: 1ujdRL3v5YjusEUqBZ_4fDVKN6EDNFDLsBaBIfOysu6I
+1. Read CI/DEPLOY ERROR REFERENCE — Drive ID: 1xEs9m3xR1-1GI3s_G6RzZTxwOXNBR-wNsM1Vah4uLl0
    Surface: sandbox constraints, deploy path, worker summary, secrets state
 2. Declare: "SESSION START · Type: [A/B/C/D/E] · Scope: [one sentence]"
 3. git pull && cp index.html /home/claude/index.html
@@ -42,7 +42,7 @@ Add a new named assertion in `smoke.js` for every FIELD_FEATURES entry (presence
 
 **Canonical docs** (open the relevant one before starting):
 - Handoff Note (read first): `1cdAspAZQK1YJ6NYx6vbT2F4hT9DrXYufVCkYNNygWIM` ← update this ID every session end
-- CI/Deploy Error Reference (read every session): `1ujdRL3v5YjusEUqBZ_4fDVKN6EDNFDLsBaBIfOysu6I`
+- CI/Deploy Error Reference (read every session): `1xEs9m3xR1-1GI3s_G6RzZTxwOXNBR-wNsM1Vah4uLl0`
 - Build Session List: `1Drrp5eRNdGb8EKodqPNwpuLaC23XcOrlv4DO13zNot0`
 - FIELD Current State: `1w0BDWk2lf1tlSVBFBTI_P0H9N2ATyZjRTKw3XR2McUE`
 - Master Improvement Ranking: `1rW90JQ5a4ybrE9l5acrbqd0q0yl_QYmPIOnEJr__GEY`
@@ -116,7 +116,7 @@ never worked despite being documented as complete.*
 | **FIELD Current State** | `1w0BDWk2lf1tlSVBFBTI_P0H9N2ATyZjRTKw3XR2McUE` | Every session end — update HEAD, smoke state, and any changed capability sections |
 | **Daily Update Reference** | `1n4fiAaU1uF2X7EKRx9Gm6XpuR6wkpwoa` | Any session that changes broadcast chip rules, thresholds, or update protocol |
 | **Handoff Note** ← update ID every session | `1cdAspAZQK1YJ6NYx6vbT2F4hT9DrXYufVCkYNNygWIM` | Every session end — replace ID with new handoff doc |
-| **CI/Deploy Error Reference** | `1ujdRL3v5YjusEUqBZ_4fDVKN6EDNFDLsBaBIfOysu6I` | When a new CI/deploy failure pattern is resolved |
+| **CI/Deploy Error Reference** | `1xEs9m3xR1-1GI3s_G6RzZTxwOXNBR-wNsM1Vah4uLl0` | When a new CI/deploy failure pattern is resolved |
 
 **The rule: edit the document, don't create a new one.**
 
@@ -297,7 +297,7 @@ Every session, Claude reads the latest handoff note from Drive before
 responding to the opening message. No user request needed.
 
 **Claude reads CI/Deploy Error Reference automatically:**  
-Every session, Claude reads `1ujdRL3v5YjusEUqBZ_4fDVKN6EDNFDLsBaBIfOysu6I`  
+Every session, Claude reads `1xEs9m3xR1-1GI3s_G6RzZTxwOXNBR-wNsM1Vah4uLl0`  
 and surfaces the sandbox constraints, deploy path, worker architecture,  
 and secrets state before any work begins. This prevents wasted time  
 attempting blocked operations (api.github.com, *.workers.dev).
@@ -440,7 +440,7 @@ a follow-up session.
 
 ## Rule 12 — CI/Deploy Error Reference read at every session start
 
-**Drive ID: `1ujdRL3v5YjusEUqBZ_4fDVKN6EDNFDLsBaBIfOysu6I`**
+**Drive ID: `1xEs9m3xR1-1GI3s_G6RzZTxwOXNBR-wNsM1Vah4uLl0`**
 
 Read this document before any code is touched in any session type.
 Not only when something is broken — every session, every type.
@@ -2285,3 +2285,62 @@ the compaction summary created the illusion of continuity.
 Rule 40 + Rule 41 together close this: any message = session start
 trigger (Rule 40), and a post-compaction message specifically
 requires checking the prior session state before proceeding (Rule 41).
+
+---
+
+## Rule 42 — Five-minute novel thinking threshold for infra failures
+
+**Incident trigger:** May 23 2026 — 6.5-hour deploy outage resolved in 15 minutes
+once the CF dashboard screenshot was analyzed. ~90 minutes wasted on repeated
+variations of the same fixes.
+
+### The rule
+
+If a CI/deploy/infrastructure problem is **not resolved within 5 minutes**,
+STOP iterating. Declare the failure mode explicitly and shift to novel thinking.
+
+Novel thinking means: look at what the system is **literally showing you**, not
+what you expect it to be saying.
+
+### What "literally showing you" means
+
+- A screenshot of the CF dashboard Settings page
+- The raw wrangler error from `npx wrangler deploy --dry-run` (run locally)
+- The exact text of the CI step failure (not inferred from step name)
+- The CF API response body (not the status code alone)
+- What the system says it **cannot do** — that tells you what you're asking it to do
+
+### The May 23 2026 lesson
+
+The CF dashboard Settings tab showed, on every single section:
+
+  "Logpush cannot be added to a Worker that **only has static assets**."
+
+This told Claude exactly: the worker is pure static assets, and the wrangler.jsonc
+had `"observability": {"enabled": true}` which the CF API rejects for this type.
+The answer was visible on screen. It was not consulted for ~90 minutes.
+
+Running `npx wrangler deploy --dry-run` locally would have immediately shown:
+  "Asset too large. FIELD-CURRENT-STATE.md with a size of 70.6 MiB."
+
+Both errors were accessible within 2 minutes of thinking differently.
+
+### Escalation protocol (after 5 minutes without resolution)
+
+1. **Stop** — do not push another variation of the same fix
+2. **Get the screenshot** — ask Jeff for the CF dashboard / error UI screenshot
+3. **Run locally** — `CLOUDFLARE_API_TOKEN=test npx wrangler deploy --dry-run`
+   catches asset errors, config errors, before any API call is needed
+4. **Read raw API** — use cf-api-probe for specific CF API calls; read the full
+   response body, not just `success: true/false`
+5. **State the known facts** — list what is confirmed true vs assumed, then
+   reason from the confirmed facts only
+
+### What this rule does NOT mean
+
+This rule does not mean "give up after 5 minutes." It means **change approach**
+after 5 minutes. Lateral thinking after exhausting the obvious is not giving up —
+it's the only way to find root causes that aren't where you expect them.
+
+Going slower is never acceptable (FIELD principle). Novel thinking is faster,
+not slower — the May 23 outage proves this.
