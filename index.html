@@ -2763,7 +2763,11 @@ async function pollOpenF1(){
     drivers:_openF1Drivers[session.key]||{},
     sessionKey:session.key,lastUpdate:Date.now(),
   // UFL 2026
-  'ufl-2026':               '2026-05-22',  // UFL section — 8 teams, Week 9+10 + playoffs (fd73a89)
+  'ufl-2026':               '2026-05-22',
+  // Weather Intelligence Expansion (Session K)
+  'weather-intelligence':   '2026-05-22',  // wxDescription/Icon/Alert/Badge/isOutdoorVenue/getVenueCoords defined
+                                           // PARK_ORIENTATION + windContextNote (MLB park geometry)
+                                           // fetchAQI (/v1/air-quality) + AQI badge + weatherDramaModifier()  // UFL section — 8 teams, Week 9+10 + playoffs (fd73a89)
   };
   // Emit to Event Bus when built (field:score for P1 change)
   if(typeof fieldEvents!=='undefined'){
@@ -8648,10 +8652,179 @@ const INDOOR_KEYWORDS = ["arena","garden","center","centre","dome","coliseum",
   "fieldhouse","forum","palace","pavilion","theater","theatre"];
 // Cardinal direction from degrees
 const WX_DIR = ["N","NNE","NE","ENE","E","ESE","SE","SSE","S","SSW","SW","WSW","W","WNW","NW","NNW"];
-// Human-readable description
-// Weather icon emoji
-// Alert string for game-affecting conditions (rain delay risk)
-// Compact badge for game cards: "🌧 62°F · 0.4" rain · 12mph NE"
+// ── PARK_ORIENTATION: degrees (true north) that center field faces ────────
+// Used by windContextNote() to determine "out to CF" vs "in from CF" context
+// Wind delta < -30° = blowing OUT toward CF (hitter's park)
+// Wind delta > +30° = blowing IN from CF (pitcher's park)
+const PARK_ORIENTATION = {
+  'Fenway Park':              57,  // NE to CF (famous left-field wall)
+  'Yankee Stadium':           28,  // NNE
+  'Wrigley Field':            45,  // NE (famous wind off Lake Michigan)
+  'Oracle Park':             346,  // NNW (infamous SF wind off McCovey Cove)
+  'Dodger Stadium':           25,  // NNE
+  'Busch Stadium':           340,  // NNW
+  'Nationals Park':           25,  // NNE
+  'Citizens Bank Park':       30,  // NNE
+  'Great American Ball Park': 20,  // NNE
+  'Kauffman Stadium':          5,  // N
+  'Comerica Park':            10,  // N
+  'Petco Park':              315,  // NW
+  'Oriole Park':              35,  // NE (Camden Yards)
+  'Guaranteed Rate Field':    20,  // NNE (Guaranteed Rate, CWS)
+  'Angels Stadium':          285,  // WNW
+  'loanDepot park':           25,  // NNE (Miami)
+  'Progressive Field':        15,  // NNE (Cleveland)
+  'Coors Field':             342,  // NNW (famous Colorado wind)
+  'Globe Life Field':        355,  // N (retractable but included for outdoor mode)
+};
+
+// Cardinal direction from wind degrees
+const WX_DIR = ["N","NNE","NE","ENE","E","ESE","SE","SSE","S","SSW","SW","WSW","W","WNW","NW","NNW"];
+function cardinalDir(deg){ return WX_DIR[Math.round(((deg%360)+360)%360/22.5)%16]; }
+
+// Wind context note for MLB parks: combines live wind with park geometry
+// Returns: "18mph out to CF — hitter's conditions" or null
+function windContextNote(venue, windDir, windSpeed){
+  if(!venue || windSpeed < 8) return null;
+  let orientation = null;
+  for(const [park, deg] of Object.entries(PARK_ORIENTATION)){
+    if(venue.includes(park.split(',')[0]) || park.includes(venue.split(',')[0])){
+      orientation = deg; break;
+    }
+  }
+  if(orientation === null) return null;
+  const delta = ((windDir - orientation + 540) % 360) - 180;
+  const spd = Math.round(windSpeed);
+  if(delta < -30) return `${spd}mph out to CF — hitter's conditions`;
+  if(delta >  30) return `${spd}mph in from CF — pitcher's conditions`;
+  return `${spd}mph crosswind`;
+}
+
+// isOutdoorVenue: returns true if venue is open-air (not dome/retractable)
+function isOutdoorVenue(venue){
+  if(!venue) return false;
+  if(VENUE_COORDS[venue] !== undefined) return VENUE_COORDS[venue][2];
+  for(const [key, v] of Object.entries(VENUE_COORDS)){
+    const keyBase = key.split(',')[0];
+    const venBase = venue.split(',')[0];
+    if(venue.includes(keyBase) || key.includes(venBase)) return v[2];
+  }
+  return false;
+}
+
+// getVenueCoords: fuzzy-match venue string → [lat, lon] or null if indoor/unknown
+function getVenueCoords(venue){
+  if(!venue) return null;
+  if(VENUE_COORDS[venue]) return VENUE_COORDS[venue][2] ? [VENUE_COORDS[venue][0], VENUE_COORDS[venue][1]] : null;
+  for(const [key, v] of Object.entries(VENUE_COORDS)){
+    const keyBase = key.split(',')[0];
+    const venBase = venue.split(',')[0];
+    if(venue.includes(keyBase) || key.includes(venBase)) return v[2] ? [v[0], v[1]] : null;
+  }
+  return null;
+}
+
+// wxDescription: human-readable conditions string
+function wxDescription(wx){
+  if((wx.rain||0)>5||(wx.precip||0)>5) return `Heavy rain · ${wx.temp}°F`;
+  if((wx.rain||0)>1||(wx.precip||0)>1) return `Rain · ${wx.temp}°F`;
+  if((wx.snowfall||0)>0.3) return `Snow · ${wx.temp}°F`;
+  if((wx.gusts||wx.wind||0)>25) return `Windy · ${wx.temp}°F`;
+  if(wx.temp < 32) return `Cold · ${wx.temp}°F`;
+  if(wx.temp > 95) return `Hot · ${wx.temp}°F`;
+  return `${wx.temp}°F`;
+}
+
+// wxIcon: emoji for current conditions
+function wxIcon(wx){
+  if((wx.snowfall||0)>0.3) return '❄️';
+  if((wx.rain||0)>5||(wx.precip||0)>5) return '⛈️';
+  if((wx.rain||0)>1||(wx.precip||0)>1) return '🌧️';
+  if((wx.aqi||0)>150) return '🌫️';
+  if((wx.gusts||wx.wind||0)>25) return '💨';
+  if(wx.temp < 32) return '🌡️';
+  if(wx.temp > 95) return '☀️';
+  return wx.isDay ? '⛅' : '🌙';
+}
+
+// wxAlert: true if conditions materially affect gameplay
+function wxAlert(wx){
+  return (wx.rain||0) > 5
+      || (wx.gusts||wx.wind||0) > 30
+      || wx.temp < 28
+      || wx.temp > 100
+      || (wx.snowfall||0) > 0.5
+      || (wx.aqi||0) > 150;
+}
+
+// weatherDramaModifier: signed drama delta for outdoor games (replaces flat +10)
+// Positive = conditions intensify drama. Negative = conditions hurt watchability.
+function weatherDramaModifier(wx){
+  if(!wx) return 0;
+  let mod = 0;
+  const feels = wx.feelsLike !== undefined ? wx.feelsLike : wx.temp;
+  const gusts  = wx.gusts || wx.wind || 0;
+  if(feels < 0)           mod += 8;   // extreme cold
+  if(feels < 28)          mod += 8;   // near/below freezing (stacks)
+  if(gusts > 20)          mod += 6;   // high wind
+  if(gusts > 30)          mod += 4;   // dangerous gusts (stacks)
+  if((wx.snowfall||0)>0.5) mod += 10; // snow
+  if((wx.rain||0)>2)      mod += 8;   // heavy rain
+  if((wx.precip||0)>5)    mod += 4;   // very heavy (stacks)
+  if((wx.aqi||0)>150)     mod -= 15;  // unhealthy air (wildfire/smoke)
+  if((wx.aqi||0)>200)     mod -= 10;  // very unhealthy (stacks)
+  return mod;
+}
+
+// wxBadge: compact HTML badge for game cards
+function wxBadge(wx){
+  if(!wx) return '';
+  const parts = [];
+  const icon = wxIcon(wx);
+  if(wx.temp !== undefined) parts.push(`${icon} ${wx.temp}°F`);
+  const windDisplay = wx.windNote
+    ? `💨 ${wx.windNote}`
+    : (wx.gusts||wx.wind||0) > 5 ? `💨 ${Math.round(wx.gusts||wx.wind)}mph ${cardinalDir(wx.windDir||0)}` : null;
+  if(windDisplay && !wx.windNote) parts.push(windDisplay);
+  else if(wx.windNote) { if(parts.length) parts[0] += ''; parts.push(`💨 ${wx.windNote}`); }
+  if((wx.rain||0)>1||(wx.precip||0)>1) parts.push(`🌧️ ${Math.round(wx.precip||wx.rain)}mm`);
+  if((wx.snowfall||0)>0.2) parts.push('❄️ Snow');
+  if((wx.aqi||0)>100){
+    const aqiEmoji = (wx.aqi||0)>200 ? '⚠️' : '🌫️';
+    const aqiLabel = (wx.aqi||0)>200 ? 'Very unhealthy' : (wx.aqi||0)>150 ? 'Unhealthy' : 'Moderate AQI';
+    parts.push(`${aqiEmoji} AQI ${wx.aqi} — ${aqiLabel}`);
+  }
+  if(!parts.length) return '';
+  const alertStyle = wx.alert
+    ? 'color:var(--caution);border:1px solid rgba(245,158,11,.3);'
+    : 'color:var(--smoke);';
+  return `<span class="wx-badge" style="font-size:.72rem;${alertStyle}padding:.1rem .4rem;border-radius:4px;background:rgba(255,255,255,.05)">${parts.join(' · ')}</span>`;
+}
+
+// AQI cache — separate from wxCache (different Open-Meteo endpoint)
+const AQI_CACHE = {}, AQI_CACHE_TIME = {};
+const AQI_TTL = 3600000; // 1-hour
+
+async function fetchAQI(lat, lon){
+  const key = `${lat.toFixed(3)}_${lon.toFixed(3)}`;
+  const now = Date.now();
+  if(AQI_CACHE[key] && (now-(AQI_CACHE_TIME[key]||0)) < AQI_TTL) return AQI_CACHE[key];
+  try{
+    const url = `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}&current=us_aqi,pm2_5`;
+    const r = await fetch(url, {signal: AbortSignal.timeout(4000)});
+    if(!r.ok) throw new Error('AQI '+r.status);
+    const json = await r.json();
+    const cur = json.current || {};
+    const aqi = { us_aqi: Math.round(cur.us_aqi||0), pm2_5: Math.round((cur.pm2_5||0)*10)/10 };
+    AQI_CACHE[key] = aqi;
+    AQI_CACHE_TIME[key] = now;
+    return aqi;
+  }catch(e){
+    if(FIELD_DEBUG) console.warn('[AQI]', e.message);
+    return null;
+  }
+}
+
 // Core fetch — uses exact URL from specification, 1-hour cache
 async function fetchWeather(lat, lon){
   const key = `${lat.toFixed(3)}_${lon.toFixed(3)}`;
@@ -8669,8 +8842,8 @@ async function fetchWeather(lat, lon){
   }catch(e){}
   try{
     const url = `${OM_BASE}?latitude=${lat}&longitude=${lon}`
-      + `&hourly=temperature_2m,wind_speed_10m,wind_direction_10m,temperature_80m,rain,showers`
-      + `&current=temperature_2m,precipitation,rain,is_day,wind_speed_10m,wind_direction_10m`
+      + `&hourly=temperature_2m,wind_speed_10m,wind_direction_10m,direct_radiation,snowfall`
+      + `&current=temperature_2m,apparent_temperature,precipitation,rain,is_day,wind_speed_10m,wind_direction_10m,wind_gusts_10m`
       + `&wind_speed_unit=mph&temperature_unit=fahrenheit`;
     const r = await fetch(url, {signal: AbortSignal.timeout(5000)});
     if(!r.ok) throw new Error("OM " + r.status);
@@ -8680,11 +8853,17 @@ async function fetchWeather(lat, lon){
       temp:    Math.round(c.temperature_2m ?? 0),
       precip:  c.precipitation ?? 0,
       rain:    c.rain ?? 0,
-      wind:    Math.round(c.wind_speed_10m ?? 0),
-      windDir: c.wind_direction_10m ?? 0,
-      isDay:   c.is_day === 1,
-      hourly:  json.hourly || null, // full hourly forecast for delay-risk analysis
+      wind:      Math.round(c.wind_speed_10m ?? 0),
+      gusts:     Math.round(c.wind_gusts_10m ?? 0),
+      windDir:   c.wind_direction_10m ?? 0,
+      feelsLike: Math.round(c.apparent_temperature ?? c.temperature_2m ?? 0),
+      isDay:     c.is_day === 1,
+      hourly:    json.hourly || null,
+      snowfall:  (json.hourly?.snowfall || [])[new Date().getUTCHours()] || 0,
+      directRad: (json.hourly?.direct_radiation || [])[new Date().getUTCHours()] || 0,
     };
+    // AQI from separate Open-Meteo air quality endpoint (non-blocking)
+    try{ const aqiData=await fetchAQI(lat,lon); if(aqiData) wx.aqi=aqiData.us_aqi; }catch(e){}
     wx.desc  = wxDescription(wx);
     wx.icon  = wxIcon(wx);
     wx.alert = wxAlert(wx);
@@ -8725,7 +8904,10 @@ function injectWeatherBadges(){
       }
       const old = badgeRow.querySelector(".wx-badge");
       if(old) old.remove();
-      badgeRow.insertAdjacentHTML("beforeend", wxBadge(wx));
+      // Compute wind context note for MLB park geometry
+      const windNote = windContextNote(game.venue, wx.windDir, wx.gusts||wx.wind);
+      const wxDisplay = windNote ? {...wx, windNote} : wx;
+      badgeRow.insertAdjacentHTML("beforeend", wxBadge(wxDisplay));
     });
   });
 }
@@ -12380,9 +12562,11 @@ function dramaScoreLive(eData, sport){
                     sp.includes('afl')||sp.includes('australian');
   if(isOutdoor && typeof wxCache !== 'undefined'){
     try{
-      const wxEntry = Object.values(wxCache||{}).find(wx=>wx?.alert);
-      if(wxEntry) sitBonus += 10; // weather alert at an outdoor venue tonight
-    }catch(e_){}
+      const wxEntry = Object.values(wxCache||{}).find(wx=>wx?.alert||(wx?.aqi||0)>100);
+      if(wxEntry){
+        // weatherDramaModifier: signed delta — replaces flat +10 (weather-intelligence build)
+        sitBonus += weatherDramaModifier(wxEntry);
+      } // wea    }catch(e_){}
   }
 
   const raw = base*52 + timeBonus + sitBonus;
