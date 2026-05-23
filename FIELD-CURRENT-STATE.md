@@ -2,11 +2,16 @@
 > Auto-updated by CI on each successful deploy and by Claude at session end. Commit history = changelog.
 
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 **HEAD:** 6574276 · **Deployed:** 2026-05-23 · **File:** ~925KB · **Smoke:** 144/0 · **L3:** 15/15
+=======
+**HEAD:** 1c21499 · **Deployed:** 2026-05-23 · **File:** ~925KB · **Smoke:** 144/0 · **L3:** 15/15
+>>>>>>> Stashed changes
 =======
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 **HEAD:** 6574276 · **Deployed:** 2026-05-23 · **File:** ~925KB · **Smoke:** 144/0 · **L3:** 15/15
 =======
 **HEAD:** 6574276 · **Deployed:** 2026-05-23 · **File:** ~925KB · **Smoke:** 144/0 · **L3:** 15/15
@@ -22,6 +27,23 @@
 **HEAD:** 6574276 · **Deployed:** 2026-05-23 · **File:** ~925KB · **Smoke:** 144/0 · **L3:** 15/15
 =======
 **HEAD:** 6574276 · **Deployed:** 2026-05-23 · **File:** ~925KB · **Smoke:** 144/0 · **L3:** 15/15
+=======
+**HEAD:** 1c21499 · **Deployed:** 2026-05-23 · **File:** ~925KB · **Smoke:** 144/0 · **L3:** 15/15
+=======
+**HEAD:** 1c21499 · **Deployed:** 2026-05-23 · **File:** ~925KB · **Smoke:** 144/0 · **L3:** 15/15
+=======
+**HEAD:** 1c21499 · **Deployed:** 2026-05-23 · **File:** ~925KB · **Smoke:** 144/0 · **L3:** 15/15
+=======
+**HEAD:** 1c21499 · **Deployed:** 2026-05-23 · **File:** ~925KB · **Smoke:** 144/0 · **L3:** 15/15
+=======
+**HEAD:** 1c21499 · **Deployed:** 2026-05-23 · **File:** ~925KB · **Smoke:** 144/0 · **L3:** 15/15
+=======
+**HEAD:** 1c21499 · **Deployed:** 2026-05-23 · **File:** ~925KB · **Smoke:** 144/0 · **L3:** 15/15
+=======
+**HEAD:** 1c21499 · **Deployed:** 2026-05-23 · **File:** ~925KB · **Smoke:** 144/0 · **L3:** 15/15
+=======
+**HEAD:** 1c21499 · **Deployed:** 2026-05-23 · **File:** ~925KB · **Smoke:** 144/0 · **L3:** 15/15
+>>>>>>> Stashed changes
 >>>>>>> Stashed changes
 >>>>>>> Stashed changes
 >>>>>>> Stashed changes
