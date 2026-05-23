@@ -57,6 +57,7 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: b57e9af57ab46c52ca9215804e689c29
+          wranglerVersion: "3.109.0"
           # gitHubToken removed: CF GitHub integration disconnected May 23 2026
 
       - name: Confirm
