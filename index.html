@@ -15985,14 +15985,22 @@ async function fetchNightOwlFromClaude(topGame){
   const winner=(topGame.homeScore||0)>=(topGame.awayScore||0)?topGame.home:topGame.away;
   const score=topGame.awayScore+'\u2013'+topGame.homeScore;
   const _sp = (topGame._section || topGame._sport || '').toLowerCase();
-  const _terms = _sp.includes('baseball')
+  const _terms = _sp.includes('baseball') || _sp.includes('mlb')
     ? 'Sport: Baseball. Use runs (not points). Close game = one-run game. Extra period = extra innings (not overtime).'
-    : _sp.includes('hockey')
+    : _sp.includes('hockey') || _sp.includes('nhl')
     ? 'Sport: Ice Hockey. Use goals. Close game = one-goal game. Extra period = overtime or shootout.'
-    : _sp.includes('soccer') || _sp.includes('league') || _sp.includes('mls')
-    ? 'Sport: Soccer. Use goals. Close game = one-goal game. Extra period = extra time (not overtime).'
     : _sp.includes('nfl') || _sp.includes('american football')
-    ? 'Sport: American Football. Use points. Close game = one-possession game.'
+    ? 'Sport: American Football. Use points (touchdowns, field goals). Close game = one-score game.'
+    : _sp.includes('afl') || _sp.includes('australian')
+    ? 'Sport: Australian Rules Football. Use goals and behinds. Score = goals.behinds.total. Close game = within a goal.'
+    : _sp.includes('tennis') || _sp.includes('atp') || _sp.includes('wta')
+    ? 'Sport: Tennis. Use sets and games (not points). Close match = deciding set. Tiebreak = tiebreak.'
+    : _sp.includes('soccer') || _sp.includes('football') || _sp.includes('league') ||
+      _sp.includes('mls') || _sp.includes('liga') || _sp.includes('serie') ||
+      _sp.includes('ligue') || _sp.includes('efl') || _sp.includes('ucl') ||
+      _sp.includes('uel') || _sp.includes('uecl') || _sp.includes('epl') ||
+      _sp.includes('bundesliga') || _sp.includes('laliga')
+    ? 'Sport: Football (soccer). Use goals (NEVER points). Close game = one-goal game. Extra period = extra time (NEVER overtime). NEVER use basketball language, possession-game framing, or interior scoring.'
     : 'Sport: Basketball. Use points. Close game = one-possession game. Extra period = overtime.';
   const prompt=['Write a FIELD Night Owl recap.',
       'Game: '+topGame.away+' @ '+topGame.home,
