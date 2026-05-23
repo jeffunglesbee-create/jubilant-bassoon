@@ -3294,6 +3294,7 @@ const SR = {
   max:       ["Max / HBO Max", "https://www.hbomax.com/sports",                    "#ff6b35","sub", "Max Standard or Premium plan required ($18.49–$22.99/mo). Basic with Ads does NOT include live sports. Streams NHL & MLB on TNT/TBS — NBA no longer on Max as of 2026."],
   fox:       ["Fox",           "https://www.foxsports.com",                         "#f0c040","tv",  "Free over-the-air (OTA antenna) OR cable/satellite. Fox One app streams with TV provider login. FIFA World Cup 2026: all 70 FOX matches + USMNT games. Select games free on Tubi."],
   fsp:       ["Fox Soccer Plus","https://www.foxsports.com/watch/fox-soccer-plus",   "#f0c040","tv",  "Cable/satellite login required. Streaming: YouTube TV (Sports Plus add-on +$10.99/mo) · FuboTV (Intl Sports Plus add-on +$6.99/mo) · DirecTV Stream (Sports Pack +$14.99/mo) · Sling TV (Blue/Orange+Blue). AFL coverage: 3 live games/round on FSP + 1 marquee game/round live first on FS1 or FS2 (tape-delay replay on FSP) + Grand Final live on FS1."],
+  nfln:      ["NFL Network", "https://www.nflnetwork.com",            "#013369","tv",  "NFL Network cable/satellite. fubo, YouTube TV, DirecTV. UFL, select NFL, combine coverage. Not available as standalone subscription."],
   fs1:       ["FS1",           "https://www.foxsports.com/live",                    "#f0c040","tv",  "Cable/satellite login required. Streams via Fox One with TV provider. FIFA World Cup 2026: 34 matches on FS1."],
   tubi:      ["Tubi (FREE)",   "https://tubitv.com/live",                           "#f57c00","free","Free ad-supported streaming — no account or subscription required. FIFA World Cup 2026: Mexico vs South Africa (June 11) and USA vs Paraguay (June 12) simulcast live in 4K for free on Tubi."],
   cbs:       ["CBS",           "https://www.cbssports.com/live",                    "#a78bfa","tv",  "Cable/satellite login or Paramount+ Premium required ($13.99/mo) to stream local CBS live."],
@@ -8678,8 +8679,7 @@ const PARK_ORIENTATION = {
   'Globe Life Field':        355,  // N (retractable but included for outdoor mode)
 };
 
-// Cardinal direction from wind degrees
-const WX_DIR = ["N","NNE","NE","ENE","E","ESE","SE","SSE","S","SSW","SW","WSW","W","WNW","NW","NNW"];
+// cardinalDir uses WX_DIR already defined earlier in the weather engine
 function cardinalDir(deg){ return WX_DIR[Math.round(((deg%360)+360)%360/22.5)%16]; }
 
 // Wind context note for MLB parks: combines live wind with park geometry
