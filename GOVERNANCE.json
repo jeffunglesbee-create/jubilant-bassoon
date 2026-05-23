@@ -100,6 +100,13 @@
       "exempt_from_staleness_check": false,
       "last_verified": "2026-05-22",
       "_note": "Contains stale Build Session + Master refs. See Architecture Index Corrections doc: 1bL8se7cPNmFM9TrdLfZSZzZjq8Nnne2WeAAXiWq0u3w"
+    },
+    {
+      "name": "Session Start Protocol",
+      "id": "1_L2h0Yv3Aizqr7yPjRkYKPfRCBTa_hxNvvbZ0NLvJUg",
+      "update_trigger": "Any change to session start sequence or tool call order",
+      "staleness_days": 30,
+      "last_verified": "2026-05-23"
     }
   ]
 }
