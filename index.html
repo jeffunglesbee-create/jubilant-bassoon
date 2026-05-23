@@ -5743,7 +5743,7 @@ function isNationalGame(g){return !!(g.nationalBundle);}
 function preGameScore(g){
   const nb=g.narrative?.boost||0;
   const ib={series_deciding:30,elimination:20,clinch:15,playoff_impl:10}[g._gameImportance]||0;
-  const nationalKeys=new Set(['NBA_ESPN','NBA_ABC','NBA_NBC','NBA_PRIME','NHL_ESPN','NHL_ABC','NHL_TNT','MLB_TBS','MLB_FOX','MLB_APPLE','MLB_NBC','MLB_PEACOCK_SNB','NFL_PRIME','NFL_NBC','NFL_ESPN','NFL_ABC','NFL_CBS','NFL_FOX','MLS_FOX','MLS_FS1']);
+  const nationalKeys=new Set(['NBA_ESPN','NBA_ABC','NBA_NBC','NBA_PRIME','NHL_ESPN','NHL_ABC','NHL_TNT','MLB_TBS','MLB_FOX','MLB_APPLE','MLB_NBC','MLB_PEACOCK_SNB','NFL_PRIME','NFL_NBC','NFL_ESPN','NFL_ABC','NFL_CBS','NFL_FOX','MLS_FOX','MLS_FS1','EFL_FINAL','EFL_PLAYOFF']);
   const cb=nationalKeys.has(g.nationalBundle)?5:0;
   // #20 proxy: real odds from _oddsCache (moneyline gap → competitive pre-game drama)
   // Tight ML = competitive game = higher drama. Replaces manual BETTING_LINES_FALLBACK spread.
@@ -6494,7 +6494,7 @@ function buildTodaySchedule(){
     // ── Championship Final — Sat May 23, 3:30pm BST (10:30am ET) ──
     {home:"Middlesbrough", away:"Hull City",
      league:"EFL Championship Playoff – Final · Winner promoted to Premier League",
-     start_time:"2026-05-23T14:30:00Z", confirmed:true, venue:"Wembley Stadium, London", neutral:true,
+     start_time:"2026-05-23T14:30:00Z", confirmed:true, venue:"Wembley Stadium, London", neutral:true, nationalBundle:"EFL_FINAL",
      streams:resolveBundle("EFL_FINAL"),
      // SPYGATE — Southampton expelled; Middlesbrough reinstated (May 20 2026)
      // Southampton admitted unauthorised filming of Middlesbrough, Ipswich, Oxford training
@@ -6510,7 +6510,7 @@ function buildTodaySchedule(){
   const eflL1Games=[
     {home:"Stockport County",  away:"Bolton Wanderers",
      league:"EFL League One Playoff – Final · Winner promoted to Championship",
-     start_time:"2026-05-24T12:00:00Z", confirmed:true, venue:"Wembley Stadium, London", neutral:true,
+     start_time:"2026-05-24T12:00:00Z", confirmed:true, venue:"Wembley Stadium, London", neutral:true, nationalBundle:"EFL_PLAYOFF",
      streams:resolveBundle("EFL_PLAYOFF"),
      matchupNote:"Stockport vs Bolton — League One final. 1pm BST / 8am ET. Sky Sports (UK) · Paramount+ (US)."},
   ].filter(g=>isToday(g.start_time));
@@ -6519,7 +6519,7 @@ function buildTodaySchedule(){
   const eflL2Games=[
     {home:"Salford City",  away:"Notts County",
      league:"EFL League Two Playoff – Final · Winner promoted to League One",
-     start_time:"2026-05-25T14:00:00Z", confirmed:true, venue:"Wembley Stadium, London", neutral:true,
+     start_time:"2026-05-25T14:00:00Z", confirmed:true, venue:"Wembley Stadium, London", neutral:true, nationalBundle:"EFL_PLAYOFF",
      streams:resolveBundle("EFL_PLAYOFF"),
      matchupNote:"Salford vs Notts County — League Two final. 3pm BST / 10am ET. Sky Sports (UK) · Paramount+ (US)."},
   ].filter(g=>isToday(g.start_time));
@@ -6874,6 +6874,9 @@ function buildTodaySchedule(){
       return {importance:'playoff_impl', boost:8, label:'One team holds the edge', icon:'📊'};
     if (/leads 1-0|up 1-0/.test(s))
       return {importance:'playoff_impl', boost:5, label:'Series advantage', icon:'📊'};
+    // Playoff/cup final: single decisive match → series_deciding importance
+    if (/final/i.test(s) && /playoff|cup|champions|europa|conference/i.test(s))
+      return {importance:'series_deciding', boost:28, label:'Playoff Final', icon:'🏆'};
     return null;
   }
 
@@ -6912,9 +6915,15 @@ function buildTodaySchedule(){
   uclGames.forEach(g=>g._sport="UEFA Champions League");
   uelGames.forEach(g=>g._sport="UEFA Europa League");
   ueclGames.forEach(g=>g._sport="UEFA Conference League");
+  applyNarrativeContext(uclGames);    // UCL/UEL/UECL finals → series_deciding
+  applyNarrativeContext(uelGames);
+  applyNarrativeContext(ueclGames);
   eflGames.forEach(g=>g._sport="EFL Championship Playoffs");
   eflL1Games.forEach(g=>g._sport="EFL League One Playoffs");
   eflL2Games.forEach(g=>g._sport="EFL League Two Playoffs");
+  applyNarrativeContext(eflGames);    // drama score: Wembley finals → series_deciding
+  applyNarrativeContext(eflL1Games);
+  applyNarrativeContext(eflL2Games);
   if(eflGames.length)  sections.push({sport:"EFL Championship Playoffs",games:eflGames});
   if(eflL1Games.length) sections.push({sport:"EFL League One Playoffs",games:eflL1Games});
   if(eflL2Games.length) sections.push({sport:"EFL League Two Playoffs",games:eflL2Games});
@@ -12496,7 +12505,7 @@ let _pwaPrompt = null;
 
   // SW_VERSION — bump on every deploy to bust returning user cache
   // Assertion 28 in smoke verifies this constant is present
-  const SW_VERSION = '2026-05-23k';
+  const SW_VERSION = '2026-05-23l';
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
   // Cache strategy: API-only (ESPN scores, weather, odds, SportsDB).
