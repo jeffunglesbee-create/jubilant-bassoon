@@ -6,6 +6,7 @@
  *
  * Reads:  /tmp/nhl.json  (from relay /nhl/v1/scoreboard/now)
  *         /tmp/nba.json  (from relay /nba/liveData/scoreboard/todaysScoreboard_00.json)
+ *         statsapi.mlb.com (live schedule — postponed game detection)
  * Env:    TODAY=YYYY-MM-DD  (set by workflow)
  *         GEMINI_KEY        (optional — primary AI for matchupNotes, gemini-3.1-flash-lite)
  *         ANTHROPIC_API_KEY (optional — Claude Sonnet 4 fallback if Gemini absent/fails)
@@ -86,6 +87,44 @@ function parseNBA() {
   }
 }
 
+// ── Detect MLB postponed games from MLB Stats API ───────────────────────
+// Returns array of { home, away } for PPD games today.
+// MLB status code 'DR' = Postponed (rain, weather, etc.)
+function parseMLBPostponed() {
+  return new Promise((resolve) => {
+    const req = https.request({
+      hostname: 'statsapi.mlb.com',
+      path: `/api/v1/schedule?sportId=1&date=${TODAY}&gameType=R&hydrate=game,team`,
+      method: 'GET',
+      headers: { 'User-Agent': 'FIELD-DataBot/1.0', 'Accept': 'application/json' },
+    }, res => {
+      let data = '';
+      res.on('data', c => data += c);
+      res.on('end', () => {
+        try {
+          const sched = JSON.parse(data);
+          const games = (sched.dates || [])[0]?.games || [];
+          const ppd = games.filter(g =>
+            g.status?.statusCode === 'DR' ||
+            (g.status?.detailedState || '').toLowerCase().includes('postpone')
+          ).map(g => ({
+            home: g.teams.home.team.name,
+            away: g.teams.away.team.name,
+          }));
+          if (ppd.length) console.log(`MLB PPD today: ${ppd.map(g => g.away + ' @ ' + g.home).join(', ')}`);
+          resolve(ppd);
+        } catch (e) {
+          console.warn('MLB postponed check failed:', e.message);
+          resolve([]);
+        }
+      });
+    });
+    req.on('error', () => resolve([]));
+    req.setTimeout(10000, () => { req.destroy(); resolve([]); });
+    req.end();
+  });
+}
+
 // ── Optional: generate matchupNote via Claude ─────────────────────────────
 // Only runs if ANTHROPIC_API_KEY is set. Set in repo secrets to enable.
 // Each call: ~1-2s, ~100 tokens. Total budget: ~4-8 calls per day.
@@ -149,7 +188,8 @@ function callGemini(prompt) {
 async function main() {
   const nhlGames = parseNHL();
   const nbaGames = parseNBA();
-  console.log(`Parsed: ${nhlGames.length} NHL + ${nbaGames.length} NBA game(s) for ${TODAY}`);
+  const mlbPPD   = await parseMLBPostponed();
+  console.log(`Parsed: ${nhlGames.length} NHL + ${nbaGames.length} NBA game(s) + ${mlbPPD.length} MLB PPD for ${TODAY}`);
 
   const overlays = [];
   const useGemini = !!process.env.GEMINI_KEY;
@@ -185,6 +225,15 @@ async function main() {
     }
 
     if (Object.keys(ov).length > 1) overlays.push(ov); // skip if only _match_key
+  }
+
+  // Add _postponed:true overlays for each MLB PPD game
+  for (const g of mlbPPD) {
+    const key = `${g.home}|${g.away}`;
+    const existing = overlays.find(o => o._match_key === key);
+    if (existing) { existing._postponed = true; }
+    else { overlays.push({ _match_key: key, _postponed: true }); }
+    console.log(`  ⛈ PPD overlay: ${g.away} @ ${g.home}`);
   }
 
   const output = {
