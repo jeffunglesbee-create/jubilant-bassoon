@@ -41,7 +41,7 @@ Add a new named assertion in `smoke.js` for every FIELD_FEATURES entry (presence
 ```
 
 **Canonical docs** (open the relevant one before starting):
-- Handoff Note (read first): `1cdAspAZQK1YJ6NYx6vbT2F4hT9DrXYufVCkYNNygWIM` ← update this ID every session end
+- Handoff Note (read first): `1GDpWzM2pLMAsSsmCLqSnRPp-qRYQIiJnNTDZmS00tFc` ← update this ID every session end
 - CI/Deploy Error Reference (read every session): `1xEs9m3xR1-1GI3s_G6RzZTxwOXNBR-wNsM1Vah4uLl0`
 - Build Session List: `1Drrp5eRNdGb8EKodqPNwpuLaC23XcOrlv4DO13zNot0`
 - FIELD Current State: `1w0BDWk2lf1tlSVBFBTI_P0H9N2ATyZjRTKw3XR2McUE`
@@ -115,7 +115,7 @@ never worked despite being documented as complete.*
 | **Master Improvement Ranking** | `1rW90JQ5a4ybrE9l5acrbqd0q0yl_QYmPIOnEJr__GEY` | Any session that ships a feature — add to FIELD_FEATURES registry with ship date |
 | **FIELD Current State** | `1w0BDWk2lf1tlSVBFBTI_P0H9N2ATyZjRTKw3XR2McUE` | Every session end — update HEAD, smoke state, and any changed capability sections |
 | **Daily Update Reference** | `1n4fiAaU1uF2X7EKRx9Gm6XpuR6wkpwoa` | Any session that changes broadcast chip rules, thresholds, or update protocol |
-| **Handoff Note** ← update ID every session | `1cdAspAZQK1YJ6NYx6vbT2F4hT9DrXYufVCkYNNygWIM` | Every session end — replace ID with new handoff doc |
+| **Handoff Note** ← update ID every session | `1GDpWzM2pLMAsSsmCLqSnRPp-qRYQIiJnNTDZmS00tFc` | Every session end — replace ID with new handoff doc |
 | **CI/Deploy Error Reference** | `1xEs9m3xR1-1GI3s_G6RzZTxwOXNBR-wNsM1Vah4uLl0` | When a new CI/deploy failure pattern is resolved |
 
 **The rule: edit the document, don't create a new one.**
