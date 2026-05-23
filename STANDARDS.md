@@ -2209,3 +2209,80 @@ Claude: Reading handoff and current state...
 
 Not:
   Claude: [immediately answers the question about the screenshot]
+
+
+## Rule 41 — Compaction is a session boundary, not a session end
+
+### What compaction is
+
+A compaction occurs when a conversation fills Claude's context window.
+The system compresses prior conversation history into a summary and
+continues the conversation. The compacted content is stored in a
+transcript file accessible via bash_tool at /mnt/transcripts/.
+
+A compaction is NOT a session end. It is a forced session boundary.
+
+**Session end**: deliberate, complete close — commits pushed, smoke
+passing, session doc written to Drive, handoff written, canonical docs
+updated, STANDARDS.md handoff ID updated, SESSION END declared.
+
+**Compaction**: mid-conversation context management — work may be
+incomplete, no session doc written, no handoff written, SESSION END
+never declared. The prior session may be open.
+
+### The compaction summary is not a handoff note
+
+The compaction summary is a Claude-generated compression artifact.
+It is not written by Claude as a deliberate handoff. It does not
+follow the Rule 15 session doc template. It does not contain the
+verified smoke state, commit hashes, or unresolved questions check
+that a proper handoff requires.
+
+The compaction summary CANNOT substitute for reading the Drive
+handoff note. Even when the summary appears complete, the
+authoritative source is the handoff note in Drive.
+
+### What must happen after a compaction
+
+The first message after a compaction triggers the same protocol
+as any opening message (Rule 40) — with one additional step first:
+
+**Step 0 — Check if the prior session was properly closed:**
+  Read the transcript:
+    view /mnt/transcripts/[latest].txt
+  Look for: SESSION END declaration, session doc Drive ID,
+  handoff note Drive ID, STANDARDS.md handoff ID commit.
+  If any of these are missing: run the session end checklist
+  (Rule 9, Step 1–6) before starting new work.
+
+**Then run the full session start protocol (Rule 40):**
+  1. Read Handoff Note from Drive (not the compaction summary)
+  2. Read FIELD Current State from Drive
+  3. Read CI/Deploy Error Reference from Drive
+  4. git pull && node smoke.js index.html
+  5. Declare SESSION START · Type · Scope · Baseline
+
+### Why the compaction summary is insufficient as context
+
+The compaction summary reflects Claude's compression judgment, not
+a verified state. It may omit unresolved questions, soft failures,
+or in-flight work. The Drive handoff note is written deliberately
+at session close, contains specific commit hashes, and flags
+anything that needs attention in the next session.
+
+Reading the Drive handoff after compaction takes 60 seconds.
+Proceeding on compaction summary alone risks acting on stale,
+incomplete, or mis-summarised state — the same failure mode that
+Rule 25 (Gemini quarantine) addresses for external handoffs.
+
+### The specific failure this rule prevents
+
+Post-compaction message arrives. Claude reads compaction summary,
+treats it as sufficient context, answers immediately without
+declaring SESSION START, without reading Drive handoff, without
+running smoke baseline. All session governance is bypassed because
+the compaction summary created the illusion of continuity.
+
+Rule 40 + Rule 41 together close this: any message = session start
+trigger (Rule 40), and a post-compaction message specifically
+requires checking the prior session state before proceeding (Rule 41).
