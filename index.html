@@ -2762,6 +2762,8 @@ async function pollOpenF1(){
     positions,raceControl:control,
     drivers:_openF1Drivers[session.key]||{},
     sessionKey:session.key,lastUpdate:Date.now(),
+  // UFL 2026
+  'ufl-2026':               '2026-05-22',  // UFL section — 8 teams, Week 9+10 + playoffs (fd73a89)
   };
   // Emit to Event Bus when built (field:score for P1 change)
   if(typeof fieldEvents!=='undefined'){
@@ -3278,7 +3280,7 @@ const SPORT_CHIP_LABELS = {
 const SR = {
   // ── Broadcast networks (TV Everywhere — requires cable/satellite login) ────────
   nbc:       ["NBC",           "https://www.nbc.com/sports",                        "#00b4d8","tv",  "Free over-the-air (antenna) or cable/satellite. CRITICAL: When a game is on NBC OTA, it is NOT on NBCSN — NBCSN only carries Peacock-exclusive content. MLB SNB: NBC OTA May 31–Sep 6. NBA Playoffs: select games NBC+Peacock. EPL: 12:30pm ET marquee fixture most Saturdays (+ Peacock stream). All NBC games stream on Peacock simultaneously. Telemundo simulcasts in Spanish."],
-  abc:       ["ABC",           "https://abc.com/sports",                            "#009cde","tv",  "Cable/satellite login required"],
+  abc:       ["ABC",           "https://abc.com/sports",                            "#009cde","tv",  "Free over-the-air (OTA antenna) or cable/satellite. ABC streams on ESPN App (cable login). UFL, NBA, college football, World Cup."],
   espn:      ["ESPN",          "https://www.espn.com/watch/",                       "#ff3c3c","tv",  "ESPN linear TV — cable/satellite required. 30 select MLB games/season (not weekly — specific dates only: Jackie Robinson Day Apr 15, Memorial Day, Little League Classic Aug 23, plus select weeknight games Jun-Aug). Also hosts MLB.TV distribution. Via ESPN App with TV provider login. Separate from ESPN Unlimited streaming tier."],
   espn2:     ["ESPN2",         "https://www.espn.com/watch/",                      "#cc0000","tv",  "Cable/satellite login required. Simulcasts select ESPN events and some WWE PLE first hours."],
   espnplus:  ["ESPN+",         "https://plus.espn.com/",                            "#ff3c3c","sub", "ESPN Unlimited tier (~$29.99/mo) — live access to ESPN, ESPN2, ESPNU, ABC Sports via ESPN App. Includes 1 MLB Game of the Day (no MLB.TV needed, blacked out locally). Can add MLB.TV subscription at a discount. Does NOT include NBC/Peacock, Apple TV+, TBS, or Prime Video games."],
