@@ -2071,3 +2071,65 @@ earned it on the field. State it directly.
 **DO NOT INVENT.** All scandal details must come from `matchupNote` or `localNote`.
 The AI adds framing; it does not add facts.
 
+
+
+## Rule 39 — Infrastructure change protocol: diagnose before touching
+
+### What this rule prevents
+
+Proposing and committing infrastructure changes (deploy paths, CI configuration,
+service integrations, workflow files) before fully mapping the impact. The failure
+mode is: identify a problem → immediately build a solution → audit after being
+challenged. Rule 13 covers this for code changes. Rule 39 covers it for
+infrastructure specifically, where the blast radius is wider.
+
+### The required diagnostic before any infrastructure change
+
+Before creating, modifying, or deleting any workflow file, CI configuration,
+or service integration (GitHub app, Cloudflare connection, secrets, webhooks):
+
+**1. Map every communication channel the existing system uses:**
+For each integration being changed, explicitly answer:
+  - What does system A send to system B?
+  - What does system B send back to system A?
+  - What does each side lose if the connection is removed or changed?
+
+Example that triggered this rule: proposing to Disconnect the Cloudflare GitHub
+app without first establishing that it provides bidirectional communication —
+not just push → deploy, but also Cloudflare → GitHub deployment status reporting.
+The fix (gitHubToken in wrangler-action) was a one-line addition, but it required
+the question to be asked first.
+
+**2. Audit every workflow that touches the affected system:**
+List every workflow that pushes to main, calls the affected service, reads from it,
+or depends on its output. Check for [skip ci] usage, paths filters, and commit
+message patterns. Do this BEFORE creating any new workflows.
+
+**3. Check downstream dependencies in both directions:**
+For every workflow change: what currently depends on the OLD behaviour?
+For every new workflow: what does it depend on that might not exist yet?
+
+**4. Write the diagnostic before any commit.**
+The diagnostic is the TYPE D phase. Only after it is written do any workflow
+files get created or modified.
+
+### [skip ci] scope
+
+`[skip ci]` skips GitHub Actions only. It does NOT skip:
+  - Cloudflare's own GitHub app CI (if connected)
+  - Any external webhook that watches git pushes
+  - Any service with its own GitHub app integration
+
+This asymmetry is why `[skip ci]` on `index.html` was a governance gap:
+it bypassed GitHub Actions tests but Cloudflare still deployed. Rule 32
+covers bypass pressure; this rule covers mapping the full blast radius
+before closing such gaps.
+
+### What "going slower is never acceptable" means for infrastructure
+
+Speed applies to outcomes, not to reasoning. Taking 10 minutes to map
+a service's communication channels before changing it is not going slower.
+Spending 2 sessions cleaning up consequences of an unconsidered change is.
+
+The constraint is: infrastructure decisions that require a session to undo
+require a diagnostic that would have taken minutes to write.
