@@ -331,8 +331,15 @@ jobs:
               echo "No changes after sync — skipping commit"
             else
               git commit -m "ci: update current state $(git rev-parse --short HEAD 2>/dev/null) [skip ci]"
-              git push origin main
-              echo "✅ Current state updated in repo"
+              # On non-fast-forward rejection (second commit arrived during this job),
+              # rebase our commit on the new remote HEAD and retry once.
+              git push origin main || {
+                echo "Push rejected — rebasing on latest and retrying..."
+                git fetch origin main
+                git rebase origin/main
+                git push origin main || echo "⚠️ State update deferred — will retry on next CI run"
+              }
+              echo "✅ Current state handling complete"
             fi
           fi
 
