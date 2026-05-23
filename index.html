@@ -3818,6 +3818,20 @@ function mlbStreams(){ return resolveBundle(MLB_BUNDLE); }
 
 // ── State ────────────────────────────────────────────────────
 let allData = null;
+
+// ── Canonical sport metadata — single source of truth for emoji, labels, plural forms ──
+// Mirrors scripts/sport-meta.json. Keep in sync. Do NOT hardcode sport emoji elsewhere.
+const SPORT_META = {
+  NBA:    {emoji:'\u{1F3C0}', entity:'&#127936;', label:'NBA',    singular:'game',  plural:'games'},
+  NHL:    {emoji:'\u{1F3D2}', entity:'&#127954;', label:'NHL',    singular:'game',  plural:'games'},
+  MLB:    {emoji:'\u26BE',    entity:'&#9918;',   label:'MLB',    singular:'game',  plural:'games'},
+  WNBA:   {emoji:'\u{1F3C0}', entity:'&#127936;', label:'WNBA',   singular:'game',  plural:'games'},
+  AFL:    {emoji:'\u{1F3C9}', entity:'&#127945;', label:'AFL',    singular:'game',  plural:'games'},
+  Soccer: {emoji:'\u26BD',    entity:'&#9917;',   label:'Soccer', singular:'match', plural:'matches'},
+  Tennis: {emoji:'\u{1F3BE}', entity:'&#127934;', label:'Tennis', singular:'match', plural:'matches'},
+  NFL:    {emoji:'\u{1F3C8}', entity:'&#127944;', label:'NFL',    singular:'game',  plural:'games'},
+};
+
 let selectedTz = "local";
 let activeFilter = "all";
 let freeOnlyFilter = localStorage.getItem("field_free_only") === "1";
@@ -11817,6 +11831,33 @@ function renderESPNScores(){
   });
 }
 
+// ── Overlay data layer — editorial patches without a session ─────────────────────────
+// Push outbox/field-data-today.json (with [skip ci]) to update matchupNotes or series
+// records. Relay edge-caches 300s; app sees changes within 5 min. No SW bump needed.
+async function loadOverlayData(){
+  const RELAY='https://field-relay-nba.jeffunglesbee.workers.dev';
+  try{
+    const res=await fetch(`${RELAY}/field/data/today`,{cache:'no-store'});
+    if(!res.ok) return;
+    const data=await res.json();
+    if(!data||!Array.isArray(data.game_overlays)||!data.game_overlays.length) return;
+    const gameMap=new Map();
+    (allData?.sports||[]).forEach(sec=>
+      (sec.games||[]).forEach(g=>gameMap.set(`${g.home}|${g.away}`,g)));
+    let patched=0;
+    for(const ov of data.game_overlays){
+      const g=gameMap.get(ov._match_key);
+      if(!g) continue;
+      ['seriesRecord','matchupNote','crew','localNote','neutral','_angle','_gameImportance']
+        .forEach(k=>{if(ov[k]!==undefined) g[k]=ov[k];});
+      patched++;
+    }
+    if(patched>0) scheduleRenderAll();
+  }catch(e){
+    if(window._fieldErrors) window._fieldErrors.push(`overlay: ${e.message}`);
+  }
+}
+
 // ── Main load ─────────────────────────────────────────────────
 async function fetchSchedule(){
   const main=document.getElementById("main");
@@ -11830,6 +11871,7 @@ async function fetchSchedule(){
   allData={sports:[...verified]};
   buildFilters(allData.sports);
   renderAll();
+  loadOverlayData(); // async enhancement — editorial patches from relay
 
   // ── Then fetch supplemental (rugby etc.) async and merge if anything returns ─
   fetchSupplemental(isoDate,dayOfWeek,monthYear).then(supplemental=>{
@@ -12444,7 +12486,7 @@ let _pwaPrompt = null;
 
   // SW_VERSION — bump on every deploy to bust returning user cache
   // Assertion 28 in smoke verifies this constant is present
-  const SW_VERSION = '2026-05-23h';
+  const SW_VERSION = '2026-05-23i';
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
   // Cache strategy: API-only (ESPN scores, weather, odds, SportsDB).
