@@ -1,0 +1,50 @@
+# .github/workflows/deploy-after-ci.yml
+#
+# CI-GATED CLOUDFLARE DEPLOY
+# Deploys to Cloudflare Workers only AFTER smoke-and-verify.yml passes.
+#
+# This is the governance fix for the [skip ci] / parallel-deploy gap:
+#   Before: Cloudflare auto-deploy fires on push independent of CI.
+#   After:  This workflow fires only when smoke-and-verify.yml succeeds.
+#
+# To fully close the gap, disable Cloudflare's own GitHub auto-deploy:
+#   dash.cloudflare.com → Workers & Pages → jubilant-bassoon
+#   → Settings → Build → Disable automatic deployments
+#   OR: use the cf-api-probe.yml workflow once CLOUDFLARE_API_TOKEN is set.
+#
+# REQUIRES: CLOUDFLARE_API_TOKEN secret in this repo's Actions secrets.
+#   Get from: dash.cloudflare.com → My Profile → API Tokens
+#   (use the same token already in field-relay-nba)
+
+name: Deploy to Cloudflare (CI-gated)
+
+on:
+  workflow_run:
+    workflows: ["Smoke test and verify"]
+    types: [completed]
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: Deploy (smoke must pass)
+    # Only deploy if smoke-and-verify.yml succeeded
+    if: github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout at the commit that triggered CI
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - name: Deploy to Cloudflare Workers
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
+      - name: Confirm deployment
+        run: |
+          echo "✅ Deployed SHA ${{ github.event.workflow_run.head_sha }}"
+          echo "   Smoke workflow: ${{ github.event.workflow_run.html_url }}"
