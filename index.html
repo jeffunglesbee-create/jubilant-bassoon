@@ -6900,6 +6900,24 @@ function buildTodaySchedule(){
     // Playoff/cup final: single decisive match → series_deciding importance
     if (/final/i.test(s) && /playoff|cup|champions|europa|conference/i.test(s))
       return {importance:'series_deciding', boost:28, label:'Playoff Final', icon:'🏆'};
+
+    // ── Soccer league relegation/European stakes ─────────────────────────
+    // _gameImportance set manually via overlay for known relegation/Europe battles.
+    // Auto-detect from matchupNote when present (overlay sets it on data day).
+    // Final-day detection: league string contains matchday at season end.
+    const isFinalDay = /matchday 38|matchweek 38|jornada 38|md38|mw38|spieltag 34|journée 38/i.test(s);
+    if (isFinalDay) {
+      // All final-day games have elevated stakes — title, Europe, or relegation all live
+      // Specific games get manual _gameImportance via overlay; this is the floor boost
+      return {importance:'playoff_impl', boost:12, label:'Final day — season destiny', icon:'🏟️'};
+    }
+    // Relegation battle detected via matchupNote or league label
+    if (/relegat/i.test(g.matchupNote||'') || /relegat/i.test(g.localNote||''))
+      return {importance:'elimination', boost:22, label:'Relegation battle', icon:'⚠️'};
+    // European spot race
+    if (/champions league|europa league|conference league/i.test(g.matchupNote||''))
+      return {importance:'playoff_impl', boost:12, label:'European spot on the line', icon:'🌍'};
+
     return null;
   }
 
@@ -6960,11 +6978,16 @@ function buildTodaySchedule(){
   if(wweGames.length)  sections.push({sport:"WWE/Pro Wrestling",games:wweGames});
   if(aflGames.length)  sections.push({sport:"Australian Football (AFL)",games:aflGames});
   sections.push(...tennisSections);
-  // Premier League — always shown if games today; fetchSoccerFixtures will refresh with live data
-  applyNarrativeContext(eplGames); // nb boost for games with narrative; future-proofs auto-detection
-  if(eplGames.length) sections.push({sport:"Premier League", games:eplGames});
-  if(laLigaGames.length) sections.push({sport:"La Liga", games:laLigaGames});
-  if(ligue1Games.length) sections.push({sport:"Ligue 1", games:ligue1Games});
+  // All live-data soccer leagues — applyNarrativeContext before rendering
+  // Fix: La Liga/Ligue 1/others previously had no narrative context → zero elimination boost
+  applyNarrativeContext(eplGames);
+  applyNarrativeContext(laLigaGames);
+  applyNarrativeContext(ligue1Games);
+  if(typeof bundesligaGames !== 'undefined') applyNarrativeContext(bundesligaGames);
+  if(typeof serieAGames    !== 'undefined') applyNarrativeContext(serieAGames);
+  if(eplGames.length)      sections.push({sport:"Premier League", games:eplGames});
+  if(laLigaGames.length)   sections.push({sport:"La Liga", games:laLigaGames});
+  if(ligue1Games.length)   sections.push({sport:"Ligue 1", games:ligue1Games});
 
   // ── Golf (PGA Tour) ───────────────────────────────────────────────────────
   // MAJOR CONFIG — PGA Championship May 14-17 at Aronimink (Newtown Square PA)
