@@ -180,7 +180,7 @@ function callGemini(prompt) {
     });
     const req = https.request({
       hostname: 'generativelanguage.googleapis.com',
-      path: `/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${process.env.GEMINI_KEY}`,
+      path: `/v1beta/models/gemini-3.1-flash-lite:generateContent?key=${process.env.GEMINI_KEY}`,
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) },
     }, res => {
@@ -245,7 +245,7 @@ async function main() {
   const useGemini = !!process.env.GEMINI_KEY;
   const useClaude = !!process.env.ANTHROPIC_API_KEY;
   const useAI = useGemini || useClaude;
-  if (useGemini) console.log('GEMINI_KEY present — matchupNotes via gemini-2.5-flash-lite');
+  if (useGemini) console.log('GEMINI_KEY present — matchupNotes via gemini-3.1-flash-lite');
   else if (useClaude) console.log('ANTHROPIC_API_KEY present — matchupNotes via Claude Sonnet 4');
   else console.log('No AI key — overlays only (no matchupNotes)');
 
@@ -261,7 +261,7 @@ async function main() {
       let note = null, backend = null;
       if (useGemini) {
         note = await callGemini(prompt);
-        if (note) backend = 'gemini-2.5-flash-lite';
+        if (note) backend = 'gemini-3.1-flash-lite';
         else if (useClaude) {
           note = await callClaude(prompt);
           if (note) backend = 'claude-sonnet-4 (fallback)';
@@ -300,7 +300,7 @@ async function main() {
       source: 'field-data workflow (automated)',
       games_found: { nhl: nhlGames.length, nba: nbaGames.length },
       ai_notes: useAI,
-      ai_backend: useGemini ? 'gemini-2.5-flash-lite' : (useClaude ? 'claude-sonnet-4' : 'none'),
+      ai_backend: useGemini ? 'gemini-3.1-flash-lite' : (useClaude ? 'claude-sonnet-4' : 'none'),
       note: 'Auto-generated daily at 7:30 AM UTC. Manual edits persist until the next run.',
     },
     game_overlays: overlays,
