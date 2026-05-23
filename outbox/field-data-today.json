@@ -1,26 +1,33 @@
 {
   "_meta": {
     "schema_version": "1.0",
-    "generated_at": "2026-05-23T07:00:00Z",
+    "generated_at": "2026-05-23T20:36:09.499Z",
     "for_date": "2026-05-23",
-    "note": "Push this file with '[skip ci]' in the commit message to update editorial data without a session, SW bump, or CI pipeline. The relay caches for 300s; the app sees changes within 5 minutes."
+    "source": "field-data workflow (automated)",
+    "games_found": {
+      "nhl": 1,
+      "nba": 1
+    },
+    "ai_notes": true,
+    "ai_backend": "gemini-3.1-flash-lite",
+    "note": "Auto-generated daily at 7:30 AM UTC. Manual edits persist until the next run."
   },
   "game_overlays": [
     {
       "_match_key": "Carolina Hurricanes|Montreal Canadiens",
-      "seriesRecord": "MTL leads 1-0",
-      "matchupNote": "MTL stunned CAR 6-2 in G1 (Slafkovsky 2G 1A) — first CAR loss of playoffs, ending bid for perfect 16-0. G2 Saturday at Lenovo Center, 7pm ET, TNT/truTV/Max.",
-      "crew": "John Forslund · Eddie Olczyk (TNT)"
+      "seriesRecord": "ECF"
     },
     {
-      "_match_key": "New York Knicks|Cleveland Cavaliers",
-      "seriesRecord": "NYK leads 2-0",
-      "matchupNote": "Knicks look for a 3-0 stranglehold at Rocket Mortgage FieldHouse. A CLE loss ends their comeback bid."
+      "_match_key": "Cleveland Cavaliers|New York Knicks",
+      "seriesRecord": "NYK leads 2-0"
     },
     {
-      "_match_key": "Middlesbrough|Hull City",
-      "neutral": true,
-      "matchupNote": "EFL Championship Playoff Final at Wembley. Middlesbrough vs Hull City — £270m Premier League prize. Paramount+ (US) · Sky Sports (UK)."
+      "_match_key": "New York Yankees|Tampa Bay Rays",
+      "_postponed": true
+    },
+    {
+      "_match_key": "Baltimore Orioles|Detroit Tigers",
+      "_postponed": true
     }
   ]
 }
