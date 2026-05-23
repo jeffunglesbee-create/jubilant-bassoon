@@ -2,6 +2,11 @@ name: Smoke Test + Live Verify
 on:
   push:
     branches: [main]
+    paths-ignore:
+      # Data-layer files: push these to update editorial content without triggering CI.
+      # A session is NOT required to update these files.
+      - 'outbox/field-data-*.json'
+      - 'scripts/sport-meta.json'
   workflow_dispatch:
   schedule:
     - cron: '0 11 * * *'   # 6am ET daily — compliance report
