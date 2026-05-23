@@ -39,6 +39,12 @@ function parseGames(jsonStr) {
   try { return JSON.parse(jsonStr); } catch { return []; }
 }
 
+// Pluralise a game count: "1 game" vs "N games" (count arrives as a string env var).
+function plural(n) {
+  const x = Number(n) || 0;
+  return x === 1 ? '1 game' : `${x} games`;
+}
+
 const nbaGames = parseGames(NBA_GAMES_JSON);
 const nhlGames = parseGames(NHL_GAMES_JSON);
 const mlbGames = parseGames(MLB_GAMES_JSON);
@@ -82,19 +88,19 @@ const html = `<!DOCTYPE html>
 
 <div style="background:#1a1a1a;border:1px solid #2a2a2a;border-radius:8px;padding:16px;margin-bottom:14px">
   <p style="color:#9ca3af;font-size:10px;letter-spacing:1px;text-transform:uppercase;margin:0 0 12px">Today's Slate</p>
-  <p style="margin:0 0 6px;font-size:13px">&#127944; NBA &mdash; <strong>${NBA_COUNT} games</strong></p>
+  <p style="margin:0 0 6px;font-size:13px">&#127936; NBA &mdash; <strong>${plural(NBA_COUNT)}</strong></p>
   <pre style="color:#d1d5db;font-size:11px;margin:0 0 12px;line-height:1.5">${nbaLines}</pre>
-  <p style="margin:0 0 6px;font-size:13px">&#127944; NHL &mdash; <strong>${NHL_COUNT} games</strong></p>
+  <p style="margin:0 0 6px;font-size:13px">&#127954; NHL &mdash; <strong>${plural(NHL_COUNT)}</strong></p>
   <pre style="color:#d1d5db;font-size:11px;margin:0 0 12px;line-height:1.5">${nhlLines}</pre>
-  <p style="margin:0 0 6px;font-size:13px">&#9918; MLB &mdash; <strong>${MLB_COUNT} games</strong></p>
+  <p style="margin:0 0 6px;font-size:13px">&#9918; MLB &mdash; <strong>${plural(MLB_COUNT)}</strong></p>
   <pre style="color:#d1d5db;font-size:11px;margin:0 0 12px;line-height:1.5">${mlbLines}</pre>
-  <p style="margin:0 0 6px;font-size:13px">&#127944; WNBA &mdash; <strong>${WNBA_COUNT} games</strong></p>
+  <p style="margin:0 0 6px;font-size:13px">&#127936; WNBA &mdash; <strong>${plural(WNBA_COUNT)}</strong></p>
   <pre style="color:#d1d5db;font-size:11px;margin:0 0 12px;line-height:1.5">${wnbaLines}</pre>
-  <p style="margin:0 0 6px;font-size:13px">&#127944; AFL &mdash; <strong>${AFL_COUNT} games</strong></p>
+  <p style="margin:0 0 6px;font-size:13px">&#127945; AFL &mdash; <strong>${plural(AFL_COUNT)}</strong></p>
   <pre style="color:#d1d5db;font-size:11px;margin:0 0 12px;line-height:1.5">${aflLines}</pre>
-  <p style="margin:0 0 6px;font-size:13px">&#9917; Soccer &mdash; <strong>${SOCCER_COUNT} games</strong></p>
+  <p style="margin:0 0 6px;font-size:13px">&#9917; Soccer &mdash; <strong>${plural(SOCCER_COUNT)}</strong></p>
   <pre style="color:#d1d5db;font-size:11px;margin:0 0 10px;line-height:1.5">${soccerLines}</pre>
-  ${TENNIS_NOTE ? `<p style="margin:0;font-size:13px">&#127939; Tennis &mdash; ${TENNIS_NOTE}</p>` : ''}
+  ${TENNIS_NOTE ? `<p style="margin:0;font-size:13px">&#127934; Tennis &mdash; ${TENNIS_NOTE}</p>` : ''}
 </div>
 
 <div style="background:#1a1a1a;border:1px solid #2a2a2a;border-radius:8px;padding:16px;margin-bottom:14px">
@@ -110,22 +116,22 @@ const html = `<!DOCTYPE html>
 const text = [
   `FIELD Daily Brief — ${DAY}`,
   '',
-  `NBA: ${NBA_COUNT} games`,
+  `NBA: ${plural(NBA_COUNT)}`,
   nbaLines,
   '',
-  `NHL: ${NHL_COUNT} games`,
+  `NHL: ${plural(NHL_COUNT)}`,
   nhlLines,
   '',
-  `MLB: ${MLB_COUNT} games`,
+  `MLB: ${plural(MLB_COUNT)}`,
   mlbLines,
   '',
-  `WNBA: ${WNBA_COUNT} games`,
+  `WNBA: ${plural(WNBA_COUNT)}`,
   wnbaLines,
   '',
-  `AFL: ${AFL_COUNT} games`,
+  `AFL: ${plural(AFL_COUNT)}`,
   aflLines,
   '',
-  `Soccer: ${SOCCER_COUNT} games`,
+  `Soccer: ${plural(SOCCER_COUNT)}`,
   soccerLines,
   TENNIS_NOTE ? `Tennis: ${TENNIS_NOTE}` : '',
   '',
