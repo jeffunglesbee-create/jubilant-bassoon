@@ -5752,6 +5752,7 @@ function detectArcType(g) {
 }
 function isNationalGame(g){return !!(g.nationalBundle);}
 function preGameScore(g){
+  if (g._postponed) return 0; // PPD games excluded from ONE TO WATCH, ww-bar, TONIGHT
   const nb=g.narrative?.boost||0;
   const ib={series_deciding:30,elimination:20,clinch:15,playoff_impl:10}[g._gameImportance]||0;
   const nationalKeys=new Set(['NBA_ESPN','NBA_ABC','NBA_NBC','NBA_PRIME','NHL_ESPN','NHL_ABC','NHL_TNT','MLB_TBS','MLB_FOX','MLB_APPLE','MLB_NBC','MLB_PEACOCK_SNB','NFL_PRIME','NFL_NBC','NFL_ESPN','NFL_ABC','NFL_CBS','NFL_FOX','MLS_FOX','MLS_FS1','EFL_FINAL','EFL_PLAYOFF','EPL_NBC','EPL_USA','EPL_PEACOCK']);
@@ -10814,6 +10815,7 @@ function normalizeMLBGame(g, date) {
                       ? resolveBundle(broadcast.nationalBundle)
                       : resolveBundle('MLB_LOCAL'),
     _sport:         'Baseball (MLB)',
+    _postponed:     normalizeMLBStatus(g.status?.statusCode) === 'postponed',
     // Probable pitchers (from probablePitcher(stats) hydration)
     homePitcher:    normalizeMLBPitcher(home.probablePitcher),
     awayPitcher:    normalizeMLBPitcher(away.probablePitcher),
@@ -11032,6 +11034,7 @@ async function fetchMLBFixtures(){
         start_time:ev.date||"",
         venue:(comp.venue?.fullName||""),
         streams:resolveBundle("MLB_LOCAL"),
+        _postponed: ev.status?.type?.name === "STATUS_POSTPONED",
       });
       added++;
     });
@@ -11890,7 +11893,7 @@ async function loadOverlayData(){
     for(const ov of data.game_overlays){
       const g=gameMap.get(ov._match_key);
       if(!g) continue;
-      ['seriesRecord','matchupNote','crew','localNote','neutral','_angle','_gameImportance']
+      ['seriesRecord','matchupNote','crew','localNote','neutral','_angle','_gameImportance','_postponed']
         .forEach(k=>{if(ov[k]!==undefined) g[k]=ov[k];});
       patched++;
     }
@@ -12528,7 +12531,7 @@ let _pwaPrompt = null;
 
   // SW_VERSION — bump on every deploy to bust returning user cache
   // Assertion 28 in smoke verifies this constant is present
-  const SW_VERSION = '2026-05-23n';
+  const SW_VERSION = '2026-05-23o';
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
   // Cache strategy: API-only (ESPN scores, weather, odds, SportsDB).
@@ -16021,6 +16024,7 @@ async function fetchNightOwlFromClaude(topGame){
 // DO NOT INVENT: all content from game object fields (start_time, matchupNote,
 // espnScores, venue, streams, seriesRecord) — nothing fabricated.
 function computeCardStage(game, eData) {
+  if (game._postponed) return 'postponed';
   const now = Date.now();
   const start = game.start_time ? new Date(game.start_time).getTime() : 0;
   const minsUntil = start ? (start - now) / 60000 : 999;
@@ -16040,6 +16044,8 @@ function computeCardStage(game, eData) {
 function buildLifeStageContent(game, eData, stage) {
   const sp = (game._section||game._sport||'').toLowerCase();
   switch(stage) {
+    case 'postponed':
+      return '<div class="card-stage-content card-stage-ppd">⛈ Postponed</div>';
     case 'pre': {
       // Pre-game: context from game data, no fabrication
       // Big game detection via Sport Classifier (now checks game.league independently)
