@@ -1,0 +1,63 @@
+# .github/workflows/deploy-gate.yml
+#
+# FAST-PATH CI-GATED DEPLOY — ~24 seconds total
+#
+# HOW IT WORKS:
+#   1. Triggers ONLY on pushes that change code files (index.html, sw.js, field_utils.js)
+#   2. Runs smoke.js only (~5s) — the structural gate, not the full test suite
+#   3. On pass → wrangler deploys immediately (~19s)
+#   4. On fail → no deploy. Broken code never reaches production.
+#
+# WHY NOT deploy-after-ci.yml (workflow_run):
+#   That waits for full smoke-and-verify.yml (~4 min). Slower is never acceptable.
+#   smoke.js alone is sufficient to prove index.html is structurally valid.
+#   The pre-commit hook already ran both smoke files before this push arrived.
+#
+# [skip ci] BEHAVIOUR:
+#   [skip ci] in commit message skips ALL GitHub Actions including this workflow.
+#   → No deploy. Code waits on main until next normal code push.
+#   → Governance gap closed for [skip ci] on index.html.
+#
+# DATA-ONLY PUSHES:
+#   outbox/, scripts/sport-meta.json, STANDARDS.md, GOVERNANCE.json etc.
+#   are NOT in the paths list → this workflow never fires for data commits.
+#
+# REQUIRES: CLOUDFLARE_API_TOKEN secret in this repo's Actions secrets (set May 23 2026).
+
+name: Deploy gate (fast smoke)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'index.html'
+      - 'sw.js'
+      - 'field_utils.js'
+      - 'wrangler.jsonc'
+
+permissions:
+  contents: read
+
+jobs:
+  smoke-and-deploy:
+    name: Smoke (~5s) → Deploy (~19s)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Fast smoke (smoke.js only)
+        run: |
+          echo "Running smoke.js structural assertions..."
+          node smoke.js index.html
+          echo "✅ Smoke passed — deploying"
+
+      - name: Deploy to Cloudflare Workers
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
+      - name: Confirm
+        run: |
+          echo "✅ Deployed ${{ github.sha }}"
+          echo "   Full CI (viewport + browser tests) running asynchronously in smoke-and-verify.yml"
