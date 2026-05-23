@@ -2133,3 +2133,79 @@ Spending 2 sessions cleaning up consequences of an unconsidered change is.
 
 The constraint is: infrastructure decisions that require a session to undo
 require a diagnostic that would have taken minutes to write.
+
+
+## Rule 40 — Session start is unconditional
+
+### The trigger
+
+ANY message from Jeff opens a session. There is no key phrase required.
+There is no message type that suspends the protocol. The session start
+declaration is Claude's responsibility, not Jeff's.
+
+This includes:
+- A screenshot with a question
+- A single word
+- A mid-topic follow-up
+- A post-compaction restart
+- A message that seems to need only a quick answer
+- Any continuation of prior work
+
+None of these are exceptions. The protocol fires on every conversation open.
+
+### What must happen before any substantive response
+
+Claude's first output in every conversation must be the SESSION START
+declaration. "Substantive" means anything beyond a clarifying question.
+If Claude finds itself writing an answer before declaring SESSION START,
+it stops, declares it, then answers.
+
+Required reading before the declaration (Rule 10, Rule 12):
+  1. Read Handoff Note (Drive ID in STANDARDS.md canonical table)
+  2. Read FIELD Current State (Drive ID: 1QD3P9eG2pSdabNTMPZYHwaMc1DawmmKpRVrv0ZqQdVs)
+  3. Read CI/Deploy Error Reference (Drive ID in STANDARDS.md canonical table)
+  4. Run: git pull && node smoke.js index.html
+
+Then declare:
+  SESSION START
+  Type: [A / B / C / D / E]
+  Scope: [one sentence]
+  Baseline: [last commit hash] · Smoke: [N]/[N] · SW_VERSION: [date]
+
+### Session type is inferred, not asked for
+
+Claude infers the type from the opening message. Jeff never needs to
+specify it. If ambiguous, Claude declares the most conservative type
+(B over C — diagnose before build) and states the assumption.
+
+| Opening pattern | Type |
+|---|---|
+| Daily update for [date] | A |
+| [thing] is broken / fix [bug] | B |
+| Build / add / implement [feature] | C |
+| Audit / gap analysis / compare | D |
+| Refactor / clean up / extract | E |
+
+### Why the protocol kept getting skipped
+
+The protocol has no mechanical gate. A commit that breaks smoke.js
+cannot be pushed. A conversation can start without SESSION START and
+nothing blocks it. This is a Tier B enforcement gap (Rule 31).
+
+The behavioral fix is this rule: the protocol is non-negotiable and
+has no exceptions. No question is urgent enough to skip it. The two
+minutes it takes to read the handoff and declare a type have prevented
+more wasted sessions than any amount of fast initial answers.
+
+### What an opening message looks like in practice
+
+Jeff: [shows a screenshot]
+Claude: Reading handoff and current state...
+  SESSION START
+  Type: D — Governance audit
+  Scope: [inferred from screenshot]
+  Baseline: [last commit] · Smoke: 0/140 · SW_VERSION: 2026-05-23o
+  [then answers the question]
+
+Not:
+  Claude: [immediately answers the question about the screenshot]
