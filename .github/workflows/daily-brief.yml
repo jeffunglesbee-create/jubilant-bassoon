@@ -93,21 +93,31 @@ jobs:
           RELAY="https://field-relay-nba.jeffunglesbee.workers.dev"
           TODAY=$(date -u +%Y-%m-%d)
           # FD relay whitelist: /matches? prefix is allowed
-          DATA=$(curl -sf --max-time 10 \
-            "$RELAY/fd/matches?dateFrom=${TODAY}&dateTo=${TODAY}" || echo '{"matches":[]}')
-          echo "$DATA" > /tmp/fd.json
-          COUNT=$(jq '[.matches[] | select(.competition.code | test("^(PL|ELC|CL|EL|ECRL|PD|BL1|SA|FL1|MLS|EC|PPL|DED|BSA)$"))] | length' /tmp/fd.json 2>/dev/null || echo 0)
-          EARLIEST=$(jq -r '[.matches[] | select(.competition.code | test("^(PL|ELC|CL|EL|ECRL|PD|BL1|SA|FL1|MLS|EC|PPL|DED|BSA)$")) | .utcDate] | sort | .[0] // empty' /tmp/fd.json)
-          # Build compact game list: away @ home [competition] — HH:MM UTC
-          GAMES=$(jq -c '[.matches[] | select(.competition.code | test("^(PL|ELC|CL|EL|ECRL|PD|BL1|SA|FL1|MLS|EC|PPL|DED|BSA)$")) | {
-            away: .awayTeam.shortName,
-            home: .homeTeam.shortName,
-            comp: .competition.code,
-            time: (.utcDate | split("T")[1] | split(":")[0:2] | join(":"))
-          }]' /tmp/fd.json 2>/dev/null | head -c 2000 || echo '[]')
-          echo "count=$COUNT" >> $GITHUB_OUTPUT
-          echo "earliest=${EARLIEST:-}" >> $GITHUB_OUTPUT
-          echo "games_json=$GAMES" >> $GITHUB_OUTPUT
+          # Capture exit code separately so a relay/network/HTTP failure is visible
+          # in the Brief as "feed error" rather than a misleading "0 games".
+          RAW=$(curl -sf --max-time 10 \
+            "$RELAY/fd/matches?dateFrom=${TODAY}&dateTo=${TODAY}" 2>/dev/null)
+          CURL_STATUS=$?
+          if [ "$CURL_STATUS" -ne 0 ] || [ -z "$RAW" ]; then
+            echo "feed_ok=false" >> $GITHUB_OUTPUT
+            echo "count=0" >> $GITHUB_OUTPUT
+            echo "earliest=" >> $GITHUB_OUTPUT
+            echo "games_json=[]" >> $GITHUB_OUTPUT
+          else
+            echo "$RAW" > /tmp/fd.json
+            echo "feed_ok=true" >> $GITHUB_OUTPUT
+            COUNT=$(jq '[.matches[] | select(.competition.code | test("^(PL|ELC|CL|EL|ECRL|PD|BL1|SA|FL1|MLS|EC|PPL|DED|BSA)$"))] | length' /tmp/fd.json 2>/dev/null || echo 0)
+            EARLIEST=$(jq -r '[.matches[] | select(.competition.code | test("^(PL|ELC|CL|EL|ECRL|PD|BL1|SA|FL1|MLS|EC|PPL|DED|BSA)$")) | .utcDate] | sort | .[0] // empty' /tmp/fd.json)
+            GAMES=$(jq -c '[.matches[] | select(.competition.code | test("^(PL|ELC|CL|EL|ECRL|PD|BL1|SA|FL1|MLS|EC|PPL|DED|BSA)$")) | {
+              away: .awayTeam.shortName,
+              home: .homeTeam.shortName,
+              comp: .competition.code,
+              time: (.utcDate | split("T")[1] | split(":")[0:2] | join(":"))
+            }]' /tmp/fd.json 2>/dev/null | head -c 2000 || echo '[]')
+            echo "count=$COUNT" >> $GITHUB_OUTPUT
+            echo "earliest=${EARLIEST:-}" >> $GITHUB_OUTPUT
+            echo "games_json=$GAMES" >> $GITHUB_OUTPUT
+          fi
 
       - name: Fetch MLB schedule
         id: mlb
@@ -294,6 +304,7 @@ jobs:
           WNBA_COUNT: ${{ steps.wnba.outputs.count }}
           AFL_COUNT: ${{ steps.afl.outputs.count }}
           SOCCER_COUNT: ${{ steps.soccer.outputs.count }}
+          SOCCER_FEED_OK: ${{ steps.soccer.outputs.feed_ok }}
           TENNIS_NOTE: ${{ steps.tennis.outputs.note }}
           SW_STATUS: ${{ steps.sw.outputs.status }}
           RELAY_STATUS: ${{ steps.health.outputs.status }}
