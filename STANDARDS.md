@@ -1972,3 +1972,47 @@ If restored from background after TTL, reinitialise as new session.
 
 The registry is a secondary defence. The Content Budget (Rule 35)
 is the primary structural defence against duplication.
+
+---
+
+## Rule 37 — Semantic Color System (COLOUR-SYS-A)
+
+All color in FIELD must reference a semantic CSS token defined
+in the color system spec (COLOUR-SYS-A). No raw hex values in
+component JavaScript, template strings, or inline styles.
+
+Token meanings are reserved globally:
+  Gold (#c9a84c / --drama-must)   → urgency, must-watch, breakthrough
+  Blue (#4a9eff / --drama-watch)  → worth it, editorial depth, informational
+  Smoke (#6a6a8a / --drama-low)   → low stakes, honest, no drama, skeptical
+  Teal (#2dd4bf / --access-free)  → discovery, free access, hidden gem
+  Amber (#f59e0b / --caution)     → caution, something to know before deciding
+  Red (#ef4444 / --angle-elim)    → elimination urgency only
+  Violet (#a78bfa / --angle-rivalry) → history, rivalry, weight
+
+Sport identity colors (--sport-nba, --sport-nhl, etc.) are used
+exclusively for card left border accents and section headers.
+Never for badges, chips, or text.
+
+No new color token may be introduced without:
+  1. Defining what it means (one sentence)
+  2. Defining what it must never be confused with
+  3. Verifying it does not conflict with an existing token's meaning
+
+Single-sentence test: what does this color mean to a user who
+has never read documentation? If "the same thing [existing token]
+means everywhere else" — use that token. If "something new" —
+define the token first.
+
+--drama-low is smoke (#6a6a8a), NOT green. Green is reserved
+exclusively for --access-free (teal family). Using green for
+low-drama content or any badge other than free OTA = violation.
+
+Smoke assertions required after token system ships:
+  assert('--drama-low is smoke not green')
+  assert('dramaBadgeColor uses var() token refs not raw hex')
+  assert('--access-free present in :root')
+
+Violation: using a color against its semantic meaning =
+DO NOT SHIP. Example: gold on a free OTA chip is a violation.
+Teal on a high-drama badge is a violation.
