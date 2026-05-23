@@ -12,7 +12,7 @@
 const fs = require('fs');
 
 // ── PER-DAY CONFIG ────────────────────────────────────────────────────────────
-const TODAY_ISO        = '2026-05-22';   // YYYY-MM-DD in America/New_York
+const TODAY_ISO = '2026-05-22';   // YYYY-MM-DD in America/New_York
 const NBA_CARDS        = 1;              // WCF G3 OKC@SAS 8:30 PM ET NBC/Peacock
 const NBA_HOME_TEAM    = 'San Antonio Spurs';
 const NBA_NETWORK      = 'NBC';          // chip text from NBA_NBC bundle
@@ -657,3 +657,9 @@ const hasStoryScore = html.includes('score-status') &&
   html.includes('_n.periodLabel');
 if(hasStoryScore) pass('Assertion 55 — Story Score: score-status CSS + _n.statusLine + _n.scoreline + _sl cache key');
 else fail('Assertion 55 — Story Score wiring missing (score-status/_n.statusLine/_n.scoreline/_sl)');
+
+// ── UFL 2026 ────────────────────────────────────────────────────────────
+assert('UFL bundles registered',
+  html.includes('UFL_FOX') && html.includes('UFL_ABC') && html.includes('UFL_ESPN2'));
+assert('UFL FIELD_FEATURES entry present',
+  html.includes("'ufl-2026'"));
