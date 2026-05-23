@@ -1,0 +1,69 @@
+# .github/workflows/field-data.yml
+#
+# FIELD DATA — Daily Overlay Automation
+#
+# Runs each morning AFTER the daily brief. Fetches live NHL/NBA schedules
+# from the relay, extracts series records, optionally generates matchupNotes
+# via Claude (if ANTHROPIC_API_KEY secret is set), then pushes
+# outbox/field-data-today.json to the repo.
+#
+# WHAT UPDATES AUTOMATICALLY (no session needed):
+#   - NHL/NBA series records (e.g. "MTL leads 2-0") after each playoff game
+#   - AI matchupNotes if ANTHROPIC_API_KEY is configured
+#
+# MANUAL EDITS: edit outbox/field-data-today.json directly in the GitHub
+# web UI with commit message "[skip ci]" for same-day corrections.
+# This workflow will overwrite it the following morning.
+#
+# SECRETS NEEDED:
+#   ANTHROPIC_API_KEY  (optional) — enables AI matchupNote generation
+
+name: FIELD Data — Daily Overlay
+
+on:
+  schedule:
+    - cron: '30 7 * * *'   # 7:30 AM UTC = 3:30 AM ET (after daily-brief at 7:00 UTC)
+  workflow_dispatch:
+
+jobs:
+  build-overlay:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Fetch NHL + NBA schedules from relay
+        run: |
+          RELAY="https://field-relay-nba.jeffunglesbee.workers.dev"
+          curl -sf --max-time 10 -H "Cache-Control: no-cache" \
+            "$RELAY/nhl/v1/scoreboard/now" > /tmp/nhl.json 2>/dev/null || echo '{}' > /tmp/nhl.json
+          curl -sf --max-time 10 -H "Cache-Control: no-cache" \
+            "$RELAY/nba/liveData/scoreboard/todaysScoreboard_00.json" \
+            > /tmp/nba.json 2>/dev/null || echo '{}' > /tmp/nba.json
+          echo "TODAY=$(date -u +%Y-%m-%d)" >> $GITHUB_ENV
+          echo "Fetched NHL ($(wc -c < /tmp/nhl.json) bytes) + NBA ($(wc -c < /tmp/nba.json) bytes)"
+
+      - name: Build overlay JSON
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: node scripts/build-field-data.js
+
+      - name: Push overlay to outbox
+        run: |
+          git config user.name  "FIELD Data Bot"
+          git config user.email "field-data@users.noreply.github.com"
+          CURRENT=$(md5sum outbox/field-data-today.json 2>/dev/null | cut -d' ' -f1 || echo "")
+          NEW=$(md5sum /tmp/field-data-today.json | cut -d' ' -f1)
+          if [ "$CURRENT" = "$NEW" ]; then
+            echo "No changes to overlay — skipping push"
+            exit 0
+          fi
+          cp /tmp/field-data-today.json outbox/field-data-today.json
+          git add outbox/field-data-today.json
+          git commit -m "data: auto-overlay ${TODAY} [skip ci]"
+          git push origin main || {
+            echo "Push rejected — rebasing and retrying..."
+            git fetch origin main && git rebase origin/main && git push origin main
+          }
+          echo "✅ Overlay updated for ${TODAY}"
