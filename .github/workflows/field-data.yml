@@ -16,7 +16,8 @@
 # This workflow will overwrite it the following morning.
 #
 # SECRETS NEEDED:
-#   ANTHROPIC_API_KEY  (optional) — enables AI matchupNote generation
+#   GEMINI_KEY         (optional, primary)  — gemini-3.1-flash-lite matchupNotes
+#   ANTHROPIC_API_KEY  (optional, fallback) — Claude Sonnet 4 if Gemini absent/fails
 
 name: FIELD Data — Daily Overlay
 
@@ -46,6 +47,7 @@ jobs:
 
       - name: Build overlay JSON
         env:
+          GEMINI_KEY: ${{ secrets.GEMINI_KEY }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: node scripts/build-field-data.js
 
