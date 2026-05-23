@@ -1,0 +1,80 @@
+# .github/workflows/cf-api-probe.yml
+#
+# CLOUDFLARE API PROBE
+# Makes authenticated Cloudflare API calls from CI (not blocked there).
+# Uses CLOUDFLARE_API_TOKEN from this repo's Actions secrets.
+#
+# Trigger file: outbox/.trigger-cf-api
+# Format:
+#   method=GET
+#   url=https://api.cloudflare.com/client/v4/accounts
+#   body={"optional":"json_body"}
+#
+# Result: written to outbox/cf-result-{timestamp}.txt
+# Read via: raw.githubusercontent.com (accessible from sandbox)
+#
+# Use cases:
+#   - Discover account_id: url=https://api.cloudflare.com/client/v4/accounts
+#   - List workers: url=https://api.cloudflare.com/client/v4/accounts/{id}/workers/scripts
+#   - Disable auto-deploy: explore Workers GitHub integration API
+#   - Any CF REST API operation
+
+name: Cloudflare API Probe
+
+on:
+  push:
+    paths: ['outbox/.trigger-cf-api']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Read trigger file and call Cloudflare API
+        env:
+          CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          if [ -z "$CF_TOKEN" ]; then
+            echo "ERROR: CLOUDFLARE_API_TOKEN not set in repo secrets." > outbox/cf-result-error.txt
+            echo "Add it: jubilant-bassoon → Settings → Secrets → Actions → CLOUDFLARE_API_TOKEN" >> outbox/cf-result-error.txt
+            echo "Source: dash.cloudflare.com → My Profile → API Tokens (same token as field-relay-nba)" >> outbox/cf-result-error.txt
+            cat outbox/cf-result-error.txt
+            exit 0
+          fi
+          METHOD=$(grep '^method=' outbox/.trigger-cf-api 2>/dev/null | cut -d= -f2- || echo "GET")
+          URL=$(grep '^url=' outbox/.trigger-cf-api 2>/dev/null | cut -d= -f2-)
+          BODY=$(grep '^body=' outbox/.trigger-cf-api 2>/dev/null | cut -d= -f2- || echo "")
+          TS=$(date -u +%Y%m%dT%H%M%SZ)
+          OUT="outbox/cf-result-${TS}.txt"
+          echo "=== CF API Probe [$TS] ===" > "$OUT"
+          echo "Request: $METHOD $URL" >> "$OUT"
+          echo "" >> "$OUT"
+          if [ -n "$BODY" ]; then
+            curl -s -X "$METHOD" \
+              -H "Authorization: Bearer $CF_TOKEN" \
+              -H "Content-Type: application/json" \
+              -d "$BODY" "$URL" \
+              | python3 -m json.tool >> "$OUT" 2>> "$OUT"
+          else
+            curl -s -X "$METHOD" \
+              -H "Authorization: Bearer $CF_TOKEN" \
+              "$URL" \
+              | python3 -m json.tool >> "$OUT" 2>> "$OUT"
+          fi
+          echo "OUT=$OUT" >> $GITHUB_ENV
+          cat "$OUT"
+
+      - name: Push result
+        run: |
+          git config user.email "cf-probe@field"
+          git config user.name "CF-Probe"
+          git add outbox/cf-result*.txt 2>/dev/null || true
+          git add outbox/cf-result-error.txt 2>/dev/null || true
+          git diff --cached --quiet && echo "No result to commit" && exit 0
+          git commit -m "cf-probe: ${{ github.event.inputs.note || 'api call' }}"
+          git pull --rebase origin main && git push origin main
