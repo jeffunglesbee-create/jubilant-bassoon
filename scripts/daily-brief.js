@@ -9,7 +9,11 @@
  *   NBA_GAMES_JSON, SOCCER_GAMES_JSON
  */
 
-const https = require('https');
+const https     = require('https');
+// Canonical sport metadata — single source of truth for emoji, labels, plurals.
+// Mirrors index.html's SPORT_META const. Update scripts/sport-meta.json to change both.
+const SPORT_META = require('./sport-meta.json');
+
 
 const {
   RESEND_API_KEY,
@@ -91,19 +95,19 @@ const html = `<!DOCTYPE html>
 
 <div style="background:#1a1a1a;border:1px solid #2a2a2a;border-radius:8px;padding:16px;margin-bottom:14px">
   <p style="color:#9ca3af;font-size:10px;letter-spacing:1px;text-transform:uppercase;margin:0 0 12px">Today's Slate</p>
-  <p style="margin:0 0 6px;font-size:13px">&#127936; NBA &mdash; <strong>${plural(NBA_COUNT)}</strong></p>
+  <p style="margin:0 0 6px;font-size:13px">${SPORT_META.NBA.entity} NBA &mdash; <strong>${plural(NBA_COUNT)}</strong></p>
   <pre style="color:#d1d5db;font-size:11px;margin:0 0 12px;line-height:1.5">${nbaLines}</pre>
-  <p style="margin:0 0 6px;font-size:13px">&#127954; NHL &mdash; <strong>${plural(NHL_COUNT)}</strong></p>
+  <p style="margin:0 0 6px;font-size:13px">${SPORT_META.NHL.entity} NHL &mdash; <strong>${plural(NHL_COUNT)}</strong></p>
   <pre style="color:#d1d5db;font-size:11px;margin:0 0 12px;line-height:1.5">${nhlLines}</pre>
-  <p style="margin:0 0 6px;font-size:13px">&#9918; MLB &mdash; <strong>${plural(MLB_COUNT)}</strong></p>
+  <p style="margin:0 0 6px;font-size:13px">${SPORT_META.MLB.entity} MLB &mdash; <strong>${plural(MLB_COUNT)}</strong></p>
   <pre style="color:#d1d5db;font-size:11px;margin:0 0 12px;line-height:1.5">${mlbLines}</pre>
-  <p style="margin:0 0 6px;font-size:13px">&#127936; WNBA &mdash; <strong>${plural(WNBA_COUNT)}</strong></p>
+  <p style="margin:0 0 6px;font-size:13px">${SPORT_META.WNBA.entity} WNBA &mdash; <strong>${plural(WNBA_COUNT)}</strong></p>
   <pre style="color:#d1d5db;font-size:11px;margin:0 0 12px;line-height:1.5">${wnbaLines}</pre>
-  <p style="margin:0 0 6px;font-size:13px">&#127945; AFL &mdash; <strong>${plural(AFL_COUNT)}</strong></p>
+  <p style="margin:0 0 6px;font-size:13px">${SPORT_META.AFL.entity} AFL &mdash; <strong>${plural(AFL_COUNT)}</strong></p>
   <pre style="color:#d1d5db;font-size:11px;margin:0 0 12px;line-height:1.5">${aflLines}</pre>
-  <p style="margin:0 0 6px;font-size:13px">&#9917; Soccer &mdash; <strong>${SOCCER_FEED_OK === 'false' ? 'feed error' : plural(SOCCER_COUNT)}</strong></p>
+  <p style="margin:0 0 6px;font-size:13px">${SPORT_META.Soccer.entity} Soccer &mdash; <strong>${SOCCER_FEED_OK === 'false' ? 'feed error' : plural(SOCCER_COUNT)}</strong></p>
   <pre style="color:#d1d5db;font-size:11px;margin:0 0 10px;line-height:1.5">${soccerLines}</pre>
-  ${TENNIS_NOTE ? `<p style="margin:0;font-size:13px">&#127934; Tennis &mdash; ${TENNIS_NOTE}</p>` : ''}
+  ${TENNIS_NOTE ? `<p style="margin:0;font-size:13px">${SPORT_META.Tennis.entity} Tennis &mdash; ${TENNIS_NOTE}</p>` : ''}
 </div>
 
 <div style="background:#1a1a1a;border:1px solid #2a2a2a;border-radius:8px;padding:16px;margin-bottom:14px">
