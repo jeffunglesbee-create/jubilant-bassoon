@@ -1,0 +1,18 @@
+=== CF API Probe [20260523T185358Z] ===
+Request: GET https://api.cloudflare.com/client/v4/accounts/b57e9af57ab46c52ca9215804e689c29/github/repos
+
+{
+    "success": false,
+    "errors": [
+        {
+            "code": 7003,
+            "message": "Could not route to /accounts/b57e9af57ab46c52ca9215804e689c29/github/repos, perhaps your object identifier is invalid?"
+        },
+        {
+            "code": 7000,
+            "message": "No route for that URI"
+        }
+    ],
+    "messages": [],
+    "result": null
+}
