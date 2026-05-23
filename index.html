@@ -6348,7 +6348,7 @@ function buildTodaySchedule(){
     // ── NHL Eastern Conference Finals — Carolina Hurricanes vs Montreal Canadiens ──
     // CAR wins East Semis 4-0 (vs Philadelphia) · MTL wins East Semis 4-3 (vs Buffalo)
     // Broadcast: TNT / truTV / Max (US) · SN / CBC / TVAS (Canada)
-    {home:"Carolina Hurricanes", away:"Montreal Canadiens", league:"NHL Playoffs – East CF G2 · MTL leads 1-0", start_time:"2026-05-23T23:00:00Z", confirmed:true, venue:"PNC Arena, Raleigh NC",      streams:resolveBundle("NHL_TNT"), crew:"John Forslund · Eddie Olczyk (TNT)", seriesRecord:"MTL leads 1-0", matchupNote:"MTL stunned CAR 6-2 in G1 (Slafkovsky 2G 1A) — first CAR loss of playoffs, ending bid for perfect 16-0. G2 Saturday at PNC Arena, 7pm ET, TNT/truTV/Max."},
+    {home:"Carolina Hurricanes", away:"Montreal Canadiens", league:"NHL Playoffs – East CF G2 · MTL leads 1-0", start_time:"2026-05-23T23:00:00Z", confirmed:true, venue:"Lenovo Center, Raleigh NC",      streams:resolveBundle("NHL_TNT"), crew:"John Forslund · Eddie Olczyk (TNT)", seriesRecord:"MTL leads 1-0", matchupNote:"MTL stunned CAR 6-2 in G1 (Slafkovsky 2G 1A) — first CAR loss of playoffs, ending bid for perfect 16-0. G2 Saturday at Lenovo Center, 7pm ET, TNT/truTV/Max."},
     {home:"Montreal Canadiens",  away:"Carolina Hurricanes", league:"NHL Playoffs – East CF G3 · Series 0-0", start_time:"2026-05-26T00:00:00Z", confirmed:true, venue:"Bell Centre, Montreal QC",   streams:resolveBundle("NHL_TNT"), seriesRecord:"0-0", matchupNote:"Series shifts to Bell Centre for G3. Montreal faithful will be electric."},
     // ── NHL Western Conference Finals — Colorado Avalanche vs Vegas Golden Knights ──
     // COL wins Presidents' Trophy (best record) · COL wins R2 4-1 (vs Minnesota) · VGK wins R2 4-2 (vs Anaheim)
@@ -7627,7 +7627,7 @@ const BETTING_LINES_FALLBACK_DATA = [
   {
     matchKey:"hurricanes",  // CAR vs MTL NHL ECF G1 — Thu May 21 8pm ET, TNT/truTV
     source:"📊 AI Estimated",
-    context:"Carolina enters with 11 days of rest after sweeping Philadelphia in four games, posting a perfect 8-0 record through two rounds. Montreal survived Buffalo in a G7 overtime thriller (Canadiens 3, Sabres 2 OT) — the Bell Centre ran on pure emotion to get here. The rust question for Carolina is real after nearly two weeks off, but the Canes have the deeper, more rested team. Montreal's momentum is real but untested against this level of opponent. PNC Arena is a notoriously hostile building.",
+    context:"Carolina enters with 11 days of rest after sweeping Philadelphia in four games, posting a perfect 8-0 record through two rounds. Montreal survived Buffalo in a G7 overtime thriller (Canadiens 3, Sabres 2 OT) — the Bell Centre ran on pure emotion to get here. The rust question for Carolina is real after nearly two weeks off, but the Canes have the deeper, more rested team. Montreal's momentum is real but untested against this level of opponent. Lenovo Center is a notoriously hostile building.",
     lines:[
       {label:"Moneyline",items:[{t:"Carolina Hurricanes",o:"-240",fav:true},{t:"Montreal Canadiens",o:"+198",fav:false}]},
       {label:"Spread",items:[{t:"Hurricanes -1.5",o:"+115",fav:false},{t:"Canadiens +1.5",o:"-135",fav:true}]},
@@ -12254,7 +12254,7 @@ const STREAMING_APPS = [
       {title:"UFC Events",                           meta:"UFC moved to Paramount+/CBS in 2026 — exclusive",badge:"ONGOING",cls:"badge-ongoing"},
       {title:"UEFA Europa League Final — May 20",     meta:"Freiburg vs Aston Villa · Beşiktaş Park, Istanbul · 3pm ET · Paramount+",badge:"UPCOMING",cls:"badge-ongoing"},
       {title:"UEFA Conference League Final — May 27", meta:"Crystal Palace vs Rayo Vallecano · Red Bull Arena, Leipzig · 3pm ET · Paramount+",badge:"UPCOMING",cls:"badge-ongoing"},
-      {title:"EFL Championship Playoffs",            meta:"Final set: Southampton vs Hull City · May 23 Wembley",  badge:"UPCOMING",cls:"badge-ongoing"},
+      {title:"EFL Championship Playoffs",            meta:"Final set: Middlesbrough vs Hull City · May 23 Wembley",  badge:"UPCOMING",cls:"badge-ongoing"},
       {title:"EFL Championship Playoff Final",        meta:"Sat May 23 · Wembley · One spot in the Premier League",badge:"UPCOMING",cls:"badge-ongoing"},
       {title:"EFL League One & Two Playoffs",         meta:"Semi-finals May 8-15 · Finals May 24-25 at Wembley", badge:"UPCOMING",cls:"badge-ongoing"},
       {title:"NWSL Soccer",                          meta:"Select CBS matches stream on Paramount+",  badge:"ONGOING", cls:"badge-ongoing"},
@@ -12432,7 +12432,7 @@ let _pwaPrompt = null;
 
   // SW_VERSION — bump on every deploy to bust returning user cache
   // Assertion 28 in smoke verifies this constant is present
-  const SW_VERSION = '2026-05-23d';
+  const SW_VERSION = '2026-05-23e';
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
   // Cache strategy: API-only (ESPN scores, weather, odds, SportsDB).
@@ -14321,6 +14321,8 @@ function renderAmbientPanel(){
     scoresHTML=`<div class="ap-scores"><div class="ap-section-label">Live</div>${rows}</div>`;
   }
 
+  // Rail display: Hull City → Hull outside the main game card (spec May 23 2026)
+  const railName=n=>n==='Hull City'?'Hull':teamNick(n||'');
   // SOON — games starting within 2 hours
   const _apNow=Date.now();
   const _apSoon=[];
@@ -14337,7 +14339,7 @@ function renderAmbientPanel(){
       const cd=mins<=1?'now':mins<60?`${mins}m`:`${Math.floor(mins/60)}h ${mins%60}m`;
       const net=g.streams?.[0]?.label||'';
       return `<div class="ap-score-row">
-        <span class="ap-score-teams">${teamNick(g.away||'')} @ ${teamNick(g.home||'')}${net?` · <span style="opacity:.6">${net}</span>`:''}</span>
+        <span class="ap-score-teams">${railName(g.away)} @ ${railName(g.home)}${net?` · <span style="opacity:.6">${net}</span>`:''}</span>
         <span class="ap-score-clock">${cd}</span>
       </div>`;
     }).join('');
@@ -14357,7 +14359,7 @@ function renderAmbientPanel(){
     const rows=_apUp.slice(0,4).map(g=>{
       const t=new Date(g.start_time).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',hour12:true,timeZone:tz2});
       return `<div class="ap-score-row">
-        <span class="ap-score-teams">${teamNick(g.away||'')} @ ${teamNick(g.home||'')}</span>
+        <span class="ap-score-teams">${railName(g.away)} @ ${railName(g.home)}</span>
         <span class="ap-score-clock">${t}</span>
       </div>`;
     }).join('');
