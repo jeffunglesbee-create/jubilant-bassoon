@@ -659,6 +659,28 @@ if(hasStoryScore) pass('Assertion 55 — Story Score: score-status CSS + _n.stat
 else fail('Assertion 55 — Story Score wiring missing (score-status/_n.statusLine/_n.scoreline/_sl)');
 
 // ── UFL 2026 ────────────────────────────────────────────────────────────
+
+// ── Weather Intelligence (Session K) ────────────────────────────────────
+assert('PARK_ORIENTATION defined',
+  html.includes('const PARK_ORIENTATION ='));
+assert('weather helper functions defined',
+  html.includes('function isOutdoorVenue(') &&
+  html.includes('function getVenueCoords(') &&
+  html.includes('function wxBadge(') &&
+  html.includes('function wxAlert(') &&
+  html.includes('function weatherDramaModifier('));
+assert('fetchAQI defined',
+  html.includes('async function fetchAQI('));
+assert('windContextNote defined',
+  html.includes('function windContextNote('));
+assert('fetchWeather extended params',
+  html.includes('wind_gusts_10m') &&
+  html.includes('direct_radiation,snowfall') &&
+  html.includes('apparent_temperature'));
+assert('weather-intelligence FIELD_FEATURES',
+  html.includes("'weather-intelligence'"));
+assert('weatherDramaModifier wired to drama',
+  html.includes('weatherDramaModifier(wxEntry)'));
 assert('UFL bundles registered',
   html.includes('UFL_FOX') && html.includes('UFL_ABC') && html.includes('UFL_ESPN2'));
 assert('UFL FIELD_FEATURES entry present',
