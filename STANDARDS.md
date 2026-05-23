@@ -2016,3 +2016,58 @@ Smoke assertions required after token system ships:
 Violation: using a color against its semantic meaning =
 DO NOT SHIP. Example: gold on a free OTA chip is a violation.
 Teal on a high-drama badge is a violation.
+---
+
+## Rule 38 — Angle Vocabulary (buildLayer3Rules)
+
+FIELD supports named editorial angles injected into the journalism compound prompt
+via `g._angle` or `g._gameImportance` on game objects. Each angle produces specific
+model instructions that override default match-preview framing.
+
+**Canonical angle list (as of Rule 38):**
+
+| Angle | Trigger | Journalism instruction |
+|---|---|---|
+| ELIMINATION | `_gameImportance:'elimination'` | Lead with stakes. Who goes home tonight. Stakes before any stat. |
+| CLOSEOUT | `_gameImportance:'series_deciding'` | Write the series arc. One team can advance tonight. |
+| FREE GAME | game is free OTA | Explicitly name the free network. Write for someone new to the sport. |
+| LOW-STAKES NATIONAL | national broadcast + drama < 35 | Prominent broadcast, low interest. Brief mention only. |
+| MY TEAM | game in MY_TEAMS | Address reader directly — "your [team]". Personal framing. |
+| MILESTONE TONIGHT | BDL milestone pct ≥ 0.97 | Name the player, the gap, the specific record. |
+| RISING | drama trend > 12 | Drama climbing fast. Use urgency language. |
+| OVERTIME / EXTRA | live period > standard maximum | Sport-correct label. Describe the live situation immediately. |
+| RIVALRY | isRivalGame() + MY_TEAMS | Acknowledge the history briefly. |
+| SCANDAL | `_angle:'SCANDAL'` | See Rule 38A below. |
+
+### Rule 38A — SCANDAL angle
+
+**Trigger:** `g._angle === 'SCANDAL'`
+
+The scandal IS the story. Off-pitch events define the context of this game.
+The journalism layer must not open with a standard match preview.
+
+**Required in first sentence:** what happened — who was found guilty, of what,
+and what the consequence was. Why this team is actually in this fixture.
+
+**Sources:** `matchupNote` and `localNote` are the primary data. Do not invent
+beyond them. Do not speculate about outcomes or punishments not yet confirmed.
+
+**Compliant openers:**
+- "Middlesbrough are here because Southampton were expelled for spying on their training."
+- "The richest game in football is being played under extraordinary circumstances — Southampton admitted to filming three opponents' training sessions and were expelled by the EFL."
+
+**Non-compliant openers (VIOLATION — DO NOT SHIP):**
+- "Middlesbrough face Hull City in the Championship playoff final at Wembley today." ❌
+- "Two sides battle for Premier League promotion..." ❌
+
+**Format:**
+- Sentence 1: scandal context (mandatory)
+- Sentence 2+: pivot to sporting stakes, what's at risk, what each team brings
+
+**Editorial register:** plain, factual, working-class contempt for obfuscation.
+The reader deserves to know why the team on the pitch isn't the one that
+earned it on the field. State it directly.
+
+**DO NOT INVENT.** All scandal details must come from `matchupNote` or `localNote`.
+The AI adds framing; it does not add facts.
+
