@@ -661,27 +661,27 @@ else fail('Assertion 55 — Story Score wiring missing (score-status/_n.statusLi
 // ── UFL 2026 ────────────────────────────────────────────────────────────
 
 // ── Weather Intelligence (Session K) ────────────────────────────────────
-assert('PARK_ORIENTATION defined',
-  html.includes('const PARK_ORIENTATION ='));
-assert('weather helper functions defined',
-  html.includes('function isOutdoorVenue(') &&
+if(html.includes('const PARK_ORIENTATION =')) pass('PARK_ORIENTATION defined');
+else fail('PARK_ORIENTATION defined');
+if(html.includes('function isOutdoorVenue(') &&
   html.includes('function getVenueCoords(') &&
   html.includes('function wxBadge(') &&
   html.includes('function wxAlert(') &&
-  html.includes('function weatherDramaModifier('));
-assert('fetchAQI defined',
-  html.includes('async function fetchAQI('));
-assert('windContextNote defined',
-  html.includes('function windContextNote('));
-assert('fetchWeather extended params',
-  html.includes('wind_gusts_10m') &&
+  html.includes('function weatherDramaModifier(')) pass('weather helper functions defined');
+else fail('weather helper functions defined');
+if(html.includes('async function fetchAQI(')) pass('fetchAQI defined');
+else fail('fetchAQI defined');
+if(html.includes('function windContextNote(')) pass('windContextNote defined');
+else fail('windContextNote defined');
+if(html.includes('wind_gusts_10m') &&
   html.includes('direct_radiation,snowfall') &&
-  html.includes('apparent_temperature'));
-assert('weather-intelligence FIELD_FEATURES',
-  html.includes("'weather-intelligence'"));
-assert('weatherDramaModifier wired to drama',
-  html.includes('weatherDramaModifier(wxEntry)'));
-assert('UFL bundles registered',
-  html.includes('UFL_FOX') && html.includes('UFL_ABC') && html.includes('UFL_ESPN2'));
-assert('UFL FIELD_FEATURES entry present',
-  html.includes("'ufl-2026'"));
+  html.includes('apparent_temperature')) pass('fetchWeather extended params');
+else fail('fetchWeather extended params');
+if(html.includes("'weather-intelligence'")) pass('weather-intelligence FIELD_FEATURES');
+else fail('weather-intelligence FIELD_FEATURES');
+if(html.includes('weatherDramaModifier(wxEntry)')) pass('weatherDramaModifier wired to drama');
+else fail('weatherDramaModifier wired to drama');
+if(html.includes('UFL_FOX') && html.includes('UFL_ABC') && html.includes('UFL_ESPN2')) pass('UFL bundles registered');
+else fail('UFL bundles registered');
+if(html.includes("'ufl-2026'")) pass('UFL FIELD_FEATURES entry present');
+else fail('UFL FIELD_FEATURES entry present');
