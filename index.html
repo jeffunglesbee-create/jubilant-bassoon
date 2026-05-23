@@ -6362,6 +6362,15 @@ function buildTodaySchedule(){
   // Sources: MLB.com + Apple TV verified May 22, 2026
   // Apple exclusive (no local blackouts): HOU @ CHC 2:20pm ET, DET @ BAL 7:15pm ET
   const mlbRaw=[
+    // ── FOX Saturday Baseball Night in America (May 23 7:15pm ET) ─────────
+    {home:"Milwaukee Brewers",  away:"Los Angeles Dodgers",
+     start_time:"2026-05-23T23:15:00Z", confirmed:true, venue:"American Family Field, Milwaukee WI",
+     nationalBundle:"MLB_FOX",  streams:resolveBundle("MLB_FOX"),
+     matchupNote:"LAD @ MIL — Baseball Night in America. 7:15pm ET on FOX — free with an antenna."},
+    {home:"Cincinnati Reds",    away:"St. Louis Cardinals",
+     start_time:"2026-05-23T23:15:00Z", confirmed:true, venue:"Great American Ball Park, Cincinnati OH",
+     nationalBundle:"MLB_FOX",  streams:resolveBundle("MLB_FOX"),
+     matchupNote:"STL @ CIN — Baseball Night in America. 7:15pm ET on FOX — free with an antenna."},
     {home:"Chicago Cubs",     away:"Houston Astros",   start_time:"2026-05-22T18:20:00Z", confirmed:true, venue:"Wrigley Field, Chicago IL",               streams:resolveBundle("MLB_APPLE"), nationalBundle:"MLB_APPLE"},
     {home:"Baltimore Orioles",away:"Detroit Tigers",   start_time:"2026-05-22T23:15:00Z", confirmed:true, venue:"Oriole Park at Camden Yards, Baltimore MD", streams:resolveBundle("MLB_APPLE"), nationalBundle:"MLB_APPLE"},
   ];
@@ -12402,7 +12411,7 @@ let _pwaPrompt = null;
 
   // SW_VERSION — bump on every deploy to bust returning user cache
   // Assertion 28 in smoke verifies this constant is present
-  const SW_VERSION = '2026-05-22';
+  const SW_VERSION = '2026-05-23';
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
   // Cache strategy: API-only (ESPN scores, weather, odds, SportsDB).
