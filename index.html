@@ -12824,6 +12824,15 @@ function buildLayer3Rules(games) {
     } catch(e_) {}
     if (typeof isRivalGame==='function' && typeof MY_TEAMS!=='undefined' && MY_TEAMS.size>0 && isRivalGame(g))
       rules.push('- RIVALRY ['+name+']: Historic matchup. Acknowledge the history briefly.');
+    // SCANDAL angle — off-pitch events define the context (Rule 38)
+    if (g._angle === 'SCANDAL')
+      rules.push('- SCANDAL ['+name+']: The context of this game has been defined by off-pitch events. '
+        +'Lead with what happened — do not bury it. The scandal IS the story. State the facts plainly: '
+        +'who was found guilty, what the punishment was, why this team is actually in this fixture. '
+        +'Use matchupNote and localNote as your primary sources — do not invent beyond them. '
+        +'First sentence must reference the scandal directly. '
+        +'Second sentence may pivot to sporting context. '
+        +'VIOLATION: opening with a standard match preview with no scandal context in sentence one.');
   });
   return rules.length ? ('\n'+rules.join('\n')) : '';
 }
