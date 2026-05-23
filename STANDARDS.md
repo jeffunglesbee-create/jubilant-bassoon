@@ -24,13 +24,13 @@ Add a new named assertion in `smoke.js` for every FIELD_FEATURES entry (presence
 
 ```
 0. Read HANDOFF NOTE — Drive ID in canonical table below (first, before everything)
-   0a. Read FIELD CURRENT STATE — Drive ID: 1QD3P9eG2pSdabNTMPZYHwaMc1DawmmKpRVrv0ZqQdVs
+   0a. Read FIELD CURRENT STATE — Drive ID: 1w0BDWk2lf1tlSVBFBTI_P0H9N2ATyZjRTKw3XR2McUE
        What FIELD is TODAY — features live, smoke state, active rules, known gaps.
        Read after handoff, before CI/Deploy ref. Takes 2 minutes. Prevents stale-state decisions.
    ⚠️  GEMINI QUARANTINE CHECK: if the handoff was produced by a Gemini session,
        STOP — do not proceed. See Rule 25. Run the 4-check audit first.
        Only use this handoff once it reaches CLEARED or PARTIALLY CLEARED status.
-1. Read CI/DEPLOY ERROR REFERENCE — Drive ID: 1Q-x4NWebBH8IzrJ-WrcotGGiLZ2ubvFId3XyW8Jt0U8
+1. Read CI/DEPLOY ERROR REFERENCE — Drive ID: 1ujdRL3v5YjusEUqBZ_4fDVKN6EDNFDLsBaBIfOysu6I
    Surface: sandbox constraints, deploy path, worker summary, secrets state
 2. Declare: "SESSION START · Type: [A/B/C/D/E] · Scope: [one sentence]"
 3. git pull && cp index.html /home/claude/index.html
@@ -42,9 +42,9 @@ Add a new named assertion in `smoke.js` for every FIELD_FEATURES entry (presence
 
 **Canonical docs** (open the relevant one before starting):
 - Handoff Note (read first): `1GXai3ZmtA67Cn4YHbRfZQNbYYNoMqHPl1WXqdmqvS3U` ← update this ID every session end
-- CI/Deploy Error Reference (read every session): `1Q-x4NWebBH8IzrJ-WrcotGGiLZ2ubvFId3XyW8Jt0U8`
+- CI/Deploy Error Reference (read every session): `1ujdRL3v5YjusEUqBZ_4fDVKN6EDNFDLsBaBIfOysu6I`
 - Build Session List: `1Drrp5eRNdGb8EKodqPNwpuLaC23XcOrlv4DO13zNot0`
-- FIELD Current State: `1QD3P9eG2pSdabNTMPZYHwaMc1DawmmKpRVrv0ZqQdVs`
+- FIELD Current State: `1w0BDWk2lf1tlSVBFBTI_P0H9N2ATyZjRTKw3XR2McUE`
 - Master Improvement Ranking: `1rW90JQ5a4ybrE9l5acrbqd0q0yl_QYmPIOnEJr__GEY`
 - Daily Update Reference: `1n4fiAaU1uF2X7EKRx9Gm6XpuR6wkpwoa`
 - Wow Features: `1QJCiwEav5VEofrdL4ba-jKsSMrcZq7EPdFehTMX-_i8`
@@ -113,10 +113,10 @@ never worked despite being documented as complete.*
 | **UI Evaluation** | `1D98AsQqsNJSe0UKkVaRFrPO9SwDcdTMvS_Ll81kUVqo` | Any session with CSS, layout, or card design changes — edit in place, no version numbers |
 | **Viewport Style Guide** | `1X_u98rkvqB4l6H5fYr1IiOZlLcZzap6cUDojgE85C2A` | Any session that changes section labels, font sizes, touch targets, or surface identifiers |
 | **Master Improvement Ranking** | `1rW90JQ5a4ybrE9l5acrbqd0q0yl_QYmPIOnEJr__GEY` | Any session that ships a feature — add to FIELD_FEATURES registry with ship date |
-| **FIELD Current State** | `1QD3P9eG2pSdabNTMPZYHwaMc1DawmmKpRVrv0ZqQdVs` | Every session end — update HEAD, smoke state, and any changed capability sections |
+| **FIELD Current State** | `1w0BDWk2lf1tlSVBFBTI_P0H9N2ATyZjRTKw3XR2McUE` | Every session end — update HEAD, smoke state, and any changed capability sections |
 | **Daily Update Reference** | `1n4fiAaU1uF2X7EKRx9Gm6XpuR6wkpwoa` | Any session that changes broadcast chip rules, thresholds, or update protocol |
 | **Handoff Note** ← update ID every session | `1dZE7y4IPU8oLbFtDMW4i-P7nBAGlZPL-vATAQtbyDw0` | Every session end — replace ID with new handoff doc |
-| **CI/Deploy Error Reference** | `1Q-x4NWebBH8IzrJ-WrcotGGiLZ2ubvFId3XyW8Jt0U8` | When a new CI/deploy failure pattern is resolved |
+| **CI/Deploy Error Reference** | `1ujdRL3v5YjusEUqBZ_4fDVKN6EDNFDLsBaBIfOysu6I` | When a new CI/deploy failure pattern is resolved |
 
 **The rule: edit the document, don't create a new one.**
 
@@ -297,7 +297,7 @@ Every session, Claude reads the latest handoff note from Drive before
 responding to the opening message. No user request needed.
 
 **Claude reads CI/Deploy Error Reference automatically:**  
-Every session, Claude reads `1Q-x4NWebBH8IzrJ-WrcotGGiLZ2ubvFId3XyW8Jt0U8`  
+Every session, Claude reads `1ujdRL3v5YjusEUqBZ_4fDVKN6EDNFDLsBaBIfOysu6I`  
 and surfaces the sandbox constraints, deploy path, worker architecture,  
 and secrets state before any work begins. This prevents wasted time  
 attempting blocked operations (api.github.com, *.workers.dev).
@@ -305,7 +305,7 @@ attempting blocked operations (api.github.com, *.workers.dev).
 **Claude reads FIELD Current State automatically:**  
 Two sources, both read before any work begins:  
 1. `FIELD-CURRENT-STATE.md` in the repo (auto-updated by CI — always reflects last deploy)  
-2. Drive doc `1QD3P9eG2pSdabNTMPZYHwaMc1DawmmKpRVrv0ZqQdVs` (full narrative version)  
+2. Drive doc `1w0BDWk2lf1tlSVBFBTI_P0H9N2ATyZjRTKw3XR2McUE` (full narrative version)  
 No user request needed. The repo file gives HEAD/smoke/gaps. The Drive doc gives capability depth.
 
 **Claude reads canonical doc IDs from GOVERNANCE.json:**  
@@ -440,7 +440,7 @@ a follow-up session.
 
 ## Rule 12 — CI/Deploy Error Reference read at every session start
 
-**Drive ID: `1Q-x4NWebBH8IzrJ-WrcotGGiLZ2ubvFId3XyW8Jt0U8`**
+**Drive ID: `1ujdRL3v5YjusEUqBZ_4fDVKN6EDNFDLsBaBIfOysu6I`**
 
 Read this document before any code is touched in any session type.
 Not only when something is broken — every session, every type.
@@ -2161,7 +2161,7 @@ it stops, declares it, then answers.
 
 Required reading before the declaration (Rule 10, Rule 12):
   1. Read Handoff Note (Drive ID in STANDARDS.md canonical table)
-  2. Read FIELD Current State (Drive ID: 1QD3P9eG2pSdabNTMPZYHwaMc1DawmmKpRVrv0ZqQdVs)
+  2. Read FIELD Current State (Drive ID: 1w0BDWk2lf1tlSVBFBTI_P0H9N2ATyZjRTKw3XR2McUE)
   3. Read CI/Deploy Error Reference (Drive ID in STANDARDS.md canonical table)
   4. Run: git pull && node smoke.js index.html
 
