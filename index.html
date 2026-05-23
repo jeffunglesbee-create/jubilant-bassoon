@@ -5754,7 +5754,7 @@ function isNationalGame(g){return !!(g.nationalBundle);}
 function preGameScore(g){
   const nb=g.narrative?.boost||0;
   const ib={series_deciding:30,elimination:20,clinch:15,playoff_impl:10}[g._gameImportance]||0;
-  const nationalKeys=new Set(['NBA_ESPN','NBA_ABC','NBA_NBC','NBA_PRIME','NHL_ESPN','NHL_ABC','NHL_TNT','MLB_TBS','MLB_FOX','MLB_APPLE','MLB_NBC','MLB_PEACOCK_SNB','NFL_PRIME','NFL_NBC','NFL_ESPN','NFL_ABC','NFL_CBS','NFL_FOX','MLS_FOX','MLS_FS1','EFL_FINAL','EFL_PLAYOFF']);
+  const nationalKeys=new Set(['NBA_ESPN','NBA_ABC','NBA_NBC','NBA_PRIME','NHL_ESPN','NHL_ABC','NHL_TNT','MLB_TBS','MLB_FOX','MLB_APPLE','MLB_NBC','MLB_PEACOCK_SNB','NFL_PRIME','NFL_NBC','NFL_ESPN','NFL_ABC','NFL_CBS','NFL_FOX','MLS_FOX','MLS_FS1','EFL_FINAL','EFL_PLAYOFF','EPL_NBC','EPL_USA','EPL_PEACOCK']);
   const cb=nationalKeys.has(g.nationalBundle)?5:0;
   // #20 proxy: real odds from _oddsCache (moneyline gap → competitive pre-game drama)
   // Tight ML = competitive game = higher drama. Replaces manual BETTING_LINES_FALLBACK spread.
@@ -6784,14 +6784,18 @@ function buildTodaySchedule(){
     {home:"Crystal Palace",        away:"Arsenal",                 league:"Premier League \u2013 Matchweek 38 \u00b7 Final Day",
      start_time:"2026-05-24T15:00:00Z", confirmed:true, venue:"Selhurst Park, London",
      streams:resolveBundle("EPL_USA"), localNote:"CNBC + Peacock",
+     _gameImportance:"series_deciding", nationalBundle:"EPL_USA",
+     narrative:{boost:25, label:"Premier League Final Day — Arsenal lift the trophy", source:"manual"},
      matchupNote:_plTitleNote()},
     {home:"Manchester City",        away:"Aston Villa",            league:"Premier League \u2013 Matchweek 38 \u00b7 Final Day",
      start_time:"2026-05-24T15:00:00Z", confirmed:true, venue:"Etihad Stadium, Manchester",
      streams:resolveBundle("EPL_PEACOCK"), localNote:"Peacock only",
+     _gameImportance:"playoff_impl", nationalBundle:"EPL_PEACOCK",
      matchupNote:_plCityNote()},
     {home:"Brighton & Hove Albion", away:"Manchester United",      league:"Premier League \u2013 Matchweek 38 \u00b7 Final Day",
      start_time:"2026-05-24T15:00:00Z", confirmed:true, venue:"Amex Stadium, Brighton",
      streams:resolveBundle("EPL_PEACOCK"), localNote:"Peacock only",
+     _gameImportance:"playoff_impl", nationalBundle:"EPL_PEACOCK",
      matchupNote:_plEuroNote("Brighton & Hove Albion","Manchester United")},
     {home:"Burnley",                away:"Wolverhampton Wanderers", league:"Premier League \u2013 Matchweek 38 \u00b7 Final Day",
      start_time:"2026-05-24T15:00:00Z", confirmed:true, venue:"Turf Moor, Burnley",
@@ -6799,24 +6803,31 @@ function buildTodaySchedule(){
      matchupNote:"Both clubs are already relegated — this match is played for pride and next season's Championship preparation."},
     {home:"Fulham",                 away:"Newcastle United",        league:"Premier League \u2013 Matchweek 38 \u00b7 Final Day",
      start_time:"2026-05-24T15:00:00Z", confirmed:true, venue:"Craven Cottage, London",
-     streams:resolveBundle("EPL_PEACOCK"), localNote:"Peacock only"},
+     streams:resolveBundle("EPL_PEACOCK"), localNote:"Peacock only",
+     matchupNote:"Final Day at Craven Cottage — Fulham and Newcastle close out their campaigns."},
     {home:"Liverpool",              away:"Brentford",               league:"Premier League \u2013 Matchweek 38 \u00b7 Final Day",
      start_time:"2026-05-24T15:00:00Z", confirmed:true, venue:"Anfield, Liverpool",
-     streams:resolveBundle("EPL_USA"), localNote:"Syfy + Peacock"},
+     streams:resolveBundle("EPL_USA"), localNote:"Syfy + Peacock",
+     matchupNote:"Anfield’s Final Day send-off — Liverpool close the season at home as Brentford wrap up a strong campaign."},
     {home:"Nottingham Forest",      away:"AFC Bournemouth",         league:"Premier League \u2013 Matchweek 38 \u00b7 Final Day",
      start_time:"2026-05-24T15:00:00Z", confirmed:true, venue:"City Ground, Nottingham",
      streams:resolveBundle("EPL_PEACOCK"), localNote:"Peacock only",
+     _gameImportance:"playoff_impl", nationalBundle:"EPL_PEACOCK",
      matchupNote:_plEuroNote("Nottingham Forest","AFC Bournemouth")},
     {home:"Sunderland",             away:"Chelsea",                 league:"Premier League \u2013 Matchweek 38 \u00b7 Final Day",
      start_time:"2026-05-24T15:00:00Z", confirmed:true, venue:"Stadium of Light, Sunderland",
-     streams:resolveBundle("EPL_PEACOCK"), localNote:"Peacock only"},
+     streams:resolveBundle("EPL_PEACOCK"), localNote:"Peacock only",
+     matchupNote:"Sunderland’s debut Premier League season reaches its close at the Stadium of Light. Chelsea wrap up their campaign in Wearside."},
     {home:"Tottenham Hotspur",      away:"Everton",                 league:"Premier League \u2013 Matchweek 38 \u00b7 Final Day",
      start_time:"2026-05-24T15:00:00Z", confirmed:true, venue:"Tottenham Hotspur Stadium, London",
      streams:resolveBundle("EPL_NBC"), localNote:"NBC (free OTA) + Peacock",
+     _gameImportance:"playoff_impl", nationalBundle:"EPL_NBC",
      matchupNote:_plTotNote()},
     {home:"West Ham United",        away:"Leeds United",            league:"Premier League \u2013 Matchweek 38 \u00b7 Final Day",
      start_time:"2026-05-24T15:00:00Z", confirmed:true, venue:"London Stadium",
      streams:resolveBundle("EPL_USA"), localNote:"USA Network (cable)",
+     _gameImportance:"elimination", nationalBundle:"EPL_USA",
+     narrative:{boost:22, label:"Relegation battle — West Ham’s survival at stake", source:"manual"},
      matchupNote:_plWhuNote()},
   ].filter(g=>isToday(g.start_time));
   const eplGames = eplRaw.map((g,i)=>({...g, _id:"epl_mw36mw37_"+i, _sport:"Premier League"}));
@@ -6949,6 +6960,7 @@ function buildTodaySchedule(){
   if(aflGames.length)  sections.push({sport:"Australian Football (AFL)",games:aflGames});
   sections.push(...tennisSections);
   // Premier League — always shown if games today; fetchSoccerFixtures will refresh with live data
+  applyNarrativeContext(eplGames); // nb boost for games with narrative; future-proofs auto-detection
   if(eplGames.length) sections.push({sport:"Premier League", games:eplGames});
   if(laLigaGames.length) sections.push({sport:"La Liga", games:laLigaGames});
   if(ligue1Games.length) sections.push({sport:"Ligue 1", games:ligue1Games});
@@ -12516,7 +12528,7 @@ let _pwaPrompt = null;
 
   // SW_VERSION — bump on every deploy to bust returning user cache
   // Assertion 28 in smoke verifies this constant is present
-  const SW_VERSION = '2026-05-23m';
+  const SW_VERSION = '2026-05-23n';
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
   // Cache strategy: API-only (ESPN scores, weather, odds, SportsDB).
