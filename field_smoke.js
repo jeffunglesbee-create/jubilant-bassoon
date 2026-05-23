@@ -12,13 +12,13 @@
 const fs = require('fs');
 
 // ── PER-DAY CONFIG ────────────────────────────────────────────────────────────
-const TODAY_ISO = '2026-05-22';   // YYYY-MM-DD in America/New_York
+const TODAY_ISO = '2026-05-23';   // YYYY-MM-DD in America/New_York
 const NBA_CARDS        = 1;              // WCF G3 OKC@SAS 8:30 PM ET NBC/Peacock
-const NBA_HOME_TEAM    = 'San Antonio Spurs';
-const NBA_NETWORK      = 'NBC';          // chip text from NBA_NBC bundle
+const NBA_HOME_TEAM    = 'Cleveland Cavaliers';
+const NBA_NETWORK      = 'ABC';          // chip text from NBA_NBC bundle
 const MLB_CARDS        = 2;             // Friday Apple TV+: HOU@CHC 2:20pm, DET@BAL 7:15pm
-const MLB_CHIP_HOME    = 'Chicago Cubs';
-const MLB_CHIP_TEXT    = 'Apple TV+';
+const MLB_CHIP_HOME    = 'Milwaukee Brewers';
+const MLB_CHIP_TEXT    = 'FOX';
 const NBA_SERIES_ACTIVE = true;
 const NBA_HYPE_TEST    = false;
 const MIN_SPORT_SECTIONS = 3;           // NBA WCF G3 + NHL WCF G2 + MLB Apple
