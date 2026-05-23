@@ -1,10 +1,32 @@
-# Exclude everything except the 3 FIELD app files: index.html, sw.js, field_utils.js
-# .assetsignore uses gitignore syntax; negations (!) re-include files.
+# Exclude non-app files from Cloudflare Workers asset upload.
+# These are docs, CI scripts, and dev tools — not part of the FIELD web app.
 
-# Exclude all files by default
-*
+# Large documentation files
+FIELD-CURRENT-STATE.md
+STANDARDS.md
 
-# Re-include the 3 app files
-!index.html
-!sw.js
-!field_utils.js
+# Scripts directory
+scripts
+
+# CI directory
+.github
+
+# Outbox (data files)
+outbox
+
+# Test / config files
+smoke.js
+field_smoke.js
+field_unit.js
+layer2_review.js
+viewport_smoke.js
+field_browser.test.js
+playwright.config.js
+playwright.viewport.config.js
+package.json
+package-lock.json
+wrangler.jsonc
+.assetsignore
+
+# Dev dependencies (local only — not committed, but excluded just in case)
+node_modules
