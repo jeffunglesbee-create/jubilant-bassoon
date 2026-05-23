@@ -1,3 +1,4 @@
+SHA: a7c3d24af7c11770bcfdaabd40599a3023d2830f
 # .github/workflows/cf-api-probe.yml
 #
 # CLOUDFLARE API PROBE
@@ -23,7 +24,8 @@ name: Cloudflare API Probe
 
 on:
   push:
-    paths: ['outbox/.trigger-cf-api']
+    paths:
+      - 'outbox/.trigger-cf-api'
   workflow_dispatch:
 
 permissions:
@@ -76,5 +78,5 @@ jobs:
           git add outbox/cf-result*.txt 2>/dev/null || true
           git add outbox/cf-result-error.txt 2>/dev/null || true
           git diff --cached --quiet && echo "No result to commit" && exit 0
-          git commit -m "cf-probe: ${{ github.event.inputs.note || 'api call' }}"
+          git commit -m "cf-probe: result [skip ci]"
           git pull --rebase origin main && git push origin main
