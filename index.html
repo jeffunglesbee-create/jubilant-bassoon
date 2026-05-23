@@ -3527,6 +3527,7 @@ function runSilentErrorScan(){
     TENNIS_TC:"Tennis Channel", TENNIS_FO:"TNT",
     GOLF_CBS:"CBS", GOLF_NBC:"NBC",
     WC26_FOX:"FOX", WC26_FS1:"FS1", WC26_FREE:"FOX/Tubi FREE",
+    UFL_FOX:"FOX", UFL_FS1:"FS1", UFL_ABC:"ABC", UFL_ESPN:"ESPN", UFL_ESPN2:"ESPN2", UFL_NFLN:"NFL Network",
   };
   let badChipCount = 0;
   allGames.forEach(g=>{
@@ -3645,6 +3646,13 @@ const BUNDLES = {
   MLS_SOCCER:   ["apple"],                                                 // MLS: Apple TV exclusive (2026+, included w/ Apple TV sub — no separate Season Pass)
   MLS_FS1:      ["apple","fs1","fubo","youtubetv","sling","directv"],          // MLS on FS1: Apple TV primary + FS1 simulcast (34 FOX/FS1 games/season)
   MLS_FOX:      ["apple","fox","fubo","youtubetv","sling","directv"],          // MLS on FOX: Apple TV primary + FOX broadcast simulcast
+  // ── UFL 2026 (spring football — FOX/ESPN family) ──────────────────────
+  UFL_FOX:   ["fox","fubo","youtubetv","sling","hulu","directv"],      // FOX OTA (free with antenna)
+  UFL_FS1:   ["fs1","fubo","youtubetv","sling","hulu","directv"],
+  UFL_ABC:   ["abc","espn","espnplus","fubo","youtubetv","sling","hulu","directv"], // ABC OTA (free)
+  UFL_ESPN:  ["espn","espnplus","fubo","youtubetv","sling","hulu","directv"],
+  UFL_ESPN2: ["espn","espnplus","fubo","youtubetv","sling","hulu","directv"],
+  UFL_NFLN:  ["nfln","fubo","youtubetv","directv"],
   TENNIS_TC:    ["tc","tcplus","espnplus","fubo","youtubetv","sling"],      // Tennis Channel / TC+ / ESPN+
   EFL_PLAYOFF:  ["paramount","cbs","fubo","hulu"], // EFL Playoffs: CBS/Paramount+ (CBS Sports Network + Golazo + P+)
   // Tennis
@@ -3743,6 +3751,7 @@ const VALID_NATIONAL_BUNDLES = new Set([
   "WNBA_ESPN","WNBA_ABC","WNBA_NBC","WNBA_PRIME","WNBA_CBS","WNBA_USA","WNBA_ION","WNBA_LOCAL",
   "EFL_PLAYOFF","EPL_USA","EPL_PEACOCK",
   "LALIGA","SERIE_A","BUNDESLIGA","LIGUE_1","EFL","EPL",
+  "UFL_FOX","UFL_FS1","UFL_ABC","UFL_ESPN","UFL_ESPN2","UFL_NFLN",
   "NFL_PRIME","NFL_NBC","NFL_ESPN","NFL_ABC","NFL_CBS","NFL_FOX",
   "TENNIS_TC","TENNIS_FO","TENNIS_TC_PLUS",
   "MLS_SOCCER","MLS_FS1","MLS_FOX",
@@ -6476,6 +6485,70 @@ function buildTodaySchedule(){
     // ── EPL: NO games May 6 (next: May 9) ───────────────────────
   // ── Scottish Premiership: NO games May 6 (last: Hearts-Rangers Mon May 4) ──
   // ── England Cricket: NO international matches until June 4 (NZ Tests) ───────
+
+  // ── UFL 2026 — Week 9 + Week 10 ────────────────────────────────────────
+  // United Football League (XFL/USFL merger) · 3rd season
+  // Regular season ends May 31 · Playoffs June 7 · Championship June 13
+  // Single table — top 4 make playoffs. Week 8 standings: Storm 6-2 (✅ clinched) ·
+  // STL 5-3 · Birmingham 4-4 · Louisville 4-4 · DC 4-4 · Houston 3-5 · Dal 2-6 · Col 2-6
+  // Crown Holder 👑: Houston Gamblers · Court Jester 🃏: Dallas Renegades
+  const uflGames=[
+    // ── Week 9 (May 22–24) ───────────────────────────────────────────────
+    // Fri May 22 8pm ET — DC @ Orlando · FOX
+    {home:"Orlando Storm",      away:"DC Defenders",
+     league:"UFL Week 9",       start_time:"2026-05-23T00:00:00Z", confirmed:true,
+     venue:"Inter&Co Stadium, Orlando, FL",
+     nationalBundle:"UFL_FOX",  streams:resolveBundle("UFL_FOX"),
+     matchupNote:"DC (4-4) enters on a 2-game losing streak. Orlando (6-2) has clinched and won 6 straight. Jack Plummer vs Xazavian Valladay. 8pm ET on FOX — free with an antenna."},
+    // Sat May 23 3pm ET — Birmingham @ Columbus · ABC
+    {home:"Columbus Aviators",  away:"Birmingham Stallions",
+     league:"UFL Week 9",       start_time:"2026-05-23T19:00:00Z", confirmed:true,
+     venue:"Historic Crew Stadium, Columbus, OH",
+     nationalBundle:"UFL_ABC",  streams:resolveBundle("UFL_ABC"),
+     matchupNote:"Birmingham (4-4) controls playoff destiny — 3 wins in a row, DTR leading the charge. H2H tiebreaker over Louisville already secured. Columbus (2-6) eliminated. 3pm ET on ABC — free with an antenna."},
+    // Sun May 24 4pm ET — Dallas @ Louisville · FOX
+    {home:"Louisville Kings",   away:"Dallas Renegades",
+     league:"UFL Week 9",       start_time:"2026-05-24T20:00:00Z", confirmed:true,
+     venue:"Lynn Family Stadium, Louisville, KY",
+     nationalBundle:"UFL_FOX",  streams:resolveBundle("UFL_FOX"),
+     matchupNote:"Louisville (4-4) hosts the Court Jester Renegades (2-6). A win keeps the Kings alive heading into Week 10. Dallas has nothing to play for. 4pm ET on FOX — free with an antenna."},
+    // Sun May 24 7pm ET — St. Louis @ Houston · ESPN2 — KEY GAME
+    {home:"Houston Gamblers",   away:"St. Louis Battlehawks",
+     league:"UFL Week 9 — Playoff Eliminator", start_time:"2026-05-25T00:00:00Z", confirmed:true,
+     venue:"Shell Energy Stadium, Houston, TX",
+     nationalBundle:"UFL_ESPN2", streams:resolveBundle("UFL_ESPN2"),
+     seriesRecord:"HOU won W8 23-16 (Houston owns H2H)",
+     matchupNote:"St. Louis (5-3) goes to Houston for revenge after a 23-16 road upset in Week 8. The Gamblers (3-5, Crown Holder 👑) now own the H2H tiebreaker over the Battlehawks. Luis Perez needs a bounce-back. Hunter Dekkers has Houston believing. 7pm ET on ESPN2.",
+     _gameImportance:"elimination"},
+    // ── Week 10 (May 29–31) ──────────────────────────────────────────────
+    // Fri May 29 8pm ET — Dallas @ St. Louis · FOX
+    {home:"St. Louis Battlehawks", away:"Dallas Renegades",
+     league:"UFL Week 10",      start_time:"2026-05-30T00:00:00Z", confirmed:true,
+     venue:"The Dome at America\'s Center, St. Louis, MO",
+     nationalBundle:"UFL_FOX",  streams:resolveBundle("UFL_FOX"),
+     matchupNote:"St. Louis closes at home vs the Court Jester. Battlehawks need a win and help to stay safe in any 5-5 tiebreaker scenario heading into the playoffs. 8pm ET on FOX — free with an antenna."},
+    // Sat May 30 3pm ET — Houston @ Birmingham · ESPN2
+    {home:"Birmingham Stallions", away:"Houston Gamblers",
+     league:"UFL Week 10 — Playoff Eliminator", start_time:"2026-05-30T19:00:00Z", confirmed:true,
+     venue:"Protective Stadium, Birmingham, AL",
+     nationalBundle:"UFL_ESPN2", streams:resolveBundle("UFL_ESPN2"),
+     matchupNote:"Season finale with full playoff stakes. Birmingham (must win to feel safe) vs Houston (spoiler role). DTR vs Dekkers, Round 2. 3pm ET on ESPN2.",
+     _gameImportance:"elimination"},
+    // Sun May 31 noon ET — Orlando @ DC · ABC
+    {home:"DC Defenders",       away:"Orlando Storm",
+     league:"UFL Week 10",      start_time:"2026-05-31T16:00:00Z", confirmed:true,
+     venue:"Audi Field, Washington, DC",
+     nationalBundle:"UFL_ABC",  streams:resolveBundle("UFL_ABC"),
+     matchupNote:"Orlando (clinched, seeding only) at DC. Defenders need this win to clinch a playoff spot with certainty. Jack Plummer may be in rest mode. Noon ET on ABC — free with an antenna."},
+    // Sun May 31 6pm ET — Louisville @ Columbus · FOX
+    {home:"Columbus Aviators",  away:"Louisville Kings",
+     league:"UFL Week 10",      start_time:"2026-05-31T22:00:00Z", confirmed:true,
+     venue:"Historic Crew Stadium, Columbus, OH",
+     nationalBundle:"UFL_FOX",  streams:resolveBundle("UFL_FOX"),
+     matchupNote:"Louisville needs a win to lock up a playoff spot. Columbus (eliminated) is playing spoiler. Final regular season game in Columbus. 6pm ET on FOX — free with an antenna."},
+  ].filter(g=>isToday(g.start_time));
+  uflGames.forEach(g=>g._sport="UFL");
+  if(uflGames.length) sections.push({sport:"UFL — United Football League",games:uflGames});
 
   // ── IPL 2026 — May 11 (Match 53/54 TBC) ─────────────────────────────────
   // Schedule: typically one game daily at 7:30pm IST = 14:00 UTC on weekdays
