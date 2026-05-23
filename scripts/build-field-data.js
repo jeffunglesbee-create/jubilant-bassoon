@@ -7,7 +7,8 @@
  * Reads:  /tmp/nhl.json  (from relay /nhl/v1/scoreboard/now)
  *         /tmp/nba.json  (from relay /nba/liveData/scoreboard/todaysScoreboard_00.json)
  * Env:    TODAY=YYYY-MM-DD  (set by workflow)
- *         ANTHROPIC_API_KEY (optional — enables AI matchupNote generation)
+ *         GEMINI_KEY        (optional — primary AI for matchupNotes, gemini-3.1-flash-lite)
+ *         ANTHROPIC_API_KEY (optional — Claude Sonnet 4 fallback if Gemini absent/fails)
  * Writes: /tmp/field-data-today.json
  */
 
@@ -117,6 +118,33 @@ function callClaude(prompt) {
   });
 }
 
+// ── Optional: generate matchupNote via Gemini 3.1 Flash-Lite ────────────
+// Primary AI backend — free tier, 1500 RPD. Same model as journalism proxy.
+function callGemini(prompt) {
+  return new Promise((resolve) => {
+    const body = JSON.stringify({
+      contents: [{ parts: [{ text: prompt }] }],
+      generationConfig: { maxOutputTokens: 120, temperature: 0.4 },
+    });
+    const req = https.request({
+      hostname: 'generativelanguage.googleapis.com',
+      path: `/v1beta/models/gemini-3.1-flash-lite:generateContent?key=${process.env.GEMINI_KEY}`,
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) },
+    }, res => {
+      let data = '';
+      res.on('data', c => data += c);
+      res.on('end', () => {
+        try { resolve(JSON.parse(data).candidates?.[0]?.content?.parts?.[0]?.text?.trim() || null); }
+        catch { resolve(null); }
+      });
+    });
+    req.on('error', () => resolve(null));
+    req.setTimeout(15000, () => { req.destroy(); resolve(null); });
+    req.write(body); req.end();
+  });
+}
+
 // ── Main ──────────────────────────────────────────────────────────────────
 async function main() {
   const nhlGames = parseNHL();
@@ -124,21 +152,36 @@ async function main() {
   console.log(`Parsed: ${nhlGames.length} NHL + ${nbaGames.length} NBA game(s) for ${TODAY}`);
 
   const overlays = [];
-  const useAI = !!process.env.ANTHROPIC_API_KEY;
-  if (useAI) console.log('ANTHROPIC_API_KEY present — will generate matchupNotes');
+  const useGemini = !!process.env.GEMINI_KEY;
+  const useClaude = !!process.env.ANTHROPIC_API_KEY;
+  const useAI = useGemini || useClaude;
+  if (useGemini) console.log('GEMINI_KEY present — matchupNotes via gemini-3.1-flash-lite (Claude fallback: ' + (useClaude ? 'yes' : 'no') + ')');
+  else if (useClaude) console.log('ANTHROPIC_API_KEY present — matchupNotes via Claude (no Gemini key).');
 
   for (const g of [...nhlGames, ...nbaGames]) {
     const ov = { _match_key: `${g.home}|${g.away}` };
     if (g.seriesRecord) ov.seriesRecord = g.seriesRecord;
 
     if (useAI && g.seriesRecord) {
-      const note = await callClaude(
+      const prompt =
         `Write a sharp 1-2 sentence FIELD sports brief matchupNote.\n` +
         `Game: ${g.away} @ ${g.home} (${g.league})\n` +
         `Series: ${g.seriesRecord}\n` +
-        `Style: punchy sports journalism, focus on stakes. No preamble. Respond with ONLY the text.`
-      );
-      if (note) { ov.matchupNote = note; console.log(`  ✓ AI matchupNote: ${g.away} @ ${g.home}`); }
+        `Style: punchy sports journalism, focus on stakes. No preamble. Respond with ONLY the text.`;
+      let note = null;
+      let backend = null;
+      if (useGemini) {
+        note = await callGemini(prompt);
+        if (note) backend = 'gemini-3.1-flash-lite';
+        else if (useClaude) {
+          note = await callClaude(prompt);
+          if (note) backend = 'claude-sonnet-4 (fallback)';
+        }
+      } else {
+        note = await callClaude(prompt);
+        if (note) backend = 'claude-sonnet-4';
+      }
+      if (note) { ov.matchupNote = note; console.log(`  ✓ ${backend}: ${g.away} @ ${g.home}`); }
     }
 
     if (Object.keys(ov).length > 1) overlays.push(ov); // skip if only _match_key
@@ -152,6 +195,7 @@ async function main() {
       source: 'field-data workflow (automated)',
       games_found: { nhl: nhlGames.length, nba: nbaGames.length },
       ai_notes: useAI,
+      ai_backend: useGemini ? 'gemini-3.1-flash-lite' : (useClaude ? 'claude-sonnet-4' : 'none'),
       note: 'Auto-generated daily at 7:30 AM UTC. Manual edits persist until the next run.',
     },
     game_overlays: overlays,
