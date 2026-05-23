@@ -6575,7 +6575,6 @@ function buildTodaySchedule(){
      matchupNote:"Louisville needs a win to lock up a playoff spot. Columbus (eliminated) is playing spoiler. Final regular season game in Columbus. 6pm ET on FOX — free with an antenna."},
   ].filter(g=>isToday(g.start_time));
   uflGames.forEach(g=>g._sport="UFL");
-  if(uflGames.length) sections.push({sport:"UFL — United Football League",games:uflGames});
 
   // ── IPL 2026 — May 11 (Match 53/54 TBC) ─────────────────────────────────
   // Schedule: typically one game daily at 7:30pm IST = 14:00 UTC on weekdays
@@ -6817,6 +6816,9 @@ function buildTodaySchedule(){
 
   // ── Assemble ─────────────────────────────────────────────────
   const sections=[];
+  // UFL push relocated here (May 23): was above `const sections=[]`, causing
+  // ReferenceError: Cannot access 'sections' before initialization (TDZ crash).
+  if(uflGames.length) sections.push({sport:"UFL — United Football League",games:uflGames});
 
   // ── PREGAME SORT SCORE ───────────────────────────────────────────────────
   // ─────────────────────────────────────────────────────────────────────────
