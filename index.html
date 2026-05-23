@@ -6491,10 +6491,10 @@ function buildTodaySchedule(){
      league:"EFL Championship Playoff SF2 – 2nd Leg", start_time:"2026-05-12T19:00:00Z", confirmed:true, venue:"St Mary's Stadium, Southampton",
      streams:resolveBundle("EFL_PLAYOFF"),
      localNote:"CBS Sports Network + Paramount+ (US); Sky Sports (UK)"},
-    // ── Championship Final — Sat May 23, 4:30pm BST (3pm ET) ──
+    // ── Championship Final — Sat May 23, 3:30pm BST (10:30am ET) ──
     {home:"Middlesbrough", away:"Hull City",
      league:"EFL Championship Playoff – Final · Winner promoted to Premier League",
-     start_time:"2026-05-23T15:30:00Z", confirmed:true, venue:"Wembley Stadium, London", neutral:true,
+     start_time:"2026-05-23T14:30:00Z", confirmed:true, venue:"Wembley Stadium, London", neutral:true,
      streams:resolveBundle("EFL_FINAL"),
      // SPYGATE — Southampton expelled; Middlesbrough reinstated (May 20 2026)
      // Southampton admitted unauthorised filming of Middlesbrough, Ipswich, Oxford training
@@ -6503,7 +6503,7 @@ function buildTodaySchedule(){
      // Southampton: 4-point deduction applied to 2026-27 Championship table
      _angle:"SCANDAL",
      _gameImportance:"elimination",
-     matchupNote:"Middlesbrough are in the final only because Southampton were expelled — the biggest sporting scandal in the Championship in years. Saints admitted to filming Boro's training before the SF (plus Oxford in December, Ipswich in April). Expelled by the EFL. Appeal dismissed May 20. Boro boss Kim Hellberg was crestfallen after losing the SF on the pitch — now his side return to Wembley for the \u00a3270m prize of promotion. Middlesbrough last in the Premier League: 2017. Hull City beat Millwall 2-0 on aggregate to reach the final. 4:30pm BST · 11:30am ET · Sky Sports (UK) · Paramount+ (US)."},
+     matchupNote:"Middlesbrough are in the final only because Southampton were expelled — the biggest sporting scandal in the Championship in years. Saints admitted to filming Boro's training before the SF (plus Oxford in December, Ipswich in April). Expelled by the EFL. Appeal dismissed May 20. Boro boss Kim Hellberg was crestfallen after losing the SF on the pitch — now his side return to Wembley for the \u00a3270m prize of promotion. Middlesbrough last in the Premier League: 2017. Hull City beat Millwall 2-0 on aggregate to reach the final. 3:30pm BST · 10:30am ET · Sky Sports (UK) · Paramount+ (US)."},
   ].filter(g=>isToday(g.start_time));
 
   // ── EFL League One Playoff Final — Sun May 24, 1pm BST ─────────────────
@@ -10025,8 +10025,10 @@ const inEFLPlayoffs = () => { const n=new Date(); return n>=EFL_PLAYOFF_START &&
 
 const SOCCER_LEAGUES = [
   {league:"eng.1", section:"Premier League",   bundle:"EPL",       endDate:"2026-05-20"},
+  // eng.2: always fetch; scoresOnly=true during EFL playoffs (live scores for eflGames[]
+  // without creating a duplicate section — eflGames[] handles the display).
+  {league:"eng.2", section:"EFL Championship", bundle:"EFL",     endDate:"2026-05-26", scoresOnly:inEFLPlayoffs()},
   ...(!inEFLPlayoffs()?[
-    {league:"eng.2", section:"EFL Championship", bundle:"EFL",     endDate:"2026-05-26"},
     {league:"eng.3", section:"EFL League One",   bundle:"EFL",     endDate:"2026-05-03"},
     {league:"eng.4", section:"EFL League Two",   bundle:"EFL",     endDate:"2026-05-03"},
   ]:[]),
@@ -11402,7 +11404,7 @@ async function fetchSoccerFixtures(){
     + String(today.getDate()).padStart(2,"0");
 
   const newSections = [];
-  await Promise.all(SOCCER_LEAGUES.map(async ({league,section,bundle})=>{
+  await Promise.all(SOCCER_LEAGUES.map(async ({league,section,bundle,scoresOnly})=>{
     try{
       const r = await fetch(`${ESPN_BASE}/soccer/${league}/scoreboard?dates=${dateStr}&limit=30`);
       if(!r.ok) return;
@@ -11460,7 +11462,7 @@ async function fetchSoccerFixtures(){
           awayLogo: away.team?.logos?.[0]?.href || null,
         };
       }).filter(Boolean);
-      if(games.length) newSections.push({sport:section,games});
+      if(games.length && !scoresOnly) newSections.push({sport:section,games}); // scoresOnly: scores only, no new section
     }catch(e){ if(FIELD_DEBUG) console.debug("FIELD soccer:",league,e.message); }
   }));
 
@@ -12494,7 +12496,7 @@ let _pwaPrompt = null;
 
   // SW_VERSION — bump on every deploy to bust returning user cache
   // Assertion 28 in smoke verifies this constant is present
-  const SW_VERSION = '2026-05-23j';
+  const SW_VERSION = '2026-05-23k';
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
   // Cache strategy: API-only (ESPN scores, weather, odds, SportsDB).
@@ -14660,7 +14662,7 @@ function renderWatchWindow(){
   if(!best||bestScore<20){el.style.display='none';if(_wwInterval){clearInterval(_wwInterval);_wwInterval=null;}return;}
   const {g,sec,minsAway}=best;
   const _wwSport=(sec.sport||'').toLowerCase();
-  const _wwVerb=_wwSport.includes('baseball')?'First pitch':_wwSport.includes('hockey')||_wwSport.includes('nhl')?'Puck drop':_wwSport.includes('football')||_wwSport.includes('nfl')||_wwSport.includes('soccer')||_wwSport.includes('league')||_wwSport.includes('mls')?'Kickoff':_wwSport.includes('afl')||_wwSport.includes('aussie')?'Bounce':'Tip-off';
+  const _wwVerb=_wwSport.includes('baseball')?'First pitch':_wwSport.includes('hockey')||_wwSport.includes('nhl')?'Puck drop':_wwSport.includes('football')||_wwSport.includes('nfl')||_wwSport.includes('soccer')||_wwSport.includes('league')||_wwSport.includes('mls')||_wwSport.includes('efl')?'Kickoff':_wwSport.includes('afl')||_wwSport.includes('aussie')?'Bounce':'Tip-off';
   const minsStr=minsAway<=1?'Starting now':minsAway<=5?_wwVerb+' in '+Math.ceil(minsAway)+' min':'Starting in '+Math.ceil(minsAway)+' min';
   const stream=g.streams&&g.streams[0];
   const streamLabel=stream?stream.label:'';
@@ -16041,7 +16043,7 @@ function buildLifeStageContent(game, eData, stage) {
       const net = game.streams?.[0]?.label || '';
       const countdownLabel = sp.includes('baseball') ? 'First pitch'
         : sp.includes('hockey') || sp.includes('nhl') ? 'Puck drop'
-        : sp.includes('football') || sp.includes('nfl') || sp.includes('soccer') || sp.includes('league') || sp.includes('epl') || sp.includes('mls') || sp.includes('ucl') || sp.includes('uel') || sp.includes('uecl') ? 'Kickoff'
+        : sp.includes('football') || sp.includes('nfl') || sp.includes('soccer') || sp.includes('league') || sp.includes('epl') || sp.includes('mls') || sp.includes('ucl') || sp.includes('uel') || sp.includes('uecl') || sp.includes('efl') ? 'Kickoff'
         : sp.includes('afl') || sp.includes('aussie') ? 'Bounce'
         : 'Tip-off';
       return `<div class="card-stage-content card-stage-soon"><span class="stage-countdown">${countdownLabel} in ${minsLeft} min</span>${net?' · '+net:''}</div>`;
@@ -16050,8 +16052,13 @@ function buildLifeStageContent(game, eData, stage) {
       // Live: story tape or current score context
       const tape = buildStoryTape(game._id, 2);
       if (tape) return tape;
-      // score-wrap handles live score for all sports — don't duplicate here
-      return '';
+      // Return a non-empty element so the stale pre-game countdown is cleared.
+      // score-wrap handles live score separately; we only show score here as fallback.
+      if (eData) {
+        const hS = eData.homeScore ?? 0, aS = eData.awayScore ?? 0;
+        return `<div class="card-stage-content card-stage-live-basic">${hS}–${aS}${eData.detail?` · ${eData.detail}`:''}</div>`;
+      }
+      return '<div class="card-stage-content card-stage-live-basic"></div>';
     }
     case 'halftime': {
       if (!eData) return '';
