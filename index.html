@@ -6464,11 +6464,19 @@ function buildTodaySchedule(){
      streams:resolveBundle("EFL_PLAYOFF"),
      localNote:"CBS Sports Network + Paramount+ (US); Sky Sports (UK)"},
     // ── Championship Final — Sat May 23, 4:30pm BST (3pm ET) ──
-    {home:"Southampton",  away:"Hull City",
+    {home:"Middlesbrough", away:"Hull City",
      league:"EFL Championship Playoff – Final · Winner promoted to Premier League",
      start_time:"2026-05-23T15:30:00Z", confirmed:true, venue:"Wembley Stadium, London",
      streams:resolveBundle("EFL_PLAYOFF"),
-     matchupNote:"Southampton vs Hull City — final Premier League promotion place. 4:30pm BST / 11:30am ET. Sky Sports (UK) · CBS Sports Network + Paramount+ (US)."},
+     // SPYGATE — Southampton expelled; Middlesbrough reinstated (May 20 2026)
+     // Southampton admitted unauthorised filming of Middlesbrough, Ipswich, Oxford training
+     // EFL independent commission expelled Saints; appeal dismissed May 20
+     // Boro returned to training May 18 — 6 days after apparent elimination
+     // Southampton: 4-point deduction applied to 2026-27 Championship table
+     _angle:"SCANDAL",
+     _gameImportance:"elimination",
+     matchupNote:"Middlesbrough are in the final only because Southampton were expelled — the biggest sporting scandal in the Championship in years. Saints admitted to filming Boro's training before the SF (plus Oxford in December, Ipswich in April). Expelled by the EFL. Appeal dismissed May 20. Boro boss Kim Hellberg was crestfallen after losing the SF on the pitch — now his side return to Wembley for the \u00a3270m prize of promotion. Middlesbrough last in the Premier League: 2017. Hull City beat Millwall 2-0 on aggregate to reach the final. 4:30pm BST · 11:30am ET · Sky Sports (UK) · CBS Sports Network + Paramount+ (US).",
+     localNote:"Southampton were expelled by the EFL's independent disciplinary commission after admitting multiple breaches of EFL Regulations — unauthorised filming of opponents' training sessions. Their appeal was heard and dismissed on May 20 2026. Middlesbrough were reinstated in their place. Southampton face a 4-point deduction in 2026-27."},
   ].filter(g=>isToday(g.start_time));
 
   // ── EFL League One Playoff Final — Sun May 24, 1pm BST ─────────────────
