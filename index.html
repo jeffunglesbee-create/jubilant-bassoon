@@ -10119,6 +10119,25 @@ async function fetchNBARelayScores() {
   }
 }
 
+// ── Midnight crossover watcher — re-runs schedule if date changes ──────────
+// Fixes blank schedule when FIELD is left open past midnight.
+// Checks every 60s; on date change triggers fetchSchedule() quietly.
+(function() {
+  let _lastDate = new Date().toLocaleDateString('en-CA', {timeZone: localTz()});
+  setInterval(() => {
+    const _nowDate = new Date().toLocaleDateString('en-CA', {timeZone: localTz()});
+    if (_nowDate !== _lastDate) {
+      _lastDate = _nowDate;
+      if (FIELD_DEBUG) console.log('[FIELD] Midnight crossover detected — refreshing schedule for', _nowDate);
+      // Only auto-refresh if user is viewing "Today" (not a past/future date)
+      if (typeof viewingISO !== 'undefined' && typeof TODAY_ISO !== 'undefined' &&
+          viewingISO === TODAY_ISO) {
+        if (typeof fetchSchedule === 'function') fetchSchedule();
+      }
+    }
+  }, 60000); // Check every 60 seconds
+})();
+
 let espnIntervalId = null;
 let oddsIntervalId = null;  // declared here; set when/if odds polling is wired (currently unused)
 const ESPN_REFRESH_LIVE     = 30000;   // baseline live — overridden by computeLiveInterval (#11b)
