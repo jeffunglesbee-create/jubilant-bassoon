@@ -50,9 +50,11 @@ jobs:
             -H "Cache-Control: no-cache" \
             "$RELAY/nba/liveData/scoreboard/todaysScoreboard_00.json" || echo '{}')
           echo "$DATA" > /tmp/nba.json
-          COUNT=$(jq '.scoreboard.games | length' /tmp/nba.json 2>/dev/null || echo 0)
+          # Exclude completed games: a morning brief's "today's slate" must not list
+          # last night's finished games (the NBA CDN scoreboard rolls over slowly).
+          COUNT=$(jq '[.scoreboard.games[]? | select((.gameStatusText // "") | test("Final") | not)] | length' /tmp/nba.json 2>/dev/null || echo 0)
           EARLIEST=$(jq -r '.scoreboard.games[]?.gameTimeUTC // empty' /tmp/nba.json | sort | head -1)
-          GAMES=$(jq -c '[.scoreboard.games[]? | {
+          GAMES=$(jq -c '[.scoreboard.games[]? | select((.gameStatusText // "") | test("Final") | not) | {
             away: "\(.awayTeam.teamCity) \(.awayTeam.teamName)",
             home: "\(.homeTeam.teamCity) \(.homeTeam.teamName)",
             time: .gameStatusText
@@ -127,26 +129,18 @@ jobs:
           echo "earliest=${EARLIEST:-}" >> $GITHUB_OUTPUT
           echo "games_json=$GAMES" >> $GITHUB_OUTPUT
 
-      - name: Fetch WNBA schedule via relay
+      - name: Fetch WNBA schedule
         id: wnba
         run: |
-          RELAY="https://field-relay-nba.jeffunglesbee.workers.dev"
-          TODAY=$(date -u +%Y-%m-%d)
-          # WNBA CDN scoreboard — same relay, different league endpoint
-          DATA=$(curl -sf --max-time 10 \
-            "$RELAY/nba/liveData/scoreboard/todaysScoreboard_00.json?leagueId=10" \
-            || echo '{}')
-          echo "$DATA" > /tmp/wnba.json
-          COUNT=$(jq '.scoreboard.games | length' /tmp/wnba.json 2>/dev/null || echo 0)
-          EARLIEST=$(jq -r '.scoreboard.games[]?.gameTimeUTC // empty' /tmp/wnba.json | sort | head -1)
-          GAMES=$(jq -c '[.scoreboard.games[]? | {
-            away: "\(.awayTeam.teamCity) \(.awayTeam.teamName)",
-            home: "\(.homeTeam.teamCity) \(.homeTeam.teamName)",
-            time: .gameStatusText
-          }]' /tmp/wnba.json 2>/dev/null || echo '[]')
-          echo "count=$COUNT" >> $GITHUB_OUTPUT
-          echo "earliest=${EARLIEST:-}" >> $GITHUB_OUTPUT
-          echo "games_json=$GAMES" >> $GITHUB_OUTPUT
+          # KNOWN GAP (May 23 2026): todaysScoreboard_00.json is the NBA-only CDN file.
+          # Appending ?leagueId=10 to a static JSON URL is inert — the relay returned
+          # NBA data, which surfaced the NBA game inside the WNBA slot of the brief.
+          # Until a verified WNBA feed is wired (WNBA CDN / stats endpoint via relay),
+          # emit an explicit empty slate rather than publish NBA data as WNBA.
+          # TODO: wire a real WNBA source, then restore a fetch + filter here.
+          echo "count=0" >> $GITHUB_OUTPUT
+          echo "earliest=" >> $GITHUB_OUTPUT
+          echo "games_json=[]" >> $GITHUB_OUTPUT
 
       - name: Fetch AFL schedule via Squiggle
         id: afl
