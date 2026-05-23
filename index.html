@@ -5802,7 +5802,7 @@ function renderTonightSummary(sections){
       const b=g._gameImportance?`<span class="ts-badge ts-${g._gameImportance}">${g._importanceIcon||''} ${g.narrative?.label||''}</span>`:'';
       const drama=Math.round(preGameScore(g));
       const bar=drama>0?`<span style="font-size:.56rem;color:var(--muted);margin-left:auto;opacity:.65">drama ${drama}</span>`:'';
-      return `<div class="ts-game${i===0?' ts-top':''}"><div class="ts-matchup">${g.away||''} ${g.neutral?'vs':'@'} ${g.home||''}</div>${b}<div class="ts-meta" style="display:flex;align-items:center">${g._section} · ${t}${n?' · '+n:''} ${bar}</div></div>`;
+      return `<div class="ts-game${i===0?' ts-top':''}"><div class="ts-matchup">${g.away||''} ${g.neutral?'vs':'@'} ${g.home||''}</div>${b}<div class="ts-meta" style="display:flex;align-items:center">${g._section} · ${t}${g._subtitle?' · '+g._subtitle:''}${n?' · '+n:''} ${bar}</div></div>`;
     };
     return `<div class="tonight-summary"><div class="ts-header"><span class="ts-title">⚡ Tonight on FIELD</span><span class="ts-count">${hl}</span></div><div class="ts-games">${top.map(entry).join('')}</div></div>`;
   }catch(e){return '';}
@@ -10933,6 +10933,14 @@ async function fetchMLBFixtures(){
           const ta=+new Date(a.start_time||0), tb=+new Date(b.start_time||0);
           return ta!==tb ? ta-tb : String(a._id||a.home||'').localeCompare(String(b._id||b.home||''));
         });
+      // Tag doubleheaders: two games same matchup same day → Game 1 / Game 2 label
+      const _dhCount=new Map();
+      mlbSec.games.forEach(g=>{const k=`${g.home}|${g.away}`;_dhCount.set(k,(_dhCount.get(k)||0)+1);});
+      const _dhSeq=new Map();
+      mlbSec.games.forEach(g=>{
+        const k=`${g.home}|${g.away}`;
+        if((_dhCount.get(k)||0)>1){const n=(_dhSeq.get(k)||0)+1;_dhSeq.set(k,n);g._subtitle=`Game ${n}`;}
+      });
       buildFilters(allData.sports);
       scheduleRenderAll();
       // Night Owl fix: now that MLB games are in allData, re-run finals detection.
@@ -12486,7 +12494,7 @@ let _pwaPrompt = null;
 
   // SW_VERSION — bump on every deploy to bust returning user cache
   // Assertion 28 in smoke verifies this constant is present
-  const SW_VERSION = '2026-05-23i';
+  const SW_VERSION = '2026-05-23j';
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
   // Cache strategy: API-only (ESPN scores, weather, odds, SportsDB).
