@@ -12566,7 +12566,8 @@ function dramaScoreLive(eData, sport){
       if(wxEntry){
         // weatherDramaModifier: signed delta — replaces flat +10 (weather-intelligence build)
         sitBonus += weatherDramaModifier(wxEntry);
-      } // wea    }catch(e_){}
+      } // weather drama modifier applied
+    }catch(e){}
   }
 
   const raw = base*52 + timeBonus + sitBonus;
