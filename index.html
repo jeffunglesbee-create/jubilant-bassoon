@@ -6849,13 +6849,27 @@ function buildTodaySchedule(){
   // ── La Liga MD37 (hardcoded fallback — fetchSoccerFixtures provides live data) ─────────────────────
   // Wed May 13 — 4 midweek games verified from Soccerway. Kick-off times per LFP official schedule.
   // All games on ESPN+ in the US (LALIGA bundle). fetchSoccerFixtures merges/dedupes live.
+  // ── La Liga MD38 — Final Day · Sun May 24 2026 ────────────────────────────────────
+  // All 10 games kick off simultaneously 16:00 UTC (noon ET / 18:00 CEST)
+  // Sources: laliga.com + final-day coverage. fetchSoccerFixtures enriches with live scores.
+  // Stakes: Barcelona = champions; Atletico = last CL spot; Girona/Mallorca/Oviedo fight relegation
   const laLigaRaw=[
-    {home:"Espanyol",       away:"Athletic Bilbao",  league:"La Liga – Matchday 37", start_time:"2026-05-13T17:30:00Z", confirmed:true, venue:"Estadi Olímpic Lluís Companys, Barcelona", streams:resolveBundle("LALIGA")},
-    {home:"Villarreal",     away:"Sevilla",           league:"La Liga – Matchday 37", start_time:"2026-05-13T17:30:00Z", confirmed:true, venue:"Estadio de la Cerámica, Villarreal",       streams:resolveBundle("LALIGA")},
-    {home:"Alavés",         away:"Barcelona",         league:"La Liga – Matchday 37", start_time:"2026-05-13T19:00:00Z", confirmed:true, venue:"Estadio de Mendizorroza, Vitoria",          streams:resolveBundle("LALIGA")},
-    {home:"Getafe",         away:"Mallorca",          league:"La Liga – Matchday 37", start_time:"2026-05-13T19:00:00Z", confirmed:true, venue:"Coliseum Alfonso Pérez, Getafe",            streams:resolveBundle("LALIGA")},
+    // Relegation battle — maximum stakes
+    {home:"Girona",          away:"Elche",             league:"La Liga — Matchday 38 · Final Day", start_time:"2026-05-24T16:00:00Z", confirmed:true, venue:"Estadi Montilivi, Girona",               streams:resolveBundle("LALIGA"), _gameImportance:"elimination", matchupNote:"Girona (40 pts) needs a win to survive. Oviedo (29 pts) already down. Mallorca also in danger. Relegation 3-way battle resolves simultaneously."},
+    {home:"Mallorca",        away:"Real Oviedo",       league:"La Liga — Matchday 38 · Final Day", start_time:"2026-05-24T16:00:00Z", confirmed:true, venue:"Estadio Son Moix, Palma",                streams:resolveBundle("LALIGA"), _gameImportance:"elimination", matchupNote:"Mallorca (39 pts) vs the already-relegated Oviedo (29 pts). A win keeps Mallorca safe if Girona falters. Simultaneous kickoff with Girona."},
+    // Champions League battle
+    {home:"Villarreal",      away:"Atletico Madrid",   league:"La Liga — Matchday 38 · Final Day", start_time:"2026-05-24T16:00:00Z", confirmed:true, venue:"Estadio de la Cerámica, Villarreal",   streams:resolveBundle("LALIGA"), _gameImportance:"playoff_impl", matchupNote:"Atletico (69 pts, 3rd) locked into the Champions League. Villarreal battles for the Conference League berth. Final chance to move up."},
+    {home:"Valencia",        away:"Barcelona",         league:"La Liga — Matchday 38 · Final Day", start_time:"2026-05-24T16:00:00Z", confirmed:true, venue:"Mestalla, Valencia",                     streams:resolveBundle("LALIGA"), matchupNote:"Champions Barcelona (94 pts) close the season at Mestalla. Valencia’s season finale — nothing but pride at stake after a difficult campaign."},
+    // Real Madrid season finale
+    {home:"Real Madrid",     away:"Athletic Club",     league:"La Liga — Matchday 38 · Final Day", start_time:"2026-05-24T16:00:00Z", confirmed:true, venue:"Santiago Bernéu, Madrid",              streams:resolveBundle("LALIGA"), matchupNote:"Real Madrid (83 pts, 2nd) host Athletic Club (Conference League hopefuls) on the final day. Mbappe’s 24-goal season ends at the Berneu."},
+    // European battle + relegation survival
+    {home:"Real Sociedad",   away:"Getafe",            league:"La Liga — Matchday 38 · Final Day", start_time:"2026-05-24T16:00:00Z", confirmed:true, venue:"Reale Arena, San Sebastián",            streams:resolveBundle("LALIGA")},
+    {home:"Rayo Vallecano",  away:"Español",         league:"La Liga — Matchday 38 · Final Day", start_time:"2026-05-24T16:00:00Z", confirmed:true, venue:"Estadio de Vallecas, Madrid",            streams:resolveBundle("LALIGA")},
+    {home:"Sevilla",         away:"Alavés",           league:"La Liga — Matchday 38 · Final Day", start_time:"2026-05-24T16:00:00Z", confirmed:true, venue:"Estadio Ramón Sánchez-Pizjuán, Sevilla", streams:resolveBundle("LALIGA")},
+    {home:"Osasuna",         away:"Celta Vigo",        league:"La Liga — Matchday 38 · Final Day", start_time:"2026-05-24T16:00:00Z", confirmed:true, venue:"El Sadar, Pamplona",                      streams:resolveBundle("LALIGA")},
+    {home:"Real Betis",      away:"Levante",           league:"La Liga — Matchday 38 · Final Day", start_time:"2026-05-24T16:00:00Z", confirmed:true, venue:"Estadio Benito Villamárín, Seville",  streams:resolveBundle("LALIGA")},
   ].filter(g=>isToday(g.start_time));
-  const laLigaGames = laLigaRaw.map((g,i)=>({...g, _id:"laliga_md37_"+i, _sport:"La Liga"}));
+  const laLigaGames = laLigaRaw.map((g,i)=>({...g, _id:"laliga_md38_"+i, _sport:"La Liga"}));
 
   // ── Ligue 1 GW34 (hardcoded fallback — fetchSoccerFixtures provides live data) ────────────────────
   // Wed May 13 — 2 games verified from Soccerway. beIN Sports in the US (LIGUE_1 bundle).
@@ -10836,14 +10850,15 @@ function resolveGameIdByHome(homeName){
 function findESPNScore(game){
   const home = (game.home||"").toLowerCase();
   const away = (game.away||"").toLowerCase();
-  // Sport guard: prevents city cross-contamination (e.g. NBA "Toronto" scoring on MLS "Toronto FC")
-  // Soccer scores: periodPrefix="'"; basketball="Q", hockey="P", baseball="T"
+  // Sport guard: prevent city-name cross-contamination (e.g. NBA "Toronto" scoring on MLS "Toronto FC")
+  // EXCLUDE clearly non-soccer: Q=basketball, H=college-bball, P=hockey, T=baseball
+  // DO NOT exclude 1H/2H — fetchSoccerFixtures stores soccer scores with those prefixes
   const sc = typeof classifySport==='function' ? classifySport(game,null) : {};
   const gameSoccer = sc.isSoccer;
   for(const [key, score] of Object.entries(espnScores)){
     const pp = score.periodPrefix||'';
-    if(gameSoccer && pp && pp!=="'") continue;
-    if(!gameSoccer && pp==="'") continue;
+    if(gameSoccer  && (pp==='Q'||pp==='H'||pp==='P'||pp==='T')) continue;
+    if(!gameSoccer && (pp==="'"||pp==='1H'||pp==='2H')) continue;
     const [hn, an] = key.split("|").map(s=>s.toLowerCase());
     if(espnTeamMatch(hn, home) && espnTeamMatch(an, away)) return score;
     if(espnTeamMatch(hn, away) && espnTeamMatch(an, home)) return score;
