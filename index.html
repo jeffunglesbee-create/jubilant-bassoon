@@ -15591,13 +15591,13 @@ function buildOTWWhyLine(g, ed, sport, isPreGame){
     return parts.slice(0,4).join(' \u00b7 ');
   }
   const parts=[];
-  if(ed.period){const p=ed.period;const sp2=sport.toLowerCase();const pl=(sp2.includes('basketball')||sp2.includes('nba'))?`Q${p}`:(sp2.includes('hockey')||sp2.includes('nhl'))?`P${p}`:(sp2.includes('football')||sp2.includes('nfl'))?`Q${p}`:`T${p}`;parts.push(pl);}
+  if(ed.period){const p=ed.period;const sp2=sport.toLowerCase();parts.push(sportContext(sp2).periodFmt(p,''));}
   if(ed.clock) parts.push(fmtESPNClock(ed.clock));
   const hS=parseInt(ed.homeScore)||0,aS=parseInt(ed.awayScore)||0,gap=Math.abs(hS-aS);
   const trailingNick = hS < aS ? teamNick(g.home||'') : teamNick(g.away||'');
   if(gap===0) parts.push('tied');
   else if(gap===1) parts.push(`${trailingNick} down 1`);
-  else if(gap<=3) parts.push(`${gap} pts`);
+  else if(gap<=3) parts.push(sportContext(sp2).gap(gap));
   if(g.seriesRecord&&g.seriesRecord!=='0-0') parts.push(g.seriesRecord);
   // Fix 5: BNI confirmed live blowout → surface in live why line
   const bniLive=(typeof computeBroadcastNarrativeIndex==='function')?computeBroadcastNarrativeIndex(g):null;
@@ -16382,6 +16382,31 @@ async function fetchNightOwlFromClaude(topGame){
 // DO NOT INVENT: all content from game object fields (start_time, matchupNote,
 // espnScores, venue, streams, seriesRecord) — nothing fabricated.
 // [DRAMA-LINE-A] Build viewport-indexed drama line tiers
+// ── Sport-specific journalism context ────────────────────────────────────────
+// Every text-generating function MUST use sportContext() for period labels,
+// score units, run thresholds, and overtime detection. No basketball defaults.
+// "Q4" is only correct for NBA/NFL/WNBA/AFL. Soccer uses "2H 87'", Hockey "P3",
+// MLB "Inn 7", Tennis "Set 2", F1 "Lap 42". "pts" is wrong for goal sports.
+function sportContext(sport){
+  const sp=(sport||'').toLowerCase();
+  if(sp.includes('soccer')||sp.includes('mls')||sp.includes('premier')||sp.includes('liga')||sp.includes('ligue')||sp.includes('serie')||sp.includes('efl')||sp.includes('championship'))
+    return {periodFmt:(p,c)=>(p===1?'1H':'2H')+(c?' '+c:''),unit:'goal',units:'goals',runTh:2,otP:2,gap:(n)=>n===1?'1 goal':n+' goals'};
+  if(sp.includes('hockey')||sp.includes('nhl'))
+    return {periodFmt:(p,c)=>'P'+p+(c?' '+c:''),unit:'goal',units:'goals',runTh:3,otP:3,gap:(n)=>n===1?'1 goal':n+' goals'};
+  if(sp.includes('baseball')||sp.includes('mlb'))
+    return {periodFmt:(p,c)=>'Inn '+p,unit:'run',units:'runs',runTh:4,otP:9,gap:(n)=>n===1?'1 run':n+' runs'};
+  if(sp.includes('australian')||sp.includes('afl'))
+    return {periodFmt:(p,c)=>'Q'+p+(c?' '+c:''),unit:'pt',units:'pts',runTh:18,otP:4,gap:(n)=>n+' pts'};
+  if(sp.includes('tennis')||sp.includes('atp')||sp.includes('wta'))
+    return {periodFmt:(p,c)=>'Set '+p,unit:'set',units:'sets',runTh:99,otP:99,gap:(n)=>n===1?'1 set':n+' sets'};
+  if(sp.includes('f1')||sp.includes('formula'))
+    return {periodFmt:(p,c)=>'Lap '+p,unit:'pos',units:'pos',runTh:99,otP:99,gap:(n)=>n+' pos'};
+  if(sp.includes('cricket'))
+    return {periodFmt:(p,c)=>'Over '+p,unit:'run',units:'runs',runTh:30,otP:99,gap:(n)=>n+' runs'};
+  // NBA, NFL, WNBA — quarter sports with points
+  return {periodFmt:(p,c)=>'Q'+p+(c?' '+c:''),unit:'pt',units:'pts',runTh:7,otP:4,gap:(n)=>n+' pts'};
+}
+
 function buildDramaLineTiers(game, eData, sport){
   const state=eData?.state||'pre', gid=game._id||'';
   const empty={tight:'',mid:'',full:''};
@@ -16395,9 +16420,7 @@ function buildDramaLineTiers(game, eData, sport){
     const moment=(moments.find(m=>m.highlight)||moments[0])?.text||'';
     const sp=(sport||game._sport||'').toLowerCase();
     let period='';
-    if(sp.includes('soccer')||sp.includes('mls')){const h=eData.period===1?'1H':'2H';period=h+(eData.clock?' '+eData.clock:'');}
-    else if(sp.includes('hockey')||sp.includes('nhl')){period=eData.period?'P'+eData.period+(eData.clock?' '+eData.clock:''):'';}
-    else{period=eData.period?'Q'+eData.period+(eData.clock?' '+eData.clock:''):'';}
+    period=eData.period?sportContext(sp).periodFmt(eData.period,eData.clock||''):'';
     let trend='';try{if((getDramaTrend(gid)||0)>8)trend=' \u00b7 rising';}catch(e_){}
     if(!moment&&!period)return empty;
     const tight=trim(moment||period,38),mid=trim(join([moment,period])+trend,52),full=join([moment,period+trend,series]);
@@ -16613,19 +16636,16 @@ function detectAndStoreStoryMoment(gameId, eData, sport) {
     }
     // Run detection: one team scores 7+ without opponent scoring
     const homeDelta = home - prevHome, awayDelta = away - prevAway;
-    if (homeDelta >= 7 && awayDelta === 0) push(`${teamNick(eData.home)} on a ${homeDelta}-0 run`);
-    if (awayDelta >= 7 && homeDelta === 0) push(`${teamNick(eData.away)} on a ${awayDelta}-0 run`);
+    const _sc=sportContext(sp),_runTh=_sc.runTh;
+    if (homeDelta >= _runTh && awayDelta === 0) push(`${teamNick(eData.home)} on a ${_sc.gap(homeDelta)} run`);
+    if (awayDelta >= _runTh && homeDelta === 0) push(`${teamNick(eData.away)} on a ${_sc.gap(awayDelta)} run`);
     // Period change
     if (period > prevPeriod && period > 1) {
-      const label = sp.includes('basketball')||sp.includes('nba') ? `Q${period} starts`
-        : sp.includes('hockey')||sp.includes('nhl') ? `P${period} starts`
-        : sp.includes('baseball')||sp.includes('mlb') ? `Inning ${period}` : `Period ${period}`;
+      const label = sportContext(sp).periodFmt(period,'') + ' starts';
       push(label);
     }
     // Overtime
-    const otThreshold = sp.includes('basketball')||sp.includes('nba') ? 4
-      : sp.includes('hockey')||sp.includes('nhl') ? 3
-      : sp.includes('baseball')||sp.includes('mlb') ? 9 : 4;
+    const otThreshold = sportContext(sp).otP;
     if (period > otThreshold && prevPeriod <= otThreshold) push('Overtime!', true);
     // Final score
     if (isFinal && !prev.final) push(`Final: ${teamNick(eData.home)||'Home'} ${home}–${away} ${teamNick(eData.away)||'Away'}`);
