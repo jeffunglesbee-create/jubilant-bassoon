@@ -2448,3 +2448,11 @@ ADR-001: AFL Auto-Schedule (Drive 1uQbzKXarVSHNmshM846uxY7Z-60McUqDUib8EHhJlUg)
   Hardcoded game ENTRIES retained for resilience. Hardcoded round NUMBER removed.
   Policy: hardcode STABLE data (bundles, entries). Do not hardcode COUNTERS that
   change on a regular cycle. Test: "Will this be wrong next week if no one updates it?"
+
+
+## Rule 43 — Sport-Specific Journalism (sportContext)
+
+All user-visible text about a game MUST call sportContext(sport) for period labels,
+score units, and run thresholds. No basketball defaults. "Q" is only correct for
+NBA/NFL/WNBA/AFL. Soccer uses "2H 87'", Hockey "P3", MLB "Inn 7", Tennis "Set 3".
+Spec: Drive 1jQ5pm1r8Cinu0eeZ7BWLs6N7LO01Mp2qYCXQ6Bu5L0A
