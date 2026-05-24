@@ -6383,6 +6383,7 @@ function renderAll(){
     const sportColor=SPORT_COLORS[sec.sport]||"#c9a84c";
     const cards=games.map((g,gi)=>{
       if(!g._id) g._id="g"+(++_gid);
+      g._insights=computeInsights(g, sec.sport); // Stage 3.5: typed data bridge
       const st=getStatus(g.start_time, g._aflComplete!==undefined?{aflComplete:g._aflComplete}:undefined);
       const timeStr=fmtTime(g.start_time);
       const isLive=st==="live";
@@ -16831,6 +16832,136 @@ function assessInjuryPriceImpact(game){
 // computeWatchValue: "Is this game worth watching right now?"
 // Returns: { value:0-100, verdict:'must'|'watch'|'skip', reason:string }
 // Feeds: buildStayUpSignal accuracy, J-Architecture lead selection, card sort order
+// ══ STAGE 3.5: INSIGHTS LAYER — Typed Data Bridge ═══════════════════════════
+// computeInsights: aggregates all data sources into one typed object per game.
+// Two registers consume: Working Class (templates) and J-Architecture (AI prose).
+// Same data. Same truth. Different voice.
+function computeInsights(game, sport){
+  const now=Date.now();
+  const sp=(sport||game._sport||'').toLowerCase();
+  const ed=typeof findESPNScore==='function'?findESPNScore(game):null;
+  const streams=game.streams||[];
+  const key=[game.home||'',game.away||''].sort().join('|').toLowerCase();
+
+  // ── BROADCAST INTELLIGENCE (Phase 1 — from Stage 3) ─────────
+  const freeStreams=streams.filter(s=>FREE_OTA.has(s.key));
+  const trialStreams=streams.filter(s=>CHEAP_SEATS_COPY[s.key]?.trial);
+  const subStreams=streams.filter(s=>SERVICE_COST[s.key]).sort((a,b)=>{
+    return parseFloat((SERVICE_COST[a.key]||'$999').replace('$',''))-
+           parseFloat((SERVICE_COST[b.key]||'$999').replace('$',''));
+  });
+  const broadcast={
+    network:streams[0]?.label||'',
+    isFreeOTA:freeStreams.length>0,
+    freeOption:freeStreams[0]?{service:freeStreams[0].label,method:'antenna',cost:12}:null,
+    cheapestOption:subStreams[0]?{service:subStreams[0].label,price:parseFloat((SERVICE_COST[subStreams[0].key]||'0').replace('$',''))}:null,
+    trialAvailable:trialStreams[0]?{service:trialStreams[0].label,days:7}:null,
+    blackedOut:false,
+    source:'sr_registry',confidence:1.0,
+  };
+
+  // ── MARKET INTELLIGENCE (Phase 2 — from Betfair cache) ──────
+  const odds=_betfairOddsCache[key]||_betfairOddsCache[game._id];
+  let market=null;
+  if(odds&&odds.homeWin&&odds.awayWin){
+    const h=parseFloat(odds.homeWin),a=parseFloat(odds.awayWin),d=odds.draw?parseFloat(odds.draw):0;
+    if(h>1&&a>1){
+      const implH=1/h,implA=1/a,implD=d>1?1/d:0;
+      const vig=((implH+implA+implD-1)*100);
+      const vigNum=parseFloat(vig.toFixed(1));
+      const coinFlip=Math.abs(implH-implA)<0.05;
+      const dominant=implH>0.7?game.home:implA>0.7?game.away:null;
+      market={
+        homeOdds:h,awayOdds:a,drawOdds:d||null,
+        vig:vigNum,
+        vigAssessment:vigNum<3?'low':vigNum<5?'avg':vigNum<8?'above_avg':'high',
+        coinFlip,marketDominant:dominant,
+        lineMove:{detected:false,magnitude:0,direction:null,trigger:null,hoursBefore:null},
+        source:'betfair',confidence:odds.inPlay?1.0:0.95,ts:odds.fetchedAt||now,
+      };
+    }
+  }
+
+  // ── WEATHER INTELLIGENCE (Phase 3 — from wxCache) ───────────
+  let weather=null;
+  if(typeof wxCache!=='undefined'&&game._id&&wxCache[game._id]){
+    const wx=wxCache[game._id];
+    const extreme=wx.temp<20||wx.temp>100||wx.wind>25||wx.precip>0.5;
+    weather={
+      applicable:true,outdoor:true,
+      temp:wx.temp||null,wind:wx.wind||null,windDirection:wx.windDir||null,
+      condition:wx.condition||'clear',precipitation:wx.precip||0,
+      extreme,source:'open-meteo',confidence:0.85,ts:now,
+      sportImpact:null,
+    };
+  }
+
+  // ── MODEL INTELLIGENCE (Phase 4 — from Squiggle cache) ──────
+  let modelPrediction=null;
+  if(game._squiggleTip){
+    const tip=game._squiggleTip;
+    modelPrediction={
+      available:true,
+      margin:tip.margin||0,confidence:tip.confidence||50,
+      models:tip.models||21,source:'squiggle',sport:'AFL',ts:now,
+      divergence:null,
+    };
+  }
+
+  // ── STANDINGS INTELLIGENCE (from cached standings) ──────────
+  let standings=null;
+  const league=game.league||'';
+  const isPlayoff=/playoff|final|semifinal|conference|round|wild card|division/i.test(league);
+  const isElim=game._gameImportance==='elimination';
+  const isDeciding=game._gameImportance==='series_deciding';
+  const stakeLevel=isElim||isDeciding?'critical':isPlayoff?'high':
+    game.seriesRecord?'high':'moderate';
+  standings={stakeLevel,source:'espn',confidence:1.0,ts:now};
+
+  // ── PLAYER INTELLIGENCE (Phase 5 — from BDL cache) ──────────
+  let playerStats=null;
+  const injuries=[];
+  const allInj=Object.values(bdlCache?.injuries||{});
+  for(const list of allInj){
+    if(!Array.isArray(list)) continue;
+    for(const inj of list){
+      const team=(inj.team||'').toLowerCase();
+      if((game.home||'').toLowerCase().includes(team)||(game.away||'').toLowerCase().includes(team)||
+         team.includes((game.home||'').split(' ').pop().toLowerCase())||
+         team.includes((game.away||'').split(' ').pop().toLowerCase())){
+        injuries.push({player:inj.player,team:inj.team,status:inj.status,
+          bodyPart:inj.description||inj.bodyPart||'',source:'bdl',confidence:0.9,ts:now});
+      }
+    }
+  }
+  if(injuries.length) playerStats={topPerformer:null,injuries};
+
+  // ── COMPOSITE SIGNALS ───────────────────────────────────────
+  const injuryMarketImpact={detected:false,player:null,priceShift:0,significance:'none',note:''};
+  if(injuries.length&&market){
+    const topInj=injuries[0];
+    injuryMarketImpact.detected=true;
+    injuryMarketImpact.player=topInj.player;
+    const spread=Math.abs(market.homeOdds-market.awayOdds);
+    injuryMarketImpact.significance=spread>1.5?'low':spread<0.3?'high':'moderate';
+    injuryMarketImpact.note=injuryMarketImpact.significance==='high'?
+      `Market hasn't adjusted for ${topInj.player} (${topInj.status})`:
+      `${topInj.player} impact appears priced in`;
+  }
+
+  // Narrative grade (maps to semantic vocabulary)
+  const wv=computeWatchValue(game,sport);
+  const narrativeGrade=wv.verdict==='must'?'must':wv.verdict==='watch'?
+    (broadcast.isFreeOTA?'discovery':'watch'):'quiet';
+
+  return {
+    broadcast,market,weather,modelPrediction,standings,playerStats,
+    composite:{injuryMarketImpact,weatherMarketCompound:{detected:false},narrativeGrade},
+    _watchValue:wv,
+    _ts:now,
+  };
+}
+
 function computeWatchValue(game, sport){
   if(!game) return {value:0,verdict:'skip',reason:'No game data'};
   const ed=typeof findESPNScore==='function'?findESPNScore(game):null;

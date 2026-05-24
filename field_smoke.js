@@ -621,6 +621,18 @@ try {
   if(hasWatchInStayUp) pass('A79 — Watch Engine feeds Stay Up Signal');
   else fail('A79 — computeWatchValue not connected to buildStayUpSignal');
 
+  const hasInsightsLayer = html.includes('function computeInsights(');
+  if(hasInsightsLayer) pass('A80 — computeInsights() defined (Stage 3.5 Insights Layer)');
+  else fail('A80 — computeInsights missing');
+
+  const hasInsightsWiring = html.includes('g._insights=computeInsights(');
+  if(hasInsightsWiring) pass('A81 — Insights Layer wired into card render loop');
+  else fail('A81 — computeInsights not called during renderAll');
+
+  const hasNarrativeGrade = html.includes('narrativeGrade');
+  if(hasNarrativeGrade) pass('A82 — Composite narrativeGrade (semantic vocabulary mapping) present');
+  else fail('A82 — narrativeGrade missing from insights composite');
+
   // ─────────────────────────────────────────────────────────────────────
   log('---');
 // Assertions 51-101 removed — structural feature guards now live in smoke.js (A51-A123).
