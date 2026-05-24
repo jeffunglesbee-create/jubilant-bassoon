@@ -3145,24 +3145,40 @@ function refreshAFLSection(){
 // Returns current AFL round number from today's hardcoded games, or falls back to 11.
 // Used to query Squiggle by round instead of by complete=0, which excludes in-progress games.
 function _aflCurrentRound(){
+  // 1. Squiggle cache (most accurate — set after first successful fetch)
+  if(_squiggleCache.games?.length){
+    const rounds=[...new Set(_squiggleCache.games.map(g=>g.round).filter(Boolean))];
+    if(rounds.length) return Math.max(...rounds);
+  }
+  // 2. Hardcoded entries (from daily update)
   const afl=(allData?.sports||[]).find(s=>s.sport==='Australian Football (AFL)');
   if(afl?.games?.length){
     const m=(afl.games[0].league||'').match(/Round (\d+)/i);
     if(m) return parseInt(m[1]);
   }
-  return 11; // fallback — update with daily update
+  // 3. Date-based auto-detect (AFL 2026 R1 ~Feb 27, rounds ~weekly, byes cause ±1)
+  // Eliminates hardcoded fallback — no manual update needed between rounds
+  const aflR1=new Date('2026-02-27T00:00:00Z');
+  const weeks=Math.floor((Date.now()-aflR1.getTime())/(7*86400000));
+  return Math.min(Math.max(1, weeks+1), 24); // clamp 1-24
 }
 
 async function squigglePrefetchAll(){
   try{
     const round=_aflCurrentRound();
-    const [gR,sR]=await Promise.all([
+    // Fetch TWO consecutive rounds: handles ±1 week date approximation + round transitions
+    // refreshAFLSection() filters for isToday() so stale games are harmless
+    const [gR,gR2,sR]=await Promise.all([
       fetch(SQUIGGLE_RELAY+'?q=games;year=2026;round='+round,{headers:{'User-Agent':'FIELD-Global-Sports'},signal:AbortSignal.timeout(7000)}),
+      fetch(SQUIGGLE_RELAY+'?q=games;year=2026;round='+(round+1),{headers:{'User-Agent':'FIELD-Global-Sports'},signal:AbortSignal.timeout(7000)}).catch(()=>({ok:false})),
       fetch(SQUIGGLE_RELAY+'?q=standings;year=2026',{headers:{'User-Agent':'FIELD-Global-Sports'},signal:AbortSignal.timeout(7000)}),
     ]);
-    if(gR.ok){const d=await gR.json();_squiggleCache={..._squiggleCache,games:d.games||[],fetchedAt:Date.now()};}
+    let games=[];
+    if(gR.ok){const d=await gR.json();games.push(...(d.games||[]));}
+    if(gR2.ok){const d=await gR2.json();games.push(...(d.games||[]));}
+    _squiggleCache={..._squiggleCache,games,fetchedAt:Date.now()};
     if(sR.ok){const d=await sR.json();_squiggleCache={..._squiggleCache,standings:d.standings||[]};}
-    if(FIELD_DEBUG) console.debug('[AFL] prefetch: games',_squiggleCache.games?.length,'standings',_squiggleCache.standings?.length);
+    if(FIELD_DEBUG) console.debug('[AFL] prefetch: R'+round+'+R'+(round+1)+' →',games.length,'games,',_squiggleCache.standings?.length,'standings');
     refreshAFLSection();
     renderAFLStandingsWidget();
   }catch(e){if(FIELD_DEBUG) console.debug('[AFL] prefetch failed:',e.message);}
