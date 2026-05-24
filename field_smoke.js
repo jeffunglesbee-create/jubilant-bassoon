@@ -605,6 +605,22 @@ try {
   if(hasIsEU) pass('A75 — isEUTimezone() EU detection function present');
   else fail('A75 — EU timezone detection missing');
 
+  const hasInjuryIntel = html.includes('function assessInjuryPriceImpact(');
+  if(hasInjuryIntel) pass('A76 — assessInjuryPriceImpact() defined (Injury Intel)');
+  else fail('A76 — assessInjuryPriceImpact missing');
+
+  const hasWatchEngine = html.includes('function computeWatchValue(');
+  if(hasWatchEngine) pass('A77 — computeWatchValue() defined (Pipeline C / Watch Engine)');
+  else fail('A77 — computeWatchValue missing');
+
+  const hasInjuryWiring = html.includes('assessInjuryPriceImpact(g)');
+  if(hasInjuryWiring) pass('A78 — Injury Intel wired into card template');
+  else fail('A78 — assessInjuryPriceImpact not called in card template');
+
+  const hasWatchInStayUp = html.includes('computeWatchValue(g');
+  if(hasWatchInStayUp) pass('A79 — Watch Engine feeds Stay Up Signal');
+  else fail('A79 — computeWatchValue not connected to buildStayUpSignal');
+
   // ─────────────────────────────────────────────────────────────────────
   log('---');
 // Assertions 51-101 removed — structural feature guards now live in smoke.js (A51-A123).

@@ -865,6 +865,14 @@ flex-shrink:0;white-space:nowrap;
 .btb-avg{color:var(--muted);}
 .btb-warn{color:#f59e0b;}
 .btb-high{color:#f87171;}
+/* ── Working Class: Injury Intel ───────────────────────────── */
+.injury-intel{font-size:.55rem;color:var(--muted);margin-top:.15rem;display:flex;align-items:baseline;gap:.3rem;overflow:hidden;}
+.ii-badge{font-weight:700;font-size:.5rem;padding:.08rem .25rem;border-radius:3px;flex-shrink:0;}
+.ii-out{background:rgba(248,113,113,.15);color:#f87171;border:1px solid rgba(248,113,113,.3);}
+.ii-doubtful{background:rgba(245,158,11,.12);color:#f59e0b;border:1px solid rgba(245,158,11,.3);}
+.ii-gtd{background:rgba(245,158,11,.08);color:#d97706;border:1px solid rgba(245,158,11,.2);}
+.ii-text{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+@media(min-width:820px){.ii-text{white-space:normal;}}
 @media(orientation:landscape)and(max-height:430px){.card-drama-line{font-size:.63rem;}}
 @media(min-width:820px)and(orientation:landscape){.card-drama-line{font-size:.64rem;white-space:normal;max-height:2.8em;}}
 /* Working Class: tablet+ text wrapping */
@@ -6405,6 +6413,7 @@ function renderAll(){
           ${(()=>{const _ed=typeof findESPNScore==='function'?findESPNScore(g):null;const _dl=buildDramaLineTiers(g,_ed,sec.sport);if(_dl.tight){const _q=s=>s.replace(/"/g,'&quot;');return `<div class="card-drama-line" data-drama-tight="${_q(_dl.tight)}" data-drama-mid="${_q(_dl.mid)}" data-drama-full="${_q(_dl.full)}">${_dl.tight}</div>`;}return g.narrative?.label&&!g._gameImportance?`<div class="narrative-line${(g.narrative.boost||0)>=20?' narrative-hi':''}">${g.narrative.label}</div>`:'';})()}
           ${(()=>{const _cs=buildCheapSeats(g);if(!_cs)return '';return `<div class="cheap-seats"><span class="cs-badge ${_cs.badgeClass}">${_cs.badge}</span><span class="cs-text">${_cs.text}</span></div>`;})()}
           ${(()=>{const _btb=beatTheBook(g);if(!_btb)return '';return `<div class="beat-the-book"><span class="btb-badge ${_btb.cls}">Vig ${_btb.vig}</span><span class="btb-text">${_btb.assessment}</span></div>`;})()}
+          ${(()=>{const _ii=assessInjuryPriceImpact(g);if(!_ii)return '';return `<div class="injury-intel"><span class="ii-badge ${_ii.cls}">${_ii.badge}</span><span class="ii-text">${_ii.text}</span></div>`;})()}
         </div>
         <div class="card-right">
           ${liveBadge}
@@ -16721,26 +16730,31 @@ function buildStayUpSignal(sportsData){
   const hr=new Date().getHours();
   if(hr<19) return null;
   if(!sportsData||!sportsData.length) return {verdict:'NO',reason:'Nothing left tonight.',cls:'su-no'};
-  const allGames=sportsData.flatMap(s=>s.games||[]);
+  const allGames=sportsData.flatMap(s=>{
+    const sport=s.sport||'';
+    return (s.games||[]).map(g=>({...g,_sport:sport}));
+  });
   const remaining=allGames.filter(g=>{
     const st=getStatus(g.start_time);
     return st==='live'||st==='upcoming'||st==='soon';
   });
   if(!remaining.length) return {verdict:'NO',reason:'All games are final. Get some sleep.',cls:'su-no'};
-  const liveGames=remaining.filter(g=>getStatus(g.start_time)==='live');
-  const playoffs=remaining.filter(g=>g.league&&/playoff|final|semifinal|conference|round|wild card/i.test(g.league));
-  const highDrama=remaining.filter(g=>{
-    const ed=typeof findESPNScore==='function'?findESPNScore(g):null;
-    return ed&&ed.drama&&ed.drama>=60;
-  });
-  // YES: playoffs live or high drama
-  if(playoffs.length&&liveGames.length) return {verdict:'YES',reason:playoffs.length+' playoff game'+(playoffs.length>1?'s':'')+' live right now.',cls:'su-yes'};
-  if(highDrama.length) return {verdict:'YES',reason:'Drama is building \u2014 '+highDrama.length+' game'+(highDrama.length>1?'s':'')+' heating up.',cls:'su-yes'};
-  // MAYBE: upcoming playoffs or live games with moderate interest
-  if(playoffs.length) return {verdict:'MAYBE',reason:'Playoff game'+(playoffs.length>1?'s':'')+' still coming \u2014 worth checking back.',cls:'su-maybe'};
-  if(liveGames.length>=2) return {verdict:'MAYBE',reason:liveGames.length+' games still live. Could get interesting.',cls:'su-maybe'};
-  // NO: nothing compelling
-  if(remaining.length===1) return {verdict:'NO',reason:'Just 1 game left and it\'s not a must-watch. Get some rest.',cls:'su-no'};
+  // Use Watch Engine for accurate assessment
+  const watchValues=remaining.map(g=>({game:g,wv:computeWatchValue(g,g._sport)}));
+  const mustWatch=watchValues.filter(w=>w.wv.verdict==='must');
+  const worthWatching=watchValues.filter(w=>w.wv.verdict==='watch');
+  const bestGame=watchValues.sort((a,b)=>b.wv.value-a.wv.value)[0];
+  if(mustWatch.length){
+    const top=mustWatch[0];
+    return {verdict:'YES',reason:top.wv.reason+' \u2014 '+(typeof getTeamNick==='function'?getTeamNick(top.game.away):top.game.away)+' @ '+(typeof getTeamNick==='function'?getTeamNick(top.game.home):top.game.home)+'.',cls:'su-yes'};
+  }
+  if(worthWatching.length>=2){
+    return {verdict:'MAYBE',reason:worthWatching.length+' games worth checking \u2014 could get interesting.',cls:'su-maybe'};
+  }
+  if(worthWatching.length===1){
+    return {verdict:'MAYBE',reason:worthWatching[0].wv.reason+' \u2014 keep an eye on it.',cls:'su-maybe'};
+  }
+  if(remaining.length===1) return {verdict:'NO',reason:'Just 1 game left and it\'s not a must-watch.',cls:'su-no'};
   return {verdict:'NO',reason:'Nothing compelling left tonight.',cls:'su-no'};
 }
 
@@ -16767,6 +16781,121 @@ function beatTheBook(game){
   const coinFlip=Math.abs(impliedH-impliedA)<0.05;
   const coinNote=coinFlip?' Coin flip \u2014 tread carefully.':'';
   return {vig:vig+'%',assessment:assessment+coinNote,cls};
+}
+
+// ══ WORKING CLASS: Injury Intel ═════════════════════════════════════════════
+function assessInjuryPriceImpact(game){
+  if(!game||!game.home||!game.away) return null;
+  // Check BDL injury cache for this game's teams
+  const allInjuries=[];
+  const sports=Object.values(bdlCache?.injuries||{});
+  for(const list of sports){
+    if(!Array.isArray(list)) continue;
+    for(const inj of list){
+      const team=(inj.team||'').toLowerCase();
+      if((game.home||'').toLowerCase().includes(team)||(game.away||'').toLowerCase().includes(team)||
+         team.includes((game.home||'').split(' ').pop().toLowerCase())||
+         team.includes((game.away||'').split(' ').pop().toLowerCase())){
+        allInjuries.push(inj);
+      }
+    }
+  }
+  if(!allInjuries.length) return null;
+  // Find most impactful injury (questionable/doubtful/out)
+  const priority={out:3,doubtful:2,questionable:1,probable:0,day_to_day:1};
+  allInjuries.sort((a,b)=>(priority[b.status?.toLowerCase()]||0)-(priority[a.status?.toLowerCase()]||0));
+  const top=allInjuries[0];
+  if(!top||!top.player) return null;
+  const status=(top.status||'unknown').toLowerCase();
+  const desc=top.description||top.bodyPart||'';
+  // Check for Betfair market movement
+  const key=[game.home||'',game.away||''].sort().join('|').toLowerCase();
+  const odds=_betfairOddsCache[key]||_betfairOddsCache[game._id];
+  let marketNote='';
+  if(odds&&odds.homeWin){
+    // Simple heuristic: if odds are very lopsided, injury may have been priced in
+    const h=parseFloat(odds.homeWin),a=parseFloat(odds.awayWin);
+    if(h>0&&a>0){
+      const spread=Math.abs(h-a);
+      if(spread>1.5) marketNote=' The market has priced this in.';
+      else if(spread<0.3) marketNote=' The market hasn\'t moved much \u2014 something to know.';
+    }
+  }
+  const badge=status==='out'?'OUT':status==='doubtful'?'DOUBTFUL':'GTD';
+  const cls=status==='out'?'ii-out':status==='doubtful'?'ii-doubtful':'ii-gtd';
+  const text=`${top.player} is ${status}${desc?' ('+desc+')':''}. ${top.team||''}.${marketNote}`;
+  return {badge,cls,text,player:top.player,status};
+}
+
+// ══ PIPELINE C: Watch Engine ════════════════════════════════════════════════
+// computeWatchValue: "Is this game worth watching right now?"
+// Returns: { value:0-100, verdict:'must'|'watch'|'skip', reason:string }
+// Feeds: buildStayUpSignal accuracy, J-Architecture lead selection, card sort order
+function computeWatchValue(game, sport){
+  if(!game) return {value:0,verdict:'skip',reason:'No game data'};
+  const ed=typeof findESPNScore==='function'?findESPNScore(game):null;
+  const st=ed?.state||getStatus(game.start_time)||'pre';
+  let value=0;
+  const factors=[];
+
+  // ── Factor 1: Game state (0-30) ─────────────────────────────
+  if(st==='in'){
+    value+=20;
+    factors.push('live');
+    // Period bonus: later = more valuable
+    const period=ed?.period||0;
+    const sc=sportContext(sport||game._sport||'');
+    if(period>=sc.otP){value+=10;factors.push('crunch time');}
+    else if(period>=(sc.otP-1)){value+=5;factors.push('late');}
+  } else if(st==='soon'){
+    value+=10;factors.push('starting soon');
+  } else if(st==='upcoming'){
+    value+=5;
+  }
+  // Final games are not worth "watching" — they're results
+  if(st==='post'||st==='final') return {value:2,verdict:'skip',reason:'Game is over'};
+
+  // ── Factor 2: Drama score (0-25) ────────────────────────────
+  if(ed&&ed.drama!==undefined){
+    const drama=ed.drama||0;
+    if(drama>=80){value+=25;factors.push('high drama');}
+    else if(drama>=60){value+=15;factors.push('building drama');}
+    else if(drama>=40){value+=8;factors.push('moderate');}
+  } else if(st==='in'){
+    // Live but no drama score — moderate value
+    const margin=Math.abs((ed?.homeScore||0)-(ed?.awayScore||0));
+    if(margin<=5){value+=12;factors.push('close game');}
+    else if(margin<=10){value+=5;}
+  }
+
+  // ── Factor 3: Stakes (0-20) ──────────────────────────────────
+  const league=game.league||'';
+  if(/final/i.test(league)){value+=20;factors.push('finals');}
+  else if(/conference|semifinal/i.test(league)){value+=15;factors.push('conference finals');}
+  else if(/playoff|round|wild card/i.test(league)){value+=12;factors.push('playoffs');}
+  else if(/elimination/i.test(game._gameImportance||'')){value+=18;factors.push('elimination');}
+  else if(/series_deciding/i.test(game._gameImportance||'')){value+=20;factors.push('deciding game');}
+
+  // ── Factor 4: Sweep/comeback potential (0-10) ────────────────
+  if(game.seriesRecord){
+    if(game.seriesRecord==='3-0'||game.seriesRecord==='0-3'){value+=10;factors.push('sweep chance');}
+    else if(game.seriesRecord==='3-1'||game.seriesRecord==='1-3'){value+=8;factors.push('on the brink');}
+    else if(game.seriesRecord==='3-2'||game.seriesRecord==='2-3'){value+=10;factors.push('winner-take-all');}
+  }
+
+  // ── Factor 5: Free access (0-5) ──────────────────────────────
+  const streams=game.streams||[];
+  if(streams.some(s=>FREE_OTA.has(s.key))){value+=5;factors.push('free');}
+
+  // ── Factor 6: Rivalry / My Team (0-10) ────────────────────────
+  if(MY_TEAMS.has(game.home)||MY_TEAMS.has(game.away)){value+=10;factors.push('your team');}
+  if(typeof isRivalGame==='function'&&isRivalGame(game)){value+=5;factors.push('rivalry');}
+
+  // ── Verdict ──────────────────────────────────────────────────
+  value=Math.min(100,value);
+  const verdict=value>=60?'must':value>=30?'watch':'skip';
+  const reason=factors.length?factors.slice(0,3).join(' \u00b7 '):'nothing notable';
+  return {value,verdict,reason};
 }
 
 function buildDramaLineTiers(game, eData, sport){
