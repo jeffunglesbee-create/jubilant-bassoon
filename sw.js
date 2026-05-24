@@ -81,3 +81,72 @@ async function networkFirstWithFallback(cacheName, request){
     );
   }
 }
+
+// ── PUSH C: Push notification handler ─────────────────────────────────────────
+// PUSH C (May 24 2026). Receives push events from field-relay-nba cron Worker.
+// Two modes:
+//   1. Silent heartbeat (no drama data) → SW does nothing (background keepalive)
+//   2. Drama payload → SW shows DRAMA_THRESHOLD notification
+// Heartbeat architecture: relay cron polls scores every 5 min, computes drama,
+//   only sends visible payload when drama ≥ drama_min threshold.
+//   Result: lock-screen notification with full context, no app open needed.
+
+self.addEventListener('push', e => {
+  e.waitUntil(handlePush(e.data));
+});
+
+async function handlePush(data) {
+  let payload = {};
+  try { payload = data ? data.json() : {}; } catch(_) {}
+
+  // Silent heartbeat — no notification, just keep SW alive
+  if (!payload.type) return;
+
+  if (payload.type === 'DRAMA_THRESHOLD') {
+    const { sport, home, away, homeScore, awayScore, periodLabel,
+            broadcast, drama, gameId, watchUrl } = payload;
+    const scoreline = `${homeScore}–${awayScore}`;
+    const title = `🎯 ${sport || 'Game'} — ${scoreline}`;
+    const body  = `${home} vs ${away} · ${periodLabel || ''} · ${broadcast || 'Live'} · Drama ${drama}`;
+    const icon  = '/icon-192.png';
+    const badge = '/icon-192.png';
+    const actions = watchUrl
+      ? [{action: 'watch', title: 'Watch Now'}]
+      : [];
+
+    await self.registration.showNotification(title, {
+      body, icon, badge, actions,
+      tag: `field-drama-${gameId}`,     // replaces previous notif for same game
+      renotify: false,                   // don't buzz again for same game
+      data: { gameId, watchUrl: watchUrl || '/', type: 'DRAMA_THRESHOLD' },
+    });
+  }
+
+  if (payload.type === 'DECISIVE_MOMENT') {
+    const { seriesState, home, away, broadcast, gameId, watchUrl } = payload;
+    await self.registration.showNotification(`⚡ ${seriesState || 'Overtime'}`, {
+      body: `${away} @ ${home} · ${broadcast || 'Live'}`,
+      icon: '/icon-192.png',
+      tag: `field-decisive-${gameId}`,
+      data: { gameId, watchUrl: watchUrl || '/', type: 'DECISIVE_MOMENT' },
+    });
+  }
+}
+
+self.addEventListener('notificationclick', e => {
+  e.notification.close();
+  const url = e.notification.data?.watchUrl || '/';
+  if (e.action === 'watch' || !e.action) {
+    e.waitUntil(
+      clients.matchAll({type:'window', includeUncontrolled:true}).then(cs => {
+        const field = cs.find(c => c.url.includes(self.location.origin));
+        if (field) {
+          field.focus();
+          if (url !== '/') field.navigate ? field.navigate(url) : null;
+        } else {
+          clients.openWindow(url !== '/' ? url : self.location.origin);
+        }
+      })
+    );
+  }
+});
