@@ -807,6 +807,11 @@ flex-shrink:0;white-space:nowrap;
 .gotd-badge.espn-gotd{color:#ff3c3c;border-color:rgba(255,60,60,.4);background:rgba(255,60,60,.08)}
 .gotd-badge.local-cov{color:var(--teal);border-color:rgba(0,212,170,.35);background:rgba(0,212,170,.07);cursor:help}
 .crew-line{font-size:.65rem;color:var(--muted);padding:.1rem .85rem .2rem;opacity:.8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* [DRAMA-LINE-A] */
+.card-drama-line{font-size:.62rem;color:var(--smoke);line-height:1.4;margin-top:.3rem;padding-top:.25rem;border-top:1px solid var(--edge);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+@media(orientation:landscape)and(max-height:430px){.card-drama-line{font-size:.63rem;}}
+@media(min-width:820px)and(orientation:landscape){.card-drama-line{font-size:.64rem;white-space:normal;max-height:2.8em;}}
 .narrative-line{font-size:.68rem;color:var(--muted);font-style:italic;padding:.05rem .85rem .15rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;opacity:.9}
 .brief-scout-note{font-size:.62rem;color:#2dd4bf;margin-top:.45rem;padding-top:.35rem;border-top:1px solid rgba(45,212,191,.15);line-height:1.4}
 .brief-bni-note{font-size:.62rem;color:#b8860b;margin-top:.3rem;line-height:1.4}
@@ -6148,7 +6153,7 @@ function renderAll(){
           </div>`:""}
           ${g.crew?`<div class="crew-line">🎙 ${g.crew}</div>`:""}
           ${g._gameImportance?`<div class="importance-badge ${g._gameImportance==='series_deciding'?'series-deciding':g._gameImportance==='elimination'?'elimination':g._gameImportance==='clinch'?'clinch':'playoff-impl'}">${g._importanceIcon||''} ${g.narrative?.label||''}</div>`:""}
-          ${g.narrative?.label&&!g._gameImportance?`<div class="narrative-line${(g.narrative.boost||0)>=20?' narrative-hi':''}">${g.narrative.label}</div>`:""}
+          ${(()=>{const _ed=typeof findESPNScore==='function'?findESPNScore(g):null;const _dl=buildDramaLineTiers(g,_ed,sec.sport);if(_dl.tight){const _q=s=>s.replace(/"/g,'&quot;');return `<div class="card-drama-line" data-drama-tight="${_q(_dl.tight)}" data-drama-mid="${_q(_dl.mid)}" data-drama-full="${_q(_dl.full)}">${_dl.tight}</div>`;}return g.narrative?.label&&!g._gameImportance?`<div class="narrative-line${(g.narrative.boost||0)>=20?' narrative-hi':''}">${g.narrative.label}</div>`:'';})()}
         </div>
         <div class="card-right">
           ${liveBadge}
@@ -6202,6 +6207,8 @@ function renderAll(){
   setTimeout(renderAmbientPanel, 1200); // ambient panel — after schedule renders
   // Runtime silent error scan — FIELD_DEBUG only, runs after async injections settle
   if(FIELD_DEBUG) setTimeout(runSilentErrorScan, 500);
+  if(!window._dramaIdxInit){initDramaLineIndexer();window._dramaIdxInit=true;}
+  setTimeout(indexDramaLines,250);
 }
 function buildFilters(sports){
   const c=document.getElementById("sport-filters"); if(!c) return;
@@ -16210,6 +16217,55 @@ async function fetchNightOwlFromClaude(topGame){
 // ── Card Life Stages: 5 content states keyed to game clock ──────────────────
 // DO NOT INVENT: all content from game object fields (start_time, matchupNote,
 // espnScores, venue, streams, seriesRecord) — nothing fabricated.
+// [DRAMA-LINE-A] Build viewport-indexed drama line tiers
+function buildDramaLineTiers(game, eData, sport){
+  const state=eData?.state||'pre', gid=game._id||'';
+  const empty={tight:'',mid:'',full:''};
+  const trim=(s,n)=>{s=(s||'');return s.length>n?s.slice(0,n-1).trimEnd()+'\u2026':s;};
+  const join=(p,sep=' \u00b7 ')=>p.filter(Boolean).join(sep);
+  const narrative=game.narrative?.label||'';
+  const series=(game.seriesRecord&&game.seriesRecord!=='0-0')?game.seriesRecord:'';
+  const firstSentence=(game.matchupNote||'').split(/[.!?]/)[0]?.trim()||'';
+  if(state==='in'){
+    const moments=_storyMoments[gid]||[];
+    const moment=(moments.find(m=>m.highlight)||moments[0])?.text||'';
+    const sp=(sport||game._sport||'').toLowerCase();
+    let period='';
+    if(sp.includes('soccer')||sp.includes('mls')){const h=eData.period===1?'1H':'2H';period=h+(eData.clock?' '+eData.clock:'');}
+    else if(sp.includes('hockey')||sp.includes('nhl')){period=eData.period?'P'+eData.period+(eData.clock?' '+eData.clock:''):'';}
+    else{period=eData.period?'Q'+eData.period+(eData.clock?' '+eData.clock:''):'';}
+    let trend='';try{if((getDramaTrend(gid)||0)>8)trend=' \u00b7 rising';}catch(e_){}
+    if(!moment&&!period)return empty;
+    const tight=trim(moment||period,38),mid=trim(join([moment,period])+trend,52),full=join([moment,period+trend,series]);
+    return tight?{tight,mid:mid||tight,full:full||mid||tight}:empty;
+  }
+  if(state==='post'){
+    const hS=eData?.homeScore??0,aS=eData?.awayScore??0,score=hS+'\u2013'+aS;
+    const peak=parseFloat(localStorage.getItem('field_drama_peak_'+gid)||'0');
+    const drama=peak>=80?'\uD83D\uDD25 High drama':peak>=60?'\u26A1 Good game':'';
+    const tight=trim(join([score,series]),36),mid=trim(join([score,drama,series]),52),full=join([score,drama,series,firstSentence]);
+    return tight?{tight,mid:mid||tight,full:full||mid||tight}:empty;
+  }
+  const primary=series||narrative,extra=series?narrative:firstSentence;
+  if(!primary&&!firstSentence)return empty;
+  const tight=trim(primary||firstSentence,36),mid=trim(join([primary,extra]),52),full=join([primary,firstSentence]);
+  return tight?{tight,mid:mid||tight,full:full||mid||tight}:empty;
+}
+function indexDramaLines(){
+  const vw=window.innerWidth,vh=window.innerHeight,landscape=vw>vh,isPhone=Math.min(vw,vh)<=430;
+  const tier=isPhone&&!landscape?'tight':isPhone&&landscape?'mid':!isPhone&&!landscape?'mid':'full';
+  const key='drama'+tier[0].toUpperCase()+tier.slice(1);
+  document.querySelectorAll('.card-drama-line[data-drama-tight]').forEach(el=>{
+    const text=el.dataset[key]||el.dataset.dramaTight;
+    if(el.textContent!==text)el.textContent=text;
+  });
+}
+function initDramaLineIndexer(){
+  let _t;const d=()=>{clearTimeout(_t);_t=setTimeout(indexDramaLines,50);};
+  window.addEventListener('resize',d);
+  screen?.orientation?.addEventListener('change',()=>requestAnimationFrame(indexDramaLines));
+}
+
 function computeCardStage(game, eData) {
   if (game._postponed) return 'postponed';
   const now = Date.now();
@@ -16332,6 +16388,7 @@ function updateCardLifeStages() {
       }
     });
   });
+  indexDramaLines();
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
