@@ -6638,19 +6638,29 @@ function buildTodaySchedule(){
   ].filter(g=>isToday(g.start_time));
   // ── MLS Soccer — live from fetchSoccerFixtures (ESPN usa.1) ────────────
   const mlsSoccer=[
-    // Matchday 15, May 23 2026 — last before World Cup break (May 25–Jul 16)
-    // Sources: mlssoccer.com + team pages. fetchSoccerFixtures (ESPN usa.1) enriches + adds CO/DC.
-    {home:"St. Louis City SC",        away:"Austin FC",              league:"MLS — Matchday 15",                           start_time:"2026-05-23T17:30:00Z", confirmed:true, venue:"Energizer Park, St. Louis MO",           streams:resolveBundle("MLS_SOCCER")},
-    {home:"Minnesota United FC",       away:"Real Salt Lake",         league:"MLS — Matchday 15",                           start_time:"2026-05-23T19:30:00Z", confirmed:true, venue:"Allianz Field, St. Paul MN",             streams:resolveBundle("MLS_SOCCER")},
-    {home:"Portland Timbers",          away:"San Jose Earthquakes",   league:"MLS — Matchday 15",                           start_time:"2026-05-23T22:30:00Z", confirmed:true, venue:"Providence Park, Portland OR",           streams:resolveBundle("MLS_SOCCER")},
-    {home:"San Diego FC",              away:"Vancouver Whitecaps FC", league:"MLS — Matchday 15",                           start_time:"2026-05-23T22:30:00Z", confirmed:true, venue:"Snapdragon Stadium, San Diego CA",       streams:resolveBundle("MLS_SOCCER")},
-    {home:"Chicago Fire FC",           away:"Toronto FC",             league:"MLS — Matchday 15 · Last Before World Cup Break", start_time:"2026-05-23T23:30:00Z", confirmed:true, venue:"Soldier Field, Chicago IL",              streams:resolveBundle("MLS_SOCCER")},
-    {home:"Nashville SC",              away:"New York City FC",       league:"MLS — Matchday 15 · Last Before World Cup Break", start_time:"2026-05-23T23:30:00Z", confirmed:true, venue:"GEODIS Park, Nashville TN",              streams:resolveBundle("MLS_SOCCER")},
-    {home:"Charlotte FC",              away:"New England Revolution", league:"MLS — Matchday 15 · Last Before World Cup Break", start_time:"2026-05-23T23:30:00Z", confirmed:true, venue:"Bank of America Stadium, Charlotte",     streams:resolveBundle("MLS_SOCCER")},
-    {home:"Sporting Kansas City",      away:"New York Red Bulls",     league:"MLS — Matchday 15 · Last Before World Cup Break", start_time:"2026-05-23T23:30:00Z", confirmed:true, venue:"Children's Mercy Park, Kansas City",    streams:resolveBundle("MLS_SOCCER")},
-    {home:"LA Galaxy",                 away:"Houston Dynamo FC",      league:"MLS — Matchday 15 · Last Before World Cup Break", start_time:"2026-05-23T23:30:00Z", confirmed:true, venue:"Dignity Health Sports Park, Carson CA",  streams:resolveBundle("MLS_SOCCER")},
+    // MLS Matchday 15 — May 23 2026 — Last Before World Cup Break (May 25–Jul 16)
+    // All times verified from team schedule pages. UTC = local + timezone offset.
+    // ESPN team names used verbatim to ensure fetchSoccerFixtures dedup works.
+    // fetchSoccerFixtures enriches with logos, live scores, _id; adds Colorado/DC opponents.
+
+    // 1:30 PM CDT (UTC-5) = 18:30 UTC
+    {home:"St. Louis City SC",        away:"Austin FC",              league:"MLS — Matchday 15",                           start_time:"2026-05-23T18:30:00Z", confirmed:true, venue:"Energizer Park, St. Louis MO",           streams:resolveBundle("MLS_SOCCER")},
+    // 3:30 PM CDT (UTC-5) = 20:30 UTC
+    {home:"Minnesota United FC",       away:"Real Salt Lake",         league:"MLS — Matchday 15",                           start_time:"2026-05-23T20:30:00Z", confirmed:true, venue:"Allianz Field, St. Paul MN",             streams:resolveBundle("MLS_SOCCER")},
+    // 6:30 PM PDT (UTC-7) = 01:30 UTC May 24
+    {home:"Portland Timbers",          away:"San Jose Earthquakes",   league:"MLS — Matchday 15",                           start_time:"2026-05-24T01:30:00Z", confirmed:true, venue:"Providence Park, Portland OR",           streams:resolveBundle("MLS_SOCCER")},
+    {home:"San Diego FC",              away:"Vancouver Whitecaps",    league:"MLS — Matchday 15",                           start_time:"2026-05-24T01:30:00Z", confirmed:true, venue:"Snapdragon Stadium, San Diego CA",       streams:resolveBundle("MLS_SOCCER")},
+    // 7:30 PM EDT (UTC-4) = 23:30 UTC — Charlotte and Cincinnati are Eastern
+    {home:"Charlotte FC",              away:"New England Revolution", league:"MLS — Matchday 15 · Last Before World Cup Break", start_time:"2026-05-23T23:30:00Z", confirmed:true, venue:"Bank of America Stadium, Charlotte NC",  streams:resolveBundle("MLS_SOCCER")},
     {home:"FC Cincinnati",             away:"Orlando City SC",        league:"MLS — Matchday 15 · Last Before World Cup Break", start_time:"2026-05-23T23:30:00Z", confirmed:true, venue:"TQL Stadium, Cincinnati OH",             streams:resolveBundle("MLS_SOCCER")},
-  ].filter(g=>isToday(g.start_time));
+    // 7:30 PM CDT (UTC-5) = 00:30 UTC May 24 — Chicago, Nashville, KC are Central
+    {home:"Chicago Fire FC",           away:"Toronto FC",             league:"MLS — Matchday 15 · Last Before World Cup Break", start_time:"2026-05-24T00:30:00Z", confirmed:true, venue:"Soldier Field, Chicago IL",              streams:resolveBundle("MLS_SOCCER")},
+    {home:"Nashville SC",              away:"New York City FC",       league:"MLS — Matchday 15 · Last Before World Cup Break", start_time:"2026-05-24T00:30:00Z", confirmed:true, venue:"GEODIS Park, Nashville TN",              streams:resolveBundle("MLS_SOCCER")},
+    {home:"Sporting Kansas City",      away:"Red Bull New York",      league:"MLS — Matchday 15 · Last Before World Cup Break", start_time:"2026-05-24T00:30:00Z", confirmed:true, venue:"Children's Mercy Park, Kansas City",    streams:resolveBundle("MLS_SOCCER")},
+    // 7:30 PM PDT (UTC-7) = 02:30 UTC May 24 — LA is Pacific
+    {home:"LA Galaxy",                 away:"Houston Dynamo FC",      league:"MLS — Matchday 15 · Last Before World Cup Break", start_time:"2026-05-24T02:30:00Z", confirmed:true, venue:"Dignity Health Sports Park, Carson CA",  streams:resolveBundle("MLS_SOCCER")},
+    // Colorado Rapids (MDT, 7:30 PM = 01:30 UTC) and D.C. United (EDT, 7:30 PM = 23:30 UTC) via ESPN
+  ].filter(g=>isToday(g.start_time))
 
   // ── Tennis: Italian Open Rome (May 6-17 2026) ──────────────────────────
   const romeStart=new Date("2026-05-06T00:00:00Z"), romeEnd=new Date("2026-05-17T23:59:00Z");
@@ -10201,7 +10211,7 @@ const SOCCER_LEAGUES = [
   {league:"ita.1", section:"Serie A",          bundle:"SERIE_A",   endDate:"2026-05-26"},
   {league:"ger.1", section:"Bundesliga",       bundle:"BUNDESLIGA",endDate:"2026-05-18"},
   {league:"fra.1", section:"Ligue 1",          bundle:"LIGUE_1",   endDate:"2026-05-25"},
-  {league:"usa.1", section:"MLS Soccer",       bundle:"MLS_SOCCER",endDate:"2026-10-19"},
+  {league:"usa.1", section:"MLS Soccer",       bundle:"MLS_SOCCER",endDate:"2026-10-19", leagueLabel:"MLS — Matchday 15"},
 ];
 
 let espnScores    = {}; // { "Home|Away": scoreObj }
@@ -11568,7 +11578,7 @@ async function fetchSoccerFixtures(){
     + String(today.getDate()).padStart(2,"0");
 
   const newSections = [];
-  await Promise.all(SOCCER_LEAGUES.map(async ({league,section,bundle,scoresOnly})=>{
+  await Promise.all(SOCCER_LEAGUES.map(async ({league,section,bundle,scoresOnly,leagueLabel})=>{
     try{
       const r = await fetch(`${ESPN_BASE}/soccer/${league}/scoreboard?dates=${dateStr}&limit=30`);
       if(!r.ok) return;
@@ -11617,7 +11627,7 @@ async function fetchSoccerFixtures(){
           _id:stableId, _sport:section,
           home:homeName,
           away:awayName,
-          league:section, start_time:ev.date||"",
+          league:(leagueLabel||section), start_time:ev.date||"",
           confirmed:true,
           venue:(comp.venue?.fullName||""),
           streams:resolveBundle(bundle),
@@ -11650,10 +11660,12 @@ async function fetchSoccerFixtures(){
         const nk = normName(g.home)+"_"+normName(g.away);
         const dup = existingNameKeys.get(nk);
         if(dup){
-          // Enrich hardcoded entry with ESPN API data (logos, precise venue)
+          // Enrich hardcoded entry with ESPN API data (logos, precise venue, _id for score-wrap)
           if(g.homeLogo && !dup.homeLogo) dup.homeLogo = g.homeLogo;
           if(g.awayLogo && !dup.awayLogo) dup.awayLogo = g.awayLogo;
           if(g.venue && !dup.venue) dup.venue = g.venue;
+          if(g._id) dup._id = g._id; // propagate stableId so renderESPNScores finds the card
+          if(g.start_time && g.start_time !== dup.start_time) dup.start_time = g.start_time; // correct time from ESPN
           return false; // suppress duplicate card
         }
         return true;
@@ -16203,7 +16215,7 @@ function computeCardStage(game, eData) {
   const now = Date.now();
   const start = game.start_time ? new Date(game.start_time).getTime() : 0;
   const minsUntil = start ? (start - now) / 60000 : 999;
-  if (eData?.state === 'post' || (start && minsUntil < -210)) return 'final';
+  // Live check BEFORE time-based final — eData.state overrides wrong hardcoded start_times
   if (eData?.state === 'in' || eData?.period > 0) {
     const sp = (game._section||game._sport||'').toLowerCase();
     const p = eData?.period || 0;
@@ -16212,6 +16224,7 @@ function computeCardStage(game, eData) {
     if ((sp.includes('basketball')||sp.includes('nba')) && p === 2 && (clk==='0:00'||clk==='')) return 'halftime';
     return 'live';
   }
+  if (eData?.state === 'post' || (start && minsUntil < -210)) return 'final';
   if (minsUntil <= 75) return 'soon';
   return 'pre';
 }
