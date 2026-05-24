@@ -797,6 +797,7 @@ flex-shrink:0;white-space:nowrap;
 
 .info-row{display:flex;align-items:center;gap:.35rem;flex-wrap:nowrap;margin-top:2px;min-width:0;overflow:hidden}
 .venue-badge{color:var(--gold2)!important;font-weight:600;background:transparent!important;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.venue-line{font-size:.5rem;color:var(--smoke);opacity:.8;margin-top:.1rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:.02em;padding-bottom:.05rem;}
 .badge-row{display:flex;align-items:center;gap:.35rem;flex-wrap:wrap;margin-top:3px;min-width:0}
 .gotd-badge{
   font-family:var(--ff-cond);font-size:.55rem;letter-spacing:.06em;text-transform:uppercase;
@@ -5419,7 +5420,7 @@ const INDIVIDUAL_SPORTS = new Set(["Golf","PGA Tour","Formula 1","F1","Tennis","
 
 const AMERICAN_SPORTS = new Set([
   "NBA Playoffs","NBA","NHL Playoffs","NHL",
-  "Baseball (MLB)","MLB","NFL","WNBA","MLS Soccer","NCAA Basketball"
+  "Baseball (MLB)","MLB","NFL","WNBA","NCAA Basketball"
 ]);
 // ESPN CDN logo URL builder
 // ESPN serves team logos at a consistent CDN path by sport/team abbreviation
@@ -6141,9 +6142,10 @@ function renderAll(){
           </div>
           <div class="info-row">
             <span class="league-badge">${g.league||sec.sport}</span>${MY_TEAMS.has(g.home)||MY_TEAMS.has(g.away)?'<span class="my-team-badge">★ MY TEAM</span>':""}${typeof isRivalGame==="function"&&MY_TEAMS.size>0&&isRivalGame(g)?'<span class="rival-badge">RIVAL</span>':""}
-            ${g.seriesRecord&&g.seriesRecord!=='0-0'?`<span class="league-badge" style="color:var(--gold2);border-color:rgba(201,168,76,.3)">${g.seriesRecord}</span>`:g.venue&&!g.league?.includes("Playoffs")?`<span class="league-badge venue-badge" style="font-size:.52rem;opacity:.7">${g.venue}</span>`:""}${buildSeriesMarginsDots(g)}
+            ${g.seriesRecord&&g.seriesRecord!=='0-0'?`<span class="league-badge" style="color:var(--gold2);border-color:rgba(201,168,76,.3)">${g.seriesRecord}</span>`:""}${buildSeriesMarginsDots(g)}
             <button class="watch-btn" data-id="${g._id}">+ Multiview</button>
           </div>
+          ${g.venue&&!g.league?.includes("Playoffs")?`<div class="venue-line">${g.venue}</div>`:""}
           ${(g.espnGOTD||g.peacockGOTD||g.mlbnShowcase||g.localNote||g.gotdStreams)?`<div class="badge-row">
             ${g.espnGOTD?'<span class="gotd-badge espn-gotd" title="Stream free on ESPN App/ESPN Unlimited — no cable required">📺 ESPN App · Free</span>':""}
             ${g.peacockGOTD?'<span class="gotd-badge peacock-gotd" title="Peacock Game of the Day — stream on Peacock, NBCSN simulcast. Local RSN blacked out in market.">🦚 Peacock GOTD · Free</span>':""}
@@ -6159,7 +6161,7 @@ function renderAll(){
           ${liveBadge}
           <div class="${timeCls}">${timeStr}</div>
           <div class="stream-row">${window.innerWidth<=600?buildMobileSmartChip(g.streams):(streamsHTMLCapped(g.streams,3)+(()=>{const pk=g.streams?.[0]?.key||'';return FREE_OTA.has(pk)?'<span class="free-badge">FREE</span>':FREE_CABLE.has(pk)?'<span class="free-badge free-cable">FREE W/ CABLE</span>':''})())}<button class="cal-btn" aria-label="Add to calendar" title="Add to calendar" data-game-id="${g._id||''}">📅</button><button class="share-btn" aria-label="Share" title="Share this game" onclick="event.stopPropagation();(navigator.share?navigator.share({title:'${(g.away||'').replace(/'/g,'')} @ ${(g.home||'').replace(/'/g,'')}',text:'${(g.away||'').replace(/'/g,'')} @ ${(g.home||'').replace(/'/g,'')} · ${g.league||sec.sport||''}\n${timeStr} ET',url:location.href}):navigator.clipboard&&navigator.clipboard.writeText('${(g.away||'').replace(/'/g,'')} @ ${(g.home||'').replace(/'/g,'')} – ${timeStr} ET via FIELD\n'+location.href)).catch(()=>{})">⬆</button></div>
-          ${FD_LEAGUE_MAP[sec.sport]||ESPN_STANDINGS_MAP[sec.sport]?`<button class="standings-btn" onclick="toggleStandings(this,'${sec.sport}','2025')" title="Show ${FD_LEAGUE_MAP[sec.sport]?'table':'standings'}">▼ ${FD_LEAGUE_MAP[sec.sport]?'Table':'Standings'}</button>`:""}
+          ${FD_LEAGUE_MAP[sec.sport]||ESPN_STANDINGS_MAP[sec.sport]?`<button class="standings-btn" onclick="toggleStandings(this,'${sec.sport}','2025')" title="Show ${(FD_LEAGUE_MAP[sec.sport]||ESPN_STANDINGS_MAP[sec.sport]?.isSoccer)?'table':'standings'}">▼ ${(FD_LEAGUE_MAP[sec.sport]||ESPN_STANDINGS_MAP[sec.sport]?.isSoccer)?'Table':'Standings'}</button>`:""}
         </div>
       </div>`;
     }).join("");
@@ -10834,10 +10836,17 @@ function resolveGameIdByHome(homeName){
 function findESPNScore(game){
   const home = (game.home||"").toLowerCase();
   const away = (game.away||"").toLowerCase();
+  // Sport guard: prevents city cross-contamination (e.g. NBA "Toronto" scoring on MLS "Toronto FC")
+  // Soccer scores: periodPrefix="'"; basketball="Q", hockey="P", baseball="T"
+  const sc = typeof classifySport==='function' ? classifySport(game,null) : {};
+  const gameSoccer = sc.isSoccer;
   for(const [key, score] of Object.entries(espnScores)){
+    const pp = score.periodPrefix||'';
+    if(gameSoccer && pp && pp!=="'") continue;
+    if(!gameSoccer && pp==="'") continue;
     const [hn, an] = key.split("|").map(s=>s.toLowerCase());
     if(espnTeamMatch(hn, home) && espnTeamMatch(an, away)) return score;
-    if(espnTeamMatch(hn, away) && espnTeamMatch(an, home)) return score; // reversed
+    if(espnTeamMatch(hn, away) && espnTeamMatch(an, home)) return score;
   }
   return null;
 }
@@ -16337,25 +16346,21 @@ function buildLifeStageContent(game, eData, stage) {
       // Return a non-empty element so the stale pre-game countdown is cleared.
       // score-wrap handles live score separately; we only show score here as fallback.
       if (eData) {
-        const hS = eData.homeScore ?? 0, aS = eData.awayScore ?? 0;
-        return `<div class="card-stage-content card-stage-live-basic">${hS}–${aS}${eData.detail?` · ${eData.detail}`:''}</div>`;
+        // Score shown in score-wrap — stage content shows clock/detail only
+        return eData.detail ? `<div class="card-stage-content card-stage-live-basic">${eData.detail}</div>` : '<div class="card-stage-content card-stage-live-basic"></div>';
       }
       return '<div class="card-stage-content card-stage-live-basic"></div>';
     }
     case 'halftime': {
       if (!eData) return '';
-      const score = `${eData.homeScore||0}–${eData.awayScore||0}`;
-      return `<div class="card-stage-content">Halftime · ${score}</div>`;
+      return `<div class="card-stage-content">Halftime</div>`;
     }
     case 'final': {
       if (!eData) return '';
-      // AFL: leader-chip already shows goals.behinds — suppress duplicate numeric final text
-      if (eData.source === 'squiggle') return '';
-      const hS = eData.homeScore||0, aS = eData.awayScore||0;
-      const winner = hS >= aS ? (eData.home||game.home||'') : (eData.away||game.away||'');
+      if (eData.source === 'squiggle') return ''; // AFL: squiggle chip handles it
+      // Score shown in score-wrap (big numbers) — stage content shows peak drama only
       const peak = parseFloat(localStorage.getItem('field_drama_peak_'+(game._id||''))||'0');
-      const peakStr = peak >= 65 ? ` · Peak drama ${Math.round(peak)}` : '';
-      return `<div class="card-stage-content"><span class="stage-final-score">Final · ${hS}–${aS}</span>${peakStr}</div>`;
+      return peak >= 65 ? `<div class="card-stage-content"><span class="stage-final-score">Peak drama ${Math.round(peak)}</span></div>` : '';
     }
     default: return '';
   }
