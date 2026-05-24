@@ -2344,3 +2344,50 @@ it's the only way to find root causes that aren't where you expect them.
 
 Going slower is never acceptable (FIELD principle). Novel thinking is faster,
 not slower — the May 23 outage proves this.
+
+
+## Rule 39 — Sport Display Convention Registry (SPORT-DISPLAY-A)
+
+**SPORT_DISPLAY_RULES is the single source of truth for sport identity.**
+
+Sport display conventions (home/away order, separator, score format, period
+prefix, table label, FD code, ESPN endpoint, isSoccer) must be declared in
+`SPORT_DISPLAY_RULES` — one entry per sport. Do NOT add new sport-specific
+checks outside this registry.
+
+Prohibited patterns (all caused Session 9/10 bugs):
+- `AMERICAN_SPORTS.has(sport)` → use `!SPORT_DISPLAY_RULES[sport]?.isAmerican`
+- `SOCCER_SPORT_SET.has(sport)` → use `SPORT_DISPLAY_RULES[sport]?.isSoccer`
+- `sportName.includes("MLS")` → use `SPORT_DISPLAY_RULES[sport]?.isSoccer`
+- `FD_LEAGUE_MAP[sport]` → use `SPORT_DISPLAY_RULES[sport]?.fdCode`
+- `ESPN_STANDINGS_MAP[sport]` → use `SPORT_DISPLAY_RULES[sport]?.espnLeague`
+
+Spec: FIELD — Unification Specs v1.0 (Drive 1YEh4YAHGyadpiaOO9LMo-w2tGZdRxj3JdU7jkBAbWYY)
+Status: Specced, not yet built. Existing code uses legacy constants until migration.
+
+## Rule 40 — Period Prefix Registry (PERIOD-PREFIX-A)
+
+**Period prefix classification uses SPORT_PERIOD_PREFIXES sets.**
+
+Do not add raw string comparisons for period prefixes (pp==="'" etc.).
+All period prefix knowledge lives in:
+  `SPORT_PERIOD_PREFIXES.soccer` = Set(["'", "1H", "2H"])
+  `SPORT_PERIOD_PREFIXES.basketball` = Set(["Q", "H"])
+  `SPORT_PERIOD_PREFIXES.hockey` = Set(["P"])
+  `SPORT_PERIOD_PREFIXES.baseball` = Set(["T"])
+  `SPORT_PERIOD_PREFIXES.football` = Set(["Q"])
+
+Use utility functions: `isSoccerPeriodPrefix(pp)`, `isNonSoccerPeriodPrefix(pp)`.
+
+Spec: FIELD — Unification Specs v1.0 (Drive 1YEh4YAHGyadpiaOO9LMo-w2tGZdRxj3JdU7jkBAbWYY)
+Status: Specced, not yet built.
+
+## Rule 41 — Schedule Section Builder (SCHEDULE-BUILDER-A)
+
+**All buildTodaySchedule sport sections use buildSection() helper.**
+
+Do not copy the 3-line filter/map/push pattern per sport. Use:
+  `buildSection(rawGames, sport, idPrefix, opts={})` → filtered+mapped array
+
+Spec: FIELD — Unification Specs v1.0 (Drive 1YEh4YAHGyadpiaOO9LMo-w2tGZdRxj3JdU7jkBAbWYY)
+Status: Specced, not yet built.
