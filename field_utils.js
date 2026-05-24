@@ -60,8 +60,19 @@
  * @param {string} name — full team name
  * @returns {string}
  */
+// Overrides for teams where the last word is misleading or wrong.
+// "Greater Western Sydney" → last word "Sydney" is ambiguous (multiple Sydney teams).
+// "New York" teams → last word is the correct nick, no override needed.
+const TEAM_NICK_OVERRIDES = {
+  'greater western sydney': 'GWS',
+  'gws giants':             'GWS',
+  // Add further overrides here as needed (Rule: last word must be unambiguous)
+};
+
 function teamNick(name) {
   if (!name) return '';
+  const override = TEAM_NICK_OVERRIDES[name.trim().toLowerCase()];
+  if (override) return override;
   return name.trim().split(/\s+/).pop() || '';
 }
 
