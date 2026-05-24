@@ -1,0 +1,165 @@
+# .github/workflows/whoop-auth-exchange.yml
+#
+# WHOOP ONE-TIME TOKEN EXCHANGE
+# Exchanges an authorization code for access + refresh tokens.
+# Run ONCE to set up the integration — after this, whoop-fetch.yml
+# auto-refreshes tokens on every run.
+#
+# PREREQUISITES (before running this):
+#   1. WHOOP_CLIENT_ID secret set in this repo
+#   2. WHOOP_CLIENT_SECRET secret set in this repo
+#   3. WHOOP_REDIRECT_URI secret set in this repo (the URI used in OAuth flow)
+#
+# HOW TO GET AN AUTHORIZATION CODE:
+#   1. Create app at developer-dashboard.whoop.com
+#   2. Set redirect URI to: https://www.whoop.com (or any URL you can see)
+#   3. Visit this URL (replace YOUR_CLIENT_ID and YOUR_REDIRECT_URI):
+#      https://api.prod.whoop.com/oauth/oauth2/auth?response_type=code
+#        &client_id=YOUR_CLIENT_ID
+#        &redirect_uri=YOUR_REDIRECT_URI_URL_ENCODED
+#        &scope=offline%20read:recovery%20read:sleep%20read:cycles%20read:profile%20read:body_measurement
+#        &state=FIELD12345
+#   4. Authorize — browser redirects to your URI
+#   5. Copy the "code" parameter from the redirect URL
+#   6. Run this workflow via workflow_dispatch, paste the code as input
+#
+# RESULT:
+#   Stores WHOOP_REFRESH_TOKEN as a GitHub Actions secret.
+#   All future data fetches use whoop-fetch.yml — no re-auth needed
+#   as long as the refresh token is used at least every 30 days.
+#
+# SECURITY: Authorization codes are single-use and expire quickly (~60s).
+# Never commit them to the repo — workflow_dispatch input is ephemeral.
+
+name: Whoop Auth Exchange (One-Time Setup)
+
+on:
+  workflow_dispatch:
+    inputs:
+      authorization_code:
+        description: 'Authorization code from Whoop OAuth redirect URL'
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  exchange:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Exchange authorization code for tokens
+        env:
+          WHOOP_CLIENT_ID:     ${{ secrets.WHOOP_CLIENT_ID }}
+          WHOOP_CLIENT_SECRET: ${{ secrets.WHOOP_CLIENT_SECRET }}
+          WHOOP_REDIRECT_URI:  ${{ secrets.WHOOP_REDIRECT_URI }}
+          AUTH_CODE:           ${{ github.event.inputs.authorization_code }}
+        run: |
+          if [ -z "$WHOOP_CLIENT_ID" ] || [ -z "$WHOOP_CLIENT_SECRET" ]; then
+            echo "ERROR: WHOOP_CLIENT_ID and WHOOP_CLIENT_SECRET secrets must be set first"
+            exit 1
+          fi
+
+          echo "Exchanging authorization code for tokens..."
+
+          RESPONSE=$(curl -sf -X POST \
+            "https://api.prod.whoop.com/oauth/oauth2/token" \
+            -H "Content-Type: application/x-www-form-urlencoded" \
+            -d "grant_type=authorization_code" \
+            -d "code=${AUTH_CODE}" \
+            -d "client_id=${WHOOP_CLIENT_ID}" \
+            -d "client_secret=${WHOOP_CLIENT_SECRET}" \
+            -d "redirect_uri=${WHOOP_REDIRECT_URI}" \
+            -d "scope=offline read:recovery read:sleep read:cycles read:profile read:body_measurement" \
+            2>&1)
+
+          echo "Token endpoint response received"
+
+          # Extract tokens
+          ACCESS_TOKEN=$(echo "$RESPONSE" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('access_token',''))" 2>/dev/null)
+          REFRESH_TOKEN=$(echo "$RESPONSE" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('refresh_token',''))" 2>/dev/null)
+          EXPIRES_IN=$(echo "$RESPONSE" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('expires_in',''))" 2>/dev/null)
+          SCOPE=$(echo "$RESPONSE" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('scope',''))" 2>/dev/null)
+
+          if [ -z "$ACCESS_TOKEN" ] || [ -z "$REFRESH_TOKEN" ]; then
+            echo "ERROR: Token exchange failed. Response:"
+            echo "$RESPONSE"
+            exit 1
+          fi
+
+          echo "✓ Access token received (expires in ${EXPIRES_IN}s)"
+          echo "✓ Refresh token received"
+          echo "  Scopes granted: $SCOPE"
+
+          # Store WHOOP_REFRESH_TOKEN as GitHub Actions secret via PyNaCl
+          echo "Storing WHOOP_REFRESH_TOKEN secret..."
+          pip install pynacl --break-system-packages -q
+
+          python3 << PYEOF
+import base64, json, urllib.request
+from nacl import encoding, public
+
+PAT  = "${{ github.token }}"
+REPO = "jeffunglesbee-create/jubilant-bassoon"
+
+# Get repo public key
+req = urllib.request.Request(
+    f"https://api.github.com/repos/{REPO}/actions/secrets/public-key",
+    headers={"Authorization": f"Bearer {PAT}", "Accept": "application/vnd.github+json"}
+)
+with urllib.request.urlopen(req) as r:
+    pk_data = json.load(r)
+key_id  = pk_data["key_id"]
+pub_key = pk_data["key"]
+
+def encrypt(pub_key_b64, value):
+    pk = public.PublicKey(base64.b64decode(pub_key_b64))
+    return base64.b64encode(public.SealedBox(pk).encrypt(value.encode())).decode()
+
+encrypted = encrypt(pub_key, "${REFRESH_TOKEN}")
+
+payload = json.dumps({"encrypted_value": encrypted, "key_id": key_id}).encode()
+req = urllib.request.Request(
+    f"https://api.github.com/repos/{REPO}/actions/secrets/WHOOP_REFRESH_TOKEN",
+    data=payload, method="PUT",
+    headers={"Authorization": f"Bearer {PAT}", "Content-Type": "application/json",
+             "Accept": "application/vnd.github+json"}
+)
+with urllib.request.urlopen(req) as r:
+    print(f"✓ WHOOP_REFRESH_TOKEN secret stored (HTTP {r.status})")
+PYEOF
+
+          # Write status to outbox
+          TS=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+          python3 -c "
+import json
+status = {
+    'status': 'success',
+    'timestamp': '${TS}',
+    'scopes': '${SCOPE}',
+    'expires_in': ${EXPIRES_IN},
+    'message': 'WHOOP_REFRESH_TOKEN stored. Run whoop-fetch.yml to pull data.'
+}
+print(json.dumps(status, indent=2))
+" > outbox/whoop-auth-status.json
+
+          echo ""
+          echo "═══════════════════════════════════════════════"
+          echo "✓ WHOOP integration set up successfully!"
+          echo "  Next: trigger whoop-fetch.yml to pull data"
+          echo "═══════════════════════════════════════════════"
+
+      - name: Commit auth status
+        run: |
+          git config user.email "whoop-auth@field"
+          git config user.name  "Whoop-Auth"
+          git add outbox/whoop-auth-status.json
+          git diff --cached --quiet && exit 0
+          git commit -m "whoop: auth exchange complete [skip ci]"
+          for i in 1 2 3; do
+            git pull --rebase --autostash origin main \
+              && git push origin main && break
+            sleep $((i * 5))
+          done
