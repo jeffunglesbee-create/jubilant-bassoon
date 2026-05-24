@@ -2391,3 +2391,30 @@ Do not copy the 3-line filter/map/push pattern per sport. Use:
 
 Spec: FIELD — Unification Specs v1.0 (Drive 1YEh4YAHGyadpiaOO9LMo-w2tGZdRxj3JdU7jkBAbWYY)
 Status: Specced, not yet built.
+
+
+## Rule 42 — Game Score Uniformity (SCORE-UNIFORM-A)
+
+**All game score lookups must use resolveGameScore(). No direct espnScores access.**
+
+The active bug (May 24 2026 screenshot): OTW showed "3-4" while the card
+showed "1-1" for the same D.C. United vs CF Montréal game. Root cause:
+_otwFindLiveGame() and findESPNScore() are independent lookup strategies
+that can land on different espnScores entries for the same physical game.
+This happens because FPL and ESPN write under different team-name key
+strings (e.g., "CF Montreal" vs "CF Montréal" with accent).
+
+Required: resolveGameScore(game) — tries both lookup strategies, picks
+the entry with the most recent espnScoreTs timestamp.
+
+Consumers that MUST use resolveGameScore() instead of direct espnScores access:
+  OTW banner (_otwFindLiveGame score display)
+  Game card score-wrap (renderESPNScores)
+  Drama badge (injectDramaBadges)
+  Score ticker (renderScoreTicker)
+  Journalism brief (buildGameNotesContext)
+  Night Owl email score read (_prevEspnScores)
+  Story moments (ed.homeScore/awayScore)
+
+Spec: FIELD — Unification Specs v1.1 (Drive 1EUDxBSvcNd00nT1SxQn110wTcIb--gBXP74RKeXX9iI)
+Status: Specced, not yet built.
