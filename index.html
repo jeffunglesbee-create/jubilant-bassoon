@@ -2235,6 +2235,25 @@ flex-shrink:0;white-space:nowrap;
   .standings-btn{ display:inline-flex; font-size:.5rem; padding:.15rem .3rem; }
 }
 
+/* ── VIEWPORT-PHONE-A: Phone capability tiers ─────────────────────────────── */
+/* phone-compact: tighter than standard for very small screens (SE, Mini) */
+[data-phone-tier="phone-compact"] .game-card{ padding:.6rem .7rem .55rem; }
+[data-phone-tier="phone-compact"] .team-name{ font-size:.85rem; }
+[data-phone-tier="phone-compact"] .filter-chip{ font-size:.62rem; padding:.2rem .4rem; }
+
+/* phone-large: show venue, more padding, larger drama line for Pro Max/Ultra */
+[data-phone-tier="phone-large"] .venue-badge{ display:inline-flex !important; font-size:.55rem; }
+[data-phone-tier="phone-large"] .game-card{ padding:.85rem .95rem .8rem; }
+[data-phone-tier="phone-large"] .card-drama-line{ font-size:.66rem; }
+
+/* phone-landscape-wide: two-column card grid when phone is sideways >700px */
+[data-phone-tier="phone-landscape-wide"] .sport-section-games{
+  display:grid; grid-template-columns:1fr 1fr; gap:.5rem;
+}
+[data-phone-tier="phone-landscape-wide"] .venue-badge{ display:inline-flex !important; }
+[data-phone-tier="phone-landscape-wide"] .card-drama-line{ font-size:.66rem; }
+[data-phone-tier="phone-landscape-wide"] .game-card{ padding:.75rem .85rem .7rem; }
+
 /* My Services modal: full-screen on mobile, larger tap targets */
 @media(max-width:600px){
   .setup-overlay, #setup-overlay{
@@ -6311,6 +6330,7 @@ function renderAll(){
   setTimeout(renderAmbientPanel, 1200); // ambient panel — after schedule renders
   // Runtime silent error scan — FIELD_DEBUG only, runs after async injections settle
   if(FIELD_DEBUG) setTimeout(runSilentErrorScan, 500);
+  if(!window._phoneTierInit){initPhoneTier();window._phoneTierInit=true;}
   if(!window._dramaIdxInit){initDramaLineIndexer();window._dramaIdxInit=true;}
   setTimeout(indexDramaLines,250);
 }
@@ -16380,9 +16400,31 @@ function buildDramaLineTiers(game, eData, sport){
   const tight=trim(primary||firstSentence,36),mid=trim(join([primary,extra]),52),full=join([primary,firstSentence]);
   return tight?{tight,mid:mid||tight,full:full||mid||tight}:empty;
 }
+// ── VIEWPORT-PHONE-A: Phone capability detection ────────────────────────────
+// Detects phone size class for viewport-scale-aware rendering.
+// phone-compact: SE/Mini (<375px)  phone-standard: regular (375-413px)
+// phone-large: Pro Max/Ultra (≥414px, 3x DPR)  phone-landscape-wide: any phone landscape >700px
+function getPhoneCapability(){
+  const w=window.innerWidth,h=window.innerHeight,dpr=window.devicePixelRatio||1;
+  if(w>h&&w>700&&Math.min(w,h)<=500) return 'phone-landscape-wide';
+  if(w>=414&&dpr>=3) return 'phone-large';
+  if(w>=375) return 'phone-standard';
+  return 'phone-compact';
+}
+function initPhoneTier(){
+  const tier=getPhoneCapability();
+  document.body.dataset.phoneTier=tier;
+  if(FIELD_DEBUG) console.debug('[VIEWPORT] phone tier:',tier,'w:'+window.innerWidth,'dpr:'+window.devicePixelRatio);
+}
+
 function indexDramaLines(){
   const vw=window.innerWidth,vh=window.innerHeight,landscape=vw>vh,isPhone=Math.min(vw,vh)<=430;
-  const tier=isPhone&&!landscape?'tight':isPhone&&landscape?'mid':!isPhone&&!landscape?'mid':'full';
+  // Phone-large (Pro Max, Ultra): upgrade portrait from tight→mid, landscape from mid→full
+  const phoneTier=document.body.dataset?.phoneTier||'phone-standard';
+  const tier=phoneTier==='phone-large'?(landscape?'full':'mid')
+    :phoneTier==='phone-landscape-wide'?'full'
+    :phoneTier==='phone-compact'?'tight'
+    :isPhone&&!landscape?'tight':isPhone&&landscape?'mid':!isPhone&&!landscape?'mid':'full';
   const key='drama'+tier[0].toUpperCase()+tier.slice(1);
   document.querySelectorAll('.card-drama-line[data-drama-tight]').forEach(el=>{
     const text=el.dataset[key]||el.dataset.dramaTight;
@@ -16390,7 +16432,7 @@ function indexDramaLines(){
   });
 }
 function initDramaLineIndexer(){
-  let _t;const d=()=>{clearTimeout(_t);_t=setTimeout(indexDramaLines,50);};
+  let _t;const d=()=>{clearTimeout(_t);_t=setTimeout(()=>{initPhoneTier();indexDramaLines();},50);};
   window.addEventListener('resize',d);
   screen?.orientation?.addEventListener('change',()=>requestAnimationFrame(indexDramaLines));
 }
