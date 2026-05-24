@@ -811,6 +811,19 @@ flex-shrink:0;white-space:nowrap;
 
 /* [DRAMA-LINE-A] */
 .card-drama-line{font-size:.62rem;color:var(--smoke);line-height:1.4;margin-top:.3rem;padding-top:.25rem;border-top:1px solid var(--edge);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+/* ── Working Class: The Skim ───────────────────────────────── */
+.skim-strip{padding:.55rem 1rem;font-size:.92rem;font-weight:600;color:var(--white);border-bottom:1px solid var(--edge);line-height:1.4;}
+.skim-strip[data-urgency="must"]{border-left:3px solid var(--gold2);}
+.skim-strip[data-urgency="watch"]{border-left:3px solid #4a9eff;}
+.skim-strip[data-urgency="quiet"]{border-left:3px solid var(--smoke);}
+.skim-text{margin:0;font-family:'Barlow',sans-serif;}
+/* ── Working Class: Cheap Seats ────────────────────────────── */
+.cheap-seats{font-size:.6rem;color:var(--muted);line-height:1.35;margin-top:.25rem;display:flex;align-items:baseline;gap:.35rem;overflow:hidden;}
+.cs-badge{font-size:.5rem;font-weight:700;padding:.1rem .3rem;border-radius:3px;text-transform:uppercase;letter-spacing:.03em;flex-shrink:0;}
+.cs-free{background:rgba(45,212,191,.15);color:#2dd4bf;border:1px solid rgba(45,212,191,.3);}
+.cs-trial{background:rgba(245,158,11,.12);color:#f59e0b;border:1px solid rgba(245,158,11,.3);}
+.cs-sub{background:rgba(106,106,138,.12);color:var(--muted);border:1px solid rgba(106,106,138,.3);}
+.cs-text{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 @media(orientation:landscape)and(max-height:430px){.card-drama-line{font-size:.63rem;}}
 @media(min-width:820px)and(orientation:landscape){.card-drama-line{font-size:.64rem;white-space:normal;max-height:2.8em;}}
 .narrative-line{font-size:.68rem;color:var(--muted);font-style:italic;padding:.05rem .85rem .15rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;opacity:.9}
@@ -2389,6 +2402,10 @@ flex-shrink:0;white-space:nowrap;
 </div>
 
 <!-- MAIN CONTENT -->
+<!-- ── The Skim — Working Class one-sentence verdict ─────── -->
+<div id="the-skim" class="skim-strip" data-urgency="quiet" style="display:none" aria-live="polite">
+  <p class="skim-text" id="skim-text"></p>
+</div>
 <div id="score-ticker-wrap" style="display:none"></div>
 <div id="major-preview-container" style="padding:0 2rem"></div>
 <div id="field-brief" style="display:none" aria-live="polite"></div>
@@ -6277,6 +6294,7 @@ function renderAll(){
           ${g.crew?`<div class="crew-line">🎙 ${g.crew}</div>`:""}
           ${g._gameImportance?`<div class="importance-badge ${g._gameImportance==='series_deciding'?'series-deciding':g._gameImportance==='elimination'?'elimination':g._gameImportance==='clinch'?'clinch':'playoff-impl'}">${g._importanceIcon||''} ${g.narrative?.label||''}</div>`:""}
           ${(()=>{const _ed=typeof findESPNScore==='function'?findESPNScore(g):null;const _dl=buildDramaLineTiers(g,_ed,sec.sport);if(_dl.tight){const _q=s=>s.replace(/"/g,'&quot;');return `<div class="card-drama-line" data-drama-tight="${_q(_dl.tight)}" data-drama-mid="${_q(_dl.mid)}" data-drama-full="${_q(_dl.full)}">${_dl.tight}</div>`;}return g.narrative?.label&&!g._gameImportance?`<div class="narrative-line${(g.narrative.boost||0)>=20?' narrative-hi':''}">${g.narrative.label}</div>`:'';})()}
+          ${(()=>{const _cs=buildCheapSeats(g);if(!_cs)return '';return `<div class="cheap-seats"><span class="cs-badge ${_cs.badgeClass}">${_cs.badge}</span><span class="cs-text">${_cs.text}</span></div>`;})()}
         </div>
         <div class="card-right">
           ${liveBadge}
@@ -6296,6 +6314,14 @@ function renderAll(){
     </div>`;
   }).filter(Boolean).join("");
   if(!main.innerHTML.trim()) main.innerHTML='<div class="empty-note">No events found for today</div>';
+  // ── Working Class: The Skim — render one-sentence verdict ──
+  const _skimEl=document.getElementById('the-skim');
+  const _skimTxt=document.getElementById('skim-text');
+  if(_skimEl&&_skimTxt){
+    const _sk=buildTheSkim(filtered);
+    if(_sk.text){_skimTxt.textContent=_sk.text;_skimEl.dataset.urgency=_sk.urgency;_skimEl.style.display='';}
+    else{_skimEl.style.display='none';}
+  }
   // Wire watch buttons
   document.querySelectorAll(".watch-btn").forEach(btn=>{
     btn.addEventListener("click",e=>{
@@ -12506,6 +12532,32 @@ const SERVICE_COST = {
   peacockpremium: '$7.99',
 };
 
+// ── WORKING CLASS: Cheap Seats Copy Templates (Rule 34 corrected) ─────────
+// FREE = OTA or free streaming, no account. TRIAL = requires card, auto-renews.
+const CHEAP_SEATS_COPY = {
+  nbc:     {free:"NBC is free over the air with an antenna (~$12 one-time). No subscription needed.",sub:"NBC also streams on Peacock ($7.99/mo)."},
+  abc:     {free:"ABC is free over the air with an antenna.",sub:"ABC also streams on Hulu Live TV, YouTube TV, or fubo."},
+  fox:     {free:"FOX is free over the air with an antenna. Same one that gets NBC.",sub:"FOX also streams on Tubi (free), YouTube TV, Hulu Live TV, or fubo."},
+  cbs:     {free:"CBS is free over the air with an antenna.",sub:"CBS also streams on Paramount+ ($7.99/mo)."},
+  cw:      {free:"CW is free over the air with an antenna. No subscription needed."},
+  ion:     {free:"ION is free over the air. Same antenna as NBC. Already have one? You're set."},
+  tubi:    {free:"Tubi is free — no subscription, no card needed."},
+  peacock: {sub:"Peacock: $7.99/month.",trial:"Peacock trial available — sometimes 30 days. Cancel before it ends to avoid charges."},
+  appletv: {sub:"Apple TV+: $9.99/month.",trial:"Apple TV+ offers a 7-day trial. Watch tonight, cancel before Sunday."},
+  espn:    {sub:"ESPN needs a cable login or YouTube TV ($72.99/mo). No cheap standalone option."},
+  espnplus:{sub:"ESPN+: $11.99/month. Streams select games not on ESPN linear."},
+  tnt:     {sub:"TNT needs Max ($9.99/mo) or a cable package."},
+  max:     {sub:"Max: $9.99/month."},
+  prime:   {sub:"Prime Video: $14.99/month. Included with Amazon Prime."},
+  paramount:{sub:"Paramount+: $7.99/month."},
+  mlbtv:   {sub:"MLB.TV ($24.99/mo) works if you're outside the home market. Blacked out locally."},
+  fubo:    {sub:"fubo: $82.99/month. Broad sports coverage but pricey."},
+  youtubetv:{sub:"YouTube TV: $72.99/month. Broad cable replacement."},
+  hulu:    {sub:"Hulu + Live TV: $82.99/month."},
+  sling:   {sub:"Sling TV: $40.99/month. Cheapest cable-style option."},
+  local:   {note:"Local broadcast game. Check your regional sports network."},
+};
+
 // ── PULSE: Viewing Conditions Score & Badge Engine (Wow#33 / Combo B-1+) ──
 // Replaces Delta8. Fixes '3pt' dead branch. Adds SPORT_CRUNCH_RULES.
 // isBlowout flag for J5 caller — this function does NOT suppress anything.
@@ -16405,6 +16457,92 @@ function sportContext(sport){
     return {periodFmt:(p,c)=>'Over '+p,unit:'run',units:'runs',runTh:30,otP:99,gap:(n)=>n+' runs'};
   // NBA, NFL, WNBA — quarter sports with points
   return {periodFmt:(p,c)=>'Q'+p+(c?' '+c:''),unit:'pt',units:'pts',runTh:7,otP:4,gap:(n)=>n+' pts'};
+}
+
+// ══ WORKING CLASS: The Skim + Cheap Seats ═══════════════════════════════════
+// Template-based, zero AI calls. The straight.
+
+function buildCheapSeats(game){
+  const streams=game.streams||[];
+  if(!streams.length) return null;
+  const freeOTA=[], freeSub=[], trial=[], sub=[], skip=[];
+  const seen=new Set();
+  for(const s of streams){
+    const k=s.key;
+    if(seen.has(k)) continue; seen.add(k);
+    const copy=CHEAP_SEATS_COPY[k];
+    if(!copy) continue;
+    if(FREE_OTA.has(k)&&copy.free){ freeOTA.push({key:k,text:copy.free,badge:'FREE'}); }
+    else if(copy.free){ freeSub.push({key:k,text:copy.free,badge:'FREE'}); }
+    else if(copy.trial){ trial.push({key:k,text:copy.trial,badge:'TRIAL'}); }
+    else if(copy.sub){ sub.push({key:k,text:copy.sub,badge:SERVICE_COST[k]||'SUB'}); }
+    else if(copy.note){ skip.push({key:k,text:copy.note,badge:''}); }
+  }
+  // Priority: free OTA → free streaming → trial → cheapest sub → local/skip
+  const best=freeOTA[0]||freeSub[0]||trial[0]||sub.sort((a,b)=>{
+    const pa=parseFloat((SERVICE_COST[a.key]||'$999').replace('$',''));
+    const pb=parseFloat((SERVICE_COST[b.key]||'$999').replace('$',''));
+    return pa-pb;
+  })[0]||skip[0];
+  if(!best) return null;
+  const badgeClass=freeOTA.length||freeSub.length?'cs-free':trial.length?'cs-trial':'cs-sub';
+  return {text:best.text,badge:best.badge,badgeClass,hasFree:freeOTA.length>0||freeSub.length>0};
+}
+
+function buildTheSkim(sportsData){
+  if(!sportsData||!sportsData.length) return {text:'',urgency:'quiet'};
+  let totalGames=0, liveGames=0, playoffGames=0, freeGames=0;
+  const sportNames=[], highlights=[];
+  for(const sec of sportsData){
+    const games=sec.games||[];
+    if(!games.length) continue;
+    totalGames+=games.length;
+    sportNames.push(sec.sport);
+    for(const g of games){
+      const st=getStatus(g.start_time);
+      if(st==='live') liveGames++;
+      if(g.league&&/playoff|final|semifinal|conference|round|wild card|division/i.test(g.league)) playoffGames++;
+      const streams=g.streams||[];
+      if(streams.some(s=>FREE_OTA.has(s.key))) freeGames++;
+    }
+  }
+  if(totalGames===0) return {text:'No games on the schedule today.',urgency:'quiet'};
+  // Build verdict
+  const parts=[];
+  // Playoff headlines
+  if(playoffGames>0){
+    // Check for specific playoff narratives
+    const allGames=sportsData.flatMap(s=>s.games||[]);
+    const sweepGames=allGames.filter(g=>g.seriesRecord&&/3-0/i.test(g.seriesRecord));
+    const elimGames=allGames.filter(g=>g._gameImportance==='elimination');
+    const decidingGames=allGames.filter(g=>g._gameImportance==='series_deciding');
+    if(sweepGames.length) parts.push(teamName(sweepGames[0])+(sweepGames.length>1?` and ${sweepGames.length-1} more`:'')+(sweepGames[0].seriesRecord==='3-0'?' can sweep tonight':' facing elimination'));
+    else if(decidingGames.length) parts.push(decidingGames.length+' deciding game'+(decidingGames.length>1?'s':'')+' tonight');
+    else if(elimGames.length) parts.push(elimGames.length+' elimination game'+(elimGames.length>1?'s':'')+' tonight');
+    else parts.push(playoffGames+' playoff game'+(playoffGames>1?'s':'')+' tonight');
+  }
+  // EPL Final Day detection
+  const eplSec=sportsData.find(s=>s.sport==='EPL'||s.sport==='Premier League');
+  if(eplSec&&(eplSec.games||[]).length>=8) parts.push('EPL Final Day \u2014 '+(eplSec.games||[]).length+' games at once');
+  // Sport count for non-playoff nights
+  if(!playoffGames&&!parts.length){
+    if(sportNames.length===1) parts.push(sportNames[0]+' night \u2014 '+totalGames+' game'+(totalGames>1?'s':''));
+    else parts.push(totalGames+' games across '+sportNames.length+' sports tonight');
+  }
+  // Free count
+  if(freeGames>0&&freeGames<=3) parts.push(freeGames+' free on antenna');
+  else if(freeGames>3) parts.push(freeGames+' free games');
+  // Live count
+  if(liveGames>0) parts.push(liveGames+' live now');
+  const text=parts.join(' \u00b7 ');
+  const urgency=playoffGames>0||liveGames>2?'must':liveGames>0||totalGames>5?'watch':'quiet';
+  return {text,urgency};
+}
+
+function teamName(g){
+  if(!g) return '';
+  // Use away team for "X can sweep" pattern (away team has 3 wins when record is 3-0)
+  return (typeof getTeamNick==='function'?getTeamNick(g.away):g.away)||g.away||'';
 }
 
 function buildDramaLineTiers(game, eData, sport){

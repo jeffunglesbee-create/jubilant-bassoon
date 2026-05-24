@@ -540,6 +540,31 @@ try {
   if(!doubleGetEl) pass('A59 — getEl() store-once: no double-call on same line');
   else fail('A59 — getEl() called twice for same id — use const el = getEl(id); if(el)...');
 
+  // ── Working Class assertions ──────────────────────────────────
+  const hasBuildTheSkim = html.includes('function buildTheSkim(');
+  if(hasBuildTheSkim) pass('A60 — buildTheSkim() defined');
+  else fail('A60 — buildTheSkim() missing — Working Class Skim not built');
+
+  const hasBuildCheapSeats = html.includes('function buildCheapSeats(');
+  if(hasBuildCheapSeats) pass('A61 — buildCheapSeats() defined');
+  else fail('A61 — buildCheapSeats() missing — Working Class Cheap Seats not built');
+
+  const hasCheapSeatsCopy = html.includes('CHEAP_SEATS_COPY');
+  if(hasCheapSeatsCopy) pass('A62 — CHEAP_SEATS_COPY template const present');
+  else fail('A62 — CHEAP_SEATS_COPY missing — Cheap Seats copy templates not defined');
+
+  const hasSkimDOM = html.includes('id="the-skim"');
+  if(hasSkimDOM) pass('A63 — The Skim DOM element present');
+  else fail('A63 — The Skim #the-skim DOM element missing');
+
+  const hasSkimWiring = html.includes('buildTheSkim(filtered)');
+  if(hasSkimWiring) pass('A64 — The Skim wired into render cycle');
+  else fail('A64 — buildTheSkim not called during renderAll');
+
+  const hasCheapSeatsWiring = html.includes('buildCheapSeats(g)');
+  if(hasCheapSeatsWiring) pass('A65 — Cheap Seats wired into card template');
+  else fail('A65 — buildCheapSeats not called in card template');
+
   // ─────────────────────────────────────────────────────────────────────
   log('---');
 // Assertions 51-101 removed — structural feature guards now live in smoke.js (A51-A123).
