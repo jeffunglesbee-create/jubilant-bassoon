@@ -581,6 +581,30 @@ try {
   if(hasBeatBookWiring) pass('A69 — Beat the Book wired into card template');
   else fail('A69 — beatTheBook not called in card template');
 
+  const hasPrivacyBanner = html.includes('id="privacy-banner"');
+  if(hasPrivacyBanner) pass('A70 — Privacy banner DOM present');
+  else fail('A70 — Privacy banner #privacy-banner missing');
+
+  const hasPrivacyModal = html.includes('id="privacy-modal-overlay"');
+  if(hasPrivacyModal) pass('A71 — Privacy policy modal present');
+  else fail('A71 — Privacy policy modal missing');
+
+  const hasInitPrivacy = html.includes('function initPrivacyBanner()');
+  if(hasInitPrivacy) pass('A72 — initPrivacyBanner() defined');
+  else fail('A72 — initPrivacyBanner missing');
+
+  const hasPrivacyGate = html.includes("field_privacy_v1") && html.includes("'no-geo'");
+  if(hasPrivacyGate) pass('A73 — C2 consent gate (field_privacy_v1) wired');
+  else fail('A73 — C2 consent gate missing from autoGeolocate');
+
+  const hasEUPushConsent = html.includes('id="eu-push-consent"');
+  if(hasEUPushConsent) pass('A74 — EU push consent DOM present');
+  else fail('A74 — EU push consent element missing');
+
+  const hasIsEU = html.includes('function isEUTimezone()');
+  if(hasIsEU) pass('A75 — isEUTimezone() EU detection function present');
+  else fail('A75 — EU timezone detection missing');
+
   // ─────────────────────────────────────────────────────────────────────
   log('---');
 // Assertions 51-101 removed — structural feature guards now live in smoke.js (A51-A123).

@@ -522,6 +522,33 @@ flex-shrink:0;white-space:nowrap;
 .pwa-banner-copy{flex:1;min-width:0}
 .pwa-banner-title{font-size:.85rem;font-weight:700;color:var(--white);letter-spacing:.04em}
 .pwa-banner-sub{font-size:.72rem;color:var(--smoke);margin-top:.1rem}
+/* ── Privacy Banner + Modal + EU Push Consent ──────────────── */
+#privacy-banner{display:none;align-items:center;gap:.75rem;padding:.65rem 1rem;background:var(--bg2);border-bottom:1px solid var(--edge);}
+.privacy-banner-body{display:flex;align-items:center;gap:.6rem;flex:1;min-width:0}
+.privacy-icon{font-size:1.2rem;flex-shrink:0}
+.privacy-title{font-size:.82rem;font-weight:700;color:var(--white)}
+.privacy-sub{font-size:.68rem;color:var(--smoke);margin-top:.1rem}
+.privacy-sub a{color:#4a9eff;text-decoration:none}
+.privacy-actions{display:flex;gap:.4rem;flex-shrink:0}
+.privacy-btn{border:none;border-radius:4px;padding:.35rem .7rem;font-size:.7rem;font-weight:600;cursor:pointer;font-family:inherit}
+.privacy-btn-accept{background:rgba(45,212,191,.2);color:#2dd4bf;border:1px solid rgba(45,212,191,.3)}
+.privacy-btn-decline{background:transparent;color:var(--smoke);border:1px solid var(--edge)}
+.privacy-modal-overlay{display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.7);justify-content:center;align-items:center;padding:1rem}
+.privacy-modal{background:var(--bg2);border-radius:12px;max-width:540px;width:100%;max-height:80vh;overflow-y:auto;padding:1.5rem;position:relative;color:var(--white)}
+.privacy-modal-close{position:absolute;top:.75rem;right:.75rem;background:none;border:none;color:var(--smoke);font-size:1.2rem;cursor:pointer}
+.privacy-modal-title{font-size:1.1rem;font-weight:700;margin:0 0 .25rem}
+.privacy-modal-updated{font-size:.65rem;color:var(--smoke);margin-bottom:1rem}
+.privacy-modal-body{font-size:.78rem;line-height:1.6;color:var(--muted)}
+.privacy-modal-body h3{font-size:.85rem;color:var(--white);margin:1rem 0 .4rem;font-weight:600}
+.privacy-modal-body p{margin:0 0 .6rem}
+.privacy-modal-body strong{color:var(--white)}
+.eu-push-consent{position:fixed;bottom:0;left:0;right:0;z-index:9998;background:var(--bg2);border-top:1px solid var(--edge);padding:1rem;animation:slideUp .3s ease}
+.eu-push-body{max-width:540px;margin:0 auto}
+.eu-push-title{font-size:.88rem;font-weight:700;color:var(--white);margin-bottom:.4rem}
+.eu-push-detail{font-size:.68rem;color:var(--smoke);line-height:1.5;margin-bottom:.6rem}
+.eu-push-detail a{color:#4a9eff;text-decoration:none}
+.eu-push-actions{display:flex;gap:.5rem}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
 .pwa-install-btn{
   background:var(--gold);color:#070710;border:none;
   border-radius:6px;padding:.45rem .85rem;font-size:.78rem;
@@ -2370,6 +2397,53 @@ flex-shrink:0;white-space:nowrap;
 </div>
 <!-- ── Offline Banner ────────────────────────────────────────── -->
 <div id="offline-banner" role="alert">📡 You're offline — showing cached schedule</div>
+<!-- ── Privacy + Consent Banner (C2) ──────────────────────────── -->
+<div id="privacy-banner" role="dialog" aria-live="polite" aria-label="Privacy settings" style="display:none">
+  <div class="privacy-banner-body">
+    <span class="privacy-icon">📍</span>
+    <div class="privacy-copy">
+      <div class="privacy-title">FIELD — Local channels</div>
+      <div class="privacy-sub">Detect your region to suggest channels in your area? <a href="#" id="privacy-policy-link">Privacy policy</a></div>
+    </div>
+  </div>
+  <div class="privacy-actions">
+    <button id="privacy-accept" class="privacy-btn privacy-btn-accept">Enable</button>
+    <button id="privacy-decline" class="privacy-btn privacy-btn-decline">Skip</button>
+  </div>
+</div>
+<!-- ── Privacy Policy Modal ───────────────────────────────────── -->
+<div id="privacy-modal-overlay" class="privacy-modal-overlay" style="display:none" onclick="this.style.display='none'">
+  <div class="privacy-modal" onclick="event.stopPropagation()">
+    <button class="privacy-modal-close" onclick="document.getElementById('privacy-modal-overlay').style.display='none'">✕</button>
+    <h2 class="privacy-modal-title">Privacy Policy</h2>
+    <div class="privacy-modal-updated">Last updated May 2026</div>
+    <div class="privacy-modal-body">
+      <p>FIELD is a personal sports intelligence tool. Here is what it does and doesn't do with your data.</p>
+      <h3>What we collect</h3>
+      <p><strong>1. Your region (optional).</strong> If you allow it, FIELD uses your IP address to detect your city and timezone via ipapi.co — not FIELD's servers. This helps suggest local channels. You can disable this anytime in Settings.</p>
+      <p><strong>2. Your preferences.</strong> Settings (timezone, sports filters, teams, display mode) are stored in your browser's local storage. This data never leaves your device.</p>
+      <p><strong>3. Push notifications (optional).</strong> If you subscribe to game alerts, FIELD stores a push subscription endpoint — a technical address generated by your browser — in Cloudflare's infrastructure. No personal identifying information is stored. All notification content is encrypted end-to-end. Unsubscribe anytime via Settings.</p>
+      <h3>What we don't do</h3>
+      <p>No advertising. No affiliate deals. No user accounts. No tracking pixels. No analytics services. No data sold to third parties. No financial relationship with any broadcaster, streaming service, or sportsbook.</p>
+      <p>When FIELD says "this game is free on antenna" or "no cheap option tonight," there is no hidden incentive behind that advice.</p>
+      <h3>Your rights</h3>
+      <p>You control your data: Settings → Privacy for location, Settings → Notifications to unsubscribe, or clear all data in browser settings. EU/UK users have full GDPR rights — your preferences are on-device, push data is deletable via unsubscribe.</p>
+      <h3>Data processing</h3>
+      <p>Push notification data is processed by Cloudflare, Inc. under their standard Data Processing Addendum.</p>
+    </div>
+  </div>
+</div>
+<!-- ── EU Push Consent Explanation ─────────────────────────────── -->
+<div id="eu-push-consent" class="eu-push-consent" style="display:none" role="dialog" aria-label="Push notification consent">
+  <div class="eu-push-body">
+    <div class="eu-push-title">🔔 Get alerts when games get dramatic?</div>
+    <div class="eu-push-detail">FIELD stores a technical endpoint (no personal info) in Cloudflare to deliver notifications. You can unsubscribe anytime in Settings. <a href="#" onclick="event.preventDefault();document.getElementById('privacy-modal-overlay').style.display='flex'">Privacy policy</a></div>
+    <div class="eu-push-actions">
+      <button id="eu-push-enable" class="privacy-btn privacy-btn-accept">Enable alerts</button>
+      <button id="eu-push-skip" class="privacy-btn privacy-btn-decline">Not now</button>
+    </div>
+  </div>
+</div>
 <!-- ── One to Watch ──────────────────────────────────────────── -->
 <div id="otw-banner" aria-live="polite"><div class="otw-inner otw-quiet" aria-hidden="true"><span class="otw-label">Loading</span><span class="otw-matchup">Fetching today\u2019s schedule\u2026</span></div></div>
 <!-- ── Watch Window ─────────────────────────────────────────── -->
@@ -12532,11 +12606,64 @@ renderUsageBadge(getUsage());
 
 // ── IP Geolocation (free, no key, ipapi.co) ────────────────────────────────
 // Auto-sets timezone on first load. Respects manual selection. 3s timeout.
+// ══ PRIVACY + CONSENT (C2) ══════════════════════════════════════════════════
+function initPrivacyBanner(){
+  const choice=localStorage.getItem('field_privacy_v1');
+  if(choice) return; // already decided
+  const banner=getEl('privacy-banner');
+  if(!banner) return;
+  banner.style.display='flex';
+  const accept=getEl('privacy-accept');
+  if(accept) accept.addEventListener('click',()=>{
+    localStorage.setItem('field_privacy_v1','geo');
+    banner.style.display='none';
+    autoGeolocate();
+  });
+  const decline=getEl('privacy-decline');
+  if(decline) decline.addEventListener('click',()=>{
+    localStorage.setItem('field_privacy_v1','no-geo');
+    banner.style.display='none';
+  });
+  const pLink=getEl('privacy-policy-link');
+  if(pLink) pLink.addEventListener('click',e=>{
+    e.preventDefault();
+    showPrivacyPolicyModal();
+  });
+}
+
+function showPrivacyPolicyModal(){
+  const overlay=getEl('privacy-modal-overlay');
+  if(overlay) overlay.style.display='flex';
+}
+
+function isEUTimezone(){
+  const tz=Intl.DateTimeFormat().resolvedOptions().timeZone||'';
+  return tz.startsWith('Europe/')||tz.startsWith('Atlantic/');
+}
+
+function showEUPushConsent(onAccept){
+  const el=getEl('eu-push-consent');
+  if(!el) return;
+  el.style.display='block';
+  const enable=getEl('eu-push-enable');
+  if(enable) enable.addEventListener('click',()=>{
+    localStorage.setItem('field_push_consent_v1','informed');
+    el.style.display='none';
+    if(onAccept) onAccept();
+  },{once:true});
+  const skip=getEl('eu-push-skip');
+  if(skip) skip.addEventListener('click',()=>{
+    el.style.display='none';
+  },{once:true});
+}
+
 (async function autoGeolocate(){
   try{
     if(localStorage.getItem("field_tz")) return; // Respect manual TZ
-    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone||"";
-    if(tz.startsWith("Europe/")||tz.startsWith("Atlantic/")) return;
+    // C2 consent gate — replaces EU timezone bypass
+    const privacyChoice = localStorage.getItem('field_privacy_v1');
+    if(privacyChoice === 'no-geo') return; // user declined
+    if(privacyChoice !== 'geo') return;    // not yet decided — wait for banner
     const r = await fetch("https://ipapi.co/json/",{signal:AbortSignal.timeout(3000)});
     if(!r.ok) return;
     const geo = await r.json();
@@ -17465,6 +17592,8 @@ function renderHalftimeSwitch(){
 // fetchSchedule() populates allData from buildTodaySchedule() then calls renderAll()
 // to render the sport-section cards into <main id="main">. Without this call the
 // schedule area would remain empty until the user navigates to another date.
+// Privacy consent banner — shows on first visit before geo fires
+initPrivacyBanner();
 fetchSchedule();
 </script>
 </body>
