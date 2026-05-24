@@ -2435,3 +2435,16 @@ Title: FIELD — Push Notification Architecture (S0 + PUSH A/B/C) — May 24 202
 Contains: Event Bus (S0), VAPID keys, PUSH A client subscription,
           PUSH B relay routes + cron + VAPID signing, PUSH C SW handler,
           CI KV bootstrap, notification templates, GDPR, what's not yet built.
+
+
+## Architectural Decision Records (ADRs)
+
+When Opus and Sonnet disagree on an architectural approach, the resolution
+is documented as an ADR in Drive. Future sessions (any model) read the ADR
+before revisiting the decision. ADRs are not reversible without Jeff's approval.
+
+ADR-001: AFL Auto-Schedule (Drive 1uQbzKXarVSHNmshM846uxY7Z-60McUqDUib8EHhJlUg)
+  Decision: Replace hardcoded round counter with three-tier auto-detection.
+  Hardcoded game ENTRIES retained for resilience. Hardcoded round NUMBER removed.
+  Policy: hardcode STABLE data (bundles, entries). Do not hardcode COUNTERS that
+  change on a regular cycle. Test: "Will this be wrong next week if no one updates it?"
