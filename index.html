@@ -2684,6 +2684,92 @@ var startFotmobEngine    = function(){};
 // TTL enforced at relay: 30s live · 120s standings · 3600s tips
 const SQUIGGLE_RELAY='https://field-relay-nba.jeffunglesbee.workers.dev/squiggle';
 
+// ── MLS Stats API relay ────────────────────────────────────────────────────────
+// Source: stats-api.mlssoccer.com — official MLS stats API (auth-free, CORS-restricted)
+// Relay route: /mls/stats/* → stats-api.mlssoccer.com/* (added field-relay-nba 83ef11a)
+// TTL: 30s live | 60s goals | 300s schedule | 3600s standings
+// 2026 constants: competition MLS-COM-000001 / season MLS-SEA-0001KA
+// Key benefit: opta_id (numeric) team IDs — canonical, accent-safe, eliminates SCORE-UNIFORM-A
+const MLS_RELAY_BASE = 'https://field-relay-nba.jeffunglesbee.workers.dev/mls/stats';
+const MLS_SEASON_2026 = 'MLS-SEA-0001KA';
+const MLS_COMPETITION = 'MLS-COM-000001';
+
+// Cache for MLS opta_id → team name mapping (populated by fetchMLSTeamMap)
+// Used to normalize espnScores keys: "4435|12637" instead of accent-variable name strings
+const _mlsTeamMap = {}; // opta_id → { name, abbreviation }
+const _mlsGameOptaIds = {}; // "home_opta|away_opta" → game opta_id (for goals lookup)
+
+// fetchMLSLive: today's MLS match state via official API relay
+// Returns array of match objects with period, minute_display, is_final, home/away scores, opta_ids
+async function fetchMLSLive() {
+  try {
+    const today = new Date().toISOString().slice(0,10);
+    const url = MLS_RELAY_BASE +
+      `/v1/matches?match_date%5Bgte%5D=${today}&match_date%5Blte%5D=${today}` +
+      `&include=home_club_match&include=away_club_match` +
+      `&include=home_club&include=away_club&per_page=100`;
+    const r = await fetch(url, {signal: AbortSignal.timeout(6000)});
+    if (!r.ok) return [];
+    const d = await r.json();
+    const matches = d.schedule || d.matches || d || [];
+    // Cache team opta_ids and populate espnScores with canonical keys
+    matches.forEach(m => {
+      const hClub = m.home_club || {};
+      const aClub = m.away_club || {};
+      const hMatch = m.home_club_match || {};
+      const aMatch = m.away_club_match || {};
+      const hId = hClub.opta_id, aId = aClub.opta_id;
+      if (hId) _mlsTeamMap[hId] = { name: hClub.name, abbreviation: hClub.abbreviation };
+      if (aId) _mlsTeamMap[aId] = { name: aClub.name, abbreviation: aClub.abbreviation };
+      if (!hId || !aId) return;
+      const key = `${hId}|${aId}`;
+      const gameOptaId = m.game_id || m.opta_id;
+      if (gameOptaId) _mlsGameOptaIds[key] = gameOptaId;
+      // Write canonical espnScores entry using numeric opta_id key
+      const period = m.period || '';
+      const isFinal = m.is_final || period === 'FullTime';
+      const isLive  = !isFinal && period && period !== 'PreMatch';
+      espnScores[key] = {
+        state: isFinal ? 'post' : isLive ? 'in' : 'pre',
+        period: period === 'FirstHalf' ? 1 : period === 'SecondHalf' ? 2 : 0,
+        clock: m.minute_display || '',
+        detail: m.minute_display || (isFinal ? 'FT' : period || ''),
+        homeScore: hMatch.score ?? 0,
+        awayScore: aMatch.score ?? 0,
+        homeName: hClub.name || '',
+        awayName: aClub.name || '',
+        home: hClub.name || '',
+        away: aClub.name || '',
+        homeWinning: (hMatch.score ?? 0) > (aMatch.score ?? 0),
+        periodPrefix: "'",  // soccer convention for classifySport
+        source: 'mls-relay',
+        _sport: 'MLS Soccer',
+        _mlsOptaHome: hId,
+        _mlsOptaAway: aId,
+        _gameId: String(gameOptaId || key),
+      };
+      espnScoreTs[key] = Date.now();
+    });
+    if (FIELD_DEBUG) console.log(`[MLS-relay] ${matches.length} matches, ${Object.keys(_mlsTeamMap).length} teams cached`);
+    return matches;
+  } catch(e) {
+    if (FIELD_DEBUG) console.warn('[MLS-relay] fetchMLSLive failed:', e.message);
+    return [];
+  }
+}
+
+// fetchMLSGoals: goalscorer events for a completed MLS match
+// matchId: opta_id (numeric). Returns [{minute_display, type, club.abbreviation}]
+async function fetchMLSGoals(matchId) {
+  try {
+    const url = MLS_RELAY_BASE +
+      `/v1/goals?match_game_id=${matchId}&include=club&order_by=goal_minute`;
+    const r = await fetch(url, {signal: AbortSignal.timeout(5000)});
+    if (!r.ok) return [];
+    return await r.json();
+  } catch(e) { return []; }
+}
+
 // ── OpenF1 — Formula 1 live timing (CORS-open, no relay needed) ───────────────
 // Free: 3 req/s · 30 req/min · 21/22 endpoints free
 // Live: 30 min before session start → 30 min after session end
@@ -3658,8 +3744,8 @@ const BUNDLES = {
   BUNDESLIGA:   ["espnplus","fubo","hulu","sling","youtubetv"],            // Bundesliga: ESPN+
   LIGUE_1:      ["bein","fubo","hulu","sling"],                             // Ligue 1: beIN Sports in US (sub req) — NOT on Peacock or NBC
   MLS_SOCCER:   ["apple"],                                                 // MLS: Apple TV exclusive (2026+, included w/ Apple TV sub — no separate Season Pass)
-  MLS_FS1:      ["apple","fs1","fubo","youtubetv","sling","directv"],          // MLS on FS1: Apple TV primary + FS1 simulcast (34 FOX/FS1 games/season)
-  MLS_FOX:      ["apple","fox","fubo","youtubetv","sling","directv"],          // MLS on FOX: Apple TV primary + FOX broadcast simulcast
+  MLS_FS1:      ["apple","fs1","fubo","youtubetv","sling","hulu","directv"],   // MLS on FS1: Apple TV + FS1 simulcast (19 of 34 Fox Sports MLS games — cable/streaming only)
+  MLS_FOX:      ["apple","fox","fubo","youtubetv","sling","hulu","directv","antenna"],  // MLS on FOX: Apple TV + FOX broadcast (FREE antenna). 15 of 34 Fox Sports MLS games. isFreeOTA=true
   // ── UFL 2026 (spring football — FOX/ESPN family) ──────────────────────
   UFL_FOX:   ["fox","fubo","youtubetv","sling","hulu","directv"],      // FOX OTA (free with antenna)
   UFL_FS1:   ["fs1","fubo","youtubetv","sling","hulu","directv"],
@@ -4789,7 +4875,7 @@ const SETUP_CATALOGUE = [
       {key:"max",      label:"Max / HBO Max"},
       {key:"netflix",  label:"Netflix"},
       {key:"prime",    label:"Prime Video (NBA · NFL TNF · WNBA · NWSL · NASCAR)"},
-      {key:"apple",    label:"Apple TV+"},
+      {key:"apple",    label:"Apple TV"},
       {key:"tcplus",   label:"Tennis Channel+"},
       {key:"willow",   label:"Willow TV"},
     ]
@@ -12237,6 +12323,7 @@ async function fetchSchedule(){
   })();
   // ─────────────────────────────────────────────────────────────────────────in full MLB slate from ESPN (supplements hardcoded games)
   setTimeout(fetchSoccerFixtures, 500); // staggered 500ms — avoids simultaneous EPL ESPN calls with fetchESPNScores init cycle
+  setTimeout(fetchMLSLive, 800);         // MLS relay: stats-api.mlssoccer.com → canonical opta_id keys in espnScores
   fetchFPLLiveScores();  // FPL relay — EPL live scores (official PL data, CORS bypass via relay)
   startSportsDBEngine(); // TheSportsDB real-time soccer livescores
   startFotmobEngine();   // Fotmob soccer livescores (more reliable, unofficial API)
@@ -12477,7 +12564,7 @@ const STREAMING_APPS = [
     ]
   },
   {
-    key:"apple", name:"Apple TV+", emoji:"🍎", color:"#c0c0c0",
+    key:"apple", name:"Apple TV", emoji:"🍎", color:"#c0c0c0",
     price:"$12.99/mo · 7-day free trial", url:"https://tv.apple.com/",
     note:"F1 + MLS + Friday Night Baseball all included — no extra pass needed",
     items:[
