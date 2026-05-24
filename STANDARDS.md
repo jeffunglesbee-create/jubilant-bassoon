@@ -30,7 +30,7 @@ Add a new named assertion in `smoke.js` for every FIELD_FEATURES entry (presence
    ⚠️  GEMINI QUARANTINE CHECK: if the handoff was produced by a Gemini session,
        STOP — do not proceed. See Rule 25. Run the 4-check audit first.
        Only use this handoff once it reaches CLEARED or PARTIALLY CLEARED status.
-1. Read CI/DEPLOY ERROR REFERENCE — Drive ID: 1xEs9m3xR1-1GI3s_G6RzZTxwOXNBR-wNsM1Vah4uLl0
+1. Read CI/DEPLOY ERROR REFERENCE — Drive ID: 18JMUd-Uq_m2DomuCua2B5UMiWOel81yzc1JU7SY6f20
    Surface: sandbox constraints, deploy path, worker summary, secrets state
 2. Declare: "SESSION START · Type: [A/B/C/D/E] · Scope: [one sentence]"
 3. git pull && cp index.html /home/claude/index.html
@@ -42,7 +42,7 @@ Add a new named assertion in `smoke.js` for every FIELD_FEATURES entry (presence
 
 **Canonical docs** (open the relevant one before starting):
 - Handoff Note (read first): `1oiSBcaykPwKaGXZH2ARRH88EqpDBviQxAxoctqmvZXI` ← update this ID every session end
-- CI/Deploy Error Reference (read every session): `1xEs9m3xR1-1GI3s_G6RzZTxwOXNBR-wNsM1Vah4uLl0`
+- CI/Deploy Error Reference (read every session): `18JMUd-Uq_m2DomuCua2B5UMiWOel81yzc1JU7SY6f20`
 - Build Session List: `1Drrp5eRNdGb8EKodqPNwpuLaC23XcOrlv4DO13zNot0`
 - FIELD Current State: `1w0BDWk2lf1tlSVBFBTI_P0H9N2ATyZjRTKw3XR2McUE`
 - Master Improvement Ranking: `1rW90JQ5a4ybrE9l5acrbqd0q0yl_QYmPIOnEJr__GEY`
@@ -116,7 +116,7 @@ never worked despite being documented as complete.*
 | **FIELD Current State** | `1w0BDWk2lf1tlSVBFBTI_P0H9N2ATyZjRTKw3XR2McUE` | Every session end — update HEAD, smoke state, and any changed capability sections |
 | **Daily Update Reference** | `1n4fiAaU1uF2X7EKRx9Gm6XpuR6wkpwoa` | Any session that changes broadcast chip rules, thresholds, or update protocol |
 | **Handoff Note** ← update ID every session | `1oiSBcaykPwKaGXZH2ARRH88EqpDBviQxAxoctqmvZXI` | Every session end — replace ID with new handoff doc |
-| **CI/Deploy Error Reference** | `1xEs9m3xR1-1GI3s_G6RzZTxwOXNBR-wNsM1Vah4uLl0` | When a new CI/deploy failure pattern is resolved |
+| **CI/Deploy Error Reference** | `18JMUd-Uq_m2DomuCua2B5UMiWOel81yzc1JU7SY6f20` | When a new CI/deploy failure pattern is resolved |
 
 **The rule: edit the document, don't create a new one.**
 
@@ -297,7 +297,7 @@ Every session, Claude reads the latest handoff note from Drive before
 responding to the opening message. No user request needed.
 
 **Claude reads CI/Deploy Error Reference automatically:**  
-Every session, Claude reads `1xEs9m3xR1-1GI3s_G6RzZTxwOXNBR-wNsM1Vah4uLl0`  
+Every session, Claude reads `18JMUd-Uq_m2DomuCua2B5UMiWOel81yzc1JU7SY6f20`  
 and surfaces the sandbox constraints, deploy path, worker architecture,  
 and secrets state before any work begins. This prevents wasted time  
 attempting blocked operations (api.github.com, *.workers.dev).
@@ -440,7 +440,7 @@ a follow-up session.
 
 ## Rule 12 — CI/Deploy Error Reference read at every session start
 
-**Drive ID: `1xEs9m3xR1-1GI3s_G6RzZTxwOXNBR-wNsM1Vah4uLl0`**
+**Drive ID: `18JMUd-Uq_m2DomuCua2B5UMiWOel81yzc1JU7SY6f20`**
 
 Read this document before any code is touched in any session type.
 Not only when something is broken — every session, every type.
