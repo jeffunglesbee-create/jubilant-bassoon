@@ -32,4 +32,11 @@ jobs:
           git config user.name "Probe"
           git add "$OUT"
           git commit -m "probe $OUT [skip ci]"
-          git push
+          # Retry push with rebase — handles concurrent CI pushes to main
+          for i in 1 2 3; do
+            git pull --rebase --autostash origin main && git push origin main && break
+            echo "Push attempt $i failed, retrying in $((i * 5))s..."
+            sleep $((i * 5))
+          done
+        env:
+          OUT: ${{ env.OUT }}
