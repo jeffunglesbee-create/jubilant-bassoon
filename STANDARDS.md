@@ -2426,3 +2426,12 @@ Permanent spec doc: Drive 138uEqnmWMuyzKaC_i4pzRxZHC_LV61UdJMc0nbhCTCQ
 Contains: broadcast corrections (Apple TV+→Apple TV, FOX/FS1 bundles),
 stats-api.mlssoccer.com relay plan, 2026 season constants, endpoint reference,
 opta_id architecture for SCORE-UNIFORM-A fix.
+
+
+## Push Notification Architecture Reference
+
+Permanent spec doc: Drive 1DanThEy0VSUQxF7GDAIGhtqmMSXfeyvXvhuVVV3TCHM
+Title: FIELD — Push Notification Architecture (S0 + PUSH A/B/C) — May 24 2026
+Contains: Event Bus (S0), VAPID keys, PUSH A client subscription,
+          PUSH B relay routes + cron + VAPID signing, PUSH C SW handler,
+          CI KV bootstrap, notification templates, GDPR, what's not yet built.
