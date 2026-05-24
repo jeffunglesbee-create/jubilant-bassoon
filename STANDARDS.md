@@ -2418,3 +2418,11 @@ Consumers that MUST use resolveGameScore() instead of direct espnScores access:
 
 Spec: FIELD — Unification Specs v1.1 (Drive 1EUDxBSvcNd00nT1SxQn110wTcIb--gBXP74RKeXX9iI)
 Status: Specced, not yet built.
+
+
+## MLS 2026 Data Architecture Reference
+
+Permanent spec doc: Drive 138uEqnmWMuyzKaC_i4pzRxZHC_LV61UdJMc0nbhCTCQ
+Contains: broadcast corrections (Apple TV+→Apple TV, FOX/FS1 bundles),
+stats-api.mlssoccer.com relay plan, 2026 season constants, endpoint reference,
+opta_id architecture for SCORE-UNIFORM-A fix.
