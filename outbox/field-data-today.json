@@ -1,61 +1,34 @@
 {
   "_meta": {
     "schema_version": "1.0",
-    "generated_at": "2026-05-23T20:56:29.651Z",
-    "for_date": "2026-05-23",
+    "generated_at": "2026-05-24T11:52:34.749Z",
+    "for_date": "2026-05-24",
     "source": "field-data workflow (automated)",
     "games_found": {
       "nhl": 1,
-      "nba": 1
+      "nba": 0,
+      "mls": 3
     },
     "ai_notes": true,
     "ai_backend": "gemini-3.1-flash-lite",
-    "note": "La Liga MW38 overlays added — relegation/European stakes set"
+    "note": "Auto-generated daily at 7:30 AM UTC. Manual edits persist until the next run."
   },
   "game_overlays": [
     {
-      "_match_key": "Carolina Hurricanes|Montreal Canadiens",
-      "seriesRecord": "ECF",
-      "matchupNote": "The Hurricanes look to seize a stranglehold on the Eastern Conference Final tonight, while the Canadiens fight to stave off elimination and keep their improbable postseason run alive. With a trip to the Stanley Cup Final on the line, Montreal’s desperation meets Carolina’s clinical precision in a high-stakes clash that will define the series trajectory."
+      "_match_key": "Vegas Golden Knights|Colorado Avalanche",
+      "seriesRecord": "WCF"
     },
     {
-      "_match_key": "Cleveland Cavaliers|New York Knicks",
-      "seriesRecord": "NYK leads 2-0",
-      "matchupNote": "The Knicks look to put a stranglehold on the Eastern Conference Finals tonight, while the Cavaliers face a desperate must-win scenario to keep their championship hopes alive. With New York holding a 2-0 series lead, Cleveland’s season effectively hangs in the balance as they return home to stave off an insurmountable deficit."
+      "_match_key": "Columbus Crew|Atlanta United FC",
+      "matchupNote": "Atlanta United hits the road desperate to climb into the playoff picture, but they face a buzzsaw in a Columbus side hunting down the Supporters' Shield. With the postseason race tightening, every point is a lifeline for the Five Stripes against the league’s most clinical juggernaut."
     },
     {
-      "_match_key": "New York Yankees|Tampa Bay Rays",
-      "_postponed": true
+      "_match_key": "Inter Miami CF|Philadelphia Union",
+      "matchupNote": "With both clubs fighting to solidify their postseason positioning, Philadelphia travels to South Florida desperate to disrupt Inter Miami’s march toward a record-breaking Supporters' Shield. Every point is critical as the Union scrap to climb above the playoff line while the Herons look to tighten their grip on the top seed."
     },
     {
-      "_match_key": "Baltimore Orioles|Detroit Tigers",
-      "_postponed": true
-    },
-    {
-      "_match_key": "Girona FC|Elche CF",
-      "_gameImportance": "elimination",
-      "matchupNote": "Girona needed all three points to keep their survival hopes alive — instead the 1-1 draw confirmed their relegation from La Liga. Elche survive; Girona go down on the final day of the season.",
-      "localNote": "Relegation confirmed — Girona drop to the Segunda División after failing to win their final home game."
-    },
-    {
-      "_match_key": "RCD Mallorca|Real Oviedo",
-      "_gameImportance": "elimination",
-      "matchupNote": "A must-win for Mallorca in their fight against the drop — the 3-0 victory improves their goal difference in what could be a knife-edge final-day tiebreaker for 18th place.",
-      "localNote": "Mallorca vs Osasuna separated only by goal difference at 42 points each — La Liga's cruellest tiebreaker."
-    },
-    {
-      "_match_key": "Getafe CF|CA Osasuna",
-      "_gameImportance": "elimination",
-      "matchupNote": "Osasuna fall to Getafe 1-0 on the final day while Mallorca win 3-0 — a four-goal swing in goal difference that could separate safety from relegation between two sides both finishing on 42 points.",
-      "localNote": "The cruelest math in La Liga: Mallorca and Osasuna level on points, decided by the goals scored on the same afternoon."
-    },
-    {
-      "_match_key": "Valencia CF|FC Barcelona",
-      "matchupNote": "Barcelona are already La Liga champions — but Valencia refused to give them a guard of honour, beating the title holders 3-1 in a brilliant final-day upset. The crowning is untouched; the scoreline is emphatic."
-    },
-    {
-      "_match_key": "Real Madrid|Athletic Bilbao",
-      "matchupNote": "Real Madrid sign off the season with a 4-2 win over Athletic Bilbao — 86 points, eight behind Barcelona. A strong finish that doesn't change the title outcome but sets the tone for next season."
+      "_match_key": "LAFC|Seattle Sounders FC",
+      "matchupNote": "Seattle heads to BMO Stadium looking to solidify their postseason standing against an LAFC side desperate to keep pace in the Supporters’ Shield race. With the playoff line tightening in the West, every point tonight is a high-stakes pivot for both clubs."
     }
   ]
 }
