@@ -6888,6 +6888,21 @@ function buildTodaySchedule(){
     {home:"Burnley",                 away:"Aston Villa",              league:"Premier League – Matchweek 36", start_time:"2026-05-10T13:00:00Z", confirmed:true, venue:"Turf Moor, Burnley",          streams:resolveBundle("EPL_PEACOCK"), localNote:"Peacock only"},
     {home:"Crystal Palace",          away:"Everton",                  league:"Premier League – Matchweek 36", start_time:"2026-05-10T13:00:00Z", confirmed:true, venue:"Selhurst Park, London",       streams:resolveBundle("EPL_USA"), localNote:"Syfy + Peacock"},
     {home:"Nottingham Forest",       away:"Newcastle United",         league:"Premier League – Matchweek 36", start_time:"2026-05-10T13:00:00Z", confirmed:true, venue:"City Ground, Nottingham",     streams:resolveBundle("EPL_USA"),     localNote:"USA Network (cable)"},
+
+    // ── EPL Matchweek 38 — Final Day — Sun May 24 2026 — ALL 4pm BST (15:00 UTC / 11am EDT) ──
+    // Arsenal are CHAMPIONS (first title in 22 years). Spurs + West Ham fighting relegation.
+    // Mo Salah farewell (Liverpool). Potentially Pep Guardiola's final game (Man City).
+    // UTC: 2026-05-24T15:00:00Z. Jeff specified: 11am EST = 11am EDT (May = daylight saving) = 15:00 UTC.
+    {home:"Brighton & Hove Albion", away:"Manchester United",        league:"Premier League – Final Day MW38", start_time:"2026-05-24T15:00:00Z", confirmed:true, venue:"Amex Stadium, Brighton",       streams:resolveBundle("EPL_PEACOCK"), localNote:"Peacock only"},
+    {home:"Burnley",               away:"Wolverhampton Wanderers",  league:"Premier League – Final Day MW38", start_time:"2026-05-24T15:00:00Z", confirmed:true, venue:"Turf Moor, Burnley",           streams:resolveBundle("EPL_PEACOCK"), localNote:"Peacock only"},
+    {home:"Crystal Palace",        away:"Arsenal",                  league:"Premier League – Final Day MW38", start_time:"2026-05-24T15:00:00Z", confirmed:true, venue:"Selhurst Park, London",        streams:resolveBundle("EPL_USA"),     localNote:"CNBC linear + Peacock. Arsenal lift the Premier League trophy — first title in 22 years."},
+    {home:"Fulham",                away:"Newcastle United",         league:"Premier League – Final Day MW38", start_time:"2026-05-24T15:00:00Z", confirmed:true, venue:"Craven Cottage, London",       streams:resolveBundle("EPL_PEACOCK"), localNote:"Peacock only"},
+    {home:"Liverpool",             away:"Brentford",                league:"Premier League – Final Day MW38", start_time:"2026-05-24T15:00:00Z", confirmed:true, venue:"Anfield, Liverpool",           streams:resolveBundle("EPL_USA"),     localNote:"Syfy linear + Peacock. Mo Salah farewell game at Anfield."},
+    {home:"Manchester City",       away:"Aston Villa",              league:"Premier League – Final Day MW38", start_time:"2026-05-24T15:00:00Z", confirmed:true, venue:"Etihad Stadium, Manchester",   streams:resolveBundle("EPL_PEACOCK"), localNote:"Peacock only. Potentially Pep Guardiola's final game as Man City manager."},
+    {home:"Nottingham Forest",     away:"AFC Bournemouth",          league:"Premier League – Final Day MW38", start_time:"2026-05-24T15:00:00Z", confirmed:true, venue:"City Ground, Nottingham",      streams:resolveBundle("EPL_PEACOCK"), localNote:"Peacock only"},
+    {home:"Sunderland",            away:"Chelsea",                  league:"Premier League – Final Day MW38", start_time:"2026-05-24T15:00:00Z", confirmed:true, venue:"Stadium of Light, Sunderland", streams:resolveBundle("EPL_PEACOCK"), localNote:"Peacock only"},
+    {home:"Tottenham Hotspur",     away:"Everton",                  league:"Premier League – Final Day MW38", start_time:"2026-05-24T15:00:00Z", confirmed:true, venue:"Tottenham Hotspur Stadium",    streams:resolveBundle("EPL_NBC"),     localNote:"NBC OTA (free with antenna) + Peacock. Spurs fighting to avoid relegation."},
+    {home:"West Ham United",       away:"Leeds United",             league:"Premier League – Final Day MW38", start_time:"2026-05-24T15:00:00Z", confirmed:true, venue:"London Stadium",               streams:resolveBundle("EPL_PEACOCK"), localNote:"Peacock only. West Ham also fighting relegation."},
     {home:"West Ham United",         away:"Arsenal",                  league:"Premier League – Matchweek 36", start_time:"2026-05-10T15:30:00Z", confirmed:true, venue:"London Stadium",              streams:resolveBundle("EPL_USA"),     localNote:"USA Network (cable)"},
     // MW37 Wednesday May 13 — verified from Soccerway / ESPN schedule
     {home:"Manchester City",         away:"Crystal Palace",           league:"Premier League – Matchweek 37", start_time:"2026-05-13T18:45:00Z", confirmed:true, venue:"Etihad Stadium, Manchester",  streams:resolveBundle("EPL_PEACOCK"), localNote:"Peacock only"},
@@ -10346,7 +10361,7 @@ const EFL_PLAYOFF_END   = new Date("2026-05-25T23:59:00Z");
 const inEFLPlayoffs = () => { const n=new Date(); return n>=EFL_PLAYOFF_START && n<=EFL_PLAYOFF_END; };
 
 const SOCCER_LEAGUES = [
-  {league:"eng.1", section:"Premier League",   bundle:"EPL",       endDate:"2026-05-20"},
+  {league:"eng.1", section:"Premier League",   bundle:"EPL",       endDate:"2026-05-25"},
   // eng.2: always fetch; scoresOnly=true during EFL playoffs (live scores for eflGames[]
   // without creating a duplicate section — eflGames[] handles the display).
   {league:"eng.2", section:"EFL Championship", bundle:"EFL",     endDate:"2026-05-26", scoresOnly:inEFLPlayoffs()},
