@@ -565,6 +565,22 @@ try {
   if(hasCheapSeatsWiring) pass('A65 — Cheap Seats wired into card template');
   else fail('A65 — buildCheapSeats not called in card template');
 
+  const hasStayUp = html.includes('function buildStayUpSignal(');
+  if(hasStayUp) pass('A66 — buildStayUpSignal() defined');
+  else fail('A66 — buildStayUpSignal() missing');
+
+  const hasBeatTheBook = html.includes('function beatTheBook(');
+  if(hasBeatTheBook) pass('A67 — beatTheBook() defined');
+  else fail('A67 — beatTheBook() missing');
+
+  const hasStayUpDOM = html.includes('id="stay-up"');
+  if(hasStayUpDOM) pass('A68 — Stay Up Signal DOM element present');
+  else fail('A68 — Stay Up #stay-up DOM element missing');
+
+  const hasBeatBookWiring = html.includes('beatTheBook(g)');
+  if(hasBeatBookWiring) pass('A69 — Beat the Book wired into card template');
+  else fail('A69 — beatTheBook not called in card template');
+
   // ─────────────────────────────────────────────────────────────────────
   log('---');
 // Assertions 51-101 removed — structural feature guards now live in smoke.js (A51-A123).

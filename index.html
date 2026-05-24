@@ -824,6 +824,20 @@ flex-shrink:0;white-space:nowrap;
 .cs-trial{background:rgba(245,158,11,.12);color:#f59e0b;border:1px solid rgba(245,158,11,.3);}
 .cs-sub{background:rgba(106,106,138,.12);color:var(--muted);border:1px solid rgba(106,106,138,.3);}
 .cs-text{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+/* ── Working Class: Stay Up Signal ─────────────────────────── */
+.stay-up-strip{padding:.4rem 1rem;font-size:.75rem;color:var(--muted);border-bottom:1px solid var(--edge);display:flex;align-items:center;gap:.5rem;}
+.su-verdict{font-weight:700;padding:.15rem .4rem;border-radius:3px;font-size:.65rem;letter-spacing:.04em;}
+.su-yes{background:rgba(45,212,191,.15);color:#2dd4bf;border:1px solid rgba(45,212,191,.3);}
+.su-maybe{background:rgba(245,158,11,.12);color:#f59e0b;border:1px solid rgba(245,158,11,.3);}
+.su-no{background:rgba(106,106,138,.12);color:var(--smoke);border:1px solid rgba(106,106,138,.3);}
+.su-reason{color:var(--muted);font-size:.7rem;}
+/* ── Working Class: Beat the Book ──────────────────────────── */
+.beat-the-book{font-size:.55rem;color:var(--muted);margin-top:.15rem;display:flex;align-items:baseline;gap:.3rem;}
+.btb-badge{font-family:var(--ff-mono);font-weight:600;font-size:.5rem;}
+.btb-good{color:#4ade80;}
+.btb-avg{color:var(--muted);}
+.btb-warn{color:#f59e0b;}
+.btb-high{color:#f87171;}
 @media(orientation:landscape)and(max-height:430px){.card-drama-line{font-size:.63rem;}}
 @media(min-width:820px)and(orientation:landscape){.card-drama-line{font-size:.64rem;white-space:normal;max-height:2.8em;}}
 .narrative-line{font-size:.68rem;color:var(--muted);font-style:italic;padding:.05rem .85rem .15rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;opacity:.9}
@@ -2405,6 +2419,10 @@ flex-shrink:0;white-space:nowrap;
 <!-- ── The Skim — Working Class one-sentence verdict ─────── -->
 <div id="the-skim" class="skim-strip" data-urgency="quiet" style="display:none" aria-live="polite">
   <p class="skim-text" id="skim-text"></p>
+</div>
+<div id="stay-up" class="stay-up-strip" style="display:none" aria-live="polite">
+  <span class="su-verdict" id="su-verdict"></span>
+  <span class="su-reason" id="su-reason"></span>
 </div>
 <div id="score-ticker-wrap" style="display:none"></div>
 <div id="major-preview-container" style="padding:0 2rem"></div>
@@ -6295,6 +6313,7 @@ function renderAll(){
           ${g._gameImportance?`<div class="importance-badge ${g._gameImportance==='series_deciding'?'series-deciding':g._gameImportance==='elimination'?'elimination':g._gameImportance==='clinch'?'clinch':'playoff-impl'}">${g._importanceIcon||''} ${g.narrative?.label||''}</div>`:""}
           ${(()=>{const _ed=typeof findESPNScore==='function'?findESPNScore(g):null;const _dl=buildDramaLineTiers(g,_ed,sec.sport);if(_dl.tight){const _q=s=>s.replace(/"/g,'&quot;');return `<div class="card-drama-line" data-drama-tight="${_q(_dl.tight)}" data-drama-mid="${_q(_dl.mid)}" data-drama-full="${_q(_dl.full)}">${_dl.tight}</div>`;}return g.narrative?.label&&!g._gameImportance?`<div class="narrative-line${(g.narrative.boost||0)>=20?' narrative-hi':''}">${g.narrative.label}</div>`:'';})()}
           ${(()=>{const _cs=buildCheapSeats(g);if(!_cs)return '';return `<div class="cheap-seats"><span class="cs-badge ${_cs.badgeClass}">${_cs.badge}</span><span class="cs-text">${_cs.text}</span></div>`;})()}
+          ${(()=>{const _btb=beatTheBook(g);if(!_btb)return '';return `<div class="beat-the-book"><span class="btb-badge ${_btb.cls}">Vig ${_btb.vig}</span><span class="btb-text">${_btb.assessment}</span></div>`;})()}
         </div>
         <div class="card-right">
           ${liveBadge}
@@ -6321,6 +6340,15 @@ function renderAll(){
     const _sk=buildTheSkim(filtered);
     if(_sk.text){_skimTxt.textContent=_sk.text;_skimEl.dataset.urgency=_sk.urgency;_skimEl.style.display='';}
     else{_skimEl.style.display='none';}
+  }
+  // ── Working Class: Stay Up Signal ──
+  const _suEl=document.getElementById('stay-up');
+  const _suV=document.getElementById('su-verdict');
+  const _suR=document.getElementById('su-reason');
+  if(_suEl&&_suV&&_suR){
+    const _su=buildStayUpSignal(filtered);
+    if(_su){_suV.textContent=_su.verdict;_suV.className='su-verdict '+_su.cls;_suR.textContent=_su.reason;_suEl.style.display='';}
+    else{_suEl.style.display='none';}
   }
   // Wire watch buttons
   document.querySelectorAll(".watch-btn").forEach(btn=>{
@@ -16541,8 +16569,60 @@ function buildTheSkim(sportsData){
 
 function teamName(g){
   if(!g) return '';
-  // Use away team for "X can sweep" pattern (away team has 3 wins when record is 3-0)
   return (typeof getTeamNick==='function'?getTeamNick(g.away):g.away)||g.away||'';
+}
+
+function buildStayUpSignal(sportsData){
+  // Only shows after 7pm local
+  const hr=new Date().getHours();
+  if(hr<19) return null;
+  if(!sportsData||!sportsData.length) return {verdict:'NO',reason:'Nothing left tonight.',cls:'su-no'};
+  const allGames=sportsData.flatMap(s=>s.games||[]);
+  const remaining=allGames.filter(g=>{
+    const st=getStatus(g.start_time);
+    return st==='live'||st==='upcoming'||st==='soon';
+  });
+  if(!remaining.length) return {verdict:'NO',reason:'All games are final. Get some sleep.',cls:'su-no'};
+  const liveGames=remaining.filter(g=>getStatus(g.start_time)==='live');
+  const playoffs=remaining.filter(g=>g.league&&/playoff|final|semifinal|conference|round|wild card/i.test(g.league));
+  const highDrama=remaining.filter(g=>{
+    const ed=typeof findESPNScore==='function'?findESPNScore(g):null;
+    return ed&&ed.drama&&ed.drama>=60;
+  });
+  // YES: playoffs live or high drama
+  if(playoffs.length&&liveGames.length) return {verdict:'YES',reason:playoffs.length+' playoff game'+(playoffs.length>1?'s':'')+' live right now.',cls:'su-yes'};
+  if(highDrama.length) return {verdict:'YES',reason:'Drama is building \u2014 '+highDrama.length+' game'+(highDrama.length>1?'s':'')+' heating up.',cls:'su-yes'};
+  // MAYBE: upcoming playoffs or live games with moderate interest
+  if(playoffs.length) return {verdict:'MAYBE',reason:'Playoff game'+(playoffs.length>1?'s':'')+' still coming \u2014 worth checking back.',cls:'su-maybe'};
+  if(liveGames.length>=2) return {verdict:'MAYBE',reason:liveGames.length+' games still live. Could get interesting.',cls:'su-maybe'};
+  // NO: nothing compelling
+  if(remaining.length===1) return {verdict:'NO',reason:'Just 1 game left and it\'s not a must-watch. Get some rest.',cls:'su-no'};
+  return {verdict:'NO',reason:'Nothing compelling left tonight.',cls:'su-no'};
+}
+
+function beatTheBook(game){
+  // Reads cached Betfair odds to calculate vig
+  if(!game._id) return null;
+  const key=[game.home||'',game.away||''].sort().join('|').toLowerCase();
+  const cached=_betfairOddsCache[key]||_betfairOddsCache[game._id];
+  if(!cached||!cached.homeWin||!cached.awayWin) return null;
+  const h=parseFloat(cached.homeWin), a=parseFloat(cached.awayWin), d=cached.draw?parseFloat(cached.draw):0;
+  if(!h||!a||h<=1||a<=1) return null;
+  // Calculate vig (overround)
+  const impliedH=1/h, impliedA=1/a, impliedD=d>1?1/d:0;
+  const total=impliedH+impliedA+impliedD;
+  const vig=((total-1)*100).toFixed(1);
+  const vigNum=parseFloat(vig);
+  // Classify
+  let assessment,cls;
+  if(vigNum<3){assessment='Low vig \u2014 fair market.';cls='btb-good';}
+  else if(vigNum<5){assessment='Average.';cls='btb-avg';}
+  else if(vigNum<8){assessment='Above average \u2014 house has an edge.';cls='btb-warn';}
+  else{assessment='High vig \u2014 the house loves this line.';cls='btb-high';}
+  // Coin flip detection
+  const coinFlip=Math.abs(impliedH-impliedA)<0.05;
+  const coinNote=coinFlip?' Coin flip \u2014 tread carefully.':'';
+  return {vig:vig+'%',assessment:assessment+coinNote,cls};
 }
 
 function buildDramaLineTiers(game, eData, sport){
