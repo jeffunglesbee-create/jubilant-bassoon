@@ -840,6 +840,8 @@ flex-shrink:0;white-space:nowrap;
 .btb-high{color:#f87171;}
 @media(orientation:landscape)and(max-height:430px){.card-drama-line{font-size:.63rem;}}
 @media(min-width:820px)and(orientation:landscape){.card-drama-line{font-size:.64rem;white-space:normal;max-height:2.8em;}}
+/* Working Class: tablet+ text wrapping */
+@media(min-width:820px){.cs-text{white-space:normal;}.cheap-seats{overflow:visible;}.beat-the-book{font-size:.58rem;}}
 .narrative-line{font-size:.68rem;color:var(--muted);font-style:italic;padding:.05rem .85rem .15rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;opacity:.9}
 .brief-scout-note{font-size:.62rem;color:#2dd4bf;margin-top:.45rem;padding-top:.35rem;border-top:1px solid rgba(45,212,191,.15);line-height:1.4}
 .brief-bni-note{font-size:.62rem;color:#b8860b;margin-top:.3rem;line-height:1.4}
@@ -2280,6 +2282,21 @@ flex-shrink:0;white-space:nowrap;
 [data-phone-tier="phone-landscape-wide"] .venue-badge{ display:inline-flex !important; }
 [data-phone-tier="phone-landscape-wide"] .card-drama-line{ font-size:.66rem; }
 [data-phone-tier="phone-landscape-wide"] .game-card{ padding:.75rem .85rem .7rem; }
+
+/* ── Working Class: phone-tier overrides ─────────────────────────────── */
+/* P1 compact: tighter Skim + smaller Cheap Seats */
+[data-phone-tier="phone-compact"] .skim-strip{ font-size:.8rem; padding:.45rem .75rem; }
+[data-phone-tier="phone-compact"] .cheap-seats{ font-size:.55rem; }
+[data-phone-tier="phone-compact"] .cs-badge{ font-size:.45rem; padding:.08rem .22rem; }
+[data-phone-tier="phone-compact"] .stay-up-strip{ font-size:.68rem; padding:.35rem .75rem; }
+[data-phone-tier="phone-compact"] .beat-the-book{ font-size:.5rem; }
+/* P3 large: more breathing room */
+[data-phone-tier="phone-large"] .skim-strip{ font-size:.95rem; }
+[data-phone-tier="phone-large"] .cheap-seats{ font-size:.62rem; }
+[data-phone-tier="phone-large"] .cs-text{ white-space:normal; } /* allow wrap on large phones */
+/* L2 landscape-wide: Skim can use more space */
+[data-phone-tier="phone-landscape-wide"] .skim-strip{ font-size:.88rem; }
+[data-phone-tier="phone-landscape-wide"] .cs-text{ white-space:normal; }
 
 /* My Services modal: full-screen on mobile, larger tap targets */
 @media(max-width:600px){
