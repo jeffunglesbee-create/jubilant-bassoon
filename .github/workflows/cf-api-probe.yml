@@ -48,6 +48,7 @@ jobs:
             echo "Add it: jubilant-bassoon → Settings → Secrets → Actions → CLOUDFLARE_API_TOKEN" >> outbox/cf-result-error.txt
             echo "Source: dash.cloudflare.com → My Profile → API Tokens (same token as field-relay-nba)" >> outbox/cf-result-error.txt
             cat outbox/cf-result-error.txt
+            echo "OUT=outbox/cf-result-error.txt" >> $GITHUB_ENV
             exit 0
           fi
           METHOD=$(grep '^method=' outbox/.trigger-cf-api 2>/dev/null | cut -d= -f2- || echo "GET")
@@ -77,8 +78,7 @@ jobs:
         run: |
           git config user.email "cf-probe@field"
           git config user.name "CF-Probe"
-          git add "outbox/cf-result-${TS}.txt" 2>/dev/null || true
-          git add outbox/cf-result-error.txt 2>/dev/null || true
+          git add "$OUT" 2>/dev/null || true
           git diff --cached --quiet && echo "No result to commit" && exit 0
           git commit -m "cf-probe result [skip ci]"
           # Retry push with rebase — handles concurrent CI pushes to main
@@ -88,4 +88,4 @@ jobs:
             sleep $((i * 5))
           done
         env:
-          TS: ${{ env.TS }}
+          OUT: ${{ env.OUT }}
