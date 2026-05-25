@@ -1,44 +1,52 @@
-# FIELD Handoff — May 25 2026 (Journalism Depth Items 4-6)
+# FIELD Handoff — May 25 2026 (Screenshot Audit Fix Session)
 
-HEAD: cfba7e8 (jubilant-bassoon) / 90304bc (field-relay-nba)
-Smoke: 175/0
-Deploy: SUCCESS (both repos)
+HEAD: d2d52c2
+Smoke: 184/0
+Deploy: SUCCESS
 SW_VERSION: 2026-05-25a
 
-## WHAT WAS BUILT
+## WHAT WAS FIXED (all from 10-screenshot audit)
 
-Items 4-6 of the journalism depth build (9-item series):
+**P0 — 4 critical bugs:**
 
-**Item 4 — BDL season averages (fetchBDLPlayerContext)**
-  Extracts player names from series matchupNotes via regex (name before stat).
-  Two-step: search /bdl/nba/v1/players → /bdl/nba/v1/season_averages.
-  24h localStorage cache per player. Parallel pre-fetch before buildCompoundPrompt.
-  Injects [SEASON STATS] into game lines: "Brunson: 24.2 PPG / 6.7 APG (season)"
+BUG-01: Skim said "New York Knicks facing elimination" (wrong team)
+  - _teamAbbr extended with NBA + NHL teams (was MLB-only)
+  - awayLeads logic hardened: parse leadToken from "NYK leads 3-0" front
+  - Empty awayAbbr no longer matches srL.includes(' leads') universally
 
-**Item 5 — NHL live shots + save% (fetchNHLLiveStats)**
-  Calls /nhl/v1/scoreboard/now (already routed). For each live game:
-  fetches /v1/gamecenter/{id}/boxscore for goalie name + sv%.
-  Injects [NHL LIVE]: "Shots: MTL 22–18 CAR · Markstrom 94.4% sv%"
-  90s cache. Maps by home|away team name key.
+BUG-02: "undefined $24.99/mo" chip on Rays @ Orioles card
+  - chipHTML now returns '' early if s.name is falsy or string 'undefined'
 
-**Item 6 — MLB Stats boxscore (fetchMLBBoxscoreContext)**
-  NEW relay route added: /mlb-stats/* → statsapi.mlb.com/api/v1 (relay 90304bc).
-  Uses game.sourceId (gamePk). Extracts current pitcher IP/K/ERA/ER + team batting avg.
-  Injects [MLB BOX]: "Cole: 7.0 IP, 9K, 1 ER · Yankees .287"
-  90s cache per gamePk.
+BUG-03: "OT" / "20T" for extra innings baseball
+  - espnPeriodLabel() was called everywhere but NEVER defined (TypeError)
+  - Now defined: baseball → "Inn N", basketball → Q1-Q4/OT, hockey → P1-P3/OT
+  - Also restored renderESPNScores() function declaration (accidentally removed)
 
-Architecture: all three pre-fetched via Promise.allSettled() in
-fetchCompoundEditorial() before buildCompoundPrompt(). Synchronous reads
-inside the game line builder.
+BUG-04: Night Owl used basketball vocabulary for Brewers 5-1 recap
+  - _terms now includes explicit NEVER USE lists per sport
+  - Baseball: "NEVER use: points, possession, one-possession, offensive sets"
 
-## WHAT'S NEXT
+**P1 — 5 factual/logic errors:**
 
-Items 7-9 (cultural signals):
-  7. Reddit buzz signal — r/nba r/hockey r/baseball comment velocity
-  8. ESPN /athletes/{id} career stats endpoint
-  9. Google Trends alpha API for cultural relevance
+BUG-05/06: "Eastern Conference Finals appearance since 1999" (should be NBA Finals)
+  - Compound prompt series rules: extract stats, use correct round name
 
-Also pending:
-  - TYPE A daily update (SW_VERSION bump May 26)
-  - SCORE-UNIFORM-A active bug (~45 min TYPE B)
-  - Current State doc update (stale)
+BUG-07/08: FIELD Brief called Notts County @ Salford "top game" over Conference Finals
+  - preGameScore tierBoost: Conference Finals +40, NBA Finals/Stanley Cup +60
+  - Compound brief: Conference Finals must be lead regardless of start time
+
+BUG-09: Betting Intelligence showed "1 playoff game" (missed NYK @ CLE)
+  - isPlayoffGame() now uses league string, not only _gameImportance
+
+BUG-10: espnGOTD flag missing for Phillies @ Padres (confirmed from ESPN Press Room)
+  - espnGOTD:true added, streams updated to MLB_ESPN
+
+**Journalism:**
+- 10 new banned phrases added from screenshots
+- Series Brief rules: must extract stats from Context, correct historical facts
+
+## NEXT SESSION
+
+Items 7-9 journalism depth (Reddit buzz, ESPN athlete stats, Google Trends)
+SCORE-UNIFORM-A active bug (~45 min TYPE B)
+TYPE A daily update when ready for May 26
