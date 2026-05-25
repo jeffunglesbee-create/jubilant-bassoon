@@ -439,6 +439,34 @@ assert('A152 — JQ wired: J5 Night Owl uses FIELD_PROSE_STYLE',
   html.includes("FIELD_PROSE_STYLE,") && html.includes("renderProseScore(s,'J5 Night Owl')"),
   'J5 Night Owl prompt must inject FIELD_PROSE_STYLE and score prose');
 
+assert('A153 — Wikimedia: WIKI_TITLES has 40+ teams',
+  (html.match(/WIKI_TITLES=\{[^}]+\}/s)?.[0]||'').split("'").length > 80,
+  'WIKI_TITLES should map 40+ teams across NBA/NHL/MLB/EPL');
+
+assert('A154 — Wikimedia: wiki trending feeds compound prompt',
+  html.includes('WIKI TRENDING') && html.includes('WIKI LOW'),
+  'Compound editorial prompt must include wiki trending context');
+
+assert('A155 — Wikimedia: editorial rules include wiki instructions',
+  html.includes('If [WIKI TRENDING] appears'),
+  'Compound prompt rules must instruct AI how to use wiki signals');
+
+assert('A156 — Mobile Intel: mobile-live-bar element in HTML',
+  html.includes('id="mobile-live-bar"'),
+  'Mobile live bar element must exist in DOM');
+
+assert('A157 — Mobile Intel: renderMobileLiveBar function defined',
+  html.includes('function renderMobileLiveBar('),
+  'renderMobileLiveBar() must exist for phone intelligence layer');
+
+assert('A158 — Mobile Intel: wired into ESPN polling cycle',
+  html.includes('renderMobileLiveBar()') && html.includes('renderOneToWatch()'),
+  'renderMobileLiveBar must be called alongside renderOneToWatch in polling');
+
+assert('A159 — Mobile Intel: CSS for mobile-live-bar',
+  html.includes('.mobile-live-bar{') && html.includes('.mlb-chip{'),
+  'Mobile live bar CSS classes must be defined');
+
 
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);
