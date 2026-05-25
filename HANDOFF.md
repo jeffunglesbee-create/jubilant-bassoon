@@ -1,67 +1,66 @@
-# FIELD Handoff — May 25 2026 Session 15
+# FIELD Handoff — May 25 2026 Session 16
 
-HEAD: 915f12f (code) / 9b97a9c (HANDOFF)
-Smoke: 159/0
-Deploy: SUCCESS
+HEAD: b26d875 (jubilant-bassoon) / 450f41b (field-relay-nba)
+Smoke: 165/0
+Deploy: SUCCESS (both repos)
 SW_VERSION: 2026-05-25a
 
-## WHAT WAS BUILT (Sessions 14-15)
+## WHAT WAS BUILT THIS SESSION
 
-Session 14: Journalism Quality Layers 1-3
-- FIELD_PROSE_STYLE + BANNED_PHRASES in all J-series prompts
-- hasCliche() + retryWithoutCliches() one-retry
-- scoreProse() via Datamuse API (debug panel output)
-- F16-F20 behavioral tests in field_browser.test.js
+Efficiency Layers 2, 3, 4 — all patent-audited and cleared:
 
-Session 15: Wikimedia expansion + Mobile Intelligence Layer
-- WIKI_TITLES: 30 → 60+ teams (all NBA, NHL, MLB, EPL, EFL)
-- [WIKI TRENDING]/[WIKI LOW] tags in compound editorial + editorial rules
-- renderMobileLiveBar(): horizontal live game chips on phone ≤600px
-- Wired into ESPN polling cycle
+Layer 2 (O(1) Newspaper — field-relay-nba):
+- handleJournalismCycle() cron every */15 min during live hours
+- Fetches ESPN, calls Claude proxy ONCE, stores prose in FIELD_JOURNALISM KV
+- GET /journalism/tonight route — flat cost at any user count
+- KV bootstrap in deploy.yml (field-journalism namespace)
+- ADR-002 compliant: prose only server-side, no classification
 
-## PATENT DEFENSE — ALL 5 PILLARS COMPLETE
+Layer 2 (client — index.html):
+- fetchPrerenderedJournalism() — relay-first before any AI call
+- initFIELDBrief wired to try relay first, graceful fallback
 
-1. Drama Dial (client-side personalization) ✅
-2. handleCron (server sends only facts) ✅
-3. Journalism Quality L1-3 (Datamuse prose scoring) ✅
-4. Wikimedia (encyclopedic signals in editorial) ✅
-5. Mobile Intelligence (phone personalization layer) ✅
+Layer 3 (delta journalism — both repos):
+- contextHash before AI call — skips if game context unchanged
+- Server-side in handleJournalismCycle, client-side in initFIELDBrief
 
-Next patent opportunity: VIEWPORT-CARD-A (Defense #1 extension)
+Layer 4 (Brotli — index.html):
+- Accept-Encoding: br, gzip on relay fetch — Cloudflare auto-compresses
 
-## UNIFICATION PATENT AUDIT (performed end of Session 15)
+## KEY ANALYSIS FINDINGS
 
-Drive: 1T4yDdGt9e4rnO3smtTVbluD-lKrSfLtUvZrXDzA1n7I
+Patent-Account Compatibility: user accounts are COMPLETELY ORTHOGONAL
+to RUWT patent claims. FIELD can add accounts/analytics without touching
+any patent defense. Valuation ladder is now MEASURABLE for first time.
 
-7 unification specs audited. Findings:
-- VIEWPORT-CARD-A: YES patent value (client-side card content adaptation)
-- SCORE-UNIFORM-A: INDIRECT (active bug undermining patent features)
-- Other 5: NONE (pure velocity/refactor, moved off critical path)
+Valuation: Rung 0 moves to ~$700-800K. Rungs 1-3 unchanged (user-dependent).
 
-Re-prioritized:
-  TIER 1: SCORE-UNIFORM-A (active bug) → VIEWPORT-CARD-A (when WHOLE FIELD)
-  TIER 2: SPORT-DISPLAY-A → PERIOD-PREFIX-A → SCHEDULE-BUILDER-A →
-          INTEL-PANEL-A → CARD-STAGE-A (batch on slow day, ~170 min)
+## COST IMPACT
 
-## ALL GAPS CLOSED
-
-- [PWA-A]: CLOSED
-- [SECTION-IDENTITY-A]: CLOSED
-- [DRAMA-LINE-A]: CLOSED
-- [LAYER3-EXT] F16-F20: CLOSED
-- [MOBILE-INTEL-A]: CLOSED
+At 750 WAU (Rung 1):
+  Before:   $145,800/year
+  After L2: $228/year (O(1) flat)
+  After L3: ~$55-90/year (delta skips unchanged cycles)
 
 ## NEXT SESSION
 
-1. TYPE A DAILY UPDATE (May 26):
+1. TYPE A DAILY UPDATE (May 26 — URGENT):
+   - Bump SW_VERSION → 2026-05-26a (Rule 23!)
    - Check results: NBA ECF G4, NHL ECF G3, EFL L2 Final
-   - Add Tue May 26 MLB slate (GOTD auto-tags)
-   - Peacock GOTD: check blog for weekly schedule
-   - Bump SW_VERSION to 2026-05-26a (Rule 23!)
+   - Add Tue May 26 MLB slate + Peacock GOTD
    - Run: node scripts/rotate-schedule.js
 
-2. SCORE-UNIFORM-A (~45 min) — active bug, next TYPE B
+2. Verify /journalism/tonight returning brief after relay cron fires
 
-3. Schedule Automation — next workflow priority
+3. Update Current State doc (major updates pending)
 
-4. Update Current State doc with Sessions 14-15 changes
+4. SCORE-UNIFORM-A (~45 min) — active bug, next TYPE B
+
+## DOCUMENTS WRITTEN TODAY
+
+- Patent-Account Compatibility + Valuation Update:
+  1_9EvCELew_mkpzOC9g0yU3PIgx5q7MKtmiPNFEC4vk8
+- Efficiency Layer Patent Audit:
+  1hdL-1PlBF8l_j_bijVKAXE6GigTIT6BhhlGe3Zv4w1M
+- Session 16 doc:
+  1SavFTETZZZCtFifxylwH5qLwk6aza0E6BZo8okmtYS4
