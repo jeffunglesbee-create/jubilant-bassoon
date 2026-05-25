@@ -8066,18 +8066,71 @@ function compBadge(moneylineGap){
 function fieldVsMarket(game, homeML, awayML){
   if(!game || !homeML || !awayML) return '';
   const gap = Math.abs(homeML - awayML);
-  // M1 extension: fieldVsMarket was missed in the Betting Intelligence drama score removal.
-  // preGameScore() is composite (importance + broadcast + odds + milestones) — displaying
-  // it as "drama score N" is Case A posture (Numerical Usage Policy).
-  // Fix: keep the qualitative arbitrage signal (FIELD vs market assessment), remove the number.
-  // The signal's value is the observation, not the score behind it.
-  const isCompetitive = isScoutsPick(game); // boolean — competitive AND off national TV
-  const isLopsided = gap < 45; // market says pick'em
-  if(gap > 180 && isCompetitive)
-    return `<div class="field-signal">FIELD rates this more competitive than the spread suggests — series context and odds signal a closer game than the line implies.</div>`;
-  if(isLopsided && !isCompetitive)
-    return `<div class="field-signal">Market says pick'em — FIELD sees limited stakes or competitive context here. May not deliver what the tight line implies.</div>`;
-  return '';
+
+  // Patent-safe rework: name the specific factual signal rather than expressing
+  // a generic FIELD "view" on watchability. The distinction:
+  //   RISKY: "FIELD rates this more competitive" — unnamed interest assessment
+  //   SAFE:  "Trailing team faces elimination — desperation shifts dynamics" — named fact
+  //
+  // Each signal below is a verifiable pre-game fact (Stakes/Narrative/Scarcity),
+  // not a composite interest score. The market comparison is contextual framing,
+  // not a claim that FIELD's excitement rating differs from the line.
+
+  const signals = [];
+  const league = (game.league||'').toLowerCase();
+  const note = (game.matchupNote||'').toLowerCase();
+
+  // Signal 1: Elimination stakes vs heavy favorite
+  // A team facing elimination (E=1 in Stakes) is desperate in ways markets underweight.
+  // This is a factual consequence claim, not an excitement claim.
+  if (gap > 150) {
+    const hasElim = game._gameImportance === 'elimination' ||
+                    /elimination|must.win|game 7|win or go home/i.test(game.league||'') ||
+                    /facing elimination|avoid elimination|or their season ends/i.test(note);
+    const hasHighIrrev = game.seriesRecord && /leads 3-0|leads 3-1/i.test(game.seriesRecord);
+    if (hasElim || hasHighIrrev) {
+      const trailerTeam = game.seriesRecord && /leads/i.test(game.seriesRecord)
+        ? (game.seriesRecord.toLowerCase().includes(teamNick(game.away).toLowerCase()) ? teamNick(game.home) : teamNick(game.away))
+        : null;
+      signals.push(trailerTeam
+        ? `${trailerTeam} faces elimination — desperation can outperform a ${gap}-point line`
+        : `Elimination stakes — trailing team desperation often outperforms a heavy spread`);
+    }
+  }
+
+  // Signal 2: Historical singularity vs market indifference
+  // A game that creates an irrevocable historical fact (H=1 in Stakes) may carry
+  // urgency the market doesn't fully price. Factual, not excitement-based.
+  if (gap > 100) {
+    const hasHistory = /first.*since \d{4}|first.*history|sweep|franchise record|clinch/i.test(note);
+    if (hasHistory) {
+      signals.push(`Historical milestone on the line tonight — context the spread doesn't price`);
+    }
+  }
+
+  // Signal 3: Scarcity — only game in this sport
+  // Schedule scarcity is a factual count, not an interest assessment.
+  // A heavy favorite in the only NHL game tonight is still the only hockey game.
+  if (gap > 150 && allData?.sports) {
+    const sport = game._sport || game._section || '';
+    const sportGames = (allData.sports.find(s=>s.sport===sport)||{games:[]}).games||[];
+    if (sportGames.length === 1) {
+      signals.push(`Only ${sport} game tonight — sole option for fans of the sport regardless of spread`);
+    }
+  }
+
+  // Signal 4: Tight market on a low-stakes game
+  // When odds say pick'em but Stakes dimensions are low, the market may be overestimating
+  // drama potential. Naming this as a stakes observation, not an excitement rating.
+  if (gap < 45 && !isScoutsPick(game)) {
+    const isMajorLeague = /nba|nhl|mlb|nfl|epl|premier league/i.test(league);
+    if (isMajorLeague) {
+      signals.push(`Tight line, but limited playoff/series context — pick'em doesn't always mean must-watch`);
+    }
+  }
+
+  if (!signals.length) return '';
+  return `<div class="field-signal">${signals[0]}</div>`;
 }
 
 function buildProbBars(homeTeam, awayTeam, homeML, awayML){
