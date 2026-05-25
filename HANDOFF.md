@@ -1,56 +1,44 @@
-# FIELD Handoff — May 25 2026 Session 17
+# FIELD Handoff — May 25 2026 (Post-Health Session)
 
-HEAD: b26d875 (code unchanged — analysis session)
-Smoke: 165/0
-Deploy: No code deploy this session
-SW_VERSION: 2026-05-25a
+HEAD: 136697d (oura/whoop workflow cleanup)
+Smoke: 2 pre-existing failures (console.log count 39, MLB render missing)
+Deploy: No index.html changes this session
+SW_VERSION: unchanged from Session 17
 
-## WHAT CHANGED
+## WHAT CHANGED THIS SESSION
 
-Analysis + documentation session. No code changes.
+Infrastructure exploration only — no code changes to index.html.
 
-Rule 44 added to STANDARDS.md:
-  Client-side size budget (~20KB/commit threshold).
-  Patent note embedded: classification stays client-side always.
+Oura + Whoop GitHub Actions workflows built, deployed, then removed.
+Both integration specs saved to Drive. GitHub Actions clean.
 
-## KEY FINDINGS (Session 17)
+Pre-existing smoke failures (existed before this session):
+  FAIL: console.log count too high (39)
+  FAIL: MLB section missing from render
 
-CLIENT SIZE + PATENT DEFENSE:
-  - File size and patent defense are UNRELATED. Bigger client = stronger defense.
-  - Real "too big" problem is PERFORMANCE, not patent risk.
-  - Tiptoe risk is organizational — ADR-002 already addresses it.
-  - What can move server-side: prose, templates, raw data.
-  - What MUST stay client-side: dramaScoreLive(), classifyGame(), OTW, badges.
+## NEXT SESSION: TYPE D — JOURNALISM QUALITY AUDIT
 
-NATIVE APP:
-  - File size concern disappears (native users expect 5-15MB installs).
-  - Patent defense STRENGTHENS on native (compiled, on-device hardware).
-  - Background execution is the big unlock — reliable client-side eval.
-  - Build pipeline handles minification automatically.
-  - One genuine trade-off: deployment velocity → content decoupling required.
-    Schedule data, broadcast registry must be relay-fetched, not hardcoded,
-    to enable content updates without App Store submission.
+User question: Does FIELD have sufficient stats depth to feed journalism?
 
-PERFORMANCE MITIGATION (no patent risk):
-  1. Minification build step (HIGH) — 60-70% size reduction
-  2. Lazy-load schedule data (MEDIUM) — parse time + native prep
-  3. Web Workers for scoring (LOW) — off-main-thread, still client-side
-  4. Rule 44 size budget (ONGOING) — in STANDARDS.md now
+Tasks:
+  1. Fix 2 pre-existing smoke failures first
+  2. Read Journalism Quality Spec (Drive 1b7fwDVZMURi2sDbQ-Ur7dpbG4I5-fuCDPWC1ILfucoU)
+  3. Audit ESPN/relay data schema for statistical depth
+  4. Map available data vs journalism layer requirements (Layers 1-3)
+  5. Identify gaps: contextual stats, career highs, advanced metrics
+  6. Propose data enrichment plan
 
-Doc: Drive 1F1tzmSQm0NeENBi9_pMSR5yWX42ohYjriWZHThkiOxw
+## INFRASTRUCTURE NOTES
 
-## NEXT SESSION
+Oura spec: Drive 1hWyhPBo9FvLxwsIND-JluLQjsZeW1vwBn4OC0masr8s
+Whoop spec: Drive 1MuQYJY8Y2RYWFp_3m-KV2RtoHwXnNr4ws8dfbJqtykg
+Whoop app already created at developer-dashboard.whoop.com
+  — just needs Client ID + Secret to activate
 
-1. TYPE A DAILY UPDATE (May 26 — URGENT):
-   - Bump SW_VERSION → 2026-05-26a (Rule 23!)
-   - Check results: NBA ECF G4, NHL ECF G3, EFL L2 Final
-   - Add Tue May 26 MLB slate + Peacock GOTD
-   - Run: node scripts/rotate-schedule.js
+CF Worker discovery: field-relay-nba.workers.dev IS reachable from sandbox
+(returns 403, not connection timeout). Block is Cloudflare Access policy
+at infrastructure level, not Worker code. Host not in allowlist = CF edge.
 
-2. Commit STANDARDS.md (Rule 44 added this session)
+## SESSION DOC
 
-3. Update Current State doc (stale since May 25 morning)
-
-4. SCORE-UNIFORM-A (~45 min) — active bug, next TYPE B
-
-5. Minification build step — highest-leverage performance item
+Drive: 16LUsDCVIDqxIlt0lsiH0NqV0xiOlR27iIBdGxDybNgc
