@@ -13393,7 +13393,9 @@ let _pwaPrompt = null;
 
   // SW_VERSION — bump on every deploy to bust returning user cache
   // Assertion 28 in smoke verifies this constant is present
-  const SW_VERSION = '2026-05-25a';
+  // Rule 23: suffix increments per deploy within a day (a → b → c), not just per date.
+  // Four deploys shipped today under 'a' — bumping to 'b'.
+  const SW_VERSION = '2026-05-25b';
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
   // Cache strategy: API-only (ESPN scores, weather, odds, SportsDB).
@@ -13844,6 +13846,137 @@ function hasCliche(text){
   return BANNED_PHRASES.filter(p=>lower.includes(p));
 }
 
+// ── Sport Vocabulary Validation — Layer 2b ─────────────────────────────────
+// Cross-sport vocabulary contamination is a GENERATION FAILURE, not a style issue.
+// "One-possession game" for a baseball recap and "inning" for a hockey game are
+// factual errors, not clichés. They need the same retry architecture as clichés.
+//
+// Root cause of persistence: Layer 1 (prompt NEVER USE lists) is a soft constraint.
+// Statistical pressure from training data (basketball/football dominate sports media)
+// overrides NEVER USE instructions on a probabilistic basis. The fix is enforcement
+// at the output layer — same as hasCliche() — not stronger prompting.
+//
+// Architecture: detect → one retry with explicit violation list → ship either way.
+// This matches the existing retryWithoutCliches() pattern exactly.
+
+const SPORT_VOCAB_VIOLATIONS = {
+  // Baseball: must not use basketball/football/soccer vocabulary
+  baseball: {
+    forbidden: [
+      'one-possession','possession game','one possession',
+      'quarter','quarters','first quarter','fourth quarter','halftime','half time',
+      'points per game','ppg','field goal percentage',
+      'transition','fast break','assist','rebound',
+      'down the stretch','in the paint',
+      'basket','baskets','three-pointer','free throw',
+      'touchdown','first down','red zone','turnover on downs',
+      'offsides','penalty kick','extra time','nil'
+    ],
+    sport: 'baseball',
+    units: 'runs (not points)',
+    extra_period: 'extra innings (not overtime, not OT, not quarters)'
+  },
+  // Soccer: must not use basketball/baseball/american football vocabulary
+  soccer: {
+    forbidden: [
+      'one-possession','possession game',
+      'quarter','quarters','first quarter','fourth quarter',
+      'inning','innings','at-bat','strikeout','home run','bases',
+      'touchdown','first down','red zone','field goal',
+      'basket','three-pointer','free throw','rebound','assist',
+      'points','scored a point','one point','two points'
+    ],
+    sport: 'football (soccer)',
+    units: 'goals (never points)',
+    extra_period: 'extra time (never overtime)'
+  },
+  // Hockey: must not use basketball/baseball/soccer/football vocabulary
+  hockey: {
+    forbidden: [
+      'one-possession','possession game',
+      'quarter','quarters','first quarter','fourth quarter','halftime',
+      'inning','innings','at-bat','strikeout','home run',
+      'touchdown','first down','red zone','field goal percentage',
+      'basket','three-pointer','free throw','rebound','assist',  // basketball
+      'nil','penalty kick'
+    ],
+    sport: 'ice hockey',
+    units: 'goals (not points)',
+    extra_period: 'overtime or shootout'
+  },
+  // Basketball: must not use baseball/hockey/soccer/football vocabulary
+  basketball: {
+    forbidden: [
+      'inning','innings','at-bat','strikeout','home run','earned run','rbi',
+      'period','periods',  // hockey term (avoid confusion)
+      'nil','penalty kick','offside','extra time','clean sheet',
+      'touchdown','first down','field goal',  // football (already football term in context)
+      'hat trick'  // hockey connotation
+    ],
+    sport: 'basketball',
+    units: 'points',
+    extra_period: 'overtime'
+  }
+};
+
+function detectSportClass(sport) {
+  const sp = (sport||'').toLowerCase();
+  if (sp.includes('baseball') || sp.includes('mlb')) return 'baseball';
+  if (sp.includes('soccer') || sp.includes('football') || sp.includes('league') ||
+      sp.includes('mls') || sp.includes('epl') || sp.includes('liga') ||
+      sp.includes('serie') || sp.includes('ligue') || sp.includes('bundesliga') ||
+      sp.includes('ucl') || sp.includes('efl')) return 'soccer';
+  if (sp.includes('hockey') || sp.includes('nhl')) return 'hockey';
+  if (sp.includes('basketball') || sp.includes('nba') || sp.includes('wnba')) return 'basketball';
+  return null;
+}
+
+function checkSportVocab(text, sport) {
+  if (!text || !sport) return [];
+  const sportClass = detectSportClass(sport);
+  if (!sportClass) return [];
+  const vocab = SPORT_VOCAB_VIOLATIONS[sportClass];
+  if (!vocab) return [];
+  const lower = text.toLowerCase();
+  return vocab.forbidden.filter(term => lower.includes(term));
+}
+
+// Layer 2b retry — same pattern as retryWithoutCliches() but for sport vocab
+async function retryWithSportVocab(originalPrompt, text, sport, proxyUrl) {
+  const violations = checkSportVocab(text, sport);
+  if (!violations.length) return text;
+  const sportClass = detectSportClass(sport);
+  const vocab = SPORT_VOCAB_VIOLATIONS[sportClass] || {};
+  if (FIELD_DEBUG) console.warn('[JQ Layer 2b] Sport vocab violations:', violations, 'in', sport);
+  try {
+    const retryPrompt = originalPrompt +
+      `\n\nCRITICAL CORRECTION — sport vocabulary errors detected:\n` +
+      `Sport: ${vocab.sport || sport}. Score in ${vocab.units || 'correct units'}. ` +
+      `Extra period = ${vocab.extra_period || 'correct term'}.\n` +
+      `These terms from the wrong sport appeared in your draft and must be removed: ${violations.join(', ')}.\n` +
+      `Rewrite using ONLY vocabulary appropriate for ${vocab.sport || sport}. ` +
+      `Every sentence must use the correct sport's terminology.`;
+    const r = await fetch(proxyUrl, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1500,
+        messages: [{role:'user', content: retryPrompt}]
+      })
+    });
+    if (!r.ok) return text;
+    const data = await r.json();
+    const retried = (data.content||[]).filter(c=>c.type==='text').map(c=>c.text).join('');
+    if (retried && retried.length > 30) {
+      const still = checkSportVocab(retried, sport);
+      if (still.length && FIELD_DEBUG) console.warn('[JQ Layer 2b] Retry still has:', still, '— shipping');
+      return retried.trim();
+    }
+  } catch(e) { if(FIELD_DEBUG) console.error('[JQ Layer 2b] retry error:', e.message); }
+  return text;
+}
+
 // Layer 2: one-retry wrapper — re-prompts if clichés found
 async function retryWithoutCliches(originalPrompt,text,proxyUrl){
   const found=hasCliche(text);
@@ -14189,21 +14322,39 @@ async function fetchCompoundEditorial(sections) {
     // Item 3: extend cliché detection to series previews and game briefs
     // Previously only result.brief was checked — series previews slipped through
     // ("punch their ticket" was visible in the screenshot — closed here)
+    // Layer 2b: sport vocab violations also checked here (e.g. "one-possession game" for baseball)
     (result.series||[]).forEach((s,i)=>{
       if(!s?.preview) return;
       const found=hasCliche(s.preview);
       if(found.length&&FIELD_DEBUG) console.warn(`[JQ Layer 2] Series[${i}] clichés:`,found);
+      // Sport vocab: infer sport from the series game object
+      const seriesGame=(sections||[]).flatMap(sec=>sec.games||[]).find(g=>
+        s.id && (s.id.includes((g.home||'').toLowerCase().replace(/\s+/g,'_')) ||
+                 s.id.includes((g.away||'').toLowerCase().replace(/\s+/g,'_'))));
+      if(seriesGame){
+        const viol=checkSportVocab(s.preview, seriesGame._sport||seriesGame._section||'');
+        if(viol.length&&FIELD_DEBUG) console.warn(`[JQ Layer 2b] Series[${i}] sport vocab:`,viol);
+      }
       scoreProse(s.preview).then(sc=>renderProseScore(sc,`Series[${i}]`));
     });
     (result.game_briefs||[]).forEach((b,i)=>{
       if(!b?.brief) return;
       const found=hasCliche(b.brief);
       if(found.length&&FIELD_DEBUG) console.warn(`[JQ Layer 2] GameBrief[${i}] clichés:`,found);
+      const briefGame=(sections||[]).flatMap(sec=>sec.games||[]).find(g=>
+        b.id && (b.id.includes((g.home||'').toLowerCase().replace(/\s+/g,'_')) ||
+                 b.id.includes((g.away||'').toLowerCase().replace(/\s+/g,'_'))));
+      if(briefGame){
+        const viol=checkSportVocab(b.brief, briefGame._sport||briefGame._section||'');
+        if(viol.length&&FIELD_DEBUG) console.warn(`[JQ Layer 2b] GameBrief[${i}] sport vocab:`,viol);
+      }
     });
     (result.epl||[]).forEach((e,i)=>{
       if(!e?.brief) return;
       const found=hasCliche(e.brief);
       if(found.length&&FIELD_DEBUG) console.warn(`[JQ Layer 2] EPL[${i}] clichés:`,found);
+      const viol=checkSportVocab(e.brief,'soccer');
+      if(viol.length&&FIELD_DEBUG) console.warn(`[JQ Layer 2b] EPL[${i}] sport vocab:`,viol);
     });
     sessionStorage.setItem(cacheKey, JSON.stringify(result));
     return result;
@@ -17182,7 +17333,13 @@ async function fetchNightOwlFromClaude(topGame){
     if(!r.ok) return null;
     const data=await r.json();
     let text=(data.content||[]).filter(c=>c.type==='text').map(c=>c.text).join('');
-    if(text&&text.length>40){text=await retryWithoutCliches(prompt,text,CLAUDE_PROXY_URL);budget.inc();scoreProse(text).then(s=>renderProseScore(s,'J5 Night Owl'));return text.trim();}
+    if(text&&text.length>40){
+      text=await retryWithoutCliches(prompt,text,CLAUDE_PROXY_URL);
+      // Layer 2b: sport vocab — catches "one-possession game" for baseball etc.
+      const _sp=topGame._section||topGame._sport||'';
+      text=await retryWithSportVocab(prompt,text,_sp,CLAUDE_PROXY_URL);
+      budget.inc();scoreProse(text).then(s=>renderProseScore(s,'J5 Night Owl'));return text.trim();
+    }
   }catch(e){if(FIELD_DEBUG)console.error('[J5 Night Owl] proxy error:',e.message);}
   return null;
 }

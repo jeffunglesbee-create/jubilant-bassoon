@@ -583,6 +583,22 @@ assert('A188 — M2: isScoutsPick wired into injectJ1J4Badges',
   html.includes('if (isScoutsPick(g))'),
   'Scout\'s Pick badge injection must use isScoutsPick() boolean gate');
 
+assert('A189 — SW_VERSION bumped to 2026-05-25b (Rule 23: suffix per deploy)',
+  html.includes("'2026-05-25b'"),
+  'Multiple deploys in one day require suffix increment (a→b→c), not just date change');
+
+assert('A190 — Layer 2b: sport vocab violation detection function defined',
+  html.includes('function checkSportVocab(') && html.includes('SPORT_VOCAB_VIOLATIONS'),
+  'checkSportVocab() must exist with per-sport forbidden term lists');
+
+assert('A191 — Layer 2b: sport vocab retry wired into Night Owl',
+  html.includes('retryWithSportVocab') && html.includes("J5 Night Owl"),
+  'Night Owl must validate sport vocabulary after cliché check — not just via prompt instruction');
+
+assert('A192 — Layer 2b: baseball forbidden terms include one-possession',
+  html.includes('one-possession') && html.includes('transition'),
+  'Baseball vocab violations must include basketball crossover terms');
+
 
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);
