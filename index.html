@@ -15662,15 +15662,23 @@ function renderAmbientPanel(){
   let scoresHTML='';
   if(live.length){
     const rows=live.slice(0,5).map(s=>{
-      const away=s.awayTricode||teamNick(s.awayName||s.away)||'';
-      const home=teamNick(s.homeName||s.home)||s.homeTricode||'';
+      const awayName=s.awayTricode||teamNick(s.awayName||s.away)||'';
+      const homeName=teamNick(s.homeName||s.home)||s.homeTricode||'';
       const periodLbl=s.periodLabel||(s.periodPrefix&&s.period?`${s.periodPrefix}${s.period}`:'');
       const isBball=s.periodPrefix==='T'||s.periodPrefix==='B'||/^[TB]\d/.test(periodLbl);
       const clockStr=(!isBball&&s.clock&&s.clock!=='0:00'&&s.clock!=='PT00M00.00S')?` ${fmtESPNClock(s.clock)}`:'';
       const timeStr=(periodLbl||clockStr)?`${periodLbl}${clockStr}`:
         (s.detail&&s.detail!=='0:00'&&typeof s.detail==='string'&&s.detail.length<12?s.detail:'');
+      // SCORE-UNIFORM-A: show leader-first to match OTW and card.
+      // ambient panel uses ESPN's own team names + scores (already correctly paired),
+      // so fix is purely reordering: leader name+score on left, trailer name+score on right.
+      const awayLeading = s.awayScore >= s.homeScore;
+      const leftName  = awayLeading ? awayName : homeName;
+      const rightName = awayLeading ? homeName : awayName;
+      const leftScore  = awayLeading ? s.awayScore : s.homeScore;
+      const rightScore = awayLeading ? s.homeScore : s.awayScore;
       return `<div class="ap-score-row">
-        <span class="ap-score-teams">${away}<strong class="ap-score-num">${s.awayScore}–${s.homeScore}</strong>${home}</span>
+        <span class="ap-score-teams">${leftName}<strong class="ap-score-num">${leftScore}–${rightScore}</strong>${rightName}</span>
         ${timeStr?`<span class="ap-score-clock">${timeStr}</span>`:''}
       </div>`;
     }).join('');
