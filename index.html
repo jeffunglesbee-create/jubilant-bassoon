@@ -13422,6 +13422,99 @@ function buildCompoundCacheKey(sections) {
 }
 
 
+// ── Journalism Quality: Anti-Cliché Architecture (Layers 1-3) ────────────────
+// Patent-adjacent: no sports app measures its own writing quality.
+// Layer 1: prompt injection (FIELD_PROSE_STYLE + BANNED_PHRASES)
+// Layer 2: post-generation cliché detection + one retry
+// Layer 3: prose scoring via Datamuse (debug panel)
+
+const BANNED_PHRASES=['punch their ticket','the stage is set','make a statement',
+  'facing a must-win','looking to bounce back','all eyes on',
+  'put the league on notice','a tale of two halves','rise to the occasion',
+  'leave it all on the floor','leave it all on the field','leave it all on the court',
+  'backs against the wall','do-or-die','prove the doubters wrong',
+  'send a message','weather the storm','turn the page',
+  'take care of business','control their own destiny','gut check',
+  'step up when it matters','laying it on the line','battle-tested',
+  'high-octane','red-hot','ice-cold','pulling away',
+  'in the driver\'s seat','with their season on the line',
+  'cement their legacy','the chess match continues'];
+
+const FIELD_PROSE_STYLE=[
+  '- STYLE: specificity over metaphor. "48 minutes from their first Finals since 1999" not "looking to punch their ticket."',
+  '- STYLE: numbers over adjectives. "Brunson\'s 29.0 PPG this series" not "Brunson has been dominant."',
+  '- STYLE: active voice. "Wembanyama blocked 3 shots" not "3 shots were blocked."',
+  '- STYLE: concrete over abstract. "Game 4 starts at 8pm on ESPN" not "the stage is set for a pivotal matchup."',
+  '- STYLE: one metaphor max per brief — if you use one, make it original.',
+  '- STYLE: write like a well-prepared friend who watched every game, not like a press release.',
+  '- STYLE: if a sentence would work in any game recap for any sport, it is too generic — rewrite with details specific to THIS game.',
+  '- BANNED PHRASES (never use): '+BANNED_PHRASES.join(', ')+'.'
+].join('\n');
+
+// Layer 2: detect banned phrases in generated text
+function hasCliche(text){
+  if(!text) return [];
+  const lower=text.toLowerCase();
+  return BANNED_PHRASES.filter(p=>lower.includes(p));
+}
+
+// Layer 2: one-retry wrapper — re-prompts if clichés found
+async function retryWithoutCliches(originalPrompt,text,proxyUrl){
+  const found=hasCliche(text);
+  if(!found.length) return text;
+  if(FIELD_DEBUG) console.warn('[JQ Layer 2] Clichés detected:',found);
+  try{
+    const retryPrompt=originalPrompt+'\n\nIMPORTANT REWRITE: your previous draft contained these banned clichés: '+found.join(', ')+'. Rewrite without them. Use a specific fact instead of each generic phrase.';
+    const r=await fetch(proxyUrl,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1500,messages:[{role:'user',content:retryPrompt}]})});
+    if(!r.ok) return text;
+    const data=await r.json();
+    const retried=(data.content||[]).filter(c=>c.type==='text').map(c=>c.text).join('');
+    if(retried&&retried.length>30){
+      const still=hasCliche(retried);
+      if(still.length&&FIELD_DEBUG) console.warn('[JQ Layer 2] Retry still has:',still,'— shipping anyway');
+      return retried.trim();
+    }
+  }catch(e){if(FIELD_DEBUG) console.error('[JQ Layer 2] retry error:',e.message);}
+  return text;
+}
+
+// Layer 3: prose scoring via Datamuse API (free, 100K/day, no key, CORS-open)
+async function scoreProse(text){
+  if(!text) return null;
+  const words=text.split(/\s+/);
+  const unique=new Set(words.map(w=>w.toLowerCase()));
+  const specifics=words.filter(w=>/^[A-Z]/.test(w)||/\d/.test(w));
+  const specificity=words.length?specifics.length/words.length:0;
+  const variety=words.length?unique.size/words.length:0;
+  const sentences=text.split(/[.!?]+/).filter(Boolean);
+  const factsPerSentence=sentences.length?specifics.length/sentences.length:0;
+  let freshness=50;
+  try{
+    const contentWords=words.filter(w=>w.length>4&&!/^(their|about|would|could|which|these|those|there|where|being|having|after|before|every|other|should|still)$/i.test(w)).slice(0,5);
+    if(contentWords.length){
+      const freqs=await Promise.all(contentWords.map(async w=>{
+        try{
+          const r=await fetch(`https://api.datamuse.com/words?sp=${encodeURIComponent(w.toLowerCase())}&md=f&max=1`);
+          const d=await r.json();
+          const tag=(d[0]?.tags||[]).find(t=>t.startsWith('f:'));
+          return tag?parseFloat(tag.slice(2)):50;
+        }catch{return 50;}
+      }));
+      const avgFreq=freqs.reduce((a,b)=>a+b,0)/freqs.length;
+      freshness=Math.max(0,100-avgFreq*2);
+    }
+  }catch(e){if(FIELD_DEBUG) console.error('[JQ Layer 3] Datamuse error:',e.message);}
+  const score=Math.round(specificity*30+variety*25+factsPerSentence*20+freshness*0.25);
+  return{score:Math.min(100,score),specificity:Math.round(specificity*100),variety:Math.round(variety*100),density:Math.round(factsPerSentence*10)/10,freshness:Math.round(freshness),cliches:hasCliche(text)};
+}
+
+// Layer 3: debug panel display for prose quality
+function renderProseScore(scoreObj,label){
+  if(!FIELD_DEBUG||!scoreObj) return;
+  console.log(`[JQ] ${label}: Score ${scoreObj.score} · Spec ${scoreObj.specificity}% · Fresh ${scoreObj.freshness} · Dense ${scoreObj.density} · Clichés ${scoreObj.cliches.length}`);
+}
+
+
 // ── Layer 3 Journalism Templates ──────────────────────────────────────────────
 // Situation-specific editorial rules injected into compound prompt.
 // DO NOT INVENT: all conditions from game object fields. Rules are model instructions.
@@ -13608,7 +13701,7 @@ Return this exact JSON structure (null for any section without sufficient data):
 
 Rules:
 - Write ONLY from the data above. Never invent scores, stats, records, or player tendencies.
-- Strong verbs, precise framing, zero clichés.
+- ${FIELD_PROSE_STYLE}
 - Every sentence must be complete. Never end mid-sentence.
 - For each series entry: write ${seriesWords} focused on stakes and series arc, or null if data insufficient.
 - For each epl entry: 40-60 words, context-first (table position, season stakes), or null if data insufficient.
@@ -13657,6 +13750,12 @@ async function fetchCompoundEditorial(sections) {
     const text = data.content?.[0]?.text || '';
     const clean = stripJsonFences(text);
     const result = JSON.parse(clean);
+    // Layer 2+3: check brief text for clichés + score prose quality
+    if(result.brief){
+      const found=hasCliche(result.brief);
+      if(found.length&&FIELD_DEBUG) console.warn('[JQ Layer 2] Compound brief clichés:',found);
+      scoreProse(result.brief).then(s=>renderProseScore(s,'Compound Brief'));
+    }
     sessionStorage.setItem(cacheKey, JSON.stringify(result));
     return result;
   } catch(e) {
@@ -13725,7 +13824,7 @@ async function fetchSeriesPreviewFromClaude(g){
     ' ',
     'Rules: 80-100 words. 2-3 sentences. Tactical focus — what to watch tonight.',
     'Write only from the data above. Never invent statistics, records, or player tendencies.',
-    'Rhetorical quality matters: strong verbs, specific framing, no clichés.',
+    FIELD_PROSE_STYLE,
     'Series narrative arc. Third person only — never use "you" or address the reader directly.',
     'Division accuracy: teams in the same division share ONE race, not "respective" races. No markdown.'
   ].filter(Boolean).join('\n');
@@ -13733,9 +13832,9 @@ async function fetchSeriesPreviewFromClaude(g){
     const r=await fetch(CLAUDE_PROXY_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:prompt}]})});
     if(!r.ok) return null;
     const data=await r.json();
-    const text=(data.content||[]).filter(c=>c.type==='text').map(c=>c.text).join('');
-    if(text&&text.length>30){budget.inc();return text.trim();}
-  }catch(e){if(FIELD_DEBUG)console.error('[J3 FIELD Brief] proxy error:',e.message);}
+    let text=(data.content||[]).filter(c=>c.type==='text').map(c=>c.text).join('');
+    if(text&&text.length>30){text=await retryWithoutCliches(prompt,text,CLAUDE_PROXY_URL);budget.inc();scoreProse(text).then(s=>renderProseScore(s,'J2 Series'));return text.trim();}
+  }catch(e){if(FIELD_DEBUG)console.error('[J2 Series Preview] proxy error:',e.message);}
   return null;
 }
 async function renderSeriesPreviewCard(gameCard){
@@ -14408,13 +14507,13 @@ async function fetchFIELDBriefFromClaude(sections){
       })()
     ].filter(Boolean).join('\n');
   }).join('\n\n');
-  const prompt=["Write a FIELD Brief for tonight's sports slate.",'','TONIGHT\'S GAMES:',gameLines,'','RULES:','- 100-120 words. 2 short paragraphs. No headers.','- Lead with the most important story.','- Call out FREE over-the-air games explicitly.',"- Surface Scout's Pick if flagged.",'- If [ANTI-HYPE] appears in a game line, describe that matchup as low-stakes in plain prose — never echo the tag [ANTI-HYPE] verbatim.','- CORRECTNESS: write only from data above. Never invent scores, stats, records, or player tendencies.','- RHETORIC: strong verbs, specific framing, no clichés. Correctness is the floor; prose quality is the ceiling.','- VOICE: third person only. Never use "you" or address the reader directly. Write like a columnist, not a chatbot.','- DIVISION ACCURACY: teams in the same division share ONE division race — never say "respective division races" for same-division teams. NHL has Atlantic/Metropolitan/Central/Pacific. NBA has Atlantic/Central/Southeast/Northwest/Pacific/Southwest. MLB has AL/NL East/Central/West.','- Plain prose only. No bullet points.','- Always complete every sentence. Never end mid-sentence.'].join('\n');
+  const prompt=["Write a FIELD Brief for tonight's sports slate.",'','TONIGHT\'S GAMES:',gameLines,'','RULES:','- 100-120 words. 2 short paragraphs. No headers.','- Lead with the most important story.','- Call out FREE over-the-air games explicitly.',"- Surface Scout's Pick if flagged.",'- If [ANTI-HYPE] appears in a game line, describe that matchup as low-stakes in plain prose — never echo the tag [ANTI-HYPE] verbatim.','- CORRECTNESS: write only from data above. Never invent scores, stats, records, or player tendencies.',FIELD_PROSE_STYLE,'- VOICE: third person only. Never use "you" or address the reader directly. Write like a columnist, not a chatbot.','- DIVISION ACCURACY: teams in the same division share ONE division race — never say "respective division races" for same-division teams. NHL has Atlantic/Metropolitan/Central/Pacific. NBA has Atlantic/Central/Southeast/Northwest/Pacific/Southwest. MLB has AL/NL East/Central/West.','- Plain prose only. No bullet points.','- Always complete every sentence. Never end mid-sentence.'].join('\n');
   try{
     const r=await fetch(CLAUDE_PROXY_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1500,messages:[{role:'user',content:prompt}]})});
     if(!r.ok) return null;
     const data=await r.json();
-    const text=(data.content||[]).filter(c=>c.type==='text').map(c=>c.text).join('');
-    if(text&&text.length>50){budget.inc();return text.replace(/\[ANTI-HYPE\]/gi,'').replace(/\s{2,}/g,' ').trim();}
+    let text=(data.content||[]).filter(c=>c.type==='text').map(c=>c.text).join('');
+    if(text&&text.length>50){text=await retryWithoutCliches(prompt,text,CLAUDE_PROXY_URL);budget.inc();scoreProse(text).then(s=>renderProseScore(s,'J3 Brief'));return text.replace(/\[ANTI-HYPE\]/gi,'').replace(/\s{2,}/g,' ').trim();}
   }catch(e){if(FIELD_DEBUG)console.error('[J3 FIELD Brief] proxy error:',e.message);}
   return null;
 }
@@ -16540,7 +16639,7 @@ async function fetchNightOwlFromClaude(topGame){
       crewCtx?'Broadcast crew: '+crewCtx:'',
       '','Rules: 80-100 words. Tactical. Not emotional. Lead with the turning point.',
       'Write only from the data above — never invent statistics, player tendencies, or context.',
-      'Rhetorical quality: strong verbs, precise framing, zero clichés.',
+      FIELD_PROSE_STYLE,
       'Third person only — never use "you" or address the reader directly.',
       'Division accuracy: teams in the same division share ONE race, not "respective" races.',
       'Explain what tactically swung the game. Series implication. Plain prose.'
@@ -16549,8 +16648,8 @@ async function fetchNightOwlFromClaude(topGame){
     const r=await fetch(CLAUDE_PROXY_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:prompt}]})});
     if(!r.ok) return null;
     const data=await r.json();
-    const text=(data.content||[]).filter(c=>c.type==='text').map(c=>c.text).join('');
-    if(text&&text.length>40){budget.inc();return text.trim();}
+    let text=(data.content||[]).filter(c=>c.type==='text').map(c=>c.text).join('');
+    if(text&&text.length>40){text=await retryWithoutCliches(prompt,text,CLAUDE_PROXY_URL);budget.inc();scoreProse(text).then(s=>renderProseScore(s,'J5 Night Owl'));return text.trim();}
   }catch(e){if(FIELD_DEBUG)console.error('[J5 Night Owl] proxy error:',e.message);}
   return null;
 }

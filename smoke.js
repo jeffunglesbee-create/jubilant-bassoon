@@ -407,6 +407,38 @@ assert('A144 — GOVERNANCE.json canonical doc IDs are non-empty strings',
   })(),
   'All canonical docs in GOVERNANCE.json must have valid Drive IDs');
 
+assert('A145 — JQ Layer 1: BANNED_PHRASES array defined',
+  html.includes('BANNED_PHRASES=') && html.includes('punch their ticket'),
+  'BANNED_PHRASES constant with banned cliché phrases must exist');
+
+assert('A146 — JQ Layer 1: FIELD_PROSE_STYLE constant defined',
+  html.includes('FIELD_PROSE_STYLE=') && html.includes('specificity over metaphor'),
+  'FIELD_PROSE_STYLE style rules constant must exist');
+
+assert('A147 — JQ Layer 2: hasCliche function defined',
+  html.includes('function hasCliche('),
+  'hasCliche() banned-phrase detection function must exist');
+
+assert('A148 — JQ Layer 2: retryWithoutCliches function defined',
+  html.includes('function retryWithoutCliches('),
+  'retryWithoutCliches() one-retry wrapper must exist');
+
+assert('A149 — JQ Layer 3: scoreProse function defined',
+  html.includes('function scoreProse(') && html.includes('api.datamuse.com'),
+  'scoreProse() with Datamuse API integration must exist');
+
+assert('A150 — JQ Layer 3: renderProseScore function defined',
+  html.includes('function renderProseScore('),
+  'renderProseScore() debug panel display must exist');
+
+assert('A151 — JQ wired: J3 Brief uses FIELD_PROSE_STYLE',
+  html.includes("FIELD_PROSE_STYLE,'- VOICE: third person"),
+  'J3 FIELD Brief prompt must inject FIELD_PROSE_STYLE');
+
+assert('A152 — JQ wired: J5 Night Owl uses FIELD_PROSE_STYLE',
+  html.includes("FIELD_PROSE_STYLE,") && html.includes("renderProseScore(s,'J5 Night Owl')"),
+  'J5 Night Owl prompt must inject FIELD_PROSE_STYLE and score prose');
+
 
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);

@@ -344,4 +344,140 @@ test.describe('Data-dependent — skip if no games', () => {
     ).toBeAttached();
   });
 
+  test('F16 — Game card tap opens bottom sheet', async ({ page }) => {
+    await page.goto(LIVE_URL, { waitUntil: 'domcontentloaded', timeout: 30000 });
+
+    let hasCards = false;
+    try {
+      await page.waitForSelector('.game-card', { timeout: LOAD_WAIT_MS });
+      hasCards = true;
+    } catch { /* no cards */ }
+
+    if (!hasCards) {
+      test.skip(true, 'No game cards rendered — off-season or load failure');
+      return;
+    }
+
+    await page.locator('.game-card').first().click();
+    await expect(page.locator('#bottom-sheet'),
+      'Bottom sheet did not open after card tap — initCardTapDelegation or openBottomSheet broken'
+    ).toHaveClass(/open/, { timeout: 2000 });
+
+    const teamsText = await page.locator('.bs-teams').first().textContent().catch(() => '');
+    expect(teamsText.length, 'Bottom sheet .bs-teams is empty — sheet opened but not populated').toBeGreaterThan(0);
+  });
+
+  test('F17 — Playoff cards have series brief injected', async ({ page }) => {
+    await page.goto(LIVE_URL, { waitUntil: 'domcontentloaded', timeout: 30000 });
+
+    // Wait for journalism queue to fire (3s delay + fetch time)
+    await page.waitForTimeout(8000);
+
+    const playoffCards = page.locator('.game-card[data-sport*="Playoffs"]');
+    const count = await playoffCards.count();
+    if (count === 0) {
+      test.skip(true, 'No playoff cards — off-season or no playoff games today');
+      return;
+    }
+
+    // At least one playoff card should have a series brief
+    const briefCards = page.locator('.game-card[data-sport*="Playoffs"] .card-brief-inline');
+    const briefCount = await briefCards.count();
+    expect(briefCount, 'No playoff card has .card-brief-inline — renderSeriesPreviewCard not firing').toBeGreaterThan(0);
+
+    const briefText = await briefCards.first().locator('.card-brief-inline-text').textContent().catch(() => '');
+    expect(briefText.length, 'Series brief text too short — empty shell or loading state').toBeGreaterThan(15);
+  });
+
+  test('F18 — Ambient panel editorial section populated after brief resolves', async ({ page }) => {
+    await page.setViewportSize({ width: 820, height: 1180 });
+    await page.goto(LIVE_URL, { waitUntil: 'domcontentloaded', timeout: 30000 });
+
+    // Check game cards loaded first
+    let hasCards = false;
+    try {
+      await page.waitForSelector('.game-card', { timeout: LOAD_WAIT_MS });
+      hasCards = true;
+    } catch { /* no cards */ }
+
+    if (!hasCards) {
+      test.skip(true, 'No schedule data to drive editorial');
+      return;
+    }
+
+    // Wait for compound editorial to resolve (10-15s via proxy)
+    await page.waitForTimeout(20000);
+
+    const editorialCard = page.locator('#ambient-panel .ap-card-brief, #ambient-panel .ap-card-owl').first();
+    await expect(editorialCard,
+      'No editorial card in ambient panel — compound editorial not rendering'
+    ).toBeAttached({ timeout: 5000 });
+
+    const cardText = await editorialCard.locator('.ap-card-text').textContent().catch(() => '');
+    expect(cardText.trim().length, 'Editorial card text too short — empty shell').toBeGreaterThan(20);
+  });
+
+  test('F19 — Mobile smart stream chip: exactly 1 chip at 360px', async ({ page }) => {
+    await page.setViewportSize({ width: 360, height: 800 });
+    await page.goto(LIVE_URL, { waitUntil: 'domcontentloaded', timeout: 30000 });
+
+    let hasCards = false;
+    try {
+      await page.waitForSelector('.game-card', { timeout: LOAD_WAIT_MS });
+      hasCards = true;
+    } catch { /* no cards */ }
+
+    if (!hasCards) {
+      test.skip(true, 'No game cards at 360px — off-season or load failure');
+      return;
+    }
+
+    // Check first 3 cards (or fewer)
+    const cards = page.locator('.game-card');
+    const cardCount = Math.min(await cards.count(), 3);
+    for (let i = 0; i < cardCount; i++) {
+      const card = cards.nth(i);
+      const chips = card.locator('.stream-chip');
+      const chipCount = await chips.count();
+      // 0 chips ok (no stream data), but >1 fails at 360px
+      if (chipCount > 0) {
+        expect(chipCount, `Card ${i}: ${chipCount} stream chips visible at 360px — should be exactly 1`).toBe(1);
+      }
+      const overflow = card.locator('.chip-overflow');
+      expect(await overflow.count(), `Card ${i}: chip-overflow visible at 360px — should be suppressed`).toBe(0);
+    }
+  });
+
+  test('F20 — Editorial sections NOT in left pane on iPad (migrated to right)', async ({ page }) => {
+    await page.setViewportSize({ width: 820, height: 1180 });
+    await page.goto(LIVE_URL, { waitUntil: 'domcontentloaded', timeout: 30000 });
+
+    // Wait for full load including brief
+    await page.waitForTimeout(20000);
+
+    // Assert #field-brief hidden at 820px
+    const briefDisplay = await page.locator('#field-brief').evaluate(
+      el => window.getComputedStyle(el).display
+    ).catch(() => 'not-found');
+    expect(briefDisplay, '#field-brief should be display:none at 820px').toBe('none');
+
+    // Assert #night-owl hidden at 820px
+    const owlDisplay = await page.locator('#night-owl').evaluate(
+      el => window.getComputedStyle(el).display
+    ).catch(() => 'not-found');
+    expect(owlDisplay, '#night-owl should be display:none at 820px').toBe('none');
+
+    // Assert ambient panel is visible
+    const ambientDisplay = await page.locator('#ambient-panel').evaluate(
+      el => window.getComputedStyle(el).display
+    ).catch(() => 'none');
+    expect(ambientDisplay, '#ambient-panel should be visible at 820px').not.toBe('none');
+
+    // Check editorial content reached the ambient panel (soft — skip if brief not resolved)
+    const editorialExists = await page.locator('#ambient-panel .ap-card-brief, #ambient-panel .ap-card-owl').count();
+    if (editorialExists === 0) {
+      console.warn('F20 assertion 4 skipped: editorial not resolved after 20s — timing edge case');
+    }
+  });
+
 });
