@@ -13741,7 +13741,8 @@ async function fetchSeriesPreviewFromClaude(g){
     'Rules: 80-100 words. 2-3 sentences. Tactical focus — what to watch tonight.',
     'Write only from the data above. Never invent statistics, records, or player tendencies.',
     'Rhetorical quality matters: strong verbs, specific framing, no clichés.',
-    'Series narrative arc. Second person. No markdown.'
+    'Series narrative arc. Third person only — never use "you" or address the reader directly.',
+    'Division accuracy: teams in the same division share ONE race, not "respective" races. No markdown.'
   ].filter(Boolean).join('\n');
   try{
     const r=await fetch(CLAUDE_PROXY_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:prompt}]})});
@@ -14422,7 +14423,7 @@ async function fetchFIELDBriefFromClaude(sections){
       })()
     ].filter(Boolean).join('\n');
   }).join('\n\n');
-  const prompt=["Write a FIELD Brief for tonight's sports slate.",'','TONIGHT\'S GAMES:',gameLines,'','RULES:','- 100-120 words. 2 short paragraphs. No headers.','- Lead with the most important story.','- Call out FREE over-the-air games explicitly.',"- Surface Scout's Pick if flagged.",'- If [ANTI-HYPE] appears in a game line, describe that matchup as low-stakes in plain prose — never echo the tag [ANTI-HYPE] verbatim.','- CORRECTNESS: write only from data above. Never invent scores, stats, records, or player tendencies.','- RHETORIC: strong verbs, specific framing, no clichés. Correctness is the floor; prose quality is the ceiling.','- Plain prose only. No bullet points.','- Always complete every sentence. Never end mid-sentence.'].join('\n');
+  const prompt=["Write a FIELD Brief for tonight's sports slate.",'','TONIGHT\'S GAMES:',gameLines,'','RULES:','- 100-120 words. 2 short paragraphs. No headers.','- Lead with the most important story.','- Call out FREE over-the-air games explicitly.',"- Surface Scout's Pick if flagged.",'- If [ANTI-HYPE] appears in a game line, describe that matchup as low-stakes in plain prose — never echo the tag [ANTI-HYPE] verbatim.','- CORRECTNESS: write only from data above. Never invent scores, stats, records, or player tendencies.','- RHETORIC: strong verbs, specific framing, no clichés. Correctness is the floor; prose quality is the ceiling.','- VOICE: third person only. Never use "you" or address the reader directly. Write like a columnist, not a chatbot.','- DIVISION ACCURACY: teams in the same division share ONE division race — never say "respective division races" for same-division teams. NHL has Atlantic/Metropolitan/Central/Pacific. NBA has Atlantic/Central/Southeast/Northwest/Pacific/Southwest. MLB has AL/NL East/Central/West.','- Plain prose only. No bullet points.','- Always complete every sentence. Never end mid-sentence.'].join('\n');
   try{
     const r=await fetch(CLAUDE_PROXY_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1500,messages:[{role:'user',content:prompt}]})});
     if(!r.ok) return null;
@@ -16555,6 +16556,8 @@ async function fetchNightOwlFromClaude(topGame){
       '','Rules: 80-100 words. Tactical. Not emotional. Lead with the turning point.',
       'Write only from the data above — never invent statistics, player tendencies, or context.',
       'Rhetorical quality: strong verbs, precise framing, zero clichés.',
+      'Third person only — never use "you" or address the reader directly.',
+      'Division accuracy: teams in the same division share ONE race, not "respective" races.',
       'Explain what tactically swung the game. Series implication. Plain prose.'
     ].filter(Boolean).join('\n');
   try{
