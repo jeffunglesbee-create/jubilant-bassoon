@@ -1,51 +1,45 @@
-# FIELD Handoff — May 25 2026 Session 10
+# FIELD Handoff — May 25 2026 Session 11
 
-HEAD: 76f9d11
+HEAD: 6f6370a
 Smoke: 144/0
 Deploy: SUCCESS
 
-## PATENT DEFENSE: COMPLETE (all layers deployed)
+## URGENT: teamNick() function MISSING
 
-Layer 2: Drama Dial (ddf73e1), Layer 3: SW push eval (0a7dc8c), Layer 5+: Wikimedia (e5bf19e)
-Remaining: field-relay-nba handleCron server strip (separate repo, not urgent)
+teamNick() was coded in May 21 session but NEVER made it to main.
+61 instances of .split(' ').pop() remain — breaks for multi-word nicknames:
+Red Sox, Blue Jays, Trail Blazers, White Sox, Golden Knights, etc.
+This caused today's "Knicks facing elimination" bug (headline matched wrong team).
+The elimination headline is fixed (6f6370a) but the root cause — missing teamNick() —
+affects 60+ other locations. Dedicated TYPE B session needed.
 
-## GOTD PROTOCOL: AUTOMATED
+Previous session reference: chat 8329165a (May 21) has the full replacement script
+with all 61 pattern pairs across 4 pattern families.
 
-ESPN_GOTD_SCHEDULE + PEACOCK_GOTD_SCHEDULE lookup tables in index.html.
-Auto-tags mlbRaw entries — no manual per-game tagging needed.
-ESPN: paste full block when announced (~4x/year). Current block through May 31.
-Peacock: paste weekly (Mon/Tue). Current week empty — paste when announced.
-When ESPN announces June-August block (expected late May): paste into ESPN_GOTD_SCHEDULE.
+## BUGS FIXED THIS SESSION
+
+- "Knicks facing elimination" → now correctly identifies trailing team (6f6370a)
+  Root cause: seriesRecord uses abbreviations ("NYK leads") but headline matcher
+  used .split(' ').pop() nicknames ("Knicks"). Added _teamAbbr matching.
 
 ## IMMEDIATE WORK FOR NEXT SESSION
 
-0. BUGS FROM LIVE SCREENSHOT (May 25):
-   - "Knicks facing elimination" headline is WRONG — Cavaliers face elimination (NYK leads 3-0).
-     Journalism integrity violation. Check headline generator + J3 Brief prompt.
-   - PHI@SD GOTD badge not showing — verify deploy propagated. If still missing after
-     cache bust, debug _gotdKey() matching in mlbRaw filter.
-
-1. TYPE A DAILY UPDATE (if May 26):
+1. TYPE B: teamNick() implementation — 61 replacements across 4 pattern families
+2. TYPE A DAILY UPDATE (if May 26):
    - Check results: NBA ECF G4, NHL ECF G3, EFL L2 Final
    - Add Tue May 26 MLB slate (GOTD auto-tags from table)
-   - Check Peacock blog for this week's GOTD schedule → paste into PEACOCK_GOTD_SCHEDULE
+   - Peacock GOTD: check blog for weekly schedule
    - Run: node scripts/rotate-schedule.js
-
-2. TYPE C: Schedule Automation (Jeff approved, spec corrected)
-   Drive: 1d6HZ7gHJ0omabekHfVuGzKNoOGgUbwJwlwvcUaUAr10
-
-3. BUILD PRIORITY: field-relay-nba handleCron strip, Drama Dial refinements,
-   YouTube, Podcast Index, SeatGeek, Polymarket, Preference Sync
+3. GOTD badge: verify PHI@SD badge shows after cache bust. If not, debug _gotdKey().
+4. TYPE C: Schedule Automation (spec: Drive 1d6HZ7gHJ0omabekHfVuGzKNoOGgUbwJwlwvcUaUAr10)
 
 ## KEY CONTEXT
 
-- Patent defense COMPLETE. GOTD auto-tagging COMPLETE.
-- HANDOFF.md is in repo root. rotate-schedule.js handles data cleanup.
-- Schedule Automation spec CORRECTED: pipeline hardcodes, no runtime fetch.
-- JustWatch evaluated and rejected (partner-locked, FIELD stays independent).
-- _teamAbbr mapping + _gotdKey() helper handle team→abbreviation matching.
-- WIKI_TITLES has 28 teams (expandable). Wikimedia chips render after 1500ms.
-- Drama Dial: getDramaDial() used everywhere. SW synced via postMessage + IndexedDB.
+- Patent defense COMPLETE (Drama Dial, SW eval, Wikimedia all deployed)
+- GOTD auto-tagging via ESPN_GOTD_SCHEDULE / PEACOCK_GOTD_SCHEDULE tables
+- HANDOFF.md in repo root. rotate-schedule.js handles data cleanup.
+- _teamAbbr mapping exists (added for GOTD) — reusable for teamNick()
+- JustWatch rejected (partner-locked). Schedule Automation spec corrected.
 
 ## SERIES STATE
 
