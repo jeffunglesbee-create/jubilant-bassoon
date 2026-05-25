@@ -4588,14 +4588,37 @@ const MLB_TEAM_RSN = {
   SDP:'SDTV',         SFG:'NBCS Bay Area',
 };
 
-// Day-of manual overrides — ESPN GOTD and Peacock GOTD cannot be reliably
-// auto-detected from the API broadcasts array until type:'I' behavior is confirmed.
-// Enter game key as 'AWAY@HOME' (official team abbreviations) or null.
-// ~30 ESPN GOTD games/season, varies for Peacock GOTD.
-const MLB_DAILY_OVERRIDES = {
-  espnGOTD:    null,      // e.g. 'NYY@BOS' — set day-of, ~2 min
-  peacockGOTD: 'CWS@SEA', // White Sox @ Mariners — Peacock GOTD Wed May 20 · 9:40 PM ET
+// ── GOTD Schedule Tables (hardcoded from press releases) ─────────────────────
+// ESPN GOTD: Published in multi-month blocks by ESPN Press Room.
+// Paste new block when announced (~4x/year). Current: Mar 27 – May 31 2026.
+// Source: espnpressroom.com/us/press-releases/2026/03/espn-announces-mlb-game-of-the-day-schedule-through-may/
+const ESPN_GOTD_SCHEDULE = {
+  // May 2026 (remaining — earlier dates rotated out)
+  '2026-05-25':'PHI@SDP','2026-05-26':'SEA@OAK','2026-05-27':'MIA@TOR',
+  '2026-05-28':'HOU@TEX','2026-05-29':'MIA@NYM','2026-05-30':'DET@CHW',
+  '2026-05-31':'PHI@LAD',
+  // June 2026 block: paste here when ESPN announces (~late May)
 };
+// Peacock GOTD: Announced weekly (Mon/Tue for upcoming week).
+// Paste each week's games. Source: peacocktv.com/blog
+const PEACOCK_GOTD_SCHEDULE = {
+  // Week of May 26-Jun 1: paste when announced
+};
+
+// Auto-match helper: builds 'AWAY@HOME' key from team abbreviations
+const _teamAbbr={'New York Yankees':'NYY','Boston Red Sox':'BOS','Tampa Bay Rays':'TBR',
+  'Toronto Blue Jays':'TOR','Baltimore Orioles':'BAL','Cleveland Guardians':'CLE',
+  'Minnesota Twins':'MIN','Chicago White Sox':'CHW','Kansas City Royals':'KCR',
+  'Detroit Tigers':'DET','Houston Astros':'HOU','Los Angeles Angels':'LAA',
+  'Seattle Mariners':'SEA','Athletics':'OAK','Texas Rangers':'TEX',
+  'New York Mets':'NYM','Atlanta Braves':'ATL','Philadelphia Phillies':'PHI',
+  'Miami Marlins':'MIA','Washington Nationals':'WSN','Milwaukee Brewers':'MIL',
+  'Chicago Cubs':'CHC','St. Louis Cardinals':'STL','Pittsburgh Pirates':'PIT',
+  'Cincinnati Reds':'CIN','Los Angeles Dodgers':'LAD','San Diego Padres':'SDP',
+  'San Francisco Giants':'SFG','Arizona Diamondbacks':'ARI',
+  'Colorado Rockies':'COL','Oakland Athletics':'OAK'};
+function _gotdKey(away,home){return(_teamAbbr[away]||'')+'@'+(_teamAbbr[home]||'');}
+
 
 // MLB team IDs for MLB Stats API teamId param (fetchMLBTeamMomentum, H2H)
 const MLB_TEAM_IDS = {
@@ -6514,7 +6537,7 @@ function buildTodaySchedule(){
     {home:"New York Mets",         away:"Cincinnati Reds",      start_time:"2026-05-25T20:10:00Z", confirmed:true, venue:"Citi Field, New York NY"},
     {home:"San Francisco Giants",  away:"Arizona Diamondbacks", start_time:"2026-05-25T21:05:00Z", confirmed:true, venue:"Oracle Park, San Francisco CA"},
     {home:"Cleveland Guardians",   away:"Washington Nationals", start_time:"2026-05-25T22:10:00Z", confirmed:true, venue:"Progressive Field, Cleveland OH"},
-    {home:"San Diego Padres",      away:"Philadelphia Phillies",start_time:"2026-05-25T22:40:00Z", confirmed:true, venue:"Petco Park, San Diego CA", espnGOTD:true},
+    {home:"San Diego Padres",      away:"Philadelphia Phillies",start_time:"2026-05-25T22:40:00Z", confirmed:true, venue:"Petco Park, San Diego CA"},
     {home:"Texas Rangers",         away:"Houston Astros",       start_time:"2026-05-25T23:05:00Z", confirmed:true, venue:"Globe Life Field, Arlington TX"},
     {home:"Toronto Blue Jays",     away:"Miami Marlins",        start_time:"2026-05-25T23:07:00Z", confirmed:true, venue:"Rogers Centre, Toronto ON"},
     {home:"Los Angeles Dodgers",   away:"Colorado Rockies",     start_time:"2026-05-26T01:10:00Z", confirmed:true, venue:"Dodger Stadium, Los Angeles CA"},
@@ -6543,14 +6566,18 @@ function buildTodaySchedule(){
       baseStreams = mlbStreams();                  // Default: MLB_LOCAL (MLB.TV + Local RSN)
     }
     const base = {...g, league:"MLB", streams:baseStreams};
+    // Auto-tag GOTD from schedule tables (no manual entry tagging needed)
+    const gKey=_gotdKey(g.away,g.home);
+    const isEspnGOTD=g.espnGOTD||ESPN_GOTD_SCHEDULE[TODAY_ISO]===gKey;
+    const isPeacockGOTD=g.peacockGOTD||PEACOCK_GOTD_SCHEDULE[TODAY_ISO]===gKey;
     // Peacock Game of the Day: streams without needing MLB.TV
-    if(g.peacockGOTD){
+    if(isPeacockGOTD){
       base.peacockGOTD = true;
       base.gotdLabel = "Peacock Game of the Day";
       base.gotdStreams = resolveBundle("MLB_PEACOCK_GOTD");
     }
     // ESPN Unlimited Game of the Day: streams without needing MLB.TV
-    if(g.espnGOTD){
+    if(isEspnGOTD){
       base.espnGOTD = true;
       base.gotdLabel = "ESPN Unlimited Game of the Day";
       base.gotdStreams = resolveBundle("MLB_ESPNU_GOTD");
@@ -10978,14 +11005,14 @@ function findESPNScore(game){
 // Source: statsapi.mlb.com (official, free, CORS-open, no key)
 // Replaces ESPN as primary MLB data source; ESPN is the fallback.
 // Broadcast chip resolution is fully automatic from API broadcasts array.
-// Only ESPN GOTD and Peacock GOTD require manual MLB_DAILY_OVERRIDES entry.
+// Only ESPN GOTD and Peacock GOTD require manual ESPN_GOTD_SCHEDULE entry.
 
 function parseBroadcasts(broadcasts, gameDate, date) {
   const result = {
     nationalBundle:  null,
     localBlackedOut: false,
-    espnGOTD:        false, // set by MLB_DAILY_OVERRIDES only — not auto-detected from API
-    peacockGOTD:     false, // set by MLB_DAILY_OVERRIDES only — not auto-detected from API
+    espnGOTD:        false, // set by ESPN_GOTD_SCHEDULE only — not auto-detected from API
+    peacockGOTD:     false, // set by ESPN_GOTD_SCHEDULE only — not auto-detected from API
     mlbnShowcase:    false,
   };
   const d = date instanceof Date ? date : new Date(date);
@@ -11021,7 +11048,7 @@ function parseBroadcasts(broadcasts, gameDate, date) {
     }
 
     // ESPN — skip; GOTD not reliably distinguishable by type field until verified.
-    // espnGOTD is set via MLB_DAILY_OVERRIDES.espnGOTD in loadMLBSlate().
+    // espnGOTD is set via ESPN_GOTD_SCHEDULE[TODAY_ISO] in loadMLBSlate().
     // TODO: once type:'I' confirmed for GOTD, add: if(b.type==='I') result.espnGOTD=true;
     if (name === 'ESPN' || name === 'ESPN+') continue;
 
@@ -11173,8 +11200,8 @@ async function loadMLBSlate(date) {
   if (mlbGames) {
     return mlbGames.map(g => {
       const key = `${g.awayTeam}@${g.homeTeam}`;
-      const isEspnGOTD    = g.espnGOTD    || MLB_DAILY_OVERRIDES.espnGOTD    === key;
-      const isPeacockGOTD = g.peacockGOTD || MLB_DAILY_OVERRIDES.peacockGOTD === key;
+      const isEspnGOTD    = g.espnGOTD    || ESPN_GOTD_SCHEDULE[TODAY_ISO]    === key;
+      const isPeacockGOTD = g.peacockGOTD || PEACOCK_GOTD_SCHEDULE[TODAY_ISO] === key;
 
       // ESPN GOTD — NON-EXCLUSIVE: shows espnapp + local RSN chips (in-market)
       // Doc ref: "Code Changes Log MLB Local Chip Rule May 11" — MLB_ESPNU_GOTD: ["espnapp","rsn"]

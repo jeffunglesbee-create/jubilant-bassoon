@@ -47,7 +47,7 @@ assert('parseBroadcasts defined', html.includes('function parseBroadcasts'));
 assert('normalizeMLBGame defined', html.includes('function normalizeMLBGame'));
 assert('loadMLBSlate defined', html.includes('async function loadMLBSlate'));
 assert('MLB_TEAM_RSN defined', html.includes('const MLB_TEAM_RSN'));
-assert('MLB_DAILY_OVERRIDES defined', html.includes('const MLB_DAILY_OVERRIDES'));
+assert('ESPN_GOTD_SCHEDULE defined', html.includes('const ESPN_GOTD_SCHEDULE'));
 
 // 5. RELAY NBA Adapters (Session 3)
 assert('RELAY_BASE defined', html.includes("const RELAY_BASE = 'https://field-relay-nba"));
