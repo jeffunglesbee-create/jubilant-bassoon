@@ -531,6 +531,42 @@ assert('A175 — Item 6: MLB boxscore wired into compound prompt',
   html.includes('MLB BOX') && html.includes('_mlbBoxscoreCache'),
   'MLB boxscore stats must inject into compound prompt game lines');
 
+assert('A176 — BUG-01: NBA/NHL teams in _teamAbbr for elimination attribution',
+  html.includes("'New York Knicks':'NYK'") && html.includes("'Carolina Hurricanes':'CAR'"),
+  '_teamAbbr must include NBA and NHL teams for correct Skim elimination labeling');
+
+assert('A177 — BUG-01: awayLeads uses leadToken not empty-string match',
+  html.includes('leadToken') && html.includes('leadMatch'),
+  'awayLeads must parse seriesRecord front token, not match empty string');
+
+assert('A178 — BUG-02: chipHTML null-guard for undefined name',
+  html.includes("!s.name||s.name==='undefined'") && html.includes("return ''"),
+  'chipHTML must return empty string when name is undefined');
+
+assert('A179 — BUG-03: espnPeriodLabel defined — no longer missing function',
+  html.includes('function espnPeriodLabel('),
+  'espnPeriodLabel must be defined — was called but never defined (TypeError)');
+
+assert('A180 — BUG-03: espnPeriodLabel uses Inn N for baseball not OT',
+  html.includes("'Inn '") || html.includes('"Inn "') || html.includes('`Inn ${period}`') || html.includes('Inn ${period}'),
+  'Baseball extra innings must render as "Inn N" not "OT"');
+
+assert('A181 — BUG-04: Night Owl explicit sport prohibitions',
+  html.includes('NEVER use: points, possession') && html.includes('NEVER use: basket'),
+  'Night Owl prompt must explicitly forbid cross-sport vocabulary');
+
+assert('A182 — BUG-07: Conference Finals tier boost in preGameScore',
+  html.includes('conference finals') && html.includes('tierBoost'),
+  'preGameScore must give tier boost to Conference Finals over lower-tier eliminations');
+
+assert('A183 — BUG-09: Playoff count uses league string not only _gameImportance',
+  html.includes('isPlayoffGame') && html.includes('conference|cup final|series'),
+  'Betting Intelligence playoff count must detect Conference Finals by league string');
+
+assert('A184 — New banned phrases from screenshots',
+  html.includes('salvage pride') && html.includes('clinical execution') && html.includes('dictated the tempo'),
+  'Banned phrases must include phrases observed in screenshot audit');
+
 
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);

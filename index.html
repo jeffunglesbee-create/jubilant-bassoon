@@ -4644,7 +4644,9 @@ const PEACOCK_GOTD_SCHEDULE = {
 };
 
 // Auto-match helper: builds 'AWAY@HOME' key from team abbreviations
-const _teamAbbr={'New York Yankees':'NYY','Boston Red Sox':'BOS','Tampa Bay Rays':'TBR',
+const _teamAbbr={
+  // MLB
+  'New York Yankees':'NYY','Boston Red Sox':'BOS','Tampa Bay Rays':'TBR',
   'Toronto Blue Jays':'TOR','Baltimore Orioles':'BAL','Cleveland Guardians':'CLE',
   'Minnesota Twins':'MIN','Chicago White Sox':'CHW','Kansas City Royals':'KCR',
   'Detroit Tigers':'DET','Houston Astros':'HOU','Los Angeles Angels':'LAA',
@@ -4654,7 +4656,25 @@ const _teamAbbr={'New York Yankees':'NYY','Boston Red Sox':'BOS','Tampa Bay Rays
   'Chicago Cubs':'CHC','St. Louis Cardinals':'STL','Pittsburgh Pirates':'PIT',
   'Cincinnati Reds':'CIN','Los Angeles Dodgers':'LAD','San Diego Padres':'SDP',
   'San Francisco Giants':'SFG','Arizona Diamondbacks':'ARI',
-  'Colorado Rockies':'COL','Oakland Athletics':'OAK'};
+  'Colorado Rockies':'COL','Oakland Athletics':'OAK',
+  // NBA — BUG-01 fix: abbreviation lookup for Skim elimination attribution
+  'New York Knicks':'NYK','Cleveland Cavaliers':'CLE',
+  'Oklahoma City Thunder':'OKC','San Antonio Spurs':'SAS',
+  'Boston Celtics':'BOS','Miami Heat':'MIA','Golden State Warriors':'GSW',
+  'Los Angeles Lakers':'LAL','Denver Nuggets':'DEN','Minnesota Timberwolves':'MIN',
+  'Milwaukee Bucks':'MIL','Indiana Pacers':'IND','Philadelphia 76ers':'PHI',
+  'Chicago Bulls':'CHI','Atlanta Hawks':'ATL','Toronto Raptors':'TOR',
+  'Dallas Mavericks':'DAL','Phoenix Suns':'PHX','Sacramento Kings':'SAC',
+  'Memphis Grizzlies':'MEM','New Orleans Pelicans':'NOP','Portland Trail Blazers':'POR',
+  // NHL — BUG-01 fix
+  'Carolina Hurricanes':'CAR','Montreal Canadiens':'MTL',
+  'Vegas Golden Knights':'VGK','Colorado Avalanche':'COL',
+  'Florida Panthers':'FLA','Boston Bruins':'BOS','Toronto Maple Leafs':'TOR',
+  'New York Rangers':'NYR','New Jersey Devils':'NJD','Washington Capitals':'WSH',
+  'Pittsburgh Penguins':'PIT','Tampa Bay Lightning':'TBL','Dallas Stars':'DAL',
+  'Edmonton Oilers':'EDM','Vancouver Canucks':'VAN','Calgary Flames':'CGY',
+  'Nashville Predators':'NSH','Minnesota Wild':'MIN','Winnipeg Jets':'WPG',
+};
 function _gotdKey(away,home){return(_teamAbbr[away]||'')+'@'+(_teamAbbr[home]||'');}
 
 
@@ -5218,6 +5238,8 @@ const APP_DEEPLINKS = {
 // regardless of whether user has them in My Services
 const RSN_KEYS = new Set(["rsn","sny","snp","nbcsca","masn","masnplus","nationalstv","yes","cleg","xfinity"]);
 function chipHTML(s, srKey, forcehave){
+  // BUG-02 guard: undefined name must never render. Fall back to key or generic label.
+  if(!s||!s.name||s.name==='undefined') return '';
   const col=s.col||"#888";
   const auth=s.auth||"sub";
   const haveIt = forcehave || (srKey && MY_SERVICES.has(srKey) && !RSN_KEYS.has(srKey));
@@ -5939,7 +5961,16 @@ function preGameScore(g){
     if (ms?.pct >= 0.98) mb = 15; // within 2% — could happen tonight
     else if (ms?.pct >= 0.95) mb = 8; // within 5%
   } catch(e_) {}
-  return nb+ib+cb+bb+mb;
+  // BUG-07 fix: Conference Finals, championship rounds must outrank lower-tier eliminations.
+  // A League Two Playoff Final has _gameImportance:'elimination' (ib=20) and might beat a
+  // Conference Finals game that lacks _gameImportance. Add tier boost from league string.
+  const leagueStr = (g.league||'').toLowerCase();
+  const tierBoost =
+    /nba finals|stanley cup final|world series|super bowl|champions league final/i.test(g.league||'') ? 60 :
+    /conference finals|cf g\d|wcf|ecf g\d|wcf g\d|ecf.*g\d/i.test(g.league||'') ? 40 :
+    /conference semi|second round|round 2|wc playoff|copa final/i.test(g.league||'') ? 15 :
+    leagueStr.includes('playoff') || leagueStr.includes('final day') ? 5 : 0;
+  return nb+ib+cb+bb+mb+tierBoost;
 }
 
 // ── TONIGHT SUMMARY CARD (Wow #23 — template version, global) ────────────
@@ -5958,7 +5989,10 @@ function renderTonightSummary(sections){
     if(!ranked.length) return '';
     const top=ranked.slice(0,3);
     const total=all.filter(g=>g.home).length;
-    const pGames=all.filter(g=>g._gameImportance).length;
+    // BUG-09 fix: _gameImportance is often absent on Conference Finals entries.
+    // Also detect by league string to count NYK @ CLE, VGK @ COL, etc.
+    const isPlayoffGame = g => g._gameImportance || /playoff|final|semifinal|conference|cup final|series/i.test(g.league||'');
+    const pGames=all.filter(isPlayoffGame).length;
     const sports=[...new Set(sections.filter(s=>s.games?.length).map(s=>s.sport))];
     const hl=pGames>0?`${pGames} playoff game${pGames>1?'s':''} tonight · ${total} total events`:`${total} events across ${sports.length} sports`;
     const entry=(g,i)=>{
@@ -6575,7 +6609,7 @@ function buildTodaySchedule(){
     {home:"New York Mets",         away:"Cincinnati Reds",      start_time:"2026-05-25T20:10:00Z", confirmed:true, venue:"Citi Field, New York NY"},
     {home:"San Francisco Giants",  away:"Arizona Diamondbacks", start_time:"2026-05-25T21:05:00Z", confirmed:true, venue:"Oracle Park, San Francisco CA"},
     {home:"Cleveland Guardians",   away:"Washington Nationals", start_time:"2026-05-25T22:10:00Z", confirmed:true, venue:"Progressive Field, Cleveland OH"},
-    {home:"San Diego Padres",      away:"Philadelphia Phillies",start_time:"2026-05-25T22:40:00Z", confirmed:true, venue:"Petco Park, San Diego CA"},
+    {home:"San Diego Padres",      away:"Philadelphia Phillies",start_time:"2026-05-25T22:40:00Z", confirmed:true, venue:"Petco Park, San Diego CA", espnGOTD:true, streams:resolveBundle("MLB_ESPN"), matchupNote:"ESPN App Game of the Day — PHI @ SD, 6:40pm ET. Available exclusively to ESPN Unlimited subscribers (or cable authenticators). Local RSN blacked out for GOTD."},
     {home:"Texas Rangers",         away:"Houston Astros",       start_time:"2026-05-25T23:05:00Z", confirmed:true, venue:"Globe Life Field, Arlington TX"},
     {home:"Toronto Blue Jays",     away:"Miami Marlins",        start_time:"2026-05-25T23:07:00Z", confirmed:true, venue:"Rogers Centre, Toronto ON"},
     {home:"Los Angeles Dodgers",   away:"Colorado Rockies",     start_time:"2026-05-26T01:10:00Z", confirmed:true, venue:"Dodger Stadium, Los Angeles CA"},
@@ -12258,8 +12292,32 @@ function enrichGame(game, espnScore){
 // Render score overlays onto existing game cards
 // Maps sport period to OT suffix when period exceeds normal game length
 // NBA: 4 quarters → OT at period 5+. NFL: 4 quarters → OT at period 5. NHL: 3 periods → OT at 4+
+// BUG-03 fix: espnPeriodLabel was called but never defined — caused TypeError for all live scores.
+// Baseball MUST use "Inn N" (never "OT") — extra innings are not overtime.
+function espnPeriodLabel(prefix, period, clock) {
+  if (!period) return '';
+  // Baseball: always "Inn N" — never OT language
+  if (prefix === 'T' || prefix === 'B' || prefix === 'Inn') {
+    return `Inn ${period}`;
+  }
+  // Basketball: Q1-Q4, then OT/2OT
+  if (prefix === 'Q') {
+    if (period <= 4) return `Q${period}`;
+    if (period === 5) return 'OT';
+    return `${period - 4}OT`;
+  }
+  // Hockey: P1-P3, then OT
+  if (prefix === 'P') {
+    if (period <= 3) return `P${period}`;
+    if (period === 4) return 'OT';
+    return `${period - 3}OT`;
+  }
+  // Soccer: handled by caller — shouldn't reach here
+  // Default: prefix + period
+  return `${prefix}${period}`;
+}
+
 function renderESPNScores(){
-  if(!allData||!allData.sports) return;
   // Prune stale entries (not updated within ESPN_SCORE_TTL) to prevent yesterday's
   // scores matching today's games by team name
   const now = Date.now();
@@ -13697,7 +13755,13 @@ const BANNED_PHRASES=['punch their ticket','the stage is set','make a statement'
   'step up when it matters','laying it on the line','battle-tested',
   'high-octane','red-hot','ice-cold','pulling away',
   'in the driver\'s seat','with their season on the line',
-  'cement their legacy','the chess match continues'];
+  'cement their legacy','the chess match continues',
+  // Added from screenshot audit May 25 2026:
+  'salvage pride','insurmountable deficit','clinical execution',
+  'dictated the tempo','decisive series deficit','statement series clincher',
+  'ruthless sweep','the team to beat','perimeter scoring',
+  'defensive lapses','offensive production required',
+  'current momentum','exploit defensive lapses'];
 
 const FIELD_PROSE_STYLE=[
   '- STYLE: specificity over metaphor. "48 minutes from their first Finals since 1999" not "looking to punch their ticket."',
@@ -13963,7 +14027,7 @@ ${gameLines || 'No games tonight.'}
 ${eplSection}${regularSection}
 Return this exact JSON structure (null for any section without sufficient data):
 {
-  "brief": "${briefWords} No headers. Lead with most important story. Complete sentences.",
+  "brief": "${briefWords} No headers. Lead with most important story. If a Conference Finals, Stanley Cup Final, or NBA Finals game is on the slate, it MUST be the lead — regardless of what time it starts. Complete sentences.",
   "series": [${seriesIds.map(id => `{"id":"${id}","preview":null}`).join(',')}],
   "scouts_pick": "one sentence explaining the Scout's Pick or null",
   "bni_note": "one sentence Anti-Hype framing or null",
@@ -13985,6 +14049,11 @@ Rules:
 - If [WIKI TRENDING] appears: note the cultural significance — this team is drawing national attention beyond normal game interest. Weave it into the brief naturally.
 - If [WIKI LOW] appears: this game is genuinely under the radar — frame it as a hidden gem if other signals (drama, stakes) support it.
 - Plain prose only. No bullet points.
+- SERIES PREVIEW RULES (critical — these fail repeatedly):
+  1. EXTRACT STATS: If the Context field contains a specific statistic (e.g. "Brunson 29.0 PPG this series"), you MUST include it in the series preview. Do not paraphrase around stats — quote the number.
+  2. HISTORICAL ACCURACY: If the Context says "first Finals since 1999", write "NBA Finals" not "Eastern Conference Finals". The team is already IN the conference finals — the milestone is reaching the NEXT round.
+  3. SERIES LEADER = CLOSER TO WINNING, TRAILER = FACING ELIMINATION. In "NYK leads 3-0", NYK is one win from the Finals, CLE faces elimination. Never swap these.
+  4. NO DIVISION FRAMING in Conference Finals or above. Knicks and Cavaliers are Conference Finals opponents, not division rivals.
 ${buildLayer3Rules(games)}`;
 }
 
@@ -14215,7 +14284,7 @@ function buildFIELDBriefStatic(sections){
   if(!ranked.length) return null;
   const top=ranked[0];
   const totalGames=ranked.length;
-  const playoffGames=ranked.filter(g=>g._section?.includes('Playoffs')).length;
+  const playoffGames=ranked.filter(g=>g._gameImportance||/playoff|final|semifinal|conference|cup final|series/i.test(g.league||'')).length;
   let lines=['Tonight on FIELD: '+totalGames+' events across '+(sections.length)+' sports.'];
   if(playoffGames) lines.push(playoffGames+' playoff game'+(playoffGames>1?'s':'')+' on the slate.');
   const topStream=(top.streams&&top.streams[0]&&top.streams[0].label)||'';
@@ -17013,22 +17082,22 @@ async function fetchNightOwlFromClaude(topGame){
   const score=topGame.awayScore+'\u2013'+topGame.homeScore;
   const _sp = (topGame._section || topGame._sport || '').toLowerCase();
   const _terms = _sp.includes('baseball') || _sp.includes('mlb')
-    ? 'Sport: Baseball. Use runs (not points). Close game = one-run game. Extra period = extra innings (not overtime).'
+    ? 'Sport: Baseball. Score in RUNS (never "points"). Close game = one-run game. Extra period = extra innings (not overtime or OT). NEVER use: points, possession, one-possession, quarter, half, period, offensive sets, turnover, momentum shift in the basketball sense. Use: runs, innings, hits, strikeouts, ERA, pitch count, at-bat.'
     : _sp.includes('hockey') || _sp.includes('nhl')
-    ? 'Sport: Ice Hockey. Use goals. Close game = one-goal game. Extra period = overtime or shootout.'
+    ? 'Sport: Ice Hockey. Score in GOALS (never "points"). Close game = one-goal game. Extra period = overtime or shootout. NEVER use: points, possession, quarter, basket. Use: shots, save percentage, power play, penalty kill.'
     : _sp.includes('nfl') || _sp.includes('american football')
-    ? 'Sport: American Football. Use points (touchdowns, field goals). Close game = one-score game.'
+    ? 'Sport: American Football. Score in POINTS (touchdowns=6, field goals=3). Close game = one-score game (8 points or fewer). Use: yards, first downs, turnover, red zone.'
     : _sp.includes('afl') || _sp.includes('australian')
-    ? 'Sport: Australian Rules Football. Use goals and behinds. Score = goals.behinds.total. Close game = within a goal.'
+    ? 'Sport: Australian Rules Football. Score in GOALS and BEHINDS. Total = goals×6 + behinds. Close game = within a goal (7 points). Use: marks, handballs, clearances, score composite format goals.behinds.total.'
     : _sp.includes('tennis') || _sp.includes('atp') || _sp.includes('wta')
-    ? 'Sport: Tennis. Use sets and games (not points). Close match = deciding set. Tiebreak = tiebreak.'
+    ? 'Sport: Tennis. Score by SETS and GAMES (not points except tiebreaks). Close match = deciding set. Use: break points, aces, double faults, set score, game score.'
     : _sp.includes('soccer') || _sp.includes('football') || _sp.includes('league') ||
       _sp.includes('mls') || _sp.includes('liga') || _sp.includes('serie') ||
       _sp.includes('ligue') || _sp.includes('efl') || _sp.includes('ucl') ||
       _sp.includes('uel') || _sp.includes('uecl') || _sp.includes('epl') ||
       _sp.includes('bundesliga') || _sp.includes('laliga')
-    ? 'Sport: Football (soccer). Use goals (NEVER points). Close game = one-goal game. Extra period = extra time (NEVER overtime). NEVER use basketball language, possession-game framing, or interior scoring.'
-    : 'Sport: Basketball. Use points. Close game = one-possession game. Extra period = overtime.';
+    ? 'Sport: Football (soccer). Score in GOALS (NEVER "points"). Close game = one-goal game. Extra period = extra time (NEVER "overtime" or "OT"). NEVER use: basket, possession-game framing, interior scoring, one-possession, touchdown. Use: shots, possession percentage, xG, clean sheet, pressing.'
+    : 'Sport: Basketball. Score in POINTS. Close game = one-possession game (within 3). Extra period = overtime. Use: assists, rebounds, field goal percentage, three-point shooting.';
   const prompt=['Write a FIELD Night Owl recap.',
       'Game: '+topGame.away+' @ '+topGame.home,
       'Final: '+score+' ('+winner+' wins)',
@@ -17153,7 +17222,12 @@ function buildTheSkim(sportsData){
       const srL=sr.toLowerCase();
       const awayAbbr=(_teamAbbr[g.away]||'').toLowerCase();
       const awayNickL=teamNick(g.away).toLowerCase();
-      const awayLeads=srL.includes(awayAbbr+' leads')||srL.includes(awayNickL+' leads')||srL.startsWith(awayAbbr)||srL.startsWith(awayNickL);
+      // BUG-01 fix: only match abbr if non-empty; parse "TOKEN leads N-M" from front
+      const leadMatch=srL.match(/^([a-z]+)\s+leads?\s+\d/);
+      const leadToken=leadMatch?leadMatch[1]:'';
+      const awayLeads=leadToken
+        ? (awayAbbr&&awayAbbr===leadToken)||awayNickL===leadToken
+        : (awayAbbr?srL.startsWith(awayAbbr):false)||srL.startsWith(awayNickL);
       const trailer=awayLeads?homeNick:awayNick;
       const leader=awayLeads?awayNick:homeNick;
       const more=sweepGames.length>1?` and ${sweepGames.length-1} more`:'';
