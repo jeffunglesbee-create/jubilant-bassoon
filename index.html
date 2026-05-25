@@ -8320,6 +8320,19 @@ async function renderBetting(){
       Live odds are not yet available for tonight&#39;s games.<br>
       Check back closer to game time, or verify directly at your preferred sportsbook.
     </p>`;
+    // Set up retry interval even on empty state — odds may arrive later
+    if (!window._bettingLiveInterval) {
+      window._bettingLiveInterval = setInterval(async () => {
+        const sec = document.getElementById('betting-section');
+        if (!sec) return;
+        const rect = sec.getBoundingClientRect();
+        if (rect.top > window.innerHeight + 400 || rect.bottom < -400) return;
+        const refreshSports = [...new Set((allData?.sports||[]).map(s=>s.sport).filter(s=>ODDS_SPORT_MAP[s]))];
+        if (refreshSports.length) await Promise.allSettled(refreshSports.map(s=>fetchOddsForSport(s)));
+        bettingRendered = false;
+        renderBetting();
+      }, 3 * 60 * 1000);
+    }
     return;
   }
 
@@ -12503,8 +12516,8 @@ async function fetchSchedule(){
   // OpenF1 — only starts if a live F1 session is detected (self-gating)
   startOpenF1Engine().catch(()=>{});
   // Odds chips — inject after sport odds load from The Odds API cache
-  // No separate API calls — reads from _oddsCache populated by fetchOddsForSport()
-  setTimeout(()=>{ try{ injectAllOddsChips(); }catch(e){} }, 5000);
+  // Also re-renders Betting Intelligence section if it was empty on first try
+  setTimeout(()=>{ try{ injectAllOddsChips(); bettingRendered=false; renderBetting(); }catch(e){} }, 5000);
   setTimeout(fdPrefetchSoccerLive, 3000)
   setTimeout(slashGolfPrefetchAll, 3500); // Slash Golf: schedule + live leaderboard
   // Pre-fetch BDL season averages once (ROOT 3 — feeds milestones for all tonight's NBA games)
