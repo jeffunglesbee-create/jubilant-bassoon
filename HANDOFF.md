@@ -1,56 +1,49 @@
-# FIELD Handoff — May 25 2026 Session 9
+# FIELD Handoff — May 25 2026 Session 10
 
-HEAD: e5bf19e
+HEAD: 76f9d11
 Smoke: 144/0
-File size: 1,008,180 bytes
 Deploy: SUCCESS
 
-## PATENT DEFENSE: COMPLETE
+## PATENT DEFENSE: COMPLETE (all layers deployed)
 
-All layers deployed. No specs-only gaps remaining.
-- Layer 1: Client-side computation (existing)
-- Layer 2: Drama Dial (ddf73e1) — slider in My Services, getDramaDial()
-- Layer 3: SW push evaluation (0a7dc8c) — computePushDrama(), _swDramaDial
-- Layer 5: Market Intelligence (existing) + Wikimedia Pageviews (e5bf19e)
-- Remaining: field-relay-nba server handleCron strip (separate repo, not urgent)
+Layer 2: Drama Dial (ddf73e1), Layer 3: SW push eval (0a7dc8c), Layer 5+: Wikimedia (e5bf19e)
+Remaining: field-relay-nba handleCron server strip (separate repo, not urgent)
+
+## GOTD PROTOCOL: AUTOMATED
+
+ESPN_GOTD_SCHEDULE + PEACOCK_GOTD_SCHEDULE lookup tables in index.html.
+Auto-tags mlbRaw entries — no manual per-game tagging needed.
+ESPN: paste full block when announced (~4x/year). Current block through May 31.
+Peacock: paste weekly (Mon/Tue). Current week empty — paste when announced.
+When ESPN announces June-August block (expected late May): paste into ESPN_GOTD_SCHEDULE.
 
 ## IMMEDIATE WORK FOR NEXT SESSION
 
-1. TYPE A DAILY UPDATE (if next session is May 26):
-   - Check results: NBA ECF G4, NHL ECF G3, EFL L2 Final (all played May 25)
-   - NBA WCF G5: Tue May 26 at OKC, 8:30pm ET, NBC — entry exists
-   - NHL WCF G4: Tue May 26 at VGK, 9pm ET, ESPN — entry exists
-   - MLB: Add Tue May 26 slate. ESPN GOTD: SEA @ ATH 9:40pm ET
+1. TYPE A DAILY UPDATE (if May 26):
+   - Check results: NBA ECF G4, NHL ECF G3, EFL L2 Final
+   - Add Tue May 26 MLB slate (GOTD auto-tags from table)
+   - Check Peacock blog for this week's GOTD schedule → paste into PEACOCK_GOTD_SCHEDULE
    - Run: node scripts/rotate-schedule.js
 
-2. TYPE C: Schedule Automation (Jeff approved)
-   Spec: Drive 1d6HZ7gHJ0omabekHfVuGzKNoOGgUbwJwlwvcUaUAr10 (CORRECTED)
-   Pipeline hardcodes entries automatically. No runtime fetch.
-   Phase 1: Expand field-data.yml (MLB + soccer + broadcast rules)
-   Phase 2: buildTodaySchedule() merges pipeline + manual overrides
-   Phase 3: Update TYPE A protocol
+2. TYPE C: Schedule Automation (Jeff approved, spec corrected)
+   Drive: 1d6HZ7gHJ0omabekHfVuGzKNoOGgUbwJwlwvcUaUAr10
 
-3. BUILD PRIORITY (post-automation):
-   - field-relay-nba handleCron server strip (completes Layer 3 fully)
-   - Drama Dial downstream refinements (OTW gate, Stay Up Signal, card pulse)
-   - YouTube highlights, Podcast Index, SeatGeek, Polymarket, Preference Sync
+3. BUILD PRIORITY: field-relay-nba handleCron strip, Drama Dial refinements,
+   YouTube, Podcast Index, SeatGeek, Polymarket, Preference Sync
 
 ## KEY CONTEXT
 
-- Patent defense COMPLETE — all layers have deployed code
-- Betfair GONE. The Odds API is the odds source.
-- AFL fully built (Sessions 1-5). Do not rebuild.
-- HANDOFF.md is in repo root — NOT Drive.
-- rotate-schedule.js keeps data under control (7-day rotation)
-- Schedule Automation spec CORRECTED: pipeline hardcodes, no runtime fetch
-- FIELD principle: hardcoded data = baseline, API data = overlay
-- Drama Dial: getDramaDial() replaces all hardcoded 65/85 thresholds
-- Wikimedia: WIKI_TITLES has 28 teams, expandable incrementally
-- SW: handles SCORE_CHANGE (new factual) + DRAMA_THRESHOLD (legacy, now filtered)
+- Patent defense COMPLETE. GOTD auto-tagging COMPLETE.
+- HANDOFF.md is in repo root. rotate-schedule.js handles data cleanup.
+- Schedule Automation spec CORRECTED: pipeline hardcodes, no runtime fetch.
+- JustWatch evaluated and rejected (partner-locked, FIELD stays independent).
+- _teamAbbr mapping + _gotdKey() helper handle team→abbreviation matching.
+- WIKI_TITLES has 28 teams (expandable). Wikimedia chips render after 1500ms.
+- Drama Dial: getDramaDial() used everywhere. SW synced via postMessage + IndexedDB.
 
 ## SERIES STATE
 
-NBA ECF: NYK leads CLE 3-0 (G4 was tonight May 25)
+NBA ECF: NYK leads CLE 3-0 (G4 was May 25)
 NBA WCF: Series tied 2-2 (G5 Tue at OKC)
-NHL ECF: CAR-MTL tied 1-1 (G3 was tonight May 25)
-NHL WCF: VGK leads COL 3-0 (G4 Tue at VGK, can sweep)
+NHL ECF: CAR-MTL tied 1-1 (G3 was May 25)
+NHL WCF: VGK leads COL 3-0 (G4 Tue at VGK)
