@@ -23,7 +23,7 @@ Add a new named assertion in `smoke.js` for every FIELD_FEATURES entry (presence
 ## Session start checklist
 
 ```
-0. Read HANDOFF NOTE — Drive ID in canonical table below (first, before everything)
+0. Read HANDOFF NOTE — `HANDOFF.md` in repo root (read after git pull, before everything)
    0a. Read FIELD CURRENT STATE — Drive ID: 1w0BDWk2lf1tlSVBFBTI_P0H9N2ATyZjRTKw3XR2McUE
        What FIELD is TODAY — features live, smoke state, active rules, known gaps.
        Read after handoff, before CI/Deploy ref. Takes 2 minutes. Prevents stale-state decisions.
@@ -41,7 +41,7 @@ Add a new named assertion in `smoke.js` for every FIELD_FEATURES entry (presence
 ```
 
 **Canonical docs** (open the relevant one before starting):
-- Handoff Note (read first): `1NyNqi1GZ5JsWGclkyt2gwa20y5ZMRvv09qlcSlAJFw4` ← update this ID every session end
+- Handoff Note (read first): `HANDOFF.md` (repo root — no Drive ID needed)
 - CI/Deploy Error Reference (read every session): `18JMUd-Uq_m2DomuCua2B5UMiWOel81yzc1JU7SY6f20`
 - Build Session List: `1Drrp5eRNdGb8EKodqPNwpuLaC23XcOrlv4DO13zNot0`
 - FIELD Current State: `1w0BDWk2lf1tlSVBFBTI_P0H9N2ATyZjRTKw3XR2McUE`
@@ -115,7 +115,7 @@ never worked despite being documented as complete.*
 | **Master Improvement Ranking** | `1rW90JQ5a4ybrE9l5acrbqd0q0yl_QYmPIOnEJr__GEY` | Any session that ships a feature — add to FIELD_FEATURES registry with ship date |
 | **FIELD Current State** | `1w0BDWk2lf1tlSVBFBTI_P0H9N2ATyZjRTKw3XR2McUE` | Every session end — update HEAD, smoke state, and any changed capability sections |
 | **Daily Update Reference** | `1oSHqnDskN04p95g6e85--4hhgIsKISZ3ZflLXKPM08E` | Any session that changes broadcast chip rules, thresholds, or update protocol |
-| **Handoff Note** ← update ID every session | `1NyNqi1GZ5JsWGclkyt2gwa20y5ZMRvv09qlcSlAJFw4` | Every session end — replace ID with new handoff doc |
+| **Handoff Note** | `HANDOFF.md` (repo root) | Every session end — overwrite file, commit with code |
 | **CI/Deploy Error Reference** | `18JMUd-Uq_m2DomuCua2B5UMiWOel81yzc1JU7SY6f20` | When a new CI/deploy failure pattern is resolved |
 
 **The rule: edit the document, don't create a new one.**
@@ -231,7 +231,7 @@ Edit the relevant living documents in place for this session type.
 Do not create new versions.
 
 **Step 4 — Handoff note**
-Write the handoff as a **separate Drive doc** (not at the bottom of the session doc):
+Overwrite `HANDOFF.md` in repo root with the handoff for the next session:
 
 ```
 HANDOFF
@@ -243,18 +243,16 @@ Blocked on: [anything requiring resolution before TYPE C work]
 Watch for: [any known fragile state or timing dependency]
 ```
 
-Title format: `FIELD App — [Date] Handoff Note`
+HANDOFF.md is committed with all other changes — no separate Drive doc
+or ID update needed. `git pull` at next session start makes it available.
 
-**Step 5 — Update handoff ID in STANDARDS.md**
-Replace the Handoff Note Drive ID in the canonical docs table and checklist
-with the new doc's ID. Commit this change:
+**Step 5 — Final commit and push**
+Commit all changes (code + HANDOFF.md) and push:
 ```
-git add STANDARDS.md
-git commit -m "Standards: handoff ID → [new_id]"
+git add -A
+git commit -m "session end: [summary]"
 git push origin main
 ```
-This is the mechanism that makes "Claude reads handoff automatically" actually work.
-The ID in STANDARDS.md is always the latest handoff. No Drive search needed.
 
 **Step 6 — State the close**
 End the session with a typed declaration:
@@ -293,7 +291,7 @@ the commit is blocked. User cannot accidentally push broken code.
 Emergency bypass: `git commit --no-verify` — use only when absolutely necessary.
 
 **Claude reads handoff automatically:**  
-Every session, Claude reads the latest handoff note from Drive before  
+Every session, Claude reads the latest handoff from HANDOFF.md (repo root) before  
 responding to the opening message. No user request needed.
 
 **Claude reads CI/Deploy Error Reference automatically:**  
@@ -337,13 +335,13 @@ User never needs to say "TYPE B" — just describe what they want.
 3. Pushes all changes  
 4. Copies `sportworld.html` for download  
 5. Writes session doc to Drive  
-6. Writes handoff note to Drive  
+6. Overwrites HANDOFF.md in repo  
 7. Updates canonical docs — two tiers:  
    AUTO (no prompting): FIELD Current State (every session — HEAD, smoke, changed sections)  
    AUTO if features shipped: Master Improvement Ranking FIELD_FEATURES registry  
    PROMPT for judgment: Build Session List, Wow Features, UI Evaluation,  
    Viewport Style Guide, Daily Update Reference (require context to update correctly)  
-8. Updates handoff ID in STANDARDS.md + commits  
+8. Commits all (code + HANDOFF.md) and pushes  
 9. Declares SESSION END  
 
 ### What requires one user action
@@ -1080,11 +1078,11 @@ immediately, without being asked:
 ```
 1. Scan conversation for unresolved questions (Step 1.5) — list and confirm disposition
 2. Write Rule 15 session doc to Drive
-3. Write handoff note to Drive (separate doc)
+3. Overwrite HANDOFF.md in repo root
 4. Update canonical docs:
    AUTO: FIELD Current State (every session) + Master FIELD_FEATURES (if features shipped)
    PROMPT: Build Session List, Wow Features, UI Evaluation, Viewport Style Guide, Daily Update Ref
-5. Update handoff ID in STANDARDS.md + git commit + git push
+5. Commit all (code + HANDOFF.md + any doc updates) and push
 6. Declare SESSION END in chat
 ```
 
@@ -1103,7 +1101,7 @@ is never permitted — each type has different constraints and checklists.
 Example sequence when user asks to audit something mid-feature build:
 ```
 [Claude]: Running session end for TYPE C...
-[writes session doc, updates handoff ID, commits]
+[writes session doc, overwrites HANDOFF.md, commits]
 SESSION END · Type: C
 
 SESSION START · Type: D · Scope: [audit scope]
@@ -2222,8 +2220,8 @@ transcript file accessible via bash_tool at /mnt/transcripts/.
 A compaction is NOT a session end. It is a forced session boundary.
 
 **Session end**: deliberate, complete close — commits pushed, smoke
-passing, session doc written to Drive, handoff written, canonical docs
-updated, STANDARDS.md handoff ID updated, SESSION END declared.
+passing, session doc written to Drive, HANDOFF.md overwritten, canonical docs
+updated, SESSION END declared.
 
 **Compaction**: mid-conversation context management — work may be
 incomplete, no session doc written, no handoff written, SESSION END
@@ -2239,7 +2237,7 @@ that a proper handoff requires.
 
 The compaction summary CANNOT substitute for reading the Drive
 handoff note. Even when the summary appears complete, the
-authoritative source is the handoff note in Drive.
+authoritative source is HANDOFF.md in the repo.
 
 ### What must happen after a compaction
 
@@ -2250,26 +2248,27 @@ as any opening message (Rule 40) — with one additional step first:
   Read the transcript:
     view /mnt/transcripts/[latest].txt
   Look for: SESSION END declaration, session doc Drive ID,
-  handoff note Drive ID, STANDARDS.md handoff ID commit.
+  HANDOFF.md commit.
   If any of these are missing: run the session end checklist
   (Rule 9, Step 1–6) before starting new work.
 
 **Then run the full session start protocol (Rule 40):**
-  1. Read Handoff Note from Drive (not the compaction summary)
-  2. Read FIELD Current State from Drive
-  3. Read CI/Deploy Error Reference from Drive
-  4. git pull && node smoke.js index.html
-  5. Declare SESSION START · Type · Scope · Baseline
+  1. git pull — gets latest HANDOFF.md and code
+  2. Read HANDOFF.md (not the compaction summary)
+  3. Read FIELD Current State from Drive
+  4. Read CI/Deploy Error Reference from Drive
+  5. node smoke.js index.html
+  6. Declare SESSION START · Type · Scope · Baseline
 
 ### Why the compaction summary is insufficient as context
 
 The compaction summary reflects Claude's compression judgment, not
 a verified state. It may omit unresolved questions, soft failures,
-or in-flight work. The Drive handoff note is written deliberately
+or in-flight work. The HANDOFF.md file is written deliberately
 at session close, contains specific commit hashes, and flags
 anything that needs attention in the next session.
 
-Reading the Drive handoff after compaction takes 60 seconds.
+Reading HANDOFF.md after compaction takes 60 seconds.
 Proceeding on compaction summary alone risks acting on stale,
 incomplete, or mis-summarised state — the same failure mode that
 Rule 25 (Gemini quarantine) addresses for external handoffs.
@@ -2278,7 +2277,7 @@ Rule 25 (Gemini quarantine) addresses for external handoffs.
 
 Post-compaction message arrives. Claude reads compaction summary,
 treats it as sufficient context, answers immediately without
-declaring SESSION START, without reading Drive handoff, without
+declaring SESSION START, without reading HANDOFF.md, without
 running smoke baseline. All session governance is bypassed because
 the compaction summary created the illusion of continuity.
 
