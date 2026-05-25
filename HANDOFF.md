@@ -1,52 +1,44 @@
-# FIELD Handoff — May 25 2026 (Screenshot Audit Fix Session)
+# FIELD Handoff — May 25 2026 (Patent Mitigation M1+M2)
 
-HEAD: d2d52c2
-Smoke: 184/0
+HEAD: 25f8571
+Smoke: 188/0
 Deploy: SUCCESS
 SW_VERSION: 2026-05-25a
 
-## WHAT WAS FIXED (all from 10-screenshot audit)
+## WHAT WAS BUILT
 
-**P0 — 4 critical bugs:**
+Two patent mitigations triggered by screenshot review:
 
-BUG-01: Skim said "New York Knicks facing elimination" (wrong team)
-  - _teamAbbr extended with NBA + NHL teams (was MLB-only)
-  - awayLeads logic hardened: parse leadToken from "NYK leads 3-0" front
-  - Empty awayAbbr no longer matches srL.includes(' leads') universally
+**M1 — "drama N" composite number removed from Betting Intelligence card**
+  preGameScore() is a multi-factor composite (importance + broadcast + odds + milestones).
+  Displaying it labeled "drama" in the Betting Intelligence Tonight On FIELD card
+  recreates "interest level value" visually (Case A posture per Numerical Usage Policy).
+  Resolution: numeric span removed from renderTonightSummary(). Semantic badges remain.
+  Sorting still uses preGameScore internally — sorting ≠ classification.
+  Live dramaScoreLive() on live cards is UNAFFECTED (Case C: single dimension, safe).
 
-BUG-02: "undefined $24.99/mo" chip on Rays @ Orioles card
-  - chipHTML now returns '' early if s.name is falsy or string 'undefined'
+**M2 — Scout's Pick reformulated as boolean gates**
+  OLD: preGameScore(g) > 70 → composite threshold → badge
+  NEW: isScoutsPick(g) → individual boolean gates (no composite sum):
+    - NOT a national game
+    - Has playoff/series context (boolean)
+    - Odds show competitive matchup (moneylineGap < 150, single dimension)
+    - Near-milestone player (boolean)
+  5 call sites replaced. Tooltip now describes signal, not score.
+  Loophole 1 preserved: no interest level value computed and thresholded.
 
-BUG-03: "OT" / "20T" for extra innings baseball
-  - espnPeriodLabel() was called everywhere but NEVER defined (TypeError)
-  - Now defined: baseball → "Inn N", basketball → Q1-Q4/OT, hockey → P1-P3/OT
-  - Also restored renderESPNScores() function declaration (accidentally removed)
+Patent mitigation doc: Drive 1Hcc-hvYc8MKbLBCWXFe3S-Nu_gw_hT_7Gcz_M-oa1LI
 
-BUG-04: Night Owl used basketball vocabulary for Brewers 5-1 recap
-  - _terms now includes explicit NEVER USE lists per sport
-  - Baseball: "NEVER use: points, possession, one-possession, offensive sets"
+## REMAINING POSTURE
 
-**P1 — 5 factual/logic errors:**
-
-BUG-05/06: "Eastern Conference Finals appearance since 1999" (should be NBA Finals)
-  - Compound prompt series rules: extract stats, use correct round name
-
-BUG-07/08: FIELD Brief called Notts County @ Salford "top game" over Conference Finals
-  - preGameScore tierBoost: Conference Finals +40, NBA Finals/Stanley Cup +60
-  - Compound brief: Conference Finals must be lead regardless of start time
-
-BUG-09: Betting Intelligence showed "1 playoff game" (missed NYK @ CLE)
-  - isPlayoffGame() now uses league string, not only _gameImportance
-
-BUG-10: espnGOTD flag missing for Phillies @ Padres (confirmed from ESPN Press Room)
-  - espnGOTD:true added, streams updated to MLB_ESPN
-
-**Journalism:**
-- 10 new banned phrases added from screenshots
-- Series Brief rules: must extract stats from Context, correct historical facts
+dramaScoreLive: Case C — safe (single dimension, admitted prior art)
+preGameScore: sort/rank only — never thresholded in if() classification
+Scout's Pick: boolean gates — Case C construction
+Push: ADR-002 — independent boolean, never reads preGameScore
 
 ## NEXT SESSION
 
-Items 7-9 journalism depth (Reddit buzz, ESPN athlete stats, Google Trends)
-SCORE-UNIFORM-A active bug (~45 min TYPE B)
-TYPE A daily update when ready for May 26
+- Items 7-9 journalism depth (Reddit buzz, ESPN athlete stats, Google Trends)
+- SCORE-UNIFORM-A active bug (~45 min TYPE B)
+- TYPE A daily update (SW_VERSION bump for May 26)
+- Current State doc update (very stale)
