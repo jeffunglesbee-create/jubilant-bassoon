@@ -6664,7 +6664,7 @@ function buildTodaySchedule(){
     {home:"New York Mets",         away:"Cincinnati Reds",      start_time:"2026-05-25T20:10:00Z", confirmed:true, venue:"Citi Field, New York NY"},
     {home:"San Francisco Giants",  away:"Arizona Diamondbacks", start_time:"2026-05-25T21:05:00Z", confirmed:true, venue:"Oracle Park, San Francisco CA"},
     {home:"Cleveland Guardians",   away:"Washington Nationals", start_time:"2026-05-25T22:10:00Z", confirmed:true, venue:"Progressive Field, Cleveland OH"},
-    {home:"San Diego Padres",      away:"Philadelphia Phillies",start_time:"2026-05-25T22:40:00Z", confirmed:true, venue:"Petco Park, San Diego CA"},
+    {home:"San Diego Padres",      away:"Philadelphia Phillies",start_time:"2026-05-25T22:40:00Z", confirmed:true, venue:"Petco Park, San Diego CA", espnGOTD:true},
     {home:"Texas Rangers",         away:"Houston Astros",       start_time:"2026-05-25T23:05:00Z", confirmed:true, venue:"Globe Life Field, Arlington TX"},
     {home:"Toronto Blue Jays",     away:"Miami Marlins",        start_time:"2026-05-25T23:07:00Z", confirmed:true, venue:"Rogers Centre, Toronto ON"},
     {home:"Los Angeles Dodgers",   away:"Colorado Rockies",     start_time:"2026-05-26T01:10:00Z", confirmed:true, venue:"Dodger Stadium, Los Angeles CA"},
@@ -6773,7 +6773,7 @@ function buildTodaySchedule(){
      localNote:"CBS Sports Network + Paramount+ (US); Sky Sports (UK)"},
     // ── Championship Final — Sat May 23, 3:30pm BST (10:30am ET) ──
     {home:"Middlesbrough", away:"Hull City",
-     league:"EFL Championship Playoff – Final · Winner promoted to Premier League",
+     league:"EFL Championship Playoff – Final · Hull City 1-0 · Promoted to Premier League",
      start_time:"2026-05-23T14:30:00Z", confirmed:true, venue:"Wembley Stadium, London", neutral:true, nationalBundle:"EFL_FINAL",
      streams:resolveBundle("EFL_FINAL"),
      // SPYGATE — Southampton expelled; Middlesbrough reinstated (May 20 2026)
@@ -6783,16 +6783,16 @@ function buildTodaySchedule(){
      // Southampton: 4-point deduction applied to 2026-27 Championship table
      _angle:"SCANDAL",
      _gameImportance:"elimination",
-     matchupNote:"Middlesbrough are in the final only because Southampton were expelled — the biggest sporting scandal in the Championship in years. Saints admitted to filming Boro's training before the SF (plus Oxford in December, Ipswich in April). Expelled by the EFL. Appeal dismissed May 20. Boro boss Kim Hellberg was crestfallen after losing the SF on the pitch — now his side return to Wembley for the \u00a3270m prize of promotion. Middlesbrough last in the Premier League: 2017. Hull City beat Millwall 2-0 on aggregate to reach the final. 3:30pm BST · 10:30am ET · Sky Sports (UK) · Paramount+ (US)."},
+     matchupNote:"Hull City 1-0 Middlesbrough. McBurnie stoppage-time winner (90+5') seals PL promotion amid Spygate scandal. Southampton expelled after admitting training espionage vs Boro, Oxford, Ipswich. Hull first PL season since 2017."},
   ].filter(g=>isToday(g.start_time));
 
   // ── EFL League One Playoff Final — Sun May 24, 1pm BST ─────────────────
   const eflL1Games=[
     {home:"Stockport County",  away:"Bolton Wanderers",
-     league:"EFL League One Playoff – Final · Winner promoted to Championship",
+     league:"EFL League One Playoff – Final · Bolton 4-1 · Promoted to Championship",
      start_time:"2026-05-24T12:00:00Z", confirmed:true, venue:"Wembley Stadium, London", neutral:true, nationalBundle:"EFL_PLAYOFF",
      streams:resolveBundle("EFL_PLAYOFF"),
-     matchupNote:"Stockport vs Bolton — League One final. 1pm BST / 8am ET. Sky Sports (UK) · Paramount+ (US)."},
+     matchupNote:"Bolton 4-1 Stockport. Rodrigues 2 (incl. pen), Wootton OG, Dalby. Bolton back in Championship for first time since 2019."},
   ].filter(g=>isToday(g.start_time));
 
   // ── EFL League Two Playoff Final — Mon May 25, 3pm BST ─────────────────
