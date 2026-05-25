@@ -467,6 +467,30 @@ assert('A159 — Mobile Intel: CSS for mobile-live-bar',
   html.includes('.mobile-live-bar{') && html.includes('.mlb-chip{'),
   'Mobile live bar CSS classes must be defined');
 
+assert('A160 — O(1) L2: JOURNALISM_RELAY constant defined',
+  html.includes('JOURNALISM_RELAY') && html.includes('/journalism/tonight'),
+  'O(1) Newspaper relay endpoint constant must exist');
+
+assert('A161 — O(1) L2: fetchPrerenderedJournalism function defined',
+  html.includes('function fetchPrerenderedJournalism('),
+  'fetchPrerenderedJournalism() relay-first function must exist');
+
+assert('A162 — O(1) L2: relay-first wired in initFIELDBrief',
+  html.includes('fetchPrerenderedJournalism()') && html.includes('served from relay KV'),
+  'initFIELDBrief must try relay before client AI call');
+
+assert('A163 — O(1) L3: delta hash function defined',
+  html.includes('function buildJournalismContextHash('),
+  'buildJournalismContextHash() delta check function must exist');
+
+assert('A164 — O(1) L3: delta check wired before client AI call',
+  html.includes('_lastJournalismHash') && html.includes('Context unchanged'),
+  'Delta hash comparison must gate client AI calls');
+
+assert('A165 — O(1) L4: Accept-Encoding Brotli hint in relay fetch',
+  html.includes('Accept-Encoding') && html.includes('br, gzip'),
+  'Relay journalism fetch must hint Brotli compression');
+
 
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);

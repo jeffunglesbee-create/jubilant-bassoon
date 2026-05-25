@@ -10371,6 +10371,49 @@ function buildSituationBadge(situation){
 // ═══════════════════════════════════════════════════════════════
 
 const CLAUDE_PROXY_URL = 'https://field-claude-proxy.jeffunglesbee.workers.dev'; // Cloudflare Pages Function proxy
+
+// ── O(1) Newspaper: pre-rendered journalism from relay KV (Layer 2) ──────────
+// Patent-safe: relay stores PROSE ONLY (ADR-002 Rule A). No interest level
+// values. No classification. Client still runs all drama scoring.
+// Layer 3 delta: hash game context before any client AI call — skip if unchanged.
+const JOURNALISM_RELAY = 'https://field-relay-nba.jeffunglesbee.workers.dev/journalism/tonight';
+let _journalismCache = null; // { brief, generatedAt, contextHash }
+let _journalismFetchedAt = 0;
+const JOURNALISM_CLIENT_TTL = 5 * 60 * 1000; // 5 min client cache
+
+async function fetchPrerenderedJournalism() {
+  const now = Date.now();
+  if (_journalismCache && (now - _journalismFetchedAt) < JOURNALISM_CLIENT_TTL) {
+    return _journalismCache;
+  }
+  try {
+    // Layer 4: Accept-Encoding hints Cloudflare to serve Brotli-compressed response
+    const r = await fetch(JOURNALISM_RELAY, {
+      headers: {'Accept-Encoding': 'br, gzip'},
+      signal: AbortSignal.timeout(4000),
+    });
+    if (!r.ok) return null;
+    const data = await r.json();
+    if (!data?.brief) return null;
+    _journalismCache = data;
+    _journalismFetchedAt = now;
+    if (FIELD_DEBUG) console.log(`[O(1)] Relay journalism loaded — age: ${r.headers.get('X-Journalism-Age')||'?'} cycle: ${r.headers.get('X-Journalism-Cycle')||'?'}`);
+    return data;
+  } catch(e) {
+    if (FIELD_DEBUG) console.log('[O(1)] Relay journalism unavailable — falling back to client AI');
+    return null;
+  }
+}
+
+// Layer 3: delta hash — avoid client AI call if game context unchanged
+// Returns a fast djb2 hash of game IDs + scores to detect meaningful changes
+function buildJournalismContextHash(sections) {
+  const ctx = (sections||[]).flatMap(s=>(s.games||[]).map(g=>`${g._id||g.home+g.away}:${g._espnScore||''}`)).join('|');
+  return ctx.split('').reduce((h,c)=>(Math.imul(31,h)+c.charCodeAt(0))|0,0).toString(16);
+}
+let _lastJournalismHash = '';
+
+
 const ESPN_BASE = "https://site.api.espn.com/apis/site/v2/sports";
 const ESPN_SPORTS = [
   {sport:"basketball",   league:"nba",             section:"NBA Playoffs",            periodPrefix:"Q"},
@@ -14634,6 +14677,31 @@ async function initFIELDBrief(sections){
 
   // Pre-fetch standings so buildCompoundPrompt has relay data available
   await Promise.allSettled(sections.slice(0, 5).map(s => fetchStandingsForPrompt(s.sport)));
+
+  // ── Layer 2: try relay pre-rendered prose first (O(1) Newspaper) ────────────
+  const relayJournalism = await fetchPrerenderedJournalism();
+  if (relayJournalism?.brief) {
+    const textEl = el.querySelector('.field-brief-text');
+    if (textEl) { textEl.textContent = trimToCompleteSentence(relayJournalism.brief); textEl.classList.remove('pending'); textEl.classList.add('loaded'); }
+    sessionStorage.setItem(cacheKey, relayJournalism.brief);
+    if (FIELD_DEBUG) console.log('[O(1)] Brief served from relay KV — no AI call');
+    if (typeof renderAmbientPanel === 'function') setTimeout(renderAmbientPanel, 50);
+    // Still try compound for series/game_briefs (non-brief fields) — but respect delta
+    const currentHash = buildJournalismContextHash(sections);
+    if (currentHash === _lastJournalismHash) {
+      if (FIELD_DEBUG) console.log('[L3 Delta] Context unchanged — skipping compound editorial');
+      return;
+    }
+    _lastJournalismHash = currentHash;
+  }
+
+  // ── Layer 3: delta check before client AI call ───────────────────────────────
+  const currentHash = buildJournalismContextHash(sections);
+  if (!relayJournalism?.brief && currentHash === _lastJournalismHash) {
+    if (FIELD_DEBUG) console.log('[L3 Delta] Context unchanged — skipping client AI call');
+    return;
+  }
+  _lastJournalismHash = currentHash;
 
   // Compound editorial call: 1 RPM covers all journalism pieces
   const compound=await fetchCompoundEditorial(sections);
