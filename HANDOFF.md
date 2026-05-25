@@ -1,44 +1,49 @@
-# FIELD Handoff — May 25 2026 (Post-Health Session)
+# FIELD Handoff — May 25 2026 (Journalism Depth Session — Items 1-3)
 
-HEAD: 136697d (oura/whoop workflow cleanup)
-Smoke: 2 pre-existing failures (console.log count 39, MLB render missing)
-Deploy: No index.html changes this session
-SW_VERSION: unchanged from Session 17
+HEAD: 90f6c22
+Smoke: 169/0
+Deploy: SUCCESS
+SW_VERSION: 2026-05-25a
 
-## WHAT CHANGED THIS SESSION
+## WHAT WAS BUILT
 
-Infrastructure exploration only — no code changes to index.html.
+Journalism depth items 1-3 (all no new APIs):
 
-Oura + Whoop GitHub Actions workflows built, deployed, then removed.
-Both integration specs saved to Drive. GitHub Actions clean.
+**Item 1 — ESPN in-game leaders** (zero extra calls)
+  _extractLeader() reads comp.leaders already in ESPN scoreboard response.
+  Extracts top scorer per team: name + stat (points/goals/hits/yards).
+  homeLeader/awayLeader added to espnScores on every poll.
+  Compound prompt now gets: "Leaders: Brunson 28pts · Mitchell 22pts"
+  Before: "Knicks lead by 3 in Q4" — now: player names + numbers.
 
-Pre-existing smoke failures (existed before this session):
-  FAIL: console.log count too high (39)
-  FAIL: MLB section missing from render
+**Item 2 — MLB probable pitchers wired** (data already extracted, never used)
+  homePitcher/awayPitcher from MLB Stats API were extracted but
+  never reached the journalism prompt. Now injected:
+  "Pitchers: G.Cole (2.14 ERA) vs C.Burnes (3.01 ERA)"
 
-## NEXT SESSION: TYPE D — JOURNALISM QUALITY AUDIT
+**Item 3 — Series cliché check extended**
+  "punch their ticket" slipped into a series preview (screenshot evidence).
+  Compound editorial previously only checked result.brief.
+  Now checks: result.series[], result.game_briefs[], result.epl[]
+  FIELD_DEBUG logs banned phrases in all compound output sections.
 
-User question: Does FIELD have sufficient stats depth to feed journalism?
+## WHAT'S NEXT
 
-Tasks:
-  1. Fix 2 pre-existing smoke failures first
-  2. Read Journalism Quality Spec (Drive 1b7fwDVZMURi2sDbQ-Ur7dpbG4I5-fuCDPWC1ILfucoU)
-  3. Audit ESPN/relay data schema for statistical depth
-  4. Map available data vs journalism layer requirements (Layers 1-3)
-  5. Identify gaps: contextual stats, career highs, advanced metrics
-  6. Propose data enrichment plan
+Items 4-6 (relay routes, ~2 hr total):
+  4. BDL series stats relay route (~45 min)
+     Brunson 29.0 PPG this series as a fact, not a phrase to invent
+  5. NHL API shot/save data relay route (~25 min)
+     Vasilevskiy .945 sv% tonight — concrete goalie context
+  6. MLB Stats game feed relay route (~35 min)
+     pitch count, ERA this month, box score leaders per game
 
-## INFRASTRUCTURE NOTES
+Items 7-9 (cultural signals, later):
+  7. Reddit buzz signal
+  8. ESPN /athletes/{id} career stats
+  9. Google Trends cultural relevance
 
-Oura spec: Drive 1hWyhPBo9FvLxwsIND-JluLQjsZeW1vwBn4OC0masr8s
-Whoop spec: Drive 1MuQYJY8Y2RYWFp_3m-KV2RtoHwXnNr4ws8dfbJqtykg
-Whoop app already created at developer-dashboard.whoop.com
-  — just needs Client ID + Secret to activate
+## ALSO PENDING
 
-CF Worker discovery: field-relay-nba.workers.dev IS reachable from sandbox
-(returns 403, not connection timeout). Block is Cloudflare Access policy
-at infrastructure level, not Worker code. Host not in allowlist = CF edge.
-
-## SESSION DOC
-
-Drive: 16LUsDCVIDqxIlt0lsiH0NqV0xiOlR27iIBdGxDybNgc
+- TYPE A daily update for May 26
+- SW_VERSION must be bumped on next deploy day (Rule 23)
+- Current State doc still stale
