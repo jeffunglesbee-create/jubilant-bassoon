@@ -4264,6 +4264,28 @@ const TODAY_ISO = _tn.getFullYear()+'-'+String(_tn.getMonth()+1).padStart(2,'0')
 // ── Drama Dial — user-controlled sensitivity (Patent Defense Layer 2) ────────
 // All drama thresholds read from this. Server CANNOT see or set this value.
 // Storage: localStorage (main thread) + IndexedDB (Service Worker fallback).
+// ── teamNick — safe team nickname extraction ─────────────────────────────────
+// Handles multi-word nicknames: Red Sox, Blue Jays, White Sox, Golden Knights, etc.
+// Fallback: last word of team name. Null-safe.
+const _multiWordNicks={'Boston Red Sox':'Red Sox','Chicago White Sox':'White Sox',
+  'Toronto Blue Jays':'Blue Jays','Portland Trail Blazers':'Trail Blazers',
+  'Vegas Golden Knights':'Golden Knights','Oklahoma City Thunder':'Thunder',
+  'New York Red Bulls':'Red Bulls','Wolverhampton Wanderers':'Wolves',
+  'Sheffield Wednesday':'Wednesday','Sheffield United':'Blades',
+  'West Ham United':'West Ham','Crystal Palace':'Palace',
+  'Aston Villa':'Villa','Nottingham Forest':'Forest',
+  'Brighton and Hove Albion':'Brighton','AFC Bournemouth':'Bournemouth',
+  'Tottenham Hotspur':'Spurs','Manchester United':'Man Utd',
+  'Manchester City':'Man City','Newcastle United':'Newcastle',
+  'Leicester City':'Leicester','Wolverhampton Wanderers':'Wolves'};
+function teamNick(name){
+  if(!name) return '';
+  if(_multiWordNicks[name]) return _multiWordNicks[name];
+  const parts=name.split(' ');
+  return parts.length>1?parts[parts.length-1]:name;
+}
+const getTeamNick=teamNick; // alias for existing references
+
 function getDramaDial(){
   const v=parseInt(localStorage.getItem('field_drama_dial'));
   return(v>=45&&v<=90)?v:65;
@@ -14910,8 +14932,8 @@ function renderAmbientPanel(){
   let scoresHTML='';
   if(live.length){
     const rows=live.slice(0,5).map(s=>{
-      const away=s.awayTricode||(s.awayName||s.away||'').split(' ').pop()||'';
-      const home=(s.homeName||s.home||'').split(' ').pop()||s.homeTricode||'';
+      const away=s.awayTricode||teamNick(s.awayName||s.away)||'';
+      const home=teamNick(s.homeName||s.home)||s.homeTricode||'';
       const periodLbl=s.periodLabel||(s.periodPrefix&&s.period?`${s.periodPrefix}${s.period}`:'');
       const isBball=s.periodPrefix==='T'||s.periodPrefix==='B'||/^[TB]\d/.test(periodLbl);
       const clockStr=(!isBball&&s.clock&&s.clock!=='0:00'&&s.clock!=='PT00M00.00S')?` ${fmtESPNClock(s.clock)}`:'';
@@ -16630,7 +16652,7 @@ function buildTheSkim(sportsData){
       // seriesRecord can use abbreviations ("NYK leads") or nicknames ("Knicks leads")
       const srL=sr.toLowerCase();
       const awayAbbr=(_teamAbbr[g.away]||'').toLowerCase();
-      const awayNickL=(g.away||'').split(' ').pop().toLowerCase();
+      const awayNickL=teamNick(g.away).toLowerCase();
       const awayLeads=srL.includes(awayAbbr+' leads')||srL.includes(awayNickL+' leads')||srL.startsWith(awayAbbr)||srL.startsWith(awayNickL);
       const trailer=awayLeads?homeNick:awayNick;
       const leader=awayLeads?awayNick:homeNick;
@@ -16734,8 +16756,8 @@ function assessInjuryPriceImpact(game){
     for(const inj of list){
       const team=(inj.team||'').toLowerCase();
       if((game.home||'').toLowerCase().includes(team)||(game.away||'').toLowerCase().includes(team)||
-         team.includes((game.home||'').split(' ').pop().toLowerCase())||
-         team.includes((game.away||'').split(' ').pop().toLowerCase())){
+         team.includes(teamNick(game.home).toLowerCase())||
+         team.includes(teamNick(game.away).toLowerCase())){
         allInjuries.push(inj);
       }
     }
@@ -16866,8 +16888,8 @@ function computeInsights(game, sport){
     for(const inj of list){
       const team=(inj.team||'').toLowerCase();
       if((game.home||'').toLowerCase().includes(team)||(game.away||'').toLowerCase().includes(team)||
-         team.includes((game.home||'').split(' ').pop().toLowerCase())||
-         team.includes((game.away||'').split(' ').pop().toLowerCase())){
+         team.includes(teamNick(game.home).toLowerCase())||
+         team.includes(teamNick(game.away).toLowerCase())){
         injuries.push({player:inj.player,team:inj.team,status:inj.status,
           bodyPart:inj.description||inj.bodyPart||'',source:'bdl',confidence:0.9,ts:now});
       }
