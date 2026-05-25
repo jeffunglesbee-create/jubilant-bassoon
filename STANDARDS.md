@@ -46,7 +46,7 @@ Add a new named assertion in `smoke.js` for every FIELD_FEATURES entry (presence
 - Build Session List: `1Drrp5eRNdGb8EKodqPNwpuLaC23XcOrlv4DO13zNot0`
 - FIELD Current State: `1w0BDWk2lf1tlSVBFBTI_P0H9N2ATyZjRTKw3XR2McUE`
 - Master Improvement Ranking: `1rW90JQ5a4ybrE9l5acrbqd0q0yl_QYmPIOnEJr__GEY`
-- Daily Update Reference: `1n4fiAaU1uF2X7EKRx9Gm6XpuR6wkpwoa`
+- Daily Update Reference: `1oSHqnDskN04p95g6e85--4hhgIsKISZ3ZflLXKPM08E`
 - Wow Features: `1QJCiwEav5VEofrdL4ba-jKsSMrcZq7EPdFehTMX-_i8`
 - UI Evaluation: `1D98AsQqsNJSe0UKkVaRFrPO9SwDcdTMvS_Ll81kUVqo`
 - Standards (Drive): `1twYHSCalULEWE1XjKB5lUVDRK5lzUP-l`
@@ -114,7 +114,7 @@ never worked despite being documented as complete.*
 | **Viewport Style Guide** | `1X_u98rkvqB4l6H5fYr1IiOZlLcZzap6cUDojgE85C2A` | Any session that changes section labels, font sizes, touch targets, or surface identifiers |
 | **Master Improvement Ranking** | `1rW90JQ5a4ybrE9l5acrbqd0q0yl_QYmPIOnEJr__GEY` | Any session that ships a feature — add to FIELD_FEATURES registry with ship date |
 | **FIELD Current State** | `1w0BDWk2lf1tlSVBFBTI_P0H9N2ATyZjRTKw3XR2McUE` | Every session end — update HEAD, smoke state, and any changed capability sections |
-| **Daily Update Reference** | `1n4fiAaU1uF2X7EKRx9Gm6XpuR6wkpwoa` | Any session that changes broadcast chip rules, thresholds, or update protocol |
+| **Daily Update Reference** | `1oSHqnDskN04p95g6e85--4hhgIsKISZ3ZflLXKPM08E` | Any session that changes broadcast chip rules, thresholds, or update protocol |
 | **Handoff Note** ← update ID every session | `1NyNqi1GZ5JsWGclkyt2gwa20y5ZMRvv09qlcSlAJFw4` | Every session end — replace ID with new handoff doc |
 | **CI/Deploy Error Reference** | `18JMUd-Uq_m2DomuCua2B5UMiWOel81yzc1JU7SY6f20` | When a new CI/deploy failure pattern is resolved |
 
@@ -386,7 +386,7 @@ git intentionally does not auto-run hooks from cloned repos (security boundary).
 ## Rule 11 — TYPE A sessions must read Daily Update Reference first
 
 Before changing any data in a daily update, open the Daily Update Reference
-(`1n4fiAaU1uF2X7EKRx9Gm6XpuR6wkpwoa`) and verify each of the
+(`1oSHqnDskN04p95g6e85--4hhgIsKISZ3ZflLXKPM08E`) and verify each of the
 following. Do not update game data until every check passes.
 
 ### TYPE A verification checklist
