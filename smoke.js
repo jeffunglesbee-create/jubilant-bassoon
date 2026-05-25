@@ -507,6 +507,30 @@ assert('A169 — Item 3: Cliché check extended to series previews',
   html.includes('Series[${i}] clichés') || html.includes("Series["),
   'Compound series[] entries must be checked for banned phrases');
 
+assert('A170 — Item 4: BDL relay base constant defined',
+  html.includes("BDL_RELAY") && html.includes('/bdl'),
+  'BDL relay base constant must exist');
+
+assert('A171 — Item 4: fetchBDLPlayerContext function defined',
+  html.includes('async function fetchBDLPlayerContext('),
+  'fetchBDLPlayerContext() must be defined for season averages');
+
+assert('A172 — Item 5: fetchNHLLiveStats function defined',
+  html.includes('async function fetchNHLLiveStats('),
+  'fetchNHLLiveStats() must be defined for shot/save context');
+
+assert('A173 — Item 5: NHL live stats wired into compound prompt',
+  html.includes('NHL LIVE') && html.includes('_nhlLiveStatsCache'),
+  'NHL live stats must inject into compound prompt game lines');
+
+assert('A174 — Item 6: fetchMLBBoxscoreContext function defined',
+  html.includes('async function fetchMLBBoxscoreContext('),
+  'fetchMLBBoxscoreContext() must be defined for pitcher/batting stats');
+
+assert('A175 — Item 6: MLB boxscore wired into compound prompt',
+  html.includes('MLB BOX') && html.includes('_mlbBoxscoreCache'),
+  'MLB boxscore stats must inject into compound prompt game lines');
+
 
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);
