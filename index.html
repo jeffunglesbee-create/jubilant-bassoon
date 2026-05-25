@@ -6314,6 +6314,7 @@ function renderAll(){
   setTimeout(injectWeatherBadges, 300); // re-apply wx badges from cache after render
   setTimeout(renderArbitrageBar, 400);   // arbitrage bar — after schedule renders
   setTimeout(renderAmbientPanel, 1200); // ambient panel — after schedule renders
+  setTimeout(injectWikiChips, 1500);    // wiki trending chips — after cards render
   // Runtime silent error scan — FIELD_DEBUG only, runs after async injections settle
   if(FIELD_DEBUG) setTimeout(runSilentErrorScan, 500);
   if(!window._phoneTierInit){initPhoneTier();window._phoneTierInit=true;}
@@ -12740,6 +12741,86 @@ const STREAMING_APPS = [
     ]
   },
 ];
+
+// ── Wikimedia Pageviews — Cultural Significance Signal (Patent Defense #5) ────
+// Free, no auth, CORS-open. Detects when teams are trending on Wikipedia.
+// No sports app does this — it's organic cultural interest, not broadcast hype.
+const WIKI_TITLES={
+  // NBA playoff teams
+  'New York Knicks':'New_York_Knicks','Cleveland Cavaliers':'Cleveland_Cavaliers',
+  'San Antonio Spurs':'San_Antonio_Spurs','Oklahoma City Thunder':'Oklahoma_City_Thunder',
+  // NHL playoff teams
+  'Carolina Hurricanes':'Carolina_Hurricanes','Montreal Canadiens':'Montreal_Canadiens',
+  'Vegas Golden Knights':'Vegas_Golden_Knights','Colorado Avalanche':'Colorado_Avalanche',
+  // MLB marquee
+  'New York Yankees':'New_York_Yankees','Los Angeles Dodgers':'Los_Angeles_Dodgers',
+  'Philadelphia Phillies':'Philadelphia_Phillies','Houston Astros':'Houston_Astros',
+  'San Diego Padres':'San_Diego_Padres','New York Mets':'New_York_Mets',
+  'Athletics':'Oakland_Athletics','Boston Red Sox':'Boston_Red_Sox',
+  'Chicago Cubs':'Chicago_Cubs','San Francisco Giants':'San_Francisco_Giants',
+  // EPL
+  'Arsenal':'Arsenal_F.C.','Manchester City':'Manchester_City_F.C.',
+  'Liverpool':'Liverpool_F.C.','Manchester United':'Manchester_United_F.C.',
+  'Chelsea':'Chelsea_F.C.','Tottenham Hotspur':'Tottenham_Hotspur_F.C.',
+  // EFL
+  'Hull City':'Hull_City_A.F.C.','Bolton Wanderers':'Bolton_Wanderers_F.C.',
+};
+const _wikiCache={};
+async function fetchWikiSignificance(teamName){
+  const title=WIKI_TITLES[teamName];
+  if(!title) return null;
+  const cacheKey='field_wiki_'+title+'_'+TODAY_ISO;
+  // Check memory cache
+  if(_wikiCache[cacheKey]) return _wikiCache[cacheKey];
+  // Check localStorage cache
+  try{const cached=localStorage.getItem(cacheKey);if(cached){const p=JSON.parse(cached);_wikiCache[cacheKey]=p;return p;}}catch(e){}
+  // Fetch 8 days of data (today + 7 trailing)
+  try{
+    const end=TODAY_ISO.replace(/-/g,'');
+    const d=new Date(TODAY_ISO);d.setDate(d.getDate()-7);
+    const start=d.toISOString().slice(0,10).replace(/-/g,'');
+    const url=`https://wikimedia.org/api/rest_v1/metrics/pageviews/per-article/en.wikipedia/all-access/all-agents/${title}/daily/${start}/${end}`;
+    const r=await fetch(url);if(!r.ok) return null;
+    const j=await r.json();
+    const items=j.items||[];
+    if(items.length<2) return null;
+    const todayViews=items[items.length-1]?.views||0;
+    const avgViews=items.slice(0,-1).reduce((s,i)=>s+(i.views||0),0)/Math.max(items.length-1,1);
+    const spikeRatio=avgViews>0?todayViews/avgViews:1;
+    const result={todayViews,avgViews:Math.round(avgViews),spikeRatio:Math.round(spikeRatio*10)/10,trending:spikeRatio>2.0};
+    _wikiCache[cacheKey]=result;
+    try{localStorage.setItem(cacheKey,JSON.stringify(result));}catch(e){}
+    return result;
+  }catch(e){return null;}
+}
+// Inject wiki trending chips on cards after schedule renders
+async function injectWikiChips(){
+  const cards=document.querySelectorAll('.game-card[data-home],[data-away]');
+  for(const card of cards){
+    if(card.querySelector('.wiki-chip')) continue; // already injected
+    const home=card.dataset.home||'';
+    const away=card.dataset.away||'';
+    const[hWiki,aWiki]=await Promise.all([fetchWikiSignificance(home),fetchWikiSignificance(away)]);
+    const venueLine=card.querySelector('.venue-line');
+    if(!venueLine) continue;
+    if(hWiki?.trending&&aWiki?.trending){
+      const chip=document.createElement('div');chip.className='wiki-chip';
+      chip.textContent=`📈 National spotlight — both teams trending`;
+      chip.style.cssText='font-size:.55rem;color:#34d399;margin-top:.15rem';
+      venueLine.insertAdjacentElement('afterend',chip);
+    }else if(hWiki?.trending){
+      const chip=document.createElement('div');chip.className='wiki-chip';
+      chip.textContent=`📈 ${home} trending (+${Math.round((hWiki.spikeRatio-1)*100)}%)`;
+      chip.style.cssText='font-size:.55rem;color:#34d399;margin-top:.15rem';
+      venueLine.insertAdjacentElement('afterend',chip);
+    }else if(aWiki?.trending){
+      const chip=document.createElement('div');chip.className='wiki-chip';
+      chip.textContent=`📈 ${away} trending (+${Math.round((aWiki.spikeRatio-1)*100)}%)`;
+      chip.style.cssText='font-size:.55rem;color:#34d399;margin-top:.15rem';
+      venueLine.insertAdjacentElement('afterend',chip);
+    }
+  }
+}
 
 function renderStreaming(){
   const grid = document.getElementById("streaming-grid");
