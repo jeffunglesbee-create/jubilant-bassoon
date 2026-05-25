@@ -16586,7 +16586,12 @@ function renderOneToWatch(){
     const {g,ed,sport,score}=fire;
     const tier=dramaTier(score)||'warm';
     const tierBadge=`${OTW_TIER_LABELS[tier]||tier.toUpperCase()} \u00b7 ${Math.round(score)}`;
-    const scoreStr=`${ed.awayScore||0}\u2013${ed.homeScore||0}`;
+    // SCORE-UNIFORM-A fix: use computeGameNarrative for score string — same path as card.
+    // Before: ed.awayScore–ed.homeScore (ESPN away-first, no alignment check).
+    // After: _n.scoreline (leader-first, same espnTeamMatch alignment as card score-wrap).
+    // This eliminates the case where home team winning shows "88–95" in OTW, "95–88" on card.
+    const _n = (typeof computeGameNarrative==='function') ? computeGameNarrative(g,ed,null) : null;
+    const scoreStr = _n?.scoreline || `${ed.awayScore||0}\u2013${ed.homeScore||0}`;
     const why=buildOTWWhyLine(g,ed,sport,false);
     const momentum=getOTWMomentum(g._id);
     // Pipeline B: resolve broadcast for Watch button
@@ -16614,7 +16619,8 @@ function renderOneToWatch(){
   const live=_otwFindLiveGame(0);
   if(live&&live.g._id!==_otwDismissedId){
     const {g,ed,sport}=live;
-    const scoreStr=`${ed.awayScore||0}\u2013${ed.homeScore||0}`;
+    const _n2 = (typeof computeGameNarrative==='function') ? computeGameNarrative(g,ed,null) : null;
+    const scoreStr = _n2?.scoreline || `${ed.awayScore||0}\u2013${ed.homeScore||0}`;
     const why=buildOTWWhyLine(g,ed,sport,false);
     banner.innerHTML=`<div class="otw-inner otw-live" id="otw-inner" role="button" tabindex="0">
       <span class="otw-pulse otw-pulse-live"></span>
