@@ -583,9 +583,9 @@ assert('A188 — M2: isScoutsPick wired into injectJ1J4Badges',
   html.includes('if (isScoutsPick(g))'),
   'Scout\'s Pick badge injection must use isScoutsPick() boolean gate');
 
-assert('A189 — SW_VERSION bumped to 2026-05-25b (Rule 23: suffix per deploy)',
-  html.includes("'2026-05-25b'"),
-  'Multiple deploys in one day require suffix increment (a→b→c), not just date change');
+assert('A189 — SW_VERSION is current (Rule 23: suffix per deploy, new day resets to a)',
+  html.includes("'2026-05-26a'"),
+  'SW_VERSION must match current deploy date — update daily per Rule 23');
 
 assert('A190 — Layer 2b: sport vocab violation detection function defined',
   html.includes('function checkSportVocab(') && html.includes('SPORT_VOCAB_VIOLATIONS'),
