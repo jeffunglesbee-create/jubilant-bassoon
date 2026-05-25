@@ -3885,7 +3885,7 @@ const BUNDLES = {
   MLB_PEACOCK_GOTD: ["peacock","nbcsn","youtubetv","hulu","sling","directv"],   // Peacock GOTD (weekday): Peacock stream + NBCSN linear simulcast
   // ESPN GAME OF THE DAY: 1 out-of-market game/day via ESPN Unlimited — non-exclusive
   //   Available on ESPN App for ESPN Unlimited subscribers; locals still carry in-market via RSN
-  MLB_ESPNU_GOTD:  ["espnapp","rsn"],                                // ESPN GOTD via ESPN App + Local RSN (in-market)
+  MLB_ESPNU_GOTD:  ["espnapp"],                                        // ESPN App GOTD: ESPN Unlimited exclusive — NO RSN, no MLB.TV (local blacked out per ESPN Press Room)
   // NETFLIX: Opening Night, Home Run Derby, Field of Dreams ONLY (not regular games) — EXCLUSIVE events
   MLB_NETFLIX:     ["netflix"],                                      // Netflix MLB exclusive events only — NOT on MLB.TV or RSN
   // MLB NETWORK SHOWCASE: 26 non-exclusive live games — locals also carry; MLBN feed blacked out in local markets
@@ -6380,7 +6380,7 @@ function renderAll(){
           </div>
           ${g.venue&&!g.league?.includes("Playoffs")?`<div class="venue-line">${g.venue}</div>`:""}
           ${(g.espnGOTD||g.peacockGOTD||g.mlbnShowcase||g.localNote||g.gotdStreams)?`<div class="badge-row">
-            ${g.espnGOTD?'<span class="gotd-badge espn-gotd" title="Stream free on ESPN App/ESPN Unlimited — no cable required">📺 ESPN App · Free</span>':""}
+            ${g.espnGOTD?'<span class="gotd-badge espn-gotd" title="ESPN App Game of the Day — requires ESPN Unlimited ($29.99/mo) or qualifying cable subscription. Local RSN blacked out.">📺 ESPN App GOTD</span>':""}
             ${g.peacockGOTD?'<span class="gotd-badge peacock-gotd" title="Peacock Game of the Day — stream on Peacock, NBCSN simulcast. Local RSN blacked out in market.">🦚 Peacock GOTD · Free</span>':""}
             ${g.mlbnShowcase?'<span class="gotd-badge" style="color:#6699ff;border-color:rgba(102,153,255,.4);background:rgba(102,153,255,.08)">📺 MLB Network</span>':""}
             ${g.localNote?'<span class="gotd-badge local-cov" title="'+g.localNote+'">📍 Local</span>':""}
@@ -6660,7 +6660,7 @@ function buildTodaySchedule(){
     {home:"New York Mets",         away:"Cincinnati Reds",      start_time:"2026-05-25T20:10:00Z", confirmed:true, venue:"Citi Field, New York NY"},
     {home:"San Francisco Giants",  away:"Arizona Diamondbacks", start_time:"2026-05-25T21:05:00Z", confirmed:true, venue:"Oracle Park, San Francisco CA"},
     {home:"Cleveland Guardians",   away:"Washington Nationals", start_time:"2026-05-25T22:10:00Z", confirmed:true, venue:"Progressive Field, Cleveland OH"},
-    {home:"San Diego Padres",      away:"Philadelphia Phillies",start_time:"2026-05-25T22:40:00Z", confirmed:true, venue:"Petco Park, San Diego CA", espnGOTD:true, streams:resolveBundle("MLB_ESPN"), matchupNote:"ESPN App Game of the Day — PHI @ SD, 6:40pm ET. Available exclusively to ESPN Unlimited subscribers (or cable authenticators). Local RSN blacked out for GOTD."},
+    {home:"San Diego Padres",      away:"Philadelphia Phillies",start_time:"2026-05-25T22:40:00Z", confirmed:true, venue:"Petco Park, San Diego CA", espnGOTD:true, matchupNote:"ESPN App GOTD — PHI @ SD, 6:40pm ET. ESPN Unlimited exclusive. Local RSN blacked out."},
     {home:"Texas Rangers",         away:"Houston Astros",       start_time:"2026-05-25T23:05:00Z", confirmed:true, venue:"Globe Life Field, Arlington TX"},
     {home:"Toronto Blue Jays",     away:"Miami Marlins",        start_time:"2026-05-25T23:07:00Z", confirmed:true, venue:"Rogers Centre, Toronto ON"},
     {home:"Los Angeles Dodgers",   away:"Colorado Rockies",     start_time:"2026-05-26T01:10:00Z", confirmed:true, venue:"Dodger Stadium, Los Angeles CA"},
@@ -6671,11 +6671,12 @@ function buildTodaySchedule(){
     //   1. nationalBundle field → explicit non-exclusive national TV (FS1/FOX/TBS) — show local AND national
     //   2. mlbnShowcase flag → MLB Network Showcase (non-exclusive) — show MLBN + local RSN
     //   3. localRsn tag → market-specific RSN (MASN, YANKEES_LOCAL, etc.) — replaces generic Local RSN
-    //   4. Default → mlbStreams() (MLB_LOCAL = MLB.TV + Local RSN)
+    //   4. GOTD (ESPN/Peacock) → exclusive, replaces RSN (local blacked out) — ROOT CAUSE FIX
+    //   5. Default → mlbStreams() (MLB_LOCAL = MLB.TV + Local RSN)
     //
-    // Exclusive national bundles (MLB_APPLE, MLB_LEADOFF, MLB_PEACOCK*, MLB_NETFLIX) intentionally
-    // do NOT include "rsn" or "mlbtv" in their definitions — so when set via nationalBundle for an
-    // exclusive game, no Local RSN chip appears (correct: local broadcast is blacked out).
+    // Exclusive national bundles (MLB_APPLE, MLB_LEADOFF, MLB_PEACOCK*, MLB_NETFLIX, MLB_ESPNU_GOTD)
+    // intentionally do NOT include "rsn" or "mlbtv" — local broadcast is blacked out for these.
+    // GOTD games are the same class of exclusive — they must enter this path, not the default.
     let baseStreams;
     if(g.nationalBundle){
       // National TV game — use national bundle. For non-exclusive bundles (FS1, FOX, TBS, MLBN, ESPN),
@@ -6686,7 +6687,15 @@ function buildTodaySchedule(){
     } else if(g.localRsn){
       baseStreams = resolveBundle(g.localRsn);     // Market-specific RSN (MASN, YANKEES_LOCAL, etc.)
     } else {
-      baseStreams = mlbStreams();                  // Default: MLB_LOCAL (MLB.TV + Local RSN)
+      // Root cause fix: check GOTD BEFORE falling through to mlbStreams().
+      // GOTD is exclusive — RSN is blacked out. Must enter exclusive path like Apple/Peacock/Netflix.
+      // Previously GOTD was post-hoc (badge + gotdStreams overlay on already-wrong baseStreams).
+      const _gk = _gotdKey(g.away||'', g.home||'');
+      const _isEspnGotd  = g.espnGOTD  || ESPN_GOTD_SCHEDULE[TODAY_ISO]  === _gk;
+      const _isPcokGotd  = g.peacockGOTD || PEACOCK_GOTD_SCHEDULE[TODAY_ISO] === _gk;
+      if (_isEspnGotd)      baseStreams = resolveBundle("MLB_ESPNU_GOTD");  // ESPN App exclusive, no RSN
+      else if (_isPcokGotd) baseStreams = resolveBundle("MLB_PEACOCK_GOTD"); // Peacock + NBCSN, no RSN
+      else                  baseStreams = mlbStreams();                       // Default: MLB.TV + Local RSN
     }
     const base = {...g, league:"MLB", streams:baseStreams};
     // Auto-tag GOTD from schedule tables (no manual entry tagging needed)
