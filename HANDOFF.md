@@ -19,6 +19,12 @@ When ESPN announces June-August block (expected late May): paste into ESPN_GOTD_
 
 ## IMMEDIATE WORK FOR NEXT SESSION
 
+0. BUGS FROM LIVE SCREENSHOT (May 25):
+   - "Knicks facing elimination" headline is WRONG — Cavaliers face elimination (NYK leads 3-0).
+     Journalism integrity violation. Check headline generator + J3 Brief prompt.
+   - PHI@SD GOTD badge not showing — verify deploy propagated. If still missing after
+     cache bust, debug _gotdKey() matching in mlbRaw filter.
+
 1. TYPE A DAILY UPDATE (if May 26):
    - Check results: NBA ECF G4, NHL ECF G3, EFL L2 Final
    - Add Tue May 26 MLB slate (GOTD auto-tags from table)
