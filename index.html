@@ -8066,11 +8066,17 @@ function compBadge(moneylineGap){
 function fieldVsMarket(game, homeML, awayML){
   if(!game || !homeML || !awayML) return '';
   const gap = Math.abs(homeML - awayML);
-  const drama = typeof preGameScore === 'function' ? preGameScore(game) : 0;
-  if(gap > 180 && drama > 68)
-    return `<div class="field-signal">FIELD sees this as more competitive than the line suggests — drama score <strong>${Math.round(drama)}</strong> despite the spread.</div>`;
-  if(gap < 45 && drama < 35)
-    return `<div class="field-signal">Market says pick'em — FIELD rates entertainment value low here <strong>(${Math.round(drama)})</strong>. May not be the game the number implies.</div>`;
+  // M1 extension: fieldVsMarket was missed in the Betting Intelligence drama score removal.
+  // preGameScore() is composite (importance + broadcast + odds + milestones) — displaying
+  // it as "drama score N" is Case A posture (Numerical Usage Policy).
+  // Fix: keep the qualitative arbitrage signal (FIELD vs market assessment), remove the number.
+  // The signal's value is the observation, not the score behind it.
+  const isCompetitive = isScoutsPick(game); // boolean — competitive AND off national TV
+  const isLopsided = gap < 45; // market says pick'em
+  if(gap > 180 && isCompetitive)
+    return `<div class="field-signal">FIELD rates this more competitive than the spread suggests — series context and odds signal a closer game than the line implies.</div>`;
+  if(isLopsided && !isCompetitive)
+    return `<div class="field-signal">Market says pick'em — FIELD sees limited stakes or competitive context here. May not deliver what the tight line implies.</div>`;
   return '';
 }
 
@@ -16715,15 +16721,20 @@ function renderMobileLiveBar(){
   const top=liveGames.slice(0,5);
   const chips=top.map(({g,ed,drama})=>{
     const tier=drama>=85?'fire':drama>=65?'crunch':drama>=45?'warm':'low';
+    const tierLabel=drama>=85?'🔥':drama>=65?'⚡':drama>=45?'●':'';
     const tn=typeof teamNick==='function'?teamNick:n=>n;
     const away=tn(g.away||'').slice(0,12);
     const home=tn(g.home||'').slice(0,12);
     const scoreStr=`${ed.awayScore||0}-${ed.homeScore||0}`;
     const hId=(g.home||'').replace(/[^a-z]/gi,'').toLowerCase();
+    // Patent note: removed raw drama number. Tier label (🔥/⚡/●) conveys the same
+    // information without exposing a threshold-comparable numerical value on a card.
+    // dramaScoreLive() is Case C (single dimension, live game state) — safe — but
+    // the number is unnecessary when the tier label already communicates intensity level.
     return `<div class="mlb-chip" data-scroll-home="${hId}">
       <span class="mlb-chip-teams">${away} @ ${home}</span>
       <span class="mlb-chip-score">${scoreStr}</span>
-      <span class="mlb-chip-drama d-${tier}">${Math.round(drama)}</span>
+      <span class="mlb-chip-drama d-${tier}">${tierLabel}</span>
     </div>`;
   }).join('');
   bar.innerHTML=`<div class="mlb-header">\u26a1 ${liveGames.length} Live</div><div class="mlb-row">${chips}</div>`;
@@ -17937,7 +17948,8 @@ function buildLifeStageContent(game, eData, stage) {
       if (eData.source === 'squiggle') return ''; // AFL: squiggle chip handles it
       // Score shown in score-wrap (big numbers) — stage content shows peak drama only
       const peak = parseFloat(localStorage.getItem('field_drama_peak_'+(game._id||''))||'0');
-      return peak >= getDramaDial() ? `<div class="card-stage-content"><span class="stage-final-score">Peak drama ${Math.round(peak)}</span></div>` : '';
+      const peakLabel = peak >= 85 ? '🔥 Fire game' : peak >= 65 ? '⚡ High drama finish' : '';
+      return peakLabel && peak >= getDramaDial() ? `<div class="card-stage-content"><span class="stage-final-score">${peakLabel}</span></div>` : '';
     }
     default: return '';
   }
@@ -18219,7 +18231,10 @@ function openBottomSheet(gameId) {
   const milestoneStr = milestone ? `${milestone.playerName} needs ${milestone.gap} more ${milestone.stat} → ${milestone.next}` : '';
   const seriesMargins = buildSeriesMarginsDots(game);
   const drama = getSmoothedDrama(gameId);
-  const dramaStr = drama != null ? `Drama ${Math.round(drama)}` + (drama >= 85 ? ' 🔥' : drama >= 65 ? ' ⚡' : '') : '';
+  // Display tier label not raw number — number is redundant alongside the sparkline
+  const dramaLabel_bs = drama != null
+    ? (drama >= 85 ? '🔥 Fire game' : drama >= 65 ? '⚡ Heating up' : drama >= 45 ? '● In play' : '')
+    : '';
   // Standings context
   const standings = _relayStandingsCache?.[sport];
   let standingsStr = '';
@@ -18235,7 +18250,7 @@ function openBottomSheet(gameId) {
     <div class="bs-teams">${game.away||'?'} @ ${game.home||'?'}</div>
     <div class="bs-meta">${scoreStr?scoreStr+period:fmtTime(game.start_time)+' ET'} · ${game.venue||sport||''}${game.seriesRecord?' · '+game.seriesRecord:''}</div>
     ${gameBrief ? `<div class="bs-section"><div class="bs-section-label">FIELD Brief</div><div class="bs-section-body" style="font-size:.74rem;line-height:1.6">${gameBrief}</div></div>` : ''}
-    ${dramaStr||cb ? `<div class="bs-section"><div class="bs-section-label">Live Intelligence</div><div class="bs-section-body">${[dramaStr,cb].filter(Boolean).join(' · ')}</div></div>` : ''}
+    ${dramaLabel_bs||cb ? `<div class="bs-section"><div class="bs-section-label">Live Intelligence</div><div class="bs-section-body">${[dramaLabel_bs,cb].filter(Boolean).join(' · ')}</div></div>` : ''}
     ${sparkline ? `<div class="bs-section"><div class="bs-section-label">Drama Arc</div>${sparkline}</div>` : ''}
     ${story ? `<div class="bs-section"><div class="bs-section-label">Story</div>${story}</div>` : ''}
     ${(game.matchupNote||game.localNote||milestoneStr) ? `<div class="bs-section"><div class="bs-section-label">Context</div><div class="bs-section-body">${[game.matchupNote||game.localNote, milestoneStr].filter(Boolean).join('<br>')}</div></div>` : ''}
