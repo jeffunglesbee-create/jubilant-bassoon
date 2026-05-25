@@ -91,6 +91,45 @@ async function networkFirstWithFallback(cacheName, request){
 //   only sends visible payload when drama ≥ drama_min threshold.
 //   Result: lock-screen notification with full context, no app open needed.
 
+// ── Drama Dial — Service Worker side (Patent Defense Layer 2+3) ──────────
+// Server pushes FACTS (score changed). Client evaluates EXCITEMENT.
+// _swDramaDial is synced from main thread via postMessage on every page load.
+let _swDramaDial = 65; // default — overwritten by postMessage sync
+
+self.addEventListener('message', e => {
+  if (e.data?.type === 'PREF_UPDATE' && e.data.key === 'drama_dial') {
+    _swDramaDial = e.data.value;
+  }
+});
+
+// Load dial from IndexedDB on SW startup (fallback if postMessage hasn't fired)
+(async function loadDialFromIDB(){
+  try {
+    const req = indexedDB.open('field_prefs', 1);
+    req.onupgradeneeded = e => { e.target.result.createObjectStore('prefs'); };
+    req.onsuccess = e => {
+      const db = e.target.result;
+      const tx = db.transaction('prefs', 'readonly');
+      const get = tx.objectStore('prefs').get('drama_dial');
+      get.onsuccess = () => { if (get.result >= 45 && get.result <= 90) _swDramaDial = get.result; };
+    };
+  } catch(e) {}
+})();
+
+// Client-side drama computation from raw game state
+function computePushDrama(d) {
+  const margin = Math.abs((d.homeScore||0) - (d.awayScore||0));
+  const period = String(d.period || '').toLowerCase();
+  const isFinal = period.includes('final');
+  if (isFinal) return 0;
+  const isLate = ['q4','ot','9th','3rd','extra','2nd half'].some(p => period.includes(p));
+  if (!isLate) return margin < 5 ? 50 : 30;
+  if (margin <= 3) return 90;
+  if (margin <= 7) return 75;
+  if (margin <= 12) return 55;
+  return 30;
+}
+
 self.addEventListener('push', e => {
   e.waitUntil(handlePush(e.data));
 });
@@ -102,24 +141,45 @@ async function handlePush(data) {
   // Silent heartbeat — no notification, just keep SW alive
   if (!payload.type) return;
 
-  if (payload.type === 'DRAMA_THRESHOLD') {
-    const { sport, home, away, homeScore, awayScore, periodLabel,
-            broadcast, drama, gameId, watchUrl } = payload;
-    const scoreline = `${homeScore}–${awayScore}`;
-    const title = `🎯 ${sport || 'Game'} — ${scoreline}`;
-    const body  = `${home} vs ${away} · ${periodLabel || ''} · ${broadcast || 'Live'} · Drama ${drama}`;
-    const icon  = '/icon-192.png';
-    const badge = '/icon-192.png';
-    const actions = watchUrl
-      ? [{action: 'watch', title: 'Watch Now'}]
-      : [];
-
+  // ── SCORE_CHANGE: factual push from server (post-handleCron refactor) ──
+  // Server sends raw game state. Client evaluates excitement.
+  if (payload.type === 'SCORE_CHANGE') {
+    const drama = computePushDrama(payload);
+    if (drama < _swDramaDial) return; // suppress — below user's dial
+    const margin = Math.abs((payload.homeScore||0) - (payload.awayScore||0));
+    const crunchThreshold = Math.min(_swDramaDial + 20, 95);
+    const isCrunch = drama >= crunchThreshold;
+    const title = isCrunch ? `🔥 CRUNCH TIME` : `⚡ Worth watching`;
+    const body = `${payload.away||'Away'} ${payload.awayScore||0}–${payload.homeScore||0} ${payload.home||'Home'} · ${payload.clock||''} ${payload.period||''}`;
     await self.registration.showNotification(title, {
-      body, icon, badge, actions,
-      tag: `field-drama-${gameId}`,     // replaces previous notif for same game
-      renotify: false,                   // don't buzz again for same game
-      data: { gameId, watchUrl: watchUrl || '/', type: 'DRAMA_THRESHOLD' },
+      body, icon: '/icon-192.png', badge: '/icon-192.png',
+      tag: `field-drama-${payload.gameId}`,
+      renotify: isCrunch, // re-buzz for crunch time
+      data: { gameId: payload.gameId, watchUrl: payload.watchUrl || '/', type: 'SCORE_CHANGE' },
+      actions: payload.watchUrl ? [{action: 'watch', title: 'Watch Now'}] : []
     });
+    return;
+  }
+
+  // ── DRAMA_THRESHOLD: legacy push (pre-refactor server still sends these) ──
+  // Now filtered by Drama Dial — client decides whether to show
+  if (payload.type === 'DRAMA_THRESHOLD') {
+    const drama = payload.drama || 0;
+    if (drama < _swDramaDial) return; // suppress — below user's dial
+    const { sport, home, away, homeScore, awayScore, periodLabel,
+            broadcast, gameId, watchUrl } = payload;
+    const crunchThreshold = Math.min(_swDramaDial + 20, 95);
+    const isCrunch = drama >= crunchThreshold;
+    const title = isCrunch ? `🔥 CRUNCH TIME — ${sport || 'Game'}` : `⚡ ${sport || 'Game'} — ${homeScore}–${awayScore}`;
+    const body  = `${home} vs ${away} · ${periodLabel || ''} · ${broadcast || 'Live'}`;
+    await self.registration.showNotification(title, {
+      body, icon: '/icon-192.png', badge: '/icon-192.png',
+      tag: `field-drama-${gameId}`,
+      renotify: isCrunch,
+      data: { gameId, watchUrl: watchUrl || '/', type: 'DRAMA_THRESHOLD' },
+      actions: watchUrl ? [{action: 'watch', title: 'Watch Now'}] : []
+    });
+    return;
   }
 
   if (payload.type === 'DECISIVE_MOMENT') {
