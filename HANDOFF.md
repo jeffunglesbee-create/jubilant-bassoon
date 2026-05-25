@@ -1,46 +1,43 @@
-# FIELD Handoff — May 25 2026 Session 16
+# FIELD Handoff — May 25 2026 Session 17
 
-HEAD: b26d875 (jubilant-bassoon) / 450f41b (field-relay-nba)
+HEAD: b26d875 (code unchanged — analysis session)
 Smoke: 165/0
-Deploy: SUCCESS (both repos)
+Deploy: No code deploy this session
 SW_VERSION: 2026-05-25a
 
-## WHAT WAS BUILT THIS SESSION
+## WHAT CHANGED
 
-Efficiency Layers 2, 3, 4 — all patent-audited and cleared:
+Analysis + documentation session. No code changes.
 
-Layer 2 (O(1) Newspaper — field-relay-nba):
-- handleJournalismCycle() cron every */15 min during live hours
-- Fetches ESPN, calls Claude proxy ONCE, stores prose in FIELD_JOURNALISM KV
-- GET /journalism/tonight route — flat cost at any user count
-- KV bootstrap in deploy.yml (field-journalism namespace)
-- ADR-002 compliant: prose only server-side, no classification
+Rule 44 added to STANDARDS.md:
+  Client-side size budget (~20KB/commit threshold).
+  Patent note embedded: classification stays client-side always.
 
-Layer 2 (client — index.html):
-- fetchPrerenderedJournalism() — relay-first before any AI call
-- initFIELDBrief wired to try relay first, graceful fallback
+## KEY FINDINGS (Session 17)
 
-Layer 3 (delta journalism — both repos):
-- contextHash before AI call — skips if game context unchanged
-- Server-side in handleJournalismCycle, client-side in initFIELDBrief
+CLIENT SIZE + PATENT DEFENSE:
+  - File size and patent defense are UNRELATED. Bigger client = stronger defense.
+  - Real "too big" problem is PERFORMANCE, not patent risk.
+  - Tiptoe risk is organizational — ADR-002 already addresses it.
+  - What can move server-side: prose, templates, raw data.
+  - What MUST stay client-side: dramaScoreLive(), classifyGame(), OTW, badges.
 
-Layer 4 (Brotli — index.html):
-- Accept-Encoding: br, gzip on relay fetch — Cloudflare auto-compresses
+NATIVE APP:
+  - File size concern disappears (native users expect 5-15MB installs).
+  - Patent defense STRENGTHENS on native (compiled, on-device hardware).
+  - Background execution is the big unlock — reliable client-side eval.
+  - Build pipeline handles minification automatically.
+  - One genuine trade-off: deployment velocity → content decoupling required.
+    Schedule data, broadcast registry must be relay-fetched, not hardcoded,
+    to enable content updates without App Store submission.
 
-## KEY ANALYSIS FINDINGS
+PERFORMANCE MITIGATION (no patent risk):
+  1. Minification build step (HIGH) — 60-70% size reduction
+  2. Lazy-load schedule data (MEDIUM) — parse time + native prep
+  3. Web Workers for scoring (LOW) — off-main-thread, still client-side
+  4. Rule 44 size budget (ONGOING) — in STANDARDS.md now
 
-Patent-Account Compatibility: user accounts are COMPLETELY ORTHOGONAL
-to RUWT patent claims. FIELD can add accounts/analytics without touching
-any patent defense. Valuation ladder is now MEASURABLE for first time.
-
-Valuation: Rung 0 moves to ~$700-800K. Rungs 1-3 unchanged (user-dependent).
-
-## COST IMPACT
-
-At 750 WAU (Rung 1):
-  Before:   $145,800/year
-  After L2: $228/year (O(1) flat)
-  After L3: ~$55-90/year (delta skips unchanged cycles)
+Doc: Drive 1F1tzmSQm0NeENBi9_pMSR5yWX42ohYjriWZHThkiOxw
 
 ## NEXT SESSION
 
@@ -50,17 +47,10 @@ At 750 WAU (Rung 1):
    - Add Tue May 26 MLB slate + Peacock GOTD
    - Run: node scripts/rotate-schedule.js
 
-2. Verify /journalism/tonight returning brief after relay cron fires
+2. Commit STANDARDS.md (Rule 44 added this session)
 
-3. Update Current State doc (major updates pending)
+3. Update Current State doc (stale since May 25 morning)
 
 4. SCORE-UNIFORM-A (~45 min) — active bug, next TYPE B
 
-## DOCUMENTS WRITTEN TODAY
-
-- Patent-Account Compatibility + Valuation Update:
-  1_9EvCELew_mkpzOC9g0yU3PIgx5q7MKtmiPNFEC4vk8
-- Efficiency Layer Patent Audit:
-  1hdL-1PlBF8l_j_bijVKAXE6GigTIT6BhhlGe3Zv4w1M
-- Session 16 doc:
-  1SavFTETZZZCtFifxylwH5qLwk6aza0E6BZo8okmtYS4
+5. Minification build step — highest-leverage performance item

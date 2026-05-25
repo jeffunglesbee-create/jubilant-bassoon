@@ -2458,3 +2458,29 @@ All user-visible text about a game MUST call sportContext(sport) for period labe
 score units, and run thresholds. No basketball defaults. "Q" is only correct for
 NBA/NFL/WNBA/AFL. Soccer uses "2H 87'", Hockey "P3", MLB "Inn 7", Tennis "Set 3".
 Spec: Drive 1jQ5pm1r8Cinu0eeZ7BWLs6N7LO01Mp2qYCXQ6Bu5L0A
+
+
+## Rule 44 — Client-Side Size Budget
+
+Baseline: ~1MB source, ~250KB Brotli-delivered (May 25 2026).
+Target delivered: <400KB (achievable with minification build step).
+
+Any single commit increasing index.html by more than 20KB (source, unminified)
+requires explicit justification: what was added, what was offset or deferred,
+was a smaller implementation considered?
+
+This rule does not prevent growth. It prevents unnoticed drift.
+The upper bound is updated when features justify it (WHOLE FIELD, native app prep).
+Checked by smoke A01 (file size in range). See also: minification spec below.
+
+PATENT NOTE: file size and patent defense are unrelated. A larger client-side
+codebase is MORE defensible (computation obviously on-device), not less.
+Classification (dramaScoreLive, classifyGame, OTW logic) MUST stay client-side
+regardless of file size pressure. Ref: ADR-002, Client-Size Analysis May 25 2026.
+Doc: Drive 1F1tzmSQm0NeENBi9_pMSR5yWX42ohYjriWZHThkiOxw
+
+ADR-002: Decoupled Three-Component Architecture (Drive 1DZq6I6T4jKiRsnO7DEqVA48WfTX0mIwEiKgYVjCqQs4)
+  What can move server-side: prose, templates, raw data relay.
+  What MUST stay client-side: all game scoring, classification, badge rendering,
+  OTW selection, push notification evaluation.
+  Rule B is binding: classifyGame() NEVER runs on a server.
