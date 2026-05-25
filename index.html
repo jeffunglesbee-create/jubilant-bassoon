@@ -16621,7 +16621,22 @@ function buildTheSkim(sportsData){
     const sweepGames=allGames.filter(g=>g.seriesRecord&&/3-0/i.test(g.seriesRecord));
     const elimGames=allGames.filter(g=>g._gameImportance==='elimination');
     const decidingGames=allGames.filter(g=>g._gameImportance==='series_deciding');
-    if(sweepGames.length) parts.push(teamName(sweepGames[0])+(sweepGames.length>1?` and ${sweepGames.length-1} more`:'')+(sweepGames[0].seriesRecord==='3-0'?' can sweep tonight':' facing elimination'));
+    if(sweepGames.length){
+      const g=sweepGames[0];
+      const sr=g.seriesRecord||'';
+      // Identify who TRAILS (faces elimination) vs who LEADS (can sweep)
+      const awayNick=typeof getTeamNick==='function'?getTeamNick(g.away):g.away;
+      const homeNick=typeof getTeamNick==='function'?getTeamNick(g.home):g.home;
+      // seriesRecord can use abbreviations ("NYK leads") or nicknames ("Knicks leads")
+      const srL=sr.toLowerCase();
+      const awayAbbr=(_teamAbbr[g.away]||'').toLowerCase();
+      const awayNickL=(g.away||'').split(' ').pop().toLowerCase();
+      const awayLeads=srL.includes(awayAbbr+' leads')||srL.includes(awayNickL+' leads')||srL.startsWith(awayAbbr)||srL.startsWith(awayNickL);
+      const trailer=awayLeads?homeNick:awayNick;
+      const leader=awayLeads?awayNick:homeNick;
+      const more=sweepGames.length>1?` and ${sweepGames.length-1} more`:'';
+      parts.push(trailer+more+' facing elimination');
+    }
     else if(decidingGames.length) parts.push(decidingGames.length+' deciding game'+(decidingGames.length>1?'s':'')+' tonight');
     else if(elimGames.length) parts.push(elimGames.length+' elimination game'+(elimGames.length>1?'s':'')+' tonight');
     else parts.push(playoffGames+' playoff game'+(playoffGames>1?'s':'')+' tonight');
