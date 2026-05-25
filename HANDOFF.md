@@ -1,55 +1,52 @@
-# FIELD Handoff — May 25 2026 Session 8
+# FIELD Handoff — May 25 2026 Session 9
 
-HEAD: 8b58406 (last code commit: 0e7d844)
+HEAD: e5bf19e
 Smoke: 144/0
-File size: 999,993 bytes
-Deploy: SUCCESS (0e7d844 is live)
+File size: 1,008,180 bytes
+Deploy: SUCCESS
+
+## PATENT DEFENSE: COMPLETE
+
+All layers deployed. No specs-only gaps remaining.
+- Layer 1: Client-side computation (existing)
+- Layer 2: Drama Dial (ddf73e1) — slider in My Services, getDramaDial()
+- Layer 3: SW push evaluation (0a7dc8c) — computePushDrama(), _swDramaDial
+- Layer 5: Market Intelligence (existing) + Wikimedia Pageviews (e5bf19e)
+- Remaining: field-relay-nba server handleCron strip (separate repo, not urgent)
 
 ## IMMEDIATE WORK FOR NEXT SESSION
 
-1. TYPE C BUILD: Schedule Automation (Jeff approved May 25)
-   Spec: Drive 1d6HZ7gHJ0omabekHfVuGzKNoOGgUbwJwlwvcUaUAr10 (CORRECTED — no runtime fetch)
-   Phase 1: Expand field-data.yml to cover MLB + soccer + broadcast rules (~2-3 hr)
-   Phase 2: index.html fetches JSON instead of hardcoded entries (~1-2 hr)
-   Phase 3: Update TYPE A protocol (~30 min)
-   Existing: field-data.yml already fetches NBA/NHL/MLS. Gap is MLB + broadcast logic.
-
-2. TYPE A DAILY UPDATE (if needed before TYPE C):
-   - NBA ECF: Check G4 result (NYK could sweep CLE, played May 25)
+1. TYPE A DAILY UPDATE (if next session is May 26):
+   - Check results: NBA ECF G4, NHL ECF G3, EFL L2 Final (all played May 25)
    - NBA WCF G5: Tue May 26 at OKC, 8:30pm ET, NBC — entry exists
    - NHL WCF G4: Tue May 26 at VGK, 9pm ET, ESPN — entry exists
-   - NHL ECF G3: Check result (CAR @ MTL, played May 25)
-   - EFL L2 Final: Check result (Salford vs Notts County, played May 25)
    - MLB: Add Tue May 26 slate. ESPN GOTD: SEA @ ATH 9:40pm ET
-   - Run: node scripts/rotate-schedule.js (automated 7-day cleanup)
+   - Run: node scripts/rotate-schedule.js
 
-## WHAT SESSIONS 6-8 ACCOMPLISHED (May 25 2026)
+2. TYPE C: Schedule Automation (Jeff approved)
+   Spec: Drive 1d6HZ7gHJ0omabekHfVuGzKNoOGgUbwJwlwvcUaUAr10 (CORRECTED)
+   Pipeline hardcodes entries automatically. No runtime fetch.
+   Phase 1: Expand field-data.yml (MLB + soccer + broadcast rules)
+   Phase 2: buildTodaySchedule() merges pipeline + manual overrides
+   Phase 3: Update TYPE A protocol
 
-DEPLOYED:
-  da1724e — daily update: NBA/NHL/MLB/EFL fixes + ESPN GOTD tag
-  0e7d844 — dead code audit: 29KB recovered, back under 1MB
-
-STRUCTURAL:
-  - HANDOFF.md moved from Drive to repo (eliminates ID churn)
-  - GOTD retrieval protocols documented (Daily Update Ref)
-  - Current State doc updated (Drive 1GvsfnTH9Xhqzg_NdYrPhPpk1d1Rnm0lkeG6ip-tLUlA)
-  - rotate-schedule.js: automated 7-day data rotation (scripts/)
-  - Schedule Automation spec written and approved
-
-DECISIONS:
-  - Rule 19 resolved: rotation keeps file under 1MB permanently. No build step needed.
-  - Schedule automation approved: eliminate manual hardcoding, TYPE A drops to verification only.
-  - Path: rotation (done) + automation (specced, ready to build)
+3. BUILD PRIORITY (post-automation):
+   - field-relay-nba handleCron server strip (completes Layer 3 fully)
+   - Drama Dial downstream refinements (OTW gate, Stay Up Signal, card pulse)
+   - YouTube highlights, Podcast Index, SeatGeek, Polymarket, Preference Sync
 
 ## KEY CONTEXT
 
-- Betfair GONE. The Odds API is the odds source. findOddsForGame().
+- Patent defense COMPLETE — all layers have deployed code
+- Betfair GONE. The Odds API is the odds source.
 - AFL fully built (Sessions 1-5). Do not rebuild.
 - HANDOFF.md is in repo root — NOT Drive.
-- Date nav limit: 7 days. rotate-schedule.js cleans older entries.
-- ESPN GOTD schedule through May 31 in Daily Update Ref.
-- field-data.yml already runs daily 7:30 AM UTC (NBA/NHL/MLS).
-- Drama Dial, handleCron refactor, Wikimedia still on build priority after automation.
+- rotate-schedule.js keeps data under control (7-day rotation)
+- Schedule Automation spec CORRECTED: pipeline hardcodes, no runtime fetch
+- FIELD principle: hardcoded data = baseline, API data = overlay
+- Drama Dial: getDramaDial() replaces all hardcoded 65/85 thresholds
+- Wikimedia: WIKI_TITLES has 28 teams, expandable incrementally
+- SW: handles SCORE_CHANGE (new factual) + DRAMA_THRESHOLD (legacy, now filtered)
 
 ## SERIES STATE
 
