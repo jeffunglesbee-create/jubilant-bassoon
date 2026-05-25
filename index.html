@@ -4441,193 +4441,8 @@ function inferSport(league){
 // Sources: NBA.com, NHL.com official schedules verified May 11, 2026
 function buildDateSchedule(iso){
   const sched = {
-    // ─── FRIDAY MAY 8 ────────────────────────────────────────────────────────
-    "2026-05-08": [
-      { sport:"NBA Playoffs", games:[
-        {home:"New York Knicks",     away:"Philadelphia 76ers",league:"NBA Playoffs – East Semis G3", start_time:"2026-05-08T23:00:00Z", confirmed:true, venue:"Madison Square Garden, New York",  streams:resolveBundle("NBA_PRIME")},
-        {home:"Minnesota Timberwolves",away:"San Antonio Spurs",    league:"NBA Playoffs – West Semis G3 · Series tied 1-1",start_time:"2026-05-10T00:30:00Z", confirmed:true, venue:"Target Center, Minneapolis",streams:resolveBundle("NBA_PRIME")},
-      ]},
-      { sport:"NHL Playoffs", games:[
-        {home:"Buffalo Sabres",      away:"Montreal Canadiens", league:"NHL Playoffs – East R2 G2",  start_time:"2026-05-08T23:00:00Z", confirmed:true, venue:"KeyBank Center, Buffalo",          streams:resolveBundle("NHL_TNT")},
-        {home:"Vegas Golden Knights",away:"Anaheim Ducks",      league:"NHL Playoffs – West R2 G3",  start_time:"2026-05-09T01:30:00Z", confirmed:true, venue:"T-Mobile Arena, Las Vegas",        streams:resolveBundle("NHL_TNT")},
-      ]},
-      { sport:"Baseball (MLB)", games:[
-        {home:"Cincinnati Reds",      away:"Houston Astros",     league:"MLB — Friday",  start_time:"2026-05-08T22:10:00Z", confirmed:true, venue:"Great American Ball Park"},
-        {home:"Philadelphia Phillies",away:"Colorado Rockies",   league:"MLB — Friday",  start_time:"2026-05-08T22:40:00Z", confirmed:true, venue:"Citizens Bank Park", streams:resolveBundle("MLB_LOCAL")},
-        {home:"Baltimore Orioles",    away:"Athletics",          league:"MLB — Friday",  start_time:"2026-05-08T23:05:00Z", confirmed:true, venue:"Oriole Park, Baltimore", localRsn:"MASN_ORIOLES", localNote:"MASN: Orioles · Athletics.TV: Oakland", streams:resolveBundle("MLB_LOCAL")},
-        {home:"Toronto Blue Jays",    away:"Los Angeles Angels", league:"MLB — Friday",  start_time:"2026-05-08T23:07:00Z", confirmed:true, venue:"Rogers Centre, Toronto", streams:resolveBundle("MLB_LOCAL")},
-        {home:"Boston Red Sox",       away:"Tampa Bay Rays",     league:"MLB — Friday",  start_time:"2026-05-08T23:10:00Z", confirmed:true, venue:"Fenway Park, Boston", streams:resolveBundle("MLB_LOCAL")},
-        {home:"Miami Marlins",        away:"Washington Nationals",league:"MLB — Friday", start_time:"2026-05-08T23:10:00Z", confirmed:true, venue:"loanDepot park, Miami", localRsn:"NATIONALS_TV", localNote:"Nationals.tv for DC/MD viewers"},
-        {home:"Cleveland Guardians",  away:"Minnesota Twins",    league:"MLB — Apple TV+ Friday Night Baseball", start_time:"2026-05-08T23:15:00Z", confirmed:true, venue:"Progressive Field, Cleveland", streams:resolveBundle("MLB_APPLE")},
-        {home:"Kansas City Royals",   away:"Detroit Tigers",     league:"MLB — Friday",  start_time:"2026-05-08T23:40:00Z", confirmed:true, venue:"Kauffman Stadium", streams:resolveBundle("MLB_LOCAL")},
-        {home:"Chicago White Sox",    away:"Seattle Mariners",   league:"MLB — Friday",  start_time:"2026-05-08T23:40:00Z", confirmed:true, venue:"Guaranteed Rate Field", streams:resolveBundle("MLB_LOCAL")},
-        {home:"Milwaukee Brewers",    away:"New York Yankees",   league:"MLB — Friday",  start_time:"2026-05-08T23:40:00Z", confirmed:true, venue:"American Family Field", localRsn:"YANKEES_LOCAL", localNote:"YES Network for NY market"},
-        {home:"Texas Rangers",        away:"Chicago Cubs",       league:"MLB — Peacock Game of the Day", start_time:"2026-05-09T00:05:00Z", confirmed:true, venue:"Globe Life Field", streams:resolveBundle("MLB_PEACOCK_GOTD"), peacockGOTD:true},
-        {home:"Arizona Diamondbacks", away:"New York Mets",      league:"MLB — Friday",  start_time:"2026-05-09T01:40:00Z", confirmed:true, venue:"Chase Field", localRsn:"METS_LOCAL", localNote:"SNY for NY/CT/NJ/PA"},
-        {home:"San Diego Padres",     away:"St. Louis Cardinals",league:"MLB — Apple TV+ Friday Night Baseball", start_time:"2026-05-09T01:45:00Z", confirmed:true, venue:"Petco Park", streams:resolveBundle("MLB_APPLE")},
-        {home:"Los Angeles Dodgers",  away:"Atlanta Braves",     league:"MLB — Friday",  start_time:"2026-05-09T02:10:00Z", confirmed:true, venue:"Dodger Stadium", streams:resolveBundle("MLB_LOCAL")},
-      ]},
-      { sport:"EFL Championship Playoffs", games:[
-        {home:"Hull City",           away:"Millwall",           league:"EFL Championship Playoff SF1 – Hull vs Millwall", start_time:"2026-05-08T19:00:00Z", confirmed:true, venue:"MKM Stadium, Hull",            streams:resolveBundle("EFL_PLAYOFF")},
-        {home:"Middlesbrough",       away:"Southampton",        league:"EFL Championship Playoff SF1 – Boro vs Southampton", start_time:"2026-05-09T11:30:00Z", confirmed:true, venue:"Riverside Stadium, Middlesbrough", streams:resolveBundle("EFL_PLAYOFF")},
-      ]},
-    ],
-    // ─── SATURDAY MAY 9 ──────────────────────────────────────────────────────
-    "2026-05-09": [
-      { sport:"NBA Playoffs", games:[
-        // Pistons lead Cavs 2-0 — G3 at Cleveland 3pm ET, NBC OTA + Peacock
-        {home:"Cleveland Cavaliers", away:"Detroit Pistons",    league:"NBA Playoffs – East Semis G3 (DET leads 2-0)", start_time:"2026-05-09T19:00:00Z", confirmed:true, venue:"Rocket Mortgage FieldHouse, Cleveland", streams:resolveBundle("NBA_NBC")},
-        // OKC leads LAL 2-0 — G3 at OKC 8:30pm ET, ABC + ESPN app (NOT NBC/Peacock)
-        {home:"Oklahoma City Thunder",away:"Los Angeles Lakers", league:"NBA Playoffs – West Semis G3 (OKC leads 2-0)", start_time:"2026-05-10T00:30:00Z", confirmed:true, venue:"Paycom Center, Oklahoma City",          streams:resolveBundle("NBA_ABC"), seriesRecord:"OKC leads 2-0"},
-        // SAS/MIN G3 was Friday May 8 9:30pm ET = Sat May 9 01:30 UTC — Prime Video
-        {home:"Minnesota Timberwolves", away:"San Antonio Spurs", league:"NBA Playoffs – West Semis G3 (series tied 1-1)", start_time:"2026-05-09T01:30:00Z", confirmed:true, venue:"Target Center, Minneapolis", streams:resolveBundle("NBA_PRIME")},
-      ]},
-      { sport:"NHL Playoffs", games:[
-        // Carolina leads Philly 3-0 — G4 at Philadelphia, TNT
-        {home:"Philadelphia Flyers", away:"Carolina Hurricanes", league:"NHL Playoffs – East R2 G4 (CAR leads 3-0)", start_time:"2026-05-09T22:00:00Z", confirmed:true, venue:"Xfinity Mobile Arena, Philadelphia", streams:resolveBundle("NHL_TNT")},
-        // Colorado leads Minnesota 2-0 — G3 at Minnesota, TNT
-        {home:"Minnesota Wild",      away:"Colorado Avalanche",  league:"NHL Playoffs – West R2 G3 (COL leads 2-0)", start_time:"2026-05-10T01:00:00Z", confirmed:true, venue:"Xcel Energy Center, St. Paul",   streams:resolveBundle("NHL_TNT")},
-      ]},
-      { sport:"Baseball (MLB)", games:[
-        // Fox/FS1 Saturday Baseball
-        {home:"Cincinnati Reds",     away:"Houston Astros",      league:"MLB — FS1 Saturday Baseball", start_time:"2026-05-09T20:10:00Z", confirmed:true, venue:"Great American Ball Park, Cincinnati", streams:resolveBundle("MLB_FOX")},
-        {home:"Arizona Diamondbacks", away:"New York Mets",      league:"MLB — FOX Saturday Baseball", start_time:"2026-05-09T23:15:00Z", confirmed:true, venue:"Chase Field, Phoenix", streams:resolveBundle("MLB_FOX")},
-        {home:"San Diego Padres",    away:"St. Louis Cardinals", league:"MLB — FOX Saturday Baseball", start_time:"2026-05-09T23:15:00Z", confirmed:true, venue:"Petco Park, San Diego",   streams:resolveBundle("MLB_FOX")},
-        {home:"Cleveland Guardians", away:"Minnesota Twins",     league:"MLB — Saturday",              start_time:"2026-05-09T22:10:00Z", confirmed:true, venue:"Progressive Field, Cleveland", localRsn:"GUARDIANS_LOCAL", localNote:"CLEGuardians.TV for Cleveland market"},
-        {home:"Texas Rangers",       away:"Chicago Cubs",        league:"MLB — Saturday",              start_time:"2026-05-09T19:05:00Z", confirmed:true, venue:"Globe Life Field, Arlington"},
-        {home:"Milwaukee Brewers",    away:"New York Yankees",   league:"MLB — Saturday",              start_time:"2026-05-09T23:10:00Z", confirmed:true, venue:"American Family Field, Milwaukee", localRsn:"YANKEES_LOCAL", localNote:"YES Network/Prime Video for NY market"},
-        {home:"Kansas City Royals",   away:"Detroit Tigers",     league:"MLB — Saturday",              start_time:"2026-05-09T23:10:00Z", confirmed:true, venue:"Kauffman Stadium, Kansas City"},
-        {home:"Chicago White Sox",    away:"Seattle Mariners",   league:"MLB — Saturday",              start_time:"2026-05-09T23:10:00Z", confirmed:true, venue:"Guaranteed Rate Field, Chicago"},
-        {home:"San Francisco Giants", away:"Pittsburgh Pirates",   league:"MLB — Saturday (Local RSN)", start_time:"2026-05-10T01:05:00Z", confirmed:true, venue:"Oracle Park, San Francisco", localRsn:"ATHLETICS_LOCAL", localNote:"NBC Sports Bay Area (NBCSBA): Xfinity/AT&T/DirecTV/Fubo · PIT: SportsNet Pittsburgh (SNP)"},
-        {home:"Los Angeles Dodgers",  away:"Atlanta Braves",     league:"MLB — Saturday (Local RSN)",  start_time:"2026-05-10T01:10:00Z", confirmed:true, venue:"Dodger Stadium, Los Angeles", localRsn:"SNLA_LOCAL", localNote:"Spectrum SportsNet LA: Spectrum cable only (NOT on Fubo/DirecTV/YouTube TV) · ATL: BravesVision"},
-      ]},
-      { sport:"EFL Championship Playoffs", games:[
-        // SF1 1st legs — confirmed by Sky Sports (12:30pm UK = 11:30am ET, 3pm UK = 2pm ET)
-        {home:"Middlesbrough",       away:"Southampton",          league:"EFL Championship Playoff SF1 1L – Boro vs Southampton", start_time:"2026-05-09T11:30:00Z", confirmed:true, venue:"Riverside Stadium, Middlesbrough", streams:resolveBundle("EFL_PLAYOFF")},
-        {home:"Hull City",           away:"Millwall",             league:"EFL Championship Playoff SF1 1L – Hull vs Millwall",   start_time:"2026-05-09T18:45:00Z", confirmed:true, venue:"MKM Stadium, Hull",                streams:resolveBundle("EFL_PLAYOFF")},
-      ]},
-      { sport:"EFL League One Playoffs", games:[
-        {home:"Stevenage",         away:"Stockport County",  league:"EFL League One Playoff SF1 1L",  start_time:"2026-05-09T14:00:00Z", confirmed:true, venue:"Lamex Stadium, Stevenage",      streams:resolveBundle("EFL_PLAYOFF")},
-        {home:"Bolton Wanderers",  away:"Bradford City",     league:"EFL League One Playoff SF1 1L",  start_time:"2026-05-09T19:00:00Z", confirmed:true, venue:"Toughsheet Stadium, Bolton",    streams:resolveBundle("EFL_PLAYOFF")},
-      ]},
-      { sport:"EFL League Two Playoffs", games:[
-        {home:"Chesterfield",      away:"Notts County",      league:"EFL League Two Playoff SF1 1L",  start_time:"2026-05-09T17:00:00Z", confirmed:true, venue:"SMH Group Stadium, Chesterfield",streams:resolveBundle("EFL_PLAYOFF")},
-      ]},
-      { sport:"Australian Football (AFL)", games:[
-        // Round 9 — multiple games today AEST
-        {home:"North Melbourne Kangaroos",away:"Sydney Swans",     league:"AFL 2026 – Round 9", start_time:"2026-05-09T04:35:00Z", confirmed:true, venue:"Marvel Stadium, Melbourne",         streams:resolveBundle("AFL_USA")},
-        {home:"Greater Western Sydney Giants",away:"Essendon Bombers",league:"AFL 2026 – Round 9", start_time:"2026-05-09T08:15:00Z", confirmed:true, venue:"ENGIE Stadium, Sydney",         streams:resolveBundle("AFL_USA")},
-        {home:"Gold Coast Suns",   away:"St Kilda Saints",     league:"AFL 2026 – Round 9", start_time:"2026-05-09T11:10:00Z", confirmed:true, venue:"People First Stadium, Gold Coast", streams:resolveBundle("AFL_USA")},
-        {home:"Geelong Cats",      away:"Collingwood Magpies", league:"AFL 2026 – Round 9", start_time:"2026-05-09T11:35:00Z", confirmed:true, venue:"Melbourne Cricket Ground",          streams:resolveBundle("AFL_USA")},
-      ]},
-      { sport:"Premier League", games:[
-        // MW36 Saturday — season ends May 24, title race live (ARS leads MCI by 5pts)
-        {home:"Liverpool",                 away:"Chelsea",             league:"Premier League – Matchweek 36", start_time:"2026-05-09T11:30:00Z", confirmed:true, venue:"Anfield, Liverpool",               streams:resolveBundle("EPL_PEACOCK"), localNote:"Peacock + NBCSN linear (YouTube TV base / Xfinity Popular & Ultimate)"},
-        {home:"Sunderland",                away:"Manchester United",   league:"Premier League – Matchweek 36", start_time:"2026-05-09T14:00:00Z", confirmed:true, venue:"Stadium of Light, Sunderland",     streams:resolveBundle("EPL_PEACOCK"), localNote:"Peacock + NBCSN linear (YouTube TV base / Xfinity Popular & Ultimate)"},
-        {home:"Brighton & Hove Albion",    away:"Wolverhampton Wanderers",league:"Premier League – Matchweek 36", start_time:"2026-05-09T14:00:00Z", confirmed:true, venue:"Amex Stadium, Brighton",       streams:resolveBundle("EPL_PEACOCK"), localNote:"Peacock + NBCSN linear (YouTube TV base / Xfinity Popular & Ultimate)"},
-        {home:"Fulham",                    away:"AFC Bournemouth",     league:"Premier League – Matchweek 36", start_time:"2026-05-09T14:00:00Z", confirmed:true, venue:"Craven Cottage, London",          streams:resolveBundle("EPL_USA"), localNote:"USA Network — not on NBC OTA or Peacock live"},
-        {home:"Manchester City",           away:"Brentford",           league:"Premier League – Matchweek 36", start_time:"2026-05-09T16:30:00Z", confirmed:true, venue:"Etihad Stadium, Manchester",      streams:resolveBundle("EPL_NBC"), localNote:"NBC OTA (free with antenna) + Peacock stream"},
-      ]},
-      { sport:"IPL", games:[
-        // Match 52 — Rajasthan Royals vs Gujarat Titans, 7:30pm IST = 14:00 UTC
-        {home:"Rajasthan Royals", away:"Gujarat Titans", league:"IPL 2026 – Match 52", start_time:"2026-05-09T14:00:00Z", confirmed:true, venue:"Sawai Mansingh Stadium, Jaipur", streams:resolveBundle("IPL")},
-      ]},
-      { sport:"Tennis", games:[
-        {home:"ATP/WTA Field", away:"", league:"Italian Open 2026 – 2nd Round · Foro Italico, Rome", start_time:"2026-05-09T09:00:00Z", confirmed:true, venue:"Foro Italico, Rome", streams:resolveBundle("TENNIS_TC")},
-      ]},
-      { sport:"WWE / Pro Wrestling", games:[
-        // WWE Backlash 2026 — Benchmark International Arena, Tampa, FL
-        // ESPN Unlimited (stream) + ESPN2 simulcast first hour. 6pm ET start.
-        // Main card: Roman Reigns (c) vs Jacob Fatu · Rollins vs Breakker · Trick Williams vs Sami Zayn
-        {home:"WWE Backlash 2026", away:"Tampa, FL", league:"WWE – Premium Live Event · Benchmark International Arena", start_time:"2026-05-09T22:00:00Z", confirmed:true, venue:"Benchmark International Arena, Tampa, FL", streams:resolveBundle("WWE_ESPN")},
-      ]},
-    ],
-    // ─── SUNDAY MAY 10 ───────────────────────────────────────────────────────
-    "2026-05-10": [
-      { sport:"NBA Playoffs", games:[
-        {home:"New York Knicks",     away:"Philadelphia 76ers",league:"NBA Playoffs – East Semis G4", start_time:"2026-05-10T19:30:00Z", confirmed:true, venue:"Madison Square Garden, New York",  streams:resolveBundle("NBA_ABC")},
-        {home:"San Antonio Spurs",   away:"Minnesota Timberwolves",league:"NBA Playoffs – West Semis G4",start_time:"2026-05-10T23:30:00Z", confirmed:true, venue:"Frost Bank Center, San Antonio",streams:resolveBundle("NBA_NBC")},
-      ]},
-      { sport:"NHL Playoffs", games:[
-        {home:"Buffalo Sabres",      away:"Montreal Canadiens", league:"NHL Playoffs – East R2 G3",  start_time:"2026-05-10T23:00:00Z", confirmed:true, venue:"KeyBank Center, Buffalo",          streams:resolveBundle("NHL_ESPN")},
-        {home:"Vegas Golden Knights",away:"Anaheim Ducks",      league:"NHL Playoffs – West R2 G4",  start_time:"2026-05-11T01:30:00Z", confirmed:true, venue:"Honda Center, Anaheim",            streams:resolveBundle("NHL_ESPN")},
-      ]},
-      { sport:"Baseball (MLB)", games:[
-        // NBC/Peacock Sunday Night Baseball — confirmed from Peacock.com
-        // May 10 SNB: DET@KC — Peacock/NBCSN ONLY (pre-May 31; NOT on NBC OTA broadcast)
-        {home:"Kansas City Royals",  away:"Detroit Tigers",     league:"MLB — Sunday Night Baseball (Peacock/NBCSN)", start_time:"2026-05-10T23:00:00Z", confirmed:true, venue:"Kauffman Stadium, Kansas City", streams:resolveBundle("MLB_PEACOCK_SNB")},
-        // Peacock GOTD noon ET — confirmed from Peacock.com
-        // May 10 Sunday Leadoff: WSH@MIA 12:15pm ET — Peacock/NBCSN exclusive (Sunday Leadoff window)
-        {home:"Miami Marlins",       away:"Washington Nationals",league:"MLB — Sunday Leadoff (Peacock/NBCSN)", start_time:"2026-05-10T16:15:00Z", confirmed:true, venue:"loanDepot park, Miami",        streams:resolveBundle("MLB_LEADOFF")},
-      ]},
-      { sport:"EFL League Two Playoffs", games:[
-        {home:"Grimsby Town",      away:"Salford City",      league:"EFL League Two Playoff SF1 – Grimsby vs Salford",     start_time:"2026-05-10T14:00:00Z", confirmed:true, venue:"Blundell Park, Grimsby",        streams:resolveBundle("EFL_PLAYOFF")},
-      ]},
-      { sport:"Australian Football (AFL)", games:[
-        {home:"Melbourne Demons",    away:"West Coast Eagles",  league:"AFL 2026 – Round 9",         start_time:"2026-05-10T03:10:00Z", confirmed:true, venue:"Marvel Stadium, Melbourne",        streams:resolveBundle("AFL_USA")},
-      ]},
-    ],
-    // ─── MONDAY MAY 11 ───────────────────────────────────────────────────────
-    "2026-05-11": [
-      { sport:"NBA Playoffs", games:[
-        {home:"Cleveland Cavaliers",   away:"Detroit Pistons",      league:"NBA Playoffs – East Semis G4 · DET leads 2-1", start_time:"2026-05-12T00:00:00Z", confirmed:true, venue:"Rocket Arena, Cleveland", streams:resolveBundle("NBA_NBC")},
-        {home:"Los Angeles Lakers",    away:"Oklahoma City Thunder",league:"NBA Playoffs – West Semis G4 · OKC leads 3-0", start_time:"2026-05-12T02:30:00Z", confirmed:true, venue:"Crypto.com Arena, Los Angeles",        streams:resolveBundle("NBA_PRIME")},
-      ]},
-      { sport:"NHL Playoffs", games:[
-        {home:"Minnesota Wild",        away:"Colorado Avalanche",   league:"NHL Playoffs – West Semis G4 · COL leads 3-0", start_time:"2026-05-11T23:00:00Z", confirmed:true, venue:"Xcel Energy Center, St. Paul",         streams:resolveBundle("NHL_ESPN")},
-      ]},
-      { sport:"Tennis", games:[
-        {home:"ATP/WTA Field", away:"", league:"Italian Open 2026 – Round of 32 · Foro Italico, Rome", start_time:"2026-05-11T09:00:00Z", confirmed:true, venue:"Foro Italico, Rome", streams:resolveBundle("TENNIS_TC")},
-      ]},
-    ],
-    // ─── TUESDAY MAY 12 ──────────────────────────────────────────────────────
-    "2026-05-12": [
-      // NBA SAS/MIN G5 + NHL BUF/MTL G4 + VGK/ANA G5 handled in const nbaGames/nhlGames above
-      { sport:"Baseball (MLB)", games:[
-        // 15 MLB games — verified against MLB.com May 12, 2026
-        // TBS national exclusive: CHC @ ATL 7:15pm ET
-        {home:"Cleveland Guardians",   away:"Los Angeles Angels",     league:"MLB", start_time:"2026-05-12T22:10:00Z", confirmed:true, venue:"Progressive Field, Cleveland",          streams:resolveBundle("MLB_LOCAL")},
-        {home:"Baltimore Orioles",     away:"New York Yankees",       league:"MLB", start_time:"2026-05-12T22:35:00Z", confirmed:true, venue:"Oriole Park at Camden Yards, Baltimore", streams:resolveBundle("MLB_LOCAL")},
-        {home:"Cincinnati Reds",       away:"Washington Nationals",   league:"MLB", start_time:"2026-05-12T22:40:00Z", confirmed:true, venue:"Great American Ball Park, Cincinnati",   streams:resolveBundle("MLB_LOCAL")},
-        {home:"Pittsburgh Pirates",    away:"Colorado Rockies",       league:"MLB", start_time:"2026-05-12T22:40:00Z", confirmed:true, venue:"PNC Park, Pittsburgh",                   streams:resolveBundle("MLB_LOCAL")},
-        {home:"Boston Red Sox",        away:"Philadelphia Phillies",  league:"MLB", start_time:"2026-05-12T22:45:00Z", confirmed:true, venue:"Fenway Park, Boston",                    streams:resolveBundle("MLB_LOCAL")},
-        {home:"Toronto Blue Jays",     away:"Tampa Bay Rays",         league:"MLB", start_time:"2026-05-12T23:07:00Z", confirmed:true, venue:"Rogers Centre, Toronto",                 streams:resolveBundle("MLB_LOCAL")},
-        {home:"New York Mets",         away:"Detroit Tigers",         league:"MLB", start_time:"2026-05-12T23:10:00Z", confirmed:true, venue:"Citi Field, Queens",                     streams:resolveBundle("MLB_LOCAL")},
-        {home:"Atlanta Braves",        away:"Chicago Cubs",           league:"MLB · TBS Tuesday national exclusive", start_time:"2026-05-12T23:15:00Z", confirmed:true, venue:"Truist Park, Atlanta", streams:resolveBundle("MLB_TBS")},
-        {home:"Chicago White Sox",     away:"Kansas City Royals",     league:"MLB", start_time:"2026-05-12T23:40:00Z", confirmed:true, venue:"Guaranteed Rate Field, Chicago",         streams:resolveBundle("MLB_LOCAL")},
-        {home:"Minnesota Twins",       away:"Miami Marlins",          league:"MLB", start_time:"2026-05-12T23:40:00Z", confirmed:true, venue:"Target Field, Minneapolis",              streams:resolveBundle("MLB_LOCAL")},
-        {home:"Milwaukee Brewers",     away:"San Diego Padres",       league:"MLB", start_time:"2026-05-12T23:40:00Z", confirmed:true, venue:"American Family Field, Milwaukee",       streams:resolveBundle("MLB_LOCAL")},
-        {home:"Texas Rangers",         away:"Arizona Diamondbacks",   league:"MLB", start_time:"2026-05-13T00:05:00Z", confirmed:true, venue:"Globe Life Field, Arlington",            streams:resolveBundle("MLB_LOCAL")},
-        {home:"Houston Astros",        away:"Seattle Mariners",       league:"MLB", start_time:"2026-05-13T00:10:00Z", confirmed:true, venue:"Daikin Park, Houston",                   streams:resolveBundle("MLB_LOCAL")},
-        {home:"Athletics",             away:"St. Louis Cardinals",    league:"MLB", start_time:"2026-05-13T01:40:00Z", confirmed:true, venue:"Sutter Health Park, Sacramento",         streams:resolveBundle("MLB_LOCAL")},
-        {home:"Los Angeles Dodgers",   away:"San Francisco Giants",   league:"MLB", start_time:"2026-05-13T02:10:00Z", confirmed:true, venue:"Dodger Stadium, Los Angeles",            streams:resolveBundle("MLB_LOCAL")},
-      ]},
-      { sport:"EFL Championship Playoffs", games:[
-        // SF2 2nd Leg: SOU hosts MID, 8pm BST / 3pm ET — first leg was 0-0 at Boro
-        {home:"Southampton",           away:"Middlesbrough",          league:"EFL Championship Playoff SF2 – 2nd Leg", start_time:"2026-05-12T19:00:00Z", confirmed:true, venue:"St Mary's Stadium, Southampton", streams:resolveBundle("EFL_PLAYOFF")},
-      ]},
-      { sport:"Tennis", games:[
-        {home:"ATP/WTA Field", away:"", league:"Italian Open 2026 – ATP R16 · WTA QF · Foro Italico, Rome", start_time:"2026-05-12T09:00:00Z", confirmed:true, venue:"Foro Italico, Rome", streams:resolveBundle("TENNIS_TC")},
-      ]},
-    ],
-    // ─── WEDNESDAY MAY 13 ────────────────────────────────────────────────────
-    "2026-05-13": [
-      { sport:"NBA Playoffs", games:[
-        {home:"Minnesota Timberwolves",away:"San Antonio Spurs",    league:"NBA Playoffs – West Semis G5 (if needed)", start_time:"2026-05-13T23:00:00Z", confirmed:true, venue:"Target Center, Minneapolis",           streams:resolveBundle("NBA_PRIME")},
-      ]},
-      { sport:"Tennis", games:[
-        {home:"ATP/WTA Field", away:"", league:"Italian Open 2026 – Round of 16 · Foro Italico, Rome", start_time:"2026-05-13T09:00:00Z", confirmed:true, venue:"Foro Italico, Rome", streams:resolveBundle("TENNIS_TC")},
-      ]},
-    ],
-    // ─── THURSDAY MAY 14 ─────────────────────────────────────────────────────
-    "2026-05-14": [
-      { sport:"NHL Playoffs", games:[
-        {home:"Vegas Golden Knights",  away:"Anaheim Ducks",        league:"NHL Playoffs – West Semis G5 (if needed)", start_time:"2026-05-14T23:00:00Z", confirmed:true, venue:"T-Mobile Arena, Las Vegas",            streams:resolveBundle("NHL_ESPN")},
-      ]},
-      { sport:"Tennis", games:[
-        {home:"ATP/WTA Field", away:"", league:"Italian Open 2026 – Quarterfinals · Foro Italico, Rome", start_time:"2026-05-14T09:00:00Z", confirmed:true, venue:"Foro Italico, Rome", streams:resolveBundle("TENNIS_TC")},
-      ]},
-    ],
+    // Date entries cleaned May 25 2026 — all pre-May 18 entries unreachable (7-day nav limit)
+    // Add new date entries here as needed for upcoming dates
   };
 
   if(!sched[iso]) return null; // Unknown date — trigger AI fetch
@@ -6615,11 +6430,7 @@ function buildTodaySchedule(){
   //   West CF: COL (Presidents' Trophy) vs VGK (2023 Cup champs) · COL won R2 vs MIN 4-1
   //   East CF: CAR (8-0 sweep machine) vs MTL (won G7 OT vs BUF to advance)
   const nhlGames=[
-    // COL vs MIN: Colorado won R2 series 4-1 (clinched May 13)
-    // VGK vs ANA: Vegas won R2 series 4-2 (clinched May 14)
-    // West CF: COL vs VGK begins May 20 at Ball Arena (Ball Arena, Denver)
-    // BUF vs MTL: BUF wins G6 8-3 — series TIED 3-3 → G7 May 18 at Buffalo
-    // G7 RESULT (May 18): MTL wins — Montreal Canadiens advance to ECF vs Carolina
+    // R2 complete: COL 4-1 MIN, VGK 4-2 ANA, MTL 4-3 BUF
     {home:"Montreal Canadiens", away:"Buffalo Sabres",   league:"NHL Playoffs – East Semis G6 · BUF wins 8-3, series tied 3-3", start_time:"2026-05-17T00:00:00Z", confirmed:true, venue:"Bell Centre, Montreal QC",   streams:resolveBundle("NHL_ABC"), crew:"Sean McDonough · Ray Ferraro · Haley Skarupa (ESPN/ABC)"},
     {home:"Buffalo Sabres",     away:"Montreal Canadiens", league:"NHL Playoffs – East Semis G7 · MTL wins series 4-3", start_time:"2026-05-18T23:30:00Z", confirmed:true, venue:"KeyBank Center, Buffalo NY", streams:resolveBundle("NHL_ESPN"), crew:"Sean McDonough · Ray Ferraro · Haley Skarupa (ESPN)", seriesRecord:"MTL wins 4-3"},
     // ── NHL Eastern Conference Finals — Carolina Hurricanes vs Montreal Canadiens ──
@@ -6634,25 +6445,10 @@ function buildTodaySchedule(){
     {home:"Colorado Avalanche",  away:"Vegas Golden Knights", league:"NHL Playoffs – West CF G2 · VGK wins 3-1",                     start_time:"2026-05-23T00:00:00Z", confirmed:true, venue:"Ball Arena, Denver CO",      streams:resolveBundle("NHL_ESPN"), crew:"Sean McDonough · Ray Ferraro · Haley Skarupa (ESPN)", seriesRecord:"VGK leads 2-0", matchupNote:"VGK wins G2 3-1 at COL. Dorofeyev 1G 1A. VGK has outscored COL 7-3 through two games. Series shifts to T-Mobile Arena for G3 Sunday."},
     {home:"Vegas Golden Knights", away:"Colorado Avalanche",  league:"NHL Playoffs \u2013 West CF G3 \u00b7 VGK wins 5-3, leads 3-0",  start_time:"2026-05-25T00:00:00Z", confirmed:true, venue:"T-Mobile Arena, Las Vegas NV",      streams:resolveBundle("NHL_ESPN"), crew:"Sean McDonough \u00b7 Ray Ferraro \u00b7 Haley Skarupa (ESPN)", seriesRecord:"VGK leads 3-0", matchupNote:"VGK wins G3 5-3 at T-Mobile Arena. Vegas leads 3-0 — one win from Stanley Cup Final. COL offense struggling: 7 goals in 3 games."},
     {home:"Vegas Golden Knights", away:"Colorado Avalanche",  league:"NHL Playoffs \u2013 West CF G4 \u00b7 VGK leads 3-0",  start_time:"2026-05-27T01:00:00Z", confirmed:true, venue:"T-Mobile Arena, Las Vegas NV",      streams:resolveBundle("NHL_ESPN"), seriesRecord:"VGK leads 3-0", matchupNote:"VGK can sweep COL. G4 at T-Mobile Arena, Tue 9pm ET, ESPN. Avalanche must win to avoid elimination."},
-  ].filter(g=>isToday(g.start_time));  // ── MLB (May 11: Monday slate + EFL 2nd leg) ──────────────────────────────
-  // ── MLB schedule: May 8 (Fri) – May 11 (Mon) ────────────────────────────────
-  // isToday() filters to the viewer's local date — correct games show each day
-  // Sources: MLB.com official schedule + Peacock.com GOTD listings verified May 11, 2026
-  // ── MLB — Friday May 22, 2026 — mlbRaw: Apple TV+ Friday Night Baseball ──────
-  // Sources: MLB.com + Apple TV verified May 22, 2026
-  // Apple exclusive (no local blackouts): HOU @ CHC 2:20pm ET, DET @ BAL 7:15pm ET
+  ].filter(g=>isToday(g.start_time));
+  // Sources: MLB.com official schedule. GOTD: ESPN Press Room + Peacock blog.
+  // Old entries removed May 25 (pre-May 25 entries unreachable via isToday)
   const mlbRaw=[
-    // ── FOX Saturday Baseball Night in America (May 23 7:15pm ET) ─────────
-    {home:"Milwaukee Brewers",  away:"Los Angeles Dodgers",
-     start_time:"2026-05-23T23:15:00Z", confirmed:true, venue:"American Family Field, Milwaukee WI",
-     nationalBundle:"MLB_FOX",  streams:resolveBundle("MLB_FOX"),
-     matchupNote:"LAD @ MIL — Baseball Night in America. 7:15pm ET on FOX — free with an antenna."},
-    {home:"Cincinnati Reds",    away:"St. Louis Cardinals",
-     start_time:"2026-05-23T23:15:00Z", confirmed:true, venue:"Great American Ball Park, Cincinnati OH",
-     nationalBundle:"MLB_FOX",  streams:resolveBundle("MLB_FOX"),
-     matchupNote:"STL @ CIN — Baseball Night in America. 7:15pm ET on FOX — free with an antenna."},
-    {home:"Chicago Cubs",     away:"Houston Astros",   start_time:"2026-05-22T18:20:00Z", confirmed:true, venue:"Wrigley Field, Chicago IL",               streams:resolveBundle("MLB_APPLE"), nationalBundle:"MLB_APPLE"},
-    {home:"Baltimore Orioles",away:"Detroit Tigers",   start_time:"2026-05-22T23:15:00Z", confirmed:true, venue:"Oriole Park at Camden Yards, Baltimore MD", streams:resolveBundle("MLB_APPLE"), nationalBundle:"MLB_APPLE"},
     // ── MLB — Monday May 25, 2026 — Memorial Day slate (13 games) ──────
     // Sources: MLB.com schedule verified May 25, 2026. NYY @ KC on ESPN (national exclusive).
     {home:"Pittsburgh Pirates",    away:"Chicago Cubs",         start_time:"2026-05-25T17:35:00Z", confirmed:true, venue:"PNC Park, Pittsburgh PA"},
@@ -6721,16 +6517,8 @@ function buildTodaySchedule(){
   ].filter(g=>isToday(g.start_time));
 
 
-  // ── UEFA Europa League — Final May 20 (Istanbul) ─────────────────────────
-  // Final: Wed May 20 · Beşiktaş Park, Istanbul · Freiburg vs Aston Villa
-  // Kickoff: 21:00 CEST / 19:00 UTC = 3pm ET · US: Paramount+ / fubo / Hulu
-  const uelGames=[
-    {home:"SC Freiburg",    away:"Aston Villa",
-     league:"UEFA Europa League – Final", start_time:"2026-05-20T19:00:00Z", confirmed:true,
-     venue:"Beşiktaş Park, Istanbul",
-     streams:resolveBundle("UEL"),
-     matchupNote:"Freiburg's first-ever continental final vs Villa's first UEFA final since winning the European Cup in 1982. Unai Emery chasing his 5th Europa League title."},
-  ].filter(g=>isToday(g.start_time));
+  // UEL Final (May 20) — completed. Freiburg vs Aston Villa at Beşiktaş Park.
+  const uelGames=[].filter(g=>isToday(g.start_time));
 
   // ── UEFA Conference League — Final May 27 (Leipzig) ────────────────────
   // Final: Wed May 27 · Red Bull Arena (Leipzig Stadium), Leipzig
@@ -6744,34 +6532,11 @@ function buildTodaySchedule(){
      matchupNote:"Crystal Palace's first-ever European final vs Rayo Vallecano's maiden UEFA decider. Palace won the FA Cup last year — can they add Europe? 3pm ET."},
   ].filter(g=>isToday(g.start_time));
 
-    // ── EFL Playoffs — May 8–25 ─────────────────────────────────────────────
-  // Championship 2nd Legs: Mon May 11 + Tue May 12
-  // Championship final: Sat May 23, Wembley.
-  // League One final: Sun May 24, Wembley. League Two final: Mon May 25, Wembley.
-  // US broadcast: CBS Sports Network + CBS Sports Golazo + Paramount+
+    // ── EFL Playoffs — Finals at Wembley (May 23-25) ────────────────────────
+  // US: CBS Sports Golazo + Paramount+. UK: Sky Sports.
   const eflGames=[
-    // SF1 1st Leg — Fri May 8
-    {home:"Middlesbrough", away:"Southampton",
-     league:"EFL Championship Playoff SF — 1st Leg", start_time:"2026-05-08T18:45:00Z", confirmed:true, venue:"Riverside Stadium, Middlesbrough",
-     streams:resolveBundle("EFL_PLAYOFF"),
-     localNote:"CBS Sports Network + Paramount+ (US); Sky Sports (UK)"},
-    // SF2 1st Leg — Sat May 9
-    {home:"Hull City", away:"Millwall",
-     league:"EFL Championship Playoff SF — 1st Leg", start_time:"2026-05-09T14:00:00Z", confirmed:true, venue:"MKM Stadium, Hull",
-     streams:resolveBundle("EFL_PLAYOFF"),
-     localNote:"CBS Sports Network + Paramount+ (US); Sky Sports (UK)"},
-    // SF1 2nd Leg — Mon May 11
-    {home:"Southampton", away:"Middlesbrough",
-     league:"EFL Championship Playoff SF — 2nd Leg", start_time:"2026-05-11T18:45:00Z", confirmed:true, venue:"St Mary's Stadium, Southampton",
-     streams:resolveBundle("EFL_PLAYOFF"),
-     localNote:"CBS Sports Network + Paramount+ (US); Sky Sports (UK)"},
-    // SF2 2nd Leg — Tue May 12 — Southampton hosts Middlesbrough, 8pm BST / 3pm ET
-    // First leg was 0-0 at Riverside; Hull/Millwall SF1 complete (Hull won 2-0 Mon May 11)
-    {home:"Southampton", away:"Middlesbrough",
-     league:"EFL Championship Playoff SF2 – 2nd Leg", start_time:"2026-05-12T19:00:00Z", confirmed:true, venue:"St Mary's Stadium, Southampton",
-     streams:resolveBundle("EFL_PLAYOFF"),
-     localNote:"CBS Sports Network + Paramount+ (US); Sky Sports (UK)"},
-    // ── Championship Final — Sat May 23, 3:30pm BST (10:30am ET) ──
+    // EFL Championship semi-finals (May 8-12) removed — all completed
+    // Championship Final — Sat May 23, 3:30pm BST (10:30am ET)
     {home:"Middlesbrough", away:"Hull City",
      league:"EFL Championship Playoff – Final · Hull City 1-0 · Promoted to Premier League",
      start_time:"2026-05-23T14:30:00Z", confirmed:true, venue:"Wembley Stadium, London", neutral:true, nationalBundle:"EFL_FINAL",
