@@ -222,8 +222,8 @@ assert('A56 — field_utils.js loaded in index.html',
   // A60 — captureFieldError helper defined
   assert('A60 — captureFieldError: error capture helper present', html.includes('function captureFieldError('));
 
-  // A61 — BETFAIR_RELAY_ENABLED gate present (prevents startup calls to undeployed relay)
-  assert('A61 — BETFAIR_RELAY_ENABLED gate: Betfair startup guarded', html.includes('const BETFAIR_RELAY_ENABLED'));
+  // A61 — findOddsForGame helper present (beatTheBook reads from The Odds API cache)
+  assert('A61 — findOddsForGame: odds lookup uses The Odds API cache', html.includes('function findOddsForGame') && !html.includes('BETFAIR_RELAY_ENABLED'));
 
   // A62 — relay score fetches use captureFieldError (not bare .catch(()=>{}))
   assert('A62 — relay fetch captures: NBA relay errors captured', html.includes("captureFieldError('relay-nba'"));
