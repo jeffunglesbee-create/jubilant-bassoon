@@ -1,56 +1,59 @@
-# FIELD Handoff — May 25 2026 Session 6
+# FIELD Handoff — May 25 2026 Session 7
 
-HEAD: da1724e (last code commit: da1724e)
+HEAD: 0e7d844 (last code commit: 0e7d844)
 Smoke: 144/0
-Deploy: SUCCESS (da1724e is live)
+File size: 999,993 bytes (under 1MB after dead code audit)
+Deploy: SUCCESS
 
 ## IMMEDIATE WORK FOR NEXT SESSION
 
-1. TYPE A DAILY UPDATE — if next session is tomorrow (May 26):
-   - NBA ECF: Check if NYK swept CLE (G4 tonight May 25, 8pm ET ESPN)
-   - NBA WCF G5: Tue May 26 at OKC, 8:30pm ET, NBC — add entry
-   - NHL ECF G4: Wed May 27 at MTL — add entry when confirmed
+1. DEEP DIVE: Is Rule 19's 1MB build step plan still appropriate?
+   - Shell-script concatenation (cat src/*.html > index.html) was written May 20
+   - Since then: Odds API rewire, GOTD system, HANDOFF.md to repo, AFL built,
+     journalism rules, Spygate EFL entries, and daily schedule data growth
+   - The file will cross 1MB again within 1-2 weeks of active development
+   - Novel thinking needed: is concatenation the right answer, or is there
+     a better architecture given what FIELD has become?
+   - Consider: what % is code vs data? Can data be externalized?
+
+2. TYPE A DAILY UPDATE (if tomorrow May 26):
+   - NBA ECF: Check G4 result (NYK can sweep CLE tonight)
+   - NBA WCF G5: Tue May 26 at OKC, 8:30pm ET, NBC — entry already added
+   - NHL ECF G4: Wed May 27 at MTL — add entry
    - NHL WCF G4: Tue May 26 at VGK, 9pm ET, ESPN — entry already added
    - EFL L2 Final: Check result (Salford vs Notts County, today May 25)
    - MLB: Add Tue May 26 slate (15 games). Tag ESPN GOTD: SEA @ ATH 9:40pm ET
    - Peacock GOTD: Check peacocktv.com blog for new weekly schedule
 
-2. ARCHITECTURE QUESTIONS — Jeff has questions queued from earlier today.
-
-3. BUILD PRIORITY (from handoff session 4):
-   - Drama Dial (~60 min)
-   - handleCron refactor (~2.5 hr)
-   - Wikimedia Pageviews (~45 min)
+3. BUILD PRIORITY (unchanged):
+   Drama Dial (~60 min), handleCron refactor (~2.5 hr), Wikimedia Pageviews (~45 min)
 
 ## WHAT THIS SESSION ACCOMPLISHED
 
-Session 6 (May 25 2026) — TYPE A daily update + structural improvement:
+Sessions 6-7 (May 25 2026):
 
-DEPLOYED (2 commits):
-  6a4df8f — daily: May 25 — fix ECF G4 venue (CLE not MSG), WCF G4 result
-    (SAS 103-82), NHL WCF G3 result (VGK 5-3), add MLB Mon slate (13 games)
-  da1724e — daily: EFL final results (Hull 1-0, Bolton 4-1), ESPN GOTD tag PHI@SD
-
-DOCUMENTED:
-  - GOTD retrieval protocols added to Daily Update Reference
-    (Drive: 1oSHqnDskN04p95g6e85--4hhgIsKISZ3ZflLXKPM08E)
-  - ESPN GOTD schedule through May 31 documented
-  - Peacock GOTD weekly cadence documented
+DEPLOYED (1 code commit + 1 audit commit):
+  da1724e — daily update: NBA/NHL/MLB/EFL fixes + ESPN GOTD tag
+  0e7d844 — dead code audit: 29KB recovered, back under 1MB
 
 STRUCTURAL:
-  - Handoff moved from Drive to repo (HANDOFF.md)
-  - Eliminates Drive ID churn in STANDARDS.md every session
-  - .assetsignore updated to exclude HANDOFF.md from deploy
+  - HANDOFF.md moved from Drive to repo (THIS FILE)
+  - GOTD retrieval protocols documented in Daily Update Reference
+  - Current State doc updated (1MB milestone, new Drive ID)
+  - Dead code audit: buildDateSchedule emptied (May 8-14 unreachable),
+    old mlbRaw/EFL entries removed, stale comments cleaned
 
 ## KEY CONTEXT
 
-- Betfair is GONE from codebase. findOddsForGame() is the odds lookup.
-- The Odds API at $30/mo is the odds source. OddsPapi deferred to ~June 19.
-- AFL Intelligence Layer fully built and deployed (Sessions 1-5 complete).
-- OIDC auth pattern: zero credentials in CI.
-- field-relay-nba is a separate private repo deploying via its own CI.
-- Drama Dial, handleCron refactor, Wikimedia Pageviews are specced on Drive (not built).
-- Patent Defense Decision Record: 1ze6m687RYNksUVzKRZVhoeHhRPb4Nb3RYFBrqOUrCe4
+- Betfair is GONE. findOddsForGame() + The Odds API is the odds source.
+- AFL Intelligence Layer fully built (Sessions 1-5). Do not rebuild.
+- HANDOFF.md is in repo root — NOT Drive. No ID tracking needed.
+- Daily Update Reference: Drive 1oSHqnDskN04p95g6e85--4hhgIsKISZ3ZflLXKPM08E
+- Current State: Drive 1GvsfnTH9Xhqzg_NdYrPhPpk1d1Rnm0lkeG6ip-tLUlA
+- CI/Deploy Ref: Drive 18JMUd-Uq_m2DomuCua2B5UMiWOel81yzc1JU7SY6f20
+- Date nav limit: 7 days back. buildDateSchedule entries older than 7 days are dead code.
+- Rule 19 threshold: file at 999,993 bytes. One active week puts it back over 1MB.
+- ESPN GOTD schedule through May 31 in Daily Update Ref doc.
 
 ## SERIES STATE
 
