@@ -491,6 +491,22 @@ assert('A165 — O(1) L4: Accept-Encoding Brotli hint in relay fetch',
   html.includes('Accept-Encoding') && html.includes('br, gzip'),
   'Relay journalism fetch must hint Brotli compression');
 
+assert('A166 — Item 1: ESPN leaders extracted into espnScores',
+  html.includes('homeLeader') && html.includes('awayLeader') && html.includes('_extractLeader'),
+  'ESPN in-game leaders must be extracted per poll into espnScores');
+
+assert('A167 — Item 1: Leaders wired into compound prompt game lines',
+  html.includes('Leaders:') && html.includes('homeLeader.name'),
+  'ESPN leaders must appear in compound editorial game lines');
+
+assert('A168 — Item 2: MLB pitchers wired into compound prompt',
+  html.includes('Pitchers:') && html.includes('homePitcher') && html.includes('awayPitcher'),
+  'MLB probable pitchers must be injected into compound prompt game lines');
+
+assert('A169 — Item 3: Cliché check extended to series previews',
+  html.includes('Series[${i}] clichés') || html.includes("Series["),
+  'Compound series[] entries must be checked for banned phrases');
+
 
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);

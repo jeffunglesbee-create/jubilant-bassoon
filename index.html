@@ -10849,6 +10849,30 @@ async function fetchESPNScores(){
         const homeLS = (home.linescores||[]).map(l=>parseInt(l.value||0)).filter(v=>!isNaN(v));
         const awayLS = (away.linescores||[]).map(l=>parseInt(l.value||0)).filter(v=>!isNaN(v));
 
+        // ── Item 1: ESPN in-game leaders — zero extra API calls ───────────────
+        // comp.leaders is in every ESPN scoreboard response at no extra cost.
+        // Provides: top scorer name + stat per team → feeds journalism prompts.
+        // "Brunson 28pts, Mitchell 22pts" replaces "Knicks lead by 3 in Q4"
+        const _extractLeader = (competitor) => {
+          const leaders = competitor.leaders || [];
+          const priority = ['points','goals','hits','passingYards','rushingYards'];
+          for (const sn of priority) {
+            const cat = leaders.find(l=>(l.name||'').toLowerCase()===sn||(l.abbreviation||'').toLowerCase()===sn.slice(0,3));
+            if (cat?.leaders?.[0]) {
+              const p = cat.leaders[0];
+              const name = p.athlete?.shortName||p.athlete?.displayName||'';
+              const val = p.displayValue||String(p.value||'');
+              const unit = cat.shortDisplayName||cat.abbreviation||'';
+              if (name&&val) return {name,val,unit};
+            }
+          }
+          const first = leaders[0]?.leaders?.[0];
+          if (first?.athlete) return {name:first.athlete.shortName||first.athlete.displayName||'',val:first.displayValue||'',unit:leaders[0]?.shortDisplayName||''};
+          return null;
+        };
+        const homeLeader = _extractLeader(home);
+        const awayLeader  = _extractLeader(away);
+
         const key = `${homeName}|${awayName}`;
         const situation = comp.situation || null;
         const _prev = espnScores[key]; // preserve async WP across polls
@@ -10865,6 +10889,7 @@ async function fetchESPNScores(){
           situation,
           homeLinescores: homeLS,
           awayLinescores: awayLS,
+          homeLeader, awayLeader, // in-game top performers — see Item 1
           wp:      _prev?.wp      ?? null, // populated by WP fetch cycle
           wp_prev: _prev?.wp_prev ?? null, // set to previous wp before update
         };
@@ -13727,8 +13752,14 @@ function buildCompoundPrompt(sections) {
       g.seriesRecord ? `  Series: ${g.seriesRecord}` : '',
       // Story Engine: live status line gives AI cleaner narrative context than raw scores
       (()=>{try{const _bsc=classifySport(g,null);const _bsyn=findESPNScore?.(g);if(_bsyn?.state==='in'){const _bn=computeGameNarrative(g,_bsyn,_bsc);return _bn.statusLine?`  Live: ${_bn.statusLine} (${_bn.scoreline} ${_bn.periodLabel?.replace(/<[^>]+>/g,'')||''})`.trim():'';}return '';}catch(e_){return ''}})(),
+      // Item 1: ESPN in-game leaders — injected automatically, zero extra calls
+      // Gives AI real names + numbers: "Leaders: Brunson 28pts · Mitchell 22pts"
+      (()=>{try{const _eL=findESPNScore?.(g);if(_eL?.state==='in'&&(_eL.homeLeader||_eL.awayLeader)){const parts=[];if(_eL.homeLeader?.name) parts.push(`${_eL.homeLeader.name} ${_eL.homeLeader.val}${_eL.homeLeader.unit?(' '+_eL.homeLeader.unit):''}`);if(_eL.awayLeader?.name) parts.push(`${_eL.awayLeader.name} ${_eL.awayLeader.val}${_eL.awayLeader.unit?(' '+_eL.awayLeader.unit):''}`);return parts.length?`  Leaders: ${parts.join(' · ')}`:'';} return '';}catch(e_){return ''}})(),
       `  Network: ${stream}`,
       crewCtx ? `  Crew: ${crewCtx}` : '',
+      // Item 2: MLB probable pitchers — already extracted, never wired until now
+      // "Pitchers: G.Cole (NYY) vs C.Burnes (BAL)" feeds DO NOT INVENT specificity
+      (()=>{try{const sp=(g._sport||g._section||'').toLowerCase();if(!(sp.includes('mlb')||sp.includes('baseball'))) return '';const hp=g.homePitcher,ap=g.awayPitcher;if(!hp&&!ap) return '';const fmt=p=>p?`${p.lastName||p.fullName||''}${p.era?` (${p.era} ERA)`:p.wins!=null?` (${p.wins}-${p.losses})`:''}`:'TBD';return `  Pitchers: ${fmt(ap)} vs ${fmt(hp)}`;}catch(e_){return ''}})(),
       g.matchupNote ? `  Context: ${g.matchupNote}` : '',
       standingsCtx ? `  ${standingsCtx}` : '',
       arcType ? `  Arc: ${arcType.toUpperCase()}` : '',
@@ -13850,6 +13881,25 @@ async function fetchCompoundEditorial(sections) {
       if(found.length&&FIELD_DEBUG) console.warn('[JQ Layer 2] Compound brief clichés:',found);
       scoreProse(result.brief).then(s=>renderProseScore(s,'Compound Brief'));
     }
+    // Item 3: extend cliché detection to series previews and game briefs
+    // Previously only result.brief was checked — series previews slipped through
+    // ("punch their ticket" was visible in the screenshot — closed here)
+    (result.series||[]).forEach((s,i)=>{
+      if(!s?.preview) return;
+      const found=hasCliche(s.preview);
+      if(found.length&&FIELD_DEBUG) console.warn(`[JQ Layer 2] Series[${i}] clichés:`,found);
+      scoreProse(s.preview).then(sc=>renderProseScore(sc,`Series[${i}]`));
+    });
+    (result.game_briefs||[]).forEach((b,i)=>{
+      if(!b?.brief) return;
+      const found=hasCliche(b.brief);
+      if(found.length&&FIELD_DEBUG) console.warn(`[JQ Layer 2] GameBrief[${i}] clichés:`,found);
+    });
+    (result.epl||[]).forEach((e,i)=>{
+      if(!e?.brief) return;
+      const found=hasCliche(e.brief);
+      if(found.length&&FIELD_DEBUG) console.warn(`[JQ Layer 2] EPL[${i}] clichés:`,found);
+    });
     sessionStorage.setItem(cacheKey, JSON.stringify(result));
     return result;
   } catch(e) {
