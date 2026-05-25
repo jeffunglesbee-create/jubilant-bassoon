@@ -1,13 +1,13 @@
 {
   "_meta": {
     "schema_version": "1.0",
-    "generated_at": "2026-05-24T11:52:34.749Z",
-    "for_date": "2026-05-24",
+    "generated_at": "2026-05-25T16:31:39.606Z",
+    "for_date": "2026-05-25",
     "source": "field-data workflow (automated)",
     "games_found": {
       "nhl": 1,
-      "nba": 0,
-      "mls": 3
+      "nba": 1,
+      "mls": 0
     },
     "ai_notes": true,
     "ai_backend": "gemini-3.1-flash-lite",
@@ -15,20 +15,14 @@
   },
   "game_overlays": [
     {
-      "_match_key": "Vegas Golden Knights|Colorado Avalanche",
-      "seriesRecord": "WCF"
+      "_match_key": "Montreal Canadiens|Carolina Hurricanes",
+      "seriesRecord": "ECF",
+      "matchupNote": "The Hurricanes roll into the Bell Centre with a chance to seize control, but a desperate Canadiens squad is fighting to keep their season from slipping into a terminal 0-2 hole. Expect a suffocating, high-stakes atmosphere as Montreal looks to turn the tide before the series shifts south."
     },
     {
-      "_match_key": "Columbus Crew|Atlanta United FC",
-      "matchupNote": "Atlanta United hits the road desperate to climb into the playoff picture, but they face a buzzsaw in a Columbus side hunting down the Supporters' Shield. With the postseason race tightening, every point is a lifeline for the Five Stripes against the league’s most clinical juggernaut."
-    },
-    {
-      "_match_key": "Inter Miami CF|Philadelphia Union",
-      "matchupNote": "With both clubs fighting to solidify their postseason positioning, Philadelphia travels to South Florida desperate to disrupt Inter Miami’s march toward a record-breaking Supporters' Shield. Every point is critical as the Union scrap to climb above the playoff line while the Herons look to tighten their grip on the top seed."
-    },
-    {
-      "_match_key": "LAFC|Seattle Sounders FC",
-      "matchupNote": "Seattle heads to BMO Stadium looking to solidify their postseason standing against an LAFC side desperate to keep pace in the Supporters’ Shield race. With the playoff line tightening in the West, every point tonight is a high-stakes pivot for both clubs."
+      "_match_key": "Cleveland Cavaliers|New York Knicks",
+      "seriesRecord": "NYK leads 3-0",
+      "matchupNote": "The Knicks look to complete a ruthless sweep tonight in Cleveland, aiming to punch their ticket to the NBA Finals and officially end the Cavaliers' season. With a 3-0 stranglehold, New York is one win away from a statement series clincher that would cement their status as the team to beat in the East."
     }
   ]
 }
