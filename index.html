@@ -1699,6 +1699,15 @@ flex-shrink:0;white-space:nowrap;
   font-family:var(--ff-cond);font-size:.72rem;letter-spacing:.15em;
   text-transform:uppercase;color:var(--smoke);margin-top:.3rem;
 }
+/* ── Drama Dial slider (Patent Defense Layer 2) ────────────────────── */
+.drama-dial-wrap{padding:1rem 0;border-bottom:1px solid var(--edge)}
+.drama-dial-label{font-family:var(--ff-cond);font-size:.65rem;letter-spacing:.18em;text-transform:uppercase;color:var(--gold2);margin-bottom:.5rem}
+.drama-dial-row{display:flex;align-items:center;gap:.5rem}
+.drama-dial-row span{font-size:.9rem}
+.drama-dial-track{-webkit-appearance:none;appearance:none;width:100%;height:6px;border-radius:3px;background:linear-gradient(to right,#64b5f6 0%,#c9a84c 50%,#f44336 100%);outline:none;cursor:pointer}
+.drama-dial-track::-webkit-slider-thumb{-webkit-appearance:none;width:24px;height:24px;border-radius:50%;background:var(--fg,#e8e0d0);border:2px solid var(--gold2,#c9a84c);cursor:pointer}
+.drama-dial-track::-moz-range-thumb{width:24px;height:24px;border-radius:50%;background:var(--fg,#e8e0d0);border:2px solid var(--gold2,#c9a84c);cursor:pointer}
+.drama-dial-preview{font-size:.7rem;color:var(--smoke);margin-top:.35rem}
 .setup-body{overflow-y:auto;padding:.9rem 1.4rem 1rem;flex:1}
 .setup-body::-webkit-scrollbar{width:3px}
 .setup-body::-webkit-scrollbar-thumb{background:var(--edge2)}
@@ -2609,6 +2618,15 @@ flex-shrink:0;white-space:nowrap;
       <div id="geo-hint" style="display:none;font-size:.65rem;color:var(--teal);margin-top:.35rem;letter-spacing:.02em"></div>
     </div>
     <div class="setup-body" id="setup-body">
+      <div class="drama-dial-wrap">
+        <div class="drama-dial-label">Drama Sensitivity</div>
+        <div class="drama-dial-row">
+          <span>🧊</span>
+          <input type="range" class="drama-dial-track" id="drama-dial" min="45" max="90" step="1">
+          <span>🔥</span>
+        </div>
+        <div class="drama-dial-preview" id="dial-preview"></div>
+      </div>
       <div class="setup-intro">
         Select the streaming services and TV packages you subscribe to.
         FIELD will mark broadcaster chips with <strong style="color:#4ade80">✓</strong> when you already have access,
@@ -4242,6 +4260,33 @@ function getStatus(iso, opts){
 // e.g. a US user at 9pm ET on May 6 should see May 6, not May 7
 const _tn = new Date();
 const TODAY_ISO = _tn.getFullYear()+'-'+String(_tn.getMonth()+1).padStart(2,'0')+'-'+String(_tn.getDate()).padStart(2,'0');
+
+// ── Drama Dial — user-controlled sensitivity (Patent Defense Layer 2) ────────
+// All drama thresholds read from this. Server CANNOT see or set this value.
+// Storage: localStorage (main thread) + IndexedDB (Service Worker fallback).
+function getDramaDial(){
+  const v=parseInt(localStorage.getItem('field_drama_dial'));
+  return(v>=45&&v<=90)?v:65;
+}
+function setDramaDial(value){
+  const v=Math.max(45,Math.min(90,parseInt(value)||65));
+  localStorage.setItem('field_drama_dial',v);
+  // Sync to Service Worker via postMessage
+  if(navigator.serviceWorker?.controller){
+    navigator.serviceWorker.controller.postMessage({type:'PREF_UPDATE',key:'drama_dial',value:v});
+  }
+  // IndexedDB fallback for SW restart
+  try{
+    const req=indexedDB.open('field_prefs',1);
+    req.onupgradeneeded=e=>{e.target.result.createObjectStore('prefs');};
+    req.onsuccess=e=>{const db=e.target.result;const tx=db.transaction('prefs','readwrite');tx.objectStore('prefs').put(v,'drama_dial');};
+  }catch(e){}
+  // Update preview text if slider exists
+  const preview=document.getElementById('dial-preview');
+  if(preview) preview.textContent=`Badges at ${v}+ · Alerts at ${Math.min(v+20,95)}+`;
+  // Re-evaluate badges with new threshold
+  if(typeof injectDramaBadges==='function') try{injectDramaBadges();}catch(e){}
+}
 let viewingDate  = new Date();  // The date currently being viewed
 let viewingISO   = TODAY_ISO;   // ISO string of viewing date
 
@@ -4998,6 +5043,14 @@ function getSuggestedRSNs(){
 function openSetup(){
   renderSetupBody();
   renderCoverageDashboard();
+  // ── Drama Dial init ────────────────────────────────────────────
+  const dial=document.getElementById('drama-dial');
+  if(dial){
+    dial.value=getDramaDial();
+    const preview=document.getElementById('dial-preview');
+    if(preview){const v=getDramaDial();preview.textContent=`Badges at ${v}+ · Alerts at ${Math.min(v+20,95)}+`;}
+    dial.oninput=function(){setDramaDial(this.value);};
+  }
   const _ov1 = getEl("setup-overlay"); if(_ov1) _ov1.style.display = "flex";
   // Show geo market hint banner
   const city = sessionStorage.getItem("field_geo_city")||"";
@@ -12545,8 +12598,9 @@ const ViewingConditions = {
       score = Math.max(0, Math.min(100, score));
     }
     const isBlowout = sport === 'Australian Football (AFL)' ? margin > 36 : margin > 20;
-    if (score >= 85) return { score, badge: 'CRUNCH TIME',    color: 'var(--c-nba)', pulse: true,  isBlowout };
-    if (score >= 65) return { score, badge: 'WORTH WATCHING', color: 'var(--c-nhl)', pulse: false, isBlowout };
+    const dial=getDramaDial();
+    if (score >= Math.min(dial+20,95)) return { score, badge: 'CRUNCH TIME',    color: 'var(--c-nba)', pulse: true,  isBlowout };
+    if (score >= dial) return { score, badge: 'WORTH WATCHING', color: 'var(--c-nhl)', pulse: false, isBlowout };
     return             { score, badge: null,           color: null,          pulse: false, isBlowout };
   }
 };
@@ -12842,6 +12896,12 @@ let _pwaPrompt = null;
         : null;
       if(swPath){
         navigator.serviceWorker.register(swPath, {scope:'/'})
+          .then(()=>{
+            // Sync Drama Dial to SW on every page load
+            if(navigator.serviceWorker.controller){
+              navigator.serviceWorker.controller.postMessage({type:'PREF_UPDATE',key:'drama_dial',value:getDramaDial()});
+            }
+          })
           .catch(()=>{ /* SW registration failed — API caching unavailable */ });
       }
     } catch(e){}
@@ -16938,7 +16998,7 @@ function buildLifeStageContent(game, eData, stage) {
       if (eData.source === 'squiggle') return ''; // AFL: squiggle chip handles it
       // Score shown in score-wrap (big numbers) — stage content shows peak drama only
       const peak = parseFloat(localStorage.getItem('field_drama_peak_'+(game._id||''))||'0');
-      return peak >= 65 ? `<div class="card-stage-content"><span class="stage-final-score">Peak drama ${Math.round(peak)}</span></div>` : '';
+      return peak >= getDramaDial() ? `<div class="card-stage-content"><span class="stage-final-score">Peak drama ${Math.round(peak)}</span></div>` : '';
     }
     default: return '';
   }
@@ -17067,8 +17127,8 @@ function renderScoreTicker() {
     : s?.includes('tennis') ? '🎾'
     : s?.includes('afl')||s?.includes('australian') ? '🏉' : '🏅';
   const chips = liveGames.map(({gid, e, drama, trendBonus}) => {
-    const fire = drama >= 65 ? ' fire' : '';
-    const icon = drama >= 85 ? '🔥' : drama >= 65 ? '⚡' : '';
+    const fire = drama >= getDramaDial() ? ' fire' : '';
+    const icon = drama >= Math.min(getDramaDial()+20,95) ? '🔥' : drama >= getDramaDial() ? '⚡' : '';
     const rising = trendBonus >= 8 ? ' ↑' : '';
     const sp2 = (e._sport||'').toLowerCase();
     const league = sp2.includes('nba')||sp2.includes('basketball') ? 'NBA'
@@ -17130,7 +17190,7 @@ function updatePinWidget() {
   const home = eData?.homeScore ?? '--', away = eData?.awayScore ?? '--';
   const period = eData?.period ? `· ${eData.periodLabel||'Q'+eData.period}` : '';
   const drama = getSmoothedDrama(_pinnedGameId) ?? 0;
-  const fireIcon = drama >= 85 ? '🔥' : drama >= 65 ? '⚡' : '';
+  const fireIcon = drama >= Math.min(getDramaDial()+20,95) ? '🔥' : drama >= getDramaDial() ? '⚡' : '';
   const title = game ? `${teamNick(game.away)} @ ${teamNick(game.home)}` : 'Pinned Game';
 
   let expanded = '';
@@ -17270,8 +17330,8 @@ function buildDramaSparklineSVG(gameId, w=140, h=28) {
       return `${x},${y}`;
     }).join(' ');
     const peak = Math.max(...hist.map(d => d.s));
-    const stroke = peak >= 85 ? 'var(--c-nba,#f97316)'
-                 : peak >= 65 ? 'var(--c-nhl,#00b4d8)'
+    const stroke = peak >= Math.min(getDramaDial()+20,95) ? 'var(--c-nba,#f97316)'
+                 : peak >= getDramaDial() ? 'var(--c-nhl,#00b4d8)'
                  : 'rgba(255,255,255,.35)';
     // Peak marker — dot at highest drama point
     const peakIdx = hist.findIndex(d => d.s === peak);
@@ -17569,7 +17629,7 @@ function renderHalftimeSwitch(){
 
   // Find highest drama OTHER live game with score >= 65
   const best = liveGames
-    .filter(g=>g.game._id!==htGame.game._id && g.drama>=65)
+    .filter(g=>g.game._id!==htGame.game._id && g.drama>=getDramaDial())
     .sort((a,b)=>b.drama-a.drama)[0];
 
   if(!best){ panel.style.display='none'; return; }
