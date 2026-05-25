@@ -5918,7 +5918,7 @@ function detectArcType(g) {
   if (bni === 'home-market')           return 'home-market';
   // Scout's Pick: high drama, not on national TV — hidden gem framing
   const pgScore = (typeof preGameScore === 'function') ? preGameScore(g) : 0;
-  if (pgScore > 70 && !isNationalGame(g)) return 'hidden-gem';
+  if (isScoutsPick(g)) return 'hidden-gem';
   // Series context: any active playoff/series game
   if (g.seriesRecord && g.seriesRecord !== '0-0') return 'series';
   // Marquee: high preGameScore on national TV (legit big game)
@@ -5926,6 +5926,52 @@ function detectArcType(g) {
   return null;
 }
 function isNationalGame(g){return !!(g.nationalBundle);}
+
+// ── M2 Patent mitigation: Scout's Pick as boolean gates (not composite threshold) ──
+// OLD: preGameScore(g) > 70 && !isNationalGame(g)
+//      preGameScore() sums importance + broadcast + odds + milestones into ONE composite.
+//      Thresholding that composite ("score > 70 → classify as interesting") recreates the
+//      patent's "determining an interest level value [and] notifying when threshold met."
+//      (Numerical Usage Policy: this is the bright line — composite value + threshold.)
+//
+// NEW: individual boolean gates, non-summed, no composite threshold.
+//      Each gate is an independent dimension; no single aggregated number is thresholded.
+//      This is Case C (Numerical Usage Policy): classification by boolean gates over
+//      individual dimensions, not by a single summed interest-level value.
+//      Specifically: games that have genuine importance signals (playoff/series context)
+//      OR are demonstrably competitive (tight odds line), AND are not on national TV.
+function isScoutsPick(g) {
+  // Gate 0: Must not be a national broadcast game (always required)
+  if (isNationalGame(g)) return false;
+
+  // Gate 1: Playoff/series importance (boolean — not a score)
+  const hasSeriesContext = !!(g.seriesRecord || /playoff|final|cup|conference|series/i.test(g.league||''));
+
+  // Gate 2: Odds show genuinely competitive matchup (single dimension: moneyline gap)
+  // Not summed with other factors — stands alone as an independent signal
+  const isOddsCompetitive = (() => {
+    try {
+      const sportKey = typeof ODDS_SPORT_MAP !== 'undefined' ? ODDS_SPORT_MAP[g._sport||g._section||''] : null;
+      if (!sportKey || typeof _oddsCache === 'undefined') return false;
+      const oddsKey = Object.keys(_oddsCache||{}).find(k => k.startsWith(sportKey));
+      if (!oddsKey) return false;
+      const odds = getGameOdds(_oddsCache[oddsKey], g.home, g.away);
+      return odds?.moneylineGap != null && odds.moneylineGap < 150;
+    } catch(_) { return false; }
+  })();
+
+  // Gate 3: Near-milestone player (single boolean: is a player close to a career mark?)
+  const hasMilestone = (() => {
+    try {
+      const gameKey = g._id || `${g.home}_${g.away}`;
+      const ms = _bdlMilestonesCache?.[gameKey];
+      return !!(ms?.pct >= 0.95);
+    } catch(_) { return false; }
+  })();
+
+  // Eligible if at least ONE positive dimension is present (boolean OR — not summed)
+  return hasSeriesContext || isOddsCompetitive || hasMilestone;
+}
 function preGameScore(g){
   if (g._postponed) return 0; // PPD games excluded from ONE TO WATCH, ww-bar, TONIGHT
   const nb=g.narrative?.boost||0;
@@ -5999,9 +6045,14 @@ function renderTonightSummary(sections){
       const t=g.start_time?new Date(g.start_time).toLocaleTimeString('en-US',{timeZone:'America/New_York',hour:'numeric',minute:'2-digit',hour12:true}):'';
       const n=g.streams?.[0]?.label||'';
       const b=g._gameImportance?`<span class="ts-badge ts-${g._gameImportance}">${g._importanceIcon||''} ${g.narrative?.label||''}</span>`:'';
-      const drama=Math.round(preGameScore(g));
-      const bar=drama>0?`<span style="font-size:.56rem;color:var(--muted);margin-left:auto;opacity:.65">drama ${drama}</span>`:'';
-      return `<div class="ts-game${i===0?' ts-top':''}"><div class="ts-matchup">${g.away||''} ${g.neutral?'vs':'@'} ${g.home||''}</div>${b}<div class="ts-meta" style="display:flex;align-items:center">${g._section} · ${t}${g._subtitle?' · '+g._subtitle:''}${n?' · '+n:''} ${bar}</div></div>`;
+      // M1 Patent mitigation: "drama N" composite number removed from display.
+      // preGameScore() sums importance + broadcast + odds + milestones into one composite.
+      // Displaying that composite labeled "drama" recreates "interest level value" visually
+      // (Numerical Usage Policy Case A — risky). Semantic labels (badges) convey the same
+      // information without creating a visible threshold-comparable interest value.
+      // The live dramaScoreLive() score (single-dimension game-state) remains on live cards
+      // as Case C (admitted prior art, single dimension, not summed composite).
+      return `<div class="ts-game${i===0?' ts-top':''}"><div class="ts-matchup">${g.away||''} ${g.neutral?'vs':'@'} ${g.home||''}</div>${b}<div class="ts-meta">${g._section} · ${t}${g._subtitle?' · '+g._subtitle:''}${n?' · '+n:''}</div></div>`;
     };
     return `<div class="tonight-summary"><div class="ts-header"><span class="ts-title">⚡ Tonight on FIELD</span><span class="ts-count">${hl}</span></div><div class="ts-games">${top.map(entry).join('')}</div></div>`;
   }catch(e){return '';}
@@ -8661,25 +8712,28 @@ function injectJ1J4Badges() {
     if (!cardBody) return;
 
     // ── J4: Scout's Pick ──────────────────────────────────────────────────
-    // High pre-game drama (>70) that isn't getting national broadcast attention
-    const pgScore = preGameScore(g);
-    if (pgScore > 70 && !isNationalGame(g)) {
+    // M2 Patent mitigation: uses isScoutsPick() boolean gates, not composite threshold.
+    // See isScoutsPick() definition for the full rationale.
+    if (isScoutsPick(g)) {
       card.classList.add('scout-pick-card');
       const badge = document.createElement('span');
       badge.className = 'scout-pick-badge';
       badge.textContent = '🔍 Scout\'s Pick';
-      // Fix 10: fieldVsMarket divergence — enrich tooltip when FIELD rates game vs market
-      let scoutTitle = `Drama score ${Math.round(pgScore)} · Under-the-radar tonight`;
+      // Tooltip: describe the qualifying signal, not a composite score
+      let scoutTitle = 'Under-the-radar tonight';
       try {
-        const sportKey = ODDS_SPORT_MAP[g._sport||g._section||''];
-        if(sportKey && _oddsCache){
-          const oddsKey = Object.keys(_oddsCache).find(k=>k.startsWith(sportKey));
-          if(oddsKey){
-            const odds = getGameOdds(_oddsCache[oddsKey], g.home, g.away);
-            if(odds?.homeML && odds?.awayML){
-              const gap = Math.abs(odds.homeML - odds.awayML);
-              if(gap > 180) scoutTitle += ` · FIELD rates more competitive than ${gap} ML gap suggests`;
-              else if(gap < 45) scoutTitle += ` · Pick'em odds · drama score says it\'s real`;
+        if (g.seriesRecord) scoutTitle = `${g.seriesRecord} · not on national TV`;
+        else if (/playoff|final|series/i.test(g.league||'')) scoutTitle = 'Playoff stakes · not on national TV';
+        else {
+          const sportKey = ODDS_SPORT_MAP[g._sport||g._section||''];
+          if(sportKey && _oddsCache){
+            const oddsKey = Object.keys(_oddsCache).find(k=>k.startsWith(sportKey));
+            if(oddsKey){
+              const odds = getGameOdds(_oddsCache[oddsKey], g.home, g.away);
+              if(odds?.homeML && odds?.awayML){
+                const gap = Math.abs(odds.homeML - odds.awayML);
+                if(gap < 150) scoutTitle = `Pick\'em game (${gap} ML gap) · not on national TV`;
+              }
             }
           }
         }
@@ -13973,7 +14027,7 @@ function buildCompoundPrompt(sections) {
       arcType ? `  Arc: ${arcType.toUpperCase()}` : '',
       bni ? `  [BNI: ${bni.replace(/-/g,' ').toUpperCase()}]` : '',
       oddsCtx ? `  Odds: ${oddsCtx}` : '',
-      preGameScore(g) > 70 && !isNationalGame(g) ? "  [SCOUT'S PICK]" : '',
+      isScoutsPick(g) ? "  [SCOUT'S PICK]" : '',
       homeMisery  ? `  [FRANCHISE_CONTEXT:${teamNick(g.home)}] ${homeMisery}` : '',
       awayMisery  ? `  [FRANCHISE_CONTEXT:${teamNick(g.away)}] ${awayMisery}` : '',
       extremeNote ? `  [LIVE EXTREME] ${extremeNote}` : '',
@@ -14289,7 +14343,7 @@ function buildFIELDBriefStatic(sections){
   if(playoffGames) lines.push(playoffGames+' playoff game'+(playoffGames>1?'s':'')+' on the slate.');
   const topStream=(top.streams&&top.streams[0]&&top.streams[0].label)||'';
   lines.push('\nTop game: '+top.away+' @ '+top.home+(top.seriesRecord?' ('+top.seriesRecord+')':'')+'.'+(topStream?' On '+topStream+'.':''));
-  const scout=ranked.find(g=>preGameScore(g)>70&&!isNationalGame(g));
+  const scout=ranked.find(g=>isScoutsPick(g));
   if(scout) lines.push("Scout's Pick: "+scout.away+' @ '+scout.home+' \u2014 high drama, under the radar.');
   const FREE_OTA_LABEL=new Set(['ABC','NBC','CBS','FOX','ION']);
   const freeGame=ranked.find(g=>g.streams&&g.streams[0]&&FREE_OTA_LABEL.has(g.streams[0].label));
@@ -14874,7 +14928,7 @@ async function fetchFIELDBriefFromClaude(sections){
       g.matchupNote?'  Matchup: '+g.matchupNote:'',
       g._section?'  Sport: '+g._section:'',
       standingsCtx?'  '+standingsCtx:'',
-      preGameScore(g)>70&&!isNationalGame(g)?"  [SCOUT'S PICK]":'',
+      isScoutsPick(g)?"  [SCOUT'S PICK]":'',
       isNationalGame(g)&&isBigMarketGame(g)&&preGameScore(g)<35?'  [ANTI-HYPE]':'',
       (()=>{const b=computeBroadcastNarrativeIndex(g);return b?'  [BNI: '+b.replace(/-/g,' ').toUpperCase()+']':'';})()
 ,

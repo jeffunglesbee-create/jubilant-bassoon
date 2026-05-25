@@ -567,6 +567,22 @@ assert('A184 — New banned phrases from screenshots',
   html.includes('salvage pride') && html.includes('clinical execution') && html.includes('dictated the tempo'),
   'Banned phrases must include phrases observed in screenshot audit');
 
+assert('A185 — M1: drama composite number removed from Betting Intelligence display',
+  !html.includes('drama ${drama}') && !html.includes('>drama ${'),
+  'Betting Intelligence must not display "drama N" composite number (patent Case A risk)');
+
+assert('A186 — M2: isScoutsPick boolean gate function defined',
+  html.includes('function isScoutsPick('),
+  'isScoutsPick() boolean gate function must replace composite-threshold Scout\'s Pick');
+
+assert('A187 — M2: preGameScore>70 threshold no longer used for Scout\'s Pick classification',
+  !html.match(/if\s*\(\s*(?:pgScore|preGameScore\(g\))\s*>\s*70/),
+  'All Scout\'s Pick classifications must use isScoutsPick(), not composite threshold');
+
+assert('A188 — M2: isScoutsPick wired into injectJ1J4Badges',
+  html.includes('if (isScoutsPick(g))'),
+  'Scout\'s Pick badge injection must use isScoutsPick() boolean gate');
+
 
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);
