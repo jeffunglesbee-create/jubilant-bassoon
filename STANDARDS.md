@@ -396,7 +396,10 @@ node field_smoke.js   ← must be 0 failures before any data change
 If failing: stop. This is now a TYPE B session.
 
 **Broadcast chip rules** (read from Daily Update Reference):
-- MLB GOTD: `peacockGOTD` and `espnGOTD` in `MLB_DAILY_OVERRIDES` — one or both, verified against
+- MLB GOTD: Auto-tagged from `ESPN_GOTD_SCHEDULE` and `PEACOCK_GOTD_SCHEDULE` lookup tables.
+  ESPN: Paste full block when announced (~4x/year, from ESPN Press Room / FutonCritic).
+  Peacock: Paste weekly schedule (Mon/Tue, from peacocktv.com/blog).
+  No daily manual tagging needed — code matches today's date against tables.
   peacocktv.com/sports/mlb and ESPN Press Room for today's date
 - Apple Friday: 2 games → `MLB_APPLE`. FOX Saturday/Monday → `MLB_FOX`.
   TBS Tuesday → `MLB_TBS`. NBC/Peacock SNB Sunday → chip depends on date vs May 31.
@@ -578,7 +581,7 @@ the entry must be removed or marked past — not left to accumulate.
 | `MEDIA_SPECIALS` series entries | `MEDIA_SPECIALS` | Series has ended |
 | `MEDIA_SPECIALS` event entries | `MEDIA_SPECIALS` | Event date has passed |
 | EPL matchday entries | schedule data | Season has ended |
-| `MLB_DAILY_OVERRIDES` GOTD flags | `MLB_DAILY_OVERRIDES` | Date has passed |
+| `ESPN_GOTD_SCHEDULE` / `PEACOCK_GOTD_SCHEDULE` | Schedule tables | Block/week has passed |
 | `confirmed:false` game entries | anywhere | Game date has passed without confirmation |
 
 ### Cleanup rule
