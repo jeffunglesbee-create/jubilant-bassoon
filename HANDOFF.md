@@ -8,7 +8,7 @@ Deploy: SUCCESS (0e7d844 is live)
 ## IMMEDIATE WORK FOR NEXT SESSION
 
 1. TYPE C BUILD: Schedule Automation (Jeff approved May 25)
-   Spec: Drive 1XiXo3jQ6f9k0S7YgwpQ6OwBrBoT0R80-5sSmeMefo_U
+   Spec: Drive 1d6HZ7gHJ0omabekHfVuGzKNoOGgUbwJwlwvcUaUAr10 (CORRECTED — no runtime fetch)
    Phase 1: Expand field-data.yml to cover MLB + soccer + broadcast rules (~2-3 hr)
    Phase 2: index.html fetches JSON instead of hardcoded entries (~1-2 hr)
    Phase 3: Update TYPE A protocol (~30 min)
