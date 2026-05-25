@@ -4,9 +4,9 @@ HEAD: 6f6370a
 Smoke: 144/0
 Deploy: SUCCESS
 
-## URGENT: teamNick() function MISSING
+## RESOLVED: teamNick() function DEPLOYED (26c0671)
 
-teamNick() was coded in May 21 session but NEVER made it to main.
+teamNick() deployed. 7 .split().pop() patterns replaced. _multiWordNicks lookup handles Red Sox, Blue Jays, White Sox, Golden Knights, etc.
 61 instances of .split(' ').pop() remain — breaks for multi-word nicknames:
 Red Sox, Blue Jays, Trail Blazers, White Sox, Golden Knights, etc.
 This caused today's "Knicks facing elimination" bug (headline matched wrong team).
