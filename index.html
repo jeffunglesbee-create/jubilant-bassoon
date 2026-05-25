@@ -393,6 +393,11 @@ flex-shrink:0;white-space:nowrap;
 .game-card.live  .card-accent{background:var(--live)}
 .game-card.soon  .card-accent{background:var(--gold)}
 .card-body{padding:.75rem 1rem .75rem .85rem;display:flex;flex-direction:column;gap:.3rem;grid-row:1;grid-column:2;min-width:0;overflow:hidden}
+/* Desk jump link in filter bar */
+.desk-jump-link{font-size:.62rem;font-weight:600;color:var(--muted);text-decoration:none;letter-spacing:.04em;padding:.25rem .5rem;border-radius:4px;white-space:nowrap;transition:color .15s,background .15s;flex-shrink:0}
+.desk-jump-link:hover{color:var(--gold2);background:rgba(201,168,76,.1)}
+.card-tap-hint{display:block;font-size:.48rem;letter-spacing:.18em;color:var(--muted);opacity:.4;margin-top:.35rem;text-align:right;pointer-events:none;user-select:none}
+@media(hover:hover){.game-card:hover .card-tap-hint{opacity:.7;transition:opacity .15s}}
 .score-wrap{grid-column:2;grid-row:2;display:none} /* hidden until ESPN injects */
 .game-card.espn-live .score-wrap,.game-card.espn-final .score-wrap{display:block}
 .matchup{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;min-width:0}
@@ -2498,7 +2503,7 @@ flex-shrink:0;white-space:nowrap;
     </div>
     <div class="masthead-right">
       <span id="streak-badge" style="display:none;align-items:center;gap:.2rem;font-size:.7rem;font-weight:700;color:var(--muted);opacity:.85;margin-right:.5rem"></span>
-      <button class="settings-btn" id="settings-btn" title="My Services — personalise your stream access"><span class="btn-label">⚙ My Services</span></button>
+      <button class="settings-btn" id="settings-btn" title="My Services &amp; Drama Sensitivity — personalise stream access and set your watch threshold"><span class="btn-label">⚙ My Services</span></button>
       <button class="refresh-btn" id="refresh-btn" title="Refresh to today" style="display:none">↺</button>
       <div class="usage-badge usage-ok" id="usage-badge" title="API calls today" style="display:none"><span class="usage-dot"></span><span id="usage-text">—</span></div>
     </div>
@@ -2516,6 +2521,7 @@ flex-shrink:0;white-space:nowrap;
     <div class="divider"></div>
     <div id="sport-filters"></div>
     <button class="tz-pill" id="tz-pill" title="Change timezone"></button>
+    <a class="desk-jump-link" href="#field-desk-section" title="FIELD Desk — editorial briefings and series previews" onclick="event.preventDefault();document.getElementById('field-desk-section')?.scrollIntoView({behavior:'smooth',block:'start'})">📰 Desk</a>
   </div>
 </nav>
 
@@ -2659,6 +2665,10 @@ flex-shrink:0;white-space:nowrap;
         </div>
         <button class="setup-skip" id="setup-skip">Skip for now</button>
         <span class="setup-count" id="setup-count"></span>
+        <div style="padding:.5rem 0 0;border-top:1px solid var(--edge);margin-top:.5rem;display:flex;align-items:center;justify-content:space-between">
+          <span style="font-size:.72rem;color:var(--smoke)">🔔 Game alerts</span>
+          <button id="push-enable-btn" style="font-size:.65rem;padding:.25rem .6rem;background:var(--card2);border:1px solid var(--edge2);color:var(--muted);border-radius:4px;cursor:pointer" title="Get notified when a must-watch game starts or reaches peak drama">Enable</button>
+        </div>
       </div>
       <button class="setup-save" id="setup-save">Save my services →</button>
     </div>
@@ -5201,6 +5211,29 @@ document.getElementById("setup-skip").addEventListener("click",()=>{
 });
 document.getElementById("settings-btn").addEventListener("click", openSetup);
 
+// Push notification enable button — wires orphaned showEUPushConsent to real UI path
+document.addEventListener('click', e => {
+  const btn = e.target.closest('#push-enable-btn');
+  if (!btn) return;
+  const doRequest = () => {
+    if (!('Notification' in window)) { btn.textContent = 'Not supported'; return; }
+    if (Notification.permission === 'granted') { btn.textContent = '✓ Enabled'; btn.style.color='#4ade80'; return; }
+    if (Notification.permission === 'denied')  { btn.textContent = 'Blocked in browser'; return; }
+    Notification.requestPermission().then(p => {
+      if (p === 'granted') { btn.textContent = '✓ Enabled'; btn.style.color='#4ade80'; localStorage.setItem('field_push_pref','granted'); }
+      else { btn.textContent = 'Declined'; }
+    });
+  };
+  // EU consent gate — show consent dialog first if EU timezone and not yet consented
+  const isEU = typeof isEUTimezone === 'function' ? isEUTimezone() : false;
+  const hasConsent = localStorage.getItem('field_push_consent_v1') === 'informed';
+  if (isEU && !hasConsent) {
+    if (typeof showEUPushConsent === 'function') showEUPushConsent(doRequest);
+  } else {
+    doRequest();
+  }
+});
+
 // Show setup on first visit (after schedule loads)
 function maybeShowSetup(){
   if(!localStorage.getItem("field_setup_done")) openSetup();
@@ -6392,11 +6425,12 @@ function renderAll(){
           ${(()=>{const _cs=buildCheapSeats(g);if(!_cs)return '';return `<div class="cheap-seats"><span class="cs-badge ${_cs.badgeClass}">${_cs.badge}</span><span class="cs-text">${_cs.text}</span></div>`;})()}
           ${(()=>{const _btb=beatTheBook(g);if(!_btb)return '';return `<div class="beat-the-book"><span class="btb-badge ${_btb.cls}">Vig ${_btb.vig}</span><span class="btb-text">${_btb.assessment}</span></div>`;})()}
           ${(()=>{const _ii=assessInjuryPriceImpact(g);if(!_ii)return '';return `<div class="injury-intel"><span class="ii-badge ${_ii.cls}">${_ii.badge}</span><span class="ii-text">${_ii.text}</span></div>`;})()}
+          <span class="card-tap-hint">tap for intel ›</span>
         </div>
         <div class="card-right">
           ${liveBadge}
           <div class="${timeCls}">${timeStr}</div>
-          <div class="stream-row">${window.innerWidth<=600?buildMobileSmartChip(g.streams):(streamsHTMLCapped(g.streams,3)+(()=>{const pk=g.streams?.[0]?.key||'';return FREE_OTA.has(pk)?'<span class="free-badge">FREE</span>':FREE_CABLE.has(pk)?'<span class="free-badge free-cable">FREE W/ CABLE</span>':''})())}<button class="cal-btn" aria-label="Add to calendar" title="Add to calendar" data-game-id="${g._id||''}">📅</button><button class="share-btn" aria-label="Share" title="Share this game" onclick="event.stopPropagation();(navigator.share?navigator.share({title:'${(g.away||'').replace(/'/g,'')} @ ${(g.home||'').replace(/'/g,'')}',text:'${(g.away||'').replace(/'/g,'')} @ ${(g.home||'').replace(/'/g,'')} · ${g.league||sec.sport||''}\n${timeStr} ET',url:location.href}):navigator.clipboard&&navigator.clipboard.writeText('${(g.away||'').replace(/'/g,'')} @ ${(g.home||'').replace(/'/g,'')} – ${timeStr} ET via FIELD\n'+location.href)).catch(()=>{})">⬆</button></div>
+          <div class="stream-row">${window.innerWidth<=600?buildMobileSmartChip(g.streams):(streamsHTMLCapped(g.streams,3)+(()=>{const pk=g.streams?.[0]?.key||'';return FREE_OTA.has(pk)?'<span class="free-badge">FREE</span>':FREE_CABLE.has(pk)?'<span class="free-badge free-cable">FREE W/ CABLE</span>':''})())}<button class="cal-btn" aria-label="Add to calendar" title="Add to Apple Calendar, Google Calendar, or Outlook (.ics)" data-game-id="${g._id||''}">📅</button><button class="share-btn" aria-label="Share" title="Share this game" onclick="event.stopPropagation();(navigator.share?navigator.share({title:'${(g.away||'').replace(/'/g,'')} @ ${(g.home||'').replace(/'/g,'')}',text:'${(g.away||'').replace(/'/g,'')} @ ${(g.home||'').replace(/'/g,'')} · ${g.league||sec.sport||''}\n${timeStr} ET',url:location.href}):navigator.clipboard&&navigator.clipboard.writeText('${(g.away||'').replace(/'/g,'')} @ ${(g.home||'').replace(/'/g,'')} – ${timeStr} ET via FIELD\n'+location.href)).catch(()=>{})">⬆</button></div>
           ${FD_LEAGUE_MAP[sec.sport]||ESPN_STANDINGS_MAP[sec.sport]?`<button class="standings-btn" onclick="toggleStandings(this,'${sec.sport}','2025')" title="Show ${(FD_LEAGUE_MAP[sec.sport]||ESPN_STANDINGS_MAP[sec.sport]?.isSoccer)?'table':'standings'}">▼ ${(FD_LEAGUE_MAP[sec.sport]||ESPN_STANDINGS_MAP[sec.sport]?.isSoccer)?'Table':'Standings'}</button>`:""}
         </div>
       </div>`;
@@ -13293,17 +13327,17 @@ async function injectWikiChips(){
     if(!venueLine) continue;
     if(hWiki?.trending&&aWiki?.trending){
       const chip=document.createElement('div');chip.className='wiki-chip';
-      chip.textContent=`📈 National spotlight — both teams trending`;
+      chip.textContent=`📈 In the news — both teams trending nationally`;
       chip.style.cssText='font-size:.55rem;color:#34d399;margin-top:.15rem';
       venueLine.insertAdjacentElement('afterend',chip);
     }else if(hWiki?.trending){
       const chip=document.createElement('div');chip.className='wiki-chip';
-      chip.textContent=`📈 ${home} trending (+${Math.round((hWiki.spikeRatio-1)*100)}%)`;
+      chip.textContent=`📈 In the news — ${home} (+${Math.round((hWiki.spikeRatio-1)*100)}% on Wikipedia)`;
       chip.style.cssText='font-size:.55rem;color:#34d399;margin-top:.15rem';
       venueLine.insertAdjacentElement('afterend',chip);
     }else if(aWiki?.trending){
       const chip=document.createElement('div');chip.className='wiki-chip';
-      chip.textContent=`📈 ${away} trending (+${Math.round((aWiki.spikeRatio-1)*100)}%)`;
+      chip.textContent=`📈 In the news — ${away} (+${Math.round((aWiki.spikeRatio-1)*100)}% on Wikipedia)`;
       chip.style.cssText='font-size:.55rem;color:#34d399;margin-top:.15rem';
       venueLine.insertAdjacentElement('afterend',chip);
     }
@@ -16009,14 +16043,16 @@ function renderArbitrageBar(){
 function renderWatchWindow(){
   const el=document.getElementById('watch-window');
   if(!el||_wwDismissed||!allData) return;
-  const now=Date.now(),WINDOW_MS=35*60*1000;
+  const now=Date.now(),WINDOW_MS=60*60*1000; // extended to 60 min (was 35)
   let best=null,bestScore=0;
-  (allData.sports||[]).forEach(sec=>{(sec.games||[]).forEach(g=>{if(!g.start_time) return;const startMs=new Date(g.start_time).getTime();const minsAway=(startMs-now)/60000;if(minsAway<-2||minsAway>35) return;const score=preGameScore(g);if(score>bestScore){bestScore=score;best={g,sec,minsAway};}});});
+  (allData.sports||[]).forEach(sec=>{(sec.games||[]).forEach(g=>{if(!g.start_time) return;const startMs=new Date(g.start_time).getTime();const minsAway=(startMs-now)/60000;if(minsAway<-2||minsAway>60) return;const score=preGameScore(g);if(score>bestScore){bestScore=score;best={g,sec,minsAway};}});});
   if(!best||bestScore<20){el.style.display='none';if(_wwInterval){clearInterval(_wwInterval);_wwInterval=null;}return;}
   const {g,sec,minsAway}=best;
   const _wwSport=(sec.sport||'').toLowerCase();
   const _wwVerb=_wwSport.includes('baseball')?'First pitch':_wwSport.includes('hockey')||_wwSport.includes('nhl')?'Puck drop':_wwSport.includes('football')||_wwSport.includes('nfl')||_wwSport.includes('soccer')||_wwSport.includes('league')||_wwSport.includes('mls')||_wwSport.includes('efl')?'Kickoff':_wwSport.includes('afl')||_wwSport.includes('aussie')?'Bounce':'Tip-off';
-  const minsStr=minsAway<=1?'Starting now':minsAway<=5?_wwVerb+' in '+Math.ceil(minsAway)+' min':'Starting in '+Math.ceil(minsAway)+' min';
+  // 35+ min: softer "Up Next" label; <35 min: "Coming Up" with urgency
+  const wwHeader = minsAway > 35 ? 'Up Next' : 'Coming Up';
+  const minsStr=minsAway<=1?'Starting now':minsAway<=5?_wwVerb+' in '+Math.ceil(minsAway)+' min':minsAway<=35?'Starting in '+Math.ceil(minsAway)+' min':'In ~'+Math.round(minsAway)+' min';
   const stream=g.streams&&g.streams[0];
   const streamLabel=stream?stream.label:'';
   const streamKey=stream?stream.key:'';
@@ -16025,7 +16061,7 @@ function renderWatchWindow(){
   const seriesInfo=g.seriesRecord?' \u00b7 '+g.seriesRecord:'';
   const wwReason=buildWatchWindowReason(g);
   el.style.display='block';
-  el.innerHTML='<div class="ww-bar" id="ww-inner"><span class="ww-pulse"></span><span class="ww-header">Coming Up</span><span class="ww-soon">'+minsStr+'</span><span class="ww-game">'+(g.away||'')+' '+(g.neutral?'vs':'@')+' '+(g.home||'')+seriesInfo+'</span>'+(wwReason?'<span class="ww-reason">'+wwReason+'</span>':'')+netChip+'<button class="ww-close" id="ww-close">\u2715</button></div>';
+  el.innerHTML='<div class="ww-bar" id="ww-inner"><span class="ww-pulse"></span><span class="ww-header">'+wwHeader+'</span><span class="ww-soon">'+minsStr+'</span><span class="ww-game">'+(g.away||'')+' '+(g.neutral?'vs':'@')+' '+(g.home||'')+seriesInfo+'</span>'+(wwReason?'<span class="ww-reason">'+wwReason+'</span>':'')+netChip+'<button class="ww-close" id="ww-close">\u2715</button></div>';
   document.getElementById('ww-close')?.addEventListener('click',e=>{e.stopPropagation();_wwDismissed=true;el.style.display='none';});
   document.getElementById('ww-inner')?.addEventListener('click',e=>{if(e.target.id==='ww-close'||e.target.closest('a')) return;const h=(g.home||'').replace(/[^a-z]/gi,'').toLowerCase();const card=[...document.querySelectorAll('.game-card')].find(c=>(c.dataset.home||'').replace(/[^a-z]/gi,'').toLowerCase()===h);if(card)card.scrollIntoView({behavior:'smooth',block:'center'});});
   if(!_wwInterval){_wwInterval=setInterval(()=>{const startMs=new Date(best.g.start_time).getTime();if(Date.now()>startMs+5*60000)_wwDismissed=false;renderWatchWindow();},60000);}
@@ -18192,6 +18228,15 @@ function pinGame(gameId) {
   document.querySelectorAll('.pin-btn').forEach(b => {
     b.classList.toggle('active', b.closest('.game-card')?.dataset?.gameid === gameId);
   });
+  // First-use hint — show once, dismiss after 4s
+  if (!localStorage.getItem('field_pin_hint_seen')) {
+    localStorage.setItem('field_pin_hint_seen','1');
+    const hint = document.createElement('div');
+    hint.textContent = '📌 Pinned — live in the corner as you scroll';
+    hint.style.cssText = 'position:fixed;bottom:5rem;left:50%;transform:translateX(-50%);background:rgba(20,20,40,.95);color:#e8e8f0;font-size:.72rem;padding:.5rem 1rem;border-radius:6px;z-index:200;pointer-events:none;border:1px solid rgba(255,255,255,.12);white-space:nowrap';
+    document.body.appendChild(hint);
+    setTimeout(() => hint.remove(), 4000);
+  }
 }
 function unpinGame() {
   _pinnedGameId = null;
