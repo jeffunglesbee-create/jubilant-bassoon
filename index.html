@@ -10667,6 +10667,143 @@ const MLB_STATS_RELAY = 'https://field-relay-nba.jeffunglesbee.workers.dev/mlb-s
 // Cache: localStorage 24h per player (season stats don't change intraday)
 // Output: "Brunson: 24.2 PPG / 6.7 APG this season" — real facts for journalism
 const _bdlStatCache = {};
+
+// ── Item 7 — ESPN Athlete Stats ──────────────────────────────────────────────
+// Coverage: MLB (primary — BDL is NBA-only), NHL, NBA (supplement BDL)
+// Sources: site.api.espn.com public endpoints — no API key required, CORS-open
+// Cache: localStorage 24h per player + in-memory session cache
+// Output: "J.Brunson: 28.4 PPG / 6.7 APG · F.Freeman: .312 AVG / 8 HR / 31 RBI"
+// Runs as pre-fetch in fetchCompoundEditorial — stored in _espnAthleteContextCache
+// Reads synchronously from cache in buildCompoundPrompt Item 7 block
+const _espnAthleteContextCache = {}; // gameId → formatted stat string
+
+const ESPN_ATHLETE_SPORT_MAP = {
+  'Basketball':       'basketball/nba',
+  'Baseball':         'baseball/mlb',
+  'Hockey':           'hockey/nhl',
+  'NFL Football':     'football/nfl',
+  'College Football': 'football/college-football',
+};
+
+// Parse ESPN stats array into a readable line for the given sport
+function _parseESPNStatLine(name, stats, sportSection) {
+  const get = (...keys) => {
+    for (const k of keys) {
+      const s = stats.find(x => x.name===k || x.abbreviation===k || x.shortDisplayName===k);
+      if (s?.displayValue && s.displayValue !== '--') return s.displayValue;
+    }
+    return null;
+  };
+  if (sportSection === 'Basketball') {
+    const pts = get('avgPoints','PTS'), ast = get('avgAssists','AST'), reb = get('avgRebounds','REB');
+    const parts = [pts&&`${pts} PPG`, ast&&`${ast} APG`, reb&&`${reb} RPG`].filter(Boolean);
+    return parts.length ? `${name}: ${parts.join(' / ')}` : '';
+  }
+  if (sportSection === 'Baseball') {
+    const era = get('ERA','earnedRunAverage');
+    if (era) {
+      const wins = get('wins','W'), k = get('strikeouts','K','SO');
+      const parts = [`${era} ERA`, wins&&`${wins}W`, k&&`${k}K`].filter(Boolean);
+      return `${name}: ${parts.join(' / ')}`;
+    }
+    const avg = get('avg','AVG','battingAverage'), hr = get('homeRuns','HR'), rbi = get('RBI','rbi');
+    const parts = [avg&&`.${avg.replace(/^0\./,'')} AVG`, hr&&`${hr} HR`, rbi&&`${rbi} RBI`].filter(Boolean);
+    return parts.length ? `${name}: ${parts.join(' / ')}` : '';
+  }
+  if (sportSection === 'Hockey') {
+    const g = get('goals','G'), a = get('assists','A'), pts = get('points','PTS'), pm = get('plusMinus','+/-');
+    const parts = [g&&`${g}G`, a&&`${a}A`, pts&&`${pts}PTS`, pm&&`${pm}+/-`].filter(Boolean).slice(0,3);
+    return parts.length ? `${name}: ${parts.join(' / ')}` : '';
+  }
+  return '';
+}
+
+async function fetchESPNAthleteStats(names, sportSection) {
+  if (!names?.length) return '';
+  const espnPath = ESPN_ATHLETE_SPORT_MAP[sportSection];
+  if (!espnPath) return '';
+  const results = [];
+  for (const raw of names.slice(0, 4)) {
+    const name = raw.trim();
+    if (!name || name.length < 4) continue;
+    const ck = `espn_ath_${espnPath.replace(/\//g,'_')}_${name.toLowerCase().replace(/\s+/g,'_')}`;
+    if (_bdlStatCache[ck]) { results.push(_bdlStatCache[ck]); continue; } // reuse single cache
+    try {
+      const cached = localStorage.getItem(ck);
+      if (cached) { const p=JSON.parse(cached); if(Date.now()-p.ts<86400000){_bdlStatCache[ck]=p.line;results.push(p.line);continue;} }
+    } catch(_){}
+    try {
+      // Step 1: search for athlete ID
+      const sr = await fetch(
+        `https://site.api.espn.com/apis/site/v2/sports/${espnPath}/athletes?name=${encodeURIComponent(name)}&limit=5`,
+        {signal:AbortSignal.timeout(5000)}
+      );
+      if (!sr.ok) continue;
+      const sd = await sr.json();
+      const pool = sd.athletes || sd.items || [];
+      const athlete = pool.find(a=>{
+        const full=(a.fullName||a.displayName||`${a.firstName||''} ${a.lastName||''}`).toLowerCase();
+        return full.includes(name.toLowerCase()) || name.toLowerCase().includes((a.lastName||'').toLowerCase());
+      });
+      if (!athlete?.id) continue;
+      // Step 2: fetch statistics
+      const ar = await fetch(
+        `https://site.api.espn.com/apis/site/v2/sports/${espnPath}/athletes/${athlete.id}/statistics`,
+        {signal:AbortSignal.timeout(5000)}
+      );
+      if (!ar.ok) continue;
+      const ad = await ar.json();
+      // ESPN returns statistics.splits.categories — find the "Total" or first category
+      const cats = ad.statistics?.splits?.categories || [];
+      const cat = cats.find(c=>c.name==='total'||c.displayName==='Total'||c.name==='general') || cats[0];
+      const stats = cat?.stats || [];
+      if (!stats.length) continue;
+      const shortName = name.split(' ').map((w,i)=>i===0?w[0]+'.':w).join('');
+      const line = _parseESPNStatLine(shortName, stats, sportSection);
+      if (!line) continue;
+      _bdlStatCache[ck] = line;
+      try { localStorage.setItem(ck, JSON.stringify({line, ts:Date.now()})); } catch(_){}
+      results.push(line);
+    } catch(e_) {
+      if(FIELD_DEBUG) console.warn('[ESPN-ATHLETE]', name, e_.message);
+    }
+  }
+  return results.join(' · ');
+}
+
+// Pre-fetch ESPN athlete stats for all tonight's games — called before compound prompt
+// Stores results in _espnAthleteContextCache[gameId]
+async function fetchESPNAthleteContextAll(games) {
+  const tasks = [];
+  for (const g of (games||[]).slice(0,8)) {
+    if (_espnAthleteContextCache[g._id]) continue; // already warm
+    const sport = g._sport||g._section||'';
+    const espnPath = ESPN_ATHLETE_SPORT_MAP[sport];
+    if (!espnPath) continue;
+    tasks.push((async()=>{
+      const names = [];
+      // MLB: use structured pitcher names (most reliable source of real player names)
+      if (sport.toLowerCase().includes('baseball')||sport.toLowerCase().includes('mlb')) {
+        if (g.homePitcher?.lastName) names.push(g.homePitcher.fullName||g.homePitcher.lastName);
+        if (g.awayPitcher?.lastName) names.push(g.awayPitcher.fullName||g.awayPitcher.lastName);
+      }
+      // All sports: extract names from matchupNote (e.g. "Brunson 29.0 PPG this series")
+      if (g.matchupNote) {
+        const m = g.matchupNote.matchAll(/([A-Z][a-z]+(?:\s+[A-Z][a-z]+)+)/g);
+        for (const match of m) {
+          const n = match[1];
+          if (!names.includes(n) && !/^(The|This|His|Her|Their|New|Old|Last|Next|Game|Series|Round|Season|East|West|North|South|Conference|Division|Finals|Cup|Bowl|World)$/.test(n.split(' ')[0])) {
+            names.push(n);
+          }
+        }
+      }
+      if (!names.length) return;
+      const line = await fetchESPNAthleteStats(names, sport);
+      if (line) _espnAthleteContextCache[g._id] = line;
+    })());
+  }
+  await Promise.allSettled(tasks);
+}
 async function fetchBDLPlayerContext(playerNames) {
   if (!playerNames?.length) return '';
   const results = [];
@@ -10707,6 +10844,62 @@ async function fetchBDLPlayerContext(playerNames) {
     } catch(_) {}
   }
   return results.length ? results.join(' · ') : '';
+}
+
+// ── BDL Recent Form — NBA momentum signal (last 5 games) ────────────────────
+// Answers "how has this player performed recently?" vs season average
+// Used in: J3 compound prompt (momentum context), Night Owl arc context
+// Cache: 4h per player (recent form changes more than season avg)
+// Pattern: "Brunson: 34.1 PPG last 5 (season: 28.4)" — delta is the signal
+const _bdlRecentFormCache = {};
+async function fetchBDLRecentForm(playerName) {
+  if (!playerName) return null;
+  const ck = `bdl_recent_${playerName.toLowerCase().replace(/\s+/g,'_')}`;
+  if (_bdlRecentFormCache[ck]) return _bdlRecentFormCache[ck];
+  try {
+    const cached = localStorage.getItem(ck);
+    if (cached) {
+      const p = JSON.parse(cached);
+      if (Date.now() - p.ts < 14400000) { _bdlRecentFormCache[ck]=p.data; return p.data; } // 4h TTL
+    }
+  } catch(_) {}
+  try {
+    // Step 1: look up player ID (reuse _bdlStatCache key pattern if already fetched)
+    const lastName = playerName.split(' ').slice(-1)[0];
+    const sr = await fetch(`${BDL_RELAY}/nba/v1/players?search=${encodeURIComponent(lastName)}&per_page=5`,
+      {signal:AbortSignal.timeout(4000)});
+    if (!sr.ok) return null;
+    const sd = await sr.json();
+    const player = (sd.data||[]).find(p=>{
+      const full = `${p.first_name||''} ${p.last_name||''}`.toLowerCase();
+      return full.includes(playerName.toLowerCase()) || playerName.toLowerCase().includes((p.last_name||'').toLowerCase());
+    });
+    if (!player?.id) return null;
+    // Step 2: get stats from last 5 games (dates_from = 10 days ago covers at least 5 NBA games)
+    const daysAgo10 = new Date(Date.now()-10*86400000).toISOString().slice(0,10);
+    const gr = await fetch(
+      `${BDL_RELAY}/nba/v1/stats?player_ids[]=${player.id}&dates_from=${daysAgo10}&per_page=10`,
+      {signal:AbortSignal.timeout(5000)}
+    );
+    if (!gr.ok) return null;
+    const gd = await gr.json();
+    const games = (gd.data||[]).filter(s=>s.pts!=null).slice(0,5); // last 5 completed games
+    if (games.length < 3) return null; // not enough data
+    const avg = f => (games.reduce((s,g)=>s+(g[f]||0),0)/games.length);
+    const pts = avg('pts').toFixed(1), ast = avg('ast').toFixed(1), reb = avg('reb').toFixed(1);
+    const data = {
+      name: playerName,
+      gamesBack: games.length,
+      line: `${pts} PPG / ${ast} APG / ${reb} RPG`,
+      formatted: `${playerName}: ${pts} PPG last ${games.length} (${ast} APG / ${reb} RPG)`,
+    };
+    _bdlRecentFormCache[ck] = data;
+    try { localStorage.setItem(ck, JSON.stringify({data, ts:Date.now()})); } catch(_) {}
+    return data;
+  } catch(e_) {
+    if(FIELD_DEBUG) console.warn('[BDL-RECENT]', playerName, e_.message);
+    return null;
+  }
 }
 
 // Item 5 — NHL live shot + save% context
@@ -14271,6 +14464,10 @@ function buildCompoundPrompt(sections) {
       // Fix 9: BDL injury context (sync, reads from warm bdlCache after bdlPrefetchAll)
       // Called once — store result to avoid double traversal of bdlCache.injuries
       (()=>{try{const inj=bdlInjuryContextSync(g.home||'',g.away||'',g._sport||g._section||'');return inj?`  ${inj}`:''}catch(e_){return ''}})(),
+      // Item 7: ESPN athlete stats — pre-fetched in fetchESPNAthleteContextAll
+      // MLB pitchers: ERA/W-L/K. NHL: G/A/PTS. NBA: PPG/APG/RPG (supplements BDL)
+      // DO NOT INVENT: only surfaces stats that ESPN confirmed — never generate stats
+      (()=>{try{const s=_espnAthleteContextCache[g._id||''];return s?`  [ESPN STATS] ${s}`:''}catch(e_){return ''}})(),
       // Fix 6: Weather context in compound prompt for outdoor games
       (()=>{try{const spG=(g._sport||g._section||'').toLowerCase();const isOut=spG.includes('baseball')||spG.includes('mlb')||spG.includes('nfl')||spG.includes('soccer')||spG.includes('league')||spG.includes('mls')||spG.includes('afl');if(!isOut) return '';const wxE=Object.values(wxCache||{}).find(wx=>wx?.alert);return wxE?`  [WEATHER ALERT: ${wxE.alert}]`:''}catch(e_){return ''}})(),
       // Wikimedia trending — cultural significance signal (Patent Defense #5)
@@ -14377,6 +14574,9 @@ async function fetchCompoundEditorial(sections) {
       });
       if (names.length) await fetchBDLPlayerContext(names.slice(0,6));
     })(),
+    // Item 7: ESPN athlete stats — MLB pitchers (structured names) + named players all sports
+    // Covers MLB/NHL where BDL has no data; supplements NBA BDL with ESPN's own figures
+    fetchESPNAthleteContextAll(games),
   ]);
 
   budget.inc();
