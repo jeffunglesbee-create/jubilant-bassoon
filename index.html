@@ -2783,7 +2783,7 @@ const FIELD_FEATURES = {
   // Journalism enrichments
   'drama-score-smoothing':  '2026-05-18',
   'standings-in-prompts':   '2026-05-18',
-  'broadcaster-registry':   '2026-05-18',
+  'broadcaster-registry':   '2026-05-26',
   // BNI + Watch Window Why
   'bni':                    '2026-05-18',
   'watch-window-why':       '2026-05-18',
@@ -14485,6 +14485,9 @@ function buildCompoundPrompt(sections) {
       // MLB pitchers: ERA/W-L/K. NHL: G/A/PTS. NBA: PPG/APG/RPG (supplements BDL)
       // DO NOT INVENT: only surfaces stats that ESPN confirmed — never generate stats
       (()=>{try{const s=_espnAthleteContextCache[g._id||''];return s?`  [ESPN STATS] ${s}`:''}catch(e_){return ''}})(),
+      // DA-01: Broadcaster crew context — enriches journalism with crew names
+      // isMarqueeBroadcast() signals A-team network priority assignment
+      (()=>{try{const cc=getCrewContext(g);const mq=isMarqueeBroadcast(g);if(!cc)return '';return `  Crew: ${cc}${mq?' [MARQUEE BROADCAST]':''}`}catch(e_){return ''}})(),
       // Fix 6: Weather context in compound prompt for outdoor games
       (()=>{try{const spG=(g._sport||g._section||'').toLowerCase();const isOut=spG.includes('baseball')||spG.includes('mlb')||spG.includes('nfl')||spG.includes('soccer')||spG.includes('league')||spG.includes('mls')||spG.includes('afl');if(!isOut) return '';const wxE=Object.values(wxCache||{}).find(wx=>wx?.alert);return wxE?`  [WEATHER ALERT: ${wxE.alert}]`:''}catch(e_){return ''}})(),
       // Wikimedia trending — cultural significance signal (Patent Defense #5)

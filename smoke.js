@@ -599,6 +599,17 @@ assert('A192 — Layer 2b: baseball forbidden terms include one-possession',
   html.includes('one-possession') && html.includes('transition'),
   'Baseball vocab violations must include basketball crossover terms');
 
+// DA-01: Broadcaster Registry — crew data for journalism prompts
+assert('A193 — DA-01: BROADCASTER_REGISTRY declared with NBA/MLB/NHL entries',
+  html.includes('BROADCASTER_REGISTRY') && html.includes("'NBA_ESPN'") && html.includes("'MLB_TBS'") && html.includes("'NHL_ESPN'"),
+  'BROADCASTER_REGISTRY must cover all three major leagues');
+assert('A194 — DA-01: getCrewForGame + isMarqueeBroadcast + getCrewContext functions present',
+  html.includes('function getCrewForGame') && html.includes('function isMarqueeBroadcast') && html.includes('function getCrewContext'),
+  'DA-01 consumer functions must exist for downstream BNI/EMBER/journalism');
+assert('A195 — DA-01: Crew context injected into compound prompt gameLines',
+  html.includes('getCrewContext(g)') && html.includes('isMarqueeBroadcast(g)') && html.includes('MARQUEE BROADCAST'),
+  'J3 compound prompt must include crew + marquee flag per game');
+
 
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);
