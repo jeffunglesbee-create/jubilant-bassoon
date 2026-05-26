@@ -6614,39 +6614,33 @@ function buildTodaySchedule(){
   // Helper: is this ISO timestamp local-today?
   // isToday() is defined at top-level utility block — accessible here and in Squiggle/AFL functions
 
-  // ── NBA Playoffs — Wednesday May 20 2026 ──────────────────────────
-  // Source: NBA.com / ESPN verified May 20, 2026
-  //   Updated May 23 2026
+  // ── NBA Playoffs — May 26 2026 ──────────────────────────────────────
+  // Source: ESPN / NBA.com / CBS Sports verified May 26, 2026
+  //   ECF OVER: NYK sweeps CLE 4-0 (G4: NYK 130, CLE 93) — Brunson ECF MVP
+  //     NYK to NBA Finals for first time since 1999. Finals start June 3 on ABC.
+  //     G1: NYK 115, CLE 104 OT · G2: NYK 109, CLE 93 · G3: NYK 121, CLE 108 · G4: NYK 130, CLE 93
   //   WCF G4 RESULT (May 24): SAS 103, OKC 82 — Series tied 2-2 (Wembanyama 33pts)
-  //   NHL WCF G3 RESULT (May 24): VGK 5, COL 3 — VGK leads 3-0
-  //   NHL ECF G2 RESULT (May 23): CAR 3, MTL 2 OT — Series tied 1-1
-  //   TONIGHT: ECF G4 — NYK @ CLE — 8pm ET — ESPN · Rocket Mortgage FieldHouse
-  //   TONIGHT: NHL ECF G3 — CAR @ MTL — 8pm ET — TNT/truTV/Max · Bell Centre
-  //   TOMORROW: WCF G5 — SAS @ OKC — 8:30pm ET — NBC · Paycom Center (series tied 2-2)
-  //   TOMORROW: NHL WCF G4 — COL @ VGK — 9pm ET — ESPN (VGK leads 3-0, can sweep)
-  // ── NBA Finals shell (June 5 est.) ─────────────────────────────────
-  //   TEAMS TBD: WCF winner (SAS or OKC) vs ECF winner (NYK or CLE)
-  //   All games: NBC/Peacock. NBA_NBC chip confirmed for 2025-26 Finals.
-  //   UPDATE: replace placeholder names + venue once CF series end (~June 3)
-  //   G1 venue: home of Eastern Conference champion
-  //   Dates: G1 June 5 · G2 June 8 · G3 June 11 · G4 June 13
-  //          G5 June 15* · G6 June 18* · G7 June 20* (* = if necessary)
+  //   TONIGHT: WCF G5 — SAS @ OKC — 8:30pm ET — NBC/Peacock (series tied 2-2)
+  //   NHL ECF G3 RESULT (May 25): CAR 3, MTL 2 OT (Svechnikov OT winner) — CAR leads 2-1
+  //   NHL WCF: VGK leads 3-0 — G4 tonight COL @ VGK 9pm ET ESPN (can sweep)
+  // ── NBA Finals 2026 ─────────────────────────────────────────────────
+  //   NYK vs WCF winner (SAS or OKC). G1 June 3, ABC. All games ABC.
   const nbaGames=[
     {home:"New York Knicks",       away:"Cleveland Cavaliers",  league:"NBA Playoffs \u2013 East CF G1 \u00b7 NYK wins 115-104",  start_time:"2026-05-20T00:00:00Z", confirmed:true, venue:"Madison Square Garden, New York NY",  streams:resolveBundle("NBA_ESPN"), seriesRecord:"NYK wins 115-104", matchupNote:"Brunson 38 pts. Knicks erased a 22-point Q4 deficit to win in OT. Sam Merrill nearly hit the buzzer-beater. NYK leads series 1-0."},
     {home:"Cleveland Cavaliers",   away:"New York Knicks",      league:"NBA Playoffs \u2013 East CF G3 \u00b7 NYK wins G3, leads 3-0",   start_time:"2026-05-24T00:00:00Z", confirmed:true, venue:"Rocket Mortgage FieldHouse, Cleveland OH", streams:resolveBundle("NBA_ABC"), seriesRecord:"NYK leads 2-0", matchupNote:"NYK wins G3 121-108 Saturday at Cleveland. Knicks lead 3-0 — one win from first Finals since 1999. G4 Monday at Cleveland, 8pm ET, ESPN."},
-    {home:"Cleveland Cavaliers",   away:"New York Knicks",      league:"NBA Playoffs \u2013 East CF G4 \u00b7 NYK leads 3-0",  start_time:"2026-05-26T00:00:00Z", confirmed:true, venue:"Rocket Mortgage FieldHouse, Cleveland OH",  streams:resolveBundle("NBA_ESPN"), seriesRecord:"NYK leads 3-0", matchupNote:"Knicks can sweep tonight — first Finals trip since 1999. G4 at Cleveland, 8pm ET, ESPN. Brunson 29.0 PPG this series."},
+    {home:"Cleveland Cavaliers",   away:"New York Knicks",      league:"NBA Playoffs \u2013 East CF G4 \u00b7 NYK wins 130-93, SWEEP",  start_time:"2026-05-26T00:00:00Z", confirmed:true, venue:"Rocket Mortgage FieldHouse, Cleveland OH",  streams:resolveBundle("NBA_ESPN"), seriesRecord:"NYK wins 4-0", matchupNote:"Knicks complete the sweep 130-93. KAT 19pts/14reb, Anunoby 17pts. Brunson 15pts 5ast (sat Q4). Mitchell led CLE with 31pts. Brunson named ECF MVP. NYK to Finals for first time since 1999."},
     {home:"San Antonio Spurs",     away:"Oklahoma City Thunder", league:"NBA Playoffs \u2013 West CF G3 \u00b7 OKC wins 123-108",  start_time:"2026-05-23T00:30:00Z", confirmed:true, venue:"Frost Bank Center, San Antonio TX",     streams:resolveBundle("NBA_NBC"), seriesRecord:"OKC leads 2-1", seriesMargins:[9,9,15,-1,-1,-1,-1], matchupNote:"OKC wins G3 123-108 (Gilgeous-Alexander 36pts). SAS won G4 103-82 (Wembanyama 33pts). Series tied 2-2. G5 Tuesday at OKC."},
     {home:"San Antonio Spurs",     away:"Oklahoma City Thunder", league:"NBA Playoffs \u2013 West CF G4 \u00b7 SAS wins 103-82, series tied 2-2",  start_time:"2026-05-25T00:00:00Z", confirmed:true, venue:"Frost Bank Center, San Antonio TX", streams:resolveBundle("NBA_NBC"), seriesRecord:"Series tied 2-2", seriesMargins:[9,9,15,-21,-1,-1,-1], matchupNote:"SAS evens series with dominant 103-82 G4 win. Wembanyama 33pts/8reb/5ast/3blk. SGA held to 19pts (6-15 FG). OKC shot 33% FG, 18% from 3. Series returns to Paycom Center for G5 Tuesday."},
-    {home:"Oklahoma City Thunder", away:"San Antonio Spurs",    league:"NBA Playoffs \u2013 West CF G5 \u00b7 Series tied 2-2",  start_time:"2026-05-27T00:30:00Z", confirmed:true, venue:"Paycom Center, Oklahoma City OK", streams:resolveBundle("NBA_NBC"), seriesRecord:"Series tied 2-2", matchupNote:"Pivotal G5 in OKC. Thunder need to reclaim home-court after Wembanyama's 33-pt G4 blowout. Tue 8:30pm ET, NBC/Peacock."},
+    {home:"Oklahoma City Thunder", away:"San Antonio Spurs",    league:"NBA Playoffs \u2013 West CF G5 \u00b7 Series tied 2-2",  start_time:"2026-05-27T00:30:00Z", confirmed:true, venue:"Paycom Center, Oklahoma City OK", streams:resolveBundle("NBA_NBC"), seriesRecord:"Series tied 2-2", matchupNote:"Pivotal G5 in OKC. Thunder need to reclaim home-court after Wembanyama's 33-pt G4 blowout. Winner of this game has won 82% of all 2-2 series historically. SGA averaging 27.5 PPG this series. Winner faces NYK in Finals (June 3). Tue 8:30pm ET, NBC/Peacock.", _gameImportance:"pivotal"},
     // ── NBA Finals 2026 — All games NBC/Peacock ─────────────────────
     // UPDATE team names + venues once ECF/WCF conclude (~June 3)
-    {home:"TBD \u2014 Eastern Champion", away:"TBD \u2014 Western Champion", league:"NBA Finals 2026 \u2013 G1 \u00b7 Series 0-0",  start_time:"2026-06-06T00:30:00Z", confirmed:true, venue:"TBD \u2014 Home of Eastern Champion", streams:resolveBundle("NBA_ABC"), seriesRecord:"0-0", matchupNote:"NBA Finals 2026 on ABC, 8:30pm ET. Teams TBD \u2014 update once Conference Finals conclude."},
-    {home:"TBD \u2014 Eastern Champion", away:"TBD \u2014 Western Champion", league:"NBA Finals 2026 \u2013 G2 \u00b7 Series 0-0",  start_time:"2026-06-09T00:30:00Z", confirmed:true, venue:"TBD \u2014 Home of Eastern Champion", streams:resolveBundle("NBA_NBC"), seriesRecord:"0-0"},
-    {home:"TBD \u2014 Western Champion", away:"TBD \u2014 Eastern Champion", league:"NBA Finals 2026 \u2013 G3 \u00b7 Series 0-0",  start_time:"2026-06-12T00:30:00Z", confirmed:true, venue:"TBD \u2014 Home of Western Champion", streams:resolveBundle("NBA_NBC"), seriesRecord:"0-0"},
-    {home:"TBD \u2014 Western Champion", away:"TBD \u2014 Eastern Champion", league:"NBA Finals 2026 \u2013 G4 \u00b7 Series 0-0",  start_time:"2026-06-14T00:30:00Z", confirmed:true, venue:"TBD \u2014 Home of Western Champion", streams:resolveBundle("NBA_NBC"), seriesRecord:"0-0"},
-    {home:"TBD \u2014 Eastern Champion", away:"TBD \u2014 Western Champion", league:"NBA Finals 2026 \u2013 G5 \u00b7 Series 0-0",  start_time:"2026-06-16T00:30:00Z", confirmed:true, venue:"TBD \u2014 Home of Eastern Champion", streams:resolveBundle("NBA_NBC"), seriesRecord:"0-0"},
-    {home:"TBD \u2014 Western Champion", away:"TBD \u2014 Eastern Champion", league:"NBA Finals 2026 \u2013 G6 \u00b7 Series 0-0",  start_time:"2026-06-19T00:30:00Z", confirmed:true, venue:"TBD \u2014 Home of Western Champion", streams:resolveBundle("NBA_NBC"), seriesRecord:"0-0"},
-    {home:"TBD \u2014 Eastern Champion", away:"TBD \u2014 Western Champion", league:"NBA Finals 2026 \u2013 G7 \u00b7 Series 0-0",  start_time:"2026-06-21T00:30:00Z", confirmed:true, venue:"TBD \u2014 Home of Eastern Champion", streams:resolveBundle("NBA_NBC"), seriesRecord:"0-0"},
+    {home:"New York Knicks", away:"TBD \u2014 Western Champion", league:"NBA Finals 2026 \u2013 G1 \u00b7 Series 0-0",  start_time:"2026-06-04T00:30:00Z", confirmed:true, venue:"Madison Square Garden, New York NY", streams:resolveBundle("NBA_ABC"), seriesRecord:"0-0", matchupNote:"NBA Finals 2026 on ABC, 8:30pm ET. NYK vs SAS/OKC (WCF ongoing, tied 2-2). Knicks' first Finals since 1999."},
+    {home:"New York Knicks", away:"TBD \u2014 Western Champion", league:"NBA Finals 2026 \u2013 G2 \u00b7 Series 0-0",  start_time:"2026-06-06T00:30:00Z", confirmed:true, venue:"Madison Square Garden, New York NY", streams:resolveBundle("NBA_ABC"), seriesRecord:"0-0"},
+    {home:"TBD \u2014 Western Champion", away:"New York Knicks", league:"NBA Finals 2026 \u2013 G3 \u00b7 Series 0-0",  start_time:"2026-06-09T00:30:00Z", confirmed:true, venue:"TBD \u2014 Home of Western Champion", streams:resolveBundle("NBA_ABC"), seriesRecord:"0-0"},
+    {home:"TBD \u2014 Western Champion", away:"New York Knicks", league:"NBA Finals 2026 \u2013 G4 \u00b7 Series 0-0",  start_time:"2026-06-11T00:30:00Z", confirmed:true, venue:"TBD \u2014 Home of Western Champion", streams:resolveBundle("NBA_ABC"), seriesRecord:"0-0"},
+    {home:"New York Knicks", away:"TBD \u2014 Western Champion", league:"NBA Finals 2026 \u2013 G5 \u00b7 Series 0-0",  start_time:"2026-06-14T00:30:00Z", confirmed:true, venue:"Madison Square Garden, New York NY", streams:resolveBundle("NBA_ABC"), seriesRecord:"0-0"},
+    {home:"TBD \u2014 Western Champion", away:"New York Knicks", league:"NBA Finals 2026 \u2013 G6 \u00b7 Series 0-0",  start_time:"2026-06-17T00:30:00Z", confirmed:true, venue:"TBD \u2014 Home of Western Champion", streams:resolveBundle("NBA_ABC"), seriesRecord:"0-0"},
+    {home:"New York Knicks", away:"TBD \u2014 Western Champion", league:"NBA Finals 2026 \u2013 G7 \u00b7 Series 0-0",  start_time:"2026-06-20T00:30:00Z", confirmed:true, venue:"Madison Square Garden, New York NY", streams:resolveBundle("NBA_ABC"), seriesRecord:"0-0"},
   ].reduce((acc,g)=>{
     // Populate global series record map from ALL games (not just today's)
     // Night Owl uses this to override stale localStorage seriesRecord values
@@ -6671,14 +6665,15 @@ function buildTodaySchedule(){
     // CAR wins East Semis 4-0 (vs Philadelphia) · MTL wins East Semis 4-3 (vs Buffalo)
     // Broadcast: TNT / truTV / Max (US) · SN / CBC / TVAS (Canada)
     {home:"Carolina Hurricanes", away:"Montreal Canadiens", league:"NHL Playoffs – East CF G2 · CAR wins 3-2 OT, series tied 1-1", start_time:"2026-05-23T23:00:00Z", confirmed:true, venue:"Lenovo Center, Raleigh NC",      streams:resolveBundle("NHL_TNT"), crew:"John Forslund · Eddie Olczyk (TNT)", seriesRecord:"Series tied 1-1", matchupNote:"CAR wins G2 3-2 in OT after MTL stunned CAR 6-2 in G1 (Slafkovsky 2G 1A) — first CAR loss of playoffs, ending bid for perfect 16-0. G2 Saturday at Lenovo Center, 7pm ET, TNT/truTV/Max."},
-    {home:"Montreal Canadiens",  away:"Carolina Hurricanes", league:"NHL Playoffs – East CF G3 · Series tied 1-1", start_time:"2026-05-26T00:00:00Z", confirmed:true, venue:"Bell Centre, Montreal QC",   streams:resolveBundle("NHL_TNT"), seriesRecord:"Series tied 1-1", matchupNote:"Series shifts to Bell Centre for G3. CAR won G2 3-2 in OT (Ehlers 2G incl. OT winner). Montreal faithful will be electric. 8pm ET, TNT/truTV/Max."},
+    {home:"Montreal Canadiens",  away:"Carolina Hurricanes", league:"NHL Playoffs – East CF G3 · CAR wins 3-2 OT, leads 2-1", start_time:"2026-05-26T00:00:00Z", confirmed:true, venue:"Bell Centre, Montreal QC",   streams:resolveBundle("NHL_TNT"), seriesRecord:"CAR leads 2-1", matchupNote:"CAR wins G3 3-2 OT (Svechnikov 14:06 OT). Gostisbehere and Hall scored in reg for CAR; Matheson and Hutson for MTL. CAR outshot MTL 38-13. Dobes 35 saves. CAR leads 2-1 — have won all 5 OT games this postseason. G4 Wed at Bell Centre."},
+    {home:"Montreal Canadiens",  away:"Carolina Hurricanes", league:"NHL Playoffs – East CF G4 · CAR leads 2-1", start_time:"2026-05-28T00:00:00Z", confirmed:true, venue:"Bell Centre, Montreal QC",   streams:resolveBundle("NHL_TNT"), seriesRecord:"CAR leads 2-1", matchupNote:"MTL must win G4 at home to avoid going down 3-1. Canadiens have lost two straight for first time this postseason. Hutson (15 pts in playoffs, 4th-most by a MTL D-man in franchise history) is a key factor. Wed 8pm ET, TNT/truTV/Max."},
     // ── NHL Western Conference Finals — Colorado Avalanche vs Vegas Golden Knights ──
     // COL wins Presidents' Trophy (best record) · COL wins R2 4-1 (vs Minnesota) · VGK wins R2 4-2 (vs Anaheim)
     // Key players: MacKinnon (COL), Marner (VGK), Dorofeyev (VGK — playoff scoring leader)
     // Broadcast: ESPN (G1-G4, G5, G7) · ABC (G6 only)
     {home:"Colorado Avalanche",  away:"Vegas Golden Knights", league:"NHL Playoffs – West CF G2 · VGK wins 3-1",                     start_time:"2026-05-23T00:00:00Z", confirmed:true, venue:"Ball Arena, Denver CO",      streams:resolveBundle("NHL_ESPN"), crew:"Sean McDonough · Ray Ferraro · Haley Skarupa (ESPN)", seriesRecord:"VGK leads 2-0", matchupNote:"VGK wins G2 3-1 at COL. Dorofeyev 1G 1A. VGK has outscored COL 7-3 through two games. Series shifts to T-Mobile Arena for G3 Sunday."},
     {home:"Vegas Golden Knights", away:"Colorado Avalanche",  league:"NHL Playoffs \u2013 West CF G3 \u00b7 VGK wins 5-3, leads 3-0",  start_time:"2026-05-25T00:00:00Z", confirmed:true, venue:"T-Mobile Arena, Las Vegas NV",      streams:resolveBundle("NHL_ESPN"), crew:"Sean McDonough \u00b7 Ray Ferraro \u00b7 Haley Skarupa (ESPN)", seriesRecord:"VGK leads 3-0", matchupNote:"VGK wins G3 5-3 at T-Mobile Arena. Vegas leads 3-0 — one win from Stanley Cup Final. COL offense struggling: 7 goals in 3 games."},
-    {home:"Vegas Golden Knights", away:"Colorado Avalanche",  league:"NHL Playoffs \u2013 West CF G4 \u00b7 VGK leads 3-0",  start_time:"2026-05-27T01:00:00Z", confirmed:true, venue:"T-Mobile Arena, Las Vegas NV",      streams:resolveBundle("NHL_ESPN"), seriesRecord:"VGK leads 3-0", matchupNote:"VGK can sweep COL. G4 at T-Mobile Arena, Tue 9pm ET, ESPN. Avalanche must win to avoid elimination."},
+    {home:"Vegas Golden Knights", away:"Colorado Avalanche",  league:"NHL Playoffs \u2013 West CF G4 \u00b7 VGK leads 3-0",  start_time:"2026-05-27T01:00:00Z", confirmed:true, venue:"T-Mobile Arena, Las Vegas NV",      streams:resolveBundle("NHL_ESPN"), seriesRecord:"VGK leads 3-0", matchupNote:"VGK can complete the sweep. COL facing elimination — outscored 12-6 in series. No team has ever come back from 3-0 in NHL history. Tue 9pm ET, ESPN.", _gameImportance:"elimination"},
   ].filter(g=>isToday(g.start_time));
   // Sources: MLB.com official schedule. GOTD: ESPN Press Room + Peacock blog.
   // Old entries removed May 25 (pre-May 25 entries unreachable via isToday)
@@ -6699,6 +6694,28 @@ function buildTodaySchedule(){
     {home:"Toronto Blue Jays",     away:"Miami Marlins",        start_time:"2026-05-25T23:07:00Z", confirmed:true, venue:"Rogers Centre, Toronto ON"},
     {home:"Los Angeles Dodgers",   away:"Colorado Rockies",     start_time:"2026-05-26T01:10:00Z", confirmed:true, venue:"Dodger Stadium, Los Angeles CA"},
     {home:"Athletics",             away:"Seattle Mariners",     start_time:"2026-05-26T01:40:00Z", confirmed:true, venue:"Sutter Health Park, West Sacramento CA"},
+    // ── MLB — Tuesday May 26, 2026 — 15 games ──────────────────────
+    // Sources: MLB.com schedule verified May 26. TBS Tuesday: ATL @ BOS.
+    // ESPN GOTD: SEA @ ATH (Daily Update Ref confirmed).
+    // Peacock GOTD: not announced for Tue (weekly cadence, check Wed).
+    {home:"Cleveland Guardians",   away:"Washington Nationals", start_time:"2026-05-26T22:10:00Z", confirmed:true, venue:"Progressive Field, Cleveland OH"},
+    {home:"Baltimore Orioles",     away:"Tampa Bay Rays",       start_time:"2026-05-26T22:35:00Z", confirmed:true, venue:"Oriole Park at Camden Yards, Baltimore MD"},
+    {home:"Detroit Tigers",        away:"Los Angeles Angels",   start_time:"2026-05-26T22:40:00Z", confirmed:true, venue:"Comerica Park, Detroit MI"},
+    {home:"Pittsburgh Pirates",    away:"Chicago Cubs",         start_time:"2026-05-26T22:40:00Z", confirmed:true, venue:"PNC Park, Pittsburgh PA"},
+    {home:"Boston Red Sox",        away:"Atlanta Braves",       start_time:"2026-05-26T22:45:00Z", confirmed:true, venue:"Fenway Park, Boston MA",
+     nationalBundle:"MLB_TBS", streams:resolveBundle("MLB_TBS"),
+     matchupNote:"TBS Tuesday — ATL @ BOS, 6:45pm ET. National broadcast on TBS + streaming on Max."},
+    {home:"Toronto Blue Jays",     away:"Miami Marlins",        start_time:"2026-05-26T23:07:00Z", confirmed:true, venue:"Rogers Centre, Toronto ON"},
+    {home:"New York Mets",         away:"Cincinnati Reds",      start_time:"2026-05-26T23:10:00Z", confirmed:true, venue:"Citi Field, New York NY"},
+    {home:"Chicago White Sox",     away:"Minnesota Twins",      start_time:"2026-05-26T23:40:00Z", confirmed:true, venue:"Guaranteed Rate Field, Chicago IL"},
+    {home:"Kansas City Royals",    away:"New York Yankees",     start_time:"2026-05-26T23:40:00Z", confirmed:true, venue:"Kauffman Stadium, Kansas City MO"},
+    {home:"Milwaukee Brewers",     away:"St. Louis Cardinals",  start_time:"2026-05-26T23:40:00Z", confirmed:true, venue:"American Family Field, Milwaukee WI"},
+    {home:"Texas Rangers",         away:"Houston Astros",       start_time:"2026-05-27T00:05:00Z", confirmed:true, venue:"Globe Life Field, Arlington TX"},
+    {home:"Athletics",             away:"Seattle Mariners",     start_time:"2026-05-27T01:40:00Z", confirmed:true, venue:"Sutter Health Park, West Sacramento CA",
+     espnGOTD:true, matchupNote:"ESPN App GOTD — SEA @ ATH, 9:40pm ET. ESPN Unlimited exclusive. Local RSN blacked out."},
+    {home:"San Diego Padres",      away:"Philadelphia Phillies",start_time:"2026-05-27T01:40:00Z", confirmed:true, venue:"Petco Park, San Diego CA"},
+    {home:"San Francisco Giants",  away:"Arizona Diamondbacks", start_time:"2026-05-27T01:45:00Z", confirmed:true, venue:"Oracle Park, San Francisco CA"},
+    {home:"Los Angeles Dodgers",   away:"Colorado Rockies",     start_time:"2026-05-27T02:10:00Z", confirmed:true, venue:"Dodger Stadium, Los Angeles CA"},
   ];
   const mlbGames=mlbRaw.filter(g=>isToday(g.start_time)).map(g=>{
     // Stream resolution — priority order (highest first):
