@@ -1,88 +1,58 @@
-# FIELD Handoff — May 26 2026 (FINAL — End of Day)
+# FIELD Handoff — May 26 2026 (ABSOLUTE FINAL)
 
 HEAD: 14ec919 · Smoke: 195/0 · SW_VERSION: 2026-05-26a
 
-## THE DAY IN ONE PARAGRAPH
+## FISH AUDIO — CORRECTED PRICING (screenshot verified)
 
-Two days of RUWT compliance work forced a precise answer to what FIELD can
-do freely — and the answer (post-game, L9 territory) produced the Arc Poster,
-a fully-built animated drama arc card for the Cowser walk-off game that is the
-most shareable, brand-forward thing FIELD has ever built. The compliance work
-clarified the IP. The IP was worth more than what the compliance was protecting.
+Free tier: 8,000 credits/month, 7 min S1/S2, 500 chars/gen, NO API
+Plus: $5.50/month (sale) / $20/month (standard) → API access unlocked
+Previous docs said "$15/month for API" — WRONG. It's Plus plan.
+User already has Fish Audio account (free tier, 8000/8000 used, resets June 25)
 
-## WHAT WAS BUILT TODAY
+## ARTIFACT NAMING RULE
 
-1. DA-01 J3 wiring (248916b) — crew context in compound prompt, smoke 195/0
-2. TYPE A May 26 daily update (7af78ca) — ECF result, NHL G3, MLB Tuesday
-3. Arc Poster prototype — OriolesMagic.jsx + CowserWalkoff.jsx (React, outputs dir)
-4. 52 new Wow features specced (#60-111)
-5. Patent-safe BNI + EMBER redesigns (specs ready, not yet built)
-6. Fish Audio S2 research + recommendation
-7. Video animation cost research + recommendation
-8. Editorial philosophy: candy/alcohol/PTI synthesis
+File + export name must both stay consistent across revisions.
+Revisions: str_replace (not full rewrites).
+CowserWalkoff.jsx → export default function CowserWalkoff (first game card)
+OriolesMagic.jsx → export default function OriolesMagic (template)
 
-## WHAT NEEDS BUILDING NEXT (in order)
+## EDITORIAL MECHANICS — USE FIELD'S OWN VOCABULARY
 
-### IMMEDIATE — Code fixes (patent safety)
-1. BNI fix (~15 min) — replace preGameScore thresholds with !isScoutsPick
-   See spec: Drive 1WZqRMOx8fCNi-gC0ktBF-wJNFKAP7udiKRFZXXPZmVQ
-2. EMBER fix (~30 min) — replace dramaScore threshold with isLateCloseGame()
-   Same spec doc. Remove dramaScore from return object + compound prompt.
+Drive: 1LVVdaOQYG6RiSgGdC_dgnmwbqNvhIYluRrd-sZoSLzE
+NOT: The Mute (ATH), Big Finish (PTI), Buy or Sell (ATH)
+USE: The Pass · The Carry · The Position · The Ledger · The Revision
+     The Lock · The Unlisted · The Thread · The Arc Shape Call
 
-### IMMEDIATE — TYPE A
-3. Check WCF G5 result (SAS @ OKC, was tonight) + NHL WCF G4 (COL @ VGK)
-   Update index.html accordingly
+## ONE-SHEETERS (canonical)
 
-### HIGH PRIORITY — Candy first
-4. Night Owl Audio #88 (~20 min) — Web Speech API, fastest candy build
-5. The Cold Open #83 (~30 min) — state-triggered cinematic entry sentence
-6. Arc Poster → Night Owl integration (~60 min) — wire CowserWalkoff into product
+Product: 1joaHx0B2Owwk_67PShR2ImvTRObWG_EBKG17kYPYI6s
+Marketing v2: 1Q0inOO7kApU7TVsT5eUnPB4xu_ycZ91vEHXyuInb33I
+Rendered HTML: /mnt/user-data/outputs/field-one-sheeter.html
+NOTE: "sportswriter" framing removed from v2 — FIELD complements
+journalism, does not replace it.
 
-### HIGH PRIORITY — PTI voice
-7. Five-Topic Brief #102 (~35 min) — restructure J3 to numbered format
-8. The Mute #105 (~15 min) — 🔇 chip on BNI maximum, one per night
-9. The Fast Verdict #109 (~25 min) — 1-3 sentence game assessment in J3
+## PRIORITY BUILD LIST
 
-### MEDIUM PRIORITY — L9 IP staking
-10. Season Drama Leaderboard #60 (~45 min) — first commercial L9 asset
-11. The Big Finish Question #108 (~20 min) — one question at end of Night Owl
-12. Game Personality Types #80 (~40 min) — arc shape classifier
+1. BNI fix (~15 min) — replace preGameScore with !isScoutsPick
+   Spec: 1WZqRMOx8fCNi-gC0ktBF-wJNFKAP7udiKRFZXXPZmVQ
+2. EMBER fix (~30 min) — isLateCloseGame() replaces dramaScore threshold
+   Same spec. Remove dramaScore from return object + compound prompt.
+3. TYPE A May 27 — WCF G5 result + NHL WCF G4 result + MLB slate
+4. Night Owl Audio #88 (~20 min) — Web Speech API first, Fish Audio upgrade later
+5. The Cold Open #83 (~30 min) — cinematic state-triggered sentence
+6. Arc Poster → Night Owl integration (~60 min) — CowserWalkoff into product
+7. Five-Topic Brief restructure (~35 min) — PTI discipline in J3
+8. The Pass (~15 min) — one sentence on nightly BNI maximum
+9. Season Drama Leaderboard #60 (~45 min) — first L9 commercial asset
 
-### PATENT / LEGAL
-13. File Regret Risk provisional at USPTO ($320, pro se, 30-day window)
-14. Contact Mark Phillip on LinkedIn (month 4, after commercial demo is ready)
+## WOW FEATURE COUNT: 111 specced · #82 Arc Poster BUILT
 
-## ARC POSTER NAMING CONVENTION
-  File: OriolesMagic.jsx · Export: OriolesMagic (template)
-  File: CowserWalkoff.jsx · Export: CowserWalkoff (first game)
-  Future: GameNameHere.jsx → export default function GameNameHere
-  Revisions: str_replace on existing file (not full rewrite)
-  Reason: Chrome tracks artifact by filename + export name
+## ALL SESSION DOCS (Part 1-5)
 
-## EDITORIAL STANDARD (THE WARMTH)
-  Every sentence must pass: "Does this sound like someone who loves the sport?"
-  PTI over First Take. Accountability over heat. Agreement over argument.
-  Fast. Structured. Warm. Willing to be wrong.
+Part 1: 1dwtipzpZn_Eoee8_XoF3L_7ligGc3tlzSwmy6lqMTr4
+Part 2: 1223UzpAvrRUI85E50tThewrXqVVX2qLpM8-VRXgjr2M
+Part 3: 1lCkDf3snN1d3eY_KpMZucFUef2Vr9LyXfwVqtejMmQI
+Part 4: 15LYxD3B3pxGiIWCvpHvnNBFlKh3Dr01sZEN3XeMXMD0
+Part 5: 1M0spqz2vqZPyT95vAp1y5Y1SOvGKjz2xmBO9lvZk78M
 
-## KEY DRIVE DOCS
-
-Session Docs:
-  Part 1: 1dwtipzpZn_Eoee8_XoF3L_7ligGc3tlzSwmy6lqMTr4
-  Part 2: 1223UzpAvrRUI85E50tThewrXqVVX2qLpM8-VRXgjr2M
-  Part 3: 1lCkDf3snN1d3eY_KpMZucFUef2Vr9LyXfwVqtejMmQI
-  Part 4: 15LYxD3B3pxGiIWCvpHvnNBFlKh3Dr01sZEN3XeMXMD0
-
-Wow Features:
-  #40-59 (Practical/Post-game): 1YVIARGmi3Qmt_G9X3euBS3Bs-RUP9IK3n_ju0ftQMgE
-  #60-79 (Leverage/Defensive): 1bd3wTF8Lrjkqv3laoBqu4dwah291I_gD4-bLTtfEQXg
-  #80-91 (Candy): 15rE0seTYEfvX_4ndfGrQOeQOs_McnAFIXT1DtJHSlWg
-  #92-101 (Alcohol): 1EM1CZPcRfbxBwoNjfu7Lt1BSJqavbHVEUjqvh6qQc10
-  #102-111 (PTI Synthesis): 1pP-00VvApDwO0jbJyMuRv1mF9IRsxpL8OfNFn6qUbRg
-
-Patent + Strategy:
-  Patent-Safe BNI+EMBER: 1WZqRMOx8fCNi-gC0ktBF-wJNFKAP7udiKRFZXXPZmVQ
-  Patent Truce Strategy: 18dmSr4-x62Vdp_t5PittiL2gODlaejS88UHFn3dcREU
-  RUWT Deep Intelligence: 1mPoXFF64jIzFOS5qe-Mu0O9Vm2UcKGddt2R1jwHbaAA
-  Arc Poster Build Record: 1u2GYU-5okrLZC5sACufzNlsCdwfpBAJ-yyZGxgqP9cs
-  CI/Deploy Ref: 18JMUd-Uq_m2DomuCua2B5UMiWOel81yzc1JU7SY6f20
-  Daily Update Ref: 1oSHqnDskN04p95g6e85--4hhgIsKISZ3ZflLXKPM08E
+CI/Deploy Ref: 18JMUd-Uq_m2DomuCua2B5UMiWOel81yzc1JU7SY6f20
