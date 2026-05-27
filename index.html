@@ -5082,7 +5082,7 @@ function getMLBAnalyticsContext(game) {
   if (!(game?._sport||'').toLowerCase().includes('baseball')) return lines;
   try {
     // G1 Park factor
-    const pf = getParkFactor(game._homeAbbr);
+    const pf = getParkFactor(game._homeAbbr || game.homeTeam || game._homeAbbr);
     if (pf?.badge) lines.push(`  Park: [${pf.badge}] ${pf.context}`);
 
     // A1 HP umpire ABS
@@ -5108,7 +5108,7 @@ function getMLBAnalyticsContext(game) {
 // Card badge HTML for park factor
 function buildParkFactorBadge(game) {
   if (!(game?._sport||'').toLowerCase().includes('baseball')) return '';
-  const pf = getParkFactor(game._homeAbbr);
+  const pf = getParkFactor(game._homeAbbr || game.homeTeam);
   if (!pf?.badge) return '';
   return `<span class="mlb-park-badge mlb-park-${pf.badgeClass}" title="${pf.context}">${pf.badge}</span>`;
 }
@@ -12342,6 +12342,12 @@ function normalizeMLBGame(g, date) {
     // Probable pitchers (from probablePitcher(stats) hydration)
     homePitcher:    normalizeMLBPitcher(home.probablePitcher),
     awayPitcher:    normalizeMLBPitcher(away.probablePitcher),
+    // HP umpire — from officials hydration (feeds UMP WATCH badge + J3 Brief)
+    // officials[] each has: { official: { id, fullName }, officialType: 'Home Plate'|'First Base'|... }
+    _hpUmpire:      (g.officials ?? []).find(o => o.officialType === 'Home Plate')?.official?.fullName ?? null,
+    // Abbreviation aliases used by park factor + analytics getters
+    _homeAbbr:      homeAbbr,
+    _awayAbbr:      awayAbbr,
   };
 }
 
@@ -12367,7 +12373,7 @@ async function fetchMLBSchedule(date) {
   const d       = date instanceof Date ? date : new Date(date);
   const dateStr = d.toLocaleDateString('en-CA');
   // probablePitcher(stats) adds ERA/W-L/WHIP/K-9 for J-Architecture keyFacts
-  const url     = `${MLB_STATS_BASE}/schedule?sportId=1&date=${dateStr}&hydrate=broadcasts(all),team,linescore,probablePitcher(stats)`;
+  const url     = `${MLB_STATS_BASE}/schedule?sportId=1&date=${dateStr}&hydrate=broadcasts(all),team,linescore,probablePitcher(stats),officials`;
   try {
     const r = await fetch(url, {signal: AbortSignal.timeout(8000)});
     if (!r.ok) throw new Error(`MLB Stats API ${r.status}`);
@@ -14270,7 +14276,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-05-27f';
+  const SW_VERSION = '2026-05-27g';
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
   // Cache strategy: API-only (ESPN scores, weather, odds, SportsDB).
