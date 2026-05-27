@@ -588,7 +588,7 @@ assert('A188 — M2: isScoutsPick wired into injectJ1J4Badges',
   'Scout\'s Pick badge injection must use isScoutsPick() boolean gate');
 
 assert('A189 — SW_VERSION is current (Rule 23: suffix per deploy, new day resets to a)',
-  html.includes("'2026-05-27j'"),
+  html.includes("'2026-05-27k'"),
   'SW_VERSION must match current deploy date — update daily per Rule 23');
 
 assert('A190 — Layer 2b: sport vocab violation detection function defined',
@@ -658,6 +658,23 @@ assert('A206 — MLB umpire: last-name keys + CF Worker endpoint wired',
   html.includes("'bucknor'") && html.includes("'barksdale'") && html.includes('/mlb-umpire-scrape'),
   'Umpire keys must be last-name-only and /mlb-umpire-scrape must be in mlbStatsInit');
 
+
+// ── A207-A210: NHL Wave 1 Analytics ─────────────────────────────────────────
+assert('A207 — NHL Wave 1: NHL_SPECIAL_TEAMS table present with confirmed probe keys',
+  html.includes("'VGK'") && html.includes("'CAR'") && html.includes('NHL_SPECIAL_TEAMS') && html.includes("sat:"),
+  'NHL_SPECIAL_TEAMS must have VGK/CAR entries with sat (SAT%) field confirmed by probe');
+
+assert('A208 — NHL Wave 1: NHL_GOALIE_RATINGS with probe-confirmed field names',
+  html.includes("'hart'") && html.includes("'andersen'") && html.includes('NHL_GOALIE_RATINGS') && html.includes("sv:"),
+  'NHL_GOALIE_RATINGS must have hart/andersen entries with sv (savePct) field');
+
+assert('A209 — NHL Wave 1: getNHLAbbrev with accent normalisation',
+  html.includes('getNHLAbbrev') && html.includes('normalize') && html.includes('\\u0300'),
+  'getNHLAbbrev must normalise unicode accents (Montréal→Montreal)');
+
+assert('A210 — NHL Wave 1: nhlAnalyticsInit wired into startup + compound prompt',
+  html.includes('nhlAnalyticsInit') && html.includes('getNHLAnalyticsContext') && html.includes('buildNHLAnalyticsBadges'),
+  'nhlAnalyticsInit must be called at startup; context + badges must be wired');
 
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);

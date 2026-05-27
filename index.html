@@ -1132,6 +1132,10 @@ flex-shrink:0;white-space:nowrap;
 .mlb-park-badge.park-pitcher-extreme{color:#818cf8;border-color:rgba(129,140,248,.4);background:rgba(129,140,248,.1)}
 .mlb-ump-badge{font-size:.58rem;font-weight:600;color:#f87171;border:1px solid rgba(248,113,113,.35);background:rgba(248,113,113,.08);padding:.1rem .42rem;border-radius:3px;white-space:nowrap}
 .mlb-analytics-badges{margin-top:2px}
+.nhl-analytics-badges{margin-top:2px}
+.nhl-badge{display:inline-block;font-size:.58rem;font-weight:700;letter-spacing:.04em;border-radius:.25rem;padding:.1rem .4rem;margin-right:.3rem}
+.nhl-badge.nhl-st{background:rgba(45,212,191,.12);color:#2dd4bf;border:1px solid rgba(45,212,191,.25)}
+.nhl-badge.nhl-pos{background:rgba(167,139,250,.12);color:#a78bfa;border:1px solid rgba(167,139,250,.25)}
 .gotd-streams{display:flex;gap:3px;flex-wrap:wrap}
 /* ── Individual sport (golf, F1) card styles ─────────────────────────────── */
 .event-name{
@@ -6971,6 +6975,7 @@ function renderAll(){
             ${g.gotdStreams?streamsHTML(g.gotdStreams):""}
           </div>`:""}
           ${(()=>{ const _pb=buildParkFactorBadge(g); const _ub=buildUmpWatchBadge(g); return (_pb||_ub) ? `<div class="badge-row mlb-analytics-badges">${_pb}${_ub}</div>` : ''; })()}
+          ${(()=>{ const _nb=buildNHLAnalyticsBadges(g); return _nb ? `<div class="badge-row nhl-analytics-badges">${_nb}</div>` : ''; })()}
           ${g.crew?`<div class="crew-line">🎙 ${g.crew}</div>`:""}
           ${g._gameImportance?`<div class="importance-badge ${g._gameImportance==='series_deciding'?'series-deciding':g._gameImportance==='elimination'?'elimination':g._gameImportance==='clinch'?'clinch':'playoff-impl'}">${g._importanceIcon||''} ${g.narrative?.label||''}</div>`:""}
           ${(()=>{const _ed=typeof findESPNScore==='function'?findESPNScore(g):null;const _dl=buildDramaLineTiers(g,_ed,sec.sport);if(_dl.tight){const _q=s=>s.replace(/"/g,'&quot;');return `<div class="card-drama-line" data-drama-tight="${_q(_dl.tight)}" data-drama-mid="${_q(_dl.mid)}" data-drama-full="${_q(_dl.full)}">${_dl.tight}</div>`;}return g.narrative?.label&&!g._gameImportance?`<div class="narrative-line${(g.narrative.boost||0)>=20?' narrative-hi':''}">${g.narrative.label}</div>`:'';})()}
@@ -11768,6 +11773,211 @@ const NHL_ABBREV_MAP = {
   'WSH':'Washington Capitals', 'WPG':'Winnipeg Jets',
 };
 
+// ── NHL Analytics Wave 1 ──────────────────────────────────────────────────────
+// Source: NHL Stats API probe May 27 2026 — outbox/nhl/nhl-analytics-probe-*.json
+// All figures: 2026 playoffs (seasonId=20252026, gameTypeId=3).
+// ADR-NHL-001: hardcode STABLE data (stats), never COUNTERS (wins, standings).
+// Test: "Will this be wrong next week?" — percentages change slowly → stable.
+//
+// PRECAUTIONS (learned from MLB Wave 1):
+//   1. Key format confirmed via probe — NOT guessed.
+//   2. getNHLAbbrev() normalises accents so "Montréal" = "Montreal" (probe showed
+//      API uses é; FIELD game data and NHL_ABBREV_MAP do not).
+//   3. _homeAbbr/_awayAbbr set by nhlAnalyticsInit() on all NHL game objects.
+//      Badges/getters never call getNHLAbbrev() without this being set first.
+//   4. Smoke assertions (A207-A210) check field PRESENCE and key CORRECTNESS,
+//      not just syntax.
+
+// Reverse map: "Carolina Hurricanes" → "CAR"
+// Derived from NHL_ABBREV_MAP — single source of truth.
+const NHL_NAME_TO_ABBREV = Object.fromEntries(
+  Object.entries(NHL_ABBREV_MAP).map(([a,n])=>[n,a])
+);
+
+// Full name → abbreviation with accent normalisation
+function getNHLAbbrev(fullName) {
+  if (!fullName) return null;
+  const d = NHL_NAME_TO_ABBREV[fullName];
+  if (d) return d;
+  // Normalise: strip combining diacritics (é→e, ü→u etc.)
+  const norm = s => s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
+  const q = norm(fullName);
+  for (const [abbrev, name] of Object.entries(NHL_ABBREV_MAP)) {
+    if (norm(name) === q) return abbrev;
+  }
+  return null;
+}
+
+// ── NHL-B4 + NHL-B2: Special Teams + Possession (2026 playoffs) ──────────────
+// Columns confirmed via probe:
+//   powerPlayPct (team/powerplay) | penaltyKillPct (team/penaltykill)
+//   satPct = CF% / Corsi (team/shotshares) | faceoffWinPct (team/summary)
+// League PP avg: ~18% | PK avg: ~82% | SAT avg: 50%
+const NHL_SPECIAL_TEAMS = {
+  'VGK': { pp:23.9, pk:87.5, sat:47.6, fo:53.3 },
+  'CAR': { pp:11.1, pk:93.5, sat:58.3, fo:47.5 },
+  'MTL': { pp:24.1, pk:77.4, sat:44.5, fo:53.4 },
+  'COL': { pp:20.6, pk:80.0, sat:55.7, fo:50.3 },
+  'BUF': { pp:20.4, pk:76.2, sat:54.0, fo:45.7 },
+  'MIN': { pp:18.4, pk:60.5, sat:45.2, fo:49.6 },
+  'ANA': { pp:31.6, pk:69.0, sat:54.3, fo:46.8 },
+  'DAL': { pp:40.0, pk:84.0, sat:51.9, fo:49.1 },
+  'PHI': { pp: 8.3, pk:85.4, sat:41.6, fo:50.7 },
+  'PIT': { pp:15.8, pk:88.2, sat:56.6, fo:47.4 },
+  'BOS': { pp:12.5, pk:95.8, sat:45.6, fo:56.2 },
+  'LAK': { pp:18.8, pk:90.9, sat:46.5, fo:49.6 },
+  'TBL': { pp:17.2, pk:80.8, sat:54.9, fo:44.4 },
+  'UTA': { pp: 6.2, pk:80.0, sat:48.0, fo:47.3 },
+  'OTT': { pp: 4.8, pk:86.7, sat:45.8, fo:58.5 },
+  'EDM': { pp:28.6, pk:50.0, sat:46.8, fo:51.7 },
+};
+
+// ── NHL-A1: Goalie Save Quality (2026 playoffs, GP ≥ 3) ──────────────────────
+// Column confirmed: savePct, goalsAgainstAverage, wins, shutouts (goalie/summary)
+// Key: lastName lowercase (confirmed field name: 'lastName' in API response)
+// Tier: elite ≥.920 | strong ≥.900 | avg ≥.885 | below <.885
+// Note: true GSAX requires MoneyPuck xG model — Wave 2 item.
+//       savePct used as proxy (valid for relative goalie quality comparisons).
+const NHL_GOALIE_RATINGS = {
+  'silovs':      { team:'PIT', sv:0.939, gaa:1.52, wins:2,  so:0, tier:'elite'  },
+  'ullmark':     { team:'OTT', sv:0.932, gaa:2.03, wins:0,  so:0, tier:'elite'  },
+  'hart':        { team:'VGK', sv:0.924, gaa:2.22, wins:12, so:0, tier:'elite'  },
+  'andersen':    { team:'CAR', sv:0.923, gaa:1.56, wins:10, so:2, tier:'elite'  },
+  'vladar':      { team:'PHI', sv:0.922, gaa:2.18, wins:4,  so:2, tier:'elite'  },
+  'dobes':       { team:'MTL', sv:0.911, gaa:2.50, wins:9,  so:0, tier:'strong' },
+  'forsberg':    { team:'LAK', sv:0.909, gaa:2.70, wins:0,  so:0, tier:'strong' },
+  'wallstedt':   { team:'MIN', sv:0.909, gaa:2.77, wins:5,  so:0, tier:'strong' },
+  'swayman':     { team:'BOS', sv:0.906, gaa:2.91, wins:2,  so:0, tier:'strong' },
+  'lyon':        { team:'BUF', sv:0.904, gaa:2.59, wins:4,  so:0, tier:'strong' },
+  'wedgewood':   { team:'COL', sv:0.904, gaa:2.47, wins:7,  so:0, tier:'strong' },
+  'vasilevskiy': { team:'TBL', sv:0.897, gaa:2.18, wins:3,  so:1, tier:'avg'    },
+  'oettinger':   { team:'DAL', sv:0.893, gaa:2.83, wins:2,  so:0, tier:'avg'    },
+  'blackwood':   { team:'COL', sv:0.890, gaa:2.82, wins:1,  so:0, tier:'avg'    },
+  'vejmelka':    { team:'UTA', sv:0.885, gaa:3.13, wins:2,  so:0, tier:'avg'    },
+  'luukkonen':   { team:'BUF', sv:0.876, gaa:3.18, wins:3,  so:0, tier:'below'  },
+  'ingram':      { team:'EDM', sv:0.876, gaa:3.86, wins:2,  so:0, tier:'below'  },
+  'skinner':     { team:'PIT', sv:0.873, gaa:3.08, wins:0,  so:0, tier:'below'  },
+  'dostal':      { team:'ANA', sv:0.870, gaa:3.54, wins:6,  so:0, tier:'below'  },
+};
+
+// ── Getters ───────────────────────────────────────────────────────────────────
+
+function getNHLSpecialTeams(abbrev) {
+  return abbrev ? (NHL_SPECIAL_TEAMS[abbrev] || null) : null;
+}
+
+function getNHLGoalieProfile(lastName) {
+  if (!lastName) return null;
+  const key = lastName.toLowerCase().replace(/[^a-z]/g,'');
+  return NHL_GOALIE_RATINGS[key] || null;
+}
+
+// Returns 2-4 context lines for compound prompt; empty string if no data.
+function getNHLAnalyticsContext(game) {
+  if (!game) return '';
+  const lines = [];
+  try {
+    const ha = game._homeAbbr || getNHLAbbrev(game.home);
+    const aa = game._awayAbbr || getNHLAbbrev(game.away);
+    const hST = getNHLSpecialTeams(ha);
+    const aST = getNHLSpecialTeams(aa);
+
+    if (hST && aST) {
+      // Power play — note if either team is elite (≥25%) or weak (≤10%)
+      const ppParts = [];
+      if (hST.pp >= 20) ppParts.push(`${teamNick(game.home||'')} ${hST.pp.toFixed(1)}% PP`);
+      if (aST.pp >= 20) ppParts.push(`${teamNick(game.away||'')} ${aST.pp.toFixed(1)}% PP`);
+      if (hST.pp <= 10) ppParts.push(`${teamNick(game.home||'')} ${hST.pp.toFixed(1)}% PP (league-worst)`);
+      if (aST.pp <= 10) ppParts.push(`${teamNick(game.away||'')} ${aST.pp.toFixed(1)}% PP (league-worst)`);
+      if (ppParts.length) lines.push(`[PP/PK] ${ppParts.join(' · ')} | PK: ${ha} ${hST.pk.toFixed(1)}% · ${aa} ${aST.pk.toFixed(1)}%`);
+
+      // Possession — flag SAT gap > 8 or either team extreme
+      const satGap = Math.abs(hST.sat - aST.sat);
+      const domTeam = hST.sat > aST.sat ? game.home : game.away;
+      const domSat  = Math.max(hST.sat, aST.sat);
+      if (satGap >= 8)   lines.push(`[POSSESSION] ${teamNick(domTeam||'')} controls ${domSat.toFixed(0)}% of shot attempts (SAT — Corsi proxy)`);
+      else if (domSat >= 55) lines.push(`[POSSESSION] ${ha} ${hST.sat.toFixed(0)}% SAT · ${aa} ${aST.sat.toFixed(0)}% SAT`);
+
+      // Faceoff dominance
+      const foGap = Math.abs(hST.fo - aST.fo);
+      if (foGap >= 8) {
+        const foTeam = hST.fo > aST.fo ? game.home : game.away;
+        const foWin  = Math.max(hST.fo, aST.fo);
+        lines.push(`[FACEOFFS] ${teamNick(foTeam||'')} wins ${foWin.toFixed(0)}% of draws — possession starts controlled`);
+      }
+    }
+
+    // Goalie matchup (set by fetchNHLRelayScores when starting goalies are announced)
+    const hG = getNHLGoalieProfile(game._homeGoalie);
+    const aG = getNHLGoalieProfile(game._awayGoalie);
+    if (hG && aG) {
+      const svGap = Math.abs(hG.sv - aG.sv);
+      if (hG.tier === 'elite' && aG.tier === 'elite')
+        lines.push(`[GOALIE DUEL] Both starters elite: ${game._homeGoalie} .${Math.round(hG.sv*1000)} sv% · ${game._awayGoalie} .${Math.round(aG.sv*1000)} sv%`);
+      else if (svGap >= 0.015) {
+        const betterG = hG.sv > aG.sv ? `${game._homeGoalie} (${teamNick(game.home||'')})` : `${game._awayGoalie} (${teamNick(game.away||'')})`;
+        lines.push(`[GOALIE EDGE] ${betterG} — .${Math.round(Math.max(hG.sv,aG.sv)*1000)} vs .${Math.round(Math.min(hG.sv,aG.sv)*1000)} sv%`);
+      }
+    } else if (hG || aG) {
+      const g = hG || aG;
+      const name = hG ? game._homeGoalie : game._awayGoalie;
+      if (g.tier === 'elite')
+        lines.push(`[GOALIE] ${name} elite this playoffs: .${Math.round(g.sv*1000)} sv%, ${g.gaa.toFixed(2)} GAA`);
+    }
+
+  } catch(e) { if(FIELD_DEBUG) console.error('[NHL Analytics]', e.message); }
+  return lines.join('\n');
+}
+
+// Badge builder: [SPECIAL TEAMS] and [POSSESSION] chips on NHL cards
+function buildNHLAnalyticsBadges(game) {
+  if (!game) return '';
+  const sp = (game._sport||'').toLowerCase();
+  if (!sp.includes('hockey') && !sp.includes('nhl')) return '';
+  const ha = game._homeAbbr || getNHLAbbrev(game.home);
+  const aa = game._awayAbbr || getNHLAbbrev(game.away);
+  const hST = getNHLSpecialTeams(ha);
+  const aST = getNHLSpecialTeams(aa);
+  if (!hST || !aST) return '';
+  const badges = [];
+  // [SPECIAL TEAMS] — one team elite PP (≥25%) vs elite PK (≥88%)
+  if ((hST.pp >= 25 || aST.pp >= 25) && (hST.pk >= 88 || aST.pk >= 88))
+    badges.push(`<span class="nhl-badge nhl-st" title="PP: ${ha} ${hST.pp}% · ${aa} ${aST.pp}% | PK: ${ha} ${hST.pk}% · ${aa} ${aST.pk}%">⚡ SPECIAL TEAMS</span>`);
+  // [POSSESSION] — SAT gap ≥ 8%
+  const satGap = Math.abs(hST.sat - aST.sat);
+  if (satGap >= 8) {
+    const leader = hST.sat > aST.sat ? ha : aa;
+    const leadSat = Math.max(hST.sat, aST.sat);
+    badges.push(`<span class="nhl-badge nhl-pos" title="Corsi: ${ha} ${hST.sat}% · ${aa} ${aST.sat}%">🏒 ${leader} ${leadSat.toFixed(0)}% SAT</span>`);
+  }
+  return badges.join('');
+}
+
+// nhlAnalyticsInit — sets _homeAbbr/_awayAbbr/_sport on all NHL game objects.
+// Called at T+4500ms so that game objects exist before any badge rendering.
+// Precaution: without this, all NHL analytics badges silently produce nothing.
+function nhlAnalyticsInit() {
+  let enriched = 0;
+  (allData?.sports||[]).forEach(sec => {
+    if (!(sec.sport||'').toLowerCase().includes('nhl') && !(sec.sport||'').toLowerCase().includes('hockey')) return;
+    (sec.games||[]).forEach(g => {
+      if (!g._homeAbbr) { g._homeAbbr = getNHLAbbrev(g.home); }
+      if (!g._awayAbbr) { g._awayAbbr = getNHLAbbrev(g.away); }
+      if (!g._sport)    { g._sport = sec.sport; }
+      enriched++;
+    });
+  });
+  if (FIELD_DEBUG && enriched) console.log(`[NHL Analytics] Enriched ${enriched} game objects with _homeAbbr/_awayAbbr/_sport`);
+  // Smoke-test: confirm VGK and CAR lookup correctly
+  if (FIELD_DEBUG) {
+    console.log('[NHL Analytics] Lookup test:',
+      'VGK ST=', JSON.stringify(getNHLSpecialTeams('VGK')),
+      'getNHLAbbrev(Montreal)=', getNHLAbbrev('Montreal Canadiens'),
+      'andersen goalie=', JSON.stringify(getNHLGoalieProfile('Andersen'))
+    );
+  }
+}
+
 async function fetchNHLRelayScores() {
   // Only run if there's an NHL section visible today
   if (!document.querySelector('.sport-section[data-sport="NHL Playoffs"]')) return;
@@ -13649,6 +13859,7 @@ async function fetchSchedule(){
   setTimeout(bdlPrefetchAll, 2000);       // BallDontLie injury prefetch (after schedule renders)
   setTimeout(uflEpaInit, 3500);           // UFL EPA live: SR PBP → EPA per play (self-gating, silent on fail)
   setTimeout(mlbStatsInit, 4000);         // MLB stats: load weekly Savant tables (patches hardcoded stubs)
+  setTimeout(nhlAnalyticsInit, 4500);     // NHL analytics: set _homeAbbr/_awayAbbr/_sport on NHL game objects
   maybeShowSetup();
   renderLastNight();
   if(Object.keys(espnScores).length) { injectDramaBadges(); detectAndRenderDoubleFeature(); renderOneToWatch(); renderMobileLiveBar(); renderWatchWindow(); renderAmbientPanel(); }
@@ -14279,7 +14490,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-05-27j';
+  const SW_VERSION = '2026-05-27k';
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
   // Cache strategy: API-only (ESPN scores, weather, odds, SportsDB).
@@ -15105,6 +15316,8 @@ function buildCompoundPrompt(sections) {
       (()=>{try{const sp=(g._sport||g._section||'').toLowerCase();if(!(sp.includes('mlb')||sp.includes('baseball'))) return '';const hp=g.homePitcher,ap=g.awayPitcher;if(!hp&&!ap) return '';const fmt=p=>p?`${p.lastName||p.fullName||''}${p.era?` (${p.era} ERA)`:p.wins!=null?` (${p.wins}-${p.losses})`:''}`:'TBD';return `  Pitchers: ${fmt(ap)} vs ${fmt(hp)}`;}catch(e_){return ''}})(),
       // Wave 1 MLB analytics: park factor + umpire ABS + pitch arsenal + tempo
       (()=>{ try { const ctx=getMLBAnalyticsContext(g); return ctx.length ? ctx.join('\n') : ''; } catch(e_){return '';} })(),
+      // Wave 1 NHL analytics: special teams (PP%/PK%) + possession (SAT%) + goalie quality
+      (()=>{ try { const sp=(g._sport||g._section||'').toLowerCase(); if(!(sp.includes('nhl')||sp.includes('hockey'))) return ''; const ctx=getNHLAnalyticsContext(g); return ctx.length ? ctx : ''; } catch(e_){return '';} })(),
       g.matchupNote ? `  Context: ${g.matchupNote}` : '',
       standingsCtx ? `  ${standingsCtx}` : '',
       arcType ? `  Arc: ${arcType.toUpperCase()}` : '',
