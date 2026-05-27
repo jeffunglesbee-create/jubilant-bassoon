@@ -1,0 +1,31 @@
+name: ESPN NFL PBP Probe
+
+on:
+  push:
+    paths:
+      - 'outbox/.trigger-espn-nfl'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run ESPN NFL PBP probe
+        run: python3 scripts/espn-nfl-probe.py
+
+      - name: Push result
+        run: |
+          git config user.email "espn-probe@field"
+          git config user.name "ESPN-Probe"
+          git add outbox/espn-nfl-result-*.json
+          git diff --cached --quiet && echo "Nothing to commit" && exit 0
+          git commit -m "espn-nfl-probe result [skip ci]"
+          for i in 1 2 3; do
+            git pull --rebase --autostash origin main && git push origin main && break
+            sleep $((i * 5))
+          done
