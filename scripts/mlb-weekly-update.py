@@ -212,3 +212,153 @@ for fn in ["team_abs","expected_stats","sprint_speed","pitch_tempo","pitch_arsen
         except: print(f"  ⚠️  {path} — unreadable")
     else:
         print(f"  ❌ {path} — missing")
+
+# ── 6. UMPIRE ABS — ESPN scraper (fallback: Savant CSV broken for hp_umpire) ──
+# Savant: challengeType=hp_umpire + csv=true → server crash (confirmed May 27 2026)
+# ESPN ABS Tracker has umpire table in server-rendered HTML — scrapeable from CI.
+# URL note: update year in URL each March when new season starts.
+# Keys: last name only (matches getUmpireABSRating lastName lookup in FIELD)
+# Zone weakness (low/high/inside/outside) preserved from hardcoded stubs; ESPN
+# doesn't provide zone data so we carry it forward from the previous run.
+print("Fetching umpire ABS from ESPN (fallback for broken Savant endpoint)...")
+try:
+    try:
+        from bs4 import BeautifulSoup
+    except ImportError:
+        import subprocess, sys
+        subprocess.run([sys.executable,'-m','pip','install','beautifulsoup4',
+                        '--quiet','--break-system-packages'], check=True)
+        from bs4 import BeautifulSoup
+
+    ESPN_ABS_URL = ("https://www.espn.com/mlb/story/_/id/48305211"
+                    "/2026-mlb-abs-challenge-system-tracker-team-player-rankings")
+    req = urllib.request.Request(ESPN_ABS_URL, headers={
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+                      "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0",
+        "Accept": "text/html,application/xhtml+xml,*/*",
+        "Accept-Language": "en-US,en;q=0.9",
+    })
+    with urllib.request.urlopen(req, timeout=25) as r:
+        html = r.read().decode('utf-8', errors='replace')
+
+    soup = BeautifulSoup(html, 'html.parser')
+
+    # Load existing file to carry forward zone weakness annotations
+    existing = {}
+    if os.path.exists("outbox/mlb/umpire_abs.json"):
+        try:
+            prev = json.load(open("outbox/mlb/umpire_abs.json"))
+            existing = prev.get("data", {})
+        except: pass
+
+    umpire_abs = {}
+
+    # ESPN renders tables inside the story body
+    # The umpire table follows a heading containing "Umpire"
+    tables = soup.find_all('table')
+    umpire_table = None
+    for table in tables:
+        # Walk backwards through siblings/ancestors to find nearby heading text
+        heading = ''
+        for ancestor in table.parents:
+            prev = ancestor.find_previous_sibling()
+            if prev:
+                heading = prev.get_text(' ', strip=True)
+                break
+        if 'umpire' in heading.lower() or 'ump' in heading.lower():
+            umpire_table = table
+            break
+
+    # Fallback: search all tables for one whose header row mentions "Overturn"
+    if not umpire_table:
+        for table in tables:
+            header_text = table.find('tr').get_text(' ').lower() if table.find('tr') else ''
+            if 'overturn' in header_text and 'name' in header_text:
+                # Check if this looks like an umpire table (no team column)
+                if 'team' not in header_text:
+                    umpire_table = table
+                    break
+
+    if umpire_table:
+        rows = umpire_table.find_all('tr')
+        # Detect header row to find column positions
+        header_cells = [th.get_text(strip=True).lower()
+                        for th in (rows[0].find_all('th') or rows[0].find_all('td'))]
+
+        def col(name_fragment):
+            for i, h in enumerate(header_cells):
+                if name_fragment in h: return i
+            return -1
+
+        name_col     = max(col('name'), 1)
+        chal_col     = col('challenge')  if col('challenge') >= 0 else col('chal')
+        overturned_col = col('overturned') if col('overturned') >= 0 else col('calls')
+        rate_col     = col('rate') if col('rate') >= 0 else col('%')
+        pitched_col  = col('pitched') if col('pitched') >= 0 else col('pitches called')
+
+        for row in rows[1:]:
+            cells = [td.get_text(strip=True) for td in row.find_all('td')]
+            if len(cells) < 3: continue
+            try:
+                name = cells[name_col] if name_col < len(cells) else ''
+                if not name or name.isdigit(): continue
+
+                challenged  = safe_int(cells[chal_col])     if chal_col >= 0 and chal_col < len(cells) else 0
+                overturned  = safe_int(cells[overturned_col]) if overturned_col >= 0 and overturned_col < len(cells) else 0
+                rate_raw    = cells[rate_col]               if rate_col >= 0 and rate_col < len(cells) else '0'
+                pitches_called = safe_int(cells[pitched_col]) if pitched_col >= 0 and pitched_col < len(cells) else 0
+
+                rate = safe_float(rate_raw.replace('%','').strip()) / 100
+
+                if challenged < 3: continue  # too small a sample
+
+                # Key = last word of name, lowercased, dots stripped
+                # "C.B. Bucknor" → "bucknor" | "Ramon De Jesus" → "jesus" — handle multi-word last names
+                name_parts = name.strip().split()
+                # Skip rank numbers that might bleed in
+                if name_parts and name_parts[0].isdigit(): name_parts = name_parts[1:]
+                last = name_parts[-1].lower().replace('.','').replace("'","") if name_parts else ''
+                if not last: continue
+
+                # Carry forward zone weakness from previous run (ESPN has no zone data)
+                prev_entry = existing.get(last, {})
+                weakness = prev_entry.get('weakness', None)
+
+                umpire_abs[last] = {
+                    'challenged': challenged,
+                    'overturned': overturned,
+                    'rate': round(rate, 3),
+                    'pitchesCalled': pitches_called,
+                    'weakness': weakness,
+                    'displayName': name,
+                }
+            except (IndexError, ValueError):
+                continue
+
+    if not umpire_abs:
+        raise ValueError("No umpire rows parsed — table structure may have changed")
+
+    with open("outbox/mlb/umpire_abs.json", "w") as f:
+        json.dump({"updated": TS, "source": "ESPN ABS Tracker", "data": umpire_abs}, f, indent=2)
+    league_avg = round(sum(v['rate'] for v in umpire_abs.values()) / len(umpire_abs), 3)
+    watch = [k for k,v in umpire_abs.items() if v['rate'] >= 0.65]
+    print(f"  ✅ {len(umpire_abs)} umpires | league avg {league_avg:.0%} | watch: {watch}")
+
+except Exception as e:
+    print(f"  ⚠️  Umpire ESPN scraper failed: {e}")
+    print(f"      Hardcoded UMPIRE_ABS_RATINGS in index.html remains as fallback.")
+    print(f"      Manual update: baseballsavant.mlb.com/leaderboard/abs-challenges (Umpire tab)")
+
+# ── Summary ───────────────────────────────────────────────────────────────────
+print(f"\n── Update complete {TS} ──")
+for fn in ["team_abs","expected_stats","sprint_speed","pitch_tempo","pitch_arsenals","umpire_abs"]:
+    path = f"outbox/mlb/{fn}.json"
+    if os.path.exists(path):
+        try:
+            d = json.load(open(path))
+            n = len(d.get("data", {}))
+            src = d.get("source","Savant")
+            print(f"  ✅ {path} — {n} entries [{src}]")
+        except: print(f"  ⚠️  {path} — unreadable")
+    else:
+        print(f"  ❌ {path} — missing")

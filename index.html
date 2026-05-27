@@ -4634,32 +4634,33 @@ const MLB_STATS_BASE = 'https://statsapi.mlb.com/api/v1';
 // Update: replace weekly from Savant umpire leaderboard
 // Key: last name (lowercase, spaces→underscore) | weakness: 'high'|'low'|'inside'|'outside'|null
 const UMPIRE_ABS_RATINGS = {
-  // Low overturn rates — umpires calling it close to ABS (good for pitchers)
-  'erich_bacchus':      { challenged:5,  overturned:0,  rate:0.00, pitchesCalled:632, weakness:null },
-  'quinn_wolcott':      { challenged:2,  overturned:0,  rate:0.00, pitchesCalled:609, weakness:null },
-  'will_little':        { challenged:10, overturned:1,  rate:0.10, pitchesCalled:919, weakness:'high' },
-  'emil_jimenez':       { challenged:5,  overturned:1,  rate:0.20, pitchesCalled:299, weakness:null },
-  'jordan_baker':       { challenged:8,  overturned:2,  rate:0.25, pitchesCalled:834, weakness:'low' },
-  'john_tumpane':       { challenged:4,  overturned:1,  rate:0.25, pitchesCalled:321, weakness:'outside' },
-  'ben_may':            { challenged:4,  overturned:1,  rate:0.25, pitchesCalled:348, weakness:null },
-  'ryan_additon':       { challenged:7,  overturned:2,  rate:0.29, pitchesCalled:649, weakness:'low' },
-  'david_rackley':      { challenged:10, overturned:3,  rate:0.30, pitchesCalled:884, weakness:'low' },
-  'nestor_ceja':        { challenged:9,  overturned:3,  rate:0.33, pitchesCalled:872, weakness:'outside' },
-  'stu_scheurwater':    { challenged:6,  overturned:2,  rate:0.33, pitchesCalled:581, weakness:null },
-  'mike_muchlinski':    { challenged:3,  overturned:1,  rate:0.33, pitchesCalled:517, weakness:null },
-  'dan_merzel':         { challenged:3,  overturned:1,  rate:0.33, pitchesCalled:277, weakness:null },
+  // Key: last name only, lowercase — matches getUmpireABSRating(lastName) lookup
+  // Source: ESPN ABS Tracker (automated weekly) + manual zone weakness notes
+  // League avg overturn rate: 53% (2026 regular season)
+  // Low overturn rates — calling it tight (good for pitchers)
+  'bacchus':      { challenged:5,  overturned:0,  rate:0.00, pitchesCalled:632,  weakness:null },
+  'wolcott':      { challenged:2,  overturned:0,  rate:0.00, pitchesCalled:609,  weakness:null },
+  'little':       { challenged:10, overturned:1,  rate:0.10, pitchesCalled:919,  weakness:'high' },
+  'jimenez':      { challenged:5,  overturned:1,  rate:0.20, pitchesCalled:299,  weakness:null },
+  'baker':        { challenged:8,  overturned:2,  rate:0.25, pitchesCalled:834,  weakness:'low' },
+  'tumpane':      { challenged:4,  overturned:1,  rate:0.25, pitchesCalled:321,  weakness:'outside' },
+  'may':          { challenged:4,  overturned:1,  rate:0.25, pitchesCalled:348,  weakness:null },
+  'additon':      { challenged:7,  overturned:2,  rate:0.29, pitchesCalled:649,  weakness:'low' },
+  'rackley':      { challenged:10, overturned:3,  rate:0.30, pitchesCalled:884,  weakness:'low' },
+  'ceja':         { challenged:9,  overturned:3,  rate:0.33, pitchesCalled:872,  weakness:'outside' },
+  'scheurwater':  { challenged:6,  overturned:2,  rate:0.33, pitchesCalled:581,  weakness:null },
+  'muchlinski':   { challenged:3,  overturned:1,  rate:0.33, pitchesCalled:517,  weakness:null },
+  'merzel':       { challenged:3,  overturned:1,  rate:0.33, pitchesCalled:277,  weakness:null },
   // Mid range
-  'ramon_de_jesus':     { challenged:11, overturned:4,  rate:0.36, pitchesCalled:634, weakness:'low' },
-  'ryan_blakney':       { challenged:8,  overturned:3,  rate:0.38, pitchesCalled:590, weakness:'outside' },
-  'adam_beck':          { challenged:8,  overturned:3,  rate:0.38, pitchesCalled:598, weakness:'low' },
-  'nic_lentz':          { challenged:13, overturned:5,  rate:0.38, pitchesCalled:729, weakness:'low' },
-  'rob_drake':          { challenged:13, overturned:5,  rate:0.38, pitchesCalled:903, weakness:'outside' },
-  // High overturn rates — umpires diverging from ABS (good for challengers)
-  // League avg 53% — above this is [UMP WATCH] territory
-  'chad_whitson':       { challenged:14, overturned:8,  rate:0.57, pitchesCalled:621, weakness:'low' },
-  'cb_bucknor':         { challenged:8,  overturned:6,  rate:0.75, pitchesCalled:544, weakness:'low' },
-  'lance_barksdale':    { challenged:9,  overturned:6,  rate:0.67, pitchesCalled:712, weakness:'outside' },
-  // TODO: populate full 76-umpire roster from Savant weekly
+  'de_jesus':     { challenged:11, overturned:4,  rate:0.36, pitchesCalled:634,  weakness:'low' },
+  'blakney':      { challenged:8,  overturned:3,  rate:0.38, pitchesCalled:590,  weakness:'outside' },
+  'beck':         { challenged:8,  overturned:3,  rate:0.38, pitchesCalled:598,  weakness:'low' },
+  'lentz':        { challenged:13, overturned:5,  rate:0.38, pitchesCalled:729,  weakness:'low' },
+  'drake':        { challenged:13, overturned:5,  rate:0.38, pitchesCalled:903,  weakness:'outside' },
+  // High overturn rates — [UMP WATCH] threshold 65%
+  'whitson':      { challenged:14, overturned:8,  rate:0.57, pitchesCalled:621,  weakness:'low' },
+  'bucknor':      { challenged:8,  overturned:6,  rate:0.75, pitchesCalled:544,  weakness:'low' },
+  'barksdale':    { challenged:9,  overturned:6,  rate:0.67, pitchesCalled:712,  weakness:'outside' },
 };
 const UMP_WATCH_THRESHOLD = 0.65; // overturn rate above league avg 53% + buffer
 
@@ -5137,6 +5138,17 @@ async function mlbStatsInit() {
     ['sprint_speed',   d => { Object.assign(PLAYER_SPEED,          d); }],
     ['pitch_tempo',    d => { Object.assign(PITCHER_TEMPO,         d); }],
     ['pitch_arsenals', d => { Object.assign(PITCHER_ARSENAL,       d); }],
+    ['umpire_abs',     d => {
+      // ESPN data has last-name keys — merge, preserving weakness annotations
+      // from hardcoded table when ESPN doesn't supply zone data
+      Object.entries(d).forEach(([k,v]) => {
+        const existing = UMPIRE_ABS_RATINGS[k];
+        UMPIRE_ABS_RATINGS[k] = {
+          ...v,
+          weakness: v.weakness ?? existing?.weakness ?? null,
+        };
+      });
+    }],
   ];
   let loaded = 0;
   await Promise.allSettled(FILES.map(async ([name, apply]) => {
@@ -14249,7 +14261,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-05-27d';
+  const SW_VERSION = '2026-05-27e';
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
   // Cache strategy: API-only (ESPN scores, weather, odds, SportsDB).
