@@ -1,7 +1,7 @@
-# FIELD Handoff — May 27 2026 (TYPE C Analytics/Spec Session Complete)
+# FIELD Handoff — May 27 2026 (TYPE A Daily Update Complete)
 
-HEAD: 00db022 · Smoke: 192/3 (stale per-day config, not regressions) · SW_VERSION: 2026-05-26a · File: ~1.08MB
-No code commits this session — pure analytics spec + documentation work.
+HEAD: 09c58a9 · Smoke: 195/0 · SW_VERSION: 2026-05-27a · File: ~1.09MB
+Deploy gate: success ✅
 
 ## CANONICAL DOCS — ALL CURRENT
 
@@ -11,87 +11,60 @@ Master Feature Priority: 1k2pq5dB6pKeegBzVBo1ee-Xo98-Qri5aq-2WqMg_suU
 CI/Deploy Ref: 18JMUd-Uq_m2DomuCua2B5UMiWOel81yzc1JU7SY6f20
 Build Session List v7.25: 19TicpFBU2ORbypNBteCXuhwbX1FoP14Y2NGuU9e3drQ
 
-## TIER 0 — DO FIRST (unchanged from previous handoff)
+## TIER 0 — DO FIRST
 
 1. BNI patent fix (~15 min) — preGameScore → !isScoutsPick
 2. EMBER patent fix (~30 min) — isLateCloseGame() replaces threshold
-3. TYPE A May 27 — WCF G5 result + NHL WCF G4 result + MLB slate
-4. NBA Finals G1 shell (~35 min) — JUNE 3 DEADLINE. NYK confirmed East.
-5. World Cup 2026 build (~90 min) — JUNE 11 DEADLINE.
+3. NBA Finals G1 shell (~35 min) — JUNE 3 DEADLINE. NYK confirmed East.
+   WCF G6 Thu May 28 (SAS @ OKC, 8:30pm NBC) — update result + wire Finals opponent once WCF done
+4. World Cup 2026 build (~90 min) — JUNE 11 DEADLINE.
+5. NHL SCF entries — add after ECF concludes (VGK in, CAR leads MTL 2-1, G4 TONIGHT)
 6. File Regret Risk USPTO provisional ($320 pro se) — 30-day window from May 26
 
-## THIS SESSION — ANALYTICS SPECS CREATED (all Drive, no code)
+## TODAY'S UPDATE — WHAT WAS DONE (TYPE A May 27)
 
-CROSS-SPORT:
-  Substitution Momentum Shift (cross-sport): 1ASy9CpKM_RIyovfvjm4nBLLD56SpHF0byNJV-fZe74g
+NBA:
+  WCF G5 marked: OKC 127, SAS 114 (OKC leads 3-2)
+    OKC: SGA 32pts (16-17 FT), Caruso 22 off bench, Holmgren 16/11, Hartenstein 12/15
+    SAS: Castle 24, Champagnie 22, Wembanyama 20 (4-15 FG, 0/5 3PT, 12-12 FT)
+  WCF G6 card added: SAS @ OKC Thu May 28 8:30pm ET, NBC/Peacock (_gameImportance:"elimination")
+  ECF confirmed done: NYK sweeps CLE 4-0, Brunson ECF MVP
+
+NHL:
+  WCF G4 marked: VGK 2, COL 1 — SWEEP 4-0. Stone game-winner, MacKinnon scoreless.
+  VGK advances to SCF. SCF entries to add after ECF done.
+  ECF G4 already present (tonight 8pm ET TNT at Bell Centre, CAR @ MTL, CAR leads 2-1)
+
+Soccer:
+  UECL Final already in: Crystal Palace vs Rayo Vallecano, 3pm ET today, Leipzig
 
 MLB:
-  Complete Baseball Analytics Spec (45 metrics): 1EwO-NfG_aBb-6CoOOliuCeCHxbYFfuTBoQrlejM7smM
-  Novel Combined Metrics / Extrapolation Layer: 1KrW5KVeMIPyonwUqtp23ExR1LzpK9IFjxzSsAM3FOww
-  ABS Era + Novel Metrics: 1muBDYM8-k041qCy_D4rrYkWfj6zeg1cOHqBzraqFTDg
+  May 27 slate added (15 games). No national chips — Wed not standard broadcast day.
+  ACTION: verify ESPN GOTD + Peacock GOTD at ESPN Press Room / peacocktv.com
 
-NBA + NHL:
-  NBA + NHL Analytics Spec (Cross-Sport): 13AGp87M_6FrWwMNi4y0L3rHcrIrqSaU-OvxGEGdzgSo
+smoke.js: A189 updated to 2026-05-27a
 
-SOCCER:
-  Soccer Club + Country + Team Fit: 11ukbH8Nivu5i2fa_KXB8KvWWYVPnNCEMpSnF-XHDngw
-  Soccer Dark Arts + Athletic Intelligence: 1D5qDyyaiT06pZCMMhIN1BC_zbU72sxvWyxSV3oiQSZ0
-  Soccer "Expected" Models Beyond xG: 1ylhR5TO31y0vs_-pXXXG5rOeIy2QpVAdo5HwHBPxuSg
+## SPORT STATE SNAPSHOT
 
-AFL:
-  AFL Advanced Analytics Spec: 1DbPS53DgZ08tvx3mzXW6Je3fC9I5HoRMOe2ma2xcyN4
-  AFL Addendum — xMarks + Stoppage Physicality: 1MDJ65YPDrL_pYZ99ZJ951CJJ2PHrK3YpPJ8R9Oz_2Mg
+NBA WCF: OKC leads SAS 3-2. G6 Thu May 28 @ Frost Bank Center, 8:30pm NBC/Peacock.
+NBA Finals: NYK vs WCF winner. G1 June 3, ABC. NYK home G1-G2.
+NHL WCF: FINAL — VGK sweeps COL 4-0. VGK in SCF.
+NHL ECF: CAR leads MTL 2-1. G4 TONIGHT Wed 8pm ET TNT. G5 Fri May 29 @ CAR.
+NHL SCF: VGK vs TBD. ~June 2-3 start. Add entries after ECF concludes.
+MLB: Regular season. 15 games today.
 
-KEY DECISIONS THIS SESSION:
-  [DECISION] "Never perform the final combination" confirmed as covering ANY
-    mathematical operation (add, multiply, weight, average) — not just summation.
-    Update STANDARDS.md: replace "summation" with "combination" throughout.
-  [DECISION] Team Fit Index (soccer) — 4 independent dimensions displayed separately
-    even though it has nothing to do with excitement. Universal design principle,
-    not just patent defense.
-  [DECISION] xFoul / xCard / expected non-goal events = Game Character Predictors.
-    They answer "what kind of game will this be?" not "who will win?"
-  [DECISION] Pre-clearance physicality (AFL) is the missing layer in clearance
-    analysis. Champion Data tracks it (2025 API). FIELD should surface it.
+## ANALYTICS SPECS FROM PRIOR SESSION (no code yet)
 
-NOVEL THINKING SUMMARIES:
-  Team Fit Index (soccer): 4-dimension assessment of national team cohesion.
-    Club pairs + position match + tactical compatibility + international minutes.
-    World Cup's most important unmeasured question. JUNE 11 BUILD PRIORITY.
-  Substitution Momentum Shift: sub as controlled experiment. 10-min before/after
-    window. ≥15 point swing = Impact Sub. Cross-sport (soccer/MLB/NBA/NHL/AFL).
-  AFL xMarks: mark rating = actual/expected. Zone-classified intercept marks.
-    Spoil quality. Stoppage physicality via pre-clearance contest dominance.
-  AFL Kill Quarter: quarter variance detector. Pre-game prediction + live alert.
-  Dark Arts (soccer): Clean Tackle Rate, "Getting Away With It" Index,
-    Tactical Foul Map, Corner Battle Index, Dribbled Past + Response.
-  Athletic Intelligence (soccer): Trackback Index, Sprint Type Classification,
-    Speed Mismatch Predictor, Defensive Effort vs. Output Ratio.
-  Expected Models beyond xG: xFoul, xCard, Tactical Foul Yield, Set Piece
-    Frequency Predictor, Long Throw Intelligence.
+Drive docs created (see May 27 TYPE C handoff for IDs):
+  MLB Complete Analytics (45 metrics), Novel Combined Metrics, ABS Era
+  NBA + NHL Analytics Spec (cross-sport)
+  Soccer: Team Fit Index, Dark Arts, Athletic Intelligence, Expected Models beyond xG
+  AFL: Advanced Analytics, xMarks + Stoppage Physicality, Kill Quarter
 
-PENDING — NOT YET BUILT (same as before + new additions):
-  MLB Stats API wiring: PACE badge, Milestone Proximity (~60 min)
-  Odds API MLB spreads removal (~5 min, 33% credit savings)
-  SCARCITY badge (~10 min, zero API calls)
-  ABS challenge count in live game card (~25 min)
-  Soccer Team Fit Index build (~3 hours, Wave 1 before June 11)
-  World Cup venue intelligence (~20 min)
-  World Cup group dynamics calculator (~25 min)
-  AFL Kill Quarter Detector (~20 min)
-  AFL xScore Conversion badge (~15 min)
-  All 85+ analytics specs above (implement in waves)
-
-## FISH AUDIO (corrected from previous docs)
-
-Plus = $5.50-20/month → API access. Free tier: 8K credits, no API.
-Web Speech API now, Fish Audio when revenue.
-
-## EDITORIAL MECHANICS
-
-The Pass · The Carry · The Lock · The Unlisted · The Arc Shape Call
-The Position · The Thread · The Ledger · The Revision · The Correction
-Spec: 1LVVdaOQYG6RiSgGdC_dgnmwbqNvhIYluRrd-sZoSLzE
+Key decisions:
+  "Never perform the final combination" = ANY math op (add/multiply/weight/average)
+  Team Fit Index = 4 independent dimensions, never combined
+  xFoul/xCard = Game Character Predictors
 
 ## ARTIFACT NAMING
 
