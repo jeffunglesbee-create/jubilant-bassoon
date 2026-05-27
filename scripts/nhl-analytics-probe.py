@@ -41,7 +41,7 @@ try:
     results['endpoints']['team_summary'] = {
         'url': url, 'status': status, 'count': len(teams),
         'sample_fields': list(teams[0].keys()) if teams else [],
-        'sample': teams[:2] if teams else [],
+        'data': teams,  # store ALL — Wave 1 builds tables from this
     }
     print(f"  ✅ {len(teams)} teams | fields: {list(teams[0].keys()) if teams else 'none'}")
 except Exception as e:
@@ -57,7 +57,7 @@ try:
     results['endpoints']['team_powerplay'] = {
         'url': url, 'status': status, 'count': len(teams),
         'sample_fields': list(teams[0].keys()) if teams else [],
-        'sample': teams[:3] if teams else [],
+        'data': teams,  # store ALL
     }
     print(f"  ✅ {len(teams)} teams | fields: {list(teams[0].keys()) if teams else 'none'}")
 except Exception as e:
@@ -73,7 +73,7 @@ try:
     results['endpoints']['team_penaltykill'] = {
         'url': url, 'status': status, 'count': len(teams),
         'sample_fields': list(teams[0].keys()) if teams else [],
-        'sample': teams[:3] if teams else [],
+        'data': teams,  # store ALL
     }
     print(f"  ✅ {len(teams)} teams | fields: {list(teams[0].keys()) if teams else 'none'}")
 except Exception as e:
@@ -89,7 +89,7 @@ try:
     results['endpoints']['goalie_summary'] = {
         'url': url, 'status': status, 'count': len(goalies),
         'sample_fields': list(goalies[0].keys()) if goalies else [],
-        'sample': goalies[:4] if goalies else [],
+        'data': goalies,  # store ALL
     }
     print(f"  ✅ {len(goalies)} goalies | fields: {list(goalies[0].keys()) if goalies else 'none'}")
 except Exception as e:
@@ -106,7 +106,7 @@ for stat_type in ["team/shotshares", "team/realtime"]:
         results['endpoints']['team_shotshares'] = {
             'url': url, 'status': status, 'count': len(teams), 'stat_type': stat_type,
             'sample_fields': list(teams[0].keys()) if teams else [],
-            'sample': teams[:2] if teams else [],
+            'data': teams,  # store ALL
         }
         print(f"  ✅ ({stat_type}) {len(teams)} teams | fields: {list(teams[0].keys()) if teams else 'none'}")
         break
@@ -119,7 +119,7 @@ for stat_type in ["team/shotshares", "team/realtime"]:
 print("6. Key format analysis...")
 for ep_key in ['team_summary', 'team_powerplay', 'team_penaltykill', 'team_shotshares']:
     ep = results['endpoints'].get(ep_key, {})
-    sample = ep.get('sample', [])
+    sample = ep.get('data', ep.get('sample', []))
     if sample:
         s = sample[0]
         id_fields = {k: s[k] for k in s if any(x in k.lower() for x in ['team','abbrev','code','name']) and k in s}
@@ -127,7 +127,7 @@ for ep_key in ['team_summary', 'team_powerplay', 'team_penaltykill', 'team_shots
         print(f"  {ep_key}: {id_fields}")
 
 ep = results['endpoints'].get('goalie_summary', {})
-sample = ep.get('sample', [])
+sample = ep.get('data', ep.get('sample', []))
 if sample:
     s = sample[0]
     id_fields = {k: s[k] for k in s if any(x in k.lower() for x in ['name','id','team','abbrev'])}
