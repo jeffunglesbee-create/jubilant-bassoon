@@ -14276,7 +14276,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-05-27g';
+  const SW_VERSION = '2026-05-27h';
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
   // Cache strategy: API-only (ESPN scores, weather, odds, SportsDB).
@@ -17034,11 +17034,18 @@ function computeBroadcastNarrativeIndex(game) {
     }
   }
 
-  // 'elimination-inflation': series context on a genuinely low-drama game
-  if (game.seriesRecord && pgScore < 45) return 'elimination-inflation';
+  // Patent fix: replace pgScore threshold comparisons with !isScoutsPick() boolean gate.
+  // OLD: pgScore < 45 / pgScore < 50 — composite preGameScore thresholded directly.
+  //      This is the patent bright line: composite value + threshold = interest-level claim.
+  // NEW: isScoutsPick() is an independent boolean — "is this genuinely a good game?"
+  //      If NOT a scout's pick → the series/market attention is manufactured hype.
+  //      No composite number. No threshold. A single independent boolean gate.
 
-  // 'home-market': big market + marquee crew + low pre-game score
-  if (marquee && isBigMarketGame(game) && pgScore < 50) return 'home-market';
+  // 'elimination-inflation': series context on a game that isn't genuinely compelling
+  if (game.seriesRecord && !isScoutsPick(game)) return 'elimination-inflation';
+
+  // 'home-market': big market + marquee crew, game not genuinely interesting
+  if (marquee && isBigMarketGame(game) && !isScoutsPick(game)) return 'home-market';
 
   return null;
 }
@@ -17075,6 +17082,29 @@ function getEmberDistributionTier(g) {
   return 3; // cable/niche streaming
 }
 
+// isLateCloseGame — independent boolean gate for EMBER patent fix.
+// Returns true when a game is objectively late AND close:
+//   - Late: final period/inning of regulation
+//   - Close: margin ≤ 3 (or tied)
+// Two independent observable facts. No composite. No threshold arithmetic.
+// Patent note: this is Case C (Numerical Usage Policy) — classification by
+// individual observable conditions, not by a single aggregated interest score.
+function isLateCloseGame(g, ed, sport) {
+  if (!ed || ed.state !== 'in') return false;
+  const sp = (sport || '').toLowerCase();
+  const period  = ed.period || 0;
+  const margin  = Math.abs((ed.homeScore || 0) - (ed.awayScore || 0));
+  const isClose = margin <= 3;
+  const isLate  =
+    (sp.includes('baseball') || sp.includes('mlb'))     ? period >= 8  :
+    (sp.includes('basketball') || sp.includes('nba'))   ? period >= 4  :
+    (sp.includes('hockey') || sp.includes('nhl'))       ? period >= 3  :
+    (sp.includes('football') || sp.includes('nfl'))     ? period >= 4  :
+    (sp.includes('soccer') || sp.includes('epl'))       ? period === 2 :
+    false;
+  return isLate && isClose;
+}
+
 function getEmberThreshold(tier, sport) {
   const sp = (sport||'').toLowerCase();
   if (tier === 2) {
@@ -17097,13 +17127,20 @@ function hasEmberContextBoost(g, sport) {
   return false;
 }
 
-function evaluateEMBER(g, sport, dramaScore) {
+function evaluateEMBER(g, sport, dramaScore, ed) {
   const tier = getEmberDistributionTier(g);
   if (tier === 1) return null; // national broadcast — not eligible
-  const baseThreshold = getEmberThreshold(tier, sport);
   const contextBoost = hasEmberContextBoost(g, sport);
-  const threshold = contextBoost ? baseThreshold - 16 : baseThreshold;
-  if (dramaScore < threshold) return null;
+
+  // Patent fix: replace dramaScore < threshold with isLateCloseGame() boolean gate.
+  // OLD: baseThreshold arithmetic on dramaScore — composite value + threshold = bright line.
+  // NEW: two independent boolean gates, non-summed:
+  //   Gate A — isLateCloseGame(): observable game state (late + close)
+  //   Gate B — hasEmberContextBoost(): structural context (series, importance flag)
+  // EMBER fires when EITHER independent gate passes. No single aggregated number thresholded.
+  const lateAndClose = isLateCloseGame(g, ed, sport);
+  if (!lateAndClose && !contextBoost) return null;
+
   return {
     ember: true, tier,
     channel: g.streams?.[0]?.label || g.nationalBundle || 'local',
@@ -17248,7 +17285,7 @@ function injectDramaBadges(){
         seriesRecord: card.dataset.series||'',
         streams: card.dataset.stream ? [{label: card.dataset.stream}] : [],
       };
-      const emberResult = evaluateEMBER(emberGame, card.dataset.sport||'', smoothed);
+      const emberResult = evaluateEMBER(emberGame, card.dataset.sport||'', smoothed, eData);
       if (emberResult) {
         const eb = document.createElement('span');
         eb.className = 'badge-ember';
@@ -17482,7 +17519,10 @@ function renderOneToWatch(){
   if(fire&&fire.g._id!==_otwDismissedId){
     const {g,ed,sport,score}=fire;
     const tier=dramaTier(score)||'warm';
-    const tierBadge=`${OTW_TIER_LABELS[tier]||tier.toUpperCase()} \u00b7 ${Math.round(score)}`;
+    // Patent fix: display tier label only — never show composite score number.
+    // Numerical Usage Policy: composite value + threshold display = patent bright line.
+    // The tier classification IS the expression. The underlying score is not.
+    const tierBadge=OTW_TIER_LABELS[tier]||tier.toUpperCase();
     // SCORE-UNIFORM-A fix: use computeGameNarrative for score string — same path as card.
     // Before: ed.awayScore–ed.homeScore (ESPN away-first, no alignment check).
     // After: _n.scoreline (leader-first, same espnTeamMatch alignment as card score-wrap).
