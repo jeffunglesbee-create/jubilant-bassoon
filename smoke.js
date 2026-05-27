@@ -588,7 +588,7 @@ assert('A188 — M2: isScoutsPick wired into injectJ1J4Badges',
   'Scout\'s Pick badge injection must use isScoutsPick() boolean gate');
 
 assert('A189 — SW_VERSION is current (Rule 23: suffix per deploy, new day resets to a)',
-  html.includes("'2026-05-27l'"),
+  html.includes("'2026-05-27m'"),
   'SW_VERSION must match current deploy date — update daily per Rule 23');
 
 assert('A190 — Layer 2b: sport vocab violation detection function defined',
@@ -676,5 +676,16 @@ assert('A210 — NHL Wave 1: nhlAnalyticsInit wired into startup + compound prom
   html.includes('nhlAnalyticsInit') && html.includes('getNHLAnalyticsContext') && html.includes('buildNHLAnalyticsBadges'),
   'nhlAnalyticsInit must be called at startup; context + badges must be wired');
 
+// ── A211-A212: Stats revamp + Betting intelligence revamp ──────────────────
+assert('A211 — Stats revamp: buildScoutingReport present in bottom sheet',
+  html.includes('buildScoutingReport') && html.includes('bs-scout-table') && html.includes('Scouting Report'),
+  'buildScoutingReport must be defined and wired into openBottomSheet()');
+
+assert('A212 — Betting revamp: buildBettingFieldEdge present in betting cards',
+  html.includes('buildBettingFieldEdge') && html.includes('bet-field-edge') && html.includes('FIELD Edge'),
+  'buildBettingFieldEdge must be defined and wired into renderBetting() card template');
+
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);
+
+

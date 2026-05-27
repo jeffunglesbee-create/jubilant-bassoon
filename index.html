@@ -1674,6 +1674,24 @@ flex-shrink:0;white-space:nowrap;
 .odds-source-live{font-family:var(--ff-mono);font-size:.6rem;color:#4ade80;letter-spacing:.03em}
 .implied-prob{font-family:var(--ff-mono);font-size:.58rem;color:var(--smoke);opacity:.8;margin-left:.3rem}
 .odds-source-ai{font-family:var(--ff-mono);font-size:.6rem;color:var(--smoke);letter-spacing:.03em}
+
+/* ── Scouting Report (bottom sheet stats section) ────────────── */
+.bs-scout-table{display:flex;flex-direction:column;gap:.25rem}
+.bs-scout-row{display:flex;gap:.5rem;align-items:baseline;font-size:.72rem;line-height:1.45}
+.bs-scout-lbl{font-size:.58rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);min-width:4.5rem;flex-shrink:0;padding-top:.1rem}
+.bs-scout-val{color:var(--white);flex:1}
+.bs-scout-val em{font-style:normal;color:var(--teal,#2dd4bf);font-weight:600}
+.bs-scout-val .scout-warn{color:#f59e0b;font-weight:600}
+.bs-scout-divider{height:1px;background:rgba(255,255,255,.06);margin:.4rem 0}
+
+/* ── Betting Field Edge ──────────────────────────────────────── */
+.bet-field-edge{padding:.45rem 1rem .4rem;border-top:1px solid var(--edge)}
+.bet-edge-label{font-size:.52rem;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--teal,#2dd4bf);margin-bottom:.3rem}
+.bet-edge-lines{display:flex;flex-direction:column;gap:.18rem}
+.bet-edge-line{font-size:.68rem;color:var(--fg);line-height:1.4;display:flex;gap:.35rem;align-items:baseline}
+.bet-edge-line .edge-icon{font-size:.62rem;flex-shrink:0}
+.bet-edge-line .edge-text{color:#d4d4e8}
+.bet-edge-bni{color:#f59e0b !important}
 .first-run-callout{
   background:rgba(201,168,76,.08);border-bottom:1px solid rgba(201,168,76,.2);
   padding:.5rem 2rem;display:flex;align-items:center;justify-content:space-between;
@@ -9072,6 +9090,7 @@ async function renderBetting(){
       ${probHTML}
       <div class="bet-lines-compact">${pills.join('')}</div>
       ${fieldVsMarket(game, odds.homeML, odds.awayML)}
+      ${buildBettingFieldEdge(game, sport)}
       ${editorialHTML}
       <div class="bet-links">
         <a class="bet-link" href="https://sportsbook.draftkings.com" target="_blank" rel="noopener">DraftKings &#8594;</a>
@@ -11937,6 +11956,168 @@ function getNHLAnalyticsContext(game) {
   return lines.join('\n');
 }
 
+// ── buildScoutingReport — raw analytics for bottom sheet ─────────────────────
+// Shows the underlying numbers the AI uses — so users can see WHERE IT COMES FROM.
+// Sport-detected: MLB shows park/umpire/pitcher data; NHL shows possession/ST/goalie.
+// Returns HTML string or '' if no data available.
+function buildScoutingReport(game, sport) {
+  if (!game) return '';
+  const sp = (sport || game._sport || '').toLowerCase();
+  const rows = [];
+
+  // ── MLB ────────────────────────────────────────────────────────────────────
+  if (sp.includes('baseball') || sp.includes('mlb')) {
+    // Park factor
+    const abbr = game._homeAbbr || game.homeTeam;
+    const pf = abbr ? getParkFactor?.(abbr) : null;
+    if (pf) {
+      const pfVal = pf.runs > 0
+        ? `<em>+${pf.runs}% runs</em> · +${pf.hr}% HR${pf.badgeClass === 'launch' ? ' · 🚀 Launch Pad' : ''}`
+        : `<span class="scout-warn">${pf.runs}% runs</span> · ${pf.hr}% HR${pf.badgeClass === 'pitchers' ? ' · 🛡 Pitcher\'s Park' : ''}`;
+      rows.push({ lbl: 'Park', val: `${game.venue ? game.venue.split(',')[0] : abbr} · ${pfVal}` });
+    }
+    // HP Umpire
+    const umpName = game._hpUmpire || game.umpire || '';
+    if (umpName) {
+      const last = umpName.split(' ').pop();
+      const ump = getUmpireABSRating?.(last);
+      if (ump) {
+        const rate = Math.round(ump.rate * 100);
+        const watchFlag = ump.rate >= 0.65 ? ' · <span class="scout-warn">⚠ UMP WATCH</span>' : '';
+        const zone = ump.weakness ? ` · weak: ${ump.weakness} zone` : '';
+        rows.push({ lbl: 'Umpire', val: `${last} · ${rate}% overturns · ${ump.challenged} challenged${zone}${watchFlag}` });
+      } else {
+        rows.push({ lbl: 'Umpire', val: umpName });
+      }
+    }
+    // Probable pitchers
+    const hp = game.homePitcher, ap = game.awayPitcher;
+    if (hp || ap) {
+      const fmtP = p => {
+        if (!p) return 'TBD';
+        const era = p.era != null ? ` · ${p.era} ERA` : '';
+        const rec = (p.wins != null && p.losses != null) ? ` · ${p.wins}-${p.losses}` : '';
+        const tempo = getPitchTempo?.(p.name || p.lastName || '');
+        const tempoStr = tempo ? ` · <em>${tempo.tempoClass}</em> tempo` : '';
+        return `${p.name || p.lastName || '?'}${era}${rec}${tempoStr}`;
+      };
+      if (ap) rows.push({ lbl: teamNick(game.away||''), val: fmtP(ap) });
+      if (hp) rows.push({ lbl: teamNick(game.home||''), val: fmtP(hp) });
+    }
+  }
+
+  // ── NHL ────────────────────────────────────────────────────────────────────
+  if (sp.includes('hockey') || sp.includes('nhl')) {
+    const ha = game._homeAbbr || getNHLAbbrev?.(game.home);
+    const aa = game._awayAbbr || getNHLAbbrev?.(game.away);
+    const hST = ha ? getNHLSpecialTeams?.(ha) : null;
+    const aST = aa ? getNHLSpecialTeams?.(aa) : null;
+    if (hST && aST) {
+      rows.push({ lbl: 'Possession',
+        val: `<em>${ha} ${hST.sat.toFixed(0)}% SAT</em> · ${aa} ${aST.sat.toFixed(0)}% SAT` +
+             (Math.abs(hST.sat - aST.sat) >= 8 ? ` · <em>+${Math.abs(hST.sat - aST.sat).toFixed(0)}% edge ${hST.sat > aST.sat ? ha : aa}</em>` : '') });
+      rows.push({ lbl: 'Special Tm',
+        val: `${ha} PP <em>${hST.pp.toFixed(1)}%</em> · PK <em>${hST.pk.toFixed(1)}%</em>` +
+             `  |  ${aa} PP <em>${aST.pp.toFixed(1)}%</em> · PK <em>${aST.pk.toFixed(1)}%</em>` });
+      if (Math.abs(hST.fo - aST.fo) >= 4)
+        rows.push({ lbl: 'Faceoffs',
+          val: `${ha} ${hST.fo.toFixed(0)}%  ·  ${aa} ${aST.fo.toFixed(0)}%` +
+               (hST.fo > aST.fo + 6 || aST.fo > hST.fo + 6
+                 ? ` · <em>${hST.fo > aST.fo ? ha : aa} wins the draws</em>` : '') });
+    }
+    // Goalies
+    const hG = game._homeGoalie ? getNHLGoalieProfile?.(game._homeGoalie) : null;
+    const aG = game._awayGoalie ? getNHLGoalieProfile?.(game._awayGoalie) : null;
+    const hGname = game._homeGoalie, aGname = game._awayGoalie;
+    if (hG && aG) {
+      const hTier = hG.tier === 'elite' ? ' 🔵' : hG.tier === 'below' ? ' 🔴' : '';
+      const aTier = aG.tier === 'elite' ? ' 🔵' : aG.tier === 'below' ? ' 🔴' : '';
+      rows.push({ lbl: 'Goalies',
+        val: `${hGname} <em>.${Math.round(hG.sv*1000)}</em>${hTier}  ·  ${aGname} <em>.${Math.round(aG.sv*1000)}</em>${aTier}` });
+    } else if (hG || aG) {
+      const g = hG||aG, n = hGname||aGname;
+      const tier = g.tier === 'elite' ? ' 🔵' : g.tier === 'below' ? ' 🔴' : '';
+      rows.push({ lbl: 'Goalie', val: `${n} <em>.${Math.round(g.sv*1000)} sv%</em> · ${g.gaa.toFixed(2)} GAA${tier}` });
+    }
+  }
+
+  if (!rows.length) return '';
+  const rowsHTML = rows.map(r =>
+    `<div class="bs-scout-row"><span class="bs-scout-lbl">${r.lbl}</span><span class="bs-scout-val">${r.val}</span></div>`
+  ).join('');
+  return `<div class="bs-section">
+    <div class="bs-section-label">Scouting Report</div>
+    <div class="bs-section-body"><div class="bs-scout-table">${rowsHTML}</div></div>
+  </div>`;
+}
+
+// ── buildBettingFieldEdge — FIELD analytical edge for betting cards ───────────
+// Shows the signals behind the odds — what the spread doesn't price.
+// Compact bullet list: 2-3 items max. BNI gets highlighted when present.
+function buildBettingFieldEdge(game, sport) {
+  if (!game) return '';
+  const sp = (sport || game._sport || '').toLowerCase();
+  const lines = [];
+
+  // NHL signals
+  if (sp.includes('hockey') || sp.includes('nhl')) {
+    const ha = game._homeAbbr || getNHLAbbrev?.(game.home);
+    const aa = game._awayAbbr || getNHLAbbrev?.(game.away);
+    const hST = ha ? getNHLSpecialTeams?.(ha) : null;
+    const aST = aa ? getNHLSpecialTeams?.(aa) : null;
+    if (hST && aST) {
+      const satGap = Math.abs(hST.sat - aST.sat);
+      if (satGap >= 8) {
+        const leader = hST.sat > aST.sat ? ha : aa;
+        const lead = Math.max(hST.sat, aST.sat);
+        lines.push({ icon:'🏒', text: `${leader} controls ${lead.toFixed(0)}% of shot attempts — possession edge` });
+      }
+      // Special teams matchup — note asymmetry (good PK vs good PP)
+      const elitePP = Math.max(hST.pp, aST.pp);
+      const elitePK = Math.min(hST.pk < aST.pk ? hST.pk : aST.pk, hST.pk > aST.pk ? hST.pk : aST.pk);
+      const ppTeam  = hST.pp > aST.pp ? ha : aa;
+      const pkTeam  = hST.pk > aST.pk ? ha : aa;
+      if (elitePP >= 24 || Math.min(hST.pk, aST.pk) >= 88) {
+        lines.push({ icon:'⚡', text: `${ppTeam} PP ${Math.max(hST.pp,aST.pp).toFixed(1)}% vs ${pkTeam} PK ${Math.max(hST.pk,aST.pk).toFixed(1)}% — special teams decides` });
+      }
+    }
+  }
+
+  // MLB signals
+  if (sp.includes('baseball') || sp.includes('mlb')) {
+    const abbr = game._homeAbbr || game.homeTeam;
+    const pf = abbr ? getParkFactor?.(abbr) : null;
+    if (pf && Math.abs(pf.runs) >= 10) {
+      const dir = pf.runs > 0 ? `+${pf.runs}% runs — O/U context` : `${pf.runs}% runs — pitcher-friendly`;
+      lines.push({ icon:'📍', text: `${game.venue?.split(',')[0] || abbr}: ${dir}` });
+    }
+    const umpName = game._hpUmpire || game.umpire || '';
+    if (umpName) {
+      const last = umpName.split(' ').pop();
+      const ump = getUmpireABSRating?.(last);
+      if (ump?.rate >= 0.65)
+        lines.push({ icon:'⚠', text: `${last} overturns ${Math.round(ump.rate*100)}% of challenged calls — strikes change at a high rate` });
+    }
+  }
+
+  // BNI — broadcast narrative vs reality check (all sports)
+  try {
+    const bni = computeBroadcastNarrativeIndex?.(game);
+    if (bni === 'narrative-push')
+      lines.push({ icon:'📡', text: 'Market implies blowout — broadcast is pushing this game harder than the line suggests', bni: true });
+    else if (bni === 'elimination-inflation')
+      lines.push({ icon:'📡', text: 'Series hype may exceed game quality — elimination games often trade at inflated attention', bni: true });
+    else if (bni === 'home-market')
+      lines.push({ icon:'📡', text: 'Big-market broadcast push — attention may not match underlying game quality', bni: true });
+  } catch(e) {}
+
+  if (!lines.length) return '';
+  const linesHTML = lines.slice(0,3).map(l =>
+    `<div class="bet-edge-line"><span class="edge-icon">${l.icon}</span><span class="edge-text${l.bni?' bet-edge-bni':''}">${l.text}</span></div>`
+  ).join('');
+  return `<div class="bet-field-edge"><div class="bet-edge-label">FIELD Edge</div><div class="bet-edge-lines">${linesHTML}</div></div>`;
+}
+
 // Badge builder: [SPECIAL TEAMS] and [POSSESSION] chips on NHL cards
 function buildNHLAnalyticsBadges(game) {
   if (!game) return '';
@@ -14498,7 +14679,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-05-27l';
+  const SW_VERSION = '2026-05-27m';
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
   // Cache strategy: API-only (ESPN scores, weather, odds, SportsDB).
@@ -19477,9 +19658,11 @@ function openBottomSheet(gameId) {
     if (hT && aT) standingsStr = `${teamNick(game.home)}: ${hT.wins}–${hT.losses} · ${teamNick(game.away)}: ${aT.wins}–${aT.losses}`;
   }
   const gameBrief = _gameBriefCache[gameId] || null;
+  const scoutReport = buildScoutingReport(game, sport);
   content.innerHTML = `
     <div class="bs-teams">${game.away||'?'} @ ${game.home||'?'}</div>
     <div class="bs-meta">${scoreStr?scoreStr+period:fmtTime(game.start_time)+' ET'} · ${game.venue||sport||''}${game.seriesRecord?' · '+game.seriesRecord:''}</div>
+    ${scoutReport}
     ${gameBrief ? `<div class="bs-section"><div class="bs-section-label">FIELD Brief</div><div class="bs-section-body" style="font-size:.74rem;line-height:1.6">${gameBrief}</div></div>` : ''}
     ${dramaLabel_bs||cb ? `<div class="bs-section"><div class="bs-section-label">Live Intelligence</div><div class="bs-section-body">${[dramaLabel_bs,cb].filter(Boolean).join(' · ')}</div></div>` : ''}
     ${sparkline ? `<div class="bs-section"><div class="bs-section-label">Drama Arc</div>${sparkline}</div>` : ''}
