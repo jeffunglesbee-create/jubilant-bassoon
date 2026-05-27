@@ -1,0 +1,150 @@
+{
+  "probeTime": "20260527T145303Z",
+  "steps": {
+    "scoreboard": {
+      "status": 200,
+      "gameCount": 5,
+      "first_game": {
+        "id": "401772510",
+        "name": "Dallas Cowboys at Philadelphia Eagles"
+      }
+    },
+    "summary_status": 200,
+    "summary_top_keys": [
+      "boxscore",
+      "format",
+      "gameInfo",
+      "drives",
+      "leaders",
+      "injuries",
+      "broadcasts",
+      "pickcenter",
+      "odds",
+      "againstTheSpread",
+      "header",
+      "scoringPlays",
+      "news",
+      "winprobability",
+      "article",
+      "videos",
+      "wallclockAvailable",
+      "meta",
+      "standings"
+    ],
+    "play_count": 9,
+    "play_fields": [
+      "id",
+      "sequenceNumber",
+      "type",
+      "text",
+      "awayScore",
+      "homeScore",
+      "period",
+      "clock",
+      "scoringPlay",
+      "priority",
+      "modified",
+      "wallclock",
+      "teamParticipants",
+      "isPenalty",
+      "statYardage",
+      "start",
+      "end",
+      "penalty",
+      "isTurnover"
+    ],
+    "play_sample": {
+      "id": "40177251040",
+      "sequenceNumber": "4000",
+      "type": {
+        "id": "53",
+        "text": "Kickoff",
+        "abbreviation": "K"
+      },
+      "text": "J.Elliott kicks 60 yards from PHI 35 to DAL 5. K.Turpin pushed ob at DAL 32 for 27 yards (K.Granson). PHI-B.VanSumeren was injured during the play. PENALTY on PHI-J.Carter, Disqualification, 15 yards, enforced at DAL 32.",
+      "awayScore": 0,
+      "homeScore": 0,
+      "period": {
+        "number": 1
+      },
+      "clock": {
+        "displayValue": "15:00"
+      },
+      "scoringPlay": false,
+      "priority": false,
+      "modified": "2025-09-05T05:06Z",
+      "wallclock": "2025-09-05T00:23:02Z",
+      "teamParticipants": [
+        {
+          "team": {
+            "$ref": "http://sports.core.api.espn.pvt/v2/sports/football/leagues/nfl/seasons/2025/teams/6?lang=en&region=us"
+          },
+          "id": "6",
+          "order": 1,
+          "type": "offense"
+        },
+        {
+          "team": {
+            "$ref": "http://sports.core.api.espn.pvt/v2/sports/football/leagues/nfl/seasons/2025/teams/21?lang=en&region=us"
+          },
+          "id": "21",
+          "order": 2,
+          "type": "defense"
+        }
+      ],
+      "isPenalty": true,
+      "statYardage": 27,
+      "start": {
+        "down": 0,
+        "distance": 0,
+        "yardLine": 35,
+        "yardsToEndzone": 65,
+        "team": {
+          "id": "21"
+        }
+      },
+      "end": {
+        "down": 1,
+        "distance": 10,
+        "yardLine": 53,
+        "yardsToEndzone": 53,
+        "downDistanceText": "1st & 10 at DAL 47",
+        "shortDownDistanceText": "1st & 10",
+        "possessionText": "DAL 47",
+        "team": {
+          "id": "6"
+        }
+      },
+      "penalty": {
+        "yards": 15,
+        "type": {
+          "slug": "disqualification",
+          "text": "Disqualification"
+        },
+        "status": {
+          "slug": "accepted",
+          "text": "Accepted"
+        }
+      },
+      "isTurnover": false
+    },
+    "epa_fields_found": [
+      "down",
+      "distance",
+      "yardLine",
+      "yardsToEndzone",
+      "clock",
+      "period",
+      "homeScore",
+      "awayScore",
+      "type",
+      "shortDownDistanceText",
+      "downDistanceText"
+    ],
+    "epa_fields_missing": [
+      "scoreValue",
+      "yardsGained"
+    ],
+    "epa_verdict": "\u2705 EPA-computable"
+  }
+}
