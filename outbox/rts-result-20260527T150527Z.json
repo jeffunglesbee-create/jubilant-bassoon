@@ -1,0 +1,94 @@
+{
+  "probeTime": "20260527T150527Z",
+  "endpoints": [
+    {
+      "label": "Event detail",
+      "path": "/sports/football/leagues/nfl/events/401872656",
+      "status": 200,
+      "epa_fields": [
+        "clock",
+        "period",
+        "type",
+        "text"
+      ],
+      "epa_count": 4,
+      "preview": "{\"success\": true, \"data\": {\"id\": \"401872656\", \"uid\": \"s:20~l:28~e:401872656\", \"name\": \"New England Patriots at Seattle Seahawks\", \"shortName\": \"NE @ SEA\", \"date\": \"2026-09-10T00:20Z\", \"status\": {\"state\": \"pre\", \"completed\": false, \"period\": 0, \"clock\": \"0:00\", \"detail\": \"Wed, September 9th at 8:20 PM EDT\", \"halftime\": false, \"firstHalfEnded\": false}, \"homeTeam\": {\"id\": \"26\", \"name\": \"Seattle Seahawks\", \"abbreviation\": \"SEA\", \"logo\": \"https://realtimesportsapi.com/api/images/proxy?url=https%3A%2F%2Fa.espncdn.com%2Fi%2Fteamlogos%2Fnfl%2F500%2Fsea.png\", \"color\": \"002a5c\", \"alternateColor\": \"69be28\", \"winner\": false, \"score\": 0}, \"awayTeam\": {\"id\": \"17\", \"name\": \"New England Patriots\", \"abbreviation\": \"NE\", \"logo\": \"https://realtimesportsapi.com/api/images/proxy?url=https%3A%2F%2Fa.espncdn.com%2Fi%2Fteamlogos%2Fnfl%2F500%2Fne.png\", \"color\": \"002a5c\", \"alternateColor\": \"c60c30\", \"winner\": false, \"score\": 0}, \"competition\": {\"attendance\": 0, \"neutralSite\": false, \"conferenceCompetition\": false, \"divisionCompetition\": false, \"playByPlayAvailable\": false, \"highlightsAvailable\": true}, \"venue\": {\"id\": \"3673\", \"name\": \"Lumen Field\", \"city\": \"Seattle\", \"state\": \"WA\", \"indoor\": false, \"grass\":"
+    },
+    {
+      "label": "Boxscore \u2b50",
+      "path": "/sports/football/leagues/nfl/events/401872656/boxscore",
+      "status": 404,
+      "epa_fields": [],
+      "epa_count": 0,
+      "preview": "{\"success\": false, \"error\": {\"code\": \"BOXSCORE_NOT_AVAILABLE\", \"message\": \"Box score not available for this event (e.g. pre-game or unsupported league).\"}}"
+    },
+    {
+      "label": "Plays \u2b50",
+      "path": "/sports/football/leagues/nfl/events/401872656/plays",
+      "status": 200,
+      "epa_fields": [],
+      "epa_count": 0,
+      "preview": "{\"success\": true, \"data\": [], \"meta\": {\"rateLimit\": {\"limit\": 10000, \"remaining\": 9998, \"reset\": 1780271999999}, \"pagination\": {\"page\": 1, \"pageSize\": 25, \"total\": 0, \"totalPages\": 0, \"hasNextPage\": false, \"hasPreviousPage\": false}}}"
+    },
+    {
+      "label": "PBP \u2b50",
+      "path": "/sports/football/leagues/nfl/events/401872656/pbp",
+      "status": 404,
+      "epa_fields": [],
+      "epa_count": 0,
+      "preview": "<!DOCTYPE html><html lang=\"en\"><head><meta charSet=\"utf-8\"/><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"/><link rel=\"preload\" href=\"/_next/static/media/e4af272ccee01ff0-s.p.woff2\" as=\"font\" crossorigin=\"\" type=\"font/woff2\"/><link rel=\"preload\" as=\"image\" imageSrcSet=\"/_next/image?url=%2FRealtimeSportsAPI.png&amp;w=256&amp;q=75&amp;dpl=dpl_FrMJhuUvmejRrjpXxiDJbXKYrJRm 1x, /_next/image?url=%2FRealtimeSportsAPI.png&amp;w=640&amp;q=75&amp;dpl=dpl_FrMJhuUvmejRrjpXxiDJbXKYrJRm 2x\" fetchPriority=\"high\"/><link rel=\"stylesheet\" href=\"/_next/static/css/7f1376bcda0d6817.css?dpl=dpl"
+    }
+  ],
+  "available_events": [
+    {
+      "id": "401872656",
+      "name": "New England Patriots at Seattle Seahawks",
+      "date": "2026-09-10T00:20Z",
+      "state": "pre"
+    },
+    {
+      "id": "401872657",
+      "name": "San Francisco 49ers at Los Angeles Rams",
+      "date": "2026-09-11T00:35Z",
+      "state": "pre"
+    },
+    {
+      "id": "401872925",
+      "name": "Tampa Bay Buccaneers at Cincinnati Bengals",
+      "date": "2026-09-13T17:00Z",
+      "state": "pre"
+    },
+    {
+      "id": "401872923",
+      "name": "New Orleans Saints at Detroit Lions",
+      "date": "2026-09-13T17:00Z",
+      "state": "pre"
+    },
+    {
+      "id": "401872924",
+      "name": "New York Jets at Tennessee Titans",
+      "date": "2026-09-13T17:00Z",
+      "state": "pre"
+    }
+  ],
+  "summary": {
+    "http_200": 2,
+    "epa_endpoints": 1,
+    "200_paths": [
+      "/sports/football/leagues/nfl/events/401872656",
+      "/sports/football/leagues/nfl/events/401872656/plays"
+    ],
+    "epa_findings": [
+      {
+        "path": "/sports/football/leagues/nfl/events/401872656",
+        "fields": [
+          "clock",
+          "period",
+          "type",
+          "text"
+        ],
+        "preview": "{\"success\": true, \"data\": {\"id\": \"401872656\", \"uid\": \"s:20~l:28~e:401872656\", \"name\": \"New England Patriots at Seattle Seahawks\", \"shortName\": \"NE @ SEA\", \"date\": \"2026-09-10T00:20Z\", \"status\": {\"state\": \"pre\", \"completed\": false, \"period\": 0, \"clock\": \"0:00\", \"detail\": \"Wed, September 9th at 8:20 PM EDT\", \"halftime\": false, \"firstHalfEnded\": false}, \"homeTeam\": {\"id\": \"26\", \"name\": \"Seattle Seahawks\", \"abbreviation\": \"SEA\", \"logo\": \"https://realtimesportsapi.com/api/images/proxy?url=https%3A%2F%2Fa.espncdn.com%2Fi%2Fteamlogos%2Fnfl%2F500%2Fsea.png\", \"color\": \"002a5c\", \"alternateColor\": \"69be2"
+      }
+    ]
+  }
+}
