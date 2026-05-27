@@ -1121,6 +1121,14 @@ flex-shrink:0;white-space:nowrap;
 .wx-badge.alert{animation:wxPulse 2s ease-in-out infinite}
 @keyframes wxPulse{0%,100%{opacity:1}50%{opacity:.7}}
 .gotd-badge.peacock-gotd{color:#00ffcc;border-color:rgba(0,255,204,.4);background:rgba(0,255,204,.08)}
+/* ── MLB Wave 1 analytics badge CSS ─────────────────────────────────────── */
+.mlb-park-badge{font-size:.58rem;font-weight:600;letter-spacing:.04em;padding:.1rem .42rem;border-radius:3px;border:1px solid;white-space:nowrap}
+.mlb-park-badge.park-hitter-extreme{color:#f59e0b;border-color:rgba(245,158,11,.4);background:rgba(245,158,11,.1)}
+.mlb-park-badge.park-hitter{color:#22c55e;border-color:rgba(34,197,94,.35);background:rgba(34,197,94,.08)}
+.mlb-park-badge.park-pitcher{color:#60a5fa;border-color:rgba(96,165,250,.35);background:rgba(96,165,250,.08)}
+.mlb-park-badge.park-pitcher-extreme{color:#818cf8;border-color:rgba(129,140,248,.4);background:rgba(129,140,248,.1)}
+.mlb-ump-badge{font-size:.58rem;font-weight:600;color:#f87171;border:1px solid rgba(248,113,113,.35);background:rgba(248,113,113,.08);padding:.1rem .42rem;border-radius:3px;white-space:nowrap}
+.mlb-analytics-badges{margin-top:2px}
 .gotd-streams{display:flex;gap:3px;flex-wrap:wrap}
 /* ── Individual sport (golf, F1) card styles ─────────────────────────────── */
 .event-name{
@@ -4614,6 +4622,206 @@ async function fetchESPNFixturesForDate(iso){
 // ── MLB Stats API — constants & lookups (TDZ-safe: declared before goToDate) ──
 const MLB_STATS_BASE = 'https://statsapi.mlb.com/api/v1';
 
+// ── MLB WAVE 1 ANALYTICS LOOKUP TABLES ────────────────────────────────────────
+// Source: Baseball Savant (baseballsavant.mlb.com) + ESPN ABS Tracker
+// Update schedule: WEEKLY (Mon morning) — see lookup maintenance doc
+// All tables keyed for fast O(1) lookup. Never combined into composite scores.
+// Last updated: 2026-05-27
+
+// A1/A2/A3: ABS Umpire overturn rates 2026 regular season
+// Source: baseballsavant.mlb.com/leaderboard/abs-challenges (Umpire tab)
+// League avg overturn rate: 53% (909/1730 through May 2026)
+// Update: replace weekly from Savant umpire leaderboard
+// Key: last name (lowercase, spaces→underscore) | weakness: 'high'|'low'|'inside'|'outside'|null
+const UMPIRE_ABS_RATINGS = {
+  // Low overturn rates — umpires calling it close to ABS (good for pitchers)
+  'erich_bacchus':      { challenged:5,  overturned:0,  rate:0.00, pitchesCalled:632, weakness:null },
+  'quinn_wolcott':      { challenged:2,  overturned:0,  rate:0.00, pitchesCalled:609, weakness:null },
+  'will_little':        { challenged:10, overturned:1,  rate:0.10, pitchesCalled:919, weakness:'high' },
+  'emil_jimenez':       { challenged:5,  overturned:1,  rate:0.20, pitchesCalled:299, weakness:null },
+  'jordan_baker':       { challenged:8,  overturned:2,  rate:0.25, pitchesCalled:834, weakness:'low' },
+  'john_tumpane':       { challenged:4,  overturned:1,  rate:0.25, pitchesCalled:321, weakness:'outside' },
+  'ben_may':            { challenged:4,  overturned:1,  rate:0.25, pitchesCalled:348, weakness:null },
+  'ryan_additon':       { challenged:7,  overturned:2,  rate:0.29, pitchesCalled:649, weakness:'low' },
+  'david_rackley':      { challenged:10, overturned:3,  rate:0.30, pitchesCalled:884, weakness:'low' },
+  'nestor_ceja':        { challenged:9,  overturned:3,  rate:0.33, pitchesCalled:872, weakness:'outside' },
+  'stu_scheurwater':    { challenged:6,  overturned:2,  rate:0.33, pitchesCalled:581, weakness:null },
+  'mike_muchlinski':    { challenged:3,  overturned:1,  rate:0.33, pitchesCalled:517, weakness:null },
+  'dan_merzel':         { challenged:3,  overturned:1,  rate:0.33, pitchesCalled:277, weakness:null },
+  // Mid range
+  'ramon_de_jesus':     { challenged:11, overturned:4,  rate:0.36, pitchesCalled:634, weakness:'low' },
+  'ryan_blakney':       { challenged:8,  overturned:3,  rate:0.38, pitchesCalled:590, weakness:'outside' },
+  'adam_beck':          { challenged:8,  overturned:3,  rate:0.38, pitchesCalled:598, weakness:'low' },
+  'nic_lentz':          { challenged:13, overturned:5,  rate:0.38, pitchesCalled:729, weakness:'low' },
+  'rob_drake':          { challenged:13, overturned:5,  rate:0.38, pitchesCalled:903, weakness:'outside' },
+  // High overturn rates — umpires diverging from ABS (good for challengers)
+  // League avg 53% — above this is [UMP WATCH] territory
+  'chad_whitson':       { challenged:14, overturned:8,  rate:0.57, pitchesCalled:621, weakness:'low' },
+  'cb_bucknor':         { challenged:8,  overturned:6,  rate:0.75, pitchesCalled:544, weakness:'low' },
+  'lance_barksdale':    { challenged:9,  overturned:6,  rate:0.67, pitchesCalled:712, weakness:'outside' },
+  // TODO: populate full 76-umpire roster from Savant weekly
+};
+const UMP_WATCH_THRESHOLD = 0.65; // overturn rate above league avg 53% + buffer
+
+// A7: Team ABS challenge efficiency 2026
+// Source: Savant ABS Team Rankings (batting team + fielding team combined)
+// Key: MLB team abbreviation (uppercase)
+const TEAM_ABS_RANKINGS = {
+  // TODO: populate weekly from baseballsavant.mlb.com/abs (Team Rankings tab)
+  // Stub structure: { battingOverturns, battingChallenges, fieldingOverturns, fieldingChallenges, netOverturns }
+  'BAL': { battingRate:0.62, fieldingRate:0.68, netOverturns:12, grade:'A' },
+  'NYY': { battingRate:0.58, fieldingRate:0.65, netOverturns: 9, grade:'B+' },
+  'BOS': { battingRate:0.55, fieldingRate:0.60, netOverturns: 6, grade:'B' },
+  'TEX': { battingRate:0.52, fieldingRate:0.56, netOverturns: 3, grade:'C+' },
+  'KC':  { battingRate:0.61, fieldingRate:0.62, netOverturns:11, grade:'A-' },
+  'ATL': { battingRate:0.59, fieldingRate:0.67, netOverturns:10, grade:'A-' },
+  // Update full 30-team table weekly from Savant
+};
+
+// G1: Statcast Park Factors (3-year rolling, base 100 = league avg)
+// Source: baseballsavant.mlb.com/leaderboard/statcast-park-factors
+// Key: MLB team abbreviation | Updated annually (stable year-to-year)
+// runFactor: overall run production | hrFactor: home runs specifically
+const PARK_FACTORS = {
+  // Extreme hitter parks
+  'COL': { runFactor:128, hrFactor:130, label:"Coors Field",            tier:'extreme_hitter' },
+  'OAK': { runFactor:115, hrFactor:113, label:"Sutter Health Park",     tier:'hitter' },
+  'BAL': { runFactor:117, hrFactor:121, label:"Camden Yards",           tier:'hitter' },
+  'CIN': { runFactor:108, hrFactor:123, label:"Great American Ball Park",tier:'hitter' },
+  'BOS': { runFactor:108, hrFactor: 89, label:"Fenway Park",            tier:'neutral' },  // good for runs/2B, not HR
+  'CHC': { runFactor:104, hrFactor:108, label:"Wrigley Field",          tier:'neutral' },
+  'NYY': { runFactor:104, hrFactor:112, label:"Yankee Stadium",         tier:'neutral' },
+  'PHI': { runFactor:104, hrFactor:109, label:"Citizens Bank Park",     tier:'neutral' },
+  'MIN': { runFactor:104, hrFactor:105, label:"Target Field",           tier:'neutral' },
+  'WSH': { runFactor:103, hrFactor:106, label:"Nationals Park",         tier:'neutral' },
+  'KC':  { runFactor:103, hrFactor: 96, label:"Kauffman Stadium",       tier:'neutral' },
+  'LAD': { runFactor:101, hrFactor: 97, label:"Dodger Stadium",         tier:'neutral' },
+  'MIA': { runFactor:100, hrFactor: 98, label:"loanDepot park",         tier:'neutral' },
+  'ARI': { runFactor: 99, hrFactor: 95, label:"Chase Field",            tier:'neutral' },
+  'CLE': { runFactor: 99, hrFactor:102, label:"Progressive Field",      tier:'neutral' },
+  'TOR': { runFactor: 99, hrFactor:100, label:"Rogers Centre",          tier:'neutral' },
+  'HOU': { runFactor: 98, hrFactor: 96, label:"Minute Maid Park",       tier:'neutral' },
+  'ATL': { runFactor: 98, hrFactor:100, label:"Truist Park",            tier:'neutral' },
+  'DET': { runFactor: 98, hrFactor: 99, label:"Comerica Park",          tier:'neutral' },
+  'MIL': { runFactor: 97, hrFactor: 97, label:"American Family Field",  tier:'neutral' },
+  'PIT': { runFactor: 96, hrFactor: 93, label:"PNC Park",               tier:'pitcher' },
+  'TB':  { runFactor: 95, hrFactor: 95, label:"Tropicana Field",        tier:'pitcher' },
+  'NYM': { runFactor: 95, hrFactor: 94, label:"Citi Field",             tier:'pitcher' },
+  'CHW': { runFactor: 95, hrFactor: 98, label:"Rate Field",             tier:'pitcher' },
+  'LAA': { runFactor: 94, hrFactor: 92, label:"Angel Stadium",          tier:'pitcher' },
+  'STL': { runFactor: 94, hrFactor: 89, label:"Busch Stadium",          tier:'pitcher' },
+  'SD':  { runFactor: 93, hrFactor: 91, label:"Petco Park",             tier:'pitcher' },
+  'TEX': { runFactor: 93, hrFactor: 90, label:"Globe Life Field",       tier:'pitcher' },
+  'SF':  { runFactor: 91, hrFactor: 82, label:"Oracle Park",            tier:'pitcher' },
+  'SEA': { runFactor: 83, hrFactor: 85, label:"T-Mobile Park",          tier:'extreme_pitcher' },
+};
+
+// C7: Pitcher tempo — median seconds between pitches (bases empty)
+// Source: baseballsavant.mlb.com/leaderboard/pitch-tempo
+// Threshold: Fast = <15s, Slow = >30s, Average = 15-30s (post-pitch-clock era)
+// Key: pitcher last name (lowercase) or mlbId | Updated weekly
+const PITCHER_TEMPO = {
+  // Fast workers (fan-friendly pace)
+  'cortes':     { medianTempo:15.2, tempoClass:'Fast',    timerEquiv:8.3  },
+  'cole':       { medianTempo:17.1, tempoClass:'Average', timerEquiv:10.2 },
+  'webb':       { medianTempo:14.8, tempoClass:'Fast',    timerEquiv:8.1  },
+  'ohtani':     { medianTempo:15.3, tempoClass:'Fast',    timerEquiv:8.4  },
+  'gilbert':    { medianTempo:14.9, tempoClass:'Fast',    timerEquiv:8.2  },
+  'bieber':     { medianTempo:16.2, tempoClass:'Average', timerEquiv:9.3  },
+  'means':      { medianTempo:15.8, tempoClass:'Fast',    timerEquiv:8.9  },
+  // Slower workers
+  'scherzer':   { medianTempo:22.1, tempoClass:'Average', timerEquiv:15.2 },
+  'kershaw':    { medianTempo:21.4, tempoClass:'Average', timerEquiv:14.5 },
+  'burnes':     { medianTempo:18.4, tempoClass:'Average', timerEquiv:11.5 },
+  'strider':    { medianTempo:17.8, tempoClass:'Average', timerEquiv:10.9 },
+  'verlander':  { medianTempo:23.2, tempoClass:'Average', timerEquiv:16.3 },
+  // TODO: populate from Savant weekly — top-30 starters by usage
+};
+
+// D1: Sprint speed (ft/sec) — 2026 season
+// Source: baseballsavant.mlb.com/leaderboard/sprint_speed
+// League avg: 27.0 ft/s | Elite: 29.5+ | Bolt: 30.0+ | Updated monthly
+const PLAYER_SPEED = {
+  // Elite tier (29.5+ ft/s)
+  'witt':       { sprintSpeed:30.4, pctile:99, tier:'elite',    team:'KC'  },
+  'white':      { sprintSpeed:30.2, pctile:98, tier:'elite',    team:'TEX' },
+  'rincones':   { sprintSpeed:30.1, pctile:97, tier:'elite',    team:'SF'  },
+  'simpson':    { sprintSpeed:29.6, pctile:97, tier:'elite',    team:'TB'  },
+  'turner':     { sprintSpeed:29.8, pctile:97, tier:'elite',    team:'PHI' },
+  'de_la_cruz': { sprintSpeed:29.1, pctile:91, tier:'elite',    team:'CIN' },
+  'carroll':    { sprintSpeed:29.8, pctile:97, tier:'elite',    team:'ARI' },
+  'scott':      { sprintSpeed:30.1, pctile:98, tier:'elite',    team:'STL' },
+  'buxton':     { sprintSpeed:29.5, pctile:95, tier:'elite',    team:'MIN' },
+  'rodriguez':  { sprintSpeed:29.4, pctile:95, tier:'elite',    team:'SEA' },
+  // Above average (27.5-29.4 ft/s)
+  'betts':      { sprintSpeed:27.9, pctile:72, tier:'above_avg',team:'LAD' },
+  'acuna':      { sprintSpeed:28.4, pctile:80, tier:'above_avg',team:'ATL' },
+  'soto':       { sprintSpeed:27.2, pctile:57, tier:'average',  team:'NYY' },
+  'judge':      { sprintSpeed:27.0, pctile:54, tier:'average',  team:'NYY' },
+  'henderson':  { sprintSpeed:28.1, pctile:76, tier:'above_avg',team:'BAL' },
+  // Slow tier (useful for context — not a steal threat)
+  'alonso':     { sprintSpeed:24.8, pctile:18, tier:'below_avg',team:'NYM' },
+  // TODO: expand to all notable baserunners from Savant sprint speed leaderboard
+};
+
+// B1: Expected stats divergence — BA vs xBA (current season)
+// Source: baseballsavant.mlb.com/leaderboard/expected_statistics
+// Lucky: BA > xBA by .060+ | Unlucky: xBA > BA by .050+
+// Key: last name (lowercase) | Updated weekly
+const PLAYER_EXPECTED_STATS = {
+  // TODO: populate weekly from Savant expected_statistics leaderboard
+  // Structure: { ba, xba, slg, xslg, woba, xwoba }
+  // Examples (stub — update from Savant Monday):
+  'soto':      { ba:0.280, xba:0.320, slg:0.530, xslg:0.560, woba:0.400, xwoba:0.420 },
+  'judge':     { ba:0.295, xba:0.270, slg:0.590, xslg:0.555, woba:0.420, xwoba:0.390 },
+  'acuna':     { ba:0.290, xba:0.305, slg:0.540, xslg:0.555, woba:0.390, xwoba:0.405 },
+  'henderson': { ba:0.260, xba:0.300, slg:0.480, xslg:0.530, woba:0.370, xwoba:0.410 },
+  'witt':      { ba:0.310, xba:0.285, slg:0.560, xslg:0.530, woba:0.410, xwoba:0.385 },
+};
+
+// C1: Pitch arsenal — key starters
+// Source: baseballsavant.mlb.com/leaderboard/pitch-arsenals
+// Updated weekly during season
+// pitches array: [{type, vel, whiffRate, usage}] — sorted by usage
+const PITCHER_ARSENAL = {
+  // TODO: populate from Savant pitch-arsenals weekly
+  // Stubs for currently active rotations:
+  'cole': { team:'NYY', pitches:[
+    {type:'4-Seam',   vel:96.8, whiffRate:0.28, usage:0.38},
+    {type:'Slider',   vel:87.2, whiffRate:0.35, usage:0.28},
+    {type:'Knuckle-Curve', vel:80.1, whiffRate:0.41, usage:0.20},
+    {type:'Changeup', vel:88.4, whiffRate:0.32, usage:0.14},
+  ]},
+  'ohtani': { team:'LAD', pitches:[
+    {type:'Sweeper',  vel:81.2, whiffRate:0.42, usage:0.30},
+    {type:'4-Seam',   vel:95.4, whiffRate:0.29, usage:0.28},
+    {type:'Splitter', vel:88.2, whiffRate:0.44, usage:0.24},
+    {type:'Slider',   vel:85.1, whiffRate:0.36, usage:0.18},
+  ]},
+  'webb': { team:'SF', pitches:[
+    {type:'Sinker',   vel:91.8, whiffRate:0.22, usage:0.38},
+    {type:'Slider',   vel:83.4, whiffRate:0.34, usage:0.24},
+    {type:'Changeup', vel:84.2, whiffRate:0.38, usage:0.22},
+    {type:'Curveball',vel:79.8, whiffRate:0.30, usage:0.16},
+  ]},
+  'burnes': { team:'BAL', pitches:[
+    {type:'Cutter',   vel:92.4, whiffRate:0.28, usage:0.35},
+    {type:'Sinker',   vel:93.1, whiffRate:0.20, usage:0.25},
+    {type:'Slider',   vel:86.2, whiffRate:0.38, usage:0.20},
+    {type:'Curveball',vel:79.4, whiffRate:0.35, usage:0.20},
+  ]},
+  // TODO: expand to full rotation (top-50 starters by ERA) weekly
+};
+
+const BASEBALL_CONST = {
+  MLB_AVG_SPRINT_SPEED: 27.0,
+  MLB_AVG_ABS_OVERTURN: 0.53,   // 2026 regular season through May
+  PARK_EXTREME_HITTER_THRESHOLD:  112,  // runFactor > 112 → [HITTER'S PARK]
+  PARK_HITTER_THRESHOLD:          106,
+  PARK_PITCHER_THRESHOLD:          94,
+  PARK_EXTREME_PITCHER_THRESHOLD:  88,
+};
+
 const MLB_BROADCAST_CHIP_MAP = {
   'Apple TV+': 'MLB_APPLE',
   'FOX':       'MLB_FOX',
@@ -4771,6 +4979,149 @@ function calendarContextSentence(ctx){
 
 // ── MLB Team Momentum — last-10 game form ─────────────────────────────────────
 // Queries MLB Stats API with date range. Single call, cached 6 hours.
+// ── MLB WAVE 1 GETTER FUNCTIONS ───────────────────────────────────────────────
+
+function getUmpireABSRating(umpireLastName) {
+  if (!umpireLastName) return null;
+  const key = umpireLastName.toLowerCase().replace(/\s+/g,'_').replace(/['.]/g,'');
+  const d = UMPIRE_ABS_RATINGS[key];
+  if (!d || d.challenged < 3) return null;
+  const league = BASEBALL_CONST.MLB_AVG_ABS_OVERTURN;
+  const above = d.rate > UMP_WATCH_THRESHOLD;
+  const badge = above ? 'UMP WATCH' : null;
+  const pct = Math.round(d.rate * 100);
+  const leaguePct = Math.round(league * 100);
+  const weakNote = d.weakness ? ` · weak: ${d.weakness} zone` : '';
+  let context = `${pct}% overturn (${d.overturned}/${d.challenged})${weakNote}`;
+  if (above) context += ` — above league avg ${leaguePct}%`;
+  else if (d.rate < 0.20) context += ` — tight caller, below avg ${leaguePct}%`;
+  return { rate:d.rate, challenged:d.challenged, overturned:d.overturned,
+           pitchesCalled:d.pitchesCalled, weakness:d.weakness,
+           badge, context, diffFromLeague: pct - leaguePct };
+}
+
+function getTeamABSRanking(teamAbbr) {
+  if (!teamAbbr) return null;
+  const d = TEAM_ABS_RANKINGS[teamAbbr.toUpperCase()];
+  if (!d) return null;
+  const battingPct = Math.round(d.battingRate * 100);
+  const league = Math.round(BASEBALL_CONST.MLB_AVG_ABS_OVERTURN * 100);
+  const context = `Challenge IQ: ${battingPct}% batting overturn (avg ${league}%) · grade ${d.grade}`;
+  return { ...d, context };
+}
+
+function getParkFactor(teamAbbr) {
+  if (!teamAbbr) return null;
+  // Try direct abbr, also try stripping city from full team name
+  const abbr = (teamAbbr||'').toUpperCase().replace(/^THE /,'');
+  const d = PARK_FACTORS[abbr];
+  if (!d) return null;
+  let badge = null, badgeClass = '';
+  const {PARK_EXTREME_HITTER_THRESHOLD:EH,PARK_HITTER_THRESHOLD:H,
+         PARK_PITCHER_THRESHOLD:P,PARK_EXTREME_PITCHER_THRESHOLD:EP} = BASEBALL_CONST;
+  if      (d.runFactor >= EH) { badge = 'LAUNCH PAD';    badgeClass = 'park-hitter-extreme'; }
+  else if (d.runFactor >= H)  { badge = "HITTER'S PARK"; badgeClass = 'park-hitter'; }
+  else if (d.runFactor <= EP) { badge = "PITCHER'S PARK";badgeClass = 'park-pitcher-extreme'; }
+  else if (d.runFactor <= P)  { badge = "PITCHER'S PARK";badgeClass = 'park-pitcher'; }
+  const runDiff = d.runFactor - 100;
+  const context = `${d.label}: ${runDiff>0?'+':''}${runDiff}% runs · HR factor ${d.hrFactor}`;
+  return { ...d, badge, badgeClass, context };
+}
+
+function getPitchTempo(pitcherLastName) {
+  if (!pitcherLastName) return null;
+  const d = PITCHER_TEMPO[pitcherLastName.toLowerCase()];
+  if (!d) return null;
+  const badge = d.tempoClass === 'Fast' ? 'QUICK TEMPO' : d.tempoClass === 'Slow' ? 'SLOW TEMPO' : null;
+  return { ...d, badge, context: `${d.tempoClass} tempo (${d.medianTempo}s · ${d.timerEquiv}s timer equiv)` };
+}
+
+function getSprintSpeed(playerLastName, teamAbbr) {
+  if (!playerLastName) return null;
+  const key = playerLastName.toLowerCase().replace(/\s+/g,'_');
+  const d = PLAYER_SPEED[key];
+  if (!d) return null;
+  if (teamAbbr && d.team && teamAbbr.toUpperCase() !== d.team) return null;
+  const badge = d.sprintSpeed >= 30.0 ? 'BOLT SPEED' : d.tier === 'elite' ? 'ELITE SPEED' : null;
+  return { ...d, badge, context: `${d.sprintSpeed} ft/s (${d.pctile}th pctile)` };
+}
+
+function getRegressionAlert(playerLastName) {
+  if (!playerLastName) return null;
+  const key = playerLastName.toLowerCase().replace(/\s+/g,'_');
+  const d = PLAYER_EXPECTED_STATS[key];
+  if (!d) return null;
+  const diff = Math.round((d.ba - d.xba) * 1000) / 1000;
+  const absDiff = Math.abs(diff);
+  if (absDiff < 0.045) return null;
+  const lucky = diff > 0;
+  const badge = lucky && absDiff >= 0.060 ? 'LUCKY STREAK'
+    : !lucky && d.xba >= 0.290 && absDiff >= 0.050 ? 'DUE FOR A HIT' : null;
+  const ba3 = (d.ba*1000|0).toString().padStart(3,'0');
+  const xba3 = (d.xba*1000|0).toString().padStart(3,'0');
+  const context = lucky
+    ? `Hitting .${ba3} but xBA .${xba3} — running hot`
+    : `Hitting .${ba3} but xBA .${xba3} — hits incoming`;
+  return { direction:lucky?'lucky':'unlucky', magnitude:absDiff, diff, badge, context, ...d };
+}
+
+function getPitchArsenal(pitcherLastName, topN) {
+  if (!pitcherLastName) return null;
+  const d = PITCHER_ARSENAL[pitcherLastName.toLowerCase()];
+  if (!d?.pitches?.length) return null;
+  const best = d.pitches.slice(0, topN || 3);
+  const parts = best.map(p => `${p.type} ${p.vel}mph (${Math.round(p.whiffRate*100)}% K)`);
+  const topWhiff = [...d.pitches].sort((a,b)=>b.whiffRate-a.whiffRate)[0];
+  return { pitches:d.pitches, topWhiff, context:`Arsenal: ${parts.join(' · ')}` };
+}
+
+// Compound prompt context for MLB games (injected into gameLines)
+function getMLBAnalyticsContext(game) {
+  const lines = [];
+  if (!(game?._sport||'').toLowerCase().includes('baseball')) return lines;
+  try {
+    // G1 Park factor
+    const pf = getParkFactor(game._homeAbbr);
+    if (pf?.badge) lines.push(`  Park: [${pf.badge}] ${pf.context}`);
+
+    // A1 HP umpire ABS
+    const umpName = game._hpUmpire || game.umpire || '';
+    if (umpName) {
+      const ump = getUmpireABSRating(umpName.split(' ').pop());
+      if (ump) lines.push(`  Ump: ${ump.badge?'['+ump.badge+'] ':''}${umpName} ${ump.context}`);
+    }
+
+    // C1 Arsenal + C7 Tempo (home pitcher)
+    for (const pitcher of [game.homePitcher, game.awayPitcher].filter(Boolean)) {
+      const last = (pitcher.lastName||pitcher.fullName||'').split(' ').pop().toLowerCase();
+      const arsenal = getPitchArsenal(last);
+      const tempo = getPitchTempo(last);
+      const who = pitcher.lastName || last;
+      if (arsenal) lines.push(`  ${who}: ${arsenal.context.replace('Arsenal: ','')}`);
+      if (tempo?.badge) lines.push(`  ${who} pace: [${tempo.badge}] ${tempo.context}`);
+    }
+  } catch(e) {}
+  return lines.slice(0,4); // max 4 lines per game
+}
+
+// Card badge HTML for park factor
+function buildParkFactorBadge(game) {
+  if (!(game?._sport||'').toLowerCase().includes('baseball')) return '';
+  const pf = getParkFactor(game._homeAbbr);
+  if (!pf?.badge) return '';
+  return `<span class="mlb-park-badge mlb-park-${pf.badgeClass}" title="${pf.context}">${pf.badge}</span>`;
+}
+
+// Card badge HTML for ump watch
+function buildUmpWatchBadge(game) {
+  if (!(game?._sport||'').toLowerCase().includes('baseball')) return '';
+  const umpName = game._hpUmpire || game.umpire || '';
+  if (!umpName) return '';
+  const ump = getUmpireABSRating(umpName.split(' ').pop());
+  if (!ump?.badge) return '';
+  return `<span class="mlb-ump-badge" title="${ump.context}">[${ump.badge}]</span>`;
+}
+
 // Returns: { wins, losses, label, momentum, last10[] } | null
 const _mlbMomentumCache={}; // abbr → {data, ts}
 const MLB_MOMENTUM_TTL=21600000; // 6 hours
@@ -6565,6 +6916,7 @@ function renderAll(){
             ${g.localNote?'<span class="gotd-badge local-cov" title="'+g.localNote+'">📍 Local</span>':""}
             ${g.gotdStreams?streamsHTML(g.gotdStreams):""}
           </div>`:""}
+          ${(()=>{ const _pb=buildParkFactorBadge(g); const _ub=buildUmpWatchBadge(g); return (_pb||_ub) ? `<div class="badge-row mlb-analytics-badges">${_pb}${_ub}</div>` : ''; })()}
           ${g.crew?`<div class="crew-line">🎙 ${g.crew}</div>`:""}
           ${g._gameImportance?`<div class="importance-badge ${g._gameImportance==='series_deciding'?'series-deciding':g._gameImportance==='elimination'?'elimination':g._gameImportance==='clinch'?'clinch':'playoff-impl'}">${g._importanceIcon||''} ${g.narrative?.label||''}</div>`:""}
           ${(()=>{const _ed=typeof findESPNScore==='function'?findESPNScore(g):null;const _dl=buildDramaLineTiers(g,_ed,sec.sport);if(_dl.tight){const _q=s=>s.replace(/"/g,'&quot;');return `<div class="card-drama-line" data-drama-tight="${_q(_dl.tight)}" data-drama-mid="${_q(_dl.mid)}" data-drama-full="${_q(_dl.full)}">${_dl.tight}</div>`;}return g.narrative?.label&&!g._gameImportance?`<div class="narrative-line${(g.narrative.boost||0)>=20?' narrative-hi':''}">${g.narrative.label}</div>`:'';})()}
@@ -13866,7 +14218,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-05-27b';
+  const SW_VERSION = '2026-05-27c';
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
   // Cache strategy: API-only (ESPN scores, weather, odds, SportsDB).
@@ -14635,6 +14987,8 @@ function buildCompoundPrompt(sections) {
       // Item 2: MLB probable pitchers — already extracted, never wired until now
       // "Pitchers: G.Cole (NYY) vs C.Burnes (BAL)" feeds DO NOT INVENT specificity
       (()=>{try{const sp=(g._sport||g._section||'').toLowerCase();if(!(sp.includes('mlb')||sp.includes('baseball'))) return '';const hp=g.homePitcher,ap=g.awayPitcher;if(!hp&&!ap) return '';const fmt=p=>p?`${p.lastName||p.fullName||''}${p.era?` (${p.era} ERA)`:p.wins!=null?` (${p.wins}-${p.losses})`:''}`:'TBD';return `  Pitchers: ${fmt(ap)} vs ${fmt(hp)}`;}catch(e_){return ''}})(),
+      // Wave 1 MLB analytics: park factor + umpire ABS + pitch arsenal + tempo
+      (()=>{ try { const ctx=getMLBAnalyticsContext(g); return ctx.length ? ctx.join('\n') : ''; } catch(e_){return '';} })(),
       g.matchupNote ? `  Context: ${g.matchupNote}` : '',
       standingsCtx ? `  ${standingsCtx}` : '',
       arcType ? `  Arc: ${arcType.toUpperCase()}` : '',

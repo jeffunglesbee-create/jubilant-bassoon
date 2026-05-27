@@ -584,7 +584,7 @@ assert('A188 — M2: isScoutsPick wired into injectJ1J4Badges',
   'Scout\'s Pick badge injection must use isScoutsPick() boolean gate');
 
 assert('A189 — SW_VERSION is current (Rule 23: suffix per deploy, new day resets to a)',
-  html.includes("'2026-05-27b'"),
+  html.includes("'2026-05-27c'"),
   'SW_VERSION must match current deploy date — update daily per Rule 23');
 
 assert('A190 — Layer 2b: sport vocab violation detection function defined',
@@ -625,6 +625,22 @@ assert('A198 — UFL-EPA: SR UFL PBP relay route referenced',
 assert('A199 — UFL-EPA: card template EPA block present',
   html.includes('_buildUFLEpaHTML') && html.includes('ufl-epa-live'),
   'EPA block must be present in card template and CSS');
+
+assert('A200 — MLB Wave 1: lookup tables present',
+  html.includes('UMPIRE_ABS_RATINGS') && html.includes('PARK_FACTORS') && html.includes('PLAYER_SPEED'),
+  'Wave 1 MLB lookup tables must be defined');
+
+assert('A201 — MLB Wave 1: getter functions present',
+  html.includes('getUmpireABSRating') && html.includes('getParkFactor') && html.includes('getRegressionAlert'),
+  'Wave 1 getter functions must be defined');
+
+assert('A202 — MLB Wave 1: analytics wired into compound prompt',
+  html.includes('getMLBAnalyticsContext'),
+  'MLB analytics context must be injected into compound prompt gameLines');
+
+assert('A203 — MLB Wave 1: park + ump badges in card template',
+  html.includes('buildParkFactorBadge') && html.includes('buildUmpWatchBadge') && html.includes('mlb-park-badge'),
+  'Park factor and ump watch badges must be in card template and CSS');
 
 
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
