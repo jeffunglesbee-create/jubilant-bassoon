@@ -390,11 +390,18 @@ jobs:
           if (fakeSource > 3) issues.push(`Possible DraftKings false attribution: ${fakeSource} instances`);
           else ok.push(`DraftKings attribution: ${aiEstimated} AI Estimated labels, ${fakeSource} live DK labels`);
 
-          // ── 4. GDPR bypass ───────────────────────────────────────────────
-          if (html.includes('startsWith("Europe/")') && html.includes('return;')) {
-            ok.push('GDPR interim bypass: EU timezone check present before ipapi.co fetch');
+          // ── 4. GDPR compliance — C2 consent gate ─────────────────────────
+          // OLD check: EU timezone bypass (startsWith("Europe/") + return)
+          // CURRENT: Full C2 consent gate — ipapi.co only called after explicit
+          //          consent (field_privacy_v1 === 'geo'). Declined = 'no-geo'.
+          //          Superseded in a prior session — compliance check updated May 27 2026.
+          const hasConsentGate = html.includes("field_privacy_v1") &&
+                                  html.includes("no-geo") &&
+                                  html.includes("ipapi.co");
+          if (hasConsentGate) {
+            ok.push('GDPR compliance: C2 consent gate present (field_privacy_v1 / no-geo blocks ipapi.co)');
           } else {
-            issues.push('GDPR bypass NOT FOUND — EU users may be silently geolocated');
+            issues.push('GDPR consent gate MISSING — verify ipapi.co is gated behind user consent');
           }
 
           // ── 5. Pricing freshness ─────────────────────────────────────────
