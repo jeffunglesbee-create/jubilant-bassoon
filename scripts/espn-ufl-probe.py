@@ -1,112 +1,103 @@
 #!/usr/bin/env python3
-"""ESPN UFL PBP probe — finds completed games, checks EPA field depth."""
+"""ESPN UFL probe v3 — tries CDN + core API + live game detection."""
 import json, urllib.request, os
 from datetime import datetime, timezone
 
-BASE    = "https://site.api.espn.com/apis/site/v2/sports/football/ufl"
-HEADERS = {"Accept": "application/json", "User-Agent": "Mozilla/5.0"}
+HEADERS = {"Accept":"application/json","User-Agent":"Mozilla/5.0"}
 EPA_FIELDS = ["down","distance","yardLine","yardsToEndzone","clock",
-              "period","homeScore","awayScore","yardsGained","statYardage",
-              "type","shortDownDistanceText","downDistanceText",
-              "isPenalty","isTurnover","scoringPlay","start","end","text"]
+              "period","homeScore","awayScore","statYardage","type",
+              "text","isPenalty","isTurnover","scoringPlay","start","end"]
 
 def fetch(url):
     try:
         req = urllib.request.Request(url, headers=HEADERS)
         with urllib.request.urlopen(req, timeout=15) as r:
-            return r.status, json.loads(r.read().decode())
+            return r.status, r.read().decode()
     except urllib.error.HTTPError as e:
-        return e.code, {"error": e.read().decode()[:300]}
+        return e.code, e.read().decode()[:500]
     except Exception as ex:
-        return 0, {"error": str(ex)}
+        return 0, str(ex)
 
-ts  = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
-out = {"probeTime": ts, "games_checked": [], "steps": {}}
+def json_fetch(url):
+    s, b = fetch(url)
+    try: return s, json.loads(b)
+    except: return s, {"raw": b[:400]}
 
-# Search across recent weeks for completed games
-# Try specific date ranges (Week 9 was ~May 23-25)
-game_id = ""
-for dates in ["20260523-20260526", "20260516-20260522", "20260509-20260515", "20260501-20260508"]:
-    s, d = fetch(f"{BASE}/scoreboard?dates={dates}")
-    events = d.get("events", [])
-    print(f"dates={dates}: HTTP {s} | {len(events)} events")
-    for e in events:
-        comp  = e.get("competitions",[{}])[0]
-        state = comp.get("status",{}).get("type",{}).get("state","")
-        name  = e.get("name","")
-        gid   = e.get("id","")
-        out["games_checked"].append({"id":gid,"name":name,"state":state,"dates":dates})
-        print(f"  {gid} | {name} | {state}")
-        if state == "post" and not game_id:
-            game_id = gid
+ts = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+out = {"probeTime": ts, "results": {}}
 
-    if game_id:
-        break
+# Known completed game IDs from previous probe
+COMPLETED = ["401857557","401857558","401857559"]
+gid = COMPLETED[0]  # Birmingham at Columbus
 
-print(f"\nUsing game: {game_id}")
-out["steps"]["selected_game"] = game_id
+print(f"Using completed game: {gid}")
 
-if not game_id:
-    print("No completed game found — trying first available")
-    s, d = fetch(f"{BASE}/scoreboard")
-    events = d.get("events",[])
-    if events: game_id = events[0]["id"]
+# Test 1: CDN gamepackage (has full PBP for many ESPN leagues)
+url1 = f"https://cdn.espn.com/core/ufl/game?gameId={gid}&xhr=1"
+s1, b1 = fetch(url1)
+out["results"]["cdn_game"] = {"status": s1, "preview": b1[:500] if isinstance(b1,str) else str(b1)[:500]}
+print(f"\n1. CDN game: HTTP {s1}")
+if s1 == 200:
+    try:
+        d1 = json.loads(b1)
+        keys = list(d1.keys()) if isinstance(d1, dict) else []
+        print(f"   Keys: {keys}")
+        out["results"]["cdn_game"]["keys"] = keys
+        # Look for plays/drives
+        gp = d1.get("gamepackageJSON", d1)
+        drives = gp.get("drives", {})
+        plays = []
+        if isinstance(drives, dict):
+            prev = drives.get("previous",[])
+            for drv in (prev if isinstance(prev,list) else []):
+                plays += drv.get("plays",[])
+        print(f"   Plays found: {len(plays)}")
+        out["results"]["cdn_game"]["play_count"] = len(plays)
+        if plays:
+            out["results"]["cdn_game"]["sample_play"] = plays[0]
+            flat = json.dumps(plays[0]).lower()
+            found = [f for f in EPA_FIELDS if f'"'+f.lower()+'"' in flat]
+            out["results"]["cdn_game"]["epa_found"] = found
+            print(f"   EPA fields: {found}")
+    except Exception as ex:
+        print(f"   Parse error: {ex}")
 
-# Fetch summary
-s2, summary = fetch(f"{BASE}/summary?event={game_id}")
-out["steps"]["summary_status"] = s2
-top_keys = list(summary.keys()) if isinstance(summary, dict) else []
-out["steps"]["summary_top_keys"] = top_keys
-print(f"\nSummary HTTP {s2} | keys: {top_keys}")
+# Test 2: sports.core API plays endpoint
+url2 = f"https://sports.core.api.espn.com/v2/sports/football/leagues/ufl/events/{gid}/competitions/{gid}/plays?limit=5"
+s2, d2 = json_fetch(url2)
+out["results"]["core_plays"] = {"status": s2, "preview": json.dumps(d2)[:500]}
+print(f"\n2. Core API plays: HTTP {s2}")
+if s2 == 200:
+    items = d2.get("items", [])
+    print(f"   Items: {len(items)}")
+    out["results"]["core_plays"]["count"] = len(items)
+    if items:
+        print(f"   Sample: {json.dumps(items[0])[:300]}")
 
-# Extract plays from drives
-plays = []
-drives = summary.get("drives", {})
-if isinstance(drives, dict):
-    print(f"Drives keys: {list(drives.keys())}")
-    # Try current drive first
-    for key in ["current"]:
-        d2 = drives.get(key)
-        if isinstance(d2, dict):
-            plays = d2.get("plays", [])
-    # Then all previous drives
-    prev = drives.get("previous", [])
-    if isinstance(prev, list):
-        all_prev_plays = []
-        for drv in prev:
-            all_prev_plays += drv.get("plays", [])
-        out["steps"]["prev_drive_count"] = len(prev)
-        out["steps"]["prev_play_count"]  = len(all_prev_plays)
-        if all_prev_plays and not plays:
-            plays = all_prev_plays
-        print(f"Previous drives: {len(prev)} | plays: {len(all_prev_plays)}")
+# Test 3: sports.core drives endpoint
+url3 = f"https://sports.core.api.espn.com/v2/sports/football/leagues/ufl/events/{gid}/competitions/{gid}/drives?limit=5"
+s3, d3 = json_fetch(url3)
+out["results"]["core_drives"] = {"status": s3, "preview": json.dumps(d3)[:500]}
+print(f"\n3. Core API drives: HTTP {s3}")
 
-out["steps"]["play_count"] = len(plays)
-print(f"Total plays for analysis: {len(plays)}")
+# Test 4: site.web.api ESPN gamepackage
+url4 = f"https://site.web.api.espn.com/apis/site/v2/sports/football/ufl/summary?event={gid}&lang=en&region=us"
+s4, d4 = json_fetch(url4)
+drives4 = d4.get("drives", {}) if isinstance(d4, dict) else {}
+out["results"]["summary_lang"] = {"status": s4, "has_drives": bool(drives4), "keys": list(d4.keys()) if isinstance(d4,dict) else []}
+print(f"\n4. Summary (lang=en): HTTP {s4} | has drives: {bool(drives4)}")
 
-if plays:
-    sample = plays[-1]  # use last play (more likely to have full data)
-    out["steps"]["play_fields"] = list(sample.keys())
-    out["steps"]["play_sample"] = sample
-
-    flat  = json.dumps(sample).lower()
-    found   = [f for f in EPA_FIELDS if f'"'+f.lower()+'"' in flat]
-    missing = [f for f in EPA_FIELDS if f not in found]
-    out["steps"]["epa_found"]   = found
-    out["steps"]["epa_missing"] = missing
-    verdict = "✅ EPA-computable" if len(found) >= 7 else f"⚠️ {len(found)} fields"
-    out["steps"]["epa_verdict"] = f"{verdict} ({len(found)}/{len(EPA_FIELDS)})"
-
-    print(f"\nPlay fields: {list(sample.keys())}")
-    print(f"EPA found ({len(found)}/{len(EPA_FIELDS)}): {found}")
-    print(f"Missing: {missing}")
-    print(f"Verdict: {out['steps']['epa_verdict']}")
-    print(f"\nSample play:\n{json.dumps(sample, indent=2)[:1000]}")
-else:
-    out["steps"]["drives_debug"] = str(drives)[:500]
-    print("No plays extracted. Drives debug:", str(drives)[:300])
+# Test 5: This week's live games schedule (confirm upcoming game IDs)
+url5 = "https://site.api.espn.com/apis/site/v2/sports/football/ufl/scoreboard?dates=20260527-20260531"
+s5, d5 = json_fetch(url5)
+upcoming = d5.get("events", []) if isinstance(d5, dict) else []
+out["results"]["upcoming_games"] = [{"id":e["id"],"name":e.get("name",""),"date":e.get("competitions",[{}])[0].get("date","")} for e in upcoming]
+print(f"\n5. Upcoming this week: {len(upcoming)} games")
+for e in upcoming:
+    comp = e.get("competitions",[{}])[0]
+    print(f"   {e['id']} | {e.get('name','')} | {comp.get('date','')}")
 
 os.makedirs("outbox", exist_ok=True)
 fn = f"outbox/espn-ufl-result-{ts}.json"
-with open(fn, "w") as f: json.dump(out, f, indent=2)
+with open(fn,"w") as f: json.dump(out, f, indent=2)
 print(f"\nWritten: {fn}")
