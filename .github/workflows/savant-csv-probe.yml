@@ -1,0 +1,29 @@
+name: Savant CSV Endpoint Probe
+
+on:
+  push:
+    paths:
+      - 'outbox/.trigger-savant-probe'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Probe Savant CSV endpoints
+        run: python3 scripts/savant-csv-probe.py
+      - name: Push result
+        run: |
+          git config user.email "savant-probe@field"
+          git config user.name "Savant-Probe"
+          git add outbox/mlb/savant-probe-*.json
+          git diff --cached --quiet && echo "Nothing to commit" && exit 0
+          git commit -m "savant-csv-probe result [skip ci]"
+          for i in 1 2 3; do
+            git pull --rebase --autostash origin main && git push origin main && break
+            sleep $((i * 5))
+          done
