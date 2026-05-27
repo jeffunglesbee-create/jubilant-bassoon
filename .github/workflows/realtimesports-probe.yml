@@ -15,7 +15,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Run probe script
+      - name: Run probe (direct API call, no relay)
+        env:
+          REALTIMESPORTS_KEY: ${{ secrets.REALTIMESPORTS_KEY }}
         run: python3 scripts/rts-probe.py
 
       - name: Push result
