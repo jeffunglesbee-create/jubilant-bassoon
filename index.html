@@ -396,7 +396,9 @@ body::before{
 .desk-jump-link:hover{color:var(--gold2);background:rgba(201,168,76,.1)}
 .card-tap-hint{display:block;font-size:.48rem;letter-spacing:.18em;color:var(--muted);opacity:.4;margin-top:.35rem;text-align:right;pointer-events:none;user-select:none}
 /* card-body is the intel tap zone — pointer + touch active feedback */
-.card-body{cursor:pointer}
+/* touch-action:manipulation set directly (not just inherited from .game-card) —
+   Samsung Internet does not reliably inherit touch-action for 300ms-delay suppression */
+.card-body{cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 .card-body:active .card-tap-hint{opacity:.9;transition:none}
 @media(hover:hover){.card-body:hover .card-tap-hint{opacity:.7;transition:opacity .15s}}
 .score-wrap{grid-column:2;grid-row:2;display:none} /* hidden until ESPN injects */
@@ -6972,7 +6974,7 @@ function renderAll(){
       return `<div class="game-card ${st}${isLive?" espn-live":""}${MY_TEAMS.has(g.home)||MY_TEAMS.has(g.away)?" my-team-card":""}" data-gameid="${g._id}" data-sport="${sec.sport}" data-home="${(g.home||"").replace(/"/g,"")}" data-away="${(g.away||"").replace(/"/g,"")}" data-starttime="${g.start_time||""}" data-venue="${(g.venue||"").replace(/"/g,"")}" data-confirmed="${g.confirmed===true?'true':'false'}" style="animation-delay:${gi*40}ms">
         <div class="card-accent"></div>
         <button class="pin-btn" aria-label="Pin game to widget" title="Pin to corner widget" onclick="event.stopPropagation();pinGame('${g._id}')">📌</button><button class="star-btn ${MY_TEAMS.has(g.home)||MY_TEAMS.has(g.away)?"starred":""}" aria-label="Follow team" title="${MY_TEAMS.has(g.away)?"Unfollow "+g.away:MY_TEAMS.has(g.home)?"Unfollow "+g.home:"Follow "+g.away+" / "+g.home}">★</button>
-        <div class="card-body" onclick="openBottomSheet('${g._id}')" role="button" aria-label="Game intel for ${(g.away||'').replace(/'/g,'')} at ${(g.home||'').replace(/'/g,'')}">
+        <div class="card-body" role="button" tabindex="0" data-open="${g._id}" aria-label="Game intel for ${(g.away||'').replace(/'/g,'')} at ${(g.home||'').replace(/'/g,'')}">
           <div class="matchup">
             ${matchupHTML(g, sec.sport)}
           </div>
@@ -7043,6 +7045,37 @@ function renderAll(){
       let game=null;
       (allData.sports||[]).forEach(s=>(s.games||[]).forEach(g=>{ if(g._id===id) game=g; }));
       if(game) mvAdd(game);
+    });
+  });
+  // ── Samsung-safe card tap: Pointer Events with 12px threshold ──────────────
+  // Root cause: onclick on .card-body is unreliable on Samsung devices because:
+  //   1. Samsung One UI elevates touch slop to ~12-16dp (stock Android = 8dp)
+  //   2. 120Hz sampling catches micro-movements that kill click events
+  //   3. Samsung Internet doesn't reliably inherit touch-action for 300ms suppression
+  // Fix: pointerdown fires before Samsung scroll detection; movement threshold
+  //      set to 12px to match Samsung's actual touch slop. Pointer events bypass
+  //      the onclick/scroll-detection race condition entirely.
+  document.querySelectorAll('.card-body[data-open]').forEach(el => {
+    const gameId = el.dataset.open;
+    if (!gameId) return;
+    let _px = 0, _py = 0, _pt = 0, _moved = false, _pid = null;
+    el.addEventListener('pointerdown', e => {
+      _px = e.clientX; _py = e.clientY; _pt = Date.now();
+      _moved = false; _pid = e.pointerId;
+    }, { passive: true });
+    el.addEventListener('pointermove', e => {
+      if (e.pointerId !== _pid) return;
+      if (Math.abs(e.clientX - _px) > 12 || Math.abs(e.clientY - _py) > 12) _moved = true;
+    }, { passive: true });
+    el.addEventListener('pointerup', e => {
+      if (e.pointerId !== _pid) return;
+      if (!_moved && Date.now() - _pt < 500) {
+        openBottomSheet(gameId);
+      }
+    });
+    // Keyboard accessibility — Enter/Space still works
+    el.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openBottomSheet(gameId); }
     });
   });
   // Major preview card (Wow #14) — upcoming majors within 5 days
@@ -14676,7 +14709,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-05-27m';
+  const SW_VERSION = '2026-05-27n';
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
   // Cache strategy: API-only (ESPN scores, weather, odds, SportsDB).

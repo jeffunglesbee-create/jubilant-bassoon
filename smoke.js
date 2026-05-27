@@ -588,7 +588,7 @@ assert('A188 — M2: isScoutsPick wired into injectJ1J4Badges',
   'Scout\'s Pick badge injection must use isScoutsPick() boolean gate');
 
 assert('A189 — SW_VERSION is current (Rule 23: suffix per deploy, new day resets to a)',
-  html.includes("'2026-05-27m'"),
+  html.includes("'2026-05-27n'"),
   'SW_VERSION must match current deploy date — update daily per Rule 23');
 
 assert('A190 — Layer 2b: sport vocab violation detection function defined',
