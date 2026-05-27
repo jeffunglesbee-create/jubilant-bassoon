@@ -1674,6 +1674,13 @@ body::before{
 .implied-prob{font-family:var(--ff-mono);font-size:.58rem;color:var(--smoke);opacity:.8;margin-left:.3rem}
 .odds-source-ai{font-family:var(--ff-mono);font-size:.6rem;color:var(--smoke);letter-spacing:.03em}
 
+/* ── FIELD Health Panel ──────────────────────────────────────────── */
+.fhp-row{font-size:.62rem;line-height:1.55;padding:.18rem 0;border-bottom:1px solid rgba(255,255,255,.05)}
+.fhp-row b{color:var(--white)}
+.fhp-ok{color:#4ade80}
+.fhp-warn{color:#f59e0b}
+.fhp-err{color:#f87171}
+
 /* ── Scouting Report (bottom sheet stats section) ────────────── */
 .bs-scout-table{display:flex;flex-direction:column;gap:.25rem}
 .bs-scout-row{display:flex;gap:.5rem;align-items:baseline;font-size:.72rem;line-height:1.45}
@@ -2754,28 +2761,173 @@ function captureFieldError(fn, err, silent=true){
     console.warn('[FIELD silent fail]',fn,entry.err);
 }
 
-// ?debug=1 panel — shows _fieldErrors + key state without opening DevTools
+// ── FIELD Health Panel ────────────────────────────────────────────────────────
+// Accessible two ways:
+//   1. Long-press settings button (⚙) for 1.5s — works on mobile without URL editing
+//   2. ?debug=1 URL param — original method still works
+//
+// Shows runtime health of every feature so non-technical users can diagnose
+// "this feature isn't working" without terminal access.
+// Screenshot the panel and share it to a Claude session for instant diagnosis.
+
+function buildFieldHealthPanel() {
+  const rows = [];
+  const ok  = (label, detail) => `<div class="fhp-row fhp-ok">✅ <b>${label}</b> ${detail}</div>`;
+  const warn = (label, detail) => `<div class="fhp-row fhp-warn">⚠️ <b>${label}</b> ${detail}</div>`;
+  const err  = (label, detail) => `<div class="fhp-row fhp-err">❌ <b>${label}</b> ${detail}</div>`;
+
+  // ── App version ─────────────────────────────────────────────────────────
+  const SW = typeof SW_VERSION !== 'undefined' ? SW_VERSION : '?';
+  rows.push(ok('Version', SW));
+
+  // ── Game cards ───────────────────────────────────────────────────────────
+  const cards = document.querySelectorAll('.game-card').length;
+  const tapWired = document.querySelectorAll('.card-body[data-open]').length;
+  if (tapWired === 0 && cards > 0)
+    rows.push(err('Card Tap', `${cards} cards but 0 pointer events wired — Samsung tap broken`));
+  else if (tapWired === cards && cards > 0)
+    rows.push(ok('Card Tap', `Pointer events on all ${tapWired} cards`));
+  else if (cards === 0)
+    rows.push(warn('Card Tap', 'No game cards rendered today'));
+  else
+    rows.push(warn('Card Tap', `${tapWired}/${cards} cards wired`));
+
+  // ── Odds API ─────────────────────────────────────────────────────────────
+  const oddsKeys = Object.keys(typeof _oddsCache !== 'undefined' ? _oddsCache : {});
+  const oddsGames = oddsKeys.reduce((n, k) => n + ((_oddsCache[k]||[]).length), 0);
+  const oddsRemaining = parseInt(localStorage.getItem('odds_remaining') || '-1');
+  if (oddsKeys.length === 0)
+    rows.push(warn('Odds API', 'No data loaded — will fetch on section scroll'));
+  else
+    rows.push(ok('Odds API', `${oddsGames} games across ${oddsKeys.length} sport(s)${oddsRemaining > 0 ? ` · ${oddsRemaining} credits remaining` : ''}`));
+
+  // ── NHL Analytics ────────────────────────────────────────────────────────
+  const nhlGames = (allData?.sports||[]).filter(s => (s.sport||'').toLowerCase().includes('nhl'));
+  if (nhlGames.length === 0) {
+    rows.push(ok('NHL Analytics', 'No NHL games today'));
+  } else {
+    let nhlOk = 0, nhlMissing = [];
+    nhlGames.forEach(sec => (sec.games||[]).forEach(g => {
+      const ha = g._homeAbbr || getNHLAbbrev?.(g.home);
+      const st = ha ? getNHLSpecialTeams?.(ha) : null;
+      if (st) nhlOk++;
+      else nhlMissing.push(`${teamNick(g.home||'')} (${ha||'?'})`);
+    }));
+    const total = nhlGames.reduce((n,s)=>n+(s.games||[]).length,0);
+    if (nhlMissing.length === 0)
+      rows.push(ok('NHL Analytics', `ST data for all ${nhlOk} game(s) · Sample: CAR PP ${getNHLSpecialTeams?.('CAR')?.pp}% PK ${getNHLSpecialTeams?.('CAR')?.pk}%`));
+    else
+      rows.push(err('NHL Analytics', `Missing ST data for: ${nhlMissing.join(', ')} — badges won't fire`));
+  }
+
+  // ── NHL game object enrichment ────────────────────────────────────────────
+  const nhlAllGames = nhlGames.flatMap(s => s.games||[]);
+  const nhlMissingAbbr = nhlAllGames.filter(g => !g._homeAbbr).length;
+  if (nhlAllGames.length > 0) {
+    if (nhlMissingAbbr === 0)
+      rows.push(ok('NHL _homeAbbr', `Set on all ${nhlAllGames.length} NHL game(s)`));
+    else
+      rows.push(err('NHL _homeAbbr', `${nhlMissingAbbr} game(s) missing — nhlAnalyticsInit may not have run yet`));
+  }
+
+  // ── MLB Analytics ────────────────────────────────────────────────────────
+  const mlbGames = (allData?.sports||[]).filter(s => (s.sport||'').toLowerCase().includes('mlb') || (s.sport||'').toLowerCase().includes('baseball'));
+  if (mlbGames.length === 0) {
+    rows.push(ok('MLB Analytics', 'No MLB games today'));
+  } else {
+    let mlbOk = 0, mlbMissAbbr = 0;
+    mlbGames.forEach(sec => (sec.games||[]).forEach(g => {
+      if (g._homeAbbr) mlbOk++; else mlbMissAbbr++;
+    }));
+    const total = mlbGames.reduce((n,s)=>n+(s.games||[]).length,0);
+    if (mlbMissAbbr === 0)
+      rows.push(ok('MLB Analytics', `_homeAbbr set on ${mlbOk}/${total} game(s)`));
+    else
+      rows.push(err('MLB Analytics', `${mlbMissAbbr} game(s) missing _homeAbbr — park/umpire badges may not fire`));
+  }
+
+  // ── Scouting Report data ─────────────────────────────────────────────────
+  const nhlST = typeof NHL_SPECIAL_TEAMS !== 'undefined' ? Object.keys(NHL_SPECIAL_TEAMS).length : 0;
+  const nhlGoalies = typeof NHL_GOALIE_RATINGS !== 'undefined' ? Object.keys(NHL_GOALIE_RATINGS).length : 0;
+  if (nhlST >= 16 && nhlGoalies >= 15)
+    rows.push(ok('Analytics Tables', `NHL: ${nhlST} teams · ${nhlGoalies} goalies`));
+  else
+    rows.push(err('Analytics Tables', `NHL teams: ${nhlST}/16 · goalies: ${nhlGoalies}/15`));
+
+  // ── Bottom sheet ─────────────────────────────────────────────────────────
+  const bsOpen = document.getElementById('bottom-sheet')?.classList.contains('open');
+  rows.push(ok('Bottom Sheet', bsOpen ? 'Currently open' : 'Ready (tap a game card to verify)'));
+
+  // ── localStorage health ───────────────────────────────────────────────────
+  try {
+    const oddsReq = JSON.parse(localStorage.getItem('odds_req') || '{}');
+    const count = oddsReq.count || 0;
+    const date = oddsReq.date || 'never';
+    rows.push(ok('Odds Budget', `${count} req today (limit 60) · date: ${date}`));
+  } catch(e) { rows.push(warn('Odds Budget', 'Could not read localStorage')); }
+
+  // ── Errors ────────────────────────────────────────────────────────────────
+  const errors = window._fieldErrors || [];
+  if (errors.length)
+    rows.push(err('Runtime Errors', `${errors.length} captured: ${errors.slice(0,2).map(e=>e.fn+':'+e.err).join(' · ')}`));
+  else
+    rows.push(ok('Runtime Errors', 'None captured'));
+
+  return rows.join('');
+}
+
+function showFieldHealthPanel() {
+  let panel = document.getElementById('fhp-overlay');
+  if (panel) { panel.remove(); return; } // toggle off
+
+  panel = document.createElement('div');
+  panel.id = 'fhp-overlay';
+  panel.style.cssText = `
+    position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.85);
+    display:flex;align-items:flex-end;justify-content:center;
+    backdrop-filter:blur(4px);
+  `;
+  panel.innerHTML = `
+    <div style="
+      background:#0d0d1c;border-top:2px solid #c9a84c;border-radius:18px 18px 0 0;
+      width:100%;max-width:600px;max-height:75vh;overflow-y:auto;
+      padding:1rem 1.1rem 2.5rem;font-family:monospace;
+    ">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem">
+        <span style="font-size:.7rem;font-weight:700;color:#c9a84c;letter-spacing:.08em">
+          ⚕ FIELD HEALTH — ${new Date().toLocaleTimeString()}
+        </span>
+        <button onclick="document.getElementById('fhp-overlay').remove()"
+          style="background:rgba(255,255,255,.1);border:none;color:#fff;border-radius:6px;
+                 padding:.25rem .6rem;font-size:.65rem;cursor:pointer">✕ Close</button>
+      </div>
+      <div style="font-size:.6rem;color:#8888aa;margin-bottom:.6rem">
+        Screenshot and share to Claude for instant diagnosis.
+      </div>
+      <div id="fhp-rows">${buildFieldHealthPanel()}</div>
+      <div style="margin-top:.75rem;font-size:.55rem;color:#555;text-align:center">
+        Long-press ⚙ to open · Tap to close
+      </div>
+    </div>`;
+  panel.addEventListener('click', e => { if (e.target === panel) panel.remove(); });
+  document.body.appendChild(panel);
+}
+
+// ── Long-press trigger on settings button ─────────────────────────────────
+window.addEventListener('load', () => {
+  const settingsBtn = document.getElementById('settings-btn');
+  if (!settingsBtn) return;
+  let _longPressTimer = null;
+  settingsBtn.addEventListener('pointerdown', () => {
+    _longPressTimer = setTimeout(() => { showFieldHealthPanel(); }, 1500);
+  }, { passive: true });
+  settingsBtn.addEventListener('pointerup',   () => clearTimeout(_longPressTimer));
+  settingsBtn.addEventListener('pointerleave',() => clearTimeout(_longPressTimer));
+});
+
+// ?debug=1 URL param still opens the panel
 if (typeof location !== 'undefined' && location.search.includes('debug=1')) {
-  window.addEventListener('load', () => {
-    const panel = document.createElement('div');
-    panel.id = 'field-debug-panel';
-    panel.style.cssText = 'position:fixed;bottom:0;left:0;right:0;background:#0a0a14;color:#0f0;font-family:monospace;font-size:.6rem;max-height:40vh;overflow:auto;z-index:9999;padding:.5rem .75rem;border-top:1px solid #333;line-height:1.5';
-    const refresh = () => {
-      const errors = window._fieldErrors || [];
-      const cards = document.querySelectorAll('.game-card').length;
-      const espn = Object.keys(window.espnScores||{}).length;
-      panel.innerHTML =
-        `<b style="color:#ff0">FIELD Debug — ${new Date().toLocaleTimeString()}</b>  ` +
-        `[<a href="?debug=0" style="color:#aaa">close</a>]<br>` +
-        `game-cards: ${cards}  |  espnScores: ${espn}  |  _fieldErrors: ${errors.length}<br>` +
-        (errors.length
-          ? errors.map(e=>`<span style="color:#f88">❌ ${e.fn}: ${e.err}</span>`).join('<br>')
-          : '<span style="color:#0f0">✅ No errors captured</span>');
-    };
-    refresh();
-    setInterval(refresh, 3000);
-    document.body.appendChild(panel);
-  });
+  window.addEventListener('load', () => setTimeout(showFieldHealthPanel, 800));
 }
 
 // ── FIELD Feature Registry ────────────────────────────────────────────────
@@ -14709,7 +14861,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-05-27n';
+  const SW_VERSION = '2026-05-27o';
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
   // Cache strategy: API-only (ESPN scores, weather, odds, SportsDB).

@@ -1,0 +1,41 @@
+# CodeRabbit configuration for FIELD (jubilant-bassoon)
+# Install CodeRabbit GitHub App at https://github.com/apps/coderabbit-ai
+# Once installed, every PR gets auto-reviewed before merging to main.
+
+language: "en-US"
+tone_instructions: "Be direct. This is a solo-developer project. Flag real bugs and silent failures. Skip style nitpicks unless they cause incorrect behaviour."
+
+reviews:
+  profile: "chill"  # Flag actual issues, not every style preference
+  request_changes_workflow: false
+  high_level_summary: true
+  poem: false
+  review_status: true
+  collapse_walkthrough: false
+
+  path_instructions:
+    - path: "index.html"
+      instructions: |
+        This is a single-file sports intelligence app (FIELD). Key things to check:
+        - Silent failures: analytics functions that exist but produce no output (missing _homeAbbr, wrong key format, empty lookup tables)
+        - Touch event model: card-body must use Pointer Events (pointerdown/pointerup), NOT onclick. Samsung devices require this.
+        - CSS: check for duplicate rules, missing :root variable definitions, duplicate @keyframes
+        - Smoke assertions in smoke.js must match any new features added
+        - SW_VERSION must be bumped on every deploy-triggering change
+        - Any new analytics lookup table must have corresponding smoke assertion checking actual data values, not just function presence
+        - Odds API: never hardcode the Starter key (8452c3ac6e226ca6eff8b087391d3c76) — that plan is exhausted
+    
+    - path: "smoke.js"
+      instructions: |
+        Smoke tests must check functional correctness (actual data values) not just code presence.
+        Assert count should only grow, never shrink.
+        New features need both A-number assertions AND functional value checks.
+    
+    - path: "field-relay-nba/src/index.js"
+      instructions: |
+        This is a Cloudflare Worker relay. Check for: correct API key routing (env secret takes priority),
+        TTL values (odds=3600s, NHL=varies), CORS headers on all routes, error handling that returns
+        useful status codes rather than silent failures.
+
+chat:
+  auto_reply: true

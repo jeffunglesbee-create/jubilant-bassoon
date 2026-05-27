@@ -189,7 +189,7 @@ assert('A55 — Runtime capture: _fieldErrors + onerror + debug panel present',
   html.includes('window._fieldErrors') &&
   html.includes('window.onerror') &&
   html.includes('unhandledrejection') &&
-  html.includes('field-debug-panel'));
+  html.includes('fhp-overlay'));
 assert('A56 — field_utils.js loaded in index.html',
   html.includes('field_utils.js') &&
   html.includes('<script src="field_utils.js">'));
@@ -588,7 +588,7 @@ assert('A188 — M2: isScoutsPick wired into injectJ1J4Badges',
   'Scout\'s Pick badge injection must use isScoutsPick() boolean gate');
 
 assert('A189 — SW_VERSION is current (Rule 23: suffix per deploy, new day resets to a)',
-  html.includes("'2026-05-27n'"),
+  html.includes("'2026-05-27o'"),
   'SW_VERSION must match current deploy date — update daily per Rule 23');
 
 assert('A190 — Layer 2b: sport vocab violation detection function defined',
@@ -684,6 +684,54 @@ assert('A211 — Stats revamp: buildScoutingReport present in bottom sheet',
 assert('A212 — Betting revamp: buildBettingFieldEdge present in betting cards',
   html.includes('buildBettingFieldEdge') && html.includes('bet-field-edge') && html.includes('FIELD Edge'),
   'buildBettingFieldEdge must be defined and wired into renderBetting() card template');
+
+// ── A213-A222: FUNCTIONAL assertions — verify actual data values, not just presence ──
+// These catch silent failures: code exists but produces no output for known inputs.
+// Pattern: check specific data values that would change if the lookup table broke.
+
+assert('A213 — Functional: NHL_SPECIAL_TEAMS CAR data correct (probe-confirmed values)',
+  html.includes("'CAR': { pp:11.1, pk:93.5, sat:58.3") || html.includes("'CAR':{pp:11.1"),
+  'CAR special teams data must match probe: PP 11.1, PK 93.5, SAT 58.3');
+
+assert('A214 — Functional: NHL_SPECIAL_TEAMS VGK data correct',
+  html.includes("'VGK': { pp:23.9, pk:87.5, sat:47.6") || html.includes("'VGK':{pp:23.9"),
+  'VGK special teams data must match probe: PP 23.9, PK 87.5, SAT 47.6');
+
+assert('A215 — Functional: NHL_SPECIAL_TEAMS has all 16 playoff teams',
+  ['VGK','CAR','MTL','COL','BUF','MIN','ANA','DAL','PHI','PIT','BOS','LAK','TBL','UTA','OTT','EDM']
+    .every(t => html.includes(`'${t}':`)),
+  'All 16 2026 playoff teams must be present in NHL_SPECIAL_TEAMS');
+
+assert('A216 — Functional: NHL_GOALIE_RATINGS key goalies with correct sv% values',
+  html.includes("'hart':") && html.includes("sv:0.924") &&
+  html.includes("'andersen':") && html.includes("sv:0.923") &&
+  html.includes("'dobes':") && html.includes("sv:0.911"),
+  'Key goalie sv% values must match probe: Hart .924, Andersen .923, Dobes .911');
+
+assert('A217 — Functional: NHL_GOALIE_RATINGS has 19 entries (GP>=3 threshold)',
+  (html.match(/'[a-z]+'\s*:\s*\{\s*team\s*:/g)||[]).length >= 19,
+  'NHL_GOALIE_RATINGS must have at least 19 goalie entries');
+
+assert('A218 — Functional: Samsung tap fix — no onclick on card-body, data-open present',
+  !html.includes('onclick="openBottomSheet') && html.includes('data-open="${g._id}"'),
+  'onclick must be removed from card-body; data-open attribute must be present');
+
+assert('A219 — Functional: Samsung tap fix — pointer events wired in post-render',
+  html.includes('pointerdown') && html.includes('pointermove') && html.includes('pointerup') &&
+  html.includes('_moved = false') && html.includes('> 12'),
+  'Pointer events with 12px Samsung slop threshold must be wired');
+
+assert('A220 — Functional: Exhausted Starter odds key not hardcoded in FIELD',
+  !html.includes('8452c3ac6e226ca6eff8b087391d3c76'),
+  'Exhausted Starter key must not appear in FIELD — relay uses 20K key via CF Worker secret');
+
+assert('A221 — Functional: --muted CSS variable defined in :root',
+  html.match(/--muted\s*:\s*#[0-9a-f]{6}/i) !== null,
+  '--muted must be defined in :root (was missing, causing silent colour fallback)');
+
+assert('A222 — Functional: touch-action:manipulation on .card-body directly (not just inherited)',
+  /\.card-body\{[^}]*touch-action\s*:\s*manipulation/.test(html),
+  'touch-action:manipulation must be on .card-body directly — Samsung does not inherit from .game-card');
 
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);
