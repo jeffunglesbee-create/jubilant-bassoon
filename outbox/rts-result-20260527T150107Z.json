@@ -1,0 +1,58 @@
+{
+  "probeTime": "20260527T150107Z",
+  "endpoints": [
+    {
+      "label": "NFL live events",
+      "path": "/sports/football/leagues/nfl/events/live",
+      "status": 200,
+      "epa_fields": [],
+      "epa_count": 0,
+      "preview": "{\"success\": true, \"data\": [], \"meta\": {\"rateLimit\": {\"limit\": 10000, \"remaining\": 9998, \"reset\": 1780271999999}}}"
+    },
+    {
+      "label": "NFL live events (no odds)",
+      "path": "/sports/football/leagues/nfl/events/live?includeOdds=false",
+      "status": 200,
+      "epa_fields": [],
+      "epa_count": 0,
+      "preview": "{\"success\": true, \"data\": [], \"meta\": {\"rateLimit\": {\"limit\": 10000, \"remaining\": 9998, \"reset\": 1780271999999}}}"
+    },
+    {
+      "label": "NBA live events",
+      "path": "/sports/basketball/leagues/nba/events/live",
+      "status": 200,
+      "epa_fields": [],
+      "epa_count": 0,
+      "preview": "{\"success\": true, \"data\": [], \"meta\": {\"rateLimit\": {\"limit\": 10000, \"remaining\": 9998, \"reset\": 1780271999999}}}"
+    },
+    {
+      "label": "NFL teams",
+      "path": "/sports/football/leagues/nfl/teams",
+      "status": 200,
+      "epa_fields": [],
+      "epa_count": 0,
+      "preview": "{\"success\": true, \"data\": [{\"id\": \"22\", \"uid\": \"s:20~l:28~t:22\", \"slug\": \"arizona-cardinals\", \"location\": \"Arizona\", \"name\": \"Cardinals\", \"nickname\": \"Cardinals\", \"abbreviation\": \"ARI\", \"displayName\": \"Arizona Cardinals\", \"shortDisplayName\": \"Cardinals\", \"color\": \"a40227\", \"alternateColor\": \"ffffff\", \"logos\": [{\"href\": \"https://realtimesportsapi.com/api/images/proxy?url=https%3A%2F%2Fa.espncdn.com%2Fi%2Fteamlogos%2Fnfl%2F500%2Fari.png\", \"width\": 500, \"height\": 500, \"alt\": \"\", \"rel\": [\"full\", \"default\"], \"lastUpdated\": \"2024-06-25T18:43Z\"}, {\"href\": \"https://realtimesportsapi.com/api/images/proxy?url=https%3A%2F%2Fa.espncdn.com%2Fi%2Fteamlogos%2Fnfl%2F500-dark%2Fari.png\", \"width\": 500, \"height\": 500, \"alt\": \"\", \"rel\": [\"full\", \"dark\"], \"lastUpdated\": \"2024-06-25T18:43Z\"}, {\"href\": \"https://realtimesportsapi.com/api/images/proxy?url=https%3A%2F%2Fa.espncdn.com%2Fi%2Fteamlogos%2Fnfl%2F500%2Fscoreboard%2Fari.png\", \"width\": 500, \"height\": 500, \"alt\": \"\", \"rel\": [\"full\", \"scoreboard\"], \"last"
+    },
+    {
+      "label": "NFL athletes",
+      "path": "/sports/football/leagues/nfl/athletes",
+      "status": 200,
+      "epa_fields": [],
+      "epa_count": 0,
+      "preview": "{\"success\": true, \"data\": [{\"id\": \"4246273\", \"displayName\": \" [35]\", \"firstName\": \"\", \"lastName\": \"[35]\", \"position\": \"C\", \"jersey\": \"35\", \"team\": {}, \"hasStats\": false}, {\"id\": \"4246281\", \"displayName\": \" [Downed]\", \"firstName\": \"\", \"lastName\": \"[Downed]\", \"position\": \"C\", \"jersey\": \"00\", \"team\": {}, \"hasStats\": false}, {\"id\": \"4246289\", \"displayName\": \" [Downed]\", \"firstName\": \"\", \"lastName\": \"[Downed]\", \"position\": \"ATH\", \"jersey\": \"00\", \"team\": {}, \"hasStats\": false}, {\"id\": \"4246247\", \"displayName\": \" [Touchback]\", \"firstName\": \"\", \"lastName\": \"[Touchback]\", \"position\": \"PK\", \"jersey\": \"00\", \"team\": {}, \"hasStats\": false}, {\"id\": \"4246272\", \"displayName\": \" [Touchback]\", \"firstName\": \"\", \"lastName\": \"[Touchback]\", \"position\": \"ATH\", \"jersey\": \"00\", \"team\": {}, \"hasStats\": false}, {\"id\": \"4246274\", \"displayName\": \" [Touchback]\", \"firstName\": \"\", \"lastName\": \"[Touchback]\", \"position\": \"C\", \"jersey\": \"00\", \"team\": {}, \"hasStats\": false}, {\"id\": \"14856\", \"displayName\": \"Isaako Aaitui\""
+    }
+  ],
+  "note": "No live NFL games (off-season) \u2014 using NBA live event for boxscore test",
+  "summary": {
+    "http_200": 5,
+    "epa_endpoints": 0,
+    "200_paths": [
+      "/sports/football/leagues/nfl/events/live",
+      "/sports/football/leagues/nfl/events/live?includeOdds=false",
+      "/sports/basketball/leagues/nba/events/live",
+      "/sports/football/leagues/nfl/teams",
+      "/sports/football/leagues/nfl/athletes"
+    ],
+    "epa_findings": []
+  }
+}
