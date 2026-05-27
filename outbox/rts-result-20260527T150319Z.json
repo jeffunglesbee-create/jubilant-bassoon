@@ -1,0 +1,100 @@
+{
+  "probeTime": "20260527T150319Z",
+  "endpoints": [
+    {
+      "label": "NFL boxscore (AFC Champ)",
+      "path": "/sports/football/leagues/nfl/events/401542236/boxscore",
+      "status": 404,
+      "epa_fields": [],
+      "epa_count": 0,
+      "preview": "{\"success\": false, \"error\": {\"code\": \"BOXSCORE_NOT_AVAILABLE\", \"message\": \"Box score not available for this event (e.g. pre-game or unsupported league).\"}}"
+    },
+    {
+      "label": "NFL event detail (AFC Champ)",
+      "path": "/sports/football/leagues/nfl/events/401542236",
+      "status": 500,
+      "epa_fields": [],
+      "epa_count": 0,
+      "preview": "{\"success\": false, \"error\": {\"code\": \"INTERNAL_ERROR\", \"message\": \"ESPN API error: 404 Not Found\"}}"
+    },
+    {
+      "label": "NFL plays (AFC Champ)",
+      "path": "/sports/football/leagues/nfl/events/401542236/plays",
+      "status": 500,
+      "epa_fields": [],
+      "epa_count": 0,
+      "preview": "{\"success\": false, \"error\": {\"code\": \"INTERNAL_ERROR\", \"message\": \"ESPN API error: 404 Not Found\"}}"
+    },
+    {
+      "label": "NFL pbp (AFC Champ)",
+      "path": "/sports/football/leagues/nfl/events/401542236/pbp",
+      "status": 404,
+      "epa_fields": [],
+      "epa_count": 0,
+      "preview": "<!DOCTYPE html><html lang=\"en\"><head><meta charSet=\"utf-8\"/><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"/><link rel=\"preload\" href=\"/_next/static/media/e4af272ccee01ff0-s.p.woff2\" as=\"font\" crossorigin=\"\" type=\"font/woff2\"/><link rel=\"preload\" as=\"image\" imageSrcSet=\"/_next/image?url=%2FRealtimeSportsAPI.png&amp;w=256&amp;q=75&amp;dpl=dpl_FrMJhuUvmejRrjpXxiDJbXKYrJRm 1x, /_next/image?url=%2FRealtimeSportsAPI.png&amp;w=640&amp;q=75&amp;dpl=dpl_FrMJhuUvmejRrjpXxiDJbXKYrJRm 2x\" fetchPriority=\"high\"/><link rel=\"stylesheet\" href=\"/_next/static/css/7f1376bcda0d6817.css?dpl=dpl"
+    },
+    {
+      "label": "NFL team detail (Chiefs id:7)",
+      "path": "/sports/football/leagues/nfl/teams/7",
+      "status": 200,
+      "epa_fields": [],
+      "epa_count": 0,
+      "preview": "{\"success\": true, \"data\": {\"id\": \"7\", \"uid\": \"s:20~l:28~t:7\", \"slug\": \"denver-broncos\", \"location\": \"Denver\", \"name\": \"Broncos\", \"nickname\": \"Broncos\", \"abbreviation\": \"DEN\", \"displayName\": \"Denver Broncos\", \"shortDisplayName\": \"Broncos\", \"color\": \"0a2343\", \"alternateColor\": \"fc4c02\", \"logos\": [{\"href\": \"https://realtimesportsapi.com/api/images/proxy?url=https%3A%2F%2Fa.espncdn.com%2Fi%2Fteamlogos%2Fnfl%2F500%2Fden.png\", \"width\": 500, \"height\": 500, \"alt\": \"\", \"rel\": [\"full\", \"default\"], \"lastUpdated\": \"2024-06-25T18:48Z\"}, {\"href\": \"https://realtimesportsapi.com/api/images/proxy?url=https%3A%2F%2Fa.espncdn.com%2Fi%2Fteamlogos%2Fnfl%2F500-dark%2Fden.png\", \"width\": 500, \"height\": 500, \"alt\": \"\", \"rel\": [\"full\", \"dark\"], \"lastUpdated\": \"2024-06-25T18:59Z\"}, {\"href\": \"https://realtimesportsapi.com/api/images/proxy?url=https%3A%2F%2Fa.espncdn.com%2Fi%2Fteamlogos%2Fnfl%2F500%2Fscoreboard%2Fden.png\", \"width\": 500, \"height\": 500, \"alt\": \"\", \"rel\": [\"full\", \"scoreboard\"], \"lastUpdated\": \"2024-06-25T18:48Z\"}, {\"href\": \"https://realtimesportsapi.com/api/images/proxy?url=https%3A%2F%2Fa.espncdn.com%2Fi%2Fteamlogos%2Fnfl%2F500-dark%2Fscoreboard%2Fden.png\", \"width\": 500, \"height\": 500, \"alt\": \""
+    },
+    {
+      "label": "NFL events list (recent)",
+      "path": "/sports/football/leagues/nfl/events?limit=3",
+      "status": 200,
+      "epa_fields": [
+        "clock",
+        "period",
+        "type",
+        "text"
+      ],
+      "epa_count": 4,
+      "preview": "{\"success\": true, \"data\": [{\"id\": \"401872656\", \"uid\": \"s:20~l:28~e:401872656\", \"name\": \"New England Patriots at Seattle Seahawks\", \"shortName\": \"NE @ SEA\", \"date\": \"2026-09-10T00:20Z\", \"status\": {\"state\": \"pre\", \"completed\": false, \"period\": 0, \"clock\": \"0:00\", \"detail\": \"Wed, September 9th at 8:20 PM EDT\", \"halftime\": false, \"firstHalfEnded\": false}, \"homeTeam\": {\"id\": \"26\", \"name\": \"Seattle Seahawks\", \"abbreviation\": \"SEA\", \"logo\": \"https://realtimesportsapi.com/api/images/proxy?url=https%3A%2F%2Fa.espncdn.com%2Fi%2Fteamlogos%2Fnfl%2F500%2Fsea.png\", \"color\": \"002a5c\", \"alternateColor\": \"69be28\", \"winner\": false, \"score\": 0}, \"awayTeam\": {\"id\": \"17\", \"name\": \"New England Patriots\", \"abbreviation\": \"NE\", \"logo\": \"https://realtimesportsapi.com/api/images/proxy?url=https%3A%2F%2Fa.espncdn.com%2Fi%2Fteamlogos%2Fnfl%2F500%2Fne.png\", \"color\": \"002a5c\", \"alternateColor\": \"c60c30\", \"winner\": false, \"score\": 0}, \"competition\": {\"attendance\": 0, \"neutralSite\": false, \"conferenceCompetition\": false, \"divisionCompetition\": false, \"playByPlayAvailable\": false, \"highlightsAvailable\": true}, \"venue\": {\"id\": \"3673\", \"name\": \"Lumen Field\", \"city\": \"Seattle\", \"state\": \"WA\", \"indoor\": false, \"grass\""
+    },
+    {
+      "label": "NFL events W1 2025",
+      "path": "/sports/football/leagues/nfl/events?season=2025&week=1&limit=2",
+      "status": 200,
+      "epa_fields": [
+        "clock",
+        "period",
+        "type",
+        "text"
+      ],
+      "epa_count": 4,
+      "preview": "{\"success\": true, \"data\": [{\"id\": \"401872656\", \"uid\": \"s:20~l:28~e:401872656\", \"name\": \"New England Patriots at Seattle Seahawks\", \"shortName\": \"NE @ SEA\", \"date\": \"2026-09-10T00:20Z\", \"status\": {\"state\": \"pre\", \"completed\": false, \"period\": 0, \"clock\": \"0:00\", \"detail\": \"Wed, September 9th at 8:20 PM EDT\", \"halftime\": false, \"firstHalfEnded\": false}, \"homeTeam\": {\"id\": \"26\", \"name\": \"Seattle Seahawks\", \"abbreviation\": \"SEA\", \"logo\": \"https://realtimesportsapi.com/api/images/proxy?url=https%3A%2F%2Fa.espncdn.com%2Fi%2Fteamlogos%2Fnfl%2F500%2Fsea.png\", \"color\": \"002a5c\", \"alternateColor\": \"69be28\", \"winner\": false, \"score\": 0}, \"awayTeam\": {\"id\": \"17\", \"name\": \"New England Patriots\", \"abbreviation\": \"NE\", \"logo\": \"https://realtimesportsapi.com/api/images/proxy?url=https%3A%2F%2Fa.espncdn.com%2Fi%2Fteamlogos%2Fnfl%2F500%2Fne.png\", \"color\": \"002a5c\", \"alternateColor\": \"c60c30\", \"winner\": false, \"score\": 0}, \"competition\": {\"attendance\": 0, \"neutralSite\": false, \"conferenceCompetition\": false, \"divisionCompetition\": false, \"playByPlayAvailable\": false, \"highlightsAvailable\": true}, \"venue\": {\"id\": \"3673\", \"name\": \"Lumen Field\", \"city\": \"Seattle\", \"state\": \"WA\", \"indoor\": false, \"grass\""
+    }
+  ],
+  "summary": {
+    "http_200": 3,
+    "epa_endpoints": 2,
+    "200_paths": [
+      "/sports/football/leagues/nfl/teams/7",
+      "/sports/football/leagues/nfl/events?limit=3",
+      "/sports/football/leagues/nfl/events?season=2025&week=1&limit=2"
+    ],
+    "epa_findings": [
+      {
+        "path": "/sports/football/leagues/nfl/events?limit=3",
+        "fields": [
+          "clock",
+          "period",
+          "type",
+          "text"
+        ]
+      },
+      {
+        "path": "/sports/football/leagues/nfl/events?season=2025&week=1&limit=2",
+        "fields": [
+          "clock",
+          "period",
+          "type",
+          "text"
+        ]
+      }
+    ]
+  }
+}
