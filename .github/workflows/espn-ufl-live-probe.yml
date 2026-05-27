@@ -1,0 +1,41 @@
+name: ESPN UFL Live Game Probe
+
+on:
+  # Manual trigger (fire this when a UFL game is live)
+  workflow_dispatch:
+  # Auto-fire during UFL Week 10 games:
+  # Dallas @ St. Louis: Fri May 29, 8pm ET (01:00 UTC Sat May 30)
+  # Houston @ Birmingham: Sat May 30, 3pm ET (19:00 UTC)
+  # Orlando @ DC: Sun May 31, noon ET (16:00 UTC)
+  # Louisville @ Columbus: Sun May 31, 6pm ET (22:00 UTC)
+  # UFL Playoffs: June 7-13
+  schedule:
+    - cron: '0 1 30 5 *'   # Fri May 29 8pm ET (midgame)
+    - cron: '30 1 30 5 *'  # Fri May 29 8:30pm ET
+    - cron: '0 20 30 5 *'  # Sat May 30 3pm ET (midgame)
+    - cron: '0 17 31 5 *'  # Sun May 31 noon ET
+    - cron: '0 23 31 5 *'  # Sun May 31 6pm ET
+    - cron: '0 0 8 6 *'    # Playoffs week - Sat Jun 7 7pm ET
+    - cron: '0 23 14 6 *'  # Championship Sun Jun 14
+
+permissions:
+  contents: write
+
+jobs:
+  live-probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run live UFL probe
+        run: python3 scripts/espn-ufl-live-probe.py
+      - name: Push result
+        run: |
+          git config user.email "ufl-live@field"
+          git config user.name "UFL-Live-Probe"
+          git add outbox/espn-ufl-live-*.json
+          git diff --cached --quiet && echo "Nothing to commit" && exit 0
+          git commit -m "espn-ufl-live result [skip ci]"
+          for i in 1 2 3; do
+            git pull --rebase --autostash origin main && git push origin main && break
+            sleep $((i * 5))
+          done
