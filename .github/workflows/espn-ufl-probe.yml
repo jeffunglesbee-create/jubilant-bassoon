@@ -1,0 +1,29 @@
+name: ESPN UFL PBP Probe
+
+on:
+  push:
+    paths:
+      - 'outbox/.trigger-espn-ufl'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run ESPN UFL PBP probe
+        run: python3 scripts/espn-ufl-probe.py
+      - name: Push result
+        run: |
+          git config user.email "ufl-probe@field"
+          git config user.name "UFL-Probe"
+          git add outbox/espn-ufl-result-*.json
+          git diff --cached --quiet && echo "Nothing to commit" && exit 0
+          git commit -m "espn-ufl-probe result [skip ci]"
+          for i in 1 2 3; do
+            git pull --rebase --autostash origin main && git push origin main && break
+            sleep $((i * 5))
+          done
