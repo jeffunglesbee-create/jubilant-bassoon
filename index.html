@@ -5138,17 +5138,6 @@ async function mlbStatsInit() {
     ['sprint_speed',   d => { Object.assign(PLAYER_SPEED,          d); }],
     ['pitch_tempo',    d => { Object.assign(PITCHER_TEMPO,         d); }],
     ['pitch_arsenals', d => { Object.assign(PITCHER_ARSENAL,       d); }],
-    ['umpire_abs',     d => {
-      // ESPN data has last-name keys — merge, preserving weakness annotations
-      // from hardcoded table when ESPN doesn't supply zone data
-      Object.entries(d).forEach(([k,v]) => {
-        const existing = UMPIRE_ABS_RATINGS[k];
-        UMPIRE_ABS_RATINGS[k] = {
-          ...v,
-          weakness: v.weakness ?? existing?.weakness ?? null,
-        };
-      });
-    }],
   ];
   let loaded = 0;
   await Promise.allSettled(FILES.map(async ([name, apply]) => {
@@ -5160,8 +5149,28 @@ async function mlbStatsInit() {
       if (data && typeof data === 'object') { apply(data); loaded++; }
     } catch(e) {}
   }));
+
+  // Umpire ABS: called directly via /mlb-umpire-scrape (not through /mlb-stats/)
+  // Reason: pipeline can't call relay (CF 1010 blocks GitHub Actions IPs).
+  // Browser can. CF Worker fetches Savant hp_umpire HTML from CF IPs (not bot-blocked),
+  // parses table, returns JSON. Cached 4h on CF edge. Always fresh at page load.
+  try {
+    const ur = await fetch(`${_MLB_RELAY}/mlb-umpire-scrape`);
+    if (ur.ok) {
+      const uj = await ur.json();
+      const ud = uj.data || uj;
+      if (ud && typeof ud === 'object' && Object.keys(ud).length >= 5) {
+        Object.entries(ud).forEach(([k,v]) => {
+          const existing = UMPIRE_ABS_RATINGS[k];
+          UMPIRE_ABS_RATINGS[k] = { ...v, weakness: v.weakness ?? existing?.weakness ?? null };
+        });
+        loaded++;
+        if (FIELD_DEBUG) console.log(`[FIELD] Umpire ABS loaded: ${Object.keys(ud).length} umpires from CF Worker`);
+      }
+    }
+  } catch(e) {}
   _mlbStatsLoaded = true;
-  if (loaded > 0) console.log(`[FIELD] MLB stats loaded: ${loaded}/5 tables from pipeline`);
+  if (loaded > 0) console.log(`[FIELD] MLB stats loaded: ${loaded}/6 tables (5 Savant + umpire CF Worker)`);
 }
 
 // Returns: { wins, losses, label, momentum, last10[] } | null
@@ -14261,7 +14270,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-05-27e';
+  const SW_VERSION = '2026-05-27f';
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
   // Cache strategy: API-only (ESPN scores, weather, odds, SportsDB).

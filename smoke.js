@@ -584,7 +584,7 @@ assert('A188 — M2: isScoutsPick wired into injectJ1J4Badges',
   'Scout\'s Pick badge injection must use isScoutsPick() boolean gate');
 
 assert('A189 — SW_VERSION is current (Rule 23: suffix per deploy, new day resets to a)',
-  html.includes("'2026-05-27e'"),
+  html.includes("'2026-05-27f'"),
   'SW_VERSION must match current deploy date — update daily per Rule 23');
 
 assert('A190 — Layer 2b: sport vocab violation detection function defined',
@@ -650,9 +650,9 @@ assert('A205 — MLB automation: /mlb-stats/ relay route referenced',
   html.includes('/mlb-stats/'),
   'FIELD must reference the /mlb-stats/ relay route for live table loading');
 
-assert('A206 — MLB umpire: last-name keys + ESPN fallback wired',
-  html.includes("'bucknor'") && html.includes("'barksdale'") && html.includes('umpire_abs'),
-  'Umpire keys must be last-name-only and umpire_abs must be in mlbStatsInit');
+assert('A206 — MLB umpire: last-name keys + CF Worker endpoint wired',
+  html.includes("'bucknor'") && html.includes("'barksdale'") && html.includes('/mlb-umpire-scrape'),
+  'Umpire keys must be last-name-only and /mlb-umpire-scrape must be in mlbStatsInit');
 
 
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
