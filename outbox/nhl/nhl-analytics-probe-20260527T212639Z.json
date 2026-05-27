@@ -1,0 +1,25 @@
+{
+  "timestamp": "20260527T212639Z",
+  "endpoints": {
+    "team_summary": {
+      "error": "URL can't contain control characters. '/stats/rest/en/team/summary?cayenneExp=seasonId=20252026 and gameTypeId=3&sort=points&limit=20' (found at least ' ')",
+      "id_field_candidates": []
+    },
+    "team_powerplay": {
+      "error": "URL can't contain control characters. '/stats/rest/en/team/powerplay?cayenneExp=seasonId=20252026 and gameTypeId=3&sort=powerPlayPct&limit=20' (found at least ' ')",
+      "id_field_candidates": []
+    },
+    "team_penaltykill": {
+      "error": "URL can't contain control characters. '/stats/rest/en/team/penaltykill?cayenneExp=seasonId=20252026 and gameTypeId=3&sort=penaltyKillPct&limit=20' (found at least ' ')",
+      "id_field_candidates": []
+    },
+    "goalie_summary": {
+      "error": "URL can't contain control characters. '/stats/rest/en/goalie/summary?cayenneExp=seasonId=20252026 and gameTypeId=3&sort=wins&limit=30' (found at least ' ')",
+      "name_field_candidates": []
+    },
+    "team_shotshares": {
+      "error": "URL can't contain control characters. '/stats/rest/en/team/shotshares?cayenneExp=seasonId=20252026 and gameTypeId=3&limit=20' (found at least ' ')",
+      "alt_error": "URL can't contain control characters. '/stats/rest/en/team/realtime?cayenneExp=seasonId=20252026 and gameTypeId=3&limit=20' (found at least ' ')"
+    }
+  }
+}
