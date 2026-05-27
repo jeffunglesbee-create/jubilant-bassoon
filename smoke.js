@@ -584,7 +584,7 @@ assert('A188 — M2: isScoutsPick wired into injectJ1J4Badges',
   'Scout\'s Pick badge injection must use isScoutsPick() boolean gate');
 
 assert('A189 — SW_VERSION is current (Rule 23: suffix per deploy, new day resets to a)',
-  html.includes("'2026-05-27a'"),
+  html.includes("'2026-05-27b'"),
   'SW_VERSION must match current deploy date — update daily per Rule 23');
 
 assert('A190 — Layer 2b: sport vocab violation detection function defined',
@@ -609,6 +609,22 @@ assert('A194 — DA-01: getCrewForGame + isMarqueeBroadcast + getCrewContext fun
 assert('A195 — DA-01: Crew context injected into compound prompt gameLines',
   html.includes('getCrewContext(g)') && html.includes('isMarqueeBroadcast(g)') && html.includes('MARQUEE BROADCAST'),
   'J3 compound prompt must include crew + marquee flag per game');
+
+assert('A196 — UFL-EPA: module functions present',
+  html.includes('_epLookup') && html.includes('uflEpaInit') && html.includes('_computeSRPlayEPA'),
+  'UFL EPA module must be wired — _epLookup, uflEpaInit, _computeSRPlayEPA required');
+
+assert('A197 — UFL-EPA: EPA table relay route referenced',
+  html.includes('/nflverse/epa_table.json'),
+  'EPA table must reference nflverse relay route');
+
+assert('A198 — UFL-EPA: SR UFL PBP relay route referenced',
+  html.includes('/sportradar-ufl/games/'),
+  'SR UFL PBP endpoint must be present in index.html');
+
+assert('A199 — UFL-EPA: card template EPA block present',
+  html.includes('_buildUFLEpaHTML') && html.includes('ufl-epa-live'),
+  'EPA block must be present in card template and CSS');
 
 
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);

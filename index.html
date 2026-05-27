@@ -865,6 +865,10 @@ flex-shrink:0;white-space:nowrap;
 .su-reason{color:var(--muted);font-size:.7rem;}
 /* ── Working Class: Beat the Book ──────────────────────────── */
 .beat-the-book{font-size:.55rem;color:var(--muted);margin-top:.15rem;display:flex;align-items:baseline;gap:.3rem;}
+.ufl-epa-live{display:flex;align-items:center;gap:.45rem;font-size:.64rem;margin-top:.25rem;padding-top:.2rem;border-top:1px solid var(--edge);flex-wrap:wrap;line-height:1.4}
+.epa-chip{font-weight:600;font-size:.7rem;letter-spacing:.01em}
+.epa-sit{color:var(--smoke);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.epa-drive-tot{color:var(--muted);font-size:.6rem;white-space:nowrap}
 .btb-badge{font-family:var(--ff-mono);font-weight:600;font-size:.5rem;}
 .btb-good{color:#4ade80;}
 .btb-avg{color:var(--muted);}
@@ -6225,6 +6229,148 @@ function getStandingVelocity(sport, division, teamName, windowDays = 7) {
 // High variance + high drama = CHAOTIC game. High drama + low variance = LOCKED IN.
 // Uses getDramaHistory() — no new API, no new storage.
 
+// ── UFL EPA Live Integration ─────────────────────────────────────────────────
+// SportRadar official data → EPA per play via nflfastR-calibrated lookup table.
+// Built May 27 2026. SR trial key: env.SPORTRADAR_UFL_KEY in relay Worker.
+// Self-gating: only runs when UFL games present today. Silent on any failure.
+const _UFL_RELAY='https://field-relay-nba.jeffunglesbee.workers.dev';
+const _UFL_SR_TEAMS={BHM:'Birmingham Stallions',LOU:'Louisville Kings',DC:'DC Defenders',STL:'St. Louis Battlehawks',HOU:'Houston Gamblers',CLB:'Columbus Aviators',DAL:'Dallas Renegades',ORL:'Orlando Storm'};
+let _epTable=null, _epTableLoad=null;
+const _uflEpaState={};
+
+async function _loadEpTable(){
+  if(_epTable) return _epTable;
+  if(_epTableLoad) return _epTableLoad;
+  _epTableLoad=fetch(`${_UFL_RELAY}/nflverse/epa_table.json`)
+    .then(r=>r.ok?r.json():null).then(d=>{if(d){_epTable=d.ep||d;}return _epTable;}).catch(()=>null);
+  return _epTableLoad;
+}
+
+function _epLookup(down,ytg,yl100){
+  if(!_epTable) return 0;
+  const ytgBuckets=[1,2,3,4,5,6,7,8,9,10,11,15,20,25];
+  const yl100Buckets=[1,6,11,16,21,26,31,36,41,46,51,56,61,66,71,76,81,86,91,96];
+  const nearest=(v,arr)=>arr.reduce((b,x)=>Math.abs(x-v)<Math.abs(b-v)?x:b);
+  const ytgB=nearest(Math.min(Math.max(ytg,1),25),ytgBuckets);
+  const yl100B=nearest(Math.max(1,Math.min(99,yl100)),yl100Buckets);
+  return _epTable[`${down}_${ytgB}_${yl100B}`]??0;
+}
+
+function _srSitToYL100(sit){
+  if(!sit?.location?.yardline) return null;
+  const ownTerritory=sit.location.id===sit.possession?.id||sit.location.name===sit.possession?.name;
+  return Math.max(1,Math.min(99,ownTerritory?(100-sit.location.yardline):sit.location.yardline));
+}
+
+function _computeSRPlayEPA(evt){
+  const SKIP=['timeout','kickoff','extra_point','two_point_conversion','no_play','kneel','spike','penalty'];
+  if(!evt||SKIP.includes(evt.play_type)) return null;
+  const ss=evt.start_situation;
+  if(!ss||ss.down===undefined) return null;
+  const yl100s=_srSitToYL100(ss); if(yl100s===null) return null;
+  const epStart=_epLookup(ss.down,ss.yfd,yl100s);
+  const downs=['1st','2nd','3rd','4th'];
+  const sit=`${downs[ss.down-1]||ss.down} & ${ss.yfd} @ ${yl100s<=50?'OPP '+yl100s:'OWN '+(100-yl100s)}`;
+  if(evt.scoring_play){
+    const epEnd=evt.play_type==='field_goal'?3:6.96;
+    const epa=Math.round((epEnd-epStart)*100)/100;
+    return{epa,ep_start:epStart,ep_end:epEnd,situation:sit};
+  }
+  if(evt.turnover){
+    const epEnd=-_epLookup(1,10,Math.max(1,Math.min(99,100-yl100s)));
+    const epa=Math.round((epEnd-epStart)*100)/100;
+    return{epa,ep_start:epStart,ep_end:epEnd,situation:sit};
+  }
+  const es=evt.end_situation;
+  if(!es||es.down===undefined) return null;
+  const yl100e=_srSitToYL100(es); if(yl100e===null) return null;
+  const epEnd=_epLookup(es.down,es.yfd,yl100e);
+  const epa=Math.round((epEnd-epStart)*100)/100;
+  return{epa,ep_start:epStart,ep_end:epEnd,situation:sit};
+}
+
+async function _fetchUFLGameEpa(srGameId,fieldGameId){
+  try{
+    const resp=await fetch(`${_UFL_RELAY}/sportradar-ufl/games/${srGameId}/pbp.json`);
+    if(!resp.ok) return;
+    const pbp=await resp.json();
+    const allDrives=(pbp.periods||[]).flatMap(p=>p.pbp||[]);
+    if(!allDrives.length) return;
+    const curDrive=allDrives[allDrives.length-1];
+    const events=curDrive?.events||[];
+    const plays=events.map(_computeSRPlayEPA).filter(Boolean);
+    const driveEpa=Math.round(plays.reduce((s,p)=>s+(p.epa||0),0)*100)/100;
+    const lastEvt=events[events.length-1];
+    const state={plays,driveEpa,drivePlayCount:plays.length,lastPlay:plays[plays.length-1]||null,
+      homePts:lastEvt?.home_points??null,awayPts:lastEvt?.away_points??null,updated:Date.now()};
+    _uflEpaState[srGameId]=state;
+    // Attach to game object
+    if(typeof allData!=='undefined'){
+      const gObj=(allData.sports||[]).flatMap(s=>s.games||[]).find(g=>g._id===fieldGameId);
+      if(gObj) gObj._epaLive=state;
+    }
+    // In-place DOM inject
+    const el=document.querySelector(`[data-gameid="${fieldGameId}"]`);
+    if(el){
+      const old=el.querySelector('.ufl-epa-live');
+      if(old) old.remove();
+      const html=_buildUFLEpaHTML(state);
+      if(html){ const hint=el.querySelector('.card-tap-hint'); if(hint) hint.insertAdjacentHTML('beforebegin',html); }
+    }
+  }catch(e){}
+}
+
+function _buildUFLEpaHTML(state){
+  if(!state?.lastPlay) return '';
+  const lp=state.lastPlay;
+  const c=lp.epa>=0.5?'var(--green)':lp.epa<=-0.5?'var(--red)':'var(--muted)';
+  const s=lp.epa>0?'+':'';
+  const ds=state.driveEpa>=0?'+':'';
+  return `<div class="ufl-epa-live"><span class="epa-chip" style="color:${c}">${s}${lp.epa} EPA</span><span class="epa-sit">${lp.situation}</span><span class="epa-drive-tot">${ds}${state.driveEpa} drive · ${state.drivePlayCount} pl</span></div>`;
+}
+
+async function _pollUFLEpa(){
+  if(!_epTable) return;
+  const now=Date.now();
+  const games=typeof uflGames!=='undefined'?uflGames:[];
+  for(const g of games){
+    if(!g._srGameId) continue;
+    const gt=new Date(g.start_time).getTime();
+    const elapsed=now-gt;
+    if(elapsed<-600000||elapsed>18000000) continue; // not within -10min to +5hrs
+    const st=_uflEpaState[g._srGameId];
+    if(st&&(now-st.updated)<50000) continue;
+    await _fetchUFLGameEpa(g._srGameId,g._id);
+    await new Promise(r=>setTimeout(r,1300)); // SR trial rate limit: 1 req/sec
+  }
+}
+
+async function uflEpaInit(){
+  const games=typeof uflGames!=='undefined'?uflGames:[];
+  if(!games.length) return;
+  await _loadEpTable();
+  if(!_epTable) return;
+  try{
+    const resp=await fetch(`${_UFL_RELAY}/sportradar-ufl/games/2026/REG/schedule.json`);
+    if(!resp.ok) return;
+    const sched=await resp.json();
+    const srIdMap={};
+    for(const week of(sched.weeks||[])){
+      for(const g of(week.games||[])){
+        const a=g.away?.alias,h=g.home?.alias;
+        if(a&&h) srIdMap[`${a}_${h}`]=g.id;
+      }
+    }
+    for(const g of games){
+      const aAlias=Object.entries(_UFL_SR_TEAMS).find(([a,n])=>n===g.away)?.[0];
+      const hAlias=Object.entries(_UFL_SR_TEAMS).find(([a,n])=>n===g.home)?.[0];
+      if(aAlias&&hAlias) g._srGameId=srIdMap[`${aAlias}_${hAlias}`];
+    }
+    _pollUFLEpa();
+    setInterval(_pollUFLEpa,60000);
+  }catch(e){}
+}
+
 function getVolatilityIndex(gameId, windowSize = 10) {
   const history = getDramaHistory(gameId);
   if (!history || history.length < 3) return null;
@@ -6425,6 +6571,7 @@ function renderAll(){
           ${(()=>{const _cs=buildCheapSeats(g);if(!_cs)return '';return `<div class="cheap-seats"><span class="cs-badge ${_cs.badgeClass}">${_cs.badge}</span><span class="cs-text">${_cs.text}</span></div>`;})()}
           ${(()=>{const _btb=beatTheBook(g);if(!_btb)return '';return `<div class="beat-the-book"><span class="btb-badge ${_btb.cls}">Vig ${_btb.vig}</span><span class="btb-text">${_btb.assessment}</span></div>`;})()}
           ${(()=>{const _ii=assessInjuryPriceImpact(g);if(!_ii)return '';return `<div class="injury-intel"><span class="ii-badge ${_ii.cls}">${_ii.badge}</span><span class="ii-text">${_ii.text}</span></div>`;})()}
+          ${(()=>{ if(g._sport!=='UFL'||!g._epaLive?.lastPlay) return ''; return _buildUFLEpaHTML(g._epaLive); })()}
           <span class="card-tap-hint">tap for intel ›</span>
         </div>
         <div class="card-right">
@@ -13088,6 +13235,7 @@ async function fetchSchedule(){
   setTimeout(weatherPrefetchAll, 4000);  // Open-Meteo outdoor venue weather
   setTimeout(fetchATPLiveScores, 4500);  // ATP Tour live scores (CORS open, no proxy needed)
   setTimeout(bdlPrefetchAll, 2000);       // BallDontLie injury prefetch (after schedule renders)
+  setTimeout(uflEpaInit, 3500);           // UFL EPA live: SR PBP → EPA per play (self-gating, silent on fail)
   maybeShowSetup();
   renderLastNight();
   if(Object.keys(espnScores).length) { injectDramaBadges(); detectAndRenderDoubleFeature(); renderOneToWatch(); renderMobileLiveBar(); renderWatchWindow(); renderAmbientPanel(); }
@@ -13718,7 +13866,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-05-27a';
+  const SW_VERSION = '2026-05-27b';
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
   // Cache strategy: API-only (ESPN scores, weather, odds, SportsDB).
