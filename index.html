@@ -9496,7 +9496,15 @@ async function bdlContextForGame(home, away, sportName) {
 // ODDS_API_KEY intentionally not here — key lives in relay worker only (server-side)
 // All odds calls route through ODDS_RELAY_BASE which injects apiKey server-side
 const ODDS_API_BASE = null; // deprecated — use ODDS_RELAY_BASE
-const ODDS_DAILY_LIMIT = 40;    // 20K/month ÷ 30 days ÷ ~3 credits/call = ~222 max/day; 40 for headroom
+const ODDS_DAILY_LIMIT = 60;    // 20K/month ÷ 30 days ÷ ~3 credits/call = ~222 max/day; 60 for headroom
+
+// One-time migration: clear odds_remaining if it was set to 0 from the exhausted Starter key.
+// The Starter key (500 credits/month, $0) was over-limit; the 20K key is now active.
+// odds_remaining = 0 would permanently block all calls — clear it so the correct quota loads.
+try {
+  const _r = parseInt(localStorage.getItem('odds_remaining') || '999');
+  if (_r < 10) { localStorage.removeItem('odds_remaining'); localStorage.removeItem('odds_req'); }
+} catch(e) {}
                                  // fetchGameOdds reuses _oddsCache → no separate calls
 const ODDS_CACHE_TTL   = 1800000;  // 30-min localStorage cache (paid tier supports frequent refresh)
 function oddsReqCount(){
@@ -12941,9 +12949,9 @@ async function fetchOddsForSport(sport, markets = 'h2h,spreads,totals') {
   } catch(e) {}
   // Budget check — prevents relay calls when daily limit hit
   if (!oddsBudgetOk()) { if (FIELD_DEBUG) console.warn('[ODDS] daily budget exhausted, skipping', sportKey); return null; }
-  // Auto-pause if account quota is nearly exhausted (read from last relay response)
-  const remaining = parseInt(localStorage.getItem('odds_remaining') || '500');
-  if (remaining < 5) { if (FIELD_DEBUG) console.warn('[ODDS] account quota critical (<5 remaining), pausing'); return null; }
+  // NOTE: odds_remaining localStorage guard removed — it reflected the exhausted Starter plan key
+  // (100.8% used) and was permanently blocking calls even after key rotation to the 20K plan.
+  // Quota is now managed by oddsBudgetOk() (daily count) which is correct for the 20K plan.
   try {
     const qs = `?regions=us&markets=${markets}&oddsFormat=american&dateFormat=iso`;
     const r  = await fetch(`${ODDS_RELAY_BASE}/v4/sports/${sportKey}/odds${qs}`,
@@ -14490,7 +14498,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-05-27k';
+  const SW_VERSION = '2026-05-27l';
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
   // Cache strategy: API-only (ESPN scores, weather, odds, SportsDB).
