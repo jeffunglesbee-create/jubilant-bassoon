@@ -1,0 +1,215 @@
+{
+  "probeTime": "20260527T171130Z",
+  "results": {
+    "relay_schedule": {
+      "status": 403,
+      "relay_error": "(none)",
+      "body": "{\"type\":\"https://developers.cloudflare.com/support/troubleshooting/http-status-codes/cloudflare-1xxx-errors/error-1010/\",\"title\":\"Error 1010: Access denied\",\"status\":403,\"detail\":\"The site owner has blocked access based on your browser's signature.\",\"instance\":\"a026a3a05ff001d9\",\"error_code\":1010,\"e"
+    },
+    "direct_schedule": {
+      "status": 200,
+      "weeks": 10,
+      "closed": 36
+    },
+    "direct_pbp": {
+      "status": 200,
+      "periods": 4,
+      "drives": 28,
+      "events": 145,
+      "sample": {
+        "type": "play",
+        "id": "2d32a6c0-2a3a-11f1-b196-a518eab465e9",
+        "sequence": 1774656518743.0,
+        "clock": "14:56",
+        "home_points": 0,
+        "away_points": 0,
+        "play_type": "rush",
+        "wall_clock": "2026-03-28T00:08:26+00:00",
+        "description": "B.Snell rushed left guard for 1 yards. Tackled by T.Norwood, T.Crowder at LOU 33.",
+        "fake_punt": false,
+        "fake_field_goal": false,
+        "screen_pass": false,
+        "play_action": false,
+        "run_pass_option": false,
+        "created_at": "2026-03-28T00:08:38+00:00",
+        "updated_at": "2026-03-28T00:12:36+00:00",
+        "official": true,
+        "start_situation": {
+          "clock": "14:56",
+          "down": 1,
+          "yfd": 10,
+          "possession": {
+            "id": "ff1f47e0-b8ef-11f0-9440-2f32b8d49d12",
+            "name": "Kings",
+            "market": "Louisville",
+            "alias": "LOU",
+            "sr_id": "sr:competitor:1320808"
+          },
+          "location": {
+            "id": "ff1f47e0-b8ef-11f0-9440-2f32b8d49d12",
+            "name": "Kings",
+            "market": "Louisville",
+            "alias": "LOU",
+            "sr_id": "sr:competitor:1320808",
+            "yardline": 32
+          }
+        },
+        "end_situation": {
+          "clock": "14:23",
+          "down": 2,
+          "yfd": 9,
+          "possession": {
+            "id": "ff1f47e0-b8ef-11f0-9440-2f32b8d49d12",
+            "name": "Kings",
+            "market": "Louisville",
+            "alias": "LOU",
+            "sr_id": "sr:competitor:1320808"
+          },
+          "location": {
+            "id": "ff1f47e0-b8ef-11f0-9440-2f32b8d49d12",
+            "name": "Kings",
+            "market": "Louisville",
+            "alias": "LOU",
+            "sr_id": "sr:competitor:1320808",
+            "yardline": 33
+          }
+        },
+        "statistics": [
+          {
+            "stat_type": "rush",
+            "attempt": 1,
+            "yards": 1,
+            "firstdown": 0,
+            "inside_20": 0,
+            "goaltogo": 0,
+            "broken_tackles": 0,
+            "kneel_down": 0,
+            "scramble": 0,
+            "player": {
+              "id": "b949dde0-f240-11f0-a831-0bac5c9d45e1",
+              "name": "Benny Snell",
+              "jersey": "26",
+              "position": "RB"
+            },
+            "team": {
+              "id": "ff1f47e0-b8ef-11f0-9440-2f32b8d49d12",
+              "name": "Kings",
+              "market": "Louisville",
+              "alias": "LOU",
+              "sr_id": "sr:competitor:1320808"
+            }
+          },
+          {
+            "stat_type": "defense",
+            "tackle": 1,
+            "category": "defense",
+            "def_target": 0,
+            "def_comp": 0,
+            "blitz": 0,
+            "hurry": 0,
+            "knockdown": 0,
+            "batted_pass": 0,
+            "player": {
+              "id": "94c6d090-5c19-11ef-914d-1f3e0012a00a",
+              "name": "Tre Norwood",
+              "jersey": "21",
+              "position": "FS"
+            },
+            "team": {
+              "id": "f4305130-9675-11ec-8570-4594a07130f0",
+              "name": "Stallions",
+              "market": "Birmingham",
+              "alias": "BHM",
+              "sr_id": "sr:competitor:882409"
+            }
+          },
+          {
+            "stat_type": "defense",
+            "ast_tackle": 1,
+            "category": "defense",
+            "def_target": 0,
+            "def_comp": 0,
+            "blitz": 0,
+            "hurry": 0,
+            "knockdown": 0,
+            "batted_pass": 0,
+            "player": {
+              "id": "5e235770-d527-11ef-b908-2762d36054cb",
+              "name": "Tae Crowder",
+              "jersey": "20",
+              "position": "LB"
+            },
+            "team": {
+              "id": "f4305130-9675-11ec-8570-4594a07130f0",
+              "name": "Stallions",
+              "market": "Birmingham",
+              "alias": "BHM",
+              "sr_id": "sr:competitor:882409"
+            }
+          }
+        ],
+        "details": [
+          {
+            "category": "rush",
+            "description": "B.Snell rushed left guard for 1 yards.",
+            "sequence": 0,
+            "direction": "left guard",
+            "yards": 1,
+            "result": "tackled",
+            "start_location": {
+              "alias": "LOU",
+              "yardline": 32
+            },
+            "end_location": {
+              "alias": "LOU",
+              "yardline": 33
+            },
+            "players": [
+              {
+                "id": "b949dde0-f240-11f0-a831-0bac5c9d45e1",
+                "name": "Benny Snell",
+                "jersey": "26",
+                "position": "RB",
+                "role": "rush"
+              }
+            ]
+          },
+          {
+            "category": "tackle",
+            "description": "Tackled by T.Norwood, T.Crowder at LOU 33.",
+            "sequence": 1,
+            "start_location": {
+              "alias": "LOU",
+              "yardline": 33
+            },
+            "end_location": {
+              "alias": "LOU",
+              "yardline": 33
+            },
+            "players": [
+              {
+                "id": "94c6d090-5c19-11ef-914d-1f3e0012a00a",
+                "name": "Tre Norwood",
+                "jersey": "21",
+                "position": "FS",
+                "role": "tackle"
+              },
+              {
+                "id": "5e235770-d527-11ef-b908-2762d36054cb",
+                "name": "Tae Crowder",
+                "jersey": "20",
+                "position": "LB",
+                "role": "ast_tackle"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "relay_pbp": {
+      "status": 403,
+      "relay_error": "(none)",
+      "body": "{\"type\":\"https://developers.cloudflare.com/support/troubleshooting/http-status-codes/cloudflare-1xxx-errors/error-1010/\",\"title\":\"Error 1010: Access denied\",\"status\":403,\"detail\":\"The site owner has blocked access based on your browser's signature.\",\"instance\":\"a026a3b5f80117c8\",\"error_code\":1010,\"e"
+    }
+  }
+}
