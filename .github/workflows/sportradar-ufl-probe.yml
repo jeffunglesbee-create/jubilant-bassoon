@@ -1,0 +1,31 @@
+name: SportRadar UFL API Probe
+
+on:
+  push:
+    paths:
+      - 'outbox/.trigger-sportradar-ufl'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run SportRadar UFL probe
+        env:
+          SPORTRADAR_UFL_KEY: ${{ secrets.SPORTRADAR_UFL_KEY }}
+        run: python3 scripts/sportradar-ufl-probe.py
+      - name: Push result
+        run: |
+          git config user.email "sr-ufl@field"
+          git config user.name "SR-UFL-Probe"
+          git add outbox/sportradar-ufl-result-*.json
+          git diff --cached --quiet && echo "Nothing to commit" && exit 0
+          git commit -m "sportradar-ufl result [skip ci]"
+          for i in 1 2 3; do
+            git pull --rebase --autostash origin main && git push origin main && break
+            sleep $((i * 5))
+          done
