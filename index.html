@@ -14279,7 +14279,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-05-27i';
+  const SW_VERSION = '2026-05-27j';
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
   // Cache strategy: API-only (ESPN scores, weather, odds, SportsDB).
@@ -14882,20 +14882,56 @@ async function retryWithoutCliches(originalPrompt,text,proxyUrl){
 }
 
 // Layer 3: prose scoring via Datamuse API (free, 100K/day, no key, CORS-open)
+// ── Layer 3: Prose Scoring — 5 dimensions ─────────────────────────────────
+// Spec: FIELD Journalism Quality Spec (Drive 1dS0ldiE9Y0aUu2DAl7Ez5yo5evxlMAZXtghnmdScIHw)
+// Upgraded May 27 2026: Statistical Depth added as 5th dimension.
+// Calibrated weights: spec=20, statDepth=25, variety=20, density=10, fresh=25
+// Datamuse (freshness) is blocked in claude.ai iframes → fallback fresh=83.
+// All other 4 dimensions are computed locally — no API dependency.
+const _JQ_STAT_PATTERNS = [
+  /\d+\s*-\s*of\s*-\s*\d+/gi,    // 11-of-19 shooting
+  /\.\d{3}\b/g,                    // .342 batting avg
+  /\d+\.\d{2}\b/g,                 // 2.31 ERA, 96.8 mph
+  /\d+%/g,                         // 29%
+  /\b\d+\s*[–\-]\s*\d+\b/g,      // 107-98 score, 4-1 record
+];
+const _JQ_STAT_NOUNS = /\b(points?|rebounds?|assists?|blocks?|steals?|ppg|apg|rpg|runs?|hits?|home\s*runs?|rbis?|era|whip|ops|obp|slg|goals?|shots?|saves?|yards?|touchdowns?|sacks?|interceptions?|strikeouts?|innings?|pitches?|pitch\s*count|ft\/s|mph)\b/gi;
+
 async function scoreProse(text){
   if(!text) return null;
-  const words=text.split(/\s+/);
-  const unique=new Set(words.map(w=>w.toLowerCase()));
-  const specifics=words.filter(w=>/^[A-Z]/.test(w)||/\d/.test(w));
-  const specificity=words.length?specifics.length/words.length:0;
-  const variety=words.length?unique.size/words.length:0;
-  const sentences=text.split(/[.!?]+/).filter(Boolean);
-  const factsPerSentence=sentences.length?specifics.length/sentences.length:0;
-  let freshness=50;
+  const words = text.split(/\s+/).filter(Boolean);
+  if (!words.length) return null;
+  const sentences = text.split(/[.!?]+/).filter(Boolean);
+  const nSent = Math.max(1, sentences.length);
+  const sentStarts = new Set(sentences.map(s => s.trim().split(/\s+/)[0]));
+
+  // 1. Specificity: proper nouns (non-sentence-start) + numbers
+  const properNouns = words.filter(w => /^[A-Z]/.test(w) && !sentStarts.has(w) && w.length > 1);
+  const numbersAll  = words.filter(w => /\d/.test(w));
+  const specifics   = properNouns.length + numbersAll.length;
+  const specificity = specifics / words.length;
+
+  // 2. Statistical Depth: sports-specific numeric patterns per sentence
+  let statCount = 0;
+  _JQ_STAT_PATTERNS.forEach(re => { statCount += (text.match(re) || []).length; });
+  statCount += (text.match(_JQ_STAT_NOUNS) || []).length;
+  const statDepth = statCount / nSent;
+
+  // 3. Variety: lexical diversity
+  const uniqueW = new Set(words.map(w => w.toLowerCase().replace(/[^a-z]/g,'')).filter(w=>w.length>2));
+  const variety = uniqueW.size / words.length;
+
+  // 4. Density: named facts per sentence
+  const density = specifics / nSent;
+
+  // 5. Freshness: Datamuse word frequency (inverted — lower freq = fresher)
+  // Fallback 83 when Datamuse blocked (e.g. claude.ai iframe CSP).
+  let freshness = 83;
   try{
-    const contentWords=words.filter(w=>w.length>4&&!/^(their|about|would|could|which|these|those|there|where|being|having|after|before|every|other|should|still)$/i.test(w)).slice(0,5);
-    if(contentWords.length){
-      const freqs=await Promise.all(contentWords.map(async w=>{
+    const stopRe = /^(their|about|would|could|which|should|after|before|against|during|while|other|first|since|still|being|where|these|those|there|every|until|under|again|from|with|this|that|have|will|they|been|were|what|when|into|than|then|also|each|over|more|most|such|both|some|only|very|just|like|well|even|back|game|team|play|year|time|week|half)$/i;
+    const cw = words.filter(w=>w.length>4&&!stopRe.test(w)&&/^[a-z]/i.test(w)).slice(0,5);
+    if(cw.length){
+      const freqs = await Promise.all(cw.map(async w=>{
         try{
           const r=await fetch(`https://api.datamuse.com/words?sp=${encodeURIComponent(w.toLowerCase())}&md=f&max=1`);
           const d=await r.json();
@@ -14904,17 +14940,36 @@ async function scoreProse(text){
         }catch{return 50;}
       }));
       const avgFreq=freqs.reduce((a,b)=>a+b,0)/freqs.length;
-      freshness=Math.max(0,100-avgFreq*2);
+      freshness=Math.max(0,Math.min(100,100-(avgFreq/3)));
     }
-  }catch(e){if(FIELD_DEBUG) console.error('[JQ Layer 3] Datamuse error:',e.message);}
-  const score=Math.round(specificity*30+variety*25+factsPerSentence*20+freshness*0.25);
-  return{score:Math.min(100,score),specificity:Math.round(specificity*100),variety:Math.round(variety*100),density:Math.round(factsPerSentence*10)/10,freshness:Math.round(freshness),cliches:hasCliche(text)};
+  }catch(e){if(FIELD_DEBUG)console.error('[JQ L3] Datamuse:',e.message);}
+
+  // Calibrated weights (May 27 2026 — 5-dimension):
+  // StatDepth and Freshness are co-equal primary differentiators.
+  const W = { spec:20, statDepth:25, variety:20, density:10, fresh:25 };
+  const score = Math.round(
+    specificity * W.spec +
+    statDepth   * W.statDepth +
+    variety     * W.variety +
+    density     * W.density +
+    freshness   * (W.fresh / 100)
+  );
+  return {
+    score:       Math.min(100, Math.max(0, score)),
+    specificity: Math.round(specificity * 100),
+    statDepth:   Math.round(statDepth * 10) / 10,
+    variety:     Math.round(variety * 100),
+    density:     Math.round(density * 10) / 10,
+    freshness:   Math.round(freshness),
+    cliches:     hasCliche(text),
+  };
 }
 
 // Layer 3: debug panel display for prose quality
-function renderProseScore(scoreObj,label){
-  if(!FIELD_DEBUG||!scoreObj) return;
-  console.log(`[JQ] ${label}: Score ${scoreObj.score} · Spec ${scoreObj.specificity}% · Fresh ${scoreObj.freshness} · Dense ${scoreObj.density} · Clichés ${scoreObj.cliches.length}`);
+function renderProseScore(scoreObj, label){
+  if(!FIELD_DEBUG || !scoreObj) return;
+  const clicheStr = scoreObj.cliches.length ? `⚠ ${scoreObj.cliches.join(', ')}` : '✓ clean';
+  console.log(`[JQ] ${label}: Score ${scoreObj.score} · Spec ${scoreObj.specificity}% · Stats ${scoreObj.statDepth}/s · Var ${scoreObj.variety}% · Dense ${scoreObj.density} · Fresh ${scoreObj.freshness} · ${clicheStr}`);
 }
 
 

@@ -427,6 +427,10 @@ assert('A149 — JQ Layer 3: scoreProse function defined',
   html.includes('function scoreProse(') && html.includes('api.datamuse.com'),
   'scoreProse() with Datamuse API integration must exist');
 
+assert('A149b — JQ Layer 3: Statistical Depth 5th dimension present',
+  html.includes('statDepth') && html.includes('_JQ_STAT_PATTERNS') && html.includes('_JQ_STAT_NOUNS'),
+  'Statistical Depth must be 5th scoring dimension in scoreProse()');
+
 assert('A150 — JQ Layer 3: renderProseScore function defined',
   html.includes('function renderProseScore('),
   'renderProseScore() debug panel display must exist');
@@ -584,7 +588,7 @@ assert('A188 — M2: isScoutsPick wired into injectJ1J4Badges',
   'Scout\'s Pick badge injection must use isScoutsPick() boolean gate');
 
 assert('A189 — SW_VERSION is current (Rule 23: suffix per deploy, new day resets to a)',
-  html.includes("'2026-05-27i'"),
+  html.includes("'2026-05-27j'"),
   'SW_VERSION must match current deploy date — update daily per Rule 23');
 
 assert('A190 — Layer 2b: sport vocab violation detection function defined',
