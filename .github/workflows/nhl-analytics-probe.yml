@@ -1,0 +1,27 @@
+name: NHL Analytics Probe
+on:
+  workflow_dispatch:
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    name: Probe NHL API endpoints
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Run NHL analytics probe
+        run: python3 scripts/nhl-analytics-probe.py
+
+      - name: Commit probe results
+        run: |
+          git config user.name  "FIELD CI"
+          git config user.email "ci@field.app"
+          git add outbox/nhl/
+          git diff --staged --quiet && echo "No changes" || \
+            git commit -m "NHL analytics probe $(date -u '+%Y-%m-%dT%H:%M:%SZ') [skip ci]"
+          git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git HEAD:main
