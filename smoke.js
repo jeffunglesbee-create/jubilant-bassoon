@@ -584,7 +584,7 @@ assert('A188 — M2: isScoutsPick wired into injectJ1J4Badges',
   'Scout\'s Pick badge injection must use isScoutsPick() boolean gate');
 
 assert('A189 — SW_VERSION is current (Rule 23: suffix per deploy, new day resets to a)',
-  html.includes("'2026-05-27c'"),
+  html.includes("'2026-05-27d'"),
   'SW_VERSION must match current deploy date — update daily per Rule 23');
 
 assert('A190 — Layer 2b: sport vocab violation detection function defined',
@@ -641,6 +641,14 @@ assert('A202 — MLB Wave 1: analytics wired into compound prompt',
 assert('A203 — MLB Wave 1: park + ump badges in card template',
   html.includes('buildParkFactorBadge') && html.includes('buildUmpWatchBadge') && html.includes('mlb-park-badge'),
   'Park factor and ump watch badges must be in card template and CSS');
+
+assert('A204 — MLB automation: mlbStatsInit present and called at startup',
+  html.includes('mlbStatsInit') && html.includes('setTimeout(mlbStatsInit'),
+  'mlbStatsInit must exist and be called at startup');
+
+assert('A205 — MLB automation: /mlb-stats/ relay route referenced',
+  html.includes('/mlb-stats/'),
+  'FIELD must reference the /mlb-stats/ relay route for live table loading');
 
 
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
