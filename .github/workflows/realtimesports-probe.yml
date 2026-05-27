@@ -1,13 +1,3 @@
-# .github/workflows/realtimesports-probe.yml
-#
-# REALTIMESPORTS API PROBE
-# Tests RealtimeSports endpoints via field-relay-nba from CI (unrestricted internet).
-# Discovers correct play-by-play path + checks EPA fields per play.
-#
-# Trigger: push to outbox/.trigger-realtimesports (no [skip ci])
-# Result:  outbox/rts-result-{timestamp}.json  (committed [skip ci])
-# Read:    git pull → cat outbox/rts-result-*.json
-
 name: RealtimeSports API Probe
 
 on:
@@ -25,119 +15,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Probe RealtimeSports via relay
-        run: |
-          RELAY="https://field-relay-nba.jeffunglesbee.workers.dev"
-          TS=$(date -u +%Y%m%dT%H%M%SZ)
-          OUT="outbox/rts-result-${TS}.json"
-          EPA_FIELDS=("down" "distance" "yardLine" "yard_line" "yardline" "score" "clock" "quarter" "yardsGained" "yards_gained" "playType" "play_type" "homeScore" "awayScore")
-
-          echo "{"  > "$OUT"
-          echo "  \"probeTime\": \"$TS\"," >> "$OUT"
-          echo "  \"relay\": \"$RELAY\"," >> "$OUT"
-          echo "  \"results\": {" >> "$OUT"
-
-          # ── Step 1: NFL schedule ────────────────────────────────────────
-          echo "    \"nfl_schedule\": $(curl -s -w '\n{"_http_status":%{http_code}}' \
-            "$RELAY/realtimesports/schedule?league=nfl&days=30" \
-            | python3 -c "
-import sys, json
-lines = sys.stdin.read().strip().split('\n')
-meta = json.loads(lines[-1])
-try:
-    data = json.loads('\n'.join(lines[:-1]))
-except:
-    data = {'raw': lines[0][:500]}
-print(json.dumps({'status': meta['_http_status'], 'data': data}))
-")," >> "$OUT"
-
-          # ── Step 2: NBA schedule (get live eventId) ────────────────────
-          NBA_SCHED=$(curl -s "$RELAY/realtimesports/schedule?league=nba&days=7")
-          echo "    \"nba_schedule_raw\": $(echo "$NBA_SCHED" | python3 -c "
-import sys,json
-d=json.loads(sys.stdin.read())
-games=(d.get('data',{}).get('nba',{}).get('live',[]) or d.get('data',{}).get('nba',{}).get('upcoming',[]))
-print(json.dumps({'count': len(games), 'first': games[0] if games else None}))
-")," >> "$OUT"
-
-          # Extract eventId for PBP tests
-          EVENT_ID=$(echo "$NBA_SCHED" | python3 -c "
-import sys,json
-d=json.loads(sys.stdin.read())
-games=(d.get('data',{}).get('nba',{}).get('live',[]) or d.get('data',{}).get('nba',{}).get('upcoming',[]))
-print(games[0].get('eventId','') if games else '')
-" 2>/dev/null || echo "")
-          echo "    \"discovered_eventId\": \"$EVENT_ID\"," >> "$OUT"
-
-          # ── Step 3: PBP path discovery ─────────────────────────────────
-          echo "    \"pbp_paths\": {" >> "$OUT"
-          PATHS=(
-            "/realtimesports/pbp?league=nba&eventId=$EVENT_ID"
-            "/realtimesports/play-by-play?league=nba&eventId=$EVENT_ID"
-            "/realtimesports/game?league=nba&eventId=$EVENT_ID"
-            "/realtimesports/pbp?eventId=$EVENT_ID"
-            "/realtimesports/game?id=$EVENT_ID"
-            "/realtimesports/events?league=nba&eventId=$EVENT_ID"
-            "/realtimesports/schedule?league=nba&eventId=$EVENT_ID"
-          )
-          FIRST=1
-          for P in "${PATHS[@]}"; do
-            [ $FIRST -eq 0 ] && echo "," >> "$OUT"
-            FIRST=0
-            RESP=$(curl -s -o /tmp/rts_body.txt -w "%{http_code}" "$RELAY$P")
-            BODY=$(cat /tmp/rts_body.txt | head -c 1000)
-            # EPA field check on response
-            EPA_FOUND=$(echo "$BODY" | python3 -c "
-import sys, json
-epa=['down','distance','yardLine','yard_line','yardline','clock','quarter','yardsGained','yards_gained','playType','play_type','homeScore','awayScore','score']
-text=sys.stdin.read().lower()
-found=[f for f in epa if '\"'+f.lower()+'\"' in text]
-print(json.dumps(found))
-" 2>/dev/null || echo "[]")
-            echo "      \"$P\": {\"status\": $RESP, \"epa_fields_found\": $EPA_FOUND, \"preview\": $(echo "$BODY" | python3 -c "import sys,json; print(json.dumps(sys.stdin.read()[:400]))" 2>/dev/null || echo '""')}" >> "$OUT"
-          done
-          echo "    }," >> "$OUT"
-
-          # ── Step 4: NFL season plays (historic 2025) ───────────────────
-          echo "    \"nfl_plays_w1\": $(curl -s -w '\n{"_s":%{http_code}}' \
-            "$RELAY/realtimesports/plays?league=nfl&season=2025&week=1" \
-            | python3 -c "
-import sys,json
-lines=sys.stdin.read().strip().split('\n')
-s=json.loads(lines[-1])['_s']
-try: d=json.loads('\n'.join(lines[:-1]))
-except: d={'raw':lines[0][:300]}
-print(json.dumps({'status':s,'preview':str(d)[:400]}))
-")," >> "$OUT"
-
-          # ── Step 5: NFL teams ──────────────────────────────────────────
-          echo "    \"nfl_teams\": $(curl -s -w '\n{"_s":%{http_code}}' \
-            "$RELAY/realtimesports/teams?league=nfl" \
-            | python3 -c "
-import sys,json
-lines=sys.stdin.read().strip().split('\n')
-s=json.loads(lines[-1])['_s']
-try: d=json.loads('\n'.join(lines[:-1]))
-except: d={'raw':lines[0][:300]}
-print(json.dumps({'status':s,'preview':str(d)[:400]}))
-")" >> "$OUT"
-
-          echo "  }" >> "$OUT"
-          echo "}" >> "$OUT"
-
-          # Validate JSON
-          python3 -m json.tool "$OUT" > /tmp/rts_validated.json 2>/dev/null && mv /tmp/rts_validated.json "$OUT" || true
-          echo "OUT=$OUT" >> $GITHUB_ENV
-          cat "$OUT"
+      - name: Run probe script
+        run: python3 scripts/rts-probe.py
 
       - name: Push result
-        env:
-          OUT: ${{ env.OUT }}
         run: |
           git config user.email "rts-probe@field"
           git config user.name "RTS-Probe"
-          git add "$OUT"
-          git diff --cached --quiet && echo "No result to commit" && exit 0
+          git add outbox/rts-result-*.json
+          git diff --cached --quiet && echo "Nothing to commit" && exit 0
           git commit -m "rts-probe result [skip ci]"
           for i in 1 2 3; do
             git pull --rebase --autostash origin main && git push origin main && break
