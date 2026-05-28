@@ -1844,6 +1844,8 @@ body::before{
   font-size:.75rem;background:none;border:1px solid var(--edge2);
   border-radius:4px;color:var(--smoke);padding:.25rem .55rem;
   cursor:pointer;transition:.12s;letter-spacing:.06em;
+  user-select:none;-webkit-user-select:none;
+  -webkit-touch-callout:none;
 }
 .settings-btn:hover{color:var(--white);border-color:var(--edge2)}
 
@@ -2914,15 +2916,30 @@ function showFieldHealthPanel() {
 }
 
 // ── Long-press trigger on settings button ─────────────────────────────────
+// iOS iPad fix: touchstart with preventDefault() blocks text selection + context menu.
+// 700ms fires before iOS context menu (~1000ms); contextmenu handler as belt+suspenders.
+// -webkit-user-select:none on .settings-btn prevents text highlight on press.
 window.addEventListener('load', () => {
   const settingsBtn = document.getElementById('settings-btn');
   if (!settingsBtn) return;
   let _longPressTimer = null;
-  settingsBtn.addEventListener('pointerdown', () => {
-    _longPressTimer = setTimeout(() => { showFieldHealthPanel(); }, 1500);
+  const _cancel = () => { clearTimeout(_longPressTimer); _longPressTimer = null; };
+  settingsBtn.addEventListener('touchstart', e => {
+    e.preventDefault(); // blocks iOS text selection + context menu trigger
+    _longPressTimer = setTimeout(() => { showFieldHealthPanel(); }, 700);
+  }, { passive: false });
+  settingsBtn.addEventListener('touchend',    _cancel);
+  settingsBtn.addEventListener('touchmove',   _cancel);
+  settingsBtn.addEventListener('touchcancel', _cancel);
+  settingsBtn.addEventListener('contextmenu', e => e.preventDefault());
+  // Desktop fallback (mouse long-press via pointerdown)
+  settingsBtn.addEventListener('pointerdown', e => {
+    if (e.pointerType === 'mouse') {
+      _longPressTimer = setTimeout(() => { showFieldHealthPanel(); }, 700);
+    }
   }, { passive: true });
-  settingsBtn.addEventListener('pointerup',   () => clearTimeout(_longPressTimer));
-  settingsBtn.addEventListener('pointerleave',() => clearTimeout(_longPressTimer));
+  settingsBtn.addEventListener('pointerup',    e => { if (e.pointerType === 'mouse') _cancel(); });
+  settingsBtn.addEventListener('pointerleave', e => { if (e.pointerType === 'mouse') _cancel(); });
 });
 
 // ?debug=1 URL param still opens the panel
