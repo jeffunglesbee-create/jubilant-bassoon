@@ -12225,9 +12225,10 @@ function buildScoutingReport(game, sport) {
     const hST = ha ? getNHLSpecialTeams?.(ha) : null;
     const aST = aa ? getNHLSpecialTeams?.(aa) : null;
     if (hST && aST) {
-      rows.push({ lbl: 'Possession',
-        val: `<em>${ha} ${hST.sat.toFixed(0)}% SAT</em> · ${aa} ${aST.sat.toFixed(0)}% SAT` +
-             (Math.abs(hST.sat - aST.sat) >= 8 ? ` · <em>+${Math.abs(hST.sat - aST.sat).toFixed(0)}% edge ${hST.sat > aST.sat ? ha : aa}</em>` : '') });
+      const hSatStr = hST.sat > aST.sat ? `<em>${ha} ${hST.sat.toFixed(0)}% SAT</em>` : `${ha} ${hST.sat.toFixed(0)}% SAT`;
+      const aSatStr = aST.sat > hST.sat ? `<em>${aa} ${aST.sat.toFixed(0)}% SAT</em>` : `${aa} ${aST.sat.toFixed(0)}% SAT`;
+      const satEdge = Math.abs(hST.sat - aST.sat) >= 8 ? ` · <em>+${Math.abs(hST.sat - aST.sat).toFixed(0)}% edge ${hST.sat > aST.sat ? ha : aa}</em>` : '';
+      rows.push({ lbl: 'Possession', val: `${hSatStr} · ${aSatStr}${satEdge}` });
       rows.push({ lbl: 'Special Tm',
         val: `${ha} PP <em>${hST.pp.toFixed(1)}%</em> · PK <em>${hST.pk.toFixed(1)}%</em>` +
              `  |  ${aa} PP <em>${aST.pp.toFixed(1)}%</em> · PK <em>${aST.pk.toFixed(1)}%</em>` });
