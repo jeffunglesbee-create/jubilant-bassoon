@@ -1,75 +1,102 @@
-# FIELD Handoff — May 28 2026
+# FIELD Handoff — May 28 2026 (Session End)
 
-## HEAD
+## HEAD (origin)
+`3117e9d` — ci: update current state 7c67805
+
+## Code HEAD
 `aabd3b7` — World Cup 2026: complete 72-game group stage
 
 ## Smoke
-231/0 ✅ (A227-A229 new WC26 assertions)
+231/0 ✅ · A1-A229
 
 ## SW_VERSION
 2026-05-28b
 
-## Last session — World Cup 2026 COMPLETE
+---
 
-### What shipped:
-- `wc26Raw[]` replaced with complete 72-game group stage array (June 11–27)
-- All 12 groups × 6 games = 72 entries confirmed from Fox Sports + Yahoo Sports
-- Correct group labels A–L (old draft had Germany→Group C, Spain→Group G, etc. — all fixed)
-- Correct UTC times including midnight-ET edge cases (BC Place, late PT games)
-- `WC26_FREE` bundle on Mexico vs South Africa (Jun 11) + USA vs Paraguay (Jun 12) — Tubi free simulcast
-- `WC26_FOX`/`WC26_FS1` correctly assigned per Fox broadcast schedule
-- Smoke A227-A229: count=72, FREE bundle present, groups correct
-- June 11 today: preview card shows "Starts in 14 days" (existing maybePushWorldCup logic)
+## COMPLETED TODAY
+- AFL base date fix (97974a2)
+- Schedule Automation Phase 1 + Phase 2
+- MLBN full system (Puppeteer workflow)
+- May 28 daily update
+- **World Cup 2026 COMPLETE (aabd3b7)** — 72 games, all groups correct
+- 8 new Drive specs (see session doc 1SKc_XBC_nNwHAmJWNq2l7_Gd6n-67LD6K1EzCNg5EDw)
+- BNI + EMBER Patent Fixes: DONE in prior sessions — do not rebuild
 
-### Previous session same day — Schedule Automation Phase 2 (still current):
-- fetchScheduleData(), _fieldDataCache, _mlbnDataCache all live
-- Phase 3 still needed: update TYPE A protocol docs (~30 min)
+---
 
-## TIER 0 — IMMEDIATE NEXT SESSIONS
+## IMMEDIATE NEXT ACTIONS
 
-1. **NBA Finals G1 Shell** — TONIGHT after WCF G6 result
-   - OKC vs SAS Game 6 (8:30pm ET, NBC/Peacock)
-   - If OKC wins: update shell home team, series confirmed NYK vs OKC
-   - If SAS wins: add G7 entry (May 30), shell still TBD
-   - June 3 deadline (G1)
+### Tonight — NBA Finals Shell (~20 min, TYPE C)
+WCF G6: OKC @ SAS, 8:30pm ET, NBC/Peacock
+- OKC wins: update shell home team, NYK vs OKC confirmed
+- SAS wins: add G7 entry May 30, remain TBD
+- June 3 deadline (G1)
 
-2. **NHL Stanley Cup Final Shell** — after ECF G5 Friday May 29
-   - CAR leads MTL (or VGK) 3-1, finishing Friday
-   - West: VGK waiting
-   - Add shell Friday night as TYPE C
+### Friday — NHL Stanley Cup Final Shell (~25 min, TYPE C)
+CAR leads ECF 3-1; VGK waiting in West. Add shell after ECF G5.
 
-3. **Schedule Automation Phase 3** (~30 min)
-   - Update Daily Update Reference doc (Drive 1oSHqnDskN04p95g6e85--4hhgIsKISZ3ZflLXKPM08E)
-   - Update STANDARDS.md Rule 11 TYPE A checklist
-   - Remove manual MLB entry protocol, add field-data JSON verification
+### Saturday daytime — The Scorecard (~30 min)
+Spec: Drive 1_w5pMbUi1kygIJtTvT2SLEN2FAazxKgi2VVSBVHVFng
+Three post-game grades on Night Owl: Drama · Closeness · Plot
+Build BEFORE Arc Percentile Record (#47).
 
-4. **Daily updates** — every morning ≤25 min
-   - WCF G6 result tonight (NBA)
-   - NHL ECF G5 result Friday
-   - MLB slates
+### Sunday daytime — Schedule Automation Phase 3 (~30 min, docs only)
+- Daily Update Ref: 1oSHqnDskN04p95g6e85--4hhgIsKISZ3ZflLXKPM08E
+  Remove manual MLB entry; add JSON verification + MLBN section
+- Update STANDARDS.md Rule 11 TYPE A checklist
 
-## TIER 0 — COMPLETED TODAY ✅
-- BNI Patent Fix ✅ (prior session)
-- EMBER Patent Fix ✅ (prior session)
-- AFL base date fix ✅ (97974a2)
-- Schedule Automation Phase 1 ✅
-- Schedule Automation Phase 2 ✅
-- MLBN full system ✅
-- May 28 daily update ✅
-- **World Cup 2026 ✅ (aabd3b7) — 72 games, all correct**
+### Post-Tuesday — build queue:
+1. QW-1 (~45 min) · 1kgxuLJFtCLmPUeRXeVZynCVC3gED_7qM2ZiSgUMRiWo
+2. Schedule Card Surface Session (~85 min):
+   DRAMA-LINE-A indexer + post-game amnesty row (.gpost)
+   + What to Skip (#51) + SECTION-IDENTITY-A
+3. Cold Open (#83) + Night Owl Audio (#88) (~50 min batch)
+4. VIBE-A (~50 min) — after QW-1
 
-## TIER 1 — POST-TUESDAY BUILD QUEUE
-All specced. Build in order of impact:
-- The Scorecard (#45, ~30 min) — Night Owl post-game grades · `1_w5pMbUi1kygIJtTvT2SLEN2FAazxKgi2VVSBVHVFng`
-- QW-1 (~45 min) — situation → drama bonus · `1kgxuLJFtCLmPUeRXeVZynCVC3gED_7qM2ZiSgUMRiWo`
-- Cold Open (#83, ~30 min) + Night Owl Audio (#88, ~20 min) — batch session · `1XWp5ZJZmggyHHKsNmHG3vU9xYmroU3uLz9MIx9UCt9o`
-- Schedule Card Surface Session (~85 min): DRAMA-LINE-A indexer + post-game amnesty row + What to Skip + SECTION-IDENTITY-A
+---
+
+## USAGE BUDGET
+Weekly ~70-75% used at session end. Resets Tuesday 10am ET.
+Keep sessions short until reset.
+
+---
+
+## OPEN TIER 0
+- NBA Finals shell — tonight
+- NHL SCF shell — Friday
+- Schedule Automation Phase 3 — Sunday
+- Regret Risk USPTO Provisional ($320) — expires ~June 25
+
+---
+
+## SPEC INVENTORY (new specs May 28)
+All in Drive parent 0ABxH84VndHL7Uk9PVA
+
+The Scorecard (#45): 1_w5pMbUi1kygIJtTvT2SLEN2FAazxKgi2VVSBVHVFng (~30 min)
+DRAMA-LINE-A: 1_mozAEGLoLTEhwh4oplCxjtPDP-X3_A4wNjjO3SNs6Q (~20 min indexer only)
+VIBE-A: 1KmlNjoOiKcmVHdZZVrwQYUlNge4DvqFQl1DVs7435qM (~50 min, after QW-1)
+F16-F20: 165kco6HzPsuflkFQGOhxrFfnWjpGgxP1ma8oGz5LF8A (~45 min)
+QW-1: 1kgxuLJFtCLmPUeRXeVZynCVC3gED_7qM2ZiSgUMRiWo (~45 min)
+Arc Signature System (#80): 11DJ6W7hd9fNc1fs6lMuUm26CCcdm6tRJTyMdygrANyY (~90 min)
+Tier 1 batch (Cold Open/Audio/Pass/Carry/Brief/Skip/OTW): 1XWp5ZJZmggyHHKsNmHG3vU9xYmroU3uLz9MIx9UCt9o
+Pre-RUWT overhauls (Sleeper/Series Arc/Percentile): 1bRgvL2uKaDjWuTlR8njkk-dcfpHvjUa9MUej_RS1kZI
+
+---
+
+## VOCABULARY LOCKED
+The Verdict: taken 3x (#95 #100 #109). Report Card: taken by #93.
+The Scorecard: FINAL name for #45. Do not revisit.
+
+---
 
 ## CANONICAL DOCS
 - CI/Deploy Ref: 18JMUd-Uq_m2DomuCua2B5UMiWOel81yzc1JU7SY6f20
 - Current State: 1gumlOLcrOOYQlGWpdcYoziIhQQTsmD4Oi3KdVfMpps8
-- Schedule Automation Spec: 1XiXo3jQ6f9k0S7YgwpQ6OwBrBoT0R80-5sSmeMefo_U
-- Daily Update Ref: 1oSHqnDskN04p95g6e85--4hhgIsKISZ3ZflLXKPM08E ← PHASE 3 UPDATE NEEDED
+- Schedule Auto Spec: 1XiXo3jQ6f9k0S7YgwpQ6OwBrBoT0R80-5sSmeMefo_U
+- Daily Update Ref: 1oSHqnDskN04p95g6e85--4hhgIsKISZ3ZflLXKPM08E (PHASE 3 NEEDED)
+- Journalism Quality: 1b7fwDVZMURi2sDbQ-Ur7dpbG4I5-fuCDPWC1ILfucoU
+- Session doc (today): 1SKc_XBC_nNwHAmJWNq2l7_Gd6n-67LD6K1EzCNg5EDw
 
 ## REPO
 jeffunglesbee-create/jubilant-bassoon
