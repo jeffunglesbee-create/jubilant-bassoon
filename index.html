@@ -440,6 +440,24 @@ body::before{
 }
 .star-btn:hover,.star-btn.starred{color:var(--gold2);opacity:1}
 .star-btn.starred{text-shadow:0 0 8px rgba(232,201,122,.4)}
+.team-picker{
+  position:absolute;top:2.2rem;right:calc(90px + .4rem);
+  z-index:10;background:var(--bg2,#141420);
+  border:1px solid rgba(255,255,255,.14);border-radius:8px;
+  padding:.3rem;display:flex;flex-direction:column;gap:.2rem;
+  min-width:148px;box-shadow:0 4px 18px rgba(0,0,0,.5);
+}
+.tp-btn{
+  background:transparent;border:1px solid rgba(255,255,255,.1);
+  border-radius:6px;color:var(--text,#e8e8e8);font-size:.72rem;
+  padding:.38rem .7rem;text-align:left;cursor:pointer;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  transition:.12s;
+}
+.tp-btn:hover{
+  background:rgba(232,201,122,.1);color:var(--gold2,#e8c97a);
+  border-color:var(--gold2,#e8c97a);
+}
 .game-card{position:relative}  /* needed for absolute star-btn */
 .game-card.my-team-card{
   border-left:2px solid var(--gold);
@@ -19244,7 +19262,11 @@ function toggleMyTeam(name){
 })();
 
 // ── Star button delegate ─────────────────────────────────────────────────
+function _dismissTeamPicker(){ document.querySelectorAll('.team-picker').forEach(p=>p.remove()); }
 document.addEventListener('click', e => {
+  // Dismiss open picker on outside click
+  if(!e.target.closest('.team-picker') && !e.target.closest('.star-btn')) _dismissTeamPicker();
+
   const btn = e.target.closest('.star-btn');
   if(!btn) return;
   e.stopPropagation();
@@ -19252,11 +19274,35 @@ document.addEventListener('click', e => {
   if(!card) return;
   const home = card.dataset.home || '';
   const away = card.dataset.away || '';
-  // If away is already starred and home is not, toggle away; else toggle home
+
   if(!MY_TEAMS.has(home) && MY_TEAMS.has(away)){
+    // Away already starred — unstar it
+    _dismissTeamPicker();
     toggleMyTeam(away);
-  } else {
+  } else if(MY_TEAMS.has(home)){
+    // Home already starred — unstar it
+    _dismissTeamPicker();
     toggleMyTeam(home);
+  } else {
+    // Neither starred — show two-button team picker
+    const existing = card.querySelector('.team-picker');
+    if(existing){ existing.remove(); return; }
+    _dismissTeamPicker();
+    const picker = document.createElement('div');
+    picker.className = 'team-picker';
+    const awayLabel = away || 'Away';
+    const homeLabel = home || 'Home';
+    picker.innerHTML =
+      `<button class="tp-btn" data-team="${away}">★ ${awayLabel}</button>`+
+      `<button class="tp-btn" data-team="${home}">★ ${homeLabel}</button>`;
+    picker.addEventListener('click', ev => {
+      const tb = ev.target.closest('.tp-btn');
+      if(!tb) return;
+      ev.stopPropagation();
+      toggleMyTeam(tb.dataset.team);
+      picker.remove();
+    });
+    btn.insertAdjacentElement('afterend', picker);
   }
 });
 
