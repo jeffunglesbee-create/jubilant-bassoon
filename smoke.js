@@ -751,6 +751,21 @@ assert('A226 — Phase2: _fieldDataCache used in mlbGames source selection',
   html.includes('_fieldDataCache?.schedules?.mlb'),
   'mlbGames must check _fieldDataCache.schedules.mlb (Phase 2 live source)');
 
+// ── World Cup 2026 ──────────────────────────────────────────────────────────
+const wc26Match = html.match(/const wc26Raw=\[([\s\S]*?)\];/);
+const wc26Count = wc26Match ? (wc26Match[1].match(/_id:"wc26_g/g)||[]).length : 0;
+assert('A227 — WC26: wc26Raw contains all 72 group stage games',
+  wc26Count === 72,
+  `wc26Raw must have 72 entries (found ${wc26Count})`);
+
+assert('A228 — WC26: WC26_FREE bundle used for Mexico-SA and USA-Paraguay',
+  html.includes('"WC26_FREE"') && html.includes('wc26_g11_mex_rsa') && html.includes('wc26_g12_usa_par'),
+  'Opening match + USMNT opener must use WC26_FREE bundle');
+
+assert('A229 — WC26: Group labels correct (A–L, no repeats from old draft)',
+  html.includes('Group E') && html.includes('Group H') && !html.includes('Group C · Opening'),
+  'Group labels must be A–L correctly assigned');
+
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);
 
