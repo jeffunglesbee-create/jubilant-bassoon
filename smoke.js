@@ -293,6 +293,7 @@ assert('A56 — field_utils.js loaded in index.html',
     ['A74', 'drama-sparkline: buildDramaSparklineSVG defined',        /function buildDramaSparklineSVG\s*\(/],
     ['A75', 'series-margins: buildSeriesMarginsDots defined',         /function buildSeriesMarginsDots\s*\(/],
     ['A76', 'ember-buried-lead: evaluateEMBER defined',               /function evaluateEMBER\s*\(/],
+    ['A76b','ember-patent-fix: dramaScore absent from evaluateEMBER return + compound tag', [/return\s*\{[\s\S]{0,120}ember:\s*true[\s\S]{0,200}lateClose/, /EMBER BURIED LEAD.*lateClose/]],
     ['A77', 'build-game-context: buildGameContext defined',           /function buildGameContext\s*\(/],
     // ── A78-A87: Drama engine + ViewingConditions ────────────────────────────
     ['A78', 'drama-score-live: dramaScoreLive defined',               /function dramaScoreLive\s*\(/],

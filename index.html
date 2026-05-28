@@ -3010,7 +3010,7 @@ const FIELD_FEATURES = {
   'afl-drama-v5':           '2026-05-20',  // AFL 6-pt calibration, Q4 1.4× multiplier, Top-10 bracket
   'atp-live-scores':        '2026-05-20',  // ATP polling enabled, relay endpoint live
   // Drama-Aware Journalism ($14 session)
-  'ember-buried-lead':      '2026-05-20',  // evaluateEMBER() — distribution tier + drama threshold
+  'ember-buried-lead':      '2026-05-28',  // evaluateEMBER() — distribution tier + isLateCloseGame() boolean gate (patent-safe)
   'bdl-relay':              '2026-05-20',  // BDL /bdl/* relay — player stats + standings tertiary
   'bdl-milestones-p2c':     '2026-05-20',  // NBA milestone notes via BDL season_averages
   'build-game-context':     '2026-05-20',  // buildGameContext() — shared signal object
@@ -7424,7 +7424,7 @@ function buildTodaySchedule(){
     {home:"San Antonio Spurs",     away:"Oklahoma City Thunder", league:"NBA Playoffs \u2013 West CF G6 \u00b7 OKC leads 3-2",  start_time:"2026-05-29T00:30:00Z", confirmed:true, venue:"Frost Bank Center, San Antonio TX", streams:resolveBundle("NBA_NBC"), seriesRecord:"OKC leads 3-2", matchupNote:"SAS must win or face elimination. Wembanyama has shot 4-15 and 4-15 in G4-G5 combined — Spurs need him to recapture his G4 dominance (33pts, 103-82 blowout). OKC one win from NBA Finals vs NYK. G6 Thu May 28, 8:30pm ET, NBC/Peacock.", _gameImportance:"elimination"},
     // ── NBA Finals 2026 — All games NBC/Peacock ─────────────────────
     // UPDATE team names + venues once ECF/WCF conclude (~June 3)
-    {home:"New York Knicks", away:"TBD \u2014 Western Champion", league:"NBA Finals 2026 \u2013 G1 \u00b7 Series 0-0",  start_time:"2026-06-04T00:30:00Z", confirmed:true, venue:"Madison Square Garden, New York NY", streams:resolveBundle("NBA_ABC"), seriesRecord:"0-0", matchupNote:"NBA Finals 2026 on ABC, 8:30pm ET. NYK vs SAS/OKC (WCF ongoing, tied 2-2). Knicks' first Finals since 1999."},
+    {home:"New York Knicks", away:"TBD \u2014 Western Champion", league:"NBA Finals 2026 \u2013 G1 \u00b7 Series 0-0",  start_time:"2026-06-04T00:30:00Z", confirmed:true, venue:"Madison Square Garden, New York NY", streams:resolveBundle("NBA_ABC"), seriesRecord:"0-0", matchupNote:"NBA Finals 2026 on ABC, 8:30pm ET. NYK vs OKC or SAS (WCF: OKC leads 3-2, G6 Thu May 28 at San Antonio 8:30pm NBC/Peacock). Knicks' first Finals since 1999."},
     {home:"New York Knicks", away:"TBD \u2014 Western Champion", league:"NBA Finals 2026 \u2013 G2 \u00b7 Series 0-0",  start_time:"2026-06-06T00:30:00Z", confirmed:true, venue:"Madison Square Garden, New York NY", streams:resolveBundle("NBA_ABC"), seriesRecord:"0-0"},
     {home:"TBD \u2014 Western Champion", away:"New York Knicks", league:"NBA Finals 2026 \u2013 G3 \u00b7 Series 0-0",  start_time:"2026-06-09T00:30:00Z", confirmed:true, venue:"TBD \u2014 Home of Western Champion", streams:resolveBundle("NBA_ABC"), seriesRecord:"0-0"},
     {home:"TBD \u2014 Western Champion", away:"New York Knicks", league:"NBA Finals 2026 \u2013 G4 \u00b7 Series 0-0",  start_time:"2026-06-11T00:30:00Z", confirmed:true, venue:"TBD \u2014 Home of Western Champion", streams:resolveBundle("NBA_ABC"), seriesRecord:"0-0"},
@@ -7456,7 +7456,8 @@ function buildTodaySchedule(){
     // Broadcast: TNT / truTV / Max (US) · SN / CBC / TVAS (Canada)
     {home:"Carolina Hurricanes", away:"Montreal Canadiens", league:"NHL Playoffs – East CF G2 · CAR wins 3-2 OT, series tied 1-1", start_time:"2026-05-23T23:00:00Z", confirmed:true, venue:"Lenovo Center, Raleigh NC",      streams:resolveBundle("NHL_TNT"), crew:"John Forslund · Eddie Olczyk (TNT)", seriesRecord:"Series tied 1-1", matchupNote:"CAR wins G2 3-2 in OT after MTL stunned CAR 6-2 in G1 (Slafkovsky 2G 1A) — first CAR loss of playoffs, ending bid for perfect 16-0. G2 Saturday at Lenovo Center, 7pm ET, TNT/truTV/Max."},
     {home:"Montreal Canadiens",  away:"Carolina Hurricanes", league:"NHL Playoffs – East CF G3 · CAR wins 3-2 OT, leads 2-1", start_time:"2026-05-26T00:00:00Z", confirmed:true, venue:"Bell Centre, Montreal QC",   streams:resolveBundle("NHL_TNT"), seriesRecord:"CAR leads 2-1", matchupNote:"CAR wins G3 3-2 OT (Svechnikov 14:06 OT). Gostisbehere and Hall scored in reg for CAR; Matheson and Hutson for MTL. CAR outshot MTL 38-13. Dobes 35 saves. CAR leads 2-1 — have won all 5 OT games this postseason. G4 Wed at Bell Centre."},
-    {home:"Montreal Canadiens",  away:"Carolina Hurricanes", league:"NHL Playoffs – East CF G4 · CAR leads 2-1", start_time:"2026-05-28T00:00:00Z", confirmed:true, venue:"Bell Centre, Montreal QC",   streams:resolveBundle("NHL_TNT"), seriesRecord:"CAR leads 2-1", matchupNote:"MTL must win G4 at home to avoid going down 3-1. Canadiens have lost two straight for first time this postseason. Hutson (15 pts in playoffs, 4th-most by a MTL D-man in franchise history) is a key factor. Wed 8pm ET, TNT/truTV/Max."},
+    {home:"Montreal Canadiens",  away:"Carolina Hurricanes", league:"NHL Playoffs \u2013 East CF G4 \u00b7 CAR wins 4-0, leads 3-1", start_time:"2026-05-28T00:00:00Z", confirmed:true, venue:"Bell Centre, Montreal QC",   streams:resolveBundle("NHL_TNT"), seriesRecord:"CAR leads 3-1", matchupNote:"CAR dominates G4 4-0 (Aho, Staal, Stankoven scored in P1 for 3-0 lead). Andersen shutout. CAR outshot MTL 43-13 according to team stats. Carolina one win from Stanley Cup Final vs VGK. G5 Fri May 29 at Lenovo Center, 8pm ET, TNT/truTV/Max."},
+    {home:"Carolina Hurricanes", away:"Montreal Canadiens",  league:"NHL Playoffs \u2013 East CF G5 \u00b7 CAR leads 3-1", start_time:"2026-05-30T00:00:00Z", confirmed:true, venue:"Lenovo Center, Raleigh NC",    streams:resolveBundle("NHL_TNT"), seriesRecord:"CAR leads 3-1", matchupNote:"MTL must win to avoid elimination. CAR one win from reaching Stanley Cup Final vs Vegas. G5 Fri May 29, 8pm ET, TNT/truTV/Max.", _gameImportance:"elimination"},
     // ── NHL Western Conference Finals — Colorado Avalanche vs Vegas Golden Knights ──
     // COL wins Presidents' Trophy (best record) · COL wins R2 4-1 (vs Minnesota) · VGK wins R2 4-2 (vs Anaheim)
     // Key players: MacKinnon (COL), Marner (VGK), Dorofeyev (VGK — playoff scoring leader)
@@ -15840,7 +15841,7 @@ function buildCompoundPrompt(sections) {
       awayMisery  ? `  [FRANCHISE_CONTEXT:${teamNick(g.away)}] ${awayMisery}` : '',
       extremeNote ? `  [LIVE EXTREME] ${extremeNote}` : '',
       // Fix 7: EMBER buried lead — tier + channel context for editorial framing
-      (()=>{try{const er=_emberResultCache[g._id||''];return er?`  [EMBER BURIED LEAD: Tier${er.tier} on ${er.channel} · drama ${er.dramaScore}${er.contextFlag?' · context boost':''}]`:''}catch(e_){return ''}})(),
+      (()=>{try{const er=_emberResultCache[g._id||''];return er?`  [EMBER BURIED LEAD: Tier${er.tier} on ${er.channel}${er.lateClose?' · late-close game':''}${er.contextFlag?' · context boost':''}]`:''}catch(e_){return ''}})(),
       // Fix 9: BDL injury context (sync, reads from warm bdlCache after bdlPrefetchAll)
       // Called once — store result to avoid double traversal of bdlCache.injuries
       (()=>{try{const inj=bdlInjuryContextSync(g.home||'',g.away||'',g._sport||g._section||'');return inj?`  ${inj}`:''}catch(e_){return ''}})(),
@@ -17910,7 +17911,7 @@ function hasEmberContextBoost(g, sport) {
   return false;
 }
 
-function evaluateEMBER(g, sport, dramaScore, ed) {
+function evaluateEMBER(g, sport, ed) {
   const tier = getEmberDistributionTier(g);
   if (tier === 1) return null; // national broadcast — not eligible
   const contextBoost = hasEmberContextBoost(g, sport);
@@ -17921,13 +17922,16 @@ function evaluateEMBER(g, sport, dramaScore, ed) {
   //   Gate A — isLateCloseGame(): observable game state (late + close)
   //   Gate B — hasEmberContextBoost(): structural context (series, importance flag)
   // EMBER fires when EITHER independent gate passes. No single aggregated number thresholded.
+  // dramaScore deliberately EXCLUDED from signature and return — EMBER is distribution + game
+  // state, never an interest level value. Removing prevents "general notification" exposure.
   const lateAndClose = isLateCloseGame(g, ed, sport);
   if (!lateAndClose && !contextBoost) return null;
 
   return {
     ember: true, tier,
     channel: g.streams?.[0]?.label || g.nationalBundle || 'local',
-    dramaScore, contextFlag: contextBoost,
+    contextFlag: contextBoost,
+    lateClose: lateAndClose,
   };
 }
 
@@ -18068,14 +18072,14 @@ function injectDramaBadges(){
         seriesRecord: card.dataset.series||'',
         streams: card.dataset.stream ? [{label: card.dataset.stream}] : [],
       };
-      const emberResult = evaluateEMBER(emberGame, card.dataset.sport||'', smoothed, eData);
+      const emberResult = evaluateEMBER(emberGame, card.dataset.sport||'', eData);
       if (emberResult) {
         const eb = document.createElement('span');
         eb.className = 'badge-ember';
         // Tier label: Tier 3 (pure local) is more buried than Tier 2 (regional)
         const tierLabel = emberResult.tier === 3 ? 'Local Gem' : emberResult.tier === 2 ? 'Regional Gem' : 'Buried Lead';
         eb.textContent = `🔍 ${tierLabel}`;
-        eb.title = `Drama ${emberResult.dramaScore} on ${emberResult.channel} (Tier ${emberResult.tier})${emberResult.contextFlag ? ' · context boost' : ''}`;
+        eb.title = `Buried Lead: Tier ${emberResult.tier} on ${emberResult.channel}${emberResult.lateClose?' · late-close game':''}${emberResult.contextFlag ? ' · context boost' : ''}`;
         liveEl.insertAdjacentElement('afterend', eb);
         // Store EMBER result for compound prompt and Night Owl priority
         if (gid) _emberResultCache[gid] = emberResult;
