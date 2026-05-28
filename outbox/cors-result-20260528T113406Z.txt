@@ -1,0 +1,25 @@
+URL: https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=2026-05-28&hydrate=broadcasts%28all%29,team  [20260528T113406Z]
+HTTP/2 200 
+access-control-allow-origin: *
+access-control-allow-methods: GET, POST, PUT, DELETE, OPTIONS
+access-control-allow-headers: Content-Type,X-Requested-With,accept,Origin,Access-Control-Request-Method,Access-Control-Request-Headers,Authorization
+access-control-expose-headers: Content-Type,X-Requested-With,accept,Origin,Access-Control-Request-Method,Access-Control-Request-Headers,Authorization
+access-control-allow-credentials: true
+cache-control: max-age=20, public
+x-content-type-options: nosniff
+x-xss-protection: 0
+x-frame-options: DENY
+content-type: application/json;charset=UTF-8
+via: 1.1 google, 1.1 varnish, 1.1 varnish
+accept-ranges: bytes
+age: 0
+date: Thu, 28 May 2026 11:34:06 GMT
+x-served-by: cache-iad-kjyo7100083-IAD, cache-ewr-kewr1740072-EWR
+x-cache: MISS, MISS
+x-cache-hits: 0, 0
+x-timer: S1779968047.642538,VS0,VE53
+vary: accept-encoding, Accept-Encoding
+content-length: 40735
+
+=== BODY (first 3000 chars) ===
+{"copyright":"Copyright 2026 MLB Advanced Media, L.P.  Use of any content on this page acknowledges agreement to the terms posted here http://gdx.mlb.com/components/copyright.txt","totalItems":6,"totalEvents":0,"totalGames":6,"totalGamesInProgress":0,"dates":[{"date":"2026-05-28","totalItems":6,"totalEvents":0,"totalGames":6,"totalGamesInProgress":0,"games":[{"gamePk":824272,"gameGuid":"dcc02d41-2261-404d-ae33-a4366692383c","link":"/api/v1.1/game/824272/feed/live","gameType":"R","season":"2026","gameDate":"2026-05-28T17:10:00Z","officialDate":"2026-05-28","status":{"abstractGameState":"Preview","codedGameState":"S","detailedState":"Scheduled","statusCode":"S","startTimeTBD":false,"abstractGameCode":"P"},"teams":{"away":{"team":{"springLeague":{"id":114,"name":"Cactus League","link":"/api/v1/league/114","abbreviation":"CL"},"allStarStatus":"N","id":108,"name":"Los Angeles Angels","link":"/api/v1/teams/108","season":2026,"venue":{"id":1,"name":"Angel Stadium","link":"/api/v1/venues/1"},"springVenue":{"id":2500,"link":"/api/v1/venues/2500"},"teamCode":"ana","fileCode":"ana","abbreviation":"LAA","teamName":"Angels","locationName":"Anaheim","firstYearOfPlay":"1961","league":{"id":103,"name":"American League","link":"/api/v1/league/103"},"division":{"id":200,"name":"American League West","link":"/api/v1/divisions/200"},"sport":{"id":1,"link":"/api/v1/sports/1","name":"Major League Baseball"},"shortName":"LA Angels","franchiseName":"Los Angeles","clubName":"Angels","active":true},"leagueRecord":{"wins":21,"losses":35,"ties":0,"pct":".375"},"splitSquad":false,"seriesNumber":18,"springLeague":{"id":114,"name":"Cactus League","link":"/api/v1/league/114","abbreviation":"CL"}},"home":{"team":{"springLeague":{"id":115,"name":"Grapefruit League","link":"/api/v1/league/115","abbreviation":"GL"},"allStarStatus":"N","id":116,"name":"Detroit Tigers","link":"/api/v1/teams/116","season":2026,"venue":{"id":2394,"name":"Comerica Park","link":"/api/v1/venues/2394"},"springVenue":{"id":2511,"link":"/api/v1/venues/2511"},"teamCode":"det","fileCode":"det","abbreviation":"DET","teamName":"Tigers","locationName":"Detroit","firstYearOfPlay":"1901","league":{"id":103,"name":"American League","link":"/api/v1/league/103"},"division":{"id":202,"name":"American League Central","link":"/api/v1/divisions/202"},"sport":{"id":1,"link":"/api/v1/sports/1","name":"Major League Baseball"},"shortName":"Detroit","franchiseName":"Detroit","clubName":"Tigers","active":true},"leagueRecord":{"wins":22,"losses":34,"ties":0,"pct":".393"},"splitSquad":false,"seriesNumber":18,"springLeague":{"id":115,"name":"Grapefruit League","link":"/api/v1/league/115","abbreviation":"GL"}}},"venue":{"id":2394,"name":"Comerica Park","link":"/api/v1/venues/2394"},"broadcasts":[{"id":1001,"name":"KLAA 830","type":"AM","language":"en","isNational":false,"callSign":"KLAA","videoResolution":{"code":"H","resolutionShort":"HD","resolutionFull":"High Resolution"},"availability":{"availabilityId":2,"availabilityCode":"lo
