@@ -7199,33 +7199,44 @@ function renderAll(){
       if(game) mvAdd(game);
     });
   });
-  // ── Samsung-safe card tap: Pointer Events with 12px threshold ──────────────
-  // Root cause: onclick on .card-body is unreliable on Samsung devices because:
-  //   1. Samsung One UI elevates touch slop to ~12-16dp (stock Android = 8dp)
-  //   2. 120Hz sampling catches micro-movements that kill click events
-  //   3. Samsung Internet doesn't reliably inherit touch-action for 300ms suppression
-  // Fix: pointerdown fires before Samsung scroll detection; movement threshold
-  //      set to 12px to match Samsung's actual touch slop. Pointer events bypass
-  //      the onclick/scroll-detection race condition entirely.
+  // ── Samsung-safe card tap: touchend + movement threshold ──────────────────
+  // Why touchend beats pointer events on Samsung:
+  //   - pointercancel fires when Samsung claims scroll → pointerup never arrives
+  //   - touchend fires BEFORE Samsung's scroll decision, every time
+  //   - preventDefault() in non-passive touchend cancels both synthetic click + scroll claim
+  //   - 10px threshold clears 120Hz micro-movement noise while catching genuine taps
+  //
+  // Pointer events remain for desktop mouse (click fallback, no touch events).
+  // Guard: _touched flag prevents mouse click from double-firing after touchend.
   document.querySelectorAll('.card-body[data-open]').forEach(el => {
     const gameId = el.dataset.open;
     if (!gameId) return;
-    let _px = 0, _py = 0, _pt = 0, _moved = false, _pid = null;
-    el.addEventListener('pointerdown', e => {
-      _px = e.clientX; _py = e.clientY; _pt = Date.now();
-      _moved = false; _pid = e.pointerId;
+    let _tx = 0, _ty = 0, _tMoved = false, _touched = false;
+
+    el.addEventListener('touchstart', e => {
+      _tx = e.touches[0].clientX;
+      _ty = e.touches[0].clientY;
+      _tMoved = false; _touched = true;
     }, { passive: true });
-    el.addEventListener('pointermove', e => {
-      if (e.pointerId !== _pid) return;
-      if (Math.abs(e.clientX - _px) > 12 || Math.abs(e.clientY - _py) > 12) _moved = true;
+
+    el.addEventListener('touchmove', e => {
+      if (Math.abs(e.touches[0].clientX - _tx) > 10 ||
+          Math.abs(e.touches[0].clientY - _ty) > 10) _tMoved = true;
     }, { passive: true });
-    el.addEventListener('pointerup', e => {
-      if (e.pointerId !== _pid) return;
-      if (!_moved && Date.now() - _pt < 500) {
+
+    // non-passive so we can call preventDefault() — cancels scroll claim + synthetic click
+    el.addEventListener('touchend', e => {
+      if (_touched && !_tMoved) {
+        e.preventDefault();
         openBottomSheet(gameId);
       }
-    });
-    // Keyboard accessibility — Enter/Space still works
+      _touched = false;
+    }, { passive: false });
+
+    // Mouse / desktop fallback (only fires when no preceding touch)
+    el.addEventListener('click', () => { if (!_touched) openBottomSheet(gameId); });
+
+    // Keyboard accessibility
     el.addEventListener('keydown', e => {
       if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openBottomSheet(gameId); }
     });
@@ -14862,6 +14873,7 @@ let _pwaPrompt = null;
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
   const SW_VERSION = '2026-05-27o';
+  window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
   // Cache strategy: API-only (ESPN scores, weather, odds, SportsDB).
@@ -18658,9 +18670,11 @@ const RIVAL_MAP=new Map();
 for(const [a,b] of RIVALRIES){if(!RIVAL_MAP.has(a))RIVAL_MAP.set(a,new Set());if(!RIVAL_MAP.has(b))RIVAL_MAP.set(b,new Set());RIVAL_MAP.get(a).add(b);RIVAL_MAP.get(b).add(a);}
 // rivalsFilter: moved earlier — see before goToDate(TODAY_ISO)
 function isRivalGame(g){
-  const h=(g.home||'').toLowerCase(),a=(g.away||'').toLowerCase();
-  for(const t of MY_TEAMS){const tl=t.toLowerCase();if(h===tl||a===tl)return false;const rivals=RIVAL_MAP.get(tl)||new Set();if(rivals.has(h)||rivals.has(a))return true;}
-  return false;
+  try {
+    const h=(g.home||'').toLowerCase(),a=(g.away||'').toLowerCase();
+    for(const t of MY_TEAMS){const tl=t.toLowerCase();if(h===tl||a===tl)return false;const rivals=RIVAL_MAP.get(tl)||new Set();if(rivals.has(h)||rivals.has(a))return true;}
+    return false;
+  } catch(e) { return false; } // guard: RIVAL_MAP may be in TDZ if called before line 18657
 }
 
 

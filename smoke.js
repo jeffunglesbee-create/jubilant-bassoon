@@ -716,10 +716,10 @@ assert('A218 — Functional: Samsung tap fix — no onclick on card-body, data-o
   !html.includes('onclick="openBottomSheet') && html.includes('data-open="${g._id}"'),
   'onclick must be removed from card-body; data-open attribute must be present');
 
-assert('A219 — Functional: Samsung tap fix — pointer events wired in post-render',
-  html.includes('pointerdown') && html.includes('pointermove') && html.includes('pointerup') &&
-  html.includes('_moved = false') && html.includes('> 12'),
-  'Pointer events with 12px Samsung slop threshold must be wired');
+assert('A219 — Functional: Samsung tap fix — touchend approach with preventDefault',
+  html.includes('touchstart') && html.includes('touchend') && html.includes('touchmove') &&
+  html.includes('_tMoved') && html.includes('passive: false') && html.includes('e.preventDefault()'),
+  'touchend with non-passive + preventDefault is the Samsung-reliable tap pattern');
 
 assert('A220 — Functional: Exhausted Starter odds key not hardcoded in FIELD',
   !html.includes('8452c3ac6e226ca6eff8b087391d3c76'),
