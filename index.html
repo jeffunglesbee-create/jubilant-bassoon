@@ -12164,10 +12164,12 @@ function buildScoutingReport(game, sport) {
     const abbr = game._homeAbbr || game.homeTeam;
     const pf = abbr ? getParkFactor?.(abbr) : null;
     if (pf) {
-      const pfVal = pf.runs > 0
-        ? `<em>+${pf.runs}% runs</em> · +${pf.hr}% HR${pf.badgeClass === 'launch' ? ' · 🚀 Launch Pad' : ''}`
-        : `<span class="scout-warn">${pf.runs}% runs</span> · ${pf.hr}% HR${pf.badgeClass === 'pitchers' ? ' · 🛡 Pitcher\'s Park' : ''}`;
-      rows.push({ lbl: 'Park', val: `${game.venue ? game.venue.split(',')[0] : abbr} · ${pfVal}` });
+      const runDiff = pf.runFactor - 100;
+      const hrDiff  = pf.hrFactor  - 100;
+      const pfVal = runDiff > 0
+        ? `<em>+${runDiff}% runs</em> · +${hrDiff}% HR${pf.badgeClass === 'park-hitter-extreme' ? ' · 🚀 Launch Pad' : ''}`
+        : `<span class="scout-warn">${runDiff}% runs</span> · ${hrDiff}% HR${pf.badgeClass === 'park-pitcher' || pf.badgeClass === 'park-pitcher-extreme' ? ' · 🛡 Pitcher\'s Park' : ''}`;
+      rows.push({ lbl: 'Park', val: `${pf.label || (game.venue ? game.venue.split(',')[0] : abbr)} · ${pfVal}` });
     }
     // HP Umpire
     const umpName = game._hpUmpire || game.umpire || '';
@@ -12280,9 +12282,12 @@ function buildBettingFieldEdge(game, sport) {
   if (sp.includes('baseball') || sp.includes('mlb')) {
     const abbr = game._homeAbbr || game.homeTeam;
     const pf = abbr ? getParkFactor?.(abbr) : null;
-    if (pf && Math.abs(pf.runs) >= 10) {
-      const dir = pf.runs > 0 ? `+${pf.runs}% runs — O/U context` : `${pf.runs}% runs — pitcher-friendly`;
-      lines.push({ icon:'📍', text: `${game.venue?.split(',')[0] || abbr}: ${dir}` });
+    if (pf) {
+      const runDiff = pf.runFactor - 100;
+      if (Math.abs(runDiff) >= 10) {
+        const dir = runDiff > 0 ? `+${runDiff}% runs — O/U context` : `${runDiff}% runs — pitcher-friendly`;
+        lines.push({ icon:'📍', text: `${pf.label || (game.venue?.split(',')[0]) || abbr}: ${dir}` });
+      }
     }
     const umpName = game._hpUmpire || game.umpire || '';
     if (umpName) {
