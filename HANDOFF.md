@@ -1,70 +1,52 @@
-# FIELD Handoff — May 28 2026 (Session End — QW-1)
+# FIELD Handoff — May 28 2026 (Session End — Smoke Gate Refactor "b")
 
 ## Code HEAD
-`c523df9` — QW-1: extract situation bonus to applyQW1SituationBonus() + smoke A230-232
+`41f7d6e` — Smoke gate: invariant per-day + relocate snapshot accuracy (bypass-free).
+Committed with **NO --no-verify** (the whole point). Rebased onto CI state commit 28fadfe.
 
-## Smoke
-Structural 234/0 ✅ · A1-A232 · SW_VERSION: 2026-05-28c
-⚠️ Per-day field_smoke.js config STALE at TODAY_ISO=2026-05-23 → red (pre-existing).
-   Sync per-day config in next daily-update run. Structural gate (CI deploy) unaffected.
+## Smoke / gates (all green, no bypass)
+- Structural `smoke.js` 235/0 ✅ (added A234 console.log gating). SW_VERSION 2026-05-28c.
+- Per-day `field_smoke.js` ✅ 0 failures — now INVARIANTS only (system-clock date, no
+  answer-key). CANNOT false-fail. Run: `node field_smoke.js index.html`.
+- `field_smoke_daily.js` (NEW) ✅ exit 0 — snapshot accuracy, DAILY-UPDATE workflow only,
+  NOT in pre-commit. Run: `node field_smoke_daily.js index.html`.
+- units ✅ · eslint 0 errors ✅. Full pre-commit hook ran inside the commit → exit 0.
+- The prior handoff's "per-day config STALE at 2026-05-23 → red" warning is RESOLVED:
+  that coupling is gone. There is no longer a stale per-day config to sync.
 
 ## COMPLETED THIS SESSION
-- QW-1 (Option B refactor): inline #11a situation drama bonus extracted VERBATIM into
-  named `applyQW1SituationBonus(eData, sport)`. Behaviour identical — no double-count,
-  no recalibration. NOT a rebuild: QW-1/#11a was already shipped & WORKING (verified
-  May 21 audit). Spec doc 1kgxuLJF... was a re-spec of an existing feature; the only
-  real gap was the named fn for VIBE-A/isCrunchTime reuse + smoke assertability.
-- Post-RUWT compliance double-checked & PASSES: situation signals are named categorical
-  game-state facts (goaliePulled/runners/isRedZone/downDistance), not excitement
-  thresholds; dramaScoreLive is Case C (single-dim), smoothed via getSmoothedDrama
-  before display; raw score never surfaced as a number (tier labels only).
-- smoke A230 (fn defined), A231 (wired: sitBonus=applyQW1SituationBonus(eData,sport)),
-  A232 (named-fact stub-guard). SW_VERSION 28b->28c, A189 pin synced.
-- Pushed with [no-verify] (Rule 16) — reason = stale per-day config only; structural
-  234/0 + units + lint(0 err) all clean.
+- Redesigned the smoke gate to be permanently bypass-free (Jeff: "do Claude's best
+  recommendations, make it readable for Sonnet 4.6, then the safe three").
+- field_smoke.js: TODAY_ISO from system clock; removed snapshot consts (NBA_CARDS,
+  NBA_HOME_TEAM, NBA_NETWORK, MLB_CARDS, MLB_CHIP_*, NBA_SERIES_ACTIVE, NBA_HYPE_TEST,
+  MIN_SPORT_SECTIONS); #4/#5/#6 → well-formedness invariants; #23 → series records
+  well-formed (not "must exist"); #25 → structural infra; argv-driven paths (field_utils
+  from same dir, was /tmp); removed divergent A55 dup.
+- smoke.js: A234 console.log gating (counts UNGATED lines, ≤4; single source of truth).
+- index.html: gated 4 production console.log leakers behind FIELD_DEBUG.
+- field_smoke_daily.js: new data-source snapshot checker for the daily-update workflow.
+- scripts/pre-commit: passes repo index path to argv-driven field_smoke.js.
+- STANDARDS.md: Enforcement → three-file model; Rule 32 → "Smoke Gate Architecture
+  (2026-05-28) — invariant vs snapshot [ADR]" (CANONICAL reference).
+- Safe three done: (1) console.logs gated, (2) A55+console.log deduped into smoke.js,
+  (3) argv-driven paths.
 
-## ARCHITECTURE NOTE (cross-model rule)
-applyQW1SituationBonus signature = (eData, sport), NOT spec's (sit, sport): the logic
-needs eData (onFirst/outs/balls/strikes/clock), diff, period, isFinalPeriod — all
-recomputed INSIDE the fn (self-contained, identical to caller). Weather block (#Fix 6)
-intentionally LEFT inline in dramaScoreLive — it is a separate signal, not "situation".
-Not an ADR (behaviour-preserving refactor, no data-model change).
+## DAILY-UPDATE WORKFLOW — NEW STEP
+After updating today's slate: fill `DAILY_EXPECTED` in field_smoke_daily.js (date=today,
+verified games {home,away,network}, networks), run `node field_smoke_daily.js index.html`,
+require exit 0 before pushing. DO NOT invent matchups. Stale date fails by design.
 
-## NEXT SESSIONS
-Tonight: NBA Finals shell after WCF G6 (OKC@SAS 8:30pm ET NBC). June 3 deadline.
-Friday: NHL SCF shell after ECF G5
-Saturday: The Scorecard (30min) spec 1_w5pMbUi1kygIJtTvT2SLEN2FAazxKgi2VVSBVHVFng
-Sunday: Schedule Automation Phase 3 (30min docs only)
-Post-QW-1 build order (per QW-1 spec): -> Schedule Card Surface -> Cold Open+Audio -> VIBE-A
-  (Build QW-1 before VIBE-A — DONE; VIBE-A can now consume applyQW1SituationBonus.)
+## ARCHITECTURE NOTE (cross-model HARD rule)
+INVARIANT (true of any correct day, no answer-key → safe to block) vs SNAPSHOT (today's
+exact slate, needs ground truth → daily workflow). Pre-commit = structural + invariant,
+both hard blocks that cannot false-fail. Snapshot accuracy relocated, not weakened.
+ADR adopted by Opus 2026-05-28; do not reverse without Jeff's approval.
 
-## OPEN TIER 0
-- Sync field_smoke.js per-day config (currently 2026-05-23) — do in next daily update
-- NBA Finals shell tonight
-- NHL SCF shell Friday
-- Schedule Automation Phase 3 Sunday
-- Regret Risk USPTO Provisional $320 expires ~June 25
-
-## NEW SPECS (May 28, Drive parent 0ABxH84VndHL7Uk9PVA)
-The Scorecard #45: 1_w5pMbUi1kygIJtTvT2SLEN2FAazxKgi2VVSBVHVFng
-DRAMA-LINE-A: 1_mozAEGLoLTEhwh4oplCxjtPDP-X3_A4wNjjO3SNs6Q
-VIBE-A: 1KmlNjoOiKcmVHdZZVrwQYUlNge4DvqFQl1DVs7435qM
-F16-F20: 165kco6HzPsuflkFQGOhxrFfnWjpGgxP1ma8oGz5LF8A
-QW-1: 1kgxuLJFtCLmPUeRXeVZynCVC3gED_7qM2ZiSgUMRiWo  [BUILT c523df9 — re-spec of shipped #11a]
-Arc Signature #80: 11DJ6W7hd9fNc1fs6lMuUm26CCcdm6tRJTyMdygrANyY
-Tier 1 batch: 1XWp5ZJZmggyHHKsNmHG3vU9xYmroU3uLz9MIx9UCt9o
-Pre-RUWT overhauls: 1bRgvL2uKaDjWuTlR8njkk-dcfpHvjUa9MUej_RS1kZI
-
-## VOCABULARY LOCKED
-The Scorecard: FINAL name for #45. Verdict taken 3x. Report Card taken by #93.
-
-## CANONICAL DOCS
-CI/Deploy Ref: 18JMUd-Uq_m2DomuCua2B5UMiWOel81yzc1JU7SY6f20
-Current State: 1gumlOLcrOOYQlGWpdcYoziIhQQTsmD4Oi3KdVfMpps8
-Schedule Auto Spec: 1XiXo3jQ6f9k0S7YgwpQ6OwBrBoT0R80-5sSmeMefo_U
-Daily Update Ref: 1oSHqnDskN04p95g6e85--4hhgIsKISZ3ZflLXKPM08E PHASE 3 NEEDED
-Journalism Quality: 1b7fwDVZMURi2sDbQ-Ur7dpbG4I5-fuCDPWC1ILfucoU
-Session doc (this session): 1lhxD94dTKSDljIMYa8lU58pnwZDEpnU3sL-MlIM4YjA
-
-## REPO
-jeffunglesbee-create/jubilant-bassoon · PAT in memory only (exp May 2027)
+## FOLLOW-UPS (flagged, NOT done — deliberate)
+- A. ~500 lines of structural assertions still duplicated in field_smoke.js (A54/A56/A57,
+  24 & 26–32, weather, UFL). Consolidate into smoke.js once each is confirmed covered.
+  Not mass-deleted (coverage-loss risk). Gate is already bypass-free without it.
+- B. node_modules is TRACKED (~1860 files, via an earlier `git add -A`). Dedicated commit:
+  add `node_modules/` to .gitignore + `git rm -r --cached node_modules`.
+- C. Drive session/ADR doc could NOT be written this session (Drive API transient errors,
+  3 attempts). Canonical ADR is in STANDARDS.md; add the Drive copy next session.
