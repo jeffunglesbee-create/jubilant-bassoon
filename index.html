@@ -5064,6 +5064,41 @@ const PEACOCK_GOTD_SCHEDULE = {
   '2026-05-28':'CHC@PIT',   // Thu 6:40pm ET — CHC @ PIT
   '2026-05-29':'TOR@BAL',   // Fri 7:05pm ET — TOR @ BAL
 };
+// MLB NETWORK: ALL non-exclusive out-of-market games (Showcase + regular).
+// NON-EXCLUSIVE: local RSN still airs; mlbnShowcase flag adds MLBN chip alongside RSN chip.
+//
+// PRIMARY SOURCE (runtime, auto): statsapi.mlb.com is CORS-open — FIELD can call directly.
+//   TYPE A BUILD PENDING: wire fetchMLBNBroadcasts() → reads broadcasts(all) at load time
+//   → auto-tags any game with 'MLB Network' in broadcasts array → mlbnShowcase:true
+//   This makes the static table below OBSOLETE once built (it becomes a fallback only).
+//   See: cors-probe confirmed CORS-open May 28 2026 (access-control-allow-origin: *)
+//
+// FALLBACK (TYPE C manual): update this table weekly from mlb.com/network/shows/regular-season-games
+//   Page is JS-rendered — use cors-probe to fetch statsapi and grep for 'MLB Network' in broadcasts.
+//   cors-probe pattern: url=https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=YYYY-MM-DD&hydrate=broadcasts%28all%29,team
+//
+// MLB Network Showcase (Vasgersian/Verducci crew) — announced multi-month block:
+//   Source: mlb.com/network/shows/regular-season-games + tracker: tamirmoore.blogspot.com/2026/02/...
+const MLBN_SCHEDULE = {
+  // Showcase games (AWAY@HOME, confirmed from tracker + statsapi verification)
+  // Past games retained for record — all verified via statsapi cors-probe
+  '2026-04-02':'NYM@SFG',   // Thu 9:30pm — Season Premiere (Vasgersian/Verducci)
+  '2026-04-09':'ARI@NYM',   // Thu 7:00pm
+  '2026-04-16':'SEA@SDP',   // Thu 8:30pm
+  '2026-04-22':'NYY@BOS',   // Wed 6:30pm
+  '2026-04-30':'SFG@PHI',   // Wed (postponed from Apr 29 rain)
+  '2026-05-06':'TEX@NYY',   // Wed 7:00pm
+  '2026-05-14':'SFG@LAD',   // Thu 10:00pm
+  '2026-05-20':'NYY@TOR',   // Wed 9:15pm (rain-delayed)
+  '2026-05-21':'NYY@TOR',   // Thu 7:00pm (ALDS rematch G2)
+  // Upcoming
+  '2026-06-03':'LAD@ARI',   // Wed 9:30pm
+  '2026-06-18':'NYM@PHI',   // Thu 6:30pm
+  '2026-06-25':'NYY@BOS',   // Thu 7:00pm
+  '2026-06-27':'LAD@SDP',   // Sat 8:30pm
+  '2026-07-02':'SDP@LAD',   // Thu 10:00pm
+  // Additional games beyond Jul 2 announced at a later date
+};
 
 // Auto-match helper: builds 'AWAY@HOME' key from team abbreviations
 const _teamAbbr={
@@ -7569,8 +7604,10 @@ function buildTodaySchedule(){
       const _gk = _gotdKey(g.away||'', g.home||'');
       const _isEspnGotd  = g.espnGOTD  || ESPN_GOTD_SCHEDULE[TODAY_ISO]  === _gk;
       const _isPcokGotd  = g.peacockGOTD || PEACOCK_GOTD_SCHEDULE[TODAY_ISO] === _gk;
+      const _isMLBN      = g.mlbnShowcase || MLBN_SCHEDULE[TODAY_ISO] === _gk;
       if (_isEspnGotd)      baseStreams = resolveBundle("MLB_ESPNU_GOTD");  // ESPN App exclusive, no RSN
       else if (_isPcokGotd) baseStreams = resolveBundle("MLB_PEACOCK_GOTD"); // Peacock + NBCSN, no RSN
+      else if (_isMLBN)     baseStreams = resolveBundle("MLB_NETWORK");      // MLBN non-exclusive, RSN still airs
       else                  baseStreams = mlbStreams();                       // Default: MLB.TV + Local RSN
     }
     const base = {...g, league:"MLB", streams:baseStreams};
@@ -7578,6 +7615,7 @@ function buildTodaySchedule(){
     const gKey=_gotdKey(g.away,g.home);
     const isEspnGOTD=g.espnGOTD||ESPN_GOTD_SCHEDULE[TODAY_ISO]===gKey;
     const isPeacockGOTD=g.peacockGOTD||PEACOCK_GOTD_SCHEDULE[TODAY_ISO]===gKey;
+    const isMLBN=g.mlbnShowcase||MLBN_SCHEDULE[TODAY_ISO]===gKey;
     // Peacock Game of the Day: streams without needing MLB.TV
     if(isPeacockGOTD){
       base.peacockGOTD = true;
@@ -7589,6 +7627,11 @@ function buildTodaySchedule(){
       base.espnGOTD = true;
       base.gotdLabel = "ESPN Unlimited Game of the Day";
       base.gotdStreams = resolveBundle("MLB_ESPNU_GOTD");
+    }
+    // MLB Network: non-exclusive — local RSN still airs, MLBN chip added alongside
+    if(isMLBN && !isEspnGOTD && !isPeacockGOTD){
+      base.mlbnShowcase = true;
+      base.gotdLabel = "MLB Network";
     }
     return base;
   });
