@@ -429,3 +429,187 @@ test.describe('1200px — Desktop', () => {
     await page.screenshot({ path: path.join(VP_SCREENSHOT_DIR, 'vp-1200.png'), fullPage: false });
   });
 });
+
+// ══════════════════════════════════════════════════════════════════
+// NEW — 5 MISSING VIEWPORT TESTS (specced May 24, built May 27)
+// Covers: P3 (414), L1 (667 landscape), L2 (932 landscape),
+//         T2 (1180 landscape), D3 (1440 desktop)
+// ══════════════════════════════════════════════════════════════════
+
+// ── P3 — 414px portrait (phone-large) ──────────────────────────
+test.describe('414px portrait — Phone Large (P3)', () => {
+  test.use({ viewport: { width: 414, height: 896 } });
+  let page;
+  test.beforeAll(async ({ browser }) => {
+    page = await browser.newPage();
+    await page.setViewportSize({ width: 414, height: 896 });
+    await page.goto(BASE_URL);
+    await page.waitForSelector('.game-card', { timeout: 12000 });
+  });
+  test.afterAll(async () => { await page.close(); });
+
+  test('P3-01 — data-phone-tier is phone-large', async () => {
+    const tier = await page.evaluate(() => document.body.dataset.phoneTier);
+    expect(tier, `Expected phone-large, got: ${tier}`).toBe('phone-large');
+  });
+
+  test('P3-02 — venue badge display:inline-flex (NOT none)', async () => {
+    const display = await page.evaluate(() => {
+      const el = document.querySelector('.venue-badge');
+      return el ? getComputedStyle(el).display : 'no-element';
+    });
+    expect(display, `venue-badge display: ${display}`).toBe('inline-flex');
+  });
+
+  test('P3-03 — game-card padding ≥ .85rem (13.6px)', async () => {
+    const pad = await page.evaluate(() => {
+      const el = document.querySelector('.game-card');
+      return el ? parseFloat(getComputedStyle(el).paddingTop) : 0;
+    });
+    expect(pad, `card paddingTop: ${pad}px`).toBeGreaterThanOrEqual(13);
+  });
+
+  test('P3-04 — drama line present on at least one card', async () => {
+    const count = await page.evaluate(() =>
+      document.querySelectorAll('.card-drama-line').length);
+    expect(count, 'No drama lines at P3').toBeGreaterThan(0);
+  });
+});
+
+// ── L1 — 667px landscape (phone landscape, SE-size) ────────────
+test.describe('667px landscape — Phone Landscape (L1)', () => {
+  test.use({ viewport: { width: 667, height: 375 } });
+  let page;
+  test.beforeAll(async ({ browser }) => {
+    page = await browser.newPage();
+    await page.setViewportSize({ width: 667, height: 375 });
+    await page.goto(BASE_URL);
+    await page.waitForSelector('.game-card', { timeout: 12000 });
+  });
+  test.afterAll(async () => { await page.close(); });
+
+  test('L1-01 — single-column layout (no 2-col grid)', async () => {
+    const gtc = await page.evaluate(() => {
+      const el = document.querySelector('.sport-section-games');
+      return el ? getComputedStyle(el).gridTemplateColumns : 'no-element';
+    });
+    // 1-col means value contains a single track — no "1fr 1fr" pattern
+    const isTwoCol = /1fr\s+1fr|repeat\s*\(\s*2/.test(gtc);
+    expect(isTwoCol, `Unexpected 2-col grid at L1: "${gtc}"`).toBe(false);
+  });
+
+  test('L1-02 — drama line present (mid-tier upgrade)', async () => {
+    const count = await page.evaluate(() =>
+      document.querySelectorAll('.card-drama-line').length);
+    expect(count, 'No drama lines at L1').toBeGreaterThan(0);
+  });
+});
+
+// ── L2 — 932px landscape (phone-landscape-wide, Pro Max) ────────
+test.describe('932px landscape — Phone Landscape Wide (L2)', () => {
+  test.use({ viewport: { width: 932, height: 430 } });
+  let page;
+  test.beforeAll(async ({ browser }) => {
+    page = await browser.newPage();
+    await page.setViewportSize({ width: 932, height: 430 });
+    await page.goto(BASE_URL);
+    await page.waitForSelector('.game-card', { timeout: 12000 });
+  });
+  test.afterAll(async () => { await page.close(); });
+
+  test('L2-01 — data-phone-tier is phone-landscape-wide', async () => {
+    const tier = await page.evaluate(() => document.body.dataset.phoneTier);
+    expect(tier, `Expected phone-landscape-wide, got: ${tier}`).toBe('phone-landscape-wide');
+  });
+
+  test('L2-02 — sport-section-games has 2-column grid', async () => {
+    const gtc = await page.evaluate(() => {
+      const el = document.querySelector('.sport-section-games');
+      return el ? getComputedStyle(el).gridTemplateColumns : 'no-element';
+    });
+    const isTwoCol = /1fr\s+1fr|repeat\s*\(\s*2/.test(gtc);
+    expect(isTwoCol, `2-col grid not active at L2, columns: "${gtc}"`).toBe(true);
+  });
+
+  test('L2-03 — venue badge display:inline-flex', async () => {
+    const display = await page.evaluate(() => {
+      const el = document.querySelector('.venue-badge');
+      return el ? getComputedStyle(el).display : 'no-element';
+    });
+    expect(display, `venue-badge display: ${display}`).toBe('inline-flex');
+  });
+
+  test('L2-04 — drama line present', async () => {
+    const count = await page.evaluate(() =>
+      document.querySelectorAll('.card-drama-line').length);
+    expect(count, 'No drama lines at L2').toBeGreaterThan(0);
+  });
+});
+
+// ── T2 — 1180px landscape (iPad landscape) ──────────────────────
+test.describe('1180px landscape — iPad Landscape (T2)', () => {
+  test.use({ viewport: { width: 1180, height: 820 } });
+  let page;
+  test.beforeAll(async ({ browser }) => {
+    page = await browser.newPage();
+    await page.setViewportSize({ width: 1180, height: 820 });
+    await page.goto(BASE_URL);
+    await page.waitForSelector('.game-card', { timeout: 12000 });
+  });
+  test.afterAll(async () => { await page.close(); });
+
+  test('T2-01 — ambient panel present (not yet at D1 threshold)', async () => {
+    const exists = await page.evaluate(() =>
+      !!document.querySelector('#ambient-panel, .ambient-panel, [id*="ambient"]'));
+    expect(exists, 'Ambient panel not found at T2 (1180px)').toBe(true);
+  });
+
+  test('T2-02 — NO three-column layout (T2 is Enlarged T1, not D1)', async () => {
+    // Confirm we're below the 1200px laptop threshold — no LEFT/CENTRE/RIGHT
+    const hasCentre = await page.evaluate(() =>
+      !!document.querySelector('#field-centre, .field-centre, [id*="centre"]'));
+    expect(hasCentre, 'CENTRE column appeared at T2 — should only activate at 1200px+').toBe(false);
+  });
+
+  test('T2-03 — drama line present (full tier expected)', async () => {
+    const count = await page.evaluate(() =>
+      document.querySelectorAll('.card-drama-line').length);
+    expect(count, 'No drama lines at T2').toBeGreaterThan(0);
+  });
+});
+
+// ── D3 — 1440px desktop ─────────────────────────────────────────
+test.describe('1440px — Desktop (D3/D4)', () => {
+  test.use({ viewport: { width: 1440, height: 900 } });
+  let page;
+  test.beforeAll(async ({ browser }) => {
+    page = await browser.newPage();
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto(BASE_URL);
+    await page.waitForSelector('.game-card', { timeout: 12000 });
+  });
+  test.afterAll(async () => { await page.close(); });
+
+  test('D3-01 — LEFT column present at 1440px', async () => {
+    const exists = await page.evaluate(() =>
+      !!document.querySelector('#field-left, .field-left, [id*="field-left"]'));
+    expect(exists, 'LEFT column not found at 1440px').toBe(true);
+  });
+
+  test('D3-02 — ambient/RIGHT panel present', async () => {
+    const exists = await page.evaluate(() =>
+      !!document.querySelector('#field-right, #ambient-panel, [id*="ambient"], .ambient-panel'));
+    expect(exists, 'RIGHT/ambient panel not found at 1440px').toBe(true);
+  });
+
+  test('D3-03 — WHOLE FIELD toggle present and labelled', async () => {
+    const exists = await page.evaluate(() =>
+      !!document.querySelector('#whole-field-toggle, [id*="whole-field"], [data-mode]'));
+    expect(exists, 'No WHOLE FIELD toggle at 1440px').toBe(true);
+  });
+
+  test('D3-04 — no horizontal overflow at 1440px', async () => {
+    const sw = await page.evaluate(() => document.body.scrollWidth);
+    expect(sw, `Horizontal overflow at 1440px: ${sw}px`).toBeLessThanOrEqual(1450);
+  });
+});
