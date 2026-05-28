@@ -1,12 +1,12 @@
 {
   "_meta": {
     "schema_version": "2.0",
-    "generated_at": "2026-05-28T11:56:11.512Z",
+    "generated_at": "2026-05-28T18:24:09.334Z",
     "for_date": "2026-05-28",
     "source": "field-data workflow (automated)",
     "games_found": {
       "nhl": 0,
-      "nba": 0,
+      "nba": 1,
       "mlb": 6,
       "mls": 0
     },
@@ -16,7 +16,19 @@
   },
   "schedules": {
     "nhl": [],
-    "nba": [],
+    "nba": [
+      {
+        "sport": "NBA",
+        "home": "San Antonio Spurs",
+        "away": "Oklahoma City Thunder",
+        "start_time": "2026-05-29T00:30:00Z",
+        "venue": null,
+        "seriesRecord": "OKC leads 3-2",
+        "isPlayoff": true,
+        "gameLabel": "West Conf. Finals",
+        "confirmed": true
+      }
+    ],
     "mlb": [
       {
         "sport": "MLB",
@@ -84,7 +96,7 @@
         "isPlayoff": false,
         "nationalBundle": null,
         "espnGOTD": false,
-        "peacockGOTD": true,
+        "peacockGOTD": false,
         "_postponed": false,
         "confirmed": true
       },
@@ -96,8 +108,8 @@
         "venue": "Globe Life Field",
         "league": "MLB",
         "isPlayoff": false,
-        "nationalBundle": "MLB_ESPN",
-        "espnGOTD": true,
+        "nationalBundle": null,
+        "espnGOTD": false,
         "peacockGOTD": false,
         "_postponed": false,
         "confirmed": true
@@ -107,8 +119,9 @@
   },
   "game_overlays": [
     {
-      "_match_key": "Texas Rangers|Houston Astros",
-      "matchupNote": "The Lone Star State rivalry takes center stage tonight as the Astros and Rangers clash in a high-stakes showdown that could prove pivotal for the American League West hierarchy. With the postseason race tightening, every pitch carries playoff implications in this critical divisional battle."
+      "_match_key": "San Antonio Spurs|Oklahoma City Thunder",
+      "seriesRecord": "OKC leads 3-2",
+      "matchupNote": "The Thunder look to punch their ticket to the Finals tonight, but the Spurs are fighting to force a decisive Game 7 and keep their championship window cracked open. With Oklahoma City holding a 3-2 series lead, San Antonio must protect home court or watch their title hopes vanish in the Texas heat."
     }
   ]
 }
