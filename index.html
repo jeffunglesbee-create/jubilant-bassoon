@@ -3531,9 +3531,10 @@ function _aflCurrentRound(){
     const m=(afl.games[0].league||'').match(/Round (\d+)/i);
     if(m) return parseInt(m[1]);
   }
-  // 3. Date-based auto-detect (AFL 2026 R1 ~Feb 27, rounds ~weekly, byes cause ±1)
-  // Eliminates hardcoded fallback — no manual update needed between rounds
-  const aflR1=new Date('2026-02-27T00:00:00Z');
+  // 3. Date-based auto-detect using actual Round 1 start (Mar 12 2026).
+  // Opening Round (Mar 5-8) is a prologue; R1 proper = Mar 12. One round ~7 days.
+  // ±1 tolerance is handled by fetching both R and R+1 in squigglePrefetchAll().
+  const aflR1=new Date('2026-03-12T00:00:00Z');
   const weeks=Math.floor((Date.now()-aflR1.getTime())/(7*86400000));
   return Math.min(Math.max(1, weeks+1), 24); // clamp 1-24
 }
