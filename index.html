@@ -1050,6 +1050,7 @@ body::before{
 .live-sit-string{font-size:.63rem;color:var(--muted,#8888aa);font-style:italic;padding:.08rem 0 0;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px}
 .cdw-note{font-size:.6rem;color:var(--muted,#8888aa);font-style:italic;padding:.06rem .85rem .1rem;line-height:1.3;opacity:.85;border-left:2px solid rgba(96,165,250,.25);margin:.05rem 0 .05rem .6rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;grid-column:2 / span 2}
 .scout-pick-badge{display:inline-flex;align-items:center;gap:.25rem;font-size:.56rem;font-weight:700;color:#2dd4bf;background:rgba(45,212,191,.1);border:1px solid rgba(45,212,191,.3);border-radius:4px;padding:.15rem .45rem;margin-top:.2rem}
+.stat-day-badge{display:inline-flex;align-items:center;gap:.2rem;font-size:.55rem;font-weight:700;color:#f5e0a0;background:rgba(245,224,160,.08);border:1px solid rgba(245,224,160,.2);border-radius:4px;padding:.12rem .4rem;margin-top:.15rem;margin-left:.25rem}
 .narrative-line.series-context{color:var(--gold2,#c9a84c);font-style:italic;opacity:.95}
 .series-preview-card{background:rgba(201,168,76,.06);border:1px solid rgba(201,168,76,.18);border-radius:10px;padding:.85rem 1rem .75rem;margin-bottom:.6rem;cursor:pointer;transition:background .2s}
 .series-preview-card:hover{background:rgba(201,168,76,.1)}
@@ -9646,8 +9647,7 @@ function injectJ1J4Badges() {
       badge.className = 'scout-pick-badge';
       badge.textContent = '🔍 Scout\'s Pick';
       // Tooltip: describe the qualifying signal, not a composite score
-      let scoutTitle = 'Under-the-radar tonight';
-      try {
+      let scoutTitle = 'Under-the-radar tonight';      try {
         if (g.seriesRecord) scoutTitle = `${g.seriesRecord} · not on national TV`;
         else if (/playoff|final|series/i.test(g.league||'')) scoutTitle = 'Playoff stakes · not on national TV';
         else {
@@ -9666,6 +9666,15 @@ function injectJ1J4Badges() {
       } catch(e_) {}
       badge.title = scoutTitle;
       cardBody.appendChild(badge);
+      // Stat of Day — one-line evidence for the Scout's Pick
+      try {
+        const statHtml = buildStatOfDayBadge(g, sec?.sport || g._sport || '');
+        if (statHtml) {
+          const statEl = document.createElement('span');
+          statEl.innerHTML = statHtml;
+          cardBody.appendChild(statEl.firstChild);
+        }
+      } catch(e_) {}
     }
 
     // ── J1: Anti-Hype (BNI) ──────────────────────────────────────────────
@@ -12383,6 +12392,98 @@ function nhlAnalyticsInit() {
   }
 }
 
+// ── getStatOfDay — tonight's most anomalous analytical fact ──────────────────
+// Returns the single number with the biggest deviation from league average
+// across all analytics data for this game. Used to:
+//   1. Power the Scout's Pick "Stat of Day" badge (one-line evidence for the pick)
+//   2. Inject a FEATURED STAT into the compound prompt with a citation rule
+//
+// Selection: largest |value - leagueAvg| / leagueAvg (normalised deviation)
+// so that a 10pt PK advantage (93% vs 82% avg) outweighs a 5% SAT edge.
+//
+// 2026 playoff league averages (calculated from probe data — 16 teams):
+//   PP%: 18.0  PK%: 82.0  SAT%: 50.0  FO%: 50.0
+//   MLB park factor avg: 100  Umpire overturn avg: 45%
+const _NHL_AVGS = { pp: 18.0, pk: 82.0, sat: 50.0, fo: 50.0 };
+
+function getStatOfDay(game, sport) {
+  if (!game) return null;
+  const sp = (sport || game._sport || '').toLowerCase();
+  const candidates = [];
+
+  // ── NHL ──────────────────────────────────────────────────────────────────
+  if (sp.includes('nhl') || sp.includes('hockey')) {
+    const ha = game._homeAbbr || getNHLAbbrev?.(game.home);
+    const aa = game._awayAbbr || getNHLAbbrev?.(game.away);
+    const hST = ha ? getNHLSpecialTeams?.(ha) : null;
+    const aST = aa ? getNHLSpecialTeams?.(aa) : null;
+    if (hST && aST) {
+      // Each candidate: { deviation, text, team, value, label, context }
+      const push = (team, abbr, val, avg, label, fmtVal, ctx) =>
+        candidates.push({ deviation: Math.abs(val - avg) / avg, team, abbr, val, label, fmtVal, ctx });
+
+      push(game.home, ha, hST.pk, _NHL_AVGS.pk, 'PK%',
+        `${hST.pk.toFixed(1)}%`, `${Math.round(hST.pk - _NHL_AVGS.pk)}pts above playoff average`);
+      push(game.away, aa, aST.pk, _NHL_AVGS.pk, 'PK%',
+        `${aST.pk.toFixed(1)}%`, `${Math.round(aST.pk - _NHL_AVGS.pk)}pts above playoff average`);
+      push(game.home, ha, hST.pp, _NHL_AVGS.pp, 'PP%',
+        `${hST.pp.toFixed(1)}%`, `${hST.pp > _NHL_AVGS.pp ? '+' : ''}${(hST.pp - _NHL_AVGS.pp).toFixed(1)}pts vs playoff average`);
+      push(game.away, aa, aST.pp, _NHL_AVGS.pp, 'PP%',
+        `${aST.pp.toFixed(1)}%`, `${aST.pp > _NHL_AVGS.pp ? '+' : ''}${(aST.pp - _NHL_AVGS.pp).toFixed(1)}pts vs playoff average`);
+      push(game.home, ha, hST.sat, _NHL_AVGS.sat, 'SAT%',
+        `${hST.sat.toFixed(0)}%`, `${hST.sat > 50 ? 'above' : 'below'} average possession`);
+      push(game.away, aa, aST.sat, _NHL_AVGS.sat, 'SAT%',
+        `${aST.sat.toFixed(0)}%`, `${aST.sat > 50 ? 'above' : 'below'} average possession`);
+    }
+    // Goalie outlier
+    const hG = game._homeGoalie ? getNHLGoalieProfile?.(game._homeGoalie) : null;
+    const aG = game._awayGoalie ? getNHLGoalieProfile?.(game._awayGoalie) : null;
+    if (hG && hG.tier === 'elite')
+      candidates.push({ deviation: (hG.sv - 0.9) / 0.9, team: game.home, abbr: ha,
+        val: hG.sv, label: 'sv%', fmtVal: `.${Math.round(hG.sv*1000)}`, ctx: 'elite sv% this playoffs' });
+    if (aG && aG.tier === 'elite')
+      candidates.push({ deviation: (aG.sv - 0.9) / 0.9, team: game.away, abbr: aa,
+        val: aG.sv, label: 'sv%', fmtVal: `.${Math.round(aG.sv*1000)}`, ctx: 'elite sv% this playoffs' });
+  }
+
+  // ── MLB ──────────────────────────────────────────────────────────────────
+  if (sp.includes('mlb') || sp.includes('baseball')) {
+    const abbr = game._homeAbbr;
+    const pf = abbr ? getParkFactor?.(abbr) : null;
+    if (pf) {
+      const runDiff = pf.runFactor - 100;
+      if (Math.abs(runDiff) >= 10)
+        candidates.push({ deviation: Math.abs(runDiff) / 100, team: pf.label || game.home, abbr,
+          val: runDiff, label: 'run factor', fmtVal: `${runDiff > 0 ? '+' : ''}${runDiff}%`,
+          ctx: `${runDiff > 0 ? 'hitter-friendly' : 'pitcher-friendly'} park` });
+    }
+    const umpName = game._hpUmpire || '';
+    if (umpName) {
+      const last = umpName.split(' ').pop();
+      const ump = getUmpireABSRating?.(last);
+      if (ump && ump.rate >= 0.55)
+        candidates.push({ deviation: (ump.rate - 0.45) / 0.45, team: last, abbr: 'UMP',
+          val: ump.rate, label: 'overturn rate', fmtVal: `${Math.round(ump.rate*100)}%`,
+          ctx: 'calls challenged at the plate' });
+    }
+  }
+
+  if (!candidates.length) return null;
+  const best = candidates.sort((a, b) => b.deviation - a.deviation)[0];
+  return {
+    ...best,
+    shortText: `${teamNick(best.team||'')} ${best.fmtVal} ${best.label}`,
+    fullText:  `${teamNick(best.team||'')} ${best.fmtVal} ${best.label} — ${best.ctx}`,
+  };
+}
+
+// Badge: renders under Scout's Pick; returns '' if no stat available
+function buildStatOfDayBadge(game, sport) {
+  const s = getStatOfDay(game, sport);
+  if (!s) return '';
+  return `<span class="stat-day-badge" title="${s.fullText}">📊 ${s.shortText}</span>`;
+}
+
 async function fetchNHLRelayScores() {
   // Only run if there's an NHL section visible today
   if (!document.querySelector('.sport-section[data-sport="NHL Playoffs"]')) return;
@@ -14895,7 +14996,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-05-27o';
+  const SW_VERSION = '2026-05-27p';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -15337,6 +15438,8 @@ const FIELD_PROSE_STYLE=[
   '- STYLE: one metaphor max per brief — if you use one, make it original.',
   '- STYLE: write like a well-prepared friend who watched every game, not like a press release.',
   '- STYLE: if a sentence would work in any game recap for any sport, it is too generic — rewrite with details specific to THIS game.',
+  '- CITE ANALYTICS: if [PP/PK], [POSSESSION], [PARK], [UMPIRE], or [GOALIE] context appears in the game data, cite the specific figure verbatim — not a paraphrase. "93.5% penalty kill" not "elite penalty killing". "+17% runs at Camden Yards" not "a hitter-friendly park".',
+  '- FEATURED STAT: if a [FEATURED STAT] line appears for a game, that exact figure MUST appear in your brief for that game.',
   '- BANNED PHRASES (never use): '+BANNED_PHRASES.join(', ')+'.'
 ].join('\n');
 
@@ -15724,6 +15827,8 @@ function buildCompoundPrompt(sections) {
       (()=>{ try { const ctx=getMLBAnalyticsContext(g); return ctx.length ? ctx.join('\n') : ''; } catch(e_){return '';} })(),
       // Wave 1 NHL analytics: special teams (PP%/PK%) + possession (SAT%) + goalie quality
       (()=>{ try { const sp=(g._sport||g._section||'').toLowerCase(); if(!(sp.includes('nhl')||sp.includes('hockey'))) return ''; const ctx=getNHLAnalyticsContext(g); return ctx.length ? ctx : ''; } catch(e_){return '';} })(),
+      // Stat of Day — featured stat for Scout's Pick game; FEATURED STAT rule enforces citation
+      (()=>{ try { if(!isScoutsPick(g)) return ''; const s=getStatOfDay(g,g._sport||g._section||''); return s ? `  [FEATURED STAT] ${s.fullText}` : ''; } catch(e_){return '';} })(),
       g.matchupNote ? `  Context: ${g.matchupNote}` : '',
       standingsCtx ? `  ${standingsCtx}` : '',
       arcType ? `  Arc: ${arcType.toUpperCase()}` : '',
