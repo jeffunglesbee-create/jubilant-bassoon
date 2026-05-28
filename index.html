@@ -1523,6 +1523,11 @@ body::before{
 .desk-card-title{font-size:.82rem;font-weight:700;color:var(--white);margin-bottom:.35rem;line-height:1.3}
 .desk-card-body{font-size:.72rem;color:var(--fg);line-height:1.6}
 .desk-card-body.muted{color:var(--smoke);font-style:italic}
+.desk-card.tappable{cursor:pointer;transition:opacity .15s}
+.desk-card.tappable:active{opacity:.75}
+.desk-card.tappable[data-expanded="1"] .desk-card-body{white-space:pre-wrap}
+.desk-card.tappable::after{content:'↕';position:absolute;bottom:.5rem;right:.6rem;font-size:.6rem;color:var(--smoke);opacity:.5}
+.desk-card.tappable[data-expanded="1"]::after{content:'↑';opacity:.7}
 /* Type-specific accent borders */
 .desk-card.type-brief{border-left:3px solid var(--gold2,#c9a84c)}
 .desk-card.type-series{border-left:3px solid rgba(99,102,241,.7)}
@@ -2193,7 +2198,10 @@ body::before{
   background:rgba(25,20,10,.85);
   border:1px solid rgba(201,168,76,.2);
   border-left:3px solid rgba(201,168,76,.65);
+  cursor:pointer;transition:opacity .15s;
 }
+.ap-card-brief:active{opacity:.75}
+.ap-card-brief[data-expanded="1"] .ap-card-text{white-space:pre-wrap;-webkit-line-clamp:unset}
 .ap-card-brief::before{
   content:'';position:absolute;top:0;left:0;right:0;height:1px;
   background:linear-gradient(90deg,transparent,rgba(201,168,76,.35),transparent);
@@ -9150,6 +9158,24 @@ function toImplied(oddsStr){
 //   type-scout   (teal)   — Scout's Picks digest
 //   type-antihype(amber)  — Anti-Hype report when J1 fires
 //   type-europa  (orange) — UCL/UEL/UECL match briefs aggregated
+// Tap-to-expand for desk cards and ambient brief card.
+// Cards store full text in data-full; truncated text shown by default.
+// Tap toggles between truncated and full. Tap again to collapse.
+function _deskCardToggle(el) {
+  const body = el.querySelector('.desk-card-body, .ap-card-text');
+  if (!body) return;
+  const full = el.dataset.full;
+  if (!full) return;
+  if (el.dataset.expanded === '1') {
+    const len = parseInt(el.dataset.truncLen) || 250;
+    body.textContent = full.slice(0, len).trim() + (full.length > len ? '\u2026' : '');
+    el.dataset.expanded = '0';
+  } else {
+    body.textContent = full;
+    el.dataset.expanded = '1';
+  }
+}
+
 function renderFieldDesk(){
   const grid = document.getElementById('field-desk-grid');
   if(!grid) return;
@@ -9161,9 +9187,10 @@ function renderFieldDesk(){
     const fbKey = typeof fieldBriefCacheKey === 'function' ? fieldBriefCacheKey() : null;
     const fbText = fbKey ? sessionStorage.getItem(fbKey) : null;
     if(fbText && fbText.length > 30){
-      cards.push(`<div class="desk-card type-brief">
+      const _df1 = fbText.replace(/"/g,'&quot;');
+      cards.push(`<div class="desk-card type-brief tappable" data-full="${_df1}" data-trunc-len="300" onclick="_deskCardToggle(this)">
         <div class="desk-card-label"><span class="desk-card-label-icon">📋</span>FIELD Brief</div>
-        <div class="desk-card-body">${fbText.slice(0,300).trim()}${fbText.length>300?'…':''}</div>
+        <div class="desk-card-body">${fbText.slice(0,300).trim()}${fbText.length>300?'\u2026':''}</div>
       </div>`);
     }
   }catch(e_){
@@ -9179,10 +9206,11 @@ function renderFieldDesk(){
           const ck = typeof seriesPreviewCacheKey==='function' ? seriesPreviewCacheKey(g) : null;
           const text = ck ? sessionStorage.getItem(ck) : null;
           if(text && text.length > 20){
-            seriesCards.push(`<div class="desk-card type-series">
+            const _dfs = text.replace(/"/g,'&quot;');
+            seriesCards.push(`<div class="desk-card type-series tappable" data-full="${_dfs}" data-trunc-len="250" onclick="_deskCardToggle(this)">
               <div class="desk-card-label"><span class="desk-card-label-icon">🏆</span>Series Brief · ${g.seriesRecord||''}</div>
               <div class="desk-card-title">${g.away||''} ${g.neutral?'vs':'@'} ${g.home||''}</div>
-              <div class="desk-card-body">${text.slice(0,250).trim()}${text.length>250?'…':''}</div>
+              <div class="desk-card-body">${text.slice(0,250).trim()}${text.length>250?'\u2026':''}</div>
             </div>`);
           }
         });
@@ -9203,10 +9231,11 @@ function renderFieldDesk(){
             if(g._id===gid) title = `${g.away||''} ${g.neutral?'vs':'@'} ${g.home||''}`;
           }));
         }catch(e__){}
-        cards.push(`<div class="desk-card type-brief">
+        const _dfg = text.replace(/"/g,'&quot;');
+        cards.push(`<div class="desk-card type-brief tappable" data-full="${_dfg}" data-trunc-len="250" onclick="_deskCardToggle(this)">
           <div class="desk-card-label"><span class="desk-card-label-icon">📰</span>FIELD Game Brief</div>
           <div class="desk-card-title">${title}</div>
-          <div class="desk-card-body">${text.slice(0,250).trim()}${text.length>250?'…':''}</div>
+          <div class="desk-card-body">${text.slice(0,250).trim()}${text.length>250?'\u2026':''}</div>
         </div>`);
       });
     }
@@ -9262,10 +9291,12 @@ function renderFieldDesk(){
         }));
       }catch(e__){}
       const isEuropa = (briefCard.closest('[data-sport]')?.dataset.sport||'').toLowerCase().includes('europa');
-      cards.push(`<div class="desk-card ${isEuropa?'type-europa':'type-series'}">
+      const _rawEpl = textEl.textContent;
+      const _dfe = _rawEpl.replace(/"/g,'&quot;');
+      cards.push(`<div class="desk-card ${isEuropa?'type-europa':'type-series'} tappable" data-full="${_dfe}" data-trunc-len="250" onclick="_deskCardToggle(this)">
         <div class="desk-card-label"><span class="desk-card-label-icon">⚽</span>Match Brief</div>
         ${title?`<div class="desk-card-title">${title}</div>`:''}
-        <div class="desk-card-body">${textEl.textContent.slice(0,250).trim()}${textEl.textContent.length>250?'…':''}</div>
+        <div class="desk-card-body">${_rawEpl.slice(0,250).trim()}${_rawEpl.length>250?'\u2026':''}</div>
       </div>`);
     });
   }catch(e_){}
@@ -17593,12 +17624,13 @@ function renderAmbientPanel(){
       const _briefText = _briefEl.querySelector('.field-brief-text')?.textContent?.trim()||'';
       const _briefDate = _briefEl.querySelector('.field-brief-date')?.textContent?.trim()||'';
       if (_briefText.length > 20) {
-        editorialHTML = `<div class="ap-card ap-card-brief">
+        const _dfb = _briefText.replace(/"/g,'&quot;');
+        editorialHTML = `<div class="ap-card ap-card-brief" data-full="${_dfb}" data-trunc-len="240" onclick="_deskCardToggle(this)">
           <div class="ap-card-header">
             <span class="ap-card-label">FIELD Brief</span>
             ${_briefDate?`<span class="ap-card-date">${_briefDate}</span>`:''}
           </div>
-          <p class="ap-card-text">${_briefText.slice(0,240)}${_briefText.length>240?'…':''}</p>
+          <p class="ap-card-text">${_briefText.slice(0,240)}${_briefText.length>240?'\u2026':''}</p>
         </div>`;
       }
     }
