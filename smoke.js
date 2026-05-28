@@ -589,7 +589,7 @@ assert('A188 — M2: isScoutsPick wired into injectJ1J4Badges',
   'Scout\'s Pick badge injection must use isScoutsPick() boolean gate');
 
 assert('A189 — SW_VERSION is current (Rule 23: suffix per deploy, new day resets to a)',
-  html.includes("'2026-05-28a'"),
+  html.includes("'2026-05-28b'"),
   'SW_VERSION must match current deploy date — update daily per Rule 23');
 
 assert('A190 — Layer 2b: sport vocab violation detection function defined',
@@ -733,6 +733,23 @@ assert('A221 — Functional: --muted CSS variable defined in :root',
 assert('A222 — Functional: touch-action:manipulation on .card-body directly (not just inherited)',
   /\.card-body\{[^}]*touch-action\s*:\s*manipulation/.test(html),
   'touch-action:manipulation must be on .card-body directly — Samsung does not inherit from .game-card');
+
+// ── A223-A226: Phase 2 — Schedule Automation assertions ──────────────────
+assert('A223 — Phase2: _fieldDataCache module-level var declared',
+  html.includes('let _fieldDataCache'),
+  '_fieldDataCache must be declared at module level for Phase 2 schedule JSON');
+
+assert('A224 — Phase2: _mlbnDataCache module-level var declared',
+  html.includes('let _mlbnDataCache'),
+  '_mlbnDataCache must be declared at module level for Phase 2 MLBN live data');
+
+assert('A225 — Phase2: fetchScheduleData function defined',
+  html.includes('async function fetchScheduleData()'),
+  'fetchScheduleData() must exist — Phase 2 async JSON fetch');
+
+assert('A226 — Phase2: _fieldDataCache used in mlbGames source selection',
+  html.includes('_fieldDataCache?.schedules?.mlb'),
+  'mlbGames must check _fieldDataCache.schedules.mlb (Phase 2 live source)');
 
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);

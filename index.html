@@ -4293,6 +4293,11 @@ function mlbStreams(){ return resolveBundle(MLB_BUNDLE); }
 
 // ── State ────────────────────────────────────────────────────
 let allData = null;
+// Phase 2 — schedule JSON cache (field-data-today.json + mlbn-schedule.json)
+// Populated by fetchScheduleData() before buildTodaySchedule() runs.
+// Falls back to hardcoded arrays if fetch fails or times out.
+let _fieldDataCache = null;   // parsed field-data-today.json (schema 2.0)
+let _mlbnDataCache  = null;   // parsed mlbn-schedule.json byDate lookup
 
 // ── Canonical sport metadata — single source of truth for emoji, labels, plural forms ──
 // Mirrors scripts/sport-meta.json. Keep in sync. Do NOT hardcode sport emoji elsewhere.
@@ -7593,7 +7598,27 @@ function buildTodaySchedule(){
     {home:"Texas Rangers",         away:"Houston Astros",       start_time:"2026-05-29T00:05:00Z", confirmed:true, venue:"Globe Life Field, Arlington TX",
      matchupNote:"ESPN App Game of the Day — HOU @ TEX, 8:05pm ET. ESPN Unlimited exclusive. Series finale: TEX won G1 10-7 (Tue), HOU won G2 4-3 (Wed). Third and final game of the set at Globe Life Field."},
   ];
-  const mlbGames=mlbRaw.filter(g=>isToday(g.start_time)).map(g=>{
+  // Phase 2: build overlay map from field-data-today.json game_overlays
+  const _mlbOverlayMap = {};
+  if (_fieldDataCache?.game_overlays) {
+    _fieldDataCache.game_overlays.forEach(o => { if (o._match_key) _mlbOverlayMap[o._match_key] = o; });
+  }
+  // Phase 2: use live JSON when fresh (schema 2.0, dated today); else hardcoded mlbRaw
+  const _useJsonMlb = _fieldDataCache?.schedules?.mlb?.length > 0 &&
+                      _fieldDataCache._meta?.for_date === TODAY_ISO;
+  const _mlbSource  = _useJsonMlb
+    ? _fieldDataCache.schedules.mlb          // live — broadcast assignments pre-computed
+    : mlbRaw.filter(g=>isToday(g.start_time)); // fallback — hardcoded entries
+
+  if (_useJsonMlb) console.log(`[Phase2] MLB from JSON: ${_mlbSource.length} games`);
+
+  const mlbGames=_mlbSource.map(g=>{
+    // Phase 2: apply overlay (AI matchupNote, postponed flag) if available
+    const ov = _mlbOverlayMap[`${g.home}|${g.away}`];
+    if (ov?._postponed) return null;  // skip postponed games
+    if (ov?.matchupNote && !g.matchupNote) g = {...g, matchupNote: ov.matchupNote};
+    if (ov?.seriesRecord && !g.seriesRecord) g = {...g, seriesRecord: ov.seriesRecord};
+
     // Stream resolution — priority order (highest first):
     //   1. nationalBundle field → explicit non-exclusive national TV (FS1/FOX/TBS) — show local AND national
     //   2. mlbnShowcase flag → MLB Network Showcase (non-exclusive) — show MLBN + local RSN
@@ -7620,7 +7645,8 @@ function buildTodaySchedule(){
       const _gk = _gotdKey(g.away||'', g.home||'');
       const _isEspnGotd  = g.espnGOTD  || ESPN_GOTD_SCHEDULE[TODAY_ISO]  === _gk;
       const _isPcokGotd  = g.peacockGOTD || PEACOCK_GOTD_SCHEDULE[TODAY_ISO] === _gk;
-      const _mlbnDay     = MLBN_SCHEDULE[TODAY_ISO];
+      // Phase 2: _mlbnDataCache from mlbn-schedule.json takes precedence over static table
+      const _mlbnDay     = (_mlbnDataCache?.[TODAY_ISO]) || MLBN_SCHEDULE[TODAY_ISO];
       const _isMLBN      = g.mlbnShowcase || (_mlbnDay && (
         _mlbnDay === _gk || (Array.isArray(_mlbnDay) && _mlbnDay.includes(_gk))
       ));
@@ -7634,7 +7660,7 @@ function buildTodaySchedule(){
     const gKey=_gotdKey(g.away,g.home);
     const isEspnGOTD=g.espnGOTD||ESPN_GOTD_SCHEDULE[TODAY_ISO]===gKey;
     const isPeacockGOTD=g.peacockGOTD||PEACOCK_GOTD_SCHEDULE[TODAY_ISO]===gKey;
-    const isMLBN=g.mlbnShowcase||(()=>{const v=MLBN_SCHEDULE[TODAY_ISO];return v&&(v===gKey||(Array.isArray(v)&&v.includes(gKey)));})();
+    const isMLBN=g.mlbnShowcase||(()=>{const v=(_mlbnDataCache?.[TODAY_ISO])||MLBN_SCHEDULE[TODAY_ISO];return v&&(v===gKey||(Array.isArray(v)&&v.includes(gKey)));})();
     // Peacock Game of the Day: streams without needing MLB.TV
     if(isPeacockGOTD){
       base.peacockGOTD = true;
@@ -7653,7 +7679,7 @@ function buildTodaySchedule(){
       base.gotdLabel = "MLB Network";
     }
     return base;
-  });
+  }).filter(Boolean);  // Phase 2: remove null entries (postponed games)
 
   // ── UEFA Champions League — Final May 30 (Budapest) ─────────────────────
   // Final: Sat May 30 · Puskás Aréna, Budapest · PSG vs Arsenal
@@ -14257,12 +14283,58 @@ async function loadOverlayData(){
   }
 }
 
+// ── Phase 2: Schedule JSON fetch ───────────────────────────────────────────
+// Fetches field-data-today.json (MLB/NHL/NBA schedule + AI matchupNotes)
+// and mlbn-schedule.json (Puppeteer-scraped MLB Network game list) in parallel.
+// Both on raw.githubusercontent.com — CORS-open, no auth needed.
+// Called with 1500ms timeout before buildTodaySchedule() so fast connections
+// get live data on first render; slow/offline falls back to hardcoded entries.
+const _SCHEDULE_BASE = 'https://raw.githubusercontent.com/jeffunglesbee-create/jubilant-bassoon/main/outbox/';
+
+async function fetchScheduleData() {
+  const [fdResult, mlbnResult] = await Promise.allSettled([
+    fetch(_SCHEDULE_BASE + 'field-data-today.json', {cache:'no-store'})
+      .then(r => r.ok ? r.json() : null),
+    fetch(_SCHEDULE_BASE + 'mlbn-schedule.json', {cache:'no-store'})
+      .then(r => r.ok ? r.json() : null),
+  ]);
+
+  // field-data-today.json — only use if schema 2.0 and dated today
+  if (fdResult.status === 'fulfilled' && fdResult.value) {
+    const d = fdResult.value;
+    if (d._meta?.schema_version === '2.0' && d._meta?.for_date === TODAY_ISO && !d.error) {
+      _fieldDataCache = d;
+      console.log(`[Phase2] field-data loaded: ${d._meta.games_found?.mlb||0} MLB, ${d._meta.games_found?.nhl||0} NHL, ${d._meta.games_found?.nba||0} NBA`);
+    }
+  }
+
+  // mlbn-schedule.json — use byDate lookup for today's games
+  if (mlbnResult.status === 'fulfilled' && mlbnResult.value) {
+    const d = mlbnResult.value;
+    if (d.byDate && !d.error) {
+      _mlbnDataCache = d.byDate;
+      const todayGames = d.byDate[TODAY_ISO];
+      if (todayGames) console.log(`[Phase2] MLBN today:`, todayGames);
+    }
+  }
+}
+
 // ── Main load ─────────────────────────────────────────────────
 async function fetchSchedule(){
   const main=document.getElementById("main");
   const today2=new Date();
   const dayOfWeek=today2.toLocaleDateString("en-US",{weekday:"long"});
   const monthYear=today2.toLocaleDateString("en-US",{month:"long",year:"numeric"});
+
+  // Phase 2: pre-fetch schedule JSONs with 1500ms timeout.
+  // Fast connections get live data on first render.
+  // Slow/offline: hardcoded arrays render first, re-render follows when fetch lands.
+  try {
+    await Promise.race([
+      fetchScheduleData(),
+      new Promise(r => setTimeout(r, 1500))
+    ]);
+  } catch(e) { /* fetch optional — hardcoded fallback active */ }
   _gid=0; // Reset game ID counter for stable data-gameid attributes
 
   // ── Render immediately from hardcoded data (zero network, zero wait) ──────
@@ -15076,7 +15148,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-05-28a';
+  const SW_VERSION = '2026-05-28b';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
