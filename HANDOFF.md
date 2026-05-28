@@ -1,61 +1,71 @@
 # FIELD Handoff — May 28 2026
 
 ## HEAD
-`c677e42` — MLBN: Puppeteer workflow + array schedule + today's 3 confirmed games
+`b2eb3c0` — Phase 2: Schedule Automation — live JSON at startup
 
 ## Smoke
-224/0 ✅
+228/0 ✅ (includes A223-A226 Phase 2 assertions)
 
-## Last session — MLBN full implementation
+## Last session — Schedule Automation Phase 2 COMPLETE
 
-**What was wrong:** statsapi broadcasts(all) does NOT include MLBN for regular carry
-games. The tracker only covers Showcase (1/week). MLBN carries multiple games daily.
-Screenshot confirmed 3 games today the old system missed entirely.
+### What shipped:
+- `_fieldDataCache`: fetches `field-data-today.json` (schema 2.0) from raw.githubusercontent.com
+- `_mlbnDataCache`: fetches `mlbn-schedule.json` byDate lookup from raw.githubusercontent.com
+- `fetchScheduleData()`: parallel fetch with 1500ms timeout before first render
+  Fast connections get live data on first render. Offline/slow = hardcoded fallback.
+- `mlbGames` source: `_fieldDataCache.schedules.mlb` when fresh (dated today, schema 2.0)
+  Falls back to hardcoded `mlbRaw` when JSON stale/unavailable
+- `game_overlays`: AI matchupNotes from Gemini auto-applied to MLB games
+- Postponed games: `_postponed` flag removes game from schedule automatically  
+- MLBN: `_mlbnDataCache[TODAY_ISO]` checked before static `MLBN_SCHEDULE`
+- SW_VERSION: 2026-05-28b
 
-**What shipped:**
-- MLBN_SCHEDULE: redesigned as arrays (multiple games per day)
-  Today: ['LAA@DET','ATL@BOS','TOR@BAL'] confirmed from screenshot
-  May 29-Jun 2 upcoming games added
-- Auto-tag logic: handles string | Array.isArray for MLBN_SCHEDULE
-- scripts/mlbn-fetch.js: Puppeteer parser — loads MLBN page, executes JS,
-  extracts table, parses "or" games, outputs byDate lookup JSON
-- .github/workflows/mlbn-schedule.yml: daily cron 9AM UTC (5AM ET)
-  + manual trigger via outbox/.trigger-mlbn-fetch push
-  + workflow_dispatch
-- outbox/mlbn-schedule.json: seed file with today's data live now
+### MLBN spec update (for Drive doc 1XiXo3jQ6f9k0S7YgwpQ6OwBrBoT0R80-5sSmeMefo_U):
+Add to BROADCAST RULES section:
+  MLB NETWORK: NOT in statsapi broadcasts(all) — confirmed cors-probe May 28.
+  Source: mlbn-schedule.json (Puppeteer workflow mlbn-schedule.yml, daily 9AM UTC)
+  Client reads _mlbnDataCache via fetchScheduleData() — same Phase 2 fetch chain
+  MLBN carries multiple games daily (3 today: LAA@DET, ATL@BOS, TOR@BAL)
+  Static MLBN_SCHEDULE table remains as fallback
 
-**How MLBN now works:**
-1. Daily: mlbn-schedule.yml runs Puppeteer → updates outbox/mlbn-schedule.json
-2. TYPE A pending: FIELD reads mlbn-schedule.json from raw.githubusercontent.com
-   at load time to auto-tag games dynamically (bypasses static table entirely)
-3. For now: static MLBN_SCHEDULE table + seed JSON both active
+Update STATUS to: Phase 1 COMPLETE (May 28 2026), Phase 2 COMPLETE (May 28 2026)
+Update PHASE 3 to: immediate next action (update TYPE A protocol docs ~30 min)
 
-**TYPE C daily MLBN checklist:**
-- Check outbox/mlbn-schedule.json was updated today (see fetched timestamp)
-- If stale: manually trigger mlbn-schedule workflow via workflow_dispatch
-  OR write to outbox/.trigger-mlbn-fetch and push
-- Verify byDate for today matches what's expected
-- Update MLBN_SCHEDULE static table for upcoming week if JSON is ahead
-
-**Daily Update Ref (Drive) needs MLBN section** — same paste as previous HANDOFF
-Drive ID: 1oSHqnDskN04p95g6e85--4hhgIsKISZ3ZflLXKPM08E
+### Phase 3 still needed (~30 min):
+- Update Daily Update Reference (Drive 1oSHqnDskN04p95g6e85--4hhgIsKISZ3ZflLXKPM08E)
+  Remove: "Research all games, write all entries, verify broadcasts"
+  Add: "Verify field-data JSON output (run workflow_dispatch if stale), add playoff matchupNotes"
+  Add MLBN section (paste from previous HANDOFF)
+- Update STANDARDS.md Rule 11 TYPE A checklist
 
 ## TIER 0 — DO FIRST NEXT SESSION
 1. BNI Patent Fix (~15 min)
 2. EMBER Patent Fix (~30 min)
-3. NBA Finals G1 Shell TYPE A — update after WCF G6 TONIGHT (OKC or SAS wins)
-4. NHL Stanley Cup Final shell — after ECF G5 (May 29, CAR leads 3-1)
+3. NBA Finals G1 Shell TYPE A — update venue after WCF G6 result TONIGHT
+4. NHL Stanley Cup Final shell — after ECF G5 (May 29)
 5. World Cup 2026 — JUNE 11 DEADLINE
-6. TYPE A: FIELD reads mlbn-schedule.json at runtime (raw.githubusercontent.com)
-   Wire fetchMLBNSchedule() → replaces static table → full dynamic MLBN detection
+6. Phase 3: update TYPE A protocol docs (~30 min)
 
 ## Tonight
-WCF G6 OKC@SAS 8:30pm ET NBC/Peacock — determines Finals G1 venue
+WCF G6 OKC@SAS 8:30pm ET NBC/Peacock — Finals G1 venue determined
+
+## Current automation stack:
+- field-data.yml: 7:30 AM UTC daily → outbox/field-data-today.json (schema 2.0)
+  MLB: 6+ games with broadcast assignment, ESPN/Peacock GOTD flags
+  NHL/NBA: series records, playoff flags
+  AI: Gemini matchupNotes for national broadcast + playoff games
+- mlbn-schedule.yml: 9:00 AM UTC daily → outbox/mlbn-schedule.json
+  Puppeteer scrapes mlb.com/network/shows/regular-season-games
+  byDate lookup for all MLBN games including non-Showcase carry games
+- Phase 2 client: fetchScheduleData() on page load, 1500ms timeout
+  MLB from JSON replaces mlbRaw for regular season games
+  MLBN from JSON replaces static table for today's detection
 
 ## Canonical docs
 - CI/Deploy Ref: 18JMUd-Uq_m2DomuCua2B5UMiWOel81yzc1JU7SY6f20
 - Current State: 1gumlOLcrOOYQlGWpdcYoziIhQQTsmD4Oi3KdVfMpps8
-- Daily Update Ref: 1oSHqnDskN04p95g6e85--4hhgIsKISZ3ZflLXKPM08E ← needs MLBN paste
+- Schedule Automation Spec: 1XiXo3jQ6f9k0S7YgwpQ6OwBrBoT0R80-5sSmeMefo_U ← update status+MLBN
+- Daily Update Ref: 1oSHqnDskN04p95g6e85--4hhgIsKISZ3ZflLXKPM08E ← Phase 3 update needed
 
 ## Repo
 jeffunglesbee-create/jubilant-bassoon
