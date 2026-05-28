@@ -5058,7 +5058,11 @@ const ESPN_GOTD_SCHEDULE = {
 // Peacock GOTD: Announced weekly (Mon/Tue for upcoming week).
 // Paste each week's games. Source: peacocktv.com/blog
 const PEACOCK_GOTD_SCHEDULE = {
-  // Week of May 26-Jun 1: paste when announced
+  // Week of May 26-Jun 1 (source: peacocktv.com/blog, updated May 26 2026)
+  '2026-05-26':'PHI@SDP',   // Tue 9:40pm ET — PHI @ SD
+  '2026-05-27':'STL@MIL',   // Wed 1:40pm ET — STL @ MIL
+  '2026-05-28':'CHC@PIT',   // Thu 6:40pm ET — CHC @ PIT
+  '2026-05-29':'TOR@BAL',   // Fri 7:05pm ET — TOR @ BAL
 };
 
 // Auto-match helper: builds 'AWAY@HOME' key from team abbreviations
@@ -7421,16 +7425,16 @@ function buildTodaySchedule(){
     {home:"San Antonio Spurs",     away:"Oklahoma City Thunder", league:"NBA Playoffs \u2013 West CF G3 \u00b7 OKC wins 123-108",  start_time:"2026-05-23T00:30:00Z", confirmed:true, venue:"Frost Bank Center, San Antonio TX",     streams:resolveBundle("NBA_NBC"), seriesRecord:"OKC leads 2-1", seriesMargins:[9,9,15,-1,-1,-1,-1], matchupNote:"OKC wins G3 123-108 (Gilgeous-Alexander 36pts). SAS won G4 103-82 (Wembanyama 33pts). Series tied 2-2. G5 Tuesday at OKC."},
     {home:"San Antonio Spurs",     away:"Oklahoma City Thunder", league:"NBA Playoffs \u2013 West CF G4 \u00b7 SAS wins 103-82, series tied 2-2",  start_time:"2026-05-25T00:00:00Z", confirmed:true, venue:"Frost Bank Center, San Antonio TX", streams:resolveBundle("NBA_NBC"), seriesRecord:"Series tied 2-2", seriesMargins:[9,9,15,-21,-1,-1,-1], matchupNote:"SAS evens series with dominant 103-82 G4 win. Wembanyama 33pts/8reb/5ast/3blk. SGA held to 19pts (6-15 FG). OKC shot 33% FG, 18% from 3. Series returns to Paycom Center for G5 Tuesday."},
     {home:"Oklahoma City Thunder", away:"San Antonio Spurs",    league:"NBA Playoffs \u2013 West CF G5 \u00b7 OKC wins 127-114, leads 3-2",  start_time:"2026-05-27T00:30:00Z", confirmed:true, venue:"Paycom Center, Oklahoma City OK", streams:resolveBundle("NBA_NBC"), seriesRecord:"OKC leads 3-2", matchupNote:"OKC wins G5 127-114 to seize 3-2 series lead. SGA 32pts (7-19 FG, 16-17 FT, 9ast) — 14th 30-point game this postseason. Caruso off the bench: 22pts, 4/8 from three, 8/8 FT, 6ast, 3stl. Holmgren 16pts/11reb and Hartenstein 12pts/15reb gave OKC two double-doubles in the frontcourt. OKC led by as many as 20 and outscored SAS 40-31 in Q2. SAS: Castle 24pts (7-11 FG), Champagnie 22pts (4/8 3PT), Wembanyama 20pts (4-15 FG, 0/5 3PT, 12-12 FT). G6 Thu at Frost Bank Center."},
-    {home:"San Antonio Spurs",     away:"Oklahoma City Thunder", league:"NBA Playoffs \u2013 West CF G6 \u00b7 OKC leads 3-2",  start_time:"2026-05-29T00:30:00Z", confirmed:true, venue:"Frost Bank Center, San Antonio TX", streams:resolveBundle("NBA_NBC"), seriesRecord:"OKC leads 3-2", matchupNote:"SAS must win or face elimination. Wembanyama has shot 4-15 and 4-15 in G4-G5 combined — Spurs need him to recapture his G4 dominance (33pts, 103-82 blowout). OKC one win from NBA Finals vs NYK. G6 Thu May 28, 8:30pm ET, NBC/Peacock.", _gameImportance:"elimination"},
+    {home:"San Antonio Spurs",     away:"Oklahoma City Thunder", league:"NBA Playoffs \u2013 West CF G6 \u00b7 OKC leads 3-2",  start_time:"2026-05-29T00:30:00Z", confirmed:true, venue:"Frost Bank Center, San Antonio TX", streams:resolveBundle("NBA_NBC"), seriesRecord:"OKC leads 3-2", matchupNote:"Elimination game for SAS at home. Win probability: SAS 59.9%, OKC 40.1% — home court meaningful but not decisive. Wembanyama has shot poorly in G4-G5 combined; SAS needs him at his G4 level (103-82 blowout). OKC one win from NBA Finals vs NYK. G6 Thu May 28, 8:30pm ET, NBC/Peacock.", _gameImportance:"elimination"},
     // ── NBA Finals 2026 — All games NBC/Peacock ─────────────────────
     // UPDATE team names + venues once ECF/WCF conclude (~June 3)
-    {home:"New York Knicks", away:"TBD \u2014 Western Champion", league:"NBA Finals 2026 \u2013 G1 \u00b7 Series 0-0",  start_time:"2026-06-04T00:30:00Z", confirmed:true, venue:"Madison Square Garden, New York NY", streams:resolveBundle("NBA_ABC"), seriesRecord:"0-0", matchupNote:"NBA Finals 2026 on ABC, 8:30pm ET. NYK vs OKC or SAS (WCF: OKC leads 3-2, G6 Thu May 28 at San Antonio 8:30pm NBC/Peacock). Knicks' first Finals since 1999."},
-    {home:"New York Knicks", away:"TBD \u2014 Western Champion", league:"NBA Finals 2026 \u2013 G2 \u00b7 Series 0-0",  start_time:"2026-06-06T00:30:00Z", confirmed:true, venue:"Madison Square Garden, New York NY", streams:resolveBundle("NBA_ABC"), seriesRecord:"0-0"},
-    {home:"TBD \u2014 Western Champion", away:"New York Knicks", league:"NBA Finals 2026 \u2013 G3 \u00b7 Series 0-0",  start_time:"2026-06-09T00:30:00Z", confirmed:true, venue:"TBD \u2014 Home of Western Champion", streams:resolveBundle("NBA_ABC"), seriesRecord:"0-0"},
-    {home:"TBD \u2014 Western Champion", away:"New York Knicks", league:"NBA Finals 2026 \u2013 G4 \u00b7 Series 0-0",  start_time:"2026-06-11T00:30:00Z", confirmed:true, venue:"TBD \u2014 Home of Western Champion", streams:resolveBundle("NBA_ABC"), seriesRecord:"0-0"},
-    {home:"New York Knicks", away:"TBD \u2014 Western Champion", league:"NBA Finals 2026 \u2013 G5 \u00b7 Series 0-0",  start_time:"2026-06-14T00:30:00Z", confirmed:true, venue:"Madison Square Garden, New York NY", streams:resolveBundle("NBA_ABC"), seriesRecord:"0-0"},
-    {home:"TBD \u2014 Western Champion", away:"New York Knicks", league:"NBA Finals 2026 \u2013 G6 \u00b7 Series 0-0",  start_time:"2026-06-17T00:30:00Z", confirmed:true, venue:"TBD \u2014 Home of Western Champion", streams:resolveBundle("NBA_ABC"), seriesRecord:"0-0"},
-    {home:"New York Knicks", away:"TBD \u2014 Western Champion", league:"NBA Finals 2026 \u2013 G7 \u00b7 Series 0-0",  start_time:"2026-06-20T00:30:00Z", confirmed:true, venue:"Madison Square Garden, New York NY", streams:resolveBundle("NBA_ABC"), seriesRecord:"0-0"},
+    {home:"TBD \u2014 Western Champion", away:"New York Knicks",        league:"NBA Finals 2026 \u2013 G1 \u00b7 Series 0-0",  start_time:"2026-06-04T00:30:00Z", confirmed:true, venue:"TBD \u2014 Home of Western Champion", streams:resolveBundle("NBA_ABC"), seriesRecord:"0-0", matchupNote:"NBA Finals 2026 on ABC, 8:30pm ET. G1-G2 at Western champion's arena (higher seed). NYK vs OKC or SAS (WCF G6 Thu May 28 at San Antonio 8:30pm NBC/Peacock). Knicks' first Finals since 1999."},
+    {home:"TBD \u2014 Western Champion", away:"New York Knicks",        league:"NBA Finals 2026 \u2013 G2 \u00b7 Series 0-0",  start_time:"2026-06-06T00:30:00Z", confirmed:true, venue:"TBD \u2014 Home of Western Champion", streams:resolveBundle("NBA_ABC"), seriesRecord:"0-0"},
+    {home:"New York Knicks", away:"TBD \u2014 Western Champion", league:"NBA Finals 2026 \u2013 G3 \u00b7 Series 0-0",  start_time:"2026-06-09T00:30:00Z", confirmed:true, venue:"Madison Square Garden, New York NY", streams:resolveBundle("NBA_ABC"), seriesRecord:"0-0"},
+    {home:"New York Knicks", away:"TBD \u2014 Western Champion", league:"NBA Finals 2026 \u2013 G4 \u00b7 Series 0-0",  start_time:"2026-06-11T00:30:00Z", confirmed:true, venue:"Madison Square Garden, New York NY", streams:resolveBundle("NBA_ABC"), seriesRecord:"0-0"},
+    {home:"TBD \u2014 Western Champion", away:"New York Knicks",        league:"NBA Finals 2026 \u2013 G5 \u00b7 Series 0-0",  start_time:"2026-06-14T00:30:00Z", confirmed:true, venue:"TBD \u2014 Home of Western Champion", streams:resolveBundle("NBA_ABC"), seriesRecord:"0-0"},
+    {home:"New York Knicks", away:"TBD \u2014 Western Champion", league:"NBA Finals 2026 \u2013 G6 \u00b7 Series 0-0",  start_time:"2026-06-17T00:30:00Z", confirmed:true, venue:"Madison Square Garden, New York NY", streams:resolveBundle("NBA_ABC"), seriesRecord:"0-0"},
+    {home:"TBD \u2014 Western Champion", away:"New York Knicks",        league:"NBA Finals 2026 \u2013 G7 \u00b7 Series 0-0",  start_time:"2026-06-20T00:30:00Z", confirmed:true, venue:"TBD \u2014 Home of Western Champion", streams:resolveBundle("NBA_ABC"), seriesRecord:"0-0"},
   ].reduce((acc,g)=>{
     // Populate global series record map from ALL games (not just today's)
     // Night Owl uses this to override stale localStorage seriesRecord values
@@ -7525,6 +7529,18 @@ function buildTodaySchedule(){
     {home:"Chicago White Sox",     away:"Minnesota Twins",      start_time:"2026-05-27T23:40:00Z", confirmed:true, venue:"Guaranteed Rate Field, Chicago IL"},
     {home:"Texas Rangers",         away:"Houston Astros",       start_time:"2026-05-28T00:05:00Z", confirmed:true, venue:"Globe Life Field, Arlington TX"},
     {home:"Los Angeles Dodgers",   away:"Colorado Rockies",     start_time:"2026-05-28T02:10:00Z", confirmed:true, venue:"Dodger Stadium, Los Angeles CA"},
+    // ── MLB — Thursday May 28, 2026 — 6 games ───────────────────────
+    // Sources: MLB.com schedule verified May 28, 2026.
+    // ESPN GOTD: HOU @ TEX 8:05pm ET (auto-tagged via ESPN_GOTD_SCHEDULE)
+    // Peacock GOTD: CHC @ PIT 6:40pm ET (auto-tagged via PEACOCK_GOTD_SCHEDULE)
+    {home:"Detroit Tigers",        away:"Los Angeles Angels",   start_time:"2026-05-28T17:10:00Z", confirmed:true, venue:"Comerica Park, Detroit MI"},
+    {home:"Chicago White Sox",     away:"Minnesota Twins",      start_time:"2026-05-28T18:10:00Z", confirmed:true, venue:"Guaranteed Rate Field, Chicago IL"},
+    {home:"Boston Red Sox",        away:"Atlanta Braves",       start_time:"2026-05-28T20:10:00Z", confirmed:true, venue:"Fenway Park, Boston MA"},
+    {home:"Baltimore Orioles",     away:"Toronto Blue Jays",    start_time:"2026-05-28T22:35:00Z", confirmed:true, venue:"Oriole Park at Camden Yards, Baltimore MD"},
+    {home:"Pittsburgh Pirates",    away:"Chicago Cubs",         start_time:"2026-05-28T22:40:00Z", confirmed:true, venue:"PNC Park, Pittsburgh PA",
+     matchupNote:"Peacock Game of the Day — CHC @ PIT, 6:40pm ET. Series rubber game: PIT won G1 12-1, CHC won G2 10-4. Nationally streamed on Peacock."},
+    {home:"Texas Rangers",         away:"Houston Astros",       start_time:"2026-05-29T00:05:00Z", confirmed:true, venue:"Globe Life Field, Arlington TX",
+     matchupNote:"ESPN App Game of the Day — HOU @ TEX, 8:05pm ET. ESPN Unlimited exclusive. Series finale: TEX won G1 10-7 (Tue), HOU won G2 4-3 (Wed). Third and final game of the set at Globe Life Field."},
   ];
   const mlbGames=mlbRaw.filter(g=>isToday(g.start_time)).map(g=>{
     // Stream resolution — priority order (highest first):
@@ -14998,7 +15014,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-05-27q';
+  const SW_VERSION = '2026-05-28a';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
