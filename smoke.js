@@ -589,7 +589,7 @@ assert('A188 — M2: isScoutsPick wired into injectJ1J4Badges',
   'Scout\'s Pick badge injection must use isScoutsPick() boolean gate');
 
 assert('A189 — SW_VERSION is current (Rule 23: suffix per deploy, new day resets to a)',
-  html.includes("'2026-05-28b'"),
+  html.includes("'2026-05-28c'"),
   'SW_VERSION must match current deploy date — update daily per Rule 23');
 
 assert('A190 — Layer 2b: sport vocab violation detection function defined',
@@ -765,6 +765,18 @@ assert('A228 — WC26: WC26_FREE bundle used for Mexico-SA and USA-Paraguay',
 assert('A229 — WC26: Group labels correct (A–L, no repeats from old draft)',
   html.includes('Group E') && html.includes('Group H') && !html.includes('Group C · Opening'),
   'Group labels must be A–L correctly assigned');
+
+assert('A230 — QW-1: applyQW1SituationBonus function defined',
+  /function applyQW1SituationBonus\s*\(/.test(html),
+  'applyQW1SituationBonus() must be defined (situation drama bonus, named fn)');
+
+assert('A231 — QW-1: dramaScoreLive wired to applyQW1SituationBonus',
+  /sitBonus\s*=\s*applyQW1SituationBonus\(eData,\s*sport\)/.test(html),
+  'dramaScoreLive must call applyQW1SituationBonus(eData, sport)');
+
+assert('A232 — QW-1: situation bonus uses named game-state facts (not thresholds)',
+  html.includes('homeGoaliePulled') && html.includes('isRedZone') && html.includes('eData.situation'),
+  'applyQW1SituationBonus must read named situation facts — post-RUWT patent posture');
 
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);

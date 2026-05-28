@@ -15188,7 +15188,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-05-28b';
+  const SW_VERSION = '2026-05-28c';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -15251,6 +15251,79 @@ let _pwaPrompt = null;
 })();
 
 // ═══════════════════════════════════════════════════════════════════════════
+// ── QW-1: Situation Drama Bonus (#11a) ───────────────────────────────────────
+// Named game-state facts from ESPN's situation object → internal drama bonus.
+// PATENT / post-RUWT: goaliePulled, power play, base occupancy, red zone,
+// down/distance are named categorical events — NOT excitement thresholds.
+// Output feeds dramaScoreLive() only; never displayed as a number (tier labels).
+// Self-contained: recomputes diff/period/isFinalPeriod identically to caller.
+// (Extracted verbatim from dramaScoreLive inline #11a — May 28 2026; behaviour
+//  unchanged. Named fn enables VIBE-A / isCrunchTime reuse + smoke assertability.)
+function applyQW1SituationBonus(eData, sport){
+  if(!eData) return 0;
+  const sp = (sport||'').toLowerCase();
+  const sit = eData.situation || {};
+  const diff = Math.abs((eData.homeScore||0) - (eData.awayScore||0));
+  const period = parseInt(eData.period)||1;
+  let sitBonus = 0;
+
+  // isFinalPeriod: amplifies bonuses in final quarter/period/inning
+  const isFinalPeriod = (
+    (sp.includes('nba')||sp.includes('basketball')) && period >= 4 ||
+    (sp.includes('nhl')||sp.includes('hockey'))     && period >= 3 ||
+    (sp.includes('mlb')||sp.includes('baseball'))   && period >= 9 ||
+    (sp.includes('nfl')||sp.includes('football'))   && period >= 4
+  );
+
+  // ── HOCKEY ── (goalie pulled is valid any period — empty net)
+  if(sp.includes('nhl')||sp.includes('hockey')){
+    const homePull = sit.homeGoaliePulled||false;
+    const awayPull = sit.awayGoaliePulled||false;
+    if(homePull || awayPull) sitBonus += 22;              // goalie pulled — empty net pressure
+    else if((sit.homePowerPlay||sit.awayPowerPlay) && diff===0) sitBonus += 18; // PP + tied
+    else if((sit.homePowerPlay||sit.awayPowerPlay) && diff<=1)  sitBonus += 15; // PP + close
+    if(sit.delayedPenalty && diff<=1) sitBonus += 8;     // delayed penalty + close
+  }
+
+  // ── BASEBALL ── (amplified in final innings)
+  if(sp.includes('mlb')||sp.includes('baseball')){
+    const runners = [eData.onFirst,eData.onSecond,eData.onThird].filter(Boolean).length;
+    const risp    = eData.onSecond||eData.onThird;
+    if(runners===3 && eData.outs===2)  sitBonus += isFinalPeriod ? 20 : 12; // bases loaded 2 out
+    else if(runners===3)               sitBonus += isFinalPeriod ? 15 :  8; // bases loaded
+    else if(risp && eData.outs===2)    sitBonus += isFinalPeriod ? 10 :  6; // RISP 2 out
+    if(eData.balls===3 && eData.strikes===2 && risp) sitBonus += 8; // full count + RISP
+    if(eData.outs===2 && period>=7)    sitBonus += 5;    // 2-out + late innings
+  }
+
+  // ── BASKETBALL ── (isFinalPeriod only — bonus fouls + shot clock)
+  if(sp.includes('nba')||sp.includes('basketball')){
+    if(isFinalPeriod){
+      if((sit.homeFoulsBonus||sit.awayFoulsBonus) && diff<=5) sitBonus += 10;
+      const sc = parseFloat(sit.shotClock||'99');
+      if(sc<=8 && diff<=6) sitBonus += 8;                // shot clock pressure, close game
+    }
+  }
+
+  // ── NFL ── (amplified in final period + 2-minute drill)
+  if(sp.includes('nfl')||sp.includes('football')){
+    const dnDist = (sit.shortDownDistanceText||sit.downDistanceText||'').toLowerCase();
+    const in2min = dnDist.includes('2-minute')||dnDist.includes('2 minute');
+    if(dnDist.includes('4th') && in2min)                  sitBonus += isFinalPeriod ? 15 : 10;
+    else if(dnDist.includes('4th'))                       sitBonus += isFinalPeriod ?  8 :  5;
+    if(sit.isRedZone && in2min && diff<=7)                sitBonus += 10;
+    else if(sit.isRedZone)                                sitBonus +=  5;
+  }
+
+  // ── SOCCER ── (stoppage time marker)
+  if(sp.includes('soccer')||sp.includes('league')||sp.includes('mls')||
+     sp.includes('liga')||sp.includes('ligue')||sp.includes('premier')){
+    if((eData.clock||'').includes('+')) sitBonus += 8;   // "90+2" stoppage time
+  }
+
+  return sitBonus;
+}
+
 // FEATURE: DRAMA SCORE LIVE — QW-1 (Drama Cross-Reference doc)
 // espnScores.situation modifiers on top of score-diff + time-urgency base
 // Returns 0–100 integer. 0 = pregame/final, >80 = "fire" urgency.
@@ -15317,66 +15390,11 @@ function dramaScoreLive(eData, sport){
     else if(q===3)     timeBonus=5;
   }
 
-  // ── #11a Situation Drama Bonus ────────────────────────────────────────
-  // Reads eData.situation (ESPN) + existing period/score state.
-  // Applied BEFORE garbage-time cap in injectDramaBadges().
-  let sitBonus = 0;
-  const sit = eData.situation || {};
-  // (diff already declared above from homeScore/awayScore)
-
-  // isFinalPeriod: amplifies bonuses in final quarter/period/inning
-  const isFinalPeriod = (
-    (sp.includes('nba')||sp.includes('basketball')) && period >= 4 ||
-    (sp.includes('nhl')||sp.includes('hockey'))     && period >= 3 ||
-    (sp.includes('mlb')||sp.includes('baseball'))   && period >= 9 ||
-    (sp.includes('nfl')||sp.includes('football'))   && period >= 4
-  );
-
-  // ── HOCKEY ── (goalie pulled is valid any period — empty net)
-  if(sp.includes('nhl')||sp.includes('hockey')){
-    const homePull = sit.homeGoaliePulled||false;
-    const awayPull = sit.awayGoaliePulled||false;
-    if(homePull || awayPull) sitBonus += 22;              // goalie pulled — empty net pressure
-    else if((sit.homePowerPlay||sit.awayPowerPlay) && diff===0) sitBonus += 18; // PP + tied
-    else if((sit.homePowerPlay||sit.awayPowerPlay) && diff<=1)  sitBonus += 15; // PP + close
-    if(sit.delayedPenalty && diff<=1) sitBonus += 8;     // delayed penalty + close
-  }
-
-  // ── BASEBALL ── (amplified in final innings)
-  if(sp.includes('mlb')||sp.includes('baseball')){
-    const runners = [eData.onFirst,eData.onSecond,eData.onThird].filter(Boolean).length;
-    const risp    = eData.onSecond||eData.onThird;
-    if(runners===3 && eData.outs===2)  sitBonus += isFinalPeriod ? 20 : 12; // bases loaded 2 out
-    else if(runners===3)               sitBonus += isFinalPeriod ? 15 :  8; // bases loaded
-    else if(risp && eData.outs===2)    sitBonus += isFinalPeriod ? 10 :  6; // RISP 2 out
-    if(eData.balls===3 && eData.strikes===2 && risp) sitBonus += 8; // full count + RISP
-    if(eData.outs===2 && period>=7)    sitBonus += 5;    // 2-out + late innings
-  }
-
-  // ── BASKETBALL ── (isFinalPeriod only — bonus fouls + shot clock)
-  if(sp.includes('nba')||sp.includes('basketball')){
-    if(isFinalPeriod){
-      if((sit.homeFoulsBonus||sit.awayFoulsBonus) && diff<=5) sitBonus += 10;
-      const sc = parseFloat(sit.shotClock||'99');
-      if(sc<=8 && diff<=6) sitBonus += 8;                // shot clock pressure, close game
-    }
-  }
-
-  // ── NFL ── (amplified in final period + 2-minute drill)
-  if(sp.includes('nfl')||sp.includes('football')){
-    const dnDist = (sit.shortDownDistanceText||sit.downDistanceText||'').toLowerCase();
-    const in2min = dnDist.includes('2-minute')||dnDist.includes('2 minute');
-    if(dnDist.includes('4th') && in2min)                  sitBonus += isFinalPeriod ? 15 : 10;
-    else if(dnDist.includes('4th'))                       sitBonus += isFinalPeriod ?  8 :  5;
-    if(sit.isRedZone && in2min && diff<=7)                sitBonus += 10;
-    else if(sit.isRedZone)                                sitBonus +=  5;
-  }
-
-  // ── SOCCER ── (stoppage time marker)
-  if(sp.includes('soccer')||sp.includes('league')||sp.includes('mls')||
-     sp.includes('liga')||sp.includes('ligue')||sp.includes('premier')){
-    if((eData.clock||'').includes('+')) sitBonus += 8;   // "90+2" stoppage time
-  }
+  // ── #11a Situation Drama Bonus (QW-1) ─────────────────────────────────
+  // Named game-state facts (goaliePulled / runners / isRedZone / downDistance)
+  // → internal bonus. Extracted to applyQW1SituationBonus(); behaviour unchanged.
+  // Post-RUWT compliant: never excitement thresholds; feeds score, not display.
+  let sitBonus = applyQW1SituationBonus(eData, sport);
 
   // ── Fix 6: Weather drama bonus ─────────────────────────────────────────
   // wxAlert fires for: rain > 5mm/hr, temp > 100°F, wind > 30mph
