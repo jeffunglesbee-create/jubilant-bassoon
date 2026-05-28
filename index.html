@@ -5434,7 +5434,7 @@ async function mlbStatsInit() {
     }
   } catch(e) {}
   _mlbStatsLoaded = true;
-  if (loaded > 0) console.log(`[FIELD] MLB stats loaded: ${loaded}/6 tables (5 Savant + umpire CF Worker)`);
+  if (loaded > 0 && FIELD_DEBUG) console.log(`[FIELD] MLB stats loaded: ${loaded}/6 tables (5 Savant + umpire CF Worker)`);
 }
 
 // Returns: { wins, losses, label, momentum, last10[] } | null
@@ -7619,7 +7619,7 @@ function buildTodaySchedule(){
     ? _fieldDataCache.schedules.mlb          // live — broadcast assignments pre-computed
     : mlbRaw.filter(g=>isToday(g.start_time)); // fallback — hardcoded entries
 
-  if (_useJsonMlb) console.log(`[Phase2] MLB from JSON: ${_mlbSource.length} games`);
+  if (_useJsonMlb && FIELD_DEBUG) console.log(`[Phase2] MLB from JSON: ${_mlbSource.length} games`);
 
   const mlbGames=_mlbSource.map(g=>{
     // Phase 2: apply overlay (AI matchupNote, postponed flag) if available
@@ -14344,7 +14344,7 @@ async function fetchScheduleData() {
     const d = fdResult.value;
     if (d._meta?.schema_version === '2.0' && d._meta?.for_date === TODAY_ISO && !d.error) {
       _fieldDataCache = d;
-      console.log(`[Phase2] field-data loaded: ${d._meta.games_found?.mlb||0} MLB, ${d._meta.games_found?.nhl||0} NHL, ${d._meta.games_found?.nba||0} NBA`);
+      if (FIELD_DEBUG) console.log(`[Phase2] field-data loaded: ${d._meta.games_found?.mlb||0} MLB, ${d._meta.games_found?.nhl||0} NHL, ${d._meta.games_found?.nba||0} NBA`);
     }
   }
 
@@ -14354,7 +14354,7 @@ async function fetchScheduleData() {
     if (d.byDate && !d.error) {
       _mlbnDataCache = d.byDate;
       const todayGames = d.byDate[TODAY_ISO];
-      if (todayGames) console.log(`[Phase2] MLBN today:`, todayGames);
+      if (todayGames && FIELD_DEBUG) console.log(`[Phase2] MLBN today:`, todayGames);
     }
   }
 }

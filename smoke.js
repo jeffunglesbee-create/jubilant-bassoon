@@ -778,6 +778,10 @@ assert('A232 — QW-1: situation bonus uses named game-state facts (not threshol
   html.includes('homeGoaliePulled') && html.includes('isRedZone') && html.includes('eData.situation'),
   'applyQW1SituationBonus must read named situation facts — post-RUWT patent posture');
 
+assert('A234 — console.log gating: ≤4 ungated (line-level FIELD_DEBUG required)',
+  html.split('\n').filter(l => /console\.log\(/.test(l) && !/FIELD_DEBUG/.test(l)).length <= 4,
+  'New console.log must be line-level FIELD_DEBUG-gated. ≤4 allows verified context-gated cases (Delta15 prior-line if, NHL Analytics FIELD_DEBUG block, renderProseScore early-return); bump deliberately like A189 if a new context-gated log is justified');
+
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);
 

@@ -1,8 +1,11 @@
-// FIELD local smoke — per-day data assertions (wraps structural smoke.js)
+// FIELD local smoke — per-day INVARIANT assertions (wraps structural smoke.js)
 // Structural assertions (feature presence, function existence): → smoke.js in repo
-// Per-day assertions (NBA_CARDS, MLB section, series records): → this file
+// Per-day INVARIANTS (render well-formedness, no stale/dupe/corrupt cards): → this file
+// Per-day SNAPSHOT ACCURACY (exact slate counts/teams/networks): → field_smoke_daily.js
 //
-// ARCHITECTURE: smoke.js is shared by CI and local. field_smoke.js adds per-day config.
+// ARCHITECTURE: smoke.js + field_smoke.js BLOCK every commit (neither can false-fail —
+// structural presence + self-syncing invariants). field_smoke_daily.js runs in the
+// daily-update workflow only. See STANDARDS.md → "Smoke Gate Architecture (2026-05-28)".
 // When adding a STRUCTURAL assertion: add to smoke.js + FIELD_FEATURES in index.html
 // When adding a PER-DAY assertion: add here only
 //
@@ -11,17 +14,22 @@
 
 const fs = require('fs');
 
-// ── PER-DAY CONFIG ────────────────────────────────────────────────────────────
-const TODAY_ISO = '2026-05-23';   // YYYY-MM-DD in America/New_York
-const NBA_CARDS        = 1;              // WCF G3 OKC@SAS 8:30 PM ET NBC/Peacock
-const NBA_HOME_TEAM    = 'Cleveland Cavaliers';
-const NBA_NETWORK      = 'ABC';          // chip text from NBA_NBC bundle
-const MLB_CARDS        = 2;             // Friday Apple TV+: HOU@CHC 2:20pm, DET@BAL 7:15pm
-const MLB_CHIP_HOME    = 'Milwaukee Brewers';
-const MLB_CHIP_TEXT    = 'FOX';
-const NBA_SERIES_ACTIVE = true;
-const NBA_HYPE_TEST    = false;
-const MIN_SPORT_SECTIONS = 3;           // NBA WCF G3 + NHL WCF G2 + MLB Apple
+// ── PER-DAY INVARIANT CONFIG ────────────────────────────────────────────────
+// This file runs INVARIANT checks only: it renders the REAL current day and
+// asserts the output is internally well-formed (no stale / duplicate / corrupt
+// cards, resolvable networks, well-formed series records). It has NO hardcoded
+// answer-key, so it CANNOT go stale and never needs --no-verify.
+//
+// Snapshot ACCURACY for a specific day (exact card counts, specific teams &
+// networks, series-active flag) lives in field_smoke_daily.js, run by the
+// daily-update workflow where the real slate is known.
+// See STANDARDS.md → "Smoke Gate Architecture (2026-05-28)".
+//
+// TODAY_ISO is derived from the system clock (America/New_York) — never pinned.
+const _nyNow = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/New_York' }));
+const TODAY_ISO = _nyNow.getFullYear() + '-' +
+  String(_nyNow.getMonth() + 1).padStart(2, '0') + '-' +
+  String(_nyNow.getDate()).padStart(2, '0');
 // ─────────────────────────────────────────────────────────────────────────────
 
 const LOG = '/tmp/field_smoke.log';
@@ -32,7 +40,9 @@ let failures = 0;
 const fail = (msg) => { failures++; log('FAIL:', msg); };
 const pass = (msg) => log('PASS:', msg);
 
-const html = fs.readFileSync('/home/claude/index.html', 'utf8');
+const INDEX_PATH = process.argv[2] || '/home/claude/index.html';
+const BASE_DIR = require('path').dirname(require('path').resolve(INDEX_PATH));
+const html = fs.readFileSync(INDEX_PATH, 'utf8');
 const m = html.match(/<script>([\s\S]*?)<\/script>/);
 if (!m) { log('FATAL: no <script> tag found'); process.exit(1); }
 const js = m[1];
@@ -41,10 +51,8 @@ const js = m[1];
 try { new Function(js); pass('Syntax: parses cleanly'); }
 catch(e) { fail('Syntax: ' + e.message); }
 
-// 2. console.log gating check
-const logCount = (html.match(/console\.log/g)||[]).length;
-if (logCount > 35) fail('Production console.log count too high: ' + logCount);
-else pass('console.log count = ' + logCount + ' (all gated behind FIELD_DEBUG)');
+// 2. console.log gating check — MOVED to smoke.js (A234, single source of truth).
+//    smoke.js counts UNGATED console.log lines (no line-level FIELD_DEBUG).
 
 // 3. Build DOM mock and run script
 const mockEl = id => ({ id, innerHTML:'', textContent:'', style:{},
@@ -95,7 +103,7 @@ Object.setPrototypeOf(global.Date, RealDate);
 // Load field_utils.js into execution context so helpers are available
 const utilsJs = (() => {
   try {
-    const raw = fs.readFileSync('/tmp/jubilant-bassoon/field_utils.js', 'utf8');
+    const raw = fs.readFileSync(BASE_DIR + '/field_utils.js', 'utf8');
     return raw.replace(/if\s*\(typeof module[^}]+\}[^}]+\}/s, '');
   } catch(e) { return ''; }
 })();
@@ -133,50 +141,33 @@ try {
     }
   }
 
-  // 4. Schedule render
+  // ── PER-DAY INVARIANTS (4–6): render the REAL today, check well-formedness ──
+  // No exact counts / specific teams / networks — that is snapshot accuracy and
+  // lives in field_smoke_daily.js. These pass on an empty (pre-update) render and
+  // fail only on genuinely malformed output → never a false block, never a bypass.
   const main = getEl('main');
-  const sportSections = (main.innerHTML.match(/class="sport-section"/g)||[]).length;
-  const expectSections = (NBA_CARDS > 0 || MLB_CARDS > 0); // only require sections if games configured
-  const minSec = typeof MIN_SPORT_SECTIONS !== 'undefined' ? MIN_SPORT_SECTIONS : 4;
-  if (expectSections && sportSections === 0) fail('Schedule: empty (renderAll no output)');
-  else if (expectSections && sportSections < minSec) fail('Schedule: only ' + sportSections + ' sections (expected ' + minSec + '+)');
-  else pass('Schedule: ' + sportSections + ' sport sections' + (!expectSections ? ' (pre-update)' : ''));
+  const mainHTML = main.innerHTML || '';
+  const sportSections = (mainHTML.match(/class="sport-section"/g)||[]).length;
+  pass('Schedule: ' + sportSections + ' sport section(s) for ' + TODAY_ISO +
+       (sportSections === 0 ? ' (empty/pre-update — OK)' : ''));
 
-  // 5. MLB section + chip checks
-  const mlbIdx = main.innerHTML.indexOf('data-sport="Baseball (MLB)"');
-  if (MLB_CARDS === 0) { pass('MLB: 0 configured — skipping'); }
-  else if (mlbIdx === -1) fail('MLB section missing from render');
-  else {
-    const nextSec = main.innerHTML.indexOf('class="sport-section"', mlbIdx + 30);
-    const mlbSec = main.innerHTML.slice(mlbIdx, nextSec === -1 ? main.innerHTML.length : nextSec);
-    const mlbCards = (mlbSec.match(/class="game-card/g)||[]).length;
-    if (mlbCards !== MLB_CARDS) fail(`MLB: expected ${MLB_CARDS} cards, got ` + mlbCards);
-    else pass(`MLB: ${MLB_CARDS} cards rendered`);
-    if (MLB_CHIP_HOME && MLB_CHIP_TEXT) {
-      const chipIdx = mlbSec.indexOf(`data-home="${MLB_CHIP_HOME}"`);
-      if (chipIdx !== -1) {
-        const nextCard = mlbSec.indexOf('class="game-card', chipIdx + 30);
-        const card = mlbSec.slice(chipIdx, nextCard === -1 ? chipIdx + 5000 : nextCard);
-        const escapedChip = MLB_CHIP_TEXT.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        if (!card.match(new RegExp(`>${escapedChip}<`))) fail(`${MLB_CHIP_HOME} card missing ${MLB_CHIP_TEXT} chip`);
-        else pass(`${MLB_CHIP_HOME} has ${MLB_CHIP_TEXT} chip`);
-      }
-    }
-  }
+  // Every rendered card must carry a matchup (data-home) — no corrupt/blank cards.
+  const cardOpen  = (mainHTML.match(/class="game-card/g)||[]).length;
+  const homeAttrs = (mainHTML.match(/data-home="[^"]+"/g)||[]).length;
+  if (cardOpen > 0 && homeAttrs === 0)
+    fail('Per-day invariant: ' + cardOpen + ' card(s) rendered but none carry data-home (malformed)');
+  else
+    pass('Per-day invariant: card matchups well-formed (' + cardOpen + ' card(s))');
 
-  // 6. NBA section + network checks
-  const nbaIdx = main.innerHTML.indexOf('data-sport="NBA Playoffs"');
-  if (NBA_CARDS === 0) { pass('NBA: 0 configured — skipping'); }
-  else if (nbaIdx === -1) fail('NBA section missing from render');
-  else {
-    const nextSec = main.innerHTML.indexOf('class="sport-section"', nbaIdx + 30);
-    const nbaSec = main.innerHTML.slice(nbaIdx, nextSec === -1 ? nbaIdx + 4000 : nextSec);
-    const nbaCards = (nbaSec.match(/class="game-card/g)||[]).length;
-    if (nbaCards !== NBA_CARDS) fail(`NBA: expected ${NBA_CARDS} card(s), got ` + nbaCards);
-    else pass(`NBA: ${NBA_CARDS} card(s) rendered`);
-    if (!nbaSec.includes(NBA_HOME_TEAM)) fail(`NBA: ${NBA_HOME_TEAM} not found in section`);
-    else if (!nbaSec.match(new RegExp(`${NBA_HOME_TEAM}[\\s\\S]{0,3000}${NBA_NETWORK}`))) fail(`${NBA_HOME_TEAM} missing ${NBA_NETWORK} chip`);
-    else pass(`${NBA_HOME_TEAM} on ${NBA_NETWORK} (correct)`);
+  // MLB / NBA sections, IF present today, must contain ≥1 card (no empty shells).
+  for (const [label, marker] of [['MLB','data-sport="Baseball (MLB)"'], ['NBA','data-sport="NBA Playoffs"']]) {
+    const idx = mainHTML.indexOf(marker);
+    if (idx === -1) { pass(label + ': no section today (OK)'); continue; }
+    const next = mainHTML.indexOf('class="sport-section"', idx + 30);
+    const sec  = mainHTML.slice(idx, next === -1 ? mainHTML.length : next);
+    const cards = (sec.match(/class="game-card/g)||[]).length;
+    if (cards === 0) fail(label + ' section rendered but contains 0 cards (empty shell)');
+    else pass(label + ' section well-formed (' + cards + ' card(s))');
   }
 
   // ════════════════════════════════════════════════════════════════════════
@@ -249,18 +240,16 @@ try {
   // LAYER 3 — ASSERTIONS 23-25 (J-series + Journalism May 16 2026)
   // ════════════════════════════════════════════════════════════════════════
 
-  // 23: NBA series record renders when NBA_SERIES_ACTIVE = true
-  if (NBA_SERIES_ACTIVE) {
-    const nbaSecFor23 = nbaIdx !== -1
-      ? main.innerHTML.slice(nbaIdx, main.innerHTML.indexOf('class="sport-section"', nbaIdx + 30) || main.innerHTML.length)
-      : '';
-    const hasSeriesText = /leads\s+\d|\d-\d|[Ss]eries\s+tied|tied\s+\d|\d+\s*leads/i.test(nbaSecFor23);
-    if (!hasSeriesText)
-      fail('Assertion 23 — NBA_SERIES_ACTIVE=true but no series record text found in NBA section');
+  // 23: Series record invariant — IF a rendered card claims a playoff series,
+  // the record must be well-formed (no empty data-series). No "a series must
+  // exist today" requirement — that is snapshot accuracy → field_smoke_daily.js.
+  {
+    const seriesAttrs = (innerHTML.match(/data-series="[^"]*"/g)||[]);
+    const blankSeries = seriesAttrs.filter(s => /data-series=""/.test(s)).length;
+    if (blankSeries > 0)
+      fail('Assertion 23 — ' + blankSeries + ' card(s) with empty data-series (corrupt series record)');
     else
-      pass('Assertion 23 — NBA series record text present in NBA section');
-  } else {
-    pass('Assertion 23 — NBA_SERIES_ACTIVE=false (no series game today, skipped)');
+      pass('Assertion 23 — series records well-formed (' + seriesAttrs.length + ' checked)');
   }
 
   // 24: Scout's Pick infrastructure (J4)
@@ -270,14 +259,8 @@ try {
   else
     pass("Assertion 24 — Scout's Pick infrastructure present (confirmed in JS)");
 
-  // 25: Anti-Hype flag J1
-  if (NBA_HYPE_TEST) {
-    const hasAntiHypeBadge = innerHTML.includes('anti-hype') || innerHTML.includes('ANTI-HYPE') || innerHTML.includes('HIGH MEDIA');
-    if (!hasAntiHypeBadge)
-      fail('Assertion 25 — NBA_HYPE_TEST=true but no Anti-Hype badge found in rendered output');
-    else
-      pass('Assertion 25 — Anti-Hype badge renders correctly in output');
-  } else {
+  // 25: Anti-Hype infrastructure (J1) — structural presence check.
+  {
     const hasAntiHypeInfra = js.includes('BigMarket') || js.includes('ANTI-HYPE') || js.includes('bigMarket');
     if (!hasAntiHypeInfra)
       fail('Assertion 25 — J1 Anti-Hype infrastructure missing from JS (BigMarket or ANTI-HYPE not found)');
@@ -498,14 +481,8 @@ try {
   if(nightOwlETKey) pass('A54 — Night Owl save/load: ET timezone key consistent');
   else fail('A54 — Night Owl: timezone key mismatch — finals may not be found');
 
-  // A55 — Runtime error capture instrumented in index.html
-  const hasFieldErrors =
-    html.includes('window._fieldErrors') &&
-    html.includes('window.onerror') &&
-    html.includes('unhandledrejection') &&
-    html.includes('field-debug-panel');
-  if(hasFieldErrors) pass('A55 — Runtime capture: _fieldErrors + onerror + debug panel present');
-  else fail('A55 — Runtime capture missing — browser errors invisible without DevTools');
+  // A55 — Runtime error capture: structural assertion. Single source of truth =
+  // smoke.js (this divergent duplicate required 'field-debug-panel' and drifted).
 
   // A56 — field_utils.js loaded as separate script
   const hasUtils = html.includes('field_utils.js') && html.includes('<script src="field_utils.js">');

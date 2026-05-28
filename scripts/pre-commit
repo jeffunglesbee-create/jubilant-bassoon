@@ -14,8 +14,11 @@ echo ""
 echo "🔍 Smoke test (structural)..."
 node "$REPO/smoke.js" "$REPO/index.html" >/dev/null 2>&1; SMOKE_S=$?
 
-echo "🔍 Smoke test (per-day)..."
-node "$REPO/field_smoke.js" >/dev/null 2>&1; SMOKE_D=$?
+echo "🔍 Smoke test (per-day invariants)..."
+node "$REPO/field_smoke.js" "$REPO/index.html" >/dev/null 2>&1; SMOKE_D=$?
+# NOTE: field_smoke_daily.js (slate ACCURACY) is run by the DAILY-UPDATE workflow,
+#       NOT here — code/doc commits must not be gated on today's slate config.
+#       See STANDARDS.md → "Smoke Gate Architecture (2026-05-28)".
 
 # Both gates must pass
 [ $SMOKE_S -eq 0 ] && [ $SMOKE_D -eq 0 ]; SMOKE=$?
@@ -41,7 +44,7 @@ if [ $SMOKE -ne 0 ] || [ $UNIT -ne 0 ] || [ $LINT -ne 0 ]; then
   echo "║           MUST include [no-verify: reason] in msg        ║"
   echo "╚══════════════════════════════════════════════════════════╝"
   [ $SMOKE   -ne 0 ] && node "$REPO/smoke.js" "$REPO/index.html" 2>&1 | tail -5
-  [ $SMOKE_D -ne 0 ] && node "$REPO/field_smoke.js" 2>&1 | tail -5
+  [ $SMOKE_D -ne 0 ] && node "$REPO/field_smoke.js" "$REPO/index.html" 2>&1 | tail -5
   [ $UNIT  -ne 0 ] && node "$REPO/field_unit.js"  2>&1 | tail -5
   [ $LINT  -ne 0 ] && echo "$LINT_OUT" | grep " error " | head -5
   exit 1

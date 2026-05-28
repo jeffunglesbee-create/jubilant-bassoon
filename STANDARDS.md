@@ -6,12 +6,12 @@
 
 ## Enforcement
 
-**Smoke test — two files, two gates:**
-- `smoke.js` — structural assertions (A1–A123). Run by CI and pre-commit. `node smoke.js index.html`.
-- `field_smoke.js` — per-day assertions (card counts, broadcast chips, rendered DOM). Run by pre-commit only. `node field_smoke.js`.
+**Smoke test — three files (see Rule 32 → "Smoke Gate Architecture (2026-05-28)"):**
+- `smoke.js` — structural assertions (feature/function presence). Run by CI + pre-commit. `node smoke.js index.html`. **BLOCKS every commit.**
+- `field_smoke.js` — per-day **INVARIANTS** (render well-formedness; system-derived date, no answer-key). Run by pre-commit. `node field_smoke.js index.html`. **BLOCKS every commit. Cannot false-fail.**
+- `field_smoke_daily.js` — per-day **SNAPSHOT ACCURACY** (exact slate counts/teams/networks). Run by the **daily-update workflow only**. `node field_smoke_daily.js index.html`. Does **not** block code/doc commits.
 
-The pre-commit hook runs both in sequence; either failing blocks the commit.
-Assertions A51–A54 are semantic contracts: if they fail, a feature silently does nothing.
+The pre-commit hook runs smoke.js + field_smoke.js + field_unit.js in sequence; any failure blocks the commit. Because neither smoke gate has a hardcoded answer-key, a correct commit never needs `--no-verify`.
 Add a new named assertion in `smoke.js` for every FIELD_FEATURES entry (presence check minimum).
 
 **Session type** — declare at session start. Types are mutually exclusive. No mixing.
@@ -1809,6 +1809,69 @@ Changes:
 
 Result: pre-commit drops from ~7s to ~1.5s. ESLint runs in CI where
 Rule 17 always said it should be.
+
+### Smoke Gate Architecture (2026-05-28) — invariant vs snapshot [ADR]
+
+**Status:** adopted 2026-05-28 (Opus). Changes the session-protocol hard-gate; do not
+reverse without Jeff's approval. Documented here for Sonnet 4.6 + Opus continuity.
+
+**Problem.** `field_smoke.js` used to pin a frozen answer-key for one day:
+`TODAY_ISO='2026-05-23'`, `NBA_CARDS=1`, specific teams, specific networks,
+`NBA_SERIES_ACTIVE=true`. Matching a snapshot is stale by construction — the moment
+the day rolls, or you commit anything that isn't a slate refresh, the gate goes red
+through no fault of the change. A red gate on a correct commit is exactly the
+bypass pressure Rule 32 warns about: it trains `--no-verify` as a reflex, which
+erodes *every* gate, not just this one. "Advisory" does not fix this — letting a
+red check through without the flag is still shipping past a red check (a silent
+bypass). The fix is to make the gate unable to false-fail.
+
+**Principle — invariant vs snapshot.**
+- An **invariant** is a property true of *any correct day*: no card older than
+  yesterday, no duplicate matchups, no empty `data-home`, no deprecated bundle,
+  every series record well-formed, clean empty-state when there are no games.
+  An invariant has no answer-key to maintain, so it is green whenever the data is
+  correct and red only when something is genuinely malformed. **Safe to block on.**
+- A **snapshot** is *today's specific slate*: exactly N cards, this team on that
+  network, a series active tonight. Verifying a snapshot needs ground truth you
+  only have when you've checked the real slate (MLB.com, Sports Media Watch, …).
+  **Not safe to block arbitrary commits on** — it belongs where the ground truth is.
+
+**The three files.**
+| File | Asserts | Date source | Runs in | Blocks |
+|------|---------|-------------|---------|--------|
+| `smoke.js` | structural (feature/function presence) | n/a | CI + pre-commit | every commit |
+| `field_smoke.js` | per-day **invariants** (well-formedness) | **system clock (America/NY)** | pre-commit | every commit |
+| `field_smoke_daily.js` | per-day **snapshot accuracy** (exact slate) | system clock + `DAILY_EXPECTED` you fill | **daily-update workflow only** | daily commit only |
+
+Both pre-commit gates are hard blocks and neither can false-fail: structural presence
+is always satisfiable by correct code; invariants are always satisfiable by correct data
+(an empty/pre-update render passes). So a correct commit is always honestly green — no
+bypass, ever. Slate correctness is not downgraded; it moved to `field_smoke_daily.js`,
+run during the daily update where the real slate is known. Relocation, not weakening.
+
+**What `field_smoke.js` no longer does:** no `TODAY_ISO` pin, no `NBA_CARDS`/
+`MLB_CARDS`/`NBA_HOME_TEAM`/`NBA_NETWORK`/`MLB_CHIP_*`/`NBA_SERIES_ACTIVE`/
+`NBA_HYPE_TEST`/`MIN_SPORT_SECTIONS` consts. `TODAY_ISO` is derived from the system
+clock. Checks #4/#5/#6 became well-formedness invariants; #23 became "series records
+must be well-formed" (not "a series must exist"); #25 became a structural infra check.
+Paths are argv-driven (`node field_smoke.js <index.html>`; field_utils.js read from the
+same dir) so it runs from any checkout, not just `/home/claude` or `/tmp`.
+
+**Daily workflow contract (`field_smoke_daily.js`).** After updating today's slate:
+fill `DAILY_EXPECTED` (date = today; games you verified; required network bundles),
+run `node field_smoke_daily.js index.html`, require exit 0 before pushing the daily
+commit. A stale `DAILY_EXPECTED.date` fails by design — it means the slate wasn't synced.
+It checks index.html **data strings**, not the rendered DOM, because the Node harness
+does not drive `renderAll()` (the same reason the old DOM-snapshot checks were perma-red
+in-container and forced bypasses).
+
+**Dedup (single source of truth).** The `console.log` gating check moved from
+`field_smoke.js` into `smoke.js` as **A234** (counts *ungated* `console.log` lines —
+those without a line-level `FIELD_DEBUG` — threshold ≤4 for verified context-gated
+cases). The divergent A55 duplicate was removed from `field_smoke.js` (smoke.js owns it).
+Follow-up (not done 2026-05-28, flagged to avoid coverage loss): `field_smoke.js` still
+carries ~500 lines of structural assertions (A54/A56/A57, 24/26–32, weather, UFL)
+duplicated from `smoke.js`; consolidate into `smoke.js` once each is confirmed covered.
 
 ## Rule 33 — Product Ethos
 
