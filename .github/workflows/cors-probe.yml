@@ -15,15 +15,17 @@ jobs:
 
       - name: Fetch and save
         run: |
+          set +e
           URL=$(grep '^url=' outbox/.trigger-cors-probe | cut -d= -f2-)
-          LIMIT=$(grep '^limit=' outbox/.trigger-cors-probe | cut -d= -f2- || echo 3000)
+          LIMIT=$(grep '^limit=' outbox/.trigger-cors-probe | cut -d= -f2-)
+          [ -z "$LIMIT" ] && LIMIT=3000
           [ -z "$URL" ] && URL="https://baseballsavant.mlb.com/gf?game_pk=824274"
           TS=$(date -u +%Y%m%dT%H%M%SZ)
           OUT="outbox/cors-result-${TS}.txt"
           echo "URL: $URL  [$TS]" > "$OUT"
-          curl -sI "$URL" >> "$OUT"
+          curl -sI "$URL" >> "$OUT" 2>&1 || echo "(HEAD request failed or not supported)" >> "$OUT"
           echo "=== BODY (first ${LIMIT} chars) ===" >> "$OUT"
-          curl -s "$URL" | head -c "$LIMIT" >> "$OUT"
+          curl -s "$URL" | head -c "$LIMIT" >> "$OUT" 2>&1 || echo "(GET request failed)" >> "$OUT"
           echo "OUT=$OUT" >> $GITHUB_ENV
 
       - name: Push result
