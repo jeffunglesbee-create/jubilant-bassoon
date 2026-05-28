@@ -1,61 +1,93 @@
-# FIELD Handoff — May 27 2026 (Late Session)
+# FIELD — Session Handoff
+## May 27-28 2026 · TYPE B + TYPE C
 
-HEAD: 12da478 · Smoke: 211/0 · SW_VERSION: 2026-05-27k
-Deploy gate: success ✅
+**HEAD:** fe00441 | **SW:** 2026-05-27q | **Smoke:** 223/0 ✅ | **Playwright:** 18/18 ✅
 
-## CANONICAL DOCS
+---
 
-Current State:    1gumlOLcrOOYQlGWpdcYoziIhQQTsmD4Oi3KdVfMpps8
-CI/Deploy Ref:    18JMUd-Uq_m2DomuCua2B5UMiWOel81yzc1JU7SY6f20
-Session Doc:      1RQfeF9AW7JmLPeV5q-PIYWw1KgXVoR_VaQdptOjYrOM
-NBA+NHL Spec:     13AGp87M_6FrWwMNi4y0L3rHcrIrqSaU-OvxGEGdzgSo
+## READ FIRST
 
-## NHL WAVE 1 — LIVE (built this session)
+1. Check WCF G6 result (OKC @ SAS — was tonight May 28)
+2. Check NHL ECF G4 result (CAR @ MTL — was May 27)
+3. Do TYPE A update before any other work
+4. NBA Finals G1 = June 3 — 6 days — shell build is 35 min
 
-Features deployed:
-  NHL-B4 Special Teams (PP%, PK%) — getNHLSpecialTeams(abbrev)
-  NHL-B2 Possession (SAT%/Corsi)  — satPct field from team/shotshares
-  NHL-A1 Goalie Save Quality      — getNHLGoalieProfile(lastName)
+---
 
-Architecture precautions applied:
-  - NHL Stats API probed FIRST (nhl-analytics-probe.yml) before any tables
-  - Field names confirmed: powerPlayPct, penaltyKillPct, satPct, savePct, lastName
-  - Accent normalisation in getNHLAbbrev() — API uses "Montréal", FIELD uses "Montreal"
-  - NHL_NAME_TO_ABBREV reverse map (full name → abbrev) built from NHL_ABBREV_MAP
-  - nhlAnalyticsInit() sets _homeAbbr/_awayAbbr/_sport at T+4500ms
-  - Smoke A207-A210 check field PRESENCE and key CORRECTNESS
+## WHAT WAS BUILT THIS SESSION
 
-Data source: NHL Stats API (api.nhle.com/stats/rest/en/*)
-  Probe: outbox/nhl/nhl-analytics-probe-*.json (committed to repo)
-  All 16 2026 playoff teams | 19 goalies (GP ≥ 3)
+**Single commit fe00441 — Playwright fixes:**
 
-Card badges: [⚡ SPECIAL TEAMS] [🏒 {TEAM} SAT%]
-Compound prompt: PP/PK/SAT/goalie context lines via getNHLAnalyticsContext()
+| Fix | Root cause | File |
+|-----|-----------|------|
+| F02+F03 MLS 400 | Off-season data gap | field_browser.test.js: SOFT_FAIL_DOMAINS |
+| F04 PRICES TDZ | Hoisted fn + const TDZ | index.html: computeCoverageStats() try-catch |
+| F10 debug panel | #field-debug-panel → #fhp-overlay | field_browser.test.js line 223 |
+| F16 card tap | .game-card → .card-body[data-open] | field_browser.test.js line 361 |
 
-## WAVE 2 GAPS (next session)
+---
 
-- NHL-C1 PDO — calculate from team_summary (goalsFor/shots + goalsAgainst/shots)
-- NHL-D1 Game Character Predictor — Wave 1 base now done
-- NHL-D3 Goalie Matchup Quality — Wave 1 base now done
-- GSAX — requires MoneyPuck xG, not in NHL API; savePct used as proxy
-- _homeGoalie/_awayGoalie not yet set — goalie badge won't fire until set by relay scores
+## TIER 0 — DO FIRST (unchanged)
 
-## COMPLIANCE
+- ⚡ **BNI Patent Fix** (~15 min) — lines 16458-16461 index.html
+- ⚡ **EMBER Patent Fix** (~30 min) — isLateCloseGame() replaces threshold
+- ⚡ **NBA Finals G1 Shell** — JUNE 3 DEADLINE
+- ⚡ **World Cup 2026 Build** — JUNE 11 DEADLINE (54 games)
+- ⚡ **USPTO Provisional** — ~$320 pro se — EXPIRES ~JUNE 25
 
-GDPR check fixed: C2 consent gate (field_privacy_v1/no-geo). Clean on HEAD.
+---
 
-## TIER 0 — NEXT SESSION
+## NEW FROM THIS SESSION
 
-1. NBA Finals G1 shell — JUNE 3 DEADLINE — check WCF G6 result first
-2. World Cup 2026 build — JUNE 11 DEADLINE
-3. NHL SCF entries — VGK in, ECF G4 result tonight
-4. Pitch arsenal column fix (30 min)
-5. USPTO provisional — 30-day window from May 26
-6. NHL _homeGoalie/_awayGoalie wiring for goalie badge to fire
+**Unifying Thread doc:** 10a6b5zQvIzWo1HoWnJ4OdXG3u0Y3J2USFjqINt48Bzs
+FIELD's intelligence layer is consistently ahead of its display layer.
+Surface ratio: ~25% without tap → target 70%. "Surface Area Audit" is
+now a named step in session protocol.
+
+**Categorization Audit:** 1kWrqLvv5ybQl7GyeBUBH5lcQ9860lV-WTAwN_sd3jzg
+~80% of specced advanced metrics have no Master entry. Wow #112-131 missing.
+H1-H4 (patent claims) missing. Master needs ANALYTICS PIPELINE + DISPLAY
+ARCHITECTURES sections. Add to STANDARDS.md: every analytics spec session
+must produce a Master update.
+
+**RUWT x Viewport Design Truth (corrected):**
+Live drama scores must NEVER appear in Drama Spectrum or Arbitrage Matrix
+cells. Named states only for live games. Post-game (Amnesty Zone) = numbers OK.
+The prior thought experiment was wrong on this point.
+
+---
+
+## KEY ARCHITECTURAL RULES CONFIRMED
+
+- dramaScoreLive() → internal routing only. Never DOM for live games.
+- Drama Spectrum live: named-state columns (CRUNCH / ELIM / GRINDING / NOT TONIGHT)
+- Arbitrage Matrix live cells: named states + access type, not scores
+- Five-badge display: [VOLATILITY][STAKES][PACE][SCARCITY][CLUTCH] — never summed
+- Amnesty Zone: data-state="post" — numbers fully open. Night Owl, Arc Poster.
+- Surface Area Audit: ask "what does FIELD compute that isn't visible?" each session
+
+---
 
 ## SPORT STATE
 
-NBA WCF: OKC leads SAS 3-2. G6 Thu May 28, NBC. CHECK RESULT.
-NHL ECF: CAR leads MTL 2-1. G4 tonight. CHECK RESULT.
-NHL SCF: VGK confirmed. Opponent = ECF winner.
-MLB: Regular season.
+| Sport | Status | Check |
+|-------|--------|-------|
+| NBA WCF | OKC leads 3-2 | G6 tonight May 28 — result unknown at close |
+| NHL ECF | CAR leads 3-0 | G4 May 27 — result unknown at close |
+| NHL SCF | VGK confirmed | Awaiting ECF winner |
+| MLB | Regular season | Daily update needed |
+
+---
+
+## CANONICAL DOCS
+
+| Doc | ID |
+|-----|----|
+| Current State | 1gumlOLcrOOYQlGWpdcYoziIhQQTsmD4Oi3KdVfMpps8 |
+| CI/Deploy Ref | 18JMUd-Uq_m2DomuCua2B5UMiWOel81yzc1JU7SY6f20 |
+| Master Feature Priority | 1k2pq5dB6pKeegBzVBo1ee-Xo98-Qri5aq-2WqMg_suU |
+| NBA+NHL Analytics Spec | 13AGp87M_6FrWwMNi4y0L3rHcrIrqSaU-OvxGEGdzgSo |
+| Baseball Analytics Spec | 1EwO-NfG_aBb-6CoOOliuCeCHxbYFfuTBoQrlejM7smM |
+| Desktop Visual Surfaces | 1ztbAGH-qHeKg1Ss_UneYmw9ZMk_H2eDcbSN66UPb22E |
+| Journalism Quality Spec | 1b7fwDVZMURi2sDbQ-Ur7dpbG4I5-fuCDPWC1ILfucoU |
+| This handoff (Drive) | 1B_9aEJ570gXiygNt9O0qz7TC6N0Y1Gc8-C3AwCBPXUs |
