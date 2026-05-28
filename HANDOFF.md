@@ -1,72 +1,76 @@
 # FIELD Handoff — May 28 2026
 
 ## HEAD
-`b2eb3c0` — Phase 2: Schedule Automation — live JSON at startup
+`aabd3b7` — World Cup 2026: complete 72-game group stage
 
 ## Smoke
-228/0 ✅ (includes A223-A226 Phase 2 assertions)
+231/0 ✅ (A227-A229 new WC26 assertions)
 
-## Last session — Schedule Automation Phase 2 COMPLETE
+## SW_VERSION
+2026-05-28b
+
+## Last session — World Cup 2026 COMPLETE
 
 ### What shipped:
-- `_fieldDataCache`: fetches `field-data-today.json` (schema 2.0) from raw.githubusercontent.com
-- `_mlbnDataCache`: fetches `mlbn-schedule.json` byDate lookup from raw.githubusercontent.com
-- `fetchScheduleData()`: parallel fetch with 1500ms timeout before first render
-  Fast connections get live data on first render. Offline/slow = hardcoded fallback.
-- `mlbGames` source: `_fieldDataCache.schedules.mlb` when fresh (dated today, schema 2.0)
-  Falls back to hardcoded `mlbRaw` when JSON stale/unavailable
-- `game_overlays`: AI matchupNotes from Gemini auto-applied to MLB games
-- Postponed games: `_postponed` flag removes game from schedule automatically  
-- MLBN: `_mlbnDataCache[TODAY_ISO]` checked before static `MLBN_SCHEDULE`
-- SW_VERSION: 2026-05-28b
+- `wc26Raw[]` replaced with complete 72-game group stage array (June 11–27)
+- All 12 groups × 6 games = 72 entries confirmed from Fox Sports + Yahoo Sports
+- Correct group labels A–L (old draft had Germany→Group C, Spain→Group G, etc. — all fixed)
+- Correct UTC times including midnight-ET edge cases (BC Place, late PT games)
+- `WC26_FREE` bundle on Mexico vs South Africa (Jun 11) + USA vs Paraguay (Jun 12) — Tubi free simulcast
+- `WC26_FOX`/`WC26_FS1` correctly assigned per Fox broadcast schedule
+- Smoke A227-A229: count=72, FREE bundle present, groups correct
+- June 11 today: preview card shows "Starts in 14 days" (existing maybePushWorldCup logic)
 
-### MLBN spec update (for Drive doc 1XiXo3jQ6f9k0S7YgwpQ6OwBrBoT0R80-5sSmeMefo_U):
-Add to BROADCAST RULES section:
-  MLB NETWORK: NOT in statsapi broadcasts(all) — confirmed cors-probe May 28.
-  Source: mlbn-schedule.json (Puppeteer workflow mlbn-schedule.yml, daily 9AM UTC)
-  Client reads _mlbnDataCache via fetchScheduleData() — same Phase 2 fetch chain
-  MLBN carries multiple games daily (3 today: LAA@DET, ATL@BOS, TOR@BAL)
-  Static MLBN_SCHEDULE table remains as fallback
+### Previous session same day — Schedule Automation Phase 2 (still current):
+- fetchScheduleData(), _fieldDataCache, _mlbnDataCache all live
+- Phase 3 still needed: update TYPE A protocol docs (~30 min)
 
-Update STATUS to: Phase 1 COMPLETE (May 28 2026), Phase 2 COMPLETE (May 28 2026)
-Update PHASE 3 to: immediate next action (update TYPE A protocol docs ~30 min)
+## TIER 0 — IMMEDIATE NEXT SESSIONS
 
-### Phase 3 still needed (~30 min):
-- Update Daily Update Reference (Drive 1oSHqnDskN04p95g6e85--4hhgIsKISZ3ZflLXKPM08E)
-  Remove: "Research all games, write all entries, verify broadcasts"
-  Add: "Verify field-data JSON output (run workflow_dispatch if stale), add playoff matchupNotes"
-  Add MLBN section (paste from previous HANDOFF)
-- Update STANDARDS.md Rule 11 TYPE A checklist
+1. **NBA Finals G1 Shell** — TONIGHT after WCF G6 result
+   - OKC vs SAS Game 6 (8:30pm ET, NBC/Peacock)
+   - If OKC wins: update shell home team, series confirmed NYK vs OKC
+   - If SAS wins: add G7 entry (May 30), shell still TBD
+   - June 3 deadline (G1)
 
-## TIER 0 — DO FIRST NEXT SESSION
-1. BNI Patent Fix (~15 min)
-2. EMBER Patent Fix (~30 min)
-3. NBA Finals G1 Shell TYPE A — update venue after WCF G6 result TONIGHT
-4. NHL Stanley Cup Final shell — after ECF G5 (May 29)
-5. World Cup 2026 — JUNE 11 DEADLINE
-6. Phase 3: update TYPE A protocol docs (~30 min)
+2. **NHL Stanley Cup Final Shell** — after ECF G5 Friday May 29
+   - CAR leads MTL (or VGK) 3-1, finishing Friday
+   - West: VGK waiting
+   - Add shell Friday night as TYPE C
 
-## Tonight
-WCF G6 OKC@SAS 8:30pm ET NBC/Peacock — Finals G1 venue determined
+3. **Schedule Automation Phase 3** (~30 min)
+   - Update Daily Update Reference doc (Drive 1oSHqnDskN04p95g6e85--4hhgIsKISZ3ZflLXKPM08E)
+   - Update STANDARDS.md Rule 11 TYPE A checklist
+   - Remove manual MLB entry protocol, add field-data JSON verification
 
-## Current automation stack:
-- field-data.yml: 7:30 AM UTC daily → outbox/field-data-today.json (schema 2.0)
-  MLB: 6+ games with broadcast assignment, ESPN/Peacock GOTD flags
-  NHL/NBA: series records, playoff flags
-  AI: Gemini matchupNotes for national broadcast + playoff games
-- mlbn-schedule.yml: 9:00 AM UTC daily → outbox/mlbn-schedule.json
-  Puppeteer scrapes mlb.com/network/shows/regular-season-games
-  byDate lookup for all MLBN games including non-Showcase carry games
-- Phase 2 client: fetchScheduleData() on page load, 1500ms timeout
-  MLB from JSON replaces mlbRaw for regular season games
-  MLBN from JSON replaces static table for today's detection
+4. **Daily updates** — every morning ≤25 min
+   - WCF G6 result tonight (NBA)
+   - NHL ECF G5 result Friday
+   - MLB slates
 
-## Canonical docs
+## TIER 0 — COMPLETED TODAY ✅
+- BNI Patent Fix ✅ (prior session)
+- EMBER Patent Fix ✅ (prior session)
+- AFL base date fix ✅ (97974a2)
+- Schedule Automation Phase 1 ✅
+- Schedule Automation Phase 2 ✅
+- MLBN full system ✅
+- May 28 daily update ✅
+- **World Cup 2026 ✅ (aabd3b7) — 72 games, all correct**
+
+## TIER 1 — POST-TUESDAY BUILD QUEUE
+All specced. Build in order of impact:
+- The Scorecard (#45, ~30 min) — Night Owl post-game grades · `1_w5pMbUi1kygIJtTvT2SLEN2FAazxKgi2VVSBVHVFng`
+- QW-1 (~45 min) — situation → drama bonus · `1kgxuLJFtCLmPUeRXeVZynCVC3gED_7qM2ZiSgUMRiWo`
+- Cold Open (#83, ~30 min) + Night Owl Audio (#88, ~20 min) — batch session · `1XWp5ZJZmggyHHKsNmHG3vU9xYmroU3uLz9MIx9UCt9o`
+- Schedule Card Surface Session (~85 min): DRAMA-LINE-A indexer + post-game amnesty row + What to Skip + SECTION-IDENTITY-A
+
+## CANONICAL DOCS
 - CI/Deploy Ref: 18JMUd-Uq_m2DomuCua2B5UMiWOel81yzc1JU7SY6f20
 - Current State: 1gumlOLcrOOYQlGWpdcYoziIhQQTsmD4Oi3KdVfMpps8
-- Schedule Automation Spec: 1XiXo3jQ6f9k0S7YgwpQ6OwBrBoT0R80-5sSmeMefo_U ← update status+MLBN
-- Daily Update Ref: 1oSHqnDskN04p95g6e85--4hhgIsKISZ3ZflLXKPM08E ← Phase 3 update needed
+- Schedule Automation Spec: 1XiXo3jQ6f9k0S7YgwpQ6OwBrBoT0R80-5sSmeMefo_U
+- Daily Update Ref: 1oSHqnDskN04p95g6e85--4hhgIsKISZ3ZflLXKPM08E ← PHASE 3 UPDATE NEEDED
 
-## Repo
+## REPO
 jeffunglesbee-create/jubilant-bassoon
 PAT: [PAT-in-memory-only] (exp May 2027)
