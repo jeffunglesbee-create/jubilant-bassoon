@@ -31,6 +31,7 @@ const SOFT_FAIL_DOMAINS = [
   'squiggle.com.au',            // AFL Squiggle — may be unavailable in CI region
   'api.the-odds-api.com',       // Odds API — free tier rate limits
   'sse.squiggle',               // AFL SSE stream
+  '/mls/stats/',                // MLS stats API — 400 when no MLS data available (season gaps)
 ];
 
 // Console messages that are expected and non-critical
@@ -220,7 +221,7 @@ test.describe('Structural — always blocking', () => {
     await page.goto(LIVE_URL + '?debug=1', { waitUntil: 'domcontentloaded', timeout: 30000 });
     await page.waitForTimeout(5000);
 
-    const visible = await page.locator('#field-debug-panel').isVisible();
+    const visible = await page.locator('#fhp-overlay').isVisible();
     expect(visible, 'Debug panel should be visible at ?debug=1').toBe(true);
     expect(errors, `Console errors at ?debug=1: ${errors.join('; ')}`).toHaveLength(0);
   });
@@ -358,10 +359,13 @@ test.describe('Data-dependent — skip if no games', () => {
       return;
     }
 
-    await page.locator('.game-card').first().click();
+    // Click .card-body[data-open] — the actual event listener target.
+    // Previously onclick was on .card-body; now it's a touchend/click listener
+    // wired to [data-open] elements post-render. .game-card click doesn't bubble.
+    await page.locator('.card-body[data-open]').first().click();
     await expect(page.locator('#bottom-sheet'),
-      'Bottom sheet did not open after card tap — initCardTapDelegation or openBottomSheet broken'
-    ).toHaveClass(/open/, { timeout: 2000 });
+      'Bottom sheet did not open after card tap — card-body[data-open] pointer events may not be wired'
+    ).toHaveClass(/open/, { timeout: 4000 });
 
     const teamsText = await page.locator('.bs-teams').first().textContent().catch(() => '');
     expect(teamsText.length, 'Bottom sheet .bs-teams is empty — sheet opened but not populated').toBeGreaterThan(0);

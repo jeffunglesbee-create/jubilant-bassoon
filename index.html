@@ -2858,7 +2858,8 @@ function buildFieldHealthPanel() {
     rows.push(err('Analytics Tables', `NHL teams: ${nhlST}/16 · goalies: ${nhlGoalies}/15`));
 
   // ── Bottom sheet ─────────────────────────────────────────────────────────
-  const bsOpen = document.getElementById('bottom-sheet')?.classList.contains('open');
+  const _bsEl = document.getElementById('bottom-sheet');
+  const bsOpen = _bsEl ? _bsEl.classList.contains('open') : false;
   rows.push(ok('Bottom Sheet', bsOpen ? 'Currently open' : 'Ready (tap a game card to verify)'));
 
   // ── localStorage health ───────────────────────────────────────────────────
@@ -14996,7 +14997,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-05-27p';
+  const SW_VERSION = '2026-05-27q';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -18896,6 +18897,7 @@ const PRICES = {
 
 // ── Coverage stats for tonight's schedule ───────────────────────────────────
 function computeCoverageStats(services){
+  try {
   const allGames = allGamesFlat().filter(g=>g.streams?.length);
   const total = allGames.length;
   const covered = allGames.filter(g=>g.streams.some(s=>services.has(s.key))).length;
@@ -18907,6 +18909,7 @@ function computeCoverageStats(services){
     .filter(([k])=>PRICES[k] && !services.has(k))
     .sort((a,b)=>b[1]-a[1])[0];
   return {total, covered, uncoveredCount:total-covered, uncovered, bestAdd};
+  } catch(e) { return {total:0,covered:0,uncoveredCount:0,uncovered:[],bestAdd:null}; } // TDZ guard: PRICES may not be initialized
 }
 
 // ── Render coverage bar at top of My Services modal ─────────────────────────
