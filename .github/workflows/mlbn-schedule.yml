@@ -1,0 +1,67 @@
+name: MLBN Schedule
+# Fetches the MLB Network regular season game schedule daily.
+# mlb.com/network/shows/regular-season-games is JS-rendered — web_fetch returns empty.
+# This workflow uses Puppeteer (headless Chromium) to execute the page's JS,
+# extract the game table, and write structured JSON to outbox/mlbn-schedule.json.
+# FIELD reads that JSON from raw.githubusercontent.com at load time.
+
+on:
+  schedule:
+    - cron: '0 9 * * *'   # 9 AM UTC = 5 AM ET — before daily TYPE C sessions
+  workflow_dispatch:       # manual trigger
+  push:
+    paths: ['outbox/.trigger-mlbn-fetch']  # manual trigger from sandbox
+
+permissions:
+  contents: write
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Puppeteer
+        run: |
+          # Install to /tmp to avoid committing node_modules
+          npm install puppeteer --prefix /tmp/puppeteer --silent
+          echo "Puppeteer installed ✓"
+
+      - name: Fetch MLBN Schedule
+        run: |
+          set +e
+          node scripts/mlbn-fetch.js
+          EXIT=$?
+          if [ $EXIT -ne 0 ]; then
+            echo "::warning::mlbn-fetch.js exited with $EXIT — schedule JSON written with error state"
+          fi
+          cat outbox/mlbn-schedule.json | python3 -c "
+          import sys, json
+          d = json.load(sys.stdin)
+          print(f\"Games fetched: {d.get('gameCount', 0)}\")
+          if d.get('error'): print(f\"Error: {d['error']}\")
+          for k,v in list(d.get('byDate', {}).items())[:10]:
+            print(f\"  {k}: {v}\")
+          "
+
+      - name: Push result
+        run: |
+          git config user.email "mlbn@field"
+          git config user.name "MLBN Scheduler"
+          git add outbox/mlbn-schedule.json
+          if git diff --cached --quiet; then
+            echo "No changes to MLBN schedule — skipping commit"
+            exit 0
+          fi
+          git commit -m "mlbn-schedule: $(date -u +%Y-%m-%d) [skip ci]"
+          for i in 1 2 3; do
+            git pull --rebase --autostash origin main && git push origin main && break
+            echo "Push attempt $i failed, retrying in $((i * 5))s..."
+            sleep $((i * 5))
+          done
