@@ -25,6 +25,15 @@ on:
   schedule:
     - cron: '30 7 * * *'   # 7:30 AM UTC = 3:30 AM ET (after daily-brief at 7:00 UTC)
   workflow_dispatch:
+    inputs:
+      espn_gotd:
+        description: 'ESPN GOTD games (home|away, comma-sep). e.g. "New York Yankees|Boston Red Sox"'
+        required: false
+        default: ''
+      peacock_gotd:
+        description: 'Peacock GOTD games (home|away, comma-sep)'
+        required: false
+        default: ''
 
 jobs:
   build-overlay:
@@ -34,7 +43,7 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Fetch NHL + NBA schedules from relay
+      - name: Fetch NHL + NBA + MLB schedules from relay
         run: |
           RELAY="https://field-relay-nba.jeffunglesbee.workers.dev"
           curl -sf --max-time 10 -H "Cache-Control: no-cache" \
@@ -44,11 +53,14 @@ jobs:
             > /tmp/nba.json 2>/dev/null || echo '{}' > /tmp/nba.json
           echo "TODAY=$(date -u +%Y-%m-%d)" >> $GITHUB_ENV
           echo "Fetched NHL ($(wc -c < /tmp/nhl.json) bytes) + NBA ($(wc -c < /tmp/nba.json) bytes)"
+          # MLB fetched directly from statsapi.mlb.com in build script (no relay needed)
 
       - name: Build overlay JSON
         env:
           GEMINI_KEY: ${{ secrets.GEMINI_KEY }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          ESPN_GOTD_IDS: ${{ github.event.inputs.espn_gotd || '' }}
+          PEACOCK_GOTD_IDS: ${{ github.event.inputs.peacock_gotd || '' }}
         run: node scripts/build-field-data.js
 
       - name: Push overlay to outbox
