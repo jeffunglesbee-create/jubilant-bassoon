@@ -1,23 +1,114 @@
 {
   "_meta": {
-    "schema_version": "1.0",
-    "generated_at": "2026-05-27T18:08:49.307Z",
-    "for_date": "2026-05-27",
+    "schema_version": "2.0",
+    "generated_at": "2026-05-28T11:56:11.512Z",
+    "for_date": "2026-05-28",
     "source": "field-data workflow (automated)",
     "games_found": {
-      "nhl": 1,
+      "nhl": 0,
       "nba": 0,
+      "mlb": 6,
       "mls": 0
     },
     "ai_notes": true,
     "ai_backend": "gemini-3.1-flash-lite",
-    "note": "Auto-generated daily at 7:30 AM UTC. Manual edits persist until the next run."
+    "note": "Phase 1: schedules block added. index.html reads schedules.mlb for full schedule. game_overlays remain for backward compat."
+  },
+  "schedules": {
+    "nhl": [],
+    "nba": [],
+    "mlb": [
+      {
+        "sport": "MLB",
+        "home": "Detroit Tigers",
+        "away": "Los Angeles Angels",
+        "start_time": "2026-05-28T17:10:00Z",
+        "venue": "Comerica Park",
+        "league": "MLB",
+        "isPlayoff": false,
+        "nationalBundle": null,
+        "espnGOTD": false,
+        "peacockGOTD": false,
+        "_postponed": false,
+        "confirmed": true
+      },
+      {
+        "sport": "MLB",
+        "home": "Chicago White Sox",
+        "away": "Minnesota Twins",
+        "start_time": "2026-05-28T18:10:00Z",
+        "venue": "Rate Field",
+        "league": "MLB",
+        "isPlayoff": false,
+        "nationalBundle": null,
+        "espnGOTD": false,
+        "peacockGOTD": false,
+        "_postponed": false,
+        "confirmed": true
+      },
+      {
+        "sport": "MLB",
+        "home": "Boston Red Sox",
+        "away": "Atlanta Braves",
+        "start_time": "2026-05-28T20:10:00Z",
+        "venue": "Fenway Park",
+        "league": "MLB",
+        "isPlayoff": false,
+        "nationalBundle": null,
+        "espnGOTD": false,
+        "peacockGOTD": false,
+        "_postponed": false,
+        "confirmed": true
+      },
+      {
+        "sport": "MLB",
+        "home": "Baltimore Orioles",
+        "away": "Toronto Blue Jays",
+        "start_time": "2026-05-28T22:35:00Z",
+        "venue": "Oriole Park at Camden Yards",
+        "league": "MLB",
+        "isPlayoff": false,
+        "nationalBundle": null,
+        "espnGOTD": false,
+        "peacockGOTD": false,
+        "_postponed": false,
+        "confirmed": true
+      },
+      {
+        "sport": "MLB",
+        "home": "Pittsburgh Pirates",
+        "away": "Chicago Cubs",
+        "start_time": "2026-05-28T22:40:00Z",
+        "venue": "PNC Park",
+        "league": "MLB",
+        "isPlayoff": false,
+        "nationalBundle": null,
+        "espnGOTD": false,
+        "peacockGOTD": true,
+        "_postponed": false,
+        "confirmed": true
+      },
+      {
+        "sport": "MLB",
+        "home": "Texas Rangers",
+        "away": "Houston Astros",
+        "start_time": "2026-05-29T00:05:00Z",
+        "venue": "Globe Life Field",
+        "league": "MLB",
+        "isPlayoff": false,
+        "nationalBundle": "MLB_ESPN",
+        "espnGOTD": true,
+        "peacockGOTD": false,
+        "_postponed": false,
+        "confirmed": true
+      }
+    ],
+    "soccer": []
   },
   "game_overlays": [
     {
-      "_match_key": "Montreal Canadiens|Carolina Hurricanes",
-      "seriesRecord": "ECF",
-      "matchupNote": "The Hurricanes roll into the Bell Centre looking to put a stranglehold on the ECF, but a desperate Canadiens squad faces a must-win scenario to keep their Stanley Cup aspirations alive. With the series momentum hanging in the balance, tonight’s clash is a high-stakes gut check for a Montreal team fighting to avoid a daunting 3-0 hole."
+      "_match_key": "Texas Rangers|Houston Astros",
+      "matchupNote": "The Lone Star State rivalry takes center stage tonight as the Astros and Rangers clash in a high-stakes showdown that could prove pivotal for the American League West hierarchy. With the postseason race tightening, every pitch carries playoff implications in this critical divisional battle."
     }
   ]
 }
