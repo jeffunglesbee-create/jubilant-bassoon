@@ -782,6 +782,18 @@ assert('A234 — console.log gating: ≤4 ungated (line-level FIELD_DEBUG requir
   html.split('\n').filter(l => /console\.log\(/.test(l) && !/FIELD_DEBUG/.test(l)).length <= 4,
   'New console.log must be line-level FIELD_DEBUG-gated. ≤4 allows verified context-gated cases (Delta15 prior-line if, NHL Analytics FIELD_DEBUG block, renderProseScore early-return); bump deliberately like A189 if a new context-gated log is justified');
 
+assert('A235 — VIBE-A: buildVibeChips defined',
+  html.includes('function buildVibeChips('),
+  'buildVibeChips() must be a named function — required for card template + smoke assertability');
+
+assert('A236 — VIBE-A: isCrunchTimeGame defined (QW-1 enablement)',
+  html.includes('function isCrunchTimeGame('),
+  'isCrunchTimeGame() must be a named function — VIBE-A CRUNCH TIME badge + smoke assertability');
+
+assert('A237 — VIBE-A: .vibe class in stylesheet',
+  html.includes('.vibe{') && html.includes('.ganalytics{'),
+  '.vibe and .ganalytics CSS must be present');
+
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);
 

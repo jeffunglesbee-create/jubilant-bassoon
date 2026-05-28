@@ -845,6 +845,21 @@ body::before{
 
 /* [DRAMA-LINE-A] */
 .card-drama-line{font-size:.62rem;color:var(--smoke);line-height:1.4;margin-top:.3rem;padding-top:.25rem;border-top:1px solid var(--edge);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+/* VIBE-A (2026-05-28): named-state badge strip */
+.ganalytics{border-top:1px solid var(--border);margin:.3rem -.7rem -.55rem;padding:.4rem .7rem;background:rgba(255,255,255,.02);display:flex;gap:.4rem;flex-wrap:wrap;align-items:center;}
+.vibe{font-size:.56rem;font-family:var(--mono);padding:.18rem .5rem;border-radius:3px;border:1px solid;white-space:nowrap;letter-spacing:.04em;font-weight:500;}
+.vibe.crunch{background:rgba(251,191,36,.12);border-color:var(--amber);color:var(--amber)}
+.vibe.blood{background:rgba(248,113,113,.12);border-color:var(--red);color:var(--red)}
+.vibe.grind{background:rgba(107,114,128,.12);border-color:#6b7280;color:#9ca3af}
+.vibe.alone{background:rgba(45,212,191,.08);border-color:var(--teal);color:var(--teal)}
+.vibe.stakes{background:rgba(167,139,250,.1);border-color:var(--violet);color:var(--violet)}
+.vibe.volatile{background:rgba(251,146,60,.1);border-color:var(--orange);color:var(--orange)}
+.vibe.mission{background:rgba(201,168,76,.1);border-color:var(--gold);color:var(--gold)}
+.vibe.mute{background:rgba(55,65,81,.2);border-color:#374151;color:#6b7280}
+.vibe.post{background:rgba(74,222,128,.08);border-color:var(--green);color:var(--green);font-size:.5rem}
+@media(max-width:430px){.ganalytics{display:none;}}
+@media(min-width:431px) and (max-width:599px){.vibe~.vibe{display:none;}}
+@media(min-width:600px) and (max-width:819px){.vibe:nth-of-type(n+3){display:none;}}
 /* ── Working Class: The Skim ───────────────────────────────── */
 .skim-strip{padding:.55rem 1rem;font-size:.92rem;font-weight:600;color:var(--white);border-bottom:1px solid var(--edge);line-height:1.4;}
 .skim-strip[data-urgency="must"]{border-left:3px solid var(--gold2);}
@@ -7235,6 +7250,7 @@ function renderAll(){
           ${(()=>{ const _nb=buildNHLAnalyticsBadges(g); return _nb ? `<div class="badge-row nhl-analytics-badges">${_nb}</div>` : ''; })()}
           ${g.crew?`<div class="crew-line">🎙 ${g.crew}</div>`:""}
           ${g._gameImportance?`<div class="importance-badge ${g._gameImportance==='series_deciding'?'series-deciding':g._gameImportance==='elimination'?'elimination':g._gameImportance==='clinch'?'clinch':'playoff-impl'}">${g._importanceIcon||''} ${g.narrative?.label||''}</div>`:""}
+          ${(()=>{const _va=typeof findESPNScore==='function'?findESPNScore(g):null;const _vc=typeof buildVibeChips==='function'?buildVibeChips(g,_va,sec.sport):[];return _vc.length?'<div class="ganalytics">'+_vc.map(v=>'<span class="vibe '+v.cls+'">'+v.label+'</span>').join('')+'</div>':'';})()} 
           ${(()=>{const _ed=typeof findESPNScore==='function'?findESPNScore(g):null;const _dl=buildDramaLineTiers(g,_ed,sec.sport);if(_dl.tight){const _q=s=>s.replace(/"/g,'&quot;');return `<div class="card-drama-line" data-drama-tight="${_q(_dl.tight)}" data-drama-mid="${_q(_dl.mid)}" data-drama-full="${_q(_dl.full)}">${_dl.tight}</div>`;}return g.narrative?.label&&!g._gameImportance?`<div class="narrative-line${(g.narrative.boost||0)>=20?' narrative-hi':''}">${g.narrative.label}</div>`:'';})()}
           ${(()=>{const _cs=buildCheapSeats(g);if(!_cs)return '';return `<div class="cheap-seats"><span class="cs-badge ${_cs.badgeClass}">${_cs.badge}</span><span class="cs-text">${_cs.text}</span></div>`;})()}
           ${(()=>{const _btb=beatTheBook(g);if(!_btb)return '';return `<div class="beat-the-book"><span class="btb-badge ${_btb.cls}">Vig ${_btb.vig}</span><span class="btb-text">${_btb.assessment}</span></div>`;})()}
@@ -19084,6 +19100,104 @@ function isRivalGame(g){
     for(const t of MY_TEAMS){const tl=t.toLowerCase();if(h===tl||a===tl)return false;const rivals=RIVAL_MAP.get(tl)||new Set();if(rivals.has(h)||rivals.has(a))return true;}
     return false;
   } catch(e) { return false; } // guard: RIVAL_MAP may be in TDZ if called before line 18657
+}
+
+// ── VIBE-A helpers (2026-05-28) ──────────────────────────────────────────────
+// isCrunchTimeGame: named game-state (SPORT_CRUNCH_RULES period + margin ≤5).
+// Replaces local isCrunchTime var inside ViewingConditions. Better patent posture:
+// no composite score, pure named conditions. Same pattern as isLateCloseGame.
+function isCrunchTimeGame(eData, sport) {
+  if (!eData || eData.state !== 'in') return false;
+  const period = String(eData.period || '').toLowerCase();
+  if (!SPORT_CRUNCH_RULES?.[sport]) return false;
+  const inCrunchPeriod = SPORT_CRUNCH_RULES[sport].some(r => period.includes(r));
+  const margin = Math.abs((eData.homeScore||0) - (eData.awayScore||0));
+  return inCrunchPeriod && margin <= 5;
+}
+
+// isObjectiveRival: checks RIVAL_MAP directly (no MY_TEAMS dependency).
+// BLOOD GAME fires for any rivalry game regardless of user's team preferences.
+// Replaces computeRivalry() (which did not exist).
+function isObjectiveRival(g) {
+  try {
+    const h = (g.home||'').toLowerCase();
+    const a = (g.away||'').toLowerCase();
+    return (RIVAL_MAP.get(h) || new Set()).has(a);
+  } catch(e) { return false; }
+}
+
+// isGrindingGame: named game-state for GRINDING badge.
+// RUWT fix: replaces isGrindState (used dramaScoreLive() threshold = patent risk).
+// Named conditions: live + close margin + not crunch time. No composite score.
+function isGrindingGame(eData, sport) {
+  if (!eData || eData.state !== 'in') return false;
+  const margin = Math.abs((eData.homeScore||0) - (eData.awayScore||0));
+  if (margin > 8) return false;
+  // If already crunch time, CRUNCH TIME badge takes precedence
+  if (typeof isCrunchTimeGame === 'function' && isCrunchTimeGame(eData, sport)) return false;
+  return true;
+}
+
+// isAloneOnScreen: only game in a ±45min window.
+// Fix: allData (not window.allData — it is a module-level variable).
+function isAloneOnScreen(game) {
+  if (!allData?.sports) return false;
+  const gameTime = new Date(game.start_time).getTime();
+  const allGames = allData.sports.flatMap(s => s.games || []);
+  return !allGames.some(g => {
+    if ((g._id||g) === (game._id||game)) return false;
+    return Math.abs(new Date(g.start_time).getTime() - gameTime) < 45 * 60 * 1000;
+  });
+}
+
+// isVolatileMatchup: large pre-game odds gap = high variance signal.
+// Financial market data (not game statistics) — no RUWT concern.
+function isVolatileMatchup(game) {
+  if (!game.odds?.moneyline) return false;
+  return Math.abs((game.odds.moneyline.home||0) - (game.odds.moneyline.away||0)) >= 200;
+}
+
+// buildVibeChips: returns [{label, cls}] for .ganalytics strip.
+// All nine states are categorical named facts — patent: ✅ safe.
+// MUTED: bni !== null (BNI categorical output, not getBNIStrength threshold).
+// GRINDING: isGrindingGame() named conditions (not dramaScore gate).
+function buildVibeChips(game, eData, sport) {
+  const chips = [];
+  const st = eData?.state || 'pre';
+  const isLive = st === 'in', isPost = st === 'post', isPre = !isLive && !isPost;
+
+  if (isPost) return [{ label: 'AMNESTY', cls: 'post' }];
+
+  // MUTED — BNI fired (categorical string, not a numeric threshold gate)
+  if (isPre) {
+    const bni = typeof computeBroadcastNarrativeIndex === 'function'
+      ? computeBroadcastNarrativeIndex(game) : null;
+    if (bni) chips.push({ label: '\uD83D\uDD07 MUTED', cls: 'mute' });
+  }
+  // CRUNCH TIME
+  if (isLive && isCrunchTimeGame(eData, sport))
+    chips.push({ label: 'CRUNCH TIME', cls: 'crunch' });
+  // ELIMINATION
+  if (game._gameImportance === 'elimination')
+    chips.push({ label: 'ELIMINATION', cls: 'stakes' });
+  // BLOOD GAME
+  if (isObjectiveRival(game) &&
+      (game._gameImportance === 'clinch' || game.isPlayoff || game.seriesRecord))
+    chips.push({ label: 'BLOOD GAME', cls: 'blood' });
+  // ALONE ON SCREEN
+  if (isAloneOnScreen(game))
+    chips.push({ label: 'ALONE ON SCREEN', cls: 'alone' });
+  // MISSION
+  if (game._gameImportance === 'series_deciding')
+    chips.push({ label: 'MISSION', cls: 'mission' });
+  // VOLATILE
+  if (isPre && isVolatileMatchup(game))
+    chips.push({ label: 'VOLATILE', cls: 'volatile' });
+  // GRINDING — named conditions only (no dramaScore gate)
+  if (isLive && isGrindingGame(eData, sport))
+    chips.push({ label: 'GRINDING', cls: 'grind' });
+
+  return chips;
 }
 
 
