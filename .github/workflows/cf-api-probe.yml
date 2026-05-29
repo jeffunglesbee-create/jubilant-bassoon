@@ -64,12 +64,14 @@ jobs:
               -H "Authorization: Bearer $CF_TOKEN" \
               -H "Content-Type: application/json" \
               -d "$BODY" "$URL" \
-              | python3 -m json.tool >> "$OUT" 2>> "$OUT"
+              > /tmp/cf_raw.txt 2>&1 || true
+            python3 -m json.tool /tmp/cf_raw.txt >> "$OUT" 2>/dev/null || cat /tmp/cf_raw.txt >> "$OUT"
           else
             curl -s -X "$METHOD" \
               -H "Authorization: Bearer $CF_TOKEN" \
               "$URL" \
-              | python3 -m json.tool >> "$OUT" 2>> "$OUT"
+              > /tmp/cf_raw.txt 2>&1 || true
+            python3 -m json.tool /tmp/cf_raw.txt >> "$OUT" 2>/dev/null || cat /tmp/cf_raw.txt >> "$OUT"
           fi
           echo "OUT=$OUT" >> $GITHUB_ENV
           cat "$OUT"
