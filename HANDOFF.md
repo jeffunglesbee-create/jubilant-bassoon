@@ -1,110 +1,133 @@
-# FIELD Handoff — May 29 2026 (Session End — Golf Intelligence Research + G-INF-1)
+# FIELD Handoff — May 29 2026 (Session End — Journalism Bug Fix)
 
 ## SESSION TYPE
-TYPE B+C — Research/Investigation + Feature Build (Golf Intelligence Infrastructure)
+TYPE B — Bug Fix (Urgent) — Journalism not firing
 
 ## Code HEAD
-`a00a413` — G-INF-1 PGA Tour relay infrastructure · Smoke 241/0
+`cd12246` — journalism fix · Smoke 241/0 · SW_VERSION 2026-05-29a
+
+## SESSION DETERMINATION
+Session type: TYPE B. No new features built. Two root-cause bugs fixed in index.html.
+A third bug (relay KV placeholder IDs) requires CF dashboard action — instructions below.
 
 ## COMPLETED THIS SESSION
 
 ### Daily Update
-- NBA WCF: SAS evened series 3-3 (Game 6 SAS 118-91 OKC). **Game 7 Saturday May 30 8pm ET OKC hosts**
-- NHL ECF: CAR leads MTL 3-1. **Game 5 tonight May 29 8pm ET at CAR**. VGK waiting in SCF.
-- NBA Finals G1: Wednesday June 3, NYK vs WCF winner (OKC or SAS). Shell needed by Tuesday.
-- Golf: Charles Schwab Challenge R2 in progress, Lee Hodges leads, cut happening today.
-- MLB: Full Friday slate, no national exclusives.
+- NBA WCF Game 7: Saturday May 30, 8pm ET, OKC hosts SAS (OKC -58.8%)
+- NHL ECF Game 5: Tonight May 29, 8pm ET, CAR hosts MTL (CAR leads 3-1)
+- NBA Finals G1: Wednesday June 3 (NYK vs WCF winner)
+- MLB Tonight: MIN@PIT 6:45pm MLB_APPLE · PHI@LAD 10:15pm MLB_APPLE
+- Golf: Charles Schwab Challenge R2 complete, cut made, R3 Saturday
 
-### Golf Intelligence Research (full TYPE C investigation)
-Complete investigation documented in Drive. Summary:
+### Journalism Bugs Fixed (commit cd12246)
 
-**Relay infrastructure (DEPLOYED):**
-- `field-relay-nba` `/pgatour` route live (commit 3e11c02)
-- Fixed GET-only guard bug (commit 3e11c02) — POST now passes through
-- PGA Tour GraphQL confirmed working: SG splits, statLeaders, playerDirectory, Schedule
-- Key: `da2-gsrx5bibzbb4njvhl7t37wqyl4` (public bundle key, server-side in relay)
+**Bug 2 — Delta hash blocked compound editorial after relay failures [FIXED]**
+Root cause: `initFIELDBrief` Layer 3 delta check was:
+  `if (!relayJournalism?.brief && currentHash === _lastJournalismHash) return`
+This fires on every load when relay returns null (which it always does — see Bug 1).
+After compound runs once, `_lastJournalismHash` is set. On every subsequent load
+with relay still failing, this condition is true → compound skipped → silence.
+Fix: `if (relayJournalism?.brief && currentHash === _lastJournalismHash) return`
+Only skip compound when relay actually served a brief. Compound runs freely on relay failure.
 
-**Data confirmed available:**
-- Season SG splits back to 2010 (16 seasons) via statLeaders/StatDetails
-- TournamentPastResults: position + total + per-round scores via `rounds { score }`
-  Type: HistoricalRoundScore — only `score` field confirmed valid (not roundNumber)
-- Colonial R{year}021 pattern confirmed stable 2015–2025
-- 6 years of Colonial per-round data collected (2016, 2019, 2021, 2022, 2023, 2025)
-- Player IDs: PGA Tour IDs stable (Spieth=34046, Scheffler=46046, McIlroy=28237)
+**Bug 3 — J8/J9/J10 init functions bailed silently when allData not ready [FIXED]**
+Root cause: initMLBGameBriefs/initWNBAGameBriefs/initStakesBriefs all have
+`if(!allData) return` at their 900/1100/1300ms startup stagger. On slow loads
+allData may not be populated yet → silent bail → no MLB/WNBA/stakes briefs ever appear.
+Fix: `if(!allData){ setTimeout(initXxx, 2500); return; }` on all three.
+One retry at +2500ms catches slow-load scenarios.
 
-**Colonial historical findings:**
-- R4 field avg: +0.38 strokes harder than R1 (range: +0.1 to +2.3)
-- Winners split 3/6 closers vs faders — Colonial doesn't systematically reward closers
-- Course DNA leaders: Spieth (-8.2 avg vs par, 5 made cuts), Scheffler (-8.0), Finau (-5.2)
-- Kevin Na: COLONIAL CLOSER 3/4, avg R4 68.0 (-2.0)
-- Gary Woodland: COLONIAL CLOSER 2/2, avg R4 66.5 (-3.5) — highest R4 value in dataset
+## BUG 1 STILL OPEN — Relay KV Placeholder IDs (requires CF dashboard)
 
-**Novel patent-adjacent metrics designed:**
-- Colonial Closing Score: hist R4/R1 delta + recency weight + SG:Putt adjustment
-- Course DNA Fingerprint: empirical winner SG profiles vs theoretical course fit
-- Scoring Source Disaggregation: sustainable (ball-striking) vs volatile (putting/scrambling)
-- Birdie Chain Index: Bounce Back% × Reverse Bounce Back% × live round state
-- Approach Band Matching: proximity at course-specific yardage vs tour average
+**What's broken:** `wrangler.toml` in field-relay-nba has:
+  ```
+  id = "JOURNALISM_PLACEHOLDER_REPLACE_WITH_REAL_ID"    ← fake
+  id = "PUSH_SUBS_PLACEHOLDER_REPLACE_WITH_REAL_ID"     ← fake
+  ```
+Every call to `/journalism/tonight` returns 503 "not configured".
+Every push notification attempt fails.
+Layer 1 (pre-rendered journalism) has never worked in production.
+The relay cron runs every 15 min but writes to phantom KV namespaces.
 
-### G-INF-1 — PGA Tour GraphQL Relay Infrastructure (SHIPPED)
-`a00a413` — 154 lines added, 241/0 smoke
+**Fix requires CF dashboard (Jeff only, ~10 minutes):**
 
-**Three deliverables:**
+Step 1 — Create FIELD_JOURNALISM KV namespace:
+  CF Dashboard → Workers & Pages → KV → Create namespace
+  Name: FIELD_JOURNALISM
+  Copy the generated ID (format: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx)
 
-1. `PGATOUR_RELAY` constant
-   → `https://field-relay-nba.jeffunglesbee.workers.dev/pgatour`
+Step 2 — Create PUSH_SUBS KV namespace:
+  CF Dashboard → Workers & Pages → KV → Create namespace
+  Name: PUSH_SUBS
+  Copy the generated ID
 
-2. `fetchPGATourStat(statId, year)` — async, 2-tier cache
-   - Memory: `_pgatourCache[stat_${statId}_${year}]`
-   - localStorage: `field_pgt_stat_${statId}_${year}`, 3600s TTL
-   - Returns `statDetails` object with ranked player rows + statValue
+Step 3 — Update wrangler.toml in field-relay-nba repo:
+  Replace:  id = "JOURNALISM_PLACEHOLDER_REPLACE_WITH_REAL_ID"
+  With:     id = "{real FIELD_JOURNALISM id}"
 
-3. `fetchPGATourPlayerDir()` — async, 2-tier cache
-   - localStorage: `field_pgt_playerDir_R`, 86400s TTL
-   - Returns active players array: `{id, displayName, country, owgr}`
+  Replace:  id = "PUSH_SUBS_PLACEHOLDER_REPLACE_WITH_REAL_ID"
+  With:     id = "{real PUSH_SUBS id}"
 
-4. ESPN golf competitor extraction
-   - golf ESPN branch now extracts `comp.competitors[]` (previously discarded)
-   - Stores to `window._espnGolfLB[tournName] = {lb, round, updated}`
-   - Per-player: `{name, espnId, total, status, linescores[], thru, position}`
+Step 4 — Push wrangler.toml change to field-relay-nba:
+  git add wrangler.toml && git commit -m "fix: real KV namespace IDs for journalism + push"
+  git push → relay CI deploys automatically (~60s)
 
-**Smoke A240-A242 added:**
-- A240: PGATOUR_RELAY constant present
-- A241: fetchPGATourStat defined
-- A242: window._espnGolfLB extraction present
+Step 5 — Verify:
+  After deploy, the relay cron will populate FIELD_JOURNALISM KV within 15 minutes.
+  Check: curl https://field-relay-nba.jeffunglesbee.workers.dev/journalism/tonight
+  Should return: `{"brief":"...","generatedAt":...}` not `{"error":"not configured"}`
+
+**Impact of fixing Bug 1:**
+  - Layer 1 pre-rendered journalism activates (zero client AI calls on load)
+  - Push notifications start working
+  - Journalism quality improves (relay has full Layer 1-3 pipeline with cliché detection)
+
+## ANALYSIS — Other Journalism Paths (no bugs found)
+
+Compound editorial (fetchCompoundEditorial → CLAUDE_PROXY_URL): correct ✅
+Night Owl (fetchNightOwlFromClaude → CLAUDE_PROXY_URL): correct ✅
+J8 renderMLBGameBriefCard: correct, awaits fetchMLBGameBriefFromClaude ✅
+J9 renderWNBAGameBriefCard: correct ✅
+J10 renderStakesBriefCard: correct ✅
+J11 fetchGameBriefOnDemand (bottom sheet): correct ✅
+Budget (journalismCallsToday, 8/day): correct, all functions gate on canCall() ✅
+CLAUDE_PROXY_URL origin: jubilant-bassoon.jeffunglesbee.workers.dev is in ALLOWED_ORIGINS ✅
+
+The bugs were specifically in the orchestration layer (initFIELDBrief + init functions),
+not in the individual journalism functions themselves.
 
 ## CURRENT STATE
 
-HEAD: a00a413 · Smoke 241/0 · SW_VERSION: 2026-05-28c (not bumped — infra only, no UX change)
-
-## OPEN (from prior sessions, still unverified)
-- MLB/WNBA brief cards on live games — untested
-- Stakes brief on elimination games — untested
-- Night Owl secondary capsules — untested
-- NBA RAI visual confirmation
+HEAD: cd12246 · Smoke 241/0 · SW_VERSION 2026-05-29a · Deployed ✅
 
 ## QUEUE
 
 ### TIER 0 DEADLINES:
-⚡ NHL SCF shell — CAR likely closes ECF tonight (Game 5). Build tomorrow.
-⚡ NBA Finals G1 shell — June 3 deadline (Tuesday). WCF Game 7 Saturday resolves matchup.
+⚡ NHL SCF shell — CAR likely closes ECF tonight. Build next session.
+⚡ NBA Finals G1 shell — June 3 (Tuesday). WCF Game 7 Saturday resolves matchup.
 ⚡ World Cup 2026 Phase 1 — June 11 HARD DEADLINE
 ⚡ USPTO provisional — ~June 25
 
+### JOURNALISM (Bug 1 remaining):
+□ Jeff: create real KV namespaces in CF dashboard, update wrangler.toml (~10 min)
+□ After KV fix: verify /journalism/tonight returns real data (15 min after deploy)
+□ After KV fix: verify push notifications working
+
 ### GOLF INTELLIGENCE SCHEDULE:
-G-INF-1 ✅ DONE — relay wired, ESPN extraction live
-G-INF-2 — Saturday/Sunday: PLAYER_ID_BRIDGE + TOURNAMENT_CALENDAR (~2h)
-G-CORE-1 — Sunday/Monday: golfDramaScore + colonialClosingScore + courseDNAFit (~3h)
-G-CORE-2 — Monday: prefetchGolfHistoricalData pipeline (~2.5h)
-G-UI-1 — Tuesday (after NBA Finals shell): golf card intel section (~3h)
-G-UI-2 — Wednesday: Night Owl golf + J12 journalism type (~2h)
-G-PREP-1 — Monday June 8: US Open Oakmont data verification (~45min)
-G-PATENT — Week of June 15: USPTO claim documentation (~2h)
+G-INF-1 ✅ DONE — relay wired, ESPN extraction live (a00a413)
+G-INF-2 — PLAYER_ID_BRIDGE + TOURNAMENT_CALENDAR (~2h)
+G-CORE-1 — golfDramaScore + colonialClosingScore + courseDNAFit (~3h)
+G-CORE-2 — prefetchGolfHistoricalData pipeline (~2.5h)
+G-UI-1 — Golf card intel section (after NBA Finals shell)
+G-UI-2 — Night Owl golf + J12 journalism type
+G-PREP-1 — Jun 8 Mon: US Open Oakmont data verification
+G-PATENT — Jun 15 wk: USPTO claim documentation
 
 ### NEXT SESSION PRIORITY ORDER:
-1. Check NHL Game 5 result → build SCF shell if CAR wins
+1. Check NHL ECF Game 5 result → build SCF shell if CAR closes
 2. Build NBA Finals G1 shell (TBD vs NYK, June 3)
-3. G-INF-2: PLAYER_ID_BRIDGE + TOURNAMENT_CALENDAR
+3. Remind Jeff: relay KV fix (Bug 1) — 10 min CF dashboard task
+4. G-INF-2: PLAYER_ID_BRIDGE + TOURNAMENT_CALENDAR
 
 ## CANONICAL IDs
 CI/Deploy Ref: 18JMUd-Uq_m2DomuCua2B5UMiWOel81yzc1JU7SY6f20
