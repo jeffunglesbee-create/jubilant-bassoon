@@ -1,79 +1,73 @@
-# FIELD Handoff — May 28 2026 (Session End — Deep Analysis + Multi-Build)
+# FIELD Handoff — May 29 2026 (Session End — RAI Chain Fixes + Baseball RAI)
 
 ## Code HEAD
-`6ec9d65` — NBA Lineup Edge (RAI), smoke 248/0
+`df5e49c` — MLB Platoon RAI built · Smoke 256/0
 
-## Smoke / gates
-- `field_smoke.js` 248/0 ✅ — all passing
-- SW_VERSION: auto-synced via deploy-gate.yml (fixed this session)
+## COMPLETED THIS SESSION
 
-## COMPLETED THIS SESSION (full day, many builds)
+### NBA RAI — Six bugs fixed across multiple builds:
+1. `47a8e7d` Temporal dead zone: homeLabel/awayLabel declared after fetchRosterAdvantage call
+2. `ab98a0f` Bottom sheet cache key mismatch: _raiCache[espnEventId] vs _raiCache[game._id]
+3. `ab98a0f` ESPN boxscore home/away: team.homeAway field doesn't exist → use name matching
+4. `ab98a0f` eData matching checked homeName only → now checks home + away names
+5. `544fd98` RAI placement: appended to .game-card without grid-column → 3px accent column
+   Fixed: now injected inside .score-wrap (grid-col:2 row:2 all viewports)
+   _raiRehydrateScoreWrap() re-injects from cache after score updates
+6. NBA CDN relay: `ce67a98` /nba-live → /nba (route already existed)
+   All NBA CDN fixes tested against live OKC@SAS G6 data (probe confirmed working)
 
-### Commits shipped:
-- `3e6f374` Star picker Option B — two-button picker when neither team starred
-- `59e385a` SW_VERSION sync + post-game drama numbers (L9) + OTW state labels
-- `6ec9d65` NBA Lineup Edge (RAI — Roster Advantage Index)
+### MLB Platoon RAI — built and shipped:
+- `df5e49c` MLB at-bat matchup edge
+- fetchMLBPlatoon(): MLB Stats live feed /game/{gamePk}/feed/live
+  → batSide + pitchHand → platoon advantage + count context
+- Switch hitters always have platoon edge
+- Display: "L vs R · batter edge" / "0-2 count (pitcher)" in score-wrap
+- Bottom sheet: At-Bat Edge section with batter/pitcher names
+- TESTING TOMORROW with live games
 
-### Specs written to Drive today:
-- Push Notification Architecture: 1IhrdaVGVCjdX4Asc_WXxAKbtXXuL8JpxDfVPNPFXmRk
-- Night Owl Media Brand: 1LaHQBS3JGxTWn3eQzl3PHZGg8rHpBg65VH-h2VK14Ok
-- UEFA Arc Poisson Patch: 1sYDPO_8zwT02XxzjfIxQFNrmv2V6QORon36_1Z8sH2s
-- Penalty Intelligence Suite: 1zD_iy5boYsEgNLjY7mQ-eNigmhA1kAW1jPUSGMLBoDg
-- Final Matchday Advantage Calculator: 1nMK2kqJ3MguWdvbYeI6LCkP1kj47B_1mjbw90gNaMtM
-- OTW Redesign + Extended Concept: 1-x0MiybQ6uci--MXjbwsrcFgBy2rYwU1-UKGKir1moI
-- RAI Roster Advantage Index: 1XwUC3lV3I6YnMc35rYogNvbwIwZmRYRBmAy-XDvwAWA
+### NBA CDN probe:
+- OKC@SAS G6 confirmed live: scoreboard + PBP both accessible
+- No Akamai block. teamName keys (spurs_thunder) confirmed in scoreboard response.
+- Probe doc: 1ZrGeeiFlFQXTnL24ABQ28knaNLnYhETk3FMuCOiaiGg
+- Game result: SAS 118 - OKC 91. Series now 3-3. Game 7 in OKC.
 
-### Key decisions:
-- BNI + EMBER patent fixes confirmed DONE (per Jeff — not rebuilt this session)
-- Night Owl Audio deferred (Fish Audio S2 ~$5.50/mo, needs revenue first)
-- OTW banner: Option B (factual state labels) BUILT; Option C specced for future session
-- Post-game drama numbers: L9 Amnesty Zone — shows 🔥 89 / ⚡ 73 / · 52 for peak ≥ 50
-- RAI uses BDL season +/- × ESPN boxscore minutes (approximation) — upgrade next session
+## CURRENT STATE
 
-## NEXT SESSION BUILD: NBA PBP — Lineup Edge Upgrade
+HEAD: df5e49c · Smoke 256/0
+RAI system fully built:
+  NBA: Tier 1 NBA CDN (exact lineup + stint net) ← active
+       Tier 2 ESPN plays[] ← active (site.web.api.espn.com relay)
+       Tier 3 ESPN boxscore ← always fallback
+  MLB: platoon + count context ← built, needs live game test tomorrow
+  Both inject into .score-wrap for consistent cross-viewport placement
 
-### Goal: NBA CDN primary + ESPN fallback for exact lineup tracking
+OPEN: NBA RAI visual confirmation still unverified (game ended before test)
+      Test on Game 7 or next available live NBA game
+      Test MLB platoon on any live game tomorrow
 
-### Three-tier fallback:
-1. NBA CDN: `https://field-relay-nba.jeffunglesbee.workers.dev/nba-live/playbyplay/playbyplay_{nbaId}.json`
-   → exact 5-man lineup from SUB events + stint net score (Layer 3 intelligence)
-2. ESPN `data.plays[]`: existing ESPN_SUMMARY_RELAY with `site.web.api.espn.com` subdomain
-   → sub events if ESPN relay switched to site.web.api.espn.com
-3. ESPN boxscore minutes: current RAI approach (already working, always fallback)
+## RELAY STATE
 
-### Relay changes needed (separate relay session):
-- Add `/nba-live/*` route to field-relay-nba worker
-  Proxies: cdn.nba.com/static/json/liveData/*
-  Headers: x-nba-stats-token:true, x-nba-stats-origin:stats, Referer:https://stats.nba.com/
-- Consider: change espn-summary route from site.api.espn.com → site.web.api.espn.com
-  (unlocks data.plays for ESPN fallback path)
+field-relay-nba deployed with:
+  /nba/* → NBA CDN (playbyplay + scoreboard whitelisted)
+  /espn-summary/* → site.web.api.espn.com (unlocks data.plays)
+  /mlb-stats/* → MLB Stats API (live feed + people + boxscore)
 
-### Build in index.html (this session):
-- NBA_CDN_RELAY constant
-- fetchNBAScoreboard() → ESPN→NBA game ID map (via scoreboard JSON)
-- fetchNBAPBP(homeLabel, awayLabel) → relay PBP call
-- parseNBAPBP(actions) → exact current lineup + stint net score per team
-- Upgrade fetchRosterAdvantage() → 3-tier fallback
-- Upgrade buildRaiSheetSection() → show stint stats when available
-- [CLOSING UNIT] badge more accurate with exact lineup
+## QUEUE
 
-### FIELD feature unlocked by PBP:
-"Stint Intelligence": current lineup's net score TONIGHT (not just season avg)
-OKC ●●●●● +9.7 (tonight: +8 in 4:32) — delivering as expected
-SAS ●●○○○ -1.4 (tonight: -6 in 2:15) — struggling vs season avg
+TIER 0 DEADLINES:
+⚡ NHL SCF shell — ECF just resolved, Hurricanes eliminated? Check results
+⚡ NBA Finals G1 shell — June 3 (OKC or SAS vs East winner)
+⚡ World Cup 2026 Phase 1 — June 11 HARD DEADLINE
+⚡ USPTO provisional — ~June 25
 
-PlayByPlayV2 DEPRECATED for 2025-26 — use CDN endpoint only.
+NEXT SESSION:
+1. Verify RAI showing on live game (NBA or MLB)
+2. NHL SCF shell if ECF resolved
+3. NBA Finals G1 shell
 
-## QUEUE AFTER THIS BUILD
-- NHL SCF shell (TODAY if ECF resolves) — ~30 min
-- NBA Finals G1 shell — June 3 deadline
-- World Cup 2026 Phase 1 — June 11 DEADLINE
-- Relay session: add /nba-live/* route + espn-summary subdomain fix
-- USPTO provisional — ~June 25
-
-## CANONICAL IDs (unchanged)
+## CANONICAL IDs
 CI/Deploy Ref: 18JMUd-Uq_m2DomuCua2B5UMiWOel81yzc1JU7SY6f20
-Current State: 1gumlOLcrOOYQlGWpdcYoziIhQQTsmD4Oi3KdVfMpps8 (STALE — needs update)
-Master Feature Priority: 1k2pq5dB6pKeegBzVBo1ee-Xo98-Qri5aq-2WqMg_suU
-PAT: [PAT-in-repo-secrets] (exp May 2027)
 Repo: jeffunglesbee-create/jubilant-bassoon
+RAI spec: 1XwUC3lV3I6YnMc35rYogNvbwIwZmRYRBmAy-XDvwAWA
+RAI audit: 1liYzvOBlmQoVuQQbE6WXIbWQKuaCXrosRGqKRjPVsMQ
+CDN probe: 1ZrGeeiFlFQXTnL24ABQ28knaNLnYhETk3FMuCOiaiGg
