@@ -10307,11 +10307,9 @@ let _lastJournalismHash = '';
 
 const ESPN_BASE = "https://site.api.espn.com/apis/site/v2/sports";
 const ESPN_SPORTS = [
-  // NBA, NHL, MLB removed Phase 2 (2026-05-29) — now polled via fetchV2AllScores (api-sports.io)
-  // UCL removed Phase 2 — now polled via V2 (api-sports.io football league 2)
-  {sport:"basketball",   league:"wnba",            section:"WNBA",                   periodPrefix:"Q"},
-  {sport:"soccer",       league:"uefa.europa",     section:"UEFA Europa League",      periodPrefix:"'"},
-  {sport:"soccer",       league:"uefa.conference", section:"UEFA Conference League",  periodPrefix:"'"},
+  // WNBA removed Phase 2b — now on api-sports.io V2 (basketball league 13)
+  // UEFA Europa + Conference League removed — now on api-sports.io V2 (football leagues 3/848)
+  // NBA, NHL, MLB, UCL removed Phase 2 — now on api-sports.io V2
   {sport:"basketball",   league:"mens-college-basketball", section:"NCAA Basketball", periodPrefix:"H"},
   {sport:"football",     league:"college-football",        section:"NCAA Football",    periodPrefix:"Q"},
   {sport:"football",     league:"nfl",                     section:"NFL",              periodPrefix:"Q"},
@@ -10325,13 +10323,10 @@ const EFL_PLAYOFF_END   = new Date("2026-05-25T23:59:00Z");
 const inEFLPlayoffs = () => { const n=new Date(); return n>=EFL_PLAYOFF_START && n<=EFL_PLAYOFF_END; };
 
 const SOCCER_LEAGUES = [
-  // EPL, La Liga, Serie A, Bundesliga, Ligue 1, MLS, WC26 removed Phase 2 — now on api-sports.io V2 (fetchV2AllScores)
-  // eng.2-4 remain on ESPN (not in V2)
-  {league:"eng.2", section:"EFL Championship", bundle:"EFL",     endDate:"2026-05-26", scoresOnly:inEFLPlayoffs()},
-  ...(!inEFLPlayoffs()?[
-    {league:"eng.3", section:"EFL League One",   bundle:"EFL",     endDate:"2026-05-03"},
-    {league:"eng.4", section:"EFL League Two",   bundle:"EFL",     endDate:"2026-05-03"},
-  ]:[]),
+  // All soccer now on api-sports.io V2 (fetchV2AllScores).
+  // EFL Championship/League One/League Two moved Phase 2b (2026-05-29).
+  // EPL, La Liga, Serie A, Bundesliga, Ligue 1, MLS, WC26, UCL, Europa, Conference: Phase 1/2.
+  // This array retained for any future ESPN-only soccer additions.
 ];
 
 let espnScores    = {}; // { "Home|Away": scoreObj }
@@ -10348,21 +10343,28 @@ const RELAY_BASE = 'https://field-relay-nba.jeffunglesbee.workers.dev/nba';
 // European leagues ended ≤2026-05-26 — set true next season.
 const V2_RELAY_BASE = 'https://field-relay-nba.jeffunglesbee.workers.dev';
 const FIELD_V2_SOURCES = {
-  nba: true, nhl: true, mlb: true, mls: true,   // Phase 1: LIVE
-  epl: true, ucl: true, laliga: true, seriea: true, bundesliga: true, ligue1: true, // seasons ended; ready for 2026-27
-  wc26: true, // FIFA World Cup 2026 (June 11 – July 19)
+  nba: true, nhl: true, mlb: true, wnba: true, // Phase 1/2: LIVE
+  mls: true,
+  epl: true, ucl: true, europa: true, conference: true,     // European — next season
+  eflchamp: true, eflone: true, efltwo: true,               // EFL tiers — next season
+  laliga: true, seriea: true, bundesliga: true, ligue1: true,
+  wc26: true, // FIFA World Cup 2026 (June 11–July 19)
 };
-// ESPN league ID → FIELD V2 sport key (polling loop cutover)
+// ESPN league ID → FIELD V2 sport key (belt-and-suspenders safety net in fetchESPNScores)
 const ESPN_TO_V2_MAP = {
-  'nba':'nba', 'nhl':'nhl', 'mlb':'mlb',
-  'eng.1':'epl', 'usa.1':'mls', 'esp.1':'laliga', 'ita.1':'seriea',
-  'ger.1':'bundesliga', 'fra.1':'ligue1', 'uefa.champions':'ucl',
+  'nba':'nba', 'nhl':'nhl', 'mlb':'mlb', 'wnba':'wnba',
+  'eng.1':'epl', 'usa.1':'mls',
+  'esp.1':'laliga', 'ita.1':'seriea', 'ger.1':'bundesliga', 'fra.1':'ligue1',
+  'uefa.champions':'ucl', 'uefa.europa':'europa', 'uefa.conference':'conference',
+  'eng.2':'eflchamp', 'eng.3':'eflone', 'eng.4':'efltwo',
   'fifa.world':'wc26',
 };
 // periodPrefix per V2 sport — must match findESPNScore exclusion guards
 const V2_PERIOD_PREFIX = {
-  nba:'Q', nhl:'P', mlb:'T',
-  mls:"'", epl:"'", ucl:"'", laliga:"'", seriea:"'", bundesliga:"'", ligue1:"'", wc26:"'",
+  nba:'Q', nhl:'P', mlb:'T', wnba:'Q',
+  mls:"'", epl:"'", ucl:"'", europa:"'", conference:"'",
+  eflchamp:"'", eflone:"'", efltwo:"'",
+  laliga:"'", seriea:"'", bundesliga:"'", ligue1:"'", wc26:"'",
 };
 async function fetchV2Games(sport, date) {
   try {

@@ -824,18 +824,21 @@ assert('A243 — Betting engine REMOVED (ToS/patent compliance, 2026-05-29)',
   !html.includes('function beatTheBook'),
   'Betting engine must be fully removed — renderBetting/findOddsForGame/ODDS_RELAY_BASE must not exist');
 
-assert('A244 — Phase 2: V2 standalone poll loop live (api-sports.io for NBA/NHL/MLB/MLS/soccer)',
+assert('A244 — Phase 2: V2 standalone poll loop, ESPN reduced to NCAA/NFL/F1/Golf only',
   html.includes('function fetchV2AllScores') &&
   html.includes('function startV2ScorePolling') &&
   html.includes('function fetchV2Games') &&
   html.includes('function mapV2ToESPN') &&
   html.includes('startV2ScorePolling()') &&
   !html.includes('{sport:"basketball",   league:"nba"') &&
+  !html.includes('{sport:"basketball",   league:"wnba"') &&
   !html.includes('{sport:"hockey",       league:"nhl"') &&
   !html.includes('{sport:"baseball",     league:"mlb"') &&
+  !html.includes('{sport:"soccer",       league:"uefa.europa"') &&
   !html.includes('{league:"eng.1"') &&
+  !html.includes('{league:"eng.2"') &&
   !html.includes('{league:"usa.1"'),
-  'Phase 2: fetchV2AllScores + startV2ScorePolling present; NBA/NHL/MLB/EPL/MLS removed from ESPN_SPORTS/SOCCER_LEAGUES');
+  'Phase 2: ESPN_SPORTS must only contain NCAA/NFL/F1/Golf; all sport/soccer on V2');
 
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);
