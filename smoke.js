@@ -794,6 +794,19 @@ assert('A237 — VIBE-A: .vibe class in stylesheet',
   html.includes('.vibe{') && html.includes('.ganalytics{'),
   '.vibe and .ganalytics CSS must be present');
 
+// ── G-INF-1: PGA Tour GraphQL relay infrastructure (May 29 2026) ───────────
+assert('A240 — G-INF-1: PGATOUR_RELAY constant defined',
+  html.includes("PGATOUR_RELAY    = 'https://field-relay-nba.jeffunglesbee.workers.dev/pgatour'"),
+  'PGATOUR_RELAY must point to field-relay-nba /pgatour route');
+
+assert('A241 — G-INF-1: fetchPGATourStat defined',
+  html.includes('async function fetchPGATourStat('),
+  'fetchPGATourStat() must be defined — PGA Tour GraphQL stats relay fn');
+
+assert('A242 — G-INF-1: ESPN golf leaderboard extraction present',
+  html.includes('window._espnGolfLB') && html.includes('competitors.length > 0'),
+  'ESPN golf competitors[] must be extracted to window._espnGolfLB — not discarded');
+
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);
 

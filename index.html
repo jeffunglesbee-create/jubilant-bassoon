@@ -3165,7 +3165,11 @@ const SQUIGGLE_RELAY='https://field-relay-nba.jeffunglesbee.workers.dev/squiggle
 // TTL: 30s live | 60s goals | 300s schedule | 3600s standings
 // 2026 constants: competition MLS-COM-000001 / season MLS-SEA-0001KA
 // Key benefit: opta_id (numeric) team IDs — canonical, accent-safe, eliminates SCORE-UNIFORM-A
-const MLS_RELAY_BASE = 'https://field-relay-nba.jeffunglesbee.workers.dev/mls/stats';
+const MLS_RELAY_BASE   = 'https://field-relay-nba.jeffunglesbee.workers.dev/mls/stats';
+// ── PGA Tour GraphQL relay ─────────────────────────────────────────────────
+// POST /pgatour → orchestrator.pgatour.com/graphql (key injected server-side)
+// Confirmed working May 29 2026. Edge cache: 3600s stats, 86400s directory.
+const PGATOUR_RELAY    = 'https://field-relay-nba.jeffunglesbee.workers.dev/pgatour';
 const MLS_SEASON_2026 = 'MLS-SEA-0001KA';
 const MLS_COMPETITION = 'MLS-COM-000001';
 
@@ -4886,6 +4890,32 @@ async function fetchESPNFixturesForDate(iso){
           // Day-aware bundle: Golf Channel Thu/Fri, CBS Sat/Sun
           const evDay = rawDate ? new Date(rawDate+'T12:00:00Z').getDay() : -1;
           const golfBundle = (evDay===0||evDay===6) ? 'GOLF_CBS' : 'GOLF_CHANNEL';
+
+          // ── Extract ESPN leaderboard (competitors[] previously discarded) ────
+          // ESPN golf scoreboard returns full per-player leaderboard at no cost.
+          // Fields available: athleteId (ESPN), total score, per-round linescores,
+          //                   status (active/cut/complete), thru (holes completed).
+          // Stored in window._espnGolfLB[tournName] for analytics layer to read.
+          const competitors = comp.competitors || [];
+          if (competitors.length > 0) {
+            const lb = competitors.map(c => ({
+              name:       c.athlete?.displayName || '',
+              espnId:     c.athlete?.id || '',
+              total:      c.score || 'E',
+              status:     c.status?.type?.name || 'active',
+              linescores: (c.linescores || []).map(l => l.value || l.score || ''),
+              thru:       (c.statistics || []).find(s =>
+                            (s.name||'').toLowerCase().includes('thru') ||
+                            (s.abbreviation||'').toLowerCase() === 'thru'
+                          )?.displayValue || '',
+              position:   c.status?.position?.displayName || String(c.order || ''),
+            })).filter(p => p.name);
+            if (!window._espnGolfLB) window._espnGolfLB = {};
+            window._espnGolfLB[tournName] = { lb, round: roundNum, updated: Date.now() };
+            if(FIELD_DEBUG) console.debug(
+              `[ESPN Golf] extracted ${lb.length} players for ${tournName} R${roundNum}`);
+          }
+
           _gid++;
           return {
             _id:`g${_gid}`, _sport:section,
@@ -10115,7 +10145,116 @@ const SLASH_GOLF_HOST = "live-golf-data.p.rapidapi.com";
 const SLASH_GOLF_BASE = "https://live-golf-data.p.rapidapi.com";
 const SLASH_GOLF_ORG  = "1";  // 1 = PGA Tour, 2 = LPGA
 const slashGolfCache  = {}; // key → {data, ts}
-const SLASH_GOLF_TTL  = 3600000; // 60-min cache — optimal for 20 req/day free tier 
+const SLASH_GOLF_TTL  = 3600000; // 60-min cache — optimal for 20 req/day free tier
+
+// ── PGA Tour GraphQL fetch helpers ─────────────────────────────────────────
+// Two-tier cache: in-memory (_pgatourCache) + localStorage (field_pgt_*).
+// All calls POST to PGATOUR_RELAY which injects the API key server-side.
+// Relay edge-caches 3600s for stats, 86400s for directory — so most calls
+// return from Cloudflare edge within ~20ms after first hit.
+const _pgatourCache = {}; // key → {data, ts}
+
+async function fetchPGATourStat(statId, year = new Date().getFullYear()) {
+  const cacheKey = `stat_${statId}_${year}`;
+  const ttl = 3600000; // 1 hour — stats update at most once daily
+  const lsKey = 'field_pgt_' + cacheKey;
+
+  // Memory layer
+  const mem = _pgatourCache[cacheKey];
+  if (mem && Date.now() - mem.ts < ttl) return mem.data;
+
+  // localStorage layer
+  try {
+    const raw = localStorage.getItem(lsKey);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Date.now() - parsed.ts < ttl) {
+        _pgatourCache[cacheKey] = parsed;
+        return parsed.data;
+      }
+    }
+  } catch(e) {}
+
+  // Network — POST to relay
+  try {
+    const res = await fetch(PGATOUR_RELAY, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        operationName: 'StatDetails',
+        variables: { tourCode: 'R', statId: String(statId), year: Number(year), eventQuery: null },
+        query: `query StatDetails($tourCode: TourCode!, $statId: String!, $year: Int, $eventQuery: StatDetailEventQuery) {
+  statDetails(tourCode: $tourCode statId: $statId year: $year eventQuery: $eventQuery) {
+    statTitle tourAvg lastProcessed
+    rows {
+      ... on StatDetailsPlayer { __typename playerId playerName country rank stats { statName statValue } }
+    }
+  }
+}`,
+      }),
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!res.ok) return null;
+    const json = await res.json();
+    if (json.errors) { if(FIELD_DEBUG) console.warn('[PGATour] StatDetails error:', json.errors[0]?.message); return null; }
+    const data = json.data?.statDetails || null;
+    const entry = { data, ts: Date.now() };
+    _pgatourCache[cacheKey] = entry;
+    try { localStorage.setItem(lsKey, JSON.stringify(entry)); } catch(e) {}
+    return data;
+  } catch(e) {
+    if(FIELD_DEBUG) console.warn('[PGATour] fetchPGATourStat failed:', e.message);
+    return null;
+  }
+}
+
+// Fetch all active PGA Tour players with IDs + OWGR. 86400s cache.
+async function fetchPGATourPlayerDir() {
+  const cacheKey = 'playerDir_R';
+  const ttl = 86400000; // 24 hours — roster is stable
+  const lsKey = 'field_pgt_' + cacheKey;
+
+  const mem = _pgatourCache[cacheKey];
+  if (mem && Date.now() - mem.ts < ttl) return mem.data;
+
+  try {
+    const raw = localStorage.getItem(lsKey);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Date.now() - parsed.ts < ttl) {
+        _pgatourCache[cacheKey] = parsed;
+        return parsed.data;
+      }
+    }
+  } catch(e) {}
+
+  try {
+    const res = await fetch(PGATOUR_RELAY, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        operationName: 'playerDirectory',
+        variables: { tourCode: 'R' },
+        query: `query playerDirectory($tourCode: TourCode!) {
+  playerDirectory(tourCode: $tourCode) {
+    players { id isActive firstName lastName displayName country owgr }
+  }
+}`,
+      }),
+      signal: AbortSignal.timeout(10000),
+    });
+    if (!res.ok) return null;
+    const json = await res.json();
+    const data = json.data?.playerDirectory?.players?.filter(p => p.isActive) || null;
+    const entry = { data, ts: Date.now() };
+    _pgatourCache[cacheKey] = entry;
+    try { localStorage.setItem(lsKey, JSON.stringify(entry)); } catch(e) {}
+    return data;
+  } catch(e) {
+    if(FIELD_DEBUG) console.warn('[PGATour] fetchPGATourPlayerDir failed:', e.message);
+    return null;
+  }
+} 
 const BDL_BASE = "https://api.balldontlie.io";
 const FD_KEY   = ""; // Auth token moved to relay worker (server-side) — no longer needed in browser
 const FD_BASE  = "https://api.football-data.org/v4";
