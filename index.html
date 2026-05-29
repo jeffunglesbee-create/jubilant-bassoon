@@ -8366,6 +8366,28 @@ function buildTodaySchedule(){
     // ── Sunday May 24 ────────────────────────────────────────────────────────
     {home:"Los Angeles Sparks",  away:"Las Vegas Aces",      league:"WNBA – 2026 Season", start_time:"2026-05-24T20:00:00Z", confirmed:true, venue:"Crypto.com Arena, Los Angeles CA",            streams:resolveBundle("WNBA_NBC"),    localNote:"NBC / Peacock"},
     {home:"Dallas Wings",        away:"New York Liberty",    league:"WNBA – 2026 Season", start_time:"2026-05-24T22:30:00Z", confirmed:true, venue:"College Park Center, Arlington TX",           streams:resolveBundle("WNBA_NBC"),    localNote:"NBC / Peacock"},
+    //
+    // ── Monday May 25 ────────────────────────────────────────────────────────
+    {home:"New York Liberty",    away:"Portland Fire",       league:"WNBA – 2026 Season", start_time:"2026-05-26T00:00:00Z", confirmed:true, venue:"Barclays Center, Brooklyn NY",               streams:resolveBundle("WNBA_NBCSN"), localNote:"Peacock / NBCSN"},
+    //
+    // ── Wednesday May 27 — USA Network doubleheader ───────────────────────────
+    {home:"New York Liberty",    away:"Phoenix Mercury",     league:"WNBA – 2026 Season", start_time:"2026-05-27T23:00:00Z", confirmed:true, venue:"Barclays Center, Brooklyn NY",               streams:resolveBundle("WNBA_USA"),   localNote:"USA Network"},
+    {home:"Minnesota Lynx",      away:"Atlanta Dream",       league:"WNBA – 2026 Season", start_time:"2026-05-28T01:00:00Z", confirmed:true, venue:"Target Center, Minneapolis MN",              streams:resolveBundle("WNBA_USA"),   localNote:"USA Network"},
+    //
+    // ── Thursday May 28 — Prime Video ────────────────────────────────────────
+    {home:"Golden State Valkyries", away:"Indiana Fever",   league:"WNBA – 2026 Season", start_time:"2026-05-29T02:00:00Z", confirmed:true, venue:"Chase Center, San Francisco CA",             streams:resolveBundle("WNBA_PRIME"), localNote:"Prime Video"},
+    //
+    // ── Friday May 29 — ION doubleheader (Game 1 confirmed; nightcap TBD) ────
+    {home:"New York Liberty",    away:"Phoenix Mercury",     league:"WNBA – 2026 Season", start_time:"2026-05-29T22:30:00Z", confirmed:true, venue:"Barclays Center, Brooklyn NY",               streams:resolveBundle("WNBA_ION"),   localNote:"ION (free OTA)"},
+    //
+    // ── Saturday May 30 — CBS ─────────────────────────────────────────────────
+    {home:"Portland Fire",       away:"Indiana Fever",       league:"WNBA – 2026 Season", start_time:"2026-05-31T00:00:00Z", confirmed:true, venue:"Moda Center, Portland OR",                   streams:resolveBundle("WNBA_CBS"),   localNote:"CBS / Paramount+"},
+    //
+    // ── Sunday May 31 — NBC / Peacock ─────────────────────────────────────────
+    {home:"Golden State Valkyries", away:"Las Vegas Aces",  league:"WNBA – 2026 Season", start_time:"2026-05-31T19:30:00Z", confirmed:true, venue:"Chase Center, San Francisco CA",             streams:resolveBundle("WNBA_NBC"),   localNote:"NBC / Peacock"},
+    //
+    // ── Monday June 1 — Peacock ───────────────────────────────────────────────
+    {home:"Phoenix Mercury",     away:"Minnesota Lynx",      league:"WNBA – 2026 Season", start_time:"2026-06-02T02:00:00Z", confirmed:true, venue:"Footprint Center, Phoenix AZ",               streams:resolveBundle("WNBA_NBCSN"), localNote:"Peacock"},
   ].filter(g=>isToday(g.start_time));
   if(wnbaGames.length) { applyNarrativeContext(wnbaGames); sections.push({sport:"WNBA", games:wnbaGames}); }
 
