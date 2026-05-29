@@ -1,3 +1,2 @@
-method=POST
-url=https://field-relay-nba.jeffunglesbee.workers.dev/pgatour
-body={"operationName":"TournamentPastResults","variables":{"id":"R2021021"},"query":"query TournamentPastResults { tournamentPastResults(id: \"R2021021\") { id players { position total player { id displayName } rounds { score } } } }"}
+method=GET
+url=https://field-relay-nba.jeffunglesbee.workers.dev/journalism/tonight
