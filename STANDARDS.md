@@ -2547,3 +2547,27 @@ ADR-002: Decoupled Three-Component Architecture (Drive 1DZq6I6T4jKiRsnO7DEqVA48W
   What MUST stay client-side: all game scoring, classification, badge rendering,
   OTW selection, push notification evaluation.
   Rule B is binding: classifyGame() NEVER runs on a server.
+
+## Rule 45 — No legal verdicts; source-clearance gate (LEGAL-GATE-A)
+
+Established May 29 2026 after the PGA Tour GraphQL incident: Claude first told Jeff the
+access was "legally clean / every precaution taken," then later flipped to "RED / delete."
+Both were overconfident legal verdicts that Jeff then acted on (built, then deleted). A solo
+developer cannot safely build on an AI's legal opinion. The failure was calibration, not which
+verdict was "right."
+
+RULES:
+1. Claude must NEVER certify a data source or action as legal, "clean," "safe," or claim
+   "every precaution taken," and must never green-light a source. Claude is not a lawyer.
+2. For any legal / Terms-of-Service / compliance question, Claude must: (a) state plainly it is
+   not legal advice; (b) report what the actual terms say plus the genuine uncertainty, as a
+   posture note — never a verdict; (c) flag that commercializing/monetizing materially raises the
+   risk; (d) recommend a qualified attorney before any commercial launch.
+3. SOURCE-CLEARANCE GATE: no new data source enters the FIELD product (relay route or client
+   fetch) until (a) its actual terms page has been read and quoted in its source doc with date,
+   AND (b) Jeff records an informed, explicit accept-the-risk decision. Ambiguous sources stay
+   OUT until that decision. The Data-Sourcing Legitimacy Matrix is run BEFORE wiring, not after.
+4. Prefer GREEN (licensed/open) sources for anything shipped. Keep the relay architecture
+   swap-ready so any source can be redirected to a licensed feed.
+
+Not reversible without Jeff's approval (ADR-class).
