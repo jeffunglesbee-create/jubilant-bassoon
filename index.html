@@ -12132,6 +12132,112 @@ async function fetchMLBFixtures(){
 
 const FPL_RELAY_BASE = 'https://field-relay-nba.jeffunglesbee.workers.dev/fpl';
 const BDL_RELAY_BASE  = 'https://field-relay-nba.jeffunglesbee.workers.dev/bdl';   // BallDontLie — apiKey injected server-side
+const MLS_RELAY_BASE  = 'https://field-relay-nba.jeffunglesbee.workers.dev/mls/stats';
+
+const MLS_SEASON_2026 = 'MLS-SEA-0001KA';
+const MLS_COMPETITION = 'MLS-COM-000001';
+const _mlsTeamMap = {};     // opta_id → { name, abbreviation }
+const _mlsGameOptaIds = {}; // "home_opta|away_opta" → game opta_id
+
+async function fetchMLSLive() {
+  try {
+    const today = new Date().toISOString().slice(0,10);
+    const url = MLS_RELAY_BASE +
+      `/v1/matches?match_date%5Bgte%5D=${today}&match_date%5Blte%5D=${today}` +
+      `&include=home_club_match&include=away_club_match&include=home_club&include=away_club&per_page=100`;
+    const r = await fetch(url, {signal: AbortSignal.timeout(6000)});
+    if (!r.ok) return [];
+    const d = await r.json();
+    const matches = d.schedule || d.matches || d || [];
+    matches.forEach(m => {
+      const hClub = m.home_club||{}, aClub = m.away_club||{};
+      const hMatch = m.home_club_match||{}, aMatch = m.away_club_match||{};
+      const hId = hClub.opta_id, aId = aClub.opta_id;
+      if (hId) _mlsTeamMap[hId] = {name:hClub.name,abbreviation:hClub.abbreviation};
+      if (aId) _mlsTeamMap[aId] = {name:aClub.name,abbreviation:aClub.abbreviation};
+      if (!hId||!aId) return;
+      const key = `${hId}|${aId}`;
+      const gameOptaId = m.game_id||m.opta_id;
+      if (gameOptaId) _mlsGameOptaIds[key] = gameOptaId;
+      const period = m.period||'';
+      const isFinal = m.is_final||period==='FullTime';
+      const isLive = !isFinal&&period&&period!=='PreMatch';
+      espnScores[key] = {
+        state:isFinal?'post':isLive?'in':'pre',
+        period:period==='FirstHalf'?1:period==='SecondHalf'?2:0,
+        clock:m.minute_display||'', detail:m.minute_display||(isFinal?'FT':period||''),
+        homeScore:hMatch.score??0, awayScore:aMatch.score??0,
+        homeName:hClub.name||'', awayName:aClub.name||'',
+        home:hClub.name||'', away:aClub.name||'',
+        homeWinning:(hMatch.score??0)>(aMatch.score??0),
+        periodPrefix:"'", source:'mls-relay', _sport:'MLS Soccer',
+        _mlsOptaHome:hId, _mlsOptaAway:aId, _gameId:String(gameOptaId||key),
+      };
+      espnScoreTs[key] = Date.now();
+    });
+    if (FIELD_DEBUG) console.log(`[MLS-relay] ${matches.length} matches`);
+    return matches;
+  } catch(e) {
+    if (FIELD_DEBUG) console.warn('[MLS-relay] fetchMLSLive failed:', e.message);
+    return [];
+  }
+}
+
+async function fetchMLSGoals(matchId) {
+  try {
+    const r = await fetch(MLS_RELAY_BASE+`/v1/goals?match_game_id=${matchId}&include=club&order_by=goal_minute`,
+      {signal:AbortSignal.timeout(5000)});
+    if (!r.ok) return [];
+    return await r.json();
+  } catch(e) { return []; }
+}
+
+// ── OpenF1 — Formula 1 live timing ───────────────────────────────────────────
+const OPENF1_BASE = 'https://api.openf1.org/v1';
+let _openF1SessionCache = {key:null,expiry:0,isLive:false};
+let _openF1PollInterval = null;
+let _openF1Drivers = {};
+
+async function fetchOpenF1CurrentSession(){
+  if(_openF1SessionCache.key&&Date.now()<_openF1SessionCache.expiry) return _openF1SessionCache;
+  try{
+    const today=new Date().toISOString().slice(0,10);
+    const r=await fetch(`${OPENF1_BASE}/sessions?date_start>=${today}&session_type=Race,Qualifying,Sprint`,{signal:AbortSignal.timeout(5000)});
+    const sessions=await r.json();
+    if(!sessions?.length){_openF1SessionCache={key:null,expiry:Date.now()+300000,isLive:false};return _openF1SessionCache;}
+    const s=sessions[sessions.length-1];
+    const start=new Date(s.date_start).getTime(),end=new Date(s.date_end||s.date_start).getTime()+1800000,now=Date.now();
+    _openF1SessionCache={key:s.session_key,name:s.session_name,location:s.location,year:s.year,
+      isLive:now>=start-1800000&&now<=end,start,end,expiry:Date.now()+60000};
+    return _openF1SessionCache;
+  }catch(e){_openF1SessionCache={key:null,expiry:Date.now()+60000,isLive:false};return _openF1SessionCache;}
+}
+async function fetchOpenF1Positions(k){try{const r=await fetch(`${OPENF1_BASE}/position?session_key=${k}`,{signal:AbortSignal.timeout(5000)});const raw=await r.json();const l={};(raw||[]).forEach(p=>{if(!l[p.driver_number]||p.date>l[p.driver_number].date)l[p.driver_number]=p;});return Object.values(l).sort((a,b)=>a.position-b.position);}catch(e){return[];}}
+async function fetchOpenF1RaceControl(k,since){try{const q=since?`?session_key=${k}&date>=${since}`:`?session_key=${k}`;const r=await fetch(`${OPENF1_BASE}/race_control${q}`,{signal:AbortSignal.timeout(5000)});return await r.json();}catch(e){return[];}}
+async function fetchOpenF1Drivers(k){if(_openF1Drivers[k])return _openF1Drivers[k];try{const r=await fetch(`${OPENF1_BASE}/drivers?session_key=${k}`,{signal:AbortSignal.timeout(5000)});const drivers=await r.json();_openF1Drivers[k]={};(drivers||[]).forEach(d=>{_openF1Drivers[k][d.driver_number]={name:d.full_name,abbr:d.name_acronym,team:d.team_name,teamColour:'#'+d.team_colour?.replace(/^#/,'')};});return _openF1Drivers[k];}catch(e){return{};}}
+
+window._openF1LiveData={positions:[],raceControl:[],drivers:{},sessionKey:null,lastUpdate:0};
+
+async function pollOpenF1(){
+  const session=await fetchOpenF1CurrentSession();
+  if(!session.isLive||!session.key) return;
+  if(!_openF1Drivers[session.key]) await fetchOpenF1Drivers(session.key);
+  const [positions,control]=await Promise.all([fetchOpenF1Positions(session.key),fetchOpenF1RaceControl(session.key,window._openF1LiveData.lastUpdate?new Date(window._openF1LiveData.lastUpdate).toISOString():null)]);
+  window._openF1LiveData={positions,raceControl:control,drivers:_openF1Drivers[session.key]||{},sessionKey:session.key,lastUpdate:Date.now()};
+  if(typeof fieldEvents!=='undefined'){const p1=positions[0];if(p1){const prev=window._openF1LiveData._prevP1;if(prev&&prev!==p1.driver_number)fieldEvents.dispatchEvent(new CustomEvent('field:lead_change',{detail:{gameId:'f1_live',sport:{isGolf:false},newLeader:p1.driver_number,source:'openf1',scoreline:`P1: #${p1.driver_number}`}}));window._openF1LiveData._prevP1=p1.driver_number;}}
+}
+
+async function startOpenF1Engine(){
+  if(_openF1PollInterval) return;
+  const session=await fetchOpenF1CurrentSession();
+  if(!session.isLive) return;
+  await pollOpenF1();
+  _openF1PollInterval=setInterval(()=>pollOpenF1().catch(e=>captureFieldError('openf1-poll',e,true)),4000);
+  const msLeft=session.end-Date.now();
+  if(msLeft>0) setTimeout(()=>{clearInterval(_openF1PollInterval);_openF1PollInterval=null;},msLeft+60000);
+}
+
+
 
 
 // ── First Lead Change Drama Burst ─────────────────────────────────────────
