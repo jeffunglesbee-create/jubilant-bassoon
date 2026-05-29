@@ -1,0 +1,19 @@
+=== CF API Probe [20260529T063528Z] ===
+Request: POST https://field-relay-nba.jeffunglesbee.workers.dev/pgatour
+
+{
+    "data": null,
+    "errors": [
+        {
+            "path": null,
+            "locations": [
+                {
+                    "line": 1,
+                    "column": 27,
+                    "sourceName": null
+                }
+            ],
+            "message": "Validation error of type WrongType: argument 'tourCode' with value 'EnumValue{name='R'}' is not a valid 'String' @ 'schedule'"
+        }
+    ]
+}
