@@ -6032,16 +6032,63 @@ document.getElementById("setup-skip").addEventListener("click",()=>{
 });
 document.getElementById("settings-btn").addEventListener("click", openSetup);
 
-// Push notification enable button — wires orphaned showEUPushConsent to real UI path
+// ── Web Push: VAPID public key + subscription wiring ────────────────────────
+// Public key only (safe to ship). Pairs with VAPID_PRIVATE_KEY held as a
+// field-relay-nba Worker secret. Subscription is sent to the relay's
+// /push/subscribe; the relay (ADR-002 Component 3) later pushes SCORE_CHANGE
+// facts and the SW (Drama Dial) decides whether to surface a notification.
+const VAPID_PUBLIC_KEY = 'BA94Jhq_0-6Hm07vN40MkakAdW4EMqMbiQh3ZkoWlvOnoes4Ds-IhKoLSe39BhL6vR8HAE2KLClmHyaLaldqFXg';
+const PUSH_SUBSCRIBE_URL = 'https://field-relay-nba.jeffunglesbee.workers.dev/push/subscribe';
+function urlBase64ToUint8Array(b64){
+  const pad = '='.repeat((4 - b64.length % 4) % 4);
+  const s = (b64 + pad).replace(/-/g,'+').replace(/_/g,'/');
+  const raw = atob(s);
+  const out = new Uint8Array(raw.length);
+  for (let i=0;i<raw.length;i++) out[i] = raw.charCodeAt(i);
+  return out;
+}
+// Create the push subscription and register it with the relay. Idempotent:
+// pushManager.subscribe returns the existing subscription if one already exists.
+async function subscribeToPush(btn){
+  try {
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+      if (btn) btn.textContent = 'Not supported'; return false;
+    }
+    const reg = await navigator.serviceWorker.ready;
+    let sub = await reg.pushManager.getSubscription();
+    if (!sub) {
+      sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+      });
+    }
+    const res = await fetch(PUSH_SUBSCRIBE_URL, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ subscription: (sub.toJSON ? sub.toJSON() : sub), prefs: {} }),
+    });
+    const ok = !!(res && res.ok);
+    if (btn) {
+      if (ok) { btn.textContent = '✓ Enabled'; btn.style.color = '#4ade80'; localStorage.setItem('field_push_pref','granted'); }
+      else    { btn.textContent = 'Retry'; }
+    }
+    return ok;
+  } catch (err) {
+    if (btn) btn.textContent = 'Retry';
+    return false;
+  }
+}
+
+// Push notification enable button — requests permission, then subscribes via the relay
 document.addEventListener('click', e => {
   const btn = e.target.closest('#push-enable-btn');
   if (!btn) return;
   const doRequest = () => {
     if (!('Notification' in window)) { btn.textContent = 'Not supported'; return; }
-    if (Notification.permission === 'granted') { btn.textContent = '✓ Enabled'; btn.style.color='#4ade80'; return; }
     if (Notification.permission === 'denied')  { btn.textContent = 'Blocked in browser'; return; }
+    if (Notification.permission === 'granted') { subscribeToPush(btn); return; }
     Notification.requestPermission().then(p => {
-      if (p === 'granted') { btn.textContent = '✓ Enabled'; btn.style.color='#4ade80'; localStorage.setItem('field_push_pref','granted'); }
+      if (p === 'granted') { subscribeToPush(btn); }
       else { btn.textContent = 'Declined'; }
     });
   };
