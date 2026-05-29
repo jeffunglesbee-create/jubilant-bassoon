@@ -155,3 +155,50 @@ Pending live device testing after journalism confirmed working.
 P1 items: push notifications, filter bar scroll, PWA install flow.
 
 ### Current HEAD: 9305375 · Smoke 243/0 · SW_VERSION 2026-05-29d
+
+---
+## JOURNALISM ROOT-CAUSE CHAIN — FULLY RESOLVED May 29 2026 (PM)
+
+The journalism failure was a CHAIN of bugs, found by adding diagnostics that
+surfaced real error strings instead of silent nulls. In order of discovery:
+
+1. **Missing field_utils.js functions** (923e12e) — stripJsonFences,
+   trimToCompleteSentence + 6 others defined only in Node test module, not in
+   index.html. Every journalism call threw ReferenceError (silently caught).
+   FIX: inlined all 8. Guard: smoke A191.
+
+2. **Stale SW** (1f84293) — sw.js frozen at 2026-05-25a; return visitors got
+   old shell. FIX: version sync + A190 guard + updatefound auto-reload (9305375).
+
+3. **Client 429 storm** (build h) — repeated reloads each fired a compound+J-layer
+   burst, exceeding Gemini 15 RPM. FIX: persist _compoundRetryAfter to
+   localStorage + backoff guard at fetchCompoundEditorial entry.
+
+4. **Cron error 1042** (relay 696d408) — the journalism cron (field-relay-nba
+   Worker) fetched the proxy (field-claude-proxy Worker) via workers.dev — a
+   same-account Worker→Worker fetch, BLOCKED by Cloudflare with error 1042.
+   The cron NEVER populated KV. FIX: compatibility_flags=['global_fetch_strictly_public']
+   in relay wrangler.toml.
+
+5. **Cron 403 Origin** (relay c5294f3) — after 1042 fix, proxy rejected the cron
+   because Workers send no Origin header. FIX: X-FIELD-Relay shared-header bypass
+   on the proxy + cron sends it.
+   ** CRITICAL GOTCHA: the DEPLOYED proxy is field-relay-nba/workers/field-claude-proxy
+      (relay deploy.yml workingDirectory is relative to THE RELAY repo). The
+      jubilant-bassoon/workers/field-claude-proxy copy is a STALE FORK that never
+      deploys. The relay copy runs gemini-3.1-flash-lite (PROXY_VERSION 6).
+      Always edit the RELAY copy for proxy changes. **
+
+6. **Gemini daily quota** (no code fix) — after all structural fixes, the cron
+   reaches Gemini cleanly but gets 429: today's RPD burned by the test storm.
+   Recovers at midnight Pacific (~08:00 UTC). The */15 cron (scheduled handler
+   line 1024) auto-populates KV on the next tick after recovery — ZERO manual
+   action needed. Once KV has prose, clients read it (zero Gemini calls).
+
+VERIFY RECOVERY: POST /journalism/run → expect {"ok":true,"reason":"written"}.
+Then GET /journalism/tonight → expect {"brief":"...","generatedAt":...}.
+Then client (after auto-reload to current SW) shows FIELD Brief prose;
+Health Panel Journalism row → "Brief rendered".
+
+New infra this session: /journalism/run manual trigger endpoint (relay),
+cron diagnostic returns (ok/reason/proxyStatus), Health Panel Journalism row.
