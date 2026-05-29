@@ -770,9 +770,10 @@ body::before{
 .double-feature-banner{background:rgba(212,175,55,.15);border:1px solid var(--gold);color:var(--gold2);font-size:.75rem;font-weight:700;letter-spacing:.04em;padding:.5rem 1rem;text-align:center;cursor:pointer;transition:opacity .3s}
 .badge-worth {background:rgba(232,160,32,.2);color:var(--soon);font-size:.6rem;font-weight:700;letter-spacing:.06em;padding:.15rem .38rem;border-radius:3px;margin-left:.3rem;margin-right:2.2rem;vertical-align:middle;display:inline-flex;align-items:center}
 .badge-closing{background:rgba(99,202,183,.18);color:#63cab7;font-size:.6rem;font-weight:800;letter-spacing:.08em;padding:.15rem .38rem;border-radius:3px;margin-left:.3rem;margin-right:2.2rem;vertical-align:middle;display:inline-flex;align-items:center}
-.rai-line{font-size:.66rem;color:var(--teal,#2dd4bf);padding:.18rem .1rem 0;letter-spacing:.02em;font-weight:600;opacity:1}
-@media(max-width:600px){.rai-line{font-size:.7rem;padding:.2rem .1rem 0}}
+.rai-line{font-size:.66rem;color:var(--teal,#2dd4bf);letter-spacing:.02em;font-weight:600;opacity:1;margin-top:.25rem;padding-top:.22rem;border-top:1px solid rgba(255,255,255,.07);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@media(max-width:600px){.rai-line{font-size:.7rem;margin-top:.2rem}}
 @media(max-width:600px) and (orientation:landscape){.rai-line{font-size:.65rem}}
+@media(min-width:820px){.rai-line{font-size:.68rem}}
 .rai-row{display:flex;align-items:center;gap:.4rem;font-size:.7rem;margin:.18rem 0}
 .rai-lbl{min-width:2.8rem;font-weight:700;color:var(--smoke)}
 .rai-bar{font-family:monospace;font-size:.72rem;letter-spacing:.05em;color:var(--muted);flex:1}
@@ -14184,6 +14185,26 @@ function espnPeriodLabel(prefix, period, clock) {
   return `${prefix}${period}`;
 }
 
+// Re-inject cached RAI line into a newly-replaced score-wrap.
+// Called by renderESPNScores after wrapEl.replaceWith(newWrap).
+// _raiCache is keyed by espnEventId OR homeLabel|awayLabel.
+// Reads the card's dataset to find the cache key without async.
+function _raiRehydrateScoreWrap(card, scoreWrap) {
+  try {
+    const h = card.dataset.home || '';
+    const a = card.dataset.away || '';
+    const labelKey = `${h}|${a}`;
+    const rai = _raiCache[labelKey] || null;
+    if (!rai) return;
+    const raiText = buildRaiCardLine(rai, h, a);
+    if (!raiText) return;
+    const line = document.createElement('div');
+    line.className = 'rai-line';
+    line.textContent = raiText;
+    scoreWrap.appendChild(line);
+  } catch(e) { /* silent — non-critical */ }
+}
+
 function renderESPNScores(){
   // Prune stale entries (not updated within ESPN_SCORE_TTL) to prevent yesterday's
   // scores matching today's games by team name
@@ -14315,13 +14336,15 @@ function renderESPNScores(){
             newWrap.classList.add("score-flash");
             setTimeout(()=>newWrap.classList.remove("score-flash"), 700);
           }
+          // Re-inject cached RAI line if available — score-wrap replaced on score change
+          _raiRehydrateScoreWrap(card, newWrap);
         }
         previousScores[scoreKey+"_sl"] = _n.scoreline;
       } else {
         const tmp = document.createElement("div");
         tmp.innerHTML = scoreHTML;
         const newWrap = tmp.firstElementChild;
-        if(newWrap) card.appendChild(newWrap);
+        if(newWrap) { card.appendChild(newWrap); _raiRehydrateScoreWrap(card, newWrap); }
         const scoreKey2 = game._id;
         previousScores[scoreKey2+"_sl"] = _n.scoreline;
       }
@@ -18593,19 +18616,32 @@ async function injectLineupEdge(card, eData, sport) {
   const rai = await fetchRosterAdvantage(espnId, homeLabel, awayLabel);
   if (!rai) return;
 
-  // ── Card .rai-line (all viewports) ───────────────────────────────────────
+  // ── Card .rai-line — placed inside score-wrap (grid-column:2, grid-row:2)
+  // score-wrap is always injected for live games, visible on all viewports.
+  // Portrait phone: row 2 below card-body. Desktop: row 2 below card-body.
+  // Landscape: same grid row 2. No grid-column ambiguity — score-wrap owns it.
+  // Fallback: card-body → before tap-hint when score-wrap not yet present.
   const raiText = buildRaiCardLine(rai, homeLabel, awayLabel);
   let raiLine = card.querySelector('.rai-line');
   if (raiText) {
     if (!raiLine) {
       raiLine = document.createElement('div');
       raiLine.className = 'rai-line';
-      // Insert after .card-drama-line or before the card's bottom edge
-      const dramaLine = card.querySelector('.card-drama-line,.narrative-line');
-      if (dramaLine) dramaLine.insertAdjacentElement('afterend', raiLine);
-      else card.appendChild(raiLine);
     }
     raiLine.textContent = raiText;
+    // Primary target: score-wrap (always at grid-column:2 row:2 on all viewports)
+    const scoreWrap = card.querySelector('.score-wrap');
+    if (scoreWrap) {
+      // Keep inside score-wrap so it stays in the correct grid column
+      if (!scoreWrap.contains(raiLine)) scoreWrap.appendChild(raiLine);
+    } else {
+      // Fallback: inside card-body before tap-hint
+      const cardBody = card.querySelector('.card-body');
+      const tapHint = cardBody?.querySelector('.card-tap-hint');
+      if (tapHint) tapHint.insertAdjacentElement('beforebegin', raiLine);
+      else if (cardBody) cardBody.appendChild(raiLine);
+      else card.appendChild(raiLine);
+    }
   } else if (raiLine) {
     raiLine.remove();
   }
