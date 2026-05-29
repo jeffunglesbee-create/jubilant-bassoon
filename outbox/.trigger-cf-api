@@ -1,3 +1,3 @@
 method=POST
 url=https://field-relay-nba.jeffunglesbee.workers.dev/pgatour
-body={"operationName":"player","variables":{"id":"28237"},"query":"query player { player(id: \"28237\") { id displayName country owgr playerBio { age born education turnedPro college } rank { rank statName } } }"}
+body={"operationName":"player","variables":{"id":"28237"},"query":"query player { player(id: \"28237\") { id displayName country owgr playerBio { age born family heightMeters weightImperial turnedPro } rank { rank statName } } }"}
