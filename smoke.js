@@ -821,13 +821,9 @@ assert('A237 — VIBE-A: .vibe class in stylesheet',
   '.vibe and .ganalytics CSS must be present');
 
 // ── G-INF-1: PGA Tour GraphQL relay infrastructure (May 29 2026) ───────────
-assert('A240 — G-INF-1: PGATOUR_RELAY constant defined',
-  html.includes("PGATOUR_RELAY    = 'https://field-relay-nba.jeffunglesbee.workers.dev/pgatour'"),
-  'PGATOUR_RELAY must point to field-relay-nba /pgatour route');
-
-assert('A241 — G-INF-1: fetchPGATourStat defined',
-  html.includes('async function fetchPGATourStat('),
-  'fetchPGATourStat() must be defined — PGA Tour GraphQL stats relay fn');
+assert('A240 — PGA Tour GraphQL relay REMOVED (ToS compliance, 2026-05-29)',
+  !html.includes('PGATOUR_RELAY') && !html.includes('fetchPGATourStat') && !html.includes('orchestrator.pgatour'),
+  'Direct PGA Tour GraphQL access must NOT be present — pgatour.com ToU prohibits automated use. Do not re-add without a licensed feed or counsel sign-off.');
 
 assert('A242 — G-INF-1: ESPN golf leaderboard extraction present',
   html.includes('window._espnGolfLB') && html.includes('competitors.length > 0'),

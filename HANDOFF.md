@@ -60,3 +60,28 @@ Relay repo: jeffunglesbee-create/field-relay-nba
 Journalism Quality Spec: 1oSj9Wl9lZl_RGGElZdn_dhI4s3vzvnkv5HazELKSw-0
 Data-Sourcing Legitimacy Matrix (MASTER scaffold): 1LUuR0CLWUvIc94Vou46VmeTLz1n-Y6YAz0F0MX6GR-M
 Verification output (in-repo): docs/data-sourcing-legitimacy-2026-05-29.md
+
+---
+## ADDENDUM — May 29 2026 (TYPE B: PGA Tour GraphQL DECOMMISSION — ToS compliance)
+Removed direct PGA Tour GraphQL access after verification found pgatour.com ToU prohibits
+automated copying/downloading and the data is licensed/proprietary (matrix RED row; the ToU
+was never consulted when the relay was originally wired — accessibility/community-precedent
+was used instead).
+
+Removed:
+- jubilant-bassoon index.html: PGATOUR_RELAY const + fetchPGATourStat()/fetchPGATourPlayerDir()
+  (no call sites existed — consumers were never built). Added one-time localStorage purge of
+  `field_pgt_*` cached data on load. smoke.js A240 flipped to an absence/regression guard
+  (A241 retired). Smoke 242/0.
+- field-relay-nba src/index.js: /pgatour route handler, PGATOUR_GRAPHQL_URL, PGATOUR_API_KEY
+  (da2-gsrx5… — PGA's embedded key), PGATOUR_HEADERS, PGATOUR_ALLOWED_OPS, pgatourCacheTtl,
+  method-guard exception, health-string entry. Redeploy drops the route + edge cache.
+- outbox/: 28 cf-probe result files containing harvested PGA GraphQL data dumps.
+
+NOT removed (flagged for Jeff's decision — distinct posture):
+- Slash Golf (RapidAPI, index.html ~line 10170) — a PAID third-party reseller; RapidAPI ToS
+  puts underlying-rights responsibility on the provider. Different risk profile; decide separately.
+- Golf Doc 1 (Drive 1Ak_GPXkiKUvUr6dUpcto0BUbhKTibIwgR-o8SYUeBfM) still contains extracted PGA
+  data + the embedded key — scrub the key + mark DECOMMISSIONED (Drive writes unavailable from
+  sandbox this session). Matrix PGA row already RED.
+- `pgatour.com/live` watch-link entry (editorial streaming descriptor) — kept; not harvested data.
