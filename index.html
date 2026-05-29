@@ -770,7 +770,7 @@ body::before{
 .double-feature-banner{background:rgba(212,175,55,.15);border:1px solid var(--gold);color:var(--gold2);font-size:.75rem;font-weight:700;letter-spacing:.04em;padding:.5rem 1rem;text-align:center;cursor:pointer;transition:opacity .3s}
 .badge-worth {background:rgba(232,160,32,.2);color:var(--soon);font-size:.6rem;font-weight:700;letter-spacing:.06em;padding:.15rem .38rem;border-radius:3px;margin-left:.3rem;margin-right:2.2rem;vertical-align:middle;display:inline-flex;align-items:center}
 .badge-closing{background:rgba(99,202,183,.18);color:#63cab7;font-size:.6rem;font-weight:800;letter-spacing:.08em;padding:.15rem .38rem;border-radius:3px;margin-left:.3rem;margin-right:2.2rem;vertical-align:middle;display:inline-flex;align-items:center}
-.rai-line{font-size:.58rem;color:var(--muted);padding:.1rem 0 0 .1rem;letter-spacing:.03em;opacity:.85}
+.rai-line{font-size:.66rem;color:var(--smoke);padding:.18rem .1rem 0;letter-spacing:.02em;font-weight:500;opacity:.9}
 .rai-row{display:flex;align-items:center;gap:.4rem;font-size:.7rem;margin:.18rem 0}
 .rai-lbl{min-width:2.8rem;font-weight:700;color:var(--smoke)}
 .rai-bar{font-family:monospace;font-size:.72rem;letter-spacing:.05em;color:var(--muted);flex:1}
@@ -12912,6 +12912,7 @@ async function fetchESPNScores(){
         const _prev = espnScores[key]; // preserve async WP across polls
         espnScores[key] = {
           _gameId: resolveGameIdByHome(homeName), // for drama history lookup
+          espnEventId: ev.id || null,             // ESPN numeric event ID — for WP, PBP, boxscore fetches
           state, period, clock, detail,
           homeScore, awayScore, homeName, awayName,
           home: homeName, away: awayName,
@@ -15734,12 +15735,13 @@ const SPORT_VOCAB_VIOLATIONS = {
     forbidden: [
       'one-possession','possession game','one possession',
       'quarter','quarters','first quarter','fourth quarter','halftime','half time',
-      'points per game','ppg','field goal percentage',
-      'transition','fast break','assist','rebound',
+      'field goal','field goal percentage','field goals',
+      'three-point','three-pointer','three pointer','free throw',
+      'transition game','fast break','assist','assists','rebound','rebounds',
       'down the stretch','in the paint',
-      'basket','baskets','three-pointer','free throw',
-      'touchdown','first down','red zone','turnover on downs',
-      'offsides','penalty kick','extra time','nil'
+      'basket','baskets','touchdown','first down','red zone','turnover on downs',
+      'offsides','penalty kick','extra time','nil',
+      'ball movement','offensive rhythm','interior scoring'
     ],
     sport: 'baseball',
     units: 'runs (not points)',
@@ -18523,9 +18525,10 @@ function buildRaiSheetSection(rai, homeLabel, awayLabel) {
 async function injectLineupEdge(card, eData, sport) {
   const sp = (sport || '').toLowerCase();
   if (!sp.includes('basketball') && !sp.includes('nba')) return;
-  if (eData?.state !== 'in') return;
+  // Allow during live AND halftime — ESPN reports state='in' throughout
+  if (eData?.state !== 'in' && eData?.state !== 'halftime') return;
 
-  const espnId = eData?.id || eData?.gameId || card.dataset.espnid || '';
+  const espnId = eData?.espnEventId || eData?.id || eData?.gameId || card.dataset.espnid || '';
   if (!espnId) return;
 
   const rai = await fetchRosterAdvantage(espnId, homeLabel, awayLabel);
@@ -19979,6 +19982,17 @@ async function fetchNightOwlFromClaude(topGame){
       // Layer 2b: sport vocab — catches "one-possession game" for baseball etc.
       const _sp=topGame._section||topGame._sport||'';
       text=await retryWithSportVocab(prompt,text,_sp,CLAUDE_PROXY_URL);
+      // Layer 2c: hard strip — last resort if AI retry still contains violations
+      const _spCls=detectSportClass(_sp);
+      if(_spCls&&_spCls!=='basketball'){
+        const _voc=SPORT_VOCAB_VIOLATIONS[_spCls];
+        if(_voc?.forbidden?.length&&_voc.forbidden.some(t=>text.toLowerCase().includes(t))){
+          const _sents=text.split(/(?<=[.!?])\s+/);
+          const _cln=_sents.filter(s=>!_voc.forbidden.some(t=>s.toLowerCase().includes(t)));
+          if(_cln.length>=2)text=_cln.join(' ');
+          if(FIELD_DEBUG)console.warn('[JQ Layer 2c] Hard-stripped sport vocab from',_sp);
+        }
+      }
       budget.inc();scoreProse(text).then(s=>renderProseScore(s,'J5 Night Owl'));return text.trim();
     }
   }catch(e){if(FIELD_DEBUG)console.error('[J5 Night Owl] proxy error:',e.message);}
