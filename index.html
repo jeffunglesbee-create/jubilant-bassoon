@@ -4709,7 +4709,7 @@ Return {"s":[]} if no major sport games that day. CRITICAL: If you are not highl
       headers:{"Content-Type":"application/json"},
       signal:AbortSignal.timeout(15000),
       body:JSON.stringify({
-        model:"claude-sonnet-4-20250514",
+        model:"claude-sonnet-4-6",
         max_tokens:800,
         messages:[{role:"user",content:prompt}]
       })
@@ -8412,7 +8412,7 @@ async function fetchSupplemental(isoDate,dayOfWeek,monthYear){
     const r=await fetch(CLAUDE_PROXY_URL,{
       method:"POST",headers:{"Content-Type":"application/json"},
       signal:AbortSignal.timeout(4000),
-      body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:200,
+      body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:200,
         messages:[{role:"user",content:prompt}]})
     });
     if(!r.ok){ const e=await r.text(); throw new Error("HTTP "+r.status+": "+e.slice(0,80)); }
@@ -8923,7 +8923,7 @@ async function fetchBettingLines(){
       headers:{"Content-Type":"application/json"},
       signal:AbortSignal.timeout(6000),
       body:JSON.stringify({
-        model:"claude-sonnet-4-20250514",
+        model:"claude-sonnet-4-6",
         max_tokens:1200,
         messages:[{role:"user",content:prompt}]
       })
@@ -10659,7 +10659,7 @@ async function renderMajorPreviewCard(container){
         method:"POST",
         headers:{"Content-Type":"application/json"},
         body:JSON.stringify({
-          model:"claude-sonnet-4-20250514",
+          model:"claude-sonnet-4-6",
           max_tokens:80,
           messages:[{role:"user",content:prompt}]
         })
@@ -15775,6 +15775,7 @@ const FIELD_PROSE_STYLE=[
   '- STYLE: if a sentence would work in any game recap for any sport, it is too generic — rewrite with details specific to THIS game.',
   '- CITE ANALYTICS: if [PP/PK], [POSSESSION], [PARK], [UMPIRE], or [GOALIE] context appears in the game data, cite the specific figure verbatim — not a paraphrase. "93.5% penalty kill" not "elite penalty killing". "+17% runs at Camden Yards" not "a hitter-friendly park".',
   '- FEATURED STAT: if a [FEATURED STAT] line appears for a game, that exact figure MUST appear in your brief for that game.',
+  '- LEAD SENTENCE: never start a brief, paragraph, or sentence with "The [Team]..." — lead with the specific situation. "Wembanyama scored 34" not "The Spurs got a big performance." "Two years without a Finals appearance ends tonight" not "The Celtics are looking to make a statement."',
   '- BANNED PHRASES (never use): '+BANNED_PHRASES.join(', ')+'.'
 ].join('\n');
 
@@ -15900,7 +15901,7 @@ async function retryWithSportVocab(originalPrompt, text, sport, proxyUrl) {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-sonnet-4-6',
         max_tokens: 1500,
         messages: [{role:'user', content: retryPrompt}]
       })
@@ -15924,7 +15925,7 @@ async function retryWithoutCliches(originalPrompt,text,proxyUrl){
   if(FIELD_DEBUG) console.warn('[JQ Layer 2] Clichés detected:',found);
   try{
     const retryPrompt=originalPrompt+'\n\nIMPORTANT REWRITE: your previous draft contained these banned clichés: '+found.join(', ')+'. Rewrite without them. Use a specific fact instead of each generic phrase.';
-    const r=await fetch(proxyUrl,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1500,messages:[{role:'user',content:retryPrompt}]})});
+    const r=await fetch(proxyUrl,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1500,messages:[{role:'user',content:retryPrompt}]})});
     if(!r.ok) return text;
     const data=await r.json();
     const retried=(data.content||[]).filter(c=>c.type==='text').map(c=>c.text).join('');
@@ -16303,7 +16304,7 @@ async function fetchCompoundEditorial(sections) {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-sonnet-4-6',
         max_tokens: (sections||[]).flatMap(s=>s.games||[]).some(g=>/conference finals|cf g\d|nba finals|stanley cup final|wcf|ecf/i.test(g.league||'')) ? 5000 : 3000,
         messages: [{role: 'user', content: buildCompoundPrompt(sections)}]
       }),
@@ -16440,7 +16441,7 @@ async function fetchSeriesPreviewFromClaude(g){
     'Division accuracy: teams in the same division share ONE race, not "respective" races. No markdown.'
   ].filter(Boolean).join('\n');
   try{
-    const r=await fetch(CLAUDE_PROXY_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:prompt}]})});
+    const r=await fetch(CLAUDE_PROXY_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1000,messages:[{role:'user',content:prompt}]})});
     if(!r.ok) return null;
     const data=await r.json();
     let text=(data.content||[]).filter(c=>c.type==='text').map(c=>c.text).join('');
@@ -17120,7 +17121,7 @@ async function fetchFIELDBriefFromClaude(sections){
   }).join('\n\n');
   const prompt=["Write a FIELD Brief for tonight's sports slate.",'','TONIGHT\'S GAMES:',gameLines,'','RULES:','- 100-120 words. 2 short paragraphs. No headers.','- Lead with the most important story.','- Call out FREE over-the-air games explicitly.',"- Surface Scout's Pick if flagged.",'- If [ANTI-HYPE] appears in a game line, describe that matchup as low-stakes in plain prose — never echo the tag [ANTI-HYPE] verbatim.','- CORRECTNESS: write only from data above. Never invent scores, stats, records, or player tendencies.',FIELD_PROSE_STYLE,'- VOICE: third person only. Never use "you" or address the reader directly. Write like a columnist, not a chatbot.','- DIVISION ACCURACY: teams in the same division share ONE division race — never say "respective division races" for same-division teams. NHL has Atlantic/Metropolitan/Central/Pacific. NBA has Atlantic/Central/Southeast/Northwest/Pacific/Southwest. MLB has AL/NL East/Central/West.','- Plain prose only. No bullet points.','- Always complete every sentence. Never end mid-sentence.'].join('\n');
   try{
-    const r=await fetch(CLAUDE_PROXY_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1500,messages:[{role:'user',content:prompt}]})});
+    const r=await fetch(CLAUDE_PROXY_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1500,messages:[{role:'user',content:prompt}]})});
     if(!r.ok) return null;
     const data=await r.json();
     let text=(data.content||[]).filter(c=>c.type==='text').map(c=>c.text).join('');
@@ -17407,7 +17408,7 @@ async function fetchEPLMatchBriefFromClaude(g) {
     const r = await fetch(CLAUDE_PROXY_URL, {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:200,messages:[{role:'user',content:prompt}]})
+      body: JSON.stringify({model:'claude-sonnet-4-6',max_tokens:200,messages:[{role:'user',content:prompt}]})
     });
     if(!r.ok) return null;
     const data = await r.json();
@@ -20268,7 +20269,7 @@ async function fetchNightOwlFromClaude(topGame){
       'Explain what tactically swung the game. Series implication. Plain prose.'
     ].filter(Boolean).join('\n');
   try{
-    const r=await fetch(CLAUDE_PROXY_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:prompt}]})});
+    const r=await fetch(CLAUDE_PROXY_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1000,messages:[{role:'user',content:prompt}]})});
     if(!r.ok) return null;
     const data=await r.json();
     let text=(data.content||[]).filter(c=>c.type==='text').map(c=>c.text).join('');
