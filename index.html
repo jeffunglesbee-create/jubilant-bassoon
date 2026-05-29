@@ -4883,6 +4883,9 @@ async function fetchESPNFixturesForDate(iso){
           // by normalising the start_time to noon UTC on tournament day
           const rawDate = (ev.date||'').slice(0,10); // "2026-05-28"
           const normTime = rawDate ? rawDate+'T12:00:00Z' : (ev.date||'');
+          // Day-aware bundle: Golf Channel Thu/Fri, CBS Sat/Sun
+          const evDay = rawDate ? new Date(rawDate+'T12:00:00Z').getDay() : -1;
+          const golfBundle = (evDay===0||evDay===6) ? 'GOLF_CBS' : 'GOLF_CHANNEL';
           _gid++;
           return {
             _id:`g${_gid}`, _sport:section,
@@ -4890,7 +4893,7 @@ async function fetchESPNFixturesForDate(iso){
             league: section + (roundLabel ? ' · '+roundLabel : ''),
             start_time: normTime,
             venue: comp.venue?.fullName || '',
-            streams: resolveBundle(bundle),
+            streams: resolveBundle(golfBundle),
             leaderNote: statusDetail || roundLabel || '',
           };
         }
@@ -8364,18 +8367,27 @@ function buildTodaySchedule(){
   //   Truist Championship (Signature) and Myrtle Beach Classic both finished May 10.
   //   No PGA Tour event Mon May 11 — Travelers Championship starts Thu Jun 26.
   const golfGames=[
-    // ── Charles Schwab Challenge — R2 Fri May 29 (active tournament May 28-31) ─
-    // Colonial CC, Fort Worth TX. Defending: Ben Griffin.
-    // Golf Channel Thu-Fri 3-6 PM ET · CBS/Golf Channel Sat-Sun
-    {home:"Charles Schwab Challenge", away:"",
+    // ── Charles Schwab Challenge — R1-R4 May 28-31 2026, Colonial CC Fort Worth TX ─
+    // Defending: Ben Griffin. Top players: JJ Spaun (#9), Russell Henley (#11), Ludvig Åberg.
+    // Scheffler and Spieth not playing. Weather delay in R1 — 6 players tied at -6.
+    // Broadcast: Golf Channel (ESPN+) Thu-Fri 4-7 PM ET · CBS/Golf Channel Sat-Sun
+    {home:"Charles Schwab Challenge",  away:"",
      league:"PGA Tour",
-     start_time:"2026-05-29T19:00:00Z", confirmed:true, // 3 PM ET = 7 PM UTC
-     venue:"Colonial CC, Fort Worth TX",
-     streams:resolveBundle("GOLF_CHANNEL"),
-     leaderNote:"R2 · Golf Channel 3-6 PM ET · CBS Sat-Sun"},
-  ].filter(g=>isToday(g.start_time)||
-    (new Date(g.start_time) > new Date() &&
-     new Date(g.start_time) < new Date(Date.now() + 7*24*3600*1000)));
+     start_time:"2026-05-28T16:00:00Z",  // R1 Thu: Golf Channel coverage 4 PM ET / noon UTC
+     tournEnd:"2026-05-31",              // R4 Sunday
+     confirmed:true, venue:"Colonial CC, Fort Worth TX",
+     streams:resolveBundle("GOLF_CHANNEL"),  // Thu-Fri: Golf Channel. CBS Sat-Sun via leaderNote
+     leaderNote:"After R1 · Hodges, Spaun, McCarty, Kim, Gerard, Putnam -6 · Griffin defending · CBS Sat-Sun"},
+  ].filter(g=>{
+    // Show for full tournament duration (Thu-Sun), not just isToday of start_time
+    const todayStr = new Date().toLocaleDateString('en-CA',{timeZone:localTz()||'America/New_York'});
+    if(g.tournEnd){
+      const startStr = new Date(g.start_time).toLocaleDateString('en-CA',{timeZone:'America/New_York'});
+      return todayStr >= startStr && todayStr <= g.tournEnd;
+    }
+    return isToday(g.start_time)||
+      (new Date(g.start_time) > new Date() && new Date(g.start_time) < new Date(Date.now()+7*24*3600*1000));
+  });
   if(golfGames.length) sections.push({sport:"Golf", games:golfGames});
   // Slash Golf enrichment fires async after init (T+3500ms)
   // slashGolfPrefetchAll() will inject leaderNote into golf cards via injectSlashGolfLeaderNotes()
@@ -11058,7 +11070,9 @@ async function slashGolfPrefetchAll(){
     // On Mon-Wed there are no in-progress events → 0 leaderboard requests
     const inProgress = active.filter(t => {
       const s = (t.status||"").toLowerCase();
-      return s.includes("progress") || s.includes("active") || s.includes("live");
+      // Broad: catches "In Progress", "in_progress", "active", "live", round labels, empty
+      return s.includes("progress") || s.includes("active") || s.includes("live") ||
+             s.includes("round") || /^r[1-4]$/.test(s) || !s;
     });
     const leaderboards = {};
     await Promise.allSettled(inProgress.map(async t => {
