@@ -11683,10 +11683,9 @@ const RELAY_BASE = 'https://field-relay-nba.jeffunglesbee.workers.dev/nba';
 // ESPN Site API — summary endpoint relay (WP + play-by-play, public REST)
 // winprobability[].homeWinPercentage — 0-1 FRACTION scale (e.g. 0.872 = 87.2%)
 const ESPN_SUMMARY_RELAY = 'https://field-relay-nba.jeffunglesbee.workers.dev/espn-summary';
-// NBA CDN live data relay — requires /nba-live/* route on field-relay-nba worker
-// Route proxies: cdn.nba.com/static/json/liveData/* with CDN auth headers
-// Until relay route is deployed, fetchNBAPBP() returns null → ESPN/boxscore fallback
-const NBA_CDN_RELAY = 'https://field-relay-nba.jeffunglesbee.workers.dev/nba-live';
+// NBA CDN live data relay — /nba/* route already deployed on field-relay-nba
+// Whitelist includes: playbyplay_*, boxscore_*, todaysScoreboard_00.json
+const NBA_CDN_RELAY = 'https://field-relay-nba.jeffunglesbee.workers.dev/nba';
 // Baseball Savant GameFeed — CORS-open, no relay needed
 // Provides live WP (homeTeamWinProbability 0-1) + Statcast exit velocity per play
 // Confirmed CORS-open: access-control-allow-origin: * (May 21 2026)
