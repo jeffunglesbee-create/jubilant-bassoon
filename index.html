@@ -20735,7 +20735,10 @@ function buildDramaLineTiers(game, eData, sport){
     return tight?{tight,mid:mid||tight,full:full||mid||tight}:empty;
   }
   if(state==='post'){
-    const hS=eData?.homeScore??0,aS=eData?.awayScore??0,score=hS+'\u2013'+aS;
+    const hS=eData?.homeScore??0,aS=eData?.awayScore??0;
+    // Leader-first to match score-wrap — home–away order is wrong when away team wins
+    const winS=Math.max(hS,aS),loseS=Math.min(hS,aS);
+    const score=winS+'–'+loseS;
     const peak=parseFloat(localStorage.getItem('field_drama_peak_'+gid)||'0');
     const drama=peak>=80?'\uD83D\uDD25 High drama':peak>=60?'\u26A1 Good game':'';
     const tight=trim(join([score,series]),36),mid=trim(join([score,drama,series]),52),full=join([score,drama,series,firstSentence]);
