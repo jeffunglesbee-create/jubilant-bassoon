@@ -111,4 +111,4 @@ CI/Deploy Ref: 18JMUd-Uq_m2DomuCua2B5UMiWOel81yzc1JU7SY6f20
 Repo: jeffunglesbee-create/jubilant-bassoon
 Relay repo: jeffunglesbee-create/field-relay-nba
 Journalism Quality Spec: 1oSj9Wl9lZl_RGGElZdn_dhI4s3vzvnkv5HazELKSw-0
-Golf Intelligence Research Drive doc: [TBD — document this session's findings]
+Golf Intelligence Research Drive doc: 1uzCk3ZrPfWPJVYg2wmpbEq_yFa8y5YmoSvJSup9sq5I
