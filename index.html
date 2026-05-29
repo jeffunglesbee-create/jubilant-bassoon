@@ -18245,15 +18245,22 @@ async function fetchNBAScoreboard() {
     if (!r.ok) return;
     const d = await r.json();
     for (const g of d?.scoreboard?.games || []) {
-      const id = g.gameId;
-      const h  = (g.homeTeam?.teamTricode || '').toLowerCase();
-      const a  = (g.awayTeam?.teamTricode || '').toLowerCase();
-      if (id && h && a) {
-        _nbaGameIdMap[`${h}_${a}`] = id;
-        _nbaGameIdMap[`${a}_${h}`] = id;
+      const id   = g.gameId;
+      const hTri = (g.homeTeam?.teamTricode || '').toLowerCase(); // 'sas'
+      const aTri = (g.awayTeam?.teamTricode || '').toLowerCase(); // 'okc'
+      const hName= (g.homeTeam?.teamName   || '').toLowerCase(); // 'spurs'
+      const aName= (g.awayTeam?.teamName   || '').toLowerCase(); // 'thunder'
+      if (!id) continue;
+      // Store by tricode (e.g. sas_okc) AND teamName (e.g. spurs_thunder)
+      // teamName keys match teamNick() output → used by fetchNBAPBP lookup
+      for (const [h,a] of [[hTri,aTri],[hName,aName]]) {
+        if (h && a) {
+          _nbaGameIdMap[`${h}_${a}`] = id;
+          _nbaGameIdMap[`${a}_${h}`] = id;
+        }
       }
     }
-    if (FIELD_DEBUG) console.debug('[NBA-CDN] scoreboard mapped', Object.keys(_nbaGameIdMap).length/2, 'games');
+    if (FIELD_DEBUG) console.debug('[NBA-CDN] scoreboard mapped', Object.keys(_nbaGameIdMap).length/4, 'games');
   } catch(e) {
     if (FIELD_DEBUG) console.warn('[NBA-CDN] scoreboard:', e.message);
   }
@@ -18262,12 +18269,13 @@ async function fetchNBAScoreboard() {
 // Fetch live PBP actions for a game — returns actions[] or null
 async function fetchNBAPBP(homeLabel, awayLabel) {
   await fetchNBAScoreboard();
-  // Try matching by teamNick abbreviation first, then raw label
-  const hKey = (teamNick(homeLabel)||homeLabel||'').toLowerCase().slice(0,3);
-  const aKey = (teamNick(awayLabel)||awayLabel||'').toLowerCase().slice(0,3);
-  const nbaId = _nbaGameIdMap[`${hKey}_${aKey}`] || _nbaGameIdMap[`${aKey}_${hKey}`];
+  // teamNick returns last word: "San Antonio Spurs" → "Spurs" → lowercase "spurs"
+  // _nbaGameIdMap stores teamName keys: "spurs_thunder", "sas_okc", etc.
+  const hNick = teamNick(homeLabel||'').toLowerCase() || (homeLabel||'').toLowerCase();
+  const aNick = teamNick(awayLabel||'').toLowerCase() || (awayLabel||'').toLowerCase();
+  const nbaId = _nbaGameIdMap[`${hNick}_${aNick}`] || _nbaGameIdMap[`${aNick}_${hNick}`];
   if (!nbaId) {
-    if (FIELD_DEBUG) console.debug('[NBA-CDN] no ID for', homeLabel, 'vs', awayLabel);
+    if (FIELD_DEBUG) console.debug('[NBA-CDN] no ID for', homeLabel, 'vs', awayLabel, '| map keys:', Object.keys(_nbaGameIdMap).slice(0,6));
     return null;
   }
   try {
@@ -18375,9 +18383,11 @@ function parseESPNPlays(plays, homeLabel, awayLabel) {
 }
 
 async function fetchRosterAdvantage(espnGameId, homeLabel, awayLabel) {
-  if (!espnGameId) return null;
+  // espnGameId required for ESPN boxscore (Tier 3); NBA CDN (Tier 1) uses labels only
+  const cacheKey = espnGameId || `${homeLabel}|${awayLabel}`;
+  if (!cacheKey) return null;
   const now = Date.now();
-  const cached = _raiCache[espnGameId];
+  const cached = _raiCache[cacheKey];
   if (cached && now - cached.ts < RAI_TTL) return cached;
 
   try {
@@ -18396,81 +18406,111 @@ async function fetchRosterAdvantage(espnGameId, homeLabel, awayLabel) {
     if (homeLabel && awayLabel) {
       const cdnActions = await fetchNBAPBP(homeLabel, awayLabel);
       if (cdnActions) {
-        // Need team tricodes — fetch from scoreboard map
-        const hKey = (teamNick(homeLabel)||homeLabel||'').toLowerCase().slice(0,3);
-        const aKey = (teamNick(awayLabel)||awayLabel||'').toLowerCase().slice(0,3);
-        pbpData = parseNBACDNActions(cdnActions, hKey.toUpperCase(), aKey.toUpperCase());
-        if (FIELD_DEBUG && pbpData) console.debug('[RAI] NBA CDN lineup:', pbpData.homeLineup?.length, pbpData.awayLineup?.length);
+        // Tricodes from _nbaGameIdMap scoreboard data — derive from team labels
+        const hTri = teamNick(homeLabel||'').toUpperCase(); // "Spurs"→"SPURS" (CDN uses tricode)
+        const aTri = teamNick(awayLabel||'').toUpperCase();
+        // Try exact tricode match from NBA scoreboard data if available
+        const hTriExact = Object.keys(_nbaGameIdMap).find(k => k.length === 3 && _nbaGameIdMap[k] === _nbaGameIdMap[`${teamNick(homeLabel||'').toLowerCase()}_${teamNick(awayLabel||'').toLowerCase()}`]);
+        pbpData = parseNBACDNActions(cdnActions, hTri, aTri);
+        if (FIELD_DEBUG && pbpData) console.debug('[RAI] NBA CDN T1:', pbpData.homeLineup?.length, pbpData.awayLineup?.length, 'source:', pbpData.source);
       }
     }
 
-    // ── Tier 2: ESPN plays[] (sub events from summary relay) ──────────────────
-    if (!pbpData) {
-      const espnPlays = await fetchESPNPlays(espnGameId);
-      if (espnPlays) {
-        pbpData = parseESPNPlays(espnPlays, homeLabel||'', awayLabel||'');
-        if (FIELD_DEBUG && pbpData) console.debug('[RAI] ESPN plays lineup:', pbpData?.source);
+    // ── Single ESPN summary fetch: captures plays[] (Tier 2) + boxscore (Tier 3) ─
+    // Avoids the prior double-fetch pattern. Relay edge-caches 25s — one call.
+    let bsPlayers = null, espnSummaryD = null;
+    if (espnGameId) {
+      try {
+        const r = await fetch(
+          `${ESPN_SUMMARY_RELAY}/sports/basketball/nba/summary?event=${espnGameId}`,
+          { signal: AbortSignal.timeout(5000) });
+        if (r.ok) {
+          espnSummaryD = await r.json();
+          bsPlayers = espnSummaryD?.boxscore?.players;
+          if (FIELD_DEBUG) console.debug('[RAI] ESPN summary:', !!bsPlayers, 'plays:', espnSummaryD?.plays?.length||0);
+        }
+      } catch(e) {
+        if (FIELD_DEBUG) console.warn('[RAI] ESPN summary fetch:', e.message);
       }
     }
 
-    // ── Tier 3: ESPN boxscore minutes (existing approximation — always works) ─
-    const url = `${ESPN_SUMMARY_RELAY}/sports/basketball/nba/summary?event=${espnGameId}`;
-    const r = await fetch(url, { signal: AbortSignal.timeout(4000) });
-    if (!r.ok) return null;
-    const d = await r.json();
-    const bsPlayers = d?.boxscore?.players;
-    if (!Array.isArray(bsPlayers) || bsPlayers.length < 2) return null;
+    // ── Tier 2: ESPN plays[] sub detection ────────────────────────────────────
+    if (!pbpData && Array.isArray(espnSummaryD?.plays) && espnSummaryD.plays.length) {
+      pbpData = parseESPNPlays(espnSummaryD.plays, homeLabel||'', awayLabel||'');
+      if (FIELD_DEBUG && pbpData) console.debug('[RAI] ESPN plays T2:', pbpData?.source);
+    }
 
-    // Build active player list from ESPN boxscore (Tier 3 baseline)
+    // ── Tier 3: ESPN boxscore (active players by minutes) ─────────────────────
+    // Bug 3 fix: verify home/away order using team.homeAway field if available
+    // ESPN may return players[0]=away, players[1]=home — check before assuming
+    let homeIdx = 0, awayIdx = 1;
+    if (Array.isArray(bsPlayers) && bsPlayers.length >= 2) {
+      const p0ha = bsPlayers[0]?.team?.homeAway || '';
+      const p1ha = bsPlayers[1]?.team?.homeAway || '';
+      if (p0ha === 'away' || p1ha === 'home') { homeIdx = 1; awayIdx = 0; }
+    }
+
     function bsTeamActive(idx) {
+      if (!Array.isArray(bsPlayers) || bsPlayers.length <= idx) return [];
       return (bsPlayers[idx]?.statistics?.[0]?.athletes || [])
         .filter(a => !a.didNotPlay && a.active !== false)
-        .map(a => ({ name: (a.athlete?.displayName||'').toLowerCase(), mins: parseFloat((a.stats||[])[0]||'0')||0, starter: !!a.starter }))
+        .map(a => ({
+          name: (a.athlete?.displayName||'').toLowerCase(),
+          // ESPN stats[0] = minutes "MM:SS" — parseFloat("32:41") → 32 (stops at colon)
+          mins: parseFloat((a.stats||[])[0]||'0') || 0,
+          starter: !!a.starter
+        }))
         .filter(a => a.mins > 0 || a.starter)
         .sort((a,b) => b.mins - a.mins)
         .slice(0, 5);
     }
 
-    // Quality calculation — works for all three tiers
-    // For Tier 1/2: match exact player names from PBP lineup
-    // For Tier 3: use boxscore active roster names
+    // Quality calculation — tracks how many players had real qMap entries
     function computeQuality(playerNames) {
-      if (!playerNames?.length) return 0;
-      let total = 0;
+      if (!playerNames?.length) return { q: 0, matched: 0 };
+      let total = 0, matched = 0;
       for (const rawName of playerNames) {
         const name = rawName.toLowerCase();
         const lastName = name.split(' ').slice(-1)[0] || '';
-        const q = qMap[name]
+        const qVal = qMap[name]
           ?? Object.entries(qMap).find(([k]) => k.endsWith(' ' + lastName))?.[1]
-          ?? 0;
-        total += q;
+          ?? null;
+        total += qVal ?? 0;
+        if (qVal != null) matched++;
       }
-      return total / playerNames.length;
+      return { q: total / playerNames.length, matched };
     }
 
     const homeNames = pbpData?.homeLineup?.length
       ? pbpData.homeLineup
-      : bsTeamActive(0).map(a => a.name);
+      : bsTeamActive(homeIdx).map(a => a.name);
     const awayNames = pbpData?.awayLineup?.length
       ? pbpData.awayLineup
-      : bsTeamActive(1).map(a => a.name);
+      : bsTeamActive(awayIdx).map(a => a.name);
 
-    const homeQual = computeQuality(homeNames);
-    const awayQual = computeQuality(awayNames);
+    if (!homeNames.length && !awayNames.length) {
+      if (FIELD_DEBUG) console.warn('[RAI] no active players found for either team');
+      return null;
+    }
+
+    const homeR = computeQuality(homeNames);
+    const awayR = computeQuality(awayNames);
+    const totalMatched = homeR.matched + awayR.matched;
 
     const result = {
-      edge: homeQual - awayQual,
-      homeQ: homeQual,
-      awayQ: awayQual,
-      homeAbbr: bsPlayers[0]?.team?.abbreviation || '',
-      awayAbbr: bsPlayers[1]?.team?.abbreviation || '',
-      // Stint data (Tier 1 only — null when using Tier 2/3)
+      edge: homeR.q - awayR.q,
+      homeQ: homeR.q,
+      awayQ: awayR.q,
+      homeAbbr: bsPlayers?.[homeIdx]?.team?.abbreviation || teamNick(homeLabel||''),
+      awayAbbr: bsPlayers?.[awayIdx]?.team?.abbreviation || teamNick(awayLabel||''),
       homeStintNet: pbpData?.homeStintNet ?? null,
       awayStintNet: pbpData?.awayStintNet ?? null,
       pbpSource: pbpData?.source || 'boxscore',
+      matched: totalMatched, // track real data quality
       ts: now
     };
-    _raiCache[espnGameId] = result;
+    _raiCache[cacheKey] = result;
+    if (FIELD_DEBUG) console.debug('[RAI] result:', result.edge.toFixed(1), 'matched:', totalMatched, 'src:', result.pbpSource);
     return result;
   } catch(e) {
     if (FIELD_DEBUG) console.warn('[RAI]', e.message);
@@ -18484,11 +18524,15 @@ function _raiQualityBar(q) {
 }
 
 function buildRaiCardLine(rai, homeLabel, awayLabel) {
-  if (!rai || Math.abs(rai.edge) < 1.5) return '';
-  const leader = rai.edge > 0
-    ? (rai.homeAbbr || teamNick(homeLabel) || 'Home')
-    : (rai.awayAbbr || teamNick(awayLabel) || 'Away');
-  return `Lineup edge: ${leader} +${Math.abs(rai.edge).toFixed(1)}`;
+  if (!rai) return '';
+  // Only show if we had actual quality data (at least 1 player matched in BDL)
+  if (!rai.matched) return '';
+  const abs = Math.abs(rai.edge);
+  const hL = rai.homeAbbr || teamNick(homeLabel||'') || 'Home';
+  const aL = rai.awayAbbr || teamNick(awayLabel||'') || 'Away';
+  if (abs < 0.5) return `Lineup edge: even`;
+  const leader = rai.edge > 0 ? hL : aL;
+  return `Lineup edge: ${leader} +${abs.toFixed(1)}`;
 }
 
 function buildRaiSheetSection(rai, homeLabel, awayLabel) {
