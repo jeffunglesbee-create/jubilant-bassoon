@@ -1,0 +1,19 @@
+=== CF API Probe [20260529T115111Z] ===
+Request: POST https://field-relay-nba.jeffunglesbee.workers.dev/pgatour
+
+{
+    "data": null,
+    "errors": [
+        {
+            "path": null,
+            "locations": [
+                {
+                    "line": 1,
+                    "column": 140,
+                    "sourceName": null
+                }
+            ],
+            "message": "Validation error of type FieldUndefined: Field 'roundNumber' in type 'HistoricalRoundScore' is undefined @ 'tournamentPastResults/players/rounds/roundNumber'"
+        }
+    ]
+}
