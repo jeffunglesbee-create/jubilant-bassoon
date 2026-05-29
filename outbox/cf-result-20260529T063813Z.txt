@@ -1,0 +1,30 @@
+=== CF API Probe [20260529T063813Z] ===
+Request: POST https://field-relay-nba.jeffunglesbee.workers.dev/pgatour
+
+{
+    "data": null,
+    "errors": [
+        {
+            "path": null,
+            "locations": [
+                {
+                    "line": 1,
+                    "column": 74,
+                    "sourceName": null
+                }
+            ],
+            "message": "Validation error of type FieldUndefined: Field 'tournamentName' in type 'HistoricalLeaderboard' is undefined @ 'tournamentPastResults/tournamentName'"
+        },
+        {
+            "path": null,
+            "locations": [
+                {
+                    "line": 1,
+                    "column": 142,
+                    "sourceName": null
+                }
+            ],
+            "message": "Validation error of type SubSelectionRequired: Sub selection required for type null of field rounds @ 'tournamentPastResults/players/rounds'"
+        }
+    ]
+}
