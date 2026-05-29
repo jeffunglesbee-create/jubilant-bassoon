@@ -6505,6 +6505,27 @@ function renderAll(){
   if(!allData) return;
   const main=document.getElementById("main");
   const sports=allData.sports||[];
+
+  // Fix: patch _homeAbbr eagerly on every renderAll so badges never miss it.
+  // nhlAnalyticsInit is also called at T+4500ms but that's too late for early renders.
+  // MLB hardcoded games have homeTeam (abbr string) but not _homeAbbr — copy it across.
+  sports.forEach(sec => {
+    const sport = (sec.sport||'').toLowerCase();
+    if (sport.includes('nhl') || sport.includes('hockey')) {
+      (sec.games||[]).forEach(g => {
+        if (!g._homeAbbr && typeof getNHLAbbrev === 'function') g._homeAbbr = getNHLAbbrev(g.home);
+        if (!g._awayAbbr && typeof getNHLAbbrev === 'function') g._awayAbbr = getNHLAbbrev(g.away);
+      });
+    }
+    if (sport.includes('mlb') || sport.includes('baseball')) {
+      (sec.games||[]).forEach(g => {
+        if (!g._homeAbbr && g.homeTeam) g._homeAbbr = g.homeTeam;
+        if (!g._awayAbbr && g.awayTeam) g._awayAbbr = g.awayTeam;
+      });
+    }
+  });
+
+
   const visible=activeFilter==="all"?sports:sports.filter(s=>s.sport===activeFilter);
   const filtered = myTeamsFilter
     ? visible.map(s=>({...s, games:(s.games||[]).filter(g=>MY_TEAMS.has(g.home)||MY_TEAMS.has(g.away))})).filter(s=>s.games.length)
