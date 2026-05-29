@@ -15544,7 +15544,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-05-29g';
+  const SW_VERSION = '2026-05-29h';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -16602,6 +16602,14 @@ async function fetchCompoundEditorial(sections) {
     try { return JSON.parse(cached); } catch(e) {}
   }
 
+  // Respect 429 backoff window (persisted across reloads). During backoff,
+  // don't call Gemini at all — avoids compounding the rate limit with each
+  // reload. Returns null → static placeholder shown until window clears.
+  if (Date.now() < _compoundRetryAfter) {
+    try { window._compoundLastError = `in 429 backoff (${Math.ceil((_compoundRetryAfter-Date.now())/1000)}s left)`; } catch(_){}
+    return null;
+  }
+
   // ── Items 4-6: pre-fetch depth data before building prompt ───────────────
   // All three are async; run in parallel. buildCompoundPrompt reads from caches.
   const games = (sections||[]).flatMap(s=>s.games||[]);
@@ -16645,6 +16653,7 @@ async function fetchCompoundEditorial(sections) {
     if (r.status === 429) {
       const retryAfter = parseInt(r.headers.get('Retry-After') || '60');
       _compoundRetryAfter = Date.now() + retryAfter * 1000;
+      try { localStorage.setItem('field_compound_retry_after', String(_compoundRetryAfter)); } catch(_){}
       if (FIELD_DEBUG) console.log(`[COMPOUND] 429 received — retrying after ${retryAfter}s`);
       try { window._compoundLastError = `429 rate-limited (retry ${retryAfter}s)`; } catch(_){}
       // Return cached if available, otherwise null (falls back to individual queue)
@@ -16721,7 +16730,11 @@ async function fetchCompoundEditorial(sections) {
 }
 
 // Retry-after timestamp for 429 backoff
-let _compoundRetryAfter = 0;
+let _compoundRetryAfter = (() => {
+  // Persist 429 backoff across reloads — prevents repeated hard-reloads from
+  // each firing a fresh Gemini burst and compounding the rate limit.
+  try { const v = parseInt(localStorage.getItem('field_compound_retry_after')||'0'); return v > Date.now() ? v : 0; } catch(_) { return 0; }
+})();
 
 // Temporal spread fallback queue — fires individual calls 3s apart
 // Called when compound editorial returns null (429 or parse fail)
