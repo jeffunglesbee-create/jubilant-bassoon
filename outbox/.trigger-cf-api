@@ -1,3 +1,3 @@
 method=POST
 url=https://field-relay-nba.jeffunglesbee.workers.dev/pgatour
-body={"operationName":"TournamentPastResults","variables":{"id":"R2025021"},"query":"query TournamentPastResults { tournamentPastResults(id: \"R2025021\") { id tournamentName players { position player { id displayName country } rounds total additionalData } } }"}
+body={"operationName":"TournamentPastResults","variables":{"id":"R2025021"},"query":"query TournamentPastResults { tournamentPastResults(id: \"R2025021\") { id players { position total player { id displayName country } rounds { round score } } } }"}
