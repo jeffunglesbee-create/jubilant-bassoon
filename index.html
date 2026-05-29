@@ -777,6 +777,7 @@ body::before{
 .rai-val{font-size:.7rem;font-weight:700;min-width:2.8rem;text-align:right}
 .rai-pos{color:#63cab7}.rai-neg{color:var(--muted)}
 .rai-edge{font-size:.63rem;color:var(--smoke);margin-top:.25rem;border-top:1px solid rgba(255,255,255,.07);padding-top:.25rem}
+.rai-stint{color:var(--muted);font-size:.6rem;font-weight:400}
 
 /* ── Share Button ───────────────────────────────────────────────────── */
 .share-btn{
@@ -11682,6 +11683,10 @@ const RELAY_BASE = 'https://field-relay-nba.jeffunglesbee.workers.dev/nba';
 // ESPN Site API — summary endpoint relay (WP + play-by-play, public REST)
 // winprobability[].homeWinPercentage — 0-1 FRACTION scale (e.g. 0.872 = 87.2%)
 const ESPN_SUMMARY_RELAY = 'https://field-relay-nba.jeffunglesbee.workers.dev/espn-summary';
+// NBA CDN live data relay — requires /nba-live/* route on field-relay-nba worker
+// Route proxies: cdn.nba.com/static/json/liveData/* with CDN auth headers
+// Until relay route is deployed, fetchNBAPBP() returns null → ESPN/boxscore fallback
+const NBA_CDN_RELAY = 'https://field-relay-nba.jeffunglesbee.workers.dev/nba-live';
 // Baseball Savant GameFeed — CORS-open, no relay needed
 // Provides live WP (homeTeamWinProbability 0-1) + Statcast exit velocity per play
 // Confirmed CORS-open: access-control-allow-origin: * (May 21 2026)
@@ -18209,14 +18214,171 @@ function evaluateEMBER(g, sport, ed) {
 const _raiCache = {};     // espnGameId → {edge, homeQ, awayQ, homeAbbr, awayAbbr, ts}
 const RAI_TTL = 90000;    // 90s — one refresh per ESPN poll cycle
 
-async function fetchRosterAdvantage(espnGameId) {
+// ═══════════════════════════════════════════════════════════════════════════
+// NBA CDN PLAY-BY-PLAY — Three-tier fallback for exact lineup tracking
+// Tier 1: NBA CDN  cdn.nba.com/static/json/liveData/playbyplay/playbyplay_{id}.json
+//         → exact 5-man lineup via SUB events + stint net score (Layer 3)
+// Tier 2: ESPN plays[] from summary relay (if site.web.api.espn.com route active)
+//         → SUB events from ESPN's own data
+// Tier 3: ESPN boxscore minutes (existing RAI approximation — always works)
+//
+// NBA CDN activation: add /nba-live/* route to field-relay-nba worker.
+// Until then, fetchNBAPBP() returns null and Tier 3 stays active.
+// PlayByPlayV2 deprecated 2025-26 — CDN endpoint is the correct live source.
+// ═══════════════════════════════════════════════════════════════════════════
+
+const _nbaGameIdMap   = {};    // 'homeLower_awayLower' → 10-digit NBA game ID
+let   _nbaScoreboardTs = 0;    // last scoreboard fetch timestamp
+const NBA_SCOREBOARD_TTL = 10 * 60 * 1000; // refresh every 10 min
+
+// Fetch today's NBA scoreboard to build ESPN team abbr → NBA game ID map
+async function fetchNBAScoreboard() {
+  const now = Date.now();
+  if (now - _nbaScoreboardTs < NBA_SCOREBOARD_TTL && Object.keys(_nbaGameIdMap).length) return;
+  _nbaScoreboardTs = now;
+  try {
+    const r = await fetch(`${NBA_CDN_RELAY}/scoreboard/todaysScoreboard_00.json`,
+      { signal: AbortSignal.timeout(4000) });
+    if (!r.ok) return;
+    const d = await r.json();
+    for (const g of d?.scoreboard?.games || []) {
+      const id = g.gameId;
+      const h  = (g.homeTeam?.teamTricode || '').toLowerCase();
+      const a  = (g.awayTeam?.teamTricode || '').toLowerCase();
+      if (id && h && a) {
+        _nbaGameIdMap[`${h}_${a}`] = id;
+        _nbaGameIdMap[`${a}_${h}`] = id;
+      }
+    }
+    if (FIELD_DEBUG) console.debug('[NBA-CDN] scoreboard mapped', Object.keys(_nbaGameIdMap).length/2, 'games');
+  } catch(e) {
+    if (FIELD_DEBUG) console.warn('[NBA-CDN] scoreboard:', e.message);
+  }
+}
+
+// Fetch live PBP actions for a game — returns actions[] or null
+async function fetchNBAPBP(homeLabel, awayLabel) {
+  await fetchNBAScoreboard();
+  // Try matching by teamNick abbreviation first, then raw label
+  const hKey = (teamNick(homeLabel)||homeLabel||'').toLowerCase().slice(0,3);
+  const aKey = (teamNick(awayLabel)||awayLabel||'').toLowerCase().slice(0,3);
+  const nbaId = _nbaGameIdMap[`${hKey}_${aKey}`] || _nbaGameIdMap[`${aKey}_${hKey}`];
+  if (!nbaId) {
+    if (FIELD_DEBUG) console.debug('[NBA-CDN] no ID for', homeLabel, 'vs', awayLabel);
+    return null;
+  }
+  try {
+    const r = await fetch(`${NBA_CDN_RELAY}/playbyplay/playbyplay_${nbaId}.json`,
+      { signal: AbortSignal.timeout(4000) });
+    if (!r.ok) { if(FIELD_DEBUG) console.warn('[NBA-CDN] PBP HTTP', r.status); return null; }
+    const d = await r.json();
+    return d?.game?.actions || null;
+  } catch(e) {
+    if (FIELD_DEBUG) console.warn('[NBA-CDN] PBP:', e.message);
+    return null;
+  }
+}
+
+// Tier 2: ESPN plays[] sub detection — uses existing summary relay response
+async function fetchESPNPlays(espnGameId) {
+  if (!espnGameId) return null;
+  try {
+    const r = await fetch(
+      `${ESPN_SUMMARY_RELAY}/sports/basketball/nba/summary?event=${espnGameId}`,
+      { signal: AbortSignal.timeout(4000) });
+    if (!r.ok) return null;
+    const d = await r.json();
+    // data.plays only populated on site.web.api.espn.com relay variant
+    return Array.isArray(d?.plays) && d.plays.length ? d.plays : null;
+  } catch(e) { return null; }
+}
+
+// Parse NBA CDN actions[] → exact current lineup + stint statistics per team
+function parseNBACDNActions(actions, homeTricode, awayTricode) {
+  if (!actions?.length) return null;
+  const hTri = (homeTricode||'').toUpperCase();
+  const aTri = (awayTricode||'').toUpperCase();
+  const homeLineup = new Set();
+  const awayLineup = new Set();
+  let homeStintScore = null; // {scoreHome, scoreAway} when current home lineup started
+  let awayStintScore = null;
+  let scoreHome = 0, scoreAway = 0;
+
+  for (const a of actions) {
+    if (a.scoreHome != null) scoreHome = parseInt(a.scoreHome) || scoreHome;
+    if (a.scoreAway != null) scoreAway = parseInt(a.scoreAway) || scoreAway;
+    const type = (a.actionType || '').toLowerCase();
+    if (type !== 'substitution' && type !== 'sub') continue;
+    const tri = (a.teamTricode || '').toUpperCase();
+    const isH = tri === hTri;
+    const isA = tri === aTri;
+    if (!isH && !isA) continue;
+    const name = a.playerName || a.playerNameI || '';
+    if (!name) continue;
+    if (a.subType === 'in') {
+      (isH ? homeLineup : awayLineup).add(name);
+      if (isH) homeStintScore = { scoreHome, scoreAway };
+      if (isA) awayStintScore = { scoreHome, scoreAway };
+    } else if (a.subType === 'out') {
+      (isH ? homeLineup : awayLineup).delete(name);
+    }
+  }
+
+  // Stint net: positive = that team outscored opponent during this lineup stint
+  const homeStintNet = homeStintScore
+    ? (scoreHome - homeStintScore.scoreHome) - (scoreAway - homeStintScore.scoreAway)
+    : null;
+  const awayStintNet = awayStintScore
+    ? (scoreAway - awayStintScore.scoreAway) - (scoreHome - awayStintScore.scoreHome)
+    : null;
+
+  return {
+    homeLineup: [...homeLineup].slice(0, 5),
+    awayLineup: [...awayLineup].slice(0, 5),
+    homeStintNet,
+    awayStintNet,
+    source: 'cdn'
+  };
+}
+
+// Parse ESPN plays[] → current lineup via SUB events (Tier 2 fallback)
+function parseESPNPlays(plays, homeLabel, awayLabel) {
+  if (!plays?.length) return null;
+  const hNick = teamNick(homeLabel||'').toLowerCase();
+  const aNick = teamNick(awayLabel||'').toLowerCase();
+  const homeLineup = new Set();
+  const awayLineup = new Set();
+
+  for (const p of plays) {
+    const typeText = (p.type?.text || p.type?.id || '').toLowerCase();
+    if (!typeText.includes('sub')) continue;
+    const teamName = (p.team?.name || p.team?.displayName || '').toLowerCase();
+    const isH = teamName.includes(hNick) || hNick.includes(teamName.split(' ').pop()||'');
+    const isA = teamName.includes(aNick) || aNick.includes(teamName.split(' ').pop()||'');
+    if (!isH && !isA) continue;
+    const desc = p.text || p.shortText || '';
+    // ESPN sub format: "Name in for Name" or participant list
+    const parts = p.participants?.map(pt => pt.athlete?.displayName).filter(Boolean) || [];
+    if (parts.length >= 2) {
+      (isH ? homeLineup : awayLineup).add(parts[0]);
+      (isH ? homeLineup : awayLineup).delete(parts[1]);
+    }
+  }
+
+  const hl = [...homeLineup].slice(0, 5);
+  const al = [...awayLineup].slice(0, 5);
+  if (!hl.length && !al.length) return null;
+  return { homeLineup: hl, awayLineup: al, homeStintNet: null, awayStintNet: null, source: 'espn' };
+}
+
+async function fetchRosterAdvantage(espnGameId, homeLabel, awayLabel) {
   if (!espnGameId) return null;
   const now = Date.now();
   const cached = _raiCache[espnGameId];
   if (cached && now - cached.ts < RAI_TTL) return cached;
 
   try {
-    // Step 1: Season +/- quality map from BDL (already cached by milestone system)
+    // Quality signal: BDL season +/- (shared cache from milestone system)
     const seasonAvgs = await fetchBDLSeasonAverages();
     const qMap = {};
     if (seasonAvgs?.length) {
@@ -18226,51 +18388,83 @@ async function fetchRosterAdvantage(espnGameId) {
       }
     }
 
-    // Step 2: ESPN boxscore — who has played minutes this game
+    // ── Tier 1: NBA CDN play-by-play (exact lineup + stint stats) ────────────
+    let pbpData = null;
+    if (homeLabel && awayLabel) {
+      const cdnActions = await fetchNBAPBP(homeLabel, awayLabel);
+      if (cdnActions) {
+        // Need team tricodes — fetch from scoreboard map
+        const hKey = (teamNick(homeLabel)||homeLabel||'').toLowerCase().slice(0,3);
+        const aKey = (teamNick(awayLabel)||awayLabel||'').toLowerCase().slice(0,3);
+        pbpData = parseNBACDNActions(cdnActions, hKey.toUpperCase(), aKey.toUpperCase());
+        if (FIELD_DEBUG && pbpData) console.debug('[RAI] NBA CDN lineup:', pbpData.homeLineup?.length, pbpData.awayLineup?.length);
+      }
+    }
+
+    // ── Tier 2: ESPN plays[] (sub events from summary relay) ──────────────────
+    if (!pbpData) {
+      const espnPlays = await fetchESPNPlays(espnGameId);
+      if (espnPlays) {
+        pbpData = parseESPNPlays(espnPlays, homeLabel||'', awayLabel||'');
+        if (FIELD_DEBUG && pbpData) console.debug('[RAI] ESPN plays lineup:', pbpData?.source);
+      }
+    }
+
+    // ── Tier 3: ESPN boxscore minutes (existing approximation — always works) ─
     const url = `${ESPN_SUMMARY_RELAY}/sports/basketball/nba/summary?event=${espnGameId}`;
     const r = await fetch(url, { signal: AbortSignal.timeout(4000) });
     if (!r.ok) return null;
     const d = await r.json();
-
     const bsPlayers = d?.boxscore?.players;
     if (!Array.isArray(bsPlayers) || bsPlayers.length < 2) return null;
 
-    function teamQuality(idx) {
-      const athletes = bsPlayers[idx]?.statistics?.[0]?.athletes || [];
-      const active = athletes
+    // Build active player list from ESPN boxscore (Tier 3 baseline)
+    function bsTeamActive(idx) {
+      return (bsPlayers[idx]?.statistics?.[0]?.athletes || [])
         .filter(a => !a.didNotPlay && a.active !== false)
-        .map(a => ({
-          name: (a.athlete?.displayName || '').toLowerCase(),
-          starter: !!a.starter,
-          mins: parseFloat((a.stats||[])[0] || '0') || 0
-        }))
+        .map(a => ({ name: (a.athlete?.displayName||'').toLowerCase(), mins: parseFloat((a.stats||[])[0]||'0')||0, starter: !!a.starter }))
         .filter(a => a.mins > 0 || a.starter)
-        .sort((a, b) => b.mins - a.mins)
+        .sort((a,b) => b.mins - a.mins)
         .slice(0, 5);
-      if (!active.length) return null;
+    }
+
+    // Quality calculation — works for all three tiers
+    // For Tier 1/2: match exact player names from PBP lineup
+    // For Tier 3: use boxscore active roster names
+    function computeQuality(playerNames) {
+      if (!playerNames?.length) return 0;
       let total = 0;
-      for (const a of active) {
-        const lastName = a.name.split(' ').slice(-1)[0] || '';
-        // Exact match first, then last-name fallback
-        const q = qMap[a.name]
+      for (const rawName of playerNames) {
+        const name = rawName.toLowerCase();
+        const lastName = name.split(' ').slice(-1)[0] || '';
+        const q = qMap[name]
           ?? Object.entries(qMap).find(([k]) => k.endsWith(' ' + lastName))?.[1]
           ?? 0;
         total += q;
       }
-      return { q: total / 5, top: active[0]?.name || '' };
+      return total / playerNames.length;
     }
 
-    // ESPN boxscore: players[0] = home, players[1] = away
-    const homeQ = teamQuality(0);
-    const awayQ = teamQuality(1);
-    if (!homeQ || !awayQ) return null;
+    const homeNames = pbpData?.homeLineup?.length
+      ? pbpData.homeLineup
+      : bsTeamActive(0).map(a => a.name);
+    const awayNames = pbpData?.awayLineup?.length
+      ? pbpData.awayLineup
+      : bsTeamActive(1).map(a => a.name);
+
+    const homeQual = computeQuality(homeNames);
+    const awayQual = computeQuality(awayNames);
 
     const result = {
-      edge: homeQ.q - awayQ.q,
-      homeQ: homeQ.q,
-      awayQ: awayQ.q,
+      edge: homeQual - awayQual,
+      homeQ: homeQual,
+      awayQ: awayQual,
       homeAbbr: bsPlayers[0]?.team?.abbreviation || '',
       awayAbbr: bsPlayers[1]?.team?.abbreviation || '',
+      // Stint data (Tier 1 only — null when using Tier 2/3)
+      homeStintNet: pbpData?.homeStintNet ?? null,
+      awayStintNet: pbpData?.awayStintNet ?? null,
+      pbpSource: pbpData?.source || 'boxscore',
       ts: now
     };
     _raiCache[espnGameId] = result;
@@ -18301,11 +18495,26 @@ function buildRaiSheetSection(rai, homeLabel, awayLabel) {
   const abs = Math.abs(rai.edge);
   const leader = rai.edge > 0 ? hL : aL;
   const ctx = abs >= 8 ? ' · significant' : abs >= 4 ? ' · clear edge' : abs >= 2 ? ' · slight edge' : '';
+
+  // Stint net score display — only when NBA CDN PBP is active (Tier 1)
+  function stintLabel(stintNet) {
+    if (stintNet == null) return '';
+    const sign = stintNet > 0 ? '+' : '';
+    return ` <span class="rai-stint">(tonight: ${sign}${stintNet})</span>`;
+  }
+  const hStint = stintLabel(rai.homeStintNet);
+  const aStint = stintLabel(rai.awayStintNet);
+
+  // Source indicator — helps debug and shows data quality
+  const srcLabel = rai.pbpSource === 'cdn' ? ' · Live PBP'
+    : rai.pbpSource === 'espn' ? ' · ESPN plays'
+    : '';
+
   return `<div class="bs-section">
-    <div class="bs-section-label">Lineup Edge</div>
+    <div class="bs-section-label">Lineup Edge${srcLabel}</div>
     <div class="bs-section-body">
-      <div class="rai-row"><span class="rai-lbl">${hL}</span><span class="rai-bar">${_raiQualityBar(rai.homeQ)}</span><span class="rai-val ${rai.homeQ>=0?'rai-pos':'rai-neg'}">${rai.homeQ>=0?'+':''}${rai.homeQ.toFixed(1)}</span></div>
-      <div class="rai-row"><span class="rai-lbl">${aL}</span><span class="rai-bar">${_raiQualityBar(rai.awayQ)}</span><span class="rai-val ${rai.awayQ>=0?'rai-pos':'rai-neg'}">${rai.awayQ>=0?'+':''}${rai.awayQ.toFixed(1)}</span></div>
+      <div class="rai-row"><span class="rai-lbl">${hL}</span><span class="rai-bar">${_raiQualityBar(rai.homeQ)}</span><span class="rai-val ${rai.homeQ>=0?'rai-pos':'rai-neg'}">${rai.homeQ>=0?'+':''}${rai.homeQ.toFixed(1)}${hStint}</span></div>
+      <div class="rai-row"><span class="rai-lbl">${aL}</span><span class="rai-bar">${_raiQualityBar(rai.awayQ)}</span><span class="rai-val ${rai.awayQ>=0?'rai-pos':'rai-neg'}">${rai.awayQ>=0?'+':''}${rai.awayQ.toFixed(1)}${aStint}</span></div>
       <div class="rai-edge">${leader} edge: +${abs.toFixed(1)}${ctx}</div>
     </div>
   </div>`;
@@ -18320,7 +18529,7 @@ async function injectLineupEdge(card, eData, sport) {
   const espnId = eData?.id || eData?.gameId || card.dataset.espnid || '';
   if (!espnId) return;
 
-  const rai = await fetchRosterAdvantage(espnId);
+  const rai = await fetchRosterAdvantage(espnId, homeLabel, awayLabel);
   if (!rai) return;
 
   const homeLabel = card.dataset.home || '';
