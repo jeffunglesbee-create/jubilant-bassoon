@@ -1,0 +1,477 @@
+=== CF API Probe [20260529T062507Z] ===
+Request: POST https://field-relay-nba.jeffunglesbee.workers.dev/pgatour
+
+{
+    "data": {
+        "statLeaders": {
+            "statCategory": "OFF_TEE",
+            "displayYear": "2025-2026",
+            "subCategories": [
+                {
+                    "subCategoryName": "Driving Leaders",
+                    "stats": [
+                        {
+                            "playerId": "46046",
+                            "playerName": "Scottie Scheffler",
+                            "statTitle": "SG: Tee-to-Green",
+                            "statValue": "1.714",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "28237",
+                            "playerName": "Rory McIlroy",
+                            "statTitle": "SG: Off-the-Tee",
+                            "statValue": "0.842",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "46046",
+                            "playerName": "Scottie Scheffler",
+                            "statTitle": "Total Driving",
+                            "statValue": "53",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "63343",
+                            "playerName": "Aldrich Potgieter",
+                            "statTitle": "Driving Distance",
+                            "statValue": "328.4",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "34098",
+                            "playerName": "Russell Henley",
+                            "statTitle": "Driving Accuracy Percentage",
+                            "statValue": "70.86%",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "63343",
+                            "playerName": "Aldrich Potgieter",
+                            "statTitle": "Ball Speed",
+                            "statValue": "190.43",
+                            "rank": "1st"
+                        }
+                    ]
+                },
+                {
+                    "subCategoryName": "Distance (All Drives)",
+                    "stats": [
+                        {
+                            "playerId": "51766",
+                            "playerName": "Wyndham Clark",
+                            "statTitle": "Longest Drives",
+                            "statValue": "446",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "63343",
+                            "playerName": "Aldrich Potgieter",
+                            "statTitle": "Driving Distance",
+                            "statValue": "328.4",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "63343",
+                            "playerName": "Aldrich Potgieter",
+                            "statTitle": "Driving Pct. 320+ (Measured)",
+                            "statValue": "68.29%",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "52689",
+                            "playerName": "Rasmus Neergaard-Petersen",
+                            "statTitle": "Driving Pct. 300-320 (Measured)",
+                            "statValue": "51.47%",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "63343",
+                            "playerName": "Aldrich Potgieter",
+                            "statTitle": "Driving Pct. 300+ (Measured)",
+                            "statValue": "92.68%",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "40115",
+                            "playerName": "Adam Svensson",
+                            "statTitle": "Driving Pct. 280-300 (Measured)",
+                            "statValue": "56.45%",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "27649",
+                            "playerName": "Brandt Snedeker",
+                            "statTitle": "Driving Pct. 260-280 (Measured)",
+                            "statValue": "36.96%",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "59006",
+                            "playerName": "Davis Chatfield",
+                            "statTitle": "Driving Pct. 240-260 (Measured)",
+                            "statValue": "14.29%",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "27649",
+                            "playerName": "Brandt Snedeker",
+                            "statTitle": "Driving Pct. <= 240 (Measured)",
+                            "statValue": "4.35%",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "63343",
+                            "playerName": "Aldrich Potgieter",
+                            "statTitle": "Driving Distance - All Drives",
+                            "statValue": "310.6",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "63343",
+                            "playerName": "Aldrich Potgieter",
+                            "statTitle": "Driving Pct. 320+ (All Drives)",
+                            "statValue": "45.00%",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "57366",
+                            "playerName": "Cameron Young",
+                            "statTitle": "Driving Pct. 300-320 (All Drives)",
+                            "statValue": "40.84%",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "54422",
+                            "playerName": "Christo Lamprecht",
+                            "statTitle": "Driving Pct. 300+ (All Drives)",
+                            "statValue": "69.93%",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "40162",
+                            "playerName": "Justin Lower",
+                            "statTitle": "Driving Pct. 280-300 (All Drives)",
+                            "statValue": "47.02%",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "27649",
+                            "playerName": "Brandt Snedeker",
+                            "statTitle": "Driving Pct. 260-280 (All Drives)",
+                            "statValue": "38.71%",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "34256",
+                            "playerName": "Andrew Putnam",
+                            "statTitle": "Driving Pct. 240-260 (All Drives)",
+                            "statValue": "16.08%",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "66417",
+                            "playerName": "Blades Brown",
+                            "statTitle": "Driving Pct. <= 240 (All Drives)",
+                            "statValue": "7.27%",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "28237",
+                            "playerName": "Rory McIlroy",
+                            "statTitle": "Percentage of Yardage covered by Tee Shots",
+                            "statValue": "66.55%",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "54422",
+                            "playerName": "Christo Lamprecht",
+                            "statTitle": "Percentage of Yardage covered by Tee Shots - Par 4's",
+                            "statValue": "70.15%",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "28237",
+                            "playerName": "Rory McIlroy",
+                            "statTitle": "Percentage of Yardage covered by Tee Shots - Par 5's",
+                            "statValue": "57.69%",
+                            "rank": "1st"
+                        }
+                    ]
+                },
+                {
+                    "subCategoryName": "Distance (Measured Drives)",
+                    "stats": [
+                        {
+                            "playerId": "63343",
+                            "playerName": "Aldrich Potgieter",
+                            "statTitle": "Driving Distance",
+                            "statValue": "328.4",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "63343",
+                            "playerName": "Aldrich Potgieter",
+                            "statTitle": "Driving Pct. 320+ (Measured)",
+                            "statValue": "68.29%",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "52689",
+                            "playerName": "Rasmus Neergaard-Petersen",
+                            "statTitle": "Driving Pct. 300-320 (Measured)",
+                            "statValue": "51.47%",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "63343",
+                            "playerName": "Aldrich Potgieter",
+                            "statTitle": "Driving Pct. 300+ (Measured)",
+                            "statValue": "92.68%",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "40115",
+                            "playerName": "Adam Svensson",
+                            "statTitle": "Driving Pct. 280-300 (Measured)",
+                            "statValue": "56.45%",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "27649",
+                            "playerName": "Brandt Snedeker",
+                            "statTitle": "Driving Pct. 260-280 (Measured)",
+                            "statValue": "36.96%",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "59006",
+                            "playerName": "Davis Chatfield",
+                            "statTitle": "Driving Pct. 240-260 (Measured)",
+                            "statValue": "14.29%",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "27649",
+                            "playerName": "Brandt Snedeker",
+                            "statTitle": "Driving Pct. <= 240 (Measured)",
+                            "statValue": "4.35%",
+                            "rank": "1st"
+                        }
+                    ]
+                },
+                {
+                    "subCategoryName": "Accuracy",
+                    "stats": [
+                        {
+                            "playerId": "34098",
+                            "playerName": "Russell Henley",
+                            "statTitle": "Driving Accuracy Percentage",
+                            "statValue": "70.86%",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "25900",
+                            "playerName": "Lucas Glover",
+                            "statTitle": "Rough Tendency",
+                            "statValue": "20.05%",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "46717",
+                            "playerName": "Viktor Hovland",
+                            "statTitle": "Left Rough Tendency",
+                            "statValue": "8.63%",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "49120",
+                            "playerName": "Kensei Hirata",
+                            "statTitle": "Right Rough Tendency",
+                            "statValue": "8.70%",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "39975",
+                            "playerName": "Michael Kim",
+                            "statTitle": "Right Rough Tendency (RTP Score)",
+                            "statValue": "-.163",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "36689",
+                            "playerName": "Brooks Koepka",
+                            "statTitle": "Left Rough Tendency (RTP Score)",
+                            "statValue": "-.211",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "35450",
+                            "playerName": "Patrick Cantlay",
+                            "statTitle": "Fairway Bunker Tendency",
+                            "statValue": "2.8",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "59006",
+                            "playerName": "Davis Chatfield",
+                            "statTitle": "Missed Fairway Percent - Other",
+                            "statValue": "1.74%",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "37455",
+                            "playerName": "Si Woo Kim",
+                            "statTitle": "Hit Fairway Percentage",
+                            "statValue": "69.95%",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "34098",
+                            "playerName": "Russell Henley",
+                            "statTitle": "Distance from Edge of Fairway",
+                            "statValue": "17' 5\"",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "39977",
+                            "playerName": "Max Homa",
+                            "statTitle": "Distance from Center of Fairway",
+                            "statValue": "15' 9\"",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "49855",
+                            "playerName": "Kristoffer Reitan",
+                            "statTitle": "Left Tendency",
+                            "statValue": "31.0",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "59866",
+                            "playerName": "Nick Dunlap",
+                            "statTitle": "Right Tendency",
+                            "statValue": "28.0",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "46046",
+                            "playerName": "Scottie Scheffler",
+                            "statTitle": "Good Drive Percentage",
+                            "statValue": "85.90%",
+                            "rank": "1st"
+                        }
+                    ]
+                },
+                {
+                    "subCategoryName": "Radar",
+                    "stats": [
+                        {
+                            "playerId": "31323",
+                            "playerName": "Gary Woodland",
+                            "statTitle": "Club Head Speed",
+                            "statValue": "127.91",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "63343",
+                            "playerName": "Aldrich Potgieter",
+                            "statTitle": "Ball Speed",
+                            "statValue": "190.43",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "39997",
+                            "playerName": "Corey Conners",
+                            "statTitle": "Smash Factor",
+                            "statValue": "1.515",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "59006",
+                            "playerName": "Davis Chatfield",
+                            "statTitle": "Launch Angle",
+                            "statValue": "13.94",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "59866",
+                            "playerName": "Nick Dunlap",
+                            "statTitle": "Spin Rate",
+                            "statValue": "3,282.0",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "63343",
+                            "playerName": "Aldrich Potgieter",
+                            "statTitle": "Distance to Apex",
+                            "statValue": "209.7",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "33141",
+                            "playerName": "Keegan Bradley",
+                            "statTitle": "Apex Height",
+                            "statValue": "133' 0\"",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "33141",
+                            "playerName": "Keegan Bradley",
+                            "statTitle": "Hang Time",
+                            "statValue": "7.7",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "63343",
+                            "playerName": "Aldrich Potgieter",
+                            "statTitle": "Carry Distance",
+                            "statValue": "314.2",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "33141",
+                            "playerName": "Keegan Bradley",
+                            "statTitle": "Carry Efficiency",
+                            "statValue": "2.554",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "59006",
+                            "playerName": "Davis Chatfield",
+                            "statTitle": "Total Distance Efficiency",
+                            "statValue": "2.696",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "59006",
+                            "playerName": "Davis Chatfield",
+                            "statTitle": "Total Driving Efficiency",
+                            "statValue": "3",
+                            "rank": "1st"
+                        }
+                    ]
+                },
+                {
+                    "subCategoryName": "Scoring",
+                    "stats": [
+                        {
+                            "playerId": "39975",
+                            "playerName": "Michael Kim",
+                            "statTitle": "Right Rough Tendency (RTP Score)",
+                            "statValue": "-.163",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "36689",
+                            "playerName": "Brooks Koepka",
+                            "statTitle": "Left Rough Tendency (RTP Score)",
+                            "statValue": "-.211",
+                            "rank": "1st"
+                        }
+                    ]
+                }
+            ]
+        }
+    }
+}
