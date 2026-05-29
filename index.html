@@ -18577,11 +18577,12 @@ async function injectLineupEdge(card, eData, sport) {
   const espnId = eData?.espnEventId || eData?.id || eData?.gameId || card.dataset.espnid || '';
   if (!espnId) return;
 
-  const rai = await fetchRosterAdvantage(espnId, homeLabel, awayLabel);
-  if (!rai) return;
-
+  // MUST be declared before fetchRosterAdvantage call — temporal dead zone fix
   const homeLabel = card.dataset.home || '';
   const awayLabel = card.dataset.away || '';
+
+  const rai = await fetchRosterAdvantage(espnId, homeLabel, awayLabel);
+  if (!rai) return;
 
   // ── Card .rai-line (all viewports) ───────────────────────────────────────
   const raiText = buildRaiCardLine(rai, homeLabel, awayLabel);
