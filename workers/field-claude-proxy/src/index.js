@@ -17,7 +17,7 @@
 //   X-FIELD-Proxy-Version: 4
 //   X-FIELD-Model: gemini-2.5-flash-lite  (or claude-sonnet-4 on fallback)
 
-const PROXY_VERSION = '4';
+const PROXY_VERSION = '5';
 
 const ALLOWED_ORIGINS = [
   'https://jubilant-bassoon.jeffunglesbee.workers.dev',
