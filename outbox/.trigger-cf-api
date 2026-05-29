@@ -1,3 +1,4 @@
 method=POST
 url=https://field-relay-nba.jeffunglesbee.workers.dev/pgatour
 body={"operationName":"statLeaders","variables":{"tourCode":"R","year":2026,"category":"STROKES_GAINED"},"query":"query statLeaders { statLeaders(tourCode: R, year: 2026, category: STROKES_GAINED) { statCategory displayYear subCategories { subCategoryName stats { playerId playerName statTitle statValue rank } } } }"}
+# retry Fri May 29 06:14:11 UTC 2026
