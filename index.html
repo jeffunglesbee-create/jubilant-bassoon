@@ -8407,7 +8407,7 @@ function buildTodaySchedule(){
      tournEnd:"2026-05-31",              // R4 Sunday
      confirmed:true, venue:"Colonial CC, Fort Worth TX",
      streams:resolveBundle("GOLF_CHANNEL"),  // Thu-Fri: Golf Channel. CBS Sat-Sun via leaderNote
-     leaderNote:"After R1 · Hodges, Spaun, McCarty, Kim, Gerard, Putnam -6 · Griffin defending · CBS Sat-Sun"},
+     leaderNote:"Charles Schwab Challenge · R2 Complete · CBS Sat-Sun"},
   ].filter(g=>{
     // Show for full tournament duration (Thu-Sun), not just isToday of start_time
     const todayStr = new Date().toLocaleDateString('en-CA',{timeZone:localTz()||'America/New_York'});
@@ -11162,12 +11162,13 @@ function injectSlashGolfLeaderNotes(activeTournaments, leaderboards){
 
       // ── TOP 10 LEADERBOARD — inject when tournament is active ───────────
       // Only show when lb data is available and tournament is ongoing (not upcoming)
-      const isActive = tourn.status && (
-        tourn.status.toLowerCase().includes("progress") ||
-        tourn.status.toLowerCase().includes("active") ||
-        tourn.status.toLowerCase().includes("official") ||
-        tourn.status.toLowerCase().includes("final")
-      );
+      // isActive: if we have lb data and this tourn passed getActiveTournaments date check,
+      // it's active. Empty/null status (common from Slash Golf API) should not block display.
+      // Only explicitly skip if status says "upcoming", "scheduled", or "pre".
+      const statusStr = (tourn.status || "").toLowerCase();
+      const isActive = !statusStr.includes("upcoming") &&
+                       !statusStr.includes("scheduled") &&
+                       !statusStr.includes("pre-tournament");
       const lbHTML = lb && isActive ? buildGolfTop10HTML(lb, roundLabel) : "";
       let lbEl = card.querySelector(".golf-leaderboard");
       if(lbHTML){
@@ -15518,7 +15519,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-05-29b';
+  const SW_VERSION = '2026-05-29c';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
