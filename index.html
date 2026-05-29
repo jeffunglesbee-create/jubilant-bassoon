@@ -12468,9 +12468,29 @@ function buildScoutingReport(game, sport) {
   if (sp.includes('basketball') || sp.includes('nba')) {
     // Look up RAI cache: try espnId first, then home|away (cross-keyed in fetchRosterAdvantage)
     const _raiEspnId = game._espnId || '';
-    const _raiLabelKey = `${game.home||''}|${game.away||''}`;
+    const _raiLabelKey = `${game.home||''}|${game.away||''}`; 
     const rai = _raiCache[_raiEspnId] || _raiCache[_raiLabelKey] || null;
     if (rai) raiSection = buildRaiSheetSection(rai, game.home||'', game.away||'');
+  }
+
+  // MLB: append platoon context from MLB live feed cache
+  if (sp.includes('baseball') || sp.includes('mlb')) {
+    const labelKey = `${game.home||''}|${game.away||''}`;
+    const platoonEntry = _mlbPlatoonCache[game.sourceId] || _mlbPlatoonCache[labelKey];
+    const p = platoonEntry?.result;
+    if (p?.platoonLabel) {
+      const edgeCls = p.platoonEdge === 'batter' ? 'rai-pos' : p.platoonEdge === 'pitcher' ? 'rai-neg' : '';
+      const countLine = p.countLabel ? `<div style="font-size:.63rem;color:var(--smoke);margin-top:.15rem">${p.countLabel}</div>` : '';
+      raiSection = `<div class="bs-section">
+        <div class="bs-section-label">At-Bat Edge</div>
+        <div class="bs-section-body">
+          <div class="rai-row"><span class="rai-lbl">Matchup</span><span class="rai-val ${edgeCls}">${p.platoonLabel}</span></div>
+          ${p.batterName ? `<div class="rai-row"><span class="rai-lbl">Batter</span><span style="font-size:.67rem">${p.batterName}</span></div>` : ''}
+          ${p.pitcherName ? `<div class="rai-row"><span class="rai-lbl">Pitcher</span><span style="font-size:.67rem">${p.pitcherName}</span></div>` : ''}
+          ${countLine}
+        </div>
+      </div>`;
+    }
   }
 
   return `<div class="bs-section">
@@ -18600,6 +18620,144 @@ function buildRaiSheetSection(rai, homeLabel, awayLabel) {
 }
 
 // Async: fetch RAI + inject .rai-line on card + [CLOSING UNIT] badge
+// ═══════════════════════════════════════════════════════════════════════════
+// FEATURE: MLB PLATOON RAI — At-Bat Matchup Edge
+// Computes batter vs pitcher handedness advantage per plate appearance.
+// Primary: MLB Stats live feed → exact bat side + pitch hand + count
+// Display: inside score-wrap, same location as NBA lineup edge
+// Updates: every at-bat change (45-90s MLB poll cycle)
+// RUWT: pitcher/batter hand = roster fact (pre-game). Count = observable. ✅
+// ═══════════════════════════════════════════════════════════════════════════
+
+const _mlbPlatoonCache = {};  // gamePk → {result, ts}
+const MLB_PLATOON_TTL = 45000; // 45s — one per at-bat roughly
+
+async function fetchMLBPlatoon(gamePk) {
+  if (!gamePk) return null;
+  const now = Date.now();
+  const cached = _mlbPlatoonCache[gamePk];
+  if (cached && now - cached.ts < MLB_PLATOON_TTL) return cached.result;
+
+  try {
+    const r = await fetch(
+      `${MLB_STATS_RELAY}/game/${gamePk}/feed/live`,
+      { signal: AbortSignal.timeout(4000) }
+    );
+    if (!r.ok) return null;
+    const d = await r.json();
+
+    const play    = d?.liveData?.plays?.currentPlay;
+    const matchup = play?.matchup;
+    const count   = play?.count;
+    if (!matchup) return null;
+
+    const batterName  = matchup.batter?.fullName || '';
+    const pitcherName = matchup.pitcher?.fullName || '';
+    const batSide     = matchup.batSide?.code  || '';   // 'L', 'R', 'S'
+    const pitchHand   = matchup.pitchHand?.code || '';  // 'L', 'R'
+    const balls       = count?.balls   ?? null;
+    const strikes     = count?.strikes ?? null;
+    const outs        = count?.outs    ?? null;
+    const inning      = d?.liveData?.linescore?.currentInning ?? null;
+    const inningHalf  = d?.liveData?.linescore?.inningHalf ?? '';  // 'Top'/'Bottom'
+
+    // ── Platoon advantage ─────────────────────────────────────────────────
+    // Switch hitter bats opposite to pitcher → always has platoon advantage
+    // Opposite hands (L vs R or R vs L) = batter advantage (+~15 wOBA pts)
+    // Same hand = pitcher advantage
+    let platoonEdge = 'neutral', platoonLabel = '';
+    if (batSide && pitchHand) {
+      const effectiveSide = batSide === 'S'
+        ? (pitchHand === 'R' ? 'L' : 'R')  // switch hitter flips
+        : batSide;
+      if (effectiveSide !== pitchHand) {
+        platoonEdge  = 'batter';
+        platoonLabel = `${effectiveSide} vs ${pitchHand} · batter edge`;
+      } else {
+        platoonEdge  = 'pitcher';
+        platoonLabel = `${effectiveSide} vs ${pitchHand} · pitcher edge`;
+      }
+      if (batSide === 'S') platoonLabel = `Switch vs ${pitchHand} · batter edge`;
+    }
+
+    // ── Count context ─────────────────────────────────────────────────────
+    // Adds a second dimension: pitcher/batter count advantage
+    let countEdge = 'neutral', countLabel = '';
+    if (balls !== null && strikes !== null) {
+      if (balls === 3 && strikes === 0) {
+        countEdge = 'batter'; countLabel = '3-0 count (batter)';
+      } else if (balls >= 2 && strikes <= 1) {
+        countEdge = 'batter'; countLabel = `${balls}-${strikes} hitter's count`;
+      } else if (strikes === 2 && balls === 0) {
+        countEdge = 'pitcher'; countLabel = '0-2 count (pitcher)';
+      } else if (strikes === 2) {
+        countEdge = 'pitcher'; countLabel = `${balls}-${strikes} pitcher's count`;
+      }
+    }
+
+    const result = {
+      batterName, pitcherName, batSide, pitchHand,
+      balls, strikes, outs, inning, inningHalf,
+      platoonEdge, platoonLabel,
+      countEdge, countLabel,
+      ts: now
+    };
+    _mlbPlatoonCache[gamePk] = { result, ts: now };
+    return result;
+  } catch(e) {
+    if (FIELD_DEBUG) console.warn('[MLB-RAI]', e.message);
+    return null;
+  }
+}
+
+function buildMLBPlatoonLine(p) {
+  if (!p) return '';
+  const parts = [];
+  if (p.platoonLabel) parts.push(p.platoonLabel);
+  // Only add count context when it's meaningfully lopsided
+  if (p.countLabel && p.countEdge !== 'neutral') {
+    // Avoid redundancy: if platoon and count both favor same side, simplify
+    if (p.platoonEdge === p.countEdge) {
+      parts.push(p.countLabel);
+    } else if (p.countEdge !== 'neutral') {
+      parts.push(p.countLabel);
+    }
+  }
+  if (!parts.length) return '';
+  return parts.join(' · ');
+}
+
+async function injectMLBPlatoon(card, eData, game) {
+  const gamePk = game?.sourceId;
+  if (!gamePk) return;
+
+  const platoon = await fetchMLBPlatoon(gamePk);
+  if (!platoon) return;
+
+  const text = buildMLBPlatoonLine(platoon);
+  let raiLine = card.querySelector('.rai-line');
+  if (text) {
+    if (!raiLine) {
+      raiLine = document.createElement('div');
+      raiLine.className = 'rai-line';
+    }
+    raiLine.textContent = text;
+    const scoreWrap = card.querySelector('.score-wrap');
+    if (scoreWrap) {
+      if (!scoreWrap.contains(raiLine)) scoreWrap.appendChild(raiLine);
+    } else {
+      const cardBody = card.querySelector('.card-body');
+      const tapHint  = cardBody?.querySelector('.card-tap-hint');
+      if (tapHint) tapHint.insertAdjacentElement('beforebegin', raiLine);
+      else if (cardBody) cardBody.appendChild(raiLine);
+    }
+    // Also cache under label key for _raiRehydrateScoreWrap reuse
+    _mlbPlatoonCache[`${game.home||''}|${game.away||''}`] = { result: platoon, ts: Date.now() };
+  } else if (raiLine) {
+    raiLine.remove();
+  }
+}
+
 async function injectLineupEdge(card, eData, sport) {
   const sp = (sport || '').toLowerCase();
   if (!sp.includes('basketball') && !sp.includes('nba')) return;
@@ -18864,6 +19022,24 @@ function injectDramaBadges(){
              h.includes(teamNick((v.homeName||'').toLowerCase()));
     });
     if (eData?.state === 'in') injectLineupEdge(card, eData, sport).catch(()=>{});
+  });
+
+  // MLB Platoon RAI — per live baseball card after badges settle
+  document.querySelectorAll('.game-card.espn-live').forEach(card => {
+    const sport = card.dataset.sport || '';
+    if (!sport.toLowerCase().includes('baseball') && !sport.toLowerCase().includes('mlb')) return;
+    const gid = card.dataset.gameid;
+    if (!gid) return;
+    const eData = Object.values(espnScores).find(v => {
+      const h = (card.dataset.home||'').toLowerCase();
+      return (v.homeName||'').toLowerCase().includes(teamNick(h)) ||
+             h.includes(teamNick((v.homeName||'').toLowerCase()));
+    });
+    if (eData?.state === 'in') {
+      // Find the FIELD game object for sourceId (MLB gamePk)
+      const game = allData?.sports?.flatMap(s=>s.games||[]).find(g=>g._id===gid);
+      if (game?.sourceId) injectMLBPlatoon(card, eData, game).catch(()=>{});
+    }
   });
 
   // J7: CDW Notes — inject situational stats on qualifying live cards
