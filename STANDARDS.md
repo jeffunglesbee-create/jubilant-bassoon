@@ -2571,3 +2571,14 @@ RULES:
    swap-ready so any source can be redirected to a licensed feed.
 
 Not reversible without Jeff's approval (ADR-class).
+
+## Rule 46 — Documentation format + size (DOC-FORMAT-A)
+
+All FIELD documentation is written as plain UTF-8 text, **≤220 KB per file**, to match the Drive
+→ Google-Doc conversion convention (docs → Drive as contentMimeType text/plain; Rule 25 / memory).
+- Content over 220 KB is split into numbered parts ("Doc 1 of N", "Doc 2 of N", …), never one oversize file.
+- Destined-for-Drive docs use plain prose, not Markdown syntax — text/plain does not render `##`/tables
+  in a Google Doc, so avoid relying on them for the Drive copy.
+- When Drive writes are unavailable (sandbox), persist the same plain-text content to repo `docs/` as a
+  fallback and migrate to Drive when writes resume. Repo-`.md` is acceptable as the fallback, but the
+  Drive version must be plain text under the limit.
