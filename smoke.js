@@ -824,14 +824,18 @@ assert('A243 — Betting engine REMOVED (ToS/patent compliance, 2026-05-29)',
   !html.includes('function beatTheBook'),
   'Betting engine must be fully removed — renderBetting/findOddsForGame/ODDS_RELAY_BASE must not exist');
 
-assert('A244 — Phase 1: V2 live scores wired into fetchESPNScores polling loop',
-  html.includes('ESPN_TO_V2_MAP') &&
-  html.includes('FIELD_V2_SOURCES') &&
+assert('A244 — Phase 2: V2 standalone poll loop live (api-sports.io for NBA/NHL/MLB/MLS/soccer)',
+  html.includes('function fetchV2AllScores') &&
+  html.includes('function startV2ScorePolling') &&
   html.includes('function fetchV2Games') &&
   html.includes('function mapV2ToESPN') &&
-  html.includes('V2_PERIOD_PREFIX') &&
-  html.includes('return; // skip ESPN call for this league'),
-  'Phase 1 V2 cutover must be wired into fetchESPNScores — ESPN_TO_V2_MAP, FIELD_V2_SOURCES, fetchV2Games, mapV2ToESPN must all be present');
+  html.includes('startV2ScorePolling()') &&
+  !html.includes('{sport:"basketball",   league:"nba"') &&
+  !html.includes('{sport:"hockey",       league:"nhl"') &&
+  !html.includes('{sport:"baseball",     league:"mlb"') &&
+  !html.includes('{league:"eng.1"') &&
+  !html.includes('{league:"usa.1"'),
+  'Phase 2: fetchV2AllScores + startV2ScorePolling present; NBA/NHL/MLB/EPL/MLS removed from ESPN_SPORTS/SOCCER_LEAGUES');
 
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);
