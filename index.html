@@ -15518,7 +15518,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-05-28c';
+  const SW_VERSION = '2026-05-29a';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -17420,9 +17420,13 @@ async function initFIELDBrief(sections){
   }
 
   // ── Layer 3: delta check before client AI call ───────────────────────────────
+  // FIX (May 29 2026): Only skip compound if relay SUCCESSFULLY served a brief.
+  // When relay fails (KV placeholders, 503, etc.) compound must always run —
+  // previous condition blocked client AI after any successful compound call even
+  // when subsequent loads had no relay brief, causing journalism to go silent.
   const currentHash = buildJournalismContextHash(sections);
-  if (!relayJournalism?.brief && currentHash === _lastJournalismHash) {
-    if (FIELD_DEBUG) console.log('[L3 Delta] Context unchanged — skipping client AI call');
+  if (relayJournalism?.brief && currentHash === _lastJournalismHash) {
+    if (FIELD_DEBUG) console.log('[L3 Delta] Relay brief fresh + context unchanged — skipping compound');
     return;
   }
   _lastJournalismHash = currentHash;
@@ -18069,7 +18073,7 @@ function initEPLMatchBriefs() {
 
 // ── J8: MLB Game Brief init ───────────────────────────────────────────────────
 function initMLBGameBriefs() {
-  if(!allData) return;
+  if(!allData){ setTimeout(initMLBGameBriefs, 2500); return; } // retry if data not ready
   const cards = [...document.querySelectorAll('.game-card[data-sport*="Baseball"],' +
     '.game-card[data-sport*="MLB"]')].slice(0, 4);
   cards.forEach(card => {
@@ -18079,7 +18083,7 @@ function initMLBGameBriefs() {
 
 // ── J9: WNBA Game Brief init ──────────────────────────────────────────────────
 function initWNBAGameBriefs() {
-  if(!allData) return;
+  if(!allData){ setTimeout(initWNBAGameBriefs, 2500); return; } // retry if data not ready
   const cards = [...document.querySelectorAll('.game-card[data-sport*="WNBA"],' +
     '.game-card[data-sport*="Women"]')].slice(0, 3);
   cards.forEach(card => {
@@ -18089,7 +18093,7 @@ function initWNBAGameBriefs() {
 
 // ── J10: Stakes Brief init ────────────────────────────────────────────────────
 function initStakesBriefs() {
-  if(!allData) return;
+  if(!allData){ setTimeout(initStakesBriefs, 2500); return; } // retry if data not ready
   document.querySelectorAll('.game-card').forEach(card => {
     const gid = card.dataset.gameid;
     if (!gid) return;
