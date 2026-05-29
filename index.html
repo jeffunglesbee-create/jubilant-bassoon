@@ -15518,7 +15518,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-05-29a';
+  const SW_VERSION = '2026-05-29b';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -15863,6 +15863,92 @@ function dramaLabel(score){
 // Called from renderESPNScores() after updating live scores.
 
 // J2: SERIES PREVIEW CARDS
+// stripJsonFences: removes markdown code fences and extracts first JSON object
+// Defined here; called by fetchCompoundEditorial and other JSON-parsing paths.
+function stripJsonFences(text) {
+  if (!text) return '';
+  const cleaned = text
+    .replace(/^```(?:json)?\s*/i, '')
+    .replace(/\s*```\s*$/, '')
+    .trim();
+  // Extract first {...} object if there's leading/trailing prose
+  const m = cleaned.match(/\{[\s\S]*\}/);
+  return m ? m[0] : cleaned;
+}
+
+function trimToCompleteSentence(text) {
+  if(!text) return text;
+  const trimmed = text.trim();
+  // Already ends cleanly
+  if(/[.!?]["']?$/.test(trimmed)) return trimmed;
+  // Find the last complete sentence boundary
+  const lastEnd = Math.max(
+    trimmed.lastIndexOf('. ') + 1,
+    trimmed.lastIndexOf('! ') + 1,
+    trimmed.lastIndexOf('? ') + 1,
+    trimmed.lastIndexOf('."') + 2,
+    trimmed.lastIndexOf('!"') + 2,
+    trimmed.lastIndexOf('?"') + 2,
+  );
+  // Trim if result is at least 30 chars (one meaningful sentence).
+  if(lastEnd >= 30 && lastEnd > trimmed.length * 0.3) {
+    return trimmed.slice(0, lastEnd).trim();
+  }
+  // No sentence boundary found — return full text rather than ''.
+  // A slightly incomplete sentence is almost always better than the generic
+  // static fallback (e.g. "Premier League fixture — one of 38 games...").
+  return trimmed;
+}
+
+
+// ── field_utils.js functions inlined (May 29 2026) ─────────────────────────
+// These were defined in field_utils.js (Node test module) but not in index.html,
+// causing ReferenceErrors in the browser on every call.
+
+function gameNetwork(g, defaultLabel='') {
+  return (g && g.streams && g.streams[0] && g.streams[0].label) || defaultLabel;
+}
+
+function shiftTime(iso, minutes) {
+  if (!iso) return iso;
+  return new Date(new Date(iso).getTime() + minutes * 60 * 1000).toISOString();
+}
+
+function parseMatchweek(leagueStr) {
+  const m = (leagueStr||'').match(/Matchweek\s*(\d+)/i);
+  return m ? parseInt(m[1]) : null;
+}
+
+function toImpliedNum(oddsStr){
+  if(!oddsStr) return null;
+  const s = String(oddsStr).trim();
+  if(["EV","PK","EVEN","+0","0"].includes(s.toUpperCase())) return 50;
+  const n = parseInt(s);
+  if(isNaN(n)) return null;
+  return n < 0 ? (-n / (-n + 100)) * 100 : (100 / (n + 100)) * 100;
+}
+
+function dramaTier(score){
+  if(score>=80) return 'fire';
+  if(score>=60) return 'hot';
+  if(score>=40) return 'warm';
+  return '';
+}
+
+function espnTeamMatch(espnName, fieldName){
+  if(!espnName||!fieldName) return false;
+  // Normalize: lowercase, remove diacritics, strip punctuation
+  const norm = s => s.toLowerCase()
+    .normalize("NFD").replace(/[̀-ͯ]/g,"")
+    .replace(/[^a-z0-9 ]/g,"");
+  const a = norm(espnName), b = norm(fieldName);
+  if(a===b) return true;
+  if(a.includes(b)||b.includes(a)) return true;
+  // Word match: any word > 3 chars shared between names
+  return a.split(" ").some(w=>w.length>3&&b.includes(w))
+      || b.split(" ").some(w=>w.length>3&&a.includes(w));
+}
+
 function journalismCallsToday(){
   const k='field_j_calls_'+new Date().toISOString().slice(0,10);
   return {get(){return parseInt(sessionStorage.getItem(k)||'0');},inc(){sessionStorage.setItem(k,String(this.get()+1));},canCall(){return this.get()<8;}};

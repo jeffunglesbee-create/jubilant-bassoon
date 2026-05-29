@@ -589,7 +589,7 @@ assert('A188 — M2: isScoutsPick wired into injectJ1J4Badges',
   'Scout\'s Pick badge injection must use isScoutsPick() boolean gate');
 
 assert('A189 — SW_VERSION is current (Rule 23: suffix per deploy, new day resets to a)',
-  html.includes("'2026-05-29a'"),
+  html.includes("'2026-05-29b'"),
   'SW_VERSION must match current deploy date — update daily per Rule 23');
 
 // A190: sw.js SW_VERSION must match index.html SW_VERSION
@@ -603,6 +603,20 @@ const htmlVersion = htmlVersionMatch ? htmlVersionMatch[1] : 'NOT_FOUND';
 assert('A190 — sw.js SW_VERSION matches index.html (Rule 23b: both must be in sync)',
   swVersion === htmlVersion,
   `sw.js SW_VERSION='${swVersion}' does not match index.html '${htmlVersion}' — return visitors get stale cached shell`);
+// A191: All field_utils.js functions called in index.html must be defined there
+// Prevents ReferenceErrors from functions defined in the Node test module but
+// missing from the browser bundle. This was the root cause of all journalism failure.
+const fieldUtilsSrc = require('fs').readFileSync('field_utils.js', 'utf8');
+const utilsFnNames = [...fieldUtilsSrc.matchAll(/^function (\w+)\(/gm)].map(m => m[1]);
+const missingFromHtml = utilsFnNames.filter(fn => {
+  const usedInHtml = new RegExp('\\b' + fn + '\\(').test(html);
+  const definedInHtml = html.includes('function ' + fn + '(');
+  return usedInHtml && !definedInHtml;
+});
+assert('A191 — field_utils.js functions used in index.html must be defined there',
+  missingFromHtml.length === 0,
+  'Missing from index.html: ' + missingFromHtml.join(', ') + ' — inline from field_utils.js');
+
 
 assert('A190 — Layer 2b: sport vocab violation detection function defined',
   html.includes('function checkSportVocab(') && html.includes('SPORT_VOCAB_VIOLATIONS'),
