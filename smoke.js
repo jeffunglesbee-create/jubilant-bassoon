@@ -589,7 +589,7 @@ assert('A188 — M2: isScoutsPick wired into injectJ1J4Badges',
   'Scout\'s Pick badge injection must use isScoutsPick() boolean gate');
 
 assert('A189 — SW_VERSION is current (Rule 23: suffix per deploy, new day resets to a)',
-  html.includes("'2026-05-29c'"),
+  html.includes("'2026-05-29d'"),
   'SW_VERSION must match current deploy date — update daily per Rule 23');
 
 // A190: sw.js SW_VERSION must match index.html SW_VERSION
