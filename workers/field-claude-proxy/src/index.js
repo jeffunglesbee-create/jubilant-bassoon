@@ -97,7 +97,13 @@ export default {
     if (request.method !== 'POST')
       return new Response('Method not allowed', { status: 405, headers: version() });
 
-    if (!ALLOWED_ORIGINS.includes(origin))
+    // Server-to-server bypass: the journalism cron (field-relay-nba Worker) calls
+    // this proxy with no Origin header (Workers don't send one). Allow it via a
+    // shared header instead of Origin. Browsers can't set this cross-origin without
+    // a preflight that would fail, so it can't be spoofed from the web.
+    const relayAuth = request.headers.get('X-FIELD-Relay') || '';
+    const isRelay = relayAuth === (env.RELAY_SHARED_SECRET || 'field-relay-cron-2026');
+    if (!isRelay && !ALLOWED_ORIGINS.includes(origin))
       return new Response(JSON.stringify({ error: 'Origin not allowed' }), {
         status: 403, headers: { 'Content-Type': 'application/json', ...version() },
       });
