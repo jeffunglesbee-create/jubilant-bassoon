@@ -43,7 +43,7 @@ Add a new named assertion in `smoke.js` for every FIELD_FEATURES entry (presence
 **Canonical docs** (open the relevant one before starting):
 - Handoff Note (read first): `HANDOFF.md` (repo root — no Drive ID needed)
 - CI/Deploy Error Reference (read every session): `18JMUd-Uq_m2DomuCua2B5UMiWOel81yzc1JU7SY6f20`
-- Build Session List: `1Drrp5eRNdGb8EKodqPNwpuLaC23XcOrlv4DO13zNot0`
+- Build Session List: `19TicpFBU2ORbypNBteCXuhwbX1FoP14Y2NGuU9e3drQ`
 - FIELD Current State: `1GvsfnTH9Xhqzg_NdYrPhPpk1d1Rnm0lkeG6ip-tLUlA`
 - Master Improvement Ranking: `1rW90JQ5a4ybrE9l5acrbqd0q0yl_QYmPIOnEJr__GEY`
 - Daily Update Reference: `1oSHqnDskN04p95g6e85--4hhgIsKISZ3ZflLXKPM08E`
@@ -107,8 +107,9 @@ never worked despite being documented as complete.*
 
 | Document | Current ID | Update trigger |
 |----------|-----------|----------------|
-| **Build Session List** (Master backlog) | `1Drrp5eRNdGb8EKodqPNwpuLaC23XcOrlv4DO13zNot0` | Every TYPE B/C session end — edit in place, never create a new version doc |
+| **Build Session List** (Master backlog) | `19TicpFBU2ORbypNBteCXuhwbX1FoP14Y2NGuU9e3drQ` | Every TYPE B/C session end — edit in place, never create a new version doc |
 | *(Archive copies in Archive/ folder for major milestones only — not routine sessions)* | | |
+| **Infrastructure Backlog (Tier 2)** | `1n4mYHB-k_X5pKrNuUFV7FK0YlolIPkNpGAkegGAUVHw` | Any session that ships or scopes an infrastructure item — edit in place |
 | **Wow Features** | `1QJCiwEav5VEofrdL4ba-jKsSMrcZq7EPdFehTMX-_i8` | Any session that implements or modifies a Wow item — edit in place, no version numbers |
 | **UI Evaluation** | `1D98AsQqsNJSe0UKkVaRFrPO9SwDcdTMvS_Ll81kUVqo` | Any session with CSS, layout, or card design changes — edit in place, no version numbers |
 | **Viewport Style Guide** | `1X_u98rkvqB4l6H5fYr1IiOZlLcZzap6cUDojgE85C2A` | Any session that changes section labels, font sizes, touch targets, or surface identifiers |
