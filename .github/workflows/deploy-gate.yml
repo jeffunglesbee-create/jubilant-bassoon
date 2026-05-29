@@ -46,6 +46,15 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Sync SW_VERSION to deploy date
+        run: |
+          DEPLOY_DATE=$(date -u +%Y-%m-%d)
+          CURRENT=$(grep "^const SW_VERSION" sw.js | grep -o "'[^']*'" | tr -d "'")
+          SUFFIX=$(echo "$CURRENT" | grep -o '[a-z]$' || echo "a")
+          NEW_VERSION="${DEPLOY_DATE}${SUFFIX}"
+          sed -i "s/const SW_VERSION *= *'[^']*'/const SW_VERSION = '${NEW_VERSION}'/" sw.js
+          echo "✅ SW_VERSION synced to ${NEW_VERSION}"
+
       - name: Fast smoke (smoke.js only)
         run: |
           echo "Running smoke.js structural assertions..."

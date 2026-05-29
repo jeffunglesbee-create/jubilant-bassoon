@@ -18435,6 +18435,54 @@ function detectAndRenderDoubleFeature() {
 // Banner always renders — never display:none. State drives content + accent colour.
 // Dismiss is per-state-key: dismissing one game doesn't kill the banner.
 
+// ── buildOTWStateLabel: named game-state label for OTW banner ────────────────
+// Replaces drama tier badges (MUST WATCH / FIRE GAME / COMPELLING) with
+// sport-specific factual state descriptions. Returns null when no named
+// condition applies — banner shows no badge rather than a drama signal.
+// Architecture: named binary conditions only, never a drama score threshold.
+function buildOTWStateLabel(g, ed, sport) {
+  if (!ed) return null;
+  const sp = (sport || g?._section || '').toLowerCase();
+  const period = String(ed.period || '');
+  const isOT = /ot|overtime|extra/i.test(period);
+  const home = parseInt(ed.homeScore) || 0;
+  const away = parseInt(ed.awayScore) || 0;
+  const margin = Math.abs(home - away);
+
+  if (isOT) return 'OVERTIME';
+
+  if (sp.includes('baseball') || sp.includes('mlb')) {
+    const inn = parseInt(period.replace(/[TB]/g,'')) || 0;
+    if (inn >= 9) return margin === 0 ? '9TH · TIED' : inn > 9 ? `${inn}TH · ${margin}-RUN` : `9TH · ${margin === 1 ? '1-RUN GAME' : margin + '-RUN GAME'}`;
+    if (inn >= 7 && margin <= 2) return `${inn}TH · CLOSE`;
+  }
+  if (sp.includes('basketball') || sp.includes('nba')) {
+    if (period === '4') {
+      if (margin === 0) return 'Q4 · TIED';
+      if (margin <= 3) return `Q4 · ${margin}-POINT GAME`;
+      if (margin <= 8) return 'Q4 · CLOSE';
+    }
+  }
+  if (sp.includes('hockey') || sp.includes('nhl')) {
+    if (period === '3') {
+      if (margin === 0) return '3RD · TIED';
+      if (margin === 1) return '3RD · ONE-GOAL GAME';
+    }
+  }
+  if (sp.includes('soccer') || sp.includes('epl') || sp.includes('mls') ||
+      sp.includes('league') || sp.includes('bundesliga') || sp.includes('serie') || sp.includes('ligue')) {
+    const min = parseInt(period) || 0;
+    if (min >= 70) {
+      if (margin === 0) return `${min}\' · TIED`;
+      if (margin === 1) return `${min}\' · ONE-GOAL GAME`;
+    }
+  }
+  if (sp.includes('afl')) {
+    if (period === '4' && margin <= 7) return 'Q4 · CLOSE';
+  }
+  return null;
+}
+
 const OTW_TIER_LABELS = { fire:'FIRE GAME', hot:'MUST WATCH', warm:'COMPELLING' };
 
 // Format ESPN clock value — handles both "9:05" and ISO "PT09M05.00S" formats
@@ -18552,7 +18600,10 @@ function renderOneToWatch(){
     // Patent fix: display tier label only — never show composite score number.
     // Numerical Usage Policy: composite value + threshold display = patent bright line.
     // The tier classification IS the expression. The underlying score is not.
-    const tierBadge=OTW_TIER_LABELS[tier]||tier.toUpperCase();
+    // Use named game-state label instead of drama tier badge.
+    // buildOTWStateLabel() returns factual condition ('OVERTIME', 'Q4 · TIED', etc.)
+    // or null when no named condition applies — badge omitted rather than showing excitement signal.
+    const tierBadge = buildOTWStateLabel(g, ed, sport);
     // SCORE-UNIFORM-A fix: use computeGameNarrative for score string — same path as card.
     // Before: ed.awayScore–ed.homeScore (ESPN away-first, no alignment check).
     // After: _n.scoreline (leader-first, same espnTeamMatch alignment as card score-wrap).
@@ -18575,7 +18626,7 @@ function renderOneToWatch(){
       <span class="otw-matchup">${g.away||''} ${g.neutral?'vs':'@'} ${g.home||''} \u00a0${scoreStr}</span>
       ${why?`<span class="otw-why">${why}</span>`:''}
       ${momentum==='up'?'<span class="otw-momentum up">\u2191</span>':''}
-      <span class="otw-drama d-${tier}">${tierBadge}</span>
+      ${tierBadge?`<span class="otw-drama d-${tier}">${tierBadge}</span>`:""}
       ${watchBtn}
       ${dismissBtn()}
     </div>`;
@@ -20116,10 +20167,14 @@ function buildLifeStageContent(game, eData, stage) {
     case 'final': {
       if (!eData) return '';
       if (eData.source === 'squiggle') return ''; // AFL: squiggle chip handles it
-      // Score shown in score-wrap (big numbers) — stage content shows peak drama only
+      // L9 Amnesty Zone: completed games can show drama score.
+      // No drama dial gate — post-game display is temporal-scope-safe (L9).
+      // Emoji tier + numeric score: '🔥 89' / '⚡ 73' / '· 52'
       const peak = parseFloat(localStorage.getItem('field_drama_peak_'+(game._id||''))||'0');
-      const peakLabel = peak >= 85 ? '🔥 Fire game' : peak >= 65 ? '⚡ High drama finish' : '';
-      return peakLabel && peak >= getDramaDial() ? `<div class="card-stage-content"><span class="stage-final-score">${peakLabel}</span></div>` : '';
+      if (peak < 50) return '';
+      const peakIcon = peak >= 85 ? '🔥' : peak >= 65 ? '⚡' : '·';
+      const peakNum  = Math.round(peak);
+      return `<div class="card-stage-content"><span class="stage-final-score">${peakIcon} ${peakNum}</span></div>`;
     }
     default: return '';
   }
