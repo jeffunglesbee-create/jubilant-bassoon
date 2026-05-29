@@ -592,6 +592,18 @@ assert('A189 — SW_VERSION is current (Rule 23: suffix per deploy, new day rese
   html.includes("'2026-05-29a'"),
   'SW_VERSION must match current deploy date — update daily per Rule 23');
 
+// A190: sw.js SW_VERSION must match index.html SW_VERSION
+// Prevents stale-while-revalidate serving old index.html to return visitors
+// Self-updating: extracts both versions dynamically so no manual sync needed on bumps
+const swContent = require('fs').readFileSync('sw.js', 'utf8');
+const swVersionMatch = swContent.match(/const SW_VERSION\s*=\s*'([^']+)'/);
+const swVersion = swVersionMatch ? swVersionMatch[1] : 'NOT_FOUND';
+const htmlVersionMatch = html.match(/const SW_VERSION = '([^']+)'/);
+const htmlVersion = htmlVersionMatch ? htmlVersionMatch[1] : 'NOT_FOUND';
+assert('A190 — sw.js SW_VERSION matches index.html (Rule 23b: both must be in sync)',
+  swVersion === htmlVersion,
+  `sw.js SW_VERSION='${swVersion}' does not match index.html '${htmlVersion}' — return visitors get stale cached shell`);
+
 assert('A190 — Layer 2b: sport vocab violation detection function defined',
   html.includes('function checkSportVocab(') && html.includes('SPORT_VOCAB_VIOLATIONS'),
   'checkSportVocab() must exist with per-sport forbidden term lists');
