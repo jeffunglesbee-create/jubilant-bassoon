@@ -6508,7 +6508,22 @@ function renderAll(){
 
   // Fix: patch _homeAbbr eagerly on every renderAll so badges never miss it.
   // nhlAnalyticsInit is also called at T+4500ms but that's too late for early renders.
-  // MLB hardcoded games have homeTeam (abbr string) but not _homeAbbr — copy it across.
+  // MLB: two sources — API games (homeTeam=abbr) + mlbRaw overrides (home=full name, no homeTeam).
+  // _MLB_NAME_ABBR provides full-name→abbr for mlbRaw games using FIELD canonical abbrevs (MLB_TEAM_RSN keys).
+  const _MLB_NAME_ABBR = {
+    'New York Yankees':'NYY','Baltimore Orioles':'BAL','Boston Red Sox':'BOS',
+    'Tampa Bay Rays':'TBR','Toronto Blue Jays':'TOR',
+    'Chicago White Sox':'CHW','Cleveland Guardians':'CLE','Detroit Tigers':'DET',
+    'Kansas City Royals':'KCR','Minnesota Twins':'MIN',
+    'Houston Astros':'HOU','Los Angeles Angels':'LAA',
+    'Athletics':'OAK','Oakland Athletics':'OAK','Seattle Mariners':'SEA','Texas Rangers':'TEX',
+    'Atlanta Braves':'ATL','Miami Marlins':'MIA','New York Mets':'NYM',
+    'Philadelphia Phillies':'PHI','Washington Nationals':'WSN',
+    'Chicago Cubs':'CHC','Cincinnati Reds':'CIN','Milwaukee Brewers':'MIL',
+    'Pittsburgh Pirates':'PIT','St. Louis Cardinals':'STL',
+    'Arizona Diamondbacks':'ARI','Colorado Rockies':'COL',
+    'Los Angeles Dodgers':'LAD','San Diego Padres':'SDP','San Francisco Giants':'SFG',
+  };
   sports.forEach(sec => {
     const sport = (sec.sport||'').toLowerCase();
     if (sport.includes('nhl') || sport.includes('hockey')) {
@@ -6519,8 +6534,14 @@ function renderAll(){
     }
     if (sport.includes('mlb') || sport.includes('baseball')) {
       (sec.games||[]).forEach(g => {
-        if (!g._homeAbbr && g.homeTeam) g._homeAbbr = g.homeTeam;
-        if (!g._awayAbbr && g.awayTeam) g._awayAbbr = g.awayTeam;
+        if (!g._homeAbbr)
+          g._homeAbbr = g.homeTeam                 // normalizeMLBGame API path
+                     || _MLB_NAME_ABBR[g.home]      // mlbRaw hardcoded path
+                     || '';
+        if (!g._awayAbbr)
+          g._awayAbbr = g.awayTeam
+                     || _MLB_NAME_ABBR[g.away]
+                     || '';
       });
     }
   });
