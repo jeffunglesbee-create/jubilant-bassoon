@@ -12465,8 +12465,10 @@ function buildScoutingReport(game, sport) {
   // NBA: append live lineup edge section from RAI cache (no new fetch — reads existing cache)
   let raiSection = '';
   if (sp.includes('basketball') || sp.includes('nba')) {
-    const espnId = game._espnId || game._id || '';
-    const rai = espnId ? _raiCache[espnId] : null;
+    // Look up RAI cache: try espnId first, then home|away (cross-keyed in fetchRosterAdvantage)
+    const _raiEspnId = game._espnId || '';
+    const _raiLabelKey = `${game.home||''}|${game.away||''}`;
+    const rai = _raiCache[_raiEspnId] || _raiCache[_raiLabelKey] || null;
     if (rai) raiSection = buildRaiSheetSection(rai, game.home||'', game.away||'');
   }
 
@@ -18441,13 +18443,18 @@ async function fetchRosterAdvantage(espnGameId, homeLabel, awayLabel) {
     }
 
     // ── Tier 3: ESPN boxscore (active players by minutes) ─────────────────────
-    // Bug 3 fix: verify home/away order using team.homeAway field if available
-    // ESPN may return players[0]=away, players[1]=home — check before assuming
+    // Bug 3 fix: verify home/away order by matching team name against homeLabel
+    // bsPlayers[].team.homeAway is NOT present in ESPN boxscore — don't use it
+    // Instead: match displayName/abbreviation against homeLabel to determine index
     let homeIdx = 0, awayIdx = 1;
-    if (Array.isArray(bsPlayers) && bsPlayers.length >= 2) {
-      const p0ha = bsPlayers[0]?.team?.homeAway || '';
-      const p1ha = bsPlayers[1]?.team?.homeAway || '';
-      if (p0ha === 'away' || p1ha === 'home') { homeIdx = 1; awayIdx = 0; }
+    if (Array.isArray(bsPlayers) && bsPlayers.length >= 2 && homeLabel) {
+      const hNick = teamNick(homeLabel).toLowerCase();
+      const p0name = (bsPlayers[0]?.team?.displayName || bsPlayers[0]?.team?.name || '').toLowerCase();
+      const p1name = (bsPlayers[1]?.team?.displayName || bsPlayers[1]?.team?.name || '').toLowerCase();
+      // If players[0] name does NOT match homeLabel but players[1] does → swap
+      const p0match = p0name.includes(hNick) || hNick.includes(p0name.split(' ').pop()||'zzz');
+      const p1match = p1name.includes(hNick) || hNick.includes(p1name.split(' ').pop()||'zzz');
+      if (!p0match && p1match) { homeIdx = 1; awayIdx = 0; }
     }
 
     function bsTeamActive(idx) {
@@ -18510,6 +18517,8 @@ async function fetchRosterAdvantage(espnGameId, homeLabel, awayLabel) {
       ts: now
     };
     _raiCache[cacheKey] = result;
+    // Also cache under homeLabel|awayLabel for bottom sheet lookup (uses game._id not espnEventId)
+    if (homeLabel && awayLabel) _raiCache[`${homeLabel}|${awayLabel}`] = result;
     if (FIELD_DEBUG) console.debug('[RAI] result:', result.edge.toFixed(1), 'matched:', totalMatched, 'src:', result.pbpSource);
     return result;
   } catch(e) {
@@ -18808,9 +18817,14 @@ function injectDramaBadges(){
     if (!sport.toLowerCase().includes('basketball') && !sport.toLowerCase().includes('nba')) return;
     const gid = card.dataset.gameid;
     if (!gid) return;
+    // Find eData by matching either home OR away name (handles home/away discrepancies)
     const eData = Object.values(espnScores).find(v => {
       const h = (card.dataset.home||'').toLowerCase();
-      return (v.homeName||'').toLowerCase().includes(teamNick(h)) ||
+      const a = (card.dataset.away||'').toLowerCase();
+      const hNick = teamNick(h) || h.split(' ').pop();
+      const aNick = teamNick(a) || a.split(' ').pop();
+      return (v.homeName||'').toLowerCase().includes(hNick) ||
+             (v.awayName||'').toLowerCase().includes(aNick) ||
              h.includes(teamNick((v.homeName||'').toLowerCase()));
     });
     if (eData?.state === 'in') injectLineupEdge(card, eData, sport).catch(()=>{});
