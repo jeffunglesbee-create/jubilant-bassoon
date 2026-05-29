@@ -18,7 +18,6 @@
 <link rel="preconnect" href="https://cdn.nba.com" crossorigin/>
 <link rel="preconnect" href="https://api-web.nhle.com" crossorigin/>
 <link rel="dns-prefetch" href="https://statsapi.mlb.com"/>
-<link rel="dns-prefetch" href="https://api.the-odds-api.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,900;1,400;1,700&family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@400;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -916,11 +915,6 @@ body::before{
 .epa-chip{font-weight:600;font-size:.7rem;letter-spacing:.01em}
 .epa-sit{color:var(--smoke);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .epa-drive-tot{color:var(--muted);font-size:.6rem;white-space:nowrap}
-.btb-badge{font-family:var(--ff-mono);font-weight:600;font-size:.5rem;}
-.btb-good{color:#4ade80;}
-.btb-avg{color:var(--muted);}
-.btb-warn{color:#f59e0b;}
-.btb-high{color:#f87171;}
 /* ── Working Class: Injury Intel ───────────────────────────── */
 .injury-intel{font-size:.55rem;color:var(--muted);margin-top:.15rem;display:flex;align-items:baseline;gap:.3rem;overflow:hidden;}
 .ii-badge{font-weight:700;font-size:.5rem;padding:.08rem .25rem;border-radius:3px;flex-shrink:0;}
@@ -1252,12 +1246,6 @@ body::before{
 /* ── Live scores from ESPN API ── */
 .score-wrap{margin-top:2px;min-width:0;max-width:100%;overflow:hidden;width:100%}
 .score-status{font-size:.72rem;color:var(--text-muted,#b0b0c0);margin-top:.2rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-style:italic;letter-spacing:.01em}
-/* Odds chip — shown on cards when market odds available */
-.odds-chip{display:inline-flex;gap:.3rem;align-items:center;font-size:.52rem;font-weight:600;color:var(--text-muted);background:rgba(100,255,180,.07);border:1px solid rgba(100,255,180,.18);border-radius:3px;padding:.08rem .3rem;margin-top:.15rem;white-space:nowrap}
-.odds-chip .odds-label{opacity:.6;font-weight:400}
-.odds-chip .odds-price{color:#64ffb4;font-variant-numeric:tabular-nums}
-.odds-chip.odds-inplay{border-color:rgba(255,180,50,.3);background:rgba(255,180,50,.06)}
-.odds-chip.odds-inplay .odds-price{color:#ffb432}
 .score-block{
   display:flex;align-items:center;gap:6px;flex-wrap:wrap;
   font-family:var(--ff-mono);font-size:1.1rem;font-weight:800;
@@ -1537,9 +1525,6 @@ body::before{
   text-transform:uppercase;background:rgba(167,139,250,.1);color:#c4b5fd;
   border:1px solid rgba(167,139,250,.2);border-radius:3px;padding:.1rem .45rem;margin-right:3px;
 }
-
-/* ── BETTING SECTION ── */
-.betting-section{max-width:1400px;margin:0 auto 4rem;padding:0 2rem}
 /* ── FIELD Desk section ─────────────────────────────────────────────────── */
 .field-desk-section{max-width:1400px;margin:0 auto 3rem;padding:0 2rem}
 .field-desk-head{
@@ -1600,130 +1585,6 @@ body::before{
   margin-bottom:1rem;padding:.4rem .75rem;background:rgba(255,255,255,.03);
   border-left:2px solid rgba(74,222,128,.3);border-radius:0 4px 4px 0;
 }
-.betting-grid{
-  display:grid;
-  grid-template-columns:1fr; /* mobile: single col */
-  gap:12px;
-}
-.bet-card{
-  background:var(--card);border:1px solid var(--edge);border-radius:var(--radius);
-  overflow:hidden;transition:.18s;
-  display:grid;grid-template-columns:3px 1fr; /* accent bar like game cards */
-}
-.bet-card:hover{background:var(--card2);border-color:var(--edge2)}
-.bet-accent{
-  background:linear-gradient(180deg,#4ade80,#22c55e);
-  width:3px;margin:-1px 0 -1px -1px;
-}
-.bet-inner{display:flex;flex-direction:column;min-width:0}
-.bet-card-head{
-  padding:.7rem 1rem .6rem;border-bottom:1px solid var(--edge);
-}
-.bet-head-left{min-width:0}
-.bet-meta-row{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;margin-top:.15rem}
-.bet-source-inline{
-  font-family:var(--ff-mono);font-size:.58rem;color:var(--smoke);
-  background:var(--card3);border:1px solid var(--edge);
-  padding:.08rem .4rem;border-radius:3px;white-space:nowrap;
-}
-.bet-game{font-family:var(--ff-display);font-size:1rem;font-weight:700;color:var(--white);letter-spacing:-.01em}
-.bet-league{font-family:var(--ff-cond);font-size:.62rem;letter-spacing:.08em;text-transform:uppercase;color:var(--platinum)}
-.bet-source{display:none} /* replaced by .bet-source-inline in meta-row */
-.bet-lines{
-  padding:.65rem 1rem;
-  display:grid;
-  grid-template-columns:repeat(auto-fill,minmax(130px,1fr));
-  gap:.5rem;
-}
-.bet-line{
-  background:var(--card3);border:1px solid var(--edge);border-radius:6px;
-  padding:.5rem .7rem;transition:.12s;
-}
-.bet-line:hover{border-color:var(--edge2);background:var(--card2)}
-.bet-line-label{
-  font-family:var(--ff-cond);font-size:.58rem;letter-spacing:.1em;text-transform:uppercase;
-  color:var(--smoke);margin-bottom:.2rem;padding-bottom:.15rem;
-  border-bottom:1px solid var(--edge);
-}
-.bet-line-vals{display:flex;flex-direction:column;gap:.15rem}
-.bet-line-item{display:flex;align-items:center;justify-content:space-between;gap:.5rem}
-.bet-team{font-family:var(--ff-body);font-size:.74rem;color:var(--platinum);
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;flex:1}
-.bet-odd{
-  font-family:var(--ff-mono);font-size:.78rem;font-weight:700;
-  white-space:nowrap;
-}
-.bet-odd.fav{color:#4ade80}
-.bet-odd.dog{color:#f87171}
-.bet-odd.even{color:var(--gold)}
-.bet-context{
-  padding:.55rem 1rem .7rem .85rem;
-  font-size:.74rem;color:var(--platinum);line-height:1.55;
-  border-top:1px solid var(--edge);
-  border-left:2px solid rgba(74,222,128,.25);
-  margin-left:1px;
-}
-/* ── Probability bars (new betting UI) ───────────────────────── */
-.prob-section{padding:.7rem 1rem .5rem}
-.prob-row{display:flex;align-items:center;gap:.6rem;margin:.25rem 0}
-.prob-team{width:44px;font-size:.7rem;color:var(--platinum);text-align:right;flex-shrink:0;
-  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.prob-bar-track{flex:1;height:5px;background:rgba(255,255,255,.06);border-radius:3px;overflow:hidden}
-.prob-bar-fill{height:100%;border-radius:3px;transition:width .4s ease}
-.prob-bar-fill.fav{background:linear-gradient(90deg,#4ade80,#22c55e)}
-.prob-bar-fill.dog{background:linear-gradient(90deg,#f87171,#ef4444)}
-.prob-bar-fill.even{background:linear-gradient(90deg,var(--gold2),var(--gold))}
-.prob-pct{font-family:var(--ff-mono);font-size:.75rem;font-weight:700;width:30px;flex-shrink:0}
-.prob-pct.fav{color:#4ade80}.prob-pct.dog{color:#f87171}.prob-pct.even{color:var(--gold)}
-.prob-ml{font-family:var(--ff-mono);font-size:.68rem;color:var(--smoke);width:44px;flex-shrink:0}
-
-/* ── Compact lines row ────────────────────────────────────────── */
-.bet-lines-compact{
-  display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;
-  padding:.35rem 1rem .5rem;border-top:1px solid var(--edge);
-}
-.bet-line-pill{
-  display:inline-flex;align-items:center;gap:.3rem;
-  font-family:var(--ff-mono);font-size:.68rem;
-  background:var(--card3);border:1px solid var(--edge);
-  border-radius:4px;padding:.2rem .55rem;white-space:nowrap;
-}
-.bet-line-pill-label{color:var(--smoke);font-size:.62rem;letter-spacing:.06em;text-transform:uppercase}
-.bet-line-pill-val{color:var(--white);font-weight:600}
-
-/* ── Competitive context badge ────────────────────────────────── */
-.comp-badge{
-  display:inline-flex;align-items:center;gap:.25rem;
-  font-family:var(--ff-cond);font-size:.58rem;font-weight:700;letter-spacing:.1em;
-  padding:.12rem .5rem;border-radius:3px;text-transform:uppercase;flex-shrink:0;
-}
-.comp-badge.pickem{color:#2dd4bf;background:rgba(45,212,191,.12);border:1px solid rgba(45,212,191,.35)}
-.comp-badge.close-line{color:#7dd3b0;background:rgba(45,212,191,.07);border:1px solid rgba(45,212,191,.2)}
-.comp-badge.lean{color:var(--gold2);background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.25)}
-.comp-badge.heavy{color:var(--smoke);background:rgba(255,255,255,.04);border:1px solid var(--edge)}
-
-/* ── FIELD vs market signal ───────────────────────────────────── */
-.field-signal{
-  padding:.45rem 1rem .5rem .85rem;font-size:.72rem;line-height:1.5;
-  color:var(--gold2);border-left:2px solid rgba(201,168,76,.4);
-  margin-left:1px;border-top:1px solid var(--edge);
-  background:rgba(201,168,76,.04);
-}
-.field-signal strong{color:var(--gold3)}
-
-/* ── Bet card header revised ──────────────────────────────────── */
-.bet-card-head-top{
-  display:flex;align-items:flex-start;justify-content:space-between;gap:.5rem;
-}
-.bet-card-head{padding:.7rem 1rem .6rem;border-bottom:1px solid var(--edge);}
-.bet-links{display:flex;flex-wrap:wrap;gap:.4rem;padding:.5rem 1rem .7rem}
-.odds-live-badge{display:inline-flex;align-items:center;gap:4px;font-family:var(--ff-mono);font-size:.6rem;color:#4ade80}
-.odds-live-dot{width:5px;height:5px;border-radius:50%;background:#4ade80;animation:pulse 2s ease-in-out infinite}
-.odds-updated{font-family:var(--ff-mono);font-size:.6rem;color:var(--smoke)}
-.odds-error{font-family:var(--ff-mono);font-size:.6rem;color:#f87171}
-.odds-source-live{font-family:var(--ff-mono);font-size:.6rem;color:#4ade80;letter-spacing:.03em}
-.implied-prob{font-family:var(--ff-mono);font-size:.58rem;color:var(--smoke);opacity:.8;margin-left:.3rem}
-.odds-source-ai{font-family:var(--ff-mono);font-size:.6rem;color:var(--smoke);letter-spacing:.03em}
 
 /* ── FIELD Health Panel ──────────────────────────────────────────── */
 .fhp-row{font-size:.62rem;line-height:1.55;padding:.18rem 0;border-bottom:1px solid rgba(255,255,255,.05)}
@@ -1740,15 +1601,6 @@ body::before{
 .bs-scout-val em{font-style:normal;color:var(--teal,#2dd4bf);font-weight:600}
 .bs-scout-val .scout-warn{color:#f59e0b;font-weight:600}
 .bs-scout-divider{height:1px;background:rgba(255,255,255,.06);margin:.4rem 0}
-
-/* ── Betting Field Edge ──────────────────────────────────────── */
-.bet-field-edge{padding:.45rem 1rem .4rem;border-top:1px solid var(--edge)}
-.bet-edge-label{font-size:.52rem;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--teal,#2dd4bf);margin-bottom:.3rem}
-.bet-edge-lines{display:flex;flex-direction:column;gap:.18rem}
-.bet-edge-line{font-size:.68rem;color:var(--fg);line-height:1.4;display:flex;gap:.35rem;align-items:baseline}
-.bet-edge-line .edge-icon{font-size:.62rem;flex-shrink:0}
-.bet-edge-line .edge-text{color:#d4d4e8}
-.bet-edge-bni{color:#f59e0b !important}
 .first-run-callout{
   background:rgba(201,168,76,.08);border-bottom:1px solid rgba(201,168,76,.2);
   padding:.5rem 2rem;display:flex;align-items:center;justify-content:space-between;
@@ -1776,16 +1628,6 @@ body::before{
 .odds-source-ai{font-family:var(--ff-mono);font-size:.6rem;color:var(--smoke);letter-spacing:.03em}
 @keyframes oddsFlash{0%{background:rgba(201,168,76,.25)}100%{background:transparent}}
 .bet-odd.changed{animation:oddsFlash .8s ease-out}
-.bet-context strong{color:var(--white);font-style:normal}
-.bet-links{
-  padding:.4rem 1rem .65rem;display:flex;gap:.4rem;flex-wrap:wrap;
-}
-.bet-link{
-  font-family:var(--ff-cond);font-size:.65rem;letter-spacing:.08em;text-transform:uppercase;
-  color:var(--gold);border:1px solid rgba(201,168,76,.3);background:rgba(201,168,76,.06);
-  border-radius:3px;padding:.2rem .6rem;text-decoration:none;transition:.12s;
-}
-.bet-link:hover{background:rgba(201,168,76,.15);border-color:var(--gold)}
 
     /* ── SETUP / ENTITLEMENT MODAL ── */
 .setup-overlay{
@@ -2086,7 +1928,6 @@ body::before{
 
   /* Betting section */
   .bet-grid{grid-template-columns:1fr}
-  .bet-card-head{padding:.65rem .85rem .5rem}
   .bet-title{font-size:.92rem}
 
   /* Media section */
@@ -2101,7 +1942,6 @@ body::before{
 
   /* Page dividers */
   .page-divider{margin:1.5rem 1rem}
-  .betting-section,.media-section,.streaming-section{padding:0 1rem}
 
   /* Legend */
   .legend{padding:.5rem 1rem}
@@ -2116,10 +1956,8 @@ body::before{
   .controls{padding:.55rem 1.25rem}
   .main{padding:1.25rem 1.25rem 4rem}
   .mv-grid{grid-template-columns:repeat(2,1fr)}
-  .betting-section,.media-section,.streaming-section{padding:0 1.25rem}
   .streaming-grid{grid-template-columns:repeat(2,1fr)}
   .media-grid{grid-template-columns:1fr}  /* single column up to 768px — phones too narrow for 2-col */
-  .betting-grid{grid-template-columns:repeat(2,1fr)}
   .score-block{font-size:.95rem}
   .card-right{min-width:80px;max-width:150px}
 }
@@ -2150,8 +1988,6 @@ body::before{
   header.masthead{margin-right:390px}
   /* Left-pane content: all scrollable sections get right margin */
   .main,#field-brief,#night-owl,#double-feature,#offline-banner,
-  .betting-section,.field-desk-section,.media-section,
-  .streaming-section,.legend,.page-divider,
   nav.controls,#score-ticker-wrap,.mv-panel{margin-right:390px}
   /* Ticker hidden on iPad — Live section in ambient panel covers this */
   #score-ticker-wrap{display:none !important}
@@ -2314,7 +2150,6 @@ body::before{
   }
   .game-card{min-width:0}
   .sport-section[data-sport="Golf"] .game-card,.sport-section[data-sport="Golf (PGA)"] .game-card{grid-column:1/-1;max-width:none}
-  .betting-grid{grid-template-columns:repeat(2,1fr);gap:12px}
   .card-body{padding:.85rem 1.1rem .45rem .95rem}
   .card-right{padding:.85rem .95rem .85rem .5rem}
   .team-name{font-size:1.05rem}
@@ -2354,7 +2189,6 @@ body::before{
   .league-badge{font-size:.64rem}
   .s-name{font-size:1.5rem}
   .sport-section{margin-bottom:3.2rem}
-  .betting-grid{grid-template-columns:repeat(3,1fr);gap:14px}
 }
 
 /* ── Medium desktop (900-1200px) — single col, polished ── */
@@ -2487,7 +2321,6 @@ body::before{
 /* Betting section: single column on mobile */
 @media(max-width:600px){
   .bet-grid{ grid-template-columns:1fr !important; }
-  .bet-card{ padding:.9rem 1rem; }
 }
 
 /* OTW banner: compact on mobile */
@@ -2695,18 +2528,6 @@ body::before{
   <div id="bs-content"></div>
 </div>
 
-<!-- ══ BETTING INTELLIGENCE SECTION ═════════════════════════ -->
-<section class="betting-section" id="betting-section">
-  <div class="betting-head">
-    <div class="betting-icon">📊</div>
-    <span class="betting-title">Betting Intelligence</span>
-  </div>
-  <div class="betting-disclaimer">
-    Lines sourced from The Odds API. For entertainment purposes only. Verify current lines before wagering. Must be 21+ and in eligible state. Sports betting may be illegal in your jurisdiction. Problem gambling: <a href="tel:18004262537" style="color:inherit">1-800-GAMBLER</a>.
-  </div>
-  <div class="betting-grid" id="betting-grid"></div>
-</section>
-
 
 
 <!-- ══ FIELD DESK ══════════════════════════════════════════════ -->
@@ -2871,15 +2692,6 @@ function buildFieldHealthPanel() {
     rows.push(warn('Card Tap', 'No game cards rendered today'));
   else
     rows.push(warn('Card Tap', `${tapWired}/${cards} cards wired`));
-
-  // ── Odds API ─────────────────────────────────────────────────────────────
-  const oddsKeys = Object.keys(typeof _oddsCache !== 'undefined' ? _oddsCache : {});
-  const oddsGames = oddsKeys.reduce((n, k) => n + ((_oddsCache[k]||[]).length), 0);
-  const oddsRemaining = parseInt(localStorage.getItem('odds_remaining') || '-1');
-  if (oddsKeys.length === 0)
-    rows.push(warn('Odds API', 'No data loaded — will fetch on section scroll'));
-  else
-    rows.push(ok('Odds API', `${oddsGames} games across ${oddsKeys.length} sport(s)${oddsRemaining > 0 ? ` · ${oddsRemaining} credits remaining` : ''}`));
 
   // ── NHL Analytics ────────────────────────────────────────────────────────
   const nhlGames = (allData?.sports||[]).filter(s => (s.sport||'').toLowerCase().includes('nhl'));
@@ -3065,7 +2877,6 @@ const FIELD_FEATURES = {
   'situation-drama-bonus':    '2026-05-18',  // #11a: hockey/baseball/NFL/NBA situation bonuses
   'period-score-extraction':  '2026-05-18',  // #18b: linescores[] + innings[] + halfTime
   'statistical-extreme-notes':'2026-05-18',  // #18c: no-hitter/4Q-surge/comeback/HT-reversal
-  'journalism-odds-context':  '2026-05-18',  // Gap 9: full market context in J3/J5 prompts
   'franchise-misery-index':   '2026-05-18',  // #29b: [FRANCHISE_CONTEXT] in compound prompt
   'quiet-hour-detection':     '2026-05-18',  // Gap 8: 90s polling when all live drama < 30
   // Core infrastructure
@@ -3144,7 +2955,6 @@ const FIELD_FEATURES = {
   'ember-fields-compound':   '2026-05-19',  // fix7: EMBER tier/channel/contextFlag in compound prompt + Night Owl
   'ticker-trend-sort':       '2026-05-19',  // fix8: score ticker sorts by drama+trend momentum
   'bdl-injury-compound':     '2026-05-19',  // fix9: bdlInjuryContextSync() in compound prompt gameLines
-  'scout-pick-market-tip':   '2026-05-19',  // fix10: fieldVsMarket divergence enriches J4 Scout's Pick tooltip
   'j1-anti-hype':           '2026-05-14',
   'j2-series-preview':      '2026-05-14',
   'j3-field-brief':         '2026-05-14',
@@ -3163,622 +2973,6 @@ if(!FIELD_DEBUG){
 
 // ═══════════════════════════════════════════════════════════════
 // LEGACY FUNCTION STUBS — Schedule Render Fix + Betting Render Safety (May 11, 2026)
-// These references appear in renderAll(), fetchSchedule(), and renderBetting() but
-// the underlying features never landed. Without these stubs the affected render path
-// fails with ReferenceError. Each is a no-op until the real feature is implemented.
-//
-// Discovery context: the schedule render fix earlier today caught the first batch
-// (startOddsPolling et al.). While auditing L1-L6 work today, found three more
-// undeclared identifiers in renderBetting() (liveOddsData, refreshLiveOdds,
-// updateOddsUI) — same class of bug, would crash betting on first lazy-section
-// load when ODDS_API_KEY is set. Stubbing pre-emptively per user directive:
-// "future build shouldn't break previous build".
-// ═══════════════════════════════════════════════════════════════
-// fetchSchedule()/renderAll() callbacks (added during schedule render emergency):
-var startOddsPolling     = function(){};
-var startSportsDBEngine  = function(){};
-var startFotmobEngine    = function(){};
-// ── Squiggle AFL Engine — Sessions 1 & 2 ─────────────────────────────────
-// Free documented API · no key · CORS-open in browsers
-// Relay: field-relay-nba.jeffunglesbee.workers.dev/squiggle (edge cache + CORS bypass)
-// TTL enforced at relay: 30s live · 120s standings · 3600s tips
-const SQUIGGLE_RELAY='https://field-relay-nba.jeffunglesbee.workers.dev/squiggle';
-
-// ── MLS Stats API relay ────────────────────────────────────────────────────────
-// Source: stats-api.mlssoccer.com — official MLS stats API (auth-free, CORS-restricted)
-// Relay route: /mls/stats/* → stats-api.mlssoccer.com/* (added field-relay-nba 83ef11a)
-// TTL: 30s live | 60s goals | 300s schedule | 3600s standings
-// 2026 constants: competition MLS-COM-000001 / season MLS-SEA-0001KA
-// Key benefit: opta_id (numeric) team IDs — canonical, accent-safe, eliminates SCORE-UNIFORM-A
-const MLS_RELAY_BASE   = 'https://field-relay-nba.jeffunglesbee.workers.dev/mls/stats';
-// PGA Tour GraphQL relay REMOVED 2026-05-29 (ToS compliance): pgatour.com Terms
-// of Use prohibit automated copying/downloading and the data is licensed/proprietary.
-// Direct GraphQL access decommissioned. One-time purge of any PGA data cached on
-// this device by the old code path:
-try { Object.keys(localStorage).forEach(k => { if (k.indexOf('field_pgt_') === 0) localStorage.removeItem(k); }); } catch(e) {}
-const MLS_SEASON_2026 = 'MLS-SEA-0001KA';
-const MLS_COMPETITION = 'MLS-COM-000001';
-
-// Cache for MLS opta_id → team name mapping (populated by fetchMLSTeamMap)
-// Used to normalize espnScores keys: "4435|12637" instead of accent-variable name strings
-const _mlsTeamMap = {}; // opta_id → { name, abbreviation }
-const _mlsGameOptaIds = {}; // "home_opta|away_opta" → game opta_id (for goals lookup)
-
-// fetchMLSLive: today's MLS match state via official API relay
-// Returns array of match objects with period, minute_display, is_final, home/away scores, opta_ids
-async function fetchMLSLive() {
-  try {
-    const today = new Date().toISOString().slice(0,10);
-    const url = MLS_RELAY_BASE +
-      `/v1/matches?match_date%5Bgte%5D=${today}&match_date%5Blte%5D=${today}` +
-      `&include=home_club_match&include=away_club_match` +
-      `&include=home_club&include=away_club&per_page=100`;
-    const r = await fetch(url, {signal: AbortSignal.timeout(6000)});
-    if (!r.ok) return [];
-    const d = await r.json();
-    const matches = d.schedule || d.matches || d || [];
-    // Cache team opta_ids and populate espnScores with canonical keys
-    matches.forEach(m => {
-      const hClub = m.home_club || {};
-      const aClub = m.away_club || {};
-      const hMatch = m.home_club_match || {};
-      const aMatch = m.away_club_match || {};
-      const hId = hClub.opta_id, aId = aClub.opta_id;
-      if (hId) _mlsTeamMap[hId] = { name: hClub.name, abbreviation: hClub.abbreviation };
-      if (aId) _mlsTeamMap[aId] = { name: aClub.name, abbreviation: aClub.abbreviation };
-      if (!hId || !aId) return;
-      const key = `${hId}|${aId}`;
-      const gameOptaId = m.game_id || m.opta_id;
-      if (gameOptaId) _mlsGameOptaIds[key] = gameOptaId;
-      // Write canonical espnScores entry using numeric opta_id key
-      const period = m.period || '';
-      const isFinal = m.is_final || period === 'FullTime';
-      const isLive  = !isFinal && period && period !== 'PreMatch';
-      espnScores[key] = {
-        state: isFinal ? 'post' : isLive ? 'in' : 'pre',
-        period: period === 'FirstHalf' ? 1 : period === 'SecondHalf' ? 2 : 0,
-        clock: m.minute_display || '',
-        detail: m.minute_display || (isFinal ? 'FT' : period || ''),
-        homeScore: hMatch.score ?? 0,
-        awayScore: aMatch.score ?? 0,
-        homeName: hClub.name || '',
-        awayName: aClub.name || '',
-        home: hClub.name || '',
-        away: aClub.name || '',
-        homeWinning: (hMatch.score ?? 0) > (aMatch.score ?? 0),
-        periodPrefix: "'",  // soccer convention for classifySport
-        source: 'mls-relay',
-        _sport: 'MLS Soccer',
-        _mlsOptaHome: hId,
-        _mlsOptaAway: aId,
-        _gameId: String(gameOptaId || key),
-      };
-      espnScoreTs[key] = Date.now();
-    });
-    if (FIELD_DEBUG) console.log(`[MLS-relay] ${matches.length} matches, ${Object.keys(_mlsTeamMap).length} teams cached`);
-    return matches;
-  } catch(e) {
-    if (FIELD_DEBUG) console.warn('[MLS-relay] fetchMLSLive failed:', e.message);
-    return [];
-  }
-}
-
-// fetchMLSGoals: goalscorer events for a completed MLS match
-// matchId: opta_id (numeric). Returns [{minute_display, type, club.abbreviation}]
-async function fetchMLSGoals(matchId) {
-  try {
-    const url = MLS_RELAY_BASE +
-      `/v1/goals?match_game_id=${matchId}&include=club&order_by=goal_minute`;
-    const r = await fetch(url, {signal: AbortSignal.timeout(5000)});
-    if (!r.ok) return [];
-    return await r.json();
-  } catch(e) { return []; }
-}
-
-// ── OpenF1 — Formula 1 live timing (CORS-open, no relay needed) ───────────────
-// Free: 3 req/s · 30 req/min · 21/22 endpoints free
-// Live: 30 min before session start → 30 min after session end
-// Gate: only poll during live session window (fetchOpenF1Session detects this)
-const OPENF1_BASE = 'https://api.openf1.org/v1';
-let _openF1SessionCache = {key:null,expiry:0,isLive:false};
-let _openF1PollInterval = null;
-
-async function fetchOpenF1CurrentSession(){
-  if(_openF1SessionCache.key && Date.now()<_openF1SessionCache.expiry) return _openF1SessionCache;
-  try{
-    const today=new Date().toISOString().slice(0,10);
-    const r=await fetch(`${OPENF1_BASE}/sessions?date_start>=${today}&session_type=Race,Qualifying,Sprint`,
-      {signal:AbortSignal.timeout(5000)});
-    const sessions=await r.json();
-    if(!sessions?.length){_openF1SessionCache={key:null,expiry:Date.now()+300000,isLive:false};return _openF1SessionCache;}
-    // Most recent session
-    const s=sessions[sessions.length-1];
-    const start=new Date(s.date_start).getTime(), end=new Date(s.date_end||s.date_start).getTime()+1800000;
-    const now=Date.now();
-    const isLive=now>=start-1800000&&now<=end;
-    _openF1SessionCache={key:s.session_key,name:s.session_name,location:s.location,
-      year:s.year,isLive,start,end,expiry:Date.now()+60000};
-    return _openF1SessionCache;
-  }catch(e){_openF1SessionCache={key:null,expiry:Date.now()+60000,isLive:false};return _openF1SessionCache;}
-}
-
-// Fetch all driver positions — single call returns full grid
-// Returns: [{driver_number, position, date}] sorted by position
-async function fetchOpenF1Positions(sessionKey){
-  try{
-    const r=await fetch(`${OPENF1_BASE}/position?session_key=${sessionKey}`,
-      {signal:AbortSignal.timeout(5000)});
-    const raw=await r.json();
-    // Deduplicate: keep latest entry per driver
-    const latest={};
-    (raw||[]).forEach(p=>{if(!latest[p.driver_number]||p.date>latest[p.driver_number].date) latest[p.driver_number]=p;});
-    return Object.values(latest).sort((a,b)=>a.position-b.position);
-  }catch(e){return [];}
-}
-
-// Fetch recent race control messages (safety car, flags, incidents)
-async function fetchOpenF1RaceControl(sessionKey,since){
-  try{
-    const q=since?`?session_key=${sessionKey}&date>=${since}`:`?session_key=${sessionKey}`;
-    const r=await fetch(`${OPENF1_BASE}/race_control${q}`,{signal:AbortSignal.timeout(5000)});
-    return await r.json();
-  }catch(e){return [];}
-}
-
-// Fetch driver metadata (number → name mapping) — cache per session
-let _openF1Drivers={};
-async function fetchOpenF1Drivers(sessionKey){
-  if(_openF1Drivers[sessionKey]) return _openF1Drivers[sessionKey];
-  try{
-    const r=await fetch(`${OPENF1_BASE}/drivers?session_key=${sessionKey}`,
-      {signal:AbortSignal.timeout(5000)});
-    const drivers=await r.json();
-    _openF1Drivers[sessionKey]={};
-    (drivers||[]).forEach(d=>{_openF1Drivers[sessionKey][d.driver_number]={
-      name:d.full_name,abbr:d.name_acronym,team:d.team_name,
-      teamColour:'#'+d.team_colour?.replace(/^#/,''),
-    };});
-    return _openF1Drivers[sessionKey];
-  }catch(e){return {};}
-}
-
-// window._openF1LiveData — shared live data consumed by card renderer
-window._openF1LiveData={positions:[],raceControl:[],drivers:{},sessionKey:null,lastUpdate:0};
-
-async function pollOpenF1(){
-  const session=await fetchOpenF1CurrentSession();
-  if(!session.isLive||!session.key) return;
-  // Fetch drivers once per session
-  if(!_openF1Drivers[session.key]) await fetchOpenF1Drivers(session.key);
-  const [positions,control]=await Promise.all([
-    fetchOpenF1Positions(session.key),
-    fetchOpenF1RaceControl(session.key,
-      window._openF1LiveData.lastUpdate?new Date(window._openF1LiveData.lastUpdate).toISOString():null),
-  ]);
-  window._openF1LiveData={
-    positions,raceControl:control,
-    drivers:_openF1Drivers[session.key]||{},
-    sessionKey:session.key,lastUpdate:Date.now(),
-  // UFL 2026
-  'ufl-2026':               '2026-05-22',
-  // Weather Intelligence Expansion (Session K)
-  'weather-intelligence':   '2026-05-22',  // wxDescription/Icon/Alert/Badge/isOutdoorVenue/getVenueCoords defined
-                                           // PARK_ORIENTATION + windContextNote (MLB park geometry)
-                                           // fetchAQI (/v1/air-quality) + AQI badge + weatherDramaModifier()  // UFL section — 8 teams, Week 9+10 + playoffs (fd73a89)
-  };
-  // Emit to Event Bus when built (field:score for P1 change)
-  if(typeof fieldEvents!=='undefined'){
-    const p1=positions[0];
-    if(p1){
-      const prev=window._openF1LiveData._prevP1;
-      if(prev&&prev!==p1.driver_number){
-        fieldEvents.dispatchEvent(new CustomEvent('field:lead_change',{detail:
-          {gameId:'f1_live',sport:{isGolf:false},newLeader:p1.driver_number,
-           source:'openf1',scoreline:`P1: #${p1.driver_number}`}}));
-      }
-      window._openF1LiveData._prevP1=p1.driver_number;
-    }
-  }
-}
-
-// Start OpenF1 polling — only during live session window (4s interval)
-// Call from app startup; gates internally on isLive
-async function startOpenF1Engine(){
-  if(_openF1PollInterval) return;
-  const session=await fetchOpenF1CurrentSession();
-  if(!session.isLive) return; // no live session — skip
-  await pollOpenF1(); // immediate first poll
-  _openF1PollInterval=setInterval(()=>pollOpenF1().catch(e=>captureFieldError('openf1-poll',e,true)),4000);
-  // Stop when session ends
-  const msLeft=session.end-Date.now();
-  if(msLeft>0) setTimeout(()=>{clearInterval(_openF1PollInterval);_openF1PollInterval=null;},msLeft+60000);
-}
-
-// ── Odds Lookup — reads from The Odds API cache (zero additional API calls) ────
-// findOddsForGame() searches _oddsCache populated by fetchOddsForSport().
-// Used by beatTheBook(), injectOddsChip(), market movement detection.
-// Prefers DraftKings, falls back to first bookmaker with h2h market.
-function findOddsForGame(game){
-  if(!game?.home||!game?.away) return null;
-  const today=new Date().toISOString().split('T')[0];
-  const slug=s=>s.toLowerCase().replace(/[^a-z0-9]/g,'').slice(0,12);
-  const homeSlug=slug(game.home), awaySlug=slug(game.away);
-  for(const key of Object.keys(_oddsCache)){
-    if(!key.endsWith(today)) continue;
-    const events=_oddsCache[key];
-    if(!Array.isArray(events)) continue;
-    const match=events.find(ev=>{
-      const h=slug(ev.home_team||''),a=slug(ev.away_team||'');
-      return (h.includes(homeSlug)||homeSlug.includes(h))&&
-             (a.includes(awaySlug)||awaySlug.includes(a));
-    });
-    if(!match) continue;
-    const bks=match.bookmakers||[];
-    const dk=bks.find(b=>b.key==='draftkings');
-    const bk=dk||bks.find(b=>(b.markets||[]).some(m=>m.key==='h2h'));
-    if(!bk) continue;
-    const h2h=(bk.markets||[]).find(m=>m.key==='h2h');
-    if(!h2h) continue;
-    const home=h2h.outcomes.find(o=>slug(o.name).includes(homeSlug));
-    const away=h2h.outcomes.find(o=>slug(o.name).includes(awaySlug));
-    if(home&&away) return {
-      moneyline:{home:home.price,away:away.price},
-      source:bk.title||bk.key,
-      allBookmakers:bks
-    };
-  }
-  return null;
-}
-
-// Format American odds for display: +150, -200
-function fmtAmericanOdds(price){
-  if(!price||isNaN(price)) return null;
-  return price>0?'+'+price:''+price;
-}
-const AFL_TEAM_ABBR={
-  'Adelaide':'ADE','Brisbane Lions':'BRI','Carlton':'CAR','Collingwood':'COL',
-  'Essendon':'ESS','Fremantle':'FRE','Geelong':'GEE','Gold Coast':'GCS',
-  'Greater Western Sydney':'GWS','Hawthorn':'HAW','Melbourne':'MEL',
-  'North Melbourne':'NME','Port Adelaide':'POR','Richmond':'RIC',
-  'St Kilda':'STK','Sydney':'SYD','West Coast':'WCE','Western Bulldogs':'WBD'
-};
-let _squiggleCache={games:null,standings:null,fetchedAt:0};
-
-// ── AFL Standings (Session 4) ─────────────────────────────────────────────────
-// Squiggle ?q=standings;year=2026 → AFL ladder with top-10 finals cut line
-// 2026: TOP 10 make finals (Wildcard Round added) — NOT top 8
-async function fetchAFLStandings(){
-  if(_squiggleCache.standings&&Date.now()-_squiggleCache.fetchedAt<120000) return;
-  try{
-    const r=await fetch(SQUIGGLE_RELAY+'?q=standings;year=2026',
-      {headers:{'User-Agent':'FIELD-Global-Sports'},signal:AbortSignal.timeout(7000)});
-    if(!r.ok) return;
-    const data=await r.json();
-    if(data.standings) _squiggleCache.standings=data.standings;
-    if(FIELD_DEBUG) console.debug('[AFL] standings fetched:',data.standings?.length,'teams');
-    renderAFLStandingsWidget();
-  }catch(e){if(FIELD_DEBUG) console.debug('[AFL] standings failed:',e.message);}
-}
-
-function renderAFLStandingsWidget(){
-  const s=_squiggleCache.standings;
-  if(!s||!s.length) return;
-  const container=document.querySelector('.sport-section[data-sport="Australian Football (AFL)"] .standings-panel');
-  if(!container) return;
-
-  const rows=s.slice(0,18).map((t,i)=>{
-    const rank=i+1;
-    const finals=rank<=10; // Top 10 make finals in 2026 (Wildcard Round)
-    const cutline=rank===10;
-    const abbr=AFL_TEAM_ABBR[t.name]||(t.name||'').slice(0,3).toUpperCase();
-    const pct=t.percentage?Math.round(t.percentage)+'%':'';
-    const border=cutline?'border-bottom:2px solid var(--accent,#f97316);':'';
-    const bg=finals?'background:rgba(249,115,22,0.06);':'';
-    return `<tr style="${border}${bg}">
-      <td style="padding:2px 6px;color:${finals?'var(--accent,#f97316)':'var(--text-muted,#888)'};font-weight:${rank<=4?'bold':'normal'}">${rank}</td>
-      <td style="padding:2px 6px;font-weight:500">${abbr}</td>
-      <td style="padding:2px 6px;text-align:center">${t.wins||0}-${t.losses||0}${t.draws?'-'+t.draws:''}</td>
-      <td style="padding:2px 6px;text-align:right;color:var(--text-muted,#888)">${pct}</td>
-      <td style="padding:2px 6px;text-align:right">${t.pts||0}</td>
-    </tr>`;
-  }).join('');
-
-  container.innerHTML=`<table style="width:100%;border-collapse:collapse;font-size:0.78rem">
-    <thead><tr style="color:var(--text-muted,#888);border-bottom:1px solid var(--border,#333)">
-      <th style="padding:2px 6px;text-align:left">#</th>
-      <th style="padding:2px 6px;text-align:left">Team</th>
-      <th style="padding:2px 6px;text-align:center">W-L</th>
-      <th style="padding:2px 6px;text-align:right">%</th>
-      <th style="padding:2px 6px;text-align:right">Pts</th>
-    </tr></thead>
-    <tbody>${rows}</tbody>
-  </table>
-  <div style="font-size:0.68rem;color:var(--text-muted,#777);margin-top:4px;padding:0 4px">
-    Top 10 qualify for finals (Wildcard Round) · Orange = finals · Line = cut
-  </div>`;
-}
-
-
-function squiggleToFieldGame(g){
-  if(!g.hteam||!g.ateam) return null;
-  return {
-    home:g.hteam, away:g.ateam,
-    league:'AFL 2026 \u2014 '+(g.roundname||'Round '+g.round),
-    start_time:new Date(g.unixtime*1000).toISOString(),
-    confirmed:true, venue:g.venue||'',
-    streams:resolveBundle('AFL_USA'),
-    _sport:'Australian Football (AFL)',
-    _id:'afl_'+g.id, _squiggleId:g.id, _squiggle:g,
-    _aflComplete:g.complete, // 0=pre 1-99=live 100=final — used by getStatus() to override time window
-  };
-}
-
-// Inject odds chip onto a game card — reads from The Odds API cache
-// Shows American moneyline: H +150 · A -200 (source: DraftKings)
-function injectOddsChip(card, game){
-  if(!card||!game) return;
-  if(card.querySelector('.odds-chip')) return; // already injected
-  const odds=findOddsForGame(game);
-  if(!odds?.moneyline) return;
-  const hPrice=fmtAmericanOdds(odds.moneyline.home);
-  const aPrice=fmtAmericanOdds(odds.moneyline.away);
-  if(!hPrice||!aPrice) return;
-  const chip=document.createElement('div');
-  chip.className='odds-chip';
-  chip.title=`Moneyline odds (${odds.source||'The Odds API'})`;
-  chip.innerHTML=
-    `<span class="odds-label">H</span><span class="odds-price">${hPrice}</span>`+
-    `<span class="odds-label">A</span><span class="odds-price">${aPrice}</span>`;
-  const stageEl=card.querySelector('.card-stage-content,.card-brief-inline');
-  if(stageEl) stageEl.after(chip);
-  else card.querySelector('.card-body')?.appendChild(chip);
-}
-
-// Inject odds on all visible cards — called after fetchOddsForSport completes
-function injectAllOddsChips(){
-  if(!allData?.sports) return;
-  (allData.sports).forEach(sec=>{
-    (sec.games||[]).forEach(game=>{
-      if(!game._id) return;
-      const card=document.querySelector(`.game-card[data-gameid="${game._id}"]`);
-      if(card) injectOddsChip(card,game);
-    });
-  });
-}
-
-
-function injectSquiggleLiveScores(){
-  if(!_squiggleCache.games) return;
-  _squiggleCache.games.forEach(g=>{
-    if(!g.hteam||g.complete===0) return;
-    const card=document.querySelector('.game-card[data-gameid="afl_'+g.id+'"]');
-    if(!card) return;
-    const ha=AFL_TEAM_ABBR[g.hteam]||g.hteam.slice(0,3).toUpperCase();
-    const aa=AFL_TEAM_ABBR[g.ateam]||g.ateam.slice(0,3).toUpperCase();
-    const hs=g.hscore??0, as_=g.ascore??0;
-    const hg=g.hgoals, hb=g.hbehinds, ag=g.agoals, ab=g.abehinds;
-    const period=g.complete>=100?'Final':(g.timestr||'Live');
-    // Goals.behinds only — no total in parens, no "· Final" for finished games
-    const periodSuffix = (g.complete>0&&g.complete<100) ? ' \u00b7 '+period : '';
-    const scoreStr=(hg!=null&&hb!=null)
-      ?ha+' '+hg+'.'+hb+' \u2013 '+aa+' '+ag+'.'+ab+periodSuffix
-      :ha+' '+hs+' \u2013 '+aa+' '+as_+periodSuffix;
-    let chip=card.querySelector('.leader-chip');
-    if(!chip){const m=card.querySelector('.matchup,.card-body');if(m){chip=document.createElement('span');chip.className='leader-chip';m.appendChild(chip);}}
-    if(chip){chip.textContent=scoreStr;chip.classList.toggle('atp-score-live',g.complete>0&&g.complete<100);}
-    card.classList.toggle('espn-live',g.complete>0&&g.complete<100);
-  });
-
-  // ── Score normalisation bridge: write live AFL games into espnScores ──────
-  // Follows the same pattern as fetchNHLRelayScores() — espnScores IS the
-  // normalised store. Everything downstream (drama scoring, OTW, dramaBadges,
-  // Night Owl) automatically picks up AFL once it's in here. Zero new callers.
-  _squiggleCache.games.forEach(sq=>{
-    if(!sq.hteam||!sq.ateam) return;
-    const live=sq.complete>0&&sq.complete<100;
-    const final_=sq.complete>=100;
-    if(!live&&!final_) return; // skip pre-game
-    // Parse Squiggle timestr "Q3 2:14" → period + clock
-    const tm=String(sq.timestr||'').match(/[Qq](\d+)\s*([\d:]+)?/);
-    const period=tm?parseInt(tm[1]):0;
-    const clock=tm&&tm[2]?tm[2]:'';
-    const key=`${sq.hteam}|${sq.ateam}`;
-    espnScores[key]={
-      _gameId: resolveGameIdByHome(sq.hteam),
-      state:   final_?'post':'in',
-      period, clock,
-      detail:  final_?'Final':(sq.timestr||'Live'),
-      homeScore: sq.hscore||0,
-      awayScore: sq.ascore||0,
-      // AFL goals.behinds display strings — set for potential future use; not currently read.
-      // Big score uses numeric totals via computeGameNarrative; gold chip uses injectSquiggleLiveScores.
-      _aflHomeStr: (sq.hgoals!=null&&sq.hbehinds!=null) ? sq.hgoals+'.'+sq.hbehinds : null,
-      _aflAwayStr: (sq.agoals!=null&&sq.abehinds!=null) ? sq.agoals+'.'+sq.abehinds : null,
-      homeName:  sq.hteam,
-      awayName:  sq.ateam,
-      homeWinning:(sq.hscore||0)>(sq.ascore||0),
-      periodPrefix:'Q',
-      source:'squiggle',
-      _aflComplete: sq.complete, // AFL-specific: 0-100 game completeness
-    };
-    espnScoreTs[key]=Date.now();
-  });
-}
-
-function refreshAFLSection(){
-  if(!_squiggleCache.games||!allData) return;
-  const todayGames=_squiggleCache.games.map(squiggleToFieldGame).filter(g=>g&&isToday(g.start_time));
-  if(!todayGames.length) return;
-  const idx=allData.sports.findIndex(s=>s.sport==='Australian Football (AFL)');
-  if(idx>=0){ allData.sports[idx]={sport:'Australian Football (AFL)',games:todayGames}; }
-  else { allData.sports.push({sport:'Australian Football (AFL)',games:todayGames}); }
-  scheduleRenderAll();
-  setTimeout(injectSquiggleLiveScores,250);
-}
-
-// Returns current AFL round number from today's hardcoded games, or falls back to 11.
-// Used to query Squiggle by round instead of by complete=0, which excludes in-progress games.
-function _aflCurrentRound(){
-  // 1. Squiggle cache (most accurate — set after first successful fetch)
-  if(_squiggleCache.games?.length){
-    const rounds=[...new Set(_squiggleCache.games.map(g=>g.round).filter(Boolean))];
-    if(rounds.length) return Math.max(...rounds);
-  }
-  // 2. Hardcoded entries (from daily update)
-  const afl=(allData?.sports||[]).find(s=>s.sport==='Australian Football (AFL)');
-  if(afl?.games?.length){
-    const m=(afl.games[0].league||'').match(/Round (\d+)/i);
-    if(m) return parseInt(m[1]);
-  }
-  // 3. Date-based auto-detect using actual Round 1 start (Mar 12 2026).
-  // Opening Round (Mar 5-8) is a prologue; R1 proper = Mar 12. One round ~7 days.
-  // ±1 tolerance is handled by fetching both R and R+1 in squigglePrefetchAll().
-  const aflR1=new Date('2026-03-12T00:00:00Z');
-  const weeks=Math.floor((Date.now()-aflR1.getTime())/(7*86400000));
-  return Math.min(Math.max(1, weeks+1), 24); // clamp 1-24
-}
-
-async function squigglePrefetchAll(){
-  try{
-    const round=_aflCurrentRound();
-    // Fetch TWO consecutive rounds: handles ±1 week date approximation + round transitions
-    // refreshAFLSection() filters for isToday() so stale games are harmless
-    const [gR,gR2,sR]=await Promise.all([
-      fetch(SQUIGGLE_RELAY+'?q=games;year=2026;round='+round,{headers:{'User-Agent':'FIELD-Global-Sports'},signal:AbortSignal.timeout(7000)}),
-      fetch(SQUIGGLE_RELAY+'?q=games;year=2026;round='+(round+1),{headers:{'User-Agent':'FIELD-Global-Sports'},signal:AbortSignal.timeout(7000)}).catch(()=>({ok:false})),
-      fetch(SQUIGGLE_RELAY+'?q=standings;year=2026',{headers:{'User-Agent':'FIELD-Global-Sports'},signal:AbortSignal.timeout(7000)}),
-    ]);
-    let games=[];
-    if(gR.ok){const d=await gR.json();games.push(...(d.games||[]));}
-    if(gR2.ok){const d=await gR2.json();games.push(...(d.games||[]));}
-    _squiggleCache={..._squiggleCache,games,fetchedAt:Date.now()};
-    if(sR.ok){const d=await sR.json();_squiggleCache={..._squiggleCache,standings:d.standings||[]};}
-    if(FIELD_DEBUG) console.debug('[AFL] prefetch: R'+round+'+R'+(round+1)+' →',games.length,'games,',_squiggleCache.standings?.length,'standings');
-    refreshAFLSection();
-    renderAFLStandingsWidget();
-  }catch(e){if(FIELD_DEBUG) console.debug('[AFL] prefetch failed:',e.message);}
-}
-
-async function startSquiggleEngine(){
-  injectSquiggleLiveScores();
-  async function refreshLive(){
-    try{
-      const r=await fetch(SQUIGGLE_RELAY+'?q=games;year=2026;round='+_aflCurrentRound(),
-        {headers:{'User-Agent':'FIELD-Global-Sports'},signal:AbortSignal.timeout(7000)});
-      if(!r.ok) return;
-      const data=await r.json();
-      _squiggleCache={games:data.games||[],fetchedAt:Date.now()};
-      injectSquiggleLiveScores();
-    }catch(e){/* silent */}
-    const hasLive=(_squiggleCache.games||[]).some(g=>g.complete>0&&g.complete<100);
-    setTimeout(refreshLive,hasLive?30000:120000);
-  }
-  setTimeout(refreshLive,60000);
-}
-
-// ── Squiggle Tips + Power Rankings (Session 3) ───────────────────────────────
-// GET /squiggle?q=tips;year=2026;round=N → 21-model consensus margin + confidence
-// GET /squiggle?q=power;year=2026 → power rankings vs ladder divergence alert
-let _squiggleTipsCache={tips:null,power:null,round:null,fetchedAt:0};
-
-async function fetchSquiggleTips(round){
-  if(_squiggleTipsCache.round===round&&Date.now()-_squiggleTipsCache.fetchedAt<3600000) return;
-  try{
-    const [tR,pR]=await Promise.all([
-      fetch(SQUIGGLE_RELAY+'?q=tips;year=2026;round='+round,{headers:{'User-Agent':'FIELD-Global-Sports'},signal:AbortSignal.timeout(7000)}),
-      fetch(SQUIGGLE_RELAY+'?q=power;year=2026',{headers:{'User-Agent':'FIELD-Global-Sports'},signal:AbortSignal.timeout(7000)}),
-    ]);
-    if(tR.ok){const d=await tR.json();_squiggleTipsCache.tips=d.tips||[];}
-    if(pR.ok){const d=await pR.json();_squiggleTipsCache.power=d.power||[];}
-    _squiggleTipsCache.round=round;
-    _squiggleTipsCache.fetchedAt=Date.now();
-    if(FIELD_DEBUG) console.debug('[AFL] tips fetched: round',round,_squiggleTipsCache.tips?.length,'tips');
-  }catch(e){if(FIELD_DEBUG) console.debug('[AFL] tips fetch failed:',e.message);}
-}
-
-function buildPowerDivergenceNote(teamName){
-  if(!_squiggleTipsCache.power||!_squiggleTipsCache.games) return null;
-  // Find ladder rank from standings cache
-  const standing=(_squiggleCache.games||[]).reduce((acc,g)=>{
-    if(!g.hteam||!g.ateam) return acc;
-    // This is a lightweight divergence check — full standings needed for accuracy
-    return acc;
-  },{});
-  // Find power rank for team
-  const pw=_squiggleTipsCache.power.find(p=>p.name===teamName||p.team===teamName);
-  if(!pw) return null;
-  const ladderRank=pw.rank,powerRank=pw.power_rank||pw.rank;
-  const diff=Math.abs(ladderRank-powerRank);
-  if(diff>=5){
-    const dir=ladderRank>powerRank?'underperforming':'overperforming';
-    return `Power rank ${dir}: ${ladderRank}${ladderRank===1?'st':ladderRank===2?'nd':ladderRank===3?'rd':'th'} on ladder \u00b7 ${powerRank}${powerRank===1?'st':powerRank===2?'nd':powerRank===3?'rd':'th'} by model`;
-  }
-  return null;
-}
-
-var injectSquiggleTips=async function(){
-  if(!_squiggleCache.games||!_squiggleCache.games.length) return;
-  // Determine current round from today's games
-  const todayGames=_squiggleCache.games.filter(g=>g&&isToday(new Date(g.unixtime*1000).toISOString()));
-  if(!todayGames.length) return;
-  const round=todayGames[0].round;
-  await fetchSquiggleTips(round);
-  if(!_squiggleTipsCache.tips||!_squiggleTipsCache.tips.length) return;
-
-  // Build a tips lookup: gameid → tip object
-  const tipsMap={};
-  _squiggleTipsCache.tips.forEach(t=>{ if(t.gameid) tipsMap[t.gameid]=t; });
-
-  // Inject tip chips onto AFL game cards
-  document.querySelectorAll('.game-card[data-gameid^="afl_"]').forEach(card=>{
-    const gidRaw=card.dataset.gameid; // "afl_38584"
-    const numId=parseInt(gidRaw.replace('afl_',''));
-    const tip=tipsMap[numId];
-    if(!tip) return;
-
-    // Build tip display: "Squiggle: GEE −11 (61% · 21 models)"
-    const margin=Math.abs(Math.round(tip.margin||0));
-    const conf=tip.confidence?Math.round(tip.confidence)+'%':null;
-    const models=tip.source_name||'21 models';
-    const tipTeamAbbr=AFL_TEAM_ABBR[tip.tip]||(tip.tip||'').slice(0,3).toUpperCase();
-    const confStr=conf?` (${conf} \u00b7 ${models})`:'';
-    const chipText=`Squiggle: ${tipTeamAbbr} \u2212${margin}${confStr}`;
-
-    // Insert tip chip into card
-    let tipEl=card.querySelector('.squiggle-tip-chip');
-    if(!tipEl){
-      const matchup=card.querySelector('.matchup,.card-body,.game-teams');
-      if(matchup){
-        tipEl=document.createElement('div');
-        tipEl.className='squiggle-tip-chip';
-        tipEl.style.cssText='font-size:0.72rem;color:var(--text-muted,#888);margin-top:2px;letter-spacing:0.01em;';
-        matchup.appendChild(tipEl);
-      }
-    }
-    if(tipEl) tipEl.textContent=chipText;
-
-    // Power divergence note
-    const game=_squiggleCache.games.find(g=>g.id===numId);
-    if(game){
-      const hNote=buildPowerDivergenceNote(game.hteam);
-      const aNote=buildPowerDivergenceNote(game.ateam);
-      const note=hNote||aNote;
-      if(note){
-        let powerEl=card.querySelector('.squiggle-power-note');
-        if(!powerEl&&tipEl){
-          powerEl=document.createElement('div');
-          powerEl.className='squiggle-power-note';
-          powerEl.style.cssText='font-size:0.68rem;color:var(--text-muted,#777);font-style:italic;margin-top:1px;';
-          tipEl.after(powerEl);
-        }
-        if(powerEl) powerEl.textContent=note;
-      }
-    }
-  });
-};
-// renderBetting() references (removed May 20 2026 TYPE E):
-// liveOddsData, refreshLiveOdds, updateOddsUI were no-op stubs from May 11 2026.
-// renderBetting() now uses _oddsCache + getGameOdds() directly — stubs never called.
 // ═══════════════════════════════════════════════════════════════
 // FIELD — Global Sports Intelligence
 // Verified schedule data for today with live broadcaster logic
@@ -6827,6 +6021,9 @@ function detectArcType(g) {
   return null;
 }
 function isNationalGame(g){return !!(g.nationalBundle);}
+// BUG-09 fix: _gameImportance is often absent on Conference Finals entries.
+// Detect by league string to catch NYK @ CLE, VGK @ COL, conference|cup final|series, etc.
+const isPlayoffGame = g => g._gameImportance || /playoff|final|semifinal|conference|cup final|series/i.test(g.league||'');
 
 // ── M2 Patent mitigation: Scout's Pick as boolean gates (not composite threshold) ──
 // OLD: preGameScore(g) > 70 && !isNationalGame(g)
@@ -6848,30 +6045,10 @@ function isScoutsPick(g) {
   // Gate 1: Playoff/series importance (boolean — not a score)
   const hasSeriesContext = !!(g.seriesRecord || /playoff|final|cup|conference|series/i.test(g.league||''));
 
-  // Gate 2: Odds show genuinely competitive matchup (single dimension: moneyline gap)
-  // Not summed with other factors — stands alone as an independent signal
-  const isOddsCompetitive = (() => {
-    try {
-      const sportKey = typeof ODDS_SPORT_MAP !== 'undefined' ? ODDS_SPORT_MAP[g._sport||g._section||''] : null;
-      if (!sportKey || typeof _oddsCache === 'undefined') return false;
-      const oddsKey = Object.keys(_oddsCache||{}).find(k => k.startsWith(sportKey));
-      if (!oddsKey) return false;
-      const odds = getGameOdds(_oddsCache[oddsKey], g.home, g.away);
-      return odds?.moneylineGap != null && odds.moneylineGap < 150;
-    } catch(_) { return false; }
-  })();
-
-  // Gate 3: Near-milestone player (single boolean: is a player close to a career mark?)
-  const hasMilestone = (() => {
-    try {
-      const gameKey = g._id || `${g.home}_${g.away}`;
-      const ms = _bdlMilestonesCache?.[gameKey];
-      return !!(ms?.pct >= 0.95);
-    } catch(_) { return false; }
-  })();
+  // Gate 2 (odds) removed — decoupled from betting engine (May 29 2026)
 
   // Eligible if at least ONE positive dimension is present (boolean OR — not summed)
-  return hasSeriesContext || isOddsCompetitive || hasMilestone;
+  return hasSeriesContext || hasMilestone;
 }
 function preGameScore(g){
   if (g._postponed) return 0; // PPD games excluded from ONE TO WATCH, ww-bar, TONIGHT
@@ -6879,26 +6056,6 @@ function preGameScore(g){
   const ib={series_deciding:30,elimination:20,clinch:15,playoff_impl:10}[g._gameImportance]||0;
   const nationalKeys=new Set(['NBA_ESPN','NBA_ABC','NBA_NBC','NBA_PRIME','NHL_ESPN','NHL_ABC','NHL_TNT','MLB_TBS','MLB_FOX','MLB_APPLE','MLB_NBC','MLB_PEACOCK_SNB','NFL_PRIME','NFL_NBC','NFL_ESPN','NFL_ABC','NFL_CBS','NFL_FOX','MLS_FOX','MLS_FS1','EFL_FINAL','EFL_PLAYOFF','EPL_NBC','EPL_USA','EPL_PEACOCK']);
   const cb=nationalKeys.has(g.nationalBundle)?5:0;
-  // #20 proxy: real odds from _oddsCache (moneyline gap → competitive pre-game drama)
-  // Tight ML = competitive game = higher drama. Replaces manual BETTING_LINES_FALLBACK spread.
-  let bb = 0;
-  try {
-    const sportKey = typeof ODDS_SPORT_MAP !== 'undefined' ? ODDS_SPORT_MAP[g._sport||g._section||''] : null;
-    if(sportKey && typeof _oddsCache !== 'undefined') {
-      const oddsKey = Object.keys(_oddsCache||{}).find(k => k.startsWith(sportKey));
-      if(oddsKey) {
-        const odds = getGameOdds(_oddsCache[oddsKey], g.home, g.away);
-        if(odds?.moneylineGap != null)
-          bb = odds.moneylineGap < 35 ? 10 : odds.moneylineGap < 100 ? 7 : odds.moneylineGap < 200 ? 3 : 0;
-      }
-    }
-    // Fallback to BETTING_LINES_FALLBACK_DATA spread if no live odds
-    if(!bb && typeof BETTING_LINES_FALLBACK_DATA !== 'undefined') {
-      const hl=(g.home||'').toLowerCase(), al=(g.away||'').toLowerCase();
-      const e=BETTING_LINES_FALLBACK_DATA.find(b=>{const mk=(b.matchKey||'').toLowerCase();return hl.includes(mk)||al.includes(mk)||mk.includes(teamNick(hl))||mk.includes(teamNick(al));});
-      if(e?.spread){const sp=Math.abs(parseFloat(e.spread)||10);bb=sp<=1.5?10:sp<=3?7:sp<=5.5?3:0;}
-    }
-  } catch(e_) {}
   // Milestone boost (ROOT 3): BDL milestone proximity → drama signal
   // A player within 5% of a career milestone makes tonight's game more interesting
   let mb = 0;
@@ -6917,47 +6074,9 @@ function preGameScore(g){
     /conference finals|cf g\d|wcf|ecf g\d|wcf g\d|ecf.*g\d/i.test(g.league||'') ? 40 :
     /conference semi|second round|round 2|wc playoff|copa final/i.test(g.league||'') ? 15 :
     leagueStr.includes('playoff') || leagueStr.includes('final day') ? 5 : 0;
-  return nb+ib+cb+bb+mb+tierBoost;
+  return nb+ib+cb+mb+tierBoost;
 }
 
-// ── TONIGHT SUMMARY CARD (Wow #23 — template version, global) ────────────
-// ─────────────────────────────────────────────────────────────────────────
-
-
-// ── Tonight on FIELD — drama-ranked game picker ─────────────────────────────
-// Top tonight's games by preGameScore with importance badges.
-// Used as betting section intro card — contextualizes why these games matter.
-// Called from renderBetting(); updates on every live poll cycle.
-function renderTonightSummary(sections){
-  try{
-    const all=sections.flatMap(s=>(s.games||[]).map(g=>({...g,_section:s.sport})));
-    if(!all.length) return '';
-    const ranked=rankGamesByDrama(all);
-    if(!ranked.length) return '';
-    const top=ranked.slice(0,3);
-    const total=all.filter(g=>g.home).length;
-    // BUG-09 fix: _gameImportance is often absent on Conference Finals entries.
-    // Also detect by league string to count NYK @ CLE, VGK @ COL, etc.
-    const isPlayoffGame = g => g._gameImportance || /playoff|final|semifinal|conference|cup final|series/i.test(g.league||'');
-    const pGames=all.filter(isPlayoffGame).length;
-    const sports=[...new Set(sections.filter(s=>s.games?.length).map(s=>s.sport))];
-    const hl=pGames>0?`${pGames} playoff game${pGames>1?'s':''} tonight · ${total} total events`:`${total} events across ${sports.length} sports`;
-    const entry=(g,i)=>{
-      const t=g.start_time?new Date(g.start_time).toLocaleTimeString('en-US',{timeZone:'America/New_York',hour:'numeric',minute:'2-digit',hour12:true}):'';
-      const n=g.streams?.[0]?.label||'';
-      const b=g._gameImportance?`<span class="ts-badge ts-${g._gameImportance}">${g._importanceIcon||''} ${g.narrative?.label||''}</span>`:'';
-      // M1 Patent mitigation: "drama N" composite number removed from display.
-      // preGameScore() sums importance + broadcast + odds + milestones into one composite.
-      // Displaying that composite labeled "drama" recreates "interest level value" visually
-      // (Numerical Usage Policy Case A — risky). Semantic labels (badges) convey the same
-      // information without creating a visible threshold-comparable interest value.
-      // The live dramaScoreLive() score (single-dimension game-state) remains on live cards
-      // as Case C (admitted prior art, single dimension, not summed composite).
-      return `<div class="ts-game${i===0?' ts-top':''}"><div class="ts-matchup">${g.away||''} ${g.neutral?'vs':'@'} ${g.home||''}</div>${b}<div class="ts-meta">${g._section} · ${t}${g._subtitle?' · '+g._subtitle:''}${n?' · '+n:''}</div></div>`;
-    };
-    return `<div class="tonight-summary"><div class="ts-header"><span class="ts-title">⚡ Tonight on FIELD</span><span class="ts-count">${hl}</span></div><div class="ts-games">${top.map(entry).join('')}</div></div>`;
-  }catch(e){return '';}
-}
 
 
 // ── Index.html utility helpers ────────────────────────────────────────────
@@ -7436,8 +6555,7 @@ function renderAll(){
           ${(()=>{const _va=typeof findESPNScore==='function'?findESPNScore(g):null;const _vc=typeof buildVibeChips==='function'?buildVibeChips(g,_va,sec.sport):[];return _vc.length?'<div class="ganalytics">'+_vc.map(v=>'<span class="vibe '+v.cls+'">'+v.label+'</span>').join('')+'</div>':'';})()} 
           ${(()=>{const _ed=typeof findESPNScore==='function'?findESPNScore(g):null;const _dl=buildDramaLineTiers(g,_ed,sec.sport);if(_dl.tight){const _q=s=>s.replace(/"/g,'&quot;');return `<div class="card-drama-line" data-drama-tight="${_q(_dl.tight)}" data-drama-mid="${_q(_dl.mid)}" data-drama-full="${_q(_dl.full)}">${_dl.tight}</div>`;}return g.narrative?.label&&!g._gameImportance?`<div class="narrative-line${(g.narrative.boost||0)>=20?' narrative-hi':''}">${g.narrative.label}</div>`:'';})()}
           ${(()=>{const _cs=buildCheapSeats(g);if(!_cs)return '';return `<div class="cheap-seats"><span class="cs-badge ${_cs.badgeClass}">${_cs.badge}</span><span class="cs-text">${_cs.text}</span></div>`;})()}
-          ${(()=>{const _btb=beatTheBook(g);if(!_btb)return '';return `<div class="beat-the-book"><span class="btb-badge ${_btb.cls}">Vig ${_btb.vig}</span><span class="btb-text">${_btb.assessment}</span></div>`;})()}
-          ${(()=>{const _ii=assessInjuryPriceImpact(g);if(!_ii)return '';return `<div class="injury-intel"><span class="ii-badge ${_ii.cls}">${_ii.badge}</span><span class="ii-text">${_ii.text}</span></div>`;})()}
+                    ${(()=>{const _ii=assessInjuryPriceImpact(g);if(!_ii)return '';return `<div class="injury-intel"><span class="ii-badge ${_ii.cls}">${_ii.badge}</span><span class="ii-text">${_ii.text}</span></div>`;})()}
           ${(()=>{ if(g._sport!=='UFL'||!g._epaLive?.lastPlay) return ''; return _buildUFLEpaHTML(g._epaLive); })()}
           <span class="card-tap-hint">tap for intel ›</span>
         </div>
@@ -8997,386 +8115,11 @@ function renderMedia(){
   }).join("");
 }
 
-// ═══════════════════════════════════════════════════════════════
-// BETTING INTELLIGENCE
-// Odds verified from DraftKings, FanDuel, BetMGM — May 11, 2026
-// ═══════════════════════════════════════════════════════════════
-// BETTING_LINES moved inside renderBetting() for lazy parsing
-
-// ── Betting cache keys ───────────────────────────────────────────────────────
-const BET_LINES_KEY  = "field_bet_lines";   // cached JSON string of BETTING_LINES
-const BET_CACHE_DATE = "field_bet_cache_d"; // date the lines were generated
-
-// Fetch fresh betting intelligence from Claude for today's games
-// Uses today's schedule from allData — compact prompt, max_tokens 1200
-async function fetchBettingLines(){
-  if(!allData||!allData.sports) return null;
-
-  // Build compact game list from today's schedule
-  const games = [];
-  allData.sports.forEach(sec=>{
-    (sec.games||[]).forEach(g=>{
-      if(getStatus(g.start_time)!=="pre"&&getStatus(g.start_time)!=="live") return; // skip finished
-      games.push(`${g.away||"?"} @ ${g.home||"?"} (${sec.sport}, ${fmtTime(g.start_time)})`);
-    });
-  });
-  if(!games.length) return null;
-
-  const schema = '{"lines":[{"game":"Away @ Home","league":"League · Time ET","source":"📊 AI Estimated",'
-    + '"context":"2-3 sentence analysis based ONLY on the injury data provided. No statistics or claims not given.",'
-    + '"lines":[{"label":"Moneyline","items":[{"t":"Home","o":"-150","fav":true},{"t":"Away","o":"+130","fav":false}]}],'
-    + '"books":[{"name":"DraftKings","url":"https://sportsbook.draftkings.com"}]}]}';
-  // ── Fetch live Odds API lines for top games ───────────────────────────────
-  let liveOddsStr = "";
-  const liveOddsMap = {};
-  try{
-    const oddsGames = allData.sports.slice(0,4);
-    const oddsResults = await Promise.allSettled(
-      oddsGames.map(async sec=>{
-        const g=(sec.games||[])[0]; if(!g||!g.home||!g.away) return;
-        const odds = await fetchGameOdds(g.home, g.away, sec.sport);
-        if(odds) liveOddsMap[`${g.away} @ ${g.home}`] = odds;
-      })
-    );
-    const oddsEntries = Object.entries(liveOddsMap);
-    if(oddsEntries.length){
-      liveOddsStr = "\n\nVerified live odds from DraftKings (use ONLY these values for line fields — do not estimate):\n";
-      oddsEntries.forEach(([game, o])=>{
-        liveOddsStr += `${game}: ML ${o.moneyline?`${o.moneyline.home>0?"+":""}${o.moneyline.home} / ${o.moneyline.away>0?"+":""}${o.moneyline.away}`:"N/A"}`;
-        if(o.spread) liveOddsStr += ` | Spread ${o.spread.line>0?"+":""}${o.spread.line} (${o.spread.home>0?"+":""}${o.spread.home} / ${o.spread.away>0?"+":""}${o.spread.away})`;
-        if(o.total)  liveOddsStr += ` | O/U ${o.total.line} (O ${o.total.over>0?"+":""}${o.total.over} / U ${o.total.under>0?"+":""}${o.total.under})`;
-        liveOddsStr += "\n";
-      });
-      if(FIELD_DEBUG) console.debug("[Odds] injecting live odds for",oddsEntries.length,"games");
-    }
-  }catch(e){ if(FIELD_DEBUG) console.warn("[Odds] prefetch error",e.message); }
-  // Gather BDL injury context — timeout after 5s to not block betting render
-  let bdlCtxStr = "";
-  try{
-    const bdlCtxParts = [];
-    const topGames = allData.sports.slice(0,4);
-    const bdlTimeout = new Promise(r=>setTimeout(()=>r([]),5000));
-    const bdlWork = (async()=>{
-      for(const sec of topGames){
-        const g=(sec.games||[])[0];
-        if(!g) continue;
-        const ctx=await bdlContextForGame(g.home||"",g.away||"",sec.sport);
-        if(ctx) bdlCtxParts.push(ctx);
-      }
-      return bdlCtxParts;
-    })();
-    const parts = await Promise.race([bdlWork, bdlTimeout]);
-    if(parts.length) bdlCtxStr = "\n\nLive injury data:\n"+parts.join("\n");
-  }catch(e){ /* BDL context optional — proceed without it */ }
-
-  const hasLiveOdds = Object.keys(liveOddsMap).length > 0;
-  const prompt = "Today is " + TODAY_ISO + ". Sports games today:\n"
-    + games.slice(0,6).join("\n")
-    + bdlCtxStr
-    + liveOddsStr
-    + "\n\nReturn betting intelligence as JSON only — no prose, no markdown fences.\n"
-    + "Schema: " + schema + "\n"
-    + (hasLiveOdds
-        ? "For games with verified odds above: set source to \"DraftKings\" and use ONLY the provided line values. Do not estimate or modify them. For games WITHOUT verified odds: omit them entirely rather than estimating — do not invent odds. "
-        : "No verified odds available. Set source to \"📊 AI Estimated\" for all cards. CRITICAL: Only include games where you have a confident, factually-grounded view of the matchup based on the injury data and recent form. Omit games entirely rather than fabricating lines. An empty {\"lines\":[]} response is preferable to inventing odds. ")
-    + "context must be based ONLY on the injury data provided above — do not add statistics, historical trends, win-loss records, head-to-head history, or any projections not explicitly given. If injury data is empty for a game, the context must not mention specific players, percentages, or numerical claims. "
-    + "Include 3-5 games at most. Quality over quantity — fewer well-reasoned cards is better than more fabricated ones. American odds format.";
-
-  if(!canUseAPI()) return null;
-  try{
-    incrementUsage();
-    const r = await fetch(CLAUDE_PROXY_URL,{
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      signal:AbortSignal.timeout(6000),
-      body:JSON.stringify({
-        model:"claude-sonnet-4-6",
-        max_tokens:1200,
-        messages:[{role:"user",content:prompt}]
-      })
-    });
-    if(!r.ok) throw new Error("HTTP "+r.status);
-    const data = await r.json();
-    if(data.type==="error"||data.error) throw new Error(data.error?.message||"API error");
-    const raw = (data.content||[]).map(b=>b.text||"").join("").trim();
-    const cleaned = raw;
-    const m = cleaned.match(/\{[\s\S]*\}/);
-    if(!m) throw new Error("No JSON in response");
-    const parsed = JSON.parse(m[0]);
-    if(!parsed.lines||!parsed.lines.length) return null;
-    // Cache for the day (May 11 2026: switched sessionStorage → localStorage so the
-    // AI-generated lines persist across browser sessions. Previously the cache was
-    // thrown away on tab close, so the fire-and-forget pattern in loadBettingLines
-    // effectively never benefited the user — they always saw the hardcoded fallback.)
-    try{
-      localStorage.setItem(BET_LINES_KEY,  JSON.stringify(parsed.lines));
-      localStorage.setItem(BET_CACHE_DATE, TODAY_ISO);
-    }catch(e){}
-    return parsed.lines;
-  }catch(e){
-    if(FIELD_DEBUG) console.debug("FIELD betting fetch:",e.message);
-    return null;
-  }
-}
 
 
-// ═/ ═══════════════════════════════════════════════════════════════
-// BETTING_LINES_FALLBACK — AUTO-GAME-SELECTION
-// Implemented: May 11, 2026 (Session H — Hardcoded Data Optimization)
-//
-// PREVIOUS: 3–4 games fully hardcoded (names, odds, context). Updated manually
-//           each daily update. Cost: 10–15 min/day.
-//
-// NOW: selectBettingGames() auto-selects top games from allData.sports using a
-//      priority order. BETTING_LINES_FALLBACK contains only the odds/context
-//      for today's date — the game names derive from the live schedule.
-//
-// DAILY UPDATE PROTOCOL (new):
-//   Game selection: automatic (zero manual work).
-//   Odds + context: still manually updated in BETTING_LINES_FALLBACK.
-//   Net savings: ~10–15 min/day (no more manually picking games or typing names).
-//
-// AFTER B1 (Odds API): game selection + live odds = fully self-maintaining.
-// ═══════════════════════════════════════════════════════════════
-
-// ── Priority-based game selector ─────────────────────────────────────────────
-// Returns up to maxCards game objects from allData.sports in priority order.
-// Used to pre-populate BETTING_LINES_FALLBACK skeleton cards before AI responds.
-function selectBettingGames(sports, maxCards=4){
-  const priority = [
-    "NBA Playoffs","NHL Playoffs","Baseball (MLB)",
-    "Premier League","WNBA","UEFA Champions League","Golf"
-  ];
-  const selected = [];
-  // Phase 1: pull featured/showcase games first (max one per sport — these get top priority)
-  for(const sportName of priority){
-    if(selected.length >= maxCards*3) break;  // soft cap so matchKey lookup has candidates
-    const sec = (sports||[]).find(s => s.sport===sportName);
-    if(!sec||!sec.games||!sec.games.length) continue;
-    const featured = sec.games.find(g => g.mlbnShowcase||g.espnGOTD);
-    if(featured) selected.push({game:featured, sport:sec.sport});
-  }
-  // Phase 2: add all remaining games from priority sports (so matchKey lookup can find any game,
-  // not just the first one). This is needed because BETTING_LINES_FALLBACK_DATA entries can
-  // reference any game on the schedule, not just the first game of each sport.
-  for(const sportName of priority){
-    if(selected.length >= maxCards*3) break;
-    const sec = (sports||[]).find(s => s.sport===sportName);
-    if(!sec||!sec.games||!sec.games.length) continue;
-    for(const g of sec.games){
-      if(selected.length >= maxCards*3) break;
-      if(selected.some(s => s.game === g)) continue;  // skip already-added featured games
-      selected.push({game:g, sport:sec.sport});
-    }
-  }
-  return selected;
-}
-
-// ── Hardcoded fallback — odds + context for today's top games ─────────────
-// Game names are now derived from selectBettingGames() at render time.
-// Only the odds values + context paragraph need manual daily update.
-// Sources: DraftKings, FanDuel, BetMGM — May 11, 2026
-// NBA: DET leads CLE 2-1 (G4 at Cleveland) · OKC leads LAL 3-0 (G4 at OKC)
-// NHL: COL leads MIN 3-0 (G4 at Minnesota)
-// ── Hardcoded fallback — odds + context for today's top games ─────────────
-// May 11 2026 bug fix: each entry now carries a `matchKey` (case-insensitive substring
-// that uniquely identifies one of the two teams). buildBettingFallback() matches each
-// entry to a selected game by team name lookup, not by array index. Previously, mismatch
-// between selector priority order and FALLBACK_DATA order caused cards to show one
-// game name with another game's odds/context — a data integrity bug.
-//
-// Sources: DraftKings, FanDuel, BetMGM — May 11, 2026
-// NBA: DET leads CLE 2-1 (G4 at Cleveland) · OKC leads LAL 3-0 (G4 at LA)
-// NHL: COL leads MIN 3-0 (G4 at Minnesota)
-// MLB: SF @ LAD on MLB Network Showcase
-const BETTING_LINES_FALLBACK_DATA = [
-  {
-    matchKey:"knicks",    // NYK vs CLE ECF G2 — Thu May 21 8pm ET, ESPN · NYK leads 1-0
-    source:"📊 AI Estimated",
-    context:"Knicks took G1 in stunning fashion — Brunson dropped 38 and erased a 22-point deficit in the fourth quarter and OT. Cleveland's James Harden was exposed as a mismatch target and had more turnovers than field goals. The Cavs must adjust defensively or risk going down 2-0 at MSG before the series shifts to Cleveland. NYK -4.5 reflects MSG home advantage; over/under set conservatively after G1 overtime.",
-    lines:[
-      {label:"Moneyline",items:[{t:"New York Knicks",o:"-190",fav:true},{t:"Cleveland Cavaliers",o:"+160",fav:false}]},
-      {label:"Spread",items:[{t:"Knicks -4.5",o:"-110",fav:true},{t:"Cavs +4.5",o:"-110",fav:false}]},
-      {label:"Total (O/U)",items:[{t:"Over 211.5",o:"-110",fav:false},{t:"Under 211.5",o:"-110",fav:false}]},
-    ],
-    books:[{name:"DraftKings",url:"https://sportsbook.draftkings.com"},{name:"FanDuel",url:"https://sportsbook.fanduel.com"},{name:"BetMGM",url:"https://sports.betmgm.com"}]
-  },
-  {
-    matchKey:"hurricanes",  // CAR vs MTL NHL ECF G1 — Thu May 21 8pm ET, TNT/truTV
-    source:"📊 AI Estimated",
-    context:"Carolina enters with 11 days of rest after sweeping Philadelphia in four games, posting a perfect 8-0 record through two rounds. Montreal survived Buffalo in a G7 overtime thriller (Canadiens 3, Sabres 2 OT) — the Bell Centre ran on pure emotion to get here. The rust question for Carolina is real after nearly two weeks off, but the Canes have the deeper, more rested team. Montreal's momentum is real but untested against this level of opponent. Lenovo Center is a notoriously hostile building.",
-    lines:[
-      {label:"Moneyline",items:[{t:"Carolina Hurricanes",o:"-240",fav:true},{t:"Montreal Canadiens",o:"+198",fav:false}]},
-      {label:"Spread",items:[{t:"Hurricanes -1.5",o:"+115",fav:false},{t:"Canadiens +1.5",o:"-135",fav:true}]},
-      {label:"Total (O/U)",items:[{t:"Over 5.5",o:"-115",fav:true},{t:"Under 5.5",o:"-105",fav:false}]},
-    ],
-    books:[{name:"DraftKings",url:"https://sportsbook.draftkings.com"},{name:"FanDuel",url:"https://sportsbook.fanduel.com"},{name:"BetMGM",url:"https://sports.betmgm.com"}]
-  },
-  {
-    matchKey:"avalanche",  // COL vs VGK NHL West CF G2 — Fri May 22 8pm ET, ESPN (series VGK leads 1-0)
-    source:"📊 AI Estimated",
-    context:"Vegas stole G1 on the road 4-2 at Ball Arena, with Dorofeyev leading all playoff scorers (9 goals). Colorado's Presidents' Trophy pedigree now faces a must-respond moment at home. MacKinnon's Avalanche are heavy G2 home favourites as a correction bet — Presidents' Trophy teams rarely go down 0-2 at home. But VGK have Cup pedigree (2023 champions) and road confidence. G2 Friday May 22 8pm ET ESPN.",
-    lines:[
-      {label:"Moneyline",items:[{t:"Colorado Avalanche",o:"-200",fav:true},{t:"Vegas Golden Knights",o:"+168",fav:false}]},
-      {label:"Spread",items:[{t:"Avalanche -1.5",o:"+105",fav:false},{t:"Golden Knights +1.5",o:"-125",fav:true}]},
-      {label:"Total (O/U)",items:[{t:"Over 5.5",o:"-130",fav:true},{t:"Under 5.5",o:"+110",fav:false}]},
-    ],
-    books:[{name:"DraftKings",url:"https://sportsbook.draftkings.com"},{name:"FanDuel",url:"https://sportsbook.fanduel.com"},{name:"BetMGM",url:"https://sports.betmgm.com"}]
-  },
-];
-
-// ── Build BETTING_LINES_FALLBACK by merging auto-selected games with stored odds ─
-// May 11 2026 (rewritten): matches FALLBACK_DATA entries to selected games by matchKey
-// (team substring) rather than by array index. This guarantees the odds/context on
-// each card actually correspond to the game name shown. If a selected game has no
-// matching FALLBACK entry, that card is omitted (DO NOT INVENT — see B4).
-function buildBettingFallback(){
-  const data = BETTING_LINES_FALLBACK_DATA;
-  if(!allData||!allData.sports||!allData.sports.length){
-    // No live schedule available — return entries with their stored team names as fallback game label
-    return data.map(d => {
-      const teamNames = d.lines[0]?.items?.map(i=>i.t).join(" @ ") || "TBD";
-      return Object.assign({}, d, {game: teamNames, league: "TBD · check schedule"});
-    });
-  }
-  const selected = selectBettingGames(allData.sports, 6); // pull more candidates than FALLBACK length
-  const cards = [];
-  for(const d of data){
-    // Find the selected game whose home or away team name contains the matchKey
-    const key = (d.matchKey||"").toLowerCase();
-    if(!key) continue;
-    const match = selected.find(s => {
-      const home = (s.game.home||"").toLowerCase();
-      const away = (s.game.away||"").toLowerCase();
-      return home.includes(key) || away.includes(key);
-    });
-    if(!match){
-      // No selected game matched — omit this entry (B4: don't fabricate game name).
-      continue;
-    }
-    const g = match.game;
-    const gameName = (g.away&&g.home) ? g.away+" @ "+g.home : (g.home||g.away||"TBD");
-    const gameTime = g.start_time ? fmtTime(g.start_time) : "TBD";
-    const leagueStr = match.sport+" · "+gameTime+" ET";
-    cards.push(Object.assign({}, d, {game:gameName, league:leagueStr}));
-  }
-  return cards;
-}
-
-// BETTING_LINES_FALLBACK is built at render time (not a static const)
-// so it always reflects the live schedule when allData is available.
-function getBettingFallback(){
-  return buildBettingFallback();
-}
 
 
-// renderBetting is now async — fetches fresh lines daily, falls back to hardcoded
-function compBadge(moneylineGap){
-  if(!moneylineGap && moneylineGap !== 0) return '';
-  if(moneylineGap < 35)  return `<span class="comp-badge pickem">Pick'em</span>`;
-  if(moneylineGap < 110) return `<span class="comp-badge close-line">Close Line</span>`;
-  if(moneylineGap < 220) return `<span class="comp-badge lean">Lean</span>`;
-  return `<span class="comp-badge heavy">Heavy Fav</span>`;
-}
 
-function fieldVsMarket(game, homeML, awayML){
-  if(!game || !homeML || !awayML) return '';
-  const gap = Math.abs(homeML - awayML);
-
-  // Patent-safe rework: name the specific factual signal rather than expressing
-  // a generic FIELD "view" on watchability. The distinction:
-  //   RISKY: "FIELD rates this more competitive" — unnamed interest assessment
-  //   SAFE:  "Trailing team faces elimination — desperation shifts dynamics" — named fact
-  //
-  // Each signal below is a verifiable pre-game fact (Stakes/Narrative/Scarcity),
-  // not a composite interest score. The market comparison is contextual framing,
-  // not a claim that FIELD's excitement rating differs from the line.
-
-  const signals = [];
-  const league = (game.league||'').toLowerCase();
-  const note = (game.matchupNote||'').toLowerCase();
-
-  // Signal 1: Elimination stakes vs heavy favorite
-  // A team facing elimination (E=1 in Stakes) is desperate in ways markets underweight.
-  // This is a factual consequence claim, not an excitement claim.
-  if (gap > 150) {
-    const hasElim = game._gameImportance === 'elimination' ||
-                    /elimination|must.win|game 7|win or go home/i.test(game.league||'') ||
-                    /facing elimination|avoid elimination|or their season ends/i.test(note);
-    const hasHighIrrev = game.seriesRecord && /leads 3-0|leads 3-1/i.test(game.seriesRecord);
-    if (hasElim || hasHighIrrev) {
-      const trailerTeam = game.seriesRecord && /leads/i.test(game.seriesRecord)
-        ? (game.seriesRecord.toLowerCase().includes(teamNick(game.away).toLowerCase()) ? teamNick(game.home) : teamNick(game.away))
-        : null;
-      signals.push(trailerTeam
-        ? `${trailerTeam} faces elimination — desperation can outperform a ${gap}-point line`
-        : `Elimination stakes — trailing team desperation often outperforms a heavy spread`);
-    }
-  }
-
-  // Signal 2: Historical singularity vs market indifference
-  // A game that creates an irrevocable historical fact (H=1 in Stakes) may carry
-  // urgency the market doesn't fully price. Factual, not excitement-based.
-  if (gap > 100) {
-    const hasHistory = /first.*since \d{4}|first.*history|sweep|franchise record|clinch/i.test(note);
-    if (hasHistory) {
-      signals.push(`Historical milestone on the line tonight — context the spread doesn't price`);
-    }
-  }
-
-  // Signal 3: Scarcity — only game in this sport
-  // Schedule scarcity is a factual count, not an interest assessment.
-  // A heavy favorite in the only NHL game tonight is still the only hockey game.
-  if (gap > 150 && allData?.sports) {
-    const sport = game._sport || game._section || '';
-    const sportGames = (allData.sports.find(s=>s.sport===sport)||{games:[]}).games||[];
-    if (sportGames.length === 1) {
-      signals.push(`Only ${sport} game tonight — sole option for fans of the sport regardless of spread`);
-    }
-  }
-
-  // Signal 4: Tight market on a low-stakes game
-  // When odds say pick'em but Stakes dimensions are low, the market may be overestimating
-  // drama potential. Naming this as a stakes observation, not an excitement rating.
-  if (gap < 45 && !isScoutsPick(game)) {
-    const isMajorLeague = /nba|nhl|mlb|nfl|epl|premier league/i.test(league);
-    if (isMajorLeague) {
-      signals.push(`Tight line, but limited playoff/series context — pick'em doesn't always mean must-watch`);
-    }
-  }
-
-  if (!signals.length) return '';
-  return `<div class="field-signal">${signals[0]}</div>`;
-}
-
-function buildProbBars(homeTeam, awayTeam, homeML, awayML){
-  if(!homeML || !awayML) return '';
-  const homeP = toImpliedNum(homeML);
-  const awayP = toImpliedNum(awayML);
-  if(!homeP || !awayP) return '';
-  const homeCls = homeML < 0 ? 'fav' : homeML > 0 ? 'dog' : 'even';
-  const awayCls = awayML < 0 ? 'fav' : awayML > 0 ? 'dog' : 'even';
-  const homeAbbr = teamNick(homeTeam).slice(0,4).toUpperCase();
-  const awayAbbr = teamNick(awayTeam).slice(0,4).toUpperCase();
-  const homePct = Math.round(homeP);
-  const awayPct = Math.round(awayP);
-  const homeML_ = homeML > 0 ? '+'+homeML : String(homeML);
-  const awayML_ = awayML > 0 ? '+'+awayML : String(awayML);
-  return `<div class="prob-section">
-    <div class="prob-row">
-      <span class="prob-team">${homeAbbr}</span>
-      <div class="prob-bar-track"><div class="prob-bar-fill ${homeCls}" style="width:${homePct}%"></div></div>
-      <span class="prob-pct ${homeCls}">${homePct}%</span>
-      <span class="prob-ml">${homeML_}</span>
-    </div>
-    <div class="prob-row">
-      <span class="prob-team">${awayAbbr}</span>
-      <div class="prob-bar-track"><div class="prob-bar-fill ${awayCls}" style="width:${awayPct}%"></div></div>
-      <span class="prob-pct ${awayCls}">${awayPct}%</span>
-      <span class="prob-ml">${awayML_}</span>
-    </div>
-  </div>`;
-}
 
 function toImplied(oddsStr){
   if(!oddsStr) return null;
@@ -9553,159 +8296,6 @@ function renderFieldDesk(){
   grid.innerHTML = cards.join('');
 }
 
-let _fieldDeskRendered = false;
-async function renderBetting(){
-  const grid = document.getElementById("betting-grid");
-  if(!grid) return;
-
-  // Tonight on FIELD: inject drama-ranked game picker above betting grid
-  // Re-fires with renderBetting() so it stays current with live score data
-  const tonightEl = document.getElementById('betting-tonight') || (() => {
-    const el = document.createElement('div');
-    el.id = 'betting-tonight';
-    grid.parentNode.insertBefore(el, grid);
-    return el;
-  })();
-  if(allData?.sports?.length){
-    const summaryHTML = renderTonightSummary(allData.sports);
-    tonightEl.innerHTML = summaryHTML;
-    tonightEl.style.display = summaryHTML ? 'block' : 'none';
-  }
-
-  // Fetch real odds from The Odds API relay for tonight's sports
-  // DO NOT INVENT: all numbers come exclusively from The Odds API. Never AI-generated.
-  const activeSports = [...new Set(
-    (allData?.sports||[]).map(s => s.sport).filter(s => ODDS_SPORT_MAP[s])
-  )];
-  if(activeSports.length){
-    await Promise.allSettled(activeSports.map(s => fetchOddsForSport(s)));
-  }
-
-  // Match every scheduled game to its odds entry
-  // Priority: _oddsCache (in-memory) → localStorage sticky (pre-game lines saved before game started)
-  const cards = [];
-  (allData?.sports||[]).forEach(sec => {
-    const sportKey = ODDS_SPORT_MAP[sec.sport];
-    if(!sportKey) return;
-    const cacheKey = `${sportKey}_${TODAY_ISO}`;
-    let oddsData = _oddsCache[cacheKey];
-    if(!oddsData) {
-      try {
-        const lsRaw = localStorage.getItem(`field_odds_${cacheKey}`);
-        if(lsRaw) oddsData = JSON.parse(lsRaw);
-      } catch(e) {}
-    }
-    if(!oddsData) return;
-    (sec.games||[]).forEach(g => {
-      if(!g.home || !g.away) return;
-      const odds = getGameOdds(oddsData, g.home, g.away);
-      if(!odds?.homeML || !odds?.awayML) return;
-      cards.push({game: g, sport: sec.sport, odds});
-    });
-  });
-
-  // Sort by pre-game drama score, show top 4
-  cards.sort((a,b) => preGameScore(b.game) - preGameScore(a.game));
-  const top = cards.slice(0,4);
-
-  if(!top.length){
-    grid.innerHTML = `<p style="padding:1rem 0;color:var(--smoke);font-size:.8rem;line-height:1.5">
-      Live odds are not yet available for tonight&#39;s games.<br>
-      Check back closer to game time, or verify directly at your preferred sportsbook.
-    </p>`;
-    // Set up retry interval even on empty state — odds may arrive later
-    if (!window._bettingLiveInterval) {
-      window._bettingLiveInterval = setInterval(async () => {
-        const sec = document.getElementById('betting-section');
-        if (!sec) return;
-        const rect = sec.getBoundingClientRect();
-        if (rect.top > window.innerHeight + 400 || rect.bottom < -400) return;
-        const refreshSports = [...new Set((allData?.sports||[]).map(s=>s.sport).filter(s=>ODDS_SPORT_MAP[s]))];
-        if (refreshSports.length) await Promise.allSettled(refreshSports.map(s=>fetchOddsForSport(s)));
-        bettingRendered = false;
-        renderBetting();
-      }, 3 * 60 * 1000);
-    }
-    return;
-  }
-
-  grid.innerHTML = top.map(({game, sport, odds}) => {
-    const gameLabel = `${game.away||''} @ ${game.home||''}`;
-    const gameTime  = game.start_time ? fmtTime(game.start_time) : '';
-    const probHTML  = buildProbBars(game.home, game.away, odds.homeML, odds.awayML);
-    const pills = [];
-    if(odds.homeSpread != null) pills.push(
-      `<span class="bet-line-pill"><span class="bet-line-pill-label">Spread</span><span class="bet-line-pill-val">${odds.homeSpread>0?'+':''}${odds.homeSpread}</span></span>`);
-    if(odds.total != null) pills.push(
-      `<span class="bet-line-pill"><span class="bet-line-pill-label">O/U</span><span class="bet-line-pill-val">${odds.total}</span></span>`);
-    pills.push(`<span class="bet-line-pill" style="opacity:.55"><span class="prob-ml">⚡ The Odds API</span></span>`);
-    const seriesCtx = game.seriesRecord
-      ? `<div style="font-size:.7rem;color:var(--platinum);padding:.25rem 1rem;border-bottom:1px solid var(--edge)">${game.seriesRecord}</div>` : '';
-
-    // J8: Editorial context — surfaces FALLBACK context paragraph and _gameBriefCache
-    // when live odds are active, the rich editorial context from FALLBACK_DATA is hidden.
-    // This makes it visible as a collapsible "FIELD Read" section in each betting card.
-    let editorialHTML = '';
-    try {
-      // Priority 1: compound-generated game brief for this specific game
-      const brief = (typeof _gameBriefCache !== 'undefined') ? _gameBriefCache[game._id||''] : null;
-      if(brief) {
-        editorialHTML = `<div class="bet-editorial" style="font-size:.7rem;color:var(--fg);line-height:1.55;padding:.5rem 1rem .35rem;border-top:1px solid var(--edge);opacity:.85"><span style="font-size:.56rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--gold2);display:block;margin-bottom:.3rem">FIELD Brief</span>${brief}</div>`;
-      } else {
-        // Priority 2: FALLBACK_DATA context paragraph (AI-estimated, editorial)
-        const fbKey = (game.home||'').toLowerCase();
-        const fbEntry = (typeof BETTING_LINES_FALLBACK_DATA !== 'undefined')
-          ? BETTING_LINES_FALLBACK_DATA.find(d => {
-              const k = (d.matchKey||'').toLowerCase();
-              return fbKey.includes(k) || (game.away||'').toLowerCase().includes(k);
-            })
-          : null;
-        if(fbEntry?.context) {
-          editorialHTML = `<div class="bet-editorial" style="font-size:.7rem;color:var(--fg);line-height:1.55;padding:.5rem 1rem .35rem;border-top:1px solid var(--edge);opacity:.85"><span style="font-size:.56rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--smoke);display:block;margin-bottom:.3rem">📊 FIELD Read</span>${fbEntry.context}</div>`;
-        }
-      }
-    } catch(e_) {}
-
-    return `<div class="bet-card"><div class="bet-accent"></div><div class="bet-inner">
-      <div class="bet-card-head">
-        <div class="bet-card-head-top">
-          <div class="bet-head-left" style="min-width:0;flex:1">
-            <div class="bet-game">${gameLabel}</div>
-            <div class="bet-meta-row" style="margin-top:.2rem">
-              <span class="bet-league">${sport} · ${gameTime} ET</span>
-            </div>
-          </div>
-          ${odds.moneylineGap!=null ? compBadge(odds.moneylineGap) : ''}
-        </div>
-      </div>
-      ${seriesCtx}
-      ${probHTML}
-      <div class="bet-lines-compact">${pills.join('')}</div>
-      ${fieldVsMarket(game, odds.homeML, odds.awayML)}
-      ${buildBettingFieldEdge(game, sport)}
-      ${editorialHTML}
-      <div class="bet-links">
-        <a class="bet-link" href="https://sportsbook.draftkings.com" target="_blank" rel="noopener">DraftKings &#8594;</a>
-        <a class="bet-link" href="https://sportsbook.fanduel.com" target="_blank" rel="noopener">FanDuel &#8594;</a>
-        <a class="bet-link" href="https://sports.betmgm.com" target="_blank" rel="noopener">BetMGM &#8594;</a>
-      </div>
-    </div></div>`;
-  }).join('');
-
-  // Live-update odds every 3 minutes while betting section is in view
-  if (!window._bettingLiveInterval) {
-    window._bettingLiveInterval = setInterval(async () => {
-      const sec = document.getElementById('betting-section');
-      if (!sec) return;
-      const rect = sec.getBoundingClientRect();
-      if (rect.top > window.innerHeight + 400 || rect.bottom < -400) return;
-      const refreshSports = [...new Set((allData?.sports||[]).map(s=>s.sport).filter(s=>ODDS_SPORT_MAP[s]))];
-      if (refreshSports.length) await Promise.allSettled(refreshSports.map(s=>fetchOddsForSport(s)));
-      bettingRendered = false;
-      renderBetting();
-    }, 3 * 60 * 1000);
-  }
-}
 
 
 // ═══════════════════════════════════════════════════════════════
@@ -10032,17 +8622,7 @@ function injectJ1J4Badges() {
         if (g.seriesRecord) scoutTitle = `${g.seriesRecord} · not on national TV`;
         else if (/playoff|final|series/i.test(g.league||'')) scoutTitle = 'Playoff stakes · not on national TV';
         else {
-          const sportKey = ODDS_SPORT_MAP[g._sport||g._section||''];
-          if(sportKey && _oddsCache){
-            const oddsKey = Object.keys(_oddsCache).find(k=>k.startsWith(sportKey));
-            if(oddsKey){
-              const odds = getGameOdds(_oddsCache[oddsKey], g.home, g.away);
-              if(odds?.homeML && odds?.awayML){
-                const gap = Math.abs(odds.homeML - odds.awayML);
-                if(gap < 150) scoutTitle = `Pick\'em game (${gap} ML gap) · not on national TV`;
-              }
-            }
-          }
+          scoutTitle = 'Competitive game · not on national TV';
         }
       } catch(e_) {}
       badge.title = scoutTitle;
@@ -10107,111 +8687,6 @@ async function bdlContextForGame(home, away, sportName) {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// LIVE ODDS ENGINE — The Odds API (the-odds-api.com)
-// 20K req/month paid tier ($30/mo). Covers NBA, NHL, MLB, UCL, AFL, EPL, MLS, Tennis.
-
-// ═══════════════════════════════════════════════════════════════
-
-// ODDS_API_KEY intentionally not here — key lives in relay worker only (server-side)
-// All odds calls route through ODDS_RELAY_BASE which injects apiKey server-side
-const ODDS_API_BASE = null; // deprecated — use ODDS_RELAY_BASE
-const ODDS_DAILY_LIMIT = 60;    // 20K/month ÷ 30 days ÷ ~3 credits/call = ~222 max/day; 60 for headroom
-
-// One-time migration: clear odds_remaining if it was set to 0 from the exhausted Starter key.
-// The Starter key (500 credits/month, $0) was over-limit; the 20K key is now active.
-// odds_remaining = 0 would permanently block all calls — clear it so the correct quota loads.
-try {
-  const _r = parseInt(localStorage.getItem('odds_remaining') || '999');
-  if (_r < 10) { localStorage.removeItem('odds_remaining'); localStorage.removeItem('odds_req'); }
-} catch(e) {}
-                                 // fetchGameOdds reuses _oddsCache → no separate calls
-const ODDS_CACHE_TTL   = 1800000;  // 30-min localStorage cache (paid tier supports frequent refresh)
-function oddsReqCount(){
-  const today = TODAY_ISO;
-  const s = JSON.parse(localStorage.getItem("odds_req")||"{}");
-  return s.date === today ? (s.count||0) : 0;
-}
-function oddsBumpCount(){
-  const today = TODAY_ISO;
-  const s = JSON.parse(localStorage.getItem("odds_req")||"{}");
-  const count = (s.date===today ? (s.count||0) : 0) + 1;
-  localStorage.setItem("odds_req", JSON.stringify({date:today, count}));
-  if(FIELD_DEBUG) console.debug(`[Odds] req ${count}/${ODDS_DAILY_LIMIT} today`);
-  return count;
-}
-function oddsBudgetOk(){ return oddsReqCount() < ODDS_DAILY_LIMIT; }
-
-// Fetch live odds for a single game from The Odds API
-// Zero-credit path: reuses _oddsCache populated by fetchOddsForSport().
-// fetchOddsForSport() is called on page load for each active sport — its
-// data lives in _oddsCache[sportKey_date] and localStorage.
-// fetchGameOdds() just searches that data — no separate relay call ever.
-// Returns {moneyline:{home,away}, spread:{line,home,away}, total:{line,over,under}} or null
-async function fetchGameOdds(homeTeam, awayTeam, sport){
-  const today = new Date().toISOString().split('T')[0];
-  const slug = (s)=>s.toLowerCase().replace(/[^a-z0-9]/g,'').slice(0,12);
-  const gameKey = `odds_${slug(homeTeam)}_${slug(awayTeam)}_${today}`;
-  // Layer 1: game-level localStorage (parsed result — fast path)
-  try{
-    const raw = localStorage.getItem(gameKey);
-    if(raw){ const {data,ts}=JSON.parse(raw); if(Date.now()-ts < ODDS_CACHE_TTL) return data; }
-  }catch(e){}
-  // Map sport → Odds API sport key
-  const SPORT_MAP = {
-    'NBA Playoffs':'basketball_nba', 'Baseball (MLB)':'baseball_mlb',
-    'NHL Playoffs':'icehockey_nhl', 'Premier League':'soccer_epl',
-    'WNBA':'basketball_wnba', 'Golf':'golf_masters_tournament_winner',
-    'UFC/MMA':'mma_mixed_martial_arts',
-  };
-  const sportKey = SPORT_MAP[sport];
-  if(!sportKey) return null;
-  // Layer 2: reuse sport-level data already loaded by fetchOddsForSport()
-  // This costs ZERO additional API credits — data is already in memory/localStorage
-  const sportCacheKey = `${sportKey}_${today}`;
-  let events = _oddsCache[sportCacheKey];
-  if(!events){
-    // Not in memory — try localStorage sport cache
-    try{
-      const lsRaw = localStorage.getItem(`field_odds_${sportCacheKey}`);
-      if(lsRaw){ const d=JSON.parse(lsRaw); if(d?.length) events=d; }
-    }catch(e){}
-  }
-  if(!events){
-    // Sport data not loaded yet — trigger fetchOddsForSport (budget-checked)
-    events = await fetchOddsForSport(sport);
-  }
-  if(!events?.length) return null;
-  // Find matching game
-  const homeSlug=slug(homeTeam), awaySlug=slug(awayTeam);
-  const match = events.find(ev=>{
-    const h=slug(ev.home_team||''), a=slug(ev.away_team||'');
-    return (h.includes(homeSlug)||homeSlug.includes(h)) &&
-           (a.includes(awaySlug)||awaySlug.includes(a));
-  });
-  if(!match) return null;
-  const dk = (match.bookmakers||[]).find(b=>b.key==='draftkings');
-  if(!dk) return null;
-  const result = {source:'DraftKings', verified:true};
-  (dk.markets||[]).forEach(mkt=>{
-    if(mkt.key==='h2h'){
-      const home=mkt.outcomes.find(o=>slug(o.name).includes(homeSlug));
-      const away=mkt.outcomes.find(o=>slug(o.name).includes(awaySlug));
-      if(home&&away) result.moneyline={home:home.price,away:away.price};
-    }
-    if(mkt.key==='spreads'){
-      const home=mkt.outcomes.find(o=>slug(o.name).includes(homeSlug));
-      if(home) result.spread={line:home.point,home:home.price,away:mkt.outcomes.find(o=>!slug(o.name).includes(homeSlug))?.price};
-    }
-    if(mkt.key==='totals'){
-      const over=mkt.outcomes.find(o=>o.name==='Over');
-      const under=mkt.outcomes.find(o=>o.name==='Under');
-      if(over) result.total={line:over.point,over:over.price,under:under?.price};
-    }
-  });
-  try{ localStorage.setItem(gameKey, JSON.stringify({data:result,ts:Date.now()})); }catch(e){}
-  if(FIELD_DEBUG) console.debug('[Odds] fetched:',homeTeam,'vs',awayTeam,'→',result);
-  return result;
-}
 const BDL_KEY  = "4c881f4b-3845-4542-841f-a0e685c9f10e";
 const SLASH_GOLF_KEY  = "1d6ac6f06bmshf789a26fcf28816p135cdbjsn2eedede3efec";
 const SLASH_GOLF_HOST = "live-golf-data.p.rapidapi.com";
@@ -12692,75 +11167,6 @@ function buildScoutingReport(game, sport) {
   </div>${raiSection}`;
 }
 
-// ── buildBettingFieldEdge — FIELD analytical edge for betting cards ───────────
-// Shows the signals behind the odds — what the spread doesn't price.
-// Compact bullet list: 2-3 items max. BNI gets highlighted when present.
-function buildBettingFieldEdge(game, sport) {
-  if (!game) return '';
-  const sp = (sport || game._sport || '').toLowerCase();
-  const lines = [];
-
-  // NHL signals
-  if (sp.includes('hockey') || sp.includes('nhl')) {
-    const ha = game._homeAbbr || getNHLAbbrev?.(game.home);
-    const aa = game._awayAbbr || getNHLAbbrev?.(game.away);
-    const hST = ha ? getNHLSpecialTeams?.(ha) : null;
-    const aST = aa ? getNHLSpecialTeams?.(aa) : null;
-    if (hST && aST) {
-      const satGap = Math.abs(hST.sat - aST.sat);
-      if (satGap >= 8) {
-        const leader = hST.sat > aST.sat ? ha : aa;
-        const lead = Math.max(hST.sat, aST.sat);
-        lines.push({ icon:'🏒', text: `${leader} controls ${lead.toFixed(0)}% of shot attempts — possession edge` });
-      }
-      // Special teams matchup — note asymmetry (good PK vs good PP)
-      const elitePP = Math.max(hST.pp, aST.pp);
-      const elitePK = Math.min(hST.pk < aST.pk ? hST.pk : aST.pk, hST.pk > aST.pk ? hST.pk : aST.pk);
-      const ppTeam  = hST.pp > aST.pp ? ha : aa;
-      const pkTeam  = hST.pk > aST.pk ? ha : aa;
-      if (elitePP >= 24 || Math.min(hST.pk, aST.pk) >= 88) {
-        lines.push({ icon:'⚡', text: `${ppTeam} PP ${Math.max(hST.pp,aST.pp).toFixed(1)}% vs ${pkTeam} PK ${Math.max(hST.pk,aST.pk).toFixed(1)}% — special teams decides` });
-      }
-    }
-  }
-
-  // MLB signals
-  if (sp.includes('baseball') || sp.includes('mlb')) {
-    const abbr = game._homeAbbr || game.homeTeam;
-    const pf = abbr ? getParkFactor?.(abbr) : null;
-    if (pf) {
-      const runDiff = pf.runFactor - 100;
-      if (Math.abs(runDiff) >= 10) {
-        const dir = runDiff > 0 ? `+${runDiff}% runs — O/U context` : `${runDiff}% runs — pitcher-friendly`;
-        lines.push({ icon:'📍', text: `${pf.label || (game.venue?.split(',')[0]) || abbr}: ${dir}` });
-      }
-    }
-    const umpName = game._hpUmpire || game.umpire || '';
-    if (umpName) {
-      const last = umpName.split(' ').pop();
-      const ump = getUmpireABSRating?.(last);
-      if (ump?.rate >= 0.65)
-        lines.push({ icon:'⚠', text: `${last} overturns ${Math.round(ump.rate*100)}% of challenged calls — strikes change at a high rate` });
-    }
-  }
-
-  // BNI — broadcast narrative vs reality check (all sports)
-  try {
-    const bni = computeBroadcastNarrativeIndex?.(game);
-    if (bni === 'narrative-push')
-      lines.push({ icon:'📡', text: 'Market implies blowout — broadcast is pushing this game harder than the line suggests', bni: true });
-    else if (bni === 'elimination-inflation')
-      lines.push({ icon:'📡', text: 'Series hype may exceed game quality — elimination games often trade at inflated attention', bni: true });
-    else if (bni === 'home-market')
-      lines.push({ icon:'📡', text: 'Big-market broadcast push — attention may not match underlying game quality', bni: true });
-  } catch(e) {}
-
-  if (!lines.length) return '';
-  const linesHTML = lines.slice(0,3).map(l =>
-    `<div class="bet-edge-line"><span class="edge-icon">${l.icon}</span><span class="edge-text${l.bni?' bet-edge-bni':''}">${l.text}</span></div>`
-  ).join('');
-  return `<div class="bet-field-edge"><div class="bet-edge-label">FIELD Edge</div><div class="bet-edge-lines">${linesHTML}</div></div>`;
-}
 
 // Badge builder: [SPECIAL TEAMS] and [POSSESSION] chips on NHL cards
 function buildNHLAnalyticsBadges(game) {
@@ -13725,42 +12131,8 @@ async function fetchMLBFixtures(){
 // as fetchSoccerFixtures ESPN path. periodPrefix:"'" triggers soccer clock display.
 
 const FPL_RELAY_BASE = 'https://field-relay-nba.jeffunglesbee.workers.dev/fpl';
-const ODDS_RELAY_BASE = 'https://field-relay-nba.jeffunglesbee.workers.dev/odds'; // apiKey injected server-side
 const BDL_RELAY_BASE  = 'https://field-relay-nba.jeffunglesbee.workers.dev/bdl';   // BallDontLie — apiKey injected server-side
 
-// ── The Odds API FIELD Adapter ────────────────────────────────────────────
-// Relay injects apiKey server-side — never in browser JS.
-// Free tier: 500 req/month. Relay 300s cache = viable with playoff slate.
-// Quota tracking: X-Requests-Remaining header forwarded by relay.
-//
-// USES:
-//   drama_bb in preGameScore()     — moneyline gap → drama bonus
-//   Pre-game EMBER trigger         — tight odds on buried RSN game
-//   BNI odds-narrative divergence  — market vs. broadcast attention
-//   J5 upset detection             — underdog win vs. opening line
-//   Totals line as pace signal     — O/U vs. current score
-//   Line movement detector         — delta between fetches
-//   Series odds for playoff EMBER  — live series implication signal
-//
-const ODDS_SPORT_MAP = {
-  // Exact section sport names used in allData.sports
-  'NBA Playoffs':    'basketball_nba',
-  'NBA':             'basketball_nba',
-  'WNBA':            'basketball_wnba',
-  'NHL Playoffs':    'icehockey_nhl',
-  'NHL':             'icehockey_nhl',
-  'Baseball (MLB)':  'baseball_mlb',
-  'NFL':             'americanfootball_nfl',
-  'Premier League':  'soccer_epl',
-  'MLS Soccer':      'soccer_usa_mls',
-  // Legacy generic keys (kept for any code using generic names)
-  'Basketball':      'basketball_nba',
-  'Baseball':        'baseball_mlb',
-  'Football':        'americanfootball_nfl',
-  'Hockey':          'icehockey_nhl',
-};
-// Cached odds per sport key — keyed by sport + today's date
-const _oddsCache = {};
 
 // ── First Lead Change Drama Burst ─────────────────────────────────────────
 // _leadTracker: tracks who is leading each live game across poll cycles
@@ -13848,73 +12220,6 @@ function getCrewContext(game) {
   const crew = getCrewForGame(game);
   if (!crew || !crew.pbp || crew.pbp === 'TBD') return null;
   return crew.pbp + ' + ' + crew.color;
-}
-
-// Fetch moneyline + spreads + totals for a sport from the Odds API via relay
-// Returns array of game objects or null on error
-async function fetchOddsForSport(sport, markets = 'h2h,spreads,totals') {
-  const sportKey = ODDS_SPORT_MAP[sport];
-  if (!sportKey) return null;
-  const cacheKey = `${sportKey}_${TODAY_ISO}`;
-  if (_oddsCache[cacheKey]) return _oddsCache[cacheKey];
-  // Try localStorage sticky cache first — pre-game odds saved before game started
-  try {
-    const lsRaw = localStorage.getItem(`field_odds_${cacheKey}`);
-    if (lsRaw) {
-      const lsData = JSON.parse(lsRaw);
-      if (lsData?.length) { _oddsCache[cacheKey] = lsData; return lsData; }
-    }
-  } catch(e) {}
-  // Budget check — prevents relay calls when daily limit hit
-  if (!oddsBudgetOk()) { if (FIELD_DEBUG) console.warn('[ODDS] daily budget exhausted, skipping', sportKey); return null; }
-  // NOTE: odds_remaining localStorage guard removed — it reflected the exhausted Starter plan key
-  // (100.8% used) and was permanently blocking calls even after key rotation to the 20K plan.
-  // Quota is now managed by oddsBudgetOk() (daily count) which is correct for the 20K plan.
-  try {
-    const qs = `?regions=us&markets=${markets}&oddsFormat=american&dateFormat=iso`;
-    const r  = await fetch(`${ODDS_RELAY_BASE}/v4/sports/${sportKey}/odds${qs}`,
-                           { signal: AbortSignal.timeout(6000) });
-    if (!r.ok) { if (FIELD_DEBUG) console.warn('[ODDS] relay returned', r.status); return null; }
-    // Track account-level quota remaining from relay response header
-    const rem = r.headers.get('x-requests-remaining');
-    if (rem !== null) try { localStorage.setItem('odds_remaining', rem); } catch(e) {}
-    const data = await r.json();
-    oddsBumpCount();
-    _oddsCache[cacheKey] = data;
-    // Persist to localStorage — survives page reload and game-start cutoff
-    try { localStorage.setItem(`field_odds_${cacheKey}`, JSON.stringify(data)); } catch(e) {}
-    if (FIELD_DEBUG) console.log(`[ODDS] ${sportKey}: ${data.length} games · quota remaining: ${rem ?? '?'}`);
-    return data;
-  } catch(e) {
-    if (FIELD_DEBUG) console.warn('[ODDS] fetch error:', e.message);
-    return null;
-  }
-}
-
-// Find odds for a specific matchup by home/away team name substring match
-// Returns { moneylineGap, homeML, awayML, homeSpread, total } or null
-function getGameOdds(oddsData, homeTeam, awayTeam) {
-  if (!oddsData?.length) return null;
-  const h = teamNick(homeTeam); // city vs name — use last word
-  const a = teamNick(awayTeam);
-  const game = oddsData.find(g => {
-    const ht = (g.home_team || '').toLowerCase();
-    const at = (g.away_team || '').toLowerCase();
-    return (ht.includes(h) || h.includes(teamNick(ht))) &&
-           (at.includes(a) || a.includes(teamNick(at)));
-  });
-  if (!game) return null;
-  const book = (game.bookmakers || []).find(b => b.key === 'draftkings' || b.key === 'fanduel') || game.bookmakers?.[0];
-  if (!book) return null;
-  const h2h  = book.markets?.find(m => m.key === 'h2h');
-  const sp   = book.markets?.find(m => m.key === 'spreads');
-  const tot  = book.markets?.find(m => m.key === 'totals');
-  const homeML = h2h?.outcomes?.find(o => o.name.toLowerCase().includes(h))?.price ?? null;
-  const awayML = h2h?.outcomes?.find(o => o.name.toLowerCase().includes(a))?.price ?? null;
-  const homeSpread = sp?.outcomes?.find(o => o.name.toLowerCase().includes(h))?.point ?? null;
-  const total = tot?.outcomes?.[0]?.point ?? null;
-  const moneylineGap = (homeML != null && awayML != null) ? Math.abs(homeML - awayML) : null;
-  return { moneylineGap, homeML, awayML, homeSpread, total, commence_time: game.commence_time };
 }
 
 // FPL short_name → FIELD team name (for names that don't fuzzy-match)
@@ -14694,14 +12999,6 @@ async function fetchSchedule(){
   // MLB fixture arrivals
     }
   }).catch(()=>{ /* supplemental optional — schedule already rendered */ });
-  startOddsPolling();
-  // Pre-fetch odds at page load so betting section has data even after games start
-  // The Odds API clears pre-game lines once a game goes live — this captures them early
-  setTimeout(() => {
-    const sportsToFetch = [...new Set((allData?.sports||[]).map(s=>s.sport).filter(s=>ODDS_SPORT_MAP[s]))];
-    Promise.allSettled(sportsToFetch.map(s => fetchOddsForSport(s)))
-      .then(() => injectJ1J4Badges()); // Re-run J1/J4 after odds load — preGameScore uses odds
-  }, 800);
   fetchESPNScores(); // Start live score polling
 
   // REMEDY P6: listen for field:data-ready (dispatched by fetchMLBFixtures on completion).
@@ -14837,7 +13134,6 @@ async function fetchSchedule(){
   startOpenF1Engine().catch(()=>{});
   // Odds chips — inject after sport odds load from The Odds API cache
   // Also re-renders Betting Intelligence section if it was empty on first try
-  setTimeout(()=>{ try{ injectAllOddsChips(); bettingRendered=false; renderBetting(); }catch(e){} }, 5000);
   setTimeout(fdPrefetchSoccerLive, 3000)
   setTimeout(slashGolfPrefetchAll, 3500); // Slash Golf: schedule + live leaderboard
   // Pre-fetch BDL season averages once (ROOT 3 — feeds milestones for all tonight's NBA games)
@@ -15094,6 +13390,18 @@ const ViewingConditions = {
 };
 
 // ── AFL Finals Bracket — McIntyre Final Eight (AFL S5) ───────────────────────
+function refreshAFLSection(){
+  if(!_squiggleCache.games||!allData) return;
+  const todayGames=_squiggleCache.games.map(squiggleToFieldGame).filter(g=>g&&isToday(g.start_time));
+  if(!todayGames.length) return;
+  const idx=allData.sports.findIndex(s=>s.sport==='Australian Football (AFL)');
+  if(idx>=0){ allData.sports[idx]={sport:'Australian Football (AFL)',games:todayGames}; }
+  else { allData.sports.push({sport:'Australian Football (AFL)',games:todayGames}); }
+  scheduleRenderAll();
+  // refreshAFLSection() filters for isToday() so stale games are harmless
+  setTimeout(injectSquiggleLiveScores,250);
+}
+
 // 2026 finals: Week 1 ~Sep 4–7 · Week 2 ~Sep 11–14 · Week 3 ~Sep 18–21
 // Grand Final: last Saturday September 2026 (~Sep 26) at MCG
 // 2026: Top 10 qualify (Wildcard Round added) — NOT top 8 as in prior years
@@ -15372,35 +13680,11 @@ function renderStreaming(){
 }
 
 // ── Lazy-load below-fold sections ────────────────────────────────────────────
-// Betting section refreshes daily — flag resets if the stored date differs from today
-const BET_DATE_KEY = "field_bet_date";
-function isBettingStale(){
-  try{ return sessionStorage.getItem(BET_DATE_KEY) !== TODAY_ISO; }
-  catch(e){ return true; }
-}
-function markBettingFresh(){
-  try{ sessionStorage.setItem(BET_DATE_KEY, TODAY_ISO); } catch(e){}
-}
-
-let bettingRendered = !isBettingStale(); // false if stale (new day) → forces re-render
-// Guard: sessionStorage may say "rendered today" but DOM is always empty on fresh load.
-// If the grid is empty, reset the flag so the IO triggers a fresh render regardless.
-if(bettingRendered){
-  try{
-    const _bg = document.getElementById('betting-grid');
-    if(_bg && _bg.children.length === 0) bettingRendered = false; // comments don't count as children
-  }catch(e){}
-}
 let mediaRendered   = false;
 
 const lazyObs=new IntersectionObserver(entries=>{
   entries.forEach(e=>{
     if(!e.isIntersecting) return;
-    if(e.target.id==="betting-section"&&!bettingRendered){
-      renderBetting();
-      bettingRendered=true;
-      markBettingFresh();
-    }
     if(e.target.id==="media-section"&&!mediaRendered){renderMedia();mediaRendered=true;}
     if(e.target.id==="streaming-section"){renderStreaming();}
     if(e.target.id==="field-desk-section"){
@@ -15409,7 +13693,7 @@ const lazyObs=new IntersectionObserver(entries=>{
     }
   });
 },{rootMargin:"800px"});  // Large margin: pre-renders betting before scroll on iPad
-["betting-section","media-section","streaming-section","field-desk-section"].forEach(id=>{
+["media-section","streaming-section","field-desk-section"].forEach(id=>{
   const el=document.getElementById(id);
   if(el) lazyObs.observe(el);
 });
@@ -16395,28 +14679,6 @@ function buildCompoundPrompt(sections) {
       ? getStatisticalExtremes(liveScoreForExtreme, g._sport||'').note : null;
     const bni = computeBroadcastNarrativeIndex(g);
     const standingsCtx = buildGameStandingsContext(g);
-    const sportKey = typeof ODDS_SPORT_MAP !== 'undefined' ? ODDS_SPORT_MAP[g._sport||g._section||''] : null;
-    // Gap 9: Full market context in journalism prompts — not just even-money flag
-    // Model now knows: who the market favors, how much, implied probability
-    const oddsCtx = (sportKey && typeof _oddsCache !== 'undefined') ?
-      (() => {
-        const ok = Object.keys(_oddsCache||{}).find(k=>k.startsWith(sportKey));
-        if(!ok) return null;
-        const odds = getGameOdds(_oddsCache[ok], g.home, g.away);
-        if(!odds?.homeML || !odds?.awayML) return null;
-        const hML = odds.homeML, aML = odds.awayML;
-        const hPct = Math.round(hML < 0 ? (-hML/(-hML+100))*100 : (100/(hML+100))*100);
-        const aPct = 100 - hPct;
-        const favTeam  = hML < aML ? teamNick(g.home) : teamNick(g.away);
-        const dogTeam  = hML < aML ? teamNick(g.away) : teamNick(g.home);
-        const favML    = hML < aML ? hML : aML;
-        const dogML    = hML < aML ? aML : hML;
-        const dogPct   = hML < aML ? aPct : hPct;
-        const favPct   = 100 - dogPct;
-        const isClose  = Math.abs(hML - aML) < 80;
-        if(isClose) return `Market: even-money · ${teamNick(g.home)} ${hML>0?'+':''}${hML} (${hPct}%) vs ${teamNick(g.away)} ${aML>0?'+':''}${aML} (${aPct}%)`;
-        return `Market: ${favTeam} favored ${favML} (${favPct}% probability) · ${dogTeam} +${Math.abs(dogML)} underdog`;
-      })() : null;
     return [
       `- ${g.away||''} ${g.neutral?'vs':'@'} ${g.home||''}`,
       g.seriesRecord ? `  Series: ${g.seriesRecord}` : '',
@@ -16427,22 +14689,18 @@ function buildCompoundPrompt(sections) {
       (()=>{try{const _eL=findESPNScore?.(g);if(_eL?.state==='in'&&(_eL.homeLeader||_eL.awayLeader)){const parts=[];if(_eL.homeLeader?.name) parts.push(`${_eL.homeLeader.name} ${_eL.homeLeader.val}${_eL.homeLeader.unit?(' '+_eL.homeLeader.unit):''}`);if(_eL.awayLeader?.name) parts.push(`${_eL.awayLeader.name} ${_eL.awayLeader.val}${_eL.awayLeader.unit?(' '+_eL.awayLeader.unit):''}`);return parts.length?`  Leaders: ${parts.join(' · ')}`:'';} return '';}catch(e_){return ''}})(),
       `  Network: ${stream}`,
       crewCtx ? `  Crew: ${crewCtx}` : '',
-      // Item 2: MLB probable pitchers — already extracted, never wired until now
-      // "Pitchers: G.Cole (NYY) vs C.Burnes (BAL)" feeds DO NOT INVENT specificity
+      // Item 2: MLB probable pitchers
       (()=>{try{const sp=(g._sport||g._section||'').toLowerCase();if(!(sp.includes('mlb')||sp.includes('baseball'))) return '';const hp=g.homePitcher,ap=g.awayPitcher;if(!hp&&!ap) return '';const fmt=p=>p?`${p.lastName||p.fullName||''}${p.era?` (${p.era} ERA)`:p.wins!=null?` (${p.wins}-${p.losses})`:''}`:'TBD';return `  Pitchers: ${fmt(ap)} vs ${fmt(hp)}`;}catch(e_){return ''}})(),
-      // Wave 1 MLB analytics: park factor + umpire ABS + pitch arsenal + tempo
+      // Wave 1 MLB analytics
       (()=>{ try { const ctx=getMLBAnalyticsContext(g); return ctx.length ? ctx.join('\n') : ''; } catch(e_){return '';} })(),
-      // Wave 1 NHL analytics: special teams (PP%/PK%) + possession (SAT%) + goalie quality
+      // Wave 1 NHL analytics
       (()=>{ try { const sp=(g._sport||g._section||'').toLowerCase(); if(!(sp.includes('nhl')||sp.includes('hockey'))) return ''; const ctx=getNHLAnalyticsContext(g); return ctx.length ? ctx : ''; } catch(e_){return '';} })(),
-      // Stat of Day — featured stat for Scout's Pick game; FEATURED STAT rule enforces citation
+      // Stat of Day
       (()=>{ try { if(!isScoutsPick(g)) return ''; const s=getStatOfDay(g,g._sport||g._section||''); return s ? `  [FEATURED STAT] ${s.fullText}` : ''; } catch(e_){return '';} })(),
       g.matchupNote ? `  Context: ${g.matchupNote}` : '',
       standingsCtx ? `  ${standingsCtx}` : '',
       arcType ? `  Arc: ${arcType.toUpperCase()}` : '',
       bni ? `  [BNI: ${bni.replace(/-/g,' ').toUpperCase()}]` : '',
-      oddsCtx ? `  Odds: ${oddsCtx}` : '',
-      isScoutsPick(g) ? "  [SCOUT'S PICK]" : '',
-      homeMisery  ? `  [FRANCHISE_CONTEXT:${teamNick(g.home)}] ${homeMisery}` : '',
       awayMisery  ? `  [FRANCHISE_CONTEXT:${teamNick(g.away)}] ${awayMisery}` : '',
       extremeNote ? `  [LIVE EXTREME] ${extremeNote}` : '',
       // Fix 7: EMBER buried lead — tier + channel context for editorial framing
@@ -17189,18 +15447,6 @@ function assembleNoteFromContext(game){
   const parts=[];
   const sport=game._section||game._sport||'';
   if(game.seriesRecord) parts.push(game.seriesRecord);
-  // Odds tightness signal
-  try{
-    const sportKey=typeof ODDS_SPORT_MAP!=='undefined'?ODDS_SPORT_MAP[sport]:null;
-    if(sportKey&&typeof _oddsCache!=='undefined'){
-      const ok=Object.keys(_oddsCache||{}).find(k=>k.startsWith(sportKey));
-      if(ok){
-        const o=getGameOdds(_oddsCache[ok],game.home,game.away);
-        if(o&&o.moneylineGap!=null&&o.moneylineGap<30)
-          parts.push(`Market: near even-money (${o.homeML}/${o.awayML})`);
-      }
-    }
-  }catch(e){ captureFieldError('odds-market-parts',e,true); }
   return parts.length?parts.join(' \u00b7 '):null;
 }
 
@@ -17310,24 +15556,6 @@ function buildGameContext(g) {
   let dramaTrend = 0;
   try { dramaTrend = getDramaTrend(gid) ?? 0; } catch(e_) {}
 
-  // Odds tightness from _oddsCache
-  let oddsLabel = null, moneylineGap = null;
-  try {
-    const sportKey = ODDS_SPORT_MAP?.[sport];
-    if (sportKey) {
-      const oddsKey = Object.keys(_oddsCache||{}).find(k => k.startsWith(sportKey));
-      if (oddsKey) {
-        const o = getGameOdds(_oddsCache[oddsKey], g.home, g.away);
-        if (o?.moneylineGap != null) {
-          moneylineGap = o.moneylineGap;
-          if (o.moneylineGap < 30)       oddsLabel = 'pick\'em';
-          else if (o.moneylineGap < 80)  oddsLabel = 'close';
-          else if (o.moneylineGap < 200) oddsLabel = 'slight favourite';
-        }
-      }
-    }
-  } catch(e_) {}
-
   // Standings gap from _relayStandingsCache
   let standingsGap = null;
   try {
@@ -17351,7 +15579,7 @@ function buildGameContext(g) {
   let liveDrama = null;
   try { liveDrama = getSmoothedDrama(gid); } catch(e_) {}
 
-  return { gid, sport, dramaTrend, oddsLabel, moneylineGap, standingsGap, milestone, liveDrama };
+  return { gid, sport, dramaTrend, standingsGap, milestone, liveDrama };
 }
 
 async function fetchFIELDBriefFromClaude(sections){
@@ -17408,7 +15636,6 @@ async function fetchFIELDBriefFromClaude(sections){
           const lines = [];
           if (ctx.dramaTrend > 10)  lines.push('  [DRAMA: RISING — game tightening]');
           if (ctx.dramaTrend < -10) lines.push('  [DRAMA: COOLING — pulling away]');
-          if (ctx.oddsLabel)        lines.push(`  [ODDS: ${ctx.oddsLabel}]`);
           if (ctx.milestone)        lines.push(`  [MILESTONE: ${ctx.milestone.playerName} needs ${ctx.milestone.gap} ${ctx.milestone.stat} for ${ctx.milestone.next}]`);
           if (ctx.standingsGap != null && ctx.standingsGap <= 2) lines.push('  [STANDINGS: teams within 2 games]');
           return lines.join('\n');
@@ -18276,18 +16503,6 @@ function buildWatchWindowReason(game) {
     const smoothed = getSmoothedDrama(gid);
     if (smoothed && smoothed >= 50) parts.push('drama\u00a0' + smoothed);
   }
-  const sportKey = ODDS_SPORT_MAP[game._sport || game._section || ''];
-  if (sportKey && _oddsCache) {
-    const oddsKey = Object.keys(_oddsCache).find(k => k.startsWith(sportKey));
-    if (oddsKey) {
-      const odds = getGameOdds(_oddsCache[oddsKey], game.home, game.away);
-      if (odds) {
-        if (odds.awayML > 150)       parts.push(teamNick(game.away)+'\u00a0+'+odds.awayML+'\u00a0dogs');
-        else if (odds.homeML > 150)  parts.push(teamNick(game.home)+'\u00a0+'+odds.homeML+'\u00a0dogs');
-        else if (odds.moneylineGap < 30) parts.push('near\u00a0even-money');
-      }
-    }
-  }
   // Volatility Index: add CHAOTIC / LOCKED IN label when distinctive
   if (parts.length < 3) {
     const volLabel = (typeof getVolatilityLabel === 'function') ? getVolatilityLabel(game._id || '') : null;
@@ -18839,16 +17054,6 @@ function computeBroadcastNarrativeIndex(game) {
   const pgScore = preGameScore(game);
   const marquee  = isMarqueeBroadcast(game);
 
-  // 'narrative-push': strongest signal — market disagrees with broadcast attention
-  // Odds gap > 200 + national broadcast = network promoting a non-contest
-  const sportKey = ODDS_SPORT_MAP[game._sport || game._section || ''];
-  if (sportKey && _oddsCache) {
-    const oddsKey = Object.keys(_oddsCache).find(k => k.startsWith(sportKey));
-    if (oddsKey) {
-      const odds = getGameOdds(_oddsCache[oddsKey], game.home, game.away);
-      if (odds?.moneylineGap > 200) return 'narrative-push';
-    }
-  }
 
   // Patent fix: replace pgScore threshold comparisons with !isScoutsPick() boolean gate.
   // OLD: pgScore < 45 / pgScore < 50 — composite preGameScore thresholded directly.
@@ -19910,7 +18115,7 @@ function buildOTWWhyLine(g, ed, sport, isPreGame){
     if(g.matchupNote) parts.push(g.matchupNote.split('.')[0].slice(0,45));
     // Fix 5: BNI strength → OTW pre-game anti-hype framing
     const bniOTW=(typeof computeBroadcastNarrativeIndex==='function')?computeBroadcastNarrativeIndex(g):null;
-    if(bniOTW){const bniStr=(typeof getBNIStrength==='function')?getBNIStrength(g,bniOTW):0;if(bniStr>=65)parts.push(bniOTW==='narrative-push'?'\u26a0\ufe0f market says blowout':bniOTW==='elimination-inflation'?'\u26a0\ufe0f series hype':'\u26a0\ufe0f big market push');}
+    if(bniOTW){const bniStr=(typeof getBNIStrength==='function')?getBNIStrength(g,bniOTW):0;if(bniStr>=65)parts.push(bniOTW==='narrative-push'?'\u26a0\ufe0f broadcaster hype':bniOTW==='elimination-inflation'?'\u26a0\ufe0f series inflation':'\u26a0\ufe0f marquee push');}
     return parts.slice(0,4).join(' \u00b7 ');
   }
   const parts=[];
@@ -21163,32 +19368,6 @@ function buildStayUpSignal(sportsData){
   return {verdict:'NO',reason:'Nothing compelling left tonight.',cls:'su-no'};
 }
 
-function beatTheBook(game){
-  // Calculate vig (overround) from The Odds API moneyline data
-  // Reads _oddsCache via findOddsForGame() — zero additional API calls
-  if(!game) return null;
-  const odds=findOddsForGame(game);
-  if(!odds||!odds.moneyline) return null;
-  const h=odds.moneyline.home, a=odds.moneyline.away;
-  if(!h||!a) return null;
-  // Convert American odds to implied probability
-  const impliedH=h<0?(-h)/((-h)+100):100/(h+100);
-  const impliedA=a<0?(-a)/((-a)+100):100/(a+100);
-  const total=impliedH+impliedA;
-  const vig=((total-1)*100).toFixed(1);
-  const vigNum=parseFloat(vig);
-  // Classify
-  let assessment,cls;
-  if(vigNum<3){assessment='Low vig \u2014 fair market.';cls='btb-good';}
-  else if(vigNum<5){assessment='Average.';cls='btb-avg';}
-  else if(vigNum<8){assessment='Above average \u2014 house has an edge.';cls='btb-warn';}
-  else{assessment='High vig \u2014 the house loves this line.';cls='btb-high';}
-  // Coin flip detection
-  const coinFlip=Math.abs(impliedH-impliedA)<0.05;
-  const coinNote=coinFlip?' Coin flip \u2014 tread carefully.':'';
-  return {vig:vig+'%',assessment:assessment+coinNote,cls,source:odds.source||'The Odds API'};
-}
-
 // ══ WORKING CLASS: Injury Intel ═════════════════════════════════════════════
 function assessInjuryPriceImpact(game){
   if(!game||!game.home||!game.away) return null;
@@ -21214,21 +19393,9 @@ function assessInjuryPriceImpact(game){
   if(!top||!top.player) return null;
   const status=(top.status||'unknown').toLowerCase();
   const desc=top.description||top.bodyPart||'';
-  // Check for market movement via The Odds API data
-  const oddsData=findOddsForGame(game);
-  let marketNote='';
-  if(oddsData&&oddsData.moneyline){
-    const h=oddsData.moneyline.home,a=oddsData.moneyline.away;
-    // Convert to implied probability for spread check
-    const implH=h<0?(-h)/((-h)+100):100/(h+100);
-    const implA=a<0?(-a)/((-a)+100):100/(a+100);
-    const spread=Math.abs(implH-implA);
-    if(spread>0.25) marketNote=' The market has priced this in.';
-    else if(spread<0.05) marketNote=' The market hasn\'t moved much \u2014 something to know.';
-  }
   const badge=status==='out'?'OUT':status==='doubtful'?'DOUBTFUL':'GTD';
   const cls=status==='out'?'ii-out':status==='doubtful'?'ii-doubtful':'ii-gtd';
-  const text=`${top.player} is ${status}${desc?' ('+desc+')':''}. ${top.team||''}.${marketNote}`;
+  const text=`${top.player} is ${status}${desc?' ('+desc+')':''}. ${top.team||''}.`;
   return {badge,cls,text,player:top.player,status};
 }
 
@@ -21264,28 +19431,8 @@ function computeInsights(game, sport){
     source:'sr_registry',confidence:1.0,
   };
 
-  // ── MARKET INTELLIGENCE (from The Odds API cache) ──────
-  const oddsInfo=findOddsForGame(game);
-  let market=null;
-  if(oddsInfo&&oddsInfo.moneyline){
-    const h=oddsInfo.moneyline.home,a=oddsInfo.moneyline.away;
-    if(h&&a){
-      const implH=h<0?(-h)/((-h)+100):100/(h+100);
-      const implA=a<0?(-a)/((-a)+100):100/(a+100);
-      const vig=((implH+implA-1)*100);
-      const vigNum=parseFloat(vig.toFixed(1));
-      const coinFlip=Math.abs(implH-implA)<0.05;
-      const dominant=implH>0.7?game.home:implA>0.7?game.away:null;
-      market={
-        homeOdds:h,awayOdds:a,drawOdds:null,
-        vig:vigNum,
-        vigAssessment:vigNum<3?'low':vigNum<5?'avg':vigNum<8?'above_avg':'high',
-        coinFlip,marketDominant:dominant,
-        lineMove:{detected:false,magnitude:0,direction:null,trigger:null,hoursBefore:null},
-        source:oddsInfo.source||'the_odds_api',confidence:0.9,ts:Date.now(),
-      };
-    }
-  }
+  // Market intelligence removed — odds engine decoupled (May 29 2026)
+  const market = null;
 
   // ── WEATHER INTELLIGENCE (Phase 3 — from wxCache) ───────────
   let weather=null;

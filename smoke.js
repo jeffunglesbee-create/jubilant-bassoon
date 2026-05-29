@@ -118,12 +118,6 @@ assert('localStorage prune function present', html.includes('pruneOldFieldData')
 
           assert('FIELD_FEATURES registry declared', html.includes('const FIELD_FEATURES = {'));
           assert('FIELD_FEATURES contains j-series', html.includes("'j1-anti-hype'") || html.includes('"j1-anti-hype"'));
-          // ── Odds API relay (pre-session work) ─────────────────────────────────
-          assert('Odds relay adapter present',
-            html.includes('ODDS_RELAY_BASE') &&
-            html.includes('fetchOddsForSport') &&
-            html.includes('getGameOdds') &&
-            html.includes("'odds-relay-adapter'"));
           assert('FIELD_FEATURES contains relay-nba', html.includes("'relay-nba'") || html.includes('"relay-nba"'));
           assert('Drama score smoothing present',
             html.includes('getSmoothedDrama') && html.includes("'drama-score-smoothing'"));
@@ -222,8 +216,7 @@ assert('A56 — field_utils.js loaded in index.html',
   // A60 — captureFieldError helper defined
   assert('A60 — captureFieldError: error capture helper present', html.includes('function captureFieldError('));
 
-  // A61 — findOddsForGame helper present (beatTheBook reads from The Odds API cache)
-  assert('A61 — findOddsForGame: odds lookup uses The Odds API cache', html.includes('function findOddsForGame') && !html.includes('BETFAIR_RELAY_ENABLED'));
+  // A61 removed — findOddsForGame deleted (betting engine decoupled May 29 2026)
 
   // A62 — relay score fetches use captureFieldError (not bare .catch(()=>{}))
   assert('A62 — relay fetch captures: NBA relay errors captured', html.includes("captureFieldError('relay-nba'"));
@@ -346,7 +339,7 @@ assert('A56 — field_utils.js loaded in index.html',
     ['A120', 'ics-export: BEGIN:VCALENDAR + .ics download',            ['BEGIN:VCALENDAR', '.ics']],
     ['A121', 'sw-version-cache-bust: SW_VERSION cache-bust query param',['SW_VERSION', '?v=${SW_VERSION}']],
     ['A122', 'auto-deploy-guard-v5: pre-commit smoke gate in repo',    null], // file check — handled below
-    ['A123', 'scout-pick-market-tip: fieldVsMarket + scoutTitle',      [/function fieldVsMarket\s*\(/, 'scoutTitle']],
+    ['A123', 'scout-pick-market-tip: scoutTitle present',              ['scoutTitle']],
   ];
 
   FEATURE_GUARDS.forEach(([id, label, check]) => {
@@ -572,9 +565,7 @@ assert('A184 — New banned phrases from screenshots',
   html.includes('salvage pride') && html.includes('clinical execution') && html.includes('dictated the tempo'),
   'Banned phrases must include phrases observed in screenshot audit');
 
-assert('A185 — M1: drama composite number removed from Betting Intelligence display',
-  !html.includes('drama ${drama}') && !html.includes('>drama ${'),
-  'Betting Intelligence must not display "drama N" composite number (patent Case A risk)');
+// A185 removed — Betting Intelligence section deleted (May 29 2026)
 
 assert('A186 — M2: isScoutsPick boolean gate function defined',
   html.includes('function isScoutsPick('),
@@ -708,9 +699,7 @@ assert('A211 — Stats revamp: buildScoutingReport present in bottom sheet',
   html.includes('buildScoutingReport') && html.includes('bs-scout-table') && html.includes('Scouting Report'),
   'buildScoutingReport must be defined and wired into openBottomSheet()');
 
-assert('A212 — Betting revamp: buildBettingFieldEdge present in betting cards',
-  html.includes('buildBettingFieldEdge') && html.includes('bet-field-edge') && html.includes('FIELD Edge'),
-  'buildBettingFieldEdge must be defined and wired into renderBetting() card template');
+// A212 removed — buildBettingFieldEdge deleted (betting engine decoupled May 29 2026)
 
 // ── A213-A222: FUNCTIONAL assertions — verify actual data values, not just presence ──
 // These catch silent failures: code exists but produces no output for known inputs.
@@ -748,9 +737,7 @@ assert('A219 — Functional: Samsung tap fix — touchend approach with preventD
   html.includes('_tMoved') && html.includes('passive: false') && html.includes('e.preventDefault()'),
   'touchend with non-passive + preventDefault is the Samsung-reliable tap pattern');
 
-assert('A220 — Functional: Exhausted Starter odds key not hardcoded in FIELD',
-  !html.includes('8452c3ac6e226ca6eff8b087391d3c76'),
-  'Exhausted Starter key must not appear in FIELD — relay uses 20K key via CF Worker secret');
+// A220 removed — odds key assertion retired with betting engine (May 29 2026)
 
 assert('A221 — Functional: --muted CSS variable defined in :root',
   html.match(/--muted\s*:\s*#[0-9a-f]{6}/i) !== null,
@@ -828,6 +815,14 @@ assert('A240 — PGA Tour GraphQL relay REMOVED (ToS compliance, 2026-05-29)',
 assert('A242 — G-INF-1: ESPN golf leaderboard extraction present',
   html.includes('window._espnGolfLB') && html.includes('competitors.length > 0'),
   'ESPN golf competitors[] must be extracted to window._espnGolfLB — not discarded');
+
+assert('A243 — Betting engine REMOVED (ToS/patent compliance, 2026-05-29)',
+  !html.includes('renderBetting') &&
+  !html.includes('function findOddsForGame') &&
+  !html.includes('ODDS_RELAY_BASE') &&
+  !html.includes('buildBettingFieldEdge') &&
+  !html.includes('function beatTheBook'),
+  'Betting engine must be fully removed — renderBetting/findOddsForGame/ODDS_RELAY_BASE must not exist');
 
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);
