@@ -13353,11 +13353,10 @@ async function fetchSchedule(){
     } catch(e){}
   })();
   // ─────────────────────────────────────────────────────────────────────────in full MLB slate from ESPN (supplements hardcoded games)
-  setTimeout(fetchSoccerFixtures, 500); // staggered 500ms — avoids simultaneous EPL ESPN calls with fetchESPNScores init cycle
+  setTimeout(fetchSoccerFixtures, 500); // no-op with empty SOCCER_LEAGUES (all soccer on V2)
   setTimeout(fetchMLSLive, 800);         // MLS relay: stats-api.mlssoccer.com → canonical opta_id keys in espnScores
   fetchFPLLiveScores();  // FPL relay — EPL live scores (official PL data, CORS bypass via relay)
-  startSportsDBEngine(); // TheSportsDB real-time soccer livescores
-  startFotmobEngine();   // Fotmob soccer livescores (more reliable, unofficial API)
+  // startSportsDBEngine / startFotmobEngine removed — soccer now fully on api-sports.io V2
   startSquiggleEngine(); // Squiggle AFL live scores (free documented API)
   setTimeout(squigglePrefetchAll, 2500); // Squiggle standings
   // OpenF1 — only starts if a live F1 session is detected (self-gating)
