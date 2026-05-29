@@ -1,0 +1,10 @@
+=== CF API Probe [20260529T152143Z] ===
+Request: POST https://field-relay-nba.jeffunglesbee.workers.dev/journalism/run
+
+{
+    "triggered": "journalism-cycle",
+    "result": {
+        "ok": false,
+        "reason": "proxy returned no prose (len 0) \u2014 likely 429/proxy error"
+    }
+}
