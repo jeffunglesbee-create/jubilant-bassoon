@@ -1,0 +1,60 @@
+=== CF API Probe [20260529T064341Z] ===
+Request: POST https://field-relay-nba.jeffunglesbee.workers.dev/pgatour
+
+{
+    "data": {
+        "statLeaders": {
+            "statCategory": "STROKES_GAINED",
+            "displayYear": "2019-2020",
+            "subCategories": [
+                {
+                    "subCategoryName": "Strokes Gained Leaders",
+                    "stats": [
+                        {
+                            "playerId": "46970",
+                            "playerName": "Jon Rahm",
+                            "statTitle": "SG: Total",
+                            "statValue": "1.823",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "33448",
+                            "playerName": "Justin Thomas",
+                            "statTitle": "SG: Tee-to-Green",
+                            "statValue": "1.741",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "47959",
+                            "playerName": "Bryson DeChambeau",
+                            "statTitle": "SG: Off-the-Tee",
+                            "statValue": "1.039",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "33448",
+                            "playerName": "Justin Thomas",
+                            "statTitle": "SG: Approach the Green",
+                            "statValue": ".997",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "28089",
+                            "playerName": "Jason Day",
+                            "statTitle": "SG: Around-the-Green",
+                            "statValue": ".632",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "47993",
+                            "playerName": "Denny McCarthy",
+                            "statTitle": "SG: Putting",
+                            "statValue": ".988",
+                            "rank": "1st"
+                        }
+                    ]
+                }
+            ]
+        }
+    }
+}
