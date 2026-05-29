@@ -770,7 +770,9 @@ body::before{
 .double-feature-banner{background:rgba(212,175,55,.15);border:1px solid var(--gold);color:var(--gold2);font-size:.75rem;font-weight:700;letter-spacing:.04em;padding:.5rem 1rem;text-align:center;cursor:pointer;transition:opacity .3s}
 .badge-worth {background:rgba(232,160,32,.2);color:var(--soon);font-size:.6rem;font-weight:700;letter-spacing:.06em;padding:.15rem .38rem;border-radius:3px;margin-left:.3rem;margin-right:2.2rem;vertical-align:middle;display:inline-flex;align-items:center}
 .badge-closing{background:rgba(99,202,183,.18);color:#63cab7;font-size:.6rem;font-weight:800;letter-spacing:.08em;padding:.15rem .38rem;border-radius:3px;margin-left:.3rem;margin-right:2.2rem;vertical-align:middle;display:inline-flex;align-items:center}
-.rai-line{font-size:.66rem;color:var(--smoke);padding:.18rem .1rem 0;letter-spacing:.02em;font-weight:500;opacity:.9}
+.rai-line{font-size:.66rem;color:var(--teal,#2dd4bf);padding:.18rem .1rem 0;letter-spacing:.02em;font-weight:600;opacity:1}
+@media(max-width:600px){.rai-line{font-size:.7rem;padding:.2rem .1rem 0}}
+@media(max-width:600px) and (orientation:landscape){.rai-line{font-size:.65rem}}
 .rai-row{display:flex;align-items:center;gap:.4rem;font-size:.7rem;margin:.18rem 0}
 .rai-lbl{min-width:2.8rem;font-weight:700;color:var(--smoke)}
 .rai-bar{font-family:monospace;font-size:.72rem;letter-spacing:.05em;color:var(--muted);flex:1}
@@ -19940,7 +19942,7 @@ async function fetchNightOwlFromClaude(topGame){
   const score=topGame.awayScore+'\u2013'+topGame.homeScore;
   const _sp = (topGame._section || topGame._sport || '').toLowerCase();
   const _terms = _sp.includes('baseball') || _sp.includes('mlb')
-    ? 'Sport: Baseball. Score in RUNS (never "points"). Close game = one-run game. Extra period = extra innings (not overtime or OT). NEVER use: points, possession, one-possession, quarter, half, period, offensive sets, turnover, momentum shift in the basketball sense. Use: runs, innings, hits, strikeouts, ERA, pitch count, at-bat.'
+    ? 'SPORT=BASEBALL. This is a baseball game. Use ONLY baseball vocabulary.\nScore in RUNS. Close game = one-run game. Extra period = extra innings.\nFORBIDDEN — any use is a FACTUAL ERROR disqualifying the recap: quarter, quarters, fourth quarter, halftime, half time, field goal, field goal percentage, three-point, three-pointer, free throw, rebound, rebounds, one-possession, possession game, fast break, assist, assists, ball movement, interior scoring, basket, baskets, in the paint, down the stretch, offensive rhythm, offensive sets, transition game, points (unless quoting opponent stats), touchdown, first down, penalty kick, nil, offsides.\nUSE INSTEAD: runs, innings, hits, strikeouts, ERA, pitch count, at-bat, on-base, extra innings, bullpen, lineup, swing.'
     : _sp.includes('hockey') || _sp.includes('nhl')
     ? 'Sport: Ice Hockey. Score in GOALS (never "points"). Close game = one-goal game. Extra period = overtime or shootout. NEVER use: points, possession, quarter, basket. Use: shots, save percentage, power play, penalty kill.'
     : _sp.includes('nfl') || _sp.includes('american football')
@@ -19989,7 +19991,8 @@ async function fetchNightOwlFromClaude(topGame){
         if(_voc?.forbidden?.length&&_voc.forbidden.some(t=>text.toLowerCase().includes(t))){
           const _sents=text.split(/(?<=[.!?])\s+/);
           const _cln=_sents.filter(s=>!_voc.forbidden.some(t=>s.toLowerCase().includes(t)));
-          if(_cln.length>=2)text=_cln.join(' ');
+          // Accept even 1 clean sentence — anything is better than all-basketball baseball recap
+          if(_cln.length>=1)text=_cln.join(' ');
           if(FIELD_DEBUG)console.warn('[JQ Layer 2c] Hard-stripped sport vocab from',_sp);
         }
       }
@@ -20012,14 +20015,16 @@ async function fetchNightOwlFromClaude(topGame){
 // MLB "Inn 7", Tennis "Set 2", F1 "Lap 42". "pts" is wrong for goal sports.
 function sportContext(sport){
   const sp=(sport||'').toLowerCase();
+  // Normalise ISO clock PT09M05.00S → '9:05' before display in period labels
+  const fmtC=c=>c&&typeof fmtESPNClock==='function'?fmtESPNClock(c):c||'';
   if(sp.includes('soccer')||sp.includes('mls')||sp.includes('premier')||sp.includes('liga')||sp.includes('ligue')||sp.includes('serie')||sp.includes('efl')||sp.includes('championship'))
-    return {periodFmt:(p,c)=>(p===1?'1H':'2H')+(c?' '+c:''),unit:'goal',units:'goals',runTh:2,otP:2,gap:(n)=>n===1?'1 goal':n+' goals'};
+    return {periodFmt:(p,c)=>(p===1?'1H':'2H')+(fmtC(c)?' '+fmtC(c):''),unit:'goal',units:'goals',runTh:2,otP:2,gap:(n)=>n===1?'1 goal':n+' goals'};
   if(sp.includes('hockey')||sp.includes('nhl'))
-    return {periodFmt:(p,c)=>'P'+p+(c?' '+c:''),unit:'goal',units:'goals',runTh:3,otP:3,gap:(n)=>n===1?'1 goal':n+' goals'};
+    return {periodFmt:(p,c)=>'P'+p+(fmtC(c)?' '+fmtC(c):''),unit:'goal',units:'goals',runTh:3,otP:3,gap:(n)=>n===1?'1 goal':n+' goals'};
   if(sp.includes('baseball')||sp.includes('mlb'))
     return {periodFmt:(p,c)=>'Inn '+p,unit:'run',units:'runs',runTh:4,otP:9,gap:(n)=>n===1?'1 run':n+' runs'};
   if(sp.includes('australian')||sp.includes('afl'))
-    return {periodFmt:(p,c)=>'Q'+p+(c?' '+c:''),unit:'pt',units:'pts',runTh:18,otP:4,gap:(n)=>n+' pts'};
+    return {periodFmt:(p,c)=>'Q'+p+(fmtC(c)?' '+fmtC(c):''),unit:'pt',units:'pts',runTh:18,otP:4,gap:(n)=>n+' pts'};
   if(sp.includes('tennis')||sp.includes('atp')||sp.includes('wta'))
     return {periodFmt:(p,c)=>'Set '+p,unit:'set',units:'sets',runTh:99,otP:99,gap:(n)=>n===1?'1 set':n+' sets'};
   if(sp.includes('f1')||sp.includes('formula'))
@@ -20027,7 +20032,7 @@ function sportContext(sport){
   if(sp.includes('cricket'))
     return {periodFmt:(p,c)=>'Over '+p,unit:'run',units:'runs',runTh:30,otP:99,gap:(n)=>n+' runs'};
   // NBA, NFL, WNBA — quarter sports with points
-  return {periodFmt:(p,c)=>'Q'+p+(c?' '+c:''),unit:'pt',units:'pts',runTh:7,otP:4,gap:(n)=>n+' pts'};
+  return {periodFmt:(p,c)=>'Q'+p+(fmtC(c)?' '+fmtC(c):''),unit:'pt',units:'pts',runTh:7,otP:4,gap:(n)=>n+' pts'};
 }
 
 // ══ WORKING CLASS: The Skim + Cheap Seats ═══════════════════════════════════
