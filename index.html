@@ -2939,6 +2939,29 @@ function buildFieldHealthPanel() {
   const bsOpen = _bsEl ? _bsEl.classList.contains('open') : false;
   rows.push(ok('Bottom Sheet', bsOpen ? 'Currently open' : 'Ready (tap a game card to verify)'));
 
+  // ── Journalism (FIELD Brief / compound editorial) ─────────────────────────
+  // Shows whether AI prose actually rendered, vs the static placeholder.
+  try {
+    const fbText = document.querySelector('.field-brief-text');
+    const briefTxt = fbText ? (fbText.textContent||'').trim() : '';
+    const fbKey = typeof fieldBriefCacheKey === 'function' ? fieldBriefCacheKey() : null;
+    const cached = fbKey ? sessionStorage.getItem(fbKey) : null;
+    const budget = typeof journalismCallsToday === 'function' ? journalismCallsToday() : null;
+    const used = budget ? budget.count : '?';
+    const isStatic = /^Tonight on FIELD:/.test(briefTxt) || briefTxt.length < 40;
+    if (cached && cached.length > 40) {
+      rows.push(ok('Journalism', `Brief rendered (${cached.length} chars) · ${used} AI calls used`));
+    } else if (briefTxt && !isStatic) {
+      rows.push(ok('Journalism', `Brief live (${briefTxt.length} chars) · ${used} AI calls`));
+    } else if (isStatic && briefTxt) {
+      rows.push(warn('Journalism', `Static placeholder only — compound not returned yet · ${used} AI calls used`));
+    } else {
+      rows.push(warn('Journalism', `No brief text yet · ${used} AI calls used`));
+    }
+  } catch(e) {
+    rows.push(warn('Journalism', 'Check failed: ' + (e?.message||'unknown')));
+  }
+
   // ── localStorage health ───────────────────────────────────────────────────
   try {
     const oddsReq = JSON.parse(localStorage.getItem('odds_req') || '{}');
@@ -15519,7 +15542,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-05-29d';
+  const SW_VERSION = '2026-05-29e';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
