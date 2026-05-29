@@ -139,3 +139,19 @@ Golf Intelligence Drive docs:
   Doc 1 — API Reference: 1Ak_GPXkiKUvUr6dUpcto0BUbhKTibIwgR-o8SYUeBfM
   Doc 2 — Historical Data: 1kCnuntcW1PpmFS78xDm8L8nVOoE45zp-dIGeF4MlrtM
   Doc 3 — Patent & Metrics: 1O690cHVepQNEjMx7hSxh-IF2vM7ncb9JOtuLLT8hj5I
+
+---
+## ADDENDUM — May 29 2026 (Journalism Audit + Android)
+
+### Additional fixes shipped after session end:
+- **Root cause found**: `trimToCompleteSentence` + `stripJsonFences` + 6 other functions removed from index.html to field_utils.js (Node-only) on May 20 — never re-added. Every journalism call silently failed. Commit `923e12e` inlined all 8 back. A191 smoke guard added.
+- **SW stale since May 25**: sw.js SW_VERSION frozen, return visitors got 4-day-old build. Commit `1f84293` + A190 guard.
+- **Golf top-10 board**: isActive check treated empty status string as falsy — leaderboard never rendered. Commit `6399654`.
+- **SW auto-reload**: No updatefound listener meant users had to manually close/reopen after deploys. Commit `9305375` adds controllerchange → location.reload(). Works on Android and iOS.
+
+### Android audit doc:
+Drive ID: 1IDI9mQ9BLQimpr68Xjk2qJveinj5nLuYb3dt4MMHBLc
+Pending live device testing after journalism confirmed working.
+P1 items: push notifications, filter bar scroll, PWA install flow.
+
+### Current HEAD: 9305375 · Smoke 243/0 · SW_VERSION 2026-05-29d
