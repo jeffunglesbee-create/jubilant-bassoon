@@ -15544,7 +15544,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-05-29f';
+  const SW_VERSION = '2026-05-29g';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -16646,11 +16646,18 @@ async function fetchCompoundEditorial(sections) {
       const retryAfter = parseInt(r.headers.get('Retry-After') || '60');
       _compoundRetryAfter = Date.now() + retryAfter * 1000;
       if (FIELD_DEBUG) console.log(`[COMPOUND] 429 received — retrying after ${retryAfter}s`);
+      try { window._compoundLastError = `429 rate-limited (retry ${retryAfter}s)`; } catch(_){}
       // Return cached if available, otherwise null (falls back to individual queue)
       return null;
     }
 
-    if (!r.ok) return null;
+    if (!r.ok) {
+      // Capture the proxy's HTTP status + body so the Health Panel names the cause.
+      let bodyTxt = '';
+      try { bodyTxt = (await r.text()).slice(0,120); } catch(_){}
+      try { window._compoundLastError = `proxy HTTP ${r.status} — ${bodyTxt}`; } catch(_){}
+      return null;
+    }
     const data = await r.json();
     const text = data.content?.[0]?.text || '';
     const clean = stripJsonFences(text);
