@@ -1,0 +1,783 @@
+=== CF API Probe [20260529T062650Z] ===
+Request: POST https://field-relay-nba.jeffunglesbee.workers.dev/pgatour
+
+{
+    "data": {
+        "statLeaders": {
+            "statCategory": "APPROACH_GREEN",
+            "displayYear": "2025-2026",
+            "subCategories": [
+                {
+                    "subCategoryName": "Approach Leaders",
+                    "stats": [
+                        {
+                            "playerId": "50525",
+                            "playerName": "Collin Morikawa",
+                            "statTitle": "SG: Approach the Green",
+                            "statValue": "0.847",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "46046",
+                            "playerName": "Scottie Scheffler",
+                            "statTitle": "Ball Striking",
+                            "statValue": "2",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "46046",
+                            "playerName": "Scottie Scheffler",
+                            "statTitle": "Greens in Regulation Percentage",
+                            "statValue": "73.23%",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "25900",
+                            "playerName": "Lucas Glover",
+                            "statTitle": "Proximity to Hole",
+                            "statValue": "34' 7\"",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "24502",
+                            "playerName": "Adam Scott",
+                            "statTitle": "Approaches from > 100 yards",
+                            "statValue": "30' 2\"",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "25900",
+                            "playerName": "Lucas Glover",
+                            "statTitle": "Approaches from inside 100 yards",
+                            "statValue": "10' 10\"",
+                            "rank": "1st"
+                        }
+                    ]
+                },
+                {
+                    "subCategoryName": "Greens in Regulation",
+                    "stats": [
+                        {
+                            "playerId": "46046",
+                            "playerName": "Scottie Scheffler",
+                            "statTitle": "Greens in Regulation Percentage",
+                            "statValue": "73.23%",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "28237",
+                            "playerName": "Rory McIlroy",
+                            "statTitle": "Greens or Fringe in Regulation",
+                            "statValue": "78.79%",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "36689",
+                            "playerName": "Brooks Koepka",
+                            "statTitle": "GIR Percentage - 200+ yards",
+                            "statValue": "65.57%",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "28237",
+                            "playerName": "Rory McIlroy",
+                            "statTitle": "GIR Percentage - 175-200 yards",
+                            "statValue": "68.97%",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "49855",
+                            "playerName": "Kristoffer Reitan",
+                            "statTitle": "GIR Percentage - 150-175 yards",
+                            "statValue": "73.19%",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "27649",
+                            "playerName": "Brandt Snedeker",
+                            "statTitle": "GIR Percentage - 125-150 yards",
+                            "statValue": "83.33%",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "55573",
+                            "playerName": "John VanDerLaan",
+                            "statTitle": "GIR Percentage - < 125 yards",
+                            "statValue": "90.13%",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "50095",
+                            "playerName": "Austin Smotherman",
+                            "statTitle": "GIR Percentage - 100-125 yards",
+                            "statValue": "90.38%",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "46414",
+                            "playerName": "Aaron Rai",
+                            "statTitle": "GIR Percentage - 100+ yards",
+                            "statValue": "67.95%",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "27214",
+                            "playerName": "Kevin Streelman",
+                            "statTitle": "GIR Percentage - < 100 yards",
+                            "statValue": "94.34%",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "59866",
+                            "playerName": "Nick Dunlap",
+                            "statTitle": "GIR Percentage - 75-100 yards",
+                            "statValue": "100.00%",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "60019",
+                            "playerName": "Jackson Suber",
+                            "statTitle": "GIR Percentage - < 75 yards",
+                            "statValue": "98.21%",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "52686",
+                            "playerName": "Rasmus H\u00f8jgaard",
+                            "statTitle": "GIR Percentage from Fairway",
+                            "statValue": "85.71%",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "66743",
+                            "playerName": "Luke Clanton",
+                            "statTitle": "GIR Pct. - Fairway Bunker",
+                            "statValue": "88.2%",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "60019",
+                            "playerName": "Jackson Suber",
+                            "statTitle": "GIR Percentage from Other than Fairway",
+                            "statValue": "63.69%",
+                            "rank": "1st"
+                        }
+                    ]
+                },
+                {
+                    "subCategoryName": "Accuracy from Fairway",
+                    "stats": [
+                        {
+                            "playerId": "25900",
+                            "playerName": "Lucas Glover",
+                            "statTitle": "Proximity to Hole",
+                            "statValue": "34' 7\"",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "59095",
+                            "playerName": "Chris Gotterup",
+                            "statTitle": "Approaches from > 275 yards",
+                            "statValue": "47' 4\"",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "52955",
+                            "playerName": "Ludvig \u00c5berg",
+                            "statTitle": "Approaches from 250-275 yards",
+                            "statValue": "42' 10\"",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "54304",
+                            "playerName": "Karl Vilips",
+                            "statTitle": "Approaches from 225-250 yards",
+                            "statValue": "32' 10\"",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "37455",
+                            "playerName": "Si Woo Kim",
+                            "statTitle": "Approaches from 200-225 yards",
+                            "statValue": "34' 2\"",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "52955",
+                            "playerName": "Ludvig \u00c5berg",
+                            "statTitle": "Approaches from > 200 yards",
+                            "statValue": "42' 3\"",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "37455",
+                            "playerName": "Si Woo Kim",
+                            "statTitle": "Approaches from 175-200 yards",
+                            "statValue": "27' 6\"",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "37455",
+                            "playerName": "Si Woo Kim",
+                            "statTitle": "Approaches from 150-175 yards",
+                            "statValue": "23' 7\"",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "59006",
+                            "playerName": "Davis Chatfield",
+                            "statTitle": "Approaches from 125-150 yards",
+                            "statValue": "15' 9\"",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "49960",
+                            "playerName": "Sepp Straka",
+                            "statTitle": "Approaches from 50-125 yards",
+                            "statValue": "14' 11\"",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "55851",
+                            "playerName": "Pontus Nyholm",
+                            "statTitle": "Approaches from 100-125 yards",
+                            "statValue": "13' 7\"",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "25900",
+                            "playerName": "Lucas Glover",
+                            "statTitle": "Approaches from 75-100 yards",
+                            "statValue": "8' 6\"",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "50188",
+                            "playerName": "S.H. Kim",
+                            "statTitle": "Approaches from 50-75 yards",
+                            "statValue": "5' 0\"",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "25900",
+                            "playerName": "Lucas Glover",
+                            "statTitle": "Approaches from inside 100 yards",
+                            "statValue": "10' 10\"",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "24502",
+                            "playerName": "Adam Scott",
+                            "statTitle": "Approaches from > 100 yards",
+                            "statValue": "30' 2\"",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "24502",
+                            "playerName": "Adam Scott",
+                            "statTitle": "Fairway Proximity",
+                            "statValue": "28' 11\"",
+                            "rank": "1st"
+                        }
+                    ]
+                },
+                {
+                    "subCategoryName": "Accuracy from Rough",
+                    "stats": [
+                        {
+                            "playerId": "34076",
+                            "playerName": "Joel Dahmen",
+                            "statTitle": "Rough Proximity",
+                            "statValue": "39' 1\"",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "28723",
+                            "playerName": "John Parry",
+                            "statTitle": "Left Rough Proximity",
+                            "statValue": "35' 4\"",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "34076",
+                            "playerName": "Joel Dahmen",
+                            "statTitle": "Right Rough Proximity",
+                            "statValue": "32' 4\"",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "59141",
+                            "playerName": "Matt McCarty",
+                            "statTitle": "Approaches from > 275 yards (Rgh)",
+                            "statValue": "5' 1\"",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "47995",
+                            "playerName": "Davis Riley",
+                            "statTitle": "Approaches from 250-275 yards (Rgh)",
+                            "statValue": "31' 9\"",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "33141",
+                            "playerName": "Keegan Bradley",
+                            "statTitle": "Approaches from 225-250 yards (Rgh)",
+                            "statValue": "31' 1\"",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "36689",
+                            "playerName": "Brooks Koepka",
+                            "statTitle": "Approaches from 200-225 yards (Rgh)",
+                            "statValue": "29' 0\"",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "54422",
+                            "playerName": "Christo Lamprecht",
+                            "statTitle": "Approaches from > 100 yards (Rgh)",
+                            "statValue": "40' 8\"",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "60067",
+                            "playerName": "Joe Highsmith",
+                            "statTitle": "Approaches from inside 100 yards (Rgh)",
+                            "statValue": "10' 5\"",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "47995",
+                            "playerName": "Davis Riley",
+                            "statTitle": "Approaches from > 200 yards (Rgh)",
+                            "statValue": "54' 3\"",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "61522",
+                            "playerName": "Michael Brennan",
+                            "statTitle": "Approaches from 175-200 yards (Rgh)",
+                            "statValue": "35' 8\"",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "46717",
+                            "playerName": "Viktor Hovland",
+                            "statTitle": "Approaches from 150-175 yards (Rgh)",
+                            "statValue": "28' 7\"",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "59018",
+                            "playerName": "Ryan Gerard",
+                            "statTitle": "Approaches from 125-150 yards (Rgh)",
+                            "statValue": "21' 11\"",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "27649",
+                            "playerName": "Brandt Snedeker",
+                            "statTitle": "Approaches from 50-125 yards (Rgh)",
+                            "statValue": "14' 10\"",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "27649",
+                            "playerName": "Brandt Snedeker",
+                            "statTitle": "Approaches from 100-125 yards (Rgh)",
+                            "statValue": "13' 11\"",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "57366",
+                            "playerName": "Cameron Young",
+                            "statTitle": "Approaches from 75-100 yards (Rgh)",
+                            "statValue": "9' 1\"",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "49855",
+                            "playerName": "Kristoffer Reitan",
+                            "statTitle": "Approaches from 50-75 yards (Rgh)",
+                            "statValue": "6' 0\"",
+                            "rank": "1st"
+                        }
+                    ]
+                },
+                {
+                    "subCategoryName": "Scoring",
+                    "stats": [
+                        {
+                            "playerId": "46046",
+                            "playerName": "Scottie Scheffler",
+                            "statTitle": "Birdie or Better Percentage - Fairway",
+                            "statValue": "29.64%",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "36689",
+                            "playerName": "Brooks Koepka",
+                            "statTitle": "Birdie or Better Percentage - Left Rough",
+                            "statValue": "28.30%",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "39975",
+                            "playerName": "Michael Kim",
+                            "statTitle": "Birdie or Better Percentage - Right Rough",
+                            "statValue": "29.58%",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "46340",
+                            "playerName": "Alex Smalley",
+                            "statTitle": "Birdie or Better Percentage - Rough",
+                            "statValue": "26.74%",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "52955",
+                            "playerName": "Ludvig \u00c5berg",
+                            "statTitle": "Birdie or Better Percentage - 200+ yards",
+                            "statValue": "48.95%",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "59095",
+                            "playerName": "Chris Gotterup",
+                            "statTitle": "Birdie or Better Percentage - 175-200 yards",
+                            "statValue": "23.85%",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "46046",
+                            "playerName": "Scottie Scheffler",
+                            "statTitle": "Birdie or Better Percentage - 150-175 yards",
+                            "statValue": "24.39%",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "56630",
+                            "playerName": "Akshay Bhatia",
+                            "statTitle": "Birdie or Better Percentage - 125-150 yards",
+                            "statValue": "34.02%",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "55182",
+                            "playerName": "Tom Kim",
+                            "statTitle": "Birdie or Better Percentage - < 125 yards",
+                            "statValue": "34.71%",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "57364",
+                            "playerName": "Michael Thorbjornsen",
+                            "statTitle": "Approach > 275 yards (RTP)",
+                            "statValue": "-1.333",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "55573",
+                            "playerName": "John VanDerLaan",
+                            "statTitle": "Approach 250-275 yards (RTP)",
+                            "statValue": "-1.000",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "47420",
+                            "playerName": "Jake Knapp",
+                            "statTitle": "Approach 225-250 yards (RTP)",
+                            "statValue": "-.696",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "47420",
+                            "playerName": "Jake Knapp",
+                            "statTitle": "Approach 200-225 yards (RTP)",
+                            "statValue": "-.295",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "47420",
+                            "playerName": "Jake Knapp",
+                            "statTitle": "Approach > 200 yards (RTP Score)",
+                            "statValue": "-.457",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "51977",
+                            "playerName": "Max Greyserman",
+                            "statTitle": "Approach 175-200 yards (RTP Score)",
+                            "statValue": "-.174",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "46046",
+                            "playerName": "Scottie Scheffler",
+                            "statTitle": "Approach 150-175 yards (RTP Score)",
+                            "statValue": "-.267",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "55182",
+                            "playerName": "Tom Kim",
+                            "statTitle": "Approach 125-150 yards (RTP Score)",
+                            "statValue": "-.299",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "51600",
+                            "playerName": "Jimmy Stanger",
+                            "statTitle": "Approach < 125 yards (RTP Score)",
+                            "statValue": "-.319",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "55851",
+                            "playerName": "Pontus Nyholm",
+                            "statTitle": "Approach 100-125 yards (RTP Score)",
+                            "statValue": "-.360",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "38991",
+                            "playerName": "Alejandro Tosti",
+                            "statTitle": "Approach 75-100 yards (RTP Score)",
+                            "statValue": "-.556",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "37076",
+                            "playerName": "Marcelo Rozo",
+                            "statTitle": "Approach 50-75 yards (RTP Score)",
+                            "statValue": "-.750",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "35461",
+                            "playerName": "Beau Hossler",
+                            "statTitle": "Approaches 50-75 yards-Rgh (RTP)",
+                            "statValue": "-1.333",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "47917",
+                            "playerName": "Takumi Kanaya",
+                            "statTitle": "Approaches 75-100 yards-Rgh (RTP)",
+                            "statValue": "-1.000",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "59866",
+                            "playerName": "Nick Dunlap",
+                            "statTitle": "Approaches 100-125 yards-Rgh (RTP)",
+                            "statValue": "-.417",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "60004",
+                            "playerName": "Jacob Bridgeman",
+                            "statTitle": "Approaches 50-125 yards-Rgh (RTP)",
+                            "statValue": "-.286",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "65256",
+                            "playerName": "David Ford",
+                            "statTitle": "Approaches 125-150 yards-Rgh (RTP)",
+                            "statValue": "-.300",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "59006",
+                            "playerName": "Davis Chatfield",
+                            "statTitle": "Approaches 150-175 yards-Rgh (RTP)",
+                            "statValue": "-.267",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "28237",
+                            "playerName": "Rory McIlroy",
+                            "statTitle": "Approaches 175-200 yards-Rgh (RTP)",
+                            "statValue": "-.333",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "36689",
+                            "playerName": "Brooks Koepka",
+                            "statTitle": "Approaches > 200 yards-Rgh (RTP)",
+                            "statValue": "-.652",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "60004",
+                            "playerName": "Jacob Bridgeman",
+                            "statTitle": "Approaches < 100 yards-Rgh (RTP)",
+                            "statValue": "-.467",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "28237",
+                            "playerName": "Rory McIlroy",
+                            "statTitle": "Approaches > 100 yards-Rgh (RTP)",
+                            "statValue": "-.127",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "54422",
+                            "playerName": "Christo Lamprecht",
+                            "statTitle": "Approaches 200-225 yards-Rgh (RTP)",
+                            "statValue": "-.800",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "33141",
+                            "playerName": "Keegan Bradley",
+                            "statTitle": "Approaches 225-250 yards-Rgh (RTP)",
+                            "statValue": "-1.000",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "57362",
+                            "playerName": "Austin Eckroat",
+                            "statTitle": "Approaches 250-275 yards-Rgh (RTP)",
+                            "statValue": "-1.500",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "29535",
+                            "playerName": "Brice Garnett",
+                            "statTitle": "Approaches > 275 yards-Rgh (RTP)",
+                            "statValue": "-2.000",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "36689",
+                            "playerName": "Brooks Koepka",
+                            "statTitle": "Approaches Left Rough (RTP Score)",
+                            "statValue": "-.170",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "39975",
+                            "playerName": "Michael Kim",
+                            "statTitle": "Approaches Right Rough (RTP Score)",
+                            "statValue": "-.169",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "46046",
+                            "playerName": "Scottie Scheffler",
+                            "statTitle": "Fairway Approach (RTP Score)",
+                            "statValue": "-.222",
+                            "rank": "1st"
+                        }
+                    ]
+                },
+                {
+                    "subCategoryName": "Going for it",
+                    "stats": [
+                        {
+                            "playerId": "46046",
+                            "playerName": "Scottie Scheffler",
+                            "statTitle": "Going for the Green",
+                            "statValue": "83.87%",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "47420",
+                            "playerName": "Jake Knapp",
+                            "statTitle": "Going for the Green - Hit Green Pct.",
+                            "statValue": "36.14%",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "27649",
+                            "playerName": "Brandt Snedeker",
+                            "statTitle": "Going for the Green - Birdie or Better",
+                            "statValue": "78.26%",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "46046",
+                            "playerName": "Scottie Scheffler",
+                            "statTitle": "Par 5 Going for the Green",
+                            "statValue": "82.03%",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "47420",
+                            "playerName": "Jake Knapp",
+                            "statTitle": "Average Going for it Shot Distance (in Yards)",
+                            "statValue": "248.7",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "60386",
+                            "playerName": "Sudarshan Yellamaraju",
+                            "statTitle": "Average Distance after Going for it Shot",
+                            "statValue": "20.2",
+                            "rank": "1st"
+                        }
+                    ]
+                },
+                {
+                    "subCategoryName": "Holeouts, Other",
+                    "stats": [
+                        {
+                            "playerId": "36699",
+                            "playerName": "Patrick Rodgers",
+                            "statTitle": "Total Hole Outs",
+                            "statValue": "22",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "51977",
+                            "playerName": "Max Greyserman",
+                            "statTitle": "Longest Hole Outs (in yards)",
+                            "statValue": "275",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "64442",
+                            "playerName": "Gordon Sargent",
+                            "statTitle": "Average Approach Shot Distance",
+                            "statValue": "161.5",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "29535",
+                            "playerName": "Brice Garnett",
+                            "statTitle": "Average Approach Distance - Birdie or Better",
+                            "statValue": "166.2",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "54422",
+                            "playerName": "Christo Lamprecht",
+                            "statTitle": "Average Approach Distance - Par",
+                            "statValue": "157.4",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "64442",
+                            "playerName": "Gordon Sargent",
+                            "statTitle": "Average Approach Distance - Bogey or Worse",
+                            "statValue": "148.0",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "28237",
+                            "playerName": "Rory McIlroy",
+                            "statTitle": "Average Distance to Hole After Tee Shot",
+                            "statValue": "156.3",
+                            "rank": "1st"
+                        }
+                    ]
+                }
+            ]
+        }
+    }
+}
