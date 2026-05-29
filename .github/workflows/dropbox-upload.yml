@@ -18,14 +18,50 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
+      - name: Refresh Dropbox access token
+        id: refresh
+        env:
+          # Durable OAuth: a refresh token never expires (unless revoked).
+          # The workflow exchanges it for a short-lived access token at runtime,
+          # so uploads no longer break every 4 hours like a raw DROPBOX_TOKEN did.
+          REFRESH_TOKEN: ${{ secrets.DROPBOX_REFRESH_TOKEN }}
+          APP_KEY: ${{ secrets.DROPBOX_APP_KEY }}
+          APP_SECRET: ${{ secrets.DROPBOX_APP_SECRET }}
+          LEGACY_TOKEN: ${{ secrets.DROPBOX_TOKEN }}
+        run: |
+          set +e
+          # If the refresh-token secrets are present, use the durable OAuth flow.
+          if [ -n "$REFRESH_TOKEN" ] && [ -n "$APP_KEY" ] && [ -n "$APP_SECRET" ]; then
+            echo "Using refresh-token flow..."
+            RESP=$(curl -s -X POST https://api.dropbox.com/oauth2/token \
+              -d grant_type=refresh_token \
+              -d refresh_token="$REFRESH_TOKEN" \
+              -u "$APP_KEY:$APP_SECRET")
+            ACCESS=$(echo "$RESP" | python3 -c "import json,sys; print(json.load(sys.stdin).get('access_token',''))" 2>/dev/null)
+            if [ -z "$ACCESS" ]; then
+              echo "Failed to refresh token. Response: $RESP"
+              exit 1
+            fi
+            echo "::add-mask::$ACCESS"
+            echo "access_token=$ACCESS" >> $GITHUB_OUTPUT
+            echo "Refreshed access token OK."
+          elif [ -n "$LEGACY_TOKEN" ]; then
+            echo "WARNING: falling back to legacy DROPBOX_TOKEN (expires ~4h)."
+            echo "::add-mask::$LEGACY_TOKEN"
+            echo "access_token=$LEGACY_TOKEN" >> $GITHUB_OUTPUT
+          else
+            echo "No Dropbox credentials configured. Add DROPBOX_REFRESH_TOKEN + DROPBOX_APP_KEY + DROPBOX_APP_SECRET."
+            exit 1
+          fi
+
       - name: Upload to Dropbox
         env:
-          DROPBOX_TOKEN: ${{ secrets.DROPBOX_TOKEN }}
+          ACCESS_TOKEN: ${{ steps.refresh.outputs.access_token }}
         run: |
           echo "Uploading ${{ inputs.source_file }} to Dropbox as /${{ inputs.filename }}..."
           RESPONSE=$(curl -s -w "\n%{http_code}" \
             -X POST https://content.dropboxapi.com/2/files/upload \
-            --header "Authorization: Bearer ${DROPBOX_TOKEN}" \
+            --header "Authorization: Bearer ${ACCESS_TOKEN}" \
             --header "Dropbox-API-Arg: {\"path\":\"/${{ inputs.filename }}\",\"mode\":\"overwrite\",\"autorename\":false,\"mute\":false}" \
             --header "Content-Type: application/octet-stream" \
             --data-binary @${{ inputs.source_file }})
