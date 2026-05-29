@@ -1,0 +1,60 @@
+=== CF API Probe [20260529T061736Z] ===
+Request: POST https://field-relay-nba.jeffunglesbee.workers.dev/pgatour
+
+{
+    "data": {
+        "statLeaders": {
+            "statCategory": "STROKES_GAINED",
+            "displayYear": "2025-2026",
+            "subCategories": [
+                {
+                    "subCategoryName": "Strokes Gained Leaders",
+                    "stats": [
+                        {
+                            "playerId": "46046",
+                            "playerName": "Scottie Scheffler",
+                            "statTitle": "SG: Total",
+                            "statValue": "2.221",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "46046",
+                            "playerName": "Scottie Scheffler",
+                            "statTitle": "SG: Tee-to-Green",
+                            "statValue": "1.714",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "28237",
+                            "playerName": "Rory McIlroy",
+                            "statTitle": "SG: Off-the-Tee",
+                            "statValue": "0.842",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "50525",
+                            "playerName": "Collin Morikawa",
+                            "statTitle": "SG: Approach the Green",
+                            "statValue": "0.847",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "27649",
+                            "playerName": "Brandt Snedeker",
+                            "statTitle": "SG: Around-the-Green",
+                            "statValue": "0.669",
+                            "rank": "1st"
+                        },
+                        {
+                            "playerId": "51894",
+                            "playerName": "Vince Whaley",
+                            "statTitle": "SG: Putting",
+                            "statValue": "0.924",
+                            "rank": "1st"
+                        }
+                    ]
+                }
+            ]
+        }
+    }
+}
