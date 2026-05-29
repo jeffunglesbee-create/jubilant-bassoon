@@ -2514,6 +2514,30 @@ body::before{
   }
 }
 
+
+/* ── Sport Game Brief Cards (MLB, WNBA) — appears above game card ─────────── */
+.sport-game-brief-card{border-radius:6px 6px 0 0;overflow:hidden;margin-bottom:0;border:1px solid rgba(255,255,255,.08);border-bottom:none}
+.sport-game-brief-mlb{border-left:3px solid #ef4444;background:rgba(239,68,68,.04)}
+.sport-game-brief-wnba{border-left:3px solid #a855f7;background:rgba(168,85,247,.04)}
+.sgb-inner{padding:.55rem .85rem .45rem}
+.sgb-tag{font-size:.52rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;opacity:.7;margin-bottom:.18rem}
+.sport-game-brief-mlb .sgb-tag{color:#ef4444}
+.sport-game-brief-wnba .sgb-tag{color:#a855f7}
+.sgb-text{font-size:.72rem;line-height:1.55;color:var(--text)}
+.sgb-text.pending{opacity:.5;font-style:italic}
+.sgb-text.loaded{opacity:1;font-style:normal}
+/* ── Stakes Brief Card (elimination / clinch / series-deciding) ─────────── */
+.stakes-brief-card{border-radius:6px 6px 0 0;overflow:hidden;margin-bottom:0;border:1px solid rgba(255,59,59,.25);border-bottom:none;background:rgba(255,59,59,.06)}
+.stakes-inner{padding:.55rem .85rem .45rem}
+.stakes-tag{font-size:.52rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--live,#ff3b3b);margin-bottom:.18rem}
+.stakes-text{font-size:.74rem;line-height:1.5;color:var(--text);font-weight:500}
+.stakes-text.pending{opacity:.5;font-style:italic}
+.stakes-text.loaded{opacity:1}
+/* ── Night Owl secondary capsules ─────────────────────────────────────────── */
+.night-owl-secondary{margin-top:.65rem;padding-top:.55rem;border-top:1px solid rgba(255,255,255,.08)}
+.night-owl-secondary .no-team{font-size:.7rem;font-weight:600;color:var(--gold2,#c9a84c);margin-bottom:.15rem}
+.night-owl-secondary .no-text{font-size:.7rem;line-height:1.5;color:var(--text-muted)}
+
 </style>
   <!-- field_utils.js: pure utility functions — FIELD domain vocabulary
        Loaded first so helpers are available to all scripts and inline handlers.
@@ -7382,7 +7406,10 @@ function renderAll(){
   // Re-inject BDL injury badges and Squiggle tips after each render
   setTimeout(()=>{ injectBdlInjuryBadges(); injectSquiggleTips(); }, 150);
   setTimeout(initSeriesPreviews, 400);  // J2: series preview cards
-  setTimeout(initEPLMatchBriefs, 700);  // EPL: match briefs — staggered to avoid rate limits
+  setTimeout(initEPLMatchBriefs, 700);  // J7: EPL + MLS + Bundesliga match briefs
+  setTimeout(initStakesBriefs,   900);  // J10: stakes brief (elimination/clinch/series-deciding)
+  setTimeout(initMLBGameBriefs, 1100);  // J8: MLB game brief (park/weather/umpire/pitcher)
+  setTimeout(initWNBAGameBriefs,1300);  // J9: WNBA game brief (standings + matchup)
   renderWatchWindow();
   setTimeout(updateCardLifeStages, 200); // Update life stages after cards render
   setTimeout(renderScoreTicker, 250);   // Render score ticker if games are live
@@ -17362,6 +17389,361 @@ function buildEPLMatchBriefStatic(g) {
   return `${g.away} vs ${g.home} — ${leagueName}.${streamNote} ${context}`;
 }
 
+
+// ═══════════════════════════════════════════════════════════════════════════
+// J-LAYER EXPANSION — Six new journalism types (May 29 2026)
+//   J8  : MLB Game Brief card (park + weather + umpire + pitcher)
+//   J9  : WNBA Game Brief card (standings + matchup context)
+//   J10 : Stakes Brief (elimination / clinch / series-deciding)
+//   J11 : On-demand Bottom Sheet Brief (all sports, lazy-fetch on tap)
+//   MLS : Extend EPL brief to domestic soccer (see renderEPLMatchBriefCard)
+//   NOX : Multi-final Night Owl (see renderNightOwlRecap)
+// All use FIELD_PROSE_STYLE, retryWithoutCliches, journalismCallsToday()
+// ═══════════════════════════════════════════════════════════════════════════
+
+// ── J8: MLB Game Brief ───────────────────────────────────────────────────────
+async function fetchMLBGameBriefFromClaude(g) {
+  const budget = journalismCallsToday();
+  if (!budget.canCall()) return null;
+
+  const abbr = (g._homeAbbr || g.homeTeam || '').toUpperCase();
+  const pf   = abbr ? getParkFactor?.(abbr) : null;
+  const ump  = (() => {
+    const name = g._hpUmpire || g.umpire || '';
+    if (!name) return '';
+    const last = name.split(' ').pop();
+    const u    = getUmpireABSRating?.(last);
+    return u ? `${last}: ${Math.round(u.rate*100)}% K-rate${u.weakness?' · weak '+u.weakness+' zone':''}` : last;
+  })();
+
+  // Park factor line
+  const pfLine = pf ? (() => {
+    const rd = pf.runFactor - 100;
+    const hd = pf.hrFactor  - 100;
+    return `Park (${pf.label||abbr}): ${rd > 0 ? '+' : ''}${rd}% runs · ${hd > 0 ? '+' : ''}${hd}% HR`;
+  })() : '';
+
+  // Weather from wxCache
+  const wxLine = (() => {
+    try {
+      const wx = typeof wxCache !== 'undefined' ? wxCache[g._id] : null;
+      if (!wx) return '';
+      const wn = windContextNote?.(g.venue, wx.windDir, wx.gusts||wx.wind);
+      return `Weather: ${wx.temp||'?'}°F · ${wx.wind||0}mph${wn ? ' · ' + wn : ''}`;
+    } catch(_) { return ''; }
+  })();
+
+  // Probable pitchers
+  const pitcherLine = (() => {
+    const fmt = p => {
+      if (!p) return null;
+      const n   = p.name || p.lastName || '?';
+      const era = p.era != null ? ` ${p.era} ERA` : '';
+      const rec = (p.wins != null && p.losses != null) ? ` (${p.wins}-${p.losses})` : '';
+      return `${n}${era}${rec}`;
+    };
+    const ap = fmt(g.awayPitcher), hp = fmt(g.homePitcher);
+    if (!ap && !hp) return '';
+    const parts = [ap ? `${teamNick(g.away||'')} ${ap}` : null, hp ? `${teamNick(g.home||'')} ${hp}` : null].filter(Boolean);
+    return 'Pitchers: ' + parts.join(' vs ');
+  })();
+
+  const standingsCtx = (typeof buildGameStandingsContext === 'function') ? buildGameStandingsContext(g) : '';
+
+  const prompt = [
+    `Write a FIELD Match Brief for this MLB game.`,
+    `${g.away||'?'} @ ${g.home||'?'}${g.venue ? ' · ' + g.venue : ''}.`,
+    pfLine, wxLine, pitcherLine, umpLine ? `Umpire: ${ump}` : '',
+    standingsCtx || '',
+    '',
+    'Rules: 50-70 words. 2 sentences. Lead with the most impactful park or weather factor.',
+    'Cite the exact figure if park or weather data is provided — never paraphrase.',
+    'Write only from data above. No invented stats.',
+    ...FIELD_PROSE_STYLE,
+  ].filter(Boolean).join('\n');
+
+  try {
+    const r = await fetch(CLAUDE_PROXY_URL, {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({model:'claude-sonnet-4-6', max_tokens:250,
+        messages:[{role:'user',content:prompt}]}),
+    });
+    if (!r.ok) return null;
+    const data = await r.json();
+    let text = (data.content||[]).filter(c=>c.type==='text').map(c=>c.text).join('');
+    if (text && text.length > 20) {
+      text = await retryWithoutCliches(prompt, text, CLAUDE_PROXY_URL);
+      budget.inc();
+      return text.trim();
+    }
+  } catch(e_) {}
+  return null;
+}
+
+async function renderMLBGameBriefCard(gameCard) {
+  const gameid = gameCard.dataset.gameid;
+  if (!gameid) return;
+  const sport = (gameCard.dataset.sport || '').toLowerCase();
+  if (!sport.includes('baseball') && !sport.includes('mlb')) return;
+  if (gameCard.previousElementSibling?.classList.contains('sport-game-brief-card')) return;
+
+  let game = null;
+  (allData?.sports||[]).forEach(s=>(s.games||[]).forEach(g=>{ if(g._id===gameid) game=g; }));
+  if (!game) return;
+
+  const eData = typeof findESPNScore === 'function' ? findESPNScore(game) : null;
+  const status = eData?.state || 'pre';
+  const cacheKey = 'field_mlb_brief_' + gameid + '_' + status;
+  const cached = sessionStorage.getItem(cacheKey);
+
+  const card = document.createElement('div');
+  card.className = 'sport-game-brief-card sport-game-brief-mlb';
+  card.dataset.gameid = gameid;
+
+  const inner = document.createElement('div');
+  inner.className = 'sgb-inner';
+  inner.innerHTML = `<div class="sgb-tag">⚾ MLB · Field Brief</div>
+    <div class="sgb-text pending">${cached || 'Loading brief…'}</div>`;
+  card.appendChild(inner);
+  gameCard.insertAdjacentElement('beforebegin', card);
+
+  if (cached) { inner.querySelector('.sgb-text')?.classList.replace('pending','loaded'); return; }
+
+  const text = await fetchMLBGameBriefFromClaude(game);
+  const textEl = inner.querySelector('.sgb-text');
+  if (text && textEl) {
+    textEl.textContent = trimToCompleteSentence(text);
+    textEl.classList.replace('pending','loaded');
+    sessionStorage.setItem(cacheKey, text);
+  } else if (textEl) {
+    card.remove();
+  }
+}
+
+// ── J9: WNBA Game Brief ───────────────────────────────────────────────────────
+async function fetchWNBAGameBriefFromClaude(g) {
+  const budget = journalismCallsToday();
+  if (!budget.canCall()) return null;
+
+  const standingsCtx = (typeof buildGameStandingsContext === 'function') ? buildGameStandingsContext(g) : '';
+  const stream = g.streams?.[0]?.label || '';
+
+  const prompt = [
+    `Write a FIELD Match Brief for this WNBA game.`,
+    `${g.away||'?'} @ ${g.home||'?'}${g.venue ? ' · ' + g.venue : ''}.`,
+    stream ? `Broadcast: ${stream}.` : '',
+    standingsCtx || '',
+    '',
+    'Rules: 35-50 words. 1-2 sentences. Context-first: standings, stakes, or notable players.',
+    'Write only from data above. No invented stats.',
+    ...FIELD_PROSE_STYLE,
+  ].filter(Boolean).join('\n');
+
+  try {
+    const r = await fetch(CLAUDE_PROXY_URL, {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({model:'claude-sonnet-4-6', max_tokens:200,
+        messages:[{role:'user',content:prompt}]}),
+    });
+    if (!r.ok) return null;
+    const data = await r.json();
+    let text = (data.content||[]).filter(c=>c.type==='text').map(c=>c.text).join('');
+    if (text && text.length > 20) {
+      text = await retryWithoutCliches(prompt, text, CLAUDE_PROXY_URL);
+      budget.inc();
+      return text.trim();
+    }
+  } catch(e_) {}
+  return null;
+}
+
+async function renderWNBAGameBriefCard(gameCard) {
+  const gameid = gameCard.dataset.gameid;
+  if (!gameid) return;
+  const sport = (gameCard.dataset.sport || '').toLowerCase();
+  if (!sport.includes('wnba') && !sport.includes("women's basketball")) return;
+  if (gameCard.previousElementSibling?.classList.contains('sport-game-brief-card')) return;
+
+  let game = null;
+  (allData?.sports||[]).forEach(s=>(s.games||[]).forEach(g=>{ if(g._id===gameid) game=g; }));
+  if (!game) return;
+
+  const eData = typeof findESPNScore === 'function' ? findESPNScore(game) : null;
+  const status = eData?.state || 'pre';
+  const cacheKey = 'field_wnba_brief_' + gameid + '_' + status;
+  const cached = sessionStorage.getItem(cacheKey);
+
+  const card = document.createElement('div');
+  card.className = 'sport-game-brief-card sport-game-brief-wnba';
+  card.dataset.gameid = gameid;
+
+  const inner = document.createElement('div');
+  inner.className = 'sgb-inner';
+  inner.innerHTML = `<div class="sgb-tag">🏀 WNBA · Field Brief</div>
+    <div class="sgb-text pending">${cached || 'Loading brief…'}</div>`;
+  card.appendChild(inner);
+  gameCard.insertAdjacentElement('beforebegin', card);
+
+  if (cached) { inner.querySelector('.sgb-text')?.classList.replace('pending','loaded'); return; }
+
+  const text = await fetchWNBAGameBriefFromClaude(game);
+  const textEl = inner.querySelector('.sgb-text');
+  if (text && textEl) {
+    textEl.textContent = trimToCompleteSentence(text);
+    textEl.classList.replace('pending','loaded');
+    sessionStorage.setItem(cacheKey, text);
+  } else if (textEl) {
+    card.remove();
+  }
+}
+
+// ── J10: Stakes Brief (elimination / clinch / series-deciding) ──────────────
+async function fetchStakesBriefFromClaude(g) {
+  const budget = journalismCallsToday();
+  if (!budget.canCall()) return null;
+
+  const imp = g._gameImportance || '';
+  if (!imp || imp === 'playoff_impl') return null;
+
+  const impLabel = imp === 'elimination' ? 'ELIMINATION GAME — a loss ends their season'
+    : imp === 'series_deciding' ? 'SERIES-DECIDING GAME — winner advances'
+    : imp === 'clinch' ? 'CLINCH OPPORTUNITY — win tonight to advance'
+    : null;
+  if (!impLabel) return null;
+
+  const standingsCtx = (typeof buildGameStandingsContext === 'function') ? buildGameStandingsContext(g) : '';
+  const series = g.seriesRecord || '';
+
+  const prompt = [
+    `Write a FIELD Stakes Brief for this high-stakes game.`,
+    `${g.away||'?'} @ ${g.home||'?'}.`,
+    impLabel,
+    series ? `Series: ${series}` : '',
+    standingsCtx || '',
+    '',
+    'Rules: 2 sentences. Lead with the historical weight — what losing or winning means beyond just tonight.',
+    'Cite specific year or franchise context if it sharpens the stakes.',
+    'Write only from data above. No invented stats.',
+    ...FIELD_PROSE_STYLE,
+  ].filter(Boolean).join('\n');
+
+  try {
+    const r = await fetch(CLAUDE_PROXY_URL, {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({model:'claude-sonnet-4-6', max_tokens:200,
+        messages:[{role:'user',content:prompt}]}),
+    });
+    if (!r.ok) return null;
+    const data = await r.json();
+    let text = (data.content||[]).filter(c=>c.type==='text').map(c=>c.text).join('');
+    if (text && text.length > 20) {
+      text = await retryWithoutCliches(prompt, text, CLAUDE_PROXY_URL);
+      budget.inc();
+      return text.trim();
+    }
+  } catch(e_) {}
+  return null;
+}
+
+async function renderStakesBriefCard(gameCard) {
+  const gameid = gameCard.dataset.gameid;
+  if (!gameid) return;
+  let game = null;
+  (allData?.sports||[]).forEach(s=>(s.games||[]).forEach(g=>{ if(g._id===gameid) game=g; }));
+  if (!game) return;
+
+  const imp = game._gameImportance || '';
+  if (!imp || imp === 'playoff_impl') return;
+  if (gameCard.previousElementSibling?.classList.contains('stakes-brief-card')) return;
+
+  const cacheKey = 'field_stakes_brief_' + gameid;
+  const cached = sessionStorage.getItem(cacheKey);
+
+  const card = document.createElement('div');
+  card.className = 'stakes-brief-card';
+  card.dataset.gameid = gameid;
+
+  const impIcon = imp === 'elimination' ? '💀 ELIMINATION' : imp === 'series_deciding' ? '⚡ MUST WIN' : '🏆 CLINCH';
+  const inner = document.createElement('div');
+  inner.className = 'stakes-inner';
+  inner.innerHTML = `<div class="stakes-tag">${impIcon}</div>
+    <div class="stakes-text pending">${cached || 'Loading…'}</div>`;
+  card.appendChild(inner);
+  gameCard.insertAdjacentElement('beforebegin', card);
+
+  if (cached) { inner.querySelector('.stakes-text')?.classList.replace('pending','loaded'); return; }
+
+  const text = await fetchStakesBriefFromClaude(game);
+  const textEl = inner.querySelector('.stakes-text');
+  if (text && textEl) {
+    textEl.textContent = trimToCompleteSentence(text);
+    textEl.classList.replace('pending','loaded');
+    sessionStorage.setItem(cacheKey, text);
+  } else if (textEl) {
+    card.remove();
+  }
+}
+
+// ── J11: On-demand Bottom Sheet Brief (all sports) ───────────────────────────
+// Called when bottom sheet opens and _gameBriefCache[gameId] is empty.
+// Dispatches to sport-specific brief function or generic fallback.
+// Result stored in _gameBriefCache so subsequent opens are instant.
+async function fetchGameBriefOnDemand(game, sport) {
+  if (!game?._id) return null;
+  if (_gameBriefCache[game._id]) return _gameBriefCache[game._id]; // already populated
+
+  const budget = journalismCallsToday();
+  if (!budget.canCall()) return null;
+
+  const sp = (sport || game._sport || game._section || '').toLowerCase();
+  let text = null;
+
+  // MLB: rich brief (park/weather/umpire/pitcher)
+  if (sp.includes('baseball') || sp.includes('mlb')) {
+    text = await fetchMLBGameBriefFromClaude(game);
+  }
+  // WNBA: standings + matchup
+  else if (sp.includes('wnba')) {
+    text = await fetchWNBAGameBriefFromClaude(game);
+  }
+  // NBA/NHL/other: generic brief from compound (if not already in cache)
+  else {
+    const standingsCtx = (typeof buildGameStandingsContext === 'function') ? buildGameStandingsContext(game) : '';
+    const series = game.seriesRecord ? `Series: ${game.seriesRecord}.` : '';
+    const stream = game.streams?.[0]?.label || '';
+    const prompt = [
+      `Write a FIELD Game Brief.`,
+      `${game.away||'?'} @ ${game.home||'?'}${game.venue ? ' · '+game.venue : ''}.`,
+      game.league ? `${game.league}.` : '',
+      stream ? `Broadcast: ${stream}.` : '',
+      series,
+      standingsCtx || '',
+      '',
+      'Rules: 35-50 words. 1-2 sentences. Stakes-first or matchup-first.',
+      'Write only from data above.',
+      ...FIELD_PROSE_STYLE,
+    ].filter(Boolean).join('\n');
+    try {
+      const r = await fetch(CLAUDE_PROXY_URL, {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({model:'claude-sonnet-4-6', max_tokens:200,
+          messages:[{role:'user',content:prompt}]}),
+      });
+      if (r.ok) {
+        const data = await r.json();
+        text = (data.content||[]).filter(c=>c.type==='text').map(c=>c.text).join('').trim();
+        if (text) { text = await retryWithoutCliches(prompt, text, CLAUDE_PROXY_URL); budget.inc(); }
+      }
+    } catch(_) {}
+  }
+
+  if (text) {
+    _gameBriefCache[game._id] = trimToCompleteSentence(text);
+    return _gameBriefCache[game._id];
+  }
+  return null;
+}
+
 async function fetchEPLMatchBriefFromClaude(g) {
   const budget = journalismCallsToday();
   if(!budget.canCall()) return null;
@@ -17425,11 +17807,12 @@ async function renderEPLMatchBriefCard(gameCard) {
   (allData?.sports||[]).forEach(s=>(s.games||[]).forEach(g=>{ if(g._id===gameid) game=g; }));
   if(!game) return;
 
-  // Only for top European leagues — MLS and Bundesliga excluded
+  // Top European leagues + domestic soccer (MLS, Bundesliga, etc.)
   const sport = (gameCard.dataset.sport||'').toLowerCase();
-  if(!sport.includes('premier league') && !sport.includes('la liga') &&
-     !sport.includes('ligue 1') &&
-     !sport.includes('serie a') && !sport.includes('uefa')) return;
+  const isSoccerLeague = sport.includes('premier league') || sport.includes('la liga') ||
+     sport.includes('ligue 1') || sport.includes('serie a') || sport.includes('uefa') ||
+     sport.includes('mls') || sport.includes('bundesliga') || sport.includes('efl championship');
+  if (!isSoccerLeague) return;
 
   // Don't add if already present
   if(gameCard.previousElementSibling?.classList.contains('epl-match-brief-card')) return;
@@ -17483,9 +17866,7 @@ async function renderEPLMatchBriefCard(gameCard) {
 
 function initEPLMatchBriefs() {
   if(!allData) return;
-  // Fire for all soccer/league games (not playoff/cup)
-  // Only fire for top European leagues — not MLS (15+ games/week) or Bundesliga (ESPN+ niche)
-  // Max 3 briefs per league — Saturday EPL can have 10 games; we only want marquee fixtures
+  // Top European leagues + MLS + Bundesliga (Fix 6: domestic soccer added)
   const BRIEF_LEAGUES = [
     { selector: '.game-card[data-sport*="Premier League"]', max: 3 },
     { selector: '.game-card[data-sport*="La Liga"]',        max: 2 },
@@ -17494,12 +17875,51 @@ function initEPLMatchBriefs() {
     { selector: '.game-card[data-sport*="UEFA Champions"]', max: 4 },
     { selector: '.game-card[data-sport*="UEFA Europa"]',    max: 3 },
     { selector: '.game-card[data-sport*="UEFA Conference"]',max: 2 },
+    { selector: '.game-card[data-sport*="MLS"]',            max: 2 },
+    { selector: '.game-card[data-sport*="Bundesliga"]',     max: 2 },
+    { selector: '.game-card[data-sport*="EFL Championship"]',max:2 },
   ];
   BRIEF_LEAGUES.forEach(({ selector, max }) => {
     const cards = [...document.querySelectorAll(selector)].slice(0, max);
     cards.forEach(card => {
       if(card.dataset.gameid) renderEPLMatchBriefCard(card).catch(()=>{});
     });
+  });
+}
+
+// ── J8: MLB Game Brief init ───────────────────────────────────────────────────
+function initMLBGameBriefs() {
+  if(!allData) return;
+  const cards = [...document.querySelectorAll('.game-card[data-sport*="Baseball"],' +
+    '.game-card[data-sport*="MLB"]')].slice(0, 4);
+  cards.forEach(card => {
+    if(card.dataset.gameid) renderMLBGameBriefCard(card).catch(()=>{});
+  });
+}
+
+// ── J9: WNBA Game Brief init ──────────────────────────────────────────────────
+function initWNBAGameBriefs() {
+  if(!allData) return;
+  const cards = [...document.querySelectorAll('.game-card[data-sport*="WNBA"],' +
+    '.game-card[data-sport*="Women"]')].slice(0, 3);
+  cards.forEach(card => {
+    if(card.dataset.gameid) renderWNBAGameBriefCard(card).catch(()=>{});
+  });
+}
+
+// ── J10: Stakes Brief init ────────────────────────────────────────────────────
+function initStakesBriefs() {
+  if(!allData) return;
+  document.querySelectorAll('.game-card').forEach(card => {
+    const gid = card.dataset.gameid;
+    if (!gid) return;
+    let game = null;
+    (allData?.sports||[]).forEach(s=>(s.games||[]).forEach(g=>{ if(g._id===gid) game=g; }));
+    if (!game) return;
+    const imp = game._gameImportance || '';
+    if (imp === 'elimination' || imp === 'series_deciding' || imp === 'clinch') {
+      renderStakesBriefCard(card).catch(()=>{});
+    }
   });
 }
 
@@ -21210,7 +21630,7 @@ function openBottomSheet(gameId) {
     <div class="bs-teams">${game.away||'?'} @ ${game.home||'?'}</div>
     <div class="bs-meta">${scoreStr?scoreStr+period:fmtTime(game.start_time)+' ET'} · ${game.venue||sport||''}${game.seriesRecord?' · '+game.seriesRecord:''}</div>
     ${scoutReport}
-    ${gameBrief ? `<div class="bs-section"><div class="bs-section-label">FIELD Brief</div><div class="bs-section-body" style="font-size:.74rem;line-height:1.6">${gameBrief}</div></div>` : ''}
+    ${gameBrief ? `<div class="bs-section"><div class="bs-section-label">FIELD Brief</div><div class="bs-section-body" style="font-size:.74rem;line-height:1.6">${gameBrief}</div></div>` : '<div class="bs-section bs-brief-placeholder" id="bs-brief-pending"><div class="bs-section-label">FIELD Brief</div><div class="bs-section-body" style="font-size:.74rem;line-height:1.6;opacity:.45;font-style:italic">Loading brief\u2026</div></div>'}
     ${dramaLabel_bs||cb ? `<div class="bs-section"><div class="bs-section-label">Live Intelligence</div><div class="bs-section-body">${[dramaLabel_bs,cb].filter(Boolean).join(' · ')}</div></div>` : ''}
     ${sparkline ? `<div class="bs-section"><div class="bs-section-label">Drama Arc</div>${sparkline}</div>` : ''}
     ${story ? `<div class="bs-section"><div class="bs-section-label">Story</div>${story}</div>` : ''}
@@ -21224,6 +21644,19 @@ function openBottomSheet(gameId) {
     </div>`;
   getEl('bs-overlay')?.classList.add('open');
   getEl('bottom-sheet')?.classList.add('open');
+
+  // J11: on-demand brief — fires after sheet opens, fills placeholder if cache was empty
+  if (!gameBrief) {
+    fetchGameBriefOnDemand(game, sport).then(text => {
+      const placeholder = document.getElementById('bs-brief-pending');
+      if (!placeholder || !text) { placeholder?.remove(); return; }
+      placeholder.querySelector('.bs-section-body').textContent = text;
+      placeholder.querySelector('.bs-section-body').style.cssText = 'font-size:.74rem;line-height:1.6';
+      placeholder.id = '';
+    }).catch(() => {
+      document.getElementById('bs-brief-pending')?.remove();
+    });
+  }
 }
 function closeBottomSheet() {
   getEl('bs-overlay')?.classList.remove('open');
@@ -21430,11 +21863,76 @@ async function renderNightOwlRecap(){
   if (finalMargin > 20) {
     const textEl = el.querySelector('.night-owl-text');
     if (textEl) { textEl.classList.remove('pending'); textEl.classList.add('loaded'); }
-    return;
+  } else {
+    const claudeText=await fetchNightOwlFromClaude(topGame);
+    if(claudeText){const textEl=el.querySelector('.night-owl-text');if(textEl){textEl.textContent=trimToCompleteSentence(claudeText);textEl.classList.remove('pending');textEl.classList.add('loaded');}sessionStorage.setItem(cacheKey,claudeText);}
+    else{const textEl=el.querySelector('.night-owl-text');if(textEl){textEl.classList.remove('pending');textEl.classList.add('loaded');}}
   }
-  const claudeText=await fetchNightOwlFromClaude(topGame);
-  if(claudeText){const textEl=el.querySelector('.night-owl-text');if(textEl){textEl.textContent=trimToCompleteSentence(claudeText);textEl.classList.remove('pending');textEl.classList.add('loaded');}sessionStorage.setItem(cacheKey,claudeText);}
-  else{const textEl=el.querySelector('.night-owl-text');if(textEl){textEl.classList.remove('pending');textEl.classList.add('loaded');}}
+
+  // NOX: Secondary capsules — all other finals with drama peak ≥ 60
+  // Adds 2-sentence capsules under the primary Night Owl brief
+  const secondaryFinals = finals
+    .filter(f => f.id !== topGame.id && f._id !== topGame._id && (f.dramaPeak||0) >= 60)
+    .slice(0, 3); // max 3 secondary recaps
+
+  for (const game of secondaryFinals) {
+    const secCacheKey = 'field_nox_secondary_' + (game.id||game._id||'');
+    const secCached   = sessionStorage.getItem(secCacheKey);
+    const winner = (game.homeScore||0) >= (game.awayScore||0) ? game.home : game.away;
+    const winScore = Math.max(game.homeScore||0, game.awayScore||0);
+    const loseScore = Math.min(game.homeScore||0, game.awayScore||0);
+
+    const secDiv = document.createElement('div');
+    secDiv.className = 'night-owl-secondary';
+    secDiv.innerHTML = `<div class="no-team">${game.away||'?'} @ ${game.home||'?'} · ${winScore}–${loseScore}</div>
+      <div class="no-text pending">${secCached || 'Loading\u2026'}</div>`;
+    el.appendChild(secDiv);
+
+    if (secCached) {
+      secDiv.querySelector('.no-text')?.classList.replace('pending','loaded');
+      continue;
+    }
+
+    // Async: fetch 2-sentence capsule for secondary final
+    (async (g, div, cKey) => {
+      try {
+        const budget = journalismCallsToday();
+        if (!budget.canCall()) { div.remove(); return; }
+        const sp = (g._section||g._sport||g.sport||'').toLowerCase();
+        const _terms = sp.includes('baseball')||sp.includes('mlb')
+          ? 'Sport: Baseball. Score in RUNS. Use baseball vocabulary only.'
+          : sp.includes('hockey')||sp.includes('nhl')
+          ? 'Sport: Hockey. Score in GOALS. Use hockey vocabulary only.'
+          : sp.includes('wnba') ? 'Sport: WNBA Basketball. Score in POINTS.'
+          : 'Sport: Basketball. Score in POINTS.';
+        const w = (g.homeScore||0)>=(g.awayScore||0)?g.home:g.away;
+        const sc = (g.awayScore||0)+'–'+(g.homeScore||0);
+        const prompt = [
+          'Write a 2-sentence FIELD recap capsule.',
+          `${g.away||'?'} @ ${g.home||'?'}. Final: ${sc} (${w} wins).`,
+          _terms,
+          g.seriesRecord ? 'Series: '+g.seriesRecord : '',
+          'Rules: exactly 2 sentences. Lead with what decided it. No filler.',
+          ...FIELD_PROSE_STYLE,
+        ].filter(Boolean).join('\n');
+        const r = await fetch(CLAUDE_PROXY_URL, {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({model:'claude-sonnet-4-6',max_tokens:200,
+            messages:[{role:'user',content:prompt}]}),
+        });
+        if (!r.ok) { div.remove(); return; }
+        const data = await r.json();
+        let text = (data.content||[]).filter(c=>c.type==='text').map(c=>c.text).join('').trim();
+        if (text && text.length > 20) {
+          text = await retryWithoutCliches(prompt, text, CLAUDE_PROXY_URL);
+          budget.inc();
+          const noText = div.querySelector('.no-text');
+          if (noText) { noText.textContent = trimToCompleteSentence(text); noText.classList.replace('pending','loaded'); }
+          sessionStorage.setItem(cKey, text);
+        } else { div.remove(); }
+      } catch(_) { div.remove(); }
+    })(game, secDiv, secCacheKey);
+  }
 }
 
 
