@@ -10351,6 +10351,57 @@ const ESPN_SCORE_TTL = 900000; // 15 min — entries not refreshed within window
 // Shadow validation: May 16–19 (4 days parallel with ESPN, zero discrepancies).
 // Cutover to primary: May 19 2026. Gives 16-day validation window before NBA Finals G1 (June 3).
 const RELAY_BASE = 'https://field-relay-nba.jeffunglesbee.workers.dev/nba';
+// ── Phase 1: api-sports.io live scores (ESPN Pivot, May 2026) ────────────
+// Spec: docs/espn-pivot-phase0-1-2026-05-29.md  Relay: /v2/* routes live.
+// European leagues ended ≤2026-05-26 — set true next season.
+const V2_RELAY_BASE = 'https://field-relay-nba.jeffunglesbee.workers.dev';
+const FIELD_V2_SOURCES = {
+  nba: true, nhl: true, mlb: true, mls: true,   // Phase 1: LIVE
+  epl: false, ucl: false, laliga: false, seriea: false, bundesliga: false, ligue1: false,
+};
+// ESPN league ID → FIELD V2 sport key (polling loop cutover)
+const ESPN_TO_V2_MAP = {
+  'nba':'nba', 'nhl':'nhl', 'mlb':'mlb',
+  'eng.1':'epl', 'usa.1':'mls', 'esp.1':'laliga', 'ita.1':'seriea',
+  'ger.1':'bundesliga', 'fra.1':'ligue1', 'uefa.champions':'ucl',
+};
+// periodPrefix per V2 sport — must match findESPNScore exclusion guards
+const V2_PERIOD_PREFIX = {
+  nba:'Q', nhl:'P', mlb:'T',
+  mls:"'", epl:"'", ucl:"'", laliga:"'", seriea:"'", bundesliga:"'", ligue1:"'",
+};
+async function fetchV2Games(sport, date) {
+  try {
+    const d = date || new Date().toISOString().slice(0, 10);
+    const r = await fetch(`${V2_RELAY_BASE}/v2/games?sport=${sport}&date=${d}`,
+      { signal: AbortSignal.timeout(6000) });
+    if (!r.ok) return [];
+    const data = await r.json();
+    return data?.games || [];
+  } catch(e) {
+    if (FIELD_DEBUG) console.warn('[V2] fetchV2Games failed:', sport, e.message);
+    return [];
+  }
+}
+function mapV2ToESPN(fg) {
+  if (!fg?.id) return null;
+  return {
+    state:       fg.state==='live'?'in':fg.state==='final'?'post':'pre',
+    homeScore:   fg.home?.score ?? 0, awayScore: fg.away?.score ?? 0,
+    home: fg.home?.name||'', away: fg.away?.name||'',
+    homeName: fg.home?.name||'', awayName: fg.away?.name||'',
+    homeWinning: (fg.home?.score??0)>(fg.away?.score??0),
+    clock: fg.clock||'', detail: fg.periodLabel||'', period: fg.periodNum||0,
+    periodPrefix: V2_PERIOD_PREFIX[fg.sport]||'',
+    situation: fg.situation||null,
+    _gameId: fg.id, _sport: fg.sport, source:'v2',
+    // ESPN-specific fields not available from V2; WP stays null until dedicated call
+    espnEventId: null, wp: null, wp_prev: null,
+    homeLeader: null, awayLeader: null,
+    homeLinescores: [], awayLinescores: [],
+  };
+}
+
 // ESPN Site API — summary endpoint relay (WP + play-by-play, public REST)
 // winprobability[].homeWinPercentage — 0-1 FRACTION scale (e.g. 0.872 = 87.2%)
 const ESPN_SUMMARY_RELAY = 'https://field-relay-nba.jeffunglesbee.workers.dev/espn-summary';
@@ -11460,6 +11511,35 @@ async function fetchESPNScores(){
 
   // Layer 2: REMEDY A+B — Promise.allSettled prevents one league error from stopping others
   await Promise.allSettled(leaguesToPoll.map(async ({sport, league, section, periodPrefix}) => {
+
+    // ── Phase 1: V2 cutover — use api-sports.io instead of ESPN for enabled sports
+    const v2Key = ESPN_TO_V2_MAP[league];
+    if (v2Key && FIELD_V2_SOURCES[v2Key]) {
+      try {
+        const games = await fetchV2Games(v2Key, todayISO);
+        let hasLive = false, hasPre = false;
+        games.forEach(fg => {
+          if (!fg?.home?.name || !fg?.away?.name) return;
+          const key = `${fg.home.name}|${fg.away.name}`;
+          espnScores[key] = mapV2ToESPN(fg) || {};
+          espnScoreTs[key] = Date.now();
+          if (fg.state === 'live') hasLive = true;
+          if (fg.state === 'pre')  hasPre  = true;
+        });
+        _espnLeagueState[league]   = hasLive ? 'live' : hasPre ? 'pre' : 'post';
+        _espnLeagueLastPoll[league] = Date.now();
+        _espnLeagueErrors[league]   = 0;
+        if (hasLive) _hasLive    = true;
+        if (hasPre)  _hasUpcoming = true;
+        if (FIELD_DEBUG) console.debug(`[V2] ${v2Key} polled: ${games.length} games, ${hasLive?'LIVE':'no live'}`);
+      } catch(e) {
+        if (FIELD_DEBUG) console.warn('[V2] poll failed:', v2Key, e.message);
+        _espnLeagueErrors[league]   = (_espnLeagueErrors[league] || 0) + 1;
+        _espnLeagueLastPoll[league] = Date.now();
+      }
+      return; // skip ESPN call for this league
+    }
+    // ── ESPN path (unchanged for non-V2 sports) ──────────────────────────
     const url = `${ESPN_BASE}/${sport}/${league}/scoreboard?dates=${dateStr}&limit=50`;
     let leagueHasLive = false, leagueHasPre = false;
     let fetchOk = false;
