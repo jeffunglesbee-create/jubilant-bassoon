@@ -10340,6 +10340,9 @@ const SOCCER_LEAGUES = [
   {league:"ger.1", section:"Bundesliga",       bundle:"BUNDESLIGA",endDate:"2026-05-18"},
   {league:"fra.1", section:"Ligue 1",          bundle:"LIGUE_1",   endDate:"2026-05-25"},
   {league:"usa.1", section:"MLS Soccer",       bundle:"MLS_SOCCER",endDate:"2026-10-19", leagueLabel:"MLS — Matchday 15"},
+  // FIFA World Cup 2026 — June 11–July 19. V2 via api-sports.io league 1 (wc26).
+  // Gated by activeSections.has("FIFA World Cup 2026") — fires only when WC games are in schedule.
+  {league:"fifa.world", section:"FIFA World Cup 2026", bundle:"WC26_FOX", endDate:"2026-07-19"},
 ];
 
 let espnScores    = {}; // { "Home|Away": scoreObj }
@@ -10357,18 +10360,20 @@ const RELAY_BASE = 'https://field-relay-nba.jeffunglesbee.workers.dev/nba';
 const V2_RELAY_BASE = 'https://field-relay-nba.jeffunglesbee.workers.dev';
 const FIELD_V2_SOURCES = {
   nba: true, nhl: true, mlb: true, mls: true,   // Phase 1: LIVE
-  epl: false, ucl: false, laliga: false, seriea: false, bundesliga: false, ligue1: false,
+  epl: true, ucl: true, laliga: true, seriea: true, bundesliga: true, ligue1: true, // seasons ended; ready for 2026-27
+  wc26: true, // FIFA World Cup 2026 (June 11 – July 19)
 };
 // ESPN league ID → FIELD V2 sport key (polling loop cutover)
 const ESPN_TO_V2_MAP = {
   'nba':'nba', 'nhl':'nhl', 'mlb':'mlb',
   'eng.1':'epl', 'usa.1':'mls', 'esp.1':'laliga', 'ita.1':'seriea',
   'ger.1':'bundesliga', 'fra.1':'ligue1', 'uefa.champions':'ucl',
+  'fifa.world':'wc26',
 };
 // periodPrefix per V2 sport — must match findESPNScore exclusion guards
 const V2_PERIOD_PREFIX = {
   nba:'Q', nhl:'P', mlb:'T',
-  mls:"'", epl:"'", ucl:"'", laliga:"'", seriea:"'", bundesliga:"'", ligue1:"'",
+  mls:"'", epl:"'", ucl:"'", laliga:"'", seriea:"'", bundesliga:"'", ligue1:"'", wc26:"'",
 };
 async function fetchV2Games(sport, date) {
   try {
