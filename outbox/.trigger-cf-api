@@ -1,3 +1,3 @@
-method=GET
-url=https://api.cloudflare.com/client/v4/user/tokens/verify
-note=verify-result-push-fix
+method=POST
+url=https://field-relay-nba.jeffunglesbee.workers.dev/pgatour
+body={"operationName":"StatDetails","variables":{"tourCode":"R","statId":"02675","year":2026,"eventQuery":null},"query":"query StatDetails($tourCode: TourCode!, $statId: String!, $year: Int, $eventQuery: StatDetailEventQuery) { statDetails(tourCode: $tourCode statId: $statId year: $year eventQuery: $eventQuery) { statTitle tourAvg rows { ... on StatDetailsPlayer { __typename playerName rank stats { statValue } } } } }"}
