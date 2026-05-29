@@ -130,3 +130,40 @@ TYPE B addendum, the TYPE D ESPN/data-sourcing audits, STANDARDS Rules 45-46, an
 change). Code HEAD line refers to jubilant-bassoon and is stale; this addendum's HEAD (c8d2db7)
 is the field-relay-nba repo. jubilant-bassoon was not touched by this change (index.html smoke
 unaffected).
+
+---
+## ADDENDUM — May 29 2026 (TYPE B: Web Push SHIPPED end-to-end)
+Completes the prior addendum's "STILL UNBUILT — push feature."
+
+DEPLOYED:
+- Relay b7f4888: VAPID_PUBLIC_KEY + VAPID_PRIVATE_KEY now Worker secrets on field-relay-nba
+  (deploy.yml wrangler-action secrets: list + env). Keypair generated once (web-push, ES256/P-256);
+  private set as repo Actions secret via PyNaCl sealed box (never printed). Public key
+  BA94Jhq_0-6Hm07vN40MkakAdW4EMqMbiQh3ZkoWlvOnoes4Ds-IhKoLSe39BhL6vR8HAE2KLClmHyaLaldqFXg is also
+  embedded client-side. sendWebPush() can now sign. cf-api-probe confirms both VAPID secrets bound.
+- Client index.html 2abe58f: #push-enable-btn now subscribes for real — urlBase64ToUint8Array +
+  pushManager.subscribe({userVisibleOnly, applicationServerKey: VAPID_PUBLIC_KEY}) then POST
+  {subscription, prefs:{}} to relay /push/subscribe. Opt-in; idempotent (reuses existing sub).
+- Client sw.js 0aaf749: computePushDrama rewritten — scores on margin (relay already pre-gates
+  late+close) with a loose very-late bonus; removed the fragile isLate string gate that had been
+  suppressing ALL alerts. Optional d.periodNum supported (relay does not send it yet; forward-compat).
+
+END-TO-END (all live): Enable -> permission -> pushManager.subscribe -> relay /push/subscribe stores
+sub:<hash> in PUSH_SUBS -> */5 cron emits SCORE_CHANGE facts on late+close games -> SW
+computePushDrama + Drama Dial gate display.
+
+VERIFIED: relay b7f4888 + client 2abe58f + 0aaf749 deploys all green. VAPID secrets bound on the
+worker; PUSH_SUBS readable, 0 subscriptions (expected — a real sub needs a browser pushManager,
+which the sandbox cannot run).
+
+REMAINING:
+- Browser opt-in test (Jeff): click Enable on the live site; a sub:<hash> key should appear in
+  PUSH_SUBS (re-probe to confirm).
+- OPTIONAL: add periodNum (numeric) to the relay SCORE_CHANGE payload so the very-late bonus is
+  deterministic for NBA/NFL regulation 4th quarter (currently via OT/SO/9th/90' string hints only).
+  One line + a relay deploy; not required for correctness.
+- Legacy DRAMA_THRESHOLD handler in sw.js still dormant; deletable later.
+
+POSTURE: client subscribe + on-device computePushDrama are Component 2 (per-device, single drama
+dimension — Numerical Usage Policy Case C). The notification trigger stays the relay's factual gate,
+not an interest threshold. Conforms to documented architecture; ADR-002 stays PROPOSED (counsel).
