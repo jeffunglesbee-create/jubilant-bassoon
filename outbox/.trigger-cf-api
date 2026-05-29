@@ -1,5 +1,2 @@
-method=POST
+method=GET
 url=https://field-claude-proxy.jeffunglesbee.workers.dev
-header=Content-Type: application/json
-header=Origin: https://jubilant-bassoon.jeffunglesbee.workers.dev
-body={"model":"claude-sonnet-4-6","max_tokens":150,"messages":[{"role":"user","content":"Return ONLY this JSON, no other text: {\"test\":\"ok\",\"brief\":\"The Hurricanes lead 3-1.\"}"}]}
