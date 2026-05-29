@@ -769,6 +769,14 @@ body::before{
 .badge-crunch{background:rgba(255,59,59,.22);color:var(--live);font-size:.6rem;font-weight:800;letter-spacing:.08em;padding:.15rem .38rem;border-radius:3px;margin-left:.3rem;margin-right:2.2rem;vertical-align:middle;display:inline-flex;align-items:center}
 .double-feature-banner{background:rgba(212,175,55,.15);border:1px solid var(--gold);color:var(--gold2);font-size:.75rem;font-weight:700;letter-spacing:.04em;padding:.5rem 1rem;text-align:center;cursor:pointer;transition:opacity .3s}
 .badge-worth {background:rgba(232,160,32,.2);color:var(--soon);font-size:.6rem;font-weight:700;letter-spacing:.06em;padding:.15rem .38rem;border-radius:3px;margin-left:.3rem;margin-right:2.2rem;vertical-align:middle;display:inline-flex;align-items:center}
+.badge-closing{background:rgba(99,202,183,.18);color:#63cab7;font-size:.6rem;font-weight:800;letter-spacing:.08em;padding:.15rem .38rem;border-radius:3px;margin-left:.3rem;margin-right:2.2rem;vertical-align:middle;display:inline-flex;align-items:center}
+.rai-line{font-size:.58rem;color:var(--muted);padding:.1rem 0 0 .1rem;letter-spacing:.03em;opacity:.85}
+.rai-row{display:flex;align-items:center;gap:.4rem;font-size:.7rem;margin:.18rem 0}
+.rai-lbl{min-width:2.8rem;font-weight:700;color:var(--smoke)}
+.rai-bar{font-family:monospace;font-size:.72rem;letter-spacing:.05em;color:var(--muted);flex:1}
+.rai-val{font-size:.7rem;font-weight:700;min-width:2.8rem;text-align:right}
+.rai-pos{color:#63cab7}.rai-neg{color:var(--muted)}
+.rai-edge{font-size:.63rem;color:var(--smoke);margin-top:.25rem;border-top:1px solid rgba(255,255,255,.07);padding-top:.25rem}
 
 /* ── Share Button ───────────────────────────────────────────────────── */
 .share-btn{
@@ -12447,10 +12455,19 @@ function buildScoutingReport(game, sport) {
   const rowsHTML = rows.map(r =>
     `<div class="bs-scout-row"><span class="bs-scout-lbl">${r.lbl}</span><span class="bs-scout-val">${r.val}</span></div>`
   ).join('');
+
+  // NBA: append live lineup edge section from RAI cache (no new fetch — reads existing cache)
+  let raiSection = '';
+  if (sp.includes('basketball') || sp.includes('nba')) {
+    const espnId = game._espnId || game._id || '';
+    const rai = espnId ? _raiCache[espnId] : null;
+    if (rai) raiSection = buildRaiSheetSection(rai, game.home||'', game.away||'');
+  }
+
   return `<div class="bs-section">
     <div class="bs-section-label">Scouting Report</div>
     <div class="bs-section-body"><div class="bs-scout-table">${rowsHTML}</div></div>
-  </div>`;
+  </div>${raiSection}`;
 }
 
 // ── buildBettingFieldEdge — FIELD analytical edge for betting cards ───────────
@@ -18178,6 +18195,176 @@ function evaluateEMBER(g, sport, ed) {
   };
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+// FEATURE: NBA LINEUP EDGE — Roster Advantage Index (RAI)
+// Quality differential between current team rotations.
+// Signal: BDL season +/- per player (pre-game quality proxy)
+// Active players: ESPN boxscore minutes/starter status (who's been on court)
+// Display: .rai-line on card (all viewports) + bottom sheet section
+//          [CLOSING UNIT] badge when trailing team's top rotation is on late
+// Architecture: async fetch → sessionStorage cache → sync display reads cache
+// RUWT: named factual state (who is on court = observable) + historical rates ✅
+// ═══════════════════════════════════════════════════════════════════════════
+
+const _raiCache = {};     // espnGameId → {edge, homeQ, awayQ, homeAbbr, awayAbbr, ts}
+const RAI_TTL = 90000;    // 90s — one refresh per ESPN poll cycle
+
+async function fetchRosterAdvantage(espnGameId) {
+  if (!espnGameId) return null;
+  const now = Date.now();
+  const cached = _raiCache[espnGameId];
+  if (cached && now - cached.ts < RAI_TTL) return cached;
+
+  try {
+    // Step 1: Season +/- quality map from BDL (already cached by milestone system)
+    const seasonAvgs = await fetchBDLSeasonAverages();
+    const qMap = {};
+    if (seasonAvgs?.length) {
+      for (const p of seasonAvgs) {
+        const key = `${p.player?.first_name||''} ${p.player?.last_name||''}`.trim().toLowerCase();
+        if (key && p.plus_minus != null) qMap[key] = parseFloat(p.plus_minus) || 0;
+      }
+    }
+
+    // Step 2: ESPN boxscore — who has played minutes this game
+    const url = `${ESPN_SUMMARY_RELAY}/sports/basketball/nba/summary?event=${espnGameId}`;
+    const r = await fetch(url, { signal: AbortSignal.timeout(4000) });
+    if (!r.ok) return null;
+    const d = await r.json();
+
+    const bsPlayers = d?.boxscore?.players;
+    if (!Array.isArray(bsPlayers) || bsPlayers.length < 2) return null;
+
+    function teamQuality(idx) {
+      const athletes = bsPlayers[idx]?.statistics?.[0]?.athletes || [];
+      const active = athletes
+        .filter(a => !a.didNotPlay && a.active !== false)
+        .map(a => ({
+          name: (a.athlete?.displayName || '').toLowerCase(),
+          starter: !!a.starter,
+          mins: parseFloat((a.stats||[])[0] || '0') || 0
+        }))
+        .filter(a => a.mins > 0 || a.starter)
+        .sort((a, b) => b.mins - a.mins)
+        .slice(0, 5);
+      if (!active.length) return null;
+      let total = 0;
+      for (const a of active) {
+        const lastName = a.name.split(' ').slice(-1)[0] || '';
+        // Exact match first, then last-name fallback
+        const q = qMap[a.name]
+          ?? Object.entries(qMap).find(([k]) => k.endsWith(' ' + lastName))?.[1]
+          ?? 0;
+        total += q;
+      }
+      return { q: total / 5, top: active[0]?.name || '' };
+    }
+
+    // ESPN boxscore: players[0] = home, players[1] = away
+    const homeQ = teamQuality(0);
+    const awayQ = teamQuality(1);
+    if (!homeQ || !awayQ) return null;
+
+    const result = {
+      edge: homeQ.q - awayQ.q,
+      homeQ: homeQ.q,
+      awayQ: awayQ.q,
+      homeAbbr: bsPlayers[0]?.team?.abbreviation || '',
+      awayAbbr: bsPlayers[1]?.team?.abbreviation || '',
+      ts: now
+    };
+    _raiCache[espnGameId] = result;
+    return result;
+  } catch(e) {
+    if (FIELD_DEBUG) console.warn('[RAI]', e.message);
+    return null;
+  }
+}
+
+function _raiQualityBar(q) {
+  const filled = Math.max(0, Math.min(5, Math.round((q + 8) / 3.2)));
+  return '●'.repeat(filled) + '○'.repeat(5 - filled);
+}
+
+function buildRaiCardLine(rai, homeLabel, awayLabel) {
+  if (!rai || Math.abs(rai.edge) < 1.5) return '';
+  const leader = rai.edge > 0
+    ? (rai.homeAbbr || teamNick(homeLabel) || 'Home')
+    : (rai.awayAbbr || teamNick(awayLabel) || 'Away');
+  return `Lineup edge: ${leader} +${Math.abs(rai.edge).toFixed(1)}`;
+}
+
+function buildRaiSheetSection(rai, homeLabel, awayLabel) {
+  if (!rai || Math.abs(rai.edge) < 0.5) return '';
+  const hL = rai.homeAbbr || teamNick(homeLabel) || 'Home';
+  const aL = rai.awayAbbr || teamNick(awayLabel) || 'Away';
+  const abs = Math.abs(rai.edge);
+  const leader = rai.edge > 0 ? hL : aL;
+  const ctx = abs >= 8 ? ' · significant' : abs >= 4 ? ' · clear edge' : abs >= 2 ? ' · slight edge' : '';
+  return `<div class="bs-section">
+    <div class="bs-section-label">Lineup Edge</div>
+    <div class="bs-section-body">
+      <div class="rai-row"><span class="rai-lbl">${hL}</span><span class="rai-bar">${_raiQualityBar(rai.homeQ)}</span><span class="rai-val ${rai.homeQ>=0?'rai-pos':'rai-neg'}">${rai.homeQ>=0?'+':''}${rai.homeQ.toFixed(1)}</span></div>
+      <div class="rai-row"><span class="rai-lbl">${aL}</span><span class="rai-bar">${_raiQualityBar(rai.awayQ)}</span><span class="rai-val ${rai.awayQ>=0?'rai-pos':'rai-neg'}">${rai.awayQ>=0?'+':''}${rai.awayQ.toFixed(1)}</span></div>
+      <div class="rai-edge">${leader} edge: +${abs.toFixed(1)}${ctx}</div>
+    </div>
+  </div>`;
+}
+
+// Async: fetch RAI + inject .rai-line on card + [CLOSING UNIT] badge
+async function injectLineupEdge(card, eData, sport) {
+  const sp = (sport || '').toLowerCase();
+  if (!sp.includes('basketball') && !sp.includes('nba')) return;
+  if (eData?.state !== 'in') return;
+
+  const espnId = eData?.id || eData?.gameId || card.dataset.espnid || '';
+  if (!espnId) return;
+
+  const rai = await fetchRosterAdvantage(espnId);
+  if (!rai) return;
+
+  const homeLabel = card.dataset.home || '';
+  const awayLabel = card.dataset.away || '';
+
+  // ── Card .rai-line (all viewports) ───────────────────────────────────────
+  const raiText = buildRaiCardLine(rai, homeLabel, awayLabel);
+  let raiLine = card.querySelector('.rai-line');
+  if (raiText) {
+    if (!raiLine) {
+      raiLine = document.createElement('div');
+      raiLine.className = 'rai-line';
+      // Insert after .card-drama-line or before the card's bottom edge
+      const dramaLine = card.querySelector('.card-drama-line,.narrative-line');
+      if (dramaLine) dramaLine.insertAdjacentElement('afterend', raiLine);
+      else card.appendChild(raiLine);
+    }
+    raiLine.textContent = raiText;
+  } else if (raiLine) {
+    raiLine.remove();
+  }
+
+  // ── [CLOSING UNIT] badge (named condition) ────────────────────────────────
+  // Fires when trailing team has lineup advantage AND isLateCloseGame
+  card.querySelectorAll('.badge-closing').forEach(b => b.remove());
+  const homeScore = eData.homeScore || 0;
+  const awayScore = eData.awayScore || 0;
+  const homeTrailing = homeScore < awayScore;
+  const awayTrailing = awayScore < homeScore;
+  const trailingHasEdge = (homeTrailing && rai.edge > 5) || (awayTrailing && rai.edge < -5);
+  if (trailingHasEdge && isLateCloseGame({ _section: sport }, sport)) {
+    const liveEl = card.querySelector('.live-indicator,.live-dot');
+    if (liveEl) {
+      const cb = document.createElement('span');
+      cb.className = 'badge-closing';
+      const label = homeTrailing
+        ? (rai.homeAbbr || teamNick(homeLabel))
+        : (rai.awayAbbr || teamNick(awayLabel));
+      cb.textContent = `◈ ${label} CLOSING UNIT`;
+      liveEl.insertAdjacentElement('afterend', cb);
+    }
+  }
+}
+
 function injectDramaBadges(){
   const cards = document.querySelectorAll('.game-card.espn-live');
   cards.forEach(card => {
@@ -18356,6 +18543,20 @@ function injectDramaBadges(){
   renderScoreTicker();
   updatePinWidget();
   updateCardLifeStages();
+
+  // NBA Lineup Edge — async, fires per live NBA card after badges settle
+  document.querySelectorAll('.game-card.espn-live').forEach(card => {
+    const sport = card.dataset.sport || '';
+    if (!sport.toLowerCase().includes('basketball') && !sport.toLowerCase().includes('nba')) return;
+    const gid = card.dataset.gameid;
+    if (!gid) return;
+    const eData = Object.values(espnScores).find(v => {
+      const h = (card.dataset.home||'').toLowerCase();
+      return (v.homeName||'').toLowerCase().includes(teamNick(h)) ||
+             h.includes(teamNick((v.homeName||'').toLowerCase()));
+    });
+    if (eData?.state === 'in') injectLineupEdge(card, eData, sport).catch(()=>{});
+  });
 
   // J7: CDW Notes — inject situational stats on qualifying live cards
   document.querySelectorAll('.game-card.espn-live').forEach(card => {
