@@ -1,204 +1,62 @@
-# FIELD Handoff — May 29 2026 (Session End — Journalism Bug Fix)
+# FIELD Handoff — May 29 2026 (Session End — TYPE C: Data-Sourcing Legitimacy Matrix verification)
 
 ## SESSION TYPE
-TYPE B — Bug Fix (Urgent) — Journalism not firing
+TYPE C — Research spike (web-enabled). No code changes. Completed the Data-Sourcing
+Legitimacy Matrix [VERIFY] cells from live ToS/API terms.
 
 ## Code HEAD
-`cd12246` — journalism fix · Smoke 241/0 · SW_VERSION 2026-05-29a
+`b1d709d` — Dropbox refresh-token flow · Smoke 243/0 (unchanged — no code touched this session)
+(Note: previous handoff body referenced `9305375`/`2e170d8`; real HEAD has been `b1d709d`
+since the Dropbox fix. Reconciled here.)
 
 ## SESSION DETERMINATION
-Session type: TYPE B. No new features built. Two root-cause bugs fixed in index.html.
-A third bug (relay KV placeholder IDs) requires CF dashboard action — instructions below.
+Prior session (TYPE B — journalism bug fix) confirmed CLOSED: smoke 243/0, tree clean,
+all journalism + Dropbox commits pushed, root-cause chain documented in
+docs/journalism-root-cause-2026-05-29.md. This session opened clean as TYPE C per the
+prior (Drive-only) chat's deferred instruction.
 
 ## COMPLETED THIS SESSION
+- All 15 [VERIFY] cells in the Data-Sourcing Legitimacy Matrix resolved against LIVE terms
+  (checked 2026-05-29). Failure modes for FRAGILE rows + one-line recommendation per sport
+  + transformation-moat framing produced (matrix worklist items 1-5).
+- Output persisted to: **docs/data-sourcing-legitimacy-2026-05-29.md** (in-repo, because
+  Drive writes are unavailable from the sandbox — reads work, create_file errors).
 
-### Daily Update
-- NBA WCF Game 7: Saturday May 30, 8pm ET, OKC hosts SAS (OKC -58.8%)
-- NHL ECF Game 5: Tonight May 29, 8pm ET, CAR hosts MTL (CAR leads 3-1)
-- NBA Finals G1: Wednesday June 3 (NYK vs WCF winner)
-- MLB Tonight: MIN@PIT 6:45pm MLB_APPLE · PHI@LAD 10:15pm MLB_APPLE
-- Golf: Charles Schwab Challenge R2 complete, cut made, R3 Saturday
+### Posture summary (full detail in the docs file)
+- GREEN: nflverse (CC-BY, attribution), Squiggle (w/ etiquette), The Odds API, Football-Data.org,
+  Open-Meteo, Wikimedia Pageviews.
+- YELLOW (derived-only/low-rate, commercial unverified): MLB StatsAPI, Baseball Savant,
+  NHL api-web, FPL, BallDontLie, Big Data Bowl.
+- RED (ToS prohibits productionized use, or commercial needs licence/contract): ESPN (FIELD's
+  PRIMARY — highest exposure), PGA Tour GraphQL, Pro Football Reference, ATP, Betfair, Reddit.
 
-### Journalism Bugs Fixed (commit cd12246)
+## ACTION REQUIRED (Jeff — Drive write needed)
+- Merge the resolved [VERIFY] cells into the MASTER Drive scaffold
+  `1LUuR0CLWUvIc94Vou46VmeTLz1n-Y6YAz0F0MX6GR-M` from a machine with Drive edit access
+  (source of truth = docs/data-sourcing-legitimacy-2026-05-29.md).
 
-**Bug 2 — Delta hash blocked compound editorial after relay failures [FIXED]**
-Root cause: `initFIELDBrief` Layer 3 delta check was:
-  `if (!relayJournalism?.brief && currentHash === _lastJournalismHash) return`
-This fires on every load when relay returns null (which it always does — see Bug 1).
-After compound runs once, `_lastJournalismHash` is set. On every subsequent load
-with relay still failing, this condition is true → compound skipped → silence.
-Fix: `if (relayJournalism?.brief && currentHash === _lastJournalismHash) return`
-Only skip compound when relay actually served a brief. Compound runs freely on relay failure.
+## NET PRIORITY ACTIONS (from the verification)
+1. NFL: migrate historical/advanced fully onto nflverse (GREEN); retire PFR + direct NGS scrape.
+2. Odds: standardize on The Odds API; Betfair licence-only.
+3. Tennis + Golf: secure a licensed feed before commercial launch (both RED in production).
+4. Social signal: swap Reddit -> Wikimedia Pageviews.
+5. ESPN/MLB/NHL/FPL: keep derived-only, low-rate, cached; line up licensed fallbacks.
 
-**Bug 3 — J8/J9/J10 init functions bailed silently when allData not ready [FIXED]**
-Root cause: initMLBGameBriefs/initWNBAGameBriefs/initStakesBriefs all have
-`if(!allData) return` at their 900/1100/1300ms startup stagger. On slow loads
-allData may not be populated yet → silent bail → no MLB/WNBA/stakes briefs ever appear.
-Fix: `if(!allData){ setTimeout(initXxx, 2500); return; }` on all three.
-One retry at +2500ms catches slow-load scenarios.
+## STILL OPEN (carried from prior handoff)
+- BUG 1 — relay KV placeholder IDs (Jeff: ~10-min CF dashboard task; create FIELD_JOURNALISM
+  + PUSH_SUBS namespaces, update field-relay-nba wrangler.toml, push).
+- Verify journalism recovery once Gemini quota resets: POST /journalism/run -> {ok:true,
+  reason:"written"}; then GET /journalism/tonight -> real brief.
+- Dropbox refresh-token: add the 3 secrets, then re-dispatch the workflow.
 
-## BUG 1 STILL OPEN — Relay KV Placeholder IDs (requires CF dashboard)
-
-**What's broken:** `wrangler.toml` in field-relay-nba has:
-  ```
-  id = "JOURNALISM_PLACEHOLDER_REPLACE_WITH_REAL_ID"    ← fake
-  id = "PUSH_SUBS_PLACEHOLDER_REPLACE_WITH_REAL_ID"     ← fake
-  ```
-Every call to `/journalism/tonight` returns 503 "not configured".
-Every push notification attempt fails.
-Layer 1 (pre-rendered journalism) has never worked in production.
-The relay cron runs every 15 min but writes to phantom KV namespaces.
-
-**Fix requires CF dashboard (Jeff only, ~10 minutes):**
-
-Step 1 — Create FIELD_JOURNALISM KV namespace:
-  CF Dashboard → Workers & Pages → KV → Create namespace
-  Name: FIELD_JOURNALISM
-  Copy the generated ID (format: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx)
-
-Step 2 — Create PUSH_SUBS KV namespace:
-  CF Dashboard → Workers & Pages → KV → Create namespace
-  Name: PUSH_SUBS
-  Copy the generated ID
-
-Step 3 — Update wrangler.toml in field-relay-nba repo:
-  Replace:  id = "JOURNALISM_PLACEHOLDER_REPLACE_WITH_REAL_ID"
-  With:     id = "{real FIELD_JOURNALISM id}"
-
-  Replace:  id = "PUSH_SUBS_PLACEHOLDER_REPLACE_WITH_REAL_ID"
-  With:     id = "{real PUSH_SUBS id}"
-
-Step 4 — Push wrangler.toml change to field-relay-nba:
-  git add wrangler.toml && git commit -m "fix: real KV namespace IDs for journalism + push"
-  git push → relay CI deploys automatically (~60s)
-
-Step 5 — Verify:
-  After deploy, the relay cron will populate FIELD_JOURNALISM KV within 15 minutes.
-  Check: curl https://field-relay-nba.jeffunglesbee.workers.dev/journalism/tonight
-  Should return: `{"brief":"...","generatedAt":...}` not `{"error":"not configured"}`
-
-**Impact of fixing Bug 1:**
-  - Layer 1 pre-rendered journalism activates (zero client AI calls on load)
-  - Push notifications start working
-  - Journalism quality improves (relay has full Layer 1-3 pipeline with cliché detection)
-
-## ANALYSIS — Other Journalism Paths (no bugs found)
-
-Compound editorial (fetchCompoundEditorial → CLAUDE_PROXY_URL): correct ✅
-Night Owl (fetchNightOwlFromClaude → CLAUDE_PROXY_URL): correct ✅
-J8 renderMLBGameBriefCard: correct, awaits fetchMLBGameBriefFromClaude ✅
-J9 renderWNBAGameBriefCard: correct ✅
-J10 renderStakesBriefCard: correct ✅
-J11 fetchGameBriefOnDemand (bottom sheet): correct ✅
-Budget (journalismCallsToday, 8/day): correct, all functions gate on canCall() ✅
-CLAUDE_PROXY_URL origin: jubilant-bassoon.jeffunglesbee.workers.dev is in ALLOWED_ORIGINS ✅
-
-The bugs were specifically in the orchestration layer (initFIELDBrief + init functions),
-not in the individual journalism functions themselves.
-
-## CURRENT STATE
-
-HEAD: cd12246 · Smoke 241/0 · SW_VERSION 2026-05-29a · Deployed ✅
-
-## QUEUE
-
-### TIER 0 DEADLINES:
-⚡ NHL SCF shell — CAR likely closes ECF tonight. Build next session.
-⚡ NBA Finals G1 shell — June 3 (Tuesday). WCF Game 7 Saturday resolves matchup.
-⚡ World Cup 2026 Phase 1 — June 11 HARD DEADLINE
-⚡ USPTO provisional — ~June 25
-
-### JOURNALISM (Bug 1 remaining):
-□ Jeff: create real KV namespaces in CF dashboard, update wrangler.toml (~10 min)
-□ After KV fix: verify /journalism/tonight returns real data (15 min after deploy)
-□ After KV fix: verify push notifications working
-
-### GOLF INTELLIGENCE SCHEDULE:
-G-INF-1 ✅ DONE — relay wired, ESPN extraction live (a00a413)
-G-INF-2 — PLAYER_ID_BRIDGE + TOURNAMENT_CALENDAR (~2h)
-G-CORE-1 — golfDramaScore + colonialClosingScore + courseDNAFit (~3h)
-G-CORE-2 — prefetchGolfHistoricalData pipeline (~2.5h)
-G-UI-1 — Golf card intel section (after NBA Finals shell)
-G-UI-2 — Night Owl golf + J12 journalism type
-G-PREP-1 — Jun 8 Mon: US Open Oakmont data verification
-G-PATENT — Jun 15 wk: USPTO claim documentation
-
-### NEXT SESSION PRIORITY ORDER:
-1. Check NHL ECF Game 5 result → build SCF shell if CAR closes
-2. Build NBA Finals G1 shell (TBD vs NYK, June 3)
-3. Remind Jeff: relay KV fix (Bug 1) — 10 min CF dashboard task
-4. G-INF-2: PLAYER_ID_BRIDGE + TOURNAMENT_CALENDAR
+## TIER 0 DEADLINES
+- NHL SCF shell (CAR closing ECF); NBA Finals G1 shell (June 3, vs NYK);
+  World Cup 2026 Phase 1 (June 11 HARD); USPTO provisional (~June 25).
 
 ## CANONICAL IDs
 CI/Deploy Ref: 18JMUd-Uq_m2DomuCua2B5UMiWOel81yzc1JU7SY6f20
 Repo: jeffunglesbee-create/jubilant-bassoon
 Relay repo: jeffunglesbee-create/field-relay-nba
 Journalism Quality Spec: 1oSj9Wl9lZl_RGGElZdn_dhI4s3vzvnkv5HazELKSw-0
-Golf Intelligence Drive docs:
-  Original (summary): 1uzCk3ZrPfWPJVYg2wmpbEq_yFa8y5YmoSvJSup9sq5I
-  Doc 1 — API Reference: 1Ak_GPXkiKUvUr6dUpcto0BUbhKTibIwgR-o8SYUeBfM
-  Doc 2 — Historical Data: 1kCnuntcW1PpmFS78xDm8L8nVOoE45zp-dIGeF4MlrtM
-  Doc 3 — Patent & Metrics: 1O690cHVepQNEjMx7hSxh-IF2vM7ncb9JOtuLLT8hj5I
-
----
-## ADDENDUM — May 29 2026 (Journalism Audit + Android)
-
-### Additional fixes shipped after session end:
-- **Root cause found**: `trimToCompleteSentence` + `stripJsonFences` + 6 other functions removed from index.html to field_utils.js (Node-only) on May 20 — never re-added. Every journalism call silently failed. Commit `923e12e` inlined all 8 back. A191 smoke guard added.
-- **SW stale since May 25**: sw.js SW_VERSION frozen, return visitors got 4-day-old build. Commit `1f84293` + A190 guard.
-- **Golf top-10 board**: isActive check treated empty status string as falsy — leaderboard never rendered. Commit `6399654`.
-- **SW auto-reload**: No updatefound listener meant users had to manually close/reopen after deploys. Commit `9305375` adds controllerchange → location.reload(). Works on Android and iOS.
-
-### Android audit doc:
-Drive ID: 1IDI9mQ9BLQimpr68Xjk2qJveinj5nLuYb3dt4MMHBLc
-Pending live device testing after journalism confirmed working.
-P1 items: push notifications, filter bar scroll, PWA install flow.
-
-### Current HEAD: 9305375 · Smoke 243/0 · SW_VERSION 2026-05-29d
-
----
-## JOURNALISM ROOT-CAUSE CHAIN — FULLY RESOLVED May 29 2026 (PM)
-
-The journalism failure was a CHAIN of bugs, found by adding diagnostics that
-surfaced real error strings instead of silent nulls. In order of discovery:
-
-1. **Missing field_utils.js functions** (923e12e) — stripJsonFences,
-   trimToCompleteSentence + 6 others defined only in Node test module, not in
-   index.html. Every journalism call threw ReferenceError (silently caught).
-   FIX: inlined all 8. Guard: smoke A191.
-
-2. **Stale SW** (1f84293) — sw.js frozen at 2026-05-25a; return visitors got
-   old shell. FIX: version sync + A190 guard + updatefound auto-reload (9305375).
-
-3. **Client 429 storm** (build h) — repeated reloads each fired a compound+J-layer
-   burst, exceeding Gemini 15 RPM. FIX: persist _compoundRetryAfter to
-   localStorage + backoff guard at fetchCompoundEditorial entry.
-
-4. **Cron error 1042** (relay 696d408) — the journalism cron (field-relay-nba
-   Worker) fetched the proxy (field-claude-proxy Worker) via workers.dev — a
-   same-account Worker→Worker fetch, BLOCKED by Cloudflare with error 1042.
-   The cron NEVER populated KV. FIX: compatibility_flags=['global_fetch_strictly_public']
-   in relay wrangler.toml.
-
-5. **Cron 403 Origin** (relay c5294f3) — after 1042 fix, proxy rejected the cron
-   because Workers send no Origin header. FIX: X-FIELD-Relay shared-header bypass
-   on the proxy + cron sends it.
-   ** CRITICAL GOTCHA: the DEPLOYED proxy is field-relay-nba/workers/field-claude-proxy
-      (relay deploy.yml workingDirectory is relative to THE RELAY repo). The
-      jubilant-bassoon/workers/field-claude-proxy copy is a STALE FORK that never
-      deploys. The relay copy runs gemini-3.1-flash-lite (PROXY_VERSION 6).
-      Always edit the RELAY copy for proxy changes. **
-
-6. **Gemini daily quota** (no code fix) — after all structural fixes, the cron
-   reaches Gemini cleanly but gets 429: today's RPD burned by the test storm.
-   Recovers at midnight Pacific (~08:00 UTC). The */15 cron (scheduled handler
-   line 1024) auto-populates KV on the next tick after recovery — ZERO manual
-   action needed. Once KV has prose, clients read it (zero Gemini calls).
-
-VERIFY RECOVERY: POST /journalism/run → expect {"ok":true,"reason":"written"}.
-Then GET /journalism/tonight → expect {"brief":"...","generatedAt":...}.
-Then client (after auto-reload to current SW) shows FIELD Brief prose;
-Health Panel Journalism row → "Brief rendered".
-
-New infra this session: /journalism/run manual trigger endpoint (relay),
-cron diagnostic returns (ok/reason/proxyStatus), Health Panel Journalism row.
+Data-Sourcing Legitimacy Matrix (MASTER scaffold): 1LUuR0CLWUvIc94Vou46VmeTLz1n-Y6YAz0F0MX6GR-M
+Verification output (in-repo): docs/data-sourcing-legitimacy-2026-05-29.md
