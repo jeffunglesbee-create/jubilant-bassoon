@@ -116,18 +116,26 @@ self.addEventListener('message', e => {
   } catch(e) {}
 })();
 
-// Client-side drama computation from raw game state
+// Client-side drama computation from raw game state.
+// The relay (Component 3) only emits SCORE_CHANGE for games already past its
+// per-sport late + close gate, so every payload is a late-game situation. Score
+// off margin (always reliable from scores) rather than matching fragile period
+// strings; add a small bonus for the very latest phases (OT / shootout / final
+// frame), detected loosely from the period label or numeric period when present.
+// A missed bonus just omits +10 — it never suppresses, so there is no fragile gate.
 function computePushDrama(d) {
-  const margin = Math.abs((d.homeScore||0) - (d.awayScore||0));
   const period = String(d.period || '').toLowerCase();
-  const isFinal = period.includes('final');
-  if (isFinal) return 0;
-  const isLate = ['q4','ot','9th','3rd','extra','2nd half'].some(p => period.includes(p));
-  if (!isLate) return margin < 5 ? 50 : 30;
-  if (margin <= 3) return 90;
-  if (margin <= 7) return 75;
-  if (margin <= 12) return 55;
-  return 30;
+  if (period.includes('final')) return 0;
+  const margin = Math.abs((d.homeScore||0) - (d.awayScore||0));
+  const pn = Number(d.periodNum || 0);
+  const veryLate = pn >= 4 || /\bot\b|\bso\b|extra/.test(period) ||
+                   period.includes('9th') || period.includes("90'");
+  const bonus = veryLate ? 10 : 0;
+  if (margin <= 1)  return Math.min(100, 90 + bonus);
+  if (margin <= 3)  return Math.min(100, 80 + bonus);
+  if (margin <= 7)  return 65 + bonus;
+  if (margin <= 12) return 50 + bonus;
+  return 40;
 }
 
 self.addEventListener('push', e => {
