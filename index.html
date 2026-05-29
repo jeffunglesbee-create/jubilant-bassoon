@@ -4872,6 +4872,29 @@ async function fetchESPNFixturesForDate(iso){
       if(!events.length) return;
       const games = events.map(ev=>{
         const comp = (ev.competitions||[])[0]; if(!comp) return null;
+
+        // ── Golf: individual sport — use event/tournament name, no home/away ─
+        if(sport === 'golf') {
+          const tournName = ev.name || ev.shortName || 'PGA Tour';
+          const statusDetail = ev.status?.type?.detail || '';
+          const roundNum = ev.status?.period || null;
+          const roundLabel = roundNum ? `R${roundNum}` : '';
+          // ESPN stores golf with midnight placeholder — suppress 12:00 AM display
+          // by normalising the start_time to noon UTC on tournament day
+          const rawDate = (ev.date||'').slice(0,10); // "2026-05-28"
+          const normTime = rawDate ? rawDate+'T12:00:00Z' : (ev.date||'');
+          _gid++;
+          return {
+            _id:`g${_gid}`, _sport:section,
+            home: tournName, away: '',  // no away for golf
+            league: section + (roundLabel ? ' · '+roundLabel : ''),
+            start_time: normTime,
+            venue: comp.venue?.fullName || '',
+            streams: resolveBundle(bundle),
+            leaderNote: statusDetail || roundLabel || '',
+          };
+        }
+
         const comps = comp.competitors||[];
         const home = comps.find(t=>t.homeAway==="home")||comps[0];
         const away = comps.find(t=>t.homeAway==="away")||comps[1];
@@ -8341,16 +8364,18 @@ function buildTodaySchedule(){
   //   Truist Championship (Signature) and Myrtle Beach Classic both finished May 10.
   //   No PGA Tour event Mon May 11 — Travelers Championship starts Thu Jun 26.
   const golfGames=[
-    // ── PGA Championship — R2 Friday May 15 (active tournament May 14-17) ─────
-    {home:"PGA Championship",          away:"",
-     league:"Major Championship · 108th PGA Championship",
-     start_time:"2026-05-15T12:00:00Z", confirmed:true, venue:"Aronimink Golf Club, Newtown Square PA",
-     streams:resolveBundle("GOLF_ESPN"),
-     leaderNote:"R2 Fri May 15 · McIlroy defending · ESPN+/Golf Channel Thu-Fri · CBS Sat-Sun"},
+    // ── Charles Schwab Challenge — R2 Fri May 29 (active tournament May 28-31) ─
+    // Colonial CC, Fort Worth TX. Defending: Ben Griffin.
+    // Golf Channel Thu-Fri 3-6 PM ET · CBS/Golf Channel Sat-Sun
+    {home:"Charles Schwab Challenge", away:"",
+     league:"PGA Tour",
+     start_time:"2026-05-29T19:00:00Z", confirmed:true, // 3 PM ET = 7 PM UTC
+     venue:"Colonial CC, Fort Worth TX",
+     streams:resolveBundle("GOLF_CHANNEL"),
+     leaderNote:"R2 · Golf Channel 3-6 PM ET · CBS Sat-Sun"},
   ].filter(g=>isToday(g.start_time)||
     (new Date(g.start_time) > new Date() &&
-     new Date(g.start_time) < new Date(Date.now() + 7*24*3600*1000) &&
-     g.league?.includes("Major")));
+     new Date(g.start_time) < new Date(Date.now() + 7*24*3600*1000)));
   if(golfGames.length) sections.push({sport:"Golf", games:golfGames});
   // Slash Golf enrichment fires async after init (T+3500ms)
   // slashGolfPrefetchAll() will inject leaderNote into golf cards via injectSlashGolfLeaderNotes()
