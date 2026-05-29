@@ -43,8 +43,12 @@ prior (Drive-only) chat's deferred instruction.
 5. ESPN/MLB/NHL/FPL: keep derived-only, low-rate, cached; line up licensed fallbacks.
 
 ## STILL OPEN (carried from prior handoff)
-- BUG 1 — relay KV placeholder IDs (Jeff: ~10-min CF dashboard task; create FIELD_JOURNALISM
-  + PUSH_SUBS namespaces, update field-relay-nba wrangler.toml, push).
+- BUG 1 — RESOLVED (May 29 2026, verified via cf-api-probe of the deployed relay settings).
+  No CF dashboard task needed: the field-relay-nba deploy.yml bootstrap step auto-creates the KV
+  namespaces. Both are live and bound: PUSH_SUBS (id 46b6d8db59ea49eca8b1d89c576a6158),
+  FIELD_JOURNALISM (id 83edf19398da4ed184a42746cb85c9d7). The cron's `if(!env.PUSH_SUBS) return`
+  guard does NOT trip. Real remaining push gate is NOT the KV — it is VAPID secrets (NOT set on
+  the relay) + the client subscribe flow (unbuilt). See ADDENDUM (TYPE B: relay push cron).
 - Verify journalism recovery once Gemini quota resets: POST /journalism/run -> {ok:true,
   reason:"written"}; then GET /journalism/tonight -> real brief.
 - Dropbox refresh-token: add the 3 secrets, then re-dispatch the workflow.
@@ -85,3 +89,44 @@ NOT removed (flagged for Jeff's decision — distinct posture):
   data + the embedded key — scrub the key + mark DECOMMISSIONED (Drive writes unavailable from
   sandbox this session). Matrix PGA row already RED.
 - `pgatour.com/live` watch-link entry (editorial streaming descriptor) — kept; not harvested data.
+
+---
+## ADDENDUM — May 29 2026 (TYPE B: relay push cron -> ADR-002 Rule D conformance)
+Deployed field-relay-nba `c8d2db7` ("Deploy RELAY Worker" run 26656411272 — success; post-deploy
+structural probes green). Refactored handleCron, the `*/5` push-heartbeat cron.
+
+WHAT CHANGED (relay src/index.js, handleCron):
+- Removed the server-side composite drama score (dramaBase + periodBonus + closenessBonus) and
+  BOTH thresholds (drama < 85; per-user drama_min). That composite-value-thresholded-to-notify
+  chain is the exact artifact the Numerical Usage Policy v2 names as "the patent."
+- Component 3 now fires on a STANDALONE BOOLEAN over raw game state: latePhase (period >=
+  minPeriod) AND closeGame (margin <= maxMargin) — two dimensional gates ANDed, never summed
+  (ADR-002 Rule D; the policy's permitted per-dimension boolean form).
+- Payload is now type:'SCORE_CHANGE' with FACTS only (scores, period, clock, broadcast); no drama
+  field. This matches the contract sw.js was already built against — the client's
+  computePushDrama() + Drama Dial evaluates excitement on-device ("server pushes facts, client
+  evaluates excitement"). Dedup re-keyed on score state so a genuine score change re-notifies.
+
+WHY NOW: the OLD cron was LIVE and firing every 5 min (wrangler.toml [triggers] crons = */5, */15),
+computing server-side interest values on a schedule — precisely the artifact ADR-002 exists to
+prevent. The refactor removes that live violation. Delivery was and remains OFF (no VAPID secrets,
+no client subscribe flow), so there is ZERO user-facing change — this only removed the server-side
+computation.
+
+POSTURE / RULE 45: this conforms code to the documented architecture (ADR-002 Rules A/B/D +
+Numerical Usage Policy v2 + the SW's SCORE_CHANGE contract). It is NOT a claim that the design
+"defeats" RUWT. ADR-002 stays PROPOSED pending counsel + Jeff approval.
+
+STILL UNBUILT (separate workstream — the push FEATURE end to end):
+- Generate a VAPID keypair (once); set VAPID_PUBLIC_KEY + VAPID_PRIVATE_KEY as field-relay-nba
+  Worker secrets (dashboard / `wrangler secret put` — the CF API cannot set secrets from a probe).
+- Add the client subscribe flow (pushManager.subscribe with the VAPID public key) to index.html;
+  none exists today. sw.js already has the SCORE_CHANGE push handler.
+- Legacy DRAMA_THRESHOLD handler in sw.js (~lines 164-183) is now dormant (server no longer sends
+  that type); safe to delete in a later client pass.
+
+NOTE ON THIS FILE: the top-of-file TYPE C header predates several later May 29 sessions (PGA
+TYPE B addendum, the TYPE D ESPN/data-sourcing audits, STANDARDS Rules 45-46, and now this relay
+change). Code HEAD line refers to jubilant-bassoon and is stale; this addendum's HEAD (c8d2db7)
+is the field-relay-nba repo. jubilant-bassoon was not touched by this change (index.html smoke
+unaffected).
