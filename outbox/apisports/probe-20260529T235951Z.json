@@ -1,0 +1,1315 @@
+{
+  "timestamp": "20260529T235951Z",
+  "today": "2026-05-29",
+  "relay": "https://field-relay-nba.jeffunglesbee.workers.dev",
+  "probes": {
+    "v2/mlb/today": {
+      "url": "https://field-relay-nba.jeffunglesbee.workers.dev/v2/games?sport=mlb&date=2026-05-29",
+      "status": 200,
+      "bytes": 3271,
+      "data": {
+        "sport": "mlb",
+        "date": "2026-05-29",
+        "games": [
+          {
+            "id": "baseball:178851",
+            "sport": "mlb",
+            "league": "MLB",
+            "state": "final",
+            "start": "2026-05-29T00:05:00+00:00",
+            "home": {
+              "name": "Texas Rangers",
+              "abbr": "",
+              "score": 1
+            },
+            "away": {
+              "name": "Houston Astros",
+              "abbr": "",
+              "score": 5
+            },
+            "periodNum": 0,
+            "periodLabel": "",
+            "clock": "",
+            "venue": "",
+            "situation": null
+          },
+          {
+            "id": "baseball:178870",
+            "sport": "mlb",
+            "league": "MLB",
+            "state": "live",
+            "start": "2026-05-29T22:40:00+00:00",
+            "home": {
+              "name": "Cincinnati Reds",
+              "abbr": "",
+              "score": 2
+            },
+            "away": {
+              "name": "Atlanta Braves",
+              "abbr": "",
+              "score": 4
+            },
+            "periodNum": 0,
+            "periodLabel": "",
+            "clock": "",
+            "venue": "",
+            "situation": {
+              "inning": null,
+              "isTop": false,
+              "outs": null
+            }
+          },
+          {
+            "id": "baseball:178857",
+            "sport": "mlb",
+            "league": "MLB",
+            "state": "live",
+            "start": "2026-05-29T22:45:00+00:00",
+            "home": {
+              "name": "Washington Nationals",
+              "abbr": "",
+              "score": 4
+            },
+            "away": {
+              "name": "San Diego Padres",
+              "abbr": "",
+              "score": 2
+            },
+            "periodNum": 0,
+            "periodLabel": "",
+            "clock": "",
+            "venue": "",
+            "situation": {
+              "inning": null,
+              "isTop": false,
+              "outs": null
+            }
+          },
+          {
+            "id": "baseball:178861",
+            "sport": "mlb",
+            "league": "MLB",
+            "state": "live",
+            "start": "2026-05-29T22:45:00+00:00",
+            "home": {
+              "name": "Pittsburgh Pirates",
+              "abbr": "",
+              "score": 4
+            },
+            "away": {
+              "name": "Minnesota Twins",
+              "abbr": "",
+              "score": 5
+            },
+            "periodNum": 0,
+            "periodLabel": "",
+            "clock": "",
+            "venue": "",
+            "situation": {
+              "inning": null,
+              "isTop": false,
+              "outs": null
+            }
+          },
+          {
+            "id": "baseball:178865",
+            "sport": "mlb",
+            "league": "MLB",
+            "state": "live",
+            "start": "2026-05-29T23:05:00+00:00",
+            "home": {
+              "name": "Baltimore Orioles",
+              "abbr": "",
+              "score": 2
+            },
+            "away": {
+              "name": "Toronto Blue Jays",
+              "abbr": "",
+              "score": 0
+            },
+            "periodNum": 0,
+            "periodLabel": "",
+            "clock": "",
+            "venue": "",
+            "situation": {
+              "inning": null,
+              "isTop": false,
+              "outs": null
+            }
+          },
+          {
+            "id": "baseball:178862",
+            "sport": "mlb",
+            "league": "MLB",
+            "state": "live",
+            "start": "2026-05-29T23:10:00+00:00",
+            "home": {
+              "name": "New York Mets",
+              "abbr": "",
+              "score": 4
+            },
+            "away": {
+              "name": "Miami Marlins",
+              "abbr": "",
+              "score": 0
+            },
+            "periodNum": 0,
+            "periodLabel": "",
+            "clock": "",
+            "venue": "",
+            "situation": {
+              "inning": null,
+              "isTop": false,
+              "outs": null
+            }
+          },
+          {
+            "id": "baseball:178863",
+            "sport": "mlb",
+            "league": "MLB",
+            "state": "live",
+            "start": "2026-05-29T23:10:00+00:00",
+            "home": {
+              "name": "Tampa Bay Rays",
+              "abbr": "",
+              "score": 1
+            },
+            "away": {
+              "name": "Los Angeles Angels",
+              "abbr": "",
+              "score": 1
+            },
+            "periodNum": 0,
+            "periodLabel": "",
+            "clock": "",
+            "venue": "",
+            "situation": {
+              "inning": null,
+              "isTop": false,
+              "outs": null
+            }
+          },
+          {
+            "id": "baseball:178871",
+            "sport": "mlb",
+            "league": "MLB",
+            "state": "live",
+            "start": "2026-05-29T23:10:00+00:00",
+            "home": {
+              "name": "Cleveland Guardians",
+              "abbr": "",
+              "score": 4
+            },
+            "away": {
+              "name": "Boston Red Sox",
+              "abbr": "",
+              "score": 0
+            },
+            "periodNum": 0,
+            "periodLabel": "",
+            "clock": "",
+            "venue": "",
+            "situation": {
+              "inning": null,
+              "isTop": false,
+              "outs": null
+            }
+          },
+          {
+            "id": "baseball:178860",
+            "sport": "mlb",
+            "league": "MLB",
+            "state": "live",
+            "start": "2026-05-29T23:15:00+00:00",
+            "home": {
+              "name": "St.Louis Cardinals",
+              "abbr": "",
+              "score": 3
+            },
+            "away": {
+              "name": "Chicago Cubs",
+              "abbr": "",
+              "score": 4
+            },
+            "periodNum": 0,
+            "periodLabel": "",
+            "clock": "",
+            "venue": "",
+            "situation": {
+              "inning": null,
+              "isTop": false,
+              "outs": null
+            }
+          },
+          {
+            "id": "baseball:178869",
+            "sport": "mlb",
+            "league": "MLB",
+            "state": "live",
+            "start": "2026-05-29T23:40:00+00:00",
+            "home": {
+              "name": "Chicago White Sox",
+              "abbr": "",
+              "score": 0
+            },
+            "away": {
+              "name": "Detroit Tigers",
+              "abbr": "",
+              "score": 0
+            },
+            "periodNum": 0,
+            "periodLabel": "",
+            "clock": "",
+            "venue": "",
+            "situation": {
+              "inning": null,
+              "isTop": false,
+              "outs": null
+            }
+          }
+        ],
+        "count": 10,
+        "source": "apisports",
+        "ts": 1780099191298
+      },
+      "error": null
+    },
+    "apisports/baseball/live": {
+      "url": "https://field-relay-nba.jeffunglesbee.workers.dev/apisports/baseball/games?live=all",
+      "status": 200,
+      "bytes": 118,
+      "data": {
+        "get": "games",
+        "parameters": {
+          "live": "all"
+        },
+        "errors": {
+          "live": "The Live field do not exist."
+        },
+        "results": 0,
+        "response": []
+      },
+      "error": null
+    },
+    "apisports/baseball/today": {
+      "url": "https://field-relay-nba.jeffunglesbee.workers.dev/apisports/baseball/games?league=1&season=2026&date=2026-05-29",
+      "status": 200,
+      "bytes": 8963,
+      "data": {
+        "get": "games",
+        "parameters": {
+          "league": "1",
+          "season": "2026",
+          "date": "2026-05-29"
+        },
+        "errors": [],
+        "results": 10,
+        "response": [
+          {
+            "id": 178851,
+            "date": "2026-05-29T00:05:00+00:00",
+            "time": "00:05",
+            "timestamp": 1780013100,
+            "timezone": "UTC",
+            "week": null,
+            "status": {
+              "long": "Finished",
+              "short": "FT"
+            },
+            "country": {
+              "id": 1,
+              "name": "USA",
+              "code": "US",
+              "flag": "https://media.api-sports.io/flags/us.svg"
+            },
+            "league": {
+              "id": 1,
+              "name": "MLB",
+              "type": "League",
+              "logo": "https://media.api-sports.io/baseball/leagues/1.png",
+              "season": 2026
+            },
+            "teams": {
+              "home": {
+                "id": 35,
+                "name": "Texas Rangers",
+                "logo": "https://media.api-sports.io/baseball/teams/35.png"
+              },
+              "away": {
+                "id": 15,
+                "name": "Houston Astros",
+                "logo": "https://media.api-sports.io/baseball/teams/15.png"
+              }
+            },
+            "scores": {
+              "home": {
+                "hits": 4,
+                "errors": 1,
+                "innings": {
+                  "1": 0,
+                  "2": 1,
+                  "3": 0,
+                  "4": 0,
+                  "5": 0,
+                  "6": 0,
+                  "7": 0,
+                  "8": 0,
+                  "9": 0,
+                  "extra": null
+                },
+                "total": 1
+              },
+              "away": {
+                "hits": 6,
+                "errors": 1,
+                "innings": {
+                  "1": 3,
+                  "2": 0,
+                  "3": 2,
+                  "4": 0,
+                  "5": 0,
+                  "6": 0,
+                  "7": 0,
+                  "8": 0,
+                  "9": 0,
+                  "extra": null
+                },
+                "total": 5
+              }
+            }
+          },
+          {
+            "id": 178870,
+            "date": "2026-05-29T22:40:00+00:00",
+            "time": "22:40",
+            "timestamp": 1780094400,
+            "timezone": "UTC",
+            "week": null,
+            "status": {
+              "long": "Inning 5",
+              "short": "IN5"
+            },
+            "country": {
+              "id": 1,
+              "name": "USA",
+              "code": "US",
+              "flag": "https://media.api-sports.io/flags/us.svg"
+            },
+            "league": {
+              "id": 1,
+              "name": "MLB",
+              "type": "League",
+              "logo": "https://media.api-sports.io/baseball/leagues/1.png",
+              "season": 2026
+            },
+            "teams": {
+              "home": {
+                "id": 8,
+                "name": "Cincinnati Reds",
+                "logo": "https://media.api-sports.io/baseball/teams/8.png"
+              },
+              "away": {
+                "id": 3,
+                "name": "Atlanta Braves",
+                "logo": "https://media.api-sports.io/baseball/teams/3.png"
+              }
+            },
+            "scores": {
+              "home": {
+                "hits": 5,
+                "errors": 0,
+                "innings": {
+                  "1": 0,
+                  "2": 0,
+                  "3": 0,
+                  "4": 2,
+                  "5": null,
+                  "6": null,
+                  "7": null,
+                  "8": null,
+                  "9": null,
+                  "extra": null
+                },
+                "total": 2
+              },
+              "away": {
+                "hits": 5,
+                "errors": 0,
+                "innings": {
+                  "1": 1,
+                  "2": 3,
+                  "3": 0,
+                  "4": 0,
+                  "5": 0,
+                  "6": null,
+                  "7": null,
+                  "8": null,
+                  "9": null,
+                  "extra": null
+                },
+                "total": 4
+              }
+            }
+          },
+          {
+            "id": 178857,
+            "date": "2026-05-29T22:45:00+00:00",
+            "time": "22:45",
+            "timestamp": 1780094700,
+            "timezone": "UTC",
+            "week": null,
+            "status": {
+              "long": "Inning 3",
+              "short": "IN3"
+            },
+            "country": {
+              "id": 1,
+              "name": "USA",
+              "code": "US",
+              "flag": "https://media.api-sports.io/flags/us.svg"
+            },
+            "league": {
+              "id": 1,
+              "name": "MLB",
+              "type": "League",
+              "logo": "https://media.api-sports.io/baseball/leagues/1.png",
+              "season": 2026
+            },
+            "teams": {
+              "home": {
+                "id": 37,
+                "name": "Washington Nationals",
+                "logo": "https://media.api-sports.io/baseball/teams/37.png"
+              },
+              "away": {
+                "id": 30,
+                "name": "San Diego Padres",
+                "logo": "https://media.api-sports.io/baseball/teams/30.png"
+              }
+            },
+            "scores": {
+              "home": {
+                "hits": 5,
+                "errors": 0,
+                "innings": {
+                  "1": 2,
+                  "2": 1,
+                  "3": 1,
+                  "4": null,
+                  "5": null,
+                  "6": null,
+                  "7": null,
+                  "8": null,
+                  "9": null,
+                  "extra": null
+                },
+                "total": 4
+              },
+              "away": {
+                "hits": 4,
+                "errors": 0,
+                "innings": {
+                  "1": 1,
+                  "2": 0,
+                  "3": 1,
+                  "4": null,
+                  "5": null,
+                  "6": null,
+                  "7": null,
+                  "8": null,
+                  "9": null,
+                  "extra": null
+                },
+                "total": 2
+              }
+            }
+          },
+          {
+            "id": 178861,
+            "date": "2026-05-29T22:45:00+00:00",
+            "time": "22:45",
+            "timestamp": 1780094700,
+            "timezone": "UTC",
+            "week": null,
+            "status": {
+              "long": "Inning 4",
+              "short": "IN4"
+            },
+            "country": {
+              "id": 1,
+              "name": "USA",
+              "code": "US",
+              "flag": "https://media.api-sports.io/flags/us.svg"
+            },
+            "league": {
+              "id": 1,
+              "name": "MLB",
+              "type": "League",
+              "logo": "https://media.api-sports.io/baseball/leagues/1.png",
+              "season": 2026
+            },
+            "teams": {
+              "home": {
+                "id": 28,
+                "name": "Pittsburgh Pirates",
+                "logo": "https://media.api-sports.io/baseball/teams/28.png"
+              },
+              "away": {
+                "id": 22,
+                "name": "Minnesota Twins",
+                "logo": "https://media.api-sports.io/baseball/teams/22.png"
+              }
+            },
+            "scores": {
+              "home": {
+                "hits": 5,
+                "errors": 0,
+                "innings": {
+                  "1": 3,
+                  "2": 0,
+                  "3": 1,
+                  "4": null,
+                  "5": null,
+                  "6": null,
+                  "7": null,
+                  "8": null,
+                  "9": null,
+                  "extra": null
+                },
+                "total": 4
+              },
+              "away": {
+                "hits": 6,
+                "errors": 1,
+                "innings": {
+                  "1": 1,
+                  "2": 2,
+                  "3": 2,
+                  "4": 0,
+                  "5": null,
+                  "6": null,
+                  "7": null,
+                  "8": null,
+                  "9": null,
+                  "extra": null
+                },
+                "total": 5
+              }
+            }
+          },
+          {
+            "id": 178865,
+            "date": "2026-05-29T23:05:00+00:00",
+            "time": "23:05",
+            "timestamp": 1780095900,
+            "timezone": "UTC",
+            "week": null,
+            "status": {
+              "long": "Inning 3",
+              "short": "IN3"
+            },
+            "country": {
+              "id": 1,
+              "name": "USA",
+              "code": "US",
+              "flag": "https://media.api-sports.io/flags/us.svg"
+            },
+            "league": {
+              "id": 1,
+              "name": "MLB",
+              "type": "League",
+              "logo": "https://media.api-sports.io/baseball/leagues/1.png",
+              "season": 2026
+            },
+            "teams": {
+              "home": {
+                "id": 4,
+                "name": "Baltimore Orioles",
+                "logo": "https://media.api-sports.io/baseball/teams/4.png"
+              },
+              "away": {
+                "id": 36,
+                "name": "Toronto Blue Jays",
+                "logo": "https://media.api-sports.io/baseball/teams/36.png"
+              }
+            },
+            "scores": {
+              "home": {
+                "hits": 4,
+                "errors": 0,
+                "innings": {
+                  "1": 0,
+                  "2": 0,
+                  "3": 2,
+                  "4": null,
+                  "5": null,
+                  "6": null,
+                  "7": null,
+                  "8": null,
+                  "9": null,
+                  "extra": null
+                },
+                "total": 2
+              },
+              "away": {
+                "hits": 1,
+                "errors": 1,
+                "innings": {
+                  "1": 0,
+                  "2": 0,
+                  "3": 0,
+                  "4": null,
+                  "5": null,
+                  "6": null,
+                  "7": null,
+                  "8": null,
+                  "9": null,
+                  "extra": null
+                },
+                "total": 0
+              }
+            }
+          },
+          {
+            "id": 178862,
+            "date": "2026-05-29T23:10:00+00:00",
+            "time": "23:10",
+            "timestamp": 1780096200,
+            "timezone": "UTC",
+            "week": null,
+            "status": {
+              "long": "Inning 3",
+              "short": "IN3"
+            },
+            "country": {
+              "id": 1,
+              "name": "USA",
+              "code": "US",
+              "flag": "https://media.api-sports.io/flags/us.svg"
+            },
+            "league": {
+              "id": 1,
+              "name": "MLB",
+              "type": "League",
+              "logo": "https://media.api-sports.io/baseball/leagues/1.png",
+              "season": 2026
+            },
+            "teams": {
+              "home": {
+                "id": 24,
+                "name": "New York Mets",
+                "logo": "https://media.api-sports.io/baseball/teams/24.png"
+              },
+              "away": {
+                "id": 19,
+                "name": "Miami Marlins",
+                "logo": "https://media.api-sports.io/baseball/teams/19.png"
+              }
+            },
+            "scores": {
+              "home": {
+                "hits": 3,
+                "errors": 0,
+                "innings": {
+                  "1": 4,
+                  "2": 0,
+                  "3": null,
+                  "4": null,
+                  "5": null,
+                  "6": null,
+                  "7": null,
+                  "8": null,
+                  "9": null,
+                  "extra": null
+                },
+                "total": 4
+              },
+              "away": {
+                "hits": 1,
+                "errors": 0,
+                "innings": {
+                  "1": 0,
+                  "2": 0,
+                  "3": 0,
+                  "4": null,
+                  "5": null,
+                  "6": null,
+                  "7": null,
+                  "8": null,
+                  "9": null,
+                  "extra": null
+                },
+                "total": 0
+              }
+            }
+          },
+          {
+            "id": 178863,
+            "date": "2026-05-29T23:10:00+00:00",
+            "time": "23:10",
+            "timestamp": 1780096200,
+            "timezone": "UTC",
+            "week": null,
+            "status": {
+              "long": "Inning 3",
+              "short": "IN3"
+            },
+            "country": {
+              "id": 1,
+              "name": "USA",
+              "code": "US",
+              "flag": "https://media.api-sports.io/flags/us.svg"
+            },
+            "league": {
+              "id": 1,
+              "name": "MLB",
+              "type": "League",
+              "logo": "https://media.api-sports.io/baseball/leagues/1.png",
+              "season": 2026
+            },
+            "teams": {
+              "home": {
+                "id": 34,
+                "name": "Tampa Bay Rays",
+                "logo": "https://media.api-sports.io/baseball/teams/34.png"
+              },
+              "away": {
+                "id": 17,
+                "name": "Los Angeles Angels",
+                "logo": "https://media.api-sports.io/baseball/teams/17.png"
+              }
+            },
+            "scores": {
+              "home": {
+                "hits": 1,
+                "errors": 0,
+                "innings": {
+                  "1": 1,
+                  "2": 0,
+                  "3": 0,
+                  "4": null,
+                  "5": null,
+                  "6": null,
+                  "7": null,
+                  "8": null,
+                  "9": null,
+                  "extra": null
+                },
+                "total": 1
+              },
+              "away": {
+                "hits": 4,
+                "errors": 0,
+                "innings": {
+                  "1": 0,
+                  "2": 0,
+                  "3": 1,
+                  "4": null,
+                  "5": null,
+                  "6": null,
+                  "7": null,
+                  "8": null,
+                  "9": null,
+                  "extra": null
+                },
+                "total": 1
+              }
+            }
+          },
+          {
+            "id": 178871,
+            "date": "2026-05-29T23:10:00+00:00",
+            "time": "23:10",
+            "timestamp": 1780096200,
+            "timezone": "UTC",
+            "week": null,
+            "status": {
+              "long": "Inning 3",
+              "short": "IN3"
+            },
+            "country": {
+              "id": 1,
+              "name": "USA",
+              "code": "US",
+              "flag": "https://media.api-sports.io/flags/us.svg"
+            },
+            "league": {
+              "id": 1,
+              "name": "MLB",
+              "type": "League",
+              "logo": "https://media.api-sports.io/baseball/leagues/1.png",
+              "season": 2026
+            },
+            "teams": {
+              "home": {
+                "id": 9,
+                "name": "Cleveland Guardians",
+                "logo": "https://media.api-sports.io/baseball/teams/9.png"
+              },
+              "away": {
+                "id": 5,
+                "name": "Boston Red Sox",
+                "logo": "https://media.api-sports.io/baseball/teams/5.png"
+              }
+            },
+            "scores": {
+              "home": {
+                "hits": 7,
+                "errors": 1,
+                "innings": {
+                  "1": 4,
+                  "2": 0,
+                  "3": 0,
+                  "4": null,
+                  "5": null,
+                  "6": null,
+                  "7": null,
+                  "8": null,
+                  "9": null,
+                  "extra": null
+                },
+                "total": 4
+              },
+              "away": {
+                "hits": 2,
+                "errors": 1,
+                "innings": {
+                  "1": 0,
+                  "2": 0,
+                  "3": 0,
+                  "4": null,
+                  "5": null,
+                  "6": null,
+                  "7": null,
+                  "8": null,
+                  "9": null,
+                  "extra": null
+                },
+                "total": 0
+              }
+            }
+          },
+          {
+            "id": 178860,
+            "date": "2026-05-29T23:15:00+00:00",
+            "time": "23:15",
+            "timestamp": 1780096500,
+            "timezone": "UTC",
+            "week": null,
+            "status": {
+              "long": "Inning 2",
+              "short": "IN2"
+            },
+            "country": {
+              "id": 1,
+              "name": "USA",
+              "code": "US",
+              "flag": "https://media.api-sports.io/flags/us.svg"
+            },
+            "league": {
+              "id": 1,
+              "name": "MLB",
+              "type": "League",
+              "logo": "https://media.api-sports.io/baseball/leagues/1.png",
+              "season": 2026
+            },
+            "teams": {
+              "home": {
+                "id": 33,
+                "name": "St.Louis Cardinals",
+                "logo": "https://media.api-sports.io/baseball/teams/33.png"
+              },
+              "away": {
+                "id": 6,
+                "name": "Chicago Cubs",
+                "logo": "https://media.api-sports.io/baseball/teams/6.png"
+              }
+            },
+            "scores": {
+              "home": {
+                "hits": 1,
+                "errors": 0,
+                "innings": {
+                  "1": 3,
+                  "2": 0,
+                  "3": null,
+                  "4": null,
+                  "5": null,
+                  "6": null,
+                  "7": null,
+                  "8": null,
+                  "9": null,
+                  "extra": null
+                },
+                "total": 3
+              },
+              "away": {
+                "hits": 6,
+                "errors": 0,
+                "innings": {
+                  "1": 3,
+                  "2": 1,
+                  "3": null,
+                  "4": null,
+                  "5": null,
+                  "6": null,
+                  "7": null,
+                  "8": null,
+                  "9": null,
+                  "extra": null
+                },
+                "total": 4
+              }
+            }
+          },
+          {
+            "id": 178869,
+            "date": "2026-05-29T23:40:00+00:00",
+            "time": "23:40",
+            "timestamp": 1780098000,
+            "timezone": "UTC",
+            "week": null,
+            "status": {
+              "long": "Inning 2",
+              "short": "IN2"
+            },
+            "country": {
+              "id": 1,
+              "name": "USA",
+              "code": "US",
+              "flag": "https://media.api-sports.io/flags/us.svg"
+            },
+            "league": {
+              "id": 1,
+              "name": "MLB",
+              "type": "League",
+              "logo": "https://media.api-sports.io/baseball/leagues/1.png",
+              "season": 2026
+            },
+            "teams": {
+              "home": {
+                "id": 7,
+                "name": "Chicago White Sox",
+                "logo": "https://media.api-sports.io/baseball/teams/7.png"
+              },
+              "away": {
+                "id": 12,
+                "name": "Detroit Tigers",
+                "logo": "https://media.api-sports.io/baseball/teams/12.png"
+              }
+            },
+            "scores": {
+              "home": {
+                "hits": 1,
+                "errors": 0,
+                "innings": {
+                  "1": 0,
+                  "2": null,
+                  "3": null,
+                  "4": null,
+                  "5": null,
+                  "6": null,
+                  "7": null,
+                  "8": null,
+                  "9": null,
+                  "extra": null
+                },
+                "total": 0
+              },
+              "away": {
+                "hits": 0,
+                "errors": 0,
+                "innings": {
+                  "1": 0,
+                  "2": 0,
+                  "3": null,
+                  "4": null,
+                  "5": null,
+                  "6": null,
+                  "7": null,
+                  "8": null,
+                  "9": null,
+                  "extra": null
+                },
+                "total": 0
+              }
+            }
+          }
+        ]
+      },
+      "error": null
+    },
+    "v2/nba/today": {
+      "url": "https://field-relay-nba.jeffunglesbee.workers.dev/v2/games?sport=nba&date=2026-05-29",
+      "status": 200,
+      "bytes": 370,
+      "data": {
+        "sport": "nba",
+        "date": "2026-05-29",
+        "games": [
+          {
+            "id": "bball:500121",
+            "sport": "nba",
+            "league": "NBA",
+            "state": "final",
+            "start": "2026-05-29T00:30:00+00:00",
+            "home": {
+              "name": "San Antonio Spurs",
+              "abbr": "",
+              "score": 118
+            },
+            "away": {
+              "name": "Oklahoma City Thunder",
+              "abbr": "",
+              "score": 91
+            },
+            "periodNum": 0,
+            "periodLabel": "",
+            "clock": "",
+            "venue": ""
+          }
+        ],
+        "count": 1,
+        "source": "apisports",
+        "ts": 1780099192330
+      },
+      "error": null
+    },
+    "apisports/basketball/live": {
+      "url": "https://field-relay-nba.jeffunglesbee.workers.dev/apisports/basketball/games?live=all",
+      "status": 200,
+      "bytes": 118,
+      "data": {
+        "get": "games",
+        "parameters": {
+          "live": "all"
+        },
+        "errors": {
+          "live": "The Live field do not exist."
+        },
+        "results": 0,
+        "response": []
+      },
+      "error": null
+    },
+    "apisports/basketball/today": {
+      "url": "https://field-relay-nba.jeffunglesbee.workers.dev/apisports/basketball/games?league=12&season=2025-2026&date=2026-05-29",
+      "status": 200,
+      "bytes": 1033,
+      "data": {
+        "get": "games",
+        "parameters": {
+          "league": "12",
+          "season": "2025-2026",
+          "date": "2026-05-29"
+        },
+        "errors": [],
+        "results": 1,
+        "response": [
+          {
+            "id": 500121,
+            "date": "2026-05-29T00:30:00+00:00",
+            "time": "00:30",
+            "timestamp": 1780014600,
+            "timezone": "UTC",
+            "stage": null,
+            "week": "NBA - Semi-finals",
+            "venue": "Frost Bank Center",
+            "status": {
+              "long": "Game Finished",
+              "short": "FT",
+              "timer": null
+            },
+            "league": {
+              "id": 12,
+              "name": "NBA",
+              "type": "League",
+              "season": "2025-2026",
+              "logo": "https://media.api-sports.io/basketball/leagues/12.png"
+            },
+            "country": {
+              "id": 5,
+              "name": "USA",
+              "code": "US",
+              "flag": "https://media.api-sports.io/flags/us.svg"
+            },
+            "teams": {
+              "home": {
+                "id": 158,
+                "name": "San Antonio Spurs",
+                "logo": "https://media.api-sports.io/basketball/teams/158.png"
+              },
+              "away": {
+                "id": 152,
+                "name": "Oklahoma City Thunder",
+                "logo": "https://media.api-sports.io/basketball/teams/152.png"
+              }
+            },
+            "scores": {
+              "home": {
+                "quarter_1": 35,
+                "quarter_2": 25,
+                "quarter_3": 32,
+                "quarter_4": 26,
+                "over_time": null,
+                "total": 118
+              },
+              "away": {
+                "quarter_1": 22,
+                "quarter_2": 31,
+                "quarter_3": 13,
+                "quarter_4": 25,
+                "over_time": null,
+                "total": 91
+              }
+            }
+          }
+        ]
+      },
+      "error": null
+    },
+    "v2/nhl/today": {
+      "url": "https://field-relay-nba.jeffunglesbee.workers.dev/v2/games?sport=nhl&date=2026-05-29",
+      "status": 200,
+      "bytes": 96,
+      "data": {
+        "sport": "nhl",
+        "date": "2026-05-29",
+        "games": [],
+        "count": 0,
+        "source": "apisports",
+        "ts": 1780099193400
+      },
+      "error": null
+    },
+    "apisports/hockey/live": {
+      "url": "https://field-relay-nba.jeffunglesbee.workers.dev/apisports/hockey/games?live=all",
+      "status": 200,
+      "bytes": 118,
+      "data": {
+        "get": "games",
+        "parameters": {
+          "live": "all"
+        },
+        "errors": {
+          "live": "The Live field do not exist."
+        },
+        "results": 0,
+        "response": []
+      },
+      "error": null
+    },
+    "apisports/hockey/today": {
+      "url": "https://field-relay-nba.jeffunglesbee.workers.dev/apisports/hockey/games?league=57&season=2025-2026&date=2026-05-29",
+      "status": 200,
+      "bytes": 175,
+      "data": {
+        "get": "games",
+        "parameters": {
+          "league": "57",
+          "season": "2025-2026",
+          "date": "2026-05-29"
+        },
+        "errors": {
+          "season": "The Season field must contain an integer."
+        },
+        "results": 0,
+        "response": []
+      },
+      "error": null
+    },
+    "apisports/football/mls/live": {
+      "url": "https://field-relay-nba.jeffunglesbee.workers.dev/apisports/football/fixtures?live=all&league=253",
+      "status": 200,
+      "bytes": 132,
+      "data": {
+        "get": "fixtures",
+        "parameters": {
+          "live": "all",
+          "league": "253"
+        },
+        "errors": [],
+        "results": 0,
+        "paging": {
+          "current": 1,
+          "total": 1
+        },
+        "response": []
+      },
+      "error": null
+    },
+    "apisports/football/mls/today": {
+      "url": "https://field-relay-nba.jeffunglesbee.workers.dev/apisports/football/fixtures?league=253&season=2026&date=2026-05-29",
+      "status": 200,
+      "bytes": 155,
+      "data": {
+        "get": "fixtures",
+        "parameters": {
+          "league": "253",
+          "season": "2026",
+          "date": "2026-05-29"
+        },
+        "errors": [],
+        "results": 0,
+        "paging": {
+          "current": 1,
+          "total": 1
+        },
+        "response": []
+      },
+      "error": null
+    },
+    "stats/mlb/178851": {
+      "url": "https://field-relay-nba.jeffunglesbee.workers.dev/apisports/baseball/games/statistics?id=178851",
+      "status": 200,
+      "bytes": 122,
+      "data": {
+        "get": "games",
+        "parameters": {
+          "id": "178851"
+        },
+        "errors": {
+          "endpoint": "This endpoint do not exist."
+        },
+        "results": 0,
+        "response": []
+      },
+      "error": null
+    },
+    "stats/nba/500121": {
+      "url": "https://field-relay-nba.jeffunglesbee.workers.dev/apisports/basketball/games/statistics?id=500121",
+      "status": 200,
+      "bytes": 122,
+      "data": {
+        "get": "games",
+        "parameters": {
+          "id": "500121"
+        },
+        "errors": {
+          "endpoint": "This endpoint do not exist."
+        },
+        "results": 0,
+        "response": []
+      },
+      "error": null
+    },
+    "predictions/nba/500121": {
+      "url": "https://field-relay-nba.jeffunglesbee.workers.dev/apisports/basketball/predictions?league=12&game=500121",
+      "status": 200,
+      "bytes": 144,
+      "data": {
+        "get": "predictions",
+        "parameters": {
+          "league": "12",
+          "game": "500121"
+        },
+        "errors": {
+          "endpoint": "This endpoint do not exist."
+        },
+        "results": 0,
+        "response": []
+      },
+      "error": null
+    }
+  }
+}
