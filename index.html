@@ -16169,7 +16169,7 @@ function buildCompoundPrompt(sections) {
   // Regular-season games that need per-game briefs: non-series, non-soccer, max 6
   // Covers WNBA, MLB local, MLS, AFL, etc. — games with no matchupNote and no seriesRecord
   const regularGames = games
-    .filter(g => !g.seriesRecord && !/premier league|la liga|serie a|ligue 1|champions|europa|conference/i.test(g._sport||''))
+    .filter(g => !g.seriesRecord && g.away && !/premier league|la liga|serie a|ligue 1|champions|europa|conference|golf|pga/i.test(g._sport||''))
     .slice(0, 6);
 
   // Soccer games for EPL briefs section (top European leagues only, max 4)
@@ -17244,7 +17244,8 @@ async function initFIELDBrief(sections){
             if(!g._id) return;
             const h=(g.home||'').toLowerCase().replace(/\s+/g,'_');
             const a=(g.away||'').toLowerCase().replace(/\s+/g,'_');
-            if(slug.includes(h.slice(-6))||slug.includes(a.slice(-6))||h.includes(slug.split('_')[0])||a.includes(slug.split('_').pop()))
+            const _lp=slug.split('_').filter(Boolean).pop()||''; // guard: never match empty string
+            if(_lp&&(slug.includes(h.slice(-6))||slug.includes(a.slice(-6))||h.includes(slug.split('_')[0])||a.includes(_lp)))
               _gameBriefCache[g._id]=trimToCompleteSentence(b.brief);
           }));
         });
@@ -17353,7 +17354,8 @@ async function initFIELDBrief(sections){
             if(!g._id) return;
             const h=(g.home||'').toLowerCase().replace(/\s+/g,'_');
             const a=(g.away||'').toLowerCase().replace(/\s+/g,'_');
-            if(slug.includes(h.slice(-6))||slug.includes(a.slice(-6))||h.includes(slug.split('_')[0])||a.includes(slug.split('_').pop())){
+            const _lp2=slug.split('_').filter(Boolean).pop()||''; // guard: never match empty string
+            if(_lp2&&(slug.includes(h.slice(-6))||slug.includes(a.slice(-6))||h.includes(slug.split('_')[0])||a.includes(_lp2))){
               _gameBriefCache[g._id]=trimToCompleteSentence(b.brief);
             }
           });
@@ -21557,7 +21559,7 @@ function updatePinWidget() {
   let game = null;
   (allData?.sports||[]).forEach(s=>(s.games||[]).forEach(g=>{ if(g._id===_pinnedGameId) game=g; }));
   const home = eData?.homeScore ?? '--', away = eData?.awayScore ?? '--';
-  const period = eData?.period ? `· ${eData.periodLabel||'Q'+eData.period}` : '';
+  const period = eData?.period ? `· ${eData.periodLabel||espnPeriodLabel(eData.periodPrefix||'Q',eData.period||0,'')}` : '';
   const drama = getSmoothedDrama(_pinnedGameId) ?? 0;
   const fireIcon = drama >= Math.min(getDramaDial()+20,95) ? '🔥' : drama >= getDramaDial() ? '⚡' : '';
   const title = game ? `${teamNick(game.away)} @ ${teamNick(game.home)}` : 'Pinned Game';
@@ -21641,7 +21643,7 @@ function openBottomSheet(gameId) {
   const _bsL = (_bsIsSoccer||!_bsIsAm) ? hS : aS;
   const _bsR = (_bsIsSoccer||!_bsIsAm) ? aS : hS;
   const scoreStr = (hS!==''&&aS!=='') ? `${_bsL}–${_bsR}` : '';
-  const period = eData?.period ? ` · ${eData.periodLabel||'Q'+eData.period}` : '';
+  const period = eData?.period ? ` · ${eData.periodLabel||espnPeriodLabel(eData.periodPrefix||'Q',eData.period||0,'')}` : '';
   const sparkline = buildDramaSparklineSVG(gameId, 200, 32) || '';
   const cb = buildComebackProbability(gameId, eData, sport) || '';
   const story = buildStoryTape(gameId, 5);
