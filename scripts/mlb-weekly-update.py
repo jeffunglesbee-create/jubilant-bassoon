@@ -22,9 +22,9 @@ from datetime import datetime, timezone
 HEADERS = {"User-Agent":"Mozilla/5.0 (compatible; FIELD-MLB-Updater/1.0)","Accept":"text/csv,*/*"}
 TS = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
 
-def fetch_csv(url, label=""):
+def fetch_csv(url, label="", timeout=30):
     req = urllib.request.Request(url, headers=HEADERS)
-    with urllib.request.urlopen(req, timeout=30) as r:
+    with urllib.request.urlopen(req, timeout=timeout) as r:
         body = r.read().decode("utf-8", errors="replace")
         body = body.lstrip("\ufeff")
         rows = list(csv.DictReader(io.StringIO(body)))
@@ -263,9 +263,9 @@ try:
     # Date range: first run = full season (April 1); subsequent = last 14 days
     today_utc = datetime.now(timezone.utc)
     if not processed_pks:
-        # First run: pull full 2026 season to date for accurate baseline
-        since_dt = datetime(2026, 4, 1, tzinfo=timezone.utc)
-        print("  First run — fetching full 2026 season Statcast data...")
+        # First run: last 30 days (hardcoded stubs cover earlier; avoid timeout on full season)
+        since_dt = today_utc - timedelta(days=30)
+        print("  First run — fetching last 30 days of Statcast data...")
     else:
         since_dt = today_utc - timedelta(days=14)
     until_dt = today_utc - timedelta(days=1)
@@ -278,7 +278,7 @@ try:
         f"?all=true&hfGT=R%7C&hfSea=2026%7C"
         f"&game_date_gt={since_str}&game_date_lt={until_str}&type=details"
     )
-    sc_rows = fetch_csv(statcast_url)
+    sc_rows = fetch_csv(statcast_url, timeout=180)  # large file — 3min timeout
     print(f"  Statcast: {len(sc_rows)} pitches ({since_str}→{until_str})")
 
     # Pattern: ABS challenge in des column
