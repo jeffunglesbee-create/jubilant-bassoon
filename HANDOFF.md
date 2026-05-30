@@ -1,54 +1,54 @@
-# FIELD Handoff — May 29 2026 (Session End — TYPE C: ESPN Pivot Phase 1)
+# FIELD Handoff — May 30 2026 (Session End — TYPE C: Leaders + Journalism)
 
 ## SESSION TYPE
-TYPE C — Feature. Phase 1 live. ESPN parallel retained.
+TYPE C — Feature. Leaders wired for all V2 sports. Journalism context enriched.
 
 ## Code HEAD
-`820d5e2` — Smoke 239/0 · Deploy gate success
+`fad595a` — Smoke 246/0 · Deploy gate success
 
 ## COMPLETED THIS SESSION
 
-### ESPN Pivot Phase 1 — api-sports.io live scores (820d5e2)
+### 1. NHL in-game leaders (A246)
+- `pickSkaterLeader()` injected into existing `fetchNHLLiveStats` boxscore fetch
+- Reads `playerByGameStats.{homeTeam|awayTeam}.{forwards|defensemen}[]`
+- Sorts by `points`, writes `{name:'C. Caufield', val:2, unit:'PTS'}` to `espnScores[key].homeLeader/awayLeader`
+- **VERIFIED 2026-05-30**: `name.default`, `goals`, `assists`, `points` all present
+- Zero new API calls — piggybacks existing goalie boxscore fetch
 
-NBA, NHL, MLB, MLS live scores now served from api-sports.io instead of ESPN.
-ESPN polling path retained in code — only bypassed when FIELD_V2_SOURCES[sport] = true.
+### 2. MLB in-game leaders (A247)
+- New `fetchMLBLeader(gamePk, espnKey)` — StatsAPI `/game/{gamePk}/boxscore`
+- Picks `pitchers[last]` (current pitcher), writes `{name:'Cole', val:'6.0 IP 7K', unit:'IP'}`
+- Wired in V2 poll loop via allData team-name match (same pattern as Savant WP)
+- **VERIFIED**: `/games/statistics/players` does NOT exist for baseball — StatsAPI is correct source
 
-**FIELD_V2_SOURCES state:**
-- nba: true  (api-sports.io basketball, league 12)
-- nhl: true  (api-sports.io hockey, league 57)
-- mlb: true  (api-sports.io baseball, league 1)
-- mls: true  (api-sports.io football, league 253)
-- epl/ucl/laliga/seriea/bundesliga/ligue1: false (seasons ended ≤2026-05-26)
+### 3. Relay fix: NHL season param (c2a83ab on field-relay-nba)
+- `V2_LEAGUES.nhl.season: '2025-2026'` → `'2025'` (integer)
+- **VERIFIED**: hockey API requires integer; `'2025-2026'` was silently returning 0 NHL games
 
-**What's wired:**
-- ESPN_TO_V2_MAP: maps ESPN league IDs → FIELD V2 sport keys
-- V2_PERIOD_PREFIX: correct periodPrefix per sport (Q/P/T/') for findESPNScore exclusion
-- fetchESPNScores() polling loop: checks ESPN_TO_V2_MAP[league] + FIELD_V2_SOURCES[v2Key]
-  at the START of each league callback — if true, calls fetchV2Games() + mapV2ToESPN(),
-  writes to espnScores, updates _espnLeagueState, returns early (skip ESPN)
-- mapV2ToESPN(): FieldGame → espnScores entry format (state/scores/period/clock/periodPrefix)
-  WP, leaders, linescores are null — V2 doesn't provide these yet
-- A244 regression guard added (239/0)
+### 4. Player stats alternatives wired
+- `fetchMLBLiveGame`: extended with `batter`/`pitcher` from `currentPlay.matchup.{batter,pitcher}.fullName`
+- `fetchBDLSeasonAverages`: builds `window._bdlSeasonAvgByTeam` index on fetch (nick→players[], sorted by pts)
 
-**Not yet wired (Phase 2 when needed):**
-- Win probability (currently ESPN WP only — needs separate api-sports.io fixtures/statistics)
-- In-game leaders (ESPN boxscore enrichment — not in /v2/games response)
-- Baseball situation (outs/balls/strikes — needs /v2/game detail endpoint)
+### 5. Journalism prompt enrichment (A248, A249)
+- **[MLB AT-BAT]** (Item 6b): current batter/pitcher + platoon label for live MLB games. Reads `_mlbPlatoonCache` — zero extra calls. Skips pre-game.
+- **[PPG LEADERS]** (Item 6c): pre-game NBA PPG leader per team from BDL season averages. Skips when live (Item 1 handles live leaders).
 
-### Phase 0 client stubs also added (were lost to push conflicts)
-V2_RELAY_BASE, FIELD_V2_SOURCES, ESPN_TO_V2_MAP, V2_PERIOD_PREFIX, fetchV2Games, mapV2ToESPN
+### 6. Journalism quota fix (A251)
+- `journalismCallsToday.canCall()` now checks `_compoundRetryAfter`
+- Individual J2/J3 calls no longer fire during active 429 backoff
+- Prevents cascade that was deepening Gemini quota exhaustion
+- **Root fix still required**: set `ANTHROPIC_KEY` in field-claude-proxy CF dashboard (Jeff only)
 
-## ESPN SURFACE REMAINING (not yet removed — spec says bake before delete)
-- ESPN path still called for: WNBA, NFL, NCAA, F1, Golf, UCL/UEL/UECL (via ESPN_SPORTS)
-- Soccer leagues via SOCCER_LEAGUES: eng.2-4, esp.1, ita.1, ger.1, fra.1, usa.1
-  (usa.1 = MLS now bypassed via V2; others still ESPN)
-- /espn-gambit relay route still live (needed for non-V2 sports)
-- /espn-summary relay route still live (WP, boxscore enrichment)
-
-Phase 2 (next season or when needed): delete ESPN paths for V2 sports; re-enable European leagues.
+## PROBING FINDINGS (key facts, do not re-probe)
+- `api-sports /games/statistics/players` — EXISTS for basketball, NOT for hockey or baseball
+- NHL api-sports season must be integer (`2025` = 2025-26 season; `'2025-2026'` errors)
+- NHLe boxscore IDs are ~10-digit ints (e.g. `2025030315`), NOT api-sports IDs
+- NHLe `/v1/gamecenter/{id}/boxscore`: skaters have `name.default`, `goals`, `assists`, `points`
+- StatsAPI `/game/{gamePk}/boxscore`: `teams.{side}.pitchers[last]` = current pitcher ID
 
 ## STILL OPEN (carried)
-- Journalism recovery (Gemini quota)
+- **ANTHROPIC_KEY** in field-claude-proxy CF dashboard → Jeff only, definitive quota fix
+- Journalism recovery (Gemini quota — quota fix helps but ANTHROPIC_KEY is the root fix)
 - Dropbox refresh-token: add 3 secrets
 - VAPID browser opt-in test
 - Golf Doc 1 (1Ak_GPXkiKUvUr6dUpcto0BUbhKTibIwgR-o8SYUeBfM): scrub key + DECOMMISSIONED
