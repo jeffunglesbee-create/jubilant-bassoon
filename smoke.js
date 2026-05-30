@@ -982,3 +982,9 @@ assert('A263 — Night Owl sport detection reads topGame.sport + league fallback
   html.includes('topGame._section || topGame._sport || topGame.sport || topGame.league') &&
   html.includes('topGame._section||topGame._sport||topGame.sport||topGame.league'),
   'Night Owl _sp must include topGame.sport (the field name saved to localStorage) and topGame.league as fallback');
+
+assert('A264 — Night Owl cache validation: contaminated cached brief is busted on sport vocab violations',
+  html.includes('Busting contaminated cache: sport vocab violations') &&
+  html.includes('sessionStorage.removeItem(cacheKey)') &&
+  html.includes('_cachedViolations.length'),
+  'Night Owl must validate cached brief before rendering — clear cache if sport vocab violations found');

@@ -21222,7 +21222,20 @@ async function renderNightOwlRecap(){
       getEl('night-owl-inner')?.classList.toggle('collapsed')
     );
   };
-  if(cached){renderCard(cached,true);return;}
+  // Validate cached brief — if sport vocab violations exist (e.g. basketball terms in baseball brief),
+  // bust the cache and regenerate. Catches stale briefs from before the sport-detection fix.
+  if(cached){
+    const _cachedSp=(topGame._section||topGame._sport||topGame.sport||topGame.league||'');
+    const _cachedSpCls=typeof detectSportClass==='function'?detectSportClass(_cachedSp):null;
+    const _cachedViolations=(_cachedSpCls&&typeof checkSportVocab==='function')
+      ?checkSportVocab(cached,_cachedSp):[];
+    if(!_cachedViolations.length){
+      renderCard(cached,true);return;
+    }
+    // Cache contaminated — clear it and regenerate
+    sessionStorage.removeItem(cacheKey);
+    if(FIELD_DEBUG) console.warn('[Night Owl] Busting contaminated cache: sport vocab violations',_cachedViolations);
+  }
   renderCard(buildNightOwlStatic(topGame),false);
   // ── J5 isBlowout gate (Combo B-1+) ──────────────────────────────────
   // Skip Claude call if the final game was a blowout — no tactical brief needed.
