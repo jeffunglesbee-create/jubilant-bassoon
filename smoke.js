@@ -1185,3 +1185,9 @@ assert('A300 — venue injected into EPL, stakes, J2 series, and Night Owl promp
   html.includes("VENUE: if venue is listed above, use it") &&
   html.includes("topGame.venue?' · '+topGame.venue:''"),
   'Venue must be injected into all journalism prompts — AI was hallucinating Allianz/Wembley for UCL Final (Puskás Aréna)');
+
+assert('A301 — WNBA brief suppressed when no standings/matchupNote context; DO NOT EXPLAIN in FIELD_PROSE_STYLE',
+  html.includes('_wnbaHasContext') &&
+  html.includes('NEVER explain what data is missing or why you cannot write') &&
+  html.includes('Never explain what data is missing. If context is thin'),
+  'WNBA card must not fire without context; all prompts must never produce meta-commentary about missing data');

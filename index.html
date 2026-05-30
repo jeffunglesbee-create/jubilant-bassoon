@@ -15160,6 +15160,7 @@ const FIELD_PROSE_STYLE=[
   '- LEAD SENTENCE: never start a brief, paragraph, or sentence with "The [Team]..." — lead with the specific situation. "Wembanyama scored 34" not "The Spurs got a big performance." "Two years without a Finals appearance ends tonight" not "The Celtics are looking to make a statement."',
   '- BANNED PHRASES (never use): '+BANNED_PHRASES.join(', ')+'.',
   '- USE SPARINGLY (maximum once per brief): '+SPARINGLY_PHRASES.join(', ')+'. If you use any of these, use it once only — then choose a more specific word.',
+  '- NEVER explain what data is missing or why you cannot write something. If context is limited, write a short factual brief from what is available. Do not produce meta-commentary about the data.',
 ].join('\n');
 
 // ── Sport-Specific Voice Guides ──────────────────────────────────────────────
@@ -17150,9 +17151,9 @@ async function fetchMLBGameBriefFromClaude(g) {
     standingsCtx || '',
     '',
     g.matchupNote ? `Matchup: ${g.matchupNote}` : '',
-    'Rules: 50-70 words. 2 sentences. Lead with the most impactful park or weather factor.',
+    'Rules: 50-70 words. 2 sentences. Lead with the most impactful park or weather factor if provided; otherwise lead with the pitching matchup or standings context.',
     'Cite the exact figure if park or weather data is provided — never paraphrase.',
-    'Write only from data above. No invented stats.',
+    'Write only from data above. No invented stats. Never explain what data is missing — if context is thin, write what you have.',
     FIELD_PROSE_STYLE,
     FIELD_BASEBALL_VOICE,
   ].filter(Boolean).join('\n');
@@ -17229,6 +17230,10 @@ async function fetchWNBAGameBriefFromClaude(g) {
   const standingsCtx = (typeof buildGameStandingsContext === 'function') ? buildGameStandingsContext(g) : '';
   const stream = g.streams?.[0]?.label || '';
 
+  // Only fire if we have something worth writing about — suppress card if context is bare
+  const _wnbaHasContext = !!(standingsCtx || g.matchupNote || g.seriesRecord);
+  if (!_wnbaHasContext) return null;
+
   const prompt = [
     `Write a FIELD Match Brief for this WNBA game.`,
     `${g.away||'?'} @ ${g.home||'?'}${g.venue ? ' · ' + g.venue : ''}.`,
@@ -17236,8 +17241,9 @@ async function fetchWNBAGameBriefFromClaude(g) {
     standingsCtx || '',
     g.matchupNote ? `Matchup: ${g.matchupNote}` : '',
     '',
-    'Rules: 35-50 words. 1-2 sentences. Context-first: standings, stakes, or notable players.',
-    'Write only from data above. No invented stats.',
+    'Rules: 35-50 words. 1-2 sentences. Use only facts provided above.',
+    'If standings are provided, anchor the brief in where each team sits.',
+    'Write only from data above. No invented stats. If data is thin, write one simple factual sentence about the matchup.',
     FIELD_PROSE_STYLE,
   ].filter(Boolean).join('\n');
 
@@ -17344,6 +17350,7 @@ async function fetchStakesBriefFromClaude(g) {
       : 'Rules: 2 sentences. Lead with the historical weight — what losing or winning means beyond just tonight.',
     'Cite specific year or franchise context if it sharpens the stakes.',
     'If Context is provided, use only facts from it. NEVER invent round context, series history, or prior results not mentioned above.',
+    'Never explain what data is missing. If context is thin, write what you have in plain factual prose.',
     isMajorFinal ? 'CRITICAL: Do NOT use the words semifinal, quarter-final, knockout round, or elimination. This is the FINAL — the last game of the competition.' : '',
     g.venue ? `VENUE: The match is at ${g.venue}. This is the only correct venue — never mention a different stadium.` : '',
     'Write only from data above. No invented stats.',
