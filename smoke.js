@@ -961,3 +961,19 @@ assert('A260 — Layer 3b: maybeScoreRetry fires rewrite when score below thresh
   html.includes('maybeScoreRetry(prompt,') &&
   html.includes('Score ${scoreObj.score} below'),
   'Layer 3b score-triggered rewrite must be defined, use threshold, and be wired into journalism paths');
+
+assert('A261 — BANNED_PHRASES expanded: 16 new entries including variants that slipped through',
+  html.includes("'gritty performance'") &&
+  html.includes("'must-win situation'") &&
+  html.includes("'pivotal moment'") &&
+  html.includes("'all the marbles'") &&
+  html.includes("'one game at a time'"),
+  'BANNED_PHRASES must include the May 30 gap audit additions');
+
+assert('A262 — SPARINGLY_PHRASES + countSparingly: use-sparingly list with 2x threshold enforcement',
+  html.includes('const SPARINGLY_PHRASES=') &&
+  html.includes('function countSparingly') &&
+  html.includes('r.count >= 2') &&
+  html.includes('USE SPARINGLY') &&
+  html.includes('OVERUSED WORDS'),
+  'SPARINGLY_PHRASES must be defined with countSparingly() and wired into retry prompt');

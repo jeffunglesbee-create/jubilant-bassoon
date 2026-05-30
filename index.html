@@ -2763,7 +2763,7 @@ function buildFieldHealthPanel() {
     const isStatic = /^Tonight on FIELD:/.test(briefTxt) || briefTxt.length < 40;
     const inBackoff = typeof _compoundRetryAfter !== 'undefined' && Date.now() < _compoundRetryAfter;
     const backoffSec = inBackoff ? Math.ceil((_compoundRetryAfter - Date.now()) / 1000) : 0;
-    function _makeResetBtn(){var b=document.createElement("button");b.textContent="Reset backoff";b.style.cssText="margin-left:6px;background:#c9a84c;color:#000;border:none;border-radius:4px;padding:2px 7px;font-size:.58rem;cursor:pointer;font-weight:700";b.onclick=function(){try{localStorage.removeItem("field_compound_retry_after");_compoundRetryAfter=0;window._compoundLastError="";var o=document.getElementById("fhp-overlay");if(o)o.remove();}catch(e){}setTimeout(function(){location.reload();},200);};return b.outerHTML;}
+    var _makeResetBtn=function(){var b=document.createElement("button");b.textContent="Reset backoff";b.style.cssText="margin-left:6px;background:#c9a84c;color:#000;border:none;border-radius:4px;padding:2px 7px;font-size:.58rem;cursor:pointer;font-weight:700";b.onclick=function(){try{localStorage.removeItem("field_compound_retry_after");_compoundRetryAfter=0;window._compoundLastError="";var o=document.getElementById("fhp-overlay");if(o)o.remove();}catch(e){}setTimeout(function(){location.reload();},200);};return b.outerHTML;}
     const resetBtn = inBackoff ? ' ' + _makeResetBtn() : '';
     if (cached && cached.length > 40) {
       rows.push(ok('Journalism', `Brief rendered (${cached.length} chars) · ${used} AI calls used`));
@@ -15014,7 +15014,8 @@ function buildCompoundCacheKey(sections) {
 // Layer 2: post-generation cliché detection + one retry
 // Layer 3: prose scoring via Datamuse (debug panel)
 
-const BANNED_PHRASES=['punch their ticket','the stage is set','make a statement',
+const BANNED_PHRASES=[
+  'punch their ticket','the stage is set','make a statement',
   'facing a must-win','looking to bounce back','all eyes on',
   'put the league on notice','a tale of two halves','rise to the occasion',
   'leave it all on the floor','leave it all on the field','leave it all on the court',
@@ -15025,12 +15026,45 @@ const BANNED_PHRASES=['punch their ticket','the stage is set','make a statement'
   'high-octane','red-hot','ice-cold','pulling away',
   'in the driver\'s seat','with their season on the line',
   'cement their legacy','the chess match continues',
-  // Added from screenshot audit May 25 2026:
   'salvage pride','insurmountable deficit','clinical execution',
   'dictated the tempo','decisive series deficit','statement series clincher',
   'ruthless sweep','the team to beat','perimeter scoring',
-  'defensive lapses','offensive production required',
-  'current momentum','exploit defensive lapses'];
+  'offensive production required','exploit defensive lapses',
+  'gritty performance','gritty win','fired on all cylinders',
+  'on the brink','must-win situation','at this point in the season',
+  'when it counts','dig deep','put this one away','get back on track',
+  'on a mission','statement win','pivotal moment','defining moment',
+  'all the marbles','one game at a time',
+];
+
+// SPARINGLY_PHRASES: not banned, but flagged if used 2+ times in one brief.
+// These are words that are sometimes right but that AI reaches for constantly.
+// Enforcement: countSparingly() counts occurrences — if any phrase appears
+// 2+ times, it's added to the Layer 2 retry note. Once is acceptable.
+const SPARINGLY_PHRASES=[
+  'crucial','critical','pivotal','key',
+  'dominant','dominance','impressive','outstanding',
+  'must-watch','storyline','narrative',
+  'momentum','statement game','statement',
+  'big-time','clutch','electric','exciting',
+  'under the radar','overlooked',
+  'deep dive','breakdown',
+  'defensive','however',
+];
+
+// Count sparingly phrase occurrences in text.
+// Returns array of {phrase, count} for any phrase appearing 2+ times.
+function countSparingly(text) {
+  if (!text) return [];
+  const lower = text.toLowerCase();
+  return SPARINGLY_PHRASES
+    .map(p => {
+      let count = 0, idx = 0;
+      while ((idx = lower.indexOf(p, idx)) !== -1) { count++; idx += p.length; }
+      return { phrase: p, count };
+    })
+    .filter(r => r.count >= 2);
+}
 
 const FIELD_PROSE_STYLE=[
   '- STYLE: specificity over metaphor. "48 minutes from their first Finals since 1999" not "looking to punch their ticket."',
@@ -15043,7 +15077,8 @@ const FIELD_PROSE_STYLE=[
   '- CITE ANALYTICS: if [PP/PK], [POSSESSION], [PARK], [UMPIRE], or [GOALIE] context appears in the game data, cite the specific figure verbatim — not a paraphrase. "93.5% penalty kill" not "elite penalty killing". "+17% runs at Camden Yards" not "a hitter-friendly park".',
   '- FEATURED STAT: if a [FEATURED STAT] line appears for a game, that exact figure MUST appear in your brief for that game.',
   '- LEAD SENTENCE: never start a brief, paragraph, or sentence with "The [Team]..." — lead with the specific situation. "Wembanyama scored 34" not "The Spurs got a big performance." "Two years without a Finals appearance ends tonight" not "The Celtics are looking to make a statement."',
-  '- BANNED PHRASES (never use): '+BANNED_PHRASES.join(', ')+'.'
+  '- BANNED PHRASES (never use): '+BANNED_PHRASES.join(', ')+'.',
+  '- USE SPARINGLY (maximum once per brief): '+SPARINGLY_PHRASES.join(', ')+'. If you use any of these, use it once only — then choose a more specific word.',
 ].join('\n');
 
 // Layer 2: detect banned phrases in generated text
@@ -15188,10 +15223,13 @@ async function retryWithSportVocab(originalPrompt, text, sport, proxyUrl) {
 // Layer 2: one-retry wrapper — re-prompts if clichés found
 async function retryWithoutCliches(originalPrompt,text,proxyUrl){
   const found=hasCliche(text);
-  if(!found.length) return text;
-  if(FIELD_DEBUG) console.warn('[JQ Layer 2] Clichés detected:',found);
+  const overused=countSparingly(text); // phrases used 2+ times
+  if(!found.length && !overused.length) return text;
+  if(FIELD_DEBUG) console.warn('[JQ Layer 2] Clichés:',found,'Overused:',overused.map(r=>r.phrase+'×'+r.count));
   try{
-    const retryPrompt=originalPrompt+'\n\nIMPORTANT REWRITE: your previous draft contained these banned clichés: '+found.join(', ')+'. Rewrite without them. Use a specific fact instead of each generic phrase.';
+    const banNote = found.length ? 'BANNED PHRASES to remove: '+found.join(', ')+'. ' : '';
+    const sparNote = overused.length ? 'OVERUSED WORDS (appeared '+overused.map(r=>'"'+r.phrase+'" '+r.count+'×').join(', ')+' — use each at most once, replace extras with more specific language): ' : '';
+    const retryPrompt=originalPrompt+'\n\nIMPORTANT REWRITE: '+banNote+sparNote+'Rewrite without them. Use a specific fact instead of each generic phrase.';
     const r=await fetch(proxyUrl,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1500,messages:[{role:'user',content:retryPrompt}]})});
     if(!r.ok) return text;
     const data=await r.json();
@@ -15723,7 +15761,9 @@ async function fetchCompoundEditorial(sections) {
     // NEW: also apply Layer 2c (lead sentence), 2d (stat verification), 3b (score retry)
     if(result.brief){
       const found=hasCliche(result.brief);
+      const overused=countSparingly(result.brief);
       if(found.length&&FIELD_DEBUG) console.warn('[JQ Layer 2] Compound brief clichés:',found);
+      if(overused.length&&FIELD_DEBUG) console.warn('[JQ Layer 2e] Compound overused:',overused.map(r=>r.phrase+'×'+r.count));
       // Chain all quality passes async (non-blocking — result already returned to caller)
       (async()=>{
         let improved = result.brief;
