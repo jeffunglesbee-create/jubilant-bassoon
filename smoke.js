@@ -1320,3 +1320,35 @@ assert('A321 — stripMarkdown defined + applied to stakes/card brief renderers'
   html.includes("inner.querySelector('.stakes-text')") &&
   !html.includes("card.querySelector('.sgb-text')"),
   'stripMarkdown must exist, be applied to all brief renderers, and stakes must use .stakes-text not .sgb-text');
+
+// ── JQ v2: 0-200 scale assertions ────────────────────────────────────────────
+assert('A322 — JQ v2: scoreProse accepts game parameter',
+  html.includes('async function scoreProse(text, game)'),
+  'scoreProse must accept (text, game) for Context Anchoring');
+
+assert('A323 — JQ v2: computeNarrativeArc defined (stakes/tension/resolution)',
+  html.includes('function computeNarrativeArc(text)') &&
+  html.includes('stakes') && html.includes('tension') && html.includes('resolution') &&
+  html.includes('arcScore'),
+  'Narrative Arc dimension must be defined and wired into scoreProse');
+
+assert('A324 — JQ v2: computeContextAnchoring defined',
+  html.includes('function computeContextAnchoring(text, game)') &&
+  html.includes('seriesRecord') && html.includes('playerNames') &&
+  html.includes('available:false'),
+  'Context Anchoring dimension must be defined with N/A handling');
+
+assert('A325 — JQ v2: score ceiling is 200',
+  html.includes('Math.min(ctx.available ? 200 : 170') &&
+  html.includes('ceiling:') &&
+  html.includes('/200'),
+  'Score ceiling must be 200 (170 when context N/A) and displayed as /200');
+
+assert('A326 — JQ v2: JQ_SCORE_THRESHOLD updated to 90',
+  html.includes('const JQ_SCORE_THRESHOLD = 90'),
+  'Retry threshold must be 90 on 0-200 scale (was 45 on 0-100)');
+
+assert('A327 — JQ v2: arc-targeted retry instructions in maybeScoreRetry',
+  html.includes('arc.stakes') && html.includes('arc.resolution') &&
+  html.includes('arcInstructions') && html.includes('Sentence 1 must state the stakes'),
+  'maybeScoreRetry must use arc breakdown for targeted retry instructions');

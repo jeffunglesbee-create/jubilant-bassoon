@@ -2850,7 +2850,7 @@ function buildFieldHealthPanel() {
       const worst = Math.min(..._jqScores.map(s=>s.score));
       const avgStat = Math.round((_jqScores.reduce((a,s)=>a+(s.stat||0),0)/_jqScores.length)*10)/10;
       const qIcon = avg >= 60 ? '✅' : avg >= 45 ? '⚠️' : '❌';
-      rows.push(ok('Prose Quality', `${qIcon} avg ${avg}/100 · best ${best} · worst ${worst} · stat ${avgStat}/s · ${_jqScores.length} briefs`));
+      rows.push(ok('Prose Quality', `${qIcon} avg ${avg}/200 · best ${best} · worst ${worst} · stat ${avgStat}/s · ${_jqScores.length} briefs`));
     } else {
       rows.push(ok('Prose Quality', 'No briefs scored yet'));
     }
@@ -16106,11 +16106,11 @@ async function checkStatVerification(originalPrompt, text, proxyUrl) {
 // "Prompts that produce higher-scoring briefs get reinforced."
 // Threshold: 45 (calibrated — below 45 means sparse stats + generic words)
 // Only fires once per brief (not chained). Budget: 1 proxy call max.
-const JQ_SCORE_THRESHOLD = 45;
-async function maybeScoreRetry(originalPrompt, text, proxyUrl, label) {
+const JQ_SCORE_THRESHOLD = 90; // 0-200 scale (was 45/100)
+async function maybeScoreRetry(originalPrompt, text, proxyUrl, label, game) {
   if (!text || !proxyUrl) return text;
   let scoreObj;
-  try { scoreObj = await scoreProse(text); } catch(e) { return text; }
+  try { scoreObj = await scoreProse(text, game||null); } catch(e) { return text; }
   renderProseScore(scoreObj, label + ' [pre-retry]');
   if (!scoreObj || scoreObj.score >= JQ_SCORE_THRESHOLD) return text;
   if (FIELD_DEBUG) console.warn(`[JQ Layer 3b] Score ${scoreObj.score} below ${JQ_SCORE_THRESHOLD} — triggering score-based rewrite`);
@@ -16121,10 +16121,19 @@ async function maybeScoreRetry(originalPrompt, text, proxyUrl, label) {
     if (scoreObj.specificity < 25) weakDims.push(`specificity (${scoreObj.specificity}% proper nouns/numbers — name more players and cite more exact figures)`);
     if (scoreObj.variety < 55) weakDims.push(`vocabulary variety (${scoreObj.variety}% — avoid repeating the same words)`);
     if (scoreObj.freshness < 50) weakDims.push(`word freshness (${scoreObj.freshness} — use more precise, less predictable word choices)`);
+    // Arc-targeted instructions (surgical retry based on which components failed)
+    const arcInstructions = [];
+    if (scoreObj.arc && !scoreObj.arc.stakes)
+      arcInstructions.push('Sentence 1 must state the stakes — what specifically happens to the loser tonight (series context, milestone, or consequence).');
+    if (scoreObj.arc && !scoreObj.arc.tension)
+      arcInstructions.push('Include at least one sentence naming a specific player alongside a concrete stat or number.');
+    if (scoreObj.arc && !scoreObj.arc.resolution)
+      arcInstructions.push('Final sentence must be forward-looking — specify what factor, player, or moment will decide this game tonight.');
     const retryPrompt = originalPrompt +
-      '\n\nPROSE QUALITY REWRITE: Your previous draft scored ' + scoreObj.score + '/100 on FIELD\'s journalism quality index. ' +
-      (weakDims.length ? 'Weakest dimensions: ' + weakDims.join('; ') + '. ' : '') +
-      'Rewrite with: (1) at least one specific stat or number per sentence, (2) player names not just team names, (3) precise language over generic sports phrases. Same length and format required.';
+      '\n\nPROSE QUALITY REWRITE: Your previous draft scored ' + scoreObj.score + '/' + (scoreObj.ceiling||200) + ' on FIELD\'s journalism quality index. ' +
+      (weakDims.length ? 'Weakest word-level dimensions: ' + weakDims.join('; ') + '. ' : '') +
+      (arcInstructions.length ? 'Structural issues: ' + arcInstructions.join(' ') + ' ' : '') +
+      'Rewrite with: (1) at least one specific stat per sentence, (2) player names not team names, (3) precise language. Same length required.';
     const r = await fetch(proxyUrl, {
       method: 'POST', headers: {'Content-Type':'application/json'},
       body: JSON.stringify({model:'claude-haiku-4-5-20251001', max_tokens:1500,
@@ -16134,7 +16143,7 @@ async function maybeScoreRetry(originalPrompt, text, proxyUrl, label) {
     const data = await r.json();
     const retried = (data.content||[]).filter(c=>c.type==='text').map(c=>c.text).join('').trim();
     if (retried && retried.length > 30) {
-      const newScore = await scoreProse(retried).catch(()=>null);
+      const newScore = await scoreProse(retried, game||null).catch(()=>null);
       if (newScore) renderProseScore(newScore, label + ' [post-retry]');
       if (FIELD_DEBUG) console.debug(`[JQ Layer 3b] Score improved: ${scoreObj.score} → ${newScore?.score ?? '?'}`);
       return retried;
@@ -16179,7 +16188,100 @@ const _JQ_STAT_PATTERNS = [
 ];
 const _JQ_STAT_NOUNS = /\b(points?|rebounds?|assists?|blocks?|steals?|ppg|apg|rpg|runs?|hits?|home\s*runs?|rbis?|era|whip|ops|obp|slg|goals?|shots?|saves?|yards?|touchdowns?|sacks?|interceptions?|strikeouts?|innings?|pitches?|pitch\s*count|ft\/s|mph)\b/gi;
 
-async function scoreProse(text){
+// ── JQ Dimension 6: Narrative Arc ─────────────────────────────────────────
+// Measures whether the brief has stakes/tension/resolution structure.
+// Pure syntactic — no API, no game object. Computed from text alone.
+// Returns {stakes, tension, resolution, bonus, score, arcScore}
+function computeNarrativeArc(text) {
+  if (!text) return {stakes:false,tension:false,resolution:false,bonus:false,score:0};
+  const sentences = text.split(/[.!?]+/).map(s=>s.trim()).filter(Boolean);
+  if (!sentences.length) return {stakes:false,tension:false,resolution:false,bonus:false,score:0};
+
+  const first = sentences[0] || '';
+  const last  = sentences[sentences.length-1] || '';
+
+  // STAKES: sentence 1 has series record, consequence term, or temporal milestone
+  const stakes = /\b\d-\d\b/.test(first) ||
+    /\b(finals|championship|eliminated|advance|clinch|sweep|series|title|cup|pennant|playoffs|world series|super bowl|stanley cup)\b/i.test(first) ||
+    /\b(first since|last time|\d+ years?|since \d{4}|first.*since|hasn.t.*since)\b/i.test(first);
+
+  // TENSION: any sentence has player name (cap word not sentence-start) + stat pattern
+  const sentStarts = new Set(sentences.map(s=>s.split(/\s+/)[0]));
+  const tension = sentences.some(s => {
+    const sWords = s.split(/\s+/);
+    const hasPlayer = sWords.some(w => /^[A-Z][a-z]{2,}/.test(w) && !sentStarts.has(w) && w.length > 3);
+    const hasStat   = /\d/.test(s) && (/\d+\.\d/.test(s) || /\d+%/.test(s) || /\d+\s*(pts?|points?|rebounds?|assists?|blocks?|goals?|ppg|apg|rpg|saves?|yards?|rbi|era|ops)\b/i.test(s));
+    return hasPlayer && hasStat;
+  });
+
+  // RESOLUTION: last sentence is forward-looking
+  const resolution = /\b(watch|look for|decide|determine|force|need|must|whether|tonight|expect|key|pivotal|swing)\b/i.test(last) ||
+    /\bif\b/i.test(last) ||
+    /\?/.test(last) ||
+    sentences.length >= 2 && /\b(will|could|may|might)\b/i.test(last);
+
+  // ARC COMPLETE BONUS: all three + correct order (stakes first, resolution last)
+  const bonus = stakes && tension && resolution;
+
+  const score = (stakes?10:0) + (tension?10:0) + (resolution?10:0) + (bonus?10:0);
+  return {stakes, tension, resolution, bonus, score};
+}
+
+// ── JQ Dimension 7: Context Anchoring ──────────────────────────────────────
+// Measures whether the brief used the provided game data.
+// Requires game object — returns {available:false} when not provided.
+// Zero API calls — pure string intersection against existing game fields.
+function computeContextAnchoring(text, game) {
+  if (!text || !game) return {available:false, score:0, seriesRecord:false, playerNames:0, numbers:0};
+
+  let score = 0;
+  const textLower = text.toLowerCase();
+
+  // SERIES RECORD (+8): brief mentions the N-N record from seriesRecord
+  let seriesRecord = false;
+  if (game.seriesRecord && game.seriesRecord !== '0-0') {
+    const recMatch = (game.seriesRecord||'').match(/\d-\d/);
+    if (recMatch && textLower.includes(recMatch[0])) {
+      seriesRecord = true;
+      score += 8;
+    }
+  }
+
+  // PLAYER NAMES (+7 each, max 2 = 14): proper names from matchupNote in brief
+  let playerNamesFound = 0;
+  if (game.matchupNote) {
+    const noteWords = game.matchupNote.split(/\s+/);
+    const noteNames = noteWords.filter(w => /^[A-Z][a-z]{2,}/.test(w) && w.length > 3 &&
+      !['The','This','His','Her','Their','After','Before','With','When','Game','Series'].includes(w));
+    // Deduplicate and check against brief
+    const uniqueNames = [...new Set(noteNames)];
+    for (const name of uniqueNames) {
+      if (playerNamesFound >= 2) break;
+      if (text.includes(name)) {
+        playerNamesFound++;
+        score += 7;
+      }
+    }
+  }
+
+  // NUMBERS (+4 each, max 2 = 8): specific numbers from matchupNote in brief
+  let numbersFound = 0;
+  if (game.matchupNote) {
+    const noteNumbers = (game.matchupNote.match(/\d+\.\d+|\d+%|\d+-\d+/g) || []);
+    const uniqueNums = [...new Set(noteNumbers)];
+    for (const num of uniqueNums) {
+      if (numbersFound >= 2) break;
+      if (text.includes(num)) {
+        numbersFound++;
+        score += 4;
+      }
+    }
+  }
+
+  return {available:true, seriesRecord, playerNames:playerNamesFound, numbers:numbersFound, score};
+}
+
+async function scoreProse(text, game){
   if(!text) return null;
   const words = text.split(/\s+/).filter(Boolean);
   if (!words.length) return null;
@@ -16226,23 +16328,38 @@ async function scoreProse(text){
     }
   }catch(e){if(FIELD_DEBUG)console.error('[JQ L3] Datamuse:',e.message);}
 
-  // Calibrated weights (May 27 2026 — 5-dimension):
-  // StatDepth and Freshness are co-equal primary differentiators.
-  const W = { spec:20, statDepth:25, variety:20, density:10, fresh:25 };
-  const score = Math.round(
+  // Calibrated weights (May 31 2026 — 7-dimension, 0-200 scale):
+  // Base 5 dimensions scaled to 130pts. Arc (40) + Context (30) = 200 ceiling.
+  const W = { spec:26, statDepth:32, variety:26, density:13, fresh:33 };
+  const base = Math.round(
     specificity * W.spec +
     statDepth   * W.statDepth +
     variety     * W.variety +
     density     * W.density +
     freshness   * (W.fresh / 100)
   );
+
+  // Dimension 6: Narrative Arc (0-40)
+  const arc = computeNarrativeArc(text);
+
+  // Dimension 7: Context Anchoring (0-30, N/A when no game)
+  const ctx = computeContextAnchoring(text, game || null);
+
+  // Total score: base(130) + arc(40) + context(30) = 200 ceiling
+  // When context N/A: ceiling is 170
+  const ctxScore = ctx.available ? ctx.score : 0;
+  const total = Math.min(ctx.available ? 200 : 170, Math.max(0, base + arc.score + ctxScore));
+
   return {
-    score:       Math.min(100, Math.max(0, score)),
+    score:       total,
+    ceiling:     ctx.available ? 200 : 170,
     specificity: Math.round(specificity * 100),
     statDepth:   Math.round(statDepth * 10) / 10,
     variety:     Math.round(variety * 100),
     density:     Math.round(density * 10) / 10,
     freshness:   Math.round(freshness),
+    arc,
+    context:     ctx,
     cliches:     hasCliche(text),
   };
 }
@@ -16256,12 +16373,12 @@ function renderProseScore(scoreObj, label){
   // Only for Compound Brief and J3 Brief (the primary output surfaces)
   if(!label.includes('Brief') && !label.includes('Night Owl')) return;
   try {
-    const scoreWarn = scoreObj.score < 45;
+    const scoreWarn = scoreObj.score < (scoreObj.ceiling ? scoreObj.ceiling * 0.45 : 90);
     const clicheWarn = scoreObj.cliches.length > 0;
     const badge = document.createElement('div');
     badge.className = 'brief-prose-score';
     badge.innerHTML =
-      `<span>Prose</span><span class="${scoreWarn?'bps-warn':'bps-val'}">${scoreObj.score}</span>` +
+      `<span>Prose</span><span class="${scoreWarn?'bps-warn':'bps-val'}">${scoreObj.score}/${scoreObj.ceiling||200}</span>` +
       `<span>·</span><span>Stat</span><span class="bps-val">${scoreObj.statDepth}/s</span>` +
       `<span>·</span><span>Spec</span><span class="bps-val">${scoreObj.specificity}%</span>` +
       (clicheWarn ? `<span>·</span><span class="bps-warn">⚠ ${scoreObj.cliches.join(', ')}</span>` : '');
@@ -16612,7 +16729,7 @@ async function fetchCompoundEditorial(sections) {
             if(FIELD_DEBUG) console.debug('[JQ] Compound brief improved — re-rendered');
           }
         } else {
-          scoreProse(result.brief).then(s=>renderProseScore(s,'Compound Brief'));
+          scoreProse(result.brief, null).then(s=>renderProseScore(s,'Compound Brief'));
         }
       })();
     }
@@ -16632,7 +16749,7 @@ async function fetchCompoundEditorial(sections) {
         const viol=checkSportVocab(s.preview, seriesGame._sport||seriesGame._section||'');
         if(viol.length&&FIELD_DEBUG) console.warn(`[JQ Layer 2b] Series[${i}] sport vocab:`,viol);
       }
-      scoreProse(s.preview).then(sc=>renderProseScore(sc,`Series[${i}]`));
+      scoreProse(s.preview, null).then(sc=>renderProseScore(sc,`Series[${i}]`));
     });
     (result.game_briefs||[]).forEach((b,i)=>{
       if(!b?.brief) return;
@@ -16761,7 +16878,7 @@ async function fetchSeriesPreviewFromClaude(g){
       text=await checkLeadSentence(prompt,text,CLAUDE_PROXY_URL);
       text=await checkStatVerification(prompt,text,CLAUDE_PROXY_URL);
       text=await maybeScoreRetry(prompt,text,CLAUDE_PROXY_URL,'J2 Series');
-      scoreProse(text).then(s=>renderProseScore(s,'J2 Series'));
+      scoreProse(text, game||null).then(s=>renderProseScore(s,'J2 Series'));
       return text.trim();
     }
   }catch(e){if(FIELD_DEBUG)console.error('[J2 Series Preview] proxy error:',e.message);}
@@ -17430,7 +17547,7 @@ async function fetchFIELDBriefFromClaude(sections){
       text=await checkLeadSentence(prompt,text,CLAUDE_PROXY_URL);
       text=await checkStatVerification(prompt,text,CLAUDE_PROXY_URL);
       text=await maybeScoreRetry(prompt,text,CLAUDE_PROXY_URL,'J3 Brief');
-      scoreProse(text).then(s=>renderProseScore(s,'J3 Brief'));
+      scoreProse(text, null).then(s=>renderProseScore(s,'J3 Brief'));
       return text.replace(/\[ANTI-HYPE\]/gi,'').replace(/\s{2,}/g,' ').trim();
     }
   }catch(e){if(FIELD_DEBUG)console.error('[J3 FIELD Brief] proxy error:',e.message);}
@@ -17803,7 +17920,7 @@ async function fetchMLBGameBriefFromClaude(g) {
       text = await checkStatVerification(prompt, text, CLAUDE_PROXY_URL);
       text = await maybeScoreRetry(prompt, text, CLAUDE_PROXY_URL, 'MLB Brief');
       cardBudget.inc();
-      scoreProse(text).then(s=>renderProseScore(s,'MLB Brief'));
+      scoreProse(text, game||null).then(s=>renderProseScore(s,'MLB Brief'));
       return text.trim();
     }
   } catch(e_) {}
@@ -17919,7 +18036,7 @@ async function fetchWNBAGameBriefFromClaude(g) {
       text = await checkLeadSentence(prompt, text, CLAUDE_PROXY_URL);
       text = await maybeScoreRetry(prompt, text, CLAUDE_PROXY_URL, 'WNBA Brief');
       cardBudget.inc();
-      scoreProse(text).then(s=>renderProseScore(s,'WNBA Brief'));
+      scoreProse(text, game||null).then(s=>renderProseScore(s,'WNBA Brief'));
       return text.trim();
     }
   } catch(e_) {}
@@ -18039,7 +18156,7 @@ async function fetchStakesBriefFromClaude(g) {
       text = await checkStatVerification(prompt, text, CLAUDE_PROXY_URL);
       text = await maybeScoreRetry(prompt, text, CLAUDE_PROXY_URL, 'Stakes Brief');
       cardBudget.inc();
-      scoreProse(text).then(s=>renderProseScore(s,'Stakes Brief'));
+      scoreProse(text, game||null).then(s=>renderProseScore(s,'Stakes Brief'));
       return text.trim();
     }
   } catch(e_) {}
@@ -18246,7 +18363,7 @@ async function fetchEPLMatchBriefFromClaude(g) {
       text = await retryWithSportVocab(prompt, text, 'soccer', CLAUDE_PROXY_URL);
       text = await checkLeadSentence(prompt, text, CLAUDE_PROXY_URL);
       budget.inc();
-      scoreProse(text).then(s=>renderProseScore(s,'EPL Brief'));
+      scoreProse(text, game||null).then(s=>renderProseScore(s,'EPL Brief'));
       return text.trim();
     }
   } catch(e) {}
@@ -21179,7 +21296,7 @@ async function fetchNightOwlFromClaude(topGame){
           if(FIELD_DEBUG)console.warn('[JQ Layer 2c] Hard-stripped sport vocab from',_sp);
         }
       }
-      budget.inc();scoreProse(text).then(s=>renderProseScore(s,'J5 Night Owl'));return text.trim();
+      budget.inc();scoreProse(text, game||null).then(s=>renderProseScore(s,'J5 Night Owl'));return text.trim();
     }
   }catch(e){if(FIELD_DEBUG)console.error('[J5 Night Owl] proxy error:',e.message);}
   return null;
