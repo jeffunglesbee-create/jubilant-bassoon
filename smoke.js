@@ -1048,3 +1048,26 @@ assert('A275 — Tier 3: low-score review queue writes flagged phrases to localS
   html.includes('Low-score phrases flagged for review') &&
   html.includes("'Phrase Review'"),
   'maybeScoreRetry must log common phrases from low-score briefs to field_jq_review; Health Panel shows count');
+
+assert('A276 — Fix 1: buildCompoundPrompt captured once, reused in quality closure (no double build)',
+  html.includes('window._lastCompoundPrompt=buildCompoundPrompt(sections)') &&
+  html.includes('window._lastCompoundPrompt || buildCompoundPrompt(sections)'),
+  'Compound prompt must be captured before fetch and reused in quality closure — not rebuilt');
+
+assert('A277 — Fix 2: saveEspnFinal saves sourceId + matchupNote (MLB box score + Night Owl context)',
+  html.includes('sourceId: game.sourceId') &&
+  html.includes('matchupNote: game.matchupNote'),
+  'saveEspnFinal must persist sourceId and matchupNote so Night Owl MLB box score injection works');
+
+assert('A278 — Fix 3: fetchESPNWinProb gated on !FIELD_V2_SOURCES.nba (D3 dead call removed)',
+  html.includes('league === \'nba\' && !FIELD_V2_SOURCES.nba'),
+  'fetchESPNWinProb must be skipped when NBA is on V2 — api-sports.io has no /predictions endpoint');
+
+assert('A279 — Fix 4: SPARINGLY_PHRASES uses specific phrases not overbroad single word defensive',
+  html.includes("'defensive struggles'") &&
+  !html.includes("'defensive','however'"),
+  'SPARINGLY_PHRASES must not contain bare defensive — too broad, flags legitimate hockey/basketball prose');
+
+assert('A280 — Fix 5: FIELD_PROSE_STYLE not spread in prompt arrays (it is a string, not array)',
+  !html.includes('...FIELD_PROSE_STYLE'),
+  'FIELD_PROSE_STYLE is a joined string — spreading it with ... would spread each character individually');
