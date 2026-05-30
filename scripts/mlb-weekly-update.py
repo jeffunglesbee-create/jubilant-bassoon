@@ -10,11 +10,11 @@ Column discoveries (from savant-csv-probe, 2026-05-27):
   pitch_tempo:    median_seconds_empty, entity_name ("Last, First"), entity_code
   pitch_arsenals: pitch-arsenal-stats endpoint for velocity+whiff (NOT pitch-arsenals)
 
-NOTE — umpire ABS not automated:
-  challengeType=umpire defaults to batter data in Savant CSV API.
-  Umpire overturn data not exposed in CSV export endpoints.
-  Manual update required: baseballsavant.mlb.com/leaderboard/abs-challenges (Umpire tab)
-  or ESPN ABS tracker. Update UMPIRE_ABS_RATINGS in index.html weekly.
+Section 6 — umpire ABS now automated via Statcast des field:
+  ABS pitch result challenges appear in Statcast per-pitch CSV des column.
+  Pattern: "[Name] challenged (pitch result), call confirmed|overturned"
+  HP umpire resolved via MLB Stats API schedule?hydrate=officials (1 call/date).
+  Source: probe confirmed on May 30 2026. No scraping required.
 """
 import csv, io, json, os, urllib.request
 from datetime import datetime, timezone
@@ -214,12 +214,6 @@ for fn in ["team_abs","expected_stats","sprint_speed","pitch_tempo","pitch_arsen
         print(f"  ❌ {path} — missing")
 
 
-# ── 6. UMPIRE ABS — handled by CF Worker, not pipeline ──────────────────────
-# /mlb-umpire-scrape relay endpoint fetches Savant hp_umpire HTML from CF IPs.
-# Browser calls it directly in mlbStatsInit() — pipeline not involved.
-# Reason: GitHub Actions IPs are CF 1010 blocked from our own relay.
-# Hardcoded UMPIRE_ABS_RATINGS in index.html serves as fallback.
-
 # ── Summary ───────────────────────────────────────────────────────────────────
 print(f"\n── Update complete {TS} ──")
 for fn in ["team_abs","expected_stats","sprint_speed","pitch_tempo","pitch_arsenals","umpire_abs"]:
@@ -233,3 +227,157 @@ for fn in ["team_abs","expected_stats","sprint_speed","pitch_tempo","pitch_arsen
         except: print(f"  ⚠️  {path} — unreadable")
     else:
         print(f"  ❌ {path} — missing")
+
+
+# ── 6. UMPIRE ABS — Statcast des field + MLB Stats API officials ─────────────
+# Replaces the broken CF Worker /mlb-umpire-scrape approach.
+# Source: Statcast per-pitch CSV (des col has challenge text) + MLB Stats API
+#         schedule?hydrate=officials (one call per date, not per game).
+# ABS challenges appear in des as:
+#   "[Name] challenged (pitch result), call on the field was [confirmed|overturned]"
+# HP umpire comes from MLB Stats API schedule with officials hydration.
+# Incremental: processed_game_pks prevents double-counting across weekly runs.
+print("\nFetching umpire ABS from Statcast des + MLB Stats API...")
+import re
+from datetime import timedelta
+
+try:
+    MLB_API_BASE = "https://statsapi.mlb.com/api/v1"
+    MLB_JSON_HEADERS = {"User-Agent": "FIELD-Sports-Intelligence/1.0", "Accept": "application/json"}
+
+    def fetch_mlb_json(url):
+        req = urllib.request.Request(url, headers=MLB_JSON_HEADERS)
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            return json.loads(resp.read())
+
+    # Load existing umpire data for incremental merge
+    ump_path = "outbox/mlb/umpire_abs.json"
+    existing_ump = {}
+    processed_pks = set()
+    if os.path.exists(ump_path):
+        with open(ump_path) as f:
+            prev = json.load(f)
+            existing_ump = prev.get("data", {})
+            processed_pks = set(prev.get("processed_game_pks", []))
+
+    # Date range: first run = full season (April 1); subsequent = last 14 days
+    today_utc = datetime.now(timezone.utc)
+    if not processed_pks:
+        # First run: pull full 2026 season to date for accurate baseline
+        since_dt = datetime(2026, 4, 1, tzinfo=timezone.utc)
+        print("  First run — fetching full 2026 season Statcast data...")
+    else:
+        since_dt = today_utc - timedelta(days=14)
+    until_dt = today_utc - timedelta(days=1)
+    since_str = since_dt.strftime("%Y-%m-%d")
+    until_str = until_dt.strftime("%Y-%m-%d")
+
+    # Fetch Statcast CSV for the date range
+    statcast_url = (
+        "https://baseballsavant.mlb.com/statcast_search/csv"
+        f"?all=true&hfGT=R%7C&hfSea=2026%7C"
+        f"&game_date_gt={since_str}&game_date_lt={until_str}&type=details"
+    )
+    sc_rows = fetch_csv(statcast_url)
+    print(f"  Statcast: {len(sc_rows)} pitches ({since_str}→{until_str})")
+
+    # Pattern: ABS challenge in des column
+    challenge_re = re.compile(
+        r'challenged \(pitch result\), call on the field was (confirmed|overturned)',
+        re.IGNORECASE
+    )
+
+    # Group challenge events by (game_pk, game_date)
+    # {game_pk: {date, challenged, overturned}}
+    game_events = {}
+    for row in sc_rows:
+        des = row.get("des", "") or ""
+        if not des: continue
+        m = challenge_re.search(des)
+        if not m: continue
+        gpk = (row.get("game_pk") or "").strip()
+        gdate = (row.get("game_date") or "").strip()
+        if not gpk or gpk in processed_pks: continue
+        if gpk not in game_events:
+            game_events[gpk] = {"date": gdate, "challenged": 0, "overturned": 0}
+        game_events[gpk]["challenged"] += 1
+        if m.group(1).lower() == "overturned":
+            game_events[gpk]["overturned"] += 1
+
+    new_game_count = len(game_events)
+    print(f"  New games with ABS challenges: {new_game_count}")
+
+    # Group new games by date → batch MLB Stats API calls (1 per date)
+    dates_to_pks = {}
+    for gpk, ev in game_events.items():
+        d = ev["date"]
+        dates_to_pks.setdefault(d, []).append(gpk)
+
+    # Fetch HP umpire per game via schedule hydrate=officials (1 call per date)
+    pk_to_umpire = {}
+    for gdate, pks in sorted(dates_to_pks.items()):
+        try:
+            sched = fetch_mlb_json(
+                f"{MLB_API_BASE}/schedule?sportId=1&date={gdate}"
+                f"&gamePks={','.join(pks)}&hydrate=officials"
+                f"&fields=dates,games,gamePk,officials,officialType,official,fullName"
+            )
+            for date_block in (sched.get("dates") or []):
+                for game in (date_block.get("games") or []):
+                    gpk = str(game.get("gamePk",""))
+                    for off in (game.get("officials") or []):
+                        if (off.get("officialType","")).lower() == "home plate":
+                            pk_to_umpire[gpk] = off.get("official",{}).get("fullName","")
+                            break
+        except Exception as e:
+            print(f"  ⚠ schedule fetch for {gdate}: {e}")
+
+    print(f"  HP umpires resolved: {len(pk_to_umpire)}/{new_game_count}")
+
+    # Build new stats, seeded from existing
+    ump_stats = {}
+    for last, d in existing_ump.items():
+        ump_stats[last] = dict(d)
+
+    for gpk, ev in game_events.items():
+        ump_full = pk_to_umpire.get(gpk)
+        if not ump_full: continue
+        last = ump_full.split()[-1].lower().replace("'","").replace(".","").replace("-","_")
+        if last not in ump_stats:
+            ump_stats[last] = {"challenged": 0, "overturned": 0,
+                               "fullName": ump_full, "weakness": None}
+        ump_stats[last]["challenged"] += ev["challenged"]
+        ump_stats[last]["overturned"] += ev["overturned"]
+        if not ump_stats[last].get("fullName"):
+            ump_stats[last]["fullName"] = ump_full
+        processed_pks.add(gpk)
+
+    # Compute rates
+    final_ump = {}
+    for last, s in ump_stats.items():
+        c = s.get("challenged", 0)
+        o = s.get("overturned", 0)
+        if c < 3: continue  # min 3 challenges for meaningful rate
+        rate = round(o / c, 3) if c > 0 else 0.0
+        final_ump[last] = {
+            "challenged": c, "overturned": o, "rate": rate,
+            "fullName": s.get("fullName",""),
+            "weakness": s.get("weakness", None)
+        }
+
+    with open(ump_path, "w") as f:
+        json.dump({
+            "updated": TS,
+            "source": "Statcast des + MLB Stats API officials",
+            "processed_game_pks": sorted(list(processed_pks)),
+            "data": final_ump
+        }, f, indent=2)
+
+    top3 = sorted(final_ump.items(), key=lambda x: x[1]["rate"], reverse=True)[:3]
+    print(f"  ✅ {len(final_ump)} umpires tracked")
+    top3_fmt = [(k, v['rate'], f"{v['overturned']}/{v['challenged']}") for k,v in top3]
+    print(f"  Top overturn: {top3_fmt}")
+
+except Exception as e:
+    print(f"  ❌ Umpire ABS: {e}")
+    import traceback; traceback.print_exc()
