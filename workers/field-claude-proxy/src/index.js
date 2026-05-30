@@ -6,7 +6,7 @@
 //   Model: gemini-2.5-flash → gemini-2.5-flash-lite (30 RPM vs 15 RPM)
 //   429 handling: forward Retry-After to client instead of throwing 502
 //   ALLOWED_ORIGINS: added jubilant-bassoon.pages.dev
-//   X-FIELD-Proxy-Version: 4 header on all responses
+//   X-FIELD-Proxy-Version: 8 header on all responses
 //   max_tokens default: 1000 → 2500 (supports compound editorial call)
 //
 // SECRETS (set once in Cloudflare dashboard, persist across deploys):
@@ -17,7 +17,7 @@
 //   X-FIELD-Proxy-Version: 4
 //   X-FIELD-Model: gemini-2.5-flash-lite  (or claude-sonnet-4 on fallback)
 
-const PROXY_VERSION = '5';
+const PROXY_VERSION = '8'; // deployed May 31 2026 — Gemini-first routing restored
 
 const ALLOWED_ORIGINS = [
   'https://jubilant-bassoon.jeffunglesbee.workers.dev',
