@@ -16059,6 +16059,7 @@ async function fetchSeriesPreviewFromClaude(g){
       text=await checkLeadSentence(prompt,text,CLAUDE_PROXY_URL);
       text=await checkStatVerification(prompt,text,CLAUDE_PROXY_URL);
       text=await maybeScoreRetry(prompt,text,CLAUDE_PROXY_URL,'J2 Series');
+      scoreProse(text).then(s=>renderProseScore(s,'J2 Series'));
       return text.trim();
     }
   }catch(e){if(FIELD_DEBUG)console.error('[J2 Series Preview] proxy error:',e.message);}
@@ -16727,6 +16728,7 @@ async function fetchFIELDBriefFromClaude(sections){
       text=await checkLeadSentence(prompt,text,CLAUDE_PROXY_URL);
       text=await checkStatVerification(prompt,text,CLAUDE_PROXY_URL);
       text=await maybeScoreRetry(prompt,text,CLAUDE_PROXY_URL,'J3 Brief');
+      scoreProse(text).then(s=>renderProseScore(s,'J3 Brief'));
       return text.replace(/\[ANTI-HYPE\]/gi,'').replace(/\s{2,}/g,' ').trim();
     }
   }catch(e){if(FIELD_DEBUG)console.error('[J3 FIELD Brief] proxy error:',e.message);}
@@ -17045,6 +17047,7 @@ async function fetchMLBGameBriefFromClaude(g) {
     pfLine, wxLine, pitcherLine, umpLine ? `Umpire: ${ump}` : '',
     standingsCtx || '',
     '',
+    g.matchupNote ? `Matchup: ${g.matchupNote}` : '',
     'Rules: 50-70 words. 2 sentences. Lead with the most impactful park or weather factor.',
     'Cite the exact figure if park or weather data is provided — never paraphrase.',
     'Write only from data above. No invented stats.',
@@ -17062,7 +17065,12 @@ async function fetchMLBGameBriefFromClaude(g) {
     let text = (data.content||[]).filter(c=>c.type==='text').map(c=>c.text).join('');
     if (text && text.length > 20) {
       text = await retryWithoutCliches(prompt, text, CLAUDE_PROXY_URL);
+      text = await retryWithSportVocab(prompt, text, 'baseball', CLAUDE_PROXY_URL);
+      text = await checkLeadSentence(prompt, text, CLAUDE_PROXY_URL);
+      text = await checkStatVerification(prompt, text, CLAUDE_PROXY_URL);
+      text = await maybeScoreRetry(prompt, text, CLAUDE_PROXY_URL, 'MLB Brief');
       budget.inc();
+      scoreProse(text).then(s=>renderProseScore(s,'MLB Brief'));
       return text.trim();
     }
   } catch(e_) {}
@@ -17122,6 +17130,7 @@ async function fetchWNBAGameBriefFromClaude(g) {
     `${g.away||'?'} @ ${g.home||'?'}${g.venue ? ' · ' + g.venue : ''}.`,
     stream ? `Broadcast: ${stream}.` : '',
     standingsCtx || '',
+    g.matchupNote ? `Matchup: ${g.matchupNote}` : '',
     '',
     'Rules: 35-50 words. 1-2 sentences. Context-first: standings, stakes, or notable players.',
     'Write only from data above. No invented stats.',
@@ -17139,7 +17148,10 @@ async function fetchWNBAGameBriefFromClaude(g) {
     let text = (data.content||[]).filter(c=>c.type==='text').map(c=>c.text).join('');
     if (text && text.length > 20) {
       text = await retryWithoutCliches(prompt, text, CLAUDE_PROXY_URL);
+      text = await checkLeadSentence(prompt, text, CLAUDE_PROXY_URL);
+      text = await maybeScoreRetry(prompt, text, CLAUDE_PROXY_URL, 'WNBA Brief');
       budget.inc();
+      scoreProse(text).then(s=>renderProseScore(s,'WNBA Brief'));
       return text.trim();
     }
   } catch(e_) {}
@@ -17209,9 +17221,11 @@ async function fetchStakesBriefFromClaude(g) {
     impLabel,
     series ? `Series: ${series}` : '',
     standingsCtx || '',
+    g.matchupNote ? `Context: ${g.matchupNote}` : '',
     '',
     'Rules: 2 sentences. Lead with the historical weight — what losing or winning means beyond just tonight.',
     'Cite specific year or franchise context if it sharpens the stakes.',
+    'If Context is provided, use specific facts from it — player names, series history, records.',
     'Write only from data above. No invented stats.',
     FIELD_PROSE_STYLE,
   ].filter(Boolean).join('\n');
@@ -17227,7 +17241,11 @@ async function fetchStakesBriefFromClaude(g) {
     let text = (data.content||[]).filter(c=>c.type==='text').map(c=>c.text).join('');
     if (text && text.length > 20) {
       text = await retryWithoutCliches(prompt, text, CLAUDE_PROXY_URL);
+      text = await checkLeadSentence(prompt, text, CLAUDE_PROXY_URL);
+      text = await checkStatVerification(prompt, text, CLAUDE_PROXY_URL);
+      text = await maybeScoreRetry(prompt, text, CLAUDE_PROXY_URL, 'Stakes Brief');
       budget.inc();
+      scoreProse(text).then(s=>renderProseScore(s,'Stakes Brief'));
       return text.trim();
     }
   } catch(e_) {}
@@ -17321,7 +17339,11 @@ async function fetchGameBriefOnDemand(game, sport) {
       if (r.ok) {
         const data = await r.json();
         text = (data.content||[]).filter(c=>c.type==='text').map(c=>c.text).join('').trim();
-        if (text) { text = await retryWithoutCliches(prompt, text, CLAUDE_PROXY_URL); budget.inc(); }
+        if (text) {
+          text = await retryWithoutCliches(prompt, text, CLAUDE_PROXY_URL);
+          text = await checkLeadSentence(prompt, text, CLAUDE_PROXY_URL);
+          budget.inc();
+        }
       }
     } catch(_) {}
   }
@@ -17374,6 +17396,7 @@ async function fetchEPLMatchBriefFromClaude(g) {
     '',
     'Rules: 40-60 words. 1-2 sentences. Use the table/form/H2H data if provided — these are concrete facts worth mentioning.',
     'No invented stats beyond what is given. No markdown. Complete every sentence.',
+    FIELD_PROSE_STYLE,
   ].filter(Boolean).join('\n');
   try {
     const r = await fetch(CLAUDE_PROXY_URL, {
@@ -21491,6 +21514,8 @@ async function renderNightOwlRecap(){
         let text = (data.content||[]).filter(c=>c.type==='text').map(c=>c.text).join('').trim();
         if (text && text.length > 20) {
           text = await retryWithoutCliches(prompt, text, CLAUDE_PROXY_URL);
+          text = await retryWithSportVocab(prompt, text, sp, CLAUDE_PROXY_URL);
+          text = await checkLeadSentence(prompt, text, CLAUDE_PROXY_URL);
           budget.inc();
           const noText = div.querySelector('.no-text');
           if (noText) { noText.textContent = trimToCompleteSentence(text); noText.classList.replace('pending','loaded'); }

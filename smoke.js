@@ -1092,3 +1092,22 @@ assert('A284 — J2 series prompt includes matchupNote and explicit stakes lead 
   html.includes("g.matchupNote?'Context: '+g.matchupNote:''") &&
   html.includes("Lead with the specific stakes of this game (clinch, elimination"),
   'Series brief prompt must inject matchupNote and instruct AI to lead with specific game stakes');
+
+assert('A285 — journalism completeness: MLB has full quality chain (sportVocab+leadCheck+statVerify+scoreRetry+scoreProse)',
+  html.includes("retryWithSportVocab(prompt, text, 'baseball', CLAUDE_PROXY_URL)") &&
+  html.includes("maybeScoreRetry(prompt, text, CLAUDE_PROXY_URL, 'MLB Brief')") &&
+  html.includes("renderProseScore(s,'MLB Brief')"),
+  'MLB brief must run full quality chain including baseball sport vocab enforcement');
+
+assert('A286 — journalism completeness: Stakes has leadCheck+statVerify+scoreRetry+scoreProse+matchupNote',
+  html.includes("maybeScoreRetry(prompt, text, CLAUDE_PROXY_URL, 'Stakes Brief')") &&
+  html.includes("renderProseScore(s,'Stakes Brief')") &&
+  html.includes("Context: \${g.matchupNote}"),
+  'Stakes brief must run full quality chain and inject matchupNote context');
+
+assert('A287 — journalism completeness: WNBA+J2+J3+EPL all have FIELD_PROSE_STYLE',
+  html.includes("renderProseScore(s,'WNBA Brief')") &&
+  html.includes("renderProseScore(s,'J2 Series')") &&
+  html.includes("renderProseScore(s,'J3 Brief')") &&
+  html.includes("renderProseScore(s,'EPL Brief')"),
+  'All major journalism surfaces must have scoreProse wired for rolling avg tracking');
