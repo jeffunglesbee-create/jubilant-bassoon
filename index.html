@@ -5,7 +5,7 @@
 <link rel="icon" href="data:,">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,interactive-widget=resizes-content"/>
 <title>FIELD — Global Sports Intelligence</title>
-<link rel="manifest" href="data:application/manifest+json,{"name":"FIELD — Global Sports Intelligence","short_name":"FIELD","description":"Live scores, schedules, streaming, and drama scores across every sport.","start_url":".","display":"standalone","background_color":"#070710","theme_color":"#c9a84c","orientation":"portrait-primary","icons":[{"src":"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='80' fill='%23070710'/%3E%3Ccircle cx='256' cy='256' r='180' fill='none' stroke='%23c9a84c' stroke-width='24'/%3E%3Ctext x='256' y='310' font-family='serif' font-size='200' font-weight='bold' fill='%23c9a84c' text-anchor='middle'%3EF%3C/text%3E%3C/svg%3E","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}]}"/>
+<link rel="manifest" href="data:application/manifest+json,{"name":"FIELD — Global Sports Intelligence","short_name":"FIELD","description":"Live scores, schedules, streaming, and drama scores across every sport.","start_url":".","display":"standalone","background_color":"#070710","theme_color":"#c9a84c","orientation":"portrait-primary","icons":[{"src":"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='80' fill='%23070710'/%3E%3Ccircle cx='256' cy='256' r='180' fill='none' stroke='%23c9a84c' stroke-width='24'/%3E%3Ctext x='256' y='310' font-family='serif' font-size='200' font-weight='bold' fill='%23c9a84c' text-anchor='middle'%3EF%3C/text%3E%3C/svg%3E","sizes":"any","type":"image/svg+xml","purpose":"any"},{"src":"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' fill='%23070710'/%3E%3Ccircle cx='256' cy='256' r='144' fill='none' stroke='%23c9a84c' stroke-width='20'/%3E%3Ctext x='256' y='298' font-family='serif' font-size='160' font-weight='bold' fill='%23c9a84c' text-anchor='middle'%3EF%3C/text%3E%3C/svg%3E","sizes":"any","type":"image/svg+xml","purpose":"maskable"}],"prefer_related_applications":false}"/>
 <meta name="theme-color" content="#c9a84c"/>
 <meta name="mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
@@ -547,6 +547,54 @@ body::before{
 .pwa-banner-copy{flex:1;min-width:0}
 .pwa-banner-title{font-size:.85rem;font-weight:700;color:var(--white);letter-spacing:.04em}
 .pwa-banner-sub{font-size:.72rem;color:var(--smoke);margin-top:.1rem}
+/* ── Right Now Section [MOBILE-INTEL-A] ─────────────────────── */
+#field-right-now{
+  display:none; /* shown via media query at phone portrait + L2 landscape */
+  padding:.5rem .75rem .25rem;
+  border-bottom:1px solid var(--edge);
+  max-width:1200px;
+}
+.rn-label{
+  font-size:.55rem;font-weight:700;letter-spacing:.08em;
+  color:var(--gold2,#c9a84c);margin-bottom:.3rem;text-transform:uppercase;
+}
+.rn-card{
+  background:rgba(255,255,255,.04);border:1px solid var(--edge2);
+  border-radius:10px;padding:.6rem .75rem;margin-bottom:.35rem;
+  cursor:pointer;-webkit-tap-highlight-color:transparent;
+  transition:background .15s;
+}
+.rn-card:active{background:rgba(255,255,255,.08);}
+.rn-row1{font-size:.78rem;font-weight:600;display:flex;align-items:center;gap:.4rem;flex-wrap:wrap;}
+.rn-row2{font-size:.62rem;color:var(--smoke);margin-top:.2rem;display:flex;gap:.4rem;flex-wrap:wrap;align-items:center;}
+.rn-brief{font-size:.60rem;color:var(--smoke);margin-top:.25rem;
+  border-top:1px solid var(--edge);padding-top:.2rem;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.rn-card--condensed{padding:.4rem .6rem;}
+.rn-card--condensed .rn-row1{font-size:.74rem;}
+.rn-card--condensed .rn-row2{font-size:.60rem;margin-top:.15rem;}
+.rn-card--compact{padding:.3rem .6rem;border-radius:7px;}
+.rn-card--compact .rn-row1{font-size:.72rem;}
+/* Featured card de-emphasis: already shown in Right Now */
+.game-card.rn-featured{opacity:.65;}
+.game-card.rn-featured .card-drama-line{display:none;}
+/* Show at P1-P3 portrait */
+@media(max-width:600px) and (orientation:portrait){
+  #field-right-now{display:block;}
+}
+/* Hide at L1 landscape narrow — user in video mode */
+@media(orientation:landscape) and (max-width:699px){
+  #field-right-now{display:none;}
+}
+/* L2 landscape wide — compact single row */
+@media(orientation:landscape) and (min-width:700px) and (max-width:819px){
+  #field-right-now{display:block;padding:.3rem .75rem;}
+}
+/* T1+ iPad and above — ambient panel handles this */
+@media(min-width:820px){
+  #field-right-now{display:none !important;}
+}
+
 /* ── Privacy Banner + Modal + EU Push Consent ──────────────── */
 #privacy-banner{display:none;align-items:center;gap:.75rem;padding:.65rem 1rem;background:var(--bg2);border-bottom:1px solid var(--edge);}
 .privacy-banner-body{display:flex;align-items:center;gap:.6rem;flex:1;min-width:0}
@@ -2442,6 +2490,7 @@ body::before{
 </div>
 <!-- ── One to Watch ──────────────────────────────────────────── -->
 <div id="otw-banner" aria-live="polite"><div class="otw-inner otw-quiet" aria-hidden="true"><span class="otw-label">Loading</span><span class="otw-matchup">Fetching today\u2019s schedule\u2026</span></div></div>
+<section id="field-right-now" aria-label="Right Now"><div class="rn-label" id="rn-label">RIGHT NOW</div><div id="rn-cards"></div></section>
 <div id="mobile-live-bar" class="mobile-live-bar" style="display:none"></div>
 <!-- ── Watch Window ─────────────────────────────────────────── -->
 <div id="watch-window" style="display:none" aria-live="polite"></div>
@@ -2875,6 +2924,189 @@ function showFieldHealthPanel() {
   document.body.appendChild(panel);
   // Fire MCP status fetch after panel is in DOM
   setTimeout(fetchMCPStatus, 100);
+}
+
+// ── MOBILE-INTEL-A: Right Now Section ─────────────────────────────────────
+// Spec: 1mRtoeL7rOxnkaodTMml1PVgBOJD5XGE9sR3jik_kdpc (May 31 2026)
+// Shows 1-2 hero cards for highest-drama live game(s) above the schedule.
+// Viewport-aware: P1-P3 portrait + L2 landscape only. Hidden on iPad+.
+// Brief sourced from relay KV (A312) — zero AI cost.
+// Rule 28: tap -> openGameSheet() already exists. CLEAR.
+
+function selectRightNowGames(sections) {
+  // Collect all games across sections
+  const all = [];
+  (sections || []).forEach(sec => {
+    (sec.games || []).forEach(g => {
+      const eData = typeof findESPNScore === 'function' ? findESPNScore(g) : null;
+      const isLive = eData?.state === 'in';
+      const drama = (typeof dramaScoreLive === 'function' ? dramaScoreLive(g._id) : null) || 0;
+      // Boost for game importance
+      const importanceBoost = g._gameImportance === 'elimination' ? 20
+                            : g._gameImportance === 'playoffs'    ? 10 : 0;
+      const score = (isLive ? drama + 30 : drama) + importanceBoost;
+      all.push({ g, eData, isLive, score });
+    });
+  });
+
+  if (!all.length) return [];
+
+  // Sort: live first, then by score desc
+  all.sort((a, b) => {
+    if (a.isLive !== b.isLive) return a.isLive ? -1 : 1;
+    return b.score - a.score;
+  });
+
+  // P1/P2/L2: 1 card. P3: up to 2 if both live + drama >= 50
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+  const landscape = vw > vh;
+  const isP3 = !landscape && vw >= 431 && vw <= 600;
+  const top = all[0];
+  if (!top) return [];
+
+  // If no live and no upcoming games, return nothing
+  const upcoming = all.filter(x => !x.isLive && (x.g.start_time > new Date().toISOString()));
+  if (!top.isLive && !upcoming.length && all.every(x => !x.isLive)) {
+    // All games are post — section less useful, still show best
+    return [top];
+  }
+
+  if (isP3 && all[1]?.isLive && all[1]?.score >= 50) {
+    return [top, all[1]];
+  }
+  return [top];
+}
+
+function buildRightNowTiers(g, eData) {
+  const isLive = eData?.state === 'in';
+  const home = g.home || '';
+  const away = g.away || '';
+  const homeScore = eData?.homeScore ?? '';
+  const awayScore = eData?.awayScore ?? '';
+  const drama = (typeof dramaScoreLive === 'function' ? dramaScoreLive(g._id) : null) || 0;
+  const series = g.seriesRecord && g.seriesRecord !== '0-0' ? g.seriesRecord : '';
+
+  // Score display
+  const scoreStr = isLive
+    ? `${away} ${awayScore} · ${home} ${homeScore}`
+    : `${away} @ ${home}`;
+
+  // Drama badge
+  const dramaEl = drama >= 40
+    ? `<span class="drama-mini" style="background:rgba(201,168,76,.15);color:#c9a84c;border:1px solid rgba(201,168,76,.3);border-radius:4px;padding:.1rem .3rem;font-size:.55rem;font-weight:700">${drama}</span>`
+    : '';
+
+  // Live badge
+  const liveEl = isLive
+    ? `<span style="background:#ef4444;color:#fff;border-radius:3px;padding:.1rem .3rem;font-size:.52rem;font-weight:700">LIVE</span>`
+    : '';
+
+  // Broadcast chip (first stream)
+  const chipSR = (g.streams || [])[0];
+  const chipEl = chipSR
+    ? `<span class="stream-chip" style="font-size:.55rem;padding:.1rem .35rem">${chipSR}</span>`
+    : '';
+
+  // Clock/period
+  const clockEl = isLive && eData?.clock
+    ? `<span style="color:var(--smoke)">${eData.clock}${eData.period ? ' P' + eData.period : ''}</span>`
+    : '';
+
+  // Series
+  const seriesEl = series
+    ? `<span style="color:var(--gold2,#c9a84c);font-size:.55rem">${series}</span>`
+    : '';
+
+  // Brief from relay KV cache (A312)
+  const brief = (_gameBriefCache && _gameBriefCache[g._id])
+    ? _gameBriefCache[g._id].slice(0, 72)
+    : '';
+
+  const condensed = `
+    <div class="rn-row1">${liveEl}<span>${scoreStr}</span>${dramaEl}</div>
+    <div class="rn-row2">${chipEl}${seriesEl}</div>`;
+
+  const standard = `
+    <div class="rn-row1">${liveEl}<span>${scoreStr}</span>${dramaEl}</div>
+    <div class="rn-row2">${clockEl}${chipEl}${seriesEl}</div>
+    ${brief ? `<div class="rn-brief">${brief}</div>` : ''}`;
+
+  const compact = `
+    <div class="rn-row1">${liveEl}<span>${scoreStr}</span>${dramaEl}${chipEl}</div>`;
+
+  return { condensed, standard, compact };
+}
+
+function renderRightNow(sections) {
+  const container = document.getElementById('rn-cards');
+  const label = document.getElementById('rn-label');
+  if (!container) return;
+
+  const selected = selectRightNowGames(sections);
+  if (!selected.length) {
+    container.innerHTML = '';
+    return;
+  }
+
+  const hasLive = selected.some(x => x.isLive);
+  if (label) label.textContent = hasLive ? 'RIGHT NOW' : 'UP NEXT';
+
+  container.innerHTML = selected.map(({ g, eData }) => {
+    const tiers = buildRightNowTiers(g, eData);
+    const gameid = g._id || '';
+    return `<div class="rn-card rn-card--condensed"
+      data-gameid="${gameid}"
+      data-rn-condensed="${tiers.condensed.replace(/"/g,'&quot;')}"
+      data-rn-standard="${tiers.standard.replace(/"/g,'&quot;')}"
+      data-rn-compact="${tiers.compact.replace(/"/g,'&quot;')}"
+      role="button" tabindex="0"
+      onclick="typeof openGameSheet==='function'&&openGameSheet('${gameid}')"
+      onkeydown="event.key==='Enter'&&typeof openGameSheet==='function'&&openGameSheet('${gameid}')"
+      aria-label="Game intel for ${(g.away||'').replace(/'/g,'')} at ${(g.home||'').replace(/'/g,'')}">
+      ${tiers.condensed}
+    </div>`;
+  }).join('');
+
+  // Mark featured game in schedule
+  document.querySelectorAll('.game-card.rn-featured').forEach(c => c.classList.remove('rn-featured'));
+  selected.forEach(({ g }) => {
+    const card = document.querySelector(`.game-card[data-gameid="${g._id}"]`);
+    if (card) card.classList.add('rn-featured');
+  });
+
+  indexRightNow();
+}
+
+function indexRightNow() {
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+  const landscape = vw > vh;
+  const isPhone = Math.min(vw, vh) <= 600;
+  const isL2 = landscape && vw >= 700 && vw < 820;
+
+  const tier = isL2 ? 'compact'
+    : (!landscape && vw <= 430) ? 'condensed'
+    : (!landscape && isPhone)   ? 'standard'
+    : null; // hidden viewports
+
+  if (!tier) return;
+
+  const keyMap = { condensed: 'rnCondensed', standard: 'rnStandard', compact: 'rnCompact' };
+  const key = keyMap[tier];
+
+  document.querySelectorAll('.rn-card[data-rn-condensed]').forEach(card => {
+    const html = card.dataset[key] || card.dataset.rnCondensed;
+    if (html) card.innerHTML = html;
+    card.className = `rn-card rn-card--${tier}`;
+  });
+}
+
+function initRightNowIndexer() {
+  window.addEventListener('resize', debounce(indexRightNow, 50));
+  if (screen?.orientation) {
+    screen.orientation.addEventListener('change', () => requestAnimationFrame(indexRightNow));
+  }
 }
 
 // ── MCP Relay status fetcher ──────────────────────────────────────────────
@@ -6897,6 +7129,9 @@ function renderAll(){
   if(!window._phoneTierInit){initPhoneTier();window._phoneTierInit=true;}
   if(!window._dramaIdxInit){initDramaLineIndexer();window._dramaIdxInit=true;}
   setTimeout(indexDramaLines,250);
+  // Right Now section — surface highest-drama game above schedule on phones
+  renderRightNow(filtered);
+  if(!window._rnIdxInit){initRightNowIndexer();window._rnIdxInit=true;}
 }
 function buildFilters(sports){
   const c=document.getElementById("sport-filters"); if(!c) return;
@@ -14896,7 +15131,10 @@ let _pwaPrompt = null;
   window.addEventListener('beforeinstallprompt', e => {
     e.preventDefault();
     _pwaPrompt = e;
-    if(localStorage.getItem('field_pwa_dismissed')) return;
+    const _dismissed = localStorage.getItem('field_pwa_dismissed');
+    const _dismissedMs = parseInt(_dismissed, 10);
+    const _14days = 14 * 24 * 60 * 60 * 1000;
+    if(_dismissed && (!isNaN(_dismissedMs) ? (Date.now() - _dismissedMs < _14days) : true)) return;
     const banner = document.getElementById('pwa-banner');
     if(banner) banner.style.display = 'flex';
   });
@@ -14912,9 +15150,24 @@ let _pwaPrompt = null;
   });
   if(dismissBtn) dismissBtn.addEventListener('click', () => {
     const _pb = getEl('pwa-banner'); if(_pb) _pb.style.display = 'none';
-    localStorage.setItem('field_pwa_dismissed','1');
+    localStorage.setItem('field_pwa_dismissed', String(Date.now()));
   });
 })();
+
+// appinstalled: fires when Chrome confirms PWA was installed.
+// Distinguish from dismiss — installed users never need prompting again.
+window.addEventListener('appinstalled', () => {
+  localStorage.setItem('field_pwa_installed', String(Date.now()));
+  // Remove dismissal flag so it doesn't interfere with future logic
+  localStorage.removeItem('field_pwa_dismissed');
+  // Hide banner — they installed
+  const _pb = document.getElementById('pwa-banner');
+  if(_pb) _pb.style.display = 'none';
+  if(typeof window._fieldErrors !== 'undefined') {
+    // Log install event to health panel
+    console.log('[PWA] appinstalled fired — app installed successfully');
+  }
+});
 
 // ═══════════════════════════════════════════════════════════════════════════
 // FEATURE: OFFLINE DETECTION

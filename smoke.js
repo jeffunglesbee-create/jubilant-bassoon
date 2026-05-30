@@ -1264,3 +1264,52 @@ assert('A312 — O(1) per-game briefs: fetchPrerenderedGameBrief + KV check in M
   html.includes('kvBrief = await fetchPrerenderedGameBrief') &&
   html.includes('kvBriefS = await fetchPrerenderedGameBrief'),
   'Card renderers must check relay KV before calling proxy — zero browser AI calls when cron has pre-generated brief');
+
+// ── PWA-A assertions ─────────────────────────────────────────────────────
+assert('A313 — PWA-A: icons split into any + maskable purposes',
+  html.includes('"purpose":"any"') &&
+  html.includes('"purpose":"maskable"') &&
+  !html.includes('"purpose":"any maskable"'),
+  'Manifest must have separate any and maskable icon entries');
+
+assert('A314 — PWA-A: prefer_related_applications:false in manifest',
+  html.includes('"prefer_related_applications":false'),
+  'Manifest must declare prefer_related_applications:false');
+
+assert('A315 — PWA-A: dismissal uses timestamp not permanent flag',
+  html.includes("'field_pwa_dismissed', String(Date.now())") &&
+  html.includes('_14days = 14 * 24 * 60 * 60 * 1000'),
+  'PWA dismissal must expire after 14 days — not permanent');
+
+assert('A316 — PWA-A: appinstalled event tracked',
+  html.includes("addEventListener('appinstalled'") &&
+  html.includes("field_pwa_installed"),
+  'appinstalled event must set field_pwa_installed in localStorage');
+
+// ── MOBILE-INTEL-A assertions ────────────────────────────────────────────
+assert('A317 — MOBILE-INTEL-A: Right Now section in DOM',
+  html.includes('id="field-right-now"') &&
+  html.includes('id="rn-cards"') &&
+  html.includes('id="rn-label"'),
+  'Right Now section must be in DOM after OTW banner');
+
+assert('A318 — MOBILE-INTEL-A: renderRightNow + indexRightNow + selectRightNowGames defined',
+  html.includes('function renderRightNow(') &&
+  html.includes('function indexRightNow(') &&
+  html.includes('function selectRightNowGames(') &&
+  html.includes('function buildRightNowTiers('),
+  'All Right Now functions must be defined');
+
+assert('A319 — MOBILE-INTEL-A: Right Now wired into renderAll',
+  html.includes('renderRightNow(filtered)') &&
+  html.includes('initRightNowIndexer()'),
+  'renderRightNow must be called at end of renderAll with filtered sections');
+
+assert('A320 — MOBILE-INTEL-A: Right Now CSS has correct viewport rules',
+  html.includes('#field-right-now') &&
+  html.includes('orientation:portrait') &&
+  html.includes('orientation:landscape') &&
+  html.includes('min-width:820px') &&
+  html.includes('rn-card--condensed') &&
+  html.includes('rn-card--compact'),
+  'Right Now CSS must include portrait/landscape/iPad media queries');
