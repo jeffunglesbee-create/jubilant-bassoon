@@ -1,67 +1,86 @@
-# FIELD Handoff — May 30 2026 (Session End — TYPE B/C: Journalism audit + leaders)
-
-## SESSION TYPE
-TYPE B/C — Bug fix + Feature. Full journalism pipeline audited and cleaned post-betting removal.
-
-## Code HEAD
-`ffd417b` — Smoke 247/0 · Deploy gate success
-
-## COMPLETED THIS SESSION
-
-### 1. ANTHROPIC_KEY set in GitHub (field-relay-nba repo)
-- Set via PyNaCl → covers field-deploy Courier + build-field-data.js
-- **Still needed in CF dashboard (sandbox blocked from api.cloudflare.com):**
-  - field-claude-proxy Worker: dash.cloudflare.com → Workers & Pages → field-claude-proxy → Settings → Variables and Secrets → ANTHROPIC_KEY (Secret)
-  - field-deploy Worker: same path, same key
-  - No redeploy needed — secrets are live immediately
-
-### 2. isScoutsPick hasMilestone undefined (A252) — CRITICAL BUG FIXED
-- `hasMilestone` was referenced but never defined after betting engine removal (May 29)
-- Effect: Scout's Pick never fired for non-playoff games; BNI `elimination-inflation` + `home-market` both broken (depend on `!isScoutsPick()`)
-- Fix: compute `hasMilestone` from `_bdlMilestonesCache` (same source as `preGameScore` mb boost)
-- Returns `true` when player within 5% of career milestone
-
-### 3. Full journalism pipeline audit — all clear
-Every function in the journalism pipeline verified present and defined:
-- computeBroadcastNarrativeIndex, getBNIStrength, isScoutsPick ✅
-- detectArcType, buildGameStandingsContext, getCalendarContext ✅
-- getFranchiseMisery, getStatisticalExtremes, evaluateEMBER ✅
-- checkSportVocab (Layer 2b), hasCliche, scoreProse, renderProseScore (Layer 3) ✅
-- retryWithoutCliches, retryWithSportVocab ✅
-- buildCompoundPrompt, fetchCompoundEditorial, buildLayer3Rules ✅
-- All BDL, ESPN athlete, NHL live, MLB boxscore pre-fetches ✅
-- All JSON result fields (brief, series, scouts_pick, bni_note, smt_note, game_briefs, epl) parsed ✅
-
-### 4. Known dead but non-breaking post-betting removal
-- `narrative-push` BNI type: computeBroadcastNarrativeIndex never returns it (needed odds); consumers handle gracefully, never triggered
-- `journalism-odds-context` feature flag: correctly removed
-
-### 5. Prior session deliverables (also this conversation)
-- NHL/MLB in-game leaders (A246, A247) — relay NHL season fix (c2a83ab)
-- MLB at-bat + BDL PPG leaders in journalism prompt (A248, A249, A250)
-- journalismCallsToday.canCall() respects _compoundRetryAfter (A251)
-- fetchBDLSeasonAverages builds _bdlSeasonAvgByTeam team index
-- fetchMLBLiveGame returns batter/pitcher from currentPlay.matchup
-
-## SMOKE
-247/0 — A246 through A252 all added this conversation.
-
-## STILL OPEN (carried)
-- **ANTHROPIC_KEY in field-claude-proxy + field-deploy CF dashboard** — Jeff only, definitive journalism quota fix
-- Journalism recovery (Gemini quota — cascade fix done A251, root fix needs CF dashboard key)
-- Dropbox refresh-token: add 3 secrets
-- VAPID browser opt-in test
-- Build Session List paste (v7.26 draft → 19TicpFBU2ORbypNBteCXuhwbX1FoP14Y2NGuU9e3drQ)
+# FIELD Handoff — May 30 2026
+**Session Type:** TYPE B/C Mixed (pre-declared, Rule 1 exception)
+**HEAD:** 6a0be7d
+**Smoke:** 309/0 (A283–A307)
+**Deploy:** SUCCESS
 
 ## TIER 0 DEADLINES
-- NHL SCF shell (CAR) — IMMINENT
-- NBA Finals G1 shell (June 3, vs NYK)
-- World Cup 2026 Phase 1 (June 11 HARD)
-- USPTO provisional (~June 25)
+- NBA Finals G1: June 3 (NYK at MSG) — shell needed
+- World Cup 2026 Phase 1: June 11 HARD
+- USPTO provisional: ~June 25
 
-## CANONICAL IDs
-CI/Deploy Ref: 18JMUd-Uq_m2DomuCua2B5UMiWOel81yzc1JU7SY6f20
-Repo: jeffunglesbee-create/jubilant-bassoon
-Relay repo: jeffunglesbee-create/field-relay-nba
-Build Session List: 19TicpFBU2ORbypNBteCXuhwbX1FoP14Y2NGuU9e3drQ
-ESPN Pivot spec (in-repo): docs/espn-pivot-phase0-1-2026-05-29.md
+## SESSION START (next session)
+1. Declare session type: A / B / C / D / E
+2. `git pull && cp index.html /home/claude/index.html`
+3. `node smoke.js index.html` — must be 309/0 before touching anything
+4. Read CI/Deploy Ref: Drive `18JMUd-Uq_m2DomuCua2B5UMiWOel81yzc1JU7SY6f20`
+
+## WHAT CHANGED THIS SESSION
+
+### Journalism completeness audit (A285-A287)
+All 9 journalism surfaces now have complete quality chains. See session doc.
+
+### Journalism gaps → strengths (A288-A293)
+- journalNote → J2 series prompt as 'Series history:' context
+- FIELD_BASEBALL_VOICE + FIELD_HOCKEY_VOICE + FIELD_SOCCER_VOICE + getFieldVoice()
+- Mandatory three-part arc structure in J3 and J2
+- EPL richer context: GD, position zones, matchupNote
+- _bannedExtension active prompt evolution from review queue
+
+### UCL Final / Stakes Brief (A294-A297)
+- _isMajorFinalGame: 🏆 UCL FINAL icon, showpiece prompt framing
+- cardBriefCallsToday() — separate 15-call budget for card-level briefs
+- Versioned cache key + explicit FINAL rules (no semifinal language)
+
+### MLB brief loading fixed (A298-A299)
+- umpLine ReferenceError was root cause of all stuck 'Loading brief...' cards
+- All card renderers now unconditionally remove card on null
+
+### Venue injection (A300)
+- g.venue in EPL, Stakes, J2, Night Owl prompts with DO NOT INVENT rule
+- Fixes Allianz/Wembley hallucinations — UCL Final is Puskás Aréna, Budapest
+
+### No peeking behind curtain (A301)
+- WNBA card suppressed when no context
+- FIELD_PROSE_STYLE global: NEVER explain missing data
+
+### MLB brief variety (A302)
+- getMLBAnalyticsContext + fetchMLBTeamMomentum injected
+- 'Vary the angle' rule — not always standings
+
+### RSN accuracy — 15 corrections (A303)
+- Post-Main Street collapse: Rays.TV, CLEGuardians.TV, Detroit SportsNet,
+  Rangers Sports Network, FDSN West, Rockies.TV, SportsNet PIT, Nationals.tv, etc.
+- New SR entries: clegtv, dsntv, texrsn, fdsnwest, rockiestv
+
+### Streaming Discovery derived + SMT time-phase (A304-A305)
+- SERVICE_FAMILIES + buildStreamingDiscovery() — data-sorted service cards
+- getCurrentSMTPhase + scoreSMTCard — currently-airing shows first
+
+### Baseball tie + Athletics (A306-A307)
+- Extra innings detection in Night Owl — no more tie narratives
+- OAK: NBCS California → Athletics.TV (Sacramento, not Oakland)
+
+## SMOKE-VERIFIED ONLY — BROWSER CONFIRMATION NEEDED
+1. Sport voice arrays (baseball/hockey/soccer) — AI output unconfirmed
+2. Three-part arc structure — AI adherence unconfirmed
+3. _bannedExtension — needs populated field_jq_review
+4. Extra innings Night Owl fix — needs real extra-innings game
+5. MLB 'vary the angle' — needs PITCHER_ARSENAL / PLAYER_EXPECTED_STATS populated
+
+## NEXT PRIORITY
+1. STANDARDS.md canonical update — Jeff must paste Rules 8-10 into
+   `1A3OaKNEjR-tASC330R3Aew9TIMwSCj9E` from draft `1MKSQnY8KnWROoJpUIahAnEaXcKlxJZUIDgOzyNLCMPo`
+2. [PWA-A] Android PWA fixes (~40 min) — prerequisite for MOBILE-INTEL-A
+3. [MOBILE-INTEL-A] Option A — Right Now section above schedule
+4. Browser confirmation session for smoke-verified-only features
+5. Rule 28 action paths for prose score badge + _bannedExtension surface
+
+## KEY DOC IDs
+- CI/Deploy Ref: `18JMUd-Uq_m2DomuCua2B5UMiWOel81yzc1JU7SY6f20`
+- Journalism Quality Spec: `1b7fwDVZMURi2sDbQ-Ur7dpbG4I5-fuCDPWC1ILfucoU`
+- Build Session List v7.26: `1C9Lx5WBD9xe_EAeilryNjN8keimpAgpyE_I50RGiKGY`
+- STANDARDS.md canonical: `1A3OaKNEjR-tASC330R3Aew9TIMwSCj9E`
+- STANDARDS.md draft (Rules 8-10): `1MKSQnY8KnWROoJpUIahAnEaXcKlxJZUIDgOzyNLCMPo`
+- Session Doc (this session): `1j09X0Yt7PeUHu_qMXYzFioUi99MqKqxEOXZuMHEGi7w`
+- Infrastructure Backlog: `1n4mYHB-k_X5pKrNuUFV7FK0YlolIPkNpGAkegGAUVHw`
