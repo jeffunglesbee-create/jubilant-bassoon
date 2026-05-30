@@ -1,2 +1,4 @@
-url=https://field-relay-nba.jeffunglesbee.workers.dev/nhl/v1/gamecenter/2025030315/boxscore
-limit=8000
+url=https://field-relay-nba.jeffunglesbee.workers.dev/mcp
+method=POST
+body={"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-03-26","capabilities":{}}}
+content_type=application/json
