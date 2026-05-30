@@ -53,7 +53,9 @@ jobs:
           SUFFIX=$(echo "$CURRENT" | grep -o '[a-z]$' || echo "a")
           NEW_VERSION="${DEPLOY_DATE}${SUFFIX}"
           sed -i "s/const SW_VERSION *= *'[^']*'/const SW_VERSION = '${NEW_VERSION}'/" sw.js
-          echo "✅ SW_VERSION synced to ${NEW_VERSION}"
+          # Also sync index.html so A190 (sw.js === index.html) passes
+          sed -i "s/const SW_VERSION = '[^']*'/const SW_VERSION = '${NEW_VERSION}'/" index.html
+          echo "✅ SW_VERSION synced to ${NEW_VERSION} in sw.js + index.html"
 
       - name: Fast smoke (smoke.js only)
         run: |
