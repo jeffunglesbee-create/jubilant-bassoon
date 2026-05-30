@@ -871,3 +871,29 @@ assert('A247 — MLB in-game leaders: fetchMLBLeader + _mlbLeaderCache + wired i
   html.includes("sport === 'mlb' && fg.state === 'live'") &&
   html.includes('fetchMLBLeader(mlbGame.sourceId, key)'),
   'MLB leaders: fetchMLBLeader must be defined, use StatsAPI boxscore, and be wired for live MLB in V2 poll');
+
+assert('A248 — Journalism: MLB at-bat context in compound prompt (Item 6b — platoon cache)',
+  html.includes('[MLB AT-BAT]') &&
+  html.includes('_mlbPlatoonCache') &&
+  html.includes('batting: ${p.batterName}') &&
+  html.includes('pitching: ${p.pitcherName}'),
+  'MLB at-bat item: must include [MLB AT-BAT] tag, read from _mlbPlatoonCache, surface batterName and pitcherName');
+
+assert('A249 — Journalism: BDL PPG leaders in compound prompt (Item 6c — pre-game)',
+  html.includes('[PPG LEADERS]') &&
+  html.includes('_bdlSeasonAvgByTeam') &&
+  html.includes('window._bdlSeasonAvgByTeam = byTeam') &&
+  html.includes("eS?.state==='in') return ''"),
+  'BDL PPG leaders: must include [PPG LEADERS] tag, build _bdlSeasonAvgByTeam index, skip when game is live');
+
+assert('A250 — fetchMLBLiveGame: includes batter and pitcher from currentPlay.matchup',
+  html.includes('batter:  play.matchup?.batter?.fullName') &&
+  html.includes('pitcher: play.matchup?.pitcher?.fullName'),
+  'fetchMLBLiveGame must return batter and pitcher from currentPlay.matchup');
+
+assert('A251 — Journalism quota fix: journalismCallsToday.canCall() respects _compoundRetryAfter backoff',
+  html.includes('typeof _compoundRetryAfter') &&
+  html.includes('Date.now()<_compoundRetryAfter') &&
+  html.includes('canCall(){') &&
+  html.includes('if(this.get()>=8) return false'),
+  'canCall must block during active 429 backoff — prevents J2/J3 cascade burning Gemini quota');

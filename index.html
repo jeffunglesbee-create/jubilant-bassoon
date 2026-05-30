@@ -12281,8 +12281,8 @@ async function fetchMLBSchedule(date) {
   }
 }
 
-// fetchMLBLiveGame — Heat Index inputs (baserunners, outs, count)
-// Built here; wired into Heat Index in a subsequent session.
+// fetchMLBLiveGame — Heat Index inputs (baserunners, outs, count) + current matchup
+// currentPlay.matchup.{batter,pitcher}.fullName added 2026-05-30
 async function fetchMLBLiveGame(gamePk) {
   const url  = `${MLB_STATS_BASE.replace('v1','v1.1')}/game/${gamePk}/feed/live`;
   const r    = await fetch(url);
@@ -12301,6 +12301,9 @@ async function fetchMLBLiveGame(gamePk) {
     onThird:    !!lp.offense?.third,
     awayScore:  lp.teams?.away?.runs ?? 0,
     homeScore:  lp.teams?.home?.runs ?? 0,
+    // Current at-bat matchup — journalism + situation context
+    batter:  play.matchup?.batter?.fullName  || null,
+    pitcher: play.matchup?.pitcher?.fullName || null,
   };
 }
 
@@ -14670,7 +14673,18 @@ function espnTeamMatch(espnName, fieldName){
 
 function journalismCallsToday(){
   const k='field_j_calls_'+new Date().toISOString().slice(0,10);
-  return {get(){return parseInt(sessionStorage.getItem(k)||'0');},inc(){sessionStorage.setItem(k,String(this.get()+1));},canCall(){return this.get()<8;}};
+  return {
+    get(){return parseInt(sessionStorage.getItem(k)||'0');},
+    inc(){sessionStorage.setItem(k,String(this.get()+1));},
+    // Blocks when session count exhausted OR within a 429 backoff window.
+    // Prevents individual J2/J3 calls from firing during compound 429 backoff,
+    // which would compound the Gemini quota burn and extend the outage.
+    canCall(){
+      if(this.get()>=8) return false;
+      if(typeof _compoundRetryAfter!=='undefined' && Date.now()<_compoundRetryAfter) return false;
+      return true;
+    }
+  };
 }
 
 // ── Compound Editorial Call — eliminates RPM burst ───────────────────────────
@@ -15179,6 +15193,15 @@ function buildCompoundPrompt(sections) {
       (()=>{try{const sp=(g._sport||g._section||'').toLowerCase();if(!(sp.includes('nhl')||sp.includes('hockey'))) return '';const key=`${g.home}|${g.away}`;const note=_nhlLiveStatsCache[key]||_nhlLiveStatsCache[`${g.away}|${g.home}`]||'';return note?`  [NHL LIVE] ${note}`:''}catch(e_){return ''}})(),
       // Item 6: MLB boxscore pitcher/batting stats (from pre-fetched _mlbBoxscoreCache)
       (()=>{try{const sp=(g._sport||g._section||'').toLowerCase();if(!(sp.includes('mlb')||sp.includes('baseball'))) return '';if(!g.sourceId) return '';const cached=_mlbBoxscoreCache[`mlb_box_${g.sourceId}`];return cached?.line?`  [MLB BOX] ${cached.line}`:''}catch(e_){return ''}})(),
+      // Item 6b: MLB live at-bat context — current batter/pitcher from platoon cache
+      (()=>{try{const sp=(g._sport||g._section||'').toLowerCase();if(!(sp.includes('mlb')||sp.includes('baseball'))) return '';const eS=findESPNScore?.(g);if(eS?.state!=='in') return '';const labelKey=`${g.home||''}|${g.away||''}`;const p=(_mlbPlatoonCache[g.sourceId]||_mlbPlatoonCache[labelKey])?.result;if(!p?.batterName&&!p?.pitcherName) return '';const parts=[];if(p.batterName) parts.push(`batting: ${p.batterName}`);if(p.pitcherName) parts.push(`pitching: ${p.pitcherName}`);if(p.platoonLabel) parts.push(p.platoonLabel);return parts.length?`  [MLB AT-BAT] ${parts.join(' · ')}`:''}catch(e_){return ''}})(),
+      // Item 6c: BDL pre-game leader averages for NBA games (non-series)
+      (()=>{try{const sp=(g._sport||g._section||'').toLowerCase();if(!sp.includes('basketball')&&!sp.includes('nba')) return '';const eS=findESPNScore?.(g);if(eS?.state==='in') return ''; // live leaders handled by Item 1
+        if(!window._bdlSeasonAvgByTeam) return '';
+        const hNick=teamNick(g.home||'').toLowerCase(), aNick=teamNick(g.away||'').toLowerCase();
+        const pick=(nick)=>{const pool=(window._bdlSeasonAvgByTeam[nick]||[]);if(!pool.length) return null;const top=pool[0];const name=`${top.player?.first_name||top.first_name||''} ${top.player?.last_name||top.last_name||''}`.trim();const pts=top.pts;return (name&&pts)?`${name} ${pts.toFixed(1)} PPG`:null;};
+        const h=pick(hNick), a=pick(aNick);const parts=[a,h].filter(Boolean);return parts.length?`  [PPG LEADERS] ${parts.join(' · ')}`:'';
+      }catch(e_){return ''}})(),
       // Item 4: BDL season averages for named players (from pre-fetched _bdlStatCache)
       (()=>{try{if(!g.seriesRecord||!g.matchupNote) return '';const names=[];const m=g.matchupNote.matchAll(/([A-Z][a-z]+(?:\s+[A-Z][a-z]+)+)\s+\d+/g);for(const match of m){if(!names.includes(match[1]))names.push(match[1]);}const stats=names.slice(0,3).map(n=>{const k='bdl_stat_'+n.toLowerCase().replace(/\s+/g,'_');return _bdlStatCache[k]||''}).filter(Boolean);return stats.length?`  [SEASON STATS] ${stats.join(' · ')}`:''}catch(e_){return ''}})(),
       // Volatility Index: game flow context for AI — CHAOTIC or LOCKED IN framing
@@ -15703,6 +15726,19 @@ async function fetchBDLSeasonAverages() {
       const d = await r.json();
       const players = d.data || [];
       try { localStorage.setItem(lsKey, JSON.stringify(players)); } catch(e) {}
+      // Build team-nick index for journalism prompt PPG leaders — O(1) lookup
+      try {
+        const byTeam = {};
+        players.forEach(p => {
+          const fullName = p.team?.full_name || p.team?.name || '';
+          if (!fullName) return;
+          const nick = teamNick(fullName).toLowerCase();
+          if (!byTeam[nick]) byTeam[nick] = [];
+          byTeam[nick].push(p);
+        });
+        Object.values(byTeam).forEach(arr => arr.sort((a,b) => (b.pts||0) - (a.pts||0)));
+        window._bdlSeasonAvgByTeam = byTeam;
+      } catch(e) {}
       if (FIELD_DEBUG) console.debug(`[BDL] season averages: ${players.length} players cached for ${TODAY_ISO}`);
       return players;
     } catch(e) {
