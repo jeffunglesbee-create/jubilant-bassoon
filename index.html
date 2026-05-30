@@ -4098,7 +4098,7 @@ Return {"s":[]} if no major sport games that day. CRITICAL: If you are not highl
       headers:{"Content-Type":"application/json"},
       signal:AbortSignal.timeout(15000),
       body:JSON.stringify({
-        model:"claude-sonnet-4-6",
+        model:"claude-haiku-4-5-20251001",
         max_tokens:800,
         messages:[{role:"user",content:prompt}]
       })
@@ -7917,7 +7917,7 @@ async function fetchSupplemental(isoDate,dayOfWeek,monthYear){
     const r=await fetch(CLAUDE_PROXY_URL,{
       method:"POST",headers:{"Content-Type":"application/json"},
       signal:AbortSignal.timeout(4000),
-      body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:200,
+      body:JSON.stringify({model:"claude-haiku-4-5-20251001",max_tokens:200,
         messages:[{role:"user",content:prompt}]})
     });
     if(!r.ok){ const e=await r.text(); throw new Error("HTTP "+r.status+": "+e.slice(0,80)); }
@@ -9592,7 +9592,7 @@ async function renderMajorPreviewCard(container){
         method:"POST",
         headers:{"Content-Type":"application/json"},
         body:JSON.stringify({
-          model:"claude-sonnet-4-6",
+          model:"claude-haiku-4-5-20251001",
           max_tokens:80,
           messages:[{role:"user",content:prompt}]
         })
@@ -15646,7 +15646,7 @@ async function retryWithSportVocab(originalPrompt, text, sport, proxyUrl) {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
       body: JSON.stringify({
-        model: 'claude-sonnet-4-6',
+        model: 'claude-haiku-4-5-20251001',
         max_tokens: 1500,
         messages: [{role:'user', content: retryPrompt}]
       })
@@ -15673,7 +15673,7 @@ async function retryWithoutCliches(originalPrompt,text,proxyUrl){
     const banNote = found.length ? 'BANNED PHRASES to remove: '+found.join(', ')+'. ' : '';
     const sparNote = overused.length ? 'OVERUSED WORDS (appeared '+overused.map(r=>'"'+r.phrase+'" '+r.count+'×').join(', ')+' — use each at most once, replace extras with more specific language): ' : '';
     const retryPrompt=originalPrompt+'\n\nIMPORTANT REWRITE: '+banNote+sparNote+'Rewrite without them. Use a specific fact instead of each generic phrase.';
-    const r=await fetch(proxyUrl,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1500,messages:[{role:'user',content:retryPrompt}]})});
+    const r=await fetch(proxyUrl,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:1500,messages:[{role:'user',content:retryPrompt}]})});
     if(!r.ok) return text;
     const data=await r.json();
     const retried=(data.content||[]).filter(c=>c.type==='text').map(c=>c.text).join('');
@@ -15705,7 +15705,7 @@ async function checkLeadSentence(originalPrompt, text, proxyUrl) {
       '..." — this is a generic team-name lead. Rewrite so the FIRST SENTENCE leads with the specific situation, stat, or stake. NOT "The [Team] are..." — start with a fact, a number, a deadline, a player, or a consequence. Keep everything else the same.';
     const r = await fetch(proxyUrl, {
       method: 'POST', headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({model:'claude-sonnet-4-6', max_tokens:1500,
+      body: JSON.stringify({model:'claude-haiku-4-5-20251001', max_tokens:1500,
         messages:[{role:'user',content:retryPrompt}]})
     });
     if (!r.ok) return text;
@@ -15764,7 +15764,7 @@ async function checkStatVerification(originalPrompt, text, proxyUrl) {
       '. These exact figures MUST appear verbatim in your rewrite. A brief without its own data is just filler.';
     const r = await fetch(proxyUrl, {
       method: 'POST', headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({model:'claude-sonnet-4-6', max_tokens:1500,
+      body: JSON.stringify({model:'claude-haiku-4-5-20251001', max_tokens:1500,
         messages:[{role:'user',content:retryPrompt}]})
     });
     if (!r.ok) return text;
@@ -15804,7 +15804,7 @@ async function maybeScoreRetry(originalPrompt, text, proxyUrl, label) {
       'Rewrite with: (1) at least one specific stat or number per sentence, (2) player names not just team names, (3) precise language over generic sports phrases. Same length and format required.';
     const r = await fetch(proxyUrl, {
       method: 'POST', headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({model:'claude-sonnet-4-6', max_tokens:1500,
+      body: JSON.stringify({model:'claude-haiku-4-5-20251001', max_tokens:1500,
         messages:[{role:'user',content:retryPrompt}]})
     });
     if (!r.ok) return text;
@@ -16231,7 +16231,7 @@ async function fetchCompoundEditorial(sections) {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({
-        model: 'claude-sonnet-4-6',
+        model: 'claude-haiku-4-5-20251001',
         max_tokens: (sections||[]).flatMap(s=>s.games||[]).some(g=>/conference finals|cf g\d|nba finals|stanley cup final|wcf|ecf/i.test(g.league||'')) ? 5000 : 3000,
         messages: [{role: 'user', content: (()=>{window._lastCompoundPrompt=buildCompoundPrompt(sections);return window._lastCompoundPrompt;})()}]
       }),
@@ -16429,7 +16429,7 @@ async function fetchSeriesPreviewFromClaude(g){
     'Third person only — never use "you" or address the reader directly. No markdown.'
   ].filter(Boolean).join('\n');
   try{
-    const r=await fetch(CLAUDE_PROXY_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1000,messages:[{role:'user',content:prompt}]})});
+    const r=await fetch(CLAUDE_PROXY_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:1000,messages:[{role:'user',content:prompt}]})});
     if(!r.ok) return null;
     const data=await r.json();
     let text=(data.content||[]).filter(c=>c.type==='text').map(c=>c.text).join('');
@@ -17098,7 +17098,7 @@ async function fetchFIELDBriefFromClaude(sections){
   }).join('\n\n');
   const prompt=["Write a FIELD Brief for tonight's sports slate.",'','TONIGHT\'S GAMES:',gameLines,'','RULES:','- 100-120 words. 2 short paragraphs. No headers.','- STRUCTURE: Paragraph 1 opens on the highest-stakes game with the specific situation (not the team name). Paragraph 2 covers the rest of the slate in order of importance. End on what carries forward.','- Lead with the specific situation, not the team. "48 minutes from their first Finals since 1999" not "The Knicks are looking to advance."','- Call out FREE over-the-air games explicitly.',"- Surface Scout's Pick if flagged.",'- If [ANTI-HYPE] appears in a game line, describe that matchup as low-stakes in plain prose — never echo the tag [ANTI-HYPE] verbatim.','- CORRECTNESS: write only from data above. Never invent scores, stats, records, or player tendencies.',FIELD_PROSE_STYLE,'- VOICE: third person only. Never use "you" or address the reader directly. Write like a columnist, not a chatbot.','- DIVISION ACCURACY: teams in the same division share ONE division race — never say "respective division races" for same-division teams. NHL has Atlantic/Metropolitan/Central/Pacific. NBA has Atlantic/Central/Southeast/Northwest/Pacific/Southwest. MLB has AL/NL East/Central/West.','- Plain prose only. No bullet points.','- Always complete every sentence. Never end mid-sentence.'].join('\n');
   try{
-    const r=await fetch(CLAUDE_PROXY_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1500,messages:[{role:'user',content:prompt}]})});
+    const r=await fetch(CLAUDE_PROXY_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:1500,messages:[{role:'user',content:prompt}]})});
     if(!r.ok) return null;
     const data=await r.json();
     let text=(data.content||[]).filter(c=>c.type==='text').map(c=>c.text).join('');
@@ -17467,7 +17467,7 @@ async function fetchMLBGameBriefFromClaude(g) {
   try {
     const r = await fetch(CLAUDE_PROXY_URL, {
       method: 'POST', headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({model:'claude-sonnet-4-6', max_tokens:400,
+      body: JSON.stringify({model:'claude-haiku-4-5-20251001', max_tokens:400,
         messages:[{role:'user',content:prompt}]}),
     });
     if (!r.ok) return null;
@@ -17556,7 +17556,7 @@ async function fetchWNBAGameBriefFromClaude(g) {
   try {
     const r = await fetch(CLAUDE_PROXY_URL, {
       method: 'POST', headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({model:'claude-sonnet-4-6', max_tokens:200,
+      body: JSON.stringify({model:'claude-haiku-4-5-20251001', max_tokens:200,
         messages:[{role:'user',content:prompt}]}),
     });
     if (!r.ok) return null;
@@ -17666,7 +17666,7 @@ async function fetchStakesBriefFromClaude(g) {
   try {
     const r = await fetch(CLAUDE_PROXY_URL, {
       method: 'POST', headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({model:'claude-sonnet-4-6', max_tokens:200,
+      body: JSON.stringify({model:'claude-haiku-4-5-20251001', max_tokens:200,
         messages:[{role:'user',content:prompt}]}),
     });
     if (!r.ok) return null;
@@ -17777,7 +17777,7 @@ async function fetchGameBriefOnDemand(game, sport) {
     try {
       const r = await fetch(CLAUDE_PROXY_URL, {
         method: 'POST', headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({model:'claude-sonnet-4-6', max_tokens:200,
+        body: JSON.stringify({model:'claude-haiku-4-5-20251001', max_tokens:200,
           messages:[{role:'user',content:prompt}]}),
       });
       if (r.ok) {
@@ -17855,7 +17855,7 @@ async function fetchEPLMatchBriefFromClaude(g) {
     const r = await fetch(CLAUDE_PROXY_URL, {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({model:'claude-sonnet-4-6',max_tokens:200,messages:[{role:'user',content:prompt}]})
+      body: JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:200,messages:[{role:'user',content:prompt}]})
     });
     if(!r.ok) return null;
     const data = await r.json();
@@ -20777,7 +20777,7 @@ async function fetchNightOwlFromClaude(topGame){
       'Explain what tactically swung the game. Series implication. Plain prose.'
     ].filter(Boolean).join('\n');
   try{
-    const r=await fetch(CLAUDE_PROXY_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1000,messages:[{role:'user',content:prompt}]})});
+    const r=await fetch(CLAUDE_PROXY_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:1000,messages:[{role:'user',content:prompt}]})});
     if(!r.ok) return null;
     const data=await r.json();
     let text=(data.content||[]).filter(c=>c.type==='text').map(c=>c.text).join('');
@@ -21968,7 +21968,7 @@ async function renderNightOwlRecap(){
         ].filter(Boolean).join('\n');
         const r = await fetch(CLAUDE_PROXY_URL, {
           method:'POST', headers:{'Content-Type':'application/json'},
-          body: JSON.stringify({model:'claude-sonnet-4-6',max_tokens:200,
+          body: JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:200,
             messages:[{role:'user',content:prompt}]}),
         });
         if (!r.ok) { div.remove(); return; }

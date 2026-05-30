@@ -366,7 +366,7 @@ function callGemini(prompt) {
 function callClaude(prompt) {
   return new Promise((resolve) => {
     const body = JSON.stringify({
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-haiku-4-5-20251001',
       max_tokens: 120,
       messages: [{ role: 'user', content: prompt }],
     });

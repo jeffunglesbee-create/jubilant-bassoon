@@ -1247,3 +1247,8 @@ assert('A309 — settings-btn long-press uses pointerdown not touchstart+prevent
   html.includes('_longPressFired') &&
   html.includes('e.stopImmediatePropagation()'),
   'Long-press must use pointerdown (not touchstart+preventDefault) — preventDefault suppresses click on Android Chrome');
+
+assert('A310 — all journalism calls use claude-haiku-4-5-20251001 not claude-sonnet-4-6',
+  !html.includes('claude-sonnet-4-6') &&
+  html.includes('claude-haiku-4-5-20251001'),
+  'All browser journalism calls must use Haiku not Sonnet — Sonnet is ~20x more expensive for short prose');
