@@ -56,17 +56,40 @@ for label, url in ENDPOINTS:
                     ev_idx = header.index("events")
                     unique_events = sorted(set(r[ev_idx] for r in all_rows if ev_idx < len(r) and r[ev_idx]))
                     extra["unique_events"] = unique_events
-                    # Check for ABS-challenge-related event types
                     abs_events = [e for e in unique_events if 'challenge' in e.lower() or 'abs' in e.lower() or 'review' in e.lower()]
                     extra["abs_related_events"] = abs_events
                 except ValueError:
                     extra["events_col_missing"] = True
+                # Check description/des for ABS challenge text
+                for desc_col in ["description", "des"]:
+                    try:
+                        d_idx = header.index(desc_col)
+                        unique_desc = sorted(set(r[d_idx] for r in all_rows if d_idx < len(r) and r[d_idx]))
+                        abs_desc = [d for d in unique_desc if 'challenge' in d.lower() or 'abs' in d.lower() or 'overturn' in d.lower() or 'review' in d.lower()]
+                        extra[f"abs_in_{desc_col}"] = abs_desc
+                        extra[f"unique_{desc_col}_count"] = len(unique_desc)
+                        extra[f"unique_{desc_col}_sample"] = unique_desc[:15]
+                    except ValueError:
+                        pass
+                # Also check type column (B/S/X) for called-strike context
+                try:
+                    t_idx = header.index("type")
+                    type_counts = {}
+                    for r in all_rows:
+                        if t_idx < len(r): type_counts[r[t_idx]] = type_counts.get(r[t_idx], 0) + 1
+                    extra["type_counts"] = type_counts
+                except ValueError: pass
                 # Check for umpire-related columns
                 ump_cols = [c for c in header if 'ump' in c.lower() or 'official' in c.lower()]
                 extra["umpire_columns"] = ump_cols
-                # Check for challenge-related columns
                 chal_cols = [c for c in header if 'challenge' in c.lower() or 'overturn' in c.lower() or 'review' in c.lower()]
                 extra["challenge_columns"] = chal_cols
+                # Sample the umpire column values
+                try:
+                    ump_idx = next(i for i,c in enumerate(header) if 'umpire' in c.lower())
+                    ump_vals = sorted(set(r[ump_idx] for r in all_rows if ump_idx < len(r) and r[ump_idx]))
+                    extra["umpire_sample_values"] = ump_vals[:10]
+                except: pass
 
             print(f"{'✅' if r.status == 200 else '⚠️ '} {label}: HTTP {r.status} | {len(rows)} rows")
             print(f"   Columns ({len(header)}): {header[:10]}")
