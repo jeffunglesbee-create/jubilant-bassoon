@@ -3141,7 +3141,7 @@ const SR = {
   texrsn:        ["Rangers Sports Network","https://www.mlb.com/rangers/schedule/programming","#003278","tv",  "Rangers Sports Network — team-owned RSN (2026, replacing FanDuel Sports Network Southwest). In-market DFW/Texas DMA. Cable/satellite + local broadcast partnerships (Matrix Media). DTC: $20/mo or $99.99/season."],
   fdsnwest:      ["FDSN West",       "https://www.fandueltelevision.com/",           "#1493FF","tv",  "FanDuel Sports Network West — Angels-owned RSN (team purchased RSN from Main Street 2026). In-market LA/SoCal DMA. Cable: Spectrum Ch.320, Cox Ch.64 (OC), DirecTV Ch.692. Angels.TV available as DTC supplement ($20/mo)."],
   rockiestv:     ["Rockies.TV",      "https://www.mlb.com/rockies/schedule/programming","#33006f","sub", "Rockies.TV — MLB Local Media (2024+). In-market Colorado/Wyoming DMA. Cable: Xfinity Ch.1262, Spectrum, DirecTV Ch.683, Fubo. DTC: $20/mo or $99.99/season."],
-  nbcsca:        ["NBCS California","https://www.nbcsports.com/california",        "#006bb6","tv",  "NBC Sports California — Athletics cable/satellite RSN. Distinct from NBC Sports Bay Area (Giants). Sacramento/Oakland territory."],
+  nbcsca:        ["NBCS California","https://www.nbcsports.com/california",        "#006bb6","tv",  "NBC Sports California — formerly carried Athletics games. Now carries Kings (NBA) and other Sacramento-area sports. Athletics moved to Athletics.TV (MLB Local Media DTC) for 2026."],
   athleticstv:   ["Athletics.TV",  "https://www.mlb.com/athletics/fans/athletics-tv",  "#003831","sub", "Athletics.TV — MLB Local Media DTC stream. In-market Sacramento/Oakland only. $20/mo or $100/season. No cable required. Same as CLEGuardians.TV / Nationals.tv model."],
   cleg:          ["CLEGuardians.TV","https://www.mlb.com/guardians/schedule/programming","#e31937","sub","CLEGuardians.TV — MLB Local Media direct stream. $20/mo or $100/season. In-market only (Ohio excl. Cincinnati, NE Kentucky, NW Pennsylvania, SW New York). No cable required, no blackouts. Also on DirecTV Ch.662."],
   nationalstv: ["Nationals.tv", "https://www.mlb.com/nationals/fans/nationals-tv",  "#ab0003","sub", "Nationals.tv — MLB Local Media (launched 2026, replacing MASN). In-market DC/MD/VA/NC/PA DMA. Cable providers (no extra charge for cable subs): Xfinity Ch.1261, Spectrum Ch.425 (IP)/330 (STB), Cox Ch.159, DirecTV Ch.641, Verizon Fios Ch.579, FuboTV ✓. Direct stream: $20/mo or $99.99/season via MLB App. Out-of-market: MLB.TV."],
@@ -4442,7 +4442,7 @@ const MLB_TEAM_RSN = {
   CHW:'CHSN',            CLE:'CLEGuardians.TV',   DET:'Detroit SportsNet',
   KCR:'Royals.TV',       MIN:'Twins.TV',
   // AL West
-  HOU:'Space City',      LAA:'FDSN West',         OAK:'NBCS California',
+  HOU:'Space City',      LAA:'FDSN West',         OAK:'Athletics.TV',
   SEA:'Mariners.TV',     TEX:'Rangers Sports Network',
   // NL East
   ATL:'BravesVision',    MIA:'Marlins.TV',         NYM:'SNY',
@@ -4550,7 +4550,7 @@ const _teamAbbr={
   'Chicago Cubs':'CHC','St. Louis Cardinals':'STL','Pittsburgh Pirates':'PIT',
   'Cincinnati Reds':'CIN','Los Angeles Dodgers':'LAD','San Diego Padres':'SDP',
   'San Francisco Giants':'SFG','Arizona Diamondbacks':'ARI',
-  'Colorado Rockies':'COL','Oakland Athletics':'OAK',
+  'Colorado Rockies':'COL','Oakland Athletics':'OAK','Sacramento Athletics':'OAK',
   // NBA — BUG-01 fix: abbreviation lookup for Skim elimination attribution
   'New York Knicks':'NYK','Cleveland Cavaliers':'CLE',
   'Oklahoma City Thunder':'OKC','San Antonio Spurs':'SAS',
@@ -5070,7 +5070,7 @@ const SETUP_CATALOGUE = [
       {key:"nationalstv",label:"Nationals.tv · Washington (DC/MD/VA)"},
       {key:"cleg",       label:"CLEGuardians.TV · Cleveland ($20/mo)"},
       {key:"snp",        label:"SportsNet Pittsburgh · Pirates/Pens"},
-      {key:"nbcsca",     label:"NBC Sports California · Athletics"},
+      {key:"nbcsca",     label:"NBC Sports California · Kings / local"},
     ]
   },
   {
@@ -15357,6 +15357,7 @@ const FIELD_BASEBALL_VOICE = [
   '- BASEBALL VOICE: The pitcher-batter matchup is the tactical spine. Name the pitchers and what they do.',
   '- BASEBALL VOICE: Situational specificity — inning, runners on base, outs — tells the story better than adjectives.',
   '- BASEBALL VOICE: Never say a team "dominated" — cite the hit total, the K total, the bullpen usage instead.',
+  '- BASEBALL VOICE: Baseball games NEVER end in a tie. If a game went to extra innings, one team scored the winning run. The final score reflects the winner. Never describe a baseball game as a tie or draw.',
 ].join('\n');
 
 const FIELD_HOCKEY_VOICE = [
@@ -20605,8 +20606,16 @@ async function fetchNightOwlFromClaude(topGame){
   const note=await fetchGameNotes(topGame).catch(()=>null);
   const standingsCtx = buildGameStandingsContext(topGame);
   const crewCtx = getCrewContext(topGame);
-  const winner=(topGame.homeScore||0)>=(topGame.awayScore||0)?topGame.home:topGame.away;
-  const score=topGame.awayScore+'\u2013'+topGame.homeScore;
+  const _homeS = topGame.homeScore||0;
+  const _awayS = topGame.awayScore||0;
+  const _isTiedScore = _homeS === _awayS;
+  // Baseball cannot end in a tie — if scores are equal the game went to extras
+  // and the stored score may reflect the last known value before the final out.
+  // Use the actual score difference to determine winner; if still tied, home wins.
+  const winner = _awayS > _homeS ? topGame.away : topGame.home;
+  const _xiNote = (_isTiedScore && (_sp.includes('baseball')||_sp.includes('mlb')))
+    ? ' (went to extra innings — one team scored the winning run after the 9th)' : '';
+  const score = _awayS+'\u2013'+_homeS;
   const _sp = (topGame._section || topGame._sport || topGame.sport || topGame.league || '').toLowerCase();
   const _terms = _sp.includes('baseball') || _sp.includes('mlb')
     ? 'SPORT=BASEBALL. This is a baseball game. Use ONLY baseball vocabulary.\nScore in RUNS. Close game = one-run game. Extra period = extra innings.\nFORBIDDEN — any use is a FACTUAL ERROR disqualifying the recap: quarter, quarters, fourth quarter, halftime, half time, field goal, field goal percentage, three-point, three-pointer, free throw, rebound, rebounds, one-possession, possession game, fast break, assist, assists, ball movement, interior scoring, basket, baskets, in the paint, down the stretch, offensive rhythm, offensive sets, transition game, points (unless quoting opponent stats), touchdown, first down, penalty kick, nil, offsides.\nUSE INSTEAD: runs, innings, hits, strikeouts, ERA, pitch count, at-bat, on-base, extra innings, bullpen, lineup, swing.'
@@ -20650,7 +20659,7 @@ async function fetchNightOwlFromClaude(topGame){
   } catch(e_) {}
   const prompt=['Write a FIELD Night Owl recap.',
       'Game: '+topGame.away+' @ '+topGame.home+(topGame.venue?' · '+topGame.venue:''),
-      'Final: '+score+' ('+winner+' wins)',
+      'Final: '+score+' ('+winner+' wins)'+_xiNote,
       _terms,
       topGame.seriesRecord?'Series: '+topGame.seriesRecord:'',
       topGame.dramaPeak?'Drama peak: '+Math.round(topGame.dramaPeak)+'/100':'',

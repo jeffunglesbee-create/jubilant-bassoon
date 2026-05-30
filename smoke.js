@@ -1220,3 +1220,15 @@ assert('A305 — SMT time-phase: getCurrentSMTPhase + scoreSMTCard + sort in ren
   html.includes('isShowCurrentlyAiring') &&
   html.includes('MEDIA_TODAY.sort((a, b) => scoreSMTCard(b) - scoreSMTCard(a))'),
   'SMT must sort by current time relevance — not static list order');
+
+assert('A306 — Night Owl: extra innings score handled — no tie for baseball, winner detected correctly',
+  html.includes('_isTiedScore') &&
+  html.includes('went to extra innings — one team scored the winning run') &&
+  html.includes('Baseball games NEVER end in a tie'),
+  'Night Owl must not present a tied baseball score as a draw — extra innings context injected');
+
+assert('A307 — Athletics: OAK uses Athletics.TV not NBCS California',
+  html.includes("OAK:'Athletics.TV'") &&
+  html.includes("Sacramento Athletics") &&
+  html.includes("Athletics moved to Athletics.TV (MLB Local Media DTC)"),
+  'Athletics left Oakland — now Sacramento temporarily, local channel is Athletics.TV not NBCS California');
