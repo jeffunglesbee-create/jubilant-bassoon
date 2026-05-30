@@ -1,0 +1,15 @@
+URL: https://field-relay-nba.jeffunglesbee.workers.dev/apisports/hockey/games/statistics/players?id=425577  [20260530T011344Z]
+HTTP/2 405 
+date: Sat, 30 May 2026 01:13:44 GMT
+content-type: text/plain;charset=UTF-8
+access-control-allow-origin: *
+access-control-allow-headers: Content-Type
+access-control-allow-methods: GET, POST
+report-to: {"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=tiUpQxTOO85%2FF7YfEyoM456gfNYDUjY2CB19JKH9MdfQuAmo%2FKCnUFl0rL%2B9TehCIdSSshpaJhGgXPsNKdf8XMQ9aKit778jM%2BXSzcp9W%2B6AaLq0PyyFllvcaysYlrk6eHa75V9AC6lY6II5g4aHOf3aVO7VqN0vhcrgxA%3D%3D"}]}
+nel: {"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}
+server: cloudflare
+cf-ray: a039e0c51dbf8583-IAD
+alt-svc: h3=":443"; ma=86400
+
+=== BODY (first 5000 chars) ===
+{"get":"games","parameters":{"id":"425577"},"errors":{"endpoint":"This endpoint do not exist."},"results":0,"response":[]}
