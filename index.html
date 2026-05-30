@@ -15147,11 +15147,93 @@ const FIELD_PROSE_STYLE=[
   '- USE SPARINGLY (maximum once per brief): '+SPARINGLY_PHRASES.join(', ')+'. If you use any of these, use it once only — then choose a more specific word.',
 ].join('\n');
 
+// ── Sport-Specific Voice Guides ──────────────────────────────────────────────
+// Appended after FIELD_PROSE_STYLE in sport-aware prompts.
+// These extend the common rules — don't replace them.
+// Each guide encodes what makes that sport's writing distinctive.
+
+const FIELD_BASEBALL_VOICE = [
+  '- BASEBALL VOICE: Write at the pace of the sport. One development per sentence.',
+  '- BASEBALL VOICE: Counting stats anchor baseball prose — strikeouts, walks, innings pitched, pitch count. Use them.',
+  '- BASEBALL VOICE: The pitcher-batter matchup is the tactical spine. Name the pitchers and what they do.',
+  '- BASEBALL VOICE: Situational specificity — inning, runners on base, outs — tells the story better than adjectives.',
+  '- BASEBALL VOICE: Never say a team "dominated" — cite the hit total, the K total, the bullpen usage instead.',
+].join('\n');
+
+const FIELD_HOCKEY_VOICE = [
+  '- HOCKEY VOICE: Special teams efficiency is the tactical spine of hockey. PP% and PK% are the first facts to reach for.',
+  '- HOCKEY VOICE: Zone time and shot totals tell the story of territorial control — cite them when available.',
+  '- HOCKEY VOICE: Named the goalie and their save percentage this series/game. Goaltending wins series.',
+  '- HOCKEY VOICE: Period-by-period momentum matters — note which team controlled which period if it shaped the game.',
+  '- HOCKEY VOICE: Never say a team "controlled the game" — say "outshot them 38-13 and held the zone in P2".',
+].join('\n');
+
+const FIELD_SOCCER_VOICE = [
+  '- SOCCER VOICE: Expected goals (xG) tell you more than the scoreline. If xG is available, cite it.',
+  '- SOCCER VOICE: Pressing intensity and defensive line shape the game before the first touch. Name the tactical approach.',
+  '- SOCCER VOICE: Never say a team "dominated possession" — cite the percentage. 72% possession is a fact; dominated is not.',
+  '- SOCCER VOICE: Clean sheets and set pieces decide close matches — reference them when relevant.',
+  '- SOCCER VOICE: Table position context (4th vs 5th) matters more in soccer than any other sport. Use it.',
+].join('\n');
+
+// ── Sport voice selector ───────────────────────────────────────────────────
+// Returns the appropriate voice guide string for a sport, or '' if no specific guide.
+function getFieldVoice(sport) {
+  const sp = (sport||'').toLowerCase();
+  if (sp.includes('baseball') || sp.includes('mlb')) return FIELD_BASEBALL_VOICE;
+  if (sp.includes('hockey') || sp.includes('nhl')) return FIELD_HOCKEY_VOICE;
+  if (sp.includes('soccer') || sp.includes('football') || sp.includes('epl') ||
+      sp.includes('mls') || sp.includes('liga') || sp.includes('ucl') ||
+      sp.includes('bundesliga') || sp.includes('serie') || sp.includes('ligue') ||
+      sp.includes('efl') || sp.includes('uecl') || sp.includes('uel')) return FIELD_SOCCER_VOICE;
+  return '';
+}
+
+// ── Active Prompt Evolution — session-layer BANNED_PHRASES extension ────────
+// Reads field_jq_review (low-score phrase queue) and field_jq_scores (rolling avg).
+// If a brief type has averaged < 45 over its last 5 scored briefs AND the review
+// queue has flagged phrases for it, those phrases are added to a session extension.
+// Never mutates the const BANNED_PHRASES. Resets on page reload (sessionStorage).
+// This closes the spec's feedback loop: "low-scoring patterns get added to banned list."
+let _bannedExtension = null; // session-level, populated once on first hasCliche() call
+function _initBannedExtension() {
+  if (_bannedExtension !== null) return;
+  _bannedExtension = [];
+  try {
+    const _sessKey = 'field_jq_banned_ext';
+    const _cached = sessionStorage.getItem(_sessKey);
+    if (_cached) { _bannedExtension = JSON.parse(_cached); return; }
+    const _scores = JSON.parse(localStorage.getItem('field_jq_scores')||'[]');
+    const _review = JSON.parse(localStorage.getItem('field_jq_review')||'[]');
+    if (!_scores.length || !_review.length) return;
+    // Group scores by label, check last 5 per label
+    const _byLabel = {};
+    _scores.forEach(s => { if(!_byLabel[s.label]) _byLabel[s.label]=[]; _byLabel[s.label].push(s.score); });
+    const _candidates = new Set();
+    Object.entries(_byLabel).forEach(([label, scores]) => {
+      const last5 = scores.slice(-5);
+      const avg = last5.reduce((a,b)=>a+b,0)/last5.length;
+      if (avg < 45 && last5.length >= 3) {
+        // Find review phrases from this label's low-score events
+        _review.filter(r=>r.label===label).forEach(r=>(r.phrases||[]).forEach(p=>_candidates.add(p)));
+      }
+    });
+    _bannedExtension = [..._candidates].filter(p=>p.length>4&&!BANNED_PHRASES.includes(p));
+    if (_bannedExtension.length) {
+      sessionStorage.setItem(_sessKey, JSON.stringify(_bannedExtension));
+      if (typeof FIELD_DEBUG!=='undefined'&&FIELD_DEBUG)
+        console.debug('[JQ Evolution] Session banned extension:', _bannedExtension);
+    }
+  } catch(e_) {}
+}
+
 // Layer 2: detect banned phrases in generated text
 function hasCliche(text){
   if(!text) return [];
+  _initBannedExtension();
   const lower=text.toLowerCase();
-  return BANNED_PHRASES.filter(p=>lower.includes(p));
+  const allBanned=[...BANNED_PHRASES, ..._bannedExtension];
+  return allBanned.filter(p=>lower.includes(p));
 }
 
 // ── Sport Vocabulary Validation — Layer 2b ─────────────────────────────────
@@ -16040,13 +16122,15 @@ async function fetchSeriesPreviewFromClaude(g){
     'Home: '+g.home+'. Away: '+g.away+'.',
     'Series: '+(g.seriesRecord||'')+'. Stakes: '+stakes+'.'+(gameNum?' Tonight is '+gameNum+'.':''),
     g.matchupNote?'Context: '+g.matchupNote:'',
+    g.journalNote&&g.journalNote!==g.matchupNote?'Series history: '+g.journalNote:'',
     g.league&&!g.matchupNote?'League: '+g.league+'.':'',
     ' ',
     'Rules: 80-100 words. 2-3 sentences. Tactical focus — what to watch tonight.',
-    'Lead with the specific stakes of this game (clinch, elimination, series advantage).',
+    'STRUCTURE: Sentence 1 = the specific stakes (clinch/elimination/advantage — cite the series record and what winning/losing means). Sentence 2 = the key tactical or narrative fact from this series (player performance, matchup, trend). Sentence 3 = what to watch tonight that decides the game.',
     'If Context is provided, use specific facts from it — player names, stats, game results.',
     'Write only from the data above. Never invent statistics, records, or player tendencies.',
     FIELD_PROSE_STYLE,
+    getFieldVoice(g._sport||g._section||g.league||''),
     'Third person only — never use "you" or address the reader directly. No markdown.'
   ].filter(Boolean).join('\n');
   try{
@@ -16717,7 +16801,7 @@ async function fetchFIELDBriefFromClaude(sections){
       })()
     ].filter(Boolean).join('\n');
   }).join('\n\n');
-  const prompt=["Write a FIELD Brief for tonight's sports slate.",'','TONIGHT\'S GAMES:',gameLines,'','RULES:','- 100-120 words. 2 short paragraphs. No headers.','- Lead with the most important story.','- Call out FREE over-the-air games explicitly.',"- Surface Scout's Pick if flagged.",'- If [ANTI-HYPE] appears in a game line, describe that matchup as low-stakes in plain prose — never echo the tag [ANTI-HYPE] verbatim.','- CORRECTNESS: write only from data above. Never invent scores, stats, records, or player tendencies.',FIELD_PROSE_STYLE,'- VOICE: third person only. Never use "you" or address the reader directly. Write like a columnist, not a chatbot.','- DIVISION ACCURACY: teams in the same division share ONE division race — never say "respective division races" for same-division teams. NHL has Atlantic/Metropolitan/Central/Pacific. NBA has Atlantic/Central/Southeast/Northwest/Pacific/Southwest. MLB has AL/NL East/Central/West.','- Plain prose only. No bullet points.','- Always complete every sentence. Never end mid-sentence.'].join('\n');
+  const prompt=["Write a FIELD Brief for tonight's sports slate.",'','TONIGHT\'S GAMES:',gameLines,'','RULES:','- 100-120 words. 2 short paragraphs. No headers.','- STRUCTURE: Paragraph 1 opens on the highest-stakes game with the specific situation (not the team name). Paragraph 2 covers the rest of the slate in order of importance. End on what carries forward.','- Lead with the specific situation, not the team. "48 minutes from their first Finals since 1999" not "The Knicks are looking to advance."','- Call out FREE over-the-air games explicitly.',"- Surface Scout's Pick if flagged.",'- If [ANTI-HYPE] appears in a game line, describe that matchup as low-stakes in plain prose — never echo the tag [ANTI-HYPE] verbatim.','- CORRECTNESS: write only from data above. Never invent scores, stats, records, or player tendencies.',FIELD_PROSE_STYLE,'- VOICE: third person only. Never use "you" or address the reader directly. Write like a columnist, not a chatbot.','- DIVISION ACCURACY: teams in the same division share ONE division race — never say "respective division races" for same-division teams. NHL has Atlantic/Metropolitan/Central/Pacific. NBA has Atlantic/Central/Southeast/Northwest/Pacific/Southwest. MLB has AL/NL East/Central/West.','- Plain prose only. No bullet points.','- Always complete every sentence. Never end mid-sentence.'].join('\n');
   try{
     const r=await fetch(CLAUDE_PROXY_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1500,messages:[{role:'user',content:prompt}]})});
     if(!r.ok) return null;
@@ -17052,6 +17136,7 @@ async function fetchMLBGameBriefFromClaude(g) {
     'Cite the exact figure if park or weather data is provided — never paraphrase.',
     'Write only from data above. No invented stats.',
     FIELD_PROSE_STYLE,
+    FIELD_BASEBALL_VOICE,
   ].filter(Boolean).join('\n');
 
   try {
@@ -17379,7 +17464,13 @@ async function fetchEPLMatchBriefFromClaude(g) {
       const rows = fdStandingsCache[fdCode];
       const find = name => { const n=teamNick(name).toLowerCase(); return rows.find(r=>(r.team||'').toLowerCase().includes(n)); };
       const hRow = find(g.home), aRow = find(g.away);
-      const fmtTeam = (r,t) => r ? `${t}: ${r.pos}${r.pos<=4?'★':r.pos>=18?'↓':''} (${r.pts}pts, form ${r.form||'?'})` : '';
+      // Enhanced form: include GF/GA (goal difference proxy) and position context
+      const fmtTeam = (r,t) => {
+        if (!r) return '';
+        const posCtx = r.pos<=4?'★ CL zone':r.pos<=6?'Euro zone':r.pos>=18?'relegation zone':r.pos>=16?'danger zone':'';
+        const gdStr = (r.goalsFor!=null && r.goalsAgainst!=null) ? ` GD${r.goalsFor-r.goalsAgainst>0?'+':''}${r.goalsFor-r.goalsAgainst}` : '';
+        return `${t}: ${r.pos}${posCtx?' ('+posCtx+')':''} ${r.pts}pts${gdStr} form ${r.form||'?'}`;
+      };
       const parts = [fmtTeam(hRow,g.home), fmtTeam(aRow,g.away)].filter(Boolean);
       if(parts.length) formLine = 'Table: ' + parts.join('. ');
     }
@@ -17393,10 +17484,12 @@ async function fetchEPLMatchBriefFromClaude(g) {
     mw ? `Matchweek ${mw} of 38.` : '',
     formLine || '',
     h2hLine || '',
+    g.matchupNote ? `Context: ${g.matchupNote}` : '',
     '',
     'Rules: 40-60 words. 1-2 sentences. Use the table/form/H2H data if provided — these are concrete facts worth mentioning.',
     'No invented stats beyond what is given. No markdown. Complete every sentence.',
     FIELD_PROSE_STYLE,
+    FIELD_SOCCER_VOICE,
   ].filter(Boolean).join('\n');
   try {
     const r = await fetch(CLAUDE_PROXY_URL, {
@@ -20310,6 +20403,7 @@ async function fetchNightOwlFromClaude(topGame){
       _owlStatCtx?'If stat context is provided above, cite the specific figure — never paraphrase it.':'',
       'Write only from the data above — never invent statistics, player tendencies, or context.',
       FIELD_PROSE_STYLE,
+      getFieldVoice(_sp),
       'Third person only — never use "you" or address the reader directly.',
       'Division accuracy: teams in the same division share ONE race, not "respective" races.',
       'Explain what tactically swung the game. Series implication. Plain prose.'

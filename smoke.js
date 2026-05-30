@@ -1111,3 +1111,38 @@ assert('A287 — journalism completeness: WNBA+J2+J3+EPL all have FIELD_PROSE_ST
   html.includes("renderProseScore(s,'J3 Brief')") &&
   html.includes("renderProseScore(s,'EPL Brief')"),
   'All major journalism surfaces must have scoreProse wired for rolling avg tracking');
+
+assert('A288 — journalNote injected into J2 series prompt as Series history context',
+  html.includes("g.journalNote&&g.journalNote!==g.matchupNote?'Series history: '+g.journalNote:''"),
+  'J2 series prompt must include journalNote for prior game history (distinct from matchupNote)');
+
+assert('A289 — sport-specific voice arrays defined: FIELD_BASEBALL_VOICE, FIELD_HOCKEY_VOICE, FIELD_SOCCER_VOICE + getFieldVoice()',
+  html.includes('const FIELD_BASEBALL_VOICE') &&
+  html.includes('const FIELD_HOCKEY_VOICE') &&
+  html.includes('const FIELD_SOCCER_VOICE') &&
+  html.includes('function getFieldVoice(sport)'),
+  'Sport-specific voice guides must be defined and selectable by sport string');
+
+assert('A290 — sport voices wired into MLB brief, Night Owl, J2 series, EPL',
+  html.includes('FIELD_BASEBALL_VOICE,') &&
+  html.includes('getFieldVoice(_sp),') &&
+  html.includes('getFieldVoice(g._sport||g._section||g.league||') &&
+  html.includes('FIELD_SOCCER_VOICE,'),
+  'Sport voices must be injected into sport-specific journalism prompts');
+
+assert('A291 — J3 and J2 have mandatory three-part arc structure rules',
+  html.includes('STRUCTURE: Paragraph 1 opens on the highest-stakes game') &&
+  html.includes('STRUCTURE: Sentence 1 = the specific stakes'),
+  'J3 and J2 prompts must enforce three-part arc structure — stakes, tactical fact, what to watch');
+
+assert('A292 — EPL brief has richer context: GD, position zone, matchupNote',
+  html.includes('CL zone') && html.includes('relegation zone') &&
+  html.includes("g.matchupNote ? `Context: ${g.matchupNote}`"),
+  'EPL brief must include goal difference, position zone context, and matchupNote');
+
+assert('A293 — Active prompt evolution: _bannedExtension reads from review queue + score history',
+  html.includes('_bannedExtension') &&
+  html.includes('field_jq_banned_ext') &&
+  html.includes('_initBannedExtension') &&
+  html.includes('avg < 45'),
+  'hasCliche must extend BANNED_PHRASES with session-layer phrases from low-score review queue');
