@@ -1178,3 +1178,10 @@ assert('A298 — MLB brief: umpLine declared before use in prompt array (was Ref
 assert('A299 — MLB/WNBA/Stakes card renderers always remove card on null (no stuck Loading brief)',
   html.includes('try { card.remove(); } catch(_) {}'),
   'Card renderers must always remove card on null/failure — else if(textEl) left card stuck when textEl was null');
+
+assert('A300 — venue injected into EPL, stakes, J2 series, and Night Owl prompts with DO NOT INVENT guard',
+  html.includes("g.venue ? ' · '+g.venue : ''") &&
+  html.includes("VENUE: The match is at") &&
+  html.includes("VENUE: if venue is listed above, use it") &&
+  html.includes("topGame.venue?' · '+topGame.venue:''"),
+  'Venue must be injected into all journalism prompts — AI was hallucinating Allianz/Wembley for UCL Final (Puskás Aréna)');

@@ -16134,7 +16134,7 @@ async function fetchSeriesPreviewFromClaude(g){
   const gNumMatch2=(g.league||'').match(/g(\d+)\b/i);
   const gameNum=gNumMatch2?'Game '+gNumMatch2[1]:'';
   const prompt=['Write a FIELD Series Brief for this playoff game.',
-    'Home: '+g.home+'. Away: '+g.away+'.',
+    'Home: '+g.home+'. Away: '+g.away+'.'+(g.venue?' Venue: '+g.venue+'.':''),
     'Series: '+(g.seriesRecord||'')+'. Stakes: '+stakes+'.'+(gameNum?' Tonight is '+gameNum+'.':''),
     g.matchupNote?'Context: '+g.matchupNote:'',
     g.journalNote&&g.journalNote!==g.matchupNote?'Series history: '+g.journalNote:'',
@@ -17333,7 +17333,7 @@ async function fetchStakesBriefFromClaude(g) {
 
   const prompt = [
     `Write a FIELD Stakes Brief for this high-stakes game.`,
-    `${g.away||'?'} @ ${g.home||'?'}.`,
+    `${g.away||'?'} @ ${g.home||'?'}${g.venue ? ' · '+g.venue : ''}.`,
     impLabel,
     series ? `Series: ${series}` : '',
     standingsCtx || '',
@@ -17345,6 +17345,7 @@ async function fetchStakesBriefFromClaude(g) {
     'Cite specific year or franchise context if it sharpens the stakes.',
     'If Context is provided, use only facts from it. NEVER invent round context, series history, or prior results not mentioned above.',
     isMajorFinal ? 'CRITICAL: Do NOT use the words semifinal, quarter-final, knockout round, or elimination. This is the FINAL — the last game of the competition.' : '',
+    g.venue ? `VENUE: The match is at ${g.venue}. This is the only correct venue — never mention a different stadium.` : '',
     'Write only from data above. No invented stats.',
     FIELD_PROSE_STYLE,
   ].filter(Boolean).join('\n');
@@ -17523,7 +17524,7 @@ async function fetchEPLMatchBriefFromClaude(g) {
 
   const prompt = [
     'Write a FIELD Match Brief for this Premier League fixture.',
-    `${g.away} @ ${g.home}.`,
+    `${g.away} @ ${g.home}${g.venue ? ' · '+g.venue : ''}.`,
     g.league ? `${g.league}.` : '',
     stream ? `Broadcast: ${stream}.` : '',
     mw ? `Matchweek ${mw} of 38.` : '',
@@ -17532,6 +17533,7 @@ async function fetchEPLMatchBriefFromClaude(g) {
     g.matchupNote ? `Context: ${g.matchupNote}` : '',
     '',
     'Rules: 40-60 words. 1-2 sentences. Use the table/form/H2H data if provided — these are concrete facts worth mentioning.',
+    'VENUE: if venue is listed above, use it — never substitute a different stadium.',
     'No invented stats beyond what is given. No markdown. Complete every sentence.',
     FIELD_PROSE_STYLE,
     FIELD_SOCCER_VOICE,
@@ -20434,7 +20436,7 @@ async function fetchNightOwlFromClaude(topGame){
     }
   } catch(e_) {}
   const prompt=['Write a FIELD Night Owl recap.',
-      'Game: '+topGame.away+' @ '+topGame.home,
+      'Game: '+topGame.away+' @ '+topGame.home+(topGame.venue?' · '+topGame.venue:''),
       'Final: '+score+' ('+winner+' wins)',
       _terms,
       topGame.seriesRecord?'Series: '+topGame.seriesRecord:'',
