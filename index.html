@@ -17628,7 +17628,7 @@ async function initFIELDBrief(sections){
   const relayJournalism = await fetchPrerenderedJournalism();
   if (relayJournalism?.brief) {
     const textEl = el.querySelector('.field-brief-text');
-    if (textEl) { textEl.textContent = trimToCompleteSentence(relayJournalism.brief); textEl.classList.remove('pending'); textEl.classList.add('loaded'); }
+    if (textEl) { textEl.textContent = trimToCompleteSentence(stripMarkdown(relayJournalism.brief)); textEl.classList.remove('pending'); textEl.classList.add('loaded'); }
     sessionStorage.setItem(cacheKey, relayJournalism.brief);
     if (FIELD_DEBUG) console.log('[O(1)] Brief served from relay KV — no AI call');
     if (typeof renderAmbientPanel === 'function') setTimeout(renderAmbientPanel, 50);
