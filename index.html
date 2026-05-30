@@ -13607,6 +13607,63 @@ async function fetchSchedule(){
 // All functions below were inadvertently dropped in the betting-engine removal commit.
 // startSquiggleEngine() + squigglePrefetchAll() were still called → 5 ReferenceErrors/load.
 
+const AFL_TEAM_ABBR={
+  'Adelaide':'ADE','Brisbane Lions':'BRI','Carlton':'CAR','Collingwood':'COL',
+  'Essendon':'ESS','Fremantle':'FRE','Geelong':'GEE','Gold Coast':'GCS',
+  'Greater Western Sydney':'GWS','Hawthorn':'HAW','Melbourne':'MEL',
+  'North Melbourne':'NME','Port Adelaide':'POR','Richmond':'RIC',
+  'St Kilda':'STK','Sydney':'SYD','West Coast':'WCE','Western Bulldogs':'WBD'
+};
+
+async function fetchAFLStandings(){
+  if(_squiggleCache.standings&&Date.now()-_squiggleCache.fetchedAt<120000) return;
+  try{
+    const r=await fetch(SQUIGGLE_RELAY+'?q=standings;year=2026',
+      {headers:{'User-Agent':'FIELD-Global-Sports'},signal:AbortSignal.timeout(7000)});
+    if(!r.ok) return;
+    const data=await r.json();
+    if(data.standings) _squiggleCache.standings=data.standings;
+    if(FIELD_DEBUG) console.debug('[AFL] standings fetched:',data.standings?.length,'teams');
+    renderAFLStandingsWidget();
+  }catch(e){if(FIELD_DEBUG) console.debug('[AFL] standings failed:',e.message);}
+}
+
+function renderAFLStandingsWidget(){
+  const s=_squiggleCache.standings;
+  if(!s||!s.length) return;
+  const container=document.querySelector('.sport-section[data-sport="Australian Football (AFL)"] .standings-panel');
+  if(!container) return;
+  const rows=s.slice(0,18).map((t,i)=>{
+    const rank=i+1;
+    const finals=rank<=10;
+    const cutline=rank===10;
+    const abbr=AFL_TEAM_ABBR[t.name]||(t.name||'').slice(0,3).toUpperCase();
+    const pct=t.percentage?Math.round(t.percentage)+'%':'';
+    const border=cutline?'border-bottom:2px solid var(--accent,#f97316);':'';
+    const bg=finals?'background:rgba(249,115,22,0.06);':'';
+    return `<tr style="${border}${bg}">
+      <td style="padding:2px 6px;color:${finals?'var(--accent,#f97316)':'var(--text-muted,#888)'};font-weight:${rank<=4?'bold':'normal'}">${rank}</td>
+      <td style="padding:2px 6px;font-weight:500">${abbr}</td>
+      <td style="padding:2px 6px;text-align:center">${t.wins||0}-${t.losses||0}${t.draws?'-'+t.draws:''}</td>
+      <td style="padding:2px 6px;text-align:right;color:var(--text-muted,#888)">${pct}</td>
+      <td style="padding:2px 6px;text-align:right">${t.pts||0}</td>
+    </tr>`;
+  }).join('');
+  container.innerHTML=`<table style="width:100%;border-collapse:collapse;font-size:0.78rem">
+    <thead><tr style="color:var(--text-muted,#888);border-bottom:1px solid var(--border,#333)">
+      <th style="padding:2px 6px;text-align:left">#</th>
+      <th style="padding:2px 6px;text-align:left">Team</th>
+      <th style="padding:2px 6px;text-align:center">W-L</th>
+      <th style="padding:2px 6px;text-align:right">%</th>
+      <th style="padding:2px 6px;text-align:right">Pts</th>
+    </tr></thead>
+    <tbody>${rows}</tbody>
+  </table>
+  <div style="font-size:0.68rem;color:var(--text-muted,#777);margin-top:4px;padding:0 4px">
+    Top 10 qualify for finals (Wildcard Round) · Orange = finals · Line = cut
+  </div>`;
+}
+
 let _squiggleCache={games:null,standings:null,fetchedAt:0};
 let _squiggleTipsCache={tips:null,power:null,round:null,fetchedAt:0};
 
@@ -16519,11 +16576,14 @@ async function initFIELDBrief(sections){
     const textEl=el.querySelector('.field-brief-text');
     if(textEl){textEl.textContent=trimToCompleteSentence(claudeText);textEl.classList.remove('pending');textEl.classList.add('loaded');}
     sessionStorage.setItem(cacheKey,claudeText);
+    // FIELD Desk: must be triggered here too — compound null path never called renderFieldDesk
+    setTimeout(renderFieldDesk, 300);
   } else {
     const textEl=el.querySelector('.field-brief-text');
     if(textEl){textEl.classList.remove('pending');textEl.classList.add('loaded');}
   }
-  setTimeout(()=>initJournalismQueue(sections),3000);
+  // FIELD Desk: also refresh after series queue fires (series cards populated ~3s later)
+  setTimeout(()=>{initJournalismQueue(sections);setTimeout(renderFieldDesk,500);},3000);
 // Re-inject scores on renderAll completion — catches cards rendered after initial ESPN poll
 // Fixes: Galaxy A36 blank scores when ESPN data was already fetched before render
 if(Object.keys(espnScores||{}).length){

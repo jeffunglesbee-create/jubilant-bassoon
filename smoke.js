@@ -914,3 +914,16 @@ assert('A253 — Squiggle engine restored: all functions defined (dropped in bet
   html.includes('async function squigglePrefetchAll') &&
   html.includes('async function startSquiggleEngine'),
   'All 7 Squiggle engine symbols must be defined — were dropped in betting removal causing 5 ReferenceErrors/load');
+
+assert('A254 — FIELD Desk: renderFieldDesk called after Claude fallback J3 path',
+  html.includes('sessionStorage.setItem(cacheKey,claudeText)') &&
+  html.includes('setTimeout(renderFieldDesk, 300)') &&
+  html.includes('initJournalismQueue(sections);setTimeout(renderFieldDesk,500)'),
+  'renderFieldDesk must be called after J3 Claude fallback stores brief — was never triggered in non-compound path');
+
+assert('A255 — AFL engine complete: AFL_TEAM_ABBR + fetchAFLStandings + renderAFLStandingsWidget restored',
+  html.includes('const AFL_TEAM_ABBR=') &&
+  html.includes('Brisbane Lions') &&
+  html.includes('async function fetchAFLStandings') &&
+  html.includes('function renderAFLStandingsWidget'),
+  'AFL symbols dropped in betting removal — AFL_TEAM_ABBR undefined would break injectSquiggleLiveScores and tips');
