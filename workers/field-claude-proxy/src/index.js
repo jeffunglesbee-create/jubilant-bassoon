@@ -1,27 +1,30 @@
-// field-claude-proxy — Cloudflare Worker v4
+// field-claude-proxy — Cloudflare Worker v8
 // Source of truth: workers/field-claude-proxy/src/index.js
 // Auto-deployed via .github/workflows/deploy-proxy.yml on push to workers/**
 //
-// CHANGES IN v4:
-//   Model: gemini-2.5-flash → gemini-2.5-flash-lite (30 RPM vs 15 RPM)
-//   429 handling: forward Retry-After to client instead of throwing 502
-//   ALLOWED_ORIGINS: added jubilant-bassoon.pages.dev
-//   X-FIELD-Proxy-Version: 8 header on all responses
-//   max_tokens default: 1000 → 2500 (supports compound editorial call)
+// CHANGES IN v8 (May 31 2026):
+//   Model: gemini-2.5-flash-lite → gemini-3.1-flash-lite (GA May 7 2026)
+//   API endpoint: v1beta → v1 (GA models served on v1)
+//   ALLOWED_ORIGINS: added field-deploy.jeffunglesbee.workers.dev (v7)
+//   hasVision: vision requests route to Claude directly (v7)
+//   429 handling: FIXED — returns 429 to client, does NOT fall back to Claude
+//     (v7 had fallback-to-Claude on 429 which caused all rate-limited calls
+//      to silently use Claude Sonnet 4. Fixed in v8.)
 //
-// SECRETS (set once in Cloudflare dashboard, persist across deploys):
+// SECRETS (set in Cloudflare dashboard):
 //   GEMINI_KEY    → aistudio.google.com → Get API key (free, 1500 RPD / 30 RPM)
-//   ANTHROPIC_KEY → console.anthropic.com → API Keys (optional Claude fallback)
+//   ANTHROPIC_KEY → console.anthropic.com → API Keys (Claude fallback)
 //
 // VERIFY after deploy (DevTools Network tab on FIELD app):
-//   X-FIELD-Proxy-Version: 4
-//   X-FIELD-Model: gemini-2.5-flash-lite  (or claude-sonnet-4 on fallback)
+//   X-FIELD-Proxy-Version: 8
+//   X-Field-Model: gemini-3.1-flash-lite  (or claude-sonnet-4 on vision/error fallback)
 
-const PROXY_VERSION = '8'; // deployed May 31 2026 — Gemini-first routing restored
+const PROXY_VERSION = '8';
 
 const ALLOWED_ORIGINS = [
   'https://jubilant-bassoon.jeffunglesbee.workers.dev',
   'https://jubilant-bassoon.pages.dev',
+  'https://field-deploy.jeffunglesbee.workers.dev',
 ];
 
 const cors = (origin) => ({
@@ -54,7 +57,7 @@ function fromGemini(data) {
   const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
   return JSON.stringify({
     id: 'gemini-proxy', type: 'message', role: 'assistant',
-    model: 'gemini-2.5-flash-lite',
+    model: 'gemini-3.1-flash-lite',
     content: [{ type: 'text', text }],
     stop_reason: 'end_turn',
     usage: { input_tokens: 0, output_tokens: 0 },
@@ -62,7 +65,7 @@ function fromGemini(data) {
 }
 
 async function callGemini(body, key) {
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${key}`;
+  const url = `https://generativelanguage.googleapis.com/v1/models/gemini-3.1-flash-lite:generateContent?key=${key}`;
   const r = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -73,7 +76,7 @@ async function callGemini(body, key) {
     throw {is429: true, retryAfter, detail: (await r.text().catch(() => '')).slice(0, 200)};
   }
   if (!r.ok) throw new Error(`Gemini ${r.status}: ${(await r.text()).slice(0, 200)}`);
-  return { text: fromGemini(await r.json()), model: 'gemini-2.5-flash-lite', status: 200 };
+  return { text: fromGemini(await r.json()), model: 'gemini-3.1-flash-lite', status: 200 };
 }
 
 async function callClaude(raw, key) {
@@ -97,10 +100,6 @@ export default {
     if (request.method !== 'POST')
       return new Response('Method not allowed', { status: 405, headers: version() });
 
-    // Server-to-server bypass: the journalism cron (field-relay-nba Worker) calls
-    // this proxy with no Origin header (Workers don't send one). Allow it via a
-    // shared header instead of Origin. Browsers can't set this cross-origin without
-    // a preflight that would fail, so it can't be spoofed from the web.
     const relayAuth = request.headers.get('X-FIELD-Relay') || '';
     const isRelay = relayAuth === (env.RELAY_SHARED_SECRET || 'field-relay-cron-2026');
     if (!isRelay && !ALLOWED_ORIGINS.includes(origin))
@@ -120,18 +119,30 @@ export default {
       status: 400, headers: { 'Content-Type': 'application/json', ...cors(origin), ...version() },
     });
 
+    // Vision requests route directly to Claude (Gemini vision requires different handling)
+    let bodyParsed;
+    try { bodyParsed = JSON.parse(raw); } catch { bodyParsed = null; }
+    const hasVision = bodyParsed?.messages?.some(
+      (m) => Array.isArray(m.content) && m.content.some((c) => c.type === 'image')
+    );
+
     let result;
 
-    if (gKey) {
+    if (gKey && !hasVision) {
       try {
         result = await callGemini(JSON.parse(raw), gKey);
       } catch (e) {
         if (e.is429) {
+          // 429: return rate limit to client — do NOT fall back to Claude.
+          // The browser's _jqDelay() RPM guard handles retries.
+          // Falling back to Claude on every 429 silently routes all
+          // rate-limited calls to paid Claude (v7 bug — fixed in v8).
           return new Response(JSON.stringify({ error: 'Rate limit exceeded', retryAfter: e.retryAfter }), {
             status: 429,
             headers: { 'Content-Type': 'application/json', 'Retry-After': e.retryAfter, ...cors(origin), ...version() },
           });
         }
+        // Non-429 Gemini error: fall back to Claude
         if (aKey) {
           try { result = await callClaude(raw, aKey); }
           catch (e2) {
@@ -145,18 +156,23 @@ export default {
           });
         }
       }
-    } else {
+    } else if (aKey) {
+      // No Gemini key, or vision request: use Claude
       try { result = await callClaude(raw, aKey); }
       catch (e) {
         return new Response(JSON.stringify({ error: `Claude failed: ${e.message}` }), {
           status: 502, headers: { 'Content-Type': 'application/json', ...cors(origin), ...version() },
         });
       }
+    } else {
+      return new Response(JSON.stringify({ error: 'No backend available for this request.' }), {
+        status: 500, headers: { 'Content-Type': 'application/json', ...cors(origin), ...version() },
+      });
     }
 
     return new Response(result.text, {
       status: result.status,
-      headers: { 'Content-Type': 'application/json', 'X-FIELD-Model': result.model, ...cors(origin), ...version() },
+      headers: { 'Content-Type': 'application/json', 'X-Field-Model': result.model, ...cors(origin), ...version() },
     });
   },
 };
