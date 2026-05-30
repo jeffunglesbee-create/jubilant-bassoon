@@ -10433,10 +10433,12 @@ function mapV2ToESPN(fg) {
     periodPrefix: V2_PERIOD_PREFIX[fg.sport]||'',
     situation: fg.situation||null,
     _gameId: fg.id, _sport: fg.sport, source:'v2',
-    // ESPN-specific fields not available from V2; WP stays null until dedicated call
+    // Linescores from relay adapter (quarter_1..4 for NBA, inning 1..9 for MLB)
+    homeLinescores: fg.linescores?.home || [],
+    awayLinescores: fg.linescores?.away || [],
+    // WP and leaders start null; filled by Savant (MLB), statistics endpoint (NBA/NHL), or NHL relay
     espnEventId: null, wp: null, wp_prev: null,
     homeLeader: null, awayLeader: null,
-    homeLinescores: [], awayLinescores: [],
   };
 }
 
@@ -10460,9 +10462,42 @@ async function fetchV2AllScores() {
       games.forEach(fg => {
         if (!fg?.home?.name || !fg?.away?.name) return;
         const key = `${fg.home.name}|${fg.away.name}`;
-        espnScores[key]  = mapV2ToESPN(fg);
+        const prev = espnScores[key];
+        const v2Entry = mapV2ToESPN(fg);
+
+        // Merge guard: V2 provides scores/period/clock; preserve richer fields
+        // already set by NHL relay, Savant, or statistics endpoint.
+        // homeLinescores: prefer V2 if it has data (relay now sends quarter scores);
+        //   fall back to prev only when V2 has none yet (e.g. game not started).
+        espnScores[key] = {
+          ...v2Entry,
+          homeLeader:     prev?.homeLeader     ?? null,
+          awayLeader:     prev?.awayLeader     ?? null,
+          wp:             prev?.wp             ?? null,
+          wp_prev:        prev?.wp_prev        ?? null,
+          homeLinescores: v2Entry.homeLinescores.length ? v2Entry.homeLinescores : (prev?.homeLinescores || []),
+          awayLinescores: v2Entry.awayLinescores.length ? v2Entry.awayLinescores : (prev?.awayLinescores || []),
+        };
         espnScoreTs[key] = Date.now();
         if (fg.state === 'live') anyLive = true;
+
+        // MLB Savant WP trigger — was in ESPN poll loop; MLB removed from ESPN_SPORTS
+        // so must fire here instead when a live MLB game is detected.
+        if (sport === 'mlb' && fg.state === 'live' && !espnScores[key].wp) {
+          try {
+            const mlbSec  = (allData?.sports||[]).find(s=>(s.sport||'').includes('Baseball'));
+            const mlbGame = (mlbSec?.games||[]).find(g =>
+              espnTeamMatch(g.home||'', fg.home?.name||'') && espnTeamMatch(g.away||'', fg.away?.name||''));
+            if (mlbGame?.sourceId) {
+              fetchSavantGameFeed(mlbGame.sourceId).then(savant => {
+                if (savant?.wp != null && espnScores[key]) {
+                  espnScores[key].wp_prev = espnScores[key].wp;
+                  espnScores[key].wp = savant.wp;
+                }
+              });
+            }
+          } catch(e_sav) { if(FIELD_DEBUG) console.warn('[V2-Savant]', e_sav.message); }
+        }
       });
       if (FIELD_DEBUG && games.length)
         console.debug(`[V2] ${sport}: ${games.length} games, ${games.filter(g=>g.state==='live').length} live`);
@@ -10910,8 +10945,10 @@ async function fetchNBARelayScores() {
       const awayKey = `${g.awayCity} ${g.awayName}`;
       const key = `${homeKey}|${awayKey}`;
       relayNBAScores[key] = g;
-      if (RELAY_PRIMARY) {
-        // Post-cutover: RELAY is source of truth
+      if (RELAY_PRIMARY && !FIELD_V2_SOURCES.nba) {
+        // Post-cutover NBA CDN write — only when V2 is NOT the NBA score source.
+        // V2 pivot (2026-05-29) made api-sports.io primary for NBA; CDN relay is
+        // now used only for _nbaGameIdMap (PBP routing) via fetchNBAScoreboard().
         espnScores[key] = {
           _gameId: resolveGameIdByHome(homeKey),
           state: g.state, period: g.period, clock: g.clock, detail: g.detail,
