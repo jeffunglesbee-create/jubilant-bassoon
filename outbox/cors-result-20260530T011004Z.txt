@@ -1,0 +1,15 @@
+URL: https://field-relay-nba.jeffunglesbee.workers.dev/apisports/baseball/games/statistics/players?id=178870  [20260530T011004Z]
+HTTP/2 405 
+date: Sat, 30 May 2026 01:10:04 GMT
+content-type: text/plain;charset=UTF-8
+access-control-allow-origin: *
+access-control-allow-headers: Content-Type
+access-control-allow-methods: GET, POST
+report-to: {"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=CRApvl6wV1UKJpnlixLYkl3slJocSDPB2oyfYetUZ3dA3Q9uPhvse8tf2DHQATE4oEHlcNu%2Bhdxu4WYZcsPpZmneS8kW3OfJotYSt7HSmK8oQH4QVpzaMqsi38uimswwaSHg64NfAuwOrVlx%2FgRQLx8tXnyCLi0ClRN2%2Fw%3D%3D"}]}
+nel: {"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}
+server: cloudflare
+cf-ray: a039db657d7adb47-DFW
+alt-svc: h3=":443"; ma=86400
+
+=== BODY (first 3000 chars) ===
+{"get":"games","parameters":{"id":"178870"},"errors":{"endpoint":"This endpoint do not exist."},"results":0,"response":[]}
