@@ -26,6 +26,10 @@ ENDPOINTS = [
     # If events column contains 'abs_challenge' or similar, umpire stats can be
     # derived from this endpoint instead of the broken hp_umpire leaderboard.
     (f"statcast_{yesterday}", f"https://baseballsavant.mlb.com/statcast_search/csv?type=details&game_date={yesterday}"),
+    # Also try May 28 (known game date) for full column + events analysis
+    ("statcast_2026-05-28", "https://baseballsavant.mlb.com/statcast_search/csv?type=details&game_date=2026-05-28"),
+    # Try May 27 — known day with many games
+    ("statcast_2026-05-27", "https://baseballsavant.mlb.com/statcast_search/csv?type=details&game_date=2026-05-27"),
 ]
 
 ts  = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
