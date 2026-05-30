@@ -1232,3 +1232,11 @@ assert('A307 — Athletics: OAK uses Athletics.TV not NBCS California',
   html.includes("Sacramento Athletics") &&
   html.includes("Athletics moved to Athletics.TV (MLB Local Media DTC)"),
   'Athletics left Oakland — now Sacramento temporarily, local channel is Athletics.TV not NBCS California');
+
+assert('A308 — MCP relay section in health panel: fetchMCPStatus + fhp-mcp placeholder + auto-fetch on open',
+  html.includes('function fetchMCPStatus') &&
+  html.includes('fhp-mcp-body') &&
+  html.includes('get_ci_status') &&
+  html.includes('get_smoke_count') &&
+  html.includes('setTimeout(fetchMCPStatus, 100)'),
+  'Health panel must include live MCP relay section with CI status, smoke count, and refresh button');

@@ -2827,6 +2827,14 @@ function buildFieldHealthPanel() {
   else
     rows.push(ok('Runtime Errors', 'None captured'));
 
+  // ── MCP Relay status (async — populated after panel renders) ─────────────
+  rows.push(`<div id="fhp-mcp" style="margin-top:.4rem">
+    <div style="color:#c9a84c;font-size:.6rem;font-weight:700;margin-bottom:.25rem">
+      🔌 MCP RELAY
+    </div>
+    <div id="fhp-mcp-body" style="color:#8888aa;font-size:.58rem">Fetching…</div>
+  </div>`);
+
   return rows.join('');
 }
 
@@ -2865,6 +2873,83 @@ function showFieldHealthPanel() {
     </div>`;
   panel.addEventListener('click', e => { if (e.target === panel) panel.remove(); });
   document.body.appendChild(panel);
+  // Fire MCP status fetch after panel is in DOM
+  setTimeout(fetchMCPStatus, 100);
+}
+
+// ── MCP Relay status fetcher ──────────────────────────────────────────────
+// Calls /mcp on field-relay-nba to get live CI status, smoke count, and
+// deploy history. Injected into the health panel after it renders.
+// No auth header needed since FIELD_MCP_SECRET is not set.
+// RUWT: uses JSON-RPC 2.0 per spec verified May 30 2026.
+async function fetchMCPStatus() {
+  const el = document.getElementById('fhp-mcp-body');
+  if (!el) return;
+
+  const MCP = CLAUDE_PROXY_URL.replace('/field-claude-proxy', '/field-relay-nba').replace('field-claude-proxy', 'field-relay-nba') || 'https://field-relay-nba.jeffunglesbee.workers.dev';
+  const RELAY_MCP = 'https://field-relay-nba.jeffunglesbee.workers.dev/mcp';
+
+  const call = async (method, params={}) => {
+    const r = await fetch(RELAY_MCP, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({jsonrpc:'2.0', id:1, method, params}),
+    });
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    const d = await r.json();
+    if (d.error) throw new Error(d.error.message);
+    return d.result;
+  };
+
+  const row = (icon, label, val, col='#aaa') =>
+    `<div style="display:flex;gap:.4rem;margin-bottom:.2rem">
+       <span>${icon}</span>
+       <span style="color:#777;min-width:80px">${label}</span>
+       <span style="color:${col};font-weight:600">${val}</span>
+     </div>`;
+
+  try {
+    // Parallel: CI status + smoke count
+    const [ciResult, smokeResult] = await Promise.all([
+      call('tools/call', {name:'get_ci_status', arguments:{}}),
+      call('tools/call', {name:'get_smoke_count', arguments:{}}),
+    ]);
+
+    const ciLines = (ciResult?.content?.[0]?.text || '').split('\n').slice(0,3);
+    const smokeText = smokeResult?.content?.[0]?.text || '?';
+    const smokeNum = smokeText.match(/\d+/)?.[0] || '?';
+
+    // Parse CI lines: "name | conclusion | sha | date"
+    const ciRows = ciLines.map(line => {
+      const [name, conclusion, sha] = line.split(' | ');
+      const icon = conclusion === 'success' ? '✅' : conclusion === 'failure' ? '❌' : '🔄';
+      const col  = conclusion === 'success' ? '#4caf82' : conclusion === 'failure' ? '#e05c5c' : '#c9a84c';
+      const shortName = (name||'').replace('Smoke Test + Live Verify','Smoke').replace('FIELD Data','Data').replace('Cloudflare API Probe','CF Probe').replace('Deploy gate (fast smoke)','Deploy gate');
+      return row(icon, shortName.slice(0,16), `${sha||'?'} · ${conclusion||'?'}`, col);
+    }).join('');
+
+    const smokeCol = parseInt(smokeNum) >= 300 ? '#4caf82' : '#c9a84c';
+
+    el.innerHTML = `
+      ${row('🧪', 'Smoke', `${smokeNum} assertions`, smokeCol)}
+      <div style="margin-top:.25rem;color:#555;font-size:.52rem;margin-bottom:.2rem">Recent runs:</div>
+      ${ciRows}
+      <div style="margin-top:.35rem">
+        <button onclick="fetchMCPStatus()"
+          style="background:rgba(201,168,76,.15);border:1px solid #c9a84c;color:#c9a84c;
+                 border-radius:5px;padding:.2rem .5rem;font-size:.55rem;cursor:pointer;font-family:monospace">
+          ↻ Refresh
+        </button>
+        <span style="color:#444;font-size:.52rem;margin-left:.4rem">via relay MCP</span>
+      </div>`;
+  } catch(e) {
+    el.innerHTML = `<span style="color:#e05c5c">MCP error: ${e.message}</span>
+      <button onclick="fetchMCPStatus()"
+        style="margin-left:.5rem;background:rgba(255,255,255,.05);border:1px solid #555;
+               color:#888;border-radius:4px;padding:.15rem .4rem;font-size:.52rem;cursor:pointer">
+        Retry
+      </button>`;
+  }
 }
 
 // ── Long-press trigger on settings button ─────────────────────────────────
