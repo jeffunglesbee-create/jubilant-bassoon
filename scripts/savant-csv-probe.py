@@ -54,7 +54,7 @@ for label, url in ENDPOINTS:
                 all_rows = rows[1:]  # skip header
                 try:
                     ev_idx = header.index("events")
-                    unique_events = sorted(set(r[ev_idx] for r in all_rows if ev_idx < len(r) and r[ev_idx]))
+                    unique_events = sorted(set(row[ev_idx] for row in all_rows if ev_idx < len(row) and row[ev_idx]))
                     extra["unique_events"] = unique_events
                     abs_events = [e for e in unique_events if 'challenge' in e.lower() or 'abs' in e.lower() or 'review' in e.lower()]
                     extra["abs_related_events"] = abs_events
@@ -64,7 +64,7 @@ for label, url in ENDPOINTS:
                 for desc_col in ["description", "des"]:
                     try:
                         d_idx = header.index(desc_col)
-                        unique_desc = sorted(set(r[d_idx] for r in all_rows if d_idx < len(r) and r[d_idx]))
+                        unique_desc = sorted(set(row[d_idx] for row in all_rows if d_idx < len(row) and row[d_idx]))
                         abs_desc = [d for d in unique_desc if 'challenge' in d.lower() or 'abs' in d.lower() or 'overturn' in d.lower() or 'review' in d.lower()]
                         extra[f"abs_in_{desc_col}"] = abs_desc
                         extra[f"unique_{desc_col}_count"] = len(unique_desc)
@@ -75,8 +75,8 @@ for label, url in ENDPOINTS:
                 try:
                     t_idx = header.index("type")
                     type_counts = {}
-                    for r in all_rows:
-                        if t_idx < len(r): type_counts[r[t_idx]] = type_counts.get(r[t_idx], 0) + 1
+                    for row in all_rows:
+                        if t_idx < len(row): type_counts[row[t_idx]] = type_counts.get(row[t_idx], 0) + 1
                     extra["type_counts"] = type_counts
                 except ValueError: pass
                 # Check for umpire-related columns
@@ -87,7 +87,7 @@ for label, url in ENDPOINTS:
                 # Sample the umpire column values
                 try:
                     ump_idx = next(i for i,c in enumerate(header) if 'umpire' in c.lower())
-                    ump_vals = sorted(set(r[ump_idx] for r in all_rows if ump_idx < len(r) and r[ump_idx]))
+                    ump_vals = sorted(set(row[ump_idx] for row in all_rows if ump_idx < len(row) and row[ump_idx]))
                     extra["umpire_sample_values"] = ump_vals[:10]
                 except: pass
 
