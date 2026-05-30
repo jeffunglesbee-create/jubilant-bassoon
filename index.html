@@ -12119,7 +12119,7 @@ function buildNHLAnalyticsBadges(game) {
 // clutchDrtg = defensive rating in clutch (last 5 min, within 5pts) — [VERIFY] from stats.nba.com
 // Wave 1: hardcoded. Update after each Finals game with playoff-adjusted values.
 const NBA_TEAM_ANALYTICS = {
-  'OKC': { pace: 97.8,  ortg: 116.2, drtg: 107.7, drtgRank: 1,  clutchDrtg: 109.1, note: 'Historic defense — best DRTG in NBA by 6.7 pts. Halfcourt-first.' },   // [VERIFY clutch]
+  'OKC': { pace: 97.8,  ortg: 116.2, drtg: 107.7, drtgRank: 1,  clutchDrtg: 109.1, champion: true, note: 'Defending NBA Champions (2024-25, beat Pacers G7). Best DRTG in NBA by 6.7 pts. SGA Finals MVP. Halfcourt-first.' },   // [VERIFY clutch]
   'NYK': { pace: 100.1, ortg: 114.3, drtg: 109.9, drtgRank: 4,  clutchDrtg: 108.8, note: 'Elite playoff D (107.8 DRTG in 10-game run). Brunson elite clutch.' }, // [VERIFY clutch]
   'SAS': { pace: 101.2, ortg: 118.1, drtg: 110.2, drtgRank: 5,  clutchDrtg: null,  note: 'Wembanyama elite shot-blocker. Transition threat.' },
   'CLE': { pace: 99.4,  ortg: 117.3, drtg: 110.8, drtgRank: 6,  clutchDrtg: null,  note: null },
@@ -12164,7 +12164,7 @@ function getNBATeamAnalytics(name) {
 // [VERIFY] all values against stats.nba.com/stats/playerclustering after each Finals game.
 const NBA_CLUTCH_PLAYERS = {
   'brunson':        { team:'NYK', clutchPts: 8.4,  clutchFg: 0.52, plusMinus: '+18.2', tier:'elite',  note:'Historically elite in clutch — series closer.' },    // [VERIFY playoffs 2026]
-  'gilgeous-alexander': { team:'OKC', clutchPts: 7.8, clutchFg: 0.48, plusMinus: '+14.6', tier:'elite',  note:'Two-time MVP finalist. Best closer on either team.' }, // [VERIFY playoffs 2026]
+  'gilgeous-alexander': { team:'OKC', clutchPts: 7.8, clutchFg: 0.48, plusMinus: '+14.6', tier:'elite',  note:'2025 NBA MVP + Finals MVP (beat Pacers in 7). Two-time champion. Best closer on either team.' }, // [VERIFY playoffs 2026]
   'towns':          { team:'NYK', clutchPts: 5.2,  clutchFg: 0.44, plusMinus: '+4.1',  tier:'avg',    note:'Good overall, average clutch — defers to Brunson.' },    // [VERIFY]
   'anunoby':        { team:'NYK', clutchPts: 4.1,  clutchFg: 0.46, plusMinus: '+6.8',  tier:'solid',  note:'Strong playoff performer, improved clutch role.' },       // [VERIFY]
   'williams':       { team:'OKC', clutchPts: 4.8,  clutchFg: 0.45, plusMinus: '+9.2',  tier:'solid',  note:'OKC second option, excellent off-ball movement.' },        // [VERIFY] Jalen Williams
@@ -12185,6 +12185,10 @@ function getNBAAnalyticsContext(game) {
   try {
     const hStats = getNBATeamAnalytics(game.home);
     const aStats = getNBATeamAnalytics(game.away);
+
+    // Defending champion context — surfaces in all OKC journalism
+    if (hStats?.champion) lines.push(`[CHAMPION] ${game.home} are the defending NBA champions (2024-25 — defeated Pacers in 7 games, SGA Finals MVP).`);
+    else if (aStats?.champion) lines.push(`[CHAMPION] ${game.away} are the defending NBA champions (2024-25 — defeated Pacers in 7 games, SGA Finals MVP).`);
 
     if (hStats && aStats) {
       const avgPace = ((hStats.pace + aStats.pace) / 2);
@@ -15847,12 +15851,12 @@ const FRANCHISE_MISERY = {
   'chicago blackhawks':'Dynasty ended 2015. Cap-era collapse from three Cups to rebuild.',
   // NBA
   'sacramento kings':  'Last NBA Finals: never. Last conference finals: 2002 (24 years). "We believe" era still unfulfilled.',
-  'indiana pacers':    'Last Finals: 2000 (26 years). Reggie Miller era never got a ring.',
+  'indiana pacers':    '2025 NBA Finals runners-up — lost to OKC in 7 games. Last Finals before 2025: 2000. Reggie Miller era never won a ring.',
   'phoenix suns':      'Last Finals: 2021 (5 years). Never won an NBA title.',
   'denver nuggets':    'First championship: 2023. Still building new dynasty expectations.',
   'new york knicks':     'Last NBA title: 1973 (53 years). First Finals since 1999 — a city that has waited two generations.',
-  'oklahoma city thunder':'Return to Finals would be first since 2012. Post-Durant rebuilding complete.',
-  'san antonio spurs': 'Post-dynasty rebuild. Wembanyama era begins. Five titles from 1999-2014.',
+  'oklahoma city thunder':'NBA Champions 2024-25 — defeated Indiana Pacers in 7. SGA Finals MVP. Second title in franchise history (first: 1979 as Seattle SuperSonics). Defending champions entering 2026 NBA Finals.',
+  'san antonio spurs': 'Post-dynasty rebuild. Wembanyama era begins. Five titles from 1999-2014. 2025-26 WCF finalist — pushed defending-champion OKC to 7 games.',
   'carolina hurricanes': 'Last Stanley Cup: 2006 (20 years). First Final since lifting the Cup — franchise built on playoff underdog identity.',
   'vegas golden knights': 'Won the Cup in 2023. Third Stanley Cup Final in 9 years of existence — one of the fastest championship windows in sports history.',
   // MLB
@@ -15971,6 +15975,7 @@ const FIELD_PROSE_STYLE=[
   '- STYLE: if a sentence would work in any game recap for any sport, it is too generic — rewrite with details specific to THIS game.',
   '- CITE ANALYTICS: if [PP/PK], [POSSESSION], [PARK], [UMPIRE], or [GOALIE] context appears in the game data, cite the specific figure verbatim — not a paraphrase. "93.5% penalty kill" not "elite penalty killing". "+17% runs at Camden Yards" not "a hitter-friendly park".',
   '- CITE NBA ANALYTICS: if [SLOW GRIND], [FAST PACE], [ELITE D BOTH], [CHESS MATCH], [CLUTCH], or [GAME TYPE] appears, cite specific DRTG, pace, or clutch figures verbatim. "107.7 DRTG, best in the NBA" not "elite defense".',
+  '- CITE CHAMPION: if [CHAMPION] appears in game context, reference the team as "defending champions" or "reigning NBA champions" in the first paragraph — never omit this when present.',
   '- FEATURED STAT: if a [FEATURED STAT] line appears for a game, that exact figure MUST appear in your brief for that game.',
   '- LEAD SENTENCE: never start a brief, paragraph, or sentence with "The [Team]..." — lead with the specific situation. "Wembanyama scored 34" not "The Spurs got a big performance." "Two years without a Finals appearance ends tonight" not "The Celtics are looking to make a statement."',
   '- BANNED PHRASES (never use): '+BANNED_PHRASES.join(', ')+'.',
