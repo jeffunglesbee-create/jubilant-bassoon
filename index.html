@@ -18062,14 +18062,24 @@ async function renderStakesBriefCard(gameCard) {
   card.className = 'stakes-brief-card';
   card.dataset.gameid = gameid;
 
-  // Icon for major finals — not "MUST WIN", that's elimination framing
+  // Stakes label — context-aware
+  // G7 conference finals gets 'FINALS BOUND', NBA/SCF Finals games get trophy label,
+  // plain G7s get 'GAME 7', elimination gets 'WINNER-TAKE-ALL'.
+  const _isG7 = /\bg7\b|game 7/i.test(game.league||'');
+  const _isCFG7 = _isG7 && /conf.*final|conference.*final|west.*final|east.*final/i.test(game.league||'');
+  const _isNBAFinalsGame = /nba finals/i.test(game.league||'');
+  const _isSCFGame = /stanley cup final/i.test(game.league||'');
   const impIcon = _isMajorFinal
     ? (/champions league.*final/i.test(game.league||'') ? '🏆 UCL FINAL'
       : /europa league.*final/i.test(game.league||'') ? '🏆 UEL FINAL'
       : /conference league.*final/i.test(game.league||'') ? '🏆 UECL FINAL'
       : '🏆 FINAL')
-    : imp === 'elimination' ? '💀 ELIMINATION'
-    : imp === 'series_deciding' ? '⚡ MUST WIN'
+    : _isNBAFinalsGame   ? '🏆 NBA FINALS'
+    : _isSCFGame         ? '🏆 STANLEY CUP FINAL'
+    : _isCFG7            ? '⚡ GAME 7 — FINALS BOUND'
+    : _isG7              ? '⚡ GAME 7'
+    : imp === 'elimination'     ? '💀 WINNER-TAKE-ALL'
+    : imp === 'series_deciding' ? '⚡ SERIES DECIDING'
     : '🏆 CLINCH';
   const inner = document.createElement('div');
   inner.className = 'stakes-inner';
