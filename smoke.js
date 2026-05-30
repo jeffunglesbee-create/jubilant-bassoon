@@ -1313,3 +1313,10 @@ assert('A320 — MOBILE-INTEL-A: Right Now CSS has correct viewport rules',
   html.includes('rn-card--condensed') &&
   html.includes('rn-card--compact'),
   'Right Now CSS must include portrait/landscape/iPad media queries');
+
+assert('A321 — stripMarkdown defined + applied to stakes/card brief renderers',
+  html.includes('function stripMarkdown(text)') &&
+  html.includes('stripMarkdown(text)') &&
+  html.includes("inner.querySelector('.stakes-text')") &&
+  !html.includes("card.querySelector('.sgb-text')"),
+  'stripMarkdown must exist, be applied to all brief renderers, and stakes must use .stakes-text not .sgb-text');

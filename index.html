@@ -15478,6 +15478,18 @@ function stripJsonFences(text) {
   return m ? m[0] : cleaned;
 }
 
+function stripMarkdown(text) {
+  if (!text) return text;
+  return text
+    .replace(/^#{1,6}\s+/gm, '')
+    .replace(/\*\*(.+?)\*\*/g, '$1')
+    .replace(/\*(.+?)\*/g, '$1')
+    .replace(/`(.+?)`/g, '$1')
+    .replace(/^[-*+]\s+/gm, '')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
 function trimToCompleteSentence(text) {
   if(!text) return text;
   const trimmed = text.trim();
@@ -17854,9 +17866,9 @@ async function renderMLBGameBriefCard(gameCard) {
   const text = await fetchMLBGameBriefFromClaude(game);
   const textEl = inner.querySelector('.sgb-text');
   if (text && textEl) {
-    textEl.textContent = trimToCompleteSentence(text);
+    textEl.textContent = trimToCompleteSentence(stripMarkdown(text));
     textEl.classList.replace('pending','loaded');
-    sessionStorage.setItem(cacheKey, text);
+    sessionStorage.setItem(cacheKey, stripMarkdown(text));
   } else {
     // Always remove card on failure — never leave "Loading brief…" stuck
     try { card.remove(); } catch(_) {}
@@ -17950,9 +17962,9 @@ async function renderWNBAGameBriefCard(gameCard) {
   const text = await fetchWNBAGameBriefFromClaude(game);
   const textEl = inner.querySelector('.sgb-text');
   if (text && textEl) {
-    textEl.textContent = trimToCompleteSentence(text);
+    textEl.textContent = trimToCompleteSentence(stripMarkdown(text));
     textEl.classList.replace('pending','loaded');
-    sessionStorage.setItem(cacheKey, text);
+    sessionStorage.setItem(cacheKey, stripMarkdown(text));
   } else {
     try { card.remove(); } catch(_) {}
   }
@@ -18071,18 +18083,18 @@ async function renderStakesBriefCard(gameCard) {
   const espnIdS = game._espnId || game.sourceId || gameid;
   const kvBriefS = await fetchPrerenderedGameBrief(espnIdS);
   if (kvBriefS) {
-    const textEl = card.querySelector('.sgb-text');
-    if (textEl) { textEl.textContent = trimToCompleteSentence(kvBriefS); textEl.classList.replace('pending','loaded'); }
-    sessionStorage.setItem(cacheKey, kvBriefS);
+    const textEl = inner.querySelector('.stakes-text'); // fix: was .sgb-text (wrong)
+    if (textEl) { textEl.textContent = trimToCompleteSentence(stripMarkdown(kvBriefS)); textEl.classList.replace('pending','loaded'); }
+    sessionStorage.setItem(cacheKey, stripMarkdown(kvBriefS));
     return;
   }
 
   const text = await fetchStakesBriefFromClaude(game);
   const textEl = inner.querySelector('.stakes-text');
   if (text && textEl) {
-    textEl.textContent = trimToCompleteSentence(text);
+    textEl.textContent = trimToCompleteSentence(stripMarkdown(text));
     textEl.classList.replace('pending','loaded');
-    sessionStorage.setItem(cacheKey, text);
+    sessionStorage.setItem(cacheKey, stripMarkdown(text));
   } else {
     try { card.remove(); } catch(_) {}
   }
