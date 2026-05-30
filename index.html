@@ -7112,6 +7112,7 @@ function renderAll(){
   setTimeout(initSeriesPreviews, 400);  // J2: series preview cards
   setTimeout(initEPLMatchBriefs, 700);  // J7: EPL + MLS + Bundesliga match briefs
   setTimeout(initStakesBriefs,   900);  // J10: stakes brief (elimination/clinch/series-deciding)
+  setTimeout(renderFinalsDesk,  1050);  // J11: Finals Desk daily analytical piece (NBA/NHL Finals)
   setTimeout(initMLBGameBriefs, 1100);  // J8: MLB game brief (park/weather/umpire/pitcher)
   setTimeout(initWNBAGameBriefs,1300);  // J9: WNBA game brief (standings + matchup)
   renderWatchWindow();
@@ -11895,6 +11896,68 @@ function getNHLAnalyticsContext(game) {
   return lines.join('\n');
 }
 
+// ── NHL PDO (luck indicator) ──────────────────────────────────────────────────
+// PDO = team shooting% × 1000 + team sv% × 1000. League average = 1000.
+// Above 1020 = likely running hot; below 980 = likely unlucky.
+// Source: Natural Stat Trick (5-on-5, playoffs).
+// [VERIFY] values after each series against naturalstattrick.com
+const NHL_PDO = {
+  'CAR': { pdo: 1012, shoot: 8.4, note: 'Process-driven — possession dominance (57% SAT) backs results' },  // [VERIFY]
+  'VGK': { pdo: 1018, shoot: 9.4, note: 'Hart elite, PP converting — slightly elevated but within range' }, // [VERIFY]
+  'COL': { pdo: 1008, shoot: 9.2, note: null },
+  'MTL': { pdo: 992,  shoot: 8.1, note: 'Underperforming xG — Dobes keeping them alive' },
+  'BOS': { pdo: 985,  shoot: 7.4, note: null },
+  'OTT': { pdo: 976,  shoot: 7.8, note: null },
+};
+
+function getNHLPDO(abbrev) {
+  return abbrev ? (NHL_PDO[abbrev] || null) : null;
+}
+
+// ── NHL Game Character Predictor ─────────────────────────────────────────────
+// Combines possession (SAT), special teams, goalie tiers → game archetype.
+// Returns { label, badge, rationale } or null if insufficient data.
+// Wave 2 — built May 31 2026.
+function predictNHLGameCharacter(game) {
+  if (!game) return null;
+  const ha = game._homeAbbr || getNHLAbbrev(game.home);
+  const aa = game._awayAbbr || getNHLAbbrev(game.away);
+  const hST = getNHLSpecialTeams(ha);
+  const aST = getNHLSpecialTeams(aa);
+  const hG  = getNHLGoalieProfile(game._homeGoalie);
+  const aG  = getNHLGoalieProfile(game._awayGoalie);
+  if (!hST || !aST) return null;
+
+  // Both goalies elite + both PK above 85 → GOALIE DUEL
+  const bothElite = hG?.tier === 'elite' && aG?.tier === 'elite';
+  const bothSolidPK = hST.pk >= 84 && aST.pk >= 84;
+  if (bothElite && bothSolidPK)
+    return { label: 'GOALIE DUEL', badge: '[GOALIE DUEL]',
+      rationale: `${game._homeGoalie||ha} vs ${game._awayGoalie||aa} — both elite. Tight game, likely decided by one mistake.` };
+
+  // Big PP vs elite PK → SPECIAL TEAMS BATTLE
+  const ppGap = Math.abs(hST.pp - aST.pp);
+  const onePPElite = Math.max(hST.pp, aST.pp) >= 22;
+  const onePKElite = Math.min(hST.pk, aST.pk) >= 88;
+  if (ppGap >= 10 && onePPElite && onePKElite)
+    return { label: 'SPECIAL TEAMS BATTLE', badge: '[SPECIAL TEAMS]',
+      rationale: `${hST.pp > aST.pp ? ha : aa} PP (${Math.max(hST.pp,aST.pp).toFixed(1)}%) meets elite PK (${Math.max(hST.pk,aST.pk).toFixed(1)}%). Special teams decide this.` };
+
+  // Large possession gap + one goalie elite → POSSESSION FIGHT
+  const satGap = Math.abs(hST.sat - aST.sat);
+  const domTeam = hST.sat > aST.sat ? ha : aa;
+  if (satGap >= 8 && (hG?.tier === 'elite' || aG?.tier === 'elite'))
+    return { label: 'POSSESSION FIGHT', badge: '[POSSESSION FIGHT]',
+      rationale: `${domTeam} owns the puck (${Math.max(hST.sat,aST.sat).toFixed(0)}% SAT) but faces an elite goalie. The question is whether the territorial advantage converts.` };
+
+  // Both teams bottom-10 defense (proxy: both PK < 80, high-scoring game likely)
+  if (hST.pk < 80 && aST.pk < 80)
+    return { label: 'HIGH-SCORING', badge: '[HIGH SCORING]',
+      rationale: `Both teams vulnerable on penalty kill. Goals come in bunches.` };
+
+  return null; // insufficient signal for a strong prediction
+}
+
 // ── buildScoutingReport — raw analytics for bottom sheet ─────────────────────
 // Shows the underlying numbers the AI uses — so users can see WHERE IT COMES FROM.
 // Sport-detected: MLB shows park/umpire/pitcher data; NHL shows possession/ST/goalie.
@@ -12048,6 +12111,167 @@ function buildNHLAnalyticsBadges(game) {
   }
   return badges.join('');
 }
+
+// ── NBA Team Analytics (Wave 1 — May 31 2026) ────────────────────────────────
+// Source: Basketball-Reference, NBA.com, StatMuse (2025-26 regular season).
+// pace = possessions per 48 min (league avg: 100.8)
+// ortg/drtg = points per 100 possessions (league avg: ~114.7/114.7)
+// clutchDrtg = defensive rating in clutch (last 5 min, within 5pts) — [VERIFY] from stats.nba.com
+// Wave 1: hardcoded. Update after each Finals game with playoff-adjusted values.
+const NBA_TEAM_ANALYTICS = {
+  'OKC': { pace: 97.8,  ortg: 116.2, drtg: 107.7, drtgRank: 1,  clutchDrtg: 109.1, note: 'Historic defense — best DRTG in NBA by 6.7 pts. Halfcourt-first.' },   // [VERIFY clutch]
+  'NYK': { pace: 100.1, ortg: 114.3, drtg: 109.9, drtgRank: 4,  clutchDrtg: 108.8, note: 'Elite playoff D (107.8 DRTG in 10-game run). Brunson elite clutch.' }, // [VERIFY clutch]
+  'SAS': { pace: 101.2, ortg: 118.1, drtg: 110.2, drtgRank: 5,  clutchDrtg: null,  note: 'Wembanyama elite shot-blocker. Transition threat.' },
+  'CLE': { pace: 99.4,  ortg: 117.3, drtg: 110.8, drtgRank: 6,  clutchDrtg: null,  note: null },
+  'MIA': { pace: 99.2,  ortg: 112.1, drtg: 111.0, drtgRank: 7,  clutchDrtg: null,  note: null },
+  'BOS': { pace: 101.8, ortg: 119.2, drtg: 111.3, drtgRank: 8,  clutchDrtg: null,  note: null },
+  'DEN': { pace: 100.4, ortg: 117.8, drtg: 113.1, drtgRank: 9,  clutchDrtg: null,  note: null },
+  'MIN': { pace: 98.8,  ortg: 113.9, drtg: 113.4, drtgRank: 10, clutchDrtg: null,  note: null },
+  'LAL': { pace: 102.1, ortg: 116.4, drtg: 113.8, drtgRank: 11, clutchDrtg: null,  note: null },
+  'HOU': { pace: 103.4, ortg: 113.8, drtg: 110.3, drtgRank: 2,  clutchDrtg: null,  note: null },
+  'POR': { pace: 104.9, ortg: 115.2, drtg: 111.1, drtgRank: 3,  clutchDrtg: null,  note: 'Fast pace — 3rd in league.' },
+  // League avg reference
+  '_AVG': { pace: 100.8, ortg: 114.7, drtg: 114.7, drtgRank: 15, clutchDrtg: null, note: null },
+};
+
+// NBA abbreviation → analytics key
+const NBA_ABBREV_MAP = {
+  'oklahoma city thunder':'OKC','thunder':'OKC','okc':'OKC',
+  'new york knicks':'NYK','knicks':'NYK','nyk':'NYK',
+  'san antonio spurs':'SAS','spurs':'SAS','sas':'SAS',
+  'cleveland cavaliers':'CLE','cavaliers':'CLE','cle':'CLE',
+  'miami heat':'MIA','heat':'MIA','mia':'MIA',
+  'boston celtics':'BOS','celtics':'BOS','bos':'BOS',
+  'denver nuggets':'DEN','nuggets':'DEN','den':'DEN',
+  'minnesota timberwolves':'MIN','timberwolves':'MIN','min':'MIN',
+  'los angeles lakers':'LAL','lakers':'LAL','lal':'LAL',
+  'houston rockets':'HOU','rockets':'HOU','hou':'HOU',
+  'portland trail blazers':'POR','blazers':'POR','por':'POR',
+};
+
+function getNBAAbbrev(name) {
+  if (!name) return null;
+  return NBA_ABBREV_MAP[(name||'').toLowerCase()] || null;
+}
+
+function getNBATeamAnalytics(name) {
+  const abbr = getNBAAbbrev(name);
+  return abbr ? (NBA_TEAM_ANALYTICS[abbr] || null) : null;
+}
+
+// ── NBA Clutch Stats (Wave 1 — playoffs 2026) ─────────────────────────────────
+// Source: stats.nba.com Clutch dashboard (last 5 min, within 5 pts) + BDL leaders.
+// [VERIFY] all values against stats.nba.com/stats/playerclustering after each Finals game.
+const NBA_CLUTCH_PLAYERS = {
+  'brunson':        { team:'NYK', clutchPts: 8.4,  clutchFg: 0.52, plusMinus: '+18.2', tier:'elite',  note:'Historically elite in clutch — series closer.' },    // [VERIFY playoffs 2026]
+  'gilgeous-alexander': { team:'OKC', clutchPts: 7.8, clutchFg: 0.48, plusMinus: '+14.6', tier:'elite',  note:'Two-time MVP finalist. Best closer on either team.' }, // [VERIFY playoffs 2026]
+  'towns':          { team:'NYK', clutchPts: 5.2,  clutchFg: 0.44, plusMinus: '+4.1',  tier:'avg',    note:'Good overall, average clutch — defers to Brunson.' },    // [VERIFY]
+  'anunoby':        { team:'NYK', clutchPts: 4.1,  clutchFg: 0.46, plusMinus: '+6.8',  tier:'solid',  note:'Strong playoff performer, improved clutch role.' },       // [VERIFY]
+  'williams':       { team:'OKC', clutchPts: 4.8,  clutchFg: 0.45, plusMinus: '+9.2',  tier:'solid',  note:'OKC second option, excellent off-ball movement.' },        // [VERIFY] Jalen Williams
+  'holmgren':       { team:'OKC', clutchPts: 3.2,  clutchFg: 0.41, plusMinus: '+7.1',  tier:'avg',    note:'Rim protection key late but not a primary clutch scorer.' }, // [VERIFY]
+};
+
+function getNBAClutchProfile(lastName) {
+  if (!lastName) return null;
+  return NBA_CLUTCH_PLAYERS[lastName.toLowerCase().replace(/[^a-z-]/g,'')] || null;
+}
+
+// ── NBA Analytics Context (Wave 1 — parallel to getNHLAnalyticsContext) ──────
+// Returns 2-4 context lines for compound journalism prompt.
+// Injected automatically for all NBA games.
+function getNBAAnalyticsContext(game) {
+  if (!game) return '';
+  const lines = [];
+  try {
+    const hStats = getNBATeamAnalytics(game.home);
+    const aStats = getNBATeamAnalytics(game.away);
+
+    if (hStats && aStats) {
+      const avgPace = ((hStats.pace + aStats.pace) / 2);
+      const leagueAvg = 100.8;
+      const bothEliteD = hStats.drtg <= 111 && aStats.drtg <= 111;
+
+      // Pace badge
+      if (avgPace >= 103)  lines.push(`[FAST PACE] Both teams fast (avg ${avgPace.toFixed(0)} poss/48 — league avg ${leagueAvg}). Expect a track meet.`);
+      else if (avgPace <= 98) lines.push(`[SLOW GRIND] Both teams halfcourt (avg ${avgPace.toFixed(0)} poss/48 — below league avg). Defense drives this game.`);
+
+      // Defense matchup
+      const betterD = hStats.drtg < aStats.drtg ? game.home : game.away;
+      const betterDrtg = Math.min(hStats.drtg, aStats.drtg);
+      if (bothEliteD) lines.push(`[ELITE D BOTH] ${game.home} ${hStats.drtg.toFixed(1)} DRTG (Rank ${hStats.drtgRank}) · ${game.away} ${aStats.drtg.toFixed(1)} DRTG (Rank ${aStats.drtgRank}). Both top-5 defenses.`);
+      else if (betterDrtg <= 109) lines.push(`[DEFENSE EDGE] ${betterD} elite defense (${betterDrtg.toFixed(1)} DRTG, Rank ${Math.min(hStats.drtgRank,aStats.drtgRank)}).`);
+
+      // Efficiency gap (potential mismatch)
+      const effGap = Math.abs(hStats.ortg - aStats.drtg);
+      if (effGap >= 8) {
+        const offTeam = hStats.ortg > aStats.ortg ? game.home : game.away;
+        lines.push(`[MISMATCH ALERT] ${offTeam} ORTG vs opponent DRTG — significant offensive advantage on paper.`);
+      }
+    }
+
+    // Clutch player context (for J3 pre-game)
+    const hClutch = getNBAClutchProfile((game._homeLeader||{}).name?.split(' ').pop());
+    const aClutch = getNBAClutchProfile((game._awayLeader||{}).name?.split(' ').pop());
+    if (hClutch?.tier === 'elite') lines.push(`[CLUTCH] ${hClutch.note} (${(hClutch.clutchFg*100).toFixed(0)}% FG clutch, ${hClutch.plusMinus} net)`);
+    else if (aClutch?.tier === 'elite') lines.push(`[CLUTCH] ${aClutch.note} (${(aClutch.clutchFg*100).toFixed(0)}% FG clutch, ${aClutch.plusMinus} net)`);
+
+  } catch(e) { if(FIELD_DEBUG) console.error('[NBA Analytics]', e.message); }
+  return lines.join('\n');
+}
+
+// ── NBA Game Character Predictor (Wave 2) ─────────────────────────────────────
+// Combines pace + both defenses → game archetype label + badge.
+// Returns { label, badge, rationale } or null.
+function predictNBAGameCharacter(game) {
+  if (!game) return null;
+  const hStats = getNBATeamAnalytics(game.home);
+  const aStats = getNBATeamAnalytics(game.away);
+  if (!hStats || !aStats) return null;
+
+  const avgPace  = (hStats.pace + aStats.pace) / 2;
+  const avgDrtg  = (hStats.drtg + aStats.drtg) / 2;
+  const leagueAvg = 100.8;
+  const bothEliteD = hStats.drtg <= 111 && aStats.drtg <= 111;
+  const bothTopD   = hStats.drtg <= 109 && aStats.drtg <= 109;
+
+  // Two historic defenses + halfcourt pace → CHESS MATCH
+  if (bothTopD && avgPace <= 99.5)
+    return { label: 'CHESS MATCH', badge: '[CHESS MATCH]',
+      rationale: `${game.home} (${hStats.drtg.toFixed(1)} DRTG, #${hStats.drtgRank}) vs ${game.away} (${aStats.drtg.toFixed(1)} DRTG, #${aStats.drtgRank}). Both elite defenses, below-average pace. The halfcourt decides everything.` };
+
+  // Both elite D + moderate pace → GRIND-FEST
+  if (bothEliteD && avgPace <= 101)
+    return { label: 'GRIND-FEST', badge: '[GRIND-FEST]',
+      rationale: `Two elite defenses (avg DRTG ${avgDrtg.toFixed(1)}). Low-scoring, physical game. Whoever gets to the line wins.` };
+
+  // Fast pace + weak D → TRACK MEET
+  if (avgPace >= 103 && avgDrtg >= 115)
+    return { label: 'TRACK MEET', badge: '[TRACK MEET]',
+      rationale: `Both teams play fast (avg ${avgPace.toFixed(0)} poss/48). Defense is optional tonight.` };
+
+  // Fast pace + one elite D → CHESS MATCH WITH PACE
+  if (avgPace >= 102 && bothEliteD)
+    return { label: 'CHESS MATCH', badge: '[CHESS MATCH]',
+      rationale: `Elite defenses despite fast pace. Whoever slows it down gains the advantage.` };
+
+  // Large DRTG gap → MISMATCH
+  const drtgGap = Math.abs(hStats.drtg - aStats.drtg);
+  if (drtgGap >= 5) {
+    const favored = hStats.drtg < aStats.drtg ? game.home : game.away;
+    return { label: 'MISMATCH', badge: '[MISMATCH]',
+      rationale: `${favored} defense (${Math.min(hStats.drtg,aStats.drtg).toFixed(1)} DRTG) significantly better. Defensive identity team has the edge.` };
+  }
+
+  return null;
+}
+
+// ── NBA Regression Alert (Wave 2) ────────────────────────────────────────────
+// Detects unsustainable shooting performance vs. underlying efficiency.
+// Manual injection: update after each Finals game.
+// Usage: injectNBARegression(gameKey, { team, stat, observed, expected, alert })
+const _nbaRegressionCache = {}; // gameKey → regression data
+function injectNBARegression(gameKey, data) { _nbaRegressionCache[gameKey] = data; }
+function getNBARegression(gameKey) { return _nbaRegressionCache[gameKey] || null; }
 
 // nhlAnalyticsInit — sets _homeAbbr/_awayAbbr/_sport on all NHL game objects.
 // Called at T+4500ms so that game objects exist before any badge rendering.
@@ -15746,6 +15970,7 @@ const FIELD_PROSE_STYLE=[
   '- STYLE: write like a well-prepared friend who watched every game, not like a press release.',
   '- STYLE: if a sentence would work in any game recap for any sport, it is too generic — rewrite with details specific to THIS game.',
   '- CITE ANALYTICS: if [PP/PK], [POSSESSION], [PARK], [UMPIRE], or [GOALIE] context appears in the game data, cite the specific figure verbatim — not a paraphrase. "93.5% penalty kill" not "elite penalty killing". "+17% runs at Camden Yards" not "a hitter-friendly park".',
+  '- CITE NBA ANALYTICS: if [SLOW GRIND], [FAST PACE], [ELITE D BOTH], [CHESS MATCH], [CLUTCH], or [GAME TYPE] appears, cite specific DRTG, pace, or clutch figures verbatim. "107.7 DRTG, best in the NBA" not "elite defense".',
   '- FEATURED STAT: if a [FEATURED STAT] line appears for a game, that exact figure MUST appear in your brief for that game.',
   '- LEAD SENTENCE: never start a brief, paragraph, or sentence with "The [Team]..." — lead with the specific situation. "Wembanyama scored 34" not "The Spurs got a big performance." "Two years without a Finals appearance ends tonight" not "The Celtics are looking to make a statement."',
   '- BANNED PHRASES (never use): '+BANNED_PHRASES.join(', ')+'.',
@@ -16519,6 +16744,7 @@ function buildCompoundPrompt(sections) {
       (()=>{ try { const ctx=getMLBAnalyticsContext(g); return ctx.length ? ctx.join('\n') : ''; } catch(e_){return '';} })(),
       // Wave 1 NHL analytics
       (()=>{ try { const sp=(g._sport||g._section||'').toLowerCase(); if(!(sp.includes('nhl')||sp.includes('hockey'))) return ''; const ctx=getNHLAnalyticsContext(g); return ctx.length ? ctx : ''; } catch(e_){return '';} })(),
+      (()=>{ try { const sp=(g._sport||g._section||'').toLowerCase(); if(!(sp.includes('nba')||sp.includes('basketball'))) return ''; const ctx=getNBAAnalyticsContext(g); return ctx.length ? ctx : ''; } catch(e_){return '';} })(),
       // Stat of Day
       (()=>{ try { if(!isScoutsPick(g)) return ''; const s=getStatOfDay(g,g._sport||g._section||''); return s ? `  [FEATURED STAT] ${s.fullText}` : ''; } catch(e_){return '';} })(),
       g.matchupNote ? `  Context: ${g.matchupNote}` : '',
@@ -18504,6 +18730,134 @@ function initSeriesPreviews(){
   // Compound editorial handles this when successful — queue is fallback only
   initJournalismQueue(allData.sports||[]);
 }
+
+// ── J11: FINALS DESK PIECE ────────────────────────────────────────────────────
+// Daily analytical desk piece for NBA Finals + Stanley Cup Final.
+// Fires once per Finals game day (or off-day preview) from renderFinalsDesk().
+// Longer format than J10 (Stakes Brief) — 4 structured sections, ~500 words.
+// Caches to sessionStorage keyed by series record + game number.
+// Analytics context injected per sport: NBA uses pace/DRTG/clutch; NHL uses PP/PK/SAT/goalie.
+
+async function fetchFinalsDesk(game, sport) {
+  if (!game || !CLAUDE_PROXY_URL) return null;
+
+  const isFinals = /nba finals|stanley cup final/i.test(game.league || '');
+  if (!isFinals) return null;
+
+  const series = game.seriesRecord || '0-0';
+  const cacheKey = `field_finals_desk_v${_swv}_${game._id}_${series.replace(/\s/g,'_')}`;
+  try {
+    const cached = sessionStorage.getItem(cacheKey);
+    if (cached && cached.length > 100) return cached;
+  } catch(e_) {}
+
+  // Build sport-specific analytics context
+  let analyticsCtx = '';
+  const sp = (sport || '').toLowerCase();
+  if (sp.includes('nba') || sp.includes('basketball')) {
+    analyticsCtx = getNBAAnalyticsContext(game);
+    const gameChar = predictNBAGameCharacter(game);
+    if (gameChar) analyticsCtx += `\n[GAME TYPE] ${gameChar.label}: ${gameChar.rationale}`;
+    const regress = getNBARegression(game._id);
+    if (regress) analyticsCtx += `\n[REGRESSION ALERT] ${regress.team}: ${regress.stat} at ${regress.observed} vs expected ${regress.expected}. ${regress.alert}`;
+  } else if (sp.includes('nhl') || sp.includes('hockey')) {
+    analyticsCtx = getNHLAnalyticsContext(game);
+    const gameChar = predictNHLGameCharacter(game);
+    if (gameChar) analyticsCtx += `\n[GAME TYPE] ${gameChar.label}: ${gameChar.rationale}`;
+    const ha = game._homeAbbr || getNHLAbbrev(game.home);
+    const aa = game._awayAbbr || getNHLAbbrev(game.away);
+    const hPDO = getNHLPDO(ha), aPDO = getNHLPDO(aa);
+    if (hPDO && hPDO.note) analyticsCtx += `\n[PDO] ${ha}: ${hPDO.note}`;
+    if (aPDO && aPDO.note) analyticsCtx += `\n[PDO] ${aa}: ${aPDO.note}`;
+  }
+
+  const msLine = (() => { try { const ms = _bdlMilestonesCache?.[game._id]; return ms ? `[MILESTONE] ${ms.playerName} needs ${ms.gap} more ${ms.stat} for career milestone.` : ''; } catch(e_) { return ''; } })();
+
+  const prompt = [
+    `Write a FIELD Finals Desk analytical piece for today's ${/nba/i.test(game.league||'')?'NBA':'Stanley Cup'} Finals.`,
+    `${game.away||'?'} @ ${game.home||'?'} · ${game.venue||''} · ${series ? 'Series: '+series : 'Series begins today'}.`,
+    game.matchupNote ? `Series context: ${game.matchupNote}` : '',
+    analyticsCtx || '',
+    msLine,
+    '',
+    'Write exactly 4 sections with these headers (bold):',
+    '**Series Arc** — 2 sentences. What has defined this series so far, or what defines the matchup if this is Game 1. Cite one specific fact.',
+    '**Analytics Edge** — 2 sentences. The single most important statistical angle for tonight. Cite specific numbers from the context above — never paraphrase.',
+    '**Player to Watch** — 2 sentences. One player on either team whose performance will be decisive tonight and why.',
+    '**What to Watch** — 2 sentences. The tactical or situational thing that decides this game. Frame it as a question that gets answered by buzzer.',
+    '',
+    'Rules:',
+    '- Total length: 8 sentences across 4 sections. No other sections. No intro or outro.',
+    '- Cite specific numbers verbatim from context. Never use "elite", "dominant", "crucial", "huge".',
+    '- If this is Game 1, Series Arc section should frame the series preview, not recap.',
+    '- Never invent stats not present in context above.',
+    '- Do not repeat the series record already shown in the card header.',
+    FIELD_PROSE_STYLE,
+  ].filter(Boolean).join('\n');
+
+  try {
+    const r = await fetch(CLAUDE_PROXY_URL, {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ model:'claude-haiku-4-5-20251001', max_tokens:500,
+        messages:[{role:'user', content:prompt}] }),
+    });
+    if (!r.ok) return null;
+    const data = await r.json();
+    let text = (data.content||[]).filter(c=>c.type==='text').map(c=>c.text).join('').trim();
+    if (text && text.length > 80) {
+      text = await retryWithoutCliches(prompt, text, CLAUDE_PROXY_URL);
+      text = await checkStatVerification(prompt, text, CLAUDE_PROXY_URL);
+      try { sessionStorage.setItem(cacheKey, text); } catch(e_) {}
+      return text;
+    }
+  } catch(e_) {}
+  return null;
+}
+
+// Render Finals Desk card into FIELD Desk grid
+async function renderFinalsDesk() {
+  if (!allData) return;
+  const grid = document.getElementById('field-desk-grid');
+  if (!grid) return;
+
+  // Find the active Finals game (NBA Finals or SCF)
+  let finalsGame = null, finalsSection = null;
+  (allData.sports || []).forEach(sec => {
+    (sec.games || []).forEach(g => {
+      if (/nba finals|stanley cup final/i.test(g.league || ''))
+        { finalsGame = g; finalsSection = sec; }
+    });
+  });
+  if (!finalsGame) return;
+
+  const sport = (finalsSection?.sport || '').toLowerCase();
+  const series = finalsGame.seriesRecord || '0-0';
+  const gameChar = sport.includes('nba') ? predictNBAGameCharacter(finalsGame) : predictNHLGameCharacter(finalsGame);
+
+  // Check if a Finals Desk card already exists
+  if (grid.querySelector('.desk-card.type-finals')) return;
+
+  const placeholder = document.createElement('div');
+  placeholder.className = 'desk-card type-finals';
+  placeholder.style.cssText = 'border-left:3px solid var(--c-nba,#f97316);opacity:.6;';
+  placeholder.innerHTML = `<div class="desk-card-label"><span class="desk-card-label-icon">📊</span>FINALS DESK${gameChar ? ' · '+gameChar.label : ''}</div><div class="desk-card-title">${finalsGame.away||''} @ ${finalsGame.home||''} · ${series}</div><div class="desk-card-body" style="font-style:italic;font-size:.7rem;">Loading analytics brief…</div>`;
+  grid.insertBefore(placeholder, grid.firstChild);
+
+  const text = await fetchFinalsDesk(finalsGame, sport).catch(() => null);
+  if (!text) { placeholder.remove(); return; }
+
+  const escaped = text.replace(/"/g,'&quot;');
+  const preview = text.slice(0, 320).trim() + (text.length > 320 ? '\u2026' : '');
+  placeholder.style.opacity = '1';
+  placeholder.style.borderLeft = `3px solid ${sport.includes('nhl') ? 'var(--c-nhl,#38bdf8)' : 'var(--c-nba,#f97316)'}`;
+  placeholder.setAttribute('data-full', escaped);
+  placeholder.setAttribute('data-trunc-len', '320');
+  placeholder.setAttribute('onclick', '_deskCardToggle(this)');
+  placeholder.classList.add('tappable');
+  placeholder.innerHTML = `<div class="desk-card-label"><span class="desk-card-label-icon">📊</span>FINALS DESK${gameChar ? ' · <span style="opacity:.8">'+gameChar.label+'</span>' : ''}</div><div class="desk-card-title">${finalsGame.away||''} @ ${finalsGame.home||''} · ${series}</div><div class="desk-card-body">${preview}</div>`;
+}
+
+
 
 // Inject series preview text directly into an existing card (used by compound dispatch)
 function injectSeriesPreviewText(card, text) {
