@@ -17144,15 +17144,38 @@ async function fetchMLBGameBriefFromClaude(g) {
 
   const standingsCtx = (typeof buildGameStandingsContext === 'function') ? buildGameStandingsContext(g) : '';
 
+  // Pull from the same analytics context that compound uses —
+  // pitch arsenal, tempo, expected stats (xBA luck), team ABS challenge IQ
+  const analyticsLines = (typeof getMLBAnalyticsContext === 'function') ? getMLBAnalyticsContext(g) : [];
+  const analyticsCtx = analyticsLines.length ? analyticsLines.join('\n') : '';
+
+  // Team momentum (last-10 record) — gives texture beyond raw standings
+  let momentumCtx = '';
+  try {
+    const homeAbbr = g._homeAbbr || g.homeTeam || '';
+    const awayAbbr = g._awayAbbr || g.awayTeam || '';
+    const [hMom, aMom] = await Promise.all([
+      homeAbbr ? fetchMLBTeamMomentum(homeAbbr).catch(()=>null) : Promise.resolve(null),
+      awayAbbr ? fetchMLBTeamMomentum(awayAbbr).catch(()=>null) : Promise.resolve(null),
+    ]);
+    const fmtMom = (m, nick) => m?.last10?.length
+      ? `${nick}: ${m.wins}-${m.losses} (L10: ${m.last10.filter(r=>r==='W').length}-${m.last10.filter(r=>r==='L').length})`
+      : null;
+    const parts = [fmtMom(hMom, teamNick(g.home||'')), fmtMom(aMom, teamNick(g.away||''))].filter(Boolean);
+    if (parts.length) momentumCtx = 'Form: ' + parts.join(' · ');
+  } catch(_) {}
+
   const prompt = [
     `Write a FIELD Match Brief for this MLB game.`,
     `${g.away||'?'} @ ${g.home||'?'}${g.venue ? ' · ' + g.venue : ''}.`,
     pfLine, wxLine, pitcherLine, umpLine ? `Umpire: ${ump}` : '',
     standingsCtx || '',
+    momentumCtx || '',
+    analyticsCtx || '',
     '',
     g.matchupNote ? `Matchup: ${g.matchupNote}` : '',
-    'Rules: 50-70 words. 2 sentences. Lead with the most impactful park or weather factor if provided; otherwise lead with the pitching matchup or standings context.',
-    'Cite the exact figure if park or weather data is provided — never paraphrase.',
+    'Rules: 50-70 words. 2 sentences. Vary the angle — use whichever single fact is most interesting tonight: park factor, pitcher arsenal, expected stats luck, momentum, or standings gap. Not always standings.',
+    'Cite the exact figure if park, weather, or analytics data is provided — never paraphrase.',
     'Write only from data above. No invented stats. Never explain what data is missing — if context is thin, write what you have.',
     FIELD_PROSE_STYLE,
     FIELD_BASEBALL_VOICE,

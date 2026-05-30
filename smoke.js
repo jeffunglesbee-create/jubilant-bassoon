@@ -1191,3 +1191,9 @@ assert('A301 — WNBA brief suppressed when no standings/matchupNote context; DO
   html.includes('NEVER explain what data is missing or why you cannot write') &&
   html.includes('Never explain what data is missing. If context is thin'),
   'WNBA card must not fire without context; all prompts must never produce meta-commentary about missing data');
+
+assert('A302 — MLB brief: getMLBAnalyticsContext + fetchMLBTeamMomentum injected; Vary the angle rule',
+  html.includes('analyticsCtx = analyticsLines.length') &&
+  html.includes('fetchMLBTeamMomentum(homeAbbr)') &&
+  html.includes('Vary the angle — use whichever single fact is most interesting tonight'),
+  'MLB brief must use pitch arsenal, expected stats, and team momentum — not only standings');
