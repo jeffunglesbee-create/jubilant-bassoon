@@ -844,3 +844,12 @@ console.log(`\n── Results: ${pass} passed, ${fail} failed ──────
 if (fail > 0) process.exit(1);
 
 
+
+assert('A245 — V2 in-game leaders: fetchV2Leaders + _v2LeaderCache + name-reversal + wired for live basketball',
+  html.includes('function fetchV2Leaders') &&
+  html.includes('_v2LeaderCache') &&
+  html.includes('V2_LEADER_TTL') &&
+  html.includes("split(' ').reverse().join(' ')") &&
+  html.includes("sport === 'nba' || sport === 'wnba') && fg.state === 'live'") &&
+  html.includes('fetchV2Leaders(sport, gameNum'),
+  'V2 leaders: fetchV2Leaders must be defined, wired for live NBA/WNBA, and reverse player name');
