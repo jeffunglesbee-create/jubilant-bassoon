@@ -927,3 +927,8 @@ assert('A255 — AFL engine complete: AFL_TEAM_ABBR + fetchAFLStandings + render
   html.includes('async function fetchAFLStandings') &&
   html.includes('function renderAFLStandingsWidget'),
   'AFL symbols dropped in betting removal — AFL_TEAM_ABBR undefined would break injectSquiggleLiveScores and tips');
+
+assert('A256 — injectSquiggleTips is a hoisted function declaration (not var expression)',
+  html.includes('async function injectSquiggleTips(){') &&
+  !html.includes('var injectSquiggleTips='),
+  'injectSquiggleTips must be function declaration — var expression not hoisted, causes ReferenceError when called at line 6711');

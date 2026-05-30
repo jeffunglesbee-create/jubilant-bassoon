@@ -13803,7 +13803,7 @@ async function fetchSquiggleTips(round){
   }catch(e){if(FIELD_DEBUG) console.debug('[AFL] tips fetch failed:',e.message);}
 }
 
-var injectSquiggleTips=async function(){
+async function injectSquiggleTips(){
   if(!_squiggleCache.games?.length) return;
   const todayGames=_squiggleCache.games.filter(g=>g&&isToday(new Date(g.unixtime*1000).toISOString()));
   if(!todayGames.length) return;
@@ -13828,7 +13828,7 @@ var injectSquiggleTips=async function(){
     }
     if(tipEl) tipEl.textContent=chipText;
   });
-};
+}
 
   // startSportsDBEngine / startFotmobEngine removed — soccer now fully on api-sports.io V2
   startSquiggleEngine(); // Squiggle AFL live scores (free documented API)
