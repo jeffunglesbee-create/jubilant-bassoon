@@ -1,14 +1,9 @@
 name: api-sports.io Probe
 
-# RUWT step 1 — read actual API response shapes before building adapters.
-# GitHub runner IPs reach *.workers.dev; sandbox cannot.
-# Results committed to outbox/apisports/ for Claude to read.
-
 on:
-  workflow_dispatch:  # trigger manually from sandbox via GitHub API
+  workflow_dispatch:
   push:
-    paths:
-      - 'outbox/.trigger-apisports-probe'  # or write this file to auto-trigger
+    paths: ['outbox/.trigger-apisports-probe']
 
 permissions:
   contents: write
@@ -26,19 +21,25 @@ jobs:
         with:
           python-version: '3.11'
 
+      - name: Network check
+        run: |
+          echo "=== Testing relay reachability ==="
+          curl -v --max-time 10 "https://field-relay-nba.jeffunglesbee.workers.dev/health" 2>&1 || echo "RELAY UNREACHABLE"
+
       - name: Run probe
         run: python3 scripts/apisports-probe.py
+        continue-on-error: true
 
       - name: Commit results
+        if: always()
         run: |
           git config user.name  "FIELD Probe"
           git config user.email "probe@field.app"
-          git add outbox/apisports/
+          git add outbox/apisports/ 2>/dev/null || true
           git diff --staged --quiet && echo "No new results" || \
             git commit -m "probe: apisports $(date -u '+%Y-%m-%dT%H:%M:%SZ') [skip ci]"
           for i in 1 2 3; do
             git pull --rebase --autostash origin main && \
             git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git HEAD:main && break
-            echo "Push attempt $i failed, retrying..."
             sleep $((i * 5))
           done
