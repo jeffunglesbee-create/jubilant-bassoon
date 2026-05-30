@@ -1,0 +1,15 @@
+URL: https://field-relay-nba.jeffunglesbee.workers.dev/apisports/hockey/games/events?id=425577  [20260530T011439Z]
+HTTP/2 405 
+date: Sat, 30 May 2026 01:14:39 GMT
+content-type: text/plain;charset=UTF-8
+access-control-allow-origin: *
+access-control-allow-headers: Content-Type
+access-control-allow-methods: GET, POST
+report-to: {"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=kwcC%2BWJ6t4qkrndIStwSrvzNyOuda40v7zB01XO925exP50bwfZL9COXZr05DmIF4%2F0WOuPRxdDqkp%2FxwS9gMP3wKwxdguMRjZ5MWlgYZkqgeDA9u%2FUPvqplKu%2FL%2B5QonjzIriEIqqpflG9i58cvuCYcIfURLKRKD7GLcg%3D%3D"}]}
+nel: {"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}
+server: cloudflare
+cf-ray: a039e21cd9eb72d4-IAD
+alt-svc: h3=":443"; ma=86400
+
+=== BODY (first 5000 chars) ===
+{"get":"games","parameters":{"id":"425577"},"errors":{"id":"The Id field do not exist."},"results":0,"response":[]}
