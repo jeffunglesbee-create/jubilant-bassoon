@@ -2763,9 +2763,8 @@ function buildFieldHealthPanel() {
     const isStatic = /^Tonight on FIELD:/.test(briefTxt) || briefTxt.length < 40;
     const inBackoff = typeof _compoundRetryAfter !== 'undefined' && Date.now() < _compoundRetryAfter;
     const backoffSec = inBackoff ? Math.ceil((_compoundRetryAfter - Date.now()) / 1000) : 0;
-    const resetBtn = inBackoff
-      ? ' <button onclick="try{localStorage.removeItem(\'field_compound_retry_after\');_compoundRetryAfter=0;window._compoundLastError=\'\';document.getElementById(\'fhp-overlay\')?.remove();}catch(e){}setTimeout(()=>location.reload(),200);" style="margin-left:6px;background:#c9a84c;color:#000;border:none;border-radius:4px;padding:2px 7px;font-size:.58rem;cursor:pointer;font-weight:700">Reset backoff</button>'
-      : '';
+    function _makeResetBtn(){var b=document.createElement("button");b.textContent="Reset backoff";b.style.cssText="margin-left:6px;background:#c9a84c;color:#000;border:none;border-radius:4px;padding:2px 7px;font-size:.58rem;cursor:pointer;font-weight:700";b.onclick=function(){try{localStorage.removeItem("field_compound_retry_after");_compoundRetryAfter=0;window._compoundLastError="";var o=document.getElementById("fhp-overlay");if(o)o.remove();}catch(e){}setTimeout(function(){location.reload();},200);};return b.outerHTML;}
+    const resetBtn = inBackoff ? ' ' + _makeResetBtn() : '';
     if (cached && cached.length > 40) {
       rows.push(ok('Journalism', `Brief rendered (${cached.length} chars) · ${used} AI calls used`));
     } else if (briefTxt && !isStatic) {
@@ -15206,6 +15205,134 @@ async function retryWithoutCliches(originalPrompt,text,proxyUrl){
   return text;
 }
 
+// ── Layer 2c: Lead sentence check ─────────────────────────────────────────
+// "The [Team]..." is the most common AI sports writing cliché — starts with
+// the team name as subject rather than the specific situation or fact.
+// Spec: "Lead with the specific situation, not the template."
+// Fires as a one-shot retry. Only checks first sentence of the brief.
+// Budget: 1 proxy call max. Ships original if retry also fails.
+const _LEAD_SENTENCE_RE = /^The [A-Z][a-z]+ (are|have|will|look|need|must|face|enter|hope|want|seek|open|host|visit|travel|return|aim|play|sit|stand|hold|lead|trail|take|make|get)\b/;
+async function checkLeadSentence(originalPrompt, text, proxyUrl) {
+  if (!text) return text;
+  const firstSentence = text.trim().split(/[.!?]/)[0];
+  if (!_LEAD_SENTENCE_RE.test(firstSentence.trim())) return text; // lead is fine
+  if (FIELD_DEBUG) console.warn('[JQ Layer 2c] Generic lead detected:', firstSentence.trim().slice(0, 60));
+  try {
+    const retryPrompt = originalPrompt +
+      '\n\nLEAD SENTENCE REWRITE REQUIRED: Your previous draft started with "' +
+      firstSentence.trim().slice(0, 80) +
+      '..." — this is a generic team-name lead. Rewrite so the FIRST SENTENCE leads with the specific situation, stat, or stake. NOT "The [Team] are..." — start with a fact, a number, a deadline, a player, or a consequence. Keep everything else the same.';
+    const r = await fetch(proxyUrl, {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({model:'claude-sonnet-4-6', max_tokens:1500,
+        messages:[{role:'user',content:retryPrompt}]})
+    });
+    if (!r.ok) return text;
+    const data = await r.json();
+    const retried = (data.content||[]).filter(c=>c.type==='text').map(c=>c.text).join('').trim();
+    if (retried && retried.length > 30) {
+      if (FIELD_DEBUG) console.debug('[JQ Layer 2c] Lead rewritten:', retried.slice(0,80));
+      return retried;
+    }
+  } catch(e) { if (FIELD_DEBUG) console.error('[JQ Layer 2c] error:', e.message); }
+  return text;
+}
+
+// ── Layer 2d: Stat verification check ─────────────────────────────────────
+// When a [SEASON STATS], [PPG LEADERS], or [FEATURED STAT] context line was
+// injected into the prompt, verify the stat appears in the output.
+// If not, add it to a targeted retry. This closes the loop between data
+// injection and actual output — strengthens patent claim directly.
+// Extracts numeric patterns (e.g. "29.4 PPG", "2.31 ERA", ".342 AVG") and
+// player names from context tags, checks they appear in the text.
+function extractStatsFromContext(prompt) {
+  const stats = [];
+  // Match [SEASON STATS], [PPG LEADERS], [ESPN STATS], [FEATURED STAT] lines
+  const contextRe = /\[(SEASON STATS|PPG LEADERS|ESPN STATS|FEATURED STAT|MLB BOX)[^\]]*\]\s*(.+)/g;
+  let m;
+  while ((m = contextRe.exec(prompt)) !== null) {
+    const line = m[2];
+    // Extract number+unit patterns: "29.4 PPG", "2.31 ERA", ".342 AVG", "7 HR", "93.5%"
+    const numRe = /(\d+\.?\d*\s*(?:PPG|APG|RPG|ERA|AVG|HR|RBI|IP|K|PTS|G|A|SOG|sv%|mph|%|K))/gi;
+    let n;
+    while ((n = numRe.exec(line)) !== null) stats.push(n[1].trim());
+    // Extract player last names (capitalized word before colon or stat)
+    const nameRe = /([A-Z][a-z]{2,})(?:\s+[A-Z][a-z]+)*:\s*[\d.]/g;
+    while ((n = nameRe.exec(line)) !== null) stats.push(n[1]);
+  }
+  return [...new Set(stats)].slice(0, 6); // dedup, max 6 to keep retry prompt tight
+}
+async function checkStatVerification(originalPrompt, text, proxyUrl) {
+  if (!text || !originalPrompt) return text;
+  const requiredStats = extractStatsFromContext(originalPrompt);
+  if (!requiredStats.length) return text;
+  const lower = text.toLowerCase();
+  const missing = requiredStats.filter(s => !lower.includes(s.toLowerCase()));
+  if (!missing.length) return text; // all stats present
+  if (FIELD_DEBUG) console.warn('[JQ Layer 2d] Missing stats in output:', missing);
+  try {
+    const retryPrompt = originalPrompt +
+      '\n\nSTAT VERIFICATION FAILURE: Your previous draft omitted these specific figures that were in the context data: ' +
+      missing.join(', ') +
+      '. These exact figures MUST appear verbatim in your rewrite. A brief without its own data is just filler.';
+    const r = await fetch(proxyUrl, {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({model:'claude-sonnet-4-6', max_tokens:1500,
+        messages:[{role:'user',content:retryPrompt}]})
+    });
+    if (!r.ok) return text;
+    const data = await r.json();
+    const retried = (data.content||[]).filter(c=>c.type==='text').map(c=>c.text).join('').trim();
+    if (retried && retried.length > 30) {
+      if (FIELD_DEBUG) console.debug('[JQ Layer 2d] Stat-verified rewrite done.');
+      return retried;
+    }
+  } catch(e) { if (FIELD_DEBUG) console.error('[JQ Layer 2d] error:', e.message); }
+  return text;
+}
+
+// ── Layer 3b: Score-triggered rewrite ──────────────────────────────────────
+// If scoreProse() returns below threshold, fire one targeted rewrite pass
+// with the score breakdown. Closes the feedback loop the spec described:
+// "Prompts that produce higher-scoring briefs get reinforced."
+// Threshold: 45 (calibrated — below 45 means sparse stats + generic words)
+// Only fires once per brief (not chained). Budget: 1 proxy call max.
+const JQ_SCORE_THRESHOLD = 45;
+async function maybeScoreRetry(originalPrompt, text, proxyUrl, label) {
+  if (!text || !proxyUrl) return text;
+  let scoreObj;
+  try { scoreObj = await scoreProse(text); } catch(e) { return text; }
+  renderProseScore(scoreObj, label + ' [pre-retry]');
+  if (!scoreObj || scoreObj.score >= JQ_SCORE_THRESHOLD) return text;
+  if (FIELD_DEBUG) console.warn(`[JQ Layer 3b] Score ${scoreObj.score} below ${JQ_SCORE_THRESHOLD} — triggering score-based rewrite`);
+  try {
+    const weakDims = [];
+    if (scoreObj.statDepth < 1.5) weakDims.push(`statistical depth (${scoreObj.statDepth.toFixed(1)} stats/sentence — aim for 2+)`);
+    if (scoreObj.specificity < 25) weakDims.push(`specificity (${scoreObj.specificity}% proper nouns/numbers — name more players and cite more exact figures)`);
+    if (scoreObj.variety < 55) weakDims.push(`vocabulary variety (${scoreObj.variety}% — avoid repeating the same words)`);
+    if (scoreObj.freshness < 50) weakDims.push(`word freshness (${scoreObj.freshness} — use more precise, less predictable word choices)`);
+    const retryPrompt = originalPrompt +
+      '\n\nPROSE QUALITY REWRITE: Your previous draft scored ' + scoreObj.score + '/100 on FIELD\'s journalism quality index. ' +
+      (weakDims.length ? 'Weakest dimensions: ' + weakDims.join('; ') + '. ' : '') +
+      'Rewrite with: (1) at least one specific stat or number per sentence, (2) player names not just team names, (3) precise language over generic sports phrases. Same length and format required.';
+    const r = await fetch(proxyUrl, {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({model:'claude-sonnet-4-6', max_tokens:1500,
+        messages:[{role:'user',content:retryPrompt}]})
+    });
+    if (!r.ok) return text;
+    const data = await r.json();
+    const retried = (data.content||[]).filter(c=>c.type==='text').map(c=>c.text).join('').trim();
+    if (retried && retried.length > 30) {
+      const newScore = await scoreProse(retried).catch(()=>null);
+      if (newScore) renderProseScore(newScore, label + ' [post-retry]');
+      if (FIELD_DEBUG) console.debug(`[JQ Layer 3b] Score improved: ${scoreObj.score} → ${newScore?.score ?? '?'}`);
+      return retried;
+    }
+  } catch(e) { if (FIELD_DEBUG) console.error('[JQ Layer 3b] error:', e.message); }
+  return text;
+}
+
 // Layer 3: prose scoring via Datamuse API (free, 100K/day, no key, CORS-open)
 // ── Layer 3: Prose Scoring — 5 dimensions ─────────────────────────────────
 // Spec: FIELD Journalism Quality Spec (Drive 1dS0ldiE9Y0aUu2DAl7Ez5yo5evxlMAZXtghnmdScIHw)
@@ -15593,10 +15720,35 @@ async function fetchCompoundEditorial(sections) {
     const clean = stripJsonFences(text);
     const result = JSON.parse(clean);
     // Layer 2+3: check brief text for clichés + score prose quality
+    // NEW: also apply Layer 2c (lead sentence), 2d (stat verification), 3b (score retry)
     if(result.brief){
       const found=hasCliche(result.brief);
       if(found.length&&FIELD_DEBUG) console.warn('[JQ Layer 2] Compound brief clichés:',found);
-      scoreProse(result.brief).then(s=>renderProseScore(s,'Compound Brief'));
+      // Chain all quality passes async (non-blocking — result already returned to caller)
+      (async()=>{
+        let improved = result.brief;
+        const prompt = buildCompoundPrompt(sections); // rebuild for context extraction
+        // Layer 2c: lead sentence check
+        improved = await checkLeadSentence(prompt, improved, CLAUDE_PROXY_URL);
+        // Layer 2d: stat verification
+        improved = await checkStatVerification(prompt, improved, CLAUDE_PROXY_URL);
+        // Layer 3b: score-triggered rewrite (also logs before/after scores)
+        improved = await maybeScoreRetry(prompt, improved, CLAUDE_PROXY_URL, 'Compound Brief');
+        if(improved !== result.brief){
+          result.brief = improved;
+          // Re-render with improved text
+          const el=document.getElementById('field-brief');
+          const textEl=el?.querySelector('.field-brief-text');
+          if(textEl && textEl.textContent !== improved){
+            textEl.textContent = trimToCompleteSentence(improved);
+            const key=fieldBriefCacheKey();
+            if(key) sessionStorage.setItem(key, improved);
+            if(FIELD_DEBUG) console.debug('[JQ] Compound brief improved — re-rendered');
+          }
+        } else {
+          scoreProse(result.brief).then(s=>renderProseScore(s,'Compound Brief'));
+        }
+      })();
     }
     // Item 3: extend cliché detection to series previews and game briefs
     // Previously only result.brief was checked — series previews slipped through
@@ -15723,7 +15875,13 @@ async function fetchSeriesPreviewFromClaude(g){
     if(!r.ok) return null;
     const data=await r.json();
     let text=(data.content||[]).filter(c=>c.type==='text').map(c=>c.text).join('');
-    if(text&&text.length>30){text=await retryWithoutCliches(prompt,text,CLAUDE_PROXY_URL);budget.inc();scoreProse(text).then(s=>renderProseScore(s,'J2 Series'));return text.trim();}
+    if(text&&text.length>30){
+      text=await retryWithoutCliches(prompt,text,CLAUDE_PROXY_URL);budget.inc();
+      text=await checkLeadSentence(prompt,text,CLAUDE_PROXY_URL);
+      text=await checkStatVerification(prompt,text,CLAUDE_PROXY_URL);
+      text=await maybeScoreRetry(prompt,text,CLAUDE_PROXY_URL,'J2 Series');
+      return text.trim();
+    }
   }catch(e){if(FIELD_DEBUG)console.error('[J2 Series Preview] proxy error:',e.message);}
   return null;
 }
@@ -16385,7 +16543,13 @@ async function fetchFIELDBriefFromClaude(sections){
     if(!r.ok) return null;
     const data=await r.json();
     let text=(data.content||[]).filter(c=>c.type==='text').map(c=>c.text).join('');
-    if(text&&text.length>50){text=await retryWithoutCliches(prompt,text,CLAUDE_PROXY_URL);budget.inc();scoreProse(text).then(s=>renderProseScore(s,'J3 Brief'));return text.replace(/\[ANTI-HYPE\]/gi,'').replace(/\s{2,}/g,' ').trim();}
+    if(text&&text.length>50){
+      text=await retryWithoutCliches(prompt,text,CLAUDE_PROXY_URL);budget.inc();
+      text=await checkLeadSentence(prompt,text,CLAUDE_PROXY_URL);
+      text=await checkStatVerification(prompt,text,CLAUDE_PROXY_URL);
+      text=await maybeScoreRetry(prompt,text,CLAUDE_PROXY_URL,'J3 Brief');
+      return text.replace(/\[ANTI-HYPE\]/gi,'').replace(/\s{2,}/g,' ').trim();
+    }
   }catch(e){if(FIELD_DEBUG)console.error('[J3 FIELD Brief] proxy error:',e.message);}
   return null;
 }

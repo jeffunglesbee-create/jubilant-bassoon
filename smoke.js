@@ -939,3 +939,25 @@ assert('A257 — renderFieldDesk triggered in all 4 journalism paths (relay KV, 
   html.includes('setTimeout(renderFieldDesk, 200)') &&
   html.includes('setTimeout(renderFieldDesk, 300)'),
   'renderFieldDesk must fire in every journalism resolution path — was missing from relay KV and cached-brief paths');
+
+assert('A258 — Layer 2c: checkLeadSentence detects and retries "The [Team]..." leads',
+  html.includes('async function checkLeadSentence') &&
+  html.includes('_LEAD_SENTENCE_RE') &&
+  html.includes('LEAD SENTENCE REWRITE REQUIRED') &&
+  html.includes('checkLeadSentence(prompt,') ,
+  'Layer 2c lead sentence check must be defined and wired into J2, J3, compound paths');
+
+assert('A259 — Layer 2d: checkStatVerification ensures injected stats appear in output',
+  html.includes('async function checkStatVerification') &&
+  html.includes('extractStatsFromContext') &&
+  html.includes('STAT VERIFICATION FAILURE') &&
+  html.includes('checkStatVerification(prompt,'),
+  'Layer 2d stat verification must extract stats from context tags and retry if missing from output');
+
+assert('A260 — Layer 3b: maybeScoreRetry fires rewrite when score below threshold',
+  html.includes('async function maybeScoreRetry') &&
+  html.includes('JQ_SCORE_THRESHOLD') &&
+  html.includes('PROSE QUALITY REWRITE') &&
+  html.includes('maybeScoreRetry(prompt,') &&
+  html.includes('Score ${scoreObj.score} below'),
+  'Layer 3b score-triggered rewrite must be defined, use threshold, and be wired into journalism paths');
