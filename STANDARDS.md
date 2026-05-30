@@ -2583,3 +2583,66 @@ All FIELD documentation is written as plain UTF-8 text, **≤220 KB per file**, 
 - When Drive writes are unavailable (sandbox), persist the same plain-text content to repo `docs/` as a
   fallback and migrate to Drive when writes resume. Repo-`.md` is acceptable as the fallback, but the
   Drive version must be plain text under the limit.
+
+=================================================================
+RULE 11 -- DO NOT ASSUME (applies to Claude in all sessions)
+=================================================================
+
+DO NOT INVENT governs what FIELD's journalism AI puts in its output.
+DO NOT ASSUME governs what Claude puts in its reasoning.
+Both prevent the same failure mode: acting on things that aren't true.
+
+The principle: before making a diagnosis, architectural
+recommendation, or system state claim, verify it. If verification
+is not possible in the moment, say so explicitly and flag the
+assumption rather than proceeding as if it were confirmed.
+
+The violation pattern:
+ "I believe X is true, therefore Y is the right fix" -- where X
+ was never verified against the actual system state.
+
+THE FOUR ASSUMPTION CLASSES (each requires explicit verification):
+
+ CLASS A -- System state
+   "The proxy is on version X" / "Gemini is running" /
+   "The deploy succeeded"
+   Verification: response headers, dashboard, version number
+   in the live system. Code and deployed state diverge.
+   The deployed state is the only truth that matters.
+
+ CLASS B -- Limits and quotas
+   "The free tier is 30 RPM" / "Multiple keys multiply quota"
+   Verification: check the account's Rate Limit page and current
+   ToS before advising. Billing tier and limits change.
+
+ CLASS C -- Model and API validity
+   "This model string is a typo" / "This endpoint doesn't exist"
+   Verification: search before declaring invalid. A string that
+   looks wrong may be a newer version postdating training knowledge.
+
+ CLASS D -- Root cause
+   "The problem is X" declared before eliminating alternatives.
+   Evidence disproving the assumption is often already in the
+   screenshot or response. Read all of it before committing.
+   A 429 proves a key IS valid. That redirects diagnosis.
+
+ENFORCEMENT:
+ Before any architectural recommendation: verify the premise.
+ Before declaring root cause: list verified vs assumed evidence.
+ Before declaring a deploy successful: require the version number
+   in the response header. "I clicked Deploy" is not confirmation.
+ When an assumption proves wrong: correct course immediately.
+
+CASE STUDY -- May 31 2026:
+ - Assumed gemini-3.1-flash-lite was invalid → it was GA since May 7
+ - Assumed free tier 30 RPM → account was Tier 1 at 4K RPM
+ - Assumed 429 meant broken key → 429 requires auth, key was valid
+ - Assumed deploys succeeded without checking version header
+ Each assumption compounded: multi-key architecture, ToS questions,
+ multiple diagnostic cycles on an unchanged deployed state.
+
+SESSION START CHECKLIST addition (Rule 11):
+ 8. ALL TYPES: any limit/quota/ToS/state claim requires
+    verification before advising (Rule 11)
+
+Added: May 31 2026
