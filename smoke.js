@@ -988,3 +988,34 @@ assert('A264 — Night Owl cache validation: contaminated cached brief is busted
   html.includes('sessionStorage.removeItem(cacheKey)') &&
   html.includes('_cachedViolations.length'),
   'Night Owl must validate cached brief before rendering — clear cache if sport vocab violations found');
+
+assert('A265 — P1: Night Owl cache key versioned with SW_VERSION (busts on deploy)',
+  html.includes("'field_nightowl_v'+_owlSwV+'_'+topGame.id"),
+  'Night Owl cache key must include SW_VERSION to auto-bust stale briefs on every deploy');
+
+assert('A266 — P6: Secondary capsule sport detection includes g.league fallback',
+  html.includes("g._section||g._sport||g.sport||g.league||''"),
+  'Secondary capsule _sp must include g.league fallback — same fix as A263 for primary');
+
+assert('A267 — P0: renderProseScore injects visible badge into brief card DOM',
+  html.includes('brief-prose-score') &&
+  html.includes('bps-val') &&
+  html.includes('field_jq_scores') &&
+  !html.includes('if(!FIELD_DEBUG || !scoreObj) return;'),
+  'renderProseScore must inject DOM badge always (not debug-only) and persist score to localStorage');
+
+assert('A268 — P3: checkLeadSentence wired into J5 Night Owl prompt chain',
+  html.includes('checkLeadSentence(prompt,text,CLAUDE_PROXY_URL); // P3: lead check on J5'),
+  'Night Owl J5 must run checkLeadSentence after cliche retry — catches default AI leads');
+
+assert('A269 — P2: extractStatsFromContext also reads Context/Matchup/Series lines (matchupNote stats)',
+  html.includes('ctxRe') &&
+  html.includes('Context|Matchup|Series') &&
+  html.includes('function _extractNums'),
+  'extractStatsFromContext must also extract from matchupNote context lines, not only tagged brackets');
+
+assert('A270 — P5: FIELD Desk shows static brief placeholder before AI journalism resolves',
+  html.includes('GENERATING') &&
+  html.includes('staticBriefEl') &&
+  html.includes('staticText.length > 30'),
+  'FIELD Desk must show static brief text as placeholder card when sessionStorage has no AI brief yet');

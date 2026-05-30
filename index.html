@@ -930,6 +930,9 @@ body::before{
 .narrative-line{font-size:.68rem;color:var(--muted);font-style:italic;padding:.05rem .85rem .15rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;opacity:.9}
 .brief-scout-note{font-size:.62rem;color:#2dd4bf;margin-top:.45rem;padding-top:.35rem;border-top:1px solid rgba(45,212,191,.15);line-height:1.4}
 .brief-bni-note{font-size:.62rem;color:#b8860b;margin-top:.3rem;line-height:1.4}
+.brief-prose-score{font-size:.5rem;font-family:var(--ff-mono,monospace);color:var(--smoke);opacity:.6;margin-top:.5rem;letter-spacing:.02em;display:flex;gap:.5rem;flex-wrap:wrap}
+.brief-prose-score .bps-val{color:var(--gold2,#c9a84c);opacity:.9}
+.brief-prose-score .bps-warn{color:#f87171;opacity:.9}
 .anti-hype-badge{display:inline-flex;align-items:center;gap:.3rem;font-size:.56rem;font-weight:600;letter-spacing:.04em;color:#b8860b;background:rgba(184,134,11,.1);border:1px solid rgba(184,134,11,.3);border-radius:4px;padding:.15rem .45rem;margin-top:.2rem}
 .game-card.scout-pick-card{border-left:3px solid var(--teal,#2dd4bf)!important}
 #watch-window{padding:.3rem 1rem;max-width:1200px;margin:0 auto}
@@ -8344,9 +8347,19 @@ function renderFieldDesk(){
     });
   }catch(e_){}
 
+  // P5: if no AI cards yet, show static brief text from #field-brief as a placeholder
   if(!cards.length){
-    if(desksec) desksec.style.display='none';
-    return;
+    try {
+      const staticBriefEl = document.querySelector('#field-brief .field-brief-text');
+      const staticText = staticBriefEl?.textContent?.trim();
+      if(staticText && staticText.length > 30 && !/Loading|Fetching|unavailable/i.test(staticText)){
+        cards.push(`<div class="desk-card type-brief tappable" data-full="${staticText.replace(/"/g,'&quot;')}" data-trunc-len="300" onclick="_deskCardToggle(this)">
+          <div class="desk-card-label"><span class="desk-card-label-icon">📋</span>FIELD Brief <span style="font-size:.45rem;opacity:.5;margin-left:.3rem">GENERATING</span></div>
+          <div class="desk-card-body">${staticText.slice(0,300).trim()}${staticText.length>300?'\u2026':''}</div>
+        </div>`);
+      }
+    } catch(e_) {}
+    if(!cards.length){ if(desksec) desksec.style.display='none'; return; }
   }
   if(desksec) desksec.style.display='';
   grid.innerHTML = cards.join('');
@@ -15285,20 +15298,26 @@ async function checkLeadSentence(originalPrompt, text, proxyUrl) {
 // player names from context tags, checks they appear in the text.
 function extractStatsFromContext(prompt) {
   const stats = [];
-  // Match [SEASON STATS], [PPG LEADERS], [ESPN STATS], [FEATURED STAT] lines
+  // Tagged context lines: [SEASON STATS], [PPG LEADERS], etc.
   const contextRe = /\[(SEASON STATS|PPG LEADERS|ESPN STATS|FEATURED STAT|MLB BOX)[^\]]*\]\s*(.+)/g;
   let m;
-  while ((m = contextRe.exec(prompt)) !== null) {
-    const line = m[2];
-    // Extract number+unit patterns: "29.4 PPG", "2.31 ERA", ".342 AVG", "7 HR", "93.5%"
-    const numRe = /(\d+\.?\d*\s*(?:PPG|APG|RPG|ERA|AVG|HR|RBI|IP|K|PTS|G|A|SOG|sv%|mph|%|K))/gi;
-    let n;
-    while ((n = numRe.exec(line)) !== null) stats.push(n[1].trim());
-    // Extract player last names (capitalized word before colon or stat)
-    const nameRe = /([A-Z][a-z]{2,})(?:\s+[A-Z][a-z]+)*:\s*[\d.]/g;
-    while ((n = nameRe.exec(line)) !== null) stats.push(n[1]);
+  while ((m = contextRe.exec(prompt)) !== null) _extractNums(m[2], stats);
+  // P2: also extract from Series/Matchup/Context lines (matchupNote stats, e.g. "Brunson 29.0 PPG")
+  const ctxRe = /(?:Context|Matchup|Series|Notes?):\s*(.+)/gi;
+  while ((m = ctxRe.exec(prompt)) !== null) _extractNums(m[1], stats);
+  return [...new Set(stats)].slice(0, 8);
+}
+function _extractNums(line, stats) {
+  if (!line) return;
+  const numRe = /(\d+\.?\d*\s*(?:PPG|APG|RPG|ERA|AVG|HR|RBI|IP|PTS|G|A|SOG|mph|%))/gi;
+  let n;
+  while ((n = numRe.exec(line)) !== null) stats.push(n[1].trim());
+  const nameRe = /([A-Z][a-z]{2,})(?:\s+[A-Z][a-z]+)*[:\s]+\d/g;
+  while ((n = nameRe.exec(line)) !== null) {
+    const w = n[1];
+    if (!/^(The|This|His|Her|Their|New|Old|Last|Next|Game|Series|Round|Season|East|West|North|South|Fri|Sat|Sun|Mon|Tue|Wed|Thu)$/.test(w))
+      stats.push(w);
   }
-  return [...new Set(stats)].slice(0, 6); // dedup, max 6 to keep retry prompt tight
 }
 async function checkStatVerification(originalPrompt, text, proxyUrl) {
   if (!text || !originalPrompt) return text;
@@ -15457,9 +15476,43 @@ async function scoreProse(text){
 
 // Layer 3: debug panel display for prose quality
 function renderProseScore(scoreObj, label){
-  if(!FIELD_DEBUG || !scoreObj) return;
+  if(!scoreObj) return;
   const clicheStr = scoreObj.cliches.length ? `⚠ ${scoreObj.cliches.join(', ')}` : '✓ clean';
-  console.log(`[JQ] ${label}: Score ${scoreObj.score} · Spec ${scoreObj.specificity}% · Stats ${scoreObj.statDepth}/s · Var ${scoreObj.variety}% · Dense ${scoreObj.density} · Fresh ${scoreObj.freshness} · ${clicheStr}`);
+  if(FIELD_DEBUG) console.log(`[JQ] ${label}: Score ${scoreObj.score} · Spec ${scoreObj.specificity}% · Stats ${scoreObj.statDepth}/s · Var ${scoreObj.variety}% · Dense ${scoreObj.density} · Fresh ${scoreObj.freshness} · ${clicheStr}`);
+  // P0: Inject prose score badge into the brief card (always visible — patent prior art)
+  // Only for Compound Brief and J3 Brief (the primary output surfaces)
+  if(!label.includes('Brief') && !label.includes('Night Owl')) return;
+  try {
+    const scoreWarn = scoreObj.score < 45;
+    const clicheWarn = scoreObj.cliches.length > 0;
+    const badge = document.createElement('div');
+    badge.className = 'brief-prose-score';
+    badge.innerHTML =
+      `<span>Prose</span><span class="${scoreWarn?'bps-warn':'bps-val'}">${scoreObj.score}</span>` +
+      `<span>·</span><span>Stat</span><span class="bps-val">${scoreObj.statDepth}/s</span>` +
+      `<span>·</span><span>Spec</span><span class="bps-val">${scoreObj.specificity}%</span>` +
+      (clicheWarn ? `<span>·</span><span class="bps-warn">⚠ ${scoreObj.cliches.join(', ')}</span>` : '');
+    // Try to attach to brief inner card (compound/J3), or Night Owl card
+    const briefInner = document.getElementById('field-brief-inner');
+    const nightOwl = document.querySelector('.night-owl-card');
+    const target = label.includes('Night Owl') ? nightOwl : briefInner;
+    if(target) {
+      target.querySelector('.brief-prose-score')?.remove(); // remove prior score
+      target.appendChild(badge);
+    }
+    // P4: Persist score to localStorage rolling average (last 14 briefs)
+    try {
+      const _scoreKey = 'field_jq_scores';
+      const _scores = JSON.parse(localStorage.getItem(_scoreKey)||'[]');
+      _scores.push({score:scoreObj.score, stat:scoreObj.statDepth, spec:scoreObj.specificity, label, ts:Date.now()});
+      if(_scores.length > 14) _scores.shift();
+      localStorage.setItem(_scoreKey, JSON.stringify(_scores));
+      if(FIELD_DEBUG) {
+        const avg = Math.round(_scores.reduce((a,s)=>a+s.score,0)/_scores.length);
+        console.debug(`[JQ] Rolling avg (${_scores.length} briefs): ${avg}`);
+      }
+    } catch(e_) {}
+  } catch(e_) {}
 }
 
 
@@ -20121,6 +20174,7 @@ async function fetchNightOwlFromClaude(topGame){
     let text=(data.content||[]).filter(c=>c.type==='text').map(c=>c.text).join('');
     if(text&&text.length>40){
       text=await retryWithoutCliches(prompt,text,CLAUDE_PROXY_URL);
+      text=await checkLeadSentence(prompt,text,CLAUDE_PROXY_URL); // P3: lead check on J5
       // Layer 2b: sport vocab — catches "one-possession game" for baseball etc.
       const _sp=topGame._section||topGame._sport||topGame.sport||topGame.league||'';
       text=await retryWithSportVocab(prompt,text,_sp,CLAUDE_PROXY_URL);
@@ -21155,7 +21209,8 @@ async function renderNightOwlRecap(){
   const alreadyRendered = _nightOwlRendered && _nightOwlGameId===topGame.id;
   const slotHasOwl = el.querySelector('.night-owl-card') !== null;
   if(alreadyRendered && slotHasOwl) return;
-  const cacheKey='field_nightowl_'+topGame.id;
+  const _owlSwV=typeof SW_VERSION!=='undefined'?SW_VERSION:'0';
+  const cacheKey='field_nightowl_v'+_owlSwV+'_'+topGame.id; // versioned: busts on deploy
   const cached=sessionStorage.getItem(cacheKey);
   // Story Engine — winner-first scoreLabel
   const _owlSc=classifySport(topGame,null);
@@ -21270,8 +21325,14 @@ async function renderNightOwlRecap(){
     el.appendChild(secDiv);
 
     if (secCached) {
-      secDiv.querySelector('.no-text')?.classList.replace('pending','loaded');
-      continue;
+      // Validate cache — bust if sport vocab contaminated
+      const _sSp=(game._section||game._sport||game.sport||game.league||'');
+      const _sViol=(typeof checkSportVocab==='function')?checkSportVocab(secCached,_sSp):[];
+      if(!_sViol.length){
+        secDiv.querySelector('.no-text')?.classList.replace('pending','loaded');
+        continue;
+      }
+      sessionStorage.removeItem(secCacheKey); // bust contaminated cache
     }
 
     // Async: fetch 2-sentence capsule for secondary final
@@ -21279,7 +21340,7 @@ async function renderNightOwlRecap(){
       try {
         const budget = journalismCallsToday();
         if (!budget.canCall()) { div.remove(); return; }
-        const sp = (g._section||g._sport||g.sport||'').toLowerCase();
+        const sp = (g._section||g._sport||g.sport||g.league||'').toLowerCase();
         const _terms = sp.includes('baseball')||sp.includes('mlb')
           ? 'Sport: Baseball. Score in RUNS. Use baseball vocabulary only.'
           : sp.includes('hockey')||sp.includes('nhl')
