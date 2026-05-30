@@ -1252,3 +1252,8 @@ assert('A310 — all journalism calls use claude-haiku-4-5-20251001 not claude-s
   !html.includes('claude-sonnet-4-6') &&
   html.includes('claude-haiku-4-5-20251001'),
   'All browser journalism calls must use Haiku not Sonnet — Sonnet is ~20x more expensive for short prose');
+
+assert('A311 — _jqDelay Gemini RPM guard: 2s stagger before all 5 quality chain retry fetches',
+  html.includes('const _jqDelay = () => new Promise(r => setTimeout(r, 2000))') &&
+  (html.match(/await _jqDelay\(\); \/\/ Gemini RPM guard/g) || []).length === 5,
+  '_jqDelay must appear in all 5 quality chain retry paths to prevent Gemini 30 RPM limit');

@@ -15628,6 +15628,14 @@ function checkSportVocab(text, sport) {
 }
 
 // Layer 2b retry — same pattern as retryWithoutCliches() but for sport vocab
+// ── Gemini RPM guard ──────────────────────────────────────────────────────────
+// Gemini free tier: 30 RPM. Quality chain fires up to 6 calls in rapid succession.
+// A 2s stagger between retry fetches keeps bursts under 30 RPM, preventing
+// fallthrough to Claude. Only fires when a retry is actually needed (happy path
+// returns early before reaching the fetch, so no delay on passing briefs).
+// VERIFIED: 6 calls × 2s stagger = 12s max chain duration. Acceptable for briefs.
+const _jqDelay = () => new Promise(r => setTimeout(r, 2000));
+
 async function retryWithSportVocab(originalPrompt, text, sport, proxyUrl) {
   const violations = checkSportVocab(text, sport);
   if (!violations.length) return text;
@@ -15635,6 +15643,7 @@ async function retryWithSportVocab(originalPrompt, text, sport, proxyUrl) {
   const vocab = SPORT_VOCAB_VIOLATIONS[sportClass] || {};
   if (FIELD_DEBUG) console.warn('[JQ Layer 2b] Sport vocab violations:', violations, 'in', sport);
   try {
+    await _jqDelay(); // Gemini RPM guard
     const retryPrompt = originalPrompt +
       `\n\nCRITICAL CORRECTION — sport vocabulary errors detected:\n` +
       `Sport: ${vocab.sport || sport}. Score in ${vocab.units || 'correct units'}. ` +
@@ -15670,6 +15679,7 @@ async function retryWithoutCliches(originalPrompt,text,proxyUrl){
   if(!found.length && !overused.length) return text;
   if(FIELD_DEBUG) console.warn('[JQ Layer 2] Clichés:',found,'Overused:',overused.map(r=>r.phrase+'×'+r.count));
   try{
+    await _jqDelay(); // Gemini RPM guard
     const banNote = found.length ? 'BANNED PHRASES to remove: '+found.join(', ')+'. ' : '';
     const sparNote = overused.length ? 'OVERUSED WORDS (appeared '+overused.map(r=>'"'+r.phrase+'" '+r.count+'×').join(', ')+' — use each at most once, replace extras with more specific language): ' : '';
     const retryPrompt=originalPrompt+'\n\nIMPORTANT REWRITE: '+banNote+sparNote+'Rewrite without them. Use a specific fact instead of each generic phrase.';
@@ -15699,6 +15709,7 @@ async function checkLeadSentence(originalPrompt, text, proxyUrl) {
   if (!_LEAD_SENTENCE_RE.test(firstSentence.trim())) return text; // lead is fine
   if (FIELD_DEBUG) console.warn('[JQ Layer 2c] Generic lead detected:', firstSentence.trim().slice(0, 60));
   try {
+    await _jqDelay(); // Gemini RPM guard
     const retryPrompt = originalPrompt +
       '\n\nLEAD SENTENCE REWRITE REQUIRED: Your previous draft started with "' +
       firstSentence.trim().slice(0, 80) +
@@ -15758,6 +15769,7 @@ async function checkStatVerification(originalPrompt, text, proxyUrl) {
   if (!missing.length) return text; // all stats present
   if (FIELD_DEBUG) console.warn('[JQ Layer 2d] Missing stats in output:', missing);
   try {
+    await _jqDelay(); // Gemini RPM guard
     const retryPrompt = originalPrompt +
       '\n\nSTAT VERIFICATION FAILURE: Your previous draft omitted these specific figures that were in the context data: ' +
       missing.join(', ') +
@@ -15793,6 +15805,7 @@ async function maybeScoreRetry(originalPrompt, text, proxyUrl, label) {
   if (!scoreObj || scoreObj.score >= JQ_SCORE_THRESHOLD) return text;
   if (FIELD_DEBUG) console.warn(`[JQ Layer 3b] Score ${scoreObj.score} below ${JQ_SCORE_THRESHOLD} — triggering score-based rewrite`);
   try {
+    await _jqDelay(); // Gemini RPM guard
     const weakDims = [];
     if (scoreObj.statDepth < 1.5) weakDims.push(`statistical depth (${scoreObj.statDepth.toFixed(1)} stats/sentence — aim for 2+)`);
     if (scoreObj.specificity < 25) weakDims.push(`specificity (${scoreObj.specificity}% proper nouns/numbers — name more players and cite more exact figures)`);
