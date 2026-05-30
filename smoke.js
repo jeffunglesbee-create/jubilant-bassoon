@@ -1146,3 +1146,16 @@ assert('A293 — Active prompt evolution: _bannedExtension reads from review que
   html.includes('_initBannedExtension') &&
   html.includes('avg < 45'),
   'hasCliche must extend BANNED_PHRASES with session-layer phrases from low-score review queue');
+
+assert('A294 — UCL/UEFA finals get showpiece label not elimination label in stakes brief',
+  html.includes('THE UEFA CHAMPIONS LEAGUE FINAL — the biggest club match in world football') &&
+  html.includes('champions league.*final|europa league.*final|conference league.*final') &&
+  html.includes('_isMajorFinalGame'),
+  'Stakes brief must detect UEFA/major finals and label them as showpiece events, not elimination games');
+
+assert('A295 — cardBriefCallsToday separate from journalismCallsToday (15 call limit)',
+  html.includes('function cardBriefCallsToday') &&
+  html.includes('field_card_brief_calls_') &&
+  html.includes('this.get()<15') &&
+  html.includes('const cardBudget = cardBriefCallsToday()'),
+  'MLB/WNBA/Stakes card briefs must use separate budget — not consume compound editorial budget');

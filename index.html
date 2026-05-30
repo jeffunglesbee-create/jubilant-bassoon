@@ -14996,6 +14996,21 @@ function journalismCallsToday(){
   };
 }
 
+// ── Card-level brief budget (separate from compound/J3 journalism budget) ─────
+// MLB/WNBA/Stakes card briefs must not consume the compound editorial budget.
+// With 15 MLB games, 3 WNBA games, and up to 4 stakes games, sharing the
+// 8-call journalism budget with J3/Night Owl causes MLB briefs to silently
+// fail when the compound call already used 1-2 budget slots.
+// Card brief budget: 15 calls/session (resets on reload via sessionStorage).
+function cardBriefCallsToday(){
+  const k='field_card_brief_calls_'+new Date().toISOString().slice(0,10);
+  return {
+    get(){return parseInt(sessionStorage.getItem(k)||'0');},
+    inc(){sessionStorage.setItem(k,String(this.get()+1));},
+    canCall(){return this.get()<15;}
+  };
+}
+
 // ── Compound Editorial Call — eliminates RPM burst ───────────────────────────
 // Replaces 5-7 simultaneous journalism calls with 1 structured JSON call.
 // Content-addressed cache: only regenerates when game context changes.
@@ -17078,8 +17093,10 @@ function buildEPLMatchBriefStatic(g) {
 
 // ── J8: MLB Game Brief ───────────────────────────────────────────────────────
 async function fetchMLBGameBriefFromClaude(g) {
-  const budget = journalismCallsToday();
-  if (!budget.canCall()) return null;
+  // Card briefs use a separate budget from compound/J3 (which share journalismCallsToday)
+  // This prevents 15 MLB games from blocking J3/Night Owl via shared budget exhaustion
+  const cardBudget = cardBriefCallsToday();
+  if (!cardBudget.canCall()) return null;
 
   const abbr = (g._homeAbbr || g.homeTeam || '').toUpperCase();
   const pf   = abbr ? getParkFactor?.(abbr) : null;
@@ -17142,7 +17159,7 @@ async function fetchMLBGameBriefFromClaude(g) {
   try {
     const r = await fetch(CLAUDE_PROXY_URL, {
       method: 'POST', headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({model:'claude-sonnet-4-6', max_tokens:250,
+      body: JSON.stringify({model:'claude-sonnet-4-6', max_tokens:400,
         messages:[{role:'user',content:prompt}]}),
     });
     if (!r.ok) return null;
@@ -17154,7 +17171,7 @@ async function fetchMLBGameBriefFromClaude(g) {
       text = await checkLeadSentence(prompt, text, CLAUDE_PROXY_URL);
       text = await checkStatVerification(prompt, text, CLAUDE_PROXY_URL);
       text = await maybeScoreRetry(prompt, text, CLAUDE_PROXY_URL, 'MLB Brief');
-      budget.inc();
+      cardBudget.inc();
       scoreProse(text).then(s=>renderProseScore(s,'MLB Brief'));
       return text.trim();
     }
@@ -17204,8 +17221,8 @@ async function renderMLBGameBriefCard(gameCard) {
 
 // ── J9: WNBA Game Brief ───────────────────────────────────────────────────────
 async function fetchWNBAGameBriefFromClaude(g) {
-  const budget = journalismCallsToday();
-  if (!budget.canCall()) return null;
+  const cardBudget = cardBriefCallsToday();
+  if (!cardBudget.canCall()) return null;
 
   const standingsCtx = (typeof buildGameStandingsContext === 'function') ? buildGameStandingsContext(g) : '';
   const stream = g.streams?.[0]?.label || '';
@@ -17235,7 +17252,7 @@ async function fetchWNBAGameBriefFromClaude(g) {
       text = await retryWithoutCliches(prompt, text, CLAUDE_PROXY_URL);
       text = await checkLeadSentence(prompt, text, CLAUDE_PROXY_URL);
       text = await maybeScoreRetry(prompt, text, CLAUDE_PROXY_URL, 'WNBA Brief');
-      budget.inc();
+      cardBudget.inc();
       scoreProse(text).then(s=>renderProseScore(s,'WNBA Brief'));
       return text.trim();
     }
@@ -17285,13 +17302,25 @@ async function renderWNBAGameBriefCard(gameCard) {
 
 // ── J10: Stakes Brief (elimination / clinch / series-deciding) ──────────────
 async function fetchStakesBriefFromClaude(g) {
-  const budget = journalismCallsToday();
-  if (!budget.canCall()) return null;
+  const cardBudget = cardBriefCallsToday();
+  if (!cardBudget.canCall()) return null;
 
   const imp = g._gameImportance || '';
-  if (!imp || imp === 'playoff_impl') return null;
+  // Major finals (UCL, UEL, UECL, World Series etc.) may not have _gameImportance set
+  const _isMajorFinalGame = /champions league.*final|europa league.*final|conference league.*final/i.test(g.league||'');
+  if (!_isMajorFinalGame && (!imp || imp === 'playoff_impl')) return null;
 
-  const impLabel = imp === 'elimination' ? 'ELIMINATION GAME — a loss ends their season'
+  // European finals and domestic cup finals are showpiece events — not "elimination games"
+  const isEuropeanFinal = /champions league.*final|europa league.*final|conference league.*final|fa cup.*final|league cup.*final/i.test(g.league||'');
+  const isMajorFinal = isEuropeanFinal || /world series|super bowl|stanley cup final|nba finals|world cup.*final/i.test(g.league||'');
+  const impLabel = isMajorFinal
+    ? (() => {
+        if (/champions league.*final/i.test(g.league||'')) return 'THE UEFA CHAMPIONS LEAGUE FINAL — the biggest club match in world football. One game for the trophy.';
+        if (/europa league.*final/i.test(g.league||'')) return 'THE UEFA EUROPA LEAGUE FINAL — second biggest European club trophy. One game decides it.';
+        if (/conference league.*final/i.test(g.league||'')) return 'THE UEFA CONFERENCE LEAGUE FINAL — a first European trophy for one of these clubs.';
+        return 'MAJOR FINAL — one game, winner takes the trophy.';
+      })()
+    : imp === 'elimination' ? 'ELIMINATION GAME — a loss ends their season'
     : imp === 'series_deciding' ? 'SERIES-DECIDING GAME — winner advances'
     : imp === 'clinch' ? 'CLINCH OPPORTUNITY — win tonight to advance'
     : null;
@@ -17308,7 +17337,9 @@ async function fetchStakesBriefFromClaude(g) {
     standingsCtx || '',
     g.matchupNote ? `Context: ${g.matchupNote}` : '',
     '',
-    'Rules: 2 sentences. Lead with the historical weight — what losing or winning means beyond just tonight.',
+    isMajorFinal
+      ? 'Rules: 2 sentences. Lead with the magnitude of the occasion and what both clubs are playing for. Cite specific history (last time in this final, years since winning, what the trophy means to this club).'
+      : 'Rules: 2 sentences. Lead with the historical weight — what losing or winning means beyond just tonight.',
     'Cite specific year or franchise context if it sharpens the stakes.',
     'If Context is provided, use specific facts from it — player names, series history, records.',
     'Write only from data above. No invented stats.',
@@ -17329,7 +17360,7 @@ async function fetchStakesBriefFromClaude(g) {
       text = await checkLeadSentence(prompt, text, CLAUDE_PROXY_URL);
       text = await checkStatVerification(prompt, text, CLAUDE_PROXY_URL);
       text = await maybeScoreRetry(prompt, text, CLAUDE_PROXY_URL, 'Stakes Brief');
-      budget.inc();
+      cardBudget.inc();
       scoreProse(text).then(s=>renderProseScore(s,'Stakes Brief'));
       return text.trim();
     }
