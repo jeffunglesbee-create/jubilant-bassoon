@@ -1257,3 +1257,10 @@ assert('A311 — _jqDelay Gemini RPM guard: 2s stagger before all 5 quality chai
   html.includes('const _jqDelay = () => new Promise(r => setTimeout(r, 2000))') &&
   (html.match(/await _jqDelay\(\); \/\/ Gemini RPM guard/g) || []).length === 5,
   '_jqDelay must appear in all 5 quality chain retry paths to prevent Gemini 30 RPM limit');
+
+assert('A312 — O(1) per-game briefs: fetchPrerenderedGameBrief + KV check in MLB/WNBA/Stakes renderers',
+  html.includes('async function fetchPrerenderedGameBrief(espnEventId)') &&
+  html.includes('/journalism/game/') &&
+  html.includes('kvBrief = await fetchPrerenderedGameBrief') &&
+  html.includes('kvBriefS = await fetchPrerenderedGameBrief'),
+  'Card renderers must check relay KV before calling proxy — zero browser AI calls when cron has pre-generated brief');

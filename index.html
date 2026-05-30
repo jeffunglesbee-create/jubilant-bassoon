@@ -17500,6 +17500,25 @@ async function fetchMLBGameBriefFromClaude(g) {
   return null;
 }
 
+// ── fetchPrerenderedGameBrief ─────────────────────────────────────────────────
+// Checks relay KV for a pre-generated game brief before calling the proxy.
+// The relay cron pre-generates briefs every 15min — browser gets instant load
+// with zero AI calls on most requests. Falls back to browser-side generation
+// if KV miss (cron hasn't run yet for this game) or relay unavailable.
+// KV key: brief:game:{espnEventId}   TTL: 3600s
+async function fetchPrerenderedGameBrief(espnEventId) {
+  if (!espnEventId) return null;
+  try {
+    const r = await fetch(
+      `${JOURNALISM_RELAY.replace('/journalism/tonight', '')}/journalism/game/${espnEventId}`,
+      { signal: AbortSignal.timeout(3000) }
+    );
+    if (!r.ok) return null;
+    const data = await r.json();
+    return data?.brief || null;
+  } catch(_) { return null; }
+}
+
 async function renderMLBGameBriefCard(gameCard) {
   const gameid = gameCard.dataset.gameid;
   if (!gameid) return;
@@ -17528,6 +17547,16 @@ async function renderMLBGameBriefCard(gameCard) {
   gameCard.insertAdjacentElement('beforebegin', card);
 
   if (cached) { inner.querySelector('.sgb-text')?.classList.replace('pending','loaded'); return; }
+
+  // Check relay KV first — zero cost if cron has pre-generated this brief
+  const espnId = game._espnId || game.sourceId || gameid;
+  const kvBrief = await fetchPrerenderedGameBrief(espnId);
+  if (kvBrief) {
+    const textEl = inner.querySelector('.sgb-text');
+    if (textEl) { textEl.textContent = trimToCompleteSentence(kvBrief); textEl.classList.replace('pending','loaded'); }
+    sessionStorage.setItem(cacheKey, kvBrief);
+    return;
+  }
 
   const text = await fetchMLBGameBriefFromClaude(game);
   const textEl = inner.querySelector('.sgb-text');
@@ -17615,6 +17644,15 @@ async function renderWNBAGameBriefCard(gameCard) {
   gameCard.insertAdjacentElement('beforebegin', card);
 
   if (cached) { inner.querySelector('.sgb-text')?.classList.replace('pending','loaded'); return; }
+
+  const espnId = game._espnId || game.sourceId || gameid;
+  const kvBrief = await fetchPrerenderedGameBrief(espnId);
+  if (kvBrief) {
+    const textEl = inner.querySelector('.sgb-text');
+    if (textEl) { textEl.textContent = trimToCompleteSentence(kvBrief); textEl.classList.replace('pending','loaded'); }
+    sessionStorage.setItem(cacheKey, kvBrief);
+    return;
+  }
 
   const text = await fetchWNBAGameBriefFromClaude(game);
   const textEl = inner.querySelector('.sgb-text');
@@ -17736,6 +17774,15 @@ async function renderStakesBriefCard(gameCard) {
   gameCard.insertAdjacentElement('beforebegin', card);
 
   if (cached) { inner.querySelector('.stakes-text')?.classList.replace('pending','loaded'); return; }
+
+  const espnIdS = game._espnId || game.sourceId || gameid;
+  const kvBriefS = await fetchPrerenderedGameBrief(espnIdS);
+  if (kvBriefS) {
+    const textEl = card.querySelector('.sgb-text');
+    if (textEl) { textEl.textContent = trimToCompleteSentence(kvBriefS); textEl.classList.replace('pending','loaded'); }
+    sessionStorage.setItem(cacheKey, kvBriefS);
+    return;
+  }
 
   const text = await fetchStakesBriefFromClaude(game);
   const textEl = inner.querySelector('.stakes-text');
