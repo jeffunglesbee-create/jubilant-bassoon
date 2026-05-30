@@ -579,9 +579,9 @@ assert('A188 — M2: isScoutsPick wired into injectJ1J4Badges',
   html.includes('if (isScoutsPick(g))'),
   'Scout\'s Pick badge injection must use isScoutsPick() boolean gate');
 
-assert('A189 — SW_VERSION is current (Rule 23: suffix per deploy, new day resets to a)',
-  html.includes("'2026-05-31a'"),
-  'SW_VERSION must match current deploy date — update daily per Rule 23');
+// A189 retired: hardcoded date caused daily CI failures when date rolled over.
+// A190 (below) dynamically verifies sw.js and index.html SW_VERSION match — sufficient.
+// CI's 'Sync SW_VERSION to deploy date' step ensures sw.js is always current.
 
 // A190: sw.js SW_VERSION must match index.html SW_VERSION
 // Prevents stale-while-revalidate serving old index.html to return visitors
