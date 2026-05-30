@@ -3103,7 +3103,12 @@ function indexRightNow() {
 }
 
 function initRightNowIndexer() {
-  window.addEventListener('resize', debounce(indexRightNow, 50));
+  // Inline debounce — debounce utility not globally available
+  let _rnResizeT;
+  window.addEventListener('resize', () => {
+    clearTimeout(_rnResizeT);
+    _rnResizeT = setTimeout(indexRightNow, 50);
+  });
   if (screen?.orientation) {
     screen.orientation.addEventListener('change', () => requestAnimationFrame(indexRightNow));
   }
