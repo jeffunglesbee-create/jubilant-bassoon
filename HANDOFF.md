@@ -1,56 +1,47 @@
-# FIELD Handoff — May 30 2026 (Session 3)
-**Session Type:** TYPE B/C Mixed (cost investigation + feature build)
-**HEAD:** 3652ffb
-**Relay HEAD:** d1632fe
-**Smoke:** 314/0 (A309–A312)
+# FIELD Handoff — May 31 2026 (TYPE A — Daily Update)
+**HEAD:** 9076994
+**Smoke:** 314/0
 **Deploy:** SUCCESS
 
 ## TIER 0 DEADLINES
-- NBA Finals G1: June 3 (NYK at MSG) — shell needed
+- **WCF G7 result needed BEFORE next session** — SAS @ OKC tonight
+  NBA Finals G1 June 3 at Western champion's arena: fill in team name + venue
+- Stanley Cup Final G1: June 2 — Carolina vs Vegas already wired ✅
 - World Cup 2026 Phase 1: June 11 HARD
 - USPTO provisional: ~June 25
 
 ## SESSION START (next session)
-1. Declare session type: A / B / C / D / E
+1. Declare session type — **TYPE A** if just updating WCF G7 result + Finals teams
 2. `git pull && cp index.html /home/claude/index.html`
-3. `node smoke.js index.html` — must be 314/0 before touching anything
+3. `node smoke.js index.html` — must be 314/0
 4. Read CI/Deploy Ref: `18JMUd-Uq_m2DomuCua2B5UMiWOel81yzc1JU7SY6f20`
-5. Read STANDARDS.md: `1g6ZfxRkRPrk2g9NK-pANPHgJ1Zf-WwrcV25V-aC7zHM`
 
 ## WHAT CHANGED THIS SESSION
 
-### Android long-press fix (A309)
-settings-btn long-press broken on Galaxy A36 + Pixel 8.
-Root cause: touchstart e.preventDefault() suppresses click on Android Chrome.
-Fix: pointerdown (passive:true) — works on Android/iOS/desktop.
-SMOKE-VERIFIED — needs device confirmation.
+### May 31 daily update (TYPE A)
+**NBA:**
+- WCF G6 result: SAS 118, OKC 91 (series tied 3-3)
+  Wembanyama 28/10/3blk. SGA 15pts (6-18 FG). SAS 32-13 Q3 (20-0 run).
+- WCF G7 added: SAS @ OKC Sat May 30, 8pm ET, NBC/Peacock, Paycom Center
+  OKC 58.4% win prob. Jalen Williams ruled out.
+- NBA Finals matchupNote updated with current context
 
-### Claude → Haiku swap (A310)
-$44 on dashboard was THIS dev session, not FIELD production.
-Precautionary: all 18 model strings → claude-haiku-4-5-20251001.
-Sonnet kept in Courier/Layer 2 vision only.
-A310 smoke assertion prevents regression.
+**NHL:**
+- ECF G5 result: CAR 6, MTL 1 — CAR wins series 4-1
+- Stanley Cup Final added: VGK @ CAR, G1 Tue June 2, 8pm ET, ABC
+  Full 7-game schedule wired (Lenovo Center + T-Mobile Arena)
 
-### Gemini RPM guard (A311)
-5 quality chain retries in ~2s hit 30 RPM → Claude fallthrough.
-Fix: _jqDelay() — 2s stagger before each retry fetch (5 functions).
-Happy path returns before delay — zero latency on passing briefs.
+**MLB:**
+- Full 15-game May 31 Sunday slate added
+- MLB_LEADOFF: TOR @ BAL, 12:15pm ET (Peacock)
+- MLB_NBC: CHC @ STL, 7:20pm ET (NBC + Peacock — first NBC broadcast of season)
 
-### O(1) per-game briefs (A312)
-Relay cron now pre-generates card briefs for all ESPN games → KV.
-Browser checks KV before proxy (fetchPrerenderedGameBrief).
-MLB/WNBA/Stakes wired. After first cron cycle: zero browser AI calls.
-SMOKE-VERIFIED — needs live sports night confirmation.
-
-## COST ARCHITECTURE (after this session)
-- Browser AI calls: near-zero (relay KV serves most)
-- Relay cron: Gemini free tier (RPM guarded)
-- Claude fallback: Haiku only on genuine Gemini errors
-- Layer 2 vision: Sonnet on CI pushes only
-- Dev sessions: main cost — keep sessions efficient
-
-## POSTPONED INDEFINITELY
-Claude Code migration — per Jeff May 30 2026
+## IMMEDIATE NEXT TASK
+WCF G7 result (tonight) → update index.html:
+- Replace "TBD — Western Champion" with actual team (OKC or SAS)
+- Update venue for G1/G2/G5/G7 (Paycom Center OKC or Frost Bank Center SAS)
+- Update NBA Finals G1 matchupNote with series context
+- **Deadline: before June 3 tipoff**
 
 ## SMOKE-VERIFIED ONLY — BROWSER CONFIRMATION NEEDED
 1. Sport voice arrays (baseball/hockey/soccer)
@@ -61,12 +52,6 @@ Claude Code migration — per Jeff May 30 2026
 6. MCP health panel section
 7. Android long-press fix (A309)
 8. O(1) per-game KV briefs (A312)
-
-## NEXT PRIORITY
-1. NBA Finals G1 shell (June 3 — HARD DEADLINE)
-2. Browser confirmation session
-3. [PWA-A] Android PWA fixes (~40 min)
-4. [MOBILE-INTEL-A] Option A
 
 ## KEY DOC IDs
 - CI/Deploy Ref: `18JMUd-Uq_m2DomuCua2B5UMiWOel81yzc1JU7SY6f20`
