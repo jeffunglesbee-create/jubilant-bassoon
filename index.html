@@ -2960,23 +2960,33 @@ window.addEventListener('load', () => {
   const settingsBtn = document.getElementById('settings-btn');
   if (!settingsBtn) return;
   let _longPressTimer = null;
+  let _longPressFired = false;
   const _cancel = () => { clearTimeout(_longPressTimer); _longPressTimer = null; };
-  settingsBtn.addEventListener('touchstart', e => {
-    e.preventDefault(); // blocks iOS text selection + context menu trigger
-    _longPressTimer = setTimeout(() => { showFieldHealthPanel(); }, 700);
-  }, { passive: false });
-  settingsBtn.addEventListener('touchend',    _cancel);
-  settingsBtn.addEventListener('touchmove',   _cancel);
-  settingsBtn.addEventListener('touchcancel', _cancel);
-  settingsBtn.addEventListener('contextmenu', e => e.preventDefault());
-  // Desktop fallback (mouse long-press via pointerdown)
+
+  // Use pointerdown/up/cancel universally — works on Android, iOS, and desktop.
+  // pointerType: 'touch' on Android/iOS, 'mouse' on desktop, 'pen' on stylus.
+  // DO NOT use e.preventDefault() on touchstart — it suppresses the click event
+  // on Android Chrome, breaking the normal tap → openSetup flow entirely.
+  // contextmenu handler below is sufficient to block Android long-press menu.
   settingsBtn.addEventListener('pointerdown', e => {
-    if (e.pointerType === 'mouse') {
-      _longPressTimer = setTimeout(() => { showFieldHealthPanel(); }, 700);
-    }
+    _longPressFired = false;
+    _longPressTimer = setTimeout(() => {
+      _longPressFired = true;
+      showFieldHealthPanel();
+    }, 700);
   }, { passive: true });
-  settingsBtn.addEventListener('pointerup',    e => { if (e.pointerType === 'mouse') _cancel(); });
-  settingsBtn.addEventListener('pointerleave', e => { if (e.pointerType === 'mouse') _cancel(); });
+  settingsBtn.addEventListener('pointerup',     _cancel);
+  settingsBtn.addEventListener('pointerleave',  _cancel);
+  settingsBtn.addEventListener('pointercancel', _cancel);
+
+  // Block native context menu on long-press (Android + iOS)
+  settingsBtn.addEventListener('contextmenu', e => e.preventDefault());
+
+  // If long-press fired, suppress the subsequent click so openSetup doesn't
+  // open on top of the health panel. Reset flag after click is consumed.
+  settingsBtn.addEventListener('click', e => {
+    if (_longPressFired) { _longPressFired = false; e.stopImmediatePropagation(); }
+  }, true); // capture phase — fires before openSetup click handler
 });
 
 // ?debug=1 URL param still opens the panel

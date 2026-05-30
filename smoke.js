@@ -1240,3 +1240,10 @@ assert('A308 — MCP relay section in health panel: fetchMCPStatus + fhp-mcp pla
   html.includes('get_smoke_count') &&
   html.includes('setTimeout(fetchMCPStatus, 100)'),
   'Health panel must include live MCP relay section with CI status, smoke count, and refresh button');
+
+assert('A309 — settings-btn long-press uses pointerdown not touchstart+preventDefault (Android fix)',
+  html.includes("settingsBtn.addEventListener('pointerdown'") &&
+  !html.includes("touchstart', e => {\n    e.preventDefault(); // blocks iOS") &&
+  html.includes('_longPressFired') &&
+  html.includes('e.stopImmediatePropagation()'),
+  'Long-press must use pointerdown (not touchstart+preventDefault) — preventDefault suppresses click on Android Chrome');
