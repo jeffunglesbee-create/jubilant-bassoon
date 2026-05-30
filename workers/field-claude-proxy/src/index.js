@@ -17,7 +17,7 @@
 //
 // VERIFY after deploy (DevTools Network tab on FIELD app):
 //   X-FIELD-Proxy-Version: 8
-//   X-Field-Model: gemini-3.1-flash-lite  (or claude-sonnet-4 on vision/error fallback)
+//   X-Field-Model: gemini-3.1-flash-lite  (or claude-haiku-fallback on vision/error fallback)
 
 const PROXY_VERSION = '9'; // v1beta restored for AI Studio keys
 
@@ -85,7 +85,7 @@ async function callClaude(raw, key) {
     headers: { 'Content-Type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01' },
     body: raw,
   });
-  return { text: await r.text(), model: 'claude-sonnet-4', status: r.status };
+  return { text: await r.text(), model: 'claude-haiku-fallback', status: r.status };
 }
 
 export default {
