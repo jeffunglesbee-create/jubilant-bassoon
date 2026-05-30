@@ -17334,6 +17334,10 @@ async function fetchMLBGameBriefFromClaude(g) {
   const analyticsCtx = analyticsLines.length ? analyticsLines.join('\n') : '';
 
   // Team momentum (last-10 record) — gives texture beyond raw standings
+  // RUWT: fetchMLBTeamMomentum response fields verified against buildCompoundPrompt
+  // usage at L15798 (same session, May 30 2026). Fields: {wins, losses, last10[]}
+  // where last10 is array of 1/0 (win/loss). Re-verify if fetchMLBTeamMomentum changes.
+  // VERIFIED May 30 2026 (inherited from compound prompt usage)
   let momentumCtx = '';
   try {
     const homeAbbr = g._homeAbbr || g.homeTeam || '';

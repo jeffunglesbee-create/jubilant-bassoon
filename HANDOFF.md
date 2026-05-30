@@ -79,8 +79,7 @@ All 9 journalism surfaces now have complete quality chains. See session doc.
 ## KEY DOC IDs
 - CI/Deploy Ref: `18JMUd-Uq_m2DomuCua2B5UMiWOel81yzc1JU7SY6f20`
 - Journalism Quality Spec: `1b7fwDVZMURi2sDbQ-Ur7dpbG4I5-fuCDPWC1ILfucoU`
-- Build Session List v7.26: `1C9Lx5WBD9xe_EAeilryNjN8keimpAgpyE_I50RGiKGY`
-- STANDARDS.md canonical: `1A3OaKNEjR-tASC330R3Aew9TIMwSCj9E`
-- STANDARDS.md draft (Rules 8-10): `1MKSQnY8KnWROoJpUIahAnEaXcKlxJZUIDgOzyNLCMPo`
+- Build Session List v7.27: `1TaywA5e3NLpJLpXcQPZwDMhDG79_rXMsvIa_J_uBOfY`
+- STANDARDS.md canonical: `1g6ZfxRkRPrk2g9NK-pANPHgJ1Zf-WwrcV25V-aC7zHM`
 - Session Doc (this session): `1j09X0Yt7PeUHu_qMXYzFioUi99MqKqxEOXZuMHEGi7w`
 - Infrastructure Backlog: `1n4mYHB-k_X5pKrNuUFV7FK0YlolIPkNpGAkegGAUVHw`
