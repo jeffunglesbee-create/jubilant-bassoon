@@ -1,7 +1,8 @@
-# FIELD Handoff — May 30 2026
-**Session Type:** TYPE B/C Mixed (pre-declared, Rule 1 exception)
-**HEAD:** 6a0be7d
-**Smoke:** 309/0 (A283–A307)
+# FIELD Handoff — May 30 2026 (Session 2)
+**Session Type:** TYPE C (standards + infrastructure)
+**HEAD:** ead9ce9
+**Relay HEAD:** 3c51366
+**Smoke:** 310/0 (A308)
 **Deploy:** SUCCESS
 
 ## TIER 0 DEADLINES
@@ -12,74 +13,54 @@
 ## SESSION START (next session)
 1. Declare session type: A / B / C / D / E
 2. `git pull && cp index.html /home/claude/index.html`
-3. `node smoke.js index.html` — must be 309/0 before touching anything
-4. Read CI/Deploy Ref: Drive `18JMUd-Uq_m2DomuCua2B5UMiWOel81yzc1JU7SY6f20`
+3. `node smoke.js index.html` — must be 310/0 before touching anything
+4. Read CI/Deploy Ref: `18JMUd-Uq_m2DomuCua2B5UMiWOel81yzc1JU7SY6f20`
+5. Read STANDARDS.md: `1g6ZfxRkRPrk2g9NK-pANPHgJ1Zf-WwrcV25V-aC7zHM`
 
 ## WHAT CHANGED THIS SESSION
 
-### Journalism completeness audit (A285-A287)
-All 9 journalism surfaces now have complete quality chains. See session doc.
+### Standards + docs
+- STANDARDS.md new canonical: `1g6ZfxRkRPrk2g9NK-pANPHgJ1Zf-WwrcV25V-aC7zHM`
+  Rules 8 (DO NOT INVENT/RUWT), 9 (ToS), 10 (Intelligence-Action) added
+- Build Session List v7.27: `1TaywA5e3NLpJLpXcQPZwDMhDG79_rXMsvIa_J_uBOfY`
+  SMT-A + STREAM-A DONE, JQ-ACTION-A/B/C added, BROWSER-CONFIRM-A added
+- RUWT annotation on fetchMLBTeamMomentum field paths
 
-### Journalism gaps → strengths (A288-A293)
-- journalNote → J2 series prompt as 'Series history:' context
-- FIELD_BASEBALL_VOICE + FIELD_HOCKEY_VOICE + FIELD_SOCCER_VOICE + getFieldVoice()
-- Mandatory three-part arc structure in J3 and J2
-- EPL richer context: GD, position zones, matchupNote
-- _bannedExtension active prompt evolution from review queue
+### MCP server (field-relay-nba)
+- `/mcp` endpoint live: JSON-RPC 2.0, spec 2025-03-26
+- Tools: get_ci_status, get_smoke_count, get_deploy_status, get_live_scores, get_espn_game
+- GITHUB_PAT set in CF dashboard ✅
+- Fixed: pre-existing `id: ,` bug in adaptHockey()
+- Fixed: POST method guard — /mcp added to allowlist
+- Verified live via cf-api-probe (initialize + tools/list + tools/call) ✅
 
-### UCL Final / Stakes Brief (A294-A297)
-- _isMajorFinalGame: 🏆 UCL FINAL icon, showpiece prompt framing
-- cardBriefCallsToday() — separate 15-call budget for card-level briefs
-- Versioned cache key + explicit FINAL rules (no semifinal language)
+### MCP in FIELD Health Panel (A308)
+- Long-press ⚙ or ?debug=1 → MCP RELAY section at bottom
+- Shows: smoke count + last 3 CI runs + Refresh button
+- Auto-fetches 100ms after panel opens
+- SMOKE-VERIFIED — browser confirmation needed
 
-### MLB brief loading fixed (A298-A299)
-- umpLine ReferenceError was root cause of all stuck 'Loading brief...' cards
-- All card renderers now unconditionally remove card on null
-
-### Venue injection (A300)
-- g.venue in EPL, Stakes, J2, Night Owl prompts with DO NOT INVENT rule
-- Fixes Allianz/Wembley hallucinations — UCL Final is Puskás Aréna, Budapest
-
-### No peeking behind curtain (A301)
-- WNBA card suppressed when no context
-- FIELD_PROSE_STYLE global: NEVER explain missing data
-
-### MLB brief variety (A302)
-- getMLBAnalyticsContext + fetchMLBTeamMomentum injected
-- 'Vary the angle' rule — not always standings
-
-### RSN accuracy — 15 corrections (A303)
-- Post-Main Street collapse: Rays.TV, CLEGuardians.TV, Detroit SportsNet,
-  Rangers Sports Network, FDSN West, Rockies.TV, SportsNet PIT, Nationals.tv, etc.
-- New SR entries: clegtv, dsntv, texrsn, fdsnwest, rockiestv
-
-### Streaming Discovery derived + SMT time-phase (A304-A305)
-- SERVICE_FAMILIES + buildStreamingDiscovery() — data-sorted service cards
-- getCurrentSMTPhase + scoreSMTCard — currently-airing shows first
-
-### Baseball tie + Athletics (A306-A307)
-- Extra innings detection in Night Owl — no more tie narratives
-- OAK: NBCS California → Athletics.TV (Sacramento, not Oakland)
+## POSTPONED INDEFINITELY
+- Claude Code migration — per Jeff May 30 2026
 
 ## SMOKE-VERIFIED ONLY — BROWSER CONFIRMATION NEEDED
-1. Sport voice arrays (baseball/hockey/soccer) — AI output unconfirmed
-2. Three-part arc structure — AI adherence unconfirmed
-3. _bannedExtension — needs populated field_jq_review
-4. Extra innings Night Owl fix — needs real extra-innings game
-5. MLB 'vary the angle' — needs PITCHER_ARSENAL / PLAYER_EXPECTED_STATS populated
+1. Sport voice arrays (baseball/hockey/soccer)
+2. Three-part arc structure (J3 + J2)
+3. _bannedExtension active evolution
+4. Extra innings Night Owl fix
+5. MLB vary-the-angle analytics
+6. MCP health panel section (relay reachable + data displays)
 
 ## NEXT PRIORITY
-1. STANDARDS.md canonical update — Jeff must paste Rules 8-10 into
-   `1A3OaKNEjR-tASC330R3Aew9TIMwSCj9E` from draft `1MKSQnY8KnWROoJpUIahAnEaXcKlxJZUIDgOzyNLCMPo`
-2. [PWA-A] Android PWA fixes (~40 min) — prerequisite for MOBILE-INTEL-A
-3. [MOBILE-INTEL-A] Option A — Right Now section above schedule
-4. Browser confirmation session for smoke-verified-only features
-5. Rule 28 action paths for prose score badge + _bannedExtension surface
+1. NBA Finals G1 shell (June 3 — HARD DEADLINE)
+2. [PWA-A] Android PWA fixes (~40 min)
+3. [MOBILE-INTEL-A] Option A — Right Now section
+4. Browser confirmation session
 
 ## KEY DOC IDs
 - CI/Deploy Ref: `18JMUd-Uq_m2DomuCua2B5UMiWOel81yzc1JU7SY6f20`
-- Journalism Quality Spec: `1b7fwDVZMURi2sDbQ-Ur7dpbG4I5-fuCDPWC1ILfucoU`
+- STANDARDS.md: `1g6ZfxRkRPrk2g9NK-pANPHgJ1Zf-WwrcV25V-aC7zHM`
 - Build Session List v7.27: `1TaywA5e3NLpJLpXcQPZwDMhDG79_rXMsvIa_J_uBOfY`
-- STANDARDS.md canonical: `1g6ZfxRkRPrk2g9NK-pANPHgJ1Zf-WwrcV25V-aC7zHM`
-- Session Doc (this session): `1j09X0Yt7PeUHu_qMXYzFioUi99MqKqxEOXZuMHEGi7w`
+- Session 1 Doc: `1j09X0Yt7PeUHu_qMXYzFioUi99MqKqxEOXZuMHEGi7w`
+- Session 2 Doc: `1-APZ5UVbSXdWQ68eUXEMuIXW6mq1iQ9Nv8Xv9jh5IK4`
 - Infrastructure Backlog: `1n4mYHB-k_X5pKrNuUFV7FK0YlolIPkNpGAkegGAUVHw`
