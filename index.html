@@ -2791,6 +2791,35 @@ function buildFieldHealthPanel() {
     rows.push(ok('Odds Budget', `${count} req today (limit 60) · date: ${date}`));
   } catch(e) { rows.push(warn('Odds Budget', 'Could not read localStorage')); }
 
+  // ── Prose Quality rolling average (patent prior art) ─────────────────────
+  try {
+    const _jqRaw = localStorage.getItem('field_jq_scores');
+    const _jqScores = _jqRaw ? JSON.parse(_jqRaw) : [];
+    if(_jqScores.length) {
+      const avg = Math.round(_jqScores.reduce((a,s)=>a+s.score,0)/_jqScores.length);
+      const best = Math.max(..._jqScores.map(s=>s.score));
+      const worst = Math.min(..._jqScores.map(s=>s.score));
+      const avgStat = Math.round((_jqScores.reduce((a,s)=>a+(s.stat||0),0)/_jqScores.length)*10)/10;
+      const qIcon = avg >= 60 ? '✅' : avg >= 45 ? '⚠️' : '❌';
+      rows.push(ok('Prose Quality', `${qIcon} avg ${avg}/100 · best ${best} · worst ${worst} · stat ${avgStat}/s · ${_jqScores.length} briefs`));
+    } else {
+      rows.push(ok('Prose Quality', 'No briefs scored yet'));
+    }
+  } catch(e) { rows.push(warn('Prose Quality', 'Could not read score history')); }
+
+  // ── Phrase Review queue (Tier 3 feedback loop) ───────────────────────────
+  try {
+    const _revRaw = localStorage.getItem('field_jq_review');
+    const _revItems = _revRaw ? JSON.parse(_revRaw) : [];
+    if(_revItems.length) {
+      const _recent = _revItems.slice(-5);
+      const _allPhrases = [...new Set(_revItems.flatMap(r=>r.phrases||[]))];
+      rows.push(warn('Phrase Review', `${_revItems.length} low-score briefs · ${_allPhrases.length} unique phrases flagged · Recent: ${_recent.flatMap(r=>r.phrases).slice(0,4).join(', ')}`));
+    } else {
+      rows.push(ok('Phrase Review', 'No phrases flagged yet'));
+    }
+  } catch(e) { rows.push(warn('Phrase Review', 'Could not read review queue')); }
+
   // ── Errors ────────────────────────────────────────────────────────────────
   const errors = window._fieldErrors || [];
   if (errors.length)
@@ -15387,6 +15416,26 @@ async function maybeScoreRetry(originalPrompt, text, proxyUrl, label) {
       return retried;
     }
   } catch(e) { if (FIELD_DEBUG) console.error('[JQ Layer 3b] error:', e.message); }
+  // Tier 3: if score still below 40 after retry, log common phrases for review
+  try {
+    if(scoreObj.score < 40) {
+      const _reviewKey = 'field_jq_review';
+      const _existing = JSON.parse(localStorage.getItem(_reviewKey)||'[]');
+      // Extract 2-3 word phrases from text that appear multiple times
+      const _words = text.toLowerCase().replace(/[^a-z\s]/g,'').split(/\s+/).filter(w=>w.length>4);
+      const _pairs = [];
+      for(let _i=0;_i<_words.length-1;_i++) _pairs.push(_words[_i]+' '+_words[_i+1]);
+      const _freq = {};
+      _pairs.forEach(p=>{ _freq[p]=(_freq[p]||0)+1; });
+      const _candidates = Object.entries(_freq).filter(([p,c])=>c>=2&&!BANNED_PHRASES.some(b=>b.includes(p))).map(([p])=>p).slice(0,3);
+      if(_candidates.length) {
+        _existing.push({phrases:_candidates, score:scoreObj.score, label, ts:Date.now()});
+        if(_existing.length > 30) _existing.shift();
+        localStorage.setItem(_reviewKey, JSON.stringify(_existing));
+        if(FIELD_DEBUG) console.warn('[JQ Tier 3] Low-score phrases flagged for review:', _candidates);
+      }
+    }
+  } catch(e_) {}
   return text;
 }
 
@@ -16799,20 +16848,22 @@ async function initFIELDBrief(sections){
         }
       });
     }
-    // Fix 4: Dispatch game_briefs for regular-season WNBA/MLB/etc. into _gameBriefCache
-    // Bottom sheet reads _gameBriefCache[gameId] to show per-game editorial context
+    // Fix 4: Dispatch game_briefs — with sport vocab check before caching
     if(compound.game_briefs?.length){
       compound.game_briefs.forEach(b=>{
         if(!b?.brief||!b?.id) return;
-        // Match compound id (home_away slugs) against game objects in allData
         const slug = b.id.toLowerCase();
         (allData?.sports||[]).forEach(sec=>{
           (sec.games||[]).forEach(g=>{
             if(!g._id) return;
             const h=(g.home||'').toLowerCase().replace(/\s+/g,'_');
             const a=(g.away||'').toLowerCase().replace(/\s+/g,'_');
-            const _lp2=slug.split('_').filter(Boolean).pop()||''; // guard: never match empty string
+            const _lp2=slug.split('_').filter(Boolean).pop()||'';
             if(_lp2&&(slug.includes(h.slice(-6))||slug.includes(a.slice(-6))||h.includes(slug.split('_')[0])||a.includes(_lp2))){
+              // Tier 2B: check sport vocab before caching game brief
+              const _gbSp=g._sport||g._section||'';
+              const _gbViol=(typeof checkSportVocab==='function')?checkSportVocab(b.brief,_gbSp):[];
+              if(_gbViol.length&&FIELD_DEBUG) console.warn('[JQ T2B] game_brief sport vocab:',_gbViol,'for',g._id);
               _gameBriefCache[g._id]=trimToCompleteSentence(b.brief);
             }
           });
@@ -17295,8 +17346,16 @@ async function fetchEPLMatchBriefFromClaude(g) {
     });
     if(!r.ok) return null;
     const data = await r.json();
-    const text = (data.content||[]).filter(c=>c.type==='text').map(c=>c.text).join('');
-    if(text && text.length > 20) { budget.inc(); return text.trim(); }
+    let text = (data.content||[]).filter(c=>c.type==='text').map(c=>c.text).join('');
+    if(text && text.length > 20) {
+      // Layer 2: cliché + sport vocab + lead checks (same chain as J3/J5)
+      text = await retryWithoutCliches(prompt, text, CLAUDE_PROXY_URL);
+      text = await retryWithSportVocab(prompt, text, 'soccer', CLAUDE_PROXY_URL);
+      text = await checkLeadSentence(prompt, text, CLAUDE_PROXY_URL);
+      budget.inc();
+      scoreProse(text).then(s=>renderProseScore(s,'EPL Brief'));
+      return text.trim();
+    }
   } catch(e) {}
   return null;
 }
@@ -20151,16 +20210,42 @@ async function fetchNightOwlFromClaude(topGame){
       _sp.includes('bundesliga') || _sp.includes('laliga')
     ? 'Sport: Football (soccer). Score in GOALS (NEVER "points"). Close game = one-goal game. Extra period = extra time (NEVER "overtime" or "OT"). NEVER use: basket, possession-game framing, interior scoring, one-possession, touchdown. Use: shots, possession percentage, xG, clean sheet, pressing.'
     : 'Sport: Basketball. Score in POINTS. Close game = one-possession game (within 3). Extra period = overtime. Use: assists, rebounds, field goal percentage, three-point shooting.';
+  // Tier 1A: inject available stat context into Night Owl prompt (same sources as compound)
+  let _owlStatCtx = '';
+  try {
+    // MLB box score line (pitcher/run totals)
+    if((_sp.includes('mlb')||_sp.includes('baseball')) && topGame.sourceId) {
+      const _boxCached = _mlbBoxscoreCache['mlb_box_'+topGame.sourceId];
+      if(_boxCached?.line) _owlStatCtx += '  [MLB BOX] '+_boxCached.line;
+    }
+    // NBA/WNBA PPG leaders
+    if((_sp.includes('nba')||_sp.includes('basketball')||_sp.includes('wnba')) && window._bdlSeasonAvgByTeam) {
+      const hNick=(topGame.home||'').split(' ').pop();
+      const aNick=(topGame.away||'').split(' ').pop();
+      const pick=(nick)=>{ const pool=(window._bdlSeasonAvgByTeam[nick]||[]); if(!pool.length) return null; const top=pool[0]; const name=`${top.player?.first_name||top.first_name||''} ${top.player?.last_name||top.last_name||''}`.trim(); const pts=top.pts; return (name&&pts)?`${name} ${pts.toFixed(1)} PPG`:null; };
+      const h=pick(hNick), a=pick(aNick); const parts=[a,h].filter(Boolean);
+      if(parts.length) _owlStatCtx += (_owlStatCtx?'\n':'')+'  [PPG LEADERS] '+parts.join(' · ');
+    }
+    // NHL skater leaders (PP%, PK% from analytics)
+    if((_sp.includes('nhl')||_sp.includes('hockey')) && window._nhlAnalyticsCache) {
+      const _nhlKey=Object.keys(window._nhlAnalyticsCache||{}).find(k=>k.includes((topGame.home||'').slice(0,4).toLowerCase()));
+      const _nhlCtx=_nhlKey?window._nhlAnalyticsCache[_nhlKey]:null;
+      if(_nhlCtx?.pp&&_nhlCtx?.pk) _owlStatCtx += (_owlStatCtx?'\n':'')+'  [PP/PK] PP '+_nhlCtx.pp+'% · PK '+_nhlCtx.pk+'%';
+    }
+  } catch(e_) {}
   const prompt=['Write a FIELD Night Owl recap.',
       'Game: '+topGame.away+' @ '+topGame.home,
       'Final: '+score+' ('+winner+' wins)',
       _terms,
       topGame.seriesRecord?'Series: '+topGame.seriesRecord:'',
       topGame.dramaPeak?'Drama peak: '+Math.round(topGame.dramaPeak)+'/100':'',
+      topGame.matchupNote?'Matchup: '+topGame.matchupNote:'',
       note&&!topGame.matchupNote?'Context: '+note:'',
+      _owlStatCtx||'',
       standingsCtx?standingsCtx:'',
       crewCtx?'Broadcast crew: '+crewCtx:'',
       '','Rules: 80-100 words. Tactical. Not emotional. Lead with the turning point.',
+      _owlStatCtx?'If stat context is provided above, cite the specific figure — never paraphrase it.':'',
       'Write only from the data above — never invent statistics, player tendencies, or context.',
       FIELD_PROSE_STYLE,
       'Third person only — never use "you" or address the reader directly.',

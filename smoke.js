@@ -1019,3 +1019,32 @@ assert('A270 — P5: FIELD Desk shows static brief placeholder before AI journal
   html.includes('staticBriefEl') &&
   html.includes('staticText.length > 30'),
   'FIELD Desk must show static brief text as placeholder card when sessionStorage has no AI brief yet');
+
+assert('A271 — Tier 1A: Night Owl injects box score / PPG / analytics stat context into prompt',
+  html.includes('_owlStatCtx') &&
+  html.includes('MLB BOX') && html.includes('PPG LEADERS') &&
+  html.includes('If stat context is provided above, cite the specific figure'),
+  'Night Owl prompt must inject available stat context same as compound — MLB box, NBA PPG, NHL PP/PK');
+
+assert('A272 — Tier 1B: Health Panel shows Prose Quality rolling avg with best/worst/stat',
+  html.includes("'Prose Quality'") &&
+  html.includes('field_jq_scores') &&
+  html.includes('best') && html.includes('worst') &&
+  html.includes('briefs'),
+  'Health Panel must display Prose Quality rolling avg row reading from field_jq_scores');
+
+assert('A273 — Tier 2A: EPL brief runs full Layer 2 chain (cliche, sport vocab, lead check, score)',
+  html.includes("retryWithSportVocab(prompt, text, 'soccer', CLAUDE_PROXY_URL)") &&
+  html.includes("scoreProse(text).then(s=>renderProseScore(s,'EPL Brief'))"),
+  'EPL brief must run retryWithoutCliches + retryWithSportVocab(soccer) + checkLeadSentence + scoreProse');
+
+assert('A274 — Tier 2B: compound game_briefs log sport vocab violations before caching',
+  html.includes('Tier 2B') && html.includes('game_brief sport vocab'),
+  'compound game_briefs dispatch must checkSportVocab before caching into _gameBriefCache');
+
+assert('A275 — Tier 3: low-score review queue writes flagged phrases to localStorage',
+  html.includes('field_jq_review') &&
+  html.includes('scoreObj.score < 40') &&
+  html.includes('Low-score phrases flagged for review') &&
+  html.includes("'Phrase Review'"),
+  'maybeScoreRetry must log common phrases from low-score briefs to field_jq_review; Health Panel shows count');
