@@ -1197,3 +1197,26 @@ assert('A302 — MLB brief: getMLBAnalyticsContext + fetchMLBTeamMomentum inject
   html.includes('fetchMLBTeamMomentum(homeAbbr)') &&
   html.includes('Vary the angle — use whichever single fact is most interesting tonight'),
   'MLB brief must use pitch arsenal, expected stats, and team momentum — not only standings');
+
+assert('A303 — RSN accuracy: MLB_TEAM_RSN updated for 15 post-Main Street corrections',
+  html.includes("TBR:'Rays.TV'") &&
+  html.includes("CLE:'CLEGuardians.TV'") &&
+  html.includes("DET:'Detroit SportsNet'") &&
+  html.includes("TEX:'Rangers Sports Network'") &&
+  html.includes("COL:'Rockies.TV'") &&
+  html.includes("WSN:'Nationals.tv'"),
+  'MLB_TEAM_RSN must reflect 2026 reality — 15 teams moved from Bally/FanDuel to MLB Local Media DTC or team-owned RSNs');
+
+assert('A304 — Stream Discovery: SERVICE_FAMILIES + buildStreamingDiscovery() defined',
+  html.includes('const SERVICE_FAMILIES') &&
+  html.includes('function buildStreamingDiscovery') &&
+  html.includes('_tonightScore') &&
+  html.includes("SERVICE_FAMILIES[s.key]"),
+  'Streaming Discovery must be derived from allData + SR registry, not static card ordering');
+
+assert('A305 — SMT time-phase: getCurrentSMTPhase + scoreSMTCard + sort in renderMedia',
+  html.includes('function getCurrentSMTPhase') &&
+  html.includes('function scoreSMTCard') &&
+  html.includes('isShowCurrentlyAiring') &&
+  html.includes('MEDIA_TODAY.sort((a, b) => scoreSMTCard(b) - scoreSMTCard(a))'),
+  'SMT must sort by current time relevance — not static list order');

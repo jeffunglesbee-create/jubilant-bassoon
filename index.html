@@ -3136,6 +3136,11 @@ const SR = {
   // ── Team-owned / MLB Local Media RSNs ──────────────────────────────────────
   sny:           ["SNY",           "https://sny.tv/",                              "#002d62","tv",  "SportsNet NY — Mets-owned RSN. Cable/satellite (DirecTV, Hulu Live TV, YouTube TV). Territory: NY State, CT, NJ, northeast PA. Also WPIX-11 OTA for select games."],
   snp:           ["SportsNet PIT", "https://www.sportsnetpittsburgh.com/",         "#ffb612","tv",  "SportsNet Pittsburgh — Pirates/Penguins-owned RSN. Cable/satellite in Pittsburgh market. In-market streaming available via SNP app."],
+  clegtv:        ["CLEGuardians.TV","https://www.mlb.com/guardians/schedule/programming","#00385d","sub", "CLEGuardians.TV — MLB Local Media (2026). In-market Cleveland/NE Ohio DMA. Cable: Xfinity, DirecTV Ch.668, Spectrum, Fubo. DTC: $20/mo or $99.99/season via MLB App."],
+  dsntv:         ["Detroit SportsNet","https://www.mlb.com/tigers/schedule/programming", "#0c2340","tv",  "Detroit SportsNet (DSN) — Tigers/Red Wings-owned RSN (MLB Local Media production). In-market Michigan DMA. Cable: DirecTV Ch.663-3, Xfinity Ch.1253, AT&T U-Verse Ch.1739, Spectrum (Detroit). DTC via MLB App $20/mo."],
+  texrsn:        ["Rangers Sports Network","https://www.mlb.com/rangers/schedule/programming","#003278","tv",  "Rangers Sports Network — team-owned RSN (2026, replacing FanDuel Sports Network Southwest). In-market DFW/Texas DMA. Cable/satellite + local broadcast partnerships (Matrix Media). DTC: $20/mo or $99.99/season."],
+  fdsnwest:      ["FDSN West",       "https://www.fandueltelevision.com/",           "#1493FF","tv",  "FanDuel Sports Network West — Angels-owned RSN (team purchased RSN from Main Street 2026). In-market LA/SoCal DMA. Cable: Spectrum Ch.320, Cox Ch.64 (OC), DirecTV Ch.692. Angels.TV available as DTC supplement ($20/mo)."],
+  rockiestv:     ["Rockies.TV",      "https://www.mlb.com/rockies/schedule/programming","#33006f","sub", "Rockies.TV — MLB Local Media (2024+). In-market Colorado/Wyoming DMA. Cable: Xfinity Ch.1262, Spectrum, DirecTV Ch.683, Fubo. DTC: $20/mo or $99.99/season."],
   nbcsca:        ["NBCS California","https://www.nbcsports.com/california",        "#006bb6","tv",  "NBC Sports California — Athletics cable/satellite RSN. Distinct from NBC Sports Bay Area (Giants). Sacramento/Oakland territory."],
   athleticstv:   ["Athletics.TV",  "https://www.mlb.com/athletics/fans/athletics-tv",  "#003831","sub", "Athletics.TV — MLB Local Media DTC stream. In-market Sacramento/Oakland only. $20/mo or $100/season. No cable required. Same as CLEGuardians.TV / Nationals.tv model."],
   cleg:          ["CLEGuardians.TV","https://www.mlb.com/guardians/schedule/programming","#e31937","sub","CLEGuardians.TV — MLB Local Media direct stream. $20/mo or $100/season. In-market only (Ohio excl. Cincinnati, NE Kentucky, NW Pennsylvania, SW New York). No cable required, no blackouts. Also on DirecTV Ch.662."],
@@ -3497,6 +3502,11 @@ const BUNDLES = {
   // Location-specific RSN overrides — Mid-Atlantic market
   MASN_ORIOLES: ["masn","masnplus","fubo","directv"],                 // MASN cable: Xfinity/Cox/Fios/DirecTV/Fubo in-market; MASN+ $19.99/mo DTC (no cable needed)  // Orioles local: Xfinity Ultimate TV / MASN+ / FuboTV / DirecTV
   NATIONALS_TV: ["nationalstv","mlbtv"],                              // Nationals.tv: included w/ Xfinity/Spectrum/Cox/DirecTV/Fios/Fubo; $20/mo DTC
+  GUARDIANS_TV: ["clegtv","mlbtv"],                                   // CLEGuardians.TV: MLB Local Media; cable/DTC; out-of-market: MLB.TV
+  TIGERS_DSN:   ["dsntv","mlbtv"],                                    // Detroit SportsNet: cable/DTC (Ilitch family)
+  RANGERS_RSN:  ["texrsn","mlbtv"],                                   // Rangers Sports Network: team-owned; cable + local OTA
+  ANGELS_FDSN:  ["fdsnwest","mlbtv"],                                 // FanDuel Sports Network West: Angels-owned; cable only
+  ROCKIES_TV:   ["rockiestv","mlbtv"],                                // Rockies.TV: MLB Local Media
   CARDINALS_TV: ["cardinalstv","mlbtv"],
   BREWERS_TV:   ["brewerstv","mlbtv"],
   RAYS_TV:      ["raystv","mlbtv"],
@@ -4425,19 +4435,35 @@ const PEACOCK_LEADOFF_HOUR_ET = 17; // games starting before 17:00 UTC = Leadoff
 const SNB_NBC_CUTOFF = { month: 4, day: 31 }; // JS month 4 = May; day 31 = post-May 31
 
 const MLB_TEAM_RSN = {
-  NYY:'YES',          BAL:'MASN',              BOS:'NESN',
-  TBR:'Bally Sports', TOR:'Sportsnet',
-  CHW:'CHSN',         CLE:'Bally Sports',      DET:'Bally Sports',
-  KCR:'Bally Sports', MIN:'Bally Sports',
-  HOU:'Space City',   LAA:'KLAA',              OAK:'NBCS California',
-  SEA:'ROOT Sports',  TEX:'Bally Sports',
-  ATL:'Bally Sports', MIA:'Bally Sports',      NYM:'SNY',
-  PHI:'NBCS Philadelphia', WSN:'MASN2',
-  CHC:'MARQUEE',      CIN:'Bally Sports',      MIL:'Bally Sports',
-  PIT:'AT&T SportsNet', STL:'Bally Sports',
-  ARI:'DBACKS',       COL:'AT&T SportsNet',    LAD:'SportsNetLA',
-  SDP:'SDTV',         SFG:'NBCS Bay Area',
+  // AL East
+  NYY:'YES',             BAL:'MASN',              BOS:'NESN',
+  TBR:'Rays.TV',         TOR:'Sportsnet',
+  // AL Central — most ex-Bally teams now on MLB Local Media DTC
+  CHW:'CHSN',            CLE:'CLEGuardians.TV',   DET:'Detroit SportsNet',
+  KCR:'Royals.TV',       MIN:'Twins.TV',
+  // AL West
+  HOU:'Space City',      LAA:'FDSN West',         OAK:'NBCS California',
+  SEA:'Mariners.TV',     TEX:'Rangers Sports Network',
+  // NL East
+  ATL:'BravesVision',    MIA:'Marlins.TV',         NYM:'SNY',
+  PHI:'NBCS Philadelphia', WSN:'Nationals.tv',
+  // NL Central
+  CHC:'MARQUEE',         CIN:'Reds.TV',            MIL:'Brewers.TV',
+  PIT:'SportsNet PIT',   STL:'Cardinals.TV',
+  // NL West
+  ARI:'DBACKS',          COL:'Rockies.TV',         LAD:'SportsNetLA',
+  SDP:'SDTV',            SFG:'NBCS Bay Area',
 };
+// RSN accuracy audit May 30 2026 — 15 corrections post-Main Street Sports Group collapse:
+// Bally Sports rebranded → FanDuel Sports Network → most teams left for MLB Local Media DTC
+// TBR/CLE/KCR/MIA/MIL/STL/CIN/SEA/WSN → MLB Local Media (Rays.TV etc.)
+// DET → Detroit SportsNet (team-owned, Ilitch family, also carries Red Wings)
+// ATL → BravesVision (team-owned, Gray Media partnership)
+// TEX → Rangers Sports Network (team-owned)
+// LAA → FDSN West (Angels purchased RSN from Main Street)
+// COL → Rockies.TV (MLB Local Media since 2024, AT&T SportsNet Rocky Mountain closed)
+// PIT → SportsNet Pittsburgh (team-owned, was AT&T SportsNet Pittsburgh)
+// MIN → Twins.TV (MLB Local Media DTC, was FanDuel Sports Network North)
 
 // ── GOTD Schedule Tables (hardcoded from press releases) ─────────────────────
 // ESPN GOTD: Published in multi-month blocks by ESPN Press Room.
@@ -8169,6 +8195,63 @@ function buildDynamicPregames(){
   return cards;
 }
 
+// ── SMT time-phase awareness (Spec: SMT-A May 21 2026) ───────────────────────
+// Returns the current phase of the sports media day.
+// Used to sort MEDIA_TODAY cards by relevance to the current time.
+function getCurrentSMTPhase() {
+  const h = new Date().getHours(); // local hour
+  if (h < 10) return 'morning';      // 12am–10am: overnight recap / morning shows
+  if (h < 13) return 'midday';       // 10am–1pm: morning shows, pre-game prep
+  if (h < 17) return 'afternoon';    // 1pm–5pm: afternoon games, early shows
+  if (h < 21) return 'evening';      // 5pm–9pm: prime time games, pregame shows
+  return 'postgame';                  // 9pm+: live games, postgame shows
+}
+
+// Returns true if a media card's show time is currently on-air or within 30min
+function isShowCurrentlyAiring(card) {
+  if (!card.time) return false;
+  try {
+    // Parse time strings like "7:30 PM ET", "10 AM ET", "11:30pm"
+    const m = card.time.match(/(\d{1,2})(?::(\d{2}))?\s*(am|pm)/i);
+    if (!m) return false;
+    let h = parseInt(m[1]);
+    const mins = parseInt(m[2] || '0');
+    const ampm = m[3].toLowerCase();
+    if (ampm === 'pm' && h !== 12) h += 12;
+    if (ampm === 'am' && h === 12) h = 0;
+    const showMinutes = h * 60 + mins;
+    const nowMinutes = new Date().getHours() * 60 + new Date().getMinutes();
+    return nowMinutes >= showMinutes && nowMinutes < showMinutes + 90; // 90min window
+  } catch (_) { return false; }
+}
+
+// Scores a media card for current relevance (higher = more relevant now)
+function scoreSMTCard(card) {
+  const phase = getCurrentSMTPhase();
+  let score = 0;
+  // Cards currently airing get highest priority
+  if (isShowCurrentlyAiring(card)) score += 100;
+  // Phase-specific boosts
+  const phaseBoosts = {
+    morning:   ['SportsCenter', 'Get Up', 'First Take', 'The Pat McAfee Show'],
+    midday:    ['First Take', 'The Herd', 'Undisputed', 'SportsCenter'],
+    afternoon: ['Around the Horn', 'Pardon the Interruption', 'MLB Central'],
+    evening:   ['NBA Tip-Off', 'NHL Face Off', 'Baseball Tonight', 'Inside the NBA', 'Pregame'],
+    postgame:  ['Inside the NBA', 'Baseball Tonight', 'NHL After Hours', 'SportsCenter'],
+  };
+  const boostList = phaseBoosts[phase] || [];
+  if (boostList.some(s => (card.show || '').includes(s))) score += 20;
+  // Tonight's sports relevance — boost cards for sports that have games tonight
+  if (allData) {
+    const tonightSports = new Set((allData.sports || []).map(s => s.sport || s.section || ''));
+    const cardNetwork = (card.network || card.chip || '').toLowerCase();
+    if (tonightSports.has('Basketball (NBA)') && cardNetwork.includes('nba')) score += 15;
+    if (tonightSports.has('Hockey (NHL)') && cardNetwork.includes('nhl')) score += 15;
+    if (tonightSports.has('Baseball (MLB)') && cardNetwork.includes('mlb')) score += 10;
+  }
+  return score;
+}
+
 function renderMedia(){
   // ── Assemble MEDIA_TODAY from templates + specials + dynamic injection ─────
   const dow = new Date().getDay();
@@ -8183,10 +8266,13 @@ function renderMedia(){
 
   // Merge; deduplicate by show name (specials/pregames can override base)
   const seen = new Set();
-  const MEDIA_TODAY = [];
+  let MEDIA_TODAY = [];
   for(const card of [...baseCards, ...specialCards, ...pregameCards]){
     if(!seen.has(card.show)){ seen.add(card.show); MEDIA_TODAY.push(card); }
   }
+
+  // SMT-A: sort by current relevance — currently airing first, then phase-aware
+  MEDIA_TODAY.sort((a, b) => scoreSMTCard(b) - scoreSMTCard(a));
 
   const MEDIA_CHIP_COLORS = {
     ESPN:"#ff3c3c", FS1:"#f0c040", CBS:"#a78bfa",
@@ -14416,10 +14502,107 @@ async function injectWikiChips(){
   }
 }
 
+// ── SERVICE_FAMILIES — maps SR keys → service card family ─────────────────────
+// Used by buildStreamingDiscovery() to score and sort service cards by
+// tonight's actual game coverage. Each family key maps to one STREAMING_APPS card.
+const SERVICE_FAMILIES = {
+  // ESPN / Disney family
+  espn:'espn', espn2:'espn', espnu:'espn', espnapp:'espn', espnplus:'espn', espnunlimited:'espn', abc:'espn',
+  // Max / Warner family
+  tnt:'max', trutv:'max', max:'max', tbs:'max',
+  // Fox family
+  fox:'fox', fs1:'fox',
+  // Peacock / NBC family
+  nbc:'peacock', peacock:'peacock', nbcsn:'peacock', usa:'peacock',
+  // Apple family
+  apple:'apple',
+  // Paramount / CBS family
+  paramount:'paramount', cbs:'paramount', paramountuk:'paramount',
+  // Prime Video
+  prime:'prime',
+  // Netflix
+  netflix:'netflix',
+  // Bundles (YouTube TV, Fubo, Hulu, Sling, DirecTV)
+  youtubetv:'bundle', fubo:'bundle', hulu:'bundle', sling:'bundle', directv:'bundle',
+  // MLB
+  mlbtv:'mlbtv', mlbn:'mlbtv', mlbplus:'mlbtv',
+  // NBA / WNBA
+  nbatv:'nbatv', wnbalp:'nbatv',
+  // Local RSN / team DTC — map to 'rsn' family (shown last)
+  rsn:'rsn', masn:'rsn', masnplus:'rsn', yes:'rsn', sny:'rsn', snp:'rsn',
+  raystv:'rsn', clegtv:'rsn', dsntv:'rsn', royalstv:'rsn', brewerstv:'rsn',
+  marlinstv:'rsn', cardinalstv:'rsn', redstv:'rsn', bravesvision:'rsn',
+  marinerstv:'rsn', twinstv:'rsn', nationalstv:'rsn', texrsn:'rsn',
+  fdsnwest:'rsn', rockiestv:'rsn', athleticstv:'rsn',
+  nbcsca:'rsn', schn:'rsn',
+  // Sport-specific / international
+  tc:'tc', tcplus:'tc',
+  fsp:'fsp',
+  bein:'bein',
+  dazn:'dazn', golazo:'dazn',
+  watchafl:'watchafl', foxfooty:'watchafl',
+  kayosports:'watchafl',
+  willow:'willow', skycricket:'willow',
+};
+
+// ── buildStreamingDiscovery() — derived service card ordering ──────────────────
+// Scores each STREAMING_APPS card by tonight's actual game coverage.
+// Cards with games tonight float to the top; cards with nothing tonight sink.
+// This replaces manual card ordering with data-driven relevance sorting.
+// Spec: FIELD SMT & Streaming Discovery Intelligence Spec May 21 2026
+function buildStreamingDiscovery() {
+  if (!allData) return null; // called before data ready
+
+  // Step 1: collect all SR stream keys from tonight's games
+  const tonightKeys = new Set();
+  (allData.sports || []).forEach(sec =>
+    (sec.games || []).forEach(g =>
+      (g.streams || []).forEach(s => { if (s.key) tonightKeys.add(s.key); })
+    )
+  );
+
+  // Step 2: count games per service family
+  const familyGameCount = {};
+  const familyLiveCount = {};
+  const familyPlayoffCount = {};
+
+  (allData.sports || []).forEach(sec => {
+    (sec.games || []).forEach(g => {
+      const isLive = (g._espnState || g.state || '') === 'in';
+      const isPlayoff = !!(g.seriesRecord || /playoff|final|series/i.test(g.league || ''));
+      (g.streams || []).forEach(s => {
+        if (!s.key) return;
+        const fam = SERVICE_FAMILIES[s.key];
+        if (!fam) return;
+        familyGameCount[fam] = (familyGameCount[fam] || 0) + 1;
+        if (isLive)    familyLiveCount[fam]   = (familyLiveCount[fam]   || 0) + 1;
+        if (isPlayoff) familyPlayoffCount[fam] = (familyPlayoffCount[fam] || 0) + 1;
+      });
+    });
+  });
+
+  // Step 3: score each STREAMING_APPS card
+  const scored = STREAMING_APPS.map(app => {
+    const fam = app.key;
+    const games    = familyGameCount[fam]   || 0;
+    const live     = familyLiveCount[fam]   || 0;
+    const playoffs = familyPlayoffCount[fam]|| 0;
+    const score = (games * 3) + (live * 5) + (playoffs * 2);
+    return { ...app, _tonightScore: score, _tonightGames: games, _tonightLive: live };
+  });
+
+  // Step 4: stable sort — highest score first, preserve original order within same score
+  scored.sort((a, b) => b._tonightScore - a._tonightScore);
+
+  return scored;
+}
+
 function renderStreaming(){
   const grid = document.getElementById("streaming-grid");
   if(!grid) return;
-  grid.innerHTML = STREAMING_APPS.map(app=>{
+  // Use buildStreamingDiscovery() to get data-sorted cards; fall back to static order
+  const apps = buildStreamingDiscovery() || STREAMING_APPS;
+  grid.innerHTML = apps.map(app=>{
     const logoStyle = `background:${app.color}18;border:1px solid ${app.color}40;color:${app.color}`;
     const items = app.items.map(item=>`
       <div class="app-item">
