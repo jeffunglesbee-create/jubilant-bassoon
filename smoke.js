@@ -1081,3 +1081,14 @@ assert('A282 — mapV2ToESPN marks null scores on final games with _scoresNull f
   html.includes('_scoresNull: state===\'post\'') &&
   html.includes('v2Entry._scoresNull && prev?.homeScore'),
   'mapV2ToESPN must detect null scores on final games and merge guard must preserve prev scores');
+
+assert('A283 — seriesPreviewCacheKey includes game number from league string (G4 vs G5 get separate entries)',
+  html.includes("field_series_preview_") &&
+  html.includes("gNumMatch") &&
+  html.includes("'_g'+gNumMatch[1]"),
+  'Series brief cache key must include game number so G4 and G5 with same seriesRecord get separate cached briefs');
+
+assert('A284 — J2 series prompt includes matchupNote and explicit stakes lead instruction',
+  html.includes("g.matchupNote?'Context: '+g.matchupNote:''") &&
+  html.includes("Lead with the specific stakes of this game (clinch, elimination"),
+  'Series brief prompt must inject matchupNote and instruct AI to lead with specific game stakes');

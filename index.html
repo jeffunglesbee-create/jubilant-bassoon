@@ -15999,7 +15999,13 @@ function initJournalismQueue(sections) {
 }
 function seriesPreviewCacheKey(g){
   const norm=s=>(s||'').toLowerCase().replace(/\s+/g,'_').replace(/[^a-z0-9_]/g,'');
-  return 'field_series_preview_'+norm(g.home)+'_'+norm(g.away)+'_'+norm(g.seriesRecord);
+  // Include game number from league string (e.g. "G5") so G4 and G5 with the same
+  // seriesRecord ("CAR leads 3-1") get separate cache entries — no stale G4 brief for G5.
+  const gNumMatch=(g.league||'').match(/g(\d+)\b/i);
+  const gNum=gNumMatch?'_g'+gNumMatch[1]:'';
+  // Also include _id for uniqueness within same game number
+  const idSuffix=g._id?(('_'+g._id).slice(-8)):'';
+  return 'field_series_preview_'+norm(g.home)+'_'+norm(g.away)+'_'+norm(g.seriesRecord)+gNum+idSuffix;
 }
 function buildSeriesPreviewStatic(g){
   const s=g._series;
@@ -16027,16 +16033,21 @@ async function fetchSeriesPreviewFromClaude(g){
   if(!budget.canCall()) return null;
   const s=g._series||{};
   const stakes=s.deciding?'SERIES DECIDING (Game 7)':s.homeElim||s.awayElim?'ELIMINATION GAME':s.homeClinch||s.awayClinch?'SERIES CLINCH':g.seriesRecord||'';
+  // Extract game number from league string for explicit game reference
+  const gNumMatch2=(g.league||'').match(/g(\d+)\b/i);
+  const gameNum=gNumMatch2?'Game '+gNumMatch2[1]:'';
   const prompt=['Write a FIELD Series Brief for this playoff game.',
-    'Home: '+g.home+'. Away: '+g.away+'. Series: '+(g.seriesRecord||'.')+'.',
-    'Stakes: '+stakes+'.',
-    g.league?'Context: '+g.league+'.':'',
+    'Home: '+g.home+'. Away: '+g.away+'.',
+    'Series: '+(g.seriesRecord||'')+'. Stakes: '+stakes+'.'+(gameNum?' Tonight is '+gameNum+'.':''),
+    g.matchupNote?'Context: '+g.matchupNote:'',
+    g.league&&!g.matchupNote?'League: '+g.league+'.':'',
     ' ',
     'Rules: 80-100 words. 2-3 sentences. Tactical focus — what to watch tonight.',
+    'Lead with the specific stakes of this game (clinch, elimination, series advantage).',
+    'If Context is provided, use specific facts from it — player names, stats, game results.',
     'Write only from the data above. Never invent statistics, records, or player tendencies.',
     FIELD_PROSE_STYLE,
-    'Series narrative arc. Third person only — never use "you" or address the reader directly.',
-    'Division accuracy: teams in the same division share ONE race, not "respective" races. No markdown.'
+    'Third person only — never use "you" or address the reader directly. No markdown.'
   ].filter(Boolean).join('\n');
   try{
     const r=await fetch(CLAUDE_PROXY_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1000,messages:[{role:'user',content:prompt}]})});
