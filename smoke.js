@@ -1090,8 +1090,8 @@ assert('A283 — seriesPreviewCacheKey includes game number from league string (
 
 assert('A284 — J2 series prompt includes matchupNote and explicit stakes lead instruction',
   html.includes("g.matchupNote?'Context: '+g.matchupNote:''") &&
-  html.includes("Lead with the specific stakes of this game (clinch, elimination"),
-  'Series brief prompt must inject matchupNote and instruct AI to lead with specific game stakes');
+  html.includes('STRUCTURE: Sentence 1 = the specific stakes'),
+  'Series brief prompt must inject matchupNote and include stakes structure instruction');
 
 assert('A285 — journalism completeness: MLB has full quality chain (sportVocab+leadCheck+statVerify+scoreRetry+scoreProse)',
   html.includes("retryWithSportVocab(prompt, text, 'baseball', CLAUDE_PROXY_URL)") &&
