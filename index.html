@@ -10566,6 +10566,18 @@ async function fetchV2AllScores() {
             fetchV2Leaders(sport, gameNum, homeTId, awayTId, key).catch(() => {});
           }
         }
+
+        // MLB pitcher leaders — StatsAPI boxscore (VERIFIED: teams.{home|away}.pitchers[last] = current pitcher)
+        // gamePk sourced from allData (same pattern as Savant WP trigger).
+        // /games/statistics/players does NOT exist for baseball — StatsAPI is the correct source.
+        if (sport === 'mlb' && fg.state === 'live') {
+          try {
+            const mlbSec  = (allData?.sports||[]).find(s=>(s.sport||'').includes('Baseball'));
+            const mlbGame = (mlbSec?.games||[]).find(g =>
+              espnTeamMatch(g.home||'', fg.home?.name||'') && espnTeamMatch(g.away||'', fg.away?.name||''));
+            if (mlbGame?.sourceId) fetchMLBLeader(mlbGame.sourceId, key).catch(()=>{});
+          } catch(e_mlbl) { if(FIELD_DEBUG) console.warn('[V2-MLB-Leader]', e_mlbl.message); }
+        }
       });
       if (FIELD_DEBUG && games.length)
         console.debug(`[V2] ${sport}: ${games.length} games, ${games.filter(g=>g.state==='live').length} live`);
@@ -10867,6 +10879,26 @@ async function fetchNHLLiveStats() {
         const br = await fetch(`${NHL_RELAY}/v1/gamecenter/${g.id}/boxscore`, { signal: AbortSignal.timeout(3000) });
         if (br.ok) {
           const bd = await br.json();
+          // ── Leaders: top-points skater per team (VERIFIED 2026-05-30) ───
+          // playerByGameStats.{homeTeam|awayTeam}.{forwards|defensemen}[]
+          // each entry: { name:{default:"C. Caufield"}, goals, assists, points }
+          const pickSkaterLeader = (teamStats) => {
+            const skaters = [...(teamStats?.forwards||[]), ...(teamStats?.defensemen||[])];
+            if (!skaters.length) return null;
+            skaters.sort((a,b) => (b.points??0) - (a.points??0));
+            const top = skaters[0];
+            if (!(top?.points)) return null;
+            const name = top?.name?.default || '';
+            return name ? { name, val: top.points, unit: 'PTS' } : null;
+          };
+          const homeSkLeader = pickSkaterLeader(bd.playerByGameStats?.homeTeam);
+          const awaySkLeader = pickSkaterLeader(bd.playerByGameStats?.awayTeam);
+          if (espnScores[key]) {
+            if (homeSkLeader) espnScores[key].homeLeader = homeSkLeader;
+            if (awaySkLeader) espnScores[key].awayLeader = awaySkLeader;
+            if (FIELD_DEBUG && (homeSkLeader||awaySkLeader))
+              console.debug(`[NHL-Leaders] ${key}: home=${homeSkLeader?.name} away=${awaySkLeader?.name}`);
+          }
           // Find starting goalies from playerByGameStats
           const homeG = (bd.playerByGameStats?.homeTeam?.goalies||[])[0];
           const awayG = (bd.playerByGameStats?.awayTeam?.goalies||[])[0];
@@ -10891,6 +10923,54 @@ async function fetchNHLLiveStats() {
     _nhlLiveStatsFetchedAt = now;
     return fresh;
   } catch(_) { return _nhlLiveStatsCache; }
+
+// ── fetchMLBLeader: current pitcher as in-game leader ─────────────────────
+// Source: MLB Stats API /game/{gamePk}/boxscore (same endpoint as fetchMLBBoxscoreContext)
+// Called from V2 poll loop for live MLB games with a known gamePk.
+// VERIFIED: teams.{home|away}.pitchers[] last entry = current pitcher ID.
+// teams.{home|away}.players['ID{id}'].person.lastName + stats.pitching.inningsPitched / strikeOuts
+// Writes {name, val, unit:'IP'} to espnScores[key].homeLeader / awayLeader.
+const _mlbLeaderCache = {}; // espnKey → {ts}
+const MLB_LEADER_TTL = 90000;
+async function fetchMLBLeader(gamePk, espnKey) {
+  const cacheKey = `mlbl:${espnKey}`;
+  const cached = _mlbLeaderCache[cacheKey];
+  if (cached && Date.now() - cached.ts < MLB_LEADER_TTL) return;
+  _mlbLeaderCache[cacheKey] = { ts: Date.now() };
+  try {
+    const r = await fetch(`${MLB_STATS_RELAY}/game/${gamePk}/boxscore`, { signal: AbortSignal.timeout(4000) });
+    if (!r.ok) return;
+    const d = await r.json();
+    // Backfill raw data for fetchMLBBoxscoreContext cache sharing
+    const boxCacheKey = `mlb_box_${gamePk}`;
+    if (_mlbBoxscoreCache[boxCacheKey] && !_mlbBoxscoreCache[boxCacheKey].raw)
+      _mlbBoxscoreCache[boxCacheKey].raw = d;
+    const teams = d?.teams || {};
+    const pickPitcher = (side) => {
+      const pitchers = teams[side]?.pitchers || [];
+      const curId = pitchers[pitchers.length - 1];
+      if (!curId) return null;
+      const info = teams[side]?.players?.[`ID${curId}`];
+      if (!info) return null;
+      const name = info.person?.lastName || '';
+      const ip   = info.stats?.pitching?.inningsPitched || '';
+      const so   = info.stats?.pitching?.strikeOuts;
+      const val  = ip ? (so != null ? `${ip} IP ${so}K` : `${ip} IP`) : null;
+      return (name && val) ? { name, val, unit: 'IP' } : null;
+    };
+    const homeLeader = pickPitcher('home');
+    const awayLeader = pickPitcher('away');
+    if (espnScores[espnKey]) {
+      if (homeLeader) espnScores[espnKey].homeLeader = homeLeader;
+      if (awayLeader) espnScores[espnKey].awayLeader = awayLeader;
+      if (FIELD_DEBUG && (homeLeader||awayLeader))
+        console.debug(`[MLB-Leader] ${espnKey}: home=${homeLeader?.name} away=${awayLeader?.name}`);
+    }
+  } catch(e) {
+    if (FIELD_DEBUG) console.warn('[MLB-Leader]', e.message);
+  }
+}
+
 }
 
 // Item 6 — MLB Stats boxscore: pitcher stats + team batting

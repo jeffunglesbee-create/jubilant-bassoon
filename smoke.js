@@ -853,3 +853,21 @@ assert('A245 — V2 in-game leaders: fetchV2Leaders + _v2LeaderCache + name-reve
   html.includes("sport === 'nba' || sport === 'wnba') && fg.state === 'live'") &&
   html.includes('fetchV2Leaders(sport, gameNum'),
   'V2 leaders: fetchV2Leaders must be defined, wired for live NBA/WNBA, and reverse player name');
+
+assert('A246 — NHL in-game leaders: pickSkaterLeader in fetchNHLLiveStats, writes homeLeader/awayLeader from playerByGameStats',
+  html.includes('pickSkaterLeader') &&
+  html.includes('playerByGameStats?.homeTeam') &&
+  html.includes('playerByGameStats?.awayTeam') &&
+  html.includes('forwards||[]), ...(teamStats?.defensemen') &&
+  html.includes('espnScores[key].homeLeader = homeSkLeader') &&
+  html.includes('espnScores[key].awayLeader = awaySkLeader'),
+  'NHL leaders: pickSkaterLeader must read forwards+defensemen from playerByGameStats and write to espnScores');
+
+assert('A247 — MLB in-game leaders: fetchMLBLeader + _mlbLeaderCache + wired in V2 poll loop for live MLB',
+  html.includes('async function fetchMLBLeader') &&
+  html.includes('_mlbLeaderCache') &&
+  html.includes('MLB_LEADER_TTL') &&
+  html.includes('pitchers[pitchers.length - 1]') &&
+  html.includes("sport === 'mlb' && fg.state === 'live'") &&
+  html.includes('fetchMLBLeader(mlbGame.sourceId, key)'),
+  'MLB leaders: fetchMLBLeader must be defined, use StatsAPI boxscore, and be wired for live MLB in V2 poll');
