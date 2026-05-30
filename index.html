@@ -6190,6 +6190,17 @@ function parseSeriesRecord(g) {
     if(homeName.includes(lastWord)) leadingTeam='home';
     else if(awayName.includes(lastWord)) leadingTeam='away';
   }
+  // Also match short abbreviations (CAR, MTL, VGK etc — length ≤ 3)
+  // Check if leadsName is a prefix of any word in the home/away name
+  if(!leadingTeam && leadsName.length<=3){
+    const abbr=leadsName.toUpperCase();
+    const matchesTeam=(teamName)=>{
+      const words=(teamName||'').toUpperCase().split(/\s+/);
+      return words.some(w=>w.startsWith(abbr));
+    };
+    if(matchesTeam(g.home)) leadingTeam='home';
+    else if(matchesTeam(g.away)) leadingTeam='away';
+  }
   const homeLeads=leadingTeam==='home', awayLeads=leadingTeam==='away';
   const homeElim=awayLeads&&wins===3&&losses===2, awayElim=homeLeads&&wins===3&&losses===2;
   const homeElim31=awayLeads&&wins===3&&losses===1, awayElim31=homeLeads&&wins===3&&losses===1;
@@ -10479,9 +10490,16 @@ async function fetchV2Games(sport, date) {
 }
 function mapV2ToESPN(fg) {
   if (!fg?.id) return null;
+  const state = fg.state==='live'?'in':fg.state==='final'?'post':'pre';
+  // Guard: api-sports.io sometimes returns null scores for final games.
+  // When both scores are null on a final, preserve previous values via merge guard
+  // downstream. Use null (not 0) so merge guard can detect the gap.
+  const homeScore = fg.home?.score ?? (state==='post' ? null : 0);
+  const awayScore = fg.away?.score ?? (state==='post' ? null : 0);
   return {
-    state:       fg.state==='live'?'in':fg.state==='final'?'post':'pre',
-    homeScore:   fg.home?.score ?? 0, awayScore: fg.away?.score ?? 0,
+    state,
+    homeScore: homeScore ?? 0, awayScore: awayScore ?? 0,
+    _scoresNull: state==='post' && fg.home?.score==null && fg.away?.score==null,
     home: fg.home?.name||'', away: fg.away?.name||'',
     homeName: fg.home?.name||'', awayName: fg.away?.name||'',
     homeWinning: (fg.home?.score??0)>(fg.away?.score??0),
@@ -10584,6 +10602,10 @@ async function fetchV2AllScores() {
         //   fall back to prev only when V2 has none yet (e.g. game not started).
         espnScores[key] = {
           ...v2Entry,
+          // Score merge guard: when V2 returns null scores on a final game,
+          // preserve previous scores rather than showing 0-0
+          homeScore: (v2Entry._scoresNull && prev?.homeScore) ? prev.homeScore : v2Entry.homeScore,
+          awayScore: (v2Entry._scoresNull && prev?.awayScore) ? prev.awayScore : v2Entry.awayScore,
           homeLeader:     prev?.homeLeader     ?? null,
           awayLeader:     prev?.awayLeader     ?? null,
           wp:             prev?.wp             ?? null,
@@ -15996,7 +16018,9 @@ function buildSeriesPreviewStatic(g){
   if(s.awayElim) return g.away+' face elimination on the road. '+g.home+' lead '+s.wins+'-'+s.losses+' and can close out tonight.';
   if(s.homeClinch) return g.home+' can close out the series tonight. One win from advancing.';
   if(s.awayClinch) return g.away+' can advance with a win. They lead '+s.wins+'-'+s.losses+' and look to close on the road.';
-  return rec+'. Watch who controls the pace \u2014 that has defined this series.';
+  // Fallback for mid-series games not matching specific templates (e.g. 2-1, 1-0)
+  const leadsInfo = s.leadsName ? `${s.leadsName} leads ${s.wins}-${s.losses}` : rec;
+  return leadsInfo+'. Game '+(s.totalGames+1)+' tonight.';
 }
 async function fetchSeriesPreviewFromClaude(g){
   const budget=journalismCallsToday();

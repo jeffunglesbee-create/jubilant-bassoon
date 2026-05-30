@@ -1071,3 +1071,13 @@ assert('A279 — Fix 4: SPARINGLY_PHRASES uses specific phrases not overbroad si
 assert('A280 — Fix 5: FIELD_PROSE_STYLE not spread in prompt arrays (it is a string, not array)',
   !html.includes('...FIELD_PROSE_STYLE'),
   'FIELD_PROSE_STYLE is a joined string — spreading it with ... would spread each character individually');
+
+assert('A281 — parseSeriesRecord matches short abbreviations (CAR, MTL, VGK ≤3 chars)',
+  html.includes('abbr=leadsName.toUpperCase()') &&
+  html.includes('words.some(w=>w.startsWith(abbr))'),
+  'parseSeriesRecord must match team abbreviations — 3-char abbrevs like CAR bypassed the length>3 guard');
+
+assert('A282 — mapV2ToESPN marks null scores on final games with _scoresNull flag',
+  html.includes('_scoresNull: state===\'post\'') &&
+  html.includes('v2Entry._scoresNull && prev?.homeScore'),
+  'mapV2ToESPN must detect null scores on final games and merge guard must preserve prev scores');
