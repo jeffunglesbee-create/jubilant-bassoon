@@ -16,27 +16,96 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-
-      - name: Network check
+      - name: Probe endpoints
         run: |
-          echo "=== Testing relay reachability ==="
-          curl -v --max-time 10 "https://field-relay-nba.jeffunglesbee.workers.dev/health" 2>&1 || echo "RELAY UNREACHABLE"
+          set -e
+          RELAY="https://field-relay-nba.jeffunglesbee.workers.dev"
+          TODAY=$(date -u '+%Y-%m-%d')
+          TS=$(date -u '+%Y%m%dT%H%M%SZ')
+          OUT="outbox/apisports/probe-${TS}.txt"
+          mkdir -p outbox/apisports
 
-      - name: Run probe
-        run: python3 scripts/apisports-probe.py
-        continue-on-error: true
+          fetch() {
+            local label="$1" url="$2"
+            echo ""
+            echo "══ $label"
+            echo "   $url"
+            curl -s --max-time 15 \
+              -H "User-Agent: FIELD-probe/1.0" \
+              -H "Accept: application/json" \
+              "$url" | python3 -m json.tool --indent 2 2>/dev/null | head -80 \
+              || echo "  (failed or not JSON)"
+          }
+
+          {
+            echo "FIELD api-sports.io PROBE"
+            echo "Date: $TODAY  TS: $TS"
+            echo "Relay: $RELAY"
+            echo ""
+            echo "════ 1. HEALTH CHECK"
+            curl -s --max-time 10 "$RELAY/health"
+
+            echo ""
+            echo "════ 2. MLB today ($TODAY)"
+            fetch "mlb/today" "$RELAY/apisports/baseball/games?league=1&season=2026&date=$TODAY"
+
+            echo ""
+            echo "════ 3. NBA today ($TODAY)"
+            fetch "nba/today" "$RELAY/apisports/basketball/games?league=12&season=2025-2026&date=$TODAY"
+
+            echo ""
+            echo "════ 4. NHL today ($TODAY)"
+            fetch "nhl/today" "$RELAY/apisports/hockey/games?league=57&season=2025-2026&date=$TODAY"
+
+            echo ""
+            echo "════ 5. NBA game stats/teams (id=500121 — yesterday's SAS@OKC)"
+            fetch "nba/stats/teams" "$RELAY/apisports/basketball/games/statistics/teams?id=500121"
+
+            echo ""
+            echo "════ 6. NBA game stats/players (id=500121)"
+            fetch "nba/stats/players" "$RELAY/apisports/basketball/games/statistics/players?id=500121"
+
+            echo ""
+            echo "════ 7. Baseball team season stats (TEX, season 2026)"
+            fetch "baseball/teams/stats" "$RELAY/apisports/baseball/teams/statistics?league=1&season=2026&team=35"
+
+            echo ""
+            echo "════ 8. MLS today (predictions if fixture found)"
+            MLS_RESP=$(curl -s --max-time 10 "$RELAY/apisports/football/fixtures?league=253&season=2026&date=$TODAY")
+            echo "$MLS_RESP" | python3 -m json.tool --indent 2 2>/dev/null | head -60
+            MLS_ID=$(echo "$MLS_RESP" | python3 -c "
+import sys, json
+try:
+    d = json.load(sys.stdin)
+    items = d.get('response', [])
+    if items:
+        print(items[0].get('fixture', {}).get('id', ''))
+except: pass
+" 2>/dev/null)
+            if [ -n "$MLS_ID" ]; then
+              echo ""
+              echo "════ 9. MLS predictions (fixture=$MLS_ID)"
+              fetch "mls/predictions" "$RELAY/apisports/football/predictions?fixture=$MLS_ID"
+            else
+              echo ""
+              echo "════ 9. No MLS fixture today — skipping predictions"
+            fi
+
+            echo ""
+            echo "════ PROBE COMPLETE $TS"
+          } | tee "$OUT"
+
+          echo "OUT=$OUT" >> $GITHUB_ENV
 
       - name: Commit results
         if: always()
+        env:
+          OUT: ${{ env.OUT }}
         run: |
           git config user.name  "FIELD Probe"
           git config user.email "probe@field.app"
-          git add outbox/apisports/ 2>/dev/null || true
-          git diff --staged --quiet && echo "No new results" || \
+          [ -n "$OUT" ] && git add "$OUT" || git add outbox/apisports/ 2>/dev/null || true
+          git diff --staged --quiet && echo "Nothing to commit" || \
             git commit -m "probe: apisports $(date -u '+%Y-%m-%dT%H:%M:%SZ') [skip ci]"
           for i in 1 2 3; do
             git pull --rebase --autostash origin main && \
