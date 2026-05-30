@@ -30,6 +30,10 @@ ENDPOINTS = [
     ("statcast_2026-05-28", "https://baseballsavant.mlb.com/statcast_search/csv?type=details&game_date=2026-05-28"),
     # Try May 27 — known day with many games
     ("statcast_2026-05-27", "https://baseballsavant.mlb.com/statcast_search/csv?type=details&game_date=2026-05-27"),
+    # Try May 1 — older date, data should be fully processed
+    ("statcast_2026-05-01", "https://baseballsavant.mlb.com/statcast_search/csv?type=details&game_date=2026-05-01"),
+    # Try date range format instead of single date
+    ("statcast_range_may01", "https://baseballsavant.mlb.com/statcast_search/csv?all=true&hfGT=R%7C&hfSea=2026%7C&game_date_gt=2026-05-01&game_date_lt=2026-05-02&type=details"),
 ]
 
 ts  = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
