@@ -6047,6 +6047,16 @@ function isScoutsPick(g) {
 
   // Gate 2 (odds) removed — decoupled from betting engine (May 29 2026)
 
+  // Gate 3: BDL milestone proximity — player within 5% of career milestone
+  // Uses same _bdlMilestonesCache populated by fetchBDLMilestones()
+  // hasMilestone was left undefined when Gate 2 was removed — fixed May 30 2026
+  let hasMilestone = false;
+  try {
+    const gameKey = g._id || `${g.home}_${g.away}`;
+    const ms = (typeof _bdlMilestonesCache !== 'undefined') ? _bdlMilestonesCache?.[gameKey] : null;
+    hasMilestone = !!(ms?.pct >= 0.95);
+  } catch(e_) {}
+
   // Eligible if at least ONE positive dimension is present (boolean OR — not summed)
   return hasSeriesContext || hasMilestone;
 }

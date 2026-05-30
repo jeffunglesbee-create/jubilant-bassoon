@@ -897,3 +897,10 @@ assert('A251 — Journalism quota fix: journalismCallsToday.canCall() respects _
   html.includes('canCall(){') &&
   html.includes('if(this.get()>=8) return false'),
   'canCall must block during active 429 backoff — prevents J2/J3 cascade burning Gemini quota');
+
+assert('A252 — isScoutsPick: hasMilestone defined from _bdlMilestonesCache (was undefined after betting removal)',
+  html.includes('let hasMilestone = false') &&
+  html.includes('_bdlMilestonesCache') &&
+  html.includes('hasMilestone = !!(ms?.pct >= 0.95)') &&
+  html.includes('return hasSeriesContext || hasMilestone'),
+  'isScoutsPick must define hasMilestone from milestone cache — undefined reference breaks Scout\'s Pick and BNI');
