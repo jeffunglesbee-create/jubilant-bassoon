@@ -1,260 +1,143 @@
 #!/usr/bin/env python3
 """
-api-sports.io Probe — FIELD RUWT step 1
-Reads actual response shapes BEFORE building any adapter code.
-Probe method: GitHub Actions runner → field-relay-nba → api-sports.io
-Runners can reach *.workers.dev; sandbox cannot.
-
-Probes (in order):
-  1. /v2/games?sport=X — FieldGame normalized shape (live + today)
-  2. /apisports/{sport}/games?live=all — raw api-sports shape
-  3. /apisports/{sport}/games/statistics?id=X — player stats shape (per live game)
-  4. /apisports/basketball/predictions?league=12&game=X — WP shape (if NBA game found)
-
-Output: outbox/apisports/probe-{timestamp}.json
-        outbox/apisports/probe-{timestamp}.md  (human-readable summary)
-
-DO NOT BUILD ADAPTERS until you have read the output.
+api-sports.io Probe — RUWT step 2 (corrected endpoints from docs)
+Verified endpoint list from api-sports.io documentation:
+  Basketball: /games/statistics/teams?id=X  /games/statistics/players?id=X
+  Baseball:   NO game-level stats endpoint (only /teams/statistics season-level)
+  Predictions: football (soccer) only via /predictions?fixture=X
+  NBA-specific: v2.nba.api-sports.io /players/statistics (season-level)
 """
 
-import urllib.request, json, os, datetime, sys
+import urllib.request, json, os, datetime
 
-RELAY   = "https://field-relay-nba.jeffunglesbee.workers.dev"
-TS      = datetime.datetime.utcnow().strftime('%Y%m%dT%H%M%SZ')
-TODAY   = datetime.datetime.utcnow().strftime('%Y-%m-%d')
+RELAY  = "https://field-relay-nba.jeffunglesbee.workers.dev"
+TS     = datetime.datetime.utcnow().strftime('%Y%m%dT%H%M%SZ')
+TODAY  = datetime.datetime.utcnow().strftime('%Y-%m-%d')
 HEADERS = {
-    'User-Agent': 'FIELD-probe/1.0 (github.com/jeffunglesbee-create/jubilant-bassoon)',
+    'User-Agent': 'FIELD-probe/1.0',
     'Accept':     'application/json',
 }
 
 os.makedirs('outbox/apisports', exist_ok=True)
+results = {'timestamp': TS, 'today': TODAY, 'probes': {}}
 
-results = {
-    'timestamp': TS,
-    'today':     TODAY,
-    'relay':     RELAY,
-    'probes':    {},
-}
-
-def fetch(url, label):
-    print(f"  GET {url}")
+def fetch(url):
     try:
         req = urllib.request.Request(url, headers=HEADERS)
         with urllib.request.urlopen(req, timeout=20) as r:
             raw  = r.read()
             data = json.loads(raw)
-            status = r.status
-            print(f"  ✅ HTTP {status} — {len(raw)} bytes")
-            return {'status': status, 'bytes': len(raw), 'data': data, 'error': None}
+            print(f"  ✅ HTTP {r.status} — {len(raw)} bytes")
+            return {'status': r.status, 'data': data, 'error': None}
     except Exception as e:
         print(f"  ❌ {e}")
         return {'status': None, 'error': str(e), 'data': None}
 
 def probe(label, url):
-    print(f"\n{'─'*60}")
-    print(f"PROBE: {label}")
-    r = fetch(url, label)
+    print(f"\n{'─'*55}\nPROBE: {label}\n  {url}")
+    r = fetch(url)
     results['probes'][label] = {'url': url, **r}
+    items = (r.get('data') or {}).get('response', [])
+    if items:
+        print(f"  → {len(items)} items | top keys: {list(items[0].keys())}")
+    elif r.get('data'):
+        errs = (r['data'] or {}).get('errors', {})
+        if errs:
+            print(f"  → errors: {errs}")
     return r
 
-def probe_games(sport_key, apisports_sport, league_id, season):
-    """Probe both /v2 and raw apisports for a sport. Return found live game IDs."""
-    live_ids = []
+print(f"\n{'═'*55}")
+print(f"FIELD api-sports PROBE v2 — {TODAY}")
+print(f"{'═'*55}")
 
-    # V2 normalized shape
-    v2 = probe(
-        f"v2/{sport_key}/today",
-        f"{RELAY}/v2/games?sport={sport_key}&date={TODAY}"
-    )
-    if v2['data'] and v2['data'].get('games'):
-        games = v2['data']['games']
-        live  = [g for g in games if g.get('state') == 'live']
-        print(f"  → {len(games)} total, {len(live)} live")
-        if games:
-            print(f"  → sample fields: {list(games[0].keys())}")
-            print(f"  → home fields:   {list((games[0].get('home') or {}).keys())}")
-            if games[0].get('situation'):
-                print(f"  → situation:     {list(games[0]['situation'].keys())}")
+# ── STEP 1: Get game IDs from today ──────────────────────────────────────
+print("\n[1] Get live/today game IDs")
 
-    # Raw apisports — live=all
-    raw_live = probe(
-        f"apisports/{apisports_sport}/live",
-        f"{RELAY}/apisports/{apisports_sport}/games?live=all"
-    )
-    if raw_live['data']:
-        items = raw_live['data'].get('response', [])
-        print(f"  → {len(items)} live games from raw")
-        for g in items[:3]:
-            gid = g.get('id')
-            if gid:
-                live_ids.append((apisports_sport, gid, sport_key))
-            print(f"  → id={gid} status={g.get('status',{}).get('short')} "
-                  f"{g.get('teams',{}).get('away',{}).get('name','?')} @ "
-                  f"{g.get('teams',{}).get('home',{}).get('name','?')}")
-        if items:
-            print(f"  → top-level keys: {list(items[0].keys())}")
+mlb_games = probe('mlb/today',
+    f"{RELAY}/apisports/baseball/games?league=1&season=2026&date={TODAY}"
+).get('data', {}).get('response', [])
 
-    # Raw apisports — by date (in case live=all empty)
-    if not live_ids:
-        raw_today = probe(
-            f"apisports/{apisports_sport}/today",
-            f"{RELAY}/apisports/{apisports_sport}/games?league={league_id}&season={season}&date={TODAY}"
-        )
-        if raw_today['data']:
-            items = raw_today['data'].get('response', [])
-            print(f"  → {len(items)} games today (by date)")
-            for g in items[:2]:
-                gid = g.get('id')
-                status = g.get('status', {}).get('short', '?')
-                if gid and status not in ('NS', 'TBD', 'PST'):
-                    live_ids.append((apisports_sport, gid, sport_key))
-            if items:
-                print(f"  → top-level keys: {list(items[0].keys())}")
+nba_games = probe('nba/today',
+    f"{RELAY}/apisports/basketball/games?league=12&season=2025-2026&date={TODAY}"
+).get('data', {}).get('response', [])
 
-    return live_ids
+nhl_games = probe('nhl/today',
+    f"{RELAY}/apisports/hockey/games?league=57&season=2025-2026&date={TODAY}"
+).get('data', {}).get('response', [])
 
-# ── FOOTBALL (soccer/MLS) — v3 has different shape ────────────────────────
-def probe_football(sport_key, league_id, season):
-    live_ids = []
-    raw_live = probe(
-        f"apisports/football/{sport_key}/live",
-        f"{RELAY}/apisports/football/fixtures?live=all&league={league_id}"
-    )
-    if raw_live['data']:
-        items = raw_live['data'].get('response', [])
-        print(f"  → {len(items)} live fixtures")
-        for f_ in items[:3]:
-            fid = f_.get('fixture', {}).get('id')
-            if fid:
-                live_ids.append(('football', fid, sport_key))
-            print(f"  → id={fid} elapsed={f_.get('fixture',{}).get('status',{}).get('elapsed')}")
-        if items:
-            print(f"  → top-level keys: {list(items[0].keys())}")
-            print(f"  → fixture keys:   {list(items[0].get('fixture',{}).keys())}")
+# Show full shape of first game
+for label, games in [('MLB', mlb_games), ('NBA', nba_games), ('NHL', nhl_games)]:
+    if games:
+        print(f"\n  {label} game[0] full shape:")
+        print(json.dumps(games[0], indent=2)[:1000])
 
-    if not live_ids:
-        raw_today = probe(
-            f"apisports/football/{sport_key}/today",
-            f"{RELAY}/apisports/football/fixtures?league={league_id}&season={season}&date={TODAY}"
-        )
-        if raw_today['data']:
-            items = raw_today['data'].get('response', [])
-            print(f"  → {len(items)} fixtures today")
-            for f_ in items[:2]:
-                fid = f_.get('fixture', {}).get('id')
-                status = f_.get('fixture', {}).get('status', {}).get('short', '?')
-                if fid and status not in ('NS', 'TBD', 'PST'):
-                    live_ids.append(('football', fid, sport_key))
-    return live_ids
+# ── STEP 2: CORRECT statistics endpoints (from docs) ─────────────────────
+print("\n[2] Basketball /games/statistics/teams and /players (CORRECTED)")
 
-# ── MAIN PROBE SEQUENCE ────────────────────────────────────────────────────
-
-print(f"\n{'═'*60}")
-print(f"FIELD api-sports PROBE — {TODAY}")
-print(f"Relay: {RELAY}")
-print(f"{'═'*60}")
-
-all_live = []
-
-print("\n[1] MLB")
-all_live += probe_games('mlb', 'baseball', league_id=1, season='2026')
-
-print("\n[2] NBA")
-all_live += probe_games('nba', 'basketball', league_id=12, season='2025-2026')
-
-print("\n[3] NHL")
-all_live += probe_games('nhl', 'hockey', league_id=57, season='2025-2026')
-
-print("\n[4] MLS (football/soccer)")
-all_live += probe_football('mls', league_id=253, season='2026')
-
-# ── STATISTICS PROBES for live games ──────────────────────────────────────
-print(f"\n{'═'*60}")
-print(f"STATISTICS PROBE — {len(all_live)} live game(s) found")
-
-stat_sports_done = set()
-for (apisports_sport, game_id, field_sport) in all_live[:6]:
-    key = f"{apisports_sport}_stats"
-    if key in stat_sports_done:
-        continue
-    stat_sports_done.add(key)
-
-    print(f"\n[STATS] {field_sport} id={game_id}")
-    stats = probe(
-        f"stats/{field_sport}/{game_id}",
-        f"{RELAY}/apisports/{apisports_sport}/games/statistics?id={game_id}"
-    )
-    if stats['data']:
-        items = stats['data'].get('response', [])
-        print(f"  → {len(items)} team stat objects")
-        if items:
-            print(f"  → team object keys:   {list(items[0].keys())}")
-            players = items[0].get('players', [])
-            if players:
-                print(f"  → player object keys: {list(players[0].keys())}")
-                stats_block = players[0].get('statistics', [{}])
-                if stats_block:
-                    print(f"  → statistics keys:    {list(stats_block[0].keys())}")
-            # Print full first team for shape reading
-            print(f"  → FULL first object:")
-            print(json.dumps(items[0], indent=2)[:2000])
-
-# ── NBA WIN PROBABILITY (pre-match predictions) ───────────────────────────
-nba_games = [g for g in all_live if g[2] == 'nba']
-if nba_games:
-    _, game_id, _ = nba_games[0]
-    print(f"\n[PREDICTIONS] NBA id={game_id}")
-    pred = probe(
-        f"predictions/nba/{game_id}",
-        f"{RELAY}/apisports/basketball/predictions?league=12&game={game_id}"
-    )
-    if pred['data'] and pred['data'].get('response'):
-        items = pred['data']['response']
-        print(f"  → {len(items)} prediction objects")
-        if items:
-            print(f"  → keys: {list(items[0].keys())}")
-            pct = items[0].get('predictions', {})
-            print(f"  → predictions keys: {list(pct.keys()) if isinstance(pct, dict) else type(pct)}")
-            print(f"  → FULL first:")
-            print(json.dumps(items[0], indent=2)[:1500])
+# Use any available NBA game
+nba_id = next((g['id'] for g in nba_games), None)
+if nba_id:
+    probe(f'nba/stats/teams/{nba_id}',
+        f"{RELAY}/apisports/basketball/games/statistics/teams?id={nba_id}")
+    probe(f'nba/stats/players/{nba_id}',
+        f"{RELAY}/apisports/basketball/games/statistics/players?id={nba_id}")
 else:
-    print("\n[PREDICTIONS] No live NBA game found — skipping")
+    print("  No NBA game found today — using hardcoded recent id=500121")
+    probe('nba/stats/teams/500121',
+        f"{RELAY}/apisports/basketball/games/statistics/teams?id=500121")
+    probe('nba/stats/players/500121',
+        f"{RELAY}/apisports/basketball/games/statistics/players?id=500121")
 
-# ── SAVE RESULTS ──────────────────────────────────────────────────────────
+# ── STEP 3: Baseball — no game stats, confirm teams/statistics ───────────
+print("\n[3] Baseball stats — no game-level endpoint per docs")
+print("    Confirming: /teams/statistics is season-level only")
+probe('baseball/teams/stats',
+    f"{RELAY}/apisports/baseball/teams/statistics?league=1&season=2026&team=35")
+
+# ── STEP 4: Hockey game stats ─────────────────────────────────────────────
+print("\n[4] Hockey /games/statistics (does it exist?)")
+nhl_id = next((g['id'] for g in nhl_games), None)
+if nhl_id:
+    probe(f'nhl/stats/teams/{nhl_id}',
+        f"{RELAY}/apisports/hockey/games/statistics/teams?id={nhl_id}")
+else:
+    print("  No NHL game today — skipping")
+
+# ── STEP 5: Football (soccer) predictions ────────────────────────────────
+print("\n[5] Football predictions — soccer only, fixture= param")
+mls_games = probe('mls/today',
+    f"{RELAY}/apisports/football/fixtures?league=253&season=2026&date={TODAY}"
+).get('data', {}).get('response', [])
+
+mls_id = next((g.get('fixture', {}).get('id') for g in mls_games if g.get('fixture', {}).get('id')), None)
+if mls_id:
+    probe(f'mls/predictions/{mls_id}',
+        f"{RELAY}/apisports/football/predictions?fixture={mls_id}")
+else:
+    print("  No MLS fixture today — skipping predictions")
+
+# ── STEP 6: Show full statistics response shapes ──────────────────────────
+print(f"\n{'═'*55}")
+print("FULL RESPONSE SHAPES FOR VERIFIED ENDPOINTS:")
+
+for label in ['nba/stats/teams/500121', 'nba/stats/players/500121', 'baseball/teams/stats']:
+    r = results['probes'].get(label, {})
+    data = r.get('data', {})
+    items = data.get('response', [])
+    errors = data.get('errors', {})
+    print(f"\n=== {label} ===")
+    if errors:
+        print(f"  ERROR: {errors}")
+    elif items:
+        print(json.dumps(items[0], indent=2)[:2000])
+    else:
+        print(f"  empty response | raw: {json.dumps(data, indent=2)[:300]}")
+
+# ── SAVE ──────────────────────────────────────────────────────────────────
 out_json = f"outbox/apisports/probe-{TS}.json"
-out_md   = f"outbox/apisports/probe-{TS}.md"
-
 with open(out_json, 'w') as f:
     json.dump(results, f, indent=2)
 
-# Human-readable summary
-lines = [
-    f"# FIELD api-sports.io Probe — {TODAY}",
-    f"Timestamp: {TS}",
-    "",
-    "## Probe URLs",
-]
-for label, r in results['probes'].items():
-    status = r.get('status', 'ERR')
-    err    = r.get('error', '')
-    lines.append(f"- `{label}`: HTTP {status} {err}")
-
-lines += [
-    "",
-    "## Live games found",
-    f"{len(all_live)} total: " + ", ".join(f"{s}:{gid}({k})" for s,gid,k in all_live),
-    "",
-    "## Next step",
-    "Read outbox/apisports/probe-{TS}.json for full field names.",
-    "Only then write adapters. Mark verified fields: `// VERIFIED [date]`",
-]
-
-with open(out_md, 'w') as f:
-    f.write('\n'.join(lines))
-
-print(f"\n{'═'*60}")
-print(f"PROBE COMPLETE")
-print(f"JSON: {out_json}")
-print(f"MD:   {out_md}")
-print(f"Live games found: {len(all_live)}")
-print(f"{'═'*60}")
+print(f"\n{'═'*55}")
+print(f"PROBE COMPLETE — {TS}")
+print(f"Output: {out_json}")
