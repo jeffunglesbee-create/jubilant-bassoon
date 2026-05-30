@@ -20074,13 +20074,13 @@ async function fetchNightOwlFromClaude(topGame){
   const budget=journalismCallsToday();
   if(!budget.canCall()) return null;
   // Pre-fetch standings from relay/API — not ESPN
-  await fetchStandingsForPrompt(topGame._section || topGame._sport || '').catch(()=>{});
+  await fetchStandingsForPrompt(topGame._section || topGame._sport || topGame.sport || '').catch(()=>{});
   const note=await fetchGameNotes(topGame).catch(()=>null);
   const standingsCtx = buildGameStandingsContext(topGame);
   const crewCtx = getCrewContext(topGame);
   const winner=(topGame.homeScore||0)>=(topGame.awayScore||0)?topGame.home:topGame.away;
   const score=topGame.awayScore+'\u2013'+topGame.homeScore;
-  const _sp = (topGame._section || topGame._sport || '').toLowerCase();
+  const _sp = (topGame._section || topGame._sport || topGame.sport || topGame.league || '').toLowerCase();
   const _terms = _sp.includes('baseball') || _sp.includes('mlb')
     ? 'SPORT=BASEBALL. This is a baseball game. Use ONLY baseball vocabulary.\nScore in RUNS. Close game = one-run game. Extra period = extra innings.\nFORBIDDEN — any use is a FACTUAL ERROR disqualifying the recap: quarter, quarters, fourth quarter, halftime, half time, field goal, field goal percentage, three-point, three-pointer, free throw, rebound, rebounds, one-possession, possession game, fast break, assist, assists, ball movement, interior scoring, basket, baskets, in the paint, down the stretch, offensive rhythm, offensive sets, transition game, points (unless quoting opponent stats), touchdown, first down, penalty kick, nil, offsides.\nUSE INSTEAD: runs, innings, hits, strikeouts, ERA, pitch count, at-bat, on-base, extra innings, bullpen, lineup, swing.'
     : _sp.includes('hockey') || _sp.includes('nhl')
@@ -20122,7 +20122,7 @@ async function fetchNightOwlFromClaude(topGame){
     if(text&&text.length>40){
       text=await retryWithoutCliches(prompt,text,CLAUDE_PROXY_URL);
       // Layer 2b: sport vocab — catches "one-possession game" for baseball etc.
-      const _sp=topGame._section||topGame._sport||'';
+      const _sp=topGame._section||topGame._sport||topGame.sport||topGame.league||'';
       text=await retryWithSportVocab(prompt,text,_sp,CLAUDE_PROXY_URL);
       // Layer 2c: hard strip — last resort if AI retry still contains violations
       const _spCls=detectSportClass(_sp);

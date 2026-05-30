@@ -977,3 +977,8 @@ assert('A262 — SPARINGLY_PHRASES + countSparingly: use-sparingly list with 2x 
   html.includes('USE SPARINGLY') &&
   html.includes('OVERUSED WORDS'),
   'SPARINGLY_PHRASES must be defined with countSparingly() and wired into retry prompt');
+
+assert('A263 — Night Owl sport detection reads topGame.sport + league fallback (saved finals field name)',
+  html.includes('topGame._section || topGame._sport || topGame.sport || topGame.league') &&
+  html.includes('topGame._section||topGame._sport||topGame.sport||topGame.league'),
+  'Night Owl _sp must include topGame.sport (the field name saved to localStorage) and topGame.league as fallback');
