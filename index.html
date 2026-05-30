@@ -16446,6 +16446,7 @@ async function initFIELDBrief(sections){
       }
     }catch(e_){
     if(typeof window._fieldErrors !== 'undefined') window._fieldErrors.push({fn:'initFIELDBrief',err:e_?.message||String(e_),ts:Date.now()});}
+    setTimeout(renderFieldDesk, 400); // Cached-brief path: Desk was never triggered on reload
     return;
   }
   const staticText=buildFIELDBriefStatic(sections)||'Loading tonight\'s brief\u2026';
@@ -16465,6 +16466,7 @@ async function initFIELDBrief(sections){
     sessionStorage.setItem(cacheKey, relayJournalism.brief);
     if (FIELD_DEBUG) console.log('[O(1)] Brief served from relay KV — no AI call');
     if (typeof renderAmbientPanel === 'function') setTimeout(renderAmbientPanel, 50);
+    setTimeout(renderFieldDesk, 300); // Relay path: Desk was never triggered here
     // Still try compound for series/game_briefs (non-brief fields) — but respect delta
     const currentHash = buildJournalismContextHash(sections);
     if (currentHash === _lastJournalismHash) {

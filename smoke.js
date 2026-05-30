@@ -932,3 +932,10 @@ assert('A256 — injectSquiggleTips is a hoisted function declaration (not var e
   html.includes('async function injectSquiggleTips(){') &&
   !html.includes('var injectSquiggleTips='),
   'injectSquiggleTips must be function declaration — var expression not hoisted, causes ReferenceError when called at line 6711');
+
+assert('A257 — renderFieldDesk triggered in all 4 journalism paths (relay KV, compound, J3 fallback, cached reload)',
+  html.includes('Relay path: Desk was never triggered here') &&
+  html.includes('Cached-brief path: Desk was never triggered on reload') &&
+  html.includes('setTimeout(renderFieldDesk, 200)') &&
+  html.includes('setTimeout(renderFieldDesk, 300)'),
+  'renderFieldDesk must fire in every journalism resolution path — was missing from relay KV and cached-brief paths');
