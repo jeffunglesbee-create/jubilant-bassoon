@@ -1159,3 +1159,14 @@ assert('A295 — cardBriefCallsToday separate from journalismCallsToday (15 call
   html.includes('this.get()<15') &&
   html.includes('const cardBudget = cardBriefCallsToday()'),
   'MLB/WNBA/Stakes card briefs must use separate budget — not consume compound editorial budget');
+
+assert('A296 — Stakes brief: UCL Final renders card (bypasses imp guard), gets trophy icon not MUST WIN',
+  html.includes("'🏆 UCL FINAL'") &&
+  html.includes("_isMajorFinal && (!imp || imp === 'playoff_impl')") &&
+  html.includes("field_stakes_brief_v' + _swv + '_'"),
+  'UCL Final must render stakes card with correct icon and versioned cache key');
+
+assert('A297 — Stakes brief prompt explicitly forbids semifinal/elimination framing for finals',
+  html.includes('This is the FINAL — not a semifinal') &&
+  html.includes('CRITICAL: Do NOT use the words semifinal'),
+  'UCL Final stakes prompt must explicitly prohibit semifinal framing to prevent hallucinated knockout context');

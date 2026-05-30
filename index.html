@@ -17338,10 +17338,11 @@ async function fetchStakesBriefFromClaude(g) {
     g.matchupNote ? `Context: ${g.matchupNote}` : '',
     '',
     isMajorFinal
-      ? 'Rules: 2 sentences. Lead with the magnitude of the occasion and what both clubs are playing for. Cite specific history (last time in this final, years since winning, what the trophy means to this club).'
+      ? 'Rules: 2 sentences. This is the FINAL — not a semifinal, not a knockout round. There is no next game. One match, winner takes the trophy. Lead with what the trophy means to each club (last won it, first final in X years, first ever). Cite only facts from Context above.'
       : 'Rules: 2 sentences. Lead with the historical weight — what losing or winning means beyond just tonight.',
     'Cite specific year or franchise context if it sharpens the stakes.',
-    'If Context is provided, use specific facts from it — player names, series history, records.',
+    'If Context is provided, use only facts from it. NEVER invent round context, series history, or prior results not mentioned above.',
+    isMajorFinal ? 'CRITICAL: Do NOT use the words semifinal, quarter-final, knockout round, or elimination. This is the FINAL — the last game of the competition.' : '',
     'Write only from data above. No invented stats.',
     FIELD_PROSE_STYLE,
   ].filter(Boolean).join('\n');
@@ -17376,17 +17377,28 @@ async function renderStakesBriefCard(gameCard) {
   if (!game) return;
 
   const imp = game._gameImportance || '';
-  if (!imp || imp === 'playoff_impl') return;
+  const _isMajorFinal = /champions league.*final|europa league.*final|conference league.*final/i.test(game.league||'');
+  if (!_isMajorFinal && (!imp || imp === 'playoff_impl')) return;
   if (gameCard.previousElementSibling?.classList.contains('stakes-brief-card')) return;
 
-  const cacheKey = 'field_stakes_brief_' + gameid;
+  // Version cache key with SW_VERSION so stale briefs (e.g. "semifinal exit") auto-bust on deploy
+  const _swv = typeof SW_VERSION !== 'undefined' ? SW_VERSION : '0';
+  const cacheKey = 'field_stakes_brief_v' + _swv + '_' + gameid;
   const cached = sessionStorage.getItem(cacheKey);
 
   const card = document.createElement('div');
   card.className = 'stakes-brief-card';
   card.dataset.gameid = gameid;
 
-  const impIcon = imp === 'elimination' ? '💀 ELIMINATION' : imp === 'series_deciding' ? '⚡ MUST WIN' : '🏆 CLINCH';
+  // Icon for major finals — not "MUST WIN", that's elimination framing
+  const impIcon = _isMajorFinal
+    ? (/champions league.*final/i.test(game.league||'') ? '🏆 UCL FINAL'
+      : /europa league.*final/i.test(game.league||'') ? '🏆 UEL FINAL'
+      : /conference league.*final/i.test(game.league||'') ? '🏆 UECL FINAL'
+      : '🏆 FINAL')
+    : imp === 'elimination' ? '💀 ELIMINATION'
+    : imp === 'series_deciding' ? '⚡ MUST WIN'
+    : '🏆 CLINCH';
   const inner = document.createElement('div');
   inner.className = 'stakes-inner';
   inner.innerHTML = `<div class="stakes-tag">${impIcon}</div>
