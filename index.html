@@ -2761,16 +2761,21 @@ function buildFieldHealthPanel() {
     const budget = typeof journalismCallsToday === 'function' ? journalismCallsToday() : null;
     const used = budget ? budget.get() : '?';
     const isStatic = /^Tonight on FIELD:/.test(briefTxt) || briefTxt.length < 40;
+    const inBackoff = typeof _compoundRetryAfter !== 'undefined' && Date.now() < _compoundRetryAfter;
+    const backoffSec = inBackoff ? Math.ceil((_compoundRetryAfter - Date.now()) / 1000) : 0;
+    const resetBtn = inBackoff
+      ? ' <button onclick="try{localStorage.removeItem(\'field_compound_retry_after\');_compoundRetryAfter=0;window._compoundLastError=\'\';document.getElementById(\'fhp-overlay\')?.remove();}catch(e){}setTimeout(()=>location.reload(),200);" style="margin-left:6px;background:#c9a84c;color:#000;border:none;border-radius:4px;padding:2px 7px;font-size:.58rem;cursor:pointer;font-weight:700">Reset backoff</button>'
+      : '';
     if (cached && cached.length > 40) {
       rows.push(ok('Journalism', `Brief rendered (${cached.length} chars) · ${used} AI calls used`));
     } else if (briefTxt && !isStatic) {
       rows.push(ok('Journalism', `Brief live (${briefTxt.length} chars) · ${used} AI calls`));
     } else if (isStatic && briefTxt) {
       const lastErr = (typeof window._compoundLastError !== 'undefined' && window._compoundLastError) ? ' · err: ' + window._compoundLastError : '';
-      rows.push(warn('Journalism', `Static only — compound null · ${used} AI calls${lastErr}`));
+      rows.push(warn('Journalism', `Static only — compound null · ${used} AI calls${inBackoff ? ` · backoff ${backoffSec}s` : ''}${lastErr}`) + resetBtn);
     } else {
       const lastErr = (typeof window._compoundLastError !== 'undefined' && window._compoundLastError) ? ' · err: ' + window._compoundLastError : '';
-      rows.push(warn('Journalism', `No brief text · ${used} AI calls${lastErr}`));
+      rows.push(warn('Journalism', `No brief text · ${used} AI calls${inBackoff ? ` · backoff ${backoffSec}s` : ''}${lastErr}`) + resetBtn);
     }
   } catch(e) {
     rows.push(warn('Journalism', 'Check failed: ' + (e?.message||'unknown')));
