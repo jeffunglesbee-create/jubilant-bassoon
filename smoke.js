@@ -1170,3 +1170,11 @@ assert('A297 — Stakes brief prompt explicitly forbids semifinal/elimination fr
   html.includes('This is the FINAL — not a semifinal') &&
   html.includes('CRITICAL: Do NOT use the words semifinal'),
   'UCL Final stakes prompt must explicitly prohibit semifinal framing to prevent hallucinated knockout context');
+
+assert('A298 — MLB brief: umpLine declared before use in prompt array (was ReferenceError → silent null)',
+  html.includes('const umpLine = !!ump;'),
+  'umpLine must be declared — was referenced in MLB prompt array but never defined, causing ReferenceError caught silently');
+
+assert('A299 — MLB/WNBA/Stakes card renderers always remove card on null (no stuck Loading brief)',
+  html.includes('try { card.remove(); } catch(_) {}'),
+  'Card renderers must always remove card on null/failure — else if(textEl) left card stuck when textEl was null');

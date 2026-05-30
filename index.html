@@ -17107,6 +17107,7 @@ async function fetchMLBGameBriefFromClaude(g) {
     const u    = getUmpireABSRating?.(last);
     return u ? `${last}: ${Math.round(u.rate*100)}% K-rate${u.weakness?' · weak '+u.weakness+' zone':''}` : last;
   })();
+  const umpLine = !!ump; // umpLine was referenced in prompt but never declared — caused ReferenceError → null
 
   // Park factor line
   const pfLine = pf ? (() => {
@@ -17214,8 +17215,9 @@ async function renderMLBGameBriefCard(gameCard) {
     textEl.textContent = trimToCompleteSentence(text);
     textEl.classList.replace('pending','loaded');
     sessionStorage.setItem(cacheKey, text);
-  } else if (textEl) {
-    card.remove();
+  } else {
+    // Always remove card on failure — never leave "Loading brief…" stuck
+    try { card.remove(); } catch(_) {}
   }
 }
 
@@ -17295,8 +17297,8 @@ async function renderWNBAGameBriefCard(gameCard) {
     textEl.textContent = trimToCompleteSentence(text);
     textEl.classList.replace('pending','loaded');
     sessionStorage.setItem(cacheKey, text);
-  } else if (textEl) {
-    card.remove();
+  } else {
+    try { card.remove(); } catch(_) {}
   }
 }
 
@@ -17414,8 +17416,8 @@ async function renderStakesBriefCard(gameCard) {
     textEl.textContent = trimToCompleteSentence(text);
     textEl.classList.replace('pending','loaded');
     sessionStorage.setItem(cacheKey, text);
-  } else if (textEl) {
-    card.remove();
+  } else {
+    try { card.remove(); } catch(_) {}
   }
 }
 
