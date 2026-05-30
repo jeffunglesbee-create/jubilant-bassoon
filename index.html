@@ -10624,6 +10624,7 @@ const SAVANT_BASE = 'https://baseballsavant.mlb.com';
 const BDL_RELAY   = 'https://field-relay-nba.jeffunglesbee.workers.dev/bdl';
 const NHL_RELAY   = 'https://field-relay-nba.jeffunglesbee.workers.dev/nhl';
 const MLB_STATS_RELAY = 'https://field-relay-nba.jeffunglesbee.workers.dev/mlb-stats';
+const SQUIGGLE_RELAY  = 'https://field-relay-nba.jeffunglesbee.workers.dev/squiggle'; // AFL Squiggle API proxy
 
 // Item 4 — BDL season averages for active playoff players
 // Cache: localStorage 24h per player (season stats don't change intraday)
@@ -13596,6 +13597,177 @@ async function fetchSchedule(){
   setTimeout(fetchSoccerFixtures, 500); // no-op with empty SOCCER_LEAGUES (all soccer on V2)
   setTimeout(fetchMLSLive, 800);         // MLS relay: stats-api.mlssoccer.com → canonical opta_id keys in espnScores
   fetchFPLLiveScores();  // FPL relay — EPL live scores (official PL data, CORS bypass via relay)
+
+// ── Squiggle AFL engine — restored May 30 2026 ────────────────────────────────
+// All functions below were inadvertently dropped in the betting-engine removal commit.
+// startSquiggleEngine() + squigglePrefetchAll() were still called → 5 ReferenceErrors/load.
+
+let _squiggleCache={games:null,standings:null,fetchedAt:0};
+let _squiggleTipsCache={tips:null,power:null,round:null,fetchedAt:0};
+
+function squiggleToFieldGame(g){
+  if(!g.hteam||!g.ateam) return null;
+  return {
+    home:g.hteam, away:g.ateam,
+    league:'AFL 2026 — '+(g.roundname||'Round '+g.round),
+    start_time:new Date(g.unixtime*1000).toISOString(),
+    confirmed:true, venue:g.venue||'',
+    streams:resolveBundle('AFL_USA'),
+    _sport:'Australian Football (AFL)',
+    _id:'afl_'+g.id, _squiggleId:g.id, _squiggle:g,
+    _aflComplete:g.complete,
+  };
+}
+
+function injectSquiggleLiveScores(){
+  if(!_squiggleCache.games) return;
+  _squiggleCache.games.forEach(g=>{
+    if(!g.hteam||g.complete===0) return;
+    const card=document.querySelector('.game-card[data-gameid="afl_'+g.id+'"]');
+    if(!card) return;
+    const ha=AFL_TEAM_ABBR[g.hteam]||g.hteam.slice(0,3).toUpperCase();
+    const aa=AFL_TEAM_ABBR[g.ateam]||g.ateam.slice(0,3).toUpperCase();
+    const hs=g.hscore??0, as_=g.ascore??0;
+    const hg=g.hgoals, hb=g.hbehinds, ag=g.agoals, ab=g.abehinds;
+    const period=g.complete>=100?'Final':(g.timestr||'Live');
+    const periodSuffix=(g.complete>0&&g.complete<100)?' · '+period:'';
+    const scoreStr=(hg!=null&&hb!=null)
+      ?ha+' '+hg+'.'+hb+' – '+aa+' '+ag+'.'+ab+periodSuffix
+      :ha+' '+hs+' – '+aa+' '+as_+periodSuffix;
+    let chip=card.querySelector('.leader-chip');
+    if(!chip){const m=card.querySelector('.matchup,.card-body');if(m){chip=document.createElement('span');chip.className='leader-chip';m.appendChild(chip);}}
+    if(chip){chip.textContent=scoreStr;chip.classList.toggle('atp-score-live',g.complete>0&&g.complete<100);}
+    card.classList.toggle('espn-live',g.complete>0&&g.complete<100);
+  });
+  // Normalise AFL into espnScores so drama/OTW/Night Owl pick it up automatically
+  _squiggleCache.games.forEach(sq=>{
+    if(!sq.hteam||!sq.ateam) return;
+    const live=sq.complete>0&&sq.complete<100;
+    const final_=sq.complete>=100;
+    if(!live&&!final_) return;
+    const tm=String(sq.timestr||'').match(/[Qq](\d+)\s*([\d:]+)?/);
+    const period=tm?parseInt(tm[1]):0;
+    const clock=tm&&tm[2]?tm[2]:'';
+    const key=`${sq.hteam}|${sq.ateam}`;
+    espnScores[key]={
+      _gameId:resolveGameIdByHome?.(sq.hteam),
+      state:final_?'post':'in', period, clock,
+      detail:final_?'Final':(sq.timestr||'Live'),
+      homeScore:sq.hscore||0, awayScore:sq.ascore||0,
+      _aflHomeStr:(sq.hgoals!=null&&sq.hbehinds!=null)?sq.hgoals+'.'+sq.hbehinds:null,
+      _aflAwayStr:(sq.agoals!=null&&sq.abehinds!=null)?sq.agoals+'.'+sq.abehinds:null,
+      homeName:sq.hteam, awayName:sq.ateam,
+      homeWinning:(sq.hscore||0)>(sq.ascore||0),
+      periodPrefix:'Q', source:'squiggle',
+      _aflComplete:sq.complete,
+    };
+    espnScoreTs[key]=Date.now();
+  });
+}
+
+function refreshAFLSection(){
+  if(!_squiggleCache.games||!allData) return;
+  const todayGames=_squiggleCache.games.map(squiggleToFieldGame).filter(g=>g&&isToday(g.start_time));
+  if(!todayGames.length) return;
+  const idx=allData.sports.findIndex(s=>s.sport==='Australian Football (AFL)');
+  if(idx>=0){ allData.sports[idx]={sport:'Australian Football (AFL)',games:todayGames}; }
+  else { allData.sports.push({sport:'Australian Football (AFL)',games:todayGames}); }
+  scheduleRenderAll();
+  setTimeout(injectSquiggleLiveScores,250);
+}
+
+function _aflCurrentRound(){
+  if(_squiggleCache.games?.length){
+    const rounds=[...new Set(_squiggleCache.games.map(g=>g.round).filter(Boolean))];
+    if(rounds.length) return Math.max(...rounds);
+  }
+  const afl=(allData?.sports||[]).find(s=>s.sport==='Australian Football (AFL)');
+  if(afl?.games?.length){
+    const m=(afl.games[0].league||'').match(/Round (\d+)/i);
+    if(m) return parseInt(m[1]);
+  }
+  const aflR1=new Date('2026-03-12T00:00:00Z');
+  const weeks=Math.floor((Date.now()-aflR1.getTime())/(7*86400000));
+  return Math.min(Math.max(1,weeks+1),24);
+}
+
+async function squigglePrefetchAll(){
+  try{
+    const round=_aflCurrentRound();
+    const [gR,gR2,sR]=await Promise.all([
+      fetch(SQUIGGLE_RELAY+'?q=games;year=2026;round='+round,{headers:{'User-Agent':'FIELD-Global-Sports'},signal:AbortSignal.timeout(7000)}),
+      fetch(SQUIGGLE_RELAY+'?q=games;year=2026;round='+(round+1),{headers:{'User-Agent':'FIELD-Global-Sports'},signal:AbortSignal.timeout(7000)}).catch(()=>({ok:false})),
+      fetch(SQUIGGLE_RELAY+'?q=standings;year=2026',{headers:{'User-Agent':'FIELD-Global-Sports'},signal:AbortSignal.timeout(7000)}),
+    ]);
+    let games=[];
+    if(gR.ok){const d=await gR.json();games.push(...(d.games||[]));}
+    if(gR2.ok){const d=await gR2.json();games.push(...(d.games||[]));}
+    _squiggleCache={..._squiggleCache,games,fetchedAt:Date.now()};
+    if(sR.ok){const d=await sR.json();_squiggleCache={..._squiggleCache,standings:d.standings||[]};}
+    if(FIELD_DEBUG) console.debug('[AFL] prefetch: R'+round+'+R'+(round+1)+' →',games.length,'games');
+    refreshAFLSection();
+    if(typeof renderAFLStandingsWidget==='function') renderAFLStandingsWidget();
+  }catch(e){if(FIELD_DEBUG) console.debug('[AFL] prefetch failed:',e.message);}
+}
+
+async function startSquiggleEngine(){
+  injectSquiggleLiveScores();
+  async function refreshLive(){
+    try{
+      const r=await fetch(SQUIGGLE_RELAY+'?q=games;year=2026;round='+_aflCurrentRound(),
+        {headers:{'User-Agent':'FIELD-Global-Sports'},signal:AbortSignal.timeout(7000)});
+      if(!r.ok) return;
+      const data=await r.json();
+      _squiggleCache={games:data.games||[],fetchedAt:Date.now()};
+      injectSquiggleLiveScores();
+    }catch(e){/* silent */}
+    const hasLive=(_squiggleCache.games||[]).some(g=>g.complete>0&&g.complete<100);
+    setTimeout(refreshLive,hasLive?30000:120000);
+  }
+  setTimeout(refreshLive,60000);
+}
+
+async function fetchSquiggleTips(round){
+  if(_squiggleTipsCache.round===round&&Date.now()-_squiggleTipsCache.fetchedAt<3600000) return;
+  try{
+    const [tR,pR]=await Promise.all([
+      fetch(SQUIGGLE_RELAY+'?q=tips;year=2026;round='+round,{headers:{'User-Agent':'FIELD-Global-Sports'},signal:AbortSignal.timeout(7000)}),
+      fetch(SQUIGGLE_RELAY+'?q=power;year=2026',{headers:{'User-Agent':'FIELD-Global-Sports'},signal:AbortSignal.timeout(7000)}),
+    ]);
+    if(tR.ok){const d=await tR.json();_squiggleTipsCache.tips=d.tips||[];}
+    if(pR.ok){const d=await pR.json();_squiggleTipsCache.power=d.power||[];}
+    _squiggleTipsCache.round=round;
+    _squiggleTipsCache.fetchedAt=Date.now();
+  }catch(e){if(FIELD_DEBUG) console.debug('[AFL] tips fetch failed:',e.message);}
+}
+
+var injectSquiggleTips=async function(){
+  if(!_squiggleCache.games?.length) return;
+  const todayGames=_squiggleCache.games.filter(g=>g&&isToday(new Date(g.unixtime*1000).toISOString()));
+  if(!todayGames.length) return;
+  const round=todayGames[0].round;
+  await fetchSquiggleTips(round);
+  if(!_squiggleTipsCache.tips?.length) return;
+  const tipsMap={};
+  _squiggleTipsCache.tips.forEach(t=>{if(t.gameid) tipsMap[t.gameid]=t;});
+  document.querySelectorAll('.game-card[data-gameid^="afl_"]').forEach(card=>{
+    const numId=parseInt((card.dataset.gameid||'').replace('afl_',''));
+    const tip=tipsMap[numId];
+    if(!tip) return;
+    const margin=Math.abs(Math.round(tip.margin||0));
+    const conf=tip.confidence?Math.round(tip.confidence)+'%':null;
+    const tipTeamAbbr=AFL_TEAM_ABBR[tip.tip]||(tip.tip||'').slice(0,3).toUpperCase();
+    const confStr=conf?` (${conf} · 21 models)`:'';
+    const chipText=`Squiggle: ${tipTeamAbbr} −${margin}${confStr}`;
+    let tipEl=card.querySelector('.squiggle-tip-chip');
+    if(!tipEl){
+      const matchup=card.querySelector('.matchup,.card-body,.game-teams');
+      if(matchup){tipEl=document.createElement('div');tipEl.className='squiggle-tip-chip';tipEl.style.cssText='font-size:0.72rem;color:var(--text-muted,#888);margin-top:2px;';matchup.appendChild(tipEl);}
+    }
+    if(tipEl) tipEl.textContent=chipText;
+  });
+};
+
   // startSportsDBEngine / startFotmobEngine removed — soccer now fully on api-sports.io V2
   startSquiggleEngine(); // Squiggle AFL live scores (free documented API)
   setTimeout(squigglePrefetchAll, 2500); // Squiggle standings

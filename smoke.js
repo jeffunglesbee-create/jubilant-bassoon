@@ -904,3 +904,13 @@ assert('A252 — isScoutsPick: hasMilestone defined from _bdlMilestonesCache (wa
   html.includes('hasMilestone = !!(ms?.pct >= 0.95)') &&
   html.includes('return hasSeriesContext || hasMilestone'),
   'isScoutsPick must define hasMilestone from milestone cache — undefined reference breaks Scout\'s Pick and BNI');
+
+assert('A253 — Squiggle engine restored: all functions defined (dropped in betting removal)',
+  html.includes('const SQUIGGLE_RELAY') &&
+  html.includes('let _squiggleCache') &&
+  html.includes('function squiggleToFieldGame') &&
+  html.includes('function injectSquiggleLiveScores') &&
+  html.includes('function _aflCurrentRound') &&
+  html.includes('async function squigglePrefetchAll') &&
+  html.includes('async function startSquiggleEngine'),
+  'All 7 Squiggle engine symbols must be defined — were dropped in betting removal causing 5 ReferenceErrors/load');
