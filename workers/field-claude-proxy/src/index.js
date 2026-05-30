@@ -4,7 +4,7 @@
 //
 // CHANGES IN v8 (May 31 2026):
 //   Model: gemini-2.5-flash-lite → gemini-3.1-flash-lite (GA May 7 2026)
-//   API endpoint: v1beta → v1 (GA models served on v1)
+//   API endpoint: v1beta (AI Studio keys require v1beta, not v1) (GA models served on v1)
 //   ALLOWED_ORIGINS: added field-deploy.jeffunglesbee.workers.dev (v7)
 //   hasVision: vision requests route to Claude directly (v7)
 //   429 handling: FIXED — returns 429 to client, does NOT fall back to Claude
@@ -19,7 +19,7 @@
 //   X-FIELD-Proxy-Version: 8
 //   X-Field-Model: gemini-3.1-flash-lite  (or claude-sonnet-4 on vision/error fallback)
 
-const PROXY_VERSION = '8';
+const PROXY_VERSION = '9'; // v1beta restored for AI Studio keys
 
 const ALLOWED_ORIGINS = [
   'https://jubilant-bassoon.jeffunglesbee.workers.dev',
@@ -65,7 +65,7 @@ function fromGemini(data) {
 }
 
 async function callGemini(body, key) {
-  const url = `https://generativelanguage.googleapis.com/v1/models/gemini-3.1-flash-lite:generateContent?key=${key}`;
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=${key}`;
   const r = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
