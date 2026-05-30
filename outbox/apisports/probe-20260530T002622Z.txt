@@ -1,0 +1,2442 @@
+FIELD api-sports.io PROBE -- 2026-05-30 20260530T002622Z
+Relay: https://field-relay-nba.jeffunglesbee.workers.dev
+
+=== HEALTH
+RELAY OK — nba + nhl + fpl + fd + odds + apisports + squiggle + atp + bdl + espn-gambit + espn-summary + dropbox + field-data + v2
+=== MLB today (2026-05-30)
+{
+  "get": "games",
+  "parameters": {
+    "league": "1",
+    "season": "2026",
+    "date": "2026-05-30"
+  },
+  "errors": [],
+  "results": 17,
+  "response": [
+    {
+      "id": 178858,
+      "date": "2026-05-30T00:05:00+00:00",
+      "time": "00:05",
+      "timestamp": 1780099500,
+      "timezone": "UTC",
+      "week": null,
+      "status": {
+        "long": "Inning 1",
+        "short": "IN1"
+      },
+      "country": {
+        "id": 1,
+        "name": "USA",
+        "code": "US",
+        "flag": "https://media.api-sports.io/flags/us.svg"
+      },
+      "league": {
+        "id": 1,
+        "name": "MLB",
+        "type": "League",
+        "logo": "https://media.api-sports.io/baseball/leagues/1.png",
+        "season": 2026
+      },
+      "teams": {
+        "home": {
+          "id": 35,
+          "name": "Texas Rangers",
+          "logo": "https://media.api-sports.io/baseball/teams/35.png"
+        },
+        "away": {
+          "id": 16,
+          "name": "Kansas City Royals",
+          "logo": "https://media.api-sports.io/baseball/teams/16.png"
+        }
+      },
+      "scores": {
+        "home": {
+          "hits": 0,
+          "errors": 0,
+          "innings": {
+            "1": 0,
+            "2": null,
+            "3": null,
+            "4": null,
+            "5": null,
+            "6": null,
+            "7": null,
+            "8": null,
+            "9": null,
+            "extra": null
+          },
+          "total": 0
+        },
+        "away": {
+          "hits": 2,
+          "errors": 0,
+          "innings": {
+            "1": 0,
+            "2": null,
+            "3": null,
+            "4": null,
+            "5": null,
+            "6": null,
+            "7": null,
+            "8": null,
+            "9": null,
+            "extra": null
+          },
+          "total": 0
+        }
+      }
+    },
+    {
+      "id": 178864,
+      "date": "2026-05-30T00:10:00+00:00",
+      "time": "00:10",
+      "timestamp": 1780099800,
+      "timezone": "UTC",
+      "week": null,
+      "status": {
+        "long": "Inning 2",
+        "short": "IN2"
+      },
+      "country": {
+        "id": 1,
+        "name": "USA",
+        "code": "US",
+        "flag": "https://media.api-sports.io/flags/us.svg"
+      },
+      "league": {
+        "id": 1,
+        "name": "MLB",
+        "type": "League",
+        "logo": "https://media.api-sports.io/baseball/leagues/1.png",
+        "season": 2026
+      },
+      "teams": {
+        "home": {
+          "id": 15,
+          "name": "Houston Astros",
+          "logo": "https://media.api-sports.io/baseball/teams/15.png"
+        },
+        "away": {
+          "id": 20,
+          "name": "Milwaukee Brewers",
+          "logo": "https://media.api-sports.io/baseball/teams/20.png"
+        }
+      },
+      "scores": {
+        "home": {
+          "hits": 1,
+          "errors": 0,
+          "innings": {
+            "1": 0,
+            "2": null,
+            "3": null,
+            "4": null,
+            "5": null,
+            "6": null,
+            "7": null,
+            "8": null,
+            "9": null,
+            "extra": null
+          },
+          "total": 0
+        },
+        "away": {
+          "hits": 0,
+          "errors": 0,
+          "innings": {
+            "1": 0,
+            "2": 0,
+            "3": null,
+            "4": null,
+            "5": null,
+            "6": null,
+            "7": null,
+            "8": null,
+            "9": null,
+            "extra": null
+          },
+          "total": 0
+        }
+      }
+    },
+    {
+      "id": 178866,
+      "date": "2026-05-30T00:40:00+00:00",
+      "time": "00:40",
+      "timestamp": 1780101600,
+      "timezone": "UTC",
+      "week": null,
+      "status": {
+        "long": "Not Started",
+        "short": "NS"
+      },
+      "country": {
+        "id": 1,
+        "name": "USA",
+        "code": "US",
+        "flag": "https://media.api-sports.io/flags/us.svg"
+      },
+      "league": {
+        "id": 1,
+        "name": "MLB",
+        "type": "League",
+        "logo": "https://media.api-sports.io/baseball/leagues/1.png",
+        "season": 2026
+      },
+      "teams": {
+        "home": {
+          "id": 10,
+          "name": "Colorado Rockies",
+          "logo": "https://media.api-sports.io/baseball/teams/10.png"
+        },
+        "away": {
+          "id": 31,
+          "name": "San Francisco Giants",
+          "logo": "https://media.api-sports.io/baseball/teams/31.png"
+        }
+      },
+      "scores": {
+        "home": {
+          "hits": null,
+          "errors": null,
+          "innings": {
+            "1": null,
+            "2": null,
+            "3": null,
+            "4": null,
+            "5": null,
+            "6": null,
+            "7": null,
+            "8": null,
+            "9": null,
+            "extra": null
+          },
+          "total": null
+        },
+        "away": {
+          "hits": null,
+          "errors": null,
+          "innings": {
+            "1": null,
+            "2": null,
+            "3": null,
+            "4": null,
+            "5": null,
+            "6": null,
+            "7": null,
+            "8": null,
+            "9": null,
+            "extra": null
+          },
+          "total": null
+        }
+      }
+    },
+    {
+      "id": 178867,
+      "date": "2026-05-30T01:40:00+00:00",
+      "time": "01:40",
+      "timestamp": 1780105200,
+      "timezone": "UTC",
+      "week": null,
+      "status": {
+        "long": "Not Started",
+        "short": "NS"
+      },
+      "country": {
+        "id": 1,
+        "name": "USA",
+        "code": "US",
+        "flag": "https://media.api-sports.io/flags/us.svg"
+      },
+      "league": {
+        "id": 1,
+        "name": "MLB",
+        "type": "League",
+        "logo": "https://media.api-sports.io/baseball/leagues/1.png",
+        "season": 2026
+      },
+      "teams": {
+        "home": {
+          "id": 963,
+          "name": "Athletics",
+          "logo": "https://media.api-sports.io/baseball/teams/963.png"
+        },
+        "away": {
+          "id": 25,
+          "name": "New York Yankees",
+          "logo": "https://media.api-sports.io/baseball/teams/25.png"
+        }
+      },
+      "scores": {
+        "home": {
+          "hits": null,
+          "errors": null,
+          "innings": {
+            "1": null,
+            "2": null,
+            "3": null,
+            "4": null,
+            "5": null,
+            "6": null,
+            "7": null,
+            "8": null,
+            "9": null,
+            "extra": null
+          },
+          "total": null
+        },
+        "away": {
+          "hits": null,
+          "errors": null,
+          "innings": {
+            "1": null,
+            "2": null,
+            "3": null,
+            "4": null,
+            "5": null,
+            "6": null,
+            "7": null,
+            "8": null,
+            "9": null,
+            "extra": null
+          },
+          "total": null
+        }
+      }
+    },
+    {
+      "id": 178868,
+      "date": "2026-05-30T02:10:00+00:00",
+      "time": "02:10",
+      "timestamp": 1780107000,
+      "timezone": "UTC",
+      "week": null,
+      "status": {
+        "long": "Not Started",
+        "short": "NS"
+      },
+      "country": {
+        "id": 1,
+        "name": "USA",
+        "code": "US",
+        "flag": "https://media.api-sports.io/flags/us.svg"
+      },
+      "league": {
+        "id": 1,
+        "name": "MLB",
+        "type": "League",
+        "logo": "https://media.api-sports.io/baseball/leagues/1.png",
+        "season": 2026
+      },
+      "teams": {
+        "home": {
+          "id": 32,
+          "name": "Seattle Mariners",
+          "logo": "https://media.api-sports.io/baseball/teams/32.png"
+        },
+        "away": {
+          "id": 2,
+          "name": "Arizona Diamondbacks",
+          "logo": "https://media.api-sports.io/baseball/teams/2.png"
+        }
+      },
+      "scores": {
+        "home": {
+          "hits": null,
+          "errors": null,
+          "innings": {
+            "1": null,
+            "2": null,
+            "3": null,
+            "4": null,
+            "5": null,
+            "6": null,
+            "7": null,
+            "8": null,
+            "9": null,
+            "extra": null
+          },
+          "total": null
+        },
+        "away": {
+          "hits": null,
+          "errors": null,
+          "innings": {
+            "1": null,
+            "2": null,
+            "3": null,
+            "4": null,
+            "5": null,
+            "6": null,
+            "7": null,
+            "8": null,
+            "9": null,
+            "extra": null
+          },
+          "total": null
+        }
+      }
+    },
+    {
+      "id": 178859,
+      "date": "2026-05-30T02:15:00+00:00",
+      "time": "02:15",
+      "timestamp": 1780107300,
+      "timezone": "UTC",
+      "week": null,
+      "status": {
+        "long": "Not Started",
+        "short": "NS"
+      },
+      "country": {
+        "id": 1,
+        "name": "USA",
+        "code": "US",
+        "flag": "https://media.api-sports.io/flags/us.svg"
+      },
+      "league": {
+        "id": 1,
+        "name": "MLB",
+        "type": "League",
+        "logo": "https://media.api-sports.io/baseball/leagues/1.png",
+        "season": 2026
+      },
+      "teams": {
+        "home": {
+          "id": 18,
+          "name": "Los Angeles Dodgers",
+          "logo": "https://media.api-sports.io/baseball/teams/18.png"
+        },
+        "away": {
+          "id": 27,
+          "name": "Philadelphia Phillies",
+          "logo": "https://media.api-sports.io/baseball/teams/27.png"
+        }
+      },
+      "scores": {
+        "home": {
+          "hits": null,
+          "errors": null,
+          "innings": {
+            "1": null,
+            "2": null,
+            "3": null,
+            "4": null,
+            "5": null,
+            "6": null,
+            "7": null,
+            "8": null,
+            "9": null,
+            "extra": null
+          },
+          "total": null
+        },
+        "away": {
+          "hits": null,
+          "errors": null,
+          "innings": {
+            "1": null,
+            "2": null,
+            "3": null,
+            "4": null,
+            "5": null,
+            "6": null,
+            "7": null,
+            "8": null,
+            "9": null,
+            "extra": null
+          },
+          "total": null
+        }
+      }
+    },
+    {
+      "id": 178884,
+      "date": "2026-05-30T18:10:00+00:00",
+      "time": "18:10",
+      "timestamp": 1780164600,
+      "timezone": "UTC",
+      "week": null,
+      "status": {
+        "long": "Not Started",
+        "short": "NS"
+      },
+      "country": {
+        "id": 1,
+        "name": "USA",
+        "code": "US",
+        "flag": "https://media.api-sports.io/flags/us.svg"
+      },
+      "league": {
+        "id": 1,
+        "name": "MLB",
+        "type": "League",
+        "logo": "https://media.api-sports.io/baseball/leagues/1.png",
+        "season": 2026
+      },
+      "teams": {
+        "home": {
+          "id": 7,
+          "name": "Chicago White Sox",
+          "logo": "https://media.api-sports.io/baseball/teams/7.png"
+        },
+        "away": {
+          "id": 12,
+          "name": "Detroit Tigers",
+          "logo": "https://media.api-sports.io/baseball/teams/12.png"
+        }
+      },
+      "scores": {
+        "home": {
+          "hits": null,
+          "errors": null,
+          "innings": {
+            "1": null,
+            "2": null,
+            "3": null,
+            "4": null,
+            "5": null,
+            "6": null,
+            "7": null,
+            "8": null,
+            "9": null,
+            "extra": null
+          },
+          "total": null
+        },
+        "away": {
+          "hits": null,
+          "errors": null,
+          "innings": {
+            "1": null,
+            "2": null,
+            "3": null,
+            "4": null,
+            "5": null,
+            "6": null,
+            "7": null,
+            "8": null,
+            "9": null,
+            "extra": null
+          },
+          "total": null
+        }
+      }
+    },
+    {
+      "id": 178873,
+      "date": "2026-05-30T20:05:00+00:00",
+      "time": "20:05",
+      "timestamp": 1780171500,
+      "timezone": "UTC",
+      "week": null,
+      "status": {
+        "long": "Not Started",
+        "short": "NS"
+      },
+      "country": {
+        "id": 1,
+        "name": "USA",
+        "code": "US",
+        "flag": "https://media.api-sports.io/flags/us.svg"
+      },
+      "league": {
+        "id": 1,
+        "name": "MLB",
+        "type": "League",
+        "logo": "https://media.api-sports.io/baseball/leagues/1.png",
+        "season": 2026
+      },
+      "teams": {
+        "home": {
+          "id": 37,
+          "name": "Washington Nationals",
+          "logo": "https://media.api-sports.io/baseball/teams/37.png"
+        },
+        "away": {
+          "id": 30,
+          "name": "San Diego Padres",
+          "logo": "https://media.api-sports.io/baseball/teams/30.png"
+        }
+      },
+      "scores": {
+        "home": {
+          "hits": null,
+          "errors": null,
+          "innings": {
+            "1": null,
+            "2": null,
+            "3": null,
+            "4": null,
+            "5": null,
+            "6": null,
+            "7": null,
+            "8": null,
+            "9": null,
+            "extra": null
+          },
+          "total": null
+        },
+        "away": {
+          "hits": null,
+          "errors": null,
+          "innings": {
+            "1": null,
+            "2": null,
+            "3": null,
+            "4": null,
+            "5": null,
+            "6": null,
+            "7": null,
+            "8": null,
+            "9": null,
+            "extra": null
+          },
+          "total": null
+        }
+      }
+    },
+    {
+      "id": 178874,
+      "date": "2026-05-30T20:05:00+00:00",
+      "time": "20:05",
+      "timestamp": 1780171500,
+      "timezone": "UTC",
+      "week": null,
+      "status": {
+        "long": "Not Started",
+        "short": "NS"
+      },
+      "country": {
+        "id": 1,
+        "name": "USA",
+        "code": "US",
+        "flag": "https://media.api-sports.io/flags/us.svg"
+      },
+      "league": {
+        "id": 1,
+        "name": "MLB",
+        "type": "League",
+        "logo": "https://media.api-sports.io/baseball/leagues/1.png",
+        "season": 2026
+      },
+      "teams": {
+        "home": {
+          "id": 35,
+          "name": "Texas Rangers",
+          "logo": "https://media.api-sports.io/baseball/teams/35.png"
+        },
+        "away": {
+          "id": 16,
+          "name": "Kansas City Royals",
+          "logo": "https://media.api-sports.io/baseball/teams/16.png"
+        }
+      },
+      "scores": {
+        "home": {
+          "hits": null,
+          "errors": null,
+          "innings": {
+            "1": null,
+            "2": null,
+            "3": null,
+            "4": null,
+            "5": null,
+            "6": null,
+            "7": null,
+            "8": null,
+            "9": null,
+            "extra": null
+          },
+          "total": null
+        },
+        "away": {
+          "hits": null,
+          "errors": null,
+          "innings": {
+            "1": null,
+            "2": null,
+            "3": null,
+            "4": null,
+            "5": null,
+            "6": null,
+            "7": null,
+            "8": null,
+            "9": null,
+            "extra": null
+          },
+          "total": null
+        }
+      }
+    },
+    {
+      "id": 178878,
+      "date": "2026-05-30T20:05:00+00:00",
+      "time": "20:05",
+      "timestamp": 1780171500,
+      "timezone": "UTC",
+      "week": null,
+      "status": {
+        "long": "Not Started",
+        "short": "NS"
+      },
+      "country": {
+        "id": 1,
+        "name": "USA",
+        "code": "US",
+        "flag": "https://media.api-sports.io/flags/us.svg"
+      },
+      "league": {
+        "id": 1,
+        "name": "MLB",
+        "type": "League",
+        "logo": "https://media.api-sports.io/baseball/leagues/1.png",
+        "season": 2026
+      },
+      "teams": {
+        "home": {
+          "id": 28,
+          "name": "Pittsburgh Pirates",
+          "logo": "https://media.api-sports.io/baseball/teams/28.png"
+        },
+        "away": {
+          "id": 22,
+          "name": "Minnesota Twins",
+          "logo": "https://media.api-sports.io/baseball/teams/22.png"
+        }
+      },
+      "scores": {
+        "home": {
+          "hits": null,
+          "errors": null,
+          "innings": {
+            "1": null,
+            "2": null,
+            "3": null,
+            "4": null,
+            "5": null,
+            "6": null,
+            "7": null,
+            "8": null,
+            "9": null,
+            "extra": null
+          },
+          "total": null
+        },
+        "away": {
+          "hits": null,
+          "errors": null,
+          "innings": {
+            "1": null,
+            "2": null,
+            "3": null,
+            "4": null,
+            "5": null,
+            "6": null,
+            "7": null,
+            "8": null,
+            "9": null,
+            "extra": null
+          },
+          "total": null
+        }
+      }
+    },
+    {
+      "id": 178885,
+      "date": "2026-05-30T20:05:00+00:00",
+      "time": "20:05",
+      "timestamp": 1780171500,
+      "timezone": "UTC",
+      "week": null,
+      "status": {
+        "long": "Not Started",
+        "short": "NS"
+      },
+      "country": {
+        "id": 1,
+        "name": "USA",
+        "code": "US",
+        "flag": "https://media.api-sports.io/flags/us.svg"
+      },
+      "league": {
+        "id": 1,
+        "name": "MLB",
+        "type": "League",
+        "logo": "https://media.api-sports.io/baseball/leagues/1.png",
+        "season": 2026
+      },
+      "teams": {
+        "home": {
+          "id": 4,
+          "name": "Baltimore Orioles",
+          "logo": "https://media.api-sports.io/baseball/teams/4.png"
+        },
+        "away": {
+          "id": 36,
+          "name": "Toronto Blue Jays",
+          "logo": "https://media.api-sports.io/baseball/teams/36.png"
+        }
+      },
+      "scores": {
+        "home": {
+          "hits": null,
+          "errors": null,
+          "innings": {
+            "1": null,
+            "2": null,
+            "3": null,
+            "4": null,
+            "5": null,
+            "6": null,
+            "7": null,
+            "8": null,
+            "9": null,
+            "extra": null
+          },
+          "total": null
+        },
+        "away": {
+          "hits": null,
+          "errors": null,
+          "innings": {
+            "1": null,
+            "2": null,
+            "3": null,
+            "4": null,
+            "5": null,
+            "6": null,
+            "7": null,
+            "8": null,
+            "9": null,
+            "extra": null
+          },
+          "total": null
+        }
+      }
+    },
+    {
+      "id": 178872,
+      "date": "2026-05-30T20:10:00+00:00",
+      "time": "20:10",
+      "timestamp": 1780171800,
+      "timezone": "UTC",
+      "week": null,
+      "status": {
+        "long": "Not Started",
+        "short": "NS"
+      },
+      "country": {
+        "id": 1,
+        "name": "USA",
+        "code": "US",
+        "flag": "https://media.api-sports.io/flags/us.svg"
+      },
+      "league": {
+        "id": 1,
+        "name": "MLB",
+        "type": "League",
+        "logo": "https://media.api-sports.io/baseball/leagues/1.png",
+        "season": 2026
+      },
+      "teams": {
+        "home": {
+          "id": 24,
+          "name": "New York Mets",
+          "logo": "https://media.api-sports.io/baseball/teams/24.png"
+        },
+        "away": {
+          "id": 19,
+          "name": "Miami Marlins",
+          "logo": "https://media.api-sports.io/baseball/teams/19.png"
+        }
+      },
+      "scores": {
+        "home": {
+          "hits": null,
+          "errors": null,
+          "innings": {
+            "1": null,
+            "2": null,
+            "3": null,
+            "4": null,
+            "5": null,
+            "6": null,
+            "7": null,
+            "8": null,
+            "9": null,
+            "extra": null
+          },
+          "total": null
+        },
+        "away": {
+          "hits": null,
+          "errors": null,
+          "innings": {
+            "1": null,
+            "2": null,
+            "3": null,
+            "4": null,
+            "5": null,
+            "6": null,
+            "7": null,
+            "8": null,
+            "9": null,
+            "extra": null
+          },
+          "total": null
+        }
+      }
+    },
+    {
+      "id": 178875,
+      "date": "2026-05-30T20:10:00+00:00",
+      "time": "20:10",
+      "timestamp": 1780171800,
+      "timezone": "UTC",
+      "week": null,
+      "status": {
+        "long": "Not Started",
+        "short": "NS"
+      },
+      "country": {
+        "id": 1,
+        "name": "USA",
+        "code": "US",
+        "flag": "https://media.api-sports.io/flags/us.svg"
+      },
+      "league": {
+        "id": 1,
+        "name": "MLB",
+        "type": "League",
+        "logo": "https://media.api-sports.io/baseball/leagues/1.png",
+        "season": 2026
+      },
+      "teams": {
+        "home": {
+          "id": 34,
+          "name": "Tampa Bay Rays",
+          "logo": "https://media.api-sports.io/baseball/teams/34.png"
+        },
+        "away": {
+          "id": 17,
+          "name": "Los Angeles Angels",
+          "logo": "https://media.api-sports.io/baseball/teams/17.png"
+        }
+      },
+      "scores": {
+        "home": {
+          "hits": null,
+          "errors": null,
+          "innings": {
+            "1": null,
+            "2": null,
+            "3": null,
+            "4": null,
+            "5": null,
+            "6": null,
+            "7": null,
+            "8": null,
+            "9": null,
+            "extra": null
+          },
+          "total": null
+        },
+        "away": {
+          "hits": null,
+          "errors": null,
+          "innings": {
+            "1": null,
+            "2": null,
+            "3": null,
+            "4": null,
+            "5": null,
+            "6": null,
+            "7": null,
+            "8": null,
+            "9": null,
+            "extra": null
+          },
+          "total": null
+        }
+      }
+    },
+    {
+      "id": 178880,
+      "date": "2026-05-30T20:10:00+00:00",
+      "time": "20:10",
+      "timestamp": 1780171800,
+      "timezone": "UTC",
+      "week": null,
+      "status": {
+        "long": "Not Started",
+        "short": "NS"
+      },
+      "country": {
+        "id": 1,
+        "name": "USA",
+        "code": "US",
+        "flag": "https://media.api-sports.io/flags/us.svg"
+      },
+      "league": {
+        "id": 1,
+        "name": "MLB",
+        "type": "League",
+        "logo": "https://media.api-sports.io/baseball/leagues/1.png",
+        "season": 2026
+      },
+      "teams": {
+        "home": {
+          "id": 15,
+          "name": "Houston Astros",
+          "logo": "https://media.api-sports.io/baseball/teams/15.png"
+        },
+        "away": {
+          "id": 20,
+          "name": "Milwaukee Brewers",
+          "logo": "https://media.api-sports.io/baseball/teams/20.png"
+        }
+      },
+      "scores": {
+        "home": {
+          "hits": null,
+          "errors": null,
+          "innings": {
+            "1": null,
+            "2": null,
+            "3": null,
+            "4": null,
+            "5": null,
+            "6": null,
+            "7": null,
+            "8": null,
+            "9": null,
+            "extra": null
+          },
+          "total": null
+        },
+        "away": {
+          "hits": null,
+          "errors": null,
+          "innings": {
+            "1": null,
+            "2": null,
+            "3": null,
+            "4": null,
+            "5": null,
+            "6": null,
+            "7": null,
+            "8": null,
+            "9": null,
+            "extra": null
+          },
+          "total": null
+        }
+      }
+    },
+    {
+      "id": 178882,
+      "date": "2026-05-30T20:10:00+00:00",
+      "time": "20:10",
+      "timestamp": 1780171800,
+      "timezone": "UTC",
+      "week": null,
+      "status": {
+        "long": "Not Started",
+        "short": "NS"
+      },
+      "country": {
+        "id": 1,
+        "name": "USA",
+        "code": "US",
+        "flag": "https://media.api-sports.io/flags/us.svg"
+      },
+      "league": {
+        "id": 1,
+        "name": "MLB",
+        "type": "League",
+        "logo": "https://media.api-sports.io/baseball/leagues/1.png",
+        "season": 2026
+      },
+      "teams": {
+        "home": {
+          "id": 9,
+          "name": "Cleveland Guardians",
+          "logo": "https://media.api-sports.io/baseball/teams/9.png"
+        },
+        "away": {
+          "id": 5,
+          "name": "Boston Red Sox",
+          "logo": "https://media.api-sports.io/baseball/teams/5.png"
+        }
+      },
+      "scores": {
+        "home": {
+          "hits": null,
+          "errors": null,
+          "innings": {
+            "1": null,
+            "2": null,
+            "3": null,
+            "4": null,
+            "5": null,
+            "6": null,
+            "7": null,
+            "8": null,
+            "9": null,
+            "extra": null
+          },
+          "total": null
+        },
+        "away": {
+          "hits": null,
+          "errors": null,
+          "innings": {
+            "1": null,
+            "2": null,
+            "3": null,
+            "4": null,
+            "5": null,
+            "6": null,
+            "7": null,
+            "8": null,
+            "9": null,
+            "extra": null
+          },
+          "total": null
+        }
+      }
+    },
+    {
+      "id": 178876,
+      "date": "2026-05-30T23:15:00+00:00",
+      "time": "23:15",
+      "timestamp": 1780182900,
+      "timezone": "UTC",
+      "week": null,
+      "status": {
+        "long": "Not Started",
+        "short": "NS"
+      },
+      "country": {
+        "id": 1,
+        "name": "USA",
+        "code": "US",
+        "flag": "https://media.api-sports.io/flags/us.svg"
+      },
+      "league": {
+        "id": 1,
+        "name": "MLB",
+        "type": "League",
+        "logo": "https://media.api-sports.io/baseball/leagues/1.png",
+        "season": 2026
+      },
+      "teams": {
+        "home": {
+          "id": 33,
+          "name": "St.Louis Cardinals",
+          "logo": "https://media.api-sports.io/baseball/teams/33.png"
+        },
+        "away": {
+          "id": 6,
+          "name": "Chicago Cubs",
+          "logo": "https://media.api-sports.io/baseball/teams/6.png"
+        }
+      },
+      "scores": {
+        "home": {
+          "hits": null,
+          "errors": null,
+          "innings": {
+            "1": null,
+            "2": null,
+            "3": null,
+            "4": null,
+            "5": null,
+            "6": null,
+            "7": null,
+            "8": null,
+            "9": null,
+            "extra": null
+          },
+          "total": null
+        },
+        "away": {
+          "hits": null,
+          "errors": null,
+          "innings": {
+            "1": null,
+            "2": null,
+            "3": null,
+            "4": null,
+            "5": null,
+            "6": null,
+            "7": null,
+            "8": null,
+            "9": null,
+            "extra": null
+          },
+          "total": null
+        }
+      }
+    },
+    {
+      "id": 178883,
+      "date": "2026-05-30T23:15:00+00:00",
+      "time": "23:15",
+      "timestamp": 1780182900,
+      "timezone": "UTC",
+      "week": null,
+      "status": {
+        "long": "Not Started",
+        "short": "NS"
+      },
+      "country": {
+        "id": 1,
+        "name": "USA",
+        "code": "US",
+        "flag": "https://media.api-sports.io/flags/us.svg"
+      },
+      "league": {
+        "id": 1,
+        "name": "MLB",
+        "type": "League",
+        "logo": "https://media.api-sports.io/baseball/leagues/1.png",
+        "season": 2026
+      },
+      "teams": {
+        "home": {
+          "id": 8,
+          "name": "Cincinnati Reds",
+          "logo": "https://media.api-sports.io/baseball/teams/8.png"
+        },
+        "away": {
+          "id": 3,
+          "name": "Atlanta Braves",
+          "logo": "https://media.api-sports.io/baseball/teams/3.png"
+        }
+      },
+      "scores": {
+        "home": {
+          "hits": null,
+          "errors": null,
+          "innings": {
+            "1": null,
+            "2": null,
+            "3": null,
+            "4": null,
+            "5": null,
+            "6": null,
+            "7": null,
+            "8": null,
+            "9": null,
+            "extra": null
+          },
+          "total": null
+        },
+        "away": {
+          "hits": null,
+          "errors": null,
+          "innings": {
+            "1": null,
+            "2": null,
+            "3": null,
+            "4": null,
+            "5": null,
+            "6": null,
+            "7": null,
+            "8": null,
+            "9": null,
+            "extra": null
+          },
+          "total": null
+        }
+      }
+    }
+  ]
+}
+
+=== NBA today (2026-05-30)
+{
+  "get": "games",
+  "parameters": {
+    "league": "12",
+    "season": "2025-2026",
+    "date": "2026-05-30"
+  },
+  "errors": [],
+  "results": 0,
+  "response": []
+}
+
+=== NHL today (2026-05-30)
+{
+  "get": "games",
+  "parameters": {
+    "league": "57",
+    "season": "2025-2026",
+    "date": "2026-05-30"
+  },
+  "errors": {
+    "season": "The Season field must contain an integer."
+  },
+  "results": 0,
+  "response": []
+}
+
+=== NBA stats/teams id=500121
+{
+  "get": "games",
+  "parameters": {
+    "id": "500121"
+  },
+  "errors": [],
+  "results": 2,
+  "response": [
+    {
+      "game": {
+        "id": 500121
+      },
+      "team": {
+        "id": 158
+      },
+      "field_goals": {
+        "total": 26,
+        "attempts": 47,
+        "percentage": 55
+      },
+      "threepoint_goals": {
+        "total": 15,
+        "attempts": 41,
+        "percentage": 37
+      },
+      "freethrows_goals": {
+        "total": 21,
+        "attempts": 25,
+        "percentage": 84
+      },
+      "rebounds": {
+        "total": 52,
+        "offence": null,
+        "defense": null
+      },
+      "assists": 30,
+      "steals": 7,
+      "blocks": 7,
+      "turnovers": 13,
+      "personal_fouls": null
+    },
+    {
+      "game": {
+        "id": 500121
+      },
+      "team": {
+        "id": 152
+      },
+      "field_goals": {
+        "total": 25,
+        "attempts": 54,
+        "percentage": 46
+      },
+      "threepoint_goals": {
+        "total": 10,
+        "attempts": 40,
+        "percentage": 25
+      },
+      "freethrows_goals": {
+        "total": 11,
+        "attempts": 12,
+        "percentage": 92
+      },
+      "rebounds": {
+        "total": 42,
+        "offence": null,
+        "defense": null
+      },
+      "assists": 22,
+      "steals": 9,
+      "blocks": 3,
+      "turnovers": 13,
+      "personal_fouls": null
+    }
+  ]
+}
+
+=== NBA stats/players id=500121
+{
+  "get": "games",
+  "parameters": {
+    "id": "500121"
+  },
+  "errors": [],
+  "results": 28,
+  "response": [
+    {
+      "game": {
+        "id": 500121
+      },
+      "team": {
+        "id": 158
+      },
+      "player": {
+        "id": 999,
+        "name": "Vassell Devin"
+      },
+      "type": "starters",
+      "minutes": "26:01",
+      "field_goals": {
+        "total": 0,
+        "attempts": 0,
+        "percentage": null
+      },
+      "threepoint_goals": {
+        "total": 4,
+        "attempts": 7,
+        "percentage": null
+      },
+      "freethrows_goals": {
+        "total": 0,
+        "attempts": 0,
+        "percentage": null
+      },
+      "rebounds": {
+        "total": 1
+      },
+      "assists": 2,
+      "points": 12
+    },
+    {
+      "game": {
+        "id": 500121
+      },
+      "team": {
+        "id": 158
+      },
+      "player": {
+        "id": 994,
+        "name": "Champagnie Julian"
+      },
+      "type": "starters",
+      "minutes": "25:07",
+      "field_goals": {
+        "total": 2,
+        "attempts": 2,
+        "percentage": null
+      },
+      "threepoint_goals": {
+        "total": 2,
+        "attempts": 6,
+        "percentage": null
+      },
+      "freethrows_goals": {
+        "total": 0,
+        "attempts": 0,
+        "percentage": null
+      },
+      "rebounds": {
+        "total": 6
+      },
+      "assists": 2,
+      "points": 10
+    },
+    {
+      "game": {
+        "id": 500121
+      },
+      "team": {
+        "id": 158
+      },
+      "player": {
+        "id": 985,
+        "name": "Wembanyama Victor"
+      },
+      "type": "starters",
+      "minutes": "28:25",
+      "field_goals": {
+        "total": 6,
+        "attempts": 12,
+        "percentage": null
+      },
+      "threepoint_goals": {
+        "total": 4,
+        "attempts": 9,
+        "percentage": null
+      },
+      "freethrows_goals": {
+        "total": 4,
+        "attempts": 4,
+        "percentage": null
+      },
+      "rebounds": {
+        "total": 10
+      },
+      "assists": 2,
+      "points": 28
+    },
+    {
+      "game": {
+        "id": 500121
+      },
+      "team": {
+        "id": 158
+      },
+      "player": {
+        "id": 969,
+        "name": "Fox De&apos;Aaron"
+      },
+      "type": "starters",
+      "minutes": "25:33",
+      "field_goals": {
+        "total": 1,
+        "attempts": 6,
+        "percentage": null
+      },
+      "threepoint_goals": {
+        "total": 0,
+        "attempts": 3,
+        "percentage": null
+      },
+      "freethrows_goals": {
+        "total": 3,
+        "attempts": 4,
+        "percentage": null
+      },
+      "rebounds": {
+        "total": 5
+      },
+      "assists": 7,
+      "points": 5
+    },
+    {
+      "game": {
+        "id": 500121
+      },
+      "team": {
+        "id": 158
+      },
+      "player": {
+        "id": 51396,
+        "name": "Castle Stephon"
+      },
+      "type": "starters",
+      "minutes": "31:54",
+      "field_goals": {
+        "total": 5,
+        "attempts": 8,
+        "percentage": null
+      },
+      "threepoint_goals": {
+        "total": 0,
+        "attempts": 2,
+        "percentage": null
+      },
+      "freethrows_goals": {
+        "total": 7,
+        "attempts": 8,
+        "percentage": null
+      },
+      "rebounds": {
+        "total": 5
+      },
+      "assists": 9,
+      "points": 17
+    },
+    {
+      "game": {
+        "id": 500121
+      },
+      "team": {
+        "id": 158
+      },
+      "player": {
+        "id": 974,
+        "name": "Barnes Harrison"
+      },
+      "type": "bench",
+      "minutes": "13:23",
+      "field_goals": {
+        "total": 0,
+        "attempts": 0,
+        "percentage": null
+      },
+      "threepoint_goals": {
+        "total": 2,
+        "attempts": 4,
+        "percentage": null
+      },
+      "freethrows_goals": {
+        "total": 0,
+        "attempts": 0,
+        "percentage": null
+      },
+      "rebounds": {
+        "total": 1
+      },
+      "assists": 0,
+      "points": 6
+    },
+    {
+      "game": {
+        "id": 500121
+      },
+      "team": {
+        "id": 158
+      },
+      "player": {
+        "id": 872,
+        "name": "Biyombo Bismack"
+      },
+      "type": "bench",
+      "minutes": "05:15",
+      "field_goals": {
+        "total": 0,
+        "attempts": 1,
+        "percentage": null
+      },
+      "threepoint_goals": {
+        "total": 0,
+        "attempts": 0,
+        "percentage": null
+      },
+      "freethrows_goals": {
+        "total": 0,
+        "attempts": 0,
+        "percentage": null
+      },
+      "rebounds": {
+        "total": 0
+      },
+      "assists": 0,
+      "points": 0
+    },
+    {
+      "game": {
+        "id": 500121
+      },
+      "team": {
+        "id": 158
+      },
+      "player": {
+        "id": 58865,
+        "name": "C. Bryant"
+      },
+      "type": "bench",
+      "minutes": "07:55",
+      "field_goals": {
+        "total": 1,
+        "attempts": 1,
+        "percentage": null
+      },
+      "threepoint_goals": {
+        "total": 0,
+        "attempts": 2,
+        "percentage": null
+      },
+      "freethrows_goals": {
+        "total": 0,
+        "attempts": 0,
+        "percentage": null
+      },
+      "rebounds": {
+        "total": 4
+      },
+      "assists": 0,
+      "points": 2
+    },
+    {
+      "game": {
+        "id": 500121
+      },
+      "team": {
+        "id": 158
+      },
+      "player": {
+        "id": 13112,
+        "name": "D. Harper"
+      },
+      "type": "bench",
+      "minutes": "22:04",
+      "field_goals": {
+        "total": 4,
+        "attempts": 6,
+        "percentage": null
+      },
+      "threepoint_goals": {
+        "total": 2,
+        "attempts": 3,
+        "percentage": null
+      },
+      "freethrows_goals": {
+        "total": 4,
+        "attempts": 4,
+        "percentage": null
+      },
+      "rebounds": {
+        "total": 6
+      },
+      "assists": 4,
+      "points": 18
+    },
+    {
+      "game": {
+        "id": 500121
+      },
+      "team": {
+        "id": 158
+      },
+      "player": {
+        "id": 996,
+        "name": "Johnson Keldon"
+      },
+      "type": "bench",
+      "minutes": "17:33",
+      "field_goals": {
+        "total": 3,
+        "attempts": 4,
+        "percentage": null
+      },
+      "threepoint_goals": {
+        "total": 1,
+        "attempts": 3,
+        "percentage": null
+      },
+      "freethrows_goals": {
+        "total": 0,
+        "attempts": 0,
+        "percentage": null
+      },
+      "rebounds": {
+        "total": 3
+      },
+      "assists": 0,
+      "points": 9
+    },
+    {
+      "game": {
+        "id": 500121
+      },
+      "team": {
+        "id": 158
+      },
+      "player": {
+        "id": 512,
+        "name": "Kornet Luke"
+      },
+      "type": "bench",
+      "minutes": "13:18",
+      "field_goals": {
+        "total": 1,
+        "attempts": 2,
+        "percentage": null
+      },
+      "threepoint_goals": {
+        "total": 0,
+        "attempts": 0,
+        "percentage": null
+      },
+      "freethrows_goals": {
+        "total": 1,
+        "attempts": 2,
+        "percentage": null
+      },
+      "rebounds": {
+        "total": 5
+      },
+      "assists": 1,
+      "points": 3
+    },
+    {
+      "game": {
+        "id": 500121
+      },
+      "team": {
+        "id": 158
+      },
+      "player": {
+        "id": 821,
+        "name": "McLaughlin Jordan"
+      },
+      "type": "bench",
+      "minutes": "07:26",
+      "field_goals": {
+        "total": 0,
+        "attempts": 1,
+        "percentage": null
+      },
+      "threepoint_goals": {
+        "total": 0,
+        "attempts": 1,
+        "percentage": null
+      },
+      "freethrows_goals": {
+        "total": 0,
+        "attempts": 0,
+        "percentage": null
+      },
+      "rebounds": {
+        "total": 4
+      },
+      "assists": 2,
+      "points": 0
+    },
+    {
+      "game": {
+        "id": 500121
+      },
+      "team": {
+        "id": 158
+      },
+      "player": {
+        "id": 1016,
+        "name": "Olynyk Kelly"
+      },
+      "type": "bench",
+      "minutes": "05:15",
+      "field_goals": {
+        "total": 2,
+        "attempts": 3,
+        "percentage": null
+      },
+      "threepoint_goals": {
+        "total": 0,
+        "attempts": 0,
+        "percentage": null
+      },
+      "freethrows_goals": {
+        "total": 2,
+        "attempts": 3,
+        "percentage": null
+      },
+      "rebounds": {
+        "total": 1
+      },
+      "assists": 0,
+      "points": 6
+    },
+    {
+      "game": {
+        "id": 500121
+      },
+      "team": {
+        "id": 158
+      },
+      "player": {
+        "id": 716,
+        "name": "Plumlee Mason"
+      },
+      "type": "bench",
+      "minutes": "04:34",
+      "field_goals": {
+        "total": 0,
+        "attempts": 0,
+        "percentage": null
+      },
+      "threepoint_goals": {
+        "total": 0,
+        "attempts": 0,
+        "percentage": null
+      },
+      "freethrows_goals": {
+        "total": 0,
+        "attempts": 0,
+        "percentage": null
+      },
+      "rebounds": {
+        "total": 1
+      },
+      "assists": 0,
+      "points": 0
+    },
+    {
+      "game": {
+        "id": 500121
+      },
+      "team": {
+        "id": 158
+      },
+      "player": {
+        "id": 882,
+        "name": "Waters III Lindy"
+      },
+      "type": "bench",
+      "minutes": "06:17",
+      "field_goals": {
+        "total": 1,
+        "attempts": 1,
+        "percentage": null
+      },
+      "threepoint_goals": {
+        "total": 0,
+        "attempts": 1,
+        "percentage": null
+      },
+      "freethrows_goals": {
+        "total": 0,
+        "attempts": 0,
+        "percentage": null
+      },
+      "rebounds": {
+        "total": 0
+      },
+      "assists": 1,
+      "points": 2
+    },
+    {
+      "game": {
+        "id": 500121
+      },
+      "team": {
+        "id": 152
+      },
+      "player": {
+        "id": 876,
+        "name": "Dort Luguentz"
+      },
+      "type": "starters",
+      "minutes": "22:31",
+      "field_goals": {
+        "total": 1,
+        "attempts": 2,
+        "percentage": null
+      },
+      "threepoint_goals": {
+        "total": 1,
+        "attempts": 9,
+        "percentage": null
+      },
+      "freethrows_goals": {
+        "total": 0,
+        "attempts": 0,
+        "percentage": null
+      },
+      "rebounds": {
+        "total": 1
+      },
+      "assists": 0,
+      "points": 5
+    },
+    {
+      "game": {
+        "id": 500121
+      },
+      "team": {
+        "id": 152
+      },
+      "player": {
+        "id": 873,
+        "name": "Holmgren Chet"
+      },
+      "type": "starters",
+      "minutes": "24:16",
+      "field_goals": {
+        "total": 4,
+        "attempts": 7,
+        "percentage": null
+      },
+      "threepoint_goals": {
+        "total": 0,
+        "attempts": 1,
+        "percentage": null
+      },
+      "freethrows_goals": {
+        "total": 2,
+        "attempts": 2,
+        "percentage": null
+      },
+      "rebounds": {
+        "total": 11
+      },
+      "assists": 1,
+      "points": 10
+    },
+    {
+      "game": {
+        "id": 500121
+      },
+      "team": {
+        "id": 152
+      },
+      "player": {
+        "id": 868,
+        "name": "Hartenstein Isaiah"
+      },
+      "type": "starters",
+      "minutes": "16:05",
+      "field_goals": {
+        "total": 5,
+        "attempts": 10,
+        "percentage": null
+      },
+      "threepoint_goals": {
+        "total": 0,
+        "attempts": 0,
+        "percentage": null
+      },
+      "freethrows_goals": {
+        "total": 0,
+        "attempts": 0,
+        "percentage": null
+      },
+      "rebounds": {
+        "total": 5
+      },
+      "assists": 3,
+      "points": 10
+    },
+    {
+      "game": {
+        "id": 500121
+      },
+      "team": {
+        "id": 152
+      },
+      "player": {
+        "id": 878,
+        "name": "Gilgeous-Alexander Shai"
+      },
+      "type": "starters",
+      "minutes": "28:17",
+      "field_goals": {
+        "total": 6,
+        "attempts": 13,
+        "percentage": null
+      },
+      "threepoint_goals": {
+        "total": 0,
+        "attempts": 5,
+        "percentage": null
+      },
+      "freethrows_goals": {
+        "total": 3,
+        "attempts": 3,
+        "percentage": null
+      },
+      "rebounds": {
+        "total": 1
+      },
+      "assists": 4,
+      "points": 15
+    },
+    {
+      "game": {
+        "id": 500121
+      },
+      "team": {
+        "id": 152
+      },
+      "player": {
+        "id": 51383,
+        "name": "J. McCain"
+      },
+      "type": "starters",
+      "minutes": "27:00",
+      "field_goals": {
+        "total": 2,
+        "attempts": 8,
+        "percentage": null
+      },
+      "threepoint_goals": {
+        "total": 2,
+        "attempts": 3,
+        "percentage": null
+      },
+      "freethrows_goals": {
+        "total": 3,
+        "attempts": 3,
+        "percentage": null
+      },
+      "rebounds": {
+        "total": 2
+      },
+      "assists": 6,
+      "points": 13
+    },
+    {
+      "game": {
+        "id": 500121
+      },
+      "team": {
+        "id": 152
+      },
+      "player": {
+        "id": 570,
+        "name": "Caruso Alex"
+      },
+      "type": "bench",
+      "minutes": "21:08",
+      "field_goals": {
+        "total": 2,
+        "attempts": 4,
+        "percentage": null
+      },
+      "threepoint_goals": {
+        "total": 1,
+        "attempts": 3,
+        "percentage": null
+      },
+      "freethrows_goals": {
+        "total": 0,
+        "attempts": 0,
+        "percentage": null
+      },
+      "rebounds": {
+        "total": 0
+      },
+      "assists": 0,
+      "points": 7
+    },
+    {
+      "game": {
+        "id": 500121
+      },
+      "team": {
+        "id": 152
+      },
+      "player": {
+        "id": 879,
+        "name": "Joe Isaiah"
+      },
+      "type": "bench",
+      "minutes": "16:01",
+      "field_goals": {
+        "total": 0,
+        "attempts": 0,
+        "percentage": null
+      },
+      "threepoint_goals": {
+        "total": 1,
+        "attempts": 4,
+        "percentage": null
+      },
+      "freethrows_goals": {
+        "total": 0,
+        "attempts": 0,
+        "percentage": null
+      },
+      "rebounds": {
+        "total": 4
+      },
+      "assists": 2,
+      "points": 3
+    },
+    {
+      "game": {
+        "id": 500121
+      },
+      "team": {
+        "id": 152
+      },
+      "player": {
+        "id": 5129,
+        "name": "Topic Nikola"
+      },
+      "type": "bench",
+      "minutes": "06:17",
+      "field_goals": {
+        "total": 0,
+        "attempts": 0,
+        "percentage": null
+      },
+      "threepoint_goals": {
+        "total": 0,
+        "attempts": 1,
+        "percentage": null
+      },
+      "freethrows_goals": {
+        "total": 0,
+        "attempts": 0,
+        "percentage": null
+      },
+      "rebounds": {
+        "total": 0
+      },
+      "assists": 0,
+      "points": 0
+    },
+    {
+      "game": {
+        "id": 500121
+      },
+      "team": {
+        "id": 152
+      },
+      "player": {
+        "id": 881,
+        "name": "Wallace Cason"
+      },
+      "type": "bench",
+      "minutes": "20:18",
+      "field_goals": {
+        "total": 1,
+        "attempts": 2,
+        "percentage": null
+      },
+      "threepoint_goals": {
+        "total": 3,
+        "attempts": 4,
+        "percentage": null
+      },
+      "freethrows_goals": {
+        "total": 0,
+        "attempts": 0,
+        "percentage": null
+      },
+      "rebounds": {
+        "total": 3
+      },
+      "assists": 1,
+      "points": 11
+    },
+    {
+      "game": {
+        "id": 500121
+      },
+      "team": {
+        "id": 152
+      },
+      "player": {
+        "id": 883,
+        "name": "Wiggins Aaron"
+      },
+      "type": "bench",
+      "minutes": "07:26",
+      "field_goals": {
+        "total": 1,
+        "attempts": 2,
+        "percentage": null
+      },
+      "threepoint_goals": {
+        "total": 1,
+        "attempts": 1,
+        "percentage": null
+      },
+      "freethrows_goals": {
+        "total": 0,
+        "attempts": 0,
+        "percentage": null
+      },
+      "rebounds": {
+        "total": 0
+      },
+      "assists": 0,
+      "points": 5
+    },
+    {
+      "game": {
+        "id": 500121
+      },
+      "team": {
+        "id": 152
+      },
+      "player": {
+        "id": 884,
+        "name": "Williams Jalen"
+      },
+      "type": "bench",
+      "minutes": "10:09",
+      "field_goals": {
+        "total": 0,
+        "attempts": 0,
+        "percentage": null
+      },
+      "threepoint_goals": {
+        "total": 0,
+        "attempts": 1,
+        "percentage": null
+      },
+      "freethrows_goals": {
+        "total": 1,
+        "attempts": 2,
+        "percentage": null
+      },
+      "rebounds": {
+        "total": 0
+      },
+      "assists": 1,
+      "points": 1
+    },
+    {
+      "game": {
+        "id": 500121
+      },
+      "team": {
+        "id": 152
+      },
+      "player": {
+        "id": 887,
+        "name": "Williams Jaylin"
+      },
+      "type": "bench",
+      "minutes": "25:38",
+      "field_goals": {
+        "total": 2,
+        "attempts": 2,
+        "percentage": null
+      },
+      "threepoint_goals": {
+        "total": 0,
+        "attempts": 4,
+        "percentage": null
+      },
+      "freethrows_goals": {
+        "total": 0,
+        "attempts": 0,
+        "percentage": null
+      },
+      "rebounds": {
+        "total": 9
+      },
+      "assists": 2,
+      "points": 4
+    },
+    {
+      "game": {
+        "id": 500121
+      },
+      "team": {
+        "id": 152
+      },
+      "player": {
+        "id": 888,
+        "name": "Williams Kenrich"
+      },
+      "type": "bench",
+      "minutes": "14:54",
+      "field_goals": {
+        "total": 1,
+        "attempts": 4,
+        "percentage": null
+      },
+      "threepoint_goals": {
+        "total": 1,
+        "attempts": 4,
+        "percentage": null
+      },
+      "freethrows_goals": {
+        "total": 2,
+        "attempts": 2,
+        "percentage": null
+      },
+      "rebounds": {
+        "total": 6
+      },
+      "assists": 2,
+      "points": 7
+    }
+  ]
+}
+
+=== Baseball team season stats (team=35 TEX)
+{
+  "get": "teams",
+  "parameters": {
+    "league": "1",
+    "season": "2026",
+    "team": "35"
+  },
+  "errors": [],
+  "results": 5,
+  "response": {
+    "country": {
+      "id": 1,
+      "name": "USA",
+      "code": "US",
+      "flag": "https://media.api-sports.io/flags/us.svg"
+    },
+    "league": {
+      "id": 1,
+      "name": "MLB",
+      "type": "League",
+      "logo": "https://media.api-sports.io/baseball/leagues/1.png",
+      "season": 2026
+    },
+    "team": {
+      "id": 35,
+      "name": "Texas Rangers",
+      "logo": "https://media.api-sports.io/baseball/teams/35.png"
+    },
+    "games": {
+      "played": {
+        "home": 25,
+        "away": 31,
+        "all": 56
+      },
+      "wins": {
+        "home": {
+          "total": 12,
+          "percentage": "0.480"
+        },
+        "away": {
+          "total": 13,
+          "percentage": "0.419"
+        },
+        "all": {
+          "total": 25,
+          "percentage": "0.446"
+        }
+      },
+      "loses": {
+        "home": {
+          "total": 13,
+          "percentage": "0.520"
+        },
+        "away": {
+          "total": 18,
+          "percentage": "0.581"
+        },
+        "all": {
+          "total": 31,
+          "percentage": "0.554"
+        }
+      }
+    },
+    "points": {
+      "for": {
+        "total": {
+          "home": 77,
+          "away": 138,
+          "all": 215
+        },
+        "average": {
+          "home": "3.1",
+          "away": "4.5",
+          "all": "3.8"
+        }
+      },
+      "against": {
+        "total": {
+          "home": 84,
+          "away": 136,
+          "all": 220
+        },
+        "average": {
+          "home": "3.4",
+          "away": "4.4",
+          "all": "3.9"
+        }
+      }
+    }
+  }
+}
+
+=== MLS today
+{
+  "get": "fixtures",
+  "parameters": {
+    "league": "253",
+    "season": "2026",
+    "date": "2026-05-30"
+  },
+  "errors": [],
+  "results": 0,
+  "paging": {
+    "current": 1,
+    "total": 1
+  },
+  "response": []
+}
+(no MLS fixture today)
+
+=== DONE 20260530T002622Z
