@@ -1,0 +1,44 @@
+name: POST Probe
+on:
+  push:
+    paths: ['outbox/.trigger-post-probe']
+permissions:
+  contents: write
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: POST request
+        run: |
+          set +e
+          URL=$(grep '^url=' outbox/.trigger-post-probe | cut -d= -f2-)
+          BODY_FILE=outbox/.post-probe-body.json
+          TS=$(date -u +%Y%m%dT%H%M%SZ)
+          OUT="outbox/post-result-${TS}.txt"
+          echo "URL: $URL  [$TS]" > "$OUT"
+          echo "=== Request body ===" >> "$OUT"
+          cat "$BODY_FILE" >> "$OUT"
+          echo "" >> "$OUT"
+          echo "=== Response headers ===" >> "$OUT"
+          curl -sI -X POST "$URL" \
+            -H "Content-Type: application/json" \
+            -H "Origin: https://jubilant-bassoon.jeffunglesbee.workers.dev" \
+            --data-binary "@$BODY_FILE" >> "$OUT" 2>&1 || true
+          echo "" >> "$OUT"
+          echo "=== Response body (first 4000 chars) ===" >> "$OUT"
+          curl -s -X POST "$URL" \
+            -H "Content-Type: application/json" \
+            -H "Origin: https://jubilant-bassoon.jeffunglesbee.workers.dev" \
+            --data-binary "@$BODY_FILE" 2>&1 | head -c 4000 >> "$OUT"
+          echo "OUT=$OUT" >> $GITHUB_ENV
+      - name: Push result
+        run: |
+          git config user.email "probe@field"
+          git config user.name "Probe"
+          git add "$OUT"
+          git commit -m "post-probe $OUT [skip ci]"
+          for i in 1 2 3; do
+            git pull --rebase --autostash origin main && git push origin main && break
+            sleep $((i * 5))
+          done
