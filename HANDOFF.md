@@ -1,55 +1,123 @@
-# FIELD Handoff — May 31 2026 (TYPE B — Relay NBA Routing Fix)
-**jubilant-bassoon HEAD:** 374a6ef · Smoke: 238/0
-**field-relay-nba HEAD:** e7ef5e7 · Deploy: SUCCESS
+# FIELD Handoff — May 31 2026 (TYPE D — WOW 1 + WOW 2 — DurableObject score push + crunch fan-out)
+**jubilant-bassoon HEAD:** pending push · Smoke: 238/0 (gate) + 5 new post-gate (A328–A332)
+**field-relay-nba HEAD:** 237e132 · Deploy: pending verification
 
-## TIER 0 DEADLINES
-- **WCF G7 result needed** — TYPE A update pending
-  Replace "TBD — Western Champion" across NBA Finals G1-G7 (7 entries)
-  Update venues: Paycom Center (OKC) or Frost Bank Center (SAS)
-  Update G1 matchupNote with series context
-  **Deadline: before June 3 tipoff (NBA Finals G1)**
-- Stanley Cup Final G1: June 2 — VGK @ CAR already wired
+## TIER 0 DEADLINES (carried forward)
 - World Cup 2026: June 11 HARD — flip wc26:true in FIELD_V2_SOURCES
+- Stanley Cup Final G1: June 2 — VGK @ CAR (already wired)
+- NBA Finals G1: June 3 — SAS vs NYK (already wired)
 - USPTO provisional: ~June 25
 
-## SESSION START (next session)
-1. Declare TYPE A — WCF G7 result update
-2. `cd /home/claude && git clone {PAT-URL}/jubilant-bassoon.git`
-3. `node smoke.js index.html` — must be 238/0
-4. Read CI/Deploy Ref: `18JMUd-Uq_m2DomuCua2B5UMiWOel81yzc1JU7SY6f20`
+## WHAT WAS BUILT THIS SESSION
 
-## WHAT CHANGED THIS SESSION (relay only — jubilant-bassoon untouched)
+### WOW 1 — Real-Time Score Push (DurableObject + WebSocket)
+**field-relay-nba (237e132):**
+- New `src/game-do.js` — `GameDO` class using Hibernation WebSocket API
+  - One DO per game (keyed by `sport:gameId`)
+  - Polls API-Sports `/v2/games` once per cycle (25s default)
+  - Broadcasts raw facts `{homeScore, awayScore, period, clock, state}` to all WS clients
+  - Hibernates between polls — alarm-driven, idle shutdown after 5 min
+- New routes in `src/index.js`:
+  - `GET /ws/game/:sport/:gameId` (WebSocket upgrade)
+  - `POST /signal/crunch/:sport/:gameId`
+  - `POST /pin/game/:sport/:gameId` + `/unpin/game/:sport/:gameId`
+- `wrangler.toml` — `[[durable_objects.bindings]]` GAME_DO + migration `v1-game-do`
 
-### Relay: NBA routed to dedicated API-NBA endpoint (e7ef5e7 — DEPLOYED)
-Problem: sport=nba was hitting API-BASKETBALL (v1.basketball.api-sports.io?league=12),
-burning shared quota with WNBA. Dashboard showed basketball at 6,458/7,500 (86%),
-API-NBA Pro plan at 0/7,500 — completely idle.
+**jubilant-bassoon (pending push):**
+- New `GameSocket` class in `index.html` (lines ~10952+)
+  - Auto-reconnect with 5s backoff
+  - Keepalive ping every 45s
+  - HTTP fallback for signalCrunch when WS not open
+- `ensureGameSocket()` / `dropGameSocket()` lifecycle helpers
+- **Dual-mode preserved:** polling code untouched, GameSocket is additive
 
-Fix (3 changes to src/index.js):
-1. APISPORTS_HOSTS: added 'nba' → 'v2.nba.api-sports.io'
-2. V2_LEAGUES['nba']: sport 'basketball'→'nba', leagueId null (date-only URL)
-3. handleV2Games: nba branch builds URL as /games?date={date}, no league/season params
-   Reuses adaptBasketball — same api-sports.io response schema expected.
-   [VERIFY] comment added — confirm field paths match on first live response.
-4. WNBA unchanged: basketball + leagueId=13
+### WOW 2 — Instant CRUNCH TIME Fan-Out
+**Page-side signal (index.html):**
+- CRUNCH TIME badge render path now signals the DO with full game state
+- `data-crunchSignaledP` attr dedupes per period at the card level
+- HTTP fallback when no WebSocket open
 
-Effect: NBA has 7,500/day dedicated quota. Basketball now WNBA-only.
+**SW-side signal (sw.js):**
+- `SCORE_CHANGE` push handler: when SW determines isCrunch locally, POST `/signal/crunch/` to DO
+- New `CRUNCH_TIME_SIGNAL` push handler (DO → SW direction): shows 🔥 CRUNCH TIME notification with full body
+- `SW_VERSION` bumped to `2026-05-31b` (synced in both index.html and sw.js)
 
-### Confirm after NBA Finals G1 (June 3):
-Check dashboard — API-NBA should show usage, API-BASKETBALL should be low.
-If NBA scores missing → check adaptBasketball field paths against v2.nba response.
+### Smoke
+- 5 new post-gate assertions (A328–A332) — all passing
+- Gate still 238/0 (pre-existing post-gate failures A273/A313/A314 unchanged)
+- Pre-existing condition: index.html is 1.285MB (rotation pending — see below)
 
-## REMAINING RELAY ACTIONS (field-relay-nba — next relay session)
-1. Remove /atp/* route — ATP ToS Section 7 explicitly prohibits systematic retrieval
-2. Deprecate /mlb-umpire-scrape — automation replaced it May 30
+## REMAINING DEPLOY WORK (NEXT SESSION OR JEFF)
 
-## FIELD_V2_SOURCES — CURRENT STATE (jubilant-bassoon)
+### 1. Cloudflare KV namespace creation — CRITICAL, manual
+The pre-existing PUSH_SUBS KV namespace was never created (per May 24 HANDOFF).
+GameDO doesn't depend on this KV directly (it uses DO storage), but the
+existing PUSH A/B/C delivery chain still does.
+
+Steps (browser, CF dashboard):
+1. Workers & Pages → KV → Create namespace "field-push-subs"
+2. Copy namespace ID
+3. Update wrangler.toml: replace `PUSH_SUBS_PLACEHOLDER_REPLACE_WITH_REAL_ID`
+4. Same for FIELD_JOURNALISM KV (`JOURNALISM_PLACEHOLDER_REPLACE_WITH_REAL_ID`)
+5. Push → CI deploys with both bindings live
+
+### 2. DurableObject deployment verification
+After field-relay-nba CI runs (~30s after commit 237e132 push):
+- Health check (browser, since *.workers.dev blocked from sandbox):
+  GET https://field-relay-nba.jeffunglesbee.workers.dev/health
+  Expect: "RELAY OK ... + ws-game-do"
+- WebSocket test (browser console on FIELD):
+  const ws = new WebSocket('wss://field-relay-nba.jeffunglesbee.workers.dev/ws/game/nba/12345');
+  ws.onopen = () => console.log('OPEN');
+  ws.onmessage = e => console.log('MSG', e.data);
+
+### 3. File rotation — pre-existing 1MB overage
+**Not caused by this session** — pristine was 1.328MB before my changes.
+Recent `data: auto-overlay` commit (6b4e250) ballooned it.
+Run `node scripts/rotate-schedule.js` next session to recover.
+
+### 4. STANDARDS.md / Current State doc
+- Add Rule reference for GameDO architecture
+- Update FIELD_FEATURES section to reflect WOW 1 + WOW 2 entries
+- New file size baseline note
+
+## ARCHITECTURE NOTES — CONSTRAINTS UPHELD
+
+**ADR-002 (relay-is-dumb):**
+- DO ships only raw facts; drama computation stays browser-side
+- DO's _fanoutCrunch payload type `CRUNCH_TIME_SIGNAL` contains zero composite values
+- DO never evaluates "is this exciting" — only "did the client ask me to deliver"
+
+**RUWT (US 9,421,446 B2):**
+- The originating browser computes the named binary condition (ViewingConditions.evaluate)
+- DO fans out the notification on behalf of the client
+- Server-side: no interest level value, no threshold comparison, no editorial decision
+
+**ESPN ToS:**
+- DO polls API-Sports primary (`/v2/games`), ESPN is browser polling fallback only
+- N user polls → 1 DO poll per game = ~99% upstream load reduction
+
+**DO NOT INVENT:**
+- All FieldGame schema fields copied from handleV2Games adapters
+- All push payload fields match existing sendWebPush expectations
+- No new API shapes invented — only reused existing patterns
+
+## FIELD_V2_SOURCES — UNCHANGED
 nba:true, nhl:true, mlb:true, wnba:true, mls:true (LIVE)
 epl/ucl/europa/conference/eflchamp/eflone/efltwo/laliga/seriea/bundesliga/ligue1: false
 wc26: false — re-enable June 11
 
+## SESSION START (next session)
+1. `cd /home/claude && git clone {PAT-URL}/jubilant-bassoon.git`
+2. `node smoke.js index.html` — must be 238/0 gate
+3. Read CI/Deploy Ref: `18JMUd-Uq_m2DomuCua2B5UMiWOel81yzc1JU7SY6f20`
+4. Check field-relay-nba deploy status for commit 237e132
+5. If KV namespaces still placeholder, create them (item 1 above)
+
 ## KEY DOC IDs
 - CI/Deploy Ref: `18JMUd-Uq_m2DomuCua2B5UMiWOel81yzc1JU7SY6f20`
 - STANDARDS.md: `1g6ZfxRkRPrk2g9NK-pANPHgJ1Zf-WwrcV25V-aC7zHM`
-- ADR-002: `1DZq6I6T4jKiRsnO7DEqVA48WfTX0mIwEiKgYVjCqQs4`
+- ADR-002: `1exp7zmdtiADes-8pA9QaLJum1m1EigbsfrXLQxyJdvM`
+- 10 Wow Factors (Workers Plus): `1O_JueImuL7JkqToDOr1OaXDOqMPVPLjm-CPW2OK_qoQ`
+- Push Architecture (S0+PUSH A/B/C): `1DanThEy0VSUQxF7GDAIGhtqmMSXfeyvXvhuVVV3TCHM`
 - PAT: ghp_***redacted*** (see memory) (exp May 2027)

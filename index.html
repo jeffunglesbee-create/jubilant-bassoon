@@ -3237,6 +3237,9 @@ if (typeof location !== 'undefined' && location.search.includes('debug=1')) {
 // Format: 'feature-key': 'YYYY-MM-DD' (date shipped)
 // Rule: add a line here + a smoke assertion = feature is documented as built.
 const FIELD_FEATURES = {
+  // Real-time fan-out (Workers Plus — May 31 2026)
+  'score-push-do':          '2026-05-31',  // WOW 1: GameDO + WebSocket fan-out
+  'crunch-push-do':         '2026-05-31',  // WOW 2: client-signaled CRUNCH TIME fan-out
   // Polling optimization (Layer 1 + Layer 2 + #11b)
   'per-league-polling':     '2026-05-18',  // Layer 1: each league on its own cadence
   'concurrent-espn-fetch':  '2026-05-18',  // Layer 2: no 200ms batch delays
@@ -10949,6 +10952,135 @@ async function fetchV2Games(sport, date) {
     return [];
   }
 }
+// ═══════════════════════════════════════════════════════════════════════════
+// GameSocket — WebSocket client for per-game live state (WOW 1, May 31 2026)
+// ═══════════════════════════════════════════════════════════════════════════
+// Connects to the per-game DurableObject at /ws/game/:sport/:gameId.
+// On receiving 'facts' messages, calls the onFacts callback with raw fields.
+// On error/close, auto-disconnects and surfaces .available = false so the
+// polling fallback (existing fetchESPNScores / fetchV2Games loop) continues
+// to drive updates. DUAL-MODE design — polling is the safety net.
+//
+// ADR-002: this client receives raw facts only. Drama computation, badge
+// rendering, and CRUNCH TIME detection all stay in the browser as before.
+// The socket is a faster delivery channel for the same facts that polling
+// would have returned. No new intelligence is introduced.
+//
+// Usage:
+//   const gs = new GameSocket('nba', '12345', factsFn);
+//   gs.connect();
+//   // ...later: gs.signalCrunch({homeScore:101, awayScore:99, period:4, ...});
+//   // ...or:    gs.disconnect();
+// ═══════════════════════════════════════════════════════════════════════════
+class GameSocket {
+  constructor(sport, gameId, onFacts) {
+    this.sport     = sport;
+    this.gameId    = String(gameId);
+    this.onFacts   = typeof onFacts === 'function' ? onFacts : (()=>{});
+    this.ws        = null;
+    this.available = false;
+    this._retryMs  = 5000;
+    this._closed   = false;
+    this._pingT    = null;
+  }
+  static wsBase() {
+    // Convert https://...workers.dev → wss://...workers.dev
+    return V2_RELAY_BASE.replace(/^https:/, 'wss:').replace(/^http:/, 'ws:');
+  }
+  connect() {
+    if (this._closed) return;
+    if (this.ws && (this.ws.readyState === WebSocket.OPEN || this.ws.readyState === WebSocket.CONNECTING)) return;
+    try {
+      const url = `${GameSocket.wsBase()}/ws/game/${encodeURIComponent(this.sport)}/${encodeURIComponent(this.gameId)}`;
+      this.ws = new WebSocket(url);
+    } catch(e) {
+      this.available = false;
+      return;
+    }
+    this.ws.onopen = () => {
+      this.available = true;
+      try { this.ws.send(JSON.stringify({ type:'hello', sport:this.sport, gameId:this.gameId })); } catch(_){}
+      // Light keepalive every 45s.
+      this._pingT = setInterval(() => {
+        if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+          try { this.ws.send(JSON.stringify({ type:'ping' })); } catch(_){}
+        }
+      }, 45000);
+    };
+    this.ws.onmessage = (ev) => {
+      let msg = null;
+      try { msg = JSON.parse(ev.data); } catch(_){}
+      if (!msg) return;
+      if (msg.type === 'facts') {
+        try { this.onFacts(msg); } catch(_){}
+      }
+    };
+    const cleanup = () => {
+      this.available = false;
+      if (this._pingT) { clearInterval(this._pingT); this._pingT = null; }
+      if (!this._closed) {
+        // Reconnect with backoff; polling fallback covers the gap.
+        setTimeout(() => this.connect(), this._retryMs);
+      }
+    };
+    this.ws.onclose = cleanup;
+    this.ws.onerror = cleanup;
+  }
+  disconnect() {
+    this._closed = true;
+    this.available = false;
+    if (this._pingT) { clearInterval(this._pingT); this._pingT = null; }
+    if (this.ws) { try { this.ws.close(); } catch(_){} this.ws = null; }
+  }
+  // Pin this game for backgrounded push delivery via the DO's subscriber list.
+  pin(subscription, prefs) {
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      try { this.ws.send(JSON.stringify({ type:'pin', subscription, prefs })); } catch(_){}
+    }
+  }
+  unpin(endpoint) {
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      try { this.ws.send(JSON.stringify({ type:'unpin', endpoint })); } catch(_){}
+    }
+  }
+  // Signal client-side-detected CRUNCH TIME. The DO dedupes per (gameId, period)
+  // and fans out Web Push to pinned subscribers. RUWT compliance: this browser
+  // already made the named-condition determination; the DO only delivers.
+  signalCrunch(detail) {
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      try { this.ws.send(JSON.stringify({ type:'signal-crunch', ...detail })); return true; } catch(_){}
+    }
+    // WebSocket not open — use HTTP signal endpoint as fallback.
+    try {
+      fetch(`${V2_RELAY_BASE}/signal/crunch/${encodeURIComponent(this.sport)}/${encodeURIComponent(this.gameId)}`, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify(detail),
+        keepalive: true,
+      }).catch(()=>{});
+      return true;
+    } catch(_) { return false; }
+  }
+}
+// Map of active GameSocket instances, keyed by `${sport}:${gameId}`.
+const _gameSockets = new Map();
+function ensureGameSocket(sport, gameId, onFacts) {
+  if (!sport || !gameId) return null;
+  const key = `${sport}:${gameId}`;
+  let gs = _gameSockets.get(key);
+  if (!gs) {
+    gs = new GameSocket(sport, gameId, onFacts);
+    _gameSockets.set(key, gs);
+    gs.connect();
+  }
+  return gs;
+}
+function dropGameSocket(sport, gameId) {
+  const key = `${sport}:${gameId}`;
+  const gs = _gameSockets.get(key);
+  if (gs) { gs.disconnect(); _gameSockets.delete(key); }
+}
+
 function mapV2ToESPN(fg) {
   if (!fg?.id) return null;
   const state = fg.state==='live'?'in':fg.state==='final'?'post':'pre';
@@ -15328,7 +15460,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-05-31a';
+  const SW_VERSION = '2026-05-31b';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -20299,6 +20431,36 @@ function injectDramaBadges(){
         } else {
           vcBadge.textContent = '⚡ CRUNCH TIME';
         }
+        // ── WOW 2 (page-side signal): client locally determined CRUNCH TIME ──
+        // Signal the DO so it can fan out Web Push to any pinned subscribers.
+        // The DO dedupes per (gameId, period). RUWT compliance: browser
+        // computed the named binary condition; DO only delivers.
+        try {
+          const sportKey = (card.dataset.sport||sport||'').toLowerCase();
+          const gameIdNum = (gid||'').replace(/^[a-z]+:/, '');
+          if (sportKey && gameIdNum && typeof ensureGameSocket === 'function' && !card.dataset.crunchSignaledP) {
+            const gs = _gameSockets?.get(`${sportKey}:${gameIdNum}`);
+            const detail = {
+              gameId: gameIdNum,
+              period: eData.period,
+              periodLabel: eData.detail || '',
+              home: card.dataset.home || '',
+              away: card.dataset.away || '',
+              homeScore: eData.homeScore ?? null,
+              awayScore: eData.awayScore ?? null,
+              broadcast: card.dataset.broadcast || '',
+            };
+            if (gs && gs.available) gs.signalCrunch(detail);
+            else {
+              // HTTP fallback if no socket is open.
+              fetch(`${V2_RELAY_BASE}/signal/crunch/${encodeURIComponent(sportKey)}/${encodeURIComponent(gameIdNum)}`, {
+                method: 'POST', headers: {'Content-Type':'application/json'},
+                body: JSON.stringify(detail), keepalive: true
+              }).catch(()=>{});
+            }
+            card.dataset.crunchSignaledP = String(eData.period);
+          }
+        } catch(_) { /* never block badge render on signal failure */ }
       } else {
         vcBadge.className = 'badge-worth';
         vcBadge.textContent = '👀 WORTH WATCHING';

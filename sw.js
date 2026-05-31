@@ -11,7 +11,7 @@
 //
 // Bump SW_VERSION on every deploy. CI smoke.js verifies it matches index.html.
 
-const SW_VERSION  = '2026-05-31a';
+const SW_VERSION  = '2026-05-31b';
 const SHELL_CACHE = `field-shell-${SW_VERSION}`;
 const API_CACHE   = 'field-api-v4';
 const SHELL_URL   = '/';
@@ -157,6 +157,33 @@ async function handlePush(data) {
     const margin = Math.abs((payload.homeScore||0) - (payload.awayScore||0));
     const crunchThreshold = Math.min(_swDramaDial + 20, 95);
     const isCrunch = drama >= crunchThreshold;
+    // ── WOW 2 (SW-side signal): if CRUNCH TIME determined here, signal DO ──
+    // SW runs when the page is closed/backgrounded — this path emits the
+    // signal so the DO can fan out to other pinned subscribers who don't
+    // share the same heartbeat schedule. RUWT compliance: SW computed the
+    // named binary condition locally; DO only delivers.
+    if (isCrunch && payload.gameId && payload.sport) {
+      const sportKey = String(payload.sport).toLowerCase();
+      const gameIdRaw = String(payload.gameId).replace(/^[a-z]+:/, '');
+      try {
+        fetch(`https://field-relay-nba.jeffunglesbee.workers.dev/signal/crunch/${encodeURIComponent(sportKey)}/${encodeURIComponent(gameIdRaw)}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            gameId:      gameIdRaw,
+            period:      payload.periodNum ?? payload.period ?? null,
+            periodLabel: payload.period || '',
+            home:        payload.home || '',
+            away:        payload.away || '',
+            homeScore:   payload.homeScore ?? null,
+            awayScore:   payload.awayScore ?? null,
+            broadcast:   payload.broadcast || '',
+            watchUrl:    payload.watchUrl || '/',
+          }),
+          keepalive: true,
+        }).catch(()=>{ /* signal failure is non-blocking */ });
+      } catch(_) { /* never block notification render on signal failure */ }
+    }
     const title = isCrunch ? `🔥 CRUNCH TIME` : `⚡ Worth watching`;
     const body = `${payload.away||'Away'} ${payload.awayScore||0}–${payload.homeScore||0} ${payload.home||'Home'} · ${payload.clock||''} ${payload.period||''}`;
     await self.registration.showNotification(title, {
@@ -197,6 +224,23 @@ async function handlePush(data) {
       icon: '/icon-192.png',
       tag: `field-decisive-${gameId}`,
       data: { gameId, watchUrl: watchUrl || '/', type: 'DECISIVE_MOMENT' },
+    });
+  }
+
+  // ── CRUNCH_TIME_SIGNAL: push fan-out from GameDO (WOW 2, May 31 2026) ──
+  // Sent by a per-game DurableObject when another client signaled CRUNCH TIME.
+  // Payload is factual (scores, period, broadcast). No composite value, no
+  // server-side threshold — the originating client made the determination.
+  if (payload.type === 'CRUNCH_TIME_SIGNAL') {
+    const { gameId, home, away, homeScore, awayScore, periodLabel, broadcast, watchUrl } = payload;
+    await self.registration.showNotification(`🔥 CRUNCH TIME`, {
+      body: `${away||''} ${awayScore??''}–${homeScore??''} ${home||''} · ${periodLabel||''}${broadcast?' · '+broadcast:''}`,
+      icon: '/icon-192.png',
+      badge: '/icon-192.png',
+      tag: `field-crunch-${gameId}`,
+      renotify: true,
+      data: { gameId, watchUrl: watchUrl || '/', type: 'CRUNCH_TIME_SIGNAL' },
+      actions: watchUrl ? [{action:'watch', title:'Watch Now'}] : []
     });
   }
 }

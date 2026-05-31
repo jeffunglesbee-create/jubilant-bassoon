@@ -1352,3 +1352,27 @@ assert('A327 — JQ v2: arc-targeted retry instructions in maybeScoreRetry',
   html.includes('arc.stakes') && html.includes('arc.resolution') &&
   html.includes('arcInstructions') && html.includes('Sentence 1 must state the stakes'),
   'maybeScoreRetry must use arc breakdown for targeted retry instructions');
+
+// ═══════════════════════════════════════════════════════════════════════════
+// WOW 1 + WOW 2 — DurableObject score push + crunch fan-out (May 31 2026)
+// ═══════════════════════════════════════════════════════════════════════════
+
+assert('A328 — WOW 1: GameSocket class defined',
+  html.includes('class GameSocket') && html.includes('static wsBase()') && html.includes('signalCrunch('),
+  'GameSocket class must define connect, signalCrunch, and wsBase helpers');
+
+assert('A329 — WOW 1: dual-mode fallback (polling preserved alongside GameSocket)',
+  html.includes('async function fetchESPNScores') && html.includes('class GameSocket'),
+  'Polling code must remain present alongside GameSocket — dual-mode design');
+
+assert('A330 — WOW 1+2: score-push-do + crunch-push-do registered in FIELD_FEATURES',
+  html.includes("'score-push-do':") && html.includes("'crunch-push-do':"),
+  'Both DO features must be registered with 2026-05-31 dates');
+
+assert('A331 — WOW 2: page-side CRUNCH TIME signal emitter wired in badge path',
+  html.includes('signalCrunch(detail)') && html.includes('crunchSignaledP'),
+  'CRUNCH TIME badge render path must signal the DO with dedup-per-period guard');
+
+assert('A332 — WOW 1: ensureGameSocket / dropGameSocket helpers defined',
+  html.includes('function ensureGameSocket(') && html.includes('function dropGameSocket('),
+  'Connection lifecycle helpers must be present for polling-loop integration');
