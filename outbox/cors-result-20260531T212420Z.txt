@@ -1,0 +1,17 @@
+URL: https://field-relay-nba.jeffunglesbee.workers.dev/v2/games?sport=nba&date=2026-05-31  [20260531T212420Z]
+HTTP/2 200 
+date: Sun, 31 May 2026 21:24:20 GMT
+content-type: application/json
+access-control-allow-origin: *
+cache-control: public, max-age=30
+access-control-allow-headers: Content-Type, Authorization, X-Requested-With
+access-control-allow-methods: GET, POST, OPTIONS
+access-control-expose-headers: X-JQ-Score, X-JQ-Retries, X-JQ-Layers, X-FIELD-Proxy
+report-to: {"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=QJwgU%2FMpRsPZ5yx037x6o10qCd8URKkoHp554Zi5luTvfJwAH%2FiIofjUfXa8LcMnRezeecNaM71yxYK%2BZd6f0Dvl%2F5FtXHdEnmcgekvzji8wDjbud7ExpKje5e4LWGN2UASdINy%2F7bSdShRcrewJ%2Bt4ZajucBt5uCH3NUQ%3D%3D"}]}
+nel: {"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}
+server: cloudflare
+cf-ray: a0490b79a84f6166-ORD
+alt-svc: h3=":443"; ma=86400
+
+=== BODY (first 2000 chars) ===
+{"sport":"nba","date":"2026-05-31","games":[{"id":"nba:16867","sport":"nba","league":"NBA","state":"final","start":"2026-05-31T00:00:00.000Z","home":{"name":"Oklahoma City Thunder","abbr":"OKC","score":103,"teamId":25},"away":{"name":"San Antonio Spurs","abbr":"SAS","score":111,"teamId":31},"periodNum":4,"periodLabel":"","clock":"","venue":"Paycom Center","linescores":{"home":[25,28,24,26],"away":[32,24,24,31]}}],"count":1,"source":"apisports","ts":1780262660652}
