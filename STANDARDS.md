@@ -2646,3 +2646,48 @@ SESSION START CHECKLIST addition (Rule 11):
     verification before advising (Rule 11)
 
 Added: May 31 2026
+
+## Rule 47 — Workers Plus CPU headroom is not relay-is-dumb authorisation (RELAY-CPU-A)
+
+Added: May 31 2026
+Context: Cloudflare account upgraded to Workers Plus (paid), raising per-request
+CPU time from 10ms to 30ms. The previous 10ms ceiling accidentally enforced the
+relay-is-dumb principle (ADR-002) by making complex computation in the relay
+physically impossible. Workers Plus removes that accidental enforcement.
+This rule exists to replace the removed mechanical constraint with an explicit one.
+
+THE RULE:
+  Workers Plus CPU headroom does NOT authorise moving intelligence to the relay.
+  relay-is-dumb (ADR-002) is an ARCHITECTURAL CHOICE, not a capacity constraint.
+  The 30ms limit is available for:
+    - Data fetching and proxying (always was)
+    - Prose quality enforcement (cliché detection, fact validation — rule application)
+    - Compression, transformation, and serialisation of facts
+    - Authentication and rate-limit enforcement
+  The 30ms limit is NOT available for:
+    - Drama score computation
+    - Watch verdict / interest level classification
+    - Editorial state determination (Interest Triangle states)
+    - preGameScore computation
+    - Any function that decides "how interesting" a game is
+
+THE DISTINCTION:
+  PERMITTED: relay applies a rule authored elsewhere (e.g. "reject prose containing
+    these cliché patterns" — the rule list is the intelligence, not the relay).
+  PERMITTED: relay formats, filters, or transforms facts (e.g. "return only the
+    last 10 samples from this arc" — selection by count is not editorial judgment).
+  FORBIDDEN: relay computes a score or verdict that determines what content a user
+    sees or receives (e.g. "compute drama and return high-drama games only" —
+    the selection criterion is editorial intelligence, which stays in the browser).
+
+ENFORCEMENT:
+  Before adding any computation to a relay Worker or Durable Object:
+    1. State explicitly: "This is rule application / fact transformation, not
+       interest level computation." If you cannot write that sentence, stop.
+    2. Check ADR-002 (relay-is-dumb, Drive 1exp7zmdtiADes-8pA9QaLJum1m1EigbsfrXLQxyJdvM).
+    3. If the computation produces a score, rank, or verdict about game quality
+       or interest level → it goes in the browser, not the relay. No exceptions.
+  The 10ms vs 30ms distinction is irrelevant to relay-is-dumb. The rule applies
+  at 1ms and at 10,000ms equally.
+
+NOT REVERSIBLE without Jeff's approval (ADR-class, same standing as ADR-002).
