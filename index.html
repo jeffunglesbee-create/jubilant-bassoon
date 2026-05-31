@@ -14575,6 +14575,40 @@ async function fetchSchedule(){
   setTimeout(fetchMLSLive, 800);         // MLS relay: stats-api.mlssoccer.com → canonical opta_id keys in espnScores
   fetchFPLLiveScores();  // FPL relay — EPL live scores (official PL data, CORS bypass via relay)
 
+
+  // startSportsDBEngine / startFotmobEngine removed — soccer now fully on api-sports.io V2
+  startSquiggleEngine(); // Squiggle AFL live scores (free documented API)
+  setTimeout(squigglePrefetchAll, 2500); // Squiggle standings
+  // OpenF1 — only starts if a live F1 session is detected (self-gating)
+  startOpenF1Engine().catch(()=>{});
+  // Odds chips — inject after sport odds load from The Odds API cache
+  // Also re-renders Betting Intelligence section if it was empty on first try
+  setTimeout(fdPrefetchSoccerLive, 3000)
+  setTimeout(slashGolfPrefetchAll, 3500); // Slash Golf: schedule + live leaderboard
+  // Pre-fetch BDL season averages once (ROOT 3 — feeds milestones for all tonight's NBA games)
+  // One relay call per day covers all games — fetchBDLMilestones() reads from shared cache
+  setTimeout(() => {
+    try {
+      const hasNBA = (allData?.sports||[]).some(s => (s.sport||'').includes('Basketball'));
+      if (hasNBA) fetchBDLSeasonAverages().catch(()=>{});
+    } catch(e_) {}
+  }, 4500);
+  setTimeout(weatherPrefetchAll, 4000);  // Open-Meteo outdoor venue weather
+  setTimeout(fetchATPLiveScores, 4500);  // ATP Tour live scores (CORS open, no proxy needed)
+  setTimeout(bdlPrefetchAll, 2000);       // BallDontLie injury prefetch (after schedule renders)
+  setTimeout(uflEpaInit, 3500);           // UFL EPA live: SR PBP → EPA per play (self-gating, silent on fail)
+  setTimeout(mlbStatsInit, 4000);         // MLB stats: load weekly Savant tables (patches hardcoded stubs)
+  setTimeout(nhlAnalyticsInit, 4500);     // NHL analytics: set _homeAbbr/_awayAbbr/_sport on NHL game objects
+  maybeShowSetup();
+  renderLastNight();
+  if(Object.keys(espnScores).length) { injectDramaBadges(); detectAndRenderDoubleFeature(); renderOneToWatch(); renderMobileLiveBar(); renderWatchWindow(); renderAmbientPanel(); }
+  // Media + betting rendered lazily by IntersectionObserver
+}
+
+// ── Squiggle AFL engine (moved to top-level scope 2026-05-31)
+// PREVIOUSLY trapped inside fetchSchedule() — functions were NOT globally
+// hoisted in strict mode, causing setTimeout callbacks in renderAll to throw
+// ReferenceError on injectSquiggleTips. Moved here to restore global scope.
 // ── Squiggle AFL engine — restored May 30 2026 ────────────────────────────────
 // All functions below were inadvertently dropped in the betting-engine removal commit.
 // startSquiggleEngine() + squigglePrefetchAll() were still called → 5 ReferenceErrors/load.
@@ -14800,35 +14834,6 @@ async function injectSquiggleTips(){
     }
     if(tipEl) tipEl.textContent=chipText;
   });
-}
-
-  // startSportsDBEngine / startFotmobEngine removed — soccer now fully on api-sports.io V2
-  startSquiggleEngine(); // Squiggle AFL live scores (free documented API)
-  setTimeout(squigglePrefetchAll, 2500); // Squiggle standings
-  // OpenF1 — only starts if a live F1 session is detected (self-gating)
-  startOpenF1Engine().catch(()=>{});
-  // Odds chips — inject after sport odds load from The Odds API cache
-  // Also re-renders Betting Intelligence section if it was empty on first try
-  setTimeout(fdPrefetchSoccerLive, 3000)
-  setTimeout(slashGolfPrefetchAll, 3500); // Slash Golf: schedule + live leaderboard
-  // Pre-fetch BDL season averages once (ROOT 3 — feeds milestones for all tonight's NBA games)
-  // One relay call per day covers all games — fetchBDLMilestones() reads from shared cache
-  setTimeout(() => {
-    try {
-      const hasNBA = (allData?.sports||[]).some(s => (s.sport||'').includes('Basketball'));
-      if (hasNBA) fetchBDLSeasonAverages().catch(()=>{});
-    } catch(e_) {}
-  }, 4500);
-  setTimeout(weatherPrefetchAll, 4000);  // Open-Meteo outdoor venue weather
-  setTimeout(fetchATPLiveScores, 4500);  // ATP Tour live scores (CORS open, no proxy needed)
-  setTimeout(bdlPrefetchAll, 2000);       // BallDontLie injury prefetch (after schedule renders)
-  setTimeout(uflEpaInit, 3500);           // UFL EPA live: SR PBP → EPA per play (self-gating, silent on fail)
-  setTimeout(mlbStatsInit, 4000);         // MLB stats: load weekly Savant tables (patches hardcoded stubs)
-  setTimeout(nhlAnalyticsInit, 4500);     // NHL analytics: set _homeAbbr/_awayAbbr/_sport on NHL game objects
-  maybeShowSetup();
-  renderLastNight();
-  if(Object.keys(espnScores).length) { injectDramaBadges(); detectAndRenderDoubleFeature(); renderOneToWatch(); renderMobileLiveBar(); renderWatchWindow(); renderAmbientPanel(); }
-  // Media + betting rendered lazily by IntersectionObserver
 }
 
 
@@ -15065,17 +15070,8 @@ const ViewingConditions = {
 };
 
 // ── AFL Finals Bracket — McIntyre Final Eight (AFL S5) ───────────────────────
-function refreshAFLSection(){
-  if(!_squiggleCache.games||!allData) return;
-  const todayGames=_squiggleCache.games.map(squiggleToFieldGame).filter(g=>g&&isToday(g.start_time));
-  if(!todayGames.length) return;
-  const idx=allData.sports.findIndex(s=>s.sport==='Australian Football (AFL)');
-  if(idx>=0){ allData.sports[idx]={sport:'Australian Football (AFL)',games:todayGames}; }
-  else { allData.sports.push({sport:'Australian Football (AFL)',games:todayGames}); }
-  scheduleRenderAll();
-  // refreshAFLSection() filters for isToday() so stale games are harmless
-  setTimeout(injectSquiggleLiveScores,250);
-}
+// refreshAFLSection() moved to top-level Squiggle block above (line ~14736)
+// to fix injectSquiggleTips ReferenceError. Duplicate removed 2026-05-31.
 
 // 2026 finals: Week 1 ~Sep 4–7 · Week 2 ~Sep 11–14 · Week 3 ~Sep 18–21
 // Grand Final: last Saturday September 2026 (~Sep 26) at MCG
@@ -15540,7 +15536,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-05-31c';
+  const SW_VERSION = '2026-05-31d';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
