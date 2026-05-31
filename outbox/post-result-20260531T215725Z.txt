@@ -1,0 +1,14 @@
+URL: https://field-claude-proxy.jeffunglesbee.workers.dev  [20260531T215725Z]
+=== Request body ===
+{
+  "model": "claude-haiku-4-5-20251001",
+  "max_tokens": 100,
+  "messages": [{"role":"user","content":"Write one sentence about a baseball game."}]
+}
+
+=== Custom headers ===
+X-FIELD-Relay: field-relay-jq-2026
+
+=== Response (status + body, first 4000 chars) ===
+{"model":"claude-haiku-4-5-20251001","id":"msg_015b96ocpWX3jLcWFZmnrfhS","type":"message","role":"assistant","content":[{"type":"text","text":"The home team won 4-2 in the bottom of the ninth inning when their star batter hit a two-run homer."}],"stop_reason":"end_turn","stop_sequence":null,"stop_details":null,"usage":{"input_tokens":15,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"cache_creation":{"ephemeral_5m_input_tokens":0,"ephemeral_1h_input_tokens":0},"output_tokens":32,"service_tier":"standard","inference_geo":"not_available"}}
+HTTP_STATUS:200
