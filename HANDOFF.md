@@ -8,7 +8,7 @@
 - NBA Finals G1: June 3 — SAS vs NYK (wired)
 - USPTO provisional: ~June 25
 
-## WHAT WAS BUILT THIS SESSION (4 features)
+## WHAT WAS BUILT THIS SESSION (5 features)
 
 ### WOW 1 + WOW 2 — DurableObject score push + CRUNCH fan-out (deployed)
 GameDO class, /ws/game/, /signal/crunch/, GameSocket client, page+SW CRUNCH signals.
@@ -22,9 +22,27 @@ subscribers + GameSocket WebSocket integration.
 wired into 5 chains, C: [LEAGUE: X] tags in buildCompoundPrompt + isolation
 instruction).
 
-### WOW 6 — Journalism Quality Gate (deployed, this part of session)
+### WOW 6 — Journalism Quality Gate at the relay (deployed)
 The patent claim "FIELD's relay enforces journalism quality structurally" is now
-provably true.
+provably true. /journalism/generate route runs all 6 layers. Cron path unified
+to use same runQualityChain module. 5 browser chains migrated to relay-first.
+
+### WOW 7 — Analytics Engine for JQ Gate observability (deployed)
+Adds field_jq_analytics dataset binding (JQ_ANALYTICS). Both live path and
+cron path write one row per brief generation. Schema:
+  indexes: [briefType, sport]
+  blobs:   [layersFired]
+  doubles: [score, retries, ms, initialCliches, finalCliches,
+            initialCrossSport, finalCrossSport, promptLength, textLength]
+Calibration loop now exists for entire WOW 6 chain. Dataset auto-creates
+on first write. Query via SQL endpoint:
+  POST /accounts/{ID}/analytics_engine/sql
+  body: SELECT ... FROM field_jq_analytics
+
+### Side fix in WOW 7 commit
+Pre-existing bug: cron-path KV value `clicheCount: finalCliches.length` would
+have stored undefined because finalCliches was already a number (the .length
+of the array). Fixed to store the count directly.
 
 **Relay (81a18ad):**
 - NEW src/journalism-quality.js (~330 lines, pure functions):
