@@ -1,0 +1,13 @@
+URL: https://field-relay-nba.jeffunglesbee.workers.dev/journalism/generate  [20260531T215603Z]
+=== Request body ===
+{
+  "prompt": "Write one sentence about a baseball game.",
+  "sport": "baseball",
+  "briefType": "mlb-brief",
+  "max_tokens": 100
+}
+
+=== Response headers ===
+
+=== Response body (first 4000 chars) ===
+{"error":"proxy returned no prose","proxy_text_length":0}
