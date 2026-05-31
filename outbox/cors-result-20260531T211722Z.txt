@@ -1,0 +1,16 @@
+URL: https://field-relay-nba.jeffunglesbee.workers.dev/v2/games?sport=nba&date=2026-05-31  [20260531T211722Z]
+HTTP/2 500 
+date: Sun, 31 May 2026 21:17:22 GMT
+content-type: application/json
+access-control-allow-origin: *
+access-control-allow-headers: Content-Type, Authorization, X-Requested-With
+access-control-allow-methods: GET, POST, OPTIONS
+access-control-expose-headers: X-JQ-Score, X-JQ-Retries, X-JQ-Layers, X-FIELD-Proxy
+report-to: {"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=iqbf6f%2F2B2A8VrRPqGx5%2B14Oc0SR2byi5y%2FBaieomAx1llFPBR3uNIHJcgHlKHe20MI%2BAVWzvttQyuXINPDWbQJ3Ztzpc5gVyBaZK68CTlJiuqsWQ%2FCklbJtedDHQfpQnTe57ddVuc%2F5ue9kbg%2Fl7XZMsthcJo2RUjl18Q%3D%3D"}]}
+nel: {"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}
+server: cloudflare
+cf-ray: a04901470943f079-DFW
+alt-svc: h3=":443"; ma=86400
+
+=== BODY (first 3000 chars) ===
+{"error":"(statusShort || \"\").toUpperCase is not a function","sport":"nba","date":"2026-05-31"}
