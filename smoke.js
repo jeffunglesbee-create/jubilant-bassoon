@@ -1376,3 +1376,36 @@ assert('A331 — WOW 2: page-side CRUNCH TIME signal emitter wired in badge path
 assert('A332 — WOW 1: ensureGameSocket / dropGameSocket helpers defined',
   html.includes('function ensureGameSocket(') && html.includes('function dropGameSocket('),
   'Connection lifecycle helpers must be present for polling-loop integration');
+
+// ═══════════════════════════════════════════════════════════════════════════
+// S0 — FIELD Event Bus (May 31 2026)
+// ═══════════════════════════════════════════════════════════════════════════
+
+assert('A333 — S0: fieldEvents EventTarget + _fieldEventCache + _dispatchIfChanged defined',
+  html.includes('const fieldEvents = new EventTarget()') &&
+  html.includes('const _fieldEventCache') &&
+  html.includes('function _dispatchIfChanged(') &&
+  html.includes('function emitScoreEvent('),
+  'S0 bus must declare fieldEvents, _fieldEventCache, _dispatchIfChanged, emitScoreEvent');
+
+assert('A334 — S0: detectAndStoreStoryMoment emits to bus (polling path)',
+  html.includes('S0 Event Bus emitter (polling path)') &&
+  html.includes("source: 'poll'") &&
+  /_prevEspnScores\[gameId\] = \{homeScore: home, awayScore: away, period, final: isFinal\};\s*[\s\S]{0,1500}emitScoreEvent\(\{/.test(html),
+  'detectAndStoreStoryMoment must call emitScoreEvent after updating _prevEspnScores');
+
+assert('A335 — S0: subscribers wired (field:lead_change burst + field:final Night Owl)',
+  html.includes("fieldEvents.addEventListener('field:lead_change'") &&
+  html.includes("fieldEvents.addEventListener('field:final'") &&
+  html.includes('_subscriberFired') &&
+  html.includes('checkForNewFinals'),
+  'Both subscribers must be attached: lead_change → burst, final → Night Owl');
+
+assert('A336 — S0: GameSocket default onFacts routes through emitScoreEvent (WebSocket path)',
+  /ensureGameSocket\(sport, gameId, onFacts\)\s*\{[\s\S]{0,1500}emitScoreEvent\(\{[\s\S]{0,800}source:\s*'ws'/.test(html) &&
+  html.includes('S0 integration: default onFacts'),
+  'ensureGameSocket must default onFacts to emitScoreEvent with source:ws');
+
+assert('A337 — S0: update-s0-event-bus registered in FIELD_FEATURES',
+  html.includes("'update-s0-event-bus':"),
+  'update-s0-event-bus must be registered in FIELD_FEATURES with 2026-05-31 date');

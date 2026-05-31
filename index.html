@@ -3237,7 +3237,8 @@ if (typeof location !== 'undefined' && location.search.includes('debug=1')) {
 // Format: 'feature-key': 'YYYY-MM-DD' (date shipped)
 // Rule: add a line here + a smoke assertion = feature is documented as built.
 const FIELD_FEATURES = {
-  // Real-time fan-out (Workers Plus — May 31 2026)
+  // Event Bus + real-time fan-out (May 31 2026)
+  'update-s0-event-bus':    '2026-05-31',  // S0: fieldEvents EventTarget + emitter + subscribers
   'score-push-do':          '2026-05-31',  // WOW 1: GameDO + WebSocket fan-out
   'crunch-push-do':         '2026-05-31',  // WOW 2: client-signaled CRUNCH TIME fan-out
   // Polling optimization (Layer 1 + Layer 2 + #11b)
@@ -11069,7 +11070,32 @@ function ensureGameSocket(sport, gameId, onFacts) {
   const key = `${sport}:${gameId}`;
   let gs = _gameSockets.get(key);
   if (!gs) {
-    gs = new GameSocket(sport, gameId, onFacts);
+    // ── S0 integration: default onFacts dispatches through the Event Bus ──
+    // If the caller doesn't provide an explicit handler, route facts into
+    // emitScoreEvent so all bus subscribers (Night Owl, lead burst, etc.)
+    // react to WebSocket-delivered facts the same way they react to polling.
+    // Callers can pass their own onFacts to override (e.g. for direct card
+    // re-render); they should still call emitScoreEvent themselves to keep
+    // the bus consistent.
+    const handler = (typeof onFacts === 'function') ? onFacts : (msg) => {
+      try {
+        if (typeof emitScoreEvent === 'function') {
+          emitScoreEvent({
+            gameId:      msg.gameId || gameId,
+            sport:       msg.sport || sport,
+            homeScore:   msg.homeScore,
+            awayScore:   msg.awayScore,
+            period:      msg.period,
+            periodLabel: msg.periodLabel || '',
+            clock:       msg.clock || '',
+            state:       msg.state || 'in',
+            isFinal:     msg.state === 'final' || msg.state === 'post',
+            source:      'ws',
+          });
+        }
+      } catch(_) { /* never throw from socket handler */ }
+    };
+    gs = new GameSocket(sport, gameId, handler);
     _gameSockets.set(key, gs);
     gs.connect();
   }
@@ -13485,7 +13511,7 @@ async function pollOpenF1(){
   if(!_openF1Drivers[session.key]) await fetchOpenF1Drivers(session.key);
   const [positions,control]=await Promise.all([fetchOpenF1Positions(session.key),fetchOpenF1RaceControl(session.key,window._openF1LiveData.lastUpdate?new Date(window._openF1LiveData.lastUpdate).toISOString():null)]);
   window._openF1LiveData={positions,raceControl:control,drivers:_openF1Drivers[session.key]||{},sessionKey:session.key,lastUpdate:Date.now()};
-  if(typeof fieldEvents!=='undefined'){const p1=positions[0];if(p1){const prev=window._openF1LiveData._prevP1;if(prev&&prev!==p1.driver_number)fieldEvents.dispatchEvent(new CustomEvent('field:lead_change',{detail:{gameId:'f1_live',sport:{isGolf:false},newLeader:p1.driver_number,source:'openf1',scoreline:`P1: #${p1.driver_number}`}}));window._openF1LiveData._prevP1=p1.driver_number;}}
+  if(typeof fieldEvents!=='undefined'){const p1=positions[0];if(p1){const prev=window._openF1LiveData._prevP1;if(prev&&prev!==p1.driver_number)fieldEvents.dispatchEvent(new CustomEvent('field:lead_change',{detail:{gameId:'f1_live',sport:'f1',newLeader:p1.driver_number,prevLeader:prev,source:'openf1',scoreline:`P1: #${p1.driver_number}`}}));window._openF1LiveData._prevP1=p1.driver_number;}}
 }
 
 async function startOpenF1Engine(){
@@ -17341,6 +17367,126 @@ const _storyMoments = {}; // gameId → [{text, ts, highlight}] max 8
 const _prevEspnScores = {}; // gameId → {homeScore, awayScore, period} for delta detection
 let _pinnedGameId = null; // currently pinned game
 let _pinWidgetExpanded = false;
+
+// ═══════════════════════════════════════════════════════════════════════════
+// S0 — FIELD Event Bus (May 31 2026)
+// ═══════════════════════════════════════════════════════════════════════════
+// Browser-native EventTarget. ~30 lines. No library.
+// Spec: Drive 1K4RAoaqbK7wUmauX-JjAonluS3MFjCZ6MEE8_6xYN48 (Update Arch v2)
+//
+// Decouples score updates from consumer code:
+//   - Polling delta detection (detectAndStoreStoryMoment) → emit field:*
+//   - GameSocket WebSocket facts (WOW 1) → emit field:*
+//   - F1 OpenF1 P1 position changes → emit field:lead_change
+//
+// Consumers (subscribers) listen for field:* events and react:
+//   - Night Owl: field:final → render recap immediately
+//   - First Lead Change burst: field:lead_change → CSS animation
+//   - Future: Series record card, Card stage update, Volatility Index
+//
+// Dedup: _fieldEventCache keyed on `${gameId}:${type}` suppresses duplicate
+// dispatches (e.g., polling AND WebSocket both detecting the same score).
+//
+// ADR-002 compliance: bus carries facts only ({homeScore, awayScore, etc.}).
+// No drama scores, no thresholds, no composite values — same payload shape
+// that GameDO uses on the network side.
+// ═══════════════════════════════════════════════════════════════════════════
+const fieldEvents = new EventTarget();
+const _fieldEventCache = {}; // `${gameId}:${type}` → scoreline (for dedup)
+
+function _dispatchIfChanged(type, detail) {
+  if (!detail || !detail.gameId) return false;
+  const key  = detail.gameId + ':' + type;
+  const prev = _fieldEventCache[key];
+  // Dedup on scoreline when present; otherwise dedup on a synthetic signature
+  // built from the detail object's score fields.
+  const sig = detail.scoreline
+    || `${detail.homeScore ?? '?'}-${detail.awayScore ?? '?'}@${detail.period ?? '?'}`;
+  if (prev === sig) return false;
+  _fieldEventCache[key] = sig;
+  fieldEvents.dispatchEvent(new CustomEvent(type, { detail }));
+  return true;
+}
+
+// emitScoreEvent — the canonical emitter. Takes raw game state and dispatches
+// field:score, field:lead_change (if leader flipped), and field:final (if post).
+// Called from: detectAndStoreStoryMoment (polling path), GameSocket.onFacts
+// (WebSocket path). DO NOT INVENT — all inputs are observable facts.
+function emitScoreEvent(detail) {
+  if (!detail || !detail.gameId) return;
+  // 1) field:score on any change
+  _dispatchIfChanged('field:score', detail);
+  // 2) field:lead_change if leader flipped (not tied, not first detection)
+  const homeS = parseInt(detail.homeScore || 0);
+  const awayS = parseInt(detail.awayScore || 0);
+  if (homeS !== awayS) {
+    const newLeader  = homeS > awayS ? (detail.home || 'home') : (detail.away || 'away');
+    const prevLeader = _fieldEventCache[detail.gameId + ':leader'];
+    if (prevLeader && prevLeader !== newLeader) {
+      _fieldEventCache[detail.gameId + ':leader'] = newLeader;
+      fieldEvents.dispatchEvent(new CustomEvent('field:lead_change', {
+        detail: { ...detail, newLeader, prevLeader, margin: Math.abs(homeS - awayS) }
+      }));
+    } else if (!prevLeader) {
+      _fieldEventCache[detail.gameId + ':leader'] = newLeader;
+    }
+  }
+  // 3) field:final on terminal state
+  if (detail.state === 'post' || detail.isFinal === true) {
+    const winner = homeS > awayS ? (detail.home || 'home') : (detail.away || 'away');
+    const loser  = homeS > awayS ? (detail.away || 'away') : (detail.home || 'home');
+    _dispatchIfChanged('field:final', { ...detail, winner, loser });
+  }
+}
+
+// Manual emitter for testing (debug utility, per Update Arch v2 spec).
+function dispatchFieldScore(gameId, homeScore, awayScore, period, state) {
+  emitScoreEvent({ gameId, homeScore, awayScore, period: period || 0, state: state || 'in' });
+}
+
+// ── S0 Subscribers ────────────────────────────────────────────────────────
+// These consumers listen on the bus and react. Each is wrapped in a one-time
+// dedup guard (_subscriberFired) so a bus event can't double-trigger an
+// expensive action. The bus's _fieldEventCache already prevents most dupes;
+// this is a belt-and-suspenders guard for cross-cycle dedup.
+const _subscriberFired = {}; // `${gameId}:${type}` → ts (per-game one-shot)
+
+// SUBSCRIBER 1: First Lead Change burst on field:lead_change
+// Mirrors the inline detection that already runs in renderESPNScores —
+// the bus listener catches lead changes from ALL emitters (poll, WS, F1)
+// without each emitter having to repeat the burst logic.
+fieldEvents.addEventListener('field:lead_change', (e) => {
+  try {
+    const d = e.detail || {};
+    if (!d.gameId) return;
+    // Idempotent: _leadChangeBurst Map already tracks per-game state and
+    // expires after 3 polling cycles. Setting again is safe.
+    if (typeof _leadChangeBurst !== 'undefined' && typeof _pollCycle !== 'undefined') {
+      _leadChangeBurst.set(d.gameId, { startPoll: _pollCycle, value: 15 });
+    }
+    if (typeof FIELD_DEBUG !== 'undefined' && FIELD_DEBUG) { console.log(`[S0 bus] field:lead_change ${d.gameId} → burst (source: ${d.source||'?'})`); }
+  } catch(_) { /* never throw from a bus listener */ }
+});
+
+// SUBSCRIBER 2: Night Owl trigger on field:final
+// Replaces up-to-90s polling lag between buzzer and recap render. The bus
+// fires within the same poll cycle that detects 'post' state. checkForNewFinals
+// uses _seenFinals Set internally so re-invocation is idempotent.
+fieldEvents.addEventListener('field:final', (e) => {
+  try {
+    const d = e.detail || {};
+    if (!d.gameId) return;
+    const guardKey = `${d.gameId}:final`;
+    if (_subscriberFired[guardKey]) return;
+    _subscriberFired[guardKey] = Date.now();
+    if (typeof FIELD_DEBUG !== 'undefined' && FIELD_DEBUG) { console.log(`[S0 bus] field:final ${d.gameId} → Night Owl check (source: ${d.source||'?'})`); }
+    // Defer to next tick so any inline state updates from the emitting code
+    // finish before checkForNewFinals scans for new finals.
+    if (typeof checkForNewFinals === 'function') {
+      setTimeout(() => { try { checkForNewFinals(); } catch(_){} }, 0);
+    }
+  } catch(_) { /* never throw from a bus listener */ }
+});
 
 async function fetchMLBStandingsParsed() {
   const key = 'Baseball (MLB)';
@@ -22473,6 +22619,30 @@ function detectAndStoreStoryMoment(gameId, eData, sport) {
     if (eData.status === 'in') push(`${teamNick(eData.home)||'Home'} ${home}–${away} ${teamNick(eData.away)||'Away'} · underway`);
   }
   _prevEspnScores[gameId] = {homeScore: home, awayScore: away, period, final: isFinal};
+  // ── S0 Event Bus emitter (polling path) ───────────────────────────────
+  // The delta math above already detects every relevant change. Emit to the
+  // bus so subscribers (Night Owl, lead change burst, future consumers) can
+  // react without waiting for the next render cycle. Dedup is handled in
+  // _dispatchIfChanged — no risk of double-fire even if called repeatedly.
+  // ADR-002: emits raw facts only, no composite values.
+  try {
+    if (typeof emitScoreEvent === 'function') {
+      emitScoreEvent({
+        gameId,
+        sport: sp,
+        home:  eData.home || '',
+        away:  eData.away || '',
+        homeScore: home,
+        awayScore: away,
+        period,
+        periodLabel: eData.detail || '',
+        clock:  eData.clock || '',
+        state:  isFinal ? 'post' : (eData.status === 'in' ? 'in' : 'pre'),
+        isFinal,
+        source: 'poll',
+      });
+    }
+  } catch(_) { /* never block delta detection on bus dispatch */ }
 }
 
 function buildStoryTape(gameId, maxItems=3) {

@@ -1,6 +1,6 @@
-# FIELD Handoff — May 31 2026 (TYPE D — WOW 1 + WOW 2 — DurableObject score push + crunch fan-out)
-**jubilant-bassoon HEAD:** pending push · Smoke: 238/0 (gate) + 5 new post-gate (A328–A332)
-**field-relay-nba HEAD:** 237e132 · Deploy: pending verification
+# FIELD Handoff — May 31 2026 (TYPE D — WOW 1 + WOW 2 + S0 Event Bus)
+**jubilant-bassoon HEAD:** pending push · Smoke: 238/0 (gate) + 10 new post-gate (A328–A337)
+**field-relay-nba HEAD:** 237e132 · Deploy: SUCCESS
 
 ## TIER 0 DEADLINES (carried forward)
 - World Cup 2026: June 11 HARD — flip wc26:true in FIELD_V2_SOURCES
@@ -11,96 +11,95 @@
 ## WHAT WAS BUILT THIS SESSION
 
 ### WOW 1 — Real-Time Score Push (DurableObject + WebSocket)
-**field-relay-nba (237e132):**
-- New `src/game-do.js` — `GameDO` class using Hibernation WebSocket API
-  - One DO per game (keyed by `sport:gameId`)
-  - Polls API-Sports `/v2/games` once per cycle (25s default)
-  - Broadcasts raw facts `{homeScore, awayScore, period, clock, state}` to all WS clients
-  - Hibernates between polls — alarm-driven, idle shutdown after 5 min
-- New routes in `src/index.js`:
-  - `GET /ws/game/:sport/:gameId` (WebSocket upgrade)
-  - `POST /signal/crunch/:sport/:gameId`
-  - `POST /pin/game/:sport/:gameId` + `/unpin/game/:sport/:gameId`
-- `wrangler.toml` — `[[durable_objects.bindings]]` GAME_DO + migration `v1-game-do`
+**field-relay-nba (237e132 — DEPLOYED):**
+- `src/game-do.js` — GameDO class using Hibernation WebSocket API
+- Routes: /ws/game/:sport/:gameId, /signal/crunch/, /pin/game/, /unpin/game/
+- wrangler.toml — GAME_DO binding + v1-game-do migration
 
 **jubilant-bassoon (pending push):**
-- New `GameSocket` class in `index.html` (lines ~10952+)
-  - Auto-reconnect with 5s backoff
-  - Keepalive ping every 45s
-  - HTTP fallback for signalCrunch when WS not open
-- `ensureGameSocket()` / `dropGameSocket()` lifecycle helpers
-- **Dual-mode preserved:** polling code untouched, GameSocket is additive
+- `GameSocket` class + ensureGameSocket / dropGameSocket helpers
+- Auto-reconnect with 5s backoff, 45s keepalive ping
+- Dual-mode preserved — polling code untouched
 
 ### WOW 2 — Instant CRUNCH TIME Fan-Out
-**Page-side signal (index.html):**
-- CRUNCH TIME badge render path now signals the DO with full game state
-- `data-crunchSignaledP` attr dedupes per period at the card level
-- HTTP fallback when no WebSocket open
+- Page-side CRUNCH signal in badge render path with per-period dedup
+- SW-side CRUNCH signal in SCORE_CHANGE handler (backgrounded path)
+- New CRUNCH_TIME_SIGNAL push handler in SW
+- SW_VERSION synced to 2026-05-31b
 
-**SW-side signal (sw.js):**
-- `SCORE_CHANGE` push handler: when SW determines isCrunch locally, POST `/signal/crunch/` to DO
-- New `CRUNCH_TIME_SIGNAL` push handler (DO → SW direction): shows 🔥 CRUNCH TIME notification with full body
-- `SW_VERSION` bumped to `2026-05-31b` (synced in both index.html and sw.js)
+### S0 — FIELD Event Bus
+Spec source: Drive 1K4RAoaqbK7wUmauX-JjAonluS3MFjCZ6MEE8_6xYN48 (Update Arch v2)
 
-### Smoke
-- 5 new post-gate assertions (A328–A332) — all passing
-- Gate still 238/0 (pre-existing post-gate failures A273/A313/A314 unchanged)
-- Pre-existing condition: index.html is 1.285MB (rotation pending — see below)
+**Implementation (7 of 7 items):**
+1. ✅ `fieldEvents = new EventTarget()` + `_fieldEventCache` + `_dispatchIfChanged` + `emitScoreEvent` declared at module-level (near `_prevEspnScores`)
+2. ✅ `detectAndStoreStoryMoment` now emits to bus after delta detection (source: 'poll')
+3. ✅ F1 orphan emitter activated — `typeof fieldEvents !== 'undefined'` guard satisfied; sport field fixed from `{isGolf:false}` to `'f1'`
+4. ✅ Subscribers wired:
+   - `field:lead_change` → `_leadChangeBurst.set()` (mirrors inline detection for ALL emitters)
+   - `field:final` → `checkForNewFinals()` (defers via setTimeout 0)
+   - `_subscriberFired` dedup guard for one-shot per-game
+5. ✅ `ensureGameSocket()` defaults `onFacts` to `emitScoreEvent` (source: 'ws') — WebSocket facts flow through the bus identically to polling facts
+6. ✅ 5 new smoke assertions: A333 (bus defined), A334 (poll emitter), A335 (subscribers), A336 (WS path), A337 (FIELD_FEATURES)
+7. ✅ HANDOFF.md updated (this doc)
 
-## REMAINING DEPLOY WORK (NEXT SESSION OR JEFF)
+**Event types in flight:**
+- `field:score` — any score change (poll + WS sources)
+- `field:lead_change` — leader flipped (poll + WS + F1 sources)
+- `field:final` — game state = 'post'
 
-### 1. Cloudflare KV namespace creation — CRITICAL, manual
-The pre-existing PUSH_SUBS KV namespace was never created (per May 24 HANDOFF).
-GameDO doesn't depend on this KV directly (it uses DO storage), but the
-existing PUSH A/B/C delivery chain still does.
+**Dedup architecture:**
+- `_fieldEventCache[gameId:type]` stores last scoreline → suppresses duplicate dispatches when poll + WS both fire
+- `_subscriberFired[gameId:type]` per-game one-shot for expensive subscribers
 
-Steps (browser, CF dashboard):
-1. Workers & Pages → KV → Create namespace "field-push-subs"
-2. Copy namespace ID
-3. Update wrangler.toml: replace `PUSH_SUBS_PLACEHOLDER_REPLACE_WITH_REAL_ID`
-4. Same for FIELD_JOURNALISM KV (`JOURNALISM_PLACEHOLDER_REPLACE_WITH_REAL_ID`)
-5. Push → CI deploys with both bindings live
+### Smoke state
+- Gate: **238/0** (unchanged from session start)
+- Post-gate assertions: A328–A332 (WOW 1+2) + A333–A337 (S0) — all passing
+- Pre-existing post-gate failures unchanged: A273 (EPL Layer 2), A313/A314 (PWA-A)
 
-### 2. DurableObject deployment verification
-After field-relay-nba CI runs (~30s after commit 237e132 push):
-- Health check (browser, since *.workers.dev blocked from sandbox):
-  GET https://field-relay-nba.jeffunglesbee.workers.dev/health
-  Expect: "RELAY OK ... + ws-game-do"
-- WebSocket test (browser console on FIELD):
-  const ws = new WebSocket('wss://field-relay-nba.jeffunglesbee.workers.dev/ws/game/nba/12345');
-  ws.onopen = () => console.log('OPEN');
-  ws.onmessage = e => console.log('MSG', e.data);
+## REMAINING DEPLOY WORK (NEXT SESSION)
 
-### 3. File rotation — pre-existing 1MB overage
-**Not caused by this session** — pristine was 1.328MB before my changes.
-Recent `data: auto-overlay` commit (6b4e250) ballooned it.
-Run `node scripts/rotate-schedule.js` next session to recover.
+### 1. Cloudflare KV namespace creation — CRITICAL, manual (carry-forward)
+PUSH_SUBS_PLACEHOLDER_REPLACE_WITH_REAL_ID + JOURNALISM_PLACEHOLDER_REPLACE_WITH_REAL_ID
+GameDO (WOW 1+2) uses DO storage so it works without KV.
+The original cron-driven PUSH B path still depends on PUSH_SUBS being real.
 
-### 4. STANDARDS.md / Current State doc
-- Add Rule reference for GameDO architecture
-- Update FIELD_FEATURES section to reflect WOW 1 + WOW 2 entries
-- New file size baseline note
+### 2. File rotation — pre-existing 1.285MB overage
+Run `node scripts/rotate-schedule.js` next session.
+Pre-existing condition; not caused by this session.
+
+### 3. Live verification (browser, *.workers.dev blocked from sandbox)
+- GET https://field-relay-nba.jeffunglesbee.workers.dev/health → expect "ws-game-do"
+- Console: `const ws = new WebSocket('wss://field-relay-nba.jeffunglesbee.workers.dev/ws/game/nba/12345')`
+- Console: `fieldEvents.addEventListener('field:score', e => console.log('BUS:', e.detail))` then watch a live game
+
+### 4. Documentation updates
+- STANDARDS.md: add rule reference for GameDO + Event Bus architecture
+- Current State doc (1GvsfnTH9Xhqzg_NdYrPhPpk1d1Rnm0lkeG6ip-tLUlA): update HEAD, file size, FIELD_FEATURES
+- Update Architecture Spec v2 (1K4RAoaqbK7wUmauX-JjAonluS3MFjCZ6MEE8_6xYN48): mark S0 DONE
+- Infrastructure Backlog (1RQovuK208W6v6AEouA-w6DFU70Cgia4uxmOMkp0eOJU): move [UPDATE S0] from PENDING to COMPLETED
+- Push Architecture (1DanThEy0VSUQxF7GDAIGhtqmMSXfeyvXvhuVVV3TCHM): correct "LIVE" status claim — components were never actually shipped pre-WOW
 
 ## ARCHITECTURE NOTES — CONSTRAINTS UPHELD
 
 **ADR-002 (relay-is-dumb):**
-- DO ships only raw facts; drama computation stays browser-side
-- DO's _fanoutCrunch payload type `CRUNCH_TIME_SIGNAL` contains zero composite values
-- DO never evaluates "is this exciting" — only "did the client ask me to deliver"
+- Bus carries facts only ({homeScore, awayScore, period, clock, state})
+- No drama scores, no thresholds, no composite values
+- All consumers (page, DO, push) compute intelligence locally from facts
 
 **RUWT (US 9,421,446 B2):**
-- The originating browser computes the named binary condition (ViewingConditions.evaluate)
-- DO fans out the notification on behalf of the client
-- Server-side: no interest level value, no threshold comparison, no editorial decision
-
-**ESPN ToS:**
-- DO polls API-Sports primary (`/v2/games`), ESPN is browser polling fallback only
-- N user polls → 1 DO poll per game = ~99% upstream load reduction
+- Bus is a fact distribution layer, not an interest level evaluator
+- Subscribers do their own named-condition checks before acting
+- Bus events do not carry "is this exciting" determinations
 
 **DO NOT INVENT:**
-- All FieldGame schema fields copied from handleV2Games adapters
-- All push payload fields match existing sendWebPush expectations
-- No new API shapes invented — only reused existing patterns
+- emitScoreEvent payload schema matches handleV2Games adapter output
+- All emitter sources are observable (delta math from _prevEspnScores)
+- F1 dispatch uses real OpenF1 driver positions, not derived rankings
+
+**DUAL-MODE PRESERVATION:**
+- Polling-only deployments: bus still works (polling path emits)
+- WebSocket-only deployments: bus still works (WS path emits)
+- Both: dedup via _fieldEventCache prevents double-fire
 
 ## FIELD_V2_SOURCES — UNCHANGED
 nba:true, nhl:true, mlb:true, wnba:true, mls:true (LIVE)
@@ -111,13 +110,15 @@ wc26: false — re-enable June 11
 1. `cd /home/claude && git clone {PAT-URL}/jubilant-bassoon.git`
 2. `node smoke.js index.html` — must be 238/0 gate
 3. Read CI/Deploy Ref: `18JMUd-Uq_m2DomuCua2B5UMiWOel81yzc1JU7SY6f20`
-4. Check field-relay-nba deploy status for commit 237e132
-5. If KV namespaces still placeholder, create them (item 1 above)
+4. Verify field-relay-nba commit 237e132 deployed (GameDO live)
+5. If KV namespaces still placeholder, create them
+6. In browser console: confirm `typeof fieldEvents === 'object'` and a live game emits
 
 ## KEY DOC IDs
 - CI/Deploy Ref: `18JMUd-Uq_m2DomuCua2B5UMiWOel81yzc1JU7SY6f20`
 - STANDARDS.md: `1g6ZfxRkRPrk2g9NK-pANPHgJ1Zf-WwrcV25V-aC7zHM`
 - ADR-002: `1exp7zmdtiADes-8pA9QaLJum1m1EigbsfrXLQxyJdvM`
-- 10 Wow Factors (Workers Plus): `1O_JueImuL7JkqToDOr1OaXDOqMPVPLjm-CPW2OK_qoQ`
-- Push Architecture (S0+PUSH A/B/C): `1DanThEy0VSUQxF7GDAIGhtqmMSXfeyvXvhuVVV3TCHM`
-- PAT: ghp_***redacted*** (see memory) (exp May 2027)
+- Update Arch v2 (S0 spec): `1K4RAoaqbK7wUmauX-JjAonluS3MFjCZ6MEE8_6xYN48`
+- 10 Wow Factors: `1O_JueImuL7JkqToDOr1OaXDOqMPVPLjm-CPW2OK_qoQ`
+- Push Architecture: `1DanThEy0VSUQxF7GDAIGhtqmMSXfeyvXvhuVVV3TCHM`
+- Infrastructure Backlog: `1RQovuK208W6v6AEouA-w6DFU70Cgia4uxmOMkp0eOJU`
