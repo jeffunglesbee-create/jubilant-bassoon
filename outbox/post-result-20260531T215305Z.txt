@@ -1,0 +1,13 @@
+URL: https://field-relay-nba.jeffunglesbee.workers.dev/journalism/generate  [20260531T215305Z]
+=== Request body ===
+{
+  "prompt": "Write a FIELD Match Brief for this MLB game.\nNew York Yankees @ Athletics · Sutter Health Park.\nWeather: 78°F · 8mph WSW · light crosswind\nPitchers: Yankees Carlos Rodón 3.21 ERA (7-3) vs Athletics JP Sears 4.85 ERA (4-7)\nStandings context: NYY 36-18 1st in AL East (5.0 games up); ATH 24-30 4th in AL West (12.0 games back)\nRules: 50-70 words. 2 sentences. Vary the angle — use whichever single fact is most interesting tonight: park factor, pitcher arsenal, expected stats luck, momentum, or standings gap. Not always standings.\nCite the exact figure if park, weather, or analytics data is provided — never paraphrase.\nWrite only from data above. No invented stats.",
+  "sport": "baseball",
+  "briefType": "mlb-brief",
+  "max_tokens": 400
+}
+
+=== Response headers ===
+
+=== Response body (first 4000 chars) ===
+{"error":"proxy returned no prose","proxy_text_length":0}
