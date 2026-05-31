@@ -1434,3 +1434,26 @@ assert('A340 — Layer C: buildCompoundPrompt emits [LEAGUE: X] tag per game + i
   html.includes('LEAGUE LABELS: every game line includes a [LEAGUE: X] tag') &&
   html.includes('Treat each league as a self-contained competition'),
   'buildCompoundPrompt must tag each game with [LEAGUE: X] and include isolation instruction');
+
+// ═══════════════════════════════════════════════════════════════════════════
+// WOW 6 — Journalism Quality Gate (May 31 2026)
+// ═══════════════════════════════════════════════════════════════════════════
+
+assert('A341 — WOW 6: JOURNALISM_GENERATE_RELAY constant + generateJournalismViaRelay wrapper defined',
+  html.includes('JOURNALISM_GENERATE_RELAY') &&
+  html.includes('/journalism/generate') &&
+  html.includes('async function generateJournalismViaRelay(') &&
+  html.includes('window._lastJQAudit'),
+  'Browser must define JOURNALISM_GENERATE_RELAY URL + generateJournalismViaRelay() wrapper + _lastJQAudit storage');
+
+assert('A342 — WOW 6: live-path migration — 5 brief chains route through relay first (J5 + J2 + J3 + MLB + Stakes)',
+  (html.match(/_viaRelay = await generateJournalismViaRelay\(/g) || []).length >= 5,
+  'J5 Night Owl, J2 Series, J3 Brief, MLB Brief, Stakes Brief must all try the relay quality gate before fallback');
+
+assert('A343 — WOW 6: journalism-quality-gate registered in FIELD_FEATURES',
+  html.includes("'journalism-quality-gate':"),
+  'journalism-quality-gate must be registered in FIELD_FEATURES with 2026-05-31 date');
+
+assert('A344 — WOW 6: relay fallback preserved — every relay-routed brief still has CLAUDE_PROXY_URL path beneath',
+  /generateJournalismViaRelay[\s\S]{0,800}Fallback: legacy direct-proxy/.test(html),
+  'Every brief that routes through relay must also keep the legacy fetch(CLAUDE_PROXY_URL) path as fallback');

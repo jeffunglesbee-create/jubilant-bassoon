@@ -3238,9 +3238,10 @@ if (typeof location !== 'undefined' && location.search.includes('debug=1')) {
 // Rule: add a line here + a smoke assertion = feature is documented as built.
 const FIELD_FEATURES = {
   // Event Bus + real-time fan-out (May 31 2026)
-  'update-s0-event-bus':    '2026-05-31',  // S0: fieldEvents EventTarget + emitter + subscribers
-  'score-push-do':          '2026-05-31',  // WOW 1: GameDO + WebSocket fan-out
-  'crunch-push-do':         '2026-05-31',  // WOW 2: client-signaled CRUNCH TIME fan-out
+  'update-s0-event-bus':       '2026-05-31',  // S0: fieldEvents EventTarget + emitter + subscribers
+  'score-push-do':             '2026-05-31',  // WOW 1: GameDO + WebSocket fan-out
+  'crunch-push-do':            '2026-05-31',  // WOW 2: client-signaled CRUNCH TIME fan-out
+  'journalism-quality-gate':   '2026-05-31',  // WOW 6: relay enforces Layers 1-2e+3b structurally
   // Polling optimization (Layer 1 + Layer 2 + #11b)
   'per-league-polling':     '2026-05-18',  // Layer 1: each league on its own cadence
   'concurrent-espn-fetch':  '2026-05-18',  // Layer 2: no 200ms batch delays
@@ -10842,6 +10843,58 @@ const CLAUDE_PROXY_URL = 'https://field-claude-proxy.jeffunglesbee.workers.dev';
 // values. No classification. Client still runs all drama scoring.
 // Layer 3 delta: hash game context before any client AI call — skip if unchanged.
 const JOURNALISM_RELAY = 'https://field-relay-nba.jeffunglesbee.workers.dev/journalism/tonight';
+// WOW 6 Journalism Quality Gate — live-path route (May 31 2026)
+// Routes browser → relay → proxy with all 6 quality layers enforced server-side.
+// Returns JQ-graded prose. Browser still scores for debug panel display, but
+// the canonical quality enforcement is on the relay (patent posture).
+const JOURNALISM_GENERATE_RELAY = 'https://field-relay-nba.jeffunglesbee.workers.dev/journalism/generate';
+
+// generateJournalismViaRelay — drop-in replacement for direct CLAUDE_PROXY_URL
+// calls in the journalism path. Sends prompt + sport hint + briefType. Returns
+// the same string shape that callers expect (raw prose), or null on failure.
+// Audit fields (score, retries, layers_fired) are logged when FIELD_DEBUG is on
+// and stored on window._lastJQAudit for the debug panel.
+async function generateJournalismViaRelay(prompt, opts = {}) {
+  if (!prompt || prompt.length < 10) return null;
+  try {
+    const body = {
+      prompt,
+      sport:     opts.sport     || null,
+      briefType: opts.briefType || 'generic',
+      max_tokens: opts.max_tokens || 1500,
+      scoreThreshold: opts.scoreThreshold || 130,
+    };
+    const r = await fetch(JOURNALISM_GENERATE_RELAY, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(body),
+    });
+    if (!r.ok) {
+      if (FIELD_DEBUG) console.warn('[JQ Gate] relay returned', r.status);
+      return null;
+    }
+    const data = await r.json();
+    if (!data || !data.text) return null;
+    // Persist audit for debug panel
+    window._lastJQAudit = {
+      score: data.score,
+      retries: data.retries,
+      layers_fired: data.layers_fired,
+      ms: data.ms,
+      briefType: data.briefType,
+      initial_cliches: data.initial_cliches,
+      final_cliches:   data.final_cliches,
+      initial_cross_sport: data.initial_cross_sport,
+      final_cross_sport:   data.final_cross_sport,
+    };
+    if (FIELD_DEBUG) console.debug('[JQ Gate]', data.briefType, 'score:', data.score, 'retries:', data.retries, 'layers:', data.layers_fired);
+    return data.text;
+  } catch(e) {
+    if (FIELD_DEBUG) console.warn('[JQ Gate] error:', e.message);
+    return null;
+  }
+}
+
 let _journalismCache = null; // { brief, generatedAt, contextHash }
 let _journalismFetchedAt = 0;
 const JOURNALISM_CLIENT_TTL = 5 * 60 * 1000; // 5 min client cache
@@ -17475,6 +17528,17 @@ async function fetchSeriesPreviewFromClaude(g){
     'Third person only — never use "you" or address the reader directly. No markdown.'
   ].filter(Boolean).join('\n');
   try{
+    // ── WOW 6 Phase 2: route through relay quality gate
+    const _sportHint = g._sport||g._section||g.league||'';
+    const _viaRelay = await generateJournalismViaRelay(prompt, {
+      sport: _sportHint, briefType: 'j2-series', max_tokens: 1000,
+    });
+    if (_viaRelay && _viaRelay.length > 30) {
+      budget.inc();
+      scoreProse(_viaRelay, game||null).then(s=>renderProseScore(s,'J2 Series'));
+      return _viaRelay.trim();
+    }
+    // Fallback: legacy direct-proxy path
     const r=await fetch(CLAUDE_PROXY_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:1000,messages:[{role:'user',content:prompt}]})});
     if(!r.ok) return null;
     const data=await r.json();
@@ -18267,6 +18331,16 @@ async function fetchFIELDBriefFromClaude(sections){
   }).join('\n\n');
   const prompt=["Write a FIELD Brief for tonight's sports slate.",'','TONIGHT\'S GAMES:',gameLines,'','RULES:','- 100-120 words. 2 short paragraphs. No headers.','- STRUCTURE: Paragraph 1 opens on the highest-stakes game with the specific situation (not the team name). Paragraph 2 covers the rest of the slate in order of importance. End on what carries forward.','- Lead with the specific situation, not the team. "48 minutes from their first Finals since 1999" not "The Knicks are looking to advance."','- Call out FREE over-the-air games explicitly.',"- Surface Scout's Pick if flagged.",'- If [ANTI-HYPE] appears in a game line, describe that matchup as low-stakes in plain prose — never echo the tag [ANTI-HYPE] verbatim.','- CORRECTNESS: write only from data above. Never invent scores, stats, records, or player tendencies.',FIELD_PROSE_STYLE,'- VOICE: third person only. Never use "you" or address the reader directly. Write like a columnist, not a chatbot.','- DIVISION ACCURACY: teams in the same division share ONE division race — never say "respective division races" for same-division teams. NHL has Atlantic/Metropolitan/Central/Pacific. NBA has Atlantic/Central/Southeast/Northwest/Pacific/Southwest. MLB has AL/NL East/Central/West.','- Plain prose only. No bullet points.','- Always complete every sentence. Never end mid-sentence.'].join('\n');
   try{
+    // ── WOW 6 Phase 2: route through relay quality gate (multi-sport slate)
+    const _viaRelay = await generateJournalismViaRelay(prompt, {
+      sport: null, briefType: 'j3-brief', max_tokens: 1500,
+    });
+    if (_viaRelay && _viaRelay.length > 30) {
+      budget.inc();
+      scoreProse(_viaRelay, null).then(s=>renderProseScore(s,'J3 Brief'));
+      return _viaRelay.replace(/\[ANTI-HYPE\]/gi,'').replace(/\s{2,}/g,' ').trim();
+    }
+    // Fallback: legacy direct-proxy path
     const r=await fetch(CLAUDE_PROXY_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:1500,messages:[{role:'user',content:prompt}]})});
     if(!r.ok) return null;
     const data=await r.json();
@@ -18635,6 +18709,16 @@ async function fetchMLBGameBriefFromClaude(g) {
   ].filter(Boolean).join('\n');
 
   try {
+    // ── WOW 6 Phase 2: route through relay quality gate
+    const _viaRelay = await generateJournalismViaRelay(prompt, {
+      sport: 'baseball', briefType: 'mlb-brief', max_tokens: 400,
+    });
+    if (_viaRelay && _viaRelay.length > 20) {
+      cardBudget.inc();
+      scoreProse(_viaRelay, game||null).then(s=>renderProseScore(s,'MLB Brief'));
+      return _viaRelay.trim();
+    }
+    // Fallback: legacy direct-proxy path
     const r = await fetch(CLAUDE_PROXY_URL, {
       method: 'POST', headers: {'Content-Type':'application/json'},
       body: JSON.stringify({model:'claude-haiku-4-5-20251001', max_tokens:400,
@@ -18873,6 +18957,17 @@ async function fetchStakesBriefFromClaude(g) {
   ].filter(Boolean).join('\n');
 
   try {
+    // ── WOW 6 Phase 2: route through relay quality gate
+    const _sportHint = g._sport || g._section || g.league || '';
+    const _viaRelay = await generateJournalismViaRelay(prompt, {
+      sport: _sportHint, briefType: 'stakes-brief', max_tokens: 200,
+    });
+    if (_viaRelay && _viaRelay.length > 20) {
+      cardBudget.inc();
+      scoreProse(_viaRelay, game||null).then(s=>renderProseScore(s,'Stakes Brief'));
+      return _viaRelay.trim();
+    }
+    // Fallback: legacy direct-proxy path
     const r = await fetch(CLAUDE_PROXY_URL, {
       method: 'POST', headers: {'Content-Type':'application/json'},
       body: JSON.stringify({model:'claude-haiku-4-5-20251001', max_tokens:200,
@@ -22164,6 +22259,21 @@ async function fetchNightOwlFromClaude(topGame){
       'Explain what tactically swung the game. Series implication. Plain prose.'
     ].filter(Boolean).join('\n');
   try{
+    // ── WOW 6: try relay quality gate first (live-path quality enforcement)
+    // Relay runs Layers 1, 2, 2b, 2c, 2d, 2e, 3b structurally before returning.
+    // Falls back to direct proxy + browser-side chain if relay unavailable.
+    const _sportHint = topGame._section || topGame._sport || topGame.sport || topGame.league || '';
+    const _viaRelay = await generateJournalismViaRelay(prompt, {
+      sport: _sportHint,
+      briefType: 'night-owl',
+      max_tokens: 1000,
+    });
+    if (_viaRelay && _viaRelay.length > 40) {
+      budget.inc();
+      scoreProse(_viaRelay, topGame||null).then(s=>renderProseScore(s,'J5 Night Owl'));
+      return _viaRelay.trim();
+    }
+    // Fallback: legacy direct-proxy path + browser-side quality chain
     const r=await fetch(CLAUDE_PROXY_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:1000,messages:[{role:'user',content:prompt}]})});
     if(!r.ok) return null;
     const data=await r.json();
