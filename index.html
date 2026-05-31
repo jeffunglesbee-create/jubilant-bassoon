@@ -15537,7 +15537,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-05-31e';
+  const SW_VERSION = '2026-05-31f';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -19066,10 +19066,19 @@ async function fetchGameBriefOnDemand(game, sport) {
   if (!game?._id) return null;
   if (_gameBriefCache[game._id]) return _gameBriefCache[game._id]; // already populated
 
-  const budget = journalismCallsToday();
-  if (!budget.canCall()) return null;
-
   const sp = (sport || game._sport || game._section || '').toLowerCase();
+  // MLB/WNBA/Stakes paths use their own cardBriefCallsToday budget (15 calls).
+  // Generic NBA/NHL/other fallback uses the shared journalismCallsToday budget (8 calls).
+  // Previously the shared budget gate fired UNCONDITIONALLY here, blocking sport-specific
+  // briefs even when their own budget was wide open. Caused every bottom-sheet tap on
+  // MLB/WNBA cards to return null silently once FIELD Brief/Night Owl/compound had
+  // consumed the 8 shared calls.
+  const usesOwnBudget = sp.includes('baseball') || sp.includes('mlb') || sp.includes('wnba');
+  if (!usesOwnBudget) {
+    const budget = journalismCallsToday();
+    if (!budget.canCall()) return null;
+  }
+
   let text = null;
 
   // MLB: rich brief (park/weather/umpire/pitcher)
