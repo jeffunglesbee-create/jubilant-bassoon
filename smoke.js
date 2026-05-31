@@ -971,9 +971,10 @@ assert('A347 — JQ-INFRA-2: column-0 function declarations are actually hoisted
     });
 
     // Known-issue exceptions — must be justified with a comment and a tracked fix
-    const KNOWN_SCOPE_TRAPS = new Set([
-      'fetchMLBLeader', // L11688 — pre-existing scope-trap inside unbalanced-brace region; caller at L11330 throws silently. Track as separate fix.
-    ]);
+    // EMPTY as of 2026-05-31 — fetchMLBLeader was the only entry, fixed by the
+    // adjacent commit that closed an open brace in fetchNHLLiveStats. New entries
+    // require an issue link.
+    const KNOWN_SCOPE_TRAPS = new Set([]);
 
     // Build a typeof checker that runs FIRST (before script body executes)
     // and writes results to a global so we can read them even if the script
