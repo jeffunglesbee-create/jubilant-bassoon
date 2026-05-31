@@ -840,6 +840,98 @@ assert('A244 — Phase 2: V2 standalone poll loop, ESPN reduced to NCAA/NFL/F1/G
   !html.includes('{league:"usa.1"'),
   'Phase 2: ESPN_SPORTS must only contain NCAA/NFL/F1/Golf; all sport/soccer on V2');
 
+// ═══════════════════════════════════════════════════════════════════════════
+// JQ-INFRA-3 — ReferenceError audit (hardening from 2026-05-31 PM session)
+// ═══════════════════════════════════════════════════════════════════════════
+// Background: 2026-05-31 PM session found 9 sites across 6 brief functions
+// where scoreProse(..., game||null) referenced an undeclared identifier
+// because the enclosing function used 'g' (or 'topGame') as its parameter
+// name, not 'game'. The reference threw ReferenceError, which was silently
+// swallowed by try/catch around the relay call, making every live-path
+// brief silently return null. Result: 0 briefs rendered while budget
+// counters showed 14 successful "scores" (phantom increments before throw).
+//
+// This audit catches the same bug pattern at build time. For every
+// scoreProse(X, Y||null) call, the identifier Y must be either:
+//   1. A parameter of the enclosing function
+//   2. A let/const/var declared in the enclosing function's body
+//   3. The literal null/undefined (i.e. caller passed it intentionally)
+//
+// Approach: walk the script char-by-char, track function start/end via
+// brace depth, capture parameter list at function entry, and check every
+// scoreProse call against in-scope identifiers. Fails fast at first
+// suspect call so the error message can name the function and line.
+
+assert('A346 — JQ-INFRA-3: scoreProse(..., X||null) calls reference an in-scope identifier (no silent ReferenceError)',
+  (() => {
+    // Extract just the inline script body so we don't false-positive on docs.
+    const scriptStart = html.indexOf('<script>\n');
+    const scriptEnd   = html.indexOf('</script>', scriptStart);
+    if (scriptStart < 0 || scriptEnd < 0) return false;
+    const script = html.slice(scriptStart + 9, scriptEnd);
+
+    // Compute index.html line of each script char (for error reporting).
+    const lineOffset = html.slice(0, scriptStart + 9).split('\n').length;
+
+    // Find all function declarations + their parameter lists by position.
+    // We only care about top-level `function foo(params)` and `async function`.
+    // Nested functions inherit outer scope, so for the audit we check the
+    // INNERMOST enclosing named function (parameters + locals).
+    const funcRegex = /(?:async\s+)?function\s+(\w+)\s*\(([^)]*)\)\s*\{/g;
+    const funcs = []; // [{name, params:[...], start, end}]
+    let m;
+    while ((m = funcRegex.exec(script)) !== null) {
+      const name   = m[1];
+      const params = m[2].split(',').map(p => p.trim().split('=')[0].trim()).filter(Boolean);
+      const bodyStart = m.index + m[0].length;
+      // Walk braces to find matching close (very rough — ignores strings/comments
+      // but good enough since we only need approximate enclosing function lookup)
+      let depth = 1, i = bodyStart;
+      while (i < script.length && depth > 0) {
+        const c = script[i];
+        if (c === '{') depth++;
+        else if (c === '}') depth--;
+        i++;
+      }
+      funcs.push({ name, params, start: m.index, end: i });
+    }
+    // Sort by start so we can find INNERMOST enclosing function for any pos
+    funcs.sort((a,b) => a.start - b.start);
+
+    // Find every scoreProse(X, Y||null) call.
+    const callRegex = /scoreProse\(([^,]+),\s*([\w$]+)\s*\|\|\s*null\)/g;
+    let c, problems = [];
+    while ((c = callRegex.exec(script)) !== null) {
+      const ident = c[2];
+      if (ident === 'null' || ident === 'undefined') continue;
+      // Find the innermost enclosing function (deepest start that wraps c.index)
+      let enclosing = null;
+      for (const fn of funcs) {
+        if (fn.start < c.index && fn.end > c.index) enclosing = fn; // deeper one wins
+      }
+      if (!enclosing) {
+        // Call at module top level — probably ok (uses global)
+        continue;
+      }
+      // Check param list first
+      if (enclosing.params.includes(ident)) continue;
+      // Check declarations in body
+      const body = script.slice(enclosing.start, enclosing.end);
+      const declRegex = new RegExp(`\\b(?:const|let|var)\\s+(?:[\\w$,\\s{}\\[\\]:]*\\b)?${ident}\\b`);
+      if (declRegex.test(body)) continue;
+      // Not a parameter, not a local: this is the bug pattern.
+      const lineNo = (script.slice(0, c.index).split('\n').length) + lineOffset - 1;
+      problems.push(`L${lineNo} in ${enclosing.name}(${enclosing.params.join(',')}): scoreProse(..., ${ident}||null) — ${ident} not in scope`);
+    }
+    if (problems.length) {
+      console.error('     Problems:');
+      problems.forEach(p => console.error(`       - ${p}`));
+      return false;
+    }
+    return true;
+  })(),
+  'Every scoreProse(.., X||null) call must reference X declared in the enclosing function\'s parameters or body (catches the May 31 silent ReferenceError pattern)');
+
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);
 
