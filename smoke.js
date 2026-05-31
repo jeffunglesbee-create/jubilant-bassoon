@@ -1457,3 +1457,11 @@ assert('A343 — WOW 6: journalism-quality-gate registered in FIELD_FEATURES',
 assert('A344 — WOW 6: relay fallback preserved — every relay-routed brief still has CLAUDE_PROXY_URL path beneath',
   /generateJournalismViaRelay[\s\S]{0,800}Fallback: legacy direct-proxy/.test(html),
   'Every brief that routes through relay must also keep the legacy fetch(CLAUDE_PROXY_URL) path as fallback');
+
+// ═══════════════════════════════════════════════════════════════════════════
+// WOW 7 — Journalism Quality Analytics (May 31 2026)
+// ═══════════════════════════════════════════════════════════════════════════
+
+assert('A345 — WOW 7: journalism-quality-analytics registered in FIELD_FEATURES',
+  html.includes("'journalism-quality-analytics':"),
+  'journalism-quality-analytics must be registered in FIELD_FEATURES with 2026-05-31 date');
