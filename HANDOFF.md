@@ -1,198 +1,100 @@
-# FIELD Handoff — May 31 2026 (TYPE C — WOW 1 + 2 + S0 + Layer 2e + WOW 6)
-**jubilant-bassoon HEAD:** 4d5475c · Smoke: 238/0 (gate) + 17 new post-gate (A328–A344)
-**field-relay-nba HEAD:** 81a18ad · Deploy: SUCCESS
+# FIELD Handoff — May 31 2026 (PM session — WOW 6 Real Fixes + Hoisting Bug)
+
+**jubilant-bassoon HEAD:** b9b56aa · Smoke: 238/0 · SW_VERSION 2026-05-31e
+**field-relay-nba HEAD:** 0ff75b8 · Deploy: SUCCESS
+**Session Doc (Drive):** 1A7OzCh_psRGvft0hQjJMTH96OkJvkK_GZo1EDIjCCgw
 
 ## TIER 0 DEADLINES
 - World Cup 2026: June 11 HARD — flip wc26:true in FIELD_V2_SOURCES
-- Stanley Cup Final G1: June 2 — VGK @ CAR (wired)
-- NBA Finals G1: June 3 — SAS vs NYK (wired)
-- USPTO provisional: ~June 25
+- Stanley Cup Final G1: June 2 — VGK @ CAR (data path wired)
+- NBA Finals G1: June 3 — SAS vs NYK (NBA v2 endpoint fixed today, verified end-to-end)
+- USPTO provisional: ~June 25 — WOW 6 NOW provably works (was structurally broken until this session)
 
-## WHAT WAS BUILT THIS SESSION (5 features)
+## WHAT WAS DISCOVERED + FIXED THIS SESSION
 
-### WOW 1 + WOW 2 — DurableObject score push + CRUNCH fan-out (deployed)
-GameDO class, /ws/game/, /signal/crunch/, GameSocket client, page+SW CRUNCH signals.
+WOW 6 had NEVER worked end-to-end from the browser despite morning sweep docs marking it DONE. The cron path was fine (whitelisted X-FIELD-Relay value) so KV pre-rendered briefs worked — masking the failure. Every browser-triggered live brief (MLB/J2/J5/Stakes) silently 403'd at the proxy then hung in fetch without timeout.
 
-### S0 — FIELD Event Bus (deployed)
-fieldEvents EventTarget + emitter in detectAndStoreStoryMoment + Night Owl/lead-burst
-subscribers + GameSocket WebSocket integration.
+### Six bugs fixed (all deployed)
 
-### Layer 2e — Cross-Sport Hallucination Detection (deployed)
-3-layer fix (A: prompt rule, B: hasCrossSportHallucination + checkCrossSport retry
-wired into 5 chains, C: [LEAGUE: X] tags in buildCompoundPrompt + isolation
-instruction).
+1. **CORS preflight 405** on /journalism/generate
+   - Browser POST with Content-Type:application/json triggered OPTIONS preflight → method gate returned 405
+   - Fix: relay c135dcc — early OPTIONS handler returns 204 with full CORS headers + Max-Age 86400 + Access-Control-Expose-Headers for JQ audit headers
 
-### WOW 6 — Journalism Quality Gate at the relay (deployed)
-The patent claim "FIELD's relay enforces journalism quality structurally" is now
-provably true. /journalism/generate route runs all 6 layers. Cron path unified
-to use same runQualityChain module. 5 browser chains migrated to relay-first.
+2. **NBA scoreboard 403** missing /liveData/ prefix
+   - Browser called ${NBA_CDN_RELAY}/scoreboard/... but whitelist requires /liveData/scoreboard/...
+   - Fix: browser 4371c91 — fixed 2 caller sites in index.html
 
-### WOW 7 — Analytics Engine for JQ Gate observability (deployed)
-Adds field_jq_analytics dataset binding (JQ_ANALYTICS). Both live path and
-cron path write one row per brief generation. Schema:
-  indexes: [briefType, sport]
-  blobs:   [layersFired]
-  doubles: [score, retries, ms, initialCliches, finalCliches,
-            initialCrossSport, finalCrossSport, promptLength, textLength]
-Calibration loop now exists for entire WOW 6 chain. Dataset auto-creates
-on first write. Query via SQL endpoint:
-  POST /accounts/{ID}/analytics_engine/sql
-  body: SELECT ... FROM field_jq_analytics
+3. **injectSquiggleTips ReferenceError** (scope bug, not stale cache)
+   - The May 30 "restore Squiggle engine" commit e66bf3a paste-bombed 226 lines of AFL/Squiggle functions INSIDE fetchSchedule's body (lines 14411-14832 in original numbering), not at top level. In strict mode + ES6, nested function declarations are scoped to the containing function — NOT globally hoisted. Top-level setTimeout in renderAll at line 7117 couldn't see them.
+   - The May 30 "hoisting fix" commit f8652b9 converted `var = async function` to `async function` — improved hoisting WITHIN fetchSchedule but didn't help callers outside.
+   - Fix: browser 0eefcbf — moved Squiggle restoration block out of fetchSchedule to top scope; removed duplicate refreshAFLSection at line 15068
+   - Verified via node Function constructor: typeof at top scope returned 'undefined' before, 'function' after
 
-### Side fix in WOW 7 commit
-Pre-existing bug: cron-path KV value `clicheCount: finalCliches.length` would
-have stored undefined because finalCliches was already a number (the .length
-of the array). Fixed to store the count directly.
+4. **/v2/games?sport=nba 500** — `(statusShort || "").toUpperCase is not a function`
+   - The adaptBasketball adapter was reused for API-NBA, but the response shape differs entirely
+   - The unresolved Rule 8 [VERIFY] marker on line 910 should have been resolved before the May 30 deploy — wasn't
+   - Fix: relay fc6763a — added ?debug=1 mode, probed real shape (Spurs @ OKC 111-103 Final), wrote adaptApiNba with verified field paths:
+     - status.long is reliable string ('Finished', 'Live', 'Not Started') — used as primary state determinant
+     - teams.visitors (not teams.away)
+     - scores.home.points (not scores.home.total)
+     - scores.home.linescore[] array (not quarter_1..4 keyed fields)
+     - arena.name (not top-level venue)
+     - date.start (not top-level date)
+     - league is bare string 'standard' — hardcode 'NBA' in output
 
-**Relay (81a18ad):**
-- NEW src/journalism-quality.js (~330 lines, pure functions):
-  - BANNED_PHRASES + SPARINGLY_PHRASES (Layer 1)
-  - hasCliche, countSparingly (Layer 2)
-  - SPORT_VOCAB_VIOLATIONS, checkSportVocab, detectSportClass (Layer 2b)
-  - LEAD_SENTENCE_RE, hasGenericLead (Layer 2c)
-  - extractStatsFromContext, missingStats (Layer 2d)
-  - LEAGUE_TROPHIES, LEAGUE_TEAMS, CROSS_LINK_VERBS,
-    hasCrossSportHallucination (Layer 2e)
-  - scoreProse 4-dim + arc, ceiling 180 (Layer 3 — no Datamuse yet)
-  - FIELD_PROSE_STYLE synced from browser including LEAGUE BOUNDARIES
-  - runQualityChain orchestrator: 6-layer enforcement, up to 6 retries
-- NEW POST /journalism/generate route:
-  - Body: { prompt, sport?, briefType?, max_tokens?, scoreThreshold? }
-  - Headers: X-JQ-Score, X-JQ-Retries, X-JQ-Layers (audit observability)
-- Cron-path handleJournalismCycle now uses runQualityChain identically to
-  live path (replaces previous 2-layer chain)
-- /health advertises 'jq-gate'
+5. **/bdl/.../season_averages 401** (tier-gating, not real bug)
+   - Free-tier BDL key doesn't cover season_averages (GOAT plan $9.99/mo required)
+   - Fix: relay c3c96e7 — relay intercepts BDL 401, returns 200 with empty data + X-RELAY-Tier-Gated:1 header. Browser code's "if !r.ok return null" path becomes "data.length === 0" path — no console spam.
 
-**Browser (4d5475c):**
-- JOURNALISM_GENERATE_RELAY constant
-- generateJournalismViaRelay(prompt, opts) wrapper with audit on _lastJQAudit
-- 5 live brief chains migrated to relay-first + proxy fallback:
-  J5 Night Owl, J2 Series Preview, J3 FIELD Brief, MLB Brief, Stakes Brief
-- 'journalism-quality-gate': '2026-05-31' in FIELD_FEATURES
-- 4 smoke assertions A341-A344 all passing
+6. **Live-path /journalism/generate "proxy returned no prose"** (the patent-critical fix)
+   - X-FIELD-Relay header mismatch. Cron path used field-relay-cron-2026 (whitelisted by proxy → bypasses Origin check). Live path used field-relay-jq-2026 — NOT whitelisted → fell through to Origin check → 403 "Origin not allowed".
+   - Diagnostic commit 01a2716 surfaced the real failure (HTTP_403 + body) in proxy_diagnostic field
+   - Fix: relay 0ff75b8 — align live-path X-FIELD-Relay value to field-relay-cron-2026
+   - Verified end-to-end via post-probe 2026-05-31T22:38Z: HTTP 200, real text, JQ audit headers populated, score=100, retries=1, layers_fired=['3b'], ms=1220, initial_cliches=0, final_cliches=0
 
-**Compound Brief NOT migrated** (JSON multi-section response shape doesn't fit
-text-in/text-out gate). Its browser-side chain already runs all 6 layers
-post-JSON-parse, so quality coverage preserved. Phase 3 candidate when
-relay gains multi-section response handling.
+7. **"Loading brief..." stuck in MLB bottom sheet** (no fetch timeout)
+   - generateJournalismViaRelay's fetch at line 10868 had no AbortSignal.timeout. Same for the fallback proxy fetch at line ~18719.
+   - When the relay was returning 502 (X-FIELD-Relay issue, pre-fix), fetch completed and returned null cleanly — the bottom sheet placeholder was removed. But after the X-FIELD-Relay fix, the relay started succeeding with long quality-chain latency, and if anything in the chain hung, the browser fetch hung too. .then() never fired. Placeholder stayed.
+   - Fix: browser b9b56aa — AbortSignal.timeout(12000) on relay fetch, AbortSignal.timeout(10000) on fallback proxy fetch. On expiry, AbortError → caught → null returned → placeholder removed gracefully.
 
-### Smoke state
-- Gate: **238/0** maintained across all 5 feature commits
-- Post-gate assertions: A328–A344 — 17 new, all passing
-- Pre-existing post-gate failures unchanged: A273 (EPL), A313/A314 (PWA-A)
-- File size: 1.247MB (down from session start ~1.28MB)
+## VERIFICATION STATE
 
-## ARCHITECTURE — JOURNALISM QUALITY CHAIN
+- Smoke: 238/0 passing (pre-existing failures A273/A313/A314 still excluded from gate)
+- Relay /journalism/generate: end-to-end probe returns 200 with text + score=100 + layers_fired=['3b']
+- Relay /v2/games?sport=nba: end-to-end probe returns correct Spurs/OKC final score 111-103
+- Relay /bdl/nba/v1/season_averages: returns 200 with empty data + tier_required:GOAT (suppresses console spam)
+- Browser SW_VERSION 2026-05-31e live on origin
 
-Two paths, identical enforcement:
+## NEXT SESSION — IMMEDIATE PRIORITIES
 
-**Live path (browser request):**
-```
-Browser → POST /journalism/generate → callProxy
-                                    → runQualityChain
-                                      ├ Layer 2  cliché → retry
-                                      ├ Layer 2b sport vocab → retry
-                                      ├ Layer 2c lead sentence → retry
-                                      ├ Layer 2d stat verify → retry
-                                      ├ Layer 2e cross-sport → retry
-                                      └ Layer 3b score gate → retry
-                                    → return { text, score, layers_fired }
-```
+1. Browser verify SW 2026-05-31e is active and MLB brief actually populates (Jeff's last screenshot showed Loading brief... stuck — that should be resolved now with the timeout fix)
+2. Verify window._lastJQAudit populates after tapping any J2/MLB/Stakes/J5 brief trigger
+3. Update the 5 morning sweep docs (STANDARDS, Arch Spec, JQ Spec, 10 Wow, Infra) per amendments in session doc 1A7OzCh_psRGvft0hQjJMTH96OkJvkK_GZo1EDIjCCgw
 
-**Cron path (slate brief KV pre-gen):**
-```
-Cron */15 → handleJournalismCycle → callProxy
-                                  → runQualityChain (same module!)
-                                  → KV.put('journalism:YYYY-MM-DD')
-```
+## REMAINING CONSOLE ERRORS — DEFERRED
 
-Both paths use identical Layer 1 prompt (FIELD_PROSE_STYLE with LEAGUE BOUNDARIES)
-and identical 6-layer enforcement via shared journalism-quality.js module.
+LOW PRIORITY (upstream issues, browser-side handled gracefully):
+- /espn-summary/.../nba/summary 404 — upstream gameId mismatch
+- /mlb-umpire-scrape 502 — relay scrape route, upstream HTML structure may have changed
+- api.openf1.org/v1/sessions?date_start%3E=... 404 — URL encoding of '>=' character
+- a.espncdn.com/...wnba/500/ACES.png 404 — WNBA Aces logo path naming
 
-## REMAINING DEPLOY WORK (NEXT SESSION)
+None block patent-critical paths.
 
-### 1. ~~CRITICAL — Cloudflare KV namespace creation~~ ✅ DONE
-KV namespaces were already created in CF account, just needed wiring.
-Confirmed via CF API probe (cf-result-20260531T152934Z.txt). Relay
-commit c440fd6 wired both real IDs:
-  PUSH_SUBS:        46b6d8db59ea49eca8b1d89c576a6158
-  FIELD_JOURNALISM: 83edf19398da4ed184a42746cb85c9d7
-Next cron tick (every */15) will start populating FIELD_JOURNALISM.
-PUSH B heartbeats will start delivering on next */5 tick.
+## BDL DECISION PENDING
 
-### 2. File rotation — 1.247MB
-Down from session-start 1.28MB. Still above 1MB rule threshold.
-Run scripts/rotate-schedule.js next session.
+Free-tier BDL key returns 401 on /season_averages. Options:
+- Upgrade to BDL GOAT plan ($9.99/mo) — enables milestone detection in NBA briefs
+- Remove milestone detection feature entirely
+- Find alternative free data source for season averages
 
-### 3. Browser verification (since *.workers.dev blocked from sandbox)
-- WOW 6 audit: open FIELD on a slate that triggers J3 → window._lastJQAudit
-  should populate with { score, retries, layers_fired, ms, briefType }
-- Relay /health: should contain "jq-gate" in response string
-- Tonight's brief: should NOT contain cross-sport hallucinations even before
-  the browser-side chain runs (Layer 2e fires at relay)
-- Bus: typeof fieldEvents === 'object' && fieldEvents instanceof EventTarget
-- WS: GameDO connection test
+Currently the 401 is suppressed at the relay (returns 200 empty data + tier marker). NBA briefs run without milestone context.
 
-### 4. Documentation updates needed
-- STANDARDS.md: add WOW 6 architecture reference, Layer 2e, S0 bus
-- Update Architecture Spec v2 (1K4RAoaqbK7wUmauX-JjAonluS3MFjCZ6MEE8_6xYN48):
-  mark S0 DONE, S1 superseded by WOW 1
-- Journalism Quality Spec (1dS0ldiE9Y0aUu2DAl7Ez5yo5evxlMAZXtghnmdScIHw):
-  add Layer 2e section + WOW 6 relay-enforcement architecture
-- 10 Wow Factors (1O_JueImuL7JkqToDOr1OaXDOqMPVPLjm-CPW2OK_qoQ):
-  mark WOW 1, 2, 6 DONE
-- Infrastructure Backlog (1RQovuK208W6v6AEouA-w6DFU70Cgia4uxmOMkp0eOJU):
-  move [UPDATE S0] to COMPLETED
-  mark [UPDATE S1] superseded by WOW 1
-  mark [PUSH A/B/C] partially completed by WOW 2 (CRUNCH path live)
-- Current State (1GvsfnTH9Xhqzg_NdYrPhPpk1d1Rnm0lkeG6ip-tLUlA):
-  update HEAD, file size, FIELD_FEATURES
+## DOC AMENDMENTS PENDING
 
-### 5. WOW 6 future improvements (Phase 3)
-- Compound Brief migration (multi-section JSON support in relay)
-- Datamuse on relay (Layer 3 freshness dimension parity with browser)
-- WOW 7 Analytics Engine (~35 min) — observability on retry rates,
-  layers_fired distribution, score distribution
-- WOW 8 Queues (~55 min) — async journalism pipeline
-
-## CONSTRAINT COMPLIANCE (ALL FEATURES)
-
-**ADR-002 (relay-is-dumb):**
-- DO ships raw facts only (WOW 1+2)
-- Bus carries facts only (S0)
-- Cross-sport detector ships violation indicators only (Layer 2e)
-- WOW 6 enforces editorial RULES (Booleans), not editorial INTELLIGENCE
-  (composite interest values). Distinction is explicit in spec.
-
-**RUWT (US 9,421,446 B2):**
-- No composite interest computation in any relay path
-- score<130 threshold is on PROSE QUALITY (specificity + variety + density +
-  statDepth), not interest level
-- All "is this exciting" determinations remain client-side
-
-**DO NOT INVENT:**
-- All payload schemas reused from existing handleV2Games adapter shape
-- Retry prompts state observed violations verbatim
-- F1 emitter uses real OpenF1 positions
-
-**DUAL-MODE PRESERVATION:**
-- Polling code untouched (WebSocket additive)
-- Browser JQ chain still runs (fallback if relay fails)
-- All 6 quality layers exist on both sides
-
-## SESSION START (next session)
-1. cd /home/claude && git clone {PAT-URL}/jubilant-bassoon.git
-2. node smoke.js index.html — must be 238/0 gate
-3. Read CI/Deploy Ref: 18JMUd-Uq_m2DomuCua2B5UMiWOel81yzc1JU7SY6f20
-4. Verify field-relay-nba commit 81a18ad deployed (jq-gate live in /health)
-5. If KV namespaces still placeholder, create them
-6. Browser console: check window._lastJQAudit populates on J3/J5 fire
-
-## KEY DOC IDs
-- CI/Deploy Ref: 18JMUd-Uq_m2DomuCua2B5UMiWOel81yzc1JU7SY6f20
-- STANDARDS.md: 1g6ZfxRkRPrk2g9NK-pANPHgJ1Zf-WwrcV25V-aC7zHM
-- ADR-002: 1exp7zmdtiADes-8pA9QaLJum1m1EigbsfrXLQxyJdvM
-- 10 Wow Factors: 1O_JueImuL7JkqToDOr1OaXDOqMPVPLjm-CPW2OK_qoQ
-- Update Arch v2 (S0): 1K4RAoaqbK7wUmauX-JjAonluS3MFjCZ6MEE8_6xYN48
-- Journalism Quality Spec: 1dS0ldiE9Y0aUu2DAl7Ez5yo5evxlMAZXtghnmdScIHw
-- Infrastructure Backlog: 1RQovuK208W6v6AEouA-w6DFU70Cgia4uxmOMkp0eOJU
+The morning sweep docs in Drive need amendment per the detailed instructions in session doc 1A7OzCh_psRGvft0hQjJMTH96OkJvkK_GZo1EDIjCCgw. Specifically:
+- STANDARDS.md: add "RUWT [VERIFY] markers non-negotiable" + "Browser fetches need AbortSignal.timeout"
+- Arch Spec v2: correct WOW 6 status; add diagnostic capture pattern
+- JQ Spec: amend WOW 6 implementation section with known failure modes
+- 10 Wow Factors: correct WOW 6 status row to reflect May 31 PM live-path fix
+- Infra Backlog: add deploy-gate probe + BDL decision + diagnostic discipline items
