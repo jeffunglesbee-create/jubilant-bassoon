@@ -1,0 +1,35 @@
+name: OPTIONS Probe
+on:
+  push:
+    paths: ['outbox/.trigger-options-probe']
+permissions:
+  contents: write
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: OPTIONS request
+        run: |
+          URL=$(grep '^url=' outbox/.trigger-options-probe | cut -d= -f2-)
+          ORIGIN=$(grep '^origin=' outbox/.trigger-options-probe | cut -d= -f2-)
+          [ -z "$ORIGIN" ] && ORIGIN="https://jubilant-bassoon.jeffunglesbee.workers.dev"
+          TS=$(date -u +%Y%m%dT%H%M%SZ)
+          OUT="outbox/options-result-${TS}.txt"
+          echo "URL: $URL  ORIGIN: $ORIGIN  [$TS]" > "$OUT"
+          echo "=== OPTIONS preflight ===" >> "$OUT"
+          curl -sI -X OPTIONS "$URL" \
+            -H "Origin: $ORIGIN" \
+            -H "Access-Control-Request-Method: POST" \
+            -H "Access-Control-Request-Headers: Content-Type" >> "$OUT" 2>&1
+          echo "OUT=$OUT" >> $GITHUB_ENV
+      - name: Push result
+        run: |
+          git config user.email "probe@field"
+          git config user.name "Probe"
+          git add "$OUT"
+          git commit -m "options-probe $OUT [skip ci]"
+          for i in 1 2 3; do
+            git pull --rebase --autostash origin main && git push origin main && break
+            sleep $((i * 5))
+          done
