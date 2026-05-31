@@ -10869,6 +10869,7 @@ async function generateJournalismViaRelay(prompt, opts = {}) {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
       body: JSON.stringify(body),
+      signal: AbortSignal.timeout(12000), // 12s — relay quality chain can take 6+ retries
     });
     if (!r.ok) {
       if (FIELD_DEBUG) console.warn('[JQ Gate] relay returned', r.status);
@@ -15536,7 +15537,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-05-31d';
+  const SW_VERSION = '2026-05-31e';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -18720,6 +18721,7 @@ async function fetchMLBGameBriefFromClaude(g) {
       method: 'POST', headers: {'Content-Type':'application/json'},
       body: JSON.stringify({model:'claude-haiku-4-5-20251001', max_tokens:400,
         messages:[{role:'user',content:prompt}]}),
+      signal: AbortSignal.timeout(10000),
     });
     if (!r.ok) return null;
     const data = await r.json();
