@@ -93,12 +93,14 @@ and identical 6-layer enforcement via shared journalism-quality.js module.
 
 ## REMAINING DEPLOY WORK (NEXT SESSION)
 
-### 1. CRITICAL — Cloudflare KV namespace creation (carry-forward)
-PUSH_SUBS + FIELD_JOURNALISM still on placeholder IDs in wrangler.toml.
-GameDO uses DO storage so WOW 1+2 work without KV. But cron-path PUSH B + the
-new WOW 6 cron pre-gen need real KV. Steps: CF dashboard → Workers & Pages →
-KV → Create field-push-subs + field-journalism → copy IDs → update wrangler.toml
-→ push → deploy.
+### 1. ~~CRITICAL — Cloudflare KV namespace creation~~ ✅ DONE
+KV namespaces were already created in CF account, just needed wiring.
+Confirmed via CF API probe (cf-result-20260531T152934Z.txt). Relay
+commit c440fd6 wired both real IDs:
+  PUSH_SUBS:        46b6d8db59ea49eca8b1d89c576a6158
+  FIELD_JOURNALISM: 83edf19398da4ed184a42746cb85c9d7
+Next cron tick (every */15) will start populating FIELD_JOURNALISM.
+PUSH B heartbeats will start delivering on next */5 tick.
 
 ### 2. File rotation — 1.247MB
 Down from session-start 1.28MB. Still above 1MB rule threshold.
