@@ -932,6 +932,82 @@ assert('A346 — JQ-INFRA-3: scoreProse(..., X||null) calls reference an in-scop
   })(),
   'Every scoreProse(.., X||null) call must reference X declared in the enclosing function\'s parameters or body (catches the May 31 silent ReferenceError pattern)');
 
+// ═══════════════════════════════════════════════════════════════════════════
+// JQ-INFRA-2 — Function hoisting check (hardening from 2026-05-31 session)
+// ═══════════════════════════════════════════════════════════════════════════
+// Background: 2026-05-31 session found that commit e66bf3a (May 30, "restore
+// Squiggle engine") added 226 lines of AFL/Squiggle declarations inside the
+// fetchSchedule() body — at column 0 visually, but actually scoped to the
+// containing function in strict mode + ES6. The function `injectSquiggleTips`
+// LOOKED top-level (visually unindented) but typeof from outside returned
+// 'undefined', so setTimeout(injectSquiggleTips) at runtime threw silent
+// ReferenceError. The session's previous attempted fix (f8652b9) converted
+// `var x = async function` to `async function` declarations — making the
+// hoisting LOOK fixed in the diff but not actually fixing scope.
+//
+// This audit catches the same bug pattern at build time by exercising the
+// JavaScript runtime's own hoisting semantics: instrument the script body
+// with a typeof check that runs BEFORE the script body executes, then
+// execute via `new Function(checkSrc)`. Any function declared at column 0
+// that typeof-evaluates to anything other than 'function' is scope-trapped.
+//
+// Known exception: `fetchMLBLeader` (declared inside an unbalanced-brace
+// region around line 11688). Pre-existing bug; caller at L11330 has been
+// silently throwing ReferenceError. Tracked as separate fix-it item; do
+// not let it block all other coverage.
+
+assert('A347 — JQ-INFRA-2: column-0 function declarations are actually hoisted to top scope (catches injectSquiggleTips-style scope-trap)',
+  (() => {
+    const scriptStart = html.indexOf('<script>\n');
+    const scriptEnd   = html.indexOf('</script>', scriptStart);
+    if (scriptStart < 0 || scriptEnd < 0) return false;
+    const script = html.slice(scriptStart + 9, scriptEnd);
+
+    // Find every column-0 (zero-indent) function declaration
+    const claimed = [];
+    script.split('\n').forEach(line => {
+      const m = line.match(/^(?:async\s+)?function\s+(\w+)/);
+      if (m) claimed.push(m[1]);
+    });
+
+    // Known-issue exceptions — must be justified with a comment and a tracked fix
+    const KNOWN_SCOPE_TRAPS = new Set([
+      'fetchMLBLeader', // L11688 — pre-existing scope-trap inside unbalanced-brace region; caller at L11330 throws silently. Track as separate fix.
+    ]);
+
+    // Build a typeof checker that runs FIRST (before script body executes)
+    // and writes results to a global so we can read them even if the script
+    // body later throws.
+    const checkSrc = `
+      globalThis.__hoistResults = {};
+      ${claimed.map(n => `try { globalThis.__hoistResults['${n}'] = typeof ${n}; } catch(e) { globalThis.__hoistResults['${n}'] = 'THROW:'+e.message; }`).join('\n')}
+    ` + '\n' + script;
+
+    let results;
+    try {
+      new Function(checkSrc)();
+      results = globalThis.__hoistResults;
+    } catch (e) {
+      // Script body throws are fine — we already captured results before the throw
+      results = globalThis.__hoistResults;
+    }
+    if (!results) return false;
+
+    const traps = [];
+    for (const [name, type] of Object.entries(results)) {
+      if (type === 'function') continue;
+      if (KNOWN_SCOPE_TRAPS.has(name)) continue;
+      traps.push(`${name} → typeof '${type}' (expected 'function')`);
+    }
+    if (traps.length) {
+      console.error('     Scope-trapped functions:');
+      traps.forEach(t => console.error(`       - ${t}`));
+      return false;
+    }
+    return true;
+  })(),
+  'Every column-0 function declaration must hoist to script top scope (otherwise setTimeout/setInterval/cross-function calls throw silent ReferenceError)');
+
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);
 
