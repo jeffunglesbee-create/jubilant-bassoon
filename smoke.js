@@ -1253,10 +1253,10 @@ assert('A310 — all journalism calls use claude-haiku-4-5-20251001 not claude-s
   html.includes('claude-haiku-4-5-20251001'),
   'All browser journalism calls must use Haiku not Sonnet — Sonnet is ~20x more expensive for short prose');
 
-assert('A311 — _jqDelay Gemini RPM guard: 2s stagger before all 5 quality chain retry fetches',
+assert('A311 — _jqDelay Gemini RPM guard: 2s stagger before all 6 quality chain retry fetches',
   html.includes('const _jqDelay = () => new Promise(r => setTimeout(r, 2000))') &&
-  (html.match(/await _jqDelay\(\); \/\/ Gemini RPM guard/g) || []).length === 5,
-  '_jqDelay must appear in all 5 quality chain retry paths to prevent Gemini 30 RPM limit');
+  (html.match(/await _jqDelay\(\); \/\/ Gemini RPM guard/g) || []).length === 6,
+  '_jqDelay must appear in all 6 quality chain retry paths to prevent Gemini 30 RPM limit (Layer 2, 2b, 2c, 2d, 2e cross-sport, 3b)');
 
 assert('A312 — O(1) per-game briefs: fetchPrerenderedGameBrief + KV check in MLB/WNBA/Stakes renderers',
   html.includes('async function fetchPrerenderedGameBrief(espnEventId)') &&
@@ -1409,3 +1409,28 @@ assert('A336 — S0: GameSocket default onFacts routes through emitScoreEvent (W
 assert('A337 — S0: update-s0-event-bus registered in FIELD_FEATURES',
   html.includes("'update-s0-event-bus':"),
   'update-s0-event-bus must be registered in FIELD_FEATURES with 2026-05-31 date');
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Layer 2e — Cross-Sport Hallucination Detection (May 31 2026)
+// ═══════════════════════════════════════════════════════════════════════════
+
+assert('A338 — Layer A: FIELD_PROSE_STYLE includes LEAGUE BOUNDARIES rule',
+  html.includes("LEAGUE BOUNDARIES (critical)") &&
+  html.includes("NEVER describe a team in one league as advancing to face"),
+  'FIELD_PROSE_STYLE must include a sport-boundary rule preventing cross-league advancement claims');
+
+assert('A339 — Layer B: hasCrossSportHallucination + checkCrossSport defined and wired',
+  html.includes('function hasCrossSportHallucination(') &&
+  html.includes('async function checkCrossSport(') &&
+  html.includes('_LEAGUE_TROPHIES') &&
+  html.includes('_LEAGUE_TEAMS') &&
+  html.includes('_CROSS_LINK_VERBS') &&
+  (html.match(/checkCrossSport\(/g) || []).length >= 5,  // 1 definition + 4 call sites
+  'checkCrossSport must be defined and called from compound brief + J2 + J3 + MLB + Stakes chains');
+
+assert('A340 — Layer C: buildCompoundPrompt emits [LEAGUE: X] tag per game + isolation rule in prompt',
+  html.includes('Layer C: explicit league tag for each game') &&
+  html.includes('[LEAGUE: ${_leagueTag}]') &&
+  html.includes('LEAGUE LABELS: every game line includes a [LEAGUE: X] tag') &&
+  html.includes('Treat each league as a self-contained competition'),
+  'buildCompoundPrompt must tag each game with [LEAGUE: X] and include isolation instruction');

@@ -16143,6 +16143,7 @@ const FIELD_PROSE_STYLE=[
   '- CITE CHAMPION: if [CHAMPION] appears in game context, reference the team as "defending champions" or "reigning NBA champions" in the first paragraph — never omit this when present.',
   '- FEATURED STAT: if a [FEATURED STAT] line appears for a game, that exact figure MUST appear in your brief for that game.',
   '- LEAD SENTENCE: never start a brief, paragraph, or sentence with "The [Team]..." — lead with the specific situation. "Wembanyama scored 34" not "The Spurs got a big performance." "Two years without a Finals appearance ends tonight" not "The Celtics are looking to make a statement."',
+  '- LEAGUE BOUNDARIES (critical): each league is a self-contained competition. NBA winners advance to the NBA Finals to face another NBA team. NHL winners advance to the Stanley Cup Final to face another NHL team. MLB winners advance to the World Series to face another MLB team. NEVER describe a team in one league as advancing to face the winner of, or playing against, a team or champion in a different league. The Stanley Cup, NBA Finals, World Series, Super Bowl, MLS Cup, and Premier League title are separate trophies in separate competitions. If two playoff series in different leagues happen at the same time, write about them as parallel events — never as connected or sequential events.',
   '- BANNED PHRASES (never use): '+BANNED_PHRASES.join(', ')+'.',
   '- USE SPARINGLY (maximum once per brief): '+SPARINGLY_PHRASES.join(', ')+'. If you use any of these, use it once only — then choose a more specific word.',
   '- NEVER explain what data is missing or why you cannot write something. If context is limited, write a short factual brief from what is available. Do not produce meta-commentary about the data.',
@@ -16494,6 +16495,182 @@ async function checkStatVerification(originalPrompt, text, proxyUrl) {
       return retried;
     }
   } catch(e) { if (FIELD_DEBUG) console.error('[JQ Layer 2d] error:', e.message); }
+  return text;
+}
+
+// ── Layer 2e: Cross-sport hallucination detector ───────────────────────────
+// Catches a specific factual failure mode the JQ scorer (specificity/freshness/
+// density/variety/stat-depth) cannot detect: when prose describes a team in
+// one league as advancing to face the winner of a different league's championship.
+//
+// Real-world example (May 31 2026 brief): "San Antonio advances to face the
+// winner of the Golden Knights-Hurricanes Stanley Cup Final." SAS plays in
+// the NBA Finals, not the SCF. This sentence is grammatically clean and would
+// score 170/170 on Datamuse — but it's a factual hallucination.
+//
+// Root cause: when the slate contains simultaneous playoffs in different leagues
+// (NBA Finals + Stanley Cup Final + WC group stage), the model can connect them.
+//
+// Detection: sentence-level scan. A sentence is flagged only if it contains:
+//   (1) a cross-league trophy/competition reference, AND
+//   (2) a verb of competitive linking ("face", "advance to", "play", "meet",
+//       "matchup with", "winner of"), AND
+//   (3) co-occurrence with another league's vocabulary in the SAME sentence
+//
+// This avoids false positives on legitimate separate references like
+// "Tonight features two playoff games — NBA WCF G7 and Stanley Cup G1."
+// (Different leagues mentioned, but no linking verb.)
+//
+// ADR-002 / DO NOT INVENT: the detector ships raw factual error indications.
+// The retry prompt explicitly states what was wrong without inventing facts.
+
+// Layer 2e uses TROPHY-LEVEL detection rather than team-vocab because trophies
+// are unambiguous proper nouns. The bug pattern is:
+//   [team or player] [cross-link verb] [trophy from DIFFERENT sport]
+//
+// _LEAGUE_TROPHIES maps each unambiguous trophy/championship phrase to its
+// league. Generic team names (which conflict across leagues — "Rangers" is
+// both MLB and NHL, "Sun" is WNBA but also a common word) are NOT used.
+// City names are included only where the city is dominantly associated with
+// one sport's championship (avoided otherwise).
+const _LEAGUE_TROPHIES = {
+  nba:  ['nba finals','nba championship','wcf','ecf','western conference finals','eastern conference finals','larry o\'brien'],
+  nhl:  ['stanley cup','stanley cup final','stanley cup finals'],
+  mlb:  ['world series','alcs','nlcs','al championship series','nl championship series','american league championship','national league championship','commissioner\'s trophy'],
+  nfl:  ['super bowl','afc championship','nfc championship','afc title game','nfc title game','vince lombardi','lombardi trophy'],
+  mls:  ['mls cup','mls cup final'],
+  epl:  ['premier league title','premier league trophy','prem title'],
+  ucl:  ['champions league final','ucl final','europa league final','conference league final'],
+  wnba: ['wnba finals','wnba championship'],
+  afl:  ['afl grand final','afl premiership'],
+  wc:   ['world cup final','world cup title']
+};
+// Team names are still used as SECONDARY signals — they qualify a sentence
+// for cross-league inspection only when paired with a different league's trophy.
+// "The Knicks face the Stanley Cup winner" → NBA team + NHL trophy = flag.
+// "San Antonio advances to face the winner of the Stanley Cup Final" → flag
+// even without NBA team name, because no NBA trophy and an NHL trophy plus
+// "advance to face" implies cross-league competition.
+const _LEAGUE_TEAMS = {
+  nba:  ['spurs','knicks','lakers','celtics','warriors','nuggets','heat','bucks','thunder','sixers','76ers','mavs','mavericks','nets','pacers','bulls','cavs','clippers','suns','grizzlies','rockets','jazz','timberwolves','trail blazers','magic','hawks','wizards','raptors','san antonio','oklahoma city','new york knicks','golden state'],
+  nhl:  ['hurricanes','golden knights','penguins','oilers','panthers','bruins','flyers','lightning','capitals','islanders','devils','blackhawks','red wings','sabres','maple leafs','canadiens','senators','jets','blues','wild','avalanche','stars','predators','sharks','kraken','blue jackets'],
+  mlb:  ['yankees','dodgers','red sox','astros','phillies','braves','mariners','blue jays','guardians','tigers','twins','royals','white sox','angels','athletics','padres','giants','rockies','diamondbacks','dbacks','cubs','cardinals','brewers','pirates','reds','marlins','mets','nationals'],
+  nfl:  ['chiefs','patriots','cowboys','eagles','49ers','niners','ravens','bills','dolphins','jets','steelers','browns','bengals','colts','jaguars','texans','titans','broncos','raiders','chargers','vikings','packers','bears','lions','falcons','saints','buccaneers','bucs','commanders','seahawks'],
+  mls:  ['inter miami','lafc','la galaxy','seattle sounders','portland timbers','atlanta united','nycfc'],
+  wnba: ['liberty','aces','indiana fever','phoenix mercury','connecticut sun','seattle storm','lynx','dallas wings','washington mystics','atlanta dream','chicago sky'],
+  afl:  ['collingwood','sydney swans','greater western sydney','geelong cats','melbourne demons','richmond tigers','hawthorn hawks','essendon bombers','carlton blues','western bulldogs','adelaide crows','port adelaide','brisbane lions','gold coast suns','st kilda saints','north melbourne kangaroos','west coast eagles','fremantle dockers']
+};
+const _CROSS_LINK_VERBS = /\b(face|faces|facing|faced|advance(?:s|d)?\s+to(?:\s+face)?|play(?:s|ed|ing)?(?:\s+against)?|meet(?:s|ing)?|matchup\s+(?:with|against)|winner\s+of|opponent\s+(?:will\s+be|is)|takes?\s+on|squares?\s+off\s+(?:with|against))\b/i;
+
+// Returns array of {sentence, leagues, signals} for cross-league hallucinations.
+// Empty array means the text passes.
+//
+// Detection logic (trophy-first to minimize false positives):
+//   For each sentence with a cross-linking verb, scan for:
+//     - TROPHY references (unambiguous proper nouns like "Stanley Cup")
+//     - TEAM references (qualifying secondary signals)
+//   Sentence is flagged if EITHER:
+//     (a) Trophies from 2+ different leagues appear in the same sentence, OR
+//     (b) A team from one league appears with a trophy from a different league
+//
+// KNOWN LIMIT: player-only references ("Wembanyama takes on the AFC champion")
+// are NOT detected. Maintaining a current player→league map is fragile
+// (trades, retirements). Layer A (prompt rule) is the primary defense against
+// this case; Layer 2e is the secondary defense for the more common
+// team/city + cross-trophy pattern.
+function hasCrossSportHallucination(text) {
+  if (!text) return [];
+  const sentences = text.split(/(?<=[.!?])\s+/).filter(s => s.length > 10);
+  const flagged = [];
+  for (const sentence of sentences) {
+    if (!_CROSS_LINK_VERBS.test(sentence)) continue;
+    const lower = sentence.toLowerCase();
+    const trophyLeagues = new Set();
+    const teamLeagues   = new Set();
+    const signals = [];
+    // Scan trophies (multi-word phrases — use plain includes)
+    for (const [league, trophies] of Object.entries(_LEAGUE_TROPHIES)) {
+      for (const t of trophies) {
+        if (lower.includes(t)) {
+          trophyLeagues.add(league);
+          signals.push(`${league}:trophy:${t}`);
+          break;
+        }
+      }
+    }
+    // Scan teams only if there's at least one trophy already (otherwise we don't
+    // care about same-sport team-to-team mentions)
+    if (trophyLeagues.size > 0) {
+      for (const [league, teams] of Object.entries(_LEAGUE_TEAMS)) {
+        for (const t of teams) {
+          // Multi-word: simple includes; single-word: word-boundary
+          const match = t.includes(' ')
+            ? lower.includes(t)
+            : new RegExp('\\b' + t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b').test(lower);
+          if (match) {
+            teamLeagues.add(league);
+            signals.push(`${league}:team:${t}`);
+            break;
+          }
+        }
+      }
+    }
+    // Flag if multiple trophy leagues, OR if a team's league differs from any
+    // trophy's league.
+    const distinctTrophyLeagues = [...trophyLeagues];
+    const distinctTeamLeagues   = [...teamLeagues];
+    let isCross = false;
+    if (distinctTrophyLeagues.length >= 2) isCross = true;
+    for (const tl of distinctTeamLeagues) {
+      for (const trl of distinctTrophyLeagues) {
+        if (tl !== trl) { isCross = true; break; }
+      }
+      if (isCross) break;
+    }
+    if (isCross) {
+      const allLeagues = [...new Set([...distinctTrophyLeagues, ...distinctTeamLeagues])];
+      flagged.push({ sentence: sentence.trim(), leagues: allLeagues, signals });
+    }
+  }
+  return flagged;
+}
+
+// Layer 2e retry — same pattern as retryWithoutCliches() but for cross-sport hallucinations
+async function checkCrossSport(originalPrompt, text, proxyUrl) {
+  if (!text) return text;
+  const violations = hasCrossSportHallucination(text);
+  if (!violations.length) return text;
+  if (FIELD_DEBUG) console.warn('[JQ Layer 2e] Cross-sport hallucination(s):', violations.map(v => `[${v.leagues.join('+')}] "${v.sentence.slice(0,80)}..."`));
+  try {
+    await _jqDelay(); // Gemini RPM guard
+    // Build explicit error description for the model
+    const errorLines = violations.map(v =>
+      `- The sentence "${v.sentence.slice(0, 140)}${v.sentence.length>140?'...':''}" combines ${v.leagues.map(l=>l.toUpperCase()).join(' and ')} in a way that suggests they meet, advance against each other, or share a championship. They do not.`
+    ).join('\n');
+    const retryPrompt = originalPrompt +
+      `\n\nCRITICAL FACTUAL CORRECTION — cross-league hallucination detected:\n` +
+      errorLines + `\n\n` +
+      `Each league is independent: NBA winners face other NBA teams in the NBA Finals; NHL winners face other NHL teams in the Stanley Cup Final; MLB winners face other MLB teams in the World Series; etc. They never advance to face winners from other leagues.\n` +
+      `Rewrite the brief so that every sentence treats each league as a self-contained competition. If you want to mention both leagues, do so as PARALLEL events (e.g. "Tonight's slate includes NBA Game 7 and Stanley Cup Game 1") — not as connected events. Do NOT use the verbs face, advance to, play, meet, matchup with, takes on, or winner of when bridging two different leagues.`;
+    const r = await fetch(proxyUrl, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 1500,
+        messages: [{role:'user', content: retryPrompt}]
+      })
+    });
+    if (!r.ok) return text;
+    const data = await r.json();
+    const retried = (data.content||[]).filter(c=>c.type==='text').map(c=>c.text).join('').trim();
+    if (retried && retried.length > 30) {
+      const still = hasCrossSportHallucination(retried);
+      if (still.length && FIELD_DEBUG) console.warn('[JQ Layer 2e] Retry STILL has cross-sport:', still.map(v=>v.sentence.slice(0,60)), '— shipping');
+      if (!still.length && FIELD_DEBUG) console.debug('[JQ Layer 2e] Cross-sport hallucination corrected.');
+      return retried;
+    }
+  } catch(e) { if (FIELD_DEBUG) console.error('[JQ Layer 2e] error:', e.message); }
   return text;
 }
 
@@ -16898,8 +17075,36 @@ function buildCompoundPrompt(sections) {
       ? getStatisticalExtremes(liveScoreForExtreme, g._sport||'').note : null;
     const bni = computeBroadcastNarrativeIndex(g);
     const standingsCtx = buildGameStandingsContext(g);
+    // Layer C: explicit league tag for each game — prevents cross-sport conflation
+    // when slate contains simultaneous championships in different leagues.
+    // Maps internal _sport/_section/league strings to canonical league codes:
+    // NBA, NHL, MLB, NFL, MLS, EPL, UCL, WNBA, AFL, NCAA, F1, PGA, ATP
+    const _leagueTag = (()=>{
+      const raw = (g.league || g._sport || g._section || '').toLowerCase();
+      if (/\bnba\b|basketball.*nba/i.test(raw)) return 'NBA';
+      if (/\bnhl\b|hockey/i.test(raw)) return 'NHL';
+      if (/\bmlb\b|baseball/i.test(raw)) return 'MLB';
+      if (/\bnfl\b/i.test(raw)) return 'NFL';
+      if (/\bwnba\b/i.test(raw)) return 'WNBA';
+      if (/\bmls\b/i.test(raw)) return 'MLS';
+      if (/\bafl\b|aussie rules|australian football/i.test(raw)) return 'AFL';
+      if (/premier league|\bepl\b/i.test(raw)) return 'EPL';
+      if (/champions league|europa|conference league|\bucl\b/i.test(raw)) return 'UCL/UEFA';
+      if (/la liga/i.test(raw)) return 'LaLiga';
+      if (/serie a/i.test(raw)) return 'Serie A';
+      if (/bundesliga/i.test(raw)) return 'Bundesliga';
+      if (/ligue 1/i.test(raw)) return 'Ligue 1';
+      if (/wc26|world cup/i.test(raw)) return 'World Cup';
+      if (/ncaa.*basket|ncaa.*hoops|ncaa\s*m/i.test(raw)) return 'NCAA-MB';
+      if (/ncaa.*foot/i.test(raw)) return 'NCAA-FB';
+      if (/\bf1\b|formula/i.test(raw)) return 'F1';
+      if (/\bpga\b|golf/i.test(raw)) return 'PGA';
+      if (/\batp\b|wta\b|tennis/i.test(raw)) return 'Tennis';
+      return raw.toUpperCase().slice(0, 16) || 'OTHER';
+    })();
     return [
       `- ${g.away||''} ${g.neutral?'vs':'@'} ${g.home||''}`,
+      `  [LEAGUE: ${_leagueTag}]`,
       g.seriesRecord ? `  Series: ${g.seriesRecord}` : '',
       // Story Engine: live status line gives AI cleaner narrative context than raw scores
       (()=>{try{const _bsc=classifySport(g,null);const _bsyn=findESPNScore?.(g);if(_bsyn?.state==='in'){const _bn=computeGameNarrative(g,_bsyn,_bsc);return _bn.statusLine?`  Live: ${_bn.statusLine} (${_bn.scoreline} ${_bn.periodLabel?.replace(/<[^>]+>/g,'')||''})`.trim():'';}return '';}catch(e_){return ''}})(),
@@ -17000,6 +17205,7 @@ Return this exact JSON structure (null for any section without sufficient data):
 
 Rules:
 - Write ONLY from the data above. Never invent scores, stats, records, or player tendencies.
+- LEAGUE LABELS: every game line includes a [LEAGUE: X] tag. Treat each league as a self-contained competition. NBA winners face other NBA teams. NHL winners face other NHL teams. NEVER describe a team in one [LEAGUE: X] game as advancing to face, playing, meeting, or being the opponent of a team in any different [LEAGUE: Y] game. If two leagues are both in tonight's slate, describe them as PARALLEL events ("Tonight's slate features NBA Game 7 and Stanley Cup Game 1") — not connected events.
 - ${FIELD_PROSE_STYLE}
 - Every sentence must be complete. Never end mid-sentence.
 - For each series entry: write ${seriesWords} focused on stakes and series arc, or null if data insufficient.
@@ -17113,6 +17319,8 @@ async function fetchCompoundEditorial(sections) {
         improved = await checkLeadSentence(prompt, improved, CLAUDE_PROXY_URL);
         // Layer 2d: stat verification
         improved = await checkStatVerification(prompt, improved, CLAUDE_PROXY_URL);
+        // Layer 2e: cross-sport hallucination check (critical for big-game slates with multiple parallel championships)
+        improved = await checkCrossSport(prompt, improved, CLAUDE_PROXY_URL);
         // Layer 3b: score-triggered rewrite (also logs before/after scores)
         improved = await maybeScoreRetry(prompt, improved, CLAUDE_PROXY_URL, 'Compound Brief');
         if(improved !== result.brief){
@@ -17275,6 +17483,7 @@ async function fetchSeriesPreviewFromClaude(g){
       text=await retryWithoutCliches(prompt,text,CLAUDE_PROXY_URL);budget.inc();
       text=await checkLeadSentence(prompt,text,CLAUDE_PROXY_URL);
       text=await checkStatVerification(prompt,text,CLAUDE_PROXY_URL);
+      text=await checkCrossSport(prompt,text,CLAUDE_PROXY_URL);
       text=await maybeScoreRetry(prompt,text,CLAUDE_PROXY_URL,'J2 Series');
       scoreProse(text, game||null).then(s=>renderProseScore(s,'J2 Series'));
       return text.trim();
@@ -18066,6 +18275,7 @@ async function fetchFIELDBriefFromClaude(sections){
       text=await retryWithoutCliches(prompt,text,CLAUDE_PROXY_URL);budget.inc();
       text=await checkLeadSentence(prompt,text,CLAUDE_PROXY_URL);
       text=await checkStatVerification(prompt,text,CLAUDE_PROXY_URL);
+      text=await checkCrossSport(prompt,text,CLAUDE_PROXY_URL);
       text=await maybeScoreRetry(prompt,text,CLAUDE_PROXY_URL,'J3 Brief');
       scoreProse(text, null).then(s=>renderProseScore(s,'J3 Brief'));
       return text.replace(/\[ANTI-HYPE\]/gi,'').replace(/\s{2,}/g,' ').trim();
@@ -18438,6 +18648,7 @@ async function fetchMLBGameBriefFromClaude(g) {
       text = await retryWithSportVocab(prompt, text, 'baseball', CLAUDE_PROXY_URL);
       text = await checkLeadSentence(prompt, text, CLAUDE_PROXY_URL);
       text = await checkStatVerification(prompt, text, CLAUDE_PROXY_URL);
+      text = await checkCrossSport(prompt, text, CLAUDE_PROXY_URL);
       text = await maybeScoreRetry(prompt, text, CLAUDE_PROXY_URL, 'MLB Brief');
       cardBudget.inc();
       scoreProse(text, game||null).then(s=>renderProseScore(s,'MLB Brief'));
@@ -18674,6 +18885,7 @@ async function fetchStakesBriefFromClaude(g) {
       text = await retryWithoutCliches(prompt, text, CLAUDE_PROXY_URL);
       text = await checkLeadSentence(prompt, text, CLAUDE_PROXY_URL);
       text = await checkStatVerification(prompt, text, CLAUDE_PROXY_URL);
+      text = await checkCrossSport(prompt, text, CLAUDE_PROXY_URL);
       text = await maybeScoreRetry(prompt, text, CLAUDE_PROXY_URL, 'Stakes Brief');
       cardBudget.inc();
       scoreProse(text, game||null).then(s=>renderProseScore(s,'Stakes Brief'));
