@@ -1,2 +1,3 @@
-method=GET
-url=https://api.cloudflare.com/client/v4/accounts/b57e9af57ab46c52ca9215804e689c29/storage/kv/namespaces?per_page=50
+method=POST
+url=https://api.cloudflare.com/client/v4/accounts/b57e9af57ab46c52ca9215804e689c29/analytics_engine/sql
+body=SELECT blob1 AS layers_fired, double1 AS score, double2 AS retries, double3 AS ms, index1 AS brief_type, index2 AS sport, timestamp FROM field_jq_analytics ORDER BY timestamp DESC LIMIT 10
