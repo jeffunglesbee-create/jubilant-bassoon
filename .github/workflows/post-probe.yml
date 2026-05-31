@@ -14,23 +14,26 @@ jobs:
           set +e
           URL=$(grep '^url=' outbox/.trigger-post-probe | cut -d= -f2-)
           BODY_FILE=outbox/.post-probe-body.json
+          HDR_FILE=outbox/.post-probe-headers
           TS=$(date -u +%Y%m%dT%H%M%SZ)
           OUT="outbox/post-result-${TS}.txt"
           echo "URL: $URL  [$TS]" > "$OUT"
           echo "=== Request body ===" >> "$OUT"
           cat "$BODY_FILE" >> "$OUT"
           echo "" >> "$OUT"
-          echo "=== Response headers ===" >> "$OUT"
-          curl -sI -X POST "$URL" \
-            -H "Content-Type: application/json" \
-            -H "Origin: https://jubilant-bassoon.jeffunglesbee.workers.dev" \
-            --data-binary "@$BODY_FILE" >> "$OUT" 2>&1 || true
+          # Build header args
+          HDR_ARGS=""
+          if [ -f "$HDR_FILE" ]; then
+            while IFS= read -r hdr; do
+              [ -z "$hdr" ] && continue
+              HDR_ARGS="$HDR_ARGS -H \"$hdr\""
+            done < "$HDR_FILE"
+          fi
+          echo "=== Custom headers ===" >> "$OUT"
+          [ -f "$HDR_FILE" ] && cat "$HDR_FILE" >> "$OUT" || echo "(none)" >> "$OUT"
           echo "" >> "$OUT"
-          echo "=== Response body (first 4000 chars) ===" >> "$OUT"
-          curl -s -X POST "$URL" \
-            -H "Content-Type: application/json" \
-            -H "Origin: https://jubilant-bassoon.jeffunglesbee.workers.dev" \
-            --data-binary "@$BODY_FILE" 2>&1 | head -c 4000 >> "$OUT"
+          echo "=== Response (status + body, first 4000 chars) ===" >> "$OUT"
+          eval "curl -s -w '\\nHTTP_STATUS:%{http_code}\\n' -X POST \"\$URL\" -H 'Content-Type: application/json' -H 'Origin: https://jubilant-bassoon.jeffunglesbee.workers.dev' $HDR_ARGS --data-binary @\"\$BODY_FILE\" 2>&1 | head -c 4000 >> \"\$OUT\""
           echo "OUT=$OUT" >> $GITHUB_ENV
       - name: Push result
         run: |
