@@ -15537,7 +15537,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-05-31f';
+  const SW_VERSION = '2026-05-31g';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -17533,7 +17533,7 @@ async function fetchSeriesPreviewFromClaude(g){
     });
     if (_viaRelay && _viaRelay.length > 30) {
       budget.inc();
-      scoreProse(_viaRelay, game||null).then(s=>renderProseScore(s,'J2 Series'));
+      scoreProse(_viaRelay, g||null).then(s=>renderProseScore(s,'J2 Series'));
       return _viaRelay.trim();
     }
     // Fallback: legacy direct-proxy path
@@ -17547,7 +17547,7 @@ async function fetchSeriesPreviewFromClaude(g){
       text=await checkStatVerification(prompt,text,CLAUDE_PROXY_URL);
       text=await checkCrossSport(prompt,text,CLAUDE_PROXY_URL);
       text=await maybeScoreRetry(prompt,text,CLAUDE_PROXY_URL,'J2 Series');
-      scoreProse(text, game||null).then(s=>renderProseScore(s,'J2 Series'));
+      scoreProse(text, g||null).then(s=>renderProseScore(s,'J2 Series'));
       return text.trim();
     }
   }catch(e){if(FIELD_DEBUG)console.error('[J2 Series Preview] proxy error:',e.message);}
@@ -18713,7 +18713,7 @@ async function fetchMLBGameBriefFromClaude(g) {
     });
     if (_viaRelay && _viaRelay.length > 20) {
       cardBudget.inc();
-      scoreProse(_viaRelay, game||null).then(s=>renderProseScore(s,'MLB Brief'));
+      scoreProse(_viaRelay, g||null).then(s=>renderProseScore(s,'MLB Brief'));
       return _viaRelay.trim();
     }
     // Fallback: legacy direct-proxy path
@@ -18734,7 +18734,7 @@ async function fetchMLBGameBriefFromClaude(g) {
       text = await checkCrossSport(prompt, text, CLAUDE_PROXY_URL);
       text = await maybeScoreRetry(prompt, text, CLAUDE_PROXY_URL, 'MLB Brief');
       cardBudget.inc();
-      scoreProse(text, game||null).then(s=>renderProseScore(s,'MLB Brief'));
+      scoreProse(text, g||null).then(s=>renderProseScore(s,'MLB Brief'));
       return text.trim();
     }
   } catch(e_) {}
@@ -18850,7 +18850,7 @@ async function fetchWNBAGameBriefFromClaude(g) {
       text = await checkLeadSentence(prompt, text, CLAUDE_PROXY_URL);
       text = await maybeScoreRetry(prompt, text, CLAUDE_PROXY_URL, 'WNBA Brief');
       cardBudget.inc();
-      scoreProse(text, game||null).then(s=>renderProseScore(s,'WNBA Brief'));
+      scoreProse(text, g||null).then(s=>renderProseScore(s,'WNBA Brief'));
       return text.trim();
     }
   } catch(e_) {}
@@ -18963,7 +18963,7 @@ async function fetchStakesBriefFromClaude(g) {
     });
     if (_viaRelay && _viaRelay.length > 20) {
       cardBudget.inc();
-      scoreProse(_viaRelay, game||null).then(s=>renderProseScore(s,'Stakes Brief'));
+      scoreProse(_viaRelay, g||null).then(s=>renderProseScore(s,'Stakes Brief'));
       return _viaRelay.trim();
     }
     // Fallback: legacy direct-proxy path
@@ -18982,7 +18982,7 @@ async function fetchStakesBriefFromClaude(g) {
       text = await checkCrossSport(prompt, text, CLAUDE_PROXY_URL);
       text = await maybeScoreRetry(prompt, text, CLAUDE_PROXY_URL, 'Stakes Brief');
       cardBudget.inc();
-      scoreProse(text, game||null).then(s=>renderProseScore(s,'Stakes Brief'));
+      scoreProse(text, g||null).then(s=>renderProseScore(s,'Stakes Brief'));
       return text.trim();
     }
   } catch(e_) {}
@@ -19198,7 +19198,7 @@ async function fetchEPLMatchBriefFromClaude(g) {
       text = await retryWithSportVocab(prompt, text, 'soccer', CLAUDE_PROXY_URL);
       text = await checkLeadSentence(prompt, text, CLAUDE_PROXY_URL);
       budget.inc();
-      scoreProse(text, game||null).then(s=>renderProseScore(s,'EPL Brief'));
+      scoreProse(text, g||null).then(s=>renderProseScore(s,'EPL Brief'));
       return text.trim();
     }
   } catch(e) {}
@@ -22304,7 +22304,7 @@ async function fetchNightOwlFromClaude(topGame){
           if(FIELD_DEBUG)console.warn('[JQ Layer 2c] Hard-stripped sport vocab from',_sp);
         }
       }
-      budget.inc();scoreProse(text, game||null).then(s=>renderProseScore(s,'J5 Night Owl'));return text.trim();
+      budget.inc();scoreProse(text, topGame||null).then(s=>renderProseScore(s,'J5 Night Owl'));return text.trim();
     }
   }catch(e){if(FIELD_DEBUG)console.error('[J5 Night Owl] proxy error:',e.message);}
   return null;
