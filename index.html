@@ -684,6 +684,7 @@ body::before{
 #otw-banner{
   margin:0 auto .35rem;max-width:1400px;padding:0 2rem;
   position:sticky;top:106px;z-index:24;min-height:44px;
+  display:none; /* PF-8: hidden until renderOneToWatch() sets display:block — prevents the "Fetching today's schedule…" placeholder ghosting behind brief content during initial load */
 }
 @media(max-width:600px){#otw-banner{top:130px}}
 .otw-inner{
@@ -15536,7 +15537,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-05-31h';
+  const SW_VERSION = '2026-05-31i';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -16197,6 +16198,9 @@ const FIELD_PROSE_STYLE=[
   '- BANNED PHRASES (never use): '+BANNED_PHRASES.join(', ')+'.',
   '- USE SPARINGLY (maximum once per brief): '+SPARINGLY_PHRASES.join(', ')+'. If you use any of these, use it once only — then choose a more specific word.',
   '- NEVER explain what data is missing or why you cannot write something. If context is limited, write a short factual brief from what is available. Do not produce meta-commentary about the data.',
+  '- NO MARKDOWN: output plain prose only. Never use # headers, ** bold **, * italics *, `code`, or bullet/list markers. Start with the first sentence. The renderer does not parse markdown — any formatting characters appear as literal symbols and look broken.',
+  '- DO NOT FABRICATE NUMBERS OR EVENTS: only reference scores, innings, periods, quarters, at-bats, drives, possessions, goals, baserunners, strikeouts, fouls, shots, saves, pitches, or other specific game events that are explicitly present in the context provided to you. If the context says "Final 6-4" do not invent "the decisive at-bat came in the sixth", do not invent "they loaded the bases twice", do not invent "struck out eight through seven innings". Only the final score and any explicitly-supplied stats are real. Anything more specific is fabrication.',
+  '- COMPUTE MARGINS CORRECTLY: if a final score is given, the margin is the arithmetic difference. 6-4 is a two-run / two-goal / two-point margin, NOT one-run. 19-6 is a thirteen-run blowout. Always compute the difference from the actual numbers — never invent or round.',
 ].join('\n');
 
 // ── Sport-Specific Voice Guides ──────────────────────────────────────────────
@@ -18300,8 +18304,26 @@ async function fetchFIELDBriefFromClaude(sections){
     const free=g.streams&&g.streams[0]&&new Set(['ABC','NBC','CBS','FOX','ION']).has(g.streams[0].label);
     const standingsCtx = buildGameStandingsContext(g);
     const crewCtx = getCrewContext(g);
+    // PF-5: pre-format start time so the LLM never has to interpret raw ISO
+    // dates like "2026-06-03T00:00:00Z" (which became "tips at 6/3" in May 31
+    // screenshot). Format as "Sun May 31, 8:00 PM ET".
+    const startLine = (() => {
+      try {
+        if (!g.start_time) return '';
+        const d = new Date(g.start_time);
+        const tz = selectedTz === 'local' ? localTz() : selectedTz;
+        const tzLabel = (tz === 'America/New_York' || tz === 'local') ? 'ET' :
+                        (tz === 'America/Los_Angeles') ? 'PT' :
+                        (tz === 'America/Chicago') ? 'CT' :
+                        (tz === 'America/Denver') ? 'MT' : tz.split('/').pop();
+        const datePart = d.toLocaleDateString('en-US', { timeZone: tz === 'local' ? localTz() : tz, weekday: 'short', month: 'short', day: 'numeric' });
+        const timePart = d.toLocaleTimeString('en-US', { timeZone: tz === 'local' ? localTz() : tz, hour: 'numeric', minute: '2-digit', hour12: true });
+        return `  Start: ${datePart}, ${timePart} ${tzLabel}`;
+      } catch(_) { return ''; }
+    })();
     return ['- '+g.away+' @ '+g.home,
       g.seriesRecord?'  Series: '+g.seriesRecord:'',
+      startLine,
       '  Network: '+stream+(free?' (FREE OTA)':''),
       crewCtx?'  Crew: '+crewCtx+(isMarqueeBroadcast(g)?' (marquee)':''):'',
       notes[i]&&!g.matchupNote?'  Context: '+notes[i]:'',
@@ -18326,7 +18348,20 @@ async function fetchFIELDBriefFromClaude(sections){
       })()
     ].filter(Boolean).join('\n');
   }).join('\n\n');
-  const prompt=["Write a FIELD Brief for tonight's sports slate.",'','TONIGHT\'S GAMES:',gameLines,'','RULES:','- 100-120 words. 2 short paragraphs. No headers.','- STRUCTURE: Paragraph 1 opens on the highest-stakes game with the specific situation (not the team name). Paragraph 2 covers the rest of the slate in order of importance. End on what carries forward.','- Lead with the specific situation, not the team. "48 minutes from their first Finals since 1999" not "The Knicks are looking to advance."','- Call out FREE over-the-air games explicitly.',"- Surface Scout's Pick if flagged.",'- If [ANTI-HYPE] appears in a game line, describe that matchup as low-stakes in plain prose — never echo the tag [ANTI-HYPE] verbatim.','- CORRECTNESS: write only from data above. Never invent scores, stats, records, or player tendencies.',FIELD_PROSE_STYLE,'- VOICE: third person only. Never use "you" or address the reader directly. Write like a columnist, not a chatbot.','- DIVISION ACCURACY: teams in the same division share ONE division race — never say "respective division races" for same-division teams. NHL has Atlantic/Metropolitan/Central/Pacific. NBA has Atlantic/Central/Southeast/Northwest/Pacific/Southwest. MLB has AL/NL East/Central/West.','- Plain prose only. No bullet points.','- Always complete every sentence. Never end mid-sentence.'].join('\n');
+  // PF-5: TONIGHT anchor — gives the LLM a clear today-reference so it
+  // never has to infer the current date from message context.
+  const _todayAnchor = (() => {
+    try {
+      const now = new Date();
+      const tz = selectedTz === 'local' ? localTz() : selectedTz;
+      return now.toLocaleDateString('en-US', { timeZone: tz === 'local' ? localTz() : tz, weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+    } catch(_) { return ''; }
+  })();
+  const prompt=["Write a FIELD Brief for tonight's sports slate.",'',_todayAnchor?`TODAY: ${_todayAnchor}.`:'',_todayAnchor?'':'','TONIGHT\'S GAMES:',gameLines,'','RULES:','- 100-120 words. 2 short paragraphs. No headers.','- STRUCTURE: Paragraph 1 opens on the highest-stakes game with the specific situation (not the team name). Paragraph 2 covers the rest of the slate in order of importance. End on what carries forward.','- Lead with the specific situation, not the team. "48 minutes from their first Finals since 1999" not "The Knicks are looking to advance."','- Call out FREE over-the-air games explicitly.',"- Surface Scout's Pick if flagged.",'- If [ANTI-HYPE] appears in a game line, describe that matchup as low-stakes in plain prose — never echo the tag [ANTI-HYPE] verbatim.','- CORRECTNESS: write only from data above. Never invent scores, stats, records, or player tendencies.',
+  // PF-5 + PF-7: explicit date-format and player-stat rules
+  '- DATES: when referring to a game, use the "Start:" line value verbatim. Do not write fractions like "6/3" — write "June 2" or "Tuesday" or "tonight". Never invent or reformat dates.',
+  '- PLAYER STATS: only cite a player stat number when it explicitly appears in context (e.g. "[MILESTONE: X needs 5 points for 1000]"). If a player is named without a stat, mention them by name but do NOT attach a fabricated number ("Dorofeyev leads the line" not "Dorofeyev posting 37"). Never invent goal totals, point totals, ERA, BA, etc.',
+  FIELD_PROSE_STYLE,'- VOICE: third person only. Never use "you" or address the reader directly. Write like a columnist, not a chatbot.','- DIVISION ACCURACY: teams in the same division share ONE division race — never say "respective division races" for same-division teams. NHL has Atlantic/Metropolitan/Central/Pacific. NBA has Atlantic/Central/Southeast/Northwest/Pacific/Southwest. MLB has AL/NL East/Central/West.','- Plain prose only. No bullet points.','- Always complete every sentence. Never end mid-sentence.'].filter(Boolean).join('\n');
   try{
     // ── WOW 6 Phase 2: route through relay quality gate (multi-sport slate)
     const _viaRelay = await generateJournalismViaRelay(prompt, {
@@ -22201,10 +22236,19 @@ async function fetchNightOwlFromClaude(topGame){
   // and the stored score may reflect the last known value before the final out.
   // Use the actual score difference to determine winner; if still tied, home wins.
   const winner = _awayS > _homeS ? topGame.away : topGame.home;
+  const _sp = (topGame._section || topGame._sport || topGame.sport || topGame.league || '').toLowerCase();
   const _xiNote = (_isTiedScore && (_sp.includes('baseball')||_sp.includes('mlb')))
     ? ' (went to extra innings — one team scored the winning run after the 9th)' : '';
   const score = _awayS+'\u2013'+_homeS;
-  const _sp = (topGame._section || topGame._sport || topGame.sport || topGame.league || '').toLowerCase();
+  // PF-3: compute margin server-side and pass explicitly so the LLM never
+  // has to do arithmetic. Picks the correct unit per sport.
+  const _marginN = Math.abs(_homeS - _awayS);
+  const _marginUnit = (_sp.includes('baseball')||_sp.includes('mlb')) ? 'run'
+                   : (_sp.includes('hockey')||_sp.includes('nhl')||_sp.includes('soccer')||_sp.includes('football')||_sp.includes('mls')) ? 'goal'
+                   : 'point';
+  const _marginLine = _isTiedScore && (_sp.includes('baseball')||_sp.includes('mlb'))
+    ? `MARGIN: one-${_marginUnit} (extra innings — winning ${_marginUnit} scored after the 9th)`
+    : `MARGIN: ${_marginN}-${_marginUnit}${_marginN === 1 ? '' : 's'} (winner ${winner})`;
   const _terms = _sp.includes('baseball') || _sp.includes('mlb')
     ? 'SPORT=BASEBALL. This is a baseball game. Use ONLY baseball vocabulary.\nScore in RUNS. Close game = one-run game. Extra period = extra innings.\nFORBIDDEN — any use is a FACTUAL ERROR disqualifying the recap: quarter, quarters, fourth quarter, halftime, half time, field goal, field goal percentage, three-point, three-pointer, free throw, rebound, rebounds, one-possession, possession game, fast break, assist, assists, ball movement, interior scoring, basket, baskets, in the paint, down the stretch, offensive rhythm, offensive sets, transition game, points (unless quoting opponent stats), touchdown, first down, penalty kick, nil, offsides.\nUSE INSTEAD: runs, innings, hits, strikeouts, ERA, pitch count, at-bat, on-base, extra innings, bullpen, lineup, swing.'
     : _sp.includes('hockey') || _sp.includes('nhl')
@@ -22248,6 +22292,7 @@ async function fetchNightOwlFromClaude(topGame){
   const prompt=['Write a FIELD Night Owl recap.',
       'Game: '+topGame.away+' @ '+topGame.home+(topGame.venue?' · '+topGame.venue:''),
       'Final: '+score+' ('+winner+' wins)'+_xiNote,
+      _marginLine,
       _terms,
       topGame.seriesRecord?'Series: '+topGame.seriesRecord:'',
       topGame.dramaPeak?'Drama peak: '+Math.round(topGame.dramaPeak)+'/100':'',
@@ -22259,6 +22304,13 @@ async function fetchNightOwlFromClaude(topGame){
       '','Rules: 80-100 words. Tactical. Not emotional. Lead with the turning point.',
       _owlStatCtx?'If stat context is provided above, cite the specific figure — never paraphrase it.':'',
       'Write only from the data above — never invent statistics, player tendencies, or context.',
+      // PF-4: ban specific-inning / specific-at-bat / specific-period fabrications.
+      // The LLM has ONLY the final score and any [MLB BOX], [PP/PK], standings
+      // context shown above. Anything more specific (which inning was decisive,
+      // which batter drove in the go-ahead run, who scored the GW goal, how
+      // many strikeouts the bullpen had) is fabrication — banned outright.
+      'CRITICAL — DO NOT FABRICATE SPECIFICS: do not write about which inning/quarter/period was decisive, do not name specific at-bats or possessions, do not invent strikeout/save/turnover counts, do not describe runners on base or scoring sequences. You have the final score, the margin, the series record, and whatever stat lines appear in brackets above — nothing else. Write a recap that captures what the data says, not a play-by-play.',
+      'CRITICAL — USE THE GIVEN MARGIN: the MARGIN line above is the authoritative score difference. Never describe a 2-run game as "one-run", a 3-goal game as "one-goal", etc. Use the unit and number from the MARGIN line verbatim.',
       FIELD_PROSE_STYLE,
       getFieldVoice(_sp),
       'Third person only — never use "you" or address the reader directly.',
