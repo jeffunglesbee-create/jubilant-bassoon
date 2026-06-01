@@ -1742,3 +1742,13 @@ assert('A359 — standalone J3 (fetchFIELDBriefFromClaude) honors isBigGame word
   html.includes("'200-240 words. 3-4 paragraphs. No headers.'") &&
   html.includes('`- ${briefWordsJ3}`'),
   'fetchFIELDBriefFromClaude must compute isBigGameJ3 from ranked games using the same regex as the compound path, derive a briefWordsJ3 ternary (200-240w / 3-4 paragraphs for big games, 100-120w / 2 paragraphs otherwise), and interpolate it into the prompt RULES block — previously hardcoded 100-120w regardless of stakes');
+
+assert('A360 — Axis 3 Phase A: buildSeriesContextTags helper defined and wired into both J3 paths',
+  /function buildSeriesContextTags\(game\)\s*\{/.test(html) &&
+  html.includes('[PLAYOFF STATS: ') &&
+  html.includes('[INJURY: ') &&
+  html.includes('[COACH: ') &&
+  html.includes('[HISTORICAL: ') &&
+  // Wired into both prompt builders (standalone fetchFIELDBriefFromClaude + compound buildCompoundPrompt)
+  (html.match(/buildSeriesContextTags\(g\)/g) || []).length >= 2,
+  'buildSeriesContextTags must define all four optional-field tags (PLAYOFF STATS / INJURY / COACH / HISTORICAL) and be invoked from at least two call sites — the standalone J3 path and the compound prompt path');

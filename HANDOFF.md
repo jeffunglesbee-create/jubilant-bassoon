@@ -1,6 +1,6 @@
-# FIELD Handoff — June 1 2026 (JQ-5 → My Services refactor → stale EPL fix → WC2026 corrections)
+# FIELD Handoff — June 1 2026 (JQ-5 → My Services refactor → stale EPL fix → WC2026 corrections → R2 Finals briefs → J3 path fix → Axis 3 Phase A)
 
-**jubilant-bassoon HEAD:** 8008759 (code) · 86ffddf (HANDOFF) · Smoke: 241/0 pre-gate · SW_VERSION 2026-06-01d
+**jubilant-bassoon HEAD:** (post-push, this commit) · Smoke: 241/0 pre-gate (+A359, A360 post-gate) · SW_VERSION 2026-06-01e
 **field-relay-nba HEAD:** 0ae4c11 · Deploy: SUCCESS · STRUCTURAL 6 green · WOW 8 e2e verified (unchanged this session)
 **Session Doc (FULL — Drive):** 1_9ECU61QSWoWFOPgH9oxsCLZ11jj1E_YqZP2lWXwPG8
 **Session Doc (JQ-5 segment only):** 1Q35ZOtrttizfbiS2ad2TMnRy3gYJozXJT9Of-9RKCc0
@@ -14,7 +14,37 @@
 - **World Cup 2026: June 11 HARD** — flip `wc26:true` in FIELD_V2_SOURCES (~5 min)
 - **USPTO provisional: ~June 25**
 
-## WHAT HAPPENED THIS SESSION
+## AFTERNOON EXTENSION — R2 Finals briefs + J3 standalone path fix + Axis 3 Phase A
+
+User opened: "start_session, open handoff doc for R2 finals narrative" → Cup G1 + NBA Finals G1 brief drafts.
+
+### Brief drafts (two files, both staged under /mnt/user-data/outputs)
+- `r2_finals_briefs.md` — kitchen-sink / aspirational. 4 drafts (Cup J2 ~108w, Cup J3 ~320w, NBA J2 ~115w, NBA J3 ~290w). Patent-defense reference for what FIELD aspires to with richer context.
+- `r2_finals_briefs_production.md` — production-shape. Same 4 series, conformed to production prompts: situation-first lead, free-on-ABC explicit, big-game word budgets (J2 ~160w, J3 200-240w / 3-4 paragraphs).
+- Both pass TIME-PERIOD ANCHORING + SLATE BOUNDARY + DO NOT INVENT + third-person + zero JQ-flagged voice/cliche.
+- Production-shape drafts still cite playoff scoring leaders / goalie SV% / coach attributions / market lines / injuries that came from external research — not from the production context block. **Production cannot reproduce these as-is until Phase B data sourcing lands (see priority list).**
+
+### Axis 2 — Standalone J3 path: honor isBigGame word budget (commit 0721c50, pushed, deploy-gate triggered)
+- `fetchFIELDBriefFromClaude` was hardcoded to `100-120 words. 2 short paragraphs` regardless of stakes
+- Compound path (`buildCompoundPrompt`, line ~17296) already correctly doubles to `200-240 words. 3-4 paragraphs.` for Conference Finals and above via `isBigGame`
+- Fix: mirror the same regex (`/conference finals|cf g\d|nba finals|stanley cup final|wcf|ecf/i`) into the standalone path; derive `briefWordsJ3` ternary; interpolate into the prompt RULES line
+- Smoke +A359 (post-gate, see P1 item 6 gate-position issue)
+- **Risk note:** with Phase B not yet wired, the standalone J3 now gets 200-240w against the same thin context — likely produces padded/repetitive prose for finals briefs until Phase B lands
+
+### Axis 3 Phase A — buildSeriesContextTags scaffolding (this commit)
+- New helper `buildSeriesContextTags(game)` (inserted after `buildGameStandingsContext`) emits four optional context tags:
+  - `[PLAYOFF STATS: ...]` from `game.playoffLeaders` (Array<string>)
+  - `[INJURY: ...]` from `game.injuries` (Array<string>)
+  - `[COACH: home — X; away — Y]` from `game.coaches` ({home?, away?})
+  - `[HISTORICAL: ...]` from `game.historical` (string)
+- Wired into both `buildCompoundPrompt` (line ~17418) and `fetchFIELDBriefFromClaude` (line ~18550)
+- Inert until Phase B data flows populate the optional fields — DO NOT INVENT preserved
+- Smoke +A360 (post-gate)
+
+### SW_VERSION bump
+- 2026-06-01d → 2026-06-01e (covers Axis 2 + Axis 3 Phase A + SW bump itself per Rule 23)
+
+## WHAT HAPPENED THIS SESSION (morning)
 
 Single-feature TYPE C session per Rule 1. User opened with "Run jq-5, DO NOT
 ASSUME." Built JQ-ACTION-A/B/C in spec order (A first → B parallel → C after A).
@@ -161,6 +191,56 @@ corrections.
 
 ### P0 — Hardcoded calendar flip
 5. **June 11 HARD:** flip `wc26:true` in FIELD_V2_SOURCES (~5 min change)
+
+### P0 — Axis 3 Phase B: data-source wiring for buildSeriesContextTags
+**(now urgent — Phase A scaffolding is live and Axis 2 widened J3 word budget; without Phase B, big-game briefs will be padded against thin context.)**
+
+Phase A (committed this session) added a `buildSeriesContextTags(g)` helper
+that emits `[PLAYOFF STATS]`, `[INJURY]`, `[COACH]`, `[HISTORICAL]` context
+tags from optional fields on the game object. The helper is wired into both
+the standalone J3 path and the compound prompt path. The fields are not yet
+populated by any data flow — Phase B wires the sources.
+
+Four independent data tasks (each ~30-90 min):
+
+- **`game.playoffLeaders`** (Array<string>). For NBA: scrape or fetch
+  playoff scoring leaders per team. NHL: NHL Stats API
+  `/stats/rest/en/skater/summary?cayenneExp=seasonId=20262026 and gameTypeId=3`
+  (or similar). Format each entry as a single line ready for the prompt:
+  `"Marner 21 pts in 16 games"`, `"Andersen 1.41 GAA .931 SV%"`.
+  Acceptance: real Cup/NBA Finals games show non-empty `[PLAYOFF STATS]` tag.
+
+- **`game.injuries`** (Array<string>). Inj feed compatible with the
+  ESPN-reduction policy. Possible sources: NHL `https://api-web.nhle.com/v1/club-stats-season/{teamCode}`,
+  NBA team injury reports. Each entry: `"Lauzon (VGK) out — upper body"`.
+  Note: existing `bdlInjuryContextSync` in compound path already injects an
+  NBA injury context line via BDL — coordinate to avoid double-injection
+  (either retire that helper, or have buildSeriesContextTags pass through it).
+
+- **`game.coaches`** (`{home?, away?}`). Hardcoded team→coach lookup OR
+  fetched from team-roster endpoints. Lookup table is acceptable per ADR-001
+  since head coach is STABLE within a season. Acceptance: tag shows for all
+  major US leagues + EPL/AFL when those games are in the slate.
+
+- **`game.historical`** (string). Hardcoded series-anchor lookup for active
+  championship rounds: `{ "CAR_VGK_2026SCF": "First Cup Final for Carolina
+  since 2006 win over Edmonton; third Vegas Final in nine years, last
+  championship 2023." }`. Repeatable for NBA Finals, future series. ADR-001
+  permits since historical anchors are STABLE data.
+
+After Phase B wiring, validate by inspecting the generated J3 brief for
+Cup G1 and NBA G1 — should reach the depth of `r2_finals_briefs_production.md`.
+
+### P1 — J3 path parity (standalone vs compound)
+**Standalone J3** (`fetchFIELDBriefFromClaude`) is much thinner than
+**compound J3** (`buildCompoundPrompt`). Standalone has ~10 context tags;
+compound has ~20+ including `[LEAGUE]`, live status, ESPN leaders, pitchers,
+sport-specific analytics, stat-of-day, arc, BNI, franchise context, live
+extreme, EMBER, BDL injury, ESPN stats, weather, WIKI, NHL/MLB live, BDL
+PPG leaders, BDL season stats, volatility. Bringing standalone to parity
+would require porting ~10 tag-construction blocks. Estimate ~60-90 min,
+mostly mechanical. Consider only if standalone path fires often in
+production traces — if compound is dominant, low priority.
 
 ### P1 — Smoke gate fix (carried + now more urgent)
 6. **smoke.js gate position (~15 min):** `if (fail > 0) process.exit(1)` at

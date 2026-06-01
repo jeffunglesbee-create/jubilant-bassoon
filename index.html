@@ -15687,7 +15687,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-01d';
+  const SW_VERSION = '2026-06-01e';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -17415,6 +17415,10 @@ function buildCompoundPrompt(sections) {
       (()=>{try{if(!g.seriesRecord||!g.matchupNote) return '';const names=[];const m=g.matchupNote.matchAll(/([A-Z][a-z]+(?:\s+[A-Z][a-z]+)+)\s+\d+/g);for(const match of m){if(!names.includes(match[1]))names.push(match[1]);}const stats=names.slice(0,3).map(n=>{const k='bdl_stat_'+n.toLowerCase().replace(/\s+/g,'_');return _bdlStatCache[k]||''}).filter(Boolean);return stats.length?`  [SEASON STATS] ${stats.join(' · ')}`:''}catch(e_){return ''}})(),
       // Volatility Index: game flow context for AI — CHAOTIC or LOCKED IN framing
       (()=>{try{const vL=getVolatilityLabel(g._id||'');return vL?`  [GAME FLOW: ${vL.toUpperCase()} — drama swinging ${vL==='chaotic'?'significantly':'steadily'} this period]`:''}catch(e_){return ''}})(),
+      // Axis 3 Phase A: structured series-context tags from optional fields
+      // (playoffLeaders / injuries / coaches / historical). Empty until Phase B
+      // data sources are wired; helper is defined-but-inert without inputs.
+      buildSeriesContextTags(g),
     ].filter(Boolean).join('\n');
   }).join('\n\n');
 
@@ -18319,6 +18323,44 @@ function buildGameStandingsContext(game) {
   return 'Standings: ' + velParts.join(' · ');
 }
 
+// ── buildSeriesContextTags (Axis 3 Phase A scaffolding, June 1 2026) ──────────
+// Emits structured context tags from optional fields on the game object.
+// Each field is populated by future Phase B data sources (HANDOFF):
+//   game.playoffLeaders : Array<string>  — one leader line per element
+//   game.injuries       : Array<string>  — one injury line per element
+//   game.coaches        : { home?: string, away?: string }
+//   game.historical     : string         — single anchor (e.g. "First Cup Final since 2006")
+// When a field is absent the corresponding tag is NOT emitted. Output is a
+// "\n"-joined string of tag lines suitable for inclusion in per-game prompt
+// blocks (both standalone fetchFIELDBriefFromClaude and compound
+// buildCompoundPrompt callers). All tags carry the same "  [TAG: payload]"
+// shape as existing context tags (BNI, MILESTONE, EMBER, etc.) so the AI
+// reads them through the same channel. DO NOT INVENT: helper never fabricates
+// payload content — it is a strict pass-through of provided field values.
+function buildSeriesContextTags(game) {
+  const lines = [];
+  try {
+    if (Array.isArray(game.playoffLeaders) && game.playoffLeaders.length) {
+      const payload = game.playoffLeaders.filter(Boolean).join('; ');
+      if (payload) lines.push('  [PLAYOFF STATS: ' + payload + ']');
+    }
+    if (Array.isArray(game.injuries) && game.injuries.length) {
+      const payload = game.injuries.filter(Boolean).join('; ');
+      if (payload) lines.push('  [INJURY: ' + payload + ']');
+    }
+    if (game.coaches && (game.coaches.home || game.coaches.away)) {
+      const parts = [];
+      if (game.coaches.home) parts.push(`${game.home || 'home'} — ${game.coaches.home}`);
+      if (game.coaches.away) parts.push(`${game.away || 'away'} — ${game.coaches.away}`);
+      if (parts.length) lines.push('  [COACH: ' + parts.join('; ') + ']');
+    }
+    if (typeof game.historical === 'string' && game.historical.trim()) {
+      lines.push('  [HISTORICAL: ' + game.historical.trim() + ']');
+    }
+  } catch(_) {}
+  return lines.join('\n');
+}
+
 // ── Game Notes Layer (Item 38) ────────────────────────────────────────────────
 // Priority stack: P1 manual → P2 official league editorial → P3 structured → P4 RSS
 // Replaces ESPN notes dependency entirely. All sources are official, free, CORS-open.
@@ -18556,7 +18598,11 @@ async function fetchFIELDBriefFromClaude(sections){
           if (ctx.standingsGap != null && ctx.standingsGap <= 2) lines.push('  [STANDINGS: teams within 2 games]');
           return lines.join('\n');
         } catch(e_) { return ''; }
-      })()
+      })(),
+      // Axis 3 Phase A: structured series-context tags from optional fields
+      // (playoffLeaders / injuries / coaches / historical). Same helper used
+      // by buildCompoundPrompt; empty until Phase B data sources are wired.
+      buildSeriesContextTags(g)
     ].filter(Boolean).join('\n');
   }).join('\n\n');
   // PF-5: TONIGHT anchor — gives the LLM a clear today-reference so it
