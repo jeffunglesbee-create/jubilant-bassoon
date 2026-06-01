@@ -15687,7 +15687,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-01e';
+  const SW_VERSION = '2026-06-01f';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -17384,9 +17384,11 @@ function buildCompoundPrompt(sections) {
       extremeNote ? `  [LIVE EXTREME] ${extremeNote}` : '',
       // Fix 7: EMBER buried lead — tier + channel context for editorial framing
       (()=>{try{const er=_emberResultCache[g._id||''];return er?`  [EMBER BURIED LEAD: Tier${er.tier} on ${er.channel}${er.lateClose?' · late-close game':''}${er.contextFlag?' · context boost':''}]`:''}catch(e_){return ''}})(),
-      // Fix 9: BDL injury context (sync, reads from warm bdlCache after bdlPrefetchAll)
-      // Called once — store result to avoid double traversal of bdlCache.injuries
-      (()=>{try{const inj=bdlInjuryContextSync(g.home||'',g.away||'',g._sport||g._section||'');return inj?`  ${inj}`:''}catch(e_){return ''}})(),
+      // Axis 3 Phase B: BDL injury context now routed through buildSeriesContextTags
+      // via populateSeriesContext(g) → [INJURY: ...] tag. Inline call retired
+      // June 1 2026 PM to prevent double-injection now that the compound path also
+      // surfaces injuries through the same helper. bdlInjuryContextSync function
+      // retained as the data source for NBA pulls inside populateSeriesContext.
       // Item 7: ESPN athlete stats — pre-fetched in fetchESPNAthleteContextAll
       // MLB pitchers: ERA/W-L/K. NHL: G/A/PTS. NBA: PPG/APG/RPG (supplements BDL)
       // DO NOT INVENT: only surfaces stats that ESPN confirmed — never generate stats
@@ -17415,9 +17417,16 @@ function buildCompoundPrompt(sections) {
       (()=>{try{if(!g.seriesRecord||!g.matchupNote) return '';const names=[];const m=g.matchupNote.matchAll(/([A-Z][a-z]+(?:\s+[A-Z][a-z]+)+)\s+\d+/g);for(const match of m){if(!names.includes(match[1]))names.push(match[1]);}const stats=names.slice(0,3).map(n=>{const k='bdl_stat_'+n.toLowerCase().replace(/\s+/g,'_');return _bdlStatCache[k]||''}).filter(Boolean);return stats.length?`  [SEASON STATS] ${stats.join(' · ')}`:''}catch(e_){return ''}})(),
       // Volatility Index: game flow context for AI — CHAOTIC or LOCKED IN framing
       (()=>{try{const vL=getVolatilityLabel(g._id||'');return vL?`  [GAME FLOW: ${vL.toUpperCase()} — drama swinging ${vL==='chaotic'?'significantly':'steadily'} this period]`:''}catch(e_){return ''}})(),
+      // Axis 3 Phase B: populate optional fields (coaches/historical from
+      // hardcoded lookups; injuries pass-through from bdlCache). Mutates g so
+      // buildSeriesContextTags reads populated fields. Idempotent — safe to
+      // call multiple times. STABLE data only per ADR-001 — playoff leaders
+      // (subtask 9, COUNTERS) require feed integration and remain deferred.
+      (()=>{try{populateSeriesContext(g)}catch(e_){}})(),
       // Axis 3 Phase A: structured series-context tags from optional fields
-      // (playoffLeaders / injuries / coaches / historical). Empty until Phase B
-      // data sources are wired; helper is defined-but-inert without inputs.
+      // (playoffLeaders / injuries / coaches / historical). Phase B populates
+      // coaches/historical/injuries via populateSeriesContext above; playoff
+      // leaders remain empty until the feed lands (subtask 9, deferred).
       buildSeriesContextTags(g),
     ].filter(Boolean).join('\n');
   }).join('\n\n');
@@ -18323,6 +18332,149 @@ function buildGameStandingsContext(game) {
   return 'Standings: ' + velParts.join(' · ');
 }
 
+// ── Series Context Phase B (June 1 2026) ──────────────────────────────────────
+// Phase B data sources for buildSeriesContextTags (defined just below).
+// Subtask 6: NHL + NBA head-coach lookups (STABLE per ADR-001 — coaches change
+//   rarely, never mid-playoffs). Sources: Pro Hockey Rumors NHL Coaching Staff
+//   Directory (June 2025) + verified mid-season changes (VGK Cassidy→Tortorella
+//   March 29 2026); Wikipedia 2025-26 team season pages for NBA (verified
+//   through May 31 2026). Conservative coverage: teams whose 2025-26 HC was
+//   confirmed by ≥1 authoritative season-page or major outlet source. Missing
+//   entries → no [COACH] tag fires for that team (graceful degradation).
+// Subtask 7: Historical anchors for active championship rounds. STABLE for the
+//   duration of the series. Update when a new championship matchup is set.
+// Subtask 8: NBA injury pass-through reuses existing bdlInjuryContextSync; NHL
+//   injury feed (api-web.nhle.com) deferred until subtask 9 wiring.
+// DO NOT INVENT: every coach name + anchor verified before commit.
+const NHL_HEAD_COACHES = {
+  'ANA':'Joel Quenneville',    'BOS':'Marco Sturm',         'BUF':'Lindy Ruff',
+  'CGY':'Ryan Huska',          'CAR':"Rod Brind'Amour",     'CHI':'Jeff Blashill',
+  'COL':'Jared Bednar',        'CBJ':'Dean Evason',         'DAL':'Glen Gulutzan',
+  'DET':'Todd McLellan',       'EDM':'Kris Knoblauch',      'FLA':'Paul Maurice',
+  'LAK':'Jim Hiller',          'MIN':'John Hynes',          'MTL':'Martin St. Louis',
+  'NSH':'Andrew Brunette',     'NJD':'Sheldon Keefe',       'NYI':'Patrick Roy',
+  'NYR':'Mike Sullivan',       'OTT':'Travis Green',        'PHI':'Rick Tocchet',
+  'PIT':'Dan Muse',            'SEA':'Lane Lambert',        'SJS':'Ryan Warsofsky',
+  'STL':'Jim Montgomery',      'TBL':'Jon Cooper',          'TOR':'Craig Berube',
+  'UTA':'André Tourigny',      'VAN':'Adam Foote',          'VGK':'John Tortorella',
+  'WSH':'Spencer Carbery',     'WPG':'Scott Arniel',
+};
+const NBA_HEAD_COACHES = {
+  'atlanta hawks':'Quin Snyder',
+  'boston celtics':'Joe Mazzulla',
+  'brooklyn nets':'Jordi Fernandez',
+  'charlotte hornets':'Charles Lee',
+  'chicago bulls':'Billy Donovan',
+  'cleveland cavaliers':'Kenny Atkinson',
+  'dallas mavericks':'Jason Kidd',
+  'denver nuggets':'David Adelman',
+  'detroit pistons':'J.B. Bickerstaff',
+  'golden state warriors':'Steve Kerr',
+  'houston rockets':'Ime Udoka',
+  'indiana pacers':'Rick Carlisle',
+  'la clippers':'Tyronn Lue',
+  'los angeles clippers':'Tyronn Lue',
+  'los angeles lakers':'JJ Redick',
+  'memphis grizzlies':'Tuomas Iisalo',
+  'miami heat':'Erik Spoelstra',
+  'milwaukee bucks':'Doc Rivers',
+  'new york knicks':'Mike Brown',
+  'oklahoma city thunder':'Mark Daigneault',
+  'orlando magic':'Jamahl Mosley',
+  'philadelphia 76ers':'Nick Nurse',
+  'phoenix suns':'Jordan Ott',
+  'portland trail blazers':'Chauncey Billups',
+  'sacramento kings':'Doug Christie',
+  'san antonio spurs':'Mitch Johnson',
+  'toronto raptors':'Darko Rajaković',
+  'washington wizards':'Brian Keefe',
+  // Verified-stable subset only. MIN / NOP / UTA omitted pending re-verification
+  // — missing entries gracefully produce no [COACH] tag for those teams.
+};
+
+// Historical anchors for active championship rounds.
+// Format: crisp single-line "first since X" framing the J3 lead can anchor on.
+// Update when a new championship-round matchup is set. STABLE within series.
+const SERIES_HISTORICAL_ANCHORS = {
+  'NHL_SCF_2026': "Carolina's first Stanley Cup Final since winning it in 2006 (20 years) — fourth conference-final breakthrough attempt since 2019, all prior three lost; Vegas making third Cup Final in nine years as a franchise (won 2023), under late-season hire John Tortorella who took over from Bruce Cassidy with 10 games left in the regular season.",
+  'NBA_FINALS_2026': "Knicks' first NBA Finals appearance since 1999 (27 years) — lost 4-1 that year to the Spurs; chasing first NBA title since 1973 (53 years). Spurs' first Finals since 2014 (12 years) — Wembanyama in the same role Tim Duncan filled in the 1999 series against this exact opponent.",
+};
+
+function getHeadCoachForTeam(teamName, sport) {
+  if (!teamName) return null;
+  const s = (sport || '').toLowerCase();
+  try {
+    if (s.includes('nhl') || s.includes('hockey')) {
+      const abbrev = (typeof getNHLAbbrev === 'function') ? getNHLAbbrev(teamName) : null;
+      return abbrev ? (NHL_HEAD_COACHES[abbrev] || null) : null;
+    }
+    if (s.includes('nba') || s.includes('basketball')) {
+      return NBA_HEAD_COACHES[(teamName || '').toLowerCase()] || null;
+    }
+  } catch(_) {}
+  return null;
+}
+
+function getSeriesHistoricalAnchor(game) {
+  if (!game) return null;
+  const league = (game.league || '').toLowerCase();
+  const sport = (game._section || game._sport || '').toLowerCase();
+  try {
+    if ((sport.includes('nhl') || sport.includes('hockey')) && /stanley\s*cup\s*final/.test(league)) {
+      return SERIES_HISTORICAL_ANCHORS['NHL_SCF_2026'] || null;
+    }
+    if ((sport.includes('nba') || sport.includes('basketball')) && /nba\s*finals/.test(league)) {
+      return SERIES_HISTORICAL_ANCHORS['NBA_FINALS_2026'] || null;
+    }
+  } catch(_) {}
+  return null;
+}
+
+// populateSeriesContext: mutates the game object to fill optional fields read by
+// buildSeriesContextTags. Idempotent (won't overwrite pre-populated values).
+// Called at the per-game emission step in both J3 paths (standalone + compound).
+function populateSeriesContext(game) {
+  if (!game || typeof game !== 'object') return;
+  try {
+    // Subtask 6 — Coaches (STABLE, hardcoded)
+    if (!game.coaches) {
+      const sport = game._section || game._sport || '';
+      const homeCoach = getHeadCoachForTeam(game.home || '', sport);
+      const awayCoach = getHeadCoachForTeam(game.away || '', sport);
+      if (homeCoach || awayCoach) {
+        game.coaches = {};
+        if (homeCoach) game.coaches.home = homeCoach;
+        if (awayCoach) game.coaches.away = awayCoach;
+      }
+    }
+    // Subtask 7 — Historical anchor (STABLE, hardcoded; championship rounds only)
+    if (!game.historical) {
+      const anchor = getSeriesHistoricalAnchor(game);
+      if (anchor) game.historical = anchor;
+    }
+    // Subtask 8 — Injuries (NBA via bdlCache; NHL feed deferred to subtask 9 cycle)
+    if (!Array.isArray(game.injuries) || !game.injuries.length) {
+      try {
+        if (typeof bdlInjuryContextSync === 'function') {
+          const inj = bdlInjuryContextSync(game.home || '', game.away || '', game._sport || game._section || '');
+          if (inj) {
+            // bdlInjuryContextSync returns "Injuries: X (status), Y (status)."
+            // Convert to array of "X (status)" entries for [INJURY: ...] tag.
+            const stripped = inj.replace(/^Injuries:\s*/i, '').replace(/\.\s*$/, '').trim();
+            if (stripped) {
+              const parts = stripped.split(/,\s*/).map(s => s.trim()).filter(Boolean);
+              if (parts.length) game.injuries = parts;
+            }
+          }
+        }
+      } catch(_) {}
+    }
+    // Subtask 9 — Playoff Leaders (COUNTERS, feed-driven). DEFERRED.
+    // When wired, this is where the playoff-leaders cache would be read into
+    // game.playoffLeaders. Placeholder — no-op until subtask 9 lands.
+  } catch(_) {}
+}
+
 // ── buildSeriesContextTags (Axis 3 Phase A scaffolding, June 1 2026) ──────────
 // Emits structured context tags from optional fields on the game object.
 // Each field is populated by future Phase B data sources (HANDOFF):
@@ -18350,8 +18502,12 @@ function buildSeriesContextTags(game) {
     }
     if (game.coaches && (game.coaches.home || game.coaches.away)) {
       const parts = [];
-      if (game.coaches.home) parts.push(`${game.home || 'home'} — ${game.coaches.home}`);
-      if (game.coaches.away) parts.push(`${game.away || 'away'} — ${game.coaches.away}`);
+      // Use nickname (Hurricanes) not full name (Carolina Hurricanes) — matches
+      // HANDOFF acceptance: "[COACH: Hurricanes — Brind'Amour; Golden Knights — Tortorella]"
+      const hNick = (typeof teamNick === 'function') ? teamNick(game.home || '') : (game.home || 'home');
+      const aNick = (typeof teamNick === 'function') ? teamNick(game.away || '') : (game.away || 'away');
+      if (game.coaches.home) parts.push(`${hNick || game.home || 'home'} — ${game.coaches.home}`);
+      if (game.coaches.away) parts.push(`${aNick || game.away || 'away'} — ${game.coaches.away}`);
       if (parts.length) lines.push('  [COACH: ' + parts.join('; ') + ']');
     }
     if (typeof game.historical === 'string' && game.historical.trim()) {
@@ -18599,9 +18755,13 @@ async function fetchFIELDBriefFromClaude(sections){
           return lines.join('\n');
         } catch(e_) { return ''; }
       })(),
+      // Axis 3 Phase B: populate coaches/historical/injuries on game obj before
+      // tag emission. Same helper as standalone path — single source of truth.
+      (()=>{try{populateSeriesContext(g)}catch(e_){}})(),
       // Axis 3 Phase A: structured series-context tags from optional fields
       // (playoffLeaders / injuries / coaches / historical). Same helper used
-      // by buildCompoundPrompt; empty until Phase B data sources are wired.
+      // by buildCompoundPrompt; populated by populateSeriesContext above
+      // (subtasks 6/7/8); playoff leaders await subtask 9 feed wiring.
       buildSeriesContextTags(g)
     ].filter(Boolean).join('\n');
   }).join('\n\n');

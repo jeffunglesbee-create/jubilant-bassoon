@@ -167,11 +167,22 @@ assert('A52 — espnScores._gameId stored + used in ticker trend sort',
   html.includes('function resolveGameIdByHome') &&
   html.includes('e._gameId || gid'));
 
-assert('A53 — bdlInjuryContextSync called once per game in compound prompt',
+assert('A53 — bdlInjuryContextSync has a single call site (inside populateSeriesContext) — no double-injection',
   (() => {
-    const m = html.match(/\/\/ Fix 9: BDL.*?\/\/ Fix 6:/s);
-    if (!m) return false;
-    return (m[0].match(/bdlInjuryContextSync/g) || []).length === 1;
+    // Post-Phase-B (June 1 2026 PM): the inline call in standalone J3 was retired
+    // and bdlInjuryContextSync is now invoked solely from inside populateSeriesContext,
+    // which itself runs once per game in each J3 path. This guarantees one injury
+    // pass per game across both standalone and compound prompt builders.
+    // Strip JS line comments before counting so doc strings can mention the name
+    // without inflating the call count.
+    const stripped = html.replace(/\/\/[^\n]*/g, '');
+    const callOrDef = stripped.match(/[^A-Za-z0-9_]bdlInjuryContextSync\s*\(/g) || [];
+    // Expected: 1 function definition + 1 production call = 2 occurrences total.
+    if (callOrDef.length !== 2) return false;
+    // The call must be inside populateSeriesContext (not loose anywhere else).
+    const popMatch = html.match(/function populateSeriesContext\([^)]*\)\s*\{[\s\S]*?\n\}/);
+    if (!popMatch) return false;
+    return popMatch[0].includes('bdlInjuryContextSync(game.home');
   })());
 
 assert('A54 — Night Owl save/load uses ET timezone key consistently',
@@ -1752,3 +1763,48 @@ assert('A360 — Axis 3 Phase A: buildSeriesContextTags helper defined and wired
   // Wired into both prompt builders (standalone fetchFIELDBriefFromClaude + compound buildCompoundPrompt)
   (html.match(/buildSeriesContextTags\(g\)/g) || []).length >= 2,
   'buildSeriesContextTags must define all four optional-field tags (PLAYOFF STATS / INJURY / COACH / HISTORICAL) and be invoked from at least two call sites — the standalone J3 path and the compound prompt path');
+
+assert('A361 — Axis 3 Phase B subtask 6: NHL + NBA head-coach lookup tables defined with playoff-team coverage',
+  /const NHL_HEAD_COACHES\s*=/.test(html) &&
+  /const NBA_HEAD_COACHES\s*=/.test(html) &&
+  // Cup Final teams (CAR + VGK) must be covered
+  /['"]CAR['"]\s*:\s*["']Rod Brind/.test(html) &&
+  /['"]VGK['"]\s*:\s*['"]John Tortorella['"]/.test(html) &&
+  // NBA Finals teams (SAS + NYK) must be covered
+  /['"]san antonio spurs['"]\s*:\s*['"]Mitch Johnson['"]/.test(html) &&
+  /['"]new york knicks['"]\s*:\s*['"]Mike Brown['"]/.test(html) &&
+  /function getHeadCoachForTeam\(/.test(html),
+  'NHL_HEAD_COACHES and NBA_HEAD_COACHES tables must be defined and cover the four active championship-round teams (CAR/VGK for Cup Final, SAS/NYK for NBA Finals); getHeadCoachForTeam getter must be defined');
+
+assert('A362 — Axis 3 Phase B subtask 7: SERIES_HISTORICAL_ANCHORS defined for NHL_SCF_2026 + NBA_FINALS_2026',
+  /const SERIES_HISTORICAL_ANCHORS\s*=/.test(html) &&
+  html.includes('NHL_SCF_2026') &&
+  html.includes('NBA_FINALS_2026') &&
+  // Anchor for CAR includes the "since 2006" framing — DO NOT INVENT verification
+  /first Stanley Cup Final since winning it in 2006/.test(html) &&
+  // Anchor for NYK includes "since 1999" framing
+  /first NBA Finals appearance since 1999/.test(html) &&
+  /function getSeriesHistoricalAnchor\(/.test(html),
+  'SERIES_HISTORICAL_ANCHORS table must define entries for NHL_SCF_2026 (Carolina/Vegas) and NBA_FINALS_2026 (Knicks/Spurs) with verified historical framings; getSeriesHistoricalAnchor getter must be defined');
+
+assert('A363 — Axis 3 Phase B: populateSeriesContext defined and wired into both J3 paths before buildSeriesContextTags',
+  /function populateSeriesContext\(game\)\s*\{/.test(html) &&
+  // Helper populates the three Phase B fields (coaches, historical, injuries)
+  /game\.coaches\s*=\s*\{\}/.test(html) &&
+  /game\.historical\s*=\s*anchor/.test(html) &&
+  /game\.injuries\s*=\s*parts/.test(html) &&
+  // Wired into BOTH J3 paths — must run before buildSeriesContextTags in each
+  (html.match(/populateSeriesContext\(g\)/g) || []).length >= 2,
+  'populateSeriesContext must mutate game.coaches/historical/injuries (subtasks 6/7/8) and be invoked from at least two call sites — the standalone J3 per-game line and the compound prompt per-game line — preceding buildSeriesContextTags in each');
+
+assert('A364 — Axis 3 Phase B subtask 8 coordination: inline bdlInjuryContextSync call retired from standalone J3 (now routed through buildSeriesContextTags)',
+  // The OLD inline pattern at line ~17389 must be gone
+  !html.includes("(()=>{try{const inj=bdlInjuryContextSync(g.home||'',g.away||'',g._sport||g._section||'');return inj?`  ${inj}`:''}catch(e_){return ''}})()") &&
+  // The helper function itself must still exist (used by populateSeriesContext)
+  /function bdlInjuryContextSync\(/.test(html) &&
+  // populateSeriesContext must reference it (the consumer)
+  html.includes('bdlInjuryContextSync(game.home') &&
+  // [INJURY: tag must still be emitted from buildSeriesContextTags
+  html.includes('[INJURY: '),
+  'Inline bdlInjuryContextSync call in the standalone J3 per-game block must be removed (replaced by routing through populateSeriesContext → buildSeriesContextTags [INJURY:] tag) to prevent double-injection now that the compound path also surfaces injuries via the same path');
+
