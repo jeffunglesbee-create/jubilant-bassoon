@@ -175,6 +175,67 @@ corrections.
    - Add `"prefer_related_applications": false`
    - Spec: PWA Android Spec (Drive `1n5-HFuzQfUA5NRH2Rxizgma6fTsU2Tb-qNTEokCo46s`)
 
+### P1 — STANDARDS.md duplicate-rule-numbering audit (TYPE D, scheduled June 1)
+
+Discovered during the Rule 11/48/49 commit (`116cdc3`). STANDARDS.md has
+two parallel rule sequences that collided at the morning-vs-evening editing
+point, leaving four pairs of duplicate-numbered rules:
+
+```
+Line 2140: Rule 39 — Infrastructure change protocol: diagnose before touching
+Line 2443: Rule 39 — Sport Display Convention Registry (SPORT-DISPLAY-A)
+
+Line 2202: Rule 40 — Session start is unconditional
+Line 2462: Rule 40 — Period Prefix Registry (PERIOD-PREFIX-A)
+
+Line 2278: Rule 41 — Compaction is a session boundary, not a session end
+Line 2479: Rule 41 — Schedule Section Builder (SCHEDULE-BUILDER-A)
+
+Line 2385: Rule 42 — Five-minute novel thinking threshold for infra failures
+Line 2490: Rule 42 — Game Score Uniformity (SCORE-UNIFORM-A)
+```
+
+**Constraints (Jeff, June 1 2026):**
+- **NO RULES MAY BE DELETED.** All 8 rules above must survive. The audit
+  only renumbers, never removes.
+- **Renumber only.** Pick a canonical sequence (likely: the governance/
+  process rules keep 39-42, the registry/A-suffix rules get new numbers
+  starting from 50 since 49 is now taken by the "I don't know" rule).
+- **Rule 48 (DO NOT ASSUME) applies to this work itself.** Before
+  renumbering any rule, READ ITS FULL TEXT to confirm what it actually
+  does. Do not assume two rules at the same number are unrelated based on
+  title alone, or that the right renumber is "whichever I saw second."
+  Verify each rule's content and any internal cross-references before
+  moving.
+
+**Cross-reference impact** (must be checked and updated as part of the
+renumber):
+- STANDARDS.md internal `(Rule N)` citations
+- HANDOFF.md, FIELD Current State, CI/Deploy Reference, Build Session List
+- Code comments referencing rule numbers (grep for `Rule 39`, `Rule 40`,
+  `Rule 41`, `Rule 42` in index.html and the relay repo)
+- Drive docs that cite specific rule numbers
+
+**Recommended approach:**
+1. Read each rule's full body. Note any internal `Rule N` references.
+2. Map old-number → new-number for the registry/A-suffix rules.
+3. Renumber headers + update internal cross-references in one commit.
+4. Append a "Renumbered: June [N] 2026" note to each moved rule's body
+   (same pattern as Rule 48's renumber note from June 1).
+5. Grep the repo + Drive for stale `Rule 39/40/41/42` citations and
+   resolve.
+6. Optional follow-up: same audit for any other rules that might have
+   collided (currently only 39-42 known).
+
+**Why this isn't urgent**: nothing breaks today from the duplicate numbers
+— STANDARDS.md is read by humans, and the rules are distinct enough by
+title that there is no ambiguity in practice. But future automation that
+parses STANDARDS by rule number, or future Drive sync, will trip over the
+collisions. This audit is preventative.
+
+**Estimated build:** ~45 min TYPE D session (read all 8 rules carefully
++ renumber + cross-reference update + grep sweep).
+
 ### P1 — Documentation amendments (carried)
 8. Update 5 morning-sweep docs (STANDARDS / Arch Spec / JQ Spec / 10 Wow /
    Infra) per session `1A7OzCh_psRGvft0hQjJMTH96OkJvkK_GZo1EDIjCCgw`
