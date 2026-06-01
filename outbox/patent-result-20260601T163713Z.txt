@@ -1,0 +1,829 @@
+== Patent PDF Probe 20260601T163713Z ==
+Trigger:
+pdf_url=https://patentimages.storage.googleapis.com/98/39/57/97ff387b91a4a0/US11468139.pdf
+---
+Parsed URL: https://patentimages.storage.googleapis.com/98/39/57/97ff387b91a4a0/US11468139.pdf
+Download HTTP=200 size=2293821
+First 8 bytes:  % P D F - 1 . 1
+Text size: 72575 bytes / 819 lines
+=== PDF TEXT BEGINS ===
+                                                                                               US011468139B2
+
+
+( 12 ) Weitz
+       Unitedet al .
+                     States Patent                                        ( 10 ) Patent No .: US 11,468,139 B2
+                                                                          (45) Date of Patent :     Oct. 11 , 2022
+( 54 ) CONTENT OPPORTUNITY SCORING AND                               ( 58 ) Field of Classification Search
+         AUTOMATION                                                         CPC .. GO6F 16/957 ; G06F 16/9532 ; G06F 16/951 ;
+                                                                                                  G06Q 30/0201; G06Q 30/0202
+( 71 ) Applicants : Brad Weitz , Mercer Island , WA (US ) ;                 See application file for complete search history .
+                   Jason Flores , Seattle , WA (US );
+                   Richard Sanchez , Seattle, WA (US )               ( 56 )                    References Cited
+
+( 72 ) Inventors : Brad Weitz , Mercer Island , WA (US ) ;                             U.S. PATENT DOCUMENTS
+                   Jason Flores , Seattle, WA ( US );                         9,720,899 B1 *    8/2017 Birnbaum         G06Q 10/063
+                   Richard Sanchez , Seattle , WA (US )                       10,235,681 B2 * 3/2019 Chang              G06F 40/237
+                                                                       2011/0119576 A1 *        5/2011 Aumann            G06Q 30/02
+( 73 ) Assignee : DATA SKRIVE , INC . , Bellevue, WA                   2013/0144605 A1 * 6/2013 Brager
+                                                                                                                              715/255
+                                                                                                                           G06F 40/40
+                       (US )                                                                                                    704/9
+( * ) Notice :         Subject to any disclaimer, the term of this     2014/0019443 A1 *        1/2014 Golshan         G06F 16/24578
+                       patent is extended or adjusted under 35                                                               707/723
+                                                                       2015/0012514 Al *        1/2015 Yan               G06F 16/951
+                       U.S.C. 154 (b ) by 0 days.                                                                            707/706
+                                                                       2015/0106078 A1 * 4/2015 Chang                     G06F 16/35
+( 21 ) Appl . No .: 16 /557,849                                                                                                704/9
+                                                                      2015/0261773 A1 *         9/2015 Walid             G06F 16/951
+(22 ) Filed :       Aug. 30, 2019                                                                                            707/769
+                                                                      2016/0048598 A1 *         2/2016 Fujioka          HO4L 65/4025
+( 65 )                    Prior Publication Data                                                                              707/722
+         US 2020/0073899 A1           Mar. 5 , 2020                                               (Continued )
+                                                                     Primary Examiner Laurie A Ries
+                   Related U.S. Application Data                     (74 ) Attorney, Agent, or Firm Richard T. Black ;
+( 60 ) Provisional application No. 62 / 725,975 , filed on Aug.      FisherBroyles LLP
+         31 , 2018 .
+                                                                     ( 57 )                      ABSTRACT
+(51 ) Int. Ci.                                                       This invention relates to marketing and creation of digital
+      GOOF 17/00                   ( 2019.01)                        content (text, voice , video , imagery, etc.) and understanding
+      G06F 16/957                  ( 2019.01 )                       what topics are most relevant for an intended audience , its
+         G06Q 30/02                ( 2012.01 )                       size , the type of content that audience wants to consume , and
+         GOOF 16/9532              ( 2019.01 )                       the optimal distribution method ( social media , email , pod
+         GO6F 16/951               ( 2019.01 )                       casts , voice assistants , web pages , mobile apps , etc. ), and
+( 52 ) U.S. Cl.                                                      leveraging machine learning to automatically create content
+       ???               GO6F 16/957 (2019.01 ) ; G06F 16/951        with a high chance of success .
+                    (2019.01 ) ; GO6F 16/9532 ( 2019.01 ) ; G06Q
+                   30/0201 ( 2013.01 ) ; G06Q 30/0202 ( 2013.01 )                  17 Claims , 8 Drawing Sheets
+               7
+
+
+
+
+                                Q
+                                                                                                  AM Data Visualizations
+                                                                                                  olmi
+                                                                                                                     123
+
+
+    Social Sourcing
+                                                            000                                                image Creation
+
+
+                                                                                                   ?
+                                                                                                     ?
+                                              US 11,468,139 B2
+                                                       Page 2
+
+( 56 )                References Cited
+             U.S. PATENT DOCUMENTS
+ 2016/0147713 Al *     5/2016 Ni              GO6T 3/40
+                                                345/660
+ 2017/0201779 A1 *     7/2017 Publicover   HO4N 21/2668
+ 2017/0300477 A1 * 10/2017 Long              G06F 40/30
+ 2018/0161680 A1 * 6/2018 Thompson           A63F 13/79
+ 2018/0300406 A1 * 10/2018 LaRowe          G06Q 30/0201
+ 2018/0349793 A1 * 12/2018 Triolo            GOON 20/00
+ 2019/0034976 A1 * 1/2019 Hamedi           G06Q 30/0204
+ 2019/0114298 A1 * 4/2019 Acharya           G06F 40/258
+ 2019/0197599 A1 *     6/2019 Zia           606Q 30/0641
+ 2019/0244222 A1 *     8/2019 Rathod         G06Q 30/02
+ 2019/0361987 A1 * 11/2019 Qiao             G06F 16/345
+* cited by examiner
+U.S. Patent               Oct. 11 , 2022                     Sheet 1 of 8             US 11,468,139 B2
+
+
+
+
+                                              124
+       N/Aretiwclse               SPocsital         CIrmeatigoen                126
+
+                      .
+                          ***
+                                    D         16
+
+                                                                                            1
+                                                                                            .
+                                                                                            Fig
+                                  09
+
+       G              T
+                                    allo 303 ?
+                                                                   Soucrianlg
+U.S. Patent   Oct. 11 , 2022             Sheet 2 of 8             US 11,468,139 B2
+
+
+
+
+                               Optimze
+                                                                      2
+                                                                      .
+                                                                      Fig
+                                                                        ***
+
+
+
+
+                            c
+                  Resarch         ***
+                                                        Osnovej
+                                                  09)
+U.S. Patent            Oct. 11 , 2022          Sheet 3 of 8         US 11,468,139 B2
+
+
+
+
+March Madness Hub Page : Competitive Opportunities by Topic
+                 OS
+                 333
+
+
+
+                  33
+***
+
+                                                 398          309            311
+
+
+ Wew
+                                                                             538 28
+
+                                                                             ***
+
+ WWXXX
+                                                                     X
+
+                                                                             50630
+                                        8823
+                        53      18                                                 SVOS
+
+
+
+
+                        *3       2
+U.S. Patent         Oct. 11 , 2022     Sheet 4 of 8                 US 11,468,139 B2
+
+
+
+
+                                     Fig. 4
+  Rankings Matrix Tool
+
+                                                                an average -- Vor Ranking
+
+
+                                              408 409      410 411 412
+                                              st
+                                          ???? 8.
+
+  Xertes                                                   ¢
+                                                           S
+                          33
+                          >
+
+                                               43
+
+
+
+
+                          *                                                            53
+
+                                              22
+
+
+                          18                  83      **
+                                                                            ***
+                                                                            M *        28
+
+                          2
+                          2
+
+
+
+
+                           7
+                          3
+                                               2
+                                                           36                          27
+                          3                     3:
+U.S. Patent      Oct. 11 , 2022    Sheet 5 of 8           US 11,468,139 B2
+
+
+
+
+                                  Fig. 5
+      Gonzaga vs Ohio State Preview: Odds, Predictions , TV ,
+      Starting Lineups 3/17/18 | March Madness
+
+
+
+
+              SINZAGA                             193
+                                                  33
+                23                                              STRA
+
+
+
+
+               GONZAGA                             OWO STATES
+
+
+
+
+                          604
+U.S. Patent        Oct. 11 , 2022     Sheet 6 of 8          US 11,468,139 B2
+
+
+
+
+                                    Fig. 7
+ SEASON AVERAGES
+
+                   702
+
+
+
+                                                     SANTE
+                       35                             39
+                                                               .
+                                                      ???
+
+                   39.9
+
+                   11.6
+
+                   38
+
+
+
+
+                                                      119
+
+                   4
+U.S. Patent       Oct. 11 , 2022           Sheet 7 of 8                 US 11,468,139 B2
+
+
+
+
+                                    Fig. 8 .
+      1     GAME RECAPS
+          HERO
+
+
+                                       804
+                                   AS WE       Post            ***
+
+
+                                                   805
+
+
+
+           *                                              .........
+
+                                                            *********
+
+
+                 807
+U.S. Patent       Oct. 11 , 2022     Sheet 8 of 8             US 11,468,139 B2
+
+
+
+
+                                   Fig. 9
+              DAILY RANKINGS UPDATE
+          HIDRO                        Mae          Sot          WE
+
+
+
+
+                                                        ***
+
+
+
+
+                                                    ?
+
+
+
+
+                             905
+                                                     US 11,468,139 B2
+                               1                                                                     2
+     CONTENT OPPORTUNITY SCORING AND                      a publisher, seasonal trends and /or editorial calendar needs
+                      AUTOMATION                          may dictate which topics to target in order to increase traffic
+                                                          to a website . Lastly, keyword research in an SEM platform
+             FIELD OF THE INVENTION                       or tool may reveal topical patterns in search engines that,
+                                                        5 competitively, may be of interest to a business (i.e. , an
+  This invention relates generally the marketing and cre E -Commerce website ) or publisher (i.e. , a news media
+ation of digital content ( text, voice , video , imagery, etc. ) and , website) .
+more specifically, to the need to understand what topics are               Leverage platform to analyze search activity. For instance
+most relevant for an audience you are trying to reach , the look at keywords or queries being typed into google , their
+size of that audience , the type of content ( image , video , text , 10 respective search volume, what companies and websites
+voice , etc. ) the audience wants to consume it , and the rank on the Search Engine Results page , Cost Per Click data
+distribution method for consumption ( social media , email , and seasonal trends to identify which queries companies and
+podcasts, voice assistants , web pages , mobile apps , etc. ), and websites should “ write ” content for to increase traffic , rev
+then leveraging machine learning to automatically create 15 enue or other goals .
+this content.                                                              Use ML to identify best opportunity to maximize traffic .
+                                                                        The ML platform blends SEM data from various APIs (i.e. ,
+          BACKGROUND OF THE INVENTION                                   SEMRush and Ahrefs ) to gather the relative search interest
+                                                                  and level of competition for a particular set of topics .
+  Content is used to inform , market, transact, and differen-       An algorithm can be utilized to assess the size of the
+tiate . However, content production is still extremely manual, 20 opportunity for each topic relative to a website's present
+hence time-consuming and thus prohibitively expensive . authority in search engines . The platform generates content
+Moreover, much content that is created is not effective or recommendations that include delivery format suggestions
+efficient at informing, marketing, transacted , and differenti- (i.e. , article, podcast , social media campaign, auto - generated
+ating. Automated systems are needed to solve these prob- post , etc. ). Based on the results of the algorithm , all topics
+lems .                                                         25 are sorted in descending order by level of impact for the
+   There is over 2.7 Zetabytes of digital data and content, client. Next, the platform estimates the density of traffic that
+90 % of which has been produced in the last 2 years . In 60 a client's web site is likely to receive once content recom
+seconds of online activity 500 hours of YouTube video is mendations are applied . Post - launch, the ML platform moni
+uploaded, 150,000 emails are sent, 3.3 million Facebook® tors performance of applied content via the client's preferred
+posts are written, 3.8 million Google searches are per- 30 analytics platforms (i.e. , Google Analytics and Google
+formed , 66,000 Instagram® photos are uploaded , 450,000 Search Console) over a period of time . It measures actual
+tweets are sent, 1440 Wordpress posts are drafted , and traffic, rankings and clicks against estimated traffic . Based
+29,000,000 WhatsApp messages are sent.                            on this comparison          the ML platform may refine content
+                                                                  recommendations and reassess the opportunity score for
+              SUMMARY OF ONE OR MORE                           35 each topic.
+           EMBODIMENTS OI THE INVENTION                              The present invention may also include automated key
+                                                                  word research and categorization . For example, according to
+   The sheer amount of information online presents a prob- this embodiment, every keyword can have an opportunity
+lem for advertisers and content creators . Namely, how can score that allows one to capitalize on the most relevant
+you get noticed amongst the fray ? The present invention 40 keywords for a particular business . The categorization +
+flips this “ problem ” on its head ; instead of simply wading         opportunity score ties the current structure to the most
+into the fray with more material, the present invention takes         relevant pages . Once ties , for example, the foundational
+advantage of the sheer amount of data available in order to           pages can be optimize with the researched keywords. For
+identify and create opportunities and then generate more              any keyword gaps in content, for example keywords that a
+effective content based on those opportunities. This allows 45 client should be targeting, but has no pages to target yet,
+efficient content creation that is optimized to receive the automated content can be created to fill the keyword gaps .
+maximum amount of traffic .                                    The present invention can incorporate keywords into the
+  In accordance with some examples of the invention , the        title , summary, body and metadata based on the SEO rec
+process flow may be comprised of the following exemplary         ommendation engine.
+steps : ( 1 ) Identify topics , ( 2 ) leverage the HERO Sports 50 The present invention , in a preferred embodiment, utilizes
+platform to analyze search activity - KWs being searched in natural language generation (NLG) to write an optimized
+Google , Bing , Yahoo , etc., ( 3 ) Use machine learning to look narrative. According to various embodiments, in order to
+at competition inputs such as Domain Authority, Trust Flow, accomplish this, first the platform analyzes the most impor
+Backlinks, Cost Per Click data , etc. to identify best oppor- tant trends, statistics and insights from a dataset, or multiple
+tunity ( traffic ), ( 4 ) Identify data set available in warehouse, 55 datasets. After data analysis, the platform pulls real -world
+( 5 ) Deploy natural language generation to normalize data in situations (milestones, events, statistical analysis ) from a
+the database to write optimized narrative, ( 6 ) publish con- proprietary library database. SEO analysis and contextual
+tent. In various embodiments the steps of the described updates are then added to optimize the article's keyword
+method may be in ?a different order depending on the needs        content. Then the platform creates content modules that
+of the system , available data, etc.                           60 makeup unique articles. Example modules of an article
+   Identifying topics is accomplished in a variety of ways . It include, but are not limited to , titles , subtitles , metadata ( title
+is often driven by business objectives, editorial needs or tag and meta description ), body text , images , graphs, tables ,
+exploratory keyword research in search engine marketing          etc.
+( SEM) platforms. For example, a business objective may             The present invention , in a preferred embodiment, utilizes
+drive the need for increased visibility in search engines for 65 automated drafting. According to various embodiments, this
+a specific topic that will help increase awareness, demand or involves pulling from a data warehouse , and organizing it
+online transactions around a particular brand or product. For         into a narrative data model . In alternative embodiments,
+                                                    US 11,468,139 B2
+                              3                                                                   4
+narrative writers take that narrative data model and manually         FIG . 9 is an example of content produced by a system
+create content ( titles, subtitles, metadata , body text, images , according to an embodiment of the present invention .
+etc. ) , using custom tokens and triggers that can be used for        Elements in the figures are illustrated for simplicity and
+multiple narratives.                                               clarity and have not necessarily been rendered according to
+   Content is published through an API to users . Users may 5 any particular sequence or embodiment. For example, fea
+require authentication in order to access various content. For tures may exist concurrently or in a different orientations and
+example , authenticated users may access the API and pro are illustrated in the figures to help improve the understand
+gram into his or her website , application, tool , etc. The ing of the embodiments of the present invention .
+platform according to the present invention may also include 10               DETAILED DESCRIPTION OF THE
+functionality to add new customers and employees as users .                       PREFERRED EMBODIMENT
+Users can be tied to organizations and have specific access
+levels , allowing employees access to different parts of the          The present invention provides an automated content
+portal than clients, for example.                                  generation system that collects and stores data , reviews the
+   Once an article or content is complete, additional gram- 15 data and determines opportunities for content, and then
+mar and editorial checks (Ex. AP Style , data correctness) can drafts and publishes content consistent with the identified
+be made to insure the article is correct, and adheres to opportunity.
+journalistic principles.                                              FIG . 1. provides an illustrative view of a system accord
+   In accordance with other examples of the invention , the ing to the present invention . As shown , the system 101 ,
+present invention provides a method and system for content 20 utilizes a series of inputs, 102 to generate any number of
+production .                                                       types of content 103. The individual components of the
+   In accordance with still further examples of the invention , system that allow it to generate content 103 using data and
+raw data of various forms is converted into content used by inputs 102 are described more specifically herein . Examples
+companies to inform , educate , or sell .                          of data and inputs to the system 101 include APIs 111 ,
+   In accordance with yet another example of the invention , 25 institutional data 112 , data from crawlers 113 , data from
+algorithms of the present invention help identify what topics social media and other publically available websites 114 ,
+are trending and what topics to write about .                      and public data sets 115. These are simply some examples of
+   In accordance with further examples of the invention , the data sets that go into the data warehouse, a component
+content is not limited to pure text. For example, content of the system 101. For example, the present invention can
+created according to the present invention may include polls , 30 identify target keywords or topics . Targeting key words or
+comparisons , and data visualizations .                            targets informs the user , or client, of areas of interest. This
+   In accordance with still further examples of the invention , content recommendation is preferably automated . Various
+the present invention can create numerous types of content, embodiments utilize API's institu ons , crawlers, social
+for example , but not limited to , coaches net worth , player of sourcing, and public data sets in order to identify keywords
+the week campaign, player profiles, player comparisons, 35 or topics.
+team profiles, team comparisons, game recaps , game pre-              The present invention may review the available data and
+views , and rankings posts .                                       produce useful information for the client. Types of content
+   In accordance with additional examples of the invention , include news or articles 121 , data visualizations 122 , social
+the present can create content for non - sports industries, for media posts 123 , image creation 124 , email content 125 , and
+example , real estate postings, neighborhood profiles and 40 videos 126 , or combinations of the forgoing. This useful
+comparisons , listing rankings and comparisons by home information can include competitive gaps that exist in the
+type and location , county or city profiles, selling consider- current market or vertical a company's business operates
+ations etc.                                                        within . In addition, the present invention may provide
+   These and other examples of the invention will be ordinal scores outlining what content to create and prioritize
+described in further detail below.                              45 based on a business ' need with corresponding opportunities
+                                                                   to increase traffic or revenue. For example, the present
+       BRIEF DESCRIPTION OF THE DRAWINGS                           invention may analyze publicly available data in order to
+                                                                   determine what sports story to run . The analysis would
+   Preferred and alternative examples of the present inven- produce results that would suggest the type and content of
+tion are described in detail below with reference to the 50 the content in order to maximize traffic and / or revenue .
+following drawings:                                                   More specifically , the present invention may review pub
+   FIG . 1 is a flowchart of a system for creating content licly available information and determine that there are
+according to an embodiment of the present invention;               many existing articles covering topic A from viewpoint X ,
+   FIG . 2 is a flowchart of a system for creating content but, there are fewer articles on topic A from viewpoint Y.
+according to an embodiment of the present invention;            55 Additionally, by reviewing other publicly available infor
+   FIG . 3 is a chart according to an embodiment of the mation such as Twitter, Facebook , Instagram , and other
+present invention .                                                sources, the present invention is able to determine that
+   FIG . 4 is a ranking matrix chart according to an embodi- content consumers would prefer viewpoint Y. This informa
+ment of the present invention ;                                    tion is then used to determine that an opportunity exists to
+   FIG . 5 is an example of a headline according to an 60 produce content in this less populated market thereby
+embodiment of the present invention;                               increasing traffic and revenue opportunities and not wasting
+   FIG . 6 is an example of content produced by a system resources producing content into overcrowded areas .
+according to an embodiment of the present invention ;                 The present invention may also tap Google for competi
+   FIG . 7 is an example of content produced by a system tive discovery to identify seed sites . These seed sites refer to
+according to an embodiment of the present invention;            65 top 10 or 20 organic listings for a keyword or topic in
+   FIG . 8 is an example of content produced by a system Google's live SERPs . In various alternatives, the present
+according to an embodiment of the present invention ;              invention may use SEMRush's or other search technologies
+                                                    US 11,468,139 B2
+                              5                                                                    6
+organic competitors' data to identify top 10 , 20 or 100 ally identify the client's top 5 competitors in Google outside
+organic listings from their API , which can in turn be used as of informational aggregator sites , such Wikipedia or Bank
+a robust list of seed sites . Further, the client site may be rate ( finance industry ). Once competitors are identified , run
+included in the data pull to help the platform accurately the above automation process against their Homepage
+assess its average level of authority versus the competitive 5 HTML menus . This can help ensure that the client gets
+landscape for a keyword or topic in Google's SERPs . palatable and familiar categories relevant to their business .
+Additional data sources, when available , may include               The foregoing keyword research produces a dataset. This
+MySQL, GSC or Google Analytics.                                  dataset may be stored locally, or in the cloud . In various
+   A schema may be created within the MySQL and embodiments of the present invention , the database may be
+SEMRush data , to perform searches to the Core pages . 10 continuously updated with temporally relevant information .
+Preferably, the data stream between Google search Console In other embodiments, various instances of aa database may
+and MySQL is automated . In a similar way , preferably the be stores , and the delta of one or more databases may be
+stream between Google Search Console and SEMRush is used to determine the shift in content optimization over time .
+automated . Accordingly, the present invention builds a mas-        FIG . 2 provides an illustration of a sequence according to
+sive library of search data that can be mined for internal or 15 an embodiment of a system according to the present inven
+client- facing engagements.                                      tion . The data warehouse 201 stores information for use by
+   In various embodiments, additional scripts may be used to the system to create 203 content 205. The data warehouse
+pull and import GSC data into MySQL . The frequency of 201 is in connection with the internet, and uses various
+this pull and import may be daily, weekly, monthly, or any programs to constantly look for information and update
+other time period.                                         20 existing information . This information is used to create or
+   The present invention then creates a list of URLs ( Seed edit content according to the content plan 204. Once data is
+List) to call all keywords per URL using a SEMRush API collected , it is written and optimized according to a particu
+call and PHP script . From this data, the present invention lar distribution method and or content type. Once optimized ,
+may pull , for example, the top 20 or 100 , or any other the final product 205 is produced.
+number, of ranking keywords per URL . Another option 25 When preparing the database 201 , according to various
+according to the present invention uses SEMRush's embodiments of the present invention , useful column head
+“ Related Keywords” API to backfill data. Related Keywords ers may include: keyword , category ( semi-manual ), hide/
+pull from Google's auto -suggest algorithm .                     generic /uncategorized, rankings matrix ( vs all competitors,
+    Once the database is prepared , the present invention may including the client an example function being average
+search metrics to pull from SEMRush , for example , by 30 rankings per brand = IFERROR ( AVERAGEIF S ( $ L : $ L , $ B :
+keyword . Metrics to pull may include, for example, position , $ B ,B5, $ V : $ V , “ Hero Sports ” ) , 100 ) ) , number of keywords
+search volume , competitive density, and CPC ( social per phrase, position , one or more keywords filters, search
+retweets or shares to measure probably virility of a given volume, page , referring domains , URL rating, domain rat
+topic ) .                                                        ing , brand, client filter (does the ranking page belong to a
+    An API may also target crawl/backlink metrics to pull by 35 client? ).
+URL . This can produce the number of referring domains ,            In additional embodiments, additional scripts may be
+URL ratings, domain ratings, title tags (proxy for topical used , in an automated manner, for SEMRush APIs to pro
+category ), as well as unique inlinks (which provides how vide more robust filters . For example, an embodiment of the
+“ business critical” the page is to a client or competitor .)    present invention may exclude or include filters for : key
+    Keyword Suggestions Process may be completely auto- 40 word modifiers ( single or array ), may include additional
+mated . For example, various embodiments of the present operators, AND OR for example , positional ranges (i.e.
+invention may include, an intelligent crawler and SEMRush / keywords between 1-20 in Google ) . Various other examples
+PHP looper that: ( 1 ) Identifies the top organic listing for a are of course possible depending on the needs of the
+particular keyword /topic ; Crawls the homepage HTML of individual project.
+this organic competitor's Top Nav container (i.e. , their 45 Various embodiments of the present invention utilize a
+Homepage Menu ), which in turn (2 ) extracts site category data warehouse 201. The data warehouse is a collection of
+names and corresponding URLs ; (3 ) Pulls ranking key- data from various sources, and can include both client data
+words -per - URL from the above category URLs in Positions and publicly available datasets. Publicly available datasets
+ 1-30 (to help ensure relevance ) via the SEMRush API ; (4 ) can come from open source or paid APIs or through crawling
+Automatically combines keywords, URLs , and applicable 50 various websites . The data warehouse can be used , for
+categories into a table; ( 5 ) Identifies top 5 or top 10 example , to produce client- facing pivot tables and charts.
+keywords per Category by Search Volume ( descending ); ( 6 ) For example, these client facing products can include where
+Executes the URLs -per -KW API script to extract the top the primary dimension = category. Further, in various
+organic listing for each of the top keywords identified in step embodiments, the corresponding metrics may include , for
+5 ; (7 ) Pulls ranking KWs -per -URL for each of the top 55 example but not limited to , average position, number of
+organic listings in Positions 1-20 identified in step 6. Imports keywords, search volume sum or average , average URL
+newly discovered keywords back into the master table and rating ( per topic ) , sum or average of referring domains .
+VLOOKUPs category names .                                           Various other metrics may be included as needed . A INar
+  An additional option , utilizing the teaching of the present      ratable and IAsset Engine can collect input from users which
+invention , utilizes a Keyword Suggestions Process Using 60 tell the platform what data it needs . Different data sets are
+Known Competitors. This process , for example, utilizes the dynamically returned per a client's narrative requirements.
+same - exact steps delineated above , except: is tailored to        FIG . 3 provides an example topical matrix of SEM
+each client's business based on primary and secondary metrics identifying competitive opportunities according to
+research conducted by HERO Sports , answers obtained from an embodiment of the present invention, including the
+discussions with the client to identify who they believe their 65 average positional rank , search volume ( or search interest),
+competitors are Google's listings are agnostic to this, i.e. ,      and backlink metrics for a list of sub - topics related to March
+Wikipedia ranks higher than an actual competitor; or Manu-          Madness . In theory, if a sub -topic drives relatively high
+                                                      US 11,468,139 B2
+                                7                                                                      8
+search volume , attracts relatively low referring domains , and is the number of websites that link to a specific webpage.
+a relatively low URL rating, it presents a strong opportunity Average Trust Flow (Domain) 310 is a measure from 1-100
+for the client's website to rank in search engines . Ranking a how credible or authoritative a website is . EX . ESPN.com
+needs or deltas provide opportunities to increase traffic or 5 would be high , bradweitzsports.com would be low . Sum
+revenue for articles.                                                   mary of EDU domains 311 is a count of the number domains
+    In certain embodiments, the rankings matrix may be that have .edu as an extension that link back to a website .
+appended , for example, by category . According to this                    Embodiments of the present invention may tap Google for
+example, the present invention may provide the client's competitive
+average ranking per category, as well as competitor's aver Alternativelydiscovery                  to identify seed sites , for example.
+                                                                                       , the present invention may utilize the
+age   ranking
+included    , forforexample
+                      category, using
+                                .Any number   of competitors
+                                      the present invention, amay be 10 SEMRush top organiz competitors ' data to identify seed
+                                                               client
+can easily compare their own rankings to competitors 1 , 2 , any        sites . Seed sites refers to the top 10 or 20 organix listing for
+3 , 4 , etc. on a per category basis . A level of interest can also          given keyword topic in Google's live SERPs . Additional
+be calculated, for example by crawling social media , data              data   sources may be used for example, client site data pull ,
+trends, and other available information to determine a level 15 MySQL and GSC . A resulting list of URLs ( seed list) can be
+of interest for any given topic . In many embodiments, a level used to call all keywords per URL using SEMRush API call
+of interest is determined for numerous topics , and the level and PHP script . This allows the system to , for example, pull
+can be updated periodically. This allows the system to the top 20 or 100 ranking keywords per URL . The invention
+dynamically keep up with trends, and provide the most may also , use SEMRush “ related keywords ” API to backfill
+relevant data for system decision . The level of interest is 20 data. Related Keywords can pull , for example, from
+used to identify an area of competitiveness or difficulty. For Google's auto - suggest algorithm . Target search metrics to
+example , topic A may have a high level of interest based off pull from SEMRush (by keyword ): Position , Search Vol
+available data, but , at the same time , topic A also has many ume , Competitive Density, CPC . Other data points that may
+articles written about it . As a result, were the system to pick be useful for the present invention include Social Retweets
+topic A , it would be challenging to achieve much success , 25 or Shares (measures probable virality of topic ) , Target
+given the high level of competitiveness in topic A. In order           crawl /backlink metrics to pull (by URL )API : Ahrefs: #of
+to produce the content with the highest chance of success ,            Referring Domains , URL Rating, Domain Rating , Title Tag
+the present system also keeps track of competitiveness for             ( proxy for topical category ), H1 if possible, Unique inlinks
+various topics , by comparing the level of interest and the (how “ business critical ” the page is to a client or competi
+competitiveness, the present system is able to determine the 30 tor) .
+size of opportunity for any given topic .                          FIG . 4 provides an example of the Rankings Matrix Tool
+   Various embodiments of the present invention allow for 402 according to an embodiment of the present invention .
+weighted criteria for recommendations, for example, by Here, the platform provides a table of average positional
+category . These criteria can include , relatively high search rankings in Google that can allow aa client to compare how
+volume ( search appetite ), relatively low URL rating, and or 35 well they rank for each topic against their immediate com
+referring domains ( competitive difficulty ), relatively low petitors. In theory, if a competitor's average rank for a
+average rank that retains “ ranking relevance ” ( for example, particular topic is less ( i.e. , higher ) than the competition in
+relevance = position 1-30 or 1-20 etc. ) , hide uncategorized / Google , then the client is more likely to rank well for that
+generic filter. Using these criteria, the present invention is topic should they produce content around that topic on their
+able to zero in on , or triangulates, on an opportunity based 40 website .
+weighted algorithm that reconciles, for example, ( 1 ) rela-           Using the data warehouse , and ranking matrix, the present
+tively high search volume ( search appetite) , ( 2 ) relatively invention is then able to , on a completely automated or
+low URL rating, and or referring domains ( competitive automatic basis , plan, design and create various posts ,
+difficulty ), (3 ) relatively low average rank that retains “ rank- articles, etc. that act on , in specific targeted response to , the
+ing relevance ” (for example, relevance = position 1-30 or 45 identified opportunity. Planning can target specific events in
+1-20 etc. ) . This outcome of this algorithm provides the user advance, and publish articles within an optimal timeline in
+with an opportunity where high level of interest and lower order to maximize clicks .
+competitive difficulty converge . Armed with this informa-             As depicted , items 404 through 407 for the ranking matrix
+tion, the present invention allows users to produce content tool 402 are the same as 304-307 above. 409-413 columns
+that is more likely to succeed , more clicks , revenue , etc. 50 are illustrating for a given domain (ESPN.com , NCAA.com ,
+   As depicted the competitive opportunities matrix includes etc. ) what is the average rank in search engines for each
+a number of columns . Categories 304 categorizes all the category.
+topics uncovered through analysis into groups /sub topics .            Once the proper plan is created , the present invention
+Average Blended Rank 305 informs the user, for said drafts the content. This includes all components of the end
+category, what is the average position in search engines 55 piece . The system composes, including with photos , videos
+when people make a query (Ex . Type a query into google , and other media , the content and optimizes the content for
+what is the average rank for a given webpage for that query ). consumption. The system also determines the content type,
+Count of Keyword 306 informs the user how many key- i.e. news or articles , data visualizations, social media posts ,
+words ( queries ) comprise the category. Sum of Search image creation, email content, and / or videos. The function
+Volume 307 provides a metric search engines use to under- 60 ality of the content is also determined , for example if any
+stand how many queries are made , on average , per month audio , video , charts, or images would provide additional
+( Ex. Tom Brady is queried on average 1,500,000 per month functionality or improve the content. Finally, the publication
+in google ) . Average Trust Flow 308 ( Exact URL ) is a channel is determined . For example, the present invention
+measure from 1-100 of how credible or authoritative aa web may, on a completely automated or automatic basis , produce
+page (URL ) in the eyes of search engines. For Ex . ESPN- 65 various content types including news or articles, data visu
+.com /mlb would be high , whereas bradweitzsports /mlb alizations or charts, social posts , images , email content, and
+would be low . Sum of referring domains 309 ( Exact URL ) or videos. These various content types are , of course , not
+                                                      US 11,468,139 B2
+                                9                                                                      10
+mutually exclusive . For example, a news article may require              Spelling & Grammar : The present invention can imple
+charts, images , and videos , all combined to create a single          ment an automated spellcheck system as well as a grammar
+piece of content.                                                      validator.
+   The present invention also takes into account search                   Data Checker : The present invention can utilize a data
+engine optimization in its title structure , schema , page 5 checker to review data to ensure accuracy. Data checker can
+structure , and word count. For social posts , character count, be     broken into two components . ( 1 ) Statistical Accuracy :
+                                                                    The present invention can compare a commodity database
+tagging , image type and links are also automatically popu with          multiple stat sources to check validity. If there is a
+lated . For email content, the subject line, images , text, video , discrepancy in data , the present invention will inherit the
+call to  action , etc. are populated . Voice may also be used , for
+example, transcription, alexa skills ( or other voice assis- 10 most consistently reported number and notify the Quality
+tants ), podcast searches ( deep linking, app optimization ).        Assurance team to validate the edit . ( 2 ) Changelog: The
+   The present invention may also , also completely auto present     feeds   are
+                                                                                 invention can have an understanding that past data
+                                                                                   updated . If partner APIs keep a changelog, the
+mated , determine the necessary content functionality in present invention                    can read all changes, create its own
+order   to be best received . Types of functionality can include, 15 changelog      and  update  the database . If the 3rd party API does
+for example , charts , graphs, or other statistics, social post not contain a changelog, the present invention can regularly
+statistics and or the posts themselves, for example the tweets re - crawl the APIs to ensure the most accurate data is used .
+of influential or relevant individuals, audio content, and or            Sentence, Trigger, Paragraph Failure: If a narrative com
+video content. This is done by analyzing market trends for ponent fails, the present invention can create a list to sort
+example what people are searching for in google , how many 20 through and validate. For example, if the present invention
+likes , shares , tweets , email opens, etc. are done for each did not sense a triple -double, it will list that as a failed
+article . HERO Sports ' platform then analyzes client web site trigger. It can then run automated checks against the data
+traffic , podcast data , social keting data , and business that reads like , for example, " find a game where triple
+performance metrics such as revenue, website transactions, double = failed trigger ” and “ > = 1 player has a triple -double ” .
+website traffic and analytics to optimize created content 25 Results can then be analyzed and update any triggers that
+based on audience behavior.                                          need edited . All processes will attempt to regenerate the feed
+   An important component of the present invention is to until an unbroken narrative is found . On secondary error,
+produce automated content that is indiscernible from manu regenerate                the problem narrative , if the problem persists , the
+                                                                     QA and development team can be notified to manually fix .
+ally created content. To that end , the present invention 30 Depending
+employs various techniques to ensure best journalistic prac pushed liveonor the          wait
+                                                                                             client or user request, the narrative can be
+                                                                                               until the entire feed is fixed .
+tices are followed , as well as techniques to ensure a natural           The    present   invention   constructs content to read like a
+style .
+   Upfront QA generates multiple narrative snapshots from Strong " lead” sentence etc., such
+                                                                     human    .  Some   style choices
+                                                                                                         can
+                                                                                                              as a Compelling Headline ,
+                                                                                                             be  incorporated . This pro
+past games . This can be hundreds, thousands of games that 35 vides aa notion of a theme in the content
+have occurred in the past . Errors are automatically logged , player specific , etc. ). In order to create( comeback            , blowout,
+                                                                                                                       content that reads
+grammar errors are automatically identified for fixing.              most naturally, various techniques are employed by the
+   Daily QA includes various analysis and validation steps , present invention . These include:
+for example:                                                             A Reusable trigger library: This trigger library can map
+Internal Process Analysis, which can be composed of vari- 40 out every situation of a sport. Some triggers are reusable
+ous component such as :                                              from sport -to - sport such as “ division rivalry” or “ winning
+   Crawl Validator: Checks that all games have been streak ” . Some triggers are sport or client - specific, such as a
+      crawled,                                                       “ triple -double ” trigger or “ wildcard - clinched ” trigger .
+   Narrative Validator: Checks that all expected narratives              Contextual Understanding: The present invention ranks
+    have been generated ,                                   45 the importance of any trigger within a library. For example,
+  Narrative Feed Validator : Checks for blank titles , blank a ranking may be where a “ walk - off home run ” is more
+    summaries, and blank metadata ,                            important to report about than aa “ hit streak = 2 games ” . These
+   Rundeck Validator: Processes management and genera- “ Trigger Rankings " can allow the present invention to
+     tion process . Analyze when a rundeck / cron job is contextually understand the most relevant things about any
+      supposed to kickoff, notify upon success / failure,       50 given game .
+   Notification Engine: Restart all processes on failure and          Insight Engine + Unique Ingestion style: The insight
+      send a failure notification notice via multiple outlets engine of the present invention can take data in - context,
+      ( Slack , email , etc. ). Send a success message to the QA such as the game at hand, and compare it with past games
+      and development team .                                       for insightful data points. For example, if someone has aa hit
+During this process, all items will restart upon failure and 55 in a game, the present invention takes into account all games
+attempt to fix themselves with business logic . On error, that that player has played in the past X games and deter
+regenerate the problem narrative / feed and log the error and mine if he or she is on a hitting streak . This allows the
+notify the QA and development team . On secondary error, present invention to determine and write about things like
+regenerate the problem narrative, if the problem persists , player milestones , team streaks, career leaderboards, year
+notify the QA and development team to manually fix . 60 over-year player performance, player comparisons, cross
+Depending on the client contract requirements, optionally league player comparisons.
+push the feed live or wait until the entire feed is fixed .           News Triggers: News headlines can be based off of a
+   Another feature of the DailyQA can include managing trigger ranking importance and create compelling headlines
+Content Quality, which includes checks of:                         to handle any possible situation. An example headline could
+   Style : The present invention can utilize a library of style 65 be , “ The Mariners win with aa walk -off home run from Ken
+guides to check against a narrative's grammar. For example , Griffey Jr. ” . There can be hundreds of other potential
+if an Oxford Comma is used .                                       options , the present invention decides on the ideal option
+                                                     US 11,468,139 B2
+                              11                                                                    12
+whenever this news trigger is fired , it is always going to be Tip -off is at 7:45 pm ET and the game will be playing live
+more important than a “ 2 - game hit streak ” . This level of on CBS , streaming available on FuboTV ( Free Trial ). Gon
+specificity not only ensures variation , but also captures the zaga is the favorite at -3 , 84.6 % have picked Gonzaga to
+most accurate and important depiction of the game .                  cover the spread . The over / under for total points scored is
+    Once the content type and functionality is determined, the 5 143.5 .
+present invention may also , completely automated, deter GONZAGA GAME SUMMARY Gonzaga won their last
+mine which distribution channel is most appropriate given game              against North Carolina -Greensboro, 68-64 on Thurs
+the content of the content. For example, the content may be day, March
+a news article with embedded video content, the present team -high 1915th                . Johnathan Williams ( Gonzaga) scored a
+invention may determine (as explained further below ) that a 10 attempts from the fieldforfortheaa 66.7
+                                                                                      points         winning team , making 8 of 12
+web accessible article may be best by looking at web 34 minutes, he collected 19 points%, 13fieldrebounds         goal percentage. In
+analytics data such as click - throughs, time on site , bounce with 2 turnovers . Demetrius Troy led NorthandCarolina          1 assist
+rate etc. and comparing it to other versions of content being Greensboro's team in scoring with 16 points, while shooting
+deployed. In another example, a chart may be created , and
+the present invention may determine that twitter is the best 15 8 of 11 (72.7 % ) from the field . In 28 minutes, Troy added to
+avenue to produce the most social engagement.                        his stat line , 16 points, 3 rebounds, 2 assists and 1 steal with
+    Automated search engine optimization may include                 4 turnovers .
+Word Count, Page Structure , Title Structure, Schema , Etc. Ohio St. Game Summary
+Automated social media optimization may include Char-                   Ohio State won their last game against South Dakota
+acter count, tagging , links to original article, dynamically 20 State , 81-73 on Thursday, March 15th . Ohio State's Keita
+adding and tagging specific athletes, Imagery type , links etc. Bates - Diop led his team to a win with a team -high 24 points.
+Automated email optimization may include_Subject , He went 7 for 19 from the field , shooting 36.8 % . In 37
+Image , Text, Video , CTA , Etc. Automated Voice optimiza- minutes, Keita collected 24 points, 12 rebounds, 1 assist , 1
+tion may include — Transcription, Alexa skill ( and others), block and 4 threes with 2 turnovers . Although South Dakota
+Podcast Search ( Deep linking, App Optimization) . One or 25 State was defeated, Mike Daum fought to keep his team in
+more of these automated optimizations may be used in order the game with 27 points , shooting 45 % from the field
+to produce optimized content capable of reaching the most (making 9 of 20 attempts ). In 37 minutes, he added 27
+users . For example, utilizing the present invention, the points, 6 rebounds, 1 block and 5 threes with 4 turnovers .
+system may determine an opportunity exists in topic A. The Prediction
+present invention may then determine that opportunity 30 Gonzaga had more trouble than many expected in the first
+would be best acted on using a social media post including round and needed a late three -pointer from Zach Norvell to
+text , and images . The present invention then drafts the seal the victory. Ohio State got a good fight, too , from
+    ticle , pulls the images , and uses stored analytics to deter- 12 - seed South Dakota State. This second - round matchup
+mine the best title , content, location , and timing for the should be a fun one.
+article to publish .                                              35 Ohio State : 76
+    Once prepared, and optionally approved after QC check , Gonzaga : 73
+content is automatically pushed or published to any channel             The prediction section provides insight on the last games
+or medium . Further, the present invention provides for of each team and generates a score prediction based off of
+Content Governance . Content Governances ensure that all proprietary algorithms. Season averages are dynamically
+content you push is tied together and linked and sending the 40 populated in the team comparison table , e.g. as depicted in
+same message .                                                       FIG . 7 .
+    FIG . 5 depicts an example of an article prepared accord-           The article described above is an example of a completely
+ing to an embodiment of the present invention . Every aspect automated article , without any choosing the specific subject,
+of the article was prepared without human intervention . As title , pictures or composing text . The sections that have been
+depicted , a Title 502 is automatically generated . The title 45 automated in this particular article include , an article's title ,
+preferably reads like a naturally generates one and is SEO . subtitle, header image , metadata (title tag , meta description,
+Under the title a heading 503 is produced, this heading may URL ) , introduction , links to players & teams, starting line
+appear in search engines and informs the reader as to the ups , last game summaries, predictions and a team compari
+contents . The image 505 is pulled from a database and son stats table . The title is optimized to use the most
+depicts a player from each team . The image 505 is preferably 50 descriptive terms and to use the keywords that the platform
+team specific                                                        has identified as high - value keywords to target (preview ,
+    FIG . 6 depicts content that can be included as part of an odds, TV, starting lineups, March Madness, etc.). The
+article according to an embodiment of the present invention . images are selected by the platform , choosing players based
+For example, a Starting lineup 601 may be included . The on keywords that have been mapped to an image , then the
+information 604 to populate table 603 is pulled from the data 55 images are resized and stitched together. The introduction
+warehouse . A heading 602 describing the content of the table paragraph uses game information data and generates hun
+603 may also be included . As depicted, the table is broken dreds of variations of text. The starting lineup section pulls
+into columns by team . The players for each team as listed as a team's starting lineup (or estimated starting lineup in some
+part of the information 604. Additional information is also cases ) and lists their name, internal link and position . For
+provided , such as the players position . In other examples, the 60 last game summaries, the platform finds insights from a
+players number, scoring average or other information may team's last game . This includes , but is not limited to , the
+be added as necessary.                                               game result, best player on each team and stat leaders .
+    The following text is an example of automatically gen- Insights ( such as the milestones, events and statistical analy
+erated content that accompanied the article of FIGS . 5 and sis ) can come from the Insight Engine , for example. The
+6 , underlined text indicates an automatically generated link 65 Insight Engine runs through multiple related database rows
+to additional content: “ Gonzaga (31-4 ) is scheduled to and calculates advanced insights from days, weeks , months
+matchup against Ohio St. (25-8 ) this Saturday, March 17th . and years of data .
+                                                        US 11,468,139 B2
+                           13                                                                        14
+  FIG . 7 depicts additional content that can be created                     The embodiments of the invention in which an exclusive
+according to the system of the present invention . The present property or privilege is claimed are defined as follows:
+invention may automatically pull data, images , and forms             1. A system for creating automated content, comprising:
+from the database in order to populate and create new                a data warehouse;
+content. For example, the depicted team comparison table 5 a processor; and
+701 may be included within an article as supplementary               a content creation system , stored in the memory and
+content or published on its own . Information 704 is pulled              configured, when executed on a computer processor, to :
+dynamically to populate the table 701. In the instant                communicate with one or more computing systems over
+example, the information compares numerous key metrics                   a network , to identify, by the processor, one or more
+between two opponents. The logos 702 for each team are 10                trending content topics ,
+also pulled and populate the table. The system may also              analyze , by the processor, a plurality of opportunities
+dynamically show which team is better in a category, for                 based on the one or more trending content topics ,
+example, as depicted the columns are optionally colored              analyze , by the processor, a plurality of content types
+accordingly.                                                    15       based on the opportunity and the one or more trending
+   Additional narrative examples include those depicted in               content topics ,
+FIGS . 8 and 9. FIG . 8 depicts an auto - generated game              select , by the processor, an opportunity and content type
+summary narrative according to an embodiment of the                      based on the one or more trending content topics ,
+present invention . Each aspect of the narrative example is          access , by the processor, data from the data warehouse
+auto - generated. The narrative includes a title 802 “ Game 20           based on the selected opportunity and selected content
+Summary ” as well as a summary table 804 auto populated                  type,
+with information 805 that is relevant to the particular sport.       deploy, by the processor, natural language generation to
+Further, a narrative 806 is automatically drafted to mma                 create a narrative, wherein the narrative is drafted
+rize the game. In addition , the logos 803 for each team have            according to organized data selected , by the processor ,
+been added to further legitimize and naturalize the piece . 25           from the data warehouse , and;
+Additional content is included , for example , a point sum-          present, based on the identified opportunity and the con
+mary 807 provides additional details into the game .                     tent recommendation , by the processor, the narrative.
+   FIG . 9 depicts another example of content automatically          2. The system of claim 1 wherein the content creation
+created by a system according to the present invention . A system further comprises an input mechanism for user
+daily rankings update 901 provides daily content with infor- 30 selection of a topic .
+mation relevant to users . For example , this content can track      3. The system of claim 1 wherein the content creation
+they biggest movers 902 in standings. The update 901 can system further comprises an input mechanism to bias the
+include logos and team names 903 as well as narratives 904 selection of a topic .
+relevant to the various “ biggest movers .” The net change 35 4. The system of claim 1 wherein the content creation
+905 in ranking is also included . All of this content is auto system further comprises a grammar and editorial engine,
+generated .                                                        stored in the memory and configured, when accessed by the
+   Consistent with the teachings of the present invention , content creation system , to perform grammar and editorial
+Generated content may be pushed through many different checks based on the narrative .
+channels in order to have maximum effect. For example, in 40 5. The system of claim 1 wherein the content creation
+addition to articles, social posts may also be created and system is further configured to compare a performance of
+published . In some examples, some of the content that the narrative against an expected performance, based on the
+appears in the social post may be pulled from the generated opportunity and content type .
+article . In preferred embodiments, the social post includes a       6. The system of claim 1 wherein identified opportunities
+link to the article itself.                                    45 further comprise an opportunity score associated with each
+   Representative /exemplary data sets that can generate of the plurality of identified opportunities.
+more successful articles. Utilizing the teachings of the            7. The system of claim 1 wherein the content creation
+present invention an article can be significantly more suc- system further comprises a key word collection engine,
+cessful than other articles. For example, articles utilizing the stored in the memory and configured, when accessed by the
+teachings of the present invention have achieved around four 50 content creation system , to review search engine keywords
+times the page views . The present invention's ability to cull and provide the content topic .
+data , identify interest and opportunity, prepare content          8. The system of claim 1 further comprising a reporting
+accordingly, and publish it to the best location produces this             interface, wherein the reporting interface displays the per
+success                                                                    formance of the narrative.
+  As explained above, various methods according to the 55                    9. A method for creating automated content, comprising:
+presently described invention include the steps of: ( 1 ) Iden-              collecting, by a computer based system , data in a data
+tify topics , ( 2 ) leverage platform to analyze search activity,              warehouse ;
+( 3 ) Use ML to identify best opportunity ( traffic ), ( 4 ) Identify        receiving , by the computer based system , and from a user,
+data set available in warehouse , ( 5 ) Deploy NLG to write                    a request for automated content;
+optimized narrative, ( 6 ) content gets published .                   60     identifying, by the computer based system , one or more
+     While the preferred embodiment of the invention has been                   trending content topics ;
+illustrated and described, as noted above, many changes can                  analyzing , by the computer based system , a plurality of
+be made without departing from the spirit and scope of the                      opportunities based on the one or more trending content
+invention . Accordingly, the scope of the invention is not                      topics ;
+limited by the disclosure of the preferred embodiment. 65                    analyzing , by the computer based system , a plurality of
+Instead , the invention should be determined entirely by                        content types based on the opportunity and the one or
+reference to the claims that follow .                                          more trending content topics ;
+                                                  US 11,468,139 B2
+                              15                                                                 16
+  selecting , by the computer based system , an opportunity       the content selected from a title , subtitle , metadata , images ,
+    and content type based on the one or more trending            graphs, tables , videos, or links.
+    content topics ;                                                 12. The method of claim 9 further comprising the step of,
+  accessing , by the computer based system , data from the        after publishing the content, monitoring a performance of
+     data warehouse based on the selected opportunity and 5 the13.published content
+                                                                    The method      against9 , further
+                                                                                of claim       an expected   performance
+                                                                                                       comprising the step. of,
+     selected content type;                                       before publishing the content, by the computer based sys
+  deploying, by the computer based system , natural lan            tem , performing grammar and editorial checks .
+      guage generation to draft a narrative, wherein the              14. The method of claim 9 further comprising the step of,
+      narrative is drafted according to organized data selected 10 adjusting the opportunity analysis based on the performance
+      from the data warehouse and based on the identified of the published content against the expected performance .
+      opportunity and the content recommendation ;                    15. The method of claim 9 wherein analyzing the oppor
+   publishing , by the computer based system , the content tunity further comprises generating a list of more than one
+      based on the narrative .                                     opportunity and an opportunity score for each generated
+   10. The method of claim 9 further comprising where the 15 opportunity
+step of selecting , by the computer based system , an oppor           16. The method of claim 15 wherein the opportunity score
+tunity and a content type includes biasing the selection based is based at least on cost per click data .
+on an input.                                                          17. The method of claim 9 wherein the request for
+   11. The method of claim 9 further comprising the step of, automated content includes a preferred topic .
+before publishing the content, creating content modules for
+=== PDF TEXT ENDS ===
