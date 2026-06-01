@@ -1,7 +1,7 @@
 name: Patent PDF Probe
 on:
   push:
-    paths: ['outbox/.trigger-patent-pdf']
+    paths: ['outbox/trigger-patent-pdf.txt']
   workflow_dispatch:
 
 permissions:
@@ -14,73 +14,47 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Install poppler-utils
-        run: sudo apt-get update -y -qq && sudo apt-get install -y -qq poppler-utils
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq poppler-utils
 
-      - name: Fetch + extract patent PDF(s)
+      - name: Fetch + extract
         run: |
-          set -e
           TS=$(date -u +%Y%m%dT%H%M%SZ)
-          DIAG="outbox/patent-diag-${TS}.txt"
-          mkdir -p outbox
-          echo "Trigger file contents:" > "$DIAG"
-          cat outbox/.trigger-patent-pdf >> "$DIAG" 2>&1 || echo "(no trigger file)" >> "$DIAG"
-          echo "---" >> "$DIAG"
-
-          PATENT=$(grep '^patent=' outbox/.trigger-patent-pdf 2>/dev/null | cut -d= -f2- | tr -d '[:space:]' || echo "")
-          PDF_URL=$(grep '^pdf_url=' outbox/.trigger-patent-pdf 2>/dev/null | cut -d= -f2- || echo "")
-          META_URL=$(grep '^metadata_url=' outbox/.trigger-patent-pdf 2>/dev/null | cut -d= -f2- || echo "")
-
-          echo "Parsed PATENT='$PATENT'" >> "$DIAG"
-          echo "Parsed PDF_URL='$PDF_URL'" >> "$DIAG"
-          echo "Parsed META_URL='$META_URL'" >> "$DIAG"
-
-          # Derive metadata URL from patent number
-          if [ -n "$PATENT" ] && [ -z "$META_URL" ]; then
-            META_URL="https://patents.google.com/patent/${PATENT}/en"
-            echo "Derived META_URL='$META_URL'" >> "$DIAG"
-          fi
-
-          # Pull metadata to find PDF URL
-          if [ -n "$META_URL" ] && [ -z "$PDF_URL" ]; then
-            META_FILE="outbox/patent-meta-${TS}.html"
-            echo "Fetching metadata: $META_URL" >> "$DIAG"
-            HTTP_CODE=$(curl -sL -w "%{http_code}" -o "$META_FILE" "$META_URL")
-            echo "Metadata HTTP=$HTTP_CODE  size=$(wc -c < "$META_FILE")" >> "$DIAG"
-            PDF_URL=$(grep -oE 'citation_pdf_url" content="[^"]+"' "$META_FILE" | head -1 | sed 's/citation_pdf_url" content="//;s/"$//')
-            echo "Extracted PDF_URL='$PDF_URL'" >> "$DIAG"
-          fi
-
-          # Download PDF
-          if [ -n "$PDF_URL" ]; then
-            PDF_FILE="outbox/patent-pdf-${TS}.pdf"
-            echo "Downloading PDF: $PDF_URL" >> "$DIAG"
-            HTTP_CODE=$(curl -sL -w "%{http_code}" -o "$PDF_FILE" "$PDF_URL")
-            PDF_SIZE=$(wc -c < "$PDF_FILE")
-            echo "PDF HTTP=$HTTP_CODE  size=$PDF_SIZE" >> "$DIAG"
-            echo "First 8 bytes of PDF (should be %PDF-1.x): $(head -c 8 "$PDF_FILE" | od -c | head -1)" >> "$DIAG"
-
-            if [ "$HTTP_CODE" = "200" ] && [ "$PDF_SIZE" -gt 1000 ]; then
-              TXT_FILE="outbox/patent-text-${TS}.txt"
-              pdftotext -layout "$PDF_FILE" "$TXT_FILE" 2>>"$DIAG"
-              echo "Text extraction OK: $(wc -c < "$TXT_FILE") bytes, $(wc -l < "$TXT_FILE") lines" >> "$DIAG"
-            else
-              echo "PDF download failed or too small" >> "$DIAG"
+          OUT="outbox/patent-result-${TS}.txt"
+          {
+            echo "== Patent PDF Probe ${TS} =="
+            echo "Trigger:"
+            cat outbox/trigger-patent-pdf.txt 2>/dev/null || echo "(missing)"
+            echo "---"
+            URL=$(grep -E '^pdf_url=' outbox/trigger-patent-pdf.txt 2>/dev/null | sed 's/^pdf_url=//')
+            echo "Parsed URL: $URL"
+            if [ -z "$URL" ]; then
+              echo "ERROR: no pdf_url found in trigger"
+              exit 0
             fi
-            rm -f "$PDF_FILE"
-          else
-            echo "No PDF_URL — nothing to download" >> "$DIAG"
-          fi
+            HC=$(curl -sL -o /tmp/p.pdf -w "%{http_code}" "$URL")
+            SZ=$(wc -c < /tmp/p.pdf 2>/dev/null || echo 0)
+            echo "Download HTTP=$HC size=$SZ"
+            echo "First 8 bytes: $(head -c 8 /tmp/p.pdf | od -An -c | tr -s ' ')"
+            if [ "$HC" = "200" ] && [ "$SZ" -gt 1000 ]; then
+              pdftotext -layout /tmp/p.pdf /tmp/p.txt 2>&1
+              echo "Text size: $(wc -c < /tmp/p.txt) bytes / $(wc -l < /tmp/p.txt) lines"
+              echo "=== PDF TEXT BEGINS ==="
+              cat /tmp/p.txt
+              echo "=== PDF TEXT ENDS ==="
+            else
+              echo "Skipping pdftotext (bad PDF)"
+            fi
+          } > "$OUT" 2>&1
+          echo "Output file: $OUT"
+          ls -la outbox/patent-result-*.txt | tail -1
 
       - name: Push result
         run: |
           git config user.email "probe@field"
           git config user.name "Probe"
-          git add outbox/patent-*.txt outbox/patent-*.html 2>/dev/null || true
-          if git diff --cached --quiet; then
-            echo "Nothing to commit"
-            exit 0
-          fi
-          git commit -m "patent probe output [skip ci]"
+          git add outbox/patent-result-*.txt
+          git status --short
+          git commit -m "patent probe [skip ci]"
           for i in 1 2 3; do
             git pull --rebase --autostash origin main && git push origin main && break
             sleep $((i * 5))
