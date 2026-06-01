@@ -18478,6 +18478,16 @@ async function fetchFIELDBriefFromClaude(sections){
   const all=sections.flatMap(s=>(s.games||[]).map(g=>({...g,_section:s.sport})));
   const ranked=all.filter(g=>g.home&&g.away&&g.home!=='ATP/WTA Field').sort((a,b)=>preGameScore(b)-preGameScore(a)).slice(0,8);
   if(!ranked.length) return null;
+  // Big-game flag: Conference Finals and above get doubled brief length.
+  // Mirrors the compound path (line ~17293) so standalone J3 gets the same
+  // editorial depth treatment when Conference Finals / Cup / NBA Finals are on
+  // the slate. Pre-fix: this path hardcoded 100-120w regardless of stakes.
+  const isBigGameJ3 = ranked.some(g =>
+    /conference finals|cf g\d|nba finals|stanley cup final|wcf|ecf/i.test(g.league||'')
+  );
+  const briefWordsJ3 = isBigGameJ3
+    ? '200-240 words. 3-4 paragraphs. No headers.'
+    : '100-120 words. 2 short paragraphs. No headers.';
   // Brief suppression: skip Claude if top live game is cooling + late period (decided)
   // Saves journalism tokens on games that are already over narratively.
   try {
@@ -18558,7 +18568,7 @@ async function fetchFIELDBriefFromClaude(sections){
       return now.toLocaleDateString('en-US', { timeZone: tz === 'local' ? localTz() : tz, weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
     } catch(_) { return ''; }
   })();
-  const prompt=["Write a FIELD Brief for tonight's sports slate.",'',_todayAnchor?`TODAY: ${_todayAnchor}.`:'',_todayAnchor?'':'','TONIGHT\'S GAMES:',gameLines,'','RULES:','- 100-120 words. 2 short paragraphs. No headers.','- STRUCTURE: Paragraph 1 opens on the highest-stakes game with the specific situation (not the team name). Paragraph 2 covers the rest of the slate in order of importance. End on what carries forward.','- Lead with the specific situation, not the team. "48 minutes from their first Finals since 1999" not "The Knicks are looking to advance."','- Call out FREE over-the-air games explicitly.',"- Surface Scout's Pick if flagged.",'- If [ANTI-HYPE] appears in a game line, describe that matchup as low-stakes in plain prose — never echo the tag [ANTI-HYPE] verbatim.','- CORRECTNESS: write only from data above. Never invent scores, stats, records, or player tendencies.',
+  const prompt=["Write a FIELD Brief for tonight's sports slate.",'',_todayAnchor?`TODAY: ${_todayAnchor}.`:'',_todayAnchor?'':'','TONIGHT\'S GAMES:',gameLines,'','RULES:',`- ${briefWordsJ3}`,'- STRUCTURE: Paragraph 1 opens on the highest-stakes game with the specific situation (not the team name). Paragraph 2 covers the rest of the slate in order of importance. End on what carries forward.','- Lead with the specific situation, not the team. "48 minutes from their first Finals since 1999" not "The Knicks are looking to advance."','- Call out FREE over-the-air games explicitly.',"- Surface Scout's Pick if flagged.",'- If [ANTI-HYPE] appears in a game line, describe that matchup as low-stakes in plain prose — never echo the tag [ANTI-HYPE] verbatim.','- CORRECTNESS: write only from data above. Never invent scores, stats, records, or player tendencies.',
   // PF-5 + PF-7: explicit date-format and player-stat rules
   '- DATES: when referring to a game, use the "Start:" line value verbatim. Do not write fractions like "6/3" — write "June 2" or "Tuesday" or "tonight". Never invent or reformat dates.',
   '- PLAYER STATS: only cite a player stat number when it explicitly appears in context (e.g. "[MILESTONE: X needs 5 points for 1000]"). If a player is named without a stat, mention them by name but do NOT attach a fabricated number ("Dorofeyev leads the line" not "Dorofeyev posting 37"). Never invent goal totals, point totals, ERA, BA, etc.',

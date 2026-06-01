@@ -1734,3 +1734,11 @@ assert('A358 — FIELD_PROSE_STYLE: TIME-PERIOD ANCHORING rule + J3 SLATE BOUNDA
   html.includes('SLATE BOUNDARY (mandatory)') &&
   html.includes("Saying \"In England, Man United routed Brighton 3-0\" is FABRICATION"),
   'FIELD_PROSE_STYLE must include the TIME-PERIOD ANCHORING rule (mandatory timeframe qualifier on every stat) and the J3 prompt must include the SLATE BOUNDARY rule (no league not in slate)');
+
+assert('A359 — standalone J3 (fetchFIELDBriefFromClaude) honors isBigGame word budget',
+  html.includes('const isBigGameJ3 = ranked.some(g =>') &&
+  html.includes("/conference finals|cf g\\d|nba finals|stanley cup final|wcf|ecf/i.test(g.league") &&
+  html.includes('const briefWordsJ3 = isBigGameJ3') &&
+  html.includes("'200-240 words. 3-4 paragraphs. No headers.'") &&
+  html.includes('`- ${briefWordsJ3}`'),
+  'fetchFIELDBriefFromClaude must compute isBigGameJ3 from ranked games using the same regex as the compound path, derive a briefWordsJ3 ternary (200-240w / 3-4 paragraphs for big games, 100-120w / 2 paragraphs otherwise), and interpolate it into the prompt RULES block — previously hardcoded 100-120w regardless of stakes');
