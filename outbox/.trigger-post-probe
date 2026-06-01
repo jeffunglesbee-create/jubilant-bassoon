@@ -1,2 +1,3 @@
 url=https://field-claude-proxy.jeffunglesbee.workers.dev/journalism/generate
-# Phase C verify — hit proxy directly with whitelisted relay header to bypass Origin check
+headers={"Content-Type":"application/json","X-FIELD-Relay":"field-relay-cron-2026"}
+body={"prompt":"sanity check","model":"gemini"}
