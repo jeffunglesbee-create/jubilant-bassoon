@@ -1,0 +1,15 @@
+URL: https://field-claude-proxy.jeffunglesbee.workers.dev/journalism/generate  [20260601T012744Z]
+=== Request body ===
+{
+  "prompt": "Write one sentence about a baseball game.",
+  "sport": "baseball",
+  "briefType": "mlb-brief",
+  "max_tokens": 100
+}
+
+=== Custom headers ===
+X-FIELD-Relay: field-relay-cron-2026
+
+=== Response (status + body, first 4000 chars) ===
+{"success":false,"result":[],"messages":[],"error":[{"code":2009,"message":"Unauthorized"}],"name":"AiGatewayError","httpCode":401,"internalCode":2009,"message":"Unauthorized","description":"Unauthorized"}
+HTTP_STATUS:401
