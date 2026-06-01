@@ -94,7 +94,7 @@ Decision: do not attempt within this session's budget. `game.playoffLeaders` hoo
 
 ### P0 — Live verification (now urgent: SW 2026-06-01h live; FOUR live data layers in J3 brief)
 1. **SW `2026-06-01h` active in browser**
-2. **Generate / inspect a J3 brief tonight when Cup G1 (June 2) or any Cup/Finals game lands.** Verify ALL FOUR tags fire with live data:
+2. **Generate / inspect a J3 brief before Cup G1 puck drop (Tuesday June 2 evening).** Verify ALL FOUR tags fire with live data:
    - `[COACH: …]` — live since PM-2
    - `[HISTORICAL: …]` — live since PM-2
    - `[INJURY: …]` — **NEW LIVE THIS SESSION** (ESPN feed; first time the tag has ever fired with real data)
