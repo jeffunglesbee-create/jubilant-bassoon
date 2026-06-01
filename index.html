@@ -15537,7 +15537,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-05-31j';
+  const SW_VERSION = '2026-05-31k';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -18781,12 +18781,17 @@ async function fetchMLBGameBriefFromClaude(g) {
 // with zero AI calls on most requests. Falls back to browser-side generation
 // if KV miss (cron hasn't run yet for this game) or relay unavailable.
 // KV key: brief:game:{espnEventId}   TTL: 3600s
+//
+// Timeout: 1500ms. KV reads typically return in 5-50ms; 1500ms is generous
+// for network round-trip + Worker cold start. Was 3000ms — reduced May 31
+// 2026 so a slow/degraded KV doesn't drag the bottom-sheet UX. Falling
+// through to live LLM after 1.5s is preferable to waiting 3s for nothing.
 async function fetchPrerenderedGameBrief(espnEventId) {
   if (!espnEventId) return null;
   try {
     const r = await fetch(
       `${JOURNALISM_RELAY.replace('/journalism/tonight', '')}/journalism/game/${espnEventId}`,
-      { signal: AbortSignal.timeout(3000) }
+      { signal: AbortSignal.timeout(1500) }
     );
     if (!r.ok) return null;
     const data = await r.json();
