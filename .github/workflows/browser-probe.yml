@@ -1,0 +1,52 @@
+name: Browser Probe
+on:
+  push:
+    paths: ['outbox/trigger-browser-probe.txt']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fetch with browser headers
+        run: |
+          TS=$(date -u +%Y%m%dT%H%M%SZ)
+          OUT="outbox/browser-result-${TS}.txt"
+          URL=$(grep '^url=' outbox/trigger-browser-probe.txt | head -1 | cut -d= -f2-)
+          {
+            echo "== Browser Probe $TS =="
+            echo "URL: $URL"
+            echo "---"
+            curl -sL \
+              -H "User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36" \
+              -H "Accept: text/html,application/xhtml+xml,application/xml,application/json;q=0.9,*/*;q=0.8" \
+              -H "Accept-Language: en-US,en;q=0.9" \
+              -H "Accept-Encoding: identity" \
+              -H "DNT: 1" \
+              -H "Connection: keep-alive" \
+              -H "Upgrade-Insecure-Requests: 1" \
+              -H "Sec-Fetch-Dest: document" \
+              -H "Sec-Fetch-Mode: navigate" \
+              -H "Sec-Fetch-Site: none" \
+              -H "Sec-Fetch-User: ?1" \
+              -w "\n---\nHTTP=%{http_code} size=%{size_download} time=%{time_total}\n" \
+              "$URL"
+          } > "$OUT" 2>&1
+          echo "Output: $OUT ($(wc -c < "$OUT") bytes)"
+
+      - name: Push result
+        run: |
+          git config user.email "probe@field"
+          git config user.name "Probe"
+          git add outbox/browser-result-*.txt
+          git status --short
+          git commit -m "browser probe [skip ci]"
+          for i in 1 2 3; do
+            git pull --rebase --autostash origin main && git push origin main && break
+            sleep $((i * 5))
+          done
