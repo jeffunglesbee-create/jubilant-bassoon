@@ -1,8 +1,9 @@
-# FIELD Handoff — June 1 2026 (JQ-5 close-out: ACTION-A/B/C shipped)
+# FIELD Handoff — June 1 2026 (JQ-5 → My Services refactor → stale EPL fix → WC2026 corrections)
 
-**jubilant-bassoon HEAD:** 2c483e0 · Smoke: 241/0 pre-gate · SW_VERSION 2026-06-01b
+**jubilant-bassoon HEAD:** 8008759 · Smoke: 241/0 pre-gate · SW_VERSION 2026-06-01d
 **field-relay-nba HEAD:** 0ae4c11 · Deploy: SUCCESS · STRUCTURAL 6 green · WOW 8 e2e verified (unchanged this session)
-**Session Doc (Drive):** 1Q35ZOtrttizfbiS2ad2TMnRy3gYJozXJT9Of-9RKCc0
+**Session Doc (Drive):** 1Q35ZOtrttizfbiS2ad2TMnRy3gYJozXJT9Of-9RKCc0 (JQ-5 build segment only — does not cover later commits)
+**WC2026 Format Corrections (NEW — read before any WC build work):** 17D_EzrqoNUR4LN4OK3hr6MqKFUHitWlO72O1CWmqLks
 **Spec source for this session:** Build Session List v7.27 (`1TaywA5e3NLpJLpXcQPZwDMhDG79_rXMsvIa_J_uBOfY`) TIER 4
 
 ## TIER 0 DEADLINES
@@ -60,15 +61,93 @@ ASSUME." Built JQ-ACTION-A/B/C in spec order (A first → B parallel → C after
 - `jq-action-b-banned-ext`:   '2026-06-01'
 - `jq-action-c-voice-log`:    '2026-06-01'
 
+## POST-JQ-5 WORK THIS SESSION (after commit 2c483e0)
+
+### Refactor (commit 46ae3eb) — JQ tech detail moved to My Services
+After JQ-5 close-out, user clarified: **no technical information appears in the
+UI, only in My Services menu**. The .brief-prose-score badge was stripped
+entirely (CSS + DOM); buildProseScoreDetail() and its tap handler deleted;
+JQ-ACTION-B row removed from FIELD HEALTH panel (was duplicate).
+
+NEW: `buildJournalismQualitySection()` called from `renderSetupBody` adds 5
+subsections to the My Services modal:
+1. Aggregate (avg + total briefs scored)
+2. Per brief type · last 5 (J3 Brief / MLB Brief / EPL Brief / etc.)
+3. Voice violations (writes from JQ-ACTION-C, sport-tagged)
+4. Phrases flagged (cliche + voice retries)
+5. Session quality extension (sessionStorage.field_jq_banned_ext)
+
+`scoreProse()` + localStorage persistence kept (data, not UI). SW c→c (then →d).
+FIELD_FEATURES renamed: `jq-quality-in-my-services`, `jq-banned-ext-tracked`,
+`jq-voice-log`. Smoke A267 inverted (was "badge MUST render in UI", now
+"must NOT render"). A351/A352 retargeted, A353 unchanged.
+
+**Standing rule established:** spec language describing visible UI elements
+does not authorize creating one. When in doubt, DO NOT ASSUME — ask.
+
+### Stale EPL fix (commit 8008759) — belt-and-suspenders
+User reported June 1 brief mentioning EPL Final Day results (May 24, 8 days
+stale) + EPL score chips in ticker. Diagnosis: SOCCER_LEAGUES empty + V2.epl
+false, so no fetch path is bringing EPL — leak is (a) AI hallucinating from
+training, (b) stale in-memory `espnScores` from multi-day open tab.
+
+Five gates added:
+1. `DOMESTIC_LEAGUE_BREAK_2026` constant + `isDomesticLeagueInBreak()` helper
+   with end+resume dates for EPL/LaLiga/SerieA/Ligue1/Bundesliga (11/11
+   boundary cases verified)
+2. `fetchSoccerFixtures` league + per-event date gates (defensive — current
+   path is empty but protects against future re-enable)
+3. `buildCompoundPrompt` soccerGames: `.filter(!isDomesticLeagueInBreak)` +
+   `.filter(g => isToday(g.start_time))` per game
+4. `renderScoreTicker` prune: deletes espnScoreTs entries older than 15min
+   at top of function (renderESPNScores does this but only when called)
+5. NEW PROSE RULES:
+   - **FIELD_PROSE_STYLE: TIME-PERIOD ANCHORING (mandatory)** — every numeric
+     stat must be qualified with its time period in the same sentence
+     ("this postseason", "this series", "tonight"). Bare "25.0 points" /
+     "26.0 PPG" forbidden.
+   - **J3 prompt: SLATE BOUNDARY (mandatory)** — every league/sport mentioned
+     must appear in TONIGHT'S GAMES. Explicit FABRICATION call-out using
+     the actual leak example ("Saying 'In England, Man United routed
+     Brighton 3-0' is FABRICATION when no EPL game is in the slate").
+
+Smoke +5 (A354-A358) green. SW c → d.
+
+### WC2026 Format Corrections (Drive doc 17D_EzrqoNUR4LN4OK3hr6MqKFUHitWlO72O1CWmqLks)
+User caught a "32 teams" assumption I'd relayed from the May 31 ASAP Build
+Architecture spec. Verified via web search: World Cup 2026 has **48 teams,
+12 groups of 4, 104 matches, NEW Round of 32 stage** (top 2 from each group
++ 8 best 3rd-place). The codebase (index.html) already has the correct
+numbers throughout — error is exclusively in the May 31 strategic docs.
+
+Corrections doc covers:
+- ASAP Build Architecture (`1UIuazvMvY4ewJap2Y4Z4-LbqHGvt8z-QhX28ImnAlt0`):
+  Tier 2B "32 teams" → 48, "64 games" → 104, "~90 min" → ~125 min
+- Event-Driven Features (`1yt-3ruXqTNNOl9k1jRQARFw9OtHt6IzNG4xkfcjVqTE`):
+  A1 "48 group games" → 72, A2 "32 teams/19 KB" → 48 teams/~29 KB,
+  A2 "~90 min" → ~125 min, A4 storm event Round of 16 → Round of 32 (16
+  games, ~June 27-30), D4 "64 games" → 104
+- Five other May 31 docs flagged as likely-affected (not yet verified)
+
+**Future sessions must read the corrections doc before touching any WC2026
+build item.** Read in this order: original spec → corrections doc → apply
+corrections.
+
 ## PRIORITY LIST FOR NEXT SESSION
 
-### P0 — Live verification (now urgent: SW_VERSION 2026-06-01b is live)
-1. **JQ-5 browser confirmation** (this session's deliverable):
-   - Tap a Prose badge → detail panel expands with 4 sections
-   - ?debug=1 panel shows new "Session quality extension" row
-   - On any MLB/EPL/J5 brief, voice violations appear under VOICE · SPORT
+### P0 — Live verification (now urgent: SW_VERSION 2026-06-01d is live)
+1. **JQ-5 + post-JQ-5 browser confirmation:**
+   - Open My Services modal (gear icon) — Journalism Quality section renders
+     5 subsections (Aggregate / Per brief type / Voice violations /
+     Phrases flagged / Session quality extension)
+   - .brief-prose-score badge should NOT appear in main UI anywhere
+   - Next generated FIELD Brief uses TIME-PERIOD ANCHORING (no bare
+     "25.0 points" or "26.0 PPG") and SLATE BOUNDARY (no EPL/LaLiga/etc.
+     references unless those leagues are in tonight's slate)
+   - Score ticker chips no longer show stale FT entries from prior dates
+     (15-min in-memory pruning kicks in on render)
 2. **Previously deferred from May 31 P0:**
-   - SW `2026-06-01b` active in browser
+   - SW `2026-06-01d` active in browser
    - J2/J5/MLB/Stakes brief triggers populate text
    - `window._lastJQAudit` populates non-empty
    - `getQualityTarget(sport)` injection visible post-3-scored-briefs
@@ -126,10 +205,19 @@ ASSUME." Built JQ-ACTION-A/B/C in spec order (A first → B parallel → C after
 
 ## STATE INVARIANTS AT END OF SESSION
 
-- jubilant-bassoon: smoke 241/0 pre-gate, deploy SUCCESS on `2c483e0`
+- jubilant-bassoon: smoke 241/0 pre-gate, deploy SUCCESS on `8008759`
 - field-relay-nba: STRUCTURAL 6 green, WOW 8 e2e probe done (May 31)
 - Pre-existing post-gate reds: A313, A314 (PWA-A) — hidden by gate position
 - JQ pipeline now fully Rule-28-compliant: every silent intelligence layer
   (scoreProse, _bannedExtension, retryWithSportVocab) has a user-visible
-  action path (badge tap, debug panel surface, voice violation log)
+  action path — now in MY SERVICES MODAL, not in main UI per standing rule
+- JQ quality data flows: scoreProse + voice retry → field_jq_scores +
+  field_jq_review → buildJournalismQualitySection in renderSetupBody
+- Stale-EPL defense: 5 belt-and-suspenders gates; SW 2026-06-01d will deliver
+  the new prose rules (TIME-PERIOD ANCHORING + SLATE BOUNDARY) to next
+  generated brief; cached current-day compound brief in sessionStorage may
+  still hold the old text until date rollover
+- WC2026 format: codebase correct (48 teams, 104 matches throughout); May 31
+  strategic specs have 32-team/64-game errors documented in corrections doc
+  `17D_EzrqoNUR4LN4OK3hr6MqKFUHitWlO72O1CWmqLks`
 - Sync + async journalism paths produce identical formatting (PF-1, unchanged)
