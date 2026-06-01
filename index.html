@@ -979,20 +979,6 @@ body::before{
 .narrative-line{font-size:.68rem;color:var(--muted);font-style:italic;padding:.05rem .85rem .15rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;opacity:.9}
 .brief-scout-note{font-size:.62rem;color:#2dd4bf;margin-top:.45rem;padding-top:.35rem;border-top:1px solid rgba(45,212,191,.15);line-height:1.4}
 .brief-bni-note{font-size:.62rem;color:#b8860b;margin-top:.3rem;line-height:1.4}
-.brief-prose-score{font-size:.5rem;font-family:var(--ff-mono,monospace);color:var(--smoke);opacity:.6;margin-top:.5rem;letter-spacing:.02em;display:flex;gap:.5rem;flex-wrap:wrap;cursor:pointer;transition:opacity .15s}
-.brief-prose-score:hover,.brief-prose-score:active{opacity:.95}
-.brief-prose-score::after{content:'▸';margin-left:.2rem;opacity:.5;transition:transform .15s}
-.brief-prose-score.bps-open::after{transform:rotate(90deg)}
-.brief-prose-score .bps-val{color:var(--gold2,#c9a84c);opacity:.9}
-.brief-prose-score .bps-warn{color:#f87171;opacity:.9}
-.brief-prose-detail{font-size:.56rem;font-family:var(--ff-mono,monospace);color:var(--smoke);margin-top:.35rem;padding:.5rem .6rem;background:rgba(20,20,28,.55);border-left:2px solid var(--gold2,#c9a84c);border-radius:0 4px 4px 0;line-height:1.55}
-.brief-prose-detail .bpd-section{margin-bottom:.45rem}
-.brief-prose-detail .bpd-section:last-child{margin-bottom:0}
-.brief-prose-detail .bpd-label{color:#c9a84c;font-weight:700;letter-spacing:.05em;font-size:.52rem;display:block;margin-bottom:.15rem}
-.brief-prose-detail .bpd-empty{opacity:.45;font-style:italic}
-.brief-prose-detail .bpd-phrase{display:inline-block;background:rgba(248,113,113,.12);color:#f87171;padding:.05rem .35rem;border-radius:3px;margin:.05rem .15rem .05rem 0;font-size:.52rem}
-.brief-prose-detail .bpd-phrase.bpd-voice{background:rgba(201,168,76,.15);color:#c9a84c}
-.brief-prose-detail .bpd-phrase.bpd-ext{background:rgba(45,212,191,.12);color:#2dd4bf}
 .anti-hype-badge{display:inline-flex;align-items:center;gap:.3rem;font-size:.56rem;font-weight:600;letter-spacing:.04em;color:#b8860b;background:rgba(184,134,11,.1);border:1px solid rgba(184,134,11,.3);border-radius:4px;padding:.15rem .45rem;margin-top:.2rem}
 .game-card.scout-pick-card{border-left:3px solid var(--teal,#2dd4bf)!important}
 #watch-window{padding:.3rem 1rem;max-width:1200px;margin:0 auto}
@@ -1742,6 +1728,19 @@ body::before{
 }
 .setup-group-label::after{content:'';flex:1;height:1px;background:var(--edge)}
 .setup-services{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:.25rem}
+.jq-quality-section{margin-top:1.25rem;padding-top:.9rem;border-top:1px solid var(--edge)}
+.jq-section-title{font-family:var(--ff-cond);font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--gold2,#c9a84c);margin-bottom:.2rem}
+.jq-section-sub{font-size:.6rem;color:var(--smoke);opacity:.65;margin-bottom:.7rem}
+.jq-sublabel{font-family:var(--ff-cond);font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:var(--smoke);opacity:.8;margin:.7rem 0 .25rem}
+.jq-row{font-family:var(--ff-mono,monospace);font-size:.6rem;color:var(--white);display:flex;flex-wrap:wrap;align-items:center;gap:.4rem;padding:.2rem 0;line-height:1.5}
+.jq-row-stack{flex-direction:column;align-items:flex-start;gap:.15rem}
+.jq-k{color:var(--smoke);font-weight:600;letter-spacing:.04em}
+.jq-v{color:var(--gold2,#c9a84c)}
+.jq-meta{color:var(--smoke);opacity:.55;font-size:.55rem}
+.jq-empty{font-family:var(--ff-mono,monospace);font-size:.6rem;color:var(--smoke);opacity:.5;font-style:italic;padding:.2rem 0}
+.jq-tag{display:inline-block;font-family:var(--ff-mono,monospace);font-size:.55rem;background:rgba(248,113,113,.12);color:#f87171;padding:.05rem .35rem;border-radius:3px;margin:.05rem .15rem .05rem 0}
+.jq-tag-voice{background:rgba(201,168,76,.15);color:#c9a84c}
+.jq-tag-ext{background:rgba(45,212,191,.12);color:#2dd4bf}
 .setup-svc{
   display:flex;align-items:center;gap:6px;
   padding:.32rem .7rem;border-radius:5px;border:1px solid var(--edge2);
@@ -2881,19 +2880,6 @@ function buildFieldHealthPanel() {
     }
   } catch(e) { rows.push(warn('Phrase Review', 'Could not read review queue')); }
 
-  // ── Session Quality Extension (JQ-ACTION-B) ──────────────────────────────
-  // Surfaces _bannedExtension: phrases auto-added to BANNED_PHRASES when a
-  // brief type's last-5 avg score < 45. Makes the feedback loop auditable.
-  try {
-    const _extRaw = sessionStorage.getItem('field_jq_banned_ext');
-    const _ext = _extRaw ? JSON.parse(_extRaw) : [];
-    if(_ext.length) {
-      rows.push(warn('Session quality extension', `${_ext.length} phrases active — [${_ext.slice(0,8).join(', ')}${_ext.length>8?', …':''}]`));
-    } else {
-      rows.push(ok('Session quality extension', 'inactive — no brief type below avg 45'));
-    }
-  } catch(e) { rows.push(warn('Session quality extension', 'Could not read sessionStorage')); }
-
   // ── Errors ────────────────────────────────────────────────────────────────
   const errors = window._fieldErrors || [];
   if (errors.length)
@@ -3269,9 +3255,9 @@ const FIELD_FEATURES = {
   'journalism-quality-gate':   '2026-05-31',  // WOW 6: relay enforces Layers 1-2e+3b structurally
   'journalism-quality-analytics': '2026-05-31', // WOW 7: relay writes JQ outcomes to Analytics Engine
   'journalism-quality-target': '2026-05-31',  // JQ-3 Layer 3c: per-sport rolling-avg → prompt feedback
-  'jq-action-a-prose-detail':  '2026-06-01',  // JQ-ACTION-A: tap prose badge → detail panel (score · rolling avg · phrases · session ext)
-  'jq-action-b-banned-ext':    '2026-06-01',  // JQ-ACTION-B: session quality extension surfaced in ?debug=1 panel
-  'jq-action-c-voice-log':     '2026-06-01',  // JQ-ACTION-C: retryWithSportVocab logs voice violations to field_jq_review
+  'jq-quality-in-my-services':  '2026-06-01',  // JQ-5: prose intelligence surfaced in My Services modal only (no UI tech info)
+  'jq-banned-ext-tracked':      '2026-06-01',  // JQ-ACTION-B: _bannedExtension state surfaced in My Services Journalism Quality section
+  'jq-voice-log':               '2026-06-01',  // JQ-ACTION-C: retryWithSportVocab logs voice violations to field_jq_review
   // Polling optimization (Layer 1 + Layer 2 + #11b)
   'per-league-polling':     '2026-05-18',  // Layer 1: each league on its own cadence
   'concurrent-espn-fetch':  '2026-05-18',  // Layer 2: no 200ms batch delays
@@ -5469,6 +5455,97 @@ function saveMyServices(set){
 let MY_SERVICES = loadMyServices();
 
 // Render the setup modal body
+// ── Journalism Quality section (My Services modal) ───────────────────────────
+// Surfaces JQ pipeline state — never in the brief UI, only here in admin.
+// Subsections: aggregate scores · per-label rolling avgs · recent voice
+// violations · phrases flagged · session banned extension.
+// Data sources: localStorage field_jq_scores + field_jq_review,
+// sessionStorage field_jq_banned_ext. No tap interactions — read-only diagnostic.
+function buildJournalismQualitySection(){
+  let scores = [], review = [], ext = [];
+  try { scores = JSON.parse(localStorage.getItem('field_jq_scores')||'[]'); } catch(_){}
+  try { review = JSON.parse(localStorage.getItem('field_jq_review')||'[]'); } catch(_){}
+  try { ext = JSON.parse(sessionStorage.getItem('field_jq_banned_ext')||'[]'); } catch(_){}
+
+  const fmtSubLabel = (txt) => `<div class="jq-sublabel">${txt}</div>`;
+  const fmtEmpty = (txt) => `<span class="jq-empty">${txt}</span>`;
+  const escapeHtml = (s) => String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
+
+  // 1. Aggregate
+  let aggHtml;
+  if(scores.length){
+    const total = scores.reduce((a,s)=>a+s.score,0);
+    const avg = Math.round(total/scores.length);
+    const best = Math.max(...scores.map(s=>s.score));
+    const worst = Math.min(...scores.map(s=>s.score));
+    const stat = Math.round((scores.reduce((a,s)=>a+(s.stat||0),0)/scores.length)*10)/10;
+    aggHtml = `<div class="jq-row"><span class="jq-k">avg</span><span class="jq-v">${avg}/200</span><span class="jq-k">best</span><span class="jq-v">${best}</span><span class="jq-k">worst</span><span class="jq-v">${worst}</span><span class="jq-k">stat</span><span class="jq-v">${stat}/s</span><span class="jq-k">n</span><span class="jq-v">${scores.length}</span></div>`;
+  } else {
+    aggHtml = fmtEmpty('no briefs scored yet');
+  }
+
+  // 2. Per-label rolling avgs (last 5 per label)
+  let perLabelHtml = '';
+  if(scores.length){
+    const byLabel = {};
+    scores.forEach(s=>{ (byLabel[s.label] = byLabel[s.label] || []).push(s.score); });
+    const labels = Object.keys(byLabel).sort();
+    perLabelHtml = labels.map(lbl=>{
+      const last5 = byLabel[lbl].slice(-5);
+      const avg = Math.round(last5.reduce((a,b)=>a+b,0)/last5.length);
+      return `<div class="jq-row"><span class="jq-k">${escapeHtml(lbl)}</span><span class="jq-v">${avg}/200</span><span class="jq-meta">(${last5.length} of ${byLabel[lbl].length})</span></div>`;
+    }).join('');
+  } else {
+    perLabelHtml = fmtEmpty('no per-label history yet');
+  }
+
+  // 3. Voice violations (type:'voice', last 5)
+  const voice = review.filter(r=>r.type==='voice').slice(-5).reverse();
+  let voiceHtml;
+  if(voice.length){
+    voiceHtml = voice.map(v=>{
+      const sport = escapeHtml((v.sport||'').toUpperCase());
+      const lbl = escapeHtml(v.label||'');
+      const phrases = (v.phrases||[]).map(p=>`<span class="jq-tag jq-tag-voice">${escapeHtml(p)}</span>`).join('');
+      return `<div class="jq-row jq-row-stack"><div><span class="jq-k">${sport} VOICE</span><span class="jq-meta">${lbl}</span></div><div>${phrases}</div></div>`;
+    }).join('');
+  } else {
+    voiceHtml = fmtEmpty('none — sport vocabulary clean');
+  }
+
+  // 4. Phrases flagged (non-voice, last 5)
+  const phrases = review.filter(r=>r.type!=='voice').slice(-5).reverse();
+  let phrasesHtml;
+  if(phrases.length){
+    phrasesHtml = phrases.map(p=>{
+      const lbl = escapeHtml(p.label||'');
+      const sc = p.score != null ? `<span class="jq-meta">score ${p.score}</span>` : '';
+      const tags = (p.phrases||[]).map(ph=>`<span class="jq-tag">${escapeHtml(ph)}</span>`).join('');
+      return `<div class="jq-row jq-row-stack"><div><span class="jq-k">${lbl}</span>${sc}</div><div>${tags}</div></div>`;
+    }).join('');
+  } else {
+    phrasesHtml = fmtEmpty('no phrases flagged');
+  }
+
+  // 5. Session banned extension
+  let extHtml;
+  if(ext.length){
+    extHtml = `<div class="jq-row jq-row-stack"><div><span class="jq-k">${ext.length} active</span><span class="jq-meta">auto-extended this session</span></div><div>${ext.map(p=>`<span class="jq-tag jq-tag-ext">${escapeHtml(p)}</span>`).join('')}</div></div>`;
+  } else {
+    extHtml = fmtEmpty('inactive — no brief type below avg 45');
+  }
+
+  return `<div class="jq-quality-section">
+    <div class="jq-section-title">Journalism Quality</div>
+    <div class="jq-section-sub">FIELD's prose evaluation for AI briefs. Read-only.</div>
+    ${fmtSubLabel('Aggregate')}${aggHtml}
+    ${fmtSubLabel('Per brief type · last 5')}${perLabelHtml}
+    ${fmtSubLabel('Voice violations · recent')}${voiceHtml}
+    ${fmtSubLabel('Phrases flagged · recent')}${phrasesHtml}
+    ${fmtSubLabel('Session quality extension')}${extHtml}
+  </div>`;
+}
+
 function renderSetupBody(){
   const body = document.getElementById("setup-body");
   const intro = body.querySelector(".setup-intro");
@@ -5488,9 +5565,10 @@ function renderSetupBody(){
     html += `</div>`;
   });
   // Append after intro
-  const existing = body.querySelectorAll(".setup-group-label,.setup-services");
+  const existing = body.querySelectorAll(".setup-group-label,.setup-services,.jq-quality-section");
   existing.forEach(el=>el.remove());
   body.insertAdjacentHTML("beforeend", html);
+  body.insertAdjacentHTML("beforeend", buildJournalismQualitySection());
 
   // Wire toggles
   body.querySelectorAll(".setup-svc").forEach(el=>{
@@ -15568,7 +15646,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-01b';
+  const SW_VERSION = '2026-06-01c';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -17085,141 +17163,24 @@ async function scoreProse(text, game){
   };
 }
 
-// JQ-ACTION-A (Rule 28 paired action path for prose score badge)
-// Tap badge → expand detail panel showing:
-//   - Current score breakdown (dimensions)
-//   - Banned/sparingly phrases fired for this label (from field_jq_review)
-//   - Rolling avg for this brief type (last 5 from field_jq_scores)
-//   - Session banned extension if any active (sessionStorage field_jq_banned_ext)
-// JQ-ACTION-C entries appear here too: voice violations are tagged type:'voice'.
-function buildProseScoreDetail(scoreObj, label){
-  const panel = document.createElement('div');
-  panel.className = 'brief-prose-detail';
-  const sections = [];
-  // 1. Score breakdown
-  const ceil = scoreObj.ceiling || 200;
-  const ctxScore = scoreObj.context && scoreObj.context.available ? scoreObj.context.score : null;
-  sections.push(
-    `<div class="bpd-section"><span class="bpd-label">SCORE</span>` +
-    `${scoreObj.score}/${ceil} · arc ${scoreObj.arc?.score ?? 0}/40 · ` +
-    `${ctxScore!=null ? 'ctx '+ctxScore+'/30 · ' : ''}` +
-    `stat ${scoreObj.statDepth}/s · spec ${scoreObj.specificity}% · ` +
-    `var ${scoreObj.variety}% · fresh ${scoreObj.freshness}</div>`
-  );
-  // 2. Rolling avg (last 5 of THIS label) — empty when first scored brief of this type
-  try {
-    const _scores = JSON.parse(localStorage.getItem('field_jq_scores')||'[]');
-    const _typeScores = _scores.filter(s => s.label === label).map(s => s.score);
-    const _last5 = _typeScores.slice(-5);
-    if (_last5.length) {
-      const avg = Math.round(_last5.reduce((a,b)=>a+b,0)/_last5.length);
-      sections.push(
-        `<div class="bpd-section"><span class="bpd-label">ROLLING AVG · ${label} · last ${_last5.length}</span>` +
-        `${avg}/${ceil} (range ${Math.min(..._last5)}–${Math.max(..._last5)})</div>`
-      );
-    } else {
-      sections.push(`<div class="bpd-section"><span class="bpd-label">ROLLING AVG · ${label}</span><span class="bpd-empty">first scored brief of this type</span></div>`);
-    }
-  } catch(e_) {}
-  // 3. Banned/sparingly phrases fired for this label (field_jq_review)
-  // Cliches fired in THIS brief come from scoreObj.cliches directly.
-  try {
-    const _live = (scoreObj.cliches || []).map(p => `<span class="bpd-phrase">${p}</span>`).join('');
-    const _review = JSON.parse(localStorage.getItem('field_jq_review')||'[]');
-    const _hist = _review.filter(r => r.label === label);
-    const _voiceEntries = _hist.filter(r => r.type === 'voice');
-    const _phraseEntries = _hist.filter(r => r.type !== 'voice');
-    const _voicePhrases = [...new Set(_voiceEntries.flatMap(r => r.phrases||[]))];
-    const _histPhrases = [...new Set(_phraseEntries.flatMap(r => r.phrases||[]))]
-      .filter(p => !(scoreObj.cliches||[]).includes(p));
-    let html = `<div class="bpd-section"><span class="bpd-label">PHRASES FLAGGED · ${label}</span>`;
-    if (_live || _histPhrases.length || _voicePhrases.length) {
-      if (_live) html += _live;
-      if (_histPhrases.length) html += _histPhrases.map(p => `<span class="bpd-phrase">${p}</span>`).join('');
-      if (_voicePhrases.length) {
-        // JQ-ACTION-C: sport voice violations surfaced here with VOICE tag
-        const _voiceSport = _voiceEntries[_voiceEntries.length-1]?.sport || '';
-        html += `<br><span class="bpd-label" style="margin-top:.25rem">VOICE · ${(_voiceSport||'').toUpperCase()}</span>` +
-                _voicePhrases.map(p => `<span class="bpd-phrase bpd-voice">${p}</span>`).join('');
-      }
-    } else {
-      html += `<span class="bpd-empty">none</span>`;
-    }
-    html += `</div>`;
-    sections.push(html);
-  } catch(e_) {}
-  // 4. Session banned extension (sessionStorage field_jq_banned_ext)
-  try {
-    const _ext = JSON.parse(sessionStorage.getItem('field_jq_banned_ext')||'[]');
-    if (_ext.length) {
-      sections.push(
-        `<div class="bpd-section"><span class="bpd-label">SESSION BANNED EXT · ${_ext.length} active</span>` +
-        _ext.map(p => `<span class="bpd-phrase bpd-ext">${p}</span>`).join('') +
-        `</div>`
-      );
-    } else {
-      sections.push(`<div class="bpd-section"><span class="bpd-label">SESSION BANNED EXT</span><span class="bpd-empty">inactive (no brief type below avg 45)</span></div>`);
-    }
-  } catch(e_) {}
-  panel.innerHTML = sections.join('');
-  return panel;
-}
-
 // Layer 3: debug panel display for prose quality
 function renderProseScore(scoreObj, label){
   if(!scoreObj) return;
   const clicheStr = scoreObj.cliches.length ? `⚠ ${scoreObj.cliches.join(', ')}` : '✓ clean';
   if(FIELD_DEBUG) console.log(`[JQ] ${label}: Score ${scoreObj.score} · Spec ${scoreObj.specificity}% · Stats ${scoreObj.statDepth}/s · Var ${scoreObj.variety}% · Dense ${scoreObj.density} · Fresh ${scoreObj.freshness} · ${clicheStr}`);
-  // P0: Inject prose score badge into the brief card (always visible — patent prior art)
-  // Only for Compound Brief and J3 Brief (the primary output surfaces)
+  // Persist score to localStorage rolling average (last 14 briefs).
+  // Surfaced in My Services modal Journalism Quality section — never in the brief UI.
   if(!label.includes('Brief') && !label.includes('Night Owl')) return;
   try {
-    const scoreWarn = scoreObj.score < (scoreObj.ceiling ? scoreObj.ceiling * 0.45 : 90);
-    const clicheWarn = scoreObj.cliches.length > 0;
-    const badge = document.createElement('div');
-    badge.className = 'brief-prose-score';
-    badge.setAttribute('data-jq-label', label);
-    badge.setAttribute('role', 'button');
-    badge.setAttribute('tabindex', '0');
-    badge.setAttribute('aria-label', 'Tap to see prose quality detail');
-    badge.innerHTML =
-      `<span>Prose</span><span class="${scoreWarn?'bps-warn':'bps-val'}">${scoreObj.score}/${scoreObj.ceiling||200}</span>` +
-      `<span>·</span><span>Stat</span><span class="bps-val">${scoreObj.statDepth}/s</span>` +
-      `<span>·</span><span>Spec</span><span class="bps-val">${scoreObj.specificity}%</span>` +
-      (clicheWarn ? `<span>·</span><span class="bps-warn">⚠ ${scoreObj.cliches.join(', ')}</span>` : '');
-    // JQ-ACTION-A: tap badge → toggle detail panel (Rule 28 paired action path)
-    badge.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const open = badge.classList.toggle('bps-open');
-      const sib = badge.nextElementSibling;
-      if (sib && sib.classList.contains('brief-prose-detail')) sib.remove();
-      if (open) {
-        const panel = buildProseScoreDetail(scoreObj, label);
-        badge.parentNode.insertBefore(panel, badge.nextSibling);
-      }
-    });
-    badge.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); badge.click(); } });
-    // Try to attach to brief inner card (compound/J3), or Night Owl card
-    const briefInner = document.getElementById('field-brief-inner');
-    const nightOwl = document.querySelector('.night-owl-card');
-    const target = label.includes('Night Owl') ? nightOwl : briefInner;
-    if(target) {
-      target.querySelector('.brief-prose-score')?.remove(); // remove prior score
-      target.querySelector('.brief-prose-detail')?.remove(); // remove prior detail panel
-      target.appendChild(badge);
+    const _scoreKey = 'field_jq_scores';
+    const _scores = JSON.parse(localStorage.getItem(_scoreKey)||'[]');
+    _scores.push({score:scoreObj.score, stat:scoreObj.statDepth, spec:scoreObj.specificity, label, ts:Date.now()});
+    if(_scores.length > 14) _scores.shift();
+    localStorage.setItem(_scoreKey, JSON.stringify(_scores));
+    if(FIELD_DEBUG) {
+      const avg = Math.round(_scores.reduce((a,s)=>a+s.score,0)/_scores.length);
+      console.debug(`[JQ] Rolling avg (${_scores.length} briefs): ${avg}`);
     }
-    // P4: Persist score to localStorage rolling average (last 14 briefs)
-    try {
-      const _scoreKey = 'field_jq_scores';
-      const _scores = JSON.parse(localStorage.getItem(_scoreKey)||'[]');
-      _scores.push({score:scoreObj.score, stat:scoreObj.statDepth, spec:scoreObj.specificity, label, ts:Date.now()});
-      if(_scores.length > 14) _scores.shift();
-      localStorage.setItem(_scoreKey, JSON.stringify(_scores));
-      if(FIELD_DEBUG) {
-        const avg = Math.round(_scores.reduce((a,s)=>a+s.score,0)/_scores.length);
-        console.debug(`[JQ] Rolling avg (${_scores.length} briefs): ${avg}`);
-      }
-    } catch(e_) {}
   } catch(e_) {}
 }
 

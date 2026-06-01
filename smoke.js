@@ -1193,12 +1193,13 @@ assert('A266 — P6: Secondary capsule sport detection includes g.league fallbac
   html.includes("g._section||g._sport||g.sport||g.league||''"),
   'Secondary capsule _sp must include g.league fallback — same fix as A263 for primary');
 
-assert('A267 — P0: renderProseScore injects visible badge into brief card DOM',
-  html.includes('brief-prose-score') &&
-  html.includes('bps-val') &&
+assert('A267 — JQ rule: prose score persists to localStorage but NEVER renders technical info in brief UI (Jeff rule, June 1 2026)',
   html.includes('field_jq_scores') &&
-  !html.includes('if(!FIELD_DEBUG || !scoreObj) return;'),
-  'renderProseScore must inject DOM badge always (not debug-only) and persist score to localStorage');
+  html.includes("localStorage.setItem(_scoreKey") &&
+  !html.includes('brief-prose-score') &&
+  !html.includes('bps-val') &&
+  html.includes('function buildJournalismQualitySection'),
+  'renderProseScore must persist score to localStorage (field_jq_scores) but must NOT inject any badge/DOM into the brief card. Technical surfacing lives only in My Services modal via buildJournalismQualitySection.');
 
 assert('A268 — P3: checkLeadSentence wired into J5 Night Owl prompt chain',
   html.includes('checkLeadSentence(prompt,text,CLAUDE_PROXY_URL); // P3: lead check on J5'),
@@ -1676,20 +1677,25 @@ assert('A350 — JQ-3: getQualityTarget wired into J2 series + Night Owl prompts
   (html.match(/getQualityTarget\(/g) || []).length >= 2,
   'getQualityTarget must be called at minimum 2 prompt-build sites (J2 series, Night Owl)');
 
-assert('A351 — JQ-ACTION-A: prose badge tappable + detail panel builder defined',
-  html.includes('function buildProseScoreDetail') &&
-  html.includes("badge.setAttribute('data-jq-label'") &&
-  html.includes("badge.classList.toggle('bps-open')") &&
-  html.includes('brief-prose-detail') &&
-  html.includes('SESSION BANNED EXT') &&
-  html.includes('ROLLING AVG'),
-  'JQ-ACTION-A: badge must be tappable (role=button, click handler), buildProseScoreDetail must be defined and surface 4 sections (score / rolling avg / phrases / session ext)');
+assert('A351 — JQ-5: prose intelligence lives only in My Services (zero technical surfacing in brief UI)',
+  html.includes('function buildJournalismQualitySection') &&
+  html.includes('jq-quality-section') &&
+  html.includes('Journalism Quality') &&
+  // Negative guard: brief UI must not render the old prose-score badge or detail panel
+  !html.includes("badge.className = 'brief-prose-score'") &&
+  !html.includes('function buildProseScoreDetail') &&
+  !html.includes('brief-prose-detail') &&
+  !/\.brief-prose-score\s*\{/.test(html),
+  'JQ-5: buildJournalismQualitySection must exist and be the ONLY surfacing path. Brief UI must not contain .brief-prose-score badge, .brief-prose-detail panel, or buildProseScoreDetail.');
 
-assert('A352 — JQ-ACTION-B: session quality extension row in ?debug=1 health panel',
-  html.includes('Session quality extension') &&
+assert('A352 — JQ-5: My Services Journalism Quality section reads all three stores (scores, review, ext)',
+  html.includes("localStorage.getItem('field_jq_scores')") &&
+  html.includes("localStorage.getItem('field_jq_review')") &&
   html.includes("sessionStorage.getItem('field_jq_banned_ext')") &&
-  html.includes('phrases active'),
-  "JQ-ACTION-B: buildFieldHealthPanel must read field_jq_banned_ext from sessionStorage and render a 'Session quality extension' row");
+  html.includes('Per brief type') &&
+  html.includes('Voice violations') &&
+  html.includes('Session quality extension'),
+  'My Services section must surface all 5 subsections: aggregate, per-label rolling avgs, voice violations, phrases flagged, session banned extension');
 
 assert('A353 — JQ-ACTION-C: retryWithSportVocab logs voice violations to field_jq_review',
   html.includes("async function retryWithSportVocab(originalPrompt, text, sport, proxyUrl, label)") &&
