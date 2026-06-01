@@ -1808,3 +1808,25 @@ assert('A364 — Axis 3 Phase B subtask 8 coordination: inline bdlInjuryContextS
   html.includes('[INJURY: '),
   'Inline bdlInjuryContextSync call in the standalone J3 per-game block must be removed (replaced by routing through populateSeriesContext → buildSeriesContextTags [INJURY:] tag) to prevent double-injection now that the compound path also surfaces injuries via the same path');
 
+assert('A365 — Axis 3 Phase B subtask 9: NHL playoff leaders feed wired (cache + fetcher + sync getter + prefetch + populateSeriesContext hook)',
+  // Cache + TTL constants
+  /const NHL_PLAYOFF_LEADERS_TTL\s*=\s*15\s*\*\s*60\s*\*\s*1000/.test(html) &&
+  /const _nhlPlayoffLeadersCache\s*=/.test(html) &&
+  // Async fetcher with relay path + inFlight dedup + localStorage warm cache
+  /async function fetchNHLPlayoffLeaders\(\)/.test(html) &&
+  html.includes('/v1/skater-stats-leaders/') &&
+  html.includes('/v1/goalie-stats-leaders/') &&
+  html.includes("'field_nhl_playoff_leaders'") &&
+  // Builder
+  /function buildNHLPlayoffLeadersByTeam\(skater,\s*goalie\)/.test(html) &&
+  // Sync getter consumed by populateSeriesContext
+  /function getNHLPlayoffLeadersForGame\(game\)/.test(html) &&
+  html.includes('getNHLPlayoffLeadersForGame(game)') &&
+  // Prefetch scheduled at init alongside other prefetches
+  html.includes('setTimeout(nhlPlayoffLeadersPrefetch') &&
+  // populateSeriesContext now WRITES game.playoffLeaders (no longer no-op placeholder)
+  /game\.playoffLeaders\s*=\s*leaders/.test(html) &&
+  // Subtask 9 DEFERRED comment removed from populateSeriesContext body
+  !/Subtask 9 — Playoff Leaders \(COUNTERS, feed-driven\)\. DEFERRED\./.test(html),
+  'Phase B subtask 9 must wire the NHL playoff-leaders feed end-to-end: 15-min TTL cache (_nhlPlayoffLeadersCache + localStorage), async fetchNHLPlayoffLeaders against /v1/skater-stats-leaders/ + /v1/goalie-stats-leaders/, buildNHLPlayoffLeadersByTeam aggregator, sync getNHLPlayoffLeadersForGame consumer, nhlPlayoffLeadersPrefetch scheduled at init, and populateSeriesContext writing game.playoffLeaders (replacing the DEFERRED placeholder)');
+
