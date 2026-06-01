@@ -6634,6 +6634,38 @@ function isToday(iso) {
     new Date().toLocaleDateString('en-CA', {timeZone: tz});
 }
 
+// ── Domestic European league off-season gate ────────────────────────────────
+// Top-5 leagues (EPL, LaLiga, Serie A, Ligue 1, Bundesliga) finish their
+// 2025-26 season between May 16 and May 24, 2026 and return mid-August.
+// Between those dates, suppress fixtures so stale Final Day results don't
+// leak into the schedule, ticker, brief, or any other surface. The gate is
+// league-specific so World Cup / Champions League / MLS keep flowing.
+//
+// Source dates from official league fixture lists. Update each summer when
+// next-season fixtures confirm. Dates inclusive on both ends — between
+// (and including) end and start, the league is in break.
+const DOMESTIC_LEAGUE_BREAK_2026 = {
+  'Premier League': { end: '2026-05-24', resume: '2026-08-15' },
+  'La Liga':        { end: '2026-05-24', resume: '2026-08-15' },
+  'Serie A':        { end: '2026-05-24', resume: '2026-08-22' },
+  'Ligue 1':        { end: '2026-05-17', resume: '2026-08-09' },
+  'Bundesliga':     { end: '2026-05-16', resume: '2026-08-22' },
+};
+
+// Returns true when the given league is in its summer break window today.
+// Accepts league display name (matches DOMESTIC_LEAGUE_BREAK_2026 keys) or
+// a free-form string containing the league name. Case-insensitive substring.
+function isDomesticLeagueInBreak(leagueLabel, refDate) {
+  if (!leagueLabel) return false;
+  const today = (refDate ? new Date(refDate) : new Date()).toISOString().slice(0,10);
+  const lbl = String(leagueLabel).toLowerCase();
+  for (const [name, win] of Object.entries(DOMESTIC_LEAGUE_BREAK_2026)) {
+    if (!lbl.includes(name.toLowerCase())) continue;
+    if (today > win.end && today < win.resume) return true;
+  }
+  return false;
+}
+
 // parseSeriesRecord: parses series record strings into structured objects.
 // Top-level so card rendering outside buildTodaySchedule can call it directly.
 function parseSeriesRecord(g) {
@@ -13970,6 +14002,12 @@ async function fetchSoccerFixtures(){
 
   const newSections = [];
   await Promise.all(SOCCER_LEAGUES.map(async ({league,section,bundle,scoresOnly,leagueLabel})=>{
+    // Domestic European leagues stop fetching during their summer break.
+    // Belt-and-suspenders against re-enabling without clearing this gate.
+    if (isDomesticLeagueInBreak(leagueLabel || section)) {
+      if (FIELD_DEBUG) console.debug('[soccer] in-break, skipping:', leagueLabel||section);
+      return;
+    }
     try{
       const r = await fetch(`${ESPN_BASE}/soccer/${league}/scoreboard?dates=${dateStr}&limit=30`);
       if(!r.ok) return;
@@ -13977,6 +14015,9 @@ async function fetchSoccerFixtures(){
       const events = data.events||[];
       if(!events.length) return;
       const games = events.map(ev=>{
+        // Per-event date guard: ESPN sometimes returns recent finals when no
+        // fixtures are scheduled for the requested date. Trust ev.date only.
+        if (ev.date && !isToday(ev.date)) return null;
         const comp = (ev.competitions||[])[0]; if(!comp) return null;
         const comps = comp.competitors||[];
         const home = comps.find(t=>t.homeAway==="home")||comps[0];
@@ -15646,7 +15687,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-01c';
+  const SW_VERSION = '2026-06-01d';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -16293,6 +16334,7 @@ function countSparingly(text) {
 const FIELD_PROSE_STYLE=[
   '- STYLE: specificity over metaphor. "48 minutes from their first Finals since 1999" not "looking to punch their ticket."',
   '- STYLE: numbers over adjectives. "Brunson\'s 29.0 PPG this series" not "Brunson has been dominant."',
+  '- TIME-PERIOD ANCHORING (mandatory): every numeric statistic must be qualified with its time period in the SAME sentence. Required for points, PPG, ERA, batting avg, RBIs, goals, goals-against, FG%, saves, shots, etc. Acceptable qualifiers: "this postseason", "this series", "this season", "last 5 games", "career", "through 30 starts", "tonight", "in May". Bare numbers like "25.0 points", "26.0 PPG", "37 goals", "5-for-6 with 2 RBIs", "32 points through the season" without a clear timeframe ARE FORBIDDEN. The reader must always know what window the number is measured over. Example: write "Wembanyama\'s 28.2 PPG this postseason" not "Wembanyama\'s 25.0 points." Write "Jung Hoo Lee\'s 5-for-6 night" not "Jung Hoo Lee went 5-for-6" — the noun "night" anchors the number to one game.',
   '- STYLE: active voice. "Wembanyama blocked 3 shots" not "3 shots were blocked."',
   '- STYLE: concrete over abstract. "Game 4 starts at 8pm on ESPN" not "the stage is set for a pivotal matchup."',
   '- STYLE: one metaphor max per brief — if you use one, make it original.',
@@ -17261,10 +17303,17 @@ function buildCompoundPrompt(sections) {
     .filter(g => !g.seriesRecord && g.away && !/premier league|la liga|serie a|ligue 1|champions|europa|conference|golf|pga/i.test(g._sport||''))
     .slice(0, 6);
 
-  // Soccer games for EPL briefs section (top European leagues only, max 4)
+  // Soccer games for EPL briefs section (top European leagues only, max 4).
+  // Belt-and-suspenders: even if a stale section reaches buildCompoundPrompt,
+  // (a) drop games not for today, and (b) drop games whose domestic league
+  // is in summer break per DOMESTIC_LEAGUE_BREAK_2026. The earlier isToday
+  // filter on the hardcoded eplRaw should already catch this, but a stale
+  // ESPN response, cached allData, or future re-enabled fetch path could
+  // still leak Final-Day fixtures into June. Two gates here close that.
   const soccerGames = (sections || [])
     .filter(s => /premier league|la liga|serie a|ligue 1|champions/i.test(s.sport))
-    .flatMap(s => (s.games || []).slice(0, 2))
+    .filter(s => !isDomesticLeagueInBreak(s.sport))
+    .flatMap(s => (s.games || []).filter(g => isToday(g.start_time)).slice(0, 2))
     .slice(0, 4);
 
   const gameLines = games.map(g => {
@@ -18513,6 +18562,7 @@ async function fetchFIELDBriefFromClaude(sections){
   // PF-5 + PF-7: explicit date-format and player-stat rules
   '- DATES: when referring to a game, use the "Start:" line value verbatim. Do not write fractions like "6/3" — write "June 2" or "Tuesday" or "tonight". Never invent or reformat dates.',
   '- PLAYER STATS: only cite a player stat number when it explicitly appears in context (e.g. "[MILESTONE: X needs 5 points for 1000]"). If a player is named without a stat, mention them by name but do NOT attach a fabricated number ("Dorofeyev leads the line" not "Dorofeyev posting 37"). Never invent goal totals, point totals, ERA, BA, etc.',
+  '- SLATE BOUNDARY (mandatory): every league or sport you reference must appear in TONIGHT\'S GAMES above. If the Premier League, La Liga, Serie A, Ligue 1, Bundesliga, MLS, or any other league has no game in tonight\'s slate, DO NOT mention it, recap it, or include any result from it. Saying "In England, Man United routed Brighton 3-0" is FABRICATION when no EPL game is in the slate. The brief covers ONLY what is on tonight\'s slate.',
   FIELD_PROSE_STYLE,'- VOICE: third person only. Never use "you" or address the reader directly. Write like a columnist, not a chatbot.','- DIVISION ACCURACY: teams in the same division share ONE division race — never say "respective division races" for same-division teams. NHL has Atlantic/Metropolitan/Central/Pacific. NBA has Atlantic/Central/Southeast/Northwest/Pacific/Southwest. MLB has AL/NL East/Central/West.','- Plain prose only. No bullet points.','- Always complete every sentence. Never end mid-sentence.'].filter(Boolean).join('\n');
   try{
     // ── WOW 6 Phase 2: route through relay quality gate (multi-sport slate)
@@ -23213,6 +23263,18 @@ function buildStoryTape(gameId, maxItems=3) {
 function renderScoreTicker() {
   const wrap = document.getElementById('score-ticker-wrap');
   if (!wrap) return;
+
+  // Prune stale entries before reading. renderESPNScores does this too,
+  // but only when it runs — if no live game cards are mounted (e.g. multi-
+  // day open tab with completed games from a prior date), the prune never
+  // fires and FT chips from prior days persist in the ticker. Defensive.
+  const _nowTs = Date.now();
+  Object.keys(espnScoreTs).forEach(k => {
+    if (_nowTs - espnScoreTs[k] > ESPN_SCORE_TTL) {
+      delete espnScores[k];
+      delete espnScoreTs[k];
+    }
+  });
 
   const liveGames = Object.entries(espnScores)
     .filter(([,e]) => e?.state === 'in' || e?.period > 0)

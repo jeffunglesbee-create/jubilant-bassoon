@@ -1703,3 +1703,34 @@ assert('A353 — JQ-ACTION-C: retryWithSportVocab logs voice violations to field
   html.includes("[JQ-ACTION-C]") &&
   (html.match(/retryWithSportVocab\([^)]*,\s*['"][^'"]*Brief['"]\)|retryWithSportVocab\([^)]*,\s*['"]J5 Night Owl['"]\)|retryWithSportVocab\([^)]*,\s*['"]Bottom Sheet['"]\)/g) || []).length >= 4,
   'JQ-ACTION-C: retryWithSportVocab must accept label param, write {type:voice, sport, label, phrases} to field_jq_review, and be called with a label by all 4 callers (MLB / EPL / J5 / Bottom Sheet)');
+
+assert('A354 — Domestic European league break gate constant + helper defined',
+  html.includes('const DOMESTIC_LEAGUE_BREAK_2026') &&
+  html.includes("'Premier League':") &&
+  html.includes("'La Liga':") &&
+  html.includes("'Serie A':") &&
+  html.includes("'Ligue 1':") &&
+  html.includes("'Bundesliga':") &&
+  html.includes('function isDomesticLeagueInBreak'),
+  'DOMESTIC_LEAGUE_BREAK_2026 must define end+resume windows for all 5 top European leagues and isDomesticLeagueInBreak must be callable');
+
+assert('A355 — fetchSoccerFixtures: drops events not for today + skips leagues in break',
+  html.includes("if (isDomesticLeagueInBreak(leagueLabel || section))") &&
+  html.includes("if (ev.date && !isToday(ev.date)) return null;"),
+  'fetchSoccerFixtures must guard at league level (isDomesticLeagueInBreak) and at event level (ev.date isToday)');
+
+assert('A356 — renderScoreTicker prunes stale espnScoreTs entries before reading',
+  /function renderScoreTicker\(\)\s*\{[\s\S]{0,500}Object\.keys\(espnScoreTs\)\.forEach[\s\S]{0,200}delete espnScores\[k\];/.test(html),
+  'renderScoreTicker must prune espnScoreTs entries older than ESPN_SCORE_TTL before constructing the chip list');
+
+assert('A357 — buildCompoundPrompt soccerGames gates by isToday and isDomesticLeagueInBreak',
+  html.includes('.filter(s => !isDomesticLeagueInBreak(s.sport))') &&
+  html.includes('.flatMap(s => (s.games || []).filter(g => isToday(g.start_time)).slice(0, 2))'),
+  'buildCompoundPrompt soccerGames must filter sections by isDomesticLeagueInBreak and games by isToday before being passed to the prompt');
+
+assert('A358 — FIELD_PROSE_STYLE: TIME-PERIOD ANCHORING rule + J3 SLATE BOUNDARY rule both present',
+  html.includes('TIME-PERIOD ANCHORING (mandatory)') &&
+  html.includes('Bare numbers like') &&
+  html.includes('SLATE BOUNDARY (mandatory)') &&
+  html.includes("Saying \"In England, Man United routed Brighton 3-0\" is FABRICATION"),
+  'FIELD_PROSE_STYLE must include the TIME-PERIOD ANCHORING rule (mandatory timeframe qualifier on every stat) and the J3 prompt must include the SLATE BOUNDARY rule (no league not in slate)');
