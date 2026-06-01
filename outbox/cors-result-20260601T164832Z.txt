@@ -1,0 +1,1683 @@
+URL: https://patents.google.com/patent/US12045301B2/en  [20260601T164832Z]
+HTTP/2 200 
+content-security-policy-report-only: script-src 'none'; form-action 'none'; frame-src 'none'; report-uri https://csp.withgoogle.com/csp/goa-cf66a5ad_2
+content-type: text/html
+cross-origin-opener-policy: same-origin
+vary: Sec-Fetch-Site
+vary: Sec-Fetch-Mode
+vary: Sec-Fetch-Dest
+x-content-type-options: nosniff
+x-frame-options: SAMEORIGIN
+x-frontend-version: patent-search.search_20250707_RC00
+x-xss-protection: 0
+date: Mon, 01 Jun 2026 16:48:33 GMT
+alt-svc: h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+
+=== BODY (first 80000 chars) ===
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>US12045301B2 - Content opportunity scoring and automation 
+        - Google Patents</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta charset="UTF-8">
+    <meta name="referrer" content="origin-when-crossorigin">
+    <link rel="canonical" href="https://patents.google.com/patent/US12045301B2/en">
+    <meta name="description" content="
+     This invention relates to marketing and creation of digital content (text, voice, video, imagery, etc.) and understanding what topics are most relevant for an intended audience, its size, the type of content that audience wants to consume, and the optimal distribution method (social media, email, podcasts, voice assistants, web pages, mobile apps, etc.), and leveraging machine learning to automatically create content with a high chance of success. 
+   
+   ">
+    <meta name="DC.type" content="patent">
+    <meta name="DC.title" content="Content opportunity scoring and automation 
+       ">
+    <meta name="DC.date" content="2022-09-06" scheme="dateSubmitted">
+    <meta name="DC.description" content="
+     This invention relates to marketing and creation of digital content (text, voice, video, imagery, etc.) and understanding what topics are most relevant for an intended audience, its size, the type of content that audience wants to consume, and the optimal distribution method (social media, email, podcasts, voice assistants, web pages, mobile apps, etc.), and leveraging machine learning to automatically create content with a high chance of success. 
+   
+   ">
+    <meta name="citation_patent_application_number" content="US:17/903,869">
+    <meta name="citation_pdf_url" content="https://patentimages.storage.googleapis.com/3d/fb/f2/fea25a4ca1cbd4/US12045301.pdf">
+    <meta name="citation_patent_number" content="US:12045301">
+    <meta name="DC.date" content="2024-07-23" scheme="issue">
+    <meta name="DC.contributor" content="Brad Weitz" scheme="inventor">
+    <meta name="DC.contributor" content="Jason Flores" scheme="inventor">
+    <meta name="DC.contributor" content="Richard Sanchez" scheme="inventor">
+    <meta name="DC.contributor" content="Data Skrive Inc" scheme="assignee">
+    <meta name="DC.relation" content="US:6574624" scheme="references">
+    <meta name="DC.relation" content="US:7912701" scheme="references">
+    <meta name="DC.relation" content="US:9269068" scheme="references">
+    <meta name="DC.relation" content="WO:2007146973:A2" scheme="references">
+    <meta name="DC.relation" content="US:20080005284:A1" scheme="references">
+    <meta name="DC.relation" content="US:20120278300:A1" scheme="references">
+    <meta name="DC.relation" content="US:20190244222:A1" scheme="references">
+    <meta name="DC.relation" content="US:20150081661:A1" scheme="references">
+    <meta name="DC.relation" content="US:20110119576:A1" scheme="references">
+    <meta name="DC.relation" content="US:20110252342:A1" scheme="references">
+    <meta name="DC.relation" content="US:20120109777:A1" scheme="references">
+    <meta name="DC.relation" content="US:9720899" scheme="references">
+    <meta name="DC.relation" content="US:20130054424:A1" scheme="references">
+    <meta name="DC.relation" content="US:20130144605:A1" scheme="references">
+    <meta name="DC.relation" content="US:20150012514:A1" scheme="references">
+    <meta name="DC.relation" content="US:20140046894:A1" scheme="references">
+    <meta name="DC.relation" content="US:20150261773:A1" scheme="references">
+    <meta name="DC.relation" content="US:20140019443:A1" scheme="references">
+    <meta name="DC.relation" content="US:20150046254:A1" scheme="references">
+    <meta name="DC.relation" content="US:20170235848:A1" scheme="references">
+    <meta name="DC.relation" content="US:20140188681:A1" scheme="references">
+    <meta name="DC.relation" content="US:20140278834:A1" scheme="references">
+    <meta name="DC.relation" content="US:20160306878:A1" scheme="references">
+    <meta name="DC.relation" content="US:20180161680:A1" scheme="references">
+    <meta name="DC.relation" content="US:20140365507:A1" scheme="references">
+    <meta name="DC.relation" content="US:20150039107:A1" scheme="references">
+    <meta name="DC.relation" content="US:20170201779:A1" scheme="references">
+    <meta name="DC.relation" content="US:20150339573:A1" scheme="references">
+    <meta name="DC.relation" content="US:20150106078:A1" scheme="references">
+    <meta name="DC.relation" content="US:10235681" scheme="references">
+    <meta name="DC.relation" content="US:20150112787:A1" scheme="references">
+    <meta name="DC.relation" content="US:20150120502:A1" scheme="references">
+    <meta name="DC.relation" content="US:20150269153:A1" scheme="references">
+    <meta name="DC.relation" content="US:20150265931:A1" scheme="references">
+    <meta name="DC.relation" content="US:20150347467:A1" scheme="references">
+    <meta name="DC.relation" content="US:20160048598:A1" scheme="references">
+    <meta name="DC.relation" content="US:20160147713:A1" scheme="references">
+    <meta name="DC.relation" content="US:10740377" scheme="references">
+    <meta name="DC.relation" content="US:20170300477:A1" scheme="references">
+    <meta name="DC.relation" content="US:20190114298:A1" scheme="references">
+    <meta name="DC.relation" content="US:20180071581:A1" scheme="references">
+    <meta name="DC.relation" content="CN:106503255:A" scheme="references">
+    <meta name="DC.relation" content="US:20180300406:A1" scheme="references">
+    <meta name="DC.relation" content="US:20180349793:A1" scheme="references">
+    <meta name="DC.relation" content="US:20190034976:A1" scheme="references">
+    <meta name="DC.relation" content="US:20190180338:A1" scheme="references">
+    <meta name="DC.relation" content="US:20190197599:A1" scheme="references">
+    <meta name="DC.relation" content="US:20190361987:A1" scheme="references">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:400,400italic,500,500italic,700">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Product+Sans">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700">
+
+    <style>
+      
+      #gb { top: 15px; left: auto; right: 0; width: auto; min-width: 135px !important; }   
+      body { transition: none; }
+    </style>
+    <script></script>
+
+    <script>
+      window.version = 'patent-search.search_20250707_RC00';
+
+      function sendFeedback() {
+        userfeedback.api.startFeedback({
+          'productId': '713680',
+          'bucket': 'patent-search-web',
+          'productVersion': window.version,
+        });
+      }
+
+      window.experiments = {};
+      window.experiments.patentCountries = "ae,ag,al,am,ao,ap,ar,at,au,aw,az,ba,bb,bd,be,bf,bg,bh,bj,bn,bo,br,bw,bx,by,bz,ca,cf,cg,ch,ci,cl,cm,cn,co,cr,cs,cu,cy,cz,dd,de,dj,dk,dm,do,dz,ea,ec,ee,eg,em,ep,es,fi,fr,ga,gb,gc,gd,ge,gh,gm,gn,gq,gr,gt,gw,hk,hn,hr,hu,ib,id,ie,il,in,ir,is,it,jo,jp,ke,kg,kh,km,kn,kp,kr,kw,kz,la,lc,li,lk,lr,ls,lt,lu,lv,ly,ma,mc,md,me,mg,mk,ml,mn,mo,mr,mt,mw,mx,my,mz,na,ne,ng,ni,nl,no,nz,oa,om,pa,pe,pg,ph,pl,pt,py,qa,ro,rs,ru,rw,sa,sc,sd,se,sg,si,sk,sl,sm,sn,st,su,sv,sy,sz,td,tg,th,tj,tm,tn,tr,tt,tw,tz,ua,ug,us,uy,uz,vc,ve,vn,wo,yu,za,zm,zw";
+      
+      
+      window.experiments.keywordWizard = true;
+      
+      
+      
+      window.experiments.definitions = true;
+      window.experiments.plogs = true;
+
+      window.Polymer = {
+        dom: 'shady',
+        lazyRegister: true,
+      };
+    </script>
+
+    <script src="//www.gstatic.com/patent-search/frontend/patent-search.search_20250707_RC00/scs/compiled_dir/webcomponentsjs/webcomponents-lite.min.js"></script>
+    <link rel="import" href="//www.gstatic.com/patent-search/frontend/patent-search.search_20250707_RC00/scs/compiled_dir/search-app-vulcanized.html">
+  </head>
+  <body unresolved>
+    
+    
+    <script></script>
+    <script src="//www.gstatic.com/patent-search/frontend/patent-search.search_20250707_RC00/scs/compiled_dir/search-app-vulcanized.js"></script>
+    <search-app>
+      
+      
+
+      <article class="result" itemscope itemtype="http://schema.org/ScholarlyArticle">
+  <h1 itemprop="pageTitle">US12045301B2 - Content opportunity scoring and automation 
+        - Google Patents</h1>
+  <span itemprop="title">Content opportunity scoring and automation 
+       </span>
+
+  <meta itemprop="type" content="patent">
+  <a href="https://patentimages.storage.googleapis.com/3d/fb/f2/fea25a4ca1cbd4/US12045301.pdf" itemprop="pdfLink">Download PDF</a>
+  <h2>Info</h2>
+
+  <dl>
+    <dt>Publication number</dt>
+    <dd itemprop="publicationNumber">US12045301B2</dd>
+    <meta itemprop="numberWithoutCodes" content="12045301">
+    <meta itemprop="kindCode" content="B2">
+    <meta itemprop="publicationDescription" content="Patent ( having previously published pre-grant publication)">
+    <span>US12045301B2</span>
+    <span>US17/903,869</span>
+    <span>US202217903869A</span>
+    <span>US12045301B2</span>
+    <span>US 12045301 B2</span>
+    <span>US12045301 B2</span>
+    <span>US 12045301B2</span>
+    <span>  </span>
+    <span> </span>
+    <span> </span>
+    <span>US 202217903869 A</span>
+    <span>US202217903869 A</span>
+    <span>US 202217903869A</span>
+    <span>US 12045301 B2</span>
+    <span>US12045301 B2</span>
+    <span>US 12045301B2</span>
+
+    <dt>Authority</dt>
+    <dd itemprop="countryCode">US</dd>
+    <dd itemprop="countryName">United States</dd>
+
+    <dt>Prior art keywords</dt>
+    <dd itemprop="priorArtKeywords" repeat>content</dd>
+    <dd itemprop="priorArtKeywords" repeat>topic</dd>
+    <dd itemprop="priorArtKeywords" repeat>present</dd>
+    <dd itemprop="priorArtKeywords" repeat>data</dd>
+    <dd itemprop="priorArtKeywords" repeat>network</dd>
+
+    <dt>Prior art date</dt>
+    <dd><time itemprop="priorArtDate" datetime="2018-08-31">2018-08-31</time></dd>
+
+    <dt>Legal status (The legal status is an assumption and is not a legal conclusion. Google has not performed a legal analysis and makes no representation as to the accuracy of the status listed.)</dt>
+    <dd itemprop="legalStatusIfi" itemscope>
+      <span itemprop="status">Active</span>
+    </dd>
+  </dl>
+
+  <dt>Application number</dt>
+  <dd itemprop="applicationNumber">US17/903,869</dd>
+
+  
+
+  <dt>Other versions</dt>
+  <dd itemprop="directAssociations" itemscope repeat>
+    <a href="/patent/US20230244739A1/en">
+      <span itemprop="publicationNumber">US20230244739A1</span>
+      (<span itemprop="primaryLanguage">en</span>
+    </a>
+  </dd>
+
+  <dt>Inventor</dt>
+  <dd itemprop="inventor" repeat>Brad Weitz</dd>
+  <dd itemprop="inventor" repeat>Jason Flores</dd>
+  <dd itemprop="inventor" repeat>Richard Sanchez</dd>
+
+  <dt>Current Assignee (The listed assignees may be inaccurate. Google has not performed a legal analysis and makes no representation or warranty as to the accuracy of the list.)</dt>
+  <dd itemprop="assigneeCurrent" repeat>
+    Data Skrive Inc
+  </dd>
+
+  <dt>Original Assignee</dt>
+  <dd itemprop="assigneeOriginal" repeat>Data Skrive Inc</dd>
+
+  <dt>Priority date (The priority date is an assumption and is not a legal conclusion. Google has not performed a legal analysis and makes no representation as to the accuracy of the date listed.)</dt>
+  <dd><time itemprop="priorityDate" datetime="2018-08-31">2018-08-31</time></dd>
+
+  <dt>Filing date</dt>
+  <dd><time itemprop="filingDate" datetime="2022-09-06">2022-09-06</time></dd>
+
+  <dt>Publication date</dt>
+  <dd><time itemprop="publicationDate" datetime="2024-07-23">2024-07-23</time></dd>
+
+  
+  <dd itemprop="events" itemscope repeat>
+    <time itemprop="date" datetime="2022-09-06">2022-09-06</time>
+    <span itemprop="title">Application filed by Data Skrive Inc</span>
+    <span itemprop="type">filed</span>
+    <span itemprop="critical" content="true" bool>Critical</span>
+    
+    
+    
+    <span itemprop="assigneeSearch">Data Skrive Inc</span>
+  </dd>
+  <dd itemprop="events" itemscope repeat>
+    <time itemprop="date" datetime="2022-09-06">2022-09-06</time>
+    <span itemprop="title">Priority to US17/903,869</span>
+    <span itemprop="type">priority</span>
+    <span itemprop="critical" content="true" bool>Critical</span>
+    
+    
+    <span itemprop="documentId">patent/US12045301B2/en</span>
+    
+  </dd>
+  <dd itemprop="events" itemscope repeat>
+    <time itemprop="date" datetime="2023-08-03">2023-08-03</time>
+    <span itemprop="title">Publication of US20230244739A1</span>
+    <span itemprop="type">publication</span>
+    <span itemprop="critical" content="true" bool>Critical</span>
+    
+    
+    <span itemprop="documentId">patent/US20230244739A1/en</span>
+    
+  </dd>
+  <dd itemprop="events" itemscope repeat>
+    <time itemprop="date" datetime="2024-07-22">2024-07-22</time>
+    <span itemprop="title">Priority to US18/779,275</span>
+    <span itemprop="type">priority</span>
+    
+    
+    
+    <span itemprop="documentId">patent/US20250200125A1/en</span>
+    
+  </dd>
+  <dd itemprop="events" itemscope repeat>
+    <time itemprop="date" datetime="2024-07-23">2024-07-23</time>
+    <span itemprop="title">Application granted</span>
+    <span itemprop="type">granted</span>
+    <span itemprop="critical" content="true" bool>Critical</span>
+    
+    
+    
+    
+  </dd>
+  <dd itemprop="events" itemscope repeat>
+    <time itemprop="date" datetime="2024-07-23">2024-07-23</time>
+    <span itemprop="title">Publication of US12045301B2</span>
+    <span itemprop="type">publication</span>
+    <span itemprop="critical" content="true" bool>Critical</span>
+    
+    
+    <span itemprop="documentId">patent/US12045301B2/en</span>
+    
+  </dd>
+  <dd itemprop="events" itemscope repeat>
+    <time itemprop="date">Status</time>
+    <span itemprop="title">Active</span>
+    <span itemprop="type">legal-status</span>
+    <span itemprop="critical" content="true" bool>Critical</span>
+    <span itemprop="current" content="true" bool>Current</span>
+    
+    
+    
+  </dd>
+  <dd itemprop="events" itemscope repeat>
+    <time itemprop="date" datetime="2039-08-30">2039-08-30</time>
+    <span itemprop="title">Anticipated expiration</span>
+    <span itemprop="type">legal-status</span>
+    <span itemprop="critical" content="true" bool>Critical</span>
+    
+    
+    
+    
+  </dd>
+
+  <h2>Links</h2>
+  <ul>
+    
+        <li itemprop="links" itemscope repeat>
+          <meta itemprop="id" content="usptoLink">
+          <a href="https://patft.uspto.gov/netacgi/nph-Parser?Sect1=PTO1&Sect2=HITOFF&p=1&u=/netahtml/PTO/srchnum.html&r=1&f=G&l=50&d=PALL&s1=12045301.PN." itemprop="url" target="_blank"><span itemprop="text">USPTO</span></a>
+        </li>
+        <li itemprop="links" itemscope repeat>
+          <meta itemprop="id" content="usptoPatentCenterLink">
+          <a href="https://patentcenter.uspto.gov/applications/17903869" itemprop="url" target="_blank"><span itemprop="text">USPTO PatentCenter</span></a>
+        </li>
+        <li itemprop="links" itemscope repeat>
+          <meta itemprop="id" content="usptoAssignmentLink">
+          <a href="https://assignment.uspto.gov/patent/index.html#/patent/search/resultFilter?searchInput=12045301" itemprop="url" target="_blank"><span itemprop="text">USPTO Assignment</span></a>
+        </li>
+
+    <li itemprop="links" itemscope repeat>
+        <meta itemprop="id" content="espacenetLink">
+        <a href="https://worldwide.espacenet.com/publicationDetails/biblio?CC=US&amp;NR=12045301B2&amp;KC=B2&amp;FT=D" itemprop="url" target="_blank"><span itemprop="text">Espacenet</span></a>
+      </li>
+      
+
+    
+
+    <li itemprop="links" itemscope repeat>
+      <meta itemprop="id" content="globalDossierLink">
+      <a href="https://globaldossier.uspto.gov/result/application/US/17903869/1" itemprop="url" target="_blank"><span itemprop="text">Global Dossier</span></a>
+    </li>
+
+    
+
+      
+
+      
+
+      <li itemprop="links" itemscope repeat>
+        <meta itemprop="id" content="stackexchangeLink">
+        <a href="https://patents.stackexchange.com/questions/tagged/US12045301" itemprop="url"><span itemprop="text">Discuss</span></a>
+      </li>
+      
+  </ul>
+
+  
+
+  <section>
+    <h2>Images</h2>
+    <ul>
+      <li itemprop="images" itemscope repeat>
+        <img itemprop="thumbnail" src="https://patentimages.storage.googleapis.com/14/bd/2b/3273bb07e3cc7b/US12045301-20240723-D00000.png">
+        <meta itemprop="full" content="https://patentimages.storage.googleapis.com/69/4f/de/5210cb837dd3f0/US12045301-20240723-D00000.png">
+        <ul>
+          <li itemprop="callouts" itemscope repeat>
+            <meta itemprop="figurePage" content="0">
+            <meta itemprop="id" content="1">
+            <meta itemprop="label" content="competitors">
+            <span itemprop="bounds" itemscope>
+              <meta itemprop="left" content="1060">
+              <meta itemprop="top" content="132">
+              <meta itemprop="right" content="1075">
+              <meta itemprop="bottom" content="164">
+            </span>
+          </li>
+          <li itemprop="callouts" itemscope repeat>
+            <meta itemprop="figurePage" content="0">
+            <meta itemprop="id" content="2">
+            <meta itemprop="label" content="competitors">
+            <span itemprop="bounds" itemscope>
+              <meta itemprop="left" content="658">
+              <meta itemprop="top" content="1656">
+              <meta itemprop="right" content="692">
+              <meta itemprop="bottom" content="1702">
+            </span>
+          </li>
+          <li itemprop="callouts" itemscope repeat>
+            <meta itemprop="figurePage" content="0">
+            <meta itemprop="id" content="2">
+            <meta itemprop="label" content="competitors">
+            <span itemprop="bounds" itemscope>
+              <meta itemprop="left" content="659">
+              <meta itemprop="top" content="1458">
+              <meta itemprop="right" content="693">
+              <meta itemprop="bottom" content="1490">
+            </span>
+          </li>
+          <li itemprop="callouts" itemscope repeat>
+            <meta itemprop="figurePage" content="0">
+            <meta itemprop="id" content="2">
+            <meta itemprop="label" content="competitors">
+            <span itemprop="bounds" itemscope>
+              <meta itemprop="left" content="932">
+              <meta itemprop="top" content="2409">
+              <meta itemprop="right" content="962">
+              <meta itemprop="bottom" content="2437">
+            </span>
+          </li>
+          <li itemprop="callouts" itemscope repeat>
+            <meta itemprop="figurePage" content="0">
+            <meta itemprop="id" content="2">
+            <meta itemprop="label" content="competitors">
+            <span itemprop="bounds" itemscope>
+              <meta itemprop="left" content="658">
+              <meta itemprop="top" content="1875">
+              <meta itemprop="right" content="678">
+              <meta itemprop="bottom" content="1901">
+            </span>
+          </li>
+          <li itemprop="callouts" itemscope repeat>
+            <meta itemprop="figurePage" content="0">
+            <meta itemprop="id" content="2">
+            <meta itemprop="label" content="competitors">
+            <span itemprop="bounds" itemscope>
+              <meta itemprop="left" content="662">
+              <meta itemprop="top" content="1806">
+              <meta itemprop="right" content="683">
+              <meta itemprop="bottom" content="1831">
+            </span>
+          </li>
+          <li itemprop="callouts" itemscope repeat>
+            <meta itemprop="figurePage" content="0">
+            <meta itemprop="id" content="2">
+            <meta itemprop="label" content="competitors">
+            <span itemprop="bounds" itemscope>
+              <meta itemprop="left" content="944">
+              <meta itemprop="top" content="1732">
+              <meta itemprop="right" content="966">
+              <meta itemprop="bottom" content="1758">
+            </span>
+          </li>
+          <li itemprop="callouts" itemscope repeat>
+            <meta itemprop="figurePage" content="0">
+            <meta itemprop="id" content="2">
+            <meta itemprop="label" content="competitors">
+            <span itemprop="bounds" itemscope>
+              <meta itemprop="left" content="105">
+              <meta itemprop="top" content="135">
+              <meta itemprop="right" content="121">
+              <meta itemprop="bottom" content="166">
+            </span>
+          </li>
+          <li itemprop="callouts" itemscope repeat>
+            <meta itemprop="figurePage" content="0">
+            <meta itemprop="id" content="2">
+            <meta itemprop="label" content="competitors">
+            <span itemprop="bounds" itemscope>
+              <meta itemprop="left" content="105">
+              <meta itemprop="top" content="186">
+              <meta itemprop="right" content="121">
+              <meta itemprop="bottom" content="218">
+            </span>
+          </li>
+          <li itemprop="callouts" itemscope repeat>
+            <meta itemprop="figurePage" content="0">
+            <meta itemprop="id" content="2">
+            <meta itemprop="label" content="competitors">
+            <span itemprop="bounds" itemscope>
+              <meta itemprop="left" content="1057">
+              <meta itemprop="top" content="186">
+              <meta itemprop="right" content="1076">
+              <meta itemprop="bottom" content="217">
+            </span>
+          </li>
+          <li itemprop="callouts" itemscope repeat>
+            <meta itemprop="figurePage" content="0">
+            <meta itemprop="id" content="2">
+            <meta itemprop="label" content="competitors">
+            <span itemprop="bounds" itemscope>
+              <meta itemprop="left" content="659">
+              <meta itemprop="top" content="1522">
+              <meta itemprop="right" content="693">
+              <meta itemprop="bottom" content="1552">
+            </span>
+          </li>
+          <li itemprop="callouts" itemscope repeat>
+            <meta itemprop="figurePage" content="0">
+            <meta itemprop="id" content="2">
+            <meta itemprop="label" content="competitors">
+            <span itemprop="bounds" itemscope>
+              <meta itemprop="left" content="943">
+              <meta itemprop="top" content="1661">
+              <meta itemprop="right" content="964">
+              <meta itemprop="bottom" content="1686">
+            </span>
+          </li>
+          <li itemprop="callouts" itemscope repeat>
+            <meta itemprop="figurePage" content="0">
+            <meta itemprop="id" content="2">
+            <meta itemprop="label" content="competitors">
+            <span itemprop="bounds" itemscope>
+              <meta itemprop="left" content="659">
+              <meta itemprop="top" content="1389">
+              <meta itemprop="right" content="693">
+              <meta itemprop="bottom" content="1420">
+            </span>
+          </li>
+          <li itemprop="callouts" itemscope repeat>
+            <meta itemprop="figurePage" content="0">
+            <meta itemprop="id" content="2">
+            <meta itemprop="label" content="competitors">
+            <span itemprop="bounds" itemscope>
+              <meta itemprop="left" content="659">
+              <meta itemprop="top" content="1319">
+              <meta itemprop="right" content="693">
+              <meta itemprop="bottom" content="1353">
+            </span>
+          </li>
+          <li itemprop="callouts" itemscope repeat>
+            <meta itemprop="figurePage" content="0">
+            <meta itemprop="id" content="2">
+            <meta itemprop="label" content="competitors">
+            <span itemprop="bounds" itemscope>
+              <meta itemprop="left" content="659">
+              <meta itemprop="top" content="1587">
+              <meta itemprop="right" content="693">
+              <meta itemprop="bottom" content="1627">
+            </span>
+          </li>
+          <li itemprop="callouts" itemscope repeat>
+            <meta itemprop="figurePage" content="0">
+            <meta itemprop="id" content="2">
+            <meta itemprop="label" content="competitors">
+            <span itemprop="bounds" itemscope>
+              <meta itemprop="left" content="658">
+              <meta itemprop="top" content="1727">
+              <meta itemprop="right" content="692">
+              <meta itemprop="bottom" content="1760">
+            </span>
+          </li>
+          <li itemprop="callouts" itemscope repeat>
+            <meta itemprop="figurePage" content="0">
+            <meta itemprop="id" content="3">
+            <meta itemprop="label" content="competitors">
+            <span itemprop="bounds" itemscope>
+              <meta itemprop="left" content="656">
+              <meta itemprop="top" content="2273">
+              <meta itemprop="right" content="677">
+              <meta itemprop="bottom" content="2299">
+            </span>
+          </li>
+          <li itemprop="callouts" itemscope repeat>
+            <meta itemprop="figurePage" content="0">
+            <meta itemprop="id" content="3">
+            <meta itemprop="label" content="competitors">
+            <span itemprop="bounds" itemscope>
+              <meta itemprop="left" content="657">
+              <meta itemprop="top" content="2211">
+              <meta itemprop="right" content="680">
+              <meta itemprop="bottom" content="2238">
+            </span>
+          </li>
+          <li itemprop="callouts" itemscope repeat>
+            <meta itemprop="figurePage" content="0">
+            <meta itemprop="id" content="3">
+            <meta itemprop="label" content="competitors">
+            <span itemprop="bounds" itemscope>
+              <meta itemprop="left" content="943">
+              <meta itemprop="top" content="1111">
+              <meta itemprop="right" content="967">
+              <meta itemprop="bottom" content="1138">
+            </span>
+          </li>
+          <li itemprop="callouts" itemscope repeat>
+            <meta itemprop="figurePage" content="0">
+            <meta itemprop="id" content="4">
+            <meta itemprop="label" content="competitors">
+            <span itemprop="bounds" itemscope>
+              <meta itemprop="left" content="657">
+              <meta itemprop="top" content="912">
+              <meta itemprop="right" content="678">
+              <meta itemprop="bottom" content="938">
+            </span>
+          </li>
+          <li itemprop="callouts" itemscope repeat>
+            <meta itemprop="figurePage" content="0">
+            <meta itemprop="id" content="402">
+            <meta itemprop="label" content="Rankings Matrix Tool">
+            <span itemprop="bounds" itemscope>
+              <meta itemprop="left" content="743">
+              <meta itemprop="top" content="29">
+              <meta itemprop="right" content="821">
+              <meta itemprop="bottom" content="60">
+            </span>
+          </li>
+          <li itemprop="callouts" itemscope repeat>
+            <meta itemprop="figurePage" content="0">
+            <meta itemprop="id" content="404">
+            <meta itemprop="label" content="items">
+            <span itemprop="bounds" itemscope>
+              <meta itemprop="left" content="281">
+              <meta itemprop="top" content="515">
+              <meta itemprop="right" content="361">
+              <meta itemprop="bottom" content="547">
+            </span>
+          </li>
+          <li itemprop="callouts" itemscope repeat>
+            <meta itemprop="figurePage" content="0">
+            <meta itemprop="id" content="6">
+            <meta itemprop="label" content="step">
+            <span itemprop="bounds" itemscope>
+              <meta itemprop="left" content="946">
+              <meta itemprop="top" content="1805">
+              <meta itemprop="right" content="965">
+              <meta itemprop="bottom" content="1832">
+            </span>
+          </li>
+        </ul>
+      </li>
+      <li itemprop="images" itemscope repeat>
+        <img itemprop="thumbnail" src="https://patentimages.storage.googleapis.com/5a/a3/a5/13b4299b007559/US12045301-20240723-D00001.png">
+        <meta itemprop="full" content="https://patentimages.storage.googleapis.com/97/72/20/8cffdee4ac0ea0/US12045301-20240723-D00001.png">
+        <ul>
+          <li itemprop="callouts" itemscope repeat>
+            <meta itemprop="figurePage" content="1">
+            <meta itemprop="id" content="101">
+            <meta itemprop="label" content="system">
+            <span itemprop="bounds" itemscope>
+              <meta itemprop="left" content="1043">
+              <meta itemprop="top" content="1143">
+              <meta itemprop="right" content="1109">
+              <meta itemprop="bottom" content="1177">
+            </span>
+          </li>
+          <li itemprop="callouts" itemscope repeat>
+            <meta itemprop="figurePage" content="1">
+            <meta itemprop="id" content="102">
+            <meta itemprop="label" content="inputs">
+            <span itemprop="bounds" itemscope>
+              <meta itemprop="left" content="688">
+              <meta itemprop="top" content="1144">
+              <meta itemprop="right" content="759">
+              <meta itemprop="bottom" content="1176">
+            </span>
+          </li>
+          <li itemprop="callouts" itemscope repeat>
+            <meta itemprop="figurePage" content="1">
+            <meta itemprop="id" content="103">
+            <meta itemprop="label" content="content">
+            <span itemprop="bounds" itemscope>
+              <meta itemprop="left" content="1401">
+              <meta itemprop="top" content="1141">
+              <meta itemprop="right" content="1471">
+              <meta itemprop="bottom" content="1179">
+            </span>
+          </li>
+          <li itemprop="callouts" itemscope repeat>
+            <meta itemprop="figurePage" content="1">
+            <meta itemprop="id" content="111">
+            <meta itemprop="label" content="APIs">
+            <span itemprop="bounds" itemscope>
+              <meta itemprop="left" content="110">
+              <meta itemprop="top" content="20">
+              <meta itemprop="right" content="180">
+              <meta itemprop="bottom" content="52">
+            </span>
+          </li>
+          <li itemprop="callouts" itemscope repeat>
+            <meta itemprop="figurePage" content="1">
+            <meta itemprop="id" content="112">
+            <meta itemprop="label" content="institutional data">
+            <span itemprop="bounds" itemscope>
+              <meta itemprop="left" content="38">
+              <meta itemprop="top" content="459">
+              <meta itemprop="right" content="105">
+              <meta itemprop="bottom" content="490">
+            </span>
+          </li>
+          <li itemprop="callouts" itemscope repeat>
+            <meta itemprop="figurePage" content="1">
+            <meta itemprop="id" content="113">
+            <meta itemprop="label" content="crawlers">
+            <span itemprop="bounds" itemscope>
+              <meta itemprop="left" content="18">
+              <meta itemprop="top" content="1003">
+              <meta itemprop="right" content="85">
+              <meta itemprop="bottom" content="1035">
+            </span>
+          </li>
+          <li itemprop="callouts" itemscope repeat>
+            <meta itemprop="figurePage" content="1">
+            <meta itemprop="id" content="114">
+            <meta itemprop="label" content="available websites">
+            <span itemprop="bounds" itemscope>
+              <meta itemprop="left" content="103">
+              <meta itemprop="top" content="1332">
+              <meta itemprop="right" content="171">
+              <meta itemprop="bottom" content="1366">
+            </span>
+          </li>
+          <li itemprop="callouts" itemscope repeat>
+            <meta itemprop="figurePage" content="1">
+            <meta itemprop="id" content="121">
+            <meta itemprop="label" content="articles">
+            <span itemprop="bounds" itemscope>
+              <meta itemprop="left" content="1979">
+              <meta itemprop="top" content="115">
+              <meta itemprop="right" content="2044">
+              <meta itemprop="bottom" content="147">
+            </span>
+          </li>
+          <li itemprop="callouts" itemscope repeat>
+            <meta itemprop="figurePage" content="1">
+            <meta itemprop="id" content="122">
+            <meta itemprop="label" content="data visualizations">
+            <span itemprop="bounds" itemscope>
+              <meta itemprop="left" content="1893">
+              <meta itemprop="top" content="526">
+              <meta itemprop="right" content="1966">
+              <meta itemprop="bottom" content="560">
+            </span>
+          </li>
+          <li itemprop="callouts" itemscope repeat>
+            <meta itemprop="figurePage" content="1">
+            <meta itemprop="id" content="123">
+            <meta itemprop="label" content="social media posts">
+            <span itemprop="bounds" itemscope>
+              <meta itemprop="left" content="1858">
+              <meta itemprop="top" content="827">
+              <meta itemprop="right" content="1943">
+              <meta itemprop="bottom" content="858">
+            </span>
+          </li>
+          <li itemprop="callouts" itemscope repeat>
+            <meta itemprop="figurePage" content="1">
+            <meta itemprop="id" content="124">
+            <meta itemprop="label" content="image creation">
+            <span itemprop="bounds" itemscope>
+              <meta itemprop="left" content="1969">
+              <meta itemprop="top" content="1145">
+              <meta itemprop="right" content="2040">
+              <meta itemprop="bottom" content="1179">
+            </span>
+          </li>
+          <li itemprop="callouts" itemscope repeat>
+            <meta itemprop="figurePage" content="1">
+            <meta itemprop="id" content="125">
+            <meta itemprop="label" content="email content">
+            <span itemprop="bounds" itemscope>
+              <meta itemprop="left" content="1942">
+              <meta itemprop="top" content="1445">
+              <meta itemprop="right" content="2013">
+              <meta itemprop="bottom" content="1479">
+            </span>
+          </li>
+          <li itemprop="callouts" itemscope repeat>
+            <meta itemprop="figurePage" content="1">
+            <meta itemprop="id" content="126">
+            <meta itemprop="label" content="videos">
+            <span itemprop="bounds" itemscope>
+              <meta itemprop="left" content="1872">
+              <meta itemprop="top" content="1882">
+              <meta itemprop="right" content="1942">
+              <meta itemprop="bottom" content="1914">
+            </span>
+          </li>
+        </ul>
+      </li>
+      <li itemprop="images" itemscope repeat>
+        <img itemprop="thumbnail" src="https://patentimages.storage.googleapis.com/dc/4e/f7/03e38e70d006d5/US12045301-20240723-D00002.png">
+        <meta itemprop="full" content="https://patentimages.storage.googleapis.com/02/8a/e4/92e99959946340/US12045301-20240723-D00002.png">
+        <ul>
+          <li itemprop="callouts" itemscope repeat>
+            <meta itemprop="figurePage" content="2">
+            <meta itemprop="id" content="201">
+            <meta itemprop="label" content="data warehouse">
+            <span itemprop="bounds" itemscope>
+              <meta itemprop="left" content="465">
+              <meta itemprop="top" content="1220">
+              <meta itemprop="right" content="537">
+              <meta itemprop="bottom" content="1254">
+            </span>
+          </li>
+          <li itemprop="callouts" itemscope repeat>
+            <meta itemprop="figurePage" content="2">
+            <meta itemprop="id" content="205">
+            <meta itemprop="label" content="final product">
+            <span itemprop="bounds" itemscope>
+              <meta itemprop="left" content="1767">
+              <meta itemprop="top" content="1056">
+              <meta itemprop="right" content="1841">
+              <meta itemprop="bottom" content="1090">
+            </span>
+          </li>
+        </ul>
+      </li>
+      <li itemprop="images" itemscope repeat>
+        <img itemprop="thumbnail" src="https://patentimages.storage.googleapis.com/11/da/c1/2e0cf29f1aefe5/US12045301-20240723-D00003.png">
+        <meta itemprop="full" content="https://patentimages.storage.googleapis.com/07/27/29/cf200fa0b869d5/US12045301-20240723-D00003.png">
+        <ul>
+          <li itemprop="callouts" itemscope repeat>
+            <meta itemprop="figurePage" content="3">
+            <meta itemprop="id" content="1">
+            <meta itemprop="label" content="competitors">
+            <span itemprop="bounds" itemscope>
+              <meta itemprop="left" content="126">
+              <meta itemprop="top" content="329">
+              <meta itemprop="right" content="144">
+              <meta itemprop="bottom" content="361">
+            </span>
+          </li>
+          <li itemprop="callouts" itemscope repeat>
+            <meta itemprop="figurePage" content="3">
+            <meta itemprop="id" content="1">
+            <meta itemprop="label" content="competitors">
+            <span itemprop="bounds" itemscope>
+              <meta itemprop="left" content="1373">
+              <meta itemprop="top" content="1141">
+              <meta itemprop="right" content="1391">
+              <meta itemprop="bottom" content="1168">
+            </span>
+          </li>
+          <li itemprop="callouts" itemscope repeat>
+            <meta itemprop="figurePage" content="3">
+            <meta itemprop="id" content="2">
+            <meta itemprop="label" content="competitors">
+            <span itemprop="bounds" itemscope>
+              <meta itemprop="left" content="1037">
+              <meta itemprop="top" content="2031">
+              <meta itemprop="right" content="1059">
+              <meta itemprop="bottom" content="2059">
+            </span>
+          </li>
+          <li itemprop="callouts" itemscope repeat>
+            <meta itemprop="figurePage" content="3">
+            <meta itemprop="id" content="2">
+            <meta itemprop="label" content="competitors">
+            <span itemprop="bounds" itemscope>
+              <meta itemprop="left" content="856">
+              <meta itemprop="top" content="982">
+              <meta itemprop="right" content="898">
+              <meta itemprop="bottom" content="1044">
+            </span>
+          </li>
+          <li itemprop="callouts" itemscope repeat>
+            <meta itemprop="figurePage" content="3">
+            <meta itemprop="id" content="2">
+            <meta itemprop="label" content="competitors">
+            <span itemprop="bounds" itemscope>
+              <meta itemprop="left" content="124">
+              <meta itemprop="top" content="386">
+              <meta itemprop="right" content="144">
+              <meta itemprop="bottom" content="420">
+            </span>
+          </li>
+          <li itemprop="callouts" itemscope repeat>
+            <meta itemprop="figurePage" content="3">
+            <meta itemprop="id" content="2">
+            <meta itemprop="label" content="competitors">
+            <span itemprop="bounds" itemscope>
+              <meta itemprop="left" content="1033">
+              <meta itemprop="top" content="2107">
+              <meta itemprop="right" content="1055">
+              <meta itemprop="bottom" content="2135">
+            </span>
+          </li>
+          <li itemprop="callouts" itemscope repeat>
+            <meta itemprop="figurePage" content="3">
+            <meta itemprop="id" content="2">
+            <meta itemprop="label" content="competitors">
+            <span itemprop="bounds" itemscope>
+              <meta itemprop="left" content="1370">
+              <meta itemprop="top" content="1951">
+              <meta itemprop="right" content="1393">
+              <meta itemprop="bottom" content="1980">
+            </span>
+          </li>
+          <li itemprop="callouts" itemscope repeat>
+            <meta itemprop="figurePage" content="3">
+            <meta itemprop="id" content="2">
+            <meta itemprop="label" content="competitors">
+            <span itemprop="bounds" itemscope>
+              <meta itemprop="left" content="1370">
+              <meta itemprop="top" content="1877">
+              <meta itemprop="right" content="1392">
+              <meta itemprop="bottom" content="1906">
+            </span>
+          </li>
+          <li itemprop="callouts" itemscope repeat>
+            <meta itemprop="figurePage" content="3">
+            <meta itemprop="id" content="3">
+            <meta itemprop="label" content="competitors">
+            <span itemprop="bounds" itemscope>
+              <meta itemprop="left" content="1520">
+              <meta itemprop="top" content="2106">
+              <meta itemprop="right" content="1543">
+              <meta itemprop="bottom" content="2134">
+            </span>
+          </li>
+          <li itemprop="callouts" itemscope repeat>
+            <meta itemprop="figurePage" content="3">
+            <meta itemprop="id" content="305">
+            <meta itemprop="label" content="Blended Rank">
+            <span itemprop="bounds" itemscope>
+              <meta itemprop="left" content="865">
+              <meta itemprop="top" content="477">
+              <meta itemprop="right" content="939">
+              <meta itemprop="bottom" content="510">
+            </span>
+          </li>
+          <li itemprop="callouts" itemscope repeat>
+            <meta itemprop="figurePage" content="3">
+            <meta itemprop="id" content="306">
+            <meta itemprop="label" content="Keyword">
+            <span itemprop="bounds" itemscope>
+              <meta itemprop="left" content="1061">
+              <meta itemprop="top" content="502">
+              <meta itemprop="right" content="1138">
+              <meta itemprop="bottom" content="535">
+            </span>
+          </li>
+          <li itemprop="callouts" itemscope repeat>
+            <meta itemprop="figurePage" content="3">
+            <meta itemprop="id" content="306">
+            <meta itemprop="label" content="Keyword">
+            <span itemprop="bounds" itemscope>
+              <meta itemprop="left" content="93">
+              <meta itemprop="top" content="511">
+              <meta itemprop="right" content="169">
+              <meta itemprop="bottom" content="545">
+            </span>
+          </li>
+          <li itemprop="callouts" itemscope repeat>
+            <meta itemprop="figurePage" content="3">
+            <meta itemprop="id" content="307">
+            <meta itemprop="label" content="Search Volume">
+            <span itemprop="bounds" itemscope>
+              <meta itemprop="left" content="1194">
+              <meta itemprop="top" content="472">
+              <meta itemprop="right" content="1271">
+              <meta itemprop="bottom" content="506">
+            </span>
+          </li>
+          <li itemprop="callouts" itemscope repeat>
+            <meta itemprop="figurePage" content="3">
+            <meta itemprop="id" content="311">
+            <meta itemprop="label" content="EDU domains">
+            <span itemprop="bounds" itemscope>
+              <meta itemprop="left" content="1920">
+              <meta itemprop="top" content="455">
+              <meta itemprop="right" content="1991">
+              <meta itemprop="bottom" content="488">
+            </span>
+          </li>
+          <li itemprop="callouts" itemscope repeat>
+            <meta itemprop="figurePage" content="3">
+            <meta itemprop="id" content="4">
+            <meta itemprop="label" content="competitors">
+            <span itemprop="bounds" itemscope>
+              <meta itemprop="left" content="1032">
+              <meta itemprop="top" content="1066">
+              <meta itemprop="right" content="1054">
+              <meta itemprop="bottom" content="1093">
+            </span>
+          </li>
+          <li itemprop="callouts" itemscope repeat>
+            <meta itemprop="figurePage" content="3">
+            <meta itemprop="id" content="6">
+            <meta itemprop="label" content="step">
+            <span itemprop="bounds" itemscope>
+              <meta itemprop="left" content="1372">
+              <meta itemprop="top" content="2031">
+              <meta itemprop="right" content="1392">
+              <meta itemprop="bottom" content="2060">
+            </span>
+          </li>
+        </ul>
+      </li>
+      <li itemprop="images" itemscope repeat>
+        <img itemprop="thumbnail" src="https://patentimages.storage.googleapis.com/39/1f/ad/347048b688c543/US12045301-20240723-D00004.png">
+        <meta itemprop="full" content="https://patentimages.storage.googleapis.com/5b/9b/7f/417bb5123c33ae/US12045301-20240723-D00004.png">
+        <ul>
+          <li itemprop="callouts" itemscope repeat>
+            <meta itemprop="figurePage" content="4">
+            <meta itemprop="id" content="1">
+            <meta itemprop="label" content="competitors">
+            <span itemprop="bounds" itemscope>
+              <meta itemprop="left" content="1157">
+              <meta itemprop="top" content="154">
+              <meta itemprop="right" content="1175">
+              <meta itemprop="bottom" content="189">
+            </span>
+          </li>
+          <li itemprop="callouts" itemscope repeat>
+            <meta itemprop="figurePage" content="4">
+            <meta itemprop="id" content="2">
+            <meta itemprop="label" content="competitors">
+            <span itemprop="bounds" itemscope>
+              <meta itemprop="left" content="1034">
+              <meta itemprop="top" content="1885">
+              <meta itemprop="right" content="1055">
+              <meta itemprop="bottom" content="1913">
+            </span>
+          </li>
+          <li itemprop="callouts" itemscope repeat>
+            <meta itemprop="figurePage" content="4">
+            <meta itemprop="id" content="2">
+            <meta itemprop="label" content="competitors">
+            <span itemprop="bounds" itemscope>
+              <meta itemprop="left" content="126">
+              <meta itemprop="top" content="158">
+              <meta itemprop="right" content="144">
+              <meta itemprop="bottom" content="192">
+            </span>
+          </li>
+          <li itemprop="callouts" itemscope repeat>
+            <meta itemprop="figurePage" content="4">
+            <meta itemprop="id" content="2">
+            <meta itemprop="label" content="competitors">
+            <span itemprop="bounds" itemscope>
+              <meta itemprop="left" content="126">
+              <meta itemprop="top" content="214">
+              <meta itemprop="right" content="144">
+              <meta itemprop="bottom" content="247">
+            </span>
+          </li>
+          <li itemprop="callouts" itemscope repeat>
+            <meta itemprop="figurePage" content="4">
+            <meta itemprop="id" content="2">
+            <meta itemprop="label" content="competitors">
+            <span itemprop="bounds" itemscope>
+              <meta itemprop="left" content="1033">
+              <meta itemprop="top" content="1810">
+              <meta itemprop="right" content="1056">
+              <meta itemprop="bottom" content="1838">
+            </span>
+          </li>
+          <li itemprop="callouts" itemscope repeat>
+            <meta itemprop="figurePage" content="4">
+            <meta itemprop="id" content="2">
+            <meta itemprop="label" content="competitors">
+            <span itemprop="bounds" itemscope>
+              <meta itemprop="left" content="728">
+              <meta itemprop="top" content="1965">
+              <meta itemprop="right" content="751">
+              <meta itemprop="bottom" content="1994">
+            </span>
+          </li>
+          <li itemprop="callouts" itemscope repeat>
+            <meta itemprop="figurePage" content="4">
+            <meta itemprop="id" content="2">
+            <meta itemprop="label" content="competitors">
+            <span itemprop="bounds" itemscope>
+              <meta itemprop="left" content="723">
+              <meta itemprop="top" content="2040">
+              <meta itemprop="right" content="746">
+              <meta itemprop="bottom" content="2069">
+            </span>
+          </li>
+          <li itemprop="callouts" itemscope repeat>
+            <meta itemprop="figurePage" content="4">
+            <meta itemprop="id" content="2">
+            <meta itemprop="label" content="competitors">
+            <span itemprop="bounds" itemscope>
+              <meta itemprop="left" content="1026">
+              <meta itemprop="top" content="2617">
+              <meta itemprop="right" content="1056">
+              <meta itemprop="bottom" content="2648">
+            </span>
+          </li>
+          <li itemprop="callouts" itemscope repeat>
+            <meta itemprop="figurePage" content="4">
+            <meta itemprop="id" content="3">
+            <meta itemprop="label" content="competitors">
+            <span itemprop="bounds" itemscope>
+              <meta itemprop="left" content="722">
+              <meta itemprop="top" content="2470">
+              <meta itemprop="right" content="749">
+              <meta itemprop="bottom" content="2499">
+            </span>
+          </li>
+          <li itemprop="callouts" itemscope repeat>
+            <meta itemprop="figurePage" content="4">
+            <meta itemprop="id" content="3">
+            <meta itemprop="label" content="competitors">
+            <span itemprop="bounds" itemscope>
+              <meta itemprop="left" content="723">
+              <meta itemprop="top" content="2405">
+              <meta itemprop="right" content="745">
+              <meta itemprop="bottom" content="2433">
+            </span>
+          </li>
+          <li itemprop="callouts" itemscope repeat>
+            <meta itemprop="figurePage" content="4">
+            <meta itemprop="id" content="4">
+            <meta itemprop="label" content="competitors">
+            <span itemprop="bounds" itemscope>
+              <meta itemprop="left" content="722">
+              <meta itemprop="top" content="999">
+              <meta itemprop="right" content="746">
+              <meta itemprop="bottom" content="1027">
+            </span>
+          </li>
+          <li itemprop="callouts" itemscope repeat>
+            <meta itemprop="figurePage" content="4">
+            <meta itemprop="id" content="402">
+            <meta itemprop="label" content="Rankings Matrix Tool">
+            <span itemprop="bounds" itemscope>
+              <meta itemprop="left" content="826">
+              <meta itemprop="top" content="45">
+              <meta itemprop="right" content="898">
+              <meta itemprop="bottom" content="76">
+            </span>
+          </li>
+          <li itemprop="callouts" itemscope repeat>
+            <meta itemprop="figurePage" content="4">
+            <meta itemprop="id" content="404">
+            <meta itemprop="label" content="items">
+            <span itemprop="bounds" itemscope>
+              <meta itemprop="left" content="321">
+              <meta itemprop="top" content="571">
+              <meta itemprop="right" content="402">
+              <meta itemprop="bottom" content="603">
+            </span>
+          </li>
+          <li itemprop="callouts" itemscope repeat>
+            <meta itemprop="figurePage" content="4">
+            <meta itemprop="id" content="6">
+            <meta itemprop="label" content="step">
+            <span itemprop="bounds" itemscope>
+              <meta itemprop="left" content="1035">
+              <meta itemprop="top" content="1964">
+              <meta itemprop="right" content="1055">
+              <meta itemprop="bottom" content="1994">
+            </span>
+          </li>
+        </ul>
+      </li>
+      <li itemprop="images" itemscope repeat>
+        <img itemprop="thumbnail" src="https://patentimages.storage.googleapis.com/38/62/f9/cf81f76ef6fb69/US12045301-20240723-D00005.png">
+        <meta itemprop="full" content="https://patentimages.storage.googleapis.com/8d/f8/b5/d8f36b47ef6ea8/US12045301-20240723-D00005.png">
+        <ul>
+          <li itemprop="callouts" itemscope repeat>
+            <meta itemprop="figurePage" content="5">
+            <meta itemprop="id" content="4">
+            <meta itemprop="label" content="competitors">
+            <span itemprop="bounds" itemscope>
+              <meta itemprop="left" content="1055">
+              <meta itemprop="top" content="485">
+              <meta itemprop="right" content="1084">
+              <meta itemprop="bottom" content="544">
+            </span>
+          </li>
+          <li itemprop="callouts" itemscope repeat>
+            <meta itemprop="figurePage" content="5">
+            <meta itemprop="id" content="5">
+            <meta itemprop="label" content="step">
+            <span itemprop="bounds" itemscope>
+              <meta itemprop="left" content="1492">
+              <meta itemprop="top" content="485">
+              <meta itemprop="right" content="1516">
+              <meta itemprop="bottom" content="544">
+            </span>
+          </li>
+          <li itemprop="callouts" itemscope repeat>
+            <meta itemprop="figurePage" content="5">
+            <meta itemprop="id" content="502">
+            <meta itemprop="label" content="Title">
+            <span itemprop="bounds" itemscope>
+              <meta itemprop="left" content="111">
+              <meta itemprop="top" content="19">
+              <meta itemprop="right" content="186">
+              <meta itemprop="bottom" content="55">
+            </span>
+          </li>
+          <li itemprop="callouts" itemscope repeat>
+            <meta itemprop="figurePage" content="5">
+            <meta itemprop="id" content="505">
+            <meta itemprop="label" content="image">
+            <span itemprop="bounds" itemscope>
+              <meta itemprop="left" content="1833">
+              <meta itemprop="top" content="576">
+              <meta itemprop="right" content="1906">
+              <meta itemprop="bottom" content="609">
+            </span>
+          </li>
+        </ul>
+      </li>
+      <li itemprop="images" itemscope repeat>
+        <img itemprop="thumbnail" src="https://patentimages.storage.googleapis.com/01/c9/2f/05174d60f5525a/US12045301-20240723-D00006.png">
+        <meta itemprop="full" content="https://patentimages.storage.googleapis.com/0a/df/0c/93ee0c66d3f13f/US12045301-20240723-D00006.png">
+        <ul>
+          <li itemprop="callouts" itemscope repeat>
+            <meta itemprop="figurePage" content="6">
+            <meta itemprop="id" content="601">
+            <meta itemprop="label" content="Starting lineup">
+            <span itemprop="bounds" itemscope>
+              <meta itemprop="left" content="1840">
+              <meta itemprop="top" content="20">
+              <meta itemprop="right" content="1922">
+              <meta itemprop="bottom" content="53">
+            </span>
+          </li>
+        </ul>
+      </li>
+      <li itemprop="images" itemscope repeat>
+        <img itemprop="thumbnail" src="https://patentimages.storage.googleapis.com/0d/be/4a/2fd02944bb343f/US12045301-20240723-D00007.png">
+        <meta itemprop="full" content="https://patentimages.storage.googleapis.com/94/2d/bb/6d77f0f0585fb4/US12045301-20240723-D00007.png">
+        <ul>
+          <li itemprop="callouts" itemscope repeat>
+            <meta itemprop="figurePage" content="7">
+            <meta itemprop="id" content="702">
+            <meta itemprop="label" content="logos">
+            <span itemprop="bounds" itemscope>
+              <meta itemprop="left" content="434">
+              <meta itemprop="top" content="281">
+              <meta itemprop="right" content="506">
+              <meta itemprop="bottom" content="313">
+            </span>
+          </li>
+          <li itemprop="callouts" itemscope repeat>
+            <meta itemprop="figurePage" content="7">
+            <meta itemprop="id" content="704">
+            <meta itemprop="label" content="Information">
+            <span itemprop="bounds" itemscope>
+              <meta itemprop="left" content="481">
+              <meta itemprop="top" content="1197">
+              <meta itemprop="right" content="554">
+              <meta itemprop="bottom" content="1232">
+            </span>
+          </li>
+        </ul>
+      </li>
+      <li itemprop="images" itemscope repeat>
+        <img itemprop="thumbnail" src="https://patentimages.storage.googleapis.com/77/d0/53/b0a2ed75a2518f/US12045301-20240723-D00008.png">
+        <meta itemprop="full" content="https://patentimages.storage.googleapis.com/d5/84/71/485ca6e69dacd2/US12045301-20240723-D00008.png">
+        <ul>
+          <li itemprop="callouts" itemscope repeat>
+            <meta itemprop="figurePage" content="8">
+            <meta itemprop="id" content="1">
+            <meta itemprop="label" content="competitors">
+            <span itemprop="bounds" itemscope>
+              <meta itemprop="left" content="95">
+              <meta itemprop="top" content="49">
+              <meta itemprop="right" content="125">
+              <meta itemprop="bottom" content="101">
+            </span>
+          </li>
+          <li itemprop="callouts" itemscope repeat>
+            <meta itemprop="figurePage" content="8">
+            <meta itemprop="id" content="1">
+            <meta itemprop="label" content="competitors">
+            <span itemprop="bounds" itemscope>
+              <meta itemprop="left" content="1436">
+              <meta itemprop="top" content="1247">
+              <meta itemprop="right" content="1450">
+              <meta itemprop="bottom" content="1291">
+            </span>
+          </li>
+          <li itemprop="callouts" itemscope repeat>
+            <meta itemprop="figurePage" content="8">
+            <meta itemprop="id" content="1">
+            <meta itemprop="label" content="competitors">
+            <span itemprop="bounds" itemscope>
+              <meta itemprop="left" content="736">
+              <meta itemprop="top" content="1427">
+              <meta itemprop="right" content="748">
+              <meta itemprop="bottom" content="1469">
+            </span>
+          </li>
+          <li itemprop="callouts" itemscope repeat>
+            <meta itemprop="figurePage" content="8">
+            <meta itemprop="id" content="2">
+            <meta itemprop="label" content="competitors">
+            <span itemprop="bounds" itemscope>
+              <meta itemprop="left" content="1718">
+              <meta itemprop="top" content="1247">
+              <meta itemprop="right" content="1740">
+              <meta itemprop="bottom" content="1291">
+            </span>
+          </li>
+          <li itemprop="callouts" itemscope repeat>
+            <meta itemprop="figurePage" content="8">
+            <meta itemprop="id" content="2">
+            <meta itemprop="label" content="competitors">
+            <span itemprop="bounds" itemscope>
+              <meta itemprop="left" content="455">
+              <meta itemprop="top" content="1427">
+              <meta itemprop="right" content="476">
+              <meta itemprop="bottom" content="1469">
+            </span>
+          </li>
+          <li itemprop="callouts" itemscope repeat>
+            <meta itemprop="figurePage" content="8">
+            <meta itemprop="id" content="2">
+            <meta itemprop="label" content="competitors">
+            <span itemprop="bounds" itemscope>
+              <meta itemprop="left" content="1149">
+              <meta itemprop="top" content="1247">
+              <meta itemprop="right" content="1172">
+              <meta itemprop="bottom" content="1291">
+            </span>
+          </li>
+          <li itemprop="callouts" itemscope repeat>
+            <meta itemprop="figurePage" content="8">
+            <meta itemprop="id" content="3">
+            <meta itemprop="label" content="competitors">
+            <span itemprop="bounds" itemscope>
+              <meta itemprop="left" content="994">
+              <meta itemprop="top" content="1427">
+              <meta itemprop="right" content="1016">
+              <meta itemprop="bottom" content="1469">
+            </span>
+          </li>
+          <li itemprop="callouts" itemscope repeat>
+            <meta itemprop="figurePage" content="8">
+            <meta itemprop="id" content="4">
+            <meta itemprop="label" content="competitors">
+            <span itemprop="bounds" itemscope>
+              <meta itemprop="left" content="1402">
+              <meta itemprop="top" content="517">
+              <meta itemprop="right" content="1430">
+              <meta itemprop="bottom" content="546">
+            </span>
+          </li>
+          <li itemprop="callouts" itemscope repeat>
+            <meta itemprop="figurePage" content="8">
+            <meta itemprop="id" content="4">
+            <meta itemprop="label" content="competitors">
+            <span itemprop="bounds" itemscope>
+              <meta itemprop="left" content="735">
+              <meta itemprop="top" content="1366">
+              <meta itemprop="right" content="759">
+              <meta itemprop="bottom" content="1412">
+            </span>
+          </li>
+          <li itemprop="callouts" itemscope repeat>
+            <meta itemprop="figurePage" content="8">
+            <meta itemprop="id" content="802">
+            <meta itemprop="label" content="title">
+            <span itemprop="bounds" itemscope>
+              <meta itemprop="left" content="606">
+              <meta itemprop="top" content="413">
+              <meta itemprop="right" content="678">
+              <meta itemprop="bottom" content="444">
+            </span>
+          </li>
+          <li itemprop="callouts" itemscope repeat>
+            <meta itemprop="figurePage" content="8">
+            <meta itemprop="id" content="803">
+            <meta itemprop="label" content="logos">
+            <span itemprop="bounds" itemscope>
+              <meta itemprop="left" content="484">
+              <meta itemprop="top" content="821">
+              <meta itemprop="right" content="555">
+              <meta itemprop="bottom" content="853">
+            </span>
+          </li>
+          <li itemprop="callouts" itemscope repeat>
+            <meta itemprop="figurePage" content="8">
+            <meta itemprop="id" content="805">
+            <meta itemprop="label" content="information">
+            <span itemprop="bounds" itemscope>
+              <meta itemprop="left" content="1122">
+              <meta itemprop="top" content="832">
+              <meta itemprop="right" content="1194">
+              <meta itemprop="bottom" content="865">
+            </span>
+          </li>
+          <li itemprop="callouts" itemscope repeat>
+            <meta itemprop="figurePage" content="8">
+            <meta itemprop="id" content="806">
+            <meta itemprop="label" content="narrative">
+            <span itemprop="bounds" itemscope>
+              <meta itemprop="left" content="1422">
+              <meta itemprop="top" content="1517">
+              <meta itemprop="right" content="1493">
+              <meta itemprop="bottom" content="1551">
+            </span>
+          </li>
+          <li itemprop="callouts" itemscope repeat>
+            <meta itemprop="figurePage" content="8">
+            <meta itemprop="id" content="807">
+            <meta itemprop="label" content="point summary">
+            <span itemprop="bounds" itemscope>
+              <meta itemprop="left" content="699">
+              <meta itemprop="top" content="1955">
+              <meta itemprop="right" content="774">
+              <meta itemprop="bottom" content="1989">
+            </span>
+          </li>
+        </ul>
+      </li>
+      <li itemprop="images" itemscope repeat>
+        <img itemprop="thumbnail" src="https://patentimages.storage.googleapis.com/e6/2b/db/2caed7343e102f/US12045301-20240723-D00009.png">
+        <meta itemprop="full" content="https://patentimages.storage.googleapis.com/8f/b3/9b/0b22d4137d24b3/US12045301-20240723-D00009.png">
+        <ul>
+          <li itemprop="callouts" itemscope repeat>
+            <meta itemprop="figurePage" content="9">
+            <meta itemprop="id" content="123">
+            <meta itemprop="label" content="social media posts">
+            <span itemprop="bounds" itemscope>
+              <meta itemprop="left" content="507">
+              <meta itemprop="top" content="2197">
+              <meta itemprop="right" content="578">
+              <meta itemprop="bottom" content="2232">
+            </span>
+          </li>
+          <li itemprop="callouts" itemscope repeat>
+            <meta itemprop="figurePage" content="9">
+            <meta itemprop="id" content="126">
+            <meta itemprop="label" content="videos">
+            <span itemprop="bounds" itemscope>
+              <meta itemprop="left" content="504">
+              <meta itemprop="top" content="1014">
+              <meta itemprop="right" content="579">
+              <meta itemprop="bottom" content="1049">
+            </span>
+          </li>
+          <li itemprop="callouts" itemscope repeat>
+            <meta itemprop="figurePage" content="9">
+            <meta itemprop="id" content="2">
+            <meta itemprop="label" content="competitors">
+            <span itemprop="bounds" itemscope>
+              <meta itemprop="left" content="83">
+              <meta itemprop="top" content="50">
+              <meta itemprop="right" content="124">
+              <meta itemprop="bottom" content="99">
+            </span>
+          </li>
+          <li itemprop="callouts" itemscope repeat>
+            <meta itemprop="figurePage" content="9">
+            <meta itemprop="id" content="4">
+            <meta itemprop="label" content="competitors">
+            <span itemprop="bounds" itemscope>
+              <meta itemprop="left" content="83">
+              <meta itemprop="top" content="1265">
+              <meta itemprop="right" content="146">
+              <meta itemprop="bottom" content="1345">
+            </span>
+          </li>
+          <li itemprop="callouts" itemscope repeat>
+            <meta itemprop="figurePage" content="9">
+            <meta itemprop="id" content="901">
+            <meta itemprop="label" content="update">
+            <span itemprop="bounds" itemscope>
+              <meta itemprop="left" content="291">
+              <meta itemprop="top" content="23">
+              <meta itemprop="right" content="361">
+              <meta itemprop="bottom" content="55">
+            </span>
+          </li>
+          <li itemprop="callouts" itemscope repeat>
+            <meta itemprop="figurePage" content="9">
+            <meta itemprop="id" content="902">
+            <meta itemprop="label" content="biggest movers">
+            <span itemprop="bounds" itemscope>
+              <meta itemprop="left" content="625">
+              <meta itemprop="top" content="413">
+              <meta itemprop="right" content="696">
+              <meta itemprop="bottom" content="443">
+            </span>
+          </li>
+          <li itemprop="callouts" itemscope repeat>
+            <meta itemprop="figurePage" content="9">
+            <meta itemprop="id" content="903">
+            <meta itemprop="label" content="team names">
+            <span itemprop="bounds" itemscope>
+              <meta itemprop="left" content="860">
+              <meta itemprop="top" content="557">
+              <meta itemprop="right" content="931">
+              <meta itemprop="bottom" content="589">
+            </span>
+          </li>
+          <li itemprop="callouts" itemscope repeat>
+            <meta itemprop="figurePage" content="9">
+            <meta itemprop="id" content="904">
+            <meta itemprop="label" content="narratives">
+            <span itemprop="bounds" itemscope>
+              <meta itemprop="left" content="886">
+              <meta itemprop="top" content="1538">
+              <meta itemprop="right" content="961">
+              <meta itemprop="bottom" content="1570">
+            </span>
+          </li>
+        </ul>
+      </li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Classifications</h2>
+    <ul>
+      <li>
+        <ul itemprop="classifications" itemscope repeat>
+          <li itemprop="classifications" itemscope repeat>
+            <span itemprop="Code">G</span>&mdash;<span itemprop="Description">PHYSICS</span>
+            <meta itemprop="IsCPC" content="true">
+          </li>
+          <li itemprop="classifications" itemscope repeat>
+            <span itemprop="Code">G06</span>&mdash;<span itemprop="Description">COMPUTING OR CALCULATING; COUNTING</span>
+            <meta itemprop="IsCPC" content="true">
+          </li>
+          <li itemprop="classifications" itemscope repeat>
+            <span itemprop="Code">G06F</span>&mdash;<span itemprop="Description">ELECTRIC DIGITAL DATA PROCESSING</span>
+            <meta itemprop="IsCPC" content="true">
+          </li>
+          <li itemprop="classifications" itemscope repeat>
+            <span itemprop="Code">G06F16/00</span>&mdash;<span itemprop="Description">Information retrieval; Database structures therefor; File system structures therefor</span>
+            <meta itemprop="IsCPC" content="true">
+          </li>
+          <li itemprop="classifications" itemscope repeat>
+            <span itemprop="Code">G06F16/90</span>&mdash;<span itemprop="Description">Details of database functions independent of the retrieved data types</span>
+            <meta itemprop="IsCPC" content="true">
+          </li>
+          <li itemprop="classifications" itemscope repeat>
+            <span itemprop="Code">G06F16/95</span>&mdash;<span itemprop="Description">Retrieval from the web</span>
+            <meta itemprop="IsCPC" content="true">
+          </li>
+          <li itemprop="classifications" itemscope repeat>
+            <span itemprop="Code">G06F16/957</span>&mdash;<span itemprop="Description">Browsing optimisation, e.g. caching or content distillation</span>
+            <meta itemprop="Leaf" content="true"><meta itemprop="FirstCode" content="true"><meta itemprop="IsCPC" content="true">
+          </li>
+        </ul>
+      </li>
+      <li>
+        <ul itemprop="classifications" itemscope repeat>
+          <li itemprop="classifications" itemscope repeat>
+            <span itemprop="Code">G</span>&mdash;<span itemprop="Description">PHYSICS</span>
+            <meta itemprop="IsCPC" content="true">
+          </li>
+          <li itemprop="classifications" itemscope repeat>
+            <span itemprop="Code">G06</span>&mdash;<span itemprop="Description">COMPUTING OR CALCULATING; COUNTING</span>
+            <meta itemprop="IsCPC" content="true">
+          </li>
+          <li itemprop="classifications" itemscope repeat>
+            <span itemprop="Code">G06F</span>&mdash;<span itemprop="Description">ELECTRIC DIGITAL DATA PROCESSING</span>
+            <meta itemprop="IsCPC" content="true">
+          </li>
+          <li itemprop="classifications" itemscope repeat>
+            <span itemprop="Code">G06F16/00</span>&mdash;<span itemprop="Description">Information retrieval; Database structures therefor; File system structures therefor</span>
+            <meta itemprop="IsCPC" content="true">
+          </li>
+          <li itemprop="classifications" itemscope repeat>
+            <span itemprop="Code">G06F16/90</span>&mdash;<span itemprop="Description">Details of database functions independent of the retrieved data types</span>
+            <meta itemprop="IsCPC" content="true">
+          </li>
+          <li itemprop="classifications" itemscope repeat>
+            <span itemprop="Code">G06F16/95</span>&mdash;<span itemprop="Description">Retrieval from the web</span>
+            <meta itemprop="IsCPC" content="true">
+          </li>
+          <li itemprop="classifications" itemscope repeat>
+            <span itemprop="Code">G06F16/951</span>&mdash;<span itemprop="Description">Indexing; Web crawling techniques</span>
+            <meta itemprop="Leaf" content="true"><meta itemprop="IsCPC" content="true">
+          </li>
+        </ul>
+      </li>
+      <li>
+        <ul itemprop="classifications" itemscope repeat>
+          <li itemprop="classifications" itemscope repeat>
+            <span itemprop="Code">G</span>&mdash;<span itemprop="Description">PHYSICS</span>
+            <meta itemprop="IsCPC" content="true">
+          </li>
+          <li itemprop="classifications" itemscope repeat>
+            <span itemprop="Code">G06</span>&mdash;<span itemprop="Description">COMPUTING OR CALCULATING; COUNTING</span>
+            <meta itemprop="IsCPC" content="true">
+          </li>
+          <li itemprop="classifications" itemscope repeat>
+            <span itemprop="Code">G06F</span>&mdash;<span itemprop="Description">ELECTRIC DIGITAL DATA PROCESSING</span>
+            <meta itemprop="IsCPC" content="true">
+          </li>
+          <li itemprop="classifications" itemscope repeat>
+            <span itemprop="Code">G06F16/00</span>&mdash;<span itemprop="Description">Information retrieval; Database structures therefor; File system structures therefor</span>
+            <meta itemprop="IsCPC" content="true">
+          </li>
+          <li itemprop="classifications" itemscope repeat>
+            <span itemprop="Code">G06F16/90</span>&mdash;<span itemprop="Description">Details of database functions independent of the retrieved data types</span>
+            <meta itemprop="IsCPC" content="true">
+          </li>
+          <li itemprop="classifications" itemscope repeat>
+            <span itemprop="Code">G06F16/95</span>&mdash;<span itemprop="Description">Retrieval from the web</span>
+            <meta itemprop="IsCPC" content="true">
+          </li>
+          <li itemprop="classifications" itemscope repeat>
+            <span itemprop="Code">G06F16/953</span>&mdash;<span itemprop="Description">Querying, e.g. by the use of web search engines</span>
+            <meta itemprop="IsCPC" content="true">
+          </li>
+          <li itemprop="classifications" itemscope repeat>
+            <span itemprop="Code">G06F16/9532</span>&mdash;<span itemprop="Description">Query formulation</span>
+            <meta itemprop="Leaf" content="true"><meta itemprop="IsCPC" content="true">
+          </li>
+        </ul>
+      </li>
+      <li>
+        <ul itemprop="classifications" itemscope repeat>
+          <li itemprop="classifications" itemscope repeat>
+            <span itemprop="Code">G</span>&mdash;<span itemprop="Description">PHYSICS</span>
+            <meta itemprop="IsCPC" content="true">
+          </li>
+          <li itemprop="classifications" itemscope repeat>
+            <span itemprop="Code">G06</span>&mdash;<span itemprop="Description">COMPUTING OR CALCULATING; COUNTING</span>
+            <meta itemprop="IsCPC" content="true">
+          </li>
+          <li itemprop="classifications" itemscope repeat>
+            <span itemprop="Code">G06Q</span>&mdash;<span itemprop="Description">INFORMATION AND COMMUNICATION TECHNOLOGY [ICT] SPECIALLY ADAPTED FOR ADMINISTRATIVE, COMMERCIAL, FINANCIAL, MANAGERIAL OR SUPERVISORY PURPOSES; SYSTEMS OR METHODS SPECIALLY ADAPTED FOR ADMINISTRATIVE, COMMERCIAL, FINANCIAL, MANAGERIAL OR SUPERVISORY PURPOSES, NOT OTHERWISE PROVIDED FOR</span>
+            <meta itemprop="IsCPC" content="true">
+          </li>
+          <li itemprop="classifications" itemscope repeat>
+            <span itemprop="Code">G06Q30/00</span>&mdash;<span itemprop="Description">Commerce</span>
+            <meta itemprop="IsCPC" content="true">
+          </li>
+          <li itemprop="classifications" itemscope repeat>
+            <span itemprop="Code">G06Q30/02</span>&mdash;<span itemprop="Description">Marketing; Price estimation or determination; Fundraising</span>
+            <meta itemprop="IsCPC" content="true">
+          </li>
+          <li itemprop="classifications" itemscope repeat>
+            <span itemprop="Code">G06Q30/0201</span>&mdash;<span itemprop="Description">Market modelling; Market analysis; Collecting market data</span>
+            <meta itemprop="Leaf" content="true"><meta itemprop="IsCPC" content="true">
+          </li>
+        </ul>
+      </li>
+      <li>
+        <ul itemprop="classifications" itemscope repeat>
+          <li itemprop="classifications" itemscope repeat>
+            <span itemprop="Code">G</span>&mdash;<span itemprop="Description">PHYSICS</span>
+            <meta itemprop="IsCPC" content="true">
+          </li>
+          <li itemprop="classifications" itemscope repeat>
+            <span itemprop="Code">G06</span>&mdash;<span itemprop="Description">COMPUTING OR CALCULATING; COUNTING</span>
+            <meta itemprop="IsCPC" content="true">
+          </li>
+          <li itemprop="classifications" itemscope repeat>
+            <span itemprop="Code">G06Q</span>&mdash;<span itemprop="Description">INFORMATION AND COMMUNICATION TECHNOLOGY [ICT] SPECIALLY ADAPTED FOR ADMINISTRATIVE, COMMERCIAL, FINANCIAL, MANAGERIAL OR SUPERVISORY PURPOSES; SYSTEMS OR METHODS SPECIALLY ADAPTED FOR ADMINISTRATIVE, COMMERCIAL, FINANCIAL, MANAGERIAL OR SUPERVISORY PURPOSES, NOT OTHERWISE PROVIDED FOR</span>
+            <meta itemprop="IsCPC" content="true">
+          </li>
+          <li itemprop="classifications" itemscope repeat>
+            <span itemprop="Code">G06Q30/00</span>&mdash;<span itemprop="Description">Commerce</span>
+            <meta itemprop="IsCPC" content="true">
+          </li>
+          <li itemprop="classifications" itemscope repeat>
+            <span itemprop="Code">G06Q30/02</span>&mdash;<span itemprop="Description">Marketing; Price estimation or determination; Fundraising</span>
+            <meta itemprop="IsCPC" content="true">
+          </li>
+          <li itemprop="classifications" itemscope repeat>
+            <span itemprop="Code">G06Q30/0201</span>&mdash;<span itemprop="Description">Market modelling; Market analysis; Collecting market data</span>
+            <meta itemprop="IsCPC" content="true">
+          </li>
+          <li itemprop="classifications" itemscope repeat>
+            <span itemprop="Code">G06Q30/0202</span>&mdash;<span itemprop="Description">Market predictions or forecasting for commercial activities</span>
+            <meta itemprop="Leaf" content="true"><meta itemprop="IsCPC" content="true">
+          </li>
+        </ul>
+      </li>
+    </ul>
+  </section>
+
+  
+
+  
+
+  <section>
+    <h2>Definitions</h2>
+    <ul>
+      <li itemprop="definitions" itemscope repeat>
+        <span itemprop="subject">This invention</span>
+        <span itemprop="definition">relates generally the marketing and creation of digital content (text, voice, video, imagery, etc.) and, more specifically, to the need to understand what topics are most relevant for an audience you are trying to reach, the size of that audience, the type of content (image, video, text, voice, etc.) the audience wants to consume it, and the distribution method for consumption (social media, email, podcasts, voice assistants, web pages, mobile apps, etc.), and then leveraging machine learning to automatically create this content.</span>
+        <meta itemprop="num_attr" content="0001">
+      </li>
+      <li itemprop="definitions" itemscope repeat>
+        <span itemprop="subject">digital content</span>
+        <span itemprop="definition">text, voice, video, imagery, etc.</span>
+        <meta itemprop="num_attr" content="0001">
+      </li>
+      <li itemprop="definitions" itemscope repeat>
+        <span itemprop="subject">the distribution method for consumption</span>
+        <span itemprop="definition">social media, email, podcasts, voice assistants, web pages, mobile apps, etc.</span>
+        <meta itemprop="num_attr" content="0001">
+      </li>
+      <li itemprop="definitions" itemscope repeat>
+        <span itemprop="subject">the process flow</span>
+        <span it
