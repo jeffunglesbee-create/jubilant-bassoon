@@ -1,11 +1,17 @@
-# FIELD Handoff — June 1 2026 PM-4 (ESPN injuries feed live · all 4 J3 context tags now firing · SW 2026-06-01h live)
+# FIELD Handoff — June 1 2026 PM-5 TYPE D (Backlog Reconciliation complete · canonical Build Backlog now lives on Drive)
 
-**jubilant-bassoon HEAD:** 3b097a2 · Smoke: 241/0 pre-gate (A360–A366 green post-gate; A313/A314 known post-gate red) · SW_VERSION 2026-06-01h
+**jubilant-bassoon HEAD:** dca9c13 (PM-4 + date framing fix; TYPE D session shipped no code) · Smoke: 241/0 pre-gate (A360–A366 green post-gate; A313/A314 known post-gate red) · SW_VERSION 2026-06-01h
 **field-relay-nba HEAD:** unchanged (0ae4c11) · NHL relay serving production traffic for /v1/skater-stats-leaders + /v1/goalie-stats-leaders since PM-3
-**Session Doc (PM-4, this session — Drive):** 1QxI13vHVxN9W4Kmo0O5ABgSQPsN2qEfVaHVQ-wQsnJg
+
+**🆕 CANONICAL BUILD BACKLOG (READ FIRST FOR ANY BUILD QUESTION):** Drive `1ugUh6UmeDkLR-gEH8hJPwXK2NiIrXYQY8gp2jO2p2Hk` — supersedes all priority-list build-backlog duplication. §A SHIPPED / §B IN-FLIGHT / §C SPECCED READY / §D NEEDS DECISION / §E UNSPECCED IDEAS / §F REJECTED / §G UPDATE PROTOCOL.
+**Reconciliation Spec v1.1 (CANONICAL):** Drive `1sDM2JMajjoCIg2ygLyVRn7vpB8Udu_u8bY0-tn3lo3c` — restraint filter + methodology. Supersedes v1.0 (`1g6RiKON_sCvNDiZ9mPksQ8mWjUAaNjmTVpQy7RGMBg8`).
+
+**Session Doc (PM-5 TYPE D, this session — Drive):** 1po-q4yp3qFg5AXzCYvf-IazI9Q1OviyaoZu4HysjBuQ
+**Session Doc (PM-4 prior — Drive):** 1QxI13vHVxN9W4Kmo0O5ABgSQPsN2qEfVaHVQ-wQsnJg
 **Session Doc (PM-3 prior — Drive):** 1lcrLKehfzdcUmKvZU-gttxTEyyp3a2zUqDGGrCpuTD4
 **Session Doc (PM-2 prior — Drive):** 1TJ4nsP43yxdDNAs5ReZhlgT0BAWVL3-9-7GnSs9bh1c
 **Session Doc (PM-1 prior — Drive):** 12CAk9NF1hytbMlJ2JIJSvVWYMMXG_gCUdmKn3E3nH60
+**Data Skrive Patent Analysis v3 (new today):** 1yCXY5AF5J1jvo_b5wCV7nzp_FwQ1SIWGJqusZ4AaVqU
 **WC2026 Format Corrections (READ BEFORE ANY WC BUILD):** 17D_EzrqoNUR4LN4OK3hr6MqKFUHitWlO72O1CWmqLks
 
 ## TIER 0 DEADLINES
@@ -141,8 +147,25 @@ Decision: do not attempt within this session's budget. `game.playoffLeaders` hoo
     - Data source swapped (BDL → ESPN) without touching `buildSeriesContextTags`, `populateSeriesContext`'s consumer signature, or any prompt-builder code — a clean methodological signal
     - cors-probe-first methodology as a verifiable DO-NOT-INVENT discipline
 
-### P2 — Build backlog (carried from AM)
-20. handleCron refactor (~2.5 hr) · 21. YouTube highlights (~45 min) · 22. Podcast Index (~30 min) · 23. SeatGeek (~2 hr) · 24. Polymarket (~2.5 hr) · 25. Preference Sync QR + Passkey
+### P2 — Build backlog
+
+**Authoritative source: Build Backlog Canonical v1.0 (Drive `1ugUh6UmeDkLR-gEH8hJPwXK2NiIrXYQY8gp2jO2p2Hk`).** Do not re-create build-backlog lines in this HANDOFF — items live there with provenance and restraint-check status.
+
+Highlights to surface from §C READY TO BUILD:
+
+20. **WC2026 mini-build (~35 min, before June 11)** — F09 REST Countries (10 min) + F08 Nager.Date Holidays (25 min). Both PASS all restraints. Both have clean Drive specs (Free API Opportunities `1zy9YpTP1wQg9VHIxMush-fQE2Gg9jICyNpsOgHpDvT4`). Material WC2026 brief uplift day one of tournament.
+21. **Voice Positioning Moves 1+2 (NEW from Data Skrive analysis)** — Loosen TIME-PERIOD ANCHORING + add few-shot exemplars showing FIELD voice. Awaits Jeff approval of Exemplar B v2 (see §D). Rationale: "FIELD Brief reads like Data Skrive output. Voice IS the differentiator. Patent clearance ≠ competitive differentiation."
+22. `[MOBILE-INTEL-A]` (HIGHEST priority per v7.27) — Right Now mobile hero card (~50 min). Prereq `[PWA-A]`.
+23. NW-series + Wow #29/#36/#39 + WOW 3/5/9/10 + Pipeline C + J-Arch A-D + non-sports APIs (YouTube ~45min, Podcast Index ~30min, AirNow ~20min, Web Speech ~15min, Preference Sync QR ~45min) — all in §C.
+
+### P2 — Decisions waiting on Jeff (§D in canonical)
+
+24. **SeatGeek affiliate revenue link** — ticket marketplace vs Rule 33 "no referral paths to sportsbooks" wording. Recommend Option A (build without affiliate first) as posture.
+25. **NBA playoff leaders source** — 3 options (relay route addition, narrow Finals hardcode w/ ADR-001 violation, accept gap). Recommend Option A after Rule 45 source-clearance step.
+26. **BDL milestone vs removal** — operationally inert per PM-4 finding. Recommend Option B (remove).
+27. **F07 TheSportsDB attribution terms read** — Rule 45 gate required before wiring.
+28. **F12 Google Trends alpha stability** — Rule 45 + Rule 48 Class B verification required before build.
+29. **Voice Positioning Exemplar B v2 approval** — pending; required before Moves 1+2 ship.
 
 ### P3 — Deferred console errors (carried)
 - `/espn-summary/.../nba/summary` 404
