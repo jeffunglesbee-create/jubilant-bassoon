@@ -15537,7 +15537,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-05-31i';
+  const SW_VERSION = '2026-05-31j';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -19099,6 +19099,23 @@ async function renderStakesBriefCard(gameCard) {
 async function fetchGameBriefOnDemand(game, sport) {
   if (!game?._id) return null;
   if (_gameBriefCache[game._id]) return _gameBriefCache[game._id]; // already populated
+
+  // ── O(1) Newspaper KV-first lookup (May 31 2026) ───────────────────────────
+  // The relay cron pre-generates per-game briefs every 15 min and stores them in
+  // KV (brief:game:{eventId}, 1hr TTL). If a fresh brief exists, serve it from
+  // KV at near-zero cost (KV read ~5ms vs 1-2s LLM call). This is the dominant
+  // contributor to the 97% LLM-cost reduction at scale: one cron call serves
+  // N user taps. The live-path code below remains as fallback for KV misses
+  // (cold cache, brief older than 1hr, sport not yet covered by cron).
+  const espnId = game._espnId || game.sourceId || game._id;
+  if (espnId) {
+    const kvBrief = await fetchPrerenderedGameBrief(espnId);
+    if (kvBrief && kvBrief.length > 30) {
+      const trimmed = stripMarkdown(kvBrief).trim();
+      _gameBriefCache[game._id] = trimmed;
+      return trimmed;
+    }
+  }
 
   const sp = (sport || game._sport || game._section || '').toLowerCase();
   // MLB/WNBA/Stakes paths use their own cardBriefCallsToday budget (15 calls).

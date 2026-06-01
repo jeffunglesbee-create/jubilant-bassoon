@@ -1009,6 +1009,33 @@ assert('A347 — JQ-INFRA-2: column-0 function declarations are actually hoisted
   })(),
   'Every column-0 function declaration must hoist to script top scope (otherwise setTimeout/setInterval/cross-function calls throw silent ReferenceError)');
 
+// ═══════════════════════════════════════════════════════════════════════════
+// JQ-1 / O(1) Newspaper — KV-first lookup audit (May 31 2026)
+// ═══════════════════════════════════════════════════════════════════════════
+// Background: 2026-05-31 PM session built the O(1) Newspaper bottom-sheet
+// path: every fetchGameBriefOnDemand() call must check the relay's KV brief
+// cache (brief:game:{eventId}, populated by 15-min cron) BEFORE falling
+// through to a live LLM call. This is the dominant contributor to the 97%
+// LLM-cost reduction projection: one cron call serves N user taps.
+//
+// Regression risk: a future refactor reorders the function and accidentally
+// puts the live-LLM dispatch before the KV check, silently disabling the
+// caching layer. Cost would spike 10-100x without functional visibility.
+
+assert('A348 — JQ-1: fetchGameBriefOnDemand checks KV (fetchPrerenderedGameBrief) before any sport-specific live LLM dispatch',
+  (() => {
+    const m = html.match(/async function fetchGameBriefOnDemand\([^)]*\)\s*\{([\s\S]*?)^\}/m);
+    if (!m) return false;
+    const body = m[1];
+    const kvIdx   = body.indexOf('fetchPrerenderedGameBrief');
+    if (kvIdx < 0) return false;  // KV check must exist
+    const liveRe  = /fetch(?:MLBGameBriefFromClaude|WNBAGameBriefFromClaude|StakesBriefFromClaude|EPLMatchBriefFromClaude|SeriesPreviewFromClaude)/;
+    const liveIdx = body.search(liveRe);
+    // KV check must come before any live-path dispatch (or no live dispatch at all)
+    return liveIdx < 0 || kvIdx < liveIdx;
+  })(),
+  'fetchGameBriefOnDemand must call fetchPrerenderedGameBrief before any fetch*FromClaude — preserves the O(1) Newspaper KV-first cost-reduction path');
+
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);
 
