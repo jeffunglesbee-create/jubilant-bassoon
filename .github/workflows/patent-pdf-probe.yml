@@ -1,0 +1,85 @@
+name: Patent PDF Probe
+on:
+  push:
+    paths: ['outbox/.trigger-patent-pdf']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install poppler-utils
+        run: sudo apt-get update -y && sudo apt-get install -y poppler-utils
+
+      - name: Fetch + extract patent PDF(s)
+        run: |
+          set +e
+          TS=$(date -u +%Y%m%dT%H%M%SZ)
+          # Trigger file format (one per line):
+          #   patent=US11468139B2
+          # OR
+          #   pdf_url=https://patentimages.storage.googleapis.com/.../USXXXXXXXX.pdf
+          # OR
+          #   metadata_url=https://patents.google.com/patent/USXXXXXXXXB2/en
+          # OR
+          #   assignee_search=Data+Skrive+Inc
+          PATENT=$(grep '^patent=' outbox/.trigger-patent-pdf 2>/dev/null | cut -d= -f2- | tr -d '[:space:]')
+          PDF_URL=$(grep '^pdf_url=' outbox/.trigger-patent-pdf 2>/dev/null | cut -d= -f2-)
+          META_URL=$(grep '^metadata_url=' outbox/.trigger-patent-pdf 2>/dev/null | cut -d= -f2-)
+          ASSIGNEE=$(grep '^assignee_search=' outbox/.trigger-patent-pdf 2>/dev/null | cut -d= -f2-)
+
+          # If patent number given, derive metadata URL
+          if [ -n "$PATENT" ] && [ -z "$META_URL" ]; then
+            META_URL="https://patents.google.com/patent/${PATENT}/en"
+          fi
+
+          # If metadata URL given, pull the page to extract pdf URL
+          if [ -n "$META_URL" ] && [ -z "$PDF_URL" ]; then
+            META_FILE="outbox/patent-meta-${TS}.html"
+            curl -sL -o "$META_FILE" "$META_URL"
+            PDF_URL=$(grep -oE 'citation_pdf_url" content="[^"]+"' "$META_FILE" | head -1 | sed 's/citation_pdf_url" content="//;s/"//')
+            echo "Extracted PDF URL: $PDF_URL"
+          fi
+
+          # If assignee search, hit Google Patents query API to find all patent IDs for that assignee
+          if [ -n "$ASSIGNEE" ]; then
+            SEARCH_FILE="outbox/patent-assignee-${TS}.json"
+            # Google Patents has an XHR endpoint that returns JSON
+            # Try the unauth'd search endpoint
+            curl -sL -o "$SEARCH_FILE" \
+              "https://patents.google.com/xhr/query?url=assignee%3D${ASSIGNEE// /%20}&exp=" \
+              -H "User-Agent: Mozilla/5.0" \
+              -H "Accept: application/json"
+            echo "Assignee search written to $SEARCH_FILE"
+          fi
+
+          # Download the PDF if we have a URL
+          if [ -n "$PDF_URL" ]; then
+            PDF_FILE="outbox/patent-pdf-${TS}.pdf"
+            curl -sL -o "$PDF_FILE" "$PDF_URL"
+            echo "PDF size: $(wc -c < "$PDF_FILE") bytes"
+            # Extract text with pdftotext (preserve layout for claim structure)
+            TXT_FILE="outbox/patent-text-${TS}.txt"
+            pdftotext -layout "$PDF_FILE" "$TXT_FILE"
+            echo "Text extracted: $(wc -c < "$TXT_FILE") bytes"
+            # Remove the binary PDF (keeps git small)
+            rm -f "$PDF_FILE"
+            echo "OUTPUT=$TXT_FILE" >> $GITHUB_ENV
+          fi
+
+      - name: Push result
+        run: |
+          git config user.email "probe@field"
+          git config user.name "Probe"
+          git add outbox/patent-*.txt outbox/patent-*.html outbox/patent-*.json 2>/dev/null || true
+          git diff --cached --quiet && exit 0
+          git commit -m "patent probe output [skip ci]"
+          for i in 1 2 3; do
+            git pull --rebase --autostash origin main && git push origin main && break
+            sleep $((i * 5))
+          done
