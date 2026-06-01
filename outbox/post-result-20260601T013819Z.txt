@@ -1,0 +1,16 @@
+URL: https://field-claude-proxy.jeffunglesbee.workers.dev/journalism/generate  [20260601T013819Z]
+=== Request body ===
+{
+  "prompt": "Write one sentence about a baseball game.",
+  "sport": "baseball",
+  "briefType": "mlb-brief",
+  "model": "claude-3-5-haiku-20241022",
+  "max_tokens": 100
+}
+
+=== Custom headers ===
+X-FIELD-Relay: field-relay-cron-2026
+
+=== Response (status + body, first 4000 chars) ===
+{"type":"error","error":{"type":"invalid_request_error","message":"messages: Field required"},"request_id":"req_011CbbghHmqKru4aWfG9wio4"}
+HTTP_STATUS:400
