@@ -3244,6 +3244,7 @@ const FIELD_FEATURES = {
   'crunch-push-do':            '2026-05-31',  // WOW 2: client-signaled CRUNCH TIME fan-out
   'journalism-quality-gate':   '2026-05-31',  // WOW 6: relay enforces Layers 1-2e+3b structurally
   'journalism-quality-analytics': '2026-05-31', // WOW 7: relay writes JQ outcomes to Analytics Engine
+  'journalism-quality-target': '2026-05-31',  // JQ-3 Layer 3c: per-sport rolling-avg → prompt feedback
   // Polling optimization (Layer 1 + Layer 2 + #11b)
   'per-league-polling':     '2026-05-18',  // Layer 1: each league on its own cadence
   'concurrent-espn-fetch':  '2026-05-18',  // Layer 2: no 200ms batch delays
@@ -16246,6 +16247,49 @@ function getFieldVoice(sport) {
   return '';
 }
 
+// ── Layer 3c: Quality Target Feedback Loop (JQ Spec May 27 2026) ───────────
+// Reads field_jq_scores rolling history (populated by renderProseScore on
+// every brief), computes per-sport rolling averages, returns a calibration
+// line for prompt injection when the sport's recent scores trend low.
+// Closes the loop: scorer → localStorage → prompt injection → better output.
+// Returns '' when no data, insufficient samples, or trends are healthy.
+function getQualityTarget(sport) {
+  try {
+    const _scores = JSON.parse(localStorage.getItem('field_jq_scores')||'[]');
+    if (!_scores.length) return '';
+    const sp = (sport||'').toLowerCase();
+    const sportTags = {
+      baseball:   ['mlb','baseball'],
+      hockey:     ['nhl','hockey'],
+      basketball: ['nba','wnba','basketball'],
+      soccer:     ['epl','mls','ucl','soccer','liga','football','bundesliga','serie','ligue','efl'],
+    };
+    let tags = null, key = null;
+    for (const [k, vs] of Object.entries(sportTags)) {
+      if (vs.some(v => sp.includes(v))) { tags = vs; key = k; break; }
+    }
+    if (!tags) return '';
+    const matched = _scores.filter(s => {
+      const lbl = (s.label||'').toLowerCase();
+      return tags.some(t => lbl.includes(t));
+    });
+    if (matched.length < 3) return ''; // need minimum data
+    const avgScore = matched.reduce((a,s) => a + (s.score || 0), 0) / matched.length;
+    const avgStat  = matched.reduce((a,s) => a + (s.stat  || 0), 0) / matched.length;
+    const labelStr = (key === 'baseball'   ? 'MLB' :
+                      key === 'hockey'     ? 'NHL' :
+                      key === 'basketball' ? 'NBA/WNBA' : 'soccer');
+    const lines = [];
+    if (avgScore < 130) {
+      lines.push(`- QUALITY TARGET: recent ${labelStr} briefs averaged score ${Math.round(avgScore)}/180. Target ≥ 145 — add more specific facts (names, numbers, stats with units).`);
+    }
+    if (avgStat < 1.5) {
+      lines.push(`- QUALITY TARGET: recent ${labelStr} briefs averaged stat depth ${avgStat.toFixed(1)} stats/sentence. Target ≥ 1.8 — use more specific numbers (ERA, OPS, pitch counts, percentages, scores).`);
+    }
+    return lines.join('\n');
+  } catch(_) { return ''; }
+}
+
 // ── Active Prompt Evolution — session-layer BANNED_PHRASES extension ────────
 // Reads field_jq_review (low-score phrase queue) and field_jq_scores (rolling avg).
 // If a brief type has averaged < 45 over its last 5 scored briefs AND the review
@@ -17526,6 +17570,7 @@ async function fetchSeriesPreviewFromClaude(g){
     'Write only from the data above. Never invent statistics, records, or player tendencies.',
     FIELD_PROSE_STYLE,
     getFieldVoice(g._sport||g._section||g.league||''),
+    getQualityTarget(g._sport||g._section||g.league||''),
     'Third person only — never use "you" or address the reader directly. No markdown.'
   ].filter(Boolean).join('\n');
   try{
@@ -22335,6 +22380,7 @@ async function fetchNightOwlFromClaude(topGame){
       'CRITICAL — USE THE GIVEN MARGIN: the MARGIN line above is the authoritative score difference. Never describe a 2-run game as "one-run", a 3-goal game as "one-goal", etc. Use the unit and number from the MARGIN line verbatim.',
       FIELD_PROSE_STYLE,
       getFieldVoice(_sp),
+      getQualityTarget(_sp),
       'Third person only — never use "you" or address the reader directly.',
       'Division accuracy: teams in the same division share ONE race, not "respective" races.',
       'Explain what tactically swung the game. Series implication. Plain prose.'

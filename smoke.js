@@ -1661,3 +1661,17 @@ assert('A344 — WOW 6: relay fallback preserved — every relay-routed brief st
 assert('A345 — WOW 7: journalism-quality-analytics registered in FIELD_FEATURES',
   html.includes("'journalism-quality-analytics':"),
   'journalism-quality-analytics must be registered in FIELD_FEATURES with 2026-05-31 date');
+
+// ═══════════════════════════════════════════════════════════════════════════
+// JQ-3 — Layer 3c Quality Target feedback loop (May 31 2026)
+// ═══════════════════════════════════════════════════════════════════════════
+
+assert('A349 — JQ-3: getQualityTarget function defined (reads field_jq_scores, returns calibration line)',
+  /function getQualityTarget\(sport\)/.test(html) &&
+  /field_jq_scores/.test(html) &&
+  /QUALITY TARGET/.test(html),
+  'getQualityTarget(sport) must read field_jq_scores and emit QUALITY TARGET calibration lines');
+
+assert('A350 — JQ-3: getQualityTarget wired into J2 series + Night Owl prompts',
+  (html.match(/getQualityTarget\(/g) || []).length >= 2,
+  'getQualityTarget must be called at minimum 2 prompt-build sites (J2 series, Night Owl)');
