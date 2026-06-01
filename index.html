@@ -14751,6 +14751,7 @@ async function fetchSchedule(){
   setTimeout(mlbStatsInit, 4000);         // MLB stats: load weekly Savant tables (patches hardcoded stubs)
   setTimeout(nhlAnalyticsInit, 4500);     // NHL analytics: set _homeAbbr/_awayAbbr/_sport on NHL game objects
   setTimeout(nhlPlayoffLeadersPrefetch, 3000); // Phase B subtask 9: NHL playoff leaders feed (15-min TTL)
+  setTimeout(espnInjuriesPrefetch, 3200);      // ESPN injuries (NHL + NBA league-wide; 30-min TTL)
   maybeShowSetup();
   renderLastNight();
   if(Object.keys(espnScores).length) { injectDramaBadges(); detectAndRenderDoubleFeature(); renderOneToWatch(); renderMobileLiveBar(); renderWatchWindow(); renderAmbientPanel(); }
@@ -15688,7 +15689,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-01g';
+  const SW_VERSION = '2026-06-01h';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -18431,6 +18432,157 @@ function getSeriesHistoricalAnchor(game) {
   return null;
 }
 
+// ── ESPN Injuries Feed (P1 followup: NHL injury feed + NBA injury upgrade) ──
+// Source: site.api.espn.com /apis/site/v2/sports/{hockey,basketball}/{nhl,nba}/injuries
+// Single league-wide endpoint per sport; CORS-open; cf-cached short TTL upstream.
+// Endpoints VERIFIED via cors-probe runs 20260601T200655Z (NHL) + 20260601T200813Z
+// (NBA) — both returned 200 with shape:
+//   { timestamp, season, injuries: [
+//     { id, displayName: "Team Name", injuries: [
+//       { id, status, date, longComment, shortComment,
+//         athlete: { firstName, lastName, displayName, shortName,
+//                    position: {abbreviation}, team: {abbreviation, displayName} },
+//         type: { name, description, abbreviation },
+//         details: { type, detail?, location?, side?, returnDate } } ] } ] }
+// ADR-001: counters (active injury status); must come from feed, never hardcoded.
+//
+// Replaces the operationally-inert bdlInjuryContextSync pass-through (BDL_SPORT_MAP
+// has been empty since May 15 2026 — see comment at line ~9034 — so the PM-2
+// Phase B subtask 8 wiring was structurally correct but produced no live data).
+//
+// Cache: 30-min TTL — injury status changes slowly, daily-update cadence in practice.
+const ESPN_INJURY_TTL = 30 * 60 * 1000;
+const _espnInjuryCache = {
+  nhl: { data: null, fetchedAt: 0, inFlight: null },
+  nba: { data: null, fetchedAt: 0, inFlight: null },
+};
+
+// Map sport label → { espnSport, espnLeague, storageKey }
+function _espnInjurySportSlug(sportLabel) {
+  const s = (sportLabel || '').toLowerCase();
+  if (s.includes('nhl') || s.includes('hockey')) return { key: 'nhl', sport: 'hockey', league: 'nhl' };
+  if (s.includes('nba') || s.includes('basketball')) return { key: 'nba', sport: 'basketball', league: 'nba' };
+  return null;
+}
+
+// Parses ESPN's response shape into { teamAbbrev → ["Player Name (Status — Type)", ...] }
+function buildESPNInjuriesByTeam(json) {
+  const out = {};
+  if (!json || !Array.isArray(json.injuries)) return out;
+  json.injuries.forEach(teamBlock => {
+    if (!teamBlock || !Array.isArray(teamBlock.injuries)) return;
+    teamBlock.injuries.forEach(inj => {
+      const ath = inj?.athlete || {};
+      const teamAbbr = ath.team?.abbreviation || '';
+      if (!teamAbbr) return;
+      // Build short label: prefer shortName (e.g. "T. Terry") + position abbreviation
+      const nm = ath.shortName || ath.displayName || (`${ath.firstName||''} ${ath.lastName||''}`.trim());
+      if (!nm) return;
+      const pos = ath.position?.abbreviation || '';
+      // Status (from inj.status or inj.type.description; fall back to type.abbreviation)
+      const status = inj.status || inj.type?.description || inj.type?.abbreviation || '';
+      // Detail (body part / nature) from details.type
+      const detail = inj.details?.type || inj.details?.detail || '';
+      const parts = [];
+      if (status) parts.push(status);
+      if (detail) parts.push(detail);
+      const label = pos ? `${nm} (${pos})` : nm;
+      const tail = parts.length ? ` — ${parts.join(' / ')}` : '';
+      out[teamAbbr] = out[teamAbbr] || [];
+      // Cap 4 entries per team to keep prompt context tight
+      if (out[teamAbbr].length < 4) out[teamAbbr].push(label + tail);
+    });
+  });
+  return out;
+}
+
+async function fetchESPNInjuries(sportKey) {
+  // sportKey: 'nhl' or 'nba'
+  const slug = (sportKey === 'nhl' || sportKey === 'nba') ? { key: sportKey, sport: (sportKey === 'nhl' ? 'hockey' : 'basketball'), league: sportKey } : null;
+  if (!slug) return {};
+  const cache = _espnInjuryCache[slug.key];
+  const now = Date.now();
+  if (cache.data && (now - cache.fetchedAt) < ESPN_INJURY_TTL) return cache.data;
+  try {
+    const lsKey = 'field_espn_injuries_' + slug.key;
+    const cached = localStorage.getItem(lsKey);
+    if (cached) {
+      const p = JSON.parse(cached);
+      if (p?.ts && (now - p.ts) < ESPN_INJURY_TTL && p.data) {
+        cache.data = p.data; cache.fetchedAt = p.ts;
+        return p.data;
+      }
+    }
+  } catch(_) {}
+  if (cache.inFlight) return cache.inFlight;
+  cache.inFlight = (async () => {
+    try {
+      const base = (typeof ESPN_BASE !== 'undefined') ? ESPN_BASE : 'https://site.api.espn.com/apis/site/v2/sports';
+      const url = `${base}/${slug.sport}/${slug.league}/injuries`;
+      const r = await fetch(url, { signal: AbortSignal.timeout(6000) });
+      if (!r.ok) return cache.data || {};
+      const json = await r.json().catch(()=>null);
+      if (!json) return cache.data || {};
+      const data = buildESPNInjuriesByTeam(json);
+      cache.data = data; cache.fetchedAt = Date.now();
+      try { localStorage.setItem('field_espn_injuries_' + slug.key, JSON.stringify({ ts: Date.now(), data })); } catch(_) {}
+      if (typeof FIELD_DEBUG !== 'undefined' && FIELD_DEBUG) console.log(`[ESPN Injuries ${slug.key.toUpperCase()}] fetched ${Object.keys(data).length} teams · ${Object.values(data).reduce((a,arr)=>a+arr.length,0)} entries (FIELD_DEBUG)`);
+      return data;
+    } catch(_) {
+      return cache.data || {};
+    } finally {
+      cache.inFlight = null;
+    }
+  })();
+  return cache.inFlight;
+}
+
+// Sync getter — reads from warm cache (NHL or NBA). Returns array of
+// "ABBR Player (POS) — Status / Type" lines or null when cache empty.
+function getESPNInjuriesForGame(game) {
+  if (!game) return null;
+  const slug = _espnInjurySportSlug(game._section || game._sport || '');
+  if (!slug) return null;
+  const data = _espnInjuryCache[slug.key]?.data;
+  if (!data) return null;
+  // Resolve abbrevs for home + away. NHL uses getNHLAbbrev; NBA needs a separate
+  // lookup since NBA_ABBREV_MAP only covers active-playoff teams. Build a tiny
+  // fallback that pulls the abbrev directly from the cache key set when the
+  // team name's last word matches an ESPN nickname (e.g. "Hurricanes" → "CAR").
+  const nameToAbbr = (full) => {
+    if (!full) return null;
+    if (slug.key === 'nhl' && typeof getNHLAbbrev === 'function') {
+      const a = getNHLAbbrev(full);
+      if (a) return a;
+    }
+    if (slug.key === 'nba' && typeof getNBAAbbrev === 'function') {
+      const a = getNBAAbbrev(full);
+      if (a) return a;
+    }
+    // Last-resort: look for a cached team whose nickname (last word of full name)
+    // appears in our data keys. We don't have nicknames in the cache, only
+    // abbrevs, so this fallback is intentionally narrow: it only fires when the
+    // sport-specific abbrev getter failed.
+    return null;
+  };
+  const homeAbbr = game._homeAbbr || nameToAbbr(game.home);
+  const awayAbbr = game._awayAbbr || nameToAbbr(game.away);
+  const lines = [];
+  if (awayAbbr && Array.isArray(data[awayAbbr])) {
+    data[awayAbbr].forEach(l => lines.push(`${awayAbbr} ${l}`));
+  }
+  if (homeAbbr && Array.isArray(data[homeAbbr])) {
+    data[homeAbbr].forEach(l => lines.push(`${homeAbbr} ${l}`));
+  }
+  return lines.length ? lines : null;
+}
+
+// Prefetch entrypoint — covers both sports in parallel. Fire-and-forget.
+function espnInjuriesPrefetch() {
+  try { fetchESPNInjuries('nhl'); } catch(_) {}
+  try { fetchESPNInjuries('nba'); } catch(_) {}
+}
+
 // ── Subtask 9 — NHL Playoff Leaders Feed (Axis 3 Phase B, June 1 2026 PM-3) ──
 // Source: api-web.nhle.com v1 skater-stats-leaders + goalie-stats-leaders,
 // fetched via NHL_RELAY proxy (field-relay-nba /nhl/* → api-web.nhle.com/*).
@@ -18536,9 +18688,7 @@ async function fetchNHLPlayoffLeaders() {
       _nhlPlayoffLeadersCache.data = data;
       _nhlPlayoffLeadersCache.fetchedAt = Date.now();
       try { localStorage.setItem('field_nhl_playoff_leaders', JSON.stringify({ ts: Date.now(), data })); } catch(_) {}
-      if (typeof FIELD_DEBUG !== 'undefined' && FIELD_DEBUG) {
-        console.log('[NHL Playoff Leaders] fetched', Object.keys(data).length, 'teams');
-      }
+      if (typeof FIELD_DEBUG !== 'undefined' && FIELD_DEBUG) console.log('[NHL Playoff Leaders] fetched', Object.keys(data).length, 'teams (FIELD_DEBUG)');
       return data;
     } catch(_) {
       return _nhlPlayoffLeadersCache.data || {};
@@ -18598,20 +18748,17 @@ function populateSeriesContext(game) {
       const anchor = getSeriesHistoricalAnchor(game);
       if (anchor) game.historical = anchor;
     }
-    // Subtask 8 — Injuries (NBA via bdlCache; NHL feed deferred to subtask 9 cycle)
+    // Subtask 8 — Injuries (ESPN league-wide /injuries feed; NHL + NBA via same source).
+    // Replaces the operationally-inert bdlInjuryContextSync pass-through that PM-2
+    // wired through populateSeriesContext: BDL_SPORT_MAP has been empty since May 15
+    // 2026, so the prior wiring was structurally correct but produced zero data.
+    // ESPN's league-wide injuries endpoint is verified, CORS-open, and updates on a
+    // 30-minute TTL via fetchESPNInjuries (prefetched at init by espnInjuriesPrefetch).
     if (!Array.isArray(game.injuries) || !game.injuries.length) {
       try {
-        if (typeof bdlInjuryContextSync === 'function') {
-          const inj = bdlInjuryContextSync(game.home || '', game.away || '', game._sport || game._section || '');
-          if (inj) {
-            // bdlInjuryContextSync returns "Injuries: X (status), Y (status)."
-            // Convert to array of "X (status)" entries for [INJURY: ...] tag.
-            const stripped = inj.replace(/^Injuries:\s*/i, '').replace(/\.\s*$/, '').trim();
-            if (stripped) {
-              const parts = stripped.split(/,\s*/).map(s => s.trim()).filter(Boolean);
-              if (parts.length) game.injuries = parts;
-            }
-          }
+        if (typeof getESPNInjuriesForGame === 'function') {
+          const inj = getESPNInjuriesForGame(game);
+          if (inj && inj.length) game.injuries = inj;
         }
       } catch(_) {}
     }

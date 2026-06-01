@@ -167,22 +167,18 @@ assert('A52 — espnScores._gameId stored + used in ticker trend sort',
   html.includes('function resolveGameIdByHome') &&
   html.includes('e._gameId || gid'));
 
-assert('A53 — bdlInjuryContextSync has a single call site (inside populateSeriesContext) — no double-injection',
+assert('A53 — bdlInjuryContextSync function retained but no live call sites (replaced by ESPN injuries feed)',
   (() => {
-    // Post-Phase-B (June 1 2026 PM): the inline call in standalone J3 was retired
-    // and bdlInjuryContextSync is now invoked solely from inside populateSeriesContext,
-    // which itself runs once per game in each J3 path. This guarantees one injury
-    // pass per game across both standalone and compound prompt builders.
-    // Strip JS line comments before counting so doc strings can mention the name
-    // without inflating the call count.
+    // June 1 2026 PM-4: ESPN injuries feed replaces the inert BDL pass-through.
+    // BDL_SPORT_MAP has been empty since May 15 2026 → bdlInjuryContextSync
+    // always returned '' in practice. The function is retained for backward
+    // compatibility (other callers may exist; localStorage-backed cache layer
+    // still relies on it as a no-op fallback) but no longer wired into the
+    // injury data path. Invariant: exactly 1 definition, 0 call sites.
     const stripped = html.replace(/\/\/[^\n]*/g, '');
     const callOrDef = stripped.match(/[^A-Za-z0-9_]bdlInjuryContextSync\s*\(/g) || [];
-    // Expected: 1 function definition + 1 production call = 2 occurrences total.
-    if (callOrDef.length !== 2) return false;
-    // The call must be inside populateSeriesContext (not loose anywhere else).
-    const popMatch = html.match(/function populateSeriesContext\([^)]*\)\s*\{[\s\S]*?\n\}/);
-    if (!popMatch) return false;
-    return popMatch[0].includes('bdlInjuryContextSync(game.home');
+    // Expected: 1 (the function declaration itself, `function bdlInjuryContextSync(`)
+    return callOrDef.length === 1;
   })());
 
 assert('A54 — Night Owl save/load uses ET timezone key consistently',
@@ -1789,24 +1785,26 @@ assert('A362 — Axis 3 Phase B subtask 7: SERIES_HISTORICAL_ANCHORS defined for
 
 assert('A363 — Axis 3 Phase B: populateSeriesContext defined and wired into both J3 paths before buildSeriesContextTags',
   /function populateSeriesContext\(game\)\s*\{/.test(html) &&
-  // Helper populates the three Phase B fields (coaches, historical, injuries)
+  // Helper populates the three Phase B fields (coaches, historical, injuries).
+  // Injury write was `game.injuries = parts` (PM-2 BDL parser); PM-4 routes
+  // through ESPN feed, so the write is `game.injuries = inj`.
   /game\.coaches\s*=\s*\{\}/.test(html) &&
   /game\.historical\s*=\s*anchor/.test(html) &&
-  /game\.injuries\s*=\s*parts/.test(html) &&
+  /game\.injuries\s*=\s*inj\b/.test(html) &&
   // Wired into BOTH J3 paths — must run before buildSeriesContextTags in each
   (html.match(/populateSeriesContext\(g\)/g) || []).length >= 2,
   'populateSeriesContext must mutate game.coaches/historical/injuries (subtasks 6/7/8) and be invoked from at least two call sites — the standalone J3 per-game line and the compound prompt per-game line — preceding buildSeriesContextTags in each');
 
-assert('A364 — Axis 3 Phase B subtask 8 coordination: inline bdlInjuryContextSync call retired from standalone J3 (now routed through buildSeriesContextTags)',
-  // The OLD inline pattern at line ~17389 must be gone
+assert('A364 — Phase B subtask 8 final state: inline bdlInjuryContextSync retired, injuries now routed through ESPN feed via buildSeriesContextTags',
+  // The PM-2 inline pattern in the standalone J3 block must still be gone
   !html.includes("(()=>{try{const inj=bdlInjuryContextSync(g.home||'',g.away||'',g._sport||g._section||'');return inj?`  ${inj}`:''}catch(e_){return ''}})()") &&
-  // The helper function itself must still exist (used by populateSeriesContext)
+  // bdlInjuryContextSync function definition retained for backward compatibility
   /function bdlInjuryContextSync\(/.test(html) &&
-  // populateSeriesContext must reference it (the consumer)
-  html.includes('bdlInjuryContextSync(game.home') &&
-  // [INJURY: tag must still be emitted from buildSeriesContextTags
+  // populateSeriesContext now uses the ESPN feed (not the inert BDL pass-through)
+  html.includes('getESPNInjuriesForGame(game)') &&
+  // [INJURY: tag still emitted from buildSeriesContextTags
   html.includes('[INJURY: '),
-  'Inline bdlInjuryContextSync call in the standalone J3 per-game block must be removed (replaced by routing through populateSeriesContext → buildSeriesContextTags [INJURY:] tag) to prevent double-injection now that the compound path also surfaces injuries via the same path');
+  'Injury data path: inline standalone-J3 bdlInjuryContextSync call retired (PM-2); operationally-inert BDL pass-through inside populateSeriesContext replaced by ESPN feed (PM-4); [INJURY:] tag still emitted via the same buildSeriesContextTags hook');
 
 assert('A365 — Axis 3 Phase B subtask 9: NHL playoff leaders feed wired (cache + fetcher + sync getter + prefetch + populateSeriesContext hook)',
   // Cache + TTL constants
@@ -1829,4 +1827,27 @@ assert('A365 — Axis 3 Phase B subtask 9: NHL playoff leaders feed wired (cache
   // Subtask 9 DEFERRED comment removed from populateSeriesContext body
   !/Subtask 9 — Playoff Leaders \(COUNTERS, feed-driven\)\. DEFERRED\./.test(html),
   'Phase B subtask 9 must wire the NHL playoff-leaders feed end-to-end: 15-min TTL cache (_nhlPlayoffLeadersCache + localStorage), async fetchNHLPlayoffLeaders against /v1/skater-stats-leaders/ + /v1/goalie-stats-leaders/, buildNHLPlayoffLeadersByTeam aggregator, sync getNHLPlayoffLeadersForGame consumer, nhlPlayoffLeadersPrefetch scheduled at init, and populateSeriesContext writing game.playoffLeaders (replacing the DEFERRED placeholder)');
+
+assert('A366 — ESPN injuries feed (NHL + NBA): cache + fetcher + builder + getter + prefetch + populateSeriesContext routing',
+  // Cache + TTL constants
+  /const ESPN_INJURY_TTL\s*=\s*30\s*\*\s*60\s*\*\s*1000/.test(html) &&
+  /const _espnInjuryCache\s*=\s*\{\s*nhl:/.test(html) &&
+  // Async fetcher + endpoint + localStorage keys per sport
+  /async function fetchESPNInjuries\(sportKey\)/.test(html) &&
+  // URL constructed via template literal `${slug.sport}/${slug.league}/injuries`;
+  // verify the slug map declares both sport pairs + the /injuries path suffix.
+  html.includes("sport: 'hockey', league: 'nhl'") &&
+  html.includes("sport: 'basketball', league: 'nba'") &&
+  html.includes('/injuries') &&
+  html.includes("'field_espn_injuries_'") &&
+  // Builder + getter
+  /function buildESPNInjuriesByTeam\(json\)/.test(html) &&
+  /function getESPNInjuriesForGame\(game\)/.test(html) &&
+  // Prefetch covers both sports + scheduled at init
+  html.includes('setTimeout(espnInjuriesPrefetch') &&
+  // populateSeriesContext now routes injuries through ESPN feed (not the inert BDL pass-through)
+  html.includes('getESPNInjuriesForGame(game)') &&
+  // The OLD inert BDL pass-through inside populateSeriesContext must be gone
+  !html.includes("bdlInjuryContextSync(game.home || ''"),
+  'ESPN injuries feed must replace the operationally-inert bdlInjuryContextSync pass-through inside populateSeriesContext: defines _espnInjuryCache (nhl+nba) with 30-min TTL + localStorage, fetchESPNInjuries hitting the league-wide /injuries endpoint, buildESPNInjuriesByTeam parser, getESPNInjuriesForGame sync consumer, espnInjuriesPrefetch scheduled at init, and populateSeriesContext writing game.injuries from the new source rather than the empty BDL cache');
 
