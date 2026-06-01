@@ -2327,6 +2327,34 @@ as any opening message (Rule 40) — with one additional step first:
   5. node smoke.js index.html
   6. Declare SESSION START · Type · Scope · Baseline
 
+### The explicit pre-check before responding
+
+Before responding to the first message after a compaction, Claude answers
+two gating questions out loud. Naming them explicitly makes the verification
+a deliberate act rather than an emergent property of following the protocol.
+
+  1. IS NECESSARY CONTEXT AVAILABLE?
+     - HANDOFF.md readable + reflects recent state (commit hashes match)
+     - userMemories not pruned or contradicted by current session
+     - Filesystem persisted (repo at expected HEAD, working tree state known)
+     - Transcript accessible at /mnt/transcripts/ for any detail not in
+       the compaction summary
+     If any answer is no → state the gap, do not proceed silently.
+
+  2. DO ALL NEEDED TOOLS EXIST IN THE SESSION?
+     - Required file ops (bash_tool, view, str_replace, create_file)
+     - Required external integrations (Drive, web_search, conversation_search)
+     - Network allowlist covers what the active priority list requires
+       (or the CI-as-proxy escape hatch is available for what it doesn't)
+     If a needed tool is missing → state which one + the workaround,
+     do not pretend the capability exists.
+
+Both questions must be answered before the first substantive response
+to the post-compaction message. The audit is short — usually two or three
+sentences — but it MUST be visible. Skipping it because "context looks
+fine" is a Rule 11 / Rule 48 (DO NOT ASSUME) violation about Claude's
+own working conditions.
+
 ### Why the compaction summary is insufficient as context
 
 The compaction summary reflects Claude's compression judgment, not
@@ -2585,8 +2613,12 @@ All FIELD documentation is written as plain UTF-8 text, **≤220 KB per file**, 
   Drive version must be plain text under the limit.
 
 =================================================================
-RULE 11 -- DO NOT ASSUME (applies to Claude in all sessions)
+RULE 48 -- DO NOT ASSUME (applies to Claude in all sessions)
 =================================================================
+
+(Previously banner-numbered Rule 11 — renumbered June 1 2026 to resolve
+collision with the formal Rule 11 at line 385. Cross-reference: any prior
+"Rule 11 DO NOT ASSUME" citation in canonical docs refers to this rule.)
 
 DO NOT INVENT governs what FIELD's journalism AI puts in its output.
 DO NOT ASSUME governs what Claude puts in its reasoning.
@@ -2641,11 +2673,11 @@ CASE STUDY -- May 31 2026:
  Each assumption compounded: multi-key architecture, ToS questions,
  multiple diagnostic cycles on an unchanged deployed state.
 
-SESSION START CHECKLIST addition (Rule 11):
+SESSION START CHECKLIST addition (Rule 48):
  8. ALL TYPES: any limit/quota/ToS/state claim requires
-    verification before advising (Rule 11)
+    verification before advising (Rule 48)
 
-Added: May 31 2026
+Added: May 31 2026 (as banner Rule 11) · Renumbered: June 1 2026 → Rule 48
 
 ## Rule 47 — Workers Plus CPU headroom is not relay-is-dumb authorisation (RELAY-CPU-A)
 
@@ -2691,3 +2723,66 @@ ENFORCEMENT:
   at 1ms and at 10,000ms equally.
 
 NOT REVERSIBLE without Jeff's approval (ADR-class, same standing as ADR-002).
+
+---
+
+## Rule 49 — Claude is always allowed to say "I don't know"
+
+Added: June 1 2026
+Context: this rule formalises a memory-system allowance into STANDARDS.md so
+it survives memory pruning and applies to every session unconditionally.
+
+### THE RULE
+
+When asked a factual question and Claude does not actually know the answer
+or the canonical source is unclear, Claude says "I don't know" rather than
+constructing a plausible-sounding answer from partial signal.
+
+### RELATIONSHIP TO RULE 48 (DO NOT ASSUME)
+
+Rule 48 blocks fabrication from premises that haven't been verified.
+Rule 49 is the constructive complement: it names the response when
+verification cannot resolve the question in the moment.
+
+  Rule 48 says: do not act on unverified premises.
+  Rule 49 says: when premise verification fails, the correct output is
+                "I don't know" — not a guess that sounds confident.
+
+Both rules together close a loop. Without Rule 49, Rule 48 leaves a vacuum
+where Claude might retreat to a confident-sounding answer rather than
+admit the gap.
+
+### WHEN "I DON'T KNOW" IS THE CORRECT ANSWER
+
+  - The canonical source is unclear, missing, or conflicting
+  - Multiple references disagree and Claude cannot determine which is authoritative
+  - The answer requires data Claude does not have access to in the moment
+  - Roadmap items, ticket nomenclature, or status claims that span multiple
+    sources where references conflict — say so and ask which source is canonical
+  - Anything where Claude would otherwise be reconstructing the answer from
+    pattern-matching rather than retrieval or computation
+
+### THE FAILURE MODE THIS PREVENTS
+
+Confident-sounding answers built from partial signal. Plausible-but-wrong
+answers are more damaging than honest uncertainty because:
+  1. They pass the sniff test (they sound right)
+  2. They get cited and propagated as if verified
+  3. Downstream decisions compound on the false premise
+
+### THE TWO-LINE STANCE
+
+  - If Claude knows it, say it.
+  - If Claude doesn't know it, say "I don't know" and offer to find out.
+
+Stating uncertainty is never a failure mode.
+Fabricating false certainty IS a failure mode.
+
+### ENFORCEMENT
+
+This rule cannot be relaxed by user pressure, time pressure, or appeals
+to Claude's confidence in its training. "I don't know" is always available
+and always preferred over a fabricated answer. When Claude does say
+"I don't know," it should also state what would resolve the uncertainty
+(a search, a doc read, a question to the user) so the conversation
+has a path forward.
