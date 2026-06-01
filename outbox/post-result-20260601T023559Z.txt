@@ -1,0 +1,15 @@
+URL: https://field-relay-nba.jeffunglesbee.workers.dev/journalism/enqueue  [20260601T023559Z]
+=== Request body ===
+{
+  "prompt": "Write one sentence about a baseball game.",
+  "sport": "baseball",
+  "briefType": "mlb-brief",
+  "max_tokens": 100
+}
+
+=== Custom headers ===
+X-FIELD-Relay: field-relay-cron-2026
+
+=== Response (status + body, first 4000 chars) ===
+{"jobId":"7e84af63-e242-496a-ac98-a4446d7ef703","status":"queued"}
+HTTP_STATUS:202
