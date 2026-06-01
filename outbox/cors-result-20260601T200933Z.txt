@@ -1,0 +1,13 @@
+URL: https://site.web.api.espn.com/apis/common/v3/sports/basketball/nba/statistics/byathlete?season=2026&seasontype=3&limit=5&sort=avgPoints  [20260601T200933Z]
+HTTP/2 400 
+date: Mon, 01 Jun 2026 20:09:34 GMT
+content-type: application/json;charset=UTF-8
+access-control-allow-origin: *
+access-control-allow-methods: GET,PUT,POST,DELETE,OPTIONS,HEAD
+access-control-expose-headers: content-length,location
+via: 1.1 140f76c4dea2 (Varnish/7.5)
+cache-control: max-age=300
+vary: Accept-Encoding
+
+=== BODY (first 20000 chars) ===
+{"code":400,"message":"http://sports.core.api.espn.pvt/v2/sports/basketball/leagues/nba/seasons/{id}/types/{id}/statistics/{id}/byathlete: 400"}
