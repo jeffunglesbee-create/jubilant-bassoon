@@ -1,9 +1,10 @@
 # FIELD Handoff — June 1 2026 (JQ-5 → My Services refactor → stale EPL fix → WC2026 corrections)
 
-**jubilant-bassoon HEAD:** 8008759 · Smoke: 241/0 pre-gate · SW_VERSION 2026-06-01d
+**jubilant-bassoon HEAD:** 8008759 (code) · 86ffddf (HANDOFF) · Smoke: 241/0 pre-gate · SW_VERSION 2026-06-01d
 **field-relay-nba HEAD:** 0ae4c11 · Deploy: SUCCESS · STRUCTURAL 6 green · WOW 8 e2e verified (unchanged this session)
-**Session Doc (Drive):** 1Q35ZOtrttizfbiS2ad2TMnRy3gYJozXJT9Of-9RKCc0 (JQ-5 build segment only — does not cover later commits)
-**WC2026 Format Corrections (NEW — read before any WC build work):** 17D_EzrqoNUR4LN4OK3hr6MqKFUHitWlO72O1CWmqLks
+**Session Doc (FULL — Drive):** 1_9ECU61QSWoWFOPgH9oxsCLZ11jj1E_YqZP2lWXwPG8
+**Session Doc (JQ-5 segment only):** 1Q35ZOtrttizfbiS2ad2TMnRy3gYJozXJT9Of-9RKCc0
+**WC2026 Format Corrections (READ BEFORE ANY WC BUILD):** 17D_EzrqoNUR4LN4OK3hr6MqKFUHitWlO72O1CWmqLks
 **Spec source for this session:** Build Session List v7.27 (`1TaywA5e3NLpJLpXcQPZwDMhDG79_rXMsvIa_J_uBOfY`) TIER 4
 
 ## TIER 0 DEADLINES
