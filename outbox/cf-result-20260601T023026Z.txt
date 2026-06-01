@@ -1,0 +1,15 @@
+=== CF API Probe [20260601T023026Z] ===
+Request: GET https://api.cloudflare.com/client/v4/accounts/b57e9af57ab46c52ca9215804e689c29/storage/kv/namespaces/83edf19398da4ed184a42746cb85c9d7/values/jobs:b00d3a88-78a5-43b8-bd08-7bb475c51c56
+
+{
+    "status": "done",
+    "text": "# Revised Sentence:\n\nThe Toronto Maple Leafs defeated the Montreal Canadiens 4-2 on January 15th, 2024, with Auston Matthews scoring twice in the third period.",
+    "score": 123,
+    "retries": 2,
+    "layers_fired": [
+        "2b",
+        "3b"
+    ],
+    "ms": 3054,
+    "completedAt": 1780280975778
+}
