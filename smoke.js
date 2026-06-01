@@ -1230,9 +1230,9 @@ assert('A272 — Tier 1B: Health Panel shows Prose Quality rolling avg with best
   'Health Panel must display Prose Quality rolling avg row reading from field_jq_scores');
 
 assert('A273 — Tier 2A: EPL brief runs full Layer 2 chain (cliche, sport vocab, lead check, score)',
-  html.includes("retryWithSportVocab(prompt, text, 'soccer', CLAUDE_PROXY_URL)") &&
-  html.includes("scoreProse(text).then(s=>renderProseScore(s,'EPL Brief'))"),
-  'EPL brief must run retryWithoutCliches + retryWithSportVocab(soccer) + checkLeadSentence + scoreProse');
+  html.includes("retryWithSportVocab(prompt, text, 'soccer', CLAUDE_PROXY_URL, 'EPL Brief')") &&
+  html.includes("renderProseScore(s,'EPL Brief')"),
+  'EPL brief must run retryWithoutCliches + retryWithSportVocab(soccer, label) + checkLeadSentence + scoreProse (label arg required per JQ-ACTION-C)');
 
 assert('A274 — Tier 2B: compound game_briefs log sport vocab violations before caching',
   html.includes('Tier 2B') && html.includes('game_brief sport vocab'),
@@ -1290,10 +1290,10 @@ assert('A284 — J2 series prompt includes matchupNote and explicit stakes lead 
   'Series brief prompt must inject matchupNote and include stakes structure instruction');
 
 assert('A285 — journalism completeness: MLB has full quality chain (sportVocab+leadCheck+statVerify+scoreRetry+scoreProse)',
-  html.includes("retryWithSportVocab(prompt, text, 'baseball', CLAUDE_PROXY_URL)") &&
+  html.includes("retryWithSportVocab(prompt, text, 'baseball', CLAUDE_PROXY_URL, 'MLB Brief')") &&
   html.includes("maybeScoreRetry(prompt, text, CLAUDE_PROXY_URL, 'MLB Brief')") &&
   html.includes("renderProseScore(s,'MLB Brief')"),
-  'MLB brief must run full quality chain including baseball sport vocab enforcement');
+  'MLB brief must run full quality chain including baseball sport vocab enforcement (label arg required per JQ-ACTION-C)');
 
 assert('A286 — journalism completeness: Stakes has leadCheck+statVerify+scoreRetry+scoreProse+matchupNote',
   html.includes("maybeScoreRetry(prompt, text, CLAUDE_PROXY_URL, 'Stakes Brief')") &&
@@ -1675,3 +1675,25 @@ assert('A349 — JQ-3: getQualityTarget function defined (reads field_jq_scores,
 assert('A350 — JQ-3: getQualityTarget wired into J2 series + Night Owl prompts',
   (html.match(/getQualityTarget\(/g) || []).length >= 2,
   'getQualityTarget must be called at minimum 2 prompt-build sites (J2 series, Night Owl)');
+
+assert('A351 — JQ-ACTION-A: prose badge tappable + detail panel builder defined',
+  html.includes('function buildProseScoreDetail') &&
+  html.includes("badge.setAttribute('data-jq-label'") &&
+  html.includes("badge.classList.toggle('bps-open')") &&
+  html.includes('brief-prose-detail') &&
+  html.includes('SESSION BANNED EXT') &&
+  html.includes('ROLLING AVG'),
+  'JQ-ACTION-A: badge must be tappable (role=button, click handler), buildProseScoreDetail must be defined and surface 4 sections (score / rolling avg / phrases / session ext)');
+
+assert('A352 — JQ-ACTION-B: session quality extension row in ?debug=1 health panel',
+  html.includes('Session quality extension') &&
+  html.includes("sessionStorage.getItem('field_jq_banned_ext')") &&
+  html.includes('phrases active'),
+  "JQ-ACTION-B: buildFieldHealthPanel must read field_jq_banned_ext from sessionStorage and render a 'Session quality extension' row");
+
+assert('A353 — JQ-ACTION-C: retryWithSportVocab logs voice violations to field_jq_review',
+  html.includes("async function retryWithSportVocab(originalPrompt, text, sport, proxyUrl, label)") &&
+  html.includes("type: 'voice'") &&
+  html.includes("[JQ-ACTION-C]") &&
+  (html.match(/retryWithSportVocab\([^)]*,\s*['"][^'"]*Brief['"]\)|retryWithSportVocab\([^)]*,\s*['"]J5 Night Owl['"]\)|retryWithSportVocab\([^)]*,\s*['"]Bottom Sheet['"]\)/g) || []).length >= 4,
+  'JQ-ACTION-C: retryWithSportVocab must accept label param, write {type:voice, sport, label, phrases} to field_jq_review, and be called with a label by all 4 callers (MLB / EPL / J5 / Bottom Sheet)');
