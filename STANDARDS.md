@@ -2440,7 +2440,11 @@ Going slower is never acceptable (FIELD principle). Novel thinking is faster,
 not slower — the May 23 outage proves this.
 
 
-## Rule 39 — Sport Display Convention Registry (SPORT-DISPLAY-A)
+## Rule 50 — Sport Display Convention Registry (SPORT-DISPLAY-A)
+
+(Renumbered PM-7 June 1 2026 — was Rule 39, which collided with Rule 39
+"Infrastructure change protocol" at line 2140. Cross-reference: any prior
+"Rule 39 SPORT-DISPLAY-A" citation refers to this rule, now Rule 50.)
 
 **SPORT_DISPLAY_RULES is the single source of truth for sport identity.**
 
@@ -2459,7 +2463,11 @@ Prohibited patterns (all caused Session 9/10 bugs):
 Spec: FIELD — Unification Specs v1.0 (Drive 1YEh4YAHGyadpiaOO9LMo-w2tGZdRxj3JdU7jkBAbWYY)
 Status: Specced, not yet built. Existing code uses legacy constants until migration.
 
-## Rule 40 — Period Prefix Registry (PERIOD-PREFIX-A)
+## Rule 51 — Period Prefix Registry (PERIOD-PREFIX-A)
+
+(Renumbered PM-7 June 1 2026 — was Rule 40, which collided with Rule 40
+"Session start is unconditional" at line 2202. Cross-reference: any prior
+"Rule 40 PERIOD-PREFIX-A" citation refers to this rule, now Rule 51.)
 
 **Period prefix classification uses SPORT_PERIOD_PREFIXES sets.**
 
@@ -2476,7 +2484,12 @@ Use utility functions: `isSoccerPeriodPrefix(pp)`, `isNonSoccerPeriodPrefix(pp)`
 Spec: FIELD — Unification Specs v1.0 (Drive 1YEh4YAHGyadpiaOO9LMo-w2tGZdRxj3JdU7jkBAbWYY)
 Status: Specced, not yet built.
 
-## Rule 41 — Schedule Section Builder (SCHEDULE-BUILDER-A)
+## Rule 52 — Schedule Section Builder (SCHEDULE-BUILDER-A)
+
+(Renumbered PM-7 June 1 2026 — was Rule 41, which collided with Rule 41
+"Compaction is a session boundary, not a session end" at line 2278.
+Cross-reference: any prior "Rule 41 SCHEDULE-BUILDER-A" citation refers
+to this rule, now Rule 52.)
 
 **All buildTodaySchedule sport sections use buildSection() helper.**
 
@@ -2487,7 +2500,12 @@ Spec: FIELD — Unification Specs v1.0 (Drive 1YEh4YAHGyadpiaOO9LMo-w2tGZdRxj3Jd
 Status: Specced, not yet built.
 
 
-## Rule 42 — Game Score Uniformity (SCORE-UNIFORM-A)
+## Rule 53 — Game Score Uniformity (SCORE-UNIFORM-A)
+
+(Renumbered PM-7 June 1 2026 — was Rule 42, which collided with Rule 42
+"Five-minute novel thinking threshold for infra failures" at line 2385.
+Cross-reference: any prior "Rule 42 SCORE-UNIFORM-A" citation refers to
+this rule, now Rule 53.)
 
 **All game score lookups must use resolveGameScore(). No direct espnScores access.**
 
@@ -2612,13 +2630,13 @@ All FIELD documentation is written as plain UTF-8 text, **≤220 KB per file**, 
   fallback and migrate to Drive when writes resume. Repo-`.md` is acceptable as the fallback, but the
   Drive version must be plain text under the limit.
 
-=================================================================
-RULE 48 -- DO NOT ASSUME (applies to Claude in all sessions)
-=================================================================
+## Rule 48 — DO NOT ASSUME (applies to Claude in all sessions)
 
 (Previously banner-numbered Rule 11 — renumbered June 1 2026 to resolve
 collision with the formal Rule 11 at line 385. Cross-reference: any prior
-"Rule 11 DO NOT ASSUME" citation in canonical docs refers to this rule.)
+"Rule 11 DO NOT ASSUME" citation in canonical docs refers to this rule.
+Heading format normalized June 1 2026 PM-7 — was banner-style with `===`
+fence which caused programmatic grep checks for `^## Rule 48` to miss it.)
 
 DO NOT INVENT governs what FIELD's journalism AI puts in its output.
 DO NOT ASSUME governs what Claude puts in its reasoning.
