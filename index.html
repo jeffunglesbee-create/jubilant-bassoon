@@ -1614,6 +1614,75 @@ body::before{
 .desk-card.type-antihype{border-left:3px solid rgba(245,158,11,.7)}
 .desk-card.type-europa{border-left:3px solid #f97316}
 @media(max-width:600px){.field-desk-section{padding:0 .75rem}}
+
+/* ── FIELD Journalism (PM-19) ─────────────────────────────────────────────
+   Magazine-style vertical-read editorial section. Mobile-first base; viewport
+   layouts in dedicated media queries below. */
+.field-journalism-section{max-width:1400px;margin:0 auto 3rem;padding:0 2rem;display:block}
+.field-journalism-section[hidden]{display:none}
+.jrn-layout{display:grid;grid-template-columns:1fr;gap:1.5rem}
+.jrn-reading{max-width:680px;margin:0 auto;width:100%}
+.jrn-companion{display:none} /* Hidden by default; shown at desktop only */
+.jrn-head{padding:1rem 0 .75rem;border-bottom:1px solid var(--edge);margin-bottom:1.25rem}
+.jrn-eyebrow{font-size:.6rem;font-weight:700;letter-spacing:.18em;color:var(--gold2);opacity:.85;margin-bottom:.4rem;text-transform:uppercase}
+.jrn-title{font-family:var(--ff-display);font-size:1.85rem;font-weight:600;color:var(--white);line-height:1.2;margin:0 0 .35rem}
+.jrn-meta{font-size:.68rem;color:var(--muted);letter-spacing:.04em}
+.jrn-sep{margin:0 .35rem;opacity:.6}
+.jrn-back-pill{display:none;align-self:flex-start;padding:.4rem .75rem;background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.22);border-radius:18px;font-size:.66rem;color:var(--gold2);cursor:pointer;margin-bottom:1rem;letter-spacing:.04em;transition:.15s}
+.jrn-back-pill:hover{background:rgba(201,168,76,.14);border-color:rgba(201,168,76,.38)}
+.jrn-content{display:flex;flex-direction:column;gap:1.75rem}
+.jrn-editorial{font-size:.92rem;line-height:1.75;color:var(--fg);white-space:pre-wrap}
+.jrn-editorial-label{font-size:.55rem;font-weight:700;letter-spacing:.12em;color:var(--gold);opacity:.7;margin-bottom:.5rem;text-transform:uppercase}
+.jrn-section-divider{height:1px;background:var(--edge);margin:.5rem 0;opacity:.6}
+.jrn-series{padding:.25rem 0}
+.jrn-series-marker{font-family:var(--ff-display);font-size:1.05rem;font-weight:600;color:var(--gold2);margin-bottom:.4rem;letter-spacing:.02em}
+.jrn-series-game{font-size:.74rem;color:var(--platinum);margin-bottom:.85rem;letter-spacing:.03em}
+.jrn-series-text{font-size:.85rem;line-height:1.75;color:var(--fg);margin-bottom:.85rem}
+.jrn-series-tonight{font-size:.78rem;color:var(--text-muted,#b0b0c0);line-height:1.6;padding:.6rem .85rem;background:rgba(255,255,255,.02);border-left:2px solid var(--gold);border-radius:0 6px 6px 0}
+.jrn-series-tonight-label{font-size:.55rem;font-weight:700;letter-spacing:.1em;color:var(--gold2);opacity:.7;text-transform:uppercase;margin-right:.4rem}
+.jrn-card-link{display:inline-block;font-size:.66rem;color:var(--smoke);text-decoration:none;margin-top:.65rem;letter-spacing:.04em;transition:color .15s}
+.jrn-card-link:hover{color:var(--gold2)}
+.jrn-slate{padding:.25rem 0}
+.jrn-slate-marker{font-family:var(--ff-display);font-size:1rem;font-weight:600;color:var(--gold2);margin-bottom:.65rem;letter-spacing:.02em}
+.jrn-slate-list{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:.85rem}
+.jrn-slate-item{padding:.5rem 0;border-bottom:1px solid rgba(255,255,255,.04)}
+.jrn-slate-item:last-child{border-bottom:none}
+.jrn-slate-game{font-size:.78rem;color:var(--fg);font-weight:500;margin-bottom:.2rem}
+.jrn-slate-meta{font-size:.62rem;color:var(--muted);letter-spacing:.04em;margin-bottom:.3rem}
+.jrn-slate-brief{font-size:.74rem;line-height:1.65;color:var(--text-muted,#b0b0c0)}
+.jrn-empty{padding:2rem 0;text-align:center;color:var(--smoke);font-size:.78rem;font-style:italic}
+.jrn-archive-link{margin-top:2rem;padding-top:1.25rem;border-top:1px solid var(--edge);text-align:center}
+.jrn-archive-link a{font-size:.68rem;color:var(--smoke);text-decoration:none;letter-spacing:.06em;text-transform:uppercase}
+.jrn-archive-link a:hover{color:var(--gold2)}
+
+/* Journalism nav link — same visual as desk-jump-link, distinct icon */
+.jrn-nav-link{color:var(--platinum)}
+.jrn-nav-link.active{color:var(--gold2);background:rgba(201,168,76,.08)}
+
+/* Mobile portrait (≤600px) — reading column = viewport */
+@media(max-width:600px){
+  .field-journalism-section{padding:0 .75rem}
+  .jrn-title{font-size:1.5rem}
+  .jrn-editorial{font-size:.85rem;line-height:1.7}
+  .jrn-series-text{font-size:.8rem;line-height:1.7}
+}
+
+/* Tab-swap behavior on mobile/tablet: when journalism mode active,
+   hide schedule + desk + media; show journalism. Companion stays hidden
+   at this viewport regardless. */
+@media(max-width:1199px){
+  body.journalism-mode .main,
+  body.journalism-mode #night-owl,
+  body.journalism-mode #field-desk-section,
+  body.journalism-mode #media-section,
+  body.journalism-mode .page-divider,
+  body.journalism-mode .legend-section,
+  body.journalism-mode #ambient-panel{display:none !important}
+  body.journalism-mode #field-journalism-section{display:block}
+  body.journalism-mode #field-journalism-section[hidden]{display:block}
+  body.journalism-mode .jrn-back-pill{display:inline-block}
+  body:not(.journalism-mode) #field-journalism-section{display:none}
+}
 .betting-head{
   display:flex;align-items:center;gap:.75rem;
   margin-bottom:1.2rem;padding-bottom:.65rem;
@@ -2541,6 +2610,7 @@ body::before{
     <div id="sport-filters"></div>
     <button class="tz-pill" id="tz-pill" title="Change timezone"></button>
     <a class="desk-jump-link" href="#field-desk-section" title="FIELD Desk — editorial briefings and series previews" onclick="event.preventDefault();document.getElementById('field-desk-section')?.scrollIntoView({behavior:'smooth',block:'start'})">📰 Desk</a>
+    <a class="desk-jump-link jrn-nav-link" id="jrn-nav-link" href="#field-journalism-section" title="Journalism — Tonight's editorial reading" onclick="event.preventDefault();toggleJournalismView()">📖 Journal</a>
   </div>
 </nav>
 
@@ -2602,6 +2672,37 @@ body::before{
     <span class="field-desk-sub">Tonight's editorial</span>
   </div>
   <div id="field-desk-grid"></div>
+</section>
+
+<!-- ══ FIELD JOURNALISM (PM-19, June 2 2026) ══════════════════════════════ -->
+<!-- Magazine-style vertical-read editorial destination. Sources from same
+     sessionStorage caches as FIELD Desk (J3 brief, J2 series previews, J1
+     game briefs) but presents in editorial reading order. Mobile/tablet:
+     tab-swap with schedule via body.journalism-mode class. Laptop+: multi-
+     pane co-resident. Desktop: three-pane with companion content. -->
+<section class="field-journalism-section" id="field-journalism-section" aria-label="Tonight's editorial journalism" hidden>
+  <div class="jrn-layout">
+    <div class="jrn-reading">
+      <header class="jrn-head">
+        <div class="jrn-eyebrow">JOURNALISM</div>
+        <h1 class="jrn-title">Tonight on FIELD</h1>
+        <div class="jrn-meta">
+          <span class="jrn-date" id="jrn-date">—</span>
+          <span class="jrn-sep">·</span>
+          <span class="jrn-stack-summary" id="jrn-stack-summary">loading</span>
+        </div>
+      </header>
+      <div class="jrn-back-pill" id="jrn-back-pill" onclick="toggleJournalismView()" role="button" tabindex="0">
+        ← Back to Schedule
+      </div>
+      <div class="jrn-content" id="jrn-content">
+        <!-- Populated by renderJournalism() -->
+      </div>
+    </div>
+    <aside class="jrn-companion" id="jrn-companion" aria-label="Journalism companion content">
+      <!-- Populated by renderJournalismCompanion() at desktop viewport -->
+    </aside>
+  </div>
 </section>
 
 <!-- ══ STREAMING DISCOVERY ════════════════════════════════════ -->
@@ -9052,6 +9153,224 @@ function renderFieldDesk(){
   grid.innerHTML = cards.join('');
 }
 
+
+// ── FIELD Journalism Tab (PM-19, June 2 2026) ──────────────────────────────
+// Magazine-style vertical-read destination. Sources from same caches as
+// renderFieldDesk but presents in editorial reading order with J3 → J2 → J1
+// hierarchy and explicit section markers.
+
+function toggleJournalismView() {
+  const body = document.body;
+  const willActivate = !body.classList.contains('journalism-mode');
+  body.classList.toggle('journalism-mode', willActivate);
+  try { localStorage.setItem('field_journalism_mode', willActivate ? '1' : '0'); } catch(_) {}
+  const navLink = document.getElementById('jrn-nav-link');
+  if (navLink) navLink.classList.toggle('active', willActivate);
+  if (willActivate) {
+    renderJournalism();
+    setTimeout(() => {
+      const sec = document.getElementById('field-journalism-section');
+      if (sec) {
+        sec.removeAttribute('hidden');
+        if (window.innerWidth >= 1200) {
+          sec.scrollIntoView({behavior:'smooth',block:'start'});
+        } else {
+          window.scrollTo({top: 0, behavior: 'smooth'});
+        }
+      }
+    }, 50);
+  } else {
+    window.scrollTo({top: 0, behavior: 'smooth'});
+  }
+}
+
+function renderJournalism() {
+  const sec = document.getElementById('field-journalism-section');
+  const content = document.getElementById('jrn-content');
+  if (!sec || !content) return;
+  sec.removeAttribute('hidden');
+
+  try {
+    const tz = (typeof localTz === 'function') ? localTz() : 'America/New_York';
+    const d = new Date();
+    const dateStr = d.toLocaleDateString('en-US', { timeZone: tz, weekday:'short', month:'short', day:'numeric' });
+    const dateEl = document.getElementById('jrn-date');
+    if (dateEl) dateEl.textContent = dateStr;
+  } catch(_) {}
+
+  const sections = [];
+  let briefCount = 0;
+  let seriesCount = 0;
+  let gameBriefCount = 0;
+
+  // J3 Editorial
+  try {
+    const fbKey = typeof fieldBriefCacheKey === 'function' ? fieldBriefCacheKey() : null;
+    const fbText = fbKey ? sessionStorage.getItem(fbKey) : null;
+    if (fbText && fbText.length > 30) {
+      const safe = fbText.replace(/</g,'&lt;').replace(/>/g,'&gt;');
+      sections.push(`<article class="jrn-editorial-block">
+        <div class="jrn-editorial-label">J3 · The Editorial</div>
+        <div class="jrn-editorial">${safe}</div>
+      </article>`);
+      briefCount++;
+    }
+  } catch(_) {}
+
+  // J2 Series Previews
+  try {
+    const seriesEntries = [];
+    if (allData?.sports) {
+      (allData.sports).forEach(sec_ => {
+        (sec_.games||[]).forEach(g => {
+          if (!g.seriesRecord) return;
+          const ck = typeof seriesPreviewCacheKey === 'function' ? seriesPreviewCacheKey(g) : null;
+          const text = ck ? sessionStorage.getItem(ck) : null;
+          if (!text || text.length < 30) return;
+          let weight = 0;
+          const lg = (g.league||'').toLowerCase();
+          if (/nba finals|stanley cup final/i.test(lg)) weight = 100;
+          else if (/wcf|ecf|conference finals/i.test(lg)) weight = 80;
+          else weight = 50;
+          seriesEntries.push({ g, text, weight });
+        });
+      });
+    }
+    seriesEntries.sort((a,b) => b.weight - a.weight);
+    seriesEntries.forEach(({ g, text }) => {
+      const safe = text.replace(/</g,'&lt;').replace(/>/g,'&gt;');
+      const marker = g.league || 'PLAYOFF GAME';
+      const matchup = `${g.away||''} ${g.neutral?'vs':'@'} ${g.home||''}`;
+      const streamLabel = g.streams?.[0]?.label || '';
+      const timeStr = (typeof fmtTime === 'function') ? fmtTime(g.start_time) : '';
+      const metaParts = [timeStr ? timeStr + ' ET' : '', streamLabel].filter(Boolean);
+      let tonightHtml = '';
+      if (g._id && typeof _gameBriefCache !== 'undefined' && _gameBriefCache[g._id]) {
+        const j1 = _gameBriefCache[g._id];
+        const safeJ1 = j1.replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        tonightHtml = `<div class="jrn-series-tonight"><span class="jrn-series-tonight-label">Tonight</span>${safeJ1}</div>`;
+        gameBriefCount++;
+      }
+      sections.push(`<section class="jrn-series" data-gameid="${g._id||''}">
+        <div class="jrn-series-marker">◆ ${marker}</div>
+        <div class="jrn-series-game">${matchup}${metaParts.length?' · '+metaParts.join(' · '):''}</div>
+        <div class="jrn-series-text">${safe}</div>
+        ${tonightHtml}
+        ${g._id ? `<a class="jrn-card-link" href="#" onclick="event.preventDefault();jumpToGameCard('${g._id}')">View card →</a>` : ''}
+      </section>`);
+      seriesCount++;
+    });
+  } catch(_) {}
+
+  // J1 Regular-Season Slate
+  try {
+    if (typeof _gameBriefCache !== 'undefined') {
+      const slateItems = [];
+      const usedIds = new Set();
+      (allData?.sports||[]).forEach(sec_ => (sec_.games||[]).forEach(g => {
+        if (g.seriesRecord && g._id) {
+          const ck = typeof seriesPreviewCacheKey === 'function' ? seriesPreviewCacheKey(g) : null;
+          if (ck && sessionStorage.getItem(ck)) usedIds.add(g._id);
+        }
+      }));
+      Object.entries(_gameBriefCache).forEach(([gid, text]) => {
+        if (!text || text.length < 20) return;
+        if (usedIds.has(gid)) return;
+        let game = null;
+        (allData?.sports||[]).forEach(sec_ => (sec_.games||[]).forEach(g => { if (g._id === gid) game = g; }));
+        if (!game) return;
+        const safe = text.replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        const matchup = `${game.away||''} ${game.neutral?'vs':'@'} ${game.home||''}`;
+        const stream = game.streams?.[0]?.label || '';
+        const timeStr = (typeof fmtTime === 'function') ? fmtTime(game.start_time) : '';
+        const metaParts = [timeStr ? timeStr + ' ET' : '', stream].filter(Boolean);
+        slateItems.push(`<li class="jrn-slate-item">
+          <div class="jrn-slate-game">${matchup}</div>
+          ${metaParts.length ? `<div class="jrn-slate-meta">${metaParts.join(' · ')}</div>` : ''}
+          <div class="jrn-slate-brief">${safe}</div>
+        </li>`);
+        gameBriefCount++;
+      });
+      if (slateItems.length) {
+        sections.push(`<section class="jrn-slate">
+          <div class="jrn-slate-marker">◆ Regular-Season Slate</div>
+          <ul class="jrn-slate-list">${slateItems.join('')}</ul>
+        </section>`);
+      }
+    }
+  } catch(_) {}
+
+  if (!sections.length) {
+    content.innerHTML = '<div class="jrn-empty">Tonight\'s editorial is loading. Briefs render as the journalism pipeline completes — usually within the first minute after page load.</div>';
+  } else {
+    const interleaved = [];
+    sections.forEach((s, i) => {
+      if (i > 0) interleaved.push('<div class="jrn-section-divider"></div>');
+      interleaved.push(s);
+    });
+    interleaved.push('<div class="jrn-archive-link"><a href="#" onclick="event.preventDefault();renderJournalismArchive()">Yesterday\'s FIELD →</a></div>');
+    content.innerHTML = interleaved.join('');
+  }
+
+  const stackEl = document.getElementById('jrn-stack-summary');
+  if (stackEl) {
+    const parts = [];
+    if (briefCount) parts.push('1 editorial');
+    if (seriesCount) parts.push(seriesCount + ' series brief' + (seriesCount===1?'':'s'));
+    if (gameBriefCount) parts.push(gameBriefCount + ' game brief' + (gameBriefCount===1?'':'s'));
+    stackEl.textContent = parts.length ? parts.join(' · ') : 'briefs loading';
+  }
+}
+
+function jumpToGameCard(gameId) {
+  if (!gameId) return;
+  if (window.innerWidth < 1200 && document.body.classList.contains('journalism-mode')) {
+    toggleJournalismView();
+  }
+  setTimeout(() => {
+    const card = document.querySelector(`.game-card[data-gameid="${gameId}"]`);
+    if (card) {
+      card.scrollIntoView({behavior:'smooth', block:'center'});
+      card.style.outline = '2px solid var(--gold2)';
+      setTimeout(() => { card.style.outline = ''; }, 1400);
+    }
+  }, 100);
+}
+
+function renderJournalismArchive() {
+  const content = document.getElementById('jrn-content');
+  if (!content) return;
+  const tz = (typeof localTz === 'function') ? localTz() : 'America/New_York';
+  const today = new Date();
+  const archiveEntries = [];
+  for (let i = 1; i <= 7; i++) {
+    const d = new Date(today);
+    d.setDate(d.getDate() - i);
+    const ds = d.toLocaleDateString('en-CA', { timeZone: tz });
+    const key = 'field_brief_' + ds;
+    const text = sessionStorage.getItem(key);
+    if (text && text.length > 30) {
+      archiveEntries.push({ date: d, dateStr: ds, text });
+    }
+  }
+  if (!archiveEntries.length) {
+    content.innerHTML = `<div class="jrn-empty">No prior FIELD editorials in session storage.<br>Archive populates as you use FIELD over multiple days — the prior 7 days of editorials surface here when available.</div>
+      <div class="jrn-archive-link"><a href="#" onclick="event.preventDefault();renderJournalism()">← Back to Today</a></div>`;
+    return;
+  }
+  const cards = archiveEntries.map(e => {
+    const safe = e.text.replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    const label = e.date.toLocaleDateString('en-US', { timeZone: tz, weekday:'long', month:'long', day:'numeric' });
+    return `<article class="jrn-editorial-block">
+      <div class="jrn-editorial-label">${label}</div>
+      <div class="jrn-editorial">${safe}</div>
+    </article>`;
+  });
+  const interleaved = [];
+  cards.forEach((c, i) => { if (i > 0) interleaved.push('<div class="jrn-section-divider"></div>'); interleaved.push(c); });
+  interleaved.push('<div class="jrn-archive-link"><a href="#" onclick="event.preventDefault();renderJournalism()">← Back to Today</a></div>');
+  content.innerHTML = interleaved.join('');
+}
 
 
 // ═══════════════════════════════════════════════════════════════
@@ -15819,6 +16138,7 @@ const lazyObs=new IntersectionObserver(entries=>{
     if(e.target.id==="field-desk-section"){
       // Delay 800ms — let compound prompt + series briefs settle first
       setTimeout(renderFieldDesk, 800);
+      setTimeout(renderJournalism, 800);
     }
   });
 },{rootMargin:"800px"});  // Large margin: pre-renders betting before scroll on iPad
@@ -20163,6 +20483,7 @@ async function initFIELDBrief(sections){
     }catch(e_){
     if(typeof window._fieldErrors !== 'undefined') window._fieldErrors.push({fn:'initFIELDBrief',err:e_?.message||String(e_),ts:Date.now()});}
     setTimeout(renderFieldDesk, 400); // Cached-brief path: Desk was never triggered on reload
+    setTimeout(renderJournalism, 400);
     return;
   }
   const staticText=buildFIELDBriefStatic(sections)||'Loading tonight\'s brief\u2026';
@@ -20183,6 +20504,7 @@ async function initFIELDBrief(sections){
     if (FIELD_DEBUG) console.log('[O(1)] Brief served from relay KV — no AI call');
     if (typeof renderAmbientPanel === 'function') setTimeout(renderAmbientPanel, 50);
     setTimeout(renderFieldDesk, 300); // Relay path: Desk was never triggered here
+    setTimeout(renderJournalism, 300);
     // Still try compound for series/game_briefs (non-brief fields) — but respect delta
     const currentHash = buildJournalismContextHash(sections);
     if (currentHash === _lastJournalismHash) {
@@ -20292,6 +20614,7 @@ async function initFIELDBrief(sections){
     }
     // FIELD Desk: refresh after compound dispatch so it has all briefs available
     setTimeout(renderFieldDesk, 200);
+    setTimeout(renderJournalism, 200);
     return;
   }
 
@@ -20303,12 +20626,13 @@ async function initFIELDBrief(sections){
     sessionStorage.setItem(cacheKey,claudeText);
     // FIELD Desk: must be triggered here too — compound null path never called renderFieldDesk
     setTimeout(renderFieldDesk, 300);
+    setTimeout(renderJournalism, 300);
   } else {
     const textEl=el.querySelector('.field-brief-text');
     if(textEl){textEl.classList.remove('pending');textEl.classList.add('loaded');}
   }
   // FIELD Desk: also refresh after series queue fires (series cards populated ~3s later)
-  setTimeout(()=>{initJournalismQueue(sections);setTimeout(renderFieldDesk,500);},3000);
+  setTimeout(()=>{initJournalismQueue(sections);setTimeout(renderFieldDesk,500);setTimeout(renderJournalism,500);},3000);
 // Re-inject scores on renderAll completion — catches cards rendered after initial ESPN poll
 // Fixes: Galaxy A36 blank scores when ESPN data was already fetched before render
 if(Object.keys(espnScores||{}).length){
