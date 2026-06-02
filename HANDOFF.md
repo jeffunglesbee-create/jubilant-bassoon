@@ -1,171 +1,143 @@
-# FIELD Handoff — June 1 2026 PM-5 TYPE D (Backlog Reconciliation complete · canonical Build Backlog now lives on Drive)
+# FIELD Handoff — June 1 2026 PM-6 TYPE B (NBA playoff leaders feed shipped end-to-end · ADR-003 logged)
 
-**jubilant-bassoon HEAD:** dca9c13 (PM-4 + date framing fix; TYPE D session shipped no code) · Smoke: 241/0 pre-gate (A360–A366 green post-gate; A313/A314 known post-gate red) · SW_VERSION 2026-06-01h
-**field-relay-nba HEAD:** unchanged (0ae4c11) · NHL relay serving production traffic for /v1/skater-stats-leaders + /v1/goalie-stats-leaders since PM-3
+**jubilant-bassoon HEAD:** 5c266fa (PM-6 close: NBA playoff leaders feed + ADR-003 attribution guardrail) · Smoke: 241/0 pre-gate · A360–A368 green post-gate · A313/A314 known post-gate red · SW_VERSION 2026-06-01j
+**field-relay-nba HEAD:** 6144d17 (PM-6: /nba-stats/* route → stats.nba.com/stats/leagueLeaders; ADR-003 scope-limited to /leagueLeaders only)
 
-**🆕 CANONICAL BUILD BACKLOG (READ FIRST FOR ANY BUILD QUESTION):** Drive `1ugUh6UmeDkLR-gEH8hJPwXK2NiIrXYQY8gp2jO2p2Hk` — supersedes all priority-list build-backlog duplication. §A SHIPPED / §B IN-FLIGHT / §C SPECCED READY / §D NEEDS DECISION / §E UNSPECCED IDEAS / §F REJECTED / §G UPDATE PROTOCOL.
-**Reconciliation Spec v1.1 (CANONICAL):** Drive `1sDM2JMajjoCIg2ygLyVRn7vpB8Udu_u8bY0-tn3lo3c` — restraint filter + methodology. Supersedes v1.0 (`1g6RiKON_sCvNDiZ9mPksQ8mWjUAaNjmTVpQy7RGMBg8`).
+**🆕 ADR-003 (this session):** Drive `1XUPoayJUTh2Ki_DYXgw8uOAYZoGtpDt2c7510vGq64w` — stats.nba.com Source Acceptance. Rule 45.3 satisfied: ToS quoted with date, scope limits explicit, risks acknowledged, re-evaluation triggers documented, Jeff's explicit accept-the-risk recorded BEFORE any code wiring.
 
-**Session Doc (PM-5 TYPE D, this session — Drive):** 1po-q4yp3qFg5AXzCYvf-IazI9Q1OviyaoZu4HysjBuQ
+**CANONICAL BUILD BACKLOG (READ FIRST FOR ANY BUILD QUESTION):** Drive `1ugUh6UmeDkLR-gEH8hJPwXK2NiIrXYQY8gp2jO2p2Hk` — §D "NBA PLAYOFF LEADERS SOURCE" CLOSED by ADR-003 (option A shipped). Move to §A on next §G update pass.
+
+**Session Doc (PM-6, this session — Drive):** 1fF-5hrXThTw7cawgIxEz2rD5PussHAP7iYJV4Y8Vp-Q
+**Session Doc (PM-5 prior — Drive):** 1po-q4yp3qFg5AXzCYvf-IazI9Q1OviyaoZu4HysjBuQ
 **Session Doc (PM-4 prior — Drive):** 1QxI13vHVxN9W4Kmo0O5ABgSQPsN2qEfVaHVQ-wQsnJg
 **Session Doc (PM-3 prior — Drive):** 1lcrLKehfzdcUmKvZU-gttxTEyyp3a2zUqDGGrCpuTD4
-**Session Doc (PM-2 prior — Drive):** 1TJ4nsP43yxdDNAs5ReZhlgT0BAWVL3-9-7GnSs9bh1c
-**Session Doc (PM-1 prior — Drive):** 12CAk9NF1hytbMlJ2JIJSvVWYMMXG_gCUdmKn3E3nH60
-**Data Skrive Patent Analysis v3 (new today):** 1yCXY5AF5J1jvo_b5wCV7nzp_FwQ1SIWGJqusZ4AaVqU
-**WC2026 Format Corrections (READ BEFORE ANY WC BUILD):** 17D_EzrqoNUR4LN4OK3hr6MqKFUHitWlO72O1CWmqLks
+**ADR-003 — stats.nba.com Source Acceptance (NEW):** 1XUPoayJUTh2Ki_DYXgw8uOAYZoGtpDt2c7510vGq64w
 
 ## TIER 0 DEADLINES
 
-- **Stanley Cup G1: June 2** — VGK @ CAR (all 4 context tags now live; ESPN injuries fires for first time)
-- **NBA Finals G1: June 3** — SAS @ NYK (3 of 4 tags live; [PLAYOFF STATS:] still empty until NBA leaders feed lands)
+- **NBA Finals G1: June 3** — SAS @ NYK · **ALL FOUR context tags now live for NBA** ([PLAYOFF STATS:] fires for the first time this postseason)
+- **Stanley Cup G2: June 4** — VGK @ CAR (all four tags live since PM-4)
 - **World Cup 2026: June 11 HARD** — flip `wc26:true` in FIELD_V2_SOURCES (~5 min)
 - **USPTO provisional: ~June 25**
 
-## WHAT HAPPENED THIS SESSION (PM-4)
+## WHAT HAPPENED THIS SESSION (PM-6)
 
-User opener: "Run P1 NBA half of subtask 9, P1 NHL injury feed". Two parallel P1 targets from the PM-3 priority list. Executed SESSION START hard gate, ran 5 cors-probes, shipped ESPN injuries feed (NHL + NBA in one feed), and deferred NBA playoff leaders with documented next steps.
+User opener: "Determine session type, run NBA playoff leaders feed relay side." Resolved to TYPE B Option A from PM-4/PM-5 carry (Build Backlog §D NBA PLAYOFF LEADERS SOURCE recommendation A). Session extended via "keep going" to cover app-side wiring + attribution guardrail.
 
-### Critical finding surfaced this session
+### Key finding surfaced this session
 
-PM-2's Phase B subtask 8 NBA injury wiring was **operationally inert**. `BDL_SPORT_MAP` has been empty since May 15 2026 (per the comment at index.html line ~9034 documenting BDL free-key 404s on `/v1/injuries`). `bdlInjuryContextSync` early-returned `''` for every call. The [INJURY:] tag had **never fired with live data** until this session. The PM-2 refactor was structurally correct — it just plugged into an empty source. ESPN feed is the first live data the tag has ever seen.
+PM-4 assumed stats.nba.com required custom headers (`x-nba-stats-token`, `Referer`, `x-nba-stats-origin`) per nba_api Python convention. Probe-verified WRONG: plain curl from cloud egress returned 200 with `Access-Control-Allow-Origin: *`. The relay still sends browser-like headers as a stability hedge, but they aren't strictly required. Worth noting if future stats.nba.com endpoints are added (under a NEW Rule 45 review — see ADR-003 scope limits).
 
-### Probes run (cors-probe protocol)
+### Probes run (cors-probe protocol — 2 probes this session, 7 cumulative)
 
-Five probes this session, all without `[skip ci]`:
-- `01a741a` → `api-web.nhle.com/v1/club-stats-season/CAR` → 200 but returned season list, not injuries (wrong endpoint)
-- `2499880` → `site.api.espn.com/apis/site/v2/sports/hockey/nhl/injuries` → 200, CORS-open, full team-grouped shape ✓
-- `10ccae5` → `site.api.espn.com/apis/site/v2/sports/basketball/nba/injuries` → 200, IDENTICAL shape to NHL ✓
-- `57c0d9b` → `site.web.api.espn.com/apis/common/v3/.../statistics/byathlete?seasontype=3` → 400 (param shape wrong)
-- `4a15e1c` → `sports.core.api.espn.com/v2/.../seasons/2026/types/3/leaders` → 200 but $ref chains (~25 follow-up requests per cache refresh — too expensive)
-- `099c1dc` → `site.api.espn.com/apis/site/v2/sports/basketball/nba/leaders` → 404 (doesn't exist)
+- `c27f64b` → `stats.nba.com/stats/leagueLeaders?...&Season=2025-26&SeasonType=Playoffs&StatCategory=PTS` → 200, CORS open, 153 playoff scorers ✓
+- `c5863c6` → `field-relay-nba.jeffunglesbee.workers.dev/nba-stats/leagueLeaders?...` (through-relay end-to-end) → 200, identical shape ✓
 
-Result: 2 viable endpoints (NHL + NBA injuries via same path pattern), 3 dead-ends for NBA leaders.
+### Rule 45 source-clearance gate
 
-### ESPN injuries feed (commit 3b097a2)
+After probe verified technical viability, surfaced Rule 45 BEFORE writing code. Read `nba.com/termsofuse` via web_search, quoted the actual ToS language ("NBA Statistics may only be used... for legitimate news reporting or private, non-commercial purposes"), presented 3 concrete risks (commercial carve-out, attribution requirement, IP-ban risk), asked for explicit decision instead of silently green-lighting. Jeff response: "A1" (accept + wire). Recorded ADR-003 to Drive BEFORE any code commit.
 
-`index.html` (+177 / -34 net): inserted "ESPN Injuries Feed" block immediately before the PM-3 NHL Playoff Leaders block.
+### Code changes (three single-concern commits, Rule 7)
 
-- `const ESPN_INJURY_TTL = 30 * 60 * 1000` (30 min — injuries change slowly)
-- `const _espnInjuryCache = { nhl: {…}, nba: {…} }` module scope
-- `_espnInjurySportSlug(sportLabel)` maps `'nhl'/'hockey'` → `{key:'nhl', sport:'hockey', league:'nhl'}` and `'nba'/'basketball'` → `{key:'nba', sport:'basketball', league:'nba'}`
-- `buildESPNInjuriesByTeam(json)` flattens team-grouped response into `{ teamAbbrev → ["Player (POS) — Status / Type", …] }` with per-team cap 4; prefers `athlete.shortName` for compactness
-- `async fetchESPNInjuries(sportKey)` — memory → localStorage warm cache → inFlight dedup → 6s AbortSignal timeout → defensive parsing; serves stale on failure
-- `getESPNInjuriesForGame(game)` sync getter; NHL via `getNHLAbbrev`, NBA via `getNBAAbbrev`; returns array of `"ABBR Player (POS) — Status / Type"` lines or null
-- `espnInjuriesPrefetch()` fires both sports in parallel
-- Scheduled at init T+3200ms (200ms after `nhlPlayoffLeadersPrefetch`)
-- `populateSeriesContext`: subtask 8 block now routes through `getESPNInjuriesForGame` (replaces inert `bdlInjuryContextSync`); explanatory comment documents the BDL_SPORT_MAP-empty finding
-- SW_VERSION 2026-06-01g → 2026-06-01h
+**field-relay-nba commit `6144d17`** (+49 lines):
+- `NBA_STATS_BASE`, `NBA_STATS_HEADERS`, `NBA_STATS_CACHE_TTL=900`, `NBA_STATS_ALLOWED_PATHS=['/leagueLeaders']`, `nbaStatsAllowed()`
+- `/nba-stats/*` routing branch placed BEFORE `/nba/*` catch-all (with comment explaining the prefix-strip trap)
 
-`smoke.js` (+31 / -16): A53 (zero call sites), A363 (write pattern change), A364 (ESPN feed reference), A366 (new — full ESPN wiring assertion).
+**jubilant-bassoon commit `74aa5cd`** (+189/-7 across index.html / smoke.js / sw.js):
+- `_nbaPlayoffLeadersCache`, `_parseNBALeagueLeaders`, `buildNBAPlayoffLeadersByTeam`, `fetchNBAPlayoffLeaders`, `getNBAPlayoffLeadersForGame`, `nbaPlayoffLeadersPrefetch`
+- 4 parallel category fetches (PTS/REB/AST/FG3M), `TOP_N=30` (Castle is at array index 25)
+- `populateSeriesContext` Subtask 9 chains NHL → NBA, sets `game._playoffLeadersAttribution = 'NBA.com'`
+- `buildSeriesContextTags` inlines ` — Stats: NBA.com` into the `[PLAYOFF STATS:]` tag
+- Init prefetch scheduled at T+3100ms (between NHL 3000 and ESPN injuries 3200)
+- A367 smoke assertion (NBA leaders end-to-end wiring + attribution)
+- SW_VERSION 2026-06-01h → 2026-06-01i
+
+**jubilant-bassoon commit `5c266fa`** (+48/-5):
+- `_enforceNBAAttributionFooter(briefText, sections)` — post-process guardrail
+- Wrapped at all three FIELD Brief render paths: relay KV, compound editorial, standalone fallback
+- A368 smoke assertion (≥4 helper occurrences: 1 def + 3 calls)
+- SW_VERSION 2026-06-01i → 2026-06-01j
 
 ### Functional verification
 
-Real probe responses were truncated by cors-probe at 30K chars (mid-JSON, unparseable). Verified end-to-end against synthetic payload matching the documented shape:
-
-For Cup G1 (CAR vs VGK):
+For Finals G1 (SAS @ NYK) — verified end-to-end against real probe data:
 ```
-[ 'VGK J. Lauzon (D) — Day-to-Day / Upper body' ]
+[PLAYOFF STATS: SAS V. Wembanyama 23.2 pts; SAS S. Castle 19.2 pts;
+                NYK J. Brunson 26.9 pts; NYK O. Anunoby 19.7 pts — Stats: NBA.com]
 ```
-For Anaheim test:
-```
-[ 'ANA T. Terry (RW) — Out / Hip', 'ANA R. Gudas (D) — Out / Ankle' ]
-```
-For unknown team: `null` (graceful degradation).
-
-### NBA playoff leaders (P1 #7) — investigated, deferred
-
-Three considered paths failed cleanly; one remains uninvestigated:
-
-| Path | Result |
-|---|---|
-| ESPN core API `/types/3/leaders` | 200 but `$ref` chasing → ~25 extra HTTP requests per refresh |
-| ESPN site v2 `/leaders` | 404 doesn't exist |
-| BDL playoff endpoint | `BDL_SPORT_MAP` empty since May 15 |
-| stats.nba.com via relay (uninvestigated) | Would require route addition to field-relay-nba private repo |
-| Finals-only narrow hardcode | ADR-001 violation; carried as MVP fallback only |
-
-Decision: do not attempt within this session's budget. `game.playoffLeaders` hook in `populateSeriesContext` already reserved. Carry forward as P1 with these options documented.
+Attribution guardrail tested across 7 cases: no-NBA → unchanged · already-credited → no duplicate · missing-credit → footer appended · no-trailing-punct → period + footer · empty/null inputs → safe.
 
 ### Decisions / rules invoked
 
-- **DO NOT INVENT** — 5 probes ran before any feed code was written. Two endpoints verified working; three verified non-viable.
-- **ADR-001** — NBA playoff leaders are counters → cannot be hardcoded → carried forward as P1.
-- **"I don't know" rule** — explicit acknowledgment that NBA playoff leaders source is genuinely TBD; not invented or guessed.
-- **Pattern reuse** — ESPN_BASE already exists in production; cache shape modeled on PM-3 `_nhlPlayoffLeadersCache`.
-- **cors-probe trigger discipline** — 5 trigger commits, all without `[skip ci]`; all workflows ran cleanly.
-- **A234 budget** — maintained at 3 ungated console.log lines via line-level FIELD_DEBUG inline gating.
-- **Rule 23** — SW_VERSION bumped on functional change.
+- **Rule 45** — source-clearance gate satisfied via ADR-003 (terms quoted with date + accept-the-risk recorded BEFORE wiring)
+- **ADR-001** — counter discipline preserved (NBA leaders from feed, not hardcoded)
+- **Rule 7** — three single-concern commits
+- **Rule 23** — SW_VERSION bumped twice (h→i→j)
+- **Rule 47** — RELAY-CPU-A respected (relay = pure proxy + cache; no editorial intelligence)
+- **DO NOT INVENT** — 2 probes before any code (cors-probe protocol now 7× cumulative)
+- **"I don't know" rule** — explicit acknowledgment ADR-003 is not legal opinion; counsel review required before commercial launch
 
 ## PRIORITY LIST FOR NEXT SESSION
 
-### P0 — Live verification (now urgent: SW 2026-06-01h live; FOUR live data layers in J3 brief)
-1. **SW `2026-06-01h` active in browser**
-2. **Generate / inspect a J3 brief before Cup G1 puck drop (Tuesday June 2 evening).** Verify ALL FOUR tags fire with live data:
-   - `[COACH: …]` — live since PM-2
-   - `[HISTORICAL: …]` — live since PM-2
-   - `[INJURY: …]` — **NEW LIVE THIS SESSION** (ESPN feed; first time the tag has ever fired with real data)
-   - `[PLAYOFF STATS: …]` — live since PM-3 (NHL games only)
-3. Verify NBA injuries fire for Spurs/Knicks Finals games (NBA-side of ESPN feed exercising for the first time).
-4. Brief depth should now substantially match or exceed `r2_finals_briefs_production.md`.
+### P0 — Live verification (NBA Finals G1 tomorrow June 3)
+1. **SW 2026-06-01j active in browser**
+2. **Generate / inspect a J3 brief for NBA Finals G1.** Verify ALL FOUR tags fire with live data:
+   - `[COACH: Spurs — Johnson; Knicks — Brown]`
+   - `[HISTORICAL: Knicks' first NBA Finals since 1999...]`
+   - `[INJURY: <ESPN live feed for SAS/NYK>]` — first NBA exercise of ESPN injuries feed
+   - `[PLAYOFF STATS: ... — Stats: NBA.com]` — **NEW LIVE THIS SESSION**
+3. Verify "Stats: NBA.com" appears in brief prose (preserved by AI OR appended by guardrail)
+4. Regression check: Cup Final tags still fire NHL leaders correctly
+5. Regression check: non-NBA non-NHL games don't emit `[PLAYOFF STATS:]` (sport gate)
 
 ### P0 — TIER 0 game-day
-5. **Cup Final** each game (June 2, 4, 6, …) tests injury+leader freshness (30-min TTL injuries; 15-min TTL leaders)
-6. **NBA Finals** each game (June 3, 5, 7, …) tests NBA injury surfacing
+6. NBA Finals each game (June 3, 5, 7, …) tests NBA leader freshness (15-min TTL) + attribution rendering
+7. Cup Final each game (June 4, 6, …) tests NHL leader freshness (unchanged)
 
-### P1 — NBA playoff leaders (subtask 9 NBA half, still pending)
-7. **Decision required**: (a) add `/nba-stats/*` route to field-relay-nba private repo proxying `stats.nba.com/stats/leagueLeaders?Season=2025-26&SeasonType=Playoffs`; (b) Finals-only narrow hardcode (ADR-001 violation, MVP); (c) accept that NBA games lack `[PLAYOFF STATS:]` for this postseason.
-8. Once chosen: populate same `game.playoffLeaders` hook from NBA cache. Add A367 smoke assertion.
+### P1 — Smoke gate fix (carried from PM-3/PM-4/PM-5)
+8. Move `if (fail > 0) process.exit(1)` from line ~1040 to end of smoke.js. A361–A368 currently post-gate.
 
-### P1 — Smoke gate fix (carried)
-9. **smoke.js gate position (~15 min):** move `if (fail > 0) process.exit(1)` from line 1040 to end of file. A361–A366 currently post-gate.
+### P1 — PWA-A manifest fix (A313 + A314, carried)
+9. Split `manifest.json` icons (any + maskable) + `prefer_related_applications:false`. Spec: PWA Android Spec (Drive `1n5-HFuzQfUA5NRH2Rxizgma6fTsU2Tb-qNTEokCo46s`).
 
-### P1 — PWA-A manifest fix (A313 + A314, pre-existing)
-10. After gate fix exposes them:
-    - Split `manifest.json` icons into `any` + `maskable` purpose entries
-    - Add `"prefer_related_applications": false`
-    - Spec: PWA Android Spec (Drive `1n5-HFuzQfUA5NRH2Rxizgma6fTsU2Tb-qNTEokCo46s`)
+### P1 — STANDARDS.md duplicate-rule audit (carried PM-5, TYPE D)
+10. Four pairs of duplicate-numbered rules (39/40/41/42). Renumber-only.
 
-### P1 — STANDARDS.md duplicate-rule-numbering audit (TYPE D)
-11. Four pairs of duplicate-numbered rules (39/40/41/42). Renumber-only.
+### P1 — Documentation amendments
+11. **Update CI/Deploy Ref** to document new `/nba-stats/*` relay route (currently lists `/nba/*` only)
+12. **Add ADR-003 to STANDARDS.md ADR list** (currently lists ADR-001 + ADR-002)
+13. **Update Build Backlog Canonical v1.0** — move §D NBA PLAYOFF LEADERS to §A SHIPPED with commits `6144d17` + `74aa5cd` + `5c266fa`
+14. **Investigate PM-5 relay tracking gap** — commits `fff6e3c` + `0e9a9d9` landed outside documented sessions. Provenance unclear. Back-tag or document.
 
-### P1 — Documentation amendments (carried + new)
-12. Update 5 morning-sweep docs per session `1A7OzCh_psRGvft0hQjJMTH96OkJvkK_GZo1EDIjCCgw`
-13. **Update CI/Deploy Ref to document Phase C + WOW 8 Queues + JQ-5 + Axis 2 + Axis 3 Phase A + Axis 3 Phase B (COMPLETE) + ESPN injuries feed**
-14. Update JQ Spec close-out note
-15. **Consider documenting cors-probe protocol as a methodological pattern** (used 5x this session + 2x PM-3 = 7 successful endpoint verifications via the same workflow — pattern is mature and worth canonicalizing)
+### P1 — NBA Playoff Leaders follow-ups (not blocking but worth queuing)
+15. **Audit attribution surfaces beyond J3 Brief** — current guardrail covers FIELD Brief only. If NBA leader data appears in bottom-sheet game detail, ambient panel card, share cards, etc., those also need attribution. ADR-003 §IMPLEMENTATION NOTES has the spec.
+16. **Consider extending NBA `[PLAYOFF STATS:]` to non-Finals NBA playoff games.** Currently fires only for SAS/NYK due to `SERIES_HISTORICAL_ANCHORS` Subtask 7 scope. The leader data is league-wide; the tag-emission gate is the limit. If desired: extend `populateSeriesContext` NBA branch to fire for any NBA playoff game.
 
-### P1 — Optional carryovers
-16. Extend `NBA_HEAD_COACHES` to MIN/NOP/UTA when verifiable
-17. **BDL milestone decision (now informed)** — given the operationally-inert finding, removing BDL entirely may be cleaner than upgrading the plan
+### P1 — GREEN-path successor (carried from §C Build Backlog)
+17. Investigate paid NBA stats sources (Sportradar NBA, Stats Perform, BDL GOAT $9.99/mo) as licensed replacement. Goal: swap before USPTO non-provisional triggers ADR-003 re-evaluation. Relay architecture is swap-ready — only `NBA_STATS_BASE` + headers change required.
 
 ### P0 — Hardcoded calendar flip
-18. **June 11 HARD:** flip `wc26:true` in FIELD_V2_SOURCES (~5 min)
+18. **June 11 HARD** — flip `wc26:true` in FIELD_V2_SOURCES (~5 min)
 
 ### P2 — USPTO provisional prep (~June 25)
 19. Patent narrative now includes:
-    - WOW 6 + Phase C + WOW 8 + JQ-3 + JQ-5 + Axis 2 + Axis 3 Phase A + **Axis 3 Phase B COMPLETE + ESPN injury swap-in demonstrating single-integration-point architecture**
-    - Data source swapped (BDL → ESPN) without touching `buildSeriesContextTags`, `populateSeriesContext`'s consumer signature, or any prompt-builder code — a clean methodological signal
-    - cors-probe-first methodology as a verifiable DO-NOT-INVENT discipline
+    - Full Phase B (all 9 subtasks live for both NHL and NBA)
+    - ESPN injuries swap-in (PM-4) demonstrating single-integration-point architecture
+    - NBA playoff leaders (PM-6) demonstrating new-source acceptance discipline
+    - **ADR-003 attribution discipline** — documented Rule 45 acceptance pattern with prompt-level inlining + post-process guardrail (defense-in-depth attribution)
+    - cors-probe-first methodology as verifiable DO-NOT-INVENT discipline (7 successful endpoint verifications cumulative)
 
-### P2 — Build backlog
-
-**Authoritative source: Build Backlog Canonical v1.0 (Drive `1ugUh6UmeDkLR-gEH8hJPwXK2NiIrXYQY8gp2jO2p2Hk`).** Do not re-create build-backlog lines in this HANDOFF — items live there with provenance and restraint-check status.
-
-Highlights to surface from §C READY TO BUILD:
-
-20. **WC2026 mini-build (~35 min, before June 11)** — F09 REST Countries (10 min) + F08 Nager.Date Holidays (25 min). Both PASS all restraints. Both have clean Drive specs (Free API Opportunities `1zy9YpTP1wQg9VHIxMush-fQE2Gg9jICyNpsOgHpDvT4`). Material WC2026 brief uplift day one of tournament.
-21. **Voice Positioning Moves 1+2 (NEW from Data Skrive analysis)** — Loosen TIME-PERIOD ANCHORING + add few-shot exemplars showing FIELD voice. Awaits Jeff approval of Exemplar B v2 (see §D). Rationale: "FIELD Brief reads like Data Skrive output. Voice IS the differentiator. Patent clearance ≠ competitive differentiation."
+### P2 — Build backlog highlights
+20. **WC2026 mini-build (~35 min, before June 11)** — F09 REST Countries + F08 Nager.Date Holidays. Both PASS restraints, both have clean Drive specs.
+21. **Voice Positioning Moves 1+2** (pending Exemplar B v2 approval).
 22. `[MOBILE-INTEL-A]` (HIGHEST priority per v7.27) — Right Now mobile hero card (~50 min). Prereq `[PWA-A]`.
-23. NW-series + Wow #29/#36/#39 + WOW 3/5/9/10 + Pipeline C + J-Arch A-D + non-sports APIs (YouTube ~45min, Podcast Index ~30min, AirNow ~20min, Web Speech ~15min, Preference Sync QR ~45min) — all in §C.
 
 ### P2 — Decisions waiting on Jeff (§D in canonical)
-
-24. **SeatGeek affiliate revenue link** — ticket marketplace vs Rule 33 "no referral paths to sportsbooks" wording. Recommend Option A (build without affiliate first) as posture.
-25. **NBA playoff leaders source** — 3 options (relay route addition, narrow Finals hardcode w/ ADR-001 violation, accept gap). Recommend Option A after Rule 45 source-clearance step.
-26. **BDL milestone vs removal** — operationally inert per PM-4 finding. Recommend Option B (remove).
-27. **F07 TheSportsDB attribution terms read** — Rule 45 gate required before wiring.
-28. **F12 Google Trends alpha stability** — Rule 45 + Rule 48 Class B verification required before build.
-29. **Voice Positioning Exemplar B v2 approval** — pending; required before Moves 1+2 ship.
+23. SeatGeek affiliate revenue link — A vs B
+24. BDL milestone vs removal (recommend B per PM-4 finding)
+25. F07 TheSportsDB attribution terms read (Rule 45 gate)
+26. F12 Google Trends alpha stability (Rule 45 + Rule 48 Class B)
+27. Voice Positioning Exemplar B v2 approval (Moves 1+2 blocked)
 
 ### P3 — Deferred console errors (carried)
 - `/espn-summary/.../nba/summary` 404
@@ -175,27 +147,25 @@ Highlights to surface from §C READY TO BUILD:
 
 ## STATE INVARIANTS AT END OF SESSION
 
-- jubilant-bassoon: smoke 241/0 pre-gate, deploys SUCCESS on `3b097a2` (ESPN injuries feed)
-- field-relay-nba: unchanged this session
+- jubilant-bassoon: smoke 241/0 pre-gate, deploys SUCCESS on `5c266fa`
+- field-relay-nba: deploys SUCCESS on `6144d17`
 - Pre-existing post-gate reds: A313, A314 (PWA-A) — hidden by gate position
-- Post-gate greens: **A360, A361, A362, A363, A364, A365, A366** (Phase A scaffolding + four Phase B subtasks + ESPN injuries feed)
-- SW_VERSION 2026-06-01h live
-- **ESPN injuries feed end-to-end** — covers BOTH NHL and NBA via single league-wide endpoint pattern:
-  - `_espnInjuryCache` (nhl + nba) with 30-min TTL + localStorage + inFlight dedup
-  - `fetchESPNInjuries` → `site.api.espn.com/apis/site/v2/sports/{hockey,basketball}/{nhl,nba}/injuries`
-  - `buildESPNInjuriesByTeam` parses team-grouped response into per-team line arrays
-  - `getESPNInjuriesForGame` sync consumer in `populateSeriesContext`
-  - `espnInjuriesPrefetch` scheduled at init T+3200ms (parallel both sports)
-- **bdlInjuryContextSync** function retained for backward compatibility with **ZERO live call sites** (A53 asserts this invariant)
-- Phase B remains COMPLETE; NHL playoff leaders (subtask 9) from PM-3 unchanged
-- NBA playoff leaders hook (`game.playoffLeaders` for NBA) reserved for future feed wiring
-- Single integration point preserved: `populateSeriesContext(g)` → `game.{coaches,historical,injuries,playoffLeaders}` → `buildSeriesContextTags` → `[COACH:], [HISTORICAL:], [INJURY:], [PLAYOFF STATS:]` tags
-- ADR-001 invariant preserved: counters from feed (injuries, playoff leaders), STABLE data hardcoded (coaches, historical anchors)
-- cors-probe protocol exercised 5× this session, 7× cumulative across PM-3 + PM-4 — pattern is mature
-- 5 new cors-probe results in outbox/ (200339Z, 200534Z, 200655Z, 200813Z, 201234Z, 201049Z)
+- Post-gate greens: **A360, A361, A362, A363, A364, A365, A366, A367, A368** (Phase A scaffolding + four Phase B subtasks + ESPN injuries + NBA playoff leaders + ADR-003 attribution guardrail)
+- SW_VERSION `2026-06-01j` live
+- **NBA Playoff Leaders feed end-to-end** — covers both relay-side and app-side:
+  - Relay `/nba-stats/leagueLeaders` route (NBA_STATS_HEADERS, 900s TTL, /leagueLeaders only)
+  - App `_nbaPlayoffLeadersCache` (15-min TTL + localStorage + inFlight dedup)
+  - `fetchNBAPlayoffLeaders` → 4-category parallel fetch
+  - `_parseNBALeagueLeaders` + `buildNBAPlayoffLeadersByTeam` (TOP_N=30, 4-per-team cap)
+  - `getNBAPlayoffLeadersForGame` sync consumer
+  - `nbaPlayoffLeadersPrefetch` scheduled at init T+3100ms
+- **ADR-003 attribution at three layers**:
+  - `populateSeriesContext` sets `game._playoffLeadersAttribution = 'NBA.com'`
+  - `buildSeriesContextTags` inlines ` — Stats: NBA.com` into `[PLAYOFF STATS:]` tag
+  - `_enforceNBAAttributionFooter` post-process guardrail wraps all three FIELD Brief render paths
+- ADR-003 logged to Drive `1XUPoayJUTh2Ki_DYXgw8uOAYZoGtpDt2c7510vGq64w` BEFORE any code wiring
 - All prior session state preserved:
-  - PM-3 carry: Phase B subtask 9 NHL feed live
-  - PM-2 carry: Phase B subtasks 6+7+8 live
-  - PM-1 carry: Axis 2 + Axis 3 Phase A
-  - AM carry: JQ-5, JQ-ACTION-A/B/C, prose rules, WC2026 corrections
-- Brief draft artifacts (`r2_finals_briefs.md` + `r2_finals_briefs_production.md`) from PM-1 — production-shape draft now FULLY reproducible by live pipeline with all four context layers populated for NHL games (NBA games still missing [PLAYOFF STATS:])
+  - PM-5 carry: ESPN injuries feed (NHL + NBA), Phase B subtasks 6+7+8
+  - PM-4 carry: ESPN injuries feed routing fix
+  - PM-3 carry: NHL playoff leaders feed (api-web.nhle.com)
+  - PM-2 carry: Axis 3 Phase A + B scaffolding
