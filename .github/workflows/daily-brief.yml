@@ -281,7 +281,10 @@ jobs:
       - name: Check SW_VERSION
         id: sw
         run: |
-          TODAY=$(date -u +%Y-%m-%d)
+          # PM-9: ET, not UTC. Deploy-gate stamps SW_VERSION in ET, so the
+          # consistency check must compare against ET too — otherwise the
+          # daily email reports STALE versus a UTC date that doesn't match.
+          TODAY=$(TZ='America/New_York' date +%Y-%m-%d)
           SW=$(grep -oP "SW_VERSION = '\K[0-9-]+" index.html | head -1 || echo "unknown")
           if [ "$SW" = "$TODAY" ]; then
             STATUS="OK ($SW)"

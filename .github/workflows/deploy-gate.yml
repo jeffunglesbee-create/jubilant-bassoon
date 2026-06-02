@@ -48,14 +48,21 @@ jobs:
 
       - name: Sync SW_VERSION to deploy date
         run: |
-          DEPLOY_DATE=$(date -u +%Y-%m-%d)
+          # PM-9 (June 1 2026): use America/New_York (Eastern Time) instead
+          # of UTC. The deploy gate runs whenever a commit pushes; if that
+          # happens after midnight UTC but before midnight ET, the previous
+          # behavior stamped the NEXT calendar day onto SW_VERSION while the
+          # user (and product surfaces) were still on the PREVIOUS calendar
+          # day. Result: Health Panel showed "2026-06-02" at 10pm ET on
+          # June 1. ET tracks the product's local day.
+          DEPLOY_DATE=$(TZ='America/New_York' date +%Y-%m-%d)
           CURRENT=$(grep "^const SW_VERSION" sw.js | grep -o "'[^']*'" | tr -d "'")
           SUFFIX=$(echo "$CURRENT" | grep -o '[a-z]$' || echo "a")
           NEW_VERSION="${DEPLOY_DATE}${SUFFIX}"
           sed -i "s/const SW_VERSION *= *'[^']*'/const SW_VERSION = '${NEW_VERSION}'/" sw.js
           # Also sync index.html so A190 (sw.js === index.html) passes
           sed -i "s/const SW_VERSION = '[^']*'/const SW_VERSION = '${NEW_VERSION}'/" index.html
-          echo "✅ SW_VERSION synced to ${NEW_VERSION} in sw.js + index.html"
+          echo "✅ SW_VERSION synced to ${NEW_VERSION} in sw.js + index.html (ET)"
 
       - name: Fast smoke (smoke.js only)
         run: |
