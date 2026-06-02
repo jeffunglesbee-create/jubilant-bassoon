@@ -2035,15 +2035,15 @@ assert('A377 — Tier A FIELD_FEATURES dated entries present',
 assert('A378 — JQ Layer 2f: hasWireCopy detector + retryWithoutWireCopy retry function present',
   html.includes('function hasWireCopy(text)') &&
   html.includes('async function retryWithoutWireCopy(originalPrompt, text, proxyUrl)') &&
-  // Three pattern families (verb+num, leads/enters+with+num, sits at+num)
-  html.includes('verbNumRe = /\\b(holds|carries|brings|maintains|owns|posts|averages|averaging)') &&
-  html.includes('ledWithRe = /\\b(leads|enters?\\s+for|enters?)') &&
-  html.includes('sitsAtRe = /\\bsits\\s+at\\s+') &&
+  // Three pattern families with gerund extension (PM-18 Item B)
+  html.includes('verbNumRe = /\\b(holds?|holding|carries|carrying|brings?|bringing|maintains?|maintaining|owns?|owning|posts?|posting|averages?|averaging)') &&
+  html.includes('ledWithRe = /\\b(leads?|leading|enters?\\s+for|entering\\s+for|enters?|entering)') &&
+  html.includes('sitsAtRe = /\\b(sits|sitting)\\s+at\\s+') &&
   // Retry prompt names the six Move E1 patterns explicitly
   html.includes('appositive') && html.includes('possessive compound') &&
   html.includes('prepositional embed') && html.includes('parenthetical') &&
   html.includes('threshold/collective') && html.includes('punctuation'),
-  'hasWireCopy must detect three pattern families (stat-verb+num, leads/enters+with+num, sits at+num). retryWithoutWireCopy must reference the six Move E1 patterns by name so the retry prompt teaches the rewrite rather than just blocking the verb');
+  'hasWireCopy must detect three pattern families with both indicative AND gerund forms (PM-18 closed gap: model routed around indicative-only ban with -ing forms). retryWithoutWireCopy must reference the six Move E1 patterns by name so the retry prompt teaches the rewrite rather than just blocking the verb');
 
 assert('A379 — JQ Layer 2f: retryWithoutWireCopy wired into J3 + J2 + compound brief retry chains',
   // J3 standalone path (fetchFIELDBriefFromClaude)

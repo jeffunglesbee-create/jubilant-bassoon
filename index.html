@@ -16742,6 +16742,60 @@ function getQualityTarget(sport) {
   } catch(_) { return ''; }
 }
 
+// ── Series State Clause (PM-18, June 2 2026 — Item A) ───────────────────────
+// Runtime-computed prompt clause that defines allowed/forbidden narrative
+// language by current series state. Closes the Game-1 narrative-hallucination
+// gap diagnosed June 2 PM-18 audit (4:31pm screenshot): the bare "Stakes: 0-0"
+// in J2/compound prompts was being interpreted by the model as open canvas
+// for inventing must-win/momentum/slipping-away drama that doesn't exist yet
+// in a 0-0 series. This clause explicitly tells the model what NOT to write
+// per state.
+//
+// Wired into: J2 series preview, buildCompoundPrompt (compound editorial
+// brief + game_briefs section). Per-game game_briefs receive it via the
+// game-line emission since the model sees per-game seriesRecord directly.
+//
+// IT IS POSSIBLE to constrain language by state — the v3 exemplars
+// (Exemplar A is literally a NBA Finals Game 1 done right) show this works
+// when the model uses them. The fix isn't better examples; it's state-aware
+// constraints that name the default-mode register as forbidden under the
+// actual game state.
+function buildSeriesStateClause(g) {
+  if (!g) return '';
+  const rec = (g.seriesRecord || '').trim();
+  const s = g._series || {};
+  // Game 1, 0-0 series — NO elimination, NO must-win, NO momentum yet
+  if (rec === '0-0' || rec === '' || /\bG1\b|Game\s*1\b/i.test(g.league || '')) {
+    return [
+      'SERIES STATE: Game 1 of the series, 0-0. NO ELIMINATION STAKES, NO MUST-WIN, NO MOMENTUM, NO SLIPPING AWAY.',
+      'FORBIDDEN narrative language at 0-0: "must-win", "season on the line", "championship dreams slipping",',
+      '  "series momentum", "tighten their grip on [Cup/title]", "desperate", "do-or-die", "save the series",',
+      '  "hanging in the balance", "high-stakes collision". These imply stakes that do not exist yet.',
+      'The drama IS: the matchup itself — players, styles, historical context between these specific teams,',
+      '  documented quotes, prior playoff history. NOT the series state, which is neutral at 0-0.',
+      'Bulletin-board material (player or coach quotes, documented feuds, "haven\'t forgotten" claims) is',
+      '  allowed ONLY if it appears in the data above as a direct quote or documented fact. Do not invent',
+      '  motivation, beef, or psychological narratives without a documented source.',
+    ].join('\n');
+  }
+  // Game 7 — winner-take-all
+  if (s.deciding || /\bG7\b|Game\s*7\b/i.test(g.league || '')) {
+    return 'SERIES STATE: Game 7, winner-take-all. Elimination IS the stake for both teams. "Series decider", "winner-take-all", "season on the line" all appropriate.';
+  }
+  // Elimination game
+  if (s.homeElim || s.awayElim) {
+    const trailing = s.homeElim ? (g.home || 'home team') : (g.away || 'away team');
+    return `SERIES STATE: ELIMINATION GAME. ${trailing} faces elimination. "Must-win" / "season on the line" appropriate for ${trailing} ONLY — opponent is in control.`;
+  }
+  // Series clinch possible
+  if (s.homeClinch || s.awayClinch) {
+    const leader = s.homeClinch ? (g.home || 'home team') : (g.away || 'away team');
+    return `SERIES STATE: ${leader} can clinch tonight. Opponent faces elimination.`;
+  }
+  // Mid-series — tension proportional to deficit
+  return `SERIES STATE: ${rec} series, mid-series. Drama is proportional — no must-win framing unless one team trails 0-2 or 0-3. Focus on the tactical adjustments from prior games if data permits.`;
+}
+
 // ── Active Prompt Evolution — session-layer BANNED_PHRASES extension ────────
 // Reads field_jq_review (low-score phrase queue) and field_jq_scores (rolling avg).
 // If a brief type has averaged < 45 over its last 5 scored briefs AND the review
@@ -16811,15 +16865,18 @@ function hasCliche(text){
 function hasWireCopy(text){
   if(!text) return [];
   const hits = new Set();
-  // (1) stat-verb + (article)? + number-or-record
-  const verbNumRe = /\b(holds|carries|brings|maintains|owns|posts|averages|averaging)\s+(?:a\s+|an\s+|the\s+)?(?:\d[\d.,]*|\d+[-–]\d+(?:[-–]\d+)?)\b/gi;
+  // (1) stat-verb + (article)? + number-or-record. Gerund forms included to
+  //     close the 'holding a 53-22-7 record' evasion route observed PM-18 audit
+  //     (4:31pm screenshot). The model routes around indicative-only bans by
+  //     using -ing forms; detection must match both.
+  const verbNumRe = /\b(holds?|holding|carries|carrying|brings?|bringing|maintains?|maintaining|owns?|owning|posts?|posting|averages?|averaging)\s+(?:a\s+|an\s+|the\s+)?(?:\d[\d.,]*|\d+[-–]\d+(?:[-–]\d+)?)\b/gi;
   let m;
   while ((m = verbNumRe.exec(text)) !== null) hits.add(m[0].trim());
-  // (2) leads|enters [for]? + 1-3 words + with + (article)? + number-or-record
-  const ledWithRe = /\b(leads|enters?\s+for|enters?)\s+(?:\w+\s+){1,3}with\s+(?:a\s+|an\s+|the\s+)?(?:\d[\d.,]*|\d+[-–]\d+(?:[-–]\d+)?)\b/gi;
+  // (2) leads/leading|enters/entering [for]? + 1-3 words + with + (article)? + number-or-record
+  const ledWithRe = /\b(leads?|leading|enters?\s+for|entering\s+for|enters?|entering)\s+(?:\w+\s+){1,3}with\s+(?:a\s+|an\s+|the\s+)?(?:\d[\d.,]*|\d+[-–]\d+(?:[-–]\d+)?)\b/gi;
   while ((m = ledWithRe.exec(text)) !== null) hits.add(m[0].trim());
-  // (3) sits at + (article)? + number
-  const sitsAtRe = /\bsits\s+at\s+(?:a\s+|an\s+|the\s+)?(?:\d[\d.,]*|\d+[-–]\d+)\b/gi;
+  // (3) sits at|sitting at + (article)? + number
+  const sitsAtRe = /\b(sits|sitting)\s+at\s+(?:a\s+|an\s+|the\s+)?(?:\d[\d.,]*|\d+[-–]\d+)\b/gi;
   while ((m = sitsAtRe.exec(text)) !== null) hits.add(m[0].trim());
   return [...hits];
 }
@@ -17729,6 +17786,7 @@ function buildCompoundPrompt(sections) {
       `- ${g.away||''} ${g.neutral?'vs':'@'} ${g.home||''}`,
       `  [LEAGUE: ${_leagueTag}]`,
       g.seriesRecord ? `  Series: ${g.seriesRecord}` : '',
+      g.seriesRecord ? `  [STATE CLAUSE] ${buildSeriesStateClause(g).replace(/\n/g, ' ')}` : '',
       // Story Engine: live status line gives AI cleaner narrative context than raw scores
       (()=>{try{const _bsc=classifySport(g,null);const _bsyn=findESPNScore?.(g);if(_bsyn?.state==='in'){const _bn=computeGameNarrative(g,_bsyn,_bsc);return _bn.statusLine?`  Live: ${_bn.statusLine} (${_bn.scoreline} ${_bn.periodLabel?.replace(/<[^>]+>/g,'')||''})`.trim():'';}return '';}catch(e_){return ''}})(),
       // Item 1: ESPN in-game leaders — injected automatically, zero extra calls
@@ -18107,6 +18165,7 @@ async function fetchSeriesPreviewFromClaude(g){
     'Write a FIELD Series Brief for this playoff game.',
     'Home: '+g.home+'. Away: '+g.away+'.'+(g.venue?' Venue: '+g.venue+'.':''),
     'Series: '+(g.seriesRecord||'')+'. Stakes: '+stakes+'.'+(gameNum?' Tonight is '+gameNum+'.':''),
+    buildSeriesStateClause(g),
     g.matchupNote?'Context: '+g.matchupNote:'',
     g.journalNote&&g.journalNote!==g.matchupNote?'Series history: '+g.journalNote:'',
     g.league&&!g.matchupNote?'League: '+g.league+'.':'',
