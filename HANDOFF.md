@@ -1,90 +1,106 @@
-# FIELD Handoff — June 2 2026 PM-11 TYPE B (Tier 1 plan staged)
+# FIELD Handoff — June 2 2026 PM-13 TYPE B (Tier 1 MCP LIVE)
 
-**jubilant-bassoon HEAD:** 61dd45c (HANDOFF only — no code changes this session) · Smoke: 367/0 baseline carried forward from PM-10 · SW_VERSION source `2026-06-02a`
-**field-relay-nba HEAD:** 6144d17 (unchanged since PM-6)
+**jubilant-bassoon HEAD:** 94e8ab3 (PM-12 HANDOFF commit — no further code changes this session) · Smoke: 367/0 · SW_VERSION source `2026-06-02a`
+**field-relay-nba HEAD:** 0a806c5 (MCP tools added — read_handoff, write_handoff, get_head_sha + hardened auth gate)
 
-**This session closed:** TYPE B research/architecture session (RESTRICTED — no code). Produced a complete, verified Tier 1 MCP-on-relay build plan. No commits to jubilant-bassoon or field-relay-nba. Tier 3 memory anchor protocol was committed earlier in the same conversation (memory edit #30).
+**This session closed:** TYPE B build session. Tier 1 MCP-on-relay is now LIVE and verified end-to-end. Architectural pivot mid-session: workers.dev incompatibility with Cloudflare Access self-hosted enforcement confirmed empirically, fell back to bearer-token auth (Plan B2 from PM-11 risk matrix). MCP endpoint, three new tools, and authentication all working through the `cf-api-probe.yml` + `post-probe.yml` test harness from sandbox.
 
-**Session Doc (this session — Drive):** see Tier 1 build plan below
-**Tier 1 MCP-on-Relay Build Plan (Drive):** `1MrExWxXJRnaAAIeWD4H6HW2jLLEDyeZ-zIk4pf7Gzwg` — READ BEFORE OPENING NEXT TYPE B BUILD SESSION
-**Session Doc (PM-10 prior — Drive):** 1jxcLmCk4yfi22qgJWIds2F0v7j2RJdzu1CC1UxOv1Lk
-**Session Doc (PM-9 prior — Drive):** 1r1Msf9g8QD7uV2wSql6qK_ydFZJTcis3x8Fp10sQ1gk
+**Session Doc (this session — Drive):** see TIER 1 MCP BUILD section below
+**Tier 1 MCP-on-Relay Build Plan (Drive — historical reference):** `1MrExWxXJRnaAAIeWD4H6HW2jLLEDyeZ-zIk4pf7Gzwg`
+**Session Doc (PM-12 prior — Drive):** 1CdHRgmzb8j12IudVU0470ZdZY6X4Z8LVT5YOppLv7KQ
+**Session Doc (PM-11 prior — Drive):** see Tier 1 Build Plan link
 **Data Skrive Patent Analysis v3:** 1yCXY5AF5J1jvo_b5wCV7nzp_FwQ1SIWGJqusZ4AaVqU
 **CANONICAL BUILD BACKLOG (READ FIRST):** `1ugUh6UmeDkLR-gEH8hJPwXK2NiIrXYQY8gp2jO2p2Hk`
 
-## TIER 0 DEADLINES (unchanged from PM-10)
+## TIER 0 DEADLINES (unchanged from PM-12)
 
-- **NBA Finals G1: TONIGHT (June 3 8:30pm ET, ABC)** — first live test of Voice Positioning v3
-- **Stanley Cup G1: TONIGHT (June 2 8pm ET, ABC)** — first live SCF test
+- **Stanley Cup G1: TONIGHT (June 2 8pm ET, ABC)** — first live SCF test of Voice Positioning v3
+- **NBA Finals G1: TOMORROW (June 3 8:30pm ET, ABC)** — first Finals test of v3
 - **Stanley Cup G2: June 4**
 - **World Cup 2026: June 11 HARD**
 - **USPTO provisional: ~June 25**
 
-## WHAT HAPPENED THIS SESSION (June 2 PM-11 TYPE B)
+## WHAT HAPPENED THIS SESSION (June 2 PM-13 TYPE B)
 
-Research-only session. Started as Tier 1 build session, deliberately
-de-escalated to RESTRICTED after verifying that key implementation details
-would have been fabricated without first reading the canonical Cloudflare
-sources.
+### Cloudflare Access experiment + pivot
 
-Concrete work product: complete file-by-file build plan written to Drive
-(1MrExWxXJRnaAAIeWD4H6HW2jLLEDyeZ-zIk4pf7Gzwg). Plan covers:
+PM-11's build plan recommended Cloudflare self-hosted Access for MCP authentication. Implementation walkthrough with Jeff in CF dashboard completed: Zero Trust enabled (team `shrill-thunder-28e6`), self-hosted Access app created at `field-relay-nba.jeffunglesbee.workers.dev` with Allow Jeff policy, AUD tag captured. Live enforcement test failed — workers.dev URLs are not enforceable via self-hosted Access in this account configuration. Confirmed empirically: /health returns 200 (worker responds directly), /mcp also returned worker output, indicating Access was not intercepting at the edge.
 
-  - Architectural decision (self-hosted Access, not Access for SaaS) with rationale and source citations
-  - Exact MCP tools to expose (read_handoff, write_handoff, get_head_sha)
-  - Jeff's Cloudflare dashboard prerequisites (Zero Trust, IdP, Access app, AUD/TEAM_DOMAIN extraction)
-  - File-by-file changes to field-relay-nba: new package.json, new src/mcp-server.js (~200 lines with full JWT validation skeleton), modifications to src/index.js, wrangler.toml, and CI workflow
-  - Five-phase deploy sequence (local prep → verify prereqs → auth-disabled sanity deploy → enable auth → claude.ai connector)
-  - 8 known risks with mitigations
-  - Rollback procedure
-  - Post-build verification checklist
-  - 10 source URLs verified June 2 2026
+Architectural pivot to Plan B2: bearer-token auth inside the worker code, no Cloudflare Access dependency. CF Access app deleted by Jeff via dashboard. Auth scope on CF API token does not currently include Access management; left for future automation work.
 
-Verified facts (not assumed):
+### Tier 1 MCP build (field-relay-nba commit 0a806c5)
 
-  - Cloudflare publishes two MCP-auth patterns; "Self-hosted application" is the recommended one
-  - JWT validation pattern uses jose npm package: `createRemoteJWKSet` + `jwtVerify(token, JWKS, { issuer, audience })`
-  - The relay's existing `global_fetch_strictly_public` flag does NOT block fetches to cloudflareaccess.com (different zone)
-  - field-relay-nba currently has no package.json — adding one requires also adding `npm ci` to the CI workflow
+Discovered the relay already had a partial /mcp endpoint at src/index.js:2427 implementing MCP protocol 2025-03-26 (Streamable HTTP, JSON-RPC 2.0) with 5 tools: get_ci_status, get_smoke_count, get_deploy_status, get_live_scores, get_espn_game. Auth gate existed but was permissive (skipped if FIELD_MCP_SECRET unset, leaving the endpoint wide open).
 
-Unverified / flagged for in-build resolution:
+Three HANDOFF tools added to the existing handler:
+- **read_handoff**: GET /repos/.../contents/HANDOFF.md → returns content + SHA
+- **write_handoff**: PUT to GitHub Contents API → commit message auto-prefixed with [skip ci]
+- **get_head_sha**: GET /repos/.../git/refs/heads/main → returns current HEAD SHA
 
-  - claude.ai's custom MCP connector OAuth discovery against Cloudflare Access end-to-end. If it fails, fallback is the Access for SaaS path (heavier, but explicitly supported by claude.ai per CF docs)
-  - Exact MCP TypeScript SDK API surface at install time (minor naming may have shifted; verify when npm-installed)
+Repo and path hardcoded in worker code (no path-traversal surface). Auth gate hardened to default-deny: missing FIELD_MCP_SECRET now returns 503 instead of bypass.
+
+CI workflow (deploy.yml) updated to wire two worker secrets on every deploy:
+- FIELD_MCP_SECRET (newly generated 64-char hex) sourced from GH Actions secret FIELD_MCP_SECRET
+- GITHUB_PAT sourced from GH Actions secret RELAY_GH_PAT (renamed because GitHub reserves GITHUB_* prefix for its own secrets)
+
+Both GH secrets set via PyNaCl from sandbox.
+
+### End-to-end verification via post-probe.yml on jubilant-bassoon
+
+Three test probes confirmed:
+1. POST /mcp with no Authorization → HTTP 401 {"error":"Unauthorized"}
+2. POST /mcp tools/list with bearer → HTTP 200, JSON-RPC response with all 8 tools
+3. POST /mcp tools/call get_head_sha with bearer → HTTP 200, returned real jubilant-bassoon HEAD SHA
+
+The fourth probe — write_handoff — generated this very HANDOFF.md commit. If you're reading this, the inaugural production use of Tier 1 succeeded.
+
+## TIER 1/2/3 HANDOFF CHANNEL HIERARCHY (UPDATED STATE)
+
+**Tier 1 (LIVE since June 2 PM-13):** MCP server on field-relay-nba at /mcp. Bearer-token auth (Authorization: Bearer <FIELD_MCP_SECRET>). Three handoff tools available to claude.ai via custom connector. The bearer token is held in worker secret FIELD_MCP_SECRET; rotation via GH Actions secret of the same name on jeffunglesbee-create/field-relay-nba repo.
+
+**Tier 2 (NOT NEEDED):** The relay HTTP write proxy idea (Drive trigger doc + cron pickup) is unnecessary now that Tier 1 is live. Skip unless Tier 1 proves unreliable over an extended period.
+
+**Tier 3 (LIVE since PM-11):** userMemories anchor edit #30. Format: `HEAD <hash> · <ISO> · via <mcp|bash|relay|chat>`. Updated by REPLACE on every session end. The new write channel options (mcp = Tier 1 working) make this anchor's `via` field meaningful as a freshness signal.
+
+## CLAUDE.AI CUSTOM CONNECTOR SETUP (PENDING — JEFF ACTION)
+
+To wire claude.ai to the new MCP endpoint:
+
+1. claude.ai → Settings → Connectors → **Add custom connector**
+2. URL: `https://field-relay-nba.jeffunglesbee.workers.dev/mcp`
+3. Auth: if a "custom header" or "API key" option is available, use it with:
+   - Header name: `Authorization`
+   - Header value: `Bearer 388c7bdaad74cb8c1e92a8380a2c3b8efa4573f7b4ea4e4747dde7f54f108cb2`
+   - (Alternative: `X-FIELD-MCP-Secret: <token>` — worker accepts either)
+4. If only OAuth is available, screenshot the UI and we adjust in the next session.
+
+Once added, the next chat session can use tool_search to find `read_handoff`, `write_handoff`, `get_head_sha` and call them directly. SESSION END protocol should preferentially use write_handoff (via=mcp) over bash git push (via=bash).
 
 ## NEXT SESSION PRIORITIES
 
-P0 — Live verification tonight and tomorrow (UNCHANGED from PM-10):
-  - Stanley Cup G1: TONIGHT (June 2, 8pm ET, ABC). First live SCF test of Voice Positioning v3. Watch for grammar landing on J3 briefs.
-  - NBA Finals G1: TOMORROW (June 3, 8:30pm ET, ABC). First Finals test.
-  Both: confirm SW_VERSION 2026-06-02a propagated to returning users (cache-bust on activate). Confirm push notifications fire if WOW 2 CRUNCH triggers.
+P0 — Live verification of Voice Positioning v3 tonight (Stanley Cup G1) and tomorrow (NBA Finals G1). Unchanged from PM-12.
 
-P1 — Daily MLB chip backfill: recheck ESPN MLB GOTD June schedule (ESPN Press Room + thefutoncritic.com) and Peacock GOTD week of June 1-7 (peacocktv.com blog). If found, backfill espnGOTD / peacockGOTD flags. Currently MLB games are MLB_LOCAL per "I don't know" rule from PM-10.
+P1 — Add claude.ai custom MCP connector (above). Test write_handoff from a fresh chat to confirm round-trip integration.
 
-P1 — Tier 1 MCP-on-Relay build: dedicated TYPE B session, ideally between Stanley Cup G2 (June 4) and World Cup (June 11). Recommended day: June 5, 6, 7, 8, 9, or 10. Prerequisites: read 1MrExWxXJRnaAAIeWD4H6HW2jLLEDyeZ-zIk4pf7Gzwg end-to-end, then Jeff completes Cloudflare dashboard prereqs (~30 min), then code build (~2-3 hours), then test (~30 min). Total ~4 hours plus possible debug session.
+P1 — Daily MLB chip backfill: recheck ESPN MLB GOTD June + Peacock GOTD week of June 1-7.
 
-P2 — USPTO provisional preparation continues toward ~June 25 deadline.
+P2 — USPTO provisional toward ~June 25 deadline. Tier 1's bearer-token MCP design is a defensible architecture pattern — single-purpose tools with hardcoded repo/path constants, audit-friendly. Include in patent narrative if relevant.
 
-P3 — field_smoke.js carries 4 pre-existing failures (A30 odds adapter, A53 bdlInjury double-call, A67 beatTheBook missing, A69 beatTheBook not in card template). Do not block deploy — smoke.js gate is clean 367/0. Address opportunistically.
+P2 — STANDARDS.md amendment (Rule 48 or 49): codify the T1/T2/T3 channel hierarchy and the RESTRICTED session classification. Now that T1 is live, the rule's reference architecture exists.
 
-P3 — Memory edit #1 has stale path reference "/mnt/user-data/outputs/sportworld.html (~254KB)" — actual is index.html in jubilant-bassoon at ~1MB. Cleanup opportunity.
+P3 — Add `Access: Apps and Policies: Edit` scope to the CF API token if future Access automation is desired. Not blocking; not needed unless we change architecture again.
 
-P3 — When Tier 1 build completes, update STANDARDS.md with new rule (Rule 48 or 49) codifying the T1/T2/T3 channel hierarchy and RESTRICTED session classification.
+P3 — field_smoke.js carries 4 pre-existing failures (A30 odds adapter, A53 bdlInjury double-call, A67 beatTheBook missing, A69 beatTheBook not in card template). Smoke.js (deploy gate) is clean 367/0.
 
-## TIER 1/2/3 HANDOFF CHANNEL HIERARCHY (CURRENT STATE)
+P3 — Memory edit #1 stale path reference cleanup (still references /mnt/user-data/outputs/sportworld.html ~254KB; actual is index.html ~1MB in jubilant-bassoon).
 
-Tier 1 (PLANNED, not built): MCP server on field-relay-nba at /mcp, behind Cloudflare Self-hosted Access. Read+write HANDOFF.md via custom connector in claude.ai.
-Tier 2 (NOT PLANNED): relay HTTP write endpoint. Decide whether to build only if Tier 1 proves unreliable in practice. Wait at least one week of Tier 1 use before deciding.
-Tier 3 (LIVE since June 2 PM-11): userMemories anchor edit #30 pointing to repo HANDOFF.md. Updated via REPLACE on every session end.
+## STATE INVARIANTS AT END OF SESSION
 
-## SESSION END/START PROTOCOLS
-
-Now governed by memory edits #18 (SESSION START) and #19 (SESSION END).
-Both updated June 2 PM-11 to reflect the T1/T2/T3 hierarchy. Memory anchor
-#30 currently reads:
-  "FIELD HANDOFF anchor: HEAD 61dd45c · 2026-06-02 · via bash. Source:
-   HANDOFF.md in jubilant-bassoon repo root. REPLACE this entire memory
-   edit on every session end..."
-
-After this PM-11 session-end git commit lands, anchor should be updated to
-new HEAD SHA via memory_user_edits in the next session that has bash access.
+- jubilant-bassoon HEAD: this commit (the one write_handoff just made)
+- field-relay-nba HEAD: 0a806c5
+- jubilant-bassoon smoke: 367/0
+- field-relay-nba /mcp endpoint: LIVE, 8 tools, bearer-gated
+- FIELD_MCP_SECRET: stored in worker secret + GH Actions secret on field-relay-nba
+- Cloudflare Access app: DELETED
+- T1 channel: LIVE via=mcp
+- T3 anchor: pending update post-write_handoff to reflect new HEAD + via=mcp
