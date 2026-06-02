@@ -2031,6 +2031,36 @@ assert('A377 — Tier A FIELD_FEATURES dated entries present',
   html.includes("'nhl-penalty-drift-signal':  '2026-06-02'"),
   'Tier A 1-3 features stamped in FIELD_FEATURES with deploy date for cross-session visibility');
 
+// ── A378-A380: Layer 2f Wire-Copy Retry (PM-17, June 2 2026) ────────────────
+assert('A378 — JQ Layer 2f: hasWireCopy detector + retryWithoutWireCopy retry function present',
+  html.includes('function hasWireCopy(text)') &&
+  html.includes('async function retryWithoutWireCopy(originalPrompt, text, proxyUrl)') &&
+  // Three pattern families (verb+num, leads/enters+with+num, sits at+num)
+  html.includes('verbNumRe = /\\b(holds|carries|brings|maintains|owns|posts|averages|averaging)') &&
+  html.includes('ledWithRe = /\\b(leads|enters?\\s+for|enters?)') &&
+  html.includes('sitsAtRe = /\\bsits\\s+at\\s+') &&
+  // Retry prompt names the six Move E1 patterns explicitly
+  html.includes('appositive') && html.includes('possessive compound') &&
+  html.includes('prepositional embed') && html.includes('parenthetical') &&
+  html.includes('threshold/collective') && html.includes('punctuation'),
+  'hasWireCopy must detect three pattern families (stat-verb+num, leads/enters+with+num, sits at+num). retryWithoutWireCopy must reference the six Move E1 patterns by name so the retry prompt teaches the rewrite rather than just blocking the verb');
+
+assert('A379 — JQ Layer 2f: retryWithoutWireCopy wired into J3 + J2 + compound brief retry chains',
+  // J3 standalone path (fetchFIELDBriefFromClaude)
+  /text=await retryWithoutWireCopy\(prompt,text,CLAUDE_PROXY_URL\);[\s\S]{0,400}'J3 Brief'/.test(html) &&
+  // J2 series preview path (fetchSeriesPreviewFromClaude)
+  /text=await retryWithoutWireCopy\(prompt,text,CLAUDE_PROXY_URL\);[\s\S]{0,400}'J2 Series'/.test(html) &&
+  // Compound editorial main brief — retryWithoutWireCopy in the async IIFE before checkLeadSentence
+  /improved = await retryWithoutWireCopy\(prompt, improved, CLAUDE_PROXY_URL\);[\s\S]{0,400}checkLeadSentence/.test(html),
+  'Layer 2f must run in all three brief retry chains: J3 standalone, J2 series, and compound main brief. Position: AFTER retryWithoutCliches (so clichés are caught first when present), BEFORE checkLeadSentence (so wire-copy rewrites land before line-by-line checks)');
+
+assert('A380 — JQ Layer 2f: telemetry on compound game_briefs + series previews (Phase 1 — log only, retry/re-render is Phase 2)',
+  // Compound series preview audit forEach: hasWireCopy check + log
+  /Series\[\$\{i\}\] wire-copy/.test(html) &&
+  // Compound game_brief audit forEach: hasWireCopy check + log
+  /GameBrief\[\$\{i\}\] wire-copy/.test(html),
+  'Per-game and per-series wire-copy detection must log via FIELD_DEBUG so production audits show which game_briefs trip the detector. Retry+re-render for these paths is a follow-up build (requires DOM re-render plumbing that the main-brief retry IIFE does not need)');
+
 
 // ═════════════════════════════════════════════════════════════════════
 // GATE — all assertions above must pass before deploy proceeds.

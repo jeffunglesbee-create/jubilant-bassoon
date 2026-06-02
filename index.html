@@ -3248,6 +3248,8 @@ if (typeof location !== 'undefined' && location.search.includes('debug=1')) {
 // Format: 'feature-key': 'YYYY-MM-DD' (date shipped)
 // Rule: add a line here + a smoke assertion = feature is documented as built.
 const FIELD_FEATURES = {
+  // Layer 2f Wire-Copy Retry (June 2 2026 PM-17 — Voice v3 enforcement)
+  'jq-layer-2f-wire-copy-retry': '2026-06-02',  // PM-17: hasWireCopy + retryWithoutWireCopy wired into J3 + J2 + compound main brief
   // NHL Tier A live metrics (June 2 2026 — pre-SCF G1)
   'nhl-pull-window-predictor': '2026-06-02',  // Tier A #1: predictGoaliePullState — 90s lead on pull window
   'nhl-pdo-regression-signal': '2026-06-02',  // Tier A #2: getNHLPDOSignal — forward variance call from existing PDO table
@@ -15865,7 +15867,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-02b';
+  const SW_VERSION = '2026-06-02c';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -16785,6 +16787,73 @@ function hasCliche(text){
   const lower=text.toLowerCase();
   const allBanned=[...BANNED_PHRASES, ..._bannedExtension];
   return allBanned.filter(p=>lower.includes(p));
+}
+
+// ── Wire-Copy Verb Detection (PM-17, June 2 2026) ────────────────────────────
+// Layer 2 retry catches BANNED_PHRASES (clichés). It does NOT catch the
+// wire-copy verb signature (Voice v3 Move E1 FORBIDDEN block). The model
+// reads the v3 prompt prefix, acknowledges the forbidden verbs, and still
+// produces them when faced with stat-heavy multi-sport data — confirmed in
+// production June 2 J3/per-game brief audits.
+//
+// Detection: syntactic patterns, NOT lexical. The structure is
+// "subject + stat-verb + (article)? + numeric + qualifier". Returns the
+// matched substrings so the retry prompt can name them explicitly.
+//
+// Patterns (each targets one Move E1 forbidden construction):
+//   (1) stat-verb + numeric:        "holds a 4.67 ERA", "carries a 5.81",
+//                                   "brings a 5.72", "maintains a 3.28",
+//                                   "owns the 24.8", "posts a 90", "averages 24.8"
+//   (2) leads/enters ... with num:  "leads Carolina with 80 points",
+//                                   "enters for Vegas with 90 points",
+//                                   "enters the series with a 53-29 record"
+//   (3) sits at + numeric:          "sits at 23 wins"
+function hasWireCopy(text){
+  if(!text) return [];
+  const hits = new Set();
+  // (1) stat-verb + (article)? + number-or-record
+  const verbNumRe = /\b(holds|carries|brings|maintains|owns|posts|averages|averaging)\s+(?:a\s+|an\s+|the\s+)?(?:\d[\d.,]*|\d+[-–]\d+(?:[-–]\d+)?)\b/gi;
+  let m;
+  while ((m = verbNumRe.exec(text)) !== null) hits.add(m[0].trim());
+  // (2) leads|enters [for]? + 1-3 words + with + (article)? + number-or-record
+  const ledWithRe = /\b(leads|enters?\s+for|enters?)\s+(?:\w+\s+){1,3}with\s+(?:a\s+|an\s+|the\s+)?(?:\d[\d.,]*|\d+[-–]\d+(?:[-–]\d+)?)\b/gi;
+  while ((m = ledWithRe.exec(text)) !== null) hits.add(m[0].trim());
+  // (3) sits at + (article)? + number
+  const sitsAtRe = /\bsits\s+at\s+(?:a\s+|an\s+|the\s+)?(?:\d[\d.,]*|\d+[-–]\d+)\b/gi;
+  while ((m = sitsAtRe.exec(text)) !== null) hits.add(m[0].trim());
+  return [...hits];
+}
+
+// Layer 2f: retry chain for wire-copy patterns. One retry budget, ship either way.
+// Names the specific matched phrases + cites the six FIELD-voice patterns from
+// the v3 NUMBERS-IN-PROSE GRAMMAR block. Sibling of retryWithoutCliches.
+async function retryWithoutWireCopy(originalPrompt, text, proxyUrl){
+  const hits = hasWireCopy(text);
+  if (!hits.length) return text;
+  if (FIELD_DEBUG) console.warn('[JQ Layer 2f] Wire-copy verbs:', hits);
+  try {
+    await _jqDelay();
+    const flagged = hits.slice(0, 6).map(h => '"'+h+'"').join(', ');
+    const retryPrompt = originalPrompt +
+      '\n\nIMPORTANT REWRITE — WIRE-COPY DETECTED.\n' +
+      'The following constructions appeared in your output and violate the v3 NUMBERS-IN-PROSE GRAMMAR rules above: ' + flagged + '.\n' +
+      'Rewrite using one of the six patterns from the FIELD VOICE FRAMING block: appositive ("Aho, an 80-point center, is the reason"), possessive compound ("Matz\'s 4.67 ERA tells the story"), prepositional embed ("Eichel at 90 is the headline"), parenthetical ("Nola\'s been getting hit (5.72)"), threshold/collective ("three of tonight\'s four starters carry ERAs north of 4.50"), or punctuation ("Wilson does what Wilson does. 24.8 a night."). ' +
+      'The number is evidence; the claim is the sentence. Keep the same facts. Output prose only.';
+    const r = await fetch(proxyUrl, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({model:'claude-haiku-4-5-20251001', max_tokens: 1500, messages: [{role:'user', content: retryPrompt}]})
+    });
+    if (!r.ok) return text;
+    const data = await r.json();
+    const retried = (data.content||[]).filter(c=>c.type==='text').map(c=>c.text).join('');
+    if (retried && retried.length > 30) {
+      const still = hasWireCopy(retried);
+      if (still.length && FIELD_DEBUG) console.warn('[JQ Layer 2f] Retry still has:', still, '— shipping anyway');
+      return retried.trim();
+    }
+  } catch(e) { if (FIELD_DEBUG) console.error('[JQ Layer 2f] retry error:', e.message); }
+  return text;
 }
 
 // ── Sport Vocabulary Validation — Layer 2b ─────────────────────────────────
@@ -17883,6 +17952,9 @@ async function fetchCompoundEditorial(sections) {
       (async()=>{
         let improved = result.brief;
         const prompt = window._lastCompoundPrompt || buildCompoundPrompt(sections); // reuse captured prompt
+        // Layer 2f: wire-copy verb retry (PM-17 — runs before lead/stat checks
+        // because wire-copy is the highest-frequency v3 violation in compound briefs)
+        improved = await retryWithoutWireCopy(prompt, improved, CLAUDE_PROXY_URL);
         // Layer 2c: lead sentence check
         improved = await checkLeadSentence(prompt, improved, CLAUDE_PROXY_URL);
         // Layer 2d: stat verification
@@ -17915,6 +17987,8 @@ async function fetchCompoundEditorial(sections) {
       if(!s?.preview) return;
       const found=hasCliche(s.preview);
       if(found.length&&FIELD_DEBUG) console.warn(`[JQ Layer 2] Series[${i}] clichés:`,found);
+      const wcSeries=hasWireCopy(s.preview);
+      if(wcSeries.length&&FIELD_DEBUG) console.warn(`[JQ Layer 2f] Series[${i}] wire-copy:`,wcSeries);
       // Sport vocab: infer sport from the series game object
       const seriesGame=(sections||[]).flatMap(sec=>sec.games||[]).find(g=>
         s.id && (s.id.includes((g.home||'').toLowerCase().replace(/\s+/g,'_')) ||
@@ -17929,6 +18003,8 @@ async function fetchCompoundEditorial(sections) {
       if(!b?.brief) return;
       const found=hasCliche(b.brief);
       if(found.length&&FIELD_DEBUG) console.warn(`[JQ Layer 2] GameBrief[${i}] clichés:`,found);
+      const wcGB=hasWireCopy(b.brief);
+      if(wcGB.length&&FIELD_DEBUG) console.warn(`[JQ Layer 2f] GameBrief[${i}] wire-copy:`,wcGB);
       const briefGame=(sections||[]).flatMap(sec=>sec.games||[]).find(g=>
         b.id && (b.id.includes((g.home||'').toLowerCase().replace(/\s+/g,'_')) ||
                  b.id.includes((g.away||'').toLowerCase().replace(/\s+/g,'_'))));
@@ -18062,6 +18138,7 @@ async function fetchSeriesPreviewFromClaude(g){
     let text=(data.content||[]).filter(c=>c.type==='text').map(c=>c.text).join('');
     if(text&&text.length>30){
       text=await retryWithoutCliches(prompt,text,CLAUDE_PROXY_URL);budget.inc();
+      text=await retryWithoutWireCopy(prompt,text,CLAUDE_PROXY_URL);
       text=await checkLeadSentence(prompt,text,CLAUDE_PROXY_URL);
       text=await checkStatVerification(prompt,text,CLAUDE_PROXY_URL);
       text=await checkCrossSport(prompt,text,CLAUDE_PROXY_URL);
@@ -19605,6 +19682,7 @@ async function fetchFIELDBriefFromClaude(sections){
     let text=(data.content||[]).filter(c=>c.type==='text').map(c=>c.text).join('');
     if(text&&text.length>50){
       text=await retryWithoutCliches(prompt,text,CLAUDE_PROXY_URL);budget.inc();
+      text=await retryWithoutWireCopy(prompt,text,CLAUDE_PROXY_URL);
       text=await checkLeadSentence(prompt,text,CLAUDE_PROXY_URL);
       text=await checkStatVerification(prompt,text,CLAUDE_PROXY_URL);
       text=await checkCrossSport(prompt,text,CLAUDE_PROXY_URL);
