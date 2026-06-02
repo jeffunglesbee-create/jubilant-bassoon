@@ -2047,11 +2047,11 @@ assert('A378 — JQ Layer 2f: hasWireCopy detector + retryWithoutWireCopy retry 
 
 assert('A379 — JQ Layer 2f: retryWithoutWireCopy wired into J3 + J2 + compound brief retry chains',
   // J3 standalone path (fetchFIELDBriefFromClaude)
-  /text=await retryWithoutWireCopy\(prompt,text,CLAUDE_PROXY_URL\);[\s\S]{0,400}'J3 Brief'/.test(html) &&
+  /text=await retryWithoutWireCopy\(prompt,text,CLAUDE_PROXY_URL\);[\s\S]{0,600}'J3 Brief'/.test(html) &&
   // J2 series preview path (fetchSeriesPreviewFromClaude)
-  /text=await retryWithoutWireCopy\(prompt,text,CLAUDE_PROXY_URL\);[\s\S]{0,400}'J2 Series'/.test(html) &&
+  /text=await retryWithoutWireCopy\(prompt,text,CLAUDE_PROXY_URL\);[\s\S]{0,600}'J2 Series'/.test(html) &&
   // Compound editorial main brief — retryWithoutWireCopy in the async IIFE before checkLeadSentence
-  /improved = await retryWithoutWireCopy\(prompt, improved, CLAUDE_PROXY_URL\);[\s\S]{0,400}checkLeadSentence/.test(html),
+  /improved = await retryWithoutWireCopy\(prompt, improved, CLAUDE_PROXY_URL\);[\s\S]{0,600}checkLeadSentence/.test(html),
   'Layer 2f must run in all three brief retry chains: J3 standalone, J2 series, and compound main brief. Position: AFTER retryWithoutCliches (so clichés are caught first when present), BEFORE checkLeadSentence (so wire-copy rewrites land before line-by-line checks)');
 
 assert('A380 — JQ Layer 2f: telemetry on compound game_briefs + series previews (Phase 1 — log only, retry/re-render is Phase 2)',
@@ -2060,6 +2060,38 @@ assert('A380 — JQ Layer 2f: telemetry on compound game_briefs + series preview
   // Compound game_brief audit forEach: hasWireCopy check + log
   /GameBrief\[\$\{i\}\] wire-copy/.test(html),
   'Per-game and per-series wire-copy detection must log via FIELD_DEBUG so production audits show which game_briefs trip the detector. Retry+re-render for these paths is a follow-up build (requires DOM re-render plumbing that the main-brief retry IIFE does not need)');
+
+// ── A381-A382: Item A Series State Clause + Item D Layer 2g Narrative Hallucination ──
+assert('A381 — Item A: buildSeriesStateClause wired into J2 + compound per-game line emission',
+  html.includes('function buildSeriesStateClause(g)') &&
+  // 0-0 forbidden phrase list present (state-conditional language)
+  html.includes("FORBIDDEN narrative language at 0-0") &&
+  html.includes('tighten their grip on [Cup/title]') &&
+  html.includes('hanging in the balance') &&
+  html.includes('high-stakes collision') &&
+  // Wired into J2 series prompt
+  html.includes('buildSeriesStateClause(g),') &&
+  // Wired into compound per-game line emission
+  html.includes('[STATE CLAUSE] ${buildSeriesStateClause(g)'),
+  'Item A: state-aware narrative grounding that names the forbidden Game-1 drama register (must-win, momentum, slipping, tighten grip, desperate, do-or-die, save the series, hanging in the balance, high-stakes collision). Wired at both prompt-level entry points so model gets the constraint regardless of which path generates a playoff brief');
+
+assert('A382 — Item D: Layer 2g hasNarrativeHallucination + retryWithoutNarrativeHallucination + 3-path wiring',
+  // Detector function + pattern groups
+  html.includes('function hasNarrativeHallucination(text, ctx)') &&
+  html.includes('NARRATIVE_HALLUCINATION_PATTERNS = {') &&
+  html.includes('elimination:') && html.includes('momentum:') &&
+  html.includes('trophyClaim:') && html.includes('hypeFiller:') &&
+  // Specific PM-18 failures named in patterns
+  html.includes("tighten(?:ing)?\\s+(?:their|the)\\s+grip\\s+on\\s+the\\s+(?:cup|title|trophy|championship)") &&
+  html.includes('high[- ]?stakes\\s+collision') &&
+  // Retry function references state explicitly
+  html.includes('async function retryWithoutNarrativeHallucination(originalPrompt, text, proxyUrl, ctx)') &&
+  html.includes('The series is 0-0. There is no elimination, no momentum, no slipping away') &&
+  // Wired into J3 + J2 + compound
+  /text=await retryWithoutNarrativeHallucination\(prompt,text,CLAUDE_PROXY_URL,\{seriesRecord:''/.test(html) &&
+  /text=await retryWithoutNarrativeHallucination\(prompt,text,CLAUDE_PROXY_URL,\{seriesRecord:g\.seriesRecord/.test(html) &&
+  /improved = await retryWithoutNarrativeHallucination\(prompt, improved, CLAUDE_PROXY_URL/.test(html),
+  'Item D Layer 2g: four pattern groups (elimination/momentum/trophyClaim/hypeFiller), state-conditional application (0-0 strictest, mid-series only trophy+hype), retry prompt names the state and matched phrases explicitly, wired into all three brief retry chains (J3 standalone, J2 series with game context, compound main brief)');
 
 
 // ═════════════════════════════════════════════════════════════════════

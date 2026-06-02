@@ -16936,6 +16936,119 @@ async function retryWithoutWireCopy(originalPrompt, text, proxyUrl){
   return text;
 }
 
+// ── Narrative Hallucination Detection — Layer 2g (PM-18, June 2 2026) ───────
+// Detects narrative drama that contradicts the current series state. Built
+// after PM-18 audit observed J2 brief inventing 'must-win', 'series momentum',
+// 'championship dreams slipping', 'tighten grip on the Cup' at 0-0 — drama
+// language that has no foundation when the series doesn't exist yet.
+//
+// State-conditional. Different patterns are forbidden at different series
+// states. The function returns hits only when language contradicts state.
+//
+// Game 1 / 0-0: elimination / momentum / defending-trophy language forbidden
+// Other states: defending-trophy-without-data still forbidden, but
+//   momentum / must-win etc. become situationally valid
+//
+// Input: text, optional series state context object { seriesRecord, isFinal }.
+// If no series context provided, applies the STRICTEST set (the 0-0 set), so
+// false positives are possible on legitimately tense mid-series briefs that
+// lack state metadata. This is the right default — better to retry a few
+// false positives than ship invented stakes.
+const NARRATIVE_HALLUCINATION_PATTERNS = {
+  // ELIMINATION / MUST-WIN — forbidden at 0-0 only (valid in real elim games)
+  elimination: [
+    /\bmust[- ]?win(?:\s+(?:scenario|situation|game))?\b/i,
+    /\bseason on the line\b/i,
+    /\bchampionship dreams\b/i,
+    /\bdo[- ]?or[- ]?die\b/i,
+    /\bsave the series\b/i,
+    /\bdesperate(?:ly)?\s+(?:must-?win|need|to)\b/i,
+    /\bdesperate must[- ]?win\b/i,
+  ],
+  // MOMENTUM — forbidden at 0-0 only (valid mid-series)
+  momentum: [
+    /\bseries momentum\b/i,
+    /\bmomentum hanging in the balance\b/i,
+    /\bhanging in the balance\b/i,
+    /\bslipping away\b/i,
+  ],
+  // DEFENDING-TROPHY — forbidden when no team actually holds the current title
+  // (PM-18: 'tighten grip on the Cup' — VGK doesn't hold 2025 Cup)
+  trophyClaim: [
+    /\btighten(?:ing)?\s+(?:their|the)\s+grip\s+on\s+the\s+(?:cup|title|trophy|championship)\b/i,
+    /\bdefend(?:ing)?\s+(?:their|the)\s+(?:cup|title|crown|championship)\b/i,
+    /\breigning\s+(?:cup\s+)?champion(?:s)?\b/i,
+  ],
+  // Hype filler with no specificity
+  hypeFiller: [
+    /\bhigh[- ]?stakes\s+collision\b/i,
+    /\bclash\s+of\s+titans\b/i,
+    /\bepic\s+battle\b/i,
+  ],
+};
+function hasNarrativeHallucination(text, ctx){
+  if (!text) return [];
+  const hits = [];
+  const seriesRec = (ctx?.seriesRecord || '').trim();
+  const atZeroZero = seriesRec === '0-0' || seriesRec === '' || ctx?.isGame1 === true;
+  // Trophy + hype patterns apply at ALL states (the model fabricates these
+  // independent of series record). Elimination + momentum patterns only
+  // apply at 0-0 — they're legitimate at later states.
+  const checkGroups = atZeroZero
+    ? ['elimination', 'momentum', 'trophyClaim', 'hypeFiller']
+    : ['trophyClaim', 'hypeFiller'];
+  for (const group of checkGroups) {
+    for (const re of NARRATIVE_HALLUCINATION_PATTERNS[group]) {
+      const m = text.match(re);
+      if (m) hits.push({ group, phrase: m[0].trim() });
+    }
+  }
+  return hits;
+}
+
+// Retry chain for narrative hallucination. One retry budget. Sibling of
+// retryWithoutWireCopy. Names the matched phrases AND the actual series state
+// to teach the rewrite — model can't fabricate stakes when the state is
+// named explicitly in the retry prompt.
+async function retryWithoutNarrativeHallucination(originalPrompt, text, proxyUrl, ctx){
+  const hits = hasNarrativeHallucination(text, ctx);
+  if (!hits.length) return text;
+  if (FIELD_DEBUG) console.warn('[JQ Layer 2g] Narrative hallucination:', hits);
+  try {
+    await _jqDelay();
+    const flagged = hits.slice(0, 8).map(h => `"${h.phrase}" (${h.group})`).join(', ');
+    const rec = (ctx?.seriesRecord || '').trim() || 'unknown';
+    const stateLine = (rec === '0-0' || rec === '')
+      ? 'The series is 0-0. There is no elimination, no momentum, no slipping away — those stakes do NOT exist yet.'
+      : `The series is ${rec}.`;
+    const retryPrompt = originalPrompt +
+      '\n\nIMPORTANT REWRITE — NARRATIVE HALLUCINATION DETECTED.\n' +
+      stateLine + '\n' +
+      'The following phrases imply stakes or claims that are not supported by the data above: ' + flagged + '.\n' +
+      'Rewrite WITHOUT these phrases. Focus on the matchup itself — players, styles, prior playoff history, ' +
+      'documented quotes if present in the data. Bulletin-board material (player quotes, coach quotes, ' +
+      'documented feuds) is allowed ONLY if it appears in the data above as a direct quote or documented fact. ' +
+      'Do not invent motivation, beef, or "haven\'t forgotten" narratives without a source. ' +
+      'Trophy claims (defending, reigning, tightening grip) require a documented current titleholder — ' +
+      'do NOT write these when no team actually holds the current trophy. ' +
+      'Keep the same facts. Output prose only.';
+    const r = await fetch(proxyUrl, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({model:'claude-haiku-4-5-20251001', max_tokens: 1500, messages: [{role:'user', content: retryPrompt}]})
+    });
+    if (!r.ok) return text;
+    const data = await r.json();
+    const retried = (data.content||[]).filter(c=>c.type==='text').map(c=>c.text).join('');
+    if (retried && retried.length > 30) {
+      const still = hasNarrativeHallucination(retried, ctx);
+      if (still.length && FIELD_DEBUG) console.warn('[JQ Layer 2g] Retry still has:', still, '— shipping anyway');
+      return retried.trim();
+    }
+  } catch(e) { if (FIELD_DEBUG) console.error('[JQ Layer 2g] retry error:', e.message); }
+  return text;
+}
+
 // ── Sport Vocabulary Validation — Layer 2b ─────────────────────────────────
 // Cross-sport vocabulary contamination is a GENERATION FAILURE, not a style issue.
 // "One-possession game" for a baseball recap and "inning" for a hockey game are
@@ -18036,6 +18149,9 @@ async function fetchCompoundEditorial(sections) {
         // Layer 2f: wire-copy verb retry (PM-17 — runs before lead/stat checks
         // because wire-copy is the highest-frequency v3 violation in compound briefs)
         improved = await retryWithoutWireCopy(prompt, improved, CLAUDE_PROXY_URL);
+        // Layer 2g: narrative hallucination retry (PM-18). Compound brief covers
+        // the whole slate; strictest pattern set (no series context).
+        improved = await retryWithoutNarrativeHallucination(prompt, improved, CLAUDE_PROXY_URL, {seriesRecord:'',isGame1:false});
         // Layer 2c: lead sentence check
         improved = await checkLeadSentence(prompt, improved, CLAUDE_PROXY_URL);
         // Layer 2d: stat verification
@@ -18077,6 +18193,9 @@ async function fetchCompoundEditorial(sections) {
       if(seriesGame){
         const viol=checkSportVocab(s.preview, seriesGame._sport||seriesGame._section||'');
         if(viol.length&&FIELD_DEBUG) console.warn(`[JQ Layer 2b] Series[${i}] sport vocab:`,viol);
+        // Layer 2g telemetry — series preview hallucinations with state context
+        const nh=hasNarrativeHallucination(s.preview, {seriesRecord:seriesGame.seriesRecord||'', isGame1:/\bG1\b|Game\s*1\b/i.test(seriesGame.league||'')});
+        if(nh.length&&FIELD_DEBUG) console.warn(`[JQ Layer 2g] Series[${i}] narrative hallucination:`,nh);
       }
       scoreProse(s.preview, null).then(sc=>renderProseScore(sc,`Series[${i}]`));
     });
@@ -18092,6 +18211,8 @@ async function fetchCompoundEditorial(sections) {
       if(briefGame){
         const viol=checkSportVocab(b.brief, briefGame._sport||briefGame._section||'');
         if(viol.length&&FIELD_DEBUG) console.warn(`[JQ Layer 2b] GameBrief[${i}] sport vocab:`,viol);
+        const nhB=hasNarrativeHallucination(b.brief, {seriesRecord:briefGame.seriesRecord||'', isGame1:/\bG1\b|Game\s*1\b/i.test(briefGame.league||'')});
+        if(nhB.length&&FIELD_DEBUG) console.warn(`[JQ Layer 2g] GameBrief[${i}] narrative hallucination:`,nhB);
       }
     });
     (result.epl||[]).forEach((e,i)=>{
@@ -18221,6 +18342,7 @@ async function fetchSeriesPreviewFromClaude(g){
     if(text&&text.length>30){
       text=await retryWithoutCliches(prompt,text,CLAUDE_PROXY_URL);budget.inc();
       text=await retryWithoutWireCopy(prompt,text,CLAUDE_PROXY_URL);
+      text=await retryWithoutNarrativeHallucination(prompt,text,CLAUDE_PROXY_URL,{seriesRecord:g.seriesRecord||'', isGame1:/\bG1\b|Game\s*1\b/i.test(g.league||'')});
       text=await checkLeadSentence(prompt,text,CLAUDE_PROXY_URL);
       text=await checkStatVerification(prompt,text,CLAUDE_PROXY_URL);
       text=await checkCrossSport(prompt,text,CLAUDE_PROXY_URL);
@@ -19765,6 +19887,7 @@ async function fetchFIELDBriefFromClaude(sections){
     if(text&&text.length>50){
       text=await retryWithoutCliches(prompt,text,CLAUDE_PROXY_URL);budget.inc();
       text=await retryWithoutWireCopy(prompt,text,CLAUDE_PROXY_URL);
+      text=await retryWithoutNarrativeHallucination(prompt,text,CLAUDE_PROXY_URL,{seriesRecord:'',isGame1:false}); // J3 is multi-game slate — strictest pattern set is appropriate
       text=await checkLeadSentence(prompt,text,CLAUDE_PROXY_URL);
       text=await checkStatVerification(prompt,text,CLAUDE_PROXY_URL);
       text=await checkCrossSport(prompt,text,CLAUDE_PROXY_URL);
