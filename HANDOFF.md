@@ -1,15 +1,18 @@
-# FIELD Handoff — June 2 2026 PM-19 close (Journalism Tab v1 — 5 commits, recovered + shipped)
+# FIELD Handoff — June 2 2026 PM-19 close (Journalism Tab v1 — 6 commits, recovered + shipped + retro patent-visibility polish)
 
-**jubilant-bassoon HEAD:** (set on push) · Smoke: 382/0 · SW_VERSION source `2026-06-02e`
+**jubilant-bassoon HEAD:** (set on push) · Smoke: 383/0 · SW_VERSION source `2026-06-02f`
 **field-relay-nba HEAD:** 880e3ae last meaningful (unchanged)
 
-**This session shipped:** PM-19 redo after the mid-build tool-availability interrupt. Five single-concern commits recreating + completing Journalism Tab v1 from the PM-19 Recovery Doc (Drive `10udrJmsVd0FSf-hU2qEuNTN1PL4hQ6tMlTji0IfpmN0`), reconciled with the original TYPE D recommendation Jeff approved with "Let's do it all".
+**This session shipped:** PM-19 redo after the mid-build tool-availability interrupt, followed by a retro audit reconciling the recovery doc against the original TYPE D recommendation and applying patent-visibility improvements that the recovery doc had dropped under tool-loss pressure.
+
+Six single-concern commits recreating + completing Journalism Tab v1:
 
 - C1 — Scaffold + content (nav anchor, section HTML, ~70 lines CSS, 4 JS render functions, 6 sibling renderJournalism triggers)
 - C2 — Mobile/tablet UX polish (sticky back-pill with backdrop blur + safe-area, 220ms fade-in respecting prefers-reduced-motion, scroll position save/restore, resize-aware listener)
 - C3 — Laptop side-by-side (1200-1439px) + desktop three-pane (1440px+) + companion content with quality telemetry from `field_jq_scores`
 - C4 — Bottom-sheet "Read full coverage →" cross-link via `openJournalismForGame(gameId)` helper; `data-gameid` added to `.jrn-slate-item` so cross-link works for regular-season games too
 - C5 — SW_VERSION bump `d→e` (Rule 23 same-day), `journalism-tab-v1` in FIELD_FEATURES, smoke A385-A388, HANDOFF.md, T3 memory anchor
+- **C6 retro** — J3/J2/J1 patent-visibility badges + Active Layers companion block + SW bump `e→f` + smoke A389. Reconciles the v1 with the original TYPE D recommendation's "small J3/J2/J1 badges, like a publication's section markers" — recovery doc had dropped this detail.
 
 **Session Doc (this session — Drive):** (set at SESSION END after Drive write)
 **Recovery Doc (PM-19 interrupt — Drive):** `10udrJmsVd0FSf-hU2qEuNTN1PL4hQ6tMlTji0IfpmN0`

@@ -3437,6 +3437,8 @@ if (typeof location !== 'undefined' && location.search.includes('debug=1')) {
 // Format: 'feature-key': 'YYYY-MM-DD' (date shipped)
 // Rule: add a line here + a smoke assertion = feature is documented as built.
 const FIELD_FEATURES = {
+  // PM-19 retro patent-visibility (June 2 2026 — post-audit polish)
+  'journalism-tab-v1-layer-badges':      '2026-06-02',  // J3/J2/J1 badges + Active Layers companion block (reconciles with original TYPE D rec patent angle)
   // PM-19 Journalism Tab v1 (June 2 2026 — dedicated reading destination)
   'journalism-tab-v1':                   '2026-06-02',  // toggle nav + section + magazine layout + companion + cross-link
   // PM-18 Voice v3 enforcement parity (June 2 2026 — post-SCF-G1-warmup audit)
@@ -9363,10 +9365,11 @@ function renderJournalism() {
       if (g._id && typeof _gameBriefCache !== 'undefined' && _gameBriefCache[g._id]) {
         const j1 = _gameBriefCache[g._id];
         const safeJ1 = j1.replace(/</g,'&lt;').replace(/>/g,'&gt;');
-        tonightHtml = `<div class="jrn-series-tonight"><span class="jrn-series-tonight-label">Tonight</span>${safeJ1}</div>`;
+        tonightHtml = `<div class="jrn-series-tonight"><span class="jrn-series-tonight-label">J1 · Tonight</span>${safeJ1}</div>`;
         gameBriefCount++;
       }
       sections.push(`<section class="jrn-series" data-gameid="${g._id||''}">
+        <div class="jrn-eyebrow">J2 · Series Preview</div>
         <div class="jrn-series-marker">◆ ${marker}</div>
         <div class="jrn-series-game">${matchup}${metaParts.length?' · '+metaParts.join(' · '):''}</div>
         <div class="jrn-series-text">${safe}</div>
@@ -9408,6 +9411,7 @@ function renderJournalism() {
       });
       if (slateItems.length) {
         sections.push(`<section class="jrn-slate">
+          <div class="jrn-eyebrow">J1 · Tonight's Briefs</div>
           <div class="jrn-slate-marker">◆ Regular-Season Slate</div>
           <ul class="jrn-slate-list">${slateItems.join('')}</ul>
         </section>`);
@@ -9546,7 +9550,24 @@ function renderJournalismCompanion(counts) {
     // outlook is intentionally omitted rather than fabricated.
   } catch(_) {}
 
-  // Block 4: Quality Scores (patent-visible J1-J5 telemetry)
+  // Block 4: Active Layers (PM-19 retro) — patent-visible static surfacing of
+  // the quality enforcement chain. Distinct from per-brief telemetry: this
+  // shows the ARCHITECTURE (what's instrumented), the next block shows the
+  // OUTCOMES (recent score averages). Together they document the layered
+  // quality chain that's central to the USPTO provisional claim.
+  blocks.push(`<div class="jrn-companion-block">
+    <div class="jrn-companion-label">Active Layers</div>
+    <ul class="jrn-companion-list">
+      <li class="jrn-companion-item"><strong>L1</strong> · Prompt-level
+        <div class="jrn-companion-item-meta">voice + state clauses + matchup anchors</div></li>
+      <li class="jrn-companion-item"><strong>L2</strong> · Detection retry
+        <div class="jrn-companion-item-meta">8 detectors: cliche, lead, stats, score, wire-copy, narrative, record, sport vocab</div></li>
+      <li class="jrn-companion-item"><strong>L3</strong> · Scoring + feedback
+        <div class="jrn-companion-item-meta">Datamuse freshness + per-sport quality target</div></li>
+    </ul>
+  </div>`);
+
+  // Block 5: Quality Scores (patent-visible J1-J5 telemetry)
   try {
     const scores = JSON.parse(localStorage.getItem('field_jq_scores')||'[]');
     if (Array.isArray(scores) && scores.length >= 3) {
@@ -16453,7 +16474,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-02e';
+  const SW_VERSION = '2026-06-02f';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)

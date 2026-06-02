@@ -2202,6 +2202,25 @@ assert('A388 — PM-19 Journalism Tab: four render functions present + companion
   html.includes('Regular-Season Slate'),
   'PM-19 C5: all four journalism render functions (renderJournalism, renderJournalismCompanion, renderJournalismArchive, jumpToGameCard) must be present. Companion shows Tonight Read counts + Later Tonight + Quality (field_jq_scores telemetry). Archive scans 7 days of sessionStorage. FIELD_FEATURES gains journalism-tab-v1 dated entry.');
 
+assert('A389 — PM-19 retro: J3/J2/J1 patent-visibility badges + Active Layers companion block',
+  // J3 badge (already shipped in C1)
+  html.includes('J3 · The Editorial') &&
+  // J2 badge above series markers (C6.1)
+  html.includes("J2 · Series Preview") &&
+  // J1 badge on embedded game brief (C6.2)
+  html.includes("J1 · Tonight</span>") &&
+  // J1 badge above slate marker (C6.3)
+  html.includes("J1 · Tonight's Briefs") &&
+  // Active Layers companion block (C6.4)
+  html.includes('Active Layers') &&
+  html.includes('<strong>L1</strong>') &&
+  html.includes('<strong>L2</strong>') &&
+  html.includes('<strong>L3</strong>') &&
+  html.includes('8 detectors:') &&
+  // FIELD_FEATURES entry for the badges
+  html.includes("'journalism-tab-v1-layer-badges':"),
+  'PM-19 retro polish (reconciles with original TYPE D recommendation patent angle): each journalism section surfaces its layer (J3 editorial, J2 series preview, J1 game brief, J1 regular-season slate) via .jrn-eyebrow badges. Desktop companion gains a fourth block "Active Layers" that statically names L1 (prompt-level) / L2 (detection retry, 8 detectors) / L3 (scoring + feedback) — patent-visible architecture surfacing without inventing per-layer telemetry.');
+
 
 // ═════════════════════════════════════════════════════════════════════
 // GATE — all assertions above must pass before deploy proceeds.
