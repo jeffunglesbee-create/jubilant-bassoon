@@ -15690,7 +15690,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-01k';
+  const SW_VERSION = '2026-06-01l';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -16337,7 +16337,7 @@ function countSparingly(text) {
 const FIELD_PROSE_STYLE=[
   '- STYLE: specificity over metaphor. "48 minutes from their first Finals since 1999" not "looking to punch their ticket."',
   '- STYLE: numbers over adjectives. "Brunson\'s 29.0 PPG this series" not "Brunson has been dominant."',
-  '- TIME-PERIOD ANCHORING (mandatory): every numeric statistic must be qualified with its time period in the SAME sentence. Required for points, PPG, ERA, batting avg, RBIs, goals, goals-against, FG%, saves, shots, etc. Acceptable qualifiers: "this postseason", "this series", "this season", "last 5 games", "career", "through 30 starts", "tonight", "in May". Bare numbers like "25.0 points", "26.0 PPG", "37 goals", "5-for-6 with 2 RBIs", "32 points through the season" without a clear timeframe ARE FORBIDDEN. The reader must always know what window the number is measured over. Example: write "Wembanyama\'s 28.2 PPG this postseason" not "Wembanyama\'s 25.0 points." Write "Jung Hoo Lee\'s 5-for-6 night" not "Jung Hoo Lee went 5-for-6" — the noun "night" anchors the number to one game.',
+  '- TIME-PERIOD ANCHORING: anchor a numeric statistic to its time period whenever ambiguity would exist — career vs current season, regular season vs postseason, single-game vs aggregate, etc. Acceptable qualifiers: "this postseason", "this series", "this season", "last 5 games", "career", "through 30 starts", "tonight", "in May". ELIDED constructions are acceptable when the period is unambiguous from context (e.g. a Finals brief saying "Wembanyama at 23.2 and 9" — the current series is obvious; or a tonight\'s-game brief saying "Brunson on 26 a night" — the aggregate context is established). The noun-anchor pattern remains preferred ("Jung Hoo Lee\'s 5-for-6 night" anchors via "night"). TEST: would a reader plausibly misread the period without the qualifier? If yes, anchor. If no, elide for rhythm. This rule was previously mandatory-on-every-number; loosening permits voice without producing redundant constructions like "Wembanyama\'s 23.2 PPG this postseason this Finals."',
   '- STYLE: active voice. "Wembanyama blocked 3 shots" not "3 shots were blocked."',
   '- STYLE: concrete over abstract. "Game 4 starts at 8pm on ESPN" not "the stage is set for a pivotal matchup."',
   '- STYLE: one metaphor max per brief — if you use one, make it original.',
@@ -16355,6 +16355,48 @@ const FIELD_PROSE_STYLE=[
   '- NO MARKDOWN: output plain prose only. Never use # headers, ** bold **, * italics *, `code`, or bullet/list markers. Start with the first sentence. The renderer does not parse markdown — any formatting characters appear as literal symbols and look broken.',
   '- DO NOT FABRICATE NUMBERS OR EVENTS: only reference scores, innings, periods, quarters, at-bats, drives, possessions, goals, baserunners, strikeouts, fouls, shots, saves, pitches, or other specific game events that are explicitly present in the context provided to you. If the context says "Final 6-4" do not invent "the decisive at-bat came in the sixth", do not invent "they loaded the bases twice", do not invent "struck out eight through seven innings". Only the final score and any explicitly-supplied stats are real. Anything more specific is fabrication.',
   '- COMPUTE MARGINS CORRECTLY: if a final score is given, the margin is the arithmetic difference. 6-4 is a two-run / two-goal / two-point margin, NOT one-run. 19-6 is a thirteen-run blowout. Always compute the difference from the actual numbers — never invent or round.',
+].join('\n');
+
+// ── FIELD Voice Exemplars ────────────────────────────────────────────────
+// PM-8 (June 1 2026): added after Voice Positioning Move 2 approval.
+// Patent clearance is NOT competitive differentiation — voice IS the
+// differentiator. The Data Skrive Patent Analysis v3 (Drive
+// 1yCXY5AF5J1jvo_b5wCV7nzp_FwQ1SIWGJqusZ4AaVqU) identified that the
+// prior prompt produced safe wire-copy register. These exemplars give
+// the AI demonstrations of FIELD's voice so it has something to match
+// other than the median of its training data.
+//
+// Voice register (Jeff direction, June 1): wise, intelligent, cheeky,
+// wry, and a tad cynical — but not that much. NOT bombastic, NOT hot-
+// take, NOT pure analytics-speak, NOT bitter.
+//
+// Applied at: buildCompoundPrompt (compound editorial), fetchFIELD
+// BriefFromClaude (J3 standalone), fetchSeriesPreviewFromClaude (J2).
+// NOT applied to short sub-prompts (35-70 word briefs) where the
+// exemplar length would dominate the output budget.
+const FIELD_VOICE_EXEMPLARS = [
+  '',
+  '═══ VOICE EXEMPLARS ═══',
+  'The following three exemplars demonstrate FIELD\'s voice register:',
+  '- WISE (knows the game beyond the box score)',
+  '- INTELLIGENT (makes connections, not just lists facts)',
+  '- CHEEKY (light irreverence, has fun with the material)',
+  '- WRY (dry observational humor)',
+  '- LIGHTLY CYNICAL (aware of league/media doublespeak — but not bitter)',
+  '',
+  'CRITICAL: match this REGISTER (rhythm, posture, angle). Do NOT copy the exemplars\' phrasing, players, teams, or numbers — those are illustrative. Use the actual stats and game context provided in YOUR prompt below.',
+  '',
+  '— Exemplar A (NBA Finals Game 1 setup, ~145 words):',
+  'The Spurs and Knicks haven\'t met for a championship since Tim Duncan was the future. Wembanyama at 23.2 and 9 is the headline; Brunson grinding out 26 a night is the warning. New York\'s defense gives up nothing easy in the half-court, which is awkward — that\'s where San Antonio\'s offense lives. Castle off the bench at 19 is the kind of rookie postseason that gets remembered or forgotten depending on how this series ends. The line opened SAS -2.5 and drifted to -3, which tells you something about which way the early money has been moving. Expect long possessions, foul trouble that matters, and a fourth quarter where the ball ends up in two specific hands. Whether those hands are Wembanyama\'s or Brunson\'s is most of the bet.',
+  '',
+  '— Exemplar B (WNBA Commissioner\'s Cup matchup, ~110 words):',
+  'Commissioner\'s Cup money is real money, which makes rotation choices interesting in a way regular-season rotations usually aren\'t. Phoenix is healthier than they were two weeks ago, which matters more for a team built around continuity than one built around a single matchup advantage. Atlanta\'s bench has been outscoring opposing benches at a rate that\'s either a sustainable structural edge or a small-sample mirage; the next four games settle that question. The over has hit in seven of eight when these teams play in Phoenix. The under has hit in five of six the other direction. Make of that what you will.',
+  '',
+  '— Exemplar C (NHL playoff matchup, ~100 words):',
+  'Vegas at home in May is a different team than Vegas anywhere else. Carolina knows this and will spend the first period trying to slow the rink — dump-and-chase, kill the building. If it works, this is a 2-1 hockey game and the Hurricanes are inside Vegas\'s heads. If it doesn\'t, Vegas runs the next period at 5-on-5 and the building does the rest. Stone is questionable, which is the kind of update that lands either as "cleared, will play" an hour before puck drop or "precautionary, out" five minutes after warmups. The warmups are the tell.',
+  '',
+  '═══ END VOICE EXEMPLARS ═══',
+  ''
 ].join('\n');
 
 // ── Sport-Specific Voice Guides ──────────────────────────────────────────────
@@ -17477,6 +17519,7 @@ Rules:
 - Write ONLY from the data above. Never invent scores, stats, records, or player tendencies.
 - LEAGUE LABELS: every game line includes a [LEAGUE: X] tag. Treat each league as a self-contained competition. NBA winners face other NBA teams. NHL winners face other NHL teams. NEVER describe a team in one [LEAGUE: X] game as advancing to face, playing, meeting, or being the opponent of a team in any different [LEAGUE: Y] game. If two leagues are both in tonight's slate, describe them as PARALLEL events ("Tonight's slate features NBA Game 7 and Stanley Cup Game 1") — not connected events.
 - ${FIELD_PROSE_STYLE}
+${FIELD_VOICE_EXEMPLARS}
 - Every sentence must be complete. Never end mid-sentence.
 - For each series entry: write ${seriesWords} focused on stakes and series arc, or null if data insufficient.
 - For each epl entry: 40-60 words, context-first (table position, season stakes), or null if data insufficient.
@@ -17741,6 +17784,7 @@ async function fetchSeriesPreviewFromClaude(g){
     'If Context is provided, use specific facts from it — player names, stats, game results.',
     'Write only from the data above. Never invent statistics, records, or player tendencies.',
     FIELD_PROSE_STYLE,
+    FIELD_VOICE_EXEMPLARS,
     getFieldVoice(g._sport||g._section||g.league||''),
     getQualityTarget(g._sport||g._section||g.league||''),
     'Third person only — never use "you" or address the reader directly. No markdown.'
@@ -19288,7 +19332,7 @@ async function fetchFIELDBriefFromClaude(sections){
   '- DATES: when referring to a game, use the "Start:" line value verbatim. Do not write fractions like "6/3" — write "June 2" or "Tuesday" or "tonight". Never invent or reformat dates.',
   '- PLAYER STATS: only cite a player stat number when it explicitly appears in context (e.g. "[MILESTONE: X needs 5 points for 1000]"). If a player is named without a stat, mention them by name but do NOT attach a fabricated number ("Dorofeyev leads the line" not "Dorofeyev posting 37"). Never invent goal totals, point totals, ERA, BA, etc.',
   '- SLATE BOUNDARY (mandatory): every league or sport you reference must appear in TONIGHT\'S GAMES above. If the Premier League, La Liga, Serie A, Ligue 1, Bundesliga, MLS, or any other league has no game in tonight\'s slate, DO NOT mention it, recap it, or include any result from it. Saying "In England, Man United routed Brighton 3-0" is FABRICATION when no EPL game is in the slate. The brief covers ONLY what is on tonight\'s slate.',
-  FIELD_PROSE_STYLE,'- VOICE: third person only. Never use "you" or address the reader directly. Write like a columnist, not a chatbot.','- DIVISION ACCURACY: teams in the same division share ONE division race — never say "respective division races" for same-division teams. NHL has Atlantic/Metropolitan/Central/Pacific. NBA has Atlantic/Central/Southeast/Northwest/Pacific/Southwest. MLB has AL/NL East/Central/West.','- Plain prose only. No bullet points.','- Always complete every sentence. Never end mid-sentence.'].filter(Boolean).join('\n');
+  FIELD_PROSE_STYLE,FIELD_VOICE_EXEMPLARS,'- VOICE: third person only. Never use "you" or address the reader directly. Write like a columnist, not a chatbot.','- DIVISION ACCURACY: teams in the same division share ONE division race — never say "respective division races" for same-division teams. NHL has Atlantic/Metropolitan/Central/Pacific. NBA has Atlantic/Central/Southeast/Northwest/Pacific/Southwest. MLB has AL/NL East/Central/West.','- Plain prose only. No bullet points.','- Always complete every sentence. Never end mid-sentence.'].filter(Boolean).join('\n');
   try{
     // ── WOW 6 Phase 2: route through relay quality gate (multi-sport slate)
     const _viaRelay = await generateJournalismViaRelay(prompt, {

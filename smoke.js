@@ -437,6 +437,11 @@ assert('A150 — JQ Layer 3: renderProseScore function defined',
   'renderProseScore() debug panel display must exist');
 
 assert('A151 — JQ wired: J3 Brief uses FIELD_PROSE_STYLE',
+  // PM-8: FIELD_VOICE_EXEMPLARS now inserted between FIELD_PROSE_STYLE
+  // and the inline '- VOICE: third person' clause. Allow either pattern
+  // so the assertion remains valid whether exemplars are present or not,
+  // but verifies FIELD_PROSE_STYLE precedes the inline voice rule.
+  html.includes("FIELD_PROSE_STYLE,FIELD_VOICE_EXEMPLARS,'- VOICE: third person") ||
   html.includes("FIELD_PROSE_STYLE,'- VOICE: third person"),
   'J3 FIELD Brief prompt must inject FIELD_PROSE_STYLE');
 
@@ -1743,11 +1748,17 @@ assert('A357 — buildCompoundPrompt soccerGames gates by isToday and isDomestic
   'buildCompoundPrompt soccerGames must filter sections by isDomesticLeagueInBreak and games by isToday before being passed to the prompt');
 
 assert('A358 — FIELD_PROSE_STYLE: TIME-PERIOD ANCHORING rule + J3 SLATE BOUNDARY rule both present',
-  html.includes('TIME-PERIOD ANCHORING (mandatory)') &&
-  html.includes('Bare numbers like') &&
+  // PM-8 Move 1: TIME-PERIOD ANCHORING was loosened from mandatory-every-number
+  // to context-aware. Assertion updated to match new shape (ELIDED constructions
+  // permitted when unambiguous). Original assertion strings ("(mandatory)",
+  // "Bare numbers like") removed by Move 1 and replaced with new shape.
+  html.includes('TIME-PERIOD ANCHORING:') &&
+  html.includes('ELIDED constructions are acceptable') &&
+  html.includes('noun-anchor pattern remains preferred') &&
+  // SLATE BOUNDARY rule unchanged from PM-7
   html.includes('SLATE BOUNDARY (mandatory)') &&
   html.includes("Saying \"In England, Man United routed Brighton 3-0\" is FABRICATION"),
-  'FIELD_PROSE_STYLE must include the TIME-PERIOD ANCHORING rule (mandatory timeframe qualifier on every stat) and the J3 prompt must include the SLATE BOUNDARY rule (no league not in slate)');
+  'FIELD_PROSE_STYLE must include the TIME-PERIOD ANCHORING rule (PM-8 Move 1: loosened to permit elided constructions when context is unambiguous, with TEST heuristic + noun-anchor preference retained) and the J3 prompt must include the SLATE BOUNDARY rule (no league not in tonight\'s slate)');
 
 assert('A359 — standalone J3 (fetchFIELDBriefFromClaude) honors isBigGame word budget',
   html.includes('const isBigGameJ3 = ranked.some(g =>') &&
@@ -1905,6 +1916,41 @@ assert('A369 — ADR-003 attribution extended to compound series + scouts_pick +
   // Total guardrail call sites now ≥ 7 (1 def + 3 FIELD Brief paths + 3 extended)
   (html.match(/_enforceNBAAttributionFooter\(/g) || []).length >= 7,
   'ADR-003 attribution must extend beyond the FIELD Brief to other AI-generated surfaces that can carry NBA leader data through the compound editorial prompt (which includes [PLAYOFF STATS:] tag per-game): J2 series preview (compound.series), J4-equivalent scouts pick (compound.scouts_pick), and per-game briefs (compound.game_briefs). Per-game briefs use single-game scope [{games:[g]}] so attribution only fires when THIS game has the NBA flag, not slate-wide');
+
+assert('A370 — Voice Positioning Move 2: FIELD_VOICE_EXEMPLARS constant + wired at 3 long-form surfaces',
+  // Constant exists
+  html.includes('const FIELD_VOICE_EXEMPLARS') &&
+  // Voice register language present (Jeff direction)
+  html.includes('WISE') && html.includes('INTELLIGENT') &&
+  html.includes('CHEEKY') && html.includes('WRY') &&
+  html.includes('LIGHTLY CYNICAL') &&
+  // All three exemplars present (header markers)
+  html.includes('Exemplar A (NBA Finals') &&
+  html.includes('Exemplar B (WNBA') &&
+  html.includes('Exemplar C (NHL') &&
+  // Delimiters present so AI knows where exemplars start/end
+  html.includes('═══ VOICE EXEMPLARS ═══') &&
+  html.includes('═══ END VOICE EXEMPLARS ═══') &&
+  // Anti-copy safeguard present
+  html.includes('Do NOT copy the exemplars\\\' phrasing, players, teams, or numbers') &&
+  // Wired at exactly the three intended long-form surfaces:
+  //   compound prompt template (interpolated ${FIELD_VOICE_EXEMPLARS}),
+  //   J2 series preview (array entry),
+  //   J3 standalone (comma-prefixed inline entry)
+  (html.match(/\$\{FIELD_VOICE_EXEMPLARS\}/g) || []).length >= 1 &&
+  (html.match(/[\s,]FIELD_VOICE_EXEMPLARS[,\s]/g) || []).length >= 2,
+  'Voice Positioning Move 2: FIELD_VOICE_EXEMPLARS demonstrates voice register (wise/intelligent/cheeky/wry/lightly cynical per Jeff direction June 1) via three exemplars. Wired at compound prompt template (${FIELD_VOICE_EXEMPLARS} interpolation), J2 series preview standalone (fetchSeriesPreviewFromClaude), and J3 standalone (fetchFIELDBriefFromClaude). NOT wired at short sub-briefs (35-70 word EPL/MLB/generic) where exemplar length would dominate the output budget');
+
+assert('A371 — Voice Positioning Move 1: TIME-PERIOD ANCHORING loosened to permit elided constructions',
+  // The loosened rule permits elision when context unambiguous
+  html.includes('ELIDED constructions are acceptable when the period is unambiguous') &&
+  // The TEST heuristic is present (gives AI a clear decision rule)
+  html.includes('would a reader plausibly misread the period without the qualifier') &&
+  // The old "mandatory: every numeric statistic must be qualified" wording is GONE
+  !html.includes('every numeric statistic must be qualified with its time period in the SAME sentence') &&
+  // The noun-anchor pattern preference is retained
+  html.includes('noun-anchor pattern remains preferred'),
+  'Voice Positioning Move 1: TIME-PERIOD ANCHORING rule loosened to permit elided constructions when context is unambiguous (e.g. Finals brief can say "Wembanyama at 23.2 and 9" without re-stating "this postseason this series"). The mandatory-on-every-number version produced redundant constructions and flattened voice. Loosened version retains anchoring where ambiguity exists (career vs current season, regular season vs postseason) and the noun-anchor pattern ("5-for-6 night")');
 
 
 // ═════════════════════════════════════════════════════════════════════
