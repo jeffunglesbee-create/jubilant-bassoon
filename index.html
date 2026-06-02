@@ -12231,6 +12231,29 @@ function getNHLAnalyticsContext(game) {
   try {
     const ha = game._homeAbbr || getNHLAbbrev(game.home);
     const aa = game._awayAbbr || getNHLAbbrev(game.away);
+
+    // ── [SCF MATCHUP] anchor (PM-18 Item C, June 2 2026) ─────────────────────
+    // Parallels existing NBA [WCF CHAMPION] / [CHAMPION] anchors in
+    // getNBAAnalyticsContext. Closes the 'tighten their grip on the Cup'
+    // hallucination diagnosed PM-18 (4:31pm screenshot) — model improvised a
+    // current-cup-holder narrative because nothing in the prompt grounded
+    // who actually holds the trophy vs who is playing for it.
+    //
+    // Static for the 2026 Stanley Cup Final. CAR last won 2006 (20 years);
+    // VGK won 2023 (3 years ago) — neither team holds the current (2025) Cup.
+    // The Finals matchup is open; neither team is 'defending' the title.
+    const isSCF = /stanley cup final|\bSCF\b/i.test(game.league || '');
+    if (isSCF) {
+      if (ha === 'CAR' || aa === 'CAR') {
+        lines.push(`[SCF MATCHUP] Carolina Hurricanes — first Stanley Cup Final since winning it in 2006 (20 years). Fourth conference-final breakthrough attempt since 2019; lost the prior three.`);
+      }
+      if (ha === 'VGK' || aa === 'VGK') {
+        lines.push(`[SCF MATCHUP] Vegas Golden Knights — third Cup Final in nine years as a franchise (won 2023, lost 2018). Under late-season hire John Tortorella, who took over from Bruce Cassidy with 10 games left in the regular season.`);
+      }
+      // Trophy anchor — neither team holds the current Cup
+      lines.push(`[SCF TROPHY] Neither team is defending the Stanley Cup. The Finals is open. Do NOT write 'tighten grip on the Cup', 'defend the Cup', or 'reigning champion' framings for either side.`);
+    }
+
     const hST = getNHLSpecialTeams(ha);
     const aST = getNHLSpecialTeams(aa);
 
