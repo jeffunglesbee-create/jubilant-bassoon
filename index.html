@@ -15690,7 +15690,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-01m';
+  const SW_VERSION = '2026-06-01n';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -16359,12 +16359,12 @@ const FIELD_PROSE_STYLE=[
 
 // ── FIELD Voice Exemplars ────────────────────────────────────────────────
 // PM-8 (June 1 2026): added after Voice Positioning Move 2 approval.
-// Patent clearance is NOT competitive differentiation — voice IS the
-// differentiator. The Data Skrive Patent Analysis v3 (Drive
-// 1yCXY5AF5J1jvo_b5wCV7nzp_FwQ1SIWGJqusZ4AaVqU) identified that the
-// prior prompt produced safe wire-copy register. These exemplars give
-// the AI demonstrations of FIELD's voice so it has something to match
-// other than the median of its training data.
+// PM-9 (June 1 2026 PM, after live observation): v2 — hoisted to TOP of
+// prompts (Move A), anti-exemplar added (Move B), priority statement
+// added (Move C). v1 buried the exemplars in the rules section after
+// FIELD_PROSE_STYLE — the AI processed them as "more rules" not as
+// framing, and defaulted to wire-copy register. v2 frames the voice as
+// the FIRST thing the AI sees.
 //
 // Voice register (Jeff direction, June 1): wise, intelligent, cheeky,
 // wry, and a tad cynical — but not that much. NOT bombastic, NOT hot-
@@ -16376,8 +16376,9 @@ const FIELD_PROSE_STYLE=[
 // exemplar length would dominate the output budget.
 const FIELD_VOICE_EXEMPLARS = [
   '',
-  '═══ VOICE EXEMPLARS ═══',
-  'The following three exemplars demonstrate FIELD\'s voice register:',
+  '═══ FIELD VOICE FRAMING (READ FIRST — BEFORE THE DATA AND RULES BELOW) ═══',
+  '',
+  'FIELD\'s voice register:',
   '- WISE (knows the game beyond the box score)',
   '- INTELLIGENT (makes connections, not just lists facts)',
   '- CHEEKY (light irreverence, has fun with the material)',
@@ -16395,7 +16396,28 @@ const FIELD_VOICE_EXEMPLARS = [
   '— Exemplar C (NHL playoff matchup, ~100 words):',
   'Vegas at home in May is a different team than Vegas anywhere else. Carolina knows this and will spend the first period trying to slow the rink — dump-and-chase, kill the building. If it works, this is a 2-1 hockey game and the Hurricanes are inside Vegas\'s heads. If it doesn\'t, Vegas runs the next period at 5-on-5 and the building does the rest. Stone is questionable, which is the kind of update that lands either as "cleared, will play" an hour before puck drop or "precautionary, out" five minutes after warmups. The warmups are the tell.',
   '',
-  '═══ END VOICE EXEMPLARS ═══',
+  '═══ ANTI-EXEMPLAR — WIRE COPY (NOT FIELD VOICE — AVOID THIS) ═══',
+  '',
+  'The following is the FAILURE mode — what FIELD writing must NOT be:',
+  '',
+  '"Stanley Cup Final Game 1 begins tonight at Lenovo Center as the 39-26-17 Golden Knights face the 53-22-7 Hurricanes. Pavel Dorofeyev enters with 37 goals this season, while Seth Jarvis has 32 goals this season. In MLB, 4-2 Steven Matz with a 4.67 ERA meets 0-7 Jack Flaherty with a 5.81 ERA. 3-4 Aaron Nola carries a 5.72 ERA against 5-3 Randy Vasquez with a 3.28 ERA."',
+  '',
+  'Why this fails:',
+  '- Records and stats stacked without angle',
+  '- No observation, no perspective, no voice',
+  '- "this season" repeated mechanically (the loosened TIME-PERIOD rule was not used)',
+  '- "with X" + "has Y" + "carries X against Y" — pure parallel template',
+  '- A press release could have written this. So could an automated wire feed.',
+  '',
+  'If the brief reads like a list of facts linked by "with" and "against," the voice has failed.',
+  '',
+  '═══ PRIORITY ═══',
+  '',
+  'Voice over completeness. If you have 30 facts and a 150-word budget, pick the 5 that matter most and write them with voice. Do NOT list all 30 as a transcribed data dump. A brief that names fewer games with voice beats one that names all games as a list. Compression through selection IS the editorial act — it is WHY the reader chose FIELD over a box score feed.',
+  '',
+  'When in doubt: write fewer things better, not more things flatly.',
+  '',
+  '═══ END FRAMING — DATA AND RULES BELOW ═══',
   ''
 ].join('\n');
 
@@ -17498,7 +17520,8 @@ function buildCompoundPrompt(sections) {
   const _calCtx = getCalendarContext();
   const calContextLine = _calCtx ? calendarContextSentence(_calCtx) : null;
 
-  return `You are FIELD's sports intelligence editor. Generate the complete editorial package.
+  return `${FIELD_VOICE_EXEMPLARS}
+You are FIELD's sports intelligence editor. Generate the complete editorial package.
 Return ONLY valid JSON. No markdown, no backticks, no preamble.
 ${calContextLine ? `\nSEASON CONTEXT: ${calContextLine}` : ''}
 TONIGHT'S GAMES:
@@ -17519,7 +17542,6 @@ Rules:
 - Write ONLY from the data above. Never invent scores, stats, records, or player tendencies.
 - LEAGUE LABELS: every game line includes a [LEAGUE: X] tag. Treat each league as a self-contained competition. NBA winners face other NBA teams. NHL winners face other NHL teams. NEVER describe a team in one [LEAGUE: X] game as advancing to face, playing, meeting, or being the opponent of a team in any different [LEAGUE: Y] game. If two leagues are both in tonight's slate, describe them as PARALLEL events ("Tonight's slate features NBA Game 7 and Stanley Cup Game 1") — not connected events.
 - ${FIELD_PROSE_STYLE}
-${FIELD_VOICE_EXEMPLARS}
 - Every sentence must be complete. Never end mid-sentence.
 - For each series entry: write ${seriesWords} focused on stakes and series arc, or null if data insufficient.
 - For each epl entry: 40-60 words, context-first (table position, season stakes), or null if data insufficient.
@@ -17772,7 +17794,8 @@ async function fetchSeriesPreviewFromClaude(g){
   // Extract game number from league string for explicit game reference
   const gNumMatch2=(g.league||'').match(/g(\d+)\b/i);
   const gameNum=gNumMatch2?'Game '+gNumMatch2[1]:'';
-  const prompt=['Write a FIELD Series Brief for this playoff game.',
+  const prompt=[FIELD_VOICE_EXEMPLARS,
+    'Write a FIELD Series Brief for this playoff game.',
     'Home: '+g.home+'. Away: '+g.away+'.'+(g.venue?' Venue: '+g.venue+'.':''),
     'Series: '+(g.seriesRecord||'')+'. Stakes: '+stakes+'.'+(gameNum?' Tonight is '+gameNum+'.':''),
     g.matchupNote?'Context: '+g.matchupNote:'',
@@ -17784,7 +17807,6 @@ async function fetchSeriesPreviewFromClaude(g){
     'If Context is provided, use specific facts from it — player names, stats, game results.',
     'Write only from the data above. Never invent statistics, records, or player tendencies.',
     FIELD_PROSE_STYLE,
-    FIELD_VOICE_EXEMPLARS,
     getFieldVoice(g._sport||g._section||g.league||''),
     getQualityTarget(g._sport||g._section||g.league||''),
     'Third person only — never use "you" or address the reader directly. No markdown.'
@@ -19327,12 +19349,12 @@ async function fetchFIELDBriefFromClaude(sections){
       return now.toLocaleDateString('en-US', { timeZone: tz === 'local' ? localTz() : tz, weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
     } catch(_) { return ''; }
   })();
-  const prompt=["Write a FIELD Brief for tonight's sports slate.",'',_todayAnchor?`TODAY: ${_todayAnchor}.`:'',_todayAnchor?'':'','TONIGHT\'S GAMES:',gameLines,'','RULES:',`- ${briefWordsJ3}`,'- STRUCTURE: Paragraph 1 opens on the highest-stakes game with the specific situation (not the team name). Paragraph 2 covers the rest of the slate in order of importance. End on what carries forward.','- Lead with the specific situation, not the team. "48 minutes from their first Finals since 1999" not "The Knicks are looking to advance."','- Call out FREE over-the-air games explicitly.',"- Surface Scout's Pick if flagged.",'- If [ANTI-HYPE] appears in a game line, describe that matchup as low-stakes in plain prose — never echo the tag [ANTI-HYPE] verbatim.','- CORRECTNESS: write only from data above. Never invent scores, stats, records, or player tendencies.',
+  const prompt=[FIELD_VOICE_EXEMPLARS,"Write a FIELD Brief for tonight's sports slate.",'',_todayAnchor?`TODAY: ${_todayAnchor}.`:'',_todayAnchor?'':'','TONIGHT\'S GAMES:',gameLines,'','RULES:',`- ${briefWordsJ3}`,'- STRUCTURE: Paragraph 1 opens on the highest-stakes game with the specific situation (not the team name). Paragraph 2 covers the rest of the slate in order of importance. End on what carries forward.','- Lead with the specific situation, not the team. "48 minutes from their first Finals since 1999" not "The Knicks are looking to advance."','- Call out FREE over-the-air games explicitly.',"- Surface Scout's Pick if flagged.",'- If [ANTI-HYPE] appears in a game line, describe that matchup as low-stakes in plain prose — never echo the tag [ANTI-HYPE] verbatim.','- CORRECTNESS: write only from data above. Never invent scores, stats, records, or player tendencies.',
   // PF-5 + PF-7: explicit date-format and player-stat rules
   '- DATES: when referring to a game, use the "Start:" line value verbatim. Do not write fractions like "6/3" — write "June 2" or "Tuesday" or "tonight". Never invent or reformat dates.',
   '- PLAYER STATS: only cite a player stat number when it explicitly appears in context (e.g. "[MILESTONE: X needs 5 points for 1000]"). If a player is named without a stat, mention them by name but do NOT attach a fabricated number ("Dorofeyev leads the line" not "Dorofeyev posting 37"). Never invent goal totals, point totals, ERA, BA, etc.',
   '- SLATE BOUNDARY (mandatory): every league or sport you reference must appear in TONIGHT\'S GAMES above. If the Premier League, La Liga, Serie A, Ligue 1, Bundesliga, MLS, or any other league has no game in tonight\'s slate, DO NOT mention it, recap it, or include any result from it. Saying "In England, Man United routed Brighton 3-0" is FABRICATION when no EPL game is in the slate. The brief covers ONLY what is on tonight\'s slate.',
-  FIELD_PROSE_STYLE,FIELD_VOICE_EXEMPLARS,'- VOICE: third person only. Never use "you" or address the reader directly. Write like a columnist, not a chatbot.','- DIVISION ACCURACY: teams in the same division share ONE division race — never say "respective division races" for same-division teams. NHL has Atlantic/Metropolitan/Central/Pacific. NBA has Atlantic/Central/Southeast/Northwest/Pacific/Southwest. MLB has AL/NL East/Central/West.','- Plain prose only. No bullet points.','- Always complete every sentence. Never end mid-sentence.'].filter(Boolean).join('\n');
+  FIELD_PROSE_STYLE,'- VOICE: third person only. Never use "you" or address the reader directly. Write like a columnist, not a chatbot.','- DIVISION ACCURACY: teams in the same division share ONE division race — never say "respective division races" for same-division teams. NHL has Atlantic/Metropolitan/Central/Pacific. NBA has Atlantic/Central/Southeast/Northwest/Pacific/Southwest. MLB has AL/NL East/Central/West.','- Plain prose only. No bullet points.','- Always complete every sentence. Never end mid-sentence.'].filter(Boolean).join('\n');
   try{
     // ── WOW 6 Phase 2: route through relay quality gate (multi-sport slate)
     const _viaRelay = await generateJournalismViaRelay(prompt, {

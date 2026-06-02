@@ -437,12 +437,13 @@ assert('A150 — JQ Layer 3: renderProseScore function defined',
   'renderProseScore() debug panel display must exist');
 
 assert('A151 — JQ wired: J3 Brief uses FIELD_PROSE_STYLE',
-  // PM-8: FIELD_VOICE_EXEMPLARS now inserted between FIELD_PROSE_STYLE
-  // and the inline '- VOICE: third person' clause. Allow either pattern
-  // so the assertion remains valid whether exemplars are present or not,
-  // but verifies FIELD_PROSE_STYLE precedes the inline voice rule.
-  html.includes("FIELD_PROSE_STYLE,FIELD_VOICE_EXEMPLARS,'- VOICE: third person") ||
-  html.includes("FIELD_PROSE_STYLE,'- VOICE: third person"),
+  // PM-8: FIELD_VOICE_EXEMPLARS was inserted between FIELD_PROSE_STYLE
+  // and the inline '- VOICE: third person' clause.
+  // PM-9 v2: FIELD_VOICE_EXEMPLARS moved to the TOP of the prompt array
+  // (Move A hoist), so FIELD_PROSE_STYLE is now adjacent to '- VOICE'
+  // again. The assertion accepts both forms for backward compatibility.
+  html.includes("FIELD_PROSE_STYLE,'- VOICE: third person") ||
+  html.includes("FIELD_PROSE_STYLE,FIELD_VOICE_EXEMPLARS,'- VOICE: third person"),
   'J3 FIELD Brief prompt must inject FIELD_PROSE_STYLE');
 
 assert('A152 — JQ wired: J5 Night Owl uses FIELD_PROSE_STYLE',
@@ -1917,29 +1918,30 @@ assert('A369 — ADR-003 attribution extended to compound series + scouts_pick +
   (html.match(/_enforceNBAAttributionFooter\(/g) || []).length >= 7,
   'ADR-003 attribution must extend beyond the FIELD Brief to other AI-generated surfaces that can carry NBA leader data through the compound editorial prompt (which includes [PLAYOFF STATS:] tag per-game): J2 series preview (compound.series), J4-equivalent scouts pick (compound.scouts_pick), and per-game briefs (compound.game_briefs). Per-game briefs use single-game scope [{games:[g]}] so attribution only fires when THIS game has the NBA flag, not slate-wide');
 
-assert('A370 — Voice Positioning Move 2: FIELD_VOICE_EXEMPLARS constant + wired at 3 long-form surfaces',
+assert('A370 — Voice Positioning Move 2: FIELD_VOICE_EXEMPLARS constant has 3 exemplars + anti-exemplar (Move B v2) + priority statement (Move C v2)',
   // Constant exists
   html.includes('const FIELD_VOICE_EXEMPLARS') &&
   // Voice register language present (Jeff direction)
   html.includes('WISE') && html.includes('INTELLIGENT') &&
   html.includes('CHEEKY') && html.includes('WRY') &&
   html.includes('LIGHTLY CYNICAL') &&
-  // All three exemplars present (header markers)
+  // All three positive exemplars present (header markers)
   html.includes('Exemplar A (NBA Finals') &&
   html.includes('Exemplar B (WNBA') &&
   html.includes('Exemplar C (NHL') &&
-  // Delimiters present so AI knows where exemplars start/end
-  html.includes('═══ VOICE EXEMPLARS ═══') &&
-  html.includes('═══ END VOICE EXEMPLARS ═══') &&
   // Anti-copy safeguard present
   html.includes('Do NOT copy the exemplars\\\' phrasing, players, teams, or numbers') &&
-  // Wired at exactly the three intended long-form surfaces:
-  //   compound prompt template (interpolated ${FIELD_VOICE_EXEMPLARS}),
-  //   J2 series preview (array entry),
-  //   J3 standalone (comma-prefixed inline entry)
-  (html.match(/\$\{FIELD_VOICE_EXEMPLARS\}/g) || []).length >= 1 &&
-  (html.match(/[\s,]FIELD_VOICE_EXEMPLARS[,\s]/g) || []).length >= 2,
-  'Voice Positioning Move 2: FIELD_VOICE_EXEMPLARS demonstrates voice register (wise/intelligent/cheeky/wry/lightly cynical per Jeff direction June 1) via three exemplars. Wired at compound prompt template (${FIELD_VOICE_EXEMPLARS} interpolation), J2 series preview standalone (fetchSeriesPreviewFromClaude), and J3 standalone (fetchFIELDBriefFromClaude). NOT wired at short sub-briefs (35-70 word EPL/MLB/generic) where exemplar length would dominate the output budget');
+  // Move B: anti-exemplar present (PM-9 v2)
+  html.includes('ANTI-EXEMPLAR') &&
+  html.includes('WIRE COPY') &&
+  html.includes('press release could have written this') &&
+  // Move C: priority statement present (PM-9 v2)
+  html.includes('Voice over completeness') &&
+  html.includes('Compression through selection') &&
+  // Delimiters
+  html.includes('FIELD VOICE FRAMING') &&
+  html.includes('END FRAMING — DATA AND RULES BELOW'),
+  'Voice Positioning Move 2 (v1 + v2): FIELD_VOICE_EXEMPLARS demonstrates voice register (wise/intelligent/cheeky/wry/lightly cynical) via three POSITIVE exemplars + one ANTI-EXEMPLAR (PM-9 Move B, the live failing brief paraphrase) + PRIORITY statement (PM-9 Move C, "voice over completeness"). v1 buried these in the rules; v2 makes them the opening framing the AI reads first');
 
 assert('A371 — Voice Positioning Move 1: TIME-PERIOD ANCHORING loosened to permit elided constructions',
   // The loosened rule permits elision when context unambiguous
@@ -1951,6 +1953,23 @@ assert('A371 — Voice Positioning Move 1: TIME-PERIOD ANCHORING loosened to per
   // The noun-anchor pattern preference is retained
   html.includes('noun-anchor pattern remains preferred'),
   'Voice Positioning Move 1: TIME-PERIOD ANCHORING rule loosened to permit elided constructions when context is unambiguous (e.g. Finals brief can say "Wembanyama at 23.2 and 9" without re-stating "this postseason this series"). The mandatory-on-every-number version produced redundant constructions and flattened voice. Loosened version retains anchoring where ambiguity exists (career vs current season, regular season vs postseason) and the noun-anchor pattern ("5-for-6 night")');
+
+assert('A372 — Voice Positioning v2 Move A: FIELD_VOICE_EXEMPLARS hoisted to top of long-form prompts',
+  // The old in-rules adjacency (FIELD_PROSE_STYLE immediately followed by
+  // FIELD_VOICE_EXEMPLARS in the compound template's Rules: section) is GONE
+  !html.includes('${FIELD_PROSE_STYLE}\n${FIELD_VOICE_EXEMPLARS}') &&
+  // The old comma-adjacent pattern (J3 standalone had FIELD_PROSE_STYLE,FIELD_VOICE_EXEMPLARS)
+  // is GONE — v2 puts FIELD_VOICE_EXEMPLARS at the TOP of the array instead
+  !html.includes('FIELD_PROSE_STYLE,FIELD_VOICE_EXEMPLARS') &&
+  // Compound template now opens with the exemplars BEFORE "You are FIELD's sports intelligence editor"
+  /\$\{FIELD_VOICE_EXEMPLARS\}[\s\S]{0,80}You are FIELD's sports intelligence editor/.test(html) &&
+  // J2 series preview prompt array starts with FIELD_VOICE_EXEMPLARS
+  /\[FIELD_VOICE_EXEMPLARS,\s*\n?\s*'Write a FIELD Series Brief/.test(html) &&
+  // J3 standalone prompt array starts with FIELD_VOICE_EXEMPLARS
+  /\[FIELD_VOICE_EXEMPLARS,"Write a FIELD Brief for tonight/.test(html) &&
+  // Total identifier references: 1 def + 3 wirings = 4
+  (html.match(/FIELD_VOICE_EXEMPLARS/g) || []).length >= 4,
+  'Voice Positioning v2 Move A: FIELD_VOICE_EXEMPLARS moved from the rules section (where v1 buried it after FIELD_PROSE_STYLE — AI processed it as "more rules") to the TOP of each long-form prompt as opening framing. The AI now sees voice before it sees template-shaped rules. Verified at all 3 long-form surfaces: compound template (interpolated before "You are FIELD\'s sports intelligence editor"), J2 series preview (first array element), J3 standalone (first array element). Diagnosed June 1 2026 PM after Jeff observed "no flow to the writing"');
 
 
 // ═════════════════════════════════════════════════════════════════════
