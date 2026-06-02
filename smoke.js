@@ -1875,3 +1875,16 @@ assert('A367 — Axis 3 Phase B subtask 9 NBA half: NBA playoff leaders feed wir
   /Stats:\s*\$\{game\._playoffLeadersAttribution\}/.test(html),
   'NBA playoff-leaders feed must wire end-to-end via the /nba-stats/leagueLeaders relay route (ADR-003 accept-the-risk): 15-min TTL cache (_nbaPlayoffLeadersCache + localStorage field_nba_playoff_leaders), async fetchNBAPlayoffLeaders issuing one request per StatCategory (PTS/REB/AST/FG3M), _parseNBALeagueLeaders + buildNBAPlayoffLeadersByTeam combining results into per-team line arrays, sync getNBAPlayoffLeadersForGame consumer, nbaPlayoffLeadersPrefetch scheduled at init, populateSeriesContext setting game._playoffLeadersAttribution = NBA.com alongside leaders, and buildSeriesContextTags inlining the attribution into the [PLAYOFF STATS:] tag so the credit propagates into prose');
 
+assert('A368 — ADR-003 attribution guardrail: _enforceNBAAttributionFooter wraps all three J3 Brief render paths (relay KV / compound / fallback)',
+  // Guardrail helper defined
+  /function _enforceNBAAttributionFooter\(briefText,\s*sections\)/.test(html) &&
+  // Checks for the attribution signal flag on games
+  /games\[j\]\._playoffLeadersAttribution\s*===\s*'NBA\.com'/.test(html) &&
+  // Returns input unchanged when AI already preserved the credit
+  /briefText\.includes\(['"]NBA\.com['"]\)/.test(html) &&
+  // Footer appended when guard fires
+  /'Stats:\s*NBA\.com'/.test(html) &&
+  // Wrapped at all three FIELD Brief render paths
+  (html.match(/_enforceNBAAttributionFooter\(/g) || []).length >= 4, // 1 def + 3 call sites
+  'ADR-003 attribution guardrail must close the loop on NBA leader attribution: _enforceNBAAttributionFooter helper appends a "Stats: NBA.com" footer when (a) any game in sections has _playoffLeadersAttribution === NBA.com, (b) the rendered brief text does not already contain "NBA.com" (preserving AI output when it kept the credit naturally). Wrapped at all three FIELD Brief render paths: relay KV brief, compound editorial brief, and standalone fetchFIELDBriefFromClaude fallback');
+
