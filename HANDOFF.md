@@ -1,118 +1,123 @@
-# FIELD Handoff — June 2 2026 PM-16 close (Tier A 1-3 NHL live metrics shipped pre-SCF G1)
+# FIELD Handoff — June 2 2026 PM-17 close (Layer 2f Wire-Copy Retry shipped post-SCF-G1-warmup)
 
-**jubilant-bassoon HEAD:** 73f2872 last meaningful · Smoke: 371/0 · SW_VERSION source `2026-06-02b`
-**field-relay-nba HEAD:** 880e3ae last meaningful (unchanged from PM-15) · OAuth feature commit: 8e7257d
+**jubilant-bassoon HEAD:** e95ef02 last meaningful · Smoke: 374/0 · SW_VERSION source `2026-06-02c`
+**field-relay-nba HEAD:** 880e3ae last meaningful (unchanged) · OAuth feature commit: 8e7257d
 
-**This session shipped:** TYPE B build. Three NHL Wave 2 forward-looking live metrics for Stanley Cup Final G1 tonight (8pm ET ABC, CAR vs VGK) and beyond. Tier A 1-3 from PM-15's novel-thinking ideation list, approved by Jeff in PM-16 open.
+**This session shipped:** TYPE B build. JQ Layer 2f wire-copy retry — `hasWireCopy()` syntactic detector + `retryWithoutWireCopy()` retry function, wired into J3 standalone + J2 series + compound editorial main brief paths. Closes the v3 Move E1 enforcement gap diagnosed via PM-17 audit of live SCF G1 pre-game briefs.
 
-**Session Doc (this session — Drive):** `1XAgPOaMZDe4eJAR08lPstKdNX6TciTchXGonm0bF4zo`
-**Previous session doc (PM-15 — Drive):** _written PM-15 close_
+**Session Doc (this session — Drive):** `1Xa8pXyk_aPeCxQomWSP0BVujocD8NsYf2vt4Paw726I`
+**Previous session doc (PM-16 — Drive):** `1XAgPOaMZDe4eJAR08lPstKdNX6TciTchXGonm0bF4zo`
 **CANONICAL BUILD BACKLOG (READ FIRST):** `1ugUh6UmeDkLR-gEH8hJPwXK2NiIrXYQY8gp2jO2p2Hk`
 **CI/Deploy Ref (READ AT SESSION START):** `1UrOoYDGaK2ncPrnRNXt1w0OElOLpbjP_EYROjG2w1zo`
 **FIELD Current State (READ AT SESSION START):** `1GvsfnTH9Xhqzg_NdYrPhPpk1d1Rnm0lkeG6ip-tLUlA`
 
 ## TIER 0 DEADLINES (unchanged)
 
-- **Stanley Cup G1: TONIGHT (June 2 8pm ET, ABC)** — first live test of Tier A #1 (Pull Window) + #2 (PDO Signal) in J2/J3/J5
-- **NBA Finals G1: TOMORROW (June 3 8:30pm ET, ABC)** — Tier A is NHL-only, unaffected
+- **Stanley Cup G1: TONIGHT (June 2 8pm ET, ABC)** — Layer 2f active for any Brief regeneration tonight; PM-16 Tier A #1 (Pull Window) + #2 (PDO Signal) also live
+- **NBA Finals G1: TOMORROW (June 3 8:30pm ET, ABC)** — Layer 2f applies to ALL sports, NBA included; first Finals exposure
 - **Stanley Cup G2: June 4**
 - **World Cup 2026: June 11 HARD**
 - **USPTO provisional: ~June 25**
 
-## WHAT HAPPENED THIS SESSION (June 2 PM-16)
+## WHAT HAPPENED THIS SESSION (June 2 PM-17)
 
-Scope was Tier A 1-3 from PM-15's hockey-metrics ideation. Three forward-looking live signals built, integrated into `getNHLAnalyticsContext()` (the journalism prompt-context emitter that feeds J2/J3/J5 chains). All commit on `73f2872`.
+Scope was triggered by Jeff's audit-then-build request after observing live SCF G1 pre-game briefs (Image 1: per-game CAR/VGK brief, Image 2: J3 FIELD Desk). The J2 Series Preview path produced voice-correct output ("Carolina enters its first Stanley Cup Final since the 2006 championship run, facing a Vegas squad anchored by Stone, Dorofeyev, and Marchessault"). The J3 path and per-game compound briefs failed Move E1 wholesale with 7 forbidden-verb hits in 5 sentences. The v3 NUMBERS-IN-PROSE GRAMMAR block IS reaching every prompt path (verified via grep — three call sites of FIELD_VOICE_EXEMPLARS, all included).
 
-### #1 Pull Window Predictor — `predictGoaliePullState(game)`
-Forward-looking goalie-pull state from clock + deficit in 3rd-period only.
-- deficit 1 → window opens 3:00 left → likely_pulled 1:30 left
-- deficit 2 → window opens 4:00 left → likely_pulled 2:30 left
-- deficit 3 → window opens 5:00 left → likely_pulled 3:30 left
-- Tied / OT / deficit >3 / period <3 → null
+The diagnosis was an enforcement gap: existing retry chain catches `BANNED_PHRASES` (clichés) via `hasCliche` but has zero syntactic detection for wire-copy verbs. The Move E1 forbidden-verb list reaches the prompt as instruction; nothing scans the output for violations. The fix is at the same layer as `retryWithoutCliches`: a sibling function that syntactically detects forbidden constructions and retries with explicit naming + a re-statement of the six FIELD-voice patterns.
 
-Emits `[PULL WINDOW APPROACHING]` (warming up) or `[6-ON-5 LIKELY]` (active window). Complementary to existing `#11a` situation bonus which fires AFTER `sit.goaliePulled` flips — this predicts ~90s earlier.
+### hasWireCopy(text) — three pattern families
+1. **Stat-verb + numeric** — `holds|carries|brings|maintains|owns|posts|averages|averaging` + (article)? + number-or-record. Covers "holds a 4.67 ERA", "brings a 5.72 ERA", "averages 24.8", "posts a 90 mark".
+2. **leads|enters [for]? + 1-3 words + with + numeric** — covers "leads Carolina with 80", "enters for Vegas with 90", "enters the series with a 53-29".
+3. **sits at + numeric** — covers "sits at 23 wins".
 
-Unit-tested 7 cases, all pass including null-correctness on tied/OT/deficit-4/early-3rd/period-2.
+Excludes `has` deliberately — too many false positives. The model can still use "has won six straight" but cannot use "has a 4.67 ERA".
 
-### #2 PDO Regression Signal — `getNHLPDOSignal(abbrev)`
-Reads existing `NHL_PDO` hardcoded table (6 teams: CAR, VGK, COL, MTL, BOS, OTT). Emits:
-- `pdo > 1020` → `[REGRESSION WATCH]` running hot, due for negative variance
-- `pdo < 985`  → `[REGRESSION DUE]` underperforming, due for positive variance
-- 985–1020 → null (normal band)
+### retryWithoutWireCopy(originalPrompt, text, proxyUrl)
+Mirrors `retryWithoutCliches` structure. Reads `hasWireCopy(text)` hits, builds a retry prompt that:
+- Names the specific matched phrases verbatim
+- Cites the six Move E1 patterns by name (appositive, possessive compound, prepositional embed, parenthetical, threshold/collective, punctuation) WITH their exemplars from the v3 block
+- Closes with "The number is evidence; the claim is the sentence. Keep the same facts."
 
-Surfaces the forward-looking variance call that was previously buried as freeform `note` text on only some entries.
+One retry budget. Ships either way.
 
-### #3 Penalty Drift Indicator — `computePenaltyDriftSignal(hp, ap, ha, aa)` + `trackNHLPenaltyTransitions`
-Make-up call effect — refs even out penalties within games. Threshold: `|home - away| >= 2 PIMs` → `[MAKE-UP CALL DUE]` for trailing team.
+### Wiring (three paths)
+- `fetchFIELDBriefFromClaude` (J3 standalone) — line ~19683, AFTER `retryWithoutCliches`, BEFORE `checkLeadSentence`
+- `fetchSeriesPreviewFromClaude` (J2 series) — line ~18139, same position
+- `fetchCompoundEditorial` post-render async IIFE (compound main brief) — line ~17955, FIRST in the post-render chain (clichés caught upstream by the Layer 2 audit forEach)
 
-**Data wiring deferred.** Current NHL.com `/v1/scoreboard/now` relay does not expose `situation` field (powerplay transitions). Tracker function `trackNHLPenaltyTransitions(game, prevSit, curSit)` is shipped and ready — accepts ESPN-style `sit.{home,away}PowerPlay` transitions and increments `game._homePenalties` / `game._awayPenalties`. Activates the moment a play-by-play relay route lands.
+### Telemetry only (Phase 2 fix pending)
+- Compound `result.series[]` — `hasWireCopy(s.preview)` logged via FIELD_DEBUG `[JQ Layer 2f] Series[i] wire-copy: [...]`
+- Compound `result.game_briefs[]` — `hasWireCopy(b.brief)` logged via FIELD_DEBUG `[JQ Layer 2f] GameBrief[i] wire-copy: [...]`
 
-Until then, `computePenaltyDriftSignal` returns null (counts undefined) — degrades cleanly, zero false positives.
+Retry+re-render plumbing for these paths is Phase 2 because mutating already-rendered per-card briefs requires DOM dispatch that the main-brief IIFE doesn't need. The Image 1 bottom-sheet "Vegas holds a 39-43 mark" failure will be detected by telemetry tonight but not yet auto-fixed at first render.
 
-### Wiring summary
-- All three feed `getNHLAnalyticsContext()` journalism emitter
-- `FIELD_FEATURES` entries dated 2026-06-02 (`nhl-pull-window-predictor`, `nhl-pdo-regression-signal`, `nhl-penalty-drift-signal`)
-- `SW_VERSION` bumped `2026-06-02a` → `2026-06-02b` (Rule 23 — live behavior change on same day)
-- Smoke `A374-A377` enforce presence + integration
-- Smoke: 367/0 baseline → **371/0** post-build
+### Unit-test results (standalone /tmp/wirecopy_unit_test.js, since deleted)
+**25/25 passed:**
+- **14 detection cases** — all 7 J3 production failure phrases + 2 per-game failure phrases + 5 Move E1 forbidden constructions (averages, averaging, posts, owns, sits at)
+- **8 voice-correct cases** — the six Move E1 patterns from FIELD_VOICE_EXEMPLARS plus J2 voice-correct phrasing ("enters its first Stanley Cup Final") — zero false positives
+- **3 edge cases** — empty, null, numberless prose, "has" with no number
 
-### Unit-test standalone results
-15/15 cases passed including boundary conditions (tied score, OT exclusion, deficit 4 out-of-reach, PDO band boundary at 985, unknown abbrev, undefined penalty counts, tracker idempotency on first poll). Cosmetic fix late in session: pull-threshold display "1.5:00" → "1:30" (M:SS not decimal minutes).
+### Smoke A378-A380
+- A378: detector + retry function presence + three pattern families + six-pattern naming in retry prompt
+- A379: `retryWithoutWireCopy` wired into all three brief retry chains (regex windows widened from 200 to 400 chars after first run failed)
+- A380: telemetry on game_briefs + series previews
+
+Pre-build smoke: 371/0
+Post-build smoke: **374/0**
+
+### Commit + deploy
+Single-concern commit `e95ef02` with full diagnosis in commit message. Push clean to remote (no rebase needed this time — no interim skip-ci commits during the build window). Deploy gate fires on push: smoke (~5s) → wrangler deploy (~19s) → live ~24s.
 
 ## STATE INVARIANTS AT END OF SESSION
 
-- jubilant-bassoon HEAD: `73f2872` last meaningful (Tier A 1-3 shipped)
-- jubilant-bassoon smoke: **371/0**
-- jubilant-bassoon SW_VERSION: `2026-06-02b`
+- jubilant-bassoon HEAD: `e95ef02` (Layer 2f wire-copy retry)
+- jubilant-bassoon smoke: **374/0**
+- jubilant-bassoon SW_VERSION: `2026-06-02c`
 - field-relay-nba HEAD: `880e3ae` last meaningful (unchanged)
-- field-relay-nba /mcp: LIVE with four auth paths
-- KV bindings on relay: PUSH_SUBS, FIELD_JOURNALISM, MCP_OAUTH
-- claude.ai connector "FIELD Handoff": LIVE
-- claude.ai connector "Cloudflare Developer Platform": connected per registry, tools still not surfacing via tool_search (PM-15 finding holds)
 - STANDARDS.md Rule 48 Class E: in effect
-- T3 memory anchor: will be updated to `73f2872` on SESSION END (via bash)
+- T3 memory anchor: will be updated to `e95ef02` on SESSION END (via bash)
 
 ## NEXT SESSION P1 IMMEDIATE
 
-**Watch tonight's SCF G1 output.** Tier A #1 (Pull Window) and #2 (PDO Signal) will fire live in the J5 Night Owl recap if CAR or VGK has a 3rd-period goalie-pull scenario. Pull-window message construction has not been observed in production yet — this is the first prod exposure. Verify the lines read cleanly in the brief without sounding canned.
+**Phase 2 — wire wire-copy retry into compound game_briefs + series previews** (~30-45 min). Same `hasWireCopy` + `retryWithoutWireCopy` functions (already shipped). Need to:
+1. Iterate `result.game_briefs[]` and `result.series[]` in an async post-render IIFE
+2. For each entry where `hasWireCopy(b.brief).length > 0`, await `retryWithoutWireCopy`
+3. Mutate the result entry + dispatch to `_gameBriefCache[gameId]` (lookup logic already exists in compound dispatch — see lines 19848-19860)
+4. Trigger per-card re-render (need to find/create the dispatch — possibly via existing `field:data-ready` event or a new dispatch hook)
+5. Smoke assertion A381 enforcing the IIFE + dispatch wiring
 
-P1 — **Wire NHL play-by-play relay route** (~45 min). Candidate: NHL.com `/v1/gamecenter/{gameId}/play-by-play`. No auth needed, allowed origin. Once wired, `trackNHLPenaltyTransitions` activates from the situation transitions and `computePenaltyDriftSignal` starts emitting `[MAKE-UP CALL DUE]` lines. ADR-001 aligned. This is the data-wiring half of Tier A #3.
+The Image 1 bottom-sheet "Vegas holds a 39-43 mark" failure mode is the precise target — once Phase 2 ships, the same per-game brief regenerates without the wire-copy on first render.
 
-P1 — **Cloudflare connector mismatch** (carry-forward from PM-15). Try fresh chat / re-auth / Anthropic support. `cf-api-probe.yml` stays primary.
-
-P1 — **R2 Finals Narrative Context** (carry-forward from PM-14, still PAST deadline). Salvage scope for SCF use cases.
-
-P1 — **Queues / WOW 8** — hard deadline June 11 World Cup.
-
-P1 — **R2 World Cup Team Context** — before June 11.
-
-P1 — `get_smoke_count` MCP tool reports 268 vs canonical 371 (was 367; need to also fix regex pattern). Bug from PM-13.
+**P1 carry-forward from PM-16:**
+- Wire NHL play-by-play relay route (~45 min) — activates Tier A #3 (Penalty Drift) AND unlocks Tier B #5 (Goalie Hot Hand)
+- Cloudflare connector mismatch — try fresh chat / re-auth / Anthropic support
+- R2 Finals Narrative Context — past deadline, salvage scope
+- Queues / WOW 8 — hard June 11 deadline
+- R2 World Cup Team Context — before June 11
+- `get_smoke_count` MCP tool — now reports stale 268; canonical is 374
 
 ## OTHER NEXT-SESSION PRIORITIES
 
-P2 — Extend `logRequest()` to capture body (truncated 8KB).
-P2 — Verify claude.ai connector traffic actually hits `logRequest`.
-P2 — USPTO provisional toward ~June 25.
-P2 — `tool_search "handoff"` ranking tuning.
-P2 — Probe-outbox cleanup in jubilant-bassoon.
+P2 — Extend `logRequest()` to capture body (truncated 8KB)
+P2 — Verify claude.ai connector traffic hits `logRequest`
+P2 — USPTO provisional toward ~June 25
+P2 — `tool_search "handoff"` ranking tuning
+P2 — Probe-outbox cleanup
+P2 — Sandbox gotcha codification: clone has no git user config; every commit/rebase needs inline `-c user.email=... -c user.name=...` — worth a memory edit if it surfaces again (no need yet — only 2 sessions observed)
 
-P3 — Tier A Wave 2.5 candidates from PM-15 ideation if Wave 2 lands cleanly: **Lead Vulnerability Index** (~45 min, reuses ESPN gambit), **Goalie Hot Hand / Wavering** (~45 min, in-game SV% drift via ESPN PBP).
-
-P3 — `index.html:3137` dead `MCP` var cleanup.
-P3 — `field_smoke.js` 4 pre-existing failures (A30, A53, A67, A69).
-P3 — Memory edit path-string cleanup.
+P3 — Tier B Wave 2.5 candidates from PM-15 ideation: Lead Vulnerability Index (~45 min), Goalie Hot Hand / Wavering (~45 min) — both block on NHL PBP relay route
+P3 — `index.html:3137` dead `MCP` var cleanup
+P3 — `field_smoke.js` 4 pre-existing failures (A30, A53, A67, A69)
+P3 — Memory edit path-string cleanup
 
 ## CLOSED THIS SESSION
 
-- **Tier A #1 Pull Window Predictor** — fully shipped + unit-tested, integrated into journalism emitter, live tonight at SCF G1.
-- **Tier A #2 PDO Regression Signal** — fully shipped + unit-tested, live tonight.
-- **Tier A #3 Penalty Drift Indicator** — function shipped, integrated, dormant pending NHL PBP relay (P1 next session).
-- **PM-15 hockey-metric ideation** — Tier A 1-3 graduated from ideation to shipped. Tier B (#4–7) still in §C of canonical backlog if revisited.
+- **PM-17 brief audit** — three-path diagnosis (J2 OK, J3 + per-game compound failing) → root cause (lexical-vs-syntactic enforcement gap in retry chain)
+- **Layer 2f shipped** — three brief paths now retry on wire-copy automatically. Per-game compound briefs logged for Phase 2.
+- **Voice Positioning v3** — meaningfully closer to enforcement parity with Layers 1-2. The gap was Move E1 (forbidden verbs) being instruction-only, not detection-backed. Now backed.
 
 ## TIER 1/2/3 HANDOFF CHANNEL HIERARCHY
 
-**Tier 1 (LIVE):** MCP server on field-relay-nba at /mcp. Four auth paths. 8 tools.
-
+**Tier 1 (LIVE):** MCP server on field-relay-nba at /mcp. Four auth paths.
 **Tier 2 (NOT NEEDED).**
-
-**Tier 3 (LIVE):** userMemories anchor edit. Updated to `73f2872` at PM-16 SESSION END.
+**Tier 3 (LIVE):** userMemories anchor edit. Updated to `e95ef02` at PM-17 SESSION END.
