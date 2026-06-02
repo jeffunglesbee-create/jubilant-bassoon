@@ -3248,6 +3248,13 @@ if (typeof location !== 'undefined' && location.search.includes('debug=1')) {
 // Format: 'feature-key': 'YYYY-MM-DD' (date shipped)
 // Rule: add a line here + a smoke assertion = feature is documented as built.
 const FIELD_FEATURES = {
+  // PM-18 Voice v3 enforcement parity (June 2 2026 — post-SCF-G1-warmup audit)
+  'jq-item-a-series-state-clause':       '2026-06-02',  // buildSeriesStateClause — state-aware narrative grounding
+  'jq-item-b-wirecopy-gerund-extension': '2026-06-02',  // hasWireCopy now catches holding/carrying/bringing/maintaining/owning/posting
+  'jq-item-c-scf-matchup-anchor':        '2026-06-02',  // NHL [SCF MATCHUP] + [SCF TROPHY] parallel to NBA [WCF CHAMPION]
+  'jq-item-d-layer-2g-narrative':        '2026-06-02',  // hasNarrativeHallucination + retry — 4 pattern groups, state-conditional
+  'jq-item-e-layer-2h-record-attrib':    '2026-06-02',  // hasRecordAttributionError + retry — catches team-record swaps
+  'jq-item-f-percard-retry-rerender':    '2026-06-02',  // Phase 2 — per-game/series retry+re-render via _gameBriefCache + sessionStorage + DOM
   // Layer 2f Wire-Copy Retry (June 2 2026 PM-17 — Voice v3 enforcement)
   'jq-layer-2f-wire-copy-retry': '2026-06-02',  // PM-17: hasWireCopy + retryWithoutWireCopy wired into J3 + J2 + compound main brief
   // NHL Tier A live metrics (June 2 2026 — pre-SCF G1)
@@ -15890,7 +15897,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-02c';
+  const SW_VERSION = '2026-06-02d';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -17046,6 +17053,94 @@ async function retryWithoutNarrativeHallucination(originalPrompt, text, proxyUrl
       return retried.trim();
     }
   } catch(e) { if (FIELD_DEBUG) console.error('[JQ Layer 2g] retry error:', e.message); }
+  return text;
+}
+
+// ── Record Attribution Verification — Layer 2h (PM-18 Item E) ───────────────
+// Detects when a team's W-L (or W-L-OTL) record is attributed to the WRONG team
+// in the output. PM-18 audit (4:31pm) observed "Vegas enters the Stanley Cup
+// Final holding a 53-22-7 record" — 53-22-7 is Carolina's W-L-OTL, not Vegas's.
+// The model wrote a real record but assigned it to the wrong team.
+//
+// Detection: for each record-shape number (\d+-\d+(?:-\d+)?) in the text,
+// determine which team it belongs to (per ctx.homeRecord / ctx.awayRecord),
+// then scan the preceding ~80 chars for team-name mentions. If only the WRONG
+// team is mentioned in that window, flag.
+//
+// ctx: { home, away, homeNick, awayNick, homeRecord, awayRecord }
+//   homeRecord / awayRecord — strings like "53-29" or "53-22-7", whitespace stripped
+//
+// Returns array of { record, attributedTo: 'home'|'away', shouldBe: 'home'|'away' }
+function hasRecordAttributionError(text, ctx){
+  if (!text || !ctx) return [];
+  const home = String(ctx.home || '').toLowerCase();
+  const away = String(ctx.away || '').toLowerCase();
+  const homeNick = String(ctx.homeNick || '').toLowerCase();
+  const awayNick = String(ctx.awayNick || '').toLowerCase();
+  // Also extract city/first-word — teamNick gives the last word; many briefs
+  // use the city name alone (e.g. "Vegas" rather than "Knights" or "Golden Knights").
+  const homeCity = home.split(/\s+/)[0] || '';
+  const awayCity = away.split(/\s+/)[0] || '';
+  const hRec = String(ctx.homeRecord || '').replace(/\s+/g,'');
+  const aRec = String(ctx.awayRecord || '').replace(/\s+/g,'');
+  if (!hRec || !aRec) return []; // no ground truth — skip detection
+  const lower = text.toLowerCase();
+  const hits = [];
+  const recRe = /\b(\d{1,3}[-–]\d{1,3}(?:[-–]\d{1,3})?)\b/g;
+  let m;
+  while ((m = recRe.exec(text)) !== null) {
+    const found = m[0].replace(/\s+/g,'');
+    const correctTeam = (found === hRec) ? 'home' : (found === aRec) ? 'away' : null;
+    if (!correctTeam) continue;
+    // Look at preceding 80 chars for team mentions (full / nick / city)
+    const start = Math.max(0, m.index - 80);
+    const before = lower.slice(start, m.index);
+    const homeMentioned = (home && before.includes(home)) ||
+                          (homeNick && before.includes(homeNick)) ||
+                          (homeCity && homeCity.length >= 4 && before.includes(homeCity));
+    const awayMentioned = (away && before.includes(away)) ||
+                          (awayNick && before.includes(awayNick)) ||
+                          (awayCity && awayCity.length >= 4 && before.includes(awayCity));
+    if (correctTeam === 'home' && awayMentioned && !homeMentioned) {
+      hits.push({ record: found, attributedTo: 'away', shouldBe: 'home' });
+    } else if (correctTeam === 'away' && homeMentioned && !awayMentioned) {
+      hits.push({ record: found, attributedTo: 'home', shouldBe: 'away' });
+    }
+  }
+  return hits;
+}
+
+// Layer 2h retry. Names the misattribution explicitly and the correct attribution.
+async function retryWithRecordAttribution(originalPrompt, text, proxyUrl, ctx){
+  const hits = hasRecordAttributionError(text, ctx);
+  if (!hits.length) return text;
+  if (FIELD_DEBUG) console.warn('[JQ Layer 2h] Record attribution errors:', hits);
+  try {
+    await _jqDelay();
+    const fixes = hits.slice(0, 4).map(h => {
+      const correctTeam = h.shouldBe === 'home' ? (ctx.home || 'home team') : (ctx.away || 'away team');
+      const wrongTeam   = h.attributedTo === 'home' ? (ctx.home || 'home team') : (ctx.away || 'away team');
+      return `"${h.record}" was attributed to ${wrongTeam} but is actually ${correctTeam}'s record`;
+    }).join('; ');
+    const retryPrompt = originalPrompt +
+      '\n\nIMPORTANT REWRITE — RECORD ATTRIBUTION ERROR.\n' +
+      'The following record(s) were assigned to the wrong team: ' + fixes + '.\n' +
+      `Ground truth: ${ctx.home || 'home'} record is ${ctx.homeRecord || 'unknown'}; ${ctx.away || 'away'} record is ${ctx.awayRecord || 'unknown'}.\n` +
+      'Rewrite with each record attached to the correct team. If you are not certain of a record, omit it rather than guessing.';
+    const r = await fetch(proxyUrl, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({model:'claude-haiku-4-5-20251001', max_tokens: 1500, messages: [{role:'user', content: retryPrompt}]})
+    });
+    if (!r.ok) return text;
+    const data = await r.json();
+    const retried = (data.content||[]).filter(c=>c.type==='text').map(c=>c.text).join('');
+    if (retried && retried.length > 30) {
+      const still = hasRecordAttributionError(retried, ctx);
+      if (still.length && FIELD_DEBUG) console.warn('[JQ Layer 2h] Retry still has:', still, '— shipping anyway');
+      return retried.trim();
+    }
+  } catch(e) { if (FIELD_DEBUG) console.error('[JQ Layer 2h] retry error:', e.message); }
   return text;
 }
 
@@ -18222,6 +18317,98 @@ async function fetchCompoundEditorial(sections) {
       const viol=checkSportVocab(e.brief,'soccer');
       if(viol.length&&FIELD_DEBUG) console.warn(`[JQ Layer 2b] EPL[${i}] sport vocab:`,viol);
     });
+
+    // ── Item F (PM-18): per-card retry IIFE for game_briefs + series previews ──
+    // Phase 2 of Layer 2f/2g: applies wire-copy + narrative-hallucination retries
+    // to per-card content, mutates _gameBriefCache, and refreshes the open bottom
+    // sheet if it's currently displaying an updated game.
+    //
+    // Budget guard: max 5 retries total across both arrays per compound call
+    // (else N briefs × 2 retries could blow journalism quota on a heavy slate).
+    // Fire-and-forget — result returned to caller below before this completes.
+    (async()=>{
+      const compoundPrompt = window._lastCompoundPrompt || buildCompoundPrompt(sections);
+      let retryBudget = 5;
+      // Helper: find the matching game object for a result item id
+      const _findGame = (id) => {
+        if (!id) return null;
+        const slug = id.toLowerCase();
+        for (const sec of (sections||[])) for (const g of (sec.games||[])) {
+          if (!g._id) continue;
+          const h = (g.home||'').toLowerCase().replace(/\s+/g,'_');
+          const a = (g.away||'').toLowerCase().replace(/\s+/g,'_');
+          const lp = slug.split('_').filter(Boolean).pop()||'';
+          if (lp && (slug.includes(h.slice(-6)) || slug.includes(a.slice(-6)) || h.includes(slug.split('_')[0]) || a.includes(lp))) return g;
+        }
+        return null;
+      };
+      // Helper: re-render bottom sheet if it's showing this gameId
+      const _refreshOpenSheet = (gameId) => {
+        if (window._currentBottomSheetGameId === gameId && typeof openBottomSheet === 'function') {
+          try { openBottomSheet(gameId); } catch(_) {}
+        }
+      };
+      // Per-game brief retries
+      for (const [i, b] of (result.game_briefs||[]).entries()) {
+        if (!b?.brief || retryBudget <= 0) continue;
+        const wc = hasWireCopy(b.brief);
+        const game = _findGame(b.id);
+        const ctx = game ? { seriesRecord: game.seriesRecord||'', isGame1:/\bG1\b|Game\s*1\b/i.test(game.league||'') } : {seriesRecord:'',isGame1:false};
+        const nh = hasNarrativeHallucination(b.brief, ctx);
+        if (!wc.length && !nh.length) continue;
+        let improved = b.brief;
+        if (wc.length) { improved = await retryWithoutWireCopy(compoundPrompt, improved, CLAUDE_PROXY_URL); retryBudget--; }
+        if (retryBudget > 0 && nh.length) { improved = await retryWithoutNarrativeHallucination(compoundPrompt, improved, CLAUDE_PROXY_URL, ctx); retryBudget--; }
+        if (improved && improved !== b.brief && improved.length > 30) {
+          b.brief = improved;
+          if (game && game._id) {
+            _gameBriefCache[game._id] = (typeof _enforceNBAAttributionFooter === 'function')
+              ? _enforceNBAAttributionFooter(trimToCompleteSentence(improved), [{games:[game]}])
+              : trimToCompleteSentence(improved);
+            if (FIELD_DEBUG) console.debug('[JQ Phase 2] GameBrief['+i+'] improved — cache updated for', game._id);
+            _refreshOpenSheet(game._id);
+          }
+        }
+      }
+      // Per-series preview retries
+      for (const [i, s] of (result.series||[]).entries()) {
+        if (!s?.preview || retryBudget <= 0) continue;
+        const wc = hasWireCopy(s.preview);
+        const game = _findGame(s.id);
+        const ctx = game ? { seriesRecord: game.seriesRecord||'', isGame1:/\bG1\b|Game\s*1\b/i.test(game.league||'') } : {seriesRecord:'',isGame1:false};
+        const nh = hasNarrativeHallucination(s.preview, ctx);
+        if (!wc.length && !nh.length) continue;
+        let improved = s.preview;
+        if (wc.length) { improved = await retryWithoutWireCopy(compoundPrompt, improved, CLAUDE_PROXY_URL); retryBudget--; }
+        if (retryBudget > 0 && nh.length) { improved = await retryWithoutNarrativeHallucination(compoundPrompt, improved, CLAUDE_PROXY_URL, ctx); retryBudget--; }
+        if (improved && improved !== s.preview && improved.length > 30) {
+          s.preview = improved;
+          // Series previews persist via seriesPreviewCacheKey + sessionStorage
+          if (game && typeof seriesPreviewCacheKey === 'function') {
+            try {
+              const seriesKey = seriesPreviewCacheKey(game);
+              sessionStorage.setItem(seriesKey, improved);
+              if (FIELD_DEBUG) console.debug('[JQ Phase 2] Series['+i+'] improved — sessionStorage updated for', game._id);
+            } catch(_) {}
+          }
+          // DOM refresh: any series-preview-text or card-brief-inline-text element for this gameid
+          if (game && game._id) {
+            try {
+              const trimmed = (typeof trimToCompleteSentence === 'function') ? trimToCompleteSentence(improved) : improved;
+              document.querySelectorAll(`[data-gameid="${game._id}"] .series-preview-text, [data-gameid="${game._id}"] .card-brief-inline-text`).forEach(el => {
+                el.textContent = trimmed;
+                el.classList.add('loaded');
+              });
+            } catch(_) {}
+            _refreshOpenSheet(game._id);
+          }
+        }
+      }
+      // Persist mutated result back to sessionStorage so next page open sees fixed text
+      try { sessionStorage.setItem(cacheKey, JSON.stringify(result)); } catch(_) {}
+      if (FIELD_DEBUG) console.debug('[JQ Phase 2] Per-card retry pass complete, budget remaining:', retryBudget);
+    })();
+
     sessionStorage.setItem(cacheKey, JSON.stringify(result));
     return result;
   } catch(e) {
@@ -18305,11 +18492,30 @@ async function fetchSeriesPreviewFromClaude(g){
   // Extract game number from league string for explicit game reference
   const gNumMatch2=(g.league||'').match(/g(\d+)\b/i);
   const gameNum=gNumMatch2?'Game '+gNumMatch2[1]:'';
+  // Item E: standings context for record-attribution detection (Layer 2h)
+  const _standingsCtx = (typeof buildGameStandingsContext === 'function') ? buildGameStandingsContext(g) : '';
+  // Parse home/away records out of "Team: W-L" format for Layer 2h ctx.
+  // Format from buildGameStandingsContext: "Standings: Away: 39-43 · Home: 53-29"
+  // (or "Table: ..." for soccer — skip in that case)
+  const _recordCtx = (()=>{
+    if (!_standingsCtx || _standingsCtx.startsWith('Table:')) return {};
+    const hNick = (typeof teamNick==='function') ? teamNick(g.home||'') : (g.home||'');
+    const aNick = (typeof teamNick==='function') ? teamNick(g.away||'') : (g.away||'');
+    const hRecRe = new RegExp(hNick.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'\\s*[:\\-]\\s*(\\d+[-–]\\d+(?:[-–]\\d+)?)','i');
+    const aRecRe = new RegExp(aNick.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'\\s*[:\\-]\\s*(\\d+[-–]\\d+(?:[-–]\\d+)?)','i');
+    const hM = _standingsCtx.match(hRecRe);
+    const aM = _standingsCtx.match(aRecRe);
+    return {
+      home: g.home||'', away: g.away||'', homeNick: hNick, awayNick: aNick,
+      homeRecord: hM ? hM[1] : '', awayRecord: aM ? aM[1] : '',
+    };
+  })();
   const prompt=[FIELD_VOICE_EXEMPLARS,
     'Write a FIELD Series Brief for this playoff game.',
     'Home: '+g.home+'. Away: '+g.away+'.'+(g.venue?' Venue: '+g.venue+'.':''),
     'Series: '+(g.seriesRecord||'')+'. Stakes: '+stakes+'.'+(gameNum?' Tonight is '+gameNum+'.':''),
     buildSeriesStateClause(g),
+    _standingsCtx ? 'Standings: '+_standingsCtx : '',
     g.matchupNote?'Context: '+g.matchupNote:'',
     g.journalNote&&g.journalNote!==g.matchupNote?'Series history: '+g.journalNote:'',
     g.league&&!g.matchupNote?'League: '+g.league+'.':'',
@@ -18343,6 +18549,7 @@ async function fetchSeriesPreviewFromClaude(g){
       text=await retryWithoutCliches(prompt,text,CLAUDE_PROXY_URL);budget.inc();
       text=await retryWithoutWireCopy(prompt,text,CLAUDE_PROXY_URL);
       text=await retryWithoutNarrativeHallucination(prompt,text,CLAUDE_PROXY_URL,{seriesRecord:g.seriesRecord||'', isGame1:/\bG1\b|Game\s*1\b/i.test(g.league||'')});
+      text=await retryWithRecordAttribution(prompt,text,CLAUDE_PROXY_URL,_recordCtx);
       text=await checkLeadSentence(prompt,text,CLAUDE_PROXY_URL);
       text=await checkStatVerification(prompt,text,CLAUDE_PROXY_URL);
       text=await checkCrossSport(prompt,text,CLAUDE_PROXY_URL);
@@ -24749,6 +24956,7 @@ function openBottomSheet(gameId) {
   let game = null, sport = '';
   (allData?.sports||[]).forEach(s=>(s.games||[]).forEach(g=>{ if(g._id===gameId){game=g;sport=s.sport;} }));
   if (!game) return;
+  window._currentBottomSheetGameId = gameId; // Item F: enables per-card brief retry re-render
   const eData = Object.values(espnScores||{}).find(e => {
     const h = teamNick(game.home).toLowerCase();
     return (e.homeName||'').toLowerCase().includes(h) || (e.home||'').toLowerCase().includes(h);
@@ -24821,6 +25029,7 @@ function openBottomSheet(gameId) {
 function closeBottomSheet() {
   getEl('bs-overlay')?.classList.remove('open');
   getEl('bottom-sheet')?.classList.remove('open');
+  window._currentBottomSheetGameId = null; // Item F: clear tracker
 }
 
 // ── Wow#45 Stage 2: Drama Sparkline ──────────────────────────────────────────

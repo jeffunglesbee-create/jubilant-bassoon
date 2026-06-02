@@ -2059,7 +2059,7 @@ assert('A380 — JQ Layer 2f: telemetry on compound game_briefs + series preview
   /Series\[\$\{i\}\] wire-copy/.test(html) &&
   // Compound game_brief audit forEach: hasWireCopy check + log
   /GameBrief\[\$\{i\}\] wire-copy/.test(html),
-  'Per-game and per-series wire-copy detection must log via FIELD_DEBUG so production audits show which game_briefs trip the detector. Retry+re-render for these paths is a follow-up build (requires DOM re-render plumbing that the main-brief retry IIFE does not need)');
+  'Per-game and per-series wire-copy detection must log via FIELD_DEBUG so production audits show which game_briefs trip the detector. Retry+re-render for these paths is implemented in Phase 2 (A384) but telemetry remains as a diagnostic signal');
 
 // ── A381-A382: Item A Series State Clause + Item D Layer 2g Narrative Hallucination ──
 assert('A381 — Item A: buildSeriesStateClause wired into J2 + compound per-game line emission',
@@ -2092,6 +2092,44 @@ assert('A382 — Item D: Layer 2g hasNarrativeHallucination + retryWithoutNarrat
   /text=await retryWithoutNarrativeHallucination\(prompt,text,CLAUDE_PROXY_URL,\{seriesRecord:g\.seriesRecord/.test(html) &&
   /improved = await retryWithoutNarrativeHallucination\(prompt, improved, CLAUDE_PROXY_URL/.test(html),
   'Item D Layer 2g: four pattern groups (elimination/momentum/trophyClaim/hypeFiller), state-conditional application (0-0 strictest, mid-series only trophy+hype), retry prompt names the state and matched phrases explicitly, wired into all three brief retry chains (J3 standalone, J2 series with game context, compound main brief)');
+
+assert('A383 — Item E: Layer 2h hasRecordAttributionError + retryWithRecordAttribution + J2 wiring',
+  // Detector + retry function presence
+  html.includes('function hasRecordAttributionError(text, ctx)') &&
+  html.includes('async function retryWithRecordAttribution(originalPrompt, text, proxyUrl, ctx)') &&
+  // Detector uses three-tier name matching: full name + nick + city-first-word
+  html.includes('homeCity = home.split(/\\s+/)[0]') &&
+  html.includes('awayCity = away.split(/\\s+/)[0]') &&
+  // Returns structured hit objects with attributedTo + shouldBe
+  html.includes("attributedTo: 'away', shouldBe: 'home'") &&
+  html.includes("attributedTo: 'home', shouldBe: 'away'") &&
+  // Retry prompt names the ground-truth records explicitly
+  html.includes('Ground truth: ${ctx.home || \'home\'} record is') &&
+  // Wired into J2 with _recordCtx parsed from buildGameStandingsContext
+  html.includes('const _standingsCtx = (typeof buildGameStandingsContext') &&
+  /text=await retryWithRecordAttribution\(prompt,text,CLAUDE_PROXY_URL,_recordCtx\)/.test(html),
+  'Item E Layer 2h: detects when a team record is attributed to the wrong team (PM-18 production failure: "Vegas... holding a 53-22-7 record" where 53-22-7 is Carolina). Three-tier name matching (full/nick/city) handles variants. J2 standings context injected so model has ground truth + detector has the records to verify against');
+
+assert('A384 — Item F: Phase 2 per-card retry IIFE on compound game_briefs + series previews with DOM/cache refresh',
+  // The per-card IIFE marker comment
+  html.includes('Item F (PM-18): per-card retry IIFE for game_briefs + series previews') &&
+  // Budget guard (max 5 retries to prevent quota blowout on heavy slate)
+  html.includes('let retryBudget = 5;') &&
+  // Both detectors invoked per entry
+  /for \(const \[i, b\] of \(result\.game_briefs\|\|\[\]\)\.entries\(\)\)/.test(html) &&
+  /for \(const \[i, s\] of \(result\.series\|\|\[\]\)\.entries\(\)\)/.test(html) &&
+  // _gameBriefCache updated on game_brief improvement
+  html.includes('_gameBriefCache[game._id] = (typeof _enforceNBAAttributionFooter') &&
+  // Series previews persist to sessionStorage via seriesPreviewCacheKey
+  html.includes('seriesPreviewCacheKey(game)') &&
+  // DOM refresh for currently-rendered series-preview elements
+  html.includes('[data-gameid="${game._id}"] .series-preview-text') &&
+  // openBottomSheet tracker for live re-render of open sheet
+  html.includes('window._currentBottomSheetGameId = gameId; // Item F') &&
+  html.includes('window._currentBottomSheetGameId = null; // Item F') &&
+  // Helper to re-render open sheet
+  html.includes('window._currentBottomSheetGameId === gameId'),
+  'Item F: async IIFE in fetchCompoundEditorial iterates game_briefs[] + series[], invokes Layer 2f (wire-copy) + Layer 2g (narrative hallucination) per entry with state-aware context, mutates _gameBriefCache for per-game briefs and sessionStorage(seriesPreviewCacheKey) for series, refreshes DOM card text for visible series cards and the bottom sheet if currently open. Budget capped at 5 retries to prevent quota blowout on heavy slates');
 
 
 // ═════════════════════════════════════════════════════════════════════
