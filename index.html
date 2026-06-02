@@ -1667,6 +1667,13 @@ body::before{
   .jrn-series-text{font-size:.8rem;line-height:1.7}
 }
 
+/* C2: fade-in transition when journalism-mode activates. Respects reduced motion. */
+@keyframes jrnFadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+body.journalism-mode #field-journalism-section{animation:jrnFadeIn 220ms ease-out}
+@media (prefers-reduced-motion: reduce){
+  body.journalism-mode #field-journalism-section{animation:none}
+}
+
 /* Tab-swap behavior on mobile/tablet: when journalism mode active,
    hide schedule + desk + media; show journalism. Companion stays hidden
    at this viewport regardless. */
@@ -1680,7 +1687,7 @@ body::before{
   body.journalism-mode #ambient-panel{display:none !important}
   body.journalism-mode #field-journalism-section{display:block}
   body.journalism-mode #field-journalism-section[hidden]{display:block}
-  body.journalism-mode .jrn-back-pill{display:inline-block}
+  body.journalism-mode .jrn-back-pill{display:inline-block;position:sticky;top:calc(env(safe-area-inset-top,0px) + .5rem);z-index:50;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);background:rgba(20,20,28,.78)}
   body:not(.journalism-mode) #field-journalism-section{display:none}
 }
 .betting-head{
@@ -9162,6 +9169,10 @@ function renderFieldDesk(){
 function toggleJournalismView() {
   const body = document.body;
   const willActivate = !body.classList.contains('journalism-mode');
+  // C2: scroll-position save/restore — preserve user's place in the schedule
+  if (willActivate) {
+    try { window._fieldScheduleScrollY = window.scrollY || 0; } catch(_) {}
+  }
   body.classList.toggle('journalism-mode', willActivate);
   try { localStorage.setItem('field_journalism_mode', willActivate ? '1' : '0'); } catch(_) {}
   const navLink = document.getElementById('jrn-nav-link');
@@ -9180,9 +9191,30 @@ function toggleJournalismView() {
       }
     }, 50);
   } else {
-    window.scrollTo({top: 0, behavior: 'smooth'});
+    // C2: restore prior schedule scroll position rather than jumping to top
+    const restoreY = (typeof window._fieldScheduleScrollY === 'number') ? window._fieldScheduleScrollY : 0;
+    window.scrollTo({top: restoreY, behavior: 'smooth'});
   }
 }
+
+// C2: resize-aware journalism-mode behavior. If user rotates iPad portrait → landscape
+// while in journalism-mode and crosses the 1200px threshold, the laptop+ layout (C3)
+// will be in effect. For now, just ensure the section's [hidden] attr is cleared so
+// the section stays visible across the transition. No teardown of body class needed —
+// the CSS media queries handle the layout swap automatically.
+(function(){
+  let _jrnResizeRaf = null;
+  window.addEventListener('resize', function(){
+    if (_jrnResizeRaf) return;
+    _jrnResizeRaf = requestAnimationFrame(function(){
+      _jrnResizeRaf = null;
+      if (document.body.classList.contains('journalism-mode')) {
+        const sec = document.getElementById('field-journalism-section');
+        if (sec && sec.hasAttribute('hidden')) sec.removeAttribute('hidden');
+      }
+    });
+  }, { passive: true });
+})();
 
 function renderJournalism() {
   const sec = document.getElementById('field-journalism-section');
