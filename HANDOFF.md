@@ -1,136 +1,115 @@
-# FIELD Handoff — June 1 2026 PM-8 TYPE B (Voice Positioning Moves 1+2 shipped)
+# FIELD Handoff — June 1 2026 PM-9 TYPE B (ET fix + Voice Positioning v2 shipped)
 
-**jubilant-bassoon HEAD:** cae307e (PM-8 close: Voice Positioning Moves 1+2 — TIME-PERIOD loosened + FIELD_VOICE_EXEMPLARS wired) · Smoke: 365/0 (full assertion run, gate at EOF) · SW_VERSION 2026-06-01l
+**jubilant-bassoon HEAD:** e4f7ef1 (PM-9 close: Voice Positioning v2 — Moves A+B+C) · Smoke: 366/0 (full assertion run, gate at EOF) · SW_VERSION source 2026-06-01n
 **field-relay-nba HEAD:** 6144d17 (unchanged since PM-6)
 
-**This session closed:** Item 16 from PM-7 priority list — Voice Positioning Moves 1+2. Unblocked by Jeff approvals in chat (Move 1 = accept loosening; Move 2 voice register = wise, intelligent, cheeky, wry, a tad cynical but not that much).
+**This session closed:** Two live observations from Jeff at 10:28pm ET June 1:
+1. Health Panel showed 2026-06-02l (UTC-stamped, wrong calendar day) → fixed CI workflows ET (commit 406242d)
+2. J3 Brief read as wire copy → Voice Positioning v2 A+B+C shipped (commit e4f7ef1). Move D held for observation.
 
-**Session Doc (PM-8, this session — Drive):** 1GFu8I3NPJEjJ35meUOwkLQYGkVq2l1KBB4E8ou6MdZw
+**Session Doc (PM-9, this session — Drive):** 1IEGlJZDCxm8lS5LDS3_YKr5EpRJFIvBfS_-UutVdeQ8
+**Session Doc (PM-8 prior — Drive):** 1GFu8I3NPJEjJ35meUOwkLQYGkVq2l1KBB4E8ou6MdZw
 **Session Doc (PM-7 prior — Drive):** 1Zi6pCB5dTOURvWyRvWU4KOFiDBzc2z6GZTsFQ1vsqoY
-**Session Doc (PM-6 prior — Drive):** 1fF-5hrXThTw7cawgIxEz2rD5PussHAP7iYJV4Y8Vp-Q
-**Data Skrive Patent Analysis v3 (source of Voice Positioning plan):** 1yCXY5AF5J1jvo_b5wCV7nzp_FwQ1SIWGJqusZ4AaVqU
+**Data Skrive Patent Analysis v3:** 1yCXY5AF5J1jvo_b5wCV7nzp_FwQ1SIWGJqusZ4AaVqU
 **ADR-003 — stats.nba.com Source Acceptance:** 1XUPoayJUTh2Ki_DYXgw8uOAYZoGtpDt2c7510vGq64w
-**NBA Stats GREEN-Path Successor Investigation:** 1qKrX_K6mk7aLN8e4h2g7C8sOO9JiWR_q4fqB2W5wmiE
+**NBA Stats GREEN-Path Successor:** 1qKrX_K6mk7aLN8e4h2g7C8sOO9JiWR_q4fqB2W5wmiE
 **CANONICAL BUILD BACKLOG (READ FIRST):** `1ugUh6UmeDkLR-gEH8hJPwXK2NiIrXYQY8gp2jO2p2Hk`
 
 ## TIER 0 DEADLINES
 
-- **NBA Finals G1: June 3** — SAS @ NYK · Voice Positioning result quality tested live; all 4 context tags + extended attribution still live from PM-6/PM-7
-- **Stanley Cup G2: June 4** — VGK @ CAR
-- **World Cup 2026: June 11 HARD** — flip `wc26:true` in FIELD_V2_SOURCES (~5 min)
-- **USPTO provisional: ~June 25** — Voice Positioning is the primary Defense #5 deliverable
+- **NBA Finals G1: June 3** — first major test of Voice Positioning v2 result quality
+- **Stanley Cup G2: June 4**
+- **World Cup 2026: June 11 HARD** — flip `wc26:true`
+- **USPTO provisional: ~June 25**
 
-## WHAT HAPPENED THIS SESSION (PM-8)
+## WHAT HAPPENED THIS SESSION (PM-9)
 
-User chat flow: "Present priority list" → "Detail item 16" → "Move 2: voice should be wise, intelligent, cheeky, wry and a tad cynical but not that much. Move 1: accept loosening suggestions."
+### Finding 1 — Version stamp UTC instead of ET (commit 406242d)
 
-That third message was the unblocking approval. PM-8 TYPE B started from there.
+`.github/workflows/deploy-gate.yml` line 51 used `date -u +%Y-%m-%d`. My PM-8 push committed at ~02:01 UTC June 2 = ~10:01 PM ET June 1. CI rewrote SW_VERSION from `2026-06-01l` (source) to `2026-06-02l` (deployed). Health Panel showed the future.
 
-### Move 1 — TIME-PERIOD ANCHORING loosened (in FIELD_PROSE_STYLE)
+**Fix:** `DEPLOY_DATE=$(TZ='America/New_York' date +%Y-%m-%d)` at both surfaces (deploy-gate.yml line 51 and daily-brief.yml line 284 for SW_VERSION health check consistency).
 
-**Was:** `every numeric statistic must be qualified with its time period in the SAME sentence ... Bare numbers ... ARE FORBIDDEN.`
+### Finding 2 — Voice didn't land (commit e4f7ef1)
 
-**Now:** `anchor a numeric statistic to its time period whenever ambiguity would exist ... ELIDED constructions are acceptable when the period is unambiguous from context ... TEST: would a reader plausibly misread the period without the qualifier? If yes, anchor. If no, elide for rhythm.`
+Live J3 Brief was wire copy. Specifically: "this season" repeated mechanically, records/stats stacked without angle, "with X" + "has Y" parallel template throughout, no observation.
 
-Patent-defense intent preserved (anchor where ambiguity exists). Noun-anchor pattern retained.
+**Diagnosis:** v1 buried `FIELD_VOICE_EXEMPLARS` in the rules section after `FIELD_PROSE_STYLE`. AI processed them as "more rules" alongside 50+ other instructions. Safety-discipline rules crowded out voice. Default fallback: maximum-density data transcription = wire copy.
 
-### Move 2 — FIELD_VOICE_EXEMPLARS constant + wired at 3 long-form surfaces
+**v2 Moves shipped (Jeff approved A+B+C, held D):**
 
-New constant declared after FIELD_PROSE_STYLE. Contains voice register palette (Jeff's 5 descriptors), anti-copy safeguard, and 3 exemplars:
+**Move A — HOIST.** `FIELD_VOICE_EXEMPLARS` moved from rules section to TOP of each long-form prompt:
+- Compound prompt template: opens with `${FIELD_VOICE_EXEMPLARS}` before "You are FIELD's sports intelligence editor"
+- J3 standalone: first array element before "Write a FIELD Brief..."
+- J2 series preview: first array element before "Write a FIELD Series Brief..."
 
-- **Exemplar A** (NBA Finals Game 1, ~145 words) — demonstrates elided time-period + line-movement reading
-- **Exemplar B** (WNBA Commissioner's Cup, ~110 words) — structural-edge-vs-mirage framing
-- **Exemplar C** (NHL playoff, ~100 words) — home-ice dynamics + injury-info doublespeak observation
+**Move B — ANTI-EXEMPLAR.** Added inside the constant after positive exemplars. Paraphrases the actual failing brief. Followed by "Why this fails" enumeration (records stacked, "this season" mechanical, parallel template, "a press release could have written this"). Closes with: "If the brief reads like a list of facts linked by 'with' and 'against,' the voice has failed."
 
-**Wired at:**
-1. `buildCompoundPrompt` template (`${FIELD_VOICE_EXEMPLARS}` interpolation)
-2. `fetchFIELDBriefFromClaude` (J3 standalone, comma-prefixed)
-3. `fetchSeriesPreviewFromClaude` (J2 standalone, array entry)
+**Move C — PRIORITY.** Single sharp instruction: "Voice over completeness. If you have 30 facts and a 150-word budget, pick the 5 that matter most and write them with voice. Do NOT list all 30 as a transcribed data dump. ... Compression through selection IS the editorial act — it is WHY the reader chose FIELD over a box score feed. When in doubt: write fewer things better, not more things flatly."
 
-**NOT wired at** short sub-prompts (35-70 word EPL/MLB/generic briefs) — exemplar length would dominate the output budget. Those still inherit FIELD_PROSE_STYLE with Move 1's loosening.
-
-### Why the pairing matters
-
-Move 1 alone gives the AI rope without an anchor. Move 2 alone gives a target but mandatory TIME-PERIOD rule contradicts the exemplars' rhythm. Together: Move 1 makes Move 2 reachable. The exemplars demonstrate the loosened rule in practice ("23.2 and 9" elides because Finals context is obvious).
-
-### Commit
-
-- `cae307e` — PM-8: Voice Positioning Moves 1+2 — TIME-PERIOD loosened + FIELD_VOICE_EXEMPLARS wired (single concern, Rule 7)
+**Move D — NOT APPLIED.** Held for observation. Would loosen the STRUCTURE rule ("Paragraph 1 opens on the highest-stakes game with the specific situation"). Higher risk — could backfire toward hot-take register. Decision: see if A+B+C is sufficient before pulling D.
 
 ### Smoke
 
-- A370 NEW — Voice Positioning Move 2 wiring (constant + register + 3 exemplars + delimiters + anti-copy + ≥3 wirings)
-- A371 NEW — Voice Positioning Move 1 loosening (ELIDED + TEST + noun-anchor retained + old mandatory wording GONE)
-- A151 updated — accepts FIELD_PROSE_STYLE,FIELD_VOICE_EXEMPLARS,VOICE chain
-- A358 updated — asserts the LOOSENED shape (not the old mandatory shape)
+- A370 expanded — now includes anti-exemplar (Move B) and priority (Move C) content checks
+- A372 NEW — verifies Move A hoisting (old adjacency GONE, new top-of-prompt position present, total 4 occurrences)
+- A151 updated — accepts both adjacency forms
 
-Baseline: **363/0 → 365/0**
+Baseline: 365/0 → **366/0**
 
-### Restraint check (logged)
-
-- No banned phrases in exemplars
-- "Quoted phrases" in Exemplar C are characterizations of typical team-issued updates, not attributed quotes
-- No prediction language ("Expect" is scene-setting, not outcome-calling)
-- Second-person imperative "Watch the warmups" reworded to "The warmups are the tell."
+SW_VERSION: `2026-06-01l` → `2026-06-01m` (ET fix bump) → `2026-06-01n` (v2 bump). Going forward, CI computes ET-correct dates.
 
 ## PRIORITY LIST FOR NEXT SESSION
 
-### P0 — Live verification (URGENT, Finals G1 June 3 + Cup G2 June 4)
+### P0 — Live verification (URGENT)
 
-1. SW `2026-06-01l` active in browser
-2. **NEW — Voice Positioning result quality** — does the J3 Brief read with voice? Watch for:
-   - Elided time-period constructions ("23.2 and 9" not "23.2 PPG this postseason and 9 RPG this postseason")
-   - Cheeky/wry register (a turn of phrase that feels like a columnist)
-   - All journalism integrity rules still observed (no fake stats, no predictions, no second person, no banned phrases)
-3. Failure modes to specifically watch for:
-   - AI copies exemplar PLAYER NAMES into non-NBA-Finals briefs (anti-copy safeguard should prevent)
-   - AI inflates output to exemplar length when word budget is lower
-   - AI copies exemplar STRUCTURE too closely (every brief opens with historical reference)
-   - Voice drifts into BNI/hype territory (would violate J-BUDGET-A)
-4. NBA Finals G1 J3 brief — all 4 tags + extended attribution still live from PM-7
+1. **SW_VERSION shows ET calendar day** — verify Health Panel shows `2026-06-01n` (or whatever the latest ET-stamp produces). The CI bug that wrote `2026-06-02l` is fixed.
+2. **Voice Positioning v2 result quality on next live brief.** Watch for:
+   - **POSITIVE signs:** opens with insight not template ("Vegas at home in May is..." vs "53-22-7 Hurricanes face..."), elided time-period constructions ("Dorofeyev at 37" vs "Dorofeyev has 37 goals this season"), fewer games with voice, compression evident
+   - **CONTINUED FAILURE signs:** "this season" still repeating, all 16 matchups still listed, "with X" + "against Y" parallel throughout — if so, **deploy Move D**
+3. **If still failing after v2:** deploy **Move D** (loosen STRUCTURE rule that forces "Paragraph 1 opens on the highest-stakes game"). Higher risk but at this point the safety-discipline rules clearly outweigh the voice exemplars.
+4. NBA Finals G1 J3 brief — all 4 context tags + extended attribution (PM-6/7) still live
 5. Cup Final tags regression check
-6. Smoke gate at EOF still working in CI
 
-### P0 — TIER 0 game-day cadence
+### P0 — TIER 0 cadence
 
-7. NBA Finals each game (June 3, 5, 7, …)
-8. Cup Final each game (June 4, 6, …)
-9. **June 11 HARD** — flip `wc26:true` in FIELD_V2_SOURCES
+6. NBA Finals each game (June 3, 5, 7, …)
+7. Cup Final each game (June 4, 6, …)
+8. **June 11 HARD** — flip `wc26:true`
 
-### P1 — Documentation amendments (carried from PM-6/7)
+### P1 — Documentation amendments (carried)
 
-10. Update CI/Deploy Ref for `/nba-stats/*` route
-11. Add ADR-003 to STANDARDS.md ADR list
-12. Update Build Backlog Canonical — move §D NBA → §A; add §A entry for Voice Positioning shipped
-13. Investigate PM-5 relay tracking gap (fff6e3c + 0e9a9d9)
+9. CI/Deploy Ref update (now includes PM-9 ET fix)
+10. Add ADR-003 to STANDARDS.md ADR list
+11. Build Backlog Canonical updates (Voice Positioning v1 + v2 shipped)
+12. PM-5 relay tracking gap investigation
 
-### P1 — GREEN-path successor (when ADR-003 re-evaluation trigger fires)
+### P1 — GREEN-path successor
 
-14. Verify API-Sports league-leaders endpoint or filter+sort approach (~15 min FREE). See Drive `1qKrX_K6mk7aLN8e4h2g7C8sOO9JiWR_q4fqB2W5wmiE`.
+13. Verify API-Sports league-leaders endpoint (~15 min FREE)
 
 ### P2 — USPTO provisional prep (~June 25)
 
-15. Patent narrative now includes PM-8: Voice Positioning shipped (the primary Defense #5 deliverable — "intelligent editorial layer that competitors can't replicate"). The pairing pattern (rule-loosening + exemplar demonstration) is itself patent-relevant architecture.
+14. Patent narrative now includes the **PM-9 iteration cycle itself** — Defense #5 architecture is not just the voice work but the OBSERVATION → DIAGNOSIS → VERSIONED FIX cycle that maintains it. Voice Positioning shipped (PM-8) → observed failing (PM-9 Finding 2) → diagnosed → v2 deployed in one cycle.
 
-### P2 — Build backlog highlights (carried)
+### P2 — Build backlog highlights
 
-16. WC2026 mini-build before June 11 (F09 REST Countries + F08 Nager.Date Holidays)
-17. `[MOBILE-INTEL-A]` Right Now mobile hero card (~50 min, prereq PWA-A)
+15. WC2026 mini-build before June 11
+16. `[MOBILE-INTEL-A]` Right Now mobile hero card (~50 min)
 
-### P2 — Decisions waiting on Jeff (§D Build Backlog)
+### P2 — Decisions waiting on Jeff (§D)
 
-18. SeatGeek affiliate link A vs B
-19. BDL milestone A (pay GOAT $39.99/mo) vs B (remove, PM-4 found inert) · recommend B
-20. F07 TheSportsDB attribution terms read (Rule 45)
-21. F12 Google Trends alpha stability (Rule 45 + Rule 48 Class B)
+17. SeatGeek affiliate
+18. BDL milestone A vs B (recommend B)
+19. F07 / F12 Rule 45 gates
 
-### P2 — Voice Positioning v2 if exemplars don't land
+### P3 — Voice Positioning Move D (if A+B+C insufficient)
 
-22. If live verification shows the AI not matching the register, mid-session iteration on exemplars. Have observation log ready: which voice descriptor was missed (wise/intelligent/cheeky/wry/cynical), which exemplar failed, what the AI defaulted to instead.
+20. Loosen STRUCTURE rule that forces "Paragraph 1 opens on the highest-stakes game with the specific situation." Lower priority IF v2 lands; high priority IF v2 still produces wire copy.
 
 ### P3 — Cosmetic STANDARDS.md cleanup
 
-23. Reorder Rule 47/48 in STANDARDS.md (Rule 48 at line 2633 precedes Rule 47 at line 2700). No content change.
+21. Reorder Rule 47/48 in STANDARDS.md (line 2633 precedes line 2700).
 
 ### P3 — Deferred console errors
 
@@ -141,14 +120,12 @@ Baseline: **363/0 → 365/0**
 
 ## STATE INVARIANTS AT END OF SESSION
 
-- jubilant-bassoon HEAD: cae307e, deploys SUCCESS
+- jubilant-bassoon HEAD: e4f7ef1, deploys SUCCESS
 - field-relay-nba HEAD: 6144d17 (unchanged)
-- **Smoke: 365/0** (full assertion run, gate at EOF, all green)
-- SW_VERSION `2026-06-01l` live
-- **Voice Positioning Moves 1+2 LIVE** — first J3 Brief that uses them is Finals G1 June 3
-- TIME-PERIOD ANCHORING loosened to permit elided constructions
-- FIELD_VOICE_EXEMPLARS constant + wired at 3 long-form surfaces
-- All prior session state preserved (PM-7 extended attribution, PM-6 NBA leaders feed, etc.)
-- Restraint check passed (no banned phrases, no fake quotes, no predictions, no second person)
-- Cosmetic carry: Rule 48 / Rule 47 ordering (P3)
-- Voice Positioning result quality verification carried into P0 next session
+- **Smoke: 366/0** (full assertion run, gate at EOF, all green)
+- SW_VERSION source `2026-06-01n` (CI computes ET-correct deploy stamp)
+- **CI ET fix LIVE** — deploy-gate.yml + daily-brief.yml use America/New_York
+- **Voice Positioning v2 LIVE** — exemplars hoisted to TOP of 3 long-form prompts, anti-exemplar present, priority statement present
+- Move D held for observation
+- All prior session state preserved (PM-6 NBA leaders feed, PM-7 attribution extension, PM-8 v1 Voice Positioning)
+- The PM-7 cosmetic carry (Rule 47/48 ordering) still open
