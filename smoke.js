@@ -2131,6 +2131,77 @@ assert('A384 — Item F: Phase 2 per-card retry IIFE on compound game_briefs + s
   html.includes('window._currentBottomSheetGameId === gameId'),
   'Item F: async IIFE in fetchCompoundEditorial iterates game_briefs[] + series[], invokes Layer 2f (wire-copy) + Layer 2g (narrative hallucination) per entry with state-aware context, mutates _gameBriefCache for per-game briefs and sessionStorage(seriesPreviewCacheKey) for series, refreshes DOM card text for visible series cards and the bottom sheet if currently open. Budget capped at 5 retries to prevent quota blowout on heavy slates');
 
+assert('A385 — PM-19 Journalism Tab: toggleJournalismView + body.journalism-mode CSS hide rules + localStorage persistence',
+  // Toggle function
+  html.includes('function toggleJournalismView()') &&
+  // Body class toggle
+  html.includes("body.classList.toggle('journalism-mode', willActivate)") &&
+  // localStorage persistence
+  html.includes("localStorage.setItem('field_journalism_mode'") &&
+  // Mobile/tablet hide rules
+  html.includes('@media(max-width:1199px)') &&
+  html.includes('body.journalism-mode #field-desk-section,') &&
+  html.includes('body.journalism-mode #media-section,') &&
+  // Nav anchor
+  html.includes('jrn-nav-link') &&
+  html.includes('📖 Journal') &&
+  // Section element
+  html.includes('id="field-journalism-section"'),
+  'PM-19 C1+C2: Journalism Tab toggle must create body.journalism-mode class, persist to localStorage, hide irrelevant sections at mobile/tablet, and surface 📖 Journal anchor parallel to 📰 Desk');
+
+assert('A386 — PM-19 Journalism Tab: laptop (1200-1439px) side-by-side + desktop (1440px+) three-pane layouts',
+  // Laptop media query
+  html.includes('@media(min-width:1200px) and (max-width:1439px)') &&
+  // Desktop media query
+  html.includes('@media(min-width:1440px)') &&
+  // Fixed-left rail pattern on .main
+  /body\.journalism-mode \.main\s*\{[^}]*position:fixed[^}]*left:0/.test(html) &&
+  // Companion only shown at desktop
+  /body\.journalism-mode \.jrn-companion\s*\{\s*display:block[^}]*position:fixed[^}]*right:0/.test(html) &&
+  // Reading column constraints
+  html.includes('body.journalism-mode .jrn-reading{max-width:640px}') &&
+  html.includes('body.journalism-mode .jrn-reading{max-width:720px}') &&
+  // renderJournalismCompanion present
+  html.includes('function renderJournalismCompanion('),
+  'PM-19 C3: laptop layout fixes .main as 280px left rail; desktop adds .jrn-companion as fixed right rail. Reading column capped at 640px (laptop) / 720px (desktop). renderJournalismCompanion populates Tonight Read counts, Archive link, Later Tonight playoff list, and field_jq_scores quality telemetry');
+
+assert('A387 — PM-19 Journalism Tab: bottom-sheet "Read full coverage →" cross-link + openJournalismForGame helper',
+  // Cross-link CSS class
+  html.includes('.bs-jrn-link{cursor:pointer') &&
+  // Inserted in openBottomSheet conditionally on gameBrief presence
+  html.includes('bs-section bs-jrn-link') &&
+  html.includes('Read full coverage →') &&
+  // Helper function
+  html.includes('function openJournalismForGame(gameId)') &&
+  // Helper closes sheet, toggles mode, scrolls to anchor
+  html.includes('closeBottomSheet()') &&
+  html.includes('toggleJournalismView()') &&
+  // Selector matches both series and slate items
+  html.includes('.jrn-series, [data-gameid="${gameId}"].jrn-slate-item') &&
+  // slate items carry data-gameid for cross-link
+  html.includes('<li class="jrn-slate-item" data-gameid='),
+  'PM-19 C4: bottom sheet Read full coverage link only renders when gameBrief exists (no dead link). openJournalismForGame closes sheet, enters journalism-mode, scrolls to [data-gameid].jrn-series or .jrn-slate-item with 1.6s gold outline pulse');
+
+assert('A388 — PM-19 Journalism Tab: four render functions present + companion content blocks + journalism-tab-v1 in FIELD_FEATURES',
+  // Four render functions
+  html.includes('function renderJournalism()') &&
+  html.includes('function renderJournalismCompanion(') &&
+  html.includes('function renderJournalismArchive()') &&
+  html.includes('function jumpToGameCard(') &&
+  // Companion blocks
+  html.includes("Tonight's Read") &&
+  html.includes('Later Tonight') &&
+  // Quality telemetry from field_jq_scores
+  html.includes("localStorage.getItem('field_jq_scores'") &&
+  // Archive scans 7 days
+  html.includes('for (let i = 1; i <= 7; i++)') &&
+  // FIELD_FEATURES entry
+  html.includes("'journalism-tab-v1':") &&
+  // J3 → J2 → J1 hierarchy markers
+  html.includes('J3 · The Editorial') &&
+  html.includes('Regular-Season Slate'),
+  'PM-19 C5: all four journalism render functions (renderJournalism, renderJournalismCompanion, renderJournalismArchive, jumpToGameCard) must be present. Companion shows Tonight Read counts + Later Tonight + Quality (field_jq_scores telemetry). Archive scans 7 days of sessionStorage. FIELD_FEATURES gains journalism-tab-v1 dated entry.');
+
 
 // ═════════════════════════════════════════════════════════════════════
 // GATE — all assertions above must pass before deploy proceeds.

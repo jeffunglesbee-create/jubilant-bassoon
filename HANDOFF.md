@@ -1,222 +1,145 @@
-# FIELD Handoff — June 2 2026 PM-18 close (Items A-F voice v3 enforcement parity — six features shipped)
+# FIELD Handoff — June 2 2026 PM-19 close (Journalism Tab v1 — 5 commits, recovered + shipped)
 
-**jubilant-bassoon HEAD:** 7066dd2 last meaningful · Smoke: 378/0 · SW_VERSION source `2026-06-02d`
-**field-relay-nba HEAD:** 880e3ae last meaningful (unchanged) · OAuth feature commit: 8e7257d
+**jubilant-bassoon HEAD:** (set on push) · Smoke: 382/0 · SW_VERSION source `2026-06-02e`
+**field-relay-nba HEAD:** 880e3ae last meaningful (unchanged)
 
-**This session shipped:** TYPE D → TYPE B. Audit of live SCF G1 pre-game brief (4:31pm screenshot) revealed four distinct failure modes: narrative hallucination at 0-0, wire-copy gerund evasion route, record attribution flip, and per-game compound briefs still failing. Six items recommended, all six built and shipped:
-- Item A — Series State Clause (NOVEL state-aware narrative grounding)
-- Item B — hasWireCopy gerund extension (closes 'holding' miss)
-- Item C — NHL [SCF MATCHUP] context anchor
-- Item D — Layer 2g narrative hallucination retry (state-conditional)
-- Item E — Layer 2h record attribution detector + retry
-- Item F — Phase 2 per-card retry+re-render
+**This session shipped:** PM-19 redo after the mid-build tool-availability interrupt. Five single-concern commits recreating + completing Journalism Tab v1 from the PM-19 Recovery Doc (Drive `10udrJmsVd0FSf-hU2qEuNTN1PL4hQ6tMlTji0IfpmN0`), reconciled with the original TYPE D recommendation Jeff approved with "Let's do it all".
 
-**Session Doc (this session — Drive):** `1snqEKzp8SnQxcfibIgLkG49kFm14cqyyKdQIrTJqK1I`
-**Previous session doc (PM-17 — Drive):** `1Xa8pXyk_aPeCxQomWSP0BVujocD8NsYf2vt4Paw726I`
+- C1 — Scaffold + content (nav anchor, section HTML, ~70 lines CSS, 4 JS render functions, 6 sibling renderJournalism triggers)
+- C2 — Mobile/tablet UX polish (sticky back-pill with backdrop blur + safe-area, 220ms fade-in respecting prefers-reduced-motion, scroll position save/restore, resize-aware listener)
+- C3 — Laptop side-by-side (1200-1439px) + desktop three-pane (1440px+) + companion content with quality telemetry from `field_jq_scores`
+- C4 — Bottom-sheet "Read full coverage →" cross-link via `openJournalismForGame(gameId)` helper; `data-gameid` added to `.jrn-slate-item` so cross-link works for regular-season games too
+- C5 — SW_VERSION bump `d→e` (Rule 23 same-day), `journalism-tab-v1` in FIELD_FEATURES, smoke A385-A388, HANDOFF.md, T3 memory anchor
+
+**Session Doc (this session — Drive):** (set at SESSION END after Drive write)
+**Recovery Doc (PM-19 interrupt — Drive):** `10udrJmsVd0FSf-hU2qEuNTN1PL4hQ6tMlTji0IfpmN0`
+**Previous session doc (PM-18 — Drive):** `1snqEKzp8SnQxcfibIgLkG49kFm14cqyyKdQIrTJqK1I`
 **CANONICAL BUILD BACKLOG (READ FIRST):** `1ugUh6UmeDkLR-gEH8hJPwXK2NiIrXYQY8gp2jO2p2Hk`
 **CI/Deploy Ref (READ AT SESSION START):** `1UrOoYDGaK2ncPrnRNXt1w0OElOLpbjP_EYROjG2w1zo`
 **FIELD Current State (READ AT SESSION START):** `1GvsfnTH9Xhqzg_NdYrPhPpk1d1Rnm0lkeG6ip-tLUlA`
 
 ## TIER 0 DEADLINES (unchanged)
 
-- **Stanley Cup G1: TONIGHT (June 2 8pm ET, ABC)** — Items A-F all live for any post-deploy regeneration
+- **Stanley Cup G1: TONIGHT (June 2 8pm ET, ABC)** — Items A-F all live (PM-18) for any post-deploy regeneration; PM-19 Journalism Tab additive, does not affect brief generation
 - **NBA Finals G1: TOMORROW (June 3 8:30pm ET, ABC)** — first Finals exposure for full enforcement stack
 - **Stanley Cup G2: June 4** — second exposure window
 - **World Cup 2026: June 11 HARD**
 - **USPTO provisional: ~June 25**
 
-## WHAT HAPPENED THIS SESSION (June 2 PM-18)
+## WHAT HAPPENED THIS SESSION (June 2 PM-19 redo)
 
-Opened as TYPE D after Jeff shared a 4:31pm iPad screenshot of the live SCF G1 brief. The audit identified four distinct failure modes in a single screen:
+The PM-19 interrupt left no work on remote — sandbox had been reset between sessions, so all five commits were rebuilt from scratch using the Recovery Doc as canonical spec. Cross-referenced with original TYPE D recommendation chat for C4/C5 details.
 
-1. **Narrative hallucination at 0-0** — "desperate must-win", "championship dreams slipping", "series momentum hanging in the balance", "high-stakes collision", "tighten their grip on the Cup" — all drama language inventing stakes that don't exist at 0-0.
-2. **Wire-copy gerund evasion** — "Vegas enters... holding a 53-22-7 record" — PM-17 Layer 2f catches "holds" but NOT "holding" (the model routed around the indicative-only ban with -ing forms).
-3. **Record attribution flip** — 53-22-7 is Carolina's W-L-OTL; the brief attributed it to Vegas. Model knew the real records but assigned to the wrong team.
-4. **Per-game compound brief still wire-copy** — bottom-sheet "Vegas holds a 39-43 mark" telemetry-only from PM-17.
+### C1 — Scaffold + content (commit on remote)
 
-Jeff approved all six recommendations. TYPE B opened. All six items shipped across 4 single-concern commits.
+- Top-nav: `📖 Journal` anchor with `id="jrn-nav-link"` parallel to `📰 Desk`. Calls `toggleJournalismView()` on click.
+- Section: `<section id="field-journalism-section" hidden>` inserted before STREAMING DISCOVERY. Contains `.jrn-layout > .jrn-reading + .jrn-companion`.
+- CSS: ~70 lines mobile-first reading layout. Reading column max-width 680px. Playfair display headers. Gold2 section markers. Mobile portrait (≤600px) overrides.
+- JS: 4 functions
+  - `toggleJournalismView()` — body class toggle, localStorage `field_journalism_mode` persist, conditional scroll behavior
+  - `renderJournalism()` — sources J3 from `sessionStorage(fieldBriefCacheKey())`, J2 from `sessionStorage(seriesPreviewCacheKey(g))` weighted Finals>CF>earlier, J1 from `Object.entries(_gameBriefCache)` deduped against series-shown games
+  - `jumpToGameCard(gameId)` — returns to schedule view, scrolls to card, 1.4s gold outline pulse
+  - `renderJournalismArchive()` — 7-day sessionStorage scan for `field_brief_YYYY-MM-DD` keys
+- Trigger wiring: SIBLING `setTimeout(renderJournalism, N)` added next to all 6 existing `setTimeout(renderFieldDesk, N)` sites. **Sibling pattern, NOT wrapped** — wrapped pattern broke A254/A257 literal-string assertions on first attempt.
 
-### Item A — Series State Clause (commit `be063b6` with Item B)
+### C2 — Mobile/tablet UX polish
 
-`buildSeriesStateClause(g)` returns a runtime-computed clause defining allowed/forbidden narrative language by current series state. The architectural answer to "how do we tell the model not to invent stakes that don't exist."
+- Sticky back-pill: `position:sticky; top:calc(env(safe-area-inset-top,0px) + .5rem); z-index:50; backdrop-filter:blur(8px); background:rgba(20,20,28,.78)` — iOS safe-area aware, no notch overlap
+- Fade-in: `@keyframes jrnFadeIn` 220ms ease-out, opacity 0→1 + 8px translateY. `@media (prefers-reduced-motion: reduce)` disables.
+- Scroll position save/restore: stashes `window.scrollY` to `window._fieldScheduleScrollY` on enter, scrolls back on exit
+- Resize listener: rAF-throttled, re-clears `[hidden]` if it somehow gets re-set across viewport rotation while in journalism-mode
 
-States:
-- **0-0 / Game 1**: NO elimination, NO must-win, NO momentum, NO slipping away. Forbidden phrases named: must-win, season on the line, championship dreams slipping, series momentum, tighten grip on [Cup/title], desperate, do-or-die, save the series, hanging in the balance, high-stakes collision. Drama IS the matchup. Bulletin-board material requires documented source.
-- **Game 7 / deciding**: winner-take-all language allowed
-- **Elimination**: must-win for trailing team only
-- **Clinch possible**: leader can clinch, opponent eliminated
-- **Mid-series**: tension proportional, no must-win unless 0-2/0-3
+### C3 — Multi-pane layouts + companion content
 
-Wired into:
-- `fetchSeriesPreviewFromClaude` (J2 series brief)
-- `buildCompoundPrompt` per-game line emission (compound editorial + game_briefs both receive it via [STATE CLAUSE] tag)
+- Laptop (1200-1439px) in journalism-mode: `.main` becomes `position:fixed` 280px left rail with bg+border; `#field-journalism-section` gets `margin-left:300px`; `.jrn-reading` capped at 640px
+- Desktop (1440px+) in journalism-mode: same fixed-left rail + `.jrn-companion` becomes `position:fixed right:0` 280px right rail; reading column 720px; section margin both sides 300px
+- Hide rules at laptop+ in journalism-mode: `#night-owl, #field-desk-section, #media-section, #streaming-section, .page-divider, .legend-section, #ambient-panel { display:none !important }`. Scoped to `body.journalism-mode` only — schedule view fully visible in non-journalism mode at every viewport.
+- `renderJournalismCompanion(counts)` — 4 blocks:
+  1. Tonight's Read — count rollup (passed from renderJournalism to avoid re-iteration)
+  2. Archive — link to renderJournalismArchive
+  3. Later Tonight — playoff games (have `seriesRecord`) starting after `Date.now()`, sorted by start_time, first 4
+  4. Quality Scores — `field_jq_scores` last 20, avg prose score (color-coded vs 145 threshold) + avg stat depth (vs 1.8 threshold)
+- HONEST CONSTRAINT: FIELD's schedule is today-only (`buildTodaySchedule`). Recovery doc spec'd "next 2-3 days of playoff schedule" but that data doesn't exist. Scoped to "Later Tonight" instead of fabricating multi-day data.
 
-### Item B — hasWireCopy gerund extension (commit `be063b6` with Item A)
+### C4 — Bottom-sheet cross-link
 
-Six gerunds added: holding, carrying, bringing, maintaining, owning, posting. Also leading/entering at `ledWithRe` and sitting at `sitsAtRe`. Closes the exact "holding a 53-22-7" miss observed in production. Standalone unit tests 9/9 (catches all gerund forms, no false positives on "holding back the line" or "leading the way").
+- `data-gameid="${gid}"` added to `.jrn-slate-item` template (so cross-link works for regular-season games, not just `.jrn-series` from C1)
+- `.bs-jrn-link` CSS — gold accent, hover state with subtle background, label color override
+- Cross-link inserted in `openBottomSheet` right after FIELD Brief section, conditional on `gameBrief` existing (no dead links)
+- `openJournalismForGame(gameId)` helper — closeBottomSheet → 100ms → toggleJournalismView (or renderJournalism refresh if already in mode) → 250ms → querySelector `[data-gameid="X"].jrn-series` OR `.jrn-slate-item`, scroll-into-center, 1.6s gold outline pulse with offset 4px
 
-### Item C — NHL [SCF MATCHUP] context anchor (commit `6512b31`)
+### C5 — Close-out
 
-Parallel to existing NBA [WCF CHAMPION] / [CHAMPION] anchors in `getNBAAnalyticsContext`. Closes "tighten their grip on the Cup" hallucination — Vegas won 2023 but does NOT hold the current Cup.
-
-Added to top of `getNHLAnalyticsContext`, gated on `isSCF` league string match:
-- `[SCF MATCHUP]` CAR: first Final since 2006 win (20 years). Fourth CF breakthrough attempt since 2019; lost prior three.
-- `[SCF MATCHUP]` VGK: 3rd Final in 9 years (won 2023, lost 2018). Under late-season hire John Tortorella.
-- `[SCF TROPHY]`: Neither team is defending the Cup. Finals is open. Do NOT write 'tighten grip on the Cup', 'defend the Cup', or 'reigning champion'.
-
-### Item D — Layer 2g narrative hallucination retry (commit `5f6a916`)
-
-`hasNarrativeHallucination(text, ctx)` detector + `retryWithoutNarrativeHallucination` retry. State-conditional: pattern groups apply differently per series state.
-
-Four pattern groups:
-- **elimination** — must-win, season on the line, championship dreams, do-or-die, save the series, desperate must-win
-- **momentum** — series momentum, hanging in the balance, slipping away
-- **trophyClaim** — tighten grip on [cup/title], defending [cup/title], reigning champion
-- **hypeFiller** — high-stakes collision, clash of titans, epic battle
-
-State-conditional application:
-- At 0-0 / Game 1: ALL four groups apply (strictest)
-- Mid-series: Only trophyClaim + hypeFiller (elim + momentum legitimate)
-
-Retry prompt names the actual series state explicitly + matched phrases. Cannot fabricate stakes when state is in retry prompt itself.
-
-Wired into all three brief retry chains: J3 standalone, J2 series (with game context), compound main brief IIFE.
-
-Standalone unit tests 5/5:
-- PM-18 brief @ 0-0: **10 hits across all four groups**
-- Exemplar A (NBA Finals G1 voice-correct) @ 0-0: **0 hits**
-- Same PM-18 brief @ 3-2: 2 hits (trophyClaim + hypeFiller correctly remaining)
-- Mid-series legitimate momentum @ 2-1: 0 hits
-- Game 7 elimination brief: 0 hits
-
-### Item E — Layer 2h record attribution detection (commit `7066dd2` with F)
-
-`hasRecordAttributionError(text, ctx)` detector + `retryWithRecordAttribution` retry.
-
-Detection:
-- Three-tier name matching: full ('Vegas Golden Knights'), nick ('Knights' via teamNick last-word), city ('Vegas' first-word with ≥4 char guard against false positives)
-- 80-char preceding window for team-name proximity
-- Records pattern: `\d{1,3}-\d{1,3}(?:-\d{1,3})?` — handles W-L and W-L-OTL
-- Returns `{record, attributedTo, shouldBe}` per misattribution
-- Conservative false-positive avoidance: when BOTH teams mentioned in window, no flag (attribution ambiguous)
-
-Retry prompt names the misattribution explicitly + states ground-truth records + closes with "If you are not certain of a record, omit it rather than guessing."
-
-J2 series preview wiring:
-- `buildGameStandingsContext(g)` injected as 'Standings: ...' prompt line (preempts hallucination at source)
-- Records parsed from standings string into `_recordCtx` via team-nick regex
-- `retryWithRecordAttribution` added to J2 retry chain after Layer 2g
-
-Unit tests 6/7 (PM-18 brief detected correctly; one case "both flipped" only catches first hit by design — second flip has both teams in 80-char window, conservatively unflagged).
-
-### Item F — Phase 2 per-card retry+re-render (commit `7066dd2` with E)
-
-Closes the gap from PM-17 where per-game compound briefs were telemetry-only. Now auto-retries + refreshes.
-
-Async IIFE in `fetchCompoundEditorial` (parallel to main brief retry IIFE):
-- Iterates `result.game_briefs[]` + `result.series[]`
-- Per entry: `hasWireCopy` + `hasNarrativeHallucination` with state-aware ctx
-- Conditional retries: only fires when detector hits exist
-- Budget guard: max 5 retries per compound call (prevents quota blowout on heavy slates)
-- Mutates result entry on improvement
-
-Cache + DOM refresh:
-- `game_briefs[]`: writes to `_gameBriefCache[g._id]` via existing `_enforceNBAAttributionFooter` + `trimToCompleteSentence` pipeline
-- `series[]`: writes to `sessionStorage(seriesPreviewCacheKey(game))` AND refreshes visible `.series-preview-text` / `.card-brief-inline-text` DOM elements via `[data-gameid=...]` selector
-- Bottom sheet: `window._currentBottomSheetGameId` tracker set by `openBottomSheet`, cleared by `closeBottomSheet`. `_refreshOpenSheet(gameId)` helper calls `openBottomSheet(gameId)` again to re-render if matched.
-
-Mutated result re-saved to sessionStorage at IIFE end so next page load sees improved per-card content.
-
-### Smoke A381-A384
-- A381: Item A wiring presence (state clause emitted into J2 + compound)
-- A382: Item D wiring + four pattern groups + state-conditional check
-- A383: Item E detector + city-name matching + ground-truth retry + J2 _recordCtx wiring
-- A384: Item F IIFE marker + budget guard + both detectors + _gameBriefCache writes + sessionStorage(seriesPreviewCacheKey) + DOM refresh selector + openBottomSheet tracker
-
-A378 updated for gerund extension. A379 widened to 600 chars after Layer 2g insertion. A380 reframed (Phase 2 in A384, telemetry remains diagnostic).
-
-374/0 baseline → 378/0 close.
+- SW_VERSION bumped `2026-06-02d → 2026-06-02e` in index.html AND sw.js (Rule 23: same-day suffix bump)
+- FIELD_FEATURES entry: `'journalism-tab-v1': '2026-06-02'` with comment "toggle nav + section + magazine layout + companion + cross-link"
+- Smoke A385-A388:
+  - A385: toggleJournalismView + body.journalism-mode hide CSS + localStorage key + 📖 Journal anchor
+  - A386: laptop + desktop media queries + position:fixed rails + companion right rail + 640/720 reading widths + renderJournalismCompanion presence
+  - A387: bs-jrn-link CSS + Read full coverage label + openJournalismForGame helper + dual-selector (series + slate) + data-gameid on slate items
+  - A388: four render function presence + Tonight's Read + Later Tonight + field_jq_scores + 7-day archive loop + FIELD_FEATURES entry + J3/Regular-Season markers
+- 378/0 baseline → 382/0 close
 
 ### Infrastructure
-SW_VERSION bumped `2026-06-02c` → `2026-06-02d` (Rule 23 same-day bump for Items A-F combined deploy).
-
-FIELD_FEATURES entries (dated 2026-06-02):
-- `jq-item-a-series-state-clause`
-- `jq-item-b-wirecopy-gerund-extension`
-- `jq-item-c-scf-matchup-anchor`
-- `jq-item-d-layer-2g-narrative`
-- `jq-item-e-layer-2h-record-attrib`
-- `jq-item-f-percard-retry-rerender`
+SW_VERSION bumped `2026-06-02d` → `2026-06-02e` (Rule 23 same-day d→e suffix).
 
 ### Commit + deploy
-Four single-concern commits across one session:
-- `be063b6` Items A+B (Series State Clause + gerund extension)
-- `6512b31` Item C ([SCF MATCHUP] anchor)
-- `5f6a916` Item D (Layer 2g narrative hallucination retry)
-- `7066dd2` Items E+F (Layer 2h record attribution + Phase 2 per-card retry+re-render)
-
-Push clean to remote — no auto-overlay rebase needed this session.
+Five single-concern commits pushed after each (NOT batched at end — lesson from PM-19 interrupt). C3 required a rebase due to auto-overlay drift; clean post-rebase smoke verified before push.
 
 ## STATE INVARIANTS AT END OF SESSION
 
-- jubilant-bassoon HEAD: `7066dd2` (Items E+F)
-- jubilant-bassoon smoke: **378/0**
-- jubilant-bassoon SW_VERSION: `2026-06-02d`
+- jubilant-bassoon HEAD: (set on push) — C5 final commit
+- jubilant-bassoon smoke: **382/0**
+- jubilant-bassoon SW_VERSION: `2026-06-02e`
 - field-relay-nba HEAD: `880e3ae` last meaningful (unchanged)
-- STANDARDS.md Rule 48 Class E: in effect
-- T3 memory anchor: will be updated on SESSION END (via bash)
+- STANDARDS.md: no rule changes this session
+- T3 memory anchor: updated to new HEAD via memory_user_edits at SESSION END
 
 ## NEXT SESSION P1 IMMEDIATE
 
-**Watch tonight's SCF G1 second-period regeneration + tomorrow's NBA Finals G1.** Items A-F are all active. The next J3 / J2 / compound editorial regeneration triggers:
-- Series State Clause hits the prompt prefix (preventive)
-- Layer 2g/2f/2h fire on detected violations (corrective retry)
-- Per-card retry+re-render covers game_briefs and series previews (Item F)
-- SCF MATCHUP anchor grounds NHL champion claims
+**Watch tonight's SCF G1 brief regeneration + tomorrow's NBA Finals G1.** PM-18 Items A-F + PM-19 Journalism Tab v1 are all live.
 
-**P1 carry-forward from PM-16/17:**
+**Scope deferred but ready (NOT in v1):**
+- **Schedule view collapse** (corollary to Journalism Tab, ~30 min): remove card-top J2 brief, gate card-inline FIELD SERIES BRIEF to CF/Finals only. The TYPE D rec listed this — recovery doc deliberately scoped Journalism Tab v1 as additive. Recommended for PM-20 once production exposure confirms the journalism-tab → schedule-collapse migration is safe.
+- **Phase 2 progressive disclosure** (~2-3 hr): J3 visible 6h+ pregame, J2 visible 2-6h, J1 visible <2h. Time-aware visibility for the layered hierarchy.
+
+**P1 carry-forward from PM-16/17/18:**
 - Wire NHL play-by-play relay route (~45 min) — activates Tier A #3 Penalty Drift + unlocks Tier B #5 Goalie Hot Hand
 - Cloudflare connector mismatch (carry-forward from PM-15)
 - R2 Finals Narrative Context (carry-forward, past deadline)
 - Queues / WOW 8 — hard June 11 deadline
 - R2 World Cup Team Context — before June 11
-- `get_smoke_count` MCP tool — now reports stale 268; canonical is 378
+- `get_smoke_count` MCP tool — now reports stale 378; canonical 382
 
 ## OTHER NEXT-SESSION PRIORITIES
 
-P2 — Extend `logRequest()` to capture body (truncated 8KB)
-P2 — Verify claude.ai connector traffic hits `logRequest`
-P2 — USPTO provisional toward ~June 25
-P2 — `tool_search "handoff"` ranking tuning
+P2 — USPTO provisional toward ~June 25 (Journalism Tab strengthens "layered journalism quality chain" patent visibility — make sure draft references the shipped J3→J2→J1 reading hierarchy + companion quality telemetry surfacing)
+P2 — Sandbox gotcha codification (4 sessions now: clone needs inline `-c user.email -c user.name` for every commit; worth memory edit)
 P2 — Probe-outbox cleanup
-P2 — Sandbox gotcha codification (3 sessions now observed — clone needs inline `-c user.*` for every commit; worth memory edit)
-P2 — Compound retry budget revisit if quota observed running tight; current cap is 5 per compound call
+P2 — `tool_search "handoff"` ranking tuning
 
-P3 — Tier B Wave 2.5 candidates from PM-15 ideation:
-- Lead Vulnerability Index (~45 min, needs ESPN gambit WP)
-- Goalie Hot Hand / Wavering (~45 min, needs NHL PBP relay route)
 P3 — `index.html:3137` dead `MCP` var cleanup
 P3 — `field_smoke.js` 4 pre-existing failures (A30, A53, A67, A69)
 P3 — Memory edit path-string cleanup
 
 ## CLOSED THIS SESSION
 
-- PM-18 brief audit (TYPE D) — four-failure-mode diagnosis on live 4:31pm screenshot
-- Items A through F (TYPE B) — all six recommended fixes shipped
-- Voice Positioning v3 enforcement parity — Layers 1 (prompt-level state clause), 2f (wire-copy with gerunds), 2g (narrative hallucination state-conditional), 2h (record attribution), Phase 2 per-card retry+re-render all in place
-- The Move E1 forbidden-verb gap is now backed by detection + retry across all five brief paths (J3 standalone, J2 series, compound main brief, compound game_briefs[], compound series[])
+- PM-19 interrupt recovery — all 5 commits rebuilt + shipped from spec
+- Journalism Tab v1 — additive feature, no regressions in schedule view
+- TYPE D recommendation honored at the v1 scope boundary (schedule collapse + Phase 2 deferred deliberately, documented in carry-forward)
+- 5-commit "push after every commit" protocol honored — interrupt-resilient
 
 ## DAILY WORK SUMMARY (June 2 2026)
 
-Three full TYPE B build sessions shipped today:
+Four full TYPE B build sessions shipped today:
 - PM-16: NHL Tier A 1-3 (Pull Window Predictor, PDO Regression Signal, Penalty Drift Indicator)
 - PM-17: Layer 2f wire-copy retry (3 brief paths)
 - PM-18: Items A-F voice v3 enforcement parity (6 features, 4 commits)
+- PM-19: Journalism Tab v1 (5 features, 5 commits — interrupt-recovered)
 
-Total smoke growth: 367/0 (start of day) → 378/0 (end of day). 11 new assertions covering 13 new features (some assertions cover multiple features in a single check).
+Total smoke growth: 367/0 (start of day) → 382/0 (end of day). 15 new assertions covering 18 new features.
 
 ## TIER 1/2/3 HANDOFF CHANNEL HIERARCHY
 
 **Tier 1 (LIVE):** MCP server on field-relay-nba at /mcp. Four auth paths.
 **Tier 2 (NOT NEEDED).**
-**Tier 3 (LIVE):** userMemories anchor edit. Updated to `7066dd2` at PM-18 SESSION END.
+**Tier 3 (LIVE):** userMemories anchor edit. Will be updated to new HEAD at PM-19 SESSION END.

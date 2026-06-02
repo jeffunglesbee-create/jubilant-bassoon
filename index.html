@@ -3437,6 +3437,8 @@ if (typeof location !== 'undefined' && location.search.includes('debug=1')) {
 // Format: 'feature-key': 'YYYY-MM-DD' (date shipped)
 // Rule: add a line here + a smoke assertion = feature is documented as built.
 const FIELD_FEATURES = {
+  // PM-19 Journalism Tab v1 (June 2 2026 — dedicated reading destination)
+  'journalism-tab-v1':                   '2026-06-02',  // toggle nav + section + magazine layout + companion + cross-link
   // PM-18 Voice v3 enforcement parity (June 2 2026 — post-SCF-G1-warmup audit)
   'jq-item-a-series-state-clause':       '2026-06-02',  // buildSeriesStateClause — state-aware narrative grounding
   'jq-item-b-wirecopy-gerund-extension': '2026-06-02',  // hasWireCopy now catches holding/carrying/bringing/maintaining/owning/posting
@@ -16451,7 +16453,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-02d';
+  const SW_VERSION = '2026-06-02e';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
