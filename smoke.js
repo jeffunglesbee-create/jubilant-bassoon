@@ -2237,6 +2237,22 @@ assert('A390 — PM-19 retro: Health panel uses public GitHub API for CI/smoke (
   html.includes('via GitHub API (public)'),
   'PM-19 retro fix for production HTTP 401: the Health panel previously POSTed JSON-RPC tools/call to the auth-gated /mcp endpoint on field-relay-nba, which started failing once FIELD_MCP_SECRET was deployed. The architectural correction is that get_ci_status + get_smoke_count are thin wrappers over public GitHub data — so fetch that data directly from api.github.com and raw.githubusercontent.com. The auth-gated /mcp surface remains exclusively for claude.ai connector use. No client-side bearer token (would be public on view-source). CORS verified June 2 2026 on both endpoints.');
 
+assert('A391 — PM-19 production fix: state tautology detector (Layer 2g extension) + State Clause prompt update',
+  // Fifth pattern group in NARRATIVE_HALLUCINATION_PATTERNS
+  html.includes('stateTautology: [') &&
+  // Catches the specific production phrase observed at 6:48pm
+  html.includes("begins?|starts?|opens?)\\s+at\\s+0[-") &&
+  html.includes('clean\\s+slate') &&
+  // Wired into the 0-0 checkGroups (not mid-series — would false-positive)
+  html.includes("['elimination', 'momentum', 'trophyClaim', 'hypeFiller', 'stateTautology']") &&
+  // State Clause prompt has the explicit don't-restate-state instruction
+  html.includes('DO NOT RESTATE THE SERIES STATE') &&
+  html.includes('already shown') &&
+  // Retry prompt has the state-tautology-aware extension
+  html.includes("h.group === 'stateTautology'") &&
+  html.includes('Drop tautological openings'),
+  'PM-19 production fix (6:48pm iPad screenshot showed "Game 1 ... begins at 0-0, offering a clean slate" — tautology with the UI header that already shows "G1 · Series 0-0"). Same architectural pattern as PM-18: prompt prevention (buildSeriesStateClause adds explicit do-not-restate instruction at 0-0) PLUS retry detection (NARRATIVE_HALLUCINATION_PATTERNS gains 5th group stateTautology, applied only at 0-0 via state-conditional checkGroups). The retry prompt extends with a state-tautology-specific line when those patterns fire, instructing the model to drop redundant openings and start with matchup specifics. Detector verified to catch both production phrases (begins at 0-0, clean slate) and pass legitimate negatives (Game 1 starts at 8pm ET, Carolina opens at home).');
+
 
 // ═════════════════════════════════════════════════════════════════════
 // GATE — all assertions above must pass before deploy proceeds.

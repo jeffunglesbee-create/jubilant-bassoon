@@ -3442,6 +3442,8 @@ if (typeof location !== 'undefined' && location.search.includes('debug=1')) {
 // Format: 'feature-key': 'YYYY-MM-DD' (date shipped)
 // Rule: add a line here + a smoke assertion = feature is documented as built.
 const FIELD_FEATURES = {
+  // PM-19 production fix (June 2 2026 — observed 6:48pm SCF G1 brief)
+  'jq-layer-2g-state-tautology':         '2026-06-02',  // 5th pattern group in NARRATIVE_HALLUCINATION_PATTERNS — catches "begins at 0-0", "clean slate" at G1
   // PM-19 retro patent-visibility (June 2 2026 — post-audit polish)
   'journalism-tab-v1-layer-badges':      '2026-06-02',  // J3/J2/J1 badges + Active Layers companion block (reconciles with original TYPE D rec patent angle)
   // PM-19 Journalism Tab v1 (June 2 2026 — dedicated reading destination)
@@ -16479,7 +16481,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-02g';
+  const SW_VERSION = '2026-06-02h';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -17383,6 +17385,9 @@ function buildSeriesStateClause(g) {
       'FORBIDDEN narrative language at 0-0: "must-win", "season on the line", "championship dreams slipping",',
       '  "series momentum", "tighten their grip on [Cup/title]", "desperate", "do-or-die", "save the series",',
       '  "hanging in the balance", "high-stakes collision". These imply stakes that do not exist yet.',
+      'DO NOT RESTATE THE SERIES STATE in prose. The series record (0-0) and game number are already shown',
+      '  in the UI header. Phrases like "Game 1 begins at 0-0", "starts at 0-0", "starts level", "clean slate",',
+      '  "no series history yet" are redundant — the user can see the state. Skip them entirely.',
       'The drama IS: the matchup itself — players, styles, historical context between these specific teams,',
       '  documented quotes, prior playoff history. NOT the series state, which is neutral at 0-0.',
       'Bulletin-board material (player or coach quotes, documented feuds, "haven\'t forgotten" claims) is',
@@ -17574,6 +17579,20 @@ const NARRATIVE_HALLUCINATION_PATTERNS = {
     /\bclash\s+of\s+titans\b/i,
     /\bepic\s+battle\b/i,
   ],
+  // STATE TAUTOLOGY — forbidden at 0-0 only. Restating the series state
+  // (which is already in the UI header) wastes prose. Observed PM-19 6:48pm
+  // brief: "Game 1 of the Stanley Cup Final begins at 0-0, offering a clean
+  // slate..." — the header literally says "G1 · Series 0-0" right above.
+  // Mid-series, "begins at 2-1" etc. would be informative; at 0-0 it's
+  // pure restatement.
+  stateTautology: [
+    /\bGame\s*1\s+(?:begins?|starts?|opens?)\s+at\s+0[-–—]0\b/i,
+    /\b(?:begins?|starts?|opens?)\s+at\s+0[-–—]0\b/i,
+    /\b(?:starts?|opens?)\s+level\b/i,
+    /\bclean\s+slate\b/i,
+    /\bno\s+series\s+history\s+yet\b/i,
+    /\bwith\s+no\s+prior\s+(?:games|series)\b/i,
+  ],
 };
 function hasNarrativeHallucination(text, ctx){
   if (!text) return [];
@@ -17581,10 +17600,10 @@ function hasNarrativeHallucination(text, ctx){
   const seriesRec = (ctx?.seriesRecord || '').trim();
   const atZeroZero = seriesRec === '0-0' || seriesRec === '' || ctx?.isGame1 === true;
   // Trophy + hype patterns apply at ALL states (the model fabricates these
-  // independent of series record). Elimination + momentum patterns only
-  // apply at 0-0 — they're legitimate at later states.
+  // independent of series record). Elimination + momentum + stateTautology
+  // patterns only apply at 0-0 — they're legitimate at later states.
   const checkGroups = atZeroZero
-    ? ['elimination', 'momentum', 'trophyClaim', 'hypeFiller']
+    ? ['elimination', 'momentum', 'trophyClaim', 'hypeFiller', 'stateTautology']
     : ['trophyClaim', 'hypeFiller'];
   for (const group of checkGroups) {
     for (const re of NARRATIVE_HALLUCINATION_PATTERNS[group]) {
@@ -17610,9 +17629,17 @@ async function retryWithoutNarrativeHallucination(originalPrompt, text, proxyUrl
     const stateLine = (rec === '0-0' || rec === '')
       ? 'The series is 0-0. There is no elimination, no momentum, no slipping away — those stakes do NOT exist yet.'
       : `The series is ${rec}.`;
+    // If stateTautology fired, add an explicit "don't restate the state" line.
+    // The UI header already shows the series record; restating it in prose is
+    // pure redundancy (PM-19 6:48pm production fix).
+    const tautologyFired = hits.some(h => h.group === 'stateTautology');
+    const tautologyLine = tautologyFired
+      ? 'The series state (0-0) and game number are shown in the UI header — DO NOT restate them in prose. Drop tautological openings like "begins at 0-0" or "clean slate"; start with the matchup specifics. '
+      : '';
     const retryPrompt = originalPrompt +
       '\n\nIMPORTANT REWRITE — NARRATIVE HALLUCINATION DETECTED.\n' +
       stateLine + '\n' +
+      tautologyLine +
       'The following phrases imply stakes or claims that are not supported by the data above: ' + flagged + '.\n' +
       'Rewrite WITHOUT these phrases. Focus on the matchup itself — players, styles, prior playoff history, ' +
       'documented quotes if present in the data. Bulletin-board material (player quotes, coach quotes, ' +
