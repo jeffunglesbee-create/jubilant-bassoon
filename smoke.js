@@ -2002,6 +2002,35 @@ assert('A373 — Voice Positioning v3 Moves E1+E2: numbers-in-prose grammar bloc
   html.includes('END NUMBERS-IN-PROSE GRAMMAR'),
   'Voice Positioning v3: Move E1 (numbers-in-prose grammar) teaches the META-RULE that numbers must be SUBORDINATED to claims (never main-clause predicates) via 6 specific syntactic patterns (appositive, possessive compound, prepositional embed, parenthetical, threshold/collective, punctuation) each with wire-copy-vs-FIELD before/after. The FORBIDDEN section names the wire-copy verb signature explicitly (has/holds/carries/posts/leads with/brings/maintains/enters with/sits at/owns/averages). Move E2 adds a one-number-per-sentence ratio rule with the breathing heuristic. Together they address the v2 failure mode where the AI swapped phrases but preserved wire-copy grammar (e.g. "with X ERA" → "holds X ERA"). Diagnosed June 1 2026 PM-10 after Jeff observed "we\'re still struggling on how to have rhetorical flourish when numbers are involved with prose"');
 
+// ── A374-A377: NHL Tier A live metrics (June 2 2026, pre-SCF G1) ────────────
+assert('A374 — NHL Tier A #1: predictGoaliePullState present + wired into getNHLAnalyticsContext',
+  html.includes('function predictGoaliePullState(game)') &&
+  html.includes('PULL WINDOW APPROACHING') &&
+  html.includes('6-ON-5 LIKELY') &&
+  html.includes('const pullSig = predictGoaliePullState(game)'),
+  'Tier A #1 Pull Window Predictor — function inferring goalie-pull state from clock+deficit in 3rd period, must emit window_approaching or likely_pulled phase strings AND be wired into getNHLAnalyticsContext journalism-context emitter');
+
+assert('A375 — NHL Tier A #2: getNHLPDOSignal forward-looking variance call wired',
+  html.includes('function getNHLPDOSignal(abbrev)') &&
+  html.includes('REGRESSION WATCH') &&
+  html.includes('REGRESSION DUE') &&
+  html.includes('const hPDO_t = getNHLPDOSignal(ha)') &&
+  html.includes('const aPDO_t = getNHLPDOSignal(aa)'),
+  'Tier A #2 PDO Regression Signal — reads existing NHL_PDO table and emits running-hot (>1020) / regression-due (<985) tags into journalism prompt');
+
+assert('A376 — NHL Tier A #3: computePenaltyDriftSignal function shipped (data wiring deferred)',
+  html.includes('function computePenaltyDriftSignal(homePenalties, awayPenalties, homeAbbr, awayAbbr)') &&
+  html.includes('MAKE-UP CALL DUE') &&
+  html.includes('function trackNHLPenaltyTransitions(game, prevSit, curSit)') &&
+  html.includes('const driftSig = computePenaltyDriftSignal(game._homePenalties, game._awayPenalties, ha, aa)'),
+  'Tier A #3 Penalty Drift — function + tracker shipped; emits MAKE-UP CALL DUE when |home - away| penalties >= 2. Tracker reads ESPN-style situation transitions. Activates when game._homePenalties/_awayPenalties populated (currently dormant — NHL.com relay does not expose situation; PBP relay route is P2 next-session)');
+
+assert('A377 — Tier A FIELD_FEATURES dated entries present',
+  html.includes("'nhl-pull-window-predictor': '2026-06-02'") &&
+  html.includes("'nhl-pdo-regression-signal': '2026-06-02'") &&
+  html.includes("'nhl-penalty-drift-signal':  '2026-06-02'"),
+  'Tier A 1-3 features stamped in FIELD_FEATURES with deploy date for cross-session visibility');
+
 
 // ═════════════════════════════════════════════════════════════════════
 // GATE — all assertions above must pass before deploy proceeds.

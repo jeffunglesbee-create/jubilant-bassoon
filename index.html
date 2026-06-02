@@ -3248,6 +3248,10 @@ if (typeof location !== 'undefined' && location.search.includes('debug=1')) {
 // Format: 'feature-key': 'YYYY-MM-DD' (date shipped)
 // Rule: add a line here + a smoke assertion = feature is documented as built.
 const FIELD_FEATURES = {
+  // NHL Tier A live metrics (June 2 2026 — pre-SCF G1)
+  'nhl-pull-window-predictor': '2026-06-02',  // Tier A #1: predictGoaliePullState — 90s lead on pull window
+  'nhl-pdo-regression-signal': '2026-06-02',  // Tier A #2: getNHLPDOSignal — forward variance call from existing PDO table
+  'nhl-penalty-drift-signal':  '2026-06-02',  // Tier A #3: computePenaltyDriftSignal — function shipped, data wiring pending NHL PBP relay route
   // Event Bus + real-time fan-out (May 31 2026)
   'update-s0-event-bus':       '2026-05-31',  // S0: fieldEvents EventTarget + emitter + subscribers
   'score-push-do':             '2026-05-31',  // WOW 1: GameDO + WebSocket fan-out
@@ -12271,6 +12275,20 @@ function getNHLAnalyticsContext(game) {
         lines.push(`[GOALIE] ${name} elite this playoffs: .${Math.round(g.sv*1000)} sv%, ${g.gaa.toFixed(2)} GAA`);
     }
 
+    // ── Tier A #1 — Pull Window Predictor (live, 3rd period only)
+    const pullSig = predictGoaliePullState(game);
+    if (pullSig) lines.push(pullSig.line);
+
+    // ── Tier A #2 — PDO Regression Signal (forward-looking variance call)
+    const hPDO_t = getNHLPDOSignal(ha);
+    const aPDO_t = getNHLPDOSignal(aa);
+    if (hPDO_t) lines.push(hPDO_t.line);
+    if (aPDO_t) lines.push(aPDO_t.line);
+
+    // ── Tier A #3 — Penalty Drift Indicator (live, needs game-state counts)
+    const driftSig = computePenaltyDriftSignal(game._homePenalties, game._awayPenalties, ha, aa);
+    if (driftSig) lines.push(driftSig.line);
+
   } catch(e) { if(FIELD_DEBUG) console.error('[NHL Analytics]', e.message); }
   return lines.join('\n');
 }
@@ -12335,6 +12353,138 @@ function predictNHLGameCharacter(game) {
       rationale: `Both teams vulnerable on penalty kill. Goals come in bunches.` };
 
   return null; // insufficient signal for a strong prediction
+}
+
+// ── NHL Pull Window Predictor (Tier A #1, June 2 2026) ──────────────────────
+// Forward-looking prediction of goalie-pull windows from clock + deficit.
+// Distinct from #11a (which fires on ESPN sit.goaliePulled AFTER pull happens).
+// This predicts ~90s BEFORE pull is likely, enabling drama amplification.
+//
+// Phase logic (regulation 3rd period only — no pull in playoff sudden-death OT):
+//   deficit 1 → window opens 3:00 left → likely pulled 1:30 left
+//   deficit 2 → window opens 4:00 left → likely pulled 2:30 left
+//   deficit 3 → window opens 5:00 left → likely pulled 3:30 left
+// Pre-3rd, OT, or post-game → null.
+//
+// Returns { phase, badge, line, trailingTeam, secondsRemaining } or null.
+function predictGoaliePullState(game) {
+  if (!game) return null;
+  const sp = (game._sport || '').toLowerCase();
+  if (!sp.includes('nhl') && !sp.includes('hockey')) return null;
+  if ((game.state || '') !== 'in') return null;
+
+  const period = parseInt(game.period) || 0;
+  if (period !== 3) return null; // pre-3rd or OT — no standard pull window
+
+  // Parse "M:SS" clock string to seconds
+  const clockStr = String(game.clock || '').trim();
+  const m = clockStr.match(/^(\d+):(\d{2})$/);
+  if (!m) return null;
+  const secs = parseInt(m[1]) * 60 + parseInt(m[2]);
+  if (secs <= 0) return null;
+
+  const hs = parseInt(game.homeScore) || 0;
+  const as = parseInt(game.awayScore) || 0;
+  const diff = Math.abs(hs - as);
+  if (diff === 0 || diff > 3) return null; // tied or out-of-reach (4+)
+
+  // Trailing team
+  const trailingTeam = hs < as ? game.home : game.away;
+  const trailingAbbr = hs < as
+    ? (game._homeAbbr || getNHLAbbrev?.(game.home))
+    : (game._awayAbbr || getNHLAbbrev?.(game.away));
+
+  // Thresholds in seconds
+  const TH = { 1:{open:180, pull: 90}, 2:{open:240, pull:150}, 3:{open:300, pull:210} }[diff];
+  if (!TH || secs > TH.open) return null;
+
+  const phase = secs <= TH.pull ? 'likely_pulled' : 'window_approaching';
+  const teamNickFn = (typeof teamNick === 'function') ? teamNick : (s => s || '');
+  const nick = teamNickFn(trailingTeam || trailingAbbr || '');
+
+  if (phase === 'likely_pulled') {
+    return {
+      phase: 'likely_pulled',
+      badge: '[6-ON-5 LIKELY]',
+      line: `[6-ON-5 LIKELY] ${nick} trail ${diff}, ${clockStr} left — empty-net window active`,
+      trailingTeam: trailingAbbr || trailingTeam,
+      secondsRemaining: secs,
+    };
+  }
+  const pullM = Math.floor(TH.pull/60), pullS = TH.pull % 60;
+  const pullStr = `${pullM}:${String(pullS).padStart(2,'0')}`;
+  return {
+    phase: 'window_approaching',
+    badge: '[PULL WINDOW]',
+    line: `[PULL WINDOW APPROACHING] ${nick} trail ${diff}, ${clockStr} left — pull becomes likely inside ${pullStr}`,
+    trailingTeam: trailingAbbr || trailingTeam,
+    secondsRemaining: secs,
+  };
+}
+
+// ── NHL PDO Regression Signal (Tier A #2, June 2 2026) ──────────────────────
+// Reads NHL_PDO and surfaces forward-looking regression direction.
+// Above 1020 = running hot, regression DOWN due. Below 985 = unlucky, UP due.
+// Returns { tag, direction, line } or null if abbrev absent / PDO neutral.
+function getNHLPDOSignal(abbrev) {
+  if (!abbrev) return null;
+  const p = NHL_PDO?.[abbrev];
+  if (!p || typeof p.pdo !== 'number') return null;
+  if (p.pdo > 1020) {
+    return {
+      tag: 'RUNNING HOT',
+      direction: 'down',
+      line: `[REGRESSION WATCH] ${abbrev} PDO ${p.pdo} — running hot, due for negative variance`,
+    };
+  }
+  if (p.pdo < 985) {
+    return {
+      tag: 'REGRESSION DUE',
+      direction: 'up',
+      line: `[REGRESSION DUE] ${abbrev} PDO ${p.pdo} — underperforming, due for positive variance`,
+    };
+  }
+  return null; // within normal band 985–1020
+}
+
+// ── NHL Penalty Drift Indicator (Tier A #3, June 2 2026) ────────────────────
+// Refs even out calls within a game. A 2+ penalty deficit predicts a make-up
+// call statistically. This function accepts in-game penalty counts and outputs
+// the drift signal. Counts wired via trackNHLPenaltyTransitions (below).
+//
+// Returns { team, deficit, line } or null if no drift or insufficient data.
+function computePenaltyDriftSignal(homePenalties, awayPenalties, homeAbbr, awayAbbr) {
+  const hp = parseInt(homePenalties);
+  const ap = parseInt(awayPenalties);
+  if (!Number.isFinite(hp) || !Number.isFinite(ap)) return null;
+  const drift = Math.abs(hp - ap);
+  if (drift < 2) return null;
+  // Team with FEWER penalties is statistically due to take the next one
+  const dueTeam = hp > ap ? awayAbbr : homeAbbr;
+  const undisciplined = hp > ap ? homeAbbr : awayAbbr;
+  if (!dueTeam || !undisciplined) return null;
+  return {
+    team: dueTeam,
+    deficit: drift,
+    line: `[MAKE-UP CALL DUE] ${undisciplined} ${Math.max(hp,ap)} PIMs, ${dueTeam} ${Math.min(hp,ap)} — next call statistically tilts ${dueTeam}'s way`,
+  };
+}
+
+// Penalty inference: when ESPN situation flips a team OFF power-play,
+// the opposing team took a penalty. Tracks counts on game object via
+// game._homePenalties / game._awayPenalties. Idempotent.
+// Called from fetchESPNScores poll cycle (caller-side wiring).
+function trackNHLPenaltyTransitions(game, prevSit, curSit) {
+  if (!game || !curSit) return;
+  // Initialise counters once
+  if (typeof game._homePenalties !== 'number') game._homePenalties = 0;
+  if (typeof game._awayPenalties !== 'number') game._awayPenalties = 0;
+  if (!prevSit) return; // need a prior snapshot to detect transitions
+  // Home PP just ENDED → away took the penalty (kill expired or scored on)
+  // We can't disambiguate kill-expire vs PP-goal cheaply, so we increment on
+  // the START of PP, not the end. Edge: missed if first poll catches mid-PP.
+  if (curSit.homePowerPlay && !prevSit.homePowerPlay) game._awayPenalties++;
+  if (curSit.awayPowerPlay && !prevSit.awayPowerPlay) game._homePenalties++;
 }
 
 // ── buildScoutingReport — raw analytics for bottom sheet ─────────────────────
@@ -15715,7 +15865,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-02a';
+  const SW_VERSION = '2026-06-02b';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
