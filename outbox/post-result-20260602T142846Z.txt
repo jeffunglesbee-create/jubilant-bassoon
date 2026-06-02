@@ -1,0 +1,9 @@
+URL: https://field-relay-nba.jeffunglesbee.workers.dev/mcp  [20260602T142846Z]
+=== Request body ===
+{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"get_head_sha","arguments":{}}}
+
+=== Custom headers ===
+
+=== Response (status + body, first 4000 chars) ===
+{"error":"Unauthorized"}
+HTTP_STATUS:401
