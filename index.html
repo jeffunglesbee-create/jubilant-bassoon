@@ -14751,6 +14751,7 @@ async function fetchSchedule(){
   setTimeout(mlbStatsInit, 4000);         // MLB stats: load weekly Savant tables (patches hardcoded stubs)
   setTimeout(nhlAnalyticsInit, 4500);     // NHL analytics: set _homeAbbr/_awayAbbr/_sport on NHL game objects
   setTimeout(nhlPlayoffLeadersPrefetch, 3000); // Phase B subtask 9: NHL playoff leaders feed (15-min TTL)
+  setTimeout(nbaPlayoffLeadersPrefetch, 3100); // ADR-003: NBA playoff leaders via /nba-stats/leagueLeaders (15-min TTL)
   setTimeout(espnInjuriesPrefetch, 3200);      // ESPN injuries (NHL + NBA league-wide; 30-min TTL)
   maybeShowSetup();
   renderLastNight();
@@ -15689,7 +15690,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-01h';
+  const SW_VERSION = '2026-06-01i';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -18726,6 +18727,162 @@ function nhlPlayoffLeadersPrefetch() {
   try { fetchNHLPlayoffLeaders(); } catch(_) {}
 }
 
+// ── NBA Playoff Leaders (stats.nba.com via /nba-stats/leagueLeaders relay) ────
+// Source: stats.nba.com/stats/leagueLeaders proxied through field-relay-nba.
+// Rule 45 source-clearance: ADR-003 (Drive 1XUPoayJUTh2Ki_DYXgw8uOAYZoGtpDt2c7510vGq64w)
+// records Jeff's explicit accept-the-risk decision on June 1 2026. NBA.com ToS
+// requires attribution wherever the data displays — populateSeriesContext sets
+// game._playoffLeadersAttribution = 'NBA.com' alongside game.playoffLeaders and
+// buildSeriesContextTags surfaces it inline in the [PLAYOFF STATS:] tag.
+// USPTO commercial transition is a re-evaluation trigger; see ADR-003.
+//
+// Response shape from stats.nba.com (row-based JSON):
+//   { resultSet: { headers: [...], rowSet: [[PLAYER_ID, RANK, PLAYER, TEAM_ID,
+//     TEAM, GP, MIN, FGM, FGA, FG_PCT, FG3M, FG3A, FG3_PCT, FTM, FTA, FT_PCT,
+//     OREB, DREB, REB, AST, STL, BLK, TOV, PTS, EFF], ...] } }
+// One request per StatCategory (PTS, REB, AST, FG3M). Combined into per-team
+// leader lines, capped 4 per team, mirroring the NHL builder pattern.
+const NBA_PLAYOFF_LEADERS_TTL = 15 * 60 * 1000;
+const _nbaPlayoffLeadersCache = { data: null, fetchedAt: 0, inFlight: null };
+
+// Parses one stats.nba.com leagueLeaders JSON response, extracting top-N players
+// for the named statKey (which matches the column header in resultSet.headers).
+// Returns array of { team, name, value }.
+function _parseNBALeagueLeaders(json, statKey, topN) {
+  try {
+    const headers = json && json.resultSet && json.resultSet.headers;
+    const rows = json && json.resultSet && json.resultSet.rowSet;
+    if (!Array.isArray(headers) || !Array.isArray(rows)) return [];
+    const iPlayer = headers.indexOf('PLAYER');
+    const iTeam = headers.indexOf('TEAM');
+    const iStat = headers.indexOf(statKey);
+    if (iPlayer < 0 || iTeam < 0 || iStat < 0) return [];
+    return rows.slice(0, topN).map(r => ({
+      team: r[iTeam],
+      name: r[iPlayer],
+      value: r[iStat],
+    })).filter(x => x.team && x.name && typeof x.value === 'number');
+  } catch(_) { return []; }
+}
+
+// Builds { teamAbbrev → ["J. Brunson 26.9 pts", "OG Anunoby 6.9 reb", ...] }
+// from four pre-parsed leader arrays (pts/reb/ast/3pm). Cap 4 entries per team.
+// Dedup by surname so one star doesn't appear in all four categories.
+function buildNBAPlayoffLeadersByTeam(ptsLeaders, rebLeaders, astLeaders, fg3mLeaders) {
+  const out = {};
+  const pushUnique = (team, line, surname) => {
+    if (!team || !line) return;
+    out[team] = out[team] || [];
+    const tag = surname ? new RegExp(`\\b${surname.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')}\\b`) : null;
+    if (tag && out[team].some(s => tag.test(s))) return; // already have this player
+    if (out[team].length < 4) out[team].push(line);
+  };
+  const fmt = (p, lbl) => {
+    if (!p || !p.name || typeof p.value !== 'number') return null;
+    const parts = String(p.name).split(' ');
+    const surname = parts[parts.length - 1];
+    const first = parts.length > 1 ? parts[0][0] + '. ' : '';
+    return { line: `${first}${surname} ${p.value.toFixed(1)} ${lbl}`, surname };
+  };
+  (ptsLeaders || []).forEach(p => {
+    const f = fmt(p, 'pts'); if (!f) return; pushUnique(p.team, f.line, f.surname);
+  });
+  (rebLeaders || []).forEach(p => {
+    const f = fmt(p, 'reb'); if (!f) return; pushUnique(p.team, f.line, f.surname);
+  });
+  (astLeaders || []).forEach(p => {
+    const f = fmt(p, 'ast'); if (!f) return; pushUnique(p.team, f.line, f.surname);
+  });
+  (fg3mLeaders || []).forEach(p => {
+    const f = fmt(p, '3PM'); if (!f) return; pushUnique(p.team, f.line, f.surname);
+  });
+  return out;
+}
+
+async function fetchNBAPlayoffLeaders() {
+  const now = Date.now();
+  if (_nbaPlayoffLeadersCache.data && (now - _nbaPlayoffLeadersCache.fetchedAt) < NBA_PLAYOFF_LEADERS_TTL) {
+    return _nbaPlayoffLeadersCache.data;
+  }
+  try {
+    const cached = localStorage.getItem('field_nba_playoff_leaders');
+    if (cached) {
+      const p = JSON.parse(cached);
+      if (p && p.ts && (now - p.ts) < NBA_PLAYOFF_LEADERS_TTL && p.data) {
+        _nbaPlayoffLeadersCache.data = p.data;
+        _nbaPlayoffLeadersCache.fetchedAt = p.ts;
+        return p.data;
+      }
+    }
+  } catch(_) {}
+  if (_nbaPlayoffLeadersCache.inFlight) return _nbaPlayoffLeadersCache.inFlight;
+  _nbaPlayoffLeadersCache.inFlight = (async () => {
+    try {
+      const base = 'https://field-relay-nba.jeffunglesbee.workers.dev/nba-stats/leagueLeaders';
+      const q = (cat) => `${base}?LeagueID=00&PerMode=PerGame&Scope=S&Season=2025-26&SeasonType=Playoffs&StatCategory=${cat}`;
+      // TOP_N=30 ensures Finals-team coverage even when their stars cluster
+      // outside the top 25 in any single category. Stats.nba.com's RANK
+      // field uses tie-handling that puts shared ranks at later array indices
+      // (e.g. Castle, Harden, McCollum, Thompson all share rank 23 and occupy
+      // array indices 22-25). 4-per-team cap in the builder limits final
+      // output size regardless.
+      const TOP_N = 30;
+      const [ptsR, rebR, astR, fg3mR] = await Promise.allSettled([
+        fetch(q('PTS'),  { signal: AbortSignal.timeout(7000) }),
+        fetch(q('REB'),  { signal: AbortSignal.timeout(7000) }),
+        fetch(q('AST'),  { signal: AbortSignal.timeout(7000) }),
+        fetch(q('FG3M'), { signal: AbortSignal.timeout(7000) }),
+      ]);
+      const pickJson = async (r) => (r.status === 'fulfilled' && r.value.ok) ? r.value.json().catch(()=>null) : null;
+      const [ptsJ, rebJ, astJ, fg3mJ] = await Promise.all([pickJson(ptsR), pickJson(rebR), pickJson(astR), pickJson(fg3mR)]);
+      const ptsArr  = _parseNBALeagueLeaders(ptsJ,  'PTS',  TOP_N);
+      const rebArr  = _parseNBALeagueLeaders(rebJ,  'REB',  TOP_N);
+      const astArr  = _parseNBALeagueLeaders(astJ,  'AST',  TOP_N);
+      const fg3mArr = _parseNBALeagueLeaders(fg3mJ, 'FG3M', TOP_N);
+      if (!ptsArr.length && !rebArr.length && !astArr.length && !fg3mArr.length) {
+        return _nbaPlayoffLeadersCache.data || {}; // serve stale on full failure
+      }
+      const data = buildNBAPlayoffLeadersByTeam(ptsArr, rebArr, astArr, fg3mArr);
+      _nbaPlayoffLeadersCache.data = data;
+      _nbaPlayoffLeadersCache.fetchedAt = Date.now();
+      try { localStorage.setItem('field_nba_playoff_leaders', JSON.stringify({ ts: Date.now(), data })); } catch(_) {}
+      if (FIELD_DEBUG) console.log('[NBA Playoff Leaders] fetched', Object.keys(data).length, 'teams (FIELD_DEBUG)');
+      return data;
+    } catch(_) {
+      return _nbaPlayoffLeadersCache.data || {};
+    } finally {
+      _nbaPlayoffLeadersCache.inFlight = null;
+    }
+  })();
+  return _nbaPlayoffLeadersCache.inFlight;
+}
+
+// Sync getter — reads from warm cache. Used by populateSeriesContext.
+// Returns array of leader lines (away team first, then home), or null if no
+// cache data. ADR-003 attribution is attached by the caller (populateSeriesContext
+// sets game._playoffLeadersAttribution = 'NBA.com' alongside the leader lines).
+function getNBAPlayoffLeadersForGame(game) {
+  if (!game) return null;
+  const sport = (game._section || game._sport || '').toLowerCase();
+  if (!sport.includes('nba') && !sport.includes('basketball')) return null;
+  const data = _nbaPlayoffLeadersCache.data;
+  if (!data) return null;
+  const homeAbbr = game._homeAbbr || (typeof getNBAAbbrev === 'function' ? getNBAAbbrev(game.home) : null);
+  const awayAbbr = game._awayAbbr || (typeof getNBAAbbrev === 'function' ? getNBAAbbrev(game.away) : null);
+  const lines = [];
+  if (awayAbbr && Array.isArray(data[awayAbbr])) {
+    data[awayAbbr].forEach(l => lines.push(`${awayAbbr} ${l}`));
+  }
+  if (homeAbbr && Array.isArray(data[homeAbbr])) {
+    data[homeAbbr].forEach(l => lines.push(`${homeAbbr} ${l}`));
+  }
+  return lines.length ? lines : null;
+}
+
+function nbaPlayoffLeadersPrefetch() {
+  try { fetchNBAPlayoffLeaders(); } catch(_) {}
+}
+
 // populateSeriesContext: mutates the game object to fill optional fields read by
 // buildSeriesContextTags. Idempotent (won't overwrite pre-populated values).
 // Called at the per-game emission step in both J3 paths (standalone + compound).
@@ -18762,15 +18919,26 @@ function populateSeriesContext(game) {
         }
       } catch(_) {}
     }
-    // Subtask 9 — Playoff Leaders (COUNTERS, feed-driven). NHL active via
-    // _nhlPlayoffLeadersCache (fetched at init by nhlPlayoffLeadersPrefetch).
-    // NBA remains deferred — no production-ready source. Same field hook
-    // (game.playoffLeaders) will read NBA cache when wired.
+    // Subtask 9 — Playoff Leaders (COUNTERS, feed-driven). NHL via
+    // _nhlPlayoffLeadersCache (api-web.nhle.com proxied through field-relay-nba).
+    // NBA via _nbaPlayoffLeadersCache (stats.nba.com proxied through
+    // field-relay-nba /nba-stats/leagueLeaders; ADR-003 accept-the-risk).
+    // ADR-003 attribution: when NBA data populates, also set
+    // game._playoffLeadersAttribution = 'NBA.com' so buildSeriesContextTags
+    // surfaces the attribution inline in the [PLAYOFF STATS:] tag.
     if (!Array.isArray(game.playoffLeaders) || !game.playoffLeaders.length) {
       try {
         if (typeof getNHLPlayoffLeadersForGame === 'function') {
           const leaders = getNHLPlayoffLeadersForGame(game);
           if (leaders && leaders.length) game.playoffLeaders = leaders;
+        }
+        if ((!Array.isArray(game.playoffLeaders) || !game.playoffLeaders.length)
+            && typeof getNBAPlayoffLeadersForGame === 'function') {
+          const nbaLeaders = getNBAPlayoffLeadersForGame(game);
+          if (nbaLeaders && nbaLeaders.length) {
+            game.playoffLeaders = nbaLeaders;
+            game._playoffLeadersAttribution = 'NBA.com'; // ADR-003
+          }
         }
       } catch(_) {}
     }
@@ -18796,7 +18964,16 @@ function buildSeriesContextTags(game) {
   try {
     if (Array.isArray(game.playoffLeaders) && game.playoffLeaders.length) {
       const payload = game.playoffLeaders.filter(Boolean).join('; ');
-      if (payload) lines.push('  [PLAYOFF STATS: ' + payload + ']');
+      if (payload) {
+        // ADR-003 attribution: NBA Statistics ToS requires prominent attribution
+        // when the data displays. When the data source set an attribution flag
+        // (populateSeriesContext sets game._playoffLeadersAttribution = 'NBA.com'
+        // for NBA leaders), inline the credit into the tag so it propagates into
+        // the AI prompt and the resulting prose.
+        const attr = (typeof game._playoffLeadersAttribution === 'string' && game._playoffLeadersAttribution)
+          ? ` — Stats: ${game._playoffLeadersAttribution}` : '';
+        lines.push('  [PLAYOFF STATS: ' + payload + attr + ']');
+      }
     }
     if (Array.isArray(game.injuries) && game.injuries.length) {
       const payload = game.injuries.filter(Boolean).join('; ');

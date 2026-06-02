@@ -1851,3 +1851,27 @@ assert('A366 — ESPN injuries feed (NHL + NBA): cache + fetcher + builder + get
   !html.includes("bdlInjuryContextSync(game.home || ''"),
   'ESPN injuries feed must replace the operationally-inert bdlInjuryContextSync pass-through inside populateSeriesContext: defines _espnInjuryCache (nhl+nba) with 30-min TTL + localStorage, fetchESPNInjuries hitting the league-wide /injuries endpoint, buildESPNInjuriesByTeam parser, getESPNInjuriesForGame sync consumer, espnInjuriesPrefetch scheduled at init, and populateSeriesContext writing game.injuries from the new source rather than the empty BDL cache');
 
+assert('A367 — Axis 3 Phase B subtask 9 NBA half: NBA playoff leaders feed wired via /nba-stats/leagueLeaders (ADR-003) + attribution surface',
+  // Cache + TTL constants
+  /const NBA_PLAYOFF_LEADERS_TTL\s*=\s*15\s*\*\s*60\s*\*\s*1000/.test(html) &&
+  /const _nbaPlayoffLeadersCache\s*=/.test(html) &&
+  // Async fetcher hitting the relay /nba-stats/leagueLeaders route + four StatCategory params
+  /async function fetchNBAPlayoffLeaders\(\)/.test(html) &&
+  html.includes('/nba-stats/leagueLeaders') &&
+  html.includes("StatCategory=${cat}") &&
+  html.includes("'field_nba_playoff_leaders'") &&
+  // Builder + per-category parser
+  /function buildNBAPlayoffLeadersByTeam\(ptsLeaders,\s*rebLeaders,\s*astLeaders,\s*fg3mLeaders\)/.test(html) &&
+  /function _parseNBALeagueLeaders\(json,\s*statKey,\s*topN\)/.test(html) &&
+  // Sync getter consumed by populateSeriesContext
+  /function getNBAPlayoffLeadersForGame\(game\)/.test(html) &&
+  html.includes('getNBAPlayoffLeadersForGame(game)') &&
+  // Prefetch scheduled at init alongside NHL + ESPN injuries prefetches
+  html.includes('setTimeout(nbaPlayoffLeadersPrefetch') &&
+  // populateSeriesContext sets attribution flag when NBA leaders populate
+  html.includes("game._playoffLeadersAttribution = 'NBA.com'") &&
+  // buildSeriesContextTags surfaces attribution in [PLAYOFF STATS:] tag
+  html.includes('game._playoffLeadersAttribution') &&
+  /Stats:\s*\$\{game\._playoffLeadersAttribution\}/.test(html),
+  'NBA playoff-leaders feed must wire end-to-end via the /nba-stats/leagueLeaders relay route (ADR-003 accept-the-risk): 15-min TTL cache (_nbaPlayoffLeadersCache + localStorage field_nba_playoff_leaders), async fetchNBAPlayoffLeaders issuing one request per StatCategory (PTS/REB/AST/FG3M), _parseNBALeagueLeaders + buildNBAPlayoffLeadersByTeam combining results into per-team line arrays, sync getNBAPlayoffLeadersForGame consumer, nbaPlayoffLeadersPrefetch scheduled at init, populateSeriesContext setting game._playoffLeadersAttribution = NBA.com alongside leaders, and buildSeriesContextTags inlining the attribution into the [PLAYOFF STATS:] tag so the credit propagates into prose');
+
