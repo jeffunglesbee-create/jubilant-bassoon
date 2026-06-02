@@ -3076,10 +3076,12 @@ function buildFieldHealthPanel() {
   else
     rows.push(ok('Runtime Errors', 'None captured'));
 
-  // ── MCP Relay status (async — populated after panel renders) ─────────────
+  // ── Relay/CI status (async — populated after panel renders) ─────────────
+  // Was 'MCP RELAY' (called auth-gated /mcp tools). Now reads CI + smoke
+  // directly from public GitHub API — same data, no auth surface in client.
   rows.push(`<div id="fhp-mcp" style="margin-top:.4rem">
     <div style="color:#c9a84c;font-size:.6rem;font-weight:700;margin-bottom:.25rem">
-      🔌 MCP RELAY
+      🛰️ RELAY · CI
     </div>
     <div id="fhp-mcp-body" style="color:#8888aa;font-size:.58rem">Fetching…</div>
   </div>`);
@@ -3314,29 +3316,25 @@ function initRightNowIndexer() {
   }
 }
 
-// ── MCP Relay status fetcher ──────────────────────────────────────────────
-// Calls /mcp on field-relay-nba to get live CI status, smoke count, and
-// deploy history. Injected into the health panel after it renders.
-// No auth header needed since FIELD_MCP_SECRET is not set.
-// RUWT: uses JSON-RPC 2.0 per spec verified May 30 2026.
+// ── Relay / CI status fetcher ─────────────────────────────────────────────
+// Architectural correction (PM-19 retro): the prior implementation called
+// the auth-gated /mcp endpoint on field-relay-nba and broke when
+// FIELD_MCP_SECRET was deployed (HTTP 401). The right fix is NOT to embed
+// the bearer token in client code (that defeats auth). The right fix is
+// recognizing that get_ci_status and get_smoke_count are thin wrappers
+// around PUBLIC GitHub data — so we fetch that data directly. The
+// authenticated /mcp surface stays exclusively for claude.ai's connector.
+//
+// CORS verified June 2 2026: api.github.com returns ACAO:* on actions/runs,
+// raw.githubusercontent.com returns ACAO:* on main-branch files. Both
+// public-read with ~60 req/hr unauthenticated rate limit per IP, well
+// above panel render frequency.
 async function fetchMCPStatus() {
   const el = document.getElementById('fhp-mcp-body');
   if (!el) return;
 
-  const MCP = CLAUDE_PROXY_URL.replace('/field-claude-proxy', '/field-relay-nba').replace('field-claude-proxy', 'field-relay-nba') || 'https://field-relay-nba.jeffunglesbee.workers.dev';
-  const RELAY_MCP = 'https://field-relay-nba.jeffunglesbee.workers.dev/mcp';
-
-  const call = async (method, params={}) => {
-    const r = await fetch(RELAY_MCP, {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({jsonrpc:'2.0', id:1, method, params}),
-    });
-    if (!r.ok) throw new Error(`HTTP ${r.status}`);
-    const d = await r.json();
-    if (d.error) throw new Error(d.error.message);
-    return d.result;
-  };
+  const RUNS_URL = 'https://api.github.com/repos/jeffunglesbee-create/jubilant-bassoon/actions/runs?per_page=3';
+  const SMOKE_URL = 'https://raw.githubusercontent.com/jeffunglesbee-create/jubilant-bassoon/main/smoke.js';
 
   const row = (icon, label, val, col='#aaa') =>
     `<div style="display:flex;gap:.4rem;margin-bottom:.2rem">
@@ -3346,22 +3344,29 @@ async function fetchMCPStatus() {
      </div>`;
 
   try {
-    // Parallel: CI status + smoke count
-    const [ciResult, smokeResult] = await Promise.all([
-      call('tools/call', {name:'get_ci_status', arguments:{}}),
-      call('tools/call', {name:'get_smoke_count', arguments:{}}),
+    // Parallel: CI runs + smoke source. Both public, no auth.
+    const [runsResp, smokeResp] = await Promise.all([
+      fetch(RUNS_URL, { headers: { 'Accept': 'application/vnd.github+json' }}),
+      fetch(SMOKE_URL),
     ]);
+    if (!runsResp.ok) throw new Error(`GitHub API HTTP ${runsResp.status}`);
+    if (!smokeResp.ok) throw new Error(`raw.github HTTP ${smokeResp.status}`);
 
-    const ciLines = (ciResult?.content?.[0]?.text || '').split('\n').slice(0,3);
-    const smokeText = smokeResult?.content?.[0]?.text || '?';
-    const smokeNum = smokeText.match(/\d+/)?.[0] || '?';
+    const runs = await runsResp.json();
+    const smokeSrc = await smokeResp.text();
 
-    // Parse CI lines: "name | conclusion | sha | date"
-    const ciRows = ciLines.map(line => {
-      const [name, conclusion, sha] = line.split(' | ');
+    // Count smoke assertions by counting top-level assert( calls.
+    // Regex anchored to start-of-line (with optional whitespace) to avoid
+    // matching the word inside strings or comments.
+    const smokeNum = (smokeSrc.match(/^\s*assert\(/gm) || []).length || '?';
+
+    // Most recent 3 workflow runs across all workflow types
+    const ciRows = (runs.workflow_runs || []).slice(0, 3).map(r => {
+      const conclusion = r.conclusion || r.status || '?';
+      const sha = (r.head_sha || '').slice(0, 7);
       const icon = conclusion === 'success' ? '✅' : conclusion === 'failure' ? '❌' : '🔄';
       const col  = conclusion === 'success' ? '#4caf82' : conclusion === 'failure' ? '#e05c5c' : '#c9a84c';
-      const shortName = (name||'').replace('Smoke Test + Live Verify','Smoke').replace('FIELD Data','Data').replace('Cloudflare API Probe','CF Probe').replace('Deploy gate (fast smoke)','Deploy gate');
+      const shortName = (r.name||'').replace('Smoke Test + Live Verify','Smoke').replace('FIELD Data','Data').replace('Cloudflare API Probe','CF Probe').replace('Deploy gate (fast smoke)','Deploy gate');
       return row(icon, shortName.slice(0,16), `${sha||'?'} · ${conclusion||'?'}`, col);
     }).join('');
 
@@ -3377,10 +3382,10 @@ async function fetchMCPStatus() {
                  border-radius:5px;padding:.2rem .5rem;font-size:.55rem;cursor:pointer;font-family:monospace">
           ↻ Refresh
         </button>
-        <span style="color:#444;font-size:.52rem;margin-left:.4rem">via relay MCP</span>
+        <span style="color:#444;font-size:.52rem;margin-left:.4rem">via GitHub API (public)</span>
       </div>`;
   } catch(e) {
-    el.innerHTML = `<span style="color:#e05c5c">MCP error: ${e.message}</span>
+    el.innerHTML = `<span style="color:#e05c5c">Relay/CI error: ${e.message}</span>
       <button onclick="fetchMCPStatus()"
         style="margin-left:.5rem;background:rgba(255,255,255,.05);border:1px solid #555;
                color:#888;border-radius:4px;padding:.15rem .4rem;font-size:.52rem;cursor:pointer">
@@ -16474,7 +16479,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-02f';
+  const SW_VERSION = '2026-06-02g';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)

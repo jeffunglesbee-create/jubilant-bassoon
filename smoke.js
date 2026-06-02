@@ -2221,6 +2221,22 @@ assert('A389 — PM-19 retro: J3/J2/J1 patent-visibility badges + Active Layers 
   html.includes("'journalism-tab-v1-layer-badges':"),
   'PM-19 retro polish (reconciles with original TYPE D recommendation patent angle): each journalism section surfaces its layer (J3 editorial, J2 series preview, J1 game brief, J1 regular-season slate) via .jrn-eyebrow badges. Desktop companion gains a fourth block "Active Layers" that statically names L1 (prompt-level) / L2 (detection retry, 8 detectors) / L3 (scoring + feedback) — patent-visible architecture surfacing without inventing per-layer telemetry.');
 
+assert('A390 — PM-19 retro: Health panel uses public GitHub API for CI/smoke (no auth-gated /mcp POST from client)',
+  // The new fetcher pulls from public endpoints
+  html.includes("api.github.com/repos/jeffunglesbee-create/jubilant-bassoon/actions/runs") &&
+  html.includes("raw.githubusercontent.com/jeffunglesbee-create/jubilant-bassoon/main/smoke.js") &&
+  // Smoke count derived by regex on assert(
+  html.includes("/^\\s*assert\\(/gm") &&
+  // No POST to /mcp from the fetcher (auth-gated endpoint stays for claude.ai connector only).
+  // Guard: client must NOT contain the old JSON-RPC POST to the relay /mcp path.
+  !html.includes("RELAY_MCP, {") &&
+  !html.includes("call('tools/call', {name:'get_ci_status'") &&
+  // Panel label updated
+  html.includes('RELAY · CI') &&
+  // Footer attribution honest
+  html.includes('via GitHub API (public)'),
+  'PM-19 retro fix for production HTTP 401: the Health panel previously POSTed JSON-RPC tools/call to the auth-gated /mcp endpoint on field-relay-nba, which started failing once FIELD_MCP_SECRET was deployed. The architectural correction is that get_ci_status + get_smoke_count are thin wrappers over public GitHub data — so fetch that data directly from api.github.com and raw.githubusercontent.com. The auth-gated /mcp surface remains exclusively for claude.ai connector use. No client-side bearer token (would be public on view-source). CORS verified June 2 2026 on both endpoints.');
+
 
 // ═════════════════════════════════════════════════════════════════════
 // GATE — all assertions above must pass before deploy proceeds.
