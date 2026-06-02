@@ -1971,6 +1971,37 @@ assert('A372 — Voice Positioning v2 Move A: FIELD_VOICE_EXEMPLARS hoisted to t
   (html.match(/FIELD_VOICE_EXEMPLARS/g) || []).length >= 4,
   'Voice Positioning v2 Move A: FIELD_VOICE_EXEMPLARS moved from the rules section (where v1 buried it after FIELD_PROSE_STYLE — AI processed it as "more rules") to the TOP of each long-form prompt as opening framing. The AI now sees voice before it sees template-shaped rules. Verified at all 3 long-form surfaces: compound template (interpolated before "You are FIELD\'s sports intelligence editor"), J2 series preview (first array element), J3 standalone (first array element). Diagnosed June 1 2026 PM after Jeff observed "no flow to the writing"');
 
+assert('A373 — Voice Positioning v3 Moves E1+E2: numbers-in-prose grammar block + one-number-per-sentence ratio',
+  // The grammar block header
+  html.includes('NUMBERS-IN-PROSE GRAMMAR') &&
+  html.includes('IT IS WHERE V1 AND V2 FAILED') &&
+  // Meta-rule statement (the core insight)
+  html.includes('numbers must be SUBORDINATED to a claim, never the predicate of a main clause') &&
+  // All 6 named patterns present
+  html.includes('PATTERN 1 — APPOSITIVE') &&
+  html.includes('PATTERN 2 — POSSESSIVE COMPOUND') &&
+  html.includes('PATTERN 3 — PREPOSITIONAL EMBED') &&
+  html.includes('PATTERN 4 — PARENTHETICAL') &&
+  html.includes('PATTERN 5 — THRESHOLD / COLLECTIVE') &&
+  html.includes('PATTERN 6 — PUNCTUATION') &&
+  // Each pattern has a before/after pair (Wire copy: / FIELD:)
+  (html.match(/Wire copy:/g) || []).length >= 6 &&
+  (html.match(/FIELD: /g) || []).length >= 6 &&
+  // The forbidden signature block
+  html.includes('FORBIDDEN — THE WIRE-COPY SIGNATURE') &&
+  // The forbidden verb list (sample 4 of the 10)
+  html.includes('has / holds / carries / posts') &&
+  html.includes('enters with / sits at / owns / averages') &&
+  // The trigger advice
+  html.includes('Whenever you find yourself reaching for that construction, STOP') &&
+  // Move E2 ratio rule
+  html.includes('ONE-NUMBER-PER-SENTENCE RATIO') &&
+  html.includes('AT MOST ONE number') &&
+  html.includes('A brief with 4 numbers in 12 sentences breathes') &&
+  // Closing delimiter
+  html.includes('END NUMBERS-IN-PROSE GRAMMAR'),
+  'Voice Positioning v3: Move E1 (numbers-in-prose grammar) teaches the META-RULE that numbers must be SUBORDINATED to claims (never main-clause predicates) via 6 specific syntactic patterns (appositive, possessive compound, prepositional embed, parenthetical, threshold/collective, punctuation) each with wire-copy-vs-FIELD before/after. The FORBIDDEN section names the wire-copy verb signature explicitly (has/holds/carries/posts/leads with/brings/maintains/enters with/sits at/owns/averages). Move E2 adds a one-number-per-sentence ratio rule with the breathing heuristic. Together they address the v2 failure mode where the AI swapped phrases but preserved wire-copy grammar (e.g. "with X ERA" → "holds X ERA"). Diagnosed June 1 2026 PM-10 after Jeff observed "we\'re still struggling on how to have rhetorical flourish when numbers are involved with prose"');
+
 
 // ═════════════════════════════════════════════════════════════════════
 // GATE — all assertions above must pass before deploy proceeds.

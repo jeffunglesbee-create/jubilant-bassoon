@@ -15690,7 +15690,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-01n';
+  const SW_VERSION = '2026-06-01o';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -16365,6 +16365,17 @@ const FIELD_PROSE_STYLE=[
 // FIELD_PROSE_STYLE — the AI processed them as "more rules" not as
 // framing, and defaulted to wire-copy register. v2 frames the voice as
 // the FIRST thing the AI sees.
+// PM-10 (June 1 2026, after second live observation): v3 — added the
+// NUMBERS-IN-PROSE GRAMMAR block (Move E1) + ONE-NUMBER-PER-SENTENCE
+// ratio (Move E2). v2 partially landed (J2 series + bottom-sheet brief
+// read with voice) but the J3 omnibus brief still collapsed when
+// numbers appeared. Diagnosis: the AI doesn\'t have a syntactic
+// alternative to the wire-copy pattern "Subject + stat-verb + Number
+// + qualifier." It swapped phrases ("with X ERA" → "holds X ERA") but
+// preserved the grammar. v3 teaches the META-RULE: numbers must be
+// subordinated to claims, never as main-clause predicates. Six
+// specific syntactic patterns are demonstrated + the forbidden verb
+// list is named explicitly.
 //
 // Voice register (Jeff direction, June 1): wise, intelligent, cheeky,
 // wry, and a tad cynical — but not that much. NOT bombastic, NOT hot-
@@ -16410,6 +16421,53 @@ const FIELD_VOICE_EXEMPLARS = [
   '- A press release could have written this. So could an automated wire feed.',
   '',
   'If the brief reads like a list of facts linked by "with" and "against," the voice has failed.',
+  '',
+  '═══ NUMBERS-IN-PROSE GRAMMAR (READ THIS — IT IS WHERE V1 AND V2 FAILED) ═══',
+  '',
+  'The anti-exemplar above is what happens when numbers get their own sentence. The fix is grammatical, not stylistic: numbers must be SUBORDINATED to a claim, never the predicate of a main clause.',
+  '',
+  'Six patterns that work. The wire-copy form on the left FAILS. The FIELD form on the right works because the number lives inside a noun-phrase, prepositional phrase, parenthetical, or appositive — NEVER as the predicate.',
+  '',
+  'PATTERN 1 — APPOSITIVE (number tucked into a description of who)',
+  '  Wire copy: "Aho leads Carolina with 80 points this season."',
+  '  FIELD:     "Aho, an 80-point center, is the reason Carolina is here."',
+  '',
+  'PATTERN 2 — POSSESSIVE COMPOUND (number as adjective on a noun-phrase)',
+  '  Wire copy: "Matz holds a 4.67 ERA this season."',
+  '  FIELD:     "Matz\'s 4.67 ERA tells the story — bullpen night."',
+  '',
+  'PATTERN 3 — PREPOSITIONAL EMBED (number as object of a preposition)',
+  '  Wire copy: "Eichel has 90 points this season."',
+  '  FIELD:     "Eichel at 90 is the headline; whether Carolina can deny him space is the question."',
+  '',
+  'PATTERN 4 — PARENTHETICAL (number isolated as supporting evidence)',
+  '  Wire copy: "Nola brings a 5.72 ERA to his start."',
+  '  FIELD:     "Nola\'s been getting hit (5.72), but the underlying numbers say bad luck more than bad pitcher."',
+  '',
+  'PATTERN 5 — THRESHOLD / COLLECTIVE (multiple numbers compressed)',
+  '  Wire copy: "Matz 4.67 vs Flaherty 5.81. Nola 5.72 vs Vasquez 3.28."',
+  '  FIELD:     "Three of tonight\'s four starters are carrying ERAs north of 4.50 — bullpen leverage across the board."',
+  '',
+  'PATTERN 6 — PUNCTUATION (number as rhetorical beat)',
+  '  Wire copy: "Wilson leads the Aces with 24.8 PPG this season."',
+  '  FIELD:     "Wilson does what Wilson does. 24.8 a night. Pick your poison."',
+  '',
+  '═══ FORBIDDEN — THE WIRE-COPY SIGNATURE ═══',
+  '',
+  'The construction:',
+  '  SUBJECT + [has / holds / carries / posts / leads with / brings / maintains / enters with / sits at / owns / averages] + NUMBER + [this season / in May / through May / this postseason]',
+  '',
+  'Whenever you find yourself reaching for that construction, STOP. The verb is the tell. "Holds a 4.67 ERA," "carries a 5.72 ERA," "enters with 90 points," "averages 24.8 PPG" — these are the verbs that automated wire feeds use. They make every player into a stat-holder. That is not what FIELD does.',
+  '',
+  'Restructure into one of the six patterns above. The number is evidence; the claim is the sentence.',
+  '',
+  '═══ ONE-NUMBER-PER-SENTENCE RATIO ═══',
+  '',
+  'Each sentence in the brief gets AT MOST ONE number. If a sentence has two, restructure or split. If a sentence has three, you have written a box score with verbs. A brief with 4 numbers in 12 sentences breathes. A brief with 15 numbers in 8 sentences is wire copy regardless of register.',
+  '',
+  'When you want to list multiple stats in one sentence, use Pattern 5 (Threshold / Collective): name a threshold the numbers share rather than listing them individually.',
+  '',
+  '═══ END NUMBERS-IN-PROSE GRAMMAR ═══',
   '',
   '═══ PRIORITY ═══',
   '',
