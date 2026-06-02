@@ -804,6 +804,9 @@ body::before{
 .bs-section{margin:.65rem 0}
 .bs-section-label{font-size:.52rem;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin-bottom:.3rem}
 .bs-section-body{font-size:.7rem;line-height:1.6}
+.bs-jrn-link{cursor:pointer;transition:opacity .15s,background .15s;padding:.45rem .65rem;margin:.65rem -.65rem;border-radius:.4rem}
+.bs-jrn-link:hover{opacity:.85;background:rgba(201,168,76,.06)}
+.bs-jrn-link .bs-section-label{color:var(--gold2);margin-bottom:0;cursor:pointer}
 
 /* Card Life Stage content */
 .card-stage-content{padding:.25rem 0 .1rem;font-size:.62rem;line-height:1.5;color:rgba(232,232,240,.75)}
@@ -9394,7 +9397,7 @@ function renderJournalism() {
         const stream = game.streams?.[0]?.label || '';
         const timeStr = (typeof fmtTime === 'function') ? fmtTime(game.start_time) : '';
         const metaParts = [timeStr ? timeStr + ' ET' : '', stream].filter(Boolean);
-        slateItems.push(`<li class="jrn-slate-item">
+        slateItems.push(`<li class="jrn-slate-item" data-gameid="${gid}">
           <div class="jrn-slate-game">${matchup}</div>
           ${metaParts.length ? `<div class="jrn-slate-meta">${metaParts.join(' · ')}</div>` : ''}
           <div class="jrn-slate-brief">${safe}</div>
@@ -9450,6 +9453,32 @@ function jumpToGameCard(gameId) {
       card.style.outline = '2px solid var(--gold2)';
       setTimeout(() => { card.style.outline = ''; }, 1400);
     }
+  }, 100);
+}
+
+// C4: Cross-link from bottom sheet → journalism tab anchored to the game.
+// Closes the bottom sheet, enters journalism-mode if not already in it,
+// then scrolls the matching [data-gameid] entry into view with a pulse.
+function openJournalismForGame(gameId) {
+  if (!gameId) return;
+  try { closeBottomSheet(); } catch(_) {}
+  setTimeout(() => {
+    if (!document.body.classList.contains('journalism-mode')) {
+      toggleJournalismView();
+    } else {
+      // Already in journalism mode — ensure content is rendered fresh
+      try { renderJournalism(); } catch(_) {}
+    }
+    setTimeout(() => {
+      const el = document.querySelector(`[data-gameid="${gameId}"].jrn-series, [data-gameid="${gameId}"].jrn-slate-item`);
+      if (el) {
+        el.scrollIntoView({behavior:'smooth', block:'center'});
+        const prevOutline = el.style.outline;
+        el.style.outline = '2px solid var(--gold2)';
+        el.style.outlineOffset = '4px';
+        setTimeout(() => { el.style.outline = prevOutline; el.style.outlineOffset = ''; }, 1600);
+      }
+    }, 250);
   }, 100);
 }
 
@@ -25528,6 +25557,7 @@ function openBottomSheet(gameId) {
     <div class="bs-meta">${scoreStr?scoreStr+period:fmtTime(game.start_time)+' ET'} · ${game.venue||sport||''}${game.seriesRecord?' · '+game.seriesRecord:''}</div>
     ${scoutReport}
     ${gameBrief ? `<div class="bs-section"><div class="bs-section-label">FIELD Brief</div><div class="bs-section-body" style="font-size:.74rem;line-height:1.6">${gameBrief}</div></div>` : '<div class="bs-section bs-brief-placeholder" id="bs-brief-pending"><div class="bs-section-label">FIELD Brief</div><div class="bs-section-body" style="font-size:.74rem;line-height:1.6;opacity:.45;font-style:italic">Loading brief\u2026</div></div>'}
+    ${gameBrief ? `<div class="bs-section bs-jrn-link" onclick="openJournalismForGame('${gameId}')"><div class="bs-section-label">Read full coverage →</div></div>` : ''}
     ${dramaLabel_bs||cb ? `<div class="bs-section"><div class="bs-section-label">Live Intelligence</div><div class="bs-section-body">${[dramaLabel_bs,cb].filter(Boolean).join(' · ')}</div></div>` : ''}
     ${sparkline ? `<div class="bs-section"><div class="bs-section-label">Drama Arc</div>${sparkline}</div>` : ''}
     ${story ? `<div class="bs-section"><div class="bs-section-label">Story</div>${story}</div>` : ''}
