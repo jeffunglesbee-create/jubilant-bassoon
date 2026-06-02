@@ -1690,6 +1690,84 @@ body.journalism-mode #field-journalism-section{animation:jrnFadeIn 220ms ease-ou
   body.journalism-mode .jrn-back-pill{display:inline-block;position:sticky;top:calc(env(safe-area-inset-top,0px) + .5rem);z-index:50;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);background:rgba(20,20,28,.78)}
   body:not(.journalism-mode) #field-journalism-section{display:none}
 }
+
+/* ── C3: Laptop multi-pane (1200-1439px) ──────────────────────────────────
+   Schedule rail fixed left (280px), journalism reading shifted right.
+   Companion stays hidden at laptop. */
+@media(min-width:1200px) and (max-width:1439px){
+  body.journalism-mode .main{
+    position:fixed;top:0;left:0;
+    width:280px;max-height:100vh;overflow-y:auto;
+    z-index:5;padding:1rem .5rem;
+    background:var(--bg);border-right:1px solid var(--edge);
+    margin:0;
+  }
+  body.journalism-mode #field-journalism-section{
+    margin-left:300px;
+    max-width:calc(100vw - 320px);
+  }
+  body.journalism-mode .jrn-reading{max-width:640px}
+  body.journalism-mode .jrn-back-pill{display:none} /* not needed at laptop+ — schedule already visible */
+  body.journalism-mode #night-owl,
+  body.journalism-mode #field-desk-section,
+  body.journalism-mode #media-section,
+  body.journalism-mode #streaming-section,
+  body.journalism-mode .page-divider,
+  body.journalism-mode .legend-section,
+  body.journalism-mode #ambient-panel{display:none !important}
+}
+
+/* ── C3: Desktop three-pane (1440px+) ─────────────────────────────────────
+   Schedule rail fixed left, companion fixed right, journalism in middle.
+   Companion is the patent-visible J1-J5 architecture surfaced. */
+@media(min-width:1440px){
+  body.journalism-mode .main{
+    position:fixed;top:0;left:0;
+    width:280px;max-height:100vh;overflow-y:auto;
+    z-index:5;padding:1rem .5rem;
+    background:var(--bg);border-right:1px solid var(--edge);
+    margin:0;
+  }
+  body.journalism-mode #field-journalism-section{
+    margin-left:300px;margin-right:300px;
+    max-width:calc(100vw - 620px);
+  }
+  body.journalism-mode .jrn-reading{max-width:720px}
+  body.journalism-mode .jrn-companion{
+    display:block;
+    position:fixed;right:0;top:0;
+    width:280px;max-height:100vh;overflow-y:auto;
+    z-index:5;padding:1.5rem 1rem;
+    background:var(--bg);border-left:1px solid var(--edge);
+  }
+  body.journalism-mode .jrn-back-pill{display:none}
+  body.journalism-mode #night-owl,
+  body.journalism-mode #field-desk-section,
+  body.journalism-mode #media-section,
+  body.journalism-mode #streaming-section,
+  body.journalism-mode .page-divider,
+  body.journalism-mode .legend-section,
+  body.journalism-mode #ambient-panel{display:none !important}
+}
+
+/* ── C3: Companion content styles (visible at desktop only) ───────────── */
+.jrn-companion-block{margin-bottom:1.5rem;padding-bottom:1.25rem;border-bottom:1px solid var(--edge)}
+.jrn-companion-block:last-child{border-bottom:none}
+.jrn-companion-label{font-size:.55rem;font-weight:700;letter-spacing:.14em;color:var(--gold2);opacity:.85;text-transform:uppercase;margin-bottom:.65rem}
+.jrn-companion-summary{font-size:.78rem;line-height:1.6;color:var(--fg)}
+.jrn-companion-summary strong{color:var(--gold)}
+.jrn-companion-link{display:inline-block;margin-top:.5rem;font-size:.66rem;color:var(--smoke);text-decoration:none;letter-spacing:.04em;cursor:pointer;transition:color .15s}
+.jrn-companion-link:hover{color:var(--gold2)}
+.jrn-companion-list{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:.55rem}
+.jrn-companion-item{font-size:.7rem;line-height:1.5;color:var(--fg)}
+.jrn-companion-item-meta{font-size:.6rem;color:var(--muted);letter-spacing:.04em;margin-top:.1rem}
+.jrn-quality-row{display:flex;justify-content:space-between;align-items:baseline;padding:.3rem 0;font-size:.7rem;border-bottom:1px solid rgba(255,255,255,.03)}
+.jrn-quality-row:last-child{border-bottom:none}
+.jrn-quality-row-label{color:var(--muted);letter-spacing:.03em}
+.jrn-quality-row-value{color:var(--fg);font-weight:600;font-variant-numeric:tabular-nums}
+.jrn-quality-row-value.good{color:var(--gold2)}
+.jrn-quality-row-value.warn{color:var(--smoke)}
+.jrn-companion-empty{font-size:.7rem;color:var(--muted);font-style:italic}
 .betting-head{
   display:flex;align-items:center;gap:.75rem;
   margin-bottom:1.2rem;padding-bottom:.65rem;
@@ -9352,6 +9430,12 @@ function renderJournalism() {
     if (gameBriefCount) parts.push(gameBriefCount + ' game brief' + (gameBriefCount===1?'':'s'));
     stackEl.textContent = parts.length ? parts.join(' · ') : 'briefs loading';
   }
+
+  // C3: companion content (desktop 1440px+ only — CSS hides at smaller viewports
+  // so always-render is cheap). Pass counts so we don't re-iterate.
+  try {
+    renderJournalismCompanion({ briefCount, seriesCount, gameBriefCount });
+  } catch(_) {}
 }
 
 function jumpToGameCard(gameId) {
@@ -9367,6 +9451,95 @@ function jumpToGameCard(gameId) {
       setTimeout(() => { card.style.outline = ''; }, 1400);
     }
   }, 100);
+}
+
+// C3: Companion sidebar at desktop (1440px+). Sources are read-only — same
+// caches the schedule already uses. Patent-visible surfacing of the J1-J5
+// quality architecture via the field_jq_scores telemetry.
+function renderJournalismCompanion(counts) {
+  const aside = document.getElementById('jrn-companion');
+  if (!aside) return;
+  const c = counts || { briefCount: 0, seriesCount: 0, gameBriefCount: 0 };
+  const blocks = [];
+
+  // Block 1: Tonight's Read summary
+  const totalBriefs = (c.briefCount||0) + (c.seriesCount||0) + (c.gameBriefCount||0);
+  if (totalBriefs) {
+    const parts = [];
+    if (c.briefCount) parts.push(`<strong>${c.briefCount}</strong> editorial`);
+    if (c.seriesCount) parts.push(`<strong>${c.seriesCount}</strong> series brief${c.seriesCount===1?'':'s'}`);
+    if (c.gameBriefCount) parts.push(`<strong>${c.gameBriefCount}</strong> game brief${c.gameBriefCount===1?'':'s'}`);
+    blocks.push(`<div class="jrn-companion-block">
+      <div class="jrn-companion-label">Tonight's Read</div>
+      <div class="jrn-companion-summary">${parts.join(' · ')}</div>
+    </div>`);
+  } else {
+    blocks.push(`<div class="jrn-companion-block">
+      <div class="jrn-companion-label">Tonight's Read</div>
+      <div class="jrn-companion-empty">Briefs loading…</div>
+    </div>`);
+  }
+
+  // Block 2: Yesterday — link to archive
+  blocks.push(`<div class="jrn-companion-block">
+    <div class="jrn-companion-label">Archive</div>
+    <a class="jrn-companion-link" onclick="event.preventDefault();renderJournalismArchive()">Yesterday's FIELD →</a>
+  </div>`);
+
+  // Block 3: Later Tonight — playoff games (seriesRecord) still upcoming today
+  try {
+    const now = Date.now();
+    const items = [];
+    (allData?.sports||[]).forEach(sec_ => (sec_.games||[]).forEach(g => {
+      if (!g.seriesRecord || !g.start_time) return;
+      const gt = new Date(g.start_time).getTime();
+      if (isNaN(gt) || gt <= now) return;
+      const matchup = `${g.away||''} ${g.neutral?'vs':'@'} ${g.home||''}`;
+      const timeStr = (typeof fmtTime === 'function') ? fmtTime(g.start_time) : '';
+      const streamLabel = g.streams?.[0]?.label || '';
+      const metaBits = [timeStr ? timeStr + ' ET' : '', g.league || '', streamLabel].filter(Boolean);
+      items.push({ matchup, meta: metaBits.join(' · '), gt });
+    }));
+    items.sort((a,b) => a.gt - b.gt);
+    if (items.length) {
+      const lis = items.slice(0, 4).map(i => `<li class="jrn-companion-item">
+        ${i.matchup}
+        <div class="jrn-companion-item-meta">${i.meta}</div>
+      </li>`).join('');
+      blocks.push(`<div class="jrn-companion-block">
+        <div class="jrn-companion-label">Later Tonight</div>
+        <ul class="jrn-companion-list">${lis}</ul>
+      </div>`);
+    }
+    // Honest note: FIELD's schedule is today-only (buildTodaySchedule). Multi-day
+    // outlook is intentionally omitted rather than fabricated.
+  } catch(_) {}
+
+  // Block 4: Quality Scores (patent-visible J1-J5 telemetry)
+  try {
+    const scores = JSON.parse(localStorage.getItem('field_jq_scores')||'[]');
+    if (Array.isArray(scores) && scores.length >= 3) {
+      // Take most recent 20 to avoid stale data dominating
+      const recent = scores.slice(-20);
+      const avgScore = recent.reduce((a,s) => a + (s.score||0), 0) / recent.length;
+      const avgStat  = recent.reduce((a,s) => a + (s.stat ||0), 0) / recent.length;
+      const scoreClass = avgScore >= 145 ? 'good' : (avgScore >= 120 ? '' : 'warn');
+      const statClass  = avgStat  >= 1.8 ? 'good' : (avgStat  >= 1.4 ? '' : 'warn');
+      blocks.push(`<div class="jrn-companion-block">
+        <div class="jrn-companion-label">Quality (recent ${recent.length})</div>
+        <div class="jrn-quality-row">
+          <span class="jrn-quality-row-label">Prose score</span>
+          <span class="jrn-quality-row-value ${scoreClass}">${Math.round(avgScore)}/180</span>
+        </div>
+        <div class="jrn-quality-row">
+          <span class="jrn-quality-row-label">Stat depth</span>
+          <span class="jrn-quality-row-value ${statClass}">${avgStat.toFixed(1)}/sent</span>
+        </div>
+      </div>`);
+    }
+  } catch(_) {}
+
+  aside.innerHTML = blocks.join('');
 }
 
 function renderJournalismArchive() {
