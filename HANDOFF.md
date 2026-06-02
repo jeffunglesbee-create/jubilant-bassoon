@@ -1,18 +1,20 @@
-# FIELD Handoff — June 2 2026 PM-19 close (Journalism Tab v1 — 6 commits, recovered + shipped + retro patent-visibility polish)
+# FIELD Handoff — June 2 2026 PM-19 close (Journalism Tab v1 + retro + production fixes — 8 commits)
 
-**jubilant-bassoon HEAD:** (set on push) · Smoke: 383/0 · SW_VERSION source `2026-06-02f`
+**jubilant-bassoon HEAD:** f834815 · Smoke: 385/0 · SW_VERSION source `2026-06-02h`
 **field-relay-nba HEAD:** 880e3ae last meaningful (unchanged)
 
-**This session shipped:** PM-19 redo after the mid-build tool-availability interrupt, followed by a retro audit reconciling the recovery doc against the original TYPE D recommendation and applying patent-visibility improvements that the recovery doc had dropped under tool-loss pressure.
+**This session shipped:** PM-19 redo after the mid-build tool-availability interrupt, followed by a retro audit reconciling the recovery doc against the original TYPE D recommendation, followed by two production fixes responding to live iPad screenshots.
 
-Six single-concern commits recreating + completing Journalism Tab v1:
+Eight single-concern commits:
 
-- C1 — Scaffold + content (nav anchor, section HTML, ~70 lines CSS, 4 JS render functions, 6 sibling renderJournalism triggers)
-- C2 — Mobile/tablet UX polish (sticky back-pill with backdrop blur + safe-area, 220ms fade-in respecting prefers-reduced-motion, scroll position save/restore, resize-aware listener)
-- C3 — Laptop side-by-side (1200-1439px) + desktop three-pane (1440px+) + companion content with quality telemetry from `field_jq_scores`
-- C4 — Bottom-sheet "Read full coverage →" cross-link via `openJournalismForGame(gameId)` helper; `data-gameid` added to `.jrn-slate-item` so cross-link works for regular-season games too
-- C5 — SW_VERSION bump `d→e` (Rule 23 same-day), `journalism-tab-v1` in FIELD_FEATURES, smoke A385-A388, HANDOFF.md, T3 memory anchor
-- **C6 retro** — J3/J2/J1 patent-visibility badges + Active Layers companion block + SW bump `e→f` + smoke A389. Reconciles the v1 with the original TYPE D recommendation's "small J3/J2/J1 badges, like a publication's section markers" — recovery doc had dropped this detail.
+- C1 `605029d` — Scaffold + content (nav anchor, section HTML, ~70 lines CSS, 4 JS render functions, 6 sibling renderJournalism triggers)
+- C2 `108ff78` — Mobile/tablet UX polish (sticky back-pill with backdrop blur + safe-area, 220ms fade-in respecting prefers-reduced-motion, scroll position save/restore, resize-aware listener)
+- C3 `9295765` — Laptop side-by-side (1200-1439px) + desktop three-pane (1440px+) + companion content with quality telemetry from `field_jq_scores`
+- C4 `b84333c` — Bottom-sheet "Read full coverage →" cross-link via `openJournalismForGame(gameId)` helper; `data-gameid` added to `.jrn-slate-item` so cross-link works for regular-season games too
+- C5 `0020c20` — SW_VERSION bump `d→e` (Rule 23 same-day), `journalism-tab-v1` in FIELD_FEATURES, smoke A385-A388, HANDOFF.md, T3 memory anchor
+- **C6 retro** `1563ee2` — J3/J2/J1 patent-visibility badges + Active Layers companion block + SW bump `e→f` + smoke A389. Reconciles the v1 with the original TYPE D recommendation's "small J3/J2/J1 badges, like a publication's section markers" — recovery doc had dropped this detail.
+- **MCP fix** `85f5bbd` — Health panel HTTP 401 resolved by routing CI/smoke fetch to public GitHub API instead of auth-gated `/mcp`. SW bump `f→g`, smoke A390. The auth-gated MCP server stays exclusively for claude.ai connector.
+- **State tautology** `f834815` — Layer 2g extended with 5th pattern group catching "begins at 0-0" / "clean slate" tautologies at G1. State Clause prompt updated. State-conditional, retries with tautology-aware instruction. SW bump `g→h`, smoke A391.
 
 **Session Doc (this session — Drive):** (set at SESSION END after Drive write)
 **Recovery Doc (PM-19 interrupt — Drive):** `10udrJmsVd0FSf-hU2qEuNTN1PL4hQ6tMlTji0IfpmN0`
