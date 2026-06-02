@@ -2676,11 +2676,32 @@ THE FOUR ASSUMPTION CLASSES (each requires explicit verification):
    screenshot or response. Read all of it before committing.
    A 429 proves a key IS valid. That redirects diagnosis.
 
+ CLASS E -- Capability availability / impossibility (added June 2 2026 PM-14)
+   "We can't reach workers.dev from sandbox" / "claude.ai's UI
+   doesn't expose an edit option" / "This integration isn't
+   supported" -- declared before searching.
+   Verification: search past chats + Drive docs + workflow files
+   + Anthropic docs (web_search) before declaring a capability
+   unavailable. The CI-as-proxy pattern for workers.dev and
+   api.cloudflare.com (cf-api-probe.yml, cors-probe.yml,
+   post-probe.yml) is the canonical example: a "blocked" domain
+   has a documented escape that lives in the repo and Drive.
+   Trigger: fires AT THE MOMENT Claude is about to claim
+   impossibility, not pre-emptively. Stable infrastructure facts
+   (sandbox allowlist, deploy path, probe workflow inventory)
+   are already in userMemories and surfaced by the SESSION START
+   protocol's mandatory Drive reads; do NOT re-search those at
+   every startup. The trigger fires only at decision-points
+   where Claude is about to close a door.
+
 ENFORCEMENT:
  Before any architectural recommendation: verify the premise.
  Before declaring root cause: list verified vs assumed evidence.
  Before declaring a deploy successful: require the version number
    in the response header. "I clicked Deploy" is not confirmation.
+ Before declaring a capability unavailable (Class E): search
+   past chats, Drive, repo workflow files, and Anthropic docs.
+   Only then declare the constraint.
  When an assumption proves wrong: correct course immediately.
 
 CASE STUDY -- May 31 2026:
@@ -2691,11 +2712,29 @@ CASE STUDY -- May 31 2026:
  Each assumption compounded: multi-key architecture, ToS questions,
  multiple diagnostic cycles on an unchanged deployed state.
 
+CASE STUDY -- June 2 2026 PM-14 (Class E):
+ - Drifted toward "*.workers.dev blocked from sandbox = OAuth
+   verification stuck" before Jeff corrected with "IT IS POSSIBLE."
+   That forced a search which surfaced cf-api-probe.yml +
+   post-probe.yml + cors-probe.yml -- all already committed in
+   the repo, all documented in the CI/Deploy Ref doc, all in
+   userMemories. The failure was not lacking the answer; it was
+   not searching before declaring impossibility.
+ - Companion miss: nearly guessed "the three-dot menu probably
+   has an Edit option" for claude.ai's connector UI. Web-searched
+   Anthropic docs instead and got the documented answer (custom
+   connectors must be removed + re-added; no inline edit).
+
 SESSION START CHECKLIST addition (Rule 48):
- 8. ALL TYPES: any limit/quota/ToS/state claim requires
-    verification before advising (Rule 48)
+ 8. ALL TYPES: any limit/quota/ToS/state/capability claim requires
+    verification before advising (Rule 48). For Class E specifically:
+    the trigger fires at decision-points, not at session start --
+    stable infra facts are already in userMemories and SESSION START
+    Drive reads.
 
 Added: May 31 2026 (as banner Rule 11) · Renumbered: June 1 2026 → Rule 48
+Amended: June 2 2026 PM-14 — added CLASS E (capability/impossibility
+claims) + companion case study + session-start hygiene clarification.
 
 ## Rule 47 — Workers Plus CPU headroom is not relay-is-dumb authorisation (RELAY-CPU-A)
 
