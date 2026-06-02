@@ -7571,6 +7571,31 @@ function buildTodaySchedule(){
     {home:"St. Louis Cardinals",   away:"Chicago Cubs",         start_time:"2026-05-31T23:20:00Z", confirmed:true, venue:"Busch Stadium, St. Louis MO",
      nationalBundle:"MLB_NBC", streams:resolveBundle("MLB_NBC"),
      matchupNote:"Sunday Night Baseball on NBC + Peacock — CHC @ STL, 7:20pm ET. First SNB game on NBC proper (prior weeks Peacock-only). Cubs-Cardinals NL Central rivalry. Nationally exclusive on NBC and Peacock."},
+    // ── MLB — Tuesday June 2, 2026 — 15 games (Lou Gehrig Day, all 30 teams in action) ──
+    // Source: MLB.com schedule verified June 2, 2026.
+    // TBS Tuesday: SD @ PHI 6:40pm ET (national, non-exclusive — keeps local RSN chips).
+    // MLB Network national game: COL @ LAA 9:38pm ET (per MLBN_SCHEDULE table, auto-tagged).
+    // ESPN GOTD: June block NOT yet announced by ESPN Press Room (last published block ended May 31).
+    //   "I don't know" rule applies — no espnGOTD flag set until ESPN announces June schedule.
+    // Peacock GOTD: weekly schedule for June 1-7 NOT yet posted (peacocktv.com blog still showing May 26-31 as of session start).
+    //   Recheck Wednesday and tag retroactively if needed.
+    {home:"Tampa Bay Rays",        away:"Detroit Tigers",       start_time:"2026-06-02T22:40:00Z", confirmed:true, venue:"Tropicana Field, St. Petersburg FL"},
+    {home:"Philadelphia Phillies", away:"San Diego Padres",     start_time:"2026-06-02T22:40:00Z", confirmed:true, venue:"Citizens Bank Park, Philadelphia PA",
+     nationalBundle:"MLB_TBS", streams:resolveBundle("MLB_TBS"),
+     matchupNote:"TBS Tuesday — SD @ PHI, 6:40pm ET. National broadcast on TBS + streaming on Max. Local RSN chips (NBCSP, SDPA) still active alongside TBS."},
+    {home:"Boston Red Sox",        away:"Baltimore Orioles",    start_time:"2026-06-02T22:45:00Z", confirmed:true, venue:"Fenway Park, Boston MA"},
+    {home:"Washington Nationals",  away:"Miami Marlins",        start_time:"2026-06-02T22:45:00Z", confirmed:true, venue:"Nationals Park, Washington DC"},
+    {home:"New York Yankees",      away:"Cleveland Guardians",  start_time:"2026-06-02T23:05:00Z", confirmed:true, venue:"Yankee Stadium, Bronx NY"},
+    {home:"Cincinnati Reds",       away:"Kansas City Royals",   start_time:"2026-06-02T23:10:00Z", confirmed:true, venue:"Great American Ball Park, Cincinnati OH"},
+    {home:"Atlanta Braves",        away:"Toronto Blue Jays",    start_time:"2026-06-02T23:15:00Z", confirmed:true, venue:"Truist Park, Atlanta GA"},
+    {home:"Minnesota Twins",       away:"Chicago White Sox",    start_time:"2026-06-02T23:40:00Z", confirmed:true, venue:"Target Field, Minneapolis MN"},
+    {home:"Milwaukee Brewers",     away:"San Francisco Giants", start_time:"2026-06-02T23:40:00Z", confirmed:true, venue:"American Family Field, Milwaukee WI"},
+    {home:"St. Louis Cardinals",   away:"Texas Rangers",        start_time:"2026-06-02T23:45:00Z", confirmed:true, venue:"Busch Stadium, St. Louis MO"},
+    {home:"Chicago Cubs",          away:"Athletics",            start_time:"2026-06-03T00:05:00Z", confirmed:true, venue:"Wrigley Field, Chicago IL"},
+    {home:"Houston Astros",        away:"Pittsburgh Pirates",   start_time:"2026-06-03T00:10:00Z", confirmed:true, venue:"Daikin Park, Houston TX"},
+    {home:"Los Angeles Angels",    away:"Colorado Rockies",     start_time:"2026-06-03T01:38:00Z", confirmed:true, venue:"Angel Stadium, Anaheim CA"},
+    {home:"Arizona Diamondbacks",  away:"Los Angeles Dodgers",  start_time:"2026-06-03T01:40:00Z", confirmed:true, venue:"Chase Field, Phoenix AZ"},
+    {home:"Seattle Mariners",      away:"New York Mets",        start_time:"2026-06-03T01:40:00Z", confirmed:true, venue:"T-Mobile Park, Seattle WA"},
   ];
   // Phase 2: build overlay map from field-data-today.json game_overlays
   const _mlbOverlayMap = {};
@@ -15690,7 +15715,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-01o';
+  const SW_VERSION = '2026-06-02a';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
