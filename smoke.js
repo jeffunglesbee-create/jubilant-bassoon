@@ -1895,6 +1895,17 @@ assert('A368 — ADR-003 attribution guardrail: _enforceNBAAttributionFooter wra
   (html.match(/_enforceNBAAttributionFooter\(/g) || []).length >= 4, // 1 def + 3 call sites
   'ADR-003 attribution guardrail must close the loop on NBA leader attribution: _enforceNBAAttributionFooter helper appends a "Stats: NBA.com" footer when (a) any game in sections has _playoffLeadersAttribution === NBA.com, (b) the rendered brief text does not already contain "NBA.com" (preserving AI output when it kept the credit naturally). Wrapped at all three FIELD Brief render paths: relay KV brief, compound editorial brief, and standalone fetchFIELDBriefFromClaude fallback');
 
+assert('A369 — ADR-003 attribution extended to compound series + scouts_pick + game_briefs',
+  // Wrapped on compound.series preview (J2 series briefs from compound editorial)
+  /injectSeriesPreviewText\(card,_enforceNBAAttributionFooter\(s\.preview,\s*sections\)\)/.test(html) &&
+  // Wrapped on compound.scouts_pick (J4-equivalent within compound)
+  /Scout\\u2019s Pick:[^']*'\+_enforceNBAAttributionFooter\(trimToCompleteSentence\(compound\.scouts_pick\),\s*sections\)/.test(html) &&
+  // Wrapped on compound.game_briefs (per-game briefs with single-game scope)
+  /_gameBriefCache\[g\._id\]\s*=\s*_enforceNBAAttributionFooter\(trimToCompleteSentence\(b\.brief\),\s*\[\{games:\[g\]\}\]\)/.test(html) &&
+  // Total guardrail call sites now ≥ 7 (1 def + 3 FIELD Brief paths + 3 extended)
+  (html.match(/_enforceNBAAttributionFooter\(/g) || []).length >= 7,
+  'ADR-003 attribution must extend beyond the FIELD Brief to other AI-generated surfaces that can carry NBA leader data through the compound editorial prompt (which includes [PLAYOFF STATS:] tag per-game): J2 series preview (compound.series), J4-equivalent scouts pick (compound.scouts_pick), and per-game briefs (compound.game_briefs). Per-game briefs use single-game scope [{games:[g]}] so attribution only fires when THIS game has the NBA flag, not slate-wide');
+
 
 // ═════════════════════════════════════════════════════════════════════
 // GATE — all assertions above must pass before deploy proceeds.
