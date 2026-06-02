@@ -15690,7 +15690,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-01j';
+  const SW_VERSION = '2026-06-01k';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -19434,7 +19434,9 @@ async function initFIELDBrief(sections){
           const a=(c.dataset.away||'').toLowerCase().replace(/\s+/g,'_');
           return s.id&&(s.id.toLowerCase().includes(h)||s.id.toLowerCase().includes(a));
         });
-        if(card) injectSeriesPreviewText(card,s.preview);
+        // ADR-003: series preview can contain NBA leader data because the
+        // compound prompt includes [PLAYOFF STATS:] for series-context games.
+        if(card) injectSeriesPreviewText(card,_enforceNBAAttributionFooter(s.preview, sections));
       });
     }
     // Fix 2: Dispatch scouts_pick and bni_note as brief footer notes
@@ -19443,7 +19445,8 @@ async function initFIELDBrief(sections){
       if(compound.scouts_pick){
         let scoutEl=briefInner.querySelector('.brief-scout-note');
         if(!scoutEl){scoutEl=document.createElement('div');scoutEl.className='brief-scout-note';briefInner.appendChild(scoutEl);}
-        scoutEl.textContent='\uD83D\uDD0D Scout\u2019s Pick: '+trimToCompleteSentence(compound.scouts_pick);
+        // ADR-003: scouts_pick may name an NBA Finals game with leader stats.
+        scoutEl.textContent='\uD83D\uDD0D Scout\u2019s Pick: '+_enforceNBAAttributionFooter(trimToCompleteSentence(compound.scouts_pick), sections);
       }
       if(compound.bni_note){
         let bniEl=briefInner.querySelector('.brief-bni-note');
@@ -19485,7 +19488,9 @@ async function initFIELDBrief(sections){
               const _gbSp=g._sport||g._section||'';
               const _gbViol=(typeof checkSportVocab==='function')?checkSportVocab(b.brief,_gbSp):[];
               if(_gbViol.length&&FIELD_DEBUG) console.warn('[JQ T2B] game_brief sport vocab:',_gbViol,'for',g._id);
-              _gameBriefCache[g._id]=trimToCompleteSentence(b.brief);
+              // ADR-003: per-game brief uses single-game scope so attribution
+              // only fires when THIS specific game has the NBA flag set.
+              _gameBriefCache[g._id]=_enforceNBAAttributionFooter(trimToCompleteSentence(b.brief), [{games:[g]}]);
             }
           });
         });

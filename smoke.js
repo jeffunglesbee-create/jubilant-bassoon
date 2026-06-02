@@ -1043,8 +1043,9 @@ assert('A348 — JQ-1: fetchGameBriefOnDemand checks KV (fetchPrerenderedGameBri
   })(),
   'fetchGameBriefOnDemand must call fetchPrerenderedGameBrief before any fetch*FromClaude — preserves the O(1) Newspaper KV-first cost-reduction path');
 
-console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
-if (fail > 0) process.exit(1);
+// Gate moved to end of file (PM-7) — was here, blocked A245-A368 from CI.
+// Single Results log + single process.exit at EOF ensures all assertions run
+// before pass/fail count is finalized.
 
 
 
@@ -1470,15 +1471,21 @@ assert('A312 — O(1) per-game briefs: fetchPrerenderedGameBrief + KV check in M
   'Card renderers must check relay KV before calling proxy — zero browser AI calls when cron has pre-generated brief');
 
 // ── PWA-A assertions ─────────────────────────────────────────────────────
+// PM-7 (June 1 2026): manifest is inline as a data: URI, so JSON strings
+// appear URL-encoded in the HTML. The assertions accept either raw JSON
+// form (separate manifest.json file) or URL-encoded form (inline data URI)
+// — both are valid PWA implementations per the W3C Manifest spec.
+const _hasManifestSubstr = (s) => html.includes(s) || html.includes(encodeURIComponent(s));
+
 assert('A313 — PWA-A: icons split into any + maskable purposes',
-  html.includes('"purpose":"any"') &&
-  html.includes('"purpose":"maskable"') &&
-  !html.includes('"purpose":"any maskable"'),
-  'Manifest must have separate any and maskable icon entries');
+  _hasManifestSubstr('"purpose":"any"') &&
+  _hasManifestSubstr('"purpose":"maskable"') &&
+  !_hasManifestSubstr('"purpose":"any maskable"'),
+  'Manifest must have separate any and maskable icon entries (accepts raw JSON for file manifest or URL-encoded for inline data URI manifest)');
 
 assert('A314 — PWA-A: prefer_related_applications:false in manifest',
-  html.includes('"prefer_related_applications":false'),
-  'Manifest must declare prefer_related_applications:false');
+  _hasManifestSubstr('"prefer_related_applications":false'),
+  'Manifest must declare prefer_related_applications:false (accepts raw JSON for file manifest or URL-encoded for inline data URI manifest)');
 
 assert('A315 — PWA-A: dismissal uses timestamp not permanent flag',
   html.includes("'field_pwa_dismissed', String(Date.now())") &&
@@ -1888,3 +1895,13 @@ assert('A368 — ADR-003 attribution guardrail: _enforceNBAAttributionFooter wra
   (html.match(/_enforceNBAAttributionFooter\(/g) || []).length >= 4, // 1 def + 3 call sites
   'ADR-003 attribution guardrail must close the loop on NBA leader attribution: _enforceNBAAttributionFooter helper appends a "Stats: NBA.com" footer when (a) any game in sections has _playoffLeadersAttribution === NBA.com, (b) the rendered brief text does not already contain "NBA.com" (preserving AI output when it kept the credit naturally). Wrapped at all three FIELD Brief render paths: relay KV brief, compound editorial brief, and standalone fetchFIELDBriefFromClaude fallback');
 
+
+// ═════════════════════════════════════════════════════════════════════
+// GATE — all assertions above must pass before deploy proceeds.
+// PM-7: relocated here from line ~1047. Previously A245-A368 ran but
+// their failures were invisible to CI because the gate had already
+// exited. Single Results log + single process.exit ensures the
+// pass/fail count reflects EVERY assertion in the file.
+// ═════════════════════════════════════════════════════════════════════
+console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
+if (fail > 0) process.exit(1);
