@@ -2292,6 +2292,22 @@ assert('A393 — PM-19 brief fix: compound prompt has temporal anchor + per-game
   html.includes('respect it. Write "tonight" ONLY'),
   "PM-19 production brief fix: iPad 6:48pm screenshot showed J3 brief opening 'Game 1 of the NBA Finals tonight at the Frost Bank Center' — but that game start_time was 2026-06-04T00:30:00Z = Wed Jun 3 8:30 PM ET, NOT tonight. Root cause: buildCompoundPrompt passed raw UTC ISO start_times to the model without per-game time anchors. The simpler fetchFIELDBriefFromClaude path had PF-5 startLine (May 31) but compound never got parity. Fix brings parity AND adds [WHEN: tonight|tomorrow|day] tag so the model can distinguish current-night marquee events from upcoming ones. Temporal anchor at top of prompt names today ET date explicitly. Prompt header changed from TONIGHT GAMES to SLATE (today + key upcoming) so the framing matches reality (slate often includes tomorrow marquee playoff opener).");
 
+assert('A394 — PM-19 retro: state-aware card time slot + live-state fallback for ESPN-data gaps',
+  // computeCardStage time-based live fallback
+  html.includes('PM-19 retro: time-based \'live\' fallback') &&
+  html.includes('if (start && minsUntil <= 0 && minsUntil > -210) return \'live\'') &&
+  // live-stage renderer surfaces elapsed-in-progress when eData missing
+  html.includes('awaiting live score') &&
+  html.includes('m in') &&
+  // buildCardTimeDisplay helper present + four-case handling
+  html.includes('function buildCardTimeDisplay(isLive, eData, timeStr)') &&
+  html.includes("a + '–' + h + ' F'") ||
+  html.includes('`${a}–${h} F`') &&
+  html.includes("return 'LIVE'") &&
+  // Wired into card template (NOT the bare ${timeStr} only)
+  html.includes('buildCardTimeDisplay(isLive, _ed, timeStr)'),
+  'PM-19 production card fix: Tigers @ Rays screenshot showed "First pitch in -196 min" — a LIVE game (started 3h 16m ago) rendering with negative pre-game countdown because ESPN scoreboard lacked the game and computeCardStage required eData to classify as live. SCF G1 card showed stale 8:00 PM as the prominent time element while the actual 0-0 P2 score appeared smaller below the brief — hierarchy inversion. Fix has three parts: (1) computeCardStage time-based live fallback for games started 0-210 min ago without ESPN data, aligning with getStatus(); (2) live-stage renderer shows "In progress · Xm in · awaiting live score" instead of empty div or negative countdown when eData missing; (3) buildCardTimeDisplay swaps the card-right time slot — pre-game keeps start time, live with score shows "A–H P2" compact, live without data shows "LIVE", final shows "A–H F". Verified before commit across 7 scenarios (pre, NHL live, NBA Q3, MLB B7, soccer minute, no-data, final).');
+
 
 // ═════════════════════════════════════════════════════════════════════
 // GATE — all assertions above must pass before deploy proceeds.
