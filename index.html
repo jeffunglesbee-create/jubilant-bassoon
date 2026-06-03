@@ -20,6 +20,43 @@
 <link rel="dns-prefetch" href="https://statsapi.mlb.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,900;1,400;1,700&family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@400;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 <style>
+/* PM-26-K-1 (June 3 2026): font-fallback metric overrides to eliminate FOUT-CLS.
+ * Google Fonts CSS at the <link> above uses font-display:swap — text initially
+ * renders with system fallbacks (Arial / Georgia / monospace via the generic
+ * keyword), then swaps to the web font when it arrives. Different metrics
+ * between fallback and web font cause text reflow during swap → layout shift.
+ *
+ * Capsize-computed metric overrides below make the fallback render at metrics
+ * matching the web font, so the swap produces no visible reflow. Values from
+ * @capsizecss/metrics v4.0.0 (computed from actual font binaries, June 3 2026).
+ *
+ * JetBrains Mono fallback NOT included: monospace text in FIELD is small
+ * (.55-.72rem, in mono chips/timestamps); metric mismatch impact is minor
+ * and Capsize has no system-monospace metric to compute against.
+ */
+@font-face {
+  font-family: "Barlow Fallback";
+  src: local('Arial'), local('ArialMT');
+  ascent-override: 103.4341%;
+  descent-override: 20.6868%;
+  line-gap-override: 0%;
+  size-adjust: 96.68%;
+}
+@font-face {
+  font-family: "Barlow Condensed Fallback";
+  src: local('Arial'), local('ArialMT');
+  ascent-override: 130.7334%;
+  descent-override: 26.1467%;
+  line-gap-override: 0%;
+  size-adjust: 76.4916%;
+}
+@font-face {
+  font-family: "Playfair Display Fallback";
+  src: local('Georgia');
+  ascent-override: 106.716%;
+  descent-override: 24.7558%;
+  size-adjust: 101.3906%;
+}
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
   --obsidian:#070710;
@@ -46,9 +83,9 @@
   --c-nba:#f97316;--c-nhl:#38bdf8;--c-mlb:#22c55e;
   --c-soccer:#a3e635;--c-tennis:#facc15;
   --c-cricket:#fb923c;--c-afl:#e879f9;--c-rugby:#34d399;
-  --ff-display:'Playfair Display',Georgia,serif;
-  --ff-body:'Barlow',sans-serif;
-  --ff-cond:'Barlow Condensed',sans-serif;
+  --ff-display:'Playfair Display','Playfair Display Fallback',Georgia,serif;
+  --ff-body:'Barlow','Barlow Fallback',Arial,sans-serif;
+  --ff-cond:'Barlow Condensed','Barlow Condensed Fallback',Arial,sans-serif;
   --ff-mono:'JetBrains Mono',monospace;
 }
 html{scroll-behavior:smooth}
@@ -16936,7 +16973,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-03o';
+  const SW_VERSION = '2026-06-03p';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
