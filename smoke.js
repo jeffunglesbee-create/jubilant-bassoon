@@ -2319,10 +2319,8 @@ assert('A395 — PM-20 Step 1: source-tagged score store + findScore confidence 
   html.includes("confidence: 'single'") &&
   // findESPNScore is now a wrapper — tries findScore first
   html.includes("// PM-20: try source-tagged store first") &&
-  html.includes("const tagged = typeof findScore === 'function' ? findScore(game) : null") &&
-  // SW_VERSION bumped k→l for Step 1
-  html.includes("const SW_VERSION = '2026-06-02l'"),
-  'PM-20 Step 1: introduces _scoresBySource as the parallel store keeping ESPN and API-Sports witnesses separate. findScore() returns confidence-aware view (verified/mismatch/single). findESPNScore preserves shape-compat for 20 existing callers via tagged-first / legacy-fallback. Spec: Drive 15c5euHkvuFnrF63my0rsNJ6QVkjHN06TdphwoYt1_gU. Step 1 is structurally complete but behaviorally a no-op until Steps 2-3 wire the writers.');
+  html.includes("const tagged = typeof findScore === 'function' ? findScore(game) : null"),
+  'PM-20 Step 1: introduces _scoresBySource as the parallel store keeping ESPN and API-Sports witnesses separate. findScore() returns confidence-aware view (verified/mismatch/single). findESPNScore preserves shape-compat for 20 existing callers via tagged-first / legacy-fallback. Spec: Drive 15c5euHkvuFnrF63my0rsNJ6QVkjHN06TdphwoYt1_gU. Step 1 is structurally complete but behaviorally a no-op until Steps 2-3 wire the writers. SW lock removed from this assertion — per-step bumps invalidate fixed strings; use feature presence as the invariant.');
 
 assert('A396 — PM-20 Step 2: ESPN-native scoreboard writer wires to _scoresBySource[key].espn (parallel)',
   // ESPN writer parallel-write marker comment
@@ -2330,10 +2328,8 @@ assert('A396 — PM-20 Step 2: ESPN-native scoreboard writer wires to _scoresByS
   // The actual write into the .espn slot
   html.includes('_scoresBySource[key].espn = {') &&
   // ESPN write happens AFTER espnScoreTs (parallel-with-legacy ordering preserved)
-  html.indexOf('espnScoreTs[key] = Date.now();\n        // PM-20 Step 2') > -1 &&
-  // SW_VERSION bumped l->m
-  html.includes("const SW_VERSION = '2026-06-02m'"),
-  'PM-20 Step 2: the main ESPN scoreboard poll (the one with espnEventId, _prev WP preservation) now also writes its independent witness into _scoresBySource[key].espn. espnScores[key] remains populated via the legacy write — both stores run in parallel during migration so any existing caller of findESPNScore still gets a value even before Step 3 wires the V2 writer. After Step 3 + 4 + 5, findScore() will see both witnesses and the confidence layer activates for any game polled by both sources.');
+  html.indexOf('espnScoreTs[key] = Date.now();\n        // PM-20 Step 2') > -1,
+  'PM-20 Step 2: the main ESPN scoreboard poll (the one with espnEventId, _prev WP preservation) now also writes its independent witness into _scoresBySource[key].espn. espnScores[key] remains populated via the legacy write — both stores run in parallel during migration so any existing caller of findESPNScore still gets a value even before Step 3 wires the V2 writer. After Step 3 + 4 + 5, findScore() will see both witnesses and the confidence layer activates for any game polled by both sources. SW lock removed from this assertion — per-step bumps invalidate fixed strings; use feature presence as the invariant.');
 
 
 // ═════════════════════════════════════════════════════════════════════
