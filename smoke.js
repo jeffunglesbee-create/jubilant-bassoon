@@ -2274,6 +2274,24 @@ assert('A392 — PM-19 retro: TZ canonicalization (FIELD_TZ + fieldDateKey + loc
   !html.includes(".toLocaleDateString('en-CA').replace(/-/g, '');"),
   'PM-19 retro data-integrity fix: FIELD is ET-anchored (MLB/NBA/NHL schedules published in ET, game IDs stamped with ET dates). Previous localTz() returned Intl.resolvedOptions().timeZone — leaks UTC or non-US zones for any user not in an America/* timezone. Night games past ~6pm PT generated wrong YYYYMMDD stamps under UTC. Fix: FIELD_TZ constant, localTz US-guard returns ET fallback for non-America/* zones, fieldDateKey() helper ALWAYS uses FIELD_TZ regardless of user location. Critical surfaces migrated: MLB game ID date stamp, MLB schedule fetch URL, MLB team last-21-days range, journalism archive scan. Display-side toLocaleDateString calls (header date, panel labels) deferred — they only affect rendering not data integrity.');
 
+assert('A393 — PM-19 brief fix: compound prompt has temporal anchor + per-game ET startLine + [WHEN:] tag',
+  // Temporal anchor line — gives model an explicit "today is X" reference
+  html.includes('TEMPORAL ANCHOR: Today is') &&
+  html.includes('(Eastern Time)') &&
+  // SLATE replaces the misleading "TONIGHT'S GAMES" header
+  html.includes('SLATE (today + key upcoming):') &&
+  !html.includes("TONIGHT'S GAMES:\n") &&
+  // Per-game pre-formatted start line (ET-aware, in user's selected zone if US)
+  html.includes('PM-19 retro brief fix: pre-format start time in ET') &&
+  // WHEN tag with three classifications: tonight, tomorrow, named-day
+  html.includes("'  [WHEN: tonight]'") &&
+  html.includes("'  [WHEN: tomorrow — NOT tonight]'") &&
+  html.includes('[WHEN: ${dayLabel} — NOT tonight]') &&
+  // Instruction text teaches the model what to do with the tags
+  html.includes('Respect it. Write "tonight" ONLY') ||
+  html.includes('respect it. Write "tonight" ONLY'),
+  "PM-19 production brief fix: iPad 6:48pm screenshot showed J3 brief opening 'Game 1 of the NBA Finals tonight at the Frost Bank Center' — but that game start_time was 2026-06-04T00:30:00Z = Wed Jun 3 8:30 PM ET, NOT tonight. Root cause: buildCompoundPrompt passed raw UTC ISO start_times to the model without per-game time anchors. The simpler fetchFIELDBriefFromClaude path had PF-5 startLine (May 31) but compound never got parity. Fix brings parity AND adds [WHEN: tonight|tomorrow|day] tag so the model can distinguish current-night marquee events from upcoming ones. Temporal anchor at top of prompt names today ET date explicitly. Prompt header changed from TONIGHT GAMES to SLATE (today + key upcoming) so the framing matches reality (slate often includes tomorrow marquee playoff opener).");
+
 
 // ═════════════════════════════════════════════════════════════════════
 // GATE — all assertions above must pass before deploy proceeds.

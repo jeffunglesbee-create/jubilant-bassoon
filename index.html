@@ -3442,6 +3442,8 @@ if (typeof location !== 'undefined' && location.search.includes('debug=1')) {
 // Format: 'feature-key': 'YYYY-MM-DD' (date shipped)
 // Rule: add a line here + a smoke assertion = feature is documented as built.
 const FIELD_FEATURES = {
+  // PM-19 retro brief fix (June 2 2026 — observed 6:48pm NBA Finals G1 mis-described as "tonight")
+  'compound-brief-temporal-anchor':      '2026-06-02',  // Per-game ET startLine + [WHEN:] tag + temporal anchor in prompt body; brings compound path to parity with PF-5 fetchFIELDBriefFromClaude
   // PM-19 retro data integrity (June 2 2026 — TZ canonicalization)
   'tz-canonical-et':                     '2026-06-02',  // FIELD_TZ + fieldDateKey + localTz US-guard. MLB game IDs + schedule fetch + journalism archive all ET-anchored.
   // PM-19 production fix (June 2 2026 — observed 6:48pm SCF G1 brief)
@@ -16511,7 +16513,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-02i';
+  const SW_VERSION = '2026-06-02j';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -18613,6 +18615,42 @@ function buildCompoundPrompt(sections) {
     .slice(0, 4);
 
   const gameLines = games.map(g => {
+    // PM-19 retro brief fix: pre-format start time in ET + add explicit WHEN tag.
+    // Was: model received raw UTC ISO start_time (or none) and defaulted every game
+    // to "tonight" — so a Tuesday brief opened NBA Finals G1 as "tonight" when the
+    // game was actually Wednesday (2026-06-04T00:30:00Z = Wed Jun 3 8:30 PM ET).
+    // The simpler fetchFIELDBriefFromClaude path already had PF-5 startLine; this
+    // brings the compound path to parity, plus adds an explicit WHEN distinguishing
+    // tonight vs tomorrow vs later so the model can use the right temporal language.
+    const startLine = (() => {
+      try {
+        if (!g.start_time) return '';
+        const d = new Date(g.start_time);
+        if (isNaN(d.getTime())) return '';
+        const tz = (typeof selectedTz !== 'undefined' && selectedTz === 'local')
+                     ? localTz() : (typeof selectedTz !== 'undefined' ? selectedTz : FIELD_TZ);
+        const tzLabel = (tz === 'America/New_York') ? 'ET' :
+                        (tz === 'America/Los_Angeles') ? 'PT' :
+                        (tz === 'America/Chicago') ? 'CT' :
+                        (tz === 'America/Denver') ? 'MT' : (tz.split('/').pop() || 'ET');
+        const datePart = d.toLocaleDateString('en-US', { timeZone: tz, weekday:'short', month:'short', day:'numeric' });
+        const timePart = d.toLocaleTimeString('en-US', { timeZone: tz, hour:'numeric', minute:'2-digit', hour12:true });
+        return `  Start: ${datePart}, ${timePart} ${tzLabel}`;
+      } catch(_) { return ''; }
+    })();
+    const whenTag = (() => {
+      try {
+        if (!g.start_time) return '';
+        const gameET   = fieldDateKey(new Date(g.start_time));   // ET-anchored YYYY-MM-DD for the game
+        const todayET  = fieldDateKey(new Date());                // today (ET)
+        const tomET    = (() => { const t = new Date(); t.setDate(t.getDate()+1); return fieldDateKey(t); })();
+        if (gameET === todayET) return '  [WHEN: tonight]';
+        if (gameET === tomET)   return '  [WHEN: tomorrow — NOT tonight]';
+        // Anything further out: name the day so the model can\'t default to "tonight"
+        const dayLabel = new Date(g.start_time).toLocaleDateString('en-US', { timeZone: FIELD_TZ, weekday:'long', month:'short', day:'numeric' });
+        return `  [WHEN: ${dayLabel} — NOT tonight]`;
+      } catch(_) { return ''; }
+    })();
     const stream = g.streams?.[0]?.label || 'local';
     const crewCtx = getCrewContext(g);
     const arcType = (typeof detectArcType === 'function') ? detectArcType(g) : null;
@@ -18655,6 +18693,8 @@ function buildCompoundPrompt(sections) {
     return [
       `- ${g.away||''} ${g.neutral?'vs':'@'} ${g.home||''}`,
       `  [LEAGUE: ${_leagueTag}]`,
+      startLine,
+      whenTag,
       g.seriesRecord ? `  Series: ${g.seriesRecord}` : '',
       g.seriesRecord ? `  [STATE CLAUSE] ${buildSeriesStateClause(g).replace(/\n/g, ' ')}` : '',
       // Story Engine: live status line gives AI cleaner narrative context than raw scores
@@ -18750,11 +18790,17 @@ function buildCompoundPrompt(sections) {
   const _calCtx = getCalendarContext();
   const calContextLine = _calCtx ? calendarContextSentence(_calCtx) : null;
 
+  // Today's ET date for the model's temporal anchor — eliminates the
+  // "tonight" default that previously framed tomorrow's NBA Finals G1
+  // as a current-night event.
+  const _todayETLong = new Date().toLocaleDateString('en-US', { timeZone: FIELD_TZ, weekday:'long', month:'long', day:'numeric', year:'numeric' });
+
   return `${FIELD_VOICE_EXEMPLARS}
 You are FIELD's sports intelligence editor. Generate the complete editorial package.
 Return ONLY valid JSON. No markdown, no backticks, no preamble.
 ${calContextLine ? `\nSEASON CONTEXT: ${calContextLine}` : ''}
-TONIGHT'S GAMES:
+TEMPORAL ANCHOR: Today is ${_todayETLong} (Eastern Time). All start times below are formatted in the user's selected zone — use them verbatim in prose. Each game also has a [WHEN: ...] tag: respect it. Write "tonight" ONLY for games tagged [WHEN: tonight]. Write "tomorrow" for [WHEN: tomorrow]. Write the named weekday for anything further out. NEVER call a tomorrow game "tonight" — the UI shows the user today's date and tomorrow's games must be described as such, even if they are the marquee event of the slate.
+SLATE (today + key upcoming):
 ${gameLines || 'No games tonight.'}
 ${eplSection}${regularSection}
 Return this exact JSON structure (null for any section without sufficient data):
