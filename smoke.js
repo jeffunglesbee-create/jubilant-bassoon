@@ -2475,6 +2475,24 @@ assert('A408 — P1: last-known-state hydration (startup polish bundle)',
   'Snapshot hydration: rendered DOM (#main + #sport-filters + #ambient-panel innerHTMLs) is persisted to IndexedDB on visibilitychange→hidden and beforeunload, keyed by viewport bucket (six entries from mobile-portrait at ≤600px through ultrawide at *). On boot, restoreSnapshot() reads the bucket-matched snapshot (if any), checks 6hr staleness threshold and URL match, and paints the cached innerHTMLs before fetchSchedule kicks off. The freshness strip ("Refreshed Xm ago · Updating…") appears above #main when restore succeeds, updates to "Live" after the fresh renderAll completes (markFreshnessLive), then fades after 2s. Save guards against persisting skeleton-only state (only saves when main.innerHTML contains "game-card" and not "skeleton-set"). All IDB ops are wrapped in try/catch and return null/false on failure so restore is fully opportunistic — a broken IDB never blocks fetchSchedule. URL guard (snap.url === location.pathname) handles date navigation: a snapshot taken viewing 2026-06-02 does not paint when the user reloads on 2026-06-03.');
 
 
+assert('A405 — P5: anticipatory pre-fetch (startup polish bundle)',
+  // Page-side: histogram localStorage key + recorder + predictor + sync registration
+  html.includes("FIELD_OPEN_HIST_KEY = 'field-open-hist'") &&
+  html.includes('function recordOpenHour') &&
+  html.includes('function predictNextOpenHour') &&
+  /async function registerAnticipatoryPrefetch/.test(html) &&
+  // periodicSync feature detect (graceful no-op on Safari/Firefox)
+  html.includes("'periodicSync' in reg") &&
+  // Tag must match what SW listens for
+  html.includes("'field-prewarm'") &&
+  // recordOpenHour invoked on boot
+  /recordOpenHour\(\);\s*\n\s*\/\/ Fire after first paint/.test(html) &&
+  // SW-side: periodicsync listener that reuses prefetchScheduleData
+  /addEventListener\('periodicsync'/.test(swContent) &&
+  /e\.tag === 'field-prewarm'/.test(swContent),
+  'On-device behavioral inference for proactive cache warming. Every page open increments a 24-bucket hour-of-day histogram in localStorage (field-open-hist). predictNextOpenHour takes the median of the top-3 buckets — median over mean smooths against single outlier opens. registerAnticipatoryPrefetch attempts navigator.serviceWorker.registration.periodicSync.register("field-prewarm", {minInterval: 24hr}); feature-detect ("periodicSync" in reg) makes the call a graceful no-op on Safari/Firefox/desktops where periodicBackgroundSync is unsupported. Permission state is queried before register to avoid prompt spam. The SW listens for periodicsync events with tag "field-prewarm" and calls prefetchScheduleData() (reused from P4) when fired. Patent angle (per startup polish spec): the histogram never leaves the device, no profile is built, no third party sees the pattern — this is the "on your side of the screen" framing made literal. STANDARDS Rule 50 candidate (on-device-only histograms) is noted in the carry-forward but NOT codified in this commit; that lands separately when STANDARDS is edited before the USPTO filing.');
+
+
 // ═════════════════════════════════════════════════════════════════════
 // GATE — all assertions above must pass before deploy proceeds.
 // PM-7: relocated here from line ~1047. Previously A245-A368 ran but

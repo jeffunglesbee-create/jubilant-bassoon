@@ -11,7 +11,7 @@
 //
 // Bump SW_VERSION on every deploy. CI smoke.js verifies it matches index.html.
 
-const SW_VERSION  = '2026-06-03f';
+const SW_VERSION  = '2026-06-03g';
 const SHELL_CACHE = `field-shell-${SW_VERSION}`;
 const API_CACHE   = 'field-api-v4';
 const SHELL_URL   = '/';
@@ -58,6 +58,19 @@ async function prefetchScheduleData(){
     if (fresh && fresh.ok) await cache.put(url, fresh.clone());
   } catch(_) { /* prefetch is opportunistic — never block activate */ }
 }
+
+// P5 — Anticipatory pre-fetch (June 3 2026, startup polish bundle).
+// The page registers a 'field-prewarm' periodicSync; this listener reuses
+// prefetchScheduleData to warm API_CACHE in the background near the user's
+// predicted next-open hour. On-device pattern only; no payload from the page,
+// no server-side scheduling needed for this leg (the predicted-hour analysis
+// lives in the page; the SW just executes the prewarm when the platform fires
+// the periodic sync event near that hour).
+self.addEventListener('periodicsync', e => {
+  if (e.tag === 'field-prewarm') {
+    e.waitUntil(prefetchScheduleData());
+  }
+});
 
 self.addEventListener('fetch', e => {
   const u = e.request.url;

@@ -16764,7 +16764,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-03f';
+  const SW_VERSION = '2026-06-03g';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -26542,6 +26542,57 @@ function markFreshnessLive(){
 // Save triggers — hidden = backgrounded (most reliable on mobile); beforeunload covers desktop refresh/close
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') saveSnapshot(); });
 window.addEventListener('beforeunload', saveSnapshot);
+
+// ── P5 — Anticipatory Pre-fetch (startup polish bundle, June 3 2026) ──
+// On-device behavioral inference. The pattern stays on this phone — never sent
+// to a server, never used for advertising, never linked to identity. FIELD
+// learns the user's typical open-hour rhythm via a 24-bucket histogram in
+// localStorage, then asks the SW to pre-warm the schedule via periodicSync
+// near the predicted next-open hour. If periodicSync is unsupported (Safari,
+// Firefox, most current browsers), the registration silently no-ops and the
+// rest of the startup polish bundle (skeleton + snapshot + SW activation
+// prewarm) carries the perceived-speed win on its own.
+const FIELD_OPEN_HIST_KEY = 'field-open-hist';
+function recordOpenHour(){
+  try {
+    const h = new Date().getHours();
+    const stored = localStorage.getItem(FIELD_OPEN_HIST_KEY);
+    const hist = stored ? JSON.parse(stored) : new Array(24).fill(0);
+    if (!Array.isArray(hist) || hist.length !== 24) return; // corrupt — skip rather than reset
+    hist[h] = (hist[h] || 0) + 1;
+    localStorage.setItem(FIELD_OPEN_HIST_KEY, JSON.stringify(hist));
+  } catch(_) { /* localStorage may be disabled — silently skip */ }
+}
+function predictNextOpenHour(){
+  try {
+    const stored = localStorage.getItem(FIELD_OPEN_HIST_KEY);
+    if (!stored) return null;
+    const hist = JSON.parse(stored);
+    if (!Array.isArray(hist) || hist.length !== 24) return null;
+    // Take top-3 buckets; median of those three indices is the predicted hour.
+    // Median over mean smooths against a single outlier (e.g., one 3am open).
+    const indexed = hist.map((c, i) => ({c, i})).filter(x => x.c > 0);
+    if (indexed.length === 0) return null;
+    indexed.sort((a, b) => b.c - a.c);
+    const top = indexed.slice(0, 3).map(x => x.i).sort((a, b) => a - b);
+    return top[Math.floor(top.length / 2)];
+  } catch(_) { return null; }
+}
+async function registerAnticipatoryPrefetch(){
+  // periodicSync requires installed PWA + user permission grant; feature-detect graceful no-op.
+  try {
+    if (!('serviceWorker' in navigator)) return;
+    const reg = await navigator.serviceWorker.ready;
+    if (!reg || !('periodicSync' in reg)) return; // Safari/Firefox — silently skip
+    // Permission required by spec; query before register to avoid prompt spam.
+    const status = await navigator.permissions.query({name: 'periodic-background-sync'}).catch(() => null);
+    if (status && status.state !== 'granted') return;
+    await reg.periodicSync.register('field-prewarm', { minInterval: 24 * 60 * 60 * 1000 }).catch(() => {});
+  } catch(_) { /* opportunistic — never block boot on registration failure */ }
+}
+recordOpenHour();
+// Fire after first paint so we don't compete with the critical-path startup work.
+setTimeout(registerAnticipatoryPrefetch, 4000);
 
 // Kick: restore first (paints cached DOM if any), then fetchSchedule (which renderAll-replaces with fresh).
 // .finally() so a failing restore still proceeds to fetchSchedule — restoration is opportunistic.
