@@ -380,6 +380,19 @@ body::before{
   cursor:pointer;touch-action:manipulation;user-select:none;-webkit-user-select:none;animation:fadeIn .3s ease both;
   animation-delay:min(calc(floor(var(--i, 0) / var(--cols, 1)) * 28ms), 360ms);
 }
+/* PM-26-C2 (June 3 2026): pre-reserve grid-row 2 on cards already rendered
+ * as live. Score-wrap arrives in row 2 via .espn-live / .espn-final class —
+ * without this reservation, row 2 collapses to 0 height when score-wrap is
+ * display:none, then expands to ~24px when score CSS flips to display:block,
+ * causing a per-card layout shift. minmax(1.5rem, auto) reserves the minimum
+ * score-line height upfront; row 2 still grows if actual score content is
+ * taller (e.g. baseball diamond + outs, soccer goalscorer line). Pre-game
+ * cards are NOT reserved — they don't get row 2 content during a normal
+ * session. The rare pre-game→live transition mid-load is one card's shift
+ * vs the bulk of live cards rendering shift-free from initial paint.
+ */
+.game-card.espn-live,
+.game-card.espn-final{grid-template-rows:auto minmax(1.5rem,auto) auto}
 @keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
 @keyframes scoreFlash{0%{background:rgba(201,168,76,.25)}60%{background:rgba(201,168,76,.12)}100%{background:transparent}}
 .score-flash{animation:scoreFlash .7s ease-out}
@@ -2151,6 +2164,15 @@ body.journalism-mode #field-journalism-section{animation:jrnFadeIn 220ms ease-ou
     grid-template-columns:3px 1fr;
     grid-template-rows:auto auto auto;
   }
+  /* PM-26-C2 (mobile): reserve grid-row 2 on cards already rendered as live.
+   * Same rationale as desktop rule near line 376. On mobile, card-right is at
+   * row 3, so row 2 sits between card-body and card-right. Without the
+   * reservation, the empty row collapses, then expands when score-wrap fills
+   * it — pushing card-right down and shifting subsequent cards. Pre-reserving
+   * keeps row 2 at minmax(1.5rem,auto) for live cards from initial paint.
+   */
+  .game-card.espn-live,
+  .game-card.espn-final{grid-template-rows:auto minmax(1.5rem,auto) auto}
   .card-body{
     padding:.65rem .85rem .35rem;
     grid-row:1;grid-column:2;
@@ -16787,7 +16809,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-03k';
+  const SW_VERSION = '2026-06-03l';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)

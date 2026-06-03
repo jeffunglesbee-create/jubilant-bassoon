@@ -2572,6 +2572,25 @@ assert('A414 — PM-26-C1: freshness strip slot reserved via min-height + visibi
   'PM-26-C1 fix. Freshness strip previously toggled visibility via style.display (none -> flex -> none), which shifted everything below the strip on every transition. The strip sits above #main, so its 25px height appearing/disappearing pushed the entire schedule down then back up — visible as CLS contribution on every snapshot-restore-then-fetch sequence (2nd+ visit). Fix: always reserve the 25px slot via min-height:1.6rem, default the slot to invisible via visibility:hidden + opacity:0, flip via .is-visible class. The existing transition:opacity .4s ease gives smooth fade-in / fade-out instead of instant snap. Trade-off: ~25px reserved at top of page for first-ever visit users who never see the strip (no snapshot to restore). Patent-defense gain: deterministic CLS contribution from the strip = zero. Aria-live=polite preserved for screen-reader announcements when content updates.');
 
 
+assert('A415 — PM-26-C2: live cards pre-reserve grid-row 2 for score-wrap arrival',
+  // Desktop rule: .game-card.espn-live and .espn-final get grid-template-rows
+  // with minmax(1.5rem, auto) on row 2. The bare .game-card default remains
+  // grid-template-rows:auto auto auto (no reservation for pre-game cards).
+  /\.game-card\.espn-live,\s*\n?\s*\.game-card\.espn-final\{grid-template-rows:auto minmax\(1\.5rem,auto\) auto\}/.test(html) &&
+  // Mobile rule (inside @media(max-width:600px)): same reservation. Match the
+  // second occurrence of the pattern.
+  (html.match(/\.game-card\.espn-live,\s*\n?\s*\.game-card\.espn-final\{grid-template-rows:auto minmax\(1\.5rem,auto\) auto\}/g) || []).length >= 2 &&
+  // Sanity: the bare .game-card{} block at the top of the cascade STILL has
+  // grid-template-rows:auto auto auto (no reservation by default). Only live
+  // cards reserve.
+  /\.game-card\{[\s\S]{0,300}?grid-template-rows:auto auto auto/.test(html) &&
+  // Sanity: existing .score-wrap default rules unchanged (still display:none default,
+  // promoted to display:block only when parent has espn-live/final class).
+  /\.score-wrap\{grid-column:2;grid-row:2;display:none\}/.test(html) &&
+  /\.game-card\.espn-live \.score-wrap,\.game-card\.espn-final \.score-wrap\{display:block\}/.test(html),
+  'PM-26-C2 fix. Game cards use CSS grid with grid-template-rows:auto auto auto. The .score-wrap element sits at grid-row:2 column:2 (desktop) or grid-row:2 (mobile). When score-wrap is display:none, row 2 collapses to 0 height. When ESPN scores arrive and the parent gets .espn-live or .espn-final class, the CSS rule .game-card.espn-live .score-wrap{display:block} fires — score-wrap occupies row 2, which expands from 0 to ~24px, growing the card height and shifting all subsequent cards. Fix: pre-reserve row 2 at minmax(1.5rem, auto) ONLY on cards already rendered as live/final. Non-live cards keep auto auto auto (no permanent space cost). When score-wrap arrives in a pre-reserved row, the slot already exists — minimal or no layout shift. Rare pre-game→live transitions mid-load are still subject to the shift, but for the bulk of live cards (which are the majority of live state during cold load), the reservation eliminates the shift from initial paint onward. Both desktop and mobile (max-width:600px) rules added; pre-game cards unaffected.');
+
+
 // ═════════════════════════════════════════════════════════════════════
 // GATE — all assertions above must pass before deploy proceeds.
 // PM-7: relocated here from line ~1047. Previously A245-A368 ran but
