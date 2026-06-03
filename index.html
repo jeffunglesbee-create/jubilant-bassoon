@@ -416,6 +416,32 @@ body::before{
   overflow:hidden;transition:transform .2s,box-shadow .2s,background .15s,border-color .15s;
   cursor:pointer;touch-action:manipulation;user-select:none;-webkit-user-select:none;animation:fadeIn .3s ease both;
   animation-delay:min(calc(floor(var(--i, 0) / var(--cols, 1)) * 28ms), 360ms);
+  /* PM-26-L-1 (June 3 2026): min-height absorbs editorial-injection growth.
+   * WPT analysis showed three deterministic CLS shifts (~2.4s/4s/4.8s) timed
+   * with content arrivals: ESPN/MLB schedule data, GitHub outbox JSON,
+   * relay APIs, /journalism/generate. Each arrival triggers a render that
+   * grows cards vertically (drama badges, score-wrap, scout-pick chips,
+   * situation indicators, vibe chips inject staggered across the chain).
+   * Vertical growth propagates through the grid regardless of contain:layout
+   * (which only stops style/paint/internal-layout invalidation, NOT
+   * external size changes).
+   *
+   * min-height:180px reserves enough vertical space up-front that most
+   * editorial injection stays within the reserved bounds — card doesn't
+   * grow when content arrives, neighbors don't shift. 180px matches the
+   * existing contain-intrinsic-size guess (consistent with the PM-26-J
+   * spec's averaged card-height estimate). Pre-game cards (typically
+   * ~88-100px native content height) will have some empty bottom space
+   * — visual tradeoff accepted for CLS gain. Live/final cards (typically
+   * 180-220px) already at/above the floor.
+   *
+   * NOT addressing: skeleton-to-real transition (skeletons stay at 88px;
+   * transition from 3×88=264px to 3×180=540px is still a shift). PM-26-C5
+   * preserved LCP anchor identity but real cards still replace skeletons
+   * 2 and 3. Skeleton height alignment is a separate concern queued for
+   * later; min-height alone is the minimum-viable shift-reduction.
+   */
+  min-height: 180px;
   /* PM-26-J-1 (June 3 2026): per-card layout containment cuts the session-lifetime
    * CLS cascade. The PM-26-C series fixed cold-load CLS at four discrete trigger
    * points; PM-26-J cuts the continuous cascade from the Rule-24 editorial
@@ -16973,7 +16999,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-03p';
+  const SW_VERSION = '2026-06-03q';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
