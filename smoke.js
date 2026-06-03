@@ -2308,6 +2308,22 @@ assert('A394 — PM-19 retro: state-aware card time slot + live-state fallback f
   html.includes('buildCardTimeDisplay(isLive, _ed, timeStr)'),
   'PM-19 production card fix: Tigers @ Rays screenshot showed "First pitch in -196 min" — a LIVE game (started 3h 16m ago) rendering with negative pre-game countdown because ESPN scoreboard lacked the game and computeCardStage required eData to classify as live. SCF G1 card showed stale 8:00 PM as the prominent time element while the actual 0-0 P2 score appeared smaller below the brief — hierarchy inversion. Fix has three parts: (1) computeCardStage time-based live fallback for games started 0-210 min ago without ESPN data, aligning with getStatus(); (2) live-stage renderer shows "In progress · Xm in · awaiting live score" instead of empty div or negative countdown when eData missing; (3) buildCardTimeDisplay swaps the card-right time slot — pre-game keeps start time, live with score shows "A–H P2" compact, live without data shows "LIVE", final shows "A–H F". Verified before commit across 7 scenarios (pre, NHL live, NBA Q3, MLB B7, soccer minute, no-data, final).');
 
+assert('A395 — PM-20 Step 1: source-tagged score store + findScore confidence helper + findESPNScore wrapper',
+  // _scoresBySource declaration present
+  html.includes('let _scoresBySource = {};') &&
+  // PM-20 source-tagged comment marker (locks the architectural intent in source)
+  html.includes('PM-20: Source-Tagged Score Store') &&
+  // findScore function definition with confidence enumeration
+  html.includes('function findScore(game)') &&
+  html.includes("confidence: agree ? 'verified' : 'mismatch'") &&
+  html.includes("confidence: 'single'") &&
+  // findESPNScore is now a wrapper — tries findScore first
+  html.includes("// PM-20: try source-tagged store first") &&
+  html.includes("const tagged = typeof findScore === 'function' ? findScore(game) : null") &&
+  // SW_VERSION bumped k→l for Step 1
+  html.includes("const SW_VERSION = '2026-06-02l'"),
+  'PM-20 Step 1: introduces _scoresBySource as the parallel store keeping ESPN and API-Sports witnesses separate. findScore() returns confidence-aware view (verified/mismatch/single). findESPNScore preserves shape-compat for 20 existing callers via tagged-first / legacy-fallback. Spec: Drive 15c5euHkvuFnrF63my0rsNJ6QVkjHN06TdphwoYt1_gU. Step 1 is structurally complete but behaviorally a no-op until Steps 2-3 wire the writers.');
+
 
 // ═════════════════════════════════════════════════════════════════════
 // GATE — all assertions above must pass before deploy proceeds.
