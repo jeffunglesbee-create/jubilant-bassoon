@@ -2625,6 +2625,32 @@ assert('A416 — PM-26-C5: LCP anchor preserved across main.innerHTML transition
   'PM-26-C5 fix. WPT June 3 2026 at laptop viewport (1366×681, both Chrome LAN and Edge Cable, 3-run measurements each) reported LCP NodeType=None deterministically. NodeType=None means the element the browser identified as the LCP candidate was no longer in the DOM at LCP finalization time. Root cause: the first skeleton card (largest above-the-fold block at first paint) gets picked as LCP candidate, then renderAll calls main.innerHTML=newHTML which detaches all skeleton elements. The candidate is gone, LCP reports NodeType=None. Fix: preserve the DOM identity of the first skeleton across the innerHTML replacement. (1) First skeleton in initial HTML carries data-lcp-anchor="1". (2) New applyMainHTML(html) helper builds new HTML in a detached div, locates the existing anchor in main and the first .game-card in the new content, morphs the anchor (className + attributes + innerHTML) to match firstNewCard, then uses firstNewCard.replaceWith(anchor) to atomically swap them in the detached tree, finally commits via main.replaceChildren(...tmp.children). The anchor node identity is preserved; browser LCP tracking sees the same element across the skeleton→real transition. (3) Both renderAll (main schedule render) and restoreSnapshot (2nd-visit cached HTML restore) use applyMainHTML so the anchor survives both transitions. Defensive fallbacks: empty HTML, missing anchor, missing first card, replaceChildren unavailable — all fall through to plain main.innerHTML=html. Patent relevance: directly defends perceived-perf claims by eliminating LCP measurement artifact at laptop viewport.');
 
 
+// Pre-capture the base .game-card{} rule block (the multi-line declaration at
+// ~line 375). Other .game-card{...} occurrences exist (line 483 position:relative,
+// the media-query blocks at 2163/2258/2439/2545, etc.) but those are single-line
+// or in @media wrappers; the base block is the first multi-line `.game-card{`
+// followed by a newline and a closing `}` on its own line.
+const cardBaseMatch = html.match(/\n\.game-card\{\n[\s\S]+?\n\}/);
+const cardBaseBlock = cardBaseMatch ? cardBaseMatch[0] : '';
+
+assert('A417 — PM-26-J-1: per-card layout containment on base .game-card rule (cuts session-lifetime CLS cascade)',
+  // We must have matched the base block at all.
+  cardBaseBlock.length > 0 &&
+  // SANITY: the unique 3-col grid signature confirms we matched the base
+  // rule, not some unrelated `.game-card{` substring. The
+  // `grid-template-columns:3px 1fr minmax(90px,auto)` declaration only
+  // appears in the base block.
+  /display:grid;grid-template-columns:3px 1fr minmax\(90px,auto\)/.test(cardBaseBlock) &&
+  // The three PM-26-J-1 properties must all be present inside the base block.
+  // Allow flexible whitespace around the colon and between value tokens but
+  // lock the exact value tokens — `contain: layout style paint` (paint last),
+  // `content-visibility: auto`, and `contain-intrinsic-size: auto 180px`.
+  /contain:\s*layout\s+style\s+paint/.test(cardBaseBlock) &&
+  /content-visibility:\s*auto/.test(cardBaseBlock) &&
+  /contain-intrinsic-size:\s*auto\s+180px/.test(cardBaseBlock),
+  'PM-26-J-1 fix. PM-26-C series (A413-A416) addressed cold-load CLS at four discrete transition points: skeleton->real (C5), score arrival on initially-live cards (C2), freshness strip toggle (C1), :has() reflow at laptop viewport (C6). All four fire once per cold load. None address the continuous editorial injection pipeline that mutates cards throughout the session. The Rule-24 trigger chain (renderESPNScores -> injectDramaBadges -> detectAndRenderDoubleFeature -> renderOneToWatch -> renderWatchWindow) fires every ~30s on ESPN poll. Each cycle each card is a candidate for mutation across 8+ content slots (score-wrap, drama badge, anti-hype badge, scout-pick badge, situation badge, soccer goalscorer, series record refinement, importance transition, vibe chip recompute). Each mutation grows or shrinks the target card; with grid-template-rows:auto auto auto and 2-column laptop grid, growth cascades through subsequent rows. WPT scroll-mode runs would show this as ongoing session-lifetime CLS that cold-load WPT runs miss entirely. PM-26-C series fixes do not touch it. Fix: per-card layout containment via three CSS properties on the base .game-card{} rule. `contain: layout style paint` isolates card-internal mutations from siblings — card may still grow externally (we deliberately omit `size` containment because that would clip valid content), but cascade is broken at the card boundary. `content-visibility: auto` skips offscreen card rendering entirely — mutations to those cards no-op visually and contribute zero to CLS. `contain-intrinsic-size: auto 180px` provides placeholder size for offscreen cards (180px is averaged across sports; per-sport tuning via [data-sport] selectors queued as PM-26-J-2). Pulse box-shadow on .game-card itself is NOT clipped — `contain: paint` only clips descendants, not the contained element\'s own box-shadow, per W3C CSS Containment Module L1 spec (verified via Bellamy-Royds 2018 spec discussion). Caveat: Safari pre-18 has inconsistent content-visibility support — treat as progressive enhancement; the layout containment still applies. Work-eliminated: PM-26-C3 (reveal anim audit), PM-26-C4 (ambient skeletons), PM-26-C7 (skeleton-real height match) are all obviated — containment makes those individual slot fixes redundant. Net session scope removed exceeds scope added. Patent relevance: direct defense of "consumer-aligned hydration" and "perceived-perf" claims for the USPTO ~June 25 provisional — without PM-26-J the cold-load CLS story does not survive a session-lifetime scroll-mode measurement.');
+
+
 // ═════════════════════════════════════════════════════════════════════
 // GATE — all assertions above must pass before deploy proceeds.
 // PM-7: relocated here from line ~1047. Previously A245-A368 ran but

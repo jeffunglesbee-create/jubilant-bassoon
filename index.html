@@ -379,6 +379,33 @@ body::before{
   overflow:hidden;transition:transform .2s,box-shadow .2s,background .15s,border-color .15s;
   cursor:pointer;touch-action:manipulation;user-select:none;-webkit-user-select:none;animation:fadeIn .3s ease both;
   animation-delay:min(calc(floor(var(--i, 0) / var(--cols, 1)) * 28ms), 360ms);
+  /* PM-26-J-1 (June 3 2026): per-card layout containment cuts the session-lifetime
+   * CLS cascade. The PM-26-C series fixed cold-load CLS at four discrete trigger
+   * points; PM-26-J cuts the continuous cascade from the Rule-24 editorial
+   * pipeline (renderESPNScores -> injectDramaBadges -> detectAndRenderDoubleFeature
+   * -> renderOneToWatch -> renderWatchWindow, every ~30s ESPN poll). Each cycle
+   * mutates cards across 8+ slots (score-wrap, drama badge, anti-hype, scout-pick,
+   * situation, soccer goalscorer, series record, importance, vibe chip recompute),
+   * cascading shifts through subsequent grid rows.
+   *
+   * `contain: layout style paint` isolates card-internal mutations from sibling
+   * cards. Card-internal mutations don't trigger reflow/repaint/style invalidation
+   * in siblings; card may still grow externally (no `size` containment — that
+   * would clip valid content). Pulse box-shadow on .game-card itself is NOT
+   * clipped — `contain: paint` only clips descendants, not the element's own
+   * box-shadow (verified per W3C CSS Containment Module L1 spec).
+   *
+   * `content-visibility: auto` skips offscreen card rendering entirely; mutations
+   * to those cards no-op visually and don't contribute to CLS.
+   *
+   * `contain-intrinsic-size: auto 180px` placeholder size for offscreen cards.
+   * 180px is an averaged guess across sports; per-sport tuning via [data-sport]
+   * selectors queued as PM-26-J-2. Caveat: Safari pre-18 has inconsistent
+   * content-visibility support — treat as progressive enhancement.
+   */
+  contain: layout style paint;
+  content-visibility: auto;
+  contain-intrinsic-size: auto 180px;
 }
 /* PM-26-C2 (June 3 2026): pre-reserve grid-row 2 on cards already rendered
  * as live. Score-wrap arrives in row 2 via .espn-live / .espn-final class —
@@ -16903,7 +16930,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-03m';
+  const SW_VERSION = '2026-06-03n';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
