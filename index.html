@@ -12160,6 +12160,24 @@ async function fetchV2AllScores() {
           awayLinescores: v2Entry.awayLinescores.length ? v2Entry.awayLinescores : (prev?.awayLinescores || []),
         };
         espnScoreTs[key] = Date.now();
+        // PM-20 Step 3: ALSO write to source-tagged store with apisports
+        // attribution. Independent witness for findScore() cross-source
+        // verification with the ESPN-native writer.
+        _scoresBySource[key] = _scoresBySource[key] || {};
+        _scoresBySource[key].apisports = {
+          state:        v2Entry.state,
+          period:       v2Entry.period,
+          clock:        v2Entry.clock,
+          detail:       v2Entry.detail,
+          homeScore:    (v2Entry._scoresNull && prev?.homeScore) ? prev.homeScore : v2Entry.homeScore,
+          awayScore:    (v2Entry._scoresNull && prev?.awayScore) ? prev.awayScore : v2Entry.awayScore,
+          homeName:     v2Entry.homeName,
+          awayName:     v2Entry.awayName,
+          home:         v2Entry.home,
+          away:         v2Entry.away,
+          periodPrefix: v2Entry.periodPrefix,
+          ts:           Date.now(),
+        };
         if (fg.state === 'live') anyLive = true;
 
         // MLB Savant WP trigger — was in ESPN poll loop; MLB removed from ESPN_SPORTS
@@ -13818,8 +13836,25 @@ async function fetchESPNScores(){
         games.forEach(fg => {
           if (!fg?.home?.name || !fg?.away?.name) return;
           const key = `${fg.home.name}|${fg.away.name}`;
-          espnScores[key] = mapV2ToESPN(fg) || {};
+          const v2Entry = mapV2ToESPN(fg) || {};
+          espnScores[key] = v2Entry;
           espnScoreTs[key] = Date.now();
+          // PM-20 Step 3: source-tagged parallel write for V2 fallback cascade path
+          _scoresBySource[key] = _scoresBySource[key] || {};
+          _scoresBySource[key].apisports = {
+            state:        v2Entry.state,
+            period:       v2Entry.period,
+            clock:        v2Entry.clock,
+            detail:       v2Entry.detail,
+            homeScore:    v2Entry.homeScore,
+            awayScore:    v2Entry.awayScore,
+            homeName:     v2Entry.homeName,
+            awayName:     v2Entry.awayName,
+            home:         v2Entry.home,
+            away:         v2Entry.away,
+            periodPrefix: v2Entry.periodPrefix,
+            ts:           Date.now(),
+          };
           if (fg.state === 'live') hasLive = true;
           if (fg.state === 'pre')  hasPre  = true;
         });
@@ -16607,7 +16642,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-02m';
+  const SW_VERSION = '2026-06-02n';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)

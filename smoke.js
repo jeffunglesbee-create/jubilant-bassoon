@@ -2331,6 +2331,17 @@ assert('A396 — PM-20 Step 2: ESPN-native scoreboard writer wires to _scoresByS
   html.indexOf('espnScoreTs[key] = Date.now();\n        // PM-20 Step 2') > -1,
   'PM-20 Step 2: the main ESPN scoreboard poll (the one with espnEventId, _prev WP preservation) now also writes its independent witness into _scoresBySource[key].espn. espnScores[key] remains populated via the legacy write — both stores run in parallel during migration so any existing caller of findESPNScore still gets a value even before Step 3 wires the V2 writer. After Step 3 + 4 + 5, findScore() will see both witnesses and the confidence layer activates for any game polled by both sources. SW lock removed from this assertion — per-step bumps invalidate fixed strings; use feature presence as the invariant.');
 
+assert('A397 — PM-20 Step 3: V2 (api-sports) writers wire to _scoresBySource[key].apisports (both paths)',
+  // Both V2 writers tagged with the Step 3 marker
+  (html.match(/PM-20 Step 3:/g) || []).length >= 2 &&
+  // Apisports slot is written by V2 paths
+  html.includes('_scoresBySource[key].apisports = {') &&
+  // First V2 writer (NHL/MLB merge path with prev guard)
+  html.includes('source-tagged store with apisports') &&
+  // Second V2 writer (ESPN fallback cascade)
+  html.includes('source-tagged parallel write for V2 fallback cascade path'),
+  'PM-20 Step 3: both V2 writers — the main NHL/MLB merge path (with _scoresNull score-preservation guard) and the ESPN fallback cascade path (when a league flips FIELD_V2_SOURCES true) — now write to _scoresBySource[key].apisports. The legacy espnScores[key] writes are preserved during migration. After this commit lands, findScore() will see BOTH ESPN and API-Sports witnesses for MLB/NHL games tonight and the confidence layer becomes active — verified for games where both sources agree, mismatch for divergent scores, single when only one source has polled.');
+
 
 // ═════════════════════════════════════════════════════════════════════
 // GATE — all assertions above must pass before deploy proceeds.
