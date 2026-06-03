@@ -1,136 +1,114 @@
-# FIELD Handoff — June 3 2026 TYPE A close (PM-22 L1 band-aid · Path A of Path C)
+# FIELD Handoff — June 3 2026 PM-23 close (R2 Finals Narrative Context salvage)
 
-**jubilant-bassoon HEAD:** `dcb0096` (advanced from `aaaaed6`) · Smoke: **394/0** (was 393/0 — added A400) · SW_VERSION `2026-06-02p`
-**field-relay-nba HEAD:** `75df91c` (unchanged)
-**Deploy:** fast smoke gate ✅ green on `dcb0096` at 10:59:49Z · live verify in_progress at close
+**jubilant-bassoon HEAD:** `dcb0096` (unchanged — this session was relay-only) · Smoke: **394/0** · SW_VERSION `2026-06-02p`
+**field-relay-nba HEAD:** `5608845` (advanced from `75df91c`) · Deploy: ✅ green
+**Today's session arc:** PM-22 L1 band-aid (dcb0096) → PM-23 R2 Finals Narrative Context (5608845) · two single-concern commits, both pre-Finals G1.
 
-**This session shipped:** PM-22 L1 band-aid — `!isTied` guard on verdict emission in `computeGameNarrative`. Plus a live-scores audit that uncovered a structural PM-20 weakness, plus a Drive doc sketching the PM-23 canonical key design.
-
----
-
-## SESSION TIMELINE
-
-Started as TYPE B (Daily Update + MLB broadcast verification). Switched cleanly to TYPE A (band-aid commit) per Path C decision. Closing TYPE A here.
-
-### TYPE B/D phase outputs
-
-1. **MLB broadcast verification (June 3 slate)** — 15 games, all MLB_LOCAL. The CLE @ NYY 7:05p Prime Video game is **NOT a national exclusive** (initial chip-rule reading was wrong). It's an in-market regional substitution for YES Network — out-of-market fans get it via MLB.TV normally, Cleveland's CLEG RSN chip behaves as normal. No new MLB_PRIME chip class needed; a label override (Prime Video → home in-market network) for the 21 Yankees Prime dates would suffice as a polish item. Defer to PM-24+.
-
-2. **L1 scope (Confidence-Gated Narrative)** — fully detailed scope produced inline in chat: bug location at `index.html:15218`, design with verified/single permit + mismatch/undefined block, smoke A400-A402 plan, unit tests, STANDARDS Rule 48 draft, 2hr time budget. Path C decision changed the scope.
-
-3. **Live scores audit** — empirical finding: PM-20 `'verified'` confidence is structurally unreachable for V2-enabled sports. Two writers populate `_scoresBySource` at different keys (ESPN uses full names like "New York Knicks"; api-sports uses partials like "Knicks" sourced from relay `src/index.js:856` etc.). `findScore` returns the first fuzzy-matched entry, so it never sees both sources in one entry → confidence always `'single'`. Bug #3 (Hurricanes def. Golden Knights 0-0 final from TYPE D June 3) was therefore primarily a state-mapping issue (api-sports state=final with null scores → coerced to 0-0 → leaderIsHome=true on 0>=0 → home team falsely declared winner), not a confidence problem. The L1 gate as originally scoped would have degenerated to `!isTied && margin > 0` because 'single' is the universal V2 state.
-
-### TYPE A phase output
-
-**Commit dcb0096:** PM-22 L1 band-aid
-
-```diff
-- if(isFinal&&!sc.isSoccer){
-+ if(isFinal&&!sc.isSoccer&&!isTied){
-    statusLine=`${leaderNick} def. ${trailerNick}`;
-  }
-```
-
-Plus comment block referencing TYPE D Bug #3 and the PM-23 follow-up. Smoke assertion A400 added with both regex pattern check and comment-anchor check (so future refactors can't silently strip the guard).
-
-**Net behavior change:** in the 0-0 placeholder scenario, "Hurricanes def. Golden Knights" becomes empty status — the card still shows "0–0" and "Final" period label, but no fabricated winner. When scores are real and non-tied, full verdict resumes.
-
-Single-concern Rule 7 ✓. Deploy gate ✅ on dcb0096.
+**Naming note:** PM-23 was previously specced (in HANDOFF 05aff6b) as canonical-key design. That work is now **PM-24** (still pending). PM-23 designates what actually shipped: the R2 Finals Narrative Context salvage. The PM-24 (canonical key) Drive doc reference still points to `1eG73NmJHUAPOR4E1bkFMg-Xxnq2E564ZIfB6dTGpsao` — content unchanged, label updated.
 
 ---
 
-## PATH C STATUS
+## WHAT SHIPPED THIS SESSION
 
-| Step | Status |
-|---|---|
-| 1. Ship Path A band-aid (single-concern, pre-Finals) | ✅ DONE — dcb0096, smoke 394/0 |
-| 2. Sketch the canonical key design as Drive doc | ✅ DONE — Drive ID `1eG73NmJHUAPOR4E1bkFMg-Xxnq2E564ZIfB6dTGpsao` |
-| 3. Plan PM-23 for dedicated session (target: tomorrow ahead of Stanley Cup G2) | ⏭ NEXT SESSION |
+**PM-23 — R2 Finals Narrative Context (Phase 1 inline)**
+Commit: `5608845` (field-relay-nba)
 
----
+Salvaged the June 1 PM build that lost tool access mid-session before commit. Code reproduced verbatim from handoff doc `1w5Ypy1ME6LlKKkyWh1_0IJyRm5iics61jhyBswO9uT8`. Pre-loaded historical narrative depth for both 2026 Finals matchups, injected into the cron slate brief journalism prompt when matchup detected on slate.
 
-## PM-23 — CANONICAL KEY DESIGN (PATH B)
+**Files:**
+- `src/finals-context.js` (new, 6.0KB) — both context blocks + detection regex + buildFinalsContextBlock helper
+- `src/index.js` (+9 lines) — import + injection between TONIGHT'S GAMES and RULES in buildPrompt()
 
-**Drive sketch:** `1eG73NmJHUAPOR4E1bkFMg-Xxnq2E564ZIfB6dTGpsao` (FIELD PM-23 — PM-20 Canonical Key Design)
+**Historical content (all source-cited inline):**
+- NBA: SAS regular season 62-20, NYK 53-29; 1999 NYK last Finals (Duncan MVP); 2014 SAS last Finals (Kawhi MVP, also 62-20); Wembanyama 28.2 PPG / 3.7 BPG; Brunson ECF MVP; venue allocation; ABC crew; franchise championship counts
+- NHL: CAR last Cup 2006 (Cam Ward Conn Smythe, Brind'Amour captain); VGK 2018 loss to Caps (Ovechkin's first Cup); VGK 2023 win over FLA 4-1 (Stone hat trick G5); paths to 2026 SCF; venues; ABC crew; key players; championship counts
+- Sources: Wikipedia, basketball-reference, hockey-reference, ESPN, NBA.com, NHL.com, CBS, PBS, CBC, The Hockey Writers
 
-**Recommended path:** Option A — relay-side canonicalization. New file `field-relay-nba/src/canonical-names.js` with per-sport tables (NBA/NHL/MLB/WNBA/MLS), `canonicalize()` applied at 5 writer sites in `src/index.js`. Client receives ESPN-format names from both writers, keys converge, PM-20 `'verified'` becomes reachable.
+**Detection:** defensive regex — both team-name pair AND series-label patterns. Returns empty string when no Finals games on slate (no-op).
 
-**Time budget:** ~3.5 hrs (curation 110 min + code 50 min + verification 30 min + smoke/STANDARDS 30 min)
+**Deviation from spec (documented in module header):** R2 architecture deferred to Phase 2 (WC2026 build week, June 5-10). Functional intent preserved: pre-loaded, zero per-game Claude cost, verified facts.
 
-**Verification window:** Stanley Cup G2 (June 4 8pm ET, VGK @ CAR at CAR, ABC). Both writers polling live, both sources should report identical scores → Health panel `verified ≥ 1` confirms the fix end-to-end.
-
-**Sequencing toward USPTO (~June 25):**
-- June 3 (today) — PM-22 band-aid live ✅
-- June 4 target — PM-23 canonical keys
-- June 5–10 — PM-24 restore full confidence-aware L1 gate
-- June 11+ — L2 (claim-level provenance AST) — patent-priority visual
-- ~June 25 — USPTO provisional filed with L1+L2 demonstrated
+**Salvage value:** SCF G1 missed (June 2 was past at salvage time). NBA Finals G1 tonight (June 3 8:30pm ET) and ~12 remaining Finals briefs across both series all benefit. Brief that generates next cron tick should include the historical depth.
 
 ---
 
-## STATE INVARIANTS AT END OF SESSION
+## TODAY'S FULL ARC
 
-- jubilant-bassoon HEAD: `dcb0096`
-- jubilant-bassoon smoke: **394/0**
-- jubilant-bassoon SW_VERSION: `2026-06-02p` (unchanged — band-aid did not touch SW)
-- field-relay-nba HEAD: `75df91c` (unchanged)
-- STANDARDS.md: no rule changes (Rule 48 deferred to PM-24 when full L1 ships)
-- T3 memory anchor: will update to `dcb0096` post-write
-
----
-
-## TIER 0 DEADLINES (unchanged)
-
-- **NBA Finals G1: TONIGHT** (June 3 8:30pm ET, ABC, NYK @ SAS) — first Finals exposure of PM-22 band-aid
-- **Stanley Cup G2:** June 4 (VGK @ CAR, ABC) — PM-23 verification window
-- **World Cup 2026:** June 11 HARD
-- **USPTO provisional:** ~June 25 — L1+L2 framing per Drive PM-23 sketch §5
+1. **TYPE B (Daily Update)** — MLB broadcast verification corrected (Prime Video Yankees = in-market regional, not national exclusive; CLEG chip not suppressed)
+2. **TYPE D (Audit)** — L1 scope + live scores audit; discovered PM-20 `'verified'` is structurally unreachable (writer keys don't align)
+3. **TYPE A (Code) — PM-22** — L1 band-aid `!isTied` guard committed at `dcb0096`, smoke 394/0
+4. **TYPE D (Audit)** — R2 Finals salvage verification (handoff doc intact, integration site clean, ~13 remaining briefs benefit)
+5. **TYPE A (Code) — PM-23 (THIS)** — R2 Finals Narrative Context Phase 1 shipped at `5608845`
 
 ---
 
 ## NEXT SESSION P1 IMMEDIATE
 
-**Recommended: PM-23 canonical key implementation** (per Drive sketch). 3.5 hr session, single-concern Rule 7. Verification window = Stanley Cup G2 live.
+**PM-24 — Canonical Key Design (Path B from morning audit)**
+Drive: `1eG73NmJHUAPOR4E1bkFMg-Xxnq2E564ZIfB6dTGpsao`
+~3.5 hrs. Stanley Cup G2 (June 4 ~8pm ET) is the verification window — both writers polling for a high-stakes live game, both sources should produce identical scores, Health panel `verified ≥ 1` confirms the fix.
 
-**Also fire-and-forget:** A398 augmentation — current assertion only checks the Score Confidence row renders. Add to it: assert that the tally-computation code distinguishes verified from single (it does, but the assertion doesn't lock that in).
+Recommended approach: Option A (relay-side canonicalization) per Drive sketch. New file `src/canonical-names.js` with per-sport tables, applied at 5 V2 writer sites in `src/index.js`. Restores PM-20 `'verified'` confidence as reachable, which then unblocks the full L1 confidence gate (PM-25).
 
-**Defer to PM-24+:**
-- Full L1 confidence gate restoration (needs PM-23 first)
-- MLB_PRIME label refinement for 21 Yankees Prime dates
-- Team-order canonicalization (~30 min, can ride any commit)
-- Confidence Ledger v0 (Drive doc reference from yesterday's TYPE D HANDOFF)
+**Verification of PM-23 in next session:** open FIELD Health panel during tonight's NBA Finals G1 brief generation window. Confirm the brief mentions at least one of: "1999", "2014", "Wembanyama 28.2", "Brunson", "Duncan", "Kawhi", etc. If brief still doesn't include Finals depth, check whether the slate includes the actual Finals game line (matters for cron timing relative to game start).
 
 ---
 
-## CARRY-FORWARD STANDING ITEMS
+## TIER 0 DEADLINES (unchanged)
 
-- Cloudflare connector mismatch (PM-15 carry)
-- R2 Finals Narrative Context (past deadline)
-- P2 — Sandbox gotcha codification
-- P2 — Probe-outbox cleanup
-- P2 — `tool_search "handoff"` ranking tuning
-- P3 — `index.html:3137` dead `MCP` var cleanup
-- P3 — `field_smoke.js` 4 pre-existing failures (A30, A53, A67, A69)
-- P3 — Memory edit path-string cleanup
-- P3 (new) — Smoke count tool discrepancy: tool reported 330/331, smoke output reports 393/394. Tool counts a different pattern (likely raw `assert(` calls vs. actual evaluations). Not blocking.
+- **NBA Finals G1 TONIGHT** (June 3 8:30pm ET ABC) — first PM-22 band-aid + PM-23 narrative depth exposure
+- **Stanley Cup G2:** June 4 8pm ET ABC — PM-24 canonical key verification window
+- **World Cup 2026:** June 11 HARD — wc26:true flip + R2 World Cup Team Context still pending
+- **USPTO provisional:** ~June 25 — L1+L2 framing per PM-24 Drive sketch §5
+
+---
+
+## STATE INVARIANTS AT END OF SESSION
+
+- jubilant-bassoon HEAD: `dcb0096` (unchanged — no client code touched)
+- jubilant-bassoon smoke: **394/0**
+- jubilant-bassoon SW_VERSION: `2026-06-02p` (unchanged)
+- field-relay-nba HEAD: `5608845` (advanced, deploy ✅)
+- STANDARDS.md: no rule changes
+- Canonical backlog (Drive `1ugUh6UmeDkLR-gEH8hJPwXK2NiIrXYQY8gp2jO2p2Hk`): §B R2-Finals-Narrative-Context can move to §A on next backlog refresh
+- T3 memory anchor: will update post-write to current HEAD
 
 ---
 
 ## TIER 1/2/3 HANDOFF CHANNEL HIERARCHY
 
-**Tier 1 (LIVE — used for this TYPE A close):** MCP server on field-relay-nba at `/mcp`. Fourth consecutive session-end via T1.
+**Tier 1 (LIVE — used for this PM-23 close):** MCP server on field-relay-nba at `/mcp`. Fifth consecutive session-end via T1.
 **Tier 2 (NOT BUILT — correctly deferred).**
 **Tier 3 (LIVE):** userMemories anchor — updated post-write.
 
 ---
 
+## CARRY-FORWARD STANDING ITEMS
+
+**P1 next session:**
+- PM-24 canonical keys (per Drive sketch) — Stanley Cup G2 verification window
+- A398 augmentation (assert `verified > 0` reachability)
+
+**P2:**
+- Full L1 confidence gate restoration (PM-25, after PM-24)
+- MLB Prime Video label refinement (21 Yankees dates)
+- World Cup deadline track: F09 REST Countries (10 min), F08 Nager.Date (25 min), R2 World Cup Team Context (~90 min)
+
+**P3 (unchanged from morning):**
+- Cloudflare connector mismatch (PM-15 carry)
+- Probe-outbox cleanup
+- Smoke count tool discrepancy (tool reports 331 vs smoke output 394)
+- Memory edit path-string cleanup
+
+---
+
 ## CANONICAL DOC REFS
 
-**CANONICAL BUILD BACKLOG (READ FIRST):** `1ugUh6UmeDkLR-gEH8hJPwXK2NiIrXYQY8gp2jO2p2Hk`
+**CANONICAL BUILD BACKLOG (READ FIRST):** `1ugUh6UmeDkLR-gEH8hJPwXK2NiIrXYQY8gp2jO2p2Hk` (due refresh: R2-Finals moves §B → §A)
 **CI/Deploy Ref (READ AT SESSION START):** `1UrOoYDGaK2ncPrnRNXt1w0OElOLpbjP_EYROjG2w1zo`
 **FIELD Current State (READ AT SESSION START):** `1GvsfnTH9Xhqzg_NdYrPhPpk1d1Rnm0lkeG6ip-tLUlA`
-**PM-20 Lead-off Spec (closed PM-20):** `15c5euHkvuFnrF63my0rsNJ6QVkjHN06TdphwoYt1_gU`
-**Tier 1 MCP-on-Relay Build Plan (historical):** `1MrExWxXJRnaAAIeWD4H6HW2jLLEDyeZ-zIk4pf7Gzwg`
-**TYPE D June 2 (Bug #3 + four-levels framework):** the predecessor TYPE D HANDOFF content is preserved in repo history at commit `aaaaed6`
-**PM-23 Canonical Key Design (THIS SESSION):** `1eG73NmJHUAPOR4E1bkFMg-Xxnq2E564ZIfB6dTGpsao` ← NEW
-**June 3 Session Documentation:** to be created at SESSION END close, will reference this HANDOFF + PM-23 sketch
+**PM-24 Canonical Key Design:** `1eG73NmJHUAPOR4E1bkFMg-Xxnq2E564ZIfB6dTGpsao` (was labeled PM-23 in morning HANDOFF; renamed)
+**June 1 R2 Finals Handoff (source for PM-23 code):** `1w5Ypy1ME6LlKKkyWh1_0IJyRm5iics61jhyBswO9uT8`
+**TIER 1B spec:** `1UIuazvMvY4ewJap2Y4Z4-LbqHGvt8z-QhX28ImnAlt0`
+**B1 spec:** `1yt-3ruXqTNNOl9k1jRQARFw9OtHt6IzNG4xkfcjVqTE`
+**June 3 Session Documentation:** `1kGFdJqH5M_WnalGclvFqtKqlmZsO1WzmzhZL7_HRVRU` (morning PM-22 close) — supplement to follow for PM-23
