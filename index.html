@@ -1470,6 +1470,15 @@ body::before{
 /* P7 global reduced-motion override catches the shimmer animation too; this explicit rule is belt-and-suspenders */
 @media(prefers-reduced-motion:reduce){.game-card-skeleton::after,.ambient-skeleton-block::after{animation:none}}
 
+/* P1 — Freshness Strip (startup polish bundle, last-known-state hydration) */
+/* Sits above #main; shown briefly when restoreSnapshot painted cached DOM; updates to "Live" once fresh data renders, then fades. */
+.freshness-strip{max-width:1400px;margin:.25rem auto 0;padding:.25rem 1rem;font-family:var(--ff-cond);font-size:.68rem;letter-spacing:.08em;text-transform:uppercase;color:var(--smoke);display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--edge);background:transparent;transition:opacity .4s ease}
+.freshness-strip .freshness-update{color:var(--gold2)}
+.freshness-strip.freshness-live .freshness-update{color:#4ade80}
+.freshness-strip.freshness-live .freshness-update::before{content:"Live"}
+.freshness-strip.freshness-live .freshness-update{font-size:0}
+.freshness-strip.freshness-live .freshness-update::before{font-size:.68rem}
+
 /* ── ERROR BANNER ── */
 .err-banner{
   max-width:1400px;margin:.5rem auto 0;
@@ -2775,6 +2784,7 @@ body.journalism-mode #field-journalism-section{animation:jrnFadeIn 220ms ease-ou
      Title adapts by time: Night Owl (10pm+), Evening Wrap (6-10pm), Game Recap (noon-6pm).
      #field-brief and #night-owl are sibling sections, both in the left pane. -->
 <div id="night-owl" style="display:none" aria-hidden="true"></div>
+  <div id="freshness-strip" class="freshness-strip" style="display:none" aria-live="polite"><span>Refreshed <span id="freshness-age">—</span> ago</span><span class="freshness-update">Updating…</span></div>
 <main class="main" id="main"><div class="skeleton-set" aria-hidden="true"><div class="game-card-skeleton"></div><div class="game-card-skeleton"></div><div class="game-card-skeleton"></div></div></main>
 <!-- ── iPad Ambient Panel (820–1199px couch mode) ───────────────────── -->
 <aside id="ambient-panel" aria-live="polite" aria-label="Live intelligence panel"><div class="ambient-skeleton" aria-hidden="true"><div class="ambient-skeleton-label">Live Intelligence</div><div class="ambient-skeleton-block"></div></div></aside>
@@ -16754,7 +16764,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-03e';
+  const SW_VERSION = '2026-06-03f';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -26419,7 +26429,123 @@ function renderHalftimeSwitch(){
 // schedule area would remain empty until the user navigates to another date.
 // Privacy consent banner — shows on first visit before geo fires
 initPrivacyBanner();
-fetchSchedule();
+
+// ── P1 — Last-Known-State Hydration (startup polish bundle, June 3 2026) ──
+// Snapshot rendered DOM to IndexedDB on visibilitychange/beforeunload, keyed by
+// viewport bucket so rotation never paints a wrong-layout flash. On boot, paint
+// cached DOM before fetchSchedule fires; renderAll then replaces with fresh.
+// Freshness strip ("Refreshed Xm ago · Updating…") explains the staleness
+// window honestly; updates to "Live" and fades 2s after first fresh render.
+const FIELD_SNAPSHOT_DB    = 'field-snapshots';
+const FIELD_SNAPSHOT_STORE = 'snapshots';
+const VIEWPORT_BUCKETS = [
+  { key: 'mobile-portrait',  test: '(max-width:600px)' },
+  { key: 'mobile-landscape', test: '(max-width:819px)' },
+  { key: 'tablet-ambient',   test: '(max-width:1199px)' },
+  { key: 'laptop',           test: '(max-width:1439px)' },
+  { key: 'desktop',          test: '(max-width:1799px)' },
+  { key: 'ultrawide',        test: '*' }
+];
+function currentBucket(){
+  for (const b of VIEWPORT_BUCKETS){
+    if (b.test === '*') return b.key;
+    try { if (matchMedia(b.test).matches) return b.key; } catch(_) {}
+  }
+  return 'desktop';
+}
+function _snapshotOpen(){
+  return new Promise((resolve, reject) => {
+    try {
+      const req = indexedDB.open(FIELD_SNAPSHOT_DB, 1);
+      req.onupgradeneeded = e => {
+        const db = e.target.result;
+        if (!db.objectStoreNames.contains(FIELD_SNAPSHOT_STORE)) {
+          db.createObjectStore(FIELD_SNAPSHOT_STORE);
+        }
+      };
+      req.onsuccess = e => resolve(e.target.result);
+      req.onerror = e => reject(e.target.error);
+    } catch(err) { reject(err); }
+  });
+}
+async function idbGet(store, key){
+  try {
+    const db = await _snapshotOpen();
+    return await new Promise(resolve => {
+      const tx = db.transaction(store, 'readonly');
+      const req = tx.objectStore(store).get(key);
+      req.onsuccess = () => resolve(req.result || null);
+      req.onerror   = () => resolve(null);
+    });
+  } catch(_) { return null; }
+}
+async function idbSet(store, key, value){
+  try {
+    const db = await _snapshotOpen();
+    return await new Promise(resolve => {
+      const tx = db.transaction(store, 'readwrite');
+      tx.objectStore(store).put(value, key);
+      tx.oncomplete = () => resolve(true);
+      tx.onerror    = () => resolve(false);
+    });
+  } catch(_) { return false; }
+}
+async function saveSnapshot(){
+  try {
+    const bucket  = currentBucket();
+    const main    = document.getElementById('main');
+    const filters = document.getElementById('sport-filters');
+    const ambient = document.getElementById('ambient-panel');
+    // Never persist a skeleton-only state — only save when real cards have rendered
+    if (!main || !main.innerHTML.includes('game-card') || main.innerHTML.includes('skeleton-set')) return;
+    await idbSet(FIELD_SNAPSHOT_STORE, bucket, {
+      mainHTML:    main.innerHTML,
+      filtersHTML: filters ? filters.innerHTML : '',
+      ambientHTML: ambient ? ambient.innerHTML : null,
+      savedAt:     Date.now(),
+      url:         location.pathname
+    });
+  } catch(_) {}
+}
+async function restoreSnapshot(){
+  try {
+    const bucket = currentBucket();
+    const snap = await idbGet(FIELD_SNAPSHOT_STORE, bucket);
+    if (!snap) return false;
+    if (snap.url && snap.url !== location.pathname) return false;
+    const ageMin = (Date.now() - snap.savedAt) / 60000;
+    if (ageMin > 360) return false; // > 6 hr stale
+    const main    = document.getElementById('main');
+    const filters = document.getElementById('sport-filters');
+    const ambient = document.getElementById('ambient-panel');
+    if (main    && snap.mainHTML)    main.innerHTML    = snap.mainHTML;
+    if (filters && snap.filtersHTML) filters.innerHTML = snap.filtersHTML;
+    if (ambient && snap.ambientHTML) ambient.innerHTML = snap.ambientHTML;
+    showFreshnessStrip(ageMin);
+    return true;
+  } catch(_) { return false; }
+}
+function showFreshnessStrip(ageMin){
+  const strip = document.getElementById('freshness-strip');
+  if (!strip) return;
+  const ageEl = document.getElementById('freshness-age');
+  if (ageEl) ageEl.textContent = ageMin < 60 ? `${Math.round(ageMin)}m` : `${Math.round(ageMin/60)}h`;
+  strip.style.display = '';
+  strip.classList.remove('freshness-live');
+}
+function markFreshnessLive(){
+  const strip = document.getElementById('freshness-strip');
+  if (!strip || strip.style.display === 'none') return;
+  strip.classList.add('freshness-live');
+  setTimeout(() => { strip.style.display = 'none'; strip.classList.remove('freshness-live'); }, 2000);
+}
+// Save triggers — hidden = backgrounded (most reliable on mobile); beforeunload covers desktop refresh/close
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') saveSnapshot(); });
+window.addEventListener('beforeunload', saveSnapshot);
+
+// Kick: restore first (paints cached DOM if any), then fetchSchedule (which renderAll-replaces with fresh).
+// .finally() so a failing restore still proceeds to fetchSchedule — restoration is opportunistic.
+restoreSnapshot().finally(() => { fetchSchedule().then(markFreshnessLive); });
 </script>
 </body>
 </html>

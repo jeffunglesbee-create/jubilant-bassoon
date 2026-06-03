@@ -2448,6 +2448,33 @@ assert('A402 — P4: service worker pre-warm on activation (startup polish bundl
   'On SW activation, prefetchScheduleData() runs alongside the existing old-shell-cache pruning. It fetches todays MLB schedule from statsapi.mlb.com (deterministic URL, deterministic hit on first page load because fetchScheduleData uses the same URL form, and the URL is in the API_CACHE allowlist) and stores it in API_CACHE keyed by the request URL itself — no separate "field-schedule-prewarmed" key needed because networkFirstWithFallback already matches by request. The page-side fetchScheduleData then gets a cache hit on its first network-first try (the fetch resolves from the SW cache layer transparently). Failure is non-blocking: a try/catch swallows errors so activate completes regardless, and the page falls back to its existing network path.');
 
 
+assert('A408 — P1: last-known-state hydration (startup polish bundle)',
+  // VIEWPORT_BUCKETS array with six buckets
+  html.includes('const VIEWPORT_BUCKETS') &&
+  html.includes("'mobile-portrait'") &&
+  html.includes("'ultrawide'") &&
+  // IDB store + helpers
+  html.includes("FIELD_SNAPSHOT_DB    = 'field-snapshots'") &&
+  html.includes("FIELD_SNAPSHOT_STORE = 'snapshots'") &&
+  /async function idbGet\(store, key\)/.test(html) &&
+  /async function idbSet\(store, key, value\)/.test(html) &&
+  // Snapshot save/restore + freshness strip
+  /async function saveSnapshot\(\)/.test(html) &&
+  /async function restoreSnapshot\(\)/.test(html) &&
+  html.includes('function showFreshnessStrip') &&
+  html.includes('function markFreshnessLive') &&
+  // Freshness strip CSS + static markup
+  html.includes('.freshness-strip{') &&
+  html.includes('id="freshness-strip"') &&
+  html.includes('id="freshness-age"') &&
+  // Save triggers
+  html.includes("document.addEventListener('visibilitychange'") &&
+  html.includes("window.addEventListener('beforeunload', saveSnapshot)") &&
+  // Bootstrap wire: restore first, then fetchSchedule, then markFreshnessLive
+  html.includes('restoreSnapshot().finally(() => { fetchSchedule().then(markFreshnessLive); })'),
+  'Snapshot hydration: rendered DOM (#main + #sport-filters + #ambient-panel innerHTMLs) is persisted to IndexedDB on visibilitychange→hidden and beforeunload, keyed by viewport bucket (six entries from mobile-portrait at ≤600px through ultrawide at *). On boot, restoreSnapshot() reads the bucket-matched snapshot (if any), checks 6hr staleness threshold and URL match, and paints the cached innerHTMLs before fetchSchedule kicks off. The freshness strip ("Refreshed Xm ago · Updating…") appears above #main when restore succeeds, updates to "Live" after the fresh renderAll completes (markFreshnessLive), then fades after 2s. Save guards against persisting skeleton-only state (only saves when main.innerHTML contains "game-card" and not "skeleton-set"). All IDB ops are wrapped in try/catch and return null/false on failure so restore is fully opportunistic — a broken IDB never blocks fetchSchedule. URL guard (snap.url === location.pathname) handles date navigation: a snapshot taken viewing 2026-06-02 does not paint when the user reloads on 2026-06-03.');
+
+
 // ═════════════════════════════════════════════════════════════════════
 // GATE — all assertions above must pass before deploy proceeds.
 // PM-7: relocated here from line ~1047. Previously A245-A368 ran but
