@@ -765,6 +765,8 @@ body::before{
 .game-card.pulse-high{animation:cardPulse var(--pulse-speed,1.2s) ease-in-out infinite;--pulse-color:rgba(249,115,22,.45)}
 .game-card.pulse-crunch{animation:cardPulse .65s ease-in-out infinite;--pulse-color:rgba(249,115,22,.7)}
 @media(prefers-reduced-motion:reduce){.game-card.pulse-med,.game-card.pulse-high,.game-card.pulse-crunch{animation:none}}
+/* P7 — Global reduced-motion respect (startup polish bundle, June 3 PM TYPE A) */
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:0.01ms !important;animation-iteration-count:1 !important;transition-duration:0.01ms !important;scroll-behavior:auto !important}}
 
 /* Live Score Ticker */
 .score-ticker{display:flex;align-items:center;gap:.5rem;overflow-x:auto;padding:.3rem 1rem;background:rgba(255,255,255,.03);border-bottom:1px solid rgba(255,255,255,.06);scrollbar-width:none;-webkit-overflow-scrolling:touch;scroll-snap-type:x mandatory;max-width:1200px;margin:0 auto}
@@ -16704,7 +16706,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-02p';
+  const SW_VERSION = '2026-06-03a';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
