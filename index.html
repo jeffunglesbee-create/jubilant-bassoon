@@ -13930,6 +13930,18 @@ async function fetchESPNScores(){
           wp_prev: _prev?.wp_prev ?? null, // set to previous wp before update
         };
         espnScoreTs[key] = Date.now();
+        // PM-20 Step 2: ALSO write to source-tagged store. Parallel write —
+        // espnScores[key] continues to receive the merged view for migration
+        // safety. The .espn slot here is the independent ESPN witness for
+        // findScore() cross-source verification with API-Sports.
+        _scoresBySource[key] = _scoresBySource[key] || {};
+        _scoresBySource[key].espn = {
+          state, period, clock, detail,
+          homeScore, awayScore, homeName, awayName,
+          home: homeName, away: awayName,
+          periodPrefix,
+          ts: Date.now(),
+        };
         // STEP 4: fire async WP fetch for live NBA games
         // D3 gate: skip when FIELD_V2_SOURCES.nba=true — api-sports.io is primary,
         // ESPN WP endpoint returns null/404 post-pivot. Avoids wasted request per poll.
@@ -16595,7 +16607,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-02l';
+  const SW_VERSION = '2026-06-02m';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
