@@ -1,170 +1,106 @@
-# FIELD Handoff — June 2 2026 PM-19 close (Journalism Tab v1 + retro + production fixes — 8 commits)
+# FIELD Handoff — June 2 2026 PM-19.5 close (TYPE C — verification + infra)
 
-**jubilant-bassoon HEAD:** f834815 · Smoke: 385/0 · SW_VERSION source `2026-06-02h`
-**field-relay-nba HEAD:** 880e3ae last meaningful (unchanged)
+**jubilant-bassoon HEAD:** e37acf2 (e3b0d64 PM-19 close + `[skip ci]` CI bump) · Smoke: 388/0 · SW_VERSION source `2026-06-02h`
+**field-relay-nba HEAD:** 75df91c (PM-19.5 regex fix · superseded 880e3ae as last meaningful)
 
-**This session shipped:** PM-19 redo after the mid-build tool-availability interrupt, followed by a retro audit reconciling the recovery doc against the original TYPE D recommendation, followed by two production fixes responding to live iPad screenshots.
+**This session was TYPE C, not TYPE B.** Verification + planning + memory governance, not a feature build. Single relay commit shipped as a verification follow-on (regex fix on `get_smoke_count`). PM-19's HANDOFF body is preserved structurally below — this session adds a delta.
 
-Eight single-concern commits:
+## TYPE C SESSION DELIVERIES (PM-19.5)
 
-- C1 `605029d` — Scaffold + content (nav anchor, section HTML, ~70 lines CSS, 4 JS render functions, 6 sibling renderJournalism triggers)
-- C2 `108ff78` — Mobile/tablet UX polish (sticky back-pill with backdrop blur + safe-area, 220ms fade-in respecting prefers-reduced-motion, scroll position save/restore, resize-aware listener)
-- C3 `9295765` — Laptop side-by-side (1200-1439px) + desktop three-pane (1440px+) + companion content with quality telemetry from `field_jq_scores`
-- C4 `b84333c` — Bottom-sheet "Read full coverage →" cross-link via `openJournalismForGame(gameId)` helper; `data-gameid` added to `.jrn-slate-item` so cross-link works for regular-season games too
-- C5 `0020c20` — SW_VERSION bump `d→e` (Rule 23 same-day), `journalism-tab-v1` in FIELD_FEATURES, smoke A385-A388, HANDOFF.md, T3 memory anchor
-- **C6 retro** `1563ee2` — J3/J2/J1 patent-visibility badges + Active Layers companion block + SW bump `e→f` + smoke A389. Reconciles the v1 with the original TYPE D recommendation's "small J3/J2/J1 badges, like a publication's section markers" — recovery doc had dropped this detail.
-- **MCP fix** `85f5bbd` — Health panel HTTP 401 resolved by routing CI/smoke fetch to public GitHub API instead of auth-gated `/mcp`. SW bump `f→g`, smoke A390. The auth-gated MCP server stays exclusively for claude.ai connector.
-- **State tautology** `f834815` — Layer 2g extended with 5th pattern group catching "begins at 0-0" / "clean slate" tautologies at G1. State Clause prompt updated. State-conditional, retries with tautology-aware instruction. SW bump `g→h`, smoke A391.
+**T1 MCP verified live end-to-end.** The pending PM-13 round-trip verification ("Live round-trip verification is the next-session P1") completed in this session. Three live calls returned real data via the claude.ai connector → relay `/mcp` → GitHub API path. The OAuth bearer path through `MCP_OAUTH` KV is healthy. No 401s, no degraded auth flows. T1 is production-quality.
 
-**Session Doc (this session — Drive):** (set at SESSION END after Drive write)
-**Recovery Doc (PM-19 interrupt — Drive):** `10udrJmsVd0FSf-hU2qEuNTN1PL4hQ6tMlTji0IfpmN0`
-**Previous session doc (PM-18 — Drive):** `1snqEKzp8SnQxcfibIgLkG49kFm14cqyyKdQIrTJqK1I`
-**CANONICAL BUILD BACKLOG (READ FIRST):** `1ugUh6UmeDkLR-gEH8hJPwXK2NiIrXYQY8gp2jO2p2Hk`
-**CI/Deploy Ref (READ AT SESSION START):** `1UrOoYDGaK2ncPrnRNXt1w0OElOLpbjP_EYROjG2w1zo`
-**FIELD Current State (READ AT SESSION START):** `1GvsfnTH9Xhqzg_NdYrPhPpk1d1Rnm0lkeG6ip-tLUlA`
+**T2 relay handoff channel — detailed and correctly deferred.** Documented the full design space using the canonical Drive build plan (`1MrExWxXJRnaAAIeWD4H6HW2jLLEDyeZ-zIk4pf7Gzwg`, section 9). Three earlier framings corrected: (1) the four auth paths are OAuth bearer + FIELD_MCP_SECRET across three transport surfaces (Authorization header, X-FIELD-MCP-Secret, ?token=); (2) the PM-19 health-panel 401 was a PWA-client bug, not an MCP fragility signal, and the fix bypassed the relay entirely — evidence AGAINST T2 urgency, not for it; (3) the deferral has explicit Drive precedent — "wait at least a week of T1 use before T2." T1 is ~7 hours old; the gate is on track.
+
+**Today's handoff usage traced.** PM-13 used T1 `write_handoff` once (inaugural production write). PM-14 through PM-19 all closed via bash + git push. T1 is live but underused — bash is the de facto workhorse because feature commits ride bash anyway, making a separate T1 hop for HANDOFF.md a context switch with no reward. This is not failure; it's the natural shape. This session (PM-19.5) writes HANDOFF via T1 to dog-food the channel.
+
+**Relay regex fix shipped.** `field-relay-nba` commit `75df91c`: `get_smoke_count` regex `/^assert\(/gm` → `/^\s*assert\(/gm`. Now matches indented `assert()` calls. Pre-fix returned 289; post-fix returns 325 (verified live). Residual gap to canonical 388 is runtime-loop-invocation count which source regex cannot capture without AST parsing. The HANDOFF note "get_smoke_count MCP tool — now reports stale 378; canonical 382" can be closed.
+
+**Memory edit #18 updated.** Added step 1.5 to SESSION START: `tool_search 'FIELD Handoff'` → `get_head_sha`; if SHA ≠ memory anchor, note drift in baseline declaration. T1 unreachable → continue with bash, do not block. Catches anchor-vs-origin drift at minute 1 of every future session instead of mid-session by accident. Hit the 500-char memory limit so phrasing is compressed; semantics preserved.
+
+**Anchor drift caught in real time.** Memory anchor `e3b0d64` (PM-19 close) vs origin `e37acf28` (post-PM-19 auto-CI bump at 02:27:52 UTC). The drift is structural: anchor updates only on human-driven session-end, but `[skip ci]` automated CI commits advance origin without any session. New step 1.5 above surfaces this on next session start.
+
+## STATE INVARIANTS AT END OF PM-19.5
+
+- jubilant-bassoon HEAD: `e37acf2` (CI auto-bump) — this HANDOFF write will advance one more
+- jubilant-bassoon smoke: **388/0** (unchanged — no jubilant-bassoon code changes this session)
+- jubilant-bassoon SW_VERSION: `2026-06-02h` (PM-19 final, unchanged)
+- field-relay-nba HEAD: `75df91c` (regex fix shipped)
+- field-relay-nba get_smoke_count: now returns 325 (was 289)
+- T1 channel: VERIFIED LIVE, used for this HANDOFF write
+- T2 channel: NOT BUILT (correctly deferred per Drive build plan)
+- T3 memory anchor: will be updated post-write to new HEAD via memory_user_edits
+- STANDARDS.md: no rule changes
+- Memory edit #18: SESSION START updated with T1 probe step 1.5
+
+## NEXT SESSION P1 IMMEDIATE — PM-20 LEAD-OFF
+
+**Source-Tagged Score Store + Confidence Layer** (~60-90 min). Spec: Drive `15c5euHkvuFnrF63my0rsNJ6QVkjHN06TdphwoYt1_gU`.
+
+Re-confirmed scope reading the Drive spec end-to-end this session. Five-step migration, smoke +5 (388 → 393), SW first-of-day bump `l` (since this is the next session after `h` on June 2, but if it lands June 3 the suffix resets to `a` per Rule 23).
+
+The five steps:
+1. ~15 min — Introduce `_scoresBySource` + `findScore(g)` confidence-aware lookup. Rewrite `findESPNScore` as thin wrapper. Smoke A395.
+2. ~10 min — Wire ESPN writer to `_scoresBySource[key].espn`. Keep `espnScores[key]` parallel write during migration. Smoke A396.
+3. ~10 min — Wire V2 writer to `_scoresBySource[key].apisports`. Keep V2-into-espnScores parallel. Smoke A397.
+4. ~15 min — FIELD Health panel "Score Confidence" row (verified / mismatch / single tallies, mismatch detail listing). Smoke A398.
+5. ~10 min — Card-time confidence glyph (✓ verified, ⚠ mismatch, no badge for single). Smoke A399.
+
+Backwards-compatible via `findESPNScore` wrapper — 15+ existing call sites unchanged. Zero new external deps. Zero relay changes. Zero new auth surface. The verification capability is **dormant in the codebase tonight** — emerges on deploy.
 
 ## TIER 0 DEADLINES (unchanged)
 
-- **Stanley Cup G1: TONIGHT (June 2 8pm ET, ABC)** — Items A-F all live (PM-18) for any post-deploy regeneration; PM-19 Journalism Tab additive, does not affect brief generation
-- **NBA Finals G1: TOMORROW (June 3 8:30pm ET, ABC)** — first Finals exposure for full enforcement stack
-- **Stanley Cup G2: June 4** — second exposure window
-- **World Cup 2026: June 11 HARD**
-- **USPTO provisional: ~June 25**
+- **Stanley Cup G1: TONIGHT** (June 2 8pm ET, ABC) — PM-19's Items A-F voice v3 enforcement live; PM-20 score confidence will NOT land before puck drop
+- **NBA Finals G1: TOMORROW** (June 3 8:30pm ET, ABC) — PM-20 landing window is between G1 hockey and G1 basketball
+- **Stanley Cup G2:** June 4
+- **World Cup 2026:** June 11 HARD
+- **USPTO provisional:** ~June 25
 
-## WHAT HAPPENED THIS SESSION (June 2 PM-19 redo)
+## P1 CARRY-FORWARD FROM PM-19
 
-The PM-19 interrupt left no work on remote — sandbox had been reset between sessions, so all five commits were rebuilt from scratch using the Recovery Doc as canonical spec. Cross-referenced with original TYPE D recommendation chat for C4/C5 details.
-
-### C1 — Scaffold + content (commit on remote)
-
-- Top-nav: `📖 Journal` anchor with `id="jrn-nav-link"` parallel to `📰 Desk`. Calls `toggleJournalismView()` on click.
-- Section: `<section id="field-journalism-section" hidden>` inserted before STREAMING DISCOVERY. Contains `.jrn-layout > .jrn-reading + .jrn-companion`.
-- CSS: ~70 lines mobile-first reading layout. Reading column max-width 680px. Playfair display headers. Gold2 section markers. Mobile portrait (≤600px) overrides.
-- JS: 4 functions
-  - `toggleJournalismView()` — body class toggle, localStorage `field_journalism_mode` persist, conditional scroll behavior
-  - `renderJournalism()` — sources J3 from `sessionStorage(fieldBriefCacheKey())`, J2 from `sessionStorage(seriesPreviewCacheKey(g))` weighted Finals>CF>earlier, J1 from `Object.entries(_gameBriefCache)` deduped against series-shown games
-  - `jumpToGameCard(gameId)` — returns to schedule view, scrolls to card, 1.4s gold outline pulse
-  - `renderJournalismArchive()` — 7-day sessionStorage scan for `field_brief_YYYY-MM-DD` keys
-- Trigger wiring: SIBLING `setTimeout(renderJournalism, N)` added next to all 6 existing `setTimeout(renderFieldDesk, N)` sites. **Sibling pattern, NOT wrapped** — wrapped pattern broke A254/A257 literal-string assertions on first attempt.
-
-### C2 — Mobile/tablet UX polish
-
-- Sticky back-pill: `position:sticky; top:calc(env(safe-area-inset-top,0px) + .5rem); z-index:50; backdrop-filter:blur(8px); background:rgba(20,20,28,.78)` — iOS safe-area aware, no notch overlap
-- Fade-in: `@keyframes jrnFadeIn` 220ms ease-out, opacity 0→1 + 8px translateY. `@media (prefers-reduced-motion: reduce)` disables.
-- Scroll position save/restore: stashes `window.scrollY` to `window._fieldScheduleScrollY` on enter, scrolls back on exit
-- Resize listener: rAF-throttled, re-clears `[hidden]` if it somehow gets re-set across viewport rotation while in journalism-mode
-
-### C3 — Multi-pane layouts + companion content
-
-- Laptop (1200-1439px) in journalism-mode: `.main` becomes `position:fixed` 280px left rail with bg+border; `#field-journalism-section` gets `margin-left:300px`; `.jrn-reading` capped at 640px
-- Desktop (1440px+) in journalism-mode: same fixed-left rail + `.jrn-companion` becomes `position:fixed right:0` 280px right rail; reading column 720px; section margin both sides 300px
-- Hide rules at laptop+ in journalism-mode: `#night-owl, #field-desk-section, #media-section, #streaming-section, .page-divider, .legend-section, #ambient-panel { display:none !important }`. Scoped to `body.journalism-mode` only — schedule view fully visible in non-journalism mode at every viewport.
-- `renderJournalismCompanion(counts)` — 4 blocks:
-  1. Tonight's Read — count rollup (passed from renderJournalism to avoid re-iteration)
-  2. Archive — link to renderJournalismArchive
-  3. Later Tonight — playoff games (have `seriesRecord`) starting after `Date.now()`, sorted by start_time, first 4
-  4. Quality Scores — `field_jq_scores` last 20, avg prose score (color-coded vs 145 threshold) + avg stat depth (vs 1.8 threshold)
-- HONEST CONSTRAINT: FIELD's schedule is today-only (`buildTodaySchedule`). Recovery doc spec'd "next 2-3 days of playoff schedule" but that data doesn't exist. Scoped to "Later Tonight" instead of fabricating multi-day data.
-
-### C4 — Bottom-sheet cross-link
-
-- `data-gameid="${gid}"` added to `.jrn-slate-item` template (so cross-link works for regular-season games, not just `.jrn-series` from C1)
-- `.bs-jrn-link` CSS — gold accent, hover state with subtle background, label color override
-- Cross-link inserted in `openBottomSheet` right after FIELD Brief section, conditional on `gameBrief` existing (no dead links)
-- `openJournalismForGame(gameId)` helper — closeBottomSheet → 100ms → toggleJournalismView (or renderJournalism refresh if already in mode) → 250ms → querySelector `[data-gameid="X"].jrn-series` OR `.jrn-slate-item`, scroll-into-center, 1.6s gold outline pulse with offset 4px
-
-### C5 — Close-out
-
-- SW_VERSION bumped `2026-06-02d → 2026-06-02e` in index.html AND sw.js (Rule 23: same-day suffix bump)
-- FIELD_FEATURES entry: `'journalism-tab-v1': '2026-06-02'` with comment "toggle nav + section + magazine layout + companion + cross-link"
-- Smoke A385-A388:
-  - A385: toggleJournalismView + body.journalism-mode hide CSS + localStorage key + 📖 Journal anchor
-  - A386: laptop + desktop media queries + position:fixed rails + companion right rail + 640/720 reading widths + renderJournalismCompanion presence
-  - A387: bs-jrn-link CSS + Read full coverage label + openJournalismForGame helper + dual-selector (series + slate) + data-gameid on slate items
-  - A388: four render function presence + Tonight's Read + Later Tonight + field_jq_scores + 7-day archive loop + FIELD_FEATURES entry + J3/Regular-Season markers
-- 378/0 baseline → 382/0 close
-
-### Infrastructure
-SW_VERSION bumped `2026-06-02d` → `2026-06-02e` (Rule 23 same-day d→e suffix).
-
-### Commit + deploy
-Five single-concern commits pushed after each (NOT batched at end — lesson from PM-19 interrupt). C3 required a rebase due to auto-overlay drift; clean post-rebase smoke verified before push.
-
-## STATE INVARIANTS AT END OF SESSION
-
-- jubilant-bassoon HEAD: (set on push) — C5 final commit
-- jubilant-bassoon smoke: **382/0**
-- jubilant-bassoon SW_VERSION: `2026-06-02e`
-- field-relay-nba HEAD: `880e3ae` last meaningful (unchanged)
-- STANDARDS.md: no rule changes this session
-- T3 memory anchor: updated to new HEAD via memory_user_edits at SESSION END
-
-## NEXT SESSION P1 IMMEDIATE
-
-**PM-20 LEAD-OFF — Source-Tagged Score Store + Confidence Layer** (~60-90 min)
-
-Drive spec: `15c5euHkvuFnrF63my0rsNJ6QVkjHN06TdphwoYt1_gU` (PM-20 Lead-off Brief).
-
-Origin: PM-19 (June 2) tonight's verification investigation. Jeff asked "Do we get live scores from our various Api-sports.io integrations?" — yes, for NBA/NHL/MLB/WNBA/MLS (per `FIELD_V2_SOURCES` line 11794) via `fetchV2Games` → `field-relay-nba /v2/games` → API-Sports backend. RUWT-verified shapes in Drive `1MxS6vq-w6v4AhYKBis37I6spp5npaW7xC82b-byAuB4` (May 29).
-
-The architectural gap: both ESPN and API-Sports (V2) write into the **same** `espnScores[key]` store with last-writer-wins, no source attribution (lines 9922 ESPN writer, 12067-12068 V2 writer into ESPN store). Two independent witnesses silently merged. Cross-source verification is structurally impossible despite both sources polling tonight's same games.
-
-The fix is mostly a rename + restructure + UI surface, not a build:
-1. Source-tagged store `_scoresBySource[key] = { espn:{...}, apisports:{...} }`
-2. `findScore(g)` returns confidence-aware view (verified/mismatch/single)
-3. `findESPNScore(g)` becomes a thin shape-compat wrapper
-4. ESPN + V2 writers each write to their own keyed slot (parallel writes during migration; espnScores stays populated for safety)
-5. FIELD Health panel "Score Confidence" row with verified/mismatch/single tallies + mismatch detail
-6. Card-time slot gains a subtle confidence glyph (✓ verified · no badge single · ⚠ mismatch)
-
-Migration: 5 commits, ~60 min, smoke +5 (388 → 393), SW first-of-day bump `l`. Backwards-compatible via wrapper — 15+ existing `findESPNScore` call sites unchanged. Zero new external deps, zero relay changes, zero new auth surface. Full design + step-by-step in the Drive doc.
-
-The verification capability is **dormant in the codebase tonight** — emerges on deploy.
-
-**Scope deferred but ready (NOT in PM-20 lead-off):**
-- **Schedule view collapse** (corollary to Journalism Tab, ~30 min): remove card-top J2 brief, gate card-inline FIELD SERIES BRIEF to CF/Finals only.
-- **Phase 2 progressive disclosure** (~2-3 hr): J3 visible 6h+ pregame, J2 visible 2-6h, J1 visible <2h. Time-aware visibility for the layered hierarchy.
-- **Team-order canonicalization** in tickers (small Rule 7 follow-up to PM-20 lead-off): always Away–Home, never leader-first reorder. Observed flip in screenshots tonight (9:32 PM "Astros 4-2 Pirates" → 9:56 PM "Pirates 6-4 Astros" same game, team order switched as lead changed).
-- **Score history + monotonic anomaly detection** (~45 min, PM-20 follow-on after lead-off lands): catches stale-data and attribution-flip beyond what cross-source agreement catches.
-
-**P1 carry-forward from PM-16/17/18:**
 - Wire NHL play-by-play relay route (~45 min) — activates Tier A #3 Penalty Drift + unlocks Tier B #5 Goalie Hot Hand
-- Cloudflare connector mismatch (carry-forward from PM-15)
-- R2 Finals Narrative Context (carry-forward, past deadline)
-- Queues / WOW 8 — hard June 11 deadline
+- Cloudflare connector mismatch (PM-15 carry)
+- R2 Finals Narrative Context (past deadline)
+- Queues / WOW 8 — hard June 11
 - R2 World Cup Team Context — before June 11
-- `get_smoke_count` MCP tool — now reports stale 378; canonical 382
 
-## OTHER NEXT-SESSION PRIORITIES
+## OTHER NEXT-SESSION PRIORITIES (unchanged)
 
-P2 — USPTO provisional toward ~June 25 (Journalism Tab strengthens "layered journalism quality chain" patent visibility — make sure draft references the shipped J3→J2→J1 reading hierarchy + companion quality telemetry surfacing)
-P2 — Sandbox gotcha codification (4 sessions now: clone needs inline `-c user.email -c user.name` for every commit; worth memory edit)
-P2 — Probe-outbox cleanup
-P2 — `tool_search "handoff"` ranking tuning
+- P2 — USPTO provisional toward ~June 25
+- P2 — Sandbox gotcha codification (worth a memory edit on inline git config requirement)
+- P2 — Probe-outbox cleanup
+- P2 — `tool_search "handoff"` ranking tuning
+- P3 — `index.html:3137` dead `MCP` var cleanup
+- P3 — `field_smoke.js` 4 pre-existing failures (A30, A53, A67, A69)
 
-P3 — `index.html:3137` dead `MCP` var cleanup
-P3 — `field_smoke.js` 4 pre-existing failures (A30, A53, A67, A69)
-P3 — Memory edit path-string cleanup
+## SCOPE DEFERRED (PM-19 → PM-20+, ready)
 
-## CLOSED THIS SESSION
+- Schedule view collapse (corollary to Journalism Tab, ~30 min)
+- Phase 2 progressive disclosure J3→J2→J1 time-aware visibility (~2-3 hr)
+- Team-order canonicalization in tickers (small Rule 7 follow-up to PM-20)
+- Score history + monotonic anomaly detection (~45 min, PM-20 follow-on)
 
-- PM-19 interrupt recovery — all 5 commits rebuilt + shipped from spec
-- Journalism Tab v1 — additive feature, no regressions in schedule view
-- TYPE D recommendation honored at the v1 scope boundary (schedule collapse + Phase 2 deferred deliberately, documented in carry-forward)
-- 5-commit "push after every commit" protocol honored — interrupt-resilient
+## CLOSED IN PM-19.5
 
-## DAILY WORK SUMMARY (June 2 2026)
-
-Four full TYPE B build sessions shipped today:
-- PM-16: NHL Tier A 1-3 (Pull Window Predictor, PDO Regression Signal, Penalty Drift Indicator)
-- PM-17: Layer 2f wire-copy retry (3 brief paths)
-- PM-18: Items A-F voice v3 enforcement parity (6 features, 4 commits)
-- PM-19: Journalism Tab v1 (5 features, 5 commits — interrupt-recovered)
-
-Total smoke growth: 367/0 (start of day) → 382/0 (end of day). 15 new assertions covering 18 new features.
+- T1 round-trip verification — was PM-13 P1 carry, now COMPLETE
+- T2 framing — was loose; now anchored to Drive build plan precedent
+- get_smoke_count regex bug — was reporting stale; now closes most of gap (289 → 325)
+- Memory edit #18 — was missing T1 probe; now includes step 1.5
+- HANDOFF anchor drift detection — was reactive; now proactive at every session start
 
 ## TIER 1/2/3 HANDOFF CHANNEL HIERARCHY
 
-**Tier 1 (LIVE):** MCP server on field-relay-nba at /mcp. Four auth paths.
-**Tier 2 (NOT NEEDED).**
-**Tier 3 (LIVE):** userMemories anchor edit. Will be updated to new HEAD at PM-19 SESSION END.
+**Tier 1 (LIVE — verified end-to-end PM-19.5):** MCP server on field-relay-nba at `/mcp`. OAuth bearer (claude.ai connector) + FIELD_MCP_SECRET across three transport surfaces. This HANDOFF written via T1.
+**Tier 2 (NOT BUILT — correctly deferred per Drive 1MrExWxXJRnaAAIeWD4H6HW2jLLEDyeZ-zIk4pf7Gzwg section 9 "wait at least a week of T1 use").**
+**Tier 3 (LIVE):** userMemories anchor #30 — will be updated to new HEAD post-write.
+
+---
+
+## PM-19 BODY (preserved structurally for context)
+
+PM-19 shipped Journalism Tab v1 — 8 single-concern commits including scaffold, mobile/tablet UX, multi-pane layouts, bottom-sheet cross-link, SW bump + smoke A385-A388, J3/J2/J1 patent-visibility badges retro (`1563ee2`), MCP RELAY 401 fix routing to public GitHub API (`85f5bbd`), and Layer 2g state tautology extension catching "begins at 0-0" / "clean slate" at G1 (`f834815`). Plus post-close: journalism compound brief fix (`f0ee1b1`), state-aware time slot ESPN-gap fallback (`508d987`), CI state bumps, and PM-20 carry-forward doc (`e3b0d64`). Full PM-19 detail in session doc `(PM-19 — Drive, set at end of PM-19)` and Recovery Doc `10udrJmsVd0FSf-hU2qEuNTN1PL4hQ6tMlTji0IfpmN0`.
+
+**CANONICAL BUILD BACKLOG (READ FIRST):** `1ugUh6UmeDkLR-gEH8hJPwXK2NiIrXYQY8gp2jO2p2Hk`
+**CI/Deploy Ref (READ AT SESSION START):** `1UrOoYDGaK2ncPrnRNXt1w0OElOLpbjP_EYROjG2w1zo`
+**FIELD Current State (READ AT SESSION START):** `1GvsfnTH9Xhqzg_NdYrPhPpk1d1Rnm0lkeG6ip-tLUlA`
+**PM-20 Lead-off Spec:** `15c5euHkvuFnrF63my0rsNJ6QVkjHN06TdphwoYt1_gU`
+**Tier 1 MCP-on-Relay Build Plan (historical):** `1MrExWxXJRnaAAIeWD4H6HW2jLLEDyeZ-zIk4pf7Gzwg`
