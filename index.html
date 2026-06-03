@@ -4469,11 +4469,18 @@ function fmtTime(iso){
 // Replaces the prior "always show start_time" approach which left stale 8:00 PM
 // labels on game cards that had been in P2 for an hour.
 function buildCardTimeDisplay(isLive, eData, timeStr) {
+  // PM-20 Step 5: confidence glyph derived from eData.confidence (set by findScore)
+  // verified -> '✓' (both sources agree), mismatch -> '⚠' (sources differ),
+  // single   -> '' (no badge — current state), undefined/null -> '' (legacy)
+  const conf = eData?.confidence;
+  const glyph = conf === 'verified' ? ' ✓'
+              : conf === 'mismatch' ? ' ⚠'
+              : '';
   // Final: replace stale timeStr with final score + F marker
   if (eData?.state === 'post' && (eData.homeScore != null || eData.awayScore != null)) {
     const a = eData.awayScore ?? '–';
     const h = eData.homeScore ?? '–';
-    return `${a}–${h} F`;
+    return `${a}–${h} F${glyph}`;
   }
   if (!isLive) return timeStr;
   // Live with ESPN data: compact score + period (away–home; matches ticker convention)
@@ -4482,7 +4489,7 @@ function buildCardTimeDisplay(isLive, eData, timeStr) {
     const h = eData.homeScore ?? '–';
     const pp = eData.periodPrefix || 'P';
     const period = eData.period ? `${pp}${eData.period}` : '';
-    return `${a}–${h}${period ? ' ' + period : ''}`;
+    return `${a}–${h}${period ? ' ' + period : ''}${glyph}`;
   }
   // Live, no scoreboard data: explicit "LIVE" beats stale start time
   return 'LIVE';
@@ -16691,7 +16698,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-02o';
+  const SW_VERSION = '2026-06-02p';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)

@@ -2302,7 +2302,7 @@ assert('A394 — PM-19 retro: state-aware card time slot + live-state fallback f
   // buildCardTimeDisplay helper present + four-case handling
   html.includes('function buildCardTimeDisplay(isLive, eData, timeStr)') &&
   html.includes("a + '–' + h + ' F'") ||
-  html.includes('`${a}–${h} F`') &&
+  (html.includes('`${a}–${h} F`') || html.includes('`${a}–${h} F${glyph}`')) &&
   html.includes("return 'LIVE'") &&
   // Wired into card template (NOT the bare ${timeStr} only)
   html.includes('buildCardTimeDisplay(isLive, _ed, timeStr)'),
@@ -2362,6 +2362,20 @@ assert('A398 — PM-20 Step 4: FIELD Health panel Score Confidence row + verifie
   html.includes('_sc_mismatches.slice(0, 3)') &&
   html.includes('+ ${_sc_mismatches.length - 3} more'),
   'PM-20 Step 4: FIELD Health panel gains a "Score Confidence" row tallying _scoresBySource entries by agreement state. Verified count = both sources agree. Mismatch count = both present but scores differ (diagnostic — lists specific games with both source scores side-by-side, capped at 3 with "+N more"). Single count = only one source has polled. The diagnostic Jeff actually wanted tonight ("did we get the right score for Tigers @ Rays?") is now answerable inside FIELD: the mismatch row shows the discrepancy directly with both source values.');
+
+assert('A399 — PM-20 Step 5: card-time confidence glyph from eData.confidence',
+  // Step 5 marker comment
+  html.includes('PM-20 Step 5: confidence glyph') &&
+  // Three-way conf ternary
+  html.includes("conf === 'verified' ? ' ✓'") &&
+  html.includes("conf === 'mismatch' ? ' ⚠'") &&
+  // eData?.confidence access (optional chaining preserves backwards-compat
+  // when caller passes legacy espnScores entry without confidence field)
+  html.includes('const conf = eData?.confidence;') &&
+  // Glyph appended to both Final state and Live-with-score branches
+  html.includes('`${a}–${h} F${glyph}`') &&
+  html.includes("`${a}–${h}${period ? ' ' + period : ''}${glyph}`"),
+  'PM-20 Step 5: buildCardTimeDisplay (introduced in PM-19) extended to render a confidence glyph from eData.confidence. Verified -> " ✓" (subtle visual signal both sources agree), mismatch -> " ⚠" (signals user-actionable discrepancy, click leads to Health panel detail), single/null -> "" (no badge — preserves current visual baseline). Glyph appears in both Final state ("4–2 F ✓") and Live state ("3–2 P2 ⚠"). The conf is read via optional chaining so legacy callers passing untagged eData (e.g., before Steps 2-3 writers fire) still work — they just get no glyph.');
 
 
 // ═════════════════════════════════════════════════════════════════════
