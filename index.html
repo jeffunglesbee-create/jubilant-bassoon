@@ -1472,7 +1472,8 @@ body::before{
 
 /* P1 — Freshness Strip (startup polish bundle, last-known-state hydration) */
 /* Sits above #main; shown briefly when restoreSnapshot painted cached DOM; updates to "Live" once fresh data renders, then fades. */
-.freshness-strip{max-width:1400px;margin:.25rem auto 0;padding:.25rem 1rem;font-family:var(--ff-cond);font-size:.68rem;letter-spacing:.08em;text-transform:uppercase;color:var(--smoke);display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--edge);background:transparent;transition:opacity .4s ease}
+.freshness-strip{max-width:1400px;margin:.25rem auto 0;padding:.25rem 1rem;font-family:var(--ff-cond);font-size:.68rem;letter-spacing:.08em;text-transform:uppercase;color:var(--smoke);display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--edge);background:transparent;transition:opacity .4s ease;min-height:1.6rem;visibility:hidden;opacity:0}
+.freshness-strip.is-visible{visibility:visible;opacity:1}
 .freshness-strip .freshness-update{color:var(--gold2)}
 .freshness-strip.freshness-live .freshness-update{color:#4ade80}
 .freshness-strip.freshness-live .freshness-update::before{content:"Live"}
@@ -2793,7 +2794,7 @@ body.journalism-mode #field-journalism-section{animation:jrnFadeIn 220ms ease-ou
      Title adapts by time: Night Owl (10pm+), Evening Wrap (6-10pm), Game Recap (noon-6pm).
      #field-brief and #night-owl are sibling sections, both in the left pane. -->
 <div id="night-owl" style="display:none" aria-hidden="true"></div>
-  <div id="freshness-strip" class="freshness-strip" style="display:none" aria-live="polite"><span>Refreshed <span id="freshness-age">—</span> ago</span><span class="freshness-update">Updating…</span></div>
+  <div id="freshness-strip" class="freshness-strip" aria-live="polite"><span>Refreshed <span id="freshness-age">—</span> ago</span><span class="freshness-update">Updating…</span></div>
 <main class="main" id="main"><div class="skeleton-set" aria-hidden="true"><div class="game-card-skeleton"></div><div class="game-card-skeleton"></div><div class="game-card-skeleton"></div></div></main>
 <!-- ── iPad Ambient Panel (820–1199px couch mode) ───────────────────── -->
 <aside id="ambient-panel" aria-live="polite" aria-label="Live intelligence panel"><div class="ambient-skeleton" aria-hidden="true"><div class="ambient-skeleton-label">Live Intelligence</div><div class="ambient-skeleton-block"></div></div></aside>
@@ -16786,7 +16787,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-03j';
+  const SW_VERSION = '2026-06-03k';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -26552,14 +26553,18 @@ function showFreshnessStrip(ageMin){
   if (!strip) return;
   const ageEl = document.getElementById('freshness-age');
   if (ageEl) ageEl.textContent = ageMin < 60 ? `${Math.round(ageMin)}m` : `${Math.round(ageMin/60)}h`;
-  strip.style.display = '';
+  // PM-26-C1: slot is always reserved via .freshness-strip { min-height + visibility:hidden + opacity:0 }
+  // Just flip the .is-visible class to fade in — zero layout shift.
+  strip.classList.add('is-visible');
   strip.classList.remove('freshness-live');
 }
 function markFreshnessLive(){
   const strip = document.getElementById('freshness-strip');
-  if (!strip || strip.style.display === 'none') return;
+  // PM-26-C1: read class state instead of style.display. If not visible, the
+  // strip was never shown this load (first-ever visit, no snapshot) — no-op.
+  if (!strip || !strip.classList.contains('is-visible')) return;
   strip.classList.add('freshness-live');
-  setTimeout(() => { strip.style.display = 'none'; strip.classList.remove('freshness-live'); }, 2000);
+  setTimeout(() => { strip.classList.remove('is-visible'); strip.classList.remove('freshness-live'); }, 2000);
 }
 // Save triggers — hidden = backgrounded (most reliable on mobile); beforeunload covers desktop refresh/close
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') saveSnapshot(); });

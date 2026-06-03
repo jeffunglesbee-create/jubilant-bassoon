@@ -2547,6 +2547,31 @@ assert('A413 — PM-26-C6: :has()-based grid collapse removed (CLS at laptop vie
   'PM-26-C6 fix. WPT June 3 2026 (3-run Chrome LAN at 1366×681 laptop viewport) showed median CLS 0.701 vs 0.226 at 1024×681 iPad viewport, same browser, same network. Audit identified the :has() rule at the old line 2442 as primary culprit: .games-list:not(:has(.game-card ~ .game-card)):not(:has(.game-brief-pair ~ .game-brief-pair)) {grid-template-columns:minmax(320px,640px)}. When a sport section had exactly one card, grid collapsed to single-column 640px max. When a second card arrived (late game add, journalism brief-pair injection), :has() stopped matching and grid reflowed to repeat(2,minmax(320px,1fr)) — every card in that section shifted. WPT showed this firing across 5-8 sport sections per cold load = 10-16 full-grid reflows. Fix: deleted the :has() rule entirely. Solo card sits in column 1, column 2 stays empty until another card arrives; when it does, the new card slots into column 2 without moving card 1. Aesthetic compromise (lopsided solo card) traded for zero-shift grid stability. Patent-relevant: directly defends perceived-perf and consumer-aligned-hydration claims at the laptop viewport bucket. Independent of the modal-tainting issue PM-26-A solved and the duplicate-fetch issue PM-26-B solved.');
 
 
+assert('A414 — PM-26-C1: freshness strip slot reserved via min-height + visibility',
+  // CSS: .freshness-strip must declare min-height (slot reservation) AND
+  // visibility:hidden + opacity:0 (invisible default state). The .is-visible
+  // class flips visibility:visible + opacity:1. The existing
+  // transition:opacity .4s ease gives smooth fade.
+  /\.freshness-strip\{[^}]*min-height:1\.6rem[^}]*\}/.test(html) &&
+  /\.freshness-strip\{[^}]*visibility:hidden[^}]*\}/.test(html) &&
+  /\.freshness-strip\{[^}]*opacity:0[^}]*\}/.test(html) &&
+  /\.freshness-strip\.is-visible\{[^}]*visibility:visible[^}]*\}/.test(html) &&
+  /\.freshness-strip\.is-visible\{[^}]*opacity:1[^}]*\}/.test(html) &&
+  // HTML: the freshness-strip element MUST NOT carry inline style="display:none"
+  // anymore (that was the old display-thrash pattern; .is-visible class
+  // controls visibility now).
+  !/<div id="freshness-strip"[^>]*style="display:none"/.test(html) &&
+  // JS: showFreshnessStrip must use classList.add('is-visible'), not
+  // strip.style.display = ''. markFreshnessLive must check the class
+  // not style.display.
+  /strip\.classList\.add\(['"]is-visible['"]\)/.test(html) &&
+  /strip\.classList\.contains\(['"]is-visible['"]\)/.test(html) &&
+  // Old bug pattern must be gone: setting display via style attribute on strip
+  !/strip\.style\.display = ['"]none['"]/.test(html) &&
+  !/strip\.style\.display === ['"]none['"]/.test(html),
+  'PM-26-C1 fix. Freshness strip previously toggled visibility via style.display (none -> flex -> none), which shifted everything below the strip on every transition. The strip sits above #main, so its 25px height appearing/disappearing pushed the entire schedule down then back up — visible as CLS contribution on every snapshot-restore-then-fetch sequence (2nd+ visit). Fix: always reserve the 25px slot via min-height:1.6rem, default the slot to invisible via visibility:hidden + opacity:0, flip via .is-visible class. The existing transition:opacity .4s ease gives smooth fade-in / fade-out instead of instant snap. Trade-off: ~25px reserved at top of page for first-ever visit users who never see the strip (no snapshot to restore). Patent-defense gain: deterministic CLS contribution from the strip = zero. Aria-live=polite preserved for screen-reader announcements when content updates.');
+
+
 // ═════════════════════════════════════════════════════════════════════
 // GATE — all assertions above must pass before deploy proceeds.
 // PM-7: relocated here from line ~1047. Previously A245-A368 ran but
