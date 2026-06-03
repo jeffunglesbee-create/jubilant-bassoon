@@ -1,55 +1,99 @@
-# FIELD Handoff — June 3 2026 (PM-26-A close: ?wpt test mode bypass shipped)
+# FIELD Handoff — June 3 2026 (PM-26-B close: SW install-time shell pre-cache removed)
 
-**jubilant-bassoon HEAD:** `88c8d73` (PM-26-A: ?wpt URL param skips first-visit My Services modal) · Smoke: **404/0** · SW_VERSION `2026-06-03h`
+**jubilant-bassoon HEAD:** `ed29014` (PM-26-B: SW install handler no longer re-fetches the 425 KB shell after the browser just downloaded it to render the page) · Smoke: **405/0** · SW_VERSION `2026-06-03i`
 **field-relay-nba HEAD:** `5608845` (unchanged — no relay work this session)
-**Session arc:** PM-26-A TYPE A — single-concern commit unblocking automated perf measurement of the configured-state app.
+**Session arc:** PM-26-B TYPE A — surgical single-line bug fix backed by WPT-confirmed root cause, +1 smoke assertion, SW_VERSION bump h→i.
 
 ---
 
 ## WHAT SHIPPED THIS SESSION
 
-One commit, smoke-gated, SW_VERSION bump g→h, three paired asserts:
+**`ed29014` — PM-26-B: SW install-time shell pre-cache removed** · SW_VERSION `i` · A412 added
 
-**`88c8d73` — PM-26-A: ?wpt test mode bypass** · SW_VERSION `h` · A409 / A410 / A411 · Rule 54
+WPT (three same-config 1024×681 cold-load runs across PM-26-A's clean baseline + the two earlier modal-tainted runs) showed a duplicate 425 KB bare `/` fetch at ~589 ms after the initial `/?wpt` navigation. Network trace from the post-PM-26-A `?wpt` run:
 
-WPT analysis (June 3 2026, two same-config runs at 1024×681) discovered that every automated perf test since My Services launched had been measuring the onboarding modal instead of the configured-state app. LCP "DIV with text" was modal copy; CLS 0.225–0.268 straddle was modal animation; visual perf claims in the PM-25 startup polish bundle had no empirical validation against their intended surface.
+```
+  -6 ms  200  425.6 KB  /?wpt        ← test navigation
+ 589 ms  200  425.5 KB  /            ← THE DUPLICATE (PM-26-B)
+1071 ms  200  425.5 KB  /?wpt        ← WPT 2nd-pass nav (measurement artifact)
+```
 
-Bypass design:
-- `?wpt` URL parameter pre-marks `field_setup_done` in localStorage if (and only if) not already set
-- Real user landing on a `?wpt` URL by accident: schedule renders correctly with default broadcast resolution, services configurable later via settings — no data loss
-- Block wrapped in try/catch so private mode degrades silently to showing the modal as normal
-- Injected at top of bootstrap script (immediately after FIELD_DEBUG init), before `_fieldErrors` capture
+**Real-user effect on first visit:** 850 KB downloaded instead of 425 KB. Has been present since SW v4 (May 18 2026), undetected because every prior automated perf test measured the My Services modal (fixed in PM-26-A).
 
-Files changed:
-- `index.html` (+14/-1): bypass block + SW_VERSION bump
-- `sw.js` (+1/-1): SW_VERSION g→h
-- `STANDARDS.md` (+46): Rule 54 (TEST-MODE-A) — test-mode URL params limited to skipping onboarding; never rate limits, journalism budget, paid features, or sensitive state. Forbidden param names listed (`?debug` `?test` `?mock` `?admin` `?dev`). Future test affordances must extend this rule with documented sub-bullets.
-- `smoke.js` (+27): A409 (?wpt parsing present), A410 (clobber-guarded write + try/catch wrap), A411 (`maybeShowSetup` regression guard).
+**Root cause** — `sw.js` install handler:
 
-**Verification surface live now:**
-- `https://jubilant-bassoon.jeffunglesbee.workers.dev/` → modal appears (real first-visit)
-- `https://jubilant-bassoon.jeffunglesbee.workers.dev/?wpt` → skips to schedule
+```javascript
+// BEFORE (the bug)
+self.addEventListener('install', e => {
+  e.waitUntil(
+    caches.open(SHELL_CACHE)
+      .then(c => c.add(SHELL_URL))     ← redundant 425 KB fetch
+      .then(() => self.skipWaiting())
+      .catch(() => self.skipWaiting())
+  );
+});
+```
 
-This unblocks PM-26-B/C/D investigations against a clean measurement baseline.
+`c.add(SHELL_URL)` is equivalent to `fetch('/').then(r => cache.put('/', r))` — a fresh network round-trip for the same 425 KB shell the browser had just retrieved seconds earlier. Also cached against bare `/` regardless of any query string the user navigated with, polluting cache for `?wpt` and any future URL-param paths.
+
+**Fix:**
+
+```javascript
+// AFTER
+self.addEventListener('install', e => {
+  e.waitUntil(self.skipWaiting());
+});
+```
+
+The fetch handler's `staleWhileRevalidate` (line 96) already populates SHELL_CACHE on the first shell request after activation, so the install-time pre-cache was pure overhead. `skipWaiting` preserved so the new SW still takes over immediately rather than waiting for all tabs to close.
+
+**A412** locks the fix: asserts the bug pattern (`e.waitUntil(caches.open(SHELL_CACHE)...)`) is absent AND the fix pattern (`e.waitUntil(self.skipWaiting())`) is present. Regex anchored on `e.waitUntil` call shape rather than the `cache.add` name, so the explanatory comment containing `cache.add(SHELL_URL)` literal doesn't trip the negative check.
+
+**Files changed:**
+- `sw.js` (+11/-7): install handler simplified to `e.waitUntil(self.skipWaiting())` with explanatory comment block · SW_VERSION h→i
+- `index.html` (+1/-1): SW_VERSION h→i (Rule 23b sync)
+- `smoke.js` (+12/-0): A412
+
+---
+
+## PM-26 SESSION CHAIN (today, June 3 2026)
+
+| Session | Commit | What | Status |
+|---|---|---|---|
+| PM-26-A | `88c8d73` | `?wpt` test mode bypass — automated perf tests skip My Services modal | ✅ shipped |
+| PM-26-B | `ed29014` | SW install no longer pre-caches shell — bare `/` fetch eliminated | ✅ shipped |
+
+Three commits today: PM-25 close (`542f3bc`, last night) → PM-26-A (`88c8d73`) → PM-26-B (`ed29014`). All single-concern, all smoke-gated, all deployed.
 
 ---
 
 ## SW_VERSION SEQUENCE TODAY
 
-`2026-06-03g` (yesterday's PM-25 close) → `2026-06-03h` (PM-26-A). Suffix `h` is current.
+`g` (PM-25 close, last night) → `h` (PM-26-A) → `i` (PM-26-B). Suffix `i` is current.
 
 ---
 
 ## CARRY-FORWARD STANDING ITEMS
 
 **P1 next session:**
-- **PM-26-B — 3× index.html load investigation** (~45 min). Cold-load fetch of 425KB shell three times in WPT reproduces in both same-config runs (deterministic, not measurement noise). Hypotheses ranked: SW activation re-fetch, P1 snapshot re-fetch path, WPT profile double-nav, P4 prefetch misfire on document URL. Investigation steps + smoke assertion targets specced in PM-26 WPT Spec Set. **Patent-relevant** — undermines "consumer-aligned data hydration" claims if cold-start fetch budget is 3× baseline.
-- **PM-26-C — CLS reduction** (~60 min, four sub-commits). Reserve dimensions for freshness strip slot (C1), score-wrap slot in cards (C2), choreographed reveal opacity+transform only no height (C3), ambient card skeleton placeholders (C4). Target: CLS <0.10 deterministic on all viewports. **Patent-relevant.**
-- **PM-26-D — Wikimedia relay-side aggregator** (~75 min, two commits). 48/58 Wikimedia pageview requests return 429 (rate-limited) in both runs. New relay route `/wikimedia/teams/{league}` with daily cron + KV cache, client refactor to single fetch per league. Rule 47 compatible (data caching not editorial intelligence migration).
-- **PM-26 Verification pass** (now with clean baseline). Open live app at `/?wpt` on each viewport bucket (mobile portrait, mobile landscape, iPad portrait+landscape, laptop, desktop, ultrawide) and confirm: skeleton paints before JS runs · 2nd-load freshness strip "Refreshed Xm ago" → fresh render → "Live" → fade · reduced-motion collapses animations · choreographed reveal shows row-by-row entry not diagonal sweep · score crossfade on first ESPN inject (NBA Finals G1 tonight is the test surface). PM-24 Canonical Keys (Drive `1eG73NmJHUAPOR4E1bkFMg-Xxnq2E564ZIfB6dTGpsao`) — Stanley Cup G2 tomorrow 8pm ET ABC is the verification window.
-- **STANDARDS Rule 50 candidate** — still pending. Codify "on-device-only histograms / no profile-building / no ad-tech / no third parties" before USPTO ~June 25. P5 commit message references this as deferred-from-bundle.
+
+- **PM-26 WPT re-run for empirical confirmation of PM-26-B (~10 min).** Run a single WPT pass against `/?wpt` to verify: (a) bare `/` fetch at ~589 ms is gone; (b) `bytesInDoc` reduced by ~425 KB; (c) any LCP/SI improvement from reduced network contention during the critical render window. Result becomes patent-filing evidence that the architecture eliminated the documented ~425 KB cold-load waste.
+
+- **PM-26-C — CLS reduction** (~60 min total, five sub-commits). CLS at 0.252 in the `?wpt` baseline confirmed the layout shift is the app, not the modal. Plan:
+  - **C1:** Reserve freshness strip slot via `min-height + visibility` (not `display: none → block`)
+  - **C2:** Reserve `.score-slot` inside each game card before score arrival
+  - **C3:** Choreographed reveal animates `opacity` + `transform` only — never `height` / `max-height`
+  - **C4:** Ambient cards render with `min-height` skeleton placeholders before data
+  - **C5 (NEW from PM-26-B WPT intel):** Skeleton MORPH instead of replace. Current renderAll stomps innerHTML, which detaches the skeleton LCP candidate (`LargestContentfulPaintNodeType: None` in the `?wpt` run confirms this). Morphing same-element content swap preserves LCP identity AND eliminates skeleton-to-real height delta as a layout shift source. **Patent-relevant** — defends the "perceived performance" claim by aligning LCP measurement with the user's actual perceived paint.
+
+- **PM-26-D — Wikimedia Pageviews relay-side aggregator** (~75 min, two commits). 49 of 58 Wikimedia requests still 429-rate-limited in the `?wpt` baseline run (identical pattern to modal runs — deterministic fan-out). New relay route `/wikimedia/teams/{league}` with daily cron + KV cache; client refactor to single fetch per league. Rule 47 compatible (data caching, not editorial intelligence migration).
+
+- **PM-26 Verification pass** with the new `/?wpt` clean baseline. Now that PM-26-A enabled measurement and PM-26-B eliminated the wasted fetch, validation against the six viewport buckets is well-defined. PM-24 Canonical Keys verification window: Stanley Cup G2 tomorrow 8pm ET ABC.
+
+- **STANDARDS Rule 50 candidate** — still pending. Codify "on-device-only histograms / no profile-building / no ad-tech / no third parties" before USPTO ~June 25.
 
 **P2:**
+
 - **PM-26-E** — Dead route audit: `/v2/games?sport=*`, `/field/data/today`, `/health`, `/journalism/game/...` (~30 min)
 - **PM-26-F** — MLS `/mls/stats/v1/matches` 500 handler fix (~30 min)
 - **PM-26-G** — NHL `/nhl/v1/*-stats-leaders` 403 audit (~20 min)
@@ -61,9 +105,10 @@ This unblocks PM-26-B/C/D investigations against a clean measurement baseline.
 - Cloudflare-side cron-push fallback for P5 (browsers without periodicSync)
 
 **P3 (post-USPTO):**
+
 - Cloudflare connector mismatch (PM-15 carry)
 - Probe-outbox cleanup
-- Smoke count tool discrepancy (T1 MCP `get_smoke_count` reports 338, actual 404 — regex parser drift)
+- Smoke count tool discrepancy (T1 MCP `get_smoke_count` reports 341, actual 405 — regex parser drift)
 - Memory edit path-string cleanup
 - P1 storage-budget instrumentation
 
@@ -71,27 +116,27 @@ This unblocks PM-26-B/C/D investigations against a clean measurement baseline.
 
 ## TIER 0 DEADLINES
 
-- **NBA Finals G1 TONIGHT** (June 3 8:30pm ET ABC) — first live exposure of P6 score crossfade and P2 choreographed reveal
-- **Stanley Cup G2:** June 4 8pm ET ABC — PM-24 canonical key verification window
+- **NBA Finals G1 TONIGHT** (June 3 8:30 pm ET ABC) — first live exposure of P6 score crossfade and P2 choreographed reveal, now on the post-PM-26-B shell
+- **Stanley Cup G2:** June 4 8 pm ET ABC — PM-24 canonical key verification window
 - **World Cup 2026:** June 11 HARD — wc26:true flip + R2 World Cup Team Context still pending
-- **USPTO provisional:** ~June 25 — PM-26-B/C/D should land first; clean WPT baseline against `/?wpt` becomes patent-filing-grade evidence for consumer-aligned hydration + perceived-perf claims
+- **USPTO provisional:** ~June 25 — PM-26-C and -D should land first; clean WPT measurement series across viewport buckets becomes patent-filing evidence for consumer-aligned hydration + perceived-perf claims
 
 ---
 
 ## STATE INVARIANTS AT END OF SESSION
 
-- jubilant-bassoon HEAD: `88c8d73` (PM-26-A close)
-- jubilant-bassoon smoke: **404/0** (was 401; +3 new asserts A409–A411)
-- jubilant-bassoon SW_VERSION: `2026-06-03h` (both sw.js and index.html, A190 in sync)
-- field-relay-nba HEAD: `5608845` (unchanged — no relay work this session)
-- STANDARDS.md: Rule 54 (TEST-MODE-A) added — codifies safety boundary for URL-param test affordances
-- T3 memory anchor: updated post-write to `88c8d73`
+- jubilant-bassoon HEAD: `ed29014` (PM-26-B close)
+- jubilant-bassoon smoke: **405/0** (was 404; +1 new assert A412)
+- jubilant-bassoon SW_VERSION: `2026-06-03i` (both sw.js and index.html, A190 in sync)
+- field-relay-nba HEAD: `5608845` (unchanged)
+- STANDARDS.md: unchanged this session (Rule 54 from PM-26-A is current top)
+- T3 memory anchor: updated post-write to current HEAD
 
 ---
 
 ## TIER 1/2/3 HANDOFF CHANNEL HIERARCHY
 
-**Tier 1 (LIVE — used for this close):** MCP server on field-relay-nba at `/mcp`. Eighth consecutive session-end via T1.
+**Tier 1 (LIVE — used for this close):** MCP server on field-relay-nba at `/mcp`. Ninth consecutive session-end via T1.
 **Tier 2 (NOT BUILT — correctly deferred).**
 **Tier 3 (LIVE):** userMemories anchor — updated post-write.
 
@@ -99,21 +144,22 @@ This unblocks PM-26-B/C/D investigations against a clean measurement baseline.
 
 ## SESSION POSTMORTEM
 
-Clean session. Pre-flight grep correctly identified that the spec's proposed `field-services-configured` localStorage key was wrong — actual key is `field_setup_done` with a different storage layout (a Set in `field_my_services` for the services themselves). Spec adjusted before code touched. Spec's proposed Rule 51 number was also taken (Period Prefix Registry, line 2466) — renumbered to Rule 54 (next available).
+Cleanest fix-class session in some time. Single-line root cause, single-line fix, single new smoke assertion, three files changed (sw.js, index.html, smoke.js). The PM-26-B spec's pre-flight estimate was 20–30 min and that was approximately correct end-to-end.
 
-Two smoke failures on first run, both diagnosed and fixed immediately:
-1. **A190 (SW_VERSION sync)** — Rule 23b requires sw.js and index.html SW_VERSION strings to match. Bumped sw.js first, forgot the second reference at index.html line 16780. Caught by smoke gate (Rule 23b enforcement working as designed). Fixed in same session before commit.
-2. **A410 regex too clever** — initial regex tried to match `try { ... wpt ... } catch` across multiple braces with `[^}]+` which can't span nested braces. Rewrote with simpler string-include checks plus a focused regex for the catch tail. Lesson: prefer explicit `html.includes()` over greedy regex when the pattern crosses brace boundaries.
+One smoke regex correction during local gate:
+- **A412 first version** triggered on its own comment text. The negative regex `!/c\.add\(SHELL_URL\)/` matched the literal string `cache.add(SHELL_URL)` appearing in the explanatory comment block I'd added to the install handler.
+- **Fix:** rewrote A412 to anchor on the `e.waitUntil(...)` call shape rather than the `cache.add` name. The bug pattern `e.waitUntil(caches.open(SHELL_CACHE)...)` is structurally distinct from any comment text, and the fix pattern `e.waitUntil(self.skipWaiting())` is a precise positive match. Comments mentioning `cache.add` don't trip either.
+- **Lesson archived:** when writing absence-checks in smoke for a code pattern, prefer anchoring on call-site structure (`e.waitUntil(...)` argument shape) over function/method names that may legitimately appear in adjacent comments.
 
-The PM-25 postmortem's "budget anxiety as failure" lesson held this session — no false stops, no announced "manual finish required" — work completed naturally in one straight pass.
+WPT intel converted to permanent regression guard in one commit — exactly the pattern PM-26-A unlocked.
 
 ---
 
 ## CANONICAL DOC REFS
 
-**PM-26 WPT Spec Set (this session's source):** Local file at `/mnt/user-data/outputs/PM-26_WPT_Spec_Set.md` (transient — needs to land on Drive if it should persist)
+**PM-26 WPT Spec Set:** `/mnt/user-data/outputs/PM-26_WPT_Spec_Set.md` (transient — should land on Drive permanently. PM-26-A and PM-26-B now complete; spec doc can be archived once PM-26-C-D land)
 **Startup & Loading Polish spec (PM-25 source):** `1_0WcA2a3UWmFnmTvGmwZVdXiDtw_aSx5mMBlwZbC3FI`
-**CANONICAL BUILD BACKLOG:** `1ugUh6UmeDkLR-gEH8hJPwXK2NiIrXYQY8gp2jO2p2Hk` (due refresh: PM-26-A complete; PM-26-B/C/D queued)
+**CANONICAL BUILD BACKLOG:** `1ugUh6UmeDkLR-gEH8hJPwXK2NiIrXYQY8gp2jO2p2Hk` (PM-26-A and PM-26-B both complete; PM-26-C/D/E-H queued)
 **CI/Deploy Ref (READ AT SESSION START):** `1UrOoYDGaK2ncPrnRNXt1w0OElOLpbjP_EYROjG2w1zo`
 **FIELD Current State (READ AT SESSION START):** `1GvsfnTH9Xhqzg_NdYrPhPpk1d1Rnm0lkeG6ip-tLUlA`
 **PM-24 Canonical Key Design:** `1eG73NmJHUAPOR4E1bkFMg-Xxnq2E564ZIfB6dTGpsao`
