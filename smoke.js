@@ -2438,6 +2438,16 @@ assert('A403 — P6: score-incoming crossfade on initial injection (startup poli
   'Score injection has two paths in renderESPNScores (~index.html:15493 for UPDATE via wrapEl.replaceWith, ~15511 for INITIAL via card.appendChild). P6 only smooths the INITIAL path: the wrap is created with .score-incoming (opacity:0, translateY 2px), inserted into the DOM, then a double requestAnimationFrame removes the class so the CSS transition .2s fires. The existing scoreFlash animation on the UPDATE path (~15504) is untouched — that handles score-CHANGE visual feedback. The double rAF is required because removing a class in the same tick as adding it would be a no-op (browser folds the style change). reduced-motion is honored by the global P7 override which collapses the transition to 0.01ms.');
 
 
+assert('A402 — P4: service worker pre-warm on activation (startup polish bundle)',
+  // sw.js declares prefetchScheduleData function
+  /async function prefetchScheduleData\(\)/.test(swContent) &&
+  // Function fetches the MLB statsapi schedule (a known endpoint already in the API_CACHE allowlist)
+  swContent.includes('statsapi.mlb.com/api/v1/schedule') &&
+  // activate listener invokes it (presence inside the activate event's Promise.all)
+  /addEventListener\('activate'[\s\S]+prefetchScheduleData\(\)/.test(swContent),
+  'On SW activation, prefetchScheduleData() runs alongside the existing old-shell-cache pruning. It fetches todays MLB schedule from statsapi.mlb.com (deterministic URL, deterministic hit on first page load because fetchScheduleData uses the same URL form, and the URL is in the API_CACHE allowlist) and stores it in API_CACHE keyed by the request URL itself — no separate "field-schedule-prewarmed" key needed because networkFirstWithFallback already matches by request. The page-side fetchScheduleData then gets a cache hit on its first network-first try (the fetch resolves from the SW cache layer transparently). Failure is non-blocking: a try/catch swallows errors so activate completes regardless, and the page falls back to its existing network path.');
+
+
 // ═════════════════════════════════════════════════════════════════════
 // GATE — all assertions above must pass before deploy proceeds.
 // PM-7: relocated here from line ~1047. Previously A245-A368 ran but

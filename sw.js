@@ -11,7 +11,7 @@
 //
 // Bump SW_VERSION on every deploy. CI smoke.js verifies it matches index.html.
 
-const SW_VERSION  = '2026-06-03d';
+const SW_VERSION  = '2026-06-03e';
 const SHELL_CACHE = `field-shell-${SW_VERSION}`;
 const API_CACHE   = 'field-api-v4';
 const SHELL_URL   = '/';
@@ -27,14 +27,37 @@ self.addEventListener('install', e => {
 
 self.addEventListener('activate', e => {
   e.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(
-        keys.filter(k => k.startsWith('field-shell-') && k !== SHELL_CACHE)
-            .map(k => caches.delete(k))
-      )
-    ).then(() => clients.claim())
+    Promise.all([
+      // Prune old shell caches keyed by previous SW_VERSION
+      caches.keys().then(keys =>
+        Promise.all(
+          keys.filter(k => k.startsWith('field-shell-') && k !== SHELL_CACHE)
+              .map(k => caches.delete(k))
+        )
+      ),
+      // P4 — pre-warm API cache on activation so the page's first schedule
+      // fetch hits cache instead of round-tripping. statsapi.mlb.com is in
+      // the API_CACHE allowlist (see fetch handler isAPI gate) and the URL
+      // here matches the form fetchScheduleData uses, so the entry is a
+      // direct cache hit by request URL, not a separate key.
+      prefetchScheduleData()
+    ]).then(() => clients.claim())
   );
 });
+
+// P4 — Service Worker pre-warm (June 3 2026, startup polish bundle).
+// Opportunistic; never blocks activate. A failure just leaves the API_CACHE
+// in its previous state (cold or partially populated). The page-side
+// fetchScheduleData will then fall through to network as before.
+async function prefetchScheduleData(){
+  try {
+    const today = new Date().toISOString().slice(0, 10);
+    const url   = `https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${today}&hydrate=team`;
+    const cache = await caches.open(API_CACHE);
+    const fresh = await fetch(url);
+    if (fresh && fresh.ok) await cache.put(url, fresh.clone());
+  } catch(_) { /* prefetch is opportunistic — never block activate */ }
+}
 
 self.addEventListener('fetch', e => {
   const u = e.request.url;
