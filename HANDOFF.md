@@ -1,75 +1,44 @@
-# FIELD Handoff — June 3 2026 (PM-26-B close: SW install-time shell pre-cache removed)
+# FIELD Handoff — June 3 2026 (PM-26-C P1 close: three CLS fixes shipped)
 
-**jubilant-bassoon HEAD:** `ed29014` (PM-26-B: SW install handler no longer re-fetches the 425 KB shell after the browser just downloaded it to render the page) · Smoke: **405/0** · SW_VERSION `2026-06-03i`
-**field-relay-nba HEAD:** `5608845` (unchanged — no relay work this session)
-**Session arc:** PM-26-B TYPE A — surgical single-line bug fix backed by WPT-confirmed root cause, +1 smoke assertion, SW_VERSION bump h→i.
+**jubilant-bassoon HEAD:** `bd855cc` (PM-26-C2: pre-reserve grid-row 2 on live cards) · Smoke: **408/0** · SW_VERSION `2026-06-03l`
+**field-relay-nba HEAD:** `5608845` (unchanged)
+**Session arc:** PM-26-C TYPE A — three single-concern CLS fixes shipped (C6 + C1 + C2), each smoke-gated, each SW_VERSION-bumped. C5 (skeleton morph) deferred to its own session.
 
 ---
 
 ## WHAT SHIPPED THIS SESSION
 
-**`ed29014` — PM-26-B: SW install-time shell pre-cache removed** · SW_VERSION `i` · A412 added
+Three commits, four smoke assertions added, SW_VERSION sequence i → j → k → l.
 
-WPT (three same-config 1024×681 cold-load runs across PM-26-A's clean baseline + the two earlier modal-tainted runs) showed a duplicate 425 KB bare `/` fetch at ~589 ms after the initial `/?wpt` navigation. Network trace from the post-PM-26-A `?wpt` run:
+**`afea15b` — PM-26-C6: remove `:has()` grid collapse at laptop viewport** · SW_VERSION `j` · A413
 
-```
-  -6 ms  200  425.6 KB  /?wpt        ← test navigation
- 589 ms  200  425.5 KB  /            ← THE DUPLICATE (PM-26-B)
-1071 ms  200  425.5 KB  /?wpt        ← WPT 2nd-pass nav (measurement artifact)
-```
+Audit identified `.games-list:not(:has(.game-card ~ .game-card)):not(:has(.game-brief-pair ~ .game-brief-pair)){grid-template-columns:minmax(320px,640px)}` as the dominant CLS contributor at the laptop viewport bucket (1200–1439 px). When a sport section had exactly one card, grid collapsed to single-column 640px max; when a second card arrived (late game-add, brief-pair injection), `:has()` stopped matching and grid reflowed to `repeat(2, minmax(320px, 1fr))` — every card in that section shifted simultaneously. WPT showed this firing across 5–8 sport sections per cold load = 10–16 full-grid reflows per cold load. Fix: deleted the `:has()` rule entirely. Solo cards now sit in column 1, column 2 empty until another card arrives; new card slots into column 2 with zero movement of card 1.
 
-**Real-user effect on first visit:** 850 KB downloaded instead of 425 KB. Has been present since SW v4 (May 18 2026), undetected because every prior automated perf test measured the My Services modal (fixed in PM-26-A).
+**`b363aa8` — PM-26-C1: reserve freshness strip slot via min-height + visibility** · SW_VERSION `k` · A414
 
-**Root cause** — `sw.js` install handler:
+Freshness strip toggled via inline `style.display = 'none' → '' → 'none'`, causing layout shift twice per snapshot-restore-then-fetch sequence (once on appear, once on fade-out after 2s). Fix: always reserve 1.6rem slot via `min-height + visibility:hidden + opacity:0` default; `.is-visible` class flips to `visibility:visible + opacity:1` with the existing `transition:opacity .4s ease` giving smooth fade. JS uses `classList.add/remove('is-visible')` instead of `style.display`. Aria-live=polite preserved.
 
-```javascript
-// BEFORE (the bug)
-self.addEventListener('install', e => {
-  e.waitUntil(
-    caches.open(SHELL_CACHE)
-      .then(c => c.add(SHELL_URL))     ← redundant 425 KB fetch
-      .then(() => self.skipWaiting())
-      .catch(() => self.skipWaiting())
-  );
-});
-```
+**`bd855cc` — PM-26-C2: pre-reserve grid-row 2 on live cards for score-wrap arrival** · SW_VERSION `l` · A415
 
-`c.add(SHELL_URL)` is equivalent to `fetch('/').then(r => cache.put('/', r))` — a fresh network round-trip for the same 425 KB shell the browser had just retrieved seconds earlier. Also cached against bare `/` regardless of any query string the user navigated with, polluting cache for `?wpt` and any future URL-param paths.
-
-**Fix:**
-
-```javascript
-// AFTER
-self.addEventListener('install', e => {
-  e.waitUntil(self.skipWaiting());
-});
-```
-
-The fetch handler's `staleWhileRevalidate` (line 96) already populates SHELL_CACHE on the first shell request after activation, so the install-time pre-cache was pure overhead. `skipWaiting` preserved so the new SW still takes over immediately rather than waiting for all tabs to close.
-
-**A412** locks the fix: asserts the bug pattern (`e.waitUntil(caches.open(SHELL_CACHE)...)`) is absent AND the fix pattern (`e.waitUntil(self.skipWaiting())`) is present. Regex anchored on `e.waitUntil` call shape rather than the `cache.add` name, so the explanatory comment containing `cache.add(SHELL_URL)` literal doesn't trip the negative check.
-
-**Files changed:**
-- `sw.js` (+11/-7): install handler simplified to `e.waitUntil(self.skipWaiting())` with explanatory comment block · SW_VERSION h→i
-- `index.html` (+1/-1): SW_VERSION h→i (Rule 23b sync)
-- `smoke.js` (+12/-0): A412
+Game cards use `grid-template-rows:auto auto auto`. The `.score-wrap` element sits at grid-row:2. When `display:none` (default), row 2 collapses to 0; when `display:block` (after `.espn-live` class), row 2 expands to ~24px → card grows → all subsequent cards shift. Fix: add `.game-card.espn-live, .game-card.espn-final {grid-template-rows: auto minmax(1.5rem, auto) auto}` for both desktop and mobile (max-width:600px) cascades. Live cards reserve row 2 from initial paint; pre-game cards keep `auto auto auto` (no permanent space cost). Rare pre-game→live mid-load still shifts one card, but bulk of live cards on any cold load are already-live at render time.
 
 ---
 
-## PM-26 SESSION CHAIN (today, June 3 2026)
+## C5 DEFERRED TO DEDICATED SESSION
 
-| Session | Commit | What | Status |
-|---|---|---|---|
-| PM-26-A | `88c8d73` | `?wpt` test mode bypass — automated perf tests skip My Services modal | ✅ shipped |
-| PM-26-B | `ed29014` | SW install no longer pre-caches shell — bare `/` fetch eliminated | ✅ shipped |
+**PM-26-C5 (skeleton morph instead of replace)** is the only remaining P1 sub-item and is the single highest-leverage architectural fix (per WPT June 3 evidence: LCP NodeType=None deterministically at laptop viewport, across two browsers and two networks). Deferred because:
 
-Three commits today: PM-25 close (`542f3bc`, last night) → PM-26-A (`88c8d73`) → PM-26-B (`ed29014`). All single-concern, all smoke-gated, all deployed.
+1. **Scope.** Skeletons (`.game-card-skeleton`, 88px placeholder divs at line 2820) are structurally different from real `.game-card` elements (complex CSS-grid with body/right/score regions). True morphing requires either making skeletons render with `.game-card` selectors (so JS can populate content in-place) OR rewriting renderAll to mutate existing DOM rather than stomp `main.innerHTML`. Both are 2–3 hours of careful work with multiple smoke iterations for edge cases (skeleton count ≠ game count, mid-load schedule changes, snapshot restore vs cold paint divergence).
+2. **Risk management.** Better to measure C6/C1/C2 against WPT before stacking more changes — variance budget evidence from earlier in the day shows we need to be deliberate about isolating each fix's effect.
+3. **Calendar.** USPTO ~June 25 is ~3 weeks out. C5 can land in a dedicated session this week without missing the patent-filing window.
+
+C5 spec carried forward unchanged. C5 is the next P1 item for the following session.
 
 ---
 
-## SW_VERSION SEQUENCE TODAY
+## SW_VERSION SEQUENCE TODAY (one calendar day)
 
-`g` (PM-25 close, last night) → `h` (PM-26-A) → `i` (PM-26-B). Suffix `i` is current.
+`g` (PM-25 close, last night) → `h` (PM-26-A) → `i` (PM-26-B) → `j` (PM-26-C6) → `k` (PM-26-C1) → `l` (PM-26-C2). Six suffixes today. Suffix `l` is current.
 
 ---
 
@@ -77,38 +46,28 @@ Three commits today: PM-25 close (`542f3bc`, last night) → PM-26-A (`88c8d73`)
 
 **P1 next session:**
 
-- **PM-26 WPT re-run for empirical confirmation of PM-26-B (~10 min).** Run a single WPT pass against `/?wpt` to verify: (a) bare `/` fetch at ~589 ms is gone; (b) `bytesInDoc` reduced by ~425 KB; (c) any LCP/SI improvement from reduced network contention during the critical render window. Result becomes patent-filing evidence that the architecture eliminated the documented ~425 KB cold-load waste.
-
-- **PM-26-C — CLS reduction** (~60 min total, five sub-commits). CLS at 0.252 in the `?wpt` baseline confirmed the layout shift is the app, not the modal. Plan:
-  - **C1:** Reserve freshness strip slot via `min-height + visibility` (not `display: none → block`)
-  - **C2:** Reserve `.score-slot` inside each game card before score arrival
-  - **C3:** Choreographed reveal animates `opacity` + `transform` only — never `height` / `max-height`
-  - **C4:** Ambient cards render with `min-height` skeleton placeholders before data
-  - **C5 (NEW from PM-26-B WPT intel):** Skeleton MORPH instead of replace. Current renderAll stomps innerHTML, which detaches the skeleton LCP candidate (`LargestContentfulPaintNodeType: None` in the `?wpt` run confirms this). Morphing same-element content swap preserves LCP identity AND eliminates skeleton-to-real height delta as a layout shift source. **Patent-relevant** — defends the "perceived performance" claim by aligning LCP measurement with the user's actual perceived paint.
-
-- **PM-26-D — Wikimedia Pageviews relay-side aggregator** (~75 min, two commits). 49 of 58 Wikimedia requests still 429-rate-limited in the `?wpt` baseline run (identical pattern to modal runs — deterministic fan-out). New relay route `/wikimedia/teams/{league}` with daily cron + KV cache; client refactor to single fetch per league. Rule 47 compatible (data caching, not editorial intelligence migration).
-
-- **PM-26 Verification pass** with the new `/?wpt` clean baseline. Now that PM-26-A enabled measurement and PM-26-B eliminated the wasted fetch, validation against the six viewport buckets is well-defined. PM-24 Canonical Keys verification window: Stanley Cup G2 tomorrow 8pm ET ABC.
-
+- **WPT multi-run measurement bundle to confirm C6/C1/C2 impact.** Run `runs=3, fvonly=false` against `/?wpt` at three viewports: mobile portrait (≤600 px, Moto G4 or iPhone 12 throttle profile), iPad (1024), laptop (1366). 9 first-view + 9 repeat-view measurements. C6 specifically should show median CLS at 1366 dropping from 0.701 toward ≤0.25 (out of Poor) or ≤0.10 (Good). C1 effect visible on the snapshot-restore (repeat-view) path only. C2 effect visible during windows with live games (NBA Finals G2 tomorrow night, MLB ongoing).
+- **PM-26-C5 (skeleton morph instead of replace) — dedicated session.** Strongest patent-defense fix remaining; LCP NodeType=None deterministic at laptop viewport confirmed across Chrome/LAN/laptop and Edge/Cable/laptop. Estimated 2–3 hours with smoke iteration for edge cases. Approach options to evaluate at session start: (A) skeletons rendered as `.game-card[data-skeleton="1"]` with same selectors, JS populates in-place; (B) renderAll rewritten to DOM-diff against existing children instead of stomping innerHTML; (C) hybrid where first N cards morph and rest are appended.
+- **PM-26-D — Wikimedia Pageviews relay-side aggregator** (~75 min, two commits). Note from June 3 testing: Wikimedia 429 count varies wildly across runs (51 → 19 → 1 → 5 → 49) due to per-IP rate-limit window state and WPT agent IP cycling — the bug exists but is hard to demonstrate empirically. Architectural fix (relay-side daily aggregator + KV cache) still correct regardless.
+- **PM-26 Verification pass** with the post-C6/C1/C2 baseline. Now that the visible-perf laptop-bucket bug is gone, the six-viewport verification matrix has a coherent baseline to compare against.
 - **STANDARDS Rule 50 candidate** — still pending. Codify "on-device-only histograms / no profile-building / no ad-tech / no third parties" before USPTO ~June 25.
 
 **P2:**
 
-- **PM-26-E** — Dead route audit: `/v2/games?sport=*`, `/field/data/today`, `/health`, `/journalism/game/...` (~30 min)
-- **PM-26-F** — MLS `/mls/stats/v1/matches` 500 handler fix (~30 min)
-- **PM-26-G** — NHL `/nhl/v1/*-stats-leaders` 403 audit (~20 min)
-- **PM-26-H** — OpenF1 404 endpoint audit (~15 min)
-- Full L1 confidence gate restoration
-- A398 augmentation (assert `verified > 0` reachability)
-- MLB Prime Video label refinement (21 Yankees dates)
-- World Cup deadline track: F09 REST Countries (10 min), F08 Nager.Date (25 min), R2 World Cup Team Context (~90 min)
-- Cloudflare-side cron-push fallback for P5 (browsers without periodicSync)
+- **PM-26-C3** — Choreographed reveal: confirm `--i` staggered animation uses `opacity + transform`, never `height` / `max-height`. Lower-leverage than other C items per WPT evidence (modal-tainted runs didn't show animation as a shift source). Quick audit + smoke assert.
+- **PM-26-C4** — Ambient cards skeleton placeholders. Not relevant at iPad / laptop viewports (ambient panel only renders at desktop ≥1440 px). Keep on the list for desktop-bucket testing.
+- **PM-26-C7** — Skeleton-to-real height match (investigation: measure actual skeleton vs real card heights, set min-height on skeleton to match expected real card to within ~5%).
+- **PM-26-E** — Dead route audit
+- **PM-26-F** — MLS `/mls/stats/v1/matches` 500
+- **PM-26-G** — NHL `/nhl/v1/*-stats-leaders` 403
+- **PM-26-H** — OpenF1 404
+- World Cup deadline track: F09/F08/R2
 
 **P3 (post-USPTO):**
 
 - Cloudflare connector mismatch (PM-15 carry)
 - Probe-outbox cleanup
-- Smoke count tool discrepancy (T1 MCP `get_smoke_count` reports 341, actual 405 — regex parser drift)
+- Smoke count tool discrepancy
 - Memory edit path-string cleanup
 - P1 storage-budget instrumentation
 
@@ -116,18 +75,18 @@ Three commits today: PM-25 close (`542f3bc`, last night) → PM-26-A (`88c8d73`)
 
 ## TIER 0 DEADLINES
 
-- **NBA Finals G1 TONIGHT** (June 3 8:30 pm ET ABC) — first live exposure of P6 score crossfade and P2 choreographed reveal, now on the post-PM-26-B shell
+- **NBA Finals G1 TONIGHT** (June 3 8:30 pm ET ABC) — first live exposure of PM-25 startup polish + PM-26-A/B/C6/C1/C2 stack
 - **Stanley Cup G2:** June 4 8 pm ET ABC — PM-24 canonical key verification window
-- **World Cup 2026:** June 11 HARD — wc26:true flip + R2 World Cup Team Context still pending
-- **USPTO provisional:** ~June 25 — PM-26-C and -D should land first; clean WPT measurement series across viewport buckets becomes patent-filing evidence for consumer-aligned hydration + perceived-perf claims
+- **World Cup 2026:** June 11 HARD
+- **USPTO provisional:** ~June 25
 
 ---
 
 ## STATE INVARIANTS AT END OF SESSION
 
-- jubilant-bassoon HEAD: `ed29014` (PM-26-B close)
-- jubilant-bassoon smoke: **405/0** (was 404; +1 new assert A412)
-- jubilant-bassoon SW_VERSION: `2026-06-03i` (both sw.js and index.html, A190 in sync)
+- jubilant-bassoon HEAD: `bd855cc` (PM-26-C2 close, rebased onto state update)
+- jubilant-bassoon smoke: **408/0** (was 405; +3 new asserts A413, A414, A415)
+- jubilant-bassoon SW_VERSION: `2026-06-03l` (both sw.js and index.html, A190 in sync)
 - field-relay-nba HEAD: `5608845` (unchanged)
 - STANDARDS.md: unchanged this session (Rule 54 from PM-26-A is current top)
 - T3 memory anchor: updated post-write to current HEAD
@@ -136,7 +95,7 @@ Three commits today: PM-25 close (`542f3bc`, last night) → PM-26-A (`88c8d73`)
 
 ## TIER 1/2/3 HANDOFF CHANNEL HIERARCHY
 
-**Tier 1 (LIVE — used for this close):** MCP server on field-relay-nba at `/mcp`. Ninth consecutive session-end via T1.
+**Tier 1 (LIVE — used for this close):** MCP server on field-relay-nba at `/mcp`. Tenth consecutive session-end via T1.
 **Tier 2 (NOT BUILT — correctly deferred).**
 **Tier 3 (LIVE):** userMemories anchor — updated post-write.
 
@@ -144,25 +103,21 @@ Three commits today: PM-25 close (`542f3bc`, last night) → PM-26-A (`88c8d73`)
 
 ## SESSION POSTMORTEM
 
-Cleanest fix-class session in some time. Single-line root cause, single-line fix, single new smoke assertion, three files changed (sw.js, index.html, smoke.js). The PM-26-B spec's pre-flight estimate was 20–30 min and that was approximately correct end-to-end.
+Three single-concern commits in one session, all smoke-gated, all deployed. Workflow held: each commit ≤45 min including investigation, edit, smoke iteration, commit, push, CI watch.
 
-One smoke regex correction during local gate:
-- **A412 first version** triggered on its own comment text. The negative regex `!/c\.add\(SHELL_URL\)/` matched the literal string `cache.add(SHELL_URL)` appearing in the explanatory comment block I'd added to the install handler.
-- **Fix:** rewrote A412 to anchor on the `e.waitUntil(...)` call shape rather than the `cache.add` name. The bug pattern `e.waitUntil(caches.open(SHELL_CACHE)...)` is structurally distinct from any comment text, and the fix pattern `e.waitUntil(self.skipWaiting())` is a precise positive match. Comments mentioning `cache.add` don't trip either.
-- **Lesson archived:** when writing absence-checks in smoke for a code pattern, prefer anchoring on call-site structure (`e.waitUntil(...)` argument shape) over function/method names that may legitimately appear in adjacent comments.
+**Push collision on C2.** Mid-session a `[skip ci]` daily-state-update commit landed on origin/main while I was working on C2. Push rejected. Resolved with `git pull --rebase origin main` + push. No code-conflict — just a fast-forward issue. Rebase clean because my C2 commit only touched index.html/sw.js/smoke.js while the state-update commit touched FIELD-CURRENT-STATE.md or similar Drive-export artifact. **Process note for future sessions:** consider fetching origin/main before each new commit's push to catch state-update collisions before push. Roughly 1-min cost per commit; not a strong priority since rebase is trivial.
 
-WPT intel converted to permanent regression guard in one commit — exactly the pattern PM-26-A unlocked.
+**C5 scope realism call.** Decided not to attempt C5 in this session despite it being the only remaining P1 item. The architecture difference between skeletons (placeholder divs) and real cards (complex grid structures) requires either making skeletons structurally compatible OR rewriting renderAll to DOM-diff. Both are 2–3 hour work. Better to ship the three small fixes correctly and measure their effect before stacking the largest fix. This is consistent with the variance-envelope finding from the earlier 4-run analysis: single-run WPT TBT/CLS are too noisy to isolate stacked fix effects without multi-run methodology.
+
+**Smoke regex lessons applied.** A414's regex anchored on specific CSS values (`min-height:1\.6rem`, `visibility:hidden`, `opacity:0`, `is-visible{visibility:visible`) and used both presence and absence checks. No false positives this time. A415 used both literal text match for the new selector pattern AND a global occurrence count check (`html.match(...).length >= 2`) to verify the rule was added in both desktop AND mobile blocks. Cleaner pattern than the original A412 negative-name-match.
 
 ---
 
 ## CANONICAL DOC REFS
 
-**PM-26 WPT Spec Set:** `/mnt/user-data/outputs/PM-26_WPT_Spec_Set.md` (transient — should land on Drive permanently. PM-26-A and PM-26-B now complete; spec doc can be archived once PM-26-C-D land)
+**PM-26 WPT Spec Set:** `/mnt/user-data/outputs/PM-26_WPT_Spec_Set.md` (transient — should land on Drive)
 **Startup & Loading Polish spec (PM-25 source):** `1_0WcA2a3UWmFnmTvGmwZVdXiDtw_aSx5mMBlwZbC3FI`
-**CANONICAL BUILD BACKLOG:** `1ugUh6UmeDkLR-gEH8hJPwXK2NiIrXYQY8gp2jO2p2Hk` (PM-26-A and PM-26-B both complete; PM-26-C/D/E-H queued)
-**CI/Deploy Ref (READ AT SESSION START):** `1UrOoYDGaK2ncPrnRNXt1w0OElOLpbjP_EYROjG2w1zo`
-**FIELD Current State (READ AT SESSION START):** `1GvsfnTH9Xhqzg_NdYrPhPpk1d1Rnm0lkeG6ip-tLUlA`
+**CANONICAL BUILD BACKLOG:** `1ugUh6UmeDkLR-gEH8hJPwXK2NiIrXYQY8gp2jO2p2Hk` (PM-26-A/B/C6/C1/C2 complete; PM-26-C5 + C3/C4/C7/D/E-H queued)
+**CI/Deploy Ref:** `1UrOoYDGaK2ncPrnRNXt1w0OElOLpbjP_EYROjG2w1zo`
+**FIELD Current State:** `1GvsfnTH9Xhqzg_NdYrPhPpk1d1Rnm0lkeG6ip-tLUlA`
 **PM-24 Canonical Key Design:** `1eG73NmJHUAPOR4E1bkFMg-Xxnq2E564ZIfB6dTGpsao`
-**June 1 R2 Finals Handoff:** `1w5Ypy1ME6LlKKkyWh1_0IJyRm5iics61jhyBswO9uT8`
-**TIER 1B spec:** `1UIuazvMvY4ewJap2Y4Z4-LbqHGvt8z-QhX28ImnAlt0`
-**B1 spec:** `1yt-3ruXqTNNOl9k1jRQARFw9OtHt6IzNG4xkfcjVqTE`
