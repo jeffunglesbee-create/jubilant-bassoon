@@ -1,8 +1,8 @@
-# FIELD Handoff — June 3 2026 (PM-26-C P1 set complete; PM-26-J spec captured)
+# FIELD Handoff — June 3 2026 (PM-26-C P1 set complete; PM-26-J spec captured; session doc landed)
 
 **jubilant-bassoon HEAD:** `f94e948` (PM-26-C5: preserve LCP anchor DOM identity) · Smoke: **409/0** · SW_VERSION `2026-06-03m`
 **field-relay-nba HEAD:** `5608845` (unchanged)
-**Session arc today:** PM-26-A → PM-26-B → PM-26-C6 → PM-26-C1 → PM-26-C2 → PM-26-C5. Six single-concern build commits, six SW_VERSION suffixes, six smoke assertions added (A409-A416, all green). Followed by an analysis-only turn that produced the PM-26-J architectural spec (captured below).
+**Session arc today:** PM-26-A → PM-26-B → PM-26-C6 → PM-26-C1 → PM-26-C2 → PM-26-C5. Six single-concern build commits, six SW_VERSION suffixes, six smoke assertions added (A409-A416, all green). Followed by an analysis-only turn that produced the PM-26-J architectural spec (captured below). Post-close TYPE D housekeeping (this amendment) landed the consolidated session doc to Drive.
 
 ---
 
@@ -21,7 +21,7 @@ SW_VERSION sequence today: `g` → `h` → `i` → `j` → `k` → `l` → `m`. 
 
 ## PM-26-J — CRITICAL ARCHITECTURAL CARRY-FORWARD (NEW · P1)
 
-**Spec produced by analysis-only turn at end of session.** Full reasoning chain is in chat history; the gist below should be enough to start the work.
+**Spec produced by analysis-only turn at end of session. Full spec preserved in Drive doc `1rcU6ad9_pdBCBUdaSp7o_0Soii6RlWIqJMHjO3cFBI8`** (FIELD App — 2026-06-03 Session Documentation). Gist below is enough to start the work.
 
 ### Problem
 
@@ -133,20 +133,20 @@ Single WPT run with scroll profile (scroll the page automatically over 30 second
 
 ## STATE INVARIANTS AT END OF DAY
 
-- jubilant-bassoon HEAD: `f94e948` (PM-26-C5 close + this HANDOFF amendment)
+- jubilant-bassoon last build HEAD: `f94e948` (PM-26-C5 close)
 - jubilant-bassoon smoke: **409/0** (no new asserts since C5)
 - jubilant-bassoon SW_VERSION: `2026-06-03m` (sw.js + index.html, A190 in sync)
 - field-relay-nba HEAD: `5608845` (unchanged all day)
 - STANDARDS.md: Rule 54 (test-mode URL params governance) is current top
-- T3 memory anchor: `f94e948` (matches T1)
+- T3 memory anchor: updates to current HEAD on each HANDOFF write
 
 ---
 
 ## TIER 1/2/3 HANDOFF CHANNEL HIERARCHY
 
-**Tier 1 (LIVE):** MCP server on field-relay-nba `/mcp`. Twelve consecutive session closes via T1 today including this amendment.
+**Tier 1 (LIVE):** MCP server on field-relay-nba `/mcp`. Thirteen consecutive session closes via T1 today including this amendment.
 **Tier 2 (NOT BUILT — correctly deferred).**
-**Tier 3 (LIVE):** userMemories anchor at `f94e948`.
+**Tier 3 (LIVE):** userMemories anchor, refreshed to current HEAD on each T1 write.
 
 ---
 
@@ -158,17 +158,18 @@ Single WPT run with scroll profile (scroll the page automatically over 30 second
 
 **Lesson for the spec set going forward.** WPT cold-load measurements are necessary but not sufficient evidence for the USPTO perceived-perf claims. Scroll-mode verification must be added to the verification matrix before patent filing.
 
-**T1 channel reliability.** Twelve write_handoff calls today, all succeeded. The MCP-on-relay architecture (the patent-defensible piece) demonstrated production reliability under heavy session-rotation load. That's a non-obvious win for the patent application's "session-portable agent context" architecture claim.
+**T1 channel reliability.** Thirteen write_handoff calls today (including this post-close amendment), all succeeded. The MCP-on-relay architecture (the patent-defensible piece) demonstrated production reliability under heavy session-rotation load. That's a non-obvious win for the patent application's "session-portable agent context" architecture claim.
 
-**Drive session documentation owed.** Per session-end protocol (memory edit #19), a plain-text session doc should be written to Drive (≤220 KB, title "FIELD App — 2026-06-03 Session Documentation"). Not done today across the six closures. Carry-forward to next session start: write the consolidated day's doc covering PM-26-A through PM-26-C5 plus PM-26-J spec, then resume normal protocol.
+**Drive session documentation — LANDED (post-close TYPE D, 2026-06-03).** Consolidated day's doc written covering PM-26-A through PM-26-C5 + full PM-26-J spec preservation. Drive ID: `1rcU6ad9_pdBCBUdaSp7o_0Soii6RlWIqJMHjO3cFBI8`. PM-26-J spec is now archived in Drive — the HANDOFF body's spec text remains as a working reference for the upcoming PM-26-J-1 build but the canonical archive copy is the Drive doc.
 
 ---
 
 ## CANONICAL DOC REFS
 
+**2026-06-03 Session Documentation:** `1rcU6ad9_pdBCBUdaSp7o_0Soii6RlWIqJMHjO3cFBI8` (LANDED — covers PM-26-A→C5 + PM-26-J spec)
 **PM-26 WPT Spec Set:** `/mnt/user-data/outputs/PM-26_WPT_Spec_Set.md` (transient — needs Drive landing)
 **Startup & Loading Polish spec:** `1_0WcA2a3UWmFnmTvGmwZVdXiDtw_aSx5mMBlwZbC3FI`
-**CANONICAL BUILD BACKLOG:** `1ugUh6UmeDkLR-gEH8hJPwXK2NiIrXYQY8gp2jO2p2Hk` (today's closures + PM-26-J need to land)
+**CANONICAL BUILD BACKLOG:** `1ugUh6UmeDkLR-gEH8hJPwXK2NiIrXYQY8gp2jO2p2Hk` (today's closures + PM-26-J still need to land)
 **CI/Deploy Ref:** `1UrOoYDGaK2ncPrnRNXt1w0OElOLpbjP_EYROjG2w1zo`
 **FIELD Current State:** `1GvsfnTH9Xhqzg_NdYrPhPpk1d1Rnm0lkeG6ip-tLUlA`
 **PM-24 Canonical Key Design:** `1eG73NmJHUAPOR4E1bkFMg-Xxnq2E564ZIfB6dTGpsao`
