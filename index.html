@@ -2438,10 +2438,19 @@ body.journalism-mode #field-journalism-section{animation:jrnFadeIn 220ms ease-ou
     display:flex;flex-direction:column;gap:6px;
     min-width:0; /* prevent grid blowout */
   }
-  /* Solo sections: 1 card (or 1 pair) gets capped width — no empty right column */
-  .games-list:not(:has(.game-card ~ .game-card)):not(:has(.game-brief-pair ~ .game-brief-pair)){
-    grid-template-columns:minmax(320px,640px);
-  }
+  /* PM-26-C6 (June 3 2026): The :has()-based solo-section grid collapse was
+   * removed. Previously this rule changed grid-template-columns from
+   * repeat(2,minmax(320px,1fr)) to minmax(320px,640px) when a sport section
+   * had exactly one game card. When a second card later arrived (late game
+   * add, or game-brief-pair injection), :has() stopped matching and the grid
+   * reflowed to 2-column — every card in that section shifted. WPT June 3
+   * showed this firing repeatedly across 5-8 sport sections per cold load,
+   * producing median CLS of 0.701 at 1366×681 (vs 0.226 at 1024×681 where
+   * this rule is inactive). Now solo cards just occupy column 1 with column 2
+   * empty — minor aesthetic compromise, zero layout shift when more cards
+   * arrive. Patent-relevant: defends perceived-perf claims by eliminating
+   * 10-16 grid reflows per cold load at laptop viewport.
+   */
 }
 /* ── 3-col game grid only above 1800px ── */
 @media(min-width:1800px){
@@ -16777,7 +16786,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-03i';
+  const SW_VERSION = '2026-06-03j';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)

@@ -2532,6 +2532,21 @@ assert('A412 — PM-26-B: SW install does not pre-cache the shell URL',
   'PM-26-B fix. WPT June 3 2026 (three same-config runs) showed a duplicate 425 KB bare / fetch at 589 ms after the initial /?wpt navigation. Network trace: -6 ms /?wpt (425.6 KB) | 589 ms / (425.5 KB) ← THE BUG | 1071 ms /?wpt (WPT 2nd nav). Root cause: install handler called e.waitUntil(caches.open(SHELL_CACHE).then(c => c.add(SHELL_URL))...), which is equivalent to fetch(SHELL_URL).then(r => cache.put(SHELL_URL, r)) — re-downloading the same 425 KB shell the browser had already retrieved to render the page. Also cached against bare / key regardless of any query string the user navigated with, polluting cache for ?wpt and future URL-param paths. Fix: install handler is now just e.waitUntil(self.skipWaiting()) — fetch handler\'s staleWhileRevalidate populates SHELL_CACHE on the first shell request after activation. Net perf: -425 KB per first visit / SW_VERSION bump. Patent relevance: tightens "consumer-aligned data hydration" architecture by removing wasted bandwidth that worked against the cold-start claim.');
 
 
+assert('A413 — PM-26-C6: :has()-based grid collapse removed (CLS at laptop viewport)',
+  // BUG PATTERN (must be absent): the :has() rule inside @media(min-width:1200px)
+  // that collapsed grid-template-columns to minmax(320px,640px) for solo sections.
+  // Match the distinctive selector shape that was unique to this rule.
+  !/\.games-list:not\(:has\(\.game-card ~ \.game-card\)\)/.test(html) &&
+  !/\.games-list:not\(:has\(\.game-brief-pair ~ \.game-brief-pair\)\)/.test(html) &&
+  // SANITY: the outer @media(min-width:1200px) block is still present (we
+  // only removed the :has rule, not the entire block).
+  /@media\(min-width:1200px\)\{[\s\S]{0,500}?\.game-brief-pair\{/.test(html) &&
+  // SANITY: the default 2-column grid for .games-list at 1200px+ is intact.
+  // This is the rule the solo-section :has() used to override.
+  /@media\(min-width:1200px\)\{\s*\.games-list\{[\s\S]{0,200}?grid-template-columns:repeat\(2,minmax\(320px,1fr\)\)/.test(html),
+  'PM-26-C6 fix. WPT June 3 2026 (3-run Chrome LAN at 1366×681 laptop viewport) showed median CLS 0.701 vs 0.226 at 1024×681 iPad viewport, same browser, same network. Audit identified the :has() rule at the old line 2442 as primary culprit: .games-list:not(:has(.game-card ~ .game-card)):not(:has(.game-brief-pair ~ .game-brief-pair)) {grid-template-columns:minmax(320px,640px)}. When a sport section had exactly one card, grid collapsed to single-column 640px max. When a second card arrived (late game add, journalism brief-pair injection), :has() stopped matching and grid reflowed to repeat(2,minmax(320px,1fr)) — every card in that section shifted. WPT showed this firing across 5-8 sport sections per cold load = 10-16 full-grid reflows. Fix: deleted the :has() rule entirely. Solo card sits in column 1, column 2 stays empty until another card arrives; when it does, the new card slots into column 2 without moving card 1. Aesthetic compromise (lopsided solo card) traded for zero-shift grid stability. Patent-relevant: directly defends perceived-perf and consumer-aligned-hydration claims at the laptop viewport bucket. Independent of the modal-tainting issue PM-26-A solved and the duplicate-fetch issue PM-26-B solved.');
+
+
 // ═════════════════════════════════════════════════════════════════════
 // GATE — all assertions above must pass before deploy proceeds.
 // PM-7: relocated here from line ~1047. Previously A245-A368 ran but
