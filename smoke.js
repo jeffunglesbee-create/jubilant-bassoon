@@ -2409,6 +2409,25 @@ assert('A407 — P3: static skeleton cards (startup polish bundle)',
   'Static skeleton placeholders must appear inline in #main (3 .game-card-skeleton inside a .skeleton-set), #sport-filters (6 .filter-chip-skeleton spans), and #ambient-panel (one .ambient-skeleton with a label + block). They are wrapped in aria-hidden="true" so AT announces only the real content. CSS rules size them per viewport: 1 visible at ≤1199px (mobile/tablet/ambient), 2 at 1200-1799px (laptop/desktop), 3 at 1800px+ (ultrawide). Removal is implicit — buildFilters() does sport-filters.innerHTML="", renderAll() does main.innerHTML=..., renderAmbientPanel() replaces #ambient-panel content. Shimmer animation respects prefers-reduced-motion (both the new P7 global override and the explicit rule paired with this skeleton block).');
 
 
+assert('A406 — P2: choreographed reveal (startup polish bundle)',
+  // --cols CSS variable on .games-list (defined at default + per breakpoint)
+  /\.games-list\{[^}]*--cols:1\}/.test(html) &&
+  html.includes('@media(min-width:1200px){.games-list{--cols:2}}') &&
+  html.includes('@media(min-width:1800px){.games-list{--cols:3}}') &&
+  // .game-card animation-delay reads --i and --cols with row-stagger + cap
+  html.includes('animation-delay:min(calc(floor(var(--i, 0) / var(--cols, 1)) * 28ms), 360ms)') &&
+  // .sport-section animation-delay uses --i with cap
+  html.includes('animation-delay:min(calc(var(--i, 0) * 50ms), 250ms)') &&
+  // .filter-btn gets fade+stagger animation
+  /\.filter-btn\{[^}]*animation:fadeIn \.25s ease both;animation-delay:calc\(var\(--i, 0\) \* 20ms\)/.test(html) &&
+  // Inline --i on rendered game-card and sport-section templates
+  html.includes('style="--i:${gi}"') &&
+  html.includes('style="--i:${si}"') &&
+  // buildFilters post-loop --i pass
+  html.includes("el.style.setProperty('--i', i)"),
+  'Choreographed reveal: each .game-card gets style="--i:${gi}" and each .sport-section gets style="--i:${si}". The CSS calc floor(--i / --cols) groups cards into rows, so a 6-card slate on desktop (--cols=2) reveals as 3 rows × 28ms = 0/28/56ms instead of the old 0/40/80/120/160/200ms diagonal sweep. Cap at 360ms keeps long MLB slates (15+ games) from dragging the tail. .games-list owns --cols and overrides it per viewport (1 mobile/tablet/ambient, 2 laptop/desktop, 3 ultrawide). Filter chips also stagger via a post-appendChild pass that sets --i on every child of #sport-filters by DOM order. The cap on .sport-section delay (250ms) prevents the section reveal from running past where the card reveals begin.');
+
+
 // ═════════════════════════════════════════════════════════════════════
 // GATE — all assertions above must pass before deploy proceeds.
 // PM-7: relocated here from line ~1047. Previously A245-A368 ran but
