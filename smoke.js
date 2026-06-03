@@ -2428,6 +2428,16 @@ assert('A406 — P2: choreographed reveal (startup polish bundle)',
   'Choreographed reveal: each .game-card gets style="--i:${gi}" and each .sport-section gets style="--i:${si}". The CSS calc floor(--i / --cols) groups cards into rows, so a 6-card slate on desktop (--cols=2) reveals as 3 rows × 28ms = 0/28/56ms instead of the old 0/40/80/120/160/200ms diagonal sweep. Cap at 360ms keeps long MLB slates (15+ games) from dragging the tail. .games-list owns --cols and overrides it per viewport (1 mobile/tablet/ambient, 2 laptop/desktop, 3 ultrawide). Filter chips also stagger via a post-appendChild pass that sets --i on every child of #sport-filters by DOM order. The cap on .sport-section delay (250ms) prevents the section reveal from running past where the card reveals begin.');
 
 
+assert('A403 — P6: score-incoming crossfade on initial injection (startup polish bundle)',
+  // CSS: .score-wrap transition + .score-incoming initial state
+  html.includes('.score-wrap{transition:opacity .2s ease, transform .2s ease}') &&
+  html.includes('.score-wrap.score-incoming{opacity:0;transform:translateY(2px)}') &&
+  // JS: double-rAF removal pattern on the appendChild (initial inject) path only
+  html.includes('newWrap.classList.add("score-incoming")') &&
+  html.includes('requestAnimationFrame(()=>requestAnimationFrame(()=>newWrap.classList.remove("score-incoming")))'),
+  'Score injection has two paths in renderESPNScores (~index.html:15493 for UPDATE via wrapEl.replaceWith, ~15511 for INITIAL via card.appendChild). P6 only smooths the INITIAL path: the wrap is created with .score-incoming (opacity:0, translateY 2px), inserted into the DOM, then a double requestAnimationFrame removes the class so the CSS transition .2s fires. The existing scoreFlash animation on the UPDATE path (~15504) is untouched — that handles score-CHANGE visual feedback. The double rAF is required because removing a class in the same tick as adding it would be a no-op (browser folds the style change). reduced-motion is honored by the global P7 override which collapses the transition to 0.01ms.');
+
+
 // ═════════════════════════════════════════════════════════════════════
 // GATE — all assertions above must pass before deploy proceeds.
 // PM-7: relocated here from line ~1047. Previously A245-A368 ran but

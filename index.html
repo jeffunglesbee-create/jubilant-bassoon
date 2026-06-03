@@ -408,6 +408,9 @@ body::before{
 .card-body:active .card-tap-hint{opacity:.9;transition:none}
 @media(hover:hover){.card-body:hover .card-tap-hint{opacity:.7;transition:opacity .15s}}
 .score-wrap{grid-column:2;grid-row:2;display:none} /* hidden until ESPN injects */
+/* P6 — score pop refinement: 200ms crossfade on INITIAL score injection (existing scoreFlash still fires on subsequent CHANGE) */
+.score-wrap{transition:opacity .2s ease, transform .2s ease}
+.score-wrap.score-incoming{opacity:0;transform:translateY(2px)}
 .game-card.espn-live .score-wrap,.game-card.espn-final .score-wrap{display:block}
 .matchup{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;min-width:0}
 .team-name{
@@ -15512,7 +15515,15 @@ function renderESPNScores(){
         const tmp = document.createElement("div");
         tmp.innerHTML = scoreHTML;
         const newWrap = tmp.firstElementChild;
-        if(newWrap) { card.appendChild(newWrap); _raiRehydrateScoreWrap(card, newWrap); }
+        if(newWrap) {
+          // P6 — crossfade in on INITIAL injection only (existing wrap path uses scoreFlash on change)
+          newWrap.classList.add("score-incoming");
+          card.appendChild(newWrap);
+          _raiRehydrateScoreWrap(card, newWrap);
+          // Double rAF ensures the .score-incoming opacity:0 is committed before the class is removed,
+          // so the .2s transition actually fires instead of being skipped as a no-op style change.
+          requestAnimationFrame(()=>requestAnimationFrame(()=>newWrap.classList.remove("score-incoming")));
+        }
         const scoreKey2 = game._id;
         previousScores[scoreKey2+"_sl"] = _n.scoreline;
       }
@@ -16743,7 +16754,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-03c';
+  const SW_VERSION = '2026-06-03d';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
