@@ -2342,6 +2342,27 @@ assert('A397 — PM-20 Step 3: V2 (api-sports) writers wire to _scoresBySource[k
   html.includes('source-tagged parallel write for V2 fallback cascade path'),
   'PM-20 Step 3: both V2 writers — the main NHL/MLB merge path (with _scoresNull score-preservation guard) and the ESPN fallback cascade path (when a league flips FIELD_V2_SOURCES true) — now write to _scoresBySource[key].apisports. The legacy espnScores[key] writes are preserved during migration. After this commit lands, findScore() will see BOTH ESPN and API-Sports witnesses for MLB/NHL games tonight and the confidence layer becomes active — verified for games where both sources agree, mismatch for divergent scores, single when only one source has polled.');
 
+assert('A398 — PM-20 Step 4: FIELD Health panel Score Confidence row + verified/mismatch/single tallies',
+  // Section comment marker
+  html.includes('Score Confidence (PM-20 Step 4)') &&
+  // Tally object initialization
+  html.includes('const _sc_tally = { verified: 0, mismatch: 0, single: 0 };') &&
+  // The three states surface as labeled rows
+  html.includes('✅ verified') &&
+  html.includes('⚠ mismatch') &&
+  html.includes('· single source') &&
+  // Mismatch-detail listing with espn vs apisports comparison
+  html.includes('espn:${m.espn.awayScore}-${m.espn.homeScore}') &&
+  html.includes('apisports:${m.apisports.awayScore}-${m.apisports.homeScore}') &&
+  // Panel section id
+  html.includes('id="fhp-score-confidence"') &&
+  // Header text
+  html.includes('🎯 Score Confidence') &&
+  // Mismatches truncated at 3 with "+ N more"
+  html.includes('_sc_mismatches.slice(0, 3)') &&
+  html.includes('+ ${_sc_mismatches.length - 3} more'),
+  'PM-20 Step 4: FIELD Health panel gains a "Score Confidence" row tallying _scoresBySource entries by agreement state. Verified count = both sources agree. Mismatch count = both present but scores differ (diagnostic — lists specific games with both source scores side-by-side, capped at 3 with "+N more"). Single count = only one source has polled. The diagnostic Jeff actually wanted tonight ("did we get the right score for Tigers @ Rays?") is now answerable inside FIELD: the mismatch row shows the discrepancy directly with both source values.');
+
 
 // ═════════════════════════════════════════════════════════════════════
 // GATE — all assertions above must pass before deploy proceeds.

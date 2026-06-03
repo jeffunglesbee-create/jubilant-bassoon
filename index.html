@@ -3076,6 +3076,55 @@ function buildFieldHealthPanel() {
   else
     rows.push(ok('Runtime Errors', 'None captured'));
 
+  // ── Score Confidence (PM-20 Step 4) ─────────────────────────────────────
+  // Tallies _scoresBySource: verified (both sources agree), mismatch (both
+  // disagree — diagnostic), single (only one source has polled).
+  // The diagnostic Jeff actually wanted tonight: "did we get the right
+  // score for Tigers @ Rays?" becomes answerable inside FIELD itself.
+  const _sc_tally = { verified: 0, mismatch: 0, single: 0 };
+  const _sc_mismatches = [];
+  if (typeof _scoresBySource === 'object' && _scoresBySource) {
+    for (const [key, entry] of Object.entries(_scoresBySource)) {
+      if (!entry) continue;
+      if (entry.espn && entry.apisports) {
+        const agree = entry.espn.homeScore === entry.apisports.homeScore &&
+                      entry.espn.awayScore === entry.apisports.awayScore;
+        if (agree) _sc_tally.verified++;
+        else {
+          _sc_tally.mismatch++;
+          _sc_mismatches.push({ key, espn: entry.espn, apisports: entry.apisports });
+        }
+      } else if (entry.espn || entry.apisports) {
+        _sc_tally.single++;
+      }
+    }
+  }
+  const _sc_total = _sc_tally.verified + _sc_tally.mismatch + _sc_tally.single;
+  const _sc_lines = [];
+  _sc_lines.push(`<div style="color:#76e08a">✅ verified <span style="color:#999;float:right">${_sc_tally.verified} games</span></div>`);
+  if (_sc_tally.mismatch > 0)
+    _sc_lines.push(`<div style="color:#ff6868">⚠ mismatch <span style="color:#999;float:right">${_sc_tally.mismatch} games</span></div>`);
+  else
+    _sc_lines.push(`<div style="color:#666">· no mismatches <span style="color:#666;float:right">0 games</span></div>`);
+  _sc_lines.push(`<div style="color:#8888aa">· single source <span style="color:#999;float:right">${_sc_tally.single} games</span></div>`);
+  // List specific mismatches inline (max 3, then "+ N more")
+  if (_sc_mismatches.length) {
+    const _sc_show = _sc_mismatches.slice(0, 3);
+    for (const m of _sc_show) {
+      const [hn, an] = m.key.split('|');
+      _sc_lines.push(`<div style="color:#ff9b6b;font-size:.55rem;margin-left:.5rem">⚠ ${an} @ ${hn} · espn:${m.espn.awayScore}-${m.espn.homeScore} · apisports:${m.apisports.awayScore}-${m.apisports.homeScore}</div>`);
+    }
+    if (_sc_mismatches.length > 3)
+      _sc_lines.push(`<div style="color:#888;font-size:.55rem;margin-left:.5rem">+ ${_sc_mismatches.length - 3} more</div>`);
+  }
+  const _sc_label = _sc_total === 0 ? `<span style="color:#666;font-weight:400;font-size:.55rem"> · no live scores</span>` : '';
+  rows.push(`<div id="fhp-score-confidence" style="margin-top:.4rem">
+    <div style="color:#c9a84c;font-size:.6rem;font-weight:700;margin-bottom:.25rem">
+      🎯 Score Confidence${_sc_label}
+    </div>
+    <div style="color:#8888aa;font-size:.58rem">${_sc_lines.join('')}</div>
+  </div>`);
+
   // ── Relay/CI status (async — populated after panel renders) ─────────────
   // Was 'MCP RELAY' (called auth-gated /mcp tools). Now reads CI + smoke
   // directly from public GitHub API — same data, no auth surface in client.
@@ -16642,7 +16691,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-02n';
+  const SW_VERSION = '2026-06-02o';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
