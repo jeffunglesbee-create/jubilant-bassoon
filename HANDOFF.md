@@ -101,11 +101,31 @@ Five single-concern commits pushed after each (NOT batched at end — lesson fro
 
 ## NEXT SESSION P1 IMMEDIATE
 
-**Watch tonight's SCF G1 brief regeneration + tomorrow's NBA Finals G1.** PM-18 Items A-F + PM-19 Journalism Tab v1 are all live.
+**PM-20 LEAD-OFF — Source-Tagged Score Store + Confidence Layer** (~60-90 min)
 
-**Scope deferred but ready (NOT in v1):**
-- **Schedule view collapse** (corollary to Journalism Tab, ~30 min): remove card-top J2 brief, gate card-inline FIELD SERIES BRIEF to CF/Finals only. The TYPE D rec listed this — recovery doc deliberately scoped Journalism Tab v1 as additive. Recommended for PM-20 once production exposure confirms the journalism-tab → schedule-collapse migration is safe.
+Drive spec: `15c5euHkvuFnrF63my0rsNJ6QVkjHN06TdphwoYt1_gU` (PM-20 Lead-off Brief).
+
+Origin: PM-19 (June 2) tonight's verification investigation. Jeff asked "Do we get live scores from our various Api-sports.io integrations?" — yes, for NBA/NHL/MLB/WNBA/MLS (per `FIELD_V2_SOURCES` line 11794) via `fetchV2Games` → `field-relay-nba /v2/games` → API-Sports backend. RUWT-verified shapes in Drive `1MxS6vq-w6v4AhYKBis37I6spp5npaW7xC82b-byAuB4` (May 29).
+
+The architectural gap: both ESPN and API-Sports (V2) write into the **same** `espnScores[key]` store with last-writer-wins, no source attribution (lines 9922 ESPN writer, 12067-12068 V2 writer into ESPN store). Two independent witnesses silently merged. Cross-source verification is structurally impossible despite both sources polling tonight's same games.
+
+The fix is mostly a rename + restructure + UI surface, not a build:
+1. Source-tagged store `_scoresBySource[key] = { espn:{...}, apisports:{...} }`
+2. `findScore(g)` returns confidence-aware view (verified/mismatch/single)
+3. `findESPNScore(g)` becomes a thin shape-compat wrapper
+4. ESPN + V2 writers each write to their own keyed slot (parallel writes during migration; espnScores stays populated for safety)
+5. FIELD Health panel "Score Confidence" row with verified/mismatch/single tallies + mismatch detail
+6. Card-time slot gains a subtle confidence glyph (✓ verified · no badge single · ⚠ mismatch)
+
+Migration: 5 commits, ~60 min, smoke +5 (388 → 393), SW first-of-day bump `l`. Backwards-compatible via wrapper — 15+ existing `findESPNScore` call sites unchanged. Zero new external deps, zero relay changes, zero new auth surface. Full design + step-by-step in the Drive doc.
+
+The verification capability is **dormant in the codebase tonight** — emerges on deploy.
+
+**Scope deferred but ready (NOT in PM-20 lead-off):**
+- **Schedule view collapse** (corollary to Journalism Tab, ~30 min): remove card-top J2 brief, gate card-inline FIELD SERIES BRIEF to CF/Finals only.
 - **Phase 2 progressive disclosure** (~2-3 hr): J3 visible 6h+ pregame, J2 visible 2-6h, J1 visible <2h. Time-aware visibility for the layered hierarchy.
+- **Team-order canonicalization** in tickers (small Rule 7 follow-up to PM-20 lead-off): always Away–Home, never leader-first reorder. Observed flip in screenshots tonight (9:32 PM "Astros 4-2 Pirates" → 9:56 PM "Pirates 6-4 Astros" same game, team order switched as lead changed).
+- **Score history + monotonic anomaly detection** (~45 min, PM-20 follow-on after lead-off lands): catches stale-data and attribution-flip beyond what cross-source agreement catches.
 
 **P1 carry-forward from PM-16/17/18:**
 - Wire NHL play-by-play relay route (~45 min) — activates Tier A #3 Penalty Drift + unlocks Tier B #5 Goalie Hot Hand
