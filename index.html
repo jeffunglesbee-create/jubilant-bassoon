@@ -2939,6 +2939,19 @@ body.journalism-mode #field-journalism-section{animation:jrnFadeIn 220ms ease-ou
 // ═══════════════════════════════════════════════════════════════
 let FIELD_DEBUG = localStorage.getItem('FIELD_DEBUG') === '1';
 
+// ── ?wpt test mode bypass (PM-26-A · Rule 54) ────────────────────────────────
+// Skips the first-visit My Services modal for automated perf measurement
+// (WebPageTest, Lighthouse, Playwright, Layer 2 review). Only marks
+// field_setup_done if not already set — never clobbers real user state.
+// In private mode / no localStorage: silently no-op, modal shows as normal.
+try {
+  if (new URLSearchParams(location.search).has('wpt')) {
+    if (!localStorage.getItem('field_setup_done')) {
+      localStorage.setItem('field_setup_done', '1');
+    }
+  }
+} catch(e) { /* private mode — bypass disabled, modal will show as normal */ }
+
 // ── Runtime error capture (Rule 18 — field_browser.test.js reads this) ──────
 // window._fieldErrors collects errors from critical path functions.
 // Read by: Playwright browser test, ?debug=1 panel, Night Owl diagnostics.
@@ -16764,7 +16777,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-03g';
+  const SW_VERSION = '2026-06-03h';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)

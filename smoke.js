@@ -2493,6 +2493,33 @@ assert('A405 — P5: anticipatory pre-fetch (startup polish bundle)',
   'On-device behavioral inference for proactive cache warming. Every page open increments a 24-bucket hour-of-day histogram in localStorage (field-open-hist). predictNextOpenHour takes the median of the top-3 buckets — median over mean smooths against single outlier opens. registerAnticipatoryPrefetch attempts navigator.serviceWorker.registration.periodicSync.register("field-prewarm", {minInterval: 24hr}); feature-detect ("periodicSync" in reg) makes the call a graceful no-op on Safari/Firefox/desktops where periodicBackgroundSync is unsupported. Permission state is queried before register to avoid prompt spam. The SW listens for periodicsync events with tag "field-prewarm" and calls prefetchScheduleData() (reused from P4) when fired. Patent angle (per startup polish spec): the histogram never leaves the device, no profile is built, no third party sees the pattern — this is the "on your side of the screen" framing made literal. STANDARDS Rule 50 candidate (on-device-only histograms) is noted in the carry-forward but NOT codified in this commit; that lands separately when STANDARDS is edited before the USPTO filing.');
 
 
+assert('A409 — PM-26-A: ?wpt test mode parsing exists in bootstrap',
+  // URLSearchParams check on location.search with .has('wpt')
+  /new URLSearchParams\(location\.search\)\.has\(['"]wpt['"]\)/.test(html) &&
+  // PM-26-A rationale comment present so future readers know why this exists
+  html.includes('?wpt test mode bypass (PM-26-A'),
+  'PM-26-A test mode bypass entry point. URL parameter ?wpt enables automated perf measurement (WebPageTest, Lighthouse, Playwright, Layer 2 review) to skip the first-visit My Services modal and measure the configured-state app. Without this, every visual perf metric (LCP, CLS, SI, visualComplete*) measures the modal instead of the schedule render. Rule 54 codifies the safety boundary: bypass is limited to skipping onboarding via field_setup_done; cannot affect rate limits, journalism budget, paid features, or sensitive state.');
+
+
+assert('A410 — PM-26-A: ?wpt setup_done write is guarded against clobber',
+  // The setItem must be preceded by a !localStorage.getItem guard for the same key
+  html.includes("if (!localStorage.getItem('field_setup_done')) {") &&
+  html.includes("localStorage.setItem('field_setup_done', '1');") &&
+  // The whole bypass block must be inside a try/catch so private mode degrades gracefully.
+  // Look for the rationale comment + the catch tail of the same block.
+  html.includes('?wpt test mode bypass (PM-26-A') &&
+  /\}\s*catch\(e\)\s*\{\s*\/\*\s*private mode/.test(html),
+  'PM-26-A bypass safety guarantee. The ?wpt URL param sets field_setup_done only if it is currently unset, so a real user who lands on a ?wpt URL by accident keeps any existing configuration intact. The whole block is wrapped in try/catch so private-mode browsers (where localStorage throws) silently degrade to showing the modal as normal rather than throwing a runtime error that would block page boot. Rule 54 requires idempotence and graceful degradation for all test-mode URL params.');
+
+
+assert('A411 — PM-26-A: maybeShowSetup trigger reads field_setup_done (not regressed)',
+  // The existing first-visit modal trigger must still check field_setup_done
+  // for the ?wpt bypass to work. If this regresses to checking something else,
+  // the bypass silently breaks.
+  /function maybeShowSetup\(\)\s*\{\s*\n\s*if\s*\(\s*!localStorage\.getItem\(["']field_setup_done["']\)\s*\)\s*openSetup\(\)/.test(html),
+  'PM-26-A regression guard. The ?wpt bypass works by pre-marking field_setup_done in localStorage, then relying on maybeShowSetup() to honor that flag. If maybeShowSetup is refactored to check a different key or condition without updating the bypass, automated perf tests would silently start measuring the modal again. This assertion locks the contract: maybeShowSetup must check field_setup_done. If you intentionally change the modal trigger logic, also update the ?wpt bypass (PM-26-A block) and this assertion together.');
+
+
 // ═════════════════════════════════════════════════════════════════════
 // GATE — all assertions above must pass before deploy proceeds.
 // PM-7: relocated here from line ~1047. Previously A245-A368 ran but

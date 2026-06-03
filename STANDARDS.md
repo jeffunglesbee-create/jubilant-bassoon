@@ -2843,3 +2843,49 @@ and always preferred over a fabricated answer. When Claude does say
 "I don't know," it should also state what would resolve the uncertainty
 (a search, a doc read, a question to the user) so the conversation
 has a path forward.
+
+
+## Rule 54 — URL-param test affordances (TEST-MODE-A)
+
+**Query parameters used for test mode are limited to skipping onboarding and pre-filling demo state. They MUST NOT enable read/write of sensitive state, bypass rate limits, affect journalism budget tracking, or unlock paid features.**
+
+Background: PM-26 WPT analysis (June 3 2026) discovered that every automated perf measurement since My Services launched had been measuring the onboarding modal, not the configured-state app. LCP "DIV with text" was almost certainly modal copy; CLS 0.225–0.268 straddle was modal animation. The PM-25 startup polish bundle's claimed perf gains had no empirical validation against the surface it was designed for.
+
+PM-26-A introduced `?wpt` URL param that pre-marks `field_setup_done` in localStorage if not already set, skipping the modal so WPT/Lighthouse/Playwright/Layer 2 review measure the configured-user steady-state.
+
+### What `?wpt` is permitted to do
+
+  - Pre-mark `field_setup_done` in localStorage (idempotent — only if unset)
+  - Future: pre-fill `field_my_services` with documented demo defaults if needed
+    for a specific measurement scenario (NOT shipped in PM-26-A; would require
+    its own commit with explicit defaults documented here)
+
+### What `?wpt` (and any future test-mode params) MUST NOT do
+
+  - Bypass relay rate limits or journalism budget caps
+  - Set or read sensitive state (push subscriptions, payment, location)
+  - Unlock paid features or hidden tiers
+  - Disable smoke/safety checks
+  - Affect Drama Dial or any patent-defended personalization layer
+  - Inject mock data into espnScores, drama arcs, or journalism cache
+    (mocking is for unit tests via field_unit.js, not via URL params)
+
+### Production safety
+
+If a real user lands on a `?wpt` URL by accident (e.g., shared link), they get `field_setup_done = '1'` and skip onboarding with no services configured. The schedule still renders correctly with default broadcast resolution; the user can configure services later via the settings button. No data loss, no broken state.
+
+### Future test affordances
+
+Any new URL-param test feature must:
+  1. Be added under this rule as a sub-bullet documenting what it does
+  2. Pass the "what if a real user lands on this URL" thought experiment
+  3. Be idempotent (no clobber of real user state)
+  4. Have a corresponding smoke assertion verifying its presence + safety
+
+Forbidden param names (would conflict with debug/diagnostic or be confusing): `?debug` (existing diagnostic panel), `?test`, `?mock`, `?admin`, `?dev`.
+
+### Smoke enforcement
+
+A409 verifies the `?wpt` parsing exists in bootstrap.
+A410 verifies the localStorage write is guarded against clobber.
+A411 verifies the existing modal trigger (`maybeShowSetup` reading `field_setup_done`) is intact — bypass works because of that check, so it must not regress.
