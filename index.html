@@ -2817,7 +2817,7 @@ body.journalism-mode #field-journalism-section{animation:jrnFadeIn 220ms ease-ou
      #field-brief and #night-owl are sibling sections, both in the left pane. -->
 <div id="night-owl" style="display:none" aria-hidden="true"></div>
   <div id="freshness-strip" class="freshness-strip" aria-live="polite"><span>Refreshed <span id="freshness-age">—</span> ago</span><span class="freshness-update">Updating…</span></div>
-<main class="main" id="main"><div class="skeleton-set" aria-hidden="true"><div class="game-card-skeleton"></div><div class="game-card-skeleton"></div><div class="game-card-skeleton"></div></div></main>
+<main class="main" id="main"><div class="skeleton-set" aria-hidden="true"><div class="game-card-skeleton" data-lcp-anchor="1"></div><div class="game-card-skeleton"></div><div class="game-card-skeleton"></div></div></main>
 <!-- ── iPad Ambient Panel (820–1199px couch mode) ───────────────────── -->
 <aside id="ambient-panel" aria-live="polite" aria-label="Live intelligence panel"><div class="ambient-skeleton" aria-hidden="true"><div class="ambient-skeleton-label">Live Intelligence</div><div class="ambient-skeleton-block"></div></div></aside>
 
@@ -7478,6 +7478,96 @@ function scheduleRenderAll(){
   _renderAllPending = setTimeout(()=>{ _renderAllPending=null; renderAll(); renderESPNScores(); }, 150);
 }
 
+// ── PM-26-C5 (June 3 2026) ───────────────────────────────────────────────
+// applyMainHTML replaces main.innerHTML in a way that preserves the DOM
+// identity of the first .game-card across the skeleton→real transition.
+//
+// THE PROBLEM
+// WPT June 3 2026 at laptop viewport (1366×681, Chrome LAN and Edge Cable)
+// deterministically reported LCP NodeType=None across 3-run measurements.
+// NodeType=None means the element the browser identified as the LCP candidate
+// was no longer in the DOM at the time LCP was finalized. The candidate is
+// a skeleton card (first paint, largest above-fold), and main.innerHTML=...
+// in renderAll detaches it.
+//
+// THE APPROACH
+// The first skeleton in the initial HTML carries the data-lcp-anchor marker. On
+// every main-HTML replacement, this helper:
+//   1. Builds new HTML in a detached <div>
+//   2. Locates the existing anchor element in main
+//   3. Locates the first real .game-card in the new content
+//   4. Morphs the anchor's class/attributes/innerHTML to match firstNewCard
+//   5. Uses firstNewCard.replaceWith(anchor) to atomically swap them in tmp
+//   6. Calls main.replaceChildren(...tmp.children) to commit the swap
+//
+// The anchor element's identity is preserved across the swap. Browser's LCP
+// tracking sees the SAME element across the transition — its NodeType should
+// be valid (DIV) instead of None.
+//
+// EDGE CASES
+// - Empty state (no .game-card in new HTML): falls back to main.innerHTML=html.
+//   Empty state has no LCP candidate to preserve, so this is fine.
+// - Anchor missing (subsequent renderAll calls after first morph could lose
+//   the data-lcp-anchor attribute if a prior morph stripped it): falls back
+//   to innerHTML=. We preserve the anchor attribute through the morph so
+//   subsequent calls still find it.
+// - Multiple renderAll calls before LCP finalizes: anchor stays as the same
+//   DOM node across all of them; its content updates each time.
+//
+// PATENT RELEVANCE
+// Defends perceived-perf and consumer-aligned-hydration claims by
+// eliminating the LCP-detachment timing bug that made laptop-viewport LCP
+// measurements artifactually worse than they should be. Independent of the
+// CLS work in C1/C2/C6.
+function applyMainHTML(html){
+  const main = document.getElementById('main');
+  if (!main) return;
+  if (!html || !html.trim()) {
+    main.innerHTML = '';
+    return;
+  }
+  const tmp = document.createElement('div');
+  tmp.innerHTML = html;
+  const anchor = main.querySelector('[data-lcp-anchor]');
+  const firstNewCard = tmp.querySelector('.game-card');
+  if (anchor && firstNewCard) {
+    try {
+      // Morph the anchor to match firstNewCard, then swap them.
+      // Preserve data-lcp-anchor through all subsequent morph cycles.
+      anchor.className = firstNewCard.className;
+      const newAttrs = Array.from(firstNewCard.attributes);
+      // Remove attributes from anchor that aren't in firstNewCard
+      // (except data-lcp-anchor, which we preserve).
+      Array.from(anchor.attributes).forEach(attr => {
+        if (attr.name === 'data-lcp-anchor') return;
+        if (attr.name === 'class') return;
+        if (!firstNewCard.hasAttribute(attr.name)) anchor.removeAttribute(attr.name);
+      });
+      // Copy attributes from firstNewCard to anchor.
+      newAttrs.forEach(attr => {
+        if (attr.name === 'class') return; // already set
+        anchor.setAttribute(attr.name, attr.value);
+      });
+      anchor.innerHTML = firstNewCard.innerHTML;
+      // Atomic swap in tmp: anchor moves from main to tmp (replacing firstNewCard).
+      firstNewCard.replaceWith(anchor);
+    } catch(e) {
+      // Defensive: if morph fails for any reason, fall back to plain innerHTML.
+      main.innerHTML = html;
+      return;
+    }
+  }
+  // Commit: replace main's children with tmp's children. If the morph above
+  // succeeded, the morphed anchor is among tmp's children; if not, plain new
+  // elements are.
+  try {
+    main.replaceChildren(...tmp.children);
+  } catch(e) {
+    // Defensive: extremely old browsers without replaceChildren — fall back.
+    main.innerHTML = html;
+  }
+}
+
 function renderAll(){
   if(!allData) return;
   const main=document.getElementById("main");
@@ -7534,7 +7624,10 @@ function renderAll(){
       : visible;
   if(!filtered.length||filtered.every(s=>!(s.games||[]).length)){ main.innerHTML='<div class="empty-note">No '+(freeOnlyFilter?"free ":"")+'events found for this filter</div>'; return; }
   // J3 FIELD Brief supersedes Tonight Summary Card — rendered in #field-brief above main
-  main.innerHTML=filtered.map((sec,si)=>{
+  // PM-26-C5: build HTML string, then call applyMainHTML to preserve LCP
+  // anchor identity across the skeleton→real transition. See applyMainHTML
+  // comment block for the LCP NodeType=None root cause.
+  const _renderAllHTML = filtered.map((sec,si)=>{
     const games=sec.games||[];
     if(!games.length) return "";
     const icon=SPORT_ICONS[sec.sport]||SPORT_ICONS.default;
@@ -7595,6 +7688,7 @@ function renderAll(){
       <div class="games-list">${cards}</div>
     </div>`;
   }).filter(Boolean).join("");
+  applyMainHTML(_renderAllHTML);
   if(!main.innerHTML.trim()) main.innerHTML='<div class="empty-note">No events found for today</div>';
   // ── Working Class: The Skim — render one-sentence verdict ──
   const _skimEl=document.getElementById('the-skim');
@@ -16809,7 +16903,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-03l';
+  const SW_VERSION = '2026-06-03m';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -26563,7 +26657,7 @@ async function restoreSnapshot(){
     const main    = document.getElementById('main');
     const filters = document.getElementById('sport-filters');
     const ambient = document.getElementById('ambient-panel');
-    if (main    && snap.mainHTML)    main.innerHTML    = snap.mainHTML;
+    if (main    && snap.mainHTML)    applyMainHTML(snap.mainHTML);   // PM-26-C5: preserve LCP anchor across snapshot restore
     if (filters && snap.filtersHTML) filters.innerHTML = snap.filtersHTML;
     if (ambient && snap.ambientHTML) ambient.innerHTML = snap.ambientHTML;
     showFreshnessStrip(ageMin);

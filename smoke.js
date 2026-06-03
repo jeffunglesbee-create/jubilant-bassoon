@@ -2591,6 +2591,40 @@ assert('A415 — PM-26-C2: live cards pre-reserve grid-row 2 for score-wrap arri
   'PM-26-C2 fix. Game cards use CSS grid with grid-template-rows:auto auto auto. The .score-wrap element sits at grid-row:2 column:2 (desktop) or grid-row:2 (mobile). When score-wrap is display:none, row 2 collapses to 0 height. When ESPN scores arrive and the parent gets .espn-live or .espn-final class, the CSS rule .game-card.espn-live .score-wrap{display:block} fires — score-wrap occupies row 2, which expands from 0 to ~24px, growing the card height and shifting all subsequent cards. Fix: pre-reserve row 2 at minmax(1.5rem, auto) ONLY on cards already rendered as live/final. Non-live cards keep auto auto auto (no permanent space cost). When score-wrap arrives in a pre-reserved row, the slot already exists — minimal or no layout shift. Rare pre-game→live transitions mid-load are still subject to the shift, but for the bulk of live cards (which are the majority of live state during cold load), the reservation eliminates the shift from initial paint onward. Both desktop and mobile (max-width:600px) rules added; pre-game cards unaffected.');
 
 
+assert('A416 — PM-26-C5: LCP anchor preserved across main.innerHTML transitions (skeleton morph)',
+  // INITIAL HTML: the first .game-card-skeleton in #main must carry the
+  // data-lcp-anchor="1" marker. This is the element whose DOM identity is
+  // preserved across the skeleton→real transition by applyMainHTML.
+  /<div class="game-card-skeleton" data-lcp-anchor="1"><\/div>/.test(html) &&
+  // The marker should only be on the FIRST skeleton, not subsequent ones.
+  // Count HTML-attribute occurrences (followed by `>` or `/>` or whitespace+attribute)
+  // — must be exactly 1. We exclude documentation comments that mention the literal.
+  (html.match(/data-lcp-anchor="1"(?=[>\s/])/g) || []).length === 1 &&
+  // HELPER FUNCTION: applyMainHTML must be defined and use the morph pattern.
+  /function applyMainHTML\(html\)\{/.test(html) &&
+  // The helper must locate the existing anchor via querySelector
+  /main\.querySelector\(['"]?\[data-lcp-anchor\]['"]?\)/.test(html) &&
+  // The helper must locate firstNewCard via querySelector in tmp
+  /tmp\.querySelector\(['"]?\.game-card['"]?\)/.test(html) &&
+  // The helper must use replaceWith to swap anchor into tmp (atomic swap)
+  /firstNewCard\.replaceWith\(anchor\)/.test(html) &&
+  // The helper must commit via replaceChildren (DOM-preserving, not innerHTML stomp)
+  /main\.replaceChildren\(\.\.\.tmp\.children\)/.test(html) &&
+  // CALL SITES: renderAll must invoke applyMainHTML (not direct innerHTML
+  // assignment) for its main schedule render. The OLD pattern
+  // main.innerHTML=filtered.map... must be gone; the NEW pattern
+  // const _renderAllHTML = filtered.map... + applyMainHTML(_renderAllHTML)
+  // must be present.
+  !/main\.innerHTML=filtered\.map\(/.test(html) &&
+  /const _renderAllHTML\s*=\s*filtered\.map\(/.test(html) &&
+  /applyMainHTML\(_renderAllHTML\)/.test(html) &&
+  // Snapshot restore must also use applyMainHTML so the anchor is preserved
+  // across the snapshot→fresh-render transition on 2nd+ visits.
+  /applyMainHTML\(snap\.mainHTML\)/.test(html) &&
+  !/main\s*&&\s*snap\.mainHTML\)\s*main\.innerHTML\s*=\s*snap\.mainHTML/.test(html),
+  'PM-26-C5 fix. WPT June 3 2026 at laptop viewport (1366×681, both Chrome LAN and Edge Cable, 3-run measurements each) reported LCP NodeType=None deterministically. NodeType=None means the element the browser identified as the LCP candidate was no longer in the DOM at LCP finalization time. Root cause: the first skeleton card (largest above-the-fold block at first paint) gets picked as LCP candidate, then renderAll calls main.innerHTML=newHTML which detaches all skeleton elements. The candidate is gone, LCP reports NodeType=None. Fix: preserve the DOM identity of the first skeleton across the innerHTML replacement. (1) First skeleton in initial HTML carries data-lcp-anchor="1". (2) New applyMainHTML(html) helper builds new HTML in a detached div, locates the existing anchor in main and the first .game-card in the new content, morphs the anchor (className + attributes + innerHTML) to match firstNewCard, then uses firstNewCard.replaceWith(anchor) to atomically swap them in the detached tree, finally commits via main.replaceChildren(...tmp.children). The anchor node identity is preserved; browser LCP tracking sees the same element across the skeleton→real transition. (3) Both renderAll (main schedule render) and restoreSnapshot (2nd-visit cached HTML restore) use applyMainHTML so the anchor survives both transitions. Defensive fallbacks: empty HTML, missing anchor, missing first card, replaceChildren unavailable — all fall through to plain main.innerHTML=html. Patent relevance: directly defends perceived-perf claims by eliminating LCP measurement artifact at laptop viewport.');
+
+
 // ═════════════════════════════════════════════════════════════════════
 // GATE — all assertions above must pass before deploy proceeds.
 // PM-7: relocated here from line ~1047. Previously A245-A368 ran but
