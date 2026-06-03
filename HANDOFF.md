@@ -1,44 +1,45 @@
-# FIELD Handoff — June 3 2026 (PM-26-C P1 close: three CLS fixes shipped)
+# FIELD Handoff — June 3 2026 (PM-26-C5 close: LCP anchor preservation shipped)
 
-**jubilant-bassoon HEAD:** `bd855cc` (PM-26-C2: pre-reserve grid-row 2 on live cards) · Smoke: **408/0** · SW_VERSION `2026-06-03l`
+**jubilant-bassoon HEAD:** `f94e948` (PM-26-C5: preserve LCP anchor DOM identity across innerHTML transitions) · Smoke: **409/0** · SW_VERSION `2026-06-03m`
 **field-relay-nba HEAD:** `5608845` (unchanged)
-**Session arc:** PM-26-C TYPE A — three single-concern CLS fixes shipped (C6 + C1 + C2), each smoke-gated, each SW_VERSION-bumped. C5 (skeleton morph) deferred to its own session.
+**Session arc:** PM-26-C5 TYPE A — sole P1 item from the earlier PM-26-C deferral. Shipped within one focused session after explicit user re-prompt overriding my deferral recommendation. PM-26-C P1 set (C6 + C1 + C2 + C5) is now complete for the calendar day.
 
 ---
 
 ## WHAT SHIPPED THIS SESSION
 
-Three commits, four smoke assertions added, SW_VERSION sequence i → j → k → l.
+**`f94e948` — PM-26-C5: preserve LCP anchor DOM identity across `main.innerHTML` transitions** · SW_VERSION `m` · A416
 
-**`afea15b` — PM-26-C6: remove `:has()` grid collapse at laptop viewport** · SW_VERSION `j` · A413
+WPT June 3 2026 at laptop viewport (1366×681, both Chrome LAN and Edge Cable, 3-run measurements) reported LCP NodeType=None deterministically. The first skeleton card was getting picked as the LCP candidate at first paint; then renderAll's `main.innerHTML = newHTML` detached it, leaving the candidate gone from the DOM at LCP finalization → NodeType=None.
 
-Audit identified `.games-list:not(:has(.game-card ~ .game-card)):not(:has(.game-brief-pair ~ .game-brief-pair)){grid-template-columns:minmax(320px,640px)}` as the dominant CLS contributor at the laptop viewport bucket (1200–1439 px). When a sport section had exactly one card, grid collapsed to single-column 640px max; when a second card arrived (late game-add, brief-pair injection), `:has()` stopped matching and grid reflowed to `repeat(2, minmax(320px, 1fr))` — every card in that section shifted simultaneously. WPT showed this firing across 5–8 sport sections per cold load = 10–16 full-grid reflows per cold load. Fix: deleted the `:has()` rule entirely. Solo cards now sit in column 1, column 2 empty until another card arrives; new card slots into column 2 with zero movement of card 1.
+Fix: three-part DOM identity preservation.
 
-**`b363aa8` — PM-26-C1: reserve freshness strip slot via min-height + visibility** · SW_VERSION `k` · A414
+1. **Initial HTML.** First `.game-card-skeleton` in `#main` now carries `data-lcp-anchor="1"`. This element's DOM identity will be preserved across every main.innerHTML replacement.
 
-Freshness strip toggled via inline `style.display = 'none' → '' → 'none'`, causing layout shift twice per snapshot-restore-then-fetch sequence (once on appear, once on fade-out after 2s). Fix: always reserve 1.6rem slot via `min-height + visibility:hidden + opacity:0` default; `.is-visible` class flips to `visibility:visible + opacity:1` with the existing `transition:opacity .4s ease` giving smooth fade. JS uses `classList.add/remove('is-visible')` instead of `style.display`. Aria-live=polite preserved.
+2. **New helper `applyMainHTML(html)`.** Inserted just before renderAll. Builds new HTML in a detached div, locates the existing anchor in main and the first `.game-card` in the new content, morphs the anchor's className + attributes + innerHTML to match firstNewCard (preserving `data-lcp-anchor` through all subsequent morph cycles), uses `firstNewCard.replaceWith(anchor)` to atomically swap them in the detached tree, then commits via `main.replaceChildren(...tmp.children)`. The anchor's DOM node identity persists across the transition — browser's LCP tracking sees the same element throughout.
 
-**`bd855cc` — PM-26-C2: pre-reserve grid-row 2 on live cards for score-wrap arrival** · SW_VERSION `l` · A415
+3. **Call sites.** Both renderAll (the main schedule render) AND restoreSnapshot (snapshot HTML restore on 2nd+ visits) now use applyMainHTML. Both transitions matter — snapshot restore happens before renderAll on repeat visits, and would detach the anchor first if not preserved there.
 
-Game cards use `grid-template-rows:auto auto auto`. The `.score-wrap` element sits at grid-row:2. When `display:none` (default), row 2 collapses to 0; when `display:block` (after `.espn-live` class), row 2 expands to ~24px → card grows → all subsequent cards shift. Fix: add `.game-card.espn-live, .game-card.espn-final {grid-template-rows: auto minmax(1.5rem, auto) auto}` for both desktop and mobile (max-width:600px) cascades. Live cards reserve row 2 from initial paint; pre-game cards keep `auto auto auto` (no permanent space cost). Rare pre-game→live mid-load still shifts one card, but bulk of live cards on any cold load are already-live at render time.
+Defensive fallbacks: empty HTML, missing anchor, missing first card, replaceChildren unavailable, or any unexpected exception during morph — all fall through to plain `main.innerHTML = html`. Keeps the helper from breaking renderAll in edge cases.
 
----
+Trade-off: brief detachment during `firstNewCard.replaceWith(anchor)` — anchor is momentarily off-document between detach-from-main and attach-to-tmp. In practice browsers handle microtask detach-reattach gracefully. If NodeType=None persists post-deploy, next investigation is whether some browsers reset LCP candidate tracking on any detachment regardless of duration.
 
-## C5 DEFERRED TO DEDICATED SESSION
-
-**PM-26-C5 (skeleton morph instead of replace)** is the only remaining P1 sub-item and is the single highest-leverage architectural fix (per WPT June 3 evidence: LCP NodeType=None deterministically at laptop viewport, across two browsers and two networks). Deferred because:
-
-1. **Scope.** Skeletons (`.game-card-skeleton`, 88px placeholder divs at line 2820) are structurally different from real `.game-card` elements (complex CSS-grid with body/right/score regions). True morphing requires either making skeletons render with `.game-card` selectors (so JS can populate content in-place) OR rewriting renderAll to mutate existing DOM rather than stomp `main.innerHTML`. Both are 2–3 hours of careful work with multiple smoke iterations for edge cases (skeleton count ≠ game count, mid-load schedule changes, snapshot restore vs cold paint divergence).
-2. **Risk management.** Better to measure C6/C1/C2 against WPT before stacking more changes — variance budget evidence from earlier in the day shows we need to be deliberate about isolating each fix's effect.
-3. **Calendar.** USPTO ~June 25 is ~3 weeks out. C5 can land in a dedicated session this week without missing the patent-filing window.
-
-C5 spec carried forward unchanged. C5 is the next P1 item for the following session.
+Node `--check` on inline script bundle passes (no JS syntax errors introduced).
 
 ---
 
-## SW_VERSION SEQUENCE TODAY (one calendar day)
+## PM-26-C P1 SET — DAY SUMMARY
 
-`g` (PM-25 close, last night) → `h` (PM-26-A) → `i` (PM-26-B) → `j` (PM-26-C6) → `k` (PM-26-C1) → `l` (PM-26-C2). Six suffixes today. Suffix `l` is current.
+Four single-concern commits in one calendar day, all smoke-gated, all deployed.
+
+- **`afea15b` (PM-26-C6)** — removed `:has()` grid collapse · primary laptop-viewport CLS source · SW `j` · A413
+- **`b363aa8` (PM-26-C1)** — freshness strip slot reserved · removes display-thrash CLS · SW `k` · A414
+- **`bd855cc` (PM-26-C2)** — live cards pre-reserve grid-row 2 · score-wrap arrival shift eliminated · SW `l` · A415
+- **`f94e948` (PM-26-C5)** — LCP anchor DOM identity preserved · NodeType=None artifact addressed · SW `m` · A416
+
+SW_VERSION sequence today (June 3): `g` → `h` (PM-26-A) → `i` (PM-26-B) → `j` → `k` → `l` → `m`. Seven suffixes across one calendar day. Suffix `m` is current.
+
+Smoke baseline progression: 405 → 406 → 407 → 408 → 409. Each commit added exactly one assertion locked to its specific fix pattern.
 
 ---
 
@@ -46,17 +47,21 @@ C5 spec carried forward unchanged. C5 is the next P1 item for the following sess
 
 **P1 next session:**
 
-- **WPT multi-run measurement bundle to confirm C6/C1/C2 impact.** Run `runs=3, fvonly=false` against `/?wpt` at three viewports: mobile portrait (≤600 px, Moto G4 or iPhone 12 throttle profile), iPad (1024), laptop (1366). 9 first-view + 9 repeat-view measurements. C6 specifically should show median CLS at 1366 dropping from 0.701 toward ≤0.25 (out of Poor) or ≤0.10 (Good). C1 effect visible on the snapshot-restore (repeat-view) path only. C2 effect visible during windows with live games (NBA Finals G2 tomorrow night, MLB ongoing).
-- **PM-26-C5 (skeleton morph instead of replace) — dedicated session.** Strongest patent-defense fix remaining; LCP NodeType=None deterministic at laptop viewport confirmed across Chrome/LAN/laptop and Edge/Cable/laptop. Estimated 2–3 hours with smoke iteration for edge cases. Approach options to evaluate at session start: (A) skeletons rendered as `.game-card[data-skeleton="1"]` with same selectors, JS populates in-place; (B) renderAll rewritten to DOM-diff against existing children instead of stomping innerHTML; (C) hybrid where first N cards morph and rest are appended.
-- **PM-26-D — Wikimedia Pageviews relay-side aggregator** (~75 min, two commits). Note from June 3 testing: Wikimedia 429 count varies wildly across runs (51 → 19 → 1 → 5 → 49) due to per-IP rate-limit window state and WPT agent IP cycling — the bug exists but is hard to demonstrate empirically. Architectural fix (relay-side daily aggregator + KV cache) still correct regardless.
-- **PM-26 Verification pass** with the post-C6/C1/C2 baseline. Now that the visible-perf laptop-bucket bug is gone, the six-viewport verification matrix has a coherent baseline to compare against.
-- **STANDARDS Rule 50 candidate** — still pending. Codify "on-device-only histograms / no profile-building / no ad-tech / no third parties" before USPTO ~June 25.
+- **WPT multi-run verification of the full PM-26-A→C5 stack.** Run `runs=3, fvonly=false` against `/?wpt` at three viewports (mobile portrait, iPad 1024, laptop 1366). Expected signals:
+  - **C6 effect at laptop 1366:** CLS median drops from 0.701 toward ≤0.25 or better
+  - **C5 effect at laptop 1366:** LCP NodeType shifts from None (3/3 runs) to DIV
+  - **C1 effect (snapshot restore path):** repeat-view CLS reduces marginally (strip's display-thrash gone)
+  - **C2 effect (live game windows):** CLS during active sports (NBA Finals, MLB ongoing) reduced
+  - **C3+C4+C7 still outstanding:** any residual CLS at any viewport points to one of these
+- **PM-26-D — Wikimedia Pageviews relay-side aggregator.** Carry-forward from earlier. ~75 min, two commits. Architecturally correct regardless of empirical 429 evidence variance.
+- **STANDARDS Rule 50 — codify on-device-only histograms.** Pre-USPTO governance item. Patent-defense alignment.
+- **PM-24 canonical key verification** during Stanley Cup G2 tomorrow night (June 4 8pm ET ABC).
 
-**P2:**
+**P2 (still PM-26-C series):**
 
-- **PM-26-C3** — Choreographed reveal: confirm `--i` staggered animation uses `opacity + transform`, never `height` / `max-height`. Lower-leverage than other C items per WPT evidence (modal-tainted runs didn't show animation as a shift source). Quick audit + smoke assert.
-- **PM-26-C4** — Ambient cards skeleton placeholders. Not relevant at iPad / laptop viewports (ambient panel only renders at desktop ≥1440 px). Keep on the list for desktop-bucket testing.
-- **PM-26-C7** — Skeleton-to-real height match (investigation: measure actual skeleton vs real card heights, set min-height on skeleton to match expected real card to within ~5%).
+- **PM-26-C3** — Audit choreographed reveal staggered animation. Confirm `--i` animation uses `opacity + transform` exclusively, never `height` / `max-height`. Quick audit + smoke assert. Lower-leverage than C6/C5 per WPT evidence.
+- **PM-26-C4** — Ambient cards skeleton placeholders. Only relevant at desktop ≥1440 px.
+- **PM-26-C7** — Skeleton-to-real height match. Measure actual skeleton (88px) vs typical real card height (~110-130px varies by sport/content). Set skeleton `min-height` closer to expected real card to within ~5%. Mostly addresses any residual height-delta CLS that C5 didn't catch.
 - **PM-26-E** — Dead route audit
 - **PM-26-F** — MLS `/mls/stats/v1/matches` 500
 - **PM-26-G** — NHL `/nhl/v1/*-stats-leaders` 403
@@ -67,7 +72,7 @@ C5 spec carried forward unchanged. C5 is the next P1 item for the following sess
 
 - Cloudflare connector mismatch (PM-15 carry)
 - Probe-outbox cleanup
-- Smoke count tool discrepancy
+- Smoke count tool discrepancy (T1 `get_smoke_count` parser reports lower than actual)
 - Memory edit path-string cleanup
 - P1 storage-budget instrumentation
 
@@ -75,49 +80,51 @@ C5 spec carried forward unchanged. C5 is the next P1 item for the following sess
 
 ## TIER 0 DEADLINES
 
-- **NBA Finals G1 TONIGHT** (June 3 8:30 pm ET ABC) — first live exposure of PM-25 startup polish + PM-26-A/B/C6/C1/C2 stack
+- **NBA Finals G1 TONIGHT** (June 3 8:30 pm ET ABC) — first live exposure of the full PM-25 + PM-26-A through PM-26-C5 stack on live game data
 - **Stanley Cup G2:** June 4 8 pm ET ABC — PM-24 canonical key verification window
 - **World Cup 2026:** June 11 HARD
-- **USPTO provisional:** ~June 25
+- **USPTO provisional:** ~June 25 — patent-relevant work in this session (C6 perceived-perf at laptop viewport, C5 LCP measurement integrity) directly defends consumer-aligned-hydration claims
 
 ---
 
 ## STATE INVARIANTS AT END OF SESSION
 
-- jubilant-bassoon HEAD: `bd855cc` (PM-26-C2 close, rebased onto state update)
-- jubilant-bassoon smoke: **408/0** (was 405; +3 new asserts A413, A414, A415)
-- jubilant-bassoon SW_VERSION: `2026-06-03l` (both sw.js and index.html, A190 in sync)
-- field-relay-nba HEAD: `5608845` (unchanged)
-- STANDARDS.md: unchanged this session (Rule 54 from PM-26-A is current top)
-- T3 memory anchor: updated post-write to current HEAD
+- jubilant-bassoon HEAD: `f94e948` (PM-26-C5 close)
+- jubilant-bassoon smoke: **409/0** (was 408; +1 new assert A416)
+- jubilant-bassoon SW_VERSION: `2026-06-03m` (both sw.js and index.html, A190 in sync)
+- field-relay-nba HEAD: `5608845` (unchanged this session)
+- STANDARDS.md: unchanged (Rule 54 from PM-26-A is still current top)
+- T3 memory anchor: to be updated post-write to `f94e948`
 
 ---
 
 ## TIER 1/2/3 HANDOFF CHANNEL HIERARCHY
 
-**Tier 1 (LIVE — used for this close):** MCP server on field-relay-nba at `/mcp`. Tenth consecutive session-end via T1.
+**Tier 1 (LIVE — used for this close):** MCP server on field-relay-nba at `/mcp`. Eleventh consecutive session-end via T1.
 **Tier 2 (NOT BUILT — correctly deferred).**
-**Tier 3 (LIVE):** userMemories anchor — updated post-write.
+**Tier 3 (LIVE):** userMemories anchor — updated post-write to `f94e948`.
 
 ---
 
 ## SESSION POSTMORTEM
 
-Three single-concern commits in one session, all smoke-gated, all deployed. Workflow held: each commit ≤45 min including investigation, edit, smoke iteration, commit, push, CI watch.
+**Re-prompt interpretation.** User said "Run PM-26-C" after I had just closed the previous session with C6/C1/C2 shipped and C5 explicitly deferred. Interpreted as: "do C5 now in its dedicated session per your own HANDOFF promise." That interpretation matched the apparent intent — user wanted PM-26-C completed, my deferral was overridden, C5 is the remaining P1 item. Declared new SESSION START explicitly to mark the type boundary. This is the right pattern for "user pushes back on deferral with terse directive."
 
-**Push collision on C2.** Mid-session a `[skip ci]` daily-state-update commit landed on origin/main while I was working on C2. Push rejected. Resolved with `git pull --rebase origin main` + push. No code-conflict — just a fast-forward issue. Rebase clean because my C2 commit only touched index.html/sw.js/smoke.js while the state-update commit touched FIELD-CURRENT-STATE.md or similar Drive-export artifact. **Process note for future sessions:** consider fetching origin/main before each new commit's push to catch state-update collisions before push. Roughly 1-min cost per commit; not a strong priority since rebase is trivial.
+**One smoke false-negative caught quickly.** A416's initial regex `(html.match(/data-lcp-anchor="1"/g) || []).length === 1` counted both the actual HTML attribute AND a documentation comment that contained the literal string. Debug pass (writing `_dbg.js` to test each clause individually) located the failure in 30 seconds. Two-part fix: tightened regex to use lookahead `(?=[>\s/])` (matches only when followed by HTML-significant character, not arbitrary text), and edited the comment to use `[data-lcp-anchor]` form instead of `data-lcp-anchor="1"` literal. Lesson re-applied: smoke regexes need to anchor on STRUCTURAL POSITION (within tag, before close) not just literal token presence. This is exactly the A412 lesson from PM-26-B replaying.
 
-**C5 scope realism call.** Decided not to attempt C5 in this session despite it being the only remaining P1 item. The architecture difference between skeletons (placeholder divs) and real cards (complex grid structures) requires either making skeletons structurally compatible OR rewriting renderAll to DOM-diff. Both are 2–3 hour work. Better to ship the three small fixes correctly and measure their effect before stacking the largest fix. This is consistent with the variance-envelope finding from the earlier 4-run analysis: single-run WPT TBT/CLS are too noisy to isolate stacked fix effects without multi-run methodology.
+**Helper function pattern.** applyMainHTML extracted as a separate function (vs inlined in renderAll) for three reasons: (1) reuse across both renderAll and restoreSnapshot call sites without duplication, (2) easier to test/verify in isolation via smoke assertion, (3) explicit comment block at the function header documents the LCP NodeType=None bug for future maintainers who won't have the WPT evidence in front of them. ~80 line comment block is high but worth it; the reasoning chain from "browsers track LCP by what" → "innerHTML stomp detaches" → "morph preserves identity" is non-obvious from the code alone.
 
-**Smoke regex lessons applied.** A414's regex anchored on specific CSS values (`min-height:1\.6rem`, `visibility:hidden`, `opacity:0`, `is-visible{visibility:visible`) and used both presence and absence checks. No false positives this time. A415 used both literal text match for the new selector pattern AND a global occurrence count check (`html.match(...).length >= 2`) to verify the rule was added in both desktop AND mobile blocks. Cleaner pattern than the original A412 negative-name-match.
+**Brief-detachment caveat documented honestly.** The morph approach has a known caveat: `firstNewCard.replaceWith(anchor)` briefly detaches the anchor from any document while moving it from main to tmp. Some browsers may treat any detachment as LCP candidate reset, regardless of duration. If NodeType=None persists after deploy, next investigation step is documented in the commit message. Honest scope-setting beats over-promising.
+
+**Patent-relevance pattern reaffirmed.** Every commit message in the PM-26 series explicitly calls out patent relevance. This session's C5 closes "LCP measurement artifact at laptop viewport that made FIELD's performance look worse than it actually was" — directly defensive language for the USPTO provisional. Combined with C6 (CLS at same viewport) the laptop-bucket story is materially improved.
 
 ---
 
 ## CANONICAL DOC REFS
 
-**PM-26 WPT Spec Set:** `/mnt/user-data/outputs/PM-26_WPT_Spec_Set.md` (transient — should land on Drive)
+**PM-26 WPT Spec Set:** `/mnt/user-data/outputs/PM-26_WPT_Spec_Set.md` (transient; should land on Drive)
 **Startup & Loading Polish spec (PM-25 source):** `1_0WcA2a3UWmFnmTvGmwZVdXiDtw_aSx5mMBlwZbC3FI`
-**CANONICAL BUILD BACKLOG:** `1ugUh6UmeDkLR-gEH8hJPwXK2NiIrXYQY8gp2jO2p2Hk` (PM-26-A/B/C6/C1/C2 complete; PM-26-C5 + C3/C4/C7/D/E-H queued)
+**CANONICAL BUILD BACKLOG:** `1ugUh6UmeDkLR-gEH8hJPwXK2NiIrXYQY8gp2jO2p2Hk` (PM-26-A/B/C6/C1/C2/C5 complete; PM-26-D, C3/C4/C7, E-H queued)
 **CI/Deploy Ref:** `1UrOoYDGaK2ncPrnRNXt1w0OElOLpbjP_EYROjG2w1zo`
 **FIELD Current State:** `1GvsfnTH9Xhqzg_NdYrPhPpk1d1Rnm0lkeG6ip-tLUlA`
 **PM-24 Canonical Key Design:** `1eG73NmJHUAPOR4E1bkFMg-Xxnq2E564ZIfB6dTGpsao`
