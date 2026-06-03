@@ -2378,6 +2378,15 @@ assert('A399 — PM-20 Step 5: card-time confidence glyph from eData.confidence'
   'PM-20 Step 5: buildCardTimeDisplay (introduced in PM-19) extended to render a confidence glyph from eData.confidence. Verified -> " ✓" (subtle visual signal both sources agree), mismatch -> " ⚠" (signals user-actionable discrepancy, click leads to Health panel detail), single/null -> "" (no badge — preserves current visual baseline). Glyph appears in both Final state ("4–2 F ✓") and Live state ("3–2 P2 ⚠"). The conf is read via optional chaining so legacy callers passing untagged eData (e.g., before Steps 2-3 writers fire) still work — they just get no glyph.');
 
 
+assert('A400 — PM-22 L1 band-aid: verdict gate blocks "def." on tied scores (DO NOT INVENT)',
+  // The !isTied guard must immediately precede the def. statusLine assignment
+  /if\s*\(\s*isFinal\s*&&\s*!sc\.isSoccer\s*&&\s*!isTied\s*\)\s*\{\s*\n\s*statusLine\s*=\s*`\$\{leaderNick\}\s+def\.\s+\$\{trailerNick\}`/.test(html) &&
+  // Comment anchors so future refactors don't silently strip the guard
+  html.includes('L1 BAND-AID') &&
+  html.includes('Bug #3 from TYPE D June 3'),
+  'computeGameNarrative (~index.html:15218) must gate the "def." emission on !isTied. This catches 0-0 placeholder finals (Bug #3, TYPE D June 3 2026) where api-sports returned state=final with null scores → coerced to 0-0 → leaderIsHome=true (0>=0) → home team falsely declared winner. The band-aid is a narrower form of L1; the full confidence-aware gate (verified/single permitted, mismatch/undefined blocked) requires PM-20 key canonicalization (currently api-sports "Knicks" and ESPN "New York Knicks" hash to different _scoresBySource buckets, so the verified state is structurally unreachable). See Path B follow-up in L1 scope doc.');
+
+
 // ═════════════════════════════════════════════════════════════════════
 // GATE — all assertions above must pass before deploy proceeds.
 // PM-7: relocated here from line ~1047. Previously A245-A368 ran but

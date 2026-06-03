@@ -15214,8 +15214,14 @@ function computeGameNarrative(game, espnScore, sportClass){
   }
 
   // Status line (row 2 of score-wrap — the Story Score narrative)
+  // L1 BAND-AID (PM-22, June 3 2026): block "def." emission on tied scores.
+  // Catches Bug #3 from TYPE D June 3 (0-0 placeholder → "Hurricanes def. Golden
+  // Knights" fabricated) and any legitimate tie reaching 'post' state.
+  // Full confidence-aware L1 gate requires PM-20 key canonicalization first
+  // (api-sports "Knicks" vs ESPN "New York Knicks" → separate buckets, never
+  // merge to 'verified'). See L1 scope doc for Path B follow-up.
   let statusLine='';
-  if(isFinal&&!sc.isSoccer){
+  if(isFinal&&!sc.isSoccer&&!isTied){
     statusLine=`${leaderNick} def. ${trailerNick}`;
   } else if(isLive||isHalf){
     if(!sc.isSoccer){
