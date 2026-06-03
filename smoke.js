@@ -2520,6 +2520,18 @@ assert('A411 — PM-26-A: maybeShowSetup trigger reads field_setup_done (not reg
   'PM-26-A regression guard. The ?wpt bypass works by pre-marking field_setup_done in localStorage, then relying on maybeShowSetup() to honor that flag. If maybeShowSetup is refactored to check a different key or condition without updating the bypass, automated perf tests would silently start measuring the modal again. This assertion locks the contract: maybeShowSetup must check field_setup_done. If you intentionally change the modal trigger logic, also update the ?wpt bypass (PM-26-A block) and this assertion together.');
 
 
+assert('A412 — PM-26-B: SW install does not pre-cache the shell URL',
+  // BUG PATTERN (must be absent): e.waitUntil(caches.open(SHELL_CACHE).then(c => c.add(SHELL_URL))...)
+  // The bug was an install-time pre-fetch of the shell. Specifically: any
+  // e.waitUntil call whose argument starts with caches.open(SHELL_CACHE).
+  !/e\.waitUntil\s*\(\s*\n?\s*caches\.open\(SHELL_CACHE\)/.test(swContent) &&
+  // FIX PATTERN (must be present): e.waitUntil(self.skipWaiting()) — minimal install handler.
+  /e\.waitUntil\(self\.skipWaiting\(\)\)/.test(swContent) &&
+  // Sanity: there should still be an install event handler at all.
+  /addEventListener\(['"]install['"]/.test(swContent),
+  'PM-26-B fix. WPT June 3 2026 (three same-config runs) showed a duplicate 425 KB bare / fetch at 589 ms after the initial /?wpt navigation. Network trace: -6 ms /?wpt (425.6 KB) | 589 ms / (425.5 KB) ← THE BUG | 1071 ms /?wpt (WPT 2nd nav). Root cause: install handler called e.waitUntil(caches.open(SHELL_CACHE).then(c => c.add(SHELL_URL))...), which is equivalent to fetch(SHELL_URL).then(r => cache.put(SHELL_URL, r)) — re-downloading the same 425 KB shell the browser had already retrieved to render the page. Also cached against bare / key regardless of any query string the user navigated with, polluting cache for ?wpt and future URL-param paths. Fix: install handler is now just e.waitUntil(self.skipWaiting()) — fetch handler\'s staleWhileRevalidate populates SHELL_CACHE on the first shell request after activation. Net perf: -425 KB per first visit / SW_VERSION bump. Patent relevance: tightens "consumer-aligned data hydration" architecture by removing wasted bandwidth that worked against the cold-start claim.');
+
+
 // ═════════════════════════════════════════════════════════════════════
 // GATE — all assertions above must pass before deploy proceeds.
 // PM-7: relocated here from line ~1047. Previously A245-A368 ran but

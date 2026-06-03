@@ -11,18 +11,22 @@
 //
 // Bump SW_VERSION on every deploy. CI smoke.js verifies it matches index.html.
 
-const SW_VERSION  = '2026-06-03h';
+const SW_VERSION  = '2026-06-03i';
 const SHELL_CACHE = `field-shell-${SW_VERSION}`;
 const API_CACHE   = 'field-api-v4';
 const SHELL_URL   = '/';
 
 self.addEventListener('install', e => {
-  e.waitUntil(
-    caches.open(SHELL_CACHE)
-      .then(c => c.add(SHELL_URL))
-      .then(() => self.skipWaiting())
-      .catch(() => self.skipWaiting())
-  );
+  // PM-26-B (June 3 2026): Do NOT pre-fetch the shell here.
+  // The install event fires moments after the page itself fetched the shell;
+  // calling cache.add(SHELL_URL) re-downloads the same 425KB document and
+  // ALSO strips the user's query string (e.g. ?wpt → caches bare /),
+  // polluting the cache with a wrong-key entry.
+  // The fetch handler's staleWhileRevalidate (below) populates SHELL_CACHE
+  // naturally on the first shell request after activation, so removing this
+  // is purely additive perf: -425 KB on every first visit / SW_VERSION bump.
+  // WPT June 3 2026 confirmed the bare / fetch at 589 ms across three runs.
+  e.waitUntil(self.skipWaiting());
 });
 
 self.addEventListener('activate', e => {
