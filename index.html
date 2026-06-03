@@ -3442,6 +3442,8 @@ if (typeof location !== 'undefined' && location.search.includes('debug=1')) {
 // Format: 'feature-key': 'YYYY-MM-DD' (date shipped)
 // Rule: add a line here + a smoke assertion = feature is documented as built.
 const FIELD_FEATURES = {
+  // PM-19 retro data integrity (June 2 2026 — TZ canonicalization)
+  'tz-canonical-et':                     '2026-06-02',  // FIELD_TZ + fieldDateKey + localTz US-guard. MLB game IDs + schedule fetch + journalism archive all ET-anchored.
   // PM-19 production fix (June 2 2026 — observed 6:48pm SCF G1 brief)
   'jq-layer-2g-state-tautology':         '2026-06-02',  // 5th pattern group in NARRATIVE_HALLUCINATION_PATTERNS — catches "begins at 0-0", "clean slate" at G1
   // PM-19 retro patent-visibility (June 2 2026 — post-audit polish)
@@ -4376,7 +4378,33 @@ const isoDate = today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0
 })();
 
 // ── Time helpers ─────────────────────────────────────────────
-function localTz(){ return Intl.DateTimeFormat().resolvedOptions().timeZone; }
+// ── Canonical timezone (PM-19 retro — TZ data-integrity fix) ────────────
+// FIELD is ET-anchored: MLB/NBA/NHL schedules are published in ET, game IDs
+// stamped with ET dates, cache keys keyed by ET date. The previous localTz()
+// returned the browser's resolved TZ, which leaks UTC (or any non-US zone)
+// into date-key generation. Night games past ~6pm PT / 9pm ET would generate
+// wrong YYYYMMDD stamps under UTC, causing apparent schedule slips and
+// orphaned cache keys.
+//
+// Policy: accept only America/* zones from the browser (so a user in PT or
+// CT still gets their proper local zone for display); fall back to ET for
+// UTC, Europe/*, Asia/*, or undefined. For date-key generation specifically,
+// ALWAYS use FIELD_TZ regardless of user location — the schedule itself is
+// ET-anchored and the keys must match.
+const FIELD_TZ = 'America/New_York';
+function localTz(){
+  try {
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    return tz && tz.startsWith('America/') ? tz : FIELD_TZ;
+  } catch { return FIELD_TZ; }
+}
+// Canonical ET-anchored date key (YYYY-MM-DD). Use for: MLB game IDs,
+// schedule fetch URLs, sessionStorage brief keys, anywhere a "what day is
+// it for FIELD?" answer is needed.
+function fieldDateKey(d){
+  return (d instanceof Date ? d : (d ? new Date(d) : new Date()))
+    .toLocaleDateString('en-CA', { timeZone: FIELD_TZ });
+}
 
 // Format an ISO timestamp to user's selected timezone (ET, local, or custom)
 function fmtTime(iso){
@@ -5422,8 +5450,9 @@ async function fetchMLBTeamMomentum(abbr){
   try{
     const end=new Date(); end.setDate(end.getDate()-1);
     const start=new Date(); start.setDate(start.getDate()-21); // 21 days back ensures 10+ games
-    const endStr=end.toLocaleDateString('en-CA');
-    const startStr=start.toLocaleDateString('en-CA');
+    // PM-19 retro: ET-anchored — MLB Stats API expects ET date params
+    const endStr=fieldDateKey(end);
+    const startStr=fieldDateKey(start);
     const url=`${MLB_STATS_BASE}/schedule?sportId=1&teamId=${teamId}&startDate=${startStr}&endDate=${endStr}&hydrate=linescore`;
     const r=await fetch(url,{signal:AbortSignal.timeout(7000)});
     if(!r.ok) return null;
@@ -9604,13 +9633,14 @@ function renderJournalismCompanion(counts) {
 function renderJournalismArchive() {
   const content = document.getElementById('jrn-content');
   if (!content) return;
-  const tz = (typeof localTz === 'function') ? localTz() : 'America/New_York';
+  // PM-19 retro: archive keys must match the keys briefs are stored under.
+  // Both ends use ET via fieldDateKey — survives users in non-ET zones.
   const today = new Date();
   const archiveEntries = [];
   for (let i = 1; i <= 7; i++) {
     const d = new Date(today);
     d.setDate(d.getDate() - i);
-    const ds = d.toLocaleDateString('en-CA', { timeZone: tz });
+    const ds = fieldDateKey(d);
     const key = 'field_brief_' + ds;
     const text = sessionStorage.getItem(key);
     if (text && text.length > 30) {
@@ -14119,8 +14149,9 @@ function normalizeMLBGame(g, date) {
   const awayAbbr  = away.team.abbreviation;
   const homeScore = home.score ?? 0;
   const awayScore = away.score ?? 0;
-  const dateStr   = (date instanceof Date ? date : new Date(date))
-                      .toLocaleDateString('en-CA').replace(/-/g, '');
+  // PM-19 retro: was .toLocaleDateString('en-CA') — browser TZ leak. ET-anchor required
+  // since MLB schedules are ET-anchored and game IDs must match schedule fetch keys.
+  const dateStr   = fieldDateKey(date).replace(/-/g, '');
   const broadcast = parseBroadcasts(g.broadcasts ?? [], g.gameDate, date);
 
   return {
@@ -14185,9 +14216,8 @@ function normalizeMLBPitcher(p){
 }
 
 async function fetchMLBSchedule(date) {
-  const d       = date instanceof Date ? date : new Date(date);
-  const dateStr = d.toLocaleDateString('en-CA');
-  // probablePitcher(stats) adds ERA/W-L/WHIP/K-9 for J-Architecture keyFacts
+  // PM-19 retro: ET-anchored date — schedules published in ET, fetch keys must match
+  const dateStr = fieldDateKey(date);
   const url     = `${MLB_STATS_BASE}/schedule?sportId=1&date=${dateStr}&hydrate=broadcasts(all),team,linescore,probablePitcher(stats),officials`;
   try {
     const r = await fetch(url, {signal: AbortSignal.timeout(8000)});
@@ -16481,7 +16511,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-02h';
+  const SW_VERSION = '2026-06-02i';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)

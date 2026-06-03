@@ -2253,6 +2253,27 @@ assert('A391 — PM-19 production fix: state tautology detector (Layer 2g extens
   html.includes('Drop tautological openings'),
   'PM-19 production fix (6:48pm iPad screenshot showed "Game 1 ... begins at 0-0, offering a clean slate" — tautology with the UI header that already shows "G1 · Series 0-0"). Same architectural pattern as PM-18: prompt prevention (buildSeriesStateClause adds explicit do-not-restate instruction at 0-0) PLUS retry detection (NARRATIVE_HALLUCINATION_PATTERNS gains 5th group stateTautology, applied only at 0-0 via state-conditional checkGroups). The retry prompt extends with a state-tautology-specific line when those patterns fire, instructing the model to drop redundant openings and start with matchup specifics. Detector verified to catch both production phrases (begins at 0-0, clean slate) and pass legitimate negatives (Game 1 starts at 8pm ET, Carolina opens at home).');
 
+assert('A392 — PM-19 retro: TZ canonicalization (FIELD_TZ + fieldDateKey + localTz US-guard)',
+  // Canonical constant
+  html.includes("const FIELD_TZ = 'America/New_York'") &&
+  // localTz guards against non-US zones (UTC, Europe/*, etc.)
+  html.includes("tz && tz.startsWith('America/')") &&
+  // fieldDateKey helper present
+  html.includes('function fieldDateKey(d)') &&
+  html.includes("timeZone: FIELD_TZ") &&
+  // Critical surfaces migrated: MLB game ID + schedule fetch + team last-21
+  html.includes('const dateStr   = fieldDateKey(date).replace') &&
+  html.includes('const dateStr = fieldDateKey(date);') &&
+  html.includes('const endStr=fieldDateKey(end)') &&
+  html.includes('const startStr=fieldDateKey(start)') &&
+  // Journalism Archive scan migrated
+  html.includes("const ds = fieldDateKey(d);") &&
+  // Anti-regression: no remaining browser-TZ date-key calls in the critical surfaces.
+  // (Specific phrase pattern that was replaced; if anyone reintroduces it, smoke fails.)
+  !html.includes("d.toLocaleDateString('en-CA');") &&
+  !html.includes(".toLocaleDateString('en-CA').replace(/-/g, '');"),
+  'PM-19 retro data-integrity fix: FIELD is ET-anchored (MLB/NBA/NHL schedules published in ET, game IDs stamped with ET dates). Previous localTz() returned Intl.resolvedOptions().timeZone — leaks UTC or non-US zones for any user not in an America/* timezone. Night games past ~6pm PT generated wrong YYYYMMDD stamps under UTC. Fix: FIELD_TZ constant, localTz US-guard returns ET fallback for non-America/* zones, fieldDateKey() helper ALWAYS uses FIELD_TZ regardless of user location. Critical surfaces migrated: MLB game ID date stamp, MLB schedule fetch URL, MLB team last-21-days range, journalism archive scan. Display-side toLocaleDateString calls (header date, panel labels) deferred — they only affect rendering not data integrity.');
+
 
 // ═════════════════════════════════════════════════════════════════════
 // GATE — all assertions above must pass before deploy proceeds.
