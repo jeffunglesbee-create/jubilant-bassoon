@@ -2393,6 +2393,22 @@ assert('A404 — P7: global prefers-reduced-motion override (startup polish bund
   'A second prefers-reduced-motion media query must exist (separate from the pulse-specific one at the cardPulse keyframe site) that targets the universal selector and collapses animation-duration, animation-iteration-count, transition-duration, and scroll-behavior with !important. Accessibility table stakes; lets users who set the OS preference get an instant-render experience instead of waiting through the choreographed reveal (P2), shimmer (P3), and freshness-strip transitions (P1). Per spec, placement adjacent to the existing pulse rule is fine because !important wins regardless of cascade order.');
 
 
+assert('A407 — P3: static skeleton cards (startup polish bundle)',
+  // Skeleton CSS classes present
+  html.includes('.skeleton-set') &&
+  html.includes('.game-card-skeleton') &&
+  html.includes('.filter-chip-skeleton') &&
+  html.includes('.ambient-skeleton') &&
+  // Shimmer keyframes
+  html.includes('@keyframes shimmer') &&
+  // Static markup present (skeleton instances inline in HTML)
+  html.includes('<div class="skeleton-set"') &&
+  html.includes('<div class="game-card-skeleton">') &&
+  html.includes('<span class="filter-chip-skeleton"') &&
+  html.includes('<div class="ambient-skeleton"'),
+  'Static skeleton placeholders must appear inline in #main (3 .game-card-skeleton inside a .skeleton-set), #sport-filters (6 .filter-chip-skeleton spans), and #ambient-panel (one .ambient-skeleton with a label + block). They are wrapped in aria-hidden="true" so AT announces only the real content. CSS rules size them per viewport: 1 visible at ≤1199px (mobile/tablet/ambient), 2 at 1200-1799px (laptop/desktop), 3 at 1800px+ (ultrawide). Removal is implicit — buildFilters() does sport-filters.innerHTML="", renderAll() does main.innerHTML=..., renderAmbientPanel() replaces #ambient-panel content. Shimmer animation respects prefers-reduced-motion (both the new P7 global override and the explicit rule paired with this skeleton block).');
+
+
 // ═════════════════════════════════════════════════════════════════════
 // GATE — all assertions above must pass before deploy proceeds.
 // PM-7: relocated here from line ~1047. Previously A245-A368 ran but
