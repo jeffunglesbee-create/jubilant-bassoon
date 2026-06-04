@@ -1622,6 +1622,57 @@ body::before{
   min-height: 180px;
   contain: layout;
 }
+
+/* PM-26-S-1 (June 3 2026): defer bottom-region rendering until the schedule
+ * has actually populated real cards. iPad CLS LIVE (geometric fallback)
+ * measurement on PM-26-O-2b deploy showed score-1.0 shift events at t=304ms
+ * and t=620ms attributed to .page-divider + bottom sections. Root cause: the
+ * initial HTML has only 1 visible .game-card-skeleton (at iPad portrait
+ * single-col layout per .skeleton-set>:nth-child(n+2) rule), reserving only
+ * ~88px in #main. When 16 real cards hydrate via applyMainHTML, #main grows
+ * to ~3520px. The growth pushes .page-divider + bottom sections DOWN by
+ * ~3430px, well above iPad viewport max dim (1180px), so distance_fraction
+ * clamps at 1.0. Real layout shift; would be reported identically by Chrome
+ * native API.
+ *
+ * Fix: pure-CSS gate using :has(). When no .game-card exists in #main yet
+ * (initial skeleton state — only .game-card-skeleton present), hide all
+ * bottom-of-page elements via display:none. When applyMainHTML adds real
+ * .game-card elements, :has() turns true, the :not() flips false, the rule
+ * stops applying, bottom region appears at its FINAL position. No prior
+ * position to compare. No shift recorded by the fallback (display:none →
+ * block transition is NEW element appearance, not movement) AND no shift
+ * reported by Chrome native API (element first-paint at a position is not
+ * a layout shift).
+ *
+ * No JS hook required. The :has() selector evaluates reactively as the DOM
+ * mutates. The moment .game-card appears, the rule deactivates and bottom
+ * region paints.
+ *
+ * Tradeoffs:
+ * - If schedule render fails, bottom region stays hidden. Acceptable —
+ *   broken schedule means broken page anyway.
+ * - If zero games today (rare), bottom region stays hidden. Acceptable.
+ * - Older browsers without :has() (pre-Safari-15.4, pre-Chrome-105): rule
+ *   has no effect, bottom region always visible from initial paint = prior
+ *   pre-S-1 behavior, including the 1.0 CLS event. Graceful degradation.
+ * - a11y: display:none hides from screen readers until schedule renders.
+ *   Acceptable because the content is unreachable visually too — it's not
+ *   "missing", just deferred the same way it's deferred visually.
+ *
+ * Combines with PM-26-R-1 (card floor 220px) and PM-26-N-2 (section
+ * reservations + contain:layout) for full coverage: R-1 stabilizes card
+ * internal layout, N-2 stabilizes bottom sections AFTER they appear, S-1
+ * defers their appearance until the schedule grid has grown.
+ */
+body:not(:has(#main .game-card)) :is(
+  .page-divider,
+  .field-desk-section,
+  .media-section,
+  .streaming-section
+) {
+  display: none;
+}
 .streaming-head{
   display:flex;align-items:center;gap:.75rem;
   margin-bottom:1.2rem;padding-bottom:.65rem;
@@ -17515,7 +17566,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-03z';
+  const SW_VERSION = '2026-06-03aa';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
