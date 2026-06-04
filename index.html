@@ -17571,7 +17571,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-04e';
+  const SW_VERSION = '2026-06-04f';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -26370,7 +26370,9 @@ function buildLifeStageContent(game, eData, stage) {
       else if (game.espnGOTD) parts.push('📺 Free on ESPN App / ESPN Unlimited');
       // Fallback for sports without matchupNote (WNBA, MLB local games): show localNote or venue
       if (!parts.length && game.localNote) parts.push(game.localNote.slice(0,100));
-      if (!parts.length && game.venue) parts.push(game.venue.slice(0,80));
+      // Do NOT fall back to game.venue — the card template already renders .venue-line
+      // for any game with venue set. Pushing venue here duplicates it visually.
+      // (Bug found June 4 2026: MLB local games showed stadium name twice.)
       return parts.length ? `<div class="card-stage-content${isBigNote?' big-game-note':''}">${parts.join(' · ')}</div>` : '';
     }
     case 'soon': {
