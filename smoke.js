@@ -3021,6 +3021,24 @@ assert('A459 — Level 1: buildWCGroupRows injects WP bar between live-game team
   html.includes('function buildWCGroupRows(') && html.includes('_wcBuildWPBar(liveGame, wp)'),
   'buildWCGroupRows must splice WP bar row between the two teams currently playing');
 
+// Verification: team-name matcher covers confirmed Odds API aliases
+assert('A460 — _wcMatchTeamName: bidirectional alias table covers all confirmed mismatches',
+  html.includes("'turkey':         'turkiye'")
+    && html.includes("'czech republic': 'czechia'")
+    && html.includes("'dr congo':       'congo dr'")
+    && html.includes("'usa':            'united states'"),
+  '_wcMatchTeamName must have confirmed bidirectional aliases from live /wc/odds-probs probe');
+
+// Totals market lambda
+assert('A461 — _wcMatchOdds returns lambdaHome/lambdaAway alongside probs',
+  html.includes('lambdaHome: p.lambdaHome') && html.includes('lambdaAway: p.lambdaAway'),
+  '_wcMatchOdds must pass lambda fields through from /wc/odds-probs response');
+
+assert('A462 — outcomeProbabilities entries include lambda fields for v1.4 Poisson margin model',
+  html.includes('lambdaHome: p.lambdaHome || null') && html.includes('lambdaAway: p.lambdaHome || null')
+    || html.includes("_wcMatchOdds now includes lambdaHome/lambdaAway"),
+  'outcomeProbabilities entries must carry lambda fields when available');
+
 // ═════════════════════════════════════════════════════════════════════
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);

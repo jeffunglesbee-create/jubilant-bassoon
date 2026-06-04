@@ -23681,30 +23681,60 @@ async function fetchWCLiveGames() {
 // Match odds-team-name to wc26Raw fixture team-name (The Odds API uses different name formats)
 function _wcMatchTeamName(oddsName, fieldName) {
   if (!oddsName || !fieldName) return false;
-  const norm = s => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]/g,' ').replace(/\s+/g,' ').trim();
+  // NFD normalize strips diacritics (ü→u, ç→c, é→e etc.), then alphanum+space only
+  const norm = s => s.toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]/g, ' ').replace(/\s+/g, ' ').trim();
   const a = norm(oddsName), b = norm(fieldName);
   if (a === b) return true;
-  // Common alias pairs (Odds API vs FIELD names)
-  const aliases = {'usa': 'united states','us': 'united states','türkiye': 'turkiye','turk': 'turkiye','czechia': 'czech republic'};
-  const aa = aliases[a] || a, bb = aliases[b] || b;
-  if (aa === bb) return true;
-  // Word overlap
-  const wordsA = aa.split(' ').filter(w=>w.length>2);
-  const wordsB = bb.split(' ').filter(w=>w.length>2);
-  return wordsA.some(w => bb.includes(w)) || wordsB.some(w => aa.includes(w));
+  // Bidirectional alias table — confirmed from live /wc/odds-probs probe (June 4 2026)
+  const ALIASES = {
+    'usa':            'united states',
+    'united states':  'usa',
+    'turkey':         'turkiye',       // Odds API "Turkey" ↔ wc26Raw "Türkiye" → norm → "turkiye"
+    'turkiye':        'turkey',
+    'czech republic': 'czechia',       // Odds API "Czech Republic" ↔ wc26Raw "Czechia"
+    'czechia':        'czech republic',
+    'dr congo':       'congo dr',      // Odds API "DR Congo" ↔ wc26Raw "Congo DR"
+    'congo dr':       'dr congo',
+    'ivory coast':    'cote d ivoire',
+    'cote d ivoire':  'ivory coast',
+  };
+  const aa = ALIASES[a] || a, bb = ALIASES[b] || b;
+  if (aa === bb || aa === b || a === bb) return true;
+  // 5-char prefix as final fallback
+  const pfx = 5;
+  if (a.length >= pfx && b.length >= pfx) {
+    if (b.includes(a.slice(0, pfx)) || a.includes(b.slice(0, pfx))) return true;
+  }
+  return false;
 }
 
 // Resolve odds probability for a single remaining fixture from the probs array
+// Returns {pHome, pDraw, pAway, lambdaHome, lambdaAway} or null.
+// lambdaHome/lambdaAway come from totals-derived lambda (v1.4 Poisson margin model).
 function _wcMatchOdds(fixture, oddsProbs) {
   if (!Array.isArray(oddsProbs)) return null;
   for (const p of oddsProbs) {
     const homeMatch = _wcMatchTeamName(p.home_team, fixture.home);
     const awayMatch = _wcMatchTeamName(p.away_team, fixture.away);
-    if (homeMatch && awayMatch) return {pHome: p.pHome, pDraw: p.pDraw, pAway: p.pAway};
-    // Also try reversed (some APIs flip home/away)
+    if (homeMatch && awayMatch) {
+      return {
+        pHome: p.pHome, pDraw: p.pDraw, pAway: p.pAway,
+        lambdaHome: p.lambdaHome || null,
+        lambdaAway: p.lambdaAway || null,
+      };
+    }
+    // Try reversed (some APIs flip home/away)
     const homeMatchR = _wcMatchTeamName(p.home_team, fixture.away);
     const awayMatchR = _wcMatchTeamName(p.away_team, fixture.home);
-    if (homeMatchR && awayMatchR) return {pHome: p.pAway, pDraw: p.pDraw, pAway: p.pHome};
+    if (homeMatchR && awayMatchR) {
+      return {
+        pHome: p.pAway, pDraw: p.pDraw, pAway: p.pHome,
+        lambdaHome: p.lambdaAway || null,  // swap lambdas for reversed match
+        lambdaAway: p.lambdaHome || null,
+      };
+    }
   }
   return null;
 }
@@ -23800,6 +23830,7 @@ function _wcBuildGroupInput(groupLetter, groupStandings, allFixtures, nowMs, mat
 
   // Identify if any remaining fixture is currently live (relay has winProb on it)
   // Live WP overrides pre-game odds for that specific fixture — real-time Permutations
+  // Pre-game odds entries include lambdaHome/lambdaAway (totals-market derived, v1.4 Poisson margins)
   const liveFeed = Array.isArray(liveGames) ? liveGames : [];
   let liveGame = null;
   const outcomeProbabilities = remaining.map(f => {
@@ -23807,10 +23838,13 @@ function _wcBuildGroupInput(groupLetter, groupStandings, allFixtures, nowMs, mat
       _wcMatchTeamName(g.home?.name, f.home) && _wcMatchTeamName(g.away?.name, f.away)
     );
     if (live && live.winProb) {
-      liveGame = live; // capture for WP bar rendering
+      liveGame = live;
       const wp = live.winProb;
+      // For live games: relay already computed lambdas via oddsToLambda/totals.
+      // V2 game object doesn't carry them, so omit — v1.4 uses minimum-margin for live fixtures.
       return {pHome: wp.homeWin, pDraw: wp.draw, pAway: wp.awayWin};
     }
+    // Pre-game: _wcMatchOdds now includes lambdaHome/lambdaAway from totals market (v1.4)
     return _wcMatchOdds(f, oddsProbs);
   }).filter(Boolean);
   const fullOdds = outcomeProbabilities.length === remaining.length && remaining.length > 0
