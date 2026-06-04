@@ -2820,8 +2820,15 @@ body.journalism-mode #field-journalism-section{animation:jrnFadeIn 220ms ease-ou
   <script>
   (function clsObserver(){
     if (!('PerformanceObserver' in window)) return;
-    if (!PerformanceObserver.supportedEntryTypes ||
-        !PerformanceObserver.supportedEntryTypes.includes('layout-shift')) return;
+
+    // Detect whether the layout-shift entry type is supported by this engine.
+    // PerformanceObserver itself exists in all modern engines, but only
+    // Chromium (Blink) implements layout-shift entries. WebKit (Safari + all
+    // iOS browsers, since Apple requires WKWebView) and Gecko (Firefox) do
+    // not. We mount the panel and populate window.__cls regardless — silent
+    // early-return on unsupported engines was the PM-26-O-1 bug.
+    const SUPPORTED = !!(PerformanceObserver.supportedEntryTypes &&
+                         PerformanceObserver.supportedEntryTypes.includes('layout-shift'));
 
     // Console logging is gated behind ?clsdebug=1 so production loads stay
     // quiet (respects the FIELD ≤4-ungated-console.log smoke rule). The
@@ -2853,47 +2860,49 @@ body.journalism-mode #field-journalism-section{animation:jrnFadeIn 220ms ease-ou
       return s;
     }
 
-    const po = new PerformanceObserver(list => {
-      for (const entry of list.getEntries()) {
-        if (entry.hadRecentInput) continue;
-        total += entry.value;
+    if (SUPPORTED) {
+      const po = new PerformanceObserver(list => {
+        for (const entry of list.getEntries()) {
+          if (entry.hadRecentInput) continue;
+          total += entry.value;
 
-        const t = entry.startTime;
-        if (curWindowScore === 0) {
-          curWindowStart = t;
-        } else if (t - lastShiftTime > 1000 || t - curWindowStart > 5000) {
+          const t = entry.startTime;
+          if (curWindowScore === 0) {
+            curWindowStart = t;
+          } else if (t - lastShiftTime > 1000 || t - curWindowStart > 5000) {
+            if (curWindowScore > maxWindow) maxWindow = curWindowScore;
+            curWindowStart = t;
+            curWindowScore = 0;
+          }
+          curWindowScore += entry.value;
+          lastShiftTime = t;
           if (curWindowScore > maxWindow) maxWindow = curWindowScore;
-          curWindowStart = t;
-          curWindowScore = 0;
+
+          const sources = (entry.sources || []).map(s => describeNode(s.node));
+          const ev = {
+            t: Math.round(t),
+            score: +entry.value.toFixed(4),
+            cumul: +total.toFixed(4),
+            window: +curWindowScore.toFixed(4),
+            sources
+          };
+          events.push(ev);
+          _log('[CLS] t=' + ev.t + 'ms score=' + ev.score +
+               ' cumul=' + ev.cumul + ' window=' + ev.window +
+               ' sources=[' + (sources.join(', ') || '?') + ']');
         }
-        curWindowScore += entry.value;
-        lastShiftTime = t;
-        if (curWindowScore > maxWindow) maxWindow = curWindowScore;
-
-        const sources = (entry.sources || []).map(s => describeNode(s.node));
-        const ev = {
-          t: Math.round(t),
-          score: +entry.value.toFixed(4),
-          cumul: +total.toFixed(4),
-          window: +curWindowScore.toFixed(4),
-          sources
-        };
-        events.push(ev);
-        _log('[CLS] t=' + ev.t + 'ms score=' + ev.score +
-             ' cumul=' + ev.cumul + ' window=' + ev.window +
-             ' sources=[' + (sources.join(', ') || '?') + ']');
-      }
-    });
-
-    try { po.observe({type: 'layout-shift', buffered: true}); } catch(_) { return; }
+      });
+      try { po.observe({type: 'layout-shift', buffered: true}); } catch(_) {}
+    }
 
     window.__cls = {
+      supported: SUPPORTED,
       events: events,
       getTotal: function(){ return +total.toFixed(4); },
       getMaxWindow: function(){ return +maxWindow.toFixed(4); },
       summary: function(){
-        return {total: +total.toFixed(4), maxWindow: +maxWindow.toFixed(4),
-                events: events.length};
+        return {supported: SUPPORTED, total: +total.toFixed(4),
+                maxWindow: +maxWindow.toFixed(4), events: events.length};
       },
       bySource: function(){
         const m = {};
@@ -2905,23 +2914,27 @@ body.journalism-mode #field-journalism-section{animation:jrnFadeIn 220ms ease-ou
       }
     };
 
-    let summarized = false;
-    function summarize(){
-      if (summarized) return;
-      summarized = true;
-      _log('[CLS FINAL] total=' + total.toFixed(4) +
-           ' maxWindow=' + maxWindow.toFixed(4) +
-           ' events=' + events.length);
-      _log('[CLS TOP SOURCES]');
-      window.__cls.bySource().slice(0, 8).forEach(function(row){
-        _log('  ' + row[1].toFixed(4) + '  ' + row[0]);
+    if (SUPPORTED) {
+      let summarized = false;
+      function summarize(){
+        if (summarized) return;
+        summarized = true;
+        _log('[CLS FINAL] total=' + total.toFixed(4) +
+             ' maxWindow=' + maxWindow.toFixed(4) +
+             ' events=' + events.length);
+        _log('[CLS TOP SOURCES]');
+        window.__cls.bySource().slice(0, 8).forEach(function(row){
+          _log('  ' + row[1].toFixed(4) + '  ' + row[0]);
+        });
+      }
+      ['click','keydown','touchstart','visibilitychange'].forEach(function(ev){
+        addEventListener(ev, summarize, {once: true, passive: true});
       });
     }
-    ['click','keydown','touchstart','visibilitychange'].forEach(function(ev){
-      addEventListener(ev, summarize, {once: true, passive: true});
-    });
 
-    // ?clsdebug=1 → on-screen panel for iPad/no-DevTools cases
+    // ?clsdebug=1 → on-screen panel. Mounts unconditionally so unsupported
+    // browsers (iOS, Safari, Firefox) get a clear unsupported message with
+    // alternatives, not silent failure (that was the PM-26-O-1 bug).
     if (DEBUG) {
       function mountPanel(){
         if (document.getElementById('__cls_panel__')) return;
@@ -2933,8 +2946,29 @@ body.journalism-mode #field-journalism-section{animation:jrnFadeIn 220ms ease-ou
           'padding:8px 10px;border:1px solid #0f0;border-radius:6px;' +
           'max-width:360px;max-height:55vh;overflow:auto;' +
           'white-space:pre-wrap;pointer-events:auto';
-        panel.textContent = 'CLS LIVE — waiting…';
         document.body.appendChild(panel);
+
+        if (!SUPPORTED) {
+          panel.style.color = '#fa3';
+          panel.style.borderColor = '#fa3';
+          panel.textContent =
+            'CLS LIVE — UNSUPPORTED\n\n' +
+            'PerformanceObserver({type:"layout-shift"})\n' +
+            'is not available in this browser engine.\n\n' +
+            'Where to test instead:\n' +
+            '  • Android Chrome / Edge        ✓ Blink\n' +
+            '  • Desktop Chrome / Edge        ✓ Blink\n' +
+            '  • Any Chromium-based browser   ✓ Blink\n\n' +
+            'Where this will not work:\n' +
+            '  • iOS Chrome / Safari / Edge   ✗ WebKit\n' +
+            '  • Desktop Safari               ✗ WebKit\n' +
+            '  • Firefox (any platform)       ✗ Gecko\n\n' +
+            'Open the same URL on a supported\n' +
+            'browser to see live shift data.';
+          return;
+        }
+
+        panel.textContent = 'CLS LIVE — waiting…';
         function update(){
           const lines = [
             'CLS LIVE',
@@ -17208,7 +17242,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-03s';
+  const SW_VERSION = '2026-06-03t';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
