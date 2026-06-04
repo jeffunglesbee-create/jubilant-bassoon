@@ -24,10 +24,21 @@ from nacl import encoding, public
 
 DROPBOX_TOKEN_URL = "https://api.dropbox.com/oauth2/token"
 GITHUB_API = "https://api.github.com"
+DIAG_PATH = "outbox/_dropbox_bootstrap_diag.log"
 
 
-def err(msg):
-    print(f"ERROR: {msg}", file=sys.stderr)
+def _write_diag(text):
+    os.makedirs(os.path.dirname(DIAG_PATH), exist_ok=True)
+    with open(DIAG_PATH, "a") as f:
+        f.write(text + "\n")
+
+
+def err(msg, *, extra=""):
+    full = f"ERROR: {msg}"
+    if extra:
+        full = f"{full}\n  {extra}"
+    print(full, file=sys.stderr)
+    _write_diag(full)
     sys.exit(1)
 
 
@@ -48,35 +59,38 @@ def exchange_code(app_key, app_secret, auth_code):
         timeout=30,
     )
     print(f"  HTTP {r.status_code}")
+    _write_diag(f"exchange_code HTTP {r.status_code}")
+
     try:
         body = r.json()
     except ValueError:
-        err(f"non-JSON response: {r.text[:300]}")
+        err("non-JSON response", extra=f"text={r.text[:300]}")
+
+    # Always log safe fields for diagnostic
+    safe = {k: v for k, v in body.items() if k not in ("access_token", "refresh_token")}
+    _write_diag(f"exchange_code safe body: {json.dumps(safe)}")
 
     if r.status_code != 200:
-        # Redact sensitive fields from diagnostic
-        safe = {k: v for k, v in body.items() if k not in ("access_token", "refresh_token")}
-        print(f"  Response (safe fields only): {json.dumps(safe)}")
-        if "error" in safe:
-            common = {
-                "invalid_grant": "Auth code expired (~10 min) or already used. Generate a new code via OAuth consent URL.",
-                "invalid_client": "App key / App secret mismatch. Check Settings tab in Dropbox app console.",
-                "invalid_request": "Missing parameters or malformed request.",
-            }
-            hint = common.get(safe.get("error"), "")
-            if hint:
-                print(f"  Hint: {hint}")
-        err(f"exchange failed with HTTP {r.status_code}")
+        print(f"  Response (safe): {json.dumps(safe)}")
+        common = {
+            "invalid_grant": "Auth code expired (~10 min) or already used. Generate a NEW code via the OAuth consent URL. (Single-use; a prior workflow attempt may have consumed it.)",
+            "invalid_client": "App key / App secret mismatch. Check Settings tab in Dropbox app console.",
+            "invalid_request": "Missing parameters or malformed request.",
+        }
+        hint = common.get(safe.get("error"), "")
+        err(f"exchange failed HTTP {r.status_code}", extra=f"safe={json.dumps(safe)}; hint={hint}")
 
     refresh = body.get("refresh_token")
     if not refresh:
-        safe = {k: v for k, v in body.items() if k not in ("access_token", "refresh_token")}
-        print(f"  Response keys: {list(body.keys())}")
-        print(f"  Response (safe): {json.dumps(safe)}")
-        err("response had no refresh_token (was token_access_type=offline set in authorize URL?)")
+        err(
+            "response had no refresh_token",
+            extra=f"keys={list(body.keys())}; safe={json.dumps(safe)}; "
+                  "was token_access_type=offline set in authorize URL?",
+        )
 
     print(f"  refresh_token obtained ({len(refresh)} chars)")
     print(f"  access_token expires in {body.get('expires_in', '?')}s")
+    _write_diag(f"exchange_code: refresh_token len={len(refresh)}, expires_in={body.get('expires_in')}")
     return refresh
 
 

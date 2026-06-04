@@ -56,6 +56,17 @@ jobs:
           REPO: ${{ github.repository }}
         run: python3 .github/scripts/dropbox_bootstrap.py
 
+      - name: Commit diagnostic on failure
+        if: failure()
+        run: |
+          if [ -f outbox/_dropbox_bootstrap_diag.log ]; then
+            git config user.email "actions@github.com"
+            git config user.name "dropbox-bootstrap"
+            git add outbox/_dropbox_bootstrap_diag.log
+            git commit -m "bootstrap: capture failure diagnostic [skip ci]" || true
+            git push || true
+          fi
+
       - name: Self-delete this workflow run on success
         if: success()
         env:
