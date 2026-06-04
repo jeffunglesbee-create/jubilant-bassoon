@@ -23528,6 +23528,47 @@ const WC_TEAMS = {
   L: ['Panama','England','Croatia','Ghana'],
 };
 
+// v1.6 — WC 2026 Round of 32 bracket structure (confirmed from FIFA regulations / Wikipedia)
+// Source: en.wikipedia.org/wiki/2026_FIFA_World_Cup_knockout_stage
+// Match numbers 73-88 are the official FIFA R32 matchup numbering.
+// Format: '1X' = winner of Group X, '2X' = runner-up of Group X.
+// '3rd:...' = best 3rd-place team from one of the listed groups (determined by best-8 combination).
+const WC26_R32 = {
+  '1A': {match: 79,  opponent: '3rd from C/E/F/H/I'},
+  '1B': {match: 85,  opponent: '3rd from E/F/G/I/J'},
+  '1C': {match: 76,  opponent: '2nd Group F'},
+  '1D': {match: 81,  opponent: '3rd from B/E/F/I/J'},
+  '1E': {match: 74,  opponent: '3rd from A/B/C/D/F'},
+  '1F': {match: 75,  opponent: '2nd Group C'},
+  '1G': {match: 82,  opponent: '3rd from A/E/H/I/J'},
+  '1H': {match: 84,  opponent: '2nd Group J'},
+  '1I': {match: 77,  opponent: '3rd from C/D/F/G/H'},
+  '1J': {match: 86,  opponent: '2nd Group H'},
+  '1K': {match: 87,  opponent: '3rd from D/E/I/J/L'},
+  '1L': {match: 80,  opponent: '3rd from E/H/I/J/K'},
+  '2A': {match: 73,  opponent: '2nd Group B'},
+  '2B': {match: 73,  opponent: '2nd Group A'},
+  '2C': {match: 75,  opponent: '1st Group F'},
+  '2D': {match: 88,  opponent: '2nd Group G'},
+  '2E': {match: 78,  opponent: '2nd Group I'},
+  '2F': {match: 76,  opponent: '1st Group C'},
+  '2G': {match: 88,  opponent: '2nd Group D'},
+  '2H': {match: 86,  opponent: '1st Group J'},
+  '2I': {match: 78,  opponent: '2nd Group E'},
+  '2J': {match: 84,  opponent: '1st Group H'},
+  '2K': {match: 83,  opponent: '2nd Group L'},
+  '2L': {match: 83,  opponent: '2nd Group K'},
+  // 3rd-place: opponent depends on best-8 combination (495 possibilities per FIFA Annex C)
+  // The groups where 1st-place teams may face a 3rd-place team are shown above (e.g. 1A → 3rd from C/E/F/H/I)
+};
+
+// Return a bracket description for a team that finishes pos (1/2/3) in groupId.
+function _wcBracketImplication(groupId, pos) {
+  const slot = WC26_R32[`${pos}${groupId}`];
+  if (!slot) return null;
+  return `R32 Match ${slot.match} · vs ${slot.opponent}`;
+}
+
 // Phase: 'groups' (June 11–26) or 'bracket' (June 29+)
 function getWCPhase() {
   const now = new Date();
@@ -23575,15 +23616,16 @@ async function renderWCSection() {
   const grpsEl = document.getElementById('wc-groups');
   if (grpsEl) grpsEl.removeAttribute('hidden');
   renderWCGroupsLoading();
-  // Fetch standings + match results in parallel (v1.3.1: real played[] for H2H tiebreakers)
-  const [standings, matchResults] = await Promise.all([
+  // Fetch standings + match results + odds probabilities in parallel
+  const [standings, matchResults, oddsProbs] = await Promise.all([
     fetchWCStandings(),
     fetchWCResults(),
+    fetchWCOddsProbabilities(),
   ]);
   if (!standings || Object.keys(standings).length === 0) {
     renderWCGroupsEmpty();
   } else {
-    renderWCGroups(standings, matchResults);
+    renderWCGroups(standings, matchResults, oddsProbs);
   }
 }
 
@@ -23597,6 +23639,50 @@ async function fetchWCResults() {
     const data = await r.json();
     return Array.isArray(data.results) ? data.results : [];
   } catch (e) { return []; }
+}
+
+// v1.3.2 — fetch no-vig match probabilities from relay /wc/odds-probs
+// Returns array of {home_team, away_team, pHome, pDraw, pAway, commence}
+async function fetchWCOddsProbabilities() {
+  try {
+    const base = (typeof V2_RELAY_BASE !== 'undefined' ? V2_RELAY_BASE : null)
+              || 'https://field-relay-nba.jeffunglesbee.workers.dev';
+    const r = await fetch(`${base}/wc/odds-probs`, { cache: 'no-store' });
+    if (!r.ok) return [];
+    const data = await r.json();
+    return data.ok && Array.isArray(data.probs) ? data.probs : [];
+  } catch (e) { return []; }
+}
+
+// Match odds-team-name to wc26Raw fixture team-name (The Odds API uses different name formats)
+function _wcMatchTeamName(oddsName, fieldName) {
+  if (!oddsName || !fieldName) return false;
+  const norm = s => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]/g,' ').replace(/\s+/g,' ').trim();
+  const a = norm(oddsName), b = norm(fieldName);
+  if (a === b) return true;
+  // Common alias pairs (Odds API vs FIELD names)
+  const aliases = {'usa': 'united states','us': 'united states','türkiye': 'turkiye','turk': 'turkiye','czechia': 'czech republic'};
+  const aa = aliases[a] || a, bb = aliases[b] || b;
+  if (aa === bb) return true;
+  // Word overlap
+  const wordsA = aa.split(' ').filter(w=>w.length>2);
+  const wordsB = bb.split(' ').filter(w=>w.length>2);
+  return wordsA.some(w => bb.includes(w)) || wordsB.some(w => aa.includes(w));
+}
+
+// Resolve odds probability for a single remaining fixture from the probs array
+function _wcMatchOdds(fixture, oddsProbs) {
+  if (!Array.isArray(oddsProbs)) return null;
+  for (const p of oddsProbs) {
+    const homeMatch = _wcMatchTeamName(p.home_team, fixture.home);
+    const awayMatch = _wcMatchTeamName(p.away_team, fixture.away);
+    if (homeMatch && awayMatch) return {pHome: p.pHome, pDraw: p.pDraw, pAway: p.pAway};
+    // Also try reversed (some APIs flip home/away)
+    const homeMatchR = _wcMatchTeamName(p.home_team, fixture.away);
+    const awayMatchR = _wcMatchTeamName(p.away_team, fixture.home);
+    if (homeMatchR && awayMatchR) return {pHome: p.pAway, pDraw: p.pDraw, pAway: p.pHome};
+  }
+  return null;
 }
 
 
@@ -23633,11 +23719,11 @@ function renderWCGroupsEmpty() {
 }
 
 // Live standings from D1
-function renderWCGroups(standings, matchResults) {
+function renderWCGroups(standings, matchResults, oddsProbs) {
   const el = document.getElementById('wc-groups');
   if (!el) return;
   const groups = 'ABCDEFGHIJKL'.split('');
-  const scenarios = _wcComputeAllScenarios(standings, matchResults);
+  const scenarios = _wcComputeAllScenarios(standings, matchResults, null, oddsProbs);
   const groupInputs = (scenarios && scenarios.groupInputs) || [];
   el.innerHTML = groups.map(g => {
     const gi = groupInputs.find(x => x.groupId === g) || {};
@@ -23656,7 +23742,7 @@ function renderWCGroups(standings, matchResults) {
 // played[] left empty in v1.3 — relay doesn't expose per-match results yet,
 // so H2H tiebreaker degrades to base sort (pts → GD → GF). Acceptable for
 // MD1/MD2 displays; H2H matters most on MD3, addressed in v1.3.1.
-function _wcBuildGroupInput(groupLetter, groupStandings, allFixtures, nowMs, matchResults) {
+function _wcBuildGroupInput(groupLetter, groupStandings, allFixtures, nowMs, matchResults, oddsProbs) {
   if (!groupStandings || groupStandings.length !== 4) return null;
   const teams = groupStandings.map(r => ({
     name: r.team,
@@ -23678,8 +23764,14 @@ function _wcBuildGroupInput(groupLetter, groupStandings, allFixtures, nowMs, mat
   const remaining = groupFixtures
     .filter(g => new Date(g.start_time).getTime() > nowMs)
     .map(g => ({home: g.home, away: g.away, _startMs: new Date(g.start_time).getTime()}));
-  // v1.7 — detect simultaneous final matchday (FIFA requires MD3 games to kick off at same time)
-  // Flag when the last 2 remaining fixtures start within 5 minutes of each other.
+  // v1.3.2 — resolve odds probabilities per remaining fixture
+  const outcomeProbabilities = Array.isArray(oddsProbs) && oddsProbs.length > 0
+    ? remaining.map(f => _wcMatchOdds(f, oddsProbs)).filter(Boolean)
+    : [];
+  // Only pass outcomeProbabilities if ALL remaining matches have odds (partial is unreliable)
+  const fullOdds = outcomeProbabilities.length === remaining.length && remaining.length > 0
+    ? outcomeProbabilities : undefined;
+  // v1.7 — detect simultaneous final matchday
   let simultaneousFinalDay = false;
   let simultaneousKickoffLabel = null;
   if (remaining.length === 2) {
@@ -23687,7 +23779,6 @@ function _wcBuildGroupInput(groupLetter, groupStandings, allFixtures, nowMs, mat
     if (delta <= 5 * 60 * 1000) {
       simultaneousFinalDay = true;
       const d = new Date(Math.min(remaining[0]._startMs, remaining[1]._startMs));
-      // Format: "Jun 25 @ 3 PM ET" style
       const opts = {month:'short', day:'numeric', hour:'numeric', minute:'2-digit', timeZone:'America/New_York', hour12:true, timeZoneName:'short'};
       simultaneousKickoffLabel = d.toLocaleString('en-US', opts).replace(':00','');
     }
@@ -23697,6 +23788,7 @@ function _wcBuildGroupInput(groupLetter, groupStandings, allFixtures, nowMs, mat
     teams,
     played,
     remaining: remaining.map(({home, away}) => ({home, away})),
+    outcomeProbabilities: fullOdds,
     simultaneousFinalDay,
     simultaneousKickoffLabel,
   };
@@ -23704,7 +23796,7 @@ function _wcBuildGroupInput(groupLetter, groupStandings, allFixtures, nowMs, mat
 
 // Compute scenarios across all 12 WC groups + cross-group best-3rd ranking.
 // Returns {perGroup, best3rd} or null on failure.
-function _wcComputeAllScenarios(standings, matchResults, fairPlayPoints) {
+function _wcComputeAllScenarios(standings, matchResults, fairPlayPoints, oddsProbs) {
   if (typeof computeGroupScenarios !== 'function') return null;
   if (!standings || Object.keys(standings).length === 0) return null;
   try {
@@ -23713,7 +23805,7 @@ function _wcComputeAllScenarios(standings, matchResults, fairPlayPoints) {
       ? wc26Raw : [];
     const groups = 'ABCDEFGHIJKL'.split('');
     const groupInputs = groups
-      .map(g => _wcBuildGroupInput(g, standings[g], allFixtures, nowMs, matchResults))
+      .map(g => _wcBuildGroupInput(g, standings[g], allFixtures, nowMs, matchResults, oddsProbs))
       .filter(Boolean);
     const perGroup = {};
     for (const gi of groupInputs) {
@@ -23738,8 +23830,23 @@ function _wcScenarioBadge(teamName, groupId, scenarios) {
   if (!scenarios || !scenarios.perGroup || !scenarios.perGroup[groupId]) return '';
   const teamInfo = scenarios.perGroup[groupId].perTeam[teamName];
   if (!teamInfo) return '';
+  // v1.6 — bracket implication helper (only shown when position is certain or dominant)
+  const bracketLine = (pos) => {
+    const impl = typeof _wcBracketImplication === 'function'
+      ? _wcBracketImplication(groupId, pos) : null;
+    return impl ? ` <span class="wc-sb--b3" title="Round of 32 path if finish ${pos === 1 ? '1st' : '2nd'}">${impl}</span>` : '';
+  };
+  if (teamInfo.alwaysTopGroup) {
+    return `<span class="wc-sb wc-sb--safe" title="Mathematically topping the group — will finish 1st">✓ 1st</span>${bracketLine(1)}`;
+  }
   if (teamInfo.alwaysQualify) {
-    return '<span class="wc-sb wc-sb--safe" title="Mathematically qualified — through regardless of remaining results">✓ Through</span>';
+    // Qualifies but may be 1st or 2nd — show both bracket paths if different
+    const b1 = typeof _wcBracketImplication === 'function' ? _wcBracketImplication(groupId, 1) : null;
+    const b2 = typeof _wcBracketImplication === 'function' ? _wcBracketImplication(groupId, 2) : null;
+    const bfrag = (b1 && b2 && b1 !== b2)
+      ? ` <span class="wc-sb--b3" title="Round of 32 path varies by finishing position">1st→${b1.split('·')[1]?.trim() || ''} / 2nd→${b2.split('·')[1]?.trim() || ''}</span>`
+      : (b1 ? ` <span class="wc-sb--b3">${b1}</span>` : '');
+    return `<span class="wc-sb wc-sb--safe" title="Mathematically qualified — through regardless of remaining results">✓ Through</span>${bfrag}`;
   }
   if (teamInfo.alwaysEliminated) {
     return '<span class="wc-sb wc-sb--out" title="Mathematically eliminated — cannot finish top 2 or as best 3rd">✗ Out</span>';
@@ -23748,14 +23855,20 @@ function _wcScenarioBadge(teamName, groupId, scenarios) {
   const total = c.first + c.second + c.third + c.fourth;
   if (!total) return '';
   const top2pct = Math.round((c.first + c.second) / total * 100);
-  // Best-3rd qualifier surfaces only when meaningful (>1% chance) and not already safe.
+  // Use weighted probability if available (v1.3.2 odds wired), else uniform scenario count
+  const pQual = teamInfo.pQualifyTop2 !== null ? Math.round(teamInfo.pQualifyTop2 * 100) : top2pct;
+  const isWeighted = teamInfo.pQualifyTop2 !== null;
+  const title = isWeighted
+    ? 'Market-implied qualification probability (no-vig from h2h odds)'
+    : 'Share of remaining-result scenarios in which this team finishes top 2 (uniform distribution)';
+  // Best-3rd qualifier
   let b3frag = '';
   const b3 = scenarios.best3rd && scenarios.best3rd.perTeam[teamName];
   if (b3 && b3.pQualifyAsBest3rd >= 0.01) {
     const b3pct = Math.round(b3.pQualifyAsBest3rd * 100);
     b3frag = ` <span class="wc-sb--b3" title="Probability of qualifying as one of the best-8 third-place teams">+${b3pct}% as 3rd</span>`;
   }
-  return `<span class="wc-sb wc-sb--maybe" title="Share of remaining-result scenarios in which this team finishes top 2 (assumes uniform outcome distribution)">${top2pct}% top 2</span>${b3frag}`;
+  return `<span class="wc-sb wc-sb--maybe" title="${title}">${pQual}%${isWeighted ? '' : ' top 2'}</span>${b3frag}`;
 }
 
 // Group block shell (used by both empty + live)

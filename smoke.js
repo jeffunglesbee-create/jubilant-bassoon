@@ -2971,6 +2971,28 @@ assert('A447 — Permutations Engine v1.7: simultaneous banner rendered in rende
   html.includes('wc-sim-banner') && html.includes('⚡'),
   'renderWCGroups must render simultaneous-kickoff banner when flagged');
 
+// v1.3.2 — odds probability wiring
+assert('A448 — Permutations Engine v1.3.2: fetchWCOddsProbabilities defined',
+  html.includes('async function fetchWCOddsProbabilities()') && html.includes('/wc/odds-probs'),
+  'browser must fetch /wc/odds-probs for market-derived outcomeProbabilities');
+assert('A449 — Permutations Engine v1.3.2: team-name matcher for odds-to-fixture linking',
+  html.includes('function _wcMatchTeamName(') && html.includes('function _wcMatchOdds('),
+  '_wcMatchTeamName + _wcMatchOdds required for fuzzy team-name matching');
+assert('A450 — Permutations Engine v1.3.2: badge distinguishes weighted vs uniform display',
+  html.includes('isWeighted') && html.includes('pQualifyTop2'),
+  'badge must use pQualifyTop2 when weighted probabilities available');
+
+// v1.6 — bracket-implication mapping
+assert('A451 — Permutations Engine v1.6: WC26_R32 bracket constant defined',
+  html.includes('const WC26_R32') && html.includes("match: 73") && html.includes("match: 88"),
+  'WC26_R32 must contain all 16 R32 matchups (Match 73-88 from FIFA regulations)');
+assert('A452 — Permutations Engine v1.6: _wcBracketImplication helper defined',
+  html.includes('function _wcBracketImplication(') && html.includes('R32 Match'),
+  '_wcBracketImplication must return bracket description per group position');
+assert('A453 — Permutations Engine v1.6: bracket implication surfaced in badge for qualified teams',
+  html.includes('bracketLine(') && html.includes('alwaysTopGroup'),
+  'scenario badge must surface R32 bracket path for mathematically qualified/topping teams');
+
 // ═════════════════════════════════════════════════════════════════════
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);
