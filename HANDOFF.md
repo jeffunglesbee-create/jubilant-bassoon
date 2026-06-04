@@ -1,67 +1,67 @@
 # FIELD HANDOFF — 2026-06-04 (SESSION END)
 
 ## State
-jubilant-bassoon HEAD: 14b3e8a · Smoke: 468/0
-field-relay-nba HEAD: 5db78bb
+jubilant-bassoon HEAD: 9ea54a9 · Smoke: 471/0
+field-relay-nba HEAD: a6d13aa (relay) / HANDOFF anchor: 045e91b (HANDOFF write)
 
 ## This Session — What Was Built
 
-### Soccer Win Probability — Full Stack Complete
+### Verification
+- Probed all Level 1 endpoints via probe_relay_route MCP:
+  /health ✓, /wc/odds-probs ✓ (72 games, 26 bkm avg, 19,991 credits), 
+  /wc/standings ✓ (empty, pre-tournament), /wc/results ✓ (empty, pre-tournament),
+  /v2/games?sport=wc26&date=today ✓ (empty, WC starts June 11)
+- Confirmed team-name mismatches from live data:
+  Odds API "Czech Republic" ↔ wc26Raw "Czechia"
+  Odds API "Turkey" ↔ wc26Raw "Türkiye" (ü stripped wrong in old matcher)
+  Odds API "USA" ↔ wc26Raw "United States"
+  Odds API "DR Congo" ↔ wc26Raw "Congo DR"
 
-#### Relay (field-relay-nba · 5db78bb)
-- soccer-wp.js: Poisson + Dixon-Coles model, oddsToLambda, lambdaFromShots,
-  effectiveElapsed, remainingLambda, computeLiveWP, computeAdvancementProb
-- **v1.3.2.1**: getWCPregameLambdas() — module-level 5-min lambda cache,
-  fetches Odds API h2h, runs oddsToLambda per game, stores in Map.
-  WC polling loop now resolves pregameLh/pregameLa → source: 'odds-blended'.
-  wcTeamNameMatch() for Odds API vs API-Sports team name fuzzy matching.
-- /wc/results — D1 wc_results endpoint (H2H tiebreaker data)
-- /wc/odds-probs — no-vig h2h market probs (5-min edge cache)
-- /wc/standings, /wc/third-place, /wc/wp/verify — all wired
-- probe_relay_route MCP tool (allow-list: health/wc/v2/squiggle)
-- CRUNCH: penalty_shootout | man_advantage | added_time | late_deficit (WP-gated)
-- WC D1 auto-write when games go final (idempotent)
+### lambdaFromTotalsAndH2H (soccer-wp.js — new export)
+  Binary-search over λ_h on [0.05, λ_total-0.05], 20 iterations, 5dp convergence.
+  winProbsFromLambda(λ_h, λ_total-λ_h) vs pHome from h2h market.
+  Replaces 25-iter 2-param gradient descent for WC path.
+  λ_total comes directly from O/U line (totals market `point` field).
+  lambdaSource: 'totals' vs 'h2h-inversion' (fallback when no totals coverage).
 
-#### Browser (jubilant-bassoon · 14b3e8a)
-**Permutations Engine v1.0-v1.7 + Level 1 display:**
-- v1.0: computeGroupScenarios — W/D/L enumeration, FIFA tiebreakers 1-6
-- v1.1: outcomeProbabilities → pFirst/pSecond/pQualifyTop2 per scenario
-- v1.2: computeBest3rdRanking — cross-group MC (5000 samples, seed=2026)
-- v1.3: UI badges per team (✓ Through / ✗ Out / N% top 2 / +M% as 3rd)
-- v1.3.1: fetchWCResults() → played[] for H2H tiebreakers 4-6
-- v1.3.2: fetchWCOddsProbabilities() → pre-game outcomeProbabilities
-- v1.4: wcPoissonExpectedGoals + Poisson margin model in wcApplyOutcome
-- v1.5: fairPlayPoints threaded (FIFA tiebreaker #7)
-- v1.6: WC26_R32 bracket constant + _wcBracketImplication (Match 73-88)
-- v1.7: simultaneousFinalDay detection + ⚡ banner
-- **Level 1**: fetchWCLiveGames() → /v2/games?sport=wc26, live filter
-- **Level 1**: _wcBuildWPBar() — 3-segment probability bar, pulse animation
-- **Level 1**: buildWCGroupRows() — splices WP bar between playing teams
-- **Integration**: live winProb overrides pre-game odds in outcomeProbabilities
-  → Permutations Engine updates real-time as live game progresses
+### handleWCOddsProbs + getWCPregameLambdas: markets=h2h,totals
+  Both now fetch markets=h2h,totals (was h2h only).
+  /wc/odds-probs response now includes lambdaHome, lambdaAway, lambdaTotal, lambdaSource.
+  Budget: 2 credits/call → ~576 credits/day during WC. 19,991 credits remaining.
+  VERIFIED LIVE: 72 games with lambdaSource:"totals" in probe output.
+  Spot checks: Mexico λH=1.878/λA=0.591 ✓, Germany/Curaçao λH=3.649/λA=0.385 ✓
 
-**Data flow (complete):**
-  Odds API h2h → relay noVig → oddsToLambda → pregameLh/La → computeLiveWP
-  → winProb {homeWin, draw, awayWin, source:'odds-blended'} on V2 game
-  → fetchWCLiveGames browser → outcomeProbabilities[live fixture]
-  → computeGroupScenarios(weighted) → pQualifyTop2 per team
-  → badge: "64% top 2" updates live
+### Team-name matcher fixes
+  Relay wcTeamNameMatch: NFD normalize (ü→u, removes diacritics) + confirmed alias table.
+  Browser _wcMatchTeamName: same fix + complete bidirectional alias table.
+  Both cover: Turkey↔Türkiye, Czech Republic↔Czechia, DR Congo↔Congo DR, USA↔United States.
+  Previous "Turkey" vs "Türkiye": norm stripped ü → "trkiye" ≠ "turkey" (bug). Fixed.
 
-## Smoke: 432 → 468 (+36 this session) / Unit tests: 56/0
+### Level 1 display + Permutations integration (from prior sub-session)
+  fetchWCLiveGames() → /v2/games?sport=wc26, live filter → outcomeProbabilities injection
+  _wcBuildWPBar(): 3-segment flex bar (home/draw/away), pulse animation, source label
+  buildWCGroupRows(): splices WP bar between playing teams in group standings
+  _wcMatchOdds: now returns {pHome, pDraw, pAway, lambdaHome, lambdaAway}
+  lambda fields flow through to outcomeProbabilities → wcApplyOutcome v1.4 Poisson margins
+
+### CI issue (fixed in session)
+  Relay deploy failed: JSDoc comment fragment left dangling in soccer-wp.js.
+  `/**` marker split from body when inserting lambdaFromTotalsAndH2H before oddsToLambda.
+  Fixed in commit a6d13aa. Wrangler dry-run always catches this: run before push.
+
+## Smoke: 468 → 471 (+3, A460-A462) / Unit tests: 56/0
 
 ## Outstanding Before June 11
-  - /wc/admin/seed: write path to populate D1 from API-Sports live results
-    (D1 auto-write already fires when games go final via adaptFootball)
-    Need to verify D1 write chain is actually working end-to-end
-  - Scoreboard P0: not diagnosed (first live exposure NBA Finals G1)
+  - /wc/admin/seed: D1 write chain needs e2e test (auto-write fires at game final)
   - BALLDONTLIE 48-hr trial: START June 11 opening match (Mexico vs SA 7pm ET)
-  - Watch Engine WC fix (RUWT violations line ~26190)
-  - Lambda wiring to v1.4 Poisson margin model: outcomeProbabilities objects
-    need lambdaHome/lambdaAway fields added alongside pHome/pDraw/pAway
+  - Scoreboard P0: not diagnosed (first live exposure NBA Finals G1)
+  - Watch Engine WC fix (RUWT violations ~line 26190)
+  - v1.4 Poisson margin model: lambdaHome/lambdaAway now flow through outcomeProbabilities
+    to wcApplyOutcome — verify engine actually picks them up (matchMeta param path)
 
 ## Key Refs
-jubilant-bassoon HEAD: 14b3e8a
-field-relay-nba HEAD: 5db78bb
+jubilant-bassoon HEAD: 9ea54a9
+field-relay-nba HEAD: a6d13aa
 D1 wc2026: f26669de-e772-4b56-a6d1-f8fdea08a4d4
-WC26_R32 bracket: en.wikipedia.org/wiki/2026_FIFA_World_Cup_knockout_stage
-Smoke baseline: 468/0
+Smoke: 471/0
+Credits remaining: 19,991 (as of probe, June 4)
