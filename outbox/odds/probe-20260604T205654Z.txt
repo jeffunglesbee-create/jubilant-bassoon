@@ -1,0 +1,141 @@
+FIELD Odds API Probe -- 20260604T205654Z
+
+=== 1. API KEY USAGE
+{
+  "error": "HTTP Error 404: Not Found"
+}
+  remaining=? used=?
+
+=== 2. ALL SPORTS (soccer_fifa_world_cup status)
+  Soccer sport keys (74 total):
+    americanfootball_cfl                               active=True | CFL
+    americanfootball_ncaaf                             active=True | NCAAF
+    americanfootball_ncaaf_championship_winner         active=True | NCAAF Championship Winner
+    americanfootball_nfl                               active=True | NFL
+    americanfootball_nfl_preseason                     active=True | NFL Preseason
+    americanfootball_nfl_super_bowl_winner             active=True | NFL Super Bowl Winner
+    americanfootball_ufl                               active=True | UFL
+    soccer_africa_cup_of_nations                       active=False | Africa Cup of Nations
+    soccer_argentina_primera_division                  active=False | Primera División - Argentina
+    soccer_australia_aleague                           active=False | A-League
+    soccer_austria_bundesliga                          active=False | Austrian Football Bundesliga
+    soccer_belgium_first_div                           active=False | Belgium First Div
+    soccer_brazil_campeonato                           active=True | Brazil Série A
+    soccer_brazil_serie_b                              active=True | Brazil Série B
+    soccer_chile_campeonato                            active=True | Primera División - Chile
+    soccer_china_superleague                           active=True | Super League - China
+    soccer_concacaf_gold_cup                           active=False | CONCACAF Gold Cup
+    soccer_concacaf_leagues_cup                        active=False | Leagues Cup
+    soccer_conmebol_copa_america                       active=False | Copa América
+    soccer_conmebol_copa_libertadores                  active=True | Copa Libertadores
+    soccer_conmebol_copa_sudamericana                  active=True | Copa Sudamericana
+    soccer_denmark_superliga                           active=False | Denmark Superliga
+    soccer_efl_champ                                   active=False | Championship
+    soccer_england_efl_cup                             active=False | EFL Cup
+    soccer_england_league1                             active=False | League 1
+    soccer_england_league2                             active=False | League 2
+    soccer_epl                                         active=False | EPL
+    soccer_fa_cup                                      active=False | FA Cup
+    soccer_fifa_club_world_cup                         active=False | FIFA Club World Cup
+    soccer_fifa_world_cup                              active=True | FIFA World Cup
+    soccer_fifa_world_cup_qualifiers_europe            active=False | FIFA World Cup Qualifiers - Europe
+    soccer_fifa_world_cup_qualifiers_south_america     active=False | FIFA World Cup Qualifiers - South America
+    soccer_fifa_world_cup_winner                       active=True | FIFA World Cup Winner
+    soccer_fifa_world_cup_womens                       active=False | FIFA Women's World Cup
+    soccer_finland_veikkausliiga                       active=True | Veikkausliiga - Finland
+    soccer_france_coupe_de_france                      active=False | Coupe de France
+    soccer_france_ligue_one                            active=False | Ligue 1 - France
+    soccer_france_ligue_two                            active=False | Ligue 2 - France
+    soccer_germany_bundesliga                          active=False | Bundesliga - Germany
+    soccer_germany_bundesliga2                         active=False | Bundesliga 2 - Germany
+    soccer_germany_bundesliga_women                    active=False | Frauen-Bundesliga
+    soccer_germany_dfb_pokal                           active=False | DFB-Pokal
+    soccer_germany_liga3                               active=False | 3. Liga - Germany
+    soccer_greece_super_league                         active=False | Super League - Greece
+    soccer_italy_coppa_italia                          active=False | Coppa Italia
+    soccer_italy_serie_a                               active=False | Serie A - Italy
+    soccer_italy_serie_b                               active=False | Serie B - Italy
+    soccer_japan_j_league                              active=True | J League
+    soccer_korea_kleague1                              active=False | K League 1
+    soccer_league_of_ireland                           active=True | League of Ireland
+    soccer_mexico_ligamx                               active=False | Liga MX
+    soccer_netherlands_eredivisie                      active=False | Dutch Eredivisie
+    soccer_norway_eliteserien                          active=True | Eliteserien - Norway
+    soccer_poland_ekstraklasa                          active=False | Ekstraklasa - Poland
+    soccer_portugal_primeira_liga                      active=False | Primeira Liga - Portugal
+    soccer_russia_premier_league                       active=False | Premier League - Russia
+    soccer_saudi_arabia_pro_league                     active=False | Saudi Pro League
+    soccer_spain_copa_del_rey                          active=False | Copa del Rey
+    soccer_spain_la_liga                               active=False | La Liga - Spain
+    soccer_spain_segunda_division                      active=True | La Liga 2 - Spain
+    soccer_spl                                         active=False | Premiership - Scotland
+    soccer_sweden_allsvenskan                          active=True | Allsvenskan - Sweden
+    soccer_sweden_superettan                           active=True | Superettan - Sweden
+    soccer_switzerland_superleague                     active=False | Swiss Superleague
+    soccer_turkey_super_league                         active=False | Turkey Super League
+    soccer_uefa_champs_league                          active=False | UEFA Champions League
+    soccer_uefa_champs_league_qualification            active=False | UEFA Champions League Qualification
+    soccer_uefa_champs_league_women                    active=False | UEFA Champions League Women
+    soccer_uefa_euro_qualification                     active=False | UEFA Euro Qualification
+    soccer_uefa_europa_conference_league               active=False | UEFA Europa Conference League
+    soccer_uefa_europa_league                          active=False | UEFA Europa League
+    soccer_uefa_european_championship                  active=False | UEFA Euro
+    soccer_uefa_nations_league                         active=False | UEFA Nations League
+    soccer_usa_mls                                     active=False | MLS
+
+  WC KEY DETAIL:
+{
+    "key": "soccer_fifa_world_cup",
+    "group": "Soccer",
+    "title": "FIFA World Cup",
+    "description": "FIFA World Cup 2026",
+    "active": true,
+    "has_outrights": false
+}
+  remaining=20000
+
+=== 3. WC ODDS — h2h (daysFrom=10)
+  WC games with h2h odds: 72
+  2026-06-11T19:00 | Mexico vs South Africa
+    [betmgm] h2h: [('Mexico', 1.44, ''), ('South Africa', 7.75, ''), ('Draw', 4.33, '')]
+  2026-06-12T02:00 | South Korea vs Czech Republic
+    [fanduel] h2h: [('Czech Republic', 2.8, ''), ('South Korea', 2.7, ''), ('Draw', 3.0, '')]
+  2026-06-12T19:00 | Canada vs Bosnia & Herzegovina
+    [fanduel] h2h: [('Bosnia & Herzegovina', 4.7, ''), ('Canada', 1.8, ''), ('Draw', 3.6, '')]
+  remaining=19999
+
+=== 4. WC ODDS — h2h + totals (CRITICAL: does totals work for WC?)
+  WC games with h2h+totals: 72
+  2026-06-11T19:00 | Mexico vs South Africa
+  All market keys: ['h2h', 'totals']
+    [betmgm] TOTALS: [('Over', 2.0, 2.5), ('Under', 1.71, 2.5)]
+  2026-06-12T02:00 | South Korea vs Czech Republic
+  All market keys: ['h2h', 'totals']
+  remaining=19997
+
+=== 5. WC ODDS — h2h + h2h_lay (Betfair Exchange?)
+  WC games: 72
+  Bookmakers: 26 | Exchange books: ['betfair_ex_eu', 'matchbook']
+  Market keys: ['h2h', 'h2h_lay']
+    [betfair_ex_eu] h2h: [('Mexico', 1.44, ''), ('South Africa', 9.6, ''), ('Draw', 4.8, '')]
+    [betfair_ex_eu] h2h_lay: [('Mexico', 1.45, ''), ('South Africa', 9.8, ''), ('Draw', 5.0, '')]
+  Bookmakers: 25 | Exchange books: ['betfair_ex_eu']
+  Market keys: ['h2h', 'h2h_lay']
+    [betfair_ex_eu] h2h: [('Czech Republic', 2.94, ''), ('South Korea', 2.82, ''), ('Draw', 3.2, '')]
+    [betfair_ex_eu] h2h_lay: [('Czech Republic', 2.98, ''), ('South Korea', 2.84, ''), ('Draw', 3.25, '')]
+  remaining=19993
+
+=== 6. MLS (active) — h2h + totals + h2h_lay control test
+  MLS games: 0
+  remaining=19993
+
+=== 7. WC EVENTS (upcoming, daysFrom=10)
+  WC events available: 72
+  80d82d1113934bfbea4ce8daf37a2433 | 2026-06-11T19:00 | Mexico vs South Africa
+  384cbb5d76b535896a24fe65f93cfac8 | 2026-06-12T02:00 | South Korea vs Czech Republic
+  d1f4f946c70a0b4e81f5d43e9d32361c | 2026-06-12T19:00 | Canada vs Bosnia & Herzegovina
+  c12986f447a515fbe641addd786dbb24 | 2026-06-13T01:00 | USA vs Paraguay
+  26634922d3f78c146440816023e40de8 | 2026-06-13T19:00 | Qatar vs Switzerland
+  remaining=19993
+
+=== PROBE COMPLETE
