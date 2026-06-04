@@ -1,0 +1,101 @@
+US8533532
+Title: System identifying and inferring web session events
+Grant date: 2013-09-10
+Assignee: International Business Machines Corporation
+Inventors: Robert I. Wenig, Manoj Punjabi, Geoff Townsend
+Source: ppubs
+PPUBS GUID: US-8533532-B2
+
+======================================================================
+CLAIMS
+======================================================================
+
+Claim 1 [independent]:
+A method comprising: capturing a first set of events on an instrumented browser for a first web session with a web application; capturing a second set of events with a capture system operating with a non-instrumented browser for a second web session with the web application; identifying differences between the first set of events and the second set of events; and using the identified differences to analyze performance of the capture system.
+
+Claim 2 [dep on 1]:
+The method according to claim 1 further comprising using the differences to generate replay rules that infer events missed by the capture system during the second web session.
+
+Claim 3 [dep on 2]:
+The method according to claim 2 further comprising: capturing a third set of events with the capture system, wherein the capture system operates with a client browser on a user processing device for a user web session with the web application; logging the third set of events; replaying the logged third set of events during a replay session; and using the replay rules during the replay session to infer events that are not captured by the capture system during the user web session.
+
+Claim 4 [dep on 3]:
+The method according to claim 3 further comprising: identifying a User Interface (UI) event that was captured on the instrumented browser during the first web session but was not captured by the capture system during the second web session; and generating a replay rule that generates the UI event during the replay session of the third set of events.
+
+Claim 5 [dep on 4]:
+The method according to claim 4 wherein the replay rule triggers the UI event during the replay session in a same order that the UI event that was captured during the first web session.
+
+Claim 6 [dep on 1]:
+The method according to claim 1 further comprising: identifying a first set of Document Object Models (DOMs) in the first set of events; identifying a second set of DOMs in the second set of events; and comparing the first set of DOMs with the second set of DOMs to identify the differences between the first set of events and the second set of events.
+
+Claim 7 [dep on 6]:
+The method according to claim 6 further comprising: identifying a difference between a first DOM change in the first set of DOMs and a second DOM change in the second set of DOMs; and generating a replay rule according to the difference.
+
+Claim 8 [dep on 6]:
+The method according to claim 6 further comprising: identifying a first DOM change (DOM1 .DELTA.) between a first DOM state and a second DOM state in the first set of DOMs; identifying a second DOM change (DOM2 .DELTA.) between a first DOM state and a second DOM state in the second set of DOMs; and generating a replay rule when the DOM1 .DELTA.does not match the DOM2 .DELTA., wherein the replay rule infers the DOMI .DELTA..
+
+Claim 9 [dep on 1]:
+The method according to claim 1 further comprising: identifying a first User Interface (UI) event in the first set of events; identifying a first Document Object Model change (DOMI .DELTA.) in the first set of events associated with the first UI event; identifying a second UI event in the second set of events, wherein the first UI event and the second UI event are the same; identifying a second Document Object Model change (DOM2 .DELTA.) in the second set of events associated with the second UI event; and generating an event list that identifies the first UI event and the DOM1 .DELTA.when there are differences between the DOM1 .DELTA.and the DOM2 .DELTA..
+
+Claim 10 [independent]:
+A test system, comprising: a computer system configured to compare reference events for a first web session with captured events captured by a capture system during a second web session, the computer system further configured to identify missed events during the second web session according to the comparisons between the reference events and the captured events.
+
+Claim 11 [dep on 10]:
+The test system according to claim 10 wherein the computer system is further configured to operate an instrumented browser that generates the reference events and is further configured to operate a non-instrumented browser in conjunction with the capture system to generate the captured events.
+
+Claim 12 [dep on 10]:
+The test system according to claim 10 wherein the computer system is further configured to generate an event list according to the comparison between the reference events and the captured events, the event list identifying a User Interface (UI) event, a UI identifier, a Document Object Model change (DOM .DELTA.) between two DOM states of a web page, and a web page identifier.
+
+Claim 13 [dep on 12]:
+The test system according to claim 12 wherein the computer system is further configured to generate replay rules from the event list that infer events that were missed by the capture system during the second web session.
+
+Claim 14 [dep on 10]:
+The test system according to claim 10 wherein the computer system is configured to: identify a first Document Object Model (DOM) state in the reference events; identify a second DOM state in the reference events; identify a first DOM change (DOM1 .DELTA.) between the first DOM state and the second DOM state of the reference events; identify a first DOM state for the captured events; identify a second DOM state for the captured events; identify a second DOM change (DOM2 .DELTA.) between the first DOM state and the second DOM state of the captured events; identify the missed events by comparing the DOM1 .DELTA.with the DOM2 .DELTA..
+
+Claim 15 [dep on 14]:
+The test system according to claim 14 wherein the computer system is further configured to generate a replay rule that forces the DOM1 .DELTA.during a replay session when the DOM2 .DELTA.does not match the DOM1 .DELTA..
+
+Claim 16 [dep on 15]:
+The test system according to claim 15 wherein the computer system is configured to identify a User Interface (UI) event associated with DOM1 .DELTA.and DOM2 .DELTA.and generate the replay rule that forces DOM1 .DELTA.when the UI event is detected in the captured events.
+
+Claim 17 [dep on 10]:
+The test system according to claim 10 wherein the computer system is further configured to: associate a User Interface (UI) event with a Document Object Model change (DOM .DELTA.) between a first Document Object Model (DOM) state and a second DOM state in the reference events; and determine if the UI event causes a similar (DOM .DELTA.) in the captured events.
+
+Claim 18 [dep on 17]:
+The test system according to claim 17 wherein the computer system is further configured to generate a replay rule that infers the U1 event during a replay session when the captured events change from the first DOM state to the second DOM state.
+
+Claim 19 [independent]:
+The test system according to 10 wherein the computer system is configured to: identify a particular one of the reference events; identify any changes in a Document Object Model (DOM) state associated with the particular one of the reference events; and determine whether or not to capture the particular one of the reference events according the changes, if any, identified in the DOM state.
+
+Claim 20 [independent]:
+A replay system, comprising: a replay log configured to log events captured from a monitored client web session; a session replay controller configured to replay the logged events; and an inference engine comprising a set of replay rules that correspond with missed events that were not detected during the monitored client web session, the inference engine configured to generate the missed events during a replay session of the logged events according to the replay rules.
+
+Claim 21 [dep on 20]:
+The replay system according to claim 20 wherein the replay rules include User Interface (UI) events, UI identifiers, Document Object Model differences (DOM .DELTA.s), and/or web page identifiers associated with the missed events.
+
+Claim 22 [dep on 20]:
+The replay system according to claim 20 wherein the inference engine is configured to identify the logged events that correspond with a first replay event in the replay rules and generate a second replay event in the replay rules prior to the replaying the identified logged events.
+
+Claim 23 [dep on 20]:
+The replay system according to claim 20 wherein the inference engine is configured to force Document Object Model (DOM) changes that would not normally be generated by replaying the logged events during the replay session.
+
+Claim 24 [dep on 20]:
+The replay system according to claim 20 wherein the replay rules are configured to associate a state of the client web session with a Document Object Model change (DOM .DELTA.), and the inference engine is configured to force the same (DOM .DELTA.) when the state is detected during the replay session.
+
+Claim 25 [dep on 20]:
+The replay system according to claim 20 wherein the inference engine is configured to compare Document Object Model changes (DOM .DELTA.s) in the replay rules with DOM .DELTA.s in the logged events.
+
+Claim 26 [independent]:
+An apparatus, comprising: a memory configured to store logged events from a monitored client web session; and a computing device configured to: infer events that were missed during the client web session; and generate the inferred events when replaying the logged events.
+
+Claim 27 [dep on 26]:
+The apparatus of claim 26, wherein the computing device is further configured to generate the inferred events according to replay rules that associate the inferred events with the logged events.
+
+Claim 28 [dep on 27]:
+The apparatus of claim 27, wherein the computing device is further configured to automatically generate the replay rules by comparing a first set of reference events generated from an instrumented version of a browser with a second set of test events captured by a capture system from a client version of the browser.
+
+Claim 29 [dep on 27]:
+The apparatus of claim 27, wherein the replay rules are configured to identify User Interface (UI) events where a user initiates an action or enters data into a web page during the client web session.
+
+Claim 30 [dep on 29]:
+The apparatus of claim 29, wherein the replay rules are configured to identify Document Object Model changes (DOM .DELTA.s) associated with the UI events.

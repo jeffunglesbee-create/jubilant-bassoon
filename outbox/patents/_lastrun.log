@@ -1,13 +1,38 @@
 Establishing PPUBS session...
   [ppubs] prime: HTTP 200
-  [ppubs] session ok: caseId=219589057
+  [ppubs] session ok: caseId=219589511
 
 Fetching US10846193 via PPUBS...
   [ppubs] counts: HTTP 200
   [ppubs] dumped search response to _ppubs_search_10846193.json
   [ppubs] guid=US-10846193-B2 type=USPAT
   [ppubs] dumped raw response to _ppubs_dump_10846193.json
-  US10846193: wrote US10846193.json + US10846193.txt (33 claims)
+  US10846193: unchanged, skipping
 
-All 1 patents fetched successfully.
+Fetching US11182537 via PPUBS...
+  [ppubs] counts: HTTP 200
+  [ppubs] guid=US-11182537-B2 type=USPAT
+  US11182537: wrote US11182537.json + US11182537.txt (15 claims)
+
+Fetching US8335848 via PPUBS...
+  [ppubs] counts: HTTP 200
+  [ppubs] guid=US-8335848-B2 type=USPAT
+  US8335848: wrote US8335848.json + US8335848.txt (23 claims)
+
+Fetching US8533532 via PPUBS...
+  [ppubs] counts: HTTP 200
+  [ppubs] guid=US-8533532-B2 type=USPAT
+  US8533532: wrote US8533532.json + US8533532.txt (30 claims)
+
+Fetching US9571591 via PPUBS...
+  [ppubs] counts: HTTP 200
+  [ppubs] guid=US-9571591-B2 type=USPAT
+  US9571591: wrote US9571591.json + US9571591.txt (31 claims)
+
+Fetching US9509714 via PPUBS...
+  [ppubs] counts: HTTP 200
+  [ppubs] guid=US-9509714-B2 type=USPAT
+  US9509714: wrote US9509714.json + US9509714.txt (17 claims)
+
+All 6 patents fetched successfully.
 Exit code: 0

@@ -1,0 +1,194 @@
+{
+  "_ppubs_guid": "US-9571591-B2",
+  "_ppubs_type": "USPAT",
+  "_source": "ppubs",
+  "assignees": [
+    {
+      "assignee_organization": "Dynatrace LLC"
+    }
+  ],
+  "claims": [
+    {
+      "claim_dependent": null,
+      "claim_sequence": 1,
+      "claim_text": "A computer-implemented method for determining a performance metric of a web browser displaying web content and executing on a computing device, comprising: instrumenting a request handling method with a request handling sensor, the request handling sensor operating to inject a browser agent into the web content; detecting, by the browser agent, user input elements in the web content displayed by the web browser; instrumenting, by the browser agent, each detected user input elements, where the user input elements were not previously instrumented and the action sensor generates an action event indicative of a user interaction with the corresponding user input element; detecting, by the browser agent, update mechanisms in the web content that send content update requests to a server which is located remotely from the computing device; and instrumenting, by the browser agent, each of the detected update mechanisms with an action sensor, where the detected update mechanisms were not previously instrumented and the action sensor generates an action event indicative of a content update request sent by the corresponding update mechanism; capturing a first action event at the browser agent which is executing on the client computing device, where the first action event is indicative of a user interaction with a user interaction element on the web browser and the first action event identifies the user interaction element by name and type of user interaction element and the type of user interaction is selected from a plurality of different types of user interactions; capturing a second action event at the browser agent, where the second action event is caused by the first action and is indicative of a content update request sent from the web browser by a script contained in the web content to a server which is located remotely from the computing device, the content update request causes an update to a portion of the web content displayed by the web browser without updating all of the web content displayed by the web browser; associating, by the browser agent, the second action event with the first action event; creating, by the browser agent, an action record for the user interaction, where the action record includes an identifier for the user interaction and a performance metric that is related to the user interaction and accounts for the second action event; and sending, by the browser agent, the action record over a data network to a monitoring node located remotely from the computing device."
+    },
+    {
+      "claim_dependent": 1,
+      "claim_sequence": 2,
+      "claim_text": "The computer-implemented method of claim 1 wherein the action record includes a start timestamp indicating an occurrence of the user interaction and an end timestamp indicating an end to any content updates caused by update requests caused by the user interaction."
+    },
+    {
+      "claim_dependent": 2,
+      "claim_sequence": 3,
+      "claim_text": "The computer-implemented method of claim 2 further comprises: tracking, by the browser agent, each content update request sent from the web browser to a server which is located remotely from the computing device; tracking, by the browser agent, responses to each of the content update requests sent from the web browser; and updating, by the browser agent, the end timestamp in the action record upon receiving a response for each of the content update requests and when handling of the response by the web browser is complete."
+    },
+    {
+      "claim_dependent": 3,
+      "claim_sequence": 4,
+      "claim_text": "The computer-implemented method of claim 3 wherein tracking each content update request includes receiving an action event indicative of a given content update request and incrementing a counter by one for the given content update request."
+    },
+    {
+      "claim_dependent": 4,
+      "claim_sequence": 5,
+      "claim_text": "The computer-implemented method of claim 4 wherein tracking responses to each of the content update requests includes handling a given response to a content update request; decrementing the counter by one after the handling of the given response to a content update request; and checking value of the counter; and updating the end timestamp in the action record when the value of the counter is zero."
+    },
+    {
+      "claim_dependent": 1,
+      "claim_sequence": 6,
+      "claim_text": "The computer-implemented method of claim 1 further comprises maintaining, by the browser agent, an indicator of most recent user interaction with the web browser as detected by the browser agent, wherein the second action event is associated with the most recent user interaction detected by the browser agent."
+    },
+    {
+      "claim_dependent": 1,
+      "claim_sequence": 7,
+      "claim_text": "The computer-implemented method of claim 1 further comprises updating, by the browser agent, correlation data in a data store residing on the computing device, where the correlation data includes a session identifier that identifies the web browser executing the browser agent, an action identifier that identifies an action currently being executed by the web browser, and a frame identifier that identifies a content view associated with the action currently being executed by the web browser."
+    },
+    {
+      "claim_dependent": 7,
+      "claim_sequence": 8,
+      "claim_text": "The computer-implemented method of claim 7 further comprises appending, by the browser agent, the correlation data to each request sent from the web browser to a server which is located remotely from the computing device."
+    },
+    {
+      "claim_dependent": 7,
+      "claim_sequence": 9,
+      "claim_text": "The computer-implemented method of claim 7 wherein the data store is further defined as a cookie."
+    },
+    {
+      "claim_dependent": 1,
+      "claim_sequence": 10,
+      "claim_text": "The computer-implemented method of claim 1 further comprises detecting, by the browser agent, updates to a document object model for content displayed by the web browser; detecting, in response to detecting updates to the document object model, user input elements in the content displayed by the web browser; and detecting, in response to detecting updates to the document object model, update mechanisms that send content update requests to a server which is located remotely from the computing device."
+    },
+    {
+      "claim_dependent": 10,
+      "claim_sequence": 11,
+      "claim_text": "The computer-implemented method of claim 10 further comprises instrumenting response handling mechanisms for the detected update mechanisms with an action exit sensor, where the action exit sensor is placed at the response handling mechanism in a way that the exit sensor is executed after the execution of the response handling mechanism is finished and the exit sensor generates an action event indicative of completed handling of a response received by the corresponding response handling mechanism."
+    },
+    {
+      "claim_dependent": 11,
+      "claim_sequence": 12,
+      "claim_text": "The computer-implemented method of claim 11 wherein a given response handling mechanism includes another content update mechanism nested therein, such that the action exit sensor for the given response handling mechanism is executed after execution of the nested content update mechanism."
+    },
+    {
+      "claim_dependent": 11,
+      "claim_sequence": 13,
+      "claim_text": "The computer-implemented method of claim 11 wherein a given response handling mechanism operates asynchronously from the corresponding update mechanism."
+    },
+    {
+      "claim_dependent": 1,
+      "claim_sequence": 14,
+      "claim_text": "The computer-implemented method of claim 1 further comprising the monitoring, by the browser agent, content load activities, where content load activities discard current web content and replace the current web content with entirely new content."
+    },
+    {
+      "claim_dependent": 14,
+      "claim_sequence": 15,
+      "claim_text": "The computer-implemented method of claim 14 further comprises starting, by the browser agent, a load action in response to content load activities and initializing of the browser agent when new content containing a browser agent is loaded by the web browser."
+    },
+    {
+      "claim_dependent": 15,
+      "claim_sequence": 16,
+      "claim_text": "The computer-implemented method of claim 15 further comprises starting, by the browser agent, an onload action nested to a previously started load action, in response to an event indicating that content loading is completed, is received from the web browser."
+    },
+    {
+      "claim_dependent": 16,
+      "claim_sequence": 17,
+      "claim_text": "The computer-implemented method of claim 16 further comprises detecting the point in time when post processing of new loaded content is finished and in response stopping a load and an onload action."
+    },
+    {
+      "claim_dependent": 1,
+      "claim_sequence": 18,
+      "claim_text": "The computer-implemented method of claim 1 further comprises sending, by the browser agent, the action record over a data network to a monitoring node located remotely from the computing device."
+    },
+    {
+      "claim_dependent": null,
+      "claim_sequence": 19,
+      "claim_text": "A performance management system that measure end user performance in a distributed computing environment, comprising: a web browser displaying web content and executing on a client computing device; a browser agent executing on the client computing device and being injected into the web content by a request sensor and further comprises: an instrumentation section that detects user input elements in the web content and instruments each of the detected user input element in the web content with an action sensor, where the user input elements were not previously instrumented and the action sensor generates an action event indicative of a user interaction with the corresponding user input element; the instrumentation section further detects update mechanisms that send content update requests to a web server and instruments each of the detected update mechanisms with an action sensor, where the action sensor generates an action event indicative of a content update request sent by the corresponding update mechanism; an action data manager configured to receive a first action event indicative of a user interaction with the web browser, where the first action event is indicative of a user interaction with a user interaction element on the web browser and the first action event identifies the user interaction element by name and type of user interaction element and the type of user interaction is selected from a plurality of different types of user interactions; wherein the action data manager is configured to receive a second action event and associate the second action event with the first action event, where the second action event caused by the first action and is indicative of a content update request sent from the web browser by a script contained in the web content to a server which is located remotely from the computing device, the content update request causes an update to a portion of the web content displayed by the web browser without updating all of the web content displayed by the web browser; a correlation data manager configured to receive the first action event from the action data manager and operates to update correlation data with an identifier for the user interaction, where the correlation data is maintained by the correlation data manager in a data store residing on the client computing device and is appended by the browser agent to requests sent from the web browser to a web server;  a request handling method configured, at a web server, to receive a request from the web browser, create a request record for the request and send the request record over a data network to the monitor computing device located remotely from the web server; and an event correlator executing on the monitor computing device, the event correlator configured to receive the action record and the request record and operate to associate the request record with the action record."
+    },
+    {
+      "claim_dependent": 19,
+      "claim_sequence": 20,
+      "claim_text": "The performance management system of claim 19 wherein the action data manager sends the action record, via the data network, directly to the monitor computing device."
+    },
+    {
+      "claim_dependent": 19,
+      "claim_sequence": 21,
+      "claim_text": "The performance management system of claim 19 wherein the action data manager sends the action record to the request handling method and the request handling method sends the action record to the monitor computing device."
+    },
+    {
+      "claim_dependent": 19,
+      "claim_sequence": 22,
+      "claim_text": "The performance management system of claim 19 wherein the action data manager is further configured to receive a second action event indicative of a content update request sent from the web browser by a script to the web server, associate the second action event with the first action event and update a performance metric in the action record to account for the second action event."
+    },
+    {
+      "claim_dependent": 22,
+      "claim_sequence": 23,
+      "claim_text": "The performance management system of claim 22 wherein the action record includes a start timestamp indicating an occurrence of the user interaction and an end timestamp indicating an end to any content update requests caused by the user interaction."
+    },
+    {
+      "claim_dependent": 23,
+      "claim_sequence": 24,
+      "claim_text": "The performance management system of claim 23 wherein action data manager further operates to track each content update request sent from the web browser to the web server, track responses to each of the content update requests, and update the end timestamp in the action record upon receiving a response for each of the content update requests."
+    },
+    {
+      "claim_dependent": 19,
+      "claim_sequence": 25,
+      "claim_text": "The performance management system of claim 19 wherein the request handling method further operates to inject the browser agent or a directive to load the browser agent into content provided in response to content load requests received by a request handling method."
+    },
+    {
+      "claim_dependent": 25,
+      "claim_sequence": 26,
+      "claim_text": "The performance management system of claim 25 wherein the request handling method injects the browser agent into the content only if the content is provided in accordance with Hypertext Markup Language."
+    },
+    {
+      "claim_dependent": 19,
+      "claim_sequence": 27,
+      "claim_text": "The performance management system of claim 19 wherein browser agent further operates to: detect updates to a document object model for content displayed by the web browser; detect, in response to detecting updates to the document object model, user input elements in the content displayed by the web browser; detect, in response to detecting updates to the document object model, update mechanisms that send content update requests to the web server; instrument, in response to detecting updates to the document object model, response handling mechanisms for each detected update mechanisms with an action exit sensor, where the detected update mechanisms were not previously instrumented and the action exit sensor generates an action event indicative of completed handling of a response received by the corresponding response handling mechanism."
+    },
+    {
+      "claim_dependent": 19,
+      "claim_sequence": 28,
+      "claim_text": "The performance management system of claim 19 wherein the event correlator further operates to: compare a session identifier contained in the request record with a session identifier contained in the action record, where the session identifier identifies an instance of the web browser executing the browser agent; compare a request identifier contained in the request record with a request identifier contained in the action record, where the request identifier identifies content rendered by the web browser; and associates the request record with the action record when the session identifiers match each other and the request identifiers match each other."
+    },
+    {
+      "claim_dependent": 19,
+      "claim_sequence": 29,
+      "claim_text": "The performance management system of claim 19 wherein the event correlator further operates to: compare a session identifier contained in the request record with a session identifier contained in the action record, where the session identifier identifies an instance of the web browser executing the browser agent; compare an action identifier contained in the request record with an action identifier in the action record, where the action identifier identifies an action executed by the web browser; compare a frame identifier contained in the request record with a frame identifier in the action record, where the frame identifier identifies a content view associated with an action being executed by the web browser; and associates the request record with the action record when session identifier match each other, the action identifiers match each other and the frame identifiers match each other."
+    },
+    {
+      "claim_dependent": 19,
+      "claim_sequence": 30,
+      "claim_text": "The performance management system of claim 19 wherein the event correlator further operates to: compare a session identifier contained in the request record with a session identifier contained in the action record, where the session identifier identifies an instance of the web browser executing the browser agent; determine that the request record has no frame identifier and no action identifier set; compare a referrer contained in the request record with a referrer stored in an action record; and associates the request record with the action record when session identifier match each other and the referrers each other."
+    },
+    {
+      "claim_dependent": null,
+      "claim_sequence": 31,
+      "claim_text": "A performance management system that measure end user performance in a distributed computing environment, comprising: a web browser displaying web content and executing on a client computing device; a browser agent executing on the client computing device and being injected into the web content by a request sensor and further includes: an instrumentation section that detects user input elements in the web content and instruments each of the detected user input element in the web content with an action sensor, where the user input elements were not previously instrumented and the action sensor generates an action event indicative of a user interaction with the corresponding user input element; the instrumentation section further detects update mechanisms that send content update requests to the web server and instruments each of the detected update mechanisms with an action sensor, where the action sensor generates an action event indicative of a content update request sent by the corresponding update mechanism; an action data manager configured to receive an action event indicative of the web browser loading new content, create an action record for the action event and send the action record over a data network to a monitor computing device located remotely from the client computing device, where the first action event is indicative of a user interaction with a user interaction element on the web browser and the first action event identifies the user interaction element by name and type of user interaction element and the type of user interaction is selected from a plurality of different types of user interactions, wherein the action record includes the name of the user interaction element, the type of user interaction element, a start timestamp indicating an occurrence of the user interaction, an end timestamp indicating an end to any content updates caused by update requests caused by the user interaction, and a performance metric that is related to the user interaction; wherein the action data manager is configured to receive a second action event and associate the second action event with the first action event, where the second action event is caused by the first action and is indicative of a content update request sent from the web browser by a script contained in the web content to a server which is located remotely from the computing device, the content update request causes an update to select elements displayed by the web browser without updating all of the elements displayed by the web browser; and a request handling method configured, at a web server, to receive a request for the new content from the web browser, create a request record for the request and send the request record over a data network to the monitor computing device located remotely from the web server; and an event correlator executing on the monitor computing device, the event correlator configured to receive the action record and the request record and operate to associate the action record with the request record."
+    }
+  ],
+  "examiners": [
+    {
+      "examiner_name_first": "Namitha",
+      "examiner_name_last": "Pillai"
+    }
+  ],
+  "inventors": [
+    {
+      "inventor_name_first": "Bernd",
+      "inventor_name_last": "Greifeneder"
+    },
+    {
+      "inventor_name_first": "Helmut",
+      "inventor_name_last": "Spiegl"
+    },
+    {
+      "inventor_name_first": "Markus",
+      "inventor_name_last": "Gaisbauer"
+    },
+    {
+      "inventor_name_first": "Clemens",
+      "inventor_name_last": "Fuchs"
+    }
+  ],
+  "patent_date": "2017-02-14",
+  "patent_id": "9571591",
+  "patent_title": "Method and system for tracing end-to-end transaction which accounts for content update requests"
+}

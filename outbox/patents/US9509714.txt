@@ -1,0 +1,62 @@
+US9509714
+Title: Web page and web browser protection against malicious injections
+Grant date: 2016-11-29
+Assignee: Cabara Software Ltd.
+Inventors: Omri Sivan, Eldar Ronen, Yuval Lavi
+Source: ppubs
+PPUBS GUID: US-9509714-B2
+
+======================================================================
+CLAIMS
+======================================================================
+
+Claim 1 [independent]:
+A method comprising: operating a web server to receive a call to an anti-injection client-side code from a web browser, wherein the call is facilitated by a code segment in a web page loaded by the web browser; positioning the code segment immediately before a &lt;/body&gt;tag of the web page, to: (a) cause the web browser to request the transmitting of the anti-injection client-side code after the web page has finished loading in the web browser, and (b) prevent interception of client-side code originally included in the web page; and  transmitting the anti-injection client-side code from the web server to the web browser, wherein the anti-injection client-side code comprises instructions which, when executed by the web browser: (i) intercept an injection of a node into the DOM (Document Object Model) of the web page, (ii) compare the injected node with a list, and (iii) based on the comparison, permit or block execution of the injected node in the web browser.
+
+Claim 2 [dep on 1]:
+The method according to claim 1, further comprising defining, in the code segment, that the anti-injection client-side code be loaded by the web browser synchronously, to prevent the web browser from loading the injected node before the anti-injection client-side code is executed.
+
+Claim 3 [dep on 2]:
+The method according to claim 2, wherein the definition in the code segment comprises an “async” attribute that equals “false”.
+
+Claim 4 [dep on 1]:
+The method according to claim 1, wherein the anti-injection client-side code comprises further instructions which, when executed by the web browser: determine a baseline of the DOM; and permit execution of the injected node if the injected node is triggered by a node existing in the baseline.
+
+Claim 5 [dep on 1]:
+The method according to claim 1, wherein the comparing of the injected node with the list comprises employing a regular expression (RegEx) to identify a string of characters in the injected node, based on information contained in the list.
+
+Claim 6 [dep on 1]:
+The method according to claim 1, wherein the intercepting comprises observing changes to the DOM by a MutationObserver application programming interface (API) of the web browser.
+
+Claim 7 [dep on 1]:
+The method according to claim 1, wherein the intercepting comprises overriding an API of the web browser, the API selected from the group consisting of: appendChild and insertBefore.
+
+Claim 8 [dep on 1]:
+The method according to claim 1, wherein the intercepting comprises analyzing a stack trace of a call chain that executes the injection.
+
+Claim 9 [dep on 1]:
+The method according to claim 1, wherein the list comprises information selected from the group consisting of: a uniform resource locator (URL); an Internet protocol (IP) address; and a string known to be included in recognized malicious nodes.
+
+Claim 10 [dep on 1]:
+The method according to claim 1, wherein: the list is a black list which comprises information relating to malicious nodes; and the execution of the injected node is blocked if the injected node matches the information, and is permitted if the injected node mismatches the information.
+
+Claim 11 [dep on 1]:
+The method according to claim 1, further comprising creating the black list by: collecting information on injected nodes from multiple web browsers, by executing a data collection client-side code in each of the multiple web browsers, to intercept injection of nodes into the DOM of the web page and transmit the injected nodes to a web server; analyzing the collected information, to identify malicious ones of the injected nodes; and entering information associated with the malicious injected nodes into the list.
+
+Claim 12 [dep on 1]:
+The method according to claim 1, wherein: the list is a white list which comprises information relating to non-malicious nodes; and the execution of the injected node is blocked if the injected node mismatches the information, and is permitted if the injected node matches the information.
+
+Claim 13 [independent]:
+A system comprising: (A) a non-transitory computer-readable storage medium having stored thereon instructions for: operating a web server to receive a call to an anti-injection client-side code from a web browser, wherein the call is facilitated by a code segment in a web page loaded by the web browser, positioning the code segment immediately before a &lt;/body&gt;tag of the web page, to: (a) cause the web browser to request the transmitting of the anti-injection client-side code after the web page has finished loading in the web browser, (b) prevent interception of client-side code originally included in the web page, and  transmitting the anti-injection client-side code from the web server to the web browser, wherein the anti-injection client-side code comprises instructions which, when executed by the web browser: (i) intercept an injection of a node into the DOM (Document Object Model) of the web page, (ii) compare the injected node with a list, and (iii) based on the comparison, permit or block execution of the injected node in the web browser; and   (B) at least one hardware processor configured to execute the instructions.
+
+Claim 14 [dep on 13]:
+The system according to claim 13, wherein the computer-readable storage medium further comprises instructions for defining, in the code segment, that the anti-injection client-side code be loaded by the web browser synchronously, to prevent the web browser from loading the injected node before the anti-injection client-side code is executed.
+
+Claim 15 [dep on 13]:
+The system according to claim 13, wherein the anti-injection client-side code comprises further instructions which, when executed by the web browser: determine a baseline of the DOM; and permit execution of the injected node if the injected node is triggered by a node existing in the baseline.
+
+Claim 16 [independent]:
+A computer program product comprising a non-transitory computer-readable medium having stored thereon instructions which, when executed by at least one hardware processor, cause the processor to: operate a web server to receive a call to an anti-injection client-side code from a web browser, wherein the call is facilitated by a code segment in a web page loaded by the web browser; position the code segment immediately before a &lt;/body&gt;tag of the web page, to: (i) cause the web browser to request the transmitting of the anti-injection client-side code after the web page has finished loading in the web browser, and (ii) prevent interception of client-side code originally included in the web page; and  transmit the anti-injection client-side code from the web server to the web browser, wherein the anti-injection client-side code comprises instructions which, when executed by the web browser: (a) intercept an injection of a node into the DOM (Document Object Model) of the web page, (b) compare the injected node with a list, and (c) based on the comparison, permit or block execution of the injected node in the web browser.
+
+Claim 17 [dep on 16]:
+The computer program product according to claim 16, wherein the instructions, when executed by said at least one hardware processor, further cause the processor to define, in the code segment, that the anti-injection client-side code be loaded by the web browser synchronously, to prevent the web browser from loading the injected node before the anti-injection client-side code is executed.

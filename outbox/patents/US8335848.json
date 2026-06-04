@@ -1,0 +1,170 @@
+{
+  "_ppubs_guid": "US-8335848-B2",
+  "_ppubs_type": "USPAT",
+  "_source": "ppubs",
+  "assignees": [
+    {
+      "assignee_organization": "TeaLeaf Technology, Inc."
+    }
+  ],
+  "claims": [
+    {
+      "claim_dependent": null,
+      "claim_sequence": 1,
+      "claim_text": "A method, comprising: capturing network data for a network session at a network location, the network data including web page data transmitted over a network between a web server and a user device; separately capturing user interface events associated with the network session at the user device, the user interface events including user inputs for interacting with the web page data; and replaying the network session by synchronizing rendering of at least some of the web page data with replay of at least some of the user interface events in substantially a same order as previously occurring during the network session, wherein the user interface events are captured and replayed with the web page data to recreate and simulate events in the network session that are not reproducible from the network data."
+    },
+    {
+      "claim_dependent": 1,
+      "claim_sequence": 2,
+      "claim_text": "The method of claim 1, further comprising: monitoring and capturing the network data with a first computing device at the network location; sending the network data from the first computing device to a session archive; separately monitoring and capturing the user interface events with the user device; and sending the user interface events from the user device to the session archive."
+    },
+    {
+      "claim_dependent": 1,
+      "claim_sequence": 3,
+      "claim_text": "The method of claim 1, wherein at least some of the user interface events are never transferred over the network during the network session."
+    },
+    {
+      "claim_dependent": 1,
+      "claim_sequence": 4,
+      "claim_text": "The method of claim 1, further comprising: identifying time stamps assigned to the user interface events: identifying a time difference between a first one of the time stamps assigned to a first one of the user interface events and a second one of the time stamps assigned to a second one of the user interface events; and identifying problems previously occurring in the network session based on the time difference."
+    },
+    {
+      "claim_dependent": 1,
+      "claim_sequence": 5,
+      "claim_text": "The method of claim 1, further comprising: identifying a network session event during the replaying of the network session; identifying a first time value associated with the network session event; identifying a second time value for one of the user interface events occurring after the network session event; and determine an amount of time for a user to complete an activity during the network session based on the first time value and the second time value."
+    },
+    {
+      "claim_dependent": 1,
+      "claim_sequence": 6,
+      "claim_text": "The method according to claim 1 further comprising: receiving a request to replay a time window or a portion or a stage of the network session while replaying the network session; and synchronizing replay of the user interface events with the web page data to recreate and display only the time window or the portion or the stage of the network session."
+    },
+    {
+      "claim_dependent": 1,
+      "claim_sequence": 7,
+      "claim_text": "The method of claim 1, further comprising: identifying changes in Document Object Models (DOM) events produced while replaying the network session; identifying states of the replayed network session based on the changes in the DOM events; and conducting analytics on the replayed network session based on the states of the replayed network session."
+    },
+    {
+      "claim_dependent": null,
+      "claim_sequence": 8,
+      "claim_text": "An apparatus, comprising: a processing device configured to: receive network data for a web session, wherein at least some of the network data comprises web pages transferred over a network between a server and a client during the web session; receive input events for the web session, wherein at least some of the input events are captured at a client location and interact with the web pages during the web session; and virtually recreate a re-rendering of the web session, wherein the input events are captured and replayed with the network data to recreate and simulate events previously occurring in the web session that would be missing by replaying only the network data."
+    },
+    {
+      "claim_dependent": 8,
+      "claim_sequence": 9,
+      "claim_text": "The apparatus of claim 8, wherein the processing device is further configured to: identify a first time stamp assigned to the network data or input events, wherein the first time stamp is associated with a beginning state of the web session; identifying a first time value associate with the first time stamp; identify a second time stamp assigned to the network data or input events, wherein the second time stamp is associated with an ending state of the web session; identifying a second time value associate with the second time stamp; and identifying an amount of time required to complete the web session based on the first time value and the second time value."
+    },
+    {
+      "claim_dependent": 8,
+      "claim_sequence": 10,
+      "claim_text": "The apparatus of claim 8, wherein the processing device is further configured to: identify a first time stamp assigned to the network data, wherein the first time stamp is associated with a transaction in the web session; identify a first time value associated with the first time stamp; identify a second time stamp assigned to one of the input events occurring after the first time value; identify a second time value associated with the second time stamp; and identifying an amount of time required to complete the transaction in the web session based on the first time value and the second time value."
+    },
+    {
+      "claim_dependent": 8,
+      "claim_sequence": 11,
+      "claim_text": "The apparatus of claim 8, wherein the processing device is further configured to: receive a request identifying a time window for replaying the web session; and replay the input events with the network data to virtually recreate a re-rendering of the web session only for the time window."
+    },
+    {
+      "claim_dependent": 11,
+      "claim_sequence": 12,
+      "claim_text": "The monitoring system of claim 11, wherein: time stamps are added to the network data and the input events during the web session; and the processing device is configured to use the time stamps to identify the time window."
+    },
+    {
+      "claim_dependent": 8,
+      "claim_sequence": 13,
+      "claim_text": "The apparatus of claim 8, wherein the processing device is further configured to: monitor the re-rendering of the web session; search for events during the re-rendering of the web session; and extract web session parameters from the re-rendering of the web session associated with the events."
+    },
+    {
+      "claim_dependent": 13,
+      "claim_sequence": 14,
+      "claim_text": "The apparatus of claim 13, wherein the events comprise a Uniform Resource Locator (URL)."
+    },
+    {
+      "claim_dependent": 8,
+      "claim_sequence": 15,
+      "claim_text": "The apparatus of claim 8, wherein: the network data is received from a first processing device configured to capture the network data at a first network location during the web session as the network data is being transferred between the server and the client; and the input events are received from a second processing device configured to capture the input events generated at the client when interacting with the network data during the web session."
+    },
+    {
+      "claim_dependent": null,
+      "claim_sequence": 16,
+      "claim_text": "A network monitoring system, comprising: a first computing device configured to capture network data for a web session, wherein the network data is sent over a network from a web server to a client during the web session; a second computing device configured to capture user interface events for the web session at the client, wherein at least some of the user interface events interact with the network data; and a third computing device configured to replay the web session by synchronizing replay of at least some of the user interface events with replay of at least some of the network data, wherein the user interface events are captured and replayed with the network data to recreate events in the web session that are not reproducible only with the network data."
+    },
+    {
+      "claim_dependent": 16,
+      "claim_sequence": 17,
+      "claim_text": "The network monitoring system of claim 16 wherein the third computing device is further configured to replay and display a selectable time window or a selectable portion or stage of the network data and user interface events."
+    },
+    {
+      "claim_dependent": 16,
+      "claim_sequence": 18,
+      "claim_text": "The network monitoring system of claim 16 wherein the third computing device is further configured to synchronize replay of the network data and the user interface events for substantially the entire web session."
+    },
+    {
+      "claim_dependent": 16,
+      "claim_sequence": 19,
+      "claim_text": "The network monitoring system of claim 16 wherein the third computing device is further configured to: receive a request to scan the replayed web session for a time period; scan the replayed web session for messages or events during the time period; and archive the messages or events."
+    },
+    {
+      "claim_dependent": null,
+      "claim_sequence": 20,
+      "claim_text": "A method, comprising: receiving network data captured while being transmitted over a network during a network session; receiving user inputs captured during the network session, wherein the user inputs are entered in response web pages in the network data displayed during the network session; and replaying the network session by synchronizing rendering of the web pages in the network data with the replaying of the user inputs, wherein the user inputs are captured and replayed with the network data to recreate events from the network session that are not reproducible with just the network data."
+    },
+    {
+      "claim_dependent": 20,
+      "claim_sequence": 21,
+      "claim_text": "The method of claim 20, further comprising: receiving a request to replay a time window or a portion or stage of the network session; and displaying only the web pages from the network data and the user inputs for the time window or for the portion or stage of the network session identified in the request."
+    },
+    {
+      "claim_dependent": 20,
+      "claim_sequence": 22,
+      "claim_text": "The method of claim 20, wherein: the network session is conducted between a web application operating on a web server and a client operating on a user device; the user inputs are captured on the user device; and the network data is captured either on the web server of on an intermediary server between the web server and the user device."
+    },
+    {
+      "claim_dependent": 20,
+      "claim_sequence": 23,
+      "claim_text": "The method of claim 20, further comprising: identifying a first time stamp value assigned to the network data during the network session; identifying a second time stamp value assigned to the user inputs during the network session; and identifying a time difference between the first time stamp value and the second time stamp value; and identifying an event during the replaying of the network session associated with the time difference."
+    }
+  ],
+  "examiners": [
+    {
+      "examiner_name_first": "George C",
+      "examiner_name_last": "Neurauter"
+    }
+  ],
+  "inventors": [
+    {
+      "inventor_name_first": "Robert",
+      "inventor_name_last": "Wenig"
+    },
+    {
+      "inventor_name_first": "John",
+      "inventor_name_last": "Dawes"
+    },
+    {
+      "inventor_name_first": "John",
+      "inventor_name_last": "Berkley"
+    },
+    {
+      "inventor_name_first": "Al",
+      "inventor_name_last": "Gettier"
+    },
+    {
+      "inventor_name_first": "Kirk",
+      "inventor_name_last": "Saathoff"
+    },
+    {
+      "inventor_name_first": "Wolf",
+      "inventor_name_last": "Herda"
+    },
+    {
+      "inventor_name_first": "Paul",
+      "inventor_name_last": "Austin"
+    },
+    {
+      "inventor_name_first": "Ted",
+      "inventor_name_last": "Knudsen"
+    }
+  ],
+  "patent_date": "2012-12-18",
+  "patent_id": "8335848",
+  "patent_title": "Method and apparatus for monitoring and synchronizing user interface events with network data"
+}
