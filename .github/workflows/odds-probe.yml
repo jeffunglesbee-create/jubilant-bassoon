@@ -3,7 +3,8 @@ name: Odds API Probe
 on:
   workflow_dispatch:
   push:
-    paths: ['outbox/.trigger-odds-probe']
+    paths:
+      - 'outbox/.trigger-odds-probe'
 
 permissions:
   contents: write
@@ -16,212 +17,24 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Probe Odds API endpoints
+      - name: Run probe
         run: |
-          RELAY="https://field-relay-nba.jeffunglesbee.workers.dev"
           TS=$(date -u '+%Y%m%dT%H%M%SZ')
-          TODAY=$(date -u '+%Y-%m-%d')
-          OUT="outbox/odds/probe-${TS}.txt"
           mkdir -p outbox/odds
-
-          # Fetch via relay's /odds proxy — relay injects API key
-          get() {
-            curl -sf --max-time 20 \
-              -D /tmp/resp_headers.txt \
-              -H "User-Agent: FIELD-probe/1.0" \
-              -H "Accept: application/json" \
-              "$1" 2>/dev/null || echo '{"error":"fetch_failed"}'
-          }
-
-          # Print headers then body
-          get_with_headers() {
-            curl -sf --max-time 20 \
-              -H "User-Agent: FIELD-probe/1.0" \
-              -H "Accept: application/json" \
-              -w "\n--- HTTP %{http_code} | remaining: %header{x-requests-remaining} | used: %header{x-requests-used} ---\n" \
-              "$1" 2>/dev/null || echo '{"error":"fetch_failed"}'
-          }
-
-          {
-            echo "═══════════════════════════════════════════"
-            echo "FIELD ODDS API PROBE — $TODAY $TS"
-            echo "═══════════════════════════════════════════"
-
-            # ── 1. API KEY USAGE ──────────────────────────
-            echo ""
-            echo "=== 1. USAGE (quota remaining)"
-            get_with_headers "$RELAY/odds/v4/usage" | jq '.' 2>/dev/null || echo "raw response above"
-
-            # ── 2. ALL SPORTS (including inactive) ────────
-            echo ""
-            echo "=== 2. ALL SPORTS — soccer keys"
-            get_with_headers "$RELAY/odds/v4/sports?all=true" \
-              | python3 -c "
-import sys, json
-try:
-    raw = sys.stdin.read()
-    # Strip trailing HTTP summary line
-    body = raw.split('\n---')[0]
-    data = json.loads(body)
-    soccer = [s for s in data if 'soccer' in s.get('key','').lower() or 'football' in s.get('group','').lower()]
-    for s in soccer:
-        print(f\"  {s['key']:50s} active={s.get('active')} | {s.get('title','')}\")
-    print(f'\n  Total soccer keys: {len(soccer)}')
-    wc = next((s for s in data if s.get('key') == 'soccer_fifa_world_cup'), None)
-    print(f'\n  WC KEY: {json.dumps(wc, indent=2)}')
-except Exception as e:
-    print(f'parse error: {e}')
-    print(raw[:500])
-"
-
-            # ── 3. WC ODDS — h2h (daysFrom=10 to catch pre-tournament lines) ──
-            echo ""
-            echo "=== 3. WC ODDS — h2h (next 10 days to catch June 11 opening)"
-            WC_H2H=$(get_with_headers "$RELAY/odds/v4/sports/soccer_fifa_world_cup/odds?markets=h2h&regions=us&daysFrom=10")
-            echo "$WC_H2H" | python3 -c "
-import sys, json
-raw = sys.stdin.read()
-body = raw.split('\n---')[0]
-try:
-    data = json.loads(body)
-    games = data if isinstance(data, list) else []
-    print(f'  WC games with h2h odds: {len(games)}')
-    for g in games[:3]:
-        print(f\"  {g.get('commence_time','?')[:16]} | {g.get('home_team','?')} vs {g.get('away_team','?')}\")
-        books = g.get('bookmakers',[])
-        if books:
-            b = books[0]
-            print(f\"    bookmaker: {b['key']}\")
-            for mkt in b.get('markets',[]):
-                print(f\"    market: {mkt['key']} | outcomes: {[o['name']+' '+str(o['price']) for o in mkt.get('outcomes',[])]}\")
-except Exception as e:
-    print(f'  parse error: {e}')
-    print(raw[:500])
-" 2>&1
-
-            # ── 4. WC ODDS — h2h + totals ────────────────
-            echo ""
-            echo "=== 4. WC ODDS — h2h + totals (daysFrom=10)"
-            WC_TOT=$(get_with_headers "$RELAY/odds/v4/sports/soccer_fifa_world_cup/odds?markets=h2h,totals&regions=us&daysFrom=10")
-            echo "$WC_TOT" | python3 -c "
-import sys, json
-raw = sys.stdin.read()
-body = raw.split('\n---')[0]
-try:
-    data = json.loads(body)
-    games = data if isinstance(data, list) else []
-    print(f'  WC games with h2h+totals: {len(games)}')
-    for g in games[:2]:
-        books = g.get('bookmakers',[])
-        if books:
-            b = books[0]
-            mkts = [m['key'] for m in b.get('markets',[])]
-            print(f\"  Markets available: {mkts}\")
-            for mkt in b.get('markets',[]):
-                if mkt['key'] == 'totals':
-                    print(f\"    TOTALS: {[o['name']+' '+str(o['price'])+' pt='+str(o.get('point','?')) for o in mkt.get('outcomes',[])]}\")
-except Exception as e:
-    print(f'  parse error: {e}')
-    print(raw[:400])
-" 2>&1
-
-            # ── 5. WC ODDS — h2h_lay (Betfair Exchange) ──
-            echo ""
-            echo "=== 5. WC ODDS — h2h_lay (Betfair Exchange check)"
-            WC_LAY=$(get_with_headers "$RELAY/odds/v4/sports/soccer_fifa_world_cup/odds?markets=h2h,h2h_lay&regions=us,eu&daysFrom=10")
-            echo "$WC_LAY" | python3 -c "
-import sys, json
-raw = sys.stdin.read()
-body = raw.split('\n---')[0]
-try:
-    data = json.loads(body)
-    games = data if isinstance(data, list) else []
-    print(f'  WC games with h2h+h2h_lay: {len(games)}')
-    for g in games[:2]:
-        books = g.get('bookmakers',[])
-        exchange_books = [b for b in books if 'betfair' in b.get('key','').lower() or 'exchange' in b.get('key','').lower() or 'matchbook' in b.get('key','').lower()]
-        print(f\"  Total bookmakers: {len(books)}\")
-        print(f\"  Exchange bookmakers: {[b['key'] for b in exchange_books]}\")
-        for b in exchange_books[:1]:
-            for mkt in b.get('markets',[]):
-                print(f\"    {b['key']} | {mkt['key']}: {[o['name']+' '+str(o['price']) for o in mkt.get('outcomes',[])]}\")
-except Exception as e:
-    print(f'  parse error: {e}')
-    print(raw[:400])
-" 2>&1
-
-            # ── 6. ACTIVE SOCCER — MLS totals + h2h_lay test ──
-            echo ""
-            echo "=== 6. MLS (active league) — h2h + totals + h2h_lay market test"
-            MLS=$(get_with_headers "$RELAY/odds/v4/sports/soccer_usa_mls/odds?markets=h2h,totals,h2h_lay&regions=us,eu")
-            echo "$MLS" | python3 -c "
-import sys, json
-raw = sys.stdin.read()
-body = raw.split('\n---')[0]
-try:
-    data = json.loads(body)
-    games = data if isinstance(data, list) else []
-    print(f'  MLS games: {len(games)}')
-    for g in games[:2]:
-        print(f\"  {g.get('commence_time','?')[:16]} | {g.get('home_team','?')} vs {g.get('away_team','?')}\")
-        books = g.get('bookmakers',[])
-        if books:
-            b = books[0]
-            mkts = {m['key']: m for m in b.get('markets',[])}
-            print(f\"    [{b['key']}] Markets: {list(mkts.keys())}\")
-            if 'totals' in mkts:
-                outs = mkts['totals'].get('outcomes',[])
-                print(f\"    TOTALS: {[(o['name'],o.get('point','?'),o['price']) for o in outs]}\")
-            if 'h2h_lay' in mkts:
-                print(f\"    H2H_LAY: present — {[o['name']+' '+str(o['price']) for o in mkts['h2h_lay'].get('outcomes',[])]}\")
-            else:
-                print(f\"    H2H_LAY: not returned for this bookmaker\")
-        # Check if any exchange book is present
-        ex_books = [b['key'] for b in books if 'betfair' in b.get('key','').lower() or 'lay' in b.get('key','').lower()]
-        if ex_books:
-            print(f\"    Exchange/lay books present: {ex_books}\")
-        all_market_keys = list({m['key'] for b in books for m in b.get('markets',[])})
-        print(f\"    All market keys across all bookmakers: {sorted(all_market_keys)}\")
-except Exception as e:
-    print(f'  parse error: {e}')
-    print(raw[:400])
-" 2>&1
-
-            # ── 7. EVENTS endpoint — WC event IDs ────────
-            echo ""
-            echo "=== 7. WC EVENTS (event IDs for per-event odds query)"
-            get_with_headers "$RELAY/odds/v4/sports/soccer_fifa_world_cup/events" \
-              | python3 -c "
-import sys, json
-raw = sys.stdin.read()
-body = raw.split('\n---')[0]
-try:
-    data = json.loads(body)
-    events = data if isinstance(data, list) else []
-    print(f'  WC events available: {len(events)}')
-    for e in events[:3]:
-        print(f\"  {e.get('id','?')} | {e.get('commence_time','?')[:16]} | {e.get('home_team','?')} vs {e.get('away_team','?')}\")
-except Exception as e:
-    print(f'  parse error: {e}')
-    print(raw[:300])
-" 2>&1
-
-            echo ""
-            echo "=== DONE $TS"
-          } | tee "$OUT"
-
-          echo "OUT=$OUT" >> "$GITHUB_ENV"
+          echo "FIELD Odds API Probe -- $TS" > outbox/odds/probe-${TS}.txt
+          python3 scripts/odds_probe.py >> outbox/odds/probe-${TS}.txt 2>&1
+          echo "TS=${TS}" >> "$GITHUB_ENV"
 
       - name: Commit results
         if: always()
         env:
-          OUT: ${{ env.OUT }}
+          TS: ${{ env.TS }}
         run: |
           git config user.name  "FIELD Probe"
           git config user.email "probe@field.app"
-          git add "outbox/odds/" 2>/dev/null || true
-          git diff --staged --quiet && echo "Nothing to commit" || \
-            git commit -m "probe: odds-api $(date -u '+%Y-%m-%dT%H:%M:%SZ') [skip ci]"
+          git add outbox/odds/ || true
+          git diff --staged --quiet && echo "nothing to commit" || \
+            git commit -m "probe: odds-api ${TS} [skip ci]"
           for i in 1 2 3; do
             git pull --rebase --autostash origin main && \
             git push "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" HEAD:main && break
