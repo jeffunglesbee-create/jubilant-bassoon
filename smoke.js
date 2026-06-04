@@ -2806,6 +2806,18 @@ assert('A423 — PM-26-S-1: defer bottom-region rendering until schedule has rea
 // their failures were invisible to CI because the gate had already
 // exited. Single Results log + single process.exit ensures the
 // pass/fail count reflects EVERY assertion in the file.
+
+// WC D1 — June 4 2026
+assert('A317 — WC D1: fetchWCStandings function defined',
+  html.includes('async function fetchWCStandings('));
+
+assert('A318 — WC D1: _wcStandings cache variable declared',
+  html.includes('let _wcStandings = null'));
+
+assert('A319 — WC D1: fetchWCStandings uses /wc/standings relay endpoint',
+  html.includes("'/wc/standings'") || html.includes('"/wc/standings"') ||
+  html.includes("+ '/wc/standings") || html.includes('wc/standings'));
+
 // ═════════════════════════════════════════════════════════════════════
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);

@@ -17582,7 +17582,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-04h';
+  const SW_VERSION = '2026-06-04i';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -22877,6 +22877,33 @@ function initSeriesPreviews(){
 // Longer format than J10 (Stakes Brief) — 4 structured sections, ~500 words.
 // Caches to sessionStorage keyed by series record + game number.
 // Analytics context injected per sport: NBA uses pace/DRTG/clutch; NHL uses PP/PK/SAT/goalie.
+
+// ── WC D1 Group Standings (WC D1, June 4 2026) ──────────────────────────────
+// Fetches live group standings from D1 via relay /wc/standings endpoint.
+// Called after fetchV2AllScores when sport=wc26 games are in the slate.
+// Returns: { groups: { A: [{team, played, points, gd, gf, ...}], ... } }
+// DO NOT CALL during non-WC periods — gate on wcActive flag.
+let _wcStandings = null;  // cached standings, refreshed each poll cycle
+let _wcStandingsTs = 0;   // timestamp of last successful fetch
+
+async function fetchWCStandings(group = null) {
+  try {
+    const relay = (typeof RELAY_BASE !== 'undefined' ? RELAY_BASE : '')
+                  || 'https://field-relay-nba.jeffunglesbee.workers.dev';
+    const url = group
+      ? relay + '/wc/standings?group=' + encodeURIComponent(group)
+      : relay + '/wc/standings';
+    const r = await fetch(url, { cache: 'no-store' });
+    if (!r.ok) return null;
+    const data = await r.json();
+    _wcStandings = data.groups || {};
+    _wcStandingsTs = data.ts || Date.now();
+    return _wcStandings;
+  } catch(e) {
+    return null;
+  }
+}
+
 
 async function fetchFinalsDesk(game, sport) {
   if (!game || !CLAUDE_PROXY_URL) return null;
