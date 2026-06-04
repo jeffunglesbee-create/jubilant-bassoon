@@ -1,27 +1,41 @@
 #!/usr/bin/env python3
 """
-Patent full-text extractor.
+Patent full-text extractor — PPUBS edition.
 
-Strategy (as of June 2026):
-  1. USPTO bulk grant XML (bulkdata.uspto.gov) - PRIMARY. Authoritative,
-     no API key, no rate limits, weekly archives keyed by ipgYYMMDD.zip.
-     Requires the grant date to find the right archive.
-  2. PatentSearch API (search.patentsview.org) - FALLBACK. Requires
-     PATENTSVIEW_API_KEY. Used when no grant date is provided. Note that
-     PatentSearch is being migrated to USPTO Open Data Portal starting
-     March 2026; this fallback path may need updating.
-  3. PDF + OCR is intentionally NOT used. Two-column patent OCR scrambles
-     word order; the source XML is the right input.
+Background (June 2026): The USPTO data landscape changed under us this year.
+  - PatentsView API (search.patentsview.org) shut down 2026-03-20.
+  - bulkdata.uspto.gov host DNS-deleted as part of ODP migration.
+  - ODP API (api.uspto.gov) is the new official surface BUT requires an
+    API key gated by ID.me video verification (one-time, ~30 min).
+
+This script uses USPTO Patent Public Search (PPUBS) at ppubs.uspto.gov,
+which is the same backend the public web tool uses. PPUBS requires no
+API key and no ID.me — it uses an anonymous session-token model.
+
+Reference implementation: github.com/riemannzeta/patent_mcp_server (MIT),
+which itself credits parkerhancock/patent_client for reverse-engineering
+the PPUBS request sequence. The request pattern here is a synchronous
+port of just enough of that code to get claims out.
+
+PPUBS request sequence:
+  1. GET  /pubwebapp/                          (prime cookies)
+  2. POST /api/users/me/session  body=-1       (get caseId + X-Access-Token)
+  3. POST /api/searches/counts                 (search "<num>.pn." in USPAT)
+  4. POST /api/searches/searchWithBeFamily     (get GUID for patent)
+  5. GET  /api/patents/highlight/<guid>        (full document JSON w/ sections)
 
 Input format:
-  patent_fetch.py "10846193:2020-11-24,11182537:2021-11-23"
-    -> uses bulk XML for both (no API key needed)
   patent_fetch.py "10846193"
-    -> tries PatentSearch API (will fail without PATENTSVIEW_API_KEY)
+  patent_fetch.py "10846193,11182537,8335848"
+  patent_fetch.py "10846193:2020-11-24"     # date suffix accepted but ignored
 
 Output per patent:
   outbox/patents/US{number}.json   - full structured data
   outbox/patents/US{number}.txt    - plain-text claims for Drive upload
+  outbox/patents/_lastrun.log      - run log (committed on failure for diagnostics)
+  outbox/patents/_ppubs_dump_{number}.json  - raw PPUBS response, for the
+                                              first patent in the batch only,
+                                              to verify field mapping
 
 Idempotent: identical content does not change file bytes.
 """
@@ -30,179 +44,390 @@ import json
 import os
 import re
 import sys
-import zipfile
-from datetime import datetime
-from io import BytesIO
 from pathlib import Path
-from urllib.parse import quote
 
 import requests
 
 OUTBOX = Path("outbox/patents")
 OUTBOX.mkdir(parents=True, exist_ok=True)
 
-UA = "jubilant-bassoon/patent-fetch (research)"
-PATENTSVIEW_BASE = "https://search.patentsview.org/api/v1"
-USPTO_BULK_BASE = "https://bulkdata.uspto.gov/data/patent/grant/redbook/fulltext"
+PPUBS_BASE = "https://ppubs.uspto.gov"
+UA = "Mozilla/5.0 (X11; Linux x86_64) jubilant-bassoon/patents-pipeline"
+TIMEOUT = 60
 
 
-def fetch_patentsview(patent_id: str, api_key):
-    """Returns structured patent dict or None."""
-    headers = {"User-Agent": UA}
-    if api_key:
-        headers["X-Api-Key"] = api_key
+# ---------------------------------------------------------------------------
+# Session
+# ---------------------------------------------------------------------------
 
-    # Metadata
-    meta_q = json.dumps({"patent_id": patent_id})
-    meta_fields = json.dumps([
-        "patent_id", "patent_title", "patent_date", "patent_abstract",
-        "patent_num_claims", "patent_type",
-        "assignees.assignee_organization", "assignees.assignee_country",
-        "inventors.inventor_name_first", "inventors.inventor_name_last",
-        "examiners.examiner_name_first", "examiners.examiner_name_last",
-        "cpc_current.cpc_subclass_id", "cpc_current.cpc_group_id",
-        "us_application_citations.cited_patent_number",
-    ])
-    url = f"{PATENTSVIEW_BASE}/patent/?q={quote(meta_q)}&f={quote(meta_fields)}"
+def ppubs_session():
+    """Establish an anonymous PPUBS session.
+    Returns a requests.Session with caseId/token baked in, or None on failure."""
+    s = requests.Session()
+    s.headers.update({
+        "X-Requested-With": "XMLHttpRequest",
+        "User-Agent": UA,
+        "Origin": PPUBS_BASE,
+        "Referer": f"{PPUBS_BASE}/pubwebapp/",
+        "Pragma": "no-cache",
+        "Cache-Control": "no-cache",
+    })
+
+    # Prime cookies
     try:
-        r = requests.get(url, headers=headers, timeout=30)
+        r = s.get(f"{PPUBS_BASE}/pubwebapp/", timeout=TIMEOUT)
+        print(f"  [ppubs] prime: HTTP {r.status_code}")
     except requests.RequestException as e:
-        print(f"  PatentSearch request error: {e}")
+        print(f"  [ppubs] prime error: {e}")
         return None
-    if r.status_code in (403, 404):
-        print(f"  PatentSearch HTTP {r.status_code} (no API key or not found)")
-        return None
-    if not r.ok:
-        print(f"  PatentSearch HTTP {r.status_code}")
-        return None
-    meta_data = r.json()
-    if meta_data.get("count", 0) == 0 or not meta_data.get("patents"):
-        return None
-    patent_meta = meta_data["patents"][0]
 
-    # Claims
-    claims_q = json.dumps({"patent_id": patent_id})
-    claims_fields = json.dumps([
-        "claim_sequence", "claim_text", "claim_dependent",
-    ])
-    opts = json.dumps({"size": 100})
-    url = (
-        f"{PATENTSVIEW_BASE}/g_claims/"
-        f"?q={quote(claims_q)}&f={quote(claims_fields)}&o={quote(opts)}"
-    )
+    # Create session
     try:
-        r = requests.get(url, headers=headers, timeout=30)
-        if r.ok:
-            claims_data = r.json()
-            patent_meta["claims"] = claims_data.get("g_claims", [])
-        else:
-            patent_meta["claims"] = []
-            patent_meta["claims_error"] = f"HTTP {r.status_code}"
+        r = s.post(
+            f"{PPUBS_BASE}/api/users/me/session",
+            json=-1,
+            headers={"X-Access-Token": "null", "referer": f"{PPUBS_BASE}/pubwebapp/"},
+            timeout=TIMEOUT,
+        )
     except requests.RequestException as e:
-        patent_meta["claims"] = []
-        patent_meta["claims_error"] = str(e)
+        print(f"  [ppubs] session error: {e}")
+        return None
 
-    patent_meta["_source"] = "patentsview"
-    return patent_meta
+    if r.status_code != 200:
+        print(f"  [ppubs] session HTTP {r.status_code}: {r.text[:200]}")
+        return None
 
-
-def fetch_uspto_bulk(patent_id: str, grant_date: str):
-    """Fallback: USPTO bulk grant XML. grant_date format YYYY-MM-DD."""
     try:
-        dt = datetime.strptime(grant_date, "%Y-%m-%d")
+        sess = r.json()
+        case_id = sess["userCase"]["caseId"]
+    except (ValueError, KeyError) as e:
+        print(f"  [ppubs] session parse error: {e}")
+        return None
+
+    token = r.headers.get("X-Access-Token") or r.headers.get("x-access-token")
+    if not token:
+        print("  [ppubs] no X-Access-Token in response headers")
+        return None
+
+    s.headers["X-Access-Token"] = token
+    s._case_id = case_id  # attach for later use
+    print(f"  [ppubs] session ok: caseId={case_id}")
+    return s
+
+
+# ---------------------------------------------------------------------------
+# Search by patent number
+# ---------------------------------------------------------------------------
+
+def ppubs_find_guid(s, patent_number):
+    """Search PPUBS USPAT source for the patent number, return (guid, source_type)."""
+    case_id = s._case_id
+
+    # Build the search query body. The .pn. operator is the legacy PatFT
+    # patent-number field; PPUBS still accepts it for granted patents.
+    query_str = f'"{patent_number}".pn.'
+
+    query_body = {
+        "caseId": case_id,
+        "hl_snippets": "2",
+        "op": "OR",
+        "q": query_str,
+        "queryName": query_str,
+        "highlights": "1",
+        "qt": "brs",
+        "spellCheck": False,
+        "viewName": "tile",
+        "plurals": True,
+        "britishEquivalents": True,
+        "databaseFilters": [
+            {"databaseName": "USPAT", "countryCodes": []},
+        ],
+        "searchType": 1,
+        "ignorePersist": True,
+        "userEnteredQuery": query_str,
+    }
+
+    full_body = {
+        "start": 0,
+        "pageCount": 1,
+        "sort": "date_publ desc",
+        "docFamilyFiltering": "familyIdFiltering",
+        "searchType": 1,
+        "familyIdEnglishOnly": True,
+        "familyIdFirstPreferred": "US-PGPUB",
+        "familyIdSecondPreferred": "USPAT",
+        "familyIdThirdPreferred": "FPRS",
+        "showDocPerFamilyPref": "showEnglish",
+        "queryId": 0,
+        "tagDocSearch": False,
+        "query": query_body,
+    }
+
+    # Counts call (PPUBS requires this before search)
+    try:
+        r = s.post(f"{PPUBS_BASE}/api/searches/counts", json=query_body, timeout=TIMEOUT)
+        print(f"  [ppubs] counts: HTTP {r.status_code}")
+    except requests.RequestException as e:
+        print(f"  [ppubs] counts error: {e}")
+        return None, None
+
+    # Actual search
+    try:
+        r = s.post(
+            f"{PPUBS_BASE}/api/searches/searchWithBeFamily",
+            json=full_body,
+            timeout=TIMEOUT,
+        )
+    except requests.RequestException as e:
+        print(f"  [ppubs] search error: {e}")
+        return None, None
+
+    if r.status_code != 200:
+        print(f"  [ppubs] search HTTP {r.status_code}: {r.text[:200]}")
+        return None, None
+
+    try:
+        result = r.json()
     except ValueError:
-        print(f"  Bad grant_date format: {grant_date}")
+        print(f"  [ppubs] search parse error")
+        return None, None
+
+    # Patent list is under "patents" or "docs" depending on response shape
+    patents = result.get("patents") or result.get("docs") or []
+    if not patents:
+        # Could be under nested structure; dump for debug
+        print(f"  [ppubs] no results for {patent_number}")
+        print(f"  [ppubs] response keys: {list(result.keys())}")
+        return None, None
+
+    doc = patents[0]
+    guid = doc.get("guid")
+    src_type = doc.get("type") or "USPAT"
+    return guid, src_type
+
+
+# ---------------------------------------------------------------------------
+# Document retrieval
+# ---------------------------------------------------------------------------
+
+def ppubs_get_document(s, guid, src_type):
+    """Fetch the full document JSON including all sections (claims, etc)."""
+    url = f"{PPUBS_BASE}/api/patents/highlight/{guid}"
+    params = {
+        "queryId": 1,
+        "source": src_type,
+        "includeSections": "true",
+        "uniqueId": "null",
+    }
+    try:
+        r = s.get(url, params=params, timeout=TIMEOUT)
+    except requests.RequestException as e:
+        print(f"  [ppubs] document error: {e}")
         return None
 
-    file_stem = f"ipg{dt.strftime('%y%m%d')}"
-    url = f"{USPTO_BULK_BASE}/{dt.year}/{file_stem}.zip"
-    print(f"  Downloading {url}...")
+    if r.status_code != 200:
+        print(f"  [ppubs] document HTTP {r.status_code}: {r.text[:200]}")
+        return None
 
     try:
-        r = requests.get(url, headers={"User-Agent": UA}, timeout=300, stream=True)
-    except requests.RequestException as e:
-        print(f"  Bulk fetch error: {e}")
-        return None
-    if not r.ok:
-        print(f"  Bulk HTTP {r.status_code}")
+        return r.json()
+    except ValueError:
+        print(f"  [ppubs] document parse error")
         return None
 
-    buf = BytesIO()
-    for chunk in r.iter_content(chunk_size=1 << 20):
-        buf.write(chunk)
-    buf.seek(0)
 
-    with zipfile.ZipFile(buf) as zf:
-        xml_name = next((n for n in zf.namelist() if n.endswith(".xml")), None)
-        if not xml_name:
-            print("  No XML in zip")
-            return None
-        with zf.open(xml_name) as xf:
-            patent_xml = _extract_one_patent(xf, patent_id)
+# ---------------------------------------------------------------------------
+# Claim extraction (defensive; PPUBS structure not officially documented)
+# ---------------------------------------------------------------------------
 
-    if not patent_xml:
-        print(f"  Patent {patent_id} not found in {file_stem}.zip")
-        return None
+CLAIM_NUM_RE = re.compile(r"^\s*(\d+)\s*\.\s*")
+DEP_RE = re.compile(
+    r"(?:claim|the\s+\w+\s+of\s+claim|method\s+of\s+claim|system\s+of\s+claim)\s+(\d+)",
+    re.IGNORECASE,
+)
 
-    # Parse claims out of the patent's XML block
-    claims_raw = re.findall(
-        r'<claim id="[^"]*">(.*?)</claim>',
-        patent_xml,
-        flags=re.DOTALL,
-    )
+
+def _strip_html(text):
+    """Quick-and-dirty HTML tag strip; PPUBS responses include <highlight> spans."""
+    if not text:
+        return ""
+    return re.sub(r"<[^>]+>", "", text).strip()
+
+
+def extract_claims(doc):
+    """Parse claims out of a PPUBS document response.
+
+    PPUBS document JSON has the full patent text under various keys depending
+    on the API version. Common locations: 'claimSection', 'claims',
+    'sections.claims', or as part of 'document_structure'. We try several
+    paths and fall back to regex parsing on plain text.
+    """
+    claims_raw = None
+    # Try direct keys first
+    for key in ("claimSection", "claims", "claim", "claimText"):
+        if key in doc and doc[key]:
+            claims_raw = doc[key]
+            break
+
+    # Try nested under sections
+    if claims_raw is None and "sections" in doc:
+        sec = doc["sections"]
+        if isinstance(sec, dict):
+            claims_raw = sec.get("claims") or sec.get("claimSection")
+        elif isinstance(sec, list):
+            for item in sec:
+                if isinstance(item, dict) and item.get("name", "").lower() in (
+                    "claims", "claim", "claimsection"
+                ):
+                    claims_raw = item.get("text") or item.get("content") or item
+                    break
+
+    # Try patentDocument.claimsSection or similar nesting
+    if claims_raw is None and "patentDocument" in doc:
+        pd = doc["patentDocument"]
+        if isinstance(pd, dict):
+            claims_raw = pd.get("claimsSection") or pd.get("claims")
+
+    if claims_raw is None:
+        return []
+
+    # Normalize to a single string
+    if isinstance(claims_raw, list):
+        claims_text = "\n\n".join(str(c) for c in claims_raw)
+    elif isinstance(claims_raw, dict):
+        claims_text = claims_raw.get("text") or claims_raw.get("content") or json.dumps(claims_raw)
+    else:
+        claims_text = str(claims_raw)
+
+    claims_text = _strip_html(claims_text)
+
+    # Split on claim number boundaries: "1. ..." "2. ..." etc
+    # Each claim starts with a number followed by period at line start
+    parts = re.split(r"\n\s*(\d+)\s*\.\s*", "\n" + claims_text)
+    # parts looks like ['', '1', 'A method ...', '2', 'The method ...', ...]
     claims = []
-    for i, c in enumerate(claims_raw, 1):
-        text = re.sub(r"<[^>]+>", " ", c)
-        text = re.sub(r"\s+", " ", text).strip()
-        claims.append({"claim_sequence": str(i), "claim_text": text})
+    i = 1
+    while i < len(parts) - 1:
+        try:
+            seq = int(parts[i])
+            text = parts[i + 1].strip()
+            dep_match = DEP_RE.search(text[:120])  # only look in opening words
+            claim_dep = int(dep_match.group(1)) if dep_match else None
+            claims.append({
+                "claim_sequence": seq,
+                "claim_text": text,
+                "claim_dependent": claim_dep,
+            })
+        except (ValueError, IndexError):
+            pass
+        i += 2
 
-    # Pull title and dates from the block too
-    title_m = re.search(
-        r"<invention-title[^>]*>(.*?)</invention-title>",
-        patent_xml,
-        re.DOTALL,
+    return claims
+
+
+def extract_metadata(doc):
+    """Pull title/date/assignees/inventors from a PPUBS document response.
+    Best-effort; PPUBS field names not officially documented."""
+    title = (
+        doc.get("title")
+        or doc.get("inventionTitle")
+        or doc.get("patentTitle")
+        or ""
     )
-    title = re.sub(r"\s+", " ",
-                   re.sub(r"<[^>]+>", "", title_m.group(1) if title_m else "")).strip()
+    # Strip HTML if present
+    title = _strip_html(title)
+
+    grant_date = (
+        doc.get("datePublished")
+        or doc.get("publicationDate")
+        or doc.get("grantDate")
+        or doc.get("patentDate")
+        or doc.get("date_publ")
+        or ""
+    )
+
+    # Assignees: list of dicts or strings
+    assignees = []
+    asg_raw = doc.get("assignees") or doc.get("assignee") or []
+    if isinstance(asg_raw, list):
+        for a in asg_raw:
+            if isinstance(a, dict):
+                org = a.get("organizationName") or a.get("name") or a.get("orgname") or ""
+                if org:
+                    assignees.append({"assignee_organization": _strip_html(org)})
+            elif isinstance(a, str):
+                assignees.append({"assignee_organization": _strip_html(a)})
+
+    # Inventors
+    inventors = []
+    inv_raw = doc.get("inventors") or doc.get("inventor") or []
+    if isinstance(inv_raw, list):
+        for i in inv_raw:
+            if isinstance(i, dict):
+                first = i.get("firstName") or i.get("givenName") or ""
+                last = i.get("lastName") or i.get("familyName") or ""
+                if first or last:
+                    inventors.append({
+                        "inventor_name_first": _strip_html(first),
+                        "inventor_name_last": _strip_html(last),
+                    })
+            elif isinstance(i, str):
+                # "FIRST LAST" — split on last space
+                parts = i.rsplit(" ", 1)
+                if len(parts) == 2:
+                    inventors.append({
+                        "inventor_name_first": parts[0],
+                        "inventor_name_last": parts[1],
+                    })
 
     return {
-        "patent_id": patent_id,
         "patent_title": title,
         "patent_date": grant_date,
-        "claims": claims,
-        "_source": "uspto_bulk_xml",
-        "_source_url": url,
+        "assignees": assignees,
+        "inventors": inventors,
+        "examiners": [],  # PPUBS doesn't surface examiner cleanly
     }
 
 
-def _extract_one_patent(stream, patent_id: str):
-    """Stream-scan concatenated USPTO XML, return one patent's block."""
-    target = patent_id.lstrip("0")
-    buf = []
-    in_patent = False
-    is_target = False
-    for line_bytes in stream:
-        line = line_bytes.decode("utf-8", errors="replace")
-        if "<us-patent-grant" in line:
-            in_patent = True
-            buf = [line]
-            is_target = False
-            continue
-        if in_patent:
-            buf.append(line)
-            if not is_target and "<doc-number>" in line:
-                m = re.search(r"<doc-number>(\d+)</doc-number>", line)
-                if m and m.group(1).lstrip("0") == target:
-                    is_target = True
-            if "</us-patent-grant>" in line:
-                if is_target:
-                    return "".join(buf)
-                in_patent = False
-                buf = []
-    return None
+# ---------------------------------------------------------------------------
+# Main fetch flow
+# ---------------------------------------------------------------------------
+
+def fetch_ppubs(patent_id, session, debug_dump=False):
+    """Fetch via PPUBS. Returns the canonical data dict or None on failure."""
+    guid, src_type = ppubs_find_guid(session, patent_id)
+    if not guid:
+        return None
+
+    print(f"  [ppubs] guid={guid} type={src_type}")
+
+    doc = ppubs_get_document(session, guid, src_type)
+    if not doc:
+        return None
+
+    if debug_dump:
+        dump_path = OUTBOX / f"_ppubs_dump_{patent_id}.json"
+        dump_path.write_text(json.dumps(doc, indent=2, default=str))
+        print(f"  [ppubs] dumped raw response to {dump_path.name}")
+
+    meta = extract_metadata(doc)
+    claims = extract_claims(doc)
+
+    return {
+        "patent_id": patent_id,
+        "patent_title": meta["patent_title"],
+        "patent_date": meta["patent_date"],
+        "assignees": meta["assignees"],
+        "inventors": meta["inventors"],
+        "examiners": meta["examiners"],
+        "claims": claims,
+        "_source": "ppubs",
+        "_ppubs_guid": guid,
+        "_ppubs_type": src_type,
+    }
 
 
-def write_outputs(patent_id: str, data: dict) -> None:
+def write_outputs(patent_id, data):
     json_path = OUTBOX / f"US{patent_id}.json"
     txt_path = OUTBOX / f"US{patent_id}.txt"
 
@@ -214,7 +439,6 @@ def write_outputs(patent_id: str, data: dict) -> None:
 
     json_path.write_text(payload)
 
-    # Plain-text view for Drive upload
     lines = [f"US{patent_id}"]
     if data.get("patent_title"):
         lines.append(f"Title: {data['patent_title']}")
@@ -233,20 +457,16 @@ def write_outputs(patent_id: str, data: dict) -> None:
         invs = [i for i in invs if i]
         if invs:
             lines.append(f"Inventors: {', '.join(invs)}")
-    if data.get("examiners"):
-        exs = [
-            f"{e.get('examiner_name_first', '')} {e.get('examiner_name_last', '')}".strip()
-            for e in data["examiners"]
-        ]
-        exs = [e for e in exs if e]
-        if exs:
-            lines.append(f"Examiners: {', '.join(exs)}")
     lines.append(f"Source: {data.get('_source', 'unknown')}")
+    if data.get("_ppubs_guid"):
+        lines.append(f"PPUBS GUID: {data['_ppubs_guid']}")
     lines.append("")
     lines.append("=" * 70)
     lines.append("CLAIMS")
     lines.append("=" * 70)
     lines.append("")
+    if not data.get("claims"):
+        lines.append("(No claims extracted. Inspect _ppubs_dump_*.json for field mapping.)")
     for c in data.get("claims", []):
         seq = c.get("claim_sequence", "?")
         text = c.get("claim_text", "")
@@ -256,80 +476,49 @@ def write_outputs(patent_id: str, data: dict) -> None:
         lines.append(text)
         lines.append("")
     txt_path.write_text("\n".join(lines))
-    print(f"  US{patent_id}: wrote {json_path.name} + {txt_path.name}")
+    print(f"  US{patent_id}: wrote {json_path.name} + {txt_path.name} ({len(data.get('claims', []))} claims)")
 
 
-def parse_input(arg: str):
-    """Parse '12345' or '12345:2020-11-24' format.
-    Returns (patent_id, grant_date or None)."""
+def parse_input(arg):
+    """Accept '12345' or '12345:2020-11-24' format. Date is ignored (PPUBS
+    doesn't need it). Date suffix retained for backward compat with prior runs."""
     if ":" in arg:
-        pid, date = arg.split(":", 1)
-        return pid.strip(), date.strip()
-    return arg.strip(), None
+        return arg.split(":", 1)[0].strip()
+    return arg.strip()
 
 
 def main():
     if len(sys.argv) < 2:
-        print("Usage: patent_fetch.py <patent_number[:YYYY-MM-DD]>[,...]")
-        print("  - With date hint: routes directly to USPTO bulk XML")
-        print("  - Without date hint: tries PatentSearch API (needs PATENTSVIEW_API_KEY)")
+        print("Usage: patent_fetch.py <patent_number>[,<patent_number>...]")
+        print("  (Optional :YYYY-MM-DD date suffix accepted but ignored.)")
         sys.exit(1)
 
-    patents = [parse_input(p) for p in sys.argv[1].split(",") if p.strip()]
-    api_key = os.environ.get("PATENTSVIEW_API_KEY", "").strip() or None
+    raw_inputs = [p for p in sys.argv[1].split(",") if p.strip()]
+    patents = [parse_input(p) for p in raw_inputs]
+    patents = [re.sub(r"^US|B\d?$", "", p, flags=re.IGNORECASE).strip() for p in patents]
 
-    for raw_id, hint_date in patents:
-        clean = re.sub(r"^US|B\d?$", "", raw_id, flags=re.IGNORECASE).strip()
-        print(f"\nFetching US{clean}...")
+    print(f"Establishing PPUBS session...")
+    session = ppubs_session()
+    if not session:
+        print("FAIL: could not establish PPUBS session")
+        sys.exit(1)
 
-        # PRIMARY PATH: if grant date provided, skip PatentSearch and go
-        # straight to USPTO bulk XML (no API key needed, authoritative source).
-        if hint_date:
-            print(f"  Using USPTO bulk XML (grant date hint: {hint_date})")
-            data = fetch_uspto_bulk(clean, hint_date)
-            if not data:
-                print(f"  FAIL: bulk XML fetch failed for US{clean}")
-                continue
-            write_outputs(clean, data)
+    failures = []
+    for idx, pid in enumerate(patents):
+        print(f"\nFetching US{pid} via PPUBS...")
+        # Dump raw response for the first patent only — for field-mapping debug
+        data = fetch_ppubs(pid, session, debug_dump=(idx == 0))
+        if data is None:
+            print(f"FAIL: US{pid}")
+            failures.append(pid)
             continue
+        write_outputs(pid, data)
 
-        # FALLBACK PATH: no date hint, try PatentSearch API.
-        # As of May 2024, this requires an API key. If unset, this will 403.
-        if not api_key:
-            print(f"  No date hint and PATENTSVIEW_API_KEY not set.")
-            print(f"  Skipping US{clean}. Re-run with '{clean}:YYYY-MM-DD' to use bulk XML.")
-            continue
+    if failures:
+        print(f"\n{len(failures)} of {len(patents)} patents failed: {failures}")
+        sys.exit(2)
 
-        data = fetch_patentsview(clean, api_key)
-
-        # If PatentSearch gave us metadata but no claims, try bulk for claims.
-        needs_bulk = (
-            data is None
-            or not data.get("claims")
-            or len(data.get("claims", [])) == 0
-        )
-        if needs_bulk:
-            print("  PatentSearch miss or no claims; trying USPTO bulk XML...")
-            grant_date = (data or {}).get("patent_date")
-            if not grant_date:
-                print(f"  No grant date; cannot derive bulk filename.")
-                print(f"  US{clean}: only partial data saved.")
-                if data:
-                    write_outputs(clean, data)
-                continue
-            bulk_data = fetch_uspto_bulk(clean, grant_date)
-            if bulk_data:
-                # Merge: keep PatentSearch metadata, use bulk claims if better
-                if data:
-                    data["claims"] = bulk_data.get("claims", data.get("claims", []))
-                    data["_source"] = "patentsview+bulk"
-                else:
-                    data = bulk_data
-
-        if not data:
-            print(f"  FAIL: could not retrieve US{clean}")
-            continue
-        write_outputs(clean, data)
+    print(f"\nAll {len(patents)} patents fetched successfully.")
 
 
 if __name__ == "__main__":
