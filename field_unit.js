@@ -21,6 +21,8 @@ const {
   extractJsonBlock,
   computeGroupScenarios,
   wcSortByTiebreakers,
+  computeBest3rdRanking,
+  wcMakePRNG,
 } = require('./field_utils.js');
 
 let pass = 0, fail = 0;
@@ -408,5 +410,202 @@ test('computeGroupScenarios: marginModel always reported as "minimum"', () => {
   assertEqual(r.scenariosEnumerated, 1); // 3^0 = 1 (no remaining)
 });
 
+// ── Permutations Engine v1.1 — probability-weighted scenarios ──────────────
+test('computeGroupScenarios: unweighted output exposes weighted=false, pFirst=null', () => {
+  const teams = [
+    tm('A',2,2,0,0,4,1), tm('B',2,1,1,0,3,2),
+    tm('C',2,0,1,1,1,2), tm('D',2,0,0,2,0,3),
+  ];
+  const r = computeGroupScenarios({groupId:'X', teams, played:[], remaining:[]});
+  assertEqual(r.weighted, false);
+  assertEqual(r.perTeam['A'].pFirst, null);
+  assertEqual(r.perTeam['A'].pQualifyTop2, null);
+});
+
+test('computeGroupScenarios: weighted output sums to 1.0 per team across positions', () => {
+  const teams = [
+    tm('A',2,2,0,0,4,1), tm('B',2,1,1,0,3,2),
+    tm('C',2,0,1,1,1,2), tm('D',2,0,0,2,0,3),
+  ];
+  const played = [
+    {home:'A',away:'C',homeScore:2,awayScore:0},
+    {home:'B',away:'D',homeScore:2,awayScore:0},
+    {home:'A',away:'D',homeScore:2,awayScore:1},
+    {home:'C',away:'B',homeScore:1,awayScore:1},
+  ];
+  const remaining = [{home:'A',away:'B'}, {home:'D',away:'C'}];
+  // Roughly market-implied probabilities — they must sum to 1.0 per match
+  const outcomeProbabilities = [
+    {pHome:0.5, pDraw:0.3, pAway:0.2},  // A vs B
+    {pHome:0.3, pDraw:0.3, pAway:0.4},  // D vs C
+  ];
+  const r = computeGroupScenarios({groupId:'X', teams, played, remaining, outcomeProbabilities});
+  assertEqual(r.weighted, true);
+  // For each team, pFirst+pSecond+pThird+pFourth should sum to ~1.0
+  for (const name of ['A','B','C','D']) {
+    const t = r.perTeam[name];
+    const sum = t.pFirst + t.pSecond + t.pThird + t.pFourth;
+    assert(Math.abs(sum - 1.0) < 0.001, `${name} probs sum to ${sum.toFixed(4)}, expected 1.0`);
+    assertEqual(t.pQualifyTop2, t.pFirst + t.pSecond);
+  }
+});
+
+test('computeGroupScenarios: skewed probabilities skew per-team finishing prob', () => {
+  // Two teams, 1 remaining match. If we say pHome=0.95 then home should
+  // finish 1st with ~0.95 probability (assuming the win is enough).
+  const teams = [
+    tm('A',2,1,1,0,3,2),  // 4 pts
+    tm('B',2,1,1,0,3,2),  // 4 pts — tied with A
+    tm('C',2,1,0,1,2,2),  // 3 pts
+    tm('D',2,0,0,2,1,5),  // 0 pts, gone
+  ];
+  // 1 remaining: A vs B (winner clears the group)
+  const remaining = [{home:'A',away:'B'}];
+  const outcomeProbabilities = [{pHome:0.7, pDraw:0.2, pAway:0.1}];
+  const r = computeGroupScenarios({
+    groupId:'X', teams, played:[], remaining, outcomeProbabilities,
+  });
+  // A wins (p=0.7) → A finishes 1st; A draws (p=0.2) → tied with B on points,
+  // GD ties at -? — falls back to current. A loses (p=0.1) → B 1st, A 2nd.
+  // pFirst for A should be at least pHome (0.7).
+  assert(r.perTeam['A'].pFirst >= 0.69, `A.pFirst=${r.perTeam['A'].pFirst} should be >=0.7`);
+  // pFirst for B should reflect the away-win + some draw share
+  assert(r.perTeam['B'].pFirst <= 0.31, `B.pFirst=${r.perTeam['B'].pFirst} should be <=0.3`);
+});
+
+test('computeGroupScenarios: probabilities not summing to 1 throws', () => {
+  const teams = ['A','B','C','D'].map(n => tm(n,0,0,0,0,0,0));
+  const remaining = [{home:'A',away:'B'}];
+  let threw = false;
+  try {
+    computeGroupScenarios({
+      groupId:'X', teams, played:[], remaining,
+      outcomeProbabilities: [{pHome:0.5, pDraw:0.3, pAway:0.5}],  // 1.3
+    });
+  } catch(e) {
+    threw = true;
+    assert(/sum/i.test(e.message), `expected sum error, got: ${e.message}`);
+  }
+  assert(threw, 'should throw on probabilities not summing to ~1');
+});
+
+test('computeGroupScenarios: probabilities length mismatch throws', () => {
+  const teams = ['A','B','C','D'].map(n => tm(n,0,0,0,0,0,0));
+  const remaining = [{home:'A',away:'B'}, {home:'C',away:'D'}];
+  let threw = false;
+  try {
+    computeGroupScenarios({
+      groupId:'X', teams, played:[], remaining,
+      outcomeProbabilities: [{pHome:0.5, pDraw:0.3, pAway:0.2}],  // only 1
+    });
+  } catch(e) { threw = true; }
+  assert(threw, 'should throw on prob array length mismatch');
+});
 
 
+
+
+// ── Permutations Engine v1.2 — best-3rd cross-group Monte Carlo ────────────
+test('wcMakePRNG: deterministic with same seed', () => {
+  const a = wcMakePRNG(42);
+  const b = wcMakePRNG(42);
+  for (let i = 0; i < 100; i++) assertEqual(a(), b(), `divergence at i=${i}`);
+});
+
+test('wcMakePRNG: different seeds produce different streams', () => {
+  const a = wcMakePRNG(42);
+  const b = wcMakePRNG(43);
+  let same = 0;
+  for (let i = 0; i < 100; i++) if (a() === b()) same++;
+  assert(same < 5, `seeds 42 and 43 collided ${same}/100 times — PRNG broken`);
+});
+
+test('wcMakePRNG: output is in [0, 1) over many samples', () => {
+  const r = wcMakePRNG(7);
+  for (let i = 0; i < 1000; i++) {
+    const v = r();
+    assert(v >= 0 && v < 1, `out-of-range at i=${i}: ${v}`);
+  }
+});
+
+test('computeBest3rdRanking: throws on empty input', () => {
+  let threw = false;
+  try { computeBest3rdRanking({groupInputs: []}); } catch(e) { threw = true; }
+  assert(threw, 'should throw on empty groupInputs');
+});
+
+test('computeBest3rdRanking: 12 deterministic post-MD3 groups → exact qualify counts', () => {
+  const groupInputs = [];
+  for (let i = 0; i < 12; i++) {
+    const tier = i < 4 ? 'top' : i < 8 ? 'mid' : 'low';
+    const thirdPts = tier === 'top' ? 3 : tier === 'mid' ? 1 : 0;
+    const thirdGD  = tier === 'top' ? 0 : tier === 'mid' ? -2 : -5;
+    const thirdGF  = tier === 'top' ? 3 : tier === 'mid' ? 1 : 0;
+    groupInputs.push({
+      groupId: String.fromCharCode(65 + i),
+      teams: [
+        tm(`G${i}_1st`, 3, 3, 0, 0, 6, 0),
+        tm(`G${i}_2nd`, 3, 2, 0, 1, 4, 2),
+        {name: `G${i}_3rd`, P:3, W: Math.floor(thirdPts/3), D: thirdPts%3,
+         L: 3-Math.floor(thirdPts/3)-(thirdPts%3),
+         GF: thirdGF, GA: thirdGF - thirdGD, Pts: thirdPts},
+        tm(`G${i}_4th`, 3, 0, 0, 3, 0, 8),
+      ],
+      played: [],
+      remaining: [],
+    });
+  }
+  const r = computeBest3rdRanking({groupInputs, samples: 500, seed: 12345, bestN: 8});
+  for (let i = 0; i < 4; i++) {
+    assertEqual(r.perTeam[`G${i}_3rd`].pQualifyAsBest3rd, 1.0);
+  }
+  for (let i = 8; i < 12; i++) {
+    assertEqual(r.perTeam[`G${i}_3rd`].pQualifyAsBest3rd, 0.0);
+  }
+  for (let i = 4; i < 8; i++) {
+    assertEqual(r.perTeam[`G${i}_3rd`].pQualifyAsBest3rd, 1.0);
+  }
+});
+
+test('computeBest3rdRanking: reproducibility — same seed produces same output', () => {
+  const groupInputs = [];
+  for (let i = 0; i < 4; i++) {
+    groupInputs.push({
+      groupId: String.fromCharCode(65 + i),
+      teams: ['1','2','3','4'].map(n => tm(`G${i}_${n}`, 0,0,0,0,0,0)),
+      played: [],
+      remaining: [
+        {home: `G${i}_1`, away: `G${i}_2`},
+        {home: `G${i}_3`, away: `G${i}_4`},
+      ],
+    });
+  }
+  const r1 = computeBest3rdRanking({groupInputs, samples: 1000, seed: 999, bestN: 2});
+  const r2 = computeBest3rdRanking({groupInputs, samples: 1000, seed: 999, bestN: 2});
+  for (const name in r1.perTeam) {
+    assertEqual(r1.perTeam[name].pAsThird, r2.perTeam[name].pAsThird);
+    assertEqual(r1.perTeam[name].pQualifyAsBest3rd, r2.perTeam[name].pQualifyAsBest3rd);
+  }
+});
+
+test('computeBest3rdRanking: pMiss + pQualify == pAsThird', () => {
+  const groupInputs = [];
+  for (let i = 0; i < 12; i++) {
+    groupInputs.push({
+      groupId: String.fromCharCode(65 + i),
+      teams: ['1','2','3','4'].map(n => tm(`G${i}_${n}`, 0,0,0,0,0,0)),
+      played: [],
+      remaining: [{home: `G${i}_1`, away: `G${i}_2`}],
+    });
+  }
+  const r = computeBest3rdRanking({groupInputs, samples: 500, seed: 1, bestN: 8});
+  for (const name in r.perTeam) {
+    const t = r.perTeam[name];
+    const sum = t.pQualifyAsBest3rd + t.pMissAsBest3rd;
+    assert(Math.abs(sum - t.pAsThird) < 1e-9);
+  }
+});
+
+// ── Summary ────────────────────────────────────────────────────────────────
+console.log(`\n── Results: ${pass} passed, ${fail} failed ─────────────\n`);
+if (fail > 0) process.exit(1);

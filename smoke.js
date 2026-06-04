@@ -2885,6 +2885,35 @@ assert('A428 — Permutations Engine: margin model documented in source',
   fieldUtilsSrc.includes("marginModel:") && fieldUtilsSrc.includes("'minimum'"),
   'Permutations Engine must self-document the minimum-margin W/D/L model');
 
+// v1.1 — probability weighting + v1.2 — best-3rd cross-group
+assert('A429 — Permutations Engine v1.1: outcomeProbabilities path defined',
+  /function\s+computeGroupScenarios.*outcomeProbabilities/s.test(fieldUtilsSrc)
+    && fieldUtilsSrc.includes('useProbs'),
+  'computeGroupScenarios must accept optional outcomeProbabilities for weighted scenarios');
+
+assert('A430 — Permutations Engine v1.1: pFirst/pSecond/pQualifyTop2 surfaced when weighted',
+  fieldUtilsSrc.includes('pFirst:') && fieldUtilsSrc.includes('pQualifyTop2:'),
+  'wcSummarizePerTeam must produce probability fields when scenarios are weighted');
+
+assert('A431 — Permutations Engine v1.2: computeBest3rdRanking defined',
+  /function\s+computeBest3rdRanking\s*\(/.test(fieldUtilsSrc),
+  'Best-3rd cross-group Monte Carlo engine missing from field_utils.js');
+
+assert('A432 — Permutations Engine v1.2: Mulberry32 PRNG for deterministic tests',
+  /function\s+wcMakePRNG\s*\(/.test(fieldUtilsSrc)
+    && fieldUtilsSrc.includes('0x6D2B79F5'),
+  'Best-3rd engine must include a seedable PRNG for reproducible Monte Carlo');
+
+assert('A433 — Permutations Engine v1.2: per-sample 3rd-place sampler defined',
+  /function\s+wcSampleScenario\s*\(/.test(fieldUtilsSrc),
+  'wcSampleScenario must exist as the Monte Carlo inner loop');
+
+assert('A434 — Permutations Engine v1.2: exports include best-3rd functions',
+  fieldUtilsSrc.includes('computeBest3rdRanking,')
+    && fieldUtilsSrc.includes('wcSampleScenario,')
+    && fieldUtilsSrc.includes('wcMakePRNG,'),
+  'module.exports must include v1.2 best-3rd engine functions for unit tests');
+
 // ═════════════════════════════════════════════════════════════════════
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);

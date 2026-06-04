@@ -501,17 +501,39 @@ function wcCloneTeamMap(teamMap) {
 /**
  * Enumerate every W/D/L outcome combination for the remaining fixtures and
  * compute the resulting standings under FIFA tiebreakers. Returns one entry
- * per scenario.
+ * per scenario, optionally weighted by per-match outcome probabilities.
  * @param {Object} teamMap — current standings keyed by team name
  * @param {Array<Object>} played — already-played matches (for H2H seeding)
  * @param {Array<Object>} remaining — [{home, away}, ...] unplayed
- * @returns {Array<{outcomes, final}>} list of 3^N scenarios
+ * @param {Array<Object>} [outcomeProbs] — optional, parallel to remaining:
+ *   [{pHome, pDraw, pAway}, ...]. When provided, each scenario carries a
+ *   joint probability (product of per-match probs). When omitted, scenarios
+ *   are returned with probability null and downstream code must treat them
+ *   as a uniform distribution (1 / total).
+ * @returns {Array<{outcomes, final, probability}>} list of 3^N scenarios
  */
-function wcEnumerateScenarios(teamMap, played, remaining) {
+function wcEnumerateScenarios(teamMap, played, remaining, outcomeProbs) {
   const N = remaining.length;
   if (N > 8) {
-    // 3^9 = 19683; over 8 unplayed matches is well outside group-stage size (6).
     throw new Error(`wcEnumerateScenarios: ${N} remaining > supported max of 8`);
+  }
+  // Validate outcomeProbs if provided.
+  let useProbs = false;
+  if (Array.isArray(outcomeProbs) && outcomeProbs.length > 0) {
+    if (outcomeProbs.length !== N) {
+      throw new Error(`wcEnumerateScenarios: outcomeProbs length ${outcomeProbs.length} != remaining length ${N}`);
+    }
+    for (let i = 0; i < N; i++) {
+      const p = outcomeProbs[i];
+      if (!p || typeof p.pHome !== 'number' || typeof p.pDraw !== 'number' || typeof p.pAway !== 'number') {
+        throw new Error(`wcEnumerateScenarios: outcomeProbs[${i}] missing pHome/pDraw/pAway`);
+      }
+      const sum = p.pHome + p.pDraw + p.pAway;
+      if (Math.abs(sum - 1) > 0.01) {
+        throw new Error(`wcEnumerateScenarios: outcomeProbs[${i}] sums to ${sum.toFixed(3)}, must be ~1.0`);
+      }
+    }
+    useProbs = true;
   }
   const total = Math.pow(3, N);
   const scenarios = [];
@@ -521,45 +543,60 @@ function wcEnumerateScenarios(teamMap, played, remaining) {
     const playedCopy = played.slice();
     const outcomeList = [];
     let bits = s;
+    let prob = useProbs ? 1 : null;
     for (let k = 0; k < N; k++) {
       const code = codes[bits % 3];
       bits = Math.floor(bits / 3);
       outcomeList.push({home: remaining[k].home, away: remaining[k].away, outcome: code});
       wcApplyOutcome(tm, remaining[k].home, remaining[k].away, code, playedCopy);
+      if (useProbs) {
+        const p = outcomeProbs[k];
+        prob *= (code === 'H' ? p.pHome : code === 'D' ? p.pDraw : p.pAway);
+      }
     }
     const finalArr = Object.values(tm);
     wcSortByTiebreakers(finalArr, playedCopy);
-    scenarios.push({outcomes: outcomeList, final: finalArr.map(t => t.name)});
+    scenarios.push({outcomes: outcomeList, final: finalArr.map(t => t.name), probability: prob});
   }
   return scenarios;
 }
 
 /**
  * Summarize per-team qualification possibilities across all scenarios.
+ * If scenarios carry probability weights (probability !== null), the per-team
+ * output additionally includes pFirst/pSecond/pThird/pFourth — probabilities
+ * for each finishing position. If unweighted, those fields are null.
  * @param {Array<string>} teamNames
- * @param {Array<{outcomes, final}>} scenarios — output of wcEnumerateScenarios
+ * @param {Array<{outcomes, final, probability}>} scenarios
  * @returns {Object} per-team summary
  */
 function wcSummarizePerTeam(teamNames, scenarios) {
   const out = {};
+  const weighted = scenarios.length > 0 && scenarios[0].probability !== null;
   for (const name of teamNames) {
     let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+    let p1 = 0, p2 = 0, p3 = 0, p4 = 0;
     for (const sc of scenarios) {
       const idx = sc.final.indexOf(name);
-      if (idx === 0) pos1++;
-      else if (idx === 1) pos2++;
-      else if (idx === 2) pos3++;
-      else                pos4++;
+      if (idx === 0)      { pos1++; if (weighted) p1 += sc.probability; }
+      else if (idx === 1) { pos2++; if (weighted) p2 += sc.probability; }
+      else if (idx === 2) { pos3++; if (weighted) p3 += sc.probability; }
+      else                { pos4++; if (weighted) p4 += sc.probability; }
     }
-    const total = scenarios.length;
     out[name] = {
       canTopGroup:      pos1 > 0,
       canQualifyTop2:   (pos1 + pos2) > 0,
       canFinish3rd:     pos3 > 0,
-      alwaysTopGroup:   pos1 === total,
-      alwaysQualify:    (pos1 + pos2) === total,
+      alwaysTopGroup:   pos1 === scenarios.length,
+      alwaysQualify:    (pos1 + pos2) === scenarios.length,
       alwaysEliminated: pos1 === 0 && pos2 === 0 && pos3 === 0,
       scenarioCounts:   {first: pos1, second: pos2, third: pos3, fourth: pos4},
+      // Probability fields populated only when caller provided outcomeProbabilities.
+      pFirst:           weighted ? p1 : null,
+      pSecond:          weighted ? p2 : null,
+      pThird:           weighted ? p3 : null,
+      pFourth:          weighted ? p4 : null,
+      pQualifyTop2:     weighted ? (p1 + p2) : null,
     };
   }
   return out;
@@ -575,16 +612,15 @@ function wcSummarizePerTeam(teamNames, scenarios) {
  * @param {Array<Object>} input.played — already-played matches in this group:
  *   [{home, away, homeScore, awayScore}, ...]
  * @param {Array<Object>} input.remaining — unplayed fixtures: [{home, away}, ...]
+ * @param {Array<Object>} [input.outcomeProbabilities] — optional, parallel to
+ *   remaining: [{pHome, pDraw, pAway}, ...]. Each row must sum to ~1.0.
+ *   When provided, perTeam output includes pFirst/pSecond/pThird/pFourth.
  * @returns {Object} {
- *   groupId,
- *   matchesRemaining: number,
- *   scenariosEnumerated: number,
- *   currentTable: [{name, ...}] sorted by FIFA tiebreakers,
- *   perTeam: { [name]: { canTopGroup, canQualifyTop2, ... } },
- *   marginModel: 'minimum' — documents that wins = +1 GD, draws = +0 GD
+ *   groupId, matchesRemaining, scenariosEnumerated,
+ *   currentTable, perTeam, marginModel, weighted
  * }
  */
-function computeGroupScenarios({groupId, teams, played, remaining}) {
+function computeGroupScenarios({groupId, teams, played, remaining, outcomeProbabilities}) {
   if (!Array.isArray(teams) || teams.length !== 4) {
     throw new Error('computeGroupScenarios: teams must be an array of 4');
   }
@@ -598,8 +634,8 @@ function computeGroupScenarios({groupId, teams, played, remaining}) {
   // Current table (under tiebreakers, no future outcomes applied).
   const currentSorted = Object.values(wcCloneTeamMap(teamMap));
   wcSortByTiebreakers(currentSorted, played);
-  // Enumerate.
-  const scenarios = wcEnumerateScenarios(teamMap, played, remaining);
+  // Enumerate (with optional probability weighting).
+  const scenarios = wcEnumerateScenarios(teamMap, played, remaining, outcomeProbabilities);
   const perTeam   = wcSummarizePerTeam(teams.map(t => t.name), scenarios);
   return {
     groupId,
@@ -608,11 +644,163 @@ function computeGroupScenarios({groupId, teams, played, remaining}) {
     currentTable:        currentSorted,
     perTeam,
     marginModel:         'minimum',
+    weighted:            Array.isArray(outcomeProbabilities) && outcomeProbabilities.length > 0,
   };
 }
 
-
 // ─────────────────────────────────────────────────────────────────────────────
+// ── v1.2 — BEST-3rd CROSS-GROUP ENGINE ──────────────────────────────────────
+// The 2026 WC format: 12 groups of 4 → top 2 from each group (24 teams) +
+// best 8 third-place finishers across the 12 groups = 32 to Round of 32.
+// Comparing third-place teams from DIFFERENT groups uses FIFA criteria:
+// points → goal difference → goals scored → fair-play points → drawing of
+// lots. H2H tiebreakers don't apply (the teams didn't play each other).
+//
+// Exhaustive enumeration across 12 groups is combinatorially infeasible
+// (9^12 ≈ 2.8×10^11 at MD3, 729^12 ≈ 10^34 at MD0), so this is Monte Carlo.
+// Default 10,000 samples is enough for stable P(qualify) estimates within
+// roughly ±0.5% on a single team across runs. Increase samples for tighter
+// confidence intervals.
+//
+// Determinism: pass a numeric `seed` to use a Mulberry32 PRNG for repeatable
+// results in tests. Omit `seed` to use Math.random() (non-deterministic).
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Mulberry32 — tiny deterministic PRNG. Returns a function that yields
+ * uniform [0, 1) on each call. State is closed over via `state`.
+ * Reference: https://en.wikipedia.org/wiki/Mulberry32
+ */
+function wcMakePRNG(seed) {
+  let state = (seed | 0) || 1;
+  return function() {
+    state = (state + 0x6D2B79F5) | 0;
+    let t = state;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+/**
+ * Sample ONE outcome combination for a group's remaining matches and
+ * compute the resulting final table. Used as the inner loop of the
+ * cross-group Monte Carlo.
+ * @param {Object} input — same shape as computeGroupScenarios inputs
+ * @param {Function} rand — () => [0,1) PRNG
+ * @returns {{finalTable: Array, thirdPlaceTeam: Object|null}}
+ *   finalTable: sorted [{name, P, W, D, L, GF, GA, Pts}, ...]
+ *   thirdPlaceTeam: the 3rd-place finisher's full record (or null on bad input)
+ */
+function wcSampleScenario({teams, played, remaining, outcomeProbabilities}, rand) {
+  if (!Array.isArray(teams) || teams.length !== 4) return {finalTable: [], thirdPlaceTeam: null};
+  if (!Array.isArray(played))    played    = [];
+  if (!Array.isArray(remaining)) remaining = [];
+  const useProbs = Array.isArray(outcomeProbabilities) && outcomeProbabilities.length === remaining.length;
+  const teamMap = {};
+  for (const t of teams) teamMap[t.name] = Object.assign({}, t);
+  const playedCopy = played.slice();
+  for (let k = 0; k < remaining.length; k++) {
+    const r = rand();
+    let outcome;
+    if (useProbs) {
+      const p = outcomeProbabilities[k];
+      if      (r < p.pHome)             outcome = 'H';
+      else if (r < p.pHome + p.pDraw)   outcome = 'D';
+      else                              outcome = 'A';
+    } else {
+      // Uniform — equal probability for H/D/A
+      outcome = r < 1/3 ? 'H' : r < 2/3 ? 'D' : 'A';
+    }
+    wcApplyOutcome(teamMap, remaining[k].home, remaining[k].away, outcome, playedCopy);
+  }
+  const finalArr = Object.values(teamMap);
+  wcSortByTiebreakers(finalArr, playedCopy);
+  return {
+    finalTable:     finalArr,
+    thirdPlaceTeam: finalArr.length >= 3 ? finalArr[2] : null,
+  };
+}
+
+/**
+ * Sort the third-place finishers across groups by FIFA cross-group criteria
+ * (points → GD → GF). Returns the array sorted with index 0 = best 3rd.
+ */
+function wcSortThirdPlaceAcrossGroups(thirdPlaceArr) {
+  return thirdPlaceArr.slice().sort((a, b) =>
+    (b.Pts - a.Pts)
+      || ((b.GF - b.GA) - (a.GF - a.GA))
+      || (b.GF - a.GF)
+  );
+}
+
+/**
+ * Run cross-group Monte Carlo. For each sample, draws one scenario per
+ * group, identifies each group's 3rd-place team, sorts them by FIFA
+ * cross-group criteria, and credits the top 8 with one "qualify" count.
+ *
+ * @param {Object} input
+ * @param {Array<Object>} input.groupInputs — array of group input objects,
+ *   each {groupId, teams, played, remaining, outcomeProbabilities?}
+ * @param {number} [input.samples=10000] — Monte Carlo iterations
+ * @param {number|null} [input.seed=null] — PRNG seed (null = Math.random)
+ * @param {number} [input.bestN=8] — how many third-place spots qualify (8 for WC 2026)
+ * @returns {Object} {
+ *   samples,
+ *   bestN,
+ *   perTeam: { [name]: { groupId, samplesAsThird, pAsThird, pQualifyAsBest3rd, pMissAsBest3rd } }
+ * }
+ */
+function computeBest3rdRanking({groupInputs, samples = 10000, seed = null, bestN = 8}) {
+  if (!Array.isArray(groupInputs) || groupInputs.length === 0) {
+    throw new Error('computeBest3rdRanking: groupInputs must be a non-empty array');
+  }
+  const rand = (seed !== null && seed !== undefined) ? wcMakePRNG(seed) : Math.random;
+  // Per-team counters across the run
+  const counters = {};
+  for (const gi of groupInputs) {
+    for (const t of (gi.teams || [])) {
+      counters[t.name] = counters[t.name] || {
+        groupId:        gi.groupId,
+        samplesAsThird: 0,
+        samplesQualify: 0,
+      };
+    }
+  }
+  for (let s = 0; s < samples; s++) {
+    // Sample one scenario per group, collect the third-place team
+    const thirdPlace = [];
+    for (const gi of groupInputs) {
+      const res = wcSampleScenario(gi, rand);
+      if (res.thirdPlaceTeam) {
+        thirdPlace.push(Object.assign({groupId: gi.groupId}, res.thirdPlaceTeam));
+      }
+    }
+    // Sort by FIFA cross-group criteria; top bestN qualify
+    const sorted = wcSortThirdPlaceAcrossGroups(thirdPlace);
+    for (let i = 0; i < sorted.length; i++) {
+      const tp = sorted[i];
+      counters[tp.name].samplesAsThird++;
+      if (i < bestN) counters[tp.name].samplesQualify++;
+    }
+  }
+  // Derive probabilities
+  const perTeam = {};
+  for (const name in counters) {
+    const c = counters[name];
+    perTeam[name] = {
+      groupId:           c.groupId,
+      samplesAsThird:    c.samplesAsThird,
+      pAsThird:          c.samplesAsThird / samples,
+      pQualifyAsBest3rd: c.samplesQualify / samples,
+      // P(team finishes 3rd AND misses best-N cut) = P(3rd) − P(qualify as best-3rd)
+      pMissAsBest3rd:    (c.samplesAsThird - c.samplesQualify) / samples,
+    };
+  }
+  return {samples, bestN, perTeam};
+}
+
+
 // Node.js compatibility — used by field_unit.js for direct imports
 // Browser: all functions are global (loaded via <script src> in <head>)
 if (typeof module !== 'undefined' && module.exports) {
@@ -629,5 +817,10 @@ if (typeof module !== 'undefined' && module.exports) {
     wcSortByTiebreakers,
     wcEnumerateScenarios,
     wcSummarizePerTeam,
+    // v1.2 — best-3rd cross-group
+    computeBest3rdRanking,
+    wcSampleScenario,
+    wcSortThirdPlaceAcrossGroups,
+    wcMakePRNG,
   };
 }
