@@ -1,7 +1,12 @@
+Establishing PPUBS session...
+  [ppubs] prime: HTTP 200
+  [ppubs] session ok: caseId=219587981
 
-Fetching US10846193...
-  Using USPTO bulk XML (grant date hint: 2020-11-24)
-  Downloading https://bulkdata.uspto.gov/data/patent/grant/redbook/fulltext/2020/ipg201124.zip...
-  Bulk fetch error: HTTPSConnectionPool(host='bulkdata.uspto.gov', port=443): Max retries exceeded with url: /data/patent/grant/redbook/fulltext/2020/ipg201124.zip (Caused by NameResolutionError("HTTPSConnection(host='bulkdata.uspto.gov', port=443): Failed to resolve 'bulkdata.uspto.gov' ([Errno -5] No address associated with hostname)"))
-  FAIL: bulk XML fetch failed for US10846193
-Exit code: 0
+Fetching US10846193 via PPUBS...
+  [ppubs] counts: HTTP 200
+  [ppubs] guid=US-10846193-B2 type=USPAT
+  [ppubs] document HTTP 404: {"status":"NOT_FOUND","message":"Patent not found.","developerMessage":null}
+FAIL: US10846193
+
+1 of 1 patents failed: ['10846193']
+Exit code: 2
