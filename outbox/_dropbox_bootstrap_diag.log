@@ -4,3 +4,9 @@ exchange_code HTTP 400
 exchange_code safe body: {"error": "invalid_grant", "error_description": "code doesn't exist or has expired"}
 ERROR: exchange failed HTTP 400
   safe={"error": "invalid_grant", "error_description": "code doesn't exist or has expired"}; hint=Auth code expired (~10 min) or already used. Generate a NEW code via the OAuth consent URL. (Single-use; a prior workflow attempt may have consumed it.)
+=== bootstrap run start ===
+env ok: app_key.len=15 app_secret.len=15 auth_code.len=42 pat.len=40 repo=jeffunglesbee-create/jubilant-bassoon
+exchange_code HTTP 400
+exchange_code safe body: {"error": "invalid_grant", "error_description": "code doesn't exist or has expired"}
+ERROR: exchange failed HTTP 400
+  safe={"error": "invalid_grant", "error_description": "code doesn't exist or has expired"}; hint=Auth code expired (~10 min) or already used. Generate a NEW code via the OAuth consent URL. (Single-use; a prior workflow attempt may have consumed it.)
