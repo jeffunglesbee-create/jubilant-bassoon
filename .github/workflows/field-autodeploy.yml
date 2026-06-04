@@ -150,7 +150,7 @@ jobs:
           # ── Version guard — skip if Drive file is older than current repo ─
           # SW_VERSION format: 'YYYYMMDD-N'. Lexicographic compare is safe.
           DRIVE_VER=$(grep -oP "const SW_VERSION = '\K[^']+" index_new.html 2>/dev/null || echo "00000000-0")
-          REPO_VER=$(grep -oP "const SW_VERSION = '\K[^']+" index.html 2>/dev/null || echo "00000000-0")
+          REPO_VER=$(grep -oP "const SW_VERSION\s+=\s+'\K[^']+" index.html 2>/dev/null || echo "00000000-0")
           if [[ "$DRIVE_VER" < "$REPO_VER" ]]; then
             echo "⏭  Drive SW_VERSION ($DRIVE_VER) < repo ($REPO_VER) — Drive is stale, skipping commit"
             echo "skip=true" >> $GITHUB_OUTPUT
@@ -180,10 +180,10 @@ jobs:
           else
             # Sync SW_VERSION in sw.js to match index.html (Rule 23 + PWA-A fix)
             # sw.js hardcodes SW_VERSION — must match index.html daily for cache busting
-            INDEX_VER=$(grep -oP "const SW_VERSION = \'\K[^\']+" index.html 2>/dev/null || echo "")
-            SW_VER=$(grep -oP "const SW_VERSION = \'\K[^\']+" sw.js 2>/dev/null || echo "")
+            INDEX_VER=$(grep -oP "const SW_VERSION\s+=\s+'\K[^']+" index.html 2>/dev/null || echo "")
+            SW_VER=$(grep -oP "const SW_VERSION\s+=\s+'\K[^']+" sw.js 2>/dev/null || echo "")
             if [ -n "$INDEX_VER" ] && [ "$INDEX_VER" != "$SW_VER" ]; then
-              sed -i "s/const SW_VERSION  = '[0-9-]*'/const SW_VERSION  = '${INDEX_VER}'/" sw.js
+              sed -i "s/const SW_VERSION  = '[^']*'/const SW_VERSION  = '${INDEX_VER}'/" sw.js
               git add sw.js
               echo "✅ SW_VERSION synced: ${SW_VER} → ${INDEX_VER}"
             else
