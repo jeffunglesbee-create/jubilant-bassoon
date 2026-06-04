@@ -2,61 +2,53 @@
 
 ## State
 HEAD (jubilant-bassoon): c932ff3 · SW: 2026-06-04k · Smoke: 432/0
-HEAD (field-relay-nba): 4165bb0
-
-## Tonight / Tomorrow
-- **SCF G2**: VGK @ CAR — tonight Jun 4, 8 PM ET, ABC · Lenovo Center
-  VGK leads 1-0 (G1: VGK 5-4; Hertl GWG)
-- **NBA Finals G2**: NYK @ SAS — tomorrow Jun 5, 8:30 PM ET, ABC
-  NYK leads 1-0 (G1: NYK 105-95; Brunson 30/13 Q4)
+HEAD (field-relay-nba): 209f760
 
 ## WC2026 — FULLY READY FOR JUNE 11 ✅
-ALL INFRASTRUCTURE COMPLETE:
-  - wc26Raw: 72 group stage games verified (c932ff3)
-  - WC_TEAMS: confirmed Dec 2025 draw, all 12 groups (c932ff3)
-  - D1 wc2026: schema live, relay routes active (f26669de, relay 0d9c3ac)
-  - ⚽ Groups tab: controls bar + DOM + CSS + JS (69cee53)
-  - WC team narrative context: 48 teams + D1 integration (relay 4165bb0)
+All infrastructure complete:
+  - wc26Raw 72 games verified (c932ff3)
+  - WC_TEAMS confirmed draw (c932ff3)
+  - D1 wc2026 live + wc_third_place_standings VIEW (f26669de)
+  - ⚽ Groups tab Phase 1 (69cee53)
+  - WC team narrative context 48 teams (relay 4165bb0)
+  - Live win probability 6 gaps (relay 209f760)
 
-WC TEAM CONTEXT (relay 4165bb0):
-  src/wc-team-context.js: 48 teams, all verified
-  Sources: FIFA rankings April 2026, FIFPlay managers, Wikipedia history
-  Debut teams flagged: Curaçao, Cape Verde, Jordan, Uzbekistan
-  Guardrails: FRA/ARG/GER/ENG/COD/BEL/TUR/CZE/NED/QAT
-  D1 standings injected for MD2+ games
-  MD3 simultaneous-kickoff flag injected
-  buildWCTeamContextBlock wired into journalism buildPrompt
+## WC Live Win Probability (relay 209f760)
+All 6 gaps closed:
+  Gap 1: /fixtures/statistics fetch for live WC games (parallel, non-blocking)
+  Gap 2: Poisson + Dixon-Coles WP model (soccer-wp.js)
+         winProb: {homeWin, draw, awayWin, source} on all live football V2 games
+         situation object on adaptFootball() — parallel to baseball {inning,isTop,outs}
+  Gap 3: Advancement probability via D1 scenario simulation
+         advancementProb: {homeAdvance, awayAdvance, homePositions, awayPositions}
+  Gap 4: /wc/wp/verify endpoint — verify Odds API WC coverage (hit before June 11)
+  Gap 5: Stoppage time elapsed correction in effectiveElapsed()
+  Gap 6: Soccer CRUNCH: penalty_shootout | man_advantage | added_time | late_deficit
+  8/8 unit tests passing
 
-REMAINING (optional depth):
-  - R2 WC Team Context: now superseded — inline approach in relay is better
-  - Bracket view Phase 2: ~June 18-20 (same session as Permutations Engine)
-  - F09 REST Countries: ~10 min
+## Tonight / Tomorrow
+- SCF G2: VGK @ CAR — tonight Jun 4, 8pm ET, ABC · Lenovo Center · VGK leads 1-0
+- NBA Finals G2: NYK @ SAS — tomorrow Jun 5, 8:30pm ET, ABC · NYK leads 1-0
 
-## Shipped This Session (complete)
-See previous handoffs for bug fixes and earlier builds.
-This session added:
-  - WC D1 schema + relay routes (038281c / relay 0d9c3ac)
-  - ⚽ Groups/Bracket tab (69cee53) — controls bar, DOM, CSS, JS
-  - WC data flip (c932ff3) — verified draw, _gameImportance
-  - WC team narrative context (relay 4165bb0) — 48 teams
-  - Specs: MOBILE-INTEL-A v2, Watch Engine v2, WC D1 v2, WC Groups tab, WC Team Context v2
+## Remaining WC (pre-June 11 optional depth)
+- [ ] Permutations Engine A1 (~110 min) — highest priority unbuilt
+- [ ] Final Matchday Advantage Calculator (~60 min)
+- [ ] Third-place tracker on Groups tab (~30 min, D1+endpoint ready)
+- [ ] Soccer Drama Layer 1 (~45 min)
+- [ ] WC-specific journalism rules (~20 min)
+- [ ] Round of 32+ game stubs (~15 min)
+- [ ] /wc/wp/verify — hit manually before June 11
 
-## Next Session Triggers
-- SCF G2 result tonight → G2 result + G3-G7 series records
-- NBA Finals G2 tomorrow → G2 result + G3-G7 series records
-
-## P1 Carry-Forwards
+## P1 Carry-Forwards (jubilant-bassoon)
 - [ ] Odds Budget date staleness (shows 2026-05-29)
+- [ ] Watch Engine WC fix (RUWT violations ~line 26190)
 - [ ] 7th inning stretch callout
 - [ ] Final outcome display low-drama games
-- [ ] My Services Install App button (~5 min)
-- [ ] meta-description tag (~5 min)
-- [ ] iPad CLS LIVE verification
+- [ ] meta-description tag + My Services Install App button
 
 ## Canonical Refs
 CI/Deploy: Drive 1UrOoYDGaK2ncPrnRNXt1w0OElOLpbjP_EYROjG2w1zo
-WC Groups tab spec: Drive 1g0Ne_OOO0eteJ8-GCRNZ4sm5_qey7yqy
-WC D1 spec: Drive 1HdYpPez7OJx-1DqwkMkUaEAjKk41z7U3
 WC Team Context spec v2: Drive 1A4y6NVdHhRcMXJvWQ0k1Pa71AnDgZwYk
-D1 database ID: f26669de-e772-4b56-a6d1-f8fdea08a4d4
-Relay HEAD: 4165bb0
+D1 database: f26669de-e772-4b56-a6d1-f8fdea08a4d4
+soccer-wp.js: relay/src/soccer-wp.js (new, 209f760)
+Relay HEAD: 209f760
