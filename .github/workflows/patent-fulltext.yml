@@ -73,7 +73,8 @@ jobs:
           GDRIVE_SA_KEY: ${{ secrets.GDRIVE_SA_KEY }}
           GDRIVE_PARENT_ID: ${{ secrets.GDRIVE_PARENT_ID }}
         run: |
-          python3 .github/scripts/patent_drive_upload.py
+          python3 .github/scripts/patent_drive_upload.py 2>&1 | tee outbox/patents/_drive.log
+          echo "Exit code: ${PIPESTATUS[0]}" | tee -a outbox/patents/_drive.log
 
       - name: Commit results
         if: always()
