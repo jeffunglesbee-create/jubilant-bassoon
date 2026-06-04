@@ -1,11 +1,38 @@
 Establishing PPUBS session...
-  [ppubs] prime: HTTP 403
-  [ppubs] session HTTP 403: <html>
-<head><title>403 Forbidden</title></head>
-<body>
-<center><h1>403 Forbidden</h1></center>
-</body>
-</html>
+  [ppubs] prime: HTTP 200
+  [ppubs] session ok: caseId=219592720
 
-FAIL: could not establish PPUBS session
-Exit code: 1
+Fetching US10846193 via PPUBS...
+  [ppubs] counts: HTTP 200
+  [ppubs] dumped search response to _ppubs_search_10846193.json
+  [ppubs] guid=US-10846193-B2 type=USPAT
+  [ppubs] dumped raw response to _ppubs_dump_10846193.json
+  US10846193: unchanged, skipping
+
+Fetching US11182537 via PPUBS...
+  [ppubs] counts: HTTP 200
+  [ppubs] guid=US-11182537-B2 type=USPAT
+  US11182537: unchanged, skipping
+
+Fetching US8335848 via PPUBS...
+  [ppubs] counts: HTTP 200
+  [ppubs] guid=US-8335848-B2 type=USPAT
+  US8335848: unchanged, skipping
+
+Fetching US8533532 via PPUBS...
+  [ppubs] counts: HTTP 200
+  [ppubs] guid=US-8533532-B2 type=USPAT
+  US8533532: unchanged, skipping
+
+Fetching US9571591 via PPUBS...
+  [ppubs] counts: HTTP 200
+  [ppubs] guid=US-9571591-B2 type=USPAT
+  US9571591: unchanged, skipping
+
+Fetching US9509714 via PPUBS...
+  [ppubs] counts: HTTP 200
+  [ppubs] guid=US-9509714-B2 type=USPAT
+  US9509714: unchanged, skipping
+
+All 6 patents fetched successfully.
+Exit code: 0
