@@ -2,10 +2,40 @@
 """
 Dropbox auto-upload for patent research outputs.
 
-Gated on DROPBOX_TOKEN env var. If missing, the script no-ops gracefully
-so the workflow doesn't fail.
+Auth resolution (in priority order):
+  1. Refresh-token flow (recommended, sustainable):
+       DROPBOX_REFRESH_TOKEN + DROPBOX_APP_KEY + DROPBOX_APP_SECRET
+     Script exchanges refresh token for a fresh access token at runtime
+     via https://api.dropbox.com/oauth2/token. Access token is good for
+     ~4 hours and reused for all uploads in a single run.
+  2. Legacy access token: DROPBOX_TOKEN
+     Used as-is. Short-lived access tokens expire in 4 hours; legacy
+     long-lived tokens never expire but Dropbox hasn't issued these
+     since March 2021.
+  3. If none of the above present, script no-ops gracefully.
 
-Naming convention matches the (parked) Drive uploader:
+Setup for refresh-token flow (one-time, ~5 minutes):
+  1. https://www.dropbox.com/developers/apps -> Create app
+     - API: Scoped access
+     - Type: Full Dropbox (or App folder, your choice)
+     - Name: anything (e.g., 'jubilant-bassoon-patents')
+  2. Permissions tab -> enable `files.content.write` and `files.metadata.read`
+  3. Settings tab -> note the App key and App secret
+  4. Generate a refresh token. Easiest method:
+       a. Visit:
+          https://www.dropbox.com/oauth2/authorize?client_id=APP_KEY&response_type=code&token_access_type=offline
+          (replace APP_KEY)
+       b. Authorize, copy the code shown.
+       c. Exchange the code for a refresh token:
+          curl -X POST https://api.dropbox.com/oauth2/token \\
+            -d grant_type=authorization_code \\
+            -d code=THE_CODE \\
+            -u APP_KEY:APP_SECRET
+          The 'refresh_token' field in the response is what you want.
+  5. Set three GitHub secrets in jubilant-bassoon:
+       DROPBOX_REFRESH_TOKEN, DROPBOX_APP_KEY, DROPBOX_APP_SECRET
+
+Naming convention for uploaded files:
   Patent -- US{number} -- {assignee_short} -- {YYYY-MM-DD}.{ext}
 
 Target folder defaults to /FIELD/patents/ and is configurable via
@@ -18,13 +48,9 @@ HTTP 403 'storageQuotaExceeded' regardless of folder permissions.
 The personal Gmail account can't create Shared Drives (Workspace plan
 only). Dropbox sidesteps the issue entirely. See ADR-PATENT-001 for
 the source-layer story; this script is just the upload destination.
-
-Auth: Bearer token via DROPBOX_TOKEN secret. Works with both legacy
-long-lived tokens and short-lived access tokens (no refresh handling
-- if the token expires the script returns non-zero and the workflow
-step shows red; just refresh the secret and re-run).
 """
 
+import base64
 import json
 import os
 import sys
@@ -35,6 +61,53 @@ import requests
 OUTBOX = Path("outbox/patents")
 DEFAULT_DROPBOX_PATH = "/FIELD/patents"
 UPLOAD_URL = "https://content.dropboxapi.com/2/files/upload"
+TOKEN_URL = "https://api.dropbox.com/oauth2/token"
+
+
+def resolve_access_token():
+    """Returns (access_token, source_label) or (None, reason)."""
+    refresh_token = os.environ.get("DROPBOX_REFRESH_TOKEN", "").strip()
+    app_key = os.environ.get("DROPBOX_APP_KEY", "").strip()
+    app_secret = os.environ.get("DROPBOX_APP_SECRET", "").strip()
+
+    if refresh_token and app_key and app_secret:
+        print("Exchanging refresh token for access token...")
+        basic = base64.b64encode(f"{app_key}:{app_secret}".encode()).decode()
+        try:
+            r = requests.post(
+                TOKEN_URL,
+                headers={
+                    "Authorization": f"Basic {basic}",
+                    "Content-Type": "application/x-www-form-urlencoded",
+                },
+                data={
+                    "grant_type": "refresh_token",
+                    "refresh_token": refresh_token,
+                },
+                timeout=30,
+            )
+        except requests.RequestException as e:
+            return None, f"token exchange error: {e}"
+
+        if r.status_code != 200:
+            return None, f"token exchange HTTP {r.status_code}: {r.text[:200]}"
+        try:
+            data = r.json()
+        except ValueError:
+            return None, "token exchange returned non-JSON"
+        access_token = data.get("access_token")
+        if not access_token:
+            return None, f"token exchange response missing access_token: {data}"
+        expires = data.get("expires_in", "unknown")
+        print(f"  got access token (expires in {expires}s)")
+        return access_token, "refresh-token-flow"
+
+    # Fall back to legacy/static access token
+    legacy = os.environ.get("DROPBOX_TOKEN", "").strip()
+    if legacy:
+        return legacy, "DROPBOX_TOKEN"
+
+    return None, "no Dropbox credentials present"
 
 
 def compute_title(local_path: Path) -> str:
@@ -101,10 +174,11 @@ def upload_one(token: str, local_path: Path, title: str, folder: str) -> bool:
 
 
 def main():
-    token = os.environ.get("DROPBOX_TOKEN", "").strip()
+    token, source = resolve_access_token()
     if not token:
-        print("DROPBOX_TOKEN not set; skipping Dropbox upload (workflow continues)")
+        print(f"No usable Dropbox credentials ({source}); skipping upload (workflow continues)")
         return 0
+    print(f"Auth source: {source}")
 
     folder = os.environ.get("DROPBOX_PATENT_PATH", DEFAULT_DROPBOX_PATH).strip()
     if not folder.startswith("/"):
