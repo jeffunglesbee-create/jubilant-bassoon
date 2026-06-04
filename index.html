@@ -13038,7 +13038,12 @@ async function fetchV2Leaders(sport, gameNumericId, homeTeamId, awayTeamId, espn
 
 async function fetchV2AllScores() {
   _v2PollCycle++;
-  const date    = new Date().toISOString().slice(0, 10);
+  // Use ET date (EDT = UTC-4). api-sports.io indexes US sports by the game's
+  // local Eastern date — a tip-off at 8:30 PM ET is June 3 ET but June 4 UTC,
+  // so querying the UTC date returns nothing. EDT covers the full NBA/NHL/MLB
+  // regular + playoff window (Mar–Oct). EST offset (-5h) only applies Nov–Mar
+  // when no late-night Finals games exist, so -4h is safe year-round for this.
+  const date    = new Date(Date.now() - 4 * 3600 * 1000).toISOString().slice(0, 10);
   const enabled = Object.entries(FIELD_V2_SOURCES).filter(([,v]) => v).map(([k]) => k);
   if (!enabled.length) return scheduleV2Poll(60000);
 
@@ -17566,7 +17571,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-03aa';
+  const SW_VERSION = '2026-06-04a';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
