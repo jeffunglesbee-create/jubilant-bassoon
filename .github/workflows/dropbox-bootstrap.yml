@@ -1,218 +1,68 @@
 name: Dropbox OAuth bootstrap (one-shot)
 
 # ONE-SHOT BOOTSTRAP — delete this workflow file after first successful run.
-#
-# What this does: takes a Dropbox App key, App secret, and one-time
-# authorization code (from the OAuth consent flow), exchanges the code
-# for a long-lived refresh token, and stores all three as durable repo
-# secrets (DROPBOX_REFRESH_TOKEN, DROPBOX_APP_KEY, DROPBOX_APP_SECRET).
-# Verifies the refresh-token flow works end-to-end by minting an access
-# token round-trip. Self-deletes its own run on success to scrub
-# sensitive inputs from event history.
-#
-# Why this exists: api.dropbox.com is not reachable from the assistant
-# sandbox (allowlist), but GitHub Actions runners have open egress.
-# This workflow lives in CI to do the OAuth round-trip there.
-#
-# How to use (one time):
-#   1. Visit https://www.dropbox.com/developers/apps and find your app
-#      (e.g. 'field-storage'). On the Settings tab, copy App key and
-#      App secret.
-#   2. In a browser, visit:
-#        https://www.dropbox.com/oauth2/authorize?client_id=APP_KEY&response_type=code&token_access_type=offline
-#      (replace APP_KEY with your actual App key). Authorize. Dropbox
-#      shows a short authorization code. Copy it. (Code is single-use,
-#      expires in ~10 minutes — do step 3 promptly.)
-#   3. In GitHub: Actions tab → "Dropbox OAuth bootstrap" → Run
-#      workflow → paste app_key, app_secret, auth_code → Run.
-#   4. Wait ~30s for completion. On success, the run self-deletes;
-#      the three Dropbox secrets are now set. The legacy DROPBOX_TOKEN
-#      secret (if present) can be deleted via the secrets page.
-#   5. Delete this workflow file (it has done its job).
+# Pure-Python implementation to avoid YAML pipe / bash heredoc indentation
+# pitfalls when emitting diagnostics from inline scripts.
 
 on:
   workflow_dispatch:
     inputs:
       app_key:
-        description: 'Dropbox App key (from Settings tab of your Dropbox app)'
+        description: 'Dropbox App key'
         required: true
         type: string
       app_secret:
-        description: 'Dropbox App secret (from Settings tab — click Show)'
+        description: 'Dropbox App secret'
         required: true
         type: string
       auth_code:
-        description: 'Authorization code from OAuth consent URL'
+        description: 'Authorization code from OAuth consent'
         required: true
         type: string
 
 permissions:
-  actions: write  # for the self-delete on success
+  actions: write
   contents: read
 
 jobs:
   bootstrap:
     runs-on: ubuntu-latest
     steps:
-      - name: Mask sensitive inputs immediately
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install deps
+        run: pip install requests pynacl --quiet
+
+      - name: Mask sensitive inputs
         env:
           APP_KEY: ${{ inputs.app_key }}
           APP_SECRET: ${{ inputs.app_secret }}
           AUTH_CODE: ${{ inputs.auth_code }}
         run: |
-          set +x
           echo "::add-mask::$APP_KEY"
           echo "::add-mask::$APP_SECRET"
           echo "::add-mask::$AUTH_CODE"
-          echo "Inputs masked."
 
-      - name: Exchange authorization code for refresh token
-        id: exchange
+      - name: Bootstrap Dropbox OAuth + set GitHub secrets
         env:
           APP_KEY: ${{ inputs.app_key }}
           APP_SECRET: ${{ inputs.app_secret }}
           AUTH_CODE: ${{ inputs.auth_code }}
-        run: |
-          set +x
-          echo "::add-mask::$APP_KEY"
-          echo "::add-mask::$APP_SECRET"
-          echo "::add-mask::$AUTH_CODE"
-
-          # Initial code-for-token exchange
-          RESP=$(curl -sS -X POST https://api.dropbox.com/oauth2/token \
-            -d grant_type=authorization_code \
-            -d code="$AUTH_CODE" \
-            -u "$APP_KEY:$APP_SECRET")
-
-          # Parse refresh_token from JSON response
-          REFRESH=$(echo "$RESP" | python3 -c "import json,sys; print(json.load(sys.stdin).get('refresh_token',''))" 2>/dev/null)
-          ACCESS=$(echo "$RESP" | python3 -c "import json,sys; print(json.load(sys.stdin).get('access_token',''))" 2>/dev/null)
-
-          if [ -z "$REFRESH" ]; then
-            echo "ERROR: exchange returned no refresh_token. Diagnostic (sensitive fields redacted):"
-            echo "$RESP" | python3 -c "
-          import json,sys
-          try:
-              d = json.load(sys.stdin)
-              safe = {k:v for k,v in d.items() if k not in ('access_token','refresh_token')}
-              print(json.dumps(safe, indent=2))
-          except Exception as e:
-              print('(non-JSON response)')
-              print(sys.stdin.read()[:300])
-          "
-            echo ""
-            echo "Common causes:"
-            echo "  - Auth code expired (must use within ~10 min of generating)"
-            echo "  - Auth code already used (single-use; re-run OAuth consent)"
-            echo "  - URL was missing token_access_type=offline parameter"
-            echo "  - App key / App secret mismatch (check Settings tab in Dropbox app console)"
-            exit 1
-          fi
-
-          echo "::add-mask::$REFRESH"
-          echo "::add-mask::$ACCESS"
-          echo "Exchange OK — refresh token obtained."
-
-          # Stash for next step via env (still masked)
-          echo "REFRESH_TOKEN=$REFRESH" >> $GITHUB_ENV
-
-      - name: Set durable Dropbox secrets via GitHub API
-        env:
           BOOTSTRAP_PAT: ${{ secrets.BOOTSTRAP_PAT }}
-          APP_KEY: ${{ inputs.app_key }}
-          APP_SECRET: ${{ inputs.app_secret }}
-          REFRESH_TOKEN: ${{ env.REFRESH_TOKEN }}
           REPO: ${{ github.repository }}
-        run: |
-          set +x
-          echo "::add-mask::$APP_KEY"
-          echo "::add-mask::$APP_SECRET"
-          echo "::add-mask::$REFRESH_TOKEN"
+        run: python3 .github/scripts/dropbox_bootstrap.py
 
-          pip install pynacl requests --quiet
-          python3 << 'PYEOF'
-          import json, os, base64, requests
-          from nacl import encoding, public
-
-          pat = os.environ["BOOTSTRAP_PAT"]
-          repo = os.environ["REPO"]
-
-          r = requests.get(
-              f"https://api.github.com/repos/{repo}/actions/secrets/public-key",
-              headers={"Authorization": f"token {pat}", "Accept": "application/vnd.github+json"},
-          )
-          r.raise_for_status()
-          pk = r.json()
-
-          def set_secret(name, value):
-              pub_key = public.PublicKey(pk["key"].encode("utf-8"), encoding.Base64Encoder())
-              sealed_box = public.SealedBox(pub_key)
-              encrypted = sealed_box.encrypt(value.encode("utf-8"))
-              b64 = base64.b64encode(encrypted).decode("utf-8")
-              r = requests.put(
-                  f"https://api.github.com/repos/{repo}/actions/secrets/{name}",
-                  headers={"Authorization": f"token {pat}", "Accept": "application/vnd.github+json"},
-                  json={"encrypted_value": b64, "key_id": pk["key_id"]},
-              )
-              ok = r.status_code in (201, 204)
-              print(f"  PUT {name}: HTTP {r.status_code} {'OK' if ok else r.text[:200]}")
-              return ok
-
-          all_ok = all([
-              set_secret("DROPBOX_REFRESH_TOKEN", os.environ["REFRESH_TOKEN"]),
-              set_secret("DROPBOX_APP_KEY", os.environ["APP_KEY"]),
-              set_secret("DROPBOX_APP_SECRET", os.environ["APP_SECRET"]),
-          ])
-          if not all_ok:
-              print("ERROR: one or more secret PUTs failed.")
-              raise SystemExit(1)
-          print("All three secrets set successfully.")
-          PYEOF
-
-      - name: Verify refresh-token flow round-trip
-        env:
-          APP_KEY: ${{ inputs.app_key }}
-          APP_SECRET: ${{ inputs.app_secret }}
-          REFRESH_TOKEN: ${{ env.REFRESH_TOKEN }}
-        run: |
-          set +x
-          echo "::add-mask::$APP_KEY"
-          echo "::add-mask::$APP_SECRET"
-          echo "::add-mask::$REFRESH_TOKEN"
-
-          # Use refresh_token to mint a fresh access token — proves the round-trip
-          RESP=$(curl -sS -X POST https://api.dropbox.com/oauth2/token \
-            -d grant_type=refresh_token \
-            -d refresh_token="$REFRESH_TOKEN" \
-            -u "$APP_KEY:$APP_SECRET")
-          ACCESS=$(echo "$RESP" | python3 -c "import json,sys; print(json.load(sys.stdin).get('access_token',''))" 2>/dev/null)
-          EXPIRES=$(echo "$RESP" | python3 -c "import json,sys; print(json.load(sys.stdin).get('expires_in',''))" 2>/dev/null)
-
-          if [ -z "$ACCESS" ]; then
-            echo "ERROR: refresh-flow round-trip failed."
-            echo "$RESP" | python3 -c "
-          import json,sys
-          try:
-              d=json.load(sys.stdin)
-              safe={k:v for k,v in d.items() if k not in ('access_token','refresh_token')}
-              print(json.dumps(safe, indent=2))
-          except: print(sys.stdin.read()[:300])
-          "
-            exit 1
-          fi
-          echo "::add-mask::$ACCESS"
-          echo "Verified: refresh-token flow mints an access token (expires in ${EXPIRES}s)."
-
-      - name: Self-delete this workflow run (scrub sensitive inputs)
+      - name: Self-delete this workflow run on success
         if: success()
         env:
           BOOTSTRAP_PAT: ${{ secrets.BOOTSTRAP_PAT }}
           REPO: ${{ github.repository }}
           RUN_ID: ${{ github.run_id }}
         run: |
-          set +x
-          echo "Deleting this run (#${RUN_ID}) from history..."
-          # Brief delay so the "Self-delete" step's success can be observed
           sleep 5
           STATUS=$(curl -sS -o /dev/null -w "%{http_code}" \
             -X DELETE \
@@ -220,6 +70,3 @@ jobs:
             -H "Accept: application/vnd.github+json" \
             "https://api.github.com/repos/${REPO}/actions/runs/${RUN_ID}")
           echo "Delete returned HTTP ${STATUS}"
-          # If the run was deleted successfully, the workflow log effectively
-          # disappears — Jeff will see the run vanish from the Actions list
-          # rather than seeing this final message. That's the desired outcome.
