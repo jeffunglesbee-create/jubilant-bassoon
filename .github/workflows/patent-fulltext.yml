@@ -50,10 +50,7 @@ jobs:
 
       - name: Install deps
         run: |
-          pip install requests pyyaml --quiet
-          if [ -n "${{ secrets.GDRIVE_SA_KEY }}" ] && [ "${{ inputs.skip_drive }}" != "true" ]; then
-            pip install google-api-python-client google-auth --quiet
-          fi
+          pip install requests pyyaml google-api-python-client google-auth --quiet
 
       - name: 1/3 Fetch patent full text
         env:
