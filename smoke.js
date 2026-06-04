@@ -2928,7 +2928,7 @@ assert('A436 — Permutations Engine v1.3: scenario badge renderer present',
 
 assert('A437 — Permutations Engine v1.3: scenarios computed in renderWCGroups',
   html.includes('_wcComputeAllScenarios(standings')
-    && html.includes('buildWCGroupRow(r, i, scenarios, g)'),
+    && html.includes('buildWCGroupRow(r, i, scenarios, groupId)'),
   'renderWCGroups must compute scenarios and pass them to buildWCGroupRow');
 
 assert('A438 — Permutations Engine v1.3: badge CSS state classes defined',
@@ -2992,6 +2992,34 @@ assert('A452 — Permutations Engine v1.6: _wcBracketImplication helper defined'
 assert('A453 — Permutations Engine v1.6: bracket implication surfaced in badge for qualified teams',
   html.includes('bracketLine(') && html.includes('alwaysTopGroup'),
   'scenario badge must surface R32 bracket path for mathematically qualified/topping teams');
+
+// Level 1 display + full Permutations integration
+assert('A454 — Level 1: fetchWCLiveGames defined and calls /v2/games?sport=wc26',
+  html.includes('async function fetchWCLiveGames()') && html.includes('sport=wc26'),
+  'fetchWCLiveGames must fetch live WC game data from relay V2 endpoint');
+
+assert('A455 — Level 1: _wcBuildWPBar renders live win probability bar',
+  html.includes('function _wcBuildWPBar(') && html.includes('wc-wp-bar')
+    && html.includes('wc-wp-home') && html.includes('wc-wp-draw') && html.includes('wc-wp-away'),
+  'WP bar renderer must output three probability segments (home/draw/away)');
+
+assert('A456 — Level 1: WP bar CSS includes pulse animation for live state',
+  html.includes('wc-wp-pulse') && html.includes('@keyframes wc-wp-pulse'),
+  'Live WP bar must have pulse animation to signal live state');
+
+assert('A457 — Level 1: live WP injected as outcomeProbabilities for live fixture',
+  html.includes('live.winProb') && html.includes('pHome: wp.homeWin')
+    && html.includes('pDraw: wp.draw') && html.includes('pAway: wp.awayWin'),
+  '_wcBuildGroupInput must inject live winProb into outcomeProbabilities for the live fixture');
+
+assert('A458 — Level 1: liveGames threaded through renderWCGroups → _wcComputeAllScenarios → _wcBuildGroupInput',
+  html.includes('fetchWCLiveGames()') && html.includes('liveGames')
+    && html.includes('liveGame.winProb'),
+  'Full call chain: fetchWCLiveGames → renderWCGroups → _wcComputeAllScenarios → _wcBuildGroupInput → outcomeProbabilities');
+
+assert('A459 — Level 1: buildWCGroupRows injects WP bar between live-game teams',
+  html.includes('function buildWCGroupRows(') && html.includes('_wcBuildWPBar(liveGame, wp)'),
+  'buildWCGroupRows must splice WP bar row between the two teams currently playing');
 
 // ═════════════════════════════════════════════════════════════════════
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
