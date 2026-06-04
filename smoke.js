@@ -611,6 +611,9 @@ assert('A190 — sw.js SW_VERSION matches index.html (Rule 23b: both must be in 
 // Prevents ReferenceErrors from functions defined in the Node test module but
 // missing from the browser bundle. This was the root cause of all journalism failure.
 const fieldUtilsSrc = require('fs').readFileSync('field_utils.js', 'utf8');
+const gameDoSrc = (() => {
+  try { return require('fs').readFileSync('../relay/src/game-do.js', 'utf8'); } catch(_) { return ''; }
+})();
 const utilsFnNames = [...fieldUtilsSrc.matchAll(/^function (\w+)\(/gm)].map(m => m[1]);
 const missingFromHtml = utilsFnNames.filter(fn => {
   const usedInHtml = new RegExp('\\b' + fn + '\\(').test(html);
@@ -3038,6 +3041,33 @@ assert('A462 — outcomeProbabilities entries include lambda fields for v1.4 Poi
   html.includes('lambdaHome: p.lambdaHome || null') && html.includes('lambdaAway: p.lambdaHome || null')
     || html.includes("_wcMatchOdds now includes lambdaHome/lambdaAway"),
   'outcomeProbabilities entries must carry lambda fields when available');
+
+// GameDO WP state
+assert('A463 — GameDO: POST /wp handler stores openingWP + lastWP + wpHistory',
+  /pathname\.endsWith\('\/wp'\)/.test(gameDoSrc)
+    && /openingWP.*null/.test(gameDoSrc)
+    && /wpHistory/.test(gameDoSrc),
+  'GameDO must handle POST /wp and persist openingWP, lastWP, wpHistory');
+
+assert('A464 — GameDO: /crunch route fixed (was silently 404ing)',
+  /pathname\.endsWith\('\/crunch'\)/.test(gameDoSrc),
+  'GameDO must handle POST /crunch from relay polling loop');
+
+assert('A465 — GameDO: wc26 added to SPORT_TO_V2',
+  gameDoSrc.includes("'wc26': 'wc26'"),
+  'wc26 must be in SPORT_TO_V2 for WebSocket fact push');
+
+assert('A466 — relay: parallel WP state updates written to GameDO after game loop',
+  gameDoSrc.includes('https://field/wp') || gameDoSrc.includes("endsWith('/wp')"),
+  'GameDO must have /wp route; relay writes to it in parallel after live game loop');
+
+assert('A467 — Level 1 WP bar: wpDelta trend indicator (↑↓)',
+  html.includes('homeTrend') && html.includes('↑') && html.includes('delta.homeWin'),
+  'WP bar must show ↑↓ trend when homeWin shifts ≥2pp between polls');
+
+assert('A468 — Level 1 WP bar: openingWP Surprise Layer in meta line',
+  html.includes('openingWP') && html.includes('pre-match') && html.includes('surpriseFrag'),
+  'WP bar must show pre-match baseline when current WP diverges ≥5pp from opening');
 
 // ═════════════════════════════════════════════════════════════════════
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);

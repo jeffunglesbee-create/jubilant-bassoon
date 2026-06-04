@@ -23911,10 +23911,30 @@ function _wcBuildWPBar(liveGame, wp) {
   const aName = liveGame.away?.name || '';
   const clock = liveGame.situation?.elapsed ? `${liveGame.situation.elapsed}'` : 'LIVE';
   const src   = wp.source || 'shots-proxy';
-  // Clip label text on very narrow segments
-  const hLabel = hPct >= 12 ? `${hName.split(' ')[0]} ${hPct}%` : `${hPct}%`;
-  const aLabel = aPct >= 12 ? `${aPct}% ${aName.split(' ').pop()}` : `${aPct}%`;
+
+  // wpDelta trend: show ↑↓ when homeWin shifts ≥2pp since last poll (30s)
+  const delta = liveGame.wpDelta;
+  let homeTrend = '', awayTrend = '';
+  if (delta && Math.abs(delta.homeWin) >= 0.02) {
+    homeTrend = delta.homeWin > 0 ? ' ↑' : ' ↓';
+    awayTrend = delta.homeWin > 0 ? ' ↓' : ' ↑';
+  }
+
+  // Label clipping on narrow segments
+  const hLabel = hPct >= 12 ? `${hName.split(' ')[0]} ${hPct}%${homeTrend}` : `${hPct}%`;
+  const aLabel = aPct >= 12 ? `${aPct}%${awayTrend} ${aName.split(' ').pop()}` : `${aPct}%`;
   const dLabel = dPct >= 8 ? `D ${dPct}%` : dPct >= 4 ? `${dPct}%` : '';
+
+  // Surprise Layer (Level 3): opening WP baseline from GameDO
+  const opening = liveGame.openingWP;
+  let surpriseFrag = '';
+  if (opening && Math.abs(wp.homeWin - opening.homeWin) >= 0.05) {
+    const openPct = Math.round(opening.homeWin * 100);
+    const dir = wp.homeWin > opening.homeWin ? 'up' : 'down';
+    surpriseFrag = ` · ${hName.split(' ')[0]} was ${openPct}% pre-match`;
+    if (dir === 'down') surpriseFrag += ' ▼';
+  }
+
   return `<tr class="wc-wp-row">
     <td colspan="10">
       <div class="wc-wp-bar" title="Live win probability · ${clock} · source: ${src}">
@@ -23922,7 +23942,7 @@ function _wcBuildWPBar(liveGame, wp) {
         <div class="wc-wp-draw" style="width:${dPct}%">${dLabel}</div>
         <div class="wc-wp-away" style="width:${aPct}%">${aLabel}</div>
       </div>
-      <div class="wc-wp-meta">⚽ Live · ${clock} · ${src}</div>
+      <div class="wc-wp-meta">⚽ Live · ${clock} · ${src}${surpriseFrag}</div>
     </td>
   </tr>`;
 }
