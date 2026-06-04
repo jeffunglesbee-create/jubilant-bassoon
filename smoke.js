@@ -2738,6 +2738,12 @@ assert('A421 — PM-26-O-2: cross-engine layout-shift observer (native + geometr
   /if\s*\(!SUPPORTED\)\s*\{[\s\S]*?MODE\s*=\s*['"]fallback['"]/.test(html) &&
   /INTEREST_SELECTORS/.test(html) &&
   /getBoundingClientRect/.test(html) &&
+  // PM-26-O-2b: snapshot rects MUST be in document coordinates (add
+  // scrollX/scrollY to viewport rect). Otherwise programmatic or user
+  // scroll registers as massive layout shift artifact (score clamped at
+  // 1.0 once scroll delta exceeds viewport max dim).
+  /r\.x\s*\+\s*sx,\s*y:\s*r\.y\s*\+\s*sy/.test(html) &&
+  /window\.scrollX\s*\|\|\s*window\.pageXOffset/.test(html) &&
   // Chrome's CLS formula: must compute impactFraction and distanceFraction
   // and multiply them. Locking both names so a future refactor can't
   // accidentally drop one without smoke catching it.

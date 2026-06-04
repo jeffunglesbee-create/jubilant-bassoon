@@ -3045,6 +3045,17 @@ body.journalism-mode #field-journalism-section{animation:jrnFadeIn 220ms ease-ou
       function snapshot(){
         const rects = new Map();
         const els = gatherInterest();
+        // PM-26-O-2b: convert viewport-relative rects to page-relative
+        // (document) coordinates by adding scroll offset. Chrome's native
+        // CLS API operates on document-relative positions, so scrolling
+        // never registers as layout shift. Our previous viewport-relative
+        // snapshot read every scroll event as movement (distance = scroll
+        // amount), producing artifact shift events scoring at the clamped
+        // maximum 1.0 when scroll exceeded viewport max dim. Document
+        // coordinates change ONLY when elements actually relocate within
+        // the document, which is the correct CLS signal.
+        const sx = window.scrollX || window.pageXOffset || 0;
+        const sy = window.scrollY || window.pageYOffset || 0;
         els.forEach(function(el){
           try {
             const cs = window.getComputedStyle(el);
@@ -3052,7 +3063,7 @@ body.journalism-mode #field-journalism-section{animation:jrnFadeIn 220ms ease-ou
             if (cs.position === 'fixed' || cs.position === 'absolute') return;
             const r = el.getBoundingClientRect();
             if (r.width < 1 || r.height < 1) return;
-            rects.set(el, {x: r.x, y: r.y, w: r.width, h: r.height});
+            rects.set(el, {x: r.x + sx, y: r.y + sy, w: r.width, h: r.height});
           } catch(_) {}
         });
         return rects;
@@ -17504,7 +17515,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-03y';
+  const SW_VERSION = '2026-06-03z';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
