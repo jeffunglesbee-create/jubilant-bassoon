@@ -6,7 +6,7 @@ name: Patent Watch (weekly)
 # GitHub mobile app pushes a notification.
 #
 # Auto-chains to patent-fulltext.yml for grant hits (cap 20) so the full
-# claim text + FIELD comparison + Drive upload happen in the same Actions run.
+# claim text + FIELD comparison + Dropbox upload happen in the same Actions run.
 
 on:
   schedule:

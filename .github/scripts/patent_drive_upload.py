@@ -1,6 +1,20 @@
 #!/usr/bin/env python3
 """
-Drive auto-upload for patent research outputs.
+[PARKED 2026-06-04] Drive auto-upload for patent research outputs.
+
+This script is structurally correct but not in use. On 2026-06-04 we
+discovered that Google service accounts cannot consume My Drive storage
+quota (policy change from April 2024), so SA uploads to a personal-Gmail
+My Drive folder fail with HTTP 403 'storageQuotaExceeded' regardless of
+folder-level permissions. The free Gmail tier can't create Shared Drives
+(Workspace plan only). Workflow uses patent_dropbox_upload.py instead.
+
+Re-enable this script if/when:
+  - Jeff (or his org) provisions a Google Workspace plan + Shared Drive
+  - GDRIVE_PARENT_ID secret is updated to the Shared Drive folder ID
+  - Workflow step is swapped back from Dropbox to Drive
+  - The service account is added as a member of the Shared Drive
+    (Editor role minimum)
 
 Gated on the presence of GDRIVE_SA_KEY (service account JSON) and
 GDRIVE_PARENT_ID env vars. If either is missing, the script no-ops

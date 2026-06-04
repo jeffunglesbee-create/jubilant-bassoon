@@ -17,8 +17,8 @@ on:
         description: 'Comma-separated patent numbers. Ex: 10846193,11182537,8335848'
         required: true
         type: string
-      skip_drive:
-        description: 'Skip Drive upload even if secret is set'
+      skip_dropbox:
+        description: 'Skip Dropbox upload even if secret is set'
         required: false
         type: boolean
         default: false
@@ -27,7 +27,7 @@ on:
       patents:
         required: true
         type: string
-      skip_drive:
+      skip_dropbox:
         required: false
         type: boolean
         default: false
@@ -50,7 +50,7 @@ jobs:
 
       - name: Install deps
         run: |
-          pip install requests pyyaml google-api-python-client google-auth --quiet
+          pip install requests pyyaml --quiet
 
       - name: 1/3 Fetch patent full text
         env:
@@ -64,14 +64,14 @@ jobs:
         run: |
           python3 .github/scripts/patent_compare.py "${{ inputs.patents }}"
 
-      - name: 3/3 Upload to Drive (if configured)
-        if: ${{ inputs.skip_drive != true }}
+      - name: 3/3 Upload to Dropbox (if configured)
+        if: ${{ inputs.skip_dropbox != true }}
         env:
-          GDRIVE_SA_KEY: ${{ secrets.GDRIVE_SA_KEY }}
-          GDRIVE_PARENT_ID: ${{ secrets.GDRIVE_PARENT_ID }}
+          DROPBOX_TOKEN: ${{ secrets.DROPBOX_TOKEN }}
+          DROPBOX_PATENT_PATH: ${{ vars.DROPBOX_PATENT_PATH }}
         run: |
-          python3 .github/scripts/patent_drive_upload.py 2>&1 | tee outbox/patents/_drive.log
-          echo "Exit code: ${PIPESTATUS[0]}" | tee -a outbox/patents/_drive.log
+          python3 .github/scripts/patent_dropbox_upload.py 2>&1 | tee outbox/patents/_dropbox.log
+          echo "Exit code: ${PIPESTATUS[0]}" | tee -a outbox/patents/_dropbox.log
 
       - name: Commit results
         if: always()
