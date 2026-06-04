@@ -180,7 +180,7 @@ def main():
         return 0
     print(f"Auth source: {source}")
 
-    folder = os.environ.get("DROPBOX_PATENT_PATH", DEFAULT_DROPBOX_PATH).strip()
+    folder = (os.environ.get("DROPBOX_PATENT_PATH", "") or "").strip() or DEFAULT_DROPBOX_PATH
     if not folder.startswith("/"):
         folder = "/" + folder
 
