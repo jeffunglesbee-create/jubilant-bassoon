@@ -1,0 +1,111 @@
+name: Patent Full-Text Extract
+
+# One-trigger pipeline:
+#   1. Fetch structured patent data (PatentSearch API, USPTO bulk XML fallback)
+#   2. Generate claim-element comparison vs FIELD features
+#   3. (Optional) Upload all outputs to Drive
+#   4. Commit results to outbox/patents/
+#
+# Triggers:
+#   workflow_dispatch  - manual run with patent number list
+#   workflow_call      - invoked by patent-watch.yml when grant hits found
+
+on:
+  workflow_dispatch:
+    inputs:
+      patents:
+        description: 'Comma-separated patent numbers. Ex: 10846193,11182537,8335848'
+        required: true
+        type: string
+      skip_drive:
+        description: 'Skip Drive upload even if secret is set'
+        required: false
+        type: boolean
+        default: false
+  workflow_call:
+    inputs:
+      patents:
+        required: true
+        type: string
+      skip_drive:
+        required: false
+        type: boolean
+        default: false
+    # secrets: inherit is set by the caller; no explicit declarations needed
+
+permissions:
+  contents: write
+
+jobs:
+  pipeline:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install deps
+        run: |
+          pip install requests pyyaml --quiet
+          if [ -n "${{ secrets.GDRIVE_SA_KEY }}" ] && [ "${{ inputs.skip_drive }}" != "true" ]; then
+            pip install google-api-python-client google-auth --quiet
+          fi
+
+      - name: 1/3 Fetch patent full text
+        env:
+          PATENTSVIEW_API_KEY: ${{ secrets.PATENTSVIEW_API_KEY }}
+        run: |
+          mkdir -p outbox/patents
+          python3 .github/scripts/patent_fetch.py "${{ inputs.patents }}"
+
+      - name: 2/3 Generate FIELD comparison tables
+        run: |
+          python3 .github/scripts/patent_compare.py "${{ inputs.patents }}"
+
+      - name: 3/3 Upload to Drive (if configured)
+        if: ${{ inputs.skip_drive != true }}
+        env:
+          GDRIVE_SA_KEY: ${{ secrets.GDRIVE_SA_KEY }}
+          GDRIVE_PARENT_ID: ${{ secrets.GDRIVE_PARENT_ID }}
+        run: |
+          python3 .github/scripts/patent_drive_upload.py
+
+      - name: Commit results
+        run: |
+          git config user.email "actions@github.com"
+          git config user.name "patent-fetch"
+          git add outbox/patents/
+          if ! git diff --cached --quiet; then
+            git commit -m "patents: fetch+compare ${{ inputs.patents }} [skip ci]"
+            git push
+          else
+            echo "No changes (idempotent re-run)"
+          fi
+
+      - name: Summary
+        if: always()
+        run: |
+          {
+            echo "## Patent pipeline results"
+            echo ""
+            echo "Input: \`${{ inputs.patents }}\`"
+            echo ""
+            echo "### Files produced"
+            echo '```'
+            ls -la outbox/patents/ 2>&1 || true
+            echo '```'
+            echo ""
+            echo "### Comparison highlights"
+            for f in outbox/patents/US*-compare.md; do
+              [ -f "$f" ] || continue
+              echo "#### \`$(basename "$f")\`"
+              echo ""
+              awk '/^## Strongest non-infringement/,/^## Likely differentiators/' "$f" \
+                | head -20
+              echo ""
+            done
+          } >> $GITHUB_STEP_SUMMARY

@@ -1,0 +1,156 @@
+# FIELD architectural features for automated patent claim matching.
+#
+# patent_compare.py reads this file on every run. Edit when FIELD's
+# architecture changes; do NOT edit patent_compare.py code to add features.
+#
+# Each feature has:
+#   id:                   stable identifier
+#   description:          human-readable summary
+#   claim_keyword_patterns: regex patterns (Python re, case-insensitive)
+#                          that, if present in a claim element, indicate
+#                          the feature is relevant to that element
+#   likely_argument:       what the match implies for FIELD's position
+#       MATCH              -- FIELD has this; the element reads on FIELD
+#       NON_INFRINGEMENT   -- FIELD lacks this; element is absent
+#       ELEMENT_ABSENT     -- FIELD architecturally cannot have this
+#       ELEMENT_DIFFERS    -- FIELD has something different but related
+#       DIFFERENT_METRIC   -- FIELD measures a different thing
+#   confidence:            HIGH | MEDIUM | LOW
+#       HIGH = unambiguous; MEDIUM = needs attorney review; LOW = guess
+
+features:
+  - id: client_side_only
+    description: >
+      FIELD runs entirely client-side. PM-26-O measures CLS in-browser
+      and exposes the result via ?clsdebug=1 panel. No remote monitoring
+      server. No data transfer to any backend.
+    claim_keyword_patterns:
+      - "monitoring node"
+      - "monitoring server"
+      - "remote.{0,30}server"
+      - "data transfer record.{0,50}network"
+      - "send.{0,40}(server|monitoring)"
+      - "transmit.{0,40}notification"
+      - "over a network"
+      - "resides on a server computer"
+    likely_argument: NON_INFRINGEMENT
+    confidence: HIGH
+
+  - id: layout_shift_metric
+    description: >
+      PM-26-O measures Cumulative Layout Shift (CLS) per W3C spec --
+      impact_fraction * distance_fraction with session-window aggregation.
+      Not generic "visually complete" timestamp detection.
+    claim_keyword_patterns:
+      - "visually complete"
+      - "visual completeness"
+      - "rendering process.{0,30}finished"
+      - "perceived as completed"
+      - "point in time when.{0,40}complete"
+    likely_argument: DIFFERENT_METRIC
+    confidence: MEDIUM
+
+  - id: no_session_replay
+    description: >
+      FIELD does NOT record session replay or transaction trace data.
+      No reconstruction of past states. No "replay" capability.
+    claim_keyword_patterns:
+      - "session replay"
+      - "rendering process visualization"
+      - "replay.{0,30}rendering"
+      - "playback.{0,30}rendering"
+      - "reconstruct.{0,30}content"
+      - "inversely apply"
+    likely_argument: ELEMENT_ABSENT
+    confidence: HIGH
+
+  - id: single_frame_spa
+    description: >
+      FIELD is a single-page application. No iframes, no parent/child
+      frame relationships, no nested DOMs.
+    claim_keyword_patterns:
+      - "parent.{0,15}frame"
+      - "child.{0,15}frame"
+      - "parental relationship"
+      - "iframe"
+      - "nested.{0,15}frame"
+    likely_argument: ELEMENT_ABSENT
+    confidence: HIGH
+
+  - id: continuous_mutation_cycle
+    description: >
+      FIELD has continuous editorial mutations on a ~30s ESPN polling
+      cycle. The "end of content processing" state defined by these
+      patents is NEVER reached. PM-26-J was the architectural pivot
+      specifically because cold-load metrics don't capture this.
+    claim_keyword_patterns:
+      - "end of content processing"
+      - "rendering process is finished"
+      - "no further.{0,30}mutation"
+      - "mutation.{0,30}expected"
+      - "onload.{0,15}event"
+      - "static content.{0,30}finished"
+    likely_argument: ELEMENT_DIFFERS
+    confidence: HIGH
+
+  - id: uses_mutation_observer
+    description: >
+      FIELD uses MutationObserver API and PerformanceObserver
+      layout-shift API where available. These are W3C standards.
+    claim_keyword_patterns:
+      - "MutationObserver"
+      - "DOM mutation"
+      - "document object model.{0,40}notification"
+      - "mutation notification"
+    likely_argument: MATCH
+    confidence: HIGH
+
+  - id: uses_bounding_rect
+    description: >
+      FIELD uses getBoundingClientRect for geometric measurement and
+      computes intersection with the visible viewport.
+    claim_keyword_patterns:
+      - "getBoundingClientRect"
+      - "position and size.{0,40}(element|resource)"
+      - "intersects.{0,30}visible"
+      - "visible.{0,15}area.{0,30}browser"
+    likely_argument: MATCH
+    confidence: HIGH
+
+  - id: no_transaction_context
+    description: >
+      FIELD has no concept of "transaction execution" tying user
+      interactions to server-side processing. No end-to-end trace.
+      No correlation IDs sent anywhere.
+    claim_keyword_patterns:
+      - "transaction (context|execution|trace)"
+      - "correlat(e|ion).{0,30}data"
+      - "end-to-end trans"
+      - "server.{0,15}side.{0,15}tracing"
+    likely_argument: ELEMENT_ABSENT
+    confidence: HIGH
+
+  - id: no_browser_agent_injection
+    description: >
+      FIELD's CLS measurement code is part of the application itself,
+      not "injected" into pages by a third-party monitoring vendor.
+      No agent injection mechanism, no instrumented web server.
+    claim_keyword_patterns:
+      - "browser agent.{0,30}injected"
+      - "injected.{0,30}content"
+      - "instrumented web server"
+      - "inject.{0,30}browser agent"
+    likely_argument: ELEMENT_DIFFERS
+    confidence: MEDIUM
+
+  - id: editorial_continuous_mutation
+    description: >
+      PM-26's six-layer architecture exists specifically to absorb
+      continuous editorial mutations within reserved layout. This is
+      the inverse of "detect when changes stop happening."
+    claim_keyword_patterns:
+      - "static content rendering"
+      - "initial.{0,15}rendering"
+      - "first paint"
+    likely_argument: ELEMENT_DIFFERS
+    confidence: MEDIUM

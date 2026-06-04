@@ -1,0 +1,86 @@
+name: Patent Watch (weekly)
+
+# Scans USPTO grant XML (Tuesdays) and pre-grant publication XML (Thursdays)
+# for assignees in .github/patent-watchlist.txt. Files a GitHub issue per
+# week when matches are found, AUTO-ASSIGNED to the repo owner so the
+# GitHub mobile app pushes a notification.
+#
+# Auto-chains to patent-fulltext.yml for grant hits (cap 20) so the full
+# claim text + FIELD comparison + Drive upload happen in the same Actions run.
+
+on:
+  schedule:
+    # Wednesday 16:00 UTC: after Tuesday grants and Thursday PGPub published.
+    - cron: '0 16 * * 3'
+  workflow_dispatch:
+    inputs:
+      week:
+        description: 'Override: YYYY-MM-DD of grant Tuesday (blank = most recent)'
+        required: false
+        type: string
+
+permissions:
+  contents: write
+  issues: write
+  actions: write   # required to invoke reusable workflows from this one
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    outputs:
+      grant_hits: ${{ steps.run_watcher.outputs.grant_hits }}
+      grant_hits_count: ${{ steps.run_watcher.outputs.grant_hits_count }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install deps
+        run: pip install requests --quiet
+
+      - name: Run watcher
+        id: run_watcher
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          WEEK_OVERRIDE: ${{ inputs.week }}
+        run: |
+          python3 .github/scripts/patent_watch.py
+
+      - name: Commit results
+        run: |
+          git config user.email "actions@github.com"
+          git config user.name "patent-watch"
+          git add outbox/patents/
+          if ! git diff --cached --quiet; then
+            git commit -m "patent-watch: $(date -u +%Y-%m-%d) [skip ci]"
+            git push
+          fi
+
+      - name: Summary
+        if: always()
+        run: |
+          {
+            echo "## Patent watch results"
+            echo ""
+            echo "Grant hits: \`${{ steps.run_watcher.outputs.grant_hits_count || '0' }}\`"
+            if [ -n "${{ steps.run_watcher.outputs.grant_hits }}" ]; then
+              echo "Auto-chaining patent-fulltext.yml for: \`${{ steps.run_watcher.outputs.grant_hits }}\`"
+            else
+              echo "No grant hits this week; auto-chain skipped."
+            fi
+          } >> $GITHUB_STEP_SUMMARY
+
+  # Auto-chain: if grant hits exist, run the full pipeline on them.
+  # PGPub hits are intentionally NOT chained (different publication-number
+  # format requires the pg_claims endpoint, not g_claims).
+  followup:
+    needs: watch
+    if: needs.watch.outputs.grant_hits != ''
+    uses: ./.github/workflows/patent-fulltext.yml
+    with:
+      patents: ${{ needs.watch.outputs.grant_hits }}
+      skip_drive: false
+    secrets: inherit

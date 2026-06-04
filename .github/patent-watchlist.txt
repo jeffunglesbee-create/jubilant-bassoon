@@ -1,0 +1,30 @@
+# Patent watchlist for jubilant-bassoon.
+#
+# One assignee per line. Case-insensitive substring match against full XML
+# content of USPTO weekly grant + PGPub feeds.
+# Lines starting with # are ignored.
+#
+# Run weekly via .github/workflows/patent-watch.yml on Wednesday 16:00 UTC.
+
+# --- RUM / browser-side performance measurement (PM-26 prior-art space) ---
+Dynatrace LLC
+Akamai Technologies
+Datadog
+New Relic
+Cisco AppDynamics
+Splunk LLC
+Tealeaf Technology
+SpeedCurve
+LogRocket
+
+# --- Sports excitement/notification (RUWT defense) ---
+Are You Watching This
+RUWT
+MetaBet
+
+# --- Sports data + content automation (Data Skrive prior art family) ---
+Data Skrive
+Stats Perform
+Sportradar
+
+# Add more as needed. Re-runs are idempotent.
