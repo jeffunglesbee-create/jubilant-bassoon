@@ -2859,6 +2859,32 @@ assert('A331 — WC tab: WC_TEAMS constant defined with group keys A-H',
 assert('A332 — WC tab: wc-back-pill onclick calls toggleWCView',
   html.includes('onclick="toggleWCView()"'));
 
+// ── WC Permutations Engine (jubilant-bassoon 2026-06-04 / field_utils.js) ─
+// Pure scenario calculator for WC 2026 group stage. Lives in field_utils.js;
+// these assertions verify the function definitions and exports are present so
+// the unit tests (field_unit.js) keep their import contract.
+assert('A424 — Permutations Engine: computeGroupScenarios defined in field_utils.js',
+  /function\s+computeGroupScenarios\s*\(/.test(fieldUtilsSrc),
+  'WC group-stage scenario engine missing from field_utils.js');
+
+assert('A425 — Permutations Engine: tiebreaker helper defined in field_utils.js',
+  /function\s+wcSortByTiebreakers\s*\(/.test(fieldUtilsSrc),
+  'FIFA tiebreaker sort helper missing from field_utils.js');
+
+assert('A426 — Permutations Engine: enumeration helper defined in field_utils.js',
+  /function\s+wcEnumerateScenarios\s*\(/.test(fieldUtilsSrc),
+  'WC scenario enumerator missing from field_utils.js');
+
+assert('A427 — Permutations Engine: exports include engine functions for unit tests',
+  fieldUtilsSrc.includes('computeGroupScenarios,')
+    && fieldUtilsSrc.includes('wcSortByTiebreakers,')
+    && fieldUtilsSrc.includes('wcEnumerateScenarios,'),
+  'module.exports must include Permutations Engine functions for field_unit.js');
+
+assert('A428 — Permutations Engine: margin model documented in source',
+  fieldUtilsSrc.includes("marginModel:") && fieldUtilsSrc.includes("'minimum'"),
+  'Permutations Engine must self-document the minimum-margin W/D/L model');
+
 // ═════════════════════════════════════════════════════════════════════
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);
