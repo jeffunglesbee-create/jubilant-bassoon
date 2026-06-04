@@ -1,71 +1,56 @@
-# FIELD Handoff — June 4 2026 (SCF + Morning Report fixes)
+# FIELD HANDOFF — 2026-06-04
 
-**jubilant-bassoon HEAD:** `4d4d67a` · Smoke: **416/0** · SW_VERSION `2026-06-04b`
-**field-relay-nba HEAD:** `b10bf7d` (P0.2 + journalism quality fixes)
+## State
+HEAD: 240ae4e · SW: 2026-06-04h · Smoke: 416/0
 
----
+## Tonight / Tomorrow
+- **SCF G2**: VGK @ CAR — tonight Jun 4, 8 PM ET, ABC · Lenovo Center, Raleigh
+  VGK leads 1-0 (G1: VGK 5-4 CAR comeback from 2-0 down; Ehlers scored both CAR goals then VGK rallied; Hertl GWG)
+- **NBA Finals G2**: NYK @ SAS — tomorrow Jun 5, 8:30 PM ET, ABC · Frost Bank Center, SA
+  NYK leads 1-0 (G1: NYK 105-95; Brunson 30pts/13 Q4; Wemby 6-21 FG; NYK 11-0 closing run)
 
-## SESSION — TYPE B continued · P0.3 SCF data + Morning Report
+## Fixes Shipped This Session
 
-### SCF Series Record Update (`4d4d67a`)
+### VENUE DUPLICATE (3407cf1)
+buildLifeStageContent 'pre' case had venue-name fallback when parts[] was empty.
+Injected a .card-stage-content div with venue directly below existing .venue-line from card template.
+Fix: removed the venue fallback. .venue-line already handles it.
 
-VGK won G1 5-4 (dramatic comeback from 2-0 down — first such road comeback in SCF G1 history). All SCF game entries updated:
-- G1 league/seriesRecord: "VGK wins 5-4"
-- G2 matchupNote added: Andersen 5GA on 23 shots, Theodore 70.4% xG on-ice (5v5), CAR cannot go to Vegas 0-2, penalty kill context retained
-- G2-G7 seriesRecord: "VGK leads 1-0"
+### STALE V2 SCORES (e7416d3)
+api-sports.io indexes US sports by UTC date. June 3 8 PM ET = June 4 UTC — returned as 'final' when querying today's date.
+Fix: in fetchV2AllScores, skip any 'final'-state game where fg.start resolves to a different ET date than today.
 
-Journalism cron will pick up context hash change and regenerate G2 series brief with accurate data.
+### HALFTIME WITH SCORE (e7416d3)
+Was: bare 'Halftime' label.
+Now: sport-specific label + live score (away @ home order).
+Basketball: "Half · Knicks 47 – Spurs 52" | Hockey: "2nd Int · CAR 2 – VGK 1"
 
-### Morning Report Fix — Two Parts
+### NBA FINALS G1 RESULT (240ae4e)
+NYK 105-95 SAS. All G1-G7 updated: league strings + seriesRecord → "NYK leads 1-0".
+G1 matchupNote: Brunson 30/13 Q4, Wemby 6-21 FG, SAS led 95-94 late, NYK 11-0 closing run.
+G2 matchupNote: G1 context + SAS must-protect-home-court stakes.
 
-**Truncation** (`4d4d67a`): Changed hard 200-char slice to sentence-boundary detection. Finds last `.`/`!`/`?` before 260 chars that precedes uppercase (sentence start). Verified against screenshot text: "This result mov..." → now cuts after first complete sentence. `_owlTxtRaw.length > _owlTxt.length` drives the ellipsis correctly.
+### CONFIRMED NO-BUILD: Pitching matchup
+buildScoutingReport (tap card) already shows pitcher with ERA, W-L, tempo. No card-body build needed.
 
-**Journalism quality** (relay `dac3fed` + `b10bf7d`): Added clunky wire-copy phrases to both `RELAY_BANNED` (index.js) and `BANNED_PHRASES` (journalism-quality.js):
-- `secured a victory/win` — wire-copy
-- `capitalized on scoring opportunities` — vague filler
-- `finalize a/the` — business jargon in sports context
-- `overcome the`, `to overcome`, `managed to overcome` — clunky verb choice
-- `result moved/moves` — "this result moves X into..." construction
-- `continued their`, `extended their`, `maintained their momentum` — generic fill
+## P1 Carry-Forwards
 
----
+- [ ] Post-S-1 iPad CLS LIVE verification
+- [ ] PM-26-N-1: C5 morph pattern to #jrn-content
+- [ ] PM-26-J-2: per-sport contain-intrinsic-size tuning
+- [ ] PM-26-J-3: pulse-effect live verification
+- [ ] WPT scroll-mode verification J-1→S-1 stack
+- [ ] Odds Budget date staleness (counter shows 2026-05-29)
+- [ ] 7th inning stretch callout in 'live' case (situation.inning===7 && isTop===false)
+- [ ] Final outcome display for low-drama games (score + F when drama < 50)
+- [ ] World Cup 2026 data flip — JUNE 11 HARD DEADLINE
 
-## CARRY-FORWARD
+## Next Session Triggers
+- SCF G2 result tonight → update G2 result, G3-G7 series records
+- NBA Finals G2 result tomorrow → update G2 result, G3-G7 series records
+- World Cup flip (June 11) — top priority next session
 
-**P1:**
-- Post-S-1 iPad CLS LIVE verification
-- PM-26-N-1: C5 morph pattern to `#jrn-content`
-- PM-26-J-2: per-sport contain-intrinsic-size tuning
-- PM-26-J-3: pulse-effect live verification
-- WPT scroll-mode verification J-1→S-1 stack
-- Odds Budget date staleness (cosmetic)
-
-**P2:**
-- PM-26-E Dead route audit
-- PM-26-F MLS stats 500
-- PM-26-G NHL stats leaders 403
-- PM-26-H OpenF1 404
-
-**TIER 0:**
-- Stanley Cup Finals G2: TONIGHT June 4 8pm ET ABC — all fixes shipping ✅
-- NBA Finals G2: ~June 5 8:30pm ET ABC
-- World Cup 2026: June 11 HARD
-- USPTO provisional: CANCELLED
-
----
-
-## STATE INVARIANTS
-
-- jubilant-bassoon HEAD: `4d4d67a`
-- jubilant-bassoon smoke: **416/0**
-- SW_VERSION: `2026-06-04b`
-- field-relay-nba HEAD: `b10bf7d`
-- T3 anchor: update to `4d4d67a · 2026-06-04 · via mcp`
-
----
-
-## CANONICAL DOC REFS
-
-**CI/Deploy Ref:** `1UrOoYDGaK2ncPrnRNXt1w0OElOLpbjP_EYROjG2w1zo`
-**FIELD Current State:** `1GvsfnTH9Xhqzg_NdYrPhPpk1d1Rnm0lkeG6ip-tLUlA`
-**CANONICAL BUILD BACKLOG:** `1ugUh6UmeDkLR-gEH8hJPwXK2NiIrXYQY8gp2jO2p2Hk`
+## Canonical Refs
+CI/Deploy: Drive 1UrOoYDGaK2ncPrnRNXt1w0OElOLpbjP_EYROjG2w1zo
+Current State: Drive 1GvsfnTH9Xhqzg_NdYrPhPpk1d1Rnm0lkeG6ip-tLUlA
+Build Backlog: Drive 1ugUh6UmeDkLR-gEH8hJPwXK2NiIrXYQY8gp2jO2p2Hk
