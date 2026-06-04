@@ -410,14 +410,17 @@ function espnTeamMatch(espnName, fieldName){
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
- * Sort a slice of teams by FIFA group-stage tiebreakers (1–6).
+ * Sort a slice of teams by FIFA group-stage tiebreakers (1–7).
  * Mutates and returns the input array.
  * @param {Array<Object>} teams — each has {name, P, W, D, L, GF, GA, Pts}
  * @param {Array<Object>} playedMatches — [{home, away, homeScore, awayScore}, ...]
  *   Used for H2H tiebreakers among teams tied on points + GD + GF.
+ * @param {Object} [fairPlayPoints] — optional {[teamName]: number}. FIFA FP schedule:
+ *   yellow = −1, two-yellow red = −3, direct red = −3 (cumulative in tournament).
+ *   Higher (less negative) is better. Omit to skip tiebreaker #7.
  * @returns {Array<Object>} the same array, sorted in finishing order (1st first).
  */
-function wcSortByTiebreakers(teams, playedMatches) {
+function wcSortByTiebreakers(teams, playedMatches, fairPlayPoints) {
   // Stage A — sort by base tiebreakers (Pts → GD → GF)
   const gd = t => t.GF - t.GA;
   teams.sort((a, b) =>
@@ -451,9 +454,11 @@ function wcSortByTiebreakers(teams, playedMatches) {
       }
       tied.sort((a, b) => {
         const ha = h2h[a.name], hb = h2h[b.name];
+        // H2H pts → H2H GD → H2H GF → fair-play points (tiebreaker #7)
         return (hb.Pts - ha.Pts)
             || ((hb.GF - hb.GA) - (ha.GF - ha.GA))
-            || (hb.GF - ha.GF);
+            || (hb.GF - ha.GF)
+            || (fairPlayPoints ? ((fairPlayPoints[b.name] || 0) - (fairPlayPoints[a.name] || 0)) : 0);
       });
       for (let k = i; k < j; k++) teams[k] = tied[k - i];
     }
@@ -464,30 +469,76 @@ function wcSortByTiebreakers(teams, playedMatches) {
 
 /**
  * Apply a single match outcome to the group standings (mutates copies).
- * Uses minimum-margin model: home win = 1-0, draw = 0-0, away win = 0-1.
+ * v1.0/minimum model: home win = 1-0, draw = 0-0, away win = 0-1.
+ * v1.4/poisson model: uses expected GD/GF derived from Poisson(λH, λA).
+ *   Caller passes lambdaHome, lambdaAway via matchMeta to activate.
  * @param {Object} teamMap — {teamName: {name, P, W, D, L, GF, GA, Pts}, ...}
  * @param {string} home
  * @param {string} away
  * @param {('H'|'D'|'A')} outcome — Home win / Draw / Away win
  * @param {Array<Object>} playedSink — push the synthetic match here so H2H sees it
+ * @param {{lambdaHome?: number, lambdaAway?: number}} [matchMeta]
  */
-function wcApplyOutcome(teamMap, home, away, outcome, playedSink) {
+function wcApplyOutcome(teamMap, home, away, outcome, playedSink, matchMeta) {
   const h = teamMap[home], a = teamMap[away];
   h.P += 1; a.P += 1;
+  // v1.4: Poisson-expected GD if lambdas provided; else minimum-margin (1 or 0).
+  const lH = matchMeta && matchMeta.lambdaHome > 0 ? matchMeta.lambdaHome : null;
+  const lA = matchMeta && matchMeta.lambdaAway > 0 ? matchMeta.lambdaAway : null;
   if (outcome === 'H') {
-    h.W += 1; h.Pts += 3; h.GF += 1;
-    a.L += 1; a.GA += 1;
-    playedSink.push({home, away, homeScore: 1, awayScore: 0});
+    // Expected scoreline for a home win, rounded to nearest integer
+    const hg = lH && lA ? Math.round(wcPoissonExpectedGoals(lH, lA, 'H', 'home')) : 1;
+    const ag = lH && lA ? Math.round(wcPoissonExpectedGoals(lH, lA, 'H', 'away')) : 0;
+    const safeHg = Math.max(hg, ag + 1);  // ensure result is actually a home win
+    h.W += 1; h.Pts += 3; h.GF += safeHg; h.GA += ag;
+    a.L += 1; a.GF += ag; a.GA += safeHg;
+    playedSink.push({home, away, homeScore: safeHg, awayScore: ag});
   } else if (outcome === 'A') {
-    a.W += 1; a.Pts += 3; a.GF += 1;
-    h.L += 1; h.GA += 1;
-    playedSink.push({home, away, homeScore: 0, awayScore: 1});
+    const ag = lH && lA ? Math.round(wcPoissonExpectedGoals(lH, lA, 'A', 'away')) : 1;
+    const hg = lH && lA ? Math.round(wcPoissonExpectedGoals(lH, lA, 'A', 'home')) : 0;
+    const safeAg = Math.max(ag, hg + 1);
+    a.W += 1; a.Pts += 3; a.GF += safeAg; a.GA += hg;
+    h.L += 1; h.GF += hg; h.GA += safeAg;
+    playedSink.push({home, away, homeScore: hg, awayScore: safeAg});
   } else {
-    h.D += 1; h.Pts += 1;
-    a.D += 1; a.Pts += 1;
-    playedSink.push({home, away, homeScore: 0, awayScore: 0});
+    // Draw — expected goals each side (whole goals; uses ceiling so at least 0)
+    const drHg = lH ? Math.round(lH * 0.6) : 0;  // rough fraction of shots in draw
+    const drAg = lA ? Math.round(lA * 0.6) : 0;
+    h.D += 1; h.Pts += 1; h.GF += drHg; h.GA += drAg;
+    a.D += 1; a.Pts += 1; a.GF += drAg; a.GA += drHg;
+    playedSink.push({home, away, homeScore: drHg, awayScore: drAg});
   }
 }
+
+/**
+ * Poisson expected goals for the WINNING side in a given outcome.
+ * Computes E[goals | result] = Σ k × P(k goals) / P(result) for scorelines
+ * where the result is consistent (home > away for H, etc.). Caps at 8 goals.
+ * @param {number} lH — home team lambda (expected goals)
+ * @param {number} lA — away team lambda
+ * @param {('H'|'D'|'A')} outcome
+ * @param {('home'|'away')} side — which team's goals to return
+ * @returns {number} expected goals for that side, conditioned on the outcome
+ */
+function wcPoissonExpectedGoals(lH, lA, outcome, side) {
+  const pois = (lam, k) => {
+    let p = Math.exp(-lam), r = p;
+    for (let i = 1; i <= k; i++) { r = r * lam / i; p = r; }
+    return p;
+  };
+  let num = 0, den = 0;
+  for (let h = 0; h <= 8; h++) {
+    for (let a = 0; a <= 8; a++) {
+      const relevant = outcome === 'H' ? h > a : outcome === 'A' ? a > h : h === a;
+      if (!relevant) continue;
+      const p = pois(lH, h) * pois(lA, a);
+      den += p;
+      num += p * (side === 'home' ? h : a);
+    }
+  }
+  return den > 0 ? num / den : (side === 'home' ? lH : lA);
+}
+
 
 /**
  * Deep-copy a team-state map (small enough that JSON round-trip is fine).
@@ -512,7 +563,7 @@ function wcCloneTeamMap(teamMap) {
  *   as a uniform distribution (1 / total).
  * @returns {Array<{outcomes, final, probability}>} list of 3^N scenarios
  */
-function wcEnumerateScenarios(teamMap, played, remaining, outcomeProbs) {
+function wcEnumerateScenarios(teamMap, played, remaining, outcomeProbs, fairPlayPoints) {
   const N = remaining.length;
   if (N > 8) {
     throw new Error(`wcEnumerateScenarios: ${N} remaining > supported max of 8`);
@@ -555,7 +606,7 @@ function wcEnumerateScenarios(teamMap, played, remaining, outcomeProbs) {
       }
     }
     const finalArr = Object.values(tm);
-    wcSortByTiebreakers(finalArr, playedCopy);
+    wcSortByTiebreakers(finalArr, playedCopy, fairPlayPoints);
     scenarios.push({outcomes: outcomeList, final: finalArr.map(t => t.name), probability: prob});
   }
   return scenarios;
@@ -620,7 +671,7 @@ function wcSummarizePerTeam(teamNames, scenarios) {
  *   currentTable, perTeam, marginModel, weighted
  * }
  */
-function computeGroupScenarios({groupId, teams, played, remaining, outcomeProbabilities}) {
+function computeGroupScenarios({groupId, teams, played, remaining, outcomeProbabilities, fairPlayPoints}) {
   if (!Array.isArray(teams) || teams.length !== 4) {
     throw new Error('computeGroupScenarios: teams must be an array of 4');
   }
@@ -633,9 +684,9 @@ function computeGroupScenarios({groupId, teams, played, remaining, outcomeProbab
   }
   // Current table (under tiebreakers, no future outcomes applied).
   const currentSorted = Object.values(wcCloneTeamMap(teamMap));
-  wcSortByTiebreakers(currentSorted, played);
-  // Enumerate (with optional probability weighting).
-  const scenarios = wcEnumerateScenarios(teamMap, played, remaining, outcomeProbabilities);
+  wcSortByTiebreakers(currentSorted, played, fairPlayPoints);
+  // Enumerate (with optional probability weighting and fair-play tiebreaker).
+  const scenarios = wcEnumerateScenarios(teamMap, played, remaining, outcomeProbabilities, fairPlayPoints);
   const perTeam   = wcSummarizePerTeam(teams.map(t => t.name), scenarios);
   return {
     groupId,
@@ -817,6 +868,8 @@ if (typeof module !== 'undefined' && module.exports) {
     wcSortByTiebreakers,
     wcEnumerateScenarios,
     wcSummarizePerTeam,
+    wcApplyOutcome,
+    wcPoissonExpectedGoals,
     // v1.2 — best-3rd cross-group
     computeBest3rdRanking,
     wcSampleScenario,

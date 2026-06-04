@@ -2023,6 +2023,7 @@ body.journalism-mode #field-journalism-section{animation:jrnFadeIn 220ms ease-ou
 .wc-sb--out{background:rgba(239,68,68,.18);color:#ef4444}
 .wc-sb--maybe{background:rgba(201,168,76,.18);color:#c9a84c}
 .wc-sb--b3{margin-left:3px;font-size:.62rem;color:#94a3b8;font-weight:500}
+.wc-sim-banner{font-size:.72rem;color:#c9a84c;padding:.25rem .5rem;margin-bottom:.3rem;border-left:2px solid rgba(201,168,76,.5);line-height:1.4;background:rgba(201,168,76,.06)}
 
 /* GF/GA hidden on mobile */
 @media(max-width:819px){.wc-th-gf,.wc-th-ga,.wc-td-gf,.wc-td-ga{display:none}}
@@ -18127,8 +18128,8 @@ function trimToCompleteSentence(text) {
 
 
 // ── WC PERMUTATIONS ENGINE inlined from field_utils.js (2026-06-04) ──────
-// Required by smoke A191 — any field_utils.js function called in this file
-// must also be defined here. Engine v1.0 + v1.1 + v1.2.
+// Required by smoke A191. Engine v1.0+v1.1+v1.2+v1.4+v1.5.
+// Updated automatically when field_utils.js is regenerated.
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ── WC GROUP-STAGE PERMUTATIONS ENGINE ─────────────────────────────────────────
@@ -18155,14 +18156,17 @@ function trimToCompleteSentence(text) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
- * Sort a slice of teams by FIFA group-stage tiebreakers (1–6).
+ * Sort a slice of teams by FIFA group-stage tiebreakers (1–7).
  * Mutates and returns the input array.
  * @param {Array<Object>} teams — each has {name, P, W, D, L, GF, GA, Pts}
  * @param {Array<Object>} playedMatches — [{home, away, homeScore, awayScore}, ...]
  *   Used for H2H tiebreakers among teams tied on points + GD + GF.
+ * @param {Object} [fairPlayPoints] — optional {[teamName]: number}. FIFA FP schedule:
+ *   yellow = −1, two-yellow red = −3, direct red = −3 (cumulative in tournament).
+ *   Higher (less negative) is better. Omit to skip tiebreaker #7.
  * @returns {Array<Object>} the same array, sorted in finishing order (1st first).
  */
-function wcSortByTiebreakers(teams, playedMatches) {
+function wcSortByTiebreakers(teams, playedMatches, fairPlayPoints) {
   // Stage A — sort by base tiebreakers (Pts → GD → GF)
   const gd = t => t.GF - t.GA;
   teams.sort((a, b) =>
@@ -18196,9 +18200,11 @@ function wcSortByTiebreakers(teams, playedMatches) {
       }
       tied.sort((a, b) => {
         const ha = h2h[a.name], hb = h2h[b.name];
+        // H2H pts → H2H GD → H2H GF → fair-play points (tiebreaker #7)
         return (hb.Pts - ha.Pts)
             || ((hb.GF - hb.GA) - (ha.GF - ha.GA))
-            || (hb.GF - ha.GF);
+            || (hb.GF - ha.GF)
+            || (fairPlayPoints ? ((fairPlayPoints[b.name] || 0) - (fairPlayPoints[a.name] || 0)) : 0);
       });
       for (let k = i; k < j; k++) teams[k] = tied[k - i];
     }
@@ -18209,30 +18215,76 @@ function wcSortByTiebreakers(teams, playedMatches) {
 
 /**
  * Apply a single match outcome to the group standings (mutates copies).
- * Uses minimum-margin model: home win = 1-0, draw = 0-0, away win = 0-1.
+ * v1.0/minimum model: home win = 1-0, draw = 0-0, away win = 0-1.
+ * v1.4/poisson model: uses expected GD/GF derived from Poisson(λH, λA).
+ *   Caller passes lambdaHome, lambdaAway via matchMeta to activate.
  * @param {Object} teamMap — {teamName: {name, P, W, D, L, GF, GA, Pts}, ...}
  * @param {string} home
  * @param {string} away
  * @param {('H'|'D'|'A')} outcome — Home win / Draw / Away win
  * @param {Array<Object>} playedSink — push the synthetic match here so H2H sees it
+ * @param {{lambdaHome?: number, lambdaAway?: number}} [matchMeta]
  */
-function wcApplyOutcome(teamMap, home, away, outcome, playedSink) {
+function wcApplyOutcome(teamMap, home, away, outcome, playedSink, matchMeta) {
   const h = teamMap[home], a = teamMap[away];
   h.P += 1; a.P += 1;
+  // v1.4: Poisson-expected GD if lambdas provided; else minimum-margin (1 or 0).
+  const lH = matchMeta && matchMeta.lambdaHome > 0 ? matchMeta.lambdaHome : null;
+  const lA = matchMeta && matchMeta.lambdaAway > 0 ? matchMeta.lambdaAway : null;
   if (outcome === 'H') {
-    h.W += 1; h.Pts += 3; h.GF += 1;
-    a.L += 1; a.GA += 1;
-    playedSink.push({home, away, homeScore: 1, awayScore: 0});
+    // Expected scoreline for a home win, rounded to nearest integer
+    const hg = lH && lA ? Math.round(wcPoissonExpectedGoals(lH, lA, 'H', 'home')) : 1;
+    const ag = lH && lA ? Math.round(wcPoissonExpectedGoals(lH, lA, 'H', 'away')) : 0;
+    const safeHg = Math.max(hg, ag + 1);  // ensure result is actually a home win
+    h.W += 1; h.Pts += 3; h.GF += safeHg; h.GA += ag;
+    a.L += 1; a.GF += ag; a.GA += safeHg;
+    playedSink.push({home, away, homeScore: safeHg, awayScore: ag});
   } else if (outcome === 'A') {
-    a.W += 1; a.Pts += 3; a.GF += 1;
-    h.L += 1; h.GA += 1;
-    playedSink.push({home, away, homeScore: 0, awayScore: 1});
+    const ag = lH && lA ? Math.round(wcPoissonExpectedGoals(lH, lA, 'A', 'away')) : 1;
+    const hg = lH && lA ? Math.round(wcPoissonExpectedGoals(lH, lA, 'A', 'home')) : 0;
+    const safeAg = Math.max(ag, hg + 1);
+    a.W += 1; a.Pts += 3; a.GF += safeAg; a.GA += hg;
+    h.L += 1; h.GF += hg; h.GA += safeAg;
+    playedSink.push({home, away, homeScore: hg, awayScore: safeAg});
   } else {
-    h.D += 1; h.Pts += 1;
-    a.D += 1; a.Pts += 1;
-    playedSink.push({home, away, homeScore: 0, awayScore: 0});
+    // Draw — expected goals each side (whole goals; uses ceiling so at least 0)
+    const drHg = lH ? Math.round(lH * 0.6) : 0;  // rough fraction of shots in draw
+    const drAg = lA ? Math.round(lA * 0.6) : 0;
+    h.D += 1; h.Pts += 1; h.GF += drHg; h.GA += drAg;
+    a.D += 1; a.Pts += 1; a.GF += drAg; a.GA += drHg;
+    playedSink.push({home, away, homeScore: drHg, awayScore: drAg});
   }
 }
+
+/**
+ * Poisson expected goals for the WINNING side in a given outcome.
+ * Computes E[goals | result] = Σ k × P(k goals) / P(result) for scorelines
+ * where the result is consistent (home > away for H, etc.). Caps at 8 goals.
+ * @param {number} lH — home team lambda (expected goals)
+ * @param {number} lA — away team lambda
+ * @param {('H'|'D'|'A')} outcome
+ * @param {('home'|'away')} side — which team's goals to return
+ * @returns {number} expected goals for that side, conditioned on the outcome
+ */
+function wcPoissonExpectedGoals(lH, lA, outcome, side) {
+  const pois = (lam, k) => {
+    let p = Math.exp(-lam), r = p;
+    for (let i = 1; i <= k; i++) { r = r * lam / i; p = r; }
+    return p;
+  };
+  let num = 0, den = 0;
+  for (let h = 0; h <= 8; h++) {
+    for (let a = 0; a <= 8; a++) {
+      const relevant = outcome === 'H' ? h > a : outcome === 'A' ? a > h : h === a;
+      if (!relevant) continue;
+      const p = pois(lH, h) * pois(lA, a);
+      den += p;
+      num += p * (side === 'home' ? h : a);
+    }
+  }
+  return den > 0 ? num / den : (side === 'home' ? lH : lA);
+}
+
 
 /**
  * Deep-copy a team-state map (small enough that JSON round-trip is fine).
@@ -18257,7 +18309,7 @@ function wcCloneTeamMap(teamMap) {
  *   as a uniform distribution (1 / total).
  * @returns {Array<{outcomes, final, probability}>} list of 3^N scenarios
  */
-function wcEnumerateScenarios(teamMap, played, remaining, outcomeProbs) {
+function wcEnumerateScenarios(teamMap, played, remaining, outcomeProbs, fairPlayPoints) {
   const N = remaining.length;
   if (N > 8) {
     throw new Error(`wcEnumerateScenarios: ${N} remaining > supported max of 8`);
@@ -18300,7 +18352,7 @@ function wcEnumerateScenarios(teamMap, played, remaining, outcomeProbs) {
       }
     }
     const finalArr = Object.values(tm);
-    wcSortByTiebreakers(finalArr, playedCopy);
+    wcSortByTiebreakers(finalArr, playedCopy, fairPlayPoints);
     scenarios.push({outcomes: outcomeList, final: finalArr.map(t => t.name), probability: prob});
   }
   return scenarios;
@@ -18365,7 +18417,7 @@ function wcSummarizePerTeam(teamNames, scenarios) {
  *   currentTable, perTeam, marginModel, weighted
  * }
  */
-function computeGroupScenarios({groupId, teams, played, remaining, outcomeProbabilities}) {
+function computeGroupScenarios({groupId, teams, played, remaining, outcomeProbabilities, fairPlayPoints}) {
   if (!Array.isArray(teams) || teams.length !== 4) {
     throw new Error('computeGroupScenarios: teams must be an array of 4');
   }
@@ -18378,9 +18430,9 @@ function computeGroupScenarios({groupId, teams, played, remaining, outcomeProbab
   }
   // Current table (under tiebreakers, no future outcomes applied).
   const currentSorted = Object.values(wcCloneTeamMap(teamMap));
-  wcSortByTiebreakers(currentSorted, played);
-  // Enumerate (with optional probability weighting).
-  const scenarios = wcEnumerateScenarios(teamMap, played, remaining, outcomeProbabilities);
+  wcSortByTiebreakers(currentSorted, played, fairPlayPoints);
+  // Enumerate (with optional probability weighting and fair-play tiebreaker).
+  const scenarios = wcEnumerateScenarios(teamMap, played, remaining, outcomeProbabilities, fairPlayPoints);
   const perTeam   = wcSummarizePerTeam(teams.map(t => t.name), scenarios);
   return {
     groupId,
@@ -18544,6 +18596,8 @@ function computeBest3rdRanking({groupInputs, samples = 10000, seed = null, bestN
   }
   return {samples, bestN, perTeam};
 }
+
+
 
 // ── field_utils.js functions inlined (May 29 2026) ─────────────────────────
 // These were defined in field_utils.js (Node test module) but not in index.html,
@@ -23521,13 +23575,30 @@ async function renderWCSection() {
   const grpsEl = document.getElementById('wc-groups');
   if (grpsEl) grpsEl.removeAttribute('hidden');
   renderWCGroupsLoading();
-  const standings = await fetchWCStandings();
+  // Fetch standings + match results in parallel (v1.3.1: real played[] for H2H tiebreakers)
+  const [standings, matchResults] = await Promise.all([
+    fetchWCStandings(),
+    fetchWCResults(),
+  ]);
   if (!standings || Object.keys(standings).length === 0) {
     renderWCGroupsEmpty();
   } else {
-    renderWCGroups(standings);
+    renderWCGroups(standings, matchResults);
   }
 }
+
+// v1.3.1 — fetch match results from relay /wc/results endpoint (wc_results D1 table)
+async function fetchWCResults() {
+  try {
+    const base = (typeof V2_RELAY_BASE !== 'undefined' ? V2_RELAY_BASE : null)
+              || 'https://field-relay-nba.jeffunglesbee.workers.dev';
+    const r = await fetch(`${base}/wc/results`, { cache: 'no-store' });
+    if (!r.ok) return [];
+    const data = await r.json();
+    return Array.isArray(data.results) ? data.results : [];
+  } catch (e) { return []; }
+}
+
 
 // Loading state
 function renderWCGroupsLoading() {
@@ -23562,16 +23633,21 @@ function renderWCGroupsEmpty() {
 }
 
 // Live standings from D1
-function renderWCGroups(standings) {
+function renderWCGroups(standings, matchResults) {
   const el = document.getElementById('wc-groups');
   if (!el) return;
   const groups = 'ABCDEFGHIJKL'.split('');
-  // Compute scenarios across all 12 groups (best-effort — degrades to no-badges on error).
-  const scenarios = _wcComputeAllScenarios(standings);
+  const scenarios = _wcComputeAllScenarios(standings, matchResults);
+  const groupInputs = (scenarios && scenarios.groupInputs) || [];
   el.innerHTML = groups.map(g => {
+    const gi = groupInputs.find(x => x.groupId === g) || {};
     const rows = (standings[g] || []).map((r, i) => buildWCGroupRow(r, i, scenarios, g)).join('');
+    // v1.7 — simultaneous-kickoff banner for final matchday
+    const simBanner = gi.simultaneousFinalDay
+      ? `<div class="wc-sim-banner" title="FIFA rule: final-matchday games kick off simultaneously. Neither team knows the other result.">⚡ Final day · Both games kick off simultaneously · ${gi.simultaneousKickoffLabel || ''}</div>`
+      : '';
     return buildWCGroupShell(g, rows ||
-      `<tr><td colspan="10" class="wc-empty">No results yet</td></tr>`);
+      `<tr><td colspan="10" class="wc-empty">No results yet</td></tr>`, simBanner);
   }).join('') +
   '<p class="wc-footnote">Top 2 from each group advance · Best 8 third-place teams also advance</p>';
 }
@@ -23580,7 +23656,7 @@ function renderWCGroups(standings) {
 // played[] left empty in v1.3 — relay doesn't expose per-match results yet,
 // so H2H tiebreaker degrades to base sort (pts → GD → GF). Acceptable for
 // MD1/MD2 displays; H2H matters most on MD3, addressed in v1.3.1.
-function _wcBuildGroupInput(groupLetter, groupStandings, allFixtures, nowMs) {
+function _wcBuildGroupInput(groupLetter, groupStandings, allFixtures, nowMs, matchResults) {
   if (!groupStandings || groupStandings.length !== 4) return null;
   const teams = groupStandings.map(r => ({
     name: r.team,
@@ -23592,16 +23668,43 @@ function _wcBuildGroupInput(groupLetter, groupStandings, allFixtures, nowMs) {
     GA:  r.ga     || 0,
     Pts: r.points || 0,
   }));
-  const remaining = allFixtures
-    .filter(g => g.league && g.league.includes(`Group ${groupLetter}`)
-                 && new Date(g.start_time).getTime() > nowMs)
-    .map(g => ({home: g.home, away: g.away}));
-  return {groupId: groupLetter, teams, played: [], remaining};
+  // v1.3.1 — real played[] from wc_results D1 table (null-safe; degrades to [] pre-tournament)
+  const played = (Array.isArray(matchResults) ? matchResults : [])
+    .filter(r => r.group_id === groupLetter || r.group_id === `Group ${groupLetter}`)
+    .map(r => ({home: r.home, away: r.away, homeScore: r.home_score, awayScore: r.away_score}));
+  const groupFixtures = allFixtures.filter(
+    g => g.league && g.league.includes(`Group ${groupLetter}`)
+  );
+  const remaining = groupFixtures
+    .filter(g => new Date(g.start_time).getTime() > nowMs)
+    .map(g => ({home: g.home, away: g.away, _startMs: new Date(g.start_time).getTime()}));
+  // v1.7 — detect simultaneous final matchday (FIFA requires MD3 games to kick off at same time)
+  // Flag when the last 2 remaining fixtures start within 5 minutes of each other.
+  let simultaneousFinalDay = false;
+  let simultaneousKickoffLabel = null;
+  if (remaining.length === 2) {
+    const delta = Math.abs(remaining[0]._startMs - remaining[1]._startMs);
+    if (delta <= 5 * 60 * 1000) {
+      simultaneousFinalDay = true;
+      const d = new Date(Math.min(remaining[0]._startMs, remaining[1]._startMs));
+      // Format: "Jun 25 @ 3 PM ET" style
+      const opts = {month:'short', day:'numeric', hour:'numeric', minute:'2-digit', timeZone:'America/New_York', hour12:true, timeZoneName:'short'};
+      simultaneousKickoffLabel = d.toLocaleString('en-US', opts).replace(':00','');
+    }
+  }
+  return {
+    groupId: groupLetter,
+    teams,
+    played,
+    remaining: remaining.map(({home, away}) => ({home, away})),
+    simultaneousFinalDay,
+    simultaneousKickoffLabel,
+  };
 }
 
 // Compute scenarios across all 12 WC groups + cross-group best-3rd ranking.
 // Returns {perGroup, best3rd} or null on failure.
-function _wcComputeAllScenarios(standings) {
+function _wcComputeAllScenarios(standings, matchResults, fairPlayPoints) {
   if (typeof computeGroupScenarios !== 'function') return null;
   if (!standings || Object.keys(standings).length === 0) return null;
   try {
@@ -23610,11 +23713,13 @@ function _wcComputeAllScenarios(standings) {
       ? wc26Raw : [];
     const groups = 'ABCDEFGHIJKL'.split('');
     const groupInputs = groups
-      .map(g => _wcBuildGroupInput(g, standings[g], allFixtures, nowMs))
+      .map(g => _wcBuildGroupInput(g, standings[g], allFixtures, nowMs, matchResults))
       .filter(Boolean);
     const perGroup = {};
     for (const gi of groupInputs) {
-      perGroup[gi.groupId] = computeGroupScenarios(gi);
+      // v1.5 — pass optional fairPlayPoints if provided by caller
+      const fp = fairPlayPoints && fairPlayPoints[gi.groupId];
+      perGroup[gi.groupId] = computeGroupScenarios({...gi, fairPlayPoints: fp});
     }
     let best3rd = null;
     if (typeof computeBest3rdRanking === 'function' && groupInputs.length === 12) {
@@ -23622,7 +23727,7 @@ function _wcComputeAllScenarios(standings) {
         best3rd = computeBest3rdRanking({groupInputs, samples: 5000, seed: 2026});
       } catch (e) { /* best3rd is optional */ }
     }
-    return {perGroup, best3rd};
+    return {perGroup, best3rd, groupInputs};
   } catch (e) {
     return null;
   }
@@ -23654,10 +23759,11 @@ function _wcScenarioBadge(teamName, groupId, scenarios) {
 }
 
 // Group block shell (used by both empty + live)
-function buildWCGroupShell(groupId, rowsHTML) {
+function buildWCGroupShell(groupId, rowsHTML, bannerHTML) {
   return `
     <div class="wc-group-block" data-group="${groupId}">
       <div class="wc-group-label">Group ${groupId}</div>
+      ${bannerHTML || ''}
       <table class="wc-table" aria-label="Group ${groupId} standings">
         <thead><tr>
           <th class="wc-th-pos">#</th>
