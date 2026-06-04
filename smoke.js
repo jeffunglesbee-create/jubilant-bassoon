@@ -2763,6 +2763,28 @@ assert('A421 — PM-26-O-2: cross-engine layout-shift observer (native + geometr
   'PM-26-O-2 fix. PM-26-O-1b shipped an UNSUPPORTED notice for WebKit/Gecko engines (iOS Chrome, iOS Safari, desktop Safari, Firefox) because PerformanceObserver({type:"layout-shift"}) is Blink-only. But the CLS algorithm itself is public and the primitives needed to implement it (rAF, getBoundingClientRect, MutationObserver, performance.now) are universal. Fix: add a geometric-inference fallback that computes CLS directly. Snapshot bounding rects for a fixed "interest set" (body children + known shift-suspect IDs + .game-card) on every DOM mutation, plus rAF-throttled during the cold-load 6s window for font swaps. Diff snapshots — when any element\'s y-position changes by ≥1px, compute Chrome\'s formula impact_fraction × distance_fraction, aggregate into the same session-window logic as native (1s gap / 5s max span, recordShift path is shared between native and fallback). Sources attribution is naturally available because we know which element\'s rect changed. Trade-offs: walks ~30-50 interest-set elements not the full tree (deep nested shifts may be missed), throttled at 80ms minimum between snapshots, score magnitude can drift ~5-20% vs native due to timing/edge cases. What\'s accurate: sources, relative magnitude, max-window logic (identical code path). window.__cls.mode is now a tristate (native/fallback/unsupported) so the runtime can announce which path produced its numbers. Panel renders three color-coded states: native (green), fallback (yellow + approximation note), unsupported (amber). Coverage matrix is now complete: every modern browser produces actionable CLS data with ?clsdebug=1.');
 
 
+assert('A422 — PM-26-N-2: reserve space + contain:layout on bottom sections + dividers',
+  // All four bottom-of-page elements must declare min-height AND
+  // contain:layout. We match each rule's opening selector immediately
+  // followed (within the rule body) by the two properties. CSS allows
+  // these in any order within the block, so we check each property
+  // independently within the [^}]* block body.
+  //
+  // .page-divider: 50px reservation (typical rendered height)
+  /\.page-divider\{[^}]*min-height:\s*50px[^}]*\}/.test(html) &&
+  /\.page-divider\{[^}]*contain:\s*layout[^}]*\}/.test(html) &&
+  // .field-desk-section: 220px reservation (FIELD Desk briefs grid)
+  /\.field-desk-section\{[^}]*min-height:\s*220px[^}]*\}/.test(html) &&
+  /\.field-desk-section\{[^}]*contain:\s*layout[^}]*\}/.test(html) &&
+  // .media-section: 200px reservation (Sports Media Today studio shows)
+  /\.media-section\{[^}]*min-height:\s*200px[^}]*\}/.test(html) &&
+  /\.media-section\{[^}]*contain:\s*layout[^}]*\}/.test(html) &&
+  // .streaming-section: 180px reservation (Streaming Discovery cards)
+  /\.streaming-section\{[^}]*min-height:\s*180px[^}]*\}/.test(html) &&
+  /\.streaming-section\{[^}]*contain:\s*layout[^}]*\}/.test(html),
+  'PM-26-N-2 fix. Companion to PM-26-R-1 (card floor bump). iPad CLS LIVE measurement on PM-26-O-2a deploy (geometric fallback path) identified two shift events sourced to bottom-of-page sections: 0.1003 at t=953ms attributed to .page-divider + #field-desk-section, and 0.2067 at t=1119ms attributed to .page-divider + #media-section. Diagnosis: the bottom sections (#field-desk-section, #media-section, #streaming-section) sit below <main> and below the upper-slots wrapper (PM-26-M-1). They start with EMPTY content grids (just their head element ~60px) and JS-hydrate populated grids during cold load. Hydration grows each section from ~60px to ~200-280px. The growth pushes the .page-divider that follows it down, and propagates through to the next section. Even after PM-26-R-1 stabilizes the card grid above, the section-internal cold-load hydration is a separate cascade source. Fix: reserve min-height on each bottom section + divider to absorb the cold-load hydration growth, and add contain:layout to isolate internal slot mutations from sibling sections. Reservations match typical post-hydration heights: .page-divider 50px (label + line + 2rem margin), .field-desk-section 220px (head + 2-3 brief cards), .media-section 200px (head + 3-5 media-cards), .streaming-section 180px (head + streaming-platform discovery cards). Tradeoff: if a section hydrates with fewer items than typical, the reservation shows as empty space below the populated content. Visual cost bounded at ~50-80px per section, accepted for CLS gain. NOT addressing: shifts INSIDE a section (e.g., a media-card hover triggering reflow of media-grid) — contain:layout on the section bounds those internally so the section itself doesn\'t shift, but per-card layout within the section is still free to reflow. NOT addressing: sections growing BEYOND their reservation (still shift by the residual delta, but typically <30px not the full 0→220 cold-load delta). Patent relevance: completes the multi-layer space-reservation architecture (.game-card floor R-1, #upper-slots M-1, bottom sections N-2, font-fallback metrics K-1, per-card containment J-1) — the "containment + reserved space + matched-metric fallbacks" perceived-perf defense story now covers cards, slots, and sections across the entire scrollable viewport.');
+
+
 // ═════════════════════════════════════════════════════════════════════
 // GATE — all assertions above must pass before deploy proceeds.
 // PM-7: relocated here from line ~1047. Previously A245-A368 ran but

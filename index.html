@@ -1608,7 +1608,20 @@ body::before{
 }
 
 /* ── STREAMING DISCOVERY ── */
-.streaming-section{max-width:1400px;margin:0 auto 3rem;padding:0 2rem}
+.streaming-section{
+  max-width:1400px;margin:0 auto 3rem;padding:0 2rem;
+  /* PM-26-N-2 (June 3 2026): reserve intrinsic height + contain layout.
+   * #streaming-grid is populated by JS with streaming-platform discovery
+   * cards. Pre-population: just .streaming-head (~60px). Post-population:
+   * ~150-180px. Not directly seen in iPad CLS LIVE events at this load
+   * (sits below media-section which absorbs the upstream cascade) but
+   * reserved for completeness — if media-section's 200px reservation
+   * proves insufficient and overflow propagates, streaming-section will
+   * shift next. 180px reservation absorbs typical populated height.
+   */
+  min-height: 180px;
+  contain: layout;
+}
 .streaming-head{
   display:flex;align-items:center;gap:.75rem;
   margin-bottom:1.2rem;padding-bottom:.65rem;
@@ -1699,6 +1712,25 @@ body::before{
 .page-divider{
   max-width:1400px;margin:0 auto 2rem;
   display:flex;align-items:center;gap:1rem;padding:0 2rem;
+  /* PM-26-N-2 (June 3 2026): reserve intrinsic height + contain layout.
+   * Dividers themselves are thin (~24px content + 32px bottom margin =
+   * ~50px total) and don't shift much internally, but they sit BETWEEN
+   * bottom-of-page sections (FIELD Desk, Sports Media Today, Streaming
+   * Discovery). When the section ABOVE a divider grows during hydration,
+   * the divider gets pushed down. The iPad CLS LIVE measurement
+   * (PM-26-O-2a geometric fallback) showed two big shift events sourced
+   * to .page-divider + adjacent section pairs: 0.1003 at t=953ms
+   * (.page-divider + #field-desk-section) and 0.2067 at t=1119ms
+   * (.page-divider + #media-section). Diagnosis: the sections above
+   * grew, pushing both the section ITSELF and the divider that
+   * immediately follows. min-height:50px keeps the divider from
+   * collapsing during cold load if the font-fallback path hasn't yet
+   * resolved divider-label height. contain:layout isolates any internal
+   * change (e.g., divider-label class swap or aria attribute change)
+   * from triggering sibling reflow.
+   */
+  min-height: 50px;
+  contain: layout;
 }
 .divider-line{flex:1;height:1px;background:linear-gradient(90deg,transparent,var(--edge2),transparent)}
 .divider-label{
@@ -1707,7 +1739,21 @@ body::before{
 }
 
 /* ── MEDIA SECTION ── */
-.media-section{max-width:1400px;margin:0 auto 3rem;padding:0 2rem}
+.media-section{
+  max-width:1400px;margin:0 auto 3rem;padding:0 2rem;
+  /* PM-26-N-2 (June 3 2026): reserve intrinsic height + contain layout.
+   * #media-grid is populated by JS with 3-5 Sports Media Today studio-
+   * show cards. Pre-population: just .media-head (~60px). Post-
+   * population: ~180-240px depending on show count. iPad CLS LIVE
+   * measurement (PM-26-O-2a geometric fallback) showed 0.2067 shift
+   * at t=1119ms attributed to .page-divider + #media-section. 200px
+   * reservation absorbs typical populated height. contain:layout
+   * isolates per-card hover state and media-chip mutations from
+   * sibling sections.
+   */
+  min-height: 200px;
+  contain: layout;
+}
 .media-head{
   display:flex;align-items:center;gap:.75rem;
   margin-bottom:1.2rem;padding-bottom:.65rem;
@@ -1744,7 +1790,27 @@ body::before{
   border:1px solid rgba(167,139,250,.2);border-radius:3px;padding:.1rem .45rem;margin-right:3px;
 }
 /* ── FIELD Desk section ─────────────────────────────────────────────────── */
-.field-desk-section{max-width:1400px;margin:0 auto 3rem;padding:0 2rem}
+.field-desk-section{
+  max-width:1400px;margin:0 auto 3rem;padding:0 2rem;
+  /* PM-26-N-2 (June 3 2026): reserve intrinsic height + contain layout.
+   * #field-desk-grid is populated by JS after the journalism pipeline
+   * completes (sourced from sessionStorage J3/J2/J1 caches). Pre-
+   * population the section is just .field-desk-head (~60px). Post-
+   * population it grows to ~220-280px with 2-3 brief cards. Growth
+   * pushes the next .page-divider (Also streaming today) + #media-
+   * section DOWN, which propagates through to #streaming-section and
+   * legend. iPad CLS LIVE measurement (PM-26-O-2a geometric fallback)
+   * showed 0.1003 shift at t=953ms attributed to .page-divider +
+   * #field-desk-section, confirming this section is a cold-load
+   * cascade source. 220px reservation absorbs typical populated
+   * height; if briefs exceed 220px the section still grows but by a
+   * smaller residual delta. contain:layout isolates internal slot
+   * mutations (brief card render, AI-call placeholder swap) from
+   * sibling sections.
+   */
+  min-height: 220px;
+  contain: layout;
+}
 .field-desk-head{
   display:flex;align-items:center;gap:.75rem;
   margin-bottom:1.2rem;padding-bottom:.65rem;
@@ -17438,7 +17504,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-03x';
+  const SW_VERSION = '2026-06-03y';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
