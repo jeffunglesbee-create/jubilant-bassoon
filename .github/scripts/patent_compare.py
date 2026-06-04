@@ -334,7 +334,9 @@ def main():
     print(f"Loaded {len(features)} FIELD-feature rules")
 
     if len(sys.argv) >= 2:
-        ids = [p.strip() for p in sys.argv[1].split(",") if p.strip()]
+        # Accept '12345' or '12345:2020-11-24' format. Strip date suffix.
+        raw = [p.strip() for p in sys.argv[1].split(",") if p.strip()]
+        ids = [p.split(":", 1)[0].strip() for p in raw]
         ids = [re.sub(r"^US|B\d?$", "", p, flags=re.IGNORECASE).strip() for p in ids]
     else:
         # Process every US*.json in outbox

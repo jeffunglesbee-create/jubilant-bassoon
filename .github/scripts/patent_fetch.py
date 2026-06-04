@@ -2,13 +2,22 @@
 """
 Patent full-text extractor.
 
-Strategy:
-  1. PatentSearch API (search.patentsview.org) - structured JSON. Fast, clean,
-     includes claims, inventors, assignees, examiners, CPC, citations.
-  2. USPTO bulk grant XML (bulkdata.uspto.gov) - authoritative weekly archives
-     keyed by ipgYYMMDD.zip. Used when PatentSearch is incomplete.
+Strategy (as of June 2026):
+  1. USPTO bulk grant XML (bulkdata.uspto.gov) - PRIMARY. Authoritative,
+     no API key, no rate limits, weekly archives keyed by ipgYYMMDD.zip.
+     Requires the grant date to find the right archive.
+  2. PatentSearch API (search.patentsview.org) - FALLBACK. Requires
+     PATENTSVIEW_API_KEY. Used when no grant date is provided. Note that
+     PatentSearch is being migrated to USPTO Open Data Portal starting
+     March 2026; this fallback path may need updating.
   3. PDF + OCR is intentionally NOT used. Two-column patent OCR scrambles
      word order; the source XML is the right input.
+
+Input format:
+  patent_fetch.py "10846193:2020-11-24,11182537:2021-11-23"
+    -> uses bulk XML for both (no API key needed)
+  patent_fetch.py "10846193"
+    -> tries PatentSearch API (will fail without PATENTSVIEW_API_KEY)
 
 Output per patent:
   outbox/patents/US{number}.json   - full structured data
@@ -250,19 +259,46 @@ def write_outputs(patent_id: str, data: dict) -> None:
     print(f"  US{patent_id}: wrote {json_path.name} + {txt_path.name}")
 
 
+def parse_input(arg: str):
+    """Parse '12345' or '12345:2020-11-24' format.
+    Returns (patent_id, grant_date or None)."""
+    if ":" in arg:
+        pid, date = arg.split(":", 1)
+        return pid.strip(), date.strip()
+    return arg.strip(), None
+
+
 def main():
     if len(sys.argv) < 2:
-        print("Usage: patent_fetch.py <patent_number>[,<patent_number>...]")
+        print("Usage: patent_fetch.py <patent_number[:YYYY-MM-DD]>[,...]")
+        print("  - With date hint: routes directly to USPTO bulk XML")
+        print("  - Without date hint: tries PatentSearch API (needs PATENTSVIEW_API_KEY)")
         sys.exit(1)
 
-    patents = [p.strip() for p in sys.argv[1].split(",") if p.strip()]
+    patents = [parse_input(p) for p in sys.argv[1].split(",") if p.strip()]
     api_key = os.environ.get("PATENTSVIEW_API_KEY", "").strip() or None
-    if not api_key:
-        print("Note: PATENTSVIEW_API_KEY not set; using anon access.")
 
-    for p in patents:
-        clean = re.sub(r"^US|B\d?$", "", p, flags=re.IGNORECASE).strip()
+    for raw_id, hint_date in patents:
+        clean = re.sub(r"^US|B\d?$", "", raw_id, flags=re.IGNORECASE).strip()
         print(f"\nFetching US{clean}...")
+
+        # PRIMARY PATH: if grant date provided, skip PatentSearch and go
+        # straight to USPTO bulk XML (no API key needed, authoritative source).
+        if hint_date:
+            print(f"  Using USPTO bulk XML (grant date hint: {hint_date})")
+            data = fetch_uspto_bulk(clean, hint_date)
+            if not data:
+                print(f"  FAIL: bulk XML fetch failed for US{clean}")
+                continue
+            write_outputs(clean, data)
+            continue
+
+        # FALLBACK PATH: no date hint, try PatentSearch API.
+        # As of May 2024, this requires an API key. If unset, this will 403.
+        if not api_key:
+            print(f"  No date hint and PATENTSVIEW_API_KEY not set.")
+            print(f"  Skipping US{clean}. Re-run with '{clean}:YYYY-MM-DD' to use bulk XML.")
+            continue
 
         data = fetch_patentsview(clean, api_key)
 
