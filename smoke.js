@@ -2707,6 +2707,39 @@ assert('A420 — PM-26-M-1: #upper-slots wrapper reserves 120px between controls
   'PM-26-M-1 fix. WPT scroll-mode test on PM-26-K-1+L-1 deploy (sw.js?v=2026-06-03q) showed CLS reduced 1.232 (J-1b instant) → 0.7194 (median scroll), but the residual shifts moved from the schedule cascade to the header region. Diagnosis: 9+ elements in the slot region between <nav class="controls"> and <main id="main"> begin display:none and are toggled to visible by async pipeline completions (otw-banner via renderOneToWatch, the-skim/stay-up via skim engine, score-ticker-wrap via drama scoring, field-brief via FIELD Brief generator, night-owl via night-owl render, plus others). Each toggle pushes the schedule below DOWN by the appearing element\'s height. The schedule translates as a block — PM-26-L-1 min-height on .game-card stabilizes card-internal layout but does NOT prevent the grid from being pushed by content above. Fix: wrap the slot region in #upper-slots with min-height:120px (reserves space for the typical cold-load slot content: one OTW banner ~44px + one FIELD Brief ~80px) and contain:layout (isolates per-slot growth from siblings outside the wrapper). The schedule\'s y-position becomes stable across slot population events. Tradeoff accepted: ~120px of empty vertical space below the controls bar when all slots are still loading; gain is the residual CLS contribution from the slot cascade going to zero. NOT addressing: shifts INSIDE the wrapper (slots still grow/shrink as content arrives — but those shifts don\'t propagate to the schedule), and shifts caused by content that exceeds the 120px reservation (will still cause residual schedule push-down, but only by the overage). Patent relevance: completes the containment story — schedule cards (L-1), font fallbacks (K-1), card containment (J-1), and now slot region (M-1) — multi-layer architecture defense for the perceived-perf claim.');
 
 
+assert('A421 — PM-26-O-1: in-app layout-shift observer with source attribution',
+  // The observer must register for layout-shift entries with buffered:true
+  // so it catches shifts from page start.
+  /po\.observe\(\{type:\s*['"]layout-shift['"],\s*buffered:\s*true\}\)/.test(html) &&
+  // The observer must extract entry.sources[].node and describe each node
+  // by tag/id/class — this is the whole point of the fix. Locking that the
+  // sources-extraction path exists.
+  /entry\.sources/.test(html) &&
+  /function describeNode\(n\)/.test(html) &&
+  // Must skip shifts that follow recent input (matches Chrome's CLS definition).
+  /if\s*\(entry\.hadRecentInput\)\s*continue/.test(html) &&
+  // Must expose window.__cls for console inspection (the iPad escape hatch
+  // when there's no DevTools).
+  /window\.__cls\s*=\s*\{/.test(html) &&
+  /summary:\s*function\(\)/.test(html) &&
+  /bySource:\s*function\(\)/.test(html) &&
+  // ?clsdebug=1 dev panel must mount when query param is present. This
+  // is the iPad/touch device path — no console access, on-screen readout.
+  /location\.search\.indexOf\(['"]clsdebug=1['"]\)/.test(html) &&
+  /__cls_panel__/.test(html) &&
+  // Session-window logic must implement the 1s-gap / 5s-max rule that
+  // Chrome uses to compute the reported CLS value. Without this the
+  // observer\'s maxWindow won\'t match Chrome\'s CLS number.
+  /lastShiftTime\s*>\s*1000/.test(html) &&
+  /curWindowStart\s*>\s*5000/.test(html) &&
+  // First user interaction must trigger a one-shot summary log so the
+  // [CLS FINAL] line appears in console at the natural finalization cue.
+  /\[CLS FINAL\]/.test(html) &&
+  /\[CLS TOP SOURCES\]/.test(html) &&
+  /once:\s*true,\s*passive:\s*true/.test(html),
+  'PM-26-O-1 fix. PM-26-J through PM-26-M-1 (9 hours of work) each followed the same loop: ship → WPT instant or scroll → download JSON → analyze shift rects → INFER which DOM elements shifted from coordinates → ship next fix. The inference step was lossy because WPT\'s entry.sources array was empty in our Catchpoint Edge config — never populated. So every iteration was working from coordinate guesses, and the trajectory was slowing (J→K+L cut CLS 1.232→0.7194 = -42%, K+L→M-1 cut 0.7194→0.6747 = -6%). Fix: instrument layout-shift in the live app via PerformanceObserver({type:"layout-shift"}). entry.sources[].node gives the actual DOM elements, which describeNode() renders as "tag#id.class" — no more inference. The observer also mirrors Chrome\'s session-window logic (1s gaps, 5s max span) so window.__cls.getMaxWindow() matches the CLS value Chrome reports. Three output paths: (a) console.log per shift for desktop DevTools, (b) [CLS FINAL] + [CLS TOP SOURCES] one-shot summary on first user interaction, (c) ?clsdebug=1 on-screen panel for iPad/touch devices where no DevTools is available. window.__cls.bySource() exposes a ranked list of top shift contributors for fast triage. Net effect: the WPT manual loop is no longer the limiting step for CLS debugging; any cold load of the live site now produces a complete diagnostic with element-level attribution. Patent relevance: complements the perceived-perf architecture defense by demonstrating telemetry-grade self-instrumentation for the consumer-fiduciary claim — FIELD measures its own user-experience metrics on every load.');
+
+
 // ═════════════════════════════════════════════════════════════════════
 // GATE — all assertions above must pass before deploy proceeds.
 // PM-7: relocated here from line ~1047. Previously A245-A368 ran but
