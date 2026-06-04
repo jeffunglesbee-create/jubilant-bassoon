@@ -1,0 +1,128 @@
+{
+  "_ppubs_guid": "US-11554292-B2",
+  "_ppubs_type": "USPAT",
+  "_source": "ppubs",
+  "assignees": [
+    {
+      "assignee_organization": "STATS LLC"
+    }
+  ],
+  "claims": [
+    {
+      "claim_dependent": null,
+      "claim_sequence": 1,
+      "claim_text": "A method of generating a play prediction for a team, comprising: retrieving, by a computing system comprising a processor and a memory, trajectory data for a plurality of plays from a data store; generating, by the computing system, a predictive model using a variational autoencoder and a neural network, by: generating one or more input data sets, each input data set comprising tracking information for a play of the plurality of plays; learning, by the variational autoencoder, to generate a plurality of variants for each play of the plurality of plays, wherein each variant comprises trajectory information corresponding thereto; and learning, by the neural network, a team style corresponding to each play of the plurality of plays;  receiving, by the computing system, trajectory data for a target play; generating, via the predictive model, a likelihood of a target team executing the target play by determining a number of target variants that correspond to a target team identity of the target team; generating, by the computing system, a graphical representation of each target variant, wherein the graphical representation comprises a trajectory of each play on a field and a team associated therewith; and causing output, by the computing system, of the graphical representation via a display."
+    },
+    {
+      "claim_dependent": 1,
+      "claim_sequence": 2,
+      "claim_text": "The method of claim 1, wherein generating, via the predictive model, the likelihood of the target team executing the target play, comprises: generating a plurality of target variants for the target play using the variational autoencoder."
+    },
+    {
+      "claim_dependent": 2,
+      "claim_sequence": 3,
+      "claim_text": "The method of claim 2, further comprising: associating each target variant of the plurality of target variants with a team identity."
+    },
+    {
+      "claim_dependent": 1,
+      "claim_sequence": 4,
+      "claim_text": "The method of claim 1, wherein generating, via the predictive model, the likelihood of the target team executing the target play, comprises: comparing the number of the target variants that correspond to the target team identity of the target team in relation to a number of other variants corresponding to other team identities."
+    },
+    {
+      "claim_dependent": 1,
+      "claim_sequence": 5,
+      "claim_text": "The method of claim 1, wherein the input data set further comprises possession information, playing style information, and team identity information."
+    },
+    {
+      "claim_dependent": 1,
+      "claim_sequence": 6,
+      "claim_text": "The method of claim 1, wherein the target play comprises a content and a style corresponding thereto, and each variant of the target play comprises the content and a variant style corresponding thereto."
+    },
+    {
+      "claim_dependent": null,
+      "claim_sequence": 7,
+      "claim_text": "A system for generating a play prediction for a team, comprising: a processor; and a memory having programming instructions stored thereon, which, when executed by the processor, cause the system to perform one or more operations, comprising: retrieving trajectory data for a plurality of plays from a data store; generating a predictive model using a variational autoencoder and a neural network, by: generating one or more input data sets, each input data set comprising tracking information for a play of the plurality of plays; learning, by the variational autoencoder, to generate a plurality of variants for each play of the plurality of plays, wherein each variant comprises trajectory information corresponding thereto; and learning, by the neural network, a team style corresponding to each play of the plurality of plays;  receiving trajectory data corresponding to a target play; generating, via the predictive model, a likelihood of a target team executing the target play by determining a number of target variants that correspond to a target team identity of the target team; generating a graphical representation of each target variant, wherein the graphical representation comprises a trajectory of each play on a field and a team associated therewith; and causing output of the graphical representation via a display."
+    },
+    {
+      "claim_dependent": 7,
+      "claim_sequence": 8,
+      "claim_text": "The system of claim 7, wherein generating, via the predictive model, the likelihood of the target team executing the target play, comprises: generating a plurality of target variants for the target play using the variational autoencoder."
+    },
+    {
+      "claim_dependent": 8,
+      "claim_sequence": 9,
+      "claim_text": "The system of claim 8, further comprising: associating each target variant of the plurality of target variants with a team identity."
+    },
+    {
+      "claim_dependent": 7,
+      "claim_sequence": 10,
+      "claim_text": "The system of claim 7, wherein generating, via the predictive model, the likelihood of the target team executing the target play, comprises: comparing the number of the target variants that correspond to the target team identity of the target team in relation to a number of other variants corresponding to other team identities."
+    },
+    {
+      "claim_dependent": 7,
+      "claim_sequence": 11,
+      "claim_text": "The system of claim 7, wherein the input data set further comprises possession information, playing style information, and team identity information."
+    },
+    {
+      "claim_dependent": 7,
+      "claim_sequence": 12,
+      "claim_text": "The system of claim 7, wherein the target play comprises a content and a style corresponding thereto, and each variant of the target play comprises the content and a variant style corresponding thereto."
+    },
+    {
+      "claim_dependent": null,
+      "claim_sequence": 13,
+      "claim_text": "A non-transitory computer readable medium including one or more sequences of instructions that, when executed by one or more processors, cause a computing system comprising the one or more processors to perform operations comprising: retrieving trajectory data for a plurality of plays from a data store; generating a predictive model using a variational autoencoder and a neural network, by: generating one or more input data sets, each input data set comprising tracking information for a play of the plurality of plays; learning, by the variational autoencoder, to generate a plurality of variants for each play of the plurality of plays, wherein each variant comprises trajectory information corresponding thereto; and learning, by the neural network, a team style corresponding to each play of the plurality of plays;  receiving by the computing system, trajectory data corresponding to a target play; generating, via the predictive model, a likelihood of a target team executing the target play by determining a number of target variants that correspond to a target team identity of the target team; generating a graphical representation of each target variant, wherein the graphical representation comprises a trajectory of each play on a field and a team associated therewith; and causing output of the graphical representation via a display."
+    },
+    {
+      "claim_dependent": 13,
+      "claim_sequence": 14,
+      "claim_text": "The non-transitory computer readable medium of claim 13, wherein generating, via the predictive model, the likelihood of the target team executing the target play, comprises: generating a plurality of target variants for the target play using the variational autoencoder."
+    },
+    {
+      "claim_dependent": 13,
+      "claim_sequence": 15,
+      "claim_text": "The non-transitory computer readable medium of claim 13, further comprising: associating each target variant of the plurality of target variants with a team identity."
+    },
+    {
+      "claim_dependent": 13,
+      "claim_sequence": 16,
+      "claim_text": "The non-transitory computer readable medium of claim 13, wherein generating, via the predictive model, the likelihood of the target team executing the target play, comprises: comparing the number of the target variants that correspond to the target team identity of the target team in relation to a number of other variants corresponding to other team identities."
+    },
+    {
+      "claim_dependent": 13,
+      "claim_sequence": 17,
+      "claim_text": "The non-transitory computer readable medium of claim 13, wherein the input data set further comprises possession information, playing style information, and team identity information."
+    }
+  ],
+  "examiners": [
+    {
+      "examiner_name_first": "Malina D.",
+      "examiner_name_last": "Blaise"
+    }
+  ],
+  "inventors": [
+    {
+      "inventor_name_first": "Sujoy",
+      "inventor_name_last": "Ganguly"
+    },
+    {
+      "inventor_name_first": "Long",
+      "inventor_name_last": "Sha"
+    },
+    {
+      "inventor_name_first": "Jennifer",
+      "inventor_name_last": "Hobbs"
+    },
+    {
+      "inventor_name_first": "Xinyu",
+      "inventor_name_last": "Wei"
+    },
+    {
+      "inventor_name_first": "Patrick Joseph",
+      "inventor_name_last": "Lucey"
+    }
+  ],
+  "patent_date": "2023-01-17",
+  "patent_id": "11554292",
+  "patent_title": "System and method for content and style predictions in sports"
+}

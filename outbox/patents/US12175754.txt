@@ -1,0 +1,71 @@
+US12175754
+Title: System and method for content and style predictions in sports
+Grant date: 2024-12-24
+Assignee: Stats LLC
+Inventors: Sujoy Ganguly, Long Sha, Jennifer Hobbs, Xinyu Wei, Patrick Joseph Lucey
+Source: ppubs
+PPUBS GUID: US-12175754-B2
+
+======================================================================
+CLAIMS
+======================================================================
+
+Claim 1 [independent]:
+A method of generating a play prediction for a team, comprising: receiving, by a processor of a computing system, match data for a match between a first team and a second team from a memory of the computing system; extracting, by the processor of the computing system, from the match data, one or more portions of data corresponding to a target play of the first team of the match, wherein the one or more portions of data include tracking data, and wherein the tracking data includes trajectory data; inputting, by the processor of the computing system, the tracking data into a variational autoencoder, wherein the variational autoencoder includes a generative model configured to receive the trajectory data and generate a plurality of variants of target play based on the trajectory data; based on the inputting, receiving, by the processor of the computing system, the plurality of variants of the target play based on the tracking data from the variational autoencoder; inputting, by the processor of the computing system, the target play and the plurality of variants into a neural network; based on the inputting, receiving, by the processor of the computing system, a team identity and a playing style corresponding to each of the plurality of variants from the neural network; generating, by the processor of the computing system, a graphical representation of the team identity and the playing style corresponding to each of the plurality of variants; and outputting, by the processor of the computing system, the graphical representation via a display of the computing system.
+
+Claim 2 [dep on 1]:
+The method of claim 1, further comprising: associating, by the processor of the computing system, each variant of the plurality of variants with at least one team of the first team or the second team.
+
+Claim 3 [dep on 1]:
+The method of claim 1, the method further comprising: identifying, by the processor of the computing system, a content of the target play.
+
+Claim 4 [dep on 3]:
+The method of claim 3, wherein inputting, by the processor of the computing system, the tracking data into the variational autoencoder further comprises: inputting, by the processor of the computing system, the content of the target play or the playing style into the variational autoencoder.
+
+Claim 5 [dep on 3]:
+The method of claim 3, wherein each variant of the plurality of variants maintains the content of the target play while changing the playing style exhibited by the target play.
+
+Claim 6 [dep on 1]:
+The method of claim 1, wherein generating, by the processor of the computing system, the graphical representation of the team identity and the playing style corresponding to each of the plurality of variants comprises: generating, by the processor of the computing system, one or more graphical representation trajectories for each of the plurality of variants.
+
+Claim 7 [dep on 1]:
+The method of claim 1, further comprising: predicting, by the processor of the computing system, a likelihood of a third team executing the target play by analyzing the plurality of variants with the neural network to determine a second number of target variants that exhibit a playing style similar to the third team.
+
+Claim 8 [independent]:
+A method of generating a play prediction for a plurality of teams comprising: receiving, by a processor of a computing system, match data for a match between a first team and a second team from a memory of the computing system; extracting, by the processor of the computing system, from the match data, one or more portions of data corresponding to a target play of the first team of the match, wherein the one or more portions of data include tracking data, and wherein the tracking data includes trajectory data; inputting, by the processor of the computing system, the tracking data into a variational autoencoder, wherein the variational autoencoder includes a generative model configured to receive the trajectory data and generate a plurality of variants of target play based on the trajectory data; based on the inputting, receiving, by the processor of the computing system, the plurality of variants of the target play based on the tracking data from the variational autoencoder; inputting, by the processor of the computing system, the target play and the plurality of variants into a neural network; based on the inputting, receiving, by the processor of the computing system, a team identity for a plurality of teams and a playing style corresponding to each of the plurality of variants from the neural network; predicting, by the processor of the computing system, a likelihood of the second team executing the target play by: mapping, by the neural network, each variant of the plurality of variants to a team of the plurality of teams based on the playing style exhibited in each variant, determining a number of target variants corresponding to the playing style of each team of the plurality of teams, and identifying the number of target variants corresponding to the playing style of the second team;  generating, by the processor of the computing system, a graphical representation of the number of target variants that exhibit the playing style similar to the second team; and outputting, by the processor of the computing system, the graphical representation via a display of the computing system.
+
+Claim 9 [dep on 8]:
+The method of claim 8, further comprising: associating, by the processor of the computing system, each variant of the plurality of variants with at least one team of the first team or the second team.
+
+Claim 10 [dep on 8]:
+The method of claim 8, the method further comprising: identifying, by the processor of the computing system, a content of the target play.
+
+Claim 11 [dep on 10]:
+The method of claim 10, wherein inputting, by the processor of the computing system, the tracking data into the variational autoencoder further comprises: inputting, by the processor of the computing system, the content of the target play or the playing style into the variational autoencoder.
+
+Claim 12 [dep on 10]:
+The method of claim 10, wherein each variant of the plurality of variants maintains the content of the target play while changing the playing style exhibited by the target play.
+
+Claim 13 [dep on 8]:
+The method of claim 8, wherein generating, by the processor of the computing system, the graphical representation of the team identity and the playing style corresponding to each of the plurality of variants comprises: generating, by the processor of the computing system, one or more graphical representation trajectories for each of the plurality of variants.
+
+Claim 14 [dep on 8]:
+The method of claim 8, further comprising: predicting, by the processor of the computing system, a likelihood of a third team executing the target play by analyzing the plurality of variants with the neural network to determine a second number of target variants that exhibit a playing style similar to the third team.
+
+Claim 15 [independent]:
+A system comprising: a processor; and a memory having programming instructions stored thereon, which, when executed by the processor, causes the system to perform operations comprising: receiving, by the processor, match data for a match between a first team and a second team from the memory; extracting, by the processor, from the match data, one or more portions of data corresponding to a target play of the first team of the match, wherein the one or more portions of data include tracking data, and wherein the tracking data includes trajectory data; inputting, by the processor, the tracking data into a variational autoencoder, wherein the variational autoencoder includes a generative model configured to receive the trajectory data and generate a plurality of variants of target play based on the trajectory data; based on the inputting, receiving, by the processor, the plurality of variants of the target play based on the tracking data from the variational autoencoder; inputting, by the processor, the target play and the plurality of variants into a neural network; based on the inputting, receiving, by the processor, a team identity and a playing style corresponding to each of the plurality of variants from the neural network; generating, by the processor, a graphical representation of the team identity and the playing style corresponding to each of the plurality of variants; and outputting, by the processor, the graphical representation via a display of the system.
+
+Claim 16 [dep on 15]:
+The system of claim 15, further comprising: associating, by the processor, each variant of the plurality of variants with at least one team of the first team or the second team.
+
+Claim 17 [dep on 15]:
+The system of claim 15, further comprising: identifying, by the processor, a content of the target play.
+
+Claim 18 [dep on 17]:
+The system of claim 17, wherein inputting, by the processor, the tracking data into the variational autoencoder further comprises: inputting, by the processor, the content of the target play or the playing style into the variational autoencoder.
+
+Claim 19 [dep on 17]:
+The system of claim 17, wherein each variant of the plurality of variants maintains the content of the target play while changing the playing style exhibited by the target play.
+
+Claim 20 [dep on 15]:
+The system of claim 15, wherein generating, by the processor, the graphical representation of the team identity and the playing style corresponding to each of the plurality of variants comprises: generating, by the processor, one or more graphical representation trajectories for each of the plurality of variants.
