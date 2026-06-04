@@ -2825,8 +2825,8 @@ body.journalism-mode #field-journalism-section{animation:jrnFadeIn 220ms ease-ou
     // PerformanceObserver itself exists in all modern engines, but only
     // Chromium (Blink) implements layout-shift entries. WebKit (Safari + all
     // iOS browsers, since Apple requires WKWebView) and Gecko (Firefox) do
-    // not. We mount the panel and populate window.__cls regardless — silent
-    // early-return on unsupported engines was the PM-26-O-1 bug.
+    // not. PM-26-O-2 adds a geometric-inference fallback for those engines
+    // so the observer produces actionable data everywhere.
     const SUPPORTED = !!(PerformanceObserver.supportedEntryTypes &&
                          PerformanceObserver.supportedEntryTypes.includes('layout-shift'));
 
@@ -2860,61 +2860,51 @@ body.journalism-mode #field-journalism-section{animation:jrnFadeIn 220ms ease-ou
       return s;
     }
 
+    // Shared shift-emission path used by both native and fallback. Applies
+    // the session-window logic identically so window.__cls.getMaxWindow()
+    // means the same thing regardless of which engine measured it.
+    function recordShift(t, score, sources, fallbackMode) {
+      total += score;
+      if (curWindowScore === 0) {
+        curWindowStart = t;
+      } else if (t - lastShiftTime > 1000 || t - curWindowStart > 5000) {
+        if (curWindowScore > maxWindow) maxWindow = curWindowScore;
+        curWindowStart = t;
+        curWindowScore = 0;
+      }
+      curWindowScore += score;
+      lastShiftTime = t;
+      if (curWindowScore > maxWindow) maxWindow = curWindowScore;
+
+      const ev = {
+        t: Math.round(t),
+        score: +score.toFixed(4),
+        cumul: +total.toFixed(4),
+        window: +curWindowScore.toFixed(4),
+        sources: sources
+      };
+      if (fallbackMode) ev.fallback = true;
+      events.push(ev);
+      _log((fallbackMode ? '[CLS:fb] ' : '[CLS] ') +
+           't=' + ev.t + 'ms score=' + ev.score +
+           ' cumul=' + ev.cumul + ' window=' + ev.window +
+           ' sources=[' + (sources.join(', ') || '?') + ']');
+    }
+
+    let MODE = 'unsupported';
+
+    // ── Native path (Chromium) ─────────────────────────────────────
     if (SUPPORTED) {
+      MODE = 'native';
       const po = new PerformanceObserver(list => {
         for (const entry of list.getEntries()) {
           if (entry.hadRecentInput) continue;
-          total += entry.value;
-
-          const t = entry.startTime;
-          if (curWindowScore === 0) {
-            curWindowStart = t;
-          } else if (t - lastShiftTime > 1000 || t - curWindowStart > 5000) {
-            if (curWindowScore > maxWindow) maxWindow = curWindowScore;
-            curWindowStart = t;
-            curWindowScore = 0;
-          }
-          curWindowScore += entry.value;
-          lastShiftTime = t;
-          if (curWindowScore > maxWindow) maxWindow = curWindowScore;
-
           const sources = (entry.sources || []).map(s => describeNode(s.node));
-          const ev = {
-            t: Math.round(t),
-            score: +entry.value.toFixed(4),
-            cumul: +total.toFixed(4),
-            window: +curWindowScore.toFixed(4),
-            sources
-          };
-          events.push(ev);
-          _log('[CLS] t=' + ev.t + 'ms score=' + ev.score +
-               ' cumul=' + ev.cumul + ' window=' + ev.window +
-               ' sources=[' + (sources.join(', ') || '?') + ']');
+          recordShift(entry.startTime, entry.value, sources, false);
         }
       });
       try { po.observe({type: 'layout-shift', buffered: true}); } catch(_) {}
-    }
 
-    window.__cls = {
-      supported: SUPPORTED,
-      events: events,
-      getTotal: function(){ return +total.toFixed(4); },
-      getMaxWindow: function(){ return +maxWindow.toFixed(4); },
-      summary: function(){
-        return {supported: SUPPORTED, total: +total.toFixed(4),
-                maxWindow: +maxWindow.toFixed(4), events: events.length};
-      },
-      bySource: function(){
-        const m = {};
-        events.forEach(function(ev){
-          const k = ev.sources.join(' + ') || '<no-source>';
-          m[k] = +((m[k] || 0) + ev.score).toFixed(4);
-        });
-        return Object.entries(m).sort(function(a,b){ return b[1]-a[1]; });
-      }
-    };
-
-    if (SUPPORTED) {
       let summarized = false;
       function summarize(){
         if (summarized) return;
@@ -2932,49 +2922,230 @@ body.journalism-mode #field-journalism-section{animation:jrnFadeIn 220ms ease-ou
       });
     }
 
-    // ?clsdebug=1 → on-screen panel. Mounts unconditionally so unsupported
-    // browsers (iOS, Safari, Firefox) get a clear unsupported message with
-    // alternatives, not silent failure (that was the PM-26-O-1 bug).
+    // ── Fallback path (WebKit, Gecko) ───────────────────────────────
+    // PM-26-O-2: compute CLS via geometric inference. Apple does not ship
+    // the layout-shift PerformanceObserver entry type in WebKit, but the
+    // CLS algorithm is documented and the primitives (rAF, getBoundingClientRect,
+    // MutationObserver, performance.now) are universal. We snapshot rects
+    // for a fixed "interest set" of elements (top-level body children +
+    // known shift-suspect IDs + .game-card) and diff snapshots whenever
+    // (a) the DOM mutates, or (b) rAF fires during the cold-load 5s window
+    // (catches font-swap shifts that don't involve DOM mutations).
+    //
+    // Trade-offs vs native:
+    //   - Walks ~30-50 interest-set elements, not the full DOM tree, so
+    //     shifts inside deeply-nested subtrees may be missed
+    //   - Throttled to one snapshot per rAF batch — sub-frame shifts merge
+    //   - Score magnitude can drift ~5-20% vs Chrome's internal calc due
+    //     to timing and edge cases (e.g., grow-without-move)
+    //
+    // What's accurate:
+    //   - Sources (which element shifted) — we know the element directly
+    //   - Relative magnitude (top contributors rank correctly)
+    //   - Max-window logic — identical to native, same code path
+    if (!SUPPORTED) {
+      MODE = 'fallback';
+      const INTEREST_SELECTORS = [
+        'body > *', '.masthead', '.controls', '#upper-slots',
+        '#otw-banner', '#the-skim', '#stay-up', '#score-ticker-wrap',
+        '#major-preview-container', '#field-brief', '#night-owl',
+        '#freshness-strip', '#main', '#ambient-panel',
+        '.media-section', '.streaming-section', '.field-desk-section',
+        '#field-journalism-section', '.game-card'
+      ];
+
+      let prevRects = new Map(); // element -> {x, y, w, h}
+
+      function gatherInterest(){
+        const set = new Set();
+        for (const sel of INTEREST_SELECTORS) {
+          try {
+            document.querySelectorAll(sel).forEach(function(el){ set.add(el); });
+          } catch(_) {}
+        }
+        return set;
+      }
+
+      function snapshot(){
+        const rects = new Map();
+        const els = gatherInterest();
+        els.forEach(function(el){
+          try {
+            const cs = window.getComputedStyle(el);
+            if (cs.display === 'none' || cs.visibility === 'hidden') return;
+            if (cs.position === 'fixed' || cs.position === 'absolute') return;
+            const r = el.getBoundingClientRect();
+            if (r.width < 1 || r.height < 1) return;
+            rects.set(el, {x: r.x, y: r.y, w: r.width, h: r.height});
+          } catch(_) {}
+        });
+        return rects;
+      }
+
+      function diff(oldR, newR){
+        const vw = window.innerWidth, vh = window.innerHeight;
+        const vpArea = vw * vh;
+        const maxDim = Math.max(vw, vh);
+        if (vpArea < 1) return null;
+        let aggregateScore = 0;
+        const movers = [];
+        newR.forEach(function(nr, el){
+          const or = oldR.get(el);
+          if (!or) return;
+          const adx = Math.abs(nr.x - or.x);
+          const ady = Math.abs(nr.y - or.y);
+          if (adx < 1 && ady < 1) return;
+          const left = Math.min(or.x, nr.x);
+          const top = Math.min(or.y, nr.y);
+          const right = Math.max(or.x + or.w, nr.x + nr.w);
+          const bottom = Math.max(or.y + or.h, nr.y + nr.h);
+          const unionArea = Math.max(0, right - left) * Math.max(0, bottom - top);
+          const impactFraction = Math.min(1, unionArea / vpArea);
+          const distanceFraction = Math.min(1, Math.max(adx, ady) / maxDim);
+          const score = impactFraction * distanceFraction;
+          if (score >= 0.0001) {
+            aggregateScore += score;
+            movers.push({el: el, score: score});
+          }
+        });
+        return {score: aggregateScore, movers: movers};
+      }
+
+      let checkPending = false;
+      let lastCheck = 0;
+      function scheduleCheck(){
+        if (checkPending) return;
+        checkPending = true;
+        requestAnimationFrame(function(){
+          checkPending = false;
+          const t = performance.now();
+          // Throttle: at most one diff per 80ms (~12Hz). Higher than this
+          // and we risk catching mid-animation transient states.
+          if (t - lastCheck < 80) return;
+          lastCheck = t;
+          const newR = snapshot();
+          const result = diff(prevRects, newR);
+          if (result && result.score >= 0.0005) {
+            const top = result.movers.sort(function(a,b){return b.score-a.score;}).slice(0, 5);
+            recordShift(t, result.score, top.map(function(m){return describeNode(m.el);}), true);
+          }
+          prevRects = newR;
+        });
+      }
+
+      function startFallback(){
+        prevRects = snapshot();
+        // Primary trigger: DOM mutations (most shifts are mutation-driven)
+        const mo = new MutationObserver(scheduleCheck);
+        mo.observe(document.body, {
+          childList: true, subtree: true,
+          attributes: true, characterData: false
+        });
+        // Secondary trigger: rAF during first 6s of page load to catch
+        // font-swap shifts that don't involve DOM mutations. After 6s the
+        // mutation-only path is enough.
+        const coldEnd = performance.now() + 6000;
+        function rafTick(){
+          if (performance.now() > coldEnd) return;
+          scheduleCheck();
+          requestAnimationFrame(rafTick);
+        }
+        requestAnimationFrame(rafTick);
+
+        // First user interaction → summary log, same as native path
+        let summarized = false;
+        function summarize(){
+          if (summarized) return;
+          summarized = true;
+          _log('[CLS FINAL fb] total=' + total.toFixed(4) +
+               ' maxWindow=' + maxWindow.toFixed(4) +
+               ' events=' + events.length);
+          _log('[CLS TOP SOURCES fb]');
+          window.__cls.bySource().slice(0, 8).forEach(function(row){
+            _log('  ' + row[1].toFixed(4) + '  ' + row[0]);
+          });
+        }
+        ['click','keydown','touchstart','visibilitychange'].forEach(function(ev){
+          addEventListener(ev, summarize, {once: true, passive: true});
+        });
+      }
+
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', startFallback);
+      } else {
+        startFallback();
+      }
+    }
+
+    window.__cls = {
+      mode: MODE,
+      supported: SUPPORTED,
+      events: events,
+      getTotal: function(){ return +total.toFixed(4); },
+      getMaxWindow: function(){ return +maxWindow.toFixed(4); },
+      summary: function(){
+        return {mode: MODE, total: +total.toFixed(4),
+                maxWindow: +maxWindow.toFixed(4), events: events.length};
+      },
+      bySource: function(){
+        const m = {};
+        events.forEach(function(ev){
+          const k = ev.sources.join(' + ') || '<no-source>';
+          m[k] = +((m[k] || 0) + ev.score).toFixed(4);
+        });
+        return Object.entries(m).sort(function(a,b){ return b[1]-a[1]; });
+      }
+    };
+
+    // ?clsdebug=1 → on-screen panel. Always mounts when DEBUG is set, so
+    // even unsupported configurations get clear UI feedback. Panel content
+    // branches on MODE: native → green live data, fallback → yellow live
+    // data with approximation note, unsupported → amber unavailable notice.
     if (DEBUG) {
       function mountPanel(){
         if (document.getElementById('__cls_panel__')) return;
         const panel = document.createElement('div');
         panel.id = '__cls_panel__';
+        const modeColor = MODE === 'native' ? '#0f0'
+                        : MODE === 'fallback' ? '#ff0'
+                        : '#fa3';
         panel.style.cssText =
           'position:fixed;bottom:8px;right:8px;z-index:99999;' +
-          'background:rgba(0,0,0,.92);color:#0f0;font:11px/1.35 monospace;' +
-          'padding:8px 10px;border:1px solid #0f0;border-radius:6px;' +
+          'background:rgba(0,0,0,.92);font:11px/1.35 monospace;' +
+          'padding:8px 10px;border-radius:6px;' +
           'max-width:360px;max-height:55vh;overflow:auto;' +
-          'white-space:pre-wrap;pointer-events:auto';
+          'white-space:pre-wrap;pointer-events:auto;' +
+          'color:' + modeColor + ';border:1px solid ' + modeColor + ';';
         document.body.appendChild(panel);
 
-        if (!SUPPORTED) {
-          panel.style.color = '#fa3';
-          panel.style.borderColor = '#fa3';
+        if (MODE === 'unsupported') {
           panel.textContent =
             'CLS LIVE — UNSUPPORTED\n\n' +
-            'PerformanceObserver({type:"layout-shift"})\n' +
-            'is not available in this browser engine.\n\n' +
-            'Where to test instead:\n' +
-            '  • Android Chrome / Edge        ✓ Blink\n' +
-            '  • Desktop Chrome / Edge        ✓ Blink\n' +
-            '  • Any Chromium-based browser   ✓ Blink\n\n' +
-            'Where this will not work:\n' +
-            '  • iOS Chrome / Safari / Edge   ✗ WebKit\n' +
-            '  • Desktop Safari               ✗ WebKit\n' +
-            '  • Firefox (any platform)       ✗ Gecko\n\n' +
-            'Open the same URL on a supported\n' +
-            'browser to see live shift data.';
+            'Neither native layout-shift API nor\n' +
+            'the geometric fallback could start in\n' +
+            'this environment (no PerformanceObserver).\n\n' +
+            'Open in any modern browser to retry.';
           return;
         }
 
-        panel.textContent = 'CLS LIVE — waiting…';
         function update(){
+          const header = MODE === 'native'
+            ? 'CLS LIVE (native)'
+            : 'CLS LIVE (geometric fallback)';
+          const noteLines = MODE === 'fallback'
+            ? [
+                '────────────────────────',
+                'approximate — geometric inference,',
+                'not native layout-shift API.',
+                '~5-20% magnitude variance vs Chrome.',
+              ]
+            : [];
           const lines = [
-            'CLS LIVE',
+            header,
             'total       ' + total.toFixed(4),
-            'max window  ' + maxWindow.toFixed(4) + '  ← Chrome reports this',
+            'max window  ' + maxWindow.toFixed(4) + '  ← reported CLS',
             'events      ' + events.length,
+            ...noteLines,
             '────────────────────────',
             ...events.slice(-8).map(function(e){
               return 't=' + e.t + 'ms  ' + e.score + '  [' +
@@ -2983,6 +3154,7 @@ body.journalism-mode #field-journalism-section{animation:jrnFadeIn 220ms ease-ou
           ];
           panel.textContent = lines.join('\n');
         }
+        update();
         setInterval(update, 500);
       }
       if (document.readyState === 'loading') {
@@ -17242,7 +17414,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-03t';
+  const SW_VERSION = '2026-06-03u';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)

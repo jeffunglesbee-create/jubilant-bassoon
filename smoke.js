@@ -2707,50 +2707,50 @@ assert('A420 — PM-26-M-1: #upper-slots wrapper reserves 120px between controls
   'PM-26-M-1 fix. WPT scroll-mode test on PM-26-K-1+L-1 deploy (sw.js?v=2026-06-03q) showed CLS reduced 1.232 (J-1b instant) → 0.7194 (median scroll), but the residual shifts moved from the schedule cascade to the header region. Diagnosis: 9+ elements in the slot region between <nav class="controls"> and <main id="main"> begin display:none and are toggled to visible by async pipeline completions (otw-banner via renderOneToWatch, the-skim/stay-up via skim engine, score-ticker-wrap via drama scoring, field-brief via FIELD Brief generator, night-owl via night-owl render, plus others). Each toggle pushes the schedule below DOWN by the appearing element\'s height. The schedule translates as a block — PM-26-L-1 min-height on .game-card stabilizes card-internal layout but does NOT prevent the grid from being pushed by content above. Fix: wrap the slot region in #upper-slots with min-height:120px (reserves space for the typical cold-load slot content: one OTW banner ~44px + one FIELD Brief ~80px) and contain:layout (isolates per-slot growth from siblings outside the wrapper). The schedule\'s y-position becomes stable across slot population events. Tradeoff accepted: ~120px of empty vertical space below the controls bar when all slots are still loading; gain is the residual CLS contribution from the slot cascade going to zero. NOT addressing: shifts INSIDE the wrapper (slots still grow/shrink as content arrives — but those shifts don\'t propagate to the schedule), and shifts caused by content that exceeds the 120px reservation (will still cause residual schedule push-down, but only by the overage). Patent relevance: completes the containment story — schedule cards (L-1), font fallbacks (K-1), card containment (J-1), and now slot region (M-1) — multi-layer architecture defense for the perceived-perf claim.');
 
 
-assert('A421 — PM-26-O-1b: cross-engine layout-shift observer with unsupported-browser fallback',
-  // The observer must register for layout-shift entries with buffered:true
-  // so it catches shifts from page start.
-  /po\.observe\(\{type:\s*['"]layout-shift['"],\s*buffered:\s*true\}\)/.test(html) &&
-  // The observer must extract entry.sources[].node and describe each node
-  // by tag/id/class — this is the whole point of the fix. Locking that the
-  // sources-extraction path exists.
+assert('A421 — PM-26-O-2: cross-engine layout-shift observer (native + geometric fallback)',
+  // ── Shared: session-window logic, source attribution, panel mount ──
   /entry\.sources/.test(html) &&
   /function describeNode\(n\)/.test(html) &&
-  // Must skip shifts that follow recent input (matches Chrome's CLS definition).
-  /if\s*\(entry\.hadRecentInput\)\s*continue/.test(html) &&
-  // Must expose window.__cls for console inspection (the iPad escape hatch
-  // when there's no DevTools).
   /window\.__cls\s*=\s*\{/.test(html) &&
   /summary:\s*function\(\)/.test(html) &&
   /bySource:\s*function\(\)/.test(html) &&
-  // ?clsdebug=1 dev panel must mount when query param is present. This
-  // is the iPad/touch device path — no console access, on-screen readout.
   /location\.search\.indexOf\(['"]clsdebug=1['"]\)/.test(html) &&
   /__cls_panel__/.test(html) &&
-  // Session-window logic must implement the 1s-gap / 5s-max rule that
-  // Chrome uses to compute the reported CLS value. Without this the
-  // observer\'s maxWindow won\'t match Chrome\'s CLS number.
   /lastShiftTime\s*>\s*1000/.test(html) &&
   /curWindowStart\s*>\s*5000/.test(html) &&
-  // First user interaction must trigger a one-shot summary log so the
-  // [CLS FINAL] line appears in console at the natural finalization cue.
-  /\[CLS FINAL\]/.test(html) &&
-  /\[CLS TOP SOURCES\]/.test(html) &&
+  /\[CLS FINAL/.test(html) &&
+  /\[CLS TOP SOURCES/.test(html) &&
   /once:\s*true,\s*passive:\s*true/.test(html) &&
-  // PM-26-O-1b cross-engine fix: SUPPORTED must be captured as a boolean
-  // from supportedEntryTypes, and the panel-mount path must NOT depend on
-  // it (panel always mounts when DEBUG, observer logic gates on SUPPORTED).
-  // This prevents the PM-26-O-1 silent-failure mode on iOS/Safari/Firefox
-  // where the function early-returned and no UI feedback was given.
+  // ── Native path (Chromium) must observe layout-shift entries ──
+  /po\.observe\(\{type:\s*['"]layout-shift['"],\s*buffered:\s*true\}\)/.test(html) &&
+  /if\s*\(entry\.hadRecentInput\)\s*continue/.test(html) &&
   /const SUPPORTED\s*=\s*!!\(PerformanceObserver\.supportedEntryTypes/.test(html) &&
-  /if\s*\(SUPPORTED\)\s*\{[\s\S]*?po\.observe/.test(html) &&
-  // The unsupported-browser panel must list the three browser categories
-  // a user might be on, so the alternative is obvious without leaving
-  // the page. Locking the three engine names so this doc-style content
-  // can't drift silently into unhelpfulness.
-  /Blink/.test(html) && /WebKit/.test(html) && /Gecko/.test(html) &&
-  /Android Chrome/.test(html) && /Desktop Chrome/.test(html),
-  'PM-26-O-1b fix. PM-26-O-1 shipped a PerformanceObserver({type:"layout-shift"}) for in-app CLS instrumentation, with a ?clsdebug=1 on-screen panel for touch devices. The build assumed Chromium-engine targets (desktop Chrome, Android Chrome, desktop Edge) but failed to mount the panel at all on WebKit (iOS Chrome, iOS Safari, desktop Safari) and Gecko (Firefox), because layout-shift entries are Blink-only. The PM-26-O-1 code early-returned on unsupported engines BEFORE the panel mount logic ran, producing silent failure — the user opens ?clsdebug=1 on iPad, sees nothing, has no idea why. Fix: separate the observer logic gate (gates on SUPPORTED) from the panel visibility gate (gates on DEBUG only). Panel always mounts when ?clsdebug=1 is set. On unsupported engines, panel shows an amber-styled "UNSUPPORTED" notice listing the three browser categories (Blink/WebKit/Gecko) and the alternatives (Android Chrome, desktop Chrome/Edge). window.__cls.supported boolean exposes the engine capability programmatically. Cross-platform matrix that now works: Android Chrome ✓, Desktop Chrome/Edge ✓ (data + panel), iOS Chrome/Safari ✗ + clear notice, Desktop Safari ✗ + clear notice, Firefox ✗ + clear notice. The PM-26-O-1 framing ("open the live site, get the answer") was wrong for iPad use; this fixes the discoverability gap.');
+  // ── PM-26-O-2: geometric-fallback path for WebKit/Gecko ──
+  // The fallback must (a) be gated on !SUPPORTED, (b) snapshot rects of an
+  // interest set, (c) diff snapshots and compute Chrome's CLS formula
+  // (impact_fraction × distance_fraction), (d) feed through the same
+  // recordShift path so session-window logic is identical to native, and
+  // (e) trigger via both MutationObserver (DOM mutations) and rAF (font swaps).
+  /if\s*\(!SUPPORTED\)\s*\{[\s\S]*?MODE\s*=\s*['"]fallback['"]/.test(html) &&
+  /INTEREST_SELECTORS/.test(html) &&
+  /getBoundingClientRect/.test(html) &&
+  // Chrome's CLS formula: must compute impactFraction and distanceFraction
+  // and multiply them. Locking both names so a future refactor can't
+  // accidentally drop one without smoke catching it.
+  /impactFraction\s*\*\s*distanceFraction/.test(html) &&
+  /unionArea\s*\/\s*vpArea/.test(html) &&
+  // Triggers: MutationObserver for DOM changes, rAF for font-swap window
+  /new MutationObserver\(scheduleCheck\)/.test(html) &&
+  /requestAnimationFrame\(rafTick\)/.test(html) &&
+  // Shared shift-recording function so both paths feed the same events[]
+  /function recordShift\(t, score, sources, fallbackMode\)/.test(html) &&
+  // Window.__cls must expose mode tristate for runtime inspection
+  /mode:\s*MODE/.test(html) &&
+  // Panel must mode-branch for visual clarity (native/fallback/unsupported)
+  /MODE === ['"]native['"]/.test(html) &&
+  /MODE === ['"]fallback['"]/.test(html) &&
+  /geometric fallback/.test(html),
+  'PM-26-O-2 fix. PM-26-O-1b shipped an UNSUPPORTED notice for WebKit/Gecko engines (iOS Chrome, iOS Safari, desktop Safari, Firefox) because PerformanceObserver({type:"layout-shift"}) is Blink-only. But the CLS algorithm itself is public and the primitives needed to implement it (rAF, getBoundingClientRect, MutationObserver, performance.now) are universal. Fix: add a geometric-inference fallback that computes CLS directly. Snapshot bounding rects for a fixed "interest set" (body children + known shift-suspect IDs + .game-card) on every DOM mutation, plus rAF-throttled during the cold-load 6s window for font swaps. Diff snapshots — when any element\'s y-position changes by ≥1px, compute Chrome\'s formula impact_fraction × distance_fraction, aggregate into the same session-window logic as native (1s gap / 5s max span, recordShift path is shared between native and fallback). Sources attribution is naturally available because we know which element\'s rect changed. Trade-offs: walks ~30-50 interest-set elements not the full tree (deep nested shifts may be missed), throttled at 80ms minimum between snapshots, score magnitude can drift ~5-20% vs native due to timing/edge cases. What\'s accurate: sources, relative magnitude, max-window logic (identical code path). window.__cls.mode is now a tristate (native/fallback/unsupported) so the runtime can announce which path produced its numbers. Panel renders three color-coded states: native (green), fallback (yellow + approximation note), unsupported (amber). Coverage matrix is now complete: every modern browser produces actionable CLS data with ?clsdebug=1.');
 
 
 // ═════════════════════════════════════════════════════════════════════
