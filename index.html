@@ -13053,6 +13053,17 @@ async function fetchV2AllScores() {
       const games = await fetchV2Games(sport, date);
       games.forEach(fg => {
         if (!fg?.home?.name || !fg?.away?.name) return;
+        // Guard: api-sports.io indexes US sports by UTC date, so a game that
+        // starts at 8 PM ET (midnight UTC) appears under the NEXT UTC day.
+        // When we query ET-date=Jun 4, api-sports returns that Jun 3 ET game as
+        // 'final' with yesterday's score — which would then stamp today's card.
+        // Fix: skip any 'final' V2 game whose start time (in ET) falls on a
+        // different date than the date we queried.
+        if (fg.state === 'final' && fg.start) {
+          const gameEtDate = new Date(fg.start)
+            .toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
+          if (gameEtDate !== date) return; // wrong date — skip to avoid stale score
+        }
         const key = `${fg.home.name}|${fg.away.name}`;
         const prev = espnScores[key];
         const v2Entry = mapV2ToESPN(fg);
@@ -17571,7 +17582,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-04f';
+  const SW_VERSION = '2026-06-04g';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -26408,7 +26419,16 @@ function buildLifeStageContent(game, eData, stage) {
     }
     case 'halftime': {
       if (!eData) return '';
-      return `<div class="card-stage-content">Halftime</div>`;
+      const hScore = eData.homeScore ?? 0;
+      const aScore = eData.awayScore ?? 0;
+      const hNick  = teamNick(game.home || '');
+      const aNick  = teamNick(game.away || '');
+      // Sport-specific intermission label
+      const halfLabel = (sp.includes('hockey') || sp.includes('nhl'))
+        ? '2nd Int'   // between 2nd and 3rd period
+        : 'Half';     // basketball halftime (NBA, WNBA)
+      // Score in away @ home order (American sports convention)
+      return `<div class="card-stage-content card-stage-halftime">${halfLabel} · ${aNick} ${aScore} – ${hNick} ${hScore}</div>`;
     }
     case 'final': {
       if (!eData) return '';
