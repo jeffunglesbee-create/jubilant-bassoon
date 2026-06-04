@@ -2764,6 +2764,30 @@ body.journalism-mode #field-journalism-section{animation:jrnFadeIn 220ms ease-ou
 .night-owl-secondary .no-team{font-size:.7rem;font-weight:600;color:var(--gold2,#c9a84c);margin-bottom:.15rem}
 .night-owl-secondary .no-text{font-size:.7rem;line-height:1.5;color:var(--text-muted)}
 
+/* PM-26-M-1 (June 3 2026): #upper-slots wrapper reserves 120px between
+ * the controls bar and the schedule. Inside this wrapper sit ~9 elements
+ * that begin display:none and get toggled to visible by async pipeline
+ * completions (otw-banner, the-skim, stay-up, score-ticker-wrap,
+ * major-preview-container, field-brief, night-owl, freshness-strip,
+ * etc). Each toggle previously pushed the schedule below DOWN by the
+ * appearing element's height — a multi-event CLS cascade per cold load.
+ *
+ * min-height:120px reserves vertical space so the schedule's y-position
+ * is stable as slots populate within the wrapper. contain:layout
+ * isolates layout invalidation to inside the wrapper — per-slot growth
+ * stops at the wrapper boundary and doesn't escape to siblings (the
+ * schedule below). The schedule still translates if total slot content
+ * exceeds 120px, but the residual delta is much smaller than the full
+ * cascade.
+ *
+ * 120px ≈ one OTW banner (44px) + one FIELD Brief (~80px) — the typical
+ * cold-load combination after first paint. Tradeoff accepted: 120px of
+ * empty space below controls when all slots are still loading.
+ */
+#upper-slots {
+  min-height: 120px;
+  contain: layout;
+}
 </style>
   <!-- field_utils.js: pure utility functions — FIELD domain vocabulary
        Loaded first so helpers are available to all scripts and inline handlers.
@@ -2830,6 +2854,24 @@ body.journalism-mode #field-journalism-section{animation:jrnFadeIn 220ms ease-ou
     </div>
   </div>
 </div>
+<!-- ── PM-26-M-1 (June 3 2026): #upper-slots wrapper reserves 120px ─────
+  WPT scroll-mode analysis identified header-region shifts as the dominant
+  residual CLS after L-1. Root cause: 9+ display:none slots between the
+  controls bar and the schedule (otw-banner, the-skim, stay-up,
+  score-ticker-wrap, major-preview-container, field-brief, night-owl, plus
+  others), each toggled to visible by an async render. Each toggle pushes
+  everything below DOWN by the appearing element's height. The schedule
+  translates as a block (L-1 min-height on .game-card keeps cards stable
+  but does NOT prevent the whole grid from being pushed by stuff above).
+  Wrapping the slot region in a container with min-height pre-reserves
+  space so the schedule's y-position stays stable as slots populate within.
+  contain:layout isolates layout invalidation to inside the wrapper so
+  per-slot growth doesn't escape. 120px ≈ typical sum of one OTW banner
+  (44px) + FIELD Brief (~80px) at first-paint state on cold load. Tradeoff
+  accepted: ~120px of empty space below controls when all slots are still
+  loading. Patent-perceived-perf gain outweighs initial whitespace.
+-->
+<div id="upper-slots">
 <!-- ── One to Watch ──────────────────────────────────────────── -->
 <div id="otw-banner" aria-live="polite"><div class="otw-inner otw-quiet" aria-hidden="true"><span class="otw-label">Loading</span><span class="otw-matchup">Fetching today\u2019s schedule\u2026</span></div></div>
 <section id="field-right-now" aria-label="Right Now"><div class="rn-label" id="rn-label">RIGHT NOW</div><div id="rn-cards"></div></section>
@@ -2913,6 +2955,7 @@ body.journalism-mode #field-journalism-section{animation:jrnFadeIn 220ms ease-ou
      #field-brief and #night-owl are sibling sections, both in the left pane. -->
 <div id="night-owl" style="display:none" aria-hidden="true"></div>
   <div id="freshness-strip" class="freshness-strip" aria-live="polite"><span>Refreshed <span id="freshness-age">—</span> ago</span><span class="freshness-update">Updating…</span></div>
+</div><!-- /#upper-slots PM-26-M-1 -->
 <main class="main" id="main"><div class="skeleton-set" aria-hidden="true"><div class="game-card-skeleton" data-lcp-anchor="1"></div><div class="game-card-skeleton"></div><div class="game-card-skeleton"></div></div></main>
 <!-- ── iPad Ambient Panel (820–1199px couch mode) ───────────────────── -->
 <aside id="ambient-panel" aria-live="polite" aria-label="Live intelligence panel"><div class="ambient-skeleton" aria-hidden="true"><div class="ambient-skeleton-label">Live Intelligence</div><div class="ambient-skeleton-block"></div></div></aside>
@@ -16999,7 +17042,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-03q';
+  const SW_VERSION = '2026-06-03r';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
