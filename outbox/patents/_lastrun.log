@@ -1,0 +1,7 @@
+
+Fetching US10846193...
+  Using USPTO bulk XML (grant date hint: 2020-11-24)
+  Downloading https://bulkdata.uspto.gov/data/patent/grant/redbook/fulltext/2020/ipg201124.zip...
+  Bulk fetch error: HTTPSConnectionPool(host='bulkdata.uspto.gov', port=443): Max retries exceeded with url: /data/patent/grant/redbook/fulltext/2020/ipg201124.zip (Caused by NameResolutionError("HTTPSConnection(host='bulkdata.uspto.gov', port=443): Failed to resolve 'bulkdata.uspto.gov' ([Errno -5] No address associated with hostname)"))
+  FAIL: bulk XML fetch failed for US10846193
+Exit code: 0
