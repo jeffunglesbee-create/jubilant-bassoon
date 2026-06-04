@@ -153,36 +153,68 @@ def verify_refresh_flow(app_key, app_secret, refresh_token):
 
 
 def main():
-    app_key = os.environ["APP_KEY"]
-    app_secret = os.environ["APP_SECRET"]
-    auth_code = os.environ["AUTH_CODE"]
-    pat = os.environ["BOOTSTRAP_PAT"]
-    repo = os.environ["REPO"]
+    # Write a marker so we know main() was reached
+    _write_diag("=== bootstrap run start ===")
+
+    try:
+        app_key = os.environ["APP_KEY"]
+        app_secret = os.environ["APP_SECRET"]
+        auth_code = os.environ["AUTH_CODE"]
+        pat = os.environ["BOOTSTRAP_PAT"]
+        repo = os.environ["REPO"]
+    except KeyError as e:
+        err(f"missing env var: {e}")
+
+    _write_diag(f"env ok: app_key.len={len(app_key)} app_secret.len={len(app_secret)} auth_code.len={len(auth_code)} pat.len={len(pat)} repo={repo}")
 
     # Mask any leaked echo to logs
     for v in (app_key, app_secret, auth_code, pat):
         print(f"::add-mask::{v}")
 
-    refresh_token = exchange_code(app_key, app_secret, auth_code)
+    try:
+        refresh_token = exchange_code(app_key, app_secret, auth_code)
+    except Exception as e:
+        import traceback
+        err(f"exchange_code crashed: {type(e).__name__}: {e}", extra=traceback.format_exc())
+
     # Mask the refresh token too
     print(f"::add-mask::{refresh_token}")
 
     print("Setting durable GitHub secrets...")
+    _write_diag("setting durable github secrets...")
     pubkey = None
     all_ok = True
-    for name, val in [
-        ("DROPBOX_REFRESH_TOKEN", refresh_token),
-        ("DROPBOX_APP_KEY", app_key),
-        ("DROPBOX_APP_SECRET", app_secret),
-    ]:
-        ok, pubkey = set_repo_secret(pat, repo, name, val, pubkey)
-        all_ok = all_ok and ok
+    try:
+        for name, val in [
+            ("DROPBOX_REFRESH_TOKEN", refresh_token),
+            ("DROPBOX_APP_KEY", app_key),
+            ("DROPBOX_APP_SECRET", app_secret),
+        ]:
+            ok, pubkey = set_repo_secret(pat, repo, name, val, pubkey)
+            all_ok = all_ok and ok
+            _write_diag(f"  set {name}: ok={ok}")
+    except Exception as e:
+        import traceback
+        err(f"set_repo_secret crashed: {type(e).__name__}: {e}", extra=traceback.format_exc())
+
     if not all_ok:
         err("one or more secret PUTs failed")
 
-    verify_refresh_flow(app_key, app_secret, refresh_token)
+    try:
+        verify_refresh_flow(app_key, app_secret, refresh_token)
+    except Exception as e:
+        import traceback
+        err(f"verify_refresh_flow crashed: {type(e).__name__}: {e}", extra=traceback.format_exc())
+
     print("\nBootstrap complete. All three Dropbox secrets are set and verified.")
+    _write_diag("=== bootstrap success ===")
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except SystemExit:
+        raise
+    except Exception as e:
+        import traceback
+        err(f"unhandled: {type(e).__name__}: {e}", extra=traceback.format_exc())
