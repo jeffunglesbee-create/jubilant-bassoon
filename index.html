@@ -1977,6 +1977,84 @@ body.journalism-mode #field-journalism-section{animation:jrnFadeIn 220ms ease-ou
   body:not(.journalism-mode) #field-journalism-section{display:none}
 }
 
+/* ── WC2026 Groups/Bracket Tab ──────────────────────────────────────────────
+   Mirrors journalism-mode pattern. body.wc-mode performs a full viewport swap
+   on mobile/tablet; co-resides with schedule on desktop.
+   June 4 2026 — WC Groups/Bracket Tab Spec (Drive 1g0Ne_OOO0eteJ8-GCRNZ4sm5_qey7yqy) */
+
+/* Base: section hidden, back pill hidden */
+#wc-section{display:none;padding:.75rem .75rem 2rem;min-height:60vh}
+.wc-back-pill{display:none;align-self:flex-start;padding:.4rem .75rem;background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.22);border-radius:18px;font-size:.66rem;color:var(--gold2);cursor:pointer;margin-bottom:1rem;letter-spacing:.04em;transition:.15s}
+.wc-back-pill:hover{background:rgba(201,168,76,.14);border-color:rgba(201,168,76,.38)}
+
+/* Header */
+.wc-head{margin-bottom:1.25rem}
+.wc-eyebrow{font-size:.55rem;font-weight:700;letter-spacing:.1em;color:var(--gold2);text-transform:uppercase;margin-bottom:.3rem}
+.wc-title{font-family:var(--ff-display);font-size:1.5rem;font-weight:700;color:var(--white);margin:0 0 .2rem}
+.wc-meta{font-size:.62rem;color:var(--smoke);letter-spacing:.04em}
+
+/* Groups grid — 1 col portrait, 2 landscape phone, 3 iPad, 4 desktop */
+.wc-groups{display:grid;grid-template-columns:1fr;gap:1rem}
+@media(min-width:601px){.wc-groups{grid-template-columns:1fr 1fr}}
+@media(min-width:820px){.wc-groups{grid-template-columns:repeat(3,1fr)}}
+@media(min-width:1200px){.wc-groups{grid-template-columns:repeat(4,1fr)}}
+
+/* Group block */
+.wc-group-block{background:rgba(255,255,255,.03);border:1px solid var(--edge);border-radius:10px;padding:.65rem .65rem .5rem}
+.wc-group-label{font-size:.6rem;font-weight:700;letter-spacing:.08em;color:var(--gold2);text-transform:uppercase;margin-bottom:.4rem}
+
+/* Group table */
+.wc-table{width:100%;border-collapse:collapse;font-size:.65rem}
+.wc-table thead tr{border-bottom:1px solid var(--edge)}
+.wc-table th{color:var(--smoke);font-weight:600;font-size:.6rem;padding:.2rem .15rem;text-align:center}
+.wc-th-team,.wc-td-team{text-align:left;padding-left:.2rem}
+.wc-th-pos,.wc-td-pos{color:var(--smoke);width:14px}
+.wc-th-pts,.wc-td-pts{font-weight:700;color:var(--white)}
+.wc-table td{padding:.25rem .15rem;text-align:center;color:var(--platinum)}
+.wc-td-gd{font-variant-numeric:tabular-nums}
+
+/* Row state */
+.wc-row--advance td:first-child{border-left:2px solid rgba(74,222,128,.6)}
+.wc-row--maybe td:first-child{border-left:2px solid rgba(201,168,76,.5)}
+.wc-row--maybe{border-top:1px dashed rgba(255,255,255,.1)}
+.wc-row--out{opacity:.65}
+
+/* GF/GA hidden on mobile */
+@media(max-width:819px){.wc-th-gf,.wc-th-ga,.wc-td-gf,.wc-td-ga{display:none}}
+
+/* Footnote + empty + loading */
+.wc-footnote{font-size:.58rem;color:var(--smoke);margin-top:1rem;line-height:1.5}
+.wc-empty{color:var(--smoke);font-style:italic;text-align:center;padding:.5rem;font-size:.65rem}
+.wc-skeleton{height:12px;background:var(--card2);border-radius:4px;margin:.3rem 0;animation:shimmer 1.4s ease-in-out infinite}
+
+/* Fade-in */
+@keyframes wcFadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+body.wc-mode #wc-section{animation:wcFadeIn 220ms ease-out}
+@media(prefers-reduced-motion:reduce){body.wc-mode #wc-section{animation:none}}
+
+/* Mobile/tablet tab-swap */
+@media(max-width:1199px){
+  body.wc-mode .main,
+  body.wc-mode #night-owl,
+  body.wc-mode #field-desk-section,
+  body.wc-mode #media-section,
+  body.wc-mode .page-divider,
+  body.wc-mode .legend-section,
+  body.wc-mode #upper-slots,
+  body.wc-mode #field-right-now,
+  body.wc-mode #ambient-panel{display:none !important}
+  body.wc-mode #wc-section{display:block}
+  body.wc-mode #wc-section[hidden]{display:block}
+  body.wc-mode .wc-back-pill{display:inline-block;position:sticky;top:calc(env(safe-area-inset-top,0px) + .5rem);z-index:50;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);background:rgba(20,20,28,.78)}
+  body:not(.wc-mode) #wc-section{display:none}
+}
+
+/* Desktop: co-resident with schedule */
+@media(min-width:1200px){
+  body.wc-mode #wc-section{display:block;max-width:900px;margin:0 auto}
+  body.wc-mode .wc-back-pill{display:none}
+}
+
 /* ── C3: Laptop multi-pane (1200-1439px) ──────────────────────────────────
    Schedule rail fixed left (280px), journalism reading shifted right.
    Companion stays hidden at laptop. */
@@ -3439,6 +3517,7 @@ body.journalism-mode #field-journalism-section{animation:jrnFadeIn 220ms ease-ou
     <button class="tz-pill" id="tz-pill" title="Change timezone"></button>
     <a class="desk-jump-link" href="#field-desk-section" title="FIELD Desk — editorial briefings and series previews" onclick="event.preventDefault();document.getElementById('field-desk-section')?.scrollIntoView({behavior:'smooth',block:'start'})">📰 Desk</a>
     <a class="desk-jump-link jrn-nav-link" id="jrn-nav-link" href="#field-journalism-section" title="Journalism — Tonight's editorial reading" onclick="event.preventDefault();toggleJournalismView()">📖 Journal</a>
+    <a class="desk-jump-link wc-nav-link" id="wc-nav-link" href="#wc-section" title="World Cup — Group standings and bracket" onclick="event.preventDefault();toggleWCView()" style="display:none">⚽ Groups</a>
   </div>
 </nav>
 
@@ -3532,6 +3611,33 @@ body.journalism-mode #field-journalism-section{animation:jrnFadeIn 220ms ease-ou
     <aside class="jrn-companion" id="jrn-companion" aria-label="Journalism companion content">
       <!-- Populated by renderJournalismCompanion() at desktop viewport -->
     </aside>
+  </div>
+</section>
+
+
+<!-- ══ WC2026 GROUPS / BRACKET TAB ═══════════════════════════
+     Mirror of #field-journalism-section pattern. Activated by
+     body.wc-mode via toggleWCView(). Shows group standings (Phase 1)
+     or knockout bracket (Phase 2). Tab link: #wc-nav-link in controls.
+     WC Groups/Bracket Tab Spec: Drive 1g0Ne_OOO0eteJ8-GCRNZ4sm5_qey7yqy
+     June 4 2026. -->
+<section class="wc-section" id="wc-section" aria-label="World Cup 2026 standings" hidden>
+  <div class="wc-back-pill" id="wc-back-pill"
+       onclick="toggleWCView()" role="button" tabindex="0" aria-label="Back to schedule">
+    ← Back to Schedule
+  </div>
+  <header class="wc-head">
+    <div class="wc-eyebrow">WORLD CUP 2026</div>
+    <h1 class="wc-title" id="wc-title">Group Stage</h1>
+    <div class="wc-meta" id="wc-meta">June 11 – July 19 · USA · Canada · Mexico</div>
+  </header>
+  <!-- Phase 1: Groups -->
+  <div class="wc-groups" id="wc-groups">
+    <!-- Populated by renderWCGroups() -->
+  </div>
+  <!-- Phase 2: Bracket (deferred build ~June 18-20) -->
+  <div class="wc-bracket" id="wc-bracket" hidden>
+    <!-- Populated by renderWCBracket() -->
   </div>
 </section>
 
@@ -10233,6 +10339,12 @@ function toggleJournalismView() {
   }
   body.classList.toggle('journalism-mode', willActivate);
   try { localStorage.setItem('field_journalism_mode', willActivate ? '1' : '0'); } catch(_) {}
+  // Mutual exclusion: dismiss wc-mode if activating journalism
+  if (willActivate && body.classList.contains('wc-mode')) {
+    body.classList.remove('wc-mode');
+    document.getElementById('wc-nav-link')?.classList.remove('active');
+    document.getElementById('wc-section')?.setAttribute('hidden', '');
+  }
   const navLink = document.getElementById('jrn-nav-link');
   if (navLink) navLink.classList.toggle('active', willActivate);
   if (willActivate) {
@@ -17582,7 +17694,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-04i';
+  const SW_VERSION = '2026-06-04j';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -22903,6 +23015,186 @@ async function fetchWCStandings(group = null) {
     return null;
   }
 }
+
+
+// ── WC2026 Groups/Bracket Tab ────────────────────────────────────────────────
+// Tab mirrors journalism-mode: body.wc-mode full-viewport swap on mobile/tablet.
+// Spec: Drive 1g0Ne_OOO0eteJ8-GCRNZ4sm5_qey7yqy — June 4 2026
+
+// Tournament window flag
+const wcActive = (() => {
+  const now   = new Date();
+  const open  = new Date('2026-06-11T00:00:00');
+  const close = new Date('2026-07-20T00:00:00');
+  return now >= open && now < close;
+})();
+
+// Group teams — pre-tournament roster for empty-state display.
+// Populated from confirmed FIFA draw (Dec 5 2025). Update during data flip.
+const WC_TEAMS = {
+  A: ['Qatar','Ecuador','Senegal','Netherlands'],           // placeholder — update data flip
+  B: ['England','IR Iran','USA','Wales'],
+  C: ['Argentina','Saudi Arabia','Mexico','Poland'],
+  D: ['France','Australia','Denmark','Tunisia'],
+  E: ['Spain','Costa Rica','Germany','Japan'],
+  F: ['Belgium','Canada','Morocco','Croatia'],
+  G: ['Brazil','Serbia','Switzerland','Cameroon'],
+  H: ['Portugal','Ghana','Uruguay','South Korea'],
+  I: ['placeholder','placeholder','placeholder','placeholder'],
+  J: ['placeholder','placeholder','placeholder','placeholder'],
+  K: ['placeholder','placeholder','placeholder','placeholder'],
+  L: ['placeholder','placeholder','placeholder','placeholder'],
+};
+// NOTE: Groups I–L are new in 48-team format — fill in during data flip session.
+
+// Phase: 'groups' (June 11–26) or 'bracket' (June 29+)
+function getWCPhase() {
+  const now = new Date();
+  return now >= new Date('2026-06-29T00:00:00') ? 'bracket' : 'groups';
+}
+
+// Toggle WC view — mirrors toggleJournalismView()
+function toggleWCView() {
+  const isWC = document.body.classList.toggle('wc-mode');
+  const navLink = document.getElementById('wc-nav-link');
+  const section = document.getElementById('wc-section');
+  if (isWC) {
+    navLink?.classList.add('active');
+    section?.removeAttribute('hidden');
+    // Mutual exclusion: dismiss journalism-mode if active
+    if (document.body.classList.contains('journalism-mode')) {
+      document.body.classList.remove('journalism-mode');
+      document.getElementById('jrn-nav-link')?.classList.remove('active');
+    }
+    renderWCSection();
+  } else {
+    navLink?.classList.remove('active');
+    section?.setAttribute('hidden', '');
+  }
+}
+
+// Entry point — called by toggleWCView
+async function renderWCSection() {
+  const phase = getWCPhase();
+  // Update title + label
+  const title = document.getElementById('wc-title');
+  const navLink = document.getElementById('wc-nav-link');
+  if (phase === 'bracket') {
+    if (title) title.textContent = 'Knockout Stage';
+    if (navLink) navLink.textContent = '⚽ Bracket';
+    document.getElementById('wc-groups')?.setAttribute('hidden', '');
+    const bracket = document.getElementById('wc-bracket');
+    if (bracket) bracket.removeAttribute('hidden');
+    // renderWCBracket() — deferred build ~June 18-20
+    return;
+  }
+  if (title) title.textContent = 'Group Stage';
+  if (navLink) navLink.textContent = '⚽ Groups';
+  document.getElementById('wc-bracket')?.setAttribute('hidden', '');
+  const grpsEl = document.getElementById('wc-groups');
+  if (grpsEl) grpsEl.removeAttribute('hidden');
+  renderWCGroupsLoading();
+  const standings = await fetchWCStandings();
+  if (!standings || Object.keys(standings).length === 0) {
+    renderWCGroupsEmpty();
+  } else {
+    renderWCGroups(standings);
+  }
+}
+
+// Loading state
+function renderWCGroupsLoading() {
+  const el = document.getElementById('wc-groups');
+  if (!el) return;
+  el.innerHTML = 'ABCDEFGHIJKL'.split('').map(g => `
+    <div class="wc-group-block">
+      <div class="wc-group-label">Group ${g}</div>
+      <div class="wc-skeleton" style="width:80%"></div>
+      <div class="wc-skeleton" style="width:90%"></div>
+      <div class="wc-skeleton" style="width:75%"></div>
+      <div class="wc-skeleton" style="width:85%"></div>
+    </div>`).join('');
+}
+
+// Empty state — before tournament starts (no D1 results)
+function renderWCGroupsEmpty() {
+  const el = document.getElementById('wc-groups');
+  if (!el) return;
+  el.innerHTML = 'ABCDEFGHIJKL'.split('').map(g => {
+    const teams = WC_TEAMS[g] || [];
+    const rows = teams.map((t, i) => `
+      <tr class="wc-row wc-row--${i < 2 ? 'advance' : i === 2 ? 'maybe' : 'out'}">
+        <td class="wc-td-pos">${i + 1}</td>
+        <td class="wc-td-team">${t}</td>
+        <td>—</td><td>—</td><td>—</td><td>—</td>
+        <td class="wc-td-gf">—</td><td class="wc-td-ga">—</td>
+        <td>—</td><td class="wc-td-pts">—</td>
+      </tr>`).join('');
+    return buildWCGroupShell(g, rows);
+  }).join('') + '<p class="wc-footnote">Tournament begins June 11 · Standings update automatically</p>';
+}
+
+// Live standings from D1
+function renderWCGroups(standings) {
+  const el = document.getElementById('wc-groups');
+  if (!el) return;
+  const groups = 'ABCDEFGHIJKL'.split('');
+  el.innerHTML = groups.map(g => {
+    const rows = (standings[g] || []).map((r, i) => buildWCGroupRow(r, i)).join('');
+    return buildWCGroupShell(g, rows ||
+      `<tr><td colspan="10" class="wc-empty">No results yet</td></tr>`);
+  }).join('') +
+  '<p class="wc-footnote">Top 2 from each group advance · Best 8 third-place teams also advance</p>';
+}
+
+// Group block shell (used by both empty + live)
+function buildWCGroupShell(groupId, rowsHTML) {
+  return `
+    <div class="wc-group-block" data-group="${groupId}">
+      <div class="wc-group-label">Group ${groupId}</div>
+      <table class="wc-table" aria-label="Group ${groupId} standings">
+        <thead><tr>
+          <th class="wc-th-pos">#</th>
+          <th class="wc-th-team">Team</th>
+          <th class="wc-th-num">P</th>
+          <th class="wc-th-num">W</th>
+          <th class="wc-th-num">D</th>
+          <th class="wc-th-num">L</th>
+          <th class="wc-th-num wc-th-gf">GF</th>
+          <th class="wc-th-num wc-th-ga">GA</th>
+          <th class="wc-th-num">GD</th>
+          <th class="wc-th-pts">Pts</th>
+        </tr></thead>
+        <tbody>${rowsHTML}</tbody>
+      </table>
+    </div>`;
+}
+
+// Single standings row
+function buildWCGroupRow(r, index) {
+  const cls = index < 2 ? 'wc-row--advance' : index === 2 ? 'wc-row--maybe' : 'wc-row--out';
+  const gd  = r.gd > 0 ? `+${r.gd}` : String(r.gd ?? 0);
+  const dash = (v) => (r.played ? String(v) : '—');
+  return `
+    <tr class="wc-row ${cls}">
+      <td class="wc-td-pos">${index + 1}</td>
+      <td class="wc-td-team">${r.team || '—'}</td>
+      <td>${dash(r.played)}</td>
+      <td>${dash(r.won)}</td>
+      <td>${dash(r.drawn)}</td>
+      <td>${dash(r.lost)}</td>
+      <td class="wc-td-gf">${dash(r.gf)}</td>
+      <td class="wc-td-ga">${dash(r.ga)}</td>
+      <td>${r.played ? gd : '—'}</td>
+      <td class="wc-td-pts">${r.played ? r.points : '—'}</td>
+    </tr>`;
+}
+
+// Show/hide WC nav link based on wcActive
+(function initWCNav() {
+  const link = document.getElementById('wc-nav-link');
+  if (link && wcActive) link.style.display = '';
+})();
 
 
 async function fetchFinalsDesk(game, sport) {

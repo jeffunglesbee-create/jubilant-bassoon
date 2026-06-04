@@ -2818,6 +2818,47 @@ assert('A319 — WC D1: fetchWCStandings uses /wc/standings relay endpoint',
   html.includes("'/wc/standings'") || html.includes('"/wc/standings"') ||
   html.includes("+ '/wc/standings") || html.includes('wc/standings'));
 
+
+// WC Groups/Bracket Tab — June 4 2026
+assert('A320 — WC tab: #wc-section present in DOM',
+  html.includes('id="wc-section"'));
+
+assert('A321 — WC tab: toggleWCView function defined',
+  html.includes('function toggleWCView()'));
+
+assert('A322 — WC tab: wc-nav-link in controls bar',
+  html.includes('id="wc-nav-link"'));
+
+assert('A323 — WC tab: renderWCGroups function defined',
+  html.includes('function renderWCGroups('));
+
+assert('A324 — WC tab: buildWCGroupBlock or buildWCGroupShell defined',
+  html.includes('function buildWCGroupShell(') || html.includes('function buildWCGroupBlock('));
+
+assert('A325 — WC tab: fetchWCStandings called inside renderWCSection',
+  html.includes('fetchWCStandings()') && html.includes('function renderWCSection('));
+
+assert('A326 — WC tab: body.wc-mode CSS hides .main on mobile',
+  html.includes('body.wc-mode .main') && html.includes('display:none'));
+
+assert('A327 — WC tab: wc-back-pill present in #wc-section',
+  html.includes('class="wc-back-pill"'));
+
+assert('A328 — WC tab: wcActive flag defined',
+  html.includes('const wcActive'));
+
+assert('A329 — WC tab: getWCPhase function defined',
+  html.includes('function getWCPhase()'));
+
+assert('A330 — WC tab: mutual exclusion — wc-mode dismissed when journalism activates',
+  html.includes("body.classList.contains('wc-mode')"));
+
+assert('A331 — WC tab: WC_TEAMS constant defined with group keys A-H',
+  html.includes('const WC_TEAMS') && html.includes("A:") && html.includes("H:"));
+
+assert('A332 — WC tab: wc-back-pill onclick calls toggleWCView',
+  html.includes('onclick="toggleWCView()"'));
+
 // ═════════════════════════════════════════════════════════════════════
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);
