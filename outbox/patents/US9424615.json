@@ -1,0 +1,132 @@
+{
+  "_ppubs_guid": "US-9424615-B2",
+  "_ppubs_type": "USPAT",
+  "_source": "ppubs",
+  "assignees": [
+    {
+      "assignee_organization": "Championship Analytics, Inc."
+    }
+  ],
+  "claims": [
+    {
+      "claim_dependent": null,
+      "claim_sequence": 1,
+      "claim_text": "A method of recommending one of a plurality of coaching decisions to a coach of a team playing a football game against an opponent, the method comprising the steps of: receiving, before the football game, at least one indicator regarding a quality of the team; determining a probability of success for each coaching decision based, at least in part, on the at least one indicator; based on predetermined probabilities of events occurring after each coaching decision, repeatedly simulating a remainder of the football game following each coaching decision using a computing system; associating each coaching decision with a probability of winning the football game based on the simulating step; and recommending the coaching decision having the highest probability of winning the football game."
+    },
+    {
+      "claim_dependent": 1,
+      "claim_sequence": 2,
+      "claim_text": "The method of claim 1, wherein the at least one indicator is an expected number of points that the team will score against the opponent."
+    },
+    {
+      "claim_dependent": 2,
+      "claim_sequence": 3,
+      "claim_text": "The method of claim 2, wherein the expected number of points is based on an expected point spread between the team and the opponent."
+    },
+    {
+      "claim_dependent": 1,
+      "claim_sequence": 4,
+      "claim_text": "The method of claim 1, wherein the at least one indicator is a rating of a player or a group of players on the team relative to an average player or group of players."
+    },
+    {
+      "claim_dependent": 4,
+      "claim_sequence": 5,
+      "claim_text": "The method of claim 4, wherein the at least one indicator is a rating of a field goal kicker, a punter, a punt receiver, or a punt coverage team."
+    },
+    {
+      "claim_dependent": 1,
+      "claim_sequence": 6,
+      "claim_text": "The method of claim 1, wherein the determining step, the simulating step, the associating step, and the recommending step are performed before the football game."
+    },
+    {
+      "claim_dependent": 1,
+      "claim_sequence": 7,
+      "claim_text": "The method of claim 1, wherein the determining step comprises adjusting an average probability of success based on the at least one indicator."
+    },
+    {
+      "claim_dependent": 1,
+      "claim_sequence": 8,
+      "claim_text": "The method of claim 1, further comprising the step of generating an equation based on the simulating step that represents the probability of winning the football game as a function of field position."
+    },
+    {
+      "claim_dependent": 8,
+      "claim_sequence": 9,
+      "claim_text": "The method of claim 8, further comprising the step of inputting a plurality of different field positions into the equation to calculate a probability of winning the football game at each field position."
+    },
+    {
+      "claim_dependent": 1,
+      "claim_sequence": 10,
+      "claim_text": "The method of claim 1, wherein the simulating step considers a minimum number of plays remaining in the football game when the team is ahead of the opponent, and a maximum number of plays remaining in the football game when the team is trailing the opponent."
+    },
+    {
+      "claim_dependent": 1,
+      "claim_sequence": 11,
+      "claim_text": "The method of claim 1, wherein the plurality of coaching decisions is associated with a fourth down play, the plurality of coaching decisions comprising whether to go for a first down, kick a field goal, or punt."
+    },
+    {
+      "claim_dependent": 1,
+      "claim_sequence": 12,
+      "claim_text": "The method of claim 1, wherein the plurality of coaching decisions is associated with an extra point play, the plurality of coaching decisions comprising whether to go for 1-point conversion or a 2-point conversion."
+    },
+    {
+      "claim_dependent": null,
+      "claim_sequence": 13,
+      "claim_text": "A method of recommending one of a plurality of coaching decisions to a coach of a team playing a football game against an opponent, the method comprising the steps of: determining a probability of success for each coaching decision from each of a plurality of different positions on a football field; based on predetermined probabilities of events occurring after each coaching decision, repeatedly simulating a remainder of the football game from a first game scenario to determine a probability of winning the football game with each coaching decision in the first game scenario; recommending a first coaching decision for each of the plurality of different positions on the football field corresponding to the first game scenario; based on predetermined probabilities of events occurring after each coaching decision, repeatedly simulating a remainder of the football game from a second game scenario to determine a probability of winning the football game with each coaching decision in the second game scenario; recommending a second coaching decision for each of the plurality of different positions on the football field corresponding to the second game scenario; and generating a visual representation of the first and second recommended coaching decisions."
+    },
+    {
+      "claim_dependent": 13,
+      "claim_sequence": 14,
+      "claim_text": "The method of claim 13, wherein the visual representation displays the first and second recommended coaching decisions as a function of a first down marker yard line and a yards to go for a first down."
+    },
+    {
+      "claim_dependent": 13,
+      "claim_sequence": 15,
+      "claim_text": "The method of claim 13, wherein a score differential and a time remaining in the football game differ between the first and second game scenarios."
+    },
+    {
+      "claim_dependent": 13,
+      "claim_sequence": 16,
+      "claim_text": "The method of claim 13, further comprising the step of identifying when the probability of winning the football game with a first coaching decision is close to the probability of winning the football game with a second coaching decision."
+    },
+    {
+      "claim_dependent": 13,
+      "claim_sequence": 17,
+      "claim_text": "The method of claim 13, further comprising the step of adjusting the probability of success of at least one coaching decision based on a weather condition."
+    },
+    {
+      "claim_dependent": 1,
+      "claim_sequence": 18,
+      "claim_text": "The method of claim 1, wherein the simulating step utilizes a random number generator."
+    },
+    {
+      "claim_dependent": 1,
+      "claim_sequence": 19,
+      "claim_text": "The method of claim 1, wherein, when the coaching decision is whether to attempt a first down conversion or whether to kick a field goal, the probability of winning the football game is calculated by weighting an output from the simulating step by the probability of success for the corresponding conversion coaching decision or field goal coaching decision."
+    },
+    {
+      "claim_dependent": 1,
+      "claim_sequence": 20,
+      "claim_text": "The method of claim 1, wherein, when the coaching decision is whether to punt, the probability of success for the punt coaching decision is taken into account during the simulating step."
+    },
+    {
+      "claim_dependent": 1,
+      "claim_sequence": 21,
+      "claim_text": "The method of claim 1, wherein the simulating step is performed a hundred times or more for each coaching decision."
+    }
+  ],
+  "examiners": [
+    {
+      "examiner_name_first": "Paul A",
+      "examiner_name_last": "D'Agostino"
+    }
+  ],
+  "inventors": [
+    {
+      "inventor_name_first": "Michael K.",
+      "inventor_name_last": "McRoberts"
+    }
+  ],
+  "patent_date": "2016-08-23",
+  "patent_id": "9424615",
+  "patent_title": "In-game football strategy system and method"
+}
