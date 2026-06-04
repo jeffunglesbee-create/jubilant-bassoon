@@ -2914,6 +2914,28 @@ assert('A434 — Permutations Engine v1.2: exports include best-3rd functions',
     && fieldUtilsSrc.includes('wcMakePRNG,'),
   'module.exports must include v1.2 best-3rd engine functions for unit tests');
 
+// v1.3 — UI wiring
+assert('A435 — Permutations Engine v1.3: engine inlined into index.html',
+  html.includes('function computeGroupScenarios(')
+    && html.includes('function computeBest3rdRanking(')
+    && html.includes('function wcSortByTiebreakers('),
+  'WC engine must be inlined into index.html per A191 (field_utils.js parity)');
+
+assert('A436 — Permutations Engine v1.3: scenario badge renderer present',
+  html.includes('function _wcScenarioBadge(') && html.includes('wc-sb wc-sb--safe')
+    && html.includes('wc-sb wc-sb--out') && html.includes('wc-sb wc-sb--maybe'),
+  'WC group view must include scenario badge function + three CSS state classes');
+
+assert('A437 — Permutations Engine v1.3: scenarios computed in renderWCGroups',
+  html.includes('_wcComputeAllScenarios(standings)')
+    && html.includes('buildWCGroupRow(r, i, scenarios, g)'),
+  'renderWCGroups must compute scenarios and pass them to buildWCGroupRow');
+
+assert('A438 — Permutations Engine v1.3: badge CSS state classes defined',
+  html.includes('.wc-sb--safe') && html.includes('.wc-sb--out')
+    && html.includes('.wc-sb--maybe') && html.includes('.wc-sb--b3'),
+  'CSS for scenario badges (safe/out/maybe/b3) required for visual rendering');
+
 // ═════════════════════════════════════════════════════════════════════
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);
