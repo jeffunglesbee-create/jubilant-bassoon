@@ -2738,7 +2738,13 @@ assert('A421 — PM-26-O-2: cross-engine layout-shift observer (native + geometr
   // and multiply them. Locking both names so a future refactor can't
   // accidentally drop one without smoke catching it.
   /impactFraction\s*\*\s*distanceFraction/.test(html) &&
-  /unionArea\s*\/\s*vpArea/.test(html) &&
+  // PM-26-O-2a correction: per-frame formula (one shift event per frame)
+  // not per-element aggregation. impact uses totalUnionArea (sum of moved
+  // rects, clamped by /vpArea + Math.min) and distance uses maxDistance
+  // (max across all movers in this frame). The original implementation
+  // summed per-element scores, producing total>1 when many elements moved.
+  /totalUnionArea\s*\/\s*vpArea/.test(html) &&
+  /maxDistance\s*\/\s*maxDim/.test(html) &&
   // Triggers: MutationObserver for DOM changes, rAF for font-swap window
   /new MutationObserver\(scheduleCheck\)/.test(html) &&
   /requestAnimationFrame\(rafTick\)/.test(html) &&

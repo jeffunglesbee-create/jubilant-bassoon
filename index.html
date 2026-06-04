@@ -2987,7 +2987,20 @@ body.journalism-mode #field-journalism-section{animation:jrnFadeIn 220ms ease-ou
         const vpArea = vw * vh;
         const maxDim = Math.max(vw, vh);
         if (vpArea < 1) return null;
-        let aggregateScore = 0;
+        // PM-26-O-2a: per-frame formula, matching Chrome's CLS spec.
+        // Spec: ONE shift event per frame. impact_fraction = union of all
+        // moved elements' rects / viewport area (clamped to 1).
+        // distance_fraction = MAX distance any single element moved /
+        // max(viewport width, viewport height) (clamped to 1).
+        // shift_score = impact × distance — necessarily ≤ 1.
+        //
+        // Previous PM-26-O-2 implementation incorrectly summed per-element
+        // scores, producing total > 1 when many elements moved (16 cards
+        // each contributing 0.1 → reported as 1.6 instead of correct 0.3).
+        // Sources are tracked separately for attribution; scoring is one
+        // event per frame.
+        let maxDistance = 0;
+        let totalUnionArea = 0;
         const movers = [];
         newR.forEach(function(nr, el){
           const or = oldR.get(el);
@@ -2995,20 +3008,21 @@ body.journalism-mode #field-journalism-section{animation:jrnFadeIn 220ms ease-ou
           const adx = Math.abs(nr.x - or.x);
           const ady = Math.abs(nr.y - or.y);
           if (adx < 1 && ady < 1) return;
+          const distance = Math.max(adx, ady);
+          if (distance > maxDistance) maxDistance = distance;
           const left = Math.min(or.x, nr.x);
           const top = Math.min(or.y, nr.y);
           const right = Math.max(or.x + or.w, nr.x + nr.w);
           const bottom = Math.max(or.y + or.h, nr.y + nr.h);
-          const unionArea = Math.max(0, right - left) * Math.max(0, bottom - top);
-          const impactFraction = Math.min(1, unionArea / vpArea);
-          const distanceFraction = Math.min(1, Math.max(adx, ady) / maxDim);
-          const score = impactFraction * distanceFraction;
-          if (score >= 0.0001) {
-            aggregateScore += score;
-            movers.push({el: el, score: score});
-          }
+          const elementUnionArea = Math.max(0, right - left) * Math.max(0, bottom - top);
+          totalUnionArea += elementUnionArea;
+          movers.push({el: el, distance: distance});
         });
-        return {score: aggregateScore, movers: movers};
+        if (movers.length === 0) return null;
+        const impactFraction = Math.min(1, totalUnionArea / vpArea);
+        const distanceFraction = Math.min(1, maxDistance / maxDim);
+        const score = impactFraction * distanceFraction;
+        return {score: score, movers: movers};
       }
 
       let checkPending = false;
@@ -3026,7 +3040,7 @@ body.journalism-mode #field-journalism-section{animation:jrnFadeIn 220ms ease-ou
           const newR = snapshot();
           const result = diff(prevRects, newR);
           if (result && result.score >= 0.0005) {
-            const top = result.movers.sort(function(a,b){return b.score-a.score;}).slice(0, 5);
+            const top = result.movers.sort(function(a,b){return b.distance-a.distance;}).slice(0, 5);
             recordShift(t, result.score, top.map(function(m){return describeNode(m.el);}), true);
           }
           prevRects = newR;
@@ -17414,7 +17428,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-03u';
+  const SW_VERSION = '2026-06-03v';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
