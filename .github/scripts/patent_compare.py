@@ -177,7 +177,7 @@ def render_markdown(patent: dict, features: list) -> str:
         f"**Assignee:** {assignee_orgs}",
         f"**Total claims:** {len(claims_sorted)}  ",
         f"**Independent claims:** {len(independents)} "
-        f"({', '.join(c.get('claim_sequence', '?') for c in independents)})",
+        f"({', '.join(str(c.get('claim_sequence', '?')) for c in independents)})",
         "",
         "> **Auto-generated heuristic analysis. ATTORNEY REVIEW REQUIRED.**  ",
         "> Each row matches the claim element text against FIELD architectural  ",
