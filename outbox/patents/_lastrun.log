@@ -1,12 +1,13 @@
 Establishing PPUBS session...
   [ppubs] prime: HTTP 200
-  [ppubs] session ok: caseId=219587981
+  [ppubs] session ok: caseId=219589057
 
 Fetching US10846193 via PPUBS...
   [ppubs] counts: HTTP 200
+  [ppubs] dumped search response to _ppubs_search_10846193.json
   [ppubs] guid=US-10846193-B2 type=USPAT
-  [ppubs] document HTTP 404: {"status":"NOT_FOUND","message":"Patent not found.","developerMessage":null}
-FAIL: US10846193
+  [ppubs] dumped raw response to _ppubs_dump_10846193.json
+  US10846193: wrote US10846193.json + US10846193.txt (33 claims)
 
-1 of 1 patents failed: ['10846193']
-Exit code: 2
+All 1 patents fetched successfully.
+Exit code: 0

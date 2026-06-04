@@ -1,0 +1,110 @@
+US10846193
+Title: Method and system for real-user capable detecting of the visual completeness of browser rendering process
+Grant date: 2020-11-24
+Assignee: Dynatrace LLC
+Inventors: Bernhard Lackner, Markus Wagner, Simon Schatka
+Source: ppubs
+PPUBS GUID: US-10846193-B2
+
+======================================================================
+CLAIMS
+======================================================================
+
+Claim 1 [independent]:
+A computer-implemented method for monitoring rendering of content by a web browser residing on a computing device, comprising: receiving, by a browser agent, a given notification pertaining to a document object model for the content rendered by the web browser, where the browser agent is injected into the content displayed by the web browser and the given notification includes one or more changes to the document object model; in response to receiving the given notification, processing the given notification by the browser agent, where the processing of the given notification includes determining current time, extracting the one or more changes from the given notification, and associating the current time with each of the one or more changes extracted from the given notification; detecting, by the browser agent, end of content processing by the web browser; and in response to detecting the end of content processing, creating an update event for each of the one or more changes in a data transfer record by determining a visible content area of the web browser; determining position and size of a display area corresponding to a given change to the document object model and determining whether the display area intersects with the visible content area of the web browser; and creating the update event in the data transfer record only in response to the display area intersecting with the visible content area of the web browser, wherein each update event record specifies time at which the given change to the document object model occurred, and position and size of display area affected by corresponding change to the document object model; and sending the data transfer record by the browser agent over a network to a monitoring node, where the monitoring node resides on a server computer and the server computer is located remotely from the computing device.
+
+Claim 2 [dep on 1]:
+The method of claim 1 wherein receiving a given notification further comprises registering with the web browser to receive notifications pertaining to the document object model.
+
+Claim 3 [dep on 1]:
+The method of claim 1 wherein the one or more changes to the document object model are further defined as elements added to the document object model, elements removed from the document object model, and updates to values of attributes of elements in the document object model.
+
+Claim 4 [dep on 1]:
+The method of claim 1 wherein detecting end of content processing further comprises detecting a user interaction with the content rendered by the web browser, where the user interaction is interpreted as end of content processing.
+
+Claim 5 [dep on 1]:
+The method of claim 1 wherein detecting end of content processing further comprises sending, by the browser agent, a message to a second browser agent, where the message includes a time content processing completed, the browser agent is deployed in a first frame and the second browser agent is deployed in a second frame having a parental relationship with the first frame; receiving, by the second browser agent, the message from the browser agent; and updating, by the second browser agent, a visually complete time maintained by the second browser agent with the time content processing completed when the time content processing completed is later than the visually complete time.
+
+Claim 6 [dep on 1]:
+The method of claim 1 wherein detecting end of content processing further comprises determining an amount of time since a change to the document object model, comparing the amount of time to a threshold, where the amount of time since a change to the document object model that is greater than the threshold is interpreted as end of content processing.
+
+Claim 7 [dep on 1]:
+The method of claim 1 wherein detecting end of content processing further comprises registering with the web browser to receive an event indicative of an unload of the content.
+
+Claim 8 [dep on 1]:
+The method of claim 1 further comprises retrieving, by the browser agent, data describing resources used to render content currently rendered by the web browser; determining, by the browser agent, transaction context data that identifies a transaction execution which caused the rendering of the content; determining, by the browser agent, a most recent time at which a resource load or content mutation changed a visible portion of the content currently rendered by the web browser; and creating, by the browser agent, the data transfer record, where the data transfer record includes the transaction context data, the data describing resources used to render content and the most recent time at which the resource load or content mutation changed a portion of the content.
+
+Claim 9 [dep on 1]:
+The method of claim 1 further comprises sorting, by the monitoring node, chronologically update events received in the data transfer record, where each update record specifies position and size of the display area affected by corresponding change to the document object model; determining, by the monitoring node, a percentage of the visible content area having content that is rendered by the web browser at different time increments during rendering of content, where the percentage is based on the update events received in the data transfer record and defines a time series.
+
+Claim 10 [dep on 9]:
+The method of claim 9 further comprises determining, by the monitoring node, a function that represents the time series; computing, by the monitoring node, a mathematical integral of the function from a start of the rendering process to an end of the rendering process; computing, by the monitoring node, a value for overall area by multiplying the visible content area by a render time; and computing, by the monitoring node, a performance index by subtracting the mathematical integral from the value for the overall area.
+
+Claim 11 [dep on 3]:
+The method of claim 3 further comprises gathering process visualization data in response to detecting the end of content processing, wherein gathering process visualization data includes assigning, by the browser agent, a unique identifier to each element of the document object model identified in the one or more changes; creating, by the browser agent, a mutation entry for each of the one or more changes, where the mutation entry includes data describing the given change and a unique identifier for the element of the document object model affected by the given change; capturing, by the browser agent, a text representation of the content, where the text representation includes another unique identifier; and adding, by the browser agent, the mutation entries and the text representation of the content to the data transfer record.
+
+Claim 12 [dep on 11]:
+The method of claim 11 further comprises rendering, by the monitoring node, the process visualization data on a display associated with the server computer.
+
+Claim 13 [dep on 12]:
+The method of claim 12 wherein rendering of the process visualization data includes: identifying times during rendering of the content at which significant changes occur in the rendered content; setting current version of the content at most recent of the identified times as the text representation of the content; for each identified time, identifying mutation entries and resource loads with a time later than the identified time; for each identified time, inversely applying the identified mutation entries and resource loads to the current version of the content to yield a version of the content at the identified time; for each identified time, storing the version of the content at the identified time, along with the identified time, for subsequent visualization; and for each identified time, setting the current version of the content to the version of content at the identified time.
+
+Claim 14 [dep on 12]:
+The method of claim 12 wherein rendering of the process visualization data includes: maintaining a listing of resources used for the rendering process; detecting that the given notification for the one or more changes to the document object model increases visual completeness of the content displayed by the web browser; fetching a given resource entry for a given resource from the listing of resources, where the given resource entry corresponds to the one or more changes to the document object model; and setting an indicator in the given resource entry to a value indicating that the given resource is relevant to the content displayed by the web browser.
+
+Claim 15 [dep on 13]:
+The method of claim 13 wherein the rendering of the process visualization further includes, for the version of the content at the identified time, identifying elements of the version of the content corresponding to the identified mutation entries using the unique identifiers assigned to the elements.
+
+Claim 16 [dep on 13]:
+The method of claim 13 wherein rendering of the process visualization data further includes, for the version of the content at the identified time, identifying mutation entries and resource loads that are between the identified time and next earlier identified time of the content version; and marking the identified mutations and resource loads as changes of the content between the next earlier identified time and the identified time of the content version.
+
+Claim 17 [dep on 1]:
+The method of claim 1 wherein the one or more changes to the document object model are caused by one of loading new content by the web browser or a user interaction with the content rendered by the web browser, such that the user interaction does not cause an unload of the content rendered by the web browser.
+
+Claim 18 [independent]:
+A system for monitoring content rendered by a web browser residing on a computing device, comprising: a processor in the computing device; a browser agent injected in the content displayed by the web browser and executed by the processor of the computing device, where the browser agent includes: a DOM processor configured to receive a given notification pertaining to a document object model for the content rendered by the web browser and, in response to receiving the given notification, processing the given notification by the browser agent, where the given notification includes one or more changes to the document object model and processing of the given notification includes determining current time, extracting the one or more changes from the given notification, and associating the current time with each of the one or more changes extracted from the given notification; an end-of-content detector configured to detect end of content processing by the web browser; a data analyzer, in response to detecting the end of content processing, creates an update event for each of the one or more changes in a data transfer record by determining a visible content area of the web browser; determining position and size of a display area corresponding to a given change to the document object model and determining whether the display area intersects with the visible content area of the web browser; and creating the update event in the data transfer record only in response to the display area intersecting with the visible content area of the web browser, wherein each update event record specifies time at which the given change to the document object model occurred, and position and size of display area affected by corresponding change to the document object model; and sends the data transfer record over a network to a monitoring node, where the monitoring node resides on a server computer and the server computer is located remotely from the computing device.
+
+Claim 19 [dep on 18]:
+The system of claim 18 wherein the one or more changes to the document object model are further defined as elements added to the document object model, elements removed from the document object model, and updates to values of attributes of elements in the document object model.
+
+Claim 20 [dep on 18]:
+The system of claim 18 wherein the data analyzer operates to retrieve data describing resources used to render content currently rendered by the web browser, determines transaction context data that identifies a transaction execution which caused the rendering of the content, determines a most recent time at which a resource load or content mutation changed a visible portion of the content currently rendered by the web browser, and creates the data transfer record, where the data transfer record includes the transaction context data, the data describing resources used to render content and the most recent time at which the resource load or content mutation changed a portion of the content.
+
+Claim 21 [dep on 18]:
+The system of claim 18 further comprises a data generator residing on the server computer and is configured to receive the data transfer record, wherein the data generator computes a performance index for the rendering process by sorting chronologically update events received in the data transfer record; determining a percentage of the visible content area having content that is rendered by the web browser at different time increments during rendering of content, where the percentage is based on the update events received in the data transfer record and defines a time series; determining a function that represents the time series; computing, by the monitoring node, a mathematical integral of the function from a start of the rendering process to an end of the rendering process; computing a value for overall area by multiplying the visible content area by a render time; and computing a performance index by subtracting the mathematical integral from the value for the overall area.
+
+Claim 22 [dep on 18]:
+The system of claim 18 wherein the data analyzer gathers process visualization data in response to detecting the end of content processing further comprises gathering process visualization data; and the data generator renders the process visualization data on a display associated with the server computer.
+
+Claim 23 [dep on 18]:
+The system of claim 18 wherein the data analyzer gathers process visualization data by assigning a unique identifier to each element of the document object model identified in the one or more changes; creating a mutation entry for each of the one or more changes, where the mutation entry includes data describing the given change and the unique identifier for the element of the document object model affected by the given change; capturing a text representation of the content, where the text representation includes another unique identifier; and adding the mutation entries and the text representation of the content to the data transfer record.
+
+Claim 24 [dep on 23]:
+The system of claim 23 wherein the data generator renders the process visualization data by: identifying times during rendering of the content at which significant changes occur in the rendered content; setting current version of the content at most recent of the identified times as the text representation of the content; for each identified time, identifying mutation entries and resource loads with a time later than the identified time; for each identified time, inversely applying the identified mutation entries and resource loads to the current version of the content to yield a version of the content at the identified time; for each identified time, storing the version of the content at the identified time, along with the identified time, for subsequent visualization; and for each identified time, setting the current version of the content to the version of content at the identified time.
+
+Claim 25 [dep on 24]:
+The system of claim 24 wherein the data generator selects elements of the version of the content corresponding to the identified mutation entries using the unique identifiers assigned to the elements.
+
+Claim 26 [independent]:
+A computer-implemented method for monitoring rendering of content by a web browser residing on a computing device, comprising: receiving, by a browser agent, a given notification pertaining to a document object model for the content rendered by the web browser, where the browser agent is injected into the content displayed by the web browser and the given notification includes one or more changes to the document object model; in response to receiving the given notification, processing the given notification by the browser agent, where the processing of the given notification includes determining current time, extracting the one or more changes from the given notification, associating the current time with each of the one or more changes extracted from the given notification, and creating an update event for each of the one or more changes; detecting, by the browser agent, end of content processing by the web browser; and in response to detecting the end of content processing, computing a performance index and sending the performance index in a data transfer record by the browser agent over a network to a monitoring node, where the monitoring node resides on a server computer and the server computer is located remotely from the computing device; wherein computing the performance index includes sorting chronologically the update events, where each update record specifies position and size of a display area affected by corresponding change to the document object model; determining a percentage of a visible content area having content that is rendered by the web browser at different time increments during rendering of content, where the percentage is based on the update events and defines a time series; determining a function that represents the time series; computing a mathematical integral of the function from a start of the rendering process to an end of the rendering process; computing a value for overall area by multiplying the visible content area by a duration of the rendering process; and setting the performance index equal to difference between the value for the overall area and the mathematical integral.
+
+Claim 27 [dep on 26]:
+The method of claim 26 wherein receiving a given notification further comprises registering with the web browser to receive notifications pertaining to the document object model.
+
+Claim 28 [dep on 26]:
+The method of claim 26 wherein the one or more changes to the document object model are further defined as elements added to the document object model, elements removed from the document object model, and updates to values of attributes of elements in the document object model.
+
+Claim 29 [dep on 26]:
+The method of claim 26 wherein detecting end of content processing further comprises detecting a user interaction with the content rendered by the web browser, where the user interaction is interpreted as end of content processing.
+
+Claim 30 [dep on 26]:
+The method of claim 26 wherein detecting end of content processing further comprises determining an amount of time since a change to the document object model, comparing the amount of time to a threshold, where the amount of time since a change to the document object model that is greater than the threshold is interpreted as end of content processing.
+
+Claim 31 [dep on 26]:
+The method of claim 26 wherein detecting end of content processing further comprises registering with the web browser to receive an event indicative of an unload of the content.
+
+Claim 32 [dep on 26]:
+The method of claim 26 further comprises retrieving, by the browser agent, data describing resources used to render content currently rendered by the web browser; determining, by the browser agent, transaction context data that identifies a transaction execution which caused the rendering of the content; determining, by the browser agent, a most recent time at which a resource load or content mutation changed a visible portion of the content currently rendered by the web browser; and creating, by the browser agent, the data transfer record, where the data transfer record includes the transaction context data, the data describing resources used to render content and the most recent time at which a resource load or content mutation changed a portion of the content.
+
+Claim 33 [dep on 26]:
+The method of claim 26 wherein creating an update event further comprises determining the visible content area of the web browser; for each change to the document object model, determining position and size of the display area corresponding to a given change to the document object model and determining whether the display area intersects with the visible content area of the web browser; and for each change to the document object model, creating an update event in the data transfer record only when the display area intersects with the visible content area of the web browser.
