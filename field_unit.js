@@ -22,6 +22,8 @@ const {
   computeGroupScenarios,
   wcSortByTiebreakers,
   computeBest3rdRanking,
+  wcApplyOutcome,
+  wcPoissonExpectedGoals,
   wcMakePRNG,
 } = require('./field_utils.js');
 
@@ -606,6 +608,66 @@ test('computeBest3rdRanking: pMiss + pQualify == pAsThird', () => {
   }
 });
 
+// ── v1.4 Poisson margin model tests ──────────────────────────────────────────
+
+test('v1.4: wcPoissonExpectedGoals — home win E[goals] > away win E[goals] for dominant home', () => {
+  // Germany vs Curaçao: λH=3.649, λA=0.385 — home massive favourite
+  const hGoals = wcPoissonExpectedGoals(3.649, 0.385, 'H', 'home');
+  const aGoals = wcPoissonExpectedGoals(3.649, 0.385, 'H', 'away');
+  assert(hGoals > 2.5, `Expected home goals > 2.5, got ${hGoals.toFixed(3)}`);
+  assert(hGoals > aGoals + 2, `Expected home goals >> away goals, got H=${hGoals.toFixed(2)} A=${aGoals.toFixed(2)}`);
+});
+
+test('v1.4: wcPoissonExpectedGoals — draw produces equal expected goals both sides', () => {
+  // For a symmetric match (λH = λA), draw E[goals] should be equal
+  const hGoals = wcPoissonExpectedGoals(1.3, 1.3, 'D', 'home');
+  const aGoals = wcPoissonExpectedGoals(1.3, 1.3, 'D', 'away');
+  assert(Math.abs(hGoals - aGoals) < 0.001, `Symmetric draw should give equal expected goals, got H=${hGoals.toFixed(3)} A=${aGoals.toFixed(3)}`);
+});
+
+test('v1.4: matchMeta activates Poisson margins in wcApplyOutcome', () => {
+  // With λH=3.0, λA=0.4 a home win should produce GD > 1 (Poisson model)
+  // Without matchMeta (minimum model): always 1-0 → GD=1
+  const teamMap = {
+    Home: { name:'Home', P:0, W:0, D:0, L:0, GF:0, GA:0, Pts:0 },
+    Away: { name:'Away', P:0, W:0, D:0, L:0, GF:0, GA:0, Pts:0 },
+  };
+  const sink = [];
+  wcApplyOutcome(teamMap, 'Home', 'Away', 'H', sink, { lambdaHome: 3.0, lambdaAway: 0.4 });
+  // With λH=3.0 and λA=0.4, E[home goals | win] ≈ 3.2 → rounds to 3
+  // Minimum model would give 1-0 GD=1
+  const gd = teamMap.Home.GF - teamMap.Home.GA;
+  assert(gd > 1, `Poisson margin should produce GD > 1 for dominant home team (λH=3.0 λA=0.4), got GD=${gd}`);
+});
+
+test('v1.4: matchMeta propagates through computeGroupScenarios via outcomeProbs', () => {
+  // Run engine with high-lambda home team. pQualifyTop2 should be market-weighted
+  // (non-null) and Germany should dominate with λH=3.6, λA=0.4 (93% win odds).
+  const teams = [
+    { name:'Ger', P:0, W:0, D:0, L:0, GF:0, GA:0, Pts:0 },
+    { name:'Cur', P:0, W:0, D:0, L:0, GF:0, GA:0, Pts:0 },
+    { name:'Ned', P:0, W:0, D:0, L:0, GF:0, GA:0, Pts:0 },
+    { name:'Swe', P:0, W:0, D:0, L:0, GF:0, GA:0, Pts:0 },
+  ];
+  // Single remaining match with extreme λ: Germany (λH=3.6) vs Curaçao (λA=0.4)
+  const probs = [{ pHome:0.93, pDraw:0.05, pAway:0.02, lambdaHome:3.6, lambdaAway:0.4 }];
+  const r = computeGroupScenarios({
+    groupId: 'E', teams, played: [],
+    remaining: [{home:'Ger', away:'Cur'}],
+    outcomeProbabilities: probs,
+  });
+  // Verify: pQualifyTop2 is non-null (weighted probabilities active)
+  const gerInfo = r.perTeam['Ger'];
+  assert(gerInfo.pQualifyTop2 !== null, 'pQualifyTop2 should be non-null when lambdas provided');
+  assert(gerInfo.pQualifyTop2 > 0.9,
+    `Germany qualifies top-2 >90% with 93% win odds, got ${gerInfo.pQualifyTop2?.toFixed(3)}`);
+  // Curaçao should rarely qualify
+  const curInfo = r.perTeam['Cur'];
+  assert(curInfo.pQualifyTop2 < 0.1,
+    `Curaçao qualifies top-2 <10% as heavy underdogs, got ${curInfo.pQualifyTop2?.toFixed(3)}`);
+});
+
 // ── Summary ────────────────────────────────────────────────────────────────
 console.log(`\n── Results: ${pass} passed, ${fail} failed ─────────────\n`);
 if (fail > 0) process.exit(1);
+

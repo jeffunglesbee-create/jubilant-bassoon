@@ -599,7 +599,11 @@ function wcEnumerateScenarios(teamMap, played, remaining, outcomeProbs, fairPlay
       const code = codes[bits % 3];
       bits = Math.floor(bits / 3);
       outcomeList.push({home: remaining[k].home, away: remaining[k].away, outcome: code});
-      wcApplyOutcome(tm, remaining[k].home, remaining[k].away, code, playedCopy);
+      // v1.4: pass matchMeta with Poisson lambdas when provided in outcomeProbs
+      const matchMeta = (useProbs && outcomeProbs[k]?.lambdaHome != null)
+          ? { lambdaHome: outcomeProbs[k].lambdaHome, lambdaAway: outcomeProbs[k].lambdaAway }
+          : null;
+      wcApplyOutcome(tm, remaining[k].home, remaining[k].away, code, playedCopy, matchMeta);
       if (useProbs) {
         const p = outcomeProbs[k];
         prob *= (code === 'H' ? p.pHome : code === 'D' ? p.pDraw : p.pAway);

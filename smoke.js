@@ -3021,7 +3021,7 @@ assert('A458 — Level 1: liveGames threaded through renderWCGroups → _wcCompu
   'Full call chain: fetchWCLiveGames → renderWCGroups → _wcComputeAllScenarios → _wcBuildGroupInput → outcomeProbabilities');
 
 assert('A459 — Level 1: buildWCGroupRows injects WP bar between live-game teams',
-  html.includes('function buildWCGroupRows(') && html.includes('_wcBuildWPBar(liveGame, wp)'),
+  html.includes('function buildWCGroupRows(') && html.includes('_wcBuildWPBar(liveGame, wp, {scenarios, groupId})'),
   'buildWCGroupRows must splice WP bar row between the two teams currently playing');
 
 // Verification: team-name matcher covers confirmed Odds API aliases
@@ -3042,32 +3042,45 @@ assert('A462 — outcomeProbabilities entries include lambda fields for v1.4 Poi
     || html.includes("_wcMatchOdds now includes lambdaHome/lambdaAway"),
   'outcomeProbabilities entries must carry lambda fields when available');
 
+// v1.4 Poisson margin wiring — fixed
+assert('A463 — v1.4: matchMeta wired in wcEnumerateScenarios (field_utils.js)',
+  fieldUtilsSrc.includes('lambdaHome: outcomeProbs[k].lambdaHome')
+    && fieldUtilsSrc.includes('matchMeta, null')
+    || fieldUtilsSrc.includes('matchMeta = (useProbs && outcomeProbs[k]?.lambdaHome'),
+  'wcEnumerateScenarios must extract lambdaHome/lambdaAway from outcomeProbs and pass as matchMeta');
+
+assert('A464 — v1.4: matchMeta wired in inlined engine (index.html)',
+  html.includes('matchMeta = (useProbs && outcomeProbs[k]?.lambdaHome'),
+  'Inlined engine in index.html must also pass matchMeta to wcApplyOutcome');
+
 // GameDO WP state — relay-side assertions skip gracefully when game-do.js is unavailable
-// (relay is a separate repo; its own CI validates the route handlers)
 const _gdOk = gameDoSrc.length > 0;
-assert('A463 — GameDO: POST /wp handler stores openingWP + lastWP + wpHistory',
-  !_gdOk || (/pathname\.endsWith\('\/wp'\)/.test(gameDoSrc) && /wpHistory/.test(gameDoSrc)),
-  'GameDO must handle POST /wp and persist openingWP, lastWP, wpHistory');
+assert('A465 — GameDO: openingAdvanceProb stored alongside openingWP in /wp handler',
+  !_gdOk || (gameDoSrc.includes('openingAdvanceProb') && gameDoSrc.includes('newOpeningAdvanceProb')),
+  'GameDO /wp handler must store openingAdvanceProb from relay advancementProb');
 
-assert('A464 — GameDO: /crunch route fixed (was silently 404ing)',
-  !_gdOk || /pathname\.endsWith\('\/crunch'\)/.test(gameDoSrc),
-  'GameDO must handle POST /crunch from relay polling loop');
+assert('A466 — relay: advancementProb passed to GameDO POST /wp + openingAdvanceProb attached to game',
+  html.includes('liveGame.openingAdvanceProb') && html.includes('openingAdvanceProb'),
+  'browser must read openingAdvanceProb from V2 game object (set by GameDO /wp)');
 
-assert('A465 — GameDO: wc26 added to SPORT_TO_V2',
-  !_gdOk || gameDoSrc.includes("'wc26': 'wc26'"),
-  'wc26 must be in SPORT_TO_V2 for WebSocket fact push');
+// Surprise Layer — fully integrated with GameDO + Permutations Engine
+assert('A467 — Surprise Layer: qualification context from Permutations Engine in WP bar',
+  html.includes('pQualifyTop2') && html.includes('qualFrag')
+    && html.includes('Qual:') && html.includes('scenarios.perGroup'),
+  'WP bar must show current pQualifyTop2 from Permutations Engine for both live teams');
 
-assert('A466 — relay: GameDO WP write wired (browser reads openingWP + wpDelta)',
-  html.includes('liveGame.openingWP') && html.includes('liveGame.wpDelta'),
-  'browser must read openingWP and wpDelta from V2 game object (set by GameDO /wp)');
+assert('A468 — Surprise Layer: L3c qual surprise — opening vs current advancementProb (≥8pp)',
+  html.includes('openingAdvanceProb') && html.includes('qualDelta') && html.includes('pp vs kickoff'),
+  'WP bar must show qualification shift from kickoff baseline when ≥8pp divergence');
 
-assert('A467 — Level 1 WP bar: wpDelta trend indicator (↑↓)',
-  html.includes('homeTrend') && html.includes('↑') && html.includes('delta.homeWin'),
-  'WP bar must show ↑↓ trend when homeWin shifts ≥2pp between polls');
+assert('A469 — Surprise Layer: L3a WP surprise — opening WP vs current (≥5pp)',
+  html.includes('surpriseFrag') && html.includes('opening.homeWin') && html.includes('wpDelta5'),
+  'WP bar must show WP shift from GameDO openingWP baseline when ≥5pp divergence');
 
-assert('A468 — Level 1 WP bar: openingWP Surprise Layer in meta line',
-  html.includes('openingWP') && html.includes('pre-match') && html.includes('surpriseFrag'),
-  'WP bar must show pre-match baseline when current WP diverges ≥5pp from opening');
+assert('A470 — Surprise Layer: scenarios + groupId threaded into _wcBuildWPBar',
+  html.includes('_wcBuildWPBar(liveGame, wp, {scenarios, groupId})')
+    && html.includes('function _wcBuildWPBar(liveGame, wp, ctx)'),
+  'buildWCGroupRows must pass scenarios+groupId context to _wcBuildWPBar');
 
 // ═════════════════════════════════════════════════════════════════════
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);

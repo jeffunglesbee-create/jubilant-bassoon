@@ -18354,7 +18354,11 @@ function wcEnumerateScenarios(teamMap, played, remaining, outcomeProbs, fairPlay
       const code = codes[bits % 3];
       bits = Math.floor(bits / 3);
       outcomeList.push({home: remaining[k].home, away: remaining[k].away, outcome: code});
-      wcApplyOutcome(tm, remaining[k].home, remaining[k].away, code, playedCopy);
+      // v1.4: pass matchMeta with Poisson lambdas when available in outcomeProbs
+      const matchMeta = (useProbs && outcomeProbs[k]?.lambdaHome != null)
+          ? { lambdaHome: outcomeProbs[k].lambdaHome, lambdaAway: outcomeProbs[k].lambdaAway }
+          : null;
+      wcApplyOutcome(tm, remaining[k].home, remaining[k].away, code, playedCopy, matchMeta);
       if (useProbs) {
         const p = outcomeProbs[k];
         prob *= (code === 'H' ? p.pHome : code === 'D' ? p.pDraw : p.pAway);
@@ -23803,7 +23807,7 @@ function buildWCGroupRows(standingsArr, scenarios, groupId, liveGame) {
     const awayIdx = standingsArr.findIndex(r => _wcMatchTeamName(r.team, liveGame.away.name));
     if (homeIdx !== -1 && awayIdx !== -1) {
       const insertAfter = Math.min(homeIdx, awayIdx); // insert bar after the higher-placed team
-      const wpBar = _wcBuildWPBar(liveGame, wp);
+      const wpBar = _wcBuildWPBar(liveGame, wp, {scenarios, groupId});
       rows.splice(insertAfter + 1, 0, wpBar);
     }
   }
@@ -23903,46 +23907,79 @@ function _wcComputeAllScenarios(standings, matchResults, fairPlayPoints, oddsPro
 }
 
 // Level 1 — build the live WP bar row (injected between the two playing teams)
-function _wcBuildWPBar(liveGame, wp) {
-  const hPct  = Math.round(wp.homeWin * 100);
-  const dPct  = Math.round(wp.draw    * 100);
-  const aPct  = 100 - hPct - dPct;
+// Level 1 + Surprise Layer — live win probability bar with full context.
+// Integrates: GameDO (openingWP, wpDelta, openingAdvanceProb) +
+//             Permutations Engine (current pQualifyTop2 per team)
+//
+// Display layers:
+//   L1: 3-segment WP bar (home/draw/away), source label, pulse animation
+//   L1+: wpDelta trend (↑↓ on ≥2pp shift per 30s poll)
+//   L3a: WP Surprise — current vs opening baseline (≥5pp divergence shown)
+//   L3b: Qualification context — current Permutations pQualifyTop2 for both teams
+//   L3c: Qual Surprise — current vs opening advanceProb (≥8pp divergence shown)
+function _wcBuildWPBar(liveGame, wp, ctx) {
+  const {scenarios, groupId} = ctx || {};
+  const hPct = Math.round(wp.homeWin * 100);
+  const dPct = Math.round(wp.draw    * 100);
+  const aPct = 100 - hPct - dPct;
   const hName = liveGame.home?.name || '';
   const aName = liveGame.away?.name || '';
   const clock = liveGame.situation?.elapsed ? `${liveGame.situation.elapsed}'` : 'LIVE';
   const src   = wp.source || 'shots-proxy';
 
-  // wpDelta trend: show ↑↓ when homeWin shifts ≥2pp since last poll (30s)
+  // L1+: wpDelta trend indicator (≥2pp threshold suppresses noise)
   const delta = liveGame.wpDelta;
   let homeTrend = '', awayTrend = '';
   if (delta && Math.abs(delta.homeWin) >= 0.02) {
     homeTrend = delta.homeWin > 0 ? ' ↑' : ' ↓';
     awayTrend = delta.homeWin > 0 ? ' ↓' : ' ↑';
   }
-
-  // Label clipping on narrow segments
   const hLabel = hPct >= 12 ? `${hName.split(' ')[0]} ${hPct}%${homeTrend}` : `${hPct}%`;
   const aLabel = aPct >= 12 ? `${aPct}%${awayTrend} ${aName.split(' ').pop()}` : `${aPct}%`;
   const dLabel = dPct >= 8 ? `D ${dPct}%` : dPct >= 4 ? `${dPct}%` : '';
 
-  // Surprise Layer (Level 3): opening WP baseline from GameDO
+  // L3b: qualification context from Permutations Engine
+  let qualFrag = '';
+  if (scenarios && groupId && scenarios.perGroup && scenarios.perGroup[groupId]) {
+    const pt = scenarios.perGroup[groupId].perTeam;
+    const hInfo = pt[hName] || pt[Object.keys(pt).find(n => _wcMatchTeamName(n, hName))];
+    const aInfo = pt[aName] || pt[Object.keys(pt).find(n => _wcMatchTeamName(n, aName))];
+    if (hInfo?.pQualifyTop2 != null && aInfo?.pQualifyTop2 != null) {
+      const hQPct = Math.round(hInfo.pQualifyTop2 * 100);
+      const aQPct = Math.round(aInfo.pQualifyTop2 * 100);
+      qualFrag = ` · Qual: ${hName.split(' ')[0]} ${hQPct}%, ${aName.split(' ').pop()} ${aQPct}%`;
+
+      // L3c: qual surprise — opening advanceProb vs current Permutations
+      const oa = liveGame.openingAdvanceProb;
+      if (oa && oa.homeAdvance != null) {
+        const openHQPct = Math.round(oa.homeAdvance * 100);
+        const qualDelta = hQPct - openHQPct;
+        if (Math.abs(qualDelta) >= 8) {
+          const sign = qualDelta > 0 ? '+' : '';
+          qualFrag += ` (${sign}${qualDelta}pp vs kickoff)`;
+        }
+      }
+    }
+  }
+
+  // L3a: WP surprise — opening WP baseline from GameDO (≥5pp divergence)
   const opening = liveGame.openingWP;
   let surpriseFrag = '';
   if (opening && Math.abs(wp.homeWin - opening.homeWin) >= 0.05) {
     const openPct = Math.round(opening.homeWin * 100);
-    const dir = wp.homeWin > opening.homeWin ? 'up' : 'down';
-    surpriseFrag = ` · ${hName.split(' ')[0]} was ${openPct}% pre-match`;
-    if (dir === 'down') surpriseFrag += ' ▼';
+    const wpDelta5 = hPct - openPct;
+    const sign = wpDelta5 > 0 ? '+' : '';
+    surpriseFrag = ` · ${hName.split(' ')[0]} was ${openPct}% (${sign}${wpDelta5}pp)`;
   }
 
   return `<tr class="wc-wp-row">
     <td colspan="10">
-      <div class="wc-wp-bar" title="Live win probability · ${clock} · source: ${src}">
+      <div class="wc-wp-bar" title="Live win probability · ${clock} · source: ${src}${surpriseFrag}${qualFrag}">
         <div class="wc-wp-home" style="width:${hPct}%">${hLabel}</div>
         <div class="wc-wp-draw" style="width:${dPct}%">${dLabel}</div>
         <div class="wc-wp-away" style="width:${aPct}%">${aLabel}</div>
       </div>
-      <div class="wc-wp-meta">⚽ Live · ${clock} · ${src}${surpriseFrag}</div>
+      <div class="wc-wp-meta">⚽ Live · ${clock} · ${src}${surpriseFrag}${qualFrag}</div>
     </td>
   </tr>`;
 }
