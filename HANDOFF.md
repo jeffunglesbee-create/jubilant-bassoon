@@ -1,114 +1,111 @@
 # FIELD HANDOFF — 2026-06-05 (Session END)
 
 ## State
-jubilant-bassoon HEAD: 538532e · Smoke: 501/0 · Unit tests: 66/0
-field-relay-nba HEAD: 25d8fbc (scoreboard probe workflow + allow-list)
-SW_VERSION: 2026-06-05a
-Time: ~3:45pm ET · G2 tip: 8:30pm ET tonight (NYK @ SAS · ABC)
+jubilant-bassoon HEAD: 0779cc8 · Smoke: 504/0 · Unit tests: 66/0
+field-relay-nba HEAD: 25d8fbc
+SW_VERSION: 2026-06-05a (no bump — no user-facing change this session)
+Time: evening ET · G2 tip: 8:30pm ET tonight (NYK @ SAS · ABC)
 
 ## Session Ships (chronological)
 
-### PM-24: verified confidence reachable (79cee15 → 89b765e)
-findScore aggregates witnesses across fuzzy-matched _scoresBySource keys.
-ESPN "New York Knicks|San Antonio Spurs" + api-sports "Knicks|Spurs" now
-both contribute → verified branch reachable. _pm24_matched diagnostic field.
-Smoke 494→497 (A486, A487, A488).
+### Pre-build: Amnesty Zone Definition (Type D — earlier today)
+Resolved the "Arc Poster" PPUBS blocker from the prior session.
+"Amnesty data" is now canonically defined: game.dramaScore,
+drama_score_peak, getDramaHistory() time-series, five vector
+final values, historical percentile, arc personality label.
+All surfaced at data-state="post". RUWT scope confirmed: in-game
+only. Six-hour post-game window framed as FIELD's staked territory.
+Drive: 1qyek7_eBtPvrqhVVljnKZhtmHn9GgVF9h1NilaGX9xc
 
-### Scoreboard P0 probe allow-list (relay e0b44e7)
-/nba/liveData/scoreboard/todaysScoreboard_00.json added to probe_relay_route
-ALLOWED_EXACT. Probe confirmed HTTP 200, valid JSON. CDN returns games:[]
-at 10am ET — normal early-day state, not a bug.
+### PM-25a — renderCardBadges() Card Render Slot (0779cc8, A493)
+Extracted ~80-line inline badge block from injectDramaBadges() into:
+  renderCardBadges(card, eData, sport, gid, smoothed)
+Single callsite for all live-card badge mutations: CRUNCH TIME,
+WORTH WATCHING, drama tier badge, EMBER, MLBN alert.
+Unblocks: confidence glyph, CRUNCH Fan-Out chip, WS Pulse on cards.
+DOM-only per A191 rule — stays in index.html, not field_utils.
 
-### A489: Finals Desk CI gate (4f021cc)
-Converted "verify at G2 via window._lastCompoundPrompt" from human-loop check
-to structural smoke assertion. matchupNote → buildCompoundPrompt Context line
-now CI-gated. Smoke 497→498.
+### PM-25b — Drama Dial categorical tier refactor (0779cc8, A494, A495)
+Added _otwGetLiveTier(eData, sport, smoothed) returning named condition
+strings (CRUNCH / EXTRA_TIME / CLOSE_FINISH / LIVE_GAME) from binary
+factual booleans (period, margin, SPORT_CRUNCH_RULES).
+Added _otwTierLabel(tier) for display string mapping.
+Wired into OTW FIRE state — replaces dramaTier(score)||'warm'.
+OLD: numeric composite score → tier band label
+NEW: binary factual conditions → named observation label
+Same pattern as _otwFindWCLiveGame. RUWT Rule 51 MODERATE → RESOLVED.
+Smoke 501→504 (A493, A494, A495).
 
-### Drama Dial OTW wiring A490 (00e9d25)
-Both OTW FIRE callsites replaced _otwFindLiveGame(50) → getDramaDial().
-Badges and OTW selection now governed by same user preference. RUWT Rule 51
-MODERATE resolved (user-controlled threshold, not fixed). Smoke 498→499.
+## DO NOT ASSUME corrections
 
-### Scoreboard P0 fully resolved (bcae437, A491)
-parseNBAScoreboardGames extracted to field_utils.js + index.html (A191 rule).
-fetchNBAScoreboard delegates to it. 6 synthetic unit tests (60→66): NYK@SAS
-4-key map, teamNick path, missing gameId skip, empty array, null CDN state,
-multiple games. Smoke 499→500.
+Drama Dial categorical tier refactor is SHIPPED (PM-25b, 0779cc8).
+Prior HANDOFF listed it as pending Item 12 under "Patent priority."
+It is now done. USPTO June 25 filing was cancelled June 4 — that
+header framing is stale and has been removed from the priority list.
 
-### RUWT compliance: manifest + dial preview (538532e, A492)
-RISK 1: PWA manifest "drama scores" → "drama intelligence" (public admission fix)
-RISK 2: Dial preview "Badges at 65+" → "Close games get badges" (no threshold exposure)
-Smoke 500→501.
-
-## DO NOT ASSUME corrections from this session
-
-Drama Dial was incorrectly classified as Class D ("no code"). The "Drama
-Sensitivity" slider in My Services IS the Drama Dial — fully built, localStorage
-+ IDB + SW sync, controls getDramaScore() thresholds. OTW wiring added A490.
-Missing: header chip (main-view discoverability) + categorical tier refactor.
-
-Scoreboard P0: prior HANDOFF said "RESOLVED" after just the probe allow-list.
-That was imprecise — parsing was unverified. Now fully resolved with unit tests.
+getDramaHistory(game.id) EXISTS in codebase (~line 24875). Whether
+it is being POPULATED during live games (recordDramaHistory() call
+chain) is UNVERIFIED. Must confirm before Arc Poster build.
 
 ## G2 Verification Checklist (NYK @ SAS · 8:30pm ET · ABC)
 
 1. ~6pm ET — Re-probe NBA CDN scoreboard:
    field-relay-nba/.github/workflows/scoreboard-probe.yml → workflow_dispatch
    Look for: non-empty games array, gameId for NYK@SAS, gameDate = 2026-06-05
-   If populated: _nbaGameIdMap will fill at tip, PBP features active for G2
 
 2. At G2 tip — PM-24 verification:
-   Open console:
-     findScore({home:'NYK', away:'SAS'})._pm24_matched
-   Expected: array with 2 keys (ESPN + api-sports). confidence = 'verified' or
-   'mismatch' (either beats 'single'). Card text: "62-58 Q3 ✓" or "62-58 Q3 ⚠"
+   findScore({home:'NYK', away:'SAS'})._pm24_matched
+   Expected: array with 2 keys. confidence = 'verified' or 'mismatch'
 
-3. At G2 tip — Finals Desk verification (A489 structural, this is runtime):
-   Open console:
-     window._lastCompoundPrompt
+3. At G2 tip — Finals Desk verification (A489 structural):
+   window._lastCompoundPrompt
    Should include "Context: NBA Finals G2 — NYK leads 1-0..."
+
+4. At G2 tip — PM-25b verification (new):
+   Open console during live game:
+   _otwGetLiveTier(espnData, 'Basketball', getSmoothedDrama(gameId))
+   Expected: 'CRUNCH' or 'CLOSE_FINISH' or 'LIVE_GAME' (string, not number)
 
 ## Priority List
 
 ### Time-gated (today/this week)
-  1. Re-probe NBA CDN scoreboard at ~6pm ET
-     → workflow_dispatch field-relay-nba/scoreboard-probe.yml
-  2. WC pre-flight — probe all relay endpoints before June 11 opener
+  1. WC pre-flight — probe all relay endpoints before June 11 opener
      → MEX vs RSA at Azteca, 12pm ET, FOX/Telemundo
      → D1 wc2026 f26669de-e772-4b56-a6d1-f8fdea08a4d4
-  3. BALLDONTLIE trial — June 11 opening match data source test
+  2. BALLDONTLIE trial — June 11 opening match data source test
 
 ### Infrastructure (unlock 3+ surfaces each)
-  4. PM-25 Card Render Slot
-     → renderCardBadges(card, eData) ~45 min
-     → unblocks: rich-visual confidence glyph, WS Pulse on cards, CRUNCH Fan-Out chip
-  5. PM-27 Event Bus Payload Standard
+  3. PM-27 Event Bus Payload Standard
      → standardize {type, target, source, reason, at, payload} ~30 min
      → unblocks: CRUNCH cascade chip, otw:changed beat, ws:fresh staleness
 
-### Subscribers (small, after hubs)
-  6. Rich-visual confidence glyph (~10 lines into PM-25 hook)
-  7. JQ Gate brand-safe fallback (~60 lines, parallel-trackable, no hub dep)
-  8. CRUNCH Fan-Out causality chip (~30 lines into PM-27 + PM-25)
-  9. OTW Changeover beat (~25 lines into PM-27)
-  10. WS Pulse on cards (~30 lines into PM-25 + PM-27)
-  11. iOS PWA Add-to-Home (~40 lines, parallel-trackable)
+### Subscribers (small, after PM-25 ✓ and PM-27)
+  4. Rich-visual confidence glyph (~10 lines into PM-25 hook ✓)
+  5. JQ Gate brand-safe fallback (~60 lines, parallel-trackable, no hub dep)
+  6. CRUNCH Fan-Out causality chip (~30 lines into PM-27 + PM-25 ✓)
+  7. OTW Changeover beat (~25 lines into PM-27)
+  8. WS Pulse on cards (~30 lines into PM-25 ✓ + PM-27)
+  9. iOS PWA Add-to-Home (~40 lines, parallel-trackable)
 
-### Patent priority (Jun 25 USPTO — ~20 days)
-  12. Drama Dial categorical tier refactor
-      → _otwFindLiveGame → named-condition tiers like _otwFindWCLiveGame
-      → RUWT Rule 51 MODERATE → resolved
-      → Also ships header chip discoverability (~20 lines)
-  13. Arc Poster — SVG render from existing Amnesty data (~200 lines, no backend)
-  14. State Transition PerformanceObserver (~30 lines + assertions)
+### Build items (patent-adjacent — USPTO filing cancelled June 4)
+  10. Arc Poster — SVG render from Amnesty data (~200 lines, no backend)
+      → YELLOW-GREEN novelty, park filing, build as product feature
+      → BLOCKER: verify getDramaHistory() is populated during live games
+        (recordDramaHistory() call chain — check in console at live game)
+      → getDramaHistory() exists (~line 24875), population unverified
+  11. State Transition PerformanceObserver (~30 lines + assertions)
+      → Product quality build, not a patent play
 
 ### Deferred / maintenance
-  15. A399 cleanup — detail string still says "verified unreachable" (now wrong)
-  16. field-relay-nba scoreboard-probe.yml — delete or keep as reusable diagnostic
+  12. A399 cleanup — detail string still says "verified unreachable" (now wrong)
+  13. field-relay-nba scoreboard-probe.yml — delete or keep as reusable diagnostic
 
 ## Key Refs
-jubilant-bassoon HEAD: 538532e
+jubilant-bassoon HEAD: 0779cc8
 field-relay-nba HEAD: 25d8fbc
 D1 wc2026: f26669de-e772-4b56-a6d1-f8fdea08a4d4
-Viewport spec: field-viewport-2026-06-05.html (outputs/)
-Smoke: 501/0 · Unit: 66/0
+Smoke: 504/0 · Unit: 66/0
+
+## Drive Docs (this day)
+Amnesty Zone Definition: 1qyek7_eBtPvrqhVVljnKZhtmHn9GgVF9h1NilaGX9xc
+Session doc (PM-25):     15ZflDC7r1tbZ7UdFP2ToTjUwJp_bHAAOKXO4IYE46nI
