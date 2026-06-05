@@ -6089,6 +6089,8 @@ const PEACOCK_GOTD_SCHEDULE = {
   '2026-05-27':'STL@MIL',   // Wed 1:40pm ET — STL @ MIL
   '2026-05-28':'CHC@PIT',   // Thu 6:40pm ET — CHC @ PIT
   '2026-05-29':'TOR@BAL',   // Fri 7:05pm ET — TOR @ BAL
+  // ── Week of June 2–8 2026 (source: peacocktv.com/blog, updated Jun 2 2026) ────
+  '2026-06-06':'BOS@NYY',   // Fri 7:05pm ET — BOS @ NYY (Peacock GOTD)
 };
 // MLB NETWORK: ALL non-exclusive out-of-market games (Showcase + regular).
 // NON-EXCLUSIVE: local RSN still airs; mlbnShowcase flag adds MLBN chip alongside RSN chip.
@@ -6125,7 +6127,7 @@ const MLBN_SCHEDULE = {
   '2026-06-02':['COL@LAA'],   // 9:30 PM ET
   // ── Showcase games (weekly featured broadcast, Vasgersian/Verducci) ──────
   '2026-06-03':'LAD@ARI',     // Wed 9:30pm — Showcase
-  '2026-06-05':'SFG@CHC',     // Thu 7:20pm ET — MLB Network (confirmed Jeff, June 5 2026)
+  '2026-06-06':'SFG@CHC',     // Fri 7:20pm ET — MLB Network (confirmed Jeff, June 6 2026)
   '2026-06-18':'NYM@PHI',     // Thu 6:30pm — Showcase
   '2026-06-25':'NYY@BOS',     // Thu 7:00pm — Showcase
   '2026-06-27':'LAD@SDP',     // Sat 8:30pm — Showcase
@@ -8970,6 +8972,8 @@ function buildTodaySchedule(){
     {home:"Arizona Diamondbacks",   away:"Washington Nationals", start_time:"2026-06-06T01:40:00Z", confirmed:true, venue:"Chase Field, Phoenix AZ"},
     {home:"San Diego Padres",       away:"New York Mets",        start_time:"2026-06-06T02:40:00Z", confirmed:true, venue:"Petco Park, San Diego CA"},
     {home:"Detroit Tigers",         away:"Seattle Mariners",     start_time:"2026-06-05T23:10:00Z", confirmed:true, venue:"Comerica Park, Detroit MI"},
+    // ── Sunday June 7 — NBC/Peacock Sunday Night Baseball ────────────────────
+    {home:"Chicago Cubs",           away:"San Francisco Giants", start_time:"2026-06-07T23:00:00Z", confirmed:true, venue:"Wrigley Field, Chicago IL", streams:resolveBundle("MLB_NBC"), nationalBundle:"MLB_NBC", matchupNote:"Sunday Night Baseball on NBC/Peacock. SFG vs CHC — Giants-Cubs rivalry night at Wrigley."},
   ];
   // Phase 2: build overlay map from field-data-today.json game_overlays
   const _mlbOverlayMap = {};
