@@ -34,11 +34,16 @@ jobs:
           echo "Script size: $(wc -c < outbox/relay-worker-update.js) bytes" >> "$RESULT"
           echo "" >> "$RESULT"
 
+          # Write metadata file for ES module workers
+          cat > /tmp/worker-metadata.json << 'METAEOF'
+{"main_module":"index.js","usage_model":"standard","compatibility_date":"2026-05-16","compatibility_flags":["global_fetch_strictly_public"]}
+METAEOF
+
           HTTP=$(curl -s -w "%{http_code}" -o /tmp/cf-deploy-response.txt \
             -X PUT \
             -H "Authorization: Bearer $CF_TOKEN" \
             -F "index.js=@outbox/relay-worker-update.js;type=application/javascript+module" \
-            -F 'metadata={"main_module":"index.js"};type=application/json' \
+            -F "metadata=@/tmp/worker-metadata.json;type=application/json" \
             "https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT_ID}/workers/scripts/${WORKER_NAME}")
 
           echo "HTTP status: $HTTP" >> "$RESULT"
