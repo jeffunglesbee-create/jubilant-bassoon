@@ -3104,6 +3104,32 @@ assert('A475 — relay computeAdvancementProb: cross-group thirdPlaceRate from D
   !gameDoSrc.length || true,  // relay-only: checked via wrangler dry-run
   'computeAdvancementProb must use estimateThirdPlaceRate from cross_group_rank');
 
+// Watch Engine WC fix
+assert('A476 — Watch Engine: _wcLiveGamesCache global + populated by fetchWCLiveGames',
+  html.includes('let _wcLiveGamesCache = []') && html.includes('_wcLiveGamesCache = live'),
+  '_wcLiveGamesCache must be a global populated when fetchWCLiveGames runs');
+
+assert('A477 — Watch Engine: _otwFindWCLiveGame RUWT-compliant WC selector',
+  html.includes('function _otwFindWCLiveGame()') && html.includes("source: 'permutations'")
+    || html.includes('function _otwFindWCLiveGame()') && html.includes('penalty_shootout'),
+  '_otwFindWCLiveGame must use binary named conditions for selection, never display the score');
+
+assert('A478 — Watch Engine: WC FIRE injected into STATE 1 (score >= 70)',
+  html.includes('wcFire && wcFire.score >= 70') && html.includes('_buildWCOTWLabel'),
+  'STATE 1 must surface high-drama WC live games via _otwFindWCLiveGame');
+
+assert('A479 — Watch Engine: WC LIVE injected into STATE 2',
+  html.includes('Live · WC') && html.includes('wcFire && wcFire.g._id'),
+  'STATE 2 must show any live WC game when no ESPN live game exists');
+
+assert('A480 — Watch Engine: STATE 5 QUIET guarded when WC is live',
+  html.includes('_wcLiveGamesCache.length > 0') && html.includes('Live · WC'),
+  'STATE 5 QUIET must not fire when WC games are live');
+
+assert('A481 — Watch Engine: preGameScore WC tier boost (group stage >= 40)',
+  html.includes('FIFA World Cup 2026') && html.includes('? 40 :') && html.includes('WC26_FREE'),
+  'preGameScore must have WC tier boost and WC bundles in nationalKeys');
+
 // ═════════════════════════════════════════════════════════════════════
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);

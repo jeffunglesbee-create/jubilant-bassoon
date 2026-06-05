@@ -7778,7 +7778,8 @@ function preGameScore(g){
   if (g._postponed) return 0; // PPD games excluded from ONE TO WATCH, ww-bar, TONIGHT
   const nb=g.narrative?.boost||0;
   const ib={series_deciding:30,elimination:20,clinch:15,playoff_impl:10}[g._gameImportance]||0;
-  const nationalKeys=new Set(['NBA_ESPN','NBA_ABC','NBA_NBC','NBA_PRIME','NHL_ESPN','NHL_ABC','NHL_TNT','MLB_TBS','MLB_FOX','MLB_APPLE','MLB_NBC','MLB_PEACOCK_SNB','NFL_PRIME','NFL_NBC','NFL_ESPN','NFL_ABC','NFL_CBS','NFL_FOX','MLS_FOX','MLS_FS1','EFL_FINAL','EFL_PLAYOFF','EPL_NBC','EPL_USA','EPL_PEACOCK']);
+  const nationalKeys=new Set(['NBA_ESPN','NBA_ABC','NBA_NBC','NBA_PRIME','NHL_ESPN','NHL_ABC','NHL_TNT','MLB_TBS','MLB_FOX','MLB_APPLE','MLB_NBC','MLB_PEACOCK_SNB','NFL_PRIME','NFL_NBC','NFL_ESPN','NFL_ABC','NFL_CBS','NFL_FOX','MLS_FOX','MLS_FS1','EFL_FINAL','EFL_PLAYOFF','EPL_NBC','EPL_USA','EPL_PEACOCK',
+    'WC26_FREE','WC26_FOX','WC26_FS1','WC26_PEACOCK','WC26_NBC','WC26_ESPN']);  // WC 2026 nationals
   const cb=nationalKeys.has(g.nationalBundle)?5:0;
   // Milestone boost (ROOT 3): BDL milestone proximity → drama signal
   // A player within 5% of a career milestone makes tonight's game more interesting
@@ -7795,6 +7796,10 @@ function preGameScore(g){
   const leagueStr = (g.league||'').toLowerCase();
   const tierBoost =
     /nba finals|stanley cup final|world series|super bowl|champions league final/i.test(g.league||'') ? 60 :
+    /FIFA World Cup 2026.*(Final|Third Place)/i.test(g.league||'')                                    ? 60 :
+    /FIFA World Cup 2026.*(Semi)/i.test(g.league||'')                                                 ? 45 :
+    /FIFA World Cup 2026.*(Quarter|Round of 16|Round of 32)/i.test(g.league||'')                      ? 35 :
+    /FIFA World Cup 2026/i.test(g.league||'')                                                         ? 40 :  // group stage
     /conference finals|cf g\d|wcf|ecf g\d|wcf g\d|ecf.*g\d/i.test(g.league||'') ? 40 :
     /conference semi|second round|round 2|wc playoff|copa final/i.test(g.league||'') ? 15 :
     leagueStr.includes('playoff') || leagueStr.includes('final day') ? 5 : 0;
@@ -23676,6 +23681,8 @@ async function fetchWCOddsProbabilities() {
 
 // Level 1 — fetch today's live WC games from V2 relay (/v2/games?sport=wc26)
 // Returns live games with winProb attached (relay computes odds-blended WP)
+// Also populates _wcLiveGamesCache for the Watch Engine.
+let _wcLiveGamesCache = [];  // global: Watch Engine reads this for WC live state
 async function fetchWCLiveGames() {
   try {
     const base = (typeof V2_RELAY_BASE !== 'undefined' ? V2_RELAY_BASE : null)
@@ -23684,7 +23691,9 @@ async function fetchWCLiveGames() {
     const r = await fetch(`${base}/v2/games?sport=wc26&date=${today}`, { cache: 'no-store' });
     if (!r.ok) return [];
     const data = await r.json();
-    return (data.games || []).filter(g => g.state === 'live' && g.winProb);
+    const live = (data.games || []).filter(g => g.state === 'live' && g.winProb);
+    _wcLiveGamesCache = live;  // expose to Watch Engine
+    return live;
   } catch (e) { return []; }
 }
 
@@ -26047,6 +26056,45 @@ function _otwFindLiveGame(minScore){
   return best;
 }
 
+
+// RUWT-compliant WC live game selector for the Watch Engine.
+// Uses binary named conditions (relay-classified) and WP for SELECTION only —
+// the score is never displayed. Display uses named state label, not the number.
+function _otwFindWCLiveGame() {
+  if (!_wcLiveGamesCache.length) return null;
+  let best = null, bestScore = 0;
+  for (const g of _wcLiveGamesCache) {
+    const wp     = g.winProb;
+    const crunch = g._crunch; // relay-classified binary condition
+    const elapsed = g.situation?.elapsed || 0;
+    let sel = 55; // any live WC game floors at 55
+    if      (crunch === 'penalty_shootout') sel = 92;
+    else if (crunch === 'man_advantage')    sel = 82;
+    else if (crunch === 'added_time')       sel = 80;
+    else if (crunch === 'late_deficit')     sel = 75;
+    else if (wp) {
+      if (elapsed >= 80 && (wp.draw > 0.20 || Math.max(wp.homeWin, wp.awayWin) < 0.65)) sel = 72;
+      else if (elapsed >= 60 && wp.draw > 0.25) sel = 65;
+    }
+    if (sel > bestScore) { bestScore = sel; best = {g, score: sel, crunch}; }
+  }
+  return best;
+}
+
+// Named state label for a live WC game in the Watch Engine (RUWT-compliant).
+// Returns a factual binary condition string — never a numerical drama value.
+function _buildWCOTWLabel(wcLive) {
+  const {g, crunch} = wcLive || {};
+  if (crunch === 'penalty_shootout') return 'SHOOTOUT';
+  if (crunch === 'man_advantage')    return 'MAN ADV';
+  if (crunch === 'added_time')       return 'STOPPAGE';
+  if (crunch === 'late_deficit')     return 'LATE · 1 GOAL';
+  const elapsed = g?.situation?.elapsed;
+  if (elapsed >= 80) return `${elapsed}' · WC`;
+  if (elapsed >= 45) return 'WC LIVE';
+  return 'WC';
+}
+
 function renderOneToWatch(){
   const banner=document.getElementById('otw-banner');
   if(!banner) return;
@@ -26077,27 +26125,16 @@ function renderOneToWatch(){
     });
   };
 
-  // ── STATE 1: FIRE — high-drama live game ──────────────────────────────────
+  // ── STATE 1: FIRE — high-drama live game (ESPN or WC V2) ─────────────────
   const fire=_otwFindLiveGame(50);
   if(fire&&fire.g._id!==_otwDismissedId){
     const {g,ed,sport,score}=fire;
     const tier=dramaTier(score)||'warm';
-    // Patent fix: display tier label only — never show composite score number.
-    // Numerical Usage Policy: composite value + threshold display = patent bright line.
-    // The tier classification IS the expression. The underlying score is not.
-    // Use named game-state label instead of drama tier badge.
-    // buildOTWStateLabel() returns factual condition ('OVERTIME', 'Q4 · TIED', etc.)
-    // or null when no named condition applies — badge omitted rather than showing excitement signal.
     const tierBadge = buildOTWStateLabel(g, ed, sport);
-    // SCORE-UNIFORM-A fix: use computeGameNarrative for score string — same path as card.
-    // Before: ed.awayScore–ed.homeScore (ESPN away-first, no alignment check).
-    // After: _n.scoreline (leader-first, same espnTeamMatch alignment as card score-wrap).
-    // This eliminates the case where home team winning shows "88–95" in OTW, "95–88" on card.
     const _n = (typeof computeGameNarrative==='function') ? computeGameNarrative(g,ed,null) : null;
     const scoreStr = _n?.scoreline || `${ed.awayScore||0}\u2013${ed.homeScore||0}`;
     const why=buildOTWWhyLine(g,ed,sport,false);
     const momentum=getOTWMomentum(g._id);
-    // Pipeline B: resolve broadcast for Watch button
     const bc=typeof resolveGameBroadcast==='function'?resolveGameBroadcast(g):null;
     const watchLabel=bc?bc.label:'LIVE';
     const watchUrl=bc?.watchUrl||null;
@@ -26118,6 +26155,30 @@ function renderOneToWatch(){
     wire(g._id,g); return;
   }
 
+  // WC high-drama: check V2 WC live games for FIRE-tier conditions
+  // (WC games never appear in espnScores — this is the only path for WC live)
+  const wcFire = _otwFindWCLiveGame();
+  if(wcFire && wcFire.score >= 70 && wcFire.g._id !== _otwDismissedId) {
+    const {g, crunch} = wcFire;
+    const label = _buildWCOTWLabel(wcFire);
+    const hScore = g.home?.score ?? 0, aScore = g.away?.score ?? 0;
+    const scoreStr = `${aScore}\u2013${hScore}`;
+    const bc = typeof resolveGameBroadcast==='function' ? resolveGameBroadcast(g) : null;
+    const watchUrl = bc?.watchUrl || null;
+    const watchBtn = watchUrl
+      ? `<button class="otw-watch-btn${bc.isFreeOTA?' otw-watch-free':''}" id="otw-watch" data-watch-url="${watchUrl}">WATCH \u00b7 ${bc.label}${bc.isFreeOTA?' FREE':''} \u2197</button>`
+      : '';
+    banner.innerHTML=`<div class="otw-inner${watchBtn?' otw-inner-has-watch':''}" id="otw-inner" role="button" tabindex="0">
+      <span class="otw-pulse"></span>
+      <span class="otw-label">One to Watch</span>
+      <span class="otw-matchup">${g.away?.name||''} @ ${g.home?.name||''} \u00a0${scoreStr}</span>
+      <span class="otw-drama d-fire">${label}</span>
+      ${watchBtn}
+      ${dismissBtn()}
+    </div>`;
+    wire(g._id, g); return;
+  }
+
   // ── STATE 2: LIVE — any live game, low drama ──────────────────────────────
   const live=_otwFindLiveGame(0);
   if(live&&live.g._id!==_otwDismissedId){
@@ -26133,6 +26194,21 @@ function renderOneToWatch(){
       ${dismissBtn()}
     </div>`;
     wire(g._id,g); return;
+  }
+
+  // WC any-live: show any live WC game in STATE 2 position
+  if(wcFire && wcFire.g._id !== _otwDismissedId) {
+    const {g} = wcFire;
+    const label = _buildWCOTWLabel(wcFire);
+    const hScore = g.home?.score ?? 0, aScore = g.away?.score ?? 0;
+    banner.innerHTML=`<div class="otw-inner otw-live" id="otw-inner" role="button" tabindex="0">
+      <span class="otw-pulse otw-pulse-live"></span>
+      <span class="otw-label">Live · WC</span>
+      <span class="otw-matchup">${g.away?.name||''} @ ${g.home?.name||''} \u00a0${aScore}\u2013${hScore}</span>
+      <span class="otw-drama d-pregame">${label}</span>
+      ${dismissBtn()}
+    </div>`;
+    wire(g._id, g); return;
   }
 
   // ── STATE 3: SOON — game starting in <2 hours ─────────────────────────────
@@ -26187,6 +26263,17 @@ function renderOneToWatch(){
   }
 
   // ── STATE 5: QUIET — nothing notable ─────────────────────────────────────
+  // Guard: never show QUIET when a WC game is live (WC bypasses espnScores entirely)
+  if(_wcLiveGamesCache.length > 0) {
+    // WC is live but user dismissed the game — show minimal live indicator
+    const g = _wcLiveGamesCache[0];
+    banner.innerHTML=`<div class="otw-inner otw-live" aria-hidden="true">
+      <span class="otw-pulse otw-pulse-live"></span>
+      <span class="otw-label">Live · WC</span>
+      <span class="otw-matchup">${g.away?.name||''} @ ${g.home?.name||''}</span>
+    </div>`;
+    return;
+  }
   const quietMsg=_otwCalCtx?`${_otwCalCtx.label} season`:'No live games right now';
   banner.innerHTML=`<div class="otw-inner otw-quiet" aria-hidden="true">
     <span class="otw-label">${_otwCalCtx?'Season':'Quiet'}</span>
