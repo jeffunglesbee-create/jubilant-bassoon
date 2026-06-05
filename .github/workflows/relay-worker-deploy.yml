@@ -1,0 +1,76 @@
+# .github/workflows/relay-worker-deploy.yml
+#
+# Deploy patched field-relay-nba worker via Cloudflare API.
+# Triggered by presence of outbox/relay-worker-update.js.
+# Uploads the file as multipart/form-data to the workers/scripts endpoint.
+# Cleans up the trigger file after deploy (with [skip ci]).
+
+name: Deploy Relay Worker
+
+on:
+  push:
+    paths: ['outbox/relay-worker-update.js']
+
+permissions:
+  contents: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Upload worker script
+        env:
+          CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CF_ACCOUNT_ID: b57e9af57ab46c52ca9215804e689c29
+          WORKER_NAME: field-relay-nba
+        run: |
+          TS=$(date -u +%Y%m%dT%H%M%SZ)
+          RESULT="outbox/relay-deploy-result-${TS}.txt"
+
+          echo "=== Relay Worker Deploy [$TS] ===" > "$RESULT"
+          echo "Worker: $WORKER_NAME" >> "$RESULT"
+          echo "Script size: $(wc -c < outbox/relay-worker-update.js) bytes" >> "$RESULT"
+          echo "" >> "$RESULT"
+
+          HTTP=$(curl -s -w "%{http_code}" -o /tmp/cf-deploy-response.txt \
+            -X PUT \
+            -H "Authorization: Bearer $CF_TOKEN" \
+            -F "index.js=@outbox/relay-worker-update.js;type=application/javascript+module" \
+            -F 'metadata={"main_module":"index.js"};type=application/json' \
+            "https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT_ID}/workers/scripts/${WORKER_NAME}")
+
+          echo "HTTP status: $HTTP" >> "$RESULT"
+          python3 -m json.tool /tmp/cf-deploy-response.txt >> "$RESULT" 2>/dev/null || \
+            cat /tmp/cf-deploy-response.txt >> "$RESULT"
+
+          cat "$RESULT"
+
+          if [ "$HTTP" = "200" ]; then
+            echo "✓ Deploy successful"
+            echo "RESULT=$RESULT" >> $GITHUB_ENV
+            echo "SUCCESS=true" >> $GITHUB_ENV
+          else
+            echo "✗ Deploy failed with HTTP $HTTP"
+            echo "RESULT=$RESULT" >> $GITHUB_ENV
+            echo "SUCCESS=false" >> $GITHUB_ENV
+            exit 1
+          fi
+
+      - name: Commit result and clean up trigger
+        if: always()
+        run: |
+          git config user.email "relay-deploy@field"
+          git config user.name "Relay Deploy"
+          git add "${{ env.RESULT }}" 2>/dev/null || true
+          git rm --cached outbox/relay-worker-update.js 2>/dev/null || true
+          rm -f outbox/relay-worker-update.js
+          git add -A
+          git diff --cached --quiet && echo "Nothing to commit" || \
+            git commit -m "relay: deploy field-relay-nba + cleanup [skip ci]"
+          for i in 1 2 3; do
+            git pull --rebase --autostash origin main && \
+            git push origin main && break
+            sleep $((i * 5))
+          done
