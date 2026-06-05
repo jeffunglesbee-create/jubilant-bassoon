@@ -2033,6 +2033,12 @@ body.journalism-mode #field-journalism-section{animation:jrnFadeIn 220ms ease-ou
 .wc-wp-meta{font-size:.62rem;color:#475569;margin-top:2px;padding-left:2px}
 .wc-wp-row{animation:wc-wp-pulse 2s ease-in-out infinite}
 @keyframes wc-wp-pulse{0%,100%{opacity:1}50%{opacity:.82}}
+/* Advancement probability bar */
+.wc-adv-bar{display:flex;width:100%;height:18px;border-radius:3px;overflow:hidden;font-size:.65rem;font-weight:600;margin-top:4px}
+.wc-adv-home{background:rgba(74,222,128,.35);color:#4ade80;display:flex;align-items:center;justify-content:flex-start;padding:0 5px;min-width:24px;white-space:nowrap;overflow:hidden;transition:width .4s ease}
+.wc-adv-away{background:rgba(251,191,36,.30);color:#fbbf24;display:flex;align-items:center;justify-content:flex-end;padding:0 5px;min-width:24px;white-space:nowrap;overflow:hidden;transition:width .4s ease}
+.wc-adv-gap{background:rgba(30,41,59,.4);flex:1}
+.wc-adv-meta{font-size:.60rem;color:#475569;margin-top:2px;padding-left:2px}
 
 /* GF/GA hidden on mobile */
 @media(max-width:819px){.wc-th-gf,.wc-th-ga,.wc-td-gf,.wc-td-ga{display:none}}
@@ -23907,6 +23913,85 @@ function _wcComputeAllScenarios(standings, matchResults, fairPlayPoints, oddsPro
 }
 
 // Level 1 — build the live WP bar row (injected between the two playing teams)
+// ── Advancement Probability (fully integrated) ─────────────────────────────
+//
+// True P(advance) = pQualifyTop2 + pQualifyAsBest3rd from Permutations Engine.
+// Fallback: relay g.advancementProb.homeAdvance/awayAdvance (single-game v2).
+// Baseline: GameDO openingAdvanceProb (kickoff snapshot).
+//
+// The Permutations Engine supersedes the relay estimate when both are available
+// because it considers ALL remaining fixtures; the relay considers only the
+// current live game.
+
+/**
+ * Compute true P(advance) for a team.
+ * Primary: Permutations Engine pQualifyTop2 + pQualifyAsBest3rd (full multi-game).
+ * Fallback: relay g.advancementProb field (single-game scenario v2).
+ * @param {string} teamName
+ * @param {object} scenarios — from _wcComputeAllScenarios
+ * @param {string} groupId
+ * @param {object} liveGame — V2 game object with optional advancementProb field
+ * @param {'home'|'away'} side
+ * @returns {{pAdv: number, source: string}|null}
+ */
+function _wcAdvancementProb(teamName, scenarios, groupId, liveGame, side) {
+  // Primary: Permutations Engine
+  if (scenarios && groupId && scenarios.perGroup?.[groupId]?.perTeam?.[teamName]) {
+    const pt = scenarios.perGroup[groupId].perTeam[teamName];
+    const pTop2 = pt.pQualifyTop2 ?? 0;
+    const b3 = scenarios.best3rd?.perTeam?.[teamName];
+    const pB3 = b3?.pQualifyAsBest3rd ?? 0;
+    return { pAdv: Math.min(1, pTop2 + pB3), source: 'permutations' };
+  }
+  // Fuzzy name match (Odds API names vs wc26Raw names may differ)
+  if (scenarios && groupId && scenarios.perGroup?.[groupId]?.perTeam) {
+    const pt = scenarios.perGroup[groupId].perTeam;
+    const matchKey = Object.keys(pt).find(n => _wcMatchTeamName(n, teamName));
+    if (matchKey) {
+      const info = pt[matchKey];
+      const pTop2 = info.pQualifyTop2 ?? 0;
+      const b3 = scenarios.best3rd?.perTeam?.[matchKey];
+      const pB3 = b3?.pQualifyAsBest3rd ?? 0;
+      return { pAdv: Math.min(1, pTop2 + pB3), source: 'permutations' };
+    }
+  }
+  // Fallback: relay single-game v2 estimate
+  if (liveGame?.advancementProb) {
+    const relay = liveGame.advancementProb;
+    const pAdv = side === 'home' ? relay.homeAdvance : relay.awayAdvance;
+    if (pAdv != null) return { pAdv, source: 'relay-v2' };
+  }
+  return null;
+}
+
+/**
+ * Build the advancement probability bar (injected below WP bar when data available).
+ * Shows P(advance) for both teams with opening-baseline delta from GameDO.
+ */
+function _wcBuildAdvBar(liveGame, hAdv, aAdv, hName, aName) {
+  if (hAdv == null || aAdv == null) return '';
+  const hPct = Math.round(hAdv * 100);
+  const aPct = Math.round(aAdv * 100);
+  // Space between bars = 100 - hPct - aPct (teams not qualified = neither)
+  const gapPct = Math.max(0, 100 - hPct - aPct);
+  // Opening baseline delta from GameDO
+  const oa = liveGame?.openingAdvanceProb;
+  let hDeltaStr = '', aDeltaStr = '';
+  if (oa?.homeAdvance != null) {
+    const hDelta = hPct - Math.round(oa.homeAdvance * 100);
+    if (Math.abs(hDelta) >= 5) hDeltaStr = ` ${hDelta > 0 ? '▲' : '▼'}${Math.abs(hDelta)}pp`;
+  }
+  const hLabel = hPct >= 15 ? `${hName.split(' ')[0]} ${hPct}%${hDeltaStr}` : `${hPct}%`;
+  const aLabel = aPct >= 15 ? `${aPct}%${aDeltaStr} ${aName.split(' ').pop()}` : `${aPct}%`;
+  return `
+    <div class="wc-adv-bar" title="P(advance to R32) · includes best-8 third-place path">
+      <div class="wc-adv-home" style="width:${hPct}%">${hLabel}</div>
+      ${gapPct > 0 ? `<div class="wc-adv-gap" style="width:${gapPct}%"></div>` : ''}
+      <div class="wc-adv-away" style="width:${aPct}%">${aLabel}</div>
+    </div>
+    <div class="wc-adv-meta">P(advance to R32) · ${hAdv.source === 'permutations' ? 'full group scenarios' : 'single-game estimate'}</div>`;
+}
+
 // Level 1 + Surprise Layer — live win probability bar with full context.
 // Integrates: GameDO (openingWP, wpDelta, openingAdvanceProb) +
 //             Permutations Engine (current pQualifyTop2 per team)
@@ -23938,30 +24023,6 @@ function _wcBuildWPBar(liveGame, wp, ctx) {
   const aLabel = aPct >= 12 ? `${aPct}%${awayTrend} ${aName.split(' ').pop()}` : `${aPct}%`;
   const dLabel = dPct >= 8 ? `D ${dPct}%` : dPct >= 4 ? `${dPct}%` : '';
 
-  // L3b: qualification context from Permutations Engine
-  let qualFrag = '';
-  if (scenarios && groupId && scenarios.perGroup && scenarios.perGroup[groupId]) {
-    const pt = scenarios.perGroup[groupId].perTeam;
-    const hInfo = pt[hName] || pt[Object.keys(pt).find(n => _wcMatchTeamName(n, hName))];
-    const aInfo = pt[aName] || pt[Object.keys(pt).find(n => _wcMatchTeamName(n, aName))];
-    if (hInfo?.pQualifyTop2 != null && aInfo?.pQualifyTop2 != null) {
-      const hQPct = Math.round(hInfo.pQualifyTop2 * 100);
-      const aQPct = Math.round(aInfo.pQualifyTop2 * 100);
-      qualFrag = ` · Qual: ${hName.split(' ')[0]} ${hQPct}%, ${aName.split(' ').pop()} ${aQPct}%`;
-
-      // L3c: qual surprise — opening advanceProb vs current Permutations
-      const oa = liveGame.openingAdvanceProb;
-      if (oa && oa.homeAdvance != null) {
-        const openHQPct = Math.round(oa.homeAdvance * 100);
-        const qualDelta = hQPct - openHQPct;
-        if (Math.abs(qualDelta) >= 8) {
-          const sign = qualDelta > 0 ? '+' : '';
-          qualFrag += ` (${sign}${qualDelta}pp vs kickoff)`;
-        }
-      }
-    }
-  }
-
   // L3a: WP surprise — opening WP baseline from GameDO (≥5pp divergence)
   const opening = liveGame.openingWP;
   let surpriseFrag = '';
@@ -23969,17 +24030,25 @@ function _wcBuildWPBar(liveGame, wp, ctx) {
     const openPct = Math.round(opening.homeWin * 100);
     const wpDelta5 = hPct - openPct;
     const sign = wpDelta5 > 0 ? '+' : '';
-    surpriseFrag = ` · ${hName.split(' ')[0]} was ${openPct}% (${sign}${wpDelta5}pp)`;
+    surpriseFrag = ` · ${hName.split(' ')[0]} was ${openPct}% pre-match (${sign}${wpDelta5}pp)`;
   }
+
+  // Advancement probability — full integration (Permutations primary, relay fallback)
+  const hAdvResult = _wcAdvancementProb(hName, scenarios, groupId, liveGame, 'home');
+  const aAdvResult = _wcAdvancementProb(aName, scenarios, groupId, liveGame, 'away');
+  const advBarHTML = (hAdvResult && aAdvResult)
+    ? _wcBuildAdvBar(liveGame, hAdvResult, aAdvResult, hName, aName)
+    : '';
 
   return `<tr class="wc-wp-row">
     <td colspan="10">
-      <div class="wc-wp-bar" title="Live win probability · ${clock} · source: ${src}${surpriseFrag}${qualFrag}">
+      <div class="wc-wp-bar" title="Live win probability · ${clock} · source: ${src}">
         <div class="wc-wp-home" style="width:${hPct}%">${hLabel}</div>
         <div class="wc-wp-draw" style="width:${dPct}%">${dLabel}</div>
         <div class="wc-wp-away" style="width:${aPct}%">${aLabel}</div>
       </div>
-      <div class="wc-wp-meta">⚽ Live · ${clock} · ${src}${surpriseFrag}${qualFrag}</div>
+      <div class="wc-wp-meta">⚽ Live · ${clock} · ${src}${surpriseFrag}</div>
+      ${advBarHTML}
     </td>
   </tr>`;
 }
@@ -24014,20 +24083,21 @@ function _wcScenarioBadge(teamName, groupId, scenarios) {
   const total = c.first + c.second + c.third + c.fourth;
   if (!total) return '';
   const top2pct = Math.round((c.first + c.second) / total * 100);
-  // Use weighted probability if available (v1.3.2 odds wired), else uniform scenario count
-  const pQual = teamInfo.pQualifyTop2 !== null ? Math.round(teamInfo.pQualifyTop2 * 100) : top2pct;
-  const isWeighted = teamInfo.pQualifyTop2 !== null;
-  const title = isWeighted
-    ? 'Market-implied qualification probability (no-vig from h2h odds)'
-    : 'Share of remaining-result scenarios in which this team finishes top 2 (uniform distribution)';
-  // Best-3rd qualifier
-  let b3frag = '';
+  // True P(advance) = P(top 2) + P(best-8 third-place) — shown as unified percentage
   const b3 = scenarios.best3rd && scenarios.best3rd.perTeam[teamName];
-  if (b3 && b3.pQualifyAsBest3rd >= 0.01) {
-    const b3pct = Math.round(b3.pQualifyAsBest3rd * 100);
-    b3frag = ` <span class="wc-sb--b3" title="Probability of qualifying as one of the best-8 third-place teams">+${b3pct}% as 3rd</span>`;
-  }
-  return `<span class="wc-sb wc-sb--maybe" title="${title}">${pQual}%${isWeighted ? '' : ' top 2'}</span>${b3frag}`;
+  const pB3 = b3?.pQualifyAsBest3rd ?? 0;
+  const isWeighted = teamInfo.pQualifyTop2 !== null;
+  const pTop2 = isWeighted ? (teamInfo.pQualifyTop2 ?? 0) : ((c.first + c.second) / total);
+  const pAdvTotal = Math.min(1, pTop2 + pB3);
+  const pAdvPct = Math.round(pAdvTotal * 100);
+  const hasB3Path = pB3 >= 0.01;
+  const title = isWeighted
+    ? `P(advance to R32): ${pAdvPct}% = ${Math.round(pTop2*100)}% top-2 + ${Math.round(pB3*100)}% as best-8 third · market-weighted`
+    : `P(advance to R32): ${pAdvPct}% (uniform scenario distribution) · top-2 ${Math.round(pTop2*100)}% + best-3rd ${Math.round(pB3*100)}%`;
+  const label = hasB3Path
+    ? `${pAdvPct}% adv`
+    : `${Math.round(pTop2*100)}%${isWeighted ? '' : ' top 2'}`;
+  return `<span class="wc-sb wc-sb--maybe" title="${title}">${label}</span>`;
 }
 
 // Group block shell (used by both empty + live)
