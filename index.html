@@ -9743,6 +9743,16 @@ function buildTodaySchedule(){
     {home:"Calgary Stampeders",  away:"Winnipeg Blue Bombers", league:"CFL – 2026 Season · Week 1", start_time:"2026-06-06T01:00:00Z", confirmed:true, venue:"McMahon Stadium, Calgary AB",      streams:resolveBundle("CFL_CBSSN"), localNote:"CBSSN · 9pm ET", matchupNote:"CFL Week 1 Friday night game. Winnipeg at Calgary on CBS Sports Network. Season opener for both clubs — first regular-season game between these rivals since last October. CFL+ streams free internationally."},
     {home:"Ottawa Redblacks",    away:"Edmonton Elks",         league:"CFL – 2026 Season · Week 1", start_time:"2026-06-06T23:00:00Z", confirmed:true, venue:"TD Place, Ottawa ON",               streams:resolveBundle("CFL_CBSSN"), localNote:"CBSSN · 7pm ET Sat", matchupNote:"CFL Week 1 Saturday game. Edmonton at Ottawa on CBS Sports Network."},
   ].filter(g=>isToday(g.start_time));
+  // Attach odds (pHome/pAway/spread/total) from relay if available
+  cflGames.forEach(g => {
+    const odds = _cflMatchOdds(g);
+    if (odds) {
+      g.wp = odds.pHome;              // home win probability (for drama engine)
+      g._cflSpread = odds.spread;     // home spread (negative = home favored)
+      g._cflTotal  = odds.total;      // over/under total
+      g._cflBookmakers = odds.bookmakers;
+    }
+  });
   if(cflGames.length) sections.push({sport:"Canadian Football (CFL)", games:cflGames});
 
   return sections;
@@ -16755,7 +16765,7 @@ async function fetchSchedule(){
   // Slow/offline: hardcoded arrays render first, re-render follows when fetch lands.
   try {
     await Promise.race([
-      fetchScheduleData(),
+      Promise.all([fetchScheduleData(), fetchCFLOddsProbs()]),
       new Promise(r => setTimeout(r, 1500))
     ]);
   } catch(e) { /* fetch optional — hardcoded fallback active */ }
@@ -23949,6 +23959,56 @@ async function fetchWCResults() {
     const data = await r.json();
     return Array.isArray(data.results) ? data.results : [];
   } catch (e) { return []; }
+}
+
+// CFL odds cache — populated by fetchCFLOddsProbs() at startup
+let _cflOddsCache = []; // [{home_team, away_team, commence, pHome, pAway, spread, total, bookmakers}]
+let _cflOddsFetchedAt = 0;
+
+// Fetches no-vig win probabilities + spread/total lines for CFL games from relay /cfl/odds-probs.
+// CFL has no draw — pHome + pAway = 1.0. Cached 2 min (matches relay edge TTL).
+async function fetchCFLOddsProbs() {
+  const now = Date.now();
+  if (now - _cflOddsFetchedAt < 120000 && _cflOddsCache.length) return _cflOddsCache;
+  try {
+    const base = (typeof V2_RELAY_BASE !== 'undefined' ? V2_RELAY_BASE : null)
+              || 'https://field-relay-nba.jeffunglesbee.workers.dev';
+    const r = await fetch(`${base}/cfl/odds-probs`, { cache: 'no-store' });
+    if (!r.ok) return _cflOddsCache;
+    const d = await r.json();
+    if (d.ok && Array.isArray(d.probs) && d.probs.length) {
+      _cflOddsCache = d.probs;
+      _cflOddsFetchedAt = now;
+      if (FIELD_DEBUG) console.debug('[CFL-ODDS] fetched', d.probs.length, 'games, remaining:', d.remaining);
+    }
+    return _cflOddsCache;
+  } catch(e) {
+    if (FIELD_DEBUG) console.warn('[CFL-ODDS] fetch failed:', e.message);
+    return _cflOddsCache;
+  }
+}
+
+// Match a CFL game object against the odds probs array.
+// Returns {pHome, pAway, spread, total} or null.
+function _cflMatchOdds(game) {
+  if (!_cflOddsCache.length) return null;
+  const norm = s => (s||'').toLowerCase().replace(/[^a-z]/g,' ').replace(/\s+/g,' ').trim();
+  const h = norm(game.home), a = norm(game.away);
+  for (const p of _cflOddsCache) {
+    const ph = norm(p.home_team), pa = norm(p.away_team);
+    if ((ph === h && pa === a) || (ph === a && pa === h)) {
+      // Handle reversed home/away in odds (rare but possible)
+      const flipped = ph === a;
+      return {
+        pHome: flipped ? p.pAway : p.pHome,
+        pAway: flipped ? p.pHome : p.pAway,
+        spread: flipped ? (p.spread != null ? -p.spread : null) : p.spread,
+        total: p.total,
+        bookmakers: p.bookmakers,
+      };
+    }
+  }
+  return null;
 }
 
 // v1.3.2 — fetch no-vig match probabilities from relay /wc/odds-probs
