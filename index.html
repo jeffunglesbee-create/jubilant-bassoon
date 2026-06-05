@@ -837,6 +837,17 @@ body::before{
 .otw-pulse.otw-pulse-live{background:var(--teal,#2dd4bf);animation:otw-pulse 2.5s ease-in-out infinite}
 @keyframes otw-pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.45;transform:scale(1.4)}}
 .otw-label{font-size:.88rem;font-weight:700;letter-spacing:0;color:var(--violet,#8b5cf6);flex-shrink:0}
+/* ── PM-27: OTW Changeover beat chip ── */
+.otw-changed{font-family:'DM Mono',monospace;font-size:.5rem;color:var(--teal,#2dd4bf);background:rgba(45,212,191,.08);border:1px solid rgba(45,212,191,.3);border-radius:3px;padding:.1rem .35rem;letter-spacing:.06em;flex-shrink:0;animation:fadeIn .3s ease both}
+.otw-changed-stamp{font-family:'DM Mono',monospace;font-size:.48rem;color:var(--muted);letter-spacing:.04em;flex-shrink:0}
+/* ── PM-27: CRUNCH Fan-Out causality chip ── */
+.fan-out-chip{font-family:'DM Mono',monospace;font-size:.5rem;color:var(--amber,#fbbf24);background:rgba(251,191,36,.06);border:1px solid rgba(251,191,36,.25);border-radius:3px;padding:.12rem .4rem;letter-spacing:.04em;display:inline-flex;align-items:center;gap:.2rem;cursor:pointer;margin-top:.2rem}
+.fan-out-chip::before{content:'⚡';font-size:.52rem}
+/* ── PM-27: WS Pulse freshness dot ── */
+.ws-pulse{display:inline-block;width:5px;height:5px;border-radius:50%;margin-left:.3rem;vertical-align:middle;background:var(--teal,#2dd4bf);box-shadow:0 0 4px rgba(45,212,191,.6);animation:wsPulse 1.8s ease-in-out infinite}
+.ws-pulse.ws-dim{background:rgba(45,212,191,.35);box-shadow:none;animation:none}
+.ws-pulse.ws-stale{background:none;border:1px solid var(--muted);animation:none}
+@keyframes wsPulse{0%,100%{opacity:1;box-shadow:0 0 4px rgba(45,212,191,.6)}50%{opacity:.4;box-shadow:none}}
 .otw-inner.otw-pregame .otw-label{color:var(--gold2,#c9a84c)}
 .otw-inner.otw-live    .otw-label{color:var(--teal,#2dd4bf)}
 .otw-inner.otw-quiet   .otw-label{color:var(--smoke)}
@@ -4382,6 +4393,11 @@ if (typeof location !== 'undefined' && location.search.includes('debug=1')) {
 const FIELD_FEATURES = {
   // PM-25 Rich-visual confidence glyph (June 5 2026)
   'pm25-confidence-glyph':               '2026-06-05',  // .cg CSS (verified/mismatch/single) + renderCardBadges glyph injection into .game-time. Additive to PM-20 text glyph. A496.
+  // PM-27 Event Bus Payload Standard (June 5 2026)
+  'pm27-field-crunch':          '2026-06-05',  // field:crunch emitter in renderCardBadges() + CRUNCH Fan-Out chip subscriber (S3) — related card = playoffs data-gameimportance
+  'pm27-field-otw-changed':     '2026-06-05',  // field:otw_changed emitter in renderOneToWatch() + _prevOTWId + OTW Changeover beat subscriber (S4)
+  'pm27-field-ws-fresh':        '2026-06-05',  // field:ws_fresh emitter in GameSocket.onmessage + _lastWSMessageTime Map + WS Pulse dot subscriber (S5) + updateWsPulseDot()
+  'pm27-data-gameimportance':   '2026-06-05',  // data-gameimportance attribute on game-card root — enables CSS/JS queries on playoff-card status
   // PM-25 Card Render Slot (June 5 2026)
   'pm25-render-card-badges':             '2026-06-05',  // renderCardBadges(card,eData,sport,gid,smoothed) — extracted badge slot, unblocks WS Pulse + CRUNCH chip + confidence glyph
   // PM-25 Drama Dial categorical tier refactor (June 5 2026)
@@ -8454,7 +8470,7 @@ function renderAll(){
       const isLive=st==="live";
       const timeCls=isLive?"game-time live-t":"game-time";
       const liveBadge=isLive?'<div class="live-badge"><span class="live-dot"></span>LIVE</div>':"";
-      return `<div class="game-card ${st}${isLive?" espn-live":""}${MY_TEAMS.has(g.home)||MY_TEAMS.has(g.away)?" my-team-card":""}" data-gameid="${g._id}" data-sport="${sec.sport}" data-home="${(g.home||"").replace(/"/g,"")}" data-away="${(g.away||"").replace(/"/g,"")}" data-starttime="${g.start_time||""}" data-venue="${(g.venue||"").replace(/"/g,"")}" data-confirmed="${g.confirmed===true?'true':'false'}" style="--i:${gi}">
+      return `<div class="game-card ${st}${isLive?" espn-live":""}${MY_TEAMS.has(g.home)||MY_TEAMS.has(g.away)?" my-team-card":""}" data-gameid="${g._id}" data-sport="${sec.sport}" data-home="${(g.home||"").replace(/"/g,"")}" data-away="${(g.away||"").replace(/"/g,"")}" data-starttime="${g.start_time||""}" data-venue="${(g.venue||"").replace(/"/g,"")}" data-confirmed="${g.confirmed===true?'true':'false'}"${g._gameImportance?` data-gameimportance="${g._gameImportance}"`:''} style="--i:${gi}">
         <div class="card-accent"></div>
         <button class="pin-btn" aria-label="Pin game to widget" title="Pin to corner widget" onclick="event.stopPropagation();pinGame('${g._id}')">📌</button><button class="star-btn ${MY_TEAMS.has(g.home)||MY_TEAMS.has(g.away)?"starred":""}" aria-label="Follow team" title="${MY_TEAMS.has(g.away)?"Unfollow "+g.away:MY_TEAMS.has(g.home)?"Unfollow "+g.home:"Follow "+g.away+" / "+g.home}">★</button>
         <div class="card-body" role="button" tabindex="0" data-open="${g._id}" aria-label="Game intel for ${(g.away||'').replace(/'/g,'')} at ${(g.home||'').replace(/'/g,'')}">
@@ -13071,6 +13087,18 @@ class GameSocket {
       if (!msg) return;
       if (msg.type === 'facts') {
         try { this.onFacts(msg); } catch(_){}
+        // PM-27: record freshness timestamp + emit field:ws_fresh for WS Pulse subscriber
+        try {
+          const _wsKey = `${this.sport}:${this.gameId}`;
+          if (typeof _lastWSMessageTime !== 'undefined') _lastWSMessageTime.set(_wsKey, Date.now());
+          if (typeof fieldEvents !== 'undefined') {
+            fieldEvents.dispatchEvent(new CustomEvent('field:ws_fresh', { detail: {
+              type: 'field:ws_fresh', target: _wsKey, source: 'ws',
+              reason: 'message_received', at: Date.now(),
+              payload: { gameId: this.gameId, sport: this.sport }
+            }}));
+          }
+        } catch(_) {}
       }
     };
     const cleanup = () => {
@@ -21220,6 +21248,128 @@ fieldEvents.addEventListener('field:final', (e) => {
   } catch(_) { /* never throw from a bus listener */ }
 });
 
+// ── PM-27 SUBSCRIBER 3: CRUNCH Fan-Out causality chip (field:crunch) ────────
+// When CRUNCH TIME fires on a game, inject "⚡ via {matchup}" chip on all OTHER
+// live playoff cards. "Related card" = any live card with data-gameimportance="playoffs"
+// that is not the source game. This is the correct definition: both NBA Finals and SCF
+// are championship series with _gameImportance:"playoffs" — they are related.
+// The chip is tappable → scrolls to the source card. CLS budget = 0 (no layout shift —
+// chip appended inside existing .ganalytics row or created as a narrow inline element).
+fieldEvents.addEventListener('field:crunch', (e) => {
+  try {
+    const d = e.detail?.payload || {};
+    const sourceId = e.detail?.target;
+    if (!sourceId) return;
+    const matchupLabel = d.away && d.home ? `${d.away.split(' ').pop()} @ ${d.home.split(' ').pop()}` : '';
+    if (!matchupLabel) return;
+    // Find all live playoff cards that are NOT the source
+    document.querySelectorAll('.game-card.espn-live[data-gameimportance="playoffs"]').forEach(card => {
+      if (card.dataset.gameid === sourceId) return;
+      // Remove any existing fan-out chip before re-injecting (idempotent)
+      card.querySelectorAll('.fan-out-chip').forEach(c => c.remove());
+      const chip = document.createElement('span');
+      chip.className = 'fan-out-chip';
+      chip.title = `CRUNCH TIME just activated in ${matchupLabel} — tap to see it`;
+      chip.dataset.scrollTarget = sourceId;
+      chip.appendChild(document.createTextNode(` via ${matchupLabel}`));
+      chip.addEventListener('click', (ev) => {
+        ev.stopPropagation();
+        const srcCard = document.querySelector(`.game-card[data-gameid="${sourceId}"]`);
+        if (srcCard) srcCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      });
+      // Append into .ganalytics if it exists, else append to .card-body
+      const analytics = card.querySelector('.ganalytics') || card.querySelector('.card-body');
+      if (analytics) analytics.appendChild(chip);
+    });
+  } catch(_) { /* never throw from a bus listener */ }
+});
+
+// ── PM-27 SUBSCRIBER 4: OTW Changeover beat (field:otw_changed) ─────────────
+// When OTW selection changes, flash a "JUST CHANGED ↑" chip for 12s,
+// then replace it with a "swapped HH:MM" timestamp chip.
+// CLS budget = 0: the chip occupies a flex item already reserved by .otw-changed.
+// Transient class toggle only — no mount/unmount of significant layout elements.
+fieldEvents.addEventListener('field:otw_changed', (e) => {
+  try {
+    const banner = document.getElementById('otw-banner');
+    if (!banner) return;
+    // Remove any prior changeover chips
+    banner.querySelectorAll('.otw-changed,.otw-changed-stamp').forEach(el => el.remove());
+    const chip = document.createElement('span');
+    chip.className = 'otw-changed';
+    chip.textContent = 'JUST CHANGED ↑';
+    // Insert after .otw-label
+    const label = banner.querySelector('.otw-label');
+    if (label) label.insertAdjacentElement('afterend', chip);
+    // After 12s, replace with timestamp chip
+    setTimeout(() => {
+      try {
+        if (!chip.parentNode) return;
+        const stamp = document.createElement('span');
+        stamp.className = 'otw-changed-stamp';
+        const t = new Date();
+        stamp.textContent = `swapped ${t.getHours()}:${String(t.getMinutes()).padStart(2,'0')}`;
+        chip.replaceWith(stamp);
+      } catch(_) {}
+    }, 12000);
+  } catch(_) { /* never throw from a bus listener */ }
+});
+
+// ── PM-27 SUBSCRIBER 5: WS Pulse dot on live cards (field:ws_fresh) ─────────
+// Renders freshness dot (solid teal / dimmed / stale) beside score on live cards.
+// Uses _lastWSMessageTime map updated by the GameSocket emitter.
+// Self-healing: stale state triggers ensureGameSocket resubscribe.
+// CLS budget = 0: .ws-pulse is inline-block 5×5px, same line as .game-time text.
+fieldEvents.addEventListener('field:ws_fresh', (e) => {
+  try {
+    const { gameId, sport } = e.detail?.payload || {};
+    if (!gameId || !sport) return;
+    updateWsPulseDot(sport, gameId);
+  } catch(_) {}
+});
+// Also run staleness sweep every 15s to catch dropped WS connections
+setInterval(() => {
+  try {
+    if (!_lastWSMessageTime.size) return;
+    _lastWSMessageTime.forEach((ts, key) => {
+      const [sport, gameId] = key.split(':');
+      if (sport && gameId) updateWsPulseDot(sport, gameId);
+    });
+  } catch(_) {}
+}, 15000);
+
+// updateWsPulseDot — injected/updated by both live event and staleness sweep
+function updateWsPulseDot(sport, gameId) {
+  const card = document.querySelector(`.game-card.espn-live[data-gameid="${sport}:${gameId}"], .game-card.espn-live[data-gameid="${gameId}"]`);
+  if (!card) return;
+  const gtEl = card.querySelector('.game-time');
+  if (!gtEl) return;
+  const key = `${sport}:${gameId}`;
+  const last = _lastWSMessageTime.get(key) || 0;
+  const age = Date.now() - last;
+  // Remove existing dot
+  gtEl.querySelectorAll('.ws-pulse').forEach(el => el.remove());
+  // Only show pulse when WS is active for this game
+  if (!_gameSockets?.get(key)?.available) return;
+  const dot = document.createElement('span');
+  if (age < 8000) {
+    dot.className = 'ws-pulse';
+    dot.title = 'Live score — WebSocket fresh';
+  } else if (age < 30000) {
+    dot.className = 'ws-pulse ws-dim';
+    dot.title = 'Live score — last update ' + Math.round(age/1000) + 's ago';
+  } else {
+    dot.className = 'ws-pulse ws-stale';
+    dot.title = 'WebSocket stale — reconnecting';
+    // Self-heal: re-open the socket
+    try {
+      const gs = _gameSockets.get(key);
+      if (gs && !gs._closed) { gs.disconnect(); gs.connect(); }
+    } catch(_) {}
+  }
+  gtEl.appendChild(dot);
+}
+
 async function fetchMLBStandingsParsed() {
   const key = 'Baseball (MLB)';
   if (_relayStandingsCache[key]) return _relayStandingsCache[key];
@@ -25760,6 +25910,24 @@ function renderCardBadges(card, eData, sport, gid, smoothed) {
       vcBadge.textContent = '👀 WORTH WATCHING';
     }
     liveEl.insertAdjacentElement('afterend', vcBadge);
+    // ── PM-27: emit field:crunch for CRUNCH TIME only (not WORTH WATCHING) ──
+    // Subscribers (CRUNCH Fan-Out chip) listen for this to cascade to related cards.
+    // RUWT-safe: this is a named binary condition, not a composite score threshold.
+    if (vcResult.badge === 'CRUNCH TIME') {
+      try {
+        if (typeof fieldEvents !== 'undefined') {
+          fieldEvents.dispatchEvent(new CustomEvent('field:crunch', { detail: {
+            type: 'field:crunch', target: gid, source: 'badge_render',
+            reason: 'crunch_time_badge', at: Date.now(),
+            payload: {
+              home: card.dataset.home || '', away: card.dataset.away || '',
+              sport, period: eData.period,
+              score: `${eData.awayScore||0}-${eData.homeScore||0}`
+            }
+          }}));
+        }
+      } catch(_) {}
+    }
     // CRUNCH TIME/WORTH WATCHING replaces drama badge — no double-badge
     // Still allow EMBER + MLBN to run below
   } else {
@@ -26222,6 +26390,10 @@ function buildOTWCountdown(startTime){
 // Dismiss keys: game._id for live/soon, 'tonight' for tonight state
 let _otwDismissedId=null;
 let _otwCountdownTimer=null;
+// PM-27: OTW changeover tracking (field:otw_changed emitter)
+let _prevOTWId=null;
+// PM-27: WS freshness tracking — Map<canonical_key, timestamp_ms> (field:ws_fresh emitter)
+const _lastWSMessageTime = new Map();
 
 function _otwFindLiveGame(minScore){
   let best=null,bestScore=0;
@@ -26382,6 +26554,18 @@ function renderOneToWatch(){
       ${watchBtn}
       ${dismissBtn()}
     </div>`;
+    // ── PM-27: emit field:otw_changed if OTW game changed ──────────────────
+    try {
+      const _newOTWId = g._id;
+      if (_prevOTWId !== null && _prevOTWId !== _newOTWId && typeof fieldEvents !== 'undefined') {
+        fieldEvents.dispatchEvent(new CustomEvent('field:otw_changed', { detail: {
+          type: 'field:otw_changed', target: 'otw', source: 'render_otw',
+          reason: 'momentum_swap', at: Date.now(),
+          payload: { fromId: _prevOTWId, toId: _newOTWId, toHome: g.home||'', toAway: g.away||'' }
+        }}));
+      }
+      _prevOTWId = _newOTWId;
+    } catch(_) {}
     wire(g._id,g); return;
   }
 

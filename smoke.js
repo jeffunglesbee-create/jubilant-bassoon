@@ -3323,6 +3323,50 @@ assert('A496 — PM-25 rich-visual confidence glyph: CSS + DOM injection in rend
   html.includes("'pm25-confidence-glyph'"),
   'PM-25 Rich-visual confidence glyph (A496): renderCardBadges() injects a <span class="cg {conf}"> dot into the .game-time element on live cards. Three CSS states: .cg.verified (green halo, rgba(74,222,128,.6) box-shadow), .cg.single (grey, var(--muted)), .cg.mismatch (transparent background, red border, ::after radial-gradient dot). This is additive alongside the text glyph (✓/⚠) from buildCardTimeDisplay (PM-20 Step 5) — both channels coexist. The dot is 6×6px inline-block, appended to .game-time after badge mutations complete. Three confidence states map to three dot states; null/undefined → no dot injected. Title attribute provides tooltip: "Score confirmed by 2 sources" / "Score sources disagree — check Health panel" / "Score from single source". Subscribers unblocked by PM-25a hub: this feature (done), WS Pulse (needs PM-27), CRUNCH Fan-Out chip (needs PM-27).');
 
+// ── PM-27: Event Bus Payload Standard (A497–A499) ────────────────────────────
+// A497: field:crunch emitter + CRUNCH Fan-Out chip subscriber
+// A498: field:otw_changed emitter + OTW Changeover beat subscriber
+// A499: field:ws_fresh emitter + WS Pulse dot subscriber + updateWsPulseDot
+//
+// Architecture:
+// S3 (CRUNCH Fan-Out): renderCardBadges() emits field:crunch → subscriber scans
+//   all live cards with data-gameimportance="playoffs", injects .fan-out-chip.
+//   "Related card" = same championship tier (playoffs), not same sport/round.
+//   Correct per design: NYK@SAS (NBA Finals) fans out to CAR@VGK (SCF) and vice versa.
+// S4 (OTW Changeover): renderOneToWatch() tracks _prevOTWId → emits field:otw_changed
+//   on swap → subscriber injects .otw-changed chip for 12s → fades to timestamp.
+// S5 (WS Pulse): GameSocket.onmessage emits field:ws_fresh → subscriber calls
+//   updateWsPulseDot() → renders .ws-pulse dot beside .game-time (solid/dim/stale).
+//   Staleness sweep every 15s catches dropped connections without a live message.
+
+assert('A497 — PM-27 CRUNCH Fan-Out: field:crunch emitter + fan-out chip subscriber + data-gameimportance',
+  html.includes("'field:crunch'") &&
+  html.includes('reason: \'crunch_time_badge\'') &&
+  html.includes('data-gameimportance="playoffs"') &&
+  html.includes('fan-out-chip') &&
+  html.includes("data-gameimportance=") &&
+  html.includes("'pm27-field-crunch'"),
+  'PM-27 CRUNCH Fan-Out (A497): field:crunch event emitted in renderCardBadges() when CRUNCH TIME badge fires (vcResult.badge === "CRUNCH TIME"). Payload: {type, target:gid, source:"badge_render", reason:"crunch_time_badge", at, payload:{home,away,sport,period,score}}. Subscriber S3 listens on fieldEvents, scans .game-card.espn-live[data-gameimportance="playoffs"] excluding source card, injects .fan-out-chip with scroll-anchor tap handler. data-gameimportance written to card root via template. "Related card" definition: _gameImportance="playoffs" — any live championship game. Correct for NBA Finals + SCF simultaneous scenario.');
+
+assert('A498 — PM-27 OTW Changeover: field:otw_changed emitter + _prevOTWId + beat subscriber',
+  html.includes("'field:otw_changed'") &&
+  html.includes('_prevOTWId') &&
+  html.includes('reason: \'momentum_swap\'') &&
+  html.includes('otw-changed') &&
+  html.includes('otw-changed-stamp') &&
+  html.includes("'pm27-field-otw-changed'"),
+  'PM-27 OTW Changeover beat (A498): _prevOTWId tracks the last selected OTW game ID. renderOneToWatch() emits field:otw_changed when FIRE state selects a different game (fromId → toId). Subscriber S4 injects .otw-changed chip ("JUST CHANGED ↑") after .otw-label, waits 12s, then replaces with .otw-changed-stamp timestamp chip. CLS budget = 0 — flex item, no layout shift. Transient: chip is removed on next OTW render cycle.');
+
+assert('A499 — PM-27 WS Pulse: field:ws_fresh emitter + _lastWSMessageTime + updateWsPulseDot',
+  html.includes("'field:ws_fresh'") &&
+  html.includes('_lastWSMessageTime') &&
+  html.includes('updateWsPulseDot') &&
+  html.includes('ws-pulse') &&
+  html.includes('ws-dim') &&
+  html.includes('ws-stale') &&
+  html.includes("'pm27-field-ws-fresh'"),
+  'PM-27 WS Pulse dot (A499): GameSocket.onmessage emits field:ws_fresh on every facts message. _lastWSMessageTime Map<key, ts> updated inline. Subscriber S5 calls updateWsPulseDot(sport, gameId). updateWsPulseDot renders .ws-pulse dot (solid teal < 8s / dim 8-30s / stale ring > 30s) into .game-time beside the score. Self-healing: stale state calls gs.disconnect()+gs.connect(). Staleness sweep every 15s covers dropped connections. CLS budget = 0 — inline 5×5px dot same line as score text. Only renders when _gameSockets.get(key).available is true.');
+
 // ═════════════════════════════════════════════════════════════════════
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);
