@@ -667,6 +667,80 @@ test('v1.4: matchMeta propagates through computeGroupScenarios via outcomeProbs'
     `Curaçao qualifies top-2 <10% as heavy underdogs, got ${curInfo.pQualifyTop2?.toFixed(3)}`);
 });
 
+// ── parseNBAScoreboardGames (Scoreboard P0 synthetic test) ────────────────────
+// Pretend it's 8:30 PM ET on June 5 2026. The NBA CDN has populated G2.
+// Shape confirmed from probe outbox/scoreboard-probe-20260605T140635Z.*:
+//   scoreboard.games[n].gameId / homeTeam.teamTricode / awayTeam.teamTricode
+//   homeTeam.teamName / awayTeam.teamName
+// These tests answer: "if the CDN returns game data, does the parsing produce
+// the right _nbaGameIdMap keys for fetchNBAPBP to find the game?"
+
+const { parseNBAScoreboardGames } = require('./field_utils.js');
+
+test('parseNBAScoreboardGames: NYK@SAS Finals G2 — 4 keys written', () => {
+  const map = {};
+  parseNBAScoreboardGames([{
+    gameId: '0042500402',
+    homeTeam: { teamTricode: 'SAS', teamName: 'Spurs' },
+    awayTeam: { teamTricode: 'NYK', teamName: 'Knicks' },
+  }], map);
+  assert(map['sas_nyk'] === '0042500402', 'tricode home_away key missing');
+  assert(map['nyk_sas'] === '0042500402', 'tricode away_home key missing');
+  assert(map['spurs_knicks'] === '0042500402', 'teamName home_away key missing');
+  assert(map['knicks_spurs'] === '0042500402', 'teamName away_home key missing');
+  assertEqual(Object.keys(map).length, 4, 'should write exactly 4 keys for one game');
+});
+
+test('parseNBAScoreboardGames: fetchNBAPBP lookup uses teamNick (last word)', () => {
+  // fetchNBAPBP calls teamNick("San Antonio Spurs") → "spurs"
+  // so we confirm full display names also map correctly
+  const map = {};
+  parseNBAScoreboardGames([{
+    gameId: '0042500402',
+    homeTeam: { teamTricode: 'SAS', teamName: 'Spurs' },
+    awayTeam: { teamTricode: 'NYK', teamName: 'Knicks' },
+  }], map);
+  // teamNick("New York Knicks") = "Knicks" = "knicks" lowercased
+  // teamNick("San Antonio Spurs") = "Spurs" = "spurs" lowercased
+  assert(map['spurs_knicks'] === '0042500402', 'fetchNBAPBP teamNick path: spurs_knicks');
+  assert(map['knicks_spurs'] === '0042500402', 'fetchNBAPBP teamNick path: knicks_spurs');
+});
+
+test('parseNBAScoreboardGames: skips games without gameId', () => {
+  const map = {};
+  parseNBAScoreboardGames([
+    { homeTeam: { teamTricode: 'SAS', teamName: 'Spurs' }, awayTeam: { teamTricode: 'NYK', teamName: 'Knicks' } },
+  ], map);
+  assertEqual(Object.keys(map).length, 0, 'should skip game with missing gameId');
+});
+
+test('parseNBAScoreboardGames: empty games array → empty map', () => {
+  const map = {};
+  parseNBAScoreboardGames([], map);
+  assertEqual(Object.keys(map).length, 0, 'empty games should produce empty map');
+});
+
+test('parseNBAScoreboardGames: null/undefined games → empty map (CDN early-day state)', () => {
+  // CDN returns games: [] at 10am ET — parseFn receives undefined from d?.scoreboard?.games
+  const map = {};
+  parseNBAScoreboardGames(undefined, map);
+  assertEqual(Object.keys(map).length, 0, 'undefined games should not throw');
+  parseNBAScoreboardGames(null, map);
+  assertEqual(Object.keys(map).length, 0, 'null games should not throw');
+});
+
+test('parseNBAScoreboardGames: multiple games populate map correctly', () => {
+  const map = {};
+  parseNBAScoreboardGames([
+    { gameId: '0042500402', homeTeam: { teamTricode: 'SAS', teamName: 'Spurs' }, awayTeam: { teamTricode: 'NYK', teamName: 'Knicks' } },
+    { gameId: '0032500102', homeTeam: { teamTricode: 'VGK', teamName: 'Golden Knights' }, awayTeam: { teamTricode: 'CAR', teamName: 'Hurricanes' } },
+  ], map);
+  assert(map['nyk_sas'] === '0042500402', 'NBA Finals G2 key present');
+  assert(map['car_vgk'] === '0032500102', 'SCF G3 tricode key present');
+  assert(map['hurricanes_golden knights'] === '0032500102', 'SCF G3 teamName key present');
+  assertEqual(Object.keys(map).length, 8, '2 games × 4 keys each = 8');
+});
+
 // ── Summary ────────────────────────────────────────────────────────────────
 console.log(`\n── Results: ${pass} passed, ${fail} failed ─────────────\n`);
 if (fail > 0) process.exit(1);

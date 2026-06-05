@@ -876,6 +876,35 @@ function computeBest3rdRanking({groupInputs, samples = 10000, seed = null, bestN
 
 // Node.js compatibility — used by field_unit.js for direct imports
 // Browser: all functions are global (loaded via <script src> in <head>)
+
+// ── parseNBAScoreboardGames — extracted from fetchNBAScoreboard (Scoreboard P0) ──
+// Pure function: takes NBA CDN scoreboard.games array, populates gameIdMap.
+// Extracted to field_utils.js so it can be unit-tested synthetically without
+// needing a live NBA CDN response. Matches the CDN JSON shape observed in the
+// scoreboard P0 probe (outbox/scoreboard-probe-20260605T140635Z.*):
+//   g.gameId           → 10-digit game ID
+//   g.homeTeam.teamTricode → 'SAS'    g.awayTeam.teamTricode → 'NYK'
+//   g.homeTeam.teamName   → 'Spurs'   g.awayTeam.teamName   → 'Knicks'
+// Writes 4 keys per game: tricode h_a, tricode a_h, teamName h_a, teamName a_h.
+// teamName keys match teamNick() output → consumed by fetchNBAPBP lookup.
+function parseNBAScoreboardGames(games, gameIdMap) {
+  for (const g of (games || [])) {
+    const id    = g.gameId;
+    const hTri  = (g.homeTeam?.teamTricode || '').toLowerCase();
+    const aTri  = (g.awayTeam?.teamTricode || '').toLowerCase();
+    const hName = (g.homeTeam?.teamName    || '').toLowerCase();
+    const aName = (g.awayTeam?.teamName    || '').toLowerCase();
+    if (!id) continue;
+    for (const [h, a] of [[hTri, aTri], [hName, aName]]) {
+      if (h && a) {
+        gameIdMap[`${h}_${a}`] = id;
+        gameIdMap[`${a}_${h}`] = id;
+      }
+    }
+  }
+  return gameIdMap;
+}
+
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     teamNick, teamSlug, teamSlugPair,
@@ -897,5 +926,6 @@ if (typeof module !== 'undefined' && module.exports) {
     wcSampleScenario,
     wcSortThirdPlaceAcrossGroups,
     wcMakePRNG,
+    parseNBAScoreboardGames,
   };
 }

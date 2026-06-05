@@ -25094,7 +25094,37 @@ const _nbaGameIdMap   = {};    // 'homeLower_awayLower' → 10-digit NBA game ID
 let   _nbaScoreboardTs = 0;    // last scoreboard fetch timestamp
 const NBA_SCOREBOARD_TTL = 10 * 60 * 1000; // refresh every 10 min
 
-// Fetch today's NBA scoreboard to build ESPN team abbr → NBA game ID map
+// ── parseNBAScoreboardGames — pure parsing helper for fetchNBAScoreboard ──────
+// Extracted from the inner loop so it can be unit-tested synthetically (see
+// field_utils.js + field_unit.js) without needing a live CDN response.
+// Scoreboard P0 diagnostic confirmed CDN shape:
+//   g.gameId / homeTeam.teamTricode / awayTeam.teamTricode /
+//   homeTeam.teamName / awayTeam.teamName
+// Writes 4 keys per game (tricode h_a, tricode a_h, teamName h_a, teamName a_h)
+// so fetchNBAPBP can look up by either tricode or teamNick() output.
+function parseNBAScoreboardGames(games, gameIdMap) {
+  for (const g of (games || [])) {
+    const id    = g.gameId;
+    const hTri  = (g.homeTeam?.teamTricode || '').toLowerCase();
+    const aTri  = (g.awayTeam?.teamTricode || '').toLowerCase();
+    const hName = (g.homeTeam?.teamName    || '').toLowerCase();
+    const aName = (g.awayTeam?.teamName    || '').toLowerCase();
+    if (!id) continue;
+    for (const [h, a] of [[hTri, aTri], [hName, aName]]) {
+      if (h && a) {
+        gameIdMap[`${h}_${a}`] = id;
+        gameIdMap[`${a}_${h}`] = id;
+      }
+    }
+  }
+  return gameIdMap;
+}
+
+// Fetch today's NBA scoreboard to build ESPN team abbr → NBA game ID map.
+// Parsing logic extracted to parseNBAScoreboardGames (field_utils.js) so it
+// can be unit-tested with synthetic data independent of live CDN state.
+// Scoreboard P0 diagnostic: relay allow-list added (e0b44e7), CDN shape
+// confirmed via probe (outbox/scoreboard-probe-20260605T140635Z.*).
 async function fetchNBAScoreboard() {
   const now = Date.now();
   if (now - _nbaScoreboardTs < NBA_SCOREBOARD_TTL && Object.keys(_nbaGameIdMap).length) return;
@@ -25104,22 +25134,7 @@ async function fetchNBAScoreboard() {
       { signal: AbortSignal.timeout(4000) });
     if (!r.ok) return;
     const d = await r.json();
-    for (const g of d?.scoreboard?.games || []) {
-      const id   = g.gameId;
-      const hTri = (g.homeTeam?.teamTricode || '').toLowerCase(); // 'sas'
-      const aTri = (g.awayTeam?.teamTricode || '').toLowerCase(); // 'okc'
-      const hName= (g.homeTeam?.teamName   || '').toLowerCase(); // 'spurs'
-      const aName= (g.awayTeam?.teamName   || '').toLowerCase(); // 'thunder'
-      if (!id) continue;
-      // Store by tricode (e.g. sas_okc) AND teamName (e.g. spurs_thunder)
-      // teamName keys match teamNick() output → used by fetchNBAPBP lookup
-      for (const [h,a] of [[hTri,aTri],[hName,aName]]) {
-        if (h && a) {
-          _nbaGameIdMap[`${h}_${a}`] = id;
-          _nbaGameIdMap[`${a}_${h}`] = id;
-        }
-      }
-    }
+    parseNBAScoreboardGames(d?.scoreboard?.games, _nbaGameIdMap);
     if (FIELD_DEBUG) console.debug('[NBA-CDN] scoreboard mapped', Object.keys(_nbaGameIdMap).length/4, 'games');
   } catch(e) {
     if (FIELD_DEBUG) console.warn('[NBA-CDN] scoreboard:', e.message);

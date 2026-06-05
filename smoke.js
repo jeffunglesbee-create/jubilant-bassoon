@@ -3222,6 +3222,20 @@ assert('A490 — Drama Dial OTW wiring: both FIRE callsites use getDramaDial() n
   !html.includes('_otwFindLiveGame(50)'),
   'Drama Dial OTW wiring: _otwFindLiveGame now reads getDramaDial() at both FIRE-state callsites (main OTW banner, ambient panel mirror). The user\'s Drama Sensitivity setting governs both badge display (getDramaScore) AND the One To Watch recommendation (previously hardcoded 50, ignoring user preference). STATE 2 fallback correctly stays at 0 — it fires for any live game regardless of drama threshold. RUWT Rule 51: threshold is now user-controlled localStorage value (range 45-90, default 65) not a fixed server-assigned score, addressing the MODERATE risk documented in the RUWT Deep Analysis.');
 
+// ── Scoreboard P0: parseNBAScoreboardGames extraction (June 5 2026) ──────────
+// The original P0 carry-forward was "probe route not in allow-list" — resolved
+// via relay e0b44e7. However the parsing behavior (does fetchNBAScoreboard
+// populate _nbaGameIdMap correctly when the CDN has data?) was never tested.
+// A491 verifies the extraction to field_utils.js (unit-testable) and that
+// fetchNBAScoreboard delegates to it. Unit tests in field_unit.js provide
+// the "pretend it's 8:30pm ET" synthetic verification — 6 tests, 60→66.
+
+assert('A491 — Scoreboard P0: fetchNBAScoreboard delegates parsing to parseNBAScoreboardGames',
+  html.includes('function parseNBAScoreboardGames(games, gameIdMap)') &&
+  html.includes('parseNBAScoreboardGames(d?.scoreboard?.games, _nbaGameIdMap)') &&
+  !html.includes("const hTri = (g.homeTeam?.teamTricode || '').toLowerCase(); // 'sas'"),
+  'Scoreboard P0 parsing extraction: the inner parsing loop from fetchNBAScoreboard is extracted to parseNBAScoreboardGames in field_utils.js. fetchNBAScoreboard delegates to it. Unit tests in field_unit.js (60→66) cover NYK@SAS Finals G2 4-key map, teamNick lookup path, skip on missing gameId, empty array, null/undefined CDN early-day state, and multiple games. These tests run at CI time without needing live CDN data — the "pretend it\'s 8:30pm ET" synthetic equivalent. The probe route was already allow-listed (relay e0b44e7) — this closes the functional verification gap.');
+
 // ═════════════════════════════════════════════════════════════════════
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);
