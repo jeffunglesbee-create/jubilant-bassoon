@@ -16325,6 +16325,9 @@ function classifySport(game, espnScore){
   const isAFL    =sp.includes('afl')||sp.includes('australian')||
                   espnScore?._aflComplete!==undefined||game._squiggleId!=null;
   const isCFL    =sp.includes('cfl')||sp.includes('canadian football');
+  const isWC26   =sp.includes('wc26')||sp.includes('world cup');
+  const isCricket=sp.includes('cricket')||sp.includes('ipl');
+  const isRugby  =sp.includes('rugby');
   const isSoccer =pPrefix==="'"||
                   /premier league|bundesliga|ligue 1|serie a|la liga|mls|champions|europa|conference league|efl|uecl|ucl|uel|soccer/i.test(sp);
   const isTennis =sp.includes('tennis')||sp.includes('atp')||sp.includes('wta');
@@ -16334,7 +16337,7 @@ function classifySport(game, espnScore){
   const _cfRx             =/conference finals|cf g\d|wcf|ecf|stanley cup finals?|nba finals/i;
   const isConferenceFinals=_cfRx.test(sp)||_cfRx.test(lg);
   const resolvedPrefix=pPrefix||(isNHL?'P':isMLB?'T':isSoccer?"'":(isNFL?'Q':'Q'));
-  return {isNBA,isNHL,isMLB,isWNBA,isNFL,isAFL,isSoccer,isTennis,isGolf,
+  return {isNBA,isNHL,isMLB,isWNBA,isNFL,isAFL,isCFL,isWC26,isSoccer,isTennis,isGolf,isCricket,isRugby,
           isPlayoffs,isFinals,isConferenceFinals,periodPrefix:resolvedPrefix};
 }
 
@@ -18137,6 +18140,20 @@ function dramaScoreLive(eData, sport){
     else if(period===4) timeBonus=10;
     else if(period===2 && mins<2) timeBonus=6; // two-minute warning
   }
+  // WNBA: same calibration as NBA (48-min game, similar scoring)
+  if(sp.includes('wnba')) {
+    base = diff===0?1.0 : diff<=3?0.82 : diff<=7?0.52 : diff<=14?0.22 : 0.05;
+    if(period>4) timeBonus=22;
+    else if(period>=3 && mins<2) timeBonus=18;
+    else if(period===4) timeBonus=10;
+    else if(period===3) timeBonus=5;
+  }
+  // Tennis: drama is set-based; period = current set number
+  if(sp.includes('tennis')||sp.includes('atp')||sp.includes('wta')) {
+    base = diff===0?1.0 : diff===1?0.70 : 0.20;
+    if(period>=3) timeBonus=18; // deciding set
+    else if(period>=2) timeBonus=8;
+  }
 
   // ── #11a Situation Drama Bonus (QW-1) ─────────────────────────────────
   // Named game-state facts (goaliePulled / runners / isRedZone / downDistance)
@@ -19214,6 +19231,13 @@ function getFieldVoice(sport) {
   // AFL and CFL: no dedicated FIELD voice constant yet — inline guidance
   if (sp.includes('afl') || sp.includes('australian')) return 'Australian Rules Football: use marks, handballs, clearances, inside-50s. Score as goals.behinds.total. Avoid: points, goals-only totals without behinds.';
   if (sp.includes('cfl') || sp.includes('canadian football')) return 'Canadian Football (CFL): 3 downs, wider field, end zone rouge, no-yards penalties. Score in points. Avoid: four downs, calling it NFL, American football framing.';
+  if (sp.includes('nfl') || (sp.includes('football') && !sp.includes('afl') && !sp.includes('cfl') && !sp.includes('soccer') && !sp.includes('canadian'))) return 'American Football (NFL): yards, touchdowns, field goals, first downs, red zone. Score in points. Avoid: basket, inning, goal, penalty kick.';
+  if (sp.includes('wnba')) return 'WNBA Basketball: use WNBA team/player names, not NBA equivalents. Score in points. Same vocabulary as NBA.';
+  if (sp.includes('wc26') || sp.includes('world cup')) return 'Football (soccer) — FIFA World Cup: goals (never points), extra time (never overtime), group stage, knockout round.';
+  if (sp.includes('tennis') || sp.includes('atp') || sp.includes('wta')) return 'Tennis: sets and games (not points except tiebreaks). Break point, ace, double fault, hold, break. Avoid: score, goal, touchdown.';
+  if (sp.includes('golf') || sp.includes('pga')) return 'Golf: strokes under/over par, birdies, eagles, bogeys. Leaderboard position, back nine, round score.';
+  if (sp.includes('cricket') || sp.includes('ipl')) return 'Cricket: runs, wickets, overs, innings, run rate. Score format X/Y (runs/wickets). Avoid: goal, touchdown, period.';
+  if (sp.includes('rugby')) return 'Rugby: tries, conversions, penalties, drop goals. Score in points (try=5). Avoid: goal, touchdown, inning.';
   return '';
 }
 
@@ -19232,7 +19256,11 @@ function getQualityTarget(sport) {
       baseball:   ['mlb','baseball'],
       hockey:     ['nhl','hockey'],
       basketball: ['nba','wnba','basketball'],
-      soccer:     ['epl','mls','ucl','soccer','liga','football','bundesliga','serie','ligue','efl'],
+      soccer:     ['epl','mls','ucl','soccer','liga','football','bundesliga','serie','ligue','efl','wc26','world cup'],
+      nfl:        ['nfl','american football'],
+      afl:        ['afl','australian'],
+      cfl:        ['cfl','canadian football'],
+      tennis:     ['atp','wta','tennis'],
     };
     let tags = null, key = null;
     for (const [k, vs] of Object.entries(sportTags)) {
@@ -19682,6 +19710,59 @@ const SPORT_VOCAB_VIOLATIONS = {
     units: 'goals and behinds (goals×6+behinds=total)',
     extra_period: 'extra time (not overtime)'
   },
+  // NFL: must not use basketball/baseball/soccer vocabulary
+  nfl: {
+    forbidden: [
+      'rebound','basket','three-pointer','free throw',
+      'inning','innings','at-bat','strikeout','home run',
+      'nil','penalty kick','offside','extra time','hat trick',
+      'goal','clean sheet'
+    ],
+    sport: 'American Football (NFL)',
+    units: 'points (touchdowns=6, field goals=3)',
+    extra_period: 'overtime'
+  },
+  // Tennis
+  tennis: {
+    forbidden: [
+      'touchdown','field goal','rebound','assist','basket',
+      'inning','nil','penalty kick','goal','hat trick','overtime'
+    ],
+    sport: 'tennis',
+    units: 'sets and games',
+    extra_period: 'deciding set'
+  },
+  // Golf
+  golf: {
+    forbidden: [
+      'touchdown','field goal','rebound','basket','inning',
+      'nil','penalty kick','goal','hat trick','overtime','quarter','halftime'
+    ],
+    sport: 'golf',
+    units: 'strokes relative to par',
+    extra_period: 'playoff holes'
+  },
+  // Cricket
+  cricket: {
+    forbidden: [
+      'touchdown','field goal','rebound','basket','three-pointer',
+      'nil','penalty kick','hat trick','overtime','quarter','halftime'
+    ],
+    sport: 'cricket',
+    units: 'runs and wickets',
+    extra_period: 'super over'
+  },
+  // Rugby
+  rugby: {
+    forbidden: [
+      'rebound','basket','three-pointer','free throw',
+      'inning','innings','at-bat','strikeout','home run',
+      'penalty kick','nil'
+    ],
+    sport: 'rugby',
+    units: 'points (try=5, conversion=2, penalty=3)',
+    extra_period: 'extra time'
+  },
   // CFL: must not use basketball/baseball/soccer vocabulary; distinguish from NFL
   cfl: {
     forbidden: [
@@ -19766,6 +19847,13 @@ function detectSportClass(sport) {
   if (sp.includes('basketball') || sp.includes('nba') || sp.includes('wnba')) return 'basketball';
   if (sp.includes('afl') || sp.includes('australian')) return 'afl';
   if (sp.includes('cfl') || sp.includes('canadian football')) return 'cfl';
+  if (sp.includes('nfl') || (sp.includes('football') && !sp.includes('afl') && !sp.includes('cfl') && !sp.includes('soccer') && !sp.includes('canadian'))) return 'nfl';
+  if (sp.includes('wnba')) return 'basketball';
+  if (sp.includes('tennis') || sp.includes('atp') || sp.includes('wta')) return 'tennis';
+  if (sp.includes('wc26') || sp.includes('world cup')) return 'soccer';
+  if (sp.includes('golf') || sp.includes('pga')) return 'golf';
+  if (sp.includes('cricket') || sp.includes('ipl')) return 'cricket';
+  if (sp.includes('rugby')) return 'rugby';
   return null;
 }
 
@@ -20587,6 +20675,10 @@ function buildCompoundPrompt(sections) {
       if (/\bpga\b|golf/i.test(raw)) return 'PGA';
       if (/\batp\b|wta\b|tennis/i.test(raw)) return 'Tennis';
       if (/\bcfl\b|canadian football/i.test(raw)) return 'CFL';
+      if (/\batp\b|\bwta\b|\btennis\b/i.test(raw)) return 'Tennis';
+      if (/\bpga\b|\bgolf\b/i.test(raw)) return 'Golf';
+      if (/\bcricket\b|\bipl\b/i.test(raw)) return 'Cricket';
+      if (/\brugby\b/i.test(raw)) return 'Rugby';
       return raw.toUpperCase().slice(0, 16) || 'OTHER';
     })();
     return [
@@ -27874,6 +27966,16 @@ async function fetchNightOwlFromClaude(topGame){
     ? 'Sport: Australian Rules Football. Score in GOALS and BEHINDS. Total = goals×6 + behinds. Close game = within a goal (7 points). Use: marks, handballs, clearances, score composite format goals.behinds.total.'
     : _sp.includes('cfl') || _sp.includes('canadian football')
     ? 'Sport: Canadian Football (CFL). Score in POINTS (touchdowns=6, field goals=3, rouges=1). Close game = one-score game (8 points or fewer). 4 downs (not 3 downs — that is the wrong number; CFL has 3 downs). Use: yards, first down, turnover, end zone, rouge, convert, major. NEVER use: basket, inning, goal, nil, penalty kick, quarter-back sack counts in points.'
+    : _sp.includes('wnba')
+    ? 'Sport: WNBA Basketball. Score in POINTS. Use WNBA team names and player names specifically — never substitute NBA teams. Close game = one-possession game (within 3). Extra period = overtime.'
+    : _sp.includes('wc26') || _sp.includes('world cup')
+    ? 'Sport: Football (soccer) — FIFA World Cup 2026. Score in GOALS (never points). Close game = one-goal game. Extra period = extra time (NEVER overtime). Use: shots, possession, xG, clean sheet, group stage standings, knockout bracket.'
+    : _sp.includes('cricket') || _sp.includes('ipl')
+    ? 'Sport: Cricket. Score in RUNS and WICKETS (e.g. 245/6 in 47 overs). Use: innings, overs, wickets, run rate, bowling figures. Close game = within 20 runs or 2 wickets.'
+    : _sp.includes('rugby')
+    ? 'Sport: Rugby. Score in POINTS (try=5, conversion=2, penalty=3). Use: tries, conversions, penalties, scrums, lineouts. Close game = within a converted try (7 points).'
+    : _sp.includes('golf') || _sp.includes('pga')
+    ? 'Sport: Golf. Score in STROKES relative to par (under/over par). Use: birdies, eagles, bogeys, putts, fairways. Leaderboard by strokes back or tied. Close tournament = within 2 strokes.'
     : _sp.includes('tennis') || _sp.includes('atp') || _sp.includes('wta')
     ? 'Sport: Tennis. Score by SETS and GAMES (not points except tiebreaks). Close match = deciding set. Use: break points, aces, double faults, set score, game score.'
     : _sp.includes('soccer') || _sp.includes('football') || _sp.includes('league') ||
@@ -29229,6 +29331,18 @@ async function renderNightOwlRecap(){
           ? 'Sport: Australian Rules Football. Score in GOALS and BEHINDS. Use: marks, handballs, score composite goals.behinds.total.'
           : sp.includes('cfl') || sp.includes('canadian football')
           ? 'Sport: Canadian Football (CFL). Score in POINTS. 3 downs. Use: yards, rouge, convert, major. Do not say four downs.'
+          : sp.includes('nfl') || (sp.includes('football') && !sp.includes('afl') && !sp.includes('cfl') && !sp.includes('soccer') && !sp.includes('canadian'))
+          ? 'Sport: American Football (NFL). Score in POINTS. Use: yards, touchdowns, field goals, downs, red zone.'
+          : sp.includes('tennis') || sp.includes('atp') || sp.includes('wta')
+          ? 'Sport: Tennis. Score by SETS and GAMES. Use: break points, aces, double faults, set score.'
+          : sp.includes('golf') || sp.includes('pga')
+          ? 'Sport: Golf. Score in STROKES relative to par (birdies, eagles, bogeys).'
+          : sp.includes('cricket') || sp.includes('ipl')
+          ? 'Sport: Cricket. Score in RUNS and WICKETS. Use: innings, overs, run rate.'
+          : sp.includes('rugby')
+          ? 'Sport: Rugby. Score in POINTS (try=5, conversion=2, penalty=3). Use: tries, conversions, penalties.'
+          : sp.includes('soccer') || sp.includes('league') || sp.includes('mls') || sp.includes('liga') || sp.includes('serie') || sp.includes('ligue') || sp.includes('bundesliga') || sp.includes('ucl') || sp.includes('wc') || sp.includes('world cup')
+          ? 'Sport: Football (soccer). Score in GOALS. Extra period = extra time (NOT overtime).'
           : sp.includes('wnba') ? 'Sport: WNBA Basketball. Score in POINTS.'
           : 'Sport: Basketball. Score in POINTS.';
         const w = (g.homeScore||0)>=(g.awayScore||0)?g.home:g.away;
