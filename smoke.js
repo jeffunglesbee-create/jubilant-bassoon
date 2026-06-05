@@ -3184,6 +3184,24 @@ assert('A488 — PM-24: _pm24_matched diagnostic field exposed in findScore retu
   (html.match(/_pm24_matched:\s*matchedKeys/g) || []).length >= 2,
   'PM-24 ships a console-verifiable diagnostic field. findScore returns include _pm24_matched: [...keys] showing which _scoresBySource entries contributed witnesses. At NBA Finals G2 tonight: open console, call findScore({home:"NYK", away:"SAS"}). If the array has two keys ("New York Knicks|San Antonio Spurs" and "Knicks|Spurs"), the aggregation is working. If it has one key with both witnesses, the writers happened to align (less likely). Either way verified becomes reachable. Diagnostic must appear in BOTH return branches (dual-witness AND single-witness) so we can see partial aggregation states too.');
 
+// ── PM-23 Finals Desk path lock (June 5 2026) ────────────────────────────────
+// HANDOFF said "verify at G2 via window._lastCompoundPrompt" — a human-in-the-
+// loop check that fails silently if anyone refactors away the matchupNote line
+// or the _lastCompoundPrompt capture. A489 converts that runtime expectation
+// into a structural CI gate. Per the viewport spec design doc (Novel Thinking
+// path #1): "convert wait-for-live-moment into a CI gate."
+
+assert('A489 — PM-23 R2 Finals Narrative: matchupNote injects into buildCompoundPrompt as a Context line',
+  // The injection pattern in buildCompoundPrompt — exact ternary form from index.html:20433
+  html.includes("g.matchupNote ? `  Context: ${g.matchupNote}` : ''") &&
+  // The assembled prompt must be captured to window._lastCompoundPrompt for
+  // runtime verification (HANDOFF "verify at G2" pathway is preserved)
+  html.includes('window._lastCompoundPrompt=buildCompoundPrompt(sections)') &&
+  // At least one NBA Finals game in the hardcoded schedule must carry matchupNote
+  // so the path is actually exercised on a real game during the Finals window
+  /league:\s*"NBA Finals[^"]*",[\s\S]{0,400}matchupNote:/.test(html),
+  'PM-23 (R2 Finals Narrative Context Phase 1) wires per-game matchupNote into buildCompoundPrompt as a "Context: ..." line, with the assembled prompt captured to window._lastCompoundPrompt for runtime inspection. This assertion locks three structural invariants: (a) the matchupNote → Context injection at the buildCompoundPrompt site, (b) the window._lastCompoundPrompt capture so the human-loop verification pathway in HANDOFF stays intact, (c) the existence of at least one NBA Finals game carrying matchupNote so the path is actually exercised. The runtime check is preserved (open console at G2, inspect window._lastCompoundPrompt), but the structural gate prevents a silent regression between commits.');
+
 // ═════════════════════════════════════════════════════════════════════
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);
