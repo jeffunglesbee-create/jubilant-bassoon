@@ -16324,6 +16324,7 @@ function classifySport(game, espnScore){
   const isNFL    =sp.includes('nfl')||(sp.includes('football')&&!sp.includes('afl'));
   const isAFL    =sp.includes('afl')||sp.includes('australian')||
                   espnScore?._aflComplete!==undefined||game._squiggleId!=null;
+  const isCFL    =sp.includes('cfl')||sp.includes('canadian football');
   const isSoccer =pPrefix==="'"||
                   /premier league|bundesliga|ligue 1|serie a|la liga|mls|champions|europa|conference league|efl|uecl|ucl|uel|soccer/i.test(sp);
   const isTennis =sp.includes('tennis')||sp.includes('atp')||sp.includes('wta');
@@ -18127,6 +18128,14 @@ function dramaScoreLive(eData, sport){
     if(q>=4 && mins<5) timeBonus=22;
     else if(q>=4)      timeBonus=14;
     else if(q===3)     timeBonus=5;
+  } else if(sp.includes('cfl')||sp.includes('canadian football')){
+    // CFL: similar scoring to NFL; 3-down game, wider field
+    // Margins calibrated same as NFL (one-score = 8 pts or fewer)
+    base = diff===0?1.0 : diff<=3?0.88 : diff<=8?0.62 : diff<=16?0.28 : 0.06;
+    if(period>4) timeBonus=22;       // overtime
+    else if(period===4 && mins<2) timeBonus=20;
+    else if(period===4) timeBonus=10;
+    else if(period===2 && mins<2) timeBonus=6; // two-minute warning
   }
 
   // ── #11a Situation Drama Bonus (QW-1) ─────────────────────────────────
@@ -19202,6 +19211,9 @@ function getFieldVoice(sport) {
       sp.includes('mls') || sp.includes('liga') || sp.includes('ucl') ||
       sp.includes('bundesliga') || sp.includes('serie') || sp.includes('ligue') ||
       sp.includes('efl') || sp.includes('uecl') || sp.includes('uel')) return FIELD_SOCCER_VOICE;
+  // AFL and CFL: no dedicated FIELD voice constant yet — inline guidance
+  if (sp.includes('afl') || sp.includes('australian')) return 'Australian Rules Football: use marks, handballs, clearances, inside-50s. Score as goals.behinds.total. Avoid: points, goals-only totals without behinds.';
+  if (sp.includes('cfl') || sp.includes('canadian football')) return 'Canadian Football (CFL): 3 downs, wider field, end zone rouge, no-yards penalties. Score in points. Avoid: four downs, calling it NFL, American football framing.';
   return '';
 }
 
@@ -19659,6 +19671,30 @@ async function retryWithRecordAttribution(originalPrompt, text, proxyUrl, ctx){
 // This matches the existing retryWithoutCliches() pattern exactly.
 
 const SPORT_VOCAB_VIOLATIONS = {
+  // AFL: must not use American/basketball/baseball vocabulary
+  afl: {
+    forbidden: [
+      'touchdown','first down','field goal percentage','three-point','free throw',
+      'rebound','basket','inning','innings','at-bat','strikeout','home run',
+      'penalty kick','nil','offside','overtime','possession game'
+    ],
+    sport: 'Australian Rules Football',
+    units: 'goals and behinds (goals×6+behinds=total)',
+    extra_period: 'extra time (not overtime)'
+  },
+  // CFL: must not use basketball/baseball/soccer vocabulary; distinguish from NFL
+  cfl: {
+    forbidden: [
+      'four downs','fourth down',  // CFL has 3 downs
+      'rebound','basket','three-pointer','free throw',
+      'inning','innings','at-bat','strikeout','home run',
+      'penalty kick','nil','offside','extra time',
+      'NFL team','NFL game','NFL players'  // must not confuse with NFL
+    ],
+    sport: 'Canadian Football (CFL)',
+    units: 'points (touchdowns=6, field goals=3, converts=1 or 2, rouges=1)',
+    extra_period: 'overtime'
+  },
   // Baseball: must not use basketball/football/soccer vocabulary
   baseball: {
     forbidden: [
@@ -19728,6 +19764,8 @@ function detectSportClass(sport) {
       sp.includes('ucl') || sp.includes('efl')) return 'soccer';
   if (sp.includes('hockey') || sp.includes('nhl')) return 'hockey';
   if (sp.includes('basketball') || sp.includes('nba') || sp.includes('wnba')) return 'basketball';
+  if (sp.includes('afl') || sp.includes('australian')) return 'afl';
+  if (sp.includes('cfl') || sp.includes('canadian football')) return 'cfl';
   return null;
 }
 
@@ -20548,6 +20586,7 @@ function buildCompoundPrompt(sections) {
       if (/\bf1\b|formula/i.test(raw)) return 'F1';
       if (/\bpga\b|golf/i.test(raw)) return 'PGA';
       if (/\batp\b|wta\b|tennis/i.test(raw)) return 'Tennis';
+      if (/\bcfl\b|canadian football/i.test(raw)) return 'CFL';
       return raw.toUpperCase().slice(0, 16) || 'OTHER';
     })();
     return [
@@ -27833,6 +27872,8 @@ async function fetchNightOwlFromClaude(topGame){
     ? 'Sport: American Football. Score in POINTS (touchdowns=6, field goals=3). Close game = one-score game (8 points or fewer). Use: yards, first downs, turnover, red zone.'
     : _sp.includes('afl') || _sp.includes('australian')
     ? 'Sport: Australian Rules Football. Score in GOALS and BEHINDS. Total = goals×6 + behinds. Close game = within a goal (7 points). Use: marks, handballs, clearances, score composite format goals.behinds.total.'
+    : _sp.includes('cfl') || _sp.includes('canadian football')
+    ? 'Sport: Canadian Football (CFL). Score in POINTS (touchdowns=6, field goals=3, rouges=1). Close game = one-score game (8 points or fewer). 4 downs (not 3 downs — that is the wrong number; CFL has 3 downs). Use: yards, first down, turnover, end zone, rouge, convert, major. NEVER use: basket, inning, goal, nil, penalty kick, quarter-back sack counts in points.'
     : _sp.includes('tennis') || _sp.includes('atp') || _sp.includes('wta')
     ? 'Sport: Tennis. Score by SETS and GAMES (not points except tiebreaks). Close match = deciding set. Use: break points, aces, double faults, set score, game score.'
     : _sp.includes('soccer') || _sp.includes('football') || _sp.includes('league') ||
@@ -29184,6 +29225,10 @@ async function renderNightOwlRecap(){
           ? 'Sport: Baseball. Score in RUNS. Use baseball vocabulary only.'
           : sp.includes('hockey')||sp.includes('nhl')
           ? 'Sport: Hockey. Score in GOALS. Use hockey vocabulary only.'
+          : sp.includes('afl') || sp.includes('australian')
+          ? 'Sport: Australian Rules Football. Score in GOALS and BEHINDS. Use: marks, handballs, score composite goals.behinds.total.'
+          : sp.includes('cfl') || sp.includes('canadian football')
+          ? 'Sport: Canadian Football (CFL). Score in POINTS. 3 downs. Use: yards, rouge, convert, major. Do not say four downs.'
           : sp.includes('wnba') ? 'Sport: WNBA Basketball. Score in POINTS.'
           : 'Sport: Basketball. Score in POINTS.';
         const w = (g.homeScore||0)>=(g.awayScore||0)?g.home:g.away;
