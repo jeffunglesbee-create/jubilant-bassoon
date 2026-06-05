@@ -1,48 +1,49 @@
-# FIELD HANDOFF — 2026-06-06 (Session END — AFL/CFL journalism surfaces complete)
+# FIELD HANDOFF — 2026-06-06 (Session END — full journalism surface audit)
 
 ## State
-jubilant-bassoon HEAD: d2026c4 · Smoke: 509/0 · Unit: 66/0
+jubilant-bassoon HEAD: a14db62 · Smoke: 509/0 · Unit: 66/0
 field-relay-nba HEAD: 981d474
 SW_VERSION: 2026-06-05a
 
-## AFL/CFL Journalism Surface Audit — COMPLETE ✅
+## Full Journalism Surface Audit — COMPLETE ✅
 
-### Gaps found and fixed (d2026c4 / 602532c)
+Systematic audit of all 21 sports against 10 surfaces.
+Found and fixed gaps across 3 commits: d2026c4 (AFL/CFL), 84f7c2d (AFL/CFL cleanup), a14db62 (all remaining).
 
-| Surface | AFL before | AFL after | CFL before | CFL after |
-|---|---|---|---|---|
-| `_terms` Night Owl voice | ✅ | ✅ | ❌ | ✅ |
-| `dramaScoreLive` calibration | ✅ | ✅ | ❌ | ✅ |
-| `classifySport` isSport flag | ✅ | ✅ | ❌ | ✅ |
-| `_leagueTag` in compound | ✅ | ✅ | ❌ "CANADIAN FOOTBAL" | ✅ "CFL" |
-| `getFieldVoice` | ❌ | ✅ inline | ❌ | ✅ inline |
-| `SPORT_VOCAB_VIOLATIONS` | ❌ | ✅ | ❌ | ✅ |
-| `detectSportClass` | ❌ | ✅ | ❌ | ✅ |
-| `_terms` bottom-sheet recap | ❌ | ✅ | ❌ | ✅ |
+### Final surface coverage matrix
 
-### CFL specifics added
-- Voice: 3 downs (not 4), rouge=1pt, wider field, convert, major
-- Forbidden vocab: "four downs", "fourth down", NBA/MLB/soccer terms, "NFL game"
-- Drama: NFL-equivalent calibration (one-score = 8pts), Q4 urgency
-- `detectSportClass` → 'cfl', `SPORT_VOCAB_VIOLATIONS.cfl` entry
-- `_leagueTag` → 'CFL' (was falling through to raw.toUpperCase → "CANADIAN FOOTBAL")
+| Sport | NightOwl | BottomSh | Drama | Classify | LeagueTag | FieldVoice | DetectClass | VocabViol | QualityTgt | LiveSrc |
+|---|---|---|---|---|---|---|---|---|---|---|
+| NBA | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| NHL | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| MLB | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| NFL | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | off-season |
+| WNBA | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | →basketball | ✅ | ✅ | ✅ |
+| MLS | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| EPL | ✅ | ✅ | →soccer | ✅ | ✅ | ✅ | ✅ | →soccer | ✅ | off-season |
+| UCL/UEFA | ✅ | ✅ | →soccer | ✅ | ✅ | ✅ | →soccer | →soccer | ✅ | off-season |
+| LaLiga | ✅ | ✅ | →soccer | ✅ | ✅ | →soccer | ✅ | →soccer | ✅ | off-season |
+| Serie A | ✅ | ✅ | →soccer | ✅ | ✅ | →soccer | ✅ | →soccer | ✅ | off-season |
+| Bundesliga | ✅ | ✅ | →soccer | ✅ | ✅ | ✅ | ✅ | →soccer | ✅ | off-season |
+| Ligue 1 | ✅ | ✅ | →soccer | ✅ | ✅ | →soccer | ✅ | →soccer | ✅ | off-season |
+| WC26 | ✅ | ✅ | →soccer | ✅ | ✅ | ✅ | →soccer | →soccer | →soccer | ✅ (Jun 11) |
+| AFL | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ (squiggle) |
+| CFL | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ (odds) |
+| Tennis | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Golf | ✅ | ✅ | — | ✅ | ✅ | ✅ | ✅ | ✅ | — | — |
+| Cricket | ✅ | ✅ | — | ✅ | ✅ | ✅ | ✅ | ✅ | — | ✅ (willow) |
+| Rugby | ✅ | ✅ | — | ✅ | ✅ | ✅ | ✅ | ✅ | — | — |
+| NCAAMB | — | — | — | ✅ | ✅ | — | — | — | — | — |
+| NCAAFB | — | — | — | — | — | — | — | — | — | — |
 
-### AFL specifics added (gaps were narrower)
-- `getFieldVoice` inline: marks, handballs, clearances, inside-50s, goals.behinds.total
-- `SPORT_VOCAB_VIOLATIONS.afl` entry with forbidden American/basketball/baseball terms
-- `detectSportClass` → 'afl'
-- Bottom-sheet `_terms` block: goals.behinds.total scoring
+→soccer = intentionally routed through soccer block (correct behavior)
+→basketball = WNBA routes to basketball class (correct)
+— = no live data source or rarely shown; low priority
 
-### What remains NOT wired for CFL
-- Live scores (no api.cfl.ca key — free registration at tech@cfl.ca)
-- `getStatisticalExtremes` — no CFL-specific extreme detection (not a gap; no live scores)
-- `getStatOfDay` — no CFL stat tracking (not a gap; no data source)
-- `getQualityTarget` — no CFL quality history tracking (small; low priority)
-
-### What remains NOT wired for AFL
-- `getStatOfDay` — no AFL stat (Squiggle doesn't provide enough for stat-of-day)
-- `getQualityTarget` — no AFL quality history tracking (same)
-- `getStatisticalExtremes` — no AFL Q4 surge detection (Squiggle has period scores but it's a minor gap)
+Notes:
+- Golf/Cricket/Rugby: no dramaScoreLive (no live score source; FIELD shows pre/post only)
+- Golf/Cricket/Rugby: no getQualityTarget (no quality history to learn from yet)
+- NCAAMB/NCAAFB: in-season only; carry-forward if they get a data source
 
 ## Priority List
 1. JQ Gate brand-safe fallback (~60 lines)
@@ -52,6 +53,6 @@ SW_VERSION: 2026-06-05a
 5. iOS PWA Add-to-Home (~40 lines)
 
 ## Key Refs
-jubilant-bassoon HEAD: d2026c4
+jubilant-bassoon HEAD: a14db62
 field-relay-nba HEAD: 981d474
 Smoke: 509/0 · Unit: 66/0
