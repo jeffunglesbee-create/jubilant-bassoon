@@ -3236,6 +3236,34 @@ assert('A491 — Scoreboard P0: fetchNBAScoreboard delegates parsing to parseNBA
   !html.includes("const hTri = (g.homeTeam?.teamTricode || '').toLowerCase(); // 'sas'"),
   'Scoreboard P0 parsing extraction: the inner parsing loop from fetchNBAScoreboard is extracted to parseNBAScoreboardGames in field_utils.js. fetchNBAScoreboard delegates to it. Unit tests in field_unit.js (60→66) cover NYK@SAS Finals G2 4-key map, teamNick lookup path, skip on missing gameId, empty array, null/undefined CDN early-day state, and multiple games. These tests run at CI time without needing live CDN data — the "pretend it\'s 8:30pm ET" synthetic equivalent. The probe route was already allow-listed (relay e0b44e7) — this closes the functional verification gap.');
 
+// ── RUWT compliance — Drama Dial UI + manifest (June 5 2026) ─────────────────
+// RUWT US 9,421,446 B2 covers "displaying a combined interest level score for
+// a sport event." Three compliance invariants for the Drama Dial card/chip:
+// (1) The PWA manifest must NOT describe FIELD as displaying "drama scores" —
+//     changed to "drama intelligence."
+// (2) The dial preview text must NOT expose numeric thresholds (e.g. "Badges
+//     at 65+") — changed to capability description ("close games get badges").
+// (3) The drama score number must NEVER reach visible DOM — vcResult.score is
+//     computed but only vcResult.badge (named state) is rendered.
+//
+// What remains (MODERATE, Rule 51): ViewingConditions.evaluate() uses composite
+// arithmetic pattern (score >= dial). Not displayed, user-controlled threshold,
+// but pattern matches RUWT claim structure. Categorical tier refactor deferred.
+
+assert('A492 — RUWT compliance: dial manifest + preview text have no numeric score exposure',
+  // Manifest must not say "drama scores" — changed to "drama intelligence"
+  html.includes('drama%20intelligence%20across%20every%20sport.') &&
+  !html.includes('drama%20scores%20across%20every%20sport.') &&
+  // Dial preview must NOT expose the raw threshold number (e.g. "Badges at 65+")
+  !html.includes('Badges at ${v}+') &&
+  !html.includes('Alerts at ${Math.min(v+20,95)}+') &&
+  // vcResult.score must NOT appear in any innerHTML/textContent assignment
+  // (confirmed by code audit: only vcResult.badge renders to DOM)
+  !html.includes('vcResult.score') &&
+  // The dial preview capability description must use the non-numeric framing
+  html.includes('Close games get badges'),
+  'RUWT compliance for Drama Dial UI (A492): (1) PWA manifest description changed from "drama scores" to "drama intelligence" — the prior text was an explicit public admission that FIELD shows drama scores, which directly matches RUWT US 9,421,446 B2 claim language. (2) Dial preview text changed from numeric threshold exposure ("Badges at 65+") to capability description ("Close games get badges") — the number 65 is a user preference, not a game score, but showing it implied FIELD computes per-game scores crossing that threshold, weakening the "we don\'t display scores" defense. (3) vcResult.score (from ViewingConditions.evaluate) is computed but never rendered to DOM — only vcResult.badge (named state: "CRUNCH TIME" / "WORTH WATCHING") appears on cards. Remaining MODERATE risk (Rule 51): ViewingConditions.evaluate uses composite arithmetic internally — categorical tier refactor (like _otwFindWCLiveGame) is the proper long-term fix.');
+
 // ═════════════════════════════════════════════════════════════════════
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);
