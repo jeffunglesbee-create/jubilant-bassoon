@@ -6079,7 +6079,8 @@ const ESPN_GOTD_SCHEDULE = {
   '2026-05-25':'PHI@SDP','2026-05-26':'SEA@OAK','2026-05-27':'MIA@TOR',
   '2026-05-28':'HOU@TEX','2026-05-29':'MIA@NYM','2026-05-30':'DET@CHW',
   '2026-05-31':'PHI@LAD',
-  // June 2026 block: paste here when ESPN announces (~late May)
+  // June 2026 — fetched daily via field-data-today.json (build-field-data.js broadcasts(all))
+  // Static entries here = fallback only when JSON is stale/absent
 };
 // Peacock GOTD: Announced weekly (Mon/Tue for upcoming week).
 // Paste each week's games. Source: peacocktv.com/blog
@@ -6090,6 +6091,8 @@ const PEACOCK_GOTD_SCHEDULE = {
   '2026-05-28':'CHC@PIT',   // Thu 6:40pm ET — CHC @ PIT
   '2026-05-29':'TOR@BAL',   // Fri 7:05pm ET — TOR @ BAL
   // ── Week of June 2–8 2026 (source: peacocktv.com/blog, updated Jun 2 2026) ────
+  // PRIMARY: field-data-today.json (build-field-data.js broadcasts(all)) auto-detects daily
+  // FALLBACK: static entries below for when JSON is absent/stale
   '2026-06-06':'BOS@NYY',   // Fri 7:05pm ET — BOS @ NYY (Peacock GOTD)
 };
 // MLB NETWORK: ALL non-exclusive out-of-market games (Showcase + regular).
@@ -6108,12 +6111,10 @@ const PEACOCK_GOTD_SCHEDULE = {
 // MLB Network Showcase (Vasgersian/Verducci crew) — announced multi-month block:
 //   Source: mlb.com/network/shows/regular-season-games + tracker: tamirmoore.blogspot.com/2026/02/...
 const MLBN_SCHEDULE = {
-  // VALUES: string = single game, array = multiple games that day (MLBN carries several daily)
+  // FALLBACK ONLY — primary source is field-data-today.json (build-field-data.js broadcasts(all))
+  // When field-data-today.json is dated today, mlbnShowcase flags come from statsapi broadcasts.
+  // This static table is consulted only when JSON is absent or stale (e.g. automation failure).
   // KEY FORMAT: 'YYYY-MM-DD' → 'AWAY@HOME' | ['AWAY@HOME', ...]
-  // SOURCE: mlb.com/network/shows/regular-season-games (JS-rendered — see mlbn-schedule.yml)
-  // AUTOMATION: mlbn-schedule.yml runs Puppeteer daily → outbox/mlbn-schedule.json
-  //   FIELD reads that JSON at runtime for real-time MLBN coverage (TYPE A pending)
-  //   This static table = fallback + seed data for known upcoming games.
   //
   // ── May 28 2026 (confirmed from screenshot Jeff provided) ─────────────────
   '2026-05-28':['LAA@DET','ATL@BOS','TOR@BAL'],  // 1pm, 4pm, 7pm ET

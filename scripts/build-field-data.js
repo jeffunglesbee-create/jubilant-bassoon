@@ -49,21 +49,16 @@ function nhlFullName(abbrev, fallback) {
 
 // ── MLB Broadcast Assignment (Phase 1) ───────────────────────────────────
 // Maps today's games to the correct national broadcast bundle.
-// Day-of-week rules from verified MLB broadcast agreements 2026:
-//   Friday:    Apple TV+ (MLB_APPLE) — exclusive Fri night game
-//   Saturday:  FOX primetime (MLB_FOX) — Game of Week
-//   Monday:    FOX/FS1 (MLB_FOX) — Monday game
-//   Tuesday:   TBS (MLB_TBS) — Tuesday night
-//   Sunday:    NBC/Peacock SNB post-May31 (MLB_NBC), MLB_PEACOCK_SNB pre-Jun1
-//              Sunday noon: MLB_LEADOFF (Peacock) — separate
-//   Other:     MLB_LOCAL (RSN/no national)
-// ESPN GOTD: set via espnGOTD flag, not by day rule (~30 games/season)
-function assignMLBBroadcast(game, dateStr) {
+// PRIMARY: parses live broadcast data from statsapi.mlb.com broadcasts(all) hydration.
+// Detects: MLB Network (mlbnShowcase), ESPN Unlimited GOTD (espnGOTD), Peacock GOTD (peacockGOTD).
+// FALLBACK: day-of-week rules when broadcast data absent or game is pre-game/no hydration.
+// Manual ESPN_GOTD_IDS / PEACOCK_GOTD_IDS env overrides always win.
+function assignMLBBroadcast(game, dateStr, rawBroadcasts) {
   const dow = new Date(dateStr + 'T12:00:00Z').getUTCDay(); // 0=Sun,1=Mon,...,6=Sat
   const startUTC = game.start_time ? new Date(game.start_time) : null;
   const startHourUTC = startUTC ? startUTC.getUTCHours() : 18;
 
-  // Check manual GOTD flags first
+  // Manual env overrides always win
   const matchKey = `${game.home}|${game.away}`;
   if (ESPN_GOTD_IDS.includes(matchKey)) {
     game.espnGOTD = true;
@@ -74,37 +69,82 @@ function assignMLBBroadcast(game, dateStr) {
     game.peacockGOTD = true;
   }
 
+  // Parse live broadcast array from statsapi hydration
+  const bcast = Array.isArray(rawBroadcasts) ? rawBroadcasts : [];
+  const names = bcast.map(b => (b.name || b.callSign || '').toLowerCase());
+  const hasMLBN    = names.some(n => n.includes('mlb network') || n === 'mlbn');
+  const hasApple   = names.some(n => n.includes('apple') || n.includes('apple tv'));
+  const hasESPN    = names.some(n => n === 'espn' || n.startsWith('espn '));
+  const hasFOX     = names.some(n => n === 'fox');
+  const hasFS1     = names.some(n => n === 'fs1');
+  const hasTBS     = names.some(n => n === 'tbs');
+  const hasNBC     = names.some(n => n === 'nbc' || n === 'nbcsn');
+  const hasPeacock = names.some(n => n.includes('peacock'));
+
+  // Detect Peacock GOTD: Peacock-branded national broadcast on a non-Sunday
+  // (Sunday Leadoff and SNB are always on Peacock — only tag GOTD for non-Sunday nationals)
+  if (hasPeacock && dow !== 0) {
+    game.peacockGOTD = true;
+  }
+
+  // Detect ESPN GOTD: ESPN national broadcast on a non-national-window day
+  // (ESPN has ~30 select games/season; Mon/Wed aren't guaranteed ESPN days)
+  if (hasESPN && !game.espnGOTD) {
+    game.espnGOTD = true;
+  }
+
+  // Detect MLB Network: any MLBN national carry
+  if (hasMLBN) {
+    game.mlbnShowcase = true;
+  }
+
+  // Assign primary nationalBundle from live broadcast data
+  if (bcast.length > 0) {
+    if (hasApple)          { game.nationalBundle = 'MLB_APPLE'; return; }
+    if (hasFOX)            { game.nationalBundle = 'MLB_FOX';   return; }
+    if (hasFS1)            { game.nationalBundle = 'MLB_FS1';   return; }
+    if (hasTBS)            { game.nationalBundle = 'MLB_TBS';   return; }
+    if (hasNBC || hasPeacock) {
+      // Sunday noon (Leadoff) vs evening (SNB)
+      if (dow === 0 && startHourUTC >= 15 && startHourUTC < 18) {
+        game.nationalBundle = 'MLB_LEADOFF';
+        game.peacockGOTD = true;
+      } else if (dow === 0) {
+        game.nationalBundle = 'MLB_NBC';
+      } else {
+        // Weekday Peacock GOTD
+        game.nationalBundle = 'MLB_PEACOCK_GOTD';
+        game.peacockGOTD = true;
+      }
+      return;
+    }
+    if (hasESPN) { game.nationalBundle = 'MLB_ESPN'; return; }
+    if (hasMLBN) { game.nationalBundle = 'MLB_NETWORK'; return; }
+    // Has broadcasts but only local — fall through to day-of-week for any remaining nationals
+  }
+
+  // Fallback: day-of-week rules (used when broadcasts array is empty or all-local)
   switch (dow) {
-    case 5: // Friday
-      game.nationalBundle = 'MLB_APPLE';
-      break;
-    case 6: // Saturday
-      game.nationalBundle = 'MLB_FOX';
-      break;
-    case 1: // Monday
-      game.nationalBundle = 'MLB_FOX';
-      break;
-    case 2: // Tuesday
-      game.nationalBundle = 'MLB_TBS';
-      break;
-    case 0: { // Sunday
-      // Sunday noon game: Peacock Leadoff (~12pm ET = 16:00 UTC)
+    case 5: game.nationalBundle = 'MLB_APPLE'; break;   // Friday: Apple TV+
+    case 6: game.nationalBundle = 'MLB_FOX';   break;   // Saturday: FOX
+    case 1: game.nationalBundle = 'MLB_FOX';   break;   // Monday: FOX
+    case 2: game.nationalBundle = 'MLB_TBS';   break;   // Tuesday: TBS
+    case 0: {
       if (startHourUTC >= 15 && startHourUTC < 18) {
         game.nationalBundle = 'MLB_LEADOFF';
         game.peacockGOTD = true;
-        break;
+      } else {
+        const [yr, mo, dy] = dateStr.split('-').map(Number);
+        const isPostMay31 = (mo > 5) || (mo === 5 && dy >= 31);
+        game.nationalBundle = isPostMay31 ? 'MLB_NBC' : 'MLB_PEACOCK_SNB';
       }
-      // Sunday Night Baseball: post-May 31 → NBC, pre-June → Peacock SNB
-      const [yr, mo, dy] = dateStr.split('-').map(Number);
-      const isPostMay31 = (mo > 5) || (mo === 5 && dy >= 31);
-      game.nationalBundle = isPostMay31 ? 'MLB_NBC' : 'MLB_PEACOCK_SNB';
       break;
     }
-    default:
-      game.nationalBundle = null; // local/RSN only
+    default: game.nationalBundle = null;
   }
 }
 
+// ── Parse NHL scoreboard
 // ── Parse NHL scoreboard ──────────────────────────────────────────────────
 function parseNHL() {
   try {
@@ -197,7 +237,7 @@ function parseMLBFull() {
   return new Promise((resolve) => {
     const req = https.request({
       hostname: 'statsapi.mlb.com',
-      path: `/api/v1/schedule?sportId=1&date=${TODAY}&gameType=R,F,D,L,W&hydrate=game,team,venue&limit=30`,
+      path: `/api/v1/schedule?sportId=1&date=${TODAY}&gameType=R,F,D,L,W&hydrate=game,team,venue,broadcasts(all)&limit=30`,
       method: 'GET',
       headers: { 'User-Agent': 'FIELD-DataBot/1.0', 'Accept': 'application/json' },
     }, res => {
@@ -228,6 +268,9 @@ function parseMLBFull() {
                 })()
               : null;
 
+            // Extract broadcast array from hydrated data
+            const rawBroadcasts = g.broadcasts || [];
+
             const game = {
               sport: 'MLB',
               home, away,
@@ -239,12 +282,13 @@ function parseMLBFull() {
               nationalBundle: null,
               espnGOTD: false,
               peacockGOTD: false,
+              mlbnShowcase: false,
               _postponed: isPPD,
               confirmed: true,
             };
 
-            // Assign broadcast based on day-of-week (unless playoffs have own rules)
-            if (!isPlayoff) assignMLBBroadcast(game, TODAY);
+            // Assign broadcast: live broadcasts(all) first, then day-of-week fallback
+            if (!isPlayoff) assignMLBBroadcast(game, TODAY, rawBroadcasts);
 
             return game;
           }).filter(Boolean);
@@ -429,6 +473,7 @@ async function main() {
       nationalBundle: g.nationalBundle,
       espnGOTD: g.espnGOTD || false,
       peacockGOTD: g.peacockGOTD || false,
+      mlbnShowcase: g.mlbnShowcase || false,
       _postponed: g._postponed || false,
       confirmed: true,
     })),
