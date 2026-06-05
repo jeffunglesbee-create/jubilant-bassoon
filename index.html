@@ -8498,10 +8498,17 @@ function renderAll(){
             <button class="watch-btn" data-id="${g._id}">+ Multiview</button>
           </div>
           ${g.venue&&!g.league?.includes("Playoffs")?`<div class="venue-line">${g.venue}</div>`:""}
-          ${(g.espnGOTD||g.peacockGOTD||g.mlbnShowcase||g.localNote||g.gotdStreams)?`<div class="badge-row">
+          ${(g.espnGOTD||g.peacockGOTD||g.mlbnShowcase||g.localNote||g.gotdStreams||g._cflSpread!=null||g._cflTotal!=null)?`<div class="badge-row">
             ${g.espnGOTD?'<span class="gotd-badge espn-gotd" title="ESPN App Game of the Day — requires ESPN Unlimited ($29.99/mo) or qualifying cable subscription. Local RSN blacked out.">📺 ESPN App GOTD</span>':""}
             ${g.peacockGOTD?'<span class="gotd-badge peacock-gotd" title="Peacock Game of the Day — stream on Peacock, NBCSN simulcast. Local RSN blacked out in market.">🦚 Peacock GOTD · Free</span>':""}
             ${g.mlbnShowcase?'<span class="gotd-badge" style="color:#6699ff;border-color:rgba(102,153,255,.4);background:rgba(102,153,255,.08)">📺 MLB Network</span>':""}
+            ${(g._cflSpread!=null||g._cflTotal!=null)?(()=>{
+              const sp=g._cflSpread!=null?`${g._cflSpread>0?'+':''}${g._cflSpread}`:'';
+              const tot=g._cflTotal!=null?`O/U ${g._cflTotal}`:'';
+              const label=[sp,tot].filter(Boolean).join(' · ');
+              const pct=g.wp!=null?` · ${Math.round(g.wp*100)}% home`:'';
+              return `<span class="gotd-badge" style="color:var(--gold2);border-color:rgba(201,168,76,.3);background:rgba(201,168,76,.06)" title="CFL odds · ${label}${pct}">🏈 ${label}</span>`;
+            })():''}
             ${g.localNote?'<span class="gotd-badge local-cov" title="'+g.localNote+'">📍 Local</span>':""}
             ${g.gotdStreams?streamsHTML(g.gotdStreams):""}
           </div>`:""}
@@ -20576,6 +20583,8 @@ function buildCompoundPrompt(sections) {
       (()=>{try{const _eS=findESPNScore?.(g);return buildLinescoreContext(_eS,g._id)||''}catch(e_){return ''}})(),
       (()=>{try{const _eS=findESPNScore?.(g);return buildGoalTimeline(g,_eS)||''}catch(e_){return ''}})(),
       (()=>{try{const _eS=findESPNScore?.(g);return buildNBAPlayerContext(g,_eS)||''}catch(e_){return ''}})(),
+      // CFL pre-game odds context
+      (()=>{try{if(g._cflSpread==null&&g._cflTotal==null)return '';const sp=g._cflSpread!=null?`${g._cflSpread>0?'+':''}${g._cflSpread}`:'';const tot=g._cflTotal!=null?`O/U ${g._cflTotal}`:'';const pct=g.wp!=null?` · home ${Math.round(g.wp*100)}%`:'';const parts=[sp,tot].filter(Boolean).join(' · ');return parts?`  [CFL ODDS] ${parts}${pct}`:''}catch(e_){return ''}})(),
       // Fix 7: EMBER buried lead — tier + channel context for editorial framing
       (()=>{try{const er=_emberResultCache[g._id||''];return er?`  [EMBER BURIED LEAD: Tier${er.tier} on ${er.channel}${er.lateClose?' · late-close game':''}${er.contextFlag?' · context boost':''}]`:''}catch(e_){return ''}})(),
       // Axis 3 Phase B: BDL injury context now routed through buildSeriesContextTags
