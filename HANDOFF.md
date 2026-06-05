@@ -1,84 +1,80 @@
-# FIELD HANDOFF — 2026-06-05 (Session END)
+# FIELD HANDOFF — 2026-06-05 (Session END — PM-28 partial)
 
 ## State
-jubilant-bassoon HEAD: 295dc8c · Smoke: 508/0 · Unit tests: 66/0
+jubilant-bassoon HEAD: 992c20d · Smoke: 508/0 · Unit tests: 66/0
 field-relay-nba HEAD: 25d8fbc
 SW_VERSION: 2026-06-05a
 
-## Session Ships (chronological)
+## PM-28 Build Status
 
-### PM-25a/b/c — Card Render Slot + Tier Refactor + Confidence Glyph
-See prior entries. All shipped earlier today.
+### SHIPPED this session (992c20d)
 
-### Daily update — June 5 2026 (efeebbe)
-SCF G2 CAR 4-3 VGK series tied 1-1, WNBA Fri/Sat, CFL Week 1,
-Apple FNB (CLE@TEX + KCR@MIN), MLB June 5 slate.
+**PM-28a** — `recordLinescores()` + `getLinescores()` + `LINESCORE_KEY`
+  Persists homeLinescores/awayLinescores to localStorage on each period
+  boundary. Schema: `{h,a,sport,periods,t,innings[]}`. Guard: only writes
+  when `homeLS.length > stored.periods`. Auto-pruned by existing midnight
+  prune via `.t` field. Location: ~line 26348 (near `SCORE_SNAP_KEY`).
 
-### PM-27 — Event Bus Payload Standard (295dc8c, A497–A499)
+**PM-28b** — Extract `linescore.innings[]` in `normalizeMLBGame()`
+  `g.linescore.innings[]` was hydrated via `hydrate=linescore` but never
+  read. Added extraction of `{n,hr,hh,he,ar,ah,ae}` per inning.
+  Fixes `eData.innings` always being `[]` — unblocks no-hitter check
+  (~line 18149) and late-comeback check (~line 18169).
 
-PM-27a: data-gameimportance on card root template
-  data-gameimportance="${g._gameImportance}" written when set.
-  Enables CSS/JS playoff-card queries without DOM traversal.
+**PM-28c** — Wire `recordLinescores()` at `recordScoreSnapshot` callsite
+  Fires alongside `recordScoreSnapshot` at line 26118. Passes
+  `eData.homeLinescores`, `awayLinescores`, `_sport`, `innings`. Noop
+  if `homeLinescores` absent.
 
-PM-27b: field:crunch emitter + CRUNCH Fan-Out chip (S3)
-  renderCardBadges() emits field:crunch on CRUNCH TIME badge.
-  Subscriber S3 scans .game-card.espn-live[data-gameimportance="playoffs"]
-  excluding source → .fan-out-chip "⚡ via {matchup}" with scroll-anchor.
-  "Related card" = playoffs data-gameimportance (championship tier).
-  NBA Finals fans out to SCF and vice versa. A497.
+**FIELD_FEATURES** — 10 pm28 entries declared.
 
-PM-27c: field:otw_changed emitter + OTW Changeover beat (S4)
-  _prevOTWId tracks last OTW selection. renderOneToWatch() emits on swap.
-  Subscriber S4 → .otw-changed "JUST CHANGED ↑" for 12s → timestamp stamp.
-  CLS budget = 0. A498.
+### PENDING (next session resumes here)
 
-PM-27d: field:ws_fresh emitter + WS Pulse dot (S5)
-  GameSocket.onmessage emits field:ws_fresh. _lastWSMessageTime Map.
-  updateWsPulseDot() renders .ws-pulse beside .game-time (solid/dim/stale).
-  Self-healing resubscribe on stale. 15s sweep. CLS budget = 0. A499.
+| Item | What | Key refs |
+|------|------|----------|
+| PM-28d | NBA CDN boxscore → quarter scores + player stats | `fetchNBABoxScoreViaRelay()` line 13885 (zero callsites). CDN schema: `game.homeTeam.periods[{period,score}]`. Trigger: `checkForNewFinals()` line 28933. Write into `espnScores[key].homeLinescores` + `_nbaBoxscoreCache[gameId]`. |
+| PM-28e | NHL `fetchNHLLiveStats()` → extract `byPeriod` goals | `bd.linescore.byPeriod[{periodDescriptor,away,home}]` inside existing boxscore fetch (line 13696). Insert extraction in same try-block. Write into `espnScores[key].homeLinescores/awayLinescores`. key = `${home}\|${away}` set at line 13737. |
+| PM-28f | `buildLinescoreContext()` formatter | Insert near `recordLinescores()`. Live: `eData.homeLinescores`. Postgame: `getLinescores(gameId)`. Labels: NBA Q1-Q4, NHL P1-P3, MLB Inn1-9 (H/R/E format), Soccer 1H/2H. Output: `[LINE SCORE] Q1: 28-26 \| Q2: 22-29...`. Guard: <2 periods → `''`. |
+| PM-28g | `buildGoalTimeline()` soccer | FD path: `_fdGoalCache["{home}\|{away}"]` + `htHome/htAway`. API-Football path: `/apisports/football/fixtures/events?fixture={_gameId}` via V2_RELAY_BASE. Cache in `_afEventCache[gameId]`. Output: `[GOAL TIMELINE] 23' Arsenal/Saka (Odegaard) · 67' Chelsea/Palmer [HT: 1-0]`. |
+| PM-28h | `buildNBAPlayerContext()` | Source: `_nbaBoxscoreCache` (from PM-28d). Top 2 per team by pts. Output: `[NBA BOX] Brunson 32pts/7ast · KAT 24pts/11reb (NYK)`. |
+| PM-28i | `normalizeApiFootballStats()` adapter | Input: `[{team:{name}, statistics:[{type,value}]}]` → `{"Arsenal":{"Yellow Cards":2,...}}`. ~15 lines. |
+| PM-28j | Inject into `fetchNightOwlFromClaude()` | ~line 27575. Add `_lineCtx`, `_goalCtx`, `_nbaCtx` to prompt. Update DO NOT FABRICATE rule to scope to absent data. |
+| PM-28k | Inject into `buildCompoundPrompt()` | After `extremeNote` at ~line 20518. Add `buildLinescoreContext()` + `buildGoalTimeline()` per game. |
+| PM-28l | Inject `_nhlLiveStatsCache` into Night Owl | Already reaches compound (line 20538). ~3 lines to add to Night Owl prompt. |
+| PM-28m | Midnight prune verify | `field_linescore_` auto-pruned by existing `.t` check. Verify only — no new code. |
+| PM-28n | Smoke assertion A500 | Check: recordLinescores, getLinescores, LINESCORE_KEY, buildLinescoreContext, buildGoalTimeline, buildNBAPlayerContext, normalizeApiFootballStats, innings[] in normalizeMLBGame, Night Owl injection, compound injection. |
 
-CSS: .otw-changed, .otw-changed-stamp, .fan-out-chip, .ws-pulse variants.
-Smoke: 505→508 (A497, A498, A499).
+## Key Do Not Assume Facts for Next Session
 
-## DO NOT ASSUME corrections
-
-getDramaHistory() EXISTS. Population during live games UNVERIFIED.
-Must confirm before Arc Poster build.
-
-Hub 1 (PM-25) COMPLETE. Hub 2 (PM-27) COMPLETE.
-All three Hub 2 subscribers now shipped:
-  S3 CRUNCH Fan-Out: SHIPPED
-  S4 OTW Changeover: SHIPPED
-  S5 WS Pulse: SHIPPED
+- `fetchNBABoxScoreViaRelay()` is defined (line 13885), never called
+- `_nbaGameIdMap` key format: `"{hNick}_{aNick}"` e.g. `"spurs_thunder"`
+- `_fdGoalCache` written at line 11055, zero reads anywhere
+- `htHome/htAway` on FD match objects, not in any prompt
+- API-Football `/fixtures/events` returns goals+assists+cards+subs free tier
+- `_nhlLiveStatsCache[key]` in compound (line 20538), NOT in Night Owl
+- `normalizeApiFootballStats()` needed: AF stats is array-of-objects schema, different from every other FIELD source
+- `FIELD_V2_SOURCES.mls = true` (wc26 = false, epl/ucl = false — season paused)
+- Existing midnight prune handles `field_linescore_` automatically via `.t` field
 
 ## Priority List
 
 ### Time-gated (this week)
-  1. WC pre-flight — probe all relay endpoints before June 11 opener
-     → MEX vs RSA at Azteca, 12pm ET, FOX/Telemundo
-     → D1 wc2026 f26669de-e772-4b56-a6d1-f8fdea08a4d4
-  2. BALLDONTLIE trial — June 11 opening match data source test
+1. **WC pre-flight** — probe all relay endpoints before June 11 opener
+   MEX vs RSA at Azteca, 12pm ET, FOX/Telemundo
+   D1 wc2026: `f26669de-e772-4b56-a6d1-f8fdea08a4d4`
+2. **BALLDONTLIE trial** — June 11 opening match data source test
 
-### Remaining subscribers (parallel-trackable)
-  3. JQ Gate brand-safe fallback (~60 lines, no hub dep)
-  4. iOS PWA Add-to-Home (~40 lines, parallel-trackable)
-  5. Drama Dial header chip discoverability (~20 lines)
-
-### Build items (patent-adjacent)
-  6. Arc Poster (~200 lines, no backend)
-     → BLOCKER: verify getDramaHistory() populated during live games
-  7. State Transition PerformanceObserver (~30 lines + assertions)
-
-### Deferred / maintenance
-  8. A399 cleanup — detail string says "verified unreachable" (now wrong)
-  9. field-relay-nba scoreboard-probe.yml — delete or keep
+### After PM-28 complete
+3. JQ Gate brand-safe fallback (~60 lines)
+4. Drama Dial header chip (~20 lines)
+5. Arc Poster (~200 lines, BLOCKER: verify getDramaHistory() populated live)
+6. State Transition PerformanceObserver (~30 lines)
+7. iOS PWA Add-to-Home (~40 lines)
 
 ## Key Refs
-jubilant-bassoon HEAD: 295dc8c
+jubilant-bassoon HEAD: 992c20d
 field-relay-nba HEAD: 25d8fbc
+PM-28 spec v3: 1k6ezaT8y7r1Q9gmRMOCxMARFKAp7Thta
+Session doc: 1RoJuUKdgTFVb_X6RlfXDqynV-tSDcNbK
 D1 wc2026: f26669de-e772-4b56-a6d1-f8fdea08a4d4
 Smoke: 508/0 · Unit: 66/0
-
-## Drive Docs (this day)
-Amnesty Zone Definition: 1qyek7_eBtPvrqhVVljnKZhtmHn9GgVF9h1NilaGX9xc
-Session doc (PM-25a/b): 15ZflDC7r1tbZ7UdFP2ToTjUwJp_bHAAOKXO4IYE46nI
