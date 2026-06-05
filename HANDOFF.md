@@ -1,98 +1,114 @@
-# FIELD HANDOFF — 2026-06-05 (PM-24 + Scoreboard P0)
+# FIELD HANDOFF — 2026-06-05 (Session END)
 
 ## State
-jubilant-bassoon HEAD: 89b765e · Smoke: 497/0 · Unit tests: 60/0
-field-relay-nba HEAD: 25d8fbc (scoreboard probe added; one-shot diagnostic captured)
+jubilant-bassoon HEAD: 538532e · Smoke: 501/0 · Unit tests: 66/0
+field-relay-nba HEAD: 25d8fbc (scoreboard probe workflow + allow-list)
 SW_VERSION: 2026-06-05a
+Time: ~3:45pm ET · G2 tip: 8:30pm ET tonight (NYK @ SAS · ABC)
 
-## Session Summary
+## Session Ships (chronological)
 
-### 1. PM-24: Read-time witness aggregation (79cee15 → 89b765e)
-findScore now aggregates witnesses across all fuzzy-matched _scoresBySource
-entries before evaluating confidence. The 'verified' state is reachable.
+### PM-24: verified confidence reachable (79cee15 → 89b765e)
+findScore aggregates witnesses across fuzzy-matched _scoresBySource keys.
+ESPN "New York Knicks|San Antonio Spurs" + api-sports "Knicks|Spurs" now
+both contribute → verified branch reachable. _pm24_matched diagnostic field.
+Smoke 494→497 (A486, A487, A488).
 
-Problem: PM-20 writers used literal team-name keys. ESPN wrote
-"New York Knicks|San Antonio Spurs"; api-sports wrote "Knicks|Spurs".
-Two entries per game, one witness each. findScore returned on first match
-→ always 'single'.
+### Scoreboard P0 probe allow-list (relay e0b44e7)
+/nba/liveData/scoreboard/todaysScoreboard_00.json added to probe_relay_route
+ALLOWED_EXACT. Probe confirmed HTTP 200, valid JSON. CDN returns games:[]
+at 10am ET — normal early-day state, not a bug.
 
-Fix: invert control flow. Iterate, accumulate freshest witness per source
-via espnTeamMatch fuzzy lookup. Evaluate confidence after the loop.
-Returns _pm24_matched diagnostic showing contributing keys.
+### A489: Finals Desk CI gate (4f021cc)
+Converted "verify at G2 via window._lastCompoundPrompt" from human-loop check
+to structural smoke assertion. matchupNote → buildCompoundPrompt Context line
+now CI-gated. Smoke 497→498.
 
-Smoke 494→497 (A486 comment block, A487 aggregation logic, A488 diagnostic).
-Unit tests 60/0 unchanged.
+### Drama Dial OTW wiring A490 (00e9d25)
+Both OTW FIRE callsites replaced _otwFindLiveGame(50) → getDramaDial().
+Badges and OTW selection now governed by same user preference. RUWT Rule 51
+MODERATE resolved (user-controlled threshold, not fixed). Smoke 498→499.
 
-### 2. Scoreboard P0 — RESOLVED (relay e0b44e7, probe 25d8fbc)
-The probe allow-list carry-forward is closed. /nba/liveData/scoreboard/
-todaysScoreboard_00.json added to ALLOWED_EXACT in probe_relay_route tool
-(src/index.js:3481-3495 of field-relay-nba). Deployed e0b44e7 14:01 UTC.
+### Scoreboard P0 fully resolved (bcae437, A491)
+parseNBAScoreboardGames extracted to field_utils.js + index.html (A191 rule).
+fetchNBAScoreboard delegates to it. 6 synthetic unit tests (60→66): NYK@SAS
+4-key map, teamNick path, missing gameId skip, empty array, null CDN state,
+multiple games. Smoke 499→500.
 
-DIAGNOSTIC (probe at 14:06:35 UTC = 10:06 AM ET):
-  HTTP 200, application/json, 375 bytes, 156ms
-  scoreboard.gameDate = "2026-06-04" (yesterday)
-  scoreboard.games = [] (empty)
-  meta.request = nba-prod-...amazonaws.com/.../todaysScoreboard_00.json
+### RUWT compliance: manifest + dial preview (538532e, A492)
+RISK 1: PWA manifest "drama scores" → "drama intelligence" (public admission fix)
+RISK 2: Dial preview "Badges at 65+" → "Close games get badges" (no threshold exposure)
+Smoke 500→501.
 
-Interpretation: NBA's CDN is in normal early-day state. todaysScoreboard
-rolls forward as teams arrive at arenas (typically mid-afternoon ET).
-The relay chain is fully healthy — route forwards correctly, returns
-valid JSON. The empty games array is expected at this hour.
+## DO NOT ASSUME corrections from this session
 
-CORRECTION TO PRIOR FRAMING:
-  My earlier statement that PM-24 verification depends on this route
-  was wrong. Re-tracing: _scoresBySource[key].espn is written by the
-  ESPN-native scoreboard writer (index.html:14900-15044), .apisports
-  by the api-sports V2 writer (~13200, 14900). NBA CDN scoreboard only
-  populates _nbaGameIdMap for PBP routing (fetchNBAPBP). PM-24's
-  verified branch fires independently.
+Drama Dial was incorrectly classified as Class D ("no code"). The "Drama
+Sensitivity" slider in My Services IS the Drama Dial — fully built, localStorage
++ IDB + SW sync, controls getDramaScore() thresholds. OTW wiring added A490.
+Missing: header chip (main-view discoverability) + categorical tier refactor.
 
-  What this NBA CDN scoreboard DOES gate: any feature using NBA CDN
-  PBP, including in-game scoring-run detection, possession-by-possession
-  analytics, late-game timing precision. None of these are PM-24.
+Scoreboard P0: prior HANDOFF said "RESOLVED" after just the probe allow-list.
+That was imprecise — parsing was unverified. Now fully resolved with unit tests.
 
-NEW CARRY-FORWARD (small): re-probe scoreboard at ~6pm ET tonight to
-  confirm CDN has populated G2 (NYK@SAS). Workflow is reusable:
-  re-trigger field-relay-nba/.github/workflows/scoreboard-probe.yml
-  via workflow_dispatch. Result lands in outbox/.
+## G2 Verification Checklist (NYK @ SAS · 8:30pm ET · ABC)
 
-### 3. Doc artifact (out-of-repo)
-Viewport spec refresh shipped earlier this session:
-/mnt/user-data/outputs/field-viewport-2026-06-05.html
-~2000 lines, 12-state coverage incl. NEW W1 WC variant, surface library,
-Status Ledger (DO NOT ASSUME, four-class), Novel Thinking paths.
-PM-24 section now annotated "SHIPPED 79cee15" with verification path.
+1. ~6pm ET — Re-probe NBA CDN scoreboard:
+   field-relay-nba/.github/workflows/scoreboard-probe.yml → workflow_dispatch
+   Look for: non-empty games array, gameId for NYK@SAS, gameDate = 2026-06-05
+   If populated: _nbaGameIdMap will fill at tip, PBP features active for G2
 
-## Verification at G2 (NYK @ SAS · 8:30p ET · ABC)
+2. At G2 tip — PM-24 verification:
+   Open console:
+     findScore({home:'NYK', away:'SAS'})._pm24_matched
+   Expected: array with 2 keys (ESPN + api-sports). confidence = 'verified' or
+   'mismatch' (either beats 'single'). Card text: "62-58 Q3 ✓" or "62-58 Q3 ⚠"
 
-PM-24 verification path:
-  Open console at game time:
-    findScore({home:'NYK', away:'SAS'})._pm24_matched
-  Expected: array with 2 keys (one ESPN-shaped, one api-sports-shaped)
-  Confidence field flips to 'verified' (scores agree) or 'mismatch' (diverge)
-  Card text reads "62-58 Q3 ✓" or "62-58 Q3 ⚠" for first time
+3. At G2 tip — Finals Desk verification (A489 structural, this is runtime):
+   Open console:
+     window._lastCompoundPrompt
+   Should include "Context: NBA Finals G2 — NYK leads 1-0..."
 
-NBA CDN re-probe (after the scoreboard-probe workflow re-runs):
-  Look for non-empty games array containing gameId for NYK@SAS
-  _nbaGameIdMap should then populate when fetchNBAScoreboard fires
-  Enables PBP features for G2
+## Priority List
 
-## Priority List (resequenced post-session)
+### Time-gated (today/this week)
+  1. Re-probe NBA CDN scoreboard at ~6pm ET
+     → workflow_dispatch field-relay-nba/scoreboard-probe.yml
+  2. WC pre-flight — probe all relay endpoints before June 11 opener
+     → MEX vs RSA at Azteca, 12pm ET, FOX/Telemundo
+     → D1 wc2026 f26669de-e772-4b56-a6d1-f8fdea08a4d4
+  3. BALLDONTLIE trial — June 11 opening match data source test
 
-  1. R2 Finals Narrative Context verify at G2 tonight
-       Convert to synthetic smoke #498 (see viewport spec Novel Thinking #1)
-  2. Re-probe NBA CDN scoreboard at ~6pm ET (workflow exists)
-  3. BALLDONTLIE trial — June 11 Mexico vs SA 7pm ET opening match
-  4. WC pre-flight — probe all endpoints before June 11
-  5. Drama Dial — patent-priority June 25, dual-ship with _otwFindLiveGame RUWT fix
-  6. Rich-visual confidence glyph (item 2b in viewport spec) — ~30 lines, follow-on to PM-24
-  7. wpDelta → drama signal
-  8. Level 2 sparkline
-  9. Cleanup: simplify A399 (PM-22 band-aid) detail string — verified is now reachable
+### Infrastructure (unlock 3+ surfaces each)
+  4. PM-25 Card Render Slot
+     → renderCardBadges(card, eData) ~45 min
+     → unblocks: rich-visual confidence glyph, WS Pulse on cards, CRUNCH Fan-Out chip
+  5. PM-27 Event Bus Payload Standard
+     → standardize {type, target, source, reason, at, payload} ~30 min
+     → unblocks: CRUNCH cascade chip, otw:changed beat, ws:fresh staleness
+
+### Subscribers (small, after hubs)
+  6. Rich-visual confidence glyph (~10 lines into PM-25 hook)
+  7. JQ Gate brand-safe fallback (~60 lines, parallel-trackable, no hub dep)
+  8. CRUNCH Fan-Out causality chip (~30 lines into PM-27 + PM-25)
+  9. OTW Changeover beat (~25 lines into PM-27)
+  10. WS Pulse on cards (~30 lines into PM-25 + PM-27)
+  11. iOS PWA Add-to-Home (~40 lines, parallel-trackable)
+
+### Patent priority (Jun 25 USPTO — ~20 days)
+  12. Drama Dial categorical tier refactor
+      → _otwFindLiveGame → named-condition tiers like _otwFindWCLiveGame
+      → RUWT Rule 51 MODERATE → resolved
+      → Also ships header chip discoverability (~20 lines)
+  13. Arc Poster — SVG render from existing Amnesty data (~200 lines, no backend)
+  14. State Transition PerformanceObserver (~30 lines + assertions)
+
+### Deferred / maintenance
+  15. A399 cleanup — detail string still says "verified unreachable" (now wrong)
+  16. field-relay-nba scoreboard-probe.yml — delete or keep as reusable diagnostic
 
 ## Key Refs
-jubilant-bassoon HEAD: 89b765e
+jubilant-bassoon HEAD: 538532e
 field-relay-nba HEAD: 25d8fbc
 D1 wc2026: f26669de-e772-4b56-a6d1-f8fdea08a4d4
-Smoke: 497/0 · Unit tests: 60/0
-Probe diagnostic: field-relay-nba/outbox/scoreboard-probe-20260605T140635Z.body
+Viewport spec: field-viewport-2026-06-05.html (outputs/)
+Smoke: 501/0 · Unit: 66/0
