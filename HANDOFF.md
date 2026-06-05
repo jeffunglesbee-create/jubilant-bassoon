@@ -1,68 +1,56 @@
-# FIELD HANDOFF — 2026-06-05 (Session END — WC Pre-Flight)
+# FIELD HANDOFF — 2026-06-06 (Session END — CFL Odds API)
 
 ## State
-jubilant-bassoon HEAD: cd2b737 · Smoke: 509/0 · Unit tests: 66/0
-field-relay-nba HEAD: 25d8fbc
+jubilant-bassoon HEAD: f727c04 · Smoke: 509/0 · Unit: 66/0
+field-relay-nba HEAD: 981d474
 SW_VERSION: 2026-06-05a
 
-## WC Pre-Flight — COMPLETE ✅
+## CFL Odds API — SHIPPED ✅
 
-### Probe Results (all endpoints probed via MCP probe_relay_route)
+### What was built
 
-| Endpoint | Status | Notes |
-|---|---|---|
-| `/health` | 200 | `wc-d1` + `soccer-wp` confirmed in health string |
-| `/wc/standings` | 200 | `{"groups":{}}` — empty, correct pre-tournament |
-| `/wc/results` | 200 | `{"results":[]}` — empty, correct |
-| `/wc/odds-probs` | 200 | Full group stage loaded, 29–30 bookmakers/match |
-| `/v2/games?sport=wc26&date=2026-06-11` | 200 | MEX vs RSA: `state:pre`, correct UTC kickoff, Azteca venue |
-| `/wc/wp/verify` | 200 | `soccer_fifa_world_cup active=true`, 19,983 quota remaining |
+**Relay (field-relay-nba 981d474):**
+- `handleCFLOddsProbs(env)` — fetches `americanfootball_cfl` from The Odds API
+  - Markets: h2h + spreads + totals (2 credits/call)
+  - No-vig home/away win probability (CFL has no draw)
+  - Returns: `{ok, probs:[{home_team, away_team, commence, pHome, pAway, spread, total, bookmakers}]}`
+  - CF edge-cached 2 min
+- Route: `GET /cfl/odds-probs` (top-level, NOT inside /wc/ block — bug fixed before shipping)
+- Health: `+ cfl-odds` in `/health` response
+- Probe allow-list: `/cfl/odds-probs` added for MCP probe_relay_route
+- Deployed via field-relay-nba repo push → `deploy.yml` wrangler deploy
 
-### Alias normalization — verified correct
-`_wcMatchTeamName()` already handles all known discrepancies as of June 4:
-- `usa` ↔ `united states`
-- `turkey` ↔ `turkiye`
-- `czech republic` ↔ `czechia`
-- `dr congo` ↔ `congo dr`
-- `ivory coast` ↔ `cote d ivoire`
-
-NFD normalization strips diacritics before comparison (handles Türkiye → turkiye).
-
-### V2 source flag — date-gated (cd2b737)
-`FIELD_V2_SOURCES.wc26` changed from `false` to:
-```js
-wc26: new Date() >= new Date('2026-06-11T00:00:00Z')
+**Live probe result (tonight's Week 1 games):**
 ```
-Auto-activates at June 11 00:00 UTC. No manual deploy needed on game day.
-V2 poll loop will start hitting `/v2/games?sport=wc26&date=...` every 30–60s
-as soon as the flag evaluates true. Pushes WC scores into `espnScores` on every
-poll cycle — cards update without the WC Groups tab being open.
+Calgary Stampeders vs Winnipeg Blue Bombers: pHome=0.4722 pAway=0.5278 spread=+1.5 total=47.7 (19 books)
+Ottawa Redblacks vs Edmonton Elks: pHome=0.5692 pAway=0.4308 spread=-2.4 total=51.0 (19 books)
+```
 
-### Architecture summary
-- Live card scores: V2 poll loop → `fetchV2Games('wc26')` → `espnScores[key]` (active June 11+)
-- WC Groups tab: `fetchWCStandings()` + `fetchWCResults()` + `fetchWCOddsProbabilities()` + `fetchWCLiveGames()` (tab-driven, always independent)
-- Watch Engine WC OTW: `_otwFindWCLiveGame()` reads `_wcLiveGamesCache` (populated by `fetchWCLiveGames`)
-- `wcActive` flag: date-gated `2026-06-11` to `2026-07-20` local — controls nav link + WC UI visibility
+**Client (jubilant-bassoon f727c04):**
+- `fetchCFLOddsProbs()` — async fetch with 2-min client-side cache
+- `_cflMatchOdds(game)` — matches game object to odds by team name (normalized, handles reversed home/away)
+- Wired into startup `Promise.all([fetchScheduleData(), fetchCFLOddsProbs()])` inside 1500ms race
+- `buildTodaySchedule()` attaches `g.wp`, `g._cflSpread`, `g._cflTotal` to each CFL game
 
-### Nothing else needed before June 11
-No code changes required on game day. The date-gated flag handles everything automatically.
+### What's NOT done yet
+- CFL cards don't yet DISPLAY the spread/total (data attached but no UI render)
+- CFL schedule is still hardcoded (2 Week 1 games). Needs weekly update or automation
+- No live scores (api.cfl.ca key not obtained)
 
-## Priority List
+### relay-worker-deploy.yml lesson
+The `jubilant-bassoon/.github/workflows/relay-worker-deploy.yml` workflow
+was created during this session as a failed attempt to deploy the bundled worker via CF API.
+The correct path is: edit `field-relay-nba/src/index.js` → push → `field-relay-nba` deploy.yml fires.
+The relay-worker-deploy.yml in jubilant-bassoon is vestigial — can be deleted.
 
-### After WC opens (June 11+)
-1. Monitor V2 wc26 scores on G1 — confirm Mexico name matches (`Mexico` both sides, should be clean)
-2. Confirm odds attachment works on G1 card (Mexico 66.8% to win)
-
-### Other pending (this week)
-3. JQ Gate brand-safe fallback (~60 lines)
-4. Drama Dial header chip (~20 lines)
-5. Arc Poster (~200 lines, BLOCKER: verify getDramaHistory() populated live)
-6. State Transition PerformanceObserver (~30 lines)
-7. iOS PWA Add-to-Home (~40 lines)
-8. `fetchAFGoalEvents()` — populate `_afEventCache` for PM-28g soccer goal timeline
+## Priority List (next session)
+1. Delete relay-worker-deploy.yml from jubilant-bassoon (vestigial)
+2. CFL card UI: display spread chip (e.g. "WPG -1.5") + O/U total
+3. CFL schedule automation (weekly hardcode update or api.cfl.ca key)
+4. JQ Gate brand-safe fallback (~60 lines)
+5. Drama Dial header chip (~20 lines)
 
 ## Key Refs
-jubilant-bassoon HEAD: cd2b737
-field-relay-nba HEAD: 25d8fbc
-D1 wc2026: f26669de-e772-4b56-a6d1-f8fdea08a4d4
+jubilant-bassoon HEAD: f727c04
+field-relay-nba HEAD: 981d474
 Smoke: 509/0 · Unit: 66/0
