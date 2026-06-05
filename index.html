@@ -28071,6 +28071,7 @@ async function fetchNightOwlFromClaude(topGame){
       crewCtx?'Broadcast crew: '+crewCtx:'',
       '','Rules: 80-100 words. Tactical. Not emotional. Lead with the turning point.',
       _owlStatCtx?'If stat context is provided above, cite the specific figure — never paraphrase it.':'',
+      _owlDramaPromptCtx?'DRAMA CONTEXT: [DRAMA]=tension arc intensity; [DRAMA TREND]=whether drama rose or fell late; [DRAMA PEAK]=moment of max tension. Use these to frame the narrative rhythm — never manufacture drama not in the data.':'',
       'Write only from the data above — never invent statistics, player tendencies, or context.',
       // PF-4: ban specific-inning / specific-at-bat / specific-period fabrications.
       // The LLM has ONLY the final score and any [MLB BOX], [PP/PK], standings
