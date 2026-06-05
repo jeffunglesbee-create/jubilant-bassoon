@@ -20,7 +20,20 @@
 const { test, expect } = require('@playwright/test');
 
 const LIVE_URL    = 'https://jubilant-bassoon.jeffunglesbee.workers.dev';
-const LOAD_WAIT_MS = 15000; // 15s for ESPN + weather + relay async data
+const LOAD_WAIT_MS = 15000; // max timeout for waitForSelector — NOT used as fixed wait
+
+// Event-based load helper. Waits for window._fieldDataReady sentinel
+// (set after first renderAll() — typically resolves in ~1.5s, not 15s)
+// then optionally buffers for async data (ESPN live scores, relay overlay).
+//
+// BEFORE: waitForTimeout(15000) — always burns 15s regardless of actual load state
+// AFTER:  awaitReady(page, 2000) — exits at ~1.5s + 2s buffer = 3.5s typical
+//
+// CI speedup: 20 tests × 15s → 20 tests × 4s avg → 80s → 20s with workers:4
+async function awaitReady(page, bufferMs = 2000) {
+  await page.waitForFunction(() => !!window._fieldDataReady, { timeout: 20000 });
+  if (bufferMs > 0) await page.waitForTimeout(bufferMs);
+}
 
 // External domains whose failures are expected/non-critical
 const SOFT_FAIL_DOMAINS = [
@@ -84,7 +97,7 @@ test.describe('Structural — always blocking', () => {
     // FIELD polls ESPN/MLB/AFL APIs continuously — networkidle is never reached.
     // Use domcontentloaded + bounded 8s wait to capture the initial API burst.
     await page.goto(LIVE_URL, { waitUntil: 'domcontentloaded', timeout: 30000 });
-    await page.waitForTimeout(8000);
+    await awaitReady(page, 4000); // sentinel + 4s for API burst
 
     expect(failures, `Critical network failures: ${JSON.stringify(failures)}`).toHaveLength(0);
   });
@@ -100,7 +113,7 @@ test.describe('Structural — always blocking', () => {
     });
 
     await page.goto(LIVE_URL, { waitUntil: 'domcontentloaded', timeout: 30000 });
-    await page.waitForTimeout(LOAD_WAIT_MS);
+    await awaitReady(page, 3000); // sentinel + 3s for async settle
 
     expect(errors, `Unexpected console errors: ${errors.join('; ')}`).toHaveLength(0);
   });
@@ -108,7 +121,7 @@ test.describe('Structural — always blocking', () => {
   // F04 — Runtime: captureFieldError() queue empty
   test('F04 — window._fieldErrors empty after full load', async ({ page }) => {
     await page.goto(LIVE_URL, { waitUntil: 'domcontentloaded', timeout: 30000 });
-    await page.waitForTimeout(LOAD_WAIT_MS);
+    await awaitReady(page, 2000); // sentinel + 2s buffer
 
     const errs = await page.evaluate(() => window._fieldErrors || []);
     expect(errs, `_fieldErrors: ${JSON.stringify(errs)}`).toHaveLength(0);
@@ -181,7 +194,7 @@ test.describe('Structural — always blocking', () => {
   test('F09 — iPad 820px: ambient panel visible, OTW banner hidden in live app', async ({ page }) => {
     await page.setViewportSize({ width: 820, height: 1180 });
     await page.goto(LIVE_URL, { waitUntil: 'domcontentloaded', timeout: 30000 });
-    await page.waitForTimeout(5000); // CSS media queries are immediate but 5s allows full paint
+    await awaitReady(page, 500); // CSS is synchronous — sentinel is sufficient
 
     // Diagnostic: capture all relevant element displays before asserting
     const cssState = await page.evaluate(() => {
@@ -219,7 +232,7 @@ test.describe('Structural — always blocking', () => {
     });
 
     await page.goto(LIVE_URL + '?debug=1', { waitUntil: 'domcontentloaded', timeout: 30000 });
-    await page.waitForTimeout(5000);
+    await awaitReady(page, 500); // debug panel is static HTML
 
     const visible = await page.locator('#fhp-overlay').isVisible();
     expect(visible, 'Debug panel should be visible at ?debug=1').toBe(true);
@@ -229,7 +242,7 @@ test.describe('Structural — always blocking', () => {
   // F11 — ESPN polling: no startup errors
   test('F11 — ESPN scores polling fires without startup error', async ({ page }) => {
     await page.goto(LIVE_URL, { waitUntil: 'domcontentloaded', timeout: 30000 });
-    await page.waitForTimeout(LOAD_WAIT_MS);
+    await awaitReady(page, 3000); // sentinel + 3s for ESPN first-fetch
 
     const espnErrors = await page.evaluate(() =>
       (window._fieldErrors || []).filter(e => e.fn === 'fetchESPNScores')
@@ -300,7 +313,7 @@ test.describe('Data-dependent — skip if no games', () => {
       return;
     }
 
-    await page.waitForTimeout(2000); // allow allData to fully populate
+    await awaitReady(page, 0); // allData populates before sentinel fires
 
     const result = await page.evaluate(() => {
       try {
@@ -374,8 +387,8 @@ test.describe('Data-dependent — skip if no games', () => {
   test('F17 — Playoff cards have series brief injected', async ({ page }) => {
     await page.goto(LIVE_URL, { waitUntil: 'domcontentloaded', timeout: 30000 });
 
-    // Wait for journalism queue to fire (3s delay + fetch time)
-    await page.waitForTimeout(8000);
+    // Journalism queue fires 3s after ready + fetch time (~2-3s)
+    await awaitReady(page, 5000); // sentinel + 5s for journalism queue
 
     const playoffCards = page.locator('.game-card[data-sport*="Playoffs"]');
     const count = await playoffCards.count();
@@ -409,8 +422,8 @@ test.describe('Data-dependent — skip if no games', () => {
       return;
     }
 
-    // Wait for compound editorial to resolve (10-15s via proxy)
-    await page.waitForTimeout(20000);
+    // Compound editorial resolves 10-15s via Gemini proxy
+    await awaitReady(page, 12000); // sentinel + 12s for editorial proxy
 
     const editorialCard = page.locator('#ambient-panel .ap-card-brief, #ambient-panel .ap-card-owl').first();
     await expect(editorialCard,
@@ -456,8 +469,8 @@ test.describe('Data-dependent — skip if no games', () => {
     await page.setViewportSize({ width: 820, height: 1180 });
     await page.goto(LIVE_URL, { waitUntil: 'domcontentloaded', timeout: 30000 });
 
-    // Wait for full load including brief
-    await page.waitForTimeout(20000);
+    // Editorial brief resolves 10-15s via Gemini proxy
+    await awaitReady(page, 12000); // sentinel + 12s for editorial proxy
 
     // Assert #field-brief hidden at 820px
     const briefDisplay = await page.locator('#field-brief').evaluate(

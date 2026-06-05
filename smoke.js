@@ -3146,6 +3146,10 @@ assert('A484 — RUWT: Permutations Engine patent defense comment in field_utils
     || fieldUtilsSrc.includes('RUWT PATENT DEFENSE') && fieldUtilsSrc.includes('PROBABILITIES OF FACTUAL OUTCOMES'),
   'field_utils.js must have explicit RUWT patent defense comment distinguishing probability from interest level');
 
+assert('A485 — CI speedup: _fieldDataReady sentinel set after first renderAll',
+  html.includes('window._fieldDataReady = Date.now()') && html.includes('_fieldDataReady'),
+  'sentinel must be set after first renderAll() so Playwright tests use event-based waits not fixed timeouts');
+
 // ═════════════════════════════════════════════════════════════════════
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);

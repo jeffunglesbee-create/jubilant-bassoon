@@ -8,6 +8,8 @@ const { defineConfig, devices } = require('@playwright/test');
 module.exports = defineConfig({
   testMatch: ['field_browser.test.js'],
   timeout: 60000,         // 60s per test (async data loading)
+  workers: 4,             // 4x speedup: 20 sequential tests → 5 parallel groups
+  fullyParallel: true,    // all tests in all describe blocks run in parallel
   retries: 1,             // one retry on flake — CI network can be intermittent
   reporter: process.env.CI
     ? [['github'], ['json', { outputFile: '/tmp/field_browser_results.json' }]]
