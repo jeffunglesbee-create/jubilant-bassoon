@@ -3202,6 +3202,26 @@ assert('A489 — PM-23 R2 Finals Narrative: matchupNote injects into buildCompou
   /league:\s*"NBA Finals[^"]*",[\s\S]{0,400}matchupNote:/.test(html),
   'PM-23 (R2 Finals Narrative Context Phase 1) wires per-game matchupNote into buildCompoundPrompt as a "Context: ..." line, with the assembled prompt captured to window._lastCompoundPrompt for runtime inspection. This assertion locks three structural invariants: (a) the matchupNote → Context injection at the buildCompoundPrompt site, (b) the window._lastCompoundPrompt capture so the human-loop verification pathway in HANDOFF stays intact, (c) the existence of at least one NBA Finals game carrying matchupNote so the path is actually exercised. The runtime check is preserved (open console at G2, inspect window._lastCompoundPrompt), but the structural gate prevents a silent regression between commits.');
 
+// ── Drama Dial OTW wiring (June 5 2026) ──────────────────────────────────────
+// Previously: both OTW FIRE state callsites used _otwFindLiveGame(50) —
+// a hardcoded threshold that ignored the user's Drama Sensitivity setting.
+// The dial controlled badge display but not OTW selection, creating an
+// inconsistency where badge thresholds and OTW recommendation diverged.
+// Per RUWT Deep Analysis Rule 51: MODERATE risk from composite arithmetic
+// threshold — resolved by making the threshold user-controlled (localStorage,
+// client-side only, server cannot influence).
+
+assert('A490 — Drama Dial OTW wiring: both FIRE callsites use getDramaDial() not hardcoded 50',
+  // Main OTW banner — STATE 1 FIRE
+  html.includes('const fire=_otwFindLiveGame(getDramaDial());') &&
+  // Ambient panel OTW mirror — same dial
+  html.includes('_otwFindLiveGame(getDramaDial()):null') &&
+  // STATE 2 fallback must stay at 0 (any live game, no drama gate)
+  html.includes('const live=_otwFindLiveGame(0);') &&
+  // Hardcoded 50 threshold must NOT appear in either FIRE callsite
+  !html.includes('_otwFindLiveGame(50)'),
+  'Drama Dial OTW wiring: _otwFindLiveGame now reads getDramaDial() at both FIRE-state callsites (main OTW banner, ambient panel mirror). The user\'s Drama Sensitivity setting governs both badge display (getDramaScore) AND the One To Watch recommendation (previously hardcoded 50, ignoring user preference). STATE 2 fallback correctly stays at 0 — it fires for any live game regardless of drama threshold. RUWT Rule 51: threshold is now user-controlled localStorage value (range 45-90, default 65) not a fixed server-assigned score, addressing the MODERATE risk documented in the RUWT Deep Analysis.');
+
 // ═════════════════════════════════════════════════════════════════════
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);

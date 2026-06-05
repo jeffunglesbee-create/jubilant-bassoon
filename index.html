@@ -24404,7 +24404,11 @@ function renderAmbientPanel(){
   panel.style.display='flex';
 
   // ── Section 1: OTW fire state mirror ──────────────────────────────────
-  const fire=(typeof _otwFindLiveGame==='function')?_otwFindLiveGame(50):null;
+  // Drama Dial wiring: use getDramaDial() so user's sensitivity setting governs
+  // OTW selection here, consistent with badge thresholds in getDramaScore().
+  // Per RUWT Deep Analysis: MODERATE → resolved by user-controlled threshold
+  // (server cannot set this; all computation client-side per getDramaDial).
+  const fire=(typeof _otwFindLiveGame==='function')?_otwFindLiveGame(getDramaDial()):null;
   let otwHTML;
   if(fire){
     const{g,ed,score}=fire;
@@ -26229,7 +26233,12 @@ function renderOneToWatch(){
   };
 
   // ── STATE 1: FIRE — high-drama live game (ESPN or WC V2) ─────────────────
-  const fire=_otwFindLiveGame(50);
+  // Drama Dial wiring: getDramaDial() replaces hardcoded 50 so user's sensitivity
+  // governs OTW selection. Dial range 45-90, default 65. User set to 80 → only
+  // tightest games fire as OTW; set to 45 → more games qualify. Server cannot
+  // influence this value (localStorage, client-side only). Per RUWT Deep Analysis
+  // (Rule 51): MODERATE risk resolved — threshold is now user-controlled, not fixed.
+  const fire=_otwFindLiveGame(getDramaDial());
   if(fire&&fire.g._id!==_otwDismissedId){
     const {g,ed,sport,score}=fire;
     const tier=dramaTier(score)||'warm';
