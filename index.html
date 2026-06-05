@@ -13006,7 +13006,7 @@ const FIELD_V2_SOURCES = {
   epl: false, ucl: false, europa: false, conference: false,  // European — season ended, re-enable 2026-27
   eflchamp: false, eflone: false, efltwo: false,             // EFL — season ended May 25 2026
   laliga: false, seriea: false, bundesliga: false, ligue1: false,
-  wc26: false, // FIFA World Cup 2026 — starts June 11 2026
+  wc26: new Date() >= new Date('2026-06-11T00:00:00Z'), // auto-activates June 11 2026 UTC
 };
 // ESPN league ID → FIELD V2 sport key (belt-and-suspenders safety net in fetchESPNScores)
 const ESPN_TO_V2_MAP = {
