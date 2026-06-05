@@ -3150,6 +3150,40 @@ assert('A485 — CI speedup: _fieldDataReady sentinel set after first renderAll'
   html.includes('window._fieldDataReady = Date.now()') && html.includes('_fieldDataReady'),
   'sentinel must be set after first renderAll() so Playwright tests use event-based waits not fixed timeouts');
 
+// ── PM-24: Read-time witness aggregation (June 5 2026) ────────────────────────
+// PM-20 left 'verified' confidence structurally unreachable because ESPN writes
+// under full display names ("New York Knicks|San Antonio Spurs") while api-sports
+// writes under short names ("Knicks|Spurs"). Two entries per game, one witness
+// each, findScore takes the first match → always 'single'. PM-24 fixes this by
+// aggregating witnesses across all fuzzy-matched keys before evaluating confidence.
+
+assert('A486 — PM-24: findScore comment block documents read-time aggregation fix',
+  html.includes('PM-24: Read-time witness aggregation') &&
+  html.includes("structurally unreachable") &&
+  html.includes('UNION their witnesses') &&
+  html.includes('without refactoring the 20+ writers'),
+  'PM-24 (June 5 2026) ships the read-time aggregator that makes the verified confidence state reachable. The comment block above findScore must name the problem ("verified structurally unreachable") and the fix shape (witness UNION across fuzzy-matched keys, no writer refactor). This is the patent-priority path explained in the viewport spec refresh: a single resolver function unblocks the green dot without touching the 20+ score writers. Verify at runtime: open console during NBA Finals G2, call findScore({home:"NYK", away:"SAS"}) — _pm24_matched should list both the ESPN and api-sports keys for the same game.');
+
+assert('A487 — PM-24: findScore aggregates witnesses across matched keys before evaluating confidence',
+  // Aggregation accumulators must exist
+  /let\s+espnWitness\s*=\s*null\s*,\s*apiWitness\s*=\s*null/.test(html) &&
+  // matchedKeys tracker (the diagnostic spine)
+  html.includes('const matchedKeys = [];') &&
+  // Freshest-witness selection across multiple entries
+  html.includes('(entry.espn.ts || 0) > (espnWitness.ts || 0)') &&
+  html.includes('(entry.apisports.ts || 0) > (apiWitness.ts || 0)') &&
+  // Confidence evaluation happens AFTER the loop, not inside it (the key inversion)
+  html.includes('if (espnWitness && apiWitness) {') &&
+  html.includes("confidence: agree ? 'verified' : 'mismatch'"),
+  'PM-24 inverts findScore control flow: collect witnesses across all fuzzy-matched entries FIRST, THEN evaluate confidence. Previously the function returned on first match (always single when keys differed). Now espnWitness/apiWitness accumulators track the freshest witness per source across the entry iteration. Sport-guards and team-fuzzy-match logic are unchanged — only the post-loop confidence evaluation is new.');
+
+assert('A488 — PM-24: _pm24_matched diagnostic field exposed in findScore return shape',
+  // Diagnostic field must be in both the dual-witness return and the single-witness return
+  html.includes('_pm24_matched: matchedKeys') &&
+  // Both branches: dual-witness (verified/mismatch) and single-witness
+  (html.match(/_pm24_matched:\s*matchedKeys/g) || []).length >= 2,
+  'PM-24 ships a console-verifiable diagnostic field. findScore returns include _pm24_matched: [...keys] showing which _scoresBySource entries contributed witnesses. At NBA Finals G2 tonight: open console, call findScore({home:"NYK", away:"SAS"}). If the array has two keys ("New York Knicks|San Antonio Spurs" and "Knicks|Spurs"), the aggregation is working. If it has one key with both witnesses, the writers happened to align (less likely). Either way verified becomes reachable. Diagnostic must appear in BOTH return branches (dual-witness AND single-witness) so we can see partial aggregation states too.');
+
 // ═════════════════════════════════════════════════════════════════════
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);

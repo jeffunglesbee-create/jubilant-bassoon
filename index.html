@@ -12842,12 +12842,26 @@ let _scoresBySource = {};
 // previous findESPNScore (so existing 20 callers continue to work) PLUS additive
 // fields: confidence ('verified' | 'mismatch' | 'single'), sources (array),
 // mismatch detail when sources disagree.
+//
+// ── PM-24: Read-time witness aggregation (June 5 2026) ───────────────────────
+// PM-20 left 'verified' structurally unreachable: ESPN writes under "New York
+// Knicks|San Antonio Spurs" while api-sports writes under "Knicks|Spurs" — two
+// entries in _scoresBySource for the same game, each with a single witness.
+// findScore previously took the FIRST fuzzy-matched entry and returned 'single'.
+//
+// PM-24 fix: gather ALL fuzzy-matched entries, UNION their witnesses (freshest
+// per source), THEN evaluate confidence. The 'verified' state becomes reachable
+// without refactoring the 20+ writers that route through _scoresBySource[key].
+// Write-side canonicalization can come later — this unblocks the green dot now.
 function findScore(game) {
   const home = (game.home || '').toLowerCase();
   const away = (game.away || '').toLowerCase();
   // Sport guard — preserved from findESPNScore — prevents city-name cross-contamination
   const sc = typeof classifySport === 'function' ? classifySport(game, null) : {};
   const gameSoccer = sc.isSoccer;
+  // PM-24: aggregate witnesses across all fuzzy-matched keys
+  let espnWitness = null, apiWitness = null;
+  const matchedKeys = [];
   for (const [key, entry] of Object.entries(_scoresBySource)) {
     if (!entry) continue;
     const [hn, an] = key.split('|').map(s => s.toLowerCase());
@@ -12860,26 +12874,42 @@ function findScore(game) {
     const pp = probe.periodPrefix || '';
     if (gameSoccer  && (pp === 'Q' || pp === 'H' || pp === 'P' || pp === 'T')) continue;
     if (!gameSoccer && (pp === "'" || pp === '1H' || pp === '2H')) continue;
-    const present = Object.keys(entry).filter(k => entry[k]);
-    if (!present.length) continue;
-    if (entry.espn && entry.apisports) {
-      const agree = entry.espn.homeScore === entry.apisports.homeScore &&
-                    entry.espn.awayScore === entry.apisports.awayScore;
-      const fresh = (entry.espn.ts > entry.apisports.ts) ? entry.espn : entry.apisports;
-      return {
-        ...fresh,
-        sources: present,
-        confidence: agree ? 'verified' : 'mismatch',
-        mismatch: agree ? null : {
-          espn:      { h: entry.espn.homeScore,      a: entry.espn.awayScore },
-          apisports: { h: entry.apisports.homeScore, a: entry.apisports.awayScore },
-        },
-      };
+    matchedKeys.push(key);
+    // Take the freshest witness per source across all matched entries
+    if (entry.espn && (!espnWitness || (entry.espn.ts || 0) > (espnWitness.ts || 0))) {
+      espnWitness = entry.espn;
     }
-    const only = entry.espn || entry.apisports;
-    return { ...only, sources: present, confidence: 'single', mismatch: null };
+    if (entry.apisports && (!apiWitness || (entry.apisports.ts || 0) > (apiWitness.ts || 0))) {
+      apiWitness = entry.apisports;
+    }
   }
-  return null;
+  if (!espnWitness && !apiWitness) return null;
+  const present = [];
+  if (espnWitness) present.push('espn');
+  if (apiWitness)  present.push('apisports');
+  if (espnWitness && apiWitness) {
+    const agree = espnWitness.homeScore === apiWitness.homeScore &&
+                  espnWitness.awayScore === apiWitness.awayScore;
+    const fresh = (espnWitness.ts || 0) > (apiWitness.ts || 0) ? espnWitness : apiWitness;
+    return {
+      ...fresh,
+      sources: present,
+      confidence: agree ? 'verified' : 'mismatch',
+      mismatch: agree ? null : {
+        espn:      { h: espnWitness.homeScore, a: espnWitness.awayScore },
+        apisports: { h: apiWitness.homeScore,  a: apiWitness.awayScore },
+      },
+      _pm24_matched: matchedKeys, // diagnostic: which keys were merged (verify in console)
+    };
+  }
+  const only = espnWitness || apiWitness;
+  return {
+    ...only,
+    sources: present,
+    confidence: 'single',
+    mismatch: null,
+    _pm24_matched: matchedKeys,
+  };
 }
 
 // ── RELAY — NBA CDN Proxy (Session 3 — May 16 2026) ─────────────────────────
@@ -17723,7 +17753,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-04k';
+  const SW_VERSION = '2026-06-05a';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
