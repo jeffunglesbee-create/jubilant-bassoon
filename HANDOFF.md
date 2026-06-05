@@ -1,81 +1,68 @@
-# FIELD HANDOFF — 2026-06-05 (Session END — PM-28 COMPLETE)
+# FIELD HANDOFF — 2026-06-05 (Session END — WC Pre-Flight)
 
 ## State
-jubilant-bassoon HEAD: 3ae883d · Smoke: 509/0 · Unit tests: 66/0
+jubilant-bassoon HEAD: cd2b737 · Smoke: 509/0 · Unit tests: 66/0
 field-relay-nba HEAD: 25d8fbc
 SW_VERSION: 2026-06-05a
 
-## PM-28 — COMPLETE ✅
+## WC Pre-Flight — COMPLETE ✅
 
-All items a–n shipped in commit 3ae883d.
+### Probe Results (all endpoints probed via MCP probe_relay_route)
 
-### What was built
+| Endpoint | Status | Notes |
+|---|---|---|
+| `/health` | 200 | `wc-d1` + `soccer-wp` confirmed in health string |
+| `/wc/standings` | 200 | `{"groups":{}}` — empty, correct pre-tournament |
+| `/wc/results` | 200 | `{"results":[]}` — empty, correct |
+| `/wc/odds-probs` | 200 | Full group stage loaded, 29–30 bookmakers/match |
+| `/v2/games?sport=wc26&date=2026-06-11` | 200 | MEX vs RSA: `state:pre`, correct UTC kickoff, Azteca venue |
+| `/wc/wp/verify` | 200 | `soccer_fifa_world_cup active=true`, 19,983 quota remaining |
 
-**PM-28a** — `recordLinescores()` + `getLinescores()` + `LINESCORE_KEY` (prior session)
-**PM-28b** — MLB `g.linescore.innings[]` extraction in `normalizeMLBGame()` (prior session)
-**PM-28c** — `recordLinescores()` wired at `recordScoreSnapshot` callsite (prior session)
-**PM-28d** — NBA CDN boxscore fetch in `checkForNewFinals()` → `_nbaBoxscoreCache`
-  `fetchNBABoxScoreViaRelay(nbaId)` called on first 'post' detection for NBA games.
-  Extracts `game.homeTeam/awayTeam.periods[{score}]` → `homeLinescores[]`.
-  Extracts top-2 scorers per team from `players[{name,statistics:{points,rebounds,assists}}]`.
-  Cache key: 10-digit NBA game ID from `_nbaGameIdMap`.
-**PM-28e** — NHL `byPeriod` goals → `espnScores[key].homeLinescores/awayLinescores`
-  Inside `fetchNHLLiveStats()` boxscore try-block, after goalie extraction.
-  `bd.linescore.byPeriod[{home,away}]` → homeLS/awayLS arrays written directly to espnScores.
-**PM-28f** — `buildLinescoreContext(eData, gameId)`
-  Live path: `eData.homeLinescores`. Postgame: `getLinescores(gameId)`.
-  Labels: NBA Q1-Q4, NHL P1-P3, MLB Inn1-9, Soccer 1H/2H/ET.
-  Guard: `< 2 periods → ''`. Output: `[LINE SCORE] Q1: 28-26 | Q2: 22-29 ...`
-**PM-28g** — `buildGoalTimeline(game, eData)` + `_afEventCache`
-  FD path: `_fdGoalCache[key]`. AF path: `_afEventCache[gameId]`.
-  Output: `[GOAL TIMELINE] 23' Arsenal/Saka (Odegaard) · 67' Chelsea/Palmer [HT: 1-0]`
-**PM-28h** — `buildNBAPlayerContext(game, eData)`
-  Reads `_nbaBoxscoreCache` via `_nbaGameIdMap` lookup.
-  Output: `[NBA BOX] Brunson 32pts/7ast (Knicks) · KAT 24pts/11reb (Knicks)`
-**PM-28i** — `normalizeApiFootballStats(raw)`
-  Input: `[{team:{name}, statistics:[{type,value}]}]`
-  Output: `{"Arsenal":{"Yellow Cards":2,...}}`
-**PM-28j** — Night Owl `_owlStatCtx` injections: `[LINE SCORE]`, `[GOAL TIMELINE]`, `[NBA BOX]`
-**PM-28k** — `buildCompoundPrompt()` injections after `extremeNote`: all three context builders
-**PM-28l** — NHL `_nhlLiveStatsCache` injected into Night Owl `_owlStatCtx`
-**PM-28m** — Midnight prune verified: `field_linescore_` auto-pruned by `.t` field — no new code
-**PM-28n** — Smoke assertion A500 (509/0 passing)
+### Alias normalization — verified correct
+`_wcMatchTeamName()` already handles all known discrepancies as of June 4:
+- `usa` ↔ `united states`
+- `turkey` ↔ `turkiye`
+- `czech republic` ↔ `czechia`
+- `dr congo` ↔ `congo dr`
+- `ivory coast` ↔ `cote d ivoire`
 
-### Key architectural facts for next session
+NFD normalization strips diacritics before comparison (handles Türkiye → turkiye).
 
-- `_nbaBoxscoreCache[nbaId]` = `{homeLinescores, awayLinescores, homePlayers[], awayPlayers[], homeLabel, awayLabel, ts}`
-  Populated asynchronously by `checkForNewFinals()` when NBA game hits 'post' state.
-  nbaId is 10-digit string from `_nbaGameIdMap`.
-- `_afEventCache[gameId]` declared, not yet populated. Population path: future `fetchAFGoalEvents()`.
-  Schema: `[{time:{elapsed}, team:{name}, player:{name}, assist:{name}, type, detail}]`
-- `buildLinescoreContext()` location: ~line 26423 (after `getLinescores()`)
-- `buildGoalTimeline()` location: ~line 26481
-- `buildNBAPlayerContext()` location: ~line 26517
-- `normalizeApiFootballStats()` location: ~line 26548
-- `recordScoreSnapshot()` follows immediately after `normalizeApiFootballStats()` — was accidentally
-  orphaned during PM-28g insertion and repaired. Structure verified.
-- Night Owl injection is inside the outer `try { ... } catch(e_) {}` block that wraps all
-  `_owlStatCtx` builds. PM-28j/l each use their own inner try-catch.
+### V2 source flag — date-gated (cd2b737)
+`FIELD_V2_SOURCES.wc26` changed from `false` to:
+```js
+wc26: new Date() >= new Date('2026-06-11T00:00:00Z')
+```
+Auto-activates at June 11 00:00 UTC. No manual deploy needed on game day.
+V2 poll loop will start hitting `/v2/games?sport=wc26&date=...` every 30–60s
+as soon as the flag evaluates true. Pushes WC scores into `espnScores` on every
+poll cycle — cards update without the WC Groups tab being open.
+
+### Architecture summary
+- Live card scores: V2 poll loop → `fetchV2Games('wc26')` → `espnScores[key]` (active June 11+)
+- WC Groups tab: `fetchWCStandings()` + `fetchWCResults()` + `fetchWCOddsProbabilities()` + `fetchWCLiveGames()` (tab-driven, always independent)
+- Watch Engine WC OTW: `_otwFindWCLiveGame()` reads `_wcLiveGamesCache` (populated by `fetchWCLiveGames`)
+- `wcActive` flag: date-gated `2026-06-11` to `2026-07-20` local — controls nav link + WC UI visibility
+
+### Nothing else needed before June 11
+No code changes required on game day. The date-gated flag handles everything automatically.
 
 ## Priority List
 
-### Time-gated (this week)
-1. **WC pre-flight** — probe all relay endpoints before June 11 opener
-   MEX vs RSA at Azteca, 12pm ET, FOX/Telemundo
-   D1 wc2026: `f26669de-e772-4b56-a6d1-f8fdea08a4d4`
-2. **BALLDONTLIE trial** — June 11 opening match data source test
+### After WC opens (June 11+)
+1. Monitor V2 wc26 scores on G1 — confirm Mexico name matches (`Mexico` both sides, should be clean)
+2. Confirm odds attachment works on G1 card (Mexico 66.8% to win)
 
-### After PM-28 (now unblocked)
+### Other pending (this week)
 3. JQ Gate brand-safe fallback (~60 lines)
 4. Drama Dial header chip (~20 lines)
 5. Arc Poster (~200 lines, BLOCKER: verify getDramaHistory() populated live)
 6. State Transition PerformanceObserver (~30 lines)
 7. iOS PWA Add-to-Home (~40 lines)
-8. `fetchAFGoalEvents()` — populate `_afEventCache` from `/apisports/football/fixtures/events?fixture={_gameId}`
+8. `fetchAFGoalEvents()` — populate `_afEventCache` for PM-28g soccer goal timeline
 
 ## Key Refs
-jubilant-bassoon HEAD: 3ae883d
+jubilant-bassoon HEAD: cd2b737
 field-relay-nba HEAD: 25d8fbc
-PM-28 spec v3: 1k6ezaT8y7r1Q9gmRMOCxMARFKAp7Thta
 D1 wc2026: f26669de-e772-4b56-a6d1-f8fdea08a4d4
 Smoke: 509/0 · Unit: 66/0
