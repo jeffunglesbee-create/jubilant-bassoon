@@ -4398,6 +4398,17 @@ const FIELD_FEATURES = {
   'pm27-field-otw-changed':     '2026-06-05',  // field:otw_changed emitter in renderOneToWatch() + _prevOTWId + OTW Changeover beat subscriber (S4)
   'pm27-field-ws-fresh':        '2026-06-05',  // field:ws_fresh emitter in GameSocket.onmessage + _lastWSMessageTime Map + WS Pulse dot subscriber (S5) + updateWsPulseDot()
   'pm27-data-gameimportance':   '2026-06-05',  // data-gameimportance attribute on game-card root — enables CSS/JS queries on playoff-card status
+  // PM-28 Linescore Persistence + Journalism Context (June 5 2026)
+  'pm28-record-linescores':     '2026-06-05',  // recordLinescores()/getLinescores() persist period/quarter/inning scores to localStorage
+  'pm28-mlb-innings-extract':   '2026-06-05',  // normalizeMLBGame() now extracts linescore.innings[] H/R/E — fixes silent eData.innings=[] bug
+  'pm28-nhl-period-scores':     '2026-06-05',  // fetchNHLLiveStats() extracts byPeriod goals into homeLinescores/awayLinescores
+  'pm28-nba-boxscore-quarters': '2026-06-05',  // fetchNBABoxScoreViaRelay() extracts per-quarter scores + player stats on post-game trigger
+  'pm28-build-linescore-ctx':   '2026-06-05',  // buildLinescoreContext() formats [LINE SCORE] for all sports → journalism prompts
+  'pm28-build-goal-timeline':   '2026-06-05',  // buildGoalTimeline() formats [GOAL TIMELINE] + [HT] from _fdGoalCache → journalism
+  'pm28-nba-player-context':    '2026-06-05',  // buildNBAPlayerContext() formats [NBA BOX] from boxscore cache → Night Owl
+  'pm28-normalize-af-stats':    '2026-06-05',  // normalizeApiFootballStats() flattens API-Football statistics array schema
+  'pm28-night-owl-injection':   '2026-06-05',  // Night Owl prompt receives [LINE SCORE] [GOAL TIMELINE] [NBA BOX] [NHL LIVE]
+  'pm28-compound-injection':    '2026-06-05',  // buildCompoundPrompt() receives [LINE SCORE] [GOAL TIMELINE]
   // PM-25 Card Render Slot (June 5 2026)
   'pm25-render-card-badges':             '2026-06-05',  // renderCardBadges(card,eData,sport,gid,smoothed) — extracted badge slot, unblocks WS Pulse + CRUNCH chip + confidence glyph
   // PM-25 Drama Dial categorical tier refactor (June 5 2026)
@@ -15499,6 +15510,20 @@ function normalizeMLBGame(g, date) {
     // Abbreviation aliases used by park factor + analytics getters
     _homeAbbr:      homeAbbr,
     _awayAbbr:      awayAbbr,
+    // PM-28b: Extract per-inning H/R/E from MLB Stats API linescore hydration.
+    // g.linescore.innings[] is available via hydrate=linescore in fetchMLBSchedule.
+    // Previously discarded — caused eData.innings to always be [], silently breaking
+    // getStatisticalExtremes() no-hitter check (line ~18149) and comeback check (~18169).
+    // Schema per inning: { num, home:{runs,hits,errors}, away:{runs,hits,errors} }
+    innings: (g.linescore?.innings || []).map(i => ({
+      n:  i.num         ?? 0,
+      hr: i.home?.runs  ?? 0,
+      hh: i.home?.hits  ?? 0,
+      he: i.home?.errors ?? 0,
+      ar: i.away?.runs  ?? 0,
+      ah: i.away?.hits  ?? 0,
+      ae: i.away?.errors ?? 0,
+    })),
   };
 }
 
@@ -26116,6 +26141,14 @@ function injectDramaBadges(){
       // Uses observable fact (did total score change?) NOT drama score delta.
       // RUWT defense: binary factual event, not composite interest signal.
       recordScoreSnapshot(gid, parseInt(eData.homeScore)||0, parseInt(eData.awayScore)||0);
+      // ── PM-28c: Persist interval scores for journalism context ─────────
+      // homeLinescores/awayLinescores arrive from ESPN or V2 relay each poll cycle.
+      // recordLinescores() only writes when period count increases (guard prevents
+      // mid-period stale overwrites). eData.innings only populated for MLB.
+      if (typeof recordLinescores === 'function' && eData.homeLinescores?.length) {
+        recordLinescores(gid, eData.homeLinescores, eData.awayLinescores,
+          eData._sport || '', eData.innings || []);
+      }
     }
 
     // ── Smoothing: use rolling average for display decisions ──────────
@@ -26347,6 +26380,46 @@ function buildOTWWhyLine(g, ed, sport, isPreGame){
 // TTL: entries beyond 5 minutes old are irrelevant for momentum display.
 const SCORE_SNAP_KEY = 'field_score_snap_';
 const SCORE_SNAP_MAX = 10;
+
+// ── PM-28a: Linescore persistence ────────────────────────────────────────────
+// Persists per-period/quarter/inning scores to localStorage so postgame
+// journalism prompts can reference them. Previously all interval data was
+// discarded at the end of each poll cycle.
+//
+// Schema: { h:[int], a:[int], sport:str, periods:int, t:ms,
+//            innings:[{n,hr,hh,he,ar,ah,ae}] (MLB only) }
+// Guard: only update when homeLS.length > stored.periods (never overwrite
+//   with stale mid-period data from a later poll that has fewer entries).
+// Key: 'field_linescore_' + gameId — pruned by existing midnight prune
+//   (prune checks .t against 15-day cutoff, matching this schema).
+const LINESCORE_KEY = 'field_linescore_';
+
+function recordLinescores(gameId, homeLS, awayLS, sport, innings) {
+  if (!gameId || !homeLS || !homeLS.length) return;
+  try {
+    const key = LINESCORE_KEY + gameId;
+    const stored = JSON.parse(localStorage.getItem(key) || '{"h":[],"a":[],"sport":"","periods":0}');
+    if (homeLS.length > (stored.periods || 0)) {
+      const entry = {
+        h:       homeLS.map(Number),
+        a:       awayLS ? awayLS.map(Number) : [],
+        sport:   sport || '',
+        periods: homeLS.length,
+        t:       Date.now(),
+      };
+      // MLB only: store innings H/R/E array if provided
+      if (innings && innings.length) entry.innings = innings;
+      localStorage.setItem(key, JSON.stringify(entry));
+    }
+  } catch(e) {}
+}
+
+function getLinescores(gameId) {
+  try {
+    const raw = localStorage.getItem(LINESCORE_KEY + gameId);
+    return raw ? JSON.parse(raw) : null;
+  } catch(e) { return null; }
+}
 
 function recordScoreSnapshot(gameId, homeScore, awayScore) {
   if (!gameId) return;
