@@ -4373,6 +4373,10 @@ if (typeof location !== 'undefined' && location.search.includes('debug=1')) {
 // Format: 'feature-key': 'YYYY-MM-DD' (date shipped)
 // Rule: add a line here + a smoke assertion = feature is documented as built.
 const FIELD_FEATURES = {
+  // PM-25 Card Render Slot (June 5 2026)
+  'pm25-render-card-badges':             '2026-06-05',  // renderCardBadges(card,eData,sport,gid,smoothed) — extracted badge slot, unblocks WS Pulse + CRUNCH chip + confidence glyph
+  // PM-25 Drama Dial categorical tier refactor (June 5 2026)
+  'pm25-otw-categorical-tier':           '2026-06-05',  // _otwGetLiveTier() named-condition tier + _otwTierLabel() — OTW FIRE label is now factual condition, not numeric band. RUWT Rule 51 MODERATE → RESOLVED.
   // PM-19 retro live-card fix (June 2 2026 — observed 9:56pm Tigers-Rays "-196 min")
   'card-state-aware-time-slot':          '2026-06-02',  // buildCardTimeDisplay + time-based live fallback in computeCardStage + elapsed-in-progress for no-eData live games
   // PM-19 retro brief fix (June 2 2026 — observed 6:48pm NBA Finals G1 mis-described as "tonight")
@@ -25656,6 +25660,151 @@ async function injectLineupEdge(card, eData, sport) {
   }
 }
 
+// ── PM-25 (June 5 2026): Card Render Slot ────────────────────────────────────
+// Extracted from the inline drama badge block inside injectDramaBadges().
+// renderCardBadges(card, eData, sport, gid, smoothed) is the single callsite
+// for all live-card badge mutations: CRUNCH TIME, WORTH WATCHING, drama tier,
+// EMBER, MLBN alert. Callers (WS Pulse, CRUNCH Fan-Out chip, future surfaces)
+// call this instead of reimplementing the badge hierarchy.
+// DO NOT INVENT: all badge logic is verbatim from the prior inline block.
+// A191: extracted to index.html only (not field_utils — DOM dependency).
+function renderCardBadges(card, eData, sport, gid, smoothed) {
+  if (!card || !eData) return;
+  // Remove existing badges before re-injecting
+  card.querySelectorAll('.drama-badge,.badge-crunch,.badge-worth').forEach(b => b.remove());
+  const liveEl = card.querySelector('.live-indicator,.live-dot');
+  if (!liveEl) return;
+
+  // ── PULSE: ViewingConditions CRUNCH TIME / WORTH WATCHING badge ──────
+  const vcResult = ViewingConditions.evaluate(gid, eData.period,
+    Math.abs((eData.homeScore||0) - (eData.awayScore||0)), sport);
+  if (vcResult.badge) {
+    const vcBadge = document.createElement('span');
+    const gameCardObj = (()=>{ try {
+      return {_id: gid, home: card.dataset.home||'', away: card.dataset.away||'', _section: card.dataset.sport||''};
+    } catch(e_) { return null; } })();
+    const milestoneMs = gameCardObj ? _bdlMilestonesCache?.[gid] : null;
+    if (vcResult.badge === 'CRUNCH TIME') {
+      vcBadge.className = 'badge-crunch badge-pulse';
+      if (milestoneMs?.shortLabel) {
+        vcBadge.textContent = `⚡ ${milestoneMs.shortLabel} · CRUNCH TIME`;
+        vcBadge.title = `${milestoneMs.playerName} needs ${milestoneMs.gap} more ${milestoneMs.stat} to reach ${milestoneMs.next}`;
+      } else {
+        vcBadge.textContent = '⚡ CRUNCH TIME';
+      }
+      try {
+        const sportKey = (card.dataset.sport||sport||'').toLowerCase();
+        const gameIdNum = (gid||'').replace(/^[a-z]+:/, '');
+        if (sportKey && gameIdNum && typeof ensureGameSocket === 'function' && !card.dataset.crunchSignaledP) {
+          const gs = _gameSockets?.get(`${sportKey}:${gameIdNum}`);
+          const detail = { gameId: gameIdNum, period: eData.period, periodLabel: eData.detail||'',
+            home: card.dataset.home||'', away: card.dataset.away||'',
+            homeScore: eData.homeScore??null, awayScore: eData.awayScore??null,
+            broadcast: card.dataset.broadcast||'' };
+          if (gs && gs.available) gs.signalCrunch(detail);
+          else fetch(`${V2_RELAY_BASE}/signal/crunch/${encodeURIComponent(sportKey)}/${encodeURIComponent(gameIdNum)}`,
+            { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(detail), keepalive:true }).catch(()=>{});
+          card.dataset.crunchSignaledP = String(eData.period);
+        }
+      } catch(_) {}
+    } else {
+      vcBadge.className = 'badge-worth';
+      vcBadge.textContent = '👀 WORTH WATCHING';
+    }
+    liveEl.insertAdjacentElement('afterend', vcBadge);
+    // CRUNCH TIME/WORTH WATCHING replaces drama badge — no double-badge
+    // Still allow EMBER + MLBN to run below
+  } else {
+    // Fallback: standard drama badge using smoothed score
+    const displayTier = dramaTier(smoothed);
+    if (displayTier) {
+      const badge = document.createElement('span');
+      badge.className = `drama-badge drama-${displayTier}`;
+      badge.textContent = dramaLabel(smoothed);
+      liveEl.insertAdjacentElement('afterend', badge);
+    }
+  }
+
+  // ── EMBER: BURIED LEAD sits below, never pulses ───────────────────────
+  try {
+    const emberGame = { _id: gid, home: card.dataset.home||'', away: card.dataset.away||'',
+      _section: card.dataset.sport||'', nationalBundle: card.dataset.bundle||'',
+      seriesRecord: card.dataset.series||'',
+      streams: card.dataset.stream ? [{label: card.dataset.stream}] : [] };
+    const emberResult = evaluateEMBER(emberGame, sport, eData);
+    if (emberResult) {
+      const eb = document.createElement('span');
+      eb.className = 'badge-ember';
+      const tierLabel = emberResult.tier === 3 ? 'Local Gem' : emberResult.tier === 2 ? 'Regional Gem' : 'Buried Lead';
+      eb.textContent = `🔍 ${tierLabel}`;
+      eb.title = `Buried Lead: Tier ${emberResult.tier} on ${emberResult.channel}${emberResult.lateClose?' · late-close game':''}${emberResult.contextFlag?' · context boost':''}`;
+      liveEl.insertAdjacentElement('afterend', eb);
+      if (gid) _emberResultCache[gid] = emberResult;
+    } else {
+      if (gid) delete _emberResultCache[gid];
+    }
+  } catch(e_) {}
+
+  // ── MLB Network Drama Alert ───────────────────────────────────────────
+  try {
+    const gameObj = { _id: gid, home: card.dataset.home||'', away: card.dataset.away||'',
+      _section: sport, _sport: sport, nationalBundle: card.dataset.nationalBundle||'' };
+    const mlbnHtml = buildMLBNAlertChip(gameObj, smoothed);
+    if (mlbnHtml) {
+      card.querySelectorAll('.mlbn-alert').forEach(el => el.remove());
+      const mlbnEl = document.createElement('div');
+      mlbnEl.innerHTML = mlbnHtml;
+      const chip = mlbnEl.firstElementChild;
+      if (chip) liveEl.insertAdjacentElement('afterend', chip);
+    } else {
+      card.querySelectorAll('.mlbn-alert').forEach(el => el.remove());
+    }
+  } catch(e_) {}
+}
+
+// ── PM-25 / Drama Dial categorical tier refactor (June 5 2026) ───────────────
+// Named-condition tier selector for live ESPN games — mirrors _otwFindWCLiveGame.
+// Returns a named condition string (never a numeric composite) or null.
+// Replaces the dramaTier(score) numeric path in the OTW FIRE header chip and
+// completes the RUWT Rule 51 MODERATE → RESOLVED path begun by A490.
+// The FIRE callsite (getDramaDial() threshold) is already user-controlled (A490).
+// This function adds the named categorical tier on top of that selection so that
+// the label shown to the user is a factual condition, not a score band.
+// RUWT compliance: boolean-gated named conditions, never numerical threshold display.
+function _otwGetLiveTier(eData, sport, smoothed) {
+  if (!eData) return null;
+  const sp = (sport || '').toLowerCase();
+  const period = eData.period || '';
+  const margin = Math.abs((eData.homeScore||0) - (eData.awayScore||0));
+  const p = String(period).toLowerCase();
+
+  // T1: Final period + close game (sport-specific crunch rules)
+  if (SPORT_CRUNCH_RULES?.[sport]) {
+    const inCrunch = SPORT_CRUNCH_RULES[sport].some(r => p.includes(r.toLowerCase()));
+    if (inCrunch && margin <= 5) return 'CRUNCH';
+  }
+  // T2: Overtime / extra innings / extra time
+  if (p.includes('ot') || p.includes('overtime') || p.includes('extra') ||
+      p.includes('so') || p.includes('shootout') || (sp.includes('baseball') && parseInt(period) > 9)) {
+    return 'EXTRA_TIME';
+  }
+  // T3: Final stretch, close margin
+  if (margin <= 3 && smoothed >= 60) return 'CLOSE_FINISH';
+  // T4: Late game, contested
+  if (smoothed >= 40) return 'LIVE_GAME';
+  return null;
+}
+
+// Named label for the OTW header chip — factual condition string, never a score.
+// Callers: renderOneToWatch FIRE state header chip.
+function _otwTierLabel(tier) {
+  if (tier === 'CRUNCH')       return 'CRUNCH TIME';
+  if (tier === 'EXTRA_TIME')   return 'OT / EXTRA';
+  if (tier === 'CLOSE_FINISH') return 'CLOSE GAME';
+  if (tier === 'LIVE_GAME')    return 'LIVE';
+  return 'LIVE';
+}
+
 function injectDramaBadges(){
   const cards = document.querySelectorAll('.game-card.espn-live');
   cards.forEach(card => {
@@ -25737,132 +25886,12 @@ function injectDramaBadges(){
     // Badges and ViewingConditions use the smoothed score to prevent
     // single-poll spikes from triggering CRUNCH TIME / EMBER prematurely.
     const smoothed = getSmoothedDrama(gid) ?? score;
-    const displayTier = dramaTier(smoothed);
-
     // Apply card pulse (ambient drama signal)
     applyCardPulse(gid, smoothed);
-    // Remove existing badges
-    card.querySelectorAll('.drama-badge,.badge-crunch,.badge-worth').forEach(b=>b.remove());
-    const liveEl = card.querySelector('.live-indicator,.live-dot');
-    if(!liveEl) return;
 
-    // ── PULSE: ViewingConditions CRUNCH TIME / WORTH WATCHING badge ──────
-    // Uses smoothed score — ViewingConditions reads from drama arc history internally
-    const vcResult = ViewingConditions.evaluate(gid, eData.period, margin, sport);
-    if (vcResult.badge) {
-      const vcBadge = document.createElement('span');
-      // Compound badge: milestone + CRUNCH TIME (ROOT 1 + ROOT 3)
-      // When CRUNCH TIME fires AND a BDL milestone is cached for this game,
-      // show "SGA −1 · CRUNCH TIME" — first sports badge with player narrative.
-      const gameCardObj = (()=>{
-        try {
-          const h = (card.dataset.home||'').toLowerCase();
-          const a = (card.dataset.away||'').toLowerCase();
-          const sec = card.dataset.sport||'';
-          return {_id: gid, home: card.dataset.home||'', away: card.dataset.away||'', _section: sec};
-        } catch(e_) { return null; }
-      })();
-      const milestoneMs = gameCardObj ? _bdlMilestonesCache?.[gid] : null;
-
-      if (vcResult.badge === 'CRUNCH TIME') {
-        vcBadge.className = 'badge-crunch badge-pulse';
-        if (milestoneMs?.shortLabel) {
-          vcBadge.textContent = `⚡ ${milestoneMs.shortLabel} · CRUNCH TIME`;
-          vcBadge.title = `${milestoneMs.playerName} needs ${milestoneMs.gap} more ${milestoneMs.stat} to reach ${milestoneMs.next}`;
-        } else {
-          vcBadge.textContent = '⚡ CRUNCH TIME';
-        }
-        // ── WOW 2 (page-side signal): client locally determined CRUNCH TIME ──
-        // Signal the DO so it can fan out Web Push to any pinned subscribers.
-        // The DO dedupes per (gameId, period). RUWT compliance: browser
-        // computed the named binary condition; DO only delivers.
-        try {
-          const sportKey = (card.dataset.sport||sport||'').toLowerCase();
-          const gameIdNum = (gid||'').replace(/^[a-z]+:/, '');
-          if (sportKey && gameIdNum && typeof ensureGameSocket === 'function' && !card.dataset.crunchSignaledP) {
-            const gs = _gameSockets?.get(`${sportKey}:${gameIdNum}`);
-            const detail = {
-              gameId: gameIdNum,
-              period: eData.period,
-              periodLabel: eData.detail || '',
-              home: card.dataset.home || '',
-              away: card.dataset.away || '',
-              homeScore: eData.homeScore ?? null,
-              awayScore: eData.awayScore ?? null,
-              broadcast: card.dataset.broadcast || '',
-            };
-            if (gs && gs.available) gs.signalCrunch(detail);
-            else {
-              // HTTP fallback if no socket is open.
-              fetch(`${V2_RELAY_BASE}/signal/crunch/${encodeURIComponent(sportKey)}/${encodeURIComponent(gameIdNum)}`, {
-                method: 'POST', headers: {'Content-Type':'application/json'},
-                body: JSON.stringify(detail), keepalive: true
-              }).catch(()=>{});
-            }
-            card.dataset.crunchSignaledP = String(eData.period);
-          }
-        } catch(_) { /* never block badge render on signal failure */ }
-      } else {
-        vcBadge.className = 'badge-worth';
-        vcBadge.textContent = '👀 WORTH WATCHING';
-      }
-      liveEl.insertAdjacentElement('afterend', vcBadge);
-      return; // CRUNCH TIME/WORTH WATCHING replaces drama badge — no double-badge
-    }
-
-    // Fallback: standard drama badge using smoothed score
-    if(!displayTier) return;
-    const badge = document.createElement('span');
-    badge.className = `drama-badge drama-${displayTier}`;
-    badge.textContent = dramaLabel(smoothed);
-    liveEl.insertAdjacentElement('afterend', badge);
-
-    // EMBER: check after drama badge — BURIED LEAD sits below, never pulses
-    // Uses game data from card attributes + smoothed score
-    try {
-      const emberGame = {
-        _id: gid, home: card.dataset.home||'', away: card.dataset.away||'',
-        _section: card.dataset.sport||'',
-        nationalBundle: card.dataset.bundle||'',
-        seriesRecord: card.dataset.series||'',
-        streams: card.dataset.stream ? [{label: card.dataset.stream}] : [],
-      };
-      const emberResult = evaluateEMBER(emberGame, card.dataset.sport||'', eData);
-      if (emberResult) {
-        const eb = document.createElement('span');
-        eb.className = 'badge-ember';
-        // Tier label: Tier 3 (pure local) is more buried than Tier 2 (regional)
-        const tierLabel = emberResult.tier === 3 ? 'Local Gem' : emberResult.tier === 2 ? 'Regional Gem' : 'Buried Lead';
-        eb.textContent = `🔍 ${tierLabel}`;
-        eb.title = `Buried Lead: Tier ${emberResult.tier} on ${emberResult.channel}${emberResult.lateClose?' · late-close game':''}${emberResult.contextFlag ? ' · context boost' : ''}`;
-        liveEl.insertAdjacentElement('afterend', eb);
-        // Store EMBER result for compound prompt and Night Owl priority
-        if (gid) _emberResultCache[gid] = emberResult;
-      } else {
-        // Clear EMBER cache when game no longer qualifies
-        if (gid) delete _emberResultCache[gid];
-      }
-    } catch(e_) {}
-
-    // ── MLB Network Drama Alert (shouldShowMLBNAlert + buildMLBNAlertChip) ──
-    try {
-      const gameObj = {
-        _id: gid, home: card.dataset.home||'', away: card.dataset.away||'',
-        _section: sport, _sport: sport,
-        nationalBundle: card.dataset.nationalBundle||''
-      };
-      const mlbnHtml = buildMLBNAlertChip(gameObj, smoothed);
-      if (mlbnHtml) {
-        // Remove any existing MLB alert chip before re-injecting
-        card.querySelectorAll('.mlbn-alert').forEach(el => el.remove());
-        const mlbnEl = document.createElement('div');
-        mlbnEl.innerHTML = mlbnHtml;
-        const chip = mlbnEl.firstElementChild;
-        if (chip) liveEl.insertAdjacentElement('afterend', chip);
-      } else {
-        card.querySelectorAll('.mlbn-alert').forEach(el => el.remove());
-      }
-    } catch(e_) {}
+    // ── PM-25 Card Render Slot: delegate all badge mutations to renderCardBadges()
+    // Single callsite for CRUNCH TIME / WORTH WATCHING / drama tier / EMBER / MLBN.
+    renderCardBadges(card, eData, sport, gid, smoothed);
   });
   // Update ticker + pin widget + life stages on every drama cycle
   renderScoreTicker();
@@ -26256,8 +26285,13 @@ function renderOneToWatch(){
   const fire=_otwFindLiveGame(getDramaDial());
   if(fire&&fire.g._id!==_otwDismissedId){
     const {g,ed,sport,score}=fire;
-    const tier=dramaTier(score)||'warm';
-    const tierBadge = buildOTWStateLabel(g, ed, sport);
+    // ── PM-25 categorical tier refactor: named condition replaces numeric tier ──
+    // _otwGetLiveTier returns a named condition string (CRUNCH/EXTRA_TIME/CLOSE_FINISH/LIVE_GAME).
+    // _otwTierLabel converts to display string. CSS class still uses the legacy tier name
+    // for styling continuity — the change is that the displayed label is now factual, not numeric.
+    const _liveTierKey = _otwGetLiveTier(ed, sport, getSmoothedDrama(g._id) ?? score) || 'LIVE_GAME';
+    const tier = _liveTierKey === 'CRUNCH' ? 'fire' : _liveTierKey === 'EXTRA_TIME' ? 'fire' : _liveTierKey === 'CLOSE_FINISH' ? 'hot' : 'warm';
+    const tierBadge = buildOTWStateLabel(g, ed, sport) || _otwTierLabel(_liveTierKey);
     const _n = (typeof computeGameNarrative==='function') ? computeGameNarrative(g,ed,null) : null;
     const scoreStr = _n?.scoreline || `${ed.awayScore||0}\u2013${ed.homeScore||0}`;
     const why=buildOTWWhyLine(g,ed,sport,false);

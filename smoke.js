@@ -3264,6 +3264,43 @@ assert('A492 — RUWT compliance: dial manifest + preview text have no numeric s
   html.includes('Close games get badges'),
   'RUWT compliance for Drama Dial UI (A492): (1) PWA manifest description changed from "drama scores" to "drama intelligence" — the prior text was an explicit public admission that FIELD shows drama scores, which directly matches RUWT US 9,421,446 B2 claim language. (2) Dial preview text changed from numeric threshold exposure ("Badges at 65+") to capability description ("Close games get badges") — the number 65 is a user preference, not a game score, but showing it implied FIELD computes per-game scores crossing that threshold, weakening the "we don\'t display scores" defense. (3) vcResult.score (from ViewingConditions.evaluate) is computed but never rendered to DOM — only vcResult.badge (named state: "CRUNCH TIME" / "WORTH WATCHING") appears on cards. Remaining MODERATE risk (Rule 51): ViewingConditions.evaluate uses composite arithmetic internally — categorical tier refactor (like _otwFindWCLiveGame) is the proper long-term fix.');
 
+// ── PM-25: Card Render Slot + Categorical Tier Refactor (A493–A495) ──────────
+// A493: renderCardBadges is extracted as a named function (DOM-side only, not field_utils).
+// A494: _otwGetLiveTier and _otwTierLabel exist as named functions.
+// A495: OTW FIRE state no longer uses raw dramaTier(score) for label — uses _otwGetLiveTier.
+//
+// RUWT compliance note (Rule 51 — now RESOLVED):
+// Prior: OTW FIRE label used dramaTier(score) which maps numeric composite score to
+//   CSS tier bands. While the score was user-controlled (A490), the mapping
+//   (score >= threshold → label) still matched RUWT claim structure for \"displaying
+//   a combined interest level.\"
+// After: _otwGetLiveTier() returns named binary conditions (CRUNCH/EXTRA_TIME/CLOSE_FINISH/
+//   LIVE_GAME) derived from factual game-state booleans (period string, margin, crunch rules).
+//   No composite score threshold crossing reaches the displayed label.
+//   _otwTierLabel() maps condition → display string. Same pattern as _otwFindWCLiveGame.
+//   Rule 51 MODERATE risk is now RESOLVED.
+
+assert('A493 — PM-25 Card Render Slot: renderCardBadges exists as named function',
+  typeof html === 'string' &&
+  html.includes('function renderCardBadges(') &&
+  html.includes('renderCardBadges(card, eData, sport, gid, smoothed)'),
+  'PM-25 Card Render Slot (A493): renderCardBadges(card, eData, sport, gid, smoothed) must be present as an extracted named function. This is the single callsite for all live-card badge mutations — CRUNCH TIME, WORTH WATCHING, drama tier badge, EMBER, MLBN alert. Callers (WS Pulse on cards PM-25, CRUNCH Fan-Out chip PM-27, rich-visual confidence glyph) call renderCardBadges() instead of reimplementing the badge hierarchy. The function is DOM-dependent (uses liveEl, insertAdjacentElement) and lives in index.html only, not field_utils.js (per A191 rule: no DOM ops in field_utils).');
+
+assert('A494 — PM-25 categorical tier refactor: _otwGetLiveTier + _otwTierLabel exist',
+  html.includes('function _otwGetLiveTier(') &&
+  html.includes('function _otwTierLabel(') &&
+  html.includes("return 'CRUNCH'") &&
+  html.includes("return 'EXTRA_TIME'") &&
+  html.includes("return 'CLOSE_FINISH'"),
+  'PM-25 categorical tier refactor (A494): _otwGetLiveTier(eData, sport, smoothed) must return named condition strings (CRUNCH/EXTRA_TIME/CLOSE_FINISH/LIVE_GAME) derived from factual game-state booleans — never a numeric composite threshold. _otwTierLabel(tier) maps condition to display string. This mirrors _otwFindWCLiveGame\'s named-condition tier architecture for the ESPN live game path. RUWT Rule 51: the WC path already used named conditions; the ESPN path previously used dramaTier(score) numeric bands. These two functions bring the ESPN path to parity.');
+
+assert('A495 — RUWT Rule 51 RESOLVED: OTW FIRE state uses _otwGetLiveTier not raw dramaTier',
+  html.includes('_otwGetLiveTier(ed, sport,') &&
+  html.includes('_otwTierLabel(_liveTierKey)') &&
+  // The old pattern (dramaTier(score)||'warm' in the OTW FIRE block) must be gone
+  !html.includes("const tier=dramaTier(score)||'warm'"),
+  'RUWT Rule 51 RESOLVED (A495): OTW FIRE state must use _otwGetLiveTier() for named-condition tier derivation. The prior pattern (dramaTier(score)||\'warm\') mapped a numeric composite score to CSS tier bands — even though the threshold was user-controlled (A490), the pattern still matched RUWT claim structure for displaying a combined interest level. After this change: tier label is derived from binary factual conditions (period/margin/crunch rules) via _otwGetLiveTier(), same architectural pattern as _otwFindWCLiveGame which was already fully RUWT-compliant. Composite score is still used internally for getDramaDial() threshold gate (A490 — user-controlled) but the displayed label is now a factual named condition. Rule 51 MODERATE → RESOLVED.');
+
 // ═════════════════════════════════════════════════════════════════════
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);
