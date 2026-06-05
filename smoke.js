@@ -3301,6 +3301,28 @@ assert('A495 — RUWT Rule 51 RESOLVED: OTW FIRE state uses _otwGetLiveTier not 
   !html.includes("const tier=dramaTier(score)||'warm'"),
   'RUWT Rule 51 RESOLVED (A495): OTW FIRE state must use _otwGetLiveTier() for named-condition tier derivation. The prior pattern (dramaTier(score)||\'warm\') mapped a numeric composite score to CSS tier bands — even though the threshold was user-controlled (A490), the pattern still matched RUWT claim structure for displaying a combined interest level. After this change: tier label is derived from binary factual conditions (period/margin/crunch rules) via _otwGetLiveTier(), same architectural pattern as _otwFindWCLiveGame which was already fully RUWT-compliant. Composite score is still used internally for getDramaDial() threshold gate (A490 — user-controlled) but the displayed label is now a factual named condition. Rule 51 MODERATE → RESOLVED.');
 
+// ── PM-25 Rich-visual confidence glyph (A496) ────────────────────────────────
+// Verifies four things:
+// (1) .cg CSS classes exist in index.html (verified/mismatch/single/mismatch::after)
+// (2) renderCardBadges() contains the .game-time injection block
+// (3) The glyph is additive — does NOT remove the text glyph from buildCardTimeDisplay
+// (4) FIELD_FEATURES entry present
+
+assert('A496 — PM-25 rich-visual confidence glyph: CSS + DOM injection in renderCardBadges',
+  // CSS: all three state classes must be present
+  html.includes('.cg.verified{') &&
+  html.includes('.cg.single{') &&
+  html.includes('.cg.mismatch{') &&
+  html.includes('.cg.mismatch::after{') &&
+  // DOM injection: .game-time querySelector and .cg class assignment inside renderCardBadges
+  html.includes("card.querySelector('.game-time')") &&
+  html.includes("dot.className = `cg ${conf}`") &&
+  // Additive: PM-20 text glyph still present (not replaced)
+  html.includes("conf === 'verified' ? ' ✓'") &&
+  // FIELD_FEATURES
+  html.includes("'pm25-confidence-glyph'"),
+  'PM-25 Rich-visual confidence glyph (A496): renderCardBadges() injects a <span class="cg {conf}"> dot into the .game-time element on live cards. Three CSS states: .cg.verified (green halo, rgba(74,222,128,.6) box-shadow), .cg.single (grey, var(--muted)), .cg.mismatch (transparent background, red border, ::after radial-gradient dot). This is additive alongside the text glyph (✓/⚠) from buildCardTimeDisplay (PM-20 Step 5) — both channels coexist. The dot is 6×6px inline-block, appended to .game-time after badge mutations complete. Three confidence states map to three dot states; null/undefined → no dot injected. Title attribute provides tooltip: "Score confirmed by 2 sources" / "Score sources disagree — check Health panel" / "Score from single source". Subscribers unblocked by PM-25a hub: this feature (done), WS Pulse (needs PM-27), CRUNCH Fan-Out chip (needs PM-27).');
+
 // ═════════════════════════════════════════════════════════════════════
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);

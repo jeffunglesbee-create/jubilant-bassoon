@@ -1426,6 +1426,13 @@ body::before{
   color:var(--gold2);letter-spacing:.02em;white-space:nowrap;
 }
 .game-time.live-t{color:var(--live)}
+/* ── PM-25 Rich-visual confidence glyph (A496) ── */
+/* Renders beside the score in .game-time: green halo=verified, grey=single, red ring=mismatch */
+.cg{display:inline-block;width:6px;height:6px;border-radius:50%;margin-left:.35rem;vertical-align:middle;position:relative}
+.cg.verified{background:var(--green,#4ade80);box-shadow:0 0 4px rgba(74,222,128,.6)}
+.cg.single{background:var(--muted,#6b7280)}
+.cg.mismatch{background:transparent;border:1px solid var(--live,#f87171);position:relative}
+.cg.mismatch::after{content:'';position:absolute;inset:1px;border-radius:50%;background:radial-gradient(circle,var(--live,#f87171) 30%,transparent 31%) 0 0/3px 3px}
 /* ── Live scores from ESPN API ── */
 .score-wrap{margin-top:2px;min-width:0;max-width:100%;overflow:hidden;width:100%}
 .score-status{font-size:.72rem;color:var(--text-muted,#b0b0c0);margin-top:.2rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-style:italic;letter-spacing:.01em}
@@ -4373,6 +4380,8 @@ if (typeof location !== 'undefined' && location.search.includes('debug=1')) {
 // Format: 'feature-key': 'YYYY-MM-DD' (date shipped)
 // Rule: add a line here + a smoke assertion = feature is documented as built.
 const FIELD_FEATURES = {
+  // PM-25 Rich-visual confidence glyph (June 5 2026)
+  'pm25-confidence-glyph':               '2026-06-05',  // .cg CSS (verified/mismatch/single) + renderCardBadges glyph injection into .game-time. Additive to PM-20 text glyph. A496.
   // PM-25 Card Render Slot (June 5 2026)
   'pm25-render-card-badges':             '2026-06-05',  // renderCardBadges(card,eData,sport,gid,smoothed) — extracted badge slot, unblocks WS Pulse + CRUNCH chip + confidence glyph
   // PM-25 Drama Dial categorical tier refactor (June 5 2026)
@@ -25758,6 +25767,27 @@ function renderCardBadges(card, eData, sport, gid, smoothed) {
       if (chip) liveEl.insertAdjacentElement('afterend', chip);
     } else {
       card.querySelectorAll('.mlbn-alert').forEach(el => el.remove());
+    }
+  } catch(e_) {}
+
+  // ── PM-25 Rich-visual confidence glyph (A496) ────────────────────────────
+  // Injects a colored dot <span class="cg {conf}"> beside the score in .game-time.
+  // Additive alongside the existing text glyph in buildCardTimeDisplay (PM-20 Step 5).
+  // verified → green halo dot · mismatch → red ring dot · single → grey dot · null → remove
+  // DOM-safe: removes any prior .cg before injecting; no-op if .game-time absent.
+  try {
+    const gtEl = card.querySelector('.game-time');
+    if (gtEl) {
+      gtEl.querySelectorAll('.cg').forEach(el => el.remove());
+      const conf = eData?.confidence;
+      if (conf === 'verified' || conf === 'mismatch' || conf === 'single') {
+        const dot = document.createElement('span');
+        dot.className = `cg ${conf}`;
+        dot.title = conf === 'verified' ? 'Score confirmed by 2 sources'
+                  : conf === 'mismatch' ? 'Score sources disagree — check Health panel'
+                  : 'Score from single source';
+        gtEl.appendChild(dot);
+      }
     }
   } catch(e_) {}
 }
