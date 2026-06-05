@@ -13739,6 +13739,21 @@ async function fetchNHLLiveStats() {
           };
           const hg = fmt(homeG, home), ag = fmt(awayG, away);
           if (hg || ag) goalieNote = [ag, hg].filter(Boolean).join(' · ');
+          // PM-28e: extract byPeriod goals → espnScores homeLinescores/awayLinescores
+          // bd.linescore.byPeriod[{periodDescriptor:{number}, away, home}]
+          try {
+            const byPeriod = bd?.linescore?.byPeriod || [];
+            if (byPeriod.length >= 1) {
+              const homeLS = byPeriod.map(p => p.home ?? 0);
+              const awayLS = byPeriod.map(p => p.away ?? 0);
+              const eKey = `${home}|${away}`;
+              if (espnScores[eKey]) {
+                espnScores[eKey].homeLinescores = homeLS;
+                espnScores[eKey].awayLinescores = awayLS;
+              }
+              if (FIELD_DEBUG) console.debug('[PM-28e] NHL byPeriod:', eKey, homeLS, 'vs', awayLS);
+            }
+          } catch(_e28) {}
         }
       } catch(_) {}
       const sogNote = (homeSog != null && awaySog != null)
@@ -20541,6 +20556,10 @@ function buildCompoundPrompt(sections) {
       bni ? `  [BNI: ${bni.replace(/-/g,' ').toUpperCase()}]` : '',
       awayMisery  ? `  [FRANCHISE_CONTEXT:${teamNick(g.away)}] ${awayMisery}` : '',
       extremeNote ? `  [LIVE EXTREME] ${extremeNote}` : '',
+      // PM-28k: linescore + goal timeline + NBA box context
+      (()=>{try{const _eS=findESPNScore?.(g);return buildLinescoreContext(_eS,g._id)||''}catch(e_){return ''}})(),
+      (()=>{try{const _eS=findESPNScore?.(g);return buildGoalTimeline(g,_eS)||''}catch(e_){return ''}})(),
+      (()=>{try{const _eS=findESPNScore?.(g);return buildNBAPlayerContext(g,_eS)||''}catch(e_){return ''}})(),
       // Fix 7: EMBER buried lead — tier + channel context for editorial framing
       (()=>{try{const er=_emberResultCache[g._id||''];return er?`  [EMBER BURIED LEAD: Tier${er.tier} on ${er.channel}${er.lateClose?' · late-close game':''}${er.contextFlag?' · context boost':''}]`:''}catch(e_){return ''}})(),
       // Axis 3 Phase B: BDL injury context now routed through buildSeriesContextTags
@@ -25318,6 +25337,7 @@ const RAI_TTL = 90000;    // 90s — one refresh per ESPN poll cycle
 // ═══════════════════════════════════════════════════════════════════════════
 
 const _nbaGameIdMap   = {};    // 'homeLower_awayLower' → 10-digit NBA game ID
+const _nbaBoxscoreCache = {};  // gameId → {homeLinescores:[], awayLinescores:[], homePlayers:[], awayPlayers:[], ts}
 let   _nbaScoreboardTs = 0;    // last scoreboard fetch timestamp
 const NBA_SCOREBOARD_TTL = 10 * 60 * 1000; // refresh every 10 min
 
@@ -26419,6 +26439,131 @@ function getLinescores(gameId) {
     const raw = localStorage.getItem(LINESCORE_KEY + gameId);
     return raw ? JSON.parse(raw) : null;
   } catch(e) { return null; }
+}
+
+// PM-28f: buildLinescoreContext() — formats per-period/quarter/inning scores for AI context
+// Live path: eData.homeLinescores / eData.awayLinescores (in-memory, updated each poll)
+// Postgame path: getLinescores(gameId) (localStorage, persisted by recordLinescores)
+// Output: "[LINE SCORE] Q1: 28-26 | Q2: 22-29 | Q3: 31-24 | Q4: 19-21"
+// Guard: returns '' if fewer than 2 completed periods (insufficient signal)
+function buildLinescoreContext(eData, gameId) {
+  try {
+    let homeLS = eData?.homeLinescores || [];
+    let awayLS  = eData?.awayLinescores || [];
+    // Postgame fallback: read from localStorage
+    if (!homeLS.length && gameId) {
+      const stored = getLinescores(gameId);
+      if (stored) { homeLS = stored.h || []; awayLS = stored.a || []; }
+    }
+    if (homeLS.length < 2 || awayLS.length < 2) return '';
+    const sp = (eData?._sport || '').toLowerCase();
+    // Label schema by sport
+    const label = (i) => {
+      if (sp.includes('nba') || sp.includes('basketball')) return `Q${i+1}`;
+      if (sp.includes('nhl') || sp.includes('hockey'))    return `P${i+1}`;
+      if (sp.includes('mlb') || sp.includes('baseball'))  return `Inn${i+1}`;
+      if (sp.includes('soccer') || sp.includes('league') || sp.includes('mls') ||
+          sp.includes('epl') || sp.includes('ucl') || sp.includes('wc26'))
+        return i === 0 ? '1H' : i === 1 ? '2H' : `ET${i-1}`;
+      return `P${i+1}`;
+    };
+    const parts = homeLS.map((h,i) => `${label(i)}: ${h}-${awayLS[i]??0}`);
+    return `[LINE SCORE] ${parts.join(' | ')}`;
+  } catch(e_) { return ''; }
+}
+
+// PM-28g: buildGoalTimeline() — formats soccer goal timeline for AI context
+// Primary path: _fdGoalCache["{home}|{away}"] → [{player,minute,team}] (football-data.org)
+// API-Football path: _afEventCache[gameId] (populated by fetchAFGoalEvents, called on demand)
+// Output: "[GOAL TIMELINE] 23' Arsenal/Saka (Odegaard) · 67' Chelsea/Palmer [HT: 1-0]"
+// Guard: returns '' for non-soccer or no goal data
+const _afEventCache = {}; // gameId → [{time:{elapsed},team:{name},player:{name},assist:{name},type,detail}]
+function buildGoalTimeline(game, eData) {
+  try {
+    const sp = (game?._sport || game?._section || eData?._sport || '').toLowerCase();
+    if (!(sp.includes('soccer') || sp.includes('league') || sp.includes('mls') ||
+          sp.includes('epl')    || sp.includes('ucl')    || sp.includes('liga') ||
+          sp.includes('serie')  || sp.includes('ligue')  || sp.includes('bundesliga') ||
+          sp.includes('wc26'))) return '';
+    const key = `${game?.home||''}|${game?.away||''}`;
+    // FD path first (football-data.org goals already normalized)
+    const fdGoals = _fdGoalCache[key] || _fdGoalCache[`${game?.away||''}|${game?.home||''}`] || [];
+    // AF path: _afEventCache keyed by numeric game ID
+    const afGoals = (eData?._gameId ? _afEventCache[eData._gameId] : null) || [];
+    const goals = fdGoals.length ? fdGoals : afGoals;
+    if (!goals.length) return '';
+    const htHome = eData?.htHome ?? null;
+    const htAway = eData?.htAway ?? null;
+    const htStr  = (htHome !== null && htAway !== null) ? ` [HT: ${htHome}-${htAway}]` : '';
+    const events = goals
+      .filter(g => g.minute != null)
+      .sort((a,b) => (a.minute??0) - (b.minute??0))
+      .map(g => {
+        const min   = g.minute ?? g.time?.elapsed ?? '?';
+        const team  = g.team?.name || g.team || '';
+        const player= g.player?.name || g.player || '';
+        const assist= g.assist?.name || g.assist || '';
+        const short = team ? `${team.split(' ').slice(-1)[0]}` : '';
+        const assistStr = assist ? ` (${assist.split(' ').slice(-1)[0]})` : '';
+        return `${min}' ${short}/${player.split(' ').slice(-1)[0]}${assistStr}`;
+      });
+    if (!events.length) return '';
+    return `[GOAL TIMELINE] ${events.join(' · ')}${htStr}`;
+  } catch(e_) { return ''; }
+}
+
+// PM-28h: buildNBAPlayerContext() — top scorers from _nbaBoxscoreCache
+// Output: "[NBA BOX] Brunson 32pts/7ast · KAT 24pts/11reb (NYK)"
+function buildNBAPlayerContext(game, eData) {
+  try {
+    const sp = (game?._sport || game?._section || eData?._sport || '').toLowerCase();
+    if (!(sp.includes('nba') || sp.includes('basketball'))) return '';
+    // Look up by all possible ID forms
+    const hNick = teamNick(game?.home||'').toLowerCase();
+    const aNick = teamNick(game?.away||'').toLowerCase();
+    const nbaId = _nbaGameIdMap[`${hNick}_${aNick}`] || _nbaGameIdMap[`${aNick}_${hNick}`];
+    const cached = nbaId ? _nbaBoxscoreCache[nbaId] : null;
+    if (!cached) return '';
+    const fmt = (p) => {
+      if (!p?.name) return null;
+      const last = p.name.split(' ').slice(-1)[0];
+      const teamShort = teamNick(p.team||'');
+      const stats = [`${p.pts}pts`];
+      if (p.ast >= 5) stats.push(`${p.ast}ast`);
+      else if (p.reb >= 7) stats.push(`${p.reb}reb`);
+      return `${last} ${stats.join('/')} (${teamShort})`;
+    };
+    const players = [...(cached.homePlayers||[]), ...(cached.awayPlayers||[])]
+      .sort((a,b) => (b.pts||0) - (a.pts||0))
+      .slice(0,3)
+      .map(fmt).filter(Boolean);
+    if (!players.length) return '';
+    return `[NBA BOX] ${players.join(' · ')}`;
+  } catch(e_) { return ''; }
+}
+
+// PM-28i: normalizeApiFootballStats() — converts API-Football stats array-of-objects
+// Input: [{team:{name}, statistics:[{type:"Yellow Cards",value:2},...]}]
+// Output: {"Arsenal":{"Yellow Cards":2,"Shots on Goal":5,...},"Chelsea":{...}}
+function normalizeApiFootballStats(raw) {
+  try {
+    if (!Array.isArray(raw)) return {};
+    const out = {};
+    for (const entry of raw) {
+      const teamName = entry?.team?.name || '';
+      if (!teamName) continue;
+      out[teamName] = {};
+      for (const stat of (entry?.statistics || [])) {
+        if (stat?.type && stat?.value != null) {
+          // Coerce numeric strings; keep null/"null" as 0
+          const v = stat.value === 'null' || stat.value === null ? 0
+            : isNaN(Number(stat.value)) ? stat.value : Number(stat.value);
+          out[teamName][stat.type] = v;
+        }
+      }
+    }
+    return out;
+  } catch(e_) { return {}; }
 }
 
 function recordScoreSnapshot(gameId, homeScore, awayScore) {
@@ -27644,6 +27789,39 @@ async function fetchNightOwlFromClaude(topGame){
       const _nhlCtx=_nhlKey?window._nhlAnalyticsCache[_nhlKey]:null;
       if(_nhlCtx?.pp&&_nhlCtx?.pk) _owlStatCtx += (_owlStatCtx?'\n':'')+'  [PP/PK] PP '+_nhlCtx.pp+'% · PK '+_nhlCtx.pk+'%';
     }
+    // PM-28j: linescore context (all sports with period scores)
+    try {
+      const _owlEData = Object.values(espnScores).find(v =>
+        (v.homeName||'').toLowerCase().includes((topGame.home||'').toLowerCase().slice(-5)) ||
+        (v.home||'').toLowerCase().includes((topGame.home||'').toLowerCase().slice(-5))
+      );
+      const _lineCtx = buildLinescoreContext(_owlEData, topGame._id);
+      if (_lineCtx) _owlStatCtx += (_owlStatCtx?'\n':'')+'  '+_lineCtx;
+    } catch(e_) {}
+    // PM-28j: soccer goal timeline
+    try {
+      const _owlEData2 = Object.values(espnScores).find(v =>
+        (v.homeName||v.home||'').toLowerCase().includes((topGame.home||'').toLowerCase().slice(-5))
+      );
+      const _goalCtx = buildGoalTimeline(topGame, _owlEData2);
+      if (_goalCtx) _owlStatCtx += (_owlStatCtx?'\n':'')+'  '+_goalCtx;
+    } catch(e_) {}
+    // PM-28h/j: NBA player box
+    try {
+      const _owlEData3 = Object.values(espnScores).find(v =>
+        (v.homeName||v.home||'').toLowerCase().includes((topGame.home||'').toLowerCase().slice(-5))
+      );
+      const _nbaCtx = buildNBAPlayerContext(topGame, _owlEData3);
+      if (_nbaCtx) _owlStatCtx += (_owlStatCtx?'\n':'')+'  '+_nbaCtx;
+    } catch(e_) {}
+    // PM-28l: NHL live shot/goalie context in Night Owl
+    try {
+      if (_sp.includes('nhl') || _sp.includes('hockey')) {
+        const _nhlOwlKey = `${topGame.home||''}|${topGame.away||''}`;
+        const _nhlNote = _nhlLiveStatsCache[_nhlOwlKey] || _nhlLiveStatsCache[`${topGame.away||''}|${topGame.home||''}`] || '';
+        if (_nhlNote) _owlStatCtx += (_owlStatCtx?'\n':'')+'  [NHL LIVE] '+_nhlNote;
+      }
+    } catch(e_) {}
   } catch(e_) {}
   const prompt=['Write a FIELD Night Owl recap.',
       'Game: '+topGame.away+' @ '+topGame.home+(topGame.venue?' · '+topGame.venue:''),
@@ -29015,6 +29193,52 @@ function checkForNewFinals(){
       if(!eData || eData.state !== 'post') return;
       if(_seenFinals.has(game._id)) return;
       _seenFinals.add(game._id);
+      // PM-28d: NBA CDN boxscore → quarter scores + player stats
+      // fetchNBAScoreboard() populates _nbaGameIdMap (tricode + teamName keys).
+      // Look up the 10-digit NBA game ID, fetch boxscore, write to _nbaBoxscoreCache.
+      const _sp28 = (sec.sport||sec._sport||'').toLowerCase();
+      if (_sp28.includes('nba') || _sp28.includes('basketball')) {
+        (async () => {
+          try {
+            await fetchNBAScoreboard();
+            const hNick = teamNick(game.home||'').toLowerCase();
+            const aNick = teamNick(game.away||'').toLowerCase();
+            const nbaId = _nbaGameIdMap[`${hNick}_${aNick}`] || _nbaGameIdMap[`${aNick}_${hNick}`];
+            if (!nbaId) return;
+            if (_nbaBoxscoreCache[nbaId]?.ts) return; // already fetched this game
+            const d = await fetchNBABoxScoreViaRelay(nbaId);
+            const ht = d?.game?.homeTeam;
+            const at = d?.game?.awayTeam;
+            // Quarter scores: periods[{period,score}] — CDN schema confirmed
+            const toLS = (periods) => (periods||[]).map(p => p.score ?? 0);
+            const homeLinescores = toLS(ht?.periods);
+            const awayLinescores = toLS(at?.periods);
+            // Top 2 scorers per team: players[{name,statistics:{points,rebounds,assists}}]
+            const topPlayers = (players, teamLabel) => (players||[])
+              .filter(p => (p.statistics?.points ?? 0) > 0)
+              .sort((a,b) => (b.statistics?.points??0) - (a.statistics?.points??0))
+              .slice(0,2)
+              .map(p => ({
+                name: p.name || '',
+                pts:  p.statistics?.points  ?? 0,
+                reb:  p.statistics?.rebounds ?? 0,
+                ast:  p.statistics?.assists  ?? 0,
+                team: teamLabel,
+              }));
+            _nbaBoxscoreCache[nbaId] = {
+              homeLinescores, awayLinescores,
+              homePlayers: topPlayers(ht?.players, game.home||''),
+              awayPlayers: topPlayers(at?.players, game.away||''),
+              homeLabel: game.home||'', awayLabel: game.away||'',
+              ts: Date.now(),
+            };
+            if (FIELD_DEBUG) console.debug('[PM-28d] NBA boxscore cached:', nbaId,
+              'Q:', homeLinescores.join('-'), 'vs', awayLinescores.join('-'));
+          } catch(e) {
+            if (FIELD_DEBUG) console.warn('[PM-28d] NBA boxscore fetch failed:', e.message);
+          }
+        })();
+      }
       saveEspnFinal(game, eData);
       renderNightOwlRecap().catch(e=>captureFieldError('night-owl',e,false));
     });

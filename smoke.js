@@ -3367,6 +3367,30 @@ assert('A499 — PM-27 WS Pulse: field:ws_fresh emitter + _lastWSMessageTime + u
   html.includes("'pm27-field-ws-fresh'"),
   'PM-27 WS Pulse dot (A499): GameSocket.onmessage emits field:ws_fresh on every facts message. _lastWSMessageTime Map<key, ts> updated inline. Subscriber S5 calls updateWsPulseDot(sport, gameId). updateWsPulseDot renders .ws-pulse dot (solid teal < 8s / dim 8-30s / stale ring > 30s) into .game-time beside the score. Self-healing: stale state calls gs.disconnect()+gs.connect(). Staleness sweep every 15s covers dropped connections. CLS budget = 0 — inline 5×5px dot same line as score text. Only renders when _gameSockets.get(key).available is true.');
 
+// ── PM-28: Context Richness Layer (A500) ──────────────────────────────────────
+// A500: Full PM-28 surface — all functions + cache + injection points present
+
+assert('A500 — PM-28 Context Richness: recordLinescores/getLinescores/buildLinescoreContext/buildGoalTimeline/buildNBAPlayerContext/normalizeApiFootballStats + injections',
+  html.includes('recordLinescores') &&
+  html.includes('getLinescores') &&
+  html.includes('LINESCORE_KEY') &&
+  html.includes('buildLinescoreContext') &&
+  html.includes('buildGoalTimeline') &&
+  html.includes('buildNBAPlayerContext') &&
+  html.includes('normalizeApiFootballStats') &&
+  html.includes('_nbaBoxscoreCache') &&
+  html.includes('_afEventCache') &&
+  html.includes('byPeriod') &&
+  html.includes("(g.linescore?.innings || []).map") &&
+  html.includes('[LINE SCORE]') &&
+  html.includes('[GOAL TIMELINE]') &&
+  html.includes('[NBA BOX]') &&
+  html.includes("'pm28-record-linescores'") &&
+  html.includes("'pm28-nba-boxscore-quarters'") &&
+  html.includes("'pm28-nhl-period-scores'") &&
+  html.includes("'pm28-build-goal-timeline'"),
+  'PM-28 Context Richness Layer (A500): recordLinescores() + getLinescores() persist homeLinescores/awayLinescores to localStorage per period boundary. buildLinescoreContext() formats [LINE SCORE] Q1-Q4/P1-P3/Inn1-9 for compound + Night Owl. buildGoalTimeline() reads _fdGoalCache + _afEventCache → [GOAL TIMELINE] with HT score. buildNBAPlayerContext() reads _nbaBoxscoreCache (populated by fetchNBABoxScoreViaRelay in checkForNewFinals) → [NBA BOX] top scorers. normalizeApiFootballStats() converts API-Football array-of-objects stats schema → keyed map. PM-28e NHL byPeriod extraction writes homeLinescores/awayLinescores from bd.linescore.byPeriod in fetchNHLLiveStats boxscore try-block. All three context builders injected into buildCompoundPrompt (after extremeNote) and fetchNightOwlFromClaude (_owlStatCtx). _afEventCache declared for AF soccer events. Midnight prune: field_linescore_ keys auto-pruned by existing .t field check — no new code needed.');
+
 // ═════════════════════════════════════════════════════════════════════
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);
