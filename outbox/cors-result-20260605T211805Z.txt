@@ -1,0 +1,24 @@
+URL: https://www.cfl.ca/wp-json/  [20260605T211805Z]
+HTTP/2 200 
+content-type: application/json; charset=UTF-8
+server: Apache/2.4.67 (Debian)
+x-powered-by: PHP/8.0.28
+x-robots-tag: noindex
+link: <https://www.cfl.ca/wp-json/>; rel="https://api.w.org/"
+x-content-type-options: nosniff
+access-control-expose-headers: X-WP-Total, X-WP-TotalPages, Link
+access-control-allow-headers: Authorization, X-WP-Nonce, Content-Disposition, Content-MD5, Content-Type
+allow: GET
+via: 1.1 varnish, 1.1 varnish
+accept-ranges: bytes
+age: 0
+date: Fri, 05 Jun 2026 21:18:05 GMT
+x-served-by: cache-yyz4523-YYZ, cache-iad-kiad7000145-IAD
+x-cache: MISS, MISS
+x-cache-hits: 0, 0
+vary: Origin
+strict-transport-security: max-age=31557600
+content-length: 341310
+
+=== BODY (first 3000 chars) ===
+{"name":"CFL.ca","description":"Official site of the Canadian Football League","url":"https:\/\/www.cfl.ca","home":"https:\/\/www.cfl.ca","gmt_offset":-4,"timezone_string":"America\/Toronto","namespaces":["oembed\/1.0","bc\/v1","coauthors\/v1","foogallery\/v1","ninja-forms-submissions","nf-be-data","ninja-forms-views","yoast\/v1","redirection\/v1","tribe\/event-aggregator\/v1","tribe\/events\/v1","mc4wp\/v1","wp-mail-smtp\/v1","wp\/v2","wp-site-health\/v1","wp-block-editor\/v1"],"authentication":{"application-passwords":{"endpoints":{"authorization":"https:\/\/www.cfl.ca\/wp-admin\/authorize-application.php"}}},"routes":{"\/":{"namespace":"","methods":["GET"],"endpoints":[{"methods":["GET"],"args":{"context":{"default":"view","required":false}}}],"_links":{"self":[{"href":"https:\/\/www.cfl.ca\/wp-json\/"}]}},"\/batch\/v1":{"namespace":"","methods":["POST"],"endpoints":[{"methods":["POST"],"args":{"validation":{"type":"string","enum":["require-all-validate","normal"],"default":"normal","required":false},"requests":{"type":"array","maxItems":25,"items":{"type":"object","properties":{"method":{"type":"string","enum":["POST","PUT","PATCH","DELETE"],"default":"POST"},"path":{"type":"string","required":true},"body":{"type":"object","properties":[],"additionalProperties":true},"headers":{"type":"object","properties":[],"additionalProperties":{"type":["string","array"],"items":{"type":"string"}}}}},"required":true}}}],"_links":{"self":[{"href":"https:\/\/www.cfl.ca\/wp-json\/batch\/v1"}]}},"\/oembed\/1.0":{"namespace":"oembed\/1.0","methods":["GET"],"endpoints":[{"methods":["GET"],"args":{"namespace":{"default":"oembed\/1.0","required":false},"context":{"default":"view","required":false}}}],"_links":{"self":[{"href":"https:\/\/www.cfl.ca\/wp-json\/oembed\/1.0"}]}},"\/oembed\/1.0\/embed":{"namespace":"oembed\/1.0","methods":["GET"],"endpoints":[{"methods":["GET"],"args":{"url":{"description":"The URL of the resource for which to fetch oEmbed data.","type":"string","format":"uri","required":true},"format":{"default":"json","required":false},"maxwidth":{"default":600,"required":false}}}],"_links":{"self":[{"href":"https:\/\/www.cfl.ca\/wp-json\/oembed\/1.0\/embed"}]}},"\/oembed\/1.0\/proxy":{"namespace":"oembed\/1.0","methods":["GET"],"endpoints":[{"methods":["GET"],"args":{"url":{"description":"The URL of the resource for which to fetch oEmbed data.","type":"string","format":"uri","required":true},"format":{"description":"The oEmbed format to use.","type":"string","default":"json","enum":["json","xml"],"required":false},"maxwidth":{"description":"The maximum width of the embed frame in pixels.","type":"integer","default":600,"required":false},"maxheight":{"description":"The maximum height of the embed frame in pixels.","type":"integer","required":false},"discover":{"description":"Whether to perform an oEmbed discovery request for unsanctioned providers.","type":"boolean","default":true,"required":false}}}],"_links":{"self":[{"href":"https:\/\/www.cfl.ca\/
