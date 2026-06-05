@@ -1,71 +1,65 @@
 # FIELD HANDOFF — 2026-06-04 (SESSION END)
 
 ## State
-jubilant-bassoon HEAD: bbd41b0 · Smoke: 490/0 · Unit tests: 60/0
-field-relay-nba HEAD: 78618f6 (unchanged)
+jubilant-bassoon HEAD: 5ff7ede · Smoke: 493/0 · Unit tests: 60/0
+field-relay-nba HEAD: b888a5f
 
-## This Session
+## RUWT Deep Analysis — Results
 
-### D1 Write Chain — E2E Verified
-Full test using Cloudflare D1 MCP + probe_relay_route:
-  INSERT INTO wc_results (Mexico 2-0 South Africa, Group A) → changes:1 ✓
-  DELETE+INSERT wc_group recompute SQL → changes:2 ✓
-  /wc/results?group=A probe → correct schema, all fields ✓
-  /wc/standings?group=A probe → Mexico P1 W1 Pts3 · SA P1 L1 Pts0 ✓
-  /wc/third-place probe → 200 OK, empty (correct, only 2 teams) ✓
-  Cleanup → D1 back to empty ✓
-VERDICT: write chain ready for June 11.
+RUWT = US 9,421,446 B2. Claim requires: composite interest level from
+multiple factors → threshold comparison → recommendation/notification.
 
-### Sandbox Access — Confirmed
-  github.com git: ✅
-  api.github.com REST: ✅ (confirmed May 22 — old docs were wrong)
-  Cloudflare D1 MCP (d1_database_query): ✅ proven this session
-  probe_relay_route MCP (GET, allow-listed): ✅ proven
-  *.workers.dev direct: ❌ use probe_relay_route or D1 MCP
-  api.cloudflare.com direct: ❌ use outbox/.trigger-cf-api workflow (~40s)
+### GameDO: CLEAR
+Distributes mathematical facts only (winProb=Poisson output, wpDelta=probability
+change, _crunch=binary named condition). Extended patent defense comment enumerates
+every field and its factual nature. No code changes needed.
 
-### Watch Engine WC Fix (bbd41b0)
-Three problems fixed:
+### Permutations Engine: CLEAR
+Computes advancement PROBABILITIES (mathematical facts about outcome distributions),
+not interest/excitement scores. Added explicit RUWT PATENT DEFENSE comment to
+field_utils.js distinguishing probability from interest level in three specific ways.
 
-1. WC live games invisible to Watch Engine
-   _wcLiveGamesCache = [] module-level global. fetchWCLiveGames() populates it.
-   _otwFindWCLiveGame(): RUWT-compliant selector using relay binary conditions
-   (_crunch: penalty_shootout/man_advantage/added_time/late_deficit) and WP.
-   Selection score: 55 floor, 92 for SHOOTOUT, 80+ for other CRUNCH conditions.
-   Score is NEVER displayed — only named label shown (_buildWCOTWLabel).
+### Win Probability — three risks found:
 
-2. Watch Engine STATE 1/2 injection
-   STATE 1 FIRE: after ESPN check, surfaces wcFire.score >= 70 (CRUNCH+ tier).
-     Shows named label, Watch button via resolveGameBroadcast.
-   STATE 2 LIVE: shows any live WC game (wcFire score >= 55).
-   _buildWCOTWLabel: SHOOTOUT | MAN ADV | STOPPAGE | LATE · 1 GOAL | N' · WC.
+1. getOTWMomentum() — HIGH — FIXED (5ff7ede)
+   Pattern: drama_history[last].s - [prev].s >= 10 → '↑' in OTW banner
+   All three RUWT elements: composite score + threshold + display element.
+   Fix: score-event detector.
+     recordScoreSnapshot(gameId, h, a): writes factual score-change log.
+     getOTWMomentum(): binary check — did scoring happen in last 3 minutes? Yes/No.
+     No composite score read, no threshold comparison on interest level.
 
-3. STATE 5 QUIET guard
-   When _wcLiveGamesCache.length > 0: shows 'Live · WC' instead of
-   'No live games right now'. QUIET never fires during WC.
+2. _otwFindWCLiveGame() sel score — MODERATE — FIXED (5ff7ede)
+   Pattern: sel = f(crunch, WP, elapsed) → numerical composite → recommendation
+   Fix: strict categorical priority tiers (T1-T6), no composite arithmetic.
+     T1: penalty_shootout | T2: man_advantage/added_time | T3: late_deficit
+     T4: elapsed>=80 AND draw>20% (AND-gated binary)
+     T5: elapsed>=60 AND draw>25% (AND-gated binary) | T6: any live WC
+     Within tier: sort by elapsed time only (single factual fact).
+   STATE 1 check updated: wcFire.tier <= 3 (not score >= 70).
 
-4. preGameScore() WC tier boosts + national bundles
-   Group stage: +40 → matches surface in TONIGHT (~55 total for featured games)
-   Knockout: Round of 32=35, QF=35, SF=45, Final=60
-   WC26_FREE/FOX/FS1/PEACOCK added to nationalKeys (+5 national boost).
+3. _otwFindLiveGame(50) dramaScoreLive — MODERATE — DOCUMENTED, NOT FIXED
+   Pattern: dramaScoreLive() > 50 → game selection (existing ESPN path)
+   Display uses named labels (mitigated). Selection mechanism is composite.
+   Planned refactor: replace with buildOTWStateLabel() category-based selection.
+   This is a larger change — documented for Drama Dial session.
 
-RUWT compliance: all WC Watch Engine display uses named binary conditions.
-No composite interest level computed or displayed. Patent defense intact.
+4. late_deficit threshold loserWP < 0.15 — LOW — NO CHANGE
+   Single probability, single threshold, binary boolean output.
+   Not composite. Mitigated by named-condition output. Keep with documentation.
 
-## Smoke: 484→490 (+6, A476-A481) / Unit tests: 60/0
+## RUWT Status Post-Session
+  ✓ GameDO: fully documented, CLEAR
+  ✓ Permutations Engine: fully documented, CLEAR
+  ✓ getOTWMomentum: fixed (drama score → score event)
+  ✓ _otwFindWCLiveGame: fixed (composite sel → categorical tiers)
+  ○ _otwFindLiveGame(50): documented, refactor deferred to Drama Dial session
+  ○ Drama Dial: not yet built — the long-term FTO solution (patent-priority)
 
-## Priority List (Updated)
-  ✓ D1 write chain e2e verified
-  ✓ Watch Engine WC fix — RUWT compliant
-  ← NEXT: Scoreboard P0 (undiagnosed, NBA Finals live daily)
-  ← NEXT: R2 Finals Narrative Context Phase 1
-  ← June 11: BALLDONTLIE trial start (Mexico vs SA, 7pm ET)
-  ← June 11: WC pre-flight verification
-  ← June 25: Drama Dial (patent defense, highest-value patent item not built)
-  ← June 25: wpDelta → drama signal hookup
+## Smoke: 490→493 / Unit tests: 60/0
 
 ## Key Refs
-jubilant-bassoon HEAD: bbd41b0
-field-relay-nba HEAD: 78618f6
-D1 wc2026: f26669de-e772-4b56-a6d1-f8fdea08a4d4
-Smoke: 490/0 · Unit tests: 60/0
+jubilant-bassoon HEAD: 5ff7ede
+field-relay-nba HEAD: b888a5f
+Smoke: 493/0 · Unit tests: 60/0
+Next: Scoreboard P0 diagnosis (NBA Finals live, daily breakage)
