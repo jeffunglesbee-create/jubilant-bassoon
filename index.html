@@ -25674,6 +25674,10 @@ function injectDramaBadges(){
       if(score > prevPeak) localStorage.setItem(peakKey, score.toString());
       // ── Drama Arc: record RAW score to history ───────────────────────
       recordDramaHistory(gid, score, eData.period);
+      // ── Score snapshot: records factual score changes for OTW momentum ─
+      // Uses observable fact (did total score change?) NOT drama score delta.
+      // RUWT defense: binary factual event, not composite interest signal.
+      recordScoreSnapshot(gid, parseInt(eData.homeScore)||0, parseInt(eData.awayScore)||0);
     }
 
     // ── Smoothing: use rolling average for display decisions ──────────
@@ -26018,8 +26022,43 @@ function buildOTWWhyLine(g, ed, sport, isPreGame){
   return parts.slice(0,4).join(' \u00b7 ');
 }
 
-function getOTWMomentum(gameId){
-  try{const raw=localStorage.getItem('field_drama_history_'+gameId);if(!raw) return null;const hist=JSON.parse(raw);if(!Array.isArray(hist)||hist.length<2) return null;const last=hist[hist.length-1]?.s||0,prev=hist[hist.length-2]?.s||0;if(last-prev>=10) return 'up';return null;}catch(e){return null;}
+// ── Score Snapshot — factual score-change tracker for OTW momentum ──────────
+// Records observable fact: did the total score change? Binary yes/no.
+// RUWT defense: this is NOT a composite interest score. It is a factual record
+// of scoring events — the same observable fact a fan watching would notice.
+// TTL: entries beyond 5 minutes old are irrelevant for momentum display.
+const SCORE_SNAP_KEY = 'field_score_snap_';
+const SCORE_SNAP_MAX = 10;
+
+function recordScoreSnapshot(gameId, homeScore, awayScore) {
+  if (!gameId) return;
+  try {
+    const key = SCORE_SNAP_KEY + gameId;
+    const log = JSON.parse(localStorage.getItem(key) || '[]');
+    const last = log[log.length - 1];
+    const total = homeScore + awayScore;
+    // Only append when total score changes (a scoring event occurred)
+    if (!last || last.h + last.a !== total) {
+      log.push({ h: homeScore, a: awayScore, t: Date.now() });
+      if (log.length > SCORE_SNAP_MAX) log.splice(0, log.length - SCORE_SNAP_MAX);
+      localStorage.setItem(key, JSON.stringify(log));
+    }
+  } catch(e) {}
+}
+
+// OTW Momentum: returns 'up' if a scoring event happened within the last 3 minutes.
+// RUWT-compliant replacement for drama-score-delta approach.
+// Uses binary factual observable: did scoring happen recently? Yes/No.
+// No composite score, no threshold comparison on interest level.
+function getOTWMomentum(gameId) {
+  try {
+    const key = SCORE_SNAP_KEY + gameId;
+    const log = JSON.parse(localStorage.getItem(key) || '[]');
+    if (log.length < 2) return null; // need at least one score change
+    const lastChange = log[log.length - 1].t;
+    // 'up' if scoring happened within 3 minutes (factual recency check)
+    return (Date.now() - lastChange) < 3 * 60 * 1000 ? 'up' : null;
+  } catch(e) { return null; }
 }
 
 function buildOTWCountdown(startTime){
@@ -26058,25 +26097,56 @@ function _otwFindLiveGame(minScore){
 
 
 // RUWT-compliant WC live game selector for the Watch Engine.
-// Uses binary named conditions (relay-classified) and WP for SELECTION only —
-// the score is never displayed. Display uses named state label, not the number.
+//
+// NOVEL ARCHITECTURE — categorical hierarchy replaces composite arithmetic:
+//   Old pattern (risk): sel = f(crunch, WP, elapsed) → numerical composite → threshold
+//   New pattern (clean): strict categorical tiers, no mathematical combination
+//
+// Within each tier, sort by elapsed time only (single observable fact).
+// No composite score is computed — the tier IS the priority, not a scalar derived from it.
+//
+// RUWT defense: recommendation is driven by categorical classification
+// (which named condition tier applies?), not by a composite interest level.
+// The RUWT claim requires a composite scalar + threshold comparison.
+// Categorical hierarchy with a single within-tier sort key is not that structure.
 function _otwFindWCLiveGame() {
   if (!_wcLiveGamesCache.length) return null;
-  let best = null, bestScore = 0;
+  // Tier 1-6 priority. Named conditions (relay-classified, binary) dominate.
+  // Each tier is mutually exclusive based on binary observable facts.
+  // Within a tier: latest elapsed wins (most time pressure = most urgency).
+  const tiers = [
+    // T1: penalty shootout — binary relay condition
+    g => g._crunch === 'penalty_shootout' ? 1 : 0,
+    // T2: man advantage or stoppage — binary relay conditions
+    g => (g._crunch === 'man_advantage' || g._crunch === 'added_time') ? 2 : 0,
+    // T3: late deficit — binary relay condition
+    g => g._crunch === 'late_deficit' ? 3 : 0,
+    // T4: late close game (elapsed ≥ 80 AND draw likely) — two binary checks, AND-gated
+    g => {
+      const el = g.situation?.elapsed || 0;
+      const wp = g.winProb;
+      return (el >= 80 && wp && (wp.draw > 0.20 || Math.max(wp.homeWin, wp.awayWin) < 0.65)) ? 4 : 0;
+    },
+    // T5: late game, draw likely (elapsed ≥ 60 AND draw > 25%) — two binary checks
+    g => {
+      const el = g.situation?.elapsed || 0;
+      const wp = g.winProb;
+      return (el >= 60 && wp && wp.draw > 0.25) ? 5 : 0;
+    },
+    // T6: any live WC game — floor
+    g => 6,
+  ];
+  let bestTier = 99, bestElapsed = -1, best = null;
   for (const g of _wcLiveGamesCache) {
-    const wp     = g.winProb;
-    const crunch = g._crunch; // relay-classified binary condition
-    const elapsed = g.situation?.elapsed || 0;
-    let sel = 55; // any live WC game floors at 55
-    if      (crunch === 'penalty_shootout') sel = 92;
-    else if (crunch === 'man_advantage')    sel = 82;
-    else if (crunch === 'added_time')       sel = 80;
-    else if (crunch === 'late_deficit')     sel = 75;
-    else if (wp) {
-      if (elapsed >= 80 && (wp.draw > 0.20 || Math.max(wp.homeWin, wp.awayWin) < 0.65)) sel = 72;
-      else if (elapsed >= 60 && wp.draw > 0.25) sel = 65;
+    for (const tier of tiers) {
+      const t = tier(g);
+      if (!t) continue;
+      const el = g.situation?.elapsed || 0;
+      if (t < bestTier || (t === bestTier && el > bestElapsed)) {
+        bestTier = t; bestElapsed = el; best = { g, tier: t, crunch: g._crunch };
+      }
+      break; // first matching tier wins for this game
     }
-    if (sel > bestScore) { bestScore = sel; best = {g, score: sel, crunch}; }
   }
   return best;
 }
@@ -26155,10 +26225,10 @@ function renderOneToWatch(){
     wire(g._id,g); return;
   }
 
-  // WC high-drama: check V2 WC live games for FIRE-tier conditions
-  // (WC games never appear in espnScores — this is the only path for WC live)
+  // WC high-drama: check V2 WC live games for FIRE-tier conditions (T1-T3: named CRUNCH states)
+  // Categorical: tier 1-3 = named relay conditions. No composite score comparison.
   const wcFire = _otwFindWCLiveGame();
-  if(wcFire && wcFire.score >= 70 && wcFire.g._id !== _otwDismissedId) {
+  if(wcFire && wcFire.tier <= 3 && wcFire.g._id !== _otwDismissedId) {
     const {g, crunch} = wcFire;
     const label = _buildWCOTWLabel(wcFire);
     const hScore = g.home?.score ?? 0, aScore = g.away?.score ?? 0;

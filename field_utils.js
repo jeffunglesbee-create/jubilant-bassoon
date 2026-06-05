@@ -387,6 +387,24 @@ function espnTeamMatch(espnName, fieldName){
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ── WC GROUP-STAGE PERMUTATIONS ENGINE ─────────────────────────────────────────
+//
+// RUWT PATENT DEFENSE (US 9,421,446 B2):
+// This engine computes PROBABILITIES OF FACTUAL OUTCOMES — P(team finishes
+// top 2), P(team qualifies as best-8 third-place team) — not composite
+// interest/excitement levels. Probabilities are mathematical facts derived
+// from combinatorial game-state analysis (3^N W/D/L scenarios × FIFA
+// tiebreaker rules × Monte Carlo cross-group sampling).
+//
+// The RUWT patent claims: composite interest level computed from multiple
+// factors → threshold comparison → recommendation or notification.
+// Outcome probability does NOT meet this claim structure:
+//   - It is a single-dimension mathematical fact (not composite of interest signals)
+//   - It is displayed as informational content, not used to trigger notifications
+//   - No threshold comparison on the probability generates a recommendation
+//
+// All interest-level determination, Drama Dial thresholds, and CRUNCH TIME
+// notifications are computed browser-side in separate systems (ViewingConditions,
+// drama history, relay named conditions). This engine has zero coupling to those.
 // Pure function. Given a group's current standings and remaining fixtures,
 // enumerate every possible final outcome and summarize per-team qualification
 // scenarios. Used by the WC Groups view to answer "what does Team X need?"

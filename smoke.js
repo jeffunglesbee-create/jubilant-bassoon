@@ -3114,9 +3114,9 @@ assert('A477 — Watch Engine: _otwFindWCLiveGame RUWT-compliant WC selector',
     || html.includes('function _otwFindWCLiveGame()') && html.includes('penalty_shootout'),
   '_otwFindWCLiveGame must use binary named conditions for selection, never display the score');
 
-assert('A478 — Watch Engine: WC FIRE injected into STATE 1 (score >= 70)',
-  html.includes('wcFire && wcFire.score >= 70') && html.includes('_buildWCOTWLabel'),
-  'STATE 1 must surface high-drama WC live games via _otwFindWCLiveGame');
+assert('A478 — Watch Engine: WC FIRE injected into STATE 1 (tier 1-3: named CRUNCH conditions)',
+  html.includes('wcFire && wcFire.tier <= 3') && html.includes('_buildWCOTWLabel'),
+  'STATE 1 must surface WC games in CRUNCH named-condition tiers via categorical hierarchy');
 
 assert('A479 — Watch Engine: WC LIVE injected into STATE 2',
   html.includes('Live · WC') && html.includes('wcFire && wcFire.g._id'),
@@ -3129,6 +3129,22 @@ assert('A480 — Watch Engine: STATE 5 QUIET guarded when WC is live',
 assert('A481 — Watch Engine: preGameScore WC tier boost (group stage >= 40)',
   html.includes('FIFA World Cup 2026') && html.includes('? 40 :') && html.includes('WC26_FREE'),
   'preGameScore must have WC tier boost and WC bundles in nationalKeys');
+
+// RUWT-clean implementation assertions
+assert('A482 — RUWT: getOTWMomentum replaced with score-event detector (no drama score read)',
+  html.includes('SCORE_SNAP_KEY') && html.includes('function recordScoreSnapshot(')
+    && html.includes('did scoring happen recently'),
+  'getOTWMomentum must use binary scoring-event detection, not composite drama score delta');
+
+assert('A483 — RUWT: _otwFindWCLiveGame uses categorical tier hierarchy, not composite sel score',
+  html.includes('strict categorical tiers') && html.includes('bestTier')
+    && !html.includes('let sel = 55'),
+  '_otwFindWCLiveGame must use categorical priority tiers, not composite numerical sel score');
+
+assert('A484 — RUWT: Permutations Engine patent defense comment in field_utils.js',
+  fieldUtilsSrc.includes('RUWT PATENT DEFENSE') && fieldUtilsSrc.includes('probabilities of factual outcomes')
+    || fieldUtilsSrc.includes('RUWT PATENT DEFENSE') && fieldUtilsSrc.includes('PROBABILITIES OF FACTUAL OUTCOMES'),
+  'field_utils.js must have explicit RUWT patent defense comment distinguishing probability from interest level');
 
 // ═════════════════════════════════════════════════════════════════════
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
