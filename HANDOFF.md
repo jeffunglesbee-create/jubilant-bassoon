@@ -1,65 +1,56 @@
 # FIELD HANDOFF — 2026-06-04 (SESSION END)
 
 ## State
-jubilant-bassoon HEAD: 5ff7ede · Smoke: 493/0 · Unit tests: 60/0
-field-relay-nba HEAD: b888a5f
+jubilant-bassoon HEAD: 1a01349 (CI) / smoke HEAD: 5ff7ede (source)
+Deploy HEAD: 1a01349 · Smoke: 494/0 · Unit tests: 60/0
 
-## RUWT Deep Analysis — Results
+## CI Speedup — Measured Results
 
-RUWT = US 9,421,446 B2. Claim requires: composite interest level from
-multiple factors → threshold comparison → recommendation/notification.
+### Root cause of 10-minute CI
+20 Playwright tests × waitForTimeout(15000) fixed ceiling × sequential execution
+= 300s of pure arithmetic sleep for what renders in ~1.5s.
 
-### GameDO: CLEAR
-Distributes mathematical facts only (winProb=Poisson output, wpDelta=probability
-change, _crunch=binary named condition). Extended patent defense comment enumerates
-every field and its factual nature. No code changes needed.
+### Fixes shipped (1a01349)
 
-### Permutations Engine: CLEAR
-Computes advancement PROBABILITIES (mathematical facts about outcome distributions),
-not interest/excitement scores. Added explicit RUWT PATENT DEFENSE comment to
-field_utils.js distinguishing probability from interest level in three specific ways.
+Fix 1: playwright.config.js — workers:4 + fullyParallel:true
+  20 sequential → 4 parallel groups. One config flag.
 
-### Win Probability — three risks found:
+Fix 2: window._fieldDataReady sentinel in index.html
+  Set after first renderAll(). Typically resolves ~1.5s after DOMContentLoaded.
+  Structural tests were waiting 15s for hardcoded schedule that renders in ~1.5s.
 
-1. getOTWMomentum() — HIGH — FIXED (5ff7ede)
-   Pattern: drama_history[last].s - [prev].s >= 10 → '↑' in OTW banner
-   All three RUWT elements: composite score + threshold + display element.
-   Fix: score-event detector.
-     recordScoreSnapshot(gameId, h, a): writes factual score-change log.
-     getOTWMomentum(): binary check — did scoring happen in last 3 minutes? Yes/No.
-     No composite score read, no threshold comparison on interest level.
+Fix 3: awaitReady(page, bufferMs) helper in field_browser.test.js
+  Replaces all waitForTimeout(N) fixed waits with event-based detection.
+  9 calls replaced: F02(8s→5.5s), F03(15→4.5s), F04(15→3.5s), F09(5→2s),
+  F10(5→2s), F11(15→4.5s), F17(8→6.5s), F18(20→13.5s), F20(20→13.5s).
 
-2. _otwFindWCLiveGame() sel score — MODERATE — FIXED (5ff7ede)
-   Pattern: sel = f(crunch, WP, elapsed) → numerical composite → recommendation
-   Fix: strict categorical priority tiers (T1-T6), no composite arithmetic.
-     T1: penalty_shootout | T2: man_advantage/added_time | T3: late_deficit
-     T4: elapsed>=80 AND draw>20% (AND-gated binary)
-     T5: elapsed>=60 AND draw>25% (AND-gated binary) | T6: any live WC
-     Within tier: sort by elapsed time only (single factual fact).
-   STATE 1 check updated: wcFire.tier <= 3 (not score >= 70).
+### Measured improvement
+  Playwright tests:   301s → 155s  (49% faster)
+  Browser-test job:   336s → 193s
+  Total CI wall time: 433s → 292s  (33% faster, ~5 min vs 7+ min)
+  Smoke A485 added.
 
-3. _otwFindLiveGame(50) dramaScoreLive — MODERATE — DOCUMENTED, NOT FIXED
-   Pattern: dramaScoreLive() > 50 → game selection (existing ESPN path)
-   Display uses named labels (mitigated). Selection mechanism is composite.
-   Planned refactor: replace with buildOTWStateLabel() category-based selection.
-   This is a larger change — documented for Drama Dial session.
+### Why not 4x? 
+  GitHub Actions ubuntu-latest = 2 vCPUs (not 4).
+  Playwright I/O-bound — parallelism helps but 4 workers on 2 cores ≠ 4x.
+  Effective speedup: ~2x parallel + ~2x sentinel = compound ~2x total.
 
-4. late_deficit threshold loserWP < 0.15 — LOW — NO CHANGE
-   Single probability, single threshold, binary boolean output.
-   Not composite. Mitigated by named-condition output. Keep with documentation.
+### Remaining headroom
+  - CF propagation wait: 25s hard constraint (separate from deploy timing)
+  - Playwright install: 22s × 2 jobs = 44s waste (share via artifact or cache)
+  - Editorial tests (F18/F20): 12s AI proxy waits — new per-worker bottleneck
+  - If editorial tests skipped on non-editorial commits: ~20s more savings
+  - Local serve via wrangler dev: eliminates CF wait entirely (saves 25s)
 
-## RUWT Status Post-Session
-  ✓ GameDO: fully documented, CLEAR
-  ✓ Permutations Engine: fully documented, CLEAR
-  ✓ getOTWMomentum: fixed (drama score → score event)
-  ✓ _otwFindWCLiveGame: fixed (composite sel → categorical tiers)
-  ○ _otwFindLiveGame(50): documented, refactor deferred to Drama Dial session
-  ○ Drama Dial: not yet built — the long-term FTO solution (patent-priority)
-
-## Smoke: 490→493 / Unit tests: 60/0
+## Priority List (Current)
+  ← NEXT: Scoreboard P0 (NBA Finals live, daily breakage)
+  ← NEXT: R2 Finals Narrative Context Phase 1 (NBA Finals ongoing)  
+  ← June 11: BALLDONTLIE trial (Mexico vs SA 7pm ET opening match)
+  ← June 11: WC pre-flight verification
+  ← June 25: Drama Dial (patent defense, highest-value unbuilt feature)
+  ← June 25: wpDelta → drama signal hookup
 
 ## Key Refs
-jubilant-bassoon HEAD: 5ff7ede
+jubilant-bassoon HEAD: 1a01349
 field-relay-nba HEAD: b888a5f
-Smoke: 493/0 · Unit tests: 60/0
-Next: Scoreboard P0 diagnosis (NBA Finals live, daily breakage)
+Smoke: 494/0 · Unit tests: 60/0
