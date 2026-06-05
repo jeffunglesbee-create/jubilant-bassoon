@@ -19229,7 +19229,7 @@ function getFieldVoice(sport) {
       sp.includes('bundesliga') || sp.includes('serie') || sp.includes('ligue') ||
       sp.includes('efl') || sp.includes('uecl') || sp.includes('uel')) return FIELD_SOCCER_VOICE;
   // AFL and CFL: no dedicated FIELD voice constant yet — inline guidance
-  if (sp.includes('afl') || sp.includes('australian')) return 'Australian Rules Football: use marks, handballs, clearances, inside-50s. Score as goals.behinds.total. Avoid: points, goals-only totals without behinds.';
+  if (sp.includes('afl') || sp.includes('australian')) return 'Australian Rules Football: use marks, handballs, clearances, inside-50s. Score as goals.behinds.total (e.g. 12.5.77). MARGIN RULE: scores are in total points — a 6-point margin = one-goal margin, a 12-point margin = two-goal margin. NEVER equate point-difference directly to goals ("6-goals margin" for a 6-point win is WRONG). Avoid: points, goals-only totals without behinds.';
   if (sp.includes('cfl') || sp.includes('canadian football')) return 'Canadian Football (CFL): 3 downs, wider field, end zone rouge, no-yards penalties. Score in points. Avoid: four downs, calling it NFL, American football framing.';
   if (sp.includes('nfl') || (sp.includes('football') && !sp.includes('afl') && !sp.includes('cfl') && !sp.includes('soccer') && !sp.includes('canadian'))) return 'American Football (NFL): yards, touchdowns, field goals, first downs, red zone. Score in points. Avoid: basket, inning, goal, penalty kick.';
   if (sp.includes('wnba')) return 'WNBA Basketball: use WNBA team/player names, not NBA equivalents. Score in points. Same vocabulary as NBA.';
@@ -19704,10 +19704,13 @@ const SPORT_VOCAB_VIOLATIONS = {
     forbidden: [
       'touchdown','first down','field goal percentage','three-point','free throw',
       'rebound','basket','inning','innings','at-bat','strikeout','home run',
-      'penalty kick','nil','offside','overtime','possession game'
+      'penalty kick','nil','offside','overtime','possession game',
+      // Critical: never equate point-margin directly to goals
+      // "6-goals margin" when the margin is 6 POINTS is WRONG (6 pts = 1 goal)
+      'goals margin','goal margin'
     ],
     sport: 'Australian Rules Football',
-    units: 'goals and behinds (goals×6+behinds=total)',
+    units: 'goals and behinds (goals×6+behinds=total). Margin in points ÷ 6 = approximate goals.',
     extra_period: 'extra time (not overtime)'
   },
   // NFL: must not use basketball/baseball/soccer vocabulary
@@ -27950,10 +27953,23 @@ async function fetchNightOwlFromClaude(topGame){
   // PF-3: compute margin server-side and pass explicitly so the LLM never
   // has to do arithmetic. Picks the correct unit per sport.
   const _marginN = Math.abs(_homeS - _awayS);
+  // AFL exclusion: "Australian Football" contains "football" but is NOT soccer
+  // Raw scores for AFL are TOTAL POINTS (goals×6 + behinds) — do NOT call them "goals"
+  const _isAFLsport = _sp.includes('afl') || (_sp.includes('australian') && _sp.includes('football'));
   const _marginUnit = (_sp.includes('baseball')||_sp.includes('mlb')) ? 'run'
-                   : (_sp.includes('hockey')||_sp.includes('nhl')||_sp.includes('soccer')||_sp.includes('football')||_sp.includes('mls')) ? 'goal'
+                   : (_sp.includes('hockey')||_sp.includes('nhl')||_sp.includes('soccer')||(!_isAFLsport && _sp.includes('football'))||_sp.includes('mls')) ? 'goal'
                    : 'point';
-  const _marginLine = _isTiedScore && (_sp.includes('baseball')||_sp.includes('mlb'))
+  // AFL: convert point margin to goals+behinds description
+  const _aflMarginStr = _isAFLsport ? (()=>{
+    const g = Math.floor(_marginN / 6);
+    const b = _marginN % 6;
+    if (g === 0) return `${b}-point margin (less than one goal — decisive kick wins it)`;
+    if (b === 0) return `${g}-goal margin`;
+    return `${g}-goal-${b}-behind margin (${_marginN} points)`;
+  })() : null;
+  const _marginLine = _isAFLsport
+    ? `MARGIN: ${_aflMarginStr} (winner ${winner})`
+    : _isTiedScore && (_sp.includes('baseball')||_sp.includes('mlb'))
     ? `MARGIN: one-${_marginUnit} (extra innings — winning ${_marginUnit} scored after the 9th)`
     : `MARGIN: ${_marginN}-${_marginUnit}${_marginN === 1 ? '' : 's'} (winner ${winner})`;
   const _terms = _sp.includes('baseball') || _sp.includes('mlb')
@@ -27963,7 +27979,7 @@ async function fetchNightOwlFromClaude(topGame){
     : _sp.includes('nfl') || _sp.includes('american football')
     ? 'Sport: American Football. Score in POINTS (touchdowns=6, field goals=3). Close game = one-score game (8 points or fewer). Use: yards, first downs, turnover, red zone.'
     : _sp.includes('afl') || _sp.includes('australian')
-    ? 'Sport: Australian Rules Football. Score in GOALS and BEHINDS. Total = goals×6 + behinds. Close game = within a goal (7 points). Use: marks, handballs, clearances, score composite format goals.behinds.total.'
+    ? 'Sport: Australian Rules Football. Score in GOALS and BEHINDS. Total = goals×6 + behinds. CRITICAL MARGIN RULE: scores are given as TOTAL POINTS (e.g. 77–71). To describe the margin: divide point-margin by 6 to get approximate goals, remainder = behinds. A 6-point margin = one-goal margin (NOT six goals). A 12-point margin = two-goal margin. A 3-point margin = half-a-goal (describe as "within a goal"). NEVER say "X-goals margin" when you mean X-points margin — always convert. Close game = within a goal (≤6 points). Use: marks, handballs, clearances, inside 50s, score composite format goals.behinds.total (e.g. 12.5.77 = 12 goals, 5 behinds, 77 total). Forbidden: saying the point difference IS the number of goals.'
     : _sp.includes('cfl') || _sp.includes('canadian football')
     ? 'Sport: Canadian Football (CFL). Score in POINTS (touchdowns=6, field goals=3, rouges=1). Close game = one-score game (8 points or fewer). 4 downs (not 3 downs — that is the wrong number; CFL has 3 downs). Use: yards, first down, turnover, end zone, rouge, convert, major. NEVER use: basket, inning, goal, nil, penalty kick, quarter-back sack counts in points.'
     : _sp.includes('wnba')
@@ -29328,7 +29344,7 @@ async function renderNightOwlRecap(){
           : sp.includes('hockey')||sp.includes('nhl')
           ? 'Sport: Hockey. Score in GOALS. Use hockey vocabulary only.'
           : sp.includes('afl') || sp.includes('australian')
-          ? 'Sport: Australian Rules Football. Score in GOALS and BEHINDS. Use: marks, handballs, score composite goals.behinds.total.'
+          ? 'Sport: Australian Rules Football. Score in GOALS and BEHINDS. goals×6+behinds=total. MARGIN: 6-point win = one-goal margin (NOT six goals). Use: marks, handballs, score composite goals.behinds.total.'
           : sp.includes('cfl') || sp.includes('canadian football')
           ? 'Sport: Canadian Football (CFL). Score in POINTS. 3 downs. Use: yards, rouge, convert, major. Do not say four downs.'
           : sp.includes('nfl') || (sp.includes('football') && !sp.includes('afl') && !sp.includes('cfl') && !sp.includes('soccer') && !sp.includes('canadian'))
