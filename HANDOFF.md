@@ -1,93 +1,81 @@
 # FIELD HANDOFF — 2026-06-04 (SESSION END)
 
 ## State
-jubilant-bassoon HEAD: caf3429 · Smoke: 479/0 · Unit tests: 60/0
-field-relay-nba HEAD: e52d184
+jubilant-bassoon HEAD: d932e81 · Smoke: 484/0 · Unit tests: 60/0
+field-relay-nba HEAD: 78618f6
 
-## This Session — What Was Built
+## This Session — Advancement Probability Complete
 
-### v1.4 Poisson Margin Wiring Fix
-Active bug: wcEnumerateScenarios called wcApplyOutcome without matchMeta.
-lambdaHome/lambdaAway were present in outcomeProbabilities objects (from
-/wc/odds-probs totals market) but never extracted and passed to the engine.
+### relay/src/soccer-wp.js (78618f6)
+computeAdvancementProb v2:
+  - estimateThirdPlaceRate(): proper rank-based estimate from cross_group_rank
+    (rank 1-6: 95%, 7: 80%, 8: 50% bubble, 9: 20%, 10: 5%, 11-12: 1%)
+    Pre-tournament default: 8/12 = 66.7% (uniform)
+  - groupId derived from standings[0].group_id for rank lookup
+  - method tag: 'single-game-scenario-v2'
+  - Removed hardcoded 0.5/0.6 + stale _ suppressor
 
-Fix: in wcEnumerateScenarios inner loop:
-  `const matchMeta = (useProbs && outcomeProbs[k]?.lambdaHome != null)
-       ? { lambdaHome: outcomeProbs[k].lambdaHome, lambdaAway: outcomeProbs[k].lambdaAway }
-       : null;
-   wcApplyOutcome(tm, home, away, code, playedCopy, matchMeta);`
-Fixed in both field_utils.js and inlined engine copy in index.html.
+### index.html (d932e81)
 
-4 new unit tests (total 60/0):
-  - wcPoissonExpectedGoals: dominant λH=3.649 gives >2.5 home goals
-  - wcPoissonExpectedGoals: symmetric draw gives equal goals both sides
-  - wcApplyOutcome with matchMeta: λH=3.0/λA=0.4 produces GD>1 (not 1-0)
-  - computeGroupScenarios with lambdas: Germany >90% qualify, Curaçao <10%
+_wcAdvancementProb(teamName, scenarios, groupId, liveGame, side):
+  Primary: Permutations Engine pQualifyTop2 + pQualifyAsBest3rd (multi-game).
+  Fallback: relay g.advancementProb.homeAdvance/awayAdvance (single-game v2).
+  Fuzzy team-name matching for Odds API vs wc26Raw variations.
+  Source tagged: 'permutations' | 'relay-v2'
 
-### openingAdvanceProb in GameDO (game-do.js + index.js)
-relay: POST /wp body now includes advanceProb (g.advancementProb from D1).
-DO: stores openingAdvanceProb once at first live poll (immutable kickoff baseline).
-DO: returns openingAdvanceProb in POST /wp response.
-browser: g.openingAdvanceProb attached from DO response.
-Used by L3c Qual Surprise layer for "vs kickoff" qualification baseline.
+_wcBuildAdvBar(liveGame, hAdv, aAdv, hName, aName):
+  Dedicated two-tone advancement bar (home green / away amber), injected
+  BELOW the WP bar in same <td>. Shows opening delta from GameDO baseline (▲▼)
+  when ≥5pp. Source label: 'full group scenarios' vs 'single-game estimate'.
+  CSS: wc-adv-bar, wc-adv-home, wc-adv-away, wc-adv-gap, wc-adv-meta.
 
-### Full Surprise Layer — _wcBuildWPBar(liveGame, wp, {scenarios, groupId})
-buildWCGroupRows now passes {scenarios, groupId} context to _wcBuildWPBar.
-_wcBuildWPBar rewritten with 4 display layers:
-  L1:  3-segment WP bar (home/draw/away), source, pulse animation
-  L1+: wpDelta trend ↑↓ (≥2pp per 30s poll)
-  L3a: WP Surprise — current vs GameDO openingWP (≥5pp → shows delta)
-       'Mexico was 67% (+15pp)'
-  L3b: Qualification context from Permutations Engine pQualifyTop2:
-       'Qual: Mexico 82%, South Africa 23%'
-       Fuzzy team-name lookup via _wcMatchTeamName
-  L3c: Qual Surprise — pQualifyTop2 vs openingAdvanceProb (≥8pp → shows delta)
-       'Qual: Mexico 82%, South Africa 23% (+16pp vs kickoff)'
+_wcBuildWPBar: calls _wcAdvancementProb for both teams, renders _wcBuildAdvBar.
 
-Full integration chain complete:
-  Odds API h2h,totals → lambdaFromTotalsAndH2H → pregameLh/La → computeLiveWP
-  → winProb{source:'odds-blended'} → GameDO POST /wp
-  → {openingWP, wpDelta, openingAdvanceProb, recentHistory}
-  → browser g.openingWP / g.wpDelta / g.openingAdvanceProb / g.recentWPHistory
-  → _wcBuildWPBar: L1+L1++L3a+L3b+L3c
-  + outcomeProbabilities[live fixture] → computeGroupScenarios(weighted+Poisson)
-  → pQualifyTop2 → L3b qualification display
+_wcScenarioBadge:
+  Badge now shows TRUE P(advance) = pQualifyTop2 + pQualifyAsBest3rd.
+  '${pAdvPct}% adv' when best-3rd path meaningful (≥1%).
+  Tooltip: 'XX% = YY% top-2 + ZZ% as best-8 third'.
 
-## Smoke: 477→479 / Unit tests: 56→60
+What was connected that wasn't before:
+  relay g.advancementProb → first consumed anywhere in browser display
+  GameDO openingAdvanceProb → baseline delta in advancement bar
+  pQualifyTop2 + pQualifyAsBest3rd → unified P(advance) badge (not split)
+  Live WP → outcomeProbabilities → Permutations → real-time advancement bar
 
-## Full WP Stack — Final Status
-  ✓ Poisson + Dixon-Coles model
-  ✓ lambdaFromTotalsAndH2H (20-step binary search)
-  ✓ oddsToLambda (25-step gradient descent fallback)
+## Complete WP + Advancement Stack — Final Status
+  ✓ Poisson + Dixon-Coles model (computeLiveWP)
+  ✓ lambdaFromTotalsAndH2H (totals market, 20-step binary search)
+  ✓ oddsToLambda (h2h inversion fallback)
   ✓ lambdaFromShots (SOT proxy, trust-blended)
-  ✓ effectiveElapsed + remainingLambda + man-advantage
-  ✓ Pre-game lambda cache (5-min TTL, module-level)
+  ✓ Pre-game lambda cache (getWCPregameLambdas, 5-min TTL)
   ✓ winProb on V2 live game (source: odds-blended/shots-proxy/default-lambda)
   ✓ Soccer CRUNCH: 4 conditions, WP-gated late_deficit, /crunch route fixed
-  ✓ computeAdvancementProb (single-game v1, D1 standings, thirdPlaceRate)
+  ✓ computeAdvancementProb v2 (cross-group thirdPlaceRate from D1 rank)
   ✓ GameDO WP store: openingWP, lastWP, wpHistory, openingAdvanceProb
-  ✓ GameDO WebSocket fan-out: {type:'wp', wp, wpDelta}
-  ✓ Level 1: 3-segment bar + source label + pulse
-  ✓ Level 1+: wpDelta trend ↑↓ (≥2pp)
+  ✓ GameDO WS fan-out: {type:'wp', wp, wpDelta}
+  ✓ Level 1: 3-segment WP bar + source label + pulse
+  ✓ Level 1+: wpDelta trend ↑↓ (≥2pp per poll)
   ✓ Level 3a: WP Surprise — openingWP vs current (≥5pp)
-  ✓ Level 3b: Qual context — Permutations pQualifyTop2 both teams
-  ✓ Level 3c: Qual Surprise — openingAdvanceProb vs current (≥8pp)
-  ✓ v1.4 Poisson margin model — FIXED (matchMeta now wired correctly)
-  ✓ v1.5 fair-play tiebreaker (fairPlayPoints param threaded)
-  ✓ v1.6 bracket implications (WC26_R32 constant, Match 73-88)
+  ✓ Advancement bar: dedicated visual row with both teams' P(advance)
+  ✓ Advancement bar: opening delta from GameDO (▲▼ when ≥5pp)
+  ✓ Advancement badge: true P(advance) = pQualifyTop2 + pQualifyAsBest3rd
+  ✓ v1.4 Poisson margin model — matchMeta wired correctly
+  ✓ v1.5 fair-play tiebreaker
+  ✓ v1.6 bracket implications (Match 73-88)
   ✓ v1.7 simultaneous-kickoff banner
-  ○ Level 2 sparkline (recentWPHistory in game object; display not built)
-  ○ wpDelta → drama dial (data available; hook not built)
-  ○ Full Permutations Engine advancement prob on relay (engine is browser-side)
+  ○ Level 2 sparkline (recentWPHistory available; display not built)
+  ○ wpDelta → drama dial hookup
+
+## Smoke: 479→484 / Unit tests: 60/0
 
 ## Outstanding Before June 11
-  - /wc/admin/seed e2e test (auto-write verified to fire, need test of write chain)
-  - BALLDONTLIE trial: START June 11 (Mexico vs SA 7pm ET)
-  - Scoreboard P0 (undiagnosed)
+  - /wc/admin/seed e2e test
+  - BALLDONTLIE trial: June 11
+  - Scoreboard P0
   - Watch Engine WC fix (~line 26190)
 
 ## Key Refs
-jubilant-bassoon HEAD: caf3429
-field-relay-nba HEAD: e52d184
+jubilant-bassoon HEAD: d932e81
+field-relay-nba HEAD: 78618f6
 D1 wc2026: f26669de-e772-4b56-a6d1-f8fdea08a4d4
-Smoke: 479/0 · Unit tests: 60/0
+Smoke: 484/0 · Unit tests: 60/0
