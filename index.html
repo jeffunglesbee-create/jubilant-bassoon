@@ -3120,18 +3120,32 @@ body.wc-mode #wc-section{animation:wcFadeIn 220ms ease-out}
       lastShiftTime = t;
       if (curWindowScore > maxWindow) maxWindow = curWindowScore;
 
+      // PM-26-P: tag shift with the active load phase so CLS events are
+      // actionable. Reads the most recent field:* mark fired before this
+      // shift's timestamp. Falls back to 'skeleton' (pre-renderAll) if no
+      // mark has fired yet, or 'post-load' if all three have fired.
+      let phase = 'skeleton';
+      try {
+        const marks = performance.getEntriesByType('mark')
+          .filter(m => /^field:/.test(m.name) && m.startTime <= t)
+          .sort((a, b) => b.startTime - a.startTime);
+        if (marks.length) phase = marks[0].name.replace('field:', '');
+      } catch(_) {}
+
       const ev = {
         t: Math.round(t),
         score: +score.toFixed(4),
         cumul: +total.toFixed(4),
         window: +curWindowScore.toFixed(4),
-        sources: sources
+        sources: sources,
+        phase: phase
       };
       if (fallbackMode) ev.fallback = true;
       events.push(ev);
       _log((fallbackMode ? '[CLS:fb] ' : '[CLS] ') +
            't=' + ev.t + 'ms score=' + ev.score +
            ' cumul=' + ev.cumul + ' window=' + ev.window +
+           ' phase=' + phase +
            ' sources=[' + (sources.join(', ') || '?') + ']');
     }
 
@@ -16955,15 +16969,24 @@ async function fetchSchedule(){
   const verified=buildTodaySchedule();
   allData={sports:[...verified]};
   buildFilters(allData.sports);
+  // PM-26-P: state-transition performance marks. Consumed by clsObserver to
+  // tag each layout-shift event with the load phase it occurred in, making
+  // CLS source attribution actionable (which frame caused the shift?).
+  // Phases: 'cards' (skeleton→real), 'ready' (overlay hydration begins),
+  // 'supplemental' (rugby/afl async merge). Marks are passive — zero cost
+  // unless DevTools Performance tab or __cls.events is inspected.
+  try { performance.mark('field:cards'); } catch(_) {}
   renderAll();
   // Sentinel for Playwright test optimization: tests waitForFunction(() => window._fieldDataReady)
   // instead of waitForTimeout(15000). Typically resolves in ~1.5s not 15s.
   window._fieldDataReady = Date.now();
+  try { performance.mark('field:ready'); } catch(_) {}
   loadOverlayData(); // async enhancement — editorial patches from relay
 
   // ── Then fetch supplemental (rugby etc.) async and merge if anything returns ─
   fetchSupplemental(isoDate,dayOfWeek,monthYear).then(supplemental=>{
     if(supplemental && supplemental.length){
+      try { performance.mark('field:supplemental'); } catch(_) {}
       allData={sports:[...verified,...supplemental]};
       buildFilters(allData.sports);
       scheduleRenderAll(); // debounced — collapses with soccer

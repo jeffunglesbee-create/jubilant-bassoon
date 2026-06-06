@@ -3428,6 +3428,28 @@ assert('A502 — PM-30 NBA Live Boxscore: fetchNBALiveBoxscore + oncourt Tier0 i
   html.includes('0.4 * p.plusMinus + 0.6 * seasonPM'),
   'PM-30 NBA Live Boxscore: fetchNBALiveBoxscore(nbaId) polls CDN every 90s during live games. Gap 1: oncourt:"1" flag → Tier 0 in RAI (replaces fragile PBP tricode matching). Gap 2: 0.4×live stint plusMinusPoints + 0.6×season +/- blended quality signal. Gap 3: buildFoulTroubleContext() → [FOUL TROUBLE] starters ≥3 fouls Q1-Q2, ≥4 Q3+. Gap 5: [OFFICIALS] tag from CDN. Gap 6: parseNBAScoreboardGames extracts gameLeaders → _nbaScoreLeaders → buildNBAScoreLeadersContext() zero-cost [LEADERS] tag. All wired into buildCompoundPrompt parallel prefetch + Night Owl _owlStatCtx. RUWT: all named observable facts — oncourt (binary), fouls (NBA rule threshold), officials (identity), plusMinusPoints (factual score differential).');
 
+// ── PM-26-P: State Transition Performance Marks + CLS Phase Tagging (A503) ───
+assert('A503 — PM-26-P: performance.mark at load-phase transitions + CLS phase tagging in recordShift',
+  // Three marks bracket the five-frame load sequence:
+  //   'skeleton' (pre-JS) → 'cards' (renderAll) → 'ready' (_fieldDataReady+overlay)
+  //   → 'supplemental' (async rugby/afl merge)
+  html.includes("performance.mark('field:cards')") &&
+  html.includes("performance.mark('field:ready')") &&
+  html.includes("performance.mark('field:supplemental')") &&
+  // All three are wrapped in try/catch (passive — must never throw)
+  html.includes("try { performance.mark('field:cards'); } catch(_) {}") &&
+  html.includes("try { performance.mark('field:ready'); } catch(_) {}") &&
+  html.includes("try { performance.mark('field:supplemental'); } catch(_) {}") &&
+  // field:cards fires immediately before renderAll (not after)
+  /performance\.mark\('field:cards'\)[^]*?renderAll\(\)/.test(html) &&
+  // recordShift tags each CLS event with its load phase
+  html.includes("let phase = 'skeleton'") &&
+  html.includes("performance.getEntriesByType('mark')") &&
+  html.includes(".filter(m => /^field:/.test(m.name) && m.startTime <= t)") &&
+  html.includes("phase: phase") &&
+  html.includes("' phase=' + phase +"),
+  "PM-26-P state transition marks: performance.mark('field:cards'/'field:ready'/'field:supplemental') fire at the three transition boundaries of the five-frame cold-load sequence. clsObserver.recordShift() reads the most recent field:* mark at shift time to tag each __cls.events entry with its load phase (skeleton/cards/ready/supplemental). Makes CLS source attribution actionable: window.__cls.events filtered by phase shows which frame caused layout shift. All marks are try/catch-wrapped (passive, zero production cost).");
+
 // ═════════════════════════════════════════════════════════════════════
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);
