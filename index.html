@@ -13363,12 +13363,14 @@ async function fetchV2AllScores() {
       const games = await fetchV2Games(sport, queryDate);
       games.forEach(fg => {
         if (!fg?.home?.name || !fg?.away?.name) return;
-        // Guard: skip final games whose UTC start date doesn't match the queried date.
-        // Prevents yesterday's finished games from polluting today's cards.
-        // Uses UTC comparison (both date and game start are UTC — consistent).
+        // Guard: skip final games that are genuinely from a prior day.
+        // A game is valid if its UTC start date matches either the ET query date
+        // or the UTC query date — covering the full US evening window.
+        // e.g. BAL@TOR starts 23:07 UTC Jun 5 (ET date Jun 5, UTC date Jun 5),
+        // queried on Jun 6 UTC: gameUtcDate=Jun5, etDate=Jun5 → valid, keep it.
         if (fg.state === 'final' && fg.start) {
           const gameUtcDate = new Date(fg.start).toISOString().slice(0, 10);
-          if (gameUtcDate !== date) return;
+          if (gameUtcDate !== date && gameUtcDate !== etDate) return;
         }
         const key = `${fg.home.name}|${fg.away.name}`;
         const prev = espnScores[key];
@@ -29072,14 +29074,22 @@ function buildLifeStageContent(game, eData, stage) {
     case 'final': {
       if (!eData) return '';
       if (eData.source === 'squiggle') return ''; // AFL: squiggle chip handles it
-      // L9 Amnesty Zone: completed games can show drama score.
-      // No drama dial gate — post-game display is temporal-scope-safe (L9).
-      // Emoji tier + numeric score: '🔥 89' / '⚡ 73' / '· 52'
+      // Show final score + optional drama peak
+      const fh = eData.homeScore ?? null, fa = eData.awayScore ?? null;
+      if (fh !== null && fa !== null) {
+        const fhN = teamNick(game.home||''), faN = teamNick(game.away||'');
+        const fLeader = fh >= fa ? fhN : faN;
+        const fTrailer = fh >= fa ? faN : fhN;
+        const fLS = fh >= fa ? fh : fa, fTS = fh >= fa ? fa : fh;
+        const peak = parseFloat(localStorage.getItem('field_drama_peak_'+(game._id||''))||'0');
+        const peakStr = peak >= 50 ? ` ${peak >= 85 ? '🔥' : peak >= 65 ? '⚡' : '·'}${Math.round(peak)}` : '';
+        return `<div class="card-stage-content card-stage-live-basic">${fLeader} ${fLS}–${fTS} ${fTrailer} F${peakStr}</div>`;
+      }
+      // No score data — fall back to drama peak only
       const peak = parseFloat(localStorage.getItem('field_drama_peak_'+(game._id||''))||'0');
       if (peak < 50) return '';
       const peakIcon = peak >= 85 ? '🔥' : peak >= 65 ? '⚡' : '·';
-      const peakNum  = Math.round(peak);
-      return `<div class="card-stage-content"><span class="stage-final-score">${peakIcon} ${peakNum}</span></div>`;
+      return `<div class="card-stage-content"><span class="stage-final-score">${peakIcon} ${Math.round(peak)}</span></div>`;
     }
     default: return '';
   }
