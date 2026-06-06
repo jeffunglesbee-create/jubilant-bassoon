@@ -1,7 +1,6 @@
-# stat-bootstrap.yml
-# One-shot workflow: set CLOUDFLARE_API_TOKEN in stat repo + create KV namespace
-# Trigger: push outbox/.trigger-stat-bootstrap
-# Deletes itself after successful run (one-shot)
+# stat-bootstrap.yml — one-shot STAT setup
+# Sets CLOUDFLARE_API_TOKEN in stat repo, creates KV namespace,
+# updates wrangler.toml, then triggers stat deploy.
 
 name: STAT Bootstrap
 
@@ -19,53 +18,45 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install PyNaCl
+      - name: Install PyNaCl + requests
         run: pip install pynacl requests --quiet
 
       - name: Set CLOUDFLARE_API_TOKEN in stat repo
         env:
           CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          GH_PAT: ${{ secrets.GITHUB_TOKEN }}
+          CROSS_PAT: ${{ secrets.CROSS_REPO_PAT }}
         run: |
           python3 << 'PYEOF'
-          import base64, json, os, sys
-          import requests
+          import base64, json, os, sys, requests
           from nacl import encoding, public
 
-          PAT = os.environ["GH_PAT"]
+          PAT = os.environ["CROSS_PAT"]
           CF_TOKEN = os.environ["CF_TOKEN"]
           REPO = "jeffunglesbee-create/stat"
           SECRET_NAME = "CLOUDFLARE_API_TOKEN"
 
-          # Get stat repo public key
           r = requests.get(
             f"https://api.github.com/repos/{REPO}/actions/secrets/public-key",
-            headers={"Authorization": f"token {PAT}",
-                     "Accept": "application/vnd.github+json"}
+            headers={"Authorization": f"token {PAT}", "Accept": "application/vnd.github+json"}
           )
           if r.status_code != 200:
-            print(f"ERROR getting public key: {r.status_code} {r.text}")
-            sys.exit(1)
+            print(f"ERROR getting public key: {r.status_code} {r.text}"); sys.exit(1)
           key_data = r.json()
           print(f"Got public key for {REPO}, key_id={key_data['key_id']}")
 
-          # Encrypt with NaCl SealedBox
           pub_key = public.PublicKey(key_data["key"].encode(), encoding.Base64Encoder)
           sealed = public.SealedBox(pub_key).encrypt(CF_TOKEN.encode())
           encrypted = base64.b64encode(sealed).decode()
 
-          # PUT secret
           r2 = requests.put(
             f"https://api.github.com/repos/{REPO}/actions/secrets/{SECRET_NAME}",
-            headers={"Authorization": f"token {PAT}",
-                     "Accept": "application/vnd.github+json"},
+            headers={"Authorization": f"token {PAT}", "Accept": "application/vnd.github+json"},
             json={"encrypted_value": encrypted, "key_id": key_data["key_id"]}
           )
           if r2.status_code in (201, 204):
             print(f"SUCCESS: {SECRET_NAME} set in {REPO}")
           else:
-            print(f"ERROR setting secret: {r2.status_code} {r2.text}")
-            sys.exit(1)
+            print(f"ERROR: {r2.status_code} {r2.text}"); sys.exit(1)
           PYEOF
 
       - name: Create KV namespace in Cloudflare
@@ -73,93 +64,80 @@ jobs:
           CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
         run: |
           ACCOUNT_ID="b57e9af57ab46c52ca9215804e689c29"
-          RESULT=$(curl -s -X POST \
+          RESULT=$(curl -sf -X POST \
             "https://api.cloudflare.com/client/v4/accounts/${ACCOUNT_ID}/storage/kv/namespaces" \
             -H "Authorization: Bearer ${CF_TOKEN}" \
             -H "Content-Type: application/json" \
             -d '{"title":"STAT_KV"}')
-          echo "KV create result: $RESULT"
+          echo "Raw result: $RESULT"
           KV_ID=$(echo "$RESULT" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('result',{}).get('id','ERROR'))")
-          echo "KV_ID=$KV_ID" >> $GITHUB_ENV
           echo "KV namespace ID: $KV_ID"
+          echo "KV_ID=$KV_ID" >> $GITHUB_ENV
 
       - name: Update wrangler.toml in stat repo with KV ID
         env:
-          GH_PAT: ${{ secrets.GITHUB_TOKEN }}
+          CROSS_PAT: ${{ secrets.CROSS_REPO_PAT }}
           KV_ID: ${{ env.KV_ID }}
         run: |
           python3 << 'PYEOF'
-          import base64, json, os, requests
+          import base64, json, os, sys, requests
 
-          PAT = os.environ["GH_PAT"]
-          KV_ID = os.environ["KV_ID"]
+          PAT = os.environ["CROSS_PAT"]
+          KV_ID = os.environ.get("KV_ID", "")
           REPO = "jeffunglesbee-create/stat"
 
-          if KV_ID == "ERROR" or not KV_ID:
-            print("KV_ID not set — skipping wrangler.toml update")
-            exit(0)
+          if not KV_ID or KV_ID == "ERROR":
+            print("KV_ID not available — skipping wrangler.toml update"); sys.exit(0)
 
           # Get current wrangler.toml
           r = requests.get(
             f"https://api.github.com/repos/{REPO}/contents/wrangler.toml",
-            headers={"Authorization": f"token {PAT}",
-                     "Accept": "application/vnd.github+json"}
+            headers={"Authorization": f"token {PAT}", "Accept": "application/vnd.github+json"}
           )
           if r.status_code != 200:
-            print(f"ERROR getting wrangler.toml: {r.status_code}")
-            exit(1)
-
+            print(f"ERROR getting wrangler.toml: {r.status_code}"); sys.exit(1)
           data = r.json()
           content = base64.b64decode(data["content"]).decode("utf-8")
           sha = data["sha"]
 
-          # Replace placeholder with real KV ID
           new_content = content.replace(
             'id = "REPLACE_WITH_YOUR_KV_NAMESPACE_ID"',
             f'id = "{KV_ID}"'
           )
-
           if new_content == content:
-            print("Placeholder not found — wrangler.toml may already be updated")
-            exit(0)
+            print("Placeholder not found — already updated?"); sys.exit(0)
 
-          # Commit updated wrangler.toml
           encoded = base64.b64encode(new_content.encode()).decode()
           r2 = requests.put(
             f"https://api.github.com/repos/{REPO}/contents/wrangler.toml",
-            headers={"Authorization": f"token {PAT}",
-                     "Accept": "application/vnd.github+json"},
-            json={
-              "message": f"Set KV namespace ID: {KV_ID}",
-              "content": encoded,
-              "sha": sha
-            }
+            headers={"Authorization": f"token {PAT}", "Accept": "application/vnd.github+json"},
+            json={"message": f"[STAT] Set KV namespace ID {KV_ID}", "content": encoded, "sha": sha}
           )
           if r2.status_code in (200, 201):
             print(f"SUCCESS: wrangler.toml updated with KV_ID={KV_ID}")
+            print(f"Commit SHA: {r2.json().get('commit',{}).get('sha','?')[:8]}")
           else:
-            print(f"ERROR updating wrangler.toml: {r2.status_code} {r2.text}")
-            exit(1)
+            print(f"ERROR: {r2.status_code} {r2.text}"); sys.exit(1)
           PYEOF
 
-      - name: Write bootstrap result
+      - name: Write result
         run: |
           TS=$(date -u +%Y%m%dT%H%M%SZ)
           OUT="outbox/stat-bootstrap-result-${TS}.txt"
-          echo "=== STAT Bootstrap Result [${TS}] ===" > "$OUT"
+          echo "=== STAT Bootstrap [${TS}] ===" > "$OUT"
           echo "CLOUDFLARE_API_TOKEN: set in jeffunglesbee-create/stat" >> "$OUT"
           echo "KV_ID: ${{ env.KV_ID }}" >> "$OUT"
-          echo "wrangler.toml: updated with KV ID" >> "$OUT"
-          echo "Next step: push to stat triggers deploy.yml CI" >> "$OUT"
-          echo "OUT=$OUT" >> $GITHUB_ENV
+          echo "wrangler.toml: updated" >> "$OUT"
+          echo "NEXT: stat CI will deploy on wrangler.toml push" >> "$OUT"
           cat "$OUT"
+          echo "OUT=$OUT" >> $GITHUB_ENV
 
       - name: Push result
         run: |
           git config user.email "probe@field"
           git config user.name "STAT-Bootstrap"
-          git add "$OUT" 2>/dev/null || true
-          git diff --cached --quiet && echo "Nothing to commit" && exit 0
+          git add "$OUT"
+          git diff --cached --quiet && exit 0
           git commit -m "stat-bootstrap result [skip ci]"
           for i in 1 2 3; do
             git pull --rebase --autostash origin main && git push origin main && break
