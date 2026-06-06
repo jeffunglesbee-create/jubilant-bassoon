@@ -1,58 +1,54 @@
-# FIELD HANDOFF — 2026-06-06 (Session END — full journalism surface audit)
+# FIELD HANDOFF — 2026-06-06 (Session END — PM-29 Postgame Drama Context)
 
 ## State
-jubilant-bassoon HEAD: a14db62 · Smoke: 509/0 · Unit: 66/0
+jubilant-bassoon HEAD: 56354fc · Smoke: 510/0 · Unit: 66/0
 field-relay-nba HEAD: 981d474
-SW_VERSION: 2026-06-05a
 
-## Full Journalism Surface Audit — COMPLETE ✅
+## PM-29 — COMPLETE ✅
 
-Systematic audit of all 21 sports against 10 surfaces.
-Found and fixed gaps across 3 commits: d2026c4 (AFL/CFL), 84f7c2d (AFL/CFL cleanup), a14db62 (all remaining).
+Revival of all RUWT-scrapped drama metrics for postgame surfaces.
+RUWT risk: NONE. All outputs are historical facts (game is over), not live recommendations.
 
-### Final surface coverage matrix
+### buildScoreNarrativeContext(gameId, homeLabel, awayLabel, sport)
+Reads field_score_snap_* (up to 10 {h,a,t} entries).
+Outputs: [SCORE NARRATIVE] biggest lead · lead changes · loser's max lead (comeback signal)
+Sport-aware units: goal (soccer/hockey), run (baseball), point (everything else).
+Skips: golf, tennis (score snapshots not meaningful for those sports).
+Returns '' when < 2 entries or skipped sport.
 
-| Sport | NightOwl | BottomSh | Drama | Classify | LeagueTag | FieldVoice | DetectClass | VocabViol | QualityTgt | LiveSrc |
-|---|---|---|---|---|---|---|---|---|---|---|
-| NBA | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| NHL | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| MLB | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| NFL | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | off-season |
-| WNBA | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | →basketball | ✅ | ✅ | ✅ |
-| MLS | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| EPL | ✅ | ✅ | →soccer | ✅ | ✅ | ✅ | ✅ | →soccer | ✅ | off-season |
-| UCL/UEFA | ✅ | ✅ | →soccer | ✅ | ✅ | ✅ | →soccer | →soccer | ✅ | off-season |
-| LaLiga | ✅ | ✅ | →soccer | ✅ | ✅ | →soccer | ✅ | →soccer | ✅ | off-season |
-| Serie A | ✅ | ✅ | →soccer | ✅ | ✅ | →soccer | ✅ | →soccer | ✅ | off-season |
-| Bundesliga | ✅ | ✅ | →soccer | ✅ | ✅ | ✅ | ✅ | →soccer | ✅ | off-season |
-| Ligue 1 | ✅ | ✅ | →soccer | ✅ | ✅ | →soccer | ✅ | →soccer | ✅ | off-season |
-| WC26 | ✅ | ✅ | →soccer | ✅ | ✅ | ✅ | →soccer | →soccer | →soccer | ✅ (Jun 11) |
-| AFL | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ (squiggle) |
-| CFL | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ (odds) |
-| Tennis | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Golf | ✅ | ✅ | — | ✅ | ✅ | ✅ | ✅ | ✅ | — | — |
-| Cricket | ✅ | ✅ | — | ✅ | ✅ | ✅ | ✅ | ✅ | — | ✅ (willow) |
-| Rugby | ✅ | ✅ | — | ✅ | ✅ | ✅ | ✅ | ✅ | — | — |
-| NCAAMB | — | — | — | ✅ | ✅ | — | — | — | — | — |
-| NCAAFB | — | — | — | — | — | — | — | — | — | — |
+### buildDramaArcDescription(gameId)
+Reads field_drama_history_* (up to 200 {t,s,p} samples).
+Arc classification: quiet-game / moderate / sustained-thriller / late-bloomer /
+early-spike / mid-peak / late-drama / one-electric-moment.
+Outputs: [DRAMA ARC] one-sentence plain English describing the tension shape.
+Returns '' when < 4 samples.
 
-→soccer = intentionally routed through soccer block (correct behavior)
-→basketball = WNBA routes to basketball class (correct)
-— = no live data source or rarely shown; low priority
+### Night Owl fix + extension
+_owlDramaPromptCtx was UNDECLARED (regression from June 5 session — variable was
+referenced at line 28074 but the let declaration never reached that scope).
+Fixed + extended: now includes [DRAMA], [DRAMA TREND], [DRAMA PEAK] (these 3
+existed but weren't reaching the prompt), [DRAMA ARC], [SCORE NARRATIVE].
+EMBER tag added to Night Owl prompt with dramaPeak: [EMBER BURIED LEAD: Tier3 · peak 84].
+Updated DRAMA CONTEXT usage instruction covers all five tags.
 
-Notes:
-- Golf/Cricket/Rugby: no dramaScoreLive (no live score source; FIELD shows pre/post only)
-- Golf/Cricket/Rugby: no getQualityTarget (no quality history to learn from yet)
-- NCAAMB/NCAAFB: in-season only; carry-forward if they get a data source
+### Bottom sheet postgame
+New "Game Summary" section (replaces live "Live Intelligence" for state=post):
+  Peak 🔥84 · 18 min high drama · surged late ↑
+  [score narrative text below]
+Drama Arc sparkline now has arc description text beneath it for final games.
+
+### Compound prompt
+buildDramaArcDescription + buildScoreNarrativeContext injected after PM-28k block.
+Guard: _eS?.state!=='post' — only fires for finished games (RUWT-clean).
 
 ## Priority List
 1. JQ Gate brand-safe fallback (~60 lines)
 2. Drama Dial header chip (~20 lines)
-3. Arc Poster (~200 lines, BLOCKER: verify getDramaHistory() populated live)
+3. Arc Poster (~200 lines)
 4. State Transition PerformanceObserver (~30 lines)
 5. iOS PWA Add-to-Home (~40 lines)
 
 ## Key Refs
-jubilant-bassoon HEAD: a14db62
+jubilant-bassoon HEAD: 56354fc
 field-relay-nba HEAD: 981d474
-Smoke: 509/0 · Unit: 66/0
+Smoke: 510/0 · Unit: 66/0
