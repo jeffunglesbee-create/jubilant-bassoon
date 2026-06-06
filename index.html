@@ -13377,6 +13377,16 @@ async function fetchV2AllScores() {
         const prev = espnScores[key];
         const v2Entry = mapV2ToESPN(fg);
 
+        // Guard: never overwrite a known live or final score with a pre-game entry.
+        // V2 returns both today's finished game AND tomorrow's scheduled game for the
+        // same teams in the same response. forEach processes them sequentially and the
+        // pre-game can overwrite the final. e.g. CIN@STL final (10-3) then CIN@STL
+        // pre (null scores) both appear in the Jun 6 UTC response.
+        if (v2Entry.state === 'pre' && prev && (prev.state === 'in' || prev.state === 'post')) {
+          // Skip — don't overwrite a real score with tomorrow's pre-game placeholder
+          return;
+        }
+
         // Merge guard: V2 provides scores/period/clock; preserve richer fields
         // already set by NHL relay, Savant, or statistics endpoint.
         // homeLinescores: prefer V2 if it has data (relay now sends quarter scores);
