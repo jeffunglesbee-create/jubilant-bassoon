@@ -12,7 +12,8 @@
     },
     "ai_notes": true,
     "ai_backend": "gemini-3.1-flash-lite",
-    "note": "Phase 1: schedules block added. index.html reads schedules.mlb for full schedule. game_overlays remain for backward compat."
+    "note": "Phase 1: schedules block added. Broadcast + series records patched manually 2026-06-06.",
+    "patched_at": "2026-06-06T manual broadcast verification"
   },
   "schedules": {
     "nhl": [
@@ -22,22 +23,25 @@
         "away": "Carolina Hurricanes",
         "start_time": "2026-06-07T00:00:00Z",
         "venue": "T-Mobile Arena",
-        "seriesRecord": "SCF",
+        "seriesRecord": "Tied 1-1",
         "isPlayoff": true,
-        "round": null,
+        "gameLabel": "Stanley Cup Final Game 3",
+        "nationalBundle": "ESPN",
+        "round": "SCF",
         "confirmed": true
       }
     ],
     "nba": [
       {
         "sport": "NBA",
-        "home": "San Antonio Spurs",
-        "away": "New York Knicks",
-        "start_time": "2026-06-06T00:30:00Z",
-        "venue": null,
+        "home": "New York Knicks",
+        "away": "San Antonio Spurs",
+        "start_time": "2026-06-07T00:30:00Z",
+        "venue": "Madison Square Garden",
         "seriesRecord": "NYK leads 2-0",
         "isPlayoff": true,
-        "gameLabel": "NBA Finals",
+        "gameLabel": "NBA Finals Game 3",
+        "nationalBundle": "ESPN",
         "confirmed": true
       }
     ],
@@ -273,13 +277,13 @@
   "game_overlays": [
     {
       "_match_key": "Vegas Golden Knights|Carolina Hurricanes",
-      "seriesRecord": "SCF",
-      "matchupNote": "The Hurricanes look to seize control in the desert tonight, but the Golden Knights are standing on the doorstep of history with a chance to push Carolina to the brink. With the Stanley Cup Final intensity peaking, tonight’s clash is a high-stakes collision between Carolina’s relentless pressure and Vegas’s clinical championship poise."
+      "seriesRecord": "Tied 1-1",
+      "matchupNote": "The series shifts to Las Vegas with the Cup Final evenly matched at 1-1. Vegas won Game 1 on the road with a late Hertl goal; Carolina stormed back in Game 2 with three third-period goals and a Seth Jarvis OT winner. The Golden Knights take home ice for Games 3 and 4."
     },
     {
-      "_match_key": "San Antonio Spurs|New York Knicks",
+      "_match_key": "New York Knicks|San Antonio Spurs",
       "seriesRecord": "NYK leads 2-0",
-      "matchupNote": "The Knicks arrive in San Antonio looking to put a stranglehold on the NBA Finals, while the desperate Spurs face a must-win scenario to keep their championship hopes from slipping into a terminal 3-0 deficit. With New York one victory away from total command, tonight’s clash serves as the definitive turning point in the series."
+      "matchupNote": "The Knicks host their first Finals game in 27 years at a raucous Madison Square Garden, looking to take a commanding 3-0 series lead. The desperate Spurs face a must-win in hostile territory to keep their championship hopes alive."
     },
     {
       "_match_key": "Detroit Tigers|Seattle Mariners",
@@ -287,7 +291,7 @@
     },
     {
       "_match_key": "Minnesota Twins|Kansas City Royals",
-      "matchupNote": "The Royals look to tighten their grip on an AL Wild Card spot as they open a pivotal series against a desperate Twins squad fighting to stay relevant in the postseason race. With both teams jockeying for position, tonight’s clash serves as a high-stakes litmus test for two clubs trending in opposite directions."
+      "matchupNote": "The Royals look to tighten their grip on an AL Wild Card spot as they open a pivotal series against a desperate Twins squad fighting to stay relevant in the postseason race. With both teams jockeying for position, tonight\u2019s clash serves as a high-stakes litmus test for two clubs trending in opposite directions."
     },
     {
       "_match_key": "St. Louis Cardinals|Cincinnati Reds",
@@ -295,7 +299,7 @@
     },
     {
       "_match_key": "Chicago Cubs|San Francisco Giants",
-      "matchupNote": "The Giants arrive at Wrigley Field desperate to salvage their fading postseason hopes against a Cubs squad looking to play spoiler in the season’s final stretch. With every loss tightening the noose on San Francisco’s wild-card aspirations, tonight’s opener is a must-win battle for survival."
+      "matchupNote": "The Giants arrive at Wrigley Field desperate to salvage their fading postseason hopes against a Cubs squad looking to play spoiler in the season\u2019s final stretch. With every loss tightening the noose on San Francisco\u2019s wild-card aspirations, tonight\u2019s opener is a must-win battle for survival."
     },
     {
       "_match_key": "Toronto Blue Jays|Baltimore Orioles",
@@ -303,7 +307,7 @@
     },
     {
       "_match_key": "Philadelphia Phillies|Chicago White Sox",
-      "matchupNote": "The reeling White Sox limp into Citizens Bank Park looking to snap a historic skid, while the Phillies aim to maintain their stranglehold on the National League’s top seed. Expect a lopsided affair as Philadelphia’s juggernaut lineup looks to feast on a Chicago rotation currently anchored to the basement of the standings."
+      "matchupNote": "The reeling White Sox limp into Citizens Bank Park looking to snap a historic skid, while the Phillies aim to maintain their stranglehold on the National League\u2019s top seed. Expect a lopsided affair as Philadelphia\u2019s juggernaut lineup looks to feast on a Chicago rotation currently anchored to the basement of the standings."
     },
     {
       "_match_key": "Arizona Diamondbacks|Washington Nationals",
@@ -311,15 +315,15 @@
     },
     {
       "_match_key": "Houston Astros|Athletics",
-      "matchupNote": "The Astros look to tighten their grip on the AL West as they host an Athletics squad playing for nothing but late-season spoilers. With Houston’s postseason window narrowing, every win against a sub-.500 opponent is a non-negotiable requirement for October survival."
+      "matchupNote": "The Astros look to tighten their grip on the AL West as they host an Athletics squad playing for nothing but late-season spoilers. With Houston\u2019s postseason window narrowing, every win against a sub-.500 opponent is a non-negotiable requirement for October survival."
     },
     {
       "_match_key": "Atlanta Braves|Pittsburgh Pirates",
-      "matchupNote": "The Pirates look to keep their flickering postseason pulse alive as they open a critical series against a Braves squad desperate to solidify their grip on the final Wild Card spot. With Atlanta clinging to a narrow lead in the race, every pitch tonight carries massive weight for both clubs’ October aspirations."
+      "matchupNote": "The Pirates look to keep their flickering postseason pulse alive as they open a critical series against a Braves squad desperate to solidify their grip on the final Wild Card spot. With Atlanta clinging to a narrow lead in the race, every pitch tonight carries massive weight for both clubs\u2019 October aspirations."
     },
     {
       "_match_key": "Miami Marlins|Tampa Bay Rays",
-      "matchupNote": "The Rays head down I-75 looking to keep their fading wild-card pulse alive against a Marlins squad playing strictly for pride. With Tampa Bay’s postseason window rapidly closing, every inning tonight is a must-win to avoid falling further off the pace."
+      "matchupNote": "The Rays head down I-75 looking to keep their fading wild-card pulse alive against a Marlins squad playing strictly for pride. With Tampa Bay\u2019s postseason window rapidly closing, every inning tonight is a must-win to avoid falling further off the pace."
     },
     {
       "_match_key": "Texas Rangers|Cleveland Guardians",
@@ -327,11 +331,11 @@
     },
     {
       "_match_key": "New York Yankees|Boston Red Sox",
-      "matchupNote": "The Red Sox invade the Bronx looking to claw back into the Wild Card hunt, but they’ll have to overcome a Yankees squad desperate to maintain their slim lead atop the AL East. With the postseason race tightening, every pitch in this high-stakes rivalry clash carries massive weight for both clubs."
+      "matchupNote": "The Red Sox invade the Bronx looking to claw back into the Wild Card hunt, but they\u2019ll have to overcome a Yankees squad desperate to maintain their slim lead atop the AL East. With the postseason race tightening, every pitch in this high-stakes rivalry clash carries massive weight for both clubs."
     },
     {
       "_match_key": "Colorado Rockies|Milwaukee Brewers",
-      "matchupNote": "The Brewers look to tighten their grip on the NL Central as they roll into Coors Field, where the Rockies aim to play spoiler and derail Milwaukee’s postseason positioning. With every game critical in the stretch run, the Brewers must avoid a letdown against a Colorado squad that consistently thrives on disrupting playoff-bound visitors."
+      "matchupNote": "The Brewers look to tighten their grip on the NL Central as they roll into Coors Field, where the Rockies aim to play spoiler and derail Milwaukee\u2019s postseason positioning. With every game critical in the stretch run, the Brewers must avoid a letdown against a Colorado squad that consistently thrives on disrupting playoff-bound visitors."
     },
     {
       "_match_key": "Los Angeles Dodgers|Los Angeles Angels",
