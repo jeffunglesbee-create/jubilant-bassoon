@@ -16389,6 +16389,83 @@ function classifySport(game, espnScore){
 // STAGE 2 — Story Engine
 // Canonical game narrative — winner/leader-first scores, status line, period label.
 // Consumed by: renderESPNScores, buildNightOwlStatic, renderLastNight, Brief context.
+// ── buildSafeScoreWrap ────────────────────────────────────────────────────────
+// The score is the most important element on the card. This function builds the
+// score-wrap HTML defensively — it never returns blank content for a live or
+// final game. It reads score data through multiple fallback layers:
+//   1. computeGameNarrative (full Story Engine output — preferred)
+//   2. Raw score values directly from the espnScore object
+//   3. The game's tonight-finals localStorage entry (survives V2 null overwrites)
+// The result is always a <div class="score-wrap"> with at minimum a score number.
+function buildSafeScoreWrap(game, score, sportClass, sitHTML) {
+  sitHTML = sitHTML || '';
+  const _sc = sportClass || classifySport(game, score);
+
+  // Layer 1: attempt full narrative (may return empty for state:'pre' or undefined state)
+  let _n = null;
+  try { _n = computeGameNarrative(game, score, _sc); } catch(e) { _n = null; }
+
+  // Layer 2: if narrative is empty (state='pre' or failed), try to recover
+  // using the raw score values + an explicit state override
+  if (!_n || _n.state === 'pre' || (_n.leaderDisplay === '' && _n.trailerDisplay === '')) {
+    const rawH = score?.homeScore ?? null;
+    const rawA = score?.awayScore ?? null;
+
+    if (rawH !== null && rawA !== null) {
+      // Build a synthetic score entry with explicit state from card-level knowledge
+      const syntheticScore = {
+        ...score,
+        state: (score?.state === 'post') ? 'post' : 'in', // force out of 'pre'
+      };
+      try { _n = computeGameNarrative(game, syntheticScore, _sc); } catch(e) { _n = null; }
+    }
+  }
+
+  // Layer 3: still no display — read from tonight-finals localStorage
+  if (!_n || _n.leaderDisplay === '') {
+    try {
+      const finals = loadTonightFinals();
+      const hNorm = (game.home||'').toLowerCase();
+      const aNorm = (game.away||'').toLowerCase();
+      const match = finals.find(f =>
+        (f.home||'').toLowerCase() === hNorm || (f.away||'').toLowerCase() === aNorm
+      );
+      if (match && match.homeScore != null) {
+        const synth = { state:'post', homeScore: match.homeScore, awayScore: match.awayScore,
+                        homeName: match.home, awayName: match.away };
+        try { _n = computeGameNarrative(game, synth, _sc); } catch(e) {}
+      }
+    } catch(e) {}
+  }
+
+  // Layer 4: last resort — raw numbers with no framing
+  if (!_n || (_n.leaderDisplay === '' && _n.trailerDisplay === '')) {
+    const rH = score?.homeScore ?? 0;
+    const rA = score?.awayScore ?? 0;
+    const isFinalRaw = score?.state === 'post';
+    return `<div class="score-wrap"><div class="score-block">` +
+      `<span class="score-home">${rA}</span><span class="score-sep">–</span>` +
+      `<span class="score-away">${rH}</span>` +
+      (isFinalRaw ? `<span class="score-final">F</span>` : '') +
+      `</div>${sitHTML}</div>`;
+  }
+
+  // Render using narrative output
+  const isSoccer = _sc.isSoccer;
+  const _leftLeader  = !_n.isTied && (isSoccer ? _n.leaderScore > _n.trailerScore : true);
+  const _rightLeader = !_n.isTied && isSoccer && _n.trailerScore > _n.leaderScore;
+  return `<div class="score-wrap">` +
+    `<div class="score-block">` +
+    `<span class="score-home${_leftLeader?' score-leader':''}">${_n.leaderDisplay}</span>` +
+    `<span class="score-sep">–</span>` +
+    `<span class="score-away${_rightLeader?' score-leader':''}">${_n.trailerDisplay}</span>` +
+    _n.periodLabel +
+    `</div>` +
+    (_n.statusLine ? `<div class="score-status">${_n.statusLine}</div>` : '') +
+    sitHTML +
+    `</div>`;
+}
+
 function computeGameNarrative(game, espnScore, sportClass){
   const sc=sportClass||classifySport(game,espnScore);
   const state=espnScore?.state||'pre';
@@ -16655,21 +16732,8 @@ function renderESPNScores(){
         sitHTML = `<div class="baseball-sit"><div class="outs-row">${outDots}</div>${diamond}</div>`;
       }
 
-      // Story Score — row 1: leader–trailer + period. Row 2: statusLine.
-      // Soccer: home-left always. Others: leader-left, score-leader class on winning side.
-      const _leftLeader  = !_n.isTied && (isSoccer ? _n.leaderScore > _n.trailerScore : true);
-      const _rightLeader = !_n.isTied && isSoccer && _n.trailerScore > _n.leaderScore;
-      const scoreHTML =
-        `<div class="score-wrap">` +
-          `<div class="score-block">` +
-          `<span class="score-home${_leftLeader?" score-leader":""}">${_n.leaderDisplay}</span>` +
-          `<span class="score-sep">–</span>` +
-          `<span class="score-away${_rightLeader?" score-leader":""}">${_n.trailerDisplay}</span>` +
-          _n.periodLabel +
-          `</div>` +
-          (_n.statusLine?`<div class="score-status">${_n.statusLine}</div>`:'') +
-          sitHTML +
-        `</div>`;
+      // Story Score — defensive build via buildSafeScoreWrap (never blank for live/final)
+      const scoreHTML = buildSafeScoreWrap(game, score, _sc, sitHTML);
 
       // NFL / NBA / NHL situation badge (down-distance, power play, shot clock)
       if(isLive && score.situation){
