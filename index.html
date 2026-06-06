@@ -1064,7 +1064,7 @@ body::before{
 }
 .gotd-badge.espn-gotd{color:#ff3c3c;border-color:rgba(255,60,60,.4);background:rgba(255,60,60,.08)}
 .gotd-badge.local-cov{color:var(--teal);border-color:rgba(0,212,170,.35);background:rgba(0,212,170,.07);cursor:help}
-.crew-line{font-size:.65rem;color:var(--muted);padding:.1rem .85rem .2rem;opacity:.8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.crew-line{font-size:.65rem;color:var(--muted);padding:.1rem .85rem .2rem;opacity:.8;white-space:normal;overflow:visible;text-overflow:unset;line-height:1.4}
 
 /* [DRAMA-LINE-A] */
 .card-drama-line{font-size:.62rem;color:var(--smoke);line-height:1.4;margin-top:.3rem;padding-top:.25rem;border-top:1px solid var(--edge);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
@@ -16558,7 +16558,10 @@ function renderESPNScores(){
 
       // Inject or update the score block
       const wrapExisting = card.querySelector(".score-wrap");
-      if(!score||score.state==="pre"){
+      // Guard: remove for genuine pre-game. Defend against api-sports state:"pre"
+      // for live games (fixed in mapV2ToESPN, but double-guard here).
+      const _hasLiveScores = (score.homeScore||0) > 0 || (score.awayScore||0) > 0;
+      if(!score||(score.state==="pre" && !_hasLiveScores)){
         if(wrapExisting) wrapExisting.remove();
         return;
       }
