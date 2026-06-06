@@ -1,0 +1,22 @@
+=== CF API Probe [20260606T063745Z] ===
+Request: GET https://stat-job-watcher.jeffunglesbee.workers.dev/
+
+{
+    "name": "STAT Job Watcher",
+    "version": "1.0.0",
+    "activeDOs": 49,
+    "watchedCompanies": 49,
+    "seenJobIds": 3,
+    "endpoints": {
+        "GET /": "This status overview",
+        "POST /trigger": "Run HiringCafe scrape now",
+        "POST /bootstrap": "Spawn DOs for all companies",
+        "GET /companies": "List all watched companies",
+        "POST /companies": "Add a company (body: {name,ats,token,url?})",
+        "GET /do/:key/status": "Status of a specific DO",
+        "GET /salary-status": "Salary DO: peer pool / LCA / BLS cache status",
+        "POST /salary-refresh": "Re-fetch BLS OEWS + DOL LCA salary caches",
+        "POST /reset-seen": "Clear seen job IDs (re-alerts all current jobs)",
+        "POST /reset-all": "Nuclear reset: clear seen + registry"
+    }
+}
