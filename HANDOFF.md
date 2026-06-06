@@ -1,54 +1,66 @@
-# FIELD HANDOFF — 2026-06-06 (Session END — PM-29 Postgame Drama Context)
+# FIELD HANDOFF — 2026-06-06 (Session END — PM-30 NBA Live Boxscore)
 
 ## State
-jubilant-bassoon HEAD: 56354fc · Smoke: 510/0 · Unit: 66/0
+jubilant-bassoon HEAD: 5f18604 · Smoke: 511/0 · Unit: 66/0
 field-relay-nba HEAD: 981d474
 
-## PM-29 — COMPLETE ✅
+## PM-30 — NBA Live Boxscore Optimizations — COMPLETE ✅
 
-Revival of all RUWT-scrapped drama metrics for postgame surfaces.
-RUWT risk: NONE. All outputs are historical facts (game is over), not live recommendations.
+Live probe of NYK@SAS NBA Finals G2 (0042500402) confirmed CDN boxscore
+delivers 33 per-player stats, oncourt flag, live stint +/-, officials.
 
-### buildScoreNarrativeContext(gameId, homeLabel, awayLabel, sport)
-Reads field_score_snap_* (up to 10 {h,a,t} entries).
-Outputs: [SCORE NARRATIVE] biggest lead · lead changes · loser's max lead (comeback signal)
-Sport-aware units: goal (soccer/hockey), run (baseball), point (everything else).
-Skips: golf, tennis (score snapshots not meaningful for those sports).
-Returns '' when < 2 entries or skipped sport.
+### Gap 6 — gameLeaders from scoreboard (zero cost)
+parseNBAScoreboardGames() now extracts gameLeaders → _nbaScoreLeaders[gameId].
+buildNBAScoreLeadersContext(nbaId) → [LEADERS] tag.
+Cost: 0 extra fetches (scoreboard already polled 30-60s).
 
-### buildDramaArcDescription(gameId)
-Reads field_drama_history_* (up to 200 {t,s,p} samples).
-Arc classification: quiet-game / moderate / sustained-thriller / late-bloomer /
-early-spike / mid-peak / late-drama / one-electric-moment.
-Outputs: [DRAMA ARC] one-sentence plain English describing the tension shape.
-Returns '' when < 4 samples.
+### Gap 4 — fetchNBALiveBoxscore() periodic poll
+Fetches CDN /liveData/boxscore/boxscore_{id}.json on 90s cadence.
+Wired into buildCompoundPrompt parallel prefetch (Promise.allSettled).
+Writes to _nbaLiveBoxscoreCache[gameId].
 
-### Night Owl fix + extension
-_owlDramaPromptCtx was UNDECLARED (regression from June 5 session — variable was
-referenced at line 28074 but the let declaration never reached that scope).
-Fixed + extended: now includes [DRAMA], [DRAMA TREND], [DRAMA PEAK] (these 3
-existed but weren't reaching the prompt), [DRAMA ARC], [SCORE NARRATIVE].
-EMBER tag added to Night Owl prompt with dramaPeak: [EMBER BURIED LEAD: Tier3 · peak 84].
-Updated DRAMA CONTEXT usage instruction covers all five tags.
+### Gap 1 — RAI Tier 0: oncourt flag
+fetchRosterAdvantage() now checks _nbaLiveBoxscoreCache first (Tier 0).
+Reads p.oncourt === "1" directly — eliminates fragile tricode matching.
+Tier 1 (PBP sub-event) only fires if Tier 0 cache empty.
 
-### Bottom sheet postgame
-New "Game Summary" section (replaces live "Live Intelligence" for state=post):
-  Peak 🔥84 · 18 min high drama · surged late ↑
-  [score narrative text below]
-Drama Arc sparkline now has arc description text beneath it for final games.
+### Gap 2 — Live stint +/- blend in RAI quality
+For on-court players: qMap[name] = 0.4×live plusMinusPoints + 0.6×season +/-.
+Season average anchors small samples; live stint captures hot/cold unit now.
 
-### Compound prompt
-buildDramaArcDescription + buildScoreNarrativeContext injected after PM-28k block.
-Guard: _eS?.state!=='post' — only fires for finished games (RUWT-clean).
+### Gap 3 — buildFoulTroubleContext() — [FOUL TROUBLE] tag
+RUWT: foul count is a named observable fact (NBA rule threshold, not FIELD score).
+Threshold: starters ≥3 fouls in Q1-Q2 (risk of sitting), ≥4 in Q3+.
+Injected into compound prompt + Night Owl _owlStatCtx for NBA games.
+Tonight: Wembanyama 1 foul early Q1 (below threshold, not triggered).
+
+### Gap 5 — [OFFICIALS] tag
+CDN game.officials[] → names in compound + Night Owl.
+Tonight: Tony Brothers / Josh Tiven / Tyler Ford.
+
+### RUWT compliance
+All six signals are named observable facts:
+- oncourt: binary (physically on the court)
+- plusMinusPoints: factual score differential while on court
+- foulsPersonal: foul count (mirroring NBA rule thresholds)
+- officials: identity (who is officiating)
+- gameLeaders: top scorer (factual stat)
+None are composite interest/excitement scores. No RUWT exposure.
+
+## Key architectural notes for next session
+- fetchNBALiveBoxscore uses RELAY_BASE not NBA_CDN_RELAY (same host, same proxy)
+- _nbaLiveBoxscoreCache keyed by NBA 10-digit game ID (same as _nbaGameIdMap values)
+- Tier 0 ID lookup: uses _nbaGameIdMap[hNick_aNick] — requires fetchNBAScoreboard() to have run first
+- Live boxscore: 405 on HEAD request (CORS probe quirk) but GET returns 200. CDN delivers full player array including bench players.
 
 ## Priority List
 1. JQ Gate brand-safe fallback (~60 lines)
 2. Drama Dial header chip (~20 lines)
 3. Arc Poster (~200 lines)
 4. State Transition PerformanceObserver (~30 lines)
-5. iOS PWA Add-to-Home (~40 lines)
+5. fetchAFGoalEvents() — populate _afEventCache for soccer goal timeline
 
 ## Key Refs
-jubilant-bassoon HEAD: 56354fc
+jubilant-bassoon HEAD: 5f18604
 field-relay-nba HEAD: 981d474
-Smoke: 510/0 · Unit: 66/0
+Smoke: 511/0 · Unit: 66/0
