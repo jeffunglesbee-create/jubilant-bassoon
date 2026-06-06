@@ -1,11 +1,11 @@
 {
   "_meta": {
     "schema_version": "2.0",
-    "generated_at": "2026-06-05T16:44:08.019Z",
-    "for_date": "2026-06-05",
+    "generated_at": "2026-06-06T12:03:03.735Z",
+    "for_date": "2026-06-06",
     "source": "field-data workflow (automated)",
     "games_found": {
-      "nhl": 0,
+      "nhl": 1,
       "nba": 1,
       "mlb": 15,
       "mls": 0
@@ -15,7 +15,19 @@
     "note": "Phase 1: schedules block added. index.html reads schedules.mlb for full schedule. game_overlays remain for backward compat."
   },
   "schedules": {
-    "nhl": [],
+    "nhl": [
+      {
+        "sport": "NHL",
+        "home": "Vegas Golden Knights",
+        "away": "Carolina Hurricanes",
+        "start_time": "2026-06-07T00:00:00Z",
+        "venue": "T-Mobile Arena",
+        "seriesRecord": "SCF",
+        "isPlayoff": true,
+        "round": null,
+        "confirmed": true
+      }
+    ],
     "nba": [
       {
         "sport": "NBA",
@@ -23,7 +35,7 @@
         "away": "New York Knicks",
         "start_time": "2026-06-06T00:30:00Z",
         "venue": null,
-        "seriesRecord": "NYK leads 1-0",
+        "seriesRecord": "NYK leads 2-0",
         "isPlayoff": true,
         "gameLabel": "NBA Finals",
         "confirmed": true
@@ -32,141 +44,16 @@
     "mlb": [
       {
         "sport": "MLB",
-        "home": "Chicago Cubs",
-        "away": "San Francisco Giants",
-        "start_time": "2026-06-05T18:20:00Z",
-        "venue": "Wrigley Field",
-        "league": "MLB",
-        "isPlayoff": false,
-        "nationalBundle": "MLB_APPLE",
-        "espnGOTD": false,
-        "peacockGOTD": false,
-        "_postponed": false,
-        "confirmed": true
-      },
-      {
-        "sport": "MLB",
         "home": "Detroit Tigers",
         "away": "Seattle Mariners",
-        "start_time": "2026-06-05T22:40:00Z",
+        "start_time": "2026-06-06T17:10:00Z",
         "venue": "Comerica Park",
         "league": "MLB",
         "isPlayoff": false,
-        "nationalBundle": "MLB_APPLE",
+        "nationalBundle": "MLB_FOX",
         "espnGOTD": false,
         "peacockGOTD": false,
-        "_postponed": false,
-        "confirmed": true
-      },
-      {
-        "sport": "MLB",
-        "home": "Philadelphia Phillies",
-        "away": "Chicago White Sox",
-        "start_time": "2026-06-05T22:40:00Z",
-        "venue": "Citizens Bank Park",
-        "league": "MLB",
-        "isPlayoff": false,
-        "nationalBundle": "MLB_APPLE",
-        "espnGOTD": false,
-        "peacockGOTD": false,
-        "_postponed": false,
-        "confirmed": true
-      },
-      {
-        "sport": "MLB",
-        "home": "New York Yankees",
-        "away": "Boston Red Sox",
-        "start_time": "2026-06-05T23:05:00Z",
-        "venue": "Yankee Stadium",
-        "league": "MLB",
-        "isPlayoff": false,
-        "nationalBundle": "MLB_APPLE",
-        "espnGOTD": false,
-        "peacockGOTD": false,
-        "_postponed": false,
-        "confirmed": true
-      },
-      {
-        "sport": "MLB",
-        "home": "Toronto Blue Jays",
-        "away": "Baltimore Orioles",
-        "start_time": "2026-06-05T23:07:00Z",
-        "venue": "Rogers Centre",
-        "league": "MLB",
-        "isPlayoff": false,
-        "nationalBundle": "MLB_APPLE",
-        "espnGOTD": false,
-        "peacockGOTD": false,
-        "_postponed": false,
-        "confirmed": true
-      },
-      {
-        "sport": "MLB",
-        "home": "Miami Marlins",
-        "away": "Tampa Bay Rays",
-        "start_time": "2026-06-05T23:10:00Z",
-        "venue": "loanDepot park",
-        "league": "MLB",
-        "isPlayoff": false,
-        "nationalBundle": "MLB_APPLE",
-        "espnGOTD": false,
-        "peacockGOTD": false,
-        "_postponed": false,
-        "confirmed": true
-      },
-      {
-        "sport": "MLB",
-        "home": "Atlanta Braves",
-        "away": "Pittsburgh Pirates",
-        "start_time": "2026-06-05T23:15:00Z",
-        "venue": "Truist Park",
-        "league": "MLB",
-        "isPlayoff": false,
-        "nationalBundle": "MLB_APPLE",
-        "espnGOTD": false,
-        "peacockGOTD": false,
-        "_postponed": false,
-        "confirmed": true
-      },
-      {
-        "sport": "MLB",
-        "home": "Houston Astros",
-        "away": "Athletics",
-        "start_time": "2026-06-06T00:10:00Z",
-        "venue": "Daikin Park",
-        "league": "MLB",
-        "isPlayoff": false,
-        "nationalBundle": "MLB_APPLE",
-        "espnGOTD": false,
-        "peacockGOTD": false,
-        "_postponed": false,
-        "confirmed": true
-      },
-      {
-        "sport": "MLB",
-        "home": "St. Louis Cardinals",
-        "away": "Cincinnati Reds",
-        "start_time": "2026-06-06T00:15:00Z",
-        "venue": "Busch Stadium",
-        "league": "MLB",
-        "isPlayoff": false,
-        "nationalBundle": "MLB_APPLE",
-        "espnGOTD": false,
-        "peacockGOTD": false,
-        "_postponed": false,
-        "confirmed": true
-      },
-      {
-        "sport": "MLB",
-        "home": "Texas Rangers",
-        "away": "Cleveland Guardians",
-        "start_time": "2026-06-06T00:15:00Z",
-        "venue": "Globe Life Field",
-        "league": "MLB",
-        "isPlayoff": false,
-        "nationalBundle": "MLB_APPLE",
-        "espnGOTD": false,
-        "peacockGOTD": false,
+        "mlbnShowcase": false,
         "_postponed": false,
         "confirmed": true
       },
@@ -174,27 +61,74 @@
         "sport": "MLB",
         "home": "Minnesota Twins",
         "away": "Kansas City Royals",
-        "start_time": "2026-06-06T00:15:00Z",
+        "start_time": "2026-06-06T18:10:00Z",
         "venue": "Target Field",
         "league": "MLB",
         "isPlayoff": false,
-        "nationalBundle": "MLB_APPLE",
+        "nationalBundle": "MLB_FOX",
         "espnGOTD": false,
         "peacockGOTD": false,
+        "mlbnShowcase": false,
         "_postponed": false,
         "confirmed": true
       },
       {
         "sport": "MLB",
-        "home": "Colorado Rockies",
-        "away": "Milwaukee Brewers",
-        "start_time": "2026-06-06T00:40:00Z",
-        "venue": "Coors Field",
+        "home": "St. Louis Cardinals",
+        "away": "Cincinnati Reds",
+        "start_time": "2026-06-06T18:15:00Z",
+        "venue": "Busch Stadium",
         "league": "MLB",
         "isPlayoff": false,
-        "nationalBundle": "MLB_APPLE",
+        "nationalBundle": "MLB_FOX",
         "espnGOTD": false,
         "peacockGOTD": false,
+        "mlbnShowcase": false,
+        "_postponed": false,
+        "confirmed": true
+      },
+      {
+        "sport": "MLB",
+        "home": "Chicago Cubs",
+        "away": "San Francisco Giants",
+        "start_time": "2026-06-06T18:20:00Z",
+        "venue": "Wrigley Field",
+        "league": "MLB",
+        "isPlayoff": false,
+        "nationalBundle": "MLB_FOX",
+        "espnGOTD": false,
+        "peacockGOTD": false,
+        "mlbnShowcase": false,
+        "_postponed": false,
+        "confirmed": true
+      },
+      {
+        "sport": "MLB",
+        "home": "Toronto Blue Jays",
+        "away": "Baltimore Orioles",
+        "start_time": "2026-06-06T19:07:00Z",
+        "venue": "Rogers Centre",
+        "league": "MLB",
+        "isPlayoff": false,
+        "nationalBundle": "MLB_FOX",
+        "espnGOTD": false,
+        "peacockGOTD": false,
+        "mlbnShowcase": false,
+        "_postponed": false,
+        "confirmed": true
+      },
+      {
+        "sport": "MLB",
+        "home": "Philadelphia Phillies",
+        "away": "Chicago White Sox",
+        "start_time": "2026-06-06T20:05:00Z",
+        "venue": "Citizens Bank Park",
+        "league": "MLB",
+        "isPlayoff": false,
+        "nationalBundle": "MLB_ESPN",
+        "espnGOTD": true,
+        "peacockGOTD": false,
+        "mlbnShowcase": false,
         "_postponed": false,
         "confirmed": true
       },
@@ -202,27 +136,104 @@
         "sport": "MLB",
         "home": "Arizona Diamondbacks",
         "away": "Washington Nationals",
-        "start_time": "2026-06-06T01:40:00Z",
+        "start_time": "2026-06-06T20:10:00Z",
         "venue": "Chase Field",
         "league": "MLB",
         "isPlayoff": false,
-        "nationalBundle": "MLB_APPLE",
+        "nationalBundle": "MLB_FOX",
         "espnGOTD": false,
         "peacockGOTD": false,
+        "mlbnShowcase": false,
         "_postponed": false,
         "confirmed": true
       },
       {
         "sport": "MLB",
-        "home": "San Diego Padres",
-        "away": "New York Mets",
-        "start_time": "2026-06-06T01:40:00Z",
-        "venue": "Petco Park",
+        "home": "Houston Astros",
+        "away": "Athletics",
+        "start_time": "2026-06-06T20:10:00Z",
+        "venue": "Daikin Park",
         "league": "MLB",
         "isPlayoff": false,
-        "nationalBundle": "MLB_APPLE",
+        "nationalBundle": "MLB_FOX",
         "espnGOTD": false,
         "peacockGOTD": false,
+        "mlbnShowcase": false,
+        "_postponed": false,
+        "confirmed": true
+      },
+      {
+        "sport": "MLB",
+        "home": "Atlanta Braves",
+        "away": "Pittsburgh Pirates",
+        "start_time": "2026-06-06T20:10:00Z",
+        "venue": "Truist Park",
+        "league": "MLB",
+        "isPlayoff": false,
+        "nationalBundle": "MLB_FOX",
+        "espnGOTD": false,
+        "peacockGOTD": false,
+        "mlbnShowcase": false,
+        "_postponed": false,
+        "confirmed": true
+      },
+      {
+        "sport": "MLB",
+        "home": "Miami Marlins",
+        "away": "Tampa Bay Rays",
+        "start_time": "2026-06-06T20:10:00Z",
+        "venue": "loanDepot park",
+        "league": "MLB",
+        "isPlayoff": false,
+        "nationalBundle": "MLB_FOX",
+        "espnGOTD": false,
+        "peacockGOTD": false,
+        "mlbnShowcase": false,
+        "_postponed": false,
+        "confirmed": true
+      },
+      {
+        "sport": "MLB",
+        "home": "Texas Rangers",
+        "away": "Cleveland Guardians",
+        "start_time": "2026-06-06T23:35:00Z",
+        "venue": "Globe Life Field",
+        "league": "MLB",
+        "isPlayoff": false,
+        "nationalBundle": "MLB_FOX",
+        "espnGOTD": false,
+        "peacockGOTD": false,
+        "mlbnShowcase": false,
+        "_postponed": false,
+        "confirmed": true
+      },
+      {
+        "sport": "MLB",
+        "home": "New York Yankees",
+        "away": "Boston Red Sox",
+        "start_time": "2026-06-06T23:35:00Z",
+        "venue": "Yankee Stadium",
+        "league": "MLB",
+        "isPlayoff": false,
+        "nationalBundle": "MLB_FOX",
+        "espnGOTD": false,
+        "peacockGOTD": false,
+        "mlbnShowcase": false,
+        "_postponed": false,
+        "confirmed": true
+      },
+      {
+        "sport": "MLB",
+        "home": "Colorado Rockies",
+        "away": "Milwaukee Brewers",
+        "start_time": "2026-06-07T01:10:00Z",
+        "venue": "Coors Field",
+        "league": "MLB",
+        "isPlayoff": false,
+        "nationalBundle": "MLB_FOX",
+        "espnGOTD": false,
+        "peacockGOTD": false,
+        "mlbnShowcase": false,
         "_postponed": false,
         "confirmed": true
       },
@@ -230,13 +241,29 @@
         "sport": "MLB",
         "home": "Los Angeles Dodgers",
         "away": "Los Angeles Angels",
-        "start_time": "2026-06-06T02:10:00Z",
+        "start_time": "2026-06-07T02:10:00Z",
         "venue": "UNIQLO Field at Dodger Stadium",
         "league": "MLB",
         "isPlayoff": false,
-        "nationalBundle": "MLB_APPLE",
+        "nationalBundle": "MLB_FOX",
         "espnGOTD": false,
         "peacockGOTD": false,
+        "mlbnShowcase": false,
+        "_postponed": false,
+        "confirmed": true
+      },
+      {
+        "sport": "MLB",
+        "home": "San Diego Padres",
+        "away": "New York Mets",
+        "start_time": "2026-06-07T02:10:00Z",
+        "venue": "Petco Park",
+        "league": "MLB",
+        "isPlayoff": false,
+        "nationalBundle": "MLB_FOX",
+        "espnGOTD": false,
+        "peacockGOTD": false,
+        "mlbnShowcase": false,
         "_postponed": false,
         "confirmed": true
       }
@@ -245,65 +272,74 @@
   },
   "game_overlays": [
     {
-      "_match_key": "San Antonio Spurs|New York Knicks",
-      "seriesRecord": "NYK leads 1-0",
-      "matchupNote": "The Knicks look to seize a commanding 2-0 Finals lead tonight, but the Spurs must protect their home court to avoid heading to Madison Square Garden facing a desperate, season-defining deficit. With the series momentum hanging in the balance, San Antonio’s ability to counter New York’s physicality will determine if this championship clash remains a contest or becomes a coronation."
+      "_match_key": "Vegas Golden Knights|Carolina Hurricanes",
+      "seriesRecord": "SCF",
+      "matchupNote": "The Hurricanes look to seize control in the desert tonight, but the Golden Knights are standing on the doorstep of history with a chance to push Carolina to the brink. With the Stanley Cup Final intensity peaking, tonight’s clash is a high-stakes collision between Carolina’s relentless pressure and Vegas’s clinical championship poise."
     },
     {
-      "_match_key": "Chicago Cubs|San Francisco Giants",
-      "matchupNote": "The Giants arrive at Wrigley Field desperate to salvage their fading postseason aspirations against a Cubs squad looking to play spoiler in the final stretch. With both teams clinging to slim playoff hopes, tonight’s opener serves as a high-stakes elimination test where only a sweep will keep the dream alive."
+      "_match_key": "San Antonio Spurs|New York Knicks",
+      "seriesRecord": "NYK leads 2-0",
+      "matchupNote": "The Knicks arrive in San Antonio looking to put a stranglehold on the NBA Finals, while the desperate Spurs face a must-win scenario to keep their championship hopes from slipping into a terminal 3-0 deficit. With New York one victory away from total command, tonight’s clash serves as the definitive turning point in the series."
     },
     {
       "_match_key": "Detroit Tigers|Seattle Mariners",
-      "matchupNote": "The Mariners roll into Detroit desperate to salvage their fading postseason hopes against a Tigers squad riding a wave of late-summer momentum. With Seattle’s offense under the microscope, every pitch tonight serves as a high-stakes referendum on their ability to stay relevant in the Wild Card hunt."
-    },
-    {
-      "_match_key": "Philadelphia Phillies|Chicago White Sox",
-      "matchupNote": "The struggling White Sox look to avoid further embarrassment as they face a Phillies squad eager to pad their lead atop the National League standings. Philadelphia enters as heavy favorites, leaving Chicago desperate to prove they can still compete against the league’s elite."
-    },
-    {
-      "_match_key": "New York Yankees|Boston Red Sox",
-      "matchupNote": "The Red Sox roll into the Bronx desperate to claw back into the Wild Card hunt, but they’ll have to overcome a surging Yankees squad looking to tighten their grip on the AL East. With the postseason race intensifying, every pitch in this storied rivalry carries massive weight as both clubs fight for critical October positioning."
-    },
-    {
-      "_match_key": "Toronto Blue Jays|Baltimore Orioles",
-      "matchupNote": "The Orioles look to tighten their grip on the AL East as they open a high-stakes series against a desperate Blue Jays squad fighting to stay relevant in the playoff hunt. With Baltimore’s postseason ticket nearly punched, Toronto faces a must-win scenario to prove they still have a pulse in the division race."
-    },
-    {
-      "_match_key": "Miami Marlins|Tampa Bay Rays",
-      "matchupNote": "The Rays look to keep their flickering postseason pulse alive as they open a critical Sunshine State showdown against a Marlins squad playing strictly for pride. With Tampa Bay’s playoff window rapidly closing, every pitch in Miami tonight carries the weight of a must-win scenario."
-    },
-    {
-      "_match_key": "Atlanta Braves|Pittsburgh Pirates",
-      "matchupNote": "The Pirates look to keep their flickering postseason hopes on life support as they open a critical series against a Braves squad desperate to solidify their grip on the National League Wild Card. With every game now carrying playoff-level intensity, Atlanta must defend home turf against a Pittsburgh rotation fighting to prove they belong in the October conversation."
-    },
-    {
-      "_match_key": "Houston Astros|Athletics",
-      "matchupNote": "The A’s roll into Houston looking to play spoiler, but the Astros need this series to tighten their grip on the AL West and keep their postseason positioning secure. With the division race heating up, every win is a must-have for Houston as they fend off a surging Seattle squad."
-    },
-    {
-      "_match_key": "St. Louis Cardinals|Cincinnati Reds",
-      "matchupNote": "The Reds and Cardinals collide in a pivotal divisional clash tonight, with both clubs desperate to gain ground and salvage their fading postseason aspirations. Expect a high-stakes showdown as these bitter rivals battle to prove who still has a pulse in the crowded National League hunt."
-    },
-    {
-      "_match_key": "Texas Rangers|Cleveland Guardians",
-      "matchupNote": "The Guardians look to fortify their AL Central lead as they open a high-stakes series against a Rangers squad desperate to salvage their fading postseason aspirations. With Cleveland chasing top-seed positioning and Texas fighting for survival, every pitch in Arlington carries massive playoff implications."
+      "matchupNote": "The Mariners arrive in Detroit desperate to salvage their fading postseason hopes against a Tigers squad riding a late-season surge. With Seattle clinging to the fringes of the Wild Card race, every pitch tonight is a must-win to keep their October dreams on life support."
     },
     {
       "_match_key": "Minnesota Twins|Kansas City Royals",
-      "matchupNote": "The Royals roll into Minneapolis looking to tighten their grip on the AL Central, but the desperate Twins need a win tonight to keep their fading division title hopes on life support."
+      "matchupNote": "The Royals look to tighten their grip on an AL Wild Card spot as they open a pivotal series against a desperate Twins squad fighting to stay relevant in the postseason race. With both teams jockeying for position, tonight’s clash serves as a high-stakes litmus test for two clubs trending in opposite directions."
     },
     {
-      "_match_key": "Colorado Rockies|Milwaukee Brewers",
-      "matchupNote": "The Brewers look to tighten their grip on the NL Central as they roll into Coors Field, where the Rockies aim to play spoiler and derail Milwaukee’s postseason positioning. With every game critical in the stretch run, the Brew Crew must navigate the thin air to avoid a costly stumble against a dangerous home underdog."
+      "_match_key": "St. Louis Cardinals|Cincinnati Reds",
+      "matchupNote": "The Reds and Cardinals kick off a pivotal series tonight, with both clubs desperate to claw their way back into the crowded National League Wild Card hunt. Every win is magnified as these division rivals battle to prove they belong in the postseason conversation."
+    },
+    {
+      "_match_key": "Chicago Cubs|San Francisco Giants",
+      "matchupNote": "The Giants arrive at Wrigley Field desperate to salvage their fading postseason hopes against a Cubs squad looking to play spoiler in the season’s final stretch. With every loss tightening the noose on San Francisco’s wild-card aspirations, tonight’s opener is a must-win battle for survival."
+    },
+    {
+      "_match_key": "Toronto Blue Jays|Baltimore Orioles",
+      "matchupNote": "The Orioles look to tighten their grip on the AL East as they open a high-stakes series against a desperate Blue Jays squad fighting to stay relevant in the playoff hunt. With Baltimore chasing the division crown and Toronto clinging to fading postseason hopes, every pitch carries massive weight in this pivotal divisional clash."
+    },
+    {
+      "_match_key": "Philadelphia Phillies|Chicago White Sox",
+      "matchupNote": "The reeling White Sox limp into Citizens Bank Park looking to snap a historic skid, while the Phillies aim to maintain their stranglehold on the National League’s top seed. Expect a lopsided affair as Philadelphia’s juggernaut lineup looks to feast on a Chicago rotation currently anchored to the basement of the standings."
     },
     {
       "_match_key": "Arizona Diamondbacks|Washington Nationals",
-      "matchupNote": "The Diamondbacks look to tighten their grip on a crowded Wild Card race as they host a Nationals squad playing exclusively for the spoiler role. With every game critical in the desert, Arizona must capitalize on this favorable home stretch to avoid slipping out of postseason position."
+      "matchupNote": "The Diamondbacks look to tighten their grip on a crowded Wild Card race as they host a Nationals squad playing strictly for pride. With Arizona fighting for October positioning, every win against a sub-.500 opponent is a non-negotiable requirement."
+    },
+    {
+      "_match_key": "Houston Astros|Athletics",
+      "matchupNote": "The Astros look to tighten their grip on the AL West as they host an Athletics squad playing for nothing but late-season spoilers. With Houston’s postseason window narrowing, every win against a sub-.500 opponent is a non-negotiable requirement for October survival."
+    },
+    {
+      "_match_key": "Atlanta Braves|Pittsburgh Pirates",
+      "matchupNote": "The Pirates look to keep their flickering postseason pulse alive as they open a critical series against a Braves squad desperate to solidify their grip on the final Wild Card spot. With Atlanta clinging to a narrow lead in the race, every pitch tonight carries massive weight for both clubs’ October aspirations."
+    },
+    {
+      "_match_key": "Miami Marlins|Tampa Bay Rays",
+      "matchupNote": "The Rays head down I-75 looking to keep their fading wild-card pulse alive against a Marlins squad playing strictly for pride. With Tampa Bay’s postseason window rapidly closing, every inning tonight is a must-win to avoid falling further off the pace."
+    },
+    {
+      "_match_key": "Texas Rangers|Cleveland Guardians",
+      "matchupNote": "The Guardians look to tighten their grip on the AL Central as they open a high-stakes series against a Rangers squad desperate to salvage their fading postseason hopes. With Cleveland chasing home-field advantage and Texas fighting for survival, every pitch in Arlington carries massive October implications."
+    },
+    {
+      "_match_key": "New York Yankees|Boston Red Sox",
+      "matchupNote": "The Red Sox invade the Bronx looking to claw back into the Wild Card hunt, but they’ll have to overcome a Yankees squad desperate to maintain their slim lead atop the AL East. With the postseason race tightening, every pitch in this high-stakes rivalry clash carries massive weight for both clubs."
+    },
+    {
+      "_match_key": "Colorado Rockies|Milwaukee Brewers",
+      "matchupNote": "The Brewers look to tighten their grip on the NL Central as they roll into Coors Field, where the Rockies aim to play spoiler and derail Milwaukee’s postseason positioning. With every game critical in the stretch run, the Brewers must avoid a letdown against a Colorado squad that consistently thrives on disrupting playoff-bound visitors."
+    },
+    {
+      "_match_key": "Los Angeles Dodgers|Los Angeles Angels",
+      "matchupNote": "The Freeway Series shifts to Chavez Ravine tonight as the Angels look to play spoiler against a Dodgers squad desperate to solidify their grip on the NL West. With local bragging rights and critical postseason positioning on the line, expect a high-intensity clash under the lights."
     },
     {
       "_match_key": "San Diego Padres|New York Mets",
-      "matchupNote": "The Mets head to Petco Park desperate to gain ground in a crowded Wild Card race, but they’ll have to solve a surging Padres squad looking to cement their status as the National League’s hottest team. With both clubs fighting for postseason positioning, tonight’s clash serves as a high-stakes litmus test for two teams trending in opposite directions."
+      "matchupNote": "The Mets look to keep their momentum rolling in a high-stakes West Coast clash as they battle a Padres squad desperate to solidify their grip on the National League Wild Card race. With both teams fighting for postseason positioning, every pitch tonight carries the weight of a potential October tiebreaker."
     }
   ]
 }
