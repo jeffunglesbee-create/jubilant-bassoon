@@ -29362,16 +29362,24 @@ function buildScoreNarrativeContext(gameId, homeLabel, awayLabel, sport) {
 
     const hLabel = teamNick(homeLabel || '') || 'Home';
     const aLabel = teamNick(awayLabel || '') || 'Away';
+
+    // Anchor: use the final snapshot's scores as a floor for max lead calculation.
+    // Snapshot logs captured while score data was unreliable (0-0 writes) will have
+    // artificially low maxLead values. The final linescore is truth.
+    const finalSnap = log[log.length - 1];
+    const finalH = finalSnap.h ?? 0;
+    const finalA = finalSnap.a ?? 0;
+    const finalWinnerIsHome = finalH >= finalA;
+    const finalWinner = finalWinnerIsHome ? hLabel : aLabel;
+    const finalLoser  = finalWinnerIsHome ? aLabel : hLabel;
+    // The winner's final margin is the minimum possible max lead
+    const finalMargin = Math.abs(finalH - finalA);
+
     const parts = [];
 
     // Lead changes: count times lead flipped (ignoring ties)
     let prevLeader = null, leadChanges = 0;
     let maxHomeLead = 0, maxAwayLead = 0;
-    let minTrailingSnap = null; // for comeback detection
-    const finalSnap = log[log.length - 1];
-    const finalWinnerIsHome = finalSnap.h >= finalSnap.a;
-    const finalWinner = finalWinnerIsHome ? hLabel : aLabel;
-    const finalLoser  = finalWinnerIsHome ? aLabel : hLabel;
 
     for (const snap of log) {
       const diff = snap.h - snap.a;
@@ -29381,6 +29389,12 @@ function buildScoreNarrativeContext(gameId, homeLabel, awayLabel, sport) {
       maxHomeLead = Math.max(maxHomeLead, diff);
       maxAwayLead = Math.max(maxAwayLead, -diff);
     }
+
+    // Use finalMargin as a floor for the winner's max lead — snapshot logs
+    // captured during score outages show artificially low values.
+    // The winner must have led by at least their final margin at game end.
+    if (finalWinnerIsHome) maxHomeLead = Math.max(maxHomeLead, finalMargin);
+    else maxAwayLead = Math.max(maxAwayLead, finalMargin);
 
     // Biggest lead for the winner
     const winnerMaxLead = finalWinnerIsHome ? maxHomeLead : maxAwayLead;
