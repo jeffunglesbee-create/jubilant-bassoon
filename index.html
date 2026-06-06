@@ -16791,6 +16791,17 @@ function renderESPNScores(){
       if(isLive)  card.classList.add("espn-live");
       if(isFinal) card.classList.add("espn-final");
 
+      // Update .game-time (card-right score display) — baked at renderAll() time with
+      // whatever findESPNScore() returned then (usually null). Now that scores are live,
+      // rewrite it with the current data. buildCardTimeDisplay is pure/cheap.
+      const gtEl = card.querySelector('.game-time');
+      if(gtEl){
+        const gtText = buildCardTimeDisplay(isLive || isFinal, score,
+          gtEl.textContent || ''); // pass existing text as fallback timeStr
+        if(gtText) gtEl.textContent = gtText;
+        gtEl.classList.toggle('live-t', isLive);
+      }
+
       // Soccer goalscorer line — re-inject after score-wrap replace may have erased it
       if(isSoccer && (isLive || isFinal)) soccerGoalsInjectDOM(game.home, game.away);
     });
