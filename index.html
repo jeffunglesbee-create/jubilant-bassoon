@@ -13338,32 +13338,36 @@ async function fetchV2Leaders(sport, gameNumericId, homeTeamId, awayTeamId, espn
 
 async function fetchV2AllScores() {
   _v2PollCycle++;
-  // Date for api-sports.io: the relay queries api-sports by UTC date.
-  // NBA/NHL Finals games at 8:30pm ET = 00:30 UTC next day → use UTC date.
-  // Previously used ET date (UTC-4) which caused late-night playoff games to
-  // return games:[] because api-sports stores them under the UTC date.
-  // Confirmed by probe 2026-06-06: date=2026-06-05 (ET) → [], date=2026-06-06 (UTC) → G2 live.
-  // MLB day games are also UTC-indexed on the relay — UTC is the correct universal key.
-  const date    = new Date().toISOString().slice(0, 10); // UTC date
+  // Date strategy: US evening games span two UTC dates.
+  // - 7pm ET games start at 23:00 UTC on the ET date (e.g. Jun 5 UTC)
+  // - 8:30pm ET games start at 00:30 UTC the next day (e.g. Jun 6 UTC)
+  // Solution: query BOTH ET date and UTC date when they differ.
+  // The stale-final guard (UTC-based) prevents yesterday's finished games
+  // from polluting today's cards. Dedup by game ID after merging.
+  const _nowUTC  = new Date();
+  const utcDate  = _nowUTC.toISOString().slice(0, 10);
+  const etDate   = new Date(_nowUTC - 4 * 3600 * 1000).toISOString().slice(0, 10);
+  // Build list of dates to query — dedup if ET and UTC are the same
+  const datesToQuery = utcDate === etDate ? [utcDate] : [etDate, utcDate];
+  const date = utcDate; // used by stale-final guard and anyLive check
   const enabled = Object.entries(FIELD_V2_SOURCES).filter(([,v]) => v).map(([k]) => k);
   if (!enabled.length) return scheduleV2Poll(60000);
 
   let anyLive = false;
-  await Promise.allSettled(enabled.map(async sport => {
+  // Query each sport across all dates (ET + UTC when they differ) to catch
+  // full US evening schedule: 7pm ET games on ET date, 8:30pm ET on UTC date.
+  await Promise.allSettled(enabled.flatMap(sport =>
+    datesToQuery.map(async queryDate => {
     try {
-      const games = await fetchV2Games(sport, date);
+      const games = await fetchV2Games(sport, queryDate);
       games.forEach(fg => {
         if (!fg?.home?.name || !fg?.away?.name) return;
-        // Guard: api-sports.io indexes US sports by UTC date, so a game that
-        // starts at 8 PM ET (midnight UTC) appears under the NEXT UTC day.
-        // When we query ET-date=Jun 4, api-sports returns that Jun 3 ET game as
-        // 'final' with yesterday's score — which would then stamp today's card.
-        // Fix: skip any 'final' V2 game whose start time (in ET) falls on a
-        // different date than the date we queried.
+        // Guard: skip final games whose UTC start date doesn't match the queried date.
+        // Prevents yesterday's finished games from polluting today's cards.
+        // Uses UTC comparison (both date and game start are UTC — consistent).
         if (fg.state === 'final' && fg.start) {
-          const gameEtDate = new Date(fg.start)
-            .toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
-          if (gameEtDate !== date) return; // wrong date — skip to avoid stale score
+          const gameUtcDate = new Date(fg.start).toISOString().slice(0, 10);
+          if (gameUtcDate !== date) return;
         }
         const key = `${fg.home.name}|${fg.away.name}`;
         const prev = espnScores[key];
@@ -13449,11 +13453,11 @@ async function fetchV2AllScores() {
         }
       });
       if (FIELD_DEBUG && games.length)
-        console.debug(`[V2] ${sport}: ${games.length} games, ${games.filter(g=>g.state==='live').length} live`);
+        console.debug(`[V2] ${sport}/${queryDate}: ${games.length} games, ${games.filter(g=>g.state==='live').length} live`);
     } catch(e) {
-      if (FIELD_DEBUG) console.warn('[V2] poll error:', sport, e.message);
+      if (FIELD_DEBUG) console.warn('[V2] poll error:', sport, queryDate, e.message);
     }
-  }));
+  })));
 
   renderESPNScores(); // re-render with fresh V2 data
   scheduleV2Poll(anyLive ? 30000 : 60000);
