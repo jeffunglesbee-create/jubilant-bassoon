@@ -7459,7 +7459,8 @@ const INDIVIDUAL_SPORTS = new Set(["Golf","PGA Tour","Formula 1","F1","Tennis","
 
 const AMERICAN_SPORTS = new Set([
   "NBA Playoffs","NBA","NHL Playoffs","NHL",
-  "Baseball (MLB)","MLB","NFL","WNBA","NCAA Basketball"
+  "Baseball (MLB)","MLB","NFL","WNBA","NCAA Basketball",
+  "Canadian Football (CFL)","CFL"
 ]);
 // ESPN CDN logo URL builder
 // ESPN serves team logos at a consistent CDN path by sport/team abbreviation
@@ -26348,7 +26349,9 @@ async function injectMLBPlatoon(card, eData, game) {
 
 async function injectLineupEdge(card, eData, sport) {
   const sp = (sport || '').toLowerCase();
-  if (!sp.includes('basketball') && !sp.includes('nba')) return;
+  // NBA only — explicitly exclude WNBA (also contains 'basketball' via BDL avgs)
+  if (!sp.includes('nba') && !sp.includes('nba playoffs')) return;
+  if (sp.includes('wnba')) return;
   // Allow during live AND halftime — ESPN reports state='in' throughout
   if (eData?.state !== 'in' && eData?.state !== 'halftime') return;
 
@@ -26699,10 +26702,12 @@ function injectDramaBadges(){
   updatePinWidget();
   updateCardLifeStages();
 
-  // NBA Lineup Edge — async, fires per live NBA card after badges settle
+  // NBA Lineup Edge — async, fires per live NBA card after badges settle (NOT WNBA)
   document.querySelectorAll('.game-card.espn-live').forEach(card => {
     const sport = card.dataset.sport || '';
-    if (!sport.toLowerCase().includes('basketball') && !sport.toLowerCase().includes('nba')) return;
+    const spL = sport.toLowerCase();
+    if (!spL.includes('nba') && !spL.includes('nba playoffs')) return;
+    if (spL.includes('wnba')) return;
     const gid = card.dataset.gameid;
     if (!gid) return;
     // Find eData by matching either home OR away name (handles home/away discrepancies)
@@ -29029,17 +29034,23 @@ function buildLifeStageContent(game, eData, stage) {
       // Live: story tape or current score context
       const tape = buildStoryTape(game._id, 2);
       if (tape) return tape;
+      // When we have live score data, show it — even if detail/periodLabel is empty (MLB V2)
+      if (eData && eData.state === 'in' && (eData.homeScore != null || eData.awayScore != null)) {
+        const _h = eData.homeScore ?? 0, _a = eData.awayScore ?? 0;
+        const _hN = teamNick(game.home||''), _aN = teamNick(game.away||'');
+        const _det = eData.detail || '';
+        const _scorePart = `${_aN} ${_a} – ${_hN} ${_h}`;
+        return `<div class="card-stage-content card-stage-live-basic">${_det ? _det + ' · ' : ''}${_scorePart}</div>`;
+      }
       if (eData?.detail) {
         return `<div class="card-stage-content card-stage-live-basic">${eData.detail}</div>`;
       }
-      // PM-19 retro: even without ESPN data, surface that the game IS live + roughly
-      // how far in. Replaces the prior empty-div fallback (and the misleading
-      // "First pitch in -196 min" from the old 'soon' classification).
+      // PM-19 retro: surface that the game IS live when no score data yet
       if (game.start_time) {
         const minsAgo = Math.round((Date.now() - new Date(game.start_time).getTime()) / 60000);
         if (minsAgo > 0 && minsAgo < 360) {
           const elapsedStr = minsAgo < 60 ? `${minsAgo}m in` : `${Math.floor(minsAgo/60)}h ${minsAgo%60}m in`;
-          return `<div class="card-stage-content card-stage-live-basic">In progress · ${elapsedStr} · awaiting live score</div>`;
+          return `<div class="card-stage-content card-stage-live-basic">In progress · ${elapsedStr}</div>`;
         }
       }
       return '<div class="card-stage-content card-stage-live-basic"></div>';
