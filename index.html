@@ -5460,10 +5460,22 @@ function getStatus(iso, opts){
 // Usage counter persists in sessionStorage, resets daily
 // ═══════════════════════════════════════════════════════════════
 
-// TODAY_ISO uses local date parts (same method as isoDate) to avoid UTC-midnight mismatch
-// e.g. a US user at 9pm ET on May 6 should see May 6, not May 7
-const _tn = new Date();
-const TODAY_ISO = _tn.getFullYear()+'-'+String(_tn.getMonth()+1).padStart(2,'0')+'-'+String(_tn.getDate()).padStart(2,'0');
+// TODAY_ISO: 4am ET rolling cutoff for late-night sports fans.
+// Before 4:00am ET, "today" means the previous ET calendar day — games from
+// last night are still on tonight's slate, not rolled off to yesterday.
+// e.g. User at 1:30am ET on Jun 6: sees Jun 5 games (still live/final from tonight)
+// e.g. User at 4:15am ET on Jun 6: sees Jun 6 schedule (day has genuinely turned over)
+// AFL carveout: AFL games use AEST date (Australia/Sydney) for isToday() checks
+// because Australian rounds run on the Australian calendar day, not ET. A 7am
+// AEST Saturday game is a "Saturday AFL game" regardless of what the US clock says.
+(function() {
+  const _etNow = new Date();
+  const _etHour = parseInt(_etNow.toLocaleString('en-US', {timeZone:'America/New_York', hour:'numeric', hour12:false}), 10);
+  // Before 4am ET: roll back to previous ET day
+  const _etDate = new Date(_etNow);
+  if (_etHour < 4) _etDate.setTime(_etDate.getTime() - 24*60*60*1000);
+  window.TODAY_ISO = _etDate.toLocaleDateString('en-CA', {timeZone:'America/New_York'});
+})();
 
 // ── Drama Dial — user-controlled sensitivity (Patent Defense Layer 2) ────────
 // All drama thresholds read from this. Server CANNOT see or set this value.
@@ -7903,11 +7915,17 @@ function $$(selector, root) {
 // isToday: returns true if the given ISO timestamp falls on today's local date.
 // Top-level so Squiggle/AFL functions can call it before buildTodaySchedule runs.
 // Uses localTz() for correct overnight-session handling.
-function isToday(iso) {
+function isToday(iso, opts) {
   const d = new Date(iso); if (isNaN(d)) return false;
-  const tz = localTz();
-  return d.toLocaleDateString('en-CA', {timeZone: tz}) ===
-    new Date().toLocaleDateString('en-CA', {timeZone: tz});
+  // AFL carveout: Australian rounds are scheduled on the Australian calendar day.
+  // Use AEST (Australia/Sydney) for AFL games so a 7am Saturday AEST game
+  // appears on Saturday's schedule, not Friday's ET schedule.
+  if (opts?.isAFL) {
+    return d.toLocaleDateString('en-CA', {timeZone:'Australia/Sydney'}) ===
+      new Date().toLocaleDateString('en-CA', {timeZone:'Australia/Sydney'});
+  }
+  // All other sports: use ET with 4am rollover (TODAY_ISO already reflects this)
+  return d.toLocaleDateString('en-CA', {timeZone:'America/New_York'}) === TODAY_ISO;
 }
 
 // ── Domestic European league off-season gate ────────────────────────────────
@@ -17249,7 +17267,7 @@ function injectSquiggleLiveScores(){
 
 function refreshAFLSection(){
   if(!_squiggleCache.games||!allData) return;
-  const todayGames=_squiggleCache.games.map(squiggleToFieldGame).filter(g=>g&&isToday(g.start_time));
+  const todayGames=_squiggleCache.games.map(squiggleToFieldGame).filter(g=>g&&isToday(g.start_time,{isAFL:true}));
   if(!todayGames.length) return;
   const idx=allData.sports.findIndex(s=>s.sport==='Australian Football (AFL)');
   if(idx>=0){ allData.sports[idx]={sport:'Australian Football (AFL)',games:todayGames}; }
@@ -17325,7 +17343,7 @@ async function fetchSquiggleTips(round){
 
 async function injectSquiggleTips(){
   if(!_squiggleCache.games?.length) return;
-  const todayGames=_squiggleCache.games.filter(g=>g&&isToday(new Date(g.unixtime*1000).toISOString()));
+  const todayGames=_squiggleCache.games.filter(g=>g&&isToday(new Date(g.unixtime*1000).toISOString(),{isAFL:true}));
   if(!todayGames.length) return;
   const round=todayGames[0].round;
   await fetchSquiggleTips(round);
