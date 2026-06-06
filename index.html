@@ -18928,7 +18928,7 @@ function journalismCallsToday(){
     // Prevents individual J2/J3 calls from firing during compound 429 backoff,
     // which would compound the Gemini quota burn and extend the outage.
     canCall(){
-      if(this.get()>=8) return false;
+      if(this.get()>=12) return false;
       if(typeof _compoundRetryAfter!=='undefined' && Date.now()<_compoundRetryAfter) return false;
       return true;
     }

@@ -1108,7 +1108,7 @@ assert('A251 — Journalism quota fix: journalismCallsToday.canCall() respects _
   html.includes('typeof _compoundRetryAfter') &&
   html.includes('Date.now()<_compoundRetryAfter') &&
   html.includes('canCall(){') &&
-  html.includes('if(this.get()>=8) return false'),
+  html.includes('if(this.get()>=12) return false'),
   'canCall must block during active 429 backoff — prevents J2/J3 cascade burning Gemini quota');
 
 assert('A252 — isScoutsPick: hasMilestone defined from _bdlMilestonesCache (was undefined after betting removal)',
