@@ -4410,6 +4410,12 @@ const FIELD_FEATURES = {
   'pm29-owl-drama-ctx-fix':     '2026-06-06',  // _owlDramaPromptCtx: fixed undeclared var + added arc/score to Night Owl prompt
   'pm29-bs-postgame-drama':     '2026-06-06',  // Bottom sheet: postgame Game Summary section (peak + sustained + trend + score narrative)
   'pm29-compound-postgame':     '2026-06-06',  // buildCompoundPrompt: arc + score narrative injected for state=post games
+  'pm30-nba-live-boxscore':     '2026-06-06',  // fetchNBALiveBoxscore() 90s cadence — oncourt, foul trouble, stint +/-, officials
+  'pm30-nba-scoreboard-leaders':'2026-06-06',  // parseNBAScoreboardGames extracts gameLeaders → _nbaScoreLeaders (zero extra cost)
+  'pm30-nba-rai-tier0':         '2026-06-06',  // RAI Tier 0: CDN oncourt flag replaces fragile PBP sub-event parsing
+  'pm30-nba-rai-stint-blend':   '2026-06-06',  // RAI quality: 0.4×live stint +/- + 0.6×season average blended signal
+  'pm30-nba-foul-trouble':      '2026-06-06',  // buildFoulTroubleContext() — [FOUL TROUBLE] tag in compound + Night Owl
+  'pm30-nba-officials':         '2026-06-06',  // [OFFICIALS] tag in compound + Night Owl from live boxscore
   'pm28-nba-player-context':    '2026-06-05',  // buildNBAPlayerContext() formats [NBA BOX] from boxscore cache → Night Owl
   'pm28-normalize-af-stats':    '2026-06-05',  // normalizeApiFootballStats() flattens API-Football statistics array schema
   'pm28-night-owl-injection':   '2026-06-05',  // Night Owl prompt receives [LINE SCORE] [GOAL TIMELINE] [NBA BOX] [NHL LIVE]
@@ -20722,6 +20728,33 @@ function buildCompoundPrompt(sections) {
       (()=>{try{const _eS=findESPNScore?.(g);return buildLinescoreContext(_eS,g._id)||''}catch(e_){return ''}})(),
       (()=>{try{const _eS=findESPNScore?.(g);return buildGoalTimeline(g,_eS)||''}catch(e_){return ''}})(),
       (()=>{try{const _eS=findESPNScore?.(g);return buildNBAPlayerContext(g,_eS)||''}catch(e_){return ''}})(),
+      // PM-30: live NBA context (live games only — RUWT-clean named observables)
+      (()=>{try{
+        const _eS=findESPNScore?.(g);
+        if(!_eS||_eS.state==='post') return '';
+        const _sp30=(g._sport||g._section||'').toLowerCase();
+        if(!(_sp30.includes('nba')||_sp30.includes('basketball'))) return '';
+        const _hN=teamNick(g.home||'').toLowerCase(), _aN=teamNick(g.away||'').toLowerCase();
+        const _nbaId30=_nbaGameIdMap[`${_hN}_${_aN}`]||_nbaGameIdMap[`${_aN}_${_hN}`];
+        if(!_nbaId30) return '';
+        const parts30=[];
+        // Gap 6: live leaders from scoreboard (zero extra cost)
+        const _leaders30=buildNBAScoreLeadersContext(_nbaId30);
+        if(_leaders30) parts30.push(_leaders30);
+        // Gap 3: foul trouble (named factual observable)
+        const _fouls30=buildFoulTroubleContext(_nbaId30);
+        if(_fouls30) parts30.push(_fouls30);
+        // Gap 1: on-court lineup + live stint net
+        const _oc30=buildNBAOncourtContext(_nbaId30,g.home||'',g.away||'');
+        if(_oc30) parts30.push(_oc30);
+        // Gap 5: officials (factual identity)
+        const _bs30=_nbaLiveBoxscoreCache[_nbaId30];
+        if(_bs30?.officials?.length) {
+          const _refs=_bs30.officials.map(o=>o.name.split(' ').slice(-1)[0]).join('/');
+          parts30.push(`[OFFICIALS] ${_refs}`);
+        }
+        return parts30.join('\n  ');
+      }catch(e_){return ''}})(),
       // Postgame drama arc + score narrative (only for finished games — RUWT-clean)
       (()=>{try{const _eS=findESPNScore?.(g);if(_eS?.state!=='post')return '';return buildDramaArcDescription(g._id||'')||'';}catch(e_){return ''}})(),
       (()=>{try{const _eS=findESPNScore?.(g);if(_eS?.state!=='post')return '';const _sp28c=(g._sport||g._section||'').toLowerCase();return buildScoreNarrativeContext(g._id||'',g.home||'',g.away||'',_sp28c)||'';}catch(e_){return ''}})(),
@@ -20873,6 +20906,18 @@ async function fetchCompoundEditorial(sections) {
       .filter(g => (g._sport||'').toLowerCase().includes('mlb') && g.sourceId && (findESPNScore(g)?.state==='in'))
       .slice(0,3)
       .map(g => fetchMLBBoxscoreContext(g.sourceId)),
+    // PM-30: NBA live boxscore for live NBA games (oncourt, foul trouble, stint +/-)
+    ...games
+      .filter(g => {
+        const sp = (g._sport||g._section||'').toLowerCase();
+        return (sp.includes('nba')||sp.includes('basketball')) && findESPNScore(g)?.state==='in';
+      })
+      .slice(0, 2)
+      .map(g => {
+        const hN = teamNick(g.home||'').toLowerCase(), aN = teamNick(g.away||'').toLowerCase();
+        const id = _nbaGameIdMap[`${hN}_${aN}`] || _nbaGameIdMap[`${aN}_${hN}`];
+        return id ? fetchNBALiveBoxscore(id) : Promise.resolve(null);
+      }),
     // Item 4: BDL season averages — extract player names from series matchupNotes
     (async () => {
       const names = [];
@@ -25558,6 +25603,26 @@ const _nbaBoxscoreCache = {};  // gameId → {homeLinescores:[], awayLinescores:
 let   _nbaScoreboardTs = 0;    // last scoreboard fetch timestamp
 const NBA_SCOREBOARD_TTL = 10 * 60 * 1000; // refresh every 10 min
 
+// ── NBA Live Boxscore Cache (PM-30) ──────────────────────────────────────────
+// Populated by fetchNBALiveBoxscore() on 90s cadence during live games.
+// Schema mirrors CDN /liveData/boxscore/boxscore_{gameId}.json per-player fields.
+// RUWT note: all fields are named observable facts (who is on court, foul count,
+// current stint +/-) — not composite interest scores. Safe for live display.
+const _nbaLiveBoxscoreCache = {}; // gameId → {
+//   oncourt: [{name, tricode, pts, reb, ast, plusMinus, fouls}],  ← on court NOW
+//   homeLeaders: {name, pts, reb, ast},                           ← top scorer home
+//   awayLeaders: {name, pts, reb, ast},                           ← top scorer away
+//   foulTrouble: [{name, tricode, fouls, isStarter}],             ← starters ≥3 fouls
+//   officials: [{name, assignment}],                              ← referees
+//   homeStintPM: number,  ← live current-lineup net (home)
+//   awayStintPM: number,  ← live current-lineup net (away)
+//   ts: timestamp }
+let _nbaLiveBoxscoreTs = {}; // gameId → last fetch timestamp
+const NBA_LIVE_BS_TTL = 90 * 1000; // 90s — one per ESPN poll cycle
+
+// Gap 6 cache: gameLeaders from scoreboard (0-cost, already polled 30-60s)
+const _nbaScoreLeaders = {}; // gameId → {home:{name,pts,reb,ast}, away:{name,pts,reb,ast}}
+
 // ── parseNBAScoreboardGames — pure parsing helper for fetchNBAScoreboard ──────
 // Extracted from the inner loop so it can be unit-tested synthetically (see
 // field_utils.js + field_unit.js) without needing a live CDN response.
@@ -25580,6 +25645,20 @@ function parseNBAScoreboardGames(games, gameIdMap) {
         gameIdMap[`${a}_${h}`] = id;
       }
     }
+    // Gap 6: extract live gameLeaders (top scorer per team) from scoreboard.
+    // Zero extra cost — scoreboard is already polled every 30-60s.
+    // Writes into _nbaScoreLeaders[gameId] for compound prompt + RAI context.
+    try {
+      const hl = g.gameLeaders?.homeLeaders;
+      const al = g.gameLeaders?.awayLeaders;
+      if (hl || al) {
+        _nbaScoreLeaders[id] = {
+          home: hl?.name ? { name: hl.name, pts: hl.points||0, reb: hl.rebounds||0, ast: hl.assists||0, tricode: hl.teamTricode||'' } : null,
+          away: al?.name ? { name: al.name, pts: al.points||0, reb: al.rebounds||0, ast: al.assists||0, tricode: al.teamTricode||'' } : null,
+          ts: Date.now(),
+        };
+      }
+    } catch(_e30) {}
   }
   return gameIdMap;
 }
@@ -25603,6 +25682,144 @@ async function fetchNBAScoreboard() {
   } catch(e) {
     if (FIELD_DEBUG) console.warn('[NBA-CDN] scoreboard:', e.message);
   }
+}
+
+// ── fetchNBALiveBoxscore (PM-30) ─────────────────────────────────────────────
+// Fetches the CDN live boxscore for a game during play. Runs on 90s cadence
+// (same as fetchNHLLiveStats). Extracts:
+//   Gap 1: oncourt[] — which 10 players are on the floor right now (oncourt:"1")
+//   Gap 2: live stint plusMinusPoints — blended with season +/- for RAI quality
+//   Gap 3: foul trouble — starters ≥ 3 fouls in Q1-Q2, or ≥ 4 in Q3 (named fact)
+//   Gap 5: officials — referee names for compound prompt context
+//
+// RUWT compliance: all fields are named observable facts.
+//   - oncourt: who is physically on the court (binary observable)
+//   - plusMinusPoints: current unit net (factual score differential)
+//   - foulsPersonal: foul count (factual observable, named threshold per NBA rules)
+//   - officials: who is officiating (factual identity)
+// None of these are composite interest/excitement scores. No threshold-comparison
+// for live recommendation purposes. Foul trouble threshold (3 in Q1-Q2) mirrors
+// the NBA rule threshold, not a FIELD interest score.
+async function fetchNBALiveBoxscore(nbaId) {
+  if (!nbaId) return null;
+  const now = Date.now();
+  if (_nbaLiveBoxscoreTs[nbaId] && now - _nbaLiveBoxscoreTs[nbaId] < NBA_LIVE_BS_TTL) {
+    return _nbaLiveBoxscoreCache[nbaId] || null;
+  }
+  _nbaLiveBoxscoreTs[nbaId] = now;
+  try {
+    const r = await fetch(`${RELAY_BASE}/liveData/boxscore/boxscore_${nbaId}.json`,
+      { signal: AbortSignal.timeout(5000) });
+    if (!r.ok) return _nbaLiveBoxscoreCache[nbaId] || null;
+    const d = await r.json();
+    const game = d?.game;
+    if (!game) return null;
+
+    const period = game.period || 0;
+
+    // Extract per-player data from both teams
+    const parseTeam = (team) => {
+      const players = team?.players || [];
+      const oncourt = [];
+      const foulTrouble = [];
+      let stintPM = 0, stintN = 0;
+      for (const p of players) {
+        const s = p.statistics || {};
+        const name = p.name || p.firstName + ' ' + p.familyName || '';
+        const isOnCourt = p.oncourt === '1' || p.oncourt === 1;
+        const fouls = s.foulsPersonal || 0;
+        const pm = s.plusMinusPoints ?? null;
+        const pts = s.points || 0;
+        const reb = s.reboundsTotal || 0;
+        const ast = s.assists || 0;
+        const mins = parseFloat((s.minutesCalculated||'PT0M').replace('PT','').replace('M','')) || 0;
+        const isStarter = p.starter === '1' || p.starter === 1;
+
+        if (isOnCourt) {
+          oncourt.push({ name, tricode: team.teamTricode || '', pts, reb, ast,
+                         plusMinus: pm, fouls, mins, isStarter });
+          if (pm != null) { stintPM += pm; stintN++; }
+        }
+        // Gap 3: foul trouble — starters with ≥3 fouls in Q1-Q2, or ≥4 in Q3+
+        const foulThreshold = period <= 2 ? 3 : 4;
+        if (isStarter && fouls >= foulThreshold && mins > 0) {
+          foulTrouble.push({ name, tricode: team.teamTricode || '', fouls, isStarter, period });
+        }
+      }
+      return { oncourt, foulTrouble, stintPM: stintN > 0 ? stintPM / stintN : null };
+    };
+
+    const home = parseTeam(game.homeTeam);
+    const away = parseTeam(game.awayTeam);
+
+    // Gap 5: officials (factual identity — no editorial weight)
+    const officials = (game.officials || [])
+      .filter(o => o.assignment !== 'ALTERNATE')
+      .map(o => ({ name: o.name || '', assignment: o.assignment || '' }));
+
+    const result = {
+      oncourt:      [...home.oncourt, ...away.oncourt],
+      homeOncourt:  home.oncourt,
+      awayOncourt:  away.oncourt,
+      foulTrouble:  [...home.foulTrouble, ...away.foulTrouble],
+      officials,
+      homeStintPM:  home.stintPM,
+      awayStintPM:  away.stintPM,
+      period,
+      ts: now,
+    };
+    _nbaLiveBoxscoreCache[nbaId] = result;
+    if (FIELD_DEBUG) console.debug('[PM-30] live boxscore cached:', nbaId,
+      'oncourt:', result.oncourt.length, 'foul trouble:', result.foulTrouble.length);
+    return result;
+  } catch(e) {
+    if (FIELD_DEBUG) console.warn('[PM-30] live boxscore failed:', e.message);
+    return _nbaLiveBoxscoreCache[nbaId] || null;
+  }
+}
+
+// ── buildFoulTroubleContext (Gap 3) ──────────────────────────────────────────
+// Returns a [FOUL TROUBLE] tag for the compound prompt when a key player is in
+// foul trouble. RUWT-clean: named factual observable (foul count per NBA rule).
+// Q1-Q2: 3+ fouls for a starter is significant (risk of sitting). Q3+: 4+ fouls.
+function buildFoulTroubleContext(nbaId) {
+  try {
+    const bs = _nbaLiveBoxscoreCache[nbaId];
+    if (!bs?.foulTrouble?.length) return '';
+    const items = bs.foulTrouble
+      .sort((a, b) => b.fouls - a.fouls)
+      .slice(0, 3)
+      .map(p => `${p.name.split(' ').slice(-1)[0]} ${p.fouls} fouls (${p.tricode})`);
+    return `[FOUL TROUBLE] ${items.join(' · ')}`;
+  } catch(_) { return ''; }
+}
+
+// ── buildNBAOncourtContext (Gap 1 display) ────────────────────────────────────
+// Returns a formatted string of current on-court units for compound/Night Owl.
+// Uses live boxscore oncourt flag — more reliable than PBP sub-event parsing.
+function buildNBAOncourtContext(nbaId, homeLabel, awayLabel) {
+  try {
+    const bs = _nbaLiveBoxscoreCache[nbaId];
+    if (!bs?.oncourt?.length) return '';
+    const sp = (homeLabel + awayLabel).toLowerCase();
+    const hFmt = bs.homeOncourt.map(p => p.name.split(' ').slice(-1)[0]).join('/');
+    const aFmt = bs.awayOncourt.map(p => p.name.split(' ').slice(-1)[0]).join('/');
+    const hPM  = bs.homeStintPM != null ? ` (${bs.homeStintPM > 0 ? '+' : ''}${bs.homeStintPM.toFixed(0)})` : '';
+    const aPM  = bs.awayStintPM != null ? ` (${bs.awayStintPM > 0 ? '+' : ''}${bs.awayStintPM.toFixed(0)})` : '';
+    return `[ON COURT] ${teamNick(homeLabel||'')}${hPM}: ${hFmt} · ${teamNick(awayLabel||'')}${aPM}: ${aFmt}`;
+  } catch(_) { return ''; }
+}
+
+// ── buildNBAScoreLeadersContext (Gap 6 display) ───────────────────────────────
+// Formats live game leaders from scoreboard (zero extra fetch cost).
+function buildNBAScoreLeadersContext(nbaId) {
+  try {
+    const leaders = _nbaScoreLeaders[nbaId];
+    if (!leaders) return '';
+    const fmt = (l) => l ? `${l.name.split(' ').slice(-1)[0]} ${l.pts}pts/${l.reb}reb/${l.ast}ast (${l.tricode})` : null;
+    const parts = [fmt(leaders.away), fmt(leaders.home)].filter(Boolean);
+    return parts.length ? `[LEADERS] ${parts.join(' · ')}` : '';
+  } catch(_) { return ''; }
 }
 
 // Fetch live PBP actions for a game — returns actions[] or null
@@ -25740,9 +25957,51 @@ async function fetchRosterAdvantage(espnGameId, homeLabel, awayLabel) {
       }
     }
 
+    // ── Tier 0: NBA CDN live boxscore oncourt flag (PM-30) ────────────────────
+    // More reliable than PBP sub-event parsing — direct "oncourt":"1" per player.
+    // Also extracts live stint plusMinusPoints for Gap 2 blending.
+    // RUWT: oncourt is a named binary observable fact. plusMinusPoints is the
+    // factual score differential while that unit has been on the court.
+    let tier0Data = null;
+    const hNickR = teamNick(homeLabel||'').toLowerCase();
+    const aNickR = teamNick(awayLabel||'').toLowerCase();
+    const nbaIdR = espnGameId
+      ? null  // if we have ESPN ID, derive NBA ID via map
+      : (_nbaGameIdMap[`${hNickR}_${aNickR}`] || _nbaGameIdMap[`${aNickR}_${hNickR}`]);
+    const nbaIdForBS = nbaIdR || Object.values(_nbaGameIdMap).find((v, _, arr) => {
+      const k = Object.keys(_nbaGameIdMap).find(kk => _nbaGameIdMap[kk] === v && (kk.includes(hNickR) || kk.includes(aNickR)));
+      return !!k;
+    });
+    if (nbaIdForBS) {
+      const liveBS = await fetchNBALiveBoxscore(nbaIdForBS);
+      if (liveBS?.homeOncourt?.length && liveBS?.awayOncourt?.length) {
+        tier0Data = {
+          homeLineup: liveBS.homeOncourt.map(p => p.name.toLowerCase()),
+          awayLineup: liveBS.awayOncourt.map(p => p.name.toLowerCase()),
+          homeStintNet: liveBS.homeStintPM,  // Gap 2: live unit net
+          awayStintNet: liveBS.awayStintPM,
+          source: 'boxscore-oncourt',
+        };
+        // Gap 2: blend live stint +/- into qMap for current on-court players
+        // Each on-court player's live plusMinus overrides their season average
+        // with a blended signal: 0.4×live + 0.6×season (season anchors small samples)
+        for (const p of [...liveBS.homeOncourt, ...liveBS.awayOncourt]) {
+          if (p.plusMinus == null) continue;
+          const pNameLower = p.name.toLowerCase();
+          const lastName = pNameLower.split(' ').slice(-1)[0];
+          const seasonKey = pNameLower in qMap ? pNameLower
+            : Object.keys(qMap).find(k => k.endsWith(' ' + lastName)) || null;
+          const seasonPM = seasonKey ? qMap[seasonKey] : 0;
+          const blended = 0.4 * p.plusMinus + 0.6 * seasonPM;
+          qMap[pNameLower] = blended;  // overwrite with blended value
+        }
+        if (FIELD_DEBUG) console.debug('[RAI] Tier 0 oncourt:', tier0Data.homeLineup.length, 'vs', tier0Data.awayLineup.length, 'src: boxscore-oncourt');
+      }
+    }
+
     // ── Tier 1: NBA CDN play-by-play (exact lineup + stint stats) ────────────
-    let pbpData = null;
-    if (homeLabel && awayLabel) {
+    let pbpData = tier0Data; // Tier 0 takes precedence if available
+    if (!pbpData && homeLabel && awayLabel) {
       const cdnActions = await fetchNBAPBP(homeLabel, awayLabel);
       if (cdnActions) {
         // Tricodes from _nbaGameIdMap scoreboard data — derive from team labels
@@ -28055,6 +28314,25 @@ async function fetchNightOwlFromClaude(topGame){
       );
       const _nbaCtx = buildNBAPlayerContext(topGame, _owlEData3);
       if (_nbaCtx) _owlStatCtx += (_owlStatCtx?'\n':'')+'  '+_nbaCtx;
+    } catch(e_) {}
+    // PM-30: NBA live/postgame enrichment — leaders, foul trouble, officials
+    try {
+      if (_sp.includes('nba') || _sp.includes('basketball')) {
+        const _hNick30 = teamNick(topGame.home||'').toLowerCase();
+        const _aNick30 = teamNick(topGame.away||'').toLowerCase();
+        const _nbaId30 = _nbaGameIdMap[`${_hNick30}_${_aNick30}`] || _nbaGameIdMap[`${_aNick30}_${_hNick30}`];
+        if (_nbaId30) {
+          const _lead30 = buildNBAScoreLeadersContext(_nbaId30);
+          if (_lead30) _owlStatCtx += (_owlStatCtx?'\n':'')+'  '+_lead30;
+          const _foul30 = buildFoulTroubleContext(_nbaId30);
+          if (_foul30) _owlStatCtx += (_owlStatCtx?'\n':'')+'  '+_foul30;
+          const _bs30 = _nbaLiveBoxscoreCache[_nbaId30];
+          if (_bs30?.officials?.length) {
+            const _refs30 = _bs30.officials.map(o=>o.name).join(' · ');
+            _owlStatCtx += (_owlStatCtx?'\n':'')+'  [OFFICIALS] '+_refs30;
+          }
+        }
+      }
     } catch(e_) {}
     // PM-28l: NHL live shot/goalie context in Night Owl
     try {

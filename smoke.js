@@ -3408,6 +3408,27 @@ assert('A501 — PM-29 Postgame Drama Context: buildScoreNarrativeContext + buil
   html.includes("_eS?.state!=='post'"),
   'PM-29 revival of RUWT-scrapped drama metrics for all postgame surfaces. buildScoreNarrativeContext(gameId,home,away,sport): reads field_score_snap_* → [SCORE NARRATIVE] biggest lead, lead changes, comeback size. Sport-aware units (goal/run/point). Skip golf/tennis. buildDramaArcDescription(gameId): reads drama history → [DRAMA ARC] one-sentence arc shape (wire-to-wire, late-bloomer, early-spike, sustained-thriller, quiet). Night Owl: _owlDramaPromptCtx fixed (was undeclared), now includes [DRAMA]/[DRAMA TREND]/[DRAMA PEAK]/[DRAMA ARC]/[SCORE NARRATIVE] + EMBER tag with dramaPeak. Bottom sheet: postgame Game Summary section (peak+sustained+trend) + arc text below sparkline. Compound: arc + score narrative injected for state=post games only.');
 
+// ── PM-30: NBA Live Boxscore Optimizations (A502) ─────────────────────────────
+assert('A502 — PM-30 NBA Live Boxscore: fetchNBALiveBoxscore + oncourt Tier0 in RAI + gameLeaders + foul trouble + officials + stint blend',
+  html.includes('fetchNBALiveBoxscore') &&
+  html.includes('_nbaLiveBoxscoreCache') &&
+  html.includes('_nbaScoreLeaders') &&
+  html.includes('buildFoulTroubleContext') &&
+  html.includes('buildNBAOncourtContext') &&
+  html.includes('buildNBAScoreLeadersContext') &&
+  html.includes('boxscore-oncourt') &&
+  html.includes('NBA_LIVE_BS_TTL') &&
+  html.includes('[FOUL TROUBLE]') &&
+  html.includes('[ON COURT]') &&
+  html.includes('[LEADERS]') &&
+  html.includes('[OFFICIALS]') &&
+  html.includes("'pm30-nba-live-boxscore'") &&
+  html.includes("'pm30-nba-rai-tier0'") &&
+  html.includes("'pm30-nba-foul-trouble'") &&
+  html.includes('0.4 * p.plusMinus + 0.6 * seasonPM'),
+  'PM-30 NBA Live Boxscore: fetchNBALiveBoxscore(nbaId) polls CDN every 90s during live games. Gap 1: oncourt:"1" flag → Tier 0 in RAI (replaces fragile PBP tricode matching). Gap 2: 0.4×live stint plusMinusPoints + 0.6×season +/- blended quality signal. Gap 3: buildFoulTroubleContext() → [FOUL TROUBLE] starters ≥3 fouls Q1-Q2, ≥4 Q3+. Gap 5: [OFFICIALS] tag from CDN. Gap 6: parseNBAScoreboardGames extracts gameLeaders → _nbaScoreLeaders → buildNBAScoreLeadersContext() zero-cost [LEADERS] tag. All wired into buildCompoundPrompt parallel prefetch + Night Owl _owlStatCtx. RUWT: all named observable facts — oncourt (binary), fouls (NBA rule threshold), officials (identity), plusMinusPoints (factual score differential).');
+
 // ═════════════════════════════════════════════════════════════════════
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);
+
