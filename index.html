@@ -8554,6 +8554,7 @@ function renderAll(){
   }).filter(Boolean).join("");
   applyMainHTML(_renderAllHTML);
   if(!main.innerHTML.trim()) main.innerHTML='<div class="empty-note">No events found for today</div>';
+  hydrateEspnScoresFromFinals(); // ensure known final scores are in espnScores before life-stages run
   // ── Working Class: The Skim — render one-sentence verdict ──
   const _skimEl=document.getElementById('the-skim');
   const _skimTxt=document.getElementById('skim-text');
@@ -13462,6 +13463,7 @@ async function fetchV2AllScores() {
     }
   })));
 
+  hydrateEspnScoresFromFinals(); // restore known final scores before rendering (V2 returns null on finals)
   renderESPNScores(); // re-render with fresh V2 data
   scheduleV2Poll(anyLive ? 30000 : 60000);
 }
@@ -28238,6 +28240,45 @@ function loadTonightFinals(){
     }
     return [];
   }catch(e){return [];}
+}
+
+// ── hydrateEspnScoresFromFinals ───────────────────────────────────────────────
+// Writes correct final scores from tonight's localStorage finals into espnScores.
+// This is the authoritative source for completed game scores — more reliable than
+// V2 which frequently returns null scores for finished games. Called:
+//   1. After renderAll() so score-wraps render with real scores
+//   2. After each V2 poll cycle so null-score writes don't overwrite known finals
+// Key format matches V2: "Home Team|Away Team" (V2 fg.home.name|fg.away.name)
+function hydrateEspnScoresFromFinals() {
+  try {
+    const finals = loadTonightFinals();
+    if (!finals.length) return;
+    for (const f of finals) {
+      if (f.homeScore == null || f.awayScore == null) continue;
+      if (!f.home || !f.away) continue;
+      const key = `${f.home}|${f.away}`;
+      const existing = espnScores[key];
+      // Only write if: no entry exists, OR existing entry has 0-0 scores on a final
+      const existingIsBlank = existing?.state === 'post' &&
+        (existing.homeScore || 0) === 0 && (existing.awayScore || 0) === 0;
+      if (!existing || existingIsBlank) {
+        espnScores[key] = {
+          state: 'post',
+          homeScore: f.homeScore, awayScore: f.awayScore,
+          home: f.home, away: f.away,
+          homeName: f.home, awayName: f.away,
+          homeWinning: f.homeScore > f.awayScore,
+          clock: '', detail: 'F', period: 0,
+          periodPrefix: '', source: 'finals-cache',
+          espnEventId: null, wp: null, wp_prev: null,
+          homeLeader: null, awayLeader: null,
+          homeLinescores: [], awayLinescores: [],
+          _scoresNull: false,
+        };
+        espnScoreTs[key] = Date.now();
+      }
+    }
+  } catch(e) { /* silent — non-critical */ }
 }
 function buildNightOwlStatic(f){
   // Story Engine — winner-first via computeGameNarrative
