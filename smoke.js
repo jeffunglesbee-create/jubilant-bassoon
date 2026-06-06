@@ -1108,7 +1108,7 @@ assert('A251 — Journalism quota fix: journalismCallsToday.canCall() respects _
   html.includes('typeof _compoundRetryAfter') &&
   html.includes('Date.now()<_compoundRetryAfter') &&
   html.includes('canCall(){') &&
-  html.includes('if(this.get()>=12) return false'),
+  html.includes('if(this.get()>=50) return false'),
   'canCall must block during active 429 backoff — prevents J2/J3 cascade burning Gemini quota');
 
 assert('A252 — isScoutsPick: hasMilestone defined from _bdlMilestonesCache (was undefined after betting removal)',
@@ -1367,10 +1367,10 @@ assert('A294 — UCL/UEFA finals get showpiece label not elimination label in st
   html.includes('_isMajorFinalGame'),
   'Stakes brief must detect UEFA/major finals and label them as showpiece events, not elimination games');
 
-assert('A295 — cardBriefCallsToday separate from journalismCallsToday (15 call limit)',
+assert('A295 — cardBriefCallsToday separate from journalismCallsToday (50 call limit, Tier 1)',
   html.includes('function cardBriefCallsToday') &&
   html.includes('field_card_brief_calls_') &&
-  html.includes('this.get()<15') &&
+  html.includes('this.get()<50') &&
   html.includes('const cardBudget = cardBriefCallsToday()'),
   'MLB/WNBA/Stakes card briefs must use separate budget — not consume compound editorial budget');
 
@@ -1467,10 +1467,10 @@ assert('A310 — all journalism calls use claude-haiku-4-5-20251001 not claude-s
   html.includes('claude-haiku-4-5-20251001'),
   'All browser journalism calls must use Haiku not Sonnet — Sonnet is ~20x more expensive for short prose');
 
-assert('A311 — _jqDelay Gemini RPM guard: 2s stagger before all 6 quality chain retry fetches',
-  html.includes('const _jqDelay = () => new Promise(r => setTimeout(r, 2000))') &&
+assert('A311 — _jqDelay stagger: 200ms between quality chain retry fetches (Tier 1: 4000 RPM)',
+  html.includes('const _jqDelay = () => new Promise(r => setTimeout(r, 200))') &&
   (html.match(/await _jqDelay\(\); \/\/ Gemini RPM guard/g) || []).length === 6,
-  '_jqDelay must appear in all 6 quality chain retry paths to prevent Gemini 30 RPM limit (Layer 2, 2b, 2c, 2d, 2e cross-sport, 3b)');
+  '_jqDelay must appear in all 6 quality chain retry paths (Layer 2, 2b, 2c, 2d, 2e cross-sport, 3b)');
 
 assert('A312 — O(1) per-game briefs: fetchPrerenderedGameBrief + KV check in MLB/WNBA/Stakes renderers',
   html.includes('async function fetchPrerenderedGameBrief(espnEventId)') &&

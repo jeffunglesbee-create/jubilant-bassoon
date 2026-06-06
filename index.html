@@ -18929,7 +18929,7 @@ function journalismCallsToday(){
     // Prevents individual J2/J3 calls from firing during compound 429 backoff,
     // which would compound the Gemini quota burn and extend the outage.
     canCall(){
-      if(this.get()>=12) return false;
+      if(this.get()>=50) return false;
       if(typeof _compoundRetryAfter!=='undefined' && Date.now()<_compoundRetryAfter) return false;
       return true;
     }
@@ -18941,13 +18941,13 @@ function journalismCallsToday(){
 // With 15 MLB games, 3 WNBA games, and up to 4 stakes games, sharing the
 // 8-call journalism budget with J3/Night Owl causes MLB briefs to silently
 // fail when the compound call already used 1-2 budget slots.
-// Card brief budget: 15 calls/session (resets on reload via sessionStorage).
+// Card brief budget: 50 calls/session — raised from 15 (Tier 1: 4000 RPM, Jun 2026).
 function cardBriefCallsToday(){
   const k='field_card_brief_calls_'+new Date().toISOString().slice(0,10);
   return {
     get(){return parseInt(sessionStorage.getItem(k)||'0');},
     inc(){sessionStorage.setItem(k,String(this.get()+1));},
-    canCall(){return this.get()<15;}
+    canCall(){return this.get()<50;}
   };
 }
 
@@ -19919,12 +19919,10 @@ function checkSportVocab(text, sport) {
 
 // Layer 2b retry — same pattern as retryWithoutCliches() but for sport vocab
 // ── Gemini RPM guard ──────────────────────────────────────────────────────────
-// Gemini free tier: 30 RPM. Quality chain fires up to 6 calls in rapid succession.
-// A 2s stagger between retry fetches keeps bursts under 30 RPM, preventing
-// fallthrough to Claude. Only fires when a retry is actually needed (happy path
-// returns early before reaching the fetch, so no delay on passing briefs).
-// VERIFIED: 6 calls × 2s stagger = 12s max chain duration. Acceptable for briefs.
-const _jqDelay = () => new Promise(r => setTimeout(r, 2000));
+// Gemini Tier 1: 4,000 RPM (verified AI Studio Jun 2026). Quality chain fires up to
+// 6 retries — at 200ms spacing = 1.2s max chain. Previously 2s × 6 = 12s at 30 RPM.
+// _compoundRetryAfter backoff on actual 429s is the real protection.
+const _jqDelay = () => new Promise(r => setTimeout(r, 200));
 
 async function retryWithSportVocab(originalPrompt, text, sport, proxyUrl, label) {
   const violations = checkSportVocab(text, sport);
@@ -21214,7 +21212,7 @@ function initJournalismQueue(sections) {
     if (FIELD_DEBUG) console.log(`[QUEUE] in backoff — ${remaining}s remaining`);
     return;
   }
-  const QUEUE_INTERVAL = 3000; // 3s between calls — safe at 15 RPM and 30 RPM
+  const QUEUE_INTERVAL = 500; // 500ms — safe at 4000 RPM (Tier 1, verified Jun 2026)
   let delay = 0;
   // J3 Brief fires immediately (already handled by initFIELDBrief calling individual fetch)
   // Series previews stagger at 3s intervals
@@ -23744,12 +23742,9 @@ async function fetchGameBriefOnDemand(game, sport) {
   }
 
   const sp = (sport || game._sport || game._section || '').toLowerCase();
-  // MLB/WNBA/Stakes paths use their own cardBriefCallsToday budget (15 calls).
-  // Generic NBA/NHL/other fallback uses the shared journalismCallsToday budget (8 calls).
-  // Previously the shared budget gate fired UNCONDITIONALLY here, blocking sport-specific
-  // briefs even when their own budget was wide open. Caused every bottom-sheet tap on
-  // MLB/WNBA cards to return null silently once FIELD Brief/Night Owl/compound had
-  // consumed the 8 shared calls.
+  // At Tier 1 (4000 RPM), the shared budget (50/session) is essentially never
+  // exhausted. Budget gates are now primarily a safety backstop against stuck
+  // retry loops, not RPM protection. All sport paths share the same pool.
   const usesOwnBudget = sp.includes('baseball') || sp.includes('mlb') || sp.includes('wnba');
   if (!usesOwnBudget) {
     const budget = journalismCallsToday();
@@ -29721,9 +29716,14 @@ async function renderNightOwlRecap(){
   // Re-render gate: skip if same game is already in this slot
   // Exception: re-render if the element no longer contains Night Owl markup
   // (can happen if FIELD Brief overwrote it)
+  // Tier 1 (4000 RPM): also allow re-render for a DIFFERENT top game if prior
+  // game was lower drama (e.g. NBA Finals ends, then NHL Finals ends — show the better one)
   const alreadyRendered = _nightOwlRendered && _nightOwlGameId===topGame.id;
   const slotHasOwl = el.querySelector('.night-owl-card') !== null;
-  if(alreadyRendered && slotHasOwl) return;
+  const topDrama = topGame.dramaPeak || 0;
+  const currentDrama = parseFloat(sessionStorage.getItem('field_owl_drama_' + _nightOwlGameId) || '0');
+  const betterGameAvailable = _nightOwlRendered && _nightOwlGameId !== topGame.id && topDrama > currentDrama + 10;
+  if(alreadyRendered && slotHasOwl && !betterGameAvailable) return;
   const _owlSwV=typeof SW_VERSION!=='undefined'?SW_VERSION:'0';
   const cacheKey='field_nightowl_v'+_owlSwV+'_'+topGame.id; // versioned: busts on deploy
   const cached=sessionStorage.getItem(cacheKey);
@@ -29735,6 +29735,7 @@ async function renderNightOwlRecap(){
   const scoreLabel=_owlN.scoreline;
   _nightOwlRendered=true;
   _nightOwlGameId=topGame.id;
+  try { sessionStorage.setItem('field_owl_drama_' + topGame.id, String(topGame.dramaPeak||0)); } catch(_) {}
   el.style.display='block';
   // Night Owl branding is consistent — the owl knows no clock
   const _owlTitle = 'Night Owl';

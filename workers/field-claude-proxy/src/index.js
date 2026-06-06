@@ -12,8 +12,9 @@
 //      to silently use Claude Sonnet 4. Fixed in v8.)
 //
 // SECRETS (set in Cloudflare dashboard):
-//   GEMINI_KEY    → aistudio.google.com → Get API key (free, 1500 RPD / 30 RPM)
-//   ANTHROPIC_KEY → console.anthropic.com → API Keys (Claude fallback)
+//   GEMINI_KEY    → aistudio.google.com → Get API key
+//                   Tier 1 paid: 4,000 RPM / 4M TPM (gemini-3.1-flash-lite, verified Jun 2026)
+//   ANTHROPIC_KEY → console.anthropic.com → API Keys (Claude fallback for vision/errors)
 //
 // VERIFY after deploy (DevTools Network tab on FIELD app):
 //   X-FIELD-Proxy-Version: 8
