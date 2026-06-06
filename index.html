@@ -4164,10 +4164,12 @@ function buildRightNowTiers(g, eData) {
     ? `<span style="color:var(--smoke)">${eData.clock}${eData.period ? ' P' + eData.period : ''}</span>`
     : '';
 
-  // Series
+  // Series / Scout's Pick chip
   const seriesEl = series
     ? `<span style="color:var(--gold2,#c9a84c);font-size:.55rem">${series}</span>`
-    : '';
+    : (!isLive && typeof isScoutsPick === 'function' && isScoutsPick(g))
+      ? `<span style="color:#2dd4bf;font-size:.55rem">🔍 Scout's Pick</span>`
+      : '';
 
   // Brief from relay KV cache (A312)
   const brief = (_gameBriefCache && _gameBriefCache[g._id])
@@ -24997,6 +24999,11 @@ function buildWatchWindowReason(game) {
   const parts = [];
   if (game.seriesRecord) parts.push(game.seriesRecord);
 
+  // Scout's Pick: under-the-radar game — surface the signal in the Watch Window chip
+  if (typeof isScoutsPick === 'function' && isScoutsPick(game)) {
+    if (!game.seriesRecord) parts.push('🔍 Scout\'s Pick');
+  }
+
   // #29b: franchise misery context (abbreviated) — "14yr drought" fits the chip
   const homeMiseryWWR = getFranchiseMisery(game.home||'');
   const awayMiseryWWR = getFranchiseMisery(game.away||'');
@@ -29039,8 +29046,11 @@ function buildDramaLineTiers(game, eData, sport){
     return tight?{tight,mid:mid||tight,full:full||mid||tight}:empty;
   }
   const primary=series||narrative,extra=series?narrative:firstSentence;
-  if(!primary&&!firstSentence)return empty;
-  const tight=trim(primary||firstSentence,36),mid=trim(join([primary,extra]),52),full=join([primary,firstSentence]);
+  // Scout's Pick fallback: when no series/narrative text, surface the pick signal
+  const scoutLabel = (!primary && !firstSentence && typeof isScoutsPick === 'function' && isScoutsPick(game))
+    ? '🔍 Scout\'s Pick' : '';
+  if(!primary&&!firstSentence&&!scoutLabel)return empty;
+  const tight=trim(scoutLabel||primary||firstSentence,36),mid=trim([scoutLabel||primary,extra].filter(Boolean).join(' · '),52),full=[scoutLabel||primary,firstSentence].filter(Boolean).join(' · ');
   return tight?{tight,mid:mid||tight,full:full||mid||tight}:empty;
 }
 // ── VIEWPORT-PHONE-A: Phone capability detection ────────────────────────────
