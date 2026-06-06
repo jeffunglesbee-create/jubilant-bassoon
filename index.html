@@ -11175,6 +11175,19 @@ function injectJ1J4Badges() {
     // See isScoutsPick() definition for the full rationale.
     if (isScoutsPick(g)) {
       card.classList.add('scout-pick-card');
+      // Persist: Night Owl reads this at game-end to grade delivery vs prediction.
+      // Stored once (first badge injection) — isScoutsPick() may not match at game-end
+      // if V2 state changes, so we need the pre-game determination to survive.
+      try {
+        const _spKey = 'field_scout_pick_' + (g._id || '');
+        if (!localStorage.getItem(_spKey)) {
+          localStorage.setItem(_spKey, JSON.stringify({
+            home: g.home||'', away: g.away||'',
+            signal: g.seriesRecord ? 'series' : /playoff|final/i.test(g.league||'') ? 'playoff' : 'milestone',
+            t: Date.now(),
+          }));
+        }
+      } catch(_) {}
       const badge = document.createElement('span');
       badge.className = 'scout-pick-badge';
       badge.textContent = '🔍 Scout\'s Pick';
@@ -20942,7 +20955,8 @@ function buildCompoundPrompt(sections) {
     regularGames.map(g => {
       const stream = g.streams?.[0]?.label || '';
       const venue = g.venue ? ` · ${g.venue}` : '';
-      return `- ${g.away} @ ${g.home} · ${g._sport||g.league||''}${stream ? ' · '+stream : ''}${venue}${g.localNote ? ' · '+g.localNote : ''}`;
+      const pickTag = (typeof isScoutsPick === 'function' && isScoutsPick(g)) ? '  [SCOUT\'S PICK — under-the-radar game worth flagging]' : '';
+      return `- ${g.away} @ ${g.home} · ${g._sport||g.league||''}${stream ? ' · '+stream : ''}${venue}${g.localNote ? ' · '+g.localNote : ''}${pickTag}`;
     }).join('\n') : '';
 
   const eplSection = soccerGames.length ? `\nSOCCER FIXTURES (write a 40-60 word match brief for each):\n` +
@@ -20990,6 +21004,7 @@ Rules:
 - For each game_briefs entry: 30-40 words, lead with what's at stake tonight, mention the venue and broadcast, or null if data insufficient.
 - If [BNI] appears: describe that matchup as low-stakes in the brief — never echo the tag verbatim.
 - If [EMBER BURIED LEAD] appears: frame that game as an overlooked gem — mention it's on a non-marquee channel and deserves attention. Never echo the tag verbatim.
+- If [SCOUT'S PICK — under-the-radar game worth flagging] appears in a game_briefs entry: write the brief with a "hidden gem" angle — surface why this non-national game is worth watching tonight. Never echo the tag verbatim.
 - If [WEATHER ALERT] appears: mention the weather condition briefly when relevant to game outcome.
 - If [WIKI TRENDING] appears: note the cultural significance — this team is drawing national attention beyond normal game interest. Weave it into the brief naturally.
 - If [WIKI LOW] appears: this game is genuinely under the radar — frame it as a hidden gem if other signals (drama, stakes) support it.
@@ -28555,6 +28570,21 @@ async function fetchNightOwlFromClaude(topGame){
     if (_scoreNarr) _owlDramaPromptCtx += (_owlDramaPromptCtx ? '\n' : '') + '  ' + _scoreNarr;
   } catch(e_) {}
 
+  // Scout's Pick: check if this game was pre-designated as under-the-radar
+  let _owlScoutPickCtx = '';
+  try {
+    const _gidSP = topGame.id || topGame._id || '';
+    const _spKey = 'field_scout_pick_' + _gidSP;
+    const _spRaw = localStorage.getItem(_spKey);
+    if (_spRaw) {
+      const _spData = JSON.parse(_spRaw);
+      const _spSignal = _spData.signal === 'series' ? 'playoff series stakes'
+        : _spData.signal === 'playoff' ? 'playoff importance'
+        : 'milestone proximity';
+      _owlScoutPickCtx = `  [SCOUT'S PICK PREDICTION: This game was flagged pre-game as an under-the-radar pick based on ${_spSignal}. End your recap with one sentence grading delivery — did it live up to the hidden-gem recommendation?]`;
+    }
+  } catch(_) {}
+
   const prompt=['Write a FIELD Night Owl recap.',
       'Game: '+topGame.away+' @ '+topGame.home+(topGame.venue?' · '+topGame.venue:''),
       'Final: '+score+' ('+winner+' wins)'+_xiNote,
@@ -28564,6 +28594,7 @@ async function fetchNightOwlFromClaude(topGame){
       topGame.dramaPeak?'Drama peak: '+Math.round(topGame.dramaPeak)+'/100':'',
       // EMBER: if this was a buried-lead game, include that framing with peak context
       (()=>{try{const _gidE=topGame.id||topGame._id||'';const er=_emberResultCache[_gidE];if(!er)return '';const _pkE=topGame.dramaPeak>=65?` · peak ${Math.round(topGame.dramaPeak)}/100`:'';return`  [EMBER BURIED LEAD: Tier${er.tier} on ${er.channel}${_pkE}${er.lateClose?' · late-close game':''}]`;}catch(e_){return ''}})(),
+      _owlScoutPickCtx||'',
       _owlDramaPromptCtx||'',
       topGame.matchupNote?'Matchup: '+topGame.matchupNote:'',
       note&&!topGame.matchupNote?'Context: '+note:'',
@@ -28571,6 +28602,7 @@ async function fetchNightOwlFromClaude(topGame){
       standingsCtx?standingsCtx:'',
       crewCtx?'Broadcast crew: '+crewCtx:'',
       '','Rules: 80-100 words. Tactical. Not emotional. Lead with the turning point.',
+      _owlScoutPickCtx ? 'If [SCOUT\'S PICK PREDICTION] appears: end with one sentence grading delivery. Deliver on the promise (\"Delivered — high-drama playoff game as billed\") or call it out honestly (\"Fell short — low drama despite the stakes\"). Never echo the tag verbatim.' : '',
       _owlStatCtx?'If stat context is provided above, cite the specific figure — never paraphrase it.':'',
       _owlDramaPromptCtx?'DRAMA CONTEXT: [DRAMA]=minutes of sustained tension; [DRAMA TREND]=rising or fading at end; [DRAMA PEAK]=peak moment timing; [DRAMA ARC]=shape of the tension curve (use to set opening framing — thriller vs wire-to-wire vs late-bloomer); [SCORE NARRATIVE]=factual lead/comeback data. Use all of these to frame the narrative. Never invent drama facts beyond what these tags say.':'',
       'Write only from the data above — never invent statistics, player tendencies, or context.',
