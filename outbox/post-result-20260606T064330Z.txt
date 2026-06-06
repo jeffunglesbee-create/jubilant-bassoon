@@ -1,0 +1,20 @@
+URL: https://stat-job-watcher.jeffunglesbee.workers.dev/salary-refresh  [20260606T064330Z]
+=== Request body ===
+{}
+
+=== Custom headers ===
+Authorization: Bearer 388c7bdaad74cb8c1e92a8380a2c3b8efa4573f7b4ea4e4747dde7f54f108cb2
+
+=== Response (status + body, first 4000 chars) ===
+{
+  "ok": true,
+  "bls": {
+    "fetched": 0,
+    "keys": 0
+  },
+  "lca": {
+    "ok": false,
+    "error": "No LCA file reachable"
+  }
+}
+HTTP_STATUS:200
