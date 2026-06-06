@@ -15835,15 +15835,32 @@ const _mlsGameOptaIds = {}; // "home_opta|away_opta" → game opta_id
 
 async function fetchMLSLive() {
   try {
-    const today = new Date().toISOString().slice(0,10);
-    const url = MLS_RELAY_BASE +
-      `/v1/matches?match_date%5Bgte%5D=${today}&match_date%5Blte%5D=${today}` +
-      `&include=home_club_match&include=away_club_match&include=home_club&include=away_club&per_page=100`;
-    const r = await fetch(url, {signal: AbortSignal.timeout(6000)});
-    if (!r.ok) return [];
-    const d = await r.json();
-    const matches = d.schedule || d.matches || d || [];
-    matches.forEach(m => {
+    // MLS relay match_date field uses ET date. Query both ET and UTC dates
+    // to cover the full evening window (same dual-date pattern as fetchV2AllScores).
+    // 7:30pm ET MLS games = ET date Jun 5 but UTC date Jun 6.
+    const _now   = new Date();
+    const utcDate = _now.toISOString().slice(0,10);
+    const etDate  = new Date(_now - 4 * 3600 * 1000).toISOString().slice(0,10);
+    // Query the earlier date (ET); if ET==UTC, one query suffices.
+    // The relay returns all matches for that date — dedup by opta key is safe.
+    const datesToFetch = utcDate === etDate ? [utcDate] : [etDate, utcDate];
+    const allMatches = [];
+    for (const today of datesToFetch) {
+      const url = MLS_RELAY_BASE +
+        `/v1/matches?match_date%5Bgte%5D=${today}&match_date%5Blte%5D=${today}` +
+        `&include=home_club_match&include=away_club_match&include=home_club&include=away_club&per_page=100`;
+      const r = await fetch(url, {signal: AbortSignal.timeout(6000)});
+      if (!r.ok) continue;
+      const d = await r.json();
+      const matches = d.schedule || d.matches || d || [];
+      // Dedup: skip if we already have this game_id from the other date query
+      for (const m of matches) {
+        const gid = m.game_id || m.opta_id;
+        if (!gid || allMatches.some(x => (x.game_id||x.opta_id) === gid)) continue;
+        allMatches.push(m);
+      }
+    }
+    allMatches.forEach(m => {
       const hClub = m.home_club||{}, aClub = m.away_club||{};
       const hMatch = m.home_club_match||{}, aMatch = m.away_club_match||{};
       const hId = hClub.opta_id, aId = aClub.opta_id;
@@ -15869,8 +15886,8 @@ async function fetchMLSLive() {
       };
       espnScoreTs[key] = Date.now();
     });
-    if (FIELD_DEBUG) console.log(`[MLS-relay] ${matches.length} matches`);
-    return matches;
+    if (FIELD_DEBUG) console.log(`[MLS-relay] ${allMatches.length} matches (${datesToFetch.join('+')})`);
+    return allMatches;
   } catch(e) {
     if (FIELD_DEBUG) console.warn('[MLS-relay] fetchMLSLive failed:', e.message);
     return [];
@@ -28159,32 +28176,40 @@ function loadEspnFinals(){
 // Save a completed game to finals cache
 function saveEspnFinal(game, eData){
   try{
-    // Always use ET date for key — matches loadTonightFinals() which reads ET date
-    const today = new Date().toLocaleDateString('en-CA',{timeZone:'America/New_York'});
+    // Write under both ET date and UTC date so loadTonightFinals always finds it
+    // regardless of when (relative to midnight ET/UTC) the read happens.
+    const etToday  = new Date().toLocaleDateString('en-CA',{timeZone:'America/New_York'});
+    const utcToday = new Date().toISOString().slice(0,10);
+    const today    = etToday; // primary key stays ET for backwards compat
     const existing = JSON.parse(localStorage.getItem(FINALS_KEY)||'[]');
     const id = game._id || (game.home+game.away);
     if(existing.some(f=>f.id===id)) return; // already saved
     const dpKey2='field_drama_peak_'+(game._id||'');
     const dramaPeak=parseFloat(localStorage.getItem(dpKey2)||'0');
-    existing.push({
+    const entry = {
       id, home:game.home||'', away:game.away||'',
       homeScore:eData.homeScore, awayScore:eData.awayScore,
       sport:game._sport||'', league:game.league||'',
       seriesRecord: game.seriesRecord||'',
-      sourceId: game.sourceId||'',       // needed for MLB box score in Night Owl
-      matchupNote: game.matchupNote||'', // needed for Night Owl Matchup: context line
+      sourceId: game.sourceId||'',
+      matchupNote: game.matchupNote||'',
       date: today, dramaPeak,
-    });
+    };
+    existing.push(entry);
     localStorage.setItem(FINALS_KEY, JSON.stringify(existing.slice(-20)));
     localStorage.setItem(FINALS_DATE_KEY, today);
-    try{
-      const tnKey='field_tonight_finals_'+today;
-      const tnPool=JSON.parse(localStorage.getItem(tnKey)||'[]');
-      if(!tnPool.some(f=>f.id===id)){
-        tnPool.push({id,home:game.home||'',away:game.away||'',homeScore:eData.homeScore,awayScore:eData.awayScore,sport:game._sport||'',league:game.league||'',seriesRecord:game.seriesRecord||'',sourceId:game.sourceId||'',matchupNote:game.matchupNote||'',dramaPeak});
-        localStorage.setItem(tnKey,JSON.stringify(tnPool.slice(-10)));
-      }
-    }catch(e2){}
+    // Write to both ET and UTC tonight-finals keys so loadTonightFinals finds it
+    // even when ET date (save time) ≠ ET date (read time) across midnight boundary.
+    for(const dateKey of [etToday, utcToday]){
+      try{
+        const tnKey='field_tonight_finals_'+dateKey;
+        const tnPool=JSON.parse(localStorage.getItem(tnKey)||'[]');
+        if(!tnPool.some(f=>f.id===id)){
+          tnPool.push(entry);
+          localStorage.setItem(tnKey,JSON.stringify(tnPool.slice(-10)));
+        }
+      }catch(e2){}
+    }
   }catch(e){}
 }
 
@@ -28197,9 +28222,15 @@ function loadTonightFinals(){
     const today=new Date().toLocaleDateString('en-CA',{timeZone:'America/New_York'});
     const primary=JSON.parse(localStorage.getItem('field_tonight_finals_'+today)||'[]');
     if(primary.length) return primary;
-    // Fallback: local browser date (catches timezone mismatch from older saves)
+    // Fallback 1: UTC date (catches games saved after midnight UTC but before midnight ET)
+    const utcToday=new Date().toISOString().slice(0,10);
+    if(utcToday!==today){
+      const utcFallback=JSON.parse(localStorage.getItem('field_tonight_finals_'+utcToday)||'[]');
+      if(utcFallback.length) return utcFallback;
+    }
+    // Fallback 2: local browser date (catches timezone mismatch from older saves)
     const localToday=new Date().toLocaleDateString('en-CA');
-    if(localToday!==today){
+    if(localToday!==today && localToday!==utcToday){
       const fallback=JSON.parse(localStorage.getItem('field_tonight_finals_'+localToday)||'[]');
       if(fallback.length) return fallback;
     }
