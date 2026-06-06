@@ -28973,7 +28973,13 @@ function computeCardStage(game, eData) {
   // (negative countdown). Align with getStatus() which already classifies this
   // window as 'live'. The 'live' renderer handles the no-eData case explicitly.
   if (start && minsUntil <= 0 && minsUntil > -210) return 'live';
-  if (eData?.state === 'post' || (start && minsUntil < -210)) return 'final';
+  if (eData?.state === 'post' || (start && minsUntil < -210)) {
+    // Don't trust eData.state='post' for a game that hasn't started yet —
+    // stale espnScores entry from a previous game with the same team names.
+    // Only classify as final if the start time confirms the game is over.
+    if (start && minsUntil > -30) return 'pre'; // starts in the future or just recently
+    return 'final';
+  }
   if (minsUntil <= 75) return 'soon';
   return 'pre';
 }
