@@ -3391,6 +3391,23 @@ assert('A500 — PM-28 Context Richness: recordLinescores/getLinescores/buildLin
   html.includes("'pm28-build-goal-timeline'"),
   'PM-28 Context Richness Layer (A500): recordLinescores() + getLinescores() persist homeLinescores/awayLinescores to localStorage per period boundary. buildLinescoreContext() formats [LINE SCORE] Q1-Q4/P1-P3/Inn1-9 for compound + Night Owl. buildGoalTimeline() reads _fdGoalCache + _afEventCache → [GOAL TIMELINE] with HT score. buildNBAPlayerContext() reads _nbaBoxscoreCache (populated by fetchNBABoxScoreViaRelay in checkForNewFinals) → [NBA BOX] top scorers. normalizeApiFootballStats() converts API-Football array-of-objects stats schema → keyed map. PM-28e NHL byPeriod extraction writes homeLinescores/awayLinescores from bd.linescore.byPeriod in fetchNHLLiveStats boxscore try-block. All three context builders injected into buildCompoundPrompt (after extremeNote) and fetchNightOwlFromClaude (_owlStatCtx). _afEventCache declared for AF soccer events. Midnight prune: field_linescore_ keys auto-pruned by existing .t field check — no new code needed.');
 
+// ── PM-29: Postgame Drama Context Revival (A501) ──────────────────────────────
+assert('A501 — PM-29 Postgame Drama Context: buildScoreNarrativeContext + buildDramaArcDescription + Night Owl + bottom sheet + compound',
+  html.includes('buildScoreNarrativeContext') &&
+  html.includes('buildDramaArcDescription') &&
+  html.includes('[SCORE NARRATIVE]') &&
+  html.includes('[DRAMA ARC]') &&
+  html.includes("'pm29-score-narrative'") &&
+  html.includes("'pm29-drama-arc'") &&
+  html.includes("'pm29-owl-drama-ctx-fix'") &&
+  html.includes("'pm29-bs-postgame-drama'") &&
+  html.includes("'pm29-compound-postgame'") &&
+  html.includes('_owlDramaPromptCtx') &&
+  html.includes('EMBER BURIED LEAD') &&
+  html.includes('_bsPostgameDrama') &&
+  html.includes("_eS?.state!=='post'"),
+  'PM-29 revival of RUWT-scrapped drama metrics for all postgame surfaces. buildScoreNarrativeContext(gameId,home,away,sport): reads field_score_snap_* → [SCORE NARRATIVE] biggest lead, lead changes, comeback size. Sport-aware units (goal/run/point). Skip golf/tennis. buildDramaArcDescription(gameId): reads drama history → [DRAMA ARC] one-sentence arc shape (wire-to-wire, late-bloomer, early-spike, sustained-thriller, quiet). Night Owl: _owlDramaPromptCtx fixed (was undeclared), now includes [DRAMA]/[DRAMA TREND]/[DRAMA PEAK]/[DRAMA ARC]/[SCORE NARRATIVE] + EMBER tag with dramaPeak. Bottom sheet: postgame Game Summary section (peak+sustained+trend) + arc text below sparkline. Compound: arc + score narrative injected for state=post games only.');
+
 // ═════════════════════════════════════════════════════════════════════
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);

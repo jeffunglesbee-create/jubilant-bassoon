@@ -4405,6 +4405,11 @@ const FIELD_FEATURES = {
   'pm28-nba-boxscore-quarters': '2026-06-05',  // fetchNBABoxScoreViaRelay() extracts per-quarter scores + player stats on post-game trigger
   'pm28-build-linescore-ctx':   '2026-06-05',  // buildLinescoreContext() formats [LINE SCORE] for all sports → journalism prompts
   'pm28-build-goal-timeline':   '2026-06-05',  // buildGoalTimeline() formats [GOAL TIMELINE] + [HT] from _fdGoalCache → journalism
+  'pm29-score-narrative':       '2026-06-06',  // buildScoreNarrativeContext() — score snapshot log → [SCORE NARRATIVE] lead/comeback facts
+  'pm29-drama-arc':             '2026-06-06',  // buildDramaArcDescription() — drama history → [DRAMA ARC] one-sentence arc
+  'pm29-owl-drama-ctx-fix':     '2026-06-06',  // _owlDramaPromptCtx: fixed undeclared var + added arc/score to Night Owl prompt
+  'pm29-bs-postgame-drama':     '2026-06-06',  // Bottom sheet: postgame Game Summary section (peak + sustained + trend + score narrative)
+  'pm29-compound-postgame':     '2026-06-06',  // buildCompoundPrompt: arc + score narrative injected for state=post games
   'pm28-nba-player-context':    '2026-06-05',  // buildNBAPlayerContext() formats [NBA BOX] from boxscore cache → Night Owl
   'pm28-normalize-af-stats':    '2026-06-05',  // normalizeApiFootballStats() flattens API-Football statistics array schema
   'pm28-night-owl-injection':   '2026-06-05',  // Night Owl prompt receives [LINE SCORE] [GOAL TIMELINE] [NBA BOX] [NHL LIVE]
@@ -20717,6 +20722,9 @@ function buildCompoundPrompt(sections) {
       (()=>{try{const _eS=findESPNScore?.(g);return buildLinescoreContext(_eS,g._id)||''}catch(e_){return ''}})(),
       (()=>{try{const _eS=findESPNScore?.(g);return buildGoalTimeline(g,_eS)||''}catch(e_){return ''}})(),
       (()=>{try{const _eS=findESPNScore?.(g);return buildNBAPlayerContext(g,_eS)||''}catch(e_){return ''}})(),
+      // Postgame drama arc + score narrative (only for finished games — RUWT-clean)
+      (()=>{try{const _eS=findESPNScore?.(g);if(_eS?.state!=='post')return '';return buildDramaArcDescription(g._id||'')||'';}catch(e_){return ''}})(),
+      (()=>{try{const _eS=findESPNScore?.(g);if(_eS?.state!=='post')return '';const _sp28c=(g._sport||g._section||'').toLowerCase();return buildScoreNarrativeContext(g._id||'',g.home||'',g.away||'',_sp28c)||'';}catch(e_){return ''}})(),
       // CFL pre-game odds context
       (()=>{try{if(g._cflSpread==null&&g._cflTotal==null)return '';const sp=g._cflSpread!=null?`${g._cflSpread>0?'+':''}${g._cflSpread}`:'';const tot=g._cflTotal!=null?`O/U ${g._cflTotal}`:'';const pct=g.wp!=null?` · home ${Math.round(g.wp*100)}%`:'';const parts=[sp,tot].filter(Boolean).join(' · ');return parts?`  [CFL ODDS] ${parts}${pct}`:''}catch(e_){return ''}})(),
       // Fix 7: EMBER buried lead — tier + channel context for editorial framing
@@ -28057,6 +28065,34 @@ async function fetchNightOwlFromClaude(topGame){
       }
     } catch(e_) {}
   } catch(e_) {}
+
+  // Drama narrative context — all three postgame drama metrics + arc + score sequence
+  let _owlDramaPromptCtx = '';
+  try {
+    const _gid = topGame.id || topGame._id || '';
+    const _sustained = (typeof getDramaSustained === 'function') ? getDramaSustained(_gid, 65, 60*60*1000) : 0;
+    const _trend     = (typeof getDramaTrend     === 'function') ? getDramaTrend(_gid, 6)                 : 0;
+    const _peakWt    = (typeof getDramaPeakWithTime === 'function') ? getDramaPeakWithTime(_gid)           : null;
+    if (_sustained >= 5)
+      _owlDramaPromptCtx += `  [DRAMA] ${_sustained.toFixed(0)} min sustained above 65/100`;
+    if (Math.abs(_trend) >= 8)
+      _owlDramaPromptCtx += (_owlDramaPromptCtx ? '\n' : '') +
+        `  [DRAMA TREND] ${_trend > 0 ? 'Rising at final buzzer (+' + Math.round(_trend) + ')' : 'Fading late (' + Math.round(_trend) + ')'}`;
+    if (_peakWt?.s >= 70 && _peakWt?.t && Date.now() - _peakWt.t < 10800000) {
+      const _tzPeak = (typeof localTz === 'function') ? localTz() : 'America/New_York';
+      const _peakTime = new Date(_peakWt.t).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',timeZone:_tzPeak,hour12:true});
+      _owlDramaPromptCtx += (_owlDramaPromptCtx ? '\n' : '') +
+        `  [DRAMA PEAK] ${Math.round(_peakWt.s)}/100 at ${_peakTime}`;
+    }
+    // Drama arc description (shape of the game tension curve)
+    const _arcDesc = (typeof buildDramaArcDescription === 'function') ? buildDramaArcDescription(_gid) : '';
+    if (_arcDesc) _owlDramaPromptCtx += (_owlDramaPromptCtx ? '\n' : '') + '  ' + _arcDesc;
+    // Score narrative (lead changes, biggest lead, comeback — from score snapshot log)
+    const _scoreNarr = (typeof buildScoreNarrativeContext === 'function')
+      ? buildScoreNarrativeContext(_gid, topGame.home||'', topGame.away||'', _sp) : '';
+    if (_scoreNarr) _owlDramaPromptCtx += (_owlDramaPromptCtx ? '\n' : '') + '  ' + _scoreNarr;
+  } catch(e_) {}
+
   const prompt=['Write a FIELD Night Owl recap.',
       'Game: '+topGame.away+' @ '+topGame.home+(topGame.venue?' · '+topGame.venue:''),
       'Final: '+score+' ('+winner+' wins)'+_xiNote,
@@ -28064,6 +28100,9 @@ async function fetchNightOwlFromClaude(topGame){
       _terms,
       topGame.seriesRecord?'Series: '+topGame.seriesRecord:'',
       topGame.dramaPeak?'Drama peak: '+Math.round(topGame.dramaPeak)+'/100':'',
+      // EMBER: if this was a buried-lead game, include that framing with peak context
+      (()=>{try{const _gidE=topGame.id||topGame._id||'';const er=_emberResultCache[_gidE];if(!er)return '';const _pkE=topGame.dramaPeak>=65?` · peak ${Math.round(topGame.dramaPeak)}/100`:'';return`  [EMBER BURIED LEAD: Tier${er.tier} on ${er.channel}${_pkE}${er.lateClose?' · late-close game':''}]`;}catch(e_){return ''}})(),
+      _owlDramaPromptCtx||'',
       topGame.matchupNote?'Matchup: '+topGame.matchupNote:'',
       note&&!topGame.matchupNote?'Context: '+note:'',
       _owlStatCtx||'',
@@ -28071,7 +28110,7 @@ async function fetchNightOwlFromClaude(topGame){
       crewCtx?'Broadcast crew: '+crewCtx:'',
       '','Rules: 80-100 words. Tactical. Not emotional. Lead with the turning point.',
       _owlStatCtx?'If stat context is provided above, cite the specific figure — never paraphrase it.':'',
-      _owlDramaPromptCtx?'DRAMA CONTEXT: [DRAMA]=tension arc intensity; [DRAMA TREND]=whether drama rose or fell late; [DRAMA PEAK]=moment of max tension. Use these to frame the narrative rhythm — never manufacture drama not in the data.':'',
+      _owlDramaPromptCtx?'DRAMA CONTEXT: [DRAMA]=minutes of sustained tension; [DRAMA TREND]=rising or fading at end; [DRAMA PEAK]=peak moment timing; [DRAMA ARC]=shape of the tension curve (use to set opening framing — thriller vs wire-to-wire vs late-bloomer); [SCORE NARRATIVE]=factual lead/comeback data. Use all of these to frame the narrative. Never invent drama facts beyond what these tags say.':'',
       'Write only from the data above — never invent statistics, player tendencies, or context.',
       // PF-4: ban specific-inning / specific-at-bat / specific-period fabrications.
       // The LLM has ONLY the final score and any [MLB BOX], [PP/PK], standings
@@ -28821,6 +28860,128 @@ function detectAndStoreStoryMoment(gameId, eData, sport) {
   } catch(_) { /* never block delta detection on bus dispatch */ }
 }
 
+// ── buildScoreNarrativeContext ────────────────────────────────────────────────
+// Reads field_score_snap_* (scoring-event log, ≤10 entries, {h,a,t}) and produces
+// plain-English facts about the scoring arc: biggest lead, lead changes, comeback.
+// RUWT-clean: all outputs are historical factual observables, no composite score.
+// Sport-aware: uses correct unit labels per sport. Safe for journalism injection.
+// Returns '' when insufficient data (< 2 entries or golf/tennis where not meaningful).
+function buildScoreNarrativeContext(gameId, homeLabel, awayLabel, sport) {
+  try {
+    const key = SCORE_SNAP_KEY + gameId;
+    const log = JSON.parse(localStorage.getItem(key) || '[]');
+    if (log.length < 2) return '';
+    const sp = (sport || '').toLowerCase();
+    // Skip sports where running-score snapshots don't convey useful narrative
+    if (sp.includes('golf') || sp.includes('tennis') || sp.includes('atp') || sp.includes('wta')) return '';
+
+    // Score unit label per sport
+    const unit = sp.includes('soccer') || sp.includes('league') || sp.includes('mls') ||
+                 sp.includes('liga') || sp.includes('serie') || sp.includes('ligue') ||
+                 sp.includes('bundesliga') || sp.includes('ucl') || sp.includes('epl') ||
+                 sp.includes('wc26') || sp.includes('world cup')
+      ? 'goal'
+      : sp.includes('hockey') || sp.includes('nhl') ? 'goal'
+      : sp.includes('baseball') || sp.includes('mlb') ? 'run'
+      : 'point'; // NBA, NFL, CFL, AFL (AFL points = goals×6+behinds), WNBA, rugby, cricket
+
+    const hLabel = teamNick(homeLabel || '') || 'Home';
+    const aLabel = teamNick(awayLabel || '') || 'Away';
+    const parts = [];
+
+    // Lead changes: count times lead flipped (ignoring ties)
+    let prevLeader = null, leadChanges = 0;
+    let maxHomeLead = 0, maxAwayLead = 0;
+    let minTrailingSnap = null; // for comeback detection
+    const finalSnap = log[log.length - 1];
+    const finalWinnerIsHome = finalSnap.h >= finalSnap.a;
+    const finalWinner = finalWinnerIsHome ? hLabel : aLabel;
+    const finalLoser  = finalWinnerIsHome ? aLabel : hLabel;
+
+    for (const snap of log) {
+      const diff = snap.h - snap.a;
+      const leader = diff > 0 ? 'home' : diff < 0 ? 'away' : null;
+      if (leader && leader !== prevLeader && prevLeader !== null) leadChanges++;
+      if (leader) prevLeader = leader;
+      maxHomeLead = Math.max(maxHomeLead, diff);
+      maxAwayLead = Math.max(maxAwayLead, -diff);
+    }
+
+    // Biggest lead for the winner
+    const winnerMaxLead = finalWinnerIsHome ? maxHomeLead : maxAwayLead;
+    if (winnerMaxLead >= 2) {
+      const unitStr = unit === 'point' ? `${winnerMaxLead}-${unit}${winnerMaxLead === 1 ? '' : 's'}`
+        : `${winnerMaxLead}-${unit}${winnerMaxLead === 1 ? '' : 's'}`;
+      parts.push(`${finalWinner} led by as many as ${unitStr}`);
+    }
+
+    // Lead changes
+    if (leadChanges >= 2) parts.push(`${leadChanges} lead change${leadChanges === 1 ? '' : 's'}`);
+    else if (leadChanges === 1) parts.push('one lead change');
+
+    // Comeback: did the loser ever lead, and by how much?
+    const loserMaxLead = finalWinnerIsHome ? maxAwayLead : maxHomeLead;
+    if (loserMaxLead >= 2) {
+      const unitStr = `${loserMaxLead}-${unit}${loserMaxLead === 1 ? '' : 's'}`;
+      parts.push(`${finalLoser} led by ${unitStr}`);
+    }
+
+    if (!parts.length) return '';
+    return '[SCORE NARRATIVE] ' + parts.join(' · ');
+  } catch(e_) { return ''; }
+}
+
+// ── buildDramaArcDescription ──────────────────────────────────────────────────
+// Reads field_drama_history_* (drama score samples, {t,s,p}) and produces a
+// one-sentence plain-English arc description for postgame journalism.
+// Output characterises the shape: wire-to-wire, late-bloomer, early-spike,
+// sustained-thriller, or quiet-game. No composite score value is exposed in output.
+// Returns '' when < 4 samples (insufficient arc signal).
+function buildDramaArcDescription(gameId) {
+  try {
+    const hist = getDramaHistory(gameId);
+    if (hist.length < 4) return '';
+    const scores = hist.map(h => h.s);
+    const n = scores.length;
+    const peak = Math.max(...scores);
+    const peakIdx = scores.indexOf(peak);
+    const peakFrac = peakIdx / (n - 1); // 0 = early, 1 = late
+    const first3Avg  = scores.slice(0, Math.max(1, Math.floor(n * 0.25))).reduce((a,b)=>a+b,0) / Math.max(1, Math.floor(n * 0.25));
+    const last3Avg   = scores.slice(-Math.max(1, Math.floor(n * 0.25))).reduce((a,b)=>a+b,0) / Math.max(1, Math.floor(n * 0.25));
+    const midAvg     = scores.slice(Math.floor(n*0.25), Math.floor(n*0.75)).reduce((a,b)=>a+b,0) / Math.max(1, Math.floor(n*0.5));
+    const overallAvg = scores.reduce((a,b)=>a+b,0) / n;
+
+    let arc = '';
+    if (peak < 45) {
+      arc = 'Played out without much tension — low drama from start to finish.';
+    } else if (peak < 65) {
+      arc = 'Moderate drama throughout, never quite reaching the edge of the seat.';
+    } else if (overallAvg >= 65 && first3Avg >= 60 && last3Avg >= 60) {
+      // High throughout
+      arc = 'High drama from the opening moments through the final seconds — sustained thriller.';
+    } else if (peakFrac >= 0.70 && first3Avg < 55) {
+      // Quiet early, big late
+      arc = last3Avg >= 70
+        ? 'Quiet for most of the game, then erupted into a genuine nail-biter in the final stretch.'
+        : 'Built slowly before a tense finish.';
+    } else if (peakFrac <= 0.35 && last3Avg < 55) {
+      // Big early, quiet late
+      arc = 'Early fireworks that faded as one team took control — blowout after a promising start.';
+    } else if (midAvg >= 70 && last3Avg < 55) {
+      // Mid-game peak, quieted
+      arc = 'Drama peaked in the middle stages before the outcome was settled.';
+    } else if (last3Avg >= 70) {
+      arc = 'Late drama defined this one — tension built to a frantic finish.';
+    } else {
+      arc = peak >= 85
+        ? 'Had at least one electric moment even if the overall pace was uneven.'
+        : 'Competitive throughout without a definitive peak moment.';
+    }
+
+    return '[DRAMA ARC] ' + arc;
+  } catch(e_) { return ''; }
+}
+
 function buildStoryTape(gameId, maxItems=3) {
   const moments = _storyMoments[gameId];
   if (!moments?.length) return '';
@@ -29033,6 +29194,22 @@ function openBottomSheet(gameId) {
   const dramaLabel_bs = drama != null
     ? (drama >= 85 ? '🔥 Fire game' : drama >= 65 ? '⚡ Heating up' : drama >= 45 ? '● In play' : '')
     : '';
+  // Postgame: build richer drama context from history + score log
+  const _bsIsFinal = eData?.state === 'post';
+  let _bsPostgameDrama = '';
+  if (_bsIsFinal) {
+    try {
+      const _peakVal = getDramaPeak(gameId);
+      const _peakIcon = _peakVal >= 85 ? '🔥' : _peakVal >= 65 ? '⚡' : '';
+      const _sustained = getDramaSustained(gameId, 65, 60*60*1000);
+      const _trend = getDramaTrend(gameId, 6);
+      const parts = [];
+      if (_peakVal >= 50) parts.push(`${_peakIcon} Peak ${Math.round(_peakVal)}`);
+      if (_sustained >= 5) parts.push(`${Math.round(_sustained)} min high drama`);
+      if (Math.abs(_trend) >= 8) parts.push(_trend > 0 ? 'surged late ↑' : 'faded late ↓');
+      if (parts.length) _bsPostgameDrama = parts.join(' · ');
+    } catch(e_) {}
+  }
   // Standings context
   const standings = _relayStandingsCache?.[sport];
   let standingsStr = '';
@@ -29051,8 +29228,9 @@ function openBottomSheet(gameId) {
     ${scoutReport}
     ${gameBrief ? `<div class="bs-section"><div class="bs-section-label">FIELD Brief</div><div class="bs-section-body" style="font-size:.74rem;line-height:1.6">${gameBrief}</div></div>` : '<div class="bs-section bs-brief-placeholder" id="bs-brief-pending"><div class="bs-section-label">FIELD Brief</div><div class="bs-section-body" style="font-size:.74rem;line-height:1.6;opacity:.45;font-style:italic">Loading brief\u2026</div></div>'}
     ${gameBrief ? `<div class="bs-section bs-jrn-link" onclick="openJournalismForGame('${gameId}')"><div class="bs-section-label">Read full coverage →</div></div>` : ''}
-    ${dramaLabel_bs||cb ? `<div class="bs-section"><div class="bs-section-label">Live Intelligence</div><div class="bs-section-body">${[dramaLabel_bs,cb].filter(Boolean).join(' · ')}</div></div>` : ''}
-    ${sparkline ? `<div class="bs-section"><div class="bs-section-label">Drama Arc</div>${sparkline}</div>` : ''}
+    ${(_bsIsFinal && _bsPostgameDrama) ? `<div class="bs-section"><div class="bs-section-label">Game Summary</div><div class="bs-section-body">${_bsPostgameDrama}${(()=>{const _sn=buildScoreNarrativeContext(gameId,game.home||'',game.away||'',sport);return _sn?'<br>'+_sn.replace('[SCORE NARRATIVE] ',''):'';})()}</div></div>` : ''}
+    ${(!_bsIsFinal && (dramaLabel_bs||cb)) ? `<div class="bs-section"><div class="bs-section-label">Live Intelligence</div><div class="bs-section-body">${[dramaLabel_bs,cb].filter(Boolean).join(' · ')}</div></div>` : ''}
+    ${sparkline ? `<div class="bs-section"><div class="bs-section-label">Drama Arc</div>${sparkline}${_bsIsFinal?(()=>{const _ad=buildDramaArcDescription(gameId);return _ad?`<div class="bs-section-body" style="font-size:.68rem;opacity:.75;margin-top:.25rem">${_ad.replace('[DRAMA ARC] ','')}</div>`:''})():''}</div>` : ''}
     ${story ? `<div class="bs-section"><div class="bs-section-label">Story</div>${story}</div>` : ''}
     ${(game.matchupNote||game.localNote||milestoneStr) ? `<div class="bs-section"><div class="bs-section-label">Context</div><div class="bs-section-body">${[game.matchupNote||game.localNote, milestoneStr].filter(Boolean).join('<br>')}</div></div>` : ''}
     ${standingsStr||seriesMargins ? `<div class="bs-section"><div class="bs-section-label">Standings</div><div class="bs-section-body">${standingsStr}</div>${seriesMargins}</div>` : ''}
