@@ -16558,10 +16558,13 @@ function renderESPNScores(){
 
       // Inject or update the score block
       const wrapExisting = card.querySelector(".score-wrap");
-      // Guard: remove for genuine pre-game. Defend against api-sports state:"pre"
-      // for live games (fixed in mapV2ToESPN, but double-guard here).
+      // Guard: only remove score-wrap for genuine pre-game.
+      // Allow through: any live game (state=in, including 0-0 starts) and final games.
+      // The _hasLiveScores fallback defends against api-sports returning state:"pre"
+      // for an in-progress game with non-zero scores (confirmed NBA Finals G2).
       const _hasLiveScores = (score.homeScore||0) > 0 || (score.awayScore||0) > 0;
-      if(!score||(score.state==="pre" && !_hasLiveScores)){
+      const _isLiveOrFinal = score.state === 'in' || score.state === 'post' || score.state === 'halftime';
+      if(!score || (!_isLiveOrFinal && !_hasLiveScores)){
         if(wrapExisting) wrapExisting.remove();
         return;
       }
