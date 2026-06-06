@@ -1063,7 +1063,7 @@ assert('A245 — V2 in-game leaders: fetchV2Leaders + _v2LeaderCache + name-reve
   html.includes('_v2LeaderCache') &&
   html.includes('V2_LEADER_TTL') &&
   html.includes("split(' ').reverse().join(' ')") &&
-  html.includes("sport === 'nba' || sport === 'wnba') && fg.state === 'live'") &&
+  html.includes("sport === 'nba' || sport === 'wnba') && (fg.state === 'live' || v2Entry.state === 'in')") &&
   html.includes('fetchV2Leaders(sport, gameNum'),
   'V2 leaders: fetchV2Leaders must be defined, wired for live NBA/WNBA, and reverse player name');
 
@@ -1081,7 +1081,7 @@ assert('A247 — MLB in-game leaders: fetchMLBLeader + _mlbLeaderCache + wired i
   html.includes('_mlbLeaderCache') &&
   html.includes('MLB_LEADER_TTL') &&
   html.includes('pitchers[pitchers.length - 1]') &&
-  html.includes("sport === 'mlb' && fg.state === 'live'") &&
+  html.includes("sport === 'mlb' && (fg.state === 'live' || v2Entry.state === 'in')") &&
   html.includes('fetchMLBLeader(mlbGame.sourceId, key)'),
   'MLB leaders: fetchMLBLeader must be defined, use StatsAPI boxscore, and be wired for live MLB in V2 poll');
 

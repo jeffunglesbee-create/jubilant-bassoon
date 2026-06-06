@@ -13239,7 +13239,14 @@ function dropGameSocket(sport, gameId) {
 
 function mapV2ToESPN(fg) {
   if (!fg?.id) return null;
-  const state = fg.state==='live'?'in':fg.state==='final'?'post':'pre';
+  // api-sports.io sometimes returns state:"pre" even when a game is live
+  // (confirmed NBA Finals G2 2026-06-06: state="pre", clock="10:12", periodNum=2).
+  // Detect live state from clock/periodNum presence when state is wrong.
+  const hasLiveClock = fg.clock && fg.clock !== '' && fg.clock !== '00:00';
+  const isActuallyLive = fg.state === 'live' ||
+    (fg.state !== 'final' && (hasLiveClock || (fg.periodNum != null && fg.periodNum > 0 &&
+      (fg.home?.score != null || fg.away?.score != null))));
+  const state = fg.state==='final' ? 'post' : isActuallyLive ? 'in' : 'pre';
   // Guard: api-sports.io sometimes returns null scores for final games.
   // When both scores are null on a final, preserve previous values via merge guard
   // downstream. Use null (not 0) so merge guard can detect the gap.
@@ -13331,12 +13338,13 @@ async function fetchV2Leaders(sport, gameNumericId, homeTeamId, awayTeamId, espn
 
 async function fetchV2AllScores() {
   _v2PollCycle++;
-  // Use ET date (EDT = UTC-4). api-sports.io indexes US sports by the game's
-  // local Eastern date — a tip-off at 8:30 PM ET is June 3 ET but June 4 UTC,
-  // so querying the UTC date returns nothing. EDT covers the full NBA/NHL/MLB
-  // regular + playoff window (Mar–Oct). EST offset (-5h) only applies Nov–Mar
-  // when no late-night Finals games exist, so -4h is safe year-round for this.
-  const date    = new Date(Date.now() - 4 * 3600 * 1000).toISOString().slice(0, 10);
+  // Date for api-sports.io: the relay queries api-sports by UTC date.
+  // NBA/NHL Finals games at 8:30pm ET = 00:30 UTC next day → use UTC date.
+  // Previously used ET date (UTC-4) which caused late-night playoff games to
+  // return games:[] because api-sports stores them under the UTC date.
+  // Confirmed by probe 2026-06-06: date=2026-06-05 (ET) → [], date=2026-06-06 (UTC) → G2 live.
+  // MLB day games are also UTC-indexed on the relay — UTC is the correct universal key.
+  const date    = new Date().toISOString().slice(0, 10); // UTC date
   const enabled = Object.entries(FIELD_V2_SOURCES).filter(([,v]) => v).map(([k]) => k);
   if (!enabled.length) return scheduleV2Poll(60000);
 
@@ -13397,11 +13405,11 @@ async function fetchV2AllScores() {
           periodPrefix: v2Entry.periodPrefix,
           ts:           Date.now(),
         };
-        if (fg.state === 'live') anyLive = true;
+        if (fg.state === 'live' || v2Entry.state === 'in') anyLive = true;
 
         // MLB Savant WP trigger — was in ESPN poll loop; MLB removed from ESPN_SPORTS
         // so must fire here instead when a live MLB game is detected.
-        if (sport === 'mlb' && fg.state === 'live' && !espnScores[key].wp) {
+        if (sport === 'mlb' && (fg.state === 'live' || v2Entry.state === 'in') && !espnScores[key].wp) {
           try {
             const mlbSec  = (allData?.sports||[]).find(s=>(s.sport||'').includes('Baseball'));
             const mlbGame = (mlbSec?.games||[]).find(g =>
@@ -13419,7 +13427,7 @@ async function fetchV2AllScores() {
 
         // Basketball leaders — /games/statistics/players (NBA + WNBA)
         // VERIFIED 2026-05-30: endpoint exists, 28 players, name reversed, points field present.
-        if ((sport === 'nba' || sport === 'wnba') && fg.state === 'live') {
+        if ((sport === 'nba' || sport === 'wnba') && (fg.state === 'live' || v2Entry.state === 'in')) {
           const gameNum   = (fg.id || '').replace(/^bball:/, '');
           const homeTId   = fg.home?.teamId;
           const awayTId   = fg.away?.teamId;
@@ -13431,7 +13439,7 @@ async function fetchV2AllScores() {
         // MLB pitcher leaders — StatsAPI boxscore (VERIFIED: teams.{home|away}.pitchers[last] = current pitcher)
         // gamePk sourced from allData (same pattern as Savant WP trigger).
         // /games/statistics/players does NOT exist for baseball — StatsAPI is the correct source.
-        if (sport === 'mlb' && fg.state === 'live') {
+        if (sport === 'mlb' && (fg.state === 'live' || v2Entry.state === 'in')) {
           try {
             const mlbSec  = (allData?.sports||[]).find(s=>(s.sport||'').includes('Baseball'));
             const mlbGame = (mlbSec?.games||[]).find(g =>
