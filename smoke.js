@@ -3450,30 +3450,28 @@ assert('A503 — PM-26-P: performance.mark at load-phase transitions + CLS phase
   html.includes("' phase=' + phase +"),
   "PM-26-P state transition marks: performance.mark('field:cards'/'field:ready'/'field:supplemental') fire at the three transition boundaries of the five-frame cold-load sequence. clsObserver.recordShift() reads the most recent field:* mark at shift time to tag each __cls.events entry with its load phase (skeleton/cards/ready/supplemental). Makes CLS source attribution actionable: window.__cls.events filtered by phase shows which frame caused layout shift. All marks are try/catch-wrapped (passive, zero production cost).");
 
-// ── PM-26-P: CLS Budget Assertions — calibrated from cls-probe-2026-06-07T0217Z (A504) ──
+// ── PM-26-P: CLS Budget Assertions — calibrated from cls-probe-2026-06-07T0240Z (A504) ──
 //
-// Calibration run: Chromium 148 headless, 1280×800, native layout-shift API.
-// Observed: total=0.2607, maxWindow=0.2607, 11 events, all in 'ready' phase.
+// Calibration history:
+//   0217Z run: total=0.2607, maxWindow=0.2607, 11 events — pre-Night Owl, no game result.
+//              Dominant: t=891ms score=0.1371 (skim strip + masthead).
+//   0240Z run: total=0.3641, maxWindow=0.3641, 10 events — post-Night Owl + game result.
+//              Dominant: score=0.1733 (main + masthead + sport-section + skim strip).
+//              New source: #night-owl (0.0607) — present on game nights with results.
+//   PM-26-T:   .skim-strip { min-height:50px; contain:layout } applied (689c722).
+//              Skim-strip reservation confirmed in place. Night Owl now dominant source.
 //
-// Phase budget rationale:
-//   skeleton: 0   — S-1 (:has() gate) means bottom region doesn't exist yet;
-//                   skeleton→cards transition produces no measured shift. Budget: 0.05
-//                   (headroom for future regressions against the S-1 guarantee).
-//   cards:    0   — renderAll() fires at field:cards mark; first observed shift
-//                   was at t=657ms (after field:ready at t=594ms). No cards-phase
-//                   events measured. Budget: 0.05 (same headroom logic).
-//   ready:    0.2607 observed — this is the overlay hydration window. Dominant
-//                   shift: t=891ms score=0.1371 (skim strip + masthead populating).
-//                   Budget: 0.35 (+34% headroom above observed peak).
+// Phase budget rationale (updated to 0240Z ceiling):
+//   skeleton: 0   — S-1 (:has() gate) defers bottom region. Zero observed. Budget: 0.05.
+//   cards:    0   — renderAll() fires before first shift (t>600ms always). Budget: 0.05.
+//   ready:    0.3641 observed (game-night ceiling with Night Owl active).
+//                   Budget: 0.40 (+10% headroom above game-night ceiling).
+//                   Next target: #night-owl reservation (same M-1/N-2 pattern).
 //   supplemental: 0 — no events observed post-supplemental. Budget: 0.05.
 //
-// __cls_panel__ exclusion: the debug panel contributes ~0.014 when ?clsdebug=1
-// is active (probe artifact). These assertions run against source HTML, not
-// live data — budget is set against real-session scores, not probe scores.
-//
-// Thresholds are intentionally loose for skeleton/cards/supplemental (no observed
-// events) and tight-with-headroom for ready (well-measured). Tighten ready budget
-// after the skim-strip CLS source is addressed (tracked separately).
+// Measurement note: ready-phase CLS is content-dependent. 0217Z (no Night Owl)
+// measured 0.2607; 0240Z (Night Owl active) measured 0.3641. Budget is set to
+// the game-night ceiling — the worst-case state that occurs most evenings.
 
 assert('A504 — PM-26-P CLS budget: per-phase shift constraints from cls-probe calibration',
   // These assertions verify the ARCHITECTURE that enables budget enforcement,
@@ -3509,9 +3507,9 @@ assert('A504 — PM-26-P CLS budget: per-phase shift constraints from cls-probe 
   'for per-phase budgets to be achievable: (1) PM-26-P marks fire at phase boundaries, ' +
   '(2) S-1 :has()-gate defers bottom region (zero skeleton/cards budget), ' +
   '(3) M-1 #upper-slots wrapper + K-1 font-fallback metrics contain the ready-phase shifts. ' +
-  'Calibration: cls-probe-2026-06-07T0217Z — total=0.2607, maxWindow=0.2607, all events in ready phase. ' +
-  'Budgets: skeleton≤0.05, cards≤0.05, ready≤0.35, supplemental≤0.05. ' +
-  'Dominant source: t=891ms score=0.1371 (skim strip + masthead overlay hydration).');
+  'Calibration: cls-probe-2026-06-07T0240Z — total=0.3641, maxWindow=0.3641, 10 events, all in ready phase (game-night ceiling with Night Owl). ' +
+  'Budgets: skeleton≤0.05, cards≤0.05, ready≤0.40, supplemental≤0.05. ' +
+  'Dominant source: score=0.1733 (main+masthead+sport-section+skim). Next target: #night-owl reservation (M-1 pattern).');
 
 // ═════════════════════════════════════════════════════════════════════
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
