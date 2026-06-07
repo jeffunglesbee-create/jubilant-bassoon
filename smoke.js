@@ -3538,6 +3538,32 @@ assert('A505 — PM-31-JQ: brand-safe fallback renders editorial attribution whe
   html.includes('PM-31-JQ'),
   'PM-31-JQ brand-safe JQ gate fallback: when all journalism paths exhaust (relay KV miss + compound null + fetchFIELDBriefFromClaude null), renders canonical editorial card: "Tonight\'s narrative is unsettled... We don\'t write what we can\'t verify." with attribution line showing retries/layer from window._lastJQAudit. .jq-fallback CSS class applied (italic muted). .field-brief-attribution element inserted after text. Failure mode is brand-defining — never silence, never generic prose.');
 
+// ── PM-31-DD: Drama Dial Header Chip (A506) ───────────────────────────────────
+// Pre-game card chip surfacing user's Drama Dial sensitivity as a factual label.
+// Patent Defense Layer 2: server sends identical data; chip label is derived
+// entirely from client-side localStorage — server cannot influence it.
+
+assert('A506 — PM-31-DD: Drama Dial chip on pre-game cards shows user sensitivity label',
+  // buildDramaDialChip function exists
+  html.includes('function buildDramaDialChip()') &&
+  // Three canonical labels based on dial range (45-90, default 65)
+  html.includes("label=v<=54?'SENSITIVE':v<=69?'STANDARD':'SELECTIVE'") &&
+  // Chip class applied
+  html.includes('class="drama-dial-chip"') &&
+  // Chip wired into card template, only on pre-game (!isLive)
+  html.includes('!isLive?buildDramaDialChip():""') &&
+  // CSS rule present
+  html.includes('.drama-dial-chip{') &&
+  // Tapping chip opens My Services (Drama Dial section)
+  html.includes('openMyServices?.()') &&
+  // PM-31-DD comment for traceability
+  html.includes('PM-31-DD') &&
+  // RUWT compliance: chip reads getDramaDial() (user-controlled localStorage)
+  html.includes('getDramaDial()') &&
+  // Patent Defense Layer 2 comment present
+  html.includes('Patent Defense Layer 2'),
+  'PM-31-DD Drama Dial header chip: pre-game cards show user\'s Drama Dial sensitivity (SENSITIVE/STANDARD/SELECTIVE) derived from getDramaDial() (localStorage, 45-90, default 65). Server sends identical data — label is purely client-side. Patent Defense Layer 2: personalization without server-side classification. RUWT compliant: factual label of user\'s own setting, never a numeric score. Chip taps open My Services modal. Hidden on live cards (drama badges shown instead).');
+
 // ═════════════════════════════════════════════════════════════════════
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);

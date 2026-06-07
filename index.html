@@ -1309,6 +1309,7 @@ body::before{
 .series-preview-text{font-size:.72rem;color:var(--text-muted,#b0b0c0);line-height:1.55;font-style:italic}
 .series-preview-text.loaded{color:var(--fg,#e8e8f0);font-style:normal}
 .rival-badge{display:inline-flex;align-items:center;gap:.2rem;font-size:.52rem;font-weight:700;color:#f97316;background:rgba(249,115,22,.12);border:1px solid rgba(249,115,22,.3);border-radius:3px;padding:.1rem .3rem;margin-left:.25rem;vertical-align:middle}
+.drama-dial-chip{font-size:.5rem;padding:.06rem .28rem;border-radius:3px;font-weight:700;letter-spacing:.06em;border:1px solid rgba(100,181,246,.3);color:#64b5f6;background:rgba(100,181,246,.08);cursor:pointer;white-space:nowrap}
 .game-card.rival-card{border-color:rgba(249,115,22,.25)!important}
 .game-card.rival-card .card-accent{background:#f97316!important}
 .filter-btn.rivals-btn{color:#f97316;border-color:rgba(249,115,22,.4)}
@@ -8543,7 +8544,7 @@ function renderAll(){
           <div class="info-row">
             <span class="league-badge">${g.league||sec.sport}</span>${MY_TEAMS.has(g.home)||MY_TEAMS.has(g.away)?'<span class="my-team-badge">★ MY TEAM</span>':""}${typeof isRivalGame==="function"&&MY_TEAMS.size>0&&isRivalGame(g)?'<span class="rival-badge">RIVAL</span>':""}
             ${g.seriesRecord&&g.seriesRecord!=='0-0'?`<span class="league-badge" style="color:var(--gold2);border-color:rgba(201,168,76,.3)">${g.seriesRecord}</span>`:""}${buildSeriesMarginsDots(g)}
-            <button class="watch-btn" data-id="${g._id}">+ Multiview</button>
+            ${!isLive?buildDramaDialChip():""}<button class="watch-btn" data-id="${g._id}">+ Multiview</button>
           </div>
           ${g.venue&&!g.league?.includes("Playoffs")?`<div class="venue-line">${g.venue}</div>`:""}
           ${(g.espnGOTD||g.peacockGOTD||g.mlbnShowcase||g.localNote||g.gotdStreams||g._cflSpread!=null||g._cflTotal!=null)?`<div class="badge-row">
@@ -26766,6 +26767,19 @@ function _otwTierLabel(tier) {
   if (tier === 'CLOSE_FINISH') return 'CLOSE GAME';
   if (tier === 'LIVE_GAME')    return 'LIVE';
   return 'LIVE';
+}
+
+// ── PM-31-DD: Drama Dial header chip ─────────────────────────────────────────
+// Pre-game card chip showing user's current Drama Dial sensitivity setting.
+// Patent Defense Layer 2: server sends identical data to all users; each card
+// renders a different chip label based on the client-side localStorage value.
+// RUWT compliance: chip is a factual label (user's own setting), never a score.
+// Tapping the chip opens the My Services modal to the Drama Dial section.
+// Only shown on pre-game cards (!isLive) — live cards show drama badges instead.
+function buildDramaDialChip(){
+  const v=getDramaDial();
+  const label=v<=54?'SENSITIVE':v<=69?'STANDARD':'SELECTIVE';
+  return `<span class="drama-dial-chip" title="Your Drama Dial: ${v} — tap to adjust" onclick="event.stopPropagation();openMyServices?.()">${label}</span>`;
 }
 
 function injectDramaBadges(){
