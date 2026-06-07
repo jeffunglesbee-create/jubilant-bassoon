@@ -3543,26 +3543,56 @@ assert('A505 — PM-31-JQ: brand-safe fallback renders editorial attribution whe
 // Patent Defense Layer 2: server sends identical data; chip label is derived
 // entirely from client-side localStorage — server cannot influence it.
 
-assert('A506 — PM-31-DD: Drama Dial chip on pre-game cards shows user sensitivity label',
-  // buildDramaDialChip function exists
-  html.includes('function buildDramaDialChip()') &&
-  // Three canonical labels based on dial range (45-90, default 65)
-  html.includes("label=v<=54?'SENSITIVE':v<=69?'STANDARD':'SELECTIVE'") &&
-  // Chip class applied
-  html.includes('class="drama-dial-chip"') &&
-  // Chip wired into card template, only on pre-game (!isLive)
-  html.includes('!isLive?buildDramaDialChip():""') &&
-  // CSS rule present
+assert('A506 — PM-31-DD → PM-32-VI: drama-dial-chip superseded by Viewer Intelligence chip system',
+  // buildDramaDialChip replaced by buildViewerIntelChip (PM-32-VI upgrade)
+  !html.includes('function buildDramaDialChip()') &&
+  html.includes('function buildViewerIntelChip(g,sections,mode)') &&
+  // drama-dial-chip CSS retained (legacy, not used in cards) — chip CSS migrated to viewer-intel-chip
   html.includes('.drama-dial-chip{') &&
-  // Tapping chip opens My Services (Drama Dial section)
-  html.includes('openMyServices?.()') &&
-  // PM-31-DD comment for traceability
-  html.includes('PM-31-DD') &&
-  // RUWT compliance: chip reads getDramaDial() (user-controlled localStorage)
-  html.includes('getDramaDial()') &&
-  // Patent Defense Layer 2 comment present
-  html.includes('Patent Defense Layer 2'),
-  'PM-31-DD Drama Dial header chip: pre-game cards show user\'s Drama Dial sensitivity (SENSITIVE/STANDARD/SELECTIVE) derived from getDramaDial() (localStorage, 45-90, default 65). Server sends identical data — label is purely client-side. Patent Defense Layer 2: personalization without server-side classification. RUWT compliant: factual label of user\'s own setting, never a numeric score. Chip taps open My Services modal. Hidden on live cards (drama badges shown instead).');
+  html.includes('.viewer-intel-chip{') &&
+  // Card template uses new chip system
+  html.includes('buildViewerIntelChip(g,') &&
+  // PM-31-DD comment preserved for traceability (in PM-32-VI block)
+  html.includes('PM-31-DD') || html.includes('PM-32-VI'),
+  'PM-31-DD Drama Dial chip superseded by PM-32-VI Viewer Intelligence chip system. buildDramaDialChip() replaced with buildViewerIntelChip() which adds three user-controlled modes, four signal types, and game-specific intelligence. drama-dial-chip CSS retained; viewer-intel-chip CSS added with four variant classes.');
+
+// ── PM-32-VI: Viewer Intelligence Chip System (A507) ─────────────────────────
+// Three-mode pre-game chip (STAKES/STORIES/MY TEAMS) surfacing game-specific
+// intelligence. No composite score. Client-side only. Patent Defense Layer 2.
+
+assert('A507 — PM-32-VI: Viewer Intelligence chip with three-mode user-controlled priority ordering',
+  // Core functions exist
+  html.includes('function getViewerIntelMode()') &&
+  html.includes('function setViewerIntelMode(mode)') &&
+  html.includes('function buildViewerIntelChip(g,sections,mode)') &&
+  // Three modes with correct localStorage key
+  html.includes("localStorage.getItem('field_viewer_intel_mode')") &&
+  html.includes("localStorage.setItem('field_viewer_intel_mode',mode)") &&
+  html.includes("(v==='stories'||v==='myteams')?v:'stakes'") &&
+  // Four chip labels
+  html.includes("DON'T MISS") &&
+  html.includes('STORY GAME') &&
+  html.includes('ONLY GAME') &&
+  html.includes('YOUR TEAM') &&
+  // Four CSS classes
+  html.includes('vic-critical') &&
+  html.includes('vic-story') &&
+  html.includes('vic-only') &&
+  html.includes('vic-team') &&
+  // Anti-hype gate — never chip a J1-flagged game
+  html.includes('if(isAntiHype) return') &&
+  // Silence is information — no chip when no signal fires
+  html.includes("return ''; // No signal fires") &&
+  // Card template uses new chip
+  html.includes('buildViewerIntelChip(g,') &&
+  // My Services modal has mode selector
+  html.includes('viewer-intel-mode-wrap') &&
+  html.includes("data-mode=\"stakes\"") &&
+  html.includes("data-mode=\"stories\"") &&
+  html.includes("data-mode=\"myteams\"") &&
+  // PM-32-VI comment for traceability
+  html.includes('PM-32-VI'),
+  'PM-32-VI Viewer Intelligence chip: three user-controlled modes (stakes/stories/myteams) reorder four boolean signals (highStakes/hasNarrative/isOnlyGame/isMyTeam) to produce game-specific chip labels (DON\'T MISS/STORY GAME/ONLY GAME/YOUR TEAM). No composite score. Anti-hype gate prevents chips on J1-flagged games. Silence (no chip) when no signal fires. Mode selector in My Services modal. Client-side only — server cannot influence output. Patent Defense Layer 2 + ADR-002 Component 2. RUWT: all signals are factual conditions, not excitement measures.');
 
 // ═════════════════════════════════════════════════════════════════════
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);

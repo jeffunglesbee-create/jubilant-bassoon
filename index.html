@@ -1310,6 +1310,16 @@ body::before{
 .series-preview-text.loaded{color:var(--fg,#e8e8f0);font-style:normal}
 .rival-badge{display:inline-flex;align-items:center;gap:.2rem;font-size:.52rem;font-weight:700;color:#f97316;background:rgba(249,115,22,.12);border:1px solid rgba(249,115,22,.3);border-radius:3px;padding:.1rem .3rem;margin-left:.25rem;vertical-align:middle}
 .drama-dial-chip{font-size:.5rem;padding:.06rem .28rem;border-radius:3px;font-weight:700;letter-spacing:.06em;border:1px solid rgba(100,181,246,.3);color:#64b5f6;background:rgba(100,181,246,.08);cursor:pointer;white-space:nowrap}
+.viewer-intel-chip{font-size:.5rem;padding:.06rem .28rem;border-radius:3px;font-weight:700;letter-spacing:.06em;cursor:pointer;white-space:nowrap;transition:opacity .15s}
+.viewer-intel-chip.vic-critical{border:1px solid rgba(244,67,54,.45);color:#f44336;background:rgba(244,67,54,.1)}
+.viewer-intel-chip.vic-story{border:1px solid rgba(201,168,76,.45);color:var(--gold2,#c9a84c);background:rgba(201,168,76,.08)}
+.viewer-intel-chip.vic-only{border:1px solid rgba(100,181,246,.35);color:#64b5f6;background:rgba(100,181,246,.07)}
+.viewer-intel-chip.vic-team{border:1px solid rgba(74,222,128,.35);color:#4ade80;background:rgba(74,222,128,.07)}
+.viewer-intel-mode-wrap{padding:.75rem 0;border-bottom:1px solid var(--edge)}
+.viewer-intel-mode-label{font-family:var(--ff-cond);font-size:.65rem;letter-spacing:.18em;text-transform:uppercase;color:var(--gold2);margin-bottom:.5rem}
+.viewer-intel-mode-row{display:flex;gap:.5rem;flex-wrap:wrap}
+.vim-btn{font-size:.65rem;padding:.3rem .65rem;border-radius:6px;border:1px solid var(--edge);background:transparent;color:var(--muted);cursor:pointer;font-weight:600;letter-spacing:.04em;transition:all .15s}
+.vim-btn.active{border-color:var(--gold2);color:var(--gold2);background:rgba(201,168,76,.1)}
 .game-card.rival-card{border-color:rgba(249,115,22,.25)!important}
 .game-card.rival-card .card-accent{background:#f97316!important}
 .filter-btn.rivals-btn{color:#f97316;border-color:rgba(249,115,22,.4)}
@@ -3748,6 +3758,15 @@ body.wc-mode #wc-section{animation:wcFadeIn 220ms ease-out}
           <span>🔥</span>
         </div>
         <div class="drama-dial-preview" id="dial-preview"></div>
+      </div>
+      <div class="viewer-intel-mode-wrap">
+        <div class="viewer-intel-mode-label">What matters most to you?</div>
+        <div class="viewer-intel-mode-row">
+          <button class="vim-btn" data-mode="stakes"  onclick="setViewerIntelMode('stakes')">⚡ Stakes</button>
+          <button class="vim-btn" data-mode="stories" onclick="setViewerIntelMode('stories')">📖 Stories</button>
+          <button class="vim-btn" data-mode="myteams" onclick="setViewerIntelMode('myteams')">★ My Teams</button>
+        </div>
+        <div style="font-size:.6rem;color:var(--muted);margin-top:.4rem;line-height:1.5" id="vim-preview"></div>
       </div>
       <div class="setup-intro">
         Select the streaming services and TV packages you subscribe to.
@@ -6963,6 +6982,14 @@ function openSetup(){
     if(preview){const v=getDramaDial();preview.textContent=`Close games get badges · ${Math.min(v+20,95)===95?'Only the tightest':v<=50?'Nearly all':'Most'} close games get alerts`;}
     dial.oninput=function(){setDramaDial(this.value);};
   }
+  // ── Viewer Intel Mode init ─────────────────────────────────────────
+  const _vim=getViewerIntelMode();
+  document.querySelectorAll('.vim-btn').forEach(b=>b.classList.toggle('active',b.dataset.mode===_vim));
+  const _vimPrev=document.getElementById('vim-preview');
+  if(_vimPrev){
+    const _vimDesc={stakes:'Consequence first — elimination games and series-defining moments ranked above everything.',stories:'Narrative first — named storylines, historic moments, and milestones ranked above everything.',myteams:'Your teams first — games featuring teams you follow ranked above everything.'};
+    _vimPrev.textContent=_vimDesc[_vim]||_vimDesc.stakes;
+  }
   const _ov1 = getEl("setup-overlay"); if(_ov1) _ov1.style.display = "flex";
   // Show geo market hint banner
   const city = sessionStorage.getItem("field_geo_city")||"";
@@ -8544,7 +8571,7 @@ function renderAll(){
           <div class="info-row">
             <span class="league-badge">${g.league||sec.sport}</span>${MY_TEAMS.has(g.home)||MY_TEAMS.has(g.away)?'<span class="my-team-badge">★ MY TEAM</span>':""}${typeof isRivalGame==="function"&&MY_TEAMS.size>0&&isRivalGame(g)?'<span class="rival-badge">RIVAL</span>':""}
             ${g.seriesRecord&&g.seriesRecord!=='0-0'?`<span class="league-badge" style="color:var(--gold2);border-color:rgba(201,168,76,.3)">${g.seriesRecord}</span>`:""}${buildSeriesMarginsDots(g)}
-            ${!isLive?buildDramaDialChip():""}<button class="watch-btn" data-id="${g._id}">+ Multiview</button>
+            ${!isLive?buildViewerIntelChip(g,sec?[sec]:[])||"":""}<button class="watch-btn" data-id="${g._id}">+ Multiview</button>
           </div>
           ${g.venue&&!g.league?.includes("Playoffs")?`<div class="venue-line">${g.venue}</div>`:""}
           ${(g.espnGOTD||g.peacockGOTD||g.mlbnShowcase||g.localNote||g.gotdStreams||g._cflSpread!=null||g._cflTotal!=null)?`<div class="badge-row">
@@ -26769,17 +26796,108 @@ function _otwTierLabel(tier) {
   return 'LIVE';
 }
 
-// ── PM-31-DD: Drama Dial header chip ─────────────────────────────────────────
-// Pre-game card chip showing user's current Drama Dial sensitivity setting.
-// Patent Defense Layer 2: server sends identical data to all users; each card
-// renders a different chip label based on the client-side localStorage value.
-// RUWT compliance: chip is a factual label (user's own setting), never a score.
-// Tapping the chip opens the My Services modal to the Drama Dial section.
-// Only shown on pre-game cards (!isLive) — live cards show drama badges instead.
-function buildDramaDialChip(){
-  const v=getDramaDial();
-  const label=v<=54?'SENSITIVE':v<=69?'STANDARD':'SELECTIVE';
-  return `<span class="drama-dial-chip" title="Your Drama Dial: ${v} — tap to adjust" onclick="event.stopPropagation();openMyServices?.()">${label}</span>`;
+// ── PM-32-VI: Viewer Intelligence Chip ──────────────────────────────────────
+// Pre-game card chip surfacing game-specific intelligence at the intelligence
+// level the user has configured. Three modes (STAKES / STORIES / MY TEAMS)
+// reorder the same four boolean signals — no composite score, no server signal.
+//
+// Patent Defense Layer 2: client-side only (localStorage). Server sends
+// identical data; each card renders differently based on user preference.
+// ADR-002 Component 2: pure client-side classification.
+// RUWT: all signals are factual conditions (elimination status, named narrative
+// presence, schedule scarcity, team membership) — not excitement measures.
+// Patent offense: user-controlled multi-dimensional boolean classification
+// ordering is novel architecture distinct from RUWT's universal interest level.
+//
+// Modes:
+//   stakes  — consequence-first (elimination > series-defining > story > scarcity > team)
+//   stories — narrative-first  (story > elimination > scarcity > team)
+//   myteams — proximity-first  (team > elimination > story > scarcity)
+
+function getViewerIntelMode(){
+  const v=localStorage.getItem('field_viewer_intel_mode');
+  return (v==='stories'||v==='myteams')?v:'stakes';
+}
+function setViewerIntelMode(mode){
+  if(mode==='stories'||mode==='myteams'||mode==='stakes'){
+    localStorage.setItem('field_viewer_intel_mode',mode);
+  }
+  // Update button states if modal is open
+  document.querySelectorAll('.vim-btn').forEach(b=>{
+    b.classList.toggle('active',b.dataset.mode===mode);
+  });
+  const _vp=document.getElementById('vim-preview');
+  if(_vp){
+    const _vd={stakes:'Consequence first — elimination games and series-defining moments ranked above everything.',stories:'Narrative first — named storylines, historic moments, and milestones ranked above everything.',myteams:'Your teams first — games featuring teams you follow ranked above everything.'};
+    _vp.textContent=_vd[mode]||_vd.stakes;
+  }
+  // Re-render all pre-game chips with new mode
+  document.querySelectorAll('.viewer-intel-chip[data-gameid]').forEach(chip=>{
+    const gid=chip.dataset.gameid;
+    const card=[...document.querySelectorAll('.game-card')].find(c=>c.dataset.gameid===gid);
+    if(!card||card.classList.contains('espn-live')) return;
+    const g=(allData?.sports||[]).flatMap(s=>s.games||[]).find(g=>g._id===gid);
+    if(!g) return;
+    const newChip=buildViewerIntelChip(g,allData?.sports||[],mode);
+    if(newChip){
+      chip.outerHTML=newChip;
+    } else {
+      chip.remove();
+    }
+  });
+}
+
+function buildViewerIntelChip(g,sections,mode){
+  if(!g) return '';
+  mode=mode||getViewerIntelMode();
+
+  // ── Signal computation (all boolean/categorical — no composite score) ─────
+  // S: Stakes — consequence-based (pre-game facts only, never game state)
+  const isElim   = g._gameImportance==='elimination'||g._gameImportance==='series_deciding';
+  const isPlayoff= !!(g._gameImportance)||/playoff|final|semifinal|conference|cup final/i.test(g.league||'');
+  const seriesRec= (g.seriesRecord||'').trim();
+  // Series G5/G6/G7 detection — high-leverage elimination-adjacent games
+  const isLateGame=/G[567]|Game\s*[567]/i.test(g.gameLabel||g.league||'');
+  const highStakes= isElim||(isPlayoff&&(isLateGame||/leads\s+[23]-[23]/i.test(seriesRec)));
+
+  // N: Narrative — named storyline present (overlay matchupNote + importance set)
+  const hasNarrative=!!(g.matchupNote&&g.matchupNote.length>40&&g._gameImportance);
+
+  // Q: Scarcity — sole game in this sport tonight
+  const sport=(g._sport||g._section||'').toLowerCase().split('(')[0].trim();
+  const sportGames=(sections||[]).filter(s=>(s.sport||'').toLowerCase().includes(sport.split(' ')[0])).flatMap(s=>s.games||[]).length;
+  const isOnlyGame=sportGames===1;
+
+  // P: Proximity — user's saved team playing (client-side localStorage only)
+  const isMyTeam=typeof MY_TEAMS!=='undefined'&&(MY_TEAMS.has(g.home)||MY_TEAMS.has(g.away));
+
+  // A: Anti-hype gate — J1 flagged this game as low-stakes
+  const isAntiHype=!!(g._antiHype);
+  if(isAntiHype) return ''; // Never chip a game FIELD has flagged low-stakes
+
+  // ── Mode-ordered label hierarchy ──────────────────────────────────────────
+  // stakes: consequence first
+  // stories: narrative first
+  // myteams: proximity first
+  // No arithmetic. Priority order encodes the weighting.
+
+  if(mode==='stakes'){
+    if(highStakes)   return `<span class="viewer-intel-chip vic-critical" data-gameid="${g._id||''}" title="High-stakes game — consequence matters" onclick="event.stopPropagation();openSetup?.()">DON'T MISS</span>`;
+    if(hasNarrative) return `<span class="viewer-intel-chip vic-story"    data-gameid="${g._id||''}" title="Named storylines — context beyond the score" onclick="event.stopPropagation();openSetup?.()">STORY GAME</span>`;
+    if(isOnlyGame)   return `<span class="viewer-intel-chip vic-only"     data-gameid="${g._id||''}" title="Only ${sport} game tonight" onclick="event.stopPropagation();openSetup?.()">ONLY GAME</span>`;
+    if(isMyTeam)     return `<span class="viewer-intel-chip vic-team"     data-gameid="${g._id||''}" title="Your team is playing" onclick="event.stopPropagation();openSetup?.()">YOUR TEAM</span>`;
+  } else if(mode==='stories'){
+    if(hasNarrative) return `<span class="viewer-intel-chip vic-story"    data-gameid="${g._id||''}" title="Named storylines — context beyond the score" onclick="event.stopPropagation();openSetup?.()">STORY GAME</span>`;
+    if(highStakes)   return `<span class="viewer-intel-chip vic-critical" data-gameid="${g._id||''}" title="High-stakes game — consequence matters" onclick="event.stopPropagation();openSetup?.()">DON'T MISS</span>`;
+    if(isOnlyGame)   return `<span class="viewer-intel-chip vic-only"     data-gameid="${g._id||''}" title="Only ${sport} game tonight" onclick="event.stopPropagation();openSetup?.()">ONLY GAME</span>`;
+    if(isMyTeam)     return `<span class="viewer-intel-chip vic-team"     data-gameid="${g._id||''}" title="Your team is playing" onclick="event.stopPropagation();openSetup?.()">YOUR TEAM</span>`;
+  } else { // myteams
+    if(isMyTeam)     return `<span class="viewer-intel-chip vic-team"     data-gameid="${g._id||''}" title="Your team is playing" onclick="event.stopPropagation();openSetup?.()">YOUR TEAM</span>`;
+    if(highStakes)   return `<span class="viewer-intel-chip vic-critical" data-gameid="${g._id||''}" title="High-stakes game — consequence matters" onclick="event.stopPropagation();openSetup?.()">DON'T MISS</span>`;
+    if(hasNarrative) return `<span class="viewer-intel-chip vic-story"    data-gameid="${g._id||''}" title="Named storylines — context beyond the score" onclick="event.stopPropagation();openSetup?.()">STORY GAME</span>`;
+    if(isOnlyGame)   return `<span class="viewer-intel-chip vic-only"     data-gameid="${g._id||''}" title="Only ${sport} game tonight" onclick="event.stopPropagation();openSetup?.()">ONLY GAME</span>`;
+  }
+  return ''; // No signal fires — no chip (silence is information)
 }
 
 function injectDramaBadges(){
