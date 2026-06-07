@@ -12,7 +12,7 @@
     },
     "ai_notes": true,
     "ai_backend": "gemini-3.1-flash-lite",
-    "note": "Phase 1: schedules block added. Broadcast + series records patched manually 2026-06-06.",
+    "note": "Phase 1: schedules block added. Broadcast + series records patched manually 2026-06-07.",
     "patched_at": "2026-06-06T manual broadcast verification"
   },
   "schedules": {
@@ -21,11 +21,11 @@
         "sport": "NHL",
         "home": "Vegas Golden Knights",
         "away": "Carolina Hurricanes",
-        "start_time": "2026-06-07T00:00:00Z",
+        "start_time": "2026-06-10T00:00:00Z",
         "venue": "T-Mobile Arena",
-        "seriesRecord": "Tied 1-1",
+        "seriesRecord": "VGK leads 2-1",
         "isPlayoff": true,
-        "gameLabel": "Stanley Cup Final Game 3",
+        "gameLabel": "Stanley Cup Final Game 4",
         "nationalBundle": "ESPN",
         "round": "SCF",
         "confirmed": true
@@ -277,8 +277,8 @@
   "game_overlays": [
     {
       "_match_key": "Vegas Golden Knights|Carolina Hurricanes",
-      "seriesRecord": "Tied 1-1",
-      "matchupNote": "The series shifts to Las Vegas with the Cup Final evenly matched at 1-1. Vegas won Game 1 on the road with a late Hertl goal; Carolina stormed back in Game 2 with three third-period goals and a Seth Jarvis OT winner. The Golden Knights take home ice for Games 3 and 4."
+      "seriesRecord": "VGK leads 2-1",
+      "matchupNote": "Vegas survived a dramatic collapse in G3 \u2014 led 4-0, nearly blew it as Carolina scored three goals in 39 seconds (fastest in SCF history), then Svechnikov tied it late before Shea Theodore won it in double OT off a wild bounce. VGK can push Carolina to the brink in Game 4 Tuesday; another loss and the Hurricanes face elimination."
     },
     {
       "_match_key": "New York Knicks|San Antonio Spurs",
