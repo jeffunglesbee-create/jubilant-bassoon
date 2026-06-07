@@ -1,0 +1,206 @@
+{
+  "probe": "cls-probe",
+  "ts": "2026-06-07T0217Z",
+  "url": "https://jubilant-bassoon.jeffunglesbee.workers.dev",
+  "postReadyWaitMs": 4000,
+  "consoleLines": [
+    "[CLS] t=657ms score=0.0222 cumul=0.0222 window=0.0222 phase=ready sources=[main#main.main, div#the-skim.skim-strip, #text, #text, div.privacy-actions]",
+    "[CLS] t=891ms score=0.1371 cumul=0.1592 window=0.1592 phase=ready sources=[main#main.main, header.masthead, div#the-skim.skim-strip, ::before, ::after]",
+    "[CLS] t=978ms score=0.0043 cumul=0.1635 window=0.1635 phase=ready sources=[div#__cls_panel__]",
+    "[CLS] t=1401ms score=0.0611 cumul=0.2246 window=0.2246 phase=ready sources=[main#main.main]",
+    "[CLS] t=1457ms score=0.0055 cumul=0.2301 window=0.2301 phase=ready sources=[main#main.main]",
+    "[CLS] t=1860ms score=0.0208 cumul=0.2509 window=0.2509 phase=ready sources=[div]",
+    "[CLS] t=1940ms score=0.0016 cumul=0.2526 window=0.2526 phase=ready sources=[div#__cls_panel__]",
+    "[CLS] t=2489ms score=0.0009 cumul=0.2534 window=0.2534 phase=ready sources=[div#__cls_panel__]",
+    "[CLS] t=2976ms score=0.0009 cumul=0.2544 window=0.2544 phase=ready sources=[div#__cls_panel__]",
+    "[CLS] t=3460ms score=0.0009 cumul=0.2553 window=0.2553 phase=ready sources=[div#__cls_panel__]",
+    "[CLS] t=3932ms score=0.0054 cumul=0.2607 window=0.2607 phase=ready sources=[div#__cls_panel__]"
+  ],
+  "cls": {
+    "mode": "native",
+    "supported": true,
+    "total": 0.2607,
+    "maxWindow": 0.2607,
+    "eventCount": 11,
+    "byPhase": {
+      "ready": {
+        "count": 11,
+        "total": 0.2607,
+        "maxSingle": 0.1371
+      }
+    },
+    "topSources": [
+      {
+        "src": "main#main.main + header.masthead + div#the-skim.skim-strip + ::before + ::after",
+        "score": 0.1371
+      },
+      {
+        "src": "main#main.main",
+        "score": 0.0666
+      },
+      {
+        "src": "main#main.main + div#the-skim.skim-strip + #text + #text + div.privacy-actions",
+        "score": 0.0222
+      },
+      {
+        "src": "div",
+        "score": 0.0208
+      },
+      {
+        "src": "div#__cls_panel__",
+        "score": 0.014
+      }
+    ],
+    "events": [
+      {
+        "t": 657,
+        "score": 0.0222,
+        "cumul": 0.0222,
+        "window": 0.0222,
+        "phase": "ready",
+        "sources": [
+          "main#main.main",
+          "div#the-skim.skim-strip",
+          "#text",
+          "#text",
+          "div.privacy-actions"
+        ],
+        "fallback": false
+      },
+      {
+        "t": 891,
+        "score": 0.1371,
+        "cumul": 0.1592,
+        "window": 0.1592,
+        "phase": "ready",
+        "sources": [
+          "main#main.main",
+          "header.masthead",
+          "div#the-skim.skim-strip",
+          "::before",
+          "::after"
+        ],
+        "fallback": false
+      },
+      {
+        "t": 978,
+        "score": 0.0043,
+        "cumul": 0.1635,
+        "window": 0.1635,
+        "phase": "ready",
+        "sources": [
+          "div#__cls_panel__"
+        ],
+        "fallback": false
+      },
+      {
+        "t": 1401,
+        "score": 0.0611,
+        "cumul": 0.2246,
+        "window": 0.2246,
+        "phase": "ready",
+        "sources": [
+          "main#main.main"
+        ],
+        "fallback": false
+      },
+      {
+        "t": 1457,
+        "score": 0.0055,
+        "cumul": 0.2301,
+        "window": 0.2301,
+        "phase": "ready",
+        "sources": [
+          "main#main.main"
+        ],
+        "fallback": false
+      },
+      {
+        "t": 1860,
+        "score": 0.0208,
+        "cumul": 0.2509,
+        "window": 0.2509,
+        "phase": "ready",
+        "sources": [
+          "div"
+        ],
+        "fallback": false
+      },
+      {
+        "t": 1940,
+        "score": 0.0016,
+        "cumul": 0.2526,
+        "window": 0.2526,
+        "phase": "ready",
+        "sources": [
+          "div#__cls_panel__"
+        ],
+        "fallback": false
+      },
+      {
+        "t": 2489,
+        "score": 0.0009,
+        "cumul": 0.2534,
+        "window": 0.2534,
+        "phase": "ready",
+        "sources": [
+          "div#__cls_panel__"
+        ],
+        "fallback": false
+      },
+      {
+        "t": 2976,
+        "score": 0.0009,
+        "cumul": 0.2544,
+        "window": 0.2544,
+        "phase": "ready",
+        "sources": [
+          "div#__cls_panel__"
+        ],
+        "fallback": false
+      },
+      {
+        "t": 3460,
+        "score": 0.0009,
+        "cumul": 0.2553,
+        "window": 0.2553,
+        "phase": "ready",
+        "sources": [
+          "div#__cls_panel__"
+        ],
+        "fallback": false
+      },
+      {
+        "t": 3932,
+        "score": 0.0054,
+        "cumul": 0.2607,
+        "window": 0.2607,
+        "phase": "ready",
+        "sources": [
+          "div#__cls_panel__"
+        ],
+        "fallback": false
+      }
+    ],
+    "marks": [
+      {
+        "name": "field:cards",
+        "startTime": 306
+      },
+      {
+        "name": "field:ready",
+        "startTime": 354
+      },
+      {
+        "name": "field:cards",
+        "startTime": 577
+      },
+      {
+        "name": "field:ready",
+        "startTime": 594
+      }
+    ],
+    "_fieldDataReady": 1780798661661,
+    "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/148.0.7778.96 Safari/537.36"
+  }
+}
