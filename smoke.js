@@ -3511,6 +3511,33 @@ assert('A504 — PM-26-P CLS budget: per-phase shift constraints from cls-probe 
   'Budgets: skeleton≤0.05, cards≤0.05, ready≤0.40, supplemental≤0.05. ' +
   'Dominant source: score=0.1733 (main+masthead+sport-section+skim). Next target: #night-owl reservation (M-1 pattern).');
 
+// ── PM-31-JQ: Brand-Safe JQ Gate Fallback (A505) ─────────────────────────────
+// When all three journalism paths fail (relay KV → compound editorial →
+// fetchFIELDBriefFromClaude), FIELD must NOT render silence or a frozen
+// static placeholder. It must render an editorial attribution card with
+// the canonical fallback text from the Jun 5 2026 UI spec.
+// "The failure mode is itself brand-defining." — never fill with generic prose.
+
+assert('A505 — PM-31-JQ: brand-safe fallback renders editorial attribution when all journalism paths fail',
+  // Canonical fallback text (verbatim from Jun 5 2026 UI spec)
+  html.includes("Tonight\\'s narrative is unsettled. Series context and player-availability signals didn\\'t pass FIELD\\'s verification chain on time. We don\\'t write what we can\\'t verify.") &&
+  // jq-fallback CSS class applied to text element
+  html.includes("classList.add('loaded','jq-fallback')") &&
+  // Attribution DOM element created and inserted
+  html.includes("className='field-brief-attribution'") &&
+  html.includes('`— FIELD editorial · JQ chain ${_retries}/6 retries · ${_layer} escalation`') &&
+  // window._lastJQAudit consumed for retries + layer context
+  html.includes('const _jqAudit=window._lastJQAudit') &&
+  html.includes("_jqAudit?.layers_fired?.slice(-1)[0]||'2g'") &&
+  // CSS: jq-fallback style present (italic muted — visually distinct from loaded brief)
+  html.includes('.field-brief-text.jq-fallback{color:var(--muted);font-style:italic}') &&
+  // CSS: attribution line style present (monospace, muted, small)
+  html.includes('.field-brief-attribution{') &&
+  html.includes('font-family:var(--ff-mono,monospace)') &&
+  // PM-31-JQ comment in code for traceability
+  html.includes('PM-31-JQ'),
+  'PM-31-JQ brand-safe JQ gate fallback: when all journalism paths exhaust (relay KV miss + compound null + fetchFIELDBriefFromClaude null), renders canonical editorial card: "Tonight\'s narrative is unsettled... We don\'t write what we can\'t verify." with attribution line showing retries/layer from window._lastJQAudit. .jq-fallback CSS class applied (italic muted). .field-brief-attribution element inserted after text. Failure mode is brand-defining — never silence, never generic prose.');
+
 // ═════════════════════════════════════════════════════════════════════
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);

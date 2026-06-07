@@ -1196,6 +1196,8 @@ body::before{
 .field-brief-date{font-size:.52rem;color:var(--muted);opacity:.7}
 .field-brief-text{font-size:.74rem;color:var(--fg,#e8e8f0);line-height:1.6;white-space:pre-wrap}
 .field-brief-text.pending{color:var(--muted);font-style:italic;font-size:.7rem}
+.field-brief-text.jq-fallback{color:var(--muted);font-style:italic}
+.field-brief-attribution{font-size:.6rem;color:var(--muted);opacity:.7;margin-top:.4rem;font-family:var(--ff-mono,monospace)}
 /* ── Night Owl — closing editorial section ────────────────────────────────
    Replaces FIELD Brief as the lead story once tonight's games are final.
    Darker background, quieter palette — the night is winding down.
@@ -23349,8 +23351,26 @@ async function initFIELDBrief(sections){
     setTimeout(renderFieldDesk, 300);
     setTimeout(renderJournalism, 300);
   } else {
+    // ── JQ Gate brand-safe fallback (PM-31-JQ) ──────────────────────────────
+    // All three journalism paths failed (relay KV → compound editorial →
+    // fetchFIELDBriefFromClaude). FIELD never fills silence with stale generic
+    // prose — the failure mode is itself brand-defining.
+    // Renders a fixed editorial attribution card. No AI text. No silence.
+    // "We don't write what we can't verify." — Jun 5 2026 UI spec.
     const textEl=el.querySelector('.field-brief-text');
-    if(textEl){textEl.classList.remove('pending');textEl.classList.add('loaded');}
+    if(textEl){
+      const _jqAudit=window._lastJQAudit;
+      const _retries=_jqAudit?.retries!=null?_jqAudit.retries:6;
+      const _layer=_jqAudit?.layers_fired?.slice(-1)[0]||'2g';
+      textEl.textContent='Tonight\'s narrative is unsettled. Series context and player-availability signals didn\'t pass FIELD\'s verification chain on time. We don\'t write what we can\'t verify.';
+      textEl.classList.remove('pending');
+      textEl.classList.add('loaded','jq-fallback');
+      // Attribution line — surfaces the quality chain failure transparently
+      const _attr=document.createElement('div');
+      _attr.className='field-brief-attribution';
+      _attr.textContent=`— FIELD editorial · JQ chain ${_retries}/6 retries · ${_layer} escalation`;
+      textEl.after(_attr);
+    }
   }
   // FIELD Desk: also refresh after series queue fires (series cards populated ~3s later)
   setTimeout(()=>{initJournalismQueue(sections);setTimeout(renderFieldDesk,500);setTimeout(renderJournalism,500);},3000);
