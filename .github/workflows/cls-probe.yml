@@ -1,0 +1,68 @@
+name: CLS Probe
+# Loads the live FIELD site in headless Chromium, waits for full cold-load
+# completion (skeleton → cards → ready → supplemental), then reads
+# window.__cls.summary() + window.__cls.events from page context.
+#
+# Output: outbox/cls-probe-{TS}.json committed to repo [skip ci].
+# Purpose: (a) one-time calibration data for per-phase CLS budget assertions,
+#           (b) regression detection on future deploys.
+#
+# Uses ?clsdebug=1 to activate the clsObserver panel — does NOT gate the
+# observer itself (observer always runs; clsdebug=1 only enables console output).
+# The observer is already active on all cold loads via PM-26-O-1/O-2.
+#
+# Runs: manual trigger (workflow_dispatch) OR on push to outbox trigger file.
+# Does NOT run on every push — CLS measurement is calibration/on-demand.
+
+on:
+  push:
+    paths: ['outbox/.trigger-cls-probe']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  cls-probe:
+    runs-on: ubuntu-latest
+    name: CLS cold-load probe (Chromium native)
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-chromium-${{ hashFiles('package-lock.json') }}
+
+      - name: Install Playwright Chromium
+        run: |
+          npm install @playwright/test
+          npx playwright install chromium --with-deps
+
+      - name: Run CLS probe
+        run: node cls_probe.js
+        env:
+          FIELD_URL: https://jubilant-bassoon.jeffunglesbee.workers.dev
+
+      - name: Push result
+        run: |
+          git config user.email "probe@field"
+          git config user.name "CLS Probe"
+          git add outbox/cls-probe-*.json
+          git status --short
+          if git diff --cached --quiet; then
+            echo "Nothing to commit"
+            exit 0
+          fi
+          git commit -m "cls-probe result [skip ci]"
+          for i in 1 2 3; do
+            git pull --rebase --autostash origin main && git push origin main && break
+            sleep $((i * 5))
+          done
