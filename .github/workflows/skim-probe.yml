@@ -16,7 +16,7 @@ on:
 
 permissions:
   contents: write
-  actions: write   # needed to dispatch cls-probe.yml after fix
+  actions: write
 
 jobs:
   skim-probe:
@@ -47,74 +47,15 @@ jobs:
         env:
           FIELD_URL: https://jubilant-bassoon.jeffunglesbee.workers.dev
 
-      - name: Read recommendation + apply CSS fix
+      - name: Apply CSS fix
         id: apply-fix
         run: |
-          # Find the most recent skim-probe output
-          PROBE_FILE=$(ls -t outbox/skim-probe-*.json | head -1)
-          echo "Reading: $PROBE_FILE"
-
-          # Extract recommendation
-          MIN_HEIGHT=$(python3 -c "
-          import json, sys
-          d = json.load(open('$PROBE_FILE'))
-          rec = d.get('recommendation')
-          if rec and rec.get('minHeightPx'):
-              print(rec['minHeightPx'])
-          else:
-              print('0')
-          ")
-
+          OUTPUT=$(python3 apply_skim_fix.py 2>/dev/null)
+          echo "$OUTPUT"
+          MIN_HEIGHT=$(echo "$OUTPUT" | grep '^MIN_HEIGHT=' | cut -d= -f2)
+          PATCHED=$(echo "$OUTPUT" | grep '^PATCHED=' | cut -d= -f2)
           echo "min_height=$MIN_HEIGHT" >> $GITHUB_OUTPUT
-          echo "probe_file=$PROBE_FILE" >> $GITHUB_OUTPUT
-
-          if [ "$MIN_HEIGHT" = "0" ]; then
-            echo "No skim content today — skipping CSS patch"
-            echo "patched=false" >> $GITHUB_OUTPUT
-            exit 0
-          fi
-
-          echo "Applying min-height: ${MIN_HEIGHT}px to .skim-strip"
-
-          # Apply the CSS fix using Python to safely patch index.html
-          # Inserts min-height + contain:layout after the base .skim-strip rule
-          python3 << 'PYEOF'
-          import re, sys
-
-          content = open('index.html').read()
-
-          import json
-          probe = json.load(open('$PROBE_FILE'))
-          min_h = probe['recommendation']['minHeightPx']
-
-          # Target: the base .skim-strip rule (first occurrence, no attribute selector)
-          # Pattern: .skim-strip{...}  (minified, no spaces around braces)
-          # Insert min-height + contain:layout into existing rule if not present,
-          # or add a new rule block immediately after.
-
-          BASE_PATTERN = r'(\.skim-strip\{[^}]+\})'
-
-          def patch_rule(m):
-              rule = m.group(1)
-              # Skip if already has min-height
-              if 'min-height' in rule:
-                  return rule
-              # Insert before closing brace
-              return rule[:-1] + f';min-height:{min_h}px;contain:layout' + '}'
-
-          patched, count = re.subn(BASE_PATTERN, patch_rule, content, count=1)
-          if count == 0:
-              print('ERROR: .skim-strip base rule not found', file=sys.stderr)
-              sys.exit(1)
-
-          if patched == content:
-              print(f'min-height already present — no change needed')
-          else:
-              open('index.html', 'w').write(patched)
-              print(f'Patched .skim-strip with min-height:{min_h}px;contain:layout')
-          PYEOF
-
-          echo "patched=true" >> $GITHUB_OUTPUT
+          echo "patched=$PATCHED" >> $GITHUB_OUTPUT
 
       - name: Run smoke gate
         if: steps.apply-fix.outputs.patched == 'true'
@@ -131,9 +72,9 @@ jobs:
 
           if [ "$PATCHED" = "true" ]; then
             git add index.html
-            MSG="fix: PM-26-T .skim-strip min-height:${MIN_HEIGHT}px — eliminate t≈891ms CLS event [skip ci]"
+            MSG="fix: PM-26-T .skim-strip min-height:${MIN_HEIGHT}px — eliminate t=891ms CLS event [skip ci]"
           else
-            MSG="skim-probe result (no content today) [skip ci]"
+            MSG="skim-probe result (no content or already patched) [skip ci]"
           fi
 
           git diff --cached --quiet && echo "Nothing to commit" && exit 0
@@ -146,10 +87,6 @@ jobs:
       - name: Trigger cls-probe for CLS re-measurement
         if: steps.apply-fix.outputs.patched == 'true'
         run: |
-          # Dispatch cls-probe.yml to verify CLS improvement after the fix lands
-          # Note: this dispatches against the pre-fix HEAD (fix is [skip ci] so
-          # no deploy triggered yet). For post-deploy verification, re-run cls-probe
-          # manually after Cloudflare deploys the new index.html.
           curl -s -X POST \
             -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
             -H "Accept: application/vnd.github.v3+json" \
