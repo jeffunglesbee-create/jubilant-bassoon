@@ -28796,7 +28796,13 @@ async function fetchNightOwlFromClaude(topGame){
       crewCtx?'Broadcast crew: '+crewCtx:'',
       '','Rules: 80-100 words. Tactical. Not emotional. Lead with the turning point.',
       _owlScoutPickCtx ? 'If [SCOUT\'S PICK PREDICTION] appears: end with one sentence grading delivery. Deliver on the promise (\"Delivered — high-drama playoff game as billed\") or call it out honestly (\"Fell short — low drama despite the stakes\"). Never echo the tag verbatim.' : '',
-      _owlStatCtx?'If stat context is provided above, cite the specific figure — never paraphrase it.':'',
+      // PM-32-JQ: mandatory stat citation — passive rule replaced with hard requirement.
+      // Scoring analysis showed J5 averaging 122/200 when stat context is present but
+      // citation is optional. statDepth is the dominant gap; making citation mandatory
+      // forces every sentence to carry a specific number, directly lifting statDepth.
+      _owlStatCtx
+        ? 'REQUIRED — CITE ALL STATS: every bracketed stat line above ([MLB BOX], [PPG LEADERS], [PP/PK], [NHL LIVE], [SCORE NARRATIVE], etc.) must appear verbatim in your recap with its specific figure. Do not paraphrase. Do not omit. A recap missing a provided stat fails. Lead the first sentence with the most specific number available — player name + figure (e.g. "Brunson 32 points" not "Brunson was strong").'
+        : 'No box stats available — write from score, margin, series record, and drama context only. Every sentence must still include a specific number from the data above (final score, margin, series record, drama peak).',
       _owlDramaPromptCtx?'DRAMA CONTEXT: [DRAMA]=minutes of sustained tension; [DRAMA TREND]=rising or fading at end; [DRAMA PEAK]=peak moment timing; [DRAMA ARC]=shape of the tension curve (use to set opening framing — thriller vs wire-to-wire vs late-bloomer); [SCORE NARRATIVE]=factual lead/comeback data. Use all of these to frame the narrative. Never invent drama facts beyond what these tags say.':'',
       'Write only from the data above — never invent statistics, player tendencies, or context.',
       // PF-4: ban specific-inning / specific-at-bat / specific-period fabrications.

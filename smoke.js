@@ -1234,11 +1234,15 @@ assert('A270 — P5: FIELD Desk shows static brief placeholder before AI journal
   html.includes('staticText.length > 30'),
   'FIELD Desk must show static brief text as placeholder card when sessionStorage has no AI brief yet');
 
-assert('A271 — Tier 1A: Night Owl injects box score / PPG / analytics stat context into prompt',
+assert('A271 — Tier 1A: Night Owl injects box score / PPG / analytics stat context into prompt with mandatory citation',
   html.includes('_owlStatCtx') &&
   html.includes('MLB BOX') && html.includes('PPG LEADERS') &&
-  html.includes('If stat context is provided above, cite the specific figure'),
-  'Night Owl prompt must inject available stat context same as compound — MLB box, NBA PPG, NHL PP/PK');
+  // PM-32-JQ: mandatory citation rule (replaces passive 'cite the specific figure')
+  html.includes('REQUIRED — CITE ALL STATS') &&
+  html.includes('every bracketed stat line above') &&
+  // No-stats fallback still requires numbers from available data
+  html.includes('Every sentence must still include a specific number from the data above'),
+  'Night Owl prompt must inject available stat context (MLB box, NBA PPG, NHL PP/PK) with mandatory citation rule. PM-32-JQ: REQUIRED — CITE ALL STATS replaces passive citation. No-stats fallback requires every sentence to include a specific number from score/margin/series/drama data.');
 
 assert('A272 — Tier 1B: Health Panel shows Prose Quality rolling avg with best/worst/stat',
   html.includes("'Prose Quality'") &&
