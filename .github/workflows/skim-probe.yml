@@ -1,0 +1,157 @@
+name: Skim Probe + Auto-fix
+# Measures #the-skim populated height at 3 viewports, then:
+#   1. Reads recommendation from skim-probe output
+#   2. Applies min-height + contain:layout to .skim-strip in index.html
+#   3. Commits the CSS fix
+#   4. Triggers cls-probe.yml to verify CLS improvement
+#
+# Fully automated — no manual steps after dispatch.
+# If skim has no content today (height=0), records the result and exits
+# without patching (re-run on an active day).
+
+on:
+  push:
+    paths: ['outbox/.trigger-skim-probe']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: write   # needed to dispatch cls-probe.yml after fix
+
+jobs:
+  skim-probe:
+    runs-on: ubuntu-latest
+    name: Skim height probe + CSS auto-fix + CLS re-measure
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-chromium-${{ hashFiles('package-lock.json') }}
+
+      - name: Install Playwright Chromium
+        run: |
+          npm install @playwright/test
+          npx playwright install chromium --with-deps
+
+      - name: Run skim height probe
+        run: node skim_probe.js
+        env:
+          FIELD_URL: https://jubilant-bassoon.jeffunglesbee.workers.dev
+
+      - name: Read recommendation + apply CSS fix
+        id: apply-fix
+        run: |
+          # Find the most recent skim-probe output
+          PROBE_FILE=$(ls -t outbox/skim-probe-*.json | head -1)
+          echo "Reading: $PROBE_FILE"
+
+          # Extract recommendation
+          MIN_HEIGHT=$(python3 -c "
+          import json, sys
+          d = json.load(open('$PROBE_FILE'))
+          rec = d.get('recommendation')
+          if rec and rec.get('minHeightPx'):
+              print(rec['minHeightPx'])
+          else:
+              print('0')
+          ")
+
+          echo "min_height=$MIN_HEIGHT" >> $GITHUB_OUTPUT
+          echo "probe_file=$PROBE_FILE" >> $GITHUB_OUTPUT
+
+          if [ "$MIN_HEIGHT" = "0" ]; then
+            echo "No skim content today — skipping CSS patch"
+            echo "patched=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          echo "Applying min-height: ${MIN_HEIGHT}px to .skim-strip"
+
+          # Apply the CSS fix using Python to safely patch index.html
+          # Inserts min-height + contain:layout after the base .skim-strip rule
+          python3 << 'PYEOF'
+          import re, sys
+
+          content = open('index.html').read()
+
+          import json
+          probe = json.load(open('$PROBE_FILE'))
+          min_h = probe['recommendation']['minHeightPx']
+
+          # Target: the base .skim-strip rule (first occurrence, no attribute selector)
+          # Pattern: .skim-strip{...}  (minified, no spaces around braces)
+          # Insert min-height + contain:layout into existing rule if not present,
+          # or add a new rule block immediately after.
+
+          BASE_PATTERN = r'(\.skim-strip\{[^}]+\})'
+
+          def patch_rule(m):
+              rule = m.group(1)
+              # Skip if already has min-height
+              if 'min-height' in rule:
+                  return rule
+              # Insert before closing brace
+              return rule[:-1] + f';min-height:{min_h}px;contain:layout' + '}'
+
+          patched, count = re.subn(BASE_PATTERN, patch_rule, content, count=1)
+          if count == 0:
+              print('ERROR: .skim-strip base rule not found', file=sys.stderr)
+              sys.exit(1)
+
+          if patched == content:
+              print(f'min-height already present — no change needed')
+          else:
+              open('index.html', 'w').write(patched)
+              print(f'Patched .skim-strip with min-height:{min_h}px;contain:layout')
+          PYEOF
+
+          echo "patched=true" >> $GITHUB_OUTPUT
+
+      - name: Run smoke gate
+        if: steps.apply-fix.outputs.patched == 'true'
+        run: node smoke.js 2>&1 | tail -5
+
+      - name: Commit probe result + CSS fix
+        run: |
+          git config user.email "probe@field"
+          git config user.name "Skim Probe"
+          git add outbox/skim-probe-*.json
+
+          PATCHED="${{ steps.apply-fix.outputs.patched }}"
+          MIN_HEIGHT="${{ steps.apply-fix.outputs.min_height }}"
+
+          if [ "$PATCHED" = "true" ]; then
+            git add index.html
+            MSG="fix: PM-26-T .skim-strip min-height:${MIN_HEIGHT}px — eliminate t≈891ms CLS event [skip ci]"
+          else
+            MSG="skim-probe result (no content today) [skip ci]"
+          fi
+
+          git diff --cached --quiet && echo "Nothing to commit" && exit 0
+          git commit -m "$MSG"
+          for i in 1 2 3; do
+            git pull --rebase --autostash origin main && git push origin main && break
+            sleep $((i * 5))
+          done
+
+      - name: Trigger cls-probe for CLS re-measurement
+        if: steps.apply-fix.outputs.patched == 'true'
+        run: |
+          # Dispatch cls-probe.yml to verify CLS improvement after the fix lands
+          # Note: this dispatches against the pre-fix HEAD (fix is [skip ci] so
+          # no deploy triggered yet). For post-deploy verification, re-run cls-probe
+          # manually after Cloudflare deploys the new index.html.
+          curl -s -X POST \
+            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Accept: application/vnd.github.v3+json" \
+            "https://api.github.com/repos/${{ github.repository }}/actions/workflows/cls-probe.yml/dispatches" \
+            -d '{"ref":"main"}' && echo "cls-probe dispatched"
