@@ -1,79 +1,96 @@
-# FIELD HANDOFF — 2026-06-07
+# FIELD HANDOFF — 2026-06-07 (Session 2)
 
 ## HEADS
-- jubilant-bassoon HEAD: 0e85831
-- SW_VERSION: 2026-06-07a
-- Smoke: 513/0 (canonical — node smoke.js)
-- field-relay-nba HEAD: 5608845 (unchanged this session)
+- jubilant-bassoon HEAD: 5268d76 (functional — ci auto-commits on top)
+- SW_VERSION: 2026-06-07a (live on Cloudflare)
+- Smoke: 516/0 (canonical — node smoke.js)
+- field-relay-nba HEAD: 5608845 (unchanged)
 
 ## SESSION TYPE
-Daily Update + TYPE C feature build (PM-26-P, PM-26-T, CLS probe automation)
+Daily Update + TYPE C (PM-31-JQ, PM-31-DD → PM-32-VI, PM-32-JQ)
 
 ## WHAT SHIPPED THIS SESSION
 
-### Data fixes
-- `36270cc` — NBA Finals G3 home/away inverted (SAS listed as home; NYK is home at MSG). Fixed home/away, venue, start_time (was yesterday's date), gameLabel, nationalBundle, seriesRecord. NHL SCF G3 seriesRecord was "SCF" with no record — patched to "Tied 1-1". Both matchupNotes updated with verified factual context.
+### Data patches
+- `0b9c477` — NHL SCF G3 final: VGK leads 2-1. G4 advanced (Tue Jun 9, T-Mobile Arena, 8pm ET, ABC). matchupNote: Marner hat trick, Carolina 3-in-39s collapse, Theodore 2OT winner.
+- `62e3e29` — NBA Finals G3 start_time corrected: 2026-06-09T00:30:00Z (Mon Jun 8, 8:30pm ET, MSG). Verified from NBA.com + ESPN Press Room.
 
-### PM-26-P: State Transition Performance Marks + CLS Phase Tagging
-- `9857173` — `performance.mark('field:cards'/'field:ready'/'field:supplemental')` at the three cold-load phase boundaries. `recordShift()` now tags each `__cls.events` entry with its load phase. A503 new. 512/0.
+### Broadcast verification
+- NBA Finals: all games ABC, 8:30pm ET. NYK leads 2-0. G3 Mon Jun 8 at MSG. Full schedule through G7 verified.
+- NHL SCF: all games ABC, 8pm ET. VGK leads 2-1. G4 Tue Jun 9 at T-Mobile Arena.
 
-### CLS Probe Automation (cls-probe.yml + cls_probe.js)
-- `e999796` — Headless Chromium Playwright loads live site, waits for `_fieldDataReady` + 4s buffer, reads `window.__cls` from page context, commits `outbox/cls-probe-{TS}.json` including byPhase breakdown, topSources, marks. Triggered via `workflow_dispatch` or `outbox/.trigger-cls-probe`.
+### PM-31-JQ: Brand-safe JQ gate fallback (c72a45c)
+- When all journalism paths fail, renders: "Tonight's narrative is unsettled... We don't write what we can't verify." with attribution line reading window._lastJQAudit. A505. 514/0.
 
-### A504: CLS Budget Assertions (calibrated from live data)
-- `257b515` — A504 locks structural contract for per-phase CLS budgets: S-1 :has() gate, M-1 #upper-slots, K-1 font-fallback all required simultaneously. Calibrated from cls-probe-2026-06-07T0217Z (total=0.2607).
+### PM-31-DD: Drama Dial chip (9b73036)
+- Shipped static SENSITIVE/STANDARD/SELECTIVE chip. Immediately superseded by PM-32-VI as it was identical on every card. A506 updated.
 
-### PM-26-T: .skim-strip min-height:50px (auto-applied)
-- `689c722` — skim-probe measured #the-skim at 40px across 3 viewports. apply_skim_fix.py computed 50px recommendation. Auto-patched .skim-strip with min-height:50px;contain:layout. Same M-1 pattern.
-- `34d4c07` — SW_VERSION bump to deploy PM-26-T to Cloudflare (2026-06-07a).
+### PM-32-VI: Viewer Intelligence chip system (ab7cc32)
+- Three-mode user-controlled pre-game chip. getViewerIntelMode() / setViewerIntelMode() / buildViewerIntelChip(g, sections, mode).
+- Modes: stakes (default) / stories / myteams — same 4 signals, different priority order.
+- Signals: highStakes (elimination/late series) / hasNarrative (overlay matchupNote) / isOnlyGame (scarcity) / isMyTeam (proximity).
+- Anti-hype gate: g._antiHype → no chip. Silence rule: no signal fires → no chip.
+- Mode selector in My Services below Drama Dial. Chips re-render on mode change.
+- Patent offense: user-controlled multi-dimensional boolean classification ordering.
+- 2-sentence pitch: "FIELD is the only sports app that tells you what a game means before it starts — not how exciting it might be, but whether missing it will cost you. Set your intelligence mode once: consequence-first for games that define seasons, story-first for moments history will remember, or your-teams-first for the games that are personal — and every card on your schedule updates instantly, server-blind, from data only you control."
+- A507 new. 516/0.
 
-### Skim Probe Automation (skim-probe.yml + skim_probe.js + apply_skim_fix.py)
-- `9aa7c63` / `18e7103` — Full automated pipeline: measure #the-skim height at 3 viewports → compute min-height → patch index.html → smoke gate → commit → dispatch cls-probe for re-measurement.
+### PM-32-JQ: Mandatory stat citation in J5 Night Owl (5268d76)
+- J5 scored 122/200 (single sample VGK-CAR G3). Root: passive citation rule.
+- WITH stats: "REQUIRED — CITE ALL STATS: every bracketed stat line must appear verbatim... Lead first sentence with player name + figure."
+- WITHOUT stats (new): "Every sentence must still include a specific number from the data above."
+- A271 updated. 516/0.
 
-### A504 Budget Update
-- `0e85831` — A504 tightened to 0240Z game-night ceiling (total=0.3641 with Night Owl active). ready budget: 0.35 → 0.40. All other phases unchanged (0.05).
+## ACTIVE INTELLIGENCE — DOCUMENTED GAPS
+Three tiers (full analysis in session doc 1mSSPGnMuP5yKHRfkGsUkdD-cohEMnuIm):
+1. Data workflow self-correction (Tier 1) — daily overlay doesn't detect stale/wrong data
+2. Game-completion journalism trigger (Tier 2) — WOW 8 Queues built, trigger not wired
+3. Viewer Intel chip live re-render (Tier 3) — static, only updates on page reload
 
-## CLS STATE — POST SESSION
-- Calibration runs: 0217Z (no Night Owl) = 0.2607; 0240Z (Night Owl active) = 0.3641
-- PM-26-T skim reservation live on Cloudflare (50px)
-- Dominant remaining source: #night-owl (0.0607) — next target, same M-1/N-2 pattern
-- To address: dispatch skim-probe against #night-owl (or build night-owl-specific probe)
-- Budget: skeleton≤0.05, cards≤0.05, ready≤0.40, supplemental≤0.05
+## OPEN ISSUES (14 total — see session doc for full detail)
 
-## CONFIRMED RESOLVED (not P0)
-- Scoreboard panel — shipped bcae437 (Jun 5), parseNBAScoreboardGames, A491
-- R2 Finals Narrative Context — fetchFinalsDesk + buildCompoundPrompt both wire matchupNote; verified in live index.html
+### CRITICAL
+- World Cup pre-flight — June 11 (4 days). Endpoint probe needed.
+- Data workflow validation — home/away inversion, stale series records, off-by-one start_times will recur at WC scale (54 games).
 
-## STAT SEPARATION — CONFIRMED CLEAN
-- STAT bootstrap used jubilant-bassoon as temporary scaffold; fully cleaned up in fdb33b2
-- index.html, STANDARDS.md, HANDOFF.md: zero STAT touches
-- STAT repo (jeffunglesbee-create/stat) fully self-contained with own CLOUDFLARE_API_TOKEN
+### HIGH
+- PM-32-VI patent claim documentation for provisional (~June 25)
+- WOW 8 game-completion trigger for post-game journalism
 
-## OPEN ITEMS
-### P1 — Patent-priority
-- JQ Gate brand-safe fallback (~60 lines)
-- Drama Dial header chip (~20 lines)
+### MEDIUM
+- Regret Risk (VRR) — buildViewerIntelChip 5th signal tier (~40 lines). Fully specced in Drive 195lNITk3Y1ZfEZyKMZKlKkuQIDk0t2U9AfLjQbSpC0c.
+- Night Owl post-game stat capture (cold-cache fix — the real J5 score ceiling)
+- Night Owl G4 test validation (Tue Jun 10)
 
-### P2
-- Arc Poster SVG (~200 lines) — "Amnesty data" still undefined; need definition before PPUBS
-- #night-owl min-height reservation (next CLS target — dispatch skim-probe variant)
+### LOW
+- Arc Poster SVG (~200 lines) — "Amnesty data" still undefined
+- #night-owl min-height reservation
+- Chip live re-render on signal change
 
-### Hard deadline
-- World Cup 2026 pre-flight — June 11 (4 days). Auto-activation confirmed in place; endpoint probe pass needed.
+## NIGHT OWL QUALITY STATE
+- J5 scored 122/200 (1 sample — VGK-CAR G3 2OT, Jun 6)
+- PM-32-JQ (mandatory citation) addresses passive rule gap
+- Remaining ceiling: when _owlStatCtx empty, max ~130/200
+- Full fix: post-game stat capture at game completion
+- Next test: NHL SCF G4 Tue Jun 10
 
-### CLS follow-up (non-blocking)
-- Run cls-probe without ?clsdebug=1 for cleaner future calibration (panel adds ~0.014 artifact)
-- Consider adding `paths: ['index.html']` trigger to cls-probe.yml for automatic post-deploy re-measurement
+## RUWT PREGAME TIMING — RESOLVED
+- PM-32-VI chip fires pre-game, all signals are factual conditions
+- Drama Dial governs live games, Viewer Intel Mode governs pre-game
+- Two orthogonal user controls, clean separation
+- No RUWT exposure confirmed
 
-## PROBE INFRASTRUCTURE NOW AVAILABLE
-- `cls-probe.yml` — CLS cold-load measurement (dispatch anytime)
-- `skim-probe.yml` — Element height measurement + CSS auto-fix + CLS re-measure (dispatch anytime)
-- Both reuse Playwright Chromium cache; ~2min end-to-end
+## VIEWER INTEL MODE SELECTOR POSITION
+- Confirmed correct: immediately below Drama Dial in My Services
+- Screenshot showed scrolled-down state, not misplacement
+- No code change needed
 
-## BROADCAST RULES VERIFIED TODAY
-- NBA Finals: ABC/ESPN, G3 NYK home (MSG), NYK leads 2-0
-- NHL SCF: ABC, G3 VGK home (T-Mobile Arena), series tied 1-1
+## SESSION DOC
+Drive: 1mSSPGnMuP5yKHRfkGsUkdD-cohEMnuIm
+"FIELD App — 2026-06-07 Session Documentation"
+
+## SMOKE PROGRESSION
+513/0 → 514/0 (A505) → 515/0 (A506) → 516/0 (A507) → 516/0 (A271 updated)
 
 ## SW_VERSION
-- 2026-06-07a (deployed to Cloudflare)
-- Next session: increment to 2026-06-07b or 2026-06-08a depending on date
+2026-06-07a (live). Next: 2026-06-08a on day rollover.
