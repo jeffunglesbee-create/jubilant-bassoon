@@ -1,103 +1,79 @@
-# FIELD HANDOFF — 2026-06-06 (Session END FINAL — PM-31 Score Hardening + Scout's Pick + 4am Rollover)
+# FIELD HANDOFF — 2026-06-07
 
-## State
-jubilant-bassoon HEAD: 7651100 · Smoke: 511/0
-field-relay-nba HEAD: 981d474
+## HEADS
+- jubilant-bassoon HEAD: 0e85831
+- SW_VERSION: 2026-06-07a
+- Smoke: 513/0 (canonical — node smoke.js)
+- field-relay-nba HEAD: 5608845 (unchanged this session)
 
-## Session Docs
-Part 1 — Score Hardening: Drive 1rD3Omg6SCkJHhA-OneVTiF-HXTIpvxjT
-Part 2 — Scout's Pick + 4am Rollover: Drive 1vRKEjzlSdz854oqwuT1OAVUqhMsd7lYX
+## SESSION TYPE
+Daily Update + TYPE C feature build (PM-26-P, PM-26-T, CLS probe automation)
 
-## Commits This Session (clean list)
+## WHAT SHIPPED THIS SESSION
 
-7651100 feat: 4am ET rolling day cutoff + AFL AEST carveout in isToday()
-600c6c7 feat: Scout's Pick brief + Night Owl verdict
-685c923 feat: Scout's Pick into 3 missing surfaces (WatchWindow, DramaLine, RightNow)
-7c53ee1 fix: buildScoreNarrativeContext finalMargin floor (4→10 for 13-3 game)
-b148e59 fix: pre-overwrite guard — never overwrite live/final with pre-game entry
-573b5cf fix: renderESPNScores updates .game-time every poll cycle
-c86da0f harden: buildSafeScoreWrap() 4-layer defensive display
-be89224 fix: hydrateEspnScoresFromFinals() — localStorage authoritative for finals
-7062a22 fix: stale-final guard uses etDate OR utcDate; final stage shows score
-4a42a9e fix: stale eData.state=post guard; 0-0 live stage slot
-4947808 tier1: Gemini 4000 RPM recalibration
+### Data fixes
+- `36270cc` — NBA Finals G3 home/away inverted (SAS listed as home; NYK is home at MSG). Fixed home/away, venue, start_time (was yesterday's date), gameLabel, nationalBundle, seriesRecord. NHL SCF G3 seriesRecord was "SCF" with no record — patched to "Tied 1-1". Both matchupNotes updated with verified factual context.
 
-## Key Bugs Fixed
+### PM-26-P: State Transition Performance Marks + CLS Phase Tagging
+- `9857173` — `performance.mark('field:cards'/'field:ready'/'field:supplemental')` at the three cold-load phase boundaries. `recordShift()` now tags each `__cls.events` entry with its load phase. A503 new. 512/0.
 
-ROOT CAUSE of 0-0 on all live MLB (b148e59):
-V2 returns both today's final AND tomorrow's pre-game for same teams.
-forEach wrote pre-game (null) AFTER final (real scores). One guard fixed it:
-  if (v2Entry.state==='pre' && prev && (prev.state==='in'||prev.state==='post')) return;
+### CLS Probe Automation (cls-probe.yml + cls_probe.js)
+- `e999796` — Headless Chromium Playwright loads live site, waits for `_fieldDataReady` + 4s buffer, reads `window.__cls` from page context, commits `outbox/cls-probe-{TS}.json` including byPhase breakdown, topSources, marks. Triggered via `workflow_dispatch` or `outbox/.trigger-cls-probe`.
 
-ROOT CAUSE of missing scores on finished ET games (7062a22):
-Stale-final guard: gameUtcDate !== utcDate dropped 7pm ET games after midnight UTC.
-Fix: allow if gameUtcDate === etDate OR gameUtcDate === utcDate.
+### A504: CLS Budget Assertions (calibrated from live data)
+- `257b515` — A504 locks structural contract for per-phase CLS budgets: S-1 :has() gate, M-1 #upper-slots, K-1 font-fallback all required simultaneously. Calibrated from cls-probe-2026-06-07T0217Z (total=0.2607).
 
-ROOT CAUSE of .game-time never updating (573b5cf):
-buildCardTimeDisplay baked at renderAll() with null eData. No update path existed.
-Fixed in renderESPNScores: querySelector('.game-time') + update every poll cycle.
+### PM-26-T: .skim-strip min-height:50px (auto-applied)
+- `689c722` — skim-probe measured #the-skim at 40px across 3 viewports. apply_skim_fix.py computed 50px recommendation. Auto-patched .skim-strip with min-height:50px;contain:layout. Same M-1 pattern.
+- `34d4c07` — SW_VERSION bump to deploy PM-26-T to Cloudflare (2026-06-07a).
 
-NOVEL FIX — hydrateEspnScoresFromFinals (be89224):
-V2 reliably returns null for finished games. Stop fighting it.
-localStorage tonight-finals (written by saveEspnFinal when score known) is authoritative.
-Hydrate espnScores from localStorage before every render and every V2 poll.
+### Skim Probe Automation (skim-probe.yml + skim_probe.js + apply_skim_fix.py)
+- `9aa7c63` / `18e7103` — Full automated pipeline: measure #the-skim height at 3 viewports → compute min-height → patch index.html → smoke gate → commit → dispatch cls-probe for re-measurement.
 
-DEFENSIVE FIX — buildSafeScoreWrap (c86da0f):
-4-layer fallback: narrative → force-state retry → localStorage → raw numbers.
-Score-wrap never blank for a card marked live or final.
+### A504 Budget Update
+- `0e85831` — A504 tightened to 0240Z game-night ceiling (total=0.3641 with Night Owl active). ready budget: 0.35 → 0.40. All other phases unchanged (0.05).
 
-## Scout's Pick Journalism
+## CLS STATE — POST SESSION
+- Calibration runs: 0217Z (no Night Owl) = 0.2607; 0240Z (Night Owl active) = 0.3641
+- PM-26-T skim reservation live on Cloudflare (50px)
+- Dominant remaining source: #night-owl (0.0607) — next target, same M-1/N-2 pattern
+- To address: dispatch skim-probe against #night-owl (or build night-owl-specific probe)
+- Budget: skeleton≤0.05, cards≤0.05, ready≤0.40, supplemental≤0.05
 
-Brief: [SCOUT'S PICK] tag now in regularSection game lines → Gemini writes hidden-gem angle.
-Verdict: isScoutsPick designation persisted to localStorage at badge time.
-  Key: field_scout_pick_{game._id} | Value: {home, away, signal, t}
-  Night Owl reads at game-end → [SCOUT'S PICK PREDICTION] context → grades delivery.
+## CONFIRMED RESOLVED (not P0)
+- Scoreboard panel — shipped bcae437 (Jun 5), parseNBAScoreboardGames, A491
+- R2 Finals Narrative Context — fetchFinalsDesk + buildCompoundPrompt both wire matchupNote; verified in live index.html
 
-Surfaces wired (complete):
-  Card badge + teal border (pre-game, cleared on go-live) ✓
-  Desk Journal digest ✓
-  FIELD Brief (J1) text line ✓
-  Compound [SCOUT'S PICK] tag ✓
-  Compound [FEATURED STAT] tag ✓
-  scouts_pick response field ✓
-  BNI exclusions ✓
-  detectArcType → hidden-gem ✓
-  buildWatchWindowReason chip ✓ (new)
-  buildDramaLineTiers pre fallback ✓ (new)
-  buildRightNowTiers series/pick chip ✓ (new)
-  game_briefs [SCOUT'S PICK] tag in regularSection ✓ (new)
-  Night Owl postgame verdict ✓ (new)
+## STAT SEPARATION — CONFIRMED CLEAN
+- STAT bootstrap used jubilant-bassoon as temporary scaffold; fully cleaned up in fdb33b2
+- index.html, STANDARDS.md, HANDOFF.md: zero STAT touches
+- STAT repo (jeffunglesbee-create/stat) fully self-contained with own CLOUDFLARE_API_TOKEN
 
-## 4am ET Rollover
+## OPEN ITEMS
+### P1 — Patent-priority
+- JQ Gate brand-safe fallback (~60 lines)
+- Drama Dial header chip (~20 lines)
 
-TODAY_ISO: IIFE sets window.TODAY_ISO using ET with 4am cutoff.
-  Before 4am ET: subtract 24h → stay on previous ET date.
-  All downstream (viewingISO, goToDate, date labels, cache keys) correct automatically.
+### P2
+- Arc Poster SVG (~200 lines) — "Amnesty data" still undefined; need definition before PPUBS
+- #night-owl min-height reservation (next CLS target — dispatch skim-probe variant)
 
-AFL carveout: isToday(iso, {isAFL:true}) uses Australia/Sydney timezone.
-  Applied in refreshAFLSection() and injectSquiggleTips().
-  Hardcoded AFL schedule data doesn't need it (already keyed by AEST round date).
+### Hard deadline
+- World Cup 2026 pre-flight — June 11 (4 days). Auto-activation confirmed in place; endpoint probe pass needed.
 
-## V2 Architecture Final State
+### CLS follow-up (non-blocking)
+- Run cls-probe without ?clsdebug=1 for cleaner future calibration (panel adds ~0.014 artifact)
+- Consider adding `paths: ['index.html']` trigger to cls-probe.yml for automatic post-deploy re-measurement
 
-datesToQuery: [etDate, utcDate] when they differ (covers full US evening slate)
-Stale-final guard: skip if gameUtcDate !== date AND gameUtcDate !== etDate
-Pre-overwrite guard: skip if v2Entry.state==='pre' && prev.state in ['in','post']
-Score pipeline: fetchV2 → hydrateFromFinals → renderESPNScores → buildSafeScoreWrap + .game-time
+## PROBE INFRASTRUCTURE NOW AVAILABLE
+- `cls-probe.yml` — CLS cold-load measurement (dispatch anytime)
+- `skim-probe.yml` — Element height measurement + CSS auto-fix + CLS re-measure (dispatch anytime)
+- Both reuse Playwright Chromium cache; ~2min end-to-end
 
-## Open Items (Tuesday)
-1. P0: Scoreboard panel verification (first broken NBA Finals G1)
-2. P0: R2 Finals Narrative Context Phase 1
-3. JQ Gate brand-safe fallback (~60 lines)
-4. Drama Dial header chip (~20 lines)
-5. Arc Poster SVG (~200 lines)
-6. PerformanceObserver state transitions (~30 lines)
-7. WC 2026 opens June 11 — auto-activation in place
+## BROADCAST RULES VERIFIED TODAY
+- NBA Finals: ABC/ESPN, G3 NYK home (MSG), NYK leads 2-0
+- NHL SCF: ABC, G3 VGK home (T-Mobile Arena), series tied 1-1
 
-## Key Refs
-jubilant-bassoon HEAD: 7651100
-field-relay-nba HEAD: 981d474
-Smoke: 511/0 | Unit: 66/0
-Weekly limit: 91% used, resets Tue 10am. Session resets ~3:50am Jun 6.
-CI/Deploy: 1UrOoYDGaK2ncPrnRNXt1w0OElOLpbjP_EYROjG2w1zo
-Journalism Quality Spec: 1b7fwDVZMURi2sDbQ-Ur7dpbG4I5-fuCDPWC1ILfucoU
+## SW_VERSION
+- 2026-06-07a (deployed to Cloudflare)
+- Next session: increment to 2026-06-07b or 2026-06-08a depending on date
