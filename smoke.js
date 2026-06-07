@@ -3450,6 +3450,69 @@ assert('A503 — PM-26-P: performance.mark at load-phase transitions + CLS phase
   html.includes("' phase=' + phase +"),
   "PM-26-P state transition marks: performance.mark('field:cards'/'field:ready'/'field:supplemental') fire at the three transition boundaries of the five-frame cold-load sequence. clsObserver.recordShift() reads the most recent field:* mark at shift time to tag each __cls.events entry with its load phase (skeleton/cards/ready/supplemental). Makes CLS source attribution actionable: window.__cls.events filtered by phase shows which frame caused layout shift. All marks are try/catch-wrapped (passive, zero production cost).");
 
+// ── PM-26-P: CLS Budget Assertions — calibrated from cls-probe-2026-06-07T0217Z (A504) ──
+//
+// Calibration run: Chromium 148 headless, 1280×800, native layout-shift API.
+// Observed: total=0.2607, maxWindow=0.2607, 11 events, all in 'ready' phase.
+//
+// Phase budget rationale:
+//   skeleton: 0   — S-1 (:has() gate) means bottom region doesn't exist yet;
+//                   skeleton→cards transition produces no measured shift. Budget: 0.05
+//                   (headroom for future regressions against the S-1 guarantee).
+//   cards:    0   — renderAll() fires at field:cards mark; first observed shift
+//                   was at t=657ms (after field:ready at t=594ms). No cards-phase
+//                   events measured. Budget: 0.05 (same headroom logic).
+//   ready:    0.2607 observed — this is the overlay hydration window. Dominant
+//                   shift: t=891ms score=0.1371 (skim strip + masthead populating).
+//                   Budget: 0.35 (+34% headroom above observed peak).
+//   supplemental: 0 — no events observed post-supplemental. Budget: 0.05.
+//
+// __cls_panel__ exclusion: the debug panel contributes ~0.014 when ?clsdebug=1
+// is active (probe artifact). These assertions run against source HTML, not
+// live data — budget is set against real-session scores, not probe scores.
+//
+// Thresholds are intentionally loose for skeleton/cards/supplemental (no observed
+// events) and tight-with-headroom for ready (well-measured). Tighten ready budget
+// after the skim-strip CLS source is addressed (tracked separately).
+
+assert('A504 — PM-26-P CLS budget: per-phase shift constraints from cls-probe calibration',
+  // These assertions verify the ARCHITECTURE that enables budget enforcement,
+  // not the runtime scores (which require a live browser). Budget enforcement
+  // is the cls-probe.yml workflow — this assertion locks the structural contract.
+
+  // Phase marks must be present so clsObserver can tag events correctly
+  html.includes("performance.mark('field:cards')") &&
+  html.includes("performance.mark('field:ready')") &&
+  html.includes("performance.mark('field:supplemental')") &&
+
+  // recordShift must produce phase-tagged events
+  html.includes("phase: phase") &&
+
+  // S-1 (:has() gate) must be present — this is what produces zero skeleton/cards CLS.
+  // If S-1 is removed, skeleton and cards budgets will be blown immediately.
+  // A423 already locks the :has() selector; this assertion cross-references it.
+  /body:not\(:has\(#main \.game/.test(html) &&
+
+  // #upper-slots wrapper (M-1) must be present — holds OTW/skim/brief slots above
+  // schedule so overlay hydration doesn't push the schedule down.
+  // If removed, ready-phase budget will be blown by the slot population shifts.
+  html.includes('id="upper-slots"') &&
+
+  // Skim strip must have a fixed height reservation (K-1/font-fallback ensures
+  // skim strip text doesn't reflow on font-swap — dominant ready-phase shift source).
+  // Belt-and-suspenders: verify font-fallback metrics are present (A418 already
+  // locks this; cross-reference confirms both are required together).
+  html.includes('size-adjust') &&
+  html.includes('ascent-override'),
+
+  'PM-26-P CLS budget structural contract: three conditions must hold simultaneously ' +
+  'for per-phase budgets to be achievable: (1) PM-26-P marks fire at phase boundaries, ' +
+  '(2) S-1 :has()-gate defers bottom region (zero skeleton/cards budget), ' +
+  '(3) M-1 #upper-slots wrapper + K-1 font-fallback metrics contain the ready-phase shifts. ' +
+  'Calibration: cls-probe-2026-06-07T0217Z — total=0.2607, maxWindow=0.2607, all events in ready phase. ' +
+  'Budgets: skeleton≤0.05, cards≤0.05, ready≤0.35, supplemental≤0.05. ' +
+  'Dominant source: t=891ms score=0.1371 (skim strip + masthead overlay hydration).');
+
 // ═════════════════════════════════════════════════════════════════════
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);
