@@ -1,0 +1,210 @@
+{
+  "probe": "cls-probe",
+  "ts": "2026-06-07T0240Z",
+  "url": "https://jubilant-bassoon.jeffunglesbee.workers.dev",
+  "postReadyWaitMs": 4000,
+  "consoleLines": [
+    "[CLS] t=498ms score=0 cumul=0 window=0 phase=ready sources=[#text]",
+    "[CLS] t=591ms score=0.0007 cumul=0.0007 window=0.0007 phase=ready sources=[#text, div.legend, div.privacy-actions, span.brand-sub, a#jrn-nav-link.desk-jump-link.jrn-nav-link]",
+    "[CLS] t=805ms score=0.1733 cumul=0.174 window=0.174 phase=ready sources=[main#main.main, header.masthead, div.sport-section, div#the-skim.skim-strip, ::before]",
+    "[CLS] t=1010ms score=0.0838 cumul=0.2577 window=0.2577 phase=ready sources=[main#main.main]",
+    "[CLS] t=1156ms score=0.0047 cumul=0.2625 window=0.2625 phase=ready sources=[div#__cls_panel__]",
+    "[CLS] t=1407ms score=0.0607 cumul=0.3232 window=0.3232 phase=ready sources=[div#night-owl, div#last-night-bar.last-night-bar, main#main.main, ::before]",
+    "[CLS] t=1542ms score=0.0024 cumul=0.3255 window=0.3255 phase=ready sources=[div#__cls_panel__]",
+    "[CLS] t=1707ms score=0.0159 cumul=0.3414 window=0.3414 phase=ready sources=[div#night-owl, ::before]",
+    "[CLS] t=1872ms score=0.0208 cumul=0.3622 window=0.3622 phase=ready sources=[div]",
+    "[CLS] t=2040ms score=0.0019 cumul=0.3641 window=0.3641 phase=ready sources=[div#__cls_panel__]"
+  ],
+  "cls": {
+    "mode": "native",
+    "supported": true,
+    "total": 0.3641,
+    "maxWindow": 0.3641,
+    "eventCount": 10,
+    "byPhase": {
+      "ready": {
+        "count": 10,
+        "total": 0.3642,
+        "maxSingle": 0.1733
+      }
+    },
+    "topSources": [
+      {
+        "src": "main#main.main + header.masthead + div.sport-section + div#the-skim.skim-strip + ::before",
+        "score": 0.1733
+      },
+      {
+        "src": "main#main.main",
+        "score": 0.0838
+      },
+      {
+        "src": "div#night-owl + div#last-night-bar.last-night-bar + main#main.main + ::before",
+        "score": 0.0607
+      },
+      {
+        "src": "div",
+        "score": 0.0208
+      },
+      {
+        "src": "div#night-owl + ::before",
+        "score": 0.0159
+      },
+      {
+        "src": "div#__cls_panel__",
+        "score": 0.009
+      },
+      {
+        "src": "#text + div.legend + div.privacy-actions + span.brand-sub + a#jrn-nav-link.desk-jump-link.jrn-nav-link",
+        "score": 0.0007
+      },
+      {
+        "src": "#text",
+        "score": 0
+      }
+    ],
+    "events": [
+      {
+        "t": 498,
+        "score": 0,
+        "cumul": 0,
+        "window": 0,
+        "phase": "ready",
+        "sources": [
+          "#text"
+        ],
+        "fallback": false
+      },
+      {
+        "t": 591,
+        "score": 0.0007,
+        "cumul": 0.0007,
+        "window": 0.0007,
+        "phase": "ready",
+        "sources": [
+          "#text",
+          "div.legend",
+          "div.privacy-actions",
+          "span.brand-sub",
+          "a#jrn-nav-link.desk-jump-link.jrn-nav-link"
+        ],
+        "fallback": false
+      },
+      {
+        "t": 805,
+        "score": 0.1733,
+        "cumul": 0.174,
+        "window": 0.174,
+        "phase": "ready",
+        "sources": [
+          "main#main.main",
+          "header.masthead",
+          "div.sport-section",
+          "div#the-skim.skim-strip",
+          "::before"
+        ],
+        "fallback": false
+      },
+      {
+        "t": 1010,
+        "score": 0.0838,
+        "cumul": 0.2577,
+        "window": 0.2577,
+        "phase": "ready",
+        "sources": [
+          "main#main.main"
+        ],
+        "fallback": false
+      },
+      {
+        "t": 1156,
+        "score": 0.0047,
+        "cumul": 0.2625,
+        "window": 0.2625,
+        "phase": "ready",
+        "sources": [
+          "div#__cls_panel__"
+        ],
+        "fallback": false
+      },
+      {
+        "t": 1407,
+        "score": 0.0607,
+        "cumul": 0.3232,
+        "window": 0.3232,
+        "phase": "ready",
+        "sources": [
+          "div#night-owl",
+          "div#last-night-bar.last-night-bar",
+          "main#main.main",
+          "::before"
+        ],
+        "fallback": false
+      },
+      {
+        "t": 1542,
+        "score": 0.0024,
+        "cumul": 0.3255,
+        "window": 0.3255,
+        "phase": "ready",
+        "sources": [
+          "div#__cls_panel__"
+        ],
+        "fallback": false
+      },
+      {
+        "t": 1707,
+        "score": 0.0159,
+        "cumul": 0.3414,
+        "window": 0.3414,
+        "phase": "ready",
+        "sources": [
+          "div#night-owl",
+          "::before"
+        ],
+        "fallback": false
+      },
+      {
+        "t": 1872,
+        "score": 0.0208,
+        "cumul": 0.3622,
+        "window": 0.3622,
+        "phase": "ready",
+        "sources": [
+          "div"
+        ],
+        "fallback": false
+      },
+      {
+        "t": 2040,
+        "score": 0.0019,
+        "cumul": 0.3641,
+        "window": 0.3641,
+        "phase": "ready",
+        "sources": [
+          "div#__cls_panel__"
+        ],
+        "fallback": false
+      }
+    ],
+    "marks": [
+      {
+        "name": "field:cards",
+        "startTime": 331
+      },
+      {
+        "name": "field:ready",
+        "startTime": 381
+      },
+      {
+        "name": "field:cards",
+        "startTime": 927
+      },
+      {
+        "name": "field:ready",
+        "startTime": 956
+      }
+    ],
+    "_fieldDataReady": 1780800005671,
+    "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/148.0.7778.96 Safari/537.36"
+  }
+}
