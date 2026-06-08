@@ -1,53 +1,103 @@
-# FIELD HANDOFF — 2026-06-09 (Session Start)
+# FIELD HANDOFF — 2026-06-08 (Session End)
 
 ## HEADS
-- jubilant-bassoon HEAD: f86641d (data: daily update 2026-06-09)
-- SW_VERSION: 2026-06-09a
-- Smoke: 522/0 ✓
-- field-relay-nba HEAD: 5608845 (unchanged)
+- jubilant-bassoon HEAD: e3bdb93 (fix: single scrollable flex row on iPad portrait)
+- SW_VERSION: 2026-06-08b
+- Smoke: 525/0 ✓
+- field-relay-nba: 5608845 (unchanged)
 
 ## SESSION TYPE
-Daily Update (data only — no new results to patch)
+Daily Update + TYPE A (WC pre-flight) + TYPE C (multiple bug/feature fixes)
 
-## WHAT SHIPPED THIS SESSION
+## WHAT SHIPPED THIS SESSION (chronological)
 
-### Daily Update
-- SW_VERSION: 2026-06-08a → 2026-06-09a (index.html + sw.js)
-- No game results to patch — both series current from yesterday
-- NBA Finals G3 tonight: NYK vs SAS @ MSG, 8:30pm ET, ABC (NYK leads 2-0)
-- NHL SCF G4 tomorrow: VGK vs CAR @ T-Mobile Arena, 8pm ET, ABC (VGK leads 2-1)
+### Daily update
+- SW_VERSION: 2026-06-07a → 2026-06-08b (off-by-one date caught mid-session)
+- NHL SCF G3: VGK 5, CAR 4 OT — VGK leads 2-1 (Marner hat trick)
+- NBA Finals G2: NYK 105, SAS 104 — NYK leads 2-0 (KAT 21/13, Bridges 20pts)
+- A190: sw.js SW_VERSION sync fix
+- A515: smoke asserts SW_VERSION date matches today ET (cosmetic = functional)
 
-## UPCOMING GAMES — NEXT 48H
-- **Mon Jun 9 8:30pm ET** — NBA Finals G3: NYK vs SAS @ MSG, ABC (NYK leads 2-0)
+### WOW 8 + Night Owl ceiling (e03ee33, A508–A510)
+- saveEspnFinal: stat snapshot (NBA leaders, NHL PP/PK, linescore)
+- checkForNewFinals: emits field:all_final when last live game goes final
+- Subscriber 5: field:all_final → renderNightOwlRecap() + renderAmbientPanel()
+
+### WC pre-flight (A511–A513)
+- fetchESPNFixturesForDate: now calls maybePushWorldCup — countdown card fixed
+- wcActive gate: 2026-06-11 → 2026-06-08
+- renderWCGroupsEmpty: static editorial header (48 teams, three hosts, USMNT, broadcast)
+- 72/72 WC matchupNote complete (all group-stage games)
+- WC tab: iOS Safari hidden attribute fix (inline style.display='block')
+- WC tab: wc-mode nav.controls full-width (ambient panel hidden in wc-mode)
+- A516: WC Groups pill in buildFilters (inline date check, no temporal dead zone)
+
+### J1 brief priority tiers (A514)
+- _importanceScore sort on games array in buildCompoundPrompt
+- Tier 1 (Finals/WC knockout) 60-70% budget; Tier 3 (WNBA/MLB) ≤1 sentence when Tier 1 active
+
+### WNBA schedule
+- Rebuilt Jun 8–12 from WNBA official app (OPTA was wrong)
+- 45 total entries through Jun 28; Portland Fire + Toronto Tempo added
+- Angel Reese return (Tue Jun 9 @ Sky, ESPN) ✓
+- Jun 13 Sun/Lynx: Connecticut home corrected
+
+### Series Brief fixes
+- buildSeriesPreviewStatic: proper team name from leadingTeam (not raw lowercase abbr)
+- buildSeriesStateClause: explicit 2-0 and 3-0 states with team names
+- J3 prompt: SERIES RECORD LOCKDOWN instruction
+- league-badge: max-width:52vw + ellipsis at mobile
+- Static fallback for 2-0: "NYK lead the series 2-0 heading into Game 3..."
+
+### Nav bar — horizontal scrollable row
+- Mobile (≤600px): replaced 2-row grid with display:flex + overflow-x:auto
+- #sport-filters: display:contents — pills flow inline with date nav + jump links
+- iPad portrait (820-1199px): same pattern, removed hide rules that caused dead zones
+- Result: ‹ Today › · ALL · FREE · NBA · MLB · … · Desk · Journal · Groups
+  all in one horizontal scrollable row, pure CSS, no JS
+- Lesson documented: user should never have to prove Claude wrong
+
+### Health panel
+- WC Groups pill diagnostic added (present/hidden/missing states)
+
+## STANDING PRINCIPLE ESTABLISHED
+The user should never have to prove Claude wrong — on any session.
+When a UI bug is reported, verify before concluding. Rendered geometry,
+device behavior, and CSS cascade are evidence. The screen wins.
+
+## UPCOMING GAMES
+- **Mon Jun 8 8:30pm ET** — NBA Finals G3: SAS @ NYK, MSG, ABC (NYK leads 2-0)
 - **Tue Jun 9 8pm ET** — NHL SCF G4: VGK vs CAR @ T-Mobile Arena, ABC (VGK leads 2-1)
-- **Thu Jun 11 3pm ET** — FIFA World Cup opener: Mexico vs South Africa, Estadio Azteca, FOX/Tubi FREE
+- **Thu Jun 11 3pm ET** — WC opener: Mexico vs South Africa, Azteca, FOX/Tubi FREE
 
-## DEFERRED — DO NOT BUILD UNTIL TUE JUN 10 2026 10AM ET
-1. R2 WC team context (per-team narrative archive, ~125 min, Drive 17D_EzrqoNUR4LN4OK3hr6MqKFUHitWlO72O1CWmqLks)
-2. WC journalism tab brief (AI preview slot above #wc-groups, depends on R2)
+## NIGHT OWL VALIDATION
+G3 tonight + G4 tomorrow — first real test of stat snapshot fix (A508)
 
-MEMORY NOTE: Memory slot 4 holds the Tuesday deferral. After Tue Jun 10 10am ET,
-restore slot 4 to: "FIELD session documentation: save to Google Drive after each
-session as a plain text file (contentMimeType: text/plain) so it converts to a
-Google Doc. Keep content under 220KB. Title format: 'FIELD App — [Date] Session
-Documentation'." — then remove the deferral note.
+## DEFERRED — TUE JUN 10 2026 10AM ET
+1. R2 WC team context (per-team narrative archive, ~125min)
+2. WC journalism tab brief (AI preview slot above #wc-groups)
+
+MEMORY NOTE: After Tue Jun 10 10am ET, restore memory slot 4 to session
+doc format rule and remove deferral note.
 
 ## OPEN ISSUES
-
 ### HIGH
-- PM-32-VI patent documentation — June 25 provisional, 16 days
+- PM-32-VI patent documentation — June 25, 17 days
 
 ### MEDIUM
-- VRR (Regret Risk) — 5th Viewer Intel signal, specced in Drive 195lNITk3Y1ZfEZyKMZKlKkuQIDk0t2U9AfLjQbSpC0c
-- Night Owl stat snapshot validation — G3 tonight, SCF G4 tomorrow
-- WC knockout bracket tab — ~June 18–20 when R32 draw sets
+- VRR (Regret Risk) — 5th Viewer Intel signal
+- Night Owl stat snapshot validation — tonight/tomorrow
+- WC knockout bracket tab — ~June 18-20
 
 ### LOW / POST-WC
 - Streaming Discovery ambient panel tier (Option A)
-- Arc Poster SVG
-- Chip live re-render, #night-owl min-height
+- Odds Budget stale date (2026-05-29)
+- Arc Poster SVG, chip live re-render, #night-owl min-height
 
-## KEY PERMANENT REFERENCES
+## SMOKE
+516/0 (session start) → 525/0 (session end, +9: A508–A516)
+
+## KEY REFERENCES
 - Drive Current State: 1GvsfnTH9Xhqzg_NdYrPhPpk1d1Rnm0lkeG6ip-tLUlA
 - Drive CI/Deploy Ref: 1UrOoYDGaK2ncPrnRNXt1w0OElOLpbjP_EYROjG2w1zo
 - Drive Build Backlog: 1ugUh6UmeDkLR-gEH8hJPwXK2NiIrXYQY8gp2jO2p2Hk
