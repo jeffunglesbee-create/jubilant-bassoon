@@ -1,48 +1,41 @@
 {
-  "updated": "20260601T221829Z",
+  "updated": "20260608T193700Z",
   "leagueAvg": 27.0,
   "data": {
-    "witt": {
+    "mateo": {
       "sprintSpeed": 30.5,
       "pctile": 99,
       "tier": "elite",
-      "team": "KC",
-      "bolts": 55
+      "team": "ATL",
+      "bolts": 23
     },
     "white": {
       "sprintSpeed": 30.4,
       "pctile": 99,
       "tier": "elite",
       "team": "ATL",
-      "bolts": 23
+      "bolts": 25
     },
-    "mateo": {
+    "witt": {
       "sprintSpeed": 30.4,
       "pctile": 99,
       "tier": "elite",
-      "team": "ATL",
-      "bolts": 20
+      "team": "KC",
+      "bolts": 57
     },
     "bolte": {
       "sprintSpeed": 30.3,
       "pctile": 99,
       "tier": "elite",
       "team": "ATH",
-      "bolts": 16
+      "bolts": 18
     },
     "turner": {
-      "sprintSpeed": 30.0,
+      "sprintSpeed": 30.1,
       "pctile": 99,
       "tier": "elite",
       "team": "PHI",
-      "bolts": 37
-    },
-    "dunn": {
-      "sprintSpeed": 30.0,
-      "pctile": 99,
-      "tier": "elite",
-      "team": "CIN",
-      "bolts": 15
+      "bolts": 44
     },
     "griffin": {
       "sprintSpeed": 29.9,
@@ -51,6 +44,27 @@
       "team": "PIT",
       "bolts": 38
     },
+    "mccarthy": {
+      "sprintSpeed": 29.8,
+      "pctile": 99,
+      "tier": "elite",
+      "team": "COL",
+      "bolts": 29
+    },
+    "dunn": {
+      "sprintSpeed": 29.8,
+      "pctile": 99,
+      "tier": "elite",
+      "team": "CIN",
+      "bolts": 20
+    },
+    "buxton": {
+      "sprintSpeed": 29.8,
+      "pctile": 99,
+      "tier": "elite",
+      "team": "MIN",
+      "bolts": 23
+    },
     "ruiz": {
       "sprintSpeed": 25.5,
       "pctile": 3,
@@ -58,75 +72,61 @@
       "team": "WSH",
       "bolts": 0
     },
-    "buxton": {
-      "sprintSpeed": 29.8,
+    "scott": {
+      "sprintSpeed": 29.7,
       "pctile": 99,
       "tier": "elite",
-      "team": "MIN",
-      "bolts": 21
-    },
-    "mccarthy": {
-      "sprintSpeed": 29.8,
-      "pctile": 99,
-      "tier": "elite",
-      "team": "COL",
-      "bolts": 26
+      "team": "STL",
+      "bolts": 29
     },
     "carroll": {
       "sprintSpeed": 29.7,
       "pctile": 99,
       "tier": "elite",
       "team": "AZ",
-      "bolts": 21
+      "bolts": 24
+    },
+    "nu\u00f1ez": {
+      "sprintSpeed": 29.7,
+      "pctile": 99,
+      "tier": "elite",
+      "team": "WSH",
+      "bolts": 30
     },
     "mitchell": {
       "sprintSpeed": 29.6,
       "pctile": 99,
       "tier": "elite",
       "team": "MIL",
-      "bolts": 15
+      "bolts": 18
     },
-    "scott": {
-      "sprintSpeed": 29.6,
-      "pctile": 99,
-      "tier": "elite",
-      "team": "STL",
-      "bolts": 25
-    },
-    "straw": {
-      "sprintSpeed": 29.6,
-      "pctile": 99,
-      "tier": "elite",
-      "team": "TOR",
-      "bolts": 13
-    },
-    "crawford": {
-      "sprintSpeed": 25.3,
-      "pctile": 1,
-      "tier": "below_avg",
-      "team": "SEA",
-      "bolts": 0
-    },
-    "nu\u00f1ez": {
-      "sprintSpeed": 29.6,
-      "pctile": 99,
-      "tier": "elite",
-      "team": "WSH",
-      "bolts": 27
+    "acu\u00f1a": {
+      "sprintSpeed": 27.3,
+      "pctile": 59,
+      "tier": "average",
+      "team": "ATL",
+      "bolts": 1
     },
     "simpson": {
       "sprintSpeed": 29.6,
       "pctile": 99,
       "tier": "elite",
       "team": "TB",
-      "bolts": 51
+      "bolts": 52
     },
-    "acu\u00f1a": {
-      "sprintSpeed": 27.2,
-      "pctile": 56,
-      "tier": "average",
-      "team": "ATL",
-      "bolts": 1
+    "siri": {
+      "sprintSpeed": 29.6,
+      "pctile": 99,
+      "tier": "elite",
+      "team": "LAA",
+      "bolts": 6
+    },
+    "crawford": {
+      "sprintSpeed": 25.6,
+      "pctile": 6,
+      "tier": "below_avg",
+      "team": "SEA",
+      "bolts": 0
     },
     "teodosio": {
       "sprintSpeed": 29.6,
@@ -140,14 +140,21 @@
       "pctile": 99,
       "tier": "elite",
       "team": "AZ",
-      "bolts": 6
+      "bolts": 9
     },
-    "hamilton": {
+    "straw": {
       "sprintSpeed": 29.4,
       "pctile": 99,
       "tier": "above_avg",
-      "team": "MIL",
-      "bolts": 29
+      "team": "TOR",
+      "bolts": 13
+    },
+    "troy": {
+      "sprintSpeed": 29.4,
+      "pctile": 99,
+      "tier": "above_avg",
+      "team": "AZ",
+      "bolts": 4
     },
     "smith": {
       "sprintSpeed": 26.0,
@@ -156,12 +163,33 @@
       "team": "ATL",
       "bolts": 0
     },
+    "ewing": {
+      "sprintSpeed": 29.3,
+      "pctile": 99,
+      "tier": "above_avg",
+      "team": "NYM",
+      "bolts": 9
+    },
     "young": {
-      "sprintSpeed": 27.5,
-      "pctile": 65,
+      "sprintSpeed": 27.6,
+      "pctile": 68,
       "tier": "average",
       "team": "NYM",
       "bolts": 0
+    },
+    "crews": {
+      "sprintSpeed": 29.3,
+      "pctile": 99,
+      "tier": "above_avg",
+      "team": "WSH",
+      "bolts": 2
+    },
+    "crow_armstrong": {
+      "sprintSpeed": 29.3,
+      "pctile": 99,
+      "tier": "above_avg",
+      "team": "CHC",
+      "bolts": 16
     },
     "deluca": {
       "sprintSpeed": 29.2,
@@ -175,28 +203,7 @@
       "pctile": 99,
       "tier": "above_avg",
       "team": "WSH",
-      "bolts": 16
-    },
-    "crow_armstrong": {
-      "sprintSpeed": 29.2,
-      "pctile": 99,
-      "tier": "above_avg",
-      "team": "CHC",
-      "bolts": 15
-    },
-    "ewing": {
-      "sprintSpeed": 29.2,
-      "pctile": 99,
-      "tier": "above_avg",
-      "team": "NYM",
-      "bolts": 7
-    },
-    "hill": {
-      "sprintSpeed": 29.2,
-      "pctile": 99,
-      "tier": "above_avg",
-      "team": "CWS",
-      "bolts": 5
+      "bolts": 18
     },
     "lockridge": {
       "sprintSpeed": 29.2,
@@ -205,40 +212,19 @@
       "team": "MIL",
       "bolts": 7
     },
-    "crews": {
-      "sprintSpeed": 29.1,
-      "pctile": 99,
-      "tier": "above_avg",
-      "team": "WSH",
-      "bolts": 2
-    },
     "walker": {
-      "sprintSpeed": 25.7,
-      "pctile": 9,
+      "sprintSpeed": 25.8,
+      "pctile": 12,
       "tier": "below_avg",
       "team": "HOU",
       "bolts": 0
     },
-    "mangum": {
+    "hamilton": {
       "sprintSpeed": 29.1,
       "pctile": 99,
       "tier": "above_avg",
-      "team": "PIT",
-      "bolts": 8
-    },
-    "taveras": {
-      "sprintSpeed": 29.1,
-      "pctile": 99,
-      "tier": "above_avg",
-      "team": "BAL",
-      "bolts": 13
-    },
-    "shaw": {
-      "sprintSpeed": 29.0,
-      "pctile": 99,
-      "tier": "above_avg",
-      "team": "CHC",
-      "bolts": 3
+      "team": "MIL",
+      "bolts": 30
     },
     "duran": {
       "sprintSpeed": 28.8,
@@ -246,6 +232,27 @@
       "tier": "above_avg",
       "team": "TEX",
       "bolts": 6
+    },
+    "mangum": {
+      "sprintSpeed": 29.0,
+      "pctile": 99,
+      "tier": "above_avg",
+      "team": "PIT",
+      "bolts": 10
+    },
+    "hill": {
+      "sprintSpeed": 29.0,
+      "pctile": 99,
+      "tier": "above_avg",
+      "team": "CWS",
+      "bolts": 5
+    },
+    "shaw": {
+      "sprintSpeed": 29.0,
+      "pctile": 99,
+      "tier": "above_avg",
+      "team": "CHC",
+      "bolts": 3
     },
     "robert": {
       "sprintSpeed": 29.0,
@@ -261,11 +268,11 @@
       "team": "BAL",
       "bolts": 0
     },
-    "thomas": {
-      "sprintSpeed": 27.8,
-      "pctile": 74,
-      "tier": "average",
-      "team": "AZ",
+    "marte": {
+      "sprintSpeed": 25.3,
+      "pctile": 1,
+      "tier": "below_avg",
+      "team": "KC",
       "bolts": 0
     },
     "taylor": {
@@ -275,26 +282,33 @@
       "team": "NYM",
       "bolts": 2
     },
-    "marte": {
-      "sprintSpeed": 25.3,
-      "pctile": 1,
-      "tier": "below_avg",
-      "team": "KC",
+    "thomas": {
+      "sprintSpeed": 27.8,
+      "pctile": 74,
+      "tier": "average",
+      "team": "AZ",
       "bolts": 0
     },
-    "tatis": {
+    "pe\u00f1a": {
       "sprintSpeed": 28.9,
       "pctile": 99,
       "tier": "above_avg",
-      "team": "SD",
-      "bolts": 8
+      "team": "HOU",
+      "bolts": 4
+    },
+    "taveras": {
+      "sprintSpeed": 28.9,
+      "pctile": 99,
+      "tier": "above_avg",
+      "team": "BAL",
+      "bolts": 14
     },
     "rafaela": {
       "sprintSpeed": 28.9,
       "pctile": 99,
       "tier": "above_avg",
       "team": "BOS",
-      "bolts": 4
+      "bolts": 5
     },
     "wiemer": {
       "sprintSpeed": 28.9,
@@ -303,6 +317,13 @@
       "team": "WSH",
       "bolts": 1
     },
+    "tatis": {
+      "sprintSpeed": 28.9,
+      "pctile": 99,
+      "tier": "above_avg",
+      "team": "SD",
+      "bolts": 8
+    },
     "cook": {
       "sprintSpeed": 28.9,
       "pctile": 99,
@@ -310,19 +331,19 @@
       "team": "PIT",
       "bolts": 2
     },
-    "pe\u00f1a": {
+    "carter": {
       "sprintSpeed": 28.8,
       "pctile": 99,
       "tier": "above_avg",
-      "team": "HOU",
-      "bolts": 3
+      "team": "TEX",
+      "bolts": 14
     },
-    "gelof": {
+    "benson": {
       "sprintSpeed": 28.8,
       "pctile": 99,
       "tier": "above_avg",
-      "team": "ATH",
-      "bolts": 3
+      "team": "CIN",
+      "bolts": 6
     },
     "cronenworth": {
       "sprintSpeed": 28.8,
@@ -338,23 +359,16 @@
       "team": "ATL",
       "bolts": 0
     },
-    "benson": {
-      "sprintSpeed": 28.8,
+    "waldschmidt": {
+      "sprintSpeed": 28.7,
       "pctile": 99,
       "tier": "above_avg",
-      "team": "CIN",
-      "bolts": 5
-    },
-    "carter": {
-      "sprintSpeed": 28.8,
-      "pctile": 99,
-      "tier": "above_avg",
-      "team": "TEX",
-      "bolts": 12
+      "team": "AZ",
+      "bolts": 1
     },
     "rodr\u00edguez": {
-      "sprintSpeed": 26.6,
-      "pctile": 37,
+      "sprintSpeed": 27.0,
+      "pctile": 50,
       "tier": "average",
       "team": "PIT",
       "bolts": 0
@@ -366,12 +380,19 @@
       "team": "COL",
       "bolts": 7
     },
-    "barrosa": {
+    "gelof": {
       "sprintSpeed": 28.7,
       "pctile": 99,
       "tier": "above_avg",
-      "team": "AZ",
-      "bolts": 0
+      "team": "ATH",
+      "bolts": 5
+    },
+    "peters": {
+      "sprintSpeed": 28.7,
+      "pctile": 99,
+      "tier": "above_avg",
+      "team": "CWS",
+      "bolts": 4
     },
     "trout": {
       "sprintSpeed": 28.7,
@@ -380,54 +401,40 @@
       "team": "LAA",
       "bolts": 4
     },
-    "waldschmidt": {
+    "turang": {
       "sprintSpeed": 28.7,
       "pctile": 99,
       "tier": "above_avg",
-      "team": "AZ",
-      "bolts": 0
-    },
-    "frelick": {
-      "sprintSpeed": 28.6,
-      "pctile": 99,
-      "tier": "above_avg",
       "team": "MIL",
-      "bolts": 7
-    },
-    "chourio": {
-      "sprintSpeed": 28.6,
-      "pctile": 99,
-      "tier": "above_avg",
-      "team": "MIL",
-      "bolts": 8
-    },
-    "peters": {
-      "sprintSpeed": 28.6,
-      "pctile": 99,
-      "tier": "above_avg",
-      "team": "CWS",
       "bolts": 1
     },
-    "mclain": {
-      "sprintSpeed": 28.6,
+    "raley": {
+      "sprintSpeed": 28.7,
       "pctile": 99,
       "tier": "above_avg",
-      "team": "CIN",
+      "team": "SEA",
       "bolts": 0
     },
-    "merrill": {
-      "sprintSpeed": 28.6,
+    "chourio": {
+      "sprintSpeed": 28.7,
       "pctile": 99,
       "tier": "above_avg",
-      "team": "SD",
-      "bolts": 2
+      "team": "MIL",
+      "bolts": 12
     },
-    "vilade": {
-      "sprintSpeed": 28.6,
+    "keaschall": {
+      "sprintSpeed": 28.7,
       "pctile": 99,
       "tier": "above_avg",
-      "team": "TB",
-      "bolts": 0
+      "team": "MIN",
+      "bolts": 1
+    },
+    "gonzales": {
+      "sprintSpeed": 28.7,
+      "pctile": 99,
+      "tier": "above_avg",
+      "team": "PIT",
+      "bolts": 1
     },
     "hern\u00e1ndez": {
       "sprintSpeed": 28.4,
@@ -436,11 +443,53 @@
       "team": "LAD",
       "bolts": 0
     },
+    "merrill": {
+      "sprintSpeed": 28.6,
+      "pctile": 99,
+      "tier": "above_avg",
+      "team": "SD",
+      "bolts": 3
+    },
+    "langeliers": {
+      "sprintSpeed": 28.6,
+      "pctile": 99,
+      "tier": "above_avg",
+      "team": "ATH",
+      "bolts": 0
+    },
+    "benge": {
+      "sprintSpeed": 28.6,
+      "pctile": 99,
+      "tier": "above_avg",
+      "team": "NYM",
+      "bolts": 0
+    },
+    "mclain": {
+      "sprintSpeed": 28.6,
+      "pctile": 99,
+      "tier": "above_avg",
+      "team": "CIN",
+      "bolts": 0
+    },
     "harris": {
-      "sprintSpeed": 27.3,
-      "pctile": 59,
+      "sprintSpeed": 27.5,
+      "pctile": 65,
       "tier": "average",
       "team": "ATL",
+      "bolts": 0
+    },
+    "rosario": {
+      "sprintSpeed": 28.6,
+      "pctile": 99,
+      "tier": "above_avg",
+      "team": "NYY",
+      "bolts": 2
+    },
+    "barrosa": {
+      "sprintSpeed": 28.6,
+      "pctile": 99,
+      "tier": "above_avg",
+      "team": "AZ",
       "bolts": 0
     },
     "loperfido": {
@@ -450,221 +499,25 @@
       "team": "HOU",
       "bolts": 1
     },
-    "robles": {
+    "frelick": {
       "sprintSpeed": 28.6,
       "pctile": 99,
       "tier": "above_avg",
-      "team": "SEA",
-      "bolts": 2
+      "team": "MIL",
+      "bolts": 7
     },
-    "rosario": {
-      "sprintSpeed": 28.6,
-      "pctile": 99,
-      "tier": "above_avg",
-      "team": "NYY",
-      "bolts": 2
-    },
-    "turang": {
+    "perkins": {
       "sprintSpeed": 28.6,
       "pctile": 99,
       "tier": "above_avg",
       "team": "MIL",
       "bolts": 0
-    },
-    "keaschall": {
-      "sprintSpeed": 28.6,
-      "pctile": 99,
-      "tier": "above_avg",
-      "team": "MIN",
-      "bolts": 0
-    },
-    "raley": {
-      "sprintSpeed": 28.6,
-      "pctile": 99,
-      "tier": "above_avg",
-      "team": "SEA",
-      "bolts": 0
-    },
-    "benge": {
-      "sprintSpeed": 28.5,
-      "pctile": 96,
-      "tier": "above_avg",
-      "team": "NYM",
-      "bolts": 0
-    },
-    "meckler": {
-      "sprintSpeed": 28.5,
-      "pctile": 96,
-      "tier": "above_avg",
-      "team": "LAA",
-      "bolts": 3
     },
     "ortiz": {
       "sprintSpeed": 28.5,
       "pctile": 96,
       "tier": "above_avg",
       "team": "MIL",
-      "bolts": 0
-    },
-    "gonzales": {
-      "sprintSpeed": 28.5,
-      "pctile": 96,
-      "tier": "above_avg",
-      "team": "PIT",
-      "bolts": 0
-    },
-    "abrams": {
-      "sprintSpeed": 28.5,
-      "pctile": 96,
-      "tier": "above_avg",
-      "team": "WSH",
-      "bolts": 5
-    },
-    "langeliers": {
-      "sprintSpeed": 28.5,
-      "pctile": 96,
-      "tier": "above_avg",
-      "team": "ATH",
-      "bolts": 0
-    },
-    "sanoja": {
-      "sprintSpeed": 28.5,
-      "pctile": 96,
-      "tier": "above_avg",
-      "team": "MIA",
-      "bolts": 7
-    },
-    "church": {
-      "sprintSpeed": 28.5,
-      "pctile": 96,
-      "tier": "above_avg",
-      "team": "STL",
-      "bolts": 0
-    },
-    "lopez": {
-      "sprintSpeed": 28.5,
-      "pctile": 96,
-      "tier": "above_avg",
-      "team": "MIA",
-      "bolts": 1
-    },
-    "clarke": {
-      "sprintSpeed": 28.5,
-      "pctile": 96,
-      "tier": "above_avg",
-      "team": "ATH",
-      "bolts": 4
-    },
-    "osuna": {
-      "sprintSpeed": 28.5,
-      "pctile": 96,
-      "tier": "above_avg",
-      "team": "TEX",
-      "bolts": 0
-    },
-    "perkins": {
-      "sprintSpeed": 28.4,
-      "pctile": 93,
-      "tier": "average",
-      "team": "MIL",
-      "bolts": 0
-    },
-    "alexander": {
-      "sprintSpeed": 28.4,
-      "pctile": 93,
-      "tier": "average",
-      "team": "BAL",
-      "bolts": 1
-    },
-    "stott": {
-      "sprintSpeed": 28.4,
-      "pctile": 93,
-      "tier": "average",
-      "team": "PHI",
-      "bolts": 1
-    },
-    "keith": {
-      "sprintSpeed": 28.4,
-      "pctile": 93,
-      "tier": "average",
-      "team": "DET",
-      "bolts": 1
-    },
-    "de_la_cruz": {
-      "sprintSpeed": 28.4,
-      "pctile": 93,
-      "tier": "average",
-      "team": "CIN",
-      "bolts": 3
-    },
-    "fraley": {
-      "sprintSpeed": 28.4,
-      "pctile": 93,
-      "tier": "average",
-      "team": "TB",
-      "bolts": 1
-    },
-    "jones": {
-      "sprintSpeed": 28.4,
-      "pctile": 93,
-      "tier": "average",
-      "team": "DET",
-      "bolts": 0
-    },
-    "hoerner": {
-      "sprintSpeed": 28.4,
-      "pctile": 93,
-      "tier": "average",
-      "team": "CHC",
-      "bolts": 0
-    },
-    "peraza": {
-      "sprintSpeed": 28.3,
-      "pctile": 90,
-      "tier": "average",
-      "team": "LAA",
-      "bolts": 0
-    },
-    "workman": {
-      "sprintSpeed": 28.3,
-      "pctile": 90,
-      "tier": "average",
-      "team": "DET",
-      "bolts": 0
-    },
-    "steer": {
-      "sprintSpeed": 28.3,
-      "pctile": 90,
-      "tier": "average",
-      "team": "CIN",
-      "bolts": 0
-    },
-    "triolo": {
-      "sprintSpeed": 28.3,
-      "pctile": 90,
-      "tier": "average",
-      "team": "PIT",
-      "bolts": 0
-    },
-    "reyes": {
-      "sprintSpeed": 28.3,
-      "pctile": 90,
-      "tier": "average",
-      "team": "PHI",
-      "bolts": 0
-    },
-    "chisholm": {
-      "sprintSpeed": 28.3,
-      "pctile": 90,
-      "tier": "average",
-      "team": "NYY",
-      "bolts": 3
-    },
-    "bazzana": {
-      "sprintSpeed": 28.3,
-      "pctile": 90,
-      "tier": "average",
-      "team": "CLE",
       "bolts": 0
     },
     "sosa": {
@@ -674,12 +527,173 @@
       "team": "TOR",
       "bolts": 0
     },
-    "winn": {
+    "osuna": {
+      "sprintSpeed": 28.5,
+      "pctile": 96,
+      "tier": "above_avg",
+      "team": "TEX",
+      "bolts": 0
+    },
+    "steer": {
+      "sprintSpeed": 28.5,
+      "pctile": 96,
+      "tier": "above_avg",
+      "team": "CIN",
+      "bolts": 0
+    },
+    "alexander": {
+      "sprintSpeed": 28.5,
+      "pctile": 96,
+      "tier": "above_avg",
+      "team": "BAL",
+      "bolts": 2
+    },
+    "vilade": {
+      "sprintSpeed": 28.5,
+      "pctile": 96,
+      "tier": "above_avg",
+      "team": "TB",
+      "bolts": 0
+    },
+    "church": {
+      "sprintSpeed": 28.5,
+      "pctile": 96,
+      "tier": "above_avg",
+      "team": "STL",
+      "bolts": 0
+    },
+    "clarke": {
+      "sprintSpeed": 28.5,
+      "pctile": 96,
+      "tier": "above_avg",
+      "team": "ATH",
+      "bolts": 4
+    },
+    "keith": {
+      "sprintSpeed": 28.5,
+      "pctile": 96,
+      "tier": "above_avg",
+      "team": "DET",
+      "bolts": 1
+    },
+    "sanoja": {
+      "sprintSpeed": 28.4,
+      "pctile": 93,
+      "tier": "average",
+      "team": "MIA",
+      "bolts": 8
+    },
+    "cruz": {
+      "sprintSpeed": 28.4,
+      "pctile": 93,
+      "tier": "average",
+      "team": "PIT",
+      "bolts": 8
+    },
+    "abrams": {
+      "sprintSpeed": 28.4,
+      "pctile": 93,
+      "tier": "average",
+      "team": "WSH",
+      "bolts": 5
+    },
+    "peraza": {
+      "sprintSpeed": 28.4,
+      "pctile": 93,
+      "tier": "average",
+      "team": "LAA",
+      "bolts": 0
+    },
+    "de_la_cruz": {
+      "sprintSpeed": 28.4,
+      "pctile": 93,
+      "tier": "average",
+      "team": "CIN",
+      "bolts": 3
+    },
+    "jones": {
+      "sprintSpeed": 28.4,
+      "pctile": 93,
+      "tier": "average",
+      "team": "DET",
+      "bolts": 0
+    },
+    "meckler": {
+      "sprintSpeed": 28.4,
+      "pctile": 93,
+      "tier": "average",
+      "team": "LAA",
+      "bolts": 5
+    },
+    "vierling": {
+      "sprintSpeed": 28.4,
+      "pctile": 93,
+      "tier": "average",
+      "team": "DET",
+      "bolts": 1
+    },
+    "fraley": {
+      "sprintSpeed": 28.4,
+      "pctile": 93,
+      "tier": "average",
+      "team": "TB",
+      "bolts": 1
+    },
+    "triolo": {
+      "sprintSpeed": 28.4,
+      "pctile": 93,
+      "tier": "average",
+      "team": "PIT",
+      "bolts": 0
+    },
+    "lopez": {
+      "sprintSpeed": 27.3,
+      "pctile": 59,
+      "tier": "average",
+      "team": "TEX",
+      "bolts": 0
+    },
+    "stott": {
       "sprintSpeed": 28.3,
       "pctile": 90,
       "tier": "average",
-      "team": "STL",
+      "team": "PHI",
+      "bolts": 1
+    },
+    "workman": {
+      "sprintSpeed": 28.3,
+      "pctile": 90,
+      "tier": "average",
+      "team": "DET",
       "bolts": 0
+    },
+    "hoerner": {
+      "sprintSpeed": 28.3,
+      "pctile": 90,
+      "tier": "average",
+      "team": "CHC",
+      "bolts": 0
+    },
+    "chisholm": {
+      "sprintSpeed": 28.3,
+      "pctile": 90,
+      "tier": "average",
+      "team": "NYY",
+      "bolts": 3
+    },
+    "reyes": {
+      "sprintSpeed": 28.3,
+      "pctile": 90,
+      "tier": "average",
+      "team": "PHI",
+      "bolts": 0
+    },
+    "robles": {
+      "sprintSpeed": 28.3,
+      "pctile": 90,
+      "tier": "average",
+      "team": "SEA",
+      "bolts": 2
     },
     "castro": {
       "sprintSpeed": 28.3,
@@ -688,39 +702,39 @@
       "team": "COL",
       "bolts": 1
     },
-    "cruz": {
-      "sprintSpeed": 28.3,
-      "pctile": 90,
-      "tier": "average",
-      "team": "PIT",
-      "bolts": 7
-    },
-    "vierling": {
-      "sprintSpeed": 28.3,
-      "pctile": 90,
-      "tier": "average",
-      "team": "DET",
-      "bolts": 1
-    },
-    "cole": {
-      "sprintSpeed": 28.3,
-      "pctile": 90,
-      "tier": "average",
-      "team": "HOU",
-      "bolts": 1
-    },
-    "caissie": {
-      "sprintSpeed": 28.3,
-      "pctile": 90,
-      "tier": "average",
-      "team": "MIA",
-      "bolts": 0
-    },
     "antonacci": {
       "sprintSpeed": 28.3,
       "pctile": 90,
       "tier": "average",
       "team": "CWS",
+      "bolts": 0
+    },
+    "bazzana": {
+      "sprintSpeed": 28.3,
+      "pctile": 90,
+      "tier": "average",
+      "team": "CLE",
+      "bolts": 0
+    },
+    "winn": {
+      "sprintSpeed": 28.3,
+      "pctile": 90,
+      "tier": "average",
+      "team": "STL",
+      "bolts": 0
+    },
+    "matthews": {
+      "sprintSpeed": 28.3,
+      "pctile": 90,
+      "tier": "average",
+      "team": "HOU",
+      "bolts": 0
+    },
+    "caballero": {
+      "sprintSpeed": 28.3,
+      "pctile": 90,
+      "tier": "average",
+      "team": "NYY",
       "bolts": 0
     },
     "meadows": {
@@ -730,18 +744,32 @@
       "team": "DET",
       "bolts": 0
     },
-    "caballero": {
+    "caissie": {
+      "sprintSpeed": 28.3,
+      "pctile": 90,
+      "tier": "average",
+      "team": "MIA",
+      "bolts": 0
+    },
+    "henderson": {
       "sprintSpeed": 28.2,
       "pctile": 87,
       "tier": "average",
-      "team": "NYY",
-      "bolts": 0
+      "team": "BAL",
+      "bolts": 1
     },
     "williamson": {
       "sprintSpeed": 28.2,
       "pctile": 87,
       "tier": "average",
       "team": "TB",
+      "bolts": 0
+    },
+    "marsh": {
+      "sprintSpeed": 28.2,
+      "pctile": 87,
+      "tier": "average",
+      "team": "PHI",
       "bolts": 0
     },
     "p\u00e9rez": {
@@ -751,35 +779,7 @@
       "team": "DET",
       "bolts": 0
     },
-    "matthews": {
-      "sprintSpeed": 28.2,
-      "pctile": 87,
-      "tier": "average",
-      "team": "HOU",
-      "bolts": 0
-    },
     "realmuto": {
-      "sprintSpeed": 28.2,
-      "pctile": 87,
-      "tier": "average",
-      "team": "PHI",
-      "bolts": 0
-    },
-    "semien": {
-      "sprintSpeed": 28.2,
-      "pctile": 87,
-      "tier": "average",
-      "team": "NYM",
-      "bolts": 0
-    },
-    "haase": {
-      "sprintSpeed": 28.2,
-      "pctile": 87,
-      "tier": "average",
-      "team": "SF",
-      "bolts": 0
-    },
-    "marsh": {
       "sprintSpeed": 28.2,
       "pctile": 87,
       "tier": "average",
@@ -793,19 +793,12 @@
       "team": "TEX",
       "bolts": 1
     },
-    "schmitt": {
+    "nimmo": {
       "sprintSpeed": 28.2,
       "pctile": 87,
       "tier": "average",
-      "team": "SF",
-      "bolts": 0
-    },
-    "jim\u00e9nez": {
-      "sprintSpeed": 26.0,
-      "pctile": 19,
-      "tier": "below_avg",
-      "team": "TOR",
-      "bolts": 0
+      "team": "TEX",
+      "bolts": 2
     },
     "beck": {
       "sprintSpeed": 28.2,
@@ -814,39 +807,102 @@
       "team": "COL",
       "bolts": 0
     },
-    "henderson": {
+    "loftin": {
       "sprintSpeed": 28.2,
       "pctile": 87,
       "tier": "average",
-      "team": "BAL",
+      "team": "KC",
+      "bolts": 0
+    },
+    "semien": {
+      "sprintSpeed": 28.1,
+      "pctile": 84,
+      "tier": "average",
+      "team": "NYM",
+      "bolts": 0
+    },
+    "schmitt": {
+      "sprintSpeed": 28.1,
+      "pctile": 84,
+      "tier": "average",
+      "team": "SF",
+      "bolts": 0
+    },
+    "mcgonigle": {
+      "sprintSpeed": 28.1,
+      "pctile": 84,
+      "tier": "average",
+      "team": "DET",
       "bolts": 1
     },
     "pages": {
-      "sprintSpeed": 28.2,
-      "pctile": 87,
+      "sprintSpeed": 28.1,
+      "pctile": 84,
       "tier": "average",
       "team": "LAD",
       "bolts": 0
     },
-    "vargas": {
-      "sprintSpeed": 27.0,
-      "pctile": 50,
+    "swanson": {
+      "sprintSpeed": 28.1,
+      "pctile": 84,
       "tier": "average",
-      "team": "AZ",
+      "team": "CHC",
+      "bolts": 1
+    },
+    "edwards": {
+      "sprintSpeed": 28.1,
+      "pctile": 84,
+      "tier": "average",
+      "team": "MIA",
+      "bolts": 1
+    },
+    "haase": {
+      "sprintSpeed": 28.1,
+      "pctile": 84,
+      "tier": "average",
+      "team": "SF",
       "bolts": 0
     },
-    "nimmo": {
+    "lee": {
+      "sprintSpeed": 26.4,
+      "pctile": 31,
+      "tier": "below_avg",
+      "team": "MIN",
+      "bolts": 0
+    },
+    "langford": {
       "sprintSpeed": 28.1,
       "pctile": 84,
       "tier": "average",
       "team": "TEX",
-      "bolts": 2
+      "bolts": 1
     },
-    "loftin": {
+    "jim\u00e9nez": {
+      "sprintSpeed": 26.0,
+      "pctile": 19,
+      "tier": "below_avg",
+      "team": "TOR",
+      "bolts": 0
+    },
+    "vargas": {
+      "sprintSpeed": 27.1,
+      "pctile": 53,
+      "tier": "average",
+      "team": "AZ",
+      "bolts": 1
+    },
+    "abreu": {
       "sprintSpeed": 28.1,
       "pctile": 84,
       "tier": "average",
-      "team": "KC",
+      "team": "BOS",
+      "bolts": 2
+    },
+    "durbin": {
+      "sprintSpeed": 28.1,
+      "pctile": 84,
+      "tier": "average",
+      "team": "BOS",
       "bolts": 0
     },
     "norby": {
@@ -856,34 +912,6 @@
       "team": "MIA",
       "bolts": 0
     },
-    "abreu": {
-      "sprintSpeed": 28.1,
-      "pctile": 84,
-      "tier": "average",
-      "team": "BOS",
-      "bolts": 1
-    },
-    "lee": {
-      "sprintSpeed": 26.4,
-      "pctile": 31,
-      "tier": "below_avg",
-      "team": "MIN",
-      "bolts": 0
-    },
-    "edwards": {
-      "sprintSpeed": 28.1,
-      "pctile": 84,
-      "tier": "average",
-      "team": "MIA",
-      "bolts": 1
-    },
-    "mcgonigle": {
-      "sprintSpeed": 28.1,
-      "pctile": 84,
-      "tier": "average",
-      "team": "DET",
-      "bolts": 1
-    },
     "sogard": {
       "sprintSpeed": 28.1,
       "pctile": 84,
@@ -891,32 +919,11 @@
       "team": "BOS",
       "bolts": 0
     },
-    "swanson": {
-      "sprintSpeed": 28.0,
-      "pctile": 80,
-      "tier": "average",
-      "team": "CHC",
-      "bolts": 1
-    },
     "black": {
       "sprintSpeed": 28.0,
       "pctile": 80,
       "tier": "average",
       "team": "MIL",
-      "bolts": 0
-    },
-    "durbin": {
-      "sprintSpeed": 28.0,
-      "pctile": 80,
-      "tier": "average",
-      "team": "BOS",
-      "bolts": 0
-    },
-    "mayo": {
-      "sprintSpeed": 28.0,
-      "pctile": 80,
-      "tier": "average",
-      "team": "BAL",
       "bolts": 0
     },
     "chapman": {
@@ -926,25 +933,25 @@
       "team": "SF",
       "bolts": 0
     },
-    "langford": {
+    "sullivan": {
       "sprintSpeed": 28.0,
       "pctile": 80,
       "tier": "average",
-      "team": "TEX",
-      "bolts": 1
+      "team": "COL",
+      "bolts": 0
+    },
+    "nishida": {
+      "sprintSpeed": 28.0,
+      "pctile": 80,
+      "tier": "average",
+      "team": "CWS",
+      "bolts": 2
     },
     "cowser": {
       "sprintSpeed": 28.0,
       "pctile": 80,
       "tier": "average",
       "team": "BAL",
-      "bolts": 0
-    },
-    "sullivan": {
-      "sprintSpeed": 28.0,
-      "pctile": 80,
-      "tier": "average",
-      "team": "COL",
       "bolts": 0
     },
     "moniak": {
@@ -954,12 +961,26 @@
       "team": "COL",
       "bolts": 0
     },
-    "reynolds": {
+    "mayo": {
       "sprintSpeed": 28.0,
       "pctile": 80,
       "tier": "average",
-      "team": "PIT",
+      "team": "BAL",
       "bolts": 0
+    },
+    "cole": {
+      "sprintSpeed": 28.0,
+      "pctile": 80,
+      "tier": "average",
+      "team": "HOU",
+      "bolts": 1
+    },
+    "johnson": {
+      "sprintSpeed": 28.0,
+      "pctile": 80,
+      "tier": "average",
+      "team": "SD",
+      "bolts": 1
     },
     "laureano": {
       "sprintSpeed": 28.0,
@@ -975,18 +996,11 @@
       "team": "WSH",
       "bolts": 0
     },
-    "marsee": {
-      "sprintSpeed": 27.9,
-      "pctile": 77,
+    "reynolds": {
+      "sprintSpeed": 28.0,
+      "pctile": 80,
       "tier": "average",
-      "team": "MIA",
-      "bolts": 0
-    },
-    "kreidler": {
-      "sprintSpeed": 27.9,
-      "pctile": 77,
-      "tier": "average",
-      "team": "MIN",
+      "team": "PIT",
       "bolts": 0
     },
     "adell": {
@@ -996,6 +1010,13 @@
       "team": "LAA",
       "bolts": 0
     },
+    "kreidler": {
+      "sprintSpeed": 27.9,
+      "pctile": 77,
+      "tier": "average",
+      "team": "MIN",
+      "bolts": 0
+    },
     "volpe": {
       "sprintSpeed": 27.9,
       "pctile": 77,
@@ -1003,9 +1024,16 @@
       "team": "NYY",
       "bolts": 0
     },
+    "riley": {
+      "sprintSpeed": 27.9,
+      "pctile": 77,
+      "tier": "average",
+      "team": "ATL",
+      "bolts": 0
+    },
     "muncy": {
-      "sprintSpeed": 27.2,
-      "pctile": 56,
+      "sprintSpeed": 27.1,
+      "pctile": 53,
       "tier": "average",
       "team": "LAD",
       "bolts": 0
@@ -1017,18 +1045,18 @@
       "team": "BOS",
       "bolts": 0
     },
-    "o'neill": {
-      "sprintSpeed": 27.9,
-      "pctile": 77,
-      "tier": "average",
-      "team": "BAL",
-      "bolts": 0
-    },
     "tovar": {
       "sprintSpeed": 27.9,
       "pctile": 77,
       "tier": "average",
       "team": "COL",
+      "bolts": 0
+    },
+    "marsee": {
+      "sprintSpeed": 27.9,
+      "pctile": 77,
+      "tier": "average",
+      "team": "MIA",
       "bolts": 0
     },
     "shewmake": {
@@ -1038,11 +1066,11 @@
       "team": "HOU",
       "bolts": 0
     },
-    "tena": {
-      "sprintSpeed": 27.8,
-      "pctile": 74,
+    "saggese": {
+      "sprintSpeed": 27.9,
+      "pctile": 77,
       "tier": "average",
-      "team": "WSH",
+      "team": "STL",
       "bolts": 0
     },
     "outman": {
@@ -1052,18 +1080,11 @@
       "team": "MIN",
       "bolts": 0
     },
-    "altuve": {
-      "sprintSpeed": 27.9,
-      "pctile": 77,
-      "tier": "average",
-      "team": "HOU",
-      "bolts": 6
-    },
-    "riley": {
+    "o'neill": {
       "sprintSpeed": 27.8,
       "pctile": 74,
       "tier": "average",
-      "team": "ATL",
+      "team": "BAL",
       "bolts": 0
     },
     "slater": {
@@ -1073,20 +1094,6 @@
       "team": "NYM",
       "bolts": 0
     },
-    "clement": {
-      "sprintSpeed": 27.8,
-      "pctile": 74,
-      "tier": "average",
-      "team": "TOR",
-      "bolts": 1
-    },
-    "johnson": {
-      "sprintSpeed": 27.8,
-      "pctile": 74,
-      "tier": "average",
-      "team": "SD",
-      "bolts": 1
-    },
     "suzuki": {
       "sprintSpeed": 27.8,
       "pctile": 74,
@@ -1094,12 +1101,26 @@
       "team": "CHC",
       "bolts": 0
     },
+    "clement": {
+      "sprintSpeed": 27.8,
+      "pctile": 74,
+      "tier": "average",
+      "team": "TOR",
+      "bolts": 1
+    },
     "davis": {
       "sprintSpeed": 27.8,
       "pctile": 74,
       "tier": "average",
       "team": "PIT",
       "bolts": 0
+    },
+    "altuve": {
+      "sprintSpeed": 27.8,
+      "pctile": 74,
+      "tier": "average",
+      "team": "HOU",
+      "bolts": 6
     },
     "williams": {
       "sprintSpeed": 27.8,
@@ -1116,6 +1137,41 @@
       "bolts": 0
     },
     "jensen": {
+      "sprintSpeed": 27.8,
+      "pctile": 74,
+      "tier": "average",
+      "team": "KC",
+      "bolts": 0
+    },
+    "call": {
+      "sprintSpeed": 27.8,
+      "pctile": 74,
+      "tier": "average",
+      "team": "LAD",
+      "bolts": 0
+    },
+    "martin": {
+      "sprintSpeed": 27.8,
+      "pctile": 74,
+      "tier": "average",
+      "team": "MIN",
+      "bolts": 0
+    },
+    "happ": {
+      "sprintSpeed": 27.8,
+      "pctile": 74,
+      "tier": "average",
+      "team": "CHC",
+      "bolts": 0
+    },
+    "gim\u00e9nez": {
+      "sprintSpeed": 27.7,
+      "pctile": 71,
+      "tier": "average",
+      "team": "TOR",
+      "bolts": 1
+    },
+    "india": {
       "sprintSpeed": 27.7,
       "pctile": 71,
       "tier": "average",
@@ -1123,38 +1179,10 @@
       "bolts": 0
     },
     "garcia": {
-      "sprintSpeed": 27.5,
-      "pctile": 65,
+      "sprintSpeed": 27.7,
+      "pctile": 71,
       "tier": "average",
       "team": "PIT",
-      "bolts": 0
-    },
-    "martin": {
-      "sprintSpeed": 27.7,
-      "pctile": 71,
-      "tier": "average",
-      "team": "MIN",
-      "bolts": 0
-    },
-    "hernaiz": {
-      "sprintSpeed": 27.7,
-      "pctile": 71,
-      "tier": "average",
-      "team": "ATH",
-      "bolts": 0
-    },
-    "mart\u00ednez": {
-      "sprintSpeed": 27.7,
-      "pctile": 71,
-      "tier": "average",
-      "team": "CLE",
-      "bolts": 0
-    },
-    "india": {
-      "sprintSpeed": 27.7,
-      "pctile": 71,
-      "tier": "average",
-      "team": "KC",
       "bolts": 0
     },
     "adames": {
@@ -1164,46 +1192,11 @@
       "team": "SF",
       "bolts": 0
     },
-    "mccutchen": {
+    "mart\u00ednez": {
       "sprintSpeed": 27.7,
       "pctile": 71,
       "tier": "average",
-      "team": "TEX",
-      "bolts": 0
-    },
-    "rooker": {
-      "sprintSpeed": 27.7,
-      "pctile": 71,
-      "tier": "average",
-      "team": "ATH",
-      "bolts": 0
-    },
-    "call": {
-      "sprintSpeed": 27.7,
-      "pctile": 71,
-      "tier": "average",
-      "team": "LAD",
-      "bolts": 0
-    },
-    "happ": {
-      "sprintSpeed": 27.7,
-      "pctile": 71,
-      "tier": "average",
-      "team": "CHC",
-      "bolts": 0
-    },
-    "millas": {
-      "sprintSpeed": 27.7,
-      "pctile": 71,
-      "tier": "average",
-      "team": "WSH",
-      "bolts": 0
-    },
-    "yorke": {
-      "sprintSpeed": 27.7,
-      "pctile": 71,
-      "tier": "average",
-      "team": "PIT",
+      "team": "CLE",
       "bolts": 0
     },
     "meyers": {
@@ -1213,6 +1206,48 @@
       "team": "HOU",
       "bolts": 0
     },
+    "mccutchen": {
+      "sprintSpeed": 27.7,
+      "pctile": 71,
+      "tier": "average",
+      "team": "TEX",
+      "bolts": 0
+    },
+    "hernaiz": {
+      "sprintSpeed": 27.7,
+      "pctile": 71,
+      "tier": "average",
+      "team": "ATH",
+      "bolts": 0
+    },
+    "torres": {
+      "sprintSpeed": 25.2,
+      "pctile": 1,
+      "tier": "below_avg",
+      "team": "DET",
+      "bolts": 0
+    },
+    "dezenzo": {
+      "sprintSpeed": 27.7,
+      "pctile": 71,
+      "tier": "average",
+      "team": "HOU",
+      "bolts": 0
+    },
+    "yorke": {
+      "sprintSpeed": 27.7,
+      "pctile": 71,
+      "tier": "average",
+      "team": "PIT",
+      "bolts": 0
+    },
+    "tena": {
+      "sprintSpeed": 27.7,
+      "pctile": 71,
+      "tier": "average",
+      "team": "WSH",
+      "bolts": 0
+    },
     "rodriguez": {
       "sprintSpeed": 27.6,
       "pctile": 68,
@@ -1220,12 +1255,19 @@
       "team": "SF",
       "bolts": 0
     },
-    "schuemann": {
+    "schneemann": {
+      "sprintSpeed": 27.7,
+      "pctile": 71,
+      "tier": "average",
+      "team": "CLE",
+      "bolts": 0
+    },
+    "clemens": {
       "sprintSpeed": 27.6,
       "pctile": 68,
       "tier": "average",
-      "team": "NYY",
-      "bolts": 0
+      "team": "MIN",
+      "bolts": 1
     },
     "wood": {
       "sprintSpeed": 27.6,
@@ -1241,32 +1283,39 @@
       "team": "AZ",
       "bolts": 0
     },
-    "schneemann": {
+    "millas": {
       "sprintSpeed": 27.6,
       "pctile": 68,
       "tier": "average",
-      "team": "CLE",
+      "team": "WSH",
       "bolts": 0
     },
-    "saggese": {
+    "rooker": {
       "sprintSpeed": 27.6,
       "pctile": 68,
       "tier": "average",
-      "team": "STL",
+      "team": "ATH",
       "bolts": 0
-    },
-    "gim\u00e9nez": {
-      "sprintSpeed": 27.6,
-      "pctile": 68,
-      "tier": "average",
-      "team": "TOR",
-      "bolts": 1
     },
     "dingler": {
       "sprintSpeed": 27.6,
       "pctile": 68,
       "tier": "average",
       "team": "DET",
+      "bolts": 0
+    },
+    "holliday": {
+      "sprintSpeed": 27.6,
+      "pctile": 68,
+      "tier": "average",
+      "team": "BAL",
+      "bolts": 0
+    },
+    "wetherholt": {
+      "sprintSpeed": 27.6,
+      "pctile": 68,
+      "tier": "average",
+      "team": "STL",
       "bolts": 0
     },
     "neto": {
@@ -1276,39 +1325,32 @@
       "team": "LAA",
       "bolts": 0
     },
-    "bellinger": {
+    "vel\u00e1zquez": {
       "sprintSpeed": 27.6,
       "pctile": 68,
       "tier": "average",
-      "team": "NYY",
+      "team": "STL",
       "bolts": 0
     },
-    "emerson": {
+    "ohtani": {
       "sprintSpeed": 27.6,
       "pctile": 68,
-      "tier": "average",
-      "team": "SEA",
-      "bolts": 0
-    },
-    "dezenzo": {
-      "sprintSpeed": 27.5,
-      "pctile": 65,
-      "tier": "average",
-      "team": "HOU",
-      "bolts": 0
-    },
-    "clemens": {
-      "sprintSpeed": 27.5,
-      "pctile": 65,
-      "tier": "average",
-      "team": "MIN",
-      "bolts": 1
-    },
-    "rushing": {
-      "sprintSpeed": 27.5,
-      "pctile": 65,
       "tier": "average",
       "team": "LAD",
+      "bolts": 0
+    },
+    "andujar": {
+      "sprintSpeed": 27.5,
+      "pctile": 65,
+      "tier": "average",
+      "team": "SD",
+      "bolts": 0
+    },
+    "mckinstry": {
+      "sprintSpeed": 27.5,
+      "pctile": 65,
+      "tier": "average",
+      "team": "DET",
       "bolts": 0
     },
     "bader": {
@@ -1318,6 +1360,20 @@
       "team": "SF",
       "bolts": 0
     },
+    "schuemann": {
+      "sprintSpeed": 27.5,
+      "pctile": 65,
+      "tier": "average",
+      "team": "NYY",
+      "bolts": 0
+    },
+    "ram\u00edrez": {
+      "sprintSpeed": 27.0,
+      "pctile": 50,
+      "tier": "average",
+      "team": "CHC",
+      "bolts": 0
+    },
     "lowe": {
       "sprintSpeed": 25.8,
       "pctile": 12,
@@ -1325,25 +1381,11 @@
       "team": "CIN",
       "bolts": 0
     },
-    "ram\u00edrez": {
-      "sprintSpeed": 27.3,
-      "pctile": 59,
-      "tier": "average",
-      "team": "MIA",
-      "bolts": 0
-    },
-    "freeman": {
-      "sprintSpeed": 25.0,
-      "pctile": 1,
-      "tier": "below_avg",
-      "team": "LAD",
-      "bolts": 0
-    },
-    "mckinstry": {
+    "kiner_falefa": {
       "sprintSpeed": 27.4,
       "pctile": 62,
       "tier": "average",
-      "team": "DET",
+      "team": "BOS",
       "bolts": 0
     },
     "feduccia": {
@@ -1353,11 +1395,11 @@
       "team": "TB",
       "bolts": 0
     },
-    "ward": {
+    "rushing": {
       "sprintSpeed": 27.4,
       "pctile": 62,
       "tier": "average",
-      "team": "BAL",
+      "team": "LAD",
       "bolts": 0
     },
     "anthony": {
@@ -1367,6 +1409,34 @@
       "team": "BOS",
       "bolts": 0
     },
+    "freeman": {
+      "sprintSpeed": 25.1,
+      "pctile": 1,
+      "tier": "below_avg",
+      "team": "LAD",
+      "bolts": 0
+    },
+    "myers": {
+      "sprintSpeed": 27.4,
+      "pctile": 62,
+      "tier": "average",
+      "team": "CIN",
+      "bolts": 0
+    },
+    "song": {
+      "sprintSpeed": 27.4,
+      "pctile": 62,
+      "tier": "average",
+      "team": "SD",
+      "bolts": 0
+    },
+    "collins": {
+      "sprintSpeed": 27.4,
+      "pctile": 62,
+      "tier": "average",
+      "team": "KC",
+      "bolts": 0
+    },
     "pereira": {
       "sprintSpeed": 27.4,
       "pctile": 62,
@@ -1374,25 +1444,18 @@
       "team": "CWS",
       "bolts": 0
     },
-    "isbel": {
+    "bellinger": {
       "sprintSpeed": 27.4,
       "pctile": 62,
       "tier": "average",
-      "team": "KC",
+      "team": "NYY",
       "bolts": 0
     },
-    "wetherholt": {
+    "emerson": {
       "sprintSpeed": 27.4,
       "pctile": 62,
       "tier": "average",
-      "team": "STL",
-      "bolts": 0
-    },
-    "ferm\u00edn": {
-      "sprintSpeed": 27.4,
-      "pctile": 62,
-      "tier": "average",
-      "team": "STL",
+      "team": "SEA",
       "bolts": 0
     },
     "rivas": {
@@ -1400,13 +1463,6 @@
       "pctile": 62,
       "tier": "average",
       "team": "SEA",
-      "bolts": 0
-    },
-    "goodman": {
-      "sprintSpeed": 27.4,
-      "pctile": 62,
-      "tier": "average",
-      "team": "COL",
       "bolts": 0
     },
     "rocchio": {
@@ -1423,18 +1479,32 @@
       "team": "MIA",
       "bolts": 0
     },
-    "collins": {
+    "ferm\u00edn": {
+      "sprintSpeed": 27.4,
+      "pctile": 62,
+      "tier": "average",
+      "team": "STL",
+      "bolts": 0
+    },
+    "isbel": {
       "sprintSpeed": 27.4,
       "pctile": 62,
       "tier": "average",
       "team": "KC",
       "bolts": 0
     },
-    "wong": {
-      "sprintSpeed": 27.4,
-      "pctile": 62,
+    "ward": {
+      "sprintSpeed": 27.3,
+      "pctile": 59,
       "tier": "average",
-      "team": "BOS",
+      "team": "BAL",
+      "bolts": 0
+    },
+    "thompson": {
+      "sprintSpeed": 27.3,
+      "pctile": 59,
+      "tier": "average",
+      "team": "COL",
       "bolts": 0
     },
     "naylor": {
@@ -1444,6 +1514,13 @@
       "team": "CLE",
       "bolts": 0
     },
+    "wong": {
+      "sprintSpeed": 27.3,
+      "pctile": 59,
+      "tier": "average",
+      "team": "BOS",
+      "bolts": 0
+    },
     "mullins": {
       "sprintSpeed": 27.3,
       "pctile": 59,
@@ -1451,46 +1528,11 @@
       "team": "TB",
       "bolts": 1
     },
-    "ohtani": {
+    "foscue": {
       "sprintSpeed": 27.3,
       "pctile": 59,
       "tier": "average",
-      "team": "LAD",
-      "bolts": 0
-    },
-    "bleday": {
-      "sprintSpeed": 27.3,
-      "pctile": 59,
-      "tier": "average",
-      "team": "CIN",
-      "bolts": 0
-    },
-    "kiner_falefa": {
-      "sprintSpeed": 27.3,
-      "pctile": 59,
-      "tier": "average",
-      "team": "BOS",
-      "bolts": 0
-    },
-    "andujar": {
-      "sprintSpeed": 27.3,
-      "pctile": 59,
-      "tier": "average",
-      "team": "SD",
-      "bolts": 0
-    },
-    "mayer": {
-      "sprintSpeed": 27.3,
-      "pctile": 59,
-      "tier": "average",
-      "team": "BOS",
-      "bolts": 0
-    },
-    "bogaerts": {
-      "sprintSpeed": 27.3,
-      "pctile": 59,
-      "tier": "average",
-      "team": "SD",
+      "team": "TEX",
       "bolts": 0
     },
     "lewis": {
@@ -1500,6 +1542,20 @@
       "team": "MIN",
       "bolts": 0
     },
+    "goodman": {
+      "sprintSpeed": 27.3,
+      "pctile": 59,
+      "tier": "average",
+      "team": "COL",
+      "bolts": 0
+    },
+    "mayer": {
+      "sprintSpeed": 27.3,
+      "pctile": 59,
+      "tier": "average",
+      "team": "BOS",
+      "bolts": 0
+    },
     "hays": {
       "sprintSpeed": 27.3,
       "pctile": 59,
@@ -1507,21 +1563,7 @@
       "team": "CWS",
       "bolts": 0
     },
-    "foscue": {
-      "sprintSpeed": 27.3,
-      "pctile": 59,
-      "tier": "average",
-      "team": "TEX",
-      "bolts": 0
-    },
-    "song": {
-      "sprintSpeed": 27.3,
-      "pctile": 59,
-      "tier": "average",
-      "team": "SD",
-      "bolts": 0
-    },
-    "myers": {
+    "bleday": {
       "sprintSpeed": 27.2,
       "pctile": 56,
       "tier": "average",
@@ -1535,11 +1577,32 @@
       "team": "SD",
       "bolts": 0
     },
+    "meidroth": {
+      "sprintSpeed": 27.2,
+      "pctile": 56,
+      "tier": "average",
+      "team": "CWS",
+      "bolts": 0
+    },
+    "burger": {
+      "sprintSpeed": 27.2,
+      "pctile": 56,
+      "tier": "average",
+      "team": "TEX",
+      "bolts": 0
+    },
     "b\u00e1ez": {
       "sprintSpeed": 27.2,
       "pctile": 56,
       "tier": "average",
       "team": "DET",
+      "bolts": 0
+    },
+    "bogaerts": {
+      "sprintSpeed": 27.2,
+      "pctile": 56,
+      "tier": "average",
+      "team": "SD",
       "bolts": 0
     },
     "ramos": {
@@ -1556,11 +1619,11 @@
       "team": "ATH",
       "bolts": 1
     },
-    "varsho": {
+    "soderstrom": {
       "sprintSpeed": 27.2,
       "pctile": 56,
       "tier": "average",
-      "team": "TOR",
+      "team": "ATH",
       "bolts": 0
     },
     "murakami": {
@@ -1577,11 +1640,11 @@
       "team": "HOU",
       "bolts": 0
     },
-    "allen": {
+    "varsho": {
       "sprintSpeed": 27.2,
       "pctile": 56,
       "tier": "average",
-      "team": "HOU",
+      "team": "TOR",
       "bolts": 0
     },
     "rengifo": {
@@ -1591,11 +1654,18 @@
       "team": "MIL",
       "bolts": 0
     },
-    "albies": {
+    "contreras": {
+      "sprintSpeed": 25.2,
+      "pctile": 1,
+      "tier": "below_avg",
+      "team": "MIL",
+      "bolts": 0
+    },
+    "palacios": {
       "sprintSpeed": 27.1,
       "pctile": 53,
       "tier": "average",
-      "team": "ATL",
+      "team": "TB",
       "bolts": 0
     },
     "caglianone": {
@@ -1605,11 +1675,32 @@
       "team": "KC",
       "bolts": 0
     },
-    "gilbert": {
+    "allen": {
       "sprintSpeed": 27.1,
       "pctile": 53,
       "tier": "average",
-      "team": "SF",
+      "team": "HOU",
+      "bolts": 0
+    },
+    "albies": {
+      "sprintSpeed": 27.1,
+      "pctile": 53,
+      "tier": "average",
+      "team": "ATL",
+      "bolts": 0
+    },
+    "harper": {
+      "sprintSpeed": 27.1,
+      "pctile": 53,
+      "tier": "average",
+      "team": "PHI",
+      "bolts": 0
+    },
+    "arozarena": {
+      "sprintSpeed": 27.1,
+      "pctile": 53,
+      "tier": "average",
+      "team": "SEA",
       "bolts": 0
     },
     "o'hoppe": {
@@ -1619,41 +1710,6 @@
       "team": "LAA",
       "bolts": 0
     },
-    "burger": {
-      "sprintSpeed": 27.1,
-      "pctile": 53,
-      "tier": "average",
-      "team": "TEX",
-      "bolts": 0
-    },
-    "yastrzemski": {
-      "sprintSpeed": 27.1,
-      "pctile": 53,
-      "tier": "average",
-      "team": "ATL",
-      "bolts": 0
-    },
-    "yelich": {
-      "sprintSpeed": 27.1,
-      "pctile": 53,
-      "tier": "average",
-      "team": "MIL",
-      "bolts": 0
-    },
-    "meidroth": {
-      "sprintSpeed": 27.1,
-      "pctile": 53,
-      "tier": "average",
-      "team": "CWS",
-      "bolts": 0
-    },
-    "contreras": {
-      "sprintSpeed": 25.1,
-      "pctile": 1,
-      "tier": "below_avg",
-      "team": "MIL",
-      "bolts": 0
-    },
     "grichuk": {
       "sprintSpeed": 27.0,
       "pctile": 50,
@@ -1661,49 +1717,14 @@
       "team": "CWS",
       "bolts": 0
     },
-    "palacios": {
+    "yastrzemski": {
       "sprintSpeed": 27.0,
       "pctile": 50,
       "tier": "average",
-      "team": "TB",
+      "team": "ATL",
       "bolts": 0
     },
-    "harper": {
-      "sprintSpeed": 27.0,
-      "pctile": 50,
-      "tier": "average",
-      "team": "PHI",
-      "bolts": 0
-    },
-    "soderstrom": {
-      "sprintSpeed": 27.0,
-      "pctile": 50,
-      "tier": "average",
-      "team": "ATH",
-      "bolts": 0
-    },
-    "lukes": {
-      "sprintSpeed": 27.0,
-      "pctile": 50,
-      "tier": "average",
-      "team": "TOR",
-      "bolts": 0
-    },
-    "arozarena": {
-      "sprintSpeed": 27.0,
-      "pctile": 50,
-      "tier": "average",
-      "team": "SEA",
-      "bolts": 0
-    },
-    "massey": {
-      "sprintSpeed": 27.0,
-      "pctile": 50,
-      "tier": "average",
-      "team": "KC",
-      "bolts": 0
-    },
-    "hayes": {
+    "stephenson": {
       "sprintSpeed": 27.0,
       "pctile": 50,
       "tier": "average",
@@ -1717,11 +1738,39 @@
       "team": "MIL",
       "bolts": 0
     },
-    "susac": {
+    "yelich": {
+      "sprintSpeed": 27.0,
+      "pctile": 50,
+      "tier": "average",
+      "team": "MIL",
+      "bolts": 0
+    },
+    "hayes": {
+      "sprintSpeed": 27.0,
+      "pctile": 50,
+      "tier": "average",
+      "team": "CIN",
+      "bolts": 0
+    },
+    "mead": {
+      "sprintSpeed": 27.0,
+      "pctile": 50,
+      "tier": "average",
+      "team": "WSH",
+      "bolts": 0
+    },
+    "gilbert": {
       "sprintSpeed": 26.9,
       "pctile": 46,
       "tier": "average",
       "team": "SF",
+      "bolts": 0
+    },
+    "karros": {
+      "sprintSpeed": 26.9,
+      "pctile": 46,
+      "tier": "average",
+      "team": "COL",
       "bolts": 0
     },
     "schneider": {
@@ -1738,11 +1787,11 @@
       "team": "CWS",
       "bolts": 0
     },
-    "mead": {
+    "susac": {
       "sprintSpeed": 26.9,
       "pctile": 46,
       "tier": "average",
-      "team": "WSH",
+      "team": "SF",
       "bolts": 0
     },
     "jackson": {
@@ -1766,25 +1815,11 @@
       "team": "NYM",
       "bolts": 0
     },
-    "trammell": {
+    "freeland": {
       "sprintSpeed": 26.9,
       "pctile": 46,
       "tier": "average",
-      "team": "HOU",
-      "bolts": 0
-    },
-    "baty": {
-      "sprintSpeed": 26.9,
-      "pctile": 46,
-      "tier": "average",
-      "team": "NYM",
-      "bolts": 0
-    },
-    "grissom": {
-      "sprintSpeed": 26.9,
-      "pctile": 46,
-      "tier": "average",
-      "team": "LAA",
+      "team": "LAD",
       "bolts": 0
     },
     "lindor": {
@@ -1794,11 +1829,32 @@
       "team": "NYM",
       "bolts": 0
     },
+    "vivas": {
+      "sprintSpeed": 26.8,
+      "pctile": 43,
+      "tier": "average",
+      "team": "WSH",
+      "bolts": 0
+    },
+    "baty": {
+      "sprintSpeed": 26.8,
+      "pctile": 43,
+      "tier": "average",
+      "team": "NYM",
+      "bolts": 0
+    },
     "rice": {
-      "sprintSpeed": 26.9,
-      "pctile": 46,
+      "sprintSpeed": 26.8,
+      "pctile": 43,
       "tier": "average",
       "team": "NYY",
+      "bolts": 0
+    },
+    "grissom": {
+      "sprintSpeed": 26.8,
+      "pctile": 43,
+      "tier": "average",
+      "team": "LAA",
       "bolts": 0
     },
     "fermin": {
@@ -1808,20 +1864,6 @@
       "team": "SD",
       "bolts": 0
     },
-    "o'hearn": {
-      "sprintSpeed": 26.8,
-      "pctile": 43,
-      "tier": "average",
-      "team": "PIT",
-      "bolts": 0
-    },
-    "freeland": {
-      "sprintSpeed": 26.8,
-      "pctile": 43,
-      "tier": "average",
-      "team": "LAD",
-      "bolts": 0
-    },
     "dom\u00ednguez": {
       "sprintSpeed": 26.8,
       "pctile": 43,
@@ -1829,11 +1871,60 @@
       "team": "NYY",
       "bolts": 0
     },
-    "vivas": {
+    "carpenter": {
       "sprintSpeed": 26.8,
       "pctile": 43,
       "tier": "average",
-      "team": "WSH",
+      "team": "DET",
+      "bolts": 0
+    },
+    "massey": {
+      "sprintSpeed": 26.8,
+      "pctile": 43,
+      "tier": "average",
+      "team": "KC",
+      "bolts": 0
+    },
+    "larnach": {
+      "sprintSpeed": 26.8,
+      "pctile": 43,
+      "tier": "average",
+      "team": "MIN",
+      "bolts": 0
+    },
+    "refsnyder": {
+      "sprintSpeed": 26.8,
+      "pctile": 43,
+      "tier": "average",
+      "team": "SEA",
+      "bolts": 0
+    },
+    "perdomo": {
+      "sprintSpeed": 26.8,
+      "pctile": 43,
+      "tier": "average",
+      "team": "AZ",
+      "bolts": 0
+    },
+    "o'hearn": {
+      "sprintSpeed": 26.8,
+      "pctile": 43,
+      "tier": "average",
+      "team": "PIT",
+      "bolts": 0
+    },
+    "lukes": {
+      "sprintSpeed": 26.8,
+      "pctile": 43,
+      "tier": "average",
+      "team": "TOR",
+      "bolts": 0
+    },
+    "gasper": {
+      "sprintSpeed": 26.8,
+      "pctile": 43,
+      "tier": "average",
+      "team": "BOS",
       "bolts": 0
     },
     "pi\u00f1ango": {
@@ -1843,20 +1934,6 @@
       "team": "TOR",
       "bolts": 0
     },
-    "karros": {
-      "sprintSpeed": 26.8,
-      "pctile": 43,
-      "tier": "average",
-      "team": "COL",
-      "bolts": 0
-    },
-    "thompson": {
-      "sprintSpeed": 26.8,
-      "pctile": 43,
-      "tier": "average",
-      "team": "COL",
-      "bolts": 0
-    },
     "kelenic": {
       "sprintSpeed": 26.8,
       "pctile": 43,
@@ -1864,25 +1941,11 @@
       "team": "CWS",
       "bolts": 0
     },
-    "delauter": {
+    "monasterio": {
       "sprintSpeed": 26.7,
       "pctile": 40,
       "tier": "average",
-      "team": "CLE",
-      "bolts": 0
-    },
-    "perdomo": {
-      "sprintSpeed": 26.7,
-      "pctile": 40,
-      "tier": "average",
-      "team": "AZ",
-      "bolts": 0
-    },
-    "carpenter": {
-      "sprintSpeed": 26.7,
-      "pctile": 40,
-      "tier": "average",
-      "team": "DET",
+      "team": "BOS",
       "bolts": 0
     },
     "ur\u00edas": {
@@ -1892,32 +1955,18 @@
       "team": "STL",
       "bolts": 0
     },
-    "gasper": {
-      "sprintSpeed": 26.7,
-      "pctile": 40,
-      "tier": "average",
-      "team": "BOS",
-      "bolts": 0
-    },
-    "grisham": {
-      "sprintSpeed": 26.7,
-      "pctile": 40,
-      "tier": "average",
-      "team": "NYY",
-      "bolts": 0
-    },
-    "stephenson": {
-      "sprintSpeed": 26.7,
-      "pctile": 40,
-      "tier": "average",
-      "team": "CIN",
-      "bolts": 0
-    },
     "morel": {
       "sprintSpeed": 26.7,
       "pctile": 40,
       "tier": "average",
       "team": "MIA",
+      "bolts": 0
+    },
+    "kwan": {
+      "sprintSpeed": 26.7,
+      "pctile": 40,
+      "tier": "average",
+      "team": "CLE",
       "bolts": 0
     },
     "joe": {
@@ -1927,6 +1976,20 @@
       "team": "SEA",
       "bolts": 0
     },
+    "moreno": {
+      "sprintSpeed": 26.7,
+      "pctile": 40,
+      "tier": "average",
+      "team": "AZ",
+      "bolts": 0
+    },
+    "fortes": {
+      "sprintSpeed": 26.7,
+      "pctile": 40,
+      "tier": "average",
+      "team": "TB",
+      "bolts": 0
+    },
     "judge": {
       "sprintSpeed": 26.7,
       "pctile": 40,
@@ -1934,18 +1997,11 @@
       "team": "NYY",
       "bolts": 1
     },
-    "monasterio": {
+    "delauter": {
       "sprintSpeed": 26.7,
       "pctile": 40,
       "tier": "average",
-      "team": "BOS",
-      "bolts": 0
-    },
-    "friedl": {
-      "sprintSpeed": 26.7,
-      "pctile": 40,
-      "tier": "average",
-      "team": "CIN",
+      "team": "CLE",
       "bolts": 0
     },
     "kurtz": {
@@ -1955,11 +2011,18 @@
       "team": "ATH",
       "bolts": 0
     },
-    "springer": {
+    "friedl": {
       "sprintSpeed": 26.7,
       "pctile": 40,
       "tier": "average",
-      "team": "TOR",
+      "team": "CIN",
+      "bolts": 0
+    },
+    "arraez": {
+      "sprintSpeed": 26.7,
+      "pctile": 40,
+      "tier": "average",
+      "team": "SF",
       "bolts": 0
     },
     "encarnacion": {
@@ -1969,46 +2032,32 @@
       "team": "SF",
       "bolts": 0
     },
-    "espinal": {
-      "sprintSpeed": 26.6,
-      "pctile": 37,
-      "tier": "average",
-      "team": "LAD",
-      "bolts": 0
-    },
-    "larnach": {
-      "sprintSpeed": 26.6,
-      "pctile": 37,
-      "tier": "average",
-      "team": "MIN",
-      "bolts": 0
-    },
-    "kwan": {
-      "sprintSpeed": 26.6,
-      "pctile": 37,
-      "tier": "average",
-      "team": "CLE",
-      "bolts": 0
-    },
-    "arraez": {
-      "sprintSpeed": 26.6,
-      "pctile": 37,
-      "tier": "average",
-      "team": "SF",
-      "bolts": 0
-    },
     "rutschman": {
-      "sprintSpeed": 26.6,
-      "pctile": 37,
+      "sprintSpeed": 26.7,
+      "pctile": 40,
       "tier": "average",
       "team": "BAL",
       "bolts": 0
     },
-    "refsnyder": {
+    "dub\u00f3n": {
+      "sprintSpeed": 26.7,
+      "pctile": 40,
+      "tier": "average",
+      "team": "ATL",
+      "bolts": 0
+    },
+    "springer": {
       "sprintSpeed": 26.6,
       "pctile": 37,
       "tier": "average",
-      "team": "SEA",
+      "team": "TOR",
+      "bolts": 0
+    },
+    "julien": {
+      "sprintSpeed": 26.6,
+      "pctile": 37,
+      "tier": "average",
+      "team": "COL",
       "bolts": 0
     },
     "sheets": {
@@ -2025,39 +2074,53 @@
       "team": "PIT",
       "bolts": 0
     },
+    "espinal": {
+      "sprintSpeed": 26.6,
+      "pctile": 37,
+      "tier": "average",
+      "team": "LAD",
+      "bolts": 0
+    },
     "garc\u00eda": {
+      "sprintSpeed": 26.6,
+      "pctile": 37,
+      "tier": "average",
+      "team": "PHI",
+      "bolts": 0
+    },
+    "grisham": {
+      "sprintSpeed": 26.6,
+      "pctile": 37,
+      "tier": "average",
+      "team": "NYY",
+      "bolts": 0
+    },
+    "trammell": {
       "sprintSpeed": 26.5,
       "pctile": 34,
       "tier": "average",
-      "team": "WSH",
+      "team": "HOU",
       "bolts": 0
     },
-    "moreno": {
-      "sprintSpeed": 26.6,
-      "pctile": 37,
-      "tier": "average",
-      "team": "AZ",
-      "bolts": 0
-    },
-    "mack": {
-      "sprintSpeed": 26.6,
-      "pctile": 37,
-      "tier": "average",
-      "team": "MIA",
-      "bolts": 0
-    },
-    "dub\u00f3n": {
-      "sprintSpeed": 26.6,
-      "pctile": 37,
-      "tier": "average",
-      "team": "ATL",
-      "bolts": 0
-    },
-    "stewart": {
+    "benintendi": {
       "sprintSpeed": 26.5,
       "pctile": 34,
       "tier": "average",
-      "team": "CIN",
+      "team": "CWS",
+      "bolts": 0
+    },
+    "madrigal": {
+      "sprintSpeed": 26.5,
+      "pctile": 34,
+      "tier": "average",
+      "team": "LAA",
+      "bolts": 0
+    },
+    "bohm": {
+      "sprintSpeed": 26.5,
+      "pctile": 34,
+      "tier": "average",
+      "team": "PHI",
       "bolts": 0
     },
     "brito": {
@@ -2067,13 +2130,6 @@
       "team": "CLE",
       "bolts": 0
     },
-    "fortes": {
-      "sprintSpeed": 26.5,
-      "pctile": 34,
-      "tier": "average",
-      "team": "TB",
-      "bolts": 0
-    },
     "baldwin": {
       "sprintSpeed": 26.5,
       "pctile": 34,
@@ -2081,18 +2137,11 @@
       "team": "ATL",
       "bolts": 0
     },
-    "betts": {
+    "mack": {
       "sprintSpeed": 26.5,
       "pctile": 34,
       "tier": "average",
-      "team": "LAD",
-      "bolts": 0
-    },
-    "greene": {
-      "sprintSpeed": 26.5,
-      "pctile": 34,
-      "tier": "average",
-      "team": "DET",
+      "team": "MIA",
       "bolts": 0
     },
     "arias": {
@@ -2102,6 +2151,20 @@
       "team": "CLE",
       "bolts": 0
     },
+    "greene": {
+      "sprintSpeed": 26.5,
+      "pctile": 34,
+      "tier": "average",
+      "team": "DET",
+      "bolts": 0
+    },
+    "stewart": {
+      "sprintSpeed": 26.4,
+      "pctile": 31,
+      "tier": "below_avg",
+      "team": "CIN",
+      "bolts": 0
+    },
     "montgomery": {
       "sprintSpeed": 26.4,
       "pctile": 31,
@@ -2109,25 +2172,11 @@
       "team": "CWS",
       "bolts": 0
     },
-    "julien": {
+    "walton": {
       "sprintSpeed": 26.4,
       "pctile": 31,
       "tier": "below_avg",
-      "team": "COL",
-      "bolts": 0
-    },
-    "bohm": {
-      "sprintSpeed": 26.4,
-      "pctile": 31,
-      "tier": "below_avg",
-      "team": "PHI",
-      "bolts": 0
-    },
-    "benintendi": {
-      "sprintSpeed": 26.4,
-      "pctile": 31,
-      "tier": "below_avg",
-      "team": "CWS",
+      "team": "LAA",
       "bolts": 0
     },
     "moncada": {
@@ -2137,6 +2186,34 @@
       "team": "LAA",
       "bolts": 0
     },
+    "stowers": {
+      "sprintSpeed": 26.4,
+      "pctile": 31,
+      "tier": "below_avg",
+      "team": "MIA",
+      "bolts": 0
+    },
+    "torrens": {
+      "sprintSpeed": 26.4,
+      "pctile": 31,
+      "tier": "below_avg",
+      "team": "NYM",
+      "bolts": 0
+    },
+    "tucker": {
+      "sprintSpeed": 26.4,
+      "pctile": 31,
+      "tier": "below_avg",
+      "team": "LAD",
+      "bolts": 0
+    },
+    "torkelson": {
+      "sprintSpeed": 26.4,
+      "pctile": 31,
+      "tier": "below_avg",
+      "team": "DET",
+      "bolts": 0
+    },
     "pauley": {
       "sprintSpeed": 26.4,
       "pctile": 31,
@@ -2144,32 +2221,18 @@
       "team": "MIA",
       "bolts": 0
     },
-    "torkelson": {
-      "sprintSpeed": 26.3,
-      "pctile": 28,
-      "tier": "below_avg",
-      "team": "DET",
-      "bolts": 0
-    },
-    "tucker": {
+    "betts": {
       "sprintSpeed": 26.3,
       "pctile": 28,
       "tier": "below_avg",
       "team": "LAD",
       "bolts": 0
     },
-    "stowers": {
+    "march\u00e1n": {
       "sprintSpeed": 26.3,
       "pctile": 28,
       "tier": "below_avg",
-      "team": "MIA",
-      "bolts": 0
-    },
-    "torrens": {
-      "sprintSpeed": 26.3,
-      "pctile": 28,
-      "tier": "below_avg",
-      "team": "NYM",
+      "team": "PHI",
       "bolts": 0
     },
     "del_castillo": {
@@ -2177,6 +2240,13 @@
       "pctile": 28,
       "tier": "below_avg",
       "team": "AZ",
+      "bolts": 0
+    },
+    "gray": {
+      "sprintSpeed": 26.3,
+      "pctile": 28,
+      "tier": "below_avg",
+      "team": "MIN",
       "bolts": 0
     },
     "johnston": {
@@ -2193,53 +2263,25 @@
       "team": "MIN",
       "bolts": 0
     },
-    "march\u00e1n": {
-      "sprintSpeed": 26.3,
-      "pctile": 28,
-      "tier": "below_avg",
-      "team": "PHI",
-      "bolts": 0
-    },
-    "gray": {
-      "sprintSpeed": 26.3,
-      "pctile": 28,
-      "tier": "below_avg",
-      "team": "MIN",
-      "bolts": 0
-    },
-    "frazier": {
-      "sprintSpeed": 26.2,
-      "pctile": 25,
-      "tier": "below_avg",
-      "team": "LAA",
-      "bolts": 0
-    },
     "s\u00e1nchez": {
-      "sprintSpeed": 26.2,
-      "pctile": 25,
+      "sprintSpeed": 26.3,
+      "pctile": 28,
       "tier": "below_avg",
       "team": "TOR",
       "bolts": 0
     },
-    "canzone": {
-      "sprintSpeed": 26.2,
-      "pctile": 25,
-      "tier": "below_avg",
-      "team": "SEA",
-      "bolts": 0
-    },
-    "butler": {
-      "sprintSpeed": 26.2,
-      "pctile": 25,
-      "tier": "below_avg",
-      "team": "ATH",
-      "bolts": 0
-    },
     "yoshida": {
-      "sprintSpeed": 26.2,
-      "pctile": 25,
+      "sprintSpeed": 26.3,
+      "pctile": 28,
       "tier": "below_avg",
       "team": "BOS",
+      "bolts": 0
+    },
+    "okamoto": {
+      "sprintSpeed": 26.2,
+      "pctile": 25,
+      "tier": "below_avg",
+      "team": "TOR",
       "bolts": 0
     },
     "conforto": {
@@ -2249,11 +2291,18 @@
       "team": "CHC",
       "bolts": 0
     },
-    "fry": {
+    "frazier": {
       "sprintSpeed": 26.2,
       "pctile": 25,
       "tier": "below_avg",
-      "team": "CLE",
+      "team": "LAA",
+      "bolts": 0
+    },
+    "romo": {
+      "sprintSpeed": 26.2,
+      "pctile": 25,
+      "tier": "below_avg",
+      "team": "CWS",
       "bolts": 0
     },
     "escarra": {
@@ -2263,6 +2312,27 @@
       "team": "NYY",
       "bolts": 0
     },
+    "fry": {
+      "sprintSpeed": 26.2,
+      "pctile": 25,
+      "tier": "below_avg",
+      "team": "CLE",
+      "bolts": 0
+    },
+    "rogers": {
+      "sprintSpeed": 26.1,
+      "pctile": 22,
+      "tier": "below_avg",
+      "team": "DET",
+      "bolts": 0
+    },
+    "butler": {
+      "sprintSpeed": 26.1,
+      "pctile": 22,
+      "tier": "below_avg",
+      "team": "ATH",
+      "bolts": 0
+    },
     "rojas": {
       "sprintSpeed": 26.1,
       "pctile": 22,
@@ -2270,53 +2340,32 @@
       "team": "LAD",
       "bolts": 0
     },
-    "caminero": {
+    "guerrero": {
       "sprintSpeed": 26.1,
       "pctile": 22,
+      "tier": "below_avg",
+      "team": "TOR",
+      "bolts": 0
+    },
+    "canzone": {
+      "sprintSpeed": 26.1,
+      "pctile": 22,
+      "tier": "below_avg",
+      "team": "SEA",
+      "bolts": 0
+    },
+    "caminero": {
+      "sprintSpeed": 26.0,
+      "pctile": 19,
       "tier": "below_avg",
       "team": "TB",
       "bolts": 0
     },
-    "okamoto": {
-      "sprintSpeed": 26.1,
-      "pctile": 22,
-      "tier": "below_avg",
-      "team": "TOR",
-      "bolts": 0
-    },
-    "romo": {
-      "sprintSpeed": 26.1,
-      "pctile": 22,
-      "tier": "below_avg",
-      "team": "CWS",
-      "bolts": 0
-    },
-    "walton": {
-      "sprintSpeed": 26.1,
-      "pctile": 22,
-      "tier": "below_avg",
-      "team": "LAA",
-      "bolts": 0
-    },
-    "guerrero": {
+    "heineman": {
       "sprintSpeed": 26.0,
       "pctile": 19,
       "tier": "below_avg",
       "team": "TOR",
-      "bolts": 0
-    },
-    "rogers": {
-      "sprintSpeed": 26.0,
-      "pctile": 19,
-      "tier": "below_avg",
-      "team": "DET",
-      "bolts": 0
-    },
-    "cortes": {
-      "sprintSpeed": 26.0,
-      "pctile": 19,
-      "tier": "below_avg",
-      "team": "ATH",
       "bolts": 0
     },
     "gurriel": {
@@ -2326,6 +2375,13 @@
       "team": "AZ",
       "bolts": 0
     },
+    "devers": {
+      "sprintSpeed": 26.0,
+      "pctile": 19,
+      "tier": "below_avg",
+      "team": "SF",
+      "bolts": 0
+    },
     "wallner": {
       "sprintSpeed": 26.0,
       "pctile": 19,
@@ -2333,18 +2389,18 @@
       "team": "MIN",
       "bolts": 0
     },
-    "jung": {
-      "sprintSpeed": 26.0,
-      "pctile": 19,
-      "tier": "below_avg",
-      "team": "TEX",
-      "bolts": 0
-    },
-    "devers": {
+    "eldridge": {
       "sprintSpeed": 26.0,
       "pctile": 19,
       "tier": "below_avg",
       "team": "SF",
+      "bolts": 0
+    },
+    "bichette": {
+      "sprintSpeed": 26.0,
+      "pctile": 19,
+      "tier": "below_avg",
+      "team": "NYM",
       "bolts": 0
     },
     "bregman": {
@@ -2354,6 +2410,13 @@
       "team": "CHC",
       "bolts": 0
     },
+    "schwarber": {
+      "sprintSpeed": 25.9,
+      "pctile": 15,
+      "tier": "below_avg",
+      "team": "PHI",
+      "bolts": 0
+    },
     "schanuel": {
       "sprintSpeed": 25.9,
       "pctile": 15,
@@ -2361,39 +2424,25 @@
       "team": "LAA",
       "bolts": 0
     },
-    "su\u00e1rez": {
+    "jung": {
       "sprintSpeed": 25.9,
       "pctile": 15,
       "tier": "below_avg",
-      "team": "CIN",
+      "team": "TEX",
       "bolts": 0
     },
-    "heineman": {
+    "cortes": {
       "sprintSpeed": 25.9,
       "pctile": 15,
       "tier": "below_avg",
-      "team": "TOR",
+      "team": "ATH",
       "bolts": 0
     },
-    "bichette": {
+    "mcmahon": {
       "sprintSpeed": 25.8,
       "pctile": 12,
       "tier": "below_avg",
-      "team": "NYM",
-      "bolts": 0
-    },
-    "ozuna": {
-      "sprintSpeed": 25.8,
-      "pctile": 12,
-      "tier": "below_avg",
-      "team": "PIT",
-      "bolts": 0
-    },
-    "schwarber": {
-      "sprintSpeed": 25.8,
-      "pctile": 12,
-      "tier": "below_avg",
-      "team": "PHI",
+      "team": "NYY",
       "bolts": 0
     },
     "campusano": {
@@ -2403,11 +2452,11 @@
       "team": "SD",
       "bolts": 0
     },
-    "soto": {
+    "su\u00e1rez": {
       "sprintSpeed": 25.8,
       "pctile": 12,
       "tier": "below_avg",
-      "team": "NYM",
+      "team": "CIN",
       "bolts": 0
     },
     "burleson": {
@@ -2417,6 +2466,27 @@
       "team": "STL",
       "bolts": 0
     },
+    "herrera": {
+      "sprintSpeed": 25.8,
+      "pctile": 12,
+      "tier": "below_avg",
+      "team": "STL",
+      "bolts": 0
+    },
+    "busch": {
+      "sprintSpeed": 25.8,
+      "pctile": 12,
+      "tier": "below_avg",
+      "team": "CHC",
+      "bolts": 0
+    },
+    "pasquantino": {
+      "sprintSpeed": 25.8,
+      "pctile": 12,
+      "tier": "below_avg",
+      "team": "KC",
+      "bolts": 0
+    },
     "raleigh": {
       "sprintSpeed": 25.8,
       "pctile": 12,
@@ -2424,25 +2494,11 @@
       "team": "SEA",
       "bolts": 0
     },
-    "mcmahon": {
+    "d\u00edaz": {
       "sprintSpeed": 25.7,
       "pctile": 9,
       "tier": "below_avg",
-      "team": "NYY",
-      "bolts": 0
-    },
-    "hicks": {
-      "sprintSpeed": 25.7,
-      "pctile": 9,
-      "tier": "below_avg",
-      "team": "MIA",
-      "bolts": 0
-    },
-    "alvarez": {
-      "sprintSpeed": 25.7,
-      "pctile": 9,
-      "tier": "below_avg",
-      "team": "NYM",
+      "team": "TB",
       "bolts": 0
     },
     "kelly": {
@@ -2452,7 +2508,7 @@
       "team": "CHC",
       "bolts": 0
     },
-    "vientos": {
+    "soto": {
       "sprintSpeed": 25.7,
       "pctile": 9,
       "tier": "below_avg",
@@ -2466,6 +2522,34 @@
       "team": "TB",
       "bolts": 0
     },
+    "bell": {
+      "sprintSpeed": 25.7,
+      "pctile": 9,
+      "tier": "below_avg",
+      "team": "MIN",
+      "bolts": 0
+    },
+    "alvarez": {
+      "sprintSpeed": 25.7,
+      "pctile": 9,
+      "tier": "below_avg",
+      "team": "NYM",
+      "bolts": 0
+    },
+    "hicks": {
+      "sprintSpeed": 25.7,
+      "pctile": 9,
+      "tier": "below_avg",
+      "team": "MIA",
+      "bolts": 0
+    },
+    "vientos": {
+      "sprintSpeed": 25.6,
+      "pctile": 6,
+      "tier": "below_avg",
+      "team": "NYM",
+      "bolts": 0
+    },
     "pag\u00e9s": {
       "sprintSpeed": 25.6,
       "pctile": 6,
@@ -2473,102 +2557,18 @@
       "team": "STL",
       "bolts": 0
     },
-    "busch": {
-      "sprintSpeed": 25.6,
-      "pctile": 6,
-      "tier": "below_avg",
-      "team": "CHC",
-      "bolts": 0
-    },
-    "wells": {
-      "sprintSpeed": 25.6,
-      "pctile": 6,
-      "tier": "below_avg",
-      "team": "NYY",
-      "bolts": 0
-    },
-    "d\u00edaz": {
-      "sprintSpeed": 25.6,
-      "pctile": 6,
-      "tier": "below_avg",
-      "team": "TB",
-      "bolts": 0
-    },
-    "herrera": {
-      "sprintSpeed": 25.6,
-      "pctile": 6,
-      "tier": "below_avg",
-      "team": "STL",
-      "bolts": 0
-    },
-    "rivero": {
-      "sprintSpeed": 25.6,
-      "pctile": 6,
-      "tier": "below_avg",
-      "team": "LAA",
-      "bolts": 0
-    },
-    "pederson": {
-      "sprintSpeed": 25.5,
-      "pctile": 3,
-      "tier": "below_avg",
-      "team": "TEX",
-      "bolts": 0
-    },
-    "manzardo": {
-      "sprintSpeed": 25.5,
-      "pctile": 3,
-      "tier": "below_avg",
-      "team": "CLE",
-      "bolts": 0
-    },
-    "vaughn": {
-      "sprintSpeed": 25.5,
-      "pctile": 3,
-      "tier": "below_avg",
-      "team": "MIL",
-      "bolts": 0
-    },
     "mcneil": {
-      "sprintSpeed": 25.5,
-      "pctile": 3,
+      "sprintSpeed": 25.6,
+      "pctile": 6,
       "tier": "below_avg",
       "team": "ATH",
       "bolts": 0
     },
-    "diaz": {
-      "sprintSpeed": 25.5,
-      "pctile": 3,
-      "tier": "below_avg",
-      "team": "HOU",
-      "bolts": 0
-    },
-    "pasquantino": {
-      "sprintSpeed": 25.5,
-      "pctile": 3,
-      "tier": "below_avg",
-      "team": "KC",
-      "bolts": 0
-    },
-    "valera": {
-      "sprintSpeed": 25.5,
-      "pctile": 3,
+    "manzardo": {
+      "sprintSpeed": 25.6,
+      "pctile": 6,
       "tier": "below_avg",
       "team": "CLE",
-      "bolts": 0
-    },
-    "bell": {
-      "sprintSpeed": 25.5,
-      "pctile": 3,
-      "tier": "below_avg",
-      "team": "MIN",
-      "bolts": 0
-    },
-    "mccann": {
-      "sprintSpeed": 25.5,
-      "pctile": 3,
-      "tier": "below_avg",
-      "team": "AZ",
       "bolts": 0
     },
     "soler": {
@@ -2578,18 +2578,67 @@
       "team": "LAA",
       "bolts": 0
     },
-    "eldridge": {
-      "sprintSpeed": 25.4,
-      "pctile": 1,
+    "ozuna": {
+      "sprintSpeed": 25.5,
+      "pctile": 3,
       "tier": "below_avg",
-      "team": "SF",
+      "team": "PIT",
       "bolts": 0
     },
-    "arenado": {
+    "wells": {
+      "sprintSpeed": 25.5,
+      "pctile": 3,
+      "tier": "below_avg",
+      "team": "NYY",
+      "bolts": 0
+    },
+    "diaz": {
+      "sprintSpeed": 25.5,
+      "pctile": 3,
+      "tier": "below_avg",
+      "team": "HOU",
+      "bolts": 0
+    },
+    "mccann": {
+      "sprintSpeed": 25.5,
+      "pctile": 3,
+      "tier": "below_avg",
+      "team": "AZ",
+      "bolts": 0
+    },
+    "valera": {
+      "sprintSpeed": 25.5,
+      "pctile": 3,
+      "tier": "below_avg",
+      "team": "CLE",
+      "bolts": 0
+    },
+    "rivero": {
+      "sprintSpeed": 25.5,
+      "pctile": 3,
+      "tier": "below_avg",
+      "team": "LAA",
+      "bolts": 0
+    },
+    "vaughn": {
       "sprintSpeed": 25.4,
       "pctile": 1,
       "tier": "below_avg",
-      "team": "AZ",
+      "team": "MIL",
+      "bolts": 0
+    },
+    "valenzuela": {
+      "sprintSpeed": 25.4,
+      "pctile": 1,
+      "tier": "below_avg",
+      "team": "TOR",
+      "bolts": 0
+    },
+    "pederson": {
+      "sprintSpeed": 25.4,
+      "pctile": 1,
+      "tier": "below_avg",
+      "team": "TEX",
       "bolts": 0
     },
     "olson": {
@@ -2599,6 +2648,13 @@
       "team": "ATL",
       "bolts": 0
     },
+    "heim": {
+      "sprintSpeed": 25.4,
+      "pctile": 1,
+      "tier": "below_avg",
+      "team": "ATH",
+      "bolts": 0
+    },
     "polanco": {
       "sprintSpeed": 25.3,
       "pctile": 1,
@@ -2606,18 +2662,11 @@
       "team": "NYM",
       "bolts": 0
     },
-    "valenzuela": {
+    "arenado": {
       "sprintSpeed": 25.3,
       "pctile": 1,
       "tier": "below_avg",
-      "team": "TOR",
-      "bolts": 0
-    },
-    "heim": {
-      "sprintSpeed": 25.3,
-      "pctile": 1,
-      "tier": "below_avg",
-      "team": "ATH",
+      "team": "AZ",
       "bolts": 0
     },
     "arcia": {
@@ -2627,18 +2676,18 @@
       "team": "MIN",
       "bolts": 0
     },
+    "basallo": {
+      "sprintSpeed": 25.3,
+      "pctile": 1,
+      "tier": "below_avg",
+      "team": "BAL",
+      "bolts": 0
+    },
     "garver": {
       "sprintSpeed": 25.3,
       "pctile": 1,
       "tier": "below_avg",
       "team": "SEA",
-      "bolts": 0
-    },
-    "basallo": {
-      "sprintSpeed": 25.2,
-      "pctile": 1,
-      "tier": "below_avg",
-      "team": "BAL",
       "bolts": 0
     },
     "alonso": {
@@ -2662,18 +2711,11 @@
       "team": "SEA",
       "bolts": 0
     },
-    "amaya": {
+    "gorman": {
       "sprintSpeed": 25.1,
       "pctile": 1,
       "tier": "below_avg",
-      "team": "CHC",
-      "bolts": 0
-    },
-    "torres": {
-      "sprintSpeed": 25.1,
-      "pctile": 1,
-      "tier": "below_avg",
-      "team": "DET",
+      "team": "STL",
       "bolts": 0
     },
     "narv\u00e1ez": {
@@ -2683,11 +2725,11 @@
       "team": "BOS",
       "bolts": 0
     },
-    "gorman": {
-      "sprintSpeed": 25.1,
+    "amaya": {
+      "sprintSpeed": 25.0,
       "pctile": 1,
       "tier": "below_avg",
-      "team": "STL",
+      "team": "CHC",
       "bolts": 0
     },
     "d'arnaud": {
@@ -2695,20 +2737,6 @@
       "pctile": 1,
       "tier": "below_avg",
       "team": "LAA",
-      "bolts": 0
-    },
-    "seager": {
-      "sprintSpeed": 25.0,
-      "pctile": 1,
-      "tier": "below_avg",
-      "team": "TEX",
-      "bolts": 0
-    },
-    "paredes": {
-      "sprintSpeed": 25.0,
-      "pctile": 1,
-      "tier": "below_avg",
-      "team": "HOU",
       "bolts": 0
     }
   }
