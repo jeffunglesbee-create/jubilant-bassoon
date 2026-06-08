@@ -3873,6 +3873,18 @@ function buildFieldHealthPanel() {
   const SW = typeof SW_VERSION !== 'undefined' ? SW_VERSION : '?';
   rows.push(ok('Version', SW));
 
+  // ── WC Groups pill ───────────────────────────────────────────────────────
+  const _wcPill = document.getElementById('wc-filter-pill');
+  const _wcNow = new Date() >= new Date('2026-06-08T00:00:00') && new Date() < new Date('2026-07-20T00:00:00');
+  if (!_wcNow) {
+    rows.push(ok('WC Groups', 'Pre-tournament window not active'));
+  } else if (_wcPill) {
+    const _wcVisible = _wcPill.offsetParent !== null;
+    rows.push(_wcVisible ? ok('WC Groups', 'Pill present + visible in filter bar') : warn('WC Groups', 'Pill in DOM but hidden (CSS/display issue)'));
+  } else {
+    rows.push(err('WC Groups', 'Pill not in DOM — buildFilters ran before wcActive? Check console'));
+  }
+
   // ── Game cards ───────────────────────────────────────────────────────────
   const cards = document.querySelectorAll('.game-card').length;
   const tapWired = document.querySelectorAll('.card-body[data-open]').length;
