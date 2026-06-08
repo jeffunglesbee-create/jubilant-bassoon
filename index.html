@@ -8817,7 +8817,13 @@ function buildFilters(sports){
   // Portrait-safe: sits in the scrollable #sport-filters row rather than the
   // fixed-width controls-inner, so it's always reachable regardless of viewport.
   // Hidden on desktop (1200px+) where the nav jump link is used instead.
-  if (typeof wcActive !== 'undefined' && wcActive) {
+  // wcActive is defined later in the file (line ~24356) — inline the date check here
+  // to avoid a temporal dead zone when buildFilters runs at page-load time.
+  const _wcActiveNow = (() => {
+    const now = new Date();
+    return now >= new Date('2026-06-08T00:00:00') && now < new Date('2026-07-20T00:00:00');
+  })();
+  if (_wcActiveNow) {
     const wcBtn = document.createElement('button');
     wcBtn.className = 'filter-btn wc-filter-btn' + (document.body.classList.contains('wc-mode') ? ' active' : '');
     wcBtn.id = 'wc-filter-pill';
