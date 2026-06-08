@@ -2475,29 +2475,41 @@ body.wc-mode #wc-section{animation:wcFadeIn 220ms ease-out}
   .settings-btn::before{content:"⚙";font-size:.8rem}
   .usage-badge{display:none} /* too narrow */
 
-  /* Controls — single scrollable flex row on mobile */
-  /* .controls has no horizontal padding — .controls-inner handles it via scroll inset */
-  .controls{padding:.4rem 0;overflow:hidden}
+  /* Controls — 2-row mobile layout (flex-wrap with forced line break)
+     Row 1: ‹ Today › + scrollable filter pills
+     Row 2: Desk · Journal · Groups — always fully visible, no scroll */
+  .controls{padding:.35rem 0;overflow:hidden}
   .controls-inner{
+    display:flex;flex-wrap:wrap;align-items:center;
+    gap:.3rem .3rem;
+    padding:0 .75rem;
+  }
+  /* Row 1 items */
+  .date-nav{flex-shrink:0;order:1}
+  #sport-filters{
+    flex:1;min-width:0;order:1;
     display:flex;flex-wrap:nowrap;overflow-x:auto;
     -webkit-overflow-scrolling:touch;
-    gap:.35rem;align-items:center;
+    gap:.3rem;
     scrollbar-width:none;
-    /* Horizontal padding as scroll inset so first/last pill doesn't hug edge */
-    padding-left:.75rem;padding-right:.75rem;
-    box-sizing:border-box;
   }
-  .controls-inner::-webkit-scrollbar{display:none}
-  .date-nav{flex-shrink:0}
-  .tz-pill{flex-shrink:0;margin-left:0;order:99}
-  #sport-filters{
-    display:contents; /* children flow directly into .controls-inner flex row */
+  #sport-filters::-webkit-scrollbar{display:none}
+  /* Force line break before Row 2 */
+  .divider{
+    display:block !important;
+    width:100%;height:0;order:2;
+    flex-basis:100%;flex-shrink:0;
   }
-  .ctrl-label{display:none}
-  .divider{display:none}
+  /* Row 2: jump links always visible */
   .desk-jump-link,.jrn-nav-link,#wc-nav-link{
-    font-size:.65rem;padding:.22rem .6rem;white-space:nowrap;flex-shrink:0;
+    order:3;
+    display:inline-flex !important;
+    align-items:center;
+    font-size:.68rem;letter-spacing:.04em;
+    padding:.22rem .65rem;white-space:nowrap;flex-shrink:0;
   }
+  .tz-pill{display:none !important}
+  .ctrl-label{display:none}
   .tz-select{font-size:.7rem;padding:.25rem .4rem;max-width:90px}
   .tz-pill{white-space:nowrap;min-width:32px;max-width:none;font-size:.62rem}
   .date-label{min-width:76px;font-size:.62rem}
@@ -2638,23 +2650,33 @@ body.wc-mode #wc-section{animation:wcFadeIn 220ms ease-out}
   /* Left-pane content: all scrollable sections get right margin */
   .main,#field-brief,#night-owl,#double-feature,#offline-banner,
   nav.controls,#score-ticker-wrap,.mv-panel{margin-right:390px}
-  /* Single scrollable flex row at 820-1199px — same pattern as mobile.
-     display:contents on #sport-filters lets pills flow inline with jump links.
-     margin-right:390px on nav.controls keeps the row in the left pane;
-     overflow-x:auto lets it scroll within that 430px. */
+  /* iPad portrait (820-1199px): 2-row layout — same as mobile.
+     Row 1: date-nav + scrollable filter pills (430px left pane)
+     Row 2: Desk · Journal · Groups — always visible below pills */
   nav.controls .controls-inner{
+    display:flex;flex-wrap:wrap;align-items:center;
+    gap:.3rem .3rem;padding:0 .75rem;
+  }
+  nav.controls .date-nav{flex-shrink:0;order:1}
+  nav.controls #sport-filters{
+    flex:1;min-width:0;order:1;
     display:flex;flex-wrap:nowrap;overflow-x:auto;
     -webkit-overflow-scrolling:touch;
-    gap:.35rem;align-items:center;
-    scrollbar-width:none;
+    gap:.3rem;scrollbar-width:none;
   }
-  nav.controls .controls-inner::-webkit-scrollbar{display:none}
-  nav.controls #sport-filters{display:contents}
-  nav.controls .date-nav{flex-shrink:0}
-  nav.controls .tz-pill{flex-shrink:0;margin-left:0;display:flex !important}
+  nav.controls #sport-filters::-webkit-scrollbar{display:none}
+  nav.controls .divider{
+    display:block !important;width:100%;height:0;
+    order:2;flex-basis:100%;flex-shrink:0;
+  }
   nav.controls .desk-jump-link,
   nav.controls .jrn-nav-link,
-  nav.controls #wc-nav-link{display:inline-flex !important;flex-shrink:0}
+  nav.controls #wc-nav-link{
+    order:3;display:inline-flex !important;
+    align-items:center;font-size:.68rem;
+    padding:.22rem .65rem;white-space:nowrap;flex-shrink:0;
+  }
+  nav.controls .tz-pill{display:none !important}
   /* Ticker hidden on iPad — Live section in ambient panel covers this */
   #score-ticker-wrap{display:none !important}
   /* Suppress 768-900px 2-col game grid: 430px left pane too narrow for 2 cols */
