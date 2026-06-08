@@ -8087,6 +8087,15 @@ function parseSeriesRecord(g) {
     if(matchesTeam(g.home)) leadingTeam='home';
     else if(matchesTeam(g.away)) leadingTeam='away';
   }
+  // Initialism abbreviations (NYK, SAS, GSW etc) don't prefix-match any word —
+  // look up both teams in _teamAbbr map and compare against leadsName.
+  if(!leadingTeam && typeof _teamAbbr!=='undefined'){
+    const abbr=leadsName.toUpperCase();
+    const homeAbbr=(_teamAbbr[g.home]||'').toUpperCase();
+    const awayAbbr=(_teamAbbr[g.away]||'').toUpperCase();
+    if(homeAbbr===abbr) leadingTeam='home';
+    else if(awayAbbr===abbr) leadingTeam='away';
+  }
   const homeLeads=leadingTeam==='home', awayLeads=leadingTeam==='away';
   const homeElim=awayLeads&&wins===3&&losses===2, awayElim=homeLeads&&wins===3&&losses===2;
   const homeElim31=awayLeads&&wins===3&&losses===1, awayElim31=homeLeads&&wins===3&&losses===1;
