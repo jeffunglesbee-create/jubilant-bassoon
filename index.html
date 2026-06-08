@@ -2014,7 +2014,7 @@ body.journalism-mode #field-journalism-section{animation:jrnFadeIn 220ms ease-ou
    June 4 2026 — WC Groups/Bracket Tab Spec (Drive 1g0Ne_OOO0eteJ8-GCRNZ4sm5_qey7yqy) */
 
 /* Base: section hidden, back pill hidden */
-#wc-section{display:none;padding:.75rem .75rem 2rem;min-height:60vh}
+#wc-section{padding:.75rem .75rem 2rem;min-height:60vh}
 .wc-back-pill{display:none;align-self:flex-start;padding:.4rem .75rem;background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.22);border-radius:18px;font-size:.66rem;color:var(--gold2);cursor:pointer;margin-bottom:1rem;letter-spacing:.04em;transition:.15s}
 .wc-back-pill:hover{background:rgba(201,168,76,.14);border-color:rgba(201,168,76,.38)}
 
@@ -19641,10 +19641,10 @@ function buildSeriesStateClause(g) {
     const leader = s.leadingTeam === 'home' ? (g.home || 'home team') : (g.away || 'away team');
     const trailer = s.leadingTeam === 'home' ? (g.away || 'away team') : (g.home || 'home team');
     return [
-      `SERIES STATE: ${rec}. ${leader} lead 2-0. ${trailer} MUST WIN TONIGHT to avoid 0-3 — no team has ever recovered from 0-3 in NBA history.`,
-      'SERIES RECORD IS EXACTLY 2-0 — do NOT write 2-1, 1-1, or any other record. The series is 2-0. Do not change the series record.',
-      `Appropriate framing: ${trailer} face must-win stakes. ${leader} can take a stranglehold on the series with a win.`,
-      `Focus: What tactical adjustment does ${trailer} need to make? What has ${leader} done in Games 1-2 that ${trailer} hasn't solved?`,
+      `SERIES STATE: ${rec}. ${leader} lead 2-0 and can take a 3-0 stranglehold tonight. ${trailer} trail 0-2 and MUST WIN to avoid 0-3 — no team has ever recovered from 0-3 in NBA history.`,
+      'CRITICAL — SERIES RECORD: ' + leader + ' LEAD ' + wins + '-' + losses + '. ' + trailer + ' TRAIL ' + losses + '-' + wins + '. Do NOT invert this. ' + leader + ' are the team with the series advantage.',
+      `Appropriate framing: ${trailer} face must-win stakes and need a response. ${leader} are one win from a stranglehold.`,
+      `Focus: What tactical adjustment does ${trailer} need to make? What has ${leader} done in Games 1-2 that ${trailer} has not solved?`,
     ].join('\n');
   }
   // Explicit 3-0 state — facing sweep
@@ -24472,6 +24472,7 @@ function toggleWCView() {
   if (isWC) {
     navLink?.classList.add('active');
     section?.removeAttribute('hidden');
+    if (section) section.style.display = 'block'; // belt-and-suspenders: iOS Safari hidden attribute
     // Mutual exclusion: dismiss journalism-mode if active
     if (document.body.classList.contains('journalism-mode')) {
       document.body.classList.remove('journalism-mode');
@@ -24481,6 +24482,7 @@ function toggleWCView() {
   } else {
     navLink?.classList.remove('active');
     section?.setAttribute('hidden', '');
+    if (section) section.style.display = ''; // clear inline override
   }
 }
 
