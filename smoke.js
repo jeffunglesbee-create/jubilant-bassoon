@@ -3598,6 +3598,32 @@ assert('A507 — PM-32-VI: Viewer Intelligence chip with three-mode user-control
   html.includes('PM-32-VI'),
   'PM-32-VI Viewer Intelligence chip: three user-controlled modes (stakes/stories/myteams) reorder four boolean signals (highStakes/hasNarrative/isOnlyGame/isMyTeam) to produce game-specific chip labels (DON\'T MISS/STORY GAME/ONLY GAME/YOUR TEAM). No composite score. Anti-hype gate prevents chips on J1-flagged games. Silence (no chip) when no signal fires. Mode selector in My Services modal. Client-side only — server cannot influence output. Patent Defense Layer 2 + ADR-002 Component 2. RUWT: all signals are factual conditions, not excitement measures.');
 
+// ── WOW 8 + Night Owl ceiling fix (A508–A510) ────────────────────────────────
+
+// A508: saveEspnFinal snapshots statCtx at game completion
+assert('A508 — WOW8/statCtx: saveEspnFinal persists stat snapshot so Night Owl survives cold ESPN cache',
+  html.includes('statCtx: statCtx') &&
+  html.includes('stat snapshot') &&
+  html.includes('topGame.statCtx'),
+  'saveEspnFinal must write statCtx field; fetchNightOwlFromClaude must seed _owlStatCtx from topGame.statCtx when live caches are cold');
+
+// A509: checkForNewFinals emits field:all_final when no live cards remain
+assert('A509 — WOW8/all_final: checkForNewFinals emits field:all_final when last live game goes final',
+  html.includes('field:all_final') &&
+  html.includes('_allFinalFired') &&
+  html.includes('liveCards.length === 0') &&
+  html.includes('_seenFinals.size >= 1'),
+  'checkForNewFinals must emit field:all_final exactly once per night when no .espn-live cards remain');
+
+// A510: Subscriber 5 wires field:all_final to nightly wrap + ambient panel
+assert('A510 — WOW8/sub5: Subscriber 5 triggers nightly wrap and ambient panel re-render on field:all_final',
+  html.includes('field:all_final') &&
+  html.includes('nightly_wrap') &&
+  html.includes('renderNightOwlRecap') &&
+  html.includes('renderAmbientPanel') &&
+  html.includes('night-owl-wrap'),
+  'Subscriber 5 must call renderNightOwlRecap() then renderAmbientPanel() on field:all_final, with _subscriberFired guard');
+
 // ═════════════════════════════════════════════════════════════════════
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);

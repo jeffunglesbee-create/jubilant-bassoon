@@ -21751,6 +21751,33 @@ fieldEvents.addEventListener('field:crunch', (e) => {
   } catch(_) { /* never throw from a bus listener */ }
 });
 
+// ── SUBSCRIBER 5: Nightly wrap on field:all_final ────────────────────────────
+// Fires once per night when the last live game goes final. Two actions:
+// 1. Re-run renderNightOwlRecap() with full-night context — picks up statCtx
+//    snapshots from all saveEspnFinal() entries (the cold-cache ceiling fix).
+// 2. Re-render ambient panel so iPad rail reflects the completed Night Owl.
+// Guard: _subscriberFired prevents double-fire within the same night.
+fieldEvents.addEventListener('field:all_final', (e) => {
+  try {
+    const guardKey = 'all_final:nightly_wrap';
+    if (_subscriberFired[guardKey]) return;
+    _subscriberFired[guardKey] = Date.now();
+    if (FIELD_DEBUG) console.log(`[S0 bus] field:all_final → nightly wrap (${e.detail?.count} game(s))`);
+    // Small defer: let the final saveEspnFinal() writes settle before reading them back
+    setTimeout(() => {
+      try {
+        if (typeof renderNightOwlRecap === 'function') {
+          renderNightOwlRecap().catch(e2 => captureFieldError('night-owl-wrap', e2, false));
+        }
+        // Re-render ambient panel so iPad rail reflects the completed Night Owl
+        if (typeof renderAmbientPanel === 'function') {
+          setTimeout(() => { try { renderAmbientPanel(); } catch(_) {} }, 800);
+        }
+      } catch(_) {}
+    }, 500);
+  } catch(_) { /* never throw from a bus listener */ }
+});
+
 // ── PM-27 SUBSCRIBER 4: OTW Changeover beat (field:otw_changed) ─────────────
 // When OTW selection changes, flash a "JUST CHANGED ↑" chip for 12s,
 // then replace it with a "swapped HH:MM" timestamp chip.
@@ -28490,6 +28517,48 @@ function saveEspnFinal(game, eData){
     if(existing.some(f=>f.id===id)) return; // already saved
     const dpKey2='field_drama_peak_'+(game._id||'');
     const dramaPeak=parseFloat(localStorage.getItem(dpKey2)||'0');
+    // Snapshot stat context at game completion while caches are still warm.
+    // Night Owl reads this back via entry.statCtx so it has player stats even
+    // after ESPN clears the live box score (the cold-cache J5 ceiling fix).
+    let statCtx = '';
+    try {
+      const _sp = (game._sport||game.league||'').toLowerCase();
+      // NBA player box (PM-28h/j)
+      if (_sp.includes('nba') || _sp.includes('basketball')) {
+        const hNickS = teamNick(game.home||'').toLowerCase();
+        const aNickS = teamNick(game.away||'').toLowerCase();
+        const nbaIdS = (typeof _nbaGameIdMap!=='undefined')
+          ? (_nbaGameIdMap[`${hNickS}_${aNickS}`] || _nbaGameIdMap[`${aNickS}_${hNickS}`]) : null;
+        if (nbaIdS && typeof buildNBAScoreLeadersContext==='function') {
+          const lCtx = buildNBAScoreLeadersContext(nbaIdS);
+          if (lCtx) statCtx += (statCtx?'\n':'') + '  ' + lCtx;
+        }
+        if (nbaIdS && typeof buildFoulTroubleContext==='function') {
+          const fCtx = buildFoulTroubleContext(nbaIdS);
+          if (fCtx) statCtx += (statCtx?'\n':'') + '  ' + fCtx;
+        }
+      }
+      // NHL PP/PK (PM-28l)
+      if (_sp.includes('nhl') || _sp.includes('hockey')) {
+        const nhlKey = Object.keys(window._nhlAnalyticsCache||{}).find(k =>
+          k.includes((game.home||'').slice(0,4).toLowerCase()));
+        const nhlCtx = nhlKey ? (window._nhlAnalyticsCache||{})[nhlKey] : null;
+        if (nhlCtx?.pp && nhlCtx?.pk)
+          statCtx += (statCtx?'\n':'') + `  [PP/PK] PP ${nhlCtx.pp}% · PK ${nhlCtx.pk}%`;
+        const nhlLiveKey = `${game.home||''}|${game.away||''}`;
+        const nhlLive = (typeof _nhlLiveStatsCache!=='undefined')
+          ? (_nhlLiveStatsCache[nhlLiveKey] || _nhlLiveStatsCache[`${game.away||''}|${game.home||''}`] || '') : '';
+        if (nhlLive) statCtx += (statCtx?'\n':'') + '  [NHL LIVE] ' + nhlLive;
+      }
+      // Linescore (all sports)
+      if (typeof buildLinescoreContext==='function') {
+        const owlEd = Object.values(espnScores||{}).find(v =>
+          (v.homeName||'').toLowerCase().replace(/[^a-z]/g,'')
+            .endsWith((game.home||'').toLowerCase().replace(/[^a-z]/g,'').slice(-5)));
+        const lsCtx = buildLinescoreContext(owlEd, game._id);
+        if (lsCtx) statCtx += (statCtx?'\n':'') + '  ' + lsCtx;
+      }
+    } catch(_) {}
     const entry = {
       id, home:game.home||'', away:game.away||'',
       homeScore:eData.homeScore, awayScore:eData.awayScore,
@@ -28498,6 +28567,7 @@ function saveEspnFinal(game, eData){
       sourceId: game.sourceId||'',
       matchupNote: game.matchupNote||'',
       date: today, dramaPeak,
+      statCtx: statCtx || '',  // stat snapshot — survives ESPN cache clearing
     };
     existing.push(entry);
     localStorage.setItem(FINALS_KEY, JSON.stringify(existing.slice(-20)));
@@ -28661,7 +28731,9 @@ async function fetchNightOwlFromClaude(topGame){
     ? 'Sport: Football (soccer). Score in GOALS (NEVER "points"). Close game = one-goal game. Extra period = extra time (NEVER "overtime" or "OT"). NEVER use: basket, possession-game framing, interior scoring, one-possession, touchdown. Use: shots, possession percentage, xG, clean sheet, pressing.'
     : 'Sport: Basketball. Score in POINTS. Close game = one-possession game (within 3). Extra period = overtime. Use: assists, rebounds, field goal percentage, three-point shooting.';
   // Tier 1A: inject available stat context into Night Owl prompt (same sources as compound)
-  let _owlStatCtx = '';
+  // Fallback: if live caches are cold (user opened app post-game), use statCtx
+  // snapshot persisted in saveEspnFinal() at the moment the game went final.
+  let _owlStatCtx = (topGame.statCtx && topGame.statCtx.length > 0) ? topGame.statCtx : '';
   try {
     // MLB box score line (pitcher/run totals)
     if((_sp.includes('mlb')||_sp.includes('baseball')) && topGame.sourceId) {
@@ -30408,6 +30480,21 @@ function checkForNewFinals(){
       renderNightOwlRecap().catch(e=>captureFieldError('night-owl',e,false));
     });
   });
+  // field:all_final — fires once when the last live game of the night goes final.
+  // Guard: at least one game was ever seen as final, and no .espn-live cards remain.
+  // _allFinalFired is reset at midnight via the daily rollover cycle (new Date check).
+  if (_seenFinals.size >= 1 && !window._allFinalFired) {
+    const liveCards = document.querySelectorAll('#main .game-card.espn-live');
+    if (liveCards.length === 0) {
+      window._allFinalFired = true;
+      if (typeof fieldEvents !== 'undefined') {
+        fieldEvents.dispatchEvent(new CustomEvent('field:all_final', {
+          detail: { count: _seenFinals.size, ts: Date.now() }
+        }));
+      }
+      if (FIELD_DEBUG) console.log(`[checkForNewFinals] field:all_final fired — ${_seenFinals.size} game(s) final, no live cards remain`);
+    }
+  }
 }
 
 
