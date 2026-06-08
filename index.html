@@ -20802,7 +20802,24 @@ function buildLayer3Rules(games) {
 }
 
 function buildCompoundPrompt(sections) {
-  const games = (sections || []).flatMap(s => s.games || []).slice(0, 12);
+  // Sort games by importance tier before slicing so the highest-stakes games
+  // always appear first in the prompt context — reduces risk of model leading
+  // with lower-tier content when a Finals/WC game is buried in the array.
+  const _importanceScore = (g) => {
+    const l = (g.league || g._sport || '').toLowerCase();
+    if (/nba finals|stanley cup final|wc.*final|world cup.*final/i.test(l)) return 10;
+    if (/wc.*semifinal|wc.*quarter|wc.*knockout|wc.*r16|wc.*r32/i.test(l)) return 9;
+    if (/conference finals|cf g\d|wcf|ecf/i.test(l)) return 8;
+    if (/conference semi|second round|round 2/i.test(l)) return 7;
+    if (/fifa world cup|wc26/i.test(l)) return 6;  // WC group stage
+    if (g.seriesRecord) return 5;  // any playoff series
+    if (/elimination/i.test(g._gameImportance || '')) return 5;
+    if (/playoffs/i.test(g._gameImportance || '')) return 4;
+    return 1;
+  };
+  const games = (sections || []).flatMap(s => s.games || [])
+    .sort((a, b) => _importanceScore(b) - _importanceScore(a))
+    .slice(0, 12);
   const seriesGames = games.filter(g => g.seriesRecord);
 
   // Big game flag: Conference Finals and above get doubled brief length
@@ -21066,7 +21083,7 @@ ${gameLines || 'No games tonight.'}
 ${eplSection}${regularSection}
 Return this exact JSON structure (null for any section without sufficient data):
 {
-  "brief": "${briefWords} No headers. Lead with most important story. If a Conference Finals, Stanley Cup Final, or NBA Finals game is on the slate, it MUST be the lead — regardless of what time it starts. Complete sentences.",
+  "brief": "${briefWords} No headers. Complete sentences. PRIORITY TIERS — strictly enforce word allocation: TIER 1 (NBA/NHL Finals, Stanley Cup Final, WC knockout stage): lead paragraph, 60-70% of word budget. TIER 2 (Conference Finals, WC group stage): one focused sentence or short paragraph, 20-25% of budget. TIER 3 (all other leagues — WNBA, MLB, MLS, AFL, CFL): one sentence maximum per league, only if budget remains; omit entirely if a Tier 1 game is on the slate. If a Tier 1 game is present, WNBA/MLB/MLS get at most one combined sentence at the end. Never bury a Finals or WC knockout game under regular-season content.",
   "series": [${seriesIds.map(id => `{"id":"${id}","preview":null}`).join(',')}],
   "scouts_pick": "one sentence explaining the Scout's Pick or null",
   "bni_note": "one sentence Anti-Hype framing or null",
