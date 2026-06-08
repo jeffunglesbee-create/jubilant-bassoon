@@ -4019,7 +4019,7 @@ function buildFieldHealthPanel() {
       const worst = Math.min(..._jqScores.map(s=>s.score));
       const avgStat = Math.round((_jqScores.reduce((a,s)=>a+(s.stat||0),0)/_jqScores.length)*10)/10;
       const qIcon = avg >= 60 ? '✅' : avg >= 45 ? '⚠️' : '❌';
-      rows.push(ok('Prose Quality', `${qIcon} avg ${avg}/200 · best ${best} · worst ${worst} · stat ${avgStat}/s · ${_jqScores.length} briefs`));
+      rows.push(ok('Prose Quality', `${qIcon} avg ${avg}/300 · best ${best} · worst ${worst} · stat ${avgStat}/s · ${_jqScores.length} briefs`));
     } else {
       rows.push(ok('Prose Quality', 'No briefs scored yet'));
     }
@@ -6838,7 +6838,7 @@ function buildJournalismQualitySection(){
     const best = Math.max(...scores.map(s=>s.score));
     const worst = Math.min(...scores.map(s=>s.score));
     const stat = Math.round((scores.reduce((a,s)=>a+(s.stat||0),0)/scores.length)*10)/10;
-    aggHtml = `<div class="jq-row"><span class="jq-k">avg</span><span class="jq-v">${avg}/200</span><span class="jq-k">best</span><span class="jq-v">${best}</span><span class="jq-k">worst</span><span class="jq-v">${worst}</span><span class="jq-k">stat</span><span class="jq-v">${stat}/s</span><span class="jq-k">n</span><span class="jq-v">${scores.length}</span></div>`;
+    aggHtml = `<div class="jq-row"><span class="jq-k">avg</span><span class="jq-v">${avg}/300</span><span class="jq-k">best</span><span class="jq-v">${best}</span><span class="jq-k">worst</span><span class="jq-v">${worst}</span><span class="jq-k">stat</span><span class="jq-v">${stat}/s</span><span class="jq-k">n</span><span class="jq-v">${scores.length}</span></div>`;
   } else {
     aggHtml = fmtEmpty('no briefs scored yet');
   }
@@ -6852,7 +6852,7 @@ function buildJournalismQualitySection(){
     perLabelHtml = labels.map(lbl=>{
       const last5 = byLabel[lbl].slice(-5);
       const avg = Math.round(last5.reduce((a,b)=>a+b,0)/last5.length);
-      return `<div class="jq-row"><span class="jq-k">${escapeHtml(lbl)}</span><span class="jq-v">${avg}/200</span><span class="jq-meta">(${last5.length} of ${byLabel[lbl].length})</span></div>`;
+      return `<div class="jq-row"><span class="jq-k">${escapeHtml(lbl)}</span><span class="jq-v">${avg}/300</span><span class="jq-meta">(${last5.length} of ${byLabel[lbl].length})</span></div>`;
     }).join('');
   } else {
     perLabelHtml = fmtEmpty('no per-label history yet');
@@ -8930,7 +8930,7 @@ function buildTodaySchedule(){
     // ── NBA Finals 2026 — All games ABC, 8:30pm ET ─────────────────────
     {home:"San Antonio Spurs", away:"New York Knicks",        league:"NBA Finals 2026 \u2013 G1 \u00b7 NYK wins 105-95",  start_time:"2026-06-04T00:30:00Z", confirmed:true, venue:"Frost Bank Center, San Antonio TX", streams:resolveBundle("NBA_ABC"), seriesRecord:"NYK wins 105-95", crew:"Mike Breen · Richard Jefferson · Tim Legler (ABC)", _gameImportance:"playoffs", matchupNote:"NYK wins G1 105-95 at Frost Bank Center. Brunson 30pts (13 in Q4) — hit clutch shots to erase a 14-point Q3 deficit, then closed an 11-0 run after SAS briefly led 95-94 late in Q4. KAT 18pts. Wembanyama 26pts/12reb but 6-21 FG (2-9 from 3) in Finals debut — SAS couldn't hold the lead. NYK's 12th straight playoff win (3rd team in NBA history). Knicks steal home-court advantage."},
     {home:"San Antonio Spurs", away:"New York Knicks",        league:"NBA Finals 2026 \u2013 G2 \u00b7 NYK wins 105-104, leads 2-0",  start_time:"2026-06-06T00:30:00Z", confirmed:true, venue:"Frost Bank Center, San Antonio TX", streams:resolveBundle("NBA_ABC"), seriesRecord:"NYK wins 105-104", crew:"Mike Breen \u00b7 Richard Jefferson \u00b7 Tim Legler (ABC)", _gameImportance:"playoffs", matchupNote:"NYK wins G2 105-104 at Frost Bank Center — series 2-0. KAT 21pts/13reb (double-double), Bridges 20pts (8-13 FG, 4-6 from 3). Brunson 20pts/6ast but 7-25 FG. Wembanyama 29pts (11-21 FG) — efficient but SAS couldn't hold the lead. NYK wins both San Antonio games to seize full home-court control. First Finals team to win G1+G2 on road since 2016. G3 Mon Jun 8 at MSG, 8:30pm ET, ABC."},
-    {home:"New York Knicks", away:"San Antonio Spurs", league:"NBA Finals 2026 \u2013 G3 \u00b7 NYK leads 2-0",  start_time:"2026-06-09T00:30:00Z", confirmed:true, venue:"Madison Square Garden, New York NY", streams:resolveBundle("NBA_ABC"), seriesRecord:"NYK leads 2-0", crew:"Mike Breen \u00b7 Richard Jefferson \u00b7 Tim Legler (ABC)", _gameImportance:"playoffs"},
+    {home:"New York Knicks", away:"San Antonio Spurs", league:"NBA Finals 2026 \u2013 G3 \u00b7 NYK leads 2-0",  start_time:"2026-06-09T00:30:00Z", confirmed:true, venue:"Madison Square Garden, New York NY", streams:resolveBundle("NBA_ABC"), seriesRecord:"NYK leads 2-0", crew:"Mike Breen \u00b7 Richard Jefferson \u00b7 Tim Legler (ABC)", _gameImportance:"playoffs",matchupNote:"NYK leads 2-0. Brunson averaged 29.0 PPG this series but shot 7-of-25 in G2. Wembanyama 23.2 PPG this series across G1-G2 — efficient but not dominant. The matchup beneath the stars: Stephon Castle (7.4 APG this postseason) guarding Brunson in pick-and-roll; Castle forced 3 turnovers in G2. OG Anunoby held Harrison Barnes to 4 points in G1 but Barnes posted +12 in G2 — that adjustment is critical. Miles McBride is 44% from 3 this series off the bench; NYK second unit has outscored SAS reserves by 14 across both games. NYK\'s 107.7 DRTG (best in NBA this postseason) has held SAS to 2-of-12 from 3 when Wembanyama is off the floor."},
     {home:"New York Knicks", away:"San Antonio Spurs", league:"NBA Finals 2026 \u2013 G4 \u00b7 NYK leads 2-0",  start_time:"2026-06-11T00:30:00Z", confirmed:true, venue:"Madison Square Garden, New York NY", streams:resolveBundle("NBA_ABC"), seriesRecord:"NYK leads 2-0", crew:"Mike Breen \u00b7 Richard Jefferson \u00b7 Tim Legler (ABC)", _gameImportance:"playoffs"},
     {home:"San Antonio Spurs", away:"New York Knicks",        league:"NBA Finals 2026 \u2013 G5 \u00b7 NYK leads 2-0",  start_time:"2026-06-14T00:30:00Z", confirmed:true, venue:"Frost Bank Center, San Antonio TX", streams:resolveBundle("NBA_ABC"), seriesRecord:"NYK leads 2-0", crew:"Mike Breen \u00b7 Richard Jefferson \u00b7 Tim Legler (ABC)", _gameImportance:"playoffs"},
     {home:"New York Knicks", away:"San Antonio Spurs", league:"NBA Finals 2026 \u2013 G6 \u00b7 NYK leads 2-0",  start_time:"2026-06-17T00:30:00Z", confirmed:true, venue:"Madison Square Garden, New York NY", streams:resolveBundle("NBA_ABC"), seriesRecord:"NYK leads 2-0", crew:"Mike Breen \u00b7 Richard Jefferson \u00b7 Tim Legler (ABC)", _gameImportance:"playoffs"},
@@ -8969,7 +8969,7 @@ function buildTodaySchedule(){
     // Schedule: G1-G2-G5-G7 at Lenovo Center, Raleigh. G3-G4-G6 at T-Mobile Arena, Las Vegas.
     {home:"Carolina Hurricanes", away:"Vegas Golden Knights", league:"NHL Playoffs \u2013 Stanley Cup Final \u00b7 G1 \u00b7 VGK wins 5-4", start_time:"2026-06-03T00:00:00Z", confirmed:true, venue:"Lenovo Center, Raleigh NC", streams:resolveBundle("NHL_ABC"), seriesRecord:"VGK wins 5-4", crew:"Sean McDonough \u00b7 Ray Ferraro (ABC)", matchupNote:"VGK wins G1 5-4. Came back from 2-0 down — first road team to stage a multigoal comeback win in G1 of a Stanley Cup Final. Hertl GWG with 3:24 left. Theodore 1G/2A, McNabb 3A. Ehlers 2G for CAR. Andersen allowed 5 on 23 shots. VGK controlled 70.4% xG with Theodore on ice (5v5). VGK leads series 1-0.", _gameImportance:"playoffs"},
     {home:"Carolina Hurricanes", away:"Vegas Golden Knights", league:"NHL Playoffs \u2013 Stanley Cup Final \u00b7 G2 \u00b7 VGK leads 1-0", start_time:"2026-06-05T00:00:00Z", confirmed:true, venue:"Lenovo Center, Raleigh NC", streams:resolveBundle("NHL_ABC"), seriesRecord:"Series tied 1-1", crew:"Sean McDonough \u00b7 Ray Ferraro (ABC)", matchupNote:"CAR wins G2 4-3 — series tied 1-1. Hurricanes stopped the two-game home-ice slide. Andersen rebounded from allowing 5 in G1 to hold VGK to 3. CAR's PK 93.5% — played the penalty kill clean in G2. Series now shifts to T-Mobile Arena in Las Vegas for G3 (Sat June 6, 8pm ET, ABC). VGK has home-ice advantage for the next two. Ehlers has 3 goals in the series. Theodore held without a point in G2 after dominating G1 (1G/2A). CAR won despite being road team 0-55 in SCF G1 history last game — now they've evened it on home ice. G3/G4 in Las Vegas.", _gameImportance:"playoffs"},
-    {home:"Vegas Golden Knights", away:"Carolina Hurricanes", league:"NHL Playoffs \u2013 Stanley Cup Final \u00b7 G3 \u00b7 VGK wins 5-4 OT, leads 2-1", start_time:"2026-06-07T00:00:00Z", confirmed:true, venue:"T-Mobile Arena, Las Vegas NV", streams:resolveBundle("NHL_ABC"), seriesRecord:"VGK leads 2-1", crew:"Sean McDonough \u00b7 Ray Ferraro (ABC)", matchupNote:"VGK wins G3 5-4 OT at T-Mobile Arena. Marner hat trick (3G 1A, 10 shots). Carolina led 4-1 after P3 but VGK scored 4 unanswered — including OT winner — to steal the game. VGK leads series 2-1. G4 Tue Jun 9 at T-Mobile Arena, 8pm ET, ABC.", _gameImportance:"elimination"},
+    {home:"Vegas Golden Knights", away:"Carolina Hurricanes", league:"NHL Playoffs \u2013 Stanley Cup Final \u00b7 G3 \u00b7 VGK wins 5-4 OT, leads 2-1", start_time:"2026-06-07T00:00:00Z", confirmed:true, venue:"T-Mobile Arena, Las Vegas NV", streams:resolveBundle("NHL_ABC"), seriesRecord:"VGK leads 2-1", crew:"Sean McDonough \u00b7 Ray Ferraro (ABC)", matchupNote:"VGK wins G3 5-4 OT at T-Mobile Arena. Marner hat trick (3G 1A, 10 shots). Carolina led 4-1 after P3 but VGK scored 4 unanswered — including OT winner — to steal the game. VGK leads series 2-1. G4 Tue Jun 9 at T-Mobile Arena, 8pm ET, ABC.", _gameImportance:"elimination",matchupNote:"VGK leads 2-1. Marner hat trick in G3 (3G 1A, 10 shots) — series-defining. Theodore scored the OT winner. Secondary matchup: Sebastian Aho (7 points this SCF, CAR's first-line center) vs Ivan Barbashev (VGK, 5 points SCF, shutdown assignment). Brent Burns quarterbacks CAR's power play at 52% efficiency this series — VGK's PK is the critical counter. Jack Eichel won only 34% of face-offs in G3; if VGK loses the possession battle early, CAR's cycle game takes over. T-Mobile Arena, 8pm ET, ABC."},
     {home:"Vegas Golden Knights", away:"Carolina Hurricanes", league:"NHL Playoffs \u2013 Stanley Cup Final \u00b7 G4 \u00b7 VGK leads 2-1", start_time:"2026-06-10T00:00:00Z", confirmed:true, venue:"T-Mobile Arena, Las Vegas NV", streams:resolveBundle("NHL_ABC"), seriesRecord:"VGK leads 2-1", crew:"Sean McDonough \u00b7 Ray Ferraro (ABC)", _gameImportance:"elimination"},
     {home:"Carolina Hurricanes", away:"Vegas Golden Knights", league:"NHL Playoffs \u2013 Stanley Cup Final \u00b7 G5 \u00b7 VGK leads 2-1", start_time:"2026-06-12T00:00:00Z", confirmed:true, venue:"Lenovo Center, Raleigh NC", streams:resolveBundle("NHL_ABC"), seriesRecord:"VGK leads 2-1", crew:"Sean McDonough \u00b7 Ray Ferraro (ABC)", _gameImportance:"playoffs"},
     {home:"Vegas Golden Knights", away:"Carolina Hurricanes", league:"NHL Playoffs \u2013 Stanley Cup Final \u00b7 G6 \u00b7 VGK leads 2-1", start_time:"2026-06-15T00:00:00Z", confirmed:true, venue:"T-Mobile Arena, Las Vegas NV", streams:resolveBundle("NHL_ABC"), seriesRecord:"VGK leads 2-1", crew:"Sean McDonough \u00b7 Ray Ferraro (ABC)", _gameImportance:"playoffs"},
@@ -20673,9 +20673,10 @@ function computeNarrativeArc(text) {
     sentences.length >= 2 && /\b(will|could|may|might)\b/i.test(last);
 
   // ARC COMPLETE BONUS: all three + correct order (stakes first, resolution last)
+  // Raised to 15 (Jun 8 2026) — structural completeness is the highest-value arc signal.
   const bonus = stakes && tension && resolution;
 
-  const score = (stakes?10:0) + (tension?10:0) + (resolution?10:0) + (bonus?10:0);
+  const score = (stakes?10:0) + (tension?10:0) + (resolution?10:0) + (bonus?15:0);
   return {stakes, tension, resolution, bonus, score};
 }
 
@@ -20689,29 +20690,30 @@ function computeContextAnchoring(text, game) {
   let score = 0;
   const textLower = text.toLowerCase();
 
-  // SERIES RECORD (+8): brief mentions the N-N record from seriesRecord
+  // SERIES RECORD (+7): brief mentions the N-N record from seriesRecord
   let seriesRecord = false;
   if (game.seriesRecord && game.seriesRecord !== '0-0') {
     const recMatch = (game.seriesRecord||'').match(/\d-\d/);
     if (recMatch && textLower.includes(recMatch[0])) {
       seriesRecord = true;
-      score += 8;
+      score += 7;
     }
   }
 
-  // PLAYER NAMES (+7 each, max 2 = 14): proper names from matchupNote in brief
+  // PLAYER NAMES (+5 each, max 2 = 10): proper names from matchupNote in brief
+  // Recalibrated from 7→5 (Jun 8 2026) — Matchup Depth now separately rewards
+  // secondary player references; Context Anchoring rewards primary grounding.
   let playerNamesFound = 0;
   if (game.matchupNote) {
     const noteWords = game.matchupNote.split(/\s+/);
     const noteNames = noteWords.filter(w => /^[A-Z][a-z]{2,}/.test(w) && w.length > 3 &&
       !['The','This','His','Her','Their','After','Before','With','When','Game','Series'].includes(w));
-    // Deduplicate and check against brief
     const uniqueNames = [...new Set(noteNames)];
     for (const name of uniqueNames) {
       if (playerNamesFound >= 2) break;
       if (text.includes(name)) {
         playerNamesFound++;
-        score += 7;
+        score += 5;
       }
     }
   }
@@ -20732,6 +20734,131 @@ function computeContextAnchoring(text, game) {
 
   return {available:true, seriesRecord, playerNames:playerNamesFound, numbers:numbersFound, score};
 }
+
+// ── JQ Dimension 8: Temporal Precision (0-20) ─────────────────────────────
+// Measures whether stats in the brief are temporally located.
+// "Brunson averages 29.0 PPG" is ambiguous. "Brunson averaged 29.0 PPG this series"
+// is anchored. Temporal anchoring prevents the most common hallucination vector —
+// a stat that is technically present but misleadingly framed.
+// Zero API calls. Pure regex against brief text.
+function computeTemporalPrecision(text) {
+  if (!text) return {score:0, anchored:0, total:0};
+  // Find stat-bearing sentences (have a number with a sport unit)
+  const sentences = text.split(/[.!?]+/).map(s=>s.trim()).filter(Boolean);
+  const STAT_RE = /\d+\.?\d*\s*(ppg|apg|rpg|pts?|points?|rebounds?|assists?|goals?|saves?|era|ops|mph|yards?|rbi|%|\+\/\-|plus.minus)/i;
+  const TEMPORAL_RE = /\b(this series|this season|this postseason|in game \d|game \d|in \d{4}|since \d{4}|last \d+ games?|per game|on the year|this year|this month|career|tonight|in the playoffs?|in these playoffs?)\b/i;
+  let statSentences = 0, anchoredSentences = 0;
+  for (const s of sentences) {
+    if (STAT_RE.test(s)) {
+      statSentences++;
+      if (TEMPORAL_RE.test(s)) anchoredSentences++;
+    }
+  }
+  if (statSentences === 0) return {score:10, anchored:0, total:0}; // no stats = neutral (10/20)
+  // Score: proportion of stat sentences that are temporally anchored * 20
+  const ratio = anchoredSentences / statSentences;
+  const score = Math.round(ratio * 20);
+  return {score, anchored:anchoredSentences, total:statSentences};
+}
+
+// ── JQ Dimension 9: Voice Consistency (0-30) ─────────────────────────────
+// Measures whether the brief's register matches the sport's expected cadence.
+// Basketball: urgent, compressed, Q-and-period framing.
+// Baseball: longitudinal, count/inning language, unhurried.
+// Hockey: physical vocabulary, period/power-play language.
+// Soccer: possession/match framing, no "game" → "match".
+// Computed from sport string (game._sport) + text patterns. Zero API calls.
+function computeVoiceConsistency(text, game) {
+  if (!text) return {score:15, sport:'unknown', signals:0}; // neutral when no text
+  const sport = ((game?._sport || game?.league || game?._section || '')).toLowerCase();
+  const tl = text.toLowerCase();
+  let score = 15; // neutral baseline — don't penalize when sport unknown
+  let signals = 0;
+
+  // Basketball: urgency markers, Q-framing, specific possessions
+  if (sport.includes('nba') || sport.includes('basketball')) {
+    const positive = [/quarter/i,/\bq[1-4]\b/i,/crunch time/i,/half-court/i,/\bpace\b/i,/\bspacing\b/i,/pick.and.roll/i,/\bpoints\s+in\s+the\s+paint/i];
+    const negative = [/inning/i,/\bperiod\b/i,/\bpower play/i,/\bpossession\s+%/i]; // wrong sport vocab
+    const pos = positive.filter(r=>r.test(tl)).length;
+    const neg = negative.filter(r=>r.test(tl)).length;
+    score = Math.min(30, Math.max(0, 15 + pos * 4 - neg * 8));
+    signals = pos;
+  }
+  // Hockey: period/PP framing, physical vocab
+  else if (sport.includes('nhl') || sport.includes('hockey')) {
+    const positive = [/\bperiod\b/i,/power play/i,/\bpp\b/i,/\bpk\b/i,/\bsave/i,/\bgoalie/i,/\bslot\b/i,/on the forecheck/i];
+    const negative = [/inning/i,/quarter/i,/\byards\b/i];
+    const pos = positive.filter(r=>r.test(tl)).length;
+    const neg = negative.filter(r=>r.test(tl)).length;
+    score = Math.min(30, Math.max(0, 15 + pos * 3 - neg * 8));
+    signals = pos;
+  }
+  // Baseball: count/inning, pitcher-batter framing
+  else if (sport.includes('mlb') || sport.includes('baseball')) {
+    const positive = [/inning/i,/\bera\b/i,/\bwhip\b/i,/\bops\b/i,/bullpen/i,/rotation/i,/\bat.bats?\b/i,/\bcount\b/i];
+    const negative = [/quarter/i,/\bperiod\b/i,/power play/i];
+    const pos = positive.filter(r=>r.test(tl)).length;
+    const neg = negative.filter(r=>r.test(tl)).length;
+    score = Math.min(30, Math.max(0, 15 + pos * 3 - neg * 8));
+    signals = pos;
+  }
+  // Soccer/WC: match framing, possession language
+  else if (sport.includes('soccer') || sport.includes('football') || sport.includes('mls') || sport.includes('wc26') || sport.includes('fifa')) {
+    const positive = [/\bmatch\b/i,/possession/i,/\bminute\b/i,/\bhalf\b/i,/\bxg\b/i,/\bpressing\b/i,/\bcounter/i];
+    const negative = [/\bgame\b/i,/quarter/i,/inning/i]; // "game" in soccer = wrong register
+    const pos = positive.filter(r=>r.test(tl)).length;
+    const neg = negative.filter(r=>r.test(tl)).length;
+    score = Math.min(30, Math.max(0, 15 + pos * 4 - neg * 5));
+    signals = pos;
+  }
+
+  return {score, sport: sport || 'unknown', signals};
+}
+
+// ── JQ Dimension 10: Matchup Depth (0-30) ────────────────────────────────
+// Rewards briefs that surface a non-star secondary matchup or role-player context
+// beyond the featured scoring leaders. Replaces Originality (which required a
+// rolling brief corpus that doesn't exist yet).
+//
+// Two signals:
+// A. SECONDARY PLAYER (+15): brief names a player who is NOT one of the top 2
+//    scoring leaders AND NOT the first two names in matchupNote.
+//    Proxy for "went deeper than the headline matchup."
+// B. ROLE STAT (+15): brief cites a role-player stat — assists, +/-, 3P%,
+//    defensive rating, blocks, steals, PP%, PK%, WHIP, OBP.
+//    Proxy for "discussed something beyond raw points/goals."
+//
+// Zero API calls. Requires game.matchupNote to be available.
+function computeMatchupDepth(text, game) {
+  if (!text || !game?.matchupNote) return {available:false, score:0, secondary:false, roleStat:false};
+
+  // Extract the top-2 featured names from matchupNote (first two capitalized names)
+  const noteWords = game.matchupNote.split(/\s+/);
+  const noteNames = noteWords.filter(w => /^[A-Z][a-z]{2,}/.test(w) && w.length > 3 &&
+    !['The','This','His','Her','Their','After','Before','With','When','Game','Series',
+      'New','Old','First','Last','Tonight','Tonight','San','Los','Las','New'].includes(w));
+  const topTwo = [...new Set(noteNames)].slice(0, 2);
+
+  // Find ALL capitalized names in brief (not sentence starters)
+  const sentences = text.split(/[.!?]+/).map(s=>s.trim()).filter(Boolean);
+  const sentStarts = new Set(sentences.map(s=>s.split(/\s+/)[0]));
+  const briefWords = text.split(/\s+/);
+  const briefNames = briefWords.filter(w =>
+    /^[A-Z][a-z]{2,}/.test(w) && !sentStarts.has(w) && w.length > 3 &&
+    !['The','This','His','Her','Their','After','Before','With','When','NBA','NHL','MLB','WC'].includes(w)
+  );
+
+  // Check if brief mentions a name NOT in the top 2 featured names
+  const secondary = briefNames.some(n => !topTwo.some(t => t.toLowerCase() === n.toLowerCase()));
+
+  // Role stat patterns — things beyond raw points/goals
+  const ROLE_STAT_RE = /\b(assists?|\+\/\-|plus.minus|\bapg\b|blocks?|steals?|three.point|3.point|3pt|\bpp%|\bpk%|whip|\bops\b|\bobp\b|defensive\s+rating|\bdrtg\b|\bortg\b|\bbpm\b|\bwins?\s+above|\bwar\b|\btov\b|turnover|usage|pace|efficiency|\bpim\b|corsi|\bxg\b|possession|shot.share)/i;
+  const roleStat = ROLE_STAT_RE.test(text);
+
+  const score = (secondary ? 15 : 0) + (roleStat ? 15 : 0);
+  return {available:true, score, secondary, roleStat, topTwo};
+}
+
 
 async function scoreProse(text, game){
   if(!text) return null;
@@ -20780,9 +20907,11 @@ async function scoreProse(text, game){
     }
   }catch(e){if(FIELD_DEBUG)console.error('[JQ L3] Datamuse:',e.message);}
 
-  // Calibrated weights (May 31 2026 — 7-dimension, 0-200 scale):
-  // Base 5 dimensions scaled to 130pts. Arc (40) + Context (30) = 200 ceiling.
-  const W = { spec:26, statDepth:32, variety:26, density:13, fresh:33 };
+  // Calibrated weights (Jun 8 2026 — 10-dimension, 0-300 scale):
+  // Tier 1: base 5 dims = 150pts total (up from 130).
+  // Tier 2: Arc(45) + CtxAnchoring(25) + TemporalPrecision(20) + VoiceConsistency(30) + MatchupDepth(30) = 150pts
+  // Total ceiling: 300 (250 when context N/A — MatchupDepth requires game.matchupNote)
+  const W = { spec:30, statDepth:38, variety:30, density:16, fresh:36 };
   const base = Math.round(
     specificity * W.spec +
     statDepth   * W.statDepth +
@@ -20791,20 +20920,31 @@ async function scoreProse(text, game){
     freshness   * (W.fresh / 100)
   );
 
-  // Dimension 6: Narrative Arc (0-40)
+  // Dimension 6: Narrative Arc (0-45) — Stakes(10)+Tension(10)+Resolution(10)+Bonus(15)
   const arc = computeNarrativeArc(text);
 
-  // Dimension 7: Context Anchoring (0-30, N/A when no game)
+  // Dimension 7: Context Anchoring (0-25, N/A when no game)
   const ctx = computeContextAnchoring(text, game || null);
 
-  // Total score: base(130) + arc(40) + context(30) = 200 ceiling
-  // When context N/A: ceiling is 170
-  const ctxScore = ctx.available ? ctx.score : 0;
-  const total = Math.min(ctx.available ? 200 : 170, Math.max(0, base + arc.score + ctxScore));
+  // Dimension 8: Temporal Precision (0-20)
+  const temporal = computeTemporalPrecision(text);
+
+  // Dimension 9: Voice Consistency (0-30)
+  const voice = computeVoiceConsistency(text, game || null);
+
+  // Dimension 10: Matchup Depth (0-30, N/A when no game.matchupNote)
+  const matchup = computeMatchupDepth(text, game || null);
+
+  const ctxScore     = ctx.available     ? ctx.score     : 0;
+  const matchupScore = matchup.available ? matchup.score : 0;
+  const ceiling = 300 - (!ctx.available ? 25 : 0) - (!matchup.available ? 30 : 0);
+  const total = Math.min(ceiling, Math.max(0,
+    base + arc.score + ctxScore + temporal.score + voice.score + matchupScore
+  ));
 
   return {
     score:       total,
-    ceiling:     ctx.available ? 200 : 170,
+    ceiling,
     specificity: Math.round(specificity * 100),
     statDepth:   Math.round(statDepth * 10) / 10,
     variety:     Math.round(variety * 100),
@@ -20812,6 +20952,9 @@ async function scoreProse(text, game){
     freshness:   Math.round(freshness),
     arc,
     context:     ctx,
+    temporal,
+    voice,
+    matchup,
     cliches:     hasCliche(text),
   };
 }
@@ -21609,6 +21752,8 @@ async function fetchSeriesPreviewFromClaude(g){
     'STRUCTURE: Sentence 1 = the specific stakes (clinch/elimination/advantage — cite the series record and what winning/losing means). Sentence 2 = the key tactical or narrative fact from this series (player performance, matchup, trend). Sentence 3 = what to watch tonight that decides the game.',
     'If Context is provided, use specific facts from it — player names, stats, game results.',
     'Write only from the data above. Never invent statistics, records, or player tendencies.',
+    'MATCHUP DEPTH: Do not default to only the two star players. If the context includes role players, secondary matchups, or non-scoring stats (assists, +/-, defensive rating, 3P%, PP%, WHIP), surface at least one of these. A brief that only discusses the two most famous names scores lower.',
+    'TEMPORAL PRECISION: Every stat must be temporally located. Not "Brunson averages 29.0 PPG" — "Brunson averaged 29.0 PPG this series." Never leave a stat in a time vacuum.',
     FIELD_PROSE_STYLE,
     getFieldVoice(g._sport||g._section||g.league||''),
     getQualityTarget(g._sport||g._section||g.league||''),

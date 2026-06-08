@@ -1562,11 +1562,14 @@ assert('A324 — JQ v2: computeContextAnchoring defined',
   html.includes('available:false'),
   'Context Anchoring dimension must be defined with N/A handling');
 
-assert('A325 — JQ v2: score ceiling is 200',
-  html.includes('Math.min(ctx.available ? 200 : 170') &&
-  html.includes('ceiling:') &&
-  html.includes('/200'),
-  'Score ceiling must be 200 (170 when context N/A) and displayed as /200');
+assert('A325 — JQ v3: score ceiling is 300 (10-dimension scale)',
+  html.includes('ceiling') &&
+  html.includes('const W = { spec:30, statDepth:38') &&
+  html.includes('computeTemporalPrecision') &&
+  html.includes('computeVoiceConsistency') &&
+  html.includes('computeMatchupDepth') &&
+  html.includes('/300'),
+  'Score ceiling must be 300 (10-dimension scale); displayed as /300 in health panel');
 
 assert('A326 — JQ v2: JQ_SCORE_THRESHOLD updated to 90',
   html.includes('const JQ_SCORE_THRESHOLD = 90'),
@@ -3687,6 +3690,32 @@ assert('A516 — WC/filter-pill: Groups pill in buildFilters for all viewports',
   html.includes('wc-filter-pill') &&
   html.includes('_wcActiveNow'),
   'buildFilters must append a wc-filter-btn pill when wcActive (inline date check); no viewport-specific hide rules');
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ── JQ v3: 300-point scale new dimensions (A517–A519) ────────────────────────
+
+assert('A517 — JQ v3/temporal: computeTemporalPrecision scores temporal stat anchoring',
+  html.includes('function computeTemporalPrecision') &&
+  html.includes('TEMPORAL_RE') &&
+  html.includes('this series') &&
+  html.includes('anchored:anchoredSentences'),
+  'computeTemporalPrecision must detect temporally-anchored stat sentences and score 0-20');
+
+assert('A518 — JQ v3/voice: computeVoiceConsistency scores sport register',
+  html.includes('function computeVoiceConsistency') &&
+  html.includes('half-court') &&
+  html.includes('power play') &&
+  html.includes('signals:0') &&
+  html.includes('wc26'),
+  'computeVoiceConsistency must score sport-specific register for NBA/NHL/MLB/Soccer, 0-30');
+
+assert('A519 — JQ v3/matchup: computeMatchupDepth rewards secondary player/role-stat',
+  html.includes('function computeMatchupDepth') &&
+  html.includes('topTwo') &&
+  html.includes('ROLE_STAT_RE') &&
+  html.includes('secondary:false') &&
+  html.includes('MATCHUP DEPTH'),
+  'computeMatchupDepth must detect secondary player reference and role-player stat, 0-30; J3 prompt must include MATCHUP DEPTH instruction');
 
 // ─────────────────────────────────────────────────────────────────────────────
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
