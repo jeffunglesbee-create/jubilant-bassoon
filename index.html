@@ -2476,12 +2476,16 @@ body.wc-mode #wc-section{animation:wcFadeIn 220ms ease-out}
   .usage-badge{display:none} /* too narrow */
 
   /* Controls — single scrollable flex row on mobile */
-  .controls{padding:.4rem 1rem}
+  /* .controls has no horizontal padding — .controls-inner handles it via scroll inset */
+  .controls{padding:.4rem 0;overflow:hidden}
   .controls-inner{
     display:flex;flex-wrap:nowrap;overflow-x:auto;
     -webkit-overflow-scrolling:touch;
     gap:.35rem;align-items:center;
     scrollbar-width:none;
+    /* Horizontal padding as scroll inset so first/last pill doesn't hug edge */
+    padding-left:.75rem;padding-right:.75rem;
+    box-sizing:border-box;
   }
   .controls-inner::-webkit-scrollbar{display:none}
   .date-nav{flex-shrink:0}
