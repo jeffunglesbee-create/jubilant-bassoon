@@ -1172,7 +1172,7 @@ assert('A260 — Layer 3b: maybeScoreRetry fires rewrite when score below thresh
   html.includes('JQ_SCORE_THRESHOLD') &&
   html.includes('PROSE QUALITY REWRITE') &&
   html.includes('maybeScoreRetry(prompt,') &&
-  html.includes('Score ${scoreObj.score} below'),
+  html.includes('Score ${scoreObj.score}/300 below'),
   'Layer 3b score-triggered rewrite must be defined, use threshold, and be wired into journalism paths');
 
 assert('A261 — BANNED_PHRASES expanded: 16 new entries including variants that slipped through',
@@ -1571,9 +1571,9 @@ assert('A325 — JQ v3: score ceiling is 300 (10-dimension scale)',
   html.includes('/300'),
   'Score ceiling must be 300 (10-dimension scale); displayed as /300 in health panel');
 
-assert('A326 — JQ v2: JQ_SCORE_THRESHOLD updated to 90',
-  html.includes('const JQ_SCORE_THRESHOLD = 90'),
-  'Retry threshold must be 90 on 0-200 scale (was 45 on 0-100)');
+assert('A326 — JQ v3: JQ_SCORE_THRESHOLD updated to 135',
+  html.includes('const JQ_SCORE_THRESHOLD = 135'),
+  'Retry threshold must be 135 on 0-300 scale (JQ v3)');
 
 assert('A327 — JQ v2: arc-targeted retry instructions in maybeScoreRetry',
   html.includes('arc.stakes') && html.includes('arc.resolution') &&

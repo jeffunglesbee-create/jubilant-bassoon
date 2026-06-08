@@ -20558,14 +20558,14 @@ async function checkCrossSport(originalPrompt, text, proxyUrl) {
 // "Prompts that produce higher-scoring briefs get reinforced."
 // Threshold: 45 (calibrated — below 45 means sparse stats + generic words)
 // Only fires once per brief (not chained). Budget: 1 proxy call max.
-const JQ_SCORE_THRESHOLD = 90; // 0-200 scale (was 45/100)
+const JQ_SCORE_THRESHOLD = 135; // 0-300 scale (JQ v3 Jun 8 2026 — ~45% of 300)
 async function maybeScoreRetry(originalPrompt, text, proxyUrl, label, game) {
   if (!text || !proxyUrl) return text;
   let scoreObj;
   try { scoreObj = await scoreProse(text, game||null); } catch(e) { return text; }
   renderProseScore(scoreObj, label + ' [pre-retry]');
   if (!scoreObj || scoreObj.score >= JQ_SCORE_THRESHOLD) return text;
-  if (FIELD_DEBUG) console.warn(`[JQ Layer 3b] Score ${scoreObj.score} below ${JQ_SCORE_THRESHOLD} — triggering score-based rewrite`);
+  if (FIELD_DEBUG) console.warn(`[JQ Layer 3b] Score ${scoreObj.score}/300 below ${JQ_SCORE_THRESHOLD} — triggering score-based rewrite`);
   try {
     await _jqDelay(); // Gemini RPM guard
     const weakDims = [];
@@ -21748,7 +21748,7 @@ async function fetchSeriesPreviewFromClaude(g){
     g.league&&!g.matchupNote?'League: '+g.league+'.':'',
     ' ',
     'Rules: 80-100 words. 2-3 sentences. Tactical focus — what to watch tonight.',
-    'SERIES RECORD LOCKDOWN: The series record is EXACTLY ' + (g.seriesRecord || rec) + '. Do NOT write any other record. Copy the series record verbatim from the data above.',
+    'SERIES RECORD LOCKDOWN: The series record is EXACTLY ' + (g.seriesRecord || '') + '. Do NOT write any other record. Copy the series record verbatim from the data above.',
     'STRUCTURE: Sentence 1 = the specific stakes (clinch/elimination/advantage — cite the series record and what winning/losing means). Sentence 2 = the key tactical or narrative fact from this series (player performance, matchup, trend). Sentence 3 = what to watch tonight that decides the game.',
     'If Context is provided, use specific facts from it — player names, stats, game results.',
     'Write only from the data above. Never invent statistics, records, or player tendencies.',
