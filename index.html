@@ -21678,7 +21678,9 @@ function seriesPreviewCacheKey(g){
   const gNum=gNumMatch?'_g'+gNumMatch[1]:'';
   // Also include _id for uniqueness within same game number
   const idSuffix=g._id?(('_'+g._id).slice(-8)):'';
-  return 'field_series_preview_'+norm(g.home)+'_'+norm(g.away)+'_'+norm(g.seriesRecord)+gNum+idSuffix;
+  // Include SW_VERSION so every deploy busts stale cached briefs (matches Night Owl pattern A265)
+  const swV=(typeof SW_VERSION!=='undefined'?SW_VERSION:'').replace(/[^a-z0-9]/g,'');
+  return 'field_series_preview_'+swV+'_'+norm(g.home)+'_'+norm(g.away)+'_'+norm(g.seriesRecord)+gNum+idSuffix;
 }
 function buildSeriesPreviewStatic(g){
   const s=g._series;
