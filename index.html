@@ -2494,6 +2494,11 @@ body.wc-mode #wc-section{animation:wcFadeIn 220ms ease-out}
   #sport-filters::-webkit-scrollbar{display:none}
   .ctrl-label{display:none}
   .divider{display:none}
+  /* Jump links now in pill row on mobile — hide vertical fallback */
+  nav.controls .desk-jump-link,
+  nav.controls .jrn-nav-link,
+  nav.controls #wc-nav-link,
+  nav.controls .tz-pill { display:none !important; }
   .tz-select{font-size:.7rem;padding:.25rem .4rem;max-width:90px}
   .tz-pill{white-space:nowrap;min-width:32px;max-width:none;font-size:.62rem}
   .date-label{min-width:76px;font-size:.62rem}
@@ -8853,6 +8858,41 @@ function buildFilters(sports){
     });
     c.appendChild(wcBtn);
   }
+  // On mobile/tablet (≤819px), Desk · Journal · Groups jump links are direct children
+  // of .controls-inner and fall outside the 2-row grid, stacking vertically.
+  // Move them into #sport-filters so they scroll horizontally with the pill row.
+  if (window.innerWidth <= 819) {
+    const makeNavPill = (emoji, label, id, toggleFn, activeClass) => {
+      const btn = document.createElement('button');
+      btn.className = 'filter-btn nav-pill-mobile';
+      if (id) btn.id = id + '-pill';
+      btn.textContent = emoji + ' ' + label;
+      btn.style.cssText = 'color:var(--muted);flex-shrink:0';
+      btn.addEventListener('click', () => { if (typeof toggleFn === 'function') toggleFn(); });
+      return btn;
+    };
+    // Desk
+    const deskBtn = makeNavPill('📰', 'Desk', 'desk');
+    deskBtn.addEventListener('click', () => {
+      document.getElementById('field-desk-section')?.scrollIntoView({behavior:'smooth',block:'start'});
+    });
+    c.appendChild(deskBtn);
+    // Journal
+    const jrnBtn = makeNavPill('📖', 'Journal', 'jrn');
+    jrnBtn.addEventListener('click', () => {
+      if (typeof toggleJournalismView === 'function') toggleJournalismView();
+    });
+    c.appendChild(jrnBtn);
+    // Groups (only when wcActive)
+    const _wcMobile = new Date() >= new Date('2026-06-08T00:00:00') && new Date() < new Date('2026-07-20T00:00:00');
+    if (_wcMobile && !document.getElementById('wc-filter-pill')) {
+      const wcBtn2 = makeNavPill('⚽', 'Groups', 'wc-filter', () => {
+        if (typeof toggleWCView === 'function') toggleWCView();
+      });
+      c.appendChild(wcBtn2);
+    }
+  }
+
   // P2 — choreographed reveal: stagger each filter chip by its DOM order. Final pass
   // applies --i to whatever set of buttons ended up in #sport-filters (ALL + optional
   // FREE + optional MY TEAMS + optional RIVALS + N sport chips). Cheaper than threading
