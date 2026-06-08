@@ -19661,7 +19661,7 @@ function buildSeriesStateClause(g) {
     const trailer = s.leadingTeam === 'home' ? (g.away || 'away team') : (g.home || 'home team');
     return [
       `SERIES STATE: ${rec}. ${leader} lead 2-0 and can take a 3-0 stranglehold tonight. ${trailer} trail 0-2 and MUST WIN to avoid 0-3 — no team has ever recovered from 0-3 in NBA history.`,
-      'CRITICAL — SERIES RECORD: ' + leader + ' LEAD ' + wins + '-' + losses + '. ' + trailer + ' TRAIL ' + losses + '-' + wins + '. Do NOT invert this. ' + leader + ' are the team with the series advantage.',
+      'CRITICAL — SERIES RECORD: ' + leader + ' LEAD ' + s.wins + '-' + s.losses + '. ' + trailer + ' TRAIL ' + s.losses + '-' + s.wins + '. Do NOT invert this. ' + leader + ' are the team with the series advantage.',
       `Appropriate framing: ${trailer} face must-win stakes and need a response. ${leader} are one win from a stranglehold.`,
       `Focus: What tactical adjustment does ${trailer} need to make? What has ${leader} done in Games 1-2 that ${trailer} has not solved?`,
     ].join('\n');
