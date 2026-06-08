@@ -3659,6 +3659,27 @@ assert('A514 — J1/brief-tiers: buildCompoundPrompt enforces importance sort + 
   'buildCompoundPrompt must sort games by importance before slicing, and brief instruction must include Tier 1/2/3 word budget rules');
 
 // ─────────────────────────────────────────────────────────────────────────────
+// ── SW_VERSION date must match today ET (A515) ───────────────────────────────
+// Prevents cosmetically wrong dates shipping — on FIELD, cosmetic = functional.
+assert('A515 — SW_VERSION date matches today (ET)',
+  (() => {
+    const m = html.match(/SW_VERSION = '(\d{4}-\d{2}-\d{2})/);
+    if (!m) return false;
+    const swDate = m[1];
+    const todayET = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/New_York' }));
+    const y = todayET.getFullYear();
+    const mo = String(todayET.getMonth() + 1).padStart(2, '0');
+    const d = String(todayET.getDate()).padStart(2, '0');
+    const todayStr = `${y}-${mo}-${d}`;
+    if (swDate !== todayStr) {
+      console.error(`  SW_VERSION date ${swDate} !== today ET ${todayStr}`);
+      return false;
+    }
+    return true;
+  })(),
+  'SW_VERSION must start with today\'s ET date — cosmetic correctness is functional correctness on FIELD');
+
+// ─────────────────────────────────────────────────────────────────────────────
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);
 
