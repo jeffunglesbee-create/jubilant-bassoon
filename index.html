@@ -21500,8 +21500,22 @@ function buildSeriesPreviewStatic(g){
   if(s.homeClinch) return g.home+' can close out the series tonight. One win from advancing.';
   if(s.awayClinch) return g.away+' can advance with a win. They lead '+s.wins+'-'+s.losses+' and look to close on the road.';
   // Fallback for mid-series games not matching specific templates (e.g. 2-1, 1-0)
-  const leadsInfo = s.leadsName ? `${s.leadsName} leads ${s.wins}-${s.losses}` : rec;
-  return leadsInfo+'. Game '+(s.totalGames+1)+' tonight.';
+  // Resolve leadsName to actual team name (leadsName is lowercased abbreviation)
+  const leadingTeamName = s.leadingTeam === 'home' ? g.home : s.leadingTeam === 'away' ? g.away : null;
+  const leadsInfo = leadingTeamName
+    ? `${leadingTeamName} lead${s.wins}-${s.losses}`
+    : s.leadsName ? `${g.seriesRecord}` : rec;
+  const venue = g.venue ? g.venue.split(',')[0] : (s.leadingTeam === 'home' ? g.home : g.away);
+  const gameNum = s.totalGames + 1;
+  // Build a minimal but styled static fallback
+  if (leadingTeamName && s.wins === 2 && s.losses === 0) {
+    const trailingTeam = s.leadingTeam === 'home' ? g.away : g.home;
+    return `${leadingTeamName} lead the series 2-0 heading into Game ${gameNum} — ${trailingTeam} face a historically steep climb with no team ever recovering from 0-3 in this format. Tonight at ${venue || g.home}.`;
+  }
+  if (leadingTeamName && s.wins === 2 && s.losses === 1) {
+    return `${leadingTeamName} lead 2-1 and hold the series advantage heading into Game ${gameNum}. The trailing team must respond tonight to stay alive. ${venue || g.home}.`;
+  }
+  return (leadingTeamName || g.seriesRecord) + '. Game ' + gameNum + ' tonight.';
 }
 async function fetchSeriesPreviewFromClaude(g){
   const budget=journalismCallsToday();
