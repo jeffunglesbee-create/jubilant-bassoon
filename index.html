@@ -2076,6 +2076,8 @@ body.journalism-mode #field-journalism-section{animation:jrnFadeIn 220ms ease-ou
 
 /* Footnote + empty + loading */
 .wc-footnote{font-size:.58rem;color:var(--smoke);margin-top:1rem;line-height:1.5}
+.wc-preview-header{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09);border-radius:10px;padding:1rem 1.1rem;margin-bottom:1.25rem}
+.wc-preview-intro{font-size:.78rem;color:var(--fg);line-height:1.65;margin:0}
 .wc-empty{color:var(--smoke);font-style:italic;text-align:center;padding:.5rem;font-size:.65rem}
 .wc-skeleton{height:12px;background:var(--card2);border-radius:4px;margin:.3rem 0;animation:shimmer 1.4s ease-in-out infinite}
 
@@ -5880,6 +5882,14 @@ async function fetchESPNFixturesForDate(iso){
   }));
 
   if(!anyData) return null; // ESPN had nothing — let AI try
+  // Inject tournament cards (WC countdown/games, French Open) into ESPN-path sections.
+  // These are hardcoded-array surfaces not fetched from ESPN — must be called here
+  // since buildDateSchedule() short-circuits on unknown dates and never reaches them.
+  if(iso === TODAY_ISO) {
+    maybePushFrenchOpen(allSections);
+    maybePushWorldCup(allSections);
+    maybePushAFLFinals(allSections);
+  }
   setCached("espn_"+iso, allSections);
   if(FIELD_DEBUG) console.debug("FIELD: ESPN fixtures for",iso,"→",allSections.length,"sections");
   return allSections;
@@ -24271,7 +24281,7 @@ async function fetchWCStandings(group = null) {
 // Tournament window flag
 const wcActive = (() => {
   const now   = new Date();
-  const open  = new Date('2026-06-11T00:00:00');
+  const open  = new Date('2026-06-08T00:00:00'); // opened early for pre-tournament draw reference + testing
   const close = new Date('2026-07-20T00:00:00');
   return now >= open && now < close;
 })();
@@ -24571,7 +24581,13 @@ function renderWCGroupsLoading() {
 function renderWCGroupsEmpty() {
   const el = document.getElementById('wc-groups');
   if (!el) return;
-  el.innerHTML = 'ABCDEFGHIJKL'.split('').map(g => {
+  const daysAway = Math.max(0, Math.round((new Date('2026-06-11') - new Date()) / 86400000));
+  const previewHeader = daysAway > 0
+    ? `<div class="wc-preview-header">
+        <p class="wc-preview-intro">The 2026 FIFA World Cup opens <strong>June 11 at Estadio Azteca</strong> — the first tournament with 48 teams across 12 groups. 104 matches, three host nations (USA · Mexico · Canada), 39 days. The USMNT opens Group D on June 12 at SoFi Stadium against Paraguay, free on Tubi. All 72 group-stage games on FOX and FS1 in English; Telemundo and Peacock in Spanish. Group standings update automatically once play begins.</p>
+       </div>`
+    : '';
+  el.innerHTML = previewHeader + 'ABCDEFGHIJKL'.split('').map(g => {
     const teams = WC_TEAMS[g] || [];
     const rows = teams.map((t, i) => `
       <tr class="wc-row wc-row--${i < 2 ? 'advance' : i === 2 ? 'maybe' : 'out'}">

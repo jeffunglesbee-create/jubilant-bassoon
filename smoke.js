@@ -3625,6 +3625,30 @@ assert('A510 — WOW8/sub5: Subscriber 5 triggers nightly wrap and ambient panel
   'Subscriber 5 must call renderNightOwlRecap() then renderAmbientPanel() on field:all_final, with _subscriberFired guard');
 
 // ═════════════════════════════════════════════════════════════════════
+// ── WC Pre-flight fixes (A511–A513) ─────────────────────────────────────────
+
+// A511: maybePushWorldCup called in ESPN fixture path
+assert('A511 — WC/fixture-path: maybePushWorldCup called inside fetchESPNFixturesForDate',
+  html.includes('maybePushWorldCup(allSections)') &&
+  html.includes('maybePushFrenchOpen(allSections)') &&
+  html.includes('Inject tournament cards'),
+  'fetchESPNFixturesForDate must call maybePushWorldCup(allSections) before setCached so WC countdown and game cards surface when buildDateSchedule returns null');
+
+// A512: wcActive gate opens June 8 not June 11
+assert('A512 — WC/tab-gate: wcActive opens June 8 for pre-tournament draw reference',
+  html.includes("new Date('2026-06-08T00:00:00')") &&
+  !html.includes("const open  = new Date('2026-06-11T00:00:00')"),
+  'wcActive IIFE must use 2026-06-08 as open date so Groups tab surfaces 3 days before kickoff');
+
+// A513: static editorial header in renderWCGroupsEmpty
+assert('A513 — WC/empty-state: pre-tournament editorial header in renderWCGroupsEmpty',
+  html.includes('wc-preview-header') &&
+  html.includes('wc-preview-intro') &&
+  html.includes('June 11 at Estadio Azteca') &&
+  html.includes('48 teams'),
+  'renderWCGroupsEmpty must render a pre-tournament editorial header when daysAway > 0');
+
+// ─────────────────────────────────────────────────────────────────────────────
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);
 
