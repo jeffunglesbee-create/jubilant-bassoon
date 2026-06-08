@@ -1,84 +1,80 @@
-# FIELD HANDOFF — 2026-06-08 (Session Start)
+# FIELD HANDOFF — 2026-06-08 (Session End)
 
 ## HEADS
-- jubilant-bassoon HEAD: 26513e4 (data: daily update 2026-06-08 — functional)
-- SW_VERSION: 2026-06-08a (live on Cloudflare after CI)
-- Smoke: 453/0 (smoke count from relay — confirm with node smoke.js)
+- jubilant-bassoon HEAD: d554066 (data: WC matchupNote complete — 72/72)
+- CI HEAD: 470923b (auto-commit on top)
+- SW_VERSION: 2026-06-08a (live on Cloudflare)
+- Smoke: 522/0 ✓
 - field-relay-nba HEAD: 5608845 (unchanged)
 
 ## SESSION TYPE
-Daily Update (data patch only — no feature work this session)
+Daily Update + TYPE A (WC pre-flight) + TYPE C (WOW 8 / stat snapshot)
 
-## WHAT SHIPPED THIS SESSION (2026-06-08 daily update)
+## WHAT SHIPPED THIS SESSION
 
-### NHL Stanley Cup Final — G3 result
-- VGK wins G3 5-4 OT at T-Mobile Arena → **VGK leads series 2-1**
-- Marner hat trick (3G 1A, 10 shots)
-- CAR mounted 4-goal P3 surge after trailing 1-0 through two; VGK answered in OT
-- G3 league string, seriesRecord, matchupNote, _gameImportance (→ elimination) updated
-- G4 T-Mobile Arena Tue Jun 9 8pm ET ABC — flagged elimination
-- G4–G7 league labels + seriesRecord updated: "VGK leads 2-1"
+### Daily Update
+- `26513e4` — NHL SCF G3: VGK 5, CAR 4 OT (Marner hat trick). VGK leads 2-1. G4–G7 labels updated.
+- `26513e4` — NBA Finals G2: NYK 105, SAS 104. NYK leads 2-0. G3–G7 labels updated.
+- SW_VERSION: 2026-06-07a → 2026-06-08a
+- `ac599e5` — sw.js SW_VERSION sync fix (A190)
 
-### NBA Finals — G2 result
-- NYK wins G2 105-104 at Frost Bank Center → **NYK leads series 2-0**
-- KAT 21pts/13reb (double-double), Bridges 20pts (8-13 FG, 4-6 from 3)
-- Brunson 20pts/6ast but 7-25 FG; Wembanyama 29pts (11-21 FG) — efficient but SAS lost
-- NYK wins both San Antonio games; steal full home-court control
-- G2 league string, seriesRecord ("NYK wins 105-104"), matchupNote updated
-- G3–G7 league labels updated: "NYK leads 2-0"; all seriesRecord updated
+### WOW 8 + Night Owl ceiling fix (`e03ee33`, A508–A510)
+- `saveEspnFinal`: snapshots stat context (NBA leaders, NHL PP/PK, linescore) into localStorage at game-final moment — survives ESPN cache clearing for cold-cache J5 scenario
+- `checkForNewFinals`: emits `field:all_final` once per night when `_seenFinals.size >= 1` and no `.espn-live` cards remain
+- Subscriber 5: `field:all_final` → 500ms defer → `renderNightOwlRecap()` → 800ms → `renderAmbientPanel()` (iPad rail reflects completed Night Owl)
 
-### SW_VERSION
-- Bumped: 2026-06-07a → 2026-06-08a
+### WC Pre-flight (`dd28921`, A511–A513)
+- `fetchESPNFixturesForDate`: now calls `maybePushWorldCup(allSections)` — WC countdown card surfaces today, game cards surface June 11. Root cause: `buildDateSchedule()` short-circuits on unknown dates; ESPN path never called `maybePushWorldCup`. Fixed.
+- `wcActive` gate: `2026-06-11` → `2026-06-08` — ⚽ Groups tab visible now for pre-tournament draw reference and testing
+- `renderWCGroupsEmpty`: static editorial header (48 teams, three hosts, USMNT, broadcast, days-to-kickoff gated)
+- CSS: `.wc-preview-header` + `.wc-preview-intro`
+
+### WC matchupNote (`4b41fda` + `d554066`)
+- 72/72 group-stage games now have `matchupNote`
+- Was 20/72 at session start
+- All marquee openers, MD2 critical games, MD3 deciders fully written
+- J3 briefs now have editorial input for every WC game
 
 ## UPCOMING GAMES — NEXT 48H
 - **Mon Jun 8** — NBA Finals G3: NYK vs SAS @ MSG, 8:30pm ET, ABC (NYK leads 2-0)
 - **Tue Jun 9** — NHL SCF G4: VGK vs CAR @ T-Mobile Arena, 8pm ET, ABC (VGK leads 2-1)
+- **Thu Jun 11** — FIFA World Cup opens: Mexico vs South Africa, Estadio Azteca, 3pm ET, FOX/Tubi FREE
 
-## ACTIVE INTELLIGENCE — DOCUMENTED GAPS (unchanged from yesterday)
-Three tiers:
-1. Data workflow self-correction (Tier 1) — daily overlay doesn't detect stale/wrong data
-2. Game-completion journalism trigger (Tier 2) — WOW 8 Queues built, trigger not wired
-3. Viewer Intel chip live re-render (Tier 3) — static, only updates on page reload
+## NIGHT OWL VALIDATION
+- Next test: NBA Finals G3 tonight (Mon Jun 8) + NHL SCF G4 (Tue Jun 9)
+- Stat snapshot fix should produce richer J5 context in cold-cache scenario
 
-## OPEN ISSUES (14 total)
+## DEFERRED — DO NOT BUILD UNTIL TUE JUN 10 2026 10AM ET
+1. R2 WC team context (per-team narrative archive, ~125 min, Drive 17D_EzrqoNUR4LN4OK3hr6MqKFUHitWlO72O1CWmqLks)
+2. WC journalism tab brief (AI preview slot above #wc-groups, depends on R2)
+
+**MEMORY NOTE:** Memory slot 4 was overwritten to hold the Tuesday deferral. After Tuesday June 10 at 10am ET, memory 4 should be re-established as: "FIELD session documentation: save to Google Drive after each session as a plain text file (contentMimeType: text/plain) so it converts to a Google Doc. Keep content under 220KB. Title format: 'FIELD App — [Date] Session Documentation'." — and the deferral note can be removed or replaced.
+
+## OPEN ISSUES
 
 ### CRITICAL
-- **World Cup pre-flight — June 11 (3 days).** Endpoint probe needed.
-- Data workflow validation — home/away inversion, stale series records, off-by-one start_times will recur at WC scale (54 games)
+- World Cup opens June 11 (Thursday) — pre-flight complete ✓
 
 ### HIGH
-- PM-32-VI patent claim documentation for provisional (~June 25)
-- WOW 8 game-completion trigger for post-game journalism
+- PM-32-VI patent documentation — June 25 provisional, 17 days
 
 ### MEDIUM
-- Regret Risk (VRR) — buildViewerIntelChip 5th signal tier (~40 lines). Specced in Drive 195lNITk3Y1ZfEZyKMZKlKkuQIDk0t2U9AfLjQbSpC0c
-- Night Owl post-game stat capture (cold-cache fix — real J5 score ceiling)
-- Night Owl G4 test validation (NHL SCF G4, Tue Jun 9)
+- VRR (Regret Risk) — 5th Viewer Intel signal, fully specced (Drive 195lNITk3Y1ZfEZyKMZKlKkuQIDk0t2U9AfLjQbSpC0c)
+- Night Owl post-game stat capture — fixed this session (stat snapshot); validate tonight
+- WC knockout bracket tab — deferred to ~June 18–20 when R32 draw sets
 
-### LOW
-- Arc Poster SVG (~200 lines)
-- #night-owl min-height reservation
-- Chip live re-render on signal change
-
-## NIGHT OWL QUALITY STATE
-- J5 scored 122/200 (1 sample — VGK-CAR G3 2OT, Jun 6)
-- PM-32-JQ (mandatory citation) addresses passive rule gap
-- Next test: NHL SCF G4 Tue Jun 9 + NBA Finals G3 Mon Jun 8
-
-## RUWT PREGAME TIMING — RESOLVED
-- PM-32-VI chip fires pre-game, all signals are factual conditions
-- Drama Dial governs live games, Viewer Intel Mode governs pre-game
-- No RUWT exposure confirmed
-
-## SESSION DOC
-Drive: 1mSSPGnMuP5yKHRfkGsUkdD-cohEMnuIm
-"FIELD App — 2026-06-07 Session Documentation" (yesterday's doc)
+### LOW / POST-WC
+- Streaming Discovery ambient panel tier (Option A)
+- Arc Poster SVG
+- Chip live re-render, #night-owl min-height
 
 ## SMOKE PROGRESSION
-516/0 (last verified) → 453 relay count today (verify locally)
+516/0 (session start) → 522/0 (session end, +6: A508–A513)
+
+## SW_VERSION
+2026-06-08a (live)
 
 ## KEY PERMANENT REFERENCES
 - Drive Current State: 1GvsfnTH9Xhqzg_NdYrPhPpk1d1Rnm0lkeG6ip-tLUlA
 - Drive CI/Deploy Ref: 1UrOoYDGaK2ncPrnRNXt1w0OElOLpbjP_EYROjG2w1zo
 - Drive Build Backlog: 1ugUh6UmeDkLR-gEH8hJPwXK2NiIrXYQY8gp2jO2p2Hk
-- PAT: see memory anchor (expires May 2027)
