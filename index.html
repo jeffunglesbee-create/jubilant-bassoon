@@ -2634,13 +2634,23 @@ body.wc-mode #wc-section{animation:wcFadeIn 220ms ease-out}
   /* Left-pane content: all scrollable sections get right margin */
   .main,#field-brief,#night-owl,#double-feature,#offline-banner,
   nav.controls,#score-ticker-wrap,.mv-panel{margin-right:390px}
-  /* At 430px left pane, jump links overflow into ambient panel zone.
-     Hide them from nav row — Groups accessible via filter pill,
-     Desk/Journal accessible by tapping their filter pills or scrolling. */
-  nav.controls .tz-pill,
+  /* Single scrollable flex row at 820-1199px — same pattern as mobile.
+     display:contents on #sport-filters lets pills flow inline with jump links.
+     margin-right:390px on nav.controls keeps the row in the left pane;
+     overflow-x:auto lets it scroll within that 430px. */
+  nav.controls .controls-inner{
+    display:flex;flex-wrap:nowrap;overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
+    gap:.35rem;align-items:center;
+    scrollbar-width:none;
+  }
+  nav.controls .controls-inner::-webkit-scrollbar{display:none}
+  nav.controls #sport-filters{display:contents}
+  nav.controls .date-nav{flex-shrink:0}
+  nav.controls .tz-pill{flex-shrink:0;margin-left:0;display:flex !important}
   nav.controls .desk-jump-link,
   nav.controls .jrn-nav-link,
-  nav.controls #wc-nav-link { display:none !important; }
+  nav.controls #wc-nav-link{display:inline-flex !important;flex-shrink:0}
   /* Ticker hidden on iPad — Live section in ambient panel covers this */
   #score-ticker-wrap{display:none !important}
   /* Suppress 768-900px 2-col game grid: 430px left pane too narrow for 2 cols */
