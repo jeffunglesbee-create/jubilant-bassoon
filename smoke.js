@@ -3680,6 +3680,16 @@ assert('A515 — SW_VERSION date matches today (ET)',
   'SW_VERSION must start with today\'s ET date — cosmetic correctness is functional correctness on FIELD');
 
 // ─────────────────────────────────────────────────────────────────────────────
+// ── WC Groups filter pill (A516) ─────────────────────────────────────────────
+assert('A516 — WC/filter-pill: Groups pill in buildFilters for portrait viewport',
+  html.includes('wc-filter-btn') &&
+  html.includes("wcBtn.textContent = '⚽ Groups'") &&
+  html.includes('wc-filter-pill') &&
+  html.includes('.wc-filter-btn{ display:none !important; }') &&
+  html.includes('#wc-nav-link{ display:none !important; }'),
+  'buildFilters must append a wc-filter-btn pill when wcActive; desktop hides pill; iPad hides nav link');
+
+// ─────────────────────────────────────────────────────────────────────────────
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);
 

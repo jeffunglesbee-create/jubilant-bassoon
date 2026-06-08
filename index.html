@@ -2624,6 +2624,8 @@ body.wc-mode #wc-section{animation:wcFadeIn 220ms ease-out}
   padding:1rem 1.1rem 2rem;
   z-index:22;
 }
+@media(min-width:1200px){ .wc-filter-btn{ display:none !important; } }
+@media(min-width:820px) and (max-width:1199px){ #wc-nav-link{ display:none !important; } }
 @media(min-width:820px) and (max-width:1199px){
   #ambient-panel{display:flex;top:0;height:100dvh;padding-top:1rem;
     background:#0c1118;border-left:1px solid rgba(255,255,255,.09)}
@@ -8811,6 +8813,21 @@ function buildFilters(sports){
     });
     c.appendChild(btn);
   });
+  // WC Groups pill — appended to filter bar when wcActive.
+  // Portrait-safe: sits in the scrollable #sport-filters row rather than the
+  // fixed-width controls-inner, so it's always reachable regardless of viewport.
+  // Hidden on desktop (1200px+) where the nav jump link is used instead.
+  if (typeof wcActive !== 'undefined' && wcActive) {
+    const wcBtn = document.createElement('button');
+    wcBtn.className = 'filter-btn wc-filter-btn' + (document.body.classList.contains('wc-mode') ? ' active' : '');
+    wcBtn.id = 'wc-filter-pill';
+    wcBtn.textContent = '⚽ Groups';
+    wcBtn.title = 'World Cup 2026 — Group standings';
+    wcBtn.addEventListener('click', () => {
+      if (typeof toggleWCView === 'function') toggleWCView();
+    });
+    c.appendChild(wcBtn);
+  }
   // P2 — choreographed reveal: stagger each filter chip by its DOM order. Final pass
   // applies --i to whatever set of buttons ended up in #sport-filters (ALL + optional
   // FREE + optional MY TEAMS + optional RIVALS + N sport chips). Cheaper than threading
@@ -24433,6 +24450,8 @@ async function renderWCSection() {
   }
   if (title) title.textContent = 'Group Stage';
   if (navLink) navLink.textContent = '⚽ Groups';
+  // Sync filter pill active state
+  document.getElementById('wc-filter-pill')?.classList.toggle('active', document.body.classList.contains('wc-mode'));
   document.getElementById('wc-bracket')?.setAttribute('hidden', '');
   const grpsEl = document.getElementById('wc-groups');
   if (grpsEl) grpsEl.removeAttribute('hidden');
