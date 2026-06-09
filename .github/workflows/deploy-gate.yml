@@ -71,12 +71,36 @@ jobs:
           echo "✅ Smoke passed — deploying"
 
       - name: Deploy to Cloudflare Workers
+        id: deploy
+        continue-on-error: true
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: b57e9af57ab46c52ca9215804e689c29
           wranglerVersion: "3.109.0"
           # gitHubToken removed: CF GitHub integration disconnected May 23 2026
+
+      - name: Capture deploy result
+        if: always()
+        run: |
+          TS=$(date -u +%Y%m%dT%H%M%SZ)
+          OUT="outbox/deploy-result-${TS}.txt"
+          echo "DEPLOY RESULT: ${{ steps.deploy.outcome }}" > "$OUT"
+          echo "SHA: ${{ github.sha }}" >> "$OUT"
+          echo "WRANGLER OUTPUT CAPTURED VIA ACTION STDOUT:" >> "$OUT"
+          cat /tmp/wrangler-*.log 2>/dev/null >> "$OUT" || echo "(no wrangler log file found)" >> "$OUT"
+          # Try to find wrangler output in runner temp
+          find /home/runner -name "*.log" -newer /tmp -size +1c 2>/dev/null | head -5 | xargs cat 2>/dev/null >> "$OUT" || true
+          git config user.email "deploy@field"
+          git config user.name "Deploy Gate"
+          git add "$OUT"
+          git diff --cached --quiet && exit 0
+          git commit -m "deploy result [skip ci]"
+          for i in 1 2 3; do git pull --rebase --autostash origin main && git push origin main && break; sleep $((i*5)); done
+
+      - name: Fail if deploy failed
+        if: steps.deploy.outcome == 'failure'
+        run: exit 1
 
       - name: Confirm
         run: |
