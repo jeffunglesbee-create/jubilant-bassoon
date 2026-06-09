@@ -23,7 +23,7 @@ const WAIT_MS = 4000; // allow schedule + live data to render
     await page.goto(FIELD_URL, { waitUntil: 'networkidle', timeout: 20000 }).catch(() => {});
     await page.waitForTimeout(WAIT_MS);
     const file = path.join('outbox', `screenshot-${vp.name}-${ts}.png`);
-    await page.screenshot({ path: file, fullPage: false });
+    await page.screenshot({ path: file, fullPage: true });
     results.push(file);
     console.log(`✓ ${vp.name} → ${file}`);
     await page.close();
