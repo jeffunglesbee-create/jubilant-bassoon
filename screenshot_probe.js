@@ -27,8 +27,8 @@ const CUSTOM_DEVICES = {
 
 const VIEWPORTS = [
   // Mobile — 4 devices, portrait + landscape
-  { name: 'iphone-se-portrait',     device: 'iPhone SE' },
-  { name: 'iphone-se-landscape',    device: 'iPhone SE landscape' },
+  { name: 'iphone-se-portrait',     device: 'iPhone SE (3rd gen)' },
+  { name: 'iphone-se-landscape',    device: 'iPhone SE (3rd gen) landscape' },
   { name: 'pixel8-portrait',        custom: 'Pixel 8' },
   { name: 'pixel8-landscape',       custom: 'Pixel 8', landscape: true },
   { name: 'galaxy-a36-portrait',    custom: 'Galaxy A36' },
