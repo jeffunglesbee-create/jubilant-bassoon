@@ -25820,10 +25820,7 @@ function renderAmbientPanel(){
         ${net?`<span class="ap-soon-meta">${net}</span>`:''}
       </div>`;
     }else{
-      otwHTML=`<div class="ap-no-fire">
-        <span class="ap-quiet-label">One to Watch</span>
-        <span class="ap-quiet-msg">No fire game right now</span>
-      </div>`;
+      otwHTML=''; // M4: suppress quiet OTW — ghost text wastes panel top; UPCOMING leads
     }
   }
 
