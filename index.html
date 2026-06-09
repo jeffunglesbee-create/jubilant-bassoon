@@ -8863,6 +8863,23 @@ function renderAll(){
   setTimeout(updateCardLifeStages, 200); // Update life stages after cards render
   setTimeout(renderScoreTicker, 250);   // Render score ticker if games are live
   if(typeof _updateDialChip==='function') _updateDialChip(); // Drama Dial header chip
+
+  // ── MutationObserver: re-render ambient panel when field-brief content arrives ──
+  // The brief loads async (5-15s AI call). The ambient panel renders at load time
+  // before the brief completes. Without this observer, the ambient panel brief
+  // section stays empty. Originally shipped May 21 2026 (6fa9335), re-wired Jun 9.
+  (function() {
+    const _briefEl = (_DOM?.fieldBrief || document.getElementById('field-brief'));
+    if (!_briefEl || typeof MutationObserver === 'undefined') return;
+    const _briefObs = new MutationObserver(() => {
+      // Only re-render ambient if there's real content (>20 chars avoids flicker)
+      const _briefText = _briefEl.textContent?.trim() || '';
+      if (_briefText.length > 20 && typeof renderAmbientPanel === 'function') {
+        renderAmbientPanel();
+      }
+    });
+    _briefObs.observe(_briefEl, { childList: true, subtree: true, characterData: true });
+  })();
   // ── _DOM cache: stable element references — avoids repeated DOM traversal ──
   // Populated once at DOMContentLoaded. Used throughout instead of getElementById.
   // Only elements that exist in static HTML and never removed from DOM.
