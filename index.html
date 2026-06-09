@@ -21094,6 +21094,26 @@ function buildCompoundPrompt(sections) {
     .slice(0, 12);
   const seriesGames = games.filter(g => g.seriesRecord);
 
+  // Build a count summary for leagues with suppressed Tier 3 context
+  const _suppressedCounts = {};
+  if (hasTier1) {
+    games.forEach(g => {
+      if (_importanceScore(g) >= 6) return; // not suppressed
+      const league = (g.league || g._sport || g._section || '').toLowerCase();
+      const leagueKey = league.includes('mlb') || league.includes('baseball') ? 'MLB'
+        : league.includes('wnba') ? 'WNBA'
+        : league.includes('mls') ? 'MLS'
+        : league.includes('afl') ? 'AFL'
+        : league.includes('cfl') ? 'CFL'
+        : (g.league || g._sport || '');
+      _suppressedCounts[leagueKey] = (_suppressedCounts[leagueKey] || 0) + 1;
+    });
+  }
+  const _suppressedNote = Object.entries(_suppressedCounts)
+    .filter(([,n]) => n > 1)
+    .map(([lg, n]) => `${n} ${lg} games`)
+    .join(', ');
+
   // Big game flag: Conference Finals and above get doubled brief length
   // Rationale: high-stakes series deserve editorial depth; fan investment is much higher
   const isBigGame = games.some(g =>
@@ -21122,7 +21142,32 @@ function buildCompoundPrompt(sections) {
     .flatMap(s => (s.games || []).filter(g => isToday(g.start_time)).slice(0, 2))
     .slice(0, 4);
 
-  const gameLines = games.map(g => {
+  // Tier context cap: when a Tier 1 game (Finals/WC) is on the slate,
+  // limit Tier 3 (regular-season) context to 1 representative game per league.
+  // The other Tier 3 games are counted but not expanded — prevents MLB/WNBA
+  // regular season consuming the word budget on Finals nights.
+  const hasTier1 = games.some(g => _importanceScore(g) >= 8);
+  const hasTier2 = games.some(g => _importanceScore(g) >= 6 && _importanceScore(g) < 8);
+  const _leagueSeen = {};
+  const gamesForContext = hasTier1
+    ? games.filter(g => {
+        const score = _importanceScore(g);
+        if (score >= 6) return true; // Tier 1 + Tier 2: always include
+        // Tier 3: one per league only
+        const league = (g.league || g._sport || g._section || '').toLowerCase();
+        const leagueKey = league.includes('mlb') || league.includes('baseball') ? 'mlb'
+          : league.includes('wnba') ? 'wnba'
+          : league.includes('mls') ? 'mls'
+          : league.includes('afl') ? 'afl'
+          : league.includes('cfl') ? 'cfl'
+          : league;
+        if (_leagueSeen[leagueKey]) return false;
+        _leagueSeen[leagueKey] = true;
+        return true;
+      })
+    : games;
+
+  const gameLines = gamesForContext.map(g => {
     // PM-19 retro brief fix: pre-format start time in ET + add explicit WHEN tag.
     // Was: model received raw UTC ISO start_time (or none) and defaulted every game
     // to "tonight" — so a Tuesday brief opened NBA Finals G1 as "tonight" when the
@@ -21321,7 +21366,9 @@ function buildCompoundPrompt(sections) {
 
   // game_briefs: regular-season non-series, non-soccer games (WNBA, MLB, MLS, AFL, etc.)
   const regularIds = regularGames.map(g => `${(g.home||'').toLowerCase().replace(/\s+/g,'_')}_${(g.away||'').toLowerCase().replace(/\s+/g,'_')}`);
-  const regularSection = regularGames.length ? `\nREGULAR-SEASON GAMES (write a 30-40 word brief per game — venue context, standings, what's at stake):\n` +
+  // Append suppressed count to regularSection header when Tier 1 is active
+  const _suppNote = _suppressedNote ? ` (${_suppressedNote} also tonight — context condensed)` : '';
+  const regularSection = regularGames.length ? `\nREGULAR-SEASON GAMES${_suppNote} (write ONE combined sentence for all regular-season games when a Finals or WC game is present — do not expand each game individually):\n` +
     regularGames.map(g => {
       const stream = g.streams?.[0]?.label || '';
       const venue = g.venue ? ` · ${g.venue}` : '';
@@ -21355,7 +21402,7 @@ ${gameLines || 'No games tonight.'}
 ${eplSection}${regularSection}
 Return this exact JSON structure (null for any section without sufficient data):
 {
-  "brief": "${briefWords} No headers. Complete sentences. PRIORITY TIERS — strictly enforce word allocation: TIER 1 (NBA/NHL Finals, Stanley Cup Final, WC knockout stage): lead paragraph, 60-70% of word budget. TIER 2 (Conference Finals, WC group stage): one focused sentence or short paragraph, 20-25% of budget. TIER 3 (all other leagues — WNBA, MLB, MLS, AFL, CFL): one sentence maximum per league, only if budget remains; omit entirely if a Tier 1 game is on the slate. If a Tier 1 game is present, WNBA/MLB/MLS get at most one combined sentence at the end. Never bury a Finals or WC knockout game under regular-season content.",
+  "brief": "${briefWords} No headers. Complete sentences. NOTE: Context below includes 1 representative game per lower-tier league — other games in those leagues are noted by count only. Do not invent details for games not listed. PRIORITY TIERS — strictly enforce word allocation: TIER 1 (NBA/NHL Finals, Stanley Cup Final, WC knockout stage): lead paragraph, 60-70% of word budget. TIER 2 (Conference Finals, WC group stage): one focused sentence or short paragraph, 20-25% of budget. TIER 3 (all other leagues — WNBA, MLB, MLS, AFL, CFL): one sentence maximum per league, only if budget remains; omit entirely if a Tier 1 game is on the slate. If a Tier 1 game is present, WNBA/MLB/MLS get at most one combined sentence at the end. Never bury a Finals or WC knockout game under regular-season content.",
   "series": [${seriesIds.map(id => `{"id":"${id}","preview":null}`).join(',')}],
   "scouts_pick": "one sentence explaining the Scout's Pick or null",
   "bni_note": "one sentence Anti-Hype framing or null",
