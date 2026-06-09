@@ -1,0 +1,25 @@
+EXIT_CODE: 1
+SHA: 44368a09bb7c652aaeaaf97eb90e733e78270807
+---WRANGLER OUTPUT---
+
+ ⛅️ wrangler 3.109.0 (update available 4.99.0)
+----------------------------------------------
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mThe version of Wrangler you are using is now out-of-date.[0m
+
+  Please update to the latest version to prevent critical errors.
+  Run `npm install --save-dev wrangler@4` to update to the latest version.
+  After installation, run Wrangler with `npx wrangler`.
+
+
+🌀 Building list of assets...
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mAsset too large.[0m
+
+  Cloudflare Workers supports assets with sizes of up to 25 MiB. We found a file /home/runner/work/jubilant-bassoon/jubilant-bassoon/.git/objects/pack/pack-4ac73ed285dc50f5379ca6d02b8d302bfc0e1030.pack with a size of 51.7 MiB.
+  Ensure all assets in your assets directory "/home/runner/work/jubilant-bassoon/jubilant-bassoon" conform with the Workers maximum size requirement.
+
+
+
+Cloudflare collects anonymous telemetry about your usage of Wrangler. Learn more at https://github.com/cloudflare/workers-sdk/tree/main/packages/wrangler/telemetry.md
+🪵  Logs were written to "/home/runner/.config/.wrangler/logs/wrangler-2026-06-09_18-17-08_085.log"
