@@ -1,98 +1,68 @@
-# FIELD HANDOFF — 2026-06-08 (Session End, Part 2)
+# FIELD HANDOFF — 2026-06-09 (Session End)
 
 ## HEADS
-- jubilant-bassoon HEAD: b421c88 (nav bar 2-row layout)
+- jubilant-bassoon HEAD: d72d108 (J1 context cap max 2/sport)
+- CI HEAD: b3fda50 (auto-commit on top)
 - SW_VERSION: 2026-06-08b
 - Smoke: 528/0 ✓
-- field-relay-nba HEAD: 790f9da (JQ v3 relay parity)
+- field-relay-nba: 790f9da (JQ v3, unchanged)
 
 ## SESSION TYPE
-Daily Update + TYPE A (WC pre-flight) + TYPE C (extensive bug fixes + JQ v3)
+TYPE C (J1 brief analysis + J5 retry fix) + TYPE D (UX/UI engineering audit)
 
-## THIS PART (afternoon session continuation)
+## WHAT SHIPPED THIS SESSION
 
-### Series Brief — three silent ReferenceErrors (all introduced in 8747197)
+### J1 Brief Context Cap (d72d108, 9a60d8a)
+Root cause of MLB pitcher ERA dump: buildCompoundPrompt passed all 12 sorted
+games to gameLines.map(), giving Claude full context for all 8 MLB games.
+Fix: gamesForContext filters to max 2 games per league, min 1.
+Tier ordering preserved — best game per league always in first slot.
+regularSection header: "max 2 games per sport shown — 1-2 sentences per sport"
+Suppressed count appended: "(8 MLB games also tonight — context condensed)"
 
-**Root cause chain for "NYK leads 2-0. Game 3 tonight." static fallback:**
+### J5 Night Owl maybeScoreRetry (7bc2fda)
+J5 was the only journalism path without score-based retry.
+Fixed: both relay path and fallback path now call maybeScoreRetry
+with topGame as game context (full 300-ceiling eligible).
 
-1. `rec` undefined in `fetchSeriesPreviewFromClaude` prompt assembly (ba5c1c2)
-   - SERIES RECORD LOCKDOWN instruction used `rec` variable only defined in
-     `buildSeriesPreviewStatic()` scope, not `fetchSeriesPreviewFromClaude()`
-   - Fix: `(g.seriesRecord || rec)` → `(g.seriesRecord || '')`
+### Journalism Path Coverage Confirmed (all 8 paths audited)
+J1 Compound: ~245 ceiling, retry YES, null game (correct by design)
+J2 Series: 300, retry YES, game YES
+J3 Series Brief: ~245, retry YES, null game (correct by design)  
+MLB Card: 300, retry YES, game YES
+WNBA Card: 300, retry YES, game YES
+Stakes: 300, retry YES, game YES
+EPL: 300, retry NO (season over — deferred to Aug 2026)
+J5 Night Owl: 300, retry YES (FIXED this session)
 
-2. `wins`/`losses` undefined in `buildSeriesStateClause` 2-0 block (a232030)
-   - CRITICAL line used bare `wins`/`losses` not `s.wins`/`s.losses`
-   - Fix: `s.wins` and `s.losses` throughout
+### UX/UI Engineering Audit (TYPE D)
+Full audit against field-viewport-2026-06-06.html (Jun 6 spec).
+Audit doc: Drive 1aQu4IW5zBpe42tLC42VS_-q2Ra8rSVX_9R1fY1KgGOc
 
-3. Stale sessionStorage cache surviving across deploys (8fed70a)
-   - `seriesPreviewCacheKey()` did not include SW_VERSION
-   - Old static fallback text cached under key that survived redeploys
-   - Fix: SW_VERSION prefix in cache key (matches Night Owl A265 pattern)
+Key findings:
+- 406 sub-12px font instances — floor at 0.62rem
+- 0 :focus-visible, 0 bottom sheet focus trapping
+- 5 :active rules vs 65 :hover — mobile has no tap feedback
+- 0 will-change — GPU promotion gaps on crunch-card animation
+- 0 overscroll-behavior — scroll bleed on bottom sheets
+- 10 spec surfaces not in codebase (3 WC-critical before Jun 11)
+- Night Owl + Finals Desk share violet accent — disambiguation needed
+- .vibe order:-1 needed — game state chips buried behind network chips
+- Score flash animation unbuilt — WS value prop invisible
 
-All three introduced in same commit (8747197 — Series Brief 2-0 state clause).
-Pattern: silent ReferenceErrors inside try/catch return null → static fallback fires.
+Immediate wins (one commit, zero risk):
+  CSS: .vibe{order:-1}, :active states, overscroll-behavior:contain,
+  Night Owl amber, filter-btn min-height:36px, will-change, .gline color
+  JS: score flash, bottom sheet focus trap, aria-live on scores
 
-### parseSeriesRecord — initialism abbreviation fix (62bc949)
-
-Existing fix handled prefix abbreviations (CAR→Carolina) but not initialisms:
-- "NYK" → "New York Knicks": no word starts with NYK → leadingTeam=null
-- null leadingTeam → leader=g.away, trailer=g.home → complete inversion
-- Brief said "Knicks trail 2-0" when NYK leads 2-0
-
-Fix: after word-prefix matching fails, look up both teams in `_teamAbbr` map
-and compare uppercase abbreviation directly.
-
-### JQ v3 — 300-point scale (ffeb6ed + 790f9da)
-
-Client scoreProse(): 10 dimensions, 300-point ceiling.
-- Tier 1 (150): Spec 30, StatDepth 38, Variety 30, Density 16, Freshness 36
-- Dim 6: Narrative Arc 45 (Stakes 10 + Tension 10 + Resolution 10 + Bonus 15)
-- Dim 7: Context Anchoring 25 (reduced from 30; player name weight 7→5)
-- Dim 8: Temporal Precision 20 (new — stat time-period anchoring)
-- Dim 9: Voice Consistency 30 (new — sport-specific register)
-- Dim 10: Matchup Depth 30 (new — secondary player + role stat; replaces Originality)
-- J3 prompt updated: MATCHUP DEPTH + TEMPORAL PRECISION instructions
-- NBA Finals G3 matchupNote enriched: Castle/Anunoby/McBride/Barnes
-- NHL SCF G4 matchupNote enriched: Aho/Barbashev/Burns/Eichel
-- relay journalism-quality.js updated to parity (relay ceiling 245 = 300 - 25ctx N/A - 30matchup N/A)
-- JQ_SCORE_THRESHOLD: 90 → 135 (300 scale); relay threshold: 130 → 175
-
-### Nav bar — 2-row layout, Desk/Journal/Groups always visible (b421c88)
-
-Row 1: ‹ Today › + scrollable filter pills
-Row 2: Desk · Journal · Groups — always fully visible, no scroll needed
-
-Mechanism: controls-inner flex-wrap:wrap, zero-height .divider forces line break,
-jump links order:3 always land on row 2. Pure CSS. Applied mobile + iPad portrait.
-
-History of nav iteration this session:
-- 99487eb: JS runtime pill injection (wrong — CSS is the right layer)
-- 993abb7: display:contents single scrollable row (right mechanism, wrong UX)
-- e3bdb93: iPad parity
-- 5a8cc3e, 414ac47: hide rules → landscape regression
-- 2f6c7ae: overflow:hidden clip fix
-- b421c88: final correct 2-row layout
-
-### Other fixes
-- A514: J1 brief priority tiers (Finals/WC leads, WNBA compressed)
-- A515: SW_VERSION date matches today ET (cosmetic = functional)
-- A516: WC Groups pill in buildFilters (inline date check, temporal dead zone)
-- WC tab: iOS Safari hidden attribute fix (inline style.display='block')
-- WNBA schedule: rebuilt Jun 8–12 from WNBA app (OPTA data was wrong)
-- Series Brief static fallback: proper team name from leadingTeam
-- league-badge: max-width:52vw ellipsis at mobile
-- filter bar clip: controls overflow:hidden + scroll inset padding
-
-## STANDING PRINCIPLES ESTABLISHED THIS SESSION
-1. The user should never have to prove Claude wrong — any session.
-   When a UI bug is reported, verify before concluding. The screen wins.
-2. Cosmetic correctness is functional correctness on FIELD.
-   A wrong date in SW_VERSION is a wrong date on the product, full stop.
+WC-critical before Jun 11:
+  WC card variant (wc-bars, ~30 lines CSS)
+  Score flash animation (~10 lines CSS + ~8 lines JS)
+  Score TBD fallback (~8 lines)
 
 ## UPCOMING GAMES
-- Mon Jun 8 8:30pm ET — NBA Finals G3: SAS @ NYK, MSG, ABC (NYK leads 2-0)
 - Tue Jun 9 8pm ET — NHL SCF G4: VGK vs CAR @ T-Mobile, ABC (VGK leads 2-1)
-- Thu Jun 11 3pm ET — WC opener: Mexico vs South Africa, Azteca, FOX/Tubi FREE
+- Thu Jun 11 12pm ET — WC opener: Mexico vs South Africa, Azteca, FOX FREE
 
 ## DEFERRED — TUE JUN 10 2026 10AM ET
 1. R2 WC team context (Drive 17D_EzrqoNUR4LN4OK3hr6MqKFUHitWlO72O1CWmqLks)
@@ -102,23 +72,33 @@ MEMORY NOTE: After Tue Jun 10 10am ET, restore memory slot 4 to session
 doc format rule. Remove deferral note.
 
 ## OPEN ISSUES
-### HIGH
-- PM-32-VI patent documentation — June 25 provisional, 17 days
+### CRITICAL (Jun 11)
+- WC card variant (wc-bars) — not in CSS
+- Score flash animation — WS value prop invisible without it
+
+### HIGH (patent Jun 25)
+- PM-32-VI patent documentation — 16 days
+- Drama Dial header chip (~20 lines)
+- Arc Poster SVG (~200 lines, blocker cleared)
 
 ### MEDIUM
-- Night Owl stat snapshot validation — G3 tonight
-- WC knockout bracket tab — ~June 18-20
+- Series dots board (~40 lines)
+- Night Owl amnesty arc sparkline (~25 lines)
+- VRR Regret Risk (5th Viewer Intel signal)
+- WC knockout bracket tab (~June 18-20)
 
 ### LOW
 - Odds Budget stale date (2026-05-29)
-- Streaming Discovery ambient tier (Option A)
-- Arc Poster SVG
+- UX immediate wins (CSS/JS, one commit)
+- Landscape 2-col cards (~15 lines)
+- WHOLE FIELD toggle
 
 ## SMOKE
-516/0 (session start) → 528/0 (session end, +12: A514-A519 + relay parity)
+528/0 (unchanged — no smoke assertion changes this session)
 
 ## KEY REFERENCES
+- Session doc: Drive 1--N_QRgI7lMERpU2scM1TR6RQzt8WGTiwO0MQ8Iu3E8
+- UX/UI audit: Drive 1aQu4IW5zBpe42tLC42VS_-q2Ra8rSVX_9R1fY1KgGOc
 - Drive Current State: 1GvsfnTH9Xhqzg_NdYrPhPpk1d1Rnm0lkeG6ip-tLUlA
-- Drive CI/Deploy: 1UrOoYDGaK2ncPrnRNXt1w0OElOLpbjP_EYROjG2w1zo
+- Drive CI/Deploy Ref: 1UrOoYDGaK2ncPrnRNXt1w0OElOLpbjP_EYROjG2w1zo
 - Drive Build Backlog: 1ugUh6UmeDkLR-gEH8hJPwXK2NiIrXYQY8gp2jO2p2Hk
-- JQ Spec v2: 1eSgLyBFHFATJ62yUxe3tAoGmB64vcOljNMVBugU4_DI
