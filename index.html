@@ -5579,7 +5579,7 @@ function fmtTime(iso){
 // compact score+period; final shows final score; live-without-eData shows "LIVE".
 // Replaces the prior "always show start_time" approach which left stale 8:00 PM
 // labels on game cards that had been in P2 for an hour.
-function buildCardTimeDisplay(isLive, eData, timeStr) {
+function buildCardTimeDisplay(isLive, eData, timeStr, startTimeISO) {
   // PM-20 Step 5: confidence glyph derived from eData.confidence (set by findScore)
   // verified -> '✓' (both sources agree), mismatch -> '⚠' (sources differ),
   // single   -> '' (no badge — current state), undefined/null -> '' (legacy)
@@ -5602,8 +5602,13 @@ function buildCardTimeDisplay(isLive, eData, timeStr) {
     const period = eData.period ? `${pp}${eData.period}` : '';
     return `${a}–${h}${period ? ' ' + period : ''}${glyph}`;
   }
-  // Live, no scoreboard data: score-tbd shows animated dots instead of stale time
-  return '<span class="score-tbd" aria-label="Score pending"></span>';
+  // Live, no scoreboard data: score-tbd only in first 10min (genuine pre-score window)
+  // After 10min without data, show LIVE — prevents misfire on 3h+ old finished games
+  if (startTimeISO) {
+    const minsIn = (Date.now() - new Date(startTimeISO)) / 60000;
+    if (minsIn >= 0 && minsIn < 10) return '<span class="score-tbd" aria-label="Score pending"></span>';
+  }
+  return 'LIVE';
 }
 function getStatus(iso, opts){
   if(!iso) return "upcoming";
@@ -17136,7 +17141,7 @@ function renderESPNScores(){
           gtEl.setAttribute('aria-atomic','true');
         }
         const gtText = buildCardTimeDisplay(isLive || isFinal, score,
-          gtEl.textContent || ''); // pass existing text as fallback timeStr
+          gtEl.textContent || '', game.start_time || ''); // pass start_time for score-tbd window
         if(gtText && gtText !== gtEl.dataset.lastScore){
           // Score changed — trigger flash feedback
           gtEl.dataset.lastScore = gtText;
@@ -25902,7 +25907,7 @@ function renderAmbientPanel(){
   }
 
     const _apHTML=`${otwHTML}${scoresHTML?`<div class="ap-divider"></div>${scoresHTML}`:''}${soonHTML?`<div class="ap-divider"></div>${soonHTML}`:''}${upcomingHTML?`<div class="ap-divider"></div>${upcomingHTML}`:''}${ctxHTML?`<div class="ap-divider"></div>${ctxHTML}`:''}${arbHTML?`<div class="ap-divider"></div>${arbHTML}`:''}${briefHTML?`<div class="ap-divider"></div>${briefHTML}`:''}`;
-  if(panel.dataset.lastAp!==_apHTML){panel.dataset.lastAp=_apHTML;panel.innerHTML=_apHTML;}
+  if(panel.dataset.lastAp!==_apHTML||!panel.innerHTML.trim()){panel.dataset.lastAp=_apHTML;panel.innerHTML=_apHTML;}
 }
 
 // ── Broadcast Arbitrage Finder ──────────────────────────────────────────────
@@ -29410,7 +29415,7 @@ async function fetchNightOwlFromClaude(topGame){
     const _trend     = (typeof getDramaTrend     === 'function') ? getDramaTrend(_gid, 6)                 : 0;
     const _peakWt    = (typeof getDramaPeakWithTime === 'function') ? getDramaPeakWithTime(_gid)           : null;
     if (_sustained >= 5)
-      _owlDramaPromptCtx += `  [DRAMA] ${_sustained.toFixed(0)} min sustained above 65/100`;
+      _owlDramaPromptCtx += `  [DRAMA] ${_sustained.toFixed(0)} min of sustained tension`;
     if (Math.abs(_trend) >= 8)
       _owlDramaPromptCtx += (_owlDramaPromptCtx ? '\n' : '') +
         `  [DRAMA TREND] ${_trend > 0 ? 'Rising at final buzzer (+' + Math.round(_trend) + ')' : 'Fading late (' + Math.round(_trend) + ')'}`;
@@ -29467,9 +29472,9 @@ async function fetchNightOwlFromClaude(topGame){
       // citation is optional. statDepth is the dominant gap; making citation mandatory
       // forces every sentence to carry a specific number, directly lifting statDepth.
       _owlStatCtx
-        ? 'REQUIRED — CITE ALL STATS: every bracketed stat line above ([MLB BOX], [PPG LEADERS], [PP/PK], [NHL LIVE], [SCORE NARRATIVE], etc.) must appear verbatim in your recap with its specific figure. Do not paraphrase. Do not omit. A recap missing a provided stat fails. Lead the first sentence with the most specific number available — player name + figure (e.g. "Brunson 32 points" not "Brunson was strong").'
-        : 'No box stats available — write from score, margin, series record, and drama context only. Every sentence must still include a specific number from the data above (final score, margin, series record, drama peak).',
-      _owlDramaPromptCtx?'DRAMA CONTEXT: [DRAMA]=minutes of sustained tension; [DRAMA TREND]=rising or fading at end; [DRAMA PEAK]=peak moment timing; [DRAMA ARC]=shape of the tension curve (use to set opening framing — thriller vs wire-to-wire vs late-bloomer); [SCORE NARRATIVE]=factual lead/comeback data. Use all of these to frame the narrative. Never invent drama facts beyond what these tags say.':'',
+        ? 'REQUIRED — CITE ALL STATS: every stat line provided above must be referenced by its specific figure in your recap. Do NOT copy the bracket labels ([MLB BOX], [SCORE NARRATIVE], etc.) into the prose — strip all brackets and just use the numbers. Do not omit stats. Lead the first sentence with the most specific number available — player name + figure (e.g. "Brunson 32 points" not "Brunson was strong").'
+        : 'No box stats available — write from score, margin, series record, and drama context only. Every sentence must include a specific number (final score, margin, series record). Never mention a drama score or internal rating number.',
+      _owlDramaPromptCtx?'DRAMA CONTEXT (internal signals — do NOT reproduce tag names or numeric scores in prose): tension data shows how game unfolded — use to set narrative framing (thriller/wire-to-wire/late-bloomer). Lead changes and comebacks from SCORE NARRATIVE — paraphrase as prose, never copy bracket labels or scores like 53/100.':'',
       'Write only from the data above — never invent statistics, player tendencies, or context.',
       // PF-4: ban specific-inning / specific-at-bat / specific-period fabrications.
       // The LLM has ONLY the final score and any [MLB BOX], [PP/PK], standings
