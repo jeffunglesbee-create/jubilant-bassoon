@@ -43,7 +43,7 @@ jobs:
         run: |
           git config user.email "probe@field"
           git config user.name "Screenshot Probe"
-          git add outbox/screenshot-*.png outbox/screenshot-manifest-*.txt
+          git add outbox/screenshot-*.png outbox/screenshot-manifest-*.json outbox/screenshot-manifest-*.txt
           git status --short
           if git diff --cached --quiet; then
             echo "Nothing to commit"
