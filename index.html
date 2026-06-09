@@ -21142,30 +21142,27 @@ function buildCompoundPrompt(sections) {
     .flatMap(s => (s.games || []).filter(g => isToday(g.start_time)).slice(0, 2))
     .slice(0, 4);
 
-  // Tier context cap: when a Tier 1 game (Finals/WC) is on the slate,
-  // limit Tier 3 (regular-season) context to 1 representative game per league.
-  // The other Tier 3 games are counted but not expanded — prevents MLB/WNBA
-  // regular season consuming the word budget on Finals nights.
+  // Tier context cap: max 2 games per league, min 1 per league.
+  // Tier ordering preserved — highest-importance game in each league always included.
+  // Prevents MLB/WNBA regular season consuming word budget on Finals nights
+  // while ensuring every sport on the slate gets at least one entry.
   const hasTier1 = games.some(g => _importanceScore(g) >= 8);
   const hasTier2 = games.some(g => _importanceScore(g) >= 6 && _importanceScore(g) < 8);
-  const _leagueSeen = {};
-  const gamesForContext = hasTier1
-    ? games.filter(g => {
-        const score = _importanceScore(g);
-        if (score >= 6) return true; // Tier 1 + Tier 2: always include
-        // Tier 3: one per league only
-        const league = (g.league || g._sport || g._section || '').toLowerCase();
-        const leagueKey = league.includes('mlb') || league.includes('baseball') ? 'mlb'
-          : league.includes('wnba') ? 'wnba'
-          : league.includes('mls') ? 'mls'
-          : league.includes('afl') ? 'afl'
-          : league.includes('cfl') ? 'cfl'
-          : league;
-        if (_leagueSeen[leagueKey]) return false;
-        _leagueSeen[leagueKey] = true;
-        return true;
-      })
-    : games;
+  const _leagueCount = {};
+  const gamesForContext = games.filter(g => {
+    const league = (g.league || g._sport || g._section || '').toLowerCase();
+    const leagueKey = league.includes('mlb') || league.includes('baseball') ? 'mlb'
+      : league.includes('wnba') ? 'wnba'
+      : league.includes('mls') ? 'mls'
+      : league.includes('afl') ? 'afl'
+      : league.includes('cfl') ? 'cfl'
+      : league.includes('nba') || league.includes('basketball') ? 'nba'
+      : league.includes('nhl') || league.includes('hockey') ? 'nhl'
+      : league.includes('wc26') || league.includes('world cup') ? 'wc'
+      : league;
+    _leagueCount[leagueKey] = (_leagueCount[leagueKey] || 0) + 1;
+    return _leagueCount[leagueKey] <= 2; // max 2 per league; min 1 guaranteed by sort order
+  });
 
   const gameLines = gamesForContext.map(g => {
     // PM-19 retro brief fix: pre-format start time in ET + add explicit WHEN tag.
@@ -21368,7 +21365,7 @@ function buildCompoundPrompt(sections) {
   const regularIds = regularGames.map(g => `${(g.home||'').toLowerCase().replace(/\s+/g,'_')}_${(g.away||'').toLowerCase().replace(/\s+/g,'_')}`);
   // Append suppressed count to regularSection header when Tier 1 is active
   const _suppNote = _suppressedNote ? ` (${_suppressedNote} also tonight — context condensed)` : '';
-  const regularSection = regularGames.length ? `\nREGULAR-SEASON GAMES${_suppNote} (write ONE combined sentence for all regular-season games when a Finals or WC game is present — do not expand each game individually):\n` +
+  const regularSection = regularGames.length ? `\nREGULAR-SEASON GAMES${_suppNote} (max 2 games per sport shown — 1-2 sentences per sport, do not expand each game individually into a full paragraph):\n` +
     regularGames.map(g => {
       const stream = g.streams?.[0]?.label || '';
       const venue = g.venue ? ` · ${g.venue}` : '';
@@ -21402,7 +21399,7 @@ ${gameLines || 'No games tonight.'}
 ${eplSection}${regularSection}
 Return this exact JSON structure (null for any section without sufficient data):
 {
-  "brief": "${briefWords} No headers. Complete sentences. NOTE: Context below includes 1 representative game per lower-tier league — other games in those leagues are noted by count only. Do not invent details for games not listed. PRIORITY TIERS — strictly enforce word allocation: TIER 1 (NBA/NHL Finals, Stanley Cup Final, WC knockout stage): lead paragraph, 60-70% of word budget. TIER 2 (Conference Finals, WC group stage): one focused sentence or short paragraph, 20-25% of budget. TIER 3 (all other leagues — WNBA, MLB, MLS, AFL, CFL): one sentence maximum per league, only if budget remains; omit entirely if a Tier 1 game is on the slate. If a Tier 1 game is present, WNBA/MLB/MLS get at most one combined sentence at the end. Never bury a Finals or WC knockout game under regular-season content.",
+  "brief": "${briefWords} No headers. Complete sentences. NOTE: Context below includes 1 representative game per lower-tier league — other games in those leagues are noted by count only. Do not invent details for games not listed. PRIORITY TIERS — strictly enforce word allocation: TIER 1 (NBA/NHL Finals, Stanley Cup Final, WC knockout stage): lead paragraph, 60-70% of word budget. TIER 2 (Conference Finals, WC group stage): one focused sentence or short paragraph, 20-25% of budget. TIER 3 (all other leagues — WNBA, MLB, MLS, AFL, CFL): 1-2 sentences per sport maximum (context is pre-capped at 2 games per sport). Keep each sport to one tight sentence when Tier 1 is present. Never bury a Finals or WC knockout game under regular-season content.",
   "series": [${seriesIds.map(id => `{"id":"${id}","preview":null}`).join(',')}],
   "scouts_pick": "one sentence explaining the Scout's Pick or null",
   "bni_note": "one sentence Anti-Hype framing or null",
