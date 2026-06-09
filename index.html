@@ -3196,6 +3196,9 @@ body.wc-mode #wc-section{animation:wcFadeIn 220ms ease-out}
      - From any console: window.__cls.summary() returns {total, maxWindow, events}
   -->
   <script>
+// Pre-declared so bare _DOM? references never throw ReferenceError on iOS Safari
+var _DOM = null;
+
   (function clsObserver(){
     if (!('PerformanceObserver' in window)) return;
 
@@ -8883,7 +8886,10 @@ function renderAll(){
   // ── _DOM cache: stable element references — avoids repeated DOM traversal ──
   // Populated once at DOMContentLoaded. Used throughout instead of getElementById.
   // Only elements that exist in static HTML and never removed from DOM.
-  window._DOM = {
+  // _DOM declared as var so it's hoisted and accessible before DOMContentLoaded
+  // window._DOM assignment was causing ReferenceError on iOS Safari (bare _DOM? throws
+  // if identifier never declared, even with optional chaining)
+  var _DOM = {
     main:            document.getElementById('main'),
     fieldBrief:      (_DOM?.fieldBrief||document.getElementById('field-brief')),
     otwBanner:       (_DOM?.otwBanner||document.getElementById('otw-banner')),
