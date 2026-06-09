@@ -1366,8 +1366,9 @@ body::before{
 }
 .card-brief-inline{border-top:none;margin-top:0;padding-top:0}
 .card-brief-inline-label{font-size:.62rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--gold2,#c9a84c);opacity:.8;margin-bottom:.3rem}
-.card-brief-inline-text{font-size:.71rem;color:var(--text-muted,#b0b0c0);line-height:1.55;font-style:italic}
+.card-brief-inline-text{font-size:.71rem;color:var(--text-muted,#b0b0c0);line-height:1.55;font-style:italic;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
 .card-brief-inline-text.loaded{color:var(--fg,#e8e8f0);font-style:normal}
+@media(min-width:601px){.card-brief-inline-text{-webkit-line-clamp:unset;display:block;overflow:visible}}
 /* EPL Match Brief card */
 .epl-match-brief-card{background:rgba(124,58,237,.06);border:1px solid rgba(124,58,237,.2);border-left:3px solid rgba(124,58,237,.5);border-radius:8px;padding:.45rem .75rem .4rem;margin-bottom:.35rem;cursor:pointer;transition:background .2s}
 .epl-match-brief-card:hover{background:rgba(124,58,237,.1)}
@@ -21985,7 +21986,13 @@ function buildSeriesPreviewStatic(g){
   if(!s){
     // New series (G1 / 0-0): _series is null because parseSeriesRecord can't parse "0-0"
     // Use matchupNote as immediate static text so brief never shows "Loading series context…"
-    if(g.matchupNote) return g.matchupNote;
+    if(g.matchupNote){
+      // M2: strip seriesRecord from matchupNote start — avoids "VGK leads 2-1 · VGK leads 2-1" dupe
+      const sr=(g.seriesRecord||'').trim();
+      const mn=g.matchupNote.trim();
+      const stripped=sr&&mn.startsWith(sr)?mn.slice(sr.length).replace(/^[.·\s]+/,''):mn;
+      return stripped||mn;
+    }
     // Last resort: build from league context
     const lg=g.league||'';
     const cfMatch=lg.match(/([A-Z]{2,3})\s+(?:vs\.?|@|at)\s+([A-Z]{2,3})/i);
