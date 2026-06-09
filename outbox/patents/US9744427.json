@@ -1,0 +1,118 @@
+{
+  "_ppubs_guid": "US-9744427-B2",
+  "_ppubs_type": "USPAT",
+  "_source": "ppubs",
+  "assignees": [],
+  "claims": [
+    {
+      "claim_dependent": null,
+      "claim_sequence": 1,
+      "claim_text": "A sporting event rating and notification system comprising: a rating engine, wherein the rating engine monitors one or more feeds from one or more external data sources, wherein the feeds contain game statistics describing a sporting event, wherein the rating engine determines a rating associated with the sporting event based on the received game statistics, and wherein the rating engine determines whether the rating meets one or more threshold levels; and a notification engine coupled to the rating engine, wherein in response to the rating engine determining that the rating associated with the sporting event meets each of the one or more threshold levels, the notification engine transmits corresponding notifications to user devices of a first set of one or more users, wherein each of the notifications provides an audible or visible indication that the rating has escalated to the corresponding one of the one or more thresholds."
+    },
+    {
+      "claim_dependent": 1,
+      "claim_sequence": 2,
+      "claim_text": "The sporting event rating and notification system of claim 1, wherein the rating is dependent upon the game statistics and user roots, wherein the user roots comprise user input expressing interest of a second set of users in the sporting event, wherein the second set of users is different from the first set of users."
+    },
+    {
+      "claim_dependent": 1,
+      "claim_sequence": 3,
+      "claim_text": "The sporting event rating and notification system of claim 1, wherein the rating engine is coupled to a network, and wherein the notification engine is configured to transmit notifications via the network in the form of e-mail."
+    },
+    {
+      "claim_dependent": 1,
+      "claim_sequence": 4,
+      "claim_text": "The sporting event rating and notification system of claim 1, wherein the rating engine is coupled to a telephone system, and wherein the notification engine is configured to transmit notifications via the telephone system in the form of phone messages."
+    },
+    {
+      "claim_dependent": 1,
+      "claim_sequence": 5,
+      "claim_text": "The sporting event rating and notification system of claim 1, wherein the rating engine is configured to determine the rating for the sporting event by evaluating a mathematical expression that is a function of the received game statistics, and wherein the mathematical expression includes an objective rating component computed based on statistics of the sporting event and a subjective user opinion component computed based on a number of users that express interest in a particular sporting event."
+    },
+    {
+      "claim_dependent": 1,
+      "claim_sequence": 6,
+      "claim_text": "The sporting event rating and notification system of claim 1, wherein the rating engine determines a number of users who expressly indicate interest in the sporting event, and wherein the rating engine increases the rating in response to an increase in the number of users who expressly indicate interest in the sporting event."
+    },
+    {
+      "claim_dependent": 1,
+      "claim_sequence": 7,
+      "claim_text": "The sporting event rating and notification system of claim 1, wherein determining the rating comprises identifying one or more interest scenarios that are applicable to the sporting event, computing a corresponding scenario value for each of the applicable scenarios, and summing the computed scenario values."
+    },
+    {
+      "claim_dependent": 1,
+      "claim_sequence": 8,
+      "claim_text": "The sporting event rating and notification system of claim 1, wherein the notification engine is configured to identify the one or more users to whom notifications are transmitted by filtering a superset of users according to information associated with the users, wherein the information associated with the users is distinct from expressions of interest in the particular sporting event."
+    },
+    {
+      "claim_dependent": 1,
+      "claim_sequence": 9,
+      "claim_text": "The sporting event rating and notification system of claim 1, wherein the one or more threshold levels comprise a first threshold level and the notifications comprise a first set of notifications indicating the first threshold level, the rating engine further being configured to determine when the rating associated with the sporting event meets a second threshold level which is higher than the first threshold level, wherein the notification engine is configured to transmit a second set of notifications indicating the second threshold level in response to determining that the rating associated with the sporting event meets the second threshold level."
+    },
+    {
+      "claim_dependent": null,
+      "claim_sequence": 10,
+      "claim_text": "A sporting event rating and notification system comprising: a rating engine and a notification engine; wherein the rating engine is configured to monitor one or more feeds from one or more external data sources, wherein the feeds contain game statistics describing a sporting event, determine a rating associated with the sporting event based on the received game statistics, and determine whether the rating meets one or more threshold levels; wherein the notification engine is coupled to the rating engine and configured to transmit notifications to user devices of one or more users in response to the rating engine determining that the rating associated with the sporting event meets the one or more threshold levels, wherein each of the notifications provides an indication that the rating has escalated to the one or more thresholds; wherein the game statistics associated with the sporting event are received by the rating engine prior to completion of the sporting event and the notifications are transmitted to the user devices of the one or more users prior to completion of the sporting event; and wherein the notification engine is configured to transmit notifications in the form of programming instructions that are transmitted to a recording device, wherein the programming instructions are configured to cause the recording device to record at least a portion of the sporting event."
+    },
+    {
+      "claim_dependent": null,
+      "claim_sequence": 11,
+      "claim_text": "A method implemented in a sporting event rating and notification system, the method comprising: the sporting event rating and notification system monitoring one or more feeds from one or more external data sources, wherein the feeds contain game statistics describing a sporting event; the sporting event rating and notification system determining a rating associated with the sporting event based on the received game statistics; the sporting event rating and notification system determining whether the rating meets one or more threshold levels; and the sporting event rating and notification system transmitting notifications to user devices of a first set of one or more users when the rating associated with the sporting event reaches the one or more threshold levels, wherein each of the notifications provides an audible or visible indication that the rating has escalated to the one or more threshold levels."
+    },
+    {
+      "claim_dependent": 11,
+      "claim_sequence": 12,
+      "claim_text": "The method of claim 11, wherein determining the rating associated with the sporting event based on the received game statistics comprises the sporting event rating and notification system evaluating a mathematical expression that is a function of the received game statistics."
+    },
+    {
+      "claim_dependent": 12,
+      "claim_sequence": 13,
+      "claim_text": "The method of claim 12, wherein the received game statistics includes a score associated with the sporting event, a time metric associated with the sporting event, and user roots which express interest of a second set of users in the particular sporting event, wherein the second set of users is different from the first set of users."
+    },
+    {
+      "claim_dependent": 11,
+      "claim_sequence": 14,
+      "claim_text": "The method of claim 11, wherein notifying the one or more users comprises transmitting notifications in the form of programming instructions that are transmitted to a recording device, wherein the programming instructions are configured to cause the recording device to record at least a portion of the sporting event."
+    },
+    {
+      "claim_dependent": 11,
+      "claim_sequence": 15,
+      "claim_text": "The method of claim 11, wherein notifying the one or more users comprises identifying the one or more users by filtering a superset of users according to one or more rules which include filtering out users of the superset that are not associated with a television distribution system that carries the sporting event."
+    },
+    {
+      "claim_dependent": 12,
+      "claim_sequence": 16,
+      "claim_text": "The method of claim 12, wherein the mathematical expression includes an objective rating component computed based on statistics of the sporting event and a subjective user opinion component computed based on a number of users that express interest in a particular sporting event."
+    },
+    {
+      "claim_dependent": 11,
+      "claim_sequence": 17,
+      "claim_text": "The method of claim 11, wherein the rating engine determines a number of users who expressly indicate interest in the sporting event, and wherein the rating engine increases the rating in response to an increase in the number of users who expressly indicate interest in the sporting event."
+    },
+    {
+      "claim_dependent": 11,
+      "claim_sequence": 18,
+      "claim_text": "The method of claim 11, wherein determining the rating comprises identifying one or more interest scenarios that are applicable to the sporting event, computing a corresponding scenario value for each of the applicable scenarios, and summing the computed scenario values."
+    },
+    {
+      "claim_dependent": 11,
+      "claim_sequence": 19,
+      "claim_text": "The method of claim 11, wherein the sporting event rating and notification system is configured to identify the one or more users to whom notifications are transmitted by filtering a superset of users according to information associated with the users, wherein the information associated with the users is distinct from expressions of interest in the particular sporting event."
+    }
+  ],
+  "examiners": [
+    {
+      "examiner_name_first": "Masud",
+      "examiner_name_last": "Ahmed"
+    }
+  ],
+  "inventors": [
+    {
+      "inventor_name_first": "Mark",
+      "inventor_name_last": "Phillip"
+    }
+  ],
+  "patent_date": "2017-08-29",
+  "patent_id": "9744427",
+  "patent_title": "Rating system for identifying exciting sporting events and notifying users"
+}

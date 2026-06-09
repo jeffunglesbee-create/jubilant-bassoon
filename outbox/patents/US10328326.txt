@@ -1,0 +1,71 @@
+US10328326
+Title: Rating system for identifying exciting sporting events and notifying users
+Grant date: 2019-06-25
+Assignee: RUWT, LLC
+Inventors: Mark Phillip
+Source: ppubs
+PPUBS GUID: US-10328326-B2
+
+======================================================================
+CLAIMS
+======================================================================
+
+Claim 1 [independent]:
+A sporting event rating and notification system comprising: a rating engine, wherein the rating engine monitors one or more feeds from one or more external data sources, wherein the feeds contain game statistics describing a sporting event, wherein the rating engine determines a rating associated with the sporting event based on the received game statistics; and a notification engine coupled to the rating engine, wherein in response to the rating engine determining that the rating associated with the sporting event has changed, the notification engine provides corresponding notifications to a first set of one or more users, wherein each of the notifications provides an audible or visible indication that the rating has changed.
+
+Claim 2 [dep on 1]:
+The sporting event rating and notification system of claim 1, wherein the rating is dependent upon the game statistics and user roots, wherein the user roots comprise user input expressing interest of a second set of users in the sporting event, wherein the second set of users is different from the first set of users.
+
+Claim 3 [dep on 1]:
+The sporting event rating and notification system of claim 1, wherein the rating engine is configured to determine the rating for the sporting event by evaluating a mathematical expression that is a function of the received game statistics, and wherein the mathematical expression includes an objective rating component computed based on statistics of the sporting event and a subjective user opinion component computed based on a number of users that express interest in a particular sporting event.
+
+Claim 4 [dep on 1]:
+The sporting event rating and notification system of claim 1, wherein the rating engine determines a number of users who expressly indicate interest in the sporting event, and wherein the rating engine increases the rating in response to an increase in the number of users who expressly indicate interest in the sporting event.
+
+Claim 5 [dep on 1]:
+The sporting event rating and notification system of claim 1, wherein the one or more threshold levels comprise a first threshold level and the notifications comprise a first set of notifications indicating the first threshold level, the rating engine further being configured to determine when the rating associated with the sporting event meets a second threshold level which is higher than the first threshold level, wherein the notification engine is configured to provide a second set of notifications indicating the second threshold level in response to determining that the rating associated with the sporting event meets the second threshold level.
+
+Claim 6 [dep on 1]:
+The sporting event rating and notification system of claim 1, wherein the rating engine determines whether the rating meets one or more threshold levels, wherein in response to the rating engine determining that the rating associated with the sporting event meets one or more of the threshold levels the notification engine provides corresponding notifications to the first set of one or more users and thereby provides an audible or visible indication that the rating has met corresponding ones of the threshold levels.
+
+Claim 7 [dep on 1]:
+The sporting event rating and notification system of claim 1, wherein the notification engine is configured to provide the notifications by presenting the notifications on a web site that is accessible by the first set of one or more users.
+
+Claim 8 [dep on 7]:
+The sporting event rating and notification system of claim 7, wherein the notification engine is configured to provide the notifications by updating an indication of the rating associated with the sporting event that is displayed on the web site.
+
+Claim 9 [dep on 1]:
+The sporting event rating and notification system of claim 1, wherein the notification engine is configured to provide the notifications through a web service.
+
+Claim 10 [dep on 1]:
+The sporting event rating and notification system of claim 1, wherein the notification engine is configured to provide the notifications through an API.
+
+Claim 11 [independent]:
+A sporting event rating and notification system comprising: a rating engine and a notification engine; wherein the rating engine is configured to monitor one or more feeds from one or more external data sources, wherein the feeds contain game statistics describing a sporting event, determine a rating associated with the sporting event based on the received game statistics, and determine whether the rating meets one or more threshold levels; wherein the notification engine is coupled to the rating engine and configured to provide notifications to one or more users in response to the rating engine determining that the rating associated with the sporting event meets the one or more threshold levels, wherein each of the notifications provides an indication that the rating has met the one or more thresholds; wherein the game statistics associated with the sporting event are received by the rating engine prior to completion of the sporting event and the notifications are provided to the user devices of the one or more users prior to completion of the sporting event; and wherein the notification engine is configured to provide the notifications in the form of programming instructions that are provided to a recording device, wherein the programming instructions are configured to cause the recording device to record at least a portion of the sporting event.
+
+Claim 12 [independent]:
+A method implemented in a sporting event rating and notification system, the method comprising: the sporting event rating and notification system monitoring one or more feeds from one or more external data sources, wherein the feeds contain game statistics describing a sporting event; the sporting event rating and notification system determining a rating associated with the sporting event based on the received game statistics; and the sporting event rating and notification system providing notifications to a first set of one or more users when the rating associated with the sporting event changes, wherein each of the notifications provides an audible or visible indication that the rating has changed.
+
+Claim 13 [dep on 12]:
+The method of claim 12, wherein determining the rating associated with the sporting event based on the received game statistics comprises the sporting event rating and notification system evaluating a mathematical expression that is a function of the received game statistics.
+
+Claim 14 [dep on 13]:
+The method of claim 13, wherein the received game statistics includes a score associated with the sporting event, a time metric associated with the sporting event, and user roots which express interest of a second set of users in the particular sporting event, wherein the second set of users is different from the first set of users.
+
+Claim 15 [dep on 12]:
+The method of claim 12, wherein notifying the one or more users comprises providing notifications in the form of programming instructions that are provided to a recording device, wherein the programming instructions are configured to cause the recording device to record at least a portion of the sporting event.
+
+Claim 16 [dep on 13]:
+The method of claim 13, wherein the mathematical expression includes an objective rating component computed based on statistics of the sporting event and a subjective user opinion component computed based on a number of users that express interest in a particular sporting event.
+
+Claim 17 [dep on 12]:
+The method of claim 12, wherein the rating engine determines a number of users who expressly indicate interest in the sporting event, and wherein the rating engine increases the rating in response to an increase in the number of users who expressly indicate interest in the sporting event.
+
+Claim 18 [dep on 12]:
+The method of claim 12, wherein the rating engine determines whether the rating meets one or more threshold levels, and wherein in response to the rating engine determining that the rating associated with the sporting event meets the one or more threshold levels, the notification engine is configured to provide corresponding notifications to one or more users indicating that the rating has met the one or more thresholds.
+
+Claim 19 [dep on 12]:
+The method of claim 12, wherein the notifications are provided through a web service.
+
+Claim 20 [dep on 12]:
+The method of claim 12, wherein the notifications are provided through an API.
