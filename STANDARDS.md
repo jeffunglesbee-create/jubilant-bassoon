@@ -3000,3 +3000,108 @@ diagnosis. Add to allow-list in the Scoreboard P0 session.
 
 GitHub Actions runners (ubuntu-latest): unrestricted internet, including *.workers.dev.
 Workers Plus confirmed active (Durable Objects, R2, Analytics Engine available).
+
+## Rule 55 — Data overlay string typeof guard (OVERLAY-TYPEOF-A)
+
+**Established:** June 9 2026 — C1 (OTW [object Object] bug)
+
+### The bug class
+field-data-today.json overlay values are injected into game objects at data-load time.
+When a non-string value (object, array, number) reaches a function that builds a
+prose string via string concatenation or template literal, JavaScript coerces it to
+"[object Object]" or similar. This renders silently in the UI with no JS error.
+
+### The specific C1 failure
+buildOTWWhyLine isPreGame branch built a parts array and concatenated parts into prose.
+The `net` variable came from the overlay and was sometimes an object (not a string).
+Result: "ONE TO WATCH: [object Object] (Vegas)" rendered on the OTW banner.
+
+### The rule
+**Before using any overlay-sourced string variable in string context, add a typeof guard.**
+
+```javascript
+// WRONG — silently coerces non-strings
+const text = `${net} (${venue})`;
+
+// CORRECT — typeof guard before use
+if (net && typeof net === 'string') {
+  parts.push(net);
+}
+```
+
+This applies to: `net`, `seriesRecord`, `matchupNote`, `localNote`, `venue`,
+`networkName`, or any other string field sourced from field-data-today.json or
+any AI-generated overlay object.
+
+### False positives this prevents
+- "[object Object]" appearing in OTW why-line, series brief, or card prose
+- Numeric 0 or false coercing to "0" or "false" in prose context
+
+---
+
+## Rule 56 — Why-line parts array dedup (PARTS-DEDUP-A)
+
+**Established:** June 9 2026 — C2 (duplicate series record in OTW why-line)
+
+### The bug class
+buildOTWWhyLine assembles a `parts` array then joins it with " · ". When two sources
+contribute the same string (e.g. g.seriesRecord from the game object AND the first
+sentence of matchupNote both equalling "VGK leads 2-1"), the output duplicates:
+"VGK leads 2-1 · VGK leads 2-1 (advantage in goals against)".
+
+### The specific C2 failure
+matchupNote.split('.')[0] for NHL SCF G4 = "VGK leads 2-1" = g.seriesRecord exactly.
+Both pushed to parts → "VGK leads 2-1 · VGK leads 2-1" in the why-line.
+
+### The rule
+**Before pushing any string to a parts array, check it isn't already present and
+isn't a semantic duplicate of a key field.**
+
+```javascript
+// WRONG — pushes without checking
+parts.push(matchupNote.split('.')[0]);
+
+// CORRECT — skip if duplicate of seriesRecord or already in parts
+const _mn = (matchupNote || '').split('.')[0].trim();
+if (_mn && _mn !== g.seriesRecord && !parts.includes(_mn)) {
+  parts.push(_mn);
+}
+```
+
+### Scope
+Applies to any function that builds a string by joining parts from multiple sources:
+buildOTWWhyLine, buildSeriesStateClause, buildSeriesPreviewStatic, any brief builder.
+Rule is defensive: the dedup check costs nothing and prevents a class of subtle
+duplication bugs that only manifest with specific data combinations.
+
+---
+
+## Rule 57 — content-visibility:auto screenshot artifact (SCREENSHOT-CV-A)
+
+**Established:** June 9 2026 — C4/C5/H1/H6 (false alarm bug reports from screenshots)
+
+### The artifact
+CSS `content-visibility:auto` defers rendering of off-screen sections until they
+enter the viewport. In a headless Chromium screenshot, sections below the fold
+are not rendered at initial paint. Any screenshot taken without scrolling through
+the full page will show missing content — empty sections, blank cards, missing
+chip rows — that is correct in the live browser.
+
+### The specific false alarms
+- C4/C5: screenshot showed apparent card layout issues — DOM had 19/19 correct cards
+- H1/H6: WNBA section appeared missing — section was simply below fold, not rendered
+
+### The rule
+**Screenshots of FIELD must be taken with a multi-pass scroll pass before capture.**
+The screenshot_probe.js forceExpand() function implements this:
+- 8 scroll passes top-to-bottom, each re-reading scrollHeight
+- Loop breaks when scrollHeight stabilizes (all sections expanded)
+- Final scroll back to 0 before capture
+
+DO NOT file a UI bug based on a screenshot unless it was taken via screenshot_probe.js
+or an equivalent probe that forces content-visibility expansion. A missing section in
+a naive screenshot is almost always this artifact, not a real bug.
+
+### Smoke enforcement
+If a screenshot-based bug report is filed without probe confirmation, run
+screenshot_probe.js and read the manifest before taking further action.
