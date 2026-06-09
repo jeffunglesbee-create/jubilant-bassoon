@@ -27801,9 +27801,11 @@ function buildOTWWhyLine(g, ed, sport, isPreGame){
   if(isPreGame){
     const parts=[];
     if(g.start_time){try{const t=new Date(g.start_time).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',timeZone:'America/New_York',hour12:true});parts.push(t+' ET');}catch(e){}}
-    const net=g.streams?.[0]?.label;if(net) parts.push(net);
+    const net=g.streams?.[0]?.label;
+    try{window._otwNetDiag={type:typeof net,val:String(net).slice(0,80),streams0:g.streams?.[0]?JSON.stringify(Object.keys(g.streams[0]||{})):null};}catch(_){}
+    if(net&&typeof net==='string') parts.push(net);
     if(g.seriesRecord&&g.seriesRecord!=='0-0') parts.push(g.seriesRecord);
-    if(g.matchupNote) parts.push(g.matchupNote.split('.')[0].slice(0,45));
+    if(g.matchupNote){const _mn=g.matchupNote.split('.')[0].trim().slice(0,45);if(_mn&&_mn!==g.seriesRecord&&!parts.includes(_mn)) parts.push(_mn);}
     // Fix 5: BNI strength → OTW pre-game anti-hype framing
     const bniOTW=(typeof computeBroadcastNarrativeIndex==='function')?computeBroadcastNarrativeIndex(g):null;
     if(bniOTW){const bniStr=(typeof getBNIStrength==='function')?getBNIStrength(g,bniOTW):0;if(bniStr>=65)parts.push(bniOTW==='narrative-push'?'\u26a0\ufe0f broadcaster hype':bniOTW==='elimination-inflation'?'\u26a0\ufe0f series inflation':'\u26a0\ufe0f marquee push');}
