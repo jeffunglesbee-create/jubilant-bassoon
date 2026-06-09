@@ -3718,6 +3718,29 @@ assert('A519 — JQ v3/matchup: computeMatchupDepth rewards secondary player/rol
   'computeMatchupDepth must detect secondary player reference and role-player stat, 0-30; J3 prompt must include MATCHUP DEPTH instruction');
 
 // ─────────────────────────────────────────────────────────────────────────────
+// ── WC outstanding audit items (A520–A522) ───────────────────────────────────
+
+assert('A520 — WC card variant: buildWCBars function and CSS shipped',
+  html.includes('function buildWCBars') &&
+  html.includes('.wc-bars{') &&
+  html.includes('.wc-bar-track') &&
+  html.includes('.wc-bar-wp') &&
+  html.includes('.wc-bar-adv') &&
+  html.includes('wc-bars-wrap'),
+  'buildWCBars must be defined and CSS classes present; wired into card template');
+
+assert('A521 — Score TBD fallback: .score-tbd CSS and wire in buildCardTimeDisplay',
+  html.includes('.score-tbd{') &&
+  html.includes('score-tbd') &&
+  html.includes('Score pending'),
+  'score-tbd CSS must be defined; wired into buildCardTimeDisplay for live-no-data state');
+
+assert('A522 — html scroll-behavior: no global smooth on html element',
+  !html.includes('html{scroll-behavior:smooth') &&
+  (html.includes('html{scroll-behavior:auto') || !html.includes('html{scroll-behavior')),
+  'html element must not have scroll-behavior:smooth — use auto or let elements opt-in');
+
+// ─────────────────────────────────────────────────────────────────────────────
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);
 

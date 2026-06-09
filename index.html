@@ -88,7 +88,7 @@
   --ff-cond:'Barlow Condensed','Barlow Condensed Fallback',Arial,sans-serif;
   --ff-mono:'JetBrains Mono',monospace;
 }
-html{scroll-behavior:smooth}
+html{scroll-behavior:auto}
 body{background:var(--obsidian);color:var(--white);font-family:var(--ff-body);min-height:100vh;overflow-x:hidden;overscroll-behavior-y:none}
 
 /* ── NOISE OVERLAY ── */
@@ -147,6 +147,13 @@ body::before{
 }
 .refresh-btn:hover{background:linear-gradient(135deg,var(--gold2),var(--gold));color:var(--obsidian);font-weight:700;transform:scale(1.04)}
 
+/* ── Score TBD fallback (Jun 9 2026) ─────────────────────────────────────── */
+/* Shows animated dots when live game has no score yet (first ~60s after start) */
+.score-tbd{font-family:var(--ff-mono);color:var(--muted);font-size:.7rem;
+  display:inline-flex;align-items:center;gap:.2rem}
+.score-tbd::after{content:'•••';animation:pulse 1.6s ease-in-out infinite;
+  color:var(--amber);letter-spacing:.1em}
+
 /* ── WC bar legend at all viewports (Jun 9 2026) ──────────────────────────── */
 .wc-bar-legend{display:flex;gap:.5rem;font-family:var(--ff-mono);font-size:.5rem;
   color:var(--muted);margin-top:.3rem;padding-top:.3rem;border-top:1px solid var(--edge)}
@@ -154,6 +161,30 @@ body::before{
   border-radius:1px;margin-right:.2rem;vertical-align:middle}
 .leg-wp::before{background:rgba(96,165,250,.6)}
 .leg-adv::before{background:rgba(74,222,128,.6)}
+/* ── WC card advancement bars (Jun 9 2026 — spec surface W1) ──────────────── */
+/* Two-tone bar: blue inner = P(win this match), green overlay = P(advance from group) */
+.wc-bars{margin-top:.5rem;display:grid;gap:.28rem}
+.wc-bar-row{display:grid;grid-template-columns:2rem 1fr 2.2rem;
+  gap:.35rem;align-items:center;font-size:.55rem;font-family:var(--ff-mono)}
+.wc-bar-team{color:var(--text);font-size:.58rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wc-bar-track{position:relative;height:10px;background:var(--card-bg,#14141f);
+  border-radius:3px;overflow:hidden;border:1px solid var(--edge)}
+.wc-bar-wp{position:absolute;left:0;top:0;bottom:0;
+  background:linear-gradient(90deg,rgba(96,165,250,.4),rgba(96,165,250,.7));
+  border-right:1px solid rgba(96,165,250,.6);transition:width .4s ease}
+.wc-bar-adv{position:absolute;left:0;top:0;bottom:0;
+  background:rgba(74,222,128,.5);mix-blend-mode:screen;
+  transition:width .4s ease}
+.wc-bar-val{color:var(--label);text-align:right;font-size:.55rem;font-family:var(--ff-mono)}
+.wc-scenario{margin-top:.35rem;background:rgba(74,222,128,.04);
+  border:1px solid rgba(74,222,128,.15);border-radius:4px;
+  padding:.28rem .45rem;font-size:.55rem;color:var(--green);
+  font-family:var(--ff-mono);line-height:1.5}
+.wc-group-pill{display:inline-block;background:rgba(74,222,128,.1);
+  border:1px solid rgba(74,222,128,.3);color:var(--green);
+  font-family:var(--ff-mono);font-size:.48rem;padding:.08rem .3rem;
+  border-radius:3px;letter-spacing:.06em;margin-left:.3rem;vertical-align:middle}
+
 /* ── UX QUICK WINS (Jun 9 2026 audit) ─────────────────────────────────────── */
 
 /* 1. Vibe badges always lead the chip row — game state reads before network chip */
@@ -5571,8 +5602,8 @@ function buildCardTimeDisplay(isLive, eData, timeStr) {
     const period = eData.period ? `${pp}${eData.period}` : '';
     return `${a}–${h}${period ? ' ' + period : ''}${glyph}`;
   }
-  // Live, no scoreboard data: explicit "LIVE" beats stale start time
-  return 'LIVE';
+  // Live, no scoreboard data: score-tbd shows animated dots instead of stale time
+  return '<span class="score-tbd" aria-label="Score pending"></span>';
 }
 function getStatus(iso, opts){
   if(!iso) return "upcoming";
@@ -8715,6 +8746,7 @@ function renderAll(){
           ${g.crew?`<div class="crew-line">🎙 ${g.crew}</div>`:""}
           ${g._gameImportance?`<div class="importance-badge ${g._gameImportance==='series_deciding'?'series-deciding':g._gameImportance==='elimination'?'elimination':g._gameImportance==='clinch'?'clinch':'playoff-impl'}">${g._importanceIcon||''} ${g.narrative?.label||''}</div>`:""}
           ${(()=>{const _va=typeof findESPNScore==='function'?findESPNScore(g):null;const _vc=typeof buildVibeChips==='function'?buildVibeChips(g,_va,sec.sport):[];return _vc.length?'<div class="ganalytics">'+_vc.map(v=>'<span class="vibe '+v.cls+'">'+v.label+'</span>').join('')+'</div>':'';})()} 
+          ${(()=>{ const _wcB=typeof buildWCBars==='function'?buildWCBars(g):''; return _wcB?`<div class="wc-bars-wrap">${_wcB}</div>`:''; })()}
           ${(()=>{const _ed=typeof findESPNScore==='function'?findESPNScore(g):null;const _dl=buildDramaLineTiers(g,_ed,sec.sport);if(_dl.tight){const _q=s=>s.replace(/"/g,'&quot;');return `<div class="card-drama-line" data-drama-tight="${_q(_dl.tight)}" data-drama-mid="${_q(_dl.mid)}" data-drama-full="${_q(_dl.full)}">${_dl.tight}</div>`;}return g.narrative?.label&&!g._gameImportance?`<div class="narrative-line${(g.narrative.boost||0)>=20?' narrative-hi':''}">${g.narrative.label}</div>`:'';})()}
           ${(()=>{const _cs=buildCheapSeats(g);if(!_cs)return '';return `<div class="cheap-seats"><span class="cs-badge ${_cs.badgeClass}">${_cs.badge}</span><span class="cs-text">${_cs.text}</span></div>`;})()}
                     ${(()=>{const _ii=assessInjuryPriceImpact(g);if(!_ii)return '';return `<div class="injury-intel"><span class="ii-badge ${_ii.cls}">${_ii.badge}</span><span class="ii-text">${_ii.text}</span></div>`;})()}
@@ -28558,6 +28590,67 @@ const wc26Raw=[
   {home:"Argentina",away:"Jordan",league:"FIFA World Cup 2026 — Group J · MD3",start_time:"2026-06-28T02:00:00Z",confirmed:true,venue:"AT&T Stadium, Arlington TX",streams:resolveBundle("WC26_FOX"),nationalBundle:"WC26_FOX",matchupNote:"Defending champions Argentina close Group J at AT&T Stadium. Jordan qualified against all odds from Asian qualification. Messi and Argentina need clean execution heading into the knockout stage — protecting their bracket while rotating the squad.",_id:"wc26_g27_arg_jor",_sport:"FIFA World Cup 2026",_gameImportance:"playoffs"},
   {home:"Algeria",away:"Austria",league:"FIFA World Cup 2026 — Group J · MD3",start_time:"2026-06-28T02:00:00Z",confirmed:true,venue:"Arrowhead Stadium, Kansas City MO",streams:resolveBundle("WC26_FS1"),nationalBundle:"WC26_FS1",matchupNote:"Algeria vs Austria at Arrowhead Stadium — Group J MD3, closing the Argentina group. Algeria\'s AFCON title holders against Rangnick\'s pressing Austria. The winner may advance as a best third-place team depending on other results.",_id:"wc26_g27_alg_aut",_sport:"FIFA World Cup 2026",_gameImportance:"playoffs"},
 ];
+// ── WC card advancement bars (Jun 9 2026 — spec surface W1) ──────────────────
+// Renders the two-tone WP + advancement probability bar for pre-game WC cards.
+// Blue inner track = P(win this match). Green overlay = P(advance from group).
+// Data sources: wc26OddsProbs (relay) → permutations engine → static fallback.
+// Called from card template when g._sport includes 'FIFA World Cup'.
+function buildWCBars(g) {
+  if (!g || !g.home || !g.away) return '';
+  const sport = (g._sport || g.league || '').toLowerCase();
+  if (!sport.includes('world cup') && !sport.includes('wc26')) return '';
+
+  // Extract group from league string e.g. "FIFA World Cup 2026 — Group A · Opening Match"
+  const groupMatch = (g.league || '').match(/Group ([A-L])/i);
+  const groupLabel = groupMatch ? `GRP ${groupMatch[1].toUpperCase()}` : '';
+
+  // Get odds/probability data for this fixture
+  const oddsKey = `${(g.home||'').toLowerCase().replace(/\s+/g,'_')}_${(g.away||'').toLowerCase().replace(/\s+/g,'_')}`;
+  const oddsData = (typeof _wcOddsCache !== 'undefined' && _wcOddsCache) ? _wcOddsCache[oddsKey] : null;
+
+  // Win probabilities — from odds if available, else symmetric fallback
+  const homeWP  = oddsData?.homeWin  != null ? Math.round(oddsData.homeWin  * 100) : 45;
+  const drawWP  = oddsData?.draw     != null ? Math.round(oddsData.draw     * 100) : 25;
+  const awayWP  = oddsData?.awayWin  != null ? Math.round(oddsData.awayWin  * 100) : 30;
+
+  // Advancement probabilities — from permutations engine if available
+  // Stored as g._homeAdv / g._awayAdv when permutations have run
+  const homeAdv = g._homeAdv != null ? Math.round(g._homeAdv * 100) : Math.min(homeWP + 20, 99);
+  const awayAdv = g._awayAdv != null ? Math.round(g._awayAdv * 100) : Math.min(awayWP + 15, 99);
+
+  const homeName = g.home.split(' ').pop(); // last word e.g. "Mexico" → "Mexico"
+  const awayName = g.away.split(' ').pop();
+
+  const groupPill = groupLabel
+    ? `<span class="wc-group-pill">${groupLabel}</span>`
+    : '';
+
+  const legend = `<div class="wc-bar-legend">
+    <span class="leg-wp">P(win)</span>
+    <span class="leg-adv">P(advance)</span>
+  </div>`;
+
+  return `<div class="wc-bars">
+    <div class="wc-bar-row">
+      <span class="wc-bar-team">${homeName}${groupPill}</span>
+      <div class="wc-bar-track">
+        <div class="wc-bar-wp"  style="width:${homeWP}%"></div>
+        <div class="wc-bar-adv" style="width:${homeAdv}%"></div>
+      </div>
+      <span class="wc-bar-val">${homeAdv}%</span>
+    </div>
+    <div class="wc-bar-row">
+      <span class="wc-bar-team">${awayName}</span>
+      <div class="wc-bar-track">
+        <div class="wc-bar-wp"  style="width:${awayWP}%"></div>
+        <div class="wc-bar-adv" style="width:${awayAdv}%"></div>
+      </div>
+      <span class="wc-bar-val">${awayAdv}%</span>
+    </div>
+    ${legend}
+  </div>`;
+}
+
 function maybePushWorldCup(sections){
   const WC_START="2026-06-11", WC_END="2026-07-19", PREVIEW_FROM="2026-05-24";
   if(TODAY_ISO<PREVIEW_FROM||TODAY_ISO>WC_END) return;
