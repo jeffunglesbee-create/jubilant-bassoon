@@ -27878,7 +27878,14 @@ function buildLinescoreContext(eData, gameId) {
         return i === 0 ? '1H' : i === 1 ? '2H' : `ET${i-1}`;
       return `P${i+1}`;
     };
-    const parts = homeLS.map((h,i) => `${label(i)}: ${h}-${awayLS[i]??0}`);
+    // Build cumulative running score after each period/inning (not per-period isolated)
+    // "Inn3: 3-1" (isolated) is ambiguous; "Inn3: 3-2" (cumulative, home leads 3-2 after 3) is clear.
+    let cumH = 0, cumA = 0;
+    const parts = homeLS.map((h, i) => {
+      cumH += Number(h) || 0;
+      cumA += Number(awayLS[i] ?? 0) || 0;
+      return `${label(i)}: ${cumH}-${cumA}`;
+    });
     return `[LINE SCORE] ${parts.join(' | ')}`;
   } catch(e_) { return ''; }
 }
