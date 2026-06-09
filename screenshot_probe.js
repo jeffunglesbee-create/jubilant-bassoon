@@ -31,9 +31,12 @@ const VIEWPORTS = [
   { name: 'iphone-se-portrait',        device: 'iPhone SE (3rd gen)' },
   { name: 'iphone-se-landscape',       device: 'iPhone SE (3rd gen) landscape' },
   { name: 'pixel8-portrait',           custom: 'Pixel 8' },
+  { name: 'pixel8-landscape',          custom: 'Pixel 8', landscape: true },
   { name: 'galaxy-a36-portrait',       custom: 'Galaxy A36' },
+  { name: 'galaxy-a36-landscape',      custom: 'Galaxy A36', landscape: true },
   { name: 'standard-mobile-portrait',  viewport: { width: 390, height: 844 } },
   { name: 'tablet-portrait',           viewport: { width: 820, height: 1180 } },
+  { name: 'tablet-landscape',          viewport: { width: 1180, height: 820 } },
   { name: 'desktop',                   viewport: { width: 1440, height: 900 } },
 ];
 
