@@ -29231,8 +29231,9 @@ async function fetchNightOwlFromClaude(topGame){
     });
     if (_viaRelay && _viaRelay.length > 40) {
       budget.inc();
-      scoreProse(_viaRelay, topGame||null).then(s=>renderProseScore(s,'J5 Night Owl'));
-      return _viaRelay.trim();
+      const _owlRelayScored = await maybeScoreRetry(prompt, _viaRelay, CLAUDE_PROXY_URL, 'J5 Night Owl', topGame||null);
+      scoreProse(_owlRelayScored, topGame||null).then(s=>renderProseScore(s,'J5 Night Owl'));
+      return _owlRelayScored.trim();
     }
     // Fallback: legacy direct-proxy path + browser-side quality chain
     const r=await fetch(CLAUDE_PROXY_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:1000,messages:[{role:'user',content:prompt}]})});
@@ -29257,7 +29258,7 @@ async function fetchNightOwlFromClaude(topGame){
           if(FIELD_DEBUG)console.warn('[JQ Layer 2c] Hard-stripped sport vocab from',_sp);
         }
       }
-      budget.inc();scoreProse(text, topGame||null).then(s=>renderProseScore(s,'J5 Night Owl'));return text.trim();
+      budget.inc();text=await maybeScoreRetry(prompt,text,CLAUDE_PROXY_URL,'J5 Night Owl',topGame||null);scoreProse(text, topGame||null).then(s=>renderProseScore(s,'J5 Night Owl'));return text.trim();
     }
   }catch(e){if(FIELD_DEBUG)console.error('[J5 Night Owl] proxy error:',e.message);}
   return null;
