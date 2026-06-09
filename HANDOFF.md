@@ -1,58 +1,55 @@
-# FIELD HANDOFF — 2026-06-09 (Documentation Pass — C/H/M Items)
+# FIELD HANDOFF — 2026-06-09 (Patent Audit Session)
 
 ## HEADS
-- jubilant-bassoon HEAD: 36b9a0c
+- jubilant-bassoon HEAD: 96f7bc3
 - SW_VERSION: 2026-06-09d
 - Smoke: 531/0
-- field-relay-nba: 790f9da (JQ v3, unchanged)
+- field-relay-nba: 790f9da (unchanged)
 
 ## SESSION TYPE
-TYPE D (Bug verification + fix) + Documentation pass
+TYPE D (Patent Audit — read-only, docs only)
+No index.html changes. No relay changes. No feature builds.
 
 ## WHAT SHIPPED THIS SESSION
 
-### M5 — Score ticker desktop right-edge fade (closed)
-Root cause: `#score-ticker-wrap` had no positional context and no pseudo-elements.
-.score-ticker overflows at scrollWidth 1603 vs clientWidth 1200 with zero visual cue.
-Fix: `position:relative` on wrap + `::after` (64px right gradient, always visible) +
-`::before` (40px left gradient, opacity driven by `--m5-left-opacity` CSS var).
-JS scroll listener on `.score-ticker` sets var after `renderScoreTicker` mounts;
-`_m5ScrollBound` guard prevents duplicate listeners on re-renders.
-Verified via live DOM probe: `hasFadeGradient: True` at 1280/1440/1920px. Pass on attempt 1.
-Commits: 867f128 (fix), 1b3519d (sw.js SW_VERSION sync — A190 gate).
+### ADR-002 Continuation Patent Addendum (96f7bc3)
+.github/adr/ADR-002-continuation-patent-addendum.md committed.
+Documents US9744427B2 + US10328326B2 analysis.
+NEW RULE E: No SSR of drama state — client-rendered PWA is a patent compliance requirement.
+RULE A scope expanded: relay storing no ratings now covers both "no rating engine"
+AND "no state for change detection under '328 Claim 12."
 
-### M-item audit (all items verified against live DOM)
-- M1 ✅ CLOSED (6484c7a) — legend hidden on mobile/landscape
-- M2 ✅ CLOSED (multiple commits) — matchupNote clamp + hide
-- M3 ✅ CLOSED (68494d0) — FREE badge suppressed when chip visible
-- M4 ✅ CLOSED (db4dd4b) — quiet OTW empty state suppressed
-- M5 ✅ CLOSED (867f128) — right-edge fade + scroll-driven left fade
+### PPUBS Pipeline — Continuation Patents Fetched
+GitHub Actions run 27241140960.
+New: outbox/patents/US9744427.txt, US9744427.json, US9744427-compare.md
+New: outbox/patents/US10328326.txt, US10328326.json, US10328326-compare.md
+Both committed via patent-fulltext.yml workflow.
 
-### STANDARDS.md — Rules 55-57 added (36b9a0c)
-Rule 55 (OVERLAY-TYPEOF-A): typeof guard before overlay string values in prose context.
-  Root: C1 (OTW [object Object], buildOTWWhyLine, June 9 2026)
-Rule 56 (PARTS-DEDUP-A): dedup check before pushing to why-line parts array.
-  Root: C2 (duplicate series record in OTW why-line, June 9 2026)
-Rule 57 (SCREENSHOT-CV-A): content-visibility:auto defers off-screen sections in
-  headless Chromium. All screenshots require forceExpand() scroll pass.
-  Root: C4/C5/H1/H6 (false alarm bug reports, June 9 2026)
+### RUWT Patent Analysis — All Three Patents
+US9421446 (original), US9744427 (2017), US10328326 (2019) all analyzed.
 
-### Infrastructure shipped
-- m5_ticker_probe.js + m5-ticker-probe.yml — targeted DOM audit
-- screenshot_probe.js + screenshot-probe.yml — 11-viewport content-aware probe
-- Rules 55-57 in STANDARDS.md
+KEY FINDINGS:
+- '427: "game statistics" replaces "live in-game statistics." Claim 10 adds
+  "prior to completion" explicitly. All ADR-002 defenses hold unchanged.
+- '328 CHANGE 1: Threshold removed from primary method claim (Claim 12).
+  Notification when rating "changes" — not when it meets threshold.
+- '328 CHANGE 2: Web site display explicitly claimed (Claims 7-8).
+  Targets the "each browser renders it" defense. Rule E addresses this.
+- '328 CHANGE 3: API and web service delivery explicitly claimed (Claims 9-10).
+  Targets relay-style delivery. ADR-002 Rule A addresses this.
 
-## C/H ITEM HISTORY (from Bug Audit session 2026-06-09b)
+TWO LOAD-BEARING DEFENSES (hold across all three patents):
+1. Coupled apparatus requirement — "rating engine AND notification engine
+   coupled to the rating engine" in all apparatus claims, all three patents.
+   FIELD's three-component decoupled architecture defeats all apparatus claims.
+2. Stateless relay change-detection incompatibility — '328 Claim 12 requires
+   notification "when rating changes"; detecting change requires state; relay
+   stores no drama scores; cannot detect changes.
 
-C1 ✅ CLOSED — OTW [object Object]: typeof guard in buildOTWWhyLine (b1f2be3)
-C2 ✅ CLOSED — Duplicate series record: parts dedup in buildOTWWhyLine (7f9802a)
-C3 ✅ CLOSED — _sport relay: false alarm (V2 relay correct, no fix)
-C4 ✅ CLOSED — Mobile card layout: false alarm (content-visibility:auto artifact)
-C5 ✅ CLOSED — Mobile card row: false alarm (same artifact as C4)
-H1 ✅ CLOSED — WNBA missing: false alarm (content-visibility:auto artifact)
-H2 ✅ CLOSED — tz-pill truncation: false alarm (local.slice(0,4) intentional)
-H3 ✅ CLOSED — Scout's Picks empty: false alarm (sparse content correct)
-H6 ✅ CLOSED — WNBA missing: false alarm (same as H1)
+### Six Novel Loopholes Assessed
+Loopholes 1-4 survive in revised/salvaged form.
+Loophole 5 retired as primary argument (moot for '328 primary claims).
+Loophole 6 resolved (continuations now analyzed).
 
 ## DEFERRED — TUE JUN 10 2026 10AM ET
 1. R2 WC team context (Drive 17D_EzrqoNUR4LN4OK3hr6MqKFUHitWlO72O1CWmqLks)
@@ -69,17 +66,26 @@ H6 ✅ CLOSED — WNBA missing: false alarm (same as H1)
 - Drama spectrum RUWT-safe (~60 lines) — spec surface 6f
 - Focus trap bottom sheet (0 :focus-visible, 0 aria-modal)
 
+### STANDARDS.md rules to add (from this session)
+- Drama Dial = personal change relevance filter (not interest threshold)
+- Push notification content = named game state (not rating change language)
+
+### ADR-002
+- Still PROPOSED — not ratified by counsel
+- Free attorney consultation needed for split-operations live drama scoring question
+
 ### INFRA NOTE
 .git is in .assetsignore — permanent. See CI/Deploy Addendum (INCIDENT 11).
-If .assetsignore is ever reset/regenerated, add .git back immediately.
 
 ## SMOKE
 531/0
 
 ## SESSION DOCS
-- Bug Audit + Deploy Fix session doc: Drive 1H_3h9SGRIS0TCqse92mhb3KLluMEqE5z
-- M-item verification + M5 session doc: Drive 1mmdKe6IDIeebXlM5J34tiFoyyG7fWQaw
+- Patent Audit session doc: Drive 1I0Amjq-Qi1dAe0b5LGLdJYLkN3YNZWbb
+- ADR-002 Continuation Addendum: Drive 1zTM69EnF9F5zljkBD-sGVmfl2Az1ys_2
+- Novel Loopholes Assessment: Drive 1WF3dyFvOhrWfuIUs82uwfwdU64dTsjQA
+- Continuation Claims Analysis: Drive 1Dg-8wlERW4Nt7mFv01TpsTTkZvlI-Ih7
+- Prior session docs (M-item / bug audit): Drive 1mmdKe6IDIeebXlM5J34tiFoyyG7fWQaw
 - C/H/M Item Registry: Drive 1XEdWui58L5YCn2-CoN5NEcDrNdcsf2Ah
-- CI/Deploy Addendum (Incident 11): Drive 1JWvyNA5BcMpW6p7bVJDXNIAGJBwR8w75
 - Drive Current State: 1GvsfnTH9Xhqzg_NdYrPhPpk1d1Rnm0lkeG6ip-tLUlA
 - Drive CI/Deploy (main): 1UrOoYDGaK2ncPrnRNXt1w0OElOLpbjP_EYROjG2w1zo
