@@ -147,6 +147,13 @@ body::before{
 }
 .refresh-btn:hover{background:linear-gradient(135deg,var(--gold2),var(--gold));color:var(--obsidian);font-weight:700;transform:scale(1.04)}
 
+/* ── WC bar legend at all viewports (Jun 9 2026) ──────────────────────────── */
+.wc-bar-legend{display:flex;gap:.5rem;font-family:var(--ff-mono);font-size:.5rem;
+  color:var(--muted);margin-top:.3rem;padding-top:.3rem;border-top:1px solid var(--edge)}
+.wc-bar-legend span::before{content:'';display:inline-block;width:8px;height:5px;
+  border-radius:1px;margin-right:.2rem;vertical-align:middle}
+.leg-wp::before{background:rgba(96,165,250,.6)}
+.leg-adv::before{background:rgba(74,222,128,.6)}
 /* ── UX QUICK WINS (Jun 9 2026 audit) ─────────────────────────────────────── */
 
 /* 1. Vibe badges always lead the chip row — game state reads before network chip */
@@ -3639,6 +3646,7 @@ body.wc-mode #wc-section{animation:wcFadeIn 220ms ease-out}
     </div>
     <div class="masthead-right">
       <span id="streak-badge" style="display:none;align-items:center;gap:.2rem;font-size:.7rem;font-weight:700;color:var(--muted);opacity:.85;margin-right:.5rem"></span>
+      <button id="drama-dial-chip" title="Drama sensitivity — controls which games surface as One To Watch. Tap to adjust in My Services." onclick="document.getElementById('settings-btn')?.click()" style="display:none;font-family:var(--ff-mono);font-size:.6rem;padding:.2rem .5rem;border-radius:20px;border:1px solid var(--gold);background:rgba(201,168,76,.1);color:var(--gold);cursor:pointer;margin-right:.35rem;white-space:nowrap"></button>
       <button class="settings-btn" id="settings-btn" title="My Services &amp; Drama Sensitivity — personalise stream access and set your watch threshold"><span class="btn-label">⚙ My Services</span></button>
       <button class="refresh-btn" id="refresh-btn" title="Refresh to today" style="display:none">↺</button>
       <div class="usage-badge usage-ok" id="usage-badge" title="API calls today" style="display:none"><span class="usage-dot"></span><span id="usage-text">—</span></div>
@@ -5648,6 +5656,8 @@ function setDramaDial(value){
   if(preview) preview.textContent=`Close games get badges · ${Math.min(v+20,95)===95?'Only the tightest':v<=50?'Nearly all':'Most'} close games get alerts`;
   // Re-evaluate badges with new threshold
   if(typeof injectDramaBadges==='function') try{injectDramaBadges();}catch(e){}
+  // Update header chip
+  if(typeof _updateDialChip==='function') _updateDialChip();
 }
 let viewingDate  = new Date();  // The date currently being viewed
 let viewingISO   = TODAY_ISO;   // ISO string of viewing date
@@ -8808,6 +8818,7 @@ function renderAll(){
   renderWatchWindow();
   setTimeout(updateCardLifeStages, 200); // Update life stages after cards render
   setTimeout(renderScoreTicker, 250);   // Render score ticker if games are live
+  if(typeof _updateDialChip==='function') _updateDialChip(); // Drama Dial header chip
   setTimeout(injectJ1J4Badges, 300);    // J1/J4: Anti-Hype + Scout's Pick per-card badges
   setTimeout(()=>initFIELDBrief(filtered).then(()=>renderAmbientPanel()).catch(e=>{
     captureFieldError('initFIELDBrief',e,false);
@@ -17035,9 +17046,25 @@ function renderESPNScores(){
       // rewrite it with the current data. buildCardTimeDisplay is pure/cheap.
       const gtEl = card.querySelector('.game-time');
       if(gtEl){
+        // aria-live: screen readers announce score changes on live games
+        if(isLive && !gtEl.hasAttribute('aria-live')){
+          gtEl.setAttribute('aria-live','polite');
+          gtEl.setAttribute('aria-atomic','true');
+        }
         const gtText = buildCardTimeDisplay(isLive || isFinal, score,
           gtEl.textContent || ''); // pass existing text as fallback timeStr
-        if(gtText) gtEl.textContent = gtText;
+        if(gtText && gtText !== gtEl.dataset.lastScore){
+          // Score changed — trigger flash feedback
+          gtEl.dataset.lastScore = gtText;
+          gtEl.textContent = gtText;
+          if(isLive){
+            gtEl.classList.remove('score-flash');
+            void gtEl.offsetWidth; // reflow to restart animation
+            gtEl.classList.add('score-flash');
+          }
+        } else if(gtText) {
+          gtEl.textContent = gtText;
+        }
         gtEl.classList.toggle('live-t', isLive);
       }
 
@@ -27172,15 +27199,29 @@ function renderCardBadges(card, eData, sport, gid, smoothed) {
       if (conf === 'verified' || conf === 'mismatch' || conf === 'single') {
         const dot = document.createElement('span');
         dot.className = `cg ${conf}`;
-        dot.title = conf === 'verified' ? 'Score confirmed by 2 sources'
-                  : conf === 'mismatch' ? 'Score sources disagree — check Health panel'
-                  : 'Score from single source';
+        const _cgLabel = conf === 'verified' ? 'Score confirmed by 2 sources'
+                       : conf === 'mismatch' ? 'Score sources disagree — check Health panel'
+                       : 'Score from single source';
+        dot.title = _cgLabel;
+        dot.setAttribute('role', 'img');
+        dot.setAttribute('aria-label', _cgLabel);
         gtEl.appendChild(dot);
       }
     }
   } catch(e_) {}
 }
 
+// ── Drama Dial header chip (Jun 9 2026 audit) ──────────────────────────────
+// Surfaces the Dial value in the masthead so users discover personalization
+// without opening My Services. Tapping opens My Services.
+function _updateDialChip() {
+  const chip = document.getElementById('drama-dial-chip');
+  if (!chip) return;
+  const val = typeof getDramaDial === 'function' ? getDramaDial() : 65;
+  chip.textContent = 'Dial ' + val;
+  chip.style.display = 'inline-flex';
+  chip.style.alignItems = 'center';
+}
 // ── PM-25 / Drama Dial categorical tier refactor (June 5 2026) ───────────────
 // Named-condition tier selector for live ESPN games — mirrors _otwFindWCLiveGame.
 // Returns a named condition string (never a numeric composite) or null.
