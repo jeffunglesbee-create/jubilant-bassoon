@@ -479,7 +479,7 @@ body::before{
 .game-card{
   background:var(--card);border:1px solid var(--edge);
   border-radius:var(--radius);padding:0;
-  display:grid;grid-template-columns:3px 1fr minmax(90px,auto);grid-template-rows:auto auto auto;
+  display:grid;grid-template-columns:3px 1fr minmax(90px,auto);grid-template-rows:auto auto auto auto;
   overflow:hidden;transition:transform .2s,box-shadow .2s,background .15s,border-color .15s;
   cursor:pointer;touch-action:manipulation;user-select:none;-webkit-user-select:none;animation:fadeIn .3s ease both;
   animation-delay:min(calc(floor(var(--i, 0) / var(--cols, 1)) * 28ms), 360ms);
@@ -565,7 +565,7 @@ body::before{
  * vs the bulk of live cards rendering shift-free from initial paint.
  */
 .game-card.espn-live,
-.game-card.espn-final{grid-template-rows:auto minmax(1.5rem,auto) auto}
+.game-card.espn-final{grid-template-rows:auto auto minmax(1.5rem,auto) auto}
 @keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
 @keyframes scoreFlash{0%{background:rgba(201,168,76,.25)}60%{background:rgba(201,168,76,.12)}100%{background:transparent}}
 .score-flash{animation:scoreFlash .7s ease-out}
@@ -593,7 +593,7 @@ body::before{
 .card-body{cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 .card-body:active .card-tap-hint{opacity:.9;transition:none}
 @media(hover:hover){.card-body:hover .card-tap-hint{opacity:.7;transition:opacity .15s}}
-.score-wrap{grid-column:2;grid-row:2;display:none} /* hidden until ESPN injects */
+.score-wrap{grid-column:2;grid-row:3;display:none} /* hidden until ESPN injects */
 /* P6 — score pop refinement: 200ms crossfade on INITIAL score injection (existing scoreFlash still fires on subsequent CHANGE) */
 .score-wrap{transition:opacity .2s ease, transform .2s ease}
 .score-wrap.score-incoming{opacity:0;transform:translateY(2px)}
@@ -1088,7 +1088,7 @@ body::before{
   border-radius:8px;padding:.6rem .8rem;margin-top:.5rem;
   font-family:var(--ff-mono);font-size:.65rem;
   animation:fadeIn .2s ease both;
-  grid-column:2 / 4;grid-row:3;
+  grid-column:2 / 4;grid-row:4;
   overflow-x:auto;
 }
 .standings-panel.open{
@@ -1358,7 +1358,13 @@ body::before{
 .series-preview-card:hover{background:rgba(201,168,76,.1)}
 /* Inline series brief — big game cards (CF/Finals) show brief inside card-body */
 /* score-wrap at grid-row:2 drops below card-body so score appears below brief on go-live */
-.card-brief-inline{border-top:1px solid rgba(201,168,76,.15);margin-top:.35rem;padding-top:.45rem}
+.card-brief-row{
+  grid-column:2 / 4;grid-row:2;
+  border-top:1px solid rgba(255,255,255,.06);
+  padding:.45rem .85rem .55rem .85rem;
+  min-width:0;overflow:hidden;
+}
+.card-brief-inline{border-top:none;margin-top:0;padding-top:0}
 .card-brief-inline-label{font-size:.62rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--gold2,#c9a84c);opacity:.8;margin-bottom:.3rem}
 .card-brief-inline-text{font-size:.71rem;color:var(--text-muted,#b0b0c0);line-height:1.55;font-style:italic}
 .card-brief-inline-text.loaded{color:var(--fg,#e8e8f0);font-style:normal}
@@ -1510,7 +1516,7 @@ body::before{
   display:flex;flex-direction:column;align-items:flex-end;
   justify-content:space-between;gap:.35rem;flex-shrink:0;
   min-width:85px;max-width:160px;
-  grid-row:1 / 4;grid-column:3;
+  grid-row:1 / 3;grid-column:3;
 }
 .game-time{
   font-family:var(--ff-mono);font-size:.88rem;font-weight:600;
@@ -2612,7 +2618,7 @@ body.wc-mode #wc-section{animation:wcFadeIn 220ms ease-out}
    * keeps row 2 at minmax(1.5rem,auto) for live cards from initial paint.
    */
   .game-card.espn-live,
-  .game-card.espn-final{grid-template-rows:auto minmax(1.5rem,auto) auto}
+  .game-card.espn-final{grid-template-rows:auto auto minmax(1.5rem,auto) auto}
   .card-body{
     padding:.65rem .85rem .35rem;
     grid-row:1;grid-column:2;
@@ -2620,7 +2626,7 @@ body.wc-mode #wc-section{animation:wcFadeIn 220ms ease-out}
   }
   /* score-wrap moves to its own row on mobile */
   .score-wrap{
-    grid-row:2;grid-column:2;
+    grid-row:3;grid-column:2;
     padding:.2rem .85rem .25rem;
     margin-top:0;max-width:none;overflow:hidden;
     display:none; /* revealed by .espn-live rule below */
@@ -2631,11 +2637,11 @@ body.wc-mode #wc-section{animation:wcFadeIn 220ms ease-out}
   .card-right{
     display:flex;flex-direction:row;align-items:center;flex-wrap:wrap;
     padding:.25rem .85rem .6rem;gap:.35rem;
-    grid-row:3;grid-column:2;
+    grid-row:4;grid-column:2;
     min-width:0!important;max-width:none!important;width:100%;
     justify-content:flex-start;
   }
-  .card-accent{grid-row:1 / 4} /* span all 3 rows */
+  .card-accent{grid-row:1 / 5} /* span all 4 rows */
   .team-name{font-size:.88rem}
   .game-time{font-size:.75rem}
   .score-block{font-size:.95rem;gap:5px;flex-wrap:nowrap}
@@ -22069,11 +22075,15 @@ async function renderSeriesPreviewCard(gameCard){
   const isBig=/conference finals|cf g\d|nba finals|stanley cup final|wcf|ecf/i.test(game.league||'');
   if(isBig){
     const cardBody=gameCard.querySelector('.card-body');
-    if(!cardBody||cardBody.querySelector('.card-brief-inline')) return;
+    if(!cardBody||gameCard.querySelector('.card-brief-inline')) return;
+    // card-brief-row: grid-column 2/4 row 2 — spans full card width below body+right
+    const briefRow=document.createElement('div');
+    briefRow.className='card-brief-row';
     const briefEl=document.createElement('div');
     briefEl.className='card-brief-inline';
     briefEl.innerHTML='<div class="card-brief-inline-label">FIELD Series Brief</div><div class="card-brief-inline-text">'+(staticText||'Loading series context\u2026')+'</div>';
-    cardBody.appendChild(briefEl);
+    briefRow.appendChild(briefEl);
+    gameCard.appendChild(briefRow);
     const textEl=briefEl.querySelector('.card-brief-inline-text');
     const cached=sessionStorage.getItem(cacheKey);
     if(cached){textEl.textContent=trimToCompleteSentence(cached);textEl.classList.add('loaded');return;}

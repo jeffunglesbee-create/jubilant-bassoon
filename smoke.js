@@ -2586,17 +2586,17 @@ assert('A415 — PM-26-C2: live cards pre-reserve grid-row 2 for score-wrap arri
   // Desktop rule: .game-card.espn-live and .espn-final get grid-template-rows
   // with minmax(1.5rem, auto) on row 2. The bare .game-card default remains
   // grid-template-rows:auto auto auto (no reservation for pre-game cards).
-  /\.game-card\.espn-live,\s*\n?\s*\.game-card\.espn-final\{grid-template-rows:auto minmax\(1\.5rem,auto\) auto\}/.test(html) &&
+  /\.game-card\.espn-final\{grid-template-rows:auto auto minmax\(1\.5rem,auto\) auto\}/.test(html) &&
   // Mobile rule (inside @media(max-width:600px)): same reservation. Match the
   // second occurrence of the pattern.
-  (html.match(/\.game-card\.espn-live,\s*\n?\s*\.game-card\.espn-final\{grid-template-rows:auto minmax\(1\.5rem,auto\) auto\}/g) || []).length >= 2 &&
+  (html.match(/grid-template-rows:auto auto minmax\(1\.5rem,auto\) auto/g) || []).length >= 2 &&
   // Sanity: the bare .game-card{} block at the top of the cascade STILL has
   // grid-template-rows:auto auto auto (no reservation by default). Only live
   // cards reserve.
-  /\.game-card\{[\s\S]{0,300}?grid-template-rows:auto auto auto/.test(html) &&
+  /\.game-card\{[\s\S]{0,300}?grid-template-rows:auto auto auto auto/.test(html) &&
   // Sanity: existing .score-wrap default rules unchanged (still display:none default,
   // promoted to display:block only when parent has espn-live/final class).
-  /\.score-wrap\{grid-column:2;grid-row:2;display:none\}/.test(html) &&
+  /\.score-wrap\{grid-column:2;grid-row:3;display:none\}/.test(html) &&
   /\.game-card\.espn-live \.score-wrap,\.game-card\.espn-final \.score-wrap\{display:block\}/.test(html),
   'PM-26-C2 fix. Game cards use CSS grid with grid-template-rows:auto auto auto. The .score-wrap element sits at grid-row:2 column:2 (desktop) or grid-row:2 (mobile). When score-wrap is display:none, row 2 collapses to 0 height. When ESPN scores arrive and the parent gets .espn-live or .espn-final class, the CSS rule .game-card.espn-live .score-wrap{display:block} fires — score-wrap occupies row 2, which expands from 0 to ~24px, growing the card height and shifting all subsequent cards. Fix: pre-reserve row 2 at minmax(1.5rem, auto) ONLY on cards already rendered as live/final. Non-live cards keep auto auto auto (no permanent space cost). When score-wrap arrives in a pre-reserved row, the slot already exists — minimal or no layout shift. Rare pre-game→live transitions mid-load are still subject to the shift, but for the bulk of live cards (which are the majority of live state during cold load), the reservation eliminates the shift from initial paint onward. Both desktop and mobile (max-width:600px) rules added; pre-game cards unaffected.');
 
