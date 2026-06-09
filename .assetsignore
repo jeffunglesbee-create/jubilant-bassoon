@@ -1,6 +1,9 @@
 # Exclude non-app files from Cloudflare Workers asset upload.
 # These are docs, CI scripts, and dev tools — not part of the FIELD web app.
 
+# Git internals — MUST be excluded (pack files grow large quickly)
+.git
+
 # Large documentation files
 FIELD-CURRENT-STATE.md
 STANDARDS.md

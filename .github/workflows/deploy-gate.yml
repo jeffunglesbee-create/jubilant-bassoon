@@ -36,7 +36,7 @@ on:
       - 'wrangler.jsonc'
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   smoke-and-deploy:
@@ -71,26 +71,12 @@ jobs:
           echo "✅ Smoke passed — deploying"
 
       - name: Deploy to Cloudflare Workers
-        run: |
-          npm install wrangler@3.109.0 2>/dev/null
-          TS=$(date -u +%Y%m%dT%H%M%SZ)
-          set +e
-          npx wrangler@3.109.0 deploy 2>&1 | tee /tmp/wrangler_output.txt
-          EXIT_CODE=${PIPESTATUS[0]}
-          set -e
-          OUT="outbox/deploy-result-${TS}.txt"
-          echo "EXIT_CODE: $EXIT_CODE" > "$OUT"
-          echo "SHA: ${{ github.sha }}" >> "$OUT"
-          echo "---WRANGLER OUTPUT---" >> "$OUT"
-          cat /tmp/wrangler_output.txt >> "$OUT"
-          git config user.email "deploy@field"
-          git config user.name "Deploy Gate"
-          git add "$OUT"
-          git diff --cached --quiet || git commit -m "deploy result ${TS} [skip ci]"
-          for i in 1 2 3; do git pull --rebase --autostash origin main && git push origin main && break; sleep $((i*5)); done
-          exit $EXIT_CODE
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: b57e9af57ab46c52ca9215804e689c29
+          wranglerVersion: "3.109.0"
+          # gitHubToken removed: CF GitHub integration disconnected May 23 2026
 
       - name: Confirm
         run: |
