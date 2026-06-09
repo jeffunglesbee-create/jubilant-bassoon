@@ -25880,13 +25880,18 @@ function renderAmbientPanel(){
       const _owlTxt = (_owlSentEnd > 40 && _owlSentEnd < 255)
         ? _owlTxtWindow.slice(0, _owlSentEnd + 1)
         : _owlTxtWindow;
-      editorialHTML = `<div class="ap-card ap-card-owl">
+      const _owlFull = _owlTxtRaw.replace(/"/g,'&quot;');
+      const _owlHasMore = _owlTxtRaw.length > _owlTxt.length;
+      editorialHTML = `<div class="ap-card ap-card-owl${_owlHasMore?' ap-card-expandable':''}"
+        ${_owlHasMore?`data-full="${_owlFull}" data-trunc-len="200" onclick="_deskCardToggle(this)" style="cursor:pointer"`:''}
+        title="${_owlHasMore?'Tap to expand':''}">
         <div class="ap-card-header">
           <span class="ap-card-icon">${_owlIcon}</span>
           <span class="ap-card-label">${_owlLabel}</span>
+          ${_owlHasMore?'<span class="ap-card-expand-hint" style="margin-left:auto;font-size:.55rem;color:var(--muted);font-family:var(--ff-mono)">+ expand</span>':''}
         </div>
         ${_owlGame?`<div class="ap-card-game">${_owlGame}${_owlScore?' <span style="opacity:.65;font-size:.7em">'+_owlScore+'</span>':''}</div>`:''}
-        ${_owlTxt?`<p class="ap-card-text">${_owlTxt}${_owlTxtRaw.length>_owlTxt.length?'…':''}</p>`:''}
+        ${_owlTxt?`<p class="ap-card-text">${_owlTxt}${_owlHasMore?'…':''}</p>`:''}
       </div>`;
     } else if (_briefActive) {
       const _briefText = _briefEl.querySelector('.field-brief-text')?.textContent?.trim()||'';
