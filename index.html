@@ -25907,7 +25907,7 @@ function renderAmbientPanel(){
   }
 
     const _apHTML=`${otwHTML}${scoresHTML?`<div class="ap-divider"></div>${scoresHTML}`:''}${soonHTML?`<div class="ap-divider"></div>${soonHTML}`:''}${upcomingHTML?`<div class="ap-divider"></div>${upcomingHTML}`:''}${ctxHTML?`<div class="ap-divider"></div>${ctxHTML}`:''}${arbHTML?`<div class="ap-divider"></div>${arbHTML}`:''}${briefHTML?`<div class="ap-divider"></div>${briefHTML}`:''}`;
-  if(panel.dataset.lastAp!==_apHTML||!panel.innerHTML.trim()){panel.dataset.lastAp=_apHTML;panel.innerHTML=_apHTML;}
+  if(panel.dataset.lastAp!==_apHTML||panel.querySelector('.ambient-skeleton')){panel.dataset.lastAp=_apHTML;panel.innerHTML=_apHTML;}
 }
 
 // ── Broadcast Arbitrage Finder ──────────────────────────────────────────────
