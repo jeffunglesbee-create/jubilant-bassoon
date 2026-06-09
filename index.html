@@ -2600,6 +2600,9 @@ body.wc-mode #wc-section{animation:wcFadeIn 220ms ease-out}
   .section-head{top:74px} /* below 2-row controls bar */
   /* Main content */
   .main{padding:1rem 1rem 4rem}
+  /* M1: hide fixed legend on mobile — overlaps scrollable content mid-page.
+     Card accent colors (LIVE/SOON/UPCOMING dots) are self-evident on mobile. */
+  .legend{display:none !important}
 
   /* Game cards — 3-row mobile layout:
      Row 1: card-body (matchup + info-row, no score)
@@ -2930,6 +2933,8 @@ body.wc-mode #wc-section{animation:wcFadeIn 220ms ease-out}
     padding:.22rem .65rem;white-space:nowrap;flex-shrink:0;
   }
   .tz-pill{display:none !important}
+  /* M1: legend overlaps content on phone landscape too */
+  .legend{display:none !important}
 }
 
 /* ── 360px Galaxy A36 / iPhone SE small fixes ───────────────────────── */
