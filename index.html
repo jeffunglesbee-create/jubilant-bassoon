@@ -3690,7 +3690,7 @@ var _DOM = null;
     </div>
     <div class="masthead-right">
       <span id="streak-badge" style="display:none;align-items:center;gap:.2rem;font-size:.7rem;font-weight:700;color:var(--muted);opacity:.85;margin-right:.5rem"></span>
-      <button id="drama-dial-chip" title="Drama sensitivity — controls which games surface as One To Watch. Tap to adjust in My Services." onclick="document.getElementById('settings-btn')?.click()" style="display:none;font-family:var(--ff-mono);font-size:.6rem;padding:.2rem .5rem;border-radius:20px;border:1px solid var(--gold);background:rgba(201,168,76,.1);color:var(--gold);cursor:pointer;margin-right:.35rem;white-space:nowrap"></button>
+      <button id="drama-dial-chip" title="Drama sensitivity — controls which games surface as One To Watch. Tap to adjust in My Services." onclick="(function(){document.getElementById('settings-btn')?.click();setTimeout(function(){var d=document.getElementById('drama-dial');if(d){d.scrollIntoView({behavior:'smooth',block:'center'});d.focus();}},200);})()" style="display:none;font-family:var(--ff-mono);font-size:.6rem;padding:.2rem .5rem;border-radius:20px;border:1px solid var(--gold);background:rgba(201,168,76,.1);color:var(--gold);cursor:pointer;margin-right:.35rem;white-space:nowrap"></button>
       <button class="settings-btn" id="settings-btn" title="My Services &amp; Drama Sensitivity — personalise stream access and set your watch threshold"><span class="btn-label">⚙ My Services</span></button>
       <button class="refresh-btn" id="refresh-btn" title="Refresh to today" style="display:none">↺</button>
       <div class="usage-badge usage-ok" id="usage-badge" title="API calls today" style="display:none"><span class="usage-dot"></span><span id="usage-text">—</span></div>
