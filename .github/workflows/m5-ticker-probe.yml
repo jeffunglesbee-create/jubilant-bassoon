@@ -1,0 +1,57 @@
+name: M5 Ticker Probe
+# Audits score ticker desktop right-edge fade (M5).
+# Captures computed styles, scroll metrics, chip overflow, pseudo-elements.
+# Writes outbox/m5-ticker-audit-<ts>.json [skip ci].
+# Trigger: push to outbox/.trigger-m5-ticker-probe OR workflow_dispatch
+
+on:
+  push:
+    paths: ['outbox/.trigger-m5-ticker-probe']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  m5-ticker-audit:
+    runs-on: ubuntu-latest
+    name: M5 score ticker DOM audit (desktop)
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-chromium-${{ hashFiles('package-lock.json') }}
+
+      - name: Install Playwright Chromium
+        run: |
+          npm install @playwright/test
+          npx playwright install chromium --with-deps
+
+      - name: Run M5 ticker audit
+        run: node m5_ticker_probe.js
+        env:
+          FIELD_URL: https://jubilant-bassoon.jeffunglesbee.workers.dev
+
+      - name: Commit results
+        run: |
+          git config user.email "probe@field"
+          git config user.name "M5 Ticker Probe"
+          git add outbox/m5-ticker-audit-*.json
+          git status --short
+          if git diff --cached --quiet; then
+            echo "Nothing to commit"
+            exit 0
+          fi
+          git commit -m "ci: M5 ticker audit result [skip ci]"
+          for i in 1 2 3; do
+            git pull --rebase --autostash origin main && git push origin main && break
+            sleep $((i * 5))
+          done
