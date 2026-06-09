@@ -67,6 +67,16 @@ const VIEWPORTS = [
     const page = await context.newPage();
     await page.goto(FIELD_URL, { waitUntil: 'networkidle', timeout: 20000 }).catch(() => {});
     await page.waitForTimeout(WAIT_MS);
+    // Scroll through page to trigger content-visibility:auto rendering on off-screen sections
+    await page.evaluate(async () => {
+      const step = window.innerHeight;
+      for (let y = 0; y < document.body.scrollHeight; y += step) {
+        window.scrollTo(0, y);
+        await new Promise(r => setTimeout(r, 80));
+      }
+      window.scrollTo(0, 0);
+    });
+    await page.waitForTimeout(500);
     const file = path.join('outbox', `screenshot-${vp.name}-${ts}.png`);
     await page.screenshot({ path: file, fullPage: true });
     results.push(file);
