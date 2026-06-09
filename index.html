@@ -147,6 +147,35 @@ body::before{
 }
 .refresh-btn:hover{background:linear-gradient(135deg,var(--gold2),var(--gold));color:var(--obsidian);font-weight:700;transform:scale(1.04)}
 
+/* ── UX QUICK WINS (Jun 9 2026 audit) ─────────────────────────────────────── */
+
+/* 1. Vibe badges always lead the chip row — game state reads before network chip */
+.vibe{order:-1}
+
+/* 2. Touch feedback — :hover doesn't fire on mobile, :active does */
+.filter-btn:active{transform:scale(0.96);background:var(--gold-dim)}
+.game-card:active{transform:scale(0.99);box-shadow:0 0 0 1px rgba(255,255,255,.08)}
+.watch-btn:active{transform:scale(0.97);opacity:.85}
+
+/* 3. Bottom sheet scroll bleed — stops page scrolling through sheet content */
+.bottom-sheet,.mv-panel,.my-services-panel,.field-desk-section{overscroll-behavior:contain}
+
+/* 4. Night Owl → amber to disambiguate from Finals Desk (both were violet) */
+/* Finals Desk = violet (series intelligence) · Night Owl = amber (post-game) · Brief = teal (editorial) */
+.no-label{color:var(--amber)}
+#night-owl{border-left-color:rgba(251,191,36,.3)}
+
+/* 5. GPU promotion on frequently animated elements only */
+.live-dot{will-change:opacity}
+.ws-pulse::before{will-change:opacity}
+.gcard.crunch-card{will-change:box-shadow}
+.ga.crunch{will-change:opacity}
+
+/* 6. gline prose context — raise from muted (#6b7280, 4.1:1) to label (#9ca3af, 5.9:1) */
+.gline{color:var(--text-muted,#b0b0c0)}
+
+/* ─────────────────────────────────────────────────────────────────────────── */
+
 /* ── CONTROLS BAR ── */
 .controls{
   position:sticky;top:0;z-index:50;
