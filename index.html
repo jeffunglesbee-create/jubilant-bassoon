@@ -89,7 +89,7 @@
   --ff-mono:'JetBrains Mono',monospace;
 }
 html{scroll-behavior:smooth}
-body{background:var(--obsidian);color:var(--white);font-family:var(--ff-body);min-height:100vh;overflow-x:hidden}
+body{background:var(--obsidian);color:var(--white);font-family:var(--ff-body);min-height:100vh;overflow-x:hidden;overscroll-behavior-y:none}
 
 /* ── NOISE OVERLAY ── */
 body::before{
@@ -2713,6 +2713,13 @@ body.wc-mode #wc-section{animation:wcFadeIn 220ms ease-out}
     padding:.22rem .65rem;white-space:nowrap;flex-shrink:0;
   }
   nav.controls .tz-pill{display:none !important}
+  /* iPad landscape: 2-column game grid at 950px+ — left pane is wide enough */
+  /* Applies within the 820-1199px bucket where right panel is already active  */
+}
+@media(min-width:950px) and (max-width:1199px){
+  .games-list{display:grid !important;grid-template-columns:1fr 1fr;gap:.6rem}
+}
+@media(min-width:820px) and (max-width:1199px){
   /* Ticker hidden on iPad — Live section in ambient panel covers this */
   #score-ticker-wrap{display:none !important}
   /* Suppress 768-900px 2-col game grid: 430px left pane too narrow for 2 cols */
@@ -3665,9 +3672,9 @@ body.wc-mode #wc-section{animation:wcFadeIn 220ms ease-out}
     <div class="divider"></div>
     <div id="sport-filters"><span class="filter-chip-skeleton" aria-hidden="true"></span><span class="filter-chip-skeleton" aria-hidden="true"></span><span class="filter-chip-skeleton" aria-hidden="true"></span><span class="filter-chip-skeleton" aria-hidden="true"></span><span class="filter-chip-skeleton" aria-hidden="true"></span><span class="filter-chip-skeleton" aria-hidden="true"></span></div>
     <button class="tz-pill" id="tz-pill" title="Change timezone"></button>
-    <a class="desk-jump-link" href="#field-desk-section" title="FIELD Desk — editorial briefings and series previews" onclick="event.preventDefault();document.getElementById('field-desk-section')?.scrollIntoView({behavior:'smooth',block:'start'})">📰 Desk</a>
-    <a class="desk-jump-link jrn-nav-link" id="jrn-nav-link" href="#field-journalism-section" title="Journalism — Tonight's editorial reading" onclick="event.preventDefault();toggleJournalismView()">📖 Journal</a>
-    <a class="desk-jump-link wc-nav-link" id="wc-nav-link" href="#wc-section" title="World Cup — Group standings and bracket" onclick="event.preventDefault();toggleWCView()" style="display:none">⚽ Groups</a>
+    <a class="desk-jump-link" id="desk-jump-link" href="#field-desk-section" title="FIELD Desk — editorial briefings and series previews">📰 Desk</a>
+    <a class="desk-jump-link jrn-nav-link" id="jrn-nav-link" href="#field-journalism-section" title="Journalism — Tonight's editorial reading">📖 Journal</a>
+    <a class="desk-jump-link wc-nav-link" id="wc-nav-link" href="#wc-section" title="World Cup — Group standings and bracket" style="display:none">⚽ Groups</a>
   </div>
 </nav>
 
@@ -8819,6 +8826,19 @@ function renderAll(){
   setTimeout(updateCardLifeStages, 200); // Update life stages after cards render
   setTimeout(renderScoreTicker, 250);   // Render score ticker if games are live
   if(typeof _updateDialChip==='function') _updateDialChip(); // Drama Dial header chip
+  // Nav link listeners — replaces inline onclick= handlers (CSP hygiene)
+  document.getElementById('desk-jump-link')?.addEventListener('click', e => {
+    e.preventDefault();
+    document.getElementById('field-desk-section')?.scrollIntoView({behavior:'smooth',block:'start'});
+  });
+  document.getElementById('jrn-nav-link')?.addEventListener('click', e => {
+    e.preventDefault();
+    if(typeof toggleJournalismView==='function') toggleJournalismView();
+  });
+  document.getElementById('wc-nav-link')?.addEventListener('click', e => {
+    e.preventDefault();
+    if(typeof toggleWCView==='function') toggleWCView();
+  });
   setTimeout(injectJ1J4Badges, 300);    // J1/J4: Anti-Hype + Scout's Pick per-card badges
   setTimeout(()=>initFIELDBrief(filtered).then(()=>renderAmbientPanel()).catch(e=>{
     captureFieldError('initFIELDBrief',e,false);
@@ -22181,18 +22201,24 @@ fieldEvents.addEventListener('field:all_final', (e) => {
     if (_subscriberFired[guardKey]) return;
     _subscriberFired[guardKey] = Date.now();
     if (FIELD_DEBUG) console.log(`[S0 bus] field:all_final → nightly wrap (${e.detail?.count} game(s))`);
-    // Small defer: let the final saveEspnFinal() writes settle before reading them back
-    setTimeout(() => {
+    // Defer until browser is idle (2s deadline) — resilient to main-thread jank.
+    // requestIdleCallback replaces the fixed 500ms timer so Night Owl render
+    // doesn't compete with live-score poll cycles on Finals nights.
+    const _ricOrTimeout = (fn, ms) =>
+      typeof requestIdleCallback === 'function'
+        ? requestIdleCallback(fn, { timeout: ms })
+        : setTimeout(fn, ms);
+    _ricOrTimeout(() => {
       try {
         if (typeof renderNightOwlRecap === 'function') {
           renderNightOwlRecap().catch(e2 => captureFieldError('night-owl-wrap', e2, false));
         }
-        // Re-render ambient panel so iPad rail reflects the completed Night Owl
+        // Ambient panel deferred separately — let Night Owl settle first
         if (typeof renderAmbientPanel === 'function') {
-          setTimeout(() => { try { renderAmbientPanel(); } catch(_) {} }, 800);
+          _ricOrTimeout(() => { try { renderAmbientPanel(); } catch(_) {} }, 1500);
         }
       } catch(_) {}
-    }, 500);
+    }, 2000);
   } catch(_) { /* never throw from a bus listener */ }
 });
 
