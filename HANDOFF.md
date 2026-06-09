@@ -74,7 +74,7 @@ card-right: grid-row 1/3. Applies at ALL viewports.
 ### CRITICAL (Jun 11 — WC opens Thursday)
 - WC card variant in schedule (wc-bars pre-game) — CSS built, not wired to pre-game cards
 
-### HIGH (patent Jun 25)
+### HIGH (product)
 - Series dots board (~40 lines)
 - Arc sparkline SVG (~25 lines)
 - WHOLE FIELD toggle (~30 lines)
