@@ -9216,6 +9216,18 @@ function buildTodaySchedule(){
     {home:"Detroit Tigers",         away:"Seattle Mariners",     start_time:"2026-06-05T23:10:00Z", confirmed:true, venue:"Comerica Park, Detroit MI"},
     // ── Sunday June 7 — NBC/Peacock Sunday Night Baseball ────────────────────
     {home:"Chicago Cubs",           away:"San Francisco Giants", start_time:"2026-06-07T23:00:00Z", confirmed:true, venue:"Wrigley Field, Chicago IL", streams:resolveBundle("MLB_NBC"), nationalBundle:"MLB_NBC", matchupNote:"Sunday Night Baseball on NBC/Peacock. SFG vs CHC — Giants-Cubs rivalry night at Wrigley."},
+  
+    // ── MLB — Monday June 8, 2026 ──────────────────────────────────────────────
+    // Sources: MLB.com schedule verified June 8 2026. NYY @ CLE on FS1 national.
+    // MIL @ ATH at Las Vegas Ballpark (A's temp home, June 8-10 series).
+    {home:"Baltimore Orioles",     away:"Seattle Mariners",     start_time:"2026-06-08T22:35:00Z", confirmed:true, venue:"Oriole Park at Camden Yards, Baltimore MD"},
+    {home:"Tampa Bay Rays",        away:"Boston Red Sox",       start_time:"2026-06-08T22:40:00Z", confirmed:true, venue:"Tropicana Field, St. Petersburg FL"},
+    {home:"Cleveland Guardians",   away:"New York Yankees",     start_time:"2026-06-08T22:40:00Z", confirmed:true, venue:"Progressive Field, Cleveland OH", streams:resolveBundle("MLB_FOX"), nationalBundle:"MLB_FOX", matchupNote:"NYY @ CLE on FS1. 6:40pm ET."},
+    {home:"Toronto Blue Jays",     away:"Philadelphia Phillies",start_time:"2026-06-09T00:07:00Z", confirmed:true, venue:"Rogers Centre, Toronto ON"},
+    {home:"Los Angeles Angels",    away:"Houston Astros",       start_time:"2026-06-09T00:38:00Z", confirmed:true, venue:"Angel Stadium, Anaheim CA"},
+    {home:"San Diego Padres",      away:"Cincinnati Reds",      start_time:"2026-06-09T00:40:00Z", confirmed:true, venue:"Petco Park, San Diego CA"},
+    {home:"San Francisco Giants",  away:"Washington Nationals", start_time:"2026-06-09T00:45:00Z", confirmed:true, venue:"Oracle Park, San Francisco CA"},
+    {home:"Athletics",             away:"Milwaukee Brewers",    start_time:"2026-06-09T01:05:00Z", confirmed:true, venue:"Las Vegas Ballpark, Las Vegas NV", matchupNote:"A's hosting at Las Vegas Ballpark (temp home Jun 8-10 vs MIL)."},
   ];
   // Phase 2: build overlay map from field-data-today.json game_overlays
   const _mlbOverlayMap = {};
