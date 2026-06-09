@@ -4,7 +4,7 @@ const { chromium } = require('@playwright/test');
 const fs = require('fs');
 const path = require('path');
 
-const FIELD_URL = process.env.FIELD_URL || 'https://jubilant-bassoon.jeffunglesbee.workers.dev';
+const FIELD_URL = (process.env.FIELD_URL || 'https://jubilant-bassoon.jeffunglesbee.workers.dev') + '?wpt';
 const VIEWPORTS = [
   { name: 'mobile',  width: 390,  height: 844 },
   { name: 'tablet',  width: 820,  height: 1180 },
