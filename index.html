@@ -21499,6 +21499,18 @@ function buildCompoundPrompt(sections) {
       // Stat of Day
       (()=>{ try { if(!isScoutsPick(g)) return ''; const s=getStatOfDay(g,g._sport||g._section||''); return s ? `  [FEATURED STAT] ${s.fullText}` : ''; } catch(e_){return '';} })(),
       g.matchupNote ? `  Context: ${g.matchupNote}` : '',
+      // Gap D: MD3 final-matchday simultaneous kickoff injection (Jun 10 2026)
+      // Relay cron path handles this in buildWCTeamContextBlock; client on-demand path did not.
+      // Detection: /MD3\b/.test(g.league) — present in all wc26Raw MD3 league strings.
+      // Group letter extracted from league string: "FIFA World Cup 2026 — Group B · MD3" → "B".
+      (()=>{
+        try {
+          if (!/MD3\b/.test(g.league||'')) return '';
+          const gMatch = (g.league||'').match(/Group\s+([A-L])\b/i);
+          const grp = gMatch ? gMatch[1].toUpperCase() : '?';
+          return `  [FINAL MATCHDAY] Both Group ${grp} games kick off simultaneously (FIFA anti-collusion rule). Neither team knows the other group result while playing. Top 2 advance automatically. 3rd place may advance as one of the 8 best third-place teams across all 12 groups.`;
+        } catch(_) { return ''; }
+      })(),
       standingsCtx ? `  ${standingsCtx}` : '',
       arcType ? `  Arc: ${arcType.toUpperCase()}` : '',
       bni ? `  [BNI: ${bni.replace(/-/g,' ').toUpperCase()}]` : '',

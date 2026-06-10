@@ -2952,6 +2952,11 @@ assert('A438b — WC badge second-line layout: wc-sb-line class and wrap() defin
   html.includes('.wc-sb-line') && html.includes('display:block') && html.includes('const wrap ='),
   'wc-sb-line CSS + wrap() helper required for second-line badge layout (v1.7)');
 
+// Gap D: MD3 simultaneous kickoff in buildCompoundPrompt
+assert('A438c — Gap D: MD3 FINAL MATCHDAY tag injected in buildCompoundPrompt',
+  html.includes('[FINAL MATCHDAY]') && html.includes('MD3\\b') && html.includes('anti-collusion'),
+  'buildCompoundPrompt must inject [FINAL MATCHDAY] for WC MD3 games (Gap D)');
+
 // v1.3.1 — real played[] from /wc/results relay endpoint
 assert('A439 — Permutations Engine v1.3.1: relay /wc/results handler defined',
   /async\s+function\s+handleWCResults\s*\(/.test(fieldUtilsSrc.length ? '' : '') || true, // relay-side; checked via relay src separately
