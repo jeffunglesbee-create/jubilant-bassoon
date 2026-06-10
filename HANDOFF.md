@@ -1,39 +1,28 @@
-# FIELD HANDOFF — 2026-06-10 (Bottom Sheet Polish)
+# FIELD HANDOFF — 2026-06-10 (NBA Player Clutch Live Data)
 
 ## HEADS
-- jubilant-bassoon HEAD: af1d1f3
+- jubilant-bassoon HEAD: 65a234b
 - SW_VERSION: 2026-06-10a
-- Smoke: 560/0
+- Smoke: 562/0
 - field-relay-nba HEAD: e9a282d
 
-## WHAT SHIPPED (af1d1f3)
+## WHAT SHIPPED (65a234b)
 
-### Bottom sheet native polish
-Three items shipped together (swipe-dismiss, drag handle, focus trap):
+### NBA player clutch live data
+nbaPlayerCluichInit() at T+4750ms.
+Verified: /nba-stats/leaguedashplayerclutch → HTTP 200 (June 10 2026).
+Patches all 7 [VERIFY playoffs 2026] entries in NBA_CLUTCH_PLAYERS.
+Match: lastName + TEAM_ABBREVIATION (collision-safe).
+Filter: GP >= 3 (noise removal).
+Marks patched entries with _live = true.
+Preserves editorial note field.
 
-Swipe-to-dismiss:
-  initBottomSheetSwipe() called at DOMContentLoaded.
-  Engages when touch starts on handle OR content scrollTop <= 0 + downward swipe.
-  Overlay dims proportionally during drag.
-  Dismiss: delta > 90px OR velocity > 0.6px/ms.
-  Snap-back when threshold not met.
-
-Drag handle:
-  .bs-handle-row sticky at sheet top with 38×4px pill affordance.
-  aria-hidden (decorative). touch-action:none prevents system interference.
-  Brightens on press (rgba .22 → .45).
-
-Focus trap:
-  aria-modal="true" + aria-label="Game details" on sheet.
-  Escape closes. Tab cycles and wraps at boundaries.
-  First focusable element receives focus after sheet open animation (290ms).
-
-smoke: 560/0
+Result: [CLUTCH] journalism tag for NYK/SAS Finals now uses real 2026 playoff data.
 
 ## UPDATED PRIORITY LIST
 
-1. WC bracket render        (before June 27, ~17 days)
-2. Series dots 6a           (~40 lines, SCF is live)
+1. WC bracket render        (before June 27)
+2. Series dots 6a           (~40 lines, SCF live)
 3. Arc sparkline SVG 6b     (~25 lines)
 4. WHOLE FIELD toggle 6c    (~30 lines)
 5. Night Owl amnesty arc 6d (~20 lines)
@@ -44,7 +33,8 @@ smoke: 560/0
 10. ADR-002 attorney consult
 11. nflverse client wiring  (September)
 
-Bottom sheet polish (swipe, handle, focus trap): COMPLETE ✅
+Bottom sheet polish: ✅ DONE
+NBA individual player clutch: ✅ DONE
 
 ## SMOKE
-560/0
+562/0
