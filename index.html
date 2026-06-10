@@ -6733,10 +6733,12 @@ async function nhlSeriesInit() {
     // Overlay series-adjusted rates onto NHL_SPECIAL_TEAMS
     for (const [abbr, s] of Object.entries(teams)) {
       if (!NHL_SPECIAL_TEAMS[abbr]) NHL_SPECIAL_TEAMS[abbr] = {};
-      if (s.seriesPP != null) NHL_SPECIAL_TEAMS[abbr]._seriesPP = s.seriesPP;
-      if (s.seriesPK != null) NHL_SPECIAL_TEAMS[abbr]._seriesPK = s.seriesPK;
-      if (s.ppLabel)  NHL_SPECIAL_TEAMS[abbr]._ppLabel  = s.ppLabel;
-      if (s.pkLabel)  NHL_SPECIAL_TEAMS[abbr]._pkLabel  = s.pkLabel;
+      if (s.seriesPP != null) NHL_SPECIAL_TEAMS[abbr]._seriesPP  = s.seriesPP;
+      if (s.seriesPK != null) NHL_SPECIAL_TEAMS[abbr]._seriesPK  = s.seriesPK;
+      if (s.seriesPDO!= null) NHL_SPECIAL_TEAMS[abbr]._seriesPDO = s.seriesPDO;
+      if (s.ppLabel)  NHL_SPECIAL_TEAMS[abbr]._ppLabel   = s.ppLabel;
+      if (s.pkLabel)  NHL_SPECIAL_TEAMS[abbr]._pkLabel   = s.pkLabel;
+      if (s.pdoLabel) NHL_SPECIAL_TEAMS[abbr]._pdoLabel  = s.pdoLabel;
     }
     _nhlSeriesLoaded = true;
     if (FIELD_DEBUG) console.log('[FIELD] NHL series stats loaded:', Object.keys(teams));
@@ -15167,10 +15169,12 @@ function getNHLEffectiveST(abbrev) {
   if (!st) return null;
   return {
     ...st,
-    effectivePP: st._seriesPP != null ? st._seriesPP : st.pp,
-    effectivePK: st._seriesPK != null ? st._seriesPK : st.pk,
-    ppContext: st._ppLabel || `${st.pp}% PP (season)`,
-    pkContext: st._pkLabel || `${st.pk}% PK (season)`,
+    effectivePP:  st._seriesPP  != null ? st._seriesPP  : st.pp,
+    effectivePK:  st._seriesPK  != null ? st._seriesPK  : st.pk,
+    seriesPDO:    st._seriesPDO ?? null,
+    ppContext:    st._ppLabel   || `${st.pp}% PP (season)`,
+    pkContext:    st._pkLabel   || `${st.pk}% PK (season)`,
+    pdoContext:   st._pdoLabel  || null,
     isSeries: st._seriesPP != null,
   };
 }
