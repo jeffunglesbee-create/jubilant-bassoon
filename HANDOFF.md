@@ -1,23 +1,43 @@
-# FIELD HANDOFF — 2026-06-10 (NBA Player Clutch Live Data)
+# FIELD HANDOFF — 2026-06-10 (MLB Pitching Edge)
 
 ## HEADS
-- jubilant-bassoon HEAD: 65a234b
+- jubilant-bassoon HEAD: 6d278b3
 - SW_VERSION: 2026-06-10a
-- Smoke: 562/0
-- field-relay-nba HEAD: e9a282d
+- Smoke: 564/0
+- field-relay-nba HEAD: 73c5e6a
 
-## WHAT SHIPPED (65a234b)
+## WHAT SHIPPED
 
-### NBA player clutch live data
-nbaPlayerCluichInit() at T+4750ms.
-Verified: /nba-stats/leaguedashplayerclutch → HTTP 200 (June 10 2026).
-Patches all 7 [VERIFY playoffs 2026] entries in NBA_CLUTCH_PLAYERS.
-Match: lastName + TEAM_ABBREVIATION (collision-safe).
-Filter: GP >= 3 (noise removal).
-Marks patched entries with _live = true.
-Preserves editorial note field.
+### MLB probable pitcher signals (jubilant-bassoon 62b5e26, relay 73c5e6a)
 
-Result: [CLUTCH] journalism tag for NYK/SAS Finals now uses real 2026 playoff data.
+Novel hook: the starting pitcher is baseball's highest-leverage individual.
+FIELD's MLB signals were all venue/officiating level. This adds the missing
+third pillar: PITCHING.
+
+Verification:
+  statsapi.mlb.com/api/v1/schedule HTTP 200 from CF Workers.
+  /mlb-stats/people/{id}/stats HTTP 200 through relay.
+  /schedule added to MLB_STATS_API_ALLOWED_PREFIXES (relay 73c5e6a).
+  Rodón's actual 2026 stats retrieved: ERA 2.88, K/9 9.72, WHIP 1.20.
+
+Architecture:
+  Two-phase: mlbProbablePitcherInit (T+4100ms) + mlbPitcherStatsInit (T+4300ms).
+  Phase 1: schedule call → pitcher IDs keyed by home team name.
+  Phase 2: parallel stats calls for all tonight's unique pitcher IDs.
+  getStatOfDay() reads synchronously from completed cache.
+
+Three new signals:
+  Ace signal: ERA <= 3.00 AND gamesStarted >= 4
+    Badge: "Rodón 2.88 ERA"
+  ERA differential: gap >= 1.20 between starters
+    Badge: "ERA edge 2.88 vs 4.51"
+  Strikeout artist: K/9 >= 10.0
+    Badge: "Cole 10.8 K/9"
+
+MLB three-pillar signal architecture now complete:
+  VENUE:       park factor
+  OFFICIATING: umpire ABS + K-rate bias
+  PITCHING:    probable starter edge [NEW]
 
 ## UPDATED PRIORITY LIST
 
@@ -33,8 +53,9 @@ Result: [CLUTCH] journalism tag for NYK/SAS Finals now uses real 2026 playoff da
 10. ADR-002 attorney consult
 11. nflverse client wiring  (September)
 
-Bottom sheet polish: ✅ DONE
-NBA individual player clutch: ✅ DONE
+Bottom sheet polish: ✅
+NBA player clutch live:  ✅
+MLB pitching edge hook:  ✅
 
 ## SMOKE
-562/0
+564/0
