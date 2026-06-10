@@ -25481,6 +25481,94 @@ function toggleWCView() {
 }
 
 // Entry point — called by toggleWCView
+// ── WC Journalism Tab Brief ───────────────────────────────────────────────────
+// AI-generated preview injected above #wc-groups in the WC tab.
+// Enqueues to relay journalism pipeline (which already has full WC team context
+// from wc-team-context.js) — zero extra context work needed client-side.
+// Cache: sessionStorage by date so it regenerates each day.
+// Pattern: same enqueue+poll as Finals Desk (b9cd159).
+async function fetchWCTabBrief(wcGames) {
+  if (!wcGames || !wcGames.length || !JOURNALISM_ENQUEUE_RELAY) return null;
+  const dateKey = TODAY_ISO || new Date().toISOString().slice(0, 10);
+  const cacheKey  = `field_wc_tab_brief_v${_swv}_${dateKey}`;
+  const jobIdKey  = `field_wc_tab_job_v${_swv}_${dateKey}`;
+  // 1. Cached text → return immediately
+  try {
+    const cached = sessionStorage.getItem(cacheKey);
+    if (cached && cached.length > 60) return cached;
+  } catch(e_) {}
+  // 2. Build game summary for prompt (team names + kickoff times only)
+  const gameLines = wcGames.slice(0, 4).map(g => {
+    const t = g.start_time ? fmtTime(g.start_time) : 'TBD';
+    const net = g.nationalBundle === 'WC26_FREE' ? 'FOX/Tubi FREE'
+              : g.nationalBundle === 'WC26_FS1'  ? 'FS1'
+              : g.nationalBundle === 'WC26_FOX'  ? 'FOX'
+              : 'FOX/FS1';
+    const league = (g.league || '').replace('FIFA World Cup 2026 — ', '').replace('FIFA World Cup 2026', 'Group Stage');
+    return `${g.away} vs ${g.home} · ${t} ET · ${net} · ${league}`;
+  });
+  // 3. Check for in-flight job
+  let jobId = null;
+  try { jobId = sessionStorage.getItem(jobIdKey); } catch(e_) {}
+  if (!jobId) {
+    // 4. Enqueue — relay injects WC team context at prompt time
+    try {
+      const prompt = [
+        'Write a FIELD World Cup Today brief for the group stage action below.',
+        '',
+        'TODAY’S MATCHES:',
+        ...gameLines.map(l => '- ' + l),
+        '',
+        'Rules:',
+        '- 60-80 words. 1-2 short paragraphs. No headers. No bullet points.',
+        '- Lead with the most interesting matchup or storyline across today’s slate.',
+        '- Name specific teams and what’s at stake (advancement, elimination, Group rivalry).',
+        '- Note any free broadcasts (Tubi/FOX) if relevant to fan access.',
+        '- Plain prose. Write like a well-prepared friend explaining what to watch today.',
+        '- CORRECTNESS: write only from match data above + your knowledge of these teams.',
+        '- Never use: "must-watch", "clash", "showdown", "battle", "epic".',
+      ].join('\n');
+      const eq = await fetch(JOURNALISM_ENQUEUE_RELAY, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          prompt,
+          sport: 'soccer',
+          briefType: 'wc-tab-brief',
+          max_tokens: 350,
+          scoreThreshold: 110,
+        }),
+      });
+      if (eq.ok) {
+        const data = await eq.json();
+        if (data.jobId) {
+          try { sessionStorage.setItem(jobIdKey, data.jobId); } catch(e_) {}
+          jobId = data.jobId;
+        }
+      }
+    } catch(e_) {}
+  }
+  // 5. Poll for result (max 20s)
+  if (jobId && JOURNALISM_RESULT_RELAY) {
+    for (let i = 0; i < 10; i++) {
+      await new Promise(r => setTimeout(r, 2000));
+      try {
+        const pr = await fetch(`${JOURNALISM_RESULT_RELAY}/${jobId}`,
+          {signal: AbortSignal.timeout(3000)});
+        if (!pr.ok) continue;
+        const result = await pr.json();
+        if (result.status === 'done' && result.text && result.text.length > 40) {
+          try { sessionStorage.setItem(cacheKey, result.text); } catch(e_) {}
+          try { sessionStorage.removeItem(jobIdKey); } catch(e_) {}
+          return result.text;
+        }
+        if (result.status === 'failed') break;
+      } catch(e_) {}
+    }
+  }
+  return null;
+}
+
 async function renderWCSection() {
   const phase = getWCPhase();
   // Update title + label
@@ -25510,6 +25598,26 @@ async function renderWCSection() {
     fetchWCOddsProbabilities(),
     fetchWCLiveGames(),
   ]);
+  // Fetch WC journalism tab brief in parallel with the group data
+  // WC games from allData provide game list; relay supplies team context
+  const wcGames = allData ? (allData.sports || [])
+    .filter(s => (s.sport||'').includes('FIFA'))
+    .flatMap(s => s.games || []) : [];
+  // Fire async — inject when ready (doesn't block group table render)
+  fetchWCTabBrief(wcGames).then(brief => {
+    if (!brief) return;
+    const el = _DOM?.wcGroups || document.getElementById('wc-groups');
+    if (!el) return;
+    // Find or create the preview header above the first group block
+    let hdr = el.querySelector('.wc-preview-header');
+    if (!hdr) {
+      hdr = document.createElement('div');
+      hdr.className = 'wc-preview-header';
+      el.prepend(hdr);
+    }
+    hdr.innerHTML = `<p class="wc-preview-intro">${brief}</p>`;
+  }).catch(() => {});
+
   if (!standings || Object.keys(standings).length === 0) {
     renderWCGroupsEmpty();
   } else {

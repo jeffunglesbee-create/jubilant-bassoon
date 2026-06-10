@@ -2957,6 +2957,12 @@ assert('A438c — Gap D: MD3 FINAL MATCHDAY tag injected in buildCompoundPrompt'
   html.includes('[FINAL MATCHDAY]') && html.includes('MD3\\b') && html.includes('anti-collusion'),
   'buildCompoundPrompt must inject [FINAL MATCHDAY] for WC MD3 games (Gap D)');
 
+// WC journalism tab brief
+assert('A438v — WC journalism tab brief: fetchWCTabBrief defined and wired',
+  html.includes('function fetchWCTabBrief(') && html.includes('wc-tab-brief') &&
+  html.includes('field_wc_tab_brief_v') && html.includes('fetchWCTabBrief(wcGames)'),
+  'WC journalism tab brief must be defined and wired into renderWCSection');
+
 // Scout's Pick architectural rebuild (items 1-5)
 assert('A438e — Scout Pick item 1: NBA DRTG + NHL FO% in getStatOfDay',
   html.includes('leagueAvgDrtg') && html.includes('foDiff') && html.includes('FO%'),
