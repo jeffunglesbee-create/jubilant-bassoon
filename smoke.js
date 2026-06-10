@@ -2976,6 +2976,25 @@ assert('A438h — Scout Pick item 4: Desk Card 4 single editorial pick',
   html.includes('totalPicks') && html.includes('+${totalPicks-1} more qualifying'),
   'Desk Card 4 must use editorial single-pick model via buildSlateScoutsPick');
 
+// Night Owl expansion (items 1-4)
+assert('A438k — Night Owl item 1: getStatOfDay injected into _owlStatCtx',
+  html.includes('[PRE-GAME STAT EDGE]') && html.includes('_owlSd?.fullText'),
+  'Night Owl must inject getStatOfDay result as [PRE-GAME STAT EDGE] tag');
+
+assert('A438l — Night Owl item 2: enriched Scout Pick localStorage payload',
+  html.includes('statShort') && html.includes('statFull') && html.includes('wc-stakes') &&
+  html.includes('_spStatFull') && html.includes('_spSignalDesc'),
+  'Scout Pick localStorage must store statShort/statFull/gate; Night Owl must read statFull for verdict');
+
+assert('A438m — Night Owl item 3: Queue enqueue in saveEspnFinal + poll in renderNightOwlRecap',
+  html.includes('field_owl_job_v') && html.includes('_owlQueueKey') &&
+  html.includes('briefType: \'night-owl\'') && html.includes('JOURNALISM_RESULT_RELAY'),
+  'Night Owl must enqueue in saveEspnFinal and poll Queue result in renderNightOwlRecap');
+
+assert('A438n — Night Owl item 4: WC context in Night Owl stat block',
+  html.includes('[WC ADVANCEMENT]') && html.includes('_isWCOwl') && html.includes('WC_TEAM_CONTEXT'),
+  'Night Owl must inject WC team context and advancement consequence for WC games');
+
 assert('A438j — Scout Pick item 6: stat integrated into badge text (Option B)',
   html.includes("Scout's Pick: \${_spStatLine}") && html.includes('Stat of Day badge suppressed'),
   'Scout Pick badge must fold stat into badge text, suppressing separate stat-day-badge');

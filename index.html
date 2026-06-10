@@ -11695,9 +11695,25 @@ function injectJ1J4Badges() {
       try {
         const _spKey = 'field_scout_pick_' + (g._id || '');
         if (!localStorage.getItem(_spKey)) {
+          // Capture qualifying gate and stat evidence so Night Owl verdict is specific.
+          // Gate C (stat anomaly) carries shortText/fullText for "graded on delivery of X" framing.
+          let _spGate = g.seriesRecord ? 'series'
+            : /playoff|final/i.test(g.league||'') ? 'playoff'
+            : /MD[23]\b/.test(g.league||'') ? 'wc-stakes'
+            : 'stat-anomaly';
+          let _spStatShort = '', _spStatFull = '';
+          try {
+            const _spSd = (typeof getStatOfDay === 'function')
+              ? getStatOfDay(g, sec?.sport || g._sport || '') : null;
+            if (_spSd) { _spStatShort = _spSd.shortText; _spStatFull = _spSd.fullText; }
+            // Refine gate label when stat anomaly is the primary signal
+            if (!g.seriesRecord && !/playoff|final/i.test(g.league||'') && _spStatShort) _spGate = 'stat-anomaly';
+          } catch(e_) {}
           localStorage.setItem(_spKey, JSON.stringify({
             home: g.home||'', away: g.away||'',
-            signal: g.seriesRecord ? 'series' : /playoff|final/i.test(g.league||'') ? 'playoff' : 'milestone',
+            signal: _spGate,
+            statShort: _spStatShort,
+            statFull:  _spStatFull,
             t: Date.now(),
           }));
         }
@@ -29617,6 +29633,61 @@ function saveEspnFinal(game, eData){
     existing.push(entry);
     localStorage.setItem(FINALS_KEY, JSON.stringify(existing.slice(-20)));
     localStorage.setItem(FINALS_DATE_KEY, today);
+    // Item 3: enqueue Night Owl brief as soon as game goes final.
+    // Result lands in relay KV before user opens the owl card.
+    // renderNightOwlRecap polls the job key and injects without waiting on a
+    // synchronous fetchNightOwlFromClaude call in the render path.
+    // Only enqueues when relay Queue endpoint is available and margin is not a blowout.
+    try {
+      const _owlFinalMargin = Math.abs((eData.homeScore||0) - (eData.awayScore||0));
+      if (JOURNALISM_ENQUEUE_RELAY && _owlFinalMargin <= 20) {
+        const _owlQueueSwV = typeof SW_VERSION !== 'undefined' ? SW_VERSION : '0';
+        const _owlQueueKey = 'field_owl_job_v' + _owlQueueSwV + '_' + id;
+        const _owlBriefKey = 'field_nightowl_v' + _owlQueueSwV + '_' + id;
+        // Only enqueue if no cached brief and no pending job
+        const alreadyHasBrief = (() => { try { return !!sessionStorage.getItem(_owlBriefKey); } catch(e_) { return false; } })();
+        const alreadyQueued   = (() => { try { return !!sessionStorage.getItem(_owlQueueKey); } catch(e_) { return false; } })();
+        if (!alreadyHasBrief && !alreadyQueued) {
+          // Build a minimal prompt from the entry data — full context added by
+          // fetchNightOwlFromClaude when it runs as fallback, but queue gives us
+          // a head start using the stat snapshot already in entry.statCtx.
+          const _owlQ_sp = (game._sport || game.league || '').toLowerCase();
+          const _owlQ_winner = (eData.awayScore||0) > (eData.homeScore||0) ? game.away : game.home;
+          const _owlQ_margin = _owlFinalMargin;
+          const _owlQ_unit = (_owlQ_sp.includes('baseball')||_owlQ_sp.includes('mlb')) ? 'run'
+            : (_owlQ_sp.includes('hockey')||_owlQ_sp.includes('nhl')||_owlQ_sp.includes('soccer')) ? 'goal'
+            : 'point';
+          const _owlQ_prompt = [
+            'Write a FIELD Night Owl recap.',
+            `Game: ${game.away||'?'} @ ${game.home||'?'}`,
+            `Final: ${eData.awayScore}–${eData.homeScore} (${_owlQ_winner} wins)`,
+            `MARGIN: ${_owlQ_margin}-${_owlQ_unit}${_owlQ_margin===1?'':'s'} (winner ${_owlQ_winner})`,
+            game.seriesRecord ? 'Series: ' + game.seriesRecord : '',
+            game.matchupNote ? 'Matchup: ' + game.matchupNote : '',
+            entry.statCtx || '',
+            '',
+            'Rules: 80-100 words. Tactical. Not emotional. Lead with the turning point.',
+            'Write only from data above — never invent statistics or play-by-play.',
+            'CRITICAL — DO NOT FABRICATE SPECIFICS: no specific inning/quarter/at-bat details unless in stat context above.',
+          ].filter(Boolean).join('\n');
+          fetch(JOURNALISM_ENQUEUE_RELAY, {
+            method: 'POST',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({
+              prompt: _owlQ_prompt,
+              sport: game._sport || '',
+              briefType: 'night-owl',
+              max_tokens: 600,
+              scoreThreshold: 120,
+            }),
+          }).then(r => r.ok ? r.json() : null).then(data => {
+            if (data?.jobId) {
+              try { sessionStorage.setItem(_owlQueueKey, data.jobId); } catch(e_) {}
+            }
+          }).catch(() => {});
+        }
+      }
+    } catch(e_) {}
     // Write to both ET and UTC tonight-finals keys so loadTonightFinals finds it
     // even when ET date (save time) ≠ ET date (read time) across midnight boundary.
     for(const dateKey of [etToday, utcToday]){
@@ -29853,6 +29924,52 @@ async function fetchNightOwlFromClaude(topGame){
     } catch(e_) {}
   } catch(e_) {}
 
+  // Item 4: WC-specific stat context for Night Owl
+  // Advancement consequence + pre-loaded team context from WC_TEAM_CONTEXT.
+  try {
+    const _isWCOwl = /wc26|world cup|fifa/i.test(_sp);
+    if (_isWCOwl) {
+      // Team narrative context (manager, key players, historical note) from WC_TEAM_CONTEXT
+      // Same data used in buildCompoundPrompt — surfaces the team story in the recap.
+      const _wcCtxLines = [];
+      for (const teamName of [topGame.home, topGame.away]) {
+        if (!teamName) continue;
+        const code = typeof WC_NAME_TO_CODE !== 'undefined' ? WC_NAME_TO_CODE[teamName] : null;
+        const ctx  = code && typeof WC_TEAM_CONTEXT !== 'undefined' ? WC_TEAM_CONTEXT[code] : null;
+        if (ctx?.narrativeNote) _wcCtxLines.push(`  [WC: ${ctx.displayName}] ${ctx.narrativeNote}`);
+        if (ctx?.guardrail)     _wcCtxLines.push(`  [WC GUARDRAIL: ${ctx.displayName}] ${ctx.guardrail}`);
+      }
+      if (_wcCtxLines.length) {
+        _owlStatCtx += (_owlStatCtx ? '\n' : '') + _wcCtxLines.join('\n');
+      }
+      // Advancement consequence from WC scenario data (if WC tab has been opened)
+      try {
+        const _gMatch = (topGame.league||'').match(/Group\s+([A-L])\b/i);
+        const _grp = _gMatch ? _gMatch[1].toUpperCase() : null;
+        if (_grp && typeof _wcComputeAllScenarios === 'function') {
+          // Attempt to read cached scenario data — only available if WC tab was opened
+          const _cachedScenarios = window._wcScenariosCache;
+          if (_cachedScenarios?.perGroup?.[_grp]) {
+            const _ptHome = _cachedScenarios.perGroup[_grp].perTeam?.[topGame.home];
+            const _ptAway = _cachedScenarios.perGroup[_grp].perTeam?.[topGame.away];
+            const _advLines = [];
+            if (_ptHome) {
+              if (_ptHome.alwaysQualify) _advLines.push(`${topGame.home}: QUALIFIED for Round of 32`);
+              else if (_ptHome.alwaysEliminated) _advLines.push(`${topGame.home}: ELIMINATED from tournament`);
+            }
+            if (_ptAway) {
+              if (_ptAway.alwaysQualify) _advLines.push(`${topGame.away}: QUALIFIED for Round of 32`);
+              else if (_ptAway.alwaysEliminated) _advLines.push(`${topGame.away}: ELIMINATED from tournament`);
+            }
+            if (_advLines.length) {
+              _owlStatCtx += (_owlStatCtx ? '\n' : '') + '  [WC ADVANCEMENT] ' + _advLines.join(' · ');
+            }
+          }
+        }
+      } catch(e_) {}
+    }
+  } catch(e_) {}
+
   // Drama narrative context — all three postgame drama metrics + arc + score sequence
   let _owlDramaPromptCtx = '';
   try {
@@ -29880,7 +29997,19 @@ async function fetchNightOwlFromClaude(topGame){
     if (_scoreNarr) _owlDramaPromptCtx += (_owlDramaPromptCtx ? '\n' : '') + '  ' + _scoreNarr;
   } catch(e_) {}
 
-  // Scout's Pick: check if this game was pre-designated as under-the-radar
+  // Item 1: getStatOfDay into _owlStatCtx — pre-game anomaly survives to postgame recap.
+  // The stat that made this a Scout's Pick (CAR's 93.5% PK%) should appear in the
+  // Night Owl verdict — did the edge actually show up? Added after other stat context.
+  try {
+    const _owlSd = (typeof getStatOfDay === 'function')
+      ? getStatOfDay(topGame, _sp) : null;
+    if (_owlSd?.fullText) {
+      _owlStatCtx += (_owlStatCtx ? '\n' : '') + `  [PRE-GAME STAT EDGE] ${_owlSd.fullText}`;
+    }
+  } catch(e_) {}
+
+  // Scout's Pick: check if this game was pre-designated as under-the-radar.
+  // Item 2: read enriched payload (statShort + statFull + gate) so verdict is specific.
   let _owlScoutPickCtx = '';
   try {
     const _gidSP = topGame.id || topGame._id || '';
@@ -29888,10 +30017,18 @@ async function fetchNightOwlFromClaude(topGame){
     const _spRaw = localStorage.getItem(_spKey);
     if (_spRaw) {
       const _spData = JSON.parse(_spRaw);
-      const _spSignal = _spData.signal === 'series' ? 'playoff series stakes'
-        : _spData.signal === 'playoff' ? 'playoff importance'
-        : 'milestone proximity';
-      _owlScoutPickCtx = `  [SCOUT'S PICK PREDICTION: This game was flagged pre-game as an under-the-radar pick based on ${_spSignal}. End your recap with one sentence grading delivery — did it live up to the hidden-gem recommendation?]`;
+      // Build signal description — use stored stat if available, else gate label
+      let _spSignalDesc = '';
+      if (_spData.statFull) {
+        _spSignalDesc = `the stat edge: ${_spData.statFull}`;
+      } else if (_spData.signal === 'series') {
+        _spSignalDesc = 'playoff series stakes';
+      } else if (_spData.signal === 'playoff' || _spData.signal === 'wc-stakes') {
+        _spSignalDesc = 'elimination/advancement stakes';
+      } else {
+        _spSignalDesc = 'analytical signal (not on national TV)';
+      }
+      _owlScoutPickCtx = `  [SCOUT'S PICK PREDICTION: This game was flagged pre-game based on ${_spSignalDesc}. End your recap with one sentence grading delivery — did the pre-game edge prove decisive? Write "Delivered" or "Fell short" and one specific reason. Never echo tag text verbatim.]`;
     }
   } catch(_) {}
 
@@ -31344,7 +31481,34 @@ async function renderNightOwlRecap(){
     const textEl = el.querySelector('.night-owl-text');
     if (textEl) { textEl.classList.remove('pending'); textEl.classList.add('loaded'); }
   } else {
-    const claudeText=await fetchNightOwlFromClaude(topGame);
+    // Item 3 Part B: check if a Queue job was pre-enqueued when game went final.
+    // Poll the relay result endpoint first (fast if job already done).
+    // Falls back to fetchNightOwlFromClaude (full prompt with live context).
+    let claudeText = null;
+    const _owlQueueSwV2 = typeof SW_VERSION !== 'undefined' ? SW_VERSION : '0';
+    const _owlQueueKey2 = 'field_owl_job_v' + _owlQueueSwV2 + '_' + (topGame.id||topGame._id||'');
+    const _owlJobId = (() => { try { return sessionStorage.getItem(_owlQueueKey2); } catch(e_) { return null; } })();
+    if (_owlJobId && JOURNALISM_RESULT_RELAY) {
+      // Poll up to 3 times (6s) — job was enqueued at game-final so likely already done
+      for (let _i = 0; _i < 3; _i++) {
+        try {
+          const _pr = await fetch(`${JOURNALISM_RESULT_RELAY}/${_owlJobId}`,
+            {signal: AbortSignal.timeout(3000)});
+          if (_pr.ok) {
+            const _result = await _pr.json();
+            if (_result.status === 'done' && _result.text && _result.text.length > 40) {
+              claudeText = _result.text;
+              try { sessionStorage.removeItem(_owlQueueKey2); } catch(e_) {}
+              break;
+            }
+            if (_result.status === 'failed') break;
+          }
+        } catch(e_) {}
+        if (_i < 2) await new Promise(r => setTimeout(r, 2000));
+      }
+    }
+    // Fallback: full-context fetchNightOwlFromClaude (live box scores, linescore, etc.)
+    if (!claudeText) claudeText = await fetchNightOwlFromClaude(topGame);
     if(claudeText){const textEl=el.querySelector('.night-owl-text');if(textEl){textEl.textContent=trimToCompleteSentence(claudeText);textEl.classList.remove('pending');textEl.classList.add('loaded');}sessionStorage.setItem(cacheKey,claudeText);}
     else{const textEl=el.querySelector('.night-owl-text');if(textEl){textEl.classList.remove('pending');textEl.classList.add('loaded');}}
   }
