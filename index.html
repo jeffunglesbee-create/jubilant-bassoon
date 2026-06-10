@@ -2128,7 +2128,8 @@ body.journalism-mode #field-journalism-section{animation:jrnFadeIn 220ms ease-ou
 .wc-row--maybe td:first-child{border-left:2px solid rgba(201,168,76,.5)}
 .wc-row--maybe{border-top:1px dashed rgba(255,255,255,.1)}
 .wc-row--out{opacity:.65}
-.wc-sb{display:inline-block;font-size:.7rem;padding:1px 5px;border-radius:8px;margin-left:5px;font-variant-numeric:tabular-nums;font-weight:600;letter-spacing:.02em;vertical-align:middle}
+.wc-sb-line{display:block;margin-top:1px;line-height:1.3}
+.wc-sb{display:inline-block;font-size:.7rem;padding:1px 5px;border-radius:8px;margin-left:0;font-variant-numeric:tabular-nums;font-weight:600;letter-spacing:.02em;vertical-align:middle}
 .wc-sb--safe{background:rgba(74,222,128,.18);color:#4ade80}
 .wc-sb--out{background:rgba(239,68,68,.18);color:#ef4444}
 .wc-sb--maybe{background:rgba(201,168,76,.18);color:#c9a84c}
@@ -25478,32 +25479,37 @@ function _wcScenarioBadge(teamName, groupId, scenarios) {
   if (!scenarios || !scenarios.perGroup || !scenarios.perGroup[groupId]) return '';
   const teamInfo = scenarios.perGroup[groupId].perTeam[teamName];
   if (!teamInfo) return '';
-  // v1.6 — bracket implication helper (only shown when position is certain or dominant)
+  // v1.7 — badges render on a second line below the team name (avoids overflow on long names)
+  // Wrap return value in <div class="wc-sb-line"> which is display:block with no left margin.
+  const wrap = (inner) => `<div class="wc-sb-line">${inner}</div>`;
+  // Bracket implication helper — short form only (match number, no groups list)
   const bracketLine = (pos) => {
     const impl = typeof _wcBracketImplication === 'function'
       ? _wcBracketImplication(groupId, pos) : null;
-    return impl ? ` <span class="wc-sb--b3" title="Round of 32 path if finish ${pos === 1 ? '1st' : '2nd'}">${impl}</span>` : '';
+    if (!impl) return '';
+    // Trim to "R32 M85" — drop the " · vs 3rd from ..." portion to save space on second line
+    const short = impl.replace(/\s*·\s*vs.*$/, '');
+    return ` <span class="wc-sb--b3" title="${impl}">${short}</span>`;
   };
   if (teamInfo.alwaysTopGroup) {
-    return `<span class="wc-sb wc-sb--safe" title="Mathematically topping the group — will finish 1st">✓ 1st</span>${bracketLine(1)}`;
+    return wrap(`<span class="wc-sb wc-sb--safe" title="Mathematically topping the group — will finish 1st">✓ 1st</span>${bracketLine(1)}`);
   }
   if (teamInfo.alwaysQualify) {
-    // Qualifies but may be 1st or 2nd — show both bracket paths if different
     const b1 = typeof _wcBracketImplication === 'function' ? _wcBracketImplication(groupId, 1) : null;
     const b2 = typeof _wcBracketImplication === 'function' ? _wcBracketImplication(groupId, 2) : null;
-    const bfrag = (b1 && b2 && b1 !== b2)
-      ? ` <span class="wc-sb--b3" title="Round of 32 path varies by finishing position">1st→${b1.split('·')[1]?.trim() || ''} / 2nd→${b2.split('·')[1]?.trim() || ''}</span>`
-      : (b1 ? ` <span class="wc-sb--b3">${b1}</span>` : '');
-    return `<span class="wc-sb wc-sb--safe" title="Mathematically qualified — through regardless of remaining results">✓ Through</span>${bfrag}`;
+    const b1short = b1 ? b1.replace(/\s*·\s*vs.*$/, '') : '';
+    const b2short = b2 ? b2.replace(/\s*·\s*vs.*$/, '') : '';
+    const bfrag = (b1short && b2short && b1short !== b2short)
+      ? ` <span class="wc-sb--b3" title="R32 path varies by finish">${b1short} / ${b2short}</span>`
+      : (b1short ? ` <span class="wc-sb--b3" title="${b1}">${b1short}</span>` : '');
+    return wrap(`<span class="wc-sb wc-sb--safe" title="Mathematically qualified — through regardless of remaining results">✓ Through</span>${bfrag}`);
   }
   if (teamInfo.alwaysEliminated) {
-    return '<span class="wc-sb wc-sb--out" title="Mathematically eliminated — cannot finish top 2 or as best 3rd">✗ Out</span>';
+    return wrap('<span class="wc-sb wc-sb--out" title="Mathematically eliminated — cannot finish top 2 or as best 3rd">✗ Out</span>');
   }
   const c = teamInfo.scenarioCounts;
   const total = c.first + c.second + c.third + c.fourth;
   if (!total) return '';
-  const top2pct = Math.round((c.first + c.second) / total * 100);
-  // True P(advance) = P(top 2) + P(best-8 third-place) — shown as unified percentage
   const b3 = scenarios.best3rd && scenarios.best3rd.perTeam[teamName];
   const pB3 = b3?.pQualifyAsBest3rd ?? 0;
   const isWeighted = teamInfo.pQualifyTop2 !== null;
@@ -25517,7 +25523,7 @@ function _wcScenarioBadge(teamName, groupId, scenarios) {
   const label = hasB3Path
     ? `${pAdvPct}% adv`
     : `${Math.round(pTop2*100)}%${isWeighted ? '' : ' top 2'}`;
-  return `<span class="wc-sb wc-sb--maybe" title="${title}">${label}</span>`;
+  return wrap(`<span class="wc-sb wc-sb--maybe" title="${title}">${label}</span>`);
 }
 
 // Group block shell (used by both empty + live)

@@ -2946,6 +2946,10 @@ assert('A438 — Permutations Engine v1.3: badge CSS state classes defined',
     && html.includes('.wc-sb--maybe') && html.includes('.wc-sb--b3'),
   'CSS for scenario badges (safe/out/maybe/b3) required for visual rendering');
 
+assert('A438b — WC badge second-line layout: wc-sb-line class and wrap() defined',
+  html.includes('.wc-sb-line') && html.includes('display:block') && html.includes('const wrap ='),
+  'wc-sb-line CSS + wrap() helper required for second-line badge layout (v1.7)');
+
 // v1.3.1 — real played[] from /wc/results relay endpoint
 assert('A439 — Permutations Engine v1.3.1: relay /wc/results handler defined',
   /async\s+function\s+handleWCResults\s*\(/.test(fieldUtilsSrc.length ? '' : '') || true, // relay-side; checked via relay src separately
