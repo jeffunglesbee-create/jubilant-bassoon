@@ -9475,7 +9475,7 @@ function renderAll(){
   setTimeout(injectWeatherBadges, 300); // re-apply wx badges from cache after render
   setTimeout(renderArbitrageBar, 400);   // arbitrage bar — after schedule renders
   setTimeout(renderAmbientPanel, 1200); // ambient panel — after schedule renders
-  setTimeout(injectWikiChips, 1500);    // wiki trending chips — after cards render
+  setTimeout(() => injectWikiChips().catch(() => {}), 1500); // wiki trending chips — guard unhandled rejection
   // Runtime silent error scan — FIELD_DEBUG only, runs after async injections settle
   if(FIELD_DEBUG) setTimeout(runSilentErrorScan, 500);
   if(!window._phoneTierInit){initPhoneTier();window._phoneTierInit=true;}
@@ -19303,6 +19303,8 @@ async function fetchWikiSignificance(teamName){
     const j=await r.json();
     const items=j.items||[];
     if(items.length<2) return null;
+    // Wikimedia pageviews has a ~1 day lag — items[-1] is yesterday's actual data.
+    // "todayViews" here means "most recent available day", not strictly today.
     const todayViews=items[items.length-1]?.views||0;
     const avgViews=items.slice(0,-1).reduce((s,i)=>s+(i.views||0),0)/Math.max(items.length-1,1);
     const spikeRatio=avgViews>0?todayViews/avgViews:1;
@@ -19314,7 +19316,7 @@ async function fetchWikiSignificance(teamName){
 }
 // Inject wiki trending chips on cards after schedule renders
 async function injectWikiChips(){
-  const cards=document.querySelectorAll('.game-card[data-home],[data-away]');
+  const cards=document.querySelectorAll('.game-card[data-home][data-away]');
   for(const card of cards){
     if(card.querySelector('.wiki-chip')) continue; // already injected
     const home=card.dataset.home||'';
