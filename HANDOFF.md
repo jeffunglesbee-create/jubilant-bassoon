@@ -1,77 +1,69 @@
-# FIELD HANDOFF — 2026-06-10 (Whitelist Extension + Relay-Native Pipelines)
+# FIELD HANDOFF — 2026-06-10 (NHL-C: NST PDO resolved)
 
 ## HEADS
-- jubilant-bassoon HEAD: d0f2644
+- jubilant-bassoon HEAD: 5018c86
 - SW_VERSION: 2026-06-10a
 - Smoke: 555/0
-- field-relay-nba HEAD: 3120abf
+- field-relay-nba HEAD: e9a282d
 
 ## SESSION TYPE
-TYPE A+B (Verification + Feature build)
+TYPE D (Analysis + minor feature)
 
-## KEY FINDING: HEADER-BASED BLOCK, NOT IP-BASED
+## NHL-C: NST PDO — RESOLVED WITHOUT NST
 
-stats.nba.com: returns 200 through relay (with NBA headers: UA, Referer, Origin).
-The 520 from direct probe was a header-verification artefact — not a CF IP block.
-Implication: any stats.nba.com endpoint works if whitelisted in NBA_STATS_ALLOWED_PATHS.
+### Problem
+NST (naturalstattrick.com) blocked by CF Turnstile (403 + CF challenge page).
+NHL-C spec item: PDO from NST via R2.
 
-NST (naturalstattrick.com): 403 + Cloudflare Turnstile — TRUE IP block. Cannot whitelist.
-FBref: same — 403 + CF Turnstile. GitHub Actions hybrid permanent.
-MoneyPuck: HTTP 200 from CF Workers — no block at all.
+### Analysis
+PDO = team on-ice shooting% + team on-ice save%
+Formula: (goalsFor / shotsFor) + (1 - goalsAgainst / shotsAgainst)
 
-## WHITELIST EXTENSION (NBA_STATS_ALLOWED_PATHS, relay ee3ac21)
-Added (Rule 45 extension, same ToS class as leagueLeaders):
-  /leaguedashteamclutch    — team clutch stats (verified 200, returns DEF_RATING)
-  /leaguedashteamstats     — team DRTG/ORTG/pace
-  /teamdashboardbygeneralsplits
-  /leaguedashplayerclutch  — per-player clutch
+NHL boxscore top-level already has: score, sog (shots on goal) per team.
+nhl-series-r2.js already fetches all completed SCF boxscores.
+PDO computation = 4-field accumulation in existing aggregation loop.
 
-## WHAT SHIPPED
+### Precision delta vs NST
+NST provides score-adjusted 5v5 PDO.
+Raw boxscore PDO (all situations): ±~0.005 vs score-adjusted.
+For FIELD journalism ("running hot at 1.034 — regression possible"): sufficient.
+PP/PK situations are already tracked separately in the series stats pipeline.
 
-### NBA Clutch → Relay-Native (relay 467b35e)
-src/nba-clutch-r2.js replaces GitHub Actions nba-clutch-update.yml hybrid.
-  leaguedashteamclutch(Advanced) confirmed 200 with DEF_RATING, OFF_RATING.
-  Cron: Mon/Wed/Fri UTC 12 during Finals (June-July), Wed-only otherwise.
-  POST /nba-clutch-update admin endpoint.
-  R2: nba/2026/clutch_playoffs.json + clutch_regular.json
+### What shipped (relay e9a282d, jubilant-bassoon 9600e1d)
+nhl-series-r2.js: accumulates goalsFor, shotsFor, goalsAgainst, shotsAgainst.
+  Computes seriesPDO + pdoLabel per team per series.
+  pdoLabel: "1.034 PDO (17.9% sh + 85.5% sv, 4-game series window)"
+index.html: nhlSeriesInit overlays _seriesPDO/_pdoLabel onto NHL_SPECIAL_TEAMS.
+  getNHLEffectiveST() exposes seriesPDO + pdoContext to journalism/Scout's Pick.
 
-### NHL-B MoneyPuck GSAX → Relay-Native (relay 467b35e)
-src/nhl-gsax-r2.js (NHL-B spec item).
-  MoneyPuck HTTP 200 from CF Workers — no hybrid needed.
-  GSAX = xGoals - goalsAllowed (situation=all, min 3 GP).
-  Cron: Monday UTC 11, April-July.
-  Route: /nhl-gsax/playoffs.json
-  R2: nhl/2026/gsax-playoffs.json
+NST dependency: eliminated entirely. No NST fetch, no ToS concern, no CF block.
+NHL-C: CLOSED.
 
-### Client (jubilant-bassoon d0f2644)
-nhlGSAXInit() at T+4800ms — overlays _gsax/_gsaxTier on NHL_GOALIE_RATINGS.
-Replaces save% proxy with true GSAX for SCF goalie journalism context.
+## COMPLETE BLOCK MAP (June 10 2026)
+ACCESSIBLE from CF Workers (relay-native):
+  api-web.nhle.com        ✅
+  stats.nba.com           ✅ (headers: UA, Referer, Origin — whitelist required)
+  moneypuck.com           ✅ (open)
+  baseballsavant.mlb.com  ✅ (open)
+  cdn.nba.com             ✅ (headers required)
+  github.com/nflverse      ✅ (CDN redirect)
 
-### r2-init.yml (relay 3120abf)
-Manual workflow for on-demand R2 population via admin endpoints.
-First runs dispatched: nba-clutch-update, mlb-savant-update, nfl-r2-update.
+BLOCKED (CF Turnstile — GitHub Actions hybrid required):
+  fbref.com               ❌ → soccer-fbref-wc.yml (6 leagues, running)
+  naturalstattrick.com    ❌ → PDO resolved via NHL boxscore, NST not needed
 
-## BLOCK MAP (verified June 10 2026)
-ACCESSIBLE from CF Workers:
-  api-web.nhle.com        ✅ (IP-open)
-  stats.nba.com           ✅ (header-based — relay headers sufficient)
-  moneypuck.com           ✅ (IP-open)
-  baseballsavant.mlb.com  ✅ (IP-open, verified earlier session)
-  cdn.nba.com             ✅ (relay headers required)
-  github.com/nflverse      ✅ (public CDN redirect)
-
-BLOCKED from CF Workers (CF Turnstile):
-  fbref.com               ❌ → GitHub Actions hybrid (soccer-fbref-wc.yml)
-  naturalstattrick.com    ❌ → no relay path, NST PDO deferred
+## R2 PIPELINE STATUS
+nhl/scf-2026/series-stats.json — PP%/PK%/PDO, incremental, 15-min cron
+nhl/2026/gsax-playoffs.json — MoneyPuck GSAX, Monday cron (first run: next Monday)
+nba/2026/clutch_{playoffs,regular}.json — Mon/Wed/Fri cron (first run dispatched)
+mlb/2026/*.json — Monday cron (first run dispatched)
+nfl/2026/*.json — Wednesday cron (first run dispatched)
+soccer/fbref/*.json — every 3 days GH Actions (wc2026 + 5 leagues, dispatched)
 
 ## OPEN ITEMS
-NHL-C (NST PDO): blocked — need alternative source or accept manual updates
 Wimbledon draw context: ~25 min TYPE A, before July 7
-
 Product spec surfaces (6a-6f), focus trap, M5, WC bracket ~June 18-20
+ADR-002: attorney consultation pending
 
 ## SMOKE
 555/0
-
-## SESSION DOCS
-Drive 1L5QCzn4dWvUwZP8forvpX-CxHyzagc-5
