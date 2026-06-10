@@ -16924,9 +16924,29 @@ function resolveGameIdByHome(homeName){
 
 // Find matching ESPN score for a FIELD game object
 function findESPNScore(game){
+  // ── STALE-FINAL GUARD (June 10 2026) ─────────────────────────────────────
+  // Problem: api-sports.io returns late games (e.g. June 9 8:40pm ET =
+  // June 10 00:40 UTC) under date=2026-06-10 as FINAL. findScore() matches
+  // them to tonight's scheduled card (same matchup, same teams) by team name
+  // alone — no time check — and the previous day's final score shows on a
+  // future game card. Root cause: _scoresBySource has no temporal guard.
+  // Fix: a FINAL score must never appear on a card whose start_time has not
+  // yet passed. Applied to both the PM-20 source-tagged path and legacy path.
+  // Safe for all sports — game.start_time is always UTC ISO from the schedule.
+  const _staleFinalGuard = (score, g) => {
+    if (!score || score.state !== 'post' || !g || !g.start_time) return false;
+    return new Date(g.start_time).getTime() > Date.now();
+  };
+
   // PM-20: try source-tagged store first (returns confidence-aware view)
   const tagged = typeof findScore === 'function' ? findScore(game) : null;
-  if (tagged) return tagged;
+  if (tagged) {
+    if (_staleFinalGuard(tagged, game)) {
+      if (FIELD_DEBUG) console.warn('[FIELD] stale-final blocked:', game.away, '@', game.home, game.start_time);
+      return null;
+    }
+    return tagged;
+  }
   // Migration fallback: legacy espnScores (last-writer-wins, no source attribution)
   // Remove once all writers migrated to _scoresBySource.
   const home = (game.home||"").toLowerCase();
@@ -16941,8 +16961,14 @@ function findESPNScore(game){
     if(gameSoccer  && (pp==='Q'||pp==='H'||pp==='P'||pp==='T')) continue;
     if(!gameSoccer && (pp==="'"||pp==='1H'||pp==='2H')) continue;
     const [hn, an] = key.split("|").map(s=>s.toLowerCase());
-    if(espnTeamMatch(hn, home) && espnTeamMatch(an, away)) return score;
-    if(espnTeamMatch(hn, away) && espnTeamMatch(an, home)) return score;
+    if(espnTeamMatch(hn, home) && espnTeamMatch(an, away)) {
+      if (_staleFinalGuard(score, game)) continue;
+      return score;
+    }
+    if(espnTeamMatch(hn, away) && espnTeamMatch(an, home)) {
+      if (_staleFinalGuard(score, game)) continue;
+      return score;
+    }
   }
   return null;
 }

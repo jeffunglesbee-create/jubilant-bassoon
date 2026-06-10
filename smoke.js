@@ -2978,6 +2978,14 @@ assert('A443b — NBA_CLUTCH_PLAYERS [VERIFY] notes remain (editorial content pr
   html.includes('NBA_CLUTCH_PLAYERS') && html.includes('clutchPts') && html.includes('clutchFg'),
   'NBA_CLUTCH_PLAYERS table must exist with clutchPts and clutchFg fields');
 
+// Stale-final guard
+assert('A445 — stale-final guard in findESPNScore',
+  html.includes('_staleFinalGuard') &&
+  html.includes("stale-final blocked") &&
+  html.includes('start_time').valueOf() &&
+  html.includes('Date.now()'),
+  'findESPNScore must block FINAL scores on future-start_time game cards');
+
 // Bottom sheet native polish
 assert('A442a — bottom sheet: swipe-to-dismiss function defined',
   html.includes('initBottomSheetSwipe') && html.includes('bs-handle') &&
