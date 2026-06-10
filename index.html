@@ -6717,6 +6717,85 @@ async function mlbStatsInit() {
   if (loaded > 0 && FIELD_DEBUG) console.log(`[FIELD] MLB stats loaded: ${loaded}/6 tables (5 Savant + umpire CF Worker)`);
 }
 
+// ── nhlSeriesInit: loads SCF series-adjusted PP%/PK% from R2 via relay ──────
+// Overlays series-specific rates onto NHL_SPECIAL_TEAMS for journalism/Scout's Pick.
+// Pattern: same as mlbStatsInit — silent on failure, stubs remain as fallback.
+// Called at T+4500ms alongside other analytics inits.
+const _NHL_SERIES_RELAY = 'https://field-relay-nba.jeffunglesbee.workers.dev/nhl-series/scf-2026/stats';
+let _nhlSeriesLoaded = false;
+async function nhlSeriesInit() {
+  if (_nhlSeriesLoaded) return;
+  try {
+    const r = await fetch(_NHL_SERIES_RELAY, { signal: AbortSignal.timeout(5000) });
+    if (!r.ok) return;
+    const data = await r.json();
+    const teams = data.teams || {};
+    // Overlay series-adjusted rates onto NHL_SPECIAL_TEAMS
+    for (const [abbr, s] of Object.entries(teams)) {
+      if (!NHL_SPECIAL_TEAMS[abbr]) NHL_SPECIAL_TEAMS[abbr] = {};
+      if (s.seriesPP != null) NHL_SPECIAL_TEAMS[abbr]._seriesPP = s.seriesPP;
+      if (s.seriesPK != null) NHL_SPECIAL_TEAMS[abbr]._seriesPK = s.seriesPK;
+      if (s.ppLabel)  NHL_SPECIAL_TEAMS[abbr]._ppLabel  = s.ppLabel;
+      if (s.pkLabel)  NHL_SPECIAL_TEAMS[abbr]._pkLabel  = s.pkLabel;
+    }
+    _nhlSeriesLoaded = true;
+    if (FIELD_DEBUG) console.log('[FIELD] NHL series stats loaded:', Object.keys(teams));
+  } catch(e_) {}
+}
+
+// ── nbaCluichInit: loads NBA clutch DRTG from R2 via relay ───────────────────
+// Fills clutchDrtg: null gaps in NBA_TEAM_ANALYTICS with actual playoff clutch data.
+// Pattern: same as mlbStatsInit — silent on failure, stubs remain as fallback.
+const _NBA_CLUTCH_RELAY = 'https://field-relay-nba.jeffunglesbee.workers.dev/nba-clutch/clutch_playoffs.json';
+let _nbaCluichLoaded = false;
+async function nbaCluichInit() {
+  if (_nbaCluichLoaded) return;
+  try {
+    const r = await fetch(_NBA_CLUTCH_RELAY, { signal: AbortSignal.timeout(5000) });
+    if (!r.ok) return;
+    const data = await r.json();
+    const teams = data.teams || {};
+    for (const [abbr, s] of Object.entries(teams)) {
+      const entry = NBA_TEAM_ANALYTICS[abbr];
+      if (!entry) continue;
+      if (s.clutchDrtg != null) entry.clutchDrtg = s.clutchDrtg;
+      if (s.clutchNetRtg != null) entry.clutchNetRtg = s.clutchNetRtg;
+    }
+    _nbaCluichLoaded = true;
+    if (FIELD_DEBUG) console.log('[FIELD] NBA clutch stats loaded:', Object.keys(teams).length, 'teams');
+  } catch(e_) {}
+}
+
+// ── soccerFBrefInit: loads FBref xG analytics for soccer leagues ─────────────
+// Populates per-team xG/pressing context used in EPL/WC journalism prompts.
+// Called lazily — only when a soccer game is detected on tonight's slate.
+const _SOCCER_FBREF_RELAY = 'https://field-relay-nba.jeffunglesbee.workers.dev/soccer-fbref';
+let _soccerFBrefCache = {};  // {league: {teams: {squadName: {...}}}}
+async function soccerFBrefInit(leagueFile) {
+  if (_soccerFBrefCache[leagueFile]) return _soccerFBrefCache[leagueFile];
+  try {
+    const r = await fetch(`${_SOCCER_FBREF_RELAY}/${leagueFile}`, { signal: AbortSignal.timeout(5000) });
+    if (!r.ok) return null;
+    const data = await r.json();
+    _soccerFBrefCache[leagueFile] = data;
+    if (FIELD_DEBUG) console.log('[FIELD] Soccer FBref loaded:', leagueFile, Object.keys(data.teams || {}).length, 'squads');
+    return data;
+  } catch(e_) { return null; }
+}
+
+// Helper: get FBref stats for a team by display name (fuzzy: last word match)
+function getSoccerFBrefStats(squadName, leagueData) {
+  if (!leagueData?.teams) return null;
+  const teams = leagueData.teams;
+  if (teams[squadName]) return teams[squadName];
+  // Fuzzy: match by last word of squad name (FBref uses full names)
+  const lastWord = squadName.split(' ').pop().toLowerCase();
+  for (const [name, stats] of Object.entries(teams)) {
+    if (name.split(' ').pop().toLowerCase() === lastWord) return stats;
+  }
+  return null;
+}
+
 // Returns: { wins, losses, label, momentum, last10[] } | null
 const _mlbMomentumCache={}; // abbr → {data, ts}
 const MLB_MOMENTUM_TTL=21600000; // 6 hours
@@ -15046,7 +15125,27 @@ const NHL_GOALIE_RATINGS = {
 // ── Getters ───────────────────────────────────────────────────────────────────
 
 function getNHLSpecialTeams(abbrev) {
-  return abbrev ? (NHL_SPECIAL_TEAMS[abbrev] || null) : null;
+  if (!abbrev) return null;
+  const entry = NHL_SPECIAL_TEAMS[abbrev];
+  if (!entry) return null;
+  // Return with series-adjusted overlay if available (_seriesPP/_seriesPK from nhlSeriesInit)
+  // Consumers should prefer _seriesPP/PK when present (more relevant during active series)
+  return entry;
+}
+
+// Returns the most relevant PP%/PK% for journalism context:
+// series-adjusted during active SCF, season stats otherwise.
+function getNHLEffectiveST(abbrev) {
+  const st = getNHLSpecialTeams(abbrev);
+  if (!st) return null;
+  return {
+    ...st,
+    effectivePP: st._seriesPP != null ? st._seriesPP : st.pp,
+    effectivePK: st._seriesPK != null ? st._seriesPK : st.pk,
+    ppContext: st._ppLabel || `${st.pp}% PP (season)`,
+    pkContext: st._pkLabel || `${st.pk}% PK (season)`,
+    isSeries: st._seriesPP != null,
+  };
 }
 
 function getNHLGoalieProfile(lastName) {
@@ -15175,8 +15274,8 @@ function predictNHLGameCharacter(game) {
   if (!game) return null;
   const ha = game._homeAbbr || getNHLAbbrev(game.home);
   const aa = game._awayAbbr || getNHLAbbrev(game.away);
-  const hST = getNHLSpecialTeams(ha);
-  const aST = getNHLSpecialTeams(aa);
+  const hST = getNHLEffectiveST(ha);
+  const aST = getNHLEffectiveST(aa);
   const hG  = getNHLGoalieProfile(game._homeGoalie);
   const aG  = getNHLGoalieProfile(game._awayGoalie);
   if (!hST || !aST) return null;
@@ -15812,8 +15911,8 @@ function getStatOfDay(game, sport) {
     try {
       const ha = game._homeAbbr || getNHLAbbrev?.(game.home);
       const aa = game._awayAbbr || getNHLAbbrev?.(game.away);
-      const hST = ha ? getNHLSpecialTeams?.(ha) : null;
-      const aST = aa ? getNHLSpecialTeams?.(aa) : null;
+      const hST = ha ? getNHLEffectiveST?.(ha) : null;
+      const aST = aa ? getNHLEffectiveST?.(aa) : null;
       if (hST?.fo && aST?.fo) {
         const foDiff = Math.abs(hST.fo - aST.fo);
         if (foDiff >= 8) { // 8pt FO% gap is analytically significant
@@ -18028,6 +18127,8 @@ async function fetchSchedule(){
   setTimeout(bdlPrefetchAll, 2000);       // BallDontLie injury prefetch (after schedule renders)
   setTimeout(uflEpaInit, 3500);           // UFL EPA live: SR PBP → EPA per play (self-gating, silent on fail)
   setTimeout(mlbStatsInit, 4000);         // MLB stats: load weekly Savant tables (patches hardcoded stubs)
+  setTimeout(nhlSeriesInit, 4600);        // NHL series PP%/PK% from R2 (overlays NHL_SPECIAL_TEAMS)
+  setTimeout(nbaCluichInit, 4700);        // NBA clutch DRTG from R2 (fills null fields in NBA_TEAM_ANALYTICS)
   setTimeout(nhlAnalyticsInit, 4500);     // NHL analytics: set _homeAbbr/_awayAbbr/_sport on NHL game objects
   setTimeout(nhlPlayoffLeadersPrefetch, 3000); // Phase B subtask 9: NHL playoff leaders feed (15-min TTL)
   setTimeout(nbaPlayoffLeadersPrefetch, 3100); // ADR-003: NBA playoff leaders via /nba-stats/leagueLeaders (15-min TTL)
@@ -21991,6 +22092,38 @@ function buildCompoundPrompt(sections) {
       // Wave 1 NHL analytics
       (()=>{ try { const sp=(g._sport||g._section||'').toLowerCase(); if(!(sp.includes('nhl')||sp.includes('hockey'))) return ''; const ctx=getNHLAnalyticsContext(g); return ctx.length ? ctx : ''; } catch(e_){return '';} })(),
       (()=>{ try { const sp=(g._sport||g._section||'').toLowerCase(); if(!(sp.includes('nba')||sp.includes('basketball'))) return ''; const ctx=getNBAAnalyticsContext(g); return ctx.length ? ctx : ''; } catch(e_){return '';} })(),
+      // FBref xG context for EPL/soccer games (async — injected when available)
+      (()=>{ try {
+        const sp=(g._sport||g._section||'').toLowerCase();
+        if (!sp.includes('soccer') && !sp.includes('epl') && !sp.includes('premier') &&
+            !sp.includes('bundesliga') && !sp.includes('ligue') && !sp.includes('serie') &&
+            !sp.includes('laliga') && !sp.includes('la liga')) return '';
+        // Pick the right league file
+        const leagueFile = sp.includes('epl')||sp.includes('premier') ? 'epl.json'
+          : sp.includes('bundesliga') ? 'bundesliga.json'
+          : sp.includes('ligue') ? 'ligue1.json'
+          : sp.includes('serie') ? 'seriea.json'
+          : sp.includes('laliga')||sp.includes('la liga') ? 'laliga.json' : null;
+        if (!leagueFile) return '';
+        const cached = _soccerFBrefCache[leagueFile];
+        if (!cached) { soccerFBrefInit(leagueFile); return ''; } // fire-and-forget first render
+        const hStats = getSoccerFBrefStats(g.home || '', cached);
+        const aStats = getSoccerFBrefStats(g.away || '', cached);
+        const lines = [];
+        if (hStats) {
+          if (hStats.xGFor != null) lines.push(`${g.home}: xG ${hStats.xGFor}/game, xGA ${hStats.xGAgainst}/game`);
+          if (hStats.xGDivergence != null && Math.abs(hStats.xGDivergence) > 0.3)
+            lines.push(`${g.home}: ${hStats.xGDivergence > 0 ? 'over' : 'under'}-performing xG by ${Math.abs(hStats.xGDivergence).toFixed(2)}`);
+          if (hStats.psxgDiff != null && Math.abs(hStats.psxgDiff) > 0.2)
+            lines.push(`${g.home} GK: ${hStats.psxgDiff > 0 ? '+' : ''}${hStats.psxgDiff.toFixed(2)} PSxG diff`);
+        }
+        if (aStats) {
+          if (aStats.xGFor != null) lines.push(`${g.away}: xG ${aStats.xGFor}/game, xGA ${aStats.xGAgainst}/game`);
+          if (aStats.xGDivergence != null && Math.abs(aStats.xGDivergence) > 0.3)
+            lines.push(`${g.away}: ${aStats.xGDivergence > 0 ? 'over' : 'under'}-performing xG by ${Math.abs(aStats.xGDivergence).toFixed(2)}`);
+        }
+        return lines.length ? '[SOCCER ANALYTICS] ' + lines.join(' | ') : '';
+      } catch(e_){ return ''; } })(),
       // Stat of Day
       (()=>{ try { if(!isScoutsPick(g)) return ''; const s=getStatOfDay(g,g._sport||g._section||''); return s ? `  [FEATURED STAT] ${s.fullText}` : ''; } catch(e_){return '';} })(),
       g.matchupNote ? `  Context: ${g.matchupNote}` : '',

@@ -2957,6 +2957,22 @@ assert('A438c — Gap D: MD3 FINAL MATCHDAY tag injected in buildCompoundPrompt'
   html.includes('[FINAL MATCHDAY]') && html.includes('MD3\\b') && html.includes('anti-collusion'),
   'buildCompoundPrompt must inject [FINAL MATCHDAY] for WC MD3 games (Gap D)');
 
+// R2 client consumption
+assert('A438w — R2 client: nhlSeriesInit + nbaCluichInit wired at startup',
+  html.includes('function nhlSeriesInit') && html.includes('function nbaCluichInit') &&
+  html.includes('setTimeout(nhlSeriesInit') && html.includes('setTimeout(nbaCluichInit'),
+  'NHL series init and NBA clutch init must be defined and called at startup');
+
+assert('A438x — R2 client: getNHLEffectiveST prefers series-adjusted rates',
+  html.includes('function getNHLEffectiveST') && html.includes('effectivePP') &&
+  html.includes('effectivePK') && html.includes('isSeries'),
+  'getNHLEffectiveST must return series-adjusted rates when available');
+
+assert('A438y — R2 client: soccer FBref xG injected into compound prompt',
+  html.includes('SOCCER ANALYTICS') && html.includes('soccerFBrefInit') &&
+  html.includes('getSoccerFBrefStats'),
+  'FBref xG must be injected into soccer game compound prompt via buildCompoundPrompt');
+
 // WC journalism tab brief
 assert('A438v — WC journalism tab brief: fetchWCTabBrief defined and wired',
   html.includes('function fetchWCTabBrief(') && html.includes('wc-tab-brief') &&
