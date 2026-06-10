@@ -2957,6 +2957,16 @@ assert('A438c — Gap D: MD3 FINAL MATCHDAY tag injected in buildCompoundPrompt'
   html.includes('[FINAL MATCHDAY]') && html.includes('MD3\\b') && html.includes('anti-collusion'),
   'buildCompoundPrompt must inject [FINAL MATCHDAY] for WC MD3 games (Gap D)');
 
+// NBA player clutch live data
+assert('A443a — nbaPlayerCluichInit defined and wired',
+  html.includes('nbaPlayerCluichInit') && html.includes('leaguedashplayerclutch') &&
+  html.includes('_live') && html.includes('_nbaPlayerCluichLoaded'),
+  'NBA player clutch init must fetch live data and mark entries with _live flag');
+
+assert('A443b — NBA_CLUTCH_PLAYERS [VERIFY] notes remain (editorial content preserved)',
+  html.includes('NBA_CLUTCH_PLAYERS') && html.includes('clutchPts') && html.includes('clutchFg'),
+  'NBA_CLUTCH_PLAYERS table must exist with clutchPts and clutchFg fields');
+
 // Bottom sheet native polish
 assert('A442a — bottom sheet: swipe-to-dismiss function defined',
   html.includes('initBottomSheetSwipe') && html.includes('bs-handle') &&

@@ -6814,6 +6814,96 @@ async function mlbStatsInit() {
   if (loaded > 0 && FIELD_DEBUG) console.log(`[FIELD] MLB stats loaded: ${loaded}/6 tables (5 Savant + umpire CF Worker)`);
 }
 
+// ── nbaPlayerCluichInit: fetches live playoff clutch stats per player ─────────
+// Replaces [VERIFY playoffs 2026] hardcoded estimates in NBA_CLUTCH_PLAYERS.
+// Source: /nba-stats/leaguedashplayerclutch (whitelisted, relay-proxied, June 10 2026).
+// Matches by lastName + TEAM_ABBREVIATION to handle Williams/Johnson collisions.
+// Minimum 3 GP filter eliminates noise from single-game samples.
+//
+// Called at T+4700ms alongside team clutch init — same request batch (stats.nba.com).
+let _nbaPlayerCluichLoaded = false;
+
+async function nbaPlayerCluichInit() {
+  if (_nbaPlayerCluichLoaded) return;
+  try {
+    const params = new URLSearchParams({
+      LeagueID:'00', Season:'2025-26', SeasonType:'Playoffs',
+      PerMode:'PerGame', MeasureType:'Base',
+      ClutchTime:'Last 5 Minutes', AheadBehind:'Ahead or Behind', PointDiff:'5',
+      PlusMinus:'N', PaceAdjust:'N', Rank:'N',
+      Outcome:'', Location:'', Month:'0', SeasonSegment:'',
+      DateFrom:'', DateTo:'', OpponentTeamID:'0',
+      VsConference:'', VsDivision:'', GameSegment:'',
+      Period:'0', ShotClockRange:'', LastNGames:'0',
+      GameScope:'', PlayerExperience:'', PlayerPosition:'',
+      StarterBench:'', TwoWay:'0', Conference:'', Division:'',
+    });
+    const r = await fetch(
+      `${NBA_STATS_RELAY}/leaguedashplayerclutch?${params}`,
+      { signal: AbortSignal.timeout(6000) }
+    );
+    if (!r.ok) return;
+    const data = await r.json();
+    const rs = data?.resultSets?.[0];
+    if (!rs) return;
+
+    const hdrs = rs.headers;
+    const idx = Object.fromEntries(hdrs.map((h, i) => [h, i]));
+    const rows = rs.rowSet;
+
+    // Build lookup: "brunson|NYK" → row
+    const byKey = {};
+    for (const row of rows) {
+      const gp = row[idx.GP] ?? 0;
+      if (gp < 3) continue;                          // filter noise
+      const fullName = (row[idx.PLAYER_NAME] || '');
+      const lastName = fullName.split(' ').pop().toLowerCase().replace(/[^a-z-]/g, '');
+      const team     = row[idx.TEAM_ABBREVIATION] || '';
+      byKey[`${lastName}|${team}`] = row;
+      byKey[lastName] = byKey[lastName] || row;      // fallback for unique last names
+    }
+
+    // Tier calculation from live data
+    function deriveTier(pts, fg, pm, wPct) {
+      if (pts >= 6 && fg >= 0.46 && pm > 8)  return 'elite';
+      if (pts >= 4 && fg >= 0.43 && pm > 3)  return 'solid';
+      if (pm < -5)                             return 'unreliable';
+      return 'avg';
+    }
+
+    let updated = 0;
+    for (const [key, entry] of Object.entries(NBA_CLUTCH_PLAYERS)) {
+      const team    = entry.team || '';
+      const teamKey = `${key}|${team}`;
+      const row     = byKey[teamKey] || byKey[key];
+      if (!row) continue;
+
+      const pts  = row[idx.PTS]      ?? null;
+      const fg   = row[idx.FG_PCT]   ?? null;
+      const pm   = row[idx.PLUS_MINUS] ?? null;
+      const wPct = row[idx.W_PCT]    ?? null;
+      const gp   = row[idx.GP]       ?? 0;
+
+      if (pts === null || fg === null) continue;
+
+      const pmStr   = pm != null ? (pm >= 0 ? `+${pm.toFixed(1)}` : pm.toFixed(1)) : entry.plusMinus;
+      const newTier = deriveTier(pts, fg, pm ?? 0, wPct ?? 0.5);
+
+      // Patch stats; preserve editorial note
+      entry.clutchPts  = Math.round(pts * 10) / 10;
+      entry.clutchFg   = Math.round(fg * 1000) / 1000;
+      entry.plusMinus  = pmStr;
+      entry.tier       = newTier;
+      entry.gp         = gp;
+      entry._live      = true;   // flag: this entry is now from live 2026 playoff data
+      updated++;
+    }
+
+    _nbaPlayerCluichLoaded = true;
+    if (FIELD_DEBUG) console.log(`[FIELD] NBA player clutch loaded: ${updated} of ${Object.keys(NBA_CLUTCH_PLAYERS).length} entries updated`);
+  } catch(e_) {}
+}
+
 // ── nhlSeriesInit: loads SCF series-adjusted PP%/PK% from R2 via relay ──────
 // Overlays series-specific rates onto NHL_SPECIAL_TEAMS for journalism/Scout's Pick.
 // Pattern: same as mlbStatsInit — silent on failure, stubs remain as fallback.
@@ -18353,6 +18443,7 @@ async function fetchSchedule(){
   setTimeout(mlbStatsInit, 4000);         // MLB stats: load weekly Savant tables (patches hardcoded stubs)
   setTimeout(nhlSeriesInit, 4600);        // NHL series PP%/PK% from R2 (overlays NHL_SPECIAL_TEAMS)
   setTimeout(nbaCluichInit, 4700);        // NBA clutch DRTG from R2 (fills null fields in NBA_TEAM_ANALYTICS)
+  setTimeout(nbaPlayerCluichInit, 4750);    // NBA player clutch (live /leaguedashplayerclutch → patches NBA_CLUTCH_PLAYERS)
   setTimeout(nhlGSAXInit, 4800);          // NHL GSAX from MoneyPuck R2 (upgrades NHL_GOALIE_RATINGS from save% proxy)
   setTimeout(nhlAnalyticsInit, 4500);     // NHL analytics: set _homeAbbr/_awayAbbr/_sport on NHL game objects
   setTimeout(nhlPlayoffLeadersPrefetch, 3000); // Phase B subtask 9: NHL playoff leaders feed (15-min TTL)
