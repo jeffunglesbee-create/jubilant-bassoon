@@ -8075,9 +8075,63 @@ const isPlayoffGame = g => g._gameImportance || /playoff|final|semifinal|confere
 //      individual dimensions, not by a single summed interest-level value.
 //      Specifically: games that have genuine importance signals (playoff/series context)
 //      OR are demonstrably competitive (tight odds line), AND are not on national TV.
+// ── buildSlateScoutsPick — cross-slate single pick per night ──────────────────
+// Selects ONE Scout's Pick from tonight's full game slate — the single non-national
+// game with the strongest analytical signal. Replaces the old per-game badge-on-all
+// model that diluted "Scout's Pick" to meaningless when every playoff game qualified.
+//
+// Ranking priority (not summed — categorical tiebreaker order):
+//   1. Stat anomaly with highest deviation (getStatOfDay result)
+//   2. Milestone proximity (BDL pct)
+//   3. Series context without national broadcast
+//   4. WC stakes game (MD2/MD3 with meaningful pAdv variance)
+//
+// Returns the single best game object, or null if nothing qualifies.
+// Used by: Desk Card 4, slate summary, buildWatchWindowReason primary surface.
+// Individual game cards still show the badge if they qualify — this is the
+// editorial "pick of the night" layer on top of the per-game classification.
+function buildSlateScoutsPick(allGames) {
+  if (!Array.isArray(allGames) || !allGames.length) return null;
+  const candidates = allGames.filter(g => {
+    try { return isScoutsPick(g); } catch(e_) { return false; }
+  });
+  if (!candidates.length) return null;
+
+  // Score each candidate for ranking — NOT a composite interest threshold.
+  // This is internal sort order only; the returned value is a game object, not a score.
+  const _rankSignal = (g) => {
+    let rank = 0;
+    try {
+      // Stat anomaly: highest deviation wins
+      const sd = (typeof getStatOfDay === 'function') ? getStatOfDay(g, g._sport||g._section||'') : null;
+      if (sd?.deviation >= 0.25) rank += 100 + Math.round(sd.deviation * 100);
+    } catch(e_) {}
+    try {
+      // Milestone: very close (>= 0.98) beats distant (0.95)
+      const gameKey = g._id || `${g.home}_${g.away}`;
+      const ms = _bdlMilestonesCache?.[gameKey];
+      if (ms?.pct >= 0.98) rank += 80;
+      else if (ms?.pct >= 0.95) rank += 60;
+    } catch(e_) {}
+    // Series context (no national) — reliable baseline signal
+    if (!isNationalGame(g) && (g.seriesRecord || /playoff|final/i.test(g.league||''))) rank += 40;
+    // WC MD3 final matchday — maximum advancement stakes
+    if (/MD3/.test(g.league||'')) rank += 35;
+    // WC MD2 — meaningful stakes
+    if (/MD2/.test(g.league||'')) rank += 20;
+    return rank;
+  };
+
+  return candidates.sort((a, b) => _rankSignal(b) - _rankSignal(a))[0];
+}
+
 function isScoutsPick(g) {
-  // Gate 0: Must not be a national broadcast game (always required)
-  if (isNationalGame(g)) return false;
+  // Gate 0: Must not be a national broadcast game — with sport-aware carveout.
+  // WC games have nationalBundle set because there's no local alternative (not because
+  // they're marquee mainstream content). All 72 WC group games are eligible for Scout's Pick.
+  // Gate 0 still blocks NBA_ESPN, MLB_FOX, NFL_NBC etc — the true "already loud" broadcasts.
+  const isWC = /wc26|world cup|fifa/i.test(g._sport || g.league || '');
+  if (isNationalGame(g) && !isWC) return false;
 
   // Gate 1: Playoff/series importance (boolean — not a score)
   const hasSeriesContext = !!(g.seriesRecord || /playoff|final|cup|conference|series/i.test(g.league||''));
@@ -8085,8 +8139,6 @@ function isScoutsPick(g) {
   // Gate 2 (odds) removed — decoupled from betting engine (May 29 2026)
 
   // Gate 3: BDL milestone proximity — player within 5% of career milestone
-  // Uses same _bdlMilestonesCache populated by fetchBDLMilestones()
-  // hasMilestone was left undefined when Gate 2 was removed — fixed May 30 2026
   let hasMilestone = false;
   try {
     const gameKey = g._id || `${g.home}_${g.away}`;
@@ -8094,8 +8146,57 @@ function isScoutsPick(g) {
     hasMilestone = !!(ms?.pct >= 0.95);
   } catch(e_) {}
 
+  // Gate C: Stat anomaly — getStatOfDay deviation > 0.25 (normalised).
+  // 0.25 = ~20pt PK gap, ~7pt DRTG gap, +25% park factor.
+  // This is a boolean gate over a dimensional fact, not a composite threshold.
+  // Fires year-round on regular-season games with genuine analytical signal.
+  let hasStatAnomaly = false;
+  try {
+    const sp = (typeof getStatOfDay === 'function') ? getStatOfDay(g, g._sport || g._section || '') : null;
+    hasStatAnomaly = !!(sp?.deviation >= 0.25);
+  } catch(e_) {}
+
+  // Gate D: WC advancement stakes — MD2+ game where at least one team has
+  // meaningful elimination exposure (pAdv <= 0.45 going in).
+  // Only active when WC scenario data is loaded (user has opened WC tab).
+  let hasWCStakes = false;
+  if (isWC) {
+    try {
+      const gMatch = (g.league||'').match(/Group\s+([A-L])/i);
+      const grp = gMatch ? gMatch[1].toUpperCase() : null;
+      const wcScenarios = typeof _wcComputeAllScenarios === 'function' && grp
+        ? window._wcScenariosCache : null;
+      if (wcScenarios?.perGroup?.[grp]) {
+        const pt = wcScenarios.perGroup[grp].perTeam;
+        const homeAdv = _wcGetPAdv?.(wcScenarios, grp, g.home);
+        const awayAdv = _wcGetPAdv?.(wcScenarios, grp, g.away);
+        // Stakes: at least one team is not yet through AND not guaranteed through
+        hasWCStakes = !!(
+          (homeAdv != null && homeAdv > 0.05 && homeAdv < 0.95) ||
+          (awayAdv != null && awayAdv > 0.05 && awayAdv < 0.95)
+        );
+      }
+      // Fallback: MD2+ games always have stakes even without scenario data
+      if (!hasWCStakes && /MD[23]/.test(g.league||'')) hasWCStakes = true;
+    } catch(e_) {
+      if (/MD[23]/.test(g.league||'')) hasWCStakes = true;
+    }
+  }
+
   // Eligible if at least ONE positive dimension is present (boolean OR — not summed)
-  return hasSeriesContext || hasMilestone;
+  return hasSeriesContext || hasMilestone || hasStatAnomaly || hasWCStakes;
+}
+
+// Helper: get advancement probability for a team from cached scenario data.
+// Returns 0-1 or null if not available.
+function _wcGetPAdv(scenarios, groupId, teamName) {
+  if (!scenarios?.perGroup?.[groupId]?.perTeam?.[teamName]) return null;
+  const pt = scenarios.perGroup[groupId].perTeam[teamName];
+  const b3 = scenarios.best3rd?.perTeam?.[teamName];
+  const pB3 = b3?.pQualifyAsBest3rd ?? 0;
+  const pTop2 = pt.pQualifyTop2 ?? ((pt.scenarioCounts.first + pt.scenarioCounts.second) /
+    Math.max(1, pt.scenarioCounts.first + pt.scenarioCounts.second + pt.scenarioCounts.third + pt.scenarioCounts.fourth));
+  return Math.min(1, pTop2 + pB3);
 }
 function preGameScore(g){
   if (g._postponed) return 0; // PPD games excluded from ONE TO WATCH, ww-bar, TONIGHT
@@ -10788,20 +10889,34 @@ function renderFieldDesk(){
     }
   }catch(e_){}
 
-  // ── Card 4: Scout's Picks digest ────────────────────────────────────────
+  // ── Card 4: Scout's Pick — single editorial pick of the night ──────────────
+  // Uses buildSlateScoutsPick() to select ONE game from tonight's slate.
+  // Shows the stat evidence + reason inline — no list, one confident recommendation.
   try{
-    const picks = [...document.querySelectorAll('.scout-pick-card')];
-    if(picks.length > 0){
-      const pickLines = picks.slice(0,4).map(card=>{
-        const home = card.dataset.home||'';
-        const away = card.dataset.away||'';
-        const badge = card.querySelector('.scout-pick-badge');
-        const title = badge?.title || '';
-        return `<div style="margin-bottom:.35rem"><strong style="font-size:.74rem">${away} @ ${home}</strong>${title?`<br><span style="font-size:.64rem;color:var(--smoke)">${title.split('·')[0].trim()}</span>`:''}</div>`;
-      }).join('');
-      cards.push(`<div class="desk-card type-scout">
-        <div class="desk-card-label"><span class="desk-card-label-icon">🔍</span>Scout's Picks · ${picks.length} game${picks.length===1?'':'s'} tonight</div>
-        <div class="desk-card-body">${pickLines}</div>
+    const allGames = (typeof allData !== 'undefined')
+      ? (allData?.sports||[]).flatMap(s => s.games||[])
+      : [];
+    const topPick = (typeof buildSlateScoutsPick === 'function') ? buildSlateScoutsPick(allGames) : null;
+    if(topPick){
+      const sd = (typeof getStatOfDay === 'function')
+        ? getStatOfDay(topPick, topPick._sport||topPick._section||'') : null;
+      const statLine = sd ? `<div style="font-size:.64rem;color:#2dd4bf;margin-top:.2rem">📊 ${sd.fullText}</div>` : '';
+      const gameKey = topPick._id || `${topPick.home}_${topPick.away}`;
+      const ms = (typeof _bdlMilestonesCache !== 'undefined') ? _bdlMilestonesCache?.[gameKey] : null;
+      const msLine = ms ? `<div style="font-size:.64rem;color:var(--smoke);margin-top:.15rem">🏆 ${ms.playerName} needs ${ms.gap} more ${ms.stat}</div>` : '';
+      const isWCGame = /wc26|world cup|fifa/i.test(topPick._sport||topPick.league||'');
+      const wcLine = isWCGame && /MD[23]/.test(topPick.league||'')
+        ? `<div style="font-size:.64rem;color:var(--smoke);margin-top:.15rem">⚽ Advancement on the line</div>` : '';
+      const network = topPick.streams?.[0]?.label || '';
+      const networkLine = network ? `<span style="opacity:.6"> · ${network}</span>` : '';
+      const seriesLine = topPick.seriesRecord ? `<div style="font-size:.64rem;color:var(--smoke);margin-top:.15rem">${topPick.seriesRecord}</div>` : '';
+      // Count other qualifying games for footnote
+      const totalPicks = allGames.filter(g=>{try{return isScoutsPick(g);}catch(e_){return false;}}).length;
+      const footnote = totalPicks > 1 ? `<div style="font-size:.58rem;color:var(--smoke);margin-top:.4rem;opacity:.6">+${totalPicks-1} more qualifying tonight</div>` : '';
+      cards.push(`<div class="desk-card type-scout" style="cursor:pointer" onclick="(()=>{const c=document.querySelector('[data-gameid=\"${topPick._id||''}\"]');if(c)c.scrollIntoView({behavior:'smooth',block:'center'});})()" title="Click to scroll to this game">
+        <div class="desk-card-label"><span class="desk-card-label-icon">🔍</span>Scout's Pick · Tonight</div>
+        <div class="desk-card-title" style="font-size:.8rem;font-weight:700;margin-top:.2rem">${topPick.away||''} @ ${topPick.home||''}${networkLine}</div>
+        ${seriesLine}${statLine}${msLine}${wcLine}${footnote}
       </div>`);
     }
   }catch(e_){}
@@ -11607,6 +11722,95 @@ function injectJ1J4Badges() {
           const statEl = document.createElement('span');
           statEl.innerHTML = statHtml;
           cardBody.appendChild(statEl.firstChild);
+        }
+      } catch(e_) {}
+
+      // ── Queue-backed Scout's Pick brief ─────────────────────────────────
+      // Enqueue a dedicated 60-80 word "why watch" brief for the top pick.
+      // Only fires for the single top pick returned by buildSlateScoutsPick().
+      // Polls /journalism/result/:jobId and injects into .brief-scout-note.
+      try {
+        const allGames2 = (allData?.sports||[]).flatMap(s => s.games||[]);
+        const topPick2 = (typeof buildSlateScoutsPick === 'function') ? buildSlateScoutsPick(allGames2) : null;
+        const isTopPick = topPick2 && (topPick2._id === g._id ||
+          (topPick2.home === g.home && topPick2.away === g.away));
+        if (isTopPick && JOURNALISM_ENQUEUE_RELAY) {
+          const series2 = g.seriesRecord || '';
+          const sd2 = (typeof getStatOfDay === 'function') ? getStatOfDay(g, g._sport||g._section||'') : null;
+          const spBriefKey = `field_sp_brief_v${_swv}_${g._id||''}_${series2.replace(/\s/g,'_')}`;
+          const spJobKey   = `field_sp_job_v${_swv}_${g._id||''}_${series2.replace(/\s/g,'_')}`;
+          // Check sessionStorage for completed brief first
+          const cachedBrief = (() => { try { return sessionStorage.getItem(spBriefKey); } catch(e_) { return null; } })();
+          if (cachedBrief && cachedBrief.length > 40) {
+            let noteEl = cardBody.querySelector('.brief-scout-note');
+            if (!noteEl) {
+              noteEl = document.createElement('div');
+              noteEl.className = 'brief-scout-note';
+              cardBody.appendChild(noteEl);
+            }
+            noteEl.textContent = '🔍 ' + cachedBrief;
+          } else {
+            // Enqueue or poll existing job
+            (async () => {
+              try {
+                let jobId = (() => { try { return sessionStorage.getItem(spJobKey); } catch(e_) { return null; } })();
+                if (!jobId) {
+                  const spPrompt = [
+                    `Write a FIELD Scout's Pick brief for tonight's hidden-gem game.`,
+                    `${g.away||'?'} @ ${g.home||'?'}.`,
+                    g.matchupNote ? `Context: ${g.matchupNote}` : '',
+                    sd2 ? `Key stat: ${sd2.fullText}.` : '',
+                    series2 ? `Series: ${series2}.` : '',
+                    ``,
+                    `Rules: 50-70 words. One paragraph. No headers.`,
+                    `Lead with WHY this non-national game is worth watching — the specific analytical reason.`,
+                    `Cite the key stat verbatim if provided. Never use "hidden gem", "under the radar", "must-watch".`,
+                    `Write like a well-prepared friend explaining why they're skipping the national game for this one.`,
+                    FIELD_PROSE_STYLE,
+                  ].filter(Boolean).join('\n');
+                  const eq = await fetch(JOURNALISM_ENQUEUE_RELAY, {
+                    method: 'POST',
+                    headers: {'Content-Type':'application/json'},
+                    body: JSON.stringify({prompt: spPrompt, sport: g._sport||'', briefType: 'scouts-pick', max_tokens: 300, scoreThreshold: 120}),
+                  });
+                  if (eq.ok) {
+                    const data = await eq.json();
+                    if (data.jobId) {
+                      try { sessionStorage.setItem(spJobKey, data.jobId); } catch(e_) {}
+                      jobId = data.jobId;
+                    }
+                  }
+                }
+                // Poll for result (max 20s)
+                if (jobId && JOURNALISM_RESULT_RELAY) {
+                  for (let i = 0; i < 10; i++) {
+                    await new Promise(r => setTimeout(r, 2000));
+                    const pr = await fetch(`${JOURNALISM_RESULT_RELAY}/${jobId}`, {signal: AbortSignal.timeout(3000)});
+                    if (!pr.ok) continue;
+                    const result = await pr.json();
+                    if (result.status === 'done' && result.text && result.text.length > 40) {
+                      try { sessionStorage.setItem(spBriefKey, result.text); } catch(e_) {}
+                      try { sessionStorage.removeItem(spJobKey); } catch(e_) {}
+                      // Inject into card (card may have re-rendered — find fresh)
+                      const freshCard = document.querySelector(`[data-gameid="${g._id||''}"]`);
+                      const freshBody = freshCard?.querySelector('.card-body');
+                      if (freshBody) {
+                        let noteEl2 = freshBody.querySelector('.brief-scout-note');
+                        if (!noteEl2) {
+                          noteEl2 = document.createElement('div');
+                          noteEl2.className = 'brief-scout-note';
+                          freshBody.appendChild(noteEl2);
+                        }
+                        noteEl2.textContent = '🔍 ' + result.text;
+                      }
+                      break;
+                    }
+                    if (result.status === 'failed') break;
+                  }
+                }
+              } catch(e_) {}
+            })();
+          }
         }
       } catch(e_) {}
     }
@@ -15331,6 +15535,62 @@ function getStatOfDay(game, sport) {
           val: ump.rate, label: 'overturn rate', fmtVal: `${Math.round(ump.rate*100)}%`,
           ctx: 'calls challenged at the plate' });
     }
+  }
+
+  // ── NBA ──────────────────────────────────────────────────────────────────
+  // Gate D data: DRTG differential vs league average — fires on elite/poor defense matchups.
+  // League avg: _AVG entry in NBA_TEAM_ANALYTICS. Regular-season fires year-round.
+  if (sp.includes('nba') || sp.includes('basketball')) {
+    try {
+      const hStats = (typeof getNBATeamAnalytics === 'function') ? getNBATeamAnalytics(game.home) : null;
+      const aStats = (typeof getNBATeamAnalytics === 'function') ? getNBATeamAnalytics(game.away) : null;
+      const leagueAvgDrtg = NBA_TEAM_ANALYTICS?._AVG?.drtg ?? 114.7;
+      const leagueAvgPace = NBA_TEAM_ANALYTICS?._AVG?.pace ?? 100.8;
+      if (hStats) {
+        const drtgDev = Math.abs(hStats.drtg - leagueAvgDrtg) / leagueAvgDrtg;
+        if (drtgDev > 0.015) { // ~2.2pt gap at league avg — meaningful defensive edge
+          const dir = hStats.drtg < leagueAvgDrtg ? 'elite defense' : 'poor defense';
+          candidates.push({ deviation: drtgDev, team: game.home, abbr: getNBAAbbrev?.(game.home)||'',
+            val: hStats.drtg, label: 'DRTG', fmtVal: hStats.drtg.toFixed(1),
+            ctx: `${dir} — ${Math.abs(hStats.drtg - leagueAvgDrtg).toFixed(1)}pts ${hStats.drtg < leagueAvgDrtg ? 'better' : 'worse'} than league average` });
+        }
+        const paceDev = Math.abs(hStats.pace - leagueAvgPace) / leagueAvgPace;
+        if (paceDev > 0.025) { // ~2.5 possessions/game — meaningfully fast/slow
+          candidates.push({ deviation: paceDev * 0.7, team: game.home, abbr: getNBAAbbrev?.(game.home)||'',
+            val: hStats.pace, label: 'pace', fmtVal: hStats.pace.toFixed(1),
+            ctx: `${hStats.pace > leagueAvgPace ? 'fastest' : 'slowest'}-paced team in the league` });
+        }
+      }
+      if (aStats) {
+        const drtgDev = Math.abs(aStats.drtg - leagueAvgDrtg) / leagueAvgDrtg;
+        if (drtgDev > 0.015) {
+          const dir = aStats.drtg < leagueAvgDrtg ? 'elite defense' : 'poor defense';
+          candidates.push({ deviation: drtgDev, team: game.away, abbr: getNBAAbbrev?.(game.away)||'',
+            val: aStats.drtg, label: 'DRTG', fmtVal: aStats.drtg.toFixed(1),
+            ctx: `${dir} — ${Math.abs(aStats.drtg - leagueAvgDrtg).toFixed(1)}pts ${aStats.drtg < leagueAvgDrtg ? 'better' : 'worse'} than league average` });
+        }
+      }
+    } catch(e_) {}
+  }
+
+  // ── NHL FO% — faceoff differential ───────────────────────────────────────
+  // FO% differential is a real but underreported edge — already in NHL_SPECIAL_TEAMS
+  if (sp.includes('nhl') || sp.includes('hockey')) {
+    try {
+      const ha = game._homeAbbr || getNHLAbbrev?.(game.home);
+      const aa = game._awayAbbr || getNHLAbbrev?.(game.away);
+      const hST = ha ? getNHLSpecialTeams?.(ha) : null;
+      const aST = aa ? getNHLSpecialTeams?.(aa) : null;
+      if (hST?.fo && aST?.fo) {
+        const foDiff = Math.abs(hST.fo - aST.fo);
+        if (foDiff >= 8) { // 8pt FO% gap is analytically significant
+          const better = hST.fo > aST.fo ? {team:game.home,abbr:ha,fo:hST.fo} : {team:game.away,abbr:aa,fo:aST.fo};
+          candidates.push({ deviation: foDiff / 50, team: better.team, abbr: better.abbr,
+            val: better.fo, label: 'FO%', fmtVal: `${better.fo.toFixed(1)}%`,
+            ctx: `${foDiff.toFixed(0)}-point faceoff advantage tonight` });
+        }
+      }
+    } catch(e_) {}
   }
 
   if (!candidates.length) return null;

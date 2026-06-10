@@ -2957,6 +2957,29 @@ assert('A438c — Gap D: MD3 FINAL MATCHDAY tag injected in buildCompoundPrompt'
   html.includes('[FINAL MATCHDAY]') && html.includes('MD3\\b') && html.includes('anti-collusion'),
   'buildCompoundPrompt must inject [FINAL MATCHDAY] for WC MD3 games (Gap D)');
 
+// Scout's Pick architectural rebuild (items 1-5)
+assert('A438e — Scout Pick item 1: NBA DRTG + NHL FO% in getStatOfDay',
+  html.includes('leagueAvgDrtg') && html.includes('foDiff') && html.includes('FO%'),
+  'getStatOfDay must have NBA DRTG and NHL FO% candidate blocks');
+
+assert('A438f — Scout Pick item 2: isScoutsPick WC carveout + Gate C + Gate D',
+  html.includes('isWC') && html.includes('hasStatAnomaly') && html.includes('hasWCStakes') &&
+  html.includes('Gate C') && html.includes('Gate D'),
+  'isScoutsPick must have WC carveout, Gate C (stat anomaly), Gate D (WC stakes)');
+
+assert('A438g — Scout Pick item 3: buildSlateScoutsPick defined',
+  html.includes('function buildSlateScoutsPick(') && html.includes('_rankSignal'),
+  'buildSlateScoutsPick cross-slate selector must be defined');
+
+assert('A438h — Scout Pick item 4: Desk Card 4 single editorial pick',
+  html.includes('Scout\'s Pick · Tonight') && html.includes('topPick') &&
+  html.includes('totalPicks') && html.includes('+${totalPicks-1} more qualifying'),
+  'Desk Card 4 must use editorial single-pick model via buildSlateScoutsPick');
+
+assert('A438i — Scout Pick item 5: Queue-backed brief enqueue+poll',
+  html.includes('scouts-pick') && html.includes('field_sp_brief_v') && html.includes('spJobKey'),
+  'Scout\'s Pick brief must use Queue enqueue+poll pattern');
+
 // Finals Desk Queue-backed fetch
 assert('A438d — Finals Desk: Queue-backed enqueue+poll pattern',
   html.includes('JOURNALISM_ENQUEUE_RELAY') && html.includes('JOURNALISM_RESULT_RELAY') &&
