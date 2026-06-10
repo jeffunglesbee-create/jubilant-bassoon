@@ -1,61 +1,65 @@
-# FIELD HANDOFF — 2026-06-10 (ADR-002 R2 Addendum)
+# FIELD HANDOFF — 2026-06-10 (Documentation Complete)
 
 ## HEADS
-- jubilant-bassoon HEAD: ad360af
+- jubilant-bassoon HEAD: ad360af (last code) / see get_head_sha for HANDOFF commit
 - SW_VERSION: 2026-06-10a
 - Smoke: 557/0
 - field-relay-nba HEAD: e9a282d
 
-## SESSION TYPE
-TYPE D (Patent analysis + documentation)
+## SESSION END STATE — TRUE FINAL
 
-## WHAT SHIPPED (ad360af)
+All work complete. All docs written.
 
-### ADR-002 R2 Storage Addendum
-.github/adr/ADR-002-r2-addendum.md committed.
-Drive: 1C0Cw4w7Rx4kHqdQhy-mDN3mJK398DbWP
+## 6 NEW DOCS WRITTEN END-OF-SESSION
 
-#### Finding
-R2 is NOT a RUWT concern under current usage.
-  - R2 stores team performance statistics (PP%, GSAX, clutch DRTG, xG, etc.)
-  - None are game-level interest ratings in the RUWT sense
-  - Component 3 (push cron) never reads R2 — coupled pair does not form
-  - R2 data flows only to journalism prompts + client-side chips (Component 2)
+1. R2 Pipeline Reference
+   Drive: 1oIZYKeWF7UBGEdm2bnMLd98UXkyVvWr7
+   All pipelines, cron cadence, R2 keys, relay routes, client init sequence.
+   Supersedes "R2: NO BINDING CURRENTLY" in earlier Current State.
 
-#### New Rule F (binding from this addendum)
-"R2 STORES STATISTICS, NOT RATINGS."
-  Test: 'Does this value answer how exciting is this game right now?'
-  If yes → forbidden. If no → permitted.
-  Component 3 must NEVER read from R2. Unconditional.
+2. Data Source Accessibility Map
+   Drive: 1zEqDdk7QjUAvkEwd86Lk21yX5Feti33q
+   Verified block map: OPEN / GATED / BLOCKED per source.
+   Key finding: stats.nba.com is header-gated not IP-blocked.
+   FBref + NST are CF Turnstile blocked (GitHub Actions hybrid required).
 
-#### PDO edge case analyzed
-Clean: team-level, computed from historical data, never in push path.
-'Running hot/cold' label is generated client-side (_buildAnalyticsChips).
-The relay stores only the raw PDO number.
+3. Analytics Context Pipeline
+   Drive: 1ZqGyLdgwkQIJI6qforObl6TBN-9AkvXy
+   R2 key → client init → accessor function → journalism tag → user surface.
+   Full tag inventory for getNHLAnalyticsContext + getNBAAnalyticsContext.
 
-#### Rule C clarification for R2
-Component 1 reading Component 1's own R2 derived storage: PERMITTED.
-Component 3 reading R2 regardless of content: FORBIDDEN.
+4. Analytics Surface Architecture
+   Drive: 1Fn2xwaMA5cIM3sOAXNdyHfh04g8hHazO
+   Option A (brief footer) + Option C (desk card) design decisions.
+   Chip color system, trigger rules, extension guide.
 
-## ADR-002 FULL RULE SET (as of June 10 2026)
+5. Sports Media Watch Architecture
+   Drive: 13yVXGG-2n8932rl2isB9q-H3ll1HyvP0
+   buildPlayoffSpecials, buildWCMediaCards, buildDynamicPregames,
+   buildDynamicPostgames. scoreSMTCard scoring rules. renderMedia priority.
 
-Rule A: Relay generates prose only. No game classifications or interest values.
-Rule B: Classification is client-side, always.
-Rule C: No component reads another component's derived output.
-Rule D: Push checker uses standalone boolean only.
-Rule E: No SSR of drama state (client-rendered PWA is a compliance requirement).
-Rule F: R2 stores statistics, not ratings. Component 3 never reads R2. [NEW]
+6. Current State (End of Day)
+   Drive: 143MSh6OVfKII_JtXm9Z4N2S0vEHepV1g
+   Supersedes early-session Current State (which said R2: NO BINDING CURRENTLY).
+   Full capabilities, relay bindings, routes, open items, all doc IDs.
+
+## PREVIOUSLY WRITTEN THIS SESSION
+
+ADR-002 R2 Addendum (Rule F):   Drive 1C0Cw4w7Rx4kHqdQhy-mDN3mJK398DbWP
+Queue Pattern Architecture:     Drive 10gBfFiZaW7lKpZnXK1SEEwuzAuAagBHk
+Scout's Pick Architecture:      Drive 1xqXEOzok608gYUmZbU5d4GEDqAMQw3W2
+Session Documentation:          Drive 19SXTJDmXfyuiWQtlNNAjp8_fXJNiv94e
+
+## CODE SUMMARY (full session)
+
+jubilant-bassoon commits: 1c0332c → ad360af (7 commits)
+field-relay-nba commits: 6622bea → e9a282d (9 commits)
 
 ## OPEN ITEMS
-ADR-002: PROPOSED. Pending attorney review + Jeff approval.
-Split-operations question (post-game server-side scoring): unresolved.
-Wimbledon draw context: ~25 min TYPE A, before July 7
+Spec surfaces 6a-6f, focus trap, M5
+Wimbledon draw context: before July 7
 WC bracket: ~June 18-20
-Product spec surfaces 6a-6f
+ADR-002: attorney consultation pending
 
 ## SMOKE
 557/0
-
-## SESSION DOCS
-ADR-002 R2 Addendum: Drive 1C0Cw4w7Rx4kHqdQhy-mDN3mJK398DbWP
-Prior ADR-002 Continuation Addendum: Drive 1zTM69EnF9F5zljkBD-sGVmfl2Az1ys_2
