@@ -1008,7 +1008,10 @@ body::before{
 /* Bottom-sheet */
 .bottom-sheet-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:60;opacity:0;pointer-events:none;transition:opacity .2s}
 .bottom-sheet-overlay.open{opacity:1;pointer-events:all}
-.bottom-sheet{position:fixed;bottom:0;left:0;right:0;z-index:61;background:var(--card-bg,rgba(18,18,32,.98));border-top:2px solid rgba(255,255,255,.12);border-radius:18px 18px 0 0;max-height:88vh;overflow-y:auto;transform:translateY(100%);transition:transform .28s cubic-bezier(.4,0,.2,1);padding:1rem 1.1rem 2rem;backdrop-filter:blur(12px)}
+.bottom-sheet{position:fixed;bottom:0;left:0;right:0;z-index:61;background:var(--card-bg,rgba(18,18,32,.98));border-top:2px solid rgba(255,255,255,.12);border-radius:18px 18px 0 0;max-height:88vh;overflow-y:auto;transform:translateY(100%);transition:transform .28s cubic-bezier(.4,0,.2,1);padding:0 1.1rem 2rem;backdrop-filter:blur(12px)}
+.bs-handle-row{position:sticky;top:0;z-index:1;display:flex;align-items:center;justify-content:center;padding:.65rem 0 .55rem;touch-action:none;cursor:grab;background:var(--card-bg,rgba(18,18,32,.98));border-radius:18px 18px 0 0;margin-bottom:.25rem}
+.bs-handle{width:38px;height:4px;background:rgba(255,255,255,.22);border-radius:2px;transition:background .15s}
+.bs-handle-row:active .bs-handle{background:rgba(255,255,255,.45)}
 .bottom-sheet.open{transform:translateY(0)}
 .bs-handle{width:36px;height:4px;background:rgba(255,255,255,.2);border-radius:2px;margin:0 auto .9rem}
 .bs-teams{font-size:1rem;font-weight:800;margin-bottom:.25rem}
@@ -3822,7 +3825,8 @@ var _DOM = null;
 
 <!-- Bottom-sheet overlay -->
 <div id="bs-overlay" class="bottom-sheet-overlay" onclick="closeBottomSheet()"></div>
-<div id="bottom-sheet" class="bottom-sheet">
+<div id="bottom-sheet" class="bottom-sheet" role="dialog" aria-modal="true" aria-label="Game details">
+  <div class="bs-handle-row" id="bs-handle" aria-hidden="true"><div class="bs-handle"></div></div>
   <div class="bs-handle"></div>
   <div id="bs-content"></div>
 </div>
@@ -18345,6 +18349,7 @@ async function fetchSchedule(){
   setTimeout(fetchATPLiveScores, 4500);  // ATP Tour live scores (CORS open, no proxy needed)
   setTimeout(bdlPrefetchAll, 2000);       // BallDontLie injury prefetch (after schedule renders)
   setTimeout(uflEpaInit, 3500);           // UFL EPA live: SR PBP → EPA per play (self-gating, silent on fail)
+  initBottomSheetSwipe();                 // Bottom sheet: swipe-to-dismiss + focus trap
   setTimeout(mlbStatsInit, 4000);         // MLB stats: load weekly Savant tables (patches hardcoded stubs)
   setTimeout(nhlSeriesInit, 4600);        // NHL series PP%/PK% from R2 (overlays NHL_SPECIAL_TEAMS)
   setTimeout(nbaCluichInit, 4700);        // NBA clutch DRTG from R2 (fills null fields in NBA_TEAM_ANALYTICS)
@@ -31913,7 +31918,15 @@ function openBottomSheet(gameId) {
       <button onclick="navigator.share&&navigator.share({title:'${(game.away||'').replace(/'/g,'')} @ ${(game.home||'').replace(/'/g,'')}',text:'${(game.away||'').replace(/'/g,'')} @ ${(game.home||'').replace(/'/g,'')} · ${game.league||sport||''}',url:location.href}).catch(()=>{});closeBottomSheet()" style="flex:1;padding:.55rem;border-radius:.6rem;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);color:inherit;font-size:.7rem;cursor:pointer">⬆ Share</button>
     </div>`;
   getEl('bs-overlay')?.classList.add('open');
-  getEl('bottom-sheet')?.classList.add('open');
+  const _bsEl2 = getEl('bottom-sheet');
+  if (_bsEl2) {
+    _bsEl2.classList.add('open');
+    // Move focus into sheet after animation (a11y: focus trap requires focus inside)
+    setTimeout(() => {
+      const first = _bsEl2.querySelector('button,[href],[tabindex]:not([tabindex="-1"])');
+      if (first) first.focus();
+    }, 290);
+  }
 
   // J11: on-demand brief — fires after sheet opens, fills placeholder if cache was empty
   if (!gameBrief) {
@@ -31928,6 +31941,103 @@ function openBottomSheet(gameId) {
     });
   }
 }
+
+// ── Bottom sheet: swipe-to-dismiss + focus trap ───────────────────────────────
+// Swipe-down to dismiss follows iOS/Android native sheet conventions.
+// Drag starts only when sheet content is scrolled to top (or touch starts on handle).
+// Focus trap: on open, focus first interactive element; Escape closes sheet.
+function initBottomSheetSwipe() {
+  const bs  = getEl('bottom-sheet');
+  const hdl = getEl('bs-handle');
+  if (!bs) return;
+
+  let startY = 0, startTop = 0, delta = 0;
+  let dragging = false, handleDrag = false;
+  let lastMoveY = 0, lastMoveT = 0;
+
+  function onStart(e) {
+    const t = e.touches ? e.touches[0] : e;
+    startY      = t.clientY;
+    startTop    = bs.scrollTop;
+    delta       = 0;
+    dragging    = false;
+    handleDrag  = (e.target === hdl || hdl?.contains(e.target));
+    lastMoveY   = startY;
+    lastMoveT   = Date.now();
+  }
+
+  function onMove(e) {
+    const t = e.touches ? e.touches[0] : e;
+    const dy = t.clientY - startY;
+
+    if (!dragging) {
+      // Engage when: moving down AND (on handle OR scroll at top)
+      if (dy > 6 && (handleDrag || startTop <= 0)) {
+        dragging = true;
+        bs.style.transition = 'none';
+      } else {
+        return; // let normal scroll handle it
+      }
+    }
+
+    // Only allow downward drag
+    delta = Math.max(0, dy);
+    bs.style.transform = `translateY(${delta}px)`;
+
+    // Dim overlay proportionally
+    const pct = Math.min(delta / 200, 1);
+    const ov  = getEl('bs-overlay');
+    if (ov) ov.style.opacity = String(1 - pct * 0.6);
+
+    lastMoveY = t.clientY;
+    lastMoveT = Date.now();
+
+    if (delta > 0 && e.cancelable) e.preventDefault();
+  }
+
+  function onEnd() {
+    if (!dragging) return;
+    dragging = false;
+    bs.style.transition = '';
+
+    const elapsed  = Date.now() - lastMoveT;
+    const velocity = elapsed > 0 ? (delta - (lastMoveY - startY + delta)) / elapsed : 0;
+    const dismiss  = delta > 90 || velocity > 0.6;
+
+    if (dismiss) {
+      bs.style.transform = 'translateY(100%)';
+      const ov = getEl('bs-overlay');
+      if (ov) ov.style.opacity = '';
+      setTimeout(closeBottomSheet, 260);
+    } else {
+      bs.style.transform = 'translateY(0)';
+      const ov = getEl('bs-overlay');
+      if (ov) ov.style.opacity = '';
+    }
+    delta = 0;
+  }
+
+  bs.addEventListener('touchstart', onStart, { passive: true });
+  bs.addEventListener('touchmove',  onMove,  { passive: false });
+  bs.addEventListener('touchend',   onEnd,   { passive: true });
+
+  // Focus trap: keep focus inside open sheet; Escape closes
+  bs.addEventListener('keydown', e => {
+    if (e.key === 'Escape') { closeBottomSheet(); return; }
+    if (e.key !== 'Tab') return;
+    const focusable = [...bs.querySelectorAll(
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    )].filter(el => !el.disabled && el.offsetParent !== null);
+    if (!focusable.length) return;
+    const first = focusable[0], last = focusable[focusable.length - 1];
+    if (e.shiftKey && document.activeElement === first) {
+      e.preventDefault(); last.focus();
+    } else if (!e.shiftKey && document.activeElement === last) {
+      e.preventDefault(); first.focus();
+    }
+  });
+}
+
 function closeBottomSheet() {
   getEl('bs-overlay')?.classList.remove('open');
   getEl('bottom-sheet')?.classList.remove('open');

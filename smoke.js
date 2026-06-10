@@ -2957,6 +2957,21 @@ assert('A438c — Gap D: MD3 FINAL MATCHDAY tag injected in buildCompoundPrompt'
   html.includes('[FINAL MATCHDAY]') && html.includes('MD3\\b') && html.includes('anti-collusion'),
   'buildCompoundPrompt must inject [FINAL MATCHDAY] for WC MD3 games (Gap D)');
 
+// Bottom sheet native polish
+assert('A442a — bottom sheet: swipe-to-dismiss function defined',
+  html.includes('initBottomSheetSwipe') && html.includes('bs-handle') &&
+  html.includes('translateY(100%)') && html.includes('onEnd'),
+  'Bottom sheet must have swipe-to-dismiss and drag handle');
+
+assert('A442b — bottom sheet: focus trap + aria-modal present',
+  html.includes('aria-modal="true"') && html.includes("key === 'Escape'") &&
+  html.includes("key !== 'Tab'"),
+  'Bottom sheet must have focus trap (Escape + Tab cycling) and aria-modal');
+
+assert('A442c — bottom sheet: drag handle row in markup',
+  html.includes('bs-handle-row') && html.includes('bs-handle'),
+  'Bottom sheet must include drag handle pill element');
+
 // R2 client consumption
 assert('A438w — R2 client: nhlSeriesInit + nbaCluichInit wired at startup',
   html.includes('function nhlSeriesInit') && html.includes('function nbaCluichInit') &&
