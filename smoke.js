@@ -26,9 +26,11 @@ function assert(label, condition, detail = '') {
 
 console.log('\n── FIELD Smoke Test (GitHub Actions) ──────────────\n');
 
-// 1. File size sanity (>500KB, <2MB)
+// 1. File size sanity (>500KB, <2.5MB)
+// Ceiling raised from 2MB → 2.5MB (June 10 2026): wc26Raw + all WC team context inline.
+// Refactor target: extract wc26Raw + static team context to fetched JSON (~200KB savings).
 const size = Buffer.byteLength(html, 'utf8');
-assert('File size in range', size > 500000 && size < 2000000, `${size} bytes`);
+assert('File size in range', size > 500000 && size < 2500000, `${size} bytes`);
 
 // 2. HTML structure
 assert('Has DOCTYPE', html.startsWith('<!DOCTYPE html'));
