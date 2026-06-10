@@ -2976,6 +2976,35 @@ assert('A438h — Scout Pick item 4: Desk Card 4 single editorial pick',
   html.includes('totalPicks') && html.includes('+${totalPicks-1} more qualifying'),
   'Desk Card 4 must use editorial single-pick model via buildSlateScoutsPick');
 
+// Sports Media Watch upgrades (items 1-6)
+assert('A438o — SMW item 1: dynamic journalNote in buildDynamicPregames',
+  html.includes('_sd ? \' \\u00b7 \'') || html.includes("' \\u00b7 ' + _sd.shortText"),
+  'buildDynamicPregames must inject stat-of-day into journalNote');
+
+assert('A438p — SMW item 2: Scout Pick signal in scoreSMTCard',
+  html.includes('card._scoutPick') && html.includes('score += 25'),
+  'scoreSMTCard must boost Scout Pick pregame cards by 25');
+
+assert('A438q — SMW item 3: buildPlayoffSpecials defined',
+  html.includes('function buildPlayoffSpecials()') && html.includes('nbaFinalsDone') && html.includes('nhlFinalsDone'),
+  'buildPlayoffSpecials must auto-generate Finals/CF cards from allData');
+
+assert('A438r — SMW item 4: buildWCMediaCards defined',
+  html.includes('function buildWCMediaCards()') && html.includes('WC26_FOX') && html.includes('WC26_FS1'),
+  'buildWCMediaCards must generate per-game WC cards');
+
+assert('A438s — SMW item 5: buildDynamicPostgames defined',
+  html.includes('function buildDynamicPostgames()') && html.includes('Baseball Tonight') && html.includes('FIFA World Cup Postgame'),
+  'buildDynamicPostgames must generate Baseball Tonight and WC post-match cards');
+
+assert('A438t — SMW item 6: live-state suppression in scoreSMTCard',
+  html.includes('espnScores') && html.includes('state') && html.includes('score -= 50'),
+  'scoreSMTCard must deprioritize pregame cards when game is live');
+
+assert('A438u — SMW renderMedia wires all new functions',
+  html.includes('buildWCMediaCards()') && html.includes('buildPlayoffSpecials()') && html.includes('buildDynamicPostgames()'),
+  'renderMedia must call buildWCMediaCards, buildPlayoffSpecials, buildDynamicPostgames');
+
 // Night Owl expansion (items 1-4)
 assert('A438k — Night Owl item 1: getStatOfDay injected into _owlStatCtx',
   html.includes('[PRE-GAME STAT EDGE]') && html.includes('_owlSd?.fullText'),

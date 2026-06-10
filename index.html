@@ -10623,7 +10623,19 @@ function buildDynamicPregames(){
         time:pregameTime+" ET",
         desc:"Pregame coverage ahead of "+(game.away||"")+" @ "+(game.home||"")+" ("+gameTime+" ET, "+nbaNet+")."+nbaContextLine+" Series updates, injury reports, panel preview.",
         link:"https://www.espn.com/watch/",
-        journalNote: (game.seriesRecord&&game.seriesRecord!=='0-0') ? game.away+" @ "+game.home+" · "+game.seriesRecord : null,
+        journalNote: (() => {
+          // Item 1: dynamic journalNote — series record + stat edge + Scout's Pick signal
+          const _base = (game.seriesRecord && game.seriesRecord !== '0-0')
+            ? game.away + ' @ ' + game.home + ' \u00b7 ' + game.seriesRecord : null;
+          try {
+            const _sd = typeof getStatOfDay === 'function' ? getStatOfDay(game, 'nba') : null;
+            const _statStr = _sd ? ' \u00b7 ' + _sd.shortText : '';
+            const _spStr = (typeof isScoutsPick === 'function' && isScoutsPick(game)) ? ' \uD83D\uDD0D' : '';
+            return _base ? _base + _statStr + _spStr : null;
+          } catch(e_) { return _base; }
+        })(),
+        _gameId: game._id,
+        _scoutPick: !!(typeof isScoutsPick === 'function' && (() => { try { return isScoutsPick(game); } catch(e_) { return false; } })()),
       });
       const lastGame = sec.games[sec.games.length-1];
       if(lastGame&&lastGame.start_time){
@@ -10653,7 +10665,18 @@ function buildDynamicPregames(){
         time:pregameTime+" ET",
         desc:"Pregame analysis for "+(game.away||"")+" @ "+(game.home||"")+" ("+gameTime+" ET, "+network+")."+nhlContextLine+" Series preview and lineup reports.",
         link:"https://www.espn.com/watch/",
-        journalNote: (game.seriesRecord&&game.seriesRecord!=='0-0') ? (game.league||'NHL Playoffs')+" · "+game.seriesRecord : null,
+        journalNote: (() => {
+          const _base = (game.seriesRecord && game.seriesRecord !== '0-0')
+            ? (game.league || 'NHL Playoffs') + ' \u00b7 ' + game.seriesRecord : null;
+          try {
+            const _sd = typeof getStatOfDay === 'function' ? getStatOfDay(game, 'nhl') : null;
+            const _statStr = _sd ? ' \u00b7 ' + _sd.shortText : '';
+            const _spStr = (typeof isScoutsPick === 'function' && isScoutsPick(game)) ? ' \uD83D\uDD0D' : '';
+            return _base ? _base + _statStr + _spStr : null;
+          } catch(e_) { return _base; }
+        })(),
+        _gameId: game._id,
+        _scoutPick: !!(typeof isScoutsPick === 'function' && (() => { try { return isScoutsPick(game); } catch(e_) { return false; } })()),
       });
     }
 
@@ -10725,7 +10748,192 @@ function scoreSMTCard(card) {
     if (tonightSports.has('Hockey (NHL)') && cardNetwork.includes('nhl')) score += 15;
     if (tonightSports.has('Baseball (MLB)') && cardNetwork.includes('mlb')) score += 10;
   }
+  // Item 2: Scout's Pick signal — pregame card for tonight's top pick ranks higher.
+  // Uses buildSlateScoutsPick() cross-slate selector (one pick per night).
+  // card._gameId is attached by buildDynamicPregames() and buildWCMediaCards()
+  // when a game qualifies; scoreSMTCard reads it here without computing pick again.
+  if (card._scoutPick) score += 25;
+  // Item 6: Live state suppression — pregame card deprioritizes once game is live.
+  // espnScores state:'in' means the pregame window is over; drop it below live content.
+  if (card._gameId && typeof espnScores !== 'undefined') {
+    const liveEntry = Object.values(espnScores).find(v =>
+      v._gameId === card._gameId && v.state === 'in');
+    if (liveEntry) score -= 50; // pregame card, game is already live — drop it
+  }
   return score;
+}
+
+// ── Item 4: buildWCMediaCards — per-game WC cards from allData ───────────────
+// Replaces the single blanket MEDIA_SPECIALS WC card with per-game cards.
+// Generates one card per WC game on today's slate, deriving network from
+// nationalBundle and injecting matchupNote as journalNote.
+// Deduplicated by show name in renderMedia — won't conflict with MEDIA_SPECIALS.
+function buildWCMediaCards() {
+  if (!allData || !allData.sports) return [];
+  const cards = [];
+  const WC_NETWORK = {
+    WC26_FOX: 'FOX', WC26_FS1: 'FS1', WC26_FREE: 'FOX / Tubi FREE',
+  };
+  const WC_LINK = {
+    WC26_FOX: 'https://www.foxsports.com/soccer/fifa-world-cup',
+    WC26_FS1: 'https://www.foxsports.com/live',
+    WC26_FREE: 'https://tubitv.com/live',
+  };
+  const WC_CHIP = {
+    WC26_FOX: 'fox', WC26_FS1: 'FS1', WC26_FREE: 'fox',
+  };
+
+  for (const sec of allData.sports) {
+    if (!(sec.sport || '').includes('FIFA')) continue;
+    for (const game of (sec.games || [])) {
+      if (!game._id || !game.home) continue;
+      const network = WC_NETWORK[game.nationalBundle] || 'FOX/FS1';
+      const link    = WC_LINK[game.nationalBundle]    || 'https://www.foxsports.com/soccer/fifa-world-cup';
+      const chip    = WC_CHIP[game.nationalBundle]    || 'fox';
+      const gameTime = game.start_time ? fmtTime(game.start_time) : 'TBD';
+
+      // Item 1: dynamic journalNote — matchupNote + stat edge if Scout's Pick
+      let journalNote = game.matchupNote
+        ? game.matchupNote.split('.')[0].slice(0, 100) + '.'
+        : null;
+      try {
+        if (typeof isScoutsPick === 'function' && isScoutsPick(game)) {
+          const _wcSd = typeof getStatOfDay === 'function'
+            ? getStatOfDay(game, 'FIFA World Cup 2026') : null;
+          if (_wcSd) {
+            journalNote = (journalNote ? journalNote + ' ' : '') +
+              '\uD83D\uDD0D Scout’s Pick: ' + _wcSd.shortText;
+          }
+        }
+      } catch(e_) {}
+
+      const leagueShort = (game.league || '').replace('FIFA World Cup 2026 — ', '').replace('FIFA World Cup 2026', 'Group Stage');
+
+      cards.push({
+        show: game.away + ' vs ' + game.home,
+        network, chip,
+        time: gameTime + ' ET',
+        desc: leagueShort + '. ' + (game.matchupNote || (game.away + ' face ' + game.home + ' in group stage action.')) ,
+        link,
+        journalNote,
+        _gameId: game._id,
+        _scoutPick: !!(typeof isScoutsPick === 'function' && isScoutsPick(game)),
+      });
+    }
+  }
+  return cards;
+}
+
+// ── Item 3: buildPlayoffSpecials — auto-generate Finals/CF cards from allData ─
+// Reduces TYPE A manual work: no need to add MEDIA_SPECIALS entries for
+// active Finals/Conference Finals series — this generates them dynamically.
+// Only fires for games with series records (playoff context confirmed).
+// MEDIA_SPECIALS manual entries still override via dedup in renderMedia.
+function buildPlayoffSpecials() {
+  if (!allData || !allData.sports) return [];
+  const cards = [];
+  let nbaFinalsDone = false, nhlFinalsDone = false;
+
+  for (const sec of allData.sports) {
+    for (const game of (sec.games || [])) {
+      if (!game.seriesRecord || game.seriesRecord === '0-0') continue;
+      const league = (game.league || '').toLowerCase();
+      const network = game.streams?.[0]?.label || '';
+      const gameTime = game.start_time ? fmtTime(game.start_time) : 'TBD';
+
+      // NBA Finals
+      if (!nbaFinalsDone && /nba finals/i.test(game.league || '')) {
+        nbaFinalsDone = true;
+        const note = game.matchupNote ? game.matchupNote.split('.')[0].slice(0, 100) + '.' : '';
+        // Item 1: stat edge in journalNote
+        let journalNote = game.away + ' @ ' + game.home + ' \u00b7 ' + game.seriesRecord;
+        try {
+          const _sd = typeof getStatOfDay === 'function' ? getStatOfDay(game, 'nba') : null;
+          if (_sd) journalNote += ' \u00b7 ' + _sd.shortText;
+        } catch(e_) {}
+        cards.push({
+          show: 'NBA Finals ' + game.seriesRecord,
+          network: network || 'ABC',
+          chip: 'ESPN',
+          time: gameTime + ' ET',
+          desc: game.away + ' @ ' + game.home + '. ' + note + (note ? '' : ' NBA Finals on ABC.'),
+          link: 'https://www.espn.com/nba/playoffs/bracket',
+          journalNote,
+          _gameId: game._id,
+          _scoutPick: false,
+        });
+      }
+
+      // Stanley Cup Final
+      if (!nhlFinalsDone && /stanley cup final/i.test(game.league || '')) {
+        nhlFinalsDone = true;
+        let journalNote = game.away + ' @ ' + game.home + ' \u00b7 ' + game.seriesRecord;
+        try {
+          const _sd = typeof getStatOfDay === 'function' ? getStatOfDay(game, 'nhl') : null;
+          if (_sd) journalNote += ' \u00b7 ' + _sd.shortText;
+        } catch(e_) {}
+        cards.push({
+          show: 'Stanley Cup Final ' + game.seriesRecord,
+          network: network || 'ABC',
+          chip: 'ESPN',
+          time: gameTime + ' ET',
+          desc: game.away + ' @ ' + game.home + '. ' + (game.matchupNote ? game.matchupNote.split('.')[0].slice(0,100) + '.' : 'Stanley Cup Final on ABC/ESPN.'),
+          link: 'https://www.espn.com/nhl/playoffs/bracket',
+          journalNote,
+          _gameId: game._id,
+          _scoutPick: false,
+        });
+      }
+    }
+  }
+  return cards;
+}
+
+// ── Item 5: buildDynamicPostgames — Baseball Tonight, WC post-match etc ───────
+// Generates postgame show cards timed ~2.5hr after the last game of the night.
+// Covers gaps in buildDynamicPregames() which only adds Inside the NBA + Golf.
+function buildDynamicPostgames() {
+  if (!allData || !allData.sports) return [];
+  const cards = [];
+  const dow = new Date().getDay();
+  let mlbDone = false, wcDone = false;
+
+  for (const sec of allData.sports) {
+    const sport = sec.sport || '';
+    const games = sec.games || [];
+    if (!games.length) continue;
+    const lastGame = games[games.length - 1];
+    if (!lastGame.start_time) continue;
+
+    // Baseball Tonight (MLB nights — not weekends which have different coverage)
+    if (!mlbDone && sport.includes('MLB') && games.length > 0) {
+      mlbDone = true;
+      const postTime = fmtTime(shiftTime(lastGame.start_time, 210)); // ~3.5hr after last first pitch
+      cards.push({
+        show: 'Baseball Tonight',
+        network: 'ESPN', chip: 'ESPN',
+        time: '~' + postTime + ' ET',
+        desc: 'Highlights, scores, and analysis from tonight\u2019s full MLB slate. Karl Ravech and analysts break down the biggest plays, pitching performances, and standings implications.',
+        link: 'https://www.espn.com/watch/',
+      });
+    }
+
+    // WC post-match coverage (Golazo / FOX Sports postgame)
+    if (!wcDone && sport.includes('FIFA')) {
+      wcDone = true;
+      const postTime = fmtTime(shiftTime(lastGame.start_time, 120)); // ~2hr after last kickoff
+      const lastNet = lastGame.nationalBundle === 'WC26_FREE' ? 'FOX' :
+                      lastGame.nationalBundle === 'WC26_FS1'  ? 'FS1' : 'FOX';
+      cards.push({
+        show: 'FIFA World Cup Postgame',
+        network: lastNet, chip: 'fox',
+        time: '~' + postTime + ' ET',
+        desc: 'Post-match analysis and reaction following today\u2019s FIFA World Cup 2026 matches. ' + lastGame.away + ' vs ' + lastGame.home + ' wraps the day\u2019s action.',
+        link: 'https://www.foxsports.com/soccer/fifa-world-cup',
+      });
+    }
+  }
+  return cards;
 }
 
 function renderMedia(){
@@ -10738,12 +10946,17 @@ function renderMedia(){
   const specialCards = MEDIA_SPECIALS
     .filter(s => todayStr >= s.startDate && todayStr <= s.endDate)
     .map(s => s.card);
-  const pregameCards = buildDynamicPregames();
+  const pregameCards  = buildDynamicPregames();
+  const wcCards       = buildWCMediaCards();       // Item 4: per-game WC cards
+  const playoffCards  = buildPlayoffSpecials();    // Item 3: auto Finals/CF cards
+  const postgameCards = buildDynamicPostgames();   // Item 5: Baseball Tonight, WC post
 
-  // Merge; deduplicate by show name (specials/pregames can override base)
+  // Merge; deduplicate by show name (specials/pregames can override base).
+  // Priority order: base < specials < playoff-auto < WC-per-game < pregames < postgames.
+  // MEDIA_SPECIALS manual entries win over auto-generated playoff cards (manual has richer desc).
   const seen = new Set();
   let MEDIA_TODAY = [];
-  for(const card of [...baseCards, ...specialCards, ...pregameCards]){
+  for(const card of [...baseCards, ...specialCards, ...playoffCards, ...wcCards, ...pregameCards, ...postgameCards]){
     if(!seen.has(card.show)){ seen.add(card.show); MEDIA_TODAY.push(card); }
   }
 
