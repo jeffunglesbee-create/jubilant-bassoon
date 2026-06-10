@@ -1,86 +1,77 @@
-# FIELD HANDOFF — 2026-06-10 (R2 Upgrades: 4 items complete)
+# FIELD HANDOFF — 2026-06-10 (Whitelist Extension + Relay-Native Pipelines)
 
 ## HEADS
-- jubilant-bassoon HEAD: 10b567c
+- jubilant-bassoon HEAD: d0f2644
 - SW_VERSION: 2026-06-10a
 - Smoke: 555/0
-- field-relay-nba HEAD: 0b46e9f
+- field-relay-nba HEAD: 3120abf
 
 ## SESSION TYPE
 TYPE A+B (Verification + Feature build)
 
-## WHAT SHIPPED (R2 upgrade items 1-4)
+## KEY FINDING: HEADER-BASED BLOCK, NOT IP-BASED
 
-### Item 1: NHL SCF Series-Adjusted PP%/PK% (relay 686d2df)
-src/nhl-series-r2.js: fetches completed SCF boxscores from api-web.nhle.com.
-  Aggregates powerPlayGoals + pim across all games → series PP%/PK%.
-  Incremental (processedGameIds), runs every 15-min April-July.
-  R2: nhl/scf-2026/series-stats.json
-  Route: /nhl-series/{series}/stats
-  SCF state: CAR leads 3-1 (Game 4 final: CAR 5, VGK 3)
-index.html (10b567c): nhlSeriesInit() at T+4600ms
-  Overlays _seriesPP/_seriesPK onto NHL_SPECIAL_TEAMS entries.
-  getNHLEffectiveST() returns series-adjusted rates when loaded.
-  getStatOfDay + getNHLAnalyticsContext both use series-adjusted rates.
+stats.nba.com: returns 200 through relay (with NBA headers: UA, Referer, Origin).
+The 520 from direct probe was a header-verification artefact — not a CF IP block.
+Implication: any stats.nba.com endpoint works if whitelisted in NBA_STATS_ALLOWED_PATHS.
 
-### Item 2: WC Team Context Patches (relay c93b32c)
-R2 amendment layer on top of static wc-team-context.js inline module.
-  POST /wc-context-patch (X-FIELD-Admin: 1) writes patches to R2.
-  GET /wc-context-patch reads current patches.
-  buildWCTeamContextBlock(lines, db, patches) merges at prompt time.
-  loadWCPatches() with 15-min in-memory cache.
-  Format: {teams: {USA: {narrativeNote: "...", guardrail: "..."}, ...}}
-  Use for: mid-tournament injuries, form notes, tactical shifts.
+NST (naturalstattrick.com): 403 + Cloudflare Turnstile — TRUE IP block. Cannot whitelist.
+FBref: same — 403 + CF Turnstile. GitHub Actions hybrid permanent.
+MoneyPuck: HTTP 200 from CF Workers — no block at all.
 
-### Item 3: EPL/La Liga/Bundesliga/Serie A/Ligue 1 via FBref (relay 0b46e9f)
-scripts/soccer-fbref-wc.py rewritten as multi-league pipeline (jubilant-bassoon).
-  6 leagues: WC 2026, EPL 2025-26, La Liga, Bundesliga, Serie A, Ligue 1.
-  R2 keys: soccer/fbref/wc2026.json, epl.json, laliga.json, bundesliga.json, etc.
-  Route /soccer-fbref/ allowed list extended to all 6 files.
-  First runs: soccer-fbref-wc.yml dispatched (WC + all leagues).
-index.html (10b567c):
-  soccerFBrefInit(leagueFile) lazy-loads FBref data per league.
-  [SOCCER ANALYTICS] injected into buildCompoundPrompt for EPL/etc.
-  getSoccerFBrefStats() fuzzy matches by last word of squad name.
+## WHITELIST EXTENSION (NBA_STATS_ALLOWED_PATHS, relay ee3ac21)
+Added (Rule 45 extension, same ToS class as leagueLeaders):
+  /leaguedashteamclutch    — team clutch stats (verified 200, returns DEF_RATING)
+  /leaguedashteamstats     — team DRTG/ORTG/pace
+  /teamdashboardbygeneralsplits
+  /leaguedashplayerclutch  — per-player clutch
 
-### Item 4: NBA Clutch DRTG (relay 0b46e9f + jubilant-bassoon 2649179)
-scripts/nba-clutch-update.py: fetches stats.nba.com leaguedashteamclutch.
-  stats.nba.com → 520 from CF Workers — GH Actions hybrid required.
-  Fetches both Playoffs + Regular Season clutch stats.
+## WHAT SHIPPED
+
+### NBA Clutch → Relay-Native (relay 467b35e)
+src/nba-clutch-r2.js replaces GitHub Actions nba-clutch-update.yml hybrid.
+  leaguedashteamclutch(Advanced) confirmed 200 with DEF_RATING, OFF_RATING.
+  Cron: Mon/Wed/Fri UTC 12 during Finals (June-July), Wed-only otherwise.
+  POST /nba-clutch-update admin endpoint.
   R2: nba/2026/clutch_playoffs.json + clutch_regular.json
-  Route: /nba-clutch/{file}
-  First run dispatched June 10.
-index.html (10b567c):
-  nbaCluichInit() at T+4700ms fills clutchDrtg nulls in NBA_TEAM_ANALYTICS.
-  NBA Finals Desk "Analytics Edge" section now has real clutch DRTG data.
 
-## VERIFICATION RESULTS
-api-web.nhle.com: HTTP 200 from CF Workers ✅
-stats.nba.com: HTTP 520 from CF Workers ❌ (GH Actions hybrid used)
-FBref: HTTP 403 from CF Workers ❌ (GH Actions hybrid used)
+### NHL-B MoneyPuck GSAX → Relay-Native (relay 467b35e)
+src/nhl-gsax-r2.js (NHL-B spec item).
+  MoneyPuck HTTP 200 from CF Workers — no hybrid needed.
+  GSAX = xGoals - goalsAllowed (situation=all, min 3 GP).
+  Cron: Monday UTC 11, April-July.
+  Route: /nhl-gsax/playoffs.json
+  R2: nhl/2026/gsax-playoffs.json
+
+### Client (jubilant-bassoon d0f2644)
+nhlGSAXInit() at T+4800ms — overlays _gsax/_gsaxTier on NHL_GOALIE_RATINGS.
+Replaces save% proxy with true GSAX for SCF goalie journalism context.
+
+### r2-init.yml (relay 3120abf)
+Manual workflow for on-demand R2 population via admin endpoints.
+First runs dispatched: nba-clutch-update, mlb-savant-update, nfl-r2-update.
+
+## BLOCK MAP (verified June 10 2026)
+ACCESSIBLE from CF Workers:
+  api-web.nhle.com        ✅ (IP-open)
+  stats.nba.com           ✅ (header-based — relay headers sufficient)
+  moneypuck.com           ✅ (IP-open)
+  baseballsavant.mlb.com  ✅ (IP-open, verified earlier session)
+  cdn.nba.com             ✅ (relay headers required)
+  github.com/nflverse      ✅ (public CDN redirect)
+
+BLOCKED from CF Workers (CF Turnstile):
+  fbref.com               ❌ → GitHub Actions hybrid (soccer-fbref-wc.yml)
+  naturalstattrick.com    ❌ → no relay path, NST PDO deferred
+
+## OPEN ITEMS
+NHL-C (NST PDO): blocked — need alternative source or accept manual updates
+Wimbledon draw context: ~25 min TYPE A, before July 7
+
+Product spec surfaces (6a-6f), focus trap, M5, WC bracket ~June 18-20
 
 ## SMOKE
 555/0
 
-## R2 BUCKET STATE (field-relay-data, ENAM)
-mlb/2026/: team_abs, expected_stats, sprint_speed, pitch_tempo, pitch_arsenals
-  [populates Monday UTC 10-13]
-nfl/2026/: player-stats, ngs-passing, pfr-rec
-  [populates Wednesday UTC 12-15]
-soccer/fbref/: wc2026, epl, laliga, bundesliga, seriea, ligue1
-  [first run dispatched June 10 — GH Actions workflow running]
-nhl/scf-2026/: series-stats [populates on next 15-min journalism cron tick]
-nba/2026/: clutch_playoffs, clutch_regular [first run dispatched June 10]
-soccer/: wc2026-patches [empty until first /wc-context-patch POST]
-
-## REMAINING R2 ITEMS
-NHL-B (MoneyPuck GSAX): [VERIFY] ToS ~30 min
-NHL-C (NST PDO): [VERIFY] HTML structure ~30 min
-Wimbledon draw context: ~25 min TYPE A, before July 7
-
-## OPEN ITEMS (product spec surfaces)
-Series dots 6a / Arc sparkline 6b / WHOLE FIELD 6c / Night Owl amnesty 6d /
-State transition 6e / Drama spectrum 6f / Focus trap / M5 / WC bracket ~June 18-20
-
 ## SESSION DOCS
-Drive 1L5QCzn4dWvUwZP8forvpX-CxHyzagc-5 (primary)
+Drive 1L5QCzn4dWvUwZP8forvpX-CxHyzagc-5
