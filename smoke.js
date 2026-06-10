@@ -2976,6 +2976,10 @@ assert('A438h — Scout Pick item 4: Desk Card 4 single editorial pick',
   html.includes('totalPicks') && html.includes('+${totalPicks-1} more qualifying'),
   'Desk Card 4 must use editorial single-pick model via buildSlateScoutsPick');
 
+assert('A438j — Scout Pick item 6: stat integrated into badge text (Option B)',
+  html.includes("Scout's Pick: \${_spStatLine}") && html.includes('Stat of Day badge suppressed'),
+  'Scout Pick badge must fold stat into badge text, suppressing separate stat-day-badge');
+
 assert('A438i — Scout Pick item 5: Queue-backed brief enqueue+poll',
   html.includes('scouts-pick') && html.includes('field_sp_brief_v') && html.includes('spJobKey'),
   'Scout\'s Pick brief must use Queue enqueue+poll pattern');

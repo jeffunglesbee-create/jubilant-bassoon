@@ -11704,26 +11704,30 @@ function injectJ1J4Badges() {
       } catch(_) {}
       const badge = document.createElement('span');
       badge.className = 'scout-pick-badge';
-      badge.textContent = '🔍 Scout\'s Pick';
-      // Tooltip: describe the qualifying signal, not a composite score
-      let scoutTitle = 'Under-the-radar tonight';      try {
-        if (g.seriesRecord) scoutTitle = `${g.seriesRecord} · not on national TV`;
+      // Option B: stat folds into badge text when available.
+      // "🔍 Scout's Pick: CAR 93.5% PK%" — one signal, not two parallel badges.
+      // .stat-day-badge suppressed for Scout's Pick games (info already in badge).
+      let _spStatLine = '';
+      try {
+        const _spStat = (typeof getStatOfDay === 'function')
+          ? getStatOfDay(g, sec?.sport || g._sport || '') : null;
+        if (_spStat) _spStatLine = _spStat.shortText;
+      } catch(e_) {}
+      badge.textContent = _spStatLine
+        ? `🔍 Scout's Pick: ${_spStatLine}`
+        : '🔍 Scout\'s Pick';
+      // Tooltip: full stat context + qualifying signal
+      let scoutTitle = 'Under-the-radar tonight';
+      try {
+        const _spStat2 = (typeof getStatOfDay === 'function')
+          ? getStatOfDay(g, sec?.sport || g._sport || '') : null;
+        if (_spStat2) scoutTitle = _spStat2.fullText;
+        else if (g.seriesRecord) scoutTitle = `${g.seriesRecord} · not on national TV`;
         else if (/playoff|final|series/i.test(g.league||'')) scoutTitle = 'Playoff stakes · not on national TV';
-        else {
-          scoutTitle = 'Competitive game · not on national TV';
-        }
       } catch(e_) {}
       badge.title = scoutTitle;
       cardBody.appendChild(badge);
-      // Stat of Day — one-line evidence for the Scout's Pick
-      try {
-        const statHtml = buildStatOfDayBadge(g, sec?.sport || g._sport || '');
-        if (statHtml) {
-          const statEl = document.createElement('span');
-          statEl.innerHTML = statHtml;
-          cardBody.appendChild(statEl.firstChild);
-        }
-      } catch(e_) {}
+      // Stat of Day badge suppressed — stat is integrated into Scout's Pick badge above
 
       // ── Queue-backed Scout's Pick brief ─────────────────────────────────
       // Enqueue a dedicated 60-80 word "why watch" brief for the top pick.
