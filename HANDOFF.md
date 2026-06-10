@@ -1,57 +1,61 @@
-# FIELD HANDOFF — 2026-06-10 (R2 Analytics UI Surfaces)
+# FIELD HANDOFF — 2026-06-10 (ADR-002 R2 Addendum)
 
 ## HEADS
-- jubilant-bassoon HEAD: 9bb98da
+- jubilant-bassoon HEAD: ad360af
 - SW_VERSION: 2026-06-10a
 - Smoke: 557/0
 - field-relay-nba HEAD: e9a282d
 
 ## SESSION TYPE
-TYPE A (UI feature)
+TYPE D (Patent analysis + documentation)
 
-## WHAT SHIPPED (9bb98da)
+## WHAT SHIPPED (ad360af)
 
-### Option A: Scout's Pick brief footer
-Analytics chips appended below .brief-scout-note brief text.
-Only renders when R2 data loaded for the specific game.
-Both injection paths updated (cached + polled result).
+### ADR-002 R2 Storage Addendum
+.github/adr/ADR-002-r2-addendum.md committed.
+Drive: 1C0Cw4w7Rx4kHqdQhy-mDN3mJK398DbWP
 
-Chips per sport:
-  NHL: series PK% (teal) · PDO if ±0.010 (amber) · GSAX if ≥0.8 (teal/muted)
-  NBA: clutch DRTG per team (blue when elite ≤106, muted otherwise)
+#### Finding
+R2 is NOT a RUWT concern under current usage.
+  - R2 stores team performance statistics (PP%, GSAX, clutch DRTG, xG, etc.)
+  - None are game-level interest ratings in the RUWT sense
+  - Component 3 (push cron) never reads R2 — coupled pair does not form
+  - R2 data flows only to journalism prompts + client-side chips (Component 2)
 
-Design: collapsed by default (only seen after reading the brief).
-        No new surface — inside existing .brief-scout-note.
-        Chip colors: teal = performance, amber = luck signal, blue = defense.
+#### New Rule F (binding from this addendum)
+"R2 STORES STATISTICS, NOT RATINGS."
+  Test: 'Does this value answer how exciting is this game right now?'
+  If yes → forbidden. If no → permitted.
+  Component 3 must NEVER read from R2. Unconditional.
 
-### Option C: Analytics Edge desk card
-New desk card: type-analytics, inserts between Scout's Pick and Anti-Hype.
-Trigger: ≥1 SCF/Finals game on slate AND _anyR2Loaded (series/clutch/GSAX).
-Per-game sections, chip-based layout (no prose, scannable).
-Source label in card header: "NHL series · NBA clutch · GSAX"
-Blue left-border (distinct from teal Scout's Pick).
-Zero presence on game cards. Zero presence in bottom sheet.
+#### PDO edge case analyzed
+Clean: team-level, computed from historical data, never in push path.
+'Running hot/cold' label is generated client-side (_buildAnalyticsChips).
+The relay stores only the raw PDO number.
 
-### Shared infrastructure
-_buildAnalyticsChips(game): builds chip array from all loaded R2 tables.
-_chipsHTML(chips): renders chip array as HTML with title tooltip attributes.
-CSS variants: .dac base + .dac-teal/.dac-amber/.dac-blue/.dac-muted.
+#### Rule C clarification for R2
+Component 1 reading Component 1's own R2 derived storage: PERMITTED.
+Component 3 reading R2 regardless of content: FORBIDDEN.
 
-## FULL SURFACE MAP (final state)
+## ADR-002 FULL RULE SET (as of June 10 2026)
 
-| R2 data | Journalism (AI) | Scout's Pick badge | Brief footer (A) | Desk card (C) |
-|---------|----------------|-------------------|-----------------|----------------|
-| NHL series PP/PK | [PP/PK] tag ✅ | badge text ✅ | PK% chip ✅ | PK% chip ✅ |
-| NHL PDO | [PDO] tag ✅ | — | PDO chip ✅ | PDO chip ✅ |
-| NHL GSAX | [GOALIE DUEL] ✅ | — | GSAX chip ✅ | GSAX chip ✅ |
-| NBA clutch DRTG | [TEAM CLUTCH] ✅ | — | clutch chip ✅ | clutch chip ✅ |
-| Soccer xG | [SOCCER ANALYTICS] ✅ | — | — | — |
+Rule A: Relay generates prose only. No game classifications or interest values.
+Rule B: Classification is client-side, always.
+Rule C: No component reads another component's derived output.
+Rule D: Push checker uses standalone boolean only.
+Rule E: No SSR of drama state (client-rendered PWA is a compliance requirement).
+Rule F: R2 stores statistics, not ratings. Component 3 never reads R2. [NEW]
 
 ## OPEN ITEMS
+ADR-002: PROPOSED. Pending attorney review + Jeff approval.
+Split-operations question (post-game server-side scoring): unresolved.
 Wimbledon draw context: ~25 min TYPE A, before July 7
-WC bracket render: ~June 18-20
+WC bracket: ~June 18-20
 Product spec surfaces 6a-6f
-ADR-002: attorney consultation pending
 
 ## SMOKE
 557/0
+
+## SESSION DOCS
+ADR-002 R2 Addendum: Drive 1C0Cw4w7Rx4kHqdQhy-mDN3mJK398DbWP
+Prior ADR-002 Continuation Addendum: Drive 1zTM69EnF9F5zljkBD-sGVmfl2Az1ys_2
