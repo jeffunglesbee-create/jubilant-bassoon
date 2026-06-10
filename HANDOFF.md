@@ -1,69 +1,57 @@
-# FIELD HANDOFF — 2026-06-10 (R2 surfaces wired)
+# FIELD HANDOFF — 2026-06-10 (R2 Analytics UI Surfaces)
 
 ## HEADS
-- jubilant-bassoon HEAD: 27db136
+- jubilant-bassoon HEAD: 9bb98da
 - SW_VERSION: 2026-06-10a
-- Smoke: 555/0
+- Smoke: 557/0
 - field-relay-nba HEAD: e9a282d
 
-## WHAT SHIPPED (27db136)
+## SESSION TYPE
+TYPE A (UI feature)
 
-### Three journalism surface gaps closed
+## WHAT SHIPPED (9bb98da)
 
-Diagnosis from "where do R2 items surface?":
-  NHL series stats: loaded but [PP/PK] tag still used season stats.
-  NHL GSAX: loaded but [GOALIE DUEL/EDGE] still used save% only.
-  NBA clutch DRTG: loaded but never read by getNBAAnalyticsContext.
+### Option A: Scout's Pick brief footer
+Analytics chips appended below .brief-scout-note brief text.
+Only renders when R2 data loaded for the specific game.
+Both injection paths updated (cached + polled result).
 
-Fix 1 — getNHLAnalyticsContext now uses getNHLEffectiveST (series-adjusted):
-  [PP/PK] tag: "CAR 93.5% PK% (series)" not pre-SCF entry rate.
-  [PDO] tag ADDED: fires when series PDO > 1.010 or < 0.990.
-    "VGK PDO 0.981 — running cold, due for improvement"
+Chips per sport:
+  NHL: series PK% (teal) · PDO if ±0.010 (amber) · GSAX if ≥0.8 (teal/muted)
+  NBA: clutch DRTG per team (blue when elite ≤106, muted otherwise)
 
-Fix 2 — [GOALIE DUEL/EDGE] appends GSAX from MoneyPuck R2:
-  "[GOALIE DUEL] Andersen .923 · Hart .924 · GSAX: +3.1 / +1.8"
-  "[GOALIE EDGE] Andersen — .923 sv% · GSAX +3.1 this playoff run"
-  Falls back to save% only when GSAX unavailable.
+Design: collapsed by default (only seen after reading the brief).
+        No new surface — inside existing .brief-scout-note.
+        Chip colors: teal = performance, amber = luck signal, blue = defense.
 
-Fix 3 — [TEAM CLUTCH] tag ADDED to getNBAAnalyticsContext:
-  Reads clutchDrtg from NBA_TEAM_ANALYTICS (filled by nbaCluichInit).
-  Fires: elite team clutchDrtg <= 108, or gap >= 5 between teams.
-  "[TEAM CLUTCH] NYK 102.0 DRTG in clutch — elite late-game defense."
+### Option C: Analytics Edge desk card
+New desk card: type-analytics, inserts between Scout's Pick and Anti-Hype.
+Trigger: ≥1 SCF/Finals game on slate AND _anyR2Loaded (series/clutch/GSAX).
+Per-game sections, chip-based layout (no prose, scannable).
+Source label in card header: "NHL series · NBA clutch · GSAX"
+Blue left-border (distinct from teal Scout's Pick).
+Zero presence on game cards. Zero presence in bottom sheet.
 
-## FULL R2 SURFACE MAP (all items now wired)
+### Shared infrastructure
+_buildAnalyticsChips(game): builds chip array from all loaded R2 tables.
+_chipsHTML(chips): renders chip array as HTML with title tooltip attributes.
+CSS variants: .dac base + .dac-teal/.dac-amber/.dac-blue/.dac-muted.
 
-| Data | Surfaces in |
-|------|------------|
-| NHL series PP%/PK% | Scout's Pick badge + [PP/PK] journalism tag |
-| NHL series PDO | [PDO] journalism tag (NEW) |
-| NHL GSAX | [GOALIE DUEL/EDGE] journalism tags |
-| NBA clutch DRTG | [TEAM CLUTCH] journalism tag (NEW) |
-| FBref soccer xG | [SOCCER ANALYTICS] in buildCompoundPrompt |
-| MLB stats (mlbStatsInit) | Scout's Pick badge, umpire badge, pitch arsenal context |
-| nflverse | Not yet wired — September use case |
+## FULL SURFACE MAP (final state)
 
-## WHAT EACH R2 ITEM NOW PRODUCES FOR THE USER
+| R2 data | Journalism (AI) | Scout's Pick badge | Brief footer (A) | Desk card (C) |
+|---------|----------------|-------------------|-----------------|----------------|
+| NHL series PP/PK | [PP/PK] tag ✅ | badge text ✅ | PK% chip ✅ | PK% chip ✅ |
+| NHL PDO | [PDO] tag ✅ | — | PDO chip ✅ | PDO chip ✅ |
+| NHL GSAX | [GOALIE DUEL] ✅ | — | GSAX chip ✅ | GSAX chip ✅ |
+| NBA clutch DRTG | [TEAM CLUTCH] ✅ | — | clutch chip ✅ | clutch chip ✅ |
+| Soccer xG | [SOCCER ANALYTICS] ✅ | — | — | — |
 
-NHL series stats → pre-game journalism shows current-series rates not entry rates.
-  Before: "[PP/PK] VGK 23.9% PP | PK: CAR 93.5%"  (pre-SCF entry, potentially stale)
-  After:  "[PP/PK] VGK 22.1% PP (series) | PK: CAR 91.7% (series)"
-
-NHL PDO → new luck signal in journalism.
-  "[PDO] VGK PDO 0.981 — running cold, due for improvement"
-  Fires only when series window exceeds ±0.010 from baseline.
-
-NHL GSAX → goalie journalism now cites true GSAX not save% proxy.
-  "[GOALIE DUEL] Both elite: Andersen .923 · Hart .924 · GSAX: +3.1 / +1.8"
-
-NBA clutch DRTG → new late-game defense signal in Finals journalism.
-  "[TEAM CLUTCH] NYK 102.0 DRTG in clutch — elite late-game defense."
-  Fires when first R2 run completes (dispatched June 10).
-
-Soccer xG → EPL/WC journalism includes xG context.
-  "[SOCCER ANALYTICS] Arsenal: xG 2.1/game, xGA 0.9/game | xGDivergence +0.42"
+## OPEN ITEMS
+Wimbledon draw context: ~25 min TYPE A, before July 7
+WC bracket render: ~June 18-20
+Product spec surfaces 6a-6f
+ADR-002: attorney consultation pending
 
 ## SMOKE
-555/0
-
-## SESSION DOCS
-Drive 1L5QCzn4dWvUwZP8forvpX-CxHyzagc-5
+557/0
