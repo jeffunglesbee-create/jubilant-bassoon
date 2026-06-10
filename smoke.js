@@ -2979,6 +2979,18 @@ assert('A438v — WC journalism tab brief: fetchWCTabBrief defined and wired',
   html.includes('field_wc_tab_brief_v') && html.includes('fetchWCTabBrief(wcGames)'),
   'WC journalism tab brief must be defined and wired into renderWCSection');
 
+// Analytics Edge surfaces
+assert('A438z — Option A: sp-analytics-footer CSS + chip helper defined',
+  html.includes('sp-analytics-footer') && html.includes('_buildAnalyticsChips') &&
+  html.includes('_chipsHTML') && html.includes('sp-analytics-chip') === false || // CSS uses .dac alias
+  html.includes('sp-analytics-footer') && html.includes('_buildAnalyticsChips'),
+  'Scout Pick analytics footer requires _buildAnalyticsChips helper and sp-analytics-footer class');
+
+assert('A439a — Option C: Analytics Edge desk card in renderFieldDesk',
+  html.includes('type-analytics') && html.includes('desk-analytics-game') &&
+  html.includes('Analytics Edge') && html.includes('_anyR2Loaded'),
+  'Analytics Edge desk card must be conditional on R2 data loaded');
+
 // Scout's Pick architectural rebuild (items 1-5)
 assert('A438e — Scout Pick item 1: NBA DRTG + NHL FO% in getStatOfDay',
   html.includes('leagueAvgDrtg') && html.includes('foDiff') && html.includes('FO%'),
