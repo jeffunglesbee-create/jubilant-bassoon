@@ -6766,6 +6766,33 @@ async function nbaCluichInit() {
   } catch(e_) {}
 }
 
+// ── nhlGSAXInit: loads MoneyPuck GSAX from R2, upgrades NHL_GOALIE_RATINGS ───
+// Replaces save% proxy with true GSAX (Goals Saved Above Expected).
+// Silent on failure — existing tier/sv data remains as fallback.
+const _NHL_GSAX_RELAY = 'https://field-relay-nba.jeffunglesbee.workers.dev/nhl-gsax/playoffs.json';
+let _nhlGSAXLoaded = false;
+async function nhlGSAXInit() {
+  if (_nhlGSAXLoaded) return;
+  try {
+    const r = await fetch(_NHL_GSAX_RELAY, { signal: AbortSignal.timeout(5000) });
+    if (!r.ok) return;
+    const data = await r.json();
+    const goalies = data.goalies || {};
+    for (const [lastName, g] of Object.entries(goalies)) {
+      if (!NHL_GOALIE_RATINGS[lastName]) continue;
+      NHL_GOALIE_RATINGS[lastName]._gsax    = g.gsax;
+      NHL_GOALIE_RATINGS[lastName]._gsaxP60 = g.gsaxPer60;
+      // Upgrade tier if GSAX is more authoritative than save%
+      if (g.gsax >= 2.5)        NHL_GOALIE_RATINGS[lastName]._gsaxTier = 'elite';
+      else if (g.gsax >= 1.0)   NHL_GOALIE_RATINGS[lastName]._gsaxTier = 'strong';
+      else if (g.gsax >= -0.5)  NHL_GOALIE_RATINGS[lastName]._gsaxTier = 'avg';
+      else                       NHL_GOALIE_RATINGS[lastName]._gsaxTier = 'below';
+    }
+    _nhlGSAXLoaded = true;
+    if (FIELD_DEBUG) console.log('[FIELD] NHL GSAX loaded:', Object.keys(goalies).length, 'goalies');
+  } catch(e_) {}
+}
+
 // ── soccerFBrefInit: loads FBref xG analytics for soccer leagues ─────────────
 // Populates per-team xG/pressing context used in EPL/WC journalism prompts.
 // Called lazily — only when a soccer game is detected on tonight's slate.
@@ -18129,6 +18156,7 @@ async function fetchSchedule(){
   setTimeout(mlbStatsInit, 4000);         // MLB stats: load weekly Savant tables (patches hardcoded stubs)
   setTimeout(nhlSeriesInit, 4600);        // NHL series PP%/PK% from R2 (overlays NHL_SPECIAL_TEAMS)
   setTimeout(nbaCluichInit, 4700);        // NBA clutch DRTG from R2 (fills null fields in NBA_TEAM_ANALYTICS)
+  setTimeout(nhlGSAXInit, 4800);          // NHL GSAX from MoneyPuck R2 (upgrades NHL_GOALIE_RATINGS from save% proxy)
   setTimeout(nhlAnalyticsInit, 4500);     // NHL analytics: set _homeAbbr/_awayAbbr/_sport on NHL game objects
   setTimeout(nhlPlayoffLeadersPrefetch, 3000); // Phase B subtask 9: NHL playoff leaders feed (15-min TTL)
   setTimeout(nbaPlayoffLeadersPrefetch, 3100); // ADR-003: NBA playoff leaders via /nba-stats/leagueLeaders (15-min TTL)
