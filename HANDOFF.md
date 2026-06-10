@@ -1,65 +1,50 @@
-# FIELD HANDOFF — 2026-06-10 (Documentation Complete)
+# FIELD HANDOFF — 2026-06-10 (Bottom Sheet Polish)
 
 ## HEADS
-- jubilant-bassoon HEAD: ad360af (last code) / see get_head_sha for HANDOFF commit
+- jubilant-bassoon HEAD: af1d1f3
 - SW_VERSION: 2026-06-10a
-- Smoke: 557/0
+- Smoke: 560/0
 - field-relay-nba HEAD: e9a282d
 
-## SESSION END STATE — TRUE FINAL
+## WHAT SHIPPED (af1d1f3)
 
-All work complete. All docs written.
+### Bottom sheet native polish
+Three items shipped together (swipe-dismiss, drag handle, focus trap):
 
-## 6 NEW DOCS WRITTEN END-OF-SESSION
+Swipe-to-dismiss:
+  initBottomSheetSwipe() called at DOMContentLoaded.
+  Engages when touch starts on handle OR content scrollTop <= 0 + downward swipe.
+  Overlay dims proportionally during drag.
+  Dismiss: delta > 90px OR velocity > 0.6px/ms.
+  Snap-back when threshold not met.
 
-1. R2 Pipeline Reference
-   Drive: 1oIZYKeWF7UBGEdm2bnMLd98UXkyVvWr7
-   All pipelines, cron cadence, R2 keys, relay routes, client init sequence.
-   Supersedes "R2: NO BINDING CURRENTLY" in earlier Current State.
+Drag handle:
+  .bs-handle-row sticky at sheet top with 38×4px pill affordance.
+  aria-hidden (decorative). touch-action:none prevents system interference.
+  Brightens on press (rgba .22 → .45).
 
-2. Data Source Accessibility Map
-   Drive: 1zEqDdk7QjUAvkEwd86Lk21yX5Feti33q
-   Verified block map: OPEN / GATED / BLOCKED per source.
-   Key finding: stats.nba.com is header-gated not IP-blocked.
-   FBref + NST are CF Turnstile blocked (GitHub Actions hybrid required).
+Focus trap:
+  aria-modal="true" + aria-label="Game details" on sheet.
+  Escape closes. Tab cycles and wraps at boundaries.
+  First focusable element receives focus after sheet open animation (290ms).
 
-3. Analytics Context Pipeline
-   Drive: 1ZqGyLdgwkQIJI6qforObl6TBN-9AkvXy
-   R2 key → client init → accessor function → journalism tag → user surface.
-   Full tag inventory for getNHLAnalyticsContext + getNBAAnalyticsContext.
+smoke: 560/0
 
-4. Analytics Surface Architecture
-   Drive: 1Fn2xwaMA5cIM3sOAXNdyHfh04g8hHazO
-   Option A (brief footer) + Option C (desk card) design decisions.
-   Chip color system, trigger rules, extension guide.
+## UPDATED PRIORITY LIST
 
-5. Sports Media Watch Architecture
-   Drive: 13yVXGG-2n8932rl2isB9q-H3ll1HyvP0
-   buildPlayoffSpecials, buildWCMediaCards, buildDynamicPregames,
-   buildDynamicPostgames. scoreSMTCard scoring rules. renderMedia priority.
+1. WC bracket render        (before June 27, ~17 days)
+2. Series dots 6a           (~40 lines, SCF is live)
+3. Arc sparkline SVG 6b     (~25 lines)
+4. WHOLE FIELD toggle 6c    (~30 lines)
+5. Night Owl amnesty arc 6d (~20 lines)
+6. Drama spectrum 6f        (~60 lines)
+7. State transition 6e      (~30 lines)
+8. M5 score ticker fade     (bug)
+9. Wimbledon draw context   (before July 7)
+10. ADR-002 attorney consult
+11. nflverse client wiring  (September)
 
-6. Current State (End of Day)
-   Drive: 143MSh6OVfKII_JtXm9Z4N2S0vEHepV1g
-   Supersedes early-session Current State (which said R2: NO BINDING CURRENTLY).
-   Full capabilities, relay bindings, routes, open items, all doc IDs.
-
-## PREVIOUSLY WRITTEN THIS SESSION
-
-ADR-002 R2 Addendum (Rule F):   Drive 1C0Cw4w7Rx4kHqdQhy-mDN3mJK398DbWP
-Queue Pattern Architecture:     Drive 10gBfFiZaW7lKpZnXK1SEEwuzAuAagBHk
-Scout's Pick Architecture:      Drive 1xqXEOzok608gYUmZbU5d4GEDqAMQw3W2
-Session Documentation:          Drive 19SXTJDmXfyuiWQtlNNAjp8_fXJNiv94e
-
-## CODE SUMMARY (full session)
-
-jubilant-bassoon commits: 1c0332c → ad360af (7 commits)
-field-relay-nba commits: 6622bea → e9a282d (9 commits)
-
-## OPEN ITEMS
-Spec surfaces 6a-6f, focus trap, M5
-Wimbledon draw context: before July 7
-WC bracket: ~June 18-20
-ADR-002: attorney consultation pending
+Bottom sheet polish (swipe, handle, focus trap): COMPLETE ✅
 
 ## SMOKE
-557/0
+560/0
