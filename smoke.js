@@ -2957,6 +2957,17 @@ assert('A438c — Gap D: MD3 FINAL MATCHDAY tag injected in buildCompoundPrompt'
   html.includes('[FINAL MATCHDAY]') && html.includes('MD3\\b') && html.includes('anti-collusion'),
   'buildCompoundPrompt must inject [FINAL MATCHDAY] for WC MD3 games (Gap D)');
 
+// MLB probable pitcher signals
+assert('A444a — mlbProbablePitcherInit two-phase defined and wired',
+  html.includes('mlbProbablePitcherInit') && html.includes('mlbPitcherStatsInit') &&
+  html.includes('_mlbPitcherIdCache') && html.includes('_mlbPitcherStatsCache'),
+  'MLB probable pitcher init must have two phases and both caches');
+
+assert('A444b — getStatOfDay MLB pitcher signals present',
+  html.includes('ERA edge') && html.includes('getMLBProbablePitchers') &&
+  html.includes('_MLB_PITCHER_AVGS') && html.includes('K/9'),
+  'getStatOfDay must include MLB ERA edge and K9 signals reading from pitcher cache');
+
 // NBA player clutch live data
 assert('A443a — nbaPlayerCluichInit defined and wired',
   html.includes('nbaPlayerCluichInit') && html.includes('leaguedashplayerclutch') &&

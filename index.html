@@ -6764,6 +6764,104 @@ function _chipsHTML(chips) {
   ).join('');
 }
 
+// ── MLB Probable Pitcher Init — two-phase ────────────────────────────────────
+// Phase 1 (T+4100ms): Schedule call → pitcher IDs keyed by home team name.
+// Phase 2 (T+4300ms): Parallel stats calls → ERA/K9/WHIP per pitcher ID.
+// getStatOfDay() reads synchronously from _mlbPitcherStatsCache.
+//
+// Source: MLB Stats API via /mlb-stats/schedule + /mlb-stats/people/{id}/stats
+// Verified: both endpoints HTTP 200 through relay (June 10 2026).
+// Rule: /schedule added to MLB_STATS_API_ALLOWED_PREFIXES June 10 2026.
+//
+// League averages (2026 MLB starting pitchers):
+const _MLB_PITCHER_AVGS = { era: 4.55, k9: 8.50, whip: 1.30 };
+
+// Caches persisted in memory (session lifetime)
+let _mlbPitcherIdCache   = {};  // { homeTeamName: { homeId, homeName, awayId, awayName } }
+let _mlbPitcherStatsCache = {};  // { pitcherId: { era, k9, whip, gamesStarted, fullName } }
+let _mlbPitcherInitPhase = 0;   // 0=uninit, 1=ids-loaded, 2=stats-loaded
+
+async function mlbProbablePitcherInit() {
+  if (_mlbPitcherInitPhase >= 1) return;
+  try {
+    const today = new Date().toISOString().slice(0,10);
+    const r = await fetch(
+      `${MLB_STATS_RELAY}/schedule?sportId=1&date=${today}&hydrate=probablePitcher`,
+      { signal: AbortSignal.timeout(5000) }
+    );
+    if (!r.ok) return;
+    const data = await r.json();
+    const games = data?.dates?.[0]?.games || [];
+    for (const g of games) {
+      const homeTeam = g.teams?.home?.team?.name || '';
+      const awayTeam = g.teams?.away?.team?.name || '';
+      if (!homeTeam) continue;
+      const homeP = g.teams?.home?.probablePitcher;
+      const awayP = g.teams?.away?.probablePitcher;
+      _mlbPitcherIdCache[homeTeam] = {
+        homeId:   homeP?.id   ?? null,
+        homeName: homeP?.fullName ?? null,
+        awayId:   awayP?.id   ?? null,
+        awayName: awayP?.fullName ?? null,
+        awayTeam,
+      };
+    }
+    _mlbPitcherInitPhase = 1;
+    if (FIELD_DEBUG) console.log('[FIELD] MLB pitcher IDs loaded:', Object.keys(_mlbPitcherIdCache).length, 'games');
+  } catch(e_) {}
+}
+
+async function mlbPitcherStatsInit() {
+  if (_mlbPitcherInitPhase < 1 || _mlbPitcherInitPhase >= 2) return;
+  try {
+    // Collect all unique pitcher IDs from tonight's games
+    const ids = new Set();
+    for (const v of Object.values(_mlbPitcherIdCache)) {
+      if (v.homeId) ids.add(v.homeId);
+      if (v.awayId) ids.add(v.awayId);
+    }
+    if (!ids.size) return;
+    const today = new Date().toISOString().slice(0,4); // "2026"
+    // Fetch all pitcher stats in parallel
+    const results = await Promise.allSettled([...ids].map(async id => {
+      const r = await fetch(
+        `${MLB_STATS_RELAY}/people/${id}/stats?stats=season&group=pitching&season=${today}`,
+        { signal: AbortSignal.timeout(4000) }
+      );
+      if (!r.ok) return;
+      const data = await r.json();
+      const stat = data?.stats?.[0]?.splits?.[0]?.stat;
+      const player = data?.stats?.[0]?.splits?.[0]?.player;
+      if (!stat) return;
+      _mlbPitcherStatsCache[id] = {
+        fullName:     player?.fullName ?? '',
+        era:          parseFloat(stat.era) || null,
+        k9:           parseFloat(stat.strikeoutsPer9Inn) || null,
+        whip:         parseFloat(stat.whip) || null,
+        gamesStarted: parseInt(stat.gamesStarted) || 0,
+        strikeouts:   parseInt(stat.strikeOuts) || 0,
+        inningsPitched: parseFloat(stat.inningsPitched) || 0,
+      };
+    }));
+    _mlbPitcherInitPhase = 2;
+    if (FIELD_DEBUG) console.log('[FIELD] MLB pitcher stats loaded:', Object.keys(_mlbPitcherStatsCache).length, 'pitchers');
+  } catch(e_) {}
+}
+
+// Returns { home, away } pitcher stats objects for a game, or null if not loaded.
+// home/away: { fullName, era, k9, whip, gamesStarted } | null
+function getMLBProbablePitchers(homeTeamName) {
+  if (_mlbPitcherInitPhase < 2) return null;
+  const ids = _mlbPitcherIdCache[homeTeamName];
+  if (!ids) return null;
+  return {
+    home: ids.homeId ? (_mlbPitcherStatsCache[ids.homeId] || null) : null,
+    away: ids.awayId ? (_mlbPitcherStatsCache[ids.awayId] || null) : null,
+    homeName: ids.homeName,
+    awayName: ids.awayName,
+  };
+}
+
 // ── mlbStatsInit: loads weekly-updated JSON tables from relay + patches hardcoded stubs ──
 // Source: mlb-weekly-update.yml → outbox/mlb/ → /mlb-stats/* relay
 // Called at startup T+4000ms. Silent on failure (hardcoded stubs remain as fallback).
@@ -16182,6 +16280,78 @@ function getStatOfDay(game, sport) {
     }
   }
 
+  // ── MLB probable pitcher signals ─────────────────────────────────────────
+  // Three candidates: ERA edge (differential), ace signal (elite ERA), K9 (strikeout artist).
+  // Reads synchronously from _mlbPitcherStatsCache (pre-loaded at T+4300ms).
+  // Requires both phases of mlbProbablePitcherInit to be complete.
+  if (sp.includes('mlb') || sp.includes('baseball')) {
+    try {
+      const pitchers = (typeof getMLBProbablePitchers === 'function')
+        ? getMLBProbablePitchers(game.home) : null;
+      if (pitchers?.home && pitchers?.away) {
+        const hP = pitchers.home, aP = pitchers.away;
+        const MIN_GS = 4; // minimum starts to be meaningful
+        if (hP.gamesStarted >= MIN_GS || aP.gamesStarted >= MIN_GS) {
+          // Helper: "Carlos Rodón" → "Rodón"
+          const lastName = n => (n || '').split(' ').pop();
+
+          // 1. Ace on mound — ERA <= 3.00 (normalised vs league avg 4.55)
+          for (const [p, side] of [[hP, game.home], [aP, game.away]]) {
+            if (!p.era || p.gamesStarted < MIN_GS) continue;
+            if (p.era <= 3.00) {
+              const dev = (_MLB_PITCHER_AVGS.era - p.era) / _MLB_PITCHER_AVGS.era;
+              candidates.push({
+                deviation: dev,
+                team: side, abbr: '',
+                val: p.era, label: 'ERA',
+                fmtVal: p.era.toFixed(2),
+                shortText: `${lastName(p.fullName)} ${p.era.toFixed(2)} ERA`,
+                fullText:  `${p.fullName} ${p.era.toFixed(2)} ERA — ${(_MLB_PITCHER_AVGS.era - p.era).toFixed(2)} below league average`,
+                ctx: 'ace on the mound',
+              });
+            }
+          }
+
+          // 2. ERA differential — gap >= 1.20 between starters
+          if (hP.era && aP.era && hP.gamesStarted >= MIN_GS && aP.gamesStarted >= MIN_GS) {
+            const eraGap = Math.abs(hP.era - aP.era);
+            if (eraGap >= 1.20) {
+              const better = hP.era < aP.era ? hP : aP;
+              const worse  = hP.era < aP.era ? aP : hP;
+              const side   = hP.era < aP.era ? game.home : game.away;
+              candidates.push({
+                deviation: eraGap / 4.0,
+                team: side, abbr: '',
+                val: eraGap, label: 'ERA edge',
+                fmtVal: `${better.era.toFixed(2)} vs ${worse.era.toFixed(2)}`,
+                shortText: `ERA edge ${better.era.toFixed(2)} vs ${worse.era.toFixed(2)}`,
+                fullText:  `${lastName(better.fullName)} ${better.era.toFixed(2)} ERA vs ${lastName(worse.fullName)} ${worse.era.toFixed(2)} — significant pitching edge`,
+                ctx: `${lastName(better.fullName)} holds clear advantage on the mound`,
+              });
+            }
+          }
+
+          // 3. Strikeout artist — K/9 >= 10.0
+          for (const [p, side] of [[hP, game.home], [aP, game.away]]) {
+            if (!p.k9 || p.gamesStarted < MIN_GS) continue;
+            if (p.k9 >= 10.0) {
+              const dev = (p.k9 - _MLB_PITCHER_AVGS.k9) / _MLB_PITCHER_AVGS.k9;
+              candidates.push({
+                deviation: dev,
+                team: side, abbr: '',
+                val: p.k9, label: 'K/9',
+                fmtVal: p.k9.toFixed(1),
+                shortText: `${lastName(p.fullName)} ${p.k9.toFixed(1)} K/9`,
+                fullText:  `${p.fullName} ${p.k9.toFixed(1)} K/9 — elite strikeout rate (league avg ${_MLB_PITCHER_AVGS.k9})`,
+                ctx: 'high strikeout rate — game could hinge on punch-outs',
+              });
+            }
+          }
+        }
+      }
+    } catch(e_) {}
+  }
+
   // ── NBA ──────────────────────────────────────────────────────────────────
   // Gate D data: DRTG differential vs league average — fires on elite/poor defense matchups.
   // League avg: _AVG entry in NBA_TEAM_ANALYTICS. Regular-season fires year-round.
@@ -18441,6 +18611,8 @@ async function fetchSchedule(){
   setTimeout(uflEpaInit, 3500);           // UFL EPA live: SR PBP → EPA per play (self-gating, silent on fail)
   initBottomSheetSwipe();                 // Bottom sheet: swipe-to-dismiss + focus trap
   setTimeout(mlbStatsInit, 4000);         // MLB stats: load weekly Savant tables (patches hardcoded stubs)
+  setTimeout(mlbProbablePitcherInit, 4100);  // MLB pitchers phase 1: schedule → pitcher IDs
+  setTimeout(mlbPitcherStatsInit, 4300);     // MLB pitchers phase 2: stats for all tonight's starters
   setTimeout(nhlSeriesInit, 4600);        // NHL series PP%/PK% from R2 (overlays NHL_SPECIAL_TEAMS)
   setTimeout(nbaCluichInit, 4700);        // NBA clutch DRTG from R2 (fills null fields in NBA_TEAM_ANALYTICS)
   setTimeout(nbaPlayerCluichInit, 4750);    // NBA player clutch (live /leaguedashplayerclutch → patches NBA_CLUTCH_PLAYERS)
