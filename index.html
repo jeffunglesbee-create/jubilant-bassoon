@@ -15215,17 +15215,29 @@ function getNHLAnalyticsContext(game) {
       lines.push(`[SCF TROPHY] Neither team is defending the Stanley Cup. The Finals is open. Do NOT write 'tighten grip on the Cup', 'defend the Cup', or 'reigning champion' framings for either side.`);
     }
 
-    const hST = getNHLSpecialTeams(ha);
-    const aST = getNHLSpecialTeams(aa);
+    // Use series-adjusted rates when available (nhlSeriesInit overlays _seriesPP/_seriesPK)
+    const hST = getNHLEffectiveST(ha);
+    const aST = getNHLEffectiveST(aa);
 
     if (hST && aST) {
-      // Power play — note if either team is elite (≥25%) or weak (≤10%)
+      const seriesNote = hST.isSeries ? ' (series)' : '';
+      // Power play — use effective (series-adjusted when available)
       const ppParts = [];
-      if (hST.pp >= 20) ppParts.push(`${teamNick(game.home||'')} ${hST.pp.toFixed(1)}% PP`);
-      if (aST.pp >= 20) ppParts.push(`${teamNick(game.away||'')} ${aST.pp.toFixed(1)}% PP`);
-      if (hST.pp <= 10) ppParts.push(`${teamNick(game.home||'')} ${hST.pp.toFixed(1)}% PP (league-worst)`);
-      if (aST.pp <= 10) ppParts.push(`${teamNick(game.away||'')} ${aST.pp.toFixed(1)}% PP (league-worst)`);
-      if (ppParts.length) lines.push(`[PP/PK] ${ppParts.join(' · ')} | PK: ${ha} ${hST.pk.toFixed(1)}% · ${aa} ${aST.pk.toFixed(1)}%`);
+      if (hST.effectivePP >= 20) ppParts.push(`${teamNick(game.home||'')} ${hST.effectivePP.toFixed(1)}% PP${seriesNote}`);
+      if (aST.effectivePP >= 20) ppParts.push(`${teamNick(game.away||'')} ${aST.effectivePP.toFixed(1)}% PP${seriesNote}`);
+      if (hST.effectivePP <= 10) ppParts.push(`${teamNick(game.home||'')} ${hST.effectivePP.toFixed(1)}% PP (league-worst)${seriesNote}`);
+      if (aST.effectivePP <= 10) ppParts.push(`${teamNick(game.away||'')} ${aST.effectivePP.toFixed(1)}% PP (league-worst)${seriesNote}`);
+      if (ppParts.length) lines.push(`[PP/PK] ${ppParts.join(' · ')} | PK: ${ha} ${hST.effectivePK.toFixed(1)}%${seriesNote} · ${aa} ${aST.effectivePK.toFixed(1)}%${seriesNote}`);
+
+      // PDO — series window luck indicator (only when series data loaded)
+      if (hST.seriesPDO != null && aST.seriesPDO != null) {
+        const pdoParts = [];
+        if (hST.seriesPDO > 1.010) pdoParts.push(`${ha} PDO ${hST.seriesPDO.toFixed(3)} — running hot, regression possible`);
+        else if (hST.seriesPDO < 0.990) pdoParts.push(`${ha} PDO ${hST.seriesPDO.toFixed(3)} — running cold, due for improvement`);
+        if (aST.seriesPDO > 1.010) pdoParts.push(`${aa} PDO ${aST.seriesPDO.toFixed(3)} — running hot, regression possible`);
+        else if (aST.seriesPDO < 0.990) pdoParts.push(`${aa} PDO ${aST.seriesPDO.toFixed(3)} — running cold, due for improvement`);
+        if (pdoParts.length) lines.push(`[PDO] ${pdoParts.join(' · ')}`);
+      }
 
       // Possession — flag SAT gap > 8 or either team extreme
       const satGap = Math.abs(hST.sat - aST.sat);
@@ -15247,17 +15259,29 @@ function getNHLAnalyticsContext(game) {
     const hG = getNHLGoalieProfile(game._homeGoalie);
     const aG = getNHLGoalieProfile(game._awayGoalie);
     if (hG && aG) {
+      // Use GSAX (true goals saved above expected) when MoneyPuck R2 data is loaded
+      // Falls back to save% proxy when GSAX unavailable
+      const hTier = hG._gsaxTier || hG.tier;
+      const aTier = aG._gsaxTier || aG.tier;
+      const hGSAX = hG._gsax;
+      const aGSAX = aG._gsax;
       const svGap = Math.abs(hG.sv - aG.sv);
-      if (hG.tier === 'elite' && aG.tier === 'elite')
-        lines.push(`[GOALIE DUEL] Both starters elite: ${game._homeGoalie} .${Math.round(hG.sv*1000)} sv% · ${game._awayGoalie} .${Math.round(aG.sv*1000)} sv%`);
-      else if (svGap >= 0.015) {
+
+      if (hTier === 'elite' && aTier === 'elite') {
+        const gsaxNote = (hGSAX != null && aGSAX != null)
+          ? ` · GSAX: ${hGSAX > 0 ? '+' : ''}${hGSAX.toFixed(1)} / ${aGSAX > 0 ? '+' : ''}${aGSAX.toFixed(1)}`
+          : '';
+        lines.push(`[GOALIE DUEL] Both starters elite: ${game._homeGoalie} .${Math.round(hG.sv*1000)} sv% · ${game._awayGoalie} .${Math.round(aG.sv*1000)} sv%${gsaxNote}`);
+      } else if (svGap >= 0.015) {
         const betterG = hG.sv > aG.sv ? `${game._homeGoalie} (${teamNick(game.home||'')})` : `${game._awayGoalie} (${teamNick(game.away||'')})`;
-        lines.push(`[GOALIE EDGE] ${betterG} — .${Math.round(Math.max(hG.sv,aG.sv)*1000)} vs .${Math.round(Math.min(hG.sv,aG.sv)*1000)} sv%`);
+        const betterGSAX = hG.sv > aG.sv ? hGSAX : aGSAX;
+        const gsaxNote = betterGSAX != null ? ` · GSAX +${betterGSAX.toFixed(1)} this playoff run` : '';
+        lines.push(`[GOALIE EDGE] ${betterG} — .${Math.round(Math.max(hG.sv,aG.sv)*1000)} vs .${Math.round(Math.min(hG.sv,aG.sv)*1000)} sv%${gsaxNote}`);
       }
     } else if (hG || aG) {
       const g = hG || aG;
       const name = hG ? game._homeGoalie : game._awayGoalie;
-      if (g.tier === 'elite')
+      if (g._gsaxTier === 'elite' || g.tier === 'elite')
         lines.push(`[GOALIE] ${name} elite this playoffs: .${Math.round(g.sv*1000)} sv%, ${g.gaa.toFixed(2)} GAA`);
     }
 
@@ -15732,6 +15756,21 @@ function getNBAAnalyticsContext(game) {
       if (effGap >= 8) {
         const offTeam = hStats.ortg > aStats.ortg ? game.home : game.away;
         lines.push(`[MISMATCH ALERT] ${offTeam} ORTG vs opponent DRTG — significant offensive advantage on paper.`);
+      }
+    }
+
+    // Team-level clutch DRTG from R2 (nbaCluichInit fills clutchDrtg/clutchNetRtg)
+    if (hStats?.clutchDrtg != null && aStats?.clutchDrtg != null) {
+      const hCDrtg = hStats.clutchDrtg;
+      const aCDrtg = aStats.clutchDrtg;
+      const clutchGap = Math.abs(hCDrtg - aCDrtg);
+      const betterDefTeam = hCDrtg < aCDrtg ? game.home : game.away;
+      const betterCDrtg   = Math.min(hCDrtg, aCDrtg);
+      const worseCDrtg    = Math.max(hCDrtg, aCDrtg);
+      if (betterCDrtg <= 108) {
+        lines.push(`[TEAM CLUTCH] ${betterDefTeam} ${betterCDrtg.toFixed(1)} DRTG in clutch situations (last 5 min, within 5 pts) — elite late-game defense.`);
+      } else if (clutchGap >= 5) {
+        lines.push(`[TEAM CLUTCH] ${betterDefTeam} significantly better in clutch (${betterCDrtg.toFixed(1)} vs ${worseCDrtg.toFixed(1)} DRTG) — advantage in close games.`);
       }
     }
 
