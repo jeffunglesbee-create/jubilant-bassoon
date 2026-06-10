@@ -2957,6 +2957,12 @@ assert('A438c — Gap D: MD3 FINAL MATCHDAY tag injected in buildCompoundPrompt'
   html.includes('[FINAL MATCHDAY]') && html.includes('MD3\\b') && html.includes('anti-collusion'),
   'buildCompoundPrompt must inject [FINAL MATCHDAY] for WC MD3 games (Gap D)');
 
+// Finals Desk Queue-backed fetch
+assert('A438d — Finals Desk: Queue-backed enqueue+poll pattern',
+  html.includes('JOURNALISM_ENQUEUE_RELAY') && html.includes('JOURNALISM_RESULT_RELAY') &&
+  html.includes('finals-desk-nba') && html.includes('_buildFinalsDeskPrompt'),
+  'Finals Desk must use relay Queue enqueue+poll path (NBA/NHL)');
+
 // v1.3.1 — real played[] from /wc/results relay endpoint
 assert('A439 — Permutations Engine v1.3.1: relay /wc/results handler defined',
   /async\s+function\s+handleWCResults\s*\(/.test(fieldUtilsSrc.length ? '' : '') || true, // relay-side; checked via relay src separately

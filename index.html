@@ -13246,6 +13246,8 @@ const JOURNALISM_RELAY = 'https://field-relay-nba.jeffunglesbee.workers.dev/jour
 // Returns JQ-graded prose. Browser still scores for debug panel display, but
 // the canonical quality enforcement is on the relay (patent posture).
 const JOURNALISM_GENERATE_RELAY = 'https://field-relay-nba.jeffunglesbee.workers.dev/journalism/generate';
+const JOURNALISM_ENQUEUE_RELAY  = 'https://field-relay-nba.jeffunglesbee.workers.dev/journalism/enqueue';
+const JOURNALISM_RESULT_RELAY   = 'https://field-relay-nba.jeffunglesbee.workers.dev/journalism/result';
 
 // generateJournalismViaRelay — drop-in replacement for direct CLAUDE_PROXY_URL
 // calls in the journalism path. Sends prompt + sport hint + briefType. Returns
@@ -25590,20 +25592,10 @@ function buildWCGroupRow(r, index, scenarios, groupId) {
 })();
 
 
-async function fetchFinalsDesk(game, sport) {
-  if (!game || !CLAUDE_PROXY_URL) return null;
-
-  const isFinals = /nba finals|stanley cup final/i.test(game.league || '');
-  if (!isFinals) return null;
-
+// Build the Finals Desk prompt (sync — analytics context is all in-memory).
+// Separated so both the enqueue path and any fallback can share it.
+function _buildFinalsDeskPrompt(game, sport) {
   const series = game.seriesRecord || '0-0';
-  const cacheKey = `field_finals_desk_v${_swv}_${game._id}_${series.replace(/\s/g,'_')}`;
-  try {
-    const cached = sessionStorage.getItem(cacheKey);
-    if (cached && cached.length > 100) return cached;
-  } catch(e_) {}
-
-  // Build sport-specific analytics context
   let analyticsCtx = '';
   const sp = (sport || '').toLowerCase();
   if (sp.includes('nba') || sp.includes('basketball')) {
@@ -25622,10 +25614,8 @@ async function fetchFinalsDesk(game, sport) {
     if (hPDO && hPDO.note) analyticsCtx += `\n[PDO] ${ha}: ${hPDO.note}`;
     if (aPDO && aPDO.note) analyticsCtx += `\n[PDO] ${aa}: ${aPDO.note}`;
   }
-
   const msLine = (() => { try { const ms = _bdlMilestonesCache?.[game._id]; return ms ? `[MILESTONE] ${ms.playerName} needs ${ms.gap} more ${ms.stat} for career milestone.` : ''; } catch(e_) { return ''; } })();
-
-  const prompt = [
+  return [
     `Write a FIELD Finals Desk analytical piece for today's ${/nba/i.test(game.league||'')?'NBA':'Stanley Cup'} Finals.`,
     `${game.away||'?'} @ ${game.home||'?'} · ${game.venue||''} · ${series ? 'Series: '+series : 'Series begins today'}.`,
     game.matchupNote ? `Series context: ${game.matchupNote}` : '',
@@ -25646,7 +25636,78 @@ async function fetchFinalsDesk(game, sport) {
     '- Do not repeat the series record already shown in the card header.',
     FIELD_PROSE_STYLE,
   ].filter(Boolean).join('\n');
+}
 
+// Queue-backed Finals Desk fetch.
+// First call: enqueues prompt to relay queue, stores jobId in sessionStorage.
+// Subsequent calls: polls /journalism/result/:jobId until done or timeout.
+// Falls back to direct CLAUDE_PROXY_URL if relay queue is unavailable.
+// Cache key includes series record so it regenerates each new game.
+async function fetchFinalsDesk(game, sport) {
+  if (!game) return null;
+  const isFinals = /nba finals|stanley cup final/i.test(game.league || '');
+  if (!isFinals) return null;
+
+  const series = game.seriesRecord || '0-0';
+  const cacheKey    = `field_finals_desk_v${_swv}_${game._id}_${series.replace(/\s/g,'_')}`;
+  const jobIdKey    = `field_finals_desk_job_v${_swv}_${game._id}_${series.replace(/\s/g,'_')}`;
+
+  // 1. Completed text already in sessionStorage — return immediately
+  try {
+    const cached = sessionStorage.getItem(cacheKey);
+    if (cached && cached.length > 100) return cached;
+  } catch(e_) {}
+
+  const prompt = _buildFinalsDeskPrompt(game, sport);
+
+  // 2. Check if a job is already in flight — poll for result
+  let jobId = null;
+  try { jobId = sessionStorage.getItem(jobIdKey); } catch(e_) {}
+
+  if (!jobId && JOURNALISM_ENQUEUE_RELAY) {
+    // 3. No job yet — enqueue
+    try {
+      const eq = await fetch(JOURNALISM_ENQUEUE_RELAY, {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({
+          prompt,
+          sport: /nba/i.test(game.league||'') ? 'nba' : 'nhl',
+          briefType: /nba/i.test(game.league||'') ? 'finals-desk-nba' : 'finals-desk-nhl',
+          max_tokens: 600,
+          scoreThreshold: 130,
+        }),
+      });
+      if (eq.ok) {
+        const data = await eq.json();
+        if (data.jobId) {
+          try { sessionStorage.setItem(jobIdKey, data.jobId); } catch(e_) {}
+          jobId = data.jobId;
+        }
+      }
+    } catch(e_) {}
+  }
+
+  // 4. Poll for result (max 20s, 2s intervals)
+  if (jobId && JOURNALISM_RESULT_RELAY) {
+    for (let i = 0; i < 10; i++) {
+      await new Promise(r => setTimeout(r, 2000));
+      try {
+        const pr = await fetch(`${JOURNALISM_RESULT_RELAY}/${jobId}`, {signal: AbortSignal.timeout(3000)});
+        if (!pr.ok) continue;
+        const result = await pr.json();
+        if (result.status === 'done' && result.text && result.text.length > 80) {
+          try { sessionStorage.setItem(cacheKey, result.text); } catch(e_) {}
+          try { sessionStorage.removeItem(jobIdKey); } catch(e_) {}
+          return result.text;
+        }
+        if (result.status === 'failed') break; // fall through to direct path
+      } catch(e_) {}
+    }
+  }
+
+  // 5. Fallback: direct proxy call if queue timed out or unavailable
+  if (!CLAUDE_PROXY_URL) return null;
   try {
     const r = await fetch(CLAUDE_PROXY_URL, {
       method: 'POST', headers: {'Content-Type':'application/json'},
