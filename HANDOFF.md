@@ -1,69 +1,69 @@
-# FIELD HANDOFF — 2026-06-10 (NHL-C: NST PDO resolved)
+# FIELD HANDOFF — 2026-06-10 (R2 surfaces wired)
 
 ## HEADS
-- jubilant-bassoon HEAD: 5018c86
+- jubilant-bassoon HEAD: 27db136
 - SW_VERSION: 2026-06-10a
 - Smoke: 555/0
 - field-relay-nba HEAD: e9a282d
 
-## SESSION TYPE
-TYPE D (Analysis + minor feature)
+## WHAT SHIPPED (27db136)
 
-## NHL-C: NST PDO — RESOLVED WITHOUT NST
+### Three journalism surface gaps closed
 
-### Problem
-NST (naturalstattrick.com) blocked by CF Turnstile (403 + CF challenge page).
-NHL-C spec item: PDO from NST via R2.
+Diagnosis from "where do R2 items surface?":
+  NHL series stats: loaded but [PP/PK] tag still used season stats.
+  NHL GSAX: loaded but [GOALIE DUEL/EDGE] still used save% only.
+  NBA clutch DRTG: loaded but never read by getNBAAnalyticsContext.
 
-### Analysis
-PDO = team on-ice shooting% + team on-ice save%
-Formula: (goalsFor / shotsFor) + (1 - goalsAgainst / shotsAgainst)
+Fix 1 — getNHLAnalyticsContext now uses getNHLEffectiveST (series-adjusted):
+  [PP/PK] tag: "CAR 93.5% PK% (series)" not pre-SCF entry rate.
+  [PDO] tag ADDED: fires when series PDO > 1.010 or < 0.990.
+    "VGK PDO 0.981 — running cold, due for improvement"
 
-NHL boxscore top-level already has: score, sog (shots on goal) per team.
-nhl-series-r2.js already fetches all completed SCF boxscores.
-PDO computation = 4-field accumulation in existing aggregation loop.
+Fix 2 — [GOALIE DUEL/EDGE] appends GSAX from MoneyPuck R2:
+  "[GOALIE DUEL] Andersen .923 · Hart .924 · GSAX: +3.1 / +1.8"
+  "[GOALIE EDGE] Andersen — .923 sv% · GSAX +3.1 this playoff run"
+  Falls back to save% only when GSAX unavailable.
 
-### Precision delta vs NST
-NST provides score-adjusted 5v5 PDO.
-Raw boxscore PDO (all situations): ±~0.005 vs score-adjusted.
-For FIELD journalism ("running hot at 1.034 — regression possible"): sufficient.
-PP/PK situations are already tracked separately in the series stats pipeline.
+Fix 3 — [TEAM CLUTCH] tag ADDED to getNBAAnalyticsContext:
+  Reads clutchDrtg from NBA_TEAM_ANALYTICS (filled by nbaCluichInit).
+  Fires: elite team clutchDrtg <= 108, or gap >= 5 between teams.
+  "[TEAM CLUTCH] NYK 102.0 DRTG in clutch — elite late-game defense."
 
-### What shipped (relay e9a282d, jubilant-bassoon 9600e1d)
-nhl-series-r2.js: accumulates goalsFor, shotsFor, goalsAgainst, shotsAgainst.
-  Computes seriesPDO + pdoLabel per team per series.
-  pdoLabel: "1.034 PDO (17.9% sh + 85.5% sv, 4-game series window)"
-index.html: nhlSeriesInit overlays _seriesPDO/_pdoLabel onto NHL_SPECIAL_TEAMS.
-  getNHLEffectiveST() exposes seriesPDO + pdoContext to journalism/Scout's Pick.
+## FULL R2 SURFACE MAP (all items now wired)
 
-NST dependency: eliminated entirely. No NST fetch, no ToS concern, no CF block.
-NHL-C: CLOSED.
+| Data | Surfaces in |
+|------|------------|
+| NHL series PP%/PK% | Scout's Pick badge + [PP/PK] journalism tag |
+| NHL series PDO | [PDO] journalism tag (NEW) |
+| NHL GSAX | [GOALIE DUEL/EDGE] journalism tags |
+| NBA clutch DRTG | [TEAM CLUTCH] journalism tag (NEW) |
+| FBref soccer xG | [SOCCER ANALYTICS] in buildCompoundPrompt |
+| MLB stats (mlbStatsInit) | Scout's Pick badge, umpire badge, pitch arsenal context |
+| nflverse | Not yet wired — September use case |
 
-## COMPLETE BLOCK MAP (June 10 2026)
-ACCESSIBLE from CF Workers (relay-native):
-  api-web.nhle.com        ✅
-  stats.nba.com           ✅ (headers: UA, Referer, Origin — whitelist required)
-  moneypuck.com           ✅ (open)
-  baseballsavant.mlb.com  ✅ (open)
-  cdn.nba.com             ✅ (headers required)
-  github.com/nflverse      ✅ (CDN redirect)
+## WHAT EACH R2 ITEM NOW PRODUCES FOR THE USER
 
-BLOCKED (CF Turnstile — GitHub Actions hybrid required):
-  fbref.com               ❌ → soccer-fbref-wc.yml (6 leagues, running)
-  naturalstattrick.com    ❌ → PDO resolved via NHL boxscore, NST not needed
+NHL series stats → pre-game journalism shows current-series rates not entry rates.
+  Before: "[PP/PK] VGK 23.9% PP | PK: CAR 93.5%"  (pre-SCF entry, potentially stale)
+  After:  "[PP/PK] VGK 22.1% PP (series) | PK: CAR 91.7% (series)"
 
-## R2 PIPELINE STATUS
-nhl/scf-2026/series-stats.json — PP%/PK%/PDO, incremental, 15-min cron
-nhl/2026/gsax-playoffs.json — MoneyPuck GSAX, Monday cron (first run: next Monday)
-nba/2026/clutch_{playoffs,regular}.json — Mon/Wed/Fri cron (first run dispatched)
-mlb/2026/*.json — Monday cron (first run dispatched)
-nfl/2026/*.json — Wednesday cron (first run dispatched)
-soccer/fbref/*.json — every 3 days GH Actions (wc2026 + 5 leagues, dispatched)
+NHL PDO → new luck signal in journalism.
+  "[PDO] VGK PDO 0.981 — running cold, due for improvement"
+  Fires only when series window exceeds ±0.010 from baseline.
 
-## OPEN ITEMS
-Wimbledon draw context: ~25 min TYPE A, before July 7
-Product spec surfaces (6a-6f), focus trap, M5, WC bracket ~June 18-20
-ADR-002: attorney consultation pending
+NHL GSAX → goalie journalism now cites true GSAX not save% proxy.
+  "[GOALIE DUEL] Both elite: Andersen .923 · Hart .924 · GSAX: +3.1 / +1.8"
+
+NBA clutch DRTG → new late-game defense signal in Finals journalism.
+  "[TEAM CLUTCH] NYK 102.0 DRTG in clutch — elite late-game defense."
+  Fires when first R2 run completes (dispatched June 10).
+
+Soccer xG → EPL/WC journalism includes xG context.
+  "[SOCCER ANALYTICS] Arsenal: xG 2.1/game, xGA 0.9/game | xGDivergence +0.42"
 
 ## SMOKE
 555/0
+
+## SESSION DOCS
+Drive 1L5QCzn4dWvUwZP8forvpX-CxHyzagc-5
