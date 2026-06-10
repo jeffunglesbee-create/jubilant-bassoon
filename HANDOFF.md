@@ -1,57 +1,63 @@
-# FIELD HANDOFF — 2026-06-10 (Deferred Items + Documentation Session)
+# FIELD HANDOFF — 2026-06-10 (R2 Pipeline Session)
 
 ## HEADS
 - jubilant-bassoon HEAD: 9aa1e30
 - SW_VERSION: 2026-06-10a
 - Smoke: 552/0
-- field-relay-nba HEAD: 979549d
+- field-relay-nba HEAD: bd30ebd
 
 ## SESSION TYPE
-TYPE B+D (Feature build + Documentation)
-Deferred item verification, documentation of undocumented session work,
-WC journalism tab brief built.
+TYPE A+B (Verification + Feature build)
 
 ## WHAT SHIPPED THIS SESSION
 
+### R2 Infrastructure
+- R2 bucket created: field-relay-data (ENAM, Standard, June 10 2026)
+- FIELD_DATA binding added to wrangler.toml
+- Health string updated: r2-mlb included
+
+### MLB-A: MLB Savant → R2 Weekly Pipeline (relay 6622bea)
+src/mlb-savant-r2.js: ports mlb-weekly-update.py to Cloudflare Worker
+  5 Savant CSV endpoints (all return 200 from Workers Plus IPs — verified):
+    team_abs, expected_stats, sprint_speed, pitch_tempo, pitch_arsenals
+  Writes to R2: mlb/2026/{name}.json
+  Umpire ABS excluded (Statcast search CSV = 3-min fetch, exceeds Worker CPU)
+scheduled(): fires on Monday UTC 10-13
+POST /mlb-savant-update: admin endpoint (X-FIELD-Admin: 1)
+/mlb-stats/ route: R2-first, GitHub raw fallback (seamless — no regression)
+
+### Verification Results
+FBref BLOCKED: 403 + Cloudflare challenge from Workers IPs.
+  SOCCER-A (FBref pipeline) cannot use CF Cron. Alternative needed.
+Baseball Savant ACCESSIBLE: 200 from Workers Plus IPs.
+  MLB-A [VERIFY] resolved in our favor.
+
 ### WC Journalism Tab Brief (index.html 9aa1e30)
-fetchWCTabBrief(wcGames) added to renderWCSection():
-- Enqueues to relay /journalism/enqueue with briefType:'wc-tab-brief'
-- Relay provides WC team context from inline wc-team-context.js (no R2 needed)
-- Poll every 2s max 20s (Queue pattern, same as Finals Desk)
-- Cache: sessionStorage field_wc_tab_brief_v{swv}_{dateKey} (daily refresh)
-- Result: prepended as .wc-preview-header above #wc-groups
-- Works in both empty state (pre-tournament) and live state
-Closes deferred item 2 from June 9 session.
+Closed deferred item 2 from June 9 (see prior handoff).
 
-### Documentation (Drive)
-Three new docs written:
-  Queue Pattern Architecture: Drive 10gBfFiZaW7lKpZnXK1SEEwuzAuAagBHk
-  Scout's Pick Architecture: Drive 1xqXEOzok608gYUmZbU5d4GEDqAMQw3W2
-  Current State (June 10): Drive 1eLeM7PFkapkqbcu9pQKvi6gWJiw5b4La
-
-## DEFERRED ITEMS STATUS
-
-### Item 1: R2 WC Team Context — CLOSED
-Completed June 4 as inline relay module (src/wc-team-context.js).
-48 teams, 824 lines, verified sources. Architecture deviation documented
-in file header and new Scout's Pick/Queue docs.
-No R2 bucket needed for this item.
-
-### Item 2: WC Journalism Tab Brief — CLOSED
-Built today (9aa1e30). Queue-backed, daily cache, above #wc-groups.
+### Documentation
+Queue Pattern Architecture: Drive 10gBfFiZaW7lKpZnXK1SEEwuzAuAagBHk
+Scout's Pick Architecture: Drive 1xqXEOzok608gYUmZbU5d4GEDqAMQw3W2
+Current State June 10: Drive 1eLeM7PFkapkqbcu9pQKvi6gWJiw5b4La
 
 ## R2 STATUS
+- Bucket: field-relay-data (ENAM)
+- Binding: FIELD_DATA in wrangler.toml
+- First population: Monday cron (next Monday 6AM ET) OR wrangler trigger
+- Fallback: GitHub raw outbox/mlb/ files (existing — no regression)
+- stat-salary-cache: STAT project (separate bucket)
 
-Account has 1 R2 bucket: stat-salary-cache (STAT, created June 10).
-No FIELD R2 bucket exists.
-Current FIELD architecture uses inline relay modules for all static context.
-R2 needed in future for: MLB Savant cron (Tier 6A), FBref pipeline (Tier 6B),
-nflverse Pipeline 2 (Tier 6C), Wimbledon draw context.
-Add [[r2_buckets]] binding to wrangler.toml when first FIELD R2 bucket is created.
+## NEXT R2 ITEMS
+- NFL-A: nflverse Pipeline 2 → R2 (~90 min) — Sept 9 deadline, same CF Cron pattern
+  URLs: raw.githubusercontent.com/nflverse/nflverse-data (allowed domain — no block)
+  wrangler.toml R2 binding already done — just add the cron function
+- SOCCER-A: FBref BLOCKED by CF bot detection — need alternative
+  Options: (a) GitHub Actions fetches FBref, writes to R2 (hybrid); (b) skip
+- NHL-B (MoneyPuck GSAX): needs [VERIFY] on ToS
+- NHL-C (NST PDO): needs [VERIFY] on HTML structure
 
-## OPEN ISSUES
-
-### HIGH (product spec surfaces)
+## OPEN ITEMS
+### HIGH
 - Series dots board — spec surface 6a
 - Arc sparkline SVG — spec surface 6b
 - WHOLE FIELD toggle — spec surface 6c
@@ -60,18 +66,11 @@ Add [[r2_buckets]] binding to wrangler.toml when first FIELD R2 bucket is create
 - Drama spectrum RUWT-safe — spec surface 6f
 - Focus trap bottom sheet
 - M5: score ticker desktop fade
-
-### INFRASTRUCTURE
-- WC bracket render — deferred until ~June 18-20
-- FBref R2 pipeline (soccer WC analytics, Tier 6B)
-- MLB Savant Cron → R2 (Tier 6A)
-- ADR-002: attorney consultation needed (still PROPOSED)
+- WC bracket render — deferred ~June 18-20
 
 ## SMOKE
 552/0
 
 ## SESSION DOCS
-- This session: combined with morning session doc (Drive 1L5QCzn4dWvUwZP8forvpX-CxHyzagc-5)
-- Queue Pattern Architecture: Drive 10gBfFiZaW7lKpZnXK1SEEwuzAuAagBHk
-- Scout's Pick Architecture: Drive 1xqXEOzok608gYUmZbU5d4GEDqAMQw3W2
-- Current State (June 10): Drive 1eLeM7PFkapkqbcu9pQKvi6gWJiw5b4La
+Drive 1L5QCzn4dWvUwZP8forvpX-CxHyzagc-5 (morning session)
+New docs: 10gBfFiZaW7lKpZnXK1SEEwuzAuAagBHk, 1xqXEOzok608gYUmZbU5d4GEDqAMQw3W2, 1eLeM7PFkapkqbcu9pQKvi6gWJiw5b4La
