@@ -1,0 +1,37 @@
+name: NFL NGS + Injuries Update (NFL-B)
+
+on:
+  schedule:
+    # Monday 07:00 UTC — nflverse updates Tuesday nights, this runs after weekly games
+    - cron: '0 7 * * 1'
+  workflow_dispatch:   # Manual trigger any time
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Python deps
+        run: pip install pyarrow --break-system-packages -q
+
+      - name: Run NFL-B pipeline
+        env:
+          CLOUDFLARE_ACCOUNT_ID: b57e9af57ab46c52ca9215804e689c29
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: python3 scripts/build-ngs-data.py
+
+      - name: Commit outbox fallback
+        run: |
+          git config user.email "nfl-ngs@field"
+          git config user.name "NFL-NGS-Bot"
+          git add outbox/nfl/ngs-passing.json outbox/nfl/ngs-receiving.json outbox/nfl/ngs-rushing.json outbox/nfl/nfl-injuries.json
+          git diff --cached --quiet && echo "No changes to commit" && exit 0
+          git commit -m "NFL-B: NGS passing/receiving/rushing + injuries $(date -u +%Y-%m-%d) [skip ci]"
+          for i in 1 2 3; do
+            git pull --rebase --autostash origin main && git push origin main && break
+            sleep $((i * 5))
+          done
