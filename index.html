@@ -2131,6 +2131,27 @@ body.journalism-mode #field-journalism-section{animation:jrnFadeIn 220ms ease-ou
 .wc-group-block{background:rgba(255,255,255,.03);border:1px solid var(--edge);border-radius:10px;padding:.65rem .65rem .5rem}
 .wc-group-label{font-size:.6rem;font-weight:700;letter-spacing:.08em;color:var(--gold2);text-transform:uppercase;margin-bottom:.4rem}
 
+/* ── WC Sub-tabs (Groups | Bracket) ────────────────────────────────────── */
+.wc-sub-tabs{display:flex;gap:.4rem;margin:.5rem 0 .75rem;border-bottom:1px solid var(--edge);padding-bottom:.5rem}
+.wc-sub-tab{background:none;border:none;padding:.3rem .75rem;font-size:.7rem;font-weight:600;letter-spacing:.05em;color:var(--smoke);cursor:pointer;border-radius:4px;transition:color .15s,background .15s}
+.wc-sub-tab.active{color:var(--gold);background:rgba(201,168,76,.1)}
+.wc-sub-tab:hover:not(.active){color:var(--platinum);background:rgba(255,255,255,.05)}
+
+/* ── WC Conditional Bracket ────────────────────────────────────────────── */
+.wc-bracket-note{font-size:.6rem;color:var(--smoke);margin:.25rem 0 .9rem;font-style:italic}
+.wc-r32-grid{display:grid;grid-template-columns:1fr;gap:.6rem}
+@media(min-width:560px){.wc-r32-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:900px){.wc-r32-grid{grid-template-columns:1fr 1fr 1fr}}
+.wc-r32-card{background:rgba(255,255,255,.03);border:1px solid var(--edge);border-radius:8px;padding:.55rem .65rem;position:relative}
+.wc-r32-match-num{font-size:.54rem;color:var(--smoke);margin-bottom:.25rem;letter-spacing:.04em}
+.wc-r32-team{font-size:.72rem;font-weight:600;color:var(--platinum);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wc-r32-team.tbd{color:var(--smoke);font-weight:400;font-style:italic}
+.wc-r32-vs{font-size:.58rem;color:var(--smoke);margin:.2rem 0;text-align:center}
+.wc-r32-meta{font-size:.56rem;color:var(--smoke);margin-top:.3rem}
+.wc-r32-group-tag{display:inline-block;font-size:.52rem;color:var(--gold2);background:rgba(201,168,76,.08);border-radius:3px;padding:.05rem .28rem;margin-left:.3rem;vertical-align:middle}
+.wc-r32-3rd-note{font-size:.52rem;color:rgba(255,255,255,.35);margin-top:.15rem}
+.wc-bracket-section-head{font-size:.6rem;font-weight:700;letter-spacing:.08em;color:var(--smoke);text-transform:uppercase;margin:.85rem 0 .4rem}
+
 /* Group table */
 .wc-table{width:100%;border-collapse:collapse;font-size:.65rem}
 .wc-table thead tr{border-bottom:1px solid var(--edge)}
@@ -3892,6 +3913,11 @@ var _DOM = null;
     <h1 class="wc-title" id="wc-title">Group Stage</h1>
     <div class="wc-meta" id="wc-meta">June 11 – July 19 · USA · Canada · Mexico</div>
   </header>
+  <!-- Sub-tabs: Groups | Bracket -->
+  <div class="wc-sub-tabs">
+    <button class="wc-sub-tab active" id="wc-tab-groups-btn" onclick="switchWCTab('groups')">Groups</button>
+    <button class="wc-sub-tab" id="wc-tab-bracket-btn" onclick="switchWCTab('bracket')">⚡ Bracket</button>
+  </div>
   <!-- Phase 1: Groups -->
   <div class="wc-groups" id="wc-groups">
     <!-- Populated by renderWCGroups() -->
@@ -19587,7 +19613,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-10a';
+  const SW_VERSION = '2026-06-11a';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -26107,6 +26133,147 @@ function getWCPhase() {
   return now >= new Date('2026-06-29T00:00:00') ? 'bracket' : 'groups';
 }
 
+// ── WC_R32 Bracket Slot Definitions ─────────────────────────────────────────
+// Source: FIFA 2026 WC Annex C — matches 73-88 (Round of 32)
+// Slots: { match, home, away, date }
+//   home/away: '1X' = winner of group X, '2X' = runner-up, '3' = best 3rd
+//   eligible3rd: groups eligible to supply 3rd-place qualifier for this slot
+// 8 fixed (no 3rd place) + 8 conditional (3rd place from Annex C)
+const WC_R32_SLOTS = [
+  { match:73, home:{pos:2,group:'A'}, away:{pos:2,group:'B'},       date:'Jun 28' },
+  { match:74, home:{pos:1,group:'E'}, away:{pos:3,eligible:'ABCDF'},date:'Jun 28' },
+  { match:75, home:{pos:1,group:'F'}, away:{pos:2,group:'C'},       date:'Jun 28' },
+  { match:76, home:{pos:1,group:'C'}, away:{pos:2,group:'F'},       date:'Jun 29' },
+  { match:77, home:{pos:1,group:'I'}, away:{pos:3,eligible:'CDFGH'},date:'Jun 29' },
+  { match:78, home:{pos:2,group:'E'}, away:{pos:2,group:'I'},       date:'Jun 29' },
+  { match:79, home:{pos:1,group:'A'}, away:{pos:3,eligible:'CEFHI'},date:'Jun 30' },
+  { match:80, home:{pos:1,group:'L'}, away:{pos:3,eligible:'EHIJK'},date:'Jun 30' },
+  { match:81, home:{pos:1,group:'D'}, away:{pos:3,eligible:'BEFIJ'},date:'Jul 1'  },
+  { match:82, home:{pos:1,group:'G'}, away:{pos:3,eligible:'AEHIJ'},date:'Jul 1'  },
+  { match:83, home:{pos:2,group:'K'}, away:{pos:2,group:'L'},       date:'Jul 1'  },
+  { match:84, home:{pos:1,group:'H'}, away:{pos:2,group:'J'},       date:'Jul 2'  },
+  { match:85, home:{pos:1,group:'B'}, away:{pos:3,eligible:'EFGIJ'},date:'Jul 2'  },
+  { match:86, home:{pos:1,group:'J'}, away:{pos:2,group:'H'},       date:'Jul 2'  },
+  { match:87, home:{pos:1,group:'K'}, away:{pos:3,eligible:'DEIJL'},date:'Jul 3'  },
+  { match:88, home:{pos:2,group:'D'}, away:{pos:2,group:'G'},       date:'Jul 3'  },
+];
+
+// ── resolveWCBracketTeam ─────────────────────────────────────────────────────
+// Resolves one bracket slot descriptor → { name, group, tbd, is3rd }
+// perGroupTable: { 'A': [{name, Pts, GF, GA, ...}, ...], 'B': [...], ... }
+//   from scenarios.perGroup[X].currentTable
+function resolveWCBracketTeam(slot, perGroupTable) {
+  if (slot.pos === 1 || slot.pos === 2) {
+    const table = perGroupTable[slot.group];
+    const idx   = slot.pos - 1;
+    if (!table || !table[idx] || !table[idx].name) {
+      return { name: `${slot.pos===1?'W':'RU'}-${slot.group}`, group: slot.group, tbd: true };
+    }
+    return { name: table[idx].name, group: slot.group, tbd: false };
+  }
+  // Best 3rd from eligible groups (simplified Annex C pre-resolution)
+  const groups = (slot.eligible || '').split('');
+  const candidates = [];
+  for (const g of groups) {
+    const table = perGroupTable[g];
+    if (table && table[2] && table[2].name) {
+      candidates.push({ name: table[2].name, group: g, Pts: table[2].Pts||0,
+        GD: (table[2].GF||0)-(table[2].GA||0), GF: table[2].GF||0 });
+    }
+  }
+  if (!candidates.length) return { name: `Best 3rd (${slot.eligible})`, group:'', tbd: true, is3rd: true };
+  candidates.sort((a,b) => (b.Pts-a.Pts) || (b.GD-a.GD) || (b.GF-a.GF));
+  return { name: candidates[0].name, group: candidates[0].group, tbd: false, is3rd: true,
+    eligibleNote: slot.eligible };
+}
+
+// ── renderWCConditionalBracket ───────────────────────────────────────────────
+// Renders all 16 R32 matchups using current group standings.
+// "If today's results hold" — one concrete bracket, most-likely path.
+// Handles early-tournament state where groups have 0 games played (shows TBD gracefully).
+function renderWCConditionalBracket(standings, matchResults, oddsProbs, liveGames) {
+  const el = document.getElementById('wc-bracket');
+  if (!el) return;
+  // Build perGroupTable: { 'A': currentTable[], 'B': currentTable[], ... }
+  // Use computeGroupScenarios currentTable (already sorted by tiebreakers)
+  const scenarios = typeof _wcComputeAllScenarios === 'function'
+    ? _wcComputeAllScenarios(standings, matchResults, null, oddsProbs, liveGames) : null;
+  const perGroupTable = {};
+  if (scenarios?.perGroup) {
+    for (const [g, s] of Object.entries(scenarios.perGroup)) {
+      perGroupTable[g] = s.currentTable || [];
+    }
+  }
+  // Also fill from raw standings for groups with 0 games (all-zero rows still valid)
+  for (const [g, rows] of Object.entries(standings || {})) {
+    if (!perGroupTable[g] && Array.isArray(rows)) perGroupTable[g] = rows;
+  }
+  const anyResolved = Object.values(perGroupTable).some(t => t.length > 0 && t[0]?.name);
+  // Group slots by date for section headers
+  const byDate = {};
+  for (const slot of WC_R32_SLOTS) {
+    if (!byDate[slot.date]) byDate[slot.date] = [];
+    byDate[slot.date].push(slot);
+  }
+  let html = `<p class="wc-bracket-note">`;
+  if (anyResolved) {
+    html += `If current standings hold — updated live`;
+  } else {
+    html += `Bracket order set · Teams revealed as group play begins`;
+  }
+  html += `</p>`;
+  for (const [date, slots] of Object.entries(byDate)) {
+    html += `<div class="wc-bracket-section-head">${date}</div>`;
+    html += `<div class="wc-r32-grid">`;
+    for (const slot of slots) {
+      const home = resolveWCBracketTeam(slot.home, perGroupTable);
+      const away = resolveWCBracketTeam(slot.away, perGroupTable);
+      const posLabel = p => p===1?'W':p===2?'RU':'3rd';
+      html += `<div class="wc-r32-card">
+        <div class="wc-r32-match-num">Match ${slot.match}</div>
+        <div class="wc-r32-team${home.tbd?' tbd':''}">${home.name}${home.group&&!home.tbd?`<span class="wc-r32-group-tag">${posLabel(slot.home.pos)}${home.group}</span>`:''}</div>
+        <div class="wc-r32-vs">vs</div>
+        <div class="wc-r32-team${away.tbd?' tbd':''}">${away.name}${away.group&&!away.tbd?`<span class="wc-r32-group-tag">${away.is3rd?'3rd-'+away.group:posLabel(slot.away.pos)+away.group}</span>`:''}</div>
+        ${away.is3rd&&away.eligibleNote?`<div class="wc-r32-3rd-note">best 3rd · Groups ${away.eligibleNote.split('').join('/')}</div>`:''}
+        <div class="wc-r32-meta">${slot.date}</div>
+      </div>`;
+    }
+    html += `</div>`;
+  }
+  html += `<p class="wc-footnote" style="margin-top:1rem">Round of 32 matchups per FIFA Annex C · 3rd-place slots show current frontrunner from eligible groups</p>`;
+  el.innerHTML = html;
+}
+
+// ── switchWCTab ──────────────────────────────────────────────────────────────
+// Switches between Groups and Bracket sub-tabs within WC mode.
+// Called from sub-tab buttons; also called by renderWCSection on init.
+function switchWCTab(tab) {
+  const grpsEl    = (_DOM?.wcGroups || document.getElementById('wc-groups'));
+  const bracketEl = document.getElementById('wc-bracket');
+  const grpBtn    = document.getElementById('wc-tab-groups-btn');
+  const bktBtn    = document.getElementById('wc-tab-bracket-btn');
+  if (tab === 'bracket') {
+    grpsEl?.setAttribute('hidden', '');
+    bracketEl?.removeAttribute('hidden');
+    grpBtn?.classList.remove('active');
+    bktBtn?.classList.add('active');
+    // Render bracket with cached data if available
+    if (window._wcLastStandings) {
+      renderWCConditionalBracket(
+        window._wcLastStandings,
+        window._wcLastMatchResults,
+        window._wcLastOddsProbs,
+        window._wcLastLiveGames
+      );
+    }
+  } else {
+    bracketEl?.setAttribute('hidden', '');
+    grpsEl?.removeAttribute('hidden');
+    grpBtn?.classList.add('active');
+    bktBtn?.classList.remove('active');
+  }
+}
+
 // Toggle WC view — mirrors toggleJournalismView()
 function toggleWCView() {
   const isWC = document.body.classList.toggle('wc-mode');
@@ -26220,57 +26387,56 @@ async function fetchWCTabBrief(wcGames) {
 
 async function renderWCSection() {
   const phase = getWCPhase();
-  // Update title + label
+  // Update title
   const title = document.getElementById('wc-title');
   const navLink = document.getElementById('wc-nav-link');
   if (phase === 'bracket') {
     if (title) title.textContent = 'Knockout Stage';
     if (navLink) navLink.textContent = '⚽ Bracket';
-    (_DOM?.wcGroups||document.getElementById('wc-groups'))?.setAttribute('hidden', '');
-    const bracket = document.getElementById('wc-bracket');
-    if (bracket) bracket.removeAttribute('hidden');
-    // renderWCBracket() — deferred build ~June 18-20
-    return;
+    // In bracket phase, auto-switch to bracket tab
+    switchWCTab('bracket');
+  } else {
+    if (title) title.textContent = 'Group Stage';
+    if (navLink) navLink.textContent = '⚽ Groups';
+    // Show groups tab by default unless user previously selected bracket
+    const activeBkt = document.getElementById('wc-tab-bracket-btn')?.classList.contains('active');
+    if (!activeBkt) switchWCTab('groups');
   }
-  if (title) title.textContent = 'Group Stage';
-  if (navLink) navLink.textContent = '⚽ Groups';
-  // Sync filter pill active state
   document.getElementById('wc-filter-pill')?.classList.toggle('active', document.body.classList.contains('wc-mode'));
-  document.getElementById('wc-bracket')?.setAttribute('hidden', '');
-  const grpsEl = (_DOM?.wcGroups||document.getElementById('wc-groups'));
-  if (grpsEl) grpsEl.removeAttribute('hidden');
   renderWCGroupsLoading();
-  // Fetch standings + match results + odds + live game WP in parallel
+  // Fetch all WC data in parallel
   const [standings, matchResults, oddsProbs, liveGames] = await Promise.all([
     fetchWCStandings(),
     fetchWCResults(),
     fetchWCOddsProbabilities(),
     fetchWCLiveGames(),
   ]);
-  // Fetch WC journalism tab brief in parallel with the group data
-  // WC games from allData provide game list; relay supplies team context
+  // Cache data for bracket tab re-render on tab switch
+  window._wcLastStandings   = standings;
+  window._wcLastMatchResults = matchResults;
+  window._wcLastOddsProbs   = oddsProbs;
+  window._wcLastLiveGames   = liveGames;
+  // Fetch journalism brief async — don't block render
   const wcGames = allData ? (allData.sports || [])
     .filter(s => (s.sport||'').includes('FIFA'))
     .flatMap(s => s.games || []) : [];
-  // Fire async — inject when ready (doesn't block group table render)
   fetchWCTabBrief(wcGames).then(brief => {
     if (!brief) return;
     const el = _DOM?.wcGroups || document.getElementById('wc-groups');
     if (!el) return;
-    // Find or create the preview header above the first group block
     let hdr = el.querySelector('.wc-preview-header');
-    if (!hdr) {
-      hdr = document.createElement('div');
-      hdr.className = 'wc-preview-header';
-      el.prepend(hdr);
-    }
+    if (!hdr) { hdr = document.createElement('div'); hdr.className = 'wc-preview-header'; el.prepend(hdr); }
     hdr.innerHTML = `<p class="wc-preview-intro">${brief}</p>`;
   }).catch(() => {});
-
+  // Render groups table
   if (!standings || Object.keys(standings).length === 0) {
     renderWCGroupsEmpty();
   } else {
     renderWCGroups(standings, matchResults, oddsProbs, liveGames);
+  }
+  // If bracket tab is active, render it with fresh data
+  if (document.getElementById('wc-tab-bracket-btn')?.classList.contains('active')) {
+    renderWCConditionalBracket(standings, matchResults, oddsProbs, liveGames);
   }
 }
 
