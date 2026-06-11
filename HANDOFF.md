@@ -1,65 +1,81 @@
-# FIELD HANDOFF — 2026-06-11 (WC Bracket + UserDO)
+# FIELD HANDOFF — 2026-06-11 (WC Tournament Projections Engine)
 
 ## HEADS
-- jubilant-bassoon HEAD: 1897128
-- SW_VERSION: 2026-06-11a
-- Smoke: 572/0
-- field-relay-nba HEAD: 61d309f
+- jubilant-bassoon HEAD: e78dc3d
+- SW_VERSION: 2026-06-11b
+- Smoke: 575/0
+- field-relay-nba HEAD: 63cb2ae
 
-## WHAT SHIPPED
+## WHAT SHIPPED THIS SESSION
 
-### feat: WC Live Conditional Bracket (05eed4a)
-Two sub-tabs within WC mode: Groups (existing) + ⚡ Bracket (new).
+### WC Tournament Projections Engine (relay: 63cb2ae, client: e78dc3d)
 
-Bracket tab shows all 16 Round of 32 matchups as they'd form right now
-given current standings — "If today's results hold." One concrete bracket,
-most-likely-current-path. Updates live as match data refreshes.
+Replaces static conditional bracket with a live Monte Carlo tournament
+path probability engine. For each of 48 teams: pR32, pR16, pQF, pSF,
+pFinal, pChamp — computed from current group standings + remaining fixture
+odds + Poisson knockout simulation.
 
-- WC_R32_SLOTS: all 16 R32 matchups from FIFA Annex C (matches 73–88)
-  - 8 fixed: 1st vs 2nd, no 3rd place (73, 75, 76, 78, 83, 84, 86, 88)
-  - 8 conditional: group winner vs best 3rd from eligible groups
-- resolveWCBracketTeam(): resolves slot descriptors → team names from
-  perGroupTable (currentTable from computeGroupScenarios). 3rd-place slots
-  use best current 3rd from eligible groups (Pts→GD→GF sort).
-- renderWCConditionalBracket(): renders all 16 matchups grouped by date
-  (Jun 28 – Jul 3). Handles Day 1 gracefully (all TBD).
-- switchWCTab(tab): Groups ↔ Bracket. Caches standings/results/odds/live
-  for tab-switch re-render via window._wcLast* pattern.
-- renderWCSection() refactored: caches data, renders both tabs, auto-
-  switches to bracket in knockout phase (June 29+).
-- CSS: .wc-sub-tabs, .wc-r32-grid (1→2→3 col responsive), .wc-r32-card
-- Smoke A527–A529 added.
+**Relay (src/wc-tournament-projections.js, 540 lines):**
+- `computeTournamentProjections({standings, remainingFixtures, oddsProbs, N=2000})`
+  - Derives attack/defense strengths from group-stage Poisson lambdas
+  - Auto-builds remainingFixtures from oddsProbs when not provided
+  - N=2000 Monte Carlo: complete group stage → best 8 3rd → knockout rounds
+  - ODDS_NAME_ALIAS map handles Odds API vs WC_TEAM_CONTEXT name mismatches
+    ('Czech Republic'→'Czechia', 'Bosnia & Herzegovina'→'Bosnia and Herzegovina', etc.)
+- `computeMovers(prev, curr, teamsPlayedToday)` — daily diff
+  - gainers, losers: teams that played and changed
+  - secondaryBeneficiaries, secondaryLosers: teams that shifted WITHOUT playing
+    (path opened/closed because of results elsewhere in the bracket)
+- `buildMoversBriefPrompt(movers, projections)` — 3-para journalism brief prompt
 
-### feat: UserDO Architecture — relay + client bridge (61d309f + 1897128)
+**Relay routes (all live):**
+- GET  /wc/projections          — 48-team path probabilities (KV, 5min cache)
+- GET  /wc/movers               — today's movers (KV, 24h TTL)
+- GET  /wc/brief/tournament     — journalism brief from Claude (KV, 24h TTL)
+- POST /wc/projections/refresh  — manual trigger
 
-Relay (field-relay-nba@61d309f):
-- src/user-do.js: Durable Object, UUID-keyed, no PII.
-  Stores seriesLedger, watchHistory (30d TTL), dramaticMomentsMissed (7d TTL).
-  deviceSyncToken = SHA-256(userId) — PREF-SYNC-QR upgrade path.
-  Routes: /user/init, /user/state, /user/event
-- wrangler.toml: USER_DO binding + v2-user-do migration.
+**Cron:** every 15 min during WC window (June 11–July 19).
+Rotates curr→prev in KV for daily mover diff. Triggers journalism
+brief via Claude when any team's pFinal moved >3%.
 
-Client (jubilant-bassoon@1897128):
-- getFieldUserId(): crypto.randomUUID() → localStorage.field_user_id
-- _userDoRelay(): fire-and-forget, keepalive:true
-- recordWatchOpen(): wired into openBottomSheet() + mvAdd()
-- recordSeriesGame(): fires when game.seriesRecord present on sheet open
-- recordPeakMissed(): visibilitychange → drama >= 75 while hidden
-- FIELD_FEATURES 'user-do-client': '2026-06-11'
-- Smoke A523–A526 added.
+**Client (renderWCTournamentBracket, async):**
+1. Journalism brief (gold left-border card, "Tournament Outlook")
+2. Movers section: ↑/↓ arrows with delta%, "did not play" for secondary beneficiaries
+3. 48-team probability table: Team | Grp | R32 | R16 | QF | SF | Final | Win
+   Color-coded: green ≥50%, gold ≥15%, smoke <15%
+4. Falls back to conditional R32 matchup view if projections unavailable
+
+**Known issue:** First relay computation (before bug fix deployed) produced
+all-zero probabilities due to name mismatch bug. The fixed code (63cb2ae)
+will recompute on the next cron tick. The client shows correct structure
+and will populate with real probabilities once the next cron runs.
+
+### Earlier this session (carried forward)
+
+**WC Live Conditional Bracket (05eed4a)**
+Groups | ⚡ Bracket sub-tabs. Bracket shows R32 matchups as they'd form now.
+Retained as fallback view when projections unavailable.
+
+**UserDO Architecture (61d309f + 1897128)**
+UUID-keyed DO, no PII. watchHistory + seriesLedger + dramaticMomentsMissed.
+Wired into openBottomSheet() + mvAdd() + visibilitychange.
 
 ## PRIORITY LIST
 
-1. Series dots 6a                ← both finals still live
-2. Arc sparkline GLYPH 6b        ← pair with 6a
-3. WHOLE FIELD toggle 6c
-4. State transition 6e
-5. Drama spectrum 6f
-6. WC bracket — SHIPPED ✅       (deadline met, June 27)
-7. UserDO — SHIPPED ✅
-8. M5 score ticker fade (assess severity)
-9. Wimbledon draw context        (before July 7)
-10. Design system (~90 min TYPE C)
+1. WC projections first real data — verify after next cron (15-min cycle)
+2. Series dots 6a            ← both NBA Finals + SCF still live
+3. Arc sparkline GLYPH 6b   ← pair with 6a
+4. WHOLE FIELD toggle 6c
+5. State transition 6e
+6. Drama spectrum 6f
+7. M5 score ticker fade (assess severity)
+8. Wimbledon draw context   (before July 7)
+9. Design system (~90 min TYPE C)
+
+## RELAY HEADS
+- wc-tournament-projections.js: 63cb2ae (June 11 2026)
+- user-do.js: 61d309f (June 11 2026)
+- soccer-wp.js + wc-team-context.js: unchanged
 
 ## SMOKE
-572/0
+575/0
