@@ -3991,6 +3991,18 @@ assert('A535 — WHOLE FIELD: body.wf-mode CSS at 1200px',
 assert('A536 — WHOLE FIELD: field_desktop_mode localStorage key',
   html.includes("'field_desktop_mode'"));
 
+// ── A537-A541: WC Bracket Tree ───────────────────────────────────────────────
+assert('A537 — WC Bracket Tree: renderWCBracketTree function defined',
+  html.includes('async function renderWCBracketTree()'));
+assert('A538 — WC Bracket Tree: WCT_R32_SLOTS constant defined',
+  html.includes('WCT_R32_SLOTS'));
+assert('A539 — WC Bracket Tree: WCT_FLAGS emoji map defined',
+  html.includes('WCT_FLAGS'));
+assert('A540 — WC Bracket Tree: .wc-bracket-tree CSS defined',
+  html.includes('.wc-bracket-tree{') || html.includes('.wc-bracket-tree {') || html.includes('.wc-bracket-tree\n'));
+assert('A541 — WC Bracket Tree: switchWCTab calls renderWCBracketTree at wide viewport',
+  html.includes('renderWCBracketTree()'));
+
 
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);

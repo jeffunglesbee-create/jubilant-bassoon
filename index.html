@@ -2336,6 +2336,120 @@ body.wc-mode #wc-section{animation:wcFadeIn 220ms ease-out}
   #wf-toggle{display:inline-flex;align-items:center;gap:.3rem}
 }
 
+/* ── WC Bracket Tree (renderWCBracketTree) ───────────────────────────────────
+   Visual knockout bracket rendered at tablet landscape (1180px+).
+   Two-column layout: left half and right half converge on the champion.
+   Hidden below 1180px; probability table shown instead. */
+
+.wc-bracket-tree{
+  display:none;  /* shown only at 1180px+ */
+  width:100%;overflow-x:auto;
+  padding:.5rem 0 1.5rem;
+}
+@media(min-width:1180px){
+  .wc-bracket-tree{display:block}
+  /* Hide probability table when bracket tree is shown */
+  .wc-bracket-tree ~ .wc-proj-table-wrap{display:none}
+  .wc-bracket-tree ~ .wc-bracket-note{display:none}
+}
+
+/* Bracket grid: left rounds | champion | right rounds */
+.wct-grid{
+  display:grid;
+  grid-template-columns: repeat(4,1fr) auto repeat(4,1fr);
+  gap:0;
+  min-width:900px;
+  align-items:center;
+}
+
+/* Column labels */
+.wct-col-head{
+  font-size:.52rem;font-weight:700;letter-spacing:.1em;
+  color:var(--smoke);text-transform:uppercase;text-align:center;
+  padding:.4rem 0 .6rem;
+}
+
+/* Bracket match card */
+.wct-match{
+  display:flex;flex-direction:column;
+  margin:2px 3px;
+  border-radius:5px;
+  overflow:hidden;
+  border:1px solid var(--edge);
+  background:var(--card);
+  font-size:.62rem;
+  min-width:90px;
+}
+.wct-match.wct-champion{
+  border-color:rgba(201,168,76,.5);
+  background:rgba(201,168,76,.08);
+  min-width:100px;
+}
+.wct-match.wct-final{
+  border-color:rgba(255,255,255,.15);
+  min-width:100px;
+}
+
+.wct-team{
+  display:flex;align-items:center;gap:.3rem;
+  padding:.25rem .4rem;
+  color:var(--platinum);font-weight:600;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  line-height:1.2;
+}
+.wct-team:first-child{border-bottom:1px solid var(--edge)}
+.wct-team.wct-winner{color:var(--white);background:rgba(255,255,255,.04)}
+.wct-team.wct-champion-team{color:var(--gold2)}
+
+.wct-flag{font-size:.7rem;flex-shrink:0}
+.wct-name{overflow:hidden;text-overflow:ellipsis;flex:1}
+.wct-prob{
+  font-size:.5rem;font-family:var(--ff-mono);color:var(--smoke);
+  flex-shrink:0;margin-left:.2rem;
+}
+
+/* Connector lines between rounds */
+.wct-connector{
+  display:flex;align-items:center;justify-content:center;
+  padding:0 1px;
+  height:100%;
+}
+.wct-connector-line{
+  width:8px;height:2px;background:var(--edge);
+}
+
+/* Champion center column */
+.wct-center{
+  display:flex;flex-direction:column;align-items:center;
+  gap:.5rem;padding:0 .5rem;
+}
+.wct-champion-label{
+  font-size:.52rem;font-weight:700;letter-spacing:.1em;
+  color:var(--gold);text-transform:uppercase;text-align:center;
+  margin-bottom:.2rem;
+}
+/* Right-side rounds are mirrored — teams read right-to-left */
+.wct-right .wct-team{flex-direction:row-reverse;text-align:right}
+.wct-right .wct-name{text-align:right}
+
+/* Round column wrappers */
+.wct-round{
+  display:flex;flex-direction:column;
+  justify-content:space-around;
+  height:100%;
+}
+
+/* SF/Final special sizing */
+.wct-match.wct-sf{font-size:.65rem}
+.wct-match.wct-final{font-size:.67rem}
+.wct-match.wct-champion{font-size:.7rem}
+
+/* Loading / empty state */
+.wct-loading{
+  text-align:center;font-size:.65rem;color:var(--smoke);
+  padding:3rem 0;
+}
+
 /* ── C3: Laptop multi-pane (1200-1439px) ──────────────────────────────────
    Schedule rail fixed left (280px), journalism reading shifted right.
    Companion stays hidden at laptop. */
@@ -26562,14 +26676,22 @@ function switchWCTab(tab) {
     bracketEl?.removeAttribute('hidden');
     grpBtn?.classList.remove('active');
     bktBtn?.classList.add('active');
-    // Render tournament projections (async — fetches from relay)
-    renderWCTournamentBracket().catch(() => {
-      // fallback to conditional bracket if projection fetch fails
-      if (window._wcLastStandings) {
-        renderWCConditionalBracket(window._wcLastStandings, window._wcLastMatchResults,
-          window._wcLastOddsProbs, window._wcLastLiveGames);
-      }
-    });
+    // At tablet landscape+ (≥1180px): render visual bracket tree
+    // Below 1180px: render probability table
+    const isWide = typeof window !== 'undefined' && window.matchMedia('(min-width:1180px)').matches;
+    if (isWide && typeof renderWCBracketTree === 'function') {
+      renderWCBracketTree().catch(() => {
+        renderWCTournamentBracket().catch(() => {});
+      });
+    } else {
+      renderWCTournamentBracket().catch(() => {
+        // fallback to conditional bracket if projection fetch fails
+        if (window._wcLastStandings) {
+          renderWCConditionalBracket(window._wcLastStandings, window._wcLastMatchResults,
+            window._wcLastOddsProbs, window._wcLastLiveGames);
+        }
+      });
+    }
   } else {
     bracketEl?.setAttribute('hidden', '');
     grpsEl?.removeAttribute('hidden');
@@ -27308,6 +27430,175 @@ function buildWCGroupRow(r, index, scenarios, groupId) {
 }
 
 // Show/hide WC nav link based on wcActive
+// ── WC Bracket Tree Renderer ─────────────────────────────────────────────────
+// Fetches /wc/bracket (Monte Carlo slot winners) and renders a visual
+// knockout bracket at tablet landscape (1180px+).
+// Slot IDs: R32_73-88, R16_0-7, QF_0-3, SF_0-1, Final, Champion
+
+// R32 match → R16 index mapping (left half: 0-3, right half: 4-7)
+const WCT_R32_SLOTS = [
+  // Left half — R32 → R16 pairs [73,74],[75,76],[77,78],[79,80]
+  {id:'R32_73',half:'left',r16:0,pos:0}, {id:'R32_74',half:'left',r16:0,pos:1},
+  {id:'R32_75',half:'left',r16:1,pos:0}, {id:'R32_76',half:'left',r16:1,pos:1},
+  {id:'R32_77',half:'left',r16:2,pos:0}, {id:'R32_78',half:'left',r16:2,pos:1},
+  {id:'R32_79',half:'left',r16:3,pos:0}, {id:'R32_80',half:'left',r16:3,pos:1},
+  // Right half — R32 → R16 pairs [81,82],[83,84],[85,86],[87,88]
+  {id:'R32_81',half:'right',r16:4,pos:0},{id:'R32_82',half:'right',r16:4,pos:1},
+  {id:'R32_83',half:'right',r16:5,pos:0},{id:'R32_84',half:'right',r16:5,pos:1},
+  {id:'R32_85',half:'right',r16:6,pos:0},{id:'R32_86',half:'right',r16:6,pos:1},
+  {id:'R32_87',half:'right',r16:7,pos:0},{id:'R32_88',half:'right',r16:7,pos:1},
+];
+
+// Country flag emoji from FIFA code
+const WCT_FLAGS = {
+  MEX:'🇲🇽',RSA:'🇿🇦',KOR:'🇰🇷',CZE:'🇨🇿',CAN:'🇨🇦',BIH:'🇧🇦',USA:'🇺🇸',PAR:'🇵🇾',
+  QAT:'🇶🇦',SUI:'🇨🇭',BRA:'🇧🇷',MAR:'🇲🇦',HAI:'🇭🇹',SCO:'🏴󠁧󠁢󠁳󠁣󠁴󠁿',AUS:'🇦🇺',TUR:'🇹🇷',
+  GER:'🇩🇪',CUW:'🇨🇼',NED:'🇳🇱',JPN:'🇯🇵',CIV:'🇨🇮',ECU:'🇪🇨',SWE:'🇸🇪',TUN:'🇹🇳',
+  ESP:'🇪🇸',CPV:'🇨🇻',BEL:'🇧🇪',EGY:'🇪🇬',KSA:'🇸🇦',URU:'🇺🇾',IRN:'🇮🇷',NZL:'🇳🇿',
+  FRA:'🇫🇷',SEN:'🇸🇳',IRQ:'🇮🇶',NOR:'🇳🇴',ARG:'🇦🇷',ALG:'🇩🇿',AUT:'🇦🇹',JOR:'🇯🇴',
+  POR:'🇵🇹',COD:'🇨🇩',ENG:'🏴󠁧󠁢󠁥󠁮󠁧󠁿',CRO:'🇭🇷',GHA:'🇬🇭',PAN:'🇵🇦',UZB:'🇺🇿',COL:'🇨🇴',
+};
+
+function wctTeamCard(slotData, cls = '') {
+  if (!slotData) {
+    return `<div class="wct-team wct-tbd ${cls}"><span class="wct-name" style="color:var(--smoke);font-style:italic">TBD</span></div>`;
+  }
+  const flag = WCT_FLAGS[slotData.fifaCode] || '🏳️';
+  const pct  = slotData.prob != null ? Math.round(slotData.prob * 100) + '%' : '';
+  return `<div class="wct-team ${cls}">
+    <span class="wct-flag">${flag}</span>
+    <span class="wct-name">${slotData.team || 'TBD'}</span>
+    ${pct ? `<span class="wct-prob">${pct}</span>` : ''}
+  </div>`;
+}
+
+function wctMatchCard(slot1, slot2, extraCls = '') {
+  return `<div class="wct-match ${extraCls}">
+    ${wctTeamCard(slot1)}
+    ${wctTeamCard(slot2)}
+  </div>`;
+}
+
+async function renderWCBracketTree() {
+  const el = document.getElementById('wc-bracket');
+  if (!el) return;
+
+  // Remove any existing tree
+  const existing = el.querySelector('.wc-bracket-tree');
+  if (existing) existing.remove();
+
+  const RELAY = typeof V2_RELAY_BASE !== 'undefined'
+    ? V2_RELAY_BASE : 'https://field-relay-nba.jeffunglesbee.workers.dev';
+
+  // Loading state — tree placeholder
+  const treeEl = document.createElement('div');
+  treeEl.className = 'wc-bracket-tree';
+  treeEl.innerHTML = '<div class="wct-loading">Computing most likely bracket…</div>';
+  el.prepend(treeEl);
+
+  let slots = {};
+  try {
+    const r = await fetch(`${RELAY}/wc/bracket`, { cache: 'no-store' });
+    if (r.ok) {
+      const data = await r.json();
+      slots = data.bracketSlots || {};
+    }
+  } catch(e_) {}
+
+  const hasData = Object.keys(slots).length > 0;
+
+  // Build left half: 4 rounds (R32→R16→QF→SF) + champion + right half mirrored
+  function col(ids, half='left') {
+    const dir = half === 'right' ? 'wct-right' : '';
+    return ids.map(id => {
+      const s = slots[id];
+      return `<div class="wct-match ${id.startsWith('SF') ? 'wct-sf' : id === 'Final' ? 'wct-final' : id === 'Champion' ? 'wct-champion' : ''} ${dir}">
+        ${wctTeamCard(s, s ? '' : '')}
+        <div class="wct-team" style="display:none"></div>
+      </div>`;
+    }).join('');
+  }
+
+  // For each round: array of match cards as a column
+  function buildRound(slotIds, half='left', extraCls='') {
+    const dir = half === 'right' ? 'wct-right' : '';
+    return `<div class="wct-round ${dir}">` +
+      slotIds.map(id => {
+        const s = slots[id];
+        const roundCls = id.startsWith('SF') ? 'wct-sf' : id === 'Final' ? 'wct-final' : '';
+        return `<div class="wct-match ${roundCls} ${dir} ${extraCls}">
+          ${wctTeamCard(s)}
+          <div class="wct-team" style="visibility:hidden;height:0;padding:0;margin:0;border:none"></div>
+        </div>`;
+      }).join('') +
+    '</div>';
+  }
+
+  // For R32: pairs need TWO teams per match slot
+  function buildR32Round(pairs, half='left') {
+    const dir = half === 'right' ? 'wct-right' : '';
+    return `<div class="wct-round ${dir}">` +
+      pairs.map(([idA, idB]) =>
+        wctMatchCard(slots[idA], slots[idB], dir)
+      ).join('') +
+    '</div>';
+  }
+
+  const leftR32Pairs  = [[`R32_73`,`R32_74`],[`R32_75`,`R32_76`],[`R32_77`,`R32_78`],[`R32_79`,`R32_80`]];
+  const leftR16Ids    = [`R16_0`,`R16_1`,`R16_2`,`R16_3`];
+  const leftQFIds     = [`QF_0`,`QF_1`];
+  const leftSFIds     = [`SF_0`];
+  const rightR32Pairs = [[`R32_81`,`R32_82`],[`R32_83`,`R32_84`],[`R32_85`,`R32_86`],[`R32_87`,`R32_88`]];
+  const rightR16Ids   = [`R16_4`,`R16_5`,`R16_6`,`R16_7`];
+  const rightQFIds    = [`QF_2`,`QF_3`];
+  const rightSFIds    = [`SF_1`];
+
+  const champion   = slots['Champion'];
+  const finalTeam1 = slots['Final'];   // champion
+  const sfLeft     = slots['SF_0'];
+  const sfRight    = slots['SF_1'];
+
+  const note = hasData
+    ? `<p class="wc-bracket-note" style="margin-top:.75rem">Most likely bracket · ${(slots['Champion']?.prob != null ? Math.round(slots['Champion'].prob * 100) : '?')}% confidence on champion · Updates every 15 min</p>`
+    : '<p class="wc-bracket-note" style="margin-top:.75rem">Computing projections — check back shortly</p>';
+
+  // Column headers
+  const leftHeads  = ['R32','R16','QF','SF'].map(h =>
+    `<div class="wct-col-head">${h}</div>`).join('');
+  const rightHeads = ['SF','QF','R16','R32'].map(h =>
+    `<div class="wct-col-head">${h}</div>`).join('');
+
+  treeEl.innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(4,1fr) 120px repeat(4,1fr);text-align:center;min-width:900px;margin-bottom:.3rem">
+      ${leftHeads}
+      <div class="wct-col-head" style="color:var(--gold)">🏆</div>
+      ${rightHeads}
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr) 120px repeat(4,1fr);min-width:900px;align-items:center;gap:2px 0;padding:0 2px">
+      ${buildR32Round(leftR32Pairs, 'left')}
+      ${buildRound(leftR16Ids, 'left')}
+      ${buildRound(leftQFIds, 'left')}
+      ${buildRound(leftSFIds, 'left', 'wct-sf')}
+      <div style="display:flex;flex-direction:column;align-items:center;gap:.5rem;padding:0 4px">
+        <div class="wct-champion-label">Champion</div>
+        <div class="wct-match wct-champion" style="width:108px">
+          ${wctTeamCard(champion, 'wct-champion-team')}
+        </div>
+        <div style="font-size:.52rem;color:var(--smoke);text-align:center;margin-top:.3rem">Final</div>
+        <div class="wct-match wct-final" style="width:108px">
+          ${wctTeamCard(sfLeft)}
+          ${wctTeamCard(sfRight)}
+        </div>
+      </div>
+      ${buildRound(rightSFIds, 'right', 'wct-sf')}
+      ${buildRound(rightQFIds, 'right')}
+      ${buildRound(rightR16Ids, 'right')}
+      ${buildR32Round(rightR32Pairs, 'right')}
+    </div>
+    ${note}
+  `;
+}
+
 (function initWCNav() {
   const link = document.getElementById('wc-nav-link');
   if (link && wcActive) link.style.display = '';
