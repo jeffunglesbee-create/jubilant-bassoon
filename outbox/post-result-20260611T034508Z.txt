@@ -1,0 +1,15 @@
+URL: https://field-relay-nba.jeffunglesbee.workers.dev/journalism/generate  [20260611T034508Z]
+=== Request body ===
+{
+  "sport": "basketball",
+  "briefType": "nba-brief",
+  "max_tokens": 600,
+  "scoreThreshold": 130,
+  "prompt": "Write a FIELD Brief for NBA Finals Game 4. FIELD voice: hard news lead, rhetorical flourish, no wire-copy grammar. Three-part arc required: opening scene + turning point + consequence. 120-160 words. No bullet points.\n\nFINAL: NYK 107, SAS 106\nNBA FINALS SERIES: NYK leads 3-1\n\nLINESCORE:\nQ1: SAS 41 - NYK 22 (SAS +19)\nQ2: SAS 35 - NYK 27 (Halftime: SAS 76-49, SAS up 27)\nQ3: SAS 14 - NYK 26 (End Q3: SAS 90-75, SAS up 15)\nQ4: SAS 16 - NYK 32 (Final: NYK 107-106)\n\nSECOND HALF: NYK outscored SAS 58-30\n\nGAME LEADERS:\nNYK: OG Anunoby - 33 pts, 4 reb, 1 ast\nSAS: Devin Vassell - 18 pts, 5 reb, 4 ast\n\nSERIES CONTEXT:\nSAS stole Game 3 on the road to cut the deficit to 2-1. SAS came out with historic first-half intensity in Game 4. NYK staged the comeback, outscoring SAS 32-16 in Q4. SAS now faces elimination in Game 5 in San Antonio.\n\nTONE: Lead with the comeback. The Spurs blew a 27-point halftime lead in the NBA Finals. That is the story."
+}
+=== Custom headers ===
+Authorization: Bearer 388c7bdaad74cb8c1e92a8380a2c3b8efa4573f7b4ea4e4747dde7f54f108cb2
+
+=== Response (status + body, first 4000 chars) ===
+{"status":"ok","briefType":"nba-brief","text":"The New York Knicks completed the most improbable rescue mission in championship history, erasing a 27-point halftime deficit to stun the San Antonio Spurs 107-106 in Game 4. San Antonio surged to a 76-49 advantage behind historic efficiency, but the momentum fractured as the Knicks outscored their opponents 58-30 during a relentless second-half masterclass. OG Anunoby fueled the surge with 33 points, systematically dismantling a defense that looked invincible before the break. The turning point arrived in the fourth quarter, where the Knicks stifled the Spurs 32-16 to erase a 90-75 deficit entering the final frame. By overcoming the 2-1 series pressure and securing this victory, New York now stands one win away from the title. The Spurs, once poised to force a deadlock, must now grapple with the psychological wreckage of a collapse that leaves them facing elimination in Game 5.","score":226,"retries":2,"layers_fired":["2","2d"],"ms":3218,"initial_cliches":1,"final_cliches":0,"initial_cross_sport":0,"final_cross_sport":0}
+HTTP_STATUS:200
