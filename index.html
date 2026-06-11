@@ -2139,6 +2139,31 @@ body.journalism-mode #field-journalism-section{animation:jrnFadeIn 220ms ease-ou
 
 /* ── WC Conditional Bracket ────────────────────────────────────────────── */
 .wc-bracket-note{font-size:.6rem;color:var(--smoke);margin:.25rem 0 .9rem;font-style:italic}
+/* ── WC Tournament Projections ─────────────────────────────────────────── */
+.wc-proj-brief{font-size:.68rem;line-height:1.5;color:var(--platinum);margin:.5rem 0 1rem;padding:.6rem .75rem;background:rgba(255,255,255,.03);border-left:2px solid var(--gold);border-radius:0 6px 6px 0}
+.wc-proj-brief-head{font-size:.55rem;font-weight:700;letter-spacing:.08em;color:var(--gold2);text-transform:uppercase;margin-bottom:.3rem}
+.wc-movers{margin:.5rem 0 1rem}
+.wc-movers-head{font-size:.6rem;font-weight:700;letter-spacing:.08em;color:var(--smoke);text-transform:uppercase;margin-bottom:.4rem}
+.wc-mover-row{display:flex;align-items:center;gap:.4rem;padding:.2rem 0;border-bottom:1px solid rgba(255,255,255,.04)}
+.wc-mover-team{font-size:.68rem;font-weight:600;color:var(--platinum);flex:1}
+.wc-mover-delta{font-size:.65rem;font-weight:700;font-family:var(--ff-cond,'monospace')}
+.wc-mover-delta.up{color:#4ade80}
+.wc-mover-delta.down{color:#f87171}
+.wc-mover-secondary{font-size:.56rem;color:var(--smoke)}
+.wc-proj-table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.wc-proj-table{width:100%;border-collapse:collapse;font-size:.63rem}
+.wc-proj-table th{color:var(--smoke);font-weight:600;font-size:.56rem;padding:.25rem .2rem;text-align:center;border-bottom:1px solid var(--edge);white-space:nowrap}
+.wc-proj-table th.left{text-align:left;padding-left:.35rem}
+.wc-proj-table td{padding:.28rem .2rem;text-align:center;border-bottom:1px solid rgba(255,255,255,.03);color:var(--platinum)}
+.wc-proj-table td.team-cell{text-align:left;padding-left:.35rem;font-weight:600}
+.wc-proj-table td.grp{font-size:.55rem;color:var(--smoke)}
+.wc-proj-table tr:hover td{background:rgba(255,255,255,.03)}
+.wc-proj-pct{font-family:var(--ff-cond,'monospace');font-size:.62rem}
+.wc-proj-pct.hi{color:#4ade80}
+.wc-proj-pct.mid{color:var(--gold)}
+.wc-proj-pct.lo{color:var(--smoke)}
+.wc-proj-loading{font-size:.65rem;color:var(--smoke);padding:2rem 0;text-align:center}
+/* Retain R32 matchup CSS */
 .wc-r32-grid{display:grid;grid-template-columns:1fr;gap:.6rem}
 @media(min-width:560px){.wc-r32-grid{grid-template-columns:1fr 1fr}}
 @media(min-width:900px){.wc-r32-grid{grid-template-columns:1fr 1fr 1fr}}
@@ -19616,7 +19641,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-11a';
+  const SW_VERSION = '2026-06-11b';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -26307,11 +26332,107 @@ function resolveWCBracketTeam(slot, perGroupTable) {
 // Renders all 16 R32 matchups using current group standings.
 // "If today's results hold" — one concrete bracket, most-likely path.
 // Handles early-tournament state where groups have 0 games played (shows TBD gracefully).
+// ── renderWCTournamentBracket ──────────────────────────────────────────────────
+// Primary Bracket tab renderer. Shows tournament path probabilities for all 48
+// teams (from relay /wc/projections), daily movers, and journalism brief.
+// Falls back gracefully when data is pending (relay computing first run).
+// Also retains the conditional R32 matchup view as a secondary section.
+async function renderWCTournamentBracket() {
+  const el = document.getElementById('wc-bracket');
+  if (!el) return;
+  el.innerHTML = '<div class="wc-proj-loading">Computing tournament projections…</div>';
+  const RELAY = typeof V2_RELAY_BASE !== 'undefined'
+    ? V2_RELAY_BASE : 'https://field-relay-nba.jeffunglesbee.workers.dev';
+  try {
+    // Fetch projections, movers, brief in parallel
+    const [projRes, moversRes, briefRes] = await Promise.allSettled([
+      fetch(`${RELAY}/wc/projections`,       { cache: 'no-store' }),
+      fetch(`${RELAY}/wc/movers`,            { cache: 'no-store' }),
+      fetch(`${RELAY}/wc/brief/tournament`,  { cache: 'no-store' }),
+    ]);
+    const projData   = projRes.status   === 'fulfilled' && projRes.value.ok   ? await projRes.value.json()   : null;
+    const moversData = moversRes.status === 'fulfilled' && moversRes.value.ok ? await moversRes.value.json() : null;
+    const briefData  = briefRes.status  === 'fulfilled' && briefRes.value.ok  ? await briefRes.value.json()  : null;
+
+    let html = '';
+
+    // 1. Journalism brief
+    if (briefData?.text) {
+      html += `<div class="wc-proj-brief"><div class="wc-proj-brief-head">Tournament Outlook</div>${briefData.text}</div>`;
+    }
+
+    // 2. Movers section
+    const movers = moversData?.movers ?? moversData;
+    if (movers && (movers.gainers?.length || movers.secondaryBeneficiaries?.length)) {
+      html += `<div class="wc-movers"><div class="wc-movers-head">Today’s Movers</div>`;
+      const allMovers = [
+        ...(movers.gainers || []).map(d => ({...d, kind:'played'})),
+        ...(movers.losers  || []).map(d => ({...d, kind:'played'})),
+        ...(movers.secondaryBeneficiaries || []).map(d => ({...d, kind:'secondary'})),
+        ...(movers.secondaryLosers || []).map(d => ({...d, kind:'secondary'})),
+      ].sort((a,b) => Math.abs(b.deltaFinal) - Math.abs(a.deltaFinal)).slice(0, 8);
+      for (const d of allMovers) {
+        const up    = d.deltaFinal > 0;
+        const pct   = v => `${Math.round(v * 100)}%`;
+        const arrow = up ? '↑' : '↓';
+        const cls   = up ? 'up' : 'down';
+        html += `<div class="wc-mover-row">
+          <div class="wc-mover-team">${d.name}</div>
+          <div class="wc-mover-delta ${cls}">${arrow}${pct(Math.abs(d.deltaFinal))} to Final</div>
+          ${d.kind==='secondary'?'<div class="wc-mover-secondary">did not play</div>':''}
+        </div>`;
+      }
+      html += `</div>`;
+    }
+
+    // 3. Probability table
+    const teams = projData?.teams;
+    if (teams?.length) {
+      const pct = v => Math.round(v * 100);
+      const cls = v => v >= 0.5 ? 'hi' : v >= 0.15 ? 'mid' : 'lo';
+      const N = projData.N || 0;
+      const ts = projData.generatedAt ? new Date(projData.generatedAt).toLocaleTimeString('en-US', {hour:'2-digit',minute:'2-digit'}) : '';
+      html += `<p class="wc-bracket-note">Path probabilities · ${N.toLocaleString()} simulations${ts ? ' · ' + ts : ''}</p>`;
+      html += `<div class="wc-proj-table-wrap"><table class="wc-proj-table">
+        <thead><tr>
+          <th class="left">Team</th><th>Grp</th>
+          <th>R32</th><th>R16</th><th>QF</th><th>SF</th><th>Final</th><th>Win</th>
+        </tr></thead><tbody>`;
+      for (const t of teams) {
+        html += `<tr>
+          <td class="team-cell">${t.name}</td>
+          <td class="grp">${t.group}</td>
+          <td><span class="wc-proj-pct ${cls(t.pR32)}">${pct(t.pR32)}%</span></td>
+          <td><span class="wc-proj-pct ${cls(t.pR16)}">${pct(t.pR16)}%</span></td>
+          <td><span class="wc-proj-pct ${cls(t.pQF)}">${pct(t.pQF)}%</span></td>
+          <td><span class="wc-proj-pct ${cls(t.pSF)}">${pct(t.pSF)}%</span></td>
+          <td><span class="wc-proj-pct ${cls(t.pFinal)}">${pct(t.pFinal)}%</span></td>
+          <td><span class="wc-proj-pct ${cls(t.pChamp)}">${pct(t.pChamp)}%</span></td>
+        </tr>`;
+      }
+      html += `</tbody></table></div>`;
+    } else if (projData?.pending) {
+      html += `<div class="wc-proj-loading">Computing projections — check back in 30 seconds</div>`;
+    } else {
+      // First run / no data yet — show the conditional R32 matchup view as fallback
+      if (window._wcLastStandings) {
+        renderWCConditionalBracket(window._wcLastStandings, window._wcLastMatchResults,
+          window._wcLastOddsProbs, window._wcLastLiveGames);
+        return; // renderWCConditionalBracket sets innerHTML itself
+      } else {
+        html += `<div class="wc-proj-loading">Tournament projections not yet available</div>`;
+      }
+    }
+    el.innerHTML = html;
+  } catch(e) {
+    el.innerHTML = `<div class="wc-proj-loading">Projections unavailable — ${e.message}</div>`;
+  }
+}
+
+// Keep renderWCConditionalBracket as the R32 matchup fallback view
 function renderWCConditionalBracket(standings, matchResults, oddsProbs, liveGames) {
   const el = document.getElementById('wc-bracket');
   if (!el) return;
-  // Build perGroupTable: { 'A': currentTable[], 'B': currentTable[], ... }
-  // Use computeGroupScenarios currentTable (already sorted by tiebreakers)
   const scenarios = typeof _wcComputeAllScenarios === 'function'
     ? _wcComputeAllScenarios(standings, matchResults, null, oddsProbs, liveGames) : null;
   const perGroupTable = {};
@@ -26320,27 +26441,17 @@ function renderWCConditionalBracket(standings, matchResults, oddsProbs, liveGame
       perGroupTable[g] = s.currentTable || [];
     }
   }
-  // Also fill from raw standings for groups with 0 games (all-zero rows still valid)
   for (const [g, rows] of Object.entries(standings || {})) {
     if (!perGroupTable[g] && Array.isArray(rows)) perGroupTable[g] = rows;
   }
-  const anyResolved = Object.values(perGroupTable).some(t => t.length > 0 && t[0]?.name);
-  // Group slots by date for section headers
   const byDate = {};
   for (const slot of WC_R32_SLOTS) {
     if (!byDate[slot.date]) byDate[slot.date] = [];
     byDate[slot.date].push(slot);
   }
-  let html = `<p class="wc-bracket-note">`;
-  if (anyResolved) {
-    html += `If current standings hold — updated live`;
-  } else {
-    html += `Bracket order set · Teams revealed as group play begins`;
-  }
-  html += `</p>`;
+  let html = '<p class="wc-bracket-note">If current standings hold — updated live</p>';
   for (const [date, slots] of Object.entries(byDate)) {
-    html += `<div class="wc-bracket-section-head">${date}</div>`;
-    html += `<div class="wc-r32-grid">`;
+    html += `<div class="wc-bracket-section-head">${date}</div><div class="wc-r32-grid">`;
     for (const slot of slots) {
       const home = resolveWCBracketTeam(slot.home, perGroupTable);
       const away = resolveWCBracketTeam(slot.away, perGroupTable);
@@ -26350,19 +26461,14 @@ function renderWCConditionalBracket(standings, matchResults, oddsProbs, liveGame
         <div class="wc-r32-team${home.tbd?' tbd':''}">${home.name}${home.group&&!home.tbd?`<span class="wc-r32-group-tag">${posLabel(slot.home.pos)}${home.group}</span>`:''}</div>
         <div class="wc-r32-vs">vs</div>
         <div class="wc-r32-team${away.tbd?' tbd':''}">${away.name}${away.group&&!away.tbd?`<span class="wc-r32-group-tag">${away.is3rd?'3rd-'+away.group:posLabel(slot.away.pos)+away.group}</span>`:''}</div>
-        ${away.is3rd&&away.eligibleNote?`<div class="wc-r32-3rd-note">best 3rd · Groups ${away.eligibleNote.split('').join('/')}</div>`:''}
         <div class="wc-r32-meta">${slot.date}</div>
       </div>`;
     }
-    html += `</div>`;
+    html += '</div>';
   }
-  html += `<p class="wc-footnote" style="margin-top:1rem">Round of 32 matchups per FIFA Annex C · 3rd-place slots show current frontrunner from eligible groups</p>`;
   el.innerHTML = html;
 }
 
-// ── switchWCTab ──────────────────────────────────────────────────────────────
-// Switches between Groups and Bracket sub-tabs within WC mode.
-// Called from sub-tab buttons; also called by renderWCSection on init.
 function switchWCTab(tab) {
   const grpsEl    = (_DOM?.wcGroups || document.getElementById('wc-groups'));
   const bracketEl = document.getElementById('wc-bracket');
@@ -26373,15 +26479,14 @@ function switchWCTab(tab) {
     bracketEl?.removeAttribute('hidden');
     grpBtn?.classList.remove('active');
     bktBtn?.classList.add('active');
-    // Render bracket with cached data if available
-    if (window._wcLastStandings) {
-      renderWCConditionalBracket(
-        window._wcLastStandings,
-        window._wcLastMatchResults,
-        window._wcLastOddsProbs,
-        window._wcLastLiveGames
-      );
-    }
+    // Render tournament projections (async — fetches from relay)
+    renderWCTournamentBracket().catch(() => {
+      // fallback to conditional bracket if projection fetch fails
+      if (window._wcLastStandings) {
+        renderWCConditionalBracket(window._wcLastStandings, window._wcLastMatchResults,
+          window._wcLastOddsProbs, window._wcLastLiveGames);
+      }
+    });
   } else {
     bracketEl?.setAttribute('hidden', '');
     grpsEl?.removeAttribute('hidden');
@@ -26552,7 +26657,9 @@ async function renderWCSection() {
   }
   // If bracket tab is active, render it with fresh data
   if (document.getElementById('wc-tab-bracket-btn')?.classList.contains('active')) {
-    renderWCConditionalBracket(standings, matchResults, oddsProbs, liveGames);
+    renderWCTournamentBracket().catch(() => {
+      renderWCConditionalBracket(standings, matchResults, oddsProbs, liveGames);
+    });
   }
 }
 

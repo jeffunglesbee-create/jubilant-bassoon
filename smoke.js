@@ -3961,6 +3961,27 @@ assert('A529 — WC Bracket: sub-tab DOM elements present in WC section',
   'WC section must have Groups and Bracket sub-tab buttons wired to switchWCTab()');
 
 // ─────────────────────────────────────────────────────────────────────────────
+// ── WC Tournament Projections Renderer (A530–A532) ───────────────────────────
+
+assert('A530 — WC Projections: renderWCTournamentBracket defined and fetches /wc/projections',
+  html.includes('async function renderWCTournamentBracket') &&
+  html.includes('/wc/projections') &&
+  html.includes('/wc/movers') &&
+  html.includes('/wc/brief/tournament'),
+  'renderWCTournamentBracket must fetch /wc/projections, /wc/movers, /wc/brief/tournament');
+
+assert('A531 — WC Projections: probability table CSS present',
+  html.includes('.wc-proj-table{') &&
+  html.includes('.wc-mover-row{') &&
+  html.includes('.wc-proj-pct.hi{') &&
+  html.includes('.wc-proj-brief{'),
+  'Tournament projections CSS classes must be defined');
+
+assert('A532 — WC Projections: switchWCTab calls renderWCTournamentBracket (not conditional bracket)',
+  html.includes('renderWCTournamentBracket()'),
+  'switchWCTab must call renderWCTournamentBracket for the bracket tab');
+
+// ─────────────────────────────────────────────────────────────────────────────
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);
 
