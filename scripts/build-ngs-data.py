@@ -112,11 +112,14 @@ def build_ngs_passing(year):
         pid = (df.get("player_gsis_id") or [None] * n)[i]
         if not pid:
             continue
-        # Latest week per player within season (season summary = week 0)
         week = safe_int((df.get("week") or [0] * n)[i])
         existing = data.get(pid)
-        if existing and existing.get("_week", -1) > week:
-            continue
+        # Prefer week=0 (season summary); only overwrite if we don't have week=0 yet
+        if existing:
+            if existing.get("_week") == 0:
+                continue          # Already have season summary — keep it
+            if week != 0:
+                continue          # Have something, incoming is also not summary — skip
         data[pid] = {
             "_week": week,
             "name":               str((df.get("player_display_name") or [""] * n)[i] or ""),
@@ -159,8 +162,11 @@ def build_ngs_receiving(year):
             continue
         week = safe_int((df.get("week") or [0] * n)[i])
         existing = data.get(pid)
-        if existing and existing.get("_week", -1) > week:
-            continue
+        if existing:
+            if existing.get("_week") == 0:
+                continue
+            if week != 0:
+                continue
         data[pid] = {
             "_week": week,
             "name":               str((df.get("player_display_name") or [""] * n)[i] or ""),
@@ -207,8 +213,11 @@ def build_ngs_rushing(year):
             continue
         week = safe_int((df.get("week") or [0] * n)[i])
         existing = data.get(pid)
-        if existing and existing.get("_week", -1) > week:
-            continue
+        if existing:
+            if existing.get("_week") == 0:
+                continue
+            if week != 0:
+                continue
         data[pid] = {
             "_week": week,
             "name":               str((df.get("player_display_name") or [""] * n)[i] or ""),
