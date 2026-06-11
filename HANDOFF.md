@@ -1,114 +1,89 @@
-# FIELD HANDOFF — 2026-06-11 (WC Tournament Projections Engine)
+# FIELD HANDOFF — 2026-06-11 (Bracket Trap + Series Dots 6a/6b)
 
 ## HEADS
-- jubilant-bassoon HEAD: e78dc3d
-- SW_VERSION: 2026-06-11b
-- Smoke: 575/0
-- field-relay-nba HEAD: 6bfb501
+- jubilant-bassoon HEAD: 86f40084 (auto-overlay landed after 6c9d3ee)
+- Last dev commit: 6c9d3ee (feat(6b): series arc sparkline glyph)
+- SW_VERSION: 2026-06-11b (carried from prior session)
+- Smoke: 575/0 (CI green at 6c9d3ee; tool reads 512 due to cache lag — not a regression)
+- field-relay-nba HEAD: 6707adb
 
 ## WHAT SHIPPED THIS SESSION
 
-### WC Tournament Projections Engine (relay: 6bfb501, client: e78dc3d)
+### Bracket Trap Detection (relay: 352d56a + 6707adb)
 
-Live Monte Carlo tournament path probability engine for all 48 WC 2026 teams.
-Replaces static conditional bracket with per-team pR32/pR16/pQF/pSF/pFinal/pChamp.
+Position-conditional Monte Carlo tracking in wc-tournament-projections.js.
 
-**Relay (src/wc-tournament-projections.js):**
-- `computeTournamentProjections({standings, remainingFixtures, oddsProbs, N=2000})`
-  - Derives team attack/defense strengths from group-stage Poisson lambdas
-  - Auto-builds effectiveRemaining from oddsProbs when caller omits fixtures
-  - N=2000 Monte Carlo: complete group stage → best 8 3rd → knockout rounds
-  - ODDS_NAME_ALIAS: Czech Republic→Czechia, Bosnia & Herzegovina→Bosnia and Herzegovina,
-    DR Congo→Congo DR, USA→United States, Turkey→Türkiye
-  - simulateGroupStage registers teams from WC_TEAM_CONTEXT nameToGroup when
-    standings empty (Day 1 fix)
-  - Missing-fixture padding: teams with <3 group games padded toward tournament
-    mean (Ecuador fix — Germany vs Ecuador not yet in Odds API)
-  - poissonSample() for realistic goal simulation
-- `computeMovers(prev, curr, teamsPlayedToday)` — daily diff
-  - gainers, losers, secondaryBeneficiaries, secondaryLosers
-  - Secondary = teams that shifted WITHOUT playing (path opened/closed elsewhere)
-- `buildMoversBriefPrompt(movers, projections)` — 3-para Claude journalism prompt
+**wc-tournament-projections.js changes:**
+- `simulateKnockoutBracket()` now accepts `finishPositions` param
+- `countsByPos` tracking: { teamName: { 1: {R32..Champion,total}, 2:..., 3:... } }
+- Per-position tally in main simulation loop via `simFinishPos` map
+- `detectBracketTraps(countsByPos, N, nameToCtx)` exported:
+  - TRAP_THRESHOLD = 0.005 (0.5pp delta minimum)
+  - MIN_SAMPLES = 0.05 (position must appear in ≥5% of sims)
+  - Returns sorted array: { team, group, fifaCode, pChampIf1st, pChampIf2nd, delta, pFinalIf1st, pFinalIf2nd }
+- `computeTournamentProjections()` output now includes `bracketTraps[]`
+- `buildMoversBriefPrompt()` BRACKET TRAPS section added (top 3 traps)
+- Para 3 of journalism brief targets bracket trap narrative
 
-**Bug fixes committed this session:**
-- h2hLambdas formula was INVERTED: used BASE/B.defense (wrong) instead of
-  B.defense/BASE (correct). Low-defense teams (France, Spain) were being treated
-  as easier to score against. Ecuador ranked #1 due to this + missing fixture.
-  Fixed: lA = A.attack × B.defense / BASE_LAMBDA
-- USA→United States alias added (Odds API uses 'USA')
-- Turkey→Türkiye alias added (Odds API uses 'Turkey')
+**Relay routes (6707adb):**
+- GET /wc/traps — bracketTraps slice from KV, no full teams array
+- Added to probe allowlist
 
-**Relay routes (all live, in probe allowlist):**
-- GET  /wc/projections          — 48-team path probs (auto-triggers compute if empty)
-- GET  /wc/movers               — today's movers (24h TTL)
-- GET  /wc/brief/tournament     — Claude journalism brief (24h TTL)
-- POST /wc/projections/refresh  — manual trigger
+**Live data (N=2000, generated 18:00 UTC):**
+7 traps detected:
+- Scotland (C): 1st=0.6% → 2nd=3.3% (+2.7pp) ← headline
+- Germany (E): 1st=2.3% → 2nd=4.8% (+2.5pp)
+- France (I): 1st=2.4% → 2nd=4.9% (+2.5pp)
+- Iran (G), Paraguay (D), Japan (F), Egypt (G)
 
-**Cron:** every 15 min during WC window (June 11–July 19).
-Rotates curr→prev in KV for daily mover diff.
+### Injuries investigation: api-sports WC 2026 raw_count=0 — no data available.
+Betting odds already encode injury signal implicitly. No injury integration needed.
 
-**KV keys (FIELD_JOURNALISM, id: 83edf19398da4ed184a42746cb85c9d7):**
-wc:projections:current, wc:projections:prev, wc:movers:current, wc:brief:movers
+### Series Dots 6a (client: 03d6f02 + 625a005)
 
-**Client (renderWCTournamentBracket, async):**
-1. Journalism brief (gold left-border card, "Tournament Outlook")
-2. Movers: ↑/↓ delta%, "did not play" label for secondary beneficiaries
-3. 48-team probability table: Team | Grp | R32 | R16 | QF | SF | Final | Win
-   Color-coded (green ≥50%, gold ≥15%, smoke <15%)
-4. Falls back to conditional R32 matchup view if projections unavailable
-- switchWCTab() now calls renderWCTournamentBracket() instead of conditional bracket
-- Smoke A530–A532
+seriesMargins arrays added to all played Finals/SCF games:
 
-**Coverage note:** Odds API has ~71 of 72 group stage games. Germany vs Ecuador
-(simultaneous final matchday) not yet listed. Missing-fixture padding handles this.
-Coverage reaches 100% when bookmakers post final matchday odds.
+**NBA Finals (NYK vs SAS):**
+- G1: [10,-1,-1,-1,-1,-1,-1] NYK 105-95
+- G2: [10,1,-1,-1,-1,-1,-1] NYK 105-104
+- G3: [10,1,4,-1,-1,-1,-1] SAS 115-111
+- G4: [10,1,4,1,-1,-1,-1] NYK 107-106 ← largest comeback in Finals history
+  - Brunson 36pts, Anunoby 33pts + GW tip-in 1.2s. Down 29. NYK leads 3-1.
+  - G5 elimination: SAS @ Frost Bank Center, Sunday Jun 14.
 
-### WC Live Conditional Bracket (05eed4a) — from earlier this session
-Groups | ⚡ Bracket sub-tabs. Retained as fallback view in renderWCTournamentBracket.
+**SCF (VGK vs CAR):**
+- G1: [1,-1,-1,-1,-1,-1,-1] VGK 5-4
+- G2: [1,1,-1,-1,-1,-1,-1] CAR 4-3 OT (label corrected)
+- G3: [1,1,1,-1,-1,-1,-1] VGK 5-4 OT
+- G4: [1,1,1,2,-1,-1,-1] CAR 5-3 (result + matchupNote added)
+  - Staal 2G/GWG, Bussi first postseason start. Series tied 2-2.
+  - G5 Thu Jun 12 at Lenovo Center, Raleigh.
+- G5-G7 seriesRecord: Series tied 2-2
 
-### UserDO Architecture (61d309f + 1897128) — from earlier this session
-UUID-keyed DO, no PII. watchHistory (30d), seriesLedger, dramaticMomentsMissed (7d).
-Wired into openBottomSheet() + mvAdd() + visibilitychange.
-Routes: /user/init, /user/state, /user/event.
+### Arc Sparkline 6b (client: 6c9d3ee)
 
-## NEXT SESSION: BRACKET TRAP DETECTION (QUEUED)
+`buildSeriesMarginsArc(seriesMargins)` — 56×20px SVG polyline.
+- Inverted margin → tension: margin 1 = tall peak, margin 30+ = low
+- Only plots played games (m≥0), n-1 x-spacing across 7-game width
+- Color: green (avgTension≥0.85), amber (≥0.5), smoke (<0.5)
+- NBA Finals: amber (G1 dip, tight G2/G4, valley G3)
+- SCF: green (all 4 games within 2 goals)
+- CSS: .series-arc-wrap, .series-arc added
+- Feature registry: 'series-arc': '2026-06-11'
+- Rendered inline at end of dot row via .series-arc-wrap span
 
-The "finishes lower but gets easier path" narrative — highest-value journalism signal
-identified this session. USA is better off finishing 2nd in Group D IF Colombia beats
-Portugal in Group K (R16 opponent drops from Belgium rank-9 to Colombia rank-13).
-
-What needs building in wc-tournament-projections.js:
-1. Position-conditional probability tracking in the simulation loop:
-   countsByPos[team][1 or 2] = { R32, R16, QF, SF, Final, Champion, total }
-2. detectBracketTraps(projections): scan for pChamp_as_2nd > pChamp_as_1st + 0.5%
-   Returns: { team, group, pChampIf1st, pChampIf2nd, delta, structuralReason }
-   structuralReason = which specific groups produce the path divergence
-3. buildMoversBriefPrompt() addition: BRACKET TRAPS section
-   "USA faces Belgium in R16 as 1D. As 2D (requires Colombia wins Group K):
-    faces Egypt/Iran in R32, Colombia in R16. pChamp: 2.8% → 3.4%."
-4. Journalism brief writes the non-obvious cross-group narrative
-
-This is ~60 lines in wc-tournament-projections.js + prompt update. No client changes.
+## NEXT SESSION: WHOLE FIELD TOGGLE (6c)
 
 ## PRIORITY LIST
 
-1. Bracket trap detection (above) — WC journalism, high value, ~60 min
-2. Series dots 6a          ← both NBA Finals + SCF still live
-3. Arc sparkline GLYPH 6b  ← pair with 6a
-4. WHOLE FIELD toggle 6c
-5. State transition 6e
-6. Drama spectrum 6f
-7. WC projections first real data — verify pChamp order after next cron
-8. M5 score ticker fade (assess severity)
-9. Wimbledon draw context  (before July 7)
-10. Design system (~90 min TYPE C)
-
-## RELAY COMMITS THIS SESSION
-- 6d53153 — initial projections engine
-- e41aee1 — name normalization + simulation fixes (round2 restored, effectiveRemaining, poissonSample)
-- 63cb2ae — cron gate: every 15min (was hourly)
-- 7d0539f — USA→United States + Turkey→Türkiye aliases
-- 6bfb501 — inverted defense formula fix + missing-fixture padding (Ecuador fix)
+1. WHOLE FIELD toggle 6c ← next
+2. State transition 6e
+3. Drama spectrum 6f
+4. WC projections data quality — Ecuador/Ivory Coast still ranking anomalously high
+5. M5 score ticker fade (assess severity)
+6. Wimbledon draw context (before July 7)
+7. Design system (~90 min TYPE C)
 
 ## SMOKE
-575/0
+CI green at 6c9d3ee · Deploy gate + Smoke Test + Live Verify both success
+Tool reads 512 (cache lag) — not a regression
