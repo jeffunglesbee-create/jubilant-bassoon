@@ -1,61 +1,56 @@
-# FIELD HANDOFF — 2026-06-11 (BracketDO + Ambient Fix)
+# FIELD HANDOFF — 2026-06-11 (BracketDO WS client + verification)
 
 ## HEADS
-- jubilant-bassoon HEAD: 40cc3e5 (auto-overlay after e7a4ab7)
-- Last dev commit: e7a4ab7 (fix: ambient panel hidden in wc-mode at all viewports)
-- SW_VERSION: 2026-06-11c
-- Smoke: 584/0 ✅ (tool reads 521 — cache lag, not a regression)
-- field-relay-nba HEAD: 4fa945f
+- jubilant-bassoon HEAD: 4a8ab46 (auto-overlay after 422bcaa)
+- Last dev commit: 422bcaa (feat: BracketDO WS client)
+- SW_VERSION: 2026-06-11d
+- Smoke: 589/0 ✅
+- field-relay-nba HEAD: 4fa945f (BracketDO — unchanged this session)
 
-## WHAT SHIPPED THIS SESSION
+## VERIFIED THIS SESSION
 
-### BracketDO (relay: 4fa945f)
+All items interrupted by prior tool-call limits confirmed good:
 
-Single DO instance ("wc2026") for full WC tournament. Receives result
-pushes from writeWCResult() after every confirmed final — recomputes
-Monte Carlo projections, persists snapshot + delta, fans out to
-WebSocket clients, queues journalism brief on significant shifts (≥5pp).
+| Item | Status |
+|---|---|
+| 6b arc sparkline | ✅ buildSeriesMarginsArc correct — NBA #34d399, SCF green |
+| 6c WHOLE FIELD toggle | ✅ A533-A536 pass, CSS confirmed |
+| Ambient panel fix | ✅ global hide rule + desktop margin resets present |
+| BracketDO relay | ✅ live 4fa945f, /wc/bracket/state 200, health confirmed |
 
-**bracket-do.js:**
-  - POST /bracket/result: dedup → fetch standings → computeTournamentProjections (N=2000)
-    → compute delta (pChampion/pAdvance shifts per team) → persist DO storage
-    → update KV (wc:projections:current, wc:bracket:current)
-    → WS fan-out {type:'bracket:updated', delta, trigger}
-    → queue JOURNALISM_QUEUE if significant (champDelta ≥ 5pp)
-  - GET /wc/bracket/live: WebSocket upgrade — delivers bracket:current on connect
-  - GET /wc/bracket/state: REST poll fallback
-  - POST /wc/bracket/refresh: admin recompute trigger
-  - ADR-002/RUWT: probability facts only, no drama scores
+## WHAT SHIPPED: Item 5 — BracketDO WS client (client: 422bcaa)
 
-**index.js changes:**
-  - BracketDO import + export
-  - writeWCResult(db, game, env): env added; BracketDO notified fire-and-forget
-  - Routes: /wc/bracket/live, /wc/bracket/state, /wc/bracket/refresh
-  - Probe allowlist: /wc/bracket/state
-  - Health: bracket-do added
+window._bracketWS singleton (IIFE, injected before renderWCSection):
+  - Connects to wss://.../wc/bracket/live when renderWCSection() runs
+  - Closes cleanly when toggleWCView() deactivates WC mode
+  - Reconnects on unexpected close: max 3 attempts, 3s×attempt backoff
+  - 45s ping/pong keepalive (CF DO idle timeout 60s)
 
-**wrangler.toml:** BRACKET_DO binding + v3-bracket-do migration
+On bracket:updated or bracket:current received:
+  - Bracket tab active → renderWCBracketTree (wide) or
+    renderWCTournamentBracket (narrow)
+  - Groups tab active → full renderWCSection()
+  - significant delta (≥5pp) → bracket button title = narrative seed
 
-Probe: GET /wc/bracket/state → {snapshot:null, delta:null, resultCount:0} 200 OK
+Visual:
+  - .bracket-live on Projections button while WS connected
+  - Pulsing green dot via ::after + bracketPulse @keyframes
 
-### Ambient Panel Fix (client: e7a4ab7)
+Smoke: A542-A546 added (589/0 ✅)
 
-body.wc-mode #ambient-panel{display:none !important} moved out of
-@media(max-width:1199px) — now suppresses at ALL viewport widths.
-Desktop wc-mode margin resets added at 1200px+ for nav/masthead/.main.
+## FULL DATA FLOW (now complete end-to-end)
 
-## ARCHITECTURE: DO write path
+api-sports poll → status=FT detected
+  → writeWCResult: D1 write + recomputeGroupStandings
+  → BracketDO.fetch POST /bracket/result (fire-and-forget)
+    → Monte Carlo recompute (N=2000)
+    → KV updated (wc:projections:current, wc:bracket:current)
+    → WS fan-out {type:'bracket:updated', delta}
+      → client _bracketWS receives message
+        → re-renders bracket or groups tab automatically
+        → if significant: journalism brief queued
 
-api-sports poll detects status=FT
-  → writeWCResult: D1 INSERT OR IGNORE + recomputeGroupStandings
-  → notify BracketDO (async, fire-and-forget)
-  → BracketDO: fetch standings, Monte Carlo, update KV, fan-out WS
-  Total latency: ~3-5s after final whistle (next poll cycle)
-
-Hourly cron (runWCTournamentProjections) remains as safety net.
-BracketDO is the fast path — supersedes cron during live games.
-
-## NEXT SESSION: State transition 6e
+Total latency from final whistle: ~3-5s (next api-sports poll cycle)
 
 ## PRIORITY LIST
 
@@ -63,9 +58,8 @@ BracketDO is the fast path — supersedes cron during live games.
 2. Drama spectrum 6f
 3. WC projections quality — Ecuador/Ivory Coast ranking anomalously high
 4. M5 score ticker fade
-5. Client-side /wc/bracket/live WS wire-up (auto-refresh on bracket:updated)
-6. Wimbledon draw context (before July 7)
-7. Design system (~90 min TYPE C)
+5. Wimbledon draw context (before July 7)
+6. Design system (~90 min TYPE C)
 
 ## SMOKE
-584/0 ✅ CI green at e7a4ab7 (deploy gate + Smoke Test + Live Verify both pass)
+589/0 ✅ CI green at 422bcaa (deploy gate + Smoke Test + Live Verify)
