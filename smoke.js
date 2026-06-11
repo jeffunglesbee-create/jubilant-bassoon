@@ -4003,6 +4003,18 @@ assert('A540 — WC Bracket Tree: .wc-bracket-tree CSS defined',
 assert('A541 — WC Bracket Tree: switchWCTab calls renderWCBracketTree at wide viewport',
   html.includes('renderWCBracketTree()'));
 
+// ── A542-A546: BracketDO WebSocket client ─────────────────────────────────────
+assert('A542 — BracketDO WS: window._bracketWS singleton defined',
+  html.includes('window._bracketWS = { open: _open, close: _close }'));
+assert('A543 — BracketDO WS: ENDPOINT points to /wc/bracket/live',
+  html.includes("'/wc/bracket/live'") || html.includes('"/wc/bracket/live"') || html.includes("+ '/wc/bracket/live'"));
+assert('A544 — BracketDO WS: open() called in renderWCSection',
+  html.includes('window._bracketWS.open()') || html.includes('window._bracketWS) window._bracketWS.open()'));
+assert('A545 — BracketDO WS: close() called in toggleWCView on deactivate',
+  html.includes('window._bracketWS.close()') || html.includes('window._bracketWS) window._bracketWS.close()'));
+assert('A546 — BracketDO WS: bracket-live CSS class defined with animation',
+  html.includes('.wc-sub-tab.bracket-live::after') && html.includes('bracketPulse'));
+
 
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);

@@ -2137,6 +2137,9 @@ body.journalism-mode #field-journalism-section{animation:jrnFadeIn 220ms ease-ou
 .wc-sub-tabs{display:flex;gap:.4rem;margin:.5rem 0 .75rem;border-bottom:1px solid var(--edge);padding-bottom:.5rem}
 .wc-sub-tab{background:none;border:none;padding:.3rem .75rem;font-size:.7rem;font-weight:600;letter-spacing:.05em;color:var(--smoke);cursor:pointer;border-radius:4px;transition:color .15s,background .15s}
 .wc-sub-tab.active{color:var(--gold);background:rgba(201,168,76,.1)}
+/* Live bracket indicator — pulsing dot when BracketDO WebSocket is connected */
+.wc-sub-tab.bracket-live::after{content:'';display:inline-block;width:5px;height:5px;border-radius:50%;background:#4caf50;margin-left:.35rem;vertical-align:middle;animation:bracketPulse 2s ease-in-out infinite}
+@keyframes bracketPulse{0%,100%{opacity:1}50%{opacity:.35}}
 .wc-sub-tab:hover:not(.active){color:var(--platinum);background:rgba(255,255,255,.05)}
 
 /* ── WC Conditional Bracket ────────────────────────────────────────────── */
@@ -19845,7 +19848,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-11c';
+  const SW_VERSION = '2026-06-11d';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -26726,6 +26729,8 @@ function toggleWCView() {
     navLink?.classList.remove('active');
     section?.setAttribute('hidden', '');
     if (section) section.style.display = ''; // clear inline override
+    // Close BracketDO WebSocket — no bracket updates needed off-screen
+    if (window._bracketWS) window._bracketWS.close();
   }
 }
 
@@ -26818,6 +26823,89 @@ async function fetchWCTabBrief(wcGames) {
   return null;
 }
 
+// ── BracketDO WebSocket client ────────────────────────────────────────────────
+// Connects to /wc/bracket/live when WC mode is active.
+// Receives bracket:updated on every confirmed result → re-renders active tab.
+// One connection for the whole WC section — not per-tab.
+// Singleton: window._bracketWS. Reconnects on unexpected close (max 3 attempts).
+(function() {
+  const RELAY_WSS  = (typeof V2_RELAY_BASE !== 'undefined' ? V2_RELAY_BASE : 'https://field-relay-nba.jeffunglesbee.workers.dev')
+    .replace(/^https:/, 'wss:').replace(/^http:/, 'ws:');
+  const ENDPOINT   = RELAY_WSS + '/wc/bracket/live';
+  const MAX_RECONN = 3;
+  const PING_MS    = 45000;
+
+  let _ws = null, _attempts = 0, _pingTimer = null, _reconnTimer = null;
+
+  function _clearTimers() {
+    if (_pingTimer)   { clearInterval(_pingTimer);   _pingTimer   = null; }
+    if (_reconnTimer) { clearTimeout(_reconnTimer);  _reconnTimer = null; }
+  }
+
+  function _setLiveIndicator(on) {
+    const btn = document.getElementById('wc-tab-bracket-btn');
+    if (btn) btn.classList.toggle('bracket-live', on);
+  }
+
+  function _handleMessage(data) {
+    if (data && data.type === 'bracket:pong') return;
+    if (!data || (data.type !== 'bracket:updated' && data.type !== 'bracket:current')) return;
+    if (!document.body.classList.contains('wc-mode')) return;
+    if (data.delta && data.delta.significant && data.delta.narrativeSeeds && data.delta.narrativeSeeds.length) {
+      const btn = document.getElementById('wc-tab-bracket-btn');
+      if (btn) btn.setAttribute('title', 'Updated: ' + data.delta.narrativeSeeds[0]);
+    }
+    const bracketActive = document.getElementById('wc-tab-bracket-btn') &&
+      document.getElementById('wc-tab-bracket-btn').classList.contains('active');
+    if (bracketActive) {
+      const isWide = typeof window !== 'undefined' && window.matchMedia('(min-width:1180px)').matches;
+      if (isWide && typeof renderWCBracketTree === 'function') {
+        renderWCBracketTree().catch(function() { if (typeof renderWCTournamentBracket === 'function') renderWCTournamentBracket().catch(function(){}); });
+      } else {
+        if (typeof renderWCTournamentBracket === 'function') renderWCTournamentBracket().catch(function(){});
+      }
+    } else {
+      if (typeof renderWCSection === 'function') renderWCSection().catch(function(){});
+    }
+  }
+
+  function _open() {
+    if (_ws && (_ws.readyState === 0 || _ws.readyState === 1)) return;
+    _clearTimers();
+    try {
+      _ws = new WebSocket(ENDPOINT);
+      _ws.onopen = function() {
+        _attempts = 0;
+        _setLiveIndicator(true);
+        _pingTimer = setInterval(function() {
+          if (_ws && _ws.readyState === 1) _ws.send(JSON.stringify({ type: 'bracket:ping' }));
+        }, PING_MS);
+      };
+      _ws.onmessage = function(evt) {
+        try { _handleMessage(JSON.parse(evt.data)); } catch (_e) {}
+      };
+      _ws.onclose = function(evt) {
+        _clearTimers();
+        _setLiveIndicator(false);
+        if (document.body.classList.contains('wc-mode') && _attempts < MAX_RECONN && !evt.wasClean) {
+          _attempts++;
+          _reconnTimer = setTimeout(_open, 3000 * _attempts);
+        }
+      };
+      _ws.onerror = function() {};
+    } catch (_e) {}
+  }
+
+  function _close() {
+    _clearTimers();
+    _setLiveIndicator(false);
+    if (_ws) { _ws.onclose = null; _ws.close(1000); _ws = null; }
+    _attempts = 0;
+  }
+
+  window._bracketWS = { open: _open, close: _close };
+})();
+
 async function renderWCSection() {
   const phase = getWCPhase();
   // Update title
@@ -26836,6 +26924,8 @@ async function renderWCSection() {
     if (!activeBkt) switchWCTab('groups');
   }
   document.getElementById('wc-filter-pill')?.classList.toggle('active', document.body.classList.contains('wc-mode'));
+  // Open BracketDO WebSocket for live bracket updates
+  if (window._bracketWS) window._bracketWS.open();
   renderWCGroupsLoading();
   // Fetch all WC data in parallel
   const [standings, matchResults, oddsProbs, liveGames] = await Promise.all([
