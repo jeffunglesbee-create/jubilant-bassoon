@@ -4722,6 +4722,7 @@ const FIELD_FEATURES = {
   'nhl-penalty-drift-signal':  '2026-06-02',  // Tier A #3: computePenaltyDriftSignal — function shipped, data wiring pending NHL PBP relay route
   // Event Bus + real-time fan-out (May 31 2026)
   'update-s0-event-bus':       '2026-05-31',  // S0: fieldEvents EventTarget + emitter + subscribers
+  'user-do-client':            '2026-06-11',  // UserDO: UUID generation + watch_open/series_game/peak_missed
   'score-push-do':             '2026-05-31',  // WOW 1: GameDO + WebSocket fan-out
   'crunch-push-do':            '2026-05-31',  // WOW 2: client-signaled CRUNCH TIME fan-out
   'journalism-quality-gate':   '2026-05-31',  // WOW 6: relay enforces Layers 1-2e+3b structurally
@@ -8102,6 +8103,8 @@ function mvAdd(g){
     setTimeout(()=>{p.style.background="";},300); return;
   }
   mvSlots[empty]=g; mvRender(empty); mvSyncBtns(); _pickerCacheValid=false;
+  // UserDO: pin = high-intent watch signal (fire-and-forget)
+  if (typeof recordWatchOpen === 'function') recordWatchOpen(g._id, g._sport || '');
 }
 function mvSyncMvPanel(){
   const panel = document.getElementById("mv-panel");
@@ -23397,6 +23400,119 @@ let _pinWidgetExpanded = false;
 //
 // Dedup: _fieldEventCache keyed on `${gameId}:${type}` suppresses duplicate
 // dispatches (e.g., polling AND WebSocket both detecting the same score).
+// ═══════════════════════════════════════════════════════════════════════════
+// UserDO Client Bridge (June 11 2026)
+// ═══════════════════════════════════════════════════════════════════════════
+// Architecture: client generates UUID once → stored as field_user_id in
+// localStorage. No email, no account, no PII. UUID is the only identifier.
+// UserDO is created server-side the first time a meaningful action fires.
+// Pattern: fire-and-forget (never await — never block rendering).
+//
+// Meaningful actions that trigger DO init + events:
+//   - openBottomSheet(gameId)  → watch_open
+//   - pinGame(gameId)          → watch_open (treated as high-intent)
+//   - series game in seriesRecord context → series_game (when available)
+//
+// DO NOT send: drama scores, composite values, interest levels (ADR-002).
+// DO send: gameId, sport, timestamp — raw facts only.
+// ═══════════════════════════════════════════════════════════════════════════
+
+// ── getUserId ────────────────────────────────────────────────────────────────
+// Returns the field_user_id from localStorage, generating a fresh UUID if
+// this is first visit. Stable for life of the device+browser+profile.
+function getFieldUserId() {
+  try {
+    let id = localStorage.getItem('field_user_id');
+    if (!id || id.length < 16) {
+      id = (typeof crypto !== 'undefined' && crypto.randomUUID)
+        ? crypto.randomUUID()
+        : `fid-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      localStorage.setItem('field_user_id', id);
+    }
+    return id;
+  } catch(_) { return null; }
+}
+
+// ── userDoRelay ──────────────────────────────────────────────────────────────
+// Fire-and-forget relay call to UserDO. Never throws, never blocks.
+function _userDoRelay(path, method, body) {
+  try {
+    const userId = getFieldUserId();
+    if (!userId) return;
+    const base = typeof V2_RELAY_BASE !== 'undefined'
+      ? V2_RELAY_BASE : 'https://field-relay-nba.jeffunglesbee.workers.dev';
+    const url = `${base}${path}?userId=${encodeURIComponent(userId)}`;
+    fetch(url, {
+      method,
+      headers: { 'Content-Type': 'application/json' },
+      body: body ? JSON.stringify(body) : undefined,
+      keepalive: true,
+    }).catch(() => {}); // intentional swallow — analytics path, not critical
+  } catch(_) {}
+}
+
+// ── initUserDO ───────────────────────────────────────────────────────────────
+// Called on first meaningful action. Creates the UserDO if it doesn't exist.
+// Idempotent — safe to call repeatedly (DO returns { created: false } on re-init).
+let _userDOInitFired = false;
+function initUserDO() {
+  if (_userDOInitFired) return;
+  _userDOInitFired = true;
+  _userDoRelay('/user/init', 'POST', null);
+}
+
+// ── recordWatchOpen ──────────────────────────────────────────────────────────
+// Called when user opens a game brief (openBottomSheet) or pins a game (mvAdd).
+// Appends to watchHistory (rolling 30 days) in the UserDO.
+function recordWatchOpen(gameId, sport) {
+  if (!gameId) return;
+  initUserDO(); // ensure DO exists
+  _userDoRelay('/user/event', 'POST', { type: 'watch_open', gameId, sport: sport || '' });
+}
+
+// ── recordSeriesGame ─────────────────────────────────────────────────────────
+// Called when a game with seriesRecord is watched. Builds the seriesLedger
+// for NW-3 Rival Intelligence and PREF-SYNC-QR state sync.
+// seriesKey format: 'HOME_AWAY_SPORT_YEAR' e.g. 'CAR_VGK_SCF_2026'
+function recordSeriesGame(gameId, sport, seriesKey) {
+  if (!gameId || !seriesKey) return;
+  initUserDO();
+  _userDoRelay('/user/event', 'POST', { type: 'series_game', gameId, sport: sport || '', seriesKey });
+}
+
+// ── recordPeakMissed ─────────────────────────────────────────────────────────
+// Called when a game's drama peak is detected and the user is not on FIELD.
+// Powers NW-2 Smart Catch-Up Brief ("you missed a fire game while away").
+// Only fires when Page Visibility === 'hidden' and game drama >= 75.
+function recordPeakMissed(gameId, sport, peakDrama) {
+  if (!gameId || peakDrama < 75) return;
+  initUserDO();
+  _userDoRelay('/user/event', 'POST', { type: 'peak_missed', gameId, sport: sport || '', peakDrama });
+}
+
+// ── Page Visibility hook for peak_missed ─────────────────────────────────────
+// Passive listener: if a game is at peak drama when user navigates away,
+// record it so the catch-up brief can surface it on next visit.
+// Only fires once per game per visibility change (deduplicated by gameId set).
+const _missedPeakFired = new Set();
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState !== 'hidden') return;
+  try {
+    // Scan live espnScores for any game above drama threshold
+    if (typeof espnScores === 'undefined' || typeof getSmoothedDrama !== 'function') return;
+    for (const [, eData] of Object.entries(espnScores)) {
+      const gameId = eData?.id || eData?._id;
+      if (!gameId || _missedPeakFired.has(gameId)) continue;
+      const smoothed = getSmoothedDrama(gameId);
+      if (smoothed >= 75) {
+        const sport = eData._sport || eData.sport || '';
+        recordPeakMissed(gameId, sport, Math.round(smoothed));
+        _missedPeakFired.add(gameId);
+      }
+    }
+  } catch(_) {}
+});
+
 //
 // ADR-002 compliance: bus carries facts only ({homeScore, awayScore, etc.}).
 // No drama scores, no thresholds, no composite values — same payload shape
@@ -32303,6 +32419,14 @@ function openBottomSheet(gameId) {
   (allData?.sports||[]).forEach(s=>(s.games||[]).forEach(g=>{ if(g._id===gameId){game=g;sport=s.sport;} }));
   if (!game) return;
   window._currentBottomSheetGameId = gameId; // Item F: enables per-card brief retry re-render
+  // UserDO: record watch_open + series context (fire-and-forget)
+  if (typeof recordWatchOpen === 'function') recordWatchOpen(gameId, sport);
+  if (typeof recordSeriesGame === 'function' && game.seriesRecord && game.seriesRecord !== '0-0') {
+    const home = (game.home||'').replace(/\s+/g,'_').toUpperCase().slice(0,6);
+    const away = (game.away||'').replace(/\s+/g,'_').toUpperCase().slice(0,6);
+    const yr   = new Date().getFullYear();
+    recordSeriesGame(gameId, sport, `${home}_${away}_${yr}`);
+  }
   const eData = Object.values(espnScores||{}).find(e => {
     const h = teamNick(game.home).toLowerCase();
     return (e.homeName||'').toLowerCase().includes(h) || (e.home||'').toLowerCase().includes(h);

@@ -3911,6 +3911,57 @@ assert('A522 — html scroll-behavior: no global smooth on html element',
   'html element must not have scroll-behavior:smooth — use auto or let elements opt-in');
 
 // ─────────────────────────────────────────────────────────────────────────────
+// ── UserDO Client Bridge (A523–A526) ─────────────────────────────────────────
+
+assert('A523 — UserDO: getFieldUserId uses crypto.randomUUID with localStorage',
+  html.includes('field_user_id') &&
+  html.includes('crypto.randomUUID') &&
+  html.includes('function getFieldUserId'),
+  'getFieldUserId must generate/retrieve UUID from localStorage.field_user_id');
+
+assert('A524 — UserDO: _userDoRelay is fire-and-forget (no await, keepalive:true)',
+  html.includes('function _userDoRelay') &&
+  html.includes('keepalive: true') &&
+  html.includes('/user/init') &&
+  html.includes('/user/event'),
+  '_userDoRelay must use keepalive:true and target /user/* relay routes');
+
+assert('A525 — UserDO: recordWatchOpen wired into openBottomSheet',
+  html.includes("typeof recordWatchOpen === 'function') recordWatchOpen(gameId") ||
+  html.includes("recordWatchOpen(gameId, sport)"),
+  'recordWatchOpen must be called from openBottomSheet with gameId + sport');
+
+assert('A526 — UserDO: visibilitychange peak_missed hook present',
+  html.includes("visibilitychange") &&
+  html.includes("recordPeakMissed") &&
+  html.includes("_missedPeakFired"),
+  'visibilitychange listener must check drama and call recordPeakMissed for hidden state');
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ── WC Conditional Bracket (A527–A529) ───────────────────────────────────────
+
+assert('A527 — WC Bracket: WC_R32_SLOTS constant with 16 matchups defined',
+  html.includes('WC_R32_SLOTS') &&
+  html.includes('match:73') &&
+  html.includes('match:88') &&
+  html.includes("eligible:'ABCDF'"),
+  'WC_R32_SLOTS must define all 16 R32 matchups (matches 73-88) with eligible groups');
+
+assert('A528 — WC Bracket: switchWCTab + renderWCConditionalBracket defined',
+  html.includes('function switchWCTab') &&
+  html.includes('function renderWCConditionalBracket') &&
+  html.includes('function resolveWCBracketTeam'),
+  'switchWCTab, renderWCConditionalBracket, and resolveWCBracketTeam must all be defined');
+
+assert('A529 — WC Bracket: sub-tab DOM elements present in WC section',
+  html.includes("wc-tab-groups-btn") &&
+  html.includes("wc-tab-bracket-btn") &&
+  html.includes("switchWCTab('groups')") &&
+  html.includes("switchWCTab('bracket')"),
+  'WC section must have Groups and Bracket sub-tab buttons wired to switchWCTab()');
+
+// ─────────────────────────────────────────────────────────────────────────────
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);
+
 
