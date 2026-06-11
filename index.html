@@ -1367,6 +1367,8 @@ body::before{
 .series-margin-dot.close{background:#fbbf24}
 .series-margin-dot.decided{background:rgba(255,255,255,.2)}
 .series-margin-dot.upcoming{background:transparent;border:1px solid rgba(255,255,255,.2)}
+.series-arc-wrap{margin-left:.35rem;display:inline-flex;align-items:center;opacity:.9}
+.series-arc{display:block;overflow:visible}
 .night-owl-text{font-size:.73rem;color:var(--fg,#e8e8f0);line-height:1.6}
 .night-owl-text.pending{color:var(--muted);font-style:italic}
 .field-note{font-size:.65rem;color:#c9a84c;font-style:italic;margin-top:.45rem;padding-top:.4rem;border-top:1px solid rgba(201,168,76,.2);line-height:1.45;opacity:.9}
@@ -4818,6 +4820,7 @@ const FIELD_FEATURES = {
   // Playoff Intelligence Trilogy ($9.50 session)
   'drama-sparkline':        '2026-05-21',  // Wow#45 Stage 2 — inline SVG arc in J5 Night Owl
   'series-margins':         '2026-05-21',  // Series margin dots on playoff game cards
+  'series-arc':             '2026-06-11',  // Arc sparkline glyph alongside margin dots (6b)
   // Game Card Revolution + Journalism Renaissance ($30 session)
   'card-drama-pulse':       '2026-05-21',
   'live-score-ticker':      '2026-05-21',
@@ -32763,9 +32766,31 @@ function buildDramaSparklineSVG(gameId, w=140, h=28) {
 }
 
 // ── Series Margins Display ────────────────────────────────────────────────────
-// Renders compact margin dots for a playoff series — shows game-by-game tightness.
-// game.seriesMargins = [7, 3, 15, 1] — margins per game (0 = ongoing, -1 = not yet played)
-// Dot colours: ≤3=green(tight) · 4-12=amber(close) · >12=gray(decided) · -1=upcoming(empty ring)
+// Renders compact margin dots + arc sparkline for a playoff series.
+// game.seriesMargins = [7, 3, 15, 1] — margins per game (-1 = not yet played)
+// Dot colours: ≤3=green(tight) · 4-12=amber(close) · >12=smoke(decided) · -1=upcoming(empty ring)
+// Arc glyph (6b): inverted margin → tension height. Tight games = tall peaks.
+function buildSeriesMarginsArc(seriesMargins) {
+  const played = seriesMargins.map((m, i) => m >= 0 ? { i, m } : null).filter(Boolean);
+  if (played.length < 2) return '';
+  const w = 56, h = 20;
+  const maxM = Math.max(...played.map(d => d.m), 1);
+  const clampM = m => Math.min(m, 30);  // cap at 30 so blowouts don't crush tight games
+  const tension = m => 1 - clampM(m) / 30;  // 0=blowout, 1=1-pt game
+  const n = seriesMargins.length;
+  const pts = played.map(d => {
+    const x = ((d.i / (n - 1)) * (w - 4) + 2).toFixed(1);
+    const y = (h - 2 - tension(d.m) * (h - 4)).toFixed(1);
+    return `${x},${y}`;
+  }).join(' ');
+  // Color: green if avg tension ≥0.85 (mostly tight), amber if ≥0.5, smoke otherwise
+  const avgTension = played.reduce((s, d) => s + tension(d.m), 0) / played.length;
+  const stroke = avgTension >= 0.85 ? '#34d399' : avgTension >= 0.5 ? '#fbbf24' : 'rgba(255,255,255,.3)';
+  return `<svg class="series-arc" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" aria-label="Series tension arc">`
+    + `<polyline points="${pts}" fill="none" stroke="${stroke}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity=".85"/>`
+    + `</svg>`;
+}
+
 function buildSeriesMarginsDots(game) {
   if (!game?.seriesMargins?.length) return '';
   const dots = game.seriesMargins.map(m => {
@@ -32774,7 +32799,8 @@ function buildSeriesMarginsDots(game) {
     if (m <= 12) return `<span class="series-margin-dot close" title="Decided by ${m}"></span>`;
     return `<span class="series-margin-dot decided" title="Decided by ${m}"></span>`;
   }).join('');
-  return `<div class="series-margins" title="Game margins: ${game.seriesMargins.filter(m=>m>=0).join(', ')}">${dots}</div>`;
+  const arc = buildSeriesMarginsArc(game.seriesMargins);
+  return `<div class="series-margins" title="Game margins: ${game.seriesMargins.filter(m=>m>=0).join(', ')}">${dots}${arc ? `<span class="series-arc-wrap">${arc}</span>` : ''}</div>`;
 }
 
 let _nightOwlRendered=false;
