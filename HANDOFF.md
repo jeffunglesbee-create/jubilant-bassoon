@@ -1,93 +1,74 @@
-# FIELD HANDOFF — 2026-06-11 (NFL-B NGS Pipeline + WC Opener)
+# FIELD HANDOFF — 2026-06-11 (WHOLE FIELD Toggle 6c)
 
 ## HEADS
-- jubilant-bassoon HEAD: afb9ad0 (WC G1 Mexico 2-0 result)
+- jubilant-bassoon HEAD: 76aa708 (auto-overlay after 0163193)
+- Last dev commit: 0163193 (feat(6c): WHOLE FIELD toggle)
 - SW_VERSION: 2026-06-11b
-- Smoke: 575/0 ✅
-- field-relay-nba HEAD: a2e852b (NFL-B routes)
+- Smoke: 579/0 ✅
+- field-relay-nba HEAD: a2e852b
 
 ## WHAT SHIPPED THIS SESSION
 
-### NFL-B Pipeline (client: cd31b6f, 9898f28 · relay: a2e852b)
+### WHOLE FIELD Toggle 6c (client: 0163193, smoke A533-A536)
 
-**Discovery:** nflreadpy uses combined multi-season parquets (2016-present in one file),
-NOT the per-year CSV files. URL: `releases/download/nextgen_stats/ngs_{type}.parquet`
-All three types (passing, receiving, rushing) download via CF relay IP and GitHub Actions.
+**#wf-toggle button** in nav controls (inline-flex at 1200px+, hidden below):
+  - Default label: ESSENTIALS (no active class, muted border)
+  - Active label:  WHOLE FIELD (gold text, gold border, gold bg tint)
+  - Persists: localStorage 'field_desktop_mode' = 'essentials' | 'whole'
 
-**scripts/build-ngs-data.py:**
-- Fetches ngs_passing.parquet → ngs-passing.json (CPOE, aggressiveness, time-to-throw, xCOMP%)
-- Fetches ngs_receiving.parquet → ngs-receiving.json (separation, cushion, YAC above exp, target share)
-- Fetches ngs_rushing.parquet → ngs-rushing.json (efficiency N/S, RYOE, time-to-LOS, pct vs stacked)
-- Fetches injuries_{year}.parquet → nfl-injuries.json (name, team, position, week, injury, status)
-- Dynamic year: month≥8 = current year, else previous year
-- Prefers week=0 (season summary); falls back to most recent weekly row during active season
+**body.wf-mode CSS:**
 
-**Bug fixed (9898f28):** Original logic took max(week) → single-game data (~40 att).
-Fixed: prefer week=0 → full season aggregates (400-600 att for QBs).
+  Laptop 1200-1439px (LEFT + RIGHT):
+    - #ambient-panel: display:flex !important (overrides 820px max-width rule),
+      fixed right 380px, full height, dark bg, left border
+    - .main, masthead, nav, ticker: margin-right:390px
+    - .games-list: 1-col (too narrow for 2-col with 380px panel taken)
+    - score ticker: display:block !important (was hidden at iPad range)
 
-**Verified 2025 season data (week=0 summaries):**
-- Passing: 65 players, Drake Maye leads CPOE +9.139 (492 att)
-- Receiving: 212 players, Luther Burden leads separation 4.63 yds (60 tgt)
-- Rushing: 81 players, Bijan Robinson (ATL) among leaders
+  Desktop 1440px+ (LEFT + CENTRE + RIGHT):
+    - Same ambient panel as laptop
+    - #field-desk-section, #night-owl, #field-brief: display:block
+      with margin-right:390px so they don't underrun the ambient panel
 
-**.github/workflows/nfl-ngs-update.yml:**
-- Cron: Monday 07:00 UTC
-- CI run: ✅ SUCCESS (both cd31b6f and 9898f28)
-- Commits outbox fallback to outbox/nfl/
+**initWFToggle IIFE:**
+  - Reads localStorage on load → applies mode immediately
+  - Toggles body.wf-mode, updates label + active class
+  - Calls renderAmbientPanel() when switching into WHOLE FIELD
+  - Writes localStorage on each toggle
 
-**Relay routes added (a2e852b):**
-- /nflverse/ngs-receiving.json → R2-first nfl/{year}/ngs-receiving.json
-- /nflverse/ngs-rushing.json → R2-first nfl/{year}/ngs-rushing.json
-- /nflverse/nfl-injuries.json → R2-first nfl/{year}/nfl-injuries.json
-- Dynamic nflYear (month≥7 ? current : current-1) replaces hardcoded 2026
+**Default: ESSENTIALS** — first-visit users see no change. Existing users
+with localStorage 'essentials' also unaffected.
 
-**Drive doc:** "FIELD — NFL-B NGS Pipeline: Live Data Latency + Weekly vs Season Analysis"
-ID: 1j6Bd6B4DZCvV3Ol50VjUQK1NLSrcsxyqTnD9H3Uy3Cs
-Key findings:
-- Effective lag during season: 8 days (Monday cron, nflverse updates Tuesday nights)
-- week=0 = season summary; week=1-18 = individual game rows
-- Weekly trends (separation trend, CPOE streak, rushing efficiency trend) are high value
-  but should be added at NFL card client-wiring time (Sept 2026), not now
-- Move cron to Wednesday when "recent form" chips are scoped
+### Also verified this session (TYPE D)
 
-### Daily Update (afb9ad0)
+WC schedule audit:
+  72 games, June 11–28, all have matchupNotes
+  Broadcasts: WC26_FOX (39), WC26_FS1 (31), WC26_FREE (2 — MEX opener + USA opener)
+  Group A: 34 games through all 3 matchdays
 
-WC 2026 G1 — Mexico 2-0 South Africa (FT confirmed)
-- Quiñones 9' (Lira ast) — first goal of the 2026 World Cup
-- Jiménez 67' (Alvarado ast) — his first-ever World Cup goal, emotional
-- Sithole red card 49' — will miss 2 matches
-- Mexico top Group A with 3pts
+WC bracket data layer (all endpoints healthy):
+  /wc/projections — 200, 48 teams, Monte Carlo live
+  /wc/traps       — 200, 20 traps (Ghana +2.3pp leads)
+  /wc/standings   — 200 (groups:{} — first game just finished, relay updating)
+  /wc/results     — 200 (results:[] — relay hasn't ingested Mexico result yet)
+  /wc/odds-probs  — 200, full odds for upcoming games
+  /wc/brief/tournament — 200 (brief:null — no journalism brief generated yet)
 
-## UPCOMING (not yet played)
+CSS verified: body.wc-mode #wc-section[hidden]{display:block} override is
+AFTER base [hidden]{display:none} in stylesheet — correct specificity order.
 
-### Tonight June 11
-- Korea vs Czechia: WC G1, 10pm ET, FS1, Estadio Akron Guadalajara
-
-### Tonight June 12 (already June 12 UTC)
-- SCF G5: CAR vs VGK, 8pm ET, ABC, Lenovo Center Raleigh. Series tied 2-2.
-- WNBA games
-
-### Sunday June 14
-- NBA Finals G5: SAS vs NYK, 8:30pm ET, ABC, Frost Bank Center. NYK leads 3-1.
-
-### June 12 WC games
-- Canada vs Bosnia: 19:00 UTC, BMO Field Toronto, FOX
-- Many more group stage games begin
+Note: Live viewport screenshots of WC section NOT captured — sandbox blocks
+*.workers.dev. Would require GitHub Actions CI with WC-mode activation added
+to screenshot_probe.js.
 
 ## PRIORITY LIST
 
-1. WHOLE FIELD toggle 6c ← next
-2. State transition 6e
-3. Drama spectrum 6f
-4. WC projections data quality — Ecuador/Ivory Coast ranking anomalously high
-5. M5 score ticker fade
-6. Wimbledon draw context (before July 7)
-7. Design system (~90 min TYPE C)
-
-## OPEN NFL-B ITEMS
-- Probe /nflverse/ngs-receiving.json to confirm R2 populated correctly
-- Move cron Monday → Wednesday when "recent form" chips are scoped
-- Add weeklyTrend arrays at NFL card client-wiring time (Sept 2026)
+1. State transition 6e ← next
+2. Drama spectrum 6f
+3. WC projections quality — Ecuador/Ivory Coast ranking anomalously high
+4. M5 score ticker fade
+5. Wimbledon draw context (before July 7)
+6. Design system (~90 min TYPE C)
 
 ## SMOKE
-575/0 ✅ CI green at afb9ad0
+579/0 ✅ CI green at 0163193 (deploy gate + smoke both pass)
