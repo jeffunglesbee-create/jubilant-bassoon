@@ -1,89 +1,93 @@
-# FIELD HANDOFF — 2026-06-11 (Bracket Trap + Series Dots 6a/6b)
+# FIELD HANDOFF — 2026-06-11 (NFL-B NGS Pipeline + WC Opener)
 
 ## HEADS
-- jubilant-bassoon HEAD: 86f40084 (auto-overlay landed after 6c9d3ee)
-- Last dev commit: 6c9d3ee (feat(6b): series arc sparkline glyph)
-- SW_VERSION: 2026-06-11b (carried from prior session)
-- Smoke: 575/0 (CI green at 6c9d3ee; tool reads 512 due to cache lag — not a regression)
-- field-relay-nba HEAD: 6707adb
+- jubilant-bassoon HEAD: afb9ad0 (WC G1 Mexico 2-0 result)
+- SW_VERSION: 2026-06-11b
+- Smoke: 575/0 ✅
+- field-relay-nba HEAD: a2e852b (NFL-B routes)
 
 ## WHAT SHIPPED THIS SESSION
 
-### Bracket Trap Detection (relay: 352d56a + 6707adb)
+### NFL-B Pipeline (client: cd31b6f, 9898f28 · relay: a2e852b)
 
-Position-conditional Monte Carlo tracking in wc-tournament-projections.js.
+**Discovery:** nflreadpy uses combined multi-season parquets (2016-present in one file),
+NOT the per-year CSV files. URL: `releases/download/nextgen_stats/ngs_{type}.parquet`
+All three types (passing, receiving, rushing) download via CF relay IP and GitHub Actions.
 
-**wc-tournament-projections.js changes:**
-- `simulateKnockoutBracket()` now accepts `finishPositions` param
-- `countsByPos` tracking: { teamName: { 1: {R32..Champion,total}, 2:..., 3:... } }
-- Per-position tally in main simulation loop via `simFinishPos` map
-- `detectBracketTraps(countsByPos, N, nameToCtx)` exported:
-  - TRAP_THRESHOLD = 0.005 (0.5pp delta minimum)
-  - MIN_SAMPLES = 0.05 (position must appear in ≥5% of sims)
-  - Returns sorted array: { team, group, fifaCode, pChampIf1st, pChampIf2nd, delta, pFinalIf1st, pFinalIf2nd }
-- `computeTournamentProjections()` output now includes `bracketTraps[]`
-- `buildMoversBriefPrompt()` BRACKET TRAPS section added (top 3 traps)
-- Para 3 of journalism brief targets bracket trap narrative
+**scripts/build-ngs-data.py:**
+- Fetches ngs_passing.parquet → ngs-passing.json (CPOE, aggressiveness, time-to-throw, xCOMP%)
+- Fetches ngs_receiving.parquet → ngs-receiving.json (separation, cushion, YAC above exp, target share)
+- Fetches ngs_rushing.parquet → ngs-rushing.json (efficiency N/S, RYOE, time-to-LOS, pct vs stacked)
+- Fetches injuries_{year}.parquet → nfl-injuries.json (name, team, position, week, injury, status)
+- Dynamic year: month≥8 = current year, else previous year
+- Prefers week=0 (season summary); falls back to most recent weekly row during active season
 
-**Relay routes (6707adb):**
-- GET /wc/traps — bracketTraps slice from KV, no full teams array
-- Added to probe allowlist
+**Bug fixed (9898f28):** Original logic took max(week) → single-game data (~40 att).
+Fixed: prefer week=0 → full season aggregates (400-600 att for QBs).
 
-**Live data (N=2000, generated 18:00 UTC):**
-7 traps detected:
-- Scotland (C): 1st=0.6% → 2nd=3.3% (+2.7pp) ← headline
-- Germany (E): 1st=2.3% → 2nd=4.8% (+2.5pp)
-- France (I): 1st=2.4% → 2nd=4.9% (+2.5pp)
-- Iran (G), Paraguay (D), Japan (F), Egypt (G)
+**Verified 2025 season data (week=0 summaries):**
+- Passing: 65 players, Drake Maye leads CPOE +9.139 (492 att)
+- Receiving: 212 players, Luther Burden leads separation 4.63 yds (60 tgt)
+- Rushing: 81 players, Bijan Robinson (ATL) among leaders
 
-### Injuries investigation: api-sports WC 2026 raw_count=0 — no data available.
-Betting odds already encode injury signal implicitly. No injury integration needed.
+**.github/workflows/nfl-ngs-update.yml:**
+- Cron: Monday 07:00 UTC
+- CI run: ✅ SUCCESS (both cd31b6f and 9898f28)
+- Commits outbox fallback to outbox/nfl/
 
-### Series Dots 6a (client: 03d6f02 + 625a005)
+**Relay routes added (a2e852b):**
+- /nflverse/ngs-receiving.json → R2-first nfl/{year}/ngs-receiving.json
+- /nflverse/ngs-rushing.json → R2-first nfl/{year}/ngs-rushing.json
+- /nflverse/nfl-injuries.json → R2-first nfl/{year}/nfl-injuries.json
+- Dynamic nflYear (month≥7 ? current : current-1) replaces hardcoded 2026
 
-seriesMargins arrays added to all played Finals/SCF games:
+**Drive doc:** "FIELD — NFL-B NGS Pipeline: Live Data Latency + Weekly vs Season Analysis"
+ID: 1j6Bd6B4DZCvV3Ol50VjUQK1NLSrcsxyqTnD9H3Uy3Cs
+Key findings:
+- Effective lag during season: 8 days (Monday cron, nflverse updates Tuesday nights)
+- week=0 = season summary; week=1-18 = individual game rows
+- Weekly trends (separation trend, CPOE streak, rushing efficiency trend) are high value
+  but should be added at NFL card client-wiring time (Sept 2026), not now
+- Move cron to Wednesday when "recent form" chips are scoped
 
-**NBA Finals (NYK vs SAS):**
-- G1: [10,-1,-1,-1,-1,-1,-1] NYK 105-95
-- G2: [10,1,-1,-1,-1,-1,-1] NYK 105-104
-- G3: [10,1,4,-1,-1,-1,-1] SAS 115-111
-- G4: [10,1,4,1,-1,-1,-1] NYK 107-106 ← largest comeback in Finals history
-  - Brunson 36pts, Anunoby 33pts + GW tip-in 1.2s. Down 29. NYK leads 3-1.
-  - G5 elimination: SAS @ Frost Bank Center, Sunday Jun 14.
+### Daily Update (afb9ad0)
 
-**SCF (VGK vs CAR):**
-- G1: [1,-1,-1,-1,-1,-1,-1] VGK 5-4
-- G2: [1,1,-1,-1,-1,-1,-1] CAR 4-3 OT (label corrected)
-- G3: [1,1,1,-1,-1,-1,-1] VGK 5-4 OT
-- G4: [1,1,1,2,-1,-1,-1] CAR 5-3 (result + matchupNote added)
-  - Staal 2G/GWG, Bussi first postseason start. Series tied 2-2.
-  - G5 Thu Jun 12 at Lenovo Center, Raleigh.
-- G5-G7 seriesRecord: Series tied 2-2
+WC 2026 G1 — Mexico 2-0 South Africa (FT confirmed)
+- Quiñones 9' (Lira ast) — first goal of the 2026 World Cup
+- Jiménez 67' (Alvarado ast) — his first-ever World Cup goal, emotional
+- Sithole red card 49' — will miss 2 matches
+- Mexico top Group A with 3pts
 
-### Arc Sparkline 6b (client: 6c9d3ee)
+## UPCOMING (not yet played)
 
-`buildSeriesMarginsArc(seriesMargins)` — 56×20px SVG polyline.
-- Inverted margin → tension: margin 1 = tall peak, margin 30+ = low
-- Only plots played games (m≥0), n-1 x-spacing across 7-game width
-- Color: green (avgTension≥0.85), amber (≥0.5), smoke (<0.5)
-- NBA Finals: amber (G1 dip, tight G2/G4, valley G3)
-- SCF: green (all 4 games within 2 goals)
-- CSS: .series-arc-wrap, .series-arc added
-- Feature registry: 'series-arc': '2026-06-11'
-- Rendered inline at end of dot row via .series-arc-wrap span
+### Tonight June 11
+- Korea vs Czechia: WC G1, 10pm ET, FS1, Estadio Akron Guadalajara
 
-## NEXT SESSION: WHOLE FIELD TOGGLE (6c)
+### Tonight June 12 (already June 12 UTC)
+- SCF G5: CAR vs VGK, 8pm ET, ABC, Lenovo Center Raleigh. Series tied 2-2.
+- WNBA games
+
+### Sunday June 14
+- NBA Finals G5: SAS vs NYK, 8:30pm ET, ABC, Frost Bank Center. NYK leads 3-1.
+
+### June 12 WC games
+- Canada vs Bosnia: 19:00 UTC, BMO Field Toronto, FOX
+- Many more group stage games begin
 
 ## PRIORITY LIST
 
 1. WHOLE FIELD toggle 6c ← next
 2. State transition 6e
 3. Drama spectrum 6f
-4. WC projections data quality — Ecuador/Ivory Coast still ranking anomalously high
-5. M5 score ticker fade (assess severity)
+4. WC projections data quality — Ecuador/Ivory Coast ranking anomalously high
+5. M5 score ticker fade
 6. Wimbledon draw context (before July 7)
 7. Design system (~90 min TYPE C)
 
+## OPEN NFL-B ITEMS
+- Probe /nflverse/ngs-receiving.json to confirm R2 populated correctly
+- Move cron Monday → Wednesday when "recent form" chips are scoped
+- Add weeklyTrend arrays at NFL card client-wiring time (Sept 2026)
+
 ## SMOKE
-CI green at 6c9d3ee · Deploy gate + Smoke Test + Live Verify both success
-Tool reads 512 (cache lag) — not a regression
+575/0 ✅ CI green at afb9ad0
