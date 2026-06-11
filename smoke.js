@@ -3981,7 +3981,17 @@ assert('A532 — WC Projections: switchWCTab calls renderWCTournamentBracket (no
   html.includes('renderWCTournamentBracket()'),
   'switchWCTab must call renderWCTournamentBracket for the bracket tab');
 
-// ─────────────────────────────────────────────────────────────────────────────
+// ── A533-A536: WHOLE FIELD toggle (6c) ──────────────────────────────────────
+assert('A533 — WHOLE FIELD: #wf-toggle button in nav controls',
+  html.includes('id="wf-toggle"'));
+assert('A534 — WHOLE FIELD: initWFToggle IIFE defined',
+  html.includes('function initWFToggle'));
+assert('A535 — WHOLE FIELD: body.wf-mode CSS at 1200px',
+  html.includes('body.wf-mode #ambient-panel'));
+assert('A536 — WHOLE FIELD: field_desktop_mode localStorage key',
+  html.includes("'field_desktop_mode'"));
+
+
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);
 

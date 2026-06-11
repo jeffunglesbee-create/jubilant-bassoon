@@ -2257,6 +2257,85 @@ body.wc-mode #wc-section{animation:wcFadeIn 220ms ease-out}
   body.wc-mode .wc-back-pill{display:none}
 }
 
+/* ── WHOLE FIELD mode (body.wf-mode) ─────────────────────────────────────
+   Toggle: ESSENTIALS (default) ↔ WHOLE FIELD
+   Laptop 1200-1439px: LEFT (schedule) + RIGHT (ambient panel)
+   Desktop 1440px+:    LEFT (schedule) + CENTRE (journalism) + RIGHT (ambient)
+   Toggle button: #wf-toggle (hidden below 1200px)
+   Persisted: localStorage 'field_desktop_mode' = 'whole' | 'essentials' */
+
+/* Laptop WHOLE FIELD: show ambient panel on the right */
+@media(min-width:1200px) and (max-width:1439px){
+  body.wf-mode #ambient-panel{
+    display:flex !important;
+    top:0;height:100dvh;padding-top:1rem;
+    background:#0c1118;border-left:1px solid rgba(255,255,255,.09);
+    width:380px;right:0;
+  }
+  body.wf-mode .main,
+  body.wf-mode header.masthead,
+  body.wf-mode nav.controls,
+  body.wf-mode #score-ticker-wrap,
+  body.wf-mode #field-brief,
+  body.wf-mode #night-owl,
+  body.wf-mode #double-feature,
+  body.wf-mode #offline-banner,
+  body.wf-mode .mv-panel{
+    margin-right:390px;
+  }
+  body.wf-mode #score-ticker-wrap{display:block !important}
+  /* 2-col game grid stays but constrained to narrower left pane */
+  body.wf-mode .games-list{grid-template-columns:1fr !important}
+}
+
+/* Desktop WHOLE FIELD: LEFT + CENTRE + RIGHT */
+@media(min-width:1440px){
+  body.wf-mode #ambient-panel{
+    display:flex !important;
+    top:0;height:100dvh;padding-top:1rem;
+    background:#0c1118;border-left:1px solid rgba(255,255,255,.09);
+    width:380px;right:0;
+  }
+  /* RIGHT margin for ambient panel */
+  body.wf-mode .main,
+  body.wf-mode header.masthead,
+  body.wf-mode nav.controls,
+  body.wf-mode #score-ticker-wrap,
+  body.wf-mode #double-feature,
+  body.wf-mode #offline-banner,
+  body.wf-mode .mv-panel{
+    margin-right:390px;
+  }
+  body.wf-mode #score-ticker-wrap{display:block !important}
+  body.wf-mode .games-list{grid-template-columns:1fr !important}
+  /* CENTRE: journalism section visible inline (not modal) */
+  body.wf-mode #field-desk-section,
+  body.wf-mode #night-owl,
+  body.wf-mode #field-brief{
+    display:block;
+    margin-right:390px;
+  }
+}
+
+/* Toggle button — only shown at 1200px+ */
+#wf-toggle{
+  display:none;
+  background:none;border:1px solid var(--edge);
+  border-radius:5px;padding:.22rem .65rem;
+  font-size:.68rem;font-weight:600;letter-spacing:.04em;
+  color:var(--smoke);cursor:pointer;
+  white-space:nowrap;transition:color .15s,border-color .15s,background .15s;
+  font-family:var(--ff-body);
+}
+#wf-toggle:hover{color:var(--platinum);border-color:var(--platinum)}
+#wf-toggle.wf-active{
+  color:var(--gold2);border-color:rgba(201,168,76,.5);
+  background:rgba(201,168,76,.08);
+}
+@media(min-width:1200px){
+  #wf-toggle{display:inline-flex;align-items:center;gap:.3rem}
+}
+
 /* ── C3: Laptop multi-pane (1200-1439px) ──────────────────────────────────
    Schedule rail fixed left (280px), journalism reading shifted right.
    Companion stays hidden at laptop. */
@@ -3826,6 +3905,7 @@ var _DOM = null;
     <a class="desk-jump-link" id="desk-jump-link" href="#field-desk-section" title="FIELD Desk — editorial briefings and series previews">📰 Desk</a>
     <a class="desk-jump-link jrn-nav-link" id="jrn-nav-link" href="#field-journalism-section" title="Journalism — Tonight's editorial reading">📖 Journal</a>
     <a class="desk-jump-link wc-nav-link" id="wc-nav-link" href="#wc-section" title="World Cup — Group standings and bracket" style="display:none">⚽ Groups</a>
+    <button id="wf-toggle" title="Toggle between ESSENTIALS (schedule only) and WHOLE FIELD (schedule + ambient panel)">ESSENTIALS</button>
   </div>
 </nav>
 
@@ -27231,6 +27311,41 @@ function buildWCGroupRow(r, index, scenarios, groupId) {
 (function initWCNav() {
   const link = document.getElementById('wc-nav-link');
   if (link && wcActive) link.style.display = '';
+})();
+
+// ── WHOLE FIELD toggle ────────────────────────────────────────────────────
+// Persists desktop layout mode: 'essentials' (default) | 'whole'
+// Laptop 1200-1439px: LEFT + RIGHT (ambient)
+// Desktop 1440px+:   LEFT + CENTRE (editorial) + RIGHT (ambient)
+(function initWFToggle() {
+  const btn = document.getElementById('wf-toggle');
+  if (!btn) return;
+
+  const LS_KEY = 'field_desktop_mode';
+  let mode = (typeof localStorage !== 'undefined' && localStorage.getItem(LS_KEY)) || 'essentials';
+
+  function apply(m) {
+    mode = m;
+    const isWhole = m === 'whole';
+    document.body.classList.toggle('wf-mode', isWhole);
+    btn.textContent = isWhole ? 'WHOLE FIELD' : 'ESSENTIALS';
+    btn.classList.toggle('wf-active', isWhole);
+    btn.title = isWhole
+      ? 'Switch to ESSENTIALS (schedule only)'
+      : 'Switch to WHOLE FIELD (schedule + ambient panel)';
+    try { localStorage.setItem(LS_KEY, m); } catch(e_) {}
+    // Trigger ambient panel render if switching into wf-mode for the first time
+    if (isWhole && typeof renderAmbientPanel === 'function') {
+      renderAmbientPanel();
+    }
+  }
+
+  // Restore saved state on load
+  apply(mode);
+
+  btn.addEventListener('click', () => {
+    apply(mode === 'whole' ? 'essentials' : 'whole');
+  });
 })();
 
 
