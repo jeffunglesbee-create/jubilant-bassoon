@@ -2233,16 +2233,19 @@ body.wc-mode #wc-section{animation:wcFadeIn 220ms ease-out}
 @media(prefers-reduced-motion:reduce){body.wc-mode #wc-section{animation:none}}
 
 /* Mobile/tablet tab-swap */
-@media(max-width:1199px){
-  body.wc-mode .main,
+/* Ambient panel always hidden in wc-mode — at all viewport widths.
+   WC section is a full viewport swap; ambient panel would compete for space
+   and is irrelevant when browsing groups or bracket. */
+body.wc-mode #ambient-panel{display:none !important}
+
+@media(max-width:1199px){\n  body.wc-mode .main,
   body.wc-mode #night-owl,
   body.wc-mode #field-desk-section,
   body.wc-mode #media-section,
   body.wc-mode .page-divider,
   body.wc-mode .legend-section,
   body.wc-mode #upper-slots,
-  body.wc-mode #field-right-now,
-  body.wc-mode #ambient-panel{display:none !important}
+  body.wc-mode #field-right-now{display:none !important}
   body.wc-mode #wc-section{display:block}
   body.wc-mode #wc-section[hidden]{display:block}
   body.wc-mode .wc-back-pill{display:inline-block;position:sticky;top:calc(env(safe-area-inset-top,0px) + .5rem);z-index:50;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);background:rgba(20,20,28,.78)}
@@ -2255,6 +2258,10 @@ body.wc-mode #wc-section{animation:wcFadeIn 220ms ease-out}
 @media(min-width:1200px){
   body.wc-mode #wc-section{display:block;max-width:900px;margin:0 auto}
   body.wc-mode .wc-back-pill{display:none}
+  /* Ambient panel hidden (global rule above) → reset margins that assume it's present */
+  body.wc-mode nav.controls{margin-right:0 !important}
+  body.wc-mode header.masthead{margin-right:0 !important}
+  body.wc-mode .main{margin-right:0 !important}
 }
 
 /* ── WHOLE FIELD mode (body.wf-mode) ─────────────────────────────────────
@@ -19838,7 +19845,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-11b';
+  const SW_VERSION = '2026-06-11c';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
