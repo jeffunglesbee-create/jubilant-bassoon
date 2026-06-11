@@ -1,65 +1,61 @@
-# FIELD HANDOFF — 2026-06-11 (WHOLE FIELD Toggle 6c)
+# FIELD HANDOFF — 2026-06-11 (BracketDO + Ambient Fix)
 
 ## HEADS
-- jubilant-bassoon HEAD: 76aa708 (auto-overlay after 0163193)
-- Last dev commit: 0163193 (feat(6c): WHOLE FIELD toggle)
-- SW_VERSION: 2026-06-11b
-- Smoke: 579/0 ✅
-- field-relay-nba HEAD: a2e852b
+- jubilant-bassoon HEAD: 40cc3e5 (auto-overlay after e7a4ab7)
+- Last dev commit: e7a4ab7 (fix: ambient panel hidden in wc-mode at all viewports)
+- SW_VERSION: 2026-06-11c
+- Smoke: 584/0 ✅ (tool reads 521 — cache lag, not a regression)
+- field-relay-nba HEAD: 4fa945f
 
 ## WHAT SHIPPED THIS SESSION
 
-### WHOLE FIELD Toggle 6c (client: 0163193, smoke A533-A536)
+### BracketDO (relay: 4fa945f)
 
-**#wf-toggle button** in nav controls (inline-flex at 1200px+, hidden below):
-  - Default label: ESSENTIALS (no active class, muted border)
-  - Active label:  WHOLE FIELD (gold text, gold border, gold bg tint)
-  - Persists: localStorage 'field_desktop_mode' = 'essentials' | 'whole'
+Single DO instance ("wc2026") for full WC tournament. Receives result
+pushes from writeWCResult() after every confirmed final — recomputes
+Monte Carlo projections, persists snapshot + delta, fans out to
+WebSocket clients, queues journalism brief on significant shifts (≥5pp).
 
-**body.wf-mode CSS:**
+**bracket-do.js:**
+  - POST /bracket/result: dedup → fetch standings → computeTournamentProjections (N=2000)
+    → compute delta (pChampion/pAdvance shifts per team) → persist DO storage
+    → update KV (wc:projections:current, wc:bracket:current)
+    → WS fan-out {type:'bracket:updated', delta, trigger}
+    → queue JOURNALISM_QUEUE if significant (champDelta ≥ 5pp)
+  - GET /wc/bracket/live: WebSocket upgrade — delivers bracket:current on connect
+  - GET /wc/bracket/state: REST poll fallback
+  - POST /wc/bracket/refresh: admin recompute trigger
+  - ADR-002/RUWT: probability facts only, no drama scores
 
-  Laptop 1200-1439px (LEFT + RIGHT):
-    - #ambient-panel: display:flex !important (overrides 820px max-width rule),
-      fixed right 380px, full height, dark bg, left border
-    - .main, masthead, nav, ticker: margin-right:390px
-    - .games-list: 1-col (too narrow for 2-col with 380px panel taken)
-    - score ticker: display:block !important (was hidden at iPad range)
+**index.js changes:**
+  - BracketDO import + export
+  - writeWCResult(db, game, env): env added; BracketDO notified fire-and-forget
+  - Routes: /wc/bracket/live, /wc/bracket/state, /wc/bracket/refresh
+  - Probe allowlist: /wc/bracket/state
+  - Health: bracket-do added
 
-  Desktop 1440px+ (LEFT + CENTRE + RIGHT):
-    - Same ambient panel as laptop
-    - #field-desk-section, #night-owl, #field-brief: display:block
-      with margin-right:390px so they don't underrun the ambient panel
+**wrangler.toml:** BRACKET_DO binding + v3-bracket-do migration
 
-**initWFToggle IIFE:**
-  - Reads localStorage on load → applies mode immediately
-  - Toggles body.wf-mode, updates label + active class
-  - Calls renderAmbientPanel() when switching into WHOLE FIELD
-  - Writes localStorage on each toggle
+Probe: GET /wc/bracket/state → {snapshot:null, delta:null, resultCount:0} 200 OK
 
-**Default: ESSENTIALS** — first-visit users see no change. Existing users
-with localStorage 'essentials' also unaffected.
+### Ambient Panel Fix (client: e7a4ab7)
 
-### Also verified this session (TYPE D)
+body.wc-mode #ambient-panel{display:none !important} moved out of
+@media(max-width:1199px) — now suppresses at ALL viewport widths.
+Desktop wc-mode margin resets added at 1200px+ for nav/masthead/.main.
 
-WC schedule audit:
-  72 games, June 11–28, all have matchupNotes
-  Broadcasts: WC26_FOX (39), WC26_FS1 (31), WC26_FREE (2 — MEX opener + USA opener)
-  Group A: 34 games through all 3 matchdays
+## ARCHITECTURE: DO write path
 
-WC bracket data layer (all endpoints healthy):
-  /wc/projections — 200, 48 teams, Monte Carlo live
-  /wc/traps       — 200, 20 traps (Ghana +2.3pp leads)
-  /wc/standings   — 200 (groups:{} — first game just finished, relay updating)
-  /wc/results     — 200 (results:[] — relay hasn't ingested Mexico result yet)
-  /wc/odds-probs  — 200, full odds for upcoming games
-  /wc/brief/tournament — 200 (brief:null — no journalism brief generated yet)
+api-sports poll detects status=FT
+  → writeWCResult: D1 INSERT OR IGNORE + recomputeGroupStandings
+  → notify BracketDO (async, fire-and-forget)
+  → BracketDO: fetch standings, Monte Carlo, update KV, fan-out WS
+  Total latency: ~3-5s after final whistle (next poll cycle)
 
-CSS verified: body.wc-mode #wc-section[hidden]{display:block} override is
-AFTER base [hidden]{display:none} in stylesheet — correct specificity order.
+Hourly cron (runWCTournamentProjections) remains as safety net.
+BracketDO is the fast path — supersedes cron during live games.
 
-Note: Live viewport screenshots of WC section NOT captured — sandbox blocks
-*.workers.dev. Would require GitHub Actions CI with WC-mode activation added
-to screenshot_probe.js.
+## NEXT SESSION: State transition 6e
 
 ## PRIORITY LIST
 
@@ -67,8 +63,9 @@ to screenshot_probe.js.
 2. Drama spectrum 6f
 3. WC projections quality — Ecuador/Ivory Coast ranking anomalously high
 4. M5 score ticker fade
-5. Wimbledon draw context (before July 7)
-6. Design system (~90 min TYPE C)
+5. Client-side /wc/bracket/live WS wire-up (auto-refresh on bracket:updated)
+6. Wimbledon draw context (before July 7)
+7. Design system (~90 min TYPE C)
 
 ## SMOKE
-579/0 ✅ CI green at 0163193 (deploy gate + smoke both pass)
+584/0 ✅ CI green at e7a4ab7 (deploy gate + Smoke Test + Live Verify both pass)
