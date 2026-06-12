@@ -1,55 +1,63 @@
-# FIELD Handoff — June 12 2026 (WC Calibration + D1 + Bayesian)
+# FIELD Handoff — June 12 2026 (WC Schedule + Design System v2)
 
-**jubilant-bassoon HEAD:** 45997b7 · **relay HEAD:** dff7c34 · **Smoke:** 601/0 · **SW_VERSION:** 2026-06-12b
+**jubilant-bassoon HEAD:** cde57d5 · **relay HEAD:** dc534c2 · **Smoke:** 612/0 · **SW_VERSION:** 2026-06-12e
 
-## What shipped (June 11 PM → June 12 AM)
+## What shipped today
 
-### Haiku 4.5 session (~10-11 PM ET Jun 11)
-- Relay `0a3faf1`: extractWCGroup team-name fallback for api-sports matchday format
-- Relay `1c7eec0`: WC projections gaps 1+2+3 — D1-authoritative + live WP injection
-- Relay `ec9ab42`: R32 bracket _A/_B participant tracking (both teams per match)
-- Relay `413f83b`: All knockout rounds _A/_B (R16, QF, SF, Final)
-- Client `d008012`: R32 bracket renders all 32 teams (8 pairs per side)
-- Client `10b1522`: All rounds bracket rendering with _A/_B pairs
-- Session doc: Drive `1nRWRlhn1yQHS-KSakmLkfsvm2I18qrrLcKdz8Z0stAQ`
+### Relay (field-relay-nba)
+- `75be36b`: Germany vs Ecuador odds injection (auto-dedupes Jun 25)
+- `ef7a956`: Bracket slot deduplication (no team repeats per round)
+- `dff7c34`: Tier 1 Bayesian strength update (PRIOR_WEIGHT=3, opponent-adjusted)
+- `dc534c2`: **Coherent bracket** — modal groups → R32 → Poisson favorites feed forward R32→R16→QF→SF→Final. Each team exactly once. R16 participants ARE R32 winners.
 
-### Opus 4.6 session (~11 PM ET Jun 11 → 1 AM ET Jun 12)
-- Relay `75be36b`: Germany vs Ecuador odds injection (auto-dedupes when real odds appear Jun 25)
-- Relay `ef7a956`: Bracket slot deduplication — no team appears twice per round
-- Relay `dff7c34`: **Tier 1 Bayesian strength update** — blends odds priors with D1 match performance (PRIOR_WEIGHT=3)
-- Client `394a5c8`: Champion spot → Final as centerpiece with trophy + projected subtitle
-- Client `3b2fc15`: teamNick WC national names (Czech Republic→Czechia, Bosnia, Congo)
-- Client `edfa467`: Merge D1 standings with WC_TEAMS fallback + Czech Republic→Czechia normalize
-- Client `45997b7`: **fetchWCStandings RELAY_BASE fix** — was using /nba prefix (silent 404), now V2_RELAY_BASE
-- Session doc: Drive `1_r39omyFuG1g3MYudMAxgctvDXZ-onOg8z8xX8gyyJA`
+### Client (jubilant-bassoon)
+- `394a5c8`: Champion spot restructured (Final as centerpiece)
+- `3b2fc15`: teamNick WC national names (Czechia, Bosnia, Congo)
+- `edfa467`: D1 standings merge with WC_TEAMS fallback
+- `45997b7`: **fetchWCStandings RELAY_BASE fix** (Incident 12 — was /nba prefix)
+- `e53682f`: WC Tournament Brief card on main schedule
+- `f63e0ff`: **WC game cards on main schedule** — V2 polling injects FIFA section + ⚽ WC filter pill
+- `2d41627`: Smoke A559-A569 (612/0) — all 9 uncovered features
+- `23acfa5`: Comment extraction pipeline in deploy-gate.yml (363 KB / 26% gzip savings)
+- `cde57d5`: Simplified strip-comments — git source IS the documentation
 
-## D1 status
-- wc_results: 2 games (Mexico 2-0 South Africa, South Korea 2-1 Czech Republic)
-- wc_group: Group A standings computed correctly
-- Pipeline: writeWCResult → recomputeGroupStandings → BracketDO notify — all working
+## Design system work (specced, NOT built)
 
-## Prediction model
-- Tier 1 (SHIPPED): Bayesian lambda update from D1 results
-- Tier 2 (QUEUED): FBRef post-match xG integration
-- Tier 3 (QUEUED): State-dependent simulation + venue effects
-- Tier 4 (QUEUED): MD3 effective-strength modeling
+12 items documented in Items Catalog (Drive 1lWX2KtRPMNN):
+1. Chakra Petch typography (approved, supersedes Barlow/Playfair)
+2. Card tiering: featured / standard / compact grid
+3. CompactGrid for routine games (replaces collapsing)
+4. Touch feedback (:active scale 0.98)
+5. Motion token assignments to new surfaces
+6. Advancement probability scale (gold/blue/smoke)
+7. MLB / traditional sports balance rule
+8. Score-journalism symbiosis
+9. Circadian layout mode (Rules C1-C5, Rovi clearance)
+10. Bracket tree viewport rules (T2+ only)
+11. Journalism surfacing architecture (7 surfaces)
+12. Viewport artifact v4 scope (~120-150 min TYPE D)
 
-## Automation milestone
-First session to fully automate relay + client deploys from sandbox:
-- git push via PAT (github.com accessible)
-- Deploy verification via GitHub API (api.github.com accessible)
-- Full cycle: push → sleep 25 → API check → confirmed
+## Undocumented sessions recovered
+
+9 June 11 sessions found, all now documented on Drive:
+- 7 were already documented
+- 2 were missing (Haiku R32 fix + Opus calibration) — now saved
 
 ## Priority queue
-1. State transition 6e (~30 lines)
-2. Drama spectrum 6f (~60 lines)
-3. M5 score ticker fade
-4. Wimbledon draw context (before July 7)
-5. Design system (~90 min TYPE C)
-6. Multiview velocity grid
+1. **Viewport artifact v4** (~120-150 min TYPE D) — unifies v1+v2+v3.5
+2. **Design system BUILD** (~110 min TYPE C) — CSS tokens + semanticTier() + card tiering
+3. State transition 6e (~30 lines)
+4. Drama spectrum 6f (~60 lines)
+5. M5 score ticker fade
+6. Wimbledon draw context (before July 7)
 
-## Key doc IDs
+## Key Drive docs (this session)
+- Items Catalog: 1lWX2KtRPMNN1e8YfxrCd3aBPNzxOc8k0JAHOzUxprd0
+- Design System v2: 1Bv2qvn_Gz0qLZatJW9jVsQfMAwE-DyflZNplQyHmCvk
+- v4 Build Brief: 1OZItVH-7beD7wEpizwSie3mb80UtiepHIInGEZh3ALU
+- Journalism Addendum: 1ibAZ1n52akTtBEvmzgQHSkUPDEEllKwug44Gx6zggYE
+- Circadian Addendum: 137BFjJ9oErDyBmrxSvTM4RuSywln3pXaYFD77Id5Eek
+- Rovi Patent Clearance: 1ICONs1B_WzfpW562DHEEzhjc2KC8tlnqkbajYrOvctk
+- CI/Deploy Addendum: 1iLNhq5-ktyTI4dIL8E4eqoD_OB-NkcLVoG9p2NE0IJA
 - Haiku session doc: 1nRWRlhn1yQHS-KSakmLkfsvm2I18qrrLcKdz8Z0stAQ
 - Opus session doc: 1_r39omyFuG1g3MYudMAxgctvDXZ-onOg8z8xX8gyyJA
-- CI/Deploy Reference: 1UrOoYDGaK2ncPrnRNXt1w0OElOLpbjP_EYROjG2w1zo
-- CBL rev 7: 1aCInXWGnQGK1-gu-TyH8MSd48GDILGiWuQLYyVVvZSU
