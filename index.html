@@ -27954,18 +27954,33 @@ async function renderWCBracketTree() {
     [`R32_77_A`,`R32_77_B`],[`R32_78_A`,`R32_78_B`],
     [`R32_79_A`,`R32_79_B`],[`R32_80_A`,`R32_80_B`],
   ];
-  const leftR16Ids    = [`R16_0`,`R16_1`,`R16_2`,`R16_3`];
-  const leftQFIds     = [`QF_0`,`QF_1`];
-  const leftSFIds     = [`SF_0`];
+  const leftR16Pairs  = [
+    [`R16_0_A`,`R16_0_B`],[`R16_1_A`,`R16_1_B`],
+    [`R16_2_A`,`R16_2_B`],[`R16_3_A`,`R16_3_B`],
+  ];
+  const leftQFPairs   = [
+    [`QF_0_A`,`QF_0_B`],[`QF_1_A`,`QF_1_B`],
+  ];
+  const leftSFPairs   = [
+    [`SF_0_A`,`SF_0_B`],
+  ];
   const rightR32Pairs = [
     [`R32_81_A`,`R32_81_B`],[`R32_82_A`,`R32_82_B`],
     [`R32_83_A`,`R32_83_B`],[`R32_84_A`,`R32_84_B`],
     [`R32_85_A`,`R32_85_B`],[`R32_86_A`,`R32_86_B`],
     [`R32_87_A`,`R32_87_B`],[`R32_88_A`,`R32_88_B`],
   ];
-  const rightR16Ids   = [`R16_4`,`R16_5`,`R16_6`,`R16_7`];
-  const rightQFIds    = [`QF_2`,`QF_3`];
-  const rightSFIds    = [`SF_1`];
+  const rightR16Pairs = [
+    [`R16_4_A`,`R16_4_B`],[`R16_5_A`,`R16_5_B`],
+    [`R16_6_A`,`R16_6_B`],[`R16_7_A`,`R16_7_B`],
+  ];
+  const rightQFPairs  = [
+    [`QF_2_A`,`QF_2_B`],[`QF_3_A`,`QF_3_B`],
+  ];
+  const rightSFPairs  = [
+    [`SF_1_A`,`SF_1_B`],
+  ];
+  const finalPair = [`Final_A`,`Final_B`];
 
   const champion   = slots['Champion'];
   const finalTeam1 = slots['Final'];   // champion
@@ -27990,9 +28005,9 @@ async function renderWCBracketTree() {
     </div>
     <div style="display:grid;grid-template-columns:repeat(4,1fr) 120px repeat(4,1fr);min-width:900px;align-items:center;gap:2px 0;padding:0 2px">
       ${buildR32Round(leftR32Pairs, 'left')}
-      ${buildRound(leftR16Ids, 'left')}
-      ${buildRound(leftQFIds, 'left')}
-      ${buildRound(leftSFIds, 'left', 'wct-sf')}
+      ${buildR32Round(leftR16Pairs, 'left')}
+      ${buildR32Round(leftQFPairs, 'left')}
+      ${buildR32Round(leftSFPairs, 'left')}
       <div style="display:flex;flex-direction:column;align-items:center;gap:.5rem;padding:0 4px">
         <div class="wct-champion-label">Champion</div>
         <div class="wct-match wct-champion" style="width:108px">
@@ -28000,13 +28015,13 @@ async function renderWCBracketTree() {
         </div>
         <div style="font-size:.52rem;color:var(--smoke);text-align:center;margin-top:.3rem">Final</div>
         <div class="wct-match wct-final" style="width:108px">
-          ${wctTeamCard(sfLeft)}
-          ${wctTeamCard(sfRight)}
+          ${wctTeamCard(slots['Final_A'])}
+          ${wctTeamCard(slots['Final_B'])}
         </div>
       </div>
-      ${buildRound(rightSFIds, 'right', 'wct-sf')}
-      ${buildRound(rightQFIds, 'right')}
-      ${buildRound(rightR16Ids, 'right')}
+      ${buildR32Round(rightSFPairs, 'right')}
+      ${buildR32Round(rightQFPairs, 'right')}
+      ${buildR32Round(rightR16Pairs, 'right')}
       ${buildR32Round(rightR32Pairs, 'right')}
     </div>
     ${note}
