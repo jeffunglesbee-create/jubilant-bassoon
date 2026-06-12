@@ -1,78 +1,76 @@
-# FIELD HANDOFF — 2026-06-11 (AmbientDO SSE Architecture)
+# FIELD HANDOFF — 2026-06-11 (SSE espnScores writeback complete)
 
 ## HEADS
-- jubilant-bassoon HEAD: 851e9b1 (auto-overlay after 272b6f0)
-- Last dev commit: 272b6f0 (feat: AmbientDO SSE client)
-- SW_VERSION: 2026-06-11e
-- Smoke: 597/0 ✅ (tool reads 534 — cache lag, not a regression)
-- field-relay-nba HEAD: e4bd33c (CI fix)
-- AmbientDO relay commit: bc2fac4
+- jubilant-bassoon HEAD: ffae7d6 (auto-overlay after bd4f0f1)
+- Last dev commits:
+    bd4f0f1 — feat: AmbientDO SSE espnScores writeback (card display ~3s)
+    916a107 — fix: remove 90s SSE polling reduction
+- SW_VERSION: 2026-06-11g
+- Smoke: 601/0 ✅
+- field-relay-nba HEAD: e4bd33c (unchanged)
 
 ## WHAT SHIPPED THIS SESSION
 
-### AmbientDO (relay: bc2fac4)
+### 90s polling regression fix (916a107)
 
-src/ambient-do.js:
-  Single instance ("field:ambient"). Alarm-driven 30s poll.
-  Sports: nba,nhl,mlb,wc26,mls,epl,laliga,seriea,bundesliga,ligue1,wnba
-  Active-month filter skips off-season sports (saves quota).
-  Self-call to /v2/games per sport — reuses all existing adapters.
-  Detects: score change, lead change, game final.
-  Broadcasts SSE: score, lead_change, final, all_final, ping.
-  State persisted to DO storage: scores/leaders/finals keyed by date.
-  TransformStream SSE pattern; cleanup on request.signal abort.
-  Alarm: 30s when live game active; 60s idle.
-  Routes: /live/ambient (SSE), /ambient/state (REST), /ambient/kick (admin)
+computeLiveInterval SSE safety-net branch removed. SSE doesn't write to
+espnScores[], so reducing polling to 90s would stale card score display.
+Correct model: SSE supplements polling for event reactions; polling owns
+card state until writeback is complete.
+A553 updated to assert 90s branch NOT present.
 
-CONFIRMED LIVE:
-  GET /ambient/state → {clientCount:16, sportCount:0, lastPoll:null}
-  16 SSE clients connected from browsers on page load.
+### espnScores writeback (bd4f0f1)
 
-### AmbientEventSource client (client: 272b6f0)
+SSE now writes directly to espnScores[] on every score/lead_change/final/
+connected event, triggering renderESPNScores() at ~3s latency.
 
-window._ambientES singleton (IIFE):
-  EventSource to /live/ambient. Auto-connects on load.
-  Reconnects: 1.5× backoff, max 5 attempts; polling is safety net.
+score/lead_change writeback:
+  Key: data.home + '|' + data.away (matches fetchV2AllScores format)
+  Guards: key must already exist (polling seeds); never overwrite state:post
+  Updates: homeScore, awayScore, period, clock, detail, homeWinning, state
+  Preserves: linescores, leaders, wp, espnEventId (other sources own these)
+  Updates: espnScoreTs[key], _scoresBySource[key].apisports (source:'sse')
+  Render: _sseRenderTimer (200ms coalesce) → renderESPNScores()
 
-Event routing:
-  connected → seeds score store with current DO live state
-  score/lead_change → emitScoreEvent(source:'sse') → fieldEvents bus
-  final → emitScoreEvent(isFinal:true)
-  all_final → field:all_final to fieldEvents bus
+connected seed writeback:
+  Applies current DO live state to espnScores on SSE connect
+  Triggers single renderESPNScores() after seeding
 
-Velocity tracking:
-  _sseScoreTs Map: timestamps every SSE score event per gameId
-  window._sseScoreTs exposed for multiview feature
-  getVelocity(gameId) → events/min over 8-min window
+final writeback:
+  Writes state:'post' immediately, triggers renderESPNScores()
 
-computeLiveInterval SSE safety-net mode:
-  All games in section isSSECovered → 90s poll cadence
-  Falls back to 20-45s if any game loses SSE coverage
+Speed result:
+  Card score display: was 20-45s → now ~3s (SSE latency)
+  Event reactions (Night Owl, lead change burst, CRUNCH): ~3s (unchanged)
+  Polling: continues at 20-45s as safety net + for fields SSE doesn't carry
+    (linescores, leaders, wp, Savant data)
 
-ensureGameSocket proactive:
-  Opens GameDO WebSocket on first espn-live card render
-  Previously: only at CRUNCH detection. Now: on first live render.
-  data-wsOpened guard prevents duplicate connections.
+Smoke: A555-A558 added (601/0 ✅)
 
-Smoke: A547-A554 (597/0 ✅)
+### CF limits audit
 
-### CI fix (relay: e4bd33c)
+Workers Standard (Paid): 10M req/month included, 30s CPU/req, 5min CPU/cron.
+Subrequests: 10,000/invocation (raised from 1,000 Feb 2026).
+DOs: billed for active duration; hibernation = $0. setAlarm = 1 row write.
+AmbientDO alarms: ~30,000 writes/month = 0.06% of 50M included. Fine.
+Main scaling concern: request volume at 1,000+ users → SSE writeback path
+reduces this via coalesced rendering, but polling still runs per-browser.
 
-continue-on-error on wrangler deploy step + explicit /health gate.
-Wrangler exits 1 on secret-PUT failures (empty RELAY_GH_PAT) even
-when code deploys successfully. Fix: health check is the hard gate.
+## COMPLETE SSE ARCHITECTURE STATE
 
-## WHAT SSE UNLOCKS (now wired)
+AmbientDO (relay: bc2fac4):
+  Single DO "field:ambient". Alarm 30s. Sports: nba/nhl/mlb/wc26/mls/5×soccer.
+  SSE events: score, lead_change, final, all_final, ping, connected.
 
-Before: emitScoreEvent fires from polling (15-30s lag)
-After:  emitScoreEvent fires from SSE (1-3s lag) + polling as safety net
+AmbientEventSource (client: bd4f0f1):
+  window._ambientES. Auto-connects. Reconnects 1.5× backoff.
+  On score/lead_change: writes espnScores[] + coalesced renderESPNScores()
+  On final: writes state:post + renderESPNScores()
+  On connected: seeds espnScores from DO live state
+  On all events: emitScoreEvent → fieldEvents bus → all subscribers
 
-- lead_change burst: fires while lead change is still the story
-- Night Owl: game-final detection at 1-3s not 15-30s
-- CRUNCH: cross-sport fan-out chip appears instantly
-- nightly wrap: all_final fires immediately when last game ends
-- WS pulse dot: now shows on first card render (proactive ensureGameSocket)
-- Multiview velocity: _sseScoreTs enabled, ready to read
+Result: both card display AND subscriber reactions at ~3s.
+Polling remains safety net at 20-45s for richer data fields.
 
 ## PRIORITY LIST
 
@@ -82,8 +80,7 @@ After:  emitScoreEvent fires from SSE (1-3s lag) + polling as safety net
 4. M5 score ticker fade
 5. Wimbledon draw context (before July 7)
 6. Design system (~90 min TYPE C)
-7. Multiview velocity grid (WOW feature 1) — infrastructure now complete
+7. Multiview velocity grid (infrastructure complete — A555 enabled)
 
 ## SMOKE
-597/0 ✅ CI: Deploy gate success 272b6f0, Smoke Test success 272b6f0
-Relay CI: success e4bd33c
+601/0 ✅ CI: Deploy gate success bd4f0f1, Smoke Test success bd4f0f1
