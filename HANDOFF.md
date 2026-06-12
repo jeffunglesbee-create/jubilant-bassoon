@@ -1,82 +1,88 @@
-# FIELD HANDOFF — 2026-06-11 (CF edge cache + performance honesty)
+# FIELD HANDOFF — 2026-06-12 (WC D1 pipeline fix + iPad CSS fix)
 
 ## HEADS
-- jubilant-bassoon HEAD: 6f7a3e6 (client unchanged this session)
-- field-relay-nba HEAD: 03fff2c (CF cache + AmbientDO 15s)
-- SW_VERSION: 2026-06-11g
-- Smoke: 601/0 ✅
+- jubilant-bassoon HEAD: 92c615c (189e1ac post-CI HANDOFF update pending)
+- field-relay-nba HEAD: 0a3faf1
+- SW_VERSION: 2026-06-11h
+- Smoke: 601/0 ✅ (CI: success 189e1ac)
 
-## LATENCY TRUTH (documented this session)
-
-The ~3s claim was the time from AmbientDO detecting a delta to browser render.
-True end-to-end (real world goal → FIELD card): 0–31s avg ~15s (was).
-After 15s alarm: 0–16s avg ~7s.
-
-The constraint is api-sports REST update frequency (~30–60s), not FIELD infra.
-Honest claim: "scores update within ~15s of api-sports data in live matches."
-SSE architecture is genuine — it eliminates the browser-side latency entirely.
-What remains is the upstream data freshness window.
+## SMOKE COUNT CLARIFICATION
+- `get_smoke_count` tool reports 538 — counts `^\s*assert(` at line start
+- Actual runtime: 601 — includes 65 FEATURE_GUARDS forEach-dispatched asserts
+- 601 is the truth. Tool undercounts by design. Not a regression.
 
 ## WHAT SHIPPED THIS SESSION
 
-### CF edge caching on /v2/games (relay: 03fff2c)
+### fix: WC D1 write pipeline (relay: 0a3faf1)
+Root cause: api-sports changed round format from "Group Stage - Group A"
+to "Group Stage - 1" (matchday number) mid-tournament. extractWCGroup
+regex required group letter in round string → returned null → writeWCResult
+early-returned → D1 never written since tournament start.
 
-handleV2Games and handleV2Standings: cacheEverything:false → true
-cacheKey:targetUrl excludes x-apisports-key from CF cache key
-cacheTtl: 30s for games, 3600s for standings
+Fix: `_WC_TEAM_GROUP` static map (32 teams + aliases) + NFD normalization
+fallback in extractWCGroup when round string lacks group letter.
+Both writeWCResult and advancement-probability path updated.
+17/17 unit tests pass including Curaçao diacritic, Bosnia & Herzegovina
+ampersand, USA/Turkey/Türkiye aliases.
 
-VERIFIED: 509ms first call → 65ms second call (7.8× speedup, CF edge hit)
+Manual backfill: Mexico 2-0 South Africa (2026-06-11, Group A) written
+directly to D1 via Cloudflare MCP. `/wc/standings?group=A` serving correctly.
 
-Effect on api-sports quota:
-  Before: 50 users × 30s poll = 864,000 calls/day (quota: 100/day/sport)
-  After:  CF cache serves all users from same 30s response window
-          api-sports calls = ~17,280/day regardless of user count (98% reduction)
-  This is the critical fix that makes FIELD scalable: O(sports) not O(users)
+Alias table: verified 100% bidirectional — all 32 api-sports team names
+resolve to correct groups. Austria/Australia prefix collision is safe
+(requires both home AND away to match simultaneously — impossible cross-group).
 
-### AmbientDO POLL_LIVE_MS 30s → 15s (relay: 03fff2c)
+### fix: iPad wc-mode CSS (client: 189e1ac)
+`@media(max-width:1199px)` wc-mode block had literal `\n` (backslash + n)
+at opening brace instead of a real newline. Entire block silently dropped
+by browser. On iPad (820-1199px): ambient panel and WC section competed
+for space, schedule visible behind WC content, back pill not positioned,
+margin overrides not applied.
 
-Safe because CF cache absorbs the api-sports quota cost.
-DO polls at 15s but cache TTL is 30s → every other DO poll hits cache.
-api-sports max: 2/min per sport (same as before).
-Latency improvement: avg ~30s → avg ~15s (halved).
+Root cause: escaped newline from JS template literal context written into
+static CSS during prior session edit.
 
-### RELAY_BASE env var
+SW_VERSION bumped g → h. A190 caught the missed sw.js sync on first push.
 
-Exposes relay self-URL as wrangler [vars].RELAY_BASE.
-AmbientDO self-call now reads from env rather than hardcoding prod URL.
+## ANALYSIS FINDINGS (no code shipped)
 
-Health: v2-cache added
+### 6e — revised to Option A (game state lifecycle strip)
+Original spec (load-phase performance panel) retired — marks already
+serve CLS attribution via clsObserver, not user-facing.
+New spec: `tt-strip` on `.espn-live`/`.espn-final` cards recording named
+state transitions (WORTH WATCHING, CRUNCH TIME, lead changes, OT, final)
+driven by fieldEvents bus. Named states only (RUWT ADR-002). In-memory
+Map per gameId. ~30 lines.
 
-## CF LIMITS SUMMARY (from audit this session)
+### 6f — Drama Spectrum RUWT-safe
+Original spec holds. WC26 calibration (soccer thresholds) is parameter
+addition only. RUWT conditional logic unchanged. ~60 lines.
 
-Workers Standard: 10M req/month. With CF edge cache, N users → 1 cache miss per 30s.
-Request volume at 1000 users: was 86M/month → now ~17,280/day = ~518,400/month.
-Still within 10M? No — 518k/month well under. Even 98% reduction = sustainable.
+### WC projections anomaly
+Root cause confirmed: D1 empty → engine ran with zero played results →
+MD0 uniform fallback inflated Ecuador/Ivory Coast. Not a projections bug.
+Fixed by D1 pipeline fix above.
 
-DO alarms: AmbientDO 15s = ~172,800 alarms/month = 0.3% of 50M included writes.
-Hibernate: all 4 DOs use hibernation. Duration billing only when active.
-R2, D1, KV, Queue: all well within included quotas at current scale.
-
-## COMPLETE PERFORMANCE PICTURE
-
-End-to-end chain:
-  api-sports updates live data: ~30-60s cadence (their internal polling)
-  AmbientDO alarm: 15s → detects delta within 15s of api-sports updating
-  SSE fan-out to browser: ~1s
-  espnScores writeback + renderESPNScores: ~0.2s
-  Total: 0-16s avg ~7s (was 0-61s avg ~30s before this session)
-
-Client polling:
-  Continues at 20-45s drama-based cadence
-  Hits CF edge cache → api-sports sees only 2/min per sport
-  Provides enrichment: linescores, leaders, wp, Savant (SSE doesn't carry these)
+### Smoke 538 vs 601
+Tool artifact (see above). Both numbers correct for what they measure.
 
 ## PRIORITY LIST
 
-1. State transition 6e ← next
-2. Drama spectrum 6f
-3. WC projections quality (Ecuador/Ivory Coast anomaly)
-4. M5 score ticker fade
-5. Wimbledon draw context (before July 7)
-6. Design system (~90 min TYPE C)
-7. Multiview velocity grid (all infrastructure complete)
+1. M5 — score ticker desktop fade (::after always-on regardless of overflow)
+2. 6e — game state lifecycle strip (~30 lines, spec complete)
+3. 6f — drama spectrum RUWT-safe (~60 lines)
+4. Wimbledon draw context (hard deadline July 7)
+5. Design system (~90 min TYPE C)
+6. Multiview velocity grid
+
+## WC D1 STATUS
+- Results in D1: Mexico 2-0 South Africa (Group A, 2026-06-11) ✅
+- Future results: auto-write via fixed extractWCGroup ✅
+- All other groups: empty (no games played yet as of session end)
+- South Korea vs Czech Republic (Group A) and Canada vs Bosnia &
+  Herzegovina (Group B) play June 12 — will auto-write if relay
+  detects finals on next /v2/games poll cycle
+
+## RELAY STATE (field-relay-nba)
+0a3faf1 — extractWCGroup team-name fallback (deployed, success)
+03fff2c — CF edge cache + AmbientDO 15s (prior session)
