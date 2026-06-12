@@ -6010,7 +6010,11 @@ const _multiWordNicks={'Boston Red Sox':'Red Sox','Chicago White Sox':'White Sox
   'Brighton and Hove Albion':'Brighton','AFC Bournemouth':'Bournemouth',
   'Tottenham Hotspur':'Spurs','Manchester United':'Man Utd',
   'Manchester City':'Man City','Newcastle United':'Newcastle',
-  'Leicester City':'Leicester','Wolverhampton Wanderers':'Wolves'};
+  'Leicester City':'Leicester','Wolverhampton Wanderers':'Wolves',
+  'Czech Republic':'Czechia','Bosnia and Herzegovina':'Bosnia',
+  'South Africa':'S. Africa','Congo DR':'Congo','DR Congo':'Congo',
+  'Ivory Coast':'Ivory Coast','Costa Rica':'Costa Rica',
+  'Saudi Arabia':'Saudi Arabia','New Zealand':'New Zealand'};
 function teamNick(name){
   if(!name) return '';
   if(_multiWordNicks[name]) return _multiWordNicks[name];
@@ -19877,7 +19881,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-11k';
+  const SW_VERSION = '2026-06-11m';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
