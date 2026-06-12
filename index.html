@@ -27378,18 +27378,21 @@ async function renderWCSection() {
   // Render groups table
   // Merge D1 standings with WC_TEAMS fallback for groups without D1 data yet.
   // Normalise D1 team names (API-Sports sends "Czech Republic", display uses "Czechia").
-  const _d1NameFix = {'Czech Republic':'Czechia'};
+  const _d1NameFix = {'Czech Republic':'Czechia','Bosnia & Herzegovina':'Bosnia and Herzegovina'};
   const mergedStandings = {};
   for (const g of 'ABCDEFGHIJKL'.split('')) {
-    if (standings && standings[g] && standings[g].length > 0) {
-      mergedStandings[g] = standings[g].map(r => ({
-        ...r, team: _d1NameFix[r.team] || r.team,
-      }));
-    } else {
-      mergedStandings[g] = (WC_TEAMS[g] || []).map(t => ({
-        group_id: g, team: t, played: 0, won: 0, drawn: 0, lost: 0,
-        gf: 0, ga: 0, gd: 0, points: 0,
-      }));
+    const d1Teams = (standings && standings[g]) ? standings[g].map(r => ({...r, team: _d1NameFix[r.team] || r.team})) : [];
+    const d1Names = new Set(d1Teams.map(r => r.team));
+    const allTeams = WC_TEAMS[g] || [];
+    // Start with D1 teams (have match data), then append missing teams at 0-0-0
+    mergedStandings[g] = [...d1Teams];
+    for (const t of allTeams) {
+      if (!d1Names.has(t)) {
+        mergedStandings[g].push({
+          group_id: g, team: t, played: 0, won: 0, drawn: 0, lost: 0,
+          gf: 0, ga: 0, gd: 0, points: 0,
+        });
+      }
     }
   }
   renderWCGroups(mergedStandings, matchResults, oddsProbs, liveGames);
