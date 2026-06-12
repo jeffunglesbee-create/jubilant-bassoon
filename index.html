@@ -2241,7 +2241,8 @@ body.wc-mode #wc-section{animation:wcFadeIn 220ms ease-out}
    and is irrelevant when browsing groups or bracket. */
 body.wc-mode #ambient-panel{display:none !important}
 
-@media(max-width:1199px){\n  body.wc-mode .main,
+@media(max-width:1199px){
+  body.wc-mode .main,
   body.wc-mode #night-owl,
   body.wc-mode #field-desk-section,
   body.wc-mode #media-section,
@@ -19867,7 +19868,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-11g';
+  const SW_VERSION = '2026-06-11h';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
