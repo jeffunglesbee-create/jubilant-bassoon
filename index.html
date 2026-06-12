@@ -19877,7 +19877,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-11j';
+  const SW_VERSION = '2026-06-11k';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -27988,7 +27988,7 @@ async function renderWCBracketTree() {
   const sfRight    = slots['SF_1'];
 
   const note = hasData
-    ? `<p class="wc-bracket-note" style="margin-top:.75rem">Most likely bracket · ${(slots['Champion']?.prob != null ? Math.round(slots['Champion'].prob * 100) : '?')}% confidence on champion · Updates every 15 min</p>`
+    ? `<p class="wc-bracket-note" style="margin-top:.75rem">Most likely bracket · Updates every 15 min</p>`
     : '<p class="wc-bracket-note" style="margin-top:.75rem">Computing projections — check back shortly</p>';
 
   // Column headers
@@ -28008,16 +28008,14 @@ async function renderWCBracketTree() {
       ${buildR32Round(leftR16Pairs, 'left')}
       ${buildR32Round(leftQFPairs, 'left')}
       ${buildR32Round(leftSFPairs, 'left')}
-      <div style="display:flex;flex-direction:column;align-items:center;gap:.5rem;padding:0 4px">
-        <div class="wct-champion-label">Champion</div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:.4rem;padding:0 4px">
+        <div style="font-size:.9rem">🏆</div>
+        <div class="wct-champion-label">Final</div>
         <div class="wct-match wct-champion" style="width:108px">
-          ${wctTeamCard(champion, 'wct-champion-team')}
-        </div>
-        <div style="font-size:.52rem;color:var(--smoke);text-align:center;margin-top:.3rem">Final</div>
-        <div class="wct-match wct-final" style="width:108px">
           ${wctTeamCard(slots['Final_A'])}
           ${wctTeamCard(slots['Final_B'])}
         </div>
+        ${champion ? '<div style="font-size:.52rem;color:var(--gold2);text-align:center;margin-top:.2rem">Projected: ' + champion.team + ' ' + Math.round(champion.prob * 100) + '%</div>' : ''}
       </div>
       ${buildR32Round(rightSFPairs, 'right')}
       ${buildR32Round(rightQFPairs, 'right')}
