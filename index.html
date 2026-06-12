@@ -19877,7 +19877,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-11i';
+  const SW_VERSION = '2026-06-11j';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -27948,11 +27948,21 @@ async function renderWCBracketTree() {
     '</div>';
   }
 
-  const leftR32Pairs  = [[`R32_73`,`R32_74`],[`R32_75`,`R32_76`],[`R32_77`,`R32_78`],[`R32_79`,`R32_80`]];
+  const leftR32Pairs  = [
+    [`R32_73_A`,`R32_73_B`],[`R32_74_A`,`R32_74_B`],
+    [`R32_75_A`,`R32_75_B`],[`R32_76_A`,`R32_76_B`],
+    [`R32_77_A`,`R32_77_B`],[`R32_78_A`,`R32_78_B`],
+    [`R32_79_A`,`R32_79_B`],[`R32_80_A`,`R32_80_B`],
+  ];
   const leftR16Ids    = [`R16_0`,`R16_1`,`R16_2`,`R16_3`];
   const leftQFIds     = [`QF_0`,`QF_1`];
   const leftSFIds     = [`SF_0`];
-  const rightR32Pairs = [[`R32_81`,`R32_82`],[`R32_83`,`R32_84`],[`R32_85`,`R32_86`],[`R32_87`,`R32_88`]];
+  const rightR32Pairs = [
+    [`R32_81_A`,`R32_81_B`],[`R32_82_A`,`R32_82_B`],
+    [`R32_83_A`,`R32_83_B`],[`R32_84_A`,`R32_84_B`],
+    [`R32_85_A`,`R32_85_B`],[`R32_86_A`,`R32_86_B`],
+    [`R32_87_A`,`R32_87_B`],[`R32_88_A`,`R32_88_B`],
+  ];
   const rightR16Ids   = [`R16_4`,`R16_5`,`R16_6`,`R16_7`];
   const rightQFIds    = [`QF_2`,`QF_3`];
   const rightSFIds    = [`SF_1`];
