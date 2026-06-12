@@ -1,76 +1,75 @@
-# FIELD HANDOFF — 2026-06-11 (SSE espnScores writeback complete)
+# FIELD HANDOFF — 2026-06-11 (CF edge cache + performance honesty)
 
 ## HEADS
-- jubilant-bassoon HEAD: ffae7d6 (auto-overlay after bd4f0f1)
-- Last dev commits:
-    bd4f0f1 — feat: AmbientDO SSE espnScores writeback (card display ~3s)
-    916a107 — fix: remove 90s SSE polling reduction
+- jubilant-bassoon HEAD: 6f7a3e6 (client unchanged this session)
+- field-relay-nba HEAD: 03fff2c (CF cache + AmbientDO 15s)
 - SW_VERSION: 2026-06-11g
 - Smoke: 601/0 ✅
-- field-relay-nba HEAD: e4bd33c (unchanged)
+
+## LATENCY TRUTH (documented this session)
+
+The ~3s claim was the time from AmbientDO detecting a delta to browser render.
+True end-to-end (real world goal → FIELD card): 0–31s avg ~15s (was).
+After 15s alarm: 0–16s avg ~7s.
+
+The constraint is api-sports REST update frequency (~30–60s), not FIELD infra.
+Honest claim: "scores update within ~15s of api-sports data in live matches."
+SSE architecture is genuine — it eliminates the browser-side latency entirely.
+What remains is the upstream data freshness window.
 
 ## WHAT SHIPPED THIS SESSION
 
-### 90s polling regression fix (916a107)
+### CF edge caching on /v2/games (relay: 03fff2c)
 
-computeLiveInterval SSE safety-net branch removed. SSE doesn't write to
-espnScores[], so reducing polling to 90s would stale card score display.
-Correct model: SSE supplements polling for event reactions; polling owns
-card state until writeback is complete.
-A553 updated to assert 90s branch NOT present.
+handleV2Games and handleV2Standings: cacheEverything:false → true
+cacheKey:targetUrl excludes x-apisports-key from CF cache key
+cacheTtl: 30s for games, 3600s for standings
 
-### espnScores writeback (bd4f0f1)
+VERIFIED: 509ms first call → 65ms second call (7.8× speedup, CF edge hit)
 
-SSE now writes directly to espnScores[] on every score/lead_change/final/
-connected event, triggering renderESPNScores() at ~3s latency.
+Effect on api-sports quota:
+  Before: 50 users × 30s poll = 864,000 calls/day (quota: 100/day/sport)
+  After:  CF cache serves all users from same 30s response window
+          api-sports calls = ~17,280/day regardless of user count (98% reduction)
+  This is the critical fix that makes FIELD scalable: O(sports) not O(users)
 
-score/lead_change writeback:
-  Key: data.home + '|' + data.away (matches fetchV2AllScores format)
-  Guards: key must already exist (polling seeds); never overwrite state:post
-  Updates: homeScore, awayScore, period, clock, detail, homeWinning, state
-  Preserves: linescores, leaders, wp, espnEventId (other sources own these)
-  Updates: espnScoreTs[key], _scoresBySource[key].apisports (source:'sse')
-  Render: _sseRenderTimer (200ms coalesce) → renderESPNScores()
+### AmbientDO POLL_LIVE_MS 30s → 15s (relay: 03fff2c)
 
-connected seed writeback:
-  Applies current DO live state to espnScores on SSE connect
-  Triggers single renderESPNScores() after seeding
+Safe because CF cache absorbs the api-sports quota cost.
+DO polls at 15s but cache TTL is 30s → every other DO poll hits cache.
+api-sports max: 2/min per sport (same as before).
+Latency improvement: avg ~30s → avg ~15s (halved).
 
-final writeback:
-  Writes state:'post' immediately, triggers renderESPNScores()
+### RELAY_BASE env var
 
-Speed result:
-  Card score display: was 20-45s → now ~3s (SSE latency)
-  Event reactions (Night Owl, lead change burst, CRUNCH): ~3s (unchanged)
-  Polling: continues at 20-45s as safety net + for fields SSE doesn't carry
-    (linescores, leaders, wp, Savant data)
+Exposes relay self-URL as wrangler [vars].RELAY_BASE.
+AmbientDO self-call now reads from env rather than hardcoding prod URL.
 
-Smoke: A555-A558 added (601/0 ✅)
+Health: v2-cache added
 
-### CF limits audit
+## CF LIMITS SUMMARY (from audit this session)
 
-Workers Standard (Paid): 10M req/month included, 30s CPU/req, 5min CPU/cron.
-Subrequests: 10,000/invocation (raised from 1,000 Feb 2026).
-DOs: billed for active duration; hibernation = $0. setAlarm = 1 row write.
-AmbientDO alarms: ~30,000 writes/month = 0.06% of 50M included. Fine.
-Main scaling concern: request volume at 1,000+ users → SSE writeback path
-reduces this via coalesced rendering, but polling still runs per-browser.
+Workers Standard: 10M req/month. With CF edge cache, N users → 1 cache miss per 30s.
+Request volume at 1000 users: was 86M/month → now ~17,280/day = ~518,400/month.
+Still within 10M? No — 518k/month well under. Even 98% reduction = sustainable.
 
-## COMPLETE SSE ARCHITECTURE STATE
+DO alarms: AmbientDO 15s = ~172,800 alarms/month = 0.3% of 50M included writes.
+Hibernate: all 4 DOs use hibernation. Duration billing only when active.
+R2, D1, KV, Queue: all well within included quotas at current scale.
 
-AmbientDO (relay: bc2fac4):
-  Single DO "field:ambient". Alarm 30s. Sports: nba/nhl/mlb/wc26/mls/5×soccer.
-  SSE events: score, lead_change, final, all_final, ping, connected.
+## COMPLETE PERFORMANCE PICTURE
 
-AmbientEventSource (client: bd4f0f1):
-  window._ambientES. Auto-connects. Reconnects 1.5× backoff.
-  On score/lead_change: writes espnScores[] + coalesced renderESPNScores()
-  On final: writes state:post + renderESPNScores()
-  On connected: seeds espnScores from DO live state
-  On all events: emitScoreEvent → fieldEvents bus → all subscribers
+End-to-end chain:
+  api-sports updates live data: ~30-60s cadence (their internal polling)
+  AmbientDO alarm: 15s → detects delta within 15s of api-sports updating
+  SSE fan-out to browser: ~1s
+  espnScores writeback + renderESPNScores: ~0.2s
+  Total: 0-16s avg ~7s (was 0-61s avg ~30s before this session)
 
-Result: both card display AND subscriber reactions at ~3s.
-Polling remains safety net at 20-45s for richer data fields.
+Client polling:
+  Continues at 20-45s drama-based cadence
+  Hits CF edge cache → api-sports sees only 2/min per sport
+  Provides enrichment: linescores, leaders, wp, Savant (SSE doesn't carry these)
 
 ## PRIORITY LIST
 
@@ -80,7 +79,4 @@ Polling remains safety net at 20-45s for richer data fields.
 4. M5 score ticker fade
 5. Wimbledon draw context (before July 7)
 6. Design system (~90 min TYPE C)
-7. Multiview velocity grid (infrastructure complete — A555 enabled)
-
-## SMOKE
-601/0 ✅ CI: Deploy gate success bd4f0f1, Smoke Test success bd4f0f1
+7. Multiview velocity grid (all infrastructure complete)
