@@ -37,11 +37,30 @@
 11. Journalism surfacing architecture (7 surfaces)
 12. Viewport artifact v4 scope (~120-150 min TYPE D)
 
-## Undocumented sessions recovered
+## STAT — iCIMS Cookie Automation (research complete, build next session)
 
-9 June 11 sessions found, all now documented on Drive:
-- 7 were already documented
-- 2 were missing (Haiku R32 fix + Opus calibration) — now saved
+**Context:** Cookie search can be automated via Playwright in CI — same pattern as FIELD's screenshot probe workflow.
+
+**Key finding:** FIELD's jubilant-bassoon CI has confirmed working Playwright + Chromium at `/opt/pw-browsers/chromium-1194/chrome-linux/chrome`. `page.cookies()` is available on the same `page` object used for screenshots.
+
+**The pattern (GitHub Actions workflow for STAT repo):**
+- Push trigger file `outbox/.trigger-cookie-extract` → workflow launches Playwright
+- Navigate to `careers-{tenant}.icims.com/jobs/intro/login`
+- Fill credentials from `secrets.ICIMS_EMAIL` + `secrets.ICIMS_PASSWORD`
+- `page.waitForNavigation()` after submit
+- `page.cookies()` → write to `outbox/icims-cookies.json` → commit `[skip ci]`
+- STAT Worker reads cookies and uses `page.setCookie(...cookies)` for apply form POST
+
+**Do first (2 min, devtools):**
+Open `careers-mdmercy.icims.com` after login → Application → Cookies tab.
+If session cookie domain is `.icims.com` → one login covers all 7 iCIMS tenants.
+If `careers-mdmercy.icims.com` scoped → 7 separate logins needed.
+
+**executablePath note:** May need `npx playwright install chromium` fallback if STAT runner path differs from FIELD's confirmed path.
+
+**Two iCIMS apply paths (from HTML analysis):**
+- Session replay: CI extracts cookies → store in DO storage → `page.setCookie(...cookies)` rehydrates for form POST
+- Partner API: iCIMS Technology Partner Program (free registration) — routes by CLIENT_ID, scales to all 7 tenants without credentials
 
 ## Priority queue
 1. **Viewport artifact v4** (~120-150 min TYPE D) — unifies v1+v2+v3.5
@@ -51,6 +70,11 @@
 5. M5 score ticker fade
 6. Wimbledon draw context (before July 7)
 
+## STAT next session open items
+- #7 feedback loop, #11 STAT_KV dead binding, SelectMinds cursor bugs
+- Workday audit, UI list
+- **iCIMS cookie automation** — verify domain scope first, then build CI workflow
+
 ## Key Drive docs (this session)
 - Items Catalog: 1lWX2KtRPMNN1e8YfxrCd3aBPNzxOc8k0JAHOzUxprd0
 - Design System v2: 1Bv2qvn_Gz0qLZatJW9jVsQfMAwE-DyflZNplQyHmCvk
@@ -59,5 +83,3 @@
 - Circadian Addendum: 137BFjJ9oErDyBmrxSvTM4RuSywln3pXaYFD77Id5Eek
 - Rovi Patent Clearance: 1ICONs1B_WzfpW562DHEEzhjc2KC8tlnqkbajYrOvctk
 - CI/Deploy Addendum: 1iLNhq5-ktyTI4dIL8E4eqoD_OB-NkcLVoG9p2NE0IJA
-- Haiku session doc: 1nRWRlhn1yQHS-KSakmLkfsvm2I18qrrLcKdz8Z0stAQ
-- Opus session doc: 1_r39omyFuG1g3MYudMAxgctvDXZ-onOg8z8xX8gyyJA
