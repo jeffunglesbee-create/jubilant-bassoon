@@ -72,12 +72,11 @@ jobs:
 
       - name: Strip comments for deploy
         run: |
-          echo "── Source: $(wc -c < index.html | xargs) bytes"
+          echo "── Source: $(wc -c < index.html | xargs) bytes (git — full comments)"
           node scripts/strip-comments.js index.html
           mv index.deploy.html index.html
-          echo "── Deploy: $(wc -c < index.html | xargs) bytes"
-          echo "── Comments preserved in COMMENTS.md ($(wc -l < COMMENTS.md | xargs) lines)"
-          echo "✅ Comments extracted — stripped index.html ready for deploy"
+          echo "── Deploy: $(wc -c < index.html | xargs) bytes (stripped for users)"
+          echo "✅ Comments live in git source — stripped artifact ready for Cloudflare"
 
       - name: Deploy to Cloudflare Workers
         uses: cloudflare/wrangler-action@v3
