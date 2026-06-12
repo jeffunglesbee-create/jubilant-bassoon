@@ -4042,6 +4042,33 @@ assert('A557 — AmbientES: final event writes state post to espnScores',
 assert('A558 — AmbientES: connected seed writes to espnScores if key exists',
   html.includes('sse_seed') && html.includes("_ck = g.home + '|' + g.away"));
 
+// ── A559-A569: WC calibration + D1 fix + bracket + schedule (June 12 2026) ──
+assert('A559 — fetchWCStandings uses V2_RELAY_BASE not RELAY_BASE (Incident 12 fix)',
+  html.includes('fetchWCStandings') && html.includes("V2_RELAY_BASE !== 'undefined'") &&
+  !/ RELAY_BASE\b[^_]/.test(html.slice(html.indexOf('function fetchWCStandings'), html.indexOf('function fetchWCStandings') + 500).replace('V2_RELAY_BASE', '')));
+assert('A560 — D1 standings merge: _d1NameFix normalizes Czech Republic → Czechia',
+  html.includes("_d1NameFix") && html.includes("'Czech Republic':'Czechia'") && html.includes('mergedStandings'));
+assert('A561 — D1 standings merge: WC_TEAMS fallback for groups without D1 data',
+  html.includes('mergedStandings[g]') && html.includes('WC_TEAMS[g]') && html.includes('played: 0'));
+assert('A562 — teamNick: _multiWordNicks includes WC national team overrides',
+  html.includes("'Czech Republic':'Czechia'") && html.includes("'Bosnia and Herzegovina':'Bosnia'") &&
+  html.includes("'Costa Rica':'Costa Rica'"));
+assert('A563 — WC section injection: _wcSectionInjected guard prevents duplicate FIFA sections',
+  html.includes('_wcSectionInjected') && html.includes("sport: 'FIFA World Cup 2026'"));
+assert('A564 — WC section injection: FIFA section inserted into allData.sports from V2 polling',
+  html.includes("fifaSection") && html.includes("allData.sports.splice") && html.includes("scheduleRenderAll"));
+assert('A565 — WC filter pill: SPORT_ICONS and SPORT_CHIP_LABELS include FIFA World Cup',
+  html.includes('"FIFA World Cup 2026":"⚽"') && html.includes('"FIFA World Cup 2026":'));
+assert('A566 — WC Tournament Brief card: _wcTournBrief marker + async fetch',
+  html.includes('_wcTournBrief: true') && html.includes('_fetchWCTournBriefForSchedule'));
+assert('A567 — WC Tournament Brief: fetches /wc/brief/tournament + /wc/bracket for USA path',
+  html.includes("/wc/brief/tournament") && html.includes("/wc/bracket") && html.includes("R32 vs"));
+assert('A568 — Champion spot: Final as centerpiece with trophy, projected champion subtitle',
+  html.includes('Projected:') && html.includes('wct-champion-label') && html.includes('FINAL') &&
+  !html.includes('<div class="wct-champion-label">Champion</div>'));
+assert('A569 — buildWCMediaCards: hasWCGames flag + tournament brief card unshift',
+  html.includes('hasWCGames') && html.includes('cards.unshift') && html.includes("'World Cup 2026"));
+
 
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);
