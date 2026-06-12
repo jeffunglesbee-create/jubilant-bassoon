@@ -5128,7 +5128,7 @@ const SPORT_ICONS = {
   "UEFA Champions League":"🏆","UEFA Europa League":"🟠","UEFA Conference League":"🟢",
   "EFL Championship Playoffs":"🏴󠁧󠁢󠁥󠁮󠁧󠁿","EFL League One Playoffs":"🏴󠁧󠁢󠁥󠁮󠁧󠁿","EFL League Two Playoffs":"🏴󠁧󠁢󠁥󠁮󠁧󠁿",
   "Premier League":"🏴󠁧󠁢󠁥󠁮󠁧󠁿","La Liga":"🇪🇸","Serie A":"🇮🇹","Bundesliga":"🇩🇪","Ligue 1":"🇫🇷",
-  "MLS Soccer":"🇺🇸","Tennis":"🎾",
+  "MLS Soccer":"🇺🇸","FIFA World Cup 2026":"⚽","Tennis":"🎾",
   "Golf":"⛳","Cricket":"🏏","IPL":"🏏","Rugby":"🏉","AFL":"🏉","Australian Football (AFL)":"🏉",
   "Scottish Premiership":"🏴󠁧󠁢󠁳󠁣󠁴󠁿","WNBA":"🏀","NWSL":"⚽","PWHL":"🏒","Women's Basketball":"🏀","default":"🏅"
 };
@@ -5139,6 +5139,7 @@ const SPORT_CHIP_LABELS = {
   "NHL Playoffs":              "NHL",
   "Baseball (MLB)":            "MLB",
   "MLS Soccer":                "MLS",
+  "FIFA World Cup 2026":       "WC",
   "Premier League":            "EPL",
   "La Liga":                   "La Liga",
   "Serie A":                   "Serie A",
@@ -14923,6 +14924,7 @@ function mapV2ToESPN(fg) {
 // Interval: 30s while any live game detected, 60s otherwise.
 let _v2PollTimeout = null;
 let _v2PollCycle   = 0;
+let _wcSectionInjected = false; // true once FIFA section added to allData.sports from V2
 const _v2LeaderCache = {}; // gameNumericId → {ts} — prevents re-fetching within TTL
 const V2_LEADER_TTL  = 55000; // 55s — slightly under poll interval
 
@@ -15117,6 +15119,51 @@ async function fetchV2AllScores() {
   })));
 
   hydrateEspnScoresFromFinals(); // restore known final scores before rendering (V2 returns null on finals)
+
+  // ── Inject FIFA World Cup section into allData.sports ─────────────────────
+  // V2 polling fetches wc26 games → espnScores. But allData.sports (from hardcoded
+  // buildTodaySchedule) has no FIFA section → no game cards render → no live overlays.
+  // Fix: build a FIFA section from the V2 response and inject it once.
+  if (!_wcSectionInjected && FIELD_V2_SOURCES.wc26) {
+    try {
+      const wcKeys = Object.keys(espnScores).filter(k => {
+        const e = espnScores[k];
+        return e && /wc26|world cup|fifa/i.test(e._sport || e.league || e.detail || '');
+      });
+      if (wcKeys.length > 0) {
+        _wcSectionInjected = true;
+        const wcGames = wcKeys.map(k => {
+          const e = espnScores[k];
+          const [home, away] = k.split('|');
+          return {
+            home, away, _id: e.espnEventId || k,
+            league: e.league || 'FIFA World Cup 2026',
+            _sport: 'wc26', _section: 'FIFA World Cup 2026',
+            start_time: e.start_time || e.startTime || '',
+            state: e.state || 'pre',
+            confirmed: true,
+            streams: resolveBundle('WC26_FOX'),
+            nationalBundle: e.nationalBundle || 'WC26_FOX',
+            matchupNote: e.matchupNote || '',
+          };
+        });
+        const fifaSection = {
+          sport: 'FIFA World Cup 2026',
+          section: 'FIFA World Cup 2026',
+          games: wcGames,
+        };
+        if (allData?.sports) {
+          // Insert before MLB (WC is more important today)
+          const mlbIdx = allData.sports.findIndex(s => (s.sport || '').includes('Baseball'));
+          if (mlbIdx >= 0) allData.sports.splice(mlbIdx, 0, fifaSection);
+          else allData.sports.push(fifaSection);
+          buildFilters(allData.sports);
+          scheduleRenderAll();
+        }
+      }
+    } catch(e_wc) { if(FIELD_DEBUG) console.warn('[V2-WC] section inject error:', e_wc.message); }
+  }
+
   renderESPNScores(); // re-render with fresh V2 data
   scheduleV2Poll(anyLive ? 30000 : 60000);
 }
@@ -19947,7 +19994,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-12c';
+  const SW_VERSION = '2026-06-12d';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
