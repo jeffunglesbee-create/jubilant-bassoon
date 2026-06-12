@@ -2168,6 +2168,15 @@ body.journalism-mode #field-journalism-section{animation:jrnFadeIn 220ms ease-ou
 .wc-proj-pct.mid{color:var(--gold)}
 .wc-proj-pct.lo{color:var(--smoke)}
 .wc-proj-loading{font-size:.65rem;color:var(--smoke);padding:2rem 0;text-align:center}
+/* Bracket traps */
+.wc-traps{margin:.75rem 0 1rem;padding:.5rem .65rem;background:rgba(251,191,36,.05);border-left:2px solid rgba(251,191,36,.4);border-radius:0 6px 6px 0}
+.wc-traps-head{font-size:.55rem;font-weight:700;letter-spacing:.08em;color:var(--gold2);text-transform:uppercase;margin-bottom:.4rem}
+.wc-trap-row{display:flex;align-items:center;gap:.4rem;padding:.25rem 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:.63rem;flex-wrap:wrap}
+.wc-trap-team{font-weight:700;color:var(--fg);min-width:5rem;flex-shrink:0}
+.wc-trap-grp{color:var(--smoke);font-size:.56rem;min-width:3rem}
+.wc-trap-stat{color:var(--platinum);white-space:nowrap}
+.wc-trap-stat strong{color:var(--fg)}
+.wc-trap-delta{color:var(--gold);font-weight:600;margin-left:auto;white-space:nowrap}
 /* Retain R32 matchup CSS */
 .wc-r32-grid{display:grid;grid-template-columns:1fr;gap:.6rem}
 @media(min-width:560px){.wc-r32-grid{grid-template-columns:1fr 1fr}}
@@ -19868,7 +19877,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-11h';
+  const SW_VERSION = '2026-06-11i';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -26831,15 +26840,17 @@ async function renderWCTournamentBracket() {
   const RELAY = typeof V2_RELAY_BASE !== 'undefined'
     ? V2_RELAY_BASE : 'https://field-relay-nba.jeffunglesbee.workers.dev';
   try {
-    // Fetch projections, movers, brief in parallel
-    const [projRes, moversRes, briefRes] = await Promise.allSettled([
+    // Fetch projections, movers, brief, bracket traps in parallel
+    const [projRes, moversRes, briefRes, trapsRes] = await Promise.allSettled([
       fetch(`${RELAY}/wc/projections`,       { cache: 'no-store' }),
       fetch(`${RELAY}/wc/movers`,            { cache: 'no-store' }),
       fetch(`${RELAY}/wc/brief/tournament`,  { cache: 'no-store' }),
+      fetch(`${RELAY}/wc/traps`,             { cache: 'no-store' }),
     ]);
     const projData   = projRes.status   === 'fulfilled' && projRes.value.ok   ? await projRes.value.json()   : null;
     const moversData = moversRes.status === 'fulfilled' && moversRes.value.ok ? await moversRes.value.json() : null;
     const briefData  = briefRes.status  === 'fulfilled' && briefRes.value.ok  ? await briefRes.value.json()  : null;
+    const trapsData  = trapsRes.status  === 'fulfilled' && trapsRes.value.ok  ? await trapsRes.value.json()  : null;
 
     let html = '';
 
@@ -26898,6 +26909,22 @@ async function renderWCTournamentBracket() {
         </tr>`;
       }
       html += `</tbody></table></div>`;
+      // Bracket traps — finish lower, go further
+      const traps = trapsData?.bracketTraps || projData?.bracketTraps || [];
+      if (traps.length) {
+        html += `<div class="wc-traps"><div class="wc-traps-head">⚠ Bracket Traps — finishing 2nd beats finishing 1st</div>`;
+        for (const t of traps.slice(0, 5)) {
+          const delta = Math.round(t.delta * 100);
+          html += `<div class="wc-trap-row">
+            <span class="wc-trap-team">${t.team}</span>
+            <span class="wc-trap-grp">Grp ${t.group}</span>
+            <span class="wc-trap-stat">1st→Win <strong>${Math.round(t.pChampIf1st*100)}%</strong></span>
+            <span class="wc-trap-stat">2nd→Win <strong>${Math.round(t.pChampIf2nd*100)}%</strong></span>
+            <span class="wc-trap-delta">+${delta}pp if 2nd</span>
+          </div>`;
+        }
+        html += `</div>`;
+      }
     } else if (projData?.pending) {
       html += `<div class="wc-proj-loading">Computing projections — check back in 30 seconds</div>`;
     } else {
