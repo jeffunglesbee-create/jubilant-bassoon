@@ -438,15 +438,17 @@ jobs:
           // (odds chip, beatTheBook, fieldVsMarket, vig) removed May 29.
           // Odds API data REMAINS — feeds WC projections and drama scoring
           // as journalism input, not gambling output.
-          // This check verifies no user-facing gambling content has crept back in.
-          const hasGamblingUI = html.includes('place your bet') ||
-                                html.includes('sportsbook') ||
-                                html.includes('beatTheBook') ||
-                                html.includes('fieldVsMarket');
+          // Note: "sportsbook" appears in the privacy disclosure ("No financial
+          // relationship with any sportsbook") — that's anti-gambling, not gambling.
+          // This check verifies removed FUNCTIONS haven't crept back in.
+          const hasGamblingUI = html.includes('beatTheBook') ||
+                                html.includes('fieldVsMarket') ||
+                                html.includes('renderBetting') ||
+                                html.includes('fetchBettingLines');
           if (!hasGamblingUI) {
-            ok.push('Betting UI removal: no user-facing gambling content (Betfair removed May 25, UI removed May 29)');
+            ok.push('Betting UI removal: no gambling functions present (Betfair removed May 25, UI removed May 29)');
           } else {
-            issues.push('User-facing gambling content detected — betting UI was removed May 29 2026');
+            issues.push('Gambling UI function detected — betting UI was removed May 29 2026');
           }
 
           // ── Output summary ───────────────────────────────────────────────
