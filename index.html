@@ -19867,7 +19867,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-11f';
+  const SW_VERSION = '2026-06-11g';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -23790,6 +23790,7 @@ document.addEventListener('visibilitychange', () => {
   let _es        = null;
   let _attempts  = 0;
   let _connected = false;
+  let _sseRenderTimer = null;  // coalesced renderESPNScores() after writeback
   // gameId → timestamp of last SSE score event (for velocity computation)
   const _sseScoreTs = new Map();  // exposed as window._sseScoreTs
 
@@ -23816,6 +23817,21 @@ document.addEventListener('visibilitychange', () => {
       const liveGames = data.liveGames || [];
       liveGames.forEach(g => {
         if (!g.gameId) return;
+        // Write to espnScores if key already exists from polling
+        try {
+          if (typeof espnScores !== 'undefined' && g.home && g.away) {
+            const _ck = g.home + '|' + g.away;
+            const _cp = espnScores[_ck];
+            if (_cp && _cp.state !== 'post') {
+              _cp.homeScore = g.homeScore ?? _cp.homeScore;
+              _cp.awayScore = g.awayScore ?? _cp.awayScore;
+              _cp.period    = g.period    ?? _cp.period;
+              _cp.clock     = g.clock     || _cp.clock;
+              if (g.state === 'live' || g.state === 'in') _cp.state = 'in';
+              if (typeof espnScoreTs !== 'undefined') espnScoreTs[_ck] = Date.now();
+            }
+          }
+        } catch (_e) {}
         try {
           if (typeof emitScoreEvent === 'function') {
             emitScoreEvent({
@@ -23830,6 +23846,10 @@ document.addEventListener('visibilitychange', () => {
           }
         } catch (_e) {}
       });
+      // Trigger one render pass after seeding
+      if (liveGames.length && typeof renderESPNScores === 'function') {
+        setTimeout(function() { try { renderESPNScores(); } catch (_e) {} }, 100);
+      }
       return;
     }
 
@@ -23843,6 +23863,50 @@ document.addEventListener('visibilitychange', () => {
         if (ts.length > 20) ts.shift();
         _sseScoreTs.set(gid, ts);
       }
+
+      // ── espnScores writeback ─────────────────────────────────────────────
+      // Write SSE score data directly into espnScores[] so card display
+      // updates at SSE latency (~3s) instead of waiting for the next poll
+      // (20-45s). Only update the fields SSE knows — preserve leaders, wp,
+      // linescores, espnEventId set by other sources (Savant, statistics).
+      //
+      // Key: "Home Team|Away Team" — same format as mapV2ToESPN/fetchV2AllScores.
+      // Guard: never write if key not yet in espnScores (polling must seed first).
+      // Guard: never overwrite a post/final state with a live entry.
+      // Coalesced render: batch rapid multi-game ticks into one renderESPNScores().
+      try {
+        if (typeof espnScores !== 'undefined' && data.home && data.away) {
+          const _sseKey = data.home + '|' + data.away;
+          const _ssePrev = espnScores[_sseKey];
+          if (_ssePrev && _ssePrev.state !== 'post') {
+            _ssePrev.homeScore   = data.homeScore   ?? _ssePrev.homeScore;
+            _ssePrev.awayScore   = data.awayScore   ?? _ssePrev.awayScore;
+            _ssePrev.period      = data.period      ?? _ssePrev.period;
+            _ssePrev.clock       = data.clock       || _ssePrev.clock;
+            _ssePrev.detail      = data.periodLabel || _ssePrev.detail;
+            _ssePrev.homeWinning = (_ssePrev.homeScore ?? 0) > (_ssePrev.awayScore ?? 0);
+            if (data.state === 'live' || data.state === 'in') _ssePrev.state = 'in';
+            if (typeof espnScoreTs !== 'undefined') espnScoreTs[_sseKey] = Date.now();
+            if (typeof _scoresBySource !== 'undefined') {
+              _scoresBySource[_sseKey] = _scoresBySource[_sseKey] || {};
+              _scoresBySource[_sseKey].apisports = Object.assign(
+                _scoresBySource[_sseKey].apisports || {},
+                { state: _ssePrev.state, period: _ssePrev.period, clock: _ssePrev.clock,
+                  detail: _ssePrev.detail, homeScore: _ssePrev.homeScore,
+                  awayScore: _ssePrev.awayScore, ts: Date.now(), source: 'sse' }
+              );
+            }
+            if (typeof renderESPNScores === 'function') {
+              if (_sseRenderTimer) clearTimeout(_sseRenderTimer);
+              _sseRenderTimer = setTimeout(function() {
+                _sseRenderTimer = null;
+                try { renderESPNScores(); } catch (_re) {}
+              }, 200);
+            }
+          }
+        }
+      } catch (_e) {}
+
       try {
         if (typeof emitScoreEvent === 'function') {
           emitScoreEvent({
@@ -23864,6 +23928,22 @@ document.addEventListener('visibilitychange', () => {
     }
 
     if (eventType === 'final') {
+      // Write final state to espnScores immediately
+      try {
+        if (typeof espnScores !== 'undefined' && data.home && data.away) {
+          const _fk = data.home + '|' + data.away;
+          const _fp = espnScores[_fk];
+          if (_fp) {
+            _fp.state     = 'post';
+            _fp.homeScore = data.homeScore ?? _fp.homeScore;
+            _fp.awayScore = data.awayScore ?? _fp.awayScore;
+            if (typeof espnScoreTs !== 'undefined') espnScoreTs[_fk] = Date.now();
+            if (typeof renderESPNScores === 'function') {
+              setTimeout(function() { try { renderESPNScores(); } catch (_e) {} }, 100);
+            }
+          }
+        }
+      } catch (_e) {}
       try {
         if (typeof emitScoreEvent === 'function') {
           emitScoreEvent({

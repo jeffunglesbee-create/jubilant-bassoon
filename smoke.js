@@ -4032,6 +4032,15 @@ assert('A553 — AmbientES: computeLiveInterval does NOT reduce polling for SSE 
   !html.includes('return 90000') && html.includes('SSE does NOT') && html.includes('isSSECovered here'));
 assert('A554 — AmbientES: ensureGameSocket called proactively on live card render',
   html.includes("card.dataset.wsOpened = '1'") && html.includes('ensureGameSocket(_gSport, _gId, null)'));
+// ── A555-A558: espnScores writeback (card display at SSE latency) ─────────────
+assert('A555 — AmbientES: espnScores writeback on score/lead_change event',
+  html.includes('espnScores writeback') && html.includes("_sseKey = data.home + '|' + data.away"));
+assert('A556 — AmbientES: _sseRenderTimer coalesces renderESPNScores calls',
+  html.includes('_sseRenderTimer') && html.includes('clearTimeout(_sseRenderTimer)'));
+assert('A557 — AmbientES: final event writes state post to espnScores',
+  html.includes("_fp.state     = 'post'"));
+assert('A558 — AmbientES: connected seed writes to espnScores if key exists',
+  html.includes('sse_seed') && html.includes("_ck = g.home + '|' + g.away"));
 
 
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
