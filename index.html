@@ -16747,18 +16747,13 @@ function computeLiveInterval(sectionSport) {
     const smoothed = g._id ? getSmoothedDrama(g._id) : null;
     return smoothed != null ? smoothed : preGameScore(g);
   })) : 0;
-  // SSE safety-net mode: AmbientDO is delivering score events in real time.
-  // All live games in this section are SSE-covered → poll at 90s (safety net).
-  // If any game has not received an SSE event in 90s, fall back to normal cadence.
-  const games = sec?.games || [];
-  const liveGames = games.filter(g => g._status === 'in' || g._status === 'live');
-  if (liveGames.length > 0 && typeof window !== 'undefined' && window._ambientES) {
-    const allCovered = liveGames.every(g => {
-      const id = g._id || g.id || '';
-      return id && window._ambientES.isSSECovered(id);
-    });
-    if (allCovered) return 90000; // SSE is live — polling is safety net only
-  }
+  // NOTE: SSE (AmbientDO) delivers subscriber events (Night Owl, lead change burst,
+  // CRUNCH) at ~3s latency via emitScoreEvent(source:'sse'). However SSE does NOT
+  // write to espnScores[] — card score display is updated only by polling.
+  // Therefore polling must run at full drama-based cadence; reducing it would stale
+  // the score shown on cards even while SSE events fire correctly.
+  // Future: if SSE handler writes to espnScores + triggers renderESPNScores, then
+  // polling could be reduced safely. Until then: do not gate on isSSECovered here.
   if(drama > 75) return 20000;  // 20s — critical game, tight score, final period
   if(drama > 50) return 25000;  // 25s — elevated drama
   if(drama > 30) return 30000;  // 30s — normal live game
@@ -19872,7 +19867,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-11e';
+  const SW_VERSION = '2026-06-11f';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)

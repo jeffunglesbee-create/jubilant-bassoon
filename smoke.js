@@ -4028,8 +4028,8 @@ assert('A551 — AmbientES: all_final dispatched to fieldEvents',
   html.includes("eventType === 'all_final'") && html.includes("field:all_final"));
 assert('A552 — AmbientES: velocity tracking via _sseScoreTs',
   html.includes('window._sseScoreTs') && html.includes('_getVelocity'));
-assert('A553 — AmbientES: computeLiveInterval uses isSSECovered for 90s safety-net cadence',
-  html.includes('isSSECovered') && html.includes('return 90000'));
+assert('A553 — AmbientES: computeLiveInterval does NOT reduce polling for SSE (espnScores writeback required first)',
+  !html.includes('return 90000') && html.includes('SSE does NOT') && html.includes('isSSECovered here'));
 assert('A554 — AmbientES: ensureGameSocket called proactively on live card render',
   html.includes("card.dataset.wsOpened = '1'") && html.includes('ensureGameSocket(_gSport, _gId, null)'));
 
