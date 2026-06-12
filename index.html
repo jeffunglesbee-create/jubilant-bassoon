@@ -19881,7 +19881,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-11m';
+  const SW_VERSION = '2026-06-12a';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -27263,11 +27263,23 @@ async function renderWCSection() {
     hdr.innerHTML = `<p class="wc-preview-intro">${brief}</p>`;
   }).catch(() => {});
   // Render groups table
-  if (!standings || Object.keys(standings).length === 0) {
-    renderWCGroupsEmpty();
-  } else {
-    renderWCGroups(standings, matchResults, oddsProbs, liveGames);
+  // Merge D1 standings with WC_TEAMS fallback for groups without D1 data yet.
+  // Normalise D1 team names (API-Sports sends "Czech Republic", display uses "Czechia").
+  const _d1NameFix = {'Czech Republic':'Czechia'};
+  const mergedStandings = {};
+  for (const g of 'ABCDEFGHIJKL'.split('')) {
+    if (standings && standings[g] && standings[g].length > 0) {
+      mergedStandings[g] = standings[g].map(r => ({
+        ...r, team: _d1NameFix[r.team] || r.team,
+      }));
+    } else {
+      mergedStandings[g] = (WC_TEAMS[g] || []).map(t => ({
+        group_id: g, team: t, played: 0, won: 0, drawn: 0, lost: 0,
+        gf: 0, ga: 0, gd: 0, points: 0,
+      }));
+    }
   }
+  renderWCGroups(mergedStandings, matchResults, oddsProbs, liveGames);
   // If bracket tab is active, render it with fresh data
   if (document.getElementById('wc-tab-bracket-btn')?.classList.contains('active')) {
     renderWCTournamentBracket().catch(() => {
