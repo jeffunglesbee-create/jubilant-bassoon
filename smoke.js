@@ -4015,6 +4015,24 @@ assert('A545 — BracketDO WS: close() called in toggleWCView on deactivate',
 assert('A546 — BracketDO WS: bracket-live CSS class defined with animation',
   html.includes('.wc-sub-tab.bracket-live::after') && html.includes('bracketPulse'));
 
+// ── A547-A553: AmbientDO SSE client ──────────────────────────────────────────
+assert('A547 — AmbientES: window._ambientES singleton defined',
+  html.includes("window._ambientES") && html.includes('connect: _connect'));
+assert('A548 — AmbientES: ENDPOINT points to /live/ambient',
+  html.includes("+ '/live/ambient'") || html.includes("'/live/ambient'"));
+assert('A549 — AmbientES: emitScoreEvent called on score event',
+  html.includes("eventType === 'score'") && html.includes("source:      'sse'"));
+assert('A550 — AmbientES: emitScoreEvent called on final event',
+  html.includes("eventType === 'final'") && html.includes("isFinal: true"));
+assert('A551 — AmbientES: all_final dispatched to fieldEvents',
+  html.includes("eventType === 'all_final'") && html.includes("field:all_final"));
+assert('A552 — AmbientES: velocity tracking via _sseScoreTs',
+  html.includes('window._sseScoreTs') && html.includes('_getVelocity'));
+assert('A553 — AmbientES: computeLiveInterval uses isSSECovered for 90s safety-net cadence',
+  html.includes('isSSECovered') && html.includes('return 90000'));
+assert('A554 — AmbientES: ensureGameSocket called proactively on live card render',
+  html.includes("card.dataset.wsOpened = '1'") && html.includes('ensureGameSocket(_gSport, _gId, null)'));
+
 
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);

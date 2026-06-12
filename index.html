@@ -16747,6 +16747,18 @@ function computeLiveInterval(sectionSport) {
     const smoothed = g._id ? getSmoothedDrama(g._id) : null;
     return smoothed != null ? smoothed : preGameScore(g);
   })) : 0;
+  // SSE safety-net mode: AmbientDO is delivering score events in real time.
+  // All live games in this section are SSE-covered → poll at 90s (safety net).
+  // If any game has not received an SSE event in 90s, fall back to normal cadence.
+  const games = sec?.games || [];
+  const liveGames = games.filter(g => g._status === 'in' || g._status === 'live');
+  if (liveGames.length > 0 && typeof window !== 'undefined' && window._ambientES) {
+    const allCovered = liveGames.every(g => {
+      const id = g._id || g.id || '';
+      return id && window._ambientES.isSSECovered(id);
+    });
+    if (allCovered) return 90000; // SSE is live — polling is safety net only
+  }
   if(drama > 75) return 20000;  // 20s — critical game, tight score, final period
   if(drama > 50) return 25000;  // 25s — elevated drama
   if(drama > 30) return 30000;  // 30s — normal live game
@@ -18579,6 +18591,18 @@ function renderESPNScores(){
       if(isLive)  card.classList.add("espn-live");
       if(isFinal) card.classList.add("espn-final");
 
+      // Proactively open GameDO WebSocket on live cards (not just at CRUNCH).
+      // This activates the ws-pulse dot and ensures per-game facts arrive via
+      // WS immediately, not waiting for the first CRUNCH signal.
+      if (isLive && typeof ensureGameSocket === 'function') {
+        const _gSport = (score.sport || sport || '').toLowerCase();
+        const _gId    = (score.gameId || game._id || '').replace(/^[a-z]+:/, '');
+        if (_gSport && _gId && !card.dataset.wsOpened) {
+          card.dataset.wsOpened = '1';
+          ensureGameSocket(_gSport, _gId, null);
+        }
+      }
+
       // Update .game-time (card-right score display) — baked at renderAll() time with
       // whatever findESPNScore() returned then (usually null). Now that scores are live,
       // rewrite it with the current data. buildCardTimeDisplay is pure/cheap.
@@ -19848,7 +19872,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-11d';
+  const SW_VERSION = '2026-06-11e';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -23750,6 +23774,186 @@ document.addEventListener('visibilitychange', () => {
 // No drama scores, no thresholds, no composite values — same payload shape
 // that GameDO uses on the network side.
 // ═══════════════════════════════════════════════════════════════════════════
+// ── AmbientEventSource — SSE client for cross-sport ambient events ────────────
+// Single EventSource connection to AmbientDO at /live/ambient.
+// Receives: score, lead_change, final, all_final events across all sports.
+// Feeds directly into emitScoreEvent() → fieldEvents bus → all subscribers.
+// Latency: <3s vs 15-30s polling. Polling loop continues as safety net.
+//
+// ADR-002: receives raw facts only. No composite values cross the wire.
+// emitScoreEvent() runs the existing drama pipeline client-side — unchanged.
+//
+// Usage: window._ambientES.connect() / window._ambientES.disconnect()
+// Auto-connects on page load. Auto-reconnects on unexpected close.
+(function() {
+  const RELAY_BASE = (typeof V2_RELAY_BASE !== 'undefined')
+    ? V2_RELAY_BASE : 'https://field-relay-nba.jeffunglesbee.workers.dev';
+  const ENDPOINT   = RELAY_BASE + '/live/ambient';
+  const MAX_RECONN = 5;
+  const RECONN_BASE_MS = 3000;
+
+  let _es        = null;
+  let _attempts  = 0;
+  let _connected = false;
+  // gameId → timestamp of last SSE score event (for velocity computation)
+  const _sseScoreTs = new Map();  // exposed as window._sseScoreTs
+
+  // Scoring velocity: events in last 8 minutes / 8 (events per minute)
+  // Used by multiview and any velocity-dependent feature
+  function _getVelocity(gameId) {
+    const ts = _sseScoreTs.get(gameId) || [];
+    const cutoff = Date.now() - 8 * 60 * 1000;
+    const recent = ts.filter(t => t > cutoff);
+    // Keep the map tidy
+    if (recent.length !== ts.length) _sseScoreTs.set(gameId, recent);
+    return parseFloat((recent.length / 8).toFixed(2)); // events/min
+  }
+
+  function _onMessage(evt, eventType) {
+    let data;
+    try { data = JSON.parse(evt.data); } catch (_e) { return; }
+    if (!data) return;
+
+    if (eventType === 'ping') return; // keepalive — no action
+
+    if (eventType === 'connected') {
+      // Immediately seed the score store with current live state from DO
+      const liveGames = data.liveGames || [];
+      liveGames.forEach(g => {
+        if (!g.gameId) return;
+        try {
+          if (typeof emitScoreEvent === 'function') {
+            emitScoreEvent({
+              gameId:    g.gameId, sport: g.sport,
+              home:      g.home,   away:  g.away,
+              homeScore: g.homeScore, awayScore: g.awayScore,
+              period:    g.period, clock: g.clock || '',
+              state:     g.state  || 'live',
+              isFinal:   false,
+              source:    'sse_seed',
+            });
+          }
+        } catch (_e) {}
+      });
+      return;
+    }
+
+    if (eventType === 'score' || eventType === 'lead_change') {
+      // Record timestamp for velocity tracking
+      const gid = data.gameId;
+      if (gid) {
+        const ts = _sseScoreTs.get(gid) || [];
+        ts.push(Date.now());
+        // Keep at most 20 timestamps (more than enough for 8-min window)
+        if (ts.length > 20) ts.shift();
+        _sseScoreTs.set(gid, ts);
+      }
+      try {
+        if (typeof emitScoreEvent === 'function') {
+          emitScoreEvent({
+            gameId:      data.gameId,
+            sport:       data.sport,
+            home:        data.home,
+            away:        data.away,
+            homeScore:   data.homeScore,
+            awayScore:   data.awayScore,
+            period:      data.period,
+            periodLabel: data.periodLabel || '',
+            clock:       data.clock || '',
+            state:       data.state || 'live',
+            isFinal:     false,
+            source:      'sse',
+          });
+        }
+      } catch (_e) {}
+    }
+
+    if (eventType === 'final') {
+      try {
+        if (typeof emitScoreEvent === 'function') {
+          emitScoreEvent({
+            gameId: data.gameId, sport: data.sport,
+            home:   data.home,   away:  data.away,
+            homeScore: data.homeScore, awayScore: data.awayScore,
+            period: 0, state: 'post', isFinal: true,
+            source: 'sse',
+          });
+        }
+      } catch (_e) {}
+    }
+
+    if (eventType === 'all_final') {
+      try {
+        if (typeof fieldEvents !== 'undefined') {
+          fieldEvents.dispatchEvent(new CustomEvent('field:all_final', {
+            detail: { count: data.count, date: data.date, source: 'sse' }
+          }));
+        }
+      } catch (_e) {}
+    }
+  }
+
+  function _connect() {
+    if (_es && (_es.readyState === EventSource.OPEN || _es.readyState === EventSource.CONNECTING)) return;
+    if (typeof EventSource === 'undefined') return; // SSR guard
+
+    try {
+      _es = new EventSource(ENDPOINT);
+
+      _es.addEventListener('connected',   e => _onMessage(e, 'connected'));
+      _es.addEventListener('score',       e => _onMessage(e, 'score'));
+      _es.addEventListener('lead_change', e => _onMessage(e, 'lead_change'));
+      _es.addEventListener('final',       e => _onMessage(e, 'final'));
+      _es.addEventListener('all_final',   e => _onMessage(e, 'all_final'));
+      _es.addEventListener('ping',        e => _onMessage(e, 'ping'));
+
+      _es.onopen = function() {
+        _attempts  = 0;
+        _connected = true;
+      };
+
+      _es.onerror = function() {
+        _connected = false;
+        // EventSource auto-reconnects natively — but has no backoff.
+        // Close it and reopen manually with backoff to avoid hammering.
+        if (_es) { _es.close(); _es = null; }
+        if (_attempts < MAX_RECONN) {
+          _attempts++;
+          const delay = RECONN_BASE_MS * Math.pow(1.5, _attempts - 1);
+          setTimeout(_connect, Math.min(delay, 60000));
+        }
+        // After MAX_RECONN, give up gracefully — polling is the safety net.
+      };
+    } catch (_e) {}
+  }
+
+  function _disconnect() {
+    if (_es) { _es.close(); _es = null; }
+    _connected = false;
+    _attempts  = 0;
+  }
+
+  function _isSSECovered(gameId) {
+    // True if this game has received an SSE event in the last 90s
+    const ts = _sseScoreTs.get(gameId) || [];
+    return ts.length > 0 && (Date.now() - ts[ts.length - 1]) < 90000;
+  }
+
+  // Auto-connect on page load (if not hidden)
+  if (typeof document !== 'undefined') {
+    if (document.visibilityState !== 'hidden') {
+      setTimeout(_connect, 500); // slight delay to let page finish init
+    }
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible' && !_connected) _connect();
+    });
+  }
+
+  window._ambientES   = { connect: _connect, disconnect: _disconnect,
+                           isSSECovered: _isSSECovered, getVelocity: _getVelocity };
+  window._sseScoreTs  = _sseScoreTs;
+})();
+
 const fieldEvents = new EventTarget();
 const _fieldEventCache = {}; // `${gameId}:${type}` → scoreline (for dedup)
 
