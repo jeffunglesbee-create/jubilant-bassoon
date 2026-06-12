@@ -14915,6 +14915,7 @@ function mapV2ToESPN(fg) {
     // WP and leaders start null; filled by Savant (MLB), statistics endpoint (NBA/NHL), or NHL relay
     espnEventId: null, wp: null, wp_prev: null,
     homeLeader: null, awayLeader: null,
+    start_time: fg.start || '',
   };
 }
 
@@ -31687,8 +31688,8 @@ function buildVibeChips(game, eData, sport) {
   if (isObjectiveRival(game) &&
       (game._gameImportance === 'clinch' || game.isPlayoff || game.seriesRecord))
     chips.push({ label: 'BLOOD GAME', cls: 'blood' });
-  // ALONE ON SCREEN
-  if (isAloneOnScreen(game))
+  // ALONE ON SCREEN — pre-game and live only (not post-game/final)
+  if (isAloneOnScreen(game) && eData?.state !== 'post')
     chips.push({ label: 'ALONE ON SCREEN', cls: 'alone' });
   // MISSION
   if (game._gameImportance === 'series_deciding')
