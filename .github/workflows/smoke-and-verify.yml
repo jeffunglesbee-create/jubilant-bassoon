@@ -433,17 +433,20 @@ jobs:
           if (nba_tnt > 0) issues.push(`NBA_TNT appears in ${nba_tnt} resolveBundle call(s) — deprecated, use NBA_ESPN/ABC/NBC/PRIME`);
           else ok.push('NBA_TNT deprecated bundle: 0 active resolveBundle references');
 
-          // ── 8. Betting engine removed (May 29 2026) — verify stays removed ─
-          // Betting features were intentionally removed to reduce legal exposure.
-          // Odds API data remains for WC projection model (backend, not user-facing).
-          // This check verifies no user-facing betting content has crept back in.
-          const hasBettingUI = html.includes('verify before wagering') ||
-                               html.includes('place your bet') ||
-                               html.includes('sportsbook');
-          if (!hasBettingUI) {
-            ok.push('Betting removal: no user-facing betting content (removed May 29 2026)');
+          // ── 8. Betting UI removed (May 29 2026) — verify stays removed ────
+          // Betfair removed May 25 (geo-blocked). Betting Intelligence Section
+          // (odds chip, beatTheBook, fieldVsMarket, vig) removed May 29.
+          // Odds API data REMAINS — feeds WC projections and drama scoring
+          // as journalism input, not gambling output.
+          // This check verifies no user-facing gambling content has crept back in.
+          const hasGamblingUI = html.includes('place your bet') ||
+                                html.includes('sportsbook') ||
+                                html.includes('beatTheBook') ||
+                                html.includes('fieldVsMarket');
+          if (!hasGamblingUI) {
+            ok.push('Betting UI removal: no user-facing gambling content (Betfair removed May 25, UI removed May 29)');
           } else {
-            issues.push('User-facing betting content detected — betting engine was removed May 29 2026');
+            issues.push('User-facing gambling content detected — betting UI was removed May 29 2026');
           }
 
           // ── Output summary ───────────────────────────────────────────────
