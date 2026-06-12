@@ -18712,7 +18712,12 @@ function renderESPNScores(){
       // Update card class for accent colour
       card.classList.remove("espn-live","espn-final");
       if(isLive)  card.classList.add("espn-live");
-      if(isFinal) card.classList.add("espn-final");
+      if(isFinal) {
+        card.classList.add("espn-final");
+        // Remove pre-game WC probability bars on final cards
+        const wcBarsWrap = card.querySelector('.wc-bars-wrap');
+        if (wcBarsWrap) wcBarsWrap.remove();
+      }
 
       // Proactively open GameDO WebSocket on live cards (not just at CRUNCH).
       // This activates the ws-pulse dot and ensures per-game facts arrive via
@@ -31413,6 +31418,12 @@ const wc26Raw=[
 // Called from card template when g._sport includes 'FIFA World Cup'.
 function buildWCBars(g) {
   if (!g || !g.home || !g.away) return '';
+  // Pre-game only — suppress for final/completed games.
+  // Check both game object state AND current espnScores state (game object
+  // may be stale from initial WC section injection).
+  const scoreKey = `${g.home}|${g.away}`;
+  const currentState = (typeof espnScores !== 'undefined' && espnScores[scoreKey]?.state) || g.state;
+  if (currentState === 'post' || g.state === 'post' || g.state === 'final') return '';
   const sport = (g._sport || g.league || '').toLowerCase();
   if (!sport.includes('world cup') && !sport.includes('wc26')) return '';
 
