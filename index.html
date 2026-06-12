@@ -14997,6 +14997,16 @@ async function fetchV2AllScores() {
   const etDate   = new Date(_nowUTC - 4 * 3600 * 1000).toISOString().slice(0, 10);
   // Build list of dates to query — dedup if ET and UTC are the same
   const datesToQuery = utcDate === etDate ? [utcDate] : [etDate, utcDate];
+  // Evening expansion: after 4 PM ET, also query tomorrow's UTC date to catch
+  // US evening games that cross the UTC midnight boundary.
+  // e.g. USA vs Paraguay at 9 PM ET = 1 AM UTC next day — api-sports returns
+  // it on the next UTC date, not today's. Without this, the game is invisible
+  // until 8 PM ET when the UTC date flips and the dual-date logic catches it.
+  const etHour = new Date(_nowUTC - 4 * 3600 * 1000).getUTCHours();
+  if (etHour >= 16) {
+    const tomorrowUTC = new Date(_nowUTC.getTime() + 24 * 3600 * 1000).toISOString().slice(0, 10);
+    if (!datesToQuery.includes(tomorrowUTC)) datesToQuery.push(tomorrowUTC);
+  }
   const date = utcDate; // used by stale-final guard and anyLive check
   const enabled = Object.entries(FIELD_V2_SOURCES).filter(([,v]) => v).map(([k]) => k);
   if (!enabled.length) return scheduleV2Poll(60000);
@@ -15125,19 +15135,21 @@ async function fetchV2AllScores() {
   // V2 polling fetches wc26 games → espnScores. But allData.sports (from hardcoded
   // buildTodaySchedule) has no FIFA section → no game cards render → no live overlays.
   // Fix: build a FIFA section from the V2 response and inject it once.
-  if (!_wcSectionInjected && FIELD_V2_SOURCES.wc26) {
+  if (FIELD_V2_SOURCES.wc26) {
     try {
       const wcKeys = Object.keys(espnScores).filter(k => {
         const e = espnScores[k];
-        return e && /wc26|world cup|fifa/i.test(e._sport || e.league || e.detail || '');
+        if (!e || !/wc26|world cup|fifa/i.test(e._sport || e.league || e.detail || '')) return false;
+        // Filter: only today's games in ET (removes yesterday's late starts)
+        if (e.start_time && !isToday(e.start_time)) return false;
+        return true;
       });
       if (wcKeys.length > 0) {
-        _wcSectionInjected = true;
         const wcGames = wcKeys.map(k => {
           const e = espnScores[k];
           const [home, away] = k.split('|');
           return {
-            home, away, _id: e.espnEventId || k,
+            home, away, _id: e._gameId || e.espnEventId || k,
             league: e.league || 'FIFA World Cup 2026',
             _sport: 'wc26', _section: 'FIFA World Cup 2026',
             start_time: e.start_time || e.startTime || '',
@@ -15148,19 +15160,28 @@ async function fetchV2AllScores() {
             matchupNote: e.matchupNote || '',
           };
         });
-        const fifaSection = {
-          sport: 'FIFA World Cup 2026',
-          section: 'FIFA World Cup 2026',
-          games: wcGames,
-        };
-        if (allData?.sports) {
-          // Insert before MLB (WC is more important today)
-          const mlbIdx = allData.sports.findIndex(s => (s.sport || '').includes('Baseball'));
-          if (mlbIdx >= 0) allData.sports.splice(mlbIdx, 0, fifaSection);
-          else allData.sports.push(fifaSection);
-          buildFilters(allData.sports);
-          scheduleRenderAll();
+        if (!_wcSectionInjected) {
+          // First injection: add FIFA section to allData.sports
+          const fifaSection = {
+            sport: 'FIFA World Cup 2026',
+            section: 'FIFA World Cup 2026',
+            games: wcGames,
+          };
+          if (allData?.sports) {
+            const mlbIdx = allData.sports.findIndex(s => (s.sport || '').includes('Baseball'));
+            if (mlbIdx >= 0) allData.sports.splice(mlbIdx, 0, fifaSection);
+            else allData.sports.push(fifaSection);
+            buildFilters(allData.sports);
+          }
+          _wcSectionInjected = true;
+        } else {
+          // Subsequent polls: update game list + state (new games appear, state changes)
+          const fifaSection = allData?.sports?.find(s => (s.section || '').includes('FIFA'));
+          if (fifaSection) {
+            fifaSection.games = wcGames;
+          }
         }
+        scheduleRenderAll();
       }
     } catch(e_wc) { if(FIELD_DEBUG) console.warn('[V2-WC] section inject error:', e_wc.message); }
   }
@@ -20000,7 +20021,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-12f';
+  const SW_VERSION = '2026-06-12g';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
