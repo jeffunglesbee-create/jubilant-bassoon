@@ -433,11 +433,17 @@ jobs:
           if (nba_tnt > 0) issues.push(`NBA_TNT appears in ${nba_tnt} resolveBundle call(s) — deprecated, use NBA_ESPN/ABC/NBC/PRIME`);
           else ok.push('NBA_TNT deprecated bundle: 0 active resolveBundle references');
 
-          // ── 8. AI betting disclaimer present ─────────────────────────────
-          if (html.includes('verify before wagering') || html.includes('AI Estimated')) {
-            ok.push('Betting disclaimer: AI estimated label + verify warning present');
+          // ── 8. Betting engine removed (May 29 2026) — verify stays removed ─
+          // Betting features were intentionally removed to reduce legal exposure.
+          // Odds API data remains for WC projection model (backend, not user-facing).
+          // This check verifies no user-facing betting content has crept back in.
+          const hasBettingUI = html.includes('verify before wagering') ||
+                               html.includes('place your bet') ||
+                               html.includes('sportsbook');
+          if (!hasBettingUI) {
+            ok.push('Betting removal: no user-facing betting content (removed May 29 2026)');
           } else {
-            issues.push('Betting disclaimer MISSING');
+            issues.push('User-facing betting content detected — betting engine was removed May 29 2026');
           }
 
           // ── Output summary ───────────────────────────────────────────────
