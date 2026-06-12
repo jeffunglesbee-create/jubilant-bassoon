@@ -68,7 +68,16 @@ jobs:
         run: |
           echo "Running smoke.js structural assertions..."
           node smoke.js index.html
-          echo "✅ Smoke passed — deploying"
+          echo "✅ Smoke passed — stripping comments for deploy"
+
+      - name: Strip comments for deploy
+        run: |
+          echo "── Source: $(wc -c < index.html | xargs) bytes"
+          node scripts/strip-comments.js index.html
+          mv index.deploy.html index.html
+          echo "── Deploy: $(wc -c < index.html | xargs) bytes"
+          echo "── Comments preserved in COMMENTS.md ($(wc -l < COMMENTS.md | xargs) lines)"
+          echo "✅ Comments extracted — stripped index.html ready for deploy"
 
       - name: Deploy to Cloudflare Workers
         uses: cloudflare/wrangler-action@v3
