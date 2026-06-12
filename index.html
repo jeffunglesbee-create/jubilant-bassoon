@@ -11451,10 +11451,12 @@ function buildWCMediaCards() {
     WC26_FOX: 'fox', WC26_FS1: 'FS1', WC26_FREE: 'fox',
   };
 
+  let hasWCGames = false;
   for (const sec of allData.sports) {
     if (!(sec.sport || '').includes('FIFA')) continue;
     for (const game of (sec.games || [])) {
       if (!game._id || !game.home) continue;
+      hasWCGames = true;
       const network = WC_NETWORK[game.nationalBundle] || 'FOX/FS1';
       const link    = WC_LINK[game.nationalBundle]    || 'https://www.foxsports.com/soccer/fifa-world-cup';
       const chip    = WC_CHIP[game.nationalBundle]    || 'fox';
@@ -11489,7 +11491,71 @@ function buildWCMediaCards() {
       });
     }
   }
+
+  // WC Tournament Brief card — surfaces bracket context on main schedule
+  if (hasWCGames && cards.length > 0) {
+    cards.unshift({
+      show: 'World Cup 2026 · Tournament Brief',
+      network: 'FOX · Telemundo',
+      chip: 'fox',
+      time: '',
+      desc: 'Loading tournament context…',
+      link: 'https://www.foxsports.com/soccer/fifa-world-cup',
+      journalNote: null,
+      _wcTournBrief: true,  // marker for async brief injection
+    });
+    // Async fetch: inject tournament brief text after render
+    _fetchWCTournBriefForSchedule();
+  }
+
   return cards;
+}
+
+// Async: fetch /wc/brief/tournament and inject into the tournament brief card on schedule
+let _wcTournBriefFetched = false;
+function _fetchWCTournBriefForSchedule() {
+  if (_wcTournBriefFetched) return;
+  _wcTournBriefFetched = true;
+  const relay = typeof V2_RELAY_BASE !== 'undefined' ? V2_RELAY_BASE
+    : 'https://field-relay-nba.jeffunglesbee.workers.dev';
+  Promise.all([
+    fetch(relay + '/wc/brief/tournament', { cache: 'no-store' }).then(r => r.ok ? r.json() : null).catch(() => null),
+    fetch(relay + '/wc/bracket', { cache: 'no-store' }).then(r => r.ok ? r.json() : null).catch(() => null),
+  ]).then(([briefData, bracketData]) => {
+    // Find the tournament brief card in the DOM
+    const cards = document.querySelectorAll('.smt-card, .desk-card');
+    for (const card of cards) {
+      if (!card.textContent.includes('Tournament Brief')) continue;
+      const descEl = card.querySelector('.smt-card-desc, .desk-card-desc, .smt-card-time');
+      if (!descEl) continue;
+      // Build bracket context string
+      let text = '';
+      if (briefData?.brief) {
+        text = briefData.brief;
+      }
+      if (bracketData?.bracketSlots) {
+        const s = bracketData.bracketSlots;
+        // Find USA in bracket
+        const usaSlot = Object.entries(s).find(([k,v]) => v.team === 'United States' && k.includes('_A'));
+        if (usaSlot) {
+          const matchNum = usaSlot[0].replace('R32_','').replace('_A','');
+          const opponent = s['R32_' + matchNum + '_B'];
+          const r16Slot = Object.entries(s).find(([k,v]) => v.team === 'United States' && k.startsWith('R16'));
+          if (opponent && r16Slot) {
+            const r16Match = r16Slot[0].replace('_A','').replace('_B','');
+            const r16Opp = s[r16Match + '_A']?.team === 'United States' ? s[r16Match + '_B'] : s[r16Match + '_A'];
+            text += (text ? ' ' : '') + 'USA bracket path: R32 vs ' + (opponent?.team || '?') +
+              ', R16 vs ' + (r16Opp?.team || '?') + '.';
+          }
+        }
+      }
+      if (text) {
+        descEl.textContent = text.slice(0, 300);
+        descEl.style.color = 'var(--smoke, #aaa)';
+      }
+      break;
+    }
+  });
 }
 
 // ── Item 3: buildPlayoffSpecials — auto-generate Finals/CF cards from allData ─
@@ -19881,7 +19947,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-12b';
+  const SW_VERSION = '2026-06-12c';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
