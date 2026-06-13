@@ -28,6 +28,7 @@ const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
   });
   page.on('pageerror', err => {
     consoleLines.push(`[PAGEERROR] ${err.message}`);
+    if (err.stack) consoleLines.push(`[STACK] ${err.stack.split('\n').slice(0, 5).join(' || ')}`);
   });
 
   // Set FIELD_DEBUG before the page scripts run
