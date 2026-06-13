@@ -20023,7 +20023,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-13a';
+  const SW_VERSION = '2026-06-13b';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -27512,7 +27512,22 @@ async function fetchWCOddsProbabilities() {
     const r = await fetch(`${base}/wc/odds-probs`, { cache: 'no-store' });
     if (!r.ok) return [];
     const data = await r.json();
-    return data.ok && Array.isArray(data.probs) ? data.probs : [];
+    const probs = data.ok && Array.isArray(data.probs) ? data.probs : [];
+    // Build _wcOddsCache keyed as buildWCBars expects:
+    // home_team + away_team → lowercase, spaces→underscores
+    const norm = s => (s||'').toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
+    window._wcOddsCache = {};
+    for (const p of probs) {
+      const key = `${norm(p.home_team)}_${norm(p.away_team)}`;
+      window._wcOddsCache[key] = {
+        homeWin: p.pHome,
+        draw:    p.pDraw,
+        awayWin: p.pAway,
+      };
+    }
+    return probs;
   } catch (e) { return []; }
 }
 
@@ -31463,7 +31478,10 @@ function buildWCBars(g) {
   const groupLabel = groupMatch ? `GRP ${groupMatch[1].toUpperCase()}` : '';
 
   // Get odds/probability data for this fixture
-  const oddsKey = `${(g.home||'').toLowerCase().replace(/\s+/g,'_')}_${(g.away||'').toLowerCase().replace(/\s+/g,'_')}`;
+  const _normOdds = s => (s||'').toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
+  const oddsKey = `${_normOdds(g.home)}_${_normOdds(g.away)}`;
   const oddsData = (typeof _wcOddsCache !== 'undefined' && _wcOddsCache) ? _wcOddsCache[oddsKey] : null;
 
   // Win probabilities — from odds if available, else symmetric fallback
