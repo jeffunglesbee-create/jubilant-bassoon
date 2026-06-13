@@ -14932,6 +14932,7 @@ function mapV2ToESPN(fg) {
 let _v2PollTimeout = null;
 let _v2PollCycle   = 0;
 let _wcSectionInjected = false; // true once FIFA section added to allData.sports from V2
+const _wcBriefsFetched = new Set(); // dedup: game IDs we've already fetched post-match briefs for
 const _v2LeaderCache = {}; // gameNumericId → {ts} — prevents re-fetching within TTL
 const V2_LEADER_TTL  = 55000; // 55s — slightly under poll interval
 
@@ -15188,6 +15189,46 @@ async function fetchV2AllScores() {
           }
         }
         scheduleRenderAll();
+
+        // ── WC game brief consumption ─────────────────────────────────────
+        // When a WC game transitions to 'final', async-fetch the post-match
+        // brief from relay KV (brief:game:{eventId}, 1hr TTL). Inject as
+        // matchupNote so it flows into game card rendering + CDW notes.
+        // Uses existing /journalism/game/{id} relay route (same KV namespace).
+        // Dedup via _wcBriefsFetched Set — each game brief fetched once.
+        const _wcRelayBase = typeof V2_RELAY_BASE !== 'undefined' ? V2_RELAY_BASE
+          : 'https://field-relay-nba.jeffunglesbee.workers.dev';
+        for (const wg of wcGames) {
+          if (wg.state !== 'final' || !wg._id || _wcBriefsFetched.has(wg._id)) continue;
+          _wcBriefsFetched.add(wg._id);
+          // Fire-and-forget: don't block the poll cycle
+          (async (gameId, gameKey) => {
+            try {
+              const r = await fetch(
+                `${_wcRelayBase}/journalism/game/${encodeURIComponent(gameId)}`,
+                { signal: AbortSignal.timeout(1500) }
+              );
+              if (!r.ok) return;
+              const data = await r.json();
+              const brief = data?.brief;
+              if (!brief) return;
+              // Inject into espnScores so subsequent polls pick it up
+              const entry = espnScores[gameKey];
+              if (entry) entry.matchupNote = brief;
+              // Update the FIFA section game object directly
+              const fifaSec = allData?.sports?.find(s => (s.section || '').includes('FIFA'));
+              if (fifaSec) {
+                const g = (fifaSec.games || []).find(gg => gg._id === gameId);
+                if (g) g.matchupNote = brief;
+              }
+              scheduleRenderAll();
+              if (FIELD_DEBUG) console.debug('[V2-WC] brief consumed for', gameId, brief.slice(0, 60) + '…');
+            } catch(_) { /* timeout or network — silent */ }
+          })(wg._id, wcKeys.find(k => {
+            const e = espnScores[k];
+            return (e._gameId || e.espnEventId || k) === wg._id;
+          }) || '');
+        }
       }
     } catch(e_wc) { if(FIELD_DEBUG) console.warn('[V2-WC] section inject error:', e_wc.message); }
   }
@@ -20043,7 +20084,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-13g';
+  const SW_VERSION = '2026-06-13h';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)

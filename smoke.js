@@ -4068,6 +4068,8 @@ assert('A568 — Champion spot: Final as centerpiece with trophy, projected cham
   !html.includes('<div class="wct-champion-label">Champion</div>'));
 assert('A569 — buildWCMediaCards: hasWCGames flag + tournament brief card unshift',
   html.includes('hasWCGames') && html.includes('cards.unshift') && html.includes("'World Cup 2026"));
+assert('A570 — WC game brief consumption: dedup Set + final-state fetch + matchupNote inject',
+  html.includes('_wcBriefsFetched') && html.includes("wg.state !== 'final'") && html.includes('/journalism/game/'));
 
 
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
