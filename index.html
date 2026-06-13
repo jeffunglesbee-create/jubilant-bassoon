@@ -11536,15 +11536,17 @@ function _fetchWCTournBriefForSchedule() {
       }
       if (bracketData?.bracketSlots) {
         const s = bracketData.bracketSlots;
+        // api-sports uses "USA", WC_TEAMS uses "United States" — check both
+        const isUSA = (t) => t === 'United States' || t === 'USA';
         // Find USA in bracket
-        const usaSlot = Object.entries(s).find(([k,v]) => v.team === 'United States' && k.includes('_A'));
+        const usaSlot = Object.entries(s).find(([k,v]) => isUSA(v.team) && k.includes('_A'));
         if (usaSlot) {
           const matchNum = usaSlot[0].replace('R32_','').replace('_A','');
           const opponent = s['R32_' + matchNum + '_B'];
-          const r16Slot = Object.entries(s).find(([k,v]) => v.team === 'United States' && k.startsWith('R16'));
+          const r16Slot = Object.entries(s).find(([k,v]) => isUSA(v.team) && k.startsWith('R16'));
           if (opponent && r16Slot) {
             const r16Match = r16Slot[0].replace('_A','').replace('_B','');
-            const r16Opp = s[r16Match + '_A']?.team === 'United States' ? s[r16Match + '_B'] : s[r16Match + '_A'];
+            const r16Opp = isUSA(s[r16Match + '_A']?.team) ? s[r16Match + '_B'] : s[r16Match + '_A'];
             text += (text ? ' ' : '') + 'USA bracket path: R32 vs ' + (opponent?.team || '?') +
               ', R16 vs ' + (r16Opp?.team || '?') + '.';
           }
@@ -20021,7 +20023,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-12g';
+  const SW_VERSION = '2026-06-12h';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -27405,7 +27407,15 @@ async function renderWCSection() {
   // Render groups table
   // Merge D1 standings with WC_TEAMS fallback for groups without D1 data yet.
   // Normalise D1 team names (API-Sports sends "Czech Republic", display uses "Czechia").
-  const _d1NameFix = {'Czech Republic':'Czechia','Bosnia & Herzegovina':'Bosnia and Herzegovina'};
+  const _d1NameFix = {
+    'Czech Republic':'Czechia',
+    'Bosnia & Herzegovina':'Bosnia and Herzegovina',
+    'USA':'United States',
+    'Turkey':'Türkiye',
+    'Curacao':'Curaçao',
+    "Cote D'Ivoire":'Ivory Coast',
+    'Korea Republic':'South Korea',
+  };
   const mergedStandings = {};
   for (const g of 'ABCDEFGHIJKL'.split('')) {
     const d1Teams = (standings && standings[g]) ? standings[g].map(r => ({...r, team: _d1NameFix[r.team] || r.team})) : [];
