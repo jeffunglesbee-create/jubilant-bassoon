@@ -1,66 +1,62 @@
-# FIELD Handoff — June 13 2026 (End of June 12 Evening Session)
+# FIELD Handoff — June 13 2026 (End of Session)
 
-**jubilant-bassoon HEAD:** 888b0c0 · **relay HEAD:** 273bfbd · **Smoke:** 612/0 · **SW_VERSION:** 2026-06-12i
+**jubilant-bassoon HEAD:** a3cc0c5 · **relay HEAD:** 68b03f0 · **Smoke:** 612/0 · **SW_VERSION:** 2026-06-13g
 
 ## Session summary
-
-Massive bugfix + research session. 15 commits (9 client, 6 relay). WC game cards, bracket, movers, and automated brief pipeline all fixed or built.
+Continuation of June 12 evening (same conversation, compacted). Core achievement: built a permanent WC live-score diagnostic probe, used it to PROVE live scores work and root-cause the kickoff cache lag. Shipped WC card fixes, automated per-game brief pipeline, and rate-limit resilience.
 
 ## Client commits (jubilant-bassoon)
-- `8eb8ba5`: Compliance check 8 — checks removed functions not strings
-- `76588c6`: WC group standings merge — all 4 teams per group
-- `0385295`: WC cards — Invalid Date fix + ALONE ON SCREEN guard
-- `04e5398`: WC cards — buildWCBars + wc-bars-wrap removal on final
-- `76587e5`: UTC midnight boundary + isToday + live state refresh
-- `e603efa`: Team name normalization (USA + 4 preemptive) + isUSA bracket fix
+- `e603efa`: Team name normalization (USA→United States +4) + isUSA() bracket-path fix (was silently broken since launch)
 - `5d36cd2`: Post-game briefs for USA 4-1, Canada 1-1, South Korea 2-1
+- `da12569`: US Open fix — Shinnecock Hills, J.J. Spaun defending (was Oakmont/Wyndham Clark)
+- `6c1a20f`: WC odds bars — _wcOddsCache was never populated (fetchWCOddsProbabilities discarded data). Now Qatar 27%/Switzerland 95% etc.
+- `eac54b1`: WC "Kickoff" not "Tip-off" (countdown selectors missing world cup/fifa)
+- `3ef6268`→`9aa8f37`: WC live-score diagnostic probe + structured logging + try/catch isolation
+- SW_VERSION: 2026-06-13a → 2026-06-13g
 
 ## Relay commits (field-relay-nba)
-- `7062b65`: R32 third-place dedup (Ivory Coast 6x → 1x)
 - `3346134`: Movers prev rotation fix (was never initialized)
-- `496a07e`: BracketDO writes movers to KV for /wc/movers endpoint
-- `11f2b3c`: /wc/bracket/refresh in probe allow-list + accepts GET
+- `496a07e`: BracketDO writes movers to KV (bridged two movers systems)
+- `11f2b3c`: /wc/bracket/refresh in probe allow-list + GET
 - `7c04648`: Automated per-game WC briefs via JOURNALISM_QUEUE
-- `273bfbd`: Brief prompt enriched with api-sports match events (goals, cards, subs)
+- `273bfbd`: Brief prompt enriched with api-sports events (goals/cards/subs)
+- `8451899`: /apisports prefix in probe allow-list (upstream inspection)
+- `76d8ae3`: Kickoff lag — 15s football cache + rate-limit 503 guard
+- `68b03f0`: HTTP 429 → 503 no-store (was cacheable 502)
 
-## New permanent rules
-- **Rule F**: Push notifications + haptics must be FACT-ONLY (scores, finals, kickoffs). Never interest judgments (CRUNCH TIME alerts, drama thresholds). Joins Rules A-E (RUWT) and C1-C5 (Rovi).
+## Three-issue investigation (DEFINITIVE)
+1. **Live scores: PROVEN WORKING** — probe captured "70' · Switzerland 1 – Qatar 0", isLive=true, espnScores state=in. Score renders in card STAGE LINE (soccer design); hasScoreWrap:false is BY DESIGN.
+2. **Kickoff cache lag: ROOT-CAUSED + FIXED** — relay served stale 'pre' ~30s after api-sports flipped to 1H (30s CF cache) + rate-limit empties. Fixed by 76d8ae3 + 68b03f0. Rate limit partly self-inflicted from heavy probing.
+3. **'sport is not defined': NO LONGER FIRING** — intermittent (2 of 4 runs), deployed ~15215, double-forEach. Static analysis found no bare sport ref. try/catch (9aa8f37) catches + isolates without crashing loop. Post-fix probe: 0 pageerrors.
 
-## Known issue: WC live scores
-Live score rendering on WC game cards needs verification with tomorrow's live games. Potential issue: WC section re-injection on every V2 poll may wipe DOM score updates, and game _id mismatch between wc26Raw and V2-sourced entries. First test opportunity: Qatar-Switzerland 12 PM ET June 13.
+**No error at 1578** — confirmed via search + transcript grep. Client 1578=brace, relay 1578=odds-probs catch.
 
-## Movers pipeline status
-- Pipeline is OPERATIONAL (no longer null)
-- First meaningful movers will compute after tomorrow's first result
-- BracketDO now writes delta to KV + rotates prev
-- /wc/bracket/refresh accessible via MCP probe
+## Permanent diagnostic infra
+`wc_score_probe.js` + `wc-score-probe.yml`. Loads FIELD with FIELD_DEBUG=1, captures console + stack traces + card DOM + espnScores, commits to outbox. Claude reads committed report — no manual console work. Lessons: networkidle never resolves on polling page (use domcontentloaded); espnScores module-scoped (expose on window in debug); /apisports prefix lets Claude inspect raw upstream.
 
-## Automated WC brief pipeline
-- writeWCResult → fetches api-sports events → enriched prompt → JOURNALISM_QUEUE
-- Queue consumer runs Claude Haiku + cliché quality chain → KV
-- Missing client-side piece: read brief from KV and update card matchupNote (next session)
-
-## Research completed
-- 15 wow features (refined through 4 rounds)
-- browser-use infrastructure brief (Drive 1Zq_FD72)
-- FBRef legality: PROHIBITED (ToS ban + data gone Jan 2026)
-- soccer_xg (Apache 2.0): clean path for own xG model
-- web-push-browser (MIT): highest-leverage GitHub find (fact-only per Rule F)
-- Open source license analysis for commercial use
+## Automated WC journalism (operational)
+Game final → writeWCResult → D1 + BracketDO recompute → movers (KV) → JOURNALISM_QUEUE game-brief (with api-sports events) → Claude Haiku + quality chain → KV brief:game:{id} → WS. **PENDING (highest leverage): client doesn't read /wc/brief/game/{id} + update matchupNote — relay half built.**
 
 ## Priority queue
-1. **WC live scores verification** — test with tomorrow's games
-2. **Client brief consumption** — relay endpoint /wc/brief/game/{id} + client fetch
-3. Viewport artifact v4 (~150 min TYPE D) — after Tuesday reset
-4. Design system BUILD (~110 min TYPE C)
-5. web-push-browser integration (Rule F compliant)
-6. xG model pipeline (soccer_xg)
-7. Wimbledon draw context (before July 7)
+1. **Client brief consumption** (~60 min) — relay endpoint + client fetch on final. HIGHEST LEVERAGE.
+2. **Temporal polyfill** (~90 min) — ends date bug class
+3. **web-push-browser** (~120 min) — fact-only push (Rule F)
+4. **winkNLP JQ Gate pre-filter** (~60 min) — pairs with brief pipeline
+5. Viewport artifact v4 (~150 min TYPE D) — after Tuesday reset
+6. Design system BUILD (~110 min TYPE C) — typography/transitions/density/touch all specced not built
+7. xG model pipeline (soccer_xg + api-sports shots)
+8. Wikidata integration (CC0 team context)
+9. WC knockout prep — group ends June 27, R32 ~June 28
+10. Wimbledon draw — before July 7
 
-## Key Drive docs (full session)
-- Evening session doc: 10wLrVnWkEgGtCeVSvTfFQBAcSAGekxumIdZ394vQQlc
-- Items Catalog: 1lWX2KtRPMNN1e8YfxrCd3aBPNzxOc8k0JAHOzUxprd0
+## Key Drive docs
+- June 13 session doc: 1HRvTKbR_WNqYXGEhSfYI2ZnLTWzCFXp33UFl9tThIAM
+- June 12 evening doc: 10wLrVnWkEgGtCeVSvTfFQBAcSAGekxumIdZ394vQQlc
 - browser-use Brief: 1Zq_FD72dD16buJVw5odZoteRLMBiN1wR7lrxZFooqns
-- Rovi Patent Clearance: 1ICONs1B_WzfpW562DHEEzhjc2KC8tlnqkbajYrOvctk
-- Design System v2: 1Bv2qvn_Gz0qLZatJW9jVsQfMAwE-DyflZNplQyHmCvk
 - v4 Build Brief: 1OZItVH-7beD7wEpizwSie3mb80UtiepHIInGEZh3ALU
+- Rovi Clearance: 1ICONs1B_WzfpW562DHEEzhjc2KC8tlnqkbajYrOvctk
+- Design System v2: 1Bv2qvn_Gz0qLZatJW9jVsQfMAwE-DyflZNplQyHmCvk
+
+## Permanent rules active
+- Rule F: push notifications + haptics FACT-ONLY (scores/finals/kickoffs), never interest judgments. Drama Dial defense breaks for push (server decides when to send).
+- Rules A-E (ADR-002/RUWT), C1-C5 (Rovi/circadian), F (push) — three rule sets, three patent domains.
