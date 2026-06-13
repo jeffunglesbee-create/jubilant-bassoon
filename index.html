@@ -18603,6 +18603,7 @@ function renderESPNScores(){
   });
   allData.sports.forEach(sec=>{
     (sec.games||[]).forEach(game=>{
+     try {
       if(!game._id) return;
       const _isWC = /world cup|fifa|wc26/i.test(sec.sport || game._sport || game.league || '');
       const card = document.querySelector(`.game-card[data-gameid="${game._id}"]`);
@@ -18799,6 +18800,9 @@ function renderESPNScores(){
 
       // Soccer goalscorer line — re-inject after score-wrap replace may have erased it
       if(isSoccer && (isLive || isFinal)) soccerGoalsInjectDOM(game.home, game.away);
+     } catch(_rErr) {
+       if(window.FIELD_DEBUG) console.error(`[RENDER-LOOP-ERR] game="${game?.home}|${game?.away}" _id="${game?._id}" sec="${sec?.sport}" :: ${_rErr.message}`);
+     }
     });
   });
   // Night Owl trigger: detect newly-final games on every score render cycle
@@ -20039,7 +20043,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-13f';
+  const SW_VERSION = '2026-06-13g';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
