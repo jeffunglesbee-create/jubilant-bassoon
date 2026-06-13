@@ -18600,10 +18600,22 @@ function renderESPNScores(){
   allData.sports.forEach(sec=>{
     (sec.games||[]).forEach(game=>{
       if(!game._id) return;
+      const _isWC = /world cup|fifa|wc26/i.test(sec.sport || game._sport || game.league || '');
       const card = document.querySelector(`.game-card[data-gameid="${game._id}"]`);
-      if(!card) return;
+      if(!card) {
+        if(_isWC && window.FIELD_DEBUG) console.warn(`[WC-SCORE] NO CARD for _id="${game._id}" home="${game.home}" away="${game.away}"`);
+        return;
+      }
       const score = findESPNScore(game);
-      if(!score) return;
+      if(!score) {
+        if(_isWC && window.FIELD_DEBUG) console.warn(`[WC-SCORE] NO SCORE for "${game.home}|${game.away}" _id="${game._id}" — findESPNScore returned null`);
+        return;
+      }
+      if(_isWC && window.FIELD_DEBUG) {
+        const _hls = (score.homeScore||0) > 0 || (score.awayScore||0) > 0;
+        const _lof = score.state === 'in' || score.state === 'post' || score.state === 'halftime';
+        console.log(`[WC-SCORE] MATCH "${game.home}|${game.away}" _id="${game._id}" state="${score.state}" h=${score.homeScore} a=${score.awayScore} hasLiveScores=${_hls} isLiveOrFinal=${_lof} willRender=${_lof||_hls}`);
+      }
 
       // Inject or update the score block
       const wrapExisting = card.querySelector(".score-wrap");
@@ -20023,7 +20035,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-13c';
+  const SW_VERSION = '2026-06-13d';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
