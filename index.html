@@ -20023,7 +20023,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-13b';
+  const SW_VERSION = '2026-06-13c';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -28895,7 +28895,7 @@ function renderWatchWindow(){
   if(!best||bestScore<20){el.style.display='none';if(_wwInterval){clearInterval(_wwInterval);_wwInterval=null;}return;}
   const {g,sec,minsAway}=best;
   const _wwSport=(sec.sport||'').toLowerCase();
-  const _wwVerb=_wwSport.includes('baseball')?'First pitch':_wwSport.includes('hockey')||_wwSport.includes('nhl')?'Puck drop':_wwSport.includes('football')||_wwSport.includes('nfl')||_wwSport.includes('soccer')||_wwSport.includes('league')||_wwSport.includes('mls')||_wwSport.includes('efl')?'Kickoff':_wwSport.includes('afl')||_wwSport.includes('aussie')?'Bounce':'Tip-off';
+  const _wwVerb=_wwSport.includes('baseball')?'First pitch':_wwSport.includes('hockey')||_wwSport.includes('nhl')?'Puck drop':_wwSport.includes('football')||_wwSport.includes('nfl')||_wwSport.includes('soccer')||_wwSport.includes('league')||_wwSport.includes('mls')||_wwSport.includes('efl')||_wwSport.includes('world cup')||_wwSport.includes('fifa')||_wwSport.includes('wc26')?'Kickoff':_wwSport.includes('afl')||_wwSport.includes('aussie')?'Bounce':'Tip-off';
   // 35+ min: softer "Up Next" label; <35 min: "Coming Up" with urgency
   const wwHeader = minsAway > 35 ? 'Up Next' : 'Coming Up';
   const minsStr=minsAway<=1?'Starting now':minsAway<=5?_wwVerb+' in '+Math.ceil(minsAway)+' min':minsAway<=35?'Starting in '+Math.ceil(minsAway)+' min':'In ~'+Math.round(minsAway)+' min';
@@ -33038,7 +33038,7 @@ function buildLifeStageContent(game, eData, stage) {
       const net = game.streams?.[0]?.label || '';
       const countdownLabel = sp.includes('baseball') ? 'First pitch'
         : sp.includes('hockey') || sp.includes('nhl') ? 'Puck drop'
-        : sp.includes('football') || sp.includes('nfl') || sp.includes('soccer') || sp.includes('league') || sp.includes('epl') || sp.includes('mls') || sp.includes('ucl') || sp.includes('uel') || sp.includes('uecl') || sp.includes('efl') ? 'Kickoff'
+        : sp.includes('football') || sp.includes('nfl') || sp.includes('soccer') || sp.includes('league') || sp.includes('epl') || sp.includes('mls') || sp.includes('ucl') || sp.includes('uel') || sp.includes('uecl') || sp.includes('efl') || sp.includes('world cup') || sp.includes('fifa') || sp.includes('wc26') ? 'Kickoff'
         : sp.includes('afl') || sp.includes('aussie') ? 'Bounce'
         : 'Tip-off';
       return `<div class="card-stage-content card-stage-soon"><span class="stage-countdown">${countdownLabel} in ${minsLeft} min</span>${net?' · '+net:''}</div>`;
