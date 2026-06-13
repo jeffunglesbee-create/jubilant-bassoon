@@ -36,7 +36,8 @@ const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
   });
 
   console.log(`Loading ${FIELD_URL} with FIELD_DEBUG=1...`);
-  await page.goto(FIELD_URL, { waitUntil: 'networkidle', timeout: 60000 });
+  // NOT networkidle — FIELD polls every 30s so network never idles.
+  await page.goto(FIELD_URL, { waitUntil: 'domcontentloaded', timeout: 60000 });
 
   // Wait for initial V2 poll + WC injection (poll runs on load, then every 30-60s)
   console.log('Waiting 90s for V2 polls + WC section injection + score render...');
