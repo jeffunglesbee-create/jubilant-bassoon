@@ -1,85 +1,57 @@
-# FIELD Handoff — June 12 2026 (WC Schedule + Design System v2)
+# FIELD Handoff — June 12 2026 (Evening Session)
 
-**jubilant-bassoon HEAD:** cde57d5 · **relay HEAD:** dc534c2 · **Smoke:** 612/0 · **SW_VERSION:** 2026-06-12e
+**jubilant-bassoon HEAD:** 5a0d3ff · **relay HEAD:** 7062b65 · **Smoke:** 612/0 · **SW_VERSION:** 2026-06-12g
 
-## What shipped today
-
-### Relay (field-relay-nba)
-- `75be36b`: Germany vs Ecuador odds injection (auto-dedupes Jun 25)
-- `ef7a956`: Bracket slot deduplication (no team repeats per round)
-- `dff7c34`: Tier 1 Bayesian strength update (PRIOR_WEIGHT=3, opponent-adjusted)
-- `dc534c2`: **Coherent bracket** — modal groups → R32 → Poisson favorites feed forward R32→R16→QF→SF→Final. Each team exactly once. R16 participants ARE R32 winners.
+## What shipped this session
 
 ### Client (jubilant-bassoon)
-- `394a5c8`: Champion spot restructured (Final as centerpiece)
-- `3b2fc15`: teamNick WC national names (Czechia, Bosnia, Congo)
-- `edfa467`: D1 standings merge with WC_TEAMS fallback
-- `45997b7`: **fetchWCStandings RELAY_BASE fix** (Incident 12 — was /nba prefix)
-- `e53682f`: WC Tournament Brief card on main schedule
-- `f63e0ff`: **WC game cards on main schedule** — V2 polling injects FIFA section + ⚽ WC filter pill
-- `2d41627`: Smoke A559-A569 (612/0) — all 9 uncovered features
-- `23acfa5`: Comment extraction pipeline in deploy-gate.yml (363 KB / 26% gzip savings)
-- `cde57d5`: Simplified strip-comments — git source IS the documentation
+- `8eb8ba5`: Compliance check 8 — checks removed functions not generic strings (sportsbook in privacy disclosure was false positive)
+- `76588c6`: WC group standings merge — all 4 teams per group even when only some have played. Bosnia name fix.
+- `0385295`: WC game cards — Invalid Date (mapV2ToESPN missing start_time) + ALONE ON SCREEN suppressed for post-game
+- `04e5398`: WC game cards — buildWCBars suppressed for final, wc-bars-wrap removed on espn-final, Scout's Pick guard works
+- `76587e5`: UTC midnight boundary (evening expansion queries tomorrow), isToday filter (removes yesterday's games), live state update (WC section refreshes every poll not just first injection)
+- SW_VERSION: 2026-06-12e → 2026-06-12g
 
-## Design system work (specced, NOT built)
+### Relay (field-relay-nba)
+- `7062b65`: R32 third-place dedup — assignedThirds Set prevents same team appearing in multiple R32 slots. Fixed Ivory Coast 6x and Scotland 2x.
 
-12 items documented in Items Catalog (Drive 1lWX2KtRPMNN):
-1. Chakra Petch typography (approved, supersedes Barlow/Playfair)
-2. Card tiering: featured / standard / compact grid
-3. CompactGrid for routine games (replaces collapsing)
-4. Touch feedback (:active scale 0.98)
-5. Motion token assignments to new surfaces
-6. Advancement probability scale (gold/blue/smoke)
-7. MLB / traditional sports balance rule
-8. Score-journalism symbiosis
-9. Circadian layout mode (Rules C1-C5, Rovi clearance)
-10. Bracket tree viewport rules (T2+ only)
-11. Journalism surfacing architecture (7 surfaces)
-12. Viewport artifact v4 scope (~120-150 min TYPE D)
+## New permanent rules
 
-## STAT — iCIMS Cookie Automation (research complete, build next session)
+### Rule F — Push Notification RUWT Defense
+Push notifications are RUWT's central mechanism (compute interest → threshold → notify). The Drama Dial defense breaks with push because the SERVER decides when to send.
 
-**Context:** Cookie search can be automated via Playwright in CI — same pattern as FIELD's screenshot probe workflow.
+Rule F: Push notifications must be FACT-ONLY.
+- SAFE: scores, finals, kickoffs, lead changes (factual events)
+- NOT SAFE: CRUNCH TIME alerts, drama thresholds, excitement judgments, recommendations
 
-**Key finding:** FIELD's jubilant-bassoon CI has confirmed working Playwright + Chromium at `/opt/pw-browsers/chromium-1194/chrome-linux/chrome`. `page.cookies()` is available on the same `page` object used for screenshots.
+Rules A-E (RUWT), C1-C5 (Rovi), F (Push) — three rule sets for three patent domains.
 
-**The pattern (GitHub Actions workflow for STAT repo):**
-- Push trigger file `outbox/.trigger-cookie-extract` → workflow launches Playwright
-- Navigate to `careers-{tenant}.icims.com/jobs/intro/login`
-- Fill credentials from `secrets.ICIMS_EMAIL` + `secrets.ICIMS_PASSWORD`
-- `page.waitForNavigation()` after submit
-- `page.cookies()` → write to `outbox/icims-cookies.json` → commit `[skip ci]`
-- STAT Worker reads cookies and uses `page.setCookie(...cookies)` for apply form POST
+## Research completed
 
-**Do first (2 min, devtools):**
-Open `careers-mdmercy.icims.com` after login → Application → Cookies tab.
-If session cookie domain is `.icims.com` → one login covers all 7 iCIMS tenants.
-If `careers-mdmercy.icims.com` scoped → 7 separate logins needed.
+### 15 Wow Features (refined through 4 rounds)
+Each uses a new API or infrastructure. Key items: Headline Intelligence (News API), Attendance Intelligence (Ticketmaster), Live Bracket Pulse (SSE + Monte Carlo), Biometric Correlation (Oura API), Haptic Game Feel (use-haptic).
 
-**executablePath note:** May need `npx playwright install chromium` fallback if STAT runner path differs from FIELD's confirmed path.
+### browser-use Infrastructure Brief (Drive 1Zq_FD72)
+Event-driven browser automation via GitHub Actions → R2 → relay. Highest bracket impact: post-match xG for Bayesian denoising.
 
-**Two iCIMS apply paths (from HTML analysis):**
-- Session replay: CI extracts cookies → store in DO storage → `page.setCookie(...cookies)` rehydrates for form POST
-- Partner API: iCIMS Technology Partner Program (free registration) — routes by CLIENT_ID, scales to all 7 tenants without credentials
+### Legality Analysis
+FBRef: PROHIBITED (ToS ban + Opta pulled xG data Jan 2026). Clean xG path: soccer_xg (Apache 2.0) — train own model on open data, apply to api-sports shots.
+
+### Highest-Leverage GitHub Find
+web-push-browser (MIT): zero-dependency Web Push for Cloudflare Workers. Enables fact-only push notifications from relay. Subject to Rule F.
 
 ## Priority queue
-1. **Viewport artifact v4** (~120-150 min TYPE D) — unifies v1+v2+v3.5
-2. **Design system BUILD** (~110 min TYPE C) — CSS tokens + semanticTier() + card tiering
-3. State transition 6e (~30 lines)
-4. Drama spectrum 6f (~60 lines)
-5. M5 score ticker fade
+1. **Viewport artifact v4** (~120-150 min TYPE D) — after Tuesday reset
+2. **Design system BUILD** (~110 min TYPE C) — depends on v4
+3. **web-push-browser integration** (~120 min TYPE C) — fact-only notifications, Rule F
+4. State transition 6e, Drama spectrum 6f
+5. xG model pipeline (soccer_xg + api-sports shots)
 6. Wimbledon draw context (before July 7)
 
-## STAT next session open items
-- #7 feedback loop, #11 STAT_KV dead binding, SelectMinds cursor bugs
-- Workday audit, UI list
-- **iCIMS cookie automation** — verify domain scope first, then build CI workflow
-
-## Key Drive docs (this session)
+## Key Drive docs
+- Evening session doc: 10wLrVnWkEgGtCeVSvTfFQBAcSAGekxumIdZ394vQQlc
 - Items Catalog: 1lWX2KtRPMNN1e8YfxrCd3aBPNzxOc8k0JAHOzUxprd0
-- Design System v2: 1Bv2qvn_Gz0qLZatJW9jVsQfMAwE-DyflZNplQyHmCvk
+- browser-use Brief: 1Zq_FD72dD16buJVw5odZoteRLMBiN1wR7lrxZFooqns
 - v4 Build Brief: 1OZItVH-7beD7wEpizwSie3mb80UtiepHIInGEZh3ALU
-- Journalism Addendum: 1ibAZ1n52akTtBEvmzgQHSkUPDEEllKwug44Gx6zggYE
-- Circadian Addendum: 137BFjJ9oErDyBmrxSvTM4RuSywln3pXaYFD77Id5Eek
-- Rovi Patent Clearance: 1ICONs1B_WzfpW562DHEEzhjc2KC8tlnqkbajYrOvctk
-- CI/Deploy Addendum: 1iLNhq5-ktyTI4dIL8E4eqoD_OB-NkcLVoG9p2NE0IJA
+- Rovi Clearance: 1ICONs1B_WzfpW562DHEEzhjc2KC8tlnqkbajYrOvctk
+- Design System v2: 1Bv2qvn_Gz0qLZatJW9jVsQfMAwE-DyflZNplQyHmCvk
