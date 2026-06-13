@@ -1,44 +1,30 @@
 # FIELD Handoff — June 13 2026 (End of Session)
 
-**jubilant-bassoon HEAD:** a3cc0c5 · **relay HEAD:** 68b03f0 · **Smoke:** 612/0 · **SW_VERSION:** 2026-06-13g
+**jubilant-bassoon HEAD:** 428b0fb · **relay HEAD:** 68b03f0 · **Smoke:** 613/0 · **SW_VERSION:** 2026-06-13h
 
 ## Session summary
-Continuation of June 12 evening (same conversation, compacted). Core achievement: built a permanent WC live-score diagnostic probe, used it to PROVE live scores work and root-cause the kickoff cache lag. Shipped WC card fixes, automated per-game brief pipeline, and rate-limit resilience.
+Client-side WC game brief consumption shipped (HANDOFF P1 PIECE 2). When a WC game goes final, client now async-fetches the post-match brief from relay KV via `/journalism/game/{eventId}` and injects it as `matchupNote` on the game object, flowing into card rendering and CDW notes.
 
 ## Client commits (jubilant-bassoon)
-- `e603efa`: Team name normalization (USA→United States +4) + isUSA() bracket-path fix (was silently broken since launch)
-- `5d36cd2`: Post-game briefs for USA 4-1, Canada 1-1, South Korea 2-1
-- `da12569`: US Open fix — Shinnecock Hills, J.J. Spaun defending (was Oakmont/Wyndham Clark)
-- `6c1a20f`: WC odds bars — _wcOddsCache was never populated (fetchWCOddsProbabilities discarded data). Now Qatar 27%/Switzerland 95% etc.
-- `eac54b1`: WC "Kickoff" not "Tip-off" (countdown selectors missing world cup/fifa)
-- `3ef6268`→`9aa8f37`: WC live-score diagnostic probe + structured logging + try/catch isolation
-- SW_VERSION: 2026-06-13a → 2026-06-13g
+- `428b0fb`: WC game brief consumption — `_wcBriefsFetched` dedup Set, async fetch on final state, matchupNote injection, fire-and-forget (1500ms timeout), uses existing journalism relay route (same KV namespace `brief:game:*`). SW 2026-06-13h. Smoke 613/613.
+- Prior [skip ci] commits (1016f86 etc): WC probe + odds + kickoff fixes from earlier sessions.
 
-## Relay commits (field-relay-nba)
-- `3346134`: Movers prev rotation fix (was never initialized)
-- `496a07e`: BracketDO writes movers to KV (bridged two movers systems)
-- `11f2b3c`: /wc/bracket/refresh in probe allow-list + GET
-- `7c04648`: Automated per-game WC briefs via JOURNALISM_QUEUE
-- `273bfbd`: Brief prompt enriched with api-sports events (goals/cards/subs)
-- `8451899`: /apisports prefix in probe allow-list (upstream inspection)
-- `76d8ae3`: Kickoff lag — 15s football cache + rate-limit 503 guard
+## Relay commits (field-relay-nba) — unchanged this session
 - `68b03f0`: HTTP 429 → 503 no-store (was cacheable 502)
+- Full relay commit history in prior HANDOFF versions.
 
-## Three-issue investigation (DEFINITIVE)
-1. **Live scores: PROVEN WORKING** — probe captured "70' · Switzerland 1 – Qatar 0", isLive=true, espnScores state=in. Score renders in card STAGE LINE (soccer design); hasScoreWrap:false is BY DESIGN.
-2. **Kickoff cache lag: ROOT-CAUSED + FIXED** — relay served stale 'pre' ~30s after api-sports flipped to 1H (30s CF cache) + rate-limit empties. Fixed by 76d8ae3 + 68b03f0. Rate limit partly self-inflicted from heavy probing.
-3. **'sport is not defined': NO LONGER FIRING** — intermittent (2 of 4 runs), deployed ~15215, double-forEach. Static analysis found no bare sport ref. try/catch (9aa8f37) catches + isolates without crashing loop. Post-fix probe: 0 pageerrors.
+## Architecture note: WC brief pipeline (now complete end-to-end)
+1. Game final → `writeWCResult()` → D1 insert → `recomputeGroupStandings()` → BracketDO recompute
+2. `JOURNALISM_QUEUE.send({type:"game-brief"})` with api-sports events context
+3. Queue consumer → Haiku brief gen → quality chain → KV `brief:game:{eventId}` (3600s TTL)
+4. **[NEW] Client V2 poll** → detects `state==='final'` → `fetch /journalism/game/{eventId}` → injects `matchupNote` → `scheduleRenderAll()`
+5. Dedup: `_wcBriefsFetched` Set prevents re-fetching each poll cycle
 
-**No error at 1578** — confirmed via search + transcript grep. Client 1578=brace, relay 1578=odds-probs catch.
-
-## Permanent diagnostic infra
-`wc_score_probe.js` + `wc-score-probe.yml`. Loads FIELD with FIELD_DEBUG=1, captures console + stack traces + card DOM + espnScores, commits to outbox. Claude reads committed report — no manual console work. Lessons: networkidle never resolves on polling page (use domcontentloaded); espnScores module-scoped (expose on window in debug); /apisports prefix lets Claude inspect raw upstream.
-
-## Automated WC journalism (operational)
-Game final → writeWCResult → D1 + BracketDO recompute → movers (KV) → JOURNALISM_QUEUE game-brief (with api-sports events) → Claude Haiku + quality chain → KV brief:game:{id} → WS. **PENDING (highest leverage): client doesn't read /wc/brief/game/{id} + update matchupNote — relay half built.**
+## Known gap
+- Relay route `/wc/brief/game/{id}` does NOT exist as a separate endpoint. Client uses the existing `/journalism/game/{id}` route which reads from the same FIELD_JOURNALISM KV namespace. The `encodeURIComponent` handles the colon in `football:12345` eventId format. If this causes issues, a dedicated WC route would need to be added to the relay source.
 
 ## Priority queue
-1. **Client brief consumption** (~60 min) — relay endpoint + client fetch on final. HIGHEST LEVERAGE.
+1. ~~Client brief consumption~~ ✅ DONE (428b0fb)
 2. **Temporal polyfill** (~90 min) — ends date bug class
 3. **web-push-browser** (~120 min) — fact-only push (Rule F)
 4. **winkNLP JQ Gate pre-filter** (~60 min) — pairs with brief pipeline
