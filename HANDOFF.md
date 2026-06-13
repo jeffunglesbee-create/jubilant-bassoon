@@ -1,57 +1,66 @@
-# FIELD Handoff — June 12 2026 (Evening Session)
+# FIELD Handoff — June 13 2026 (End of June 12 Evening Session)
 
-**jubilant-bassoon HEAD:** 5a0d3ff · **relay HEAD:** 7062b65 · **Smoke:** 612/0 · **SW_VERSION:** 2026-06-12g
+**jubilant-bassoon HEAD:** 888b0c0 · **relay HEAD:** 273bfbd · **Smoke:** 612/0 · **SW_VERSION:** 2026-06-12i
 
-## What shipped this session
+## Session summary
 
-### Client (jubilant-bassoon)
-- `8eb8ba5`: Compliance check 8 — checks removed functions not generic strings (sportsbook in privacy disclosure was false positive)
-- `76588c6`: WC group standings merge — all 4 teams per group even when only some have played. Bosnia name fix.
-- `0385295`: WC game cards — Invalid Date (mapV2ToESPN missing start_time) + ALONE ON SCREEN suppressed for post-game
-- `04e5398`: WC game cards — buildWCBars suppressed for final, wc-bars-wrap removed on espn-final, Scout's Pick guard works
-- `76587e5`: UTC midnight boundary (evening expansion queries tomorrow), isToday filter (removes yesterday's games), live state update (WC section refreshes every poll not just first injection)
-- SW_VERSION: 2026-06-12e → 2026-06-12g
+Massive bugfix + research session. 15 commits (9 client, 6 relay). WC game cards, bracket, movers, and automated brief pipeline all fixed or built.
 
-### Relay (field-relay-nba)
-- `7062b65`: R32 third-place dedup — assignedThirds Set prevents same team appearing in multiple R32 slots. Fixed Ivory Coast 6x and Scotland 2x.
+## Client commits (jubilant-bassoon)
+- `8eb8ba5`: Compliance check 8 — checks removed functions not strings
+- `76588c6`: WC group standings merge — all 4 teams per group
+- `0385295`: WC cards — Invalid Date fix + ALONE ON SCREEN guard
+- `04e5398`: WC cards — buildWCBars + wc-bars-wrap removal on final
+- `76587e5`: UTC midnight boundary + isToday + live state refresh
+- `e603efa`: Team name normalization (USA + 4 preemptive) + isUSA bracket fix
+- `5d36cd2`: Post-game briefs for USA 4-1, Canada 1-1, South Korea 2-1
+
+## Relay commits (field-relay-nba)
+- `7062b65`: R32 third-place dedup (Ivory Coast 6x → 1x)
+- `3346134`: Movers prev rotation fix (was never initialized)
+- `496a07e`: BracketDO writes movers to KV for /wc/movers endpoint
+- `11f2b3c`: /wc/bracket/refresh in probe allow-list + accepts GET
+- `7c04648`: Automated per-game WC briefs via JOURNALISM_QUEUE
+- `273bfbd`: Brief prompt enriched with api-sports match events (goals, cards, subs)
 
 ## New permanent rules
+- **Rule F**: Push notifications + haptics must be FACT-ONLY (scores, finals, kickoffs). Never interest judgments (CRUNCH TIME alerts, drama thresholds). Joins Rules A-E (RUWT) and C1-C5 (Rovi).
 
-### Rule F — Push Notification RUWT Defense
-Push notifications are RUWT's central mechanism (compute interest → threshold → notify). The Drama Dial defense breaks with push because the SERVER decides when to send.
+## Known issue: WC live scores
+Live score rendering on WC game cards needs verification with tomorrow's live games. Potential issue: WC section re-injection on every V2 poll may wipe DOM score updates, and game _id mismatch between wc26Raw and V2-sourced entries. First test opportunity: Qatar-Switzerland 12 PM ET June 13.
 
-Rule F: Push notifications must be FACT-ONLY.
-- SAFE: scores, finals, kickoffs, lead changes (factual events)
-- NOT SAFE: CRUNCH TIME alerts, drama thresholds, excitement judgments, recommendations
+## Movers pipeline status
+- Pipeline is OPERATIONAL (no longer null)
+- First meaningful movers will compute after tomorrow's first result
+- BracketDO now writes delta to KV + rotates prev
+- /wc/bracket/refresh accessible via MCP probe
 
-Rules A-E (RUWT), C1-C5 (Rovi), F (Push) — three rule sets for three patent domains.
+## Automated WC brief pipeline
+- writeWCResult → fetches api-sports events → enriched prompt → JOURNALISM_QUEUE
+- Queue consumer runs Claude Haiku + cliché quality chain → KV
+- Missing client-side piece: read brief from KV and update card matchupNote (next session)
 
 ## Research completed
-
-### 15 Wow Features (refined through 4 rounds)
-Each uses a new API or infrastructure. Key items: Headline Intelligence (News API), Attendance Intelligence (Ticketmaster), Live Bracket Pulse (SSE + Monte Carlo), Biometric Correlation (Oura API), Haptic Game Feel (use-haptic).
-
-### browser-use Infrastructure Brief (Drive 1Zq_FD72)
-Event-driven browser automation via GitHub Actions → R2 → relay. Highest bracket impact: post-match xG for Bayesian denoising.
-
-### Legality Analysis
-FBRef: PROHIBITED (ToS ban + Opta pulled xG data Jan 2026). Clean xG path: soccer_xg (Apache 2.0) — train own model on open data, apply to api-sports shots.
-
-### Highest-Leverage GitHub Find
-web-push-browser (MIT): zero-dependency Web Push for Cloudflare Workers. Enables fact-only push notifications from relay. Subject to Rule F.
+- 15 wow features (refined through 4 rounds)
+- browser-use infrastructure brief (Drive 1Zq_FD72)
+- FBRef legality: PROHIBITED (ToS ban + data gone Jan 2026)
+- soccer_xg (Apache 2.0): clean path for own xG model
+- web-push-browser (MIT): highest-leverage GitHub find (fact-only per Rule F)
+- Open source license analysis for commercial use
 
 ## Priority queue
-1. **Viewport artifact v4** (~120-150 min TYPE D) — after Tuesday reset
-2. **Design system BUILD** (~110 min TYPE C) — depends on v4
-3. **web-push-browser integration** (~120 min TYPE C) — fact-only notifications, Rule F
-4. State transition 6e, Drama spectrum 6f
-5. xG model pipeline (soccer_xg + api-sports shots)
-6. Wimbledon draw context (before July 7)
+1. **WC live scores verification** — test with tomorrow's games
+2. **Client brief consumption** — relay endpoint /wc/brief/game/{id} + client fetch
+3. Viewport artifact v4 (~150 min TYPE D) — after Tuesday reset
+4. Design system BUILD (~110 min TYPE C)
+5. web-push-browser integration (Rule F compliant)
+6. xG model pipeline (soccer_xg)
+7. Wimbledon draw context (before July 7)
 
-## Key Drive docs
+## Key Drive docs (full session)
 - Evening session doc: 10wLrVnWkEgGtCeVSvTfFQBAcSAGekxumIdZ394vQQlc
 - Items Catalog: 1lWX2KtRPMNN1e8YfxrCd3aBPNzxOc8k0JAHOzUxprd0
 - browser-use Brief: 1Zq_FD72dD16buJVw5odZoteRLMBiN1wR7lrxZFooqns
-- v4 Build Brief: 1OZItVH-7beD7wEpizwSie3mb80UtiepHIInGEZh3ALU
-- Rovi Clearance: 1ICONs1B_WzfpW562DHEEzhjc2KC8tlnqkbajYrOvctk
+- Rovi Patent Clearance: 1ICONs1B_WzfpW562DHEEzhjc2KC8tlnqkbajYrOvctk
 - Design System v2: 1Bv2qvn_Gz0qLZatJW9jVsQfMAwE-DyflZNplQyHmCvk
+- v4 Build Brief: 1OZItVH-7beD7wEpizwSie3mb80UtiepHIInGEZh3ALU
