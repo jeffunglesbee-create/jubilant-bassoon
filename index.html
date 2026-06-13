@@ -14588,6 +14588,10 @@ const SOCCER_LEAGUES = [
 ];
 
 let espnScores    = {}; // { "Home|Away": scoreObj }
+// Expose on window in debug mode so diagnostic probes can read it
+if (typeof window !== 'undefined' && localStorage.getItem('FIELD_DEBUG') === '1') {
+  Object.defineProperty(window, 'espnScores', { get: () => espnScores, configurable: true });
+}
 let espnScoreTs   = {}; // { "Home|Away": timestamp } — for stale-entry pruning
 const ESPN_SCORE_TTL = 900000; // 15 min — entries not refreshed within window are pruned
 
@@ -20035,7 +20039,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-13d';
+  const SW_VERSION = '2026-06-13e';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)

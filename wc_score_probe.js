@@ -60,16 +60,22 @@ const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
       }));
   });
 
-  // Also grab the espnScores state for WC games
+  // Also grab the espnScores state for WC games (module-scoped — may be inaccessible)
   const espnScoresState = await page.evaluate(() => {
-    if (typeof espnScores === 'undefined') return '(espnScores undefined)';
-    const out = {};
-    for (const [k, v] of Object.entries(espnScores)) {
-      if (/world cup|fifa|wc26/i.test(v._sport || v.league || '')) {
-        out[k] = { state: v.state, homeScore: v.homeScore, awayScore: v.awayScore, _gameId: v._gameId, clock: v.clock };
+    try {
+      // espnScores lives inside FIELD's module scope; try window first
+      const es = (typeof window !== 'undefined' && window.espnScores) ? window.espnScores : null;
+      if (!es) return '(espnScores not exposed on window — module-scoped)';
+      const out = {};
+      for (const [k, v] of Object.entries(es)) {
+        if (/world cup|fifa|wc26/i.test(v._sport || v.league || '')) {
+          out[k] = { state: v.state, homeScore: v.homeScore, awayScore: v.awayScore, _gameId: v._gameId, clock: v.clock };
+        }
       }
+      return out;
+    } catch (e) {
+      return `(error accessing espnScores: ${e.message})`;
     }
-    return out;
   });
 
   // Screenshot the WC section
