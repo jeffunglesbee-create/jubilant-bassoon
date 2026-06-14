@@ -34773,7 +34773,7 @@ function renderHalftimeSwitch(){
       }
       if(isHalftime) htGame = {game, eData, sport:sec.sport};
       else liveGames.push({game, eData, sport:sec.sport,
-        drama: dramaScoreLive(eData, sec.sport)
+        tier: fieldGameTier(game._id)
       });
     });
   });
@@ -34782,10 +34782,13 @@ function renderHalftimeSwitch(){
   const htKey = htGame.game._id;
   if(_htShownGames.has(htKey+'_done')){ panel.style.display='none'; return; }
 
-  // Find highest drama OTHER live game with score >= 65
+  // ADR-002 (C2): pick the OTHER live game with the highest named tier.
+  // Only surface games that are actually in a tense tier — anything below
+  // PLAYOFF_SERIES (rank 5) is just "live", not switchworthy.
+  const SWITCHWORTHY_MIN = fieldTierRank('PLAYOFF_SERIES');
   const best = liveGames
-    .filter(g=>g.game._id!==htGame.game._id && g.drama>=getDramaDial())
-    .sort((a,b)=>b.drama-a.drama)[0];
+    .filter(g => g.game._id !== htGame.game._id && fieldTierRank(g.tier) >= SWITCHWORTHY_MIN)
+    .sort((a,b) => fieldTierRank(b.tier) - fieldTierRank(a.tier))[0];
 
   if(!best){ panel.style.display='none'; return; }
   _htShownGames.add(htKey);
@@ -34798,7 +34801,7 @@ function renderHalftimeSwitch(){
     <span class="ht-icon">🎯</span>
     <span class="ht-label">Perfect Switch</span>
     <span class="ht-matchup">${best.game.away||''} @ ${best.game.home||''} &nbsp;${scoreStr}${clockStr}</span>
-    <span class="ht-drama">${best.drama}% 🔥</span>
+    <span class="ht-drama">${fieldTierLabel(best.tier)}</span>
     <button class="ht-close" id="ht-close" aria-label="Dismiss">✕</button>
   </div>`;
 
