@@ -4108,6 +4108,14 @@ assert('A580 — fieldDatesToQuery: replaces hardcoded -4h offset in V2 poll dua
 assert('A581 — fetchV2AllScores uses fieldDatesToQuery (no hardcoded UTC offset)',
   html.includes('fieldDatesToQuery()') && !html.includes('new Date(_nowUTC - 4 * 3600 * 1000)'));
 
+// ── A596 / iPad-4: restore desk tab navigation on iPad ──────────────────────
+assert('A596 — iPad-4: nav-link 44px + bottom-sheet-overlay hidden above 820',
+  // V3 hide rule now includes the overlay defensively
+  /@media\(min-width:820px\)\{\s*\.bottom-sheet,[\s\S]{0,300}\.bottom-sheet-overlay\{ display:none !important;/.test(html) &&
+  // 44px tap floor on Desk/Journal/Groups nav links at ≤1199 (covers iPad)
+  /@media\(max-width:1199px\)\{\s*\.desk-jump-link,\s*\.jrn-nav-link,\s*#wc-nav-link\{ min-height:44px/.test(html),
+  'iPad-4 regression fix: nav-link tap targets and defensive overlay hide above 820 ensure Desk navigation works on iPad portrait and landscape.');
+
 // ── A595 / iPad-3: layout containment + overflow-anchor on game list ────────
 assert('A595 — iPad-3: contain:layout + overflow-anchor on .games-list and .game-card',
   /\.games-list\{display:flex;flex-direction:column;gap:6px;--cols:1;contain:layout style;overflow-anchor:auto\}/.test(html) &&

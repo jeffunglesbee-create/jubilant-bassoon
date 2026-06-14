@@ -1089,7 +1089,20 @@ body::before{
    (D1-D4). Hide unconditionally above 820 so the sheet cannot fire on
    surfaces that should route elsewhere. */
 @media(min-width:820px){
-  .bottom-sheet{ display:none !important; }
+  .bottom-sheet,
+  /* iPad-4: also hide the sheet's overlay above 820 — pointer-events:none
+     when closed should be enough, but defensively gating display:none too
+     prevents any stale .open class from intercepting taps on iPad. */
+  .bottom-sheet-overlay{ display:none !important; }
+}
+
+/* iPad-4: nav links (Desk / Journal / Groups) need a 44px touch target on
+   all touch surfaces (phone + iPad). V7 covered phone-only buttons; this
+   extends the floor to ≤1199 so iPad portrait+landscape get it too. */
+@media(max-width:1199px){
+  .desk-jump-link,
+  .jrn-nav-link,
+  #wc-nav-link{ min-height:44px; display:inline-flex; align-items:center; }
 }
 
 /* V7: Apple HIG / spec lines 20+101 — 44px touch floor on primary tap
