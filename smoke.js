@@ -4108,6 +4108,18 @@ assert('A580 — fieldDatesToQuery: replaces hardcoded -4h offset in V2 poll dua
 assert('A581 — fetchV2AllScores uses fieldDatesToQuery (no hardcoded UTC offset)',
   html.includes('fieldDatesToQuery()') && !html.includes('new Date(_nowUTC - 4 * 3600 * 1000)'));
 
+// ── A591 / V11: motion + opacity tokens (SEMANTICS-SYS-A) ───────────────────
+assert('A591 — V11: motion + opacity semantic tokens defined in :root',
+  /--motion-instant:0ms/.test(html) &&
+  /--motion-urgent:150ms/.test(html) &&
+  /--motion-deliberate:280ms/.test(html) &&
+  /--motion-ambient:2000ms/.test(html) &&
+  /--opacity-live:1\.0/.test(html) &&
+  /--opacity-seen:0\.6/.test(html) &&
+  /--opacity-trace:0\.25/.test(html) &&
+  /--opacity-gone:0\.0/.test(html),
+  'V11 build plan: SEMANTICS-SYS-A motion + opacity tokens (spec lines 199-211).');
+
 // ── A590 / V10: COLOUR-SYS-A semantic-token foundation ──────────────────────
 assert('A590 — V10: drama / access / angle / card-highlight tokens defined in :root',
   /--drama-must:#c9a84c/.test(html) &&
