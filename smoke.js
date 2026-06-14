@@ -4108,6 +4108,16 @@ assert('A580 — fieldDatesToQuery: replaces hardcoded -4h offset in V2 poll dua
 assert('A581 — fetchV2AllScores uses fieldDatesToQuery (no hardcoded UTC offset)',
   html.includes('fieldDatesToQuery()') && !html.includes('new Date(_nowUTC - 4 * 3600 * 1000)'));
 
+// ── A592 / V12: typography role tokens ──────────────────────────────────────
+assert('A592 — V12: typography role tokens (--type-verdict/headline/data/label/chip/context)',
+  /--type-verdict:600 1\.1rem\/1\.3 var\(--ff-display\)/.test(html) &&
+  /--type-headline:700 1\.75rem\/1\.2 var\(--ff-display\)/.test(html) &&
+  /--type-data:500 1rem\/1\.3 var\(--ff-body\)/.test(html) &&
+  /--type-label:600 \.75rem\/1\.3 var\(--ff-body\)/.test(html) &&
+  /--type-chip:500 \.8rem\/1\.3 var\(--ff-body\)/.test(html) &&
+  /--type-context:400 \.85rem\/1\.4 var\(--ff-body\)/.test(html),
+  'V12 build plan: typography role tokens (spec lines 227-232). Six role shorthands bound to Chakra Petch / DM Sans.');
+
 // ── A591 / V11: motion + opacity tokens (SEMANTICS-SYS-A) ───────────────────
 assert('A591 — V11: motion + opacity semantic tokens defined in :root',
   /--motion-instant:0ms/.test(html) &&

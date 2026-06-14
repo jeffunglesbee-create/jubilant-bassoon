@@ -109,6 +109,17 @@
   --motion-deliberate:280ms;--motion-ambient:2000ms;
   --opacity-live:1.0;--opacity-seen:0.6;
   --opacity-trace:0.25;--opacity-gone:0.0;
+  /* V12: typography role tokens (spec lines 227-232). Scaffold for the
+     verdict / headline / data / label / chip / context type roles.
+     Not yet consumed by existing CSS — defining unblocks future
+     migration of inline font-size + font-weight + line-height patterns
+     to a single role shorthand. */
+  --type-verdict:600 1.1rem/1.3 var(--ff-display);
+  --type-headline:700 1.75rem/1.2 var(--ff-display);
+  --type-data:500 1rem/1.3 var(--ff-body);
+  --type-label:600 .75rem/1.3 var(--ff-body);
+  --type-chip:500 .8rem/1.3 var(--ff-body);
+  --type-context:400 .85rem/1.4 var(--ff-body);
   --ff-display:'Chakra Petch','Chakra Petch Fallback',Arial,sans-serif;
   --ff-body:'DM Sans','DM Sans Fallback',Arial,sans-serif;
   --ff-cond:'DM Sans','DM Sans Fallback',Arial,sans-serif;
