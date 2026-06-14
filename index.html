@@ -1089,17 +1089,12 @@ body::before{
 .bs-jrn-link:hover{opacity:.85;background:rgba(201,168,76,.06)}
 .bs-jrn-link .bs-section-label{color:var(--gold2);margin-bottom:0;cursor:pointer}
 
-/* V3: bottom sheet is phone+L1/L2 only — spec lines 68-73 route T1+ to
-   ambient panel injection (T1/T2) or inline LEFT/RIGHT/CENTRE expansion
-   (D1-D4). Hide unconditionally above 820 so the sheet cannot fire on
-   surfaces that should route elsewhere. */
-@media(min-width:820px){
-  .bottom-sheet,
-  /* iPad-4: also hide the sheet's overlay above 820 — pointer-events:none
-     when closed should be enough, but defensively gating display:none too
-     prevents any stale .open class from intercepting taps on iPad. */
-  .bottom-sheet-overlay{ display:none !important; }
-}
+/* V3 REVERTED: bottom sheet restored on iPad until ambient panel injection
+   is built (Path B in IPAD-REGRESSION-FIXES.md). The spec's preferred T1+
+   routing (ambient panel injection) requires _injectGameToAmbient() which
+   is not yet implemented. Bottom sheet works correctly on all viewports.
+   When Path B ships, re-gate with @media(min-width:820px) and route taps
+   through _injectGameToAmbient instead of openBottomSheet. */
 
 /* iPad-4: nav links (Desk / Journal / Groups) need a 44px touch target on
    all touch surfaces (phone + iPad). V7 covered phone-only buttons; this
@@ -34269,10 +34264,12 @@ function openBottomSheet(gameId) {
   // viewport. Route ≥820 to a scroll-into-view + inline-expand fallback
   // so taps have a visible effect; spec lines 68-73 designate ambient
   // panel injection / inline expand for T1+ viewports.
-  if (typeof window !== 'undefined' && window.innerWidth >= 820) {
-    _openGameSheetTablet(gameId);
-    return;
-  }
+  // REVERTED: bottom sheet restored on all viewports until ambient panel
+  // injection (Path B) is built. _openGameSheetTablet preserved for future use.
+  // if (typeof window !== 'undefined' && window.innerWidth >= 820) {
+  //   _openGameSheetTablet(gameId);
+  //   return;
+  // }
   let game = null, sport = '';
   (allData?.sports||[]).forEach(s=>(s.games||[]).forEach(g=>{ if(g._id===gameId){game=g;sport=s.sport;} }));
   if (!game) return;

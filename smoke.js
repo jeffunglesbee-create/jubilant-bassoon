@@ -4116,12 +4116,10 @@ assert('A597 — iPad-5: hover styles gated behind (hover: hover) — single-tap
   'iPad-5 regression fix: iOS Safari treats first tap as :hover and second tap as click on devices without a real mouse. Gating :hover behind (hover: hover) lets the click fire on the first tap. touch-action:manipulation also removes the 300ms tap delay.');
 
 // ── A596 / iPad-4: restore desk tab navigation on iPad ──────────────────────
-assert('A596 — iPad-4: nav-link 44px + bottom-sheet-overlay hidden above 820',
-  // V3 hide rule now includes the overlay defensively
-  /@media\(min-width:820px\)\{\s*\.bottom-sheet,[\s\S]{0,300}\.bottom-sheet-overlay\{ display:none !important;/.test(html) &&
+assert('A596 — iPad-4: nav-link 44px tap floor on iPad',
   // 44px tap floor on Desk/Journal/Groups nav links at ≤1199 (covers iPad)
   /@media\(max-width:1199px\)\{\s*\.desk-jump-link,\s*\.jrn-nav-link,\s*#wc-nav-link\{ min-height:44px/.test(html),
-  'iPad-4 regression fix: nav-link tap targets and defensive overlay hide above 820 ensure Desk navigation works on iPad portrait and landscape.');
+  'iPad-4 regression fix: nav-link tap targets ensure Desk/Journal navigation works on iPad portrait and landscape.');
 
 // ── A595 / iPad-3: layout containment + overflow-anchor on game list ────────
 assert('A595 — iPad-3: contain:layout + overflow-anchor on .games-list and .game-card',
@@ -4137,15 +4135,15 @@ assert('A594 — iPad-2: _expandedCards Set + _restoreCardExpandState() hooked i
   /_restoreCardExpandState\(\);[\s\S]{0,200}Major preview card/.test(html),
   'iPad-2 regression fix: ESPN poll cycle rebuilds .game-card HTML every 20-45s, wiping data-expanded. Persist expand state in a Set and re-apply after each render.');
 
-// ── A593 / iPad-1: viewport-aware tap routing ───────────────────────────────
-assert('A593 — iPad-1: openBottomSheet routes ≥820 to inline-expand fallback',
-  html.includes('_openGameSheetTablet(gameId)') &&
+// ── A593 / iPad-1 REVERTED: routing disabled, function preserved ────────────
+assert('A593 — iPad-1 reverted: _openGameSheetTablet preserved, routing disabled',
+  // Function still exists for future ambient panel injection
   /function _openGameSheetTablet\s*\(/.test(html) &&
-  // The early-return gate at the top of openBottomSheet
-  /if \(typeof window !== 'undefined' && window\.innerWidth >= 820\)\s*\{\s*_openGameSheetTablet/.test(html) &&
-  // The CSS that makes the expanded state visible
-  /\.game-card\[data-expanded="1"\] \.card-brief-inline-text\{[\s\S]{0,80}line-clamp:unset/.test(html),
-  'iPad-1 regression fix: V3 CSS hides .bottom-sheet at min-width:820px; tap handlers must route ≥820 elsewhere. Adds inline-expand fallback for T1+ until ambient panel injection is wired.');
+  // The CSS expanded-state styles still exist
+  /\.game-card\[data-expanded="1"\] \.card-brief-inline-text\{[\s\S]{0,80}line-clamp:unset/.test(html) &&
+  // The early-return is commented out (REVERTED)
+  html.includes('// REVERTED: bottom sheet restored on all viewports'),
+  'iPad-1 routing disabled — bottom sheet works on all viewports. _openGameSheetTablet preserved for Path B (ambient panel injection).');
 
 // ── A592 / V12: typography role tokens ──────────────────────────────────────
 assert('A592 — V12: typography role tokens (--type-verdict/headline/data/label/chip/context)',
@@ -4239,13 +4237,12 @@ assert('A584 — V4: card-tier-{featured,standard,compact} classes scaffolded on
   html.includes('_cardTierClass(g)'),
   'V4 build plan: spec lines 48 + 75-86 use featured/standard/compact tiers for Two-Target Interaction and Journalism Surfacing. Card tier resolved from fieldGameTier and applied to the .game-card class list.');
 
-// ── A583 / V3: Bottom sheet gated to phone+L1/L2 only ───────────────────────
-assert('A583 — V3: bottom-sheet hidden above 820px (T1+ routes through ambient/inline)',
-  // iPad-4 expanded this block to include .bottom-sheet-overlay defensively;
-  // .bottom-sheet still appears as the first selector in the list.
-  /@media\(min-width:820px\)\{\s*\.bottom-sheet,/.test(html) &&
-  /\.bottom-sheet-overlay\{ display:none !important;/.test(html),
-  'V3 build plan: spec lines 68-73 route drama-badge tap to ambient panel (T1/T2) or inline LEFT/RIGHT/CENTRE expansion (D1-D4). Bottom sheet must not show above 820. iPad-4 also hides the overlay.');
+// ── A583 / V3 REVERTED: Bottom sheet restored on iPad ────────────────────────
+assert('A583 — V3 reverted: bottom-sheet restored on iPad (ambient panel injection pending)',
+  /V3 REVERTED: bottom sheet restored on iPad/.test(html) &&
+  // The CSS gate @media(min-width:820px){.bottom-sheet...display:none} must NOT exist
+  !/@media\(min-width:820px\)\{\s*\.bottom-sheet,/.test(html),
+  'V3 CSS gate removed — bottom sheet works on all viewports until ambient panel injection (Path B) ships.');
 
 // ── A582 / V2: Viewport v4 explicit P2/T1/T2 breakpoint sentinels ──────────
 assert('A582 — V2: explicit P2 / T1 portrait / T2 landscape breakpoint sentinels',
