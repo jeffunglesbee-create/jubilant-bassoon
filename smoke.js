@@ -4108,6 +4108,12 @@ assert('A580 — fieldDatesToQuery: replaces hardcoded -4h offset in V2 poll dua
 assert('A581 — fetchV2AllScores uses fieldDatesToQuery (no hardcoded UTC offset)',
   html.includes('fieldDatesToQuery()') && !html.includes('new Date(_nowUTC - 4 * 3600 * 1000)'));
 
+// ── A595 / iPad-3: layout containment + overflow-anchor on game list ────────
+assert('A595 — iPad-3: contain:layout + overflow-anchor on .games-list and .game-card',
+  /\.games-list\{display:flex;flex-direction:column;gap:6px;--cols:1;contain:layout style;overflow-anchor:auto\}/.test(html) &&
+  /\.game-card\{contain:layout style\}/.test(html),
+  'iPad-3 regression fix: contain:layout style + overflow-anchor:auto prevent per-card height changes from rippling into ancestor scroll position.');
+
 // ── A594 / iPad-2: persisted expand state across re-renders ─────────────────
 assert('A594 — iPad-2: _expandedCards Set + _restoreCardExpandState() hooked into renderAll',
   /const _expandedCards = new Set\(\)/.test(html) &&

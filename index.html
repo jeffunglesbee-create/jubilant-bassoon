@@ -507,7 +507,12 @@ body::before{
 }
 
 /* ── GAME CARDS ── */
-.games-list{display:flex;flex-direction:column;gap:6px;--cols:1}
+.games-list{display:flex;flex-direction:column;gap:6px;--cols:1;contain:layout style;overflow-anchor:auto}
+/* iPad-3: contain layout shifts so per-card height changes (inline expand,
+   ESPN score updates, brief loads) don't ripple into ancestor scroll
+   position. overflow-anchor lets the browser preserve the user's anchor
+   point when content above the viewport changes height. */
+.game-card{contain:layout style}
 /* P2 — choreographed reveal: --cols set per viewport so cards in the same row enter together */
 @media(min-width:1200px){.games-list{--cols:2}}
 @media(min-width:1440px){.games-list{--cols:3}}  /* V8: was 1800 — spec D3/D4 cutoff */
