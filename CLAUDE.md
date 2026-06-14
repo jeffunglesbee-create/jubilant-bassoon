@@ -20,7 +20,7 @@ A 34,000+ line single-file PWA (index.html) for global sports intelligence. Depl
 3. **Smoke must pass before push** — `node smoke.js index.html` must show 0 failed
 4. **SW_VERSION sync** — index.html and sw.js SW_VERSION must always match. Format: `YYYY-MM-DD[letter]` in ET timezone
 5. **Single-concern commits** — one logical change per commit
-6. **ADR-002 / RUWT compliance** — no composite interest-level scores, no drama scoring in relay, named binary conditions only
+6. **ADR-002 / RUWT compliance** — READ `docs/ADR-002-CONTEXT.md` before any compliance audit. Contains full defense architecture, mitigations, amnesty zone, and severity classification. Many patterns that look like violations are already mitigated.
 7. **Rule 47** — no drama scoring/classification in relay worker
 
 ## Deploy
