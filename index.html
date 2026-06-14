@@ -3007,13 +3007,31 @@ body.wc-mode #ambient-panel{display:none !important}
   .score-block{font-size:.95rem}
   .card-right{min-width:80px;max-width:150px}
 }
-@media(min-width:768px) and (max-width:900px){
+/* V2: tightened from 768-900 (overlapped T1/T2 at 820-1199) to 820-1199 */
+@media(min-width:820px) and (max-width:1199px){
   .media-grid{grid-template-columns:repeat(2,1fr)}  /* 2-col only on wider tablets */
-}
-/* ── iPad landscape (>=768px, <=900px) — 2-col games ── */
-@media(min-width:768px) and (max-width:900px){
   .games-list{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;align-items:start}
   .game-card{min-width:0}
+}
+
+/* ── V2: Viewport v4 explicit breakpoint sentinels ───────────────────────────
+   VIEWPORT-BUILD-PLAN.md Phase 1 task 2. Spec lines 16-32 define 11 named
+   breakpoints. The legacy max-width:600px / min-width:820px / etc. rules
+   remain in place; these blocks add explicit P2/T1/T2 anchors so the spec's
+   bucketing is addressable in CSS and smoke can verify presence. The --bp
+   custom property is the marker — harmless if unused, deterministic for
+   smoke regex. */
+@media(min-width:375px) and (max-width:413px){
+  :root{ --bp: "P2"; }  /* Phone Standard */
+}
+@media(min-width:414px) and (max-width:430px){
+  :root{ --bp: "P3"; }  /* Phone Large */
+}
+@media(min-width:820px) and (max-width:1199px) and (orientation:portrait){
+  :root{ --bp: "T1"; }  /* iPad Portrait */
+}
+@media(min-width:820px) and (max-width:1199px) and (orientation:landscape){
+  :root{ --bp: "T2"; }  /* iPad Landscape */
 }
 
 /* ── Ambient Panel — iPad Couch Mode (820–1199px) ───────────────────────── */

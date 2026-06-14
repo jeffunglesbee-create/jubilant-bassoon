@@ -4108,6 +4108,15 @@ assert('A580 — fieldDatesToQuery: replaces hardcoded -4h offset in V2 poll dua
 assert('A581 — fetchV2AllScores uses fieldDatesToQuery (no hardcoded UTC offset)',
   html.includes('fieldDatesToQuery()') && !html.includes('new Date(_nowUTC - 4 * 3600 * 1000)'));
 
+// ── A582 / V2: Viewport v4 explicit P2/T1/T2 breakpoint sentinels ──────────
+assert('A582 — V2: explicit P2 / T1 portrait / T2 landscape breakpoint sentinels',
+  /@media\(min-width:375px\) and \(max-width:413px\)/.test(html) &&
+  /@media\(min-width:820px\) and \(max-width:1199px\) and \(orientation:portrait\)/.test(html) &&
+  /@media\(min-width:820px\) and \(max-width:1199px\) and \(orientation:landscape\)/.test(html) &&
+  // Overlap fix: legacy 768-900 rule tightened to 820-1199 (no longer overlaps T1/T2).
+  !/@media\(min-width:768px\) and \(max-width:900px\)/.test(html),
+  'V2 build plan (VIEWPORT-BUILD-PLAN.md). Adds explicit anchors for spec breakpoints P2 (375-413), T1 portrait (820-1199 portrait), T2 landscape (820-1199 landscape). Resolves the 768-900 / 820-1199 overlap.');
+
 
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);
