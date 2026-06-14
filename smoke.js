@@ -4108,6 +4108,19 @@ assert('A580 — fieldDatesToQuery: replaces hardcoded -4h offset in V2 poll dua
 assert('A581 — fetchV2AllScores uses fieldDatesToQuery (no hardcoded UTC offset)',
   html.includes('fieldDatesToQuery()') && !html.includes('new Date(_nowUTC - 4 * 3600 * 1000)'));
 
+// ── A590 / V10: COLOUR-SYS-A semantic-token foundation ──────────────────────
+assert('A590 — V10: drama / access / angle / card-highlight tokens defined in :root',
+  /--drama-must:#c9a84c/.test(html) &&
+  /--drama-watch:#4a9eff/.test(html) &&
+  /--drama-low:#6a6a8a/.test(html) &&
+  /--access-free:#2dd4bf/.test(html) &&
+  /--access-trial:#f59e0b/.test(html) &&
+  /--card-highlight:#181830/.test(html) &&
+  /--angle-comeback:#c9a84c/.test(html) &&
+  /--angle-rivalry:#a78bfa/.test(html) &&
+  /--angle-series-lead:#4a9eff/.test(html),
+  'V10 build plan: COLOUR-SYS-A scaffold tokens (spec lines 131-156). Drama (3), access (2), angle (10), card-highlight.');
+
 // ── A589 / V9: --caution token defined in :root ─────────────────────────────
 assert('A589 — V9: --caution token defined in :root (spec line 160)',
   /--caution:\s*#f59e0b/.test(html),
