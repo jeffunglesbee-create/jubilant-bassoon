@@ -76,6 +76,18 @@
   --c-nba:#f97316;--c-nhl:#38bdf8;--c-mlb:#22c55e;
   --c-soccer:#a3e635;--c-tennis:#facc15;
   --c-cricket:#fb923c;--c-afl:#e879f9;--c-rugby:#34d399;
+  /* V6: COLOUR-SYS-A sport tokens (spec lines 163-172). --c-* legacy tokens
+     remain above for back-compat; --sport-* is the new spec-aligned naming.
+     One value fix: --c-nhl was #38bdf8 — kept here for legacy, but
+     --sport-nhl now uses the spec hex (#60a5fa). SPORT_COLORS dict
+     (below) reads from these via var(--sport-*). */
+  --sport-nba:#f97316;--sport-wnba:#f97316;
+  --sport-nhl:#60a5fa;--sport-mlb:#4ade80;
+  --sport-epl:#22c55e;--sport-mls:#16a34a;
+  --sport-nfl:#1e40af;--sport-afl:#f59e0b;
+  --sport-tennis:#facc15;--sport-f1:#ef4444;
+  --sport-champions-league:#1d4ed8;
+  --sport-wc:#c9a84c;
   --ff-display:'Chakra Petch','Chakra Petch Fallback',Arial,sans-serif;
   --ff-body:'DM Sans','DM Sans Fallback',Arial,sans-serif;
   --ff-cond:'DM Sans','DM Sans Fallback',Arial,sans-serif;
@@ -5160,29 +5172,31 @@ const TZ_OPTIONS = [
   {l:"Mumbai (IST)",v:"Asia/Kolkata"},{l:"Tokyo (JST)",v:"Asia/Tokyo"},
   {l:"Sydney (AEST)",v:"Australia/Sydney"},{l:"São Paulo (BRT)",v:"America/Sao_Paulo"},
 ];
+// V6: SPORT_COLORS reads spec tokens (var(--sport-*)) where the league maps
+// to a COLOUR-SYS-A sport identity. Non-spec leagues keep raw hex.
 const SPORT_COLORS = {
-  "NBA Playoffs":              "#f97316",
-  "NBA Regular Season":        "#f97316",
-  "NHL Playoffs":              "#38bdf8",
-  "NHL Regular Season":        "#38bdf8",
-  "Baseball (MLB)":            "#22c55e",
-  "Premier League":            "#a3e635",
+  "NBA Playoffs":              "var(--sport-nba)",
+  "NBA Regular Season":        "var(--sport-nba)",
+  "NHL Playoffs":              "var(--sport-nhl)",
+  "NHL Regular Season":        "var(--sport-nhl)",
+  "Baseball (MLB)":            "var(--sport-mlb)",
+  "Premier League":            "var(--sport-epl)",
   "EFL Championship":          "#84cc16",
   "La Liga":                   "#ef4444",
   "Serie A":                   "#3b82f6",
   "Bundesliga":                "#ef4444",
   "Ligue 1":                   "#8b5cf6",
-  "MLS Soccer":                "#ec4899",
-  "Australian Football (AFL)": "#e879f9",
+  "MLS Soccer":                "var(--sport-mls)",
+  "Australian Football (AFL)": "var(--sport-afl)",
   "IPL Cricket":               "#fb923c",
-  "Tennis":                    "#facc15",
+  "Tennis":                    "var(--sport-tennis)",
   "WWE/Pro Wrestling":         "#dc2626",
-  "NFL":                       "#4ade80",
+  "NFL":                       "var(--sport-nfl)",
   "Rugby":                     "#34d399",
-  "Formula 1":                 "#ef4444",
+  "Formula 1":                 "var(--sport-f1)",
   "MMA/UFC":                   "#f43f5e",
   "EFL Championship Playoffs": "#84cc16",
-  "UEFA Champions League":     "#3b82f6",
+  "UEFA Champions League":     "var(--sport-champions-league)",
   "UEFA Europa League":        "#f97316",
   "UEFA Conference League":    "#10b981",
   "IPL":                       "#fb923c",

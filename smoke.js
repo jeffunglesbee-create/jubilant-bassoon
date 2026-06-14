@@ -4108,6 +4108,24 @@ assert('A580 — fieldDatesToQuery: replaces hardcoded -4h offset in V2 poll dua
 assert('A581 — fetchV2AllScores uses fieldDatesToQuery (no hardcoded UTC offset)',
   html.includes('fieldDatesToQuery()') && !html.includes('new Date(_nowUTC - 4 * 3600 * 1000)'));
 
+// ── A586 / V6: Sport stripe tokens (COLOUR-SYS-A) + SPORT_COLORS refactor ───
+assert('A586 — V6: --sport-* tokens defined and SPORT_COLORS reads them',
+  // Spec hex values present for the spec-listed sports.
+  /--sport-nba:#f97316/.test(html) &&
+  /--sport-nhl:#60a5fa/.test(html) &&
+  /--sport-mlb:#4ade80/.test(html) &&
+  /--sport-epl:#22c55e/.test(html) &&
+  /--sport-mls:#16a34a/.test(html) &&
+  /--sport-nfl:#1e40af/.test(html) &&
+  /--sport-afl:#f59e0b/.test(html) &&
+  /--sport-tennis:#facc15/.test(html) &&
+  /--sport-f1:#ef4444/.test(html) &&
+  /--sport-champions-league:#1d4ed8/.test(html) &&
+  /--sport-wc:#c9a84c/.test(html) &&
+  // SPORT_COLORS dict (NBA entry) reads the token, not a raw hex literal.
+  /"NBA Playoffs":\s*"var\(--sport-nba\)"/.test(html),
+  'V6 build plan: spec lines 163-172 name sport identity tokens. Added --sport-* family with spec hex values; SPORT_COLORS dict refactored to consume them for the 9 spec-listed leagues. Legacy --c-* tokens retained for back-compat (build plan rule 7).');
+
 // ── A585 / V5: Journalism brief MID tier (2-line) at P3-L2 ──────────────────
 assert('A585 — V5: card-brief-inline-text MID tier — 2-line clamp at 414-819 + tier gating',
   /@media\(min-width:414px\) and \(max-width:819px\)\s*\{\s*\.card-brief-inline-text\s*\{\s*-webkit-line-clamp:\s*2/.test(html) &&
