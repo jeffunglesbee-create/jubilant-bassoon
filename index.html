@@ -23097,23 +23097,11 @@ function buildLayer3Rules(games) {
 }
 
 function buildCompoundPrompt(sections) {
-  // Sort games by importance tier before slicing so the highest-stakes games
-  // always appear first in the prompt context — reduces risk of model leading
-  // with lower-tier content when a Finals/WC game is buried in the array.
-  const _importanceScore = (g) => {
-    const l = (g.league || g._sport || '').toLowerCase();
-    if (/nba finals|stanley cup final|wc.*final|world cup.*final/i.test(l)) return 10;
-    if (/wc.*semifinal|wc.*quarter|wc.*knockout|wc.*r16|wc.*r32/i.test(l)) return 9;
-    if (/conference finals|cf g\d|wcf|ecf/i.test(l)) return 8;
-    if (/conference semi|second round|round 2/i.test(l)) return 7;
-    if (/fifa world cup|wc26/i.test(l)) return 6;  // WC group stage
-    if (g.seriesRecord) return 5;  // any playoff series
-    if (/elimination/i.test(g._gameImportance || '')) return 5;
-    if (/playoffs/i.test(g._gameImportance || '')) return 4;
-    return 1;
-  };
+  // ADR-002 (H7): rank games by named league tier (leagueImportanceTier),
+  // not a per-game numeric scalar. Tier string drives downstream filters;
+  // leagueImportanceRank is the sort key only — never thresholded for display.
   const games = (sections || []).flatMap(s => s.games || [])
-    .sort((a, b) => _importanceScore(b) - _importanceScore(a))
+    .sort((a, b) => leagueImportanceRank(leagueImportanceTier(b)) - leagueImportanceRank(leagueImportanceTier(a)))
     .slice(0, 12);
   const seriesGames = games.filter(g => g.seriesRecord);
 
@@ -23121,7 +23109,9 @@ function buildCompoundPrompt(sections) {
   const _suppressedCounts = {};
   if (hasTier1) {
     games.forEach(g => {
-      if (_importanceScore(g) >= 6) return; // not suppressed
+      // ADR-002 (H7): named-tier check — was '_importanceScore(g) >= 6'.
+      const _tH7 = leagueImportanceTier(g);
+      if (_tH7 !== 'reg' && _tH7 !== 'series') return; // not suppressed
       const league = (g.league || g._sport || g._section || '').toLowerCase();
       const leagueKey = league.includes('mlb') || league.includes('baseball') ? 'MLB'
         : league.includes('wnba') ? 'WNBA'
@@ -23169,8 +23159,9 @@ function buildCompoundPrompt(sections) {
   // Tier ordering preserved — highest-importance game in each league always included.
   // Prevents MLB/WNBA regular season consuming word budget on Finals nights
   // while ensuring every sport on the slate gets at least one entry.
-  const hasTier1 = games.some(g => _importanceScore(g) >= 8);
-  const hasTier2 = games.some(g => _importanceScore(g) >= 6 && _importanceScore(g) < 8);
+  // ADR-002 (H7): named-tier presence checks — were '>= 8' and '>= 6 && < 8'.
+  const hasTier1 = games.some(g => { const t = leagueImportanceTier(g); return t === 'final' || t === 'semifinal'; });
+  const hasTier2 = games.some(g => { const t = leagueImportanceTier(g); return t === 'quarterfinal' || t === 'group'; });
   const _leagueCount = {};
   const gamesForContext = games.filter(g => {
     const league = (g.league || g._sport || g._section || '').toLowerCase();
@@ -30678,17 +30669,34 @@ function fieldTierLabel(tier) {
 // Separate dimension: league-importance classifier for LLM prompt context.
 // Returns a named tier string, not a numeric scalar. Replaces the
 // _importanceScore bucket pattern at audit finding H7.
-function leagueImportanceTier(leagueLabel) {
-  const l = String(leagueLabel||'');
+// Accepts a game object (preferred) or a bare label string.
+function leagueImportanceTier(gameOrLabel) {
+  const g = (gameOrLabel && typeof gameOrLabel === 'object') ? gameOrLabel : null;
+  const l = String((g && (g.league || g._sport)) || gameOrLabel || '').toLowerCase();
   if (/nba finals|stanley cup final|world series|super bowl/i.test(l)) return 'final';
-  if (/FIFA World Cup 2026.*(Final|Third Place)/i.test(l)) return 'final';
-  if (/conference finals|cf g\d|wcf|ecf g\d|copa final|champions league final/i.test(l)) return 'final';
-  if (/FIFA World Cup 2026.*(Semi)/i.test(l)) return 'semifinal';
+  if (/fifa world cup 2026.*(final|third place)/i.test(l)) return 'final';
+  if (/conference finals|cf g\d|wcf|ecf|copa final|champions league final/i.test(l)) return 'final';
+  if (/fifa world cup 2026.*semi/i.test(l) || /wc.*semifinal/i.test(l)) return 'semifinal';
   if (/conference semi|semifinal/i.test(l)) return 'semifinal';
-  if (/FIFA World Cup 2026.*(Quarter|Round of 16|Round of 32)/i.test(l)) return 'quarterfinal';
-  if (/FIFA World Cup 2026/i.test(l)) return 'group';
-  if (/playoff|wc playoff|round 2|second round/i.test(l)) return 'series';
+  if (/fifa world cup 2026.*(quarter|round of 16|round of 32)/i.test(l) || /wc.*(quarter|knockout|r16|r32)/i.test(l)) return 'quarterfinal';
+  if (/fifa world cup|wc26/i.test(l)) return 'group';
+  if (g && g.seriesRecord) return 'series';
+  if (g && /elimination/i.test(g._gameImportance||'')) return 'series';
+  if (/playoff|round 2|second round/i.test(l)) return 'series';
+  if (g && /playoffs/i.test(g._gameImportance||'')) return 'series';
   return 'reg';
+}
+
+// Sort rank for league tiers — internal sort key only, never thresholded for display.
+function leagueImportanceRank(tier) {
+  switch (tier) {
+    case 'final':        return 10;
+    case 'semifinal':    return 9;
+    case 'quarterfinal': return 8;
+    case 'group':        return 6;
+    case 'series':       return 5;
+    default:             return 1;
+  }
 }
 
 // ── PM-32-VI: Viewer Intelligence Chip ──────────────────────────────────────

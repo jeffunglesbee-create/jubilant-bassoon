@@ -3824,12 +3824,13 @@ assert('A513 — WC/empty-state: pre-tournament editorial header in renderWCGrou
 // ─────────────────────────────────────────────────────────────────────────────
 // ── J1 brief priority tiers (A514) ──────────────────────────────────────────
 
-assert('A514 — J1/brief-tiers: buildCompoundPrompt enforces importance sort + tiered word budget',
-  html.includes('_importanceScore') &&
+assert('A514 — J1/brief-tiers: buildCompoundPrompt enforces named-tier sort + tiered word budget',
+  html.includes('leagueImportanceTier') &&
+  html.includes('leagueImportanceRank') &&
   html.includes('TIER 1 (NBA/NHL Finals') &&
   html.includes('TIER 3 (all other leagues') &&
-  html.includes('.sort((a, b) => _importanceScore(b) - _importanceScore(a))'),
-  'buildCompoundPrompt must sort games by importance before slicing, and brief instruction must include Tier 1/2/3 word budget rules');
+  html.includes('leagueImportanceRank(leagueImportanceTier(b))'),
+  'buildCompoundPrompt must sort games by named league tier before slicing (ADR-002 H7), and brief instruction must include Tier 1/2/3 word budget rules');
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ── SW_VERSION date must match today ET (A515) ───────────────────────────────
