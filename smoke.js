@@ -4108,6 +4108,15 @@ assert('A580 — fieldDatesToQuery: replaces hardcoded -4h offset in V2 poll dua
 assert('A581 — fetchV2AllScores uses fieldDatesToQuery (no hardcoded UTC offset)',
   html.includes('fieldDatesToQuery()') && !html.includes('new Date(_nowUTC - 4 * 3600 * 1000)'));
 
+// ── A599 / iPad-7: JQ Gate refusal filter + sport-specific exemplars ────────
+assert('A599 — iPad-7: _isModelRefusal filter wired into generateJournalismViaRelay + sport-specific exemplars',
+  /function _isModelRefusal\s*\(/.test(html) &&
+  /if \(_isModelRefusal\(data\.text\)\)/.test(html) &&
+  /function _fieldVoiceExemplarsForSport\s*\(/.test(html) &&
+  // Series-preview prompt construction routes through the sport-specific helper.
+  /const prompt=\[_fieldVoiceExemplarsForSport\(/.test(html),
+  'iPad-7 regression fix: (a) refusal filter in JQ Gate suppresses raw model meta-commentary (e.g. "I appreciate the detailed framework") and lets caller fall back to factual stub; (b) series-preview prompt sends sport-specific exemplars so NHL games get hockey exemplars, not NBA/MLB ones.');
+
 // ── A598 / iPad-6: ambient panel scrollable on iOS Safari ───────────────────
 assert('A598 — iPad-6: -webkit-overflow-scrolling:touch + min-height:0 children on #ambient-panel',
   /#ambient-panel\{[\s\S]{0,500}-webkit-overflow-scrolling:touch/.test(html) &&

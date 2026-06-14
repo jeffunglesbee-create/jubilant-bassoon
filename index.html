@@ -14696,6 +14696,24 @@ const JOURNALISM_GENERATE_RELAY = 'https://field-relay-nba.jeffunglesbee.workers
 const JOURNALISM_ENQUEUE_RELAY  = 'https://field-relay-nba.jeffunglesbee.workers.dev/journalism/enqueue';
 const JOURNALISM_RESULT_RELAY   = 'https://field-relay-nba.jeffunglesbee.workers.dev/journalism/result';
 
+// iPad-7: model refusal filter. Haiku occasionally emits meta-commentary
+// instead of a brief — most often when the prompt's exemplar section
+// doesn't match the sport being briefed (e.g. NBA PPG exemplars sent for
+// an NHL game with no hockey stats to verify against). Pattern-matches
+// the common refusal openings and returns true so the caller can
+// suppress + fall back to a factual stub. Patterns from observed cases
+// in IPAD-REGRESSION-FIXES.md Bug 7.
+function _isModelRefusal(text) {
+  if (!text) return false;
+  const t = String(text);
+  return /I appreciate the detailed framework/i.test(t) ||
+         /I need to flag (?:a|the |critical)/i.test(t) ||
+         /Which approach do you prefer/i.test(t) ||
+         /I cannot write (?:this|the) brief/i.test(t) ||
+         /I can write this brief in two ways/i.test(t) ||
+         /I (?:do not|don't) have (?:specific|verified) /i.test(t) && /stats|data|facts/i.test(t);
+}
+
 // generateJournalismViaRelay — drop-in replacement for direct CLAUDE_PROXY_URL
 // calls in the journalism path. Sends prompt + sport hint + briefType. Returns
 // the same string shape that callers expect (raw prose), or null on failure.
@@ -14723,6 +14741,14 @@ async function generateJournalismViaRelay(prompt, opts = {}) {
     }
     const data = await r.json();
     if (!data || !data.text) return null;
+    // iPad-7: model refusal filter (CRITICAL user-facing fix). If Haiku
+    // refuses to fabricate (e.g. NHL prompt sent with NBA-shaped exemplars),
+    // the raw meta-commentary used to reach the user as the "brief." Detect
+    // refusal patterns and suppress — caller falls back to a factual stub.
+    if (_isModelRefusal(data.text)) {
+      if (FIELD_DEBUG) console.warn('[JQ Gate] model refusal detected — suppressing', data.text.slice(0, 80));
+      return null;
+    }
     // Persist audit for debug panel
     window._lastJQAudit = {
       score: data.score,
@@ -21600,6 +21626,38 @@ const FIELD_PROSE_STYLE=[
 // BriefFromClaude (J3 standalone), fetchSeriesPreviewFromClaude (J2).
 // NOT applied to short sub-prompts (35-70 word briefs) where the
 // exemplar length would dominate the output budget.
+// iPad-7 part 2: sport-specific exemplar selector. The model refuses to
+// fabricate when the prompt's exemplar section doesn't match the sport
+// being briefed (NBA PPG/MLB ERA exemplars sent for an NHL game). This
+// helper returns a filtered copy of FIELD_VOICE_EXEMPLARS with only the
+// exemplar matching the briefed sport. Falls back to the full array if
+// sport isn't recognised — preserves prior behaviour for unknown sports.
+function _fieldVoiceExemplarsForSport(sport) {
+  if (!sport) return FIELD_VOICE_EXEMPLARS;
+  const sp = String(sport).toLowerCase();
+  // Map sport → which exemplar block to keep (A=NBA, B=WNBA, C=NHL).
+  const keep = (sp.includes('nhl') || sp.includes('hockey'))             ? 'C'
+             : (sp.includes('wnba'))                                     ? 'B'
+             : (sp.includes('nba') || sp.includes('basketball'))         ? 'A'
+             : (sp.includes('mlb') || sp.includes('baseball'))           ? 'A'  // closest tone
+             : null;
+  if (!keep) return FIELD_VOICE_EXEMPLARS;
+  const others = ['A','B','C'].filter(x => x !== keep);
+  const out = [];
+  let skipUntilBlank = false;
+  for (const line of FIELD_VOICE_EXEMPLARS) {
+    if (skipUntilBlank) {
+      // Drop the exemplar text line + the blank separator that follows it.
+      if (line === '') { skipUntilBlank = false; continue; }
+      continue;
+    }
+    const m = /^— Exemplar ([ABC])/.exec(line);
+    if (m && others.includes(m[1])) { skipUntilBlank = true; continue; }
+    out.push(line);
+  }
+  return out;
+}
+
 const FIELD_VOICE_EXEMPLARS = [
   '',
   '═══ FIELD VOICE FRAMING (READ FIRST — BEFORE THE DATA AND RULES BELOW) ═══',
@@ -24020,7 +24078,9 @@ async function fetchSeriesPreviewFromClaude(g){
       homeRecord: hM ? hM[1] : '', awayRecord: aM ? aM[1] : '',
     };
   })();
-  const prompt=[FIELD_VOICE_EXEMPLARS,
+  // iPad-7: send sport-specific exemplars only — NHL series briefs get
+  // hockey exemplars, not NBA/MLB ones. Reduces refusal frequency.
+  const prompt=[_fieldVoiceExemplarsForSport(g._sport||g._section||g.league||''),
     'Write a FIELD Series Brief for this playoff game.',
     'Home: '+g.home+'. Away: '+g.away+'.'+(g.venue?' Venue: '+g.venue+'.':''),
     'Series: '+(g.seriesRecord||'')+'. Stakes: '+stakes+'.'+(gameNum?' Tonight is '+gameNum+'.':''),
