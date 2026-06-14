@@ -4108,6 +4108,16 @@ assert('A580 — fieldDatesToQuery: replaces hardcoded -4h offset in V2 poll dua
 assert('A581 — fetchV2AllScores uses fieldDatesToQuery (no hardcoded UTC offset)',
   html.includes('fieldDatesToQuery()') && !html.includes('new Date(_nowUTC - 4 * 3600 * 1000)'));
 
+// ── A584 / V4: Card tiering classes (.card-tier-featured/standard/compact) ─
+assert('A584 — V4: card-tier-{featured,standard,compact} classes scaffolded on .game-card',
+  html.includes('.game-card.card-tier-featured') &&
+  html.includes('.game-card.card-tier-standard') &&
+  html.includes('.game-card.card-tier-compact') &&
+  // JS helper present and used in the game-card render path.
+  /function _cardTierClass\s*\(/.test(html) &&
+  html.includes('_cardTierClass(g)'),
+  'V4 build plan: spec lines 48 + 75-86 use featured/standard/compact tiers for Two-Target Interaction and Journalism Surfacing. Card tier resolved from fieldGameTier and applied to the .game-card class list.');
+
 // ── A583 / V3: Bottom sheet gated to phone+L1/L2 only ───────────────────────
 assert('A583 — V3: bottom-sheet hidden above 820px (T1+ routes through ambient/inline)',
   /@media\(min-width:820px\)\s*\{\s*\.bottom-sheet\s*\{\s*display:\s*none\s*!important/.test(html),

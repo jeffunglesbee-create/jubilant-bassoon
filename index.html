@@ -647,6 +647,16 @@ body::before{
   border-color:var(--gold2,#e8c97a);
 }
 .game-card{position:relative}  /* needed for absolute star-btn */
+
+/* V4: card tiering classes on .game-card (VIEWPORT-BUILD-PLAN.md task 4).
+   Spec lines 48 + 62-73 + 75-86 use featured / standard / compact tiers
+   to gate Two-Target Interaction and Journalism Surfacing. JS applies one
+   of these classes per card via _cardTierClass() during render. Visual
+   differences kept subtle — this scaffold unlocks per-tier rules elsewhere
+   (e.g. inline brief MID tier in V5) without restructuring existing cards. */
+.game-card.card-tier-featured{ box-shadow:inset 0 0 0 1px rgba(201,168,76,.18) }
+.game-card.card-tier-standard{ /* default — no override */ }
+.game-card.card-tier-compact{ opacity:.88 }
 .game-card.my-team-card{
   border-left:2px solid var(--gold);
   box-shadow:inset 0 0 24px rgba(201,168,76,.06);
@@ -9642,7 +9652,7 @@ function renderAll(){
       const isLive=st==="live";
       const timeCls=isLive?"game-time live-t":"game-time";
       const liveBadge=isLive?'<div class="live-badge"><span class="live-dot"></span>LIVE</div>':"";
-      return `<div class="game-card ${st}${isLive?" espn-live":""}${MY_TEAMS.has(g.home)||MY_TEAMS.has(g.away)?" my-team-card":""}" data-gameid="${g._id}" data-sport="${sec.sport}" data-home="${(g.home||"").replace(/"/g,"")}" data-away="${(g.away||"").replace(/"/g,"")}" data-starttime="${g.start_time||""}" data-venue="${(g.venue||"").replace(/"/g,"")}" data-confirmed="${g.confirmed===true?'true':'false'}"${g._gameImportance?` data-gameimportance="${g._gameImportance}"`:''} style="--i:${gi}">
+      return `<div class="game-card ${_cardTierClass(g)} ${st}${isLive?" espn-live":""}${MY_TEAMS.has(g.home)||MY_TEAMS.has(g.away)?" my-team-card":""}" data-gameid="${g._id}" data-sport="${sec.sport}" data-home="${(g.home||"").replace(/"/g,"")}" data-away="${(g.away||"").replace(/"/g,"")}" data-starttime="${g.start_time||""}" data-venue="${(g.venue||"").replace(/"/g,"")}" data-confirmed="${g.confirmed===true?'true':'false'}"${g._gameImportance?` data-gameimportance="${g._gameImportance}"`:''} style="--i:${gi}">
         <div class="card-accent"></div>
         <button class="pin-btn" aria-label="Pin game to widget" title="Pin to corner widget" onclick="event.stopPropagation();pinGame('${g._id}')">📌</button><button class="star-btn ${MY_TEAMS.has(g.home)||MY_TEAMS.has(g.away)?"starred":""}" aria-label="Follow team" title="${MY_TEAMS.has(g.away)?"Unfollow "+g.away:MY_TEAMS.has(g.home)?"Unfollow "+g.home:"Follow "+g.away+" / "+g.home}">★</button>
         <div class="card-body" role="button" tabindex="0" data-open="${g._id}" aria-label="Game intel for ${(g.away||'').replace(/'/g,'')} at ${(g.home||'').replace(/'/g,'')}">
@@ -30684,6 +30694,19 @@ function fieldTierLabel(tier) {
     case 'LIVE':             return 'LIVE';
     default:                 return '';
   }
+}
+
+// V4: card tier resolver — maps fieldGameTier to one of three CSS scaffold
+// classes used by .game-card. Spec lines 48 + 75-86: featured carries the
+// editorial weight (finals, elimination, crunch, in-series playoff),
+// standard is the default working tier, compact is for low-signal cards.
+function _cardTierClass(g) {
+  if (!g || !g._id) return 'card-tier-standard';
+  const t = fieldGameTier(g._id);
+  if (t === 'FINALS' || t === 'ELIMINATION' || t === 'CRUNCH' ||
+      t === 'EXTRA_TIME' || t === 'PLAYOFF_SERIES') return 'card-tier-featured';
+  if (t === 'UPCOMING' || t === 'NONE') return 'card-tier-compact';
+  return 'card-tier-standard';
 }
 
 // Separate dimension: league-importance classifier for LLM prompt context.
