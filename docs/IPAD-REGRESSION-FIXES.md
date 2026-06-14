@@ -57,16 +57,37 @@ the spec's intended T1/T2 routing (VIEWPORT-V4-SPEC.md lines 68-73).
 
 ## Remaining bugs from screenshots (June 14 4:21 PM)
 
-### Bug 6: Ambient panel not scrollable (clipped brief)
-**Symptom:** Game Recap card clips at "late tension. Washi..." — content below
-viewport is inaccessible. No scroll on the ambient panel.
-**Root cause:** `position:fixed` + `overflow-y:auto` on iOS Safari needs
-`-webkit-overflow-scrolling:touch`. Flex children lack `min-height:0`.
-**Fix:**
-1. Add `-webkit-overflow-scrolling:touch` to #ambient-panel iPad override
-2. Add `min-height:0` to all direct children of #ambient-panel
-3. Verify panel scrolls on iPad portrait AND landscape
-**Commit:** `fix(iPad-6): ambient panel scrollable on iOS Safari`
+### Bug 6: Ambient panel not scrollable (clipped brief) — **RESOLVED June 14 2026**
+**Symptom (historical):** Game Recap card clipped at "late tension. Washi..." —
+content below viewport was inaccessible. No scroll on the ambient panel.
+
+**Initial diagnosis was wrong.** The first three CSS-only attempts
+(`-webkit-overflow-scrolling:touch`, `min-height:0`, inner-div with flex
++ `height:100%`) all failed on real iPad. The fourth attempt (body-level
+CSS Grid) was reverted for breaking margin-right:390px on 7+ elements.
+
+**Actual root causes (both required fixing):**
+1. iOS Safari evaluates `overflow-y:auto` BEFORE flex height resolution
+   settles. A child with `height:100%` inside a `display:flex` parent
+   gets an indeterminate height at the moment overflow activates → no
+   scroll container forms.
+2. `renderAmbientPanel()` fires every 15-30s on the ESPN poll cycle and
+   replaces `panel.innerHTML` wholesale. Even with scroll working, every
+   poll yanked the reader back to scrollTop=0 mid-read.
+
+**Resolution (two-layer fix):**
+1. **iPad-18 (`59c78fd`)** — CSS: `.ambient-scroll-inner` uses inset
+   positioning (`position:absolute; top:0; right:0; bottom:0; left:0;
+   display:block; overflow-y:auto`). Height comes from inset bounds, not
+   flex resolution. `#ambient-panel` stays `position:fixed; display:flex;
+   overflow:hidden`.
+2. **iPad-19 (`41bb8df`)** — JS: `renderAmbientPanel()` saves
+   `.ambient-scroll-inner.scrollTop` before the innerHTML write and
+   restores it after.
+
+**Verified on real iPad Safari portrait AND landscape.** See
+`docs/AMBIENT-SCROLL-SPEC.md` (`What Worked` section) for the full case
+study and Rule 14 / STANDARDS Rule 24 narrative.
 
 ### Bug 7: AI refusal text exposed to user (CRITICAL)
 **Symptom:** FIELD SERIES BRIEF for SCF Game 6 shows Haiku's raw refusal:

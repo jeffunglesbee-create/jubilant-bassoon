@@ -1,8 +1,28 @@
 # FIELD HANDOFF
-**HEAD:** main @ 2f075d6 (iPad regression sweep) · 2026-06-14
-**SW_VERSION:** 2026-06-14h
-**Smoke:** 640/0 (was 550/0 at session start)
+**HEAD:** main @ 41bb8df (ambient scroll RESOLVED) · 2026-06-14
+**SW_VERSION:** 2026-06-14k
+**Smoke:** 645/0 (was 550/0 at session start)
 **Units:** 66/0
+
+## Ambient panel scroll — RESOLVED June 14 2026
+After four failed attempts, the fix is confirmed working on real iPad
+Safari (portrait + landscape). Two-layer fix:
+
+1. **iPad-18 (`59c78fd`)** — CSS: `.ambient-scroll-inner` now uses
+   `position:absolute; top:0; right:0; bottom:0; left:0; display:block;
+   overflow-y:auto`. Inset positioning gives iOS Safari a determinate
+   height before overflow:auto activates — bypasses the flex-height
+   resolution bug that broke the prior inner-div attempt (iPad-11).
+2. **iPad-19 (`41bb8df`)** — JS: `renderAmbientPanel()` saves
+   `.ambient-scroll-inner.scrollTop` before the innerHTML write and
+   restores it after. Without this, the 15-30s ESPN poll cycle yanked
+   the reader back to scrollTop=0 mid-read.
+
+`#ambient-panel` stays `position:fixed` per Rule 9 / CLAUDE.md Rule 9.
+No body-level layout change. Documented in `docs/AMBIENT-SCROLL-SPEC.md`
+(`What Worked` section).
+
+Bug 6 in `docs/IPAD-REGRESSION-FIXES.md` marked RESOLVED.
 
 ## iPad regression sweep (June 14 2026 — main)
 Executed `docs/IPAD-REGRESSION-FIXES.md` after the viewport v4 build
