@@ -4108,6 +4108,12 @@ assert('A580 — fieldDatesToQuery: replaces hardcoded -4h offset in V2 poll dua
 assert('A581 — fetchV2AllScores uses fieldDatesToQuery (no hardcoded UTC offset)',
   html.includes('fieldDatesToQuery()') && !html.includes('new Date(_nowUTC - 4 * 3600 * 1000)'));
 
+// ── A587 / V7: 44px touch-target floor on primary mobile targets ────────────
+assert('A587 — V7: 44px min-height on .filter-btn / .date-nav-btn / .share-btn / .watch-btn at mobile',
+  /@media\(max-width:819px\)\s*\{[^}]*\.filter-btn[^}]*\.share-btn[^}]*\.watch-btn[^}]*min-height:44px/s.test(html) &&
+  /\.date-nav-btn\{\s*min-height:44px;\s*min-width:44px\s*\}/.test(html),
+  'V7 build plan: spec lines 20+101 — 44px touch floor on primary tap targets at phone/tablet widths.');
+
 // ── A586 / V6: Sport stripe tokens (COLOUR-SYS-A) + SPORT_COLORS refactor ───
 assert('A586 — V6: --sport-* tokens defined and SPORT_COLORS reads them',
   // Spec hex values present for the spec-listed sports.

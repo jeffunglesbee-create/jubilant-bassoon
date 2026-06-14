@@ -1046,6 +1046,23 @@ body::before{
   .bottom-sheet{ display:none !important; }
 }
 
+/* V7: Apple HIG / spec lines 20+101 — 44px touch floor on primary tap
+   targets at phone/tablet widths. Desktop unaffected (precise pointers).
+   Date-nav buttons retain visual 24x24 via flexbox centering inside a
+   44px tap area; other buttons just lift their min-height. */
+@media(max-width:819px){
+  .filter-btn,
+  .share-btn,
+  .watch-btn,
+  .otw-watch-btn{ min-height:44px; }
+  .date-nav-btn{ min-height:44px; min-width:44px; }
+  /* drama-badge tap zone — close to the score line; expand padding so the
+     hit area is 44px without changing visible badge size. */
+  .badge-crunch,
+  .drama-mini{ min-height:44px; padding-top:.5rem; padding-bottom:.5rem;
+               display:inline-flex; align-items:center }
+}
+
 /* Card Life Stage content */
 .card-stage-content{padding:.25rem 0 .1rem;font-size:.62rem;line-height:1.5;color:rgba(232,232,240,.75)}
 .card-stage-content.big-game-note{font-size:.65rem;color:rgba(232,232,240,.88);line-height:1.6}
