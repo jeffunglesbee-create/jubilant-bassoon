@@ -2,12 +2,10 @@ name: Viewport Tests (Playwright)
 
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - 'index.html'
-      - 'tests/viewport-*.spec.js'
-      - 'tests/viewport.playwright.config.js'
+  # Optionally run on push to main — uncomment when stable:
+  # push:
+  #   branches: [main]
+  #   paths: [index.html, tests/**]
 
 jobs:
   viewport-tests:
@@ -15,16 +13,24 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
-      - run: npm ci
-      - run: npx playwright install webkit chromium --with-deps
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps webkit chromium
+
       - name: Run viewport tests
         run: npx playwright test tests/viewport-all.spec.js --config=tests/viewport.playwright.config.js
-      - uses: actions/upload-artifact@v4
-        if: failure()
+
+      - name: Upload test report
+        if: always()
+        uses: actions/upload-artifact@v4
         with:
-          name: viewport-test-results
+          name: viewport-test-report
           path: test-results/
           retention-days: 7
