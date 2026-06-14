@@ -34,7 +34,7 @@ jobs:
 
           # Exchange auth code for tokens
           print("Exchanging authorization code...")
-          r = requests.post("https://api.prod.whoop.com/oauth/token", data={
+          r = requests.post("https://api.prod.whoop.com/oauth/oauth2/token", data={
               "grant_type": "authorization_code",
               "code": auth_code,
               "client_id": client_id,
