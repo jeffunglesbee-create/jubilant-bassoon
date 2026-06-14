@@ -4108,6 +4108,12 @@ assert('A580 — fieldDatesToQuery: replaces hardcoded -4h offset in V2 poll dua
 assert('A581 — fetchV2AllScores uses fieldDatesToQuery (no hardcoded UTC offset)',
   html.includes('fieldDatesToQuery()') && !html.includes('new Date(_nowUTC - 4 * 3600 * 1000)'));
 
+// ── A598 / iPad-6: ambient panel scrollable on iOS Safari ───────────────────
+assert('A598 — iPad-6: -webkit-overflow-scrolling:touch + min-height:0 children on #ambient-panel',
+  /#ambient-panel\{[\s\S]{0,500}-webkit-overflow-scrolling:touch/.test(html) &&
+  /#ambient-panel > \*\{min-height:0\}/.test(html),
+  'iPad-6 regression fix: iOS Safari requires -webkit-overflow-scrolling:touch to enable momentum scroll on position:fixed overflow containers; flex children need min-height:0 to shrink inside an overflow-y:auto parent.');
+
 // ── A597 / iPad-5: journal tab single-tap activation ────────────────────────
 assert('A597 — iPad-5: hover styles gated behind (hover: hover) — single-tap on iPad',
   /@media \(hover: hover\)\{\s*\.desk-jump-link:hover/.test(html) &&
