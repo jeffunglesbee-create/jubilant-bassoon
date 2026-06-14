@@ -4154,18 +4154,26 @@ assert('A599 — iPad-7: _isModelRefusal filter wired into generateJournalismVia
   html.includes("['A','B','C','D']"),
   'iPad-7 regression fix: (a) refusal filter in JQ Gate suppresses raw model meta-commentary; (b) series-preview prompt sends sport-specific exemplars. Soccer/WC/EPL/MLS routed to Exemplar D (real soccer exemplar); tennis/golf/F1/AFL/NFL routed to closest tonal match among A/B/C.');
 
-// ── A598 / iPad-11: ambient panel scroll via inner-div wrapper ──────────────
-assert('A598 — iPad-11: .ambient-scroll-inner is the scroll container; #ambient-panel is the fixed shell',
-  // #ambient-panel is the fixed shell with overflow:hidden (not auto)
+// ── A598 / iPad-18: ambient panel scroll via inset-positioned inner div ────
+assert('A598 — iPad-18: .ambient-scroll-inner is position:absolute with all insets pinned; #ambient-panel is the fixed shell',
+  // #ambient-panel stays the fixed shell with overflow:hidden — Rule 9 keeps
+  // position:fixed intact, no body-level layout changes.
   /#ambient-panel\{[\s\S]+?overflow:hidden;[\s\S]+?z-index:22/.test(html) &&
-  // .ambient-scroll-inner owns scrolling + iOS momentum + flex min-height fix
+  // .ambient-scroll-inner now uses inset positioning so the scroll container
+  // gets a determinate height directly from its parent's bounds — bypassing
+  // the iOS Safari flex-height resolution bug that broke iPad-11.
   html.includes('.ambient-scroll-inner{') &&
+  html.includes('position:absolute;') &&
+  /\.ambient-scroll-inner\{[\s\S]+?top:0;right:0;bottom:0;left:0/.test(html) &&
   html.includes('overflow-y:auto;overflow-x:hidden;') &&
   html.includes('-webkit-overflow-scrolling:touch;') &&
+  // Direct children stack with margin-top (replaces the flex gap that iPad-11
+  // used — flex-on-inner is what triggered the iOS Safari scroll bug).
+  html.includes('.ambient-scroll-inner > * + *{ margin-top:.75rem; }') &&
   html.includes('.ambient-scroll-inner > *{min-height:0}') &&
   // renderAmbientPanel wraps panel content in the inner div
   html.includes('<div class="ambient-scroll-inner">'),
-  'iPad-11 regression fix: position:fixed + overflow-y:auto on the same element does not scroll reliably on iOS Safari. Split layout (fixed shell #ambient-panel, overflow:hidden) from scrolling (inner .ambient-scroll-inner div with overflow-y:auto + momentum).');
+  'iPad-18 regression fix: prior attempts (iPad-6, iPad-11, chat 4873249) kept the scroll containers height in the flex resolution chain. iOS Safari fumbles that. Inset positioning gives the inner scroll container a determinate height before overflow:auto is evaluated. See outbox/ambient-scroll-diagnosis.md.');
 
 // ── A597 / iPad-5: journal tab single-tap activation ────────────────────────
 assert('A597 — iPad-5: hover styles gated behind (hover: hover) — single-tap on iPad',

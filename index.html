@@ -3164,19 +3164,28 @@ body.wc-mode #ambient-panel{display:none !important}
   border-left:1px solid var(--edge);
   z-index:22;
 }
-/* iPad-11: dedicated scroll container that lives inside #ambient-panel.
-   This is the element iOS actually scrolls — height:100% of the fixed
-   parent, overflow-y:auto for the scroll, -webkit-overflow-scrolling:touch
-   for momentum. gap + padding moved here so the visual layout matches
-   what was previously rendered directly inside #ambient-panel. */
+/* iPad-18: dedicated scroll container that lives inside #ambient-panel.
+   iPad-11 made this an inner flex column with height:100% — but iOS
+   Safari's flex height resolution is unreliable when an `overflow-y:auto`
+   child sits inside a `position:fixed; display:flex` parent. Switch to
+   inset positioning (top:0; right:0; bottom:0; left:0) so the browser
+   computes the scroll container's height directly from the parent's
+   bounds, BEFORE overflow:auto is evaluated. This is the production
+   pattern Filament Group's sidebar / Bootstrap 5 offcanvas iOS path
+   uses. See outbox/ambient-scroll-diagnosis.md. */
 .ambient-scroll-inner{
-  display:flex;flex-direction:column;gap:.75rem;
-  height:100%;width:100%;
+  position:absolute;
+  top:0;right:0;bottom:0;left:0;
+  display:block;
   overflow-y:auto;overflow-x:hidden;
   -webkit-overflow-scrolling:touch;
   padding:1rem 1.1rem 2rem;
   box-sizing:border-box;
 }
+/* Reproduce iPad-11's vertical gap between sections without using flex
+   on the inner (flex is what triggered the iOS Safari bug). Margin-top
+   on every direct child except the first is equivalent visually. */
+.ambient-scroll-inner > * + *{ margin-top:.75rem; }
 .ambient-scroll-inner > *{min-height:0}
 @media(min-width:820px) and (max-width:1199px){
   #ambient-panel{display:flex;top:0;

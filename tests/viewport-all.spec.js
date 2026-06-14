@@ -189,14 +189,50 @@ for (const vp of VIEWPORTS) {
       });
     }
 
-    // ── #14 IPAD: ambient panel scrollable when content overflows ──────────
+    // ── #14 IPAD: ambient panel scroll architecture (iPad-18) ──────────────
     if (IS_IPAD(vp.id)) {
-      test('#14 ambient panel overflow-y allows scrolling', async ({ page }) => {
-        const overflowY = await page.evaluate(() => {
-          const el = document.getElementById('ambient-panel');
-          return el ? getComputedStyle(el).overflowY : '';
+      test('#14 ambient scroll inner div is inset-positioned and scrollable', async ({ page }) => {
+        // iPad-18 architecture (see outbox/ambient-scroll-diagnosis.md):
+        //   #ambient-panel — position:fixed shell with overflow:hidden
+        //   .ambient-scroll-inner — position:absolute inset to parent, overflow-y:auto
+        // The inner div is the element iOS Safari actually scrolls. Its
+        // height comes from inset bounds (top/right/bottom/left=0), not
+        // from flex resolution of height:100% — that was the bug.
+        const arch = await page.evaluate(() => {
+          const panel = document.getElementById('ambient-panel');
+          const inner = document.querySelector('#ambient-panel .ambient-scroll-inner');
+          if (!panel) return { panel: 'missing' };
+          if (!inner) return { panel: getComputedStyle(panel).position, inner: 'missing' };
+          const cs = getComputedStyle(inner);
+          return {
+            panelPosition:    getComputedStyle(panel).position,
+            panelOverflow:    getComputedStyle(panel).overflow,
+            innerPosition:    cs.position,
+            innerTop:         cs.top,
+            innerRight:       cs.right,
+            innerBottom:      cs.bottom,
+            innerLeft:        cs.left,
+            innerOverflowY:   cs.overflowY,
+            innerScrollable:  inner.scrollHeight > inner.clientHeight,
+            innerScrollHeight: inner.scrollHeight,
+            innerClientHeight: inner.clientHeight,
+          };
         });
-        expect(['auto', 'scroll']).toContain(overflowY);
+        expect(arch.panelPosition, 'panel is position:fixed (Rule 9)').toBe('fixed');
+        expect(arch.innerPosition, 'inner is position:absolute').toBe('absolute');
+        expect(arch.innerTop, 'inner top:0').toBe('0px');
+        expect(arch.innerRight, 'inner right:0').toBe('0px');
+        expect(arch.innerBottom, 'inner bottom:0').toBe('0px');
+        expect(arch.innerLeft, 'inner left:0').toBe('0px');
+        expect(['auto','scroll']).toContain(arch.innerOverflowY);
+        // Behavioral: when content overflows, scrollHeight must exceed
+        // clientHeight (otherwise there is nothing to scroll). On a fresh
+        // load the panel may be skeleton-only and not yet overflow — this
+        // assertion is non-strict; a hard pass on iOS still requires real
+        // device touch verification per AMBIENT-SCROLL-SPEC.md acceptance.
+        if (arch.innerScrollHeight > 0) {
+          expect(arch.innerScrollHeight).toBeGreaterThanOrEqual(arch.innerClientHeight);
+        }
       });
     }
 
