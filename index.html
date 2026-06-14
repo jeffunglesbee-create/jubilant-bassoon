@@ -20265,7 +20265,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-14e';
+  const SW_VERSION = '2026-06-14f';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -30550,6 +30550,132 @@ function _otwTierLabel(tier) {
   if (tier === 'CLOSE_FINISH') return 'CLOSE GAME';
   if (tier === 'LIVE_GAME')    return 'LIVE';
   return 'LIVE';
+}
+
+// ── ADR-002 Tier Foundation (June 14 2026) ───────────────────────────────────
+// Single source of truth for game-tier classification across the app.
+// Replaces composite preGameScore / dramaScoreLive thresholds at 13 audit sites
+// (see outbox/adr-002-audit-v2.md) with named categorical tiers. Internal
+// helpers may compute composites; every consumer reads a named tier, never a
+// raw number. Sort order via fieldTierRank() is a sort key only — never a
+// threshold gating display.
+//
+// Hierarchy (highest priority first):
+//   FINALS              — championship-round game (NBA Finals, Stanley Cup Final, …)
+//   ELIMINATION         — _gameImportance: 'elimination' | 'series_deciding'
+//   CRUNCH              — live, sport-specific crunch period + margin ≤ 5
+//   EXTRA_TIME          — live, overtime / extra innings / shootout
+//   CLOSE_LATE          — live, late period + close margin (not yet CRUNCH)
+//   PLAYOFF_SERIES      — _gameImportance: 'clinch' | 'playoff_impl', or active series
+//   MARQUEE_NATIONAL    — national broadcast + semifinal/conf-final tier
+//   LIVE                — any live game (state === 'in') not captured above
+//   UPCOMING            — scheduled, not yet started
+//   NONE                — postponed / final / no data
+function fieldGameTier(gameId) {
+  if (!gameId) return 'NONE';
+  let game = null, sport = '';
+  const sections = (typeof allData !== 'undefined' && allData?.sports) || [];
+  for (const sec of sections) {
+    const found = (sec.games||[]).find(g => g._id === gameId);
+    if (found) { game = found; sport = sec.sport; break; }
+  }
+  if (!game || game._postponed) return 'NONE';
+  const lbl = String(game.league||'');
+  // T1: championship round
+  if (/nba finals|stanley cup final|world series|super bowl|champions league final/i.test(lbl)) return 'FINALS';
+  if (/FIFA World Cup 2026.*(Final|Third Place)/i.test(lbl)) return 'FINALS';
+  // T2: elimination
+  if (game._gameImportance === 'elimination' || game._gameImportance === 'series_deciding') return 'ELIMINATION';
+  // Live-state tiers
+  const eData = (typeof findESPNScore === 'function') ? findESPNScore(game) : null;
+  if (eData && eData.state === 'in') {
+    const period = String(eData.period||'').toLowerCase();
+    const margin = Math.abs((eData.homeScore||0) - (eData.awayScore||0));
+    const sp = (sport||'').toLowerCase();
+    // T3: CRUNCH
+    const crunchRules = (typeof SPORT_CRUNCH_RULES !== 'undefined') ? SPORT_CRUNCH_RULES[sport] : null;
+    if (crunchRules && crunchRules.some(r => period.includes(r.toLowerCase())) && margin <= 5) return 'CRUNCH';
+    // T4: EXTRA_TIME
+    if (period.includes('ot') || period.includes('overtime') || period.includes('extra') ||
+        period.includes('so') || period.includes('shootout')) return 'EXTRA_TIME';
+    if (sp.includes('baseball') && (parseInt(eData.period)||0) > 9) return 'EXTRA_TIME';
+    // T5: CLOSE_LATE — sport-aware late period + close margin
+    const periodNum = parseInt(eData.period) || 0;
+    const clockMin  = parseInt(eData.clock) || 0;
+    const inLate = sp.includes('soccer') || sp.includes('league') || sp.includes('mls') ||
+                   sp.includes('liga') || sp.includes('ligue') || sp.includes('premier')
+                     ? clockMin >= 70
+                 : sp.includes('baseball') || sp.includes('mlb')
+                     ? periodNum >= 7
+                 : sp.includes('nhl') || sp.includes('hockey')
+                     ? periodNum >= 3
+                 : sp.includes('nfl') || sp.includes('football') || sp.includes('cfl')
+                     ? periodNum >= 4
+                 : periodNum >= 3;
+    if (inLate && margin <= 8) return 'CLOSE_LATE';
+  }
+  // T6: PLAYOFF_SERIES
+  if (game._gameImportance === 'clinch' || game._gameImportance === 'playoff_impl') return 'PLAYOFF_SERIES';
+  if (game.seriesRecord && game.seriesRecord !== '0-0') return 'PLAYOFF_SERIES';
+  // T7: MARQUEE_NATIONAL
+  if (typeof isNationalGame === 'function' && isNationalGame(game)) {
+    if (/conference finals|cf g\d|wcf|ecf g\d|conference semi|semifinal|copa final/i.test(lbl)) return 'MARQUEE_NATIONAL';
+    if (/FIFA World Cup 2026.*(Semi|Quarter|Round of 16|Round of 32)/i.test(lbl)) return 'MARQUEE_NATIONAL';
+  }
+  // T8: LIVE
+  if (eData && eData.state === 'in') return 'LIVE';
+  // T9: UPCOMING
+  if (eData && eData.state === 'pre') return 'UPCOMING';
+  if (game.start_time && new Date(game.start_time).getTime() > Date.now()) return 'UPCOMING';
+  return 'NONE';
+}
+
+// Numeric rank for sort comparisons ONLY. Higher = higher priority.
+// Never thresholded against display — use the named tier directly for that.
+function fieldTierRank(tier) {
+  switch (tier) {
+    case 'FINALS':           return 10;
+    case 'ELIMINATION':      return 9;
+    case 'CRUNCH':           return 8;
+    case 'EXTRA_TIME':       return 7;
+    case 'CLOSE_LATE':       return 6;
+    case 'PLAYOFF_SERIES':   return 5;
+    case 'MARQUEE_NATIONAL': return 4;
+    case 'LIVE':             return 3;
+    case 'UPCOMING':         return 2;
+    default:                 return 0;
+  }
+}
+
+// User-visible label for a tier. Factual condition string, never a number.
+function fieldTierLabel(tier) {
+  switch (tier) {
+    case 'FINALS':           return 'FINALS';
+    case 'ELIMINATION':      return 'ELIMINATION';
+    case 'CRUNCH':           return 'CRUNCH TIME';
+    case 'EXTRA_TIME':       return 'OT / EXTRA';
+    case 'CLOSE_LATE':       return 'CLOSE GAME';
+    case 'PLAYOFF_SERIES':   return 'PLAYOFF';
+    case 'MARQUEE_NATIONAL': return 'MARQUEE';
+    case 'LIVE':             return 'LIVE';
+    default:                 return '';
+  }
+}
+
+// Separate dimension: league-importance classifier for LLM prompt context.
+// Returns a named tier string, not a numeric scalar. Replaces the
+// _importanceScore bucket pattern at audit finding H7.
+function leagueImportanceTier(leagueLabel) {
+  const l = String(leagueLabel||'');
+  if (/nba finals|stanley cup final|world series|super bowl/i.test(l)) return 'final';
+  if (/FIFA World Cup 2026.*(Final|Third Place)/i.test(l)) return 'final';
+  if (/conference finals|cf g\d|wcf|ecf g\d|copa final|champions league final/i.test(l)) return 'final';
+  if (/FIFA World Cup 2026.*(Semi)/i.test(l)) return 'semifinal';
+  if (/conference semi|semifinal/i.test(l)) return 'semifinal';
+  if (/FIFA World Cup 2026.*(Quarter|Round of 16|Round of 32)/i.test(l)) return 'quarterfinal';
+  if (/FIFA World Cup 2026/i.test(l)) return 'group';
+  if (/playoff|wc playoff|round 2|second round/i.test(l)) return 'series';
+  return 'reg';
 }
 
 // ── PM-32-VI: Viewer Intelligence Chip ──────────────────────────────────────
