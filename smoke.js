@@ -2425,7 +2425,7 @@ assert('A406 — P2: choreographed reveal (startup polish bundle)',
   // --cols CSS variable on .games-list (defined at default + per breakpoint)
   /\.games-list\{[^}]*--cols:1\}/.test(html) &&
   html.includes('@media(min-width:1200px){.games-list{--cols:2}}') &&
-  html.includes('@media(min-width:1800px){.games-list{--cols:3}}') &&
+  /\@media\(min-width:1440px\)\{\.games-list\{--cols:3\}\}/.test(html) &&  // V8: was 1800; spec D3/D4 cutoff
   // .game-card animation-delay reads --i and --cols with row-stagger + cap
   html.includes('animation-delay:min(calc(floor(var(--i, 0) / var(--cols, 1)) * 28ms), 360ms)') &&
   // .sport-section animation-delay uses --i with cap
