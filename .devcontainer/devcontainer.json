@@ -1,0 +1,14 @@
+{
+  "name": "FIELD",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:20",
+  "postCreateCommand": "npm install && npm install -g wrangler@3.109.0",
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "editor.tabSize": 2,
+        "files.trimTrailingWhitespace": true
+      }
+    }
+  },
+  "forwardPorts": [8787]
+}
