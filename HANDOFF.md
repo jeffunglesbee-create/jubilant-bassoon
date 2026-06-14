@@ -1,8 +1,28 @@
 # FIELD HANDOFF
-**HEAD:** 7db3223 · 2026-06-14 · via mcp
-**SW_VERSION:** 2026-06-14g
-**Smoke:** 635/0 (was 550/0 at session start)
+**HEAD:** main @ 2f075d6 (iPad regression sweep) · 2026-06-14
+**SW_VERSION:** 2026-06-14h
+**Smoke:** 640/0 (was 550/0 at session start)
 **Units:** 66/0
+
+## iPad regression sweep (June 14 2026 — main)
+Executed `docs/IPAD-REGRESSION-FIXES.md` after the viewport v4 build
+shipped regressions on iPad. Five bugs, one commit per fix:
+1. **iPad-1** (`18c0775`): viewport-aware tap routing — openBottomSheet
+   early-returns to a scroll-into-view + inline-expand fallback at ≥820.
+2. **iPad-2** (`7f247c5`): `_expandedCards` Set + `_restoreCardExpandState()`
+   hook into renderAll so expand state survives the 20-45s poll cycle.
+3. **iPad-3** (`6346e47`): `contain:layout style` + `overflow-anchor:auto`
+   on `.games-list` and `.game-card` to stop per-card height changes from
+   rippling into ancestor scroll position.
+4. **iPad-4** (`3cf273f`): 44px tap floor on `.desk-jump-link` /
+   `.jrn-nav-link` / `#wc-nav-link` at ≤1199 + defensive hide of
+   `.bottom-sheet-overlay` above 820.
+5. **iPad-5** (`2f075d6`): hover styles gated behind `@media (hover: hover)`
+   + `touch-action:manipulation` on nav links — kills the iOS sticky-hover
+   double-tap.
+
+Five new smoke assertions A593-A597. Two existing assertions updated
+(A406 / A583).
 
 ## What shipped today (June 14 2026)
 
