@@ -6222,6 +6222,14 @@ const _multiWordNicks={'Boston Red Sox':'Red Sox','Chicago White Sox':'White Sox
   'Tottenham Hotspur':'Spurs','Manchester United':'Man Utd',
   'Manchester City':'Man City','Newcastle United':'Newcastle',
   'Leicester City':'Leicester','Wolverhampton Wanderers':'Wolves',
+  // iPad-8: WNBA — last-word nick works for most ('Atlanta Dream' → 'Dream')
+  // but ESPN sometimes ships shortened names that collapse to a single letter.
+  // Explicit entries guarantee the nick column never falls back to first-char.
+  'Las Vegas Aces':'Aces','Atlanta Dream':'Dream','Indiana Fever':'Fever',
+  'New York Liberty':'Liberty','Minnesota Lynx':'Lynx','Phoenix Mercury':'Mercury',
+  'Washington Mystics':'Mystics','Chicago Sky':'Sky','Los Angeles Sparks':'Sparks',
+  'Seattle Storm':'Storm','Connecticut Sun':'Sun','Dallas Wings':'Wings',
+  'Golden State Valkyries':'Valkyries',
   'Czech Republic':'Czechia','Bosnia and Herzegovina':'Bosnia',
   'South Africa':'S. Africa','Congo DR':'Congo','DR Congo':'Congo',
   'Ivory Coast':'Ivory Coast','Costa Rica':'Costa Rica',
@@ -6944,6 +6952,14 @@ const _teamAbbr={
   'Pittsburgh Penguins':'PIT','Tampa Bay Lightning':'TBL','Dallas Stars':'DAL',
   'Edmonton Oilers':'EDM','Vancouver Canucks':'VAN','Calgary Flames':'CGY',
   'Nashville Predators':'NSH','Minnesota Wild':'MIN','Winnipeg Jets':'WPG',
+  // iPad-8: WNBA tricodes — when ambient panel falls back to s.awayTricode
+  // the dictionary needs to know WNBA teams or the tricode column is empty
+  // and downstream rendering can collapse the team name to a single letter.
+  'Las Vegas Aces':'LVA','Atlanta Dream':'ATL','Indiana Fever':'IND',
+  'New York Liberty':'NYL','Minnesota Lynx':'MIN','Phoenix Mercury':'PHX',
+  'Washington Mystics':'WAS','Chicago Sky':'CHI','Los Angeles Sparks':'LAS',
+  'Seattle Storm':'SEA','Connecticut Sun':'CON','Dallas Wings':'DAL',
+  'Golden State Valkyries':'GSV',
 };
 function _gotdKey(away,home){return(_teamAbbr[away]||'')+'@'+(_teamAbbr[home]||'');}
 

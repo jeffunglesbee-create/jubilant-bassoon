@@ -4110,6 +4110,16 @@ assert('A580 — fieldDatesToQuery: replaces hardcoded -4h offset in V2 poll dua
 assert('A581 — fetchV2AllScores uses fieldDatesToQuery (no hardcoded UTC offset)',
   html.includes('fieldDatesToQuery()') && !html.includes('new Date(_nowUTC - 4 * 3600 * 1000)'));
 
+// ── A600 / iPad-8: WNBA team-name mappings ──────────────────────────────────
+assert('A600 — iPad-8: WNBA teams present in _multiWordNicks + _teamAbbr',
+  /'Las Vegas Aces':'Aces'/.test(html) &&
+  /'New York Liberty':'Liberty'/.test(html) &&
+  /'Connecticut Sun':'Sun'/.test(html) &&
+  /'Las Vegas Aces':'LVA'/.test(html) &&
+  /'Washington Mystics':'WAS'/.test(html) &&
+  /'Phoenix Mercury':'PHX'/.test(html),
+  'iPad-8 regression fix: WNBA teams added to both _multiWordNicks (nick column) and _teamAbbr (tricode column) so ambient panel never collapses team name to single character.');
+
 // ── A599 / iPad-7: JQ Gate refusal filter + sport-specific exemplars ────────
 assert('A599 — iPad-7: _isModelRefusal filter wired into generateJournalismViaRelay + sport-specific exemplars',
   /function _isModelRefusal\s*\(/.test(html) &&
