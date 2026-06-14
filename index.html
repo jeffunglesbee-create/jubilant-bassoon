@@ -33374,8 +33374,19 @@ function computeWatchValue(game, sport){
   if(typeof isRivalGame==='function'&&isRivalGame(game)){value+=5;factors.push('rivalry');}
 
   // ── Verdict ──────────────────────────────────────────────────
+  // ADR-002 (H1): hardcoded composite threshold replaced with named-tier verdict.
+  // Factor accumulation above stays as the internal sort key (value); the
+  // user-visible verdict comes from fieldGameTier + pref overlays.
   value=Math.min(100,value);
-  const verdict=value>=60?'must':value>=30?'watch':'skip';
+  const _tierH1 = fieldGameTier(game._id);
+  const _hasMyTeam = (MY_TEAMS.has(game.home) || MY_TEAMS.has(game.away));
+  let verdict;
+  if (_tierH1 === 'FINALS' || _tierH1 === 'ELIMINATION' || _tierH1 === 'CRUNCH') verdict = 'must';
+  else if (_hasMyTeam)                                                            verdict = 'must';
+  else if (_tierH1 === 'EXTRA_TIME' || _tierH1 === 'CLOSE_LATE' ||
+           _tierH1 === 'PLAYOFF_SERIES' || _tierH1 === 'MARQUEE_NATIONAL' ||
+           _tierH1 === 'LIVE')                                                    verdict = 'watch';
+  else                                                                            verdict = 'skip';
   const reason=factors.length?factors.slice(0,3).join(' \u00b7 '):'nothing notable';
   return {value,verdict,reason};
 }
