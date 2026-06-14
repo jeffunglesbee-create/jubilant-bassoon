@@ -20164,7 +20164,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-14b';
+  const SW_VERSION = '2026-06-14c';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -24263,6 +24263,41 @@ document.addEventListener('visibilitychange', () => {
         }
       } catch (_e) {}
     }
+
+    // ── wp_update: live in-play odds → WP writeback ─────────────────────
+    // AmbientDO broadcasts wp_update when live odds produce a WP shift
+    // exceeding 0.02 (2pp). Write directly into espnScores so WP bars
+    // render at SSE latency. Also dispatch field:wp_update for attention bar.
+    if (eventType === 'wp_update') {
+      try {
+        if (typeof espnScores !== 'undefined' && data.home && data.away) {
+          const _wpKey = data.home + '|' + data.away;
+          const _wpPrev = espnScores[_wpKey];
+          if (_wpPrev) {
+            _wpPrev.wp_prev = _wpPrev.wp;
+            _wpPrev.wp      = data.homeWP;
+            _wpPrev._liveOddsWP = {
+              homeWP: data.homeWP, awayWP: data.awayWP, drawWP: data.drawWP,
+              peakCollapse: data.peakCollapse, urgency: data.urgency,
+              confidence: data.confidence, source: 'odds-api', ts: data.ts,
+            };
+            if (typeof espnScoreTs !== 'undefined') espnScoreTs[_wpKey] = Date.now();
+            // Coalesced render (reuse score writeback timer)
+            if (!_sseRenderTimer && typeof renderESPNScores === 'function') {
+              _sseRenderTimer = setTimeout(function() {
+                _sseRenderTimer = null;
+                try { renderESPNScores(); } catch (_e) {}
+              }, 80);
+            }
+          }
+        }
+      } catch (_e) {}
+      try {
+        if (typeof fieldEvents !== 'undefined') {
+          fieldEvents.dispatchEvent(new CustomEvent('field:wp_update', { detail: data }));
+        }
+      } catch (_e) {}
+    }
   }
 
   function _connect() {
@@ -24277,6 +24312,7 @@ document.addEventListener('visibilitychange', () => {
       _es.addEventListener('lead_change', e => _onMessage(e, 'lead_change'));
       _es.addEventListener('final',       e => _onMessage(e, 'final'));
       _es.addEventListener('all_final',   e => _onMessage(e, 'all_final'));
+      _es.addEventListener('wp_update',   e => _onMessage(e, 'wp_update'));
       _es.addEventListener('ping',        e => _onMessage(e, 'ping'));
 
       _es.onopen = function() {

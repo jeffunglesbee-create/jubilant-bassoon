@@ -4077,6 +4077,12 @@ assert('A571 — NBA post-game brief consumption: dedup Set + final-state fetch 
 assert('A572 — NHL post-game brief consumption: dedup Set + final-state fetch + matchupNote inject',
   html.includes('_nhlBriefsFetched') && html.includes('/nhl/i.test') && html.includes('[V2-NHL] brief consumed'));
 
+assert('A573 — Live odds wp_update SSE handler: writeback to espnScores + field:wp_update dispatch',
+  html.includes("eventType === 'wp_update'") && html.includes('_liveOddsWP') && html.includes('field:wp_update'));
+
+assert('A574 — Live odds wp_update SSE listener registered on AmbientEventSource',
+  html.includes("addEventListener('wp_update'"));
+
 
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);
