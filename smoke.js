@@ -4071,6 +4071,9 @@ assert('A569 — buildWCMediaCards: hasWCGames flag + tournament brief card unsh
 assert('A570 — WC game brief consumption: dedup Set + final-state fetch + matchupNote inject',
   html.includes('_wcBriefsFetched') && html.includes("wg.state !== 'final'") && html.includes('/journalism/game/'));
 
+assert('A571 — NBA post-game brief consumption: dedup Set + final-state fetch + matchupNote inject',
+  html.includes('_nbaBriefsFetched') && html.includes("e.state === 'post'") && html.includes('/nba/i.test'));
+
 
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);

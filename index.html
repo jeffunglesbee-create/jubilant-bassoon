@@ -14933,6 +14933,7 @@ let _v2PollTimeout = null;
 let _v2PollCycle   = 0;
 let _wcSectionInjected = false; // true once FIFA section added to allData.sports from V2
 const _wcBriefsFetched = new Set(); // dedup: game IDs we've already fetched post-match briefs for
+const _nbaBriefsFetched = new Set(); // dedup: NBA game IDs we've already fetched post-game briefs for
 const _v2LeaderCache = {}; // gameNumericId → {ts} — prevents re-fetching within TTL
 const V2_LEADER_TTL  = 55000; // 55s — slightly under poll interval
 
@@ -15231,6 +15232,47 @@ async function fetchV2AllScores() {
         }
       }
     } catch(e_wc) { if(FIELD_DEBUG) console.warn('[V2-WC] section inject error:', e_wc.message); }
+  }
+
+  // ── NBA post-game brief consumption ───────────────────────────────────────
+  // When an NBA game transitions to 'final' in V2 poll, async-fetch the
+  // post-game brief from relay KV (brief:game:nba:{id}, 1hr TTL).
+  // Inject as matchupNote so it flows into game card rendering.
+  // Mirrors WC brief consumption pattern. Dedup via _nbaBriefsFetched Set.
+  if (FIELD_V2_SOURCES.nba) {
+    const nbaKeys = Object.keys(espnScores).filter(k => {
+      const e = espnScores[k];
+      return e && e.state === 'post' && /nba/i.test(e._sport || e.league || '');
+    });
+    const _nbaRelayBase = typeof V2_RELAY_BASE !== 'undefined' ? V2_RELAY_BASE
+      : 'https://field-relay-nba.jeffunglesbee.workers.dev';
+    for (const key of nbaKeys) {
+      const e = espnScores[key];
+      const gameId = e._gameId || e.espnEventId || '';
+      if (!gameId || _nbaBriefsFetched.has(gameId)) continue;
+      _nbaBriefsFetched.add(gameId);
+      (async (gId, gKey) => {
+        try {
+          const r = await fetch(
+            `${_nbaRelayBase}/journalism/game/${encodeURIComponent(gId)}`,
+            { signal: AbortSignal.timeout(1500) }
+          );
+          if (!r.ok) return;
+          const data = await r.json();
+          const brief = data?.brief;
+          if (!brief) return;
+          if (espnScores[gKey]) espnScores[gKey].matchupNote = brief;
+          // Also update allData game object
+          const nbaSec = (allData?.sports||[]).find(s => /NBA/i.test(s.sport||'') || /NBA/i.test(s.section||''));
+          if (nbaSec) {
+            const g = (nbaSec.games||[]).find(gg => (gg._id||gg.sourceId||'') === gId);
+            if (g) g.matchupNote = brief;
+          }
+          scheduleRenderAll();
+          if (FIELD_DEBUG) console.debug('[V2-NBA] brief consumed for', gId, brief.slice(0, 60) + '…');
+        } catch(_) { /* timeout or network — silent */ }
+      })(gameId, key);
+    }
   }
 
   renderESPNScores(); // re-render with fresh V2 data
@@ -20084,7 +20126,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-13h';
+  const SW_VERSION = '2026-06-14a';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
