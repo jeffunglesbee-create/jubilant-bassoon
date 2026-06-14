@@ -15411,9 +15411,19 @@ async function fetchV2AllScores() {
   hydrateEspnScoresFromFinals(); // restore known final scores before rendering (V2 returns null on finals)
 
   // ── Inject FIFA World Cup section into allData.sports ─────────────────────
-  // V2 polling fetches wc26 games → espnScores. But allData.sports (from hardcoded
-  // buildTodaySchedule) has no FIFA section → no game cards render → no live overlays.
-  // Fix: build a FIFA section from the V2 response and inject it once.
+  // V2 polling fetches wc26 games → espnScores. allData.sports may already
+  // contain a FIFA section pushed by maybePushWorldCup() from wc26Raw
+  // (the hardcoded schedule with matchupNotes + streams). Two failure modes
+  // we have to avoid:
+  //   1. Splicing a duplicate FIFA section when wc26Raw already produced one
+  //      — leads to two cards per match + filter bar collisions.
+  //   2. The "subsequent polls" branch looks up the section by `s.section`,
+  //      which the wc26Raw section never sets — so live state updates
+  //      silently skipped the wc26Raw section. WC games appeared static or
+  //      vanished depending on which branch fired first.
+  // Fix: idempotent injection. Look up by either `sport` or `section`. If a
+  // FIFA section already exists, mark as injected and use the update path
+  // to merge V2 live state in. Otherwise splice a fresh one.
   if (FIELD_V2_SOURCES.wc26) {
     try {
       const wcKeys = Object.keys(espnScores).filter(k => {
@@ -15423,6 +15433,17 @@ async function fetchV2AllScores() {
         if (e.start_time && !isToday(e.start_time)) return false;
         return true;
       });
+      // iPad-10: pre-flight dedup. If maybePushWorldCup already pushed a
+      // FIFA section, flip _wcSectionInjected so the update branch runs
+      // instead of splicing a duplicate. Look up by sport OR section.
+      const existingFifaSection = allData?.sports?.find(s =>
+        /FIFA/i.test(s.sport || '') || /FIFA/i.test(s.section || '')
+      );
+      if (existingFifaSection && !_wcSectionInjected) {
+        _wcSectionInjected = true;
+        // Backfill the `section` field so the update branch's find() works.
+        if (!existingFifaSection.section) existingFifaSection.section = 'FIFA World Cup 2026';
+      }
       if (wcKeys.length > 0) {
         const wcGames = wcKeys.map(k => {
           const e = espnScores[k];
@@ -15430,7 +15451,7 @@ async function fetchV2AllScores() {
           return {
             home, away, _id: e._gameId || e.espnEventId || k,
             league: e.league || 'FIFA World Cup 2026',
-            _sport: 'wc26', _section: 'FIFA World Cup 2026',
+            _sport: 'FIFA World Cup 2026', _section: 'FIFA World Cup 2026',
             start_time: e.start_time || e.startTime || '',
             state: e.state || 'pre',
             confirmed: true,
@@ -15454,10 +15475,31 @@ async function fetchV2AllScores() {
           }
           _wcSectionInjected = true;
         } else {
-          // Subsequent polls: update game list + state (new games appear, state changes)
-          const fifaSection = allData?.sports?.find(s => (s.section || '').includes('FIFA'));
+          // Subsequent polls: merge V2 live state into the existing FIFA section.
+          // Use sport OR section for lookup (wc26Raw seeds only `sport`).
+          const fifaSection = allData?.sports?.find(s =>
+            /FIFA/i.test(s.section || '') || /FIFA/i.test(s.sport || '')
+          );
           if (fifaSection) {
-            fifaSection.games = wcGames;
+            // iPad-10: MERGE — keep wc26Raw games not yet in V2, overlay V2
+            // games on top so live state (scores, clock, state) wins where
+            // V2 has it but wc26Raw's matchupNote / streams / venue survive
+            // for upcoming games V2 hasn't yet returned.
+            const byKey = new Map();
+            (fifaSection.games || []).forEach(g => {
+              const k = `${(g.home||'').toLowerCase()}|${(g.away||'').toLowerCase()}`;
+              byKey.set(k, g);
+            });
+            wcGames.forEach(v => {
+              const k = `${(v.home||'').toLowerCase()}|${(v.away||'').toLowerCase()}`;
+              const existing = byKey.get(k) || {};
+              byKey.set(k, { ...existing, ...v,
+                matchupNote: v.matchupNote || existing.matchupNote || '',
+                streams: (existing.streams && existing.streams.length) ? existing.streams : v.streams,
+                venue: existing.venue || v.venue || '',
+              });
+            });
+            fifaSection.games = Array.from(byKey.values());
           }
         }
         scheduleRenderAll();
