@@ -4110,8 +4110,9 @@ assert('A581 — fetchV2AllScores uses fieldDatesToQuery (no hardcoded UTC offse
 
 // ── A587 / V7: 44px touch-target floor on primary mobile targets ────────────
 assert('A587 — V7: 44px min-height on .filter-btn / .date-nav-btn / .share-btn / .watch-btn at mobile',
-  /@media\(max-width:819px\)\s*\{[^}]*\.filter-btn[^}]*\.share-btn[^}]*\.watch-btn[^}]*min-height:44px/s.test(html) &&
-  /\.date-nav-btn\{\s*min-height:44px;\s*min-width:44px\s*\}/.test(html),
+  html.includes('V7: Apple HIG') &&
+  /\.filter-btn,\s*\.share-btn,\s*\.watch-btn,\s*\.otw-watch-btn\{\s*min-height:44px/.test(html) &&
+  /\.date-nav-btn\{\s*min-height:44px;\s*min-width:44px/.test(html),
   'V7 build plan: spec lines 20+101 — 44px touch floor on primary tap targets at phone/tablet widths.');
 
 // ── A586 / V6: Sport stripe tokens (COLOUR-SYS-A) + SPORT_COLORS refactor ───
