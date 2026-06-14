@@ -6172,12 +6172,14 @@ function buildCardTimeDisplay(isLive, eData, timeStr, startTimeISO) {
     return `${a}–${h}${period ? ' ' + period : ''}${glyph}`;
   }
   // Live, no scoreboard data: score-tbd only in first 10min (genuine pre-score window)
-  // After 10min without data, show LIVE — prevents misfire on 3h+ old finished games
+  // After 10min without data: empty string. The .live-badge (red dot + LIVE)
+  // attached to the card already says LIVE — this slot returning "LIVE" too
+  // was the third stacked LIVE indicator (with .live-badge + drama-badge).
   if (startTimeISO) {
     const minsIn = (Date.now() - new Date(startTimeISO)) / 60000;
     if (minsIn >= 0 && minsIn < 10) return '<span class="score-tbd" aria-label="Score pending"></span>';
   }
-  return 'LIVE';
+  return '';
 }
 function getStatus(iso, opts){
   if(!iso) return "upcoming";
@@ -20912,10 +20914,14 @@ function getStatisticalExtremes(eData, sport){
   return result;
 }
 
+// iPad-14: drop the " LIVE" suffix. The .live-badge (red dot + LIVE)
+// already conveys the LIVE state; this badge is meant to convey the
+// drama TIER. "● LIVE" / "⚡ LIVE" / "🔥 LIVE" turned every drama-badge
+// into a second LIVE indicator stacked next to .live-badge.
 function dramaLabel(score){
-  if(score>=80) return '🔥 LIVE';
-  if(score>=60) return '⚡ LIVE';
-  if(score>=40) return '● LIVE';
+  if(score>=80) return '🔥';
+  if(score>=60) return '⚡';
+  if(score>=40) return '●';
   return '';
 }
 
