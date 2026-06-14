@@ -21484,6 +21484,45 @@ function dramaTier(score){
   return '';
 }
 
+// iPad-12: national-team aliases. The word-match in espnTeamMatch requires
+// shared tokens >3 chars, so short broadcaster shorthand (USMNT, USA, GBR,
+// NED 3-letter ISO codes, etc.) misses against full names like "United States"
+// or "Netherlands". ESPN's soccer/fifa.world feed often ships shortcodes;
+// wc26Raw stores full national-team names. The alias map maps both
+// directions so either side of the comparison resolves to a canonical form
+// before substring/word match runs.
+const _nationalTeamAlias = (() => {
+  const pairs = {
+    'usmnt':'united states', 'us':'united states', 'usa':'united states', 'united states':'united states',
+    'mex':'mexico', 'can':'canada', 'arg':'argentina', 'bra':'brazil', 'col':'colombia',
+    'fra':'france', 'esp':'spain', 'eng':'england', 'gbr':'england', 'ger':'germany', 'deu':'germany',
+    'ita':'italy', 'por':'portugal', 'ned':'netherlands', 'nl':'netherlands', 'bel':'belgium',
+    'sui':'switzerland', 'aut':'austria', 'cze':'czechia', 'czech republic':'czechia',
+    'pol':'poland', 'cro':'croatia', 'ser':'serbia', 'srb':'serbia',
+    'jpn':'japan', 'kor':'south korea', 'south korea':'south korea',
+    'sau':'saudi arabia', 'saudi arabia':'saudi arabia', 'irn':'iran', 'aus':'australia',
+    'mar':'morocco', 'sen':'senegal', 'tun':'tunisia', 'rsa':'south africa', 'south africa':'south africa',
+    'gha':'ghana', 'civ':'ivory coast', 'ivory coast':'ivory coast', 'nga':'nigeria',
+    'cod':'congo dr', 'cgo':'congo dr', 'dr congo':'congo dr', 'congo dr':'congo dr',
+    'tur':'turkiye', 'türkiye':'turkiye', 'turkey':'turkiye',
+    'cpv':'cape verde', 'cape verde':'cape verde',
+    'cur':'curacao', 'curaçao':'curacao', 'curacao':'curacao',
+    'nzl':'new zealand', 'new zealand':'new zealand',
+    'crc':'costa rica', 'costa rica':'costa rica',
+    'bih':'bosnia', 'bosnia and herzegovina':'bosnia',
+    'swe':'sweden', 'nor':'norway', 'den':'denmark', 'fin':'finland',
+    'alg':'algeria', 'egy':'egypt', 'kse':'kosovo',
+  };
+  return pairs;
+})();
+function _canonNationalTeam(name) {
+  if (!name) return '';
+  const n = String(name).toLowerCase()
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-z0-9 ]/g, '').trim();
+  return _nationalTeamAlias[n] || n;
+}
+
 function espnTeamMatch(espnName, fieldName){
   if(!espnName||!fieldName) return false;
   // Normalize: lowercase, remove diacritics, strip punctuation
@@ -21494,8 +21533,13 @@ function espnTeamMatch(espnName, fieldName){
   if(a===b) return true;
   if(a.includes(b)||b.includes(a)) return true;
   // Word match: any word > 3 chars shared between names
-  return a.split(" ").some(w=>w.length>3&&b.includes(w))
-      || b.split(" ").some(w=>w.length>3&&a.includes(w));
+  if (a.split(" ").some(w=>w.length>3&&b.includes(w))
+   || b.split(" ").some(w=>w.length>3&&a.includes(w))) return true;
+  // iPad-12: national-team alias match — short broadcaster shorthand
+  // (USMNT, NED, JPN, etc.) resolves to canonical name before compare.
+  const ca = _canonNationalTeam(espnName), cb = _canonNationalTeam(fieldName);
+  if (ca && cb && ca === cb) return true;
+  return false;
 }
 
 function journalismCallsToday(){
