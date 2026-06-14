@@ -1,48 +1,66 @@
-# FIELD Handoff — June 13 2026 (End of Session)
+# FIELD HANDOFF
 
-**jubilant-bassoon HEAD:** 428b0fb · **relay HEAD:** 68b03f0 · **Smoke:** 613/0 · **SW_VERSION:** 2026-06-13h
+## Current State
+- **Client HEAD:** 62e946a (jubilant-bassoon)
+- **Relay HEAD:** 6a4d6af (field-relay-nba)
+- **Smoke:** 550/0
+- **SW_VERSION:** 2026-06-13h
+- **Last session:** June 14 2026
 
-## Session summary
-Client-side WC game brief consumption shipped (HANDOFF P1 PIECE 2). When a WC game goes final, client now async-fetches the post-match brief from relay KV via `/journalism/game/{eventId}` and injects it as `matchupNote` on the game object, flowing into card rendering and CDW notes.
+## Relay Commits This Session (7)
+1. `cdec743` — fix: colon in /journalism/game/ sanitizer (WC brief consumption PIECE 1)
+2. `f1eb3f2` — fix: Monte Carlo scoring W=3 D=1 L=0 (was W=3 D=1 L=1 — unreachable branch bug)
+3. `ce9fb83` — fix: 3rd-place R32 assignment uses backtracking solver (eliminated bracket placeholders 3rd-AEHIJ, 3rd-DEIJL)
+4. `0797be4` — fix: normalizeTeamName on standings copy (USA phantom team — R32 56%→98%)
+5. `75ede64` — fix: preemptive aliases for Groups E-L (Turkiye, Curacao, Cote d'Ivoire)
+6. `9a8537b` — fix: Korea Republic → South Korea alias
+7. `6a4d6af` — ci: post-deploy BracketDO refresh (auto-recompute projections after every deploy)
 
-## Client commits (jubilant-bassoon)
-- `428b0fb`: WC game brief consumption — `_wcBriefsFetched` dedup Set, async fetch on final state, matchupNote injection, fire-and-forget (1500ms timeout), uses existing journalism relay route (same KV namespace `brief:game:*`). SW 2026-06-13h. Smoke 613/613.
-- Prior [skip ci] commits (1016f86 etc): WC probe + odds + kickoff fixes from earlier sessions.
+## Client Commits This Session (1)
+1. `428b0fb` — WC brief consumption PIECE 2 (client fetch on game final → matchupNote injection)
 
-## Relay commits (field-relay-nba) — unchanged this session
-- `68b03f0`: HTTP 429 → 503 no-store (was cacheable 502)
-- Full relay commit history in prior HANDOFF versions.
+## WC Brief Pipeline (Complete End-to-End)
+- Write: game final → writeWCResult() → D1 + BracketDO → JOURNALISM_QUEUE → Haiku → quality chain → KV `brief:game:football:{id}` (3600s TTL)
+- Read: client V2 poll → detects final → fetch `/journalism/game/{eventId}` → relay sanitizer preserves colon → KV hit → injects matchupNote → render
 
-## Architecture note: WC brief pipeline (now complete end-to-end)
-1. Game final → `writeWCResult()` → D1 insert → `recomputeGroupStandings()` → BracketDO recompute
-2. `JOURNALISM_QUEUE.send({type:"game-brief"})` with api-sports events context
-3. Queue consumer → Haiku brief gen → quality chain → KV `brief:game:{eventId}` (3600s TTL)
-4. **[NEW] Client V2 poll** → detects `state==='final'` → `fetch /journalism/game/{eventId}` → injects `matchupNote` → `scheduleRenderAll()`
-5. Dedup: `_wcBriefsFetched` Set prevents re-fetching each poll cycle
+## Monte Carlo Fixes
+- Scoring: W=3 D=1 L=0 (was L=1 due to unreachable ternary branch)
+- 3rd-place: backtracking solver with constraint-first ordering replaces greedy-sequential
+- Team names: normalizeTeamName() on standings copy prevents phantom teams (USA was duplicated as "USA" + "United States")
+- Aliases: 14 variants covering Czech Republic, Bosnia, DR Congo, USA, Turkey/Turkiye, Curacao, Cote d'Ivoire, Korea Republic
+- CI: post-deploy auto-refresh of BracketDO projections
 
-## Known gap
-- Relay route `/wc/brief/game/{id}` does NOT exist as a separate endpoint. Client uses the existing `/journalism/game/{id}` route which reads from the same FIELD_JOURNALISM KV namespace. The `encodeURIComponent` handles the colon in `football:12345` eventId format. If this causes issues, a dedicated WC route would need to be added to the relay source.
+## Vision Doc + Live Odds Spec
+- Vision document: 1ZEvy5rSQgVM-_m_liiA7lvz0YDc-jYbxJEUPiGOQ_TQ (corrected, all claims verified)
+- Corrections: 1Qxi2WlKfZNuGnOJrFZvQGc_ykyy2tJCMFiDcQYdeFDs
+- Live odds architecture: live-odds-architecture.md in outputs
+- Complete spec (10 gaps closed): live-odds-spec-complete.md in outputs, Drive 17ErKnOlE0Hikq64Lvh8NjNwglEDRyWdyuqPlnTpiMJI
+- Key insight: AmbientDO-gated event-driven polling saves 95% credits vs time-based, fits 20K plan with 47-68% headroom
+- Comeback detection via peakCollapse (peak WP - current WP)
 
-## Priority queue
-1. ~~Client brief consumption~~ ✅ DONE (428b0fb)
-2. **Temporal polyfill** (~90 min) — ends date bug class
-3. **web-push-browser** (~120 min) — fact-only push (Rule F)
-4. **winkNLP JQ Gate pre-filter** (~60 min) — pairs with brief pipeline
-5. Viewport artifact v4 (~150 min TYPE D) — after Tuesday reset
-6. Design system BUILD (~110 min TYPE C) — typography/transitions/density/touch all specced not built
-7. xG model pipeline (soccer_xg + api-sports shots)
-8. Wikidata integration (CC0 team context)
-9. WC knockout prep — group ends June 27, R32 ~June 28
-10. Wimbledon draw — before July 7
+## Sandbox Network
+- api.the-odds-api.com added to allowlist (Jun 14) — live odds testable from sandbox via relay proxy
+- field-relay-nba.jeffunglesbee.workers.dev and api.cloudflare.com already enabled (Jun 13)
 
-## Key Drive docs
-- June 13 session doc: 1HRvTKbR_WNqYXGEhSfYI2ZnLTWzCFXp33UFl9tThIAM
-- June 12 evening doc: 10wLrVnWkEgGtCeVSvTfFQBAcSAGekxumIdZ394vQQlc
-- browser-use Brief: 1Zq_FD72dD16buJVw5odZoteRLMBiN1wR7lrxZFooqns
-- v4 Build Brief: 1OZItVH-7beD7wEpizwSie3mb80UtiepHIInGEZh3ALU
-- Rovi Clearance: 1ICONs1B_WzfpW562DHEEzhjc2KC8tlnqkbajYrOvctk
-- Design System v2: 1Bv2qvn_Gz0qLZatJW9jVsQfMAwE-DyflZNplQyHmCvk
+## WC State
+- 8 results recorded (Groups A-D MD1)
+- Groups E-L start today (Jun 14)
+- Germany vs Ecuador odds now live (was the missing 72nd fixture)
+- Knicks won 2026 NBA Championship (4-1 over Spurs, Brunson 45pts G5 Finals MVP)
 
-## Permanent rules active
-- Rule F: push notifications + haptics FACT-ONLY (scores/finals/kickoffs), never interest judgments. Drama Dial defense breaks for push (server decides when to send).
-- Rules A-E (ADR-002/RUWT), C1-C5 (Rovi/circadian), F (push) — three rule sets, three patent domains.
+## Approved Action Items (Pending)
+1. NBA brief pipeline extension — extend JOURNALISM_QUEUE to NBA finals/championship games (~90 min)
+2. Netherlands vs Japan (4PM ET Jun 14) — first post-fix BracketDO recomputation, verify all fixes hold
+3. Live odds BUILD — fully specced, ready to implement
+
+## Priority Queue
+- [ ] NBA brief pipeline (approved)
+- [ ] Live in-play odds BUILD (fully specced)
+- [ ] Temporal polyfill (~90 min)
+- [ ] web-push-browser (~120 min)
+- [ ] winkNLP JQ Gate pre-filter (~60 min)
+- [ ] Viewport artifact v4 (~150 min)
+- [ ] Design system BUILD (~110 min)
+- [ ] xG model pipeline
+- [ ] WC knockout prep (group ends June 27)
+- [ ] Wimbledon draw (before July 7)
