@@ -23,6 +23,7 @@ A 34,000+ line single-file PWA (index.html) for global sports intelligence. Depl
 6. **ADR-002 / RUWT compliance** — READ `docs/ADR-002-CONTEXT.md` before any compliance audit. Contains full defense architecture, mitigations, amnesty zone, and severity classification. Many patterns that look like violations are already mitigated.
 7. **Rule 47** — no drama scoring/classification in relay worker
 8. **Prompt architecture** — READ `docs/CLAUDE-CODE-PROMPT-RULES.md` before implementing any hardware-dependent fix (CSS viewport, scroll, touch, iOS Safari). Follow the diagnosis-first pattern. Never repeat a failed approach.
+9. **Structural change guardrail** — Do NOT change layout paradigms (position:fixed → CSS Grid, flexbox → grid, single-column → multi-column, or any change to body-level layout) without explicit approval in the prompt. If a fix requires changing how the page is laid out (not just CSS properties on one element), STOP and write your proposal to outbox/ for review. The ambient panel architecture is `position:fixed; right:0; width:380px` with `margin-right:390px` on left content — this is ESTABLISHED and must not be replaced without explicit authorization. Commit `9ce7ef2` (CSS Grid escalation) was reverted because it broke the panel.
 
 ## Deploy
 - Sole deploy path: `.github/workflows/deploy-gate.yml`

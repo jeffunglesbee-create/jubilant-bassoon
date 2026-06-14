@@ -79,6 +79,34 @@ that validates it. The test should be added to tests/viewport-all.spec.js.
 If you cannot run Playwright in this environment, explain why you believe
 the test will pass on real hardware and flag it for CI verification."
 
+### Rule 6: No Structural Escalation Without Authorization
+If a fix requires changing how the PAGE is laid out (not just properties
+on one element), STOP. Do not implement. Write the proposal to outbox/
+and explain:
+- What structural change you want to make
+- What existing architecture it replaces
+- What other elements depend on the current architecture
+- What could break
+
+Examples of structural changes that require authorization:
+- Changing position:fixed to position:sticky or CSS Grid
+- Adding display:grid to body or any page-level container
+- Changing the column layout paradigm (margin-right → grid tracks)
+- Moving elements between DOM containers
+- Changing how body-level scrolling works
+
+Examples of changes that do NOT require authorization:
+- Adding/modifying CSS properties on a single element
+- Adding a wrapper div inside an existing container
+- Changing colors, fonts, spacing, borders
+- Adding event listeners
+- Fixing data pipeline logic
+
+The ambient panel CSS Grid escalation (commit 9ce7ef2) is the case study:
+it replaced position:fixed with a body-level CSS Grid, didn't zero out
+the margin-right:390px rules that the fixed layout required, and broke
+the panel visibility on real hardware. It was reverted.
+
 ---
 
 ## Prompt Template for Hardware-Dependent Bugs

@@ -34,11 +34,30 @@ chaining but doesn't enable scroll. The fundamental issue with
 `position:fixed + overflow-y:auto` on iOS Safari may not be solvable
 with CSS properties alone.
 
-### Attempt 3 (proposed but not yet tried)
-**What:** Inner scrollable div (wrap content in `.ambient-scroll-inner`
-with `overflow-y:auto`).
-**Status:** Not implemented. Proposed in a Claude Code command but not
-yet executed. May or may not work — needs diagnosis first.
+### Attempt 3 (Claude Code, commit cda61e0)
+**What:** Inner scrollable div — wrapped all ambient panel content in
+`.ambient-scroll-inner` with `overflow-y:auto; height:100%;
+-webkit-overflow-scrolling:touch`. Panel itself becomes a non-scrolling
+fixed shell; inner div owns the scroll.
+**Result:** Unknown — not verified on real iPad before Attempt 4 was
+applied on top of it. The inner-div wrapper IS still in the codebase.
+**Why it may have failed:** Still inside a position:fixed parent on iOS Safari.
+
+### Attempt 4 (Claude Code, commit 9ce7ef2 — REVERTED)
+**What:** "Structural escalation" — removed position:fixed entirely.
+Body became a 2-column CSS Grid (1fr 380px) at 820-1199px. Ambient panel
+placed in column 2 with position:sticky. All body children defaulted to
+column 1.
+**Result:** Ambient panel DISAPPEARED on real iPad. Layout completely broken.
+**Why it failed:** Left `margin-right:390px` on 7+ elements (`.main`,
+`nav.controls`, `header.masthead`, etc.) that were designed for the
+position:fixed layout. In CSS Grid, these margins compressed column 1
+content to ~50px on a 820px viewport. Claude Code's comment said these
+margins "become redundant" — they do not. CSS Grid does not zero out
+margins on grid children. Reverted in commit fb72cc1.
+**Lesson:** Structural layout changes require explicit authorization
+(Rule 6 in CLAUDE-CODE-PROMPT-RULES.md). Claude Code must not replace
+established layout paradigms to fix a single property-level bug.
 
 ---
 
