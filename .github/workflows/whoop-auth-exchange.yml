@@ -1,0 +1,99 @@
+name: Whoop Auth Exchange
+on:
+  workflow_dispatch:
+    inputs:
+      authorization_code:
+        description: 'Authorization code from OAuth redirect'
+        required: true
+
+jobs:
+  exchange:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Exchange code for tokens
+        env:
+          WHOOP_CLIENT_ID: ${{ secrets.WHOOP_CLIENT_ID }}
+          WHOOP_CLIENT_SECRET: ${{ secrets.WHOOP_CLIENT_SECRET }}
+          WHOOP_REDIRECT_URI: ${{ secrets.WHOOP_REDIRECT_URI }}
+          AUTH_CODE: ${{ github.event.inputs.authorization_code }}
+        run: |
+          pip install pynacl requests -q
+
+          python3 << 'PYEOF'
+          import json, os, base64, requests
+          from nacl import encoding, public
+
+          client_id = os.environ["WHOOP_CLIENT_ID"]
+          client_secret = os.environ["WHOOP_CLIENT_SECRET"]
+          redirect_uri = os.environ["WHOOP_REDIRECT_URI"]
+          auth_code = os.environ["AUTH_CODE"]
+          pat = "${{ secrets.GITHUB_TOKEN }}"
+          repo = "${{ github.repository }}"
+
+          # Exchange auth code for tokens
+          print("Exchanging authorization code...")
+          r = requests.post("https://api.prod.whoop.com/oauth/token", data={
+              "grant_type": "authorization_code",
+              "code": auth_code,
+              "client_id": client_id,
+              "client_secret": client_secret,
+              "redirect_uri": redirect_uri
+          })
+
+          print(f"Token exchange: HTTP {r.status_code}")
+
+          if r.status_code != 200:
+              print(f"ERROR: {r.text}")
+              with open("outbox/whoop-auth-result.json", "w") as f:
+                  json.dump({"error": r.status_code, "body": r.text}, f, indent=2)
+          else:
+              token_data = r.json()
+              access_token = token_data.get("access_token", "")
+              refresh_token = token_data.get("refresh_token", "")
+              expires_in = token_data.get("expires_in", "?")
+              
+              print(f"Access token received (expires in {expires_in}s)")
+              print(f"Refresh token: {'YES' if refresh_token else 'NO'}")
+              
+              # Store refresh token as GitHub secret
+              headers = {"Authorization": f"token {pat}", "Accept": "application/vnd.github+json"}
+              
+              # Get public key
+              pk_r = requests.get(f"https://api.github.com/repos/{repo}/actions/secrets/public-key", headers=headers)
+              pk_data = pk_r.json()
+              pub_key = public.PublicKey(pk_data["key"].encode("utf-8"), encoding.Base64Encoder)
+              sealed = public.SealedBox(pub_key)
+              
+              # Store refresh token
+              enc_refresh = base64.b64encode(sealed.encrypt(refresh_token.encode())).decode()
+              requests.put(
+                  f"https://api.github.com/repos/{repo}/actions/secrets/WHOOP_REFRESH_TOKEN",
+                  headers=headers,
+                  json={"encrypted_value": enc_refresh, "key_id": pk_data["key_id"]}
+              )
+              
+              # Store access token
+              enc_access = base64.b64encode(sealed.encrypt(access_token.encode())).decode()
+              requests.put(
+                  f"https://api.github.com/repos/{repo}/actions/secrets/WHOOP_ACCESS_TOKEN",
+                  headers=headers,
+                  json={"encrypted_value": enc_access, "key_id": pk_data["key_id"]}
+              )
+              
+              print("Tokens stored as GitHub secrets")
+              
+              with open("outbox/whoop-auth-result.json", "w") as f:
+                  json.dump({"status": "success", "expires_in": expires_in, "has_refresh": bool(refresh_token)}, f, indent=2)
+
+          PYEOF
+
+      - name: Commit result
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          mkdir -p outbox
+          git add outbox/whoop-auth-result.json -f 2>/dev/null
+          git commit -m "whoop: auth exchange result [skip ci]" || echo "Nothing to commit"
+          git push || true

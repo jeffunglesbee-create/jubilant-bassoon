@@ -16,125 +16,95 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install deps
+        run: pip install pynacl requests -q
+
       - name: Fetch Whoop data
         env:
-          WHOOP_EMAIL: ${{ secrets.WHOOP_EMAIL }}
-          WHOOP_PASSWORD: ${{ secrets.WHOOP_PASSWORD }}
+          WHOOP_CLIENT_ID: ${{ secrets.WHOOP_CLIENT_ID }}
+          WHOOP_CLIENT_SECRET: ${{ secrets.WHOOP_CLIENT_SECRET }}
+          WHOOP_REFRESH_TOKEN: ${{ secrets.WHOOP_REFRESH_TOKEN }}
         run: |
-          DAYS="${{ github.event.inputs.days || '7' }}"
-          if [ -f outbox/.trigger-whoop ]; then
-            FILE_DAYS=$(grep -oP 'days=\K\d+' outbox/.trigger-whoop 2>/dev/null || echo "")
-            [ -n "$FILE_DAYS" ] && DAYS="$FILE_DAYS"
-          fi
-
-          mkdir -p outbox
-
           python3 << 'PYEOF'
-          import json, os, sys
+          import json, os, base64, requests
           from datetime import datetime, timedelta
-          from urllib.request import Request, urlopen
-          from urllib.error import HTTPError
+          from nacl import encoding, public
 
-          email = os.environ["WHOOP_EMAIL"]
-          password = os.environ["WHOOP_PASSWORD"]
-          days = int(os.environ.get("DAYS", "7"))
+          client_id = os.environ["WHOOP_CLIENT_ID"]
+          client_secret = os.environ["WHOOP_CLIENT_SECRET"]
+          refresh_token = os.environ.get("WHOOP_REFRESH_TOKEN", "")
+          days = int("${{ github.event.inputs.days || '7' }}")
+          pat = "${{ secrets.GITHUB_TOKEN }}"
+          repo = "${{ github.repository }}"
 
-          BASE = "https://api.prod.whoop.com"
           result = {"fetched_at": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"), "days": days}
+          os.makedirs("outbox", exist_ok=True)
 
-          # Step 1: Authenticate via Cognito proxy
-          print("Authenticating via Cognito...")
-          auth_payload = json.dumps({
-              "AuthParameters": {
-                  "USERNAME": email,
-                  "PASSWORD": password
-              },
-              "ClientId": "",
-              "AuthFlow": "USER_PASSWORD_AUTH"
-          }).encode()
+          if not refresh_token:
+              result["error"] = "No WHOOP_REFRESH_TOKEN. Run whoop-auth-exchange first."
+              with open("outbox/whoop-data.json", "w") as f:
+                  json.dump(result, f, indent=2)
+              print("ERROR: No refresh token")
+              exit(0)
 
-          auth_req = Request(
-              f"{BASE}/auth-service/v3/whoop/",
-              data=auth_payload,
-              headers={
-                  "Content-Type": "application/x-amz-json-1.1",
-                  "X-Amz-Target": "AWSCognitoIdentityProviderService.InitiateAuth",
-                  "Host": "api.prod.whoop.com",
-                  "Accept": "*/*",
-                  "User-Agent": "WHOOP/15.0 CFNetwork/1568.200.51 Darwin/24.1.0"
-              }
+          # Refresh access token
+          print("Refreshing access token...")
+          r = requests.post("https://api.prod.whoop.com/oauth/token", data={
+              "grant_type": "refresh_token",
+              "refresh_token": refresh_token,
+              "client_id": client_id,
+              "client_secret": client_secret
+          })
+
+          if r.status_code != 200:
+              result["error"] = f"Token refresh failed: {r.status_code} - {r.text}"
+              with open("outbox/whoop-data.json", "w") as f:
+                  json.dump(result, f, indent=2)
+              print(f"ERROR: {r.text}")
+              exit(0)
+
+          tokens = r.json()
+          access_token = tokens["access_token"]
+          new_refresh = tokens.get("refresh_token", refresh_token)
+          print(f"Token refreshed (expires in {tokens.get('expires_in','?')}s)")
+
+          # Update refresh token secret (rolling refresh)
+          headers_gh = {"Authorization": f"token {pat}", "Accept": "application/vnd.github+json"}
+          pk_r = requests.get(f"https://api.github.com/repos/{repo}/actions/secrets/public-key", headers=headers_gh)
+          pk_data = pk_r.json()
+          pub_key = public.PublicKey(pk_data["key"].encode("utf-8"), encoding.Base64Encoder)
+          sealed = public.SealedBox(pub_key)
+          enc = base64.b64encode(sealed.encrypt(new_refresh.encode())).decode()
+          requests.put(
+              f"https://api.github.com/repos/{repo}/actions/secrets/WHOOP_REFRESH_TOKEN",
+              headers=headers_gh,
+              json={"encrypted_value": enc, "key_id": pk_data["key_id"]}
           )
+          print("Refresh token updated")
 
-          try:
-              resp = urlopen(auth_req)
-              auth_data = json.loads(resp.read())
-          except HTTPError as e:
-              body = e.read().decode()
-              print(f"Auth failed: {e.code} - {body}")
-              result["auth_error"] = {"code": e.code, "body": body}
-              # Check for MFA challenge
-              if "ChallengeName" in body or "SMS_MFA" in body:
-                  result["auth_error"]["note"] = "MFA required - need SMS code"
-              with open("outbox/whoop-data.json", "w") as f:
-                  json.dump(result, f, indent=2)
-              sys.exit(0)
-
-          auth_result = auth_data.get("AuthenticationResult", {})
-          access_token = auth_result.get("AccessToken")
-          
-          if not access_token:
-              # Might be MFA challenge
-              challenge = auth_data.get("ChallengeName", "unknown")
-              print(f"Auth challenge: {challenge}")
-              result["auth_challenge"] = challenge
-              result["session"] = auth_data.get("Session", "")[:20] + "..."
-              with open("outbox/whoop-data.json", "w") as f:
-                  json.dump(result, f, indent=2)
-              sys.exit(0)
-
-          print(f"Authenticated. Token expires in {auth_result.get('ExpiresIn', '?')}s")
-
-          # Step 2: Get user ID
-          def api_get(path):
-              req = Request(
-                  f"{BASE}{path}",
-                  headers={
-                      "Authorization": f"Bearer {access_token}",
-                      "User-Agent": "WHOOP/15.0 CFNetwork/1568.200.51 Darwin/24.1.0",
-                      "Accept": "application/json"
-                  }
-              )
-              try:
-                  resp = urlopen(req)
-                  return {"status": 200, "data": json.loads(resp.read())}
-              except HTTPError as e:
-                  return {"status": e.code, "data": e.read().decode()[:500]}
-
-          # Get profile
-          print("Fetching profile...")
-          profile = api_get("/developer/v1/user/profile/basic")
-          result["profile"] = profile
-          user_id = profile.get("data", {}).get("user_id", "")
-          print(f"User ID: {user_id}")
-
-          # Step 3: Fetch data endpoints
+          # Fetch data
+          headers = {"Authorization": f"Bearer {access_token}"}
           start = (datetime.utcnow() - timedelta(days=days)).strftime("%Y-%m-%dT00:00:00.000Z")
           end = datetime.utcnow().strftime("%Y-%m-%dT23:59:59.999Z")
           params = f"start={start}&end={end}&limit=50"
+          base = "https://api.prod.whoop.com/developer/v1"
 
           endpoints = {
-              "recovery": f"/developer/v1/recovery?{params}",
-              "sleep": f"/developer/v1/activity/sleep?{params}",
-              "cycle": f"/developer/v1/cycle?{params}",
-              "workout": f"/developer/v1/activity/workout?{params}",
+              "recovery": f"{base}/recovery?{params}",
+              "cycle": f"{base}/cycle?{params}",
+              "sleep": f"{base}/activity/sleep?{params}",
+              "workout": f"{base}/activity/workout?{params}",
+              "body": f"{base}/user/measurement/body",
+              "profile": f"{base}/user/profile/basic",
           }
 
-          for name, path in endpoints.items():
+          for name, url in endpoints.items():
               print(f"Fetching {name}...")
-              result[name] = api_get(path)
-
-          # Also try the v1 user endpoint for body measurements
-          result["body"] = api_get("/developer/v1/user/measurement/body")
+              try:
+                  r = requests.get(url, headers=headers)
+                  result[name] = {"status": r.status_code, "data": r.json() if r.status_code == 200 else r.text[:500]}
+              except Exception as e:
+                  result[name] = {"status": 0, "error": str(e)}
 
           with open("outbox/whoop-data.json", "w") as f:
               json.dump(result, f, indent=2)
@@ -142,9 +112,9 @@ jobs:
           print("\n=== Summary ===")
           for k, v in result.items():
               if isinstance(v, dict) and "status" in v:
-                  data = v.get("data", {})
-                  count = len(data.get("records", data.get("data", []))) if isinstance(data, dict) else "?"
-                  print(f"  {k:20s} HTTP {v['status']}  records: {count}")
+                  d = v.get("data", {})
+                  count = len(d.get("records", [])) if isinstance(d, dict) and "records" in d else "obj"
+                  print(f"  {k:15s} HTTP {v['status']}  records: {count}")
           PYEOF
 
       - name: Commit results
