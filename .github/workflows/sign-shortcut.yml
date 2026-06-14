@@ -11,43 +11,74 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Diagnose and sign
+      - name: Sign shortcut
         run: |
-          set -x
-          sw_vers
-          which shortcuts
-          shortcuts help 2>&1 || true
-          shortcuts sign --help 2>&1 || true
-          
-          INPUT="scripts/Oura_SPO2_Guarded.unsigned.plist"
-          OUTPUT="outbox/Oura_SPO2_Guarded.shortcut"
           DIAG="outbox/sign-diagnostic.txt"
           mkdir -p outbox
+          echo "=== macOS $(sw_vers -productVersion) ===" > "$DIAG"
           
-          echo "=== ATTEMPT 1: shortcuts sign ===" | tee "$DIAG"
-          shortcuts sign \
-            --input "$INPUT" \
-            --output "$OUTPUT" \
-            --mode anyone 2>&1 | tee -a "$DIAG"
-          SIGN_EXIT=$?
-          echo "EXIT CODE: $SIGN_EXIT" | tee -a "$DIAG"
+          # Try multiple input formats
+          for EXT in xml plist; do
+            INPUT="scripts/Oura_SPO2_Guarded.$EXT"
+            OUTPUT="outbox/Oura_SPO2_Guarded_${EXT}.shortcut"
+            
+            if [ ! -f "$INPUT" ]; then
+              echo "SKIP: $INPUT not found" >> "$DIAG"
+              continue
+            fi
+            
+            echo "" >> "$DIAG"
+            echo "=== Trying $INPUT ===" >> "$DIAG"
+            
+            # Capture both stdout and stderr
+            RESULT=$(shortcuts sign --input "$INPUT" --output "$OUTPUT" --mode anyone 2>&1) || true
+            echo "OUTPUT: $RESULT" >> "$DIAG"
+            
+            if [ -f "$OUTPUT" ]; then
+              SIZE=$(stat -f%z "$OUTPUT")
+              MAGIC=$(xxd -l 16 "$OUTPUT" | head -1)
+              echo "FILE EXISTS: $SIZE bytes" >> "$DIAG"
+              echo "MAGIC: $MAGIC" >> "$DIAG"
+              
+              # Check if it's actually signed (signed files are larger, different structure)
+              if echo "$RESULT" | grep -qi "error"; then
+                echo "STATUS: SIGN ERRORED despite file existing" >> "$DIAG"
+                rm "$OUTPUT"
+              else
+                echo "STATUS: SIGN OK" >> "$DIAG"
+              fi
+            else
+              echo "NO OUTPUT FILE" >> "$DIAG"
+            fi
+          done
           
-          if [ $SIGN_EXIT -ne 0 ] || [ ! -f "$OUTPUT" ]; then
-            echo "=== SIGN FAILED — trying plutil ===" | tee -a "$DIAG"
-            plutil -convert binary1 -o "$OUTPUT" "$INPUT" 2>&1 | tee -a "$DIAG"
-            echo "FALLBACK: plutil binary conversion (NOT signed)" >> "$DIAG"
-          else
-            echo "SIGN SUCCEEDED" >> "$DIAG"
-            file "$OUTPUT" >> "$DIAG"
-            xxd "$OUTPUT" | head -5 >> "$DIAG"
+          # Also try: convert to binary first, then sign the binary
+          echo "" >> "$DIAG"
+          echo "=== Trying binary plist input ===" >> "$DIAG"
+          plutil -convert binary1 -o scripts/Oura_SPO2_Guarded.bin.shortcut scripts/Oura_SPO2_Guarded.xml 2>&1 | tee -a "$DIAG"
+          RESULT=$(shortcuts sign --input scripts/Oura_SPO2_Guarded.bin.shortcut --output outbox/Oura_SPO2_Guarded_bin.shortcut --mode anyone 2>&1) || true
+          echo "OUTPUT: $RESULT" >> "$DIAG"
+          
+          if [ -f outbox/Oura_SPO2_Guarded_bin.shortcut ]; then
+            echo "BIN SIGN: exists, $(stat -f%z outbox/Oura_SPO2_Guarded_bin.shortcut) bytes" >> "$DIAG"
+            xxd -l 32 outbox/Oura_SPO2_Guarded_bin.shortcut >> "$DIAG"
           fi
           
-          ls -la "$OUTPUT" >> "$DIAG" 2>&1
+          # Also check: can shortcuts CLI import and re-export?
+          echo "" >> "$DIAG"
+          echo "=== shortcuts list ===" >> "$DIAG"
+          shortcuts list 2>&1 | head -10 >> "$DIAG" || echo "shortcuts list failed" >> "$DIAG"
+          
+          echo "" >> "$DIAG"
+          echo "=== iCloud status ===" >> "$DIAG"
+          defaults read MobileMeAccounts 2>&1 | head -5 >> "$DIAG" || echo "No iCloud account" >> "$DIAG"
+          
+          cat "$DIAG"
 
       - name: Commit results
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add outbox/ -f
-          git commit -m "sign shortcut diagnostic [skip ci]" || echo "Nothing to commit"
+          git commit -m "sign shortcut diagnostic v2 [skip ci]" || echo "Nothing to commit"
           git push || true
