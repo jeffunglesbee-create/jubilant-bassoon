@@ -31596,13 +31596,17 @@ function renderOneToWatch(){
   }
 
   // ── STATE 4: TONIGHT — best upcoming game today ───────────────────────────
+  // ADR-002 (H5): rank by named tier, not composite preGameScore + hardcoded
+  // 55 threshold. Surface only when top candidate hits MARQUEE_NATIONAL+.
   if(_otwDismissedId!=='tonight'){
-    let top=null,topS=0;
+    let top=null,topRank=-1;
     (allData?.sports||[]).forEach(sec=>{(sec.games||[]).forEach(g=>{
       if(!g.home||!g.away) return;
-      const s=preGameScore(g);if(s>topS){topS=s;top={g,sport:sec.sport,score:s};}
+      const r=fieldTierRank(fieldGameTier(g._id));
+      if(r>topRank){topRank=r;top={g,sport:sec.sport,rank:r};}
     });});
-    if(top&&topS>=55){
+    const _tonightMinRank=fieldTierRank('MARQUEE_NATIONAL');
+    if(top&&topRank>=_tonightMinRank){
       const {g}=top;
       const why=buildOTWWhyLine(g,{},top.sport,true);
       banner.innerHTML=`<div class="otw-inner otw-pregame" id="otw-inner" role="button" tabindex="0">
