@@ -1976,7 +1976,9 @@ assert('A372 — Voice Positioning v2 Move A: FIELD_VOICE_EXEMPLARS hoisted to t
   // Compound template now opens with the exemplars BEFORE "You are FIELD's sports intelligence editor"
   /\$\{FIELD_VOICE_EXEMPLARS\}[\s\S]{0,80}You are FIELD's sports intelligence editor/.test(html) &&
   // J2 series preview prompt array starts with FIELD_VOICE_EXEMPLARS
-  /\[FIELD_VOICE_EXEMPLARS,\s*\n?\s*'Write a FIELD Series Brief/.test(html) &&
+  // (iPad-7 wraps this in _fieldVoiceExemplarsForSport(...) — accept both forms)
+  (/\[FIELD_VOICE_EXEMPLARS,\s*\n?\s*'Write a FIELD Series Brief/.test(html) ||
+   /\[_fieldVoiceExemplarsForSport\([^)]*\),\s*\n?\s*'Write a FIELD Series Brief/.test(html)) &&
   // J3 standalone prompt array starts with FIELD_VOICE_EXEMPLARS
   /\[FIELD_VOICE_EXEMPLARS,"Write a FIELD Brief for tonight/.test(html) &&
   // Total identifier references: 1 def + 3 wirings = 4
