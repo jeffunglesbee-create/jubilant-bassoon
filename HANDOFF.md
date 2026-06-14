@@ -1,12 +1,30 @@
 # FIELD HANDOFF
 
 ## Current State
-- **Client HEAD:** cc5cc68 (jubilant-bassoon, branch claude/elegant-shannon-t2dvt0)
+- **Client HEAD:** main @ 7fe82e6 (Viewport v4 build complete; SW_VERSION bumped below)
 - **Relay HEAD:** 0aa14d9 (field-relay-nba)
-- **Smoke:** 624/0
+- **Smoke:** 635/0
 - **Units:** 66/0
-- **SW_VERSION:** 2026-06-14f
+- **SW_VERSION:** 2026-06-14g
 - **Last session:** June 14 2026
+
+## Viewport v4 Build (June 14 2026 — main)
+Executed `docs/VIEWPORT-BUILD-PLAN.md` (12 tasks, one commit each, smoke
+after every change).
+
+- **Phase 1 (BROKEN fixes):** V1 typography migration (Chakra Petch +
+  DM Sans), V2 explicit P1/P2/P3 breakpoints + T1/T2 orientation gates.
+- **Phase 2 (PARTIAL fixes):** V3 bottom-sheet phone-only gate, V4
+  card-tier classes on `.game-card`, V5 journalism brief MID tier
+  (2-line), V6 `--sport-*` tokens + SPORT_COLORS refactor, V7 44px
+  touch-target floor, V8 CompactGrid 3-col at 1440.
+- **Phase 3 (Token foundation):** V9 `--caution` token (was undefined
+  on live), V10 COLOUR-SYS-A scaffold (drama / access / angle /
+  card-highlight), V11 motion + opacity tokens, V12 typography role
+  tokens.
+
+11 new smoke assertions added (A582-A592). Smoke went from 624/0 →
+635/0. A406 / A418 / A514 updated to track refactored patterns.
 
 ## ADR-002 Refactor (June 14 2026 — branch claude/elegant-shannon-t2dvt0)
 Added `fieldGameTier(gameId)` (and `fieldTierRank`, `fieldTierLabel`,
