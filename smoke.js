@@ -4154,6 +4154,14 @@ assert('A599 — iPad-7: _isModelRefusal filter wired into generateJournalismVia
   html.includes("['A','B','C','D']"),
   'iPad-7 regression fix: (a) refusal filter in JQ Gate suppresses raw model meta-commentary; (b) series-preview prompt sends sport-specific exemplars. Soccer/WC/EPL/MLS routed to Exemplar D (real soccer exemplar); tennis/golf/F1/AFL/NFL routed to closest tonal match among A/B/C.');
 
+// ── A602 / iPad-19: scroll position preserved across renderAmbientPanel polls
+assert('A602 — iPad-19: renderAmbientPanel preserves scrollTop across innerHTML re-render (STANDARDS Rule 24)',
+  // Saves scrollTop before innerHTML write
+  /const _apPrevScroll = panel\.querySelector\('\.ambient-scroll-inner'\)\?\.scrollTop \|\| 0;/.test(html) &&
+  // Restores scrollTop on the new inner after the write
+  /if \(_apNewInner\) _apNewInner\.scrollTop = _apPrevScroll;/.test(html),
+  'iPad-19 Rule 24 fix: renderAmbientPanel fires every 15-30s on the ESPN poll cycle. innerHTML replacement resets scrollTop on the new .ambient-scroll-inner element. Save the prior scrollTop and reapply it after the write so the user does not get yanked back to the top mid-read.');
+
 // ── A598 / iPad-18: ambient panel scroll via inset-positioned inner div ────
 assert('A598 — iPad-18: .ambient-scroll-inner is position:absolute with all insets pinned; #ambient-panel is the fixed shell',
   // #ambient-panel stays the fixed shell with overflow:hidden — Rule 9 keeps

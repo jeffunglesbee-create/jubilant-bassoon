@@ -29470,7 +29470,21 @@ function renderAmbientPanel(){
     // div is the scroll container; #ambient-panel is the fixed shell.
     const _apHTML=`${otwHTML}${scoresHTML?`<div class="ap-divider"></div>${scoresHTML}`:''}${soonHTML?`<div class="ap-divider"></div>${soonHTML}`:''}${upcomingHTML?`<div class="ap-divider"></div>${upcomingHTML}`:''}${ctxHTML?`<div class="ap-divider"></div>${ctxHTML}`:''}${arbHTML?`<div class="ap-divider"></div>${arbHTML}`:''}${briefHTML?`<div class="ap-divider"></div>${briefHTML}`:''}`;
   const _apWrapped=`<div class="ambient-scroll-inner">${_apHTML}</div>`;
-  if(panel.dataset.lastAp!==_apHTML||panel.querySelector('.ambient-skeleton')){panel.dataset.lastAp=_apHTML;panel.innerHTML=_apWrapped;}
+  if(panel.dataset.lastAp!==_apHTML||panel.querySelector('.ambient-skeleton')){
+    // iPad-19 (CLAUDE.md Rule 14 / STANDARDS Rule 24): renderAmbientPanel
+    // fires every 15-30s via the ESPN poll cycle. The innerHTML write below
+    // replaces the .ambient-scroll-inner element wholesale, which resets
+    // scrollTop on the new element to 0 — even if iPad-18's CSS lets the
+    // user actually scroll. Save scrollTop before the write, restore after.
+    // Without this, every poll yanks the panel back to the top mid-read.
+    const _apPrevScroll = panel.querySelector('.ambient-scroll-inner')?.scrollTop || 0;
+    panel.dataset.lastAp=_apHTML;
+    panel.innerHTML=_apWrapped;
+    if (_apPrevScroll > 0) {
+      const _apNewInner = panel.querySelector('.ambient-scroll-inner');
+      if (_apNewInner) _apNewInner.scrollTop = _apPrevScroll;
+    }
+  }
 }
 
 // ── Broadcast Arbitrage Finder ──────────────────────────────────────────────
