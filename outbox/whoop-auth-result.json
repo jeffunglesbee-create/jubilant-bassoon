@@ -1,4 +1,4 @@
 {
-  "error": 404,
-  "body": "{\"error\": \"Error 404 - The requested route does not exist. Make sure you are using the right path, domain, and port.\"}"
+  "error": 400,
+  "body": "{\"error\":\"invalid_grant\",\"error_description\":\"The provided authorization grant (e.g., authorization code, resource owner credentials) or refresh token is invalid, expired, revoked, does not match the redirection URI used in the authorization request, or was issued to another client\",\"status_code\":400}"
 }
