@@ -4234,8 +4234,11 @@ assert('A584 — V4: card-tier-{featured,standard,compact} classes scaffolded on
 
 // ── A583 / V3: Bottom sheet gated to phone+L1/L2 only ───────────────────────
 assert('A583 — V3: bottom-sheet hidden above 820px (T1+ routes through ambient/inline)',
-  /@media\(min-width:820px\)\s*\{\s*\.bottom-sheet\s*\{\s*display:\s*none\s*!important/.test(html),
-  'V3 build plan: spec lines 68-73 route drama-badge tap to ambient panel (T1/T2) or inline LEFT/RIGHT/CENTRE expansion (D1-D4). Bottom sheet must not show above 820.');
+  // iPad-4 expanded this block to include .bottom-sheet-overlay defensively;
+  // .bottom-sheet still appears as the first selector in the list.
+  /@media\(min-width:820px\)\{\s*\.bottom-sheet,/.test(html) &&
+  /\.bottom-sheet-overlay\{ display:none !important;/.test(html),
+  'V3 build plan: spec lines 68-73 route drama-badge tap to ambient panel (T1/T2) or inline LEFT/RIGHT/CENTRE expansion (D1-D4). Bottom sheet must not show above 820. iPad-4 also hides the overlay.');
 
 // ── A582 / V2: Viewport v4 explicit P2/T1/T2 breakpoint sentinels ──────────
 assert('A582 — V2: explicit P2 / T1 portrait / T2 landscape breakpoint sentinels',
