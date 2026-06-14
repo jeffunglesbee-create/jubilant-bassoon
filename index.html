@@ -4630,30 +4630,27 @@ function showFieldHealthPanel() {
 // Rule 28: tap -> openGameSheet() already exists. CLEAR.
 
 function selectRightNowGames(sections) {
-  // Collect all games across sections
+  // ADR-002 (H2): rank games by named tier, not composite drama + boost.
   const all = [];
   (sections || []).forEach(sec => {
     (sec.games || []).forEach(g => {
       const eData = typeof findESPNScore === 'function' ? findESPNScore(g) : null;
       const isLive = eData?.state === 'in';
-      const drama = (typeof dramaScoreLive === 'function' ? dramaScoreLive(g._id) : null) || 0;
-      // Boost for game importance
-      const importanceBoost = g._gameImportance === 'elimination' ? 20
-                            : g._gameImportance === 'playoffs'    ? 10 : 0;
-      const score = (isLive ? drama + 30 : drama) + importanceBoost;
-      all.push({ g, eData, isLive, score });
+      const tier = fieldGameTier(g._id);
+      const rank = fieldTierRank(tier);
+      all.push({ g, eData, isLive, tier, rank });
     });
   });
 
   if (!all.length) return [];
 
-  // Sort: live first, then by score desc
+  // Sort: live first, then by tier rank desc (named-tier ordering).
   all.sort((a, b) => {
     if (a.isLive !== b.isLive) return a.isLive ? -1 : 1;
-    return b.score - a.score;
+    return b.rank - a.rank;
   });
 
-  // P1/P2/L2: 1 card. P3: up to 2 if both live + drama >= 50
+  // P1/P2/L2: 1 card. P3: up to 2 if both live AND second hits CLOSE_LATE+ tier.
   const vw = window.innerWidth;
   const vh = window.innerHeight;
   const landscape = vw > vh;
@@ -4664,11 +4661,11 @@ function selectRightNowGames(sections) {
   // If no live and no upcoming games, return nothing
   const upcoming = all.filter(x => !x.isLive && (x.g.start_time > new Date().toISOString()));
   if (!top.isLive && !upcoming.length && all.every(x => !x.isLive)) {
-    // All games are post — section less useful, still show best
     return [top];
   }
 
-  if (isP3 && all[1]?.isLive && all[1]?.score >= 50) {
+  const CLOSE_LATE_RANK = fieldTierRank('CLOSE_LATE');
+  if (isP3 && all[1]?.isLive && (all[1]?.rank ?? 0) >= CLOSE_LATE_RANK) {
     return [top, all[1]];
   }
   return [top];
