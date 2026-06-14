@@ -4680,7 +4680,6 @@ function buildRightNowTiers(g, eData) {
   const away = g.away || '';
   const homeScore = eData?.homeScore ?? '';
   const awayScore = eData?.awayScore ?? '';
-  const drama = (typeof dramaScoreLive === 'function' ? dramaScoreLive(g._id) : null) || 0;
   const series = g.seriesRecord && g.seriesRecord !== '0-0' ? g.seriesRecord : '';
 
   // Score display
@@ -4688,9 +4687,11 @@ function buildRightNowTiers(g, eData) {
     ? `${away} ${awayScore} · ${home} ${homeScore}`
     : `${away} @ ${home}`;
 
-  // Drama badge
-  const dramaEl = drama >= 40
-    ? `<span class="drama-mini" style="background:rgba(201,168,76,.15);color:#c9a84c;border:1px solid rgba(201,168,76,.3);border-radius:4px;padding:.1rem .3rem;font-size:.55rem;font-weight:700">${drama}</span>`
+  // ADR-002 (C3): tier-gated badge, factual tier label, no raw drama number.
+  const _rnTier = fieldGameTier(g._id);
+  const _rnTense = _rnTier === 'CRUNCH' || _rnTier === 'EXTRA_TIME' || _rnTier === 'CLOSE_LATE';
+  const dramaEl = _rnTense
+    ? `<span class="drama-mini" style="background:rgba(201,168,76,.15);color:#c9a84c;border:1px solid rgba(201,168,76,.3);border-radius:4px;padding:.1rem .3rem;font-size:.55rem;font-weight:700">${fieldTierLabel(_rnTier)}</span>`
     : '';
 
   // Live badge
