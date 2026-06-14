@@ -33975,6 +33975,21 @@ function buildLifeStageContent(game, eData, stage) {
       if (eData?.detail) {
         return `<div class="card-stage-content card-stage-live-basic">${eData.detail}</div>`;
       }
+      // iPad-13: soccer/WC match minute belongs to the relay (ESPN soccer
+      // scoreboard ships detail like "45'" or "HT"). Until that data lands,
+      // do NOT fall through to wall-clock elapsed for soccer — "2h 14m in"
+      // is meaningless next to a match minute. Show plain LIVE instead.
+      const _sportLower = (game._sport || game.league || '').toLowerCase();
+      const _isSoccer = _sportLower.includes('soccer') || _sportLower.includes('fifa') ||
+                       _sportLower.includes('world cup') || _sportLower.includes('wc26') ||
+                       _sportLower.includes('mls') || _sportLower.includes('epl') ||
+                       _sportLower.includes('premier league') || _sportLower.includes('la liga') ||
+                       _sportLower.includes('serie a') || _sportLower.includes('bundesliga') ||
+                       _sportLower.includes('ligue 1') || _sportLower.includes('champions league') ||
+                       _sportLower.includes('europa');
+      if (_isSoccer) {
+        return '<div class="card-stage-content card-stage-live-basic">LIVE</div>';
+      }
       // PM-19 retro: surface that the game IS live when no score data yet
       if (game.start_time) {
         const minsAgo = Math.round((Date.now() - new Date(game.start_time).getTime()) / 60000);
