@@ -10,8 +10,8 @@ jobs:
 
       - name: Install deps
         run: |
-          pip install playwright requests pynacl -q
-          python3 -m playwright install chromium
+          pip install patchright requests pynacl -q
+          python3 -m patchright install chromium
 
       - name: Automated OAuth flow
         env:
@@ -24,7 +24,7 @@ jobs:
           python3 << 'PYEOF'
           import os, json, base64, time, requests, sys
           from urllib.parse import urlencode, urlparse, parse_qs
-          from playwright.sync_api import sync_playwright
+          from patchright.sync_api import sync_playwright
           from nacl import encoding, public
 
           client_id = os.environ["WHOOP_CLIENT_ID"]
@@ -53,8 +53,6 @@ jobs:
               browser = p.chromium.launch(
                   headless=True,
                   args=[
-                      "--disable-blink-features=AutomationControlled",
-                      "--no-sandbox"
                   ]
               )
               context = browser.new_context(
@@ -62,7 +60,6 @@ jobs:
                   viewport={"width": 1280, "height": 720}
               )
               # Remove webdriver flag
-              context.add_init_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
               page = context.new_page()
 
               try:
