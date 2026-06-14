@@ -4108,6 +4108,11 @@ assert('A580 — fieldDatesToQuery: replaces hardcoded -4h offset in V2 poll dua
 assert('A581 — fetchV2AllScores uses fieldDatesToQuery (no hardcoded UTC offset)',
   html.includes('fieldDatesToQuery()') && !html.includes('new Date(_nowUTC - 4 * 3600 * 1000)'));
 
+// ── A589 / V9: --caution token defined in :root ─────────────────────────────
+assert('A589 — V9: --caution token defined in :root (spec line 160)',
+  /--caution:\s*#f59e0b/.test(html),
+  'V9 build plan: --caution was referenced via var(--caution) at line ~13343 but never declared, silently resolving to nothing. Token added to :root per spec line 160.');
+
 // ── A588 / V8: CompactGrid 3-col at 1440px (D3/D4 cutoff) ───────────────────
 assert('A588 — V8: 3-col game grid at min-width:1440px (was 1800px)',
   /@media\(min-width:1440px\)\{\.games-list\{--cols:3\}\}/.test(html) &&
