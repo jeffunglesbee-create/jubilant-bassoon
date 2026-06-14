@@ -478,7 +478,7 @@ body::before{
 .games-list{display:flex;flex-direction:column;gap:6px;--cols:1}
 /* P2 — choreographed reveal: --cols set per viewport so cards in the same row enter together */
 @media(min-width:1200px){.games-list{--cols:2}}
-@media(min-width:1800px){.games-list{--cols:3}}
+@media(min-width:1440px){.games-list{--cols:3}}  /* V8: was 1800 — spec D3/D4 cutoff */
 /* iPad ambient mode (820-1199px) forces 1-col anyway — override the desktop --cols value */
 @media(min-width:820px) and (max-width:1199px){.games-list{--cols:1}}
 .game-card{
@@ -1746,7 +1746,7 @@ body::before{
 .skeleton-set{display:grid;grid-template-columns:1fr;gap:6px;padding:1.25rem 2rem}
 .skeleton-set>:nth-child(n+2){display:none}
 @media(min-width:1200px){.skeleton-set{grid-template-columns:repeat(2,minmax(320px,1fr));gap:10px}.skeleton-set>:nth-child(-n+2){display:block}}
-@media(min-width:1800px){.skeleton-set{grid-template-columns:repeat(3,minmax(360px,1fr));gap:12px}.skeleton-set>:nth-child(-n+3){display:block}}
+@media(min-width:1440px){.skeleton-set{grid-template-columns:repeat(3,minmax(360px,1fr));gap:12px}.skeleton-set>:nth-child(-n+3){display:block}}  /* V8: was 1800 — spec D3/D4 cutoff */
 /* iPad ambient mode (820-1199px) forces 1-col main, overriding the 1200+ rule above for this range */
 @media(min-width:820px) and (max-width:1199px){.skeleton-set{grid-template-columns:1fr}.skeleton-set>:nth-child(n+2){display:none}}
 
@@ -3373,8 +3373,8 @@ body.wc-mode #ambient-panel{display:none !important}
    * 10-16 grid reflows per cold load at laptop viewport.
    */
 }
-/* ── 3-col game grid only above 1800px ── */
-@media(min-width:1800px){
+/* ── V8: 3-col game grid above 1440px (spec D3/D4 cutoff; was 1800) ── */
+@media(min-width:1440px){
   .games-list{grid-template-columns:repeat(3,minmax(360px,1fr));gap:12px}
   .game-card .card-right{max-width:185px;padding:.95rem 1rem .95rem .5rem}
   .card-body{padding:.95rem 1.2rem .5rem 1rem}

@@ -4108,6 +4108,14 @@ assert('A580 — fieldDatesToQuery: replaces hardcoded -4h offset in V2 poll dua
 assert('A581 — fetchV2AllScores uses fieldDatesToQuery (no hardcoded UTC offset)',
   html.includes('fieldDatesToQuery()') && !html.includes('new Date(_nowUTC - 4 * 3600 * 1000)'));
 
+// ── A588 / V8: CompactGrid 3-col at 1440px (D3/D4 cutoff) ───────────────────
+assert('A588 — V8: 3-col game grid at min-width:1440px (was 1800px)',
+  /@media\(min-width:1440px\)\{\.games-list\{--cols:3\}\}/.test(html) &&
+  /@media\(min-width:1440px\)\{\s*\.games-list\{grid-template-columns:repeat\(3,minmax\(360px,1fr\)\)/.test(html) &&
+  // Confirm the legacy 1800px breakpoint is gone for the games-list rules.
+  !/@media\(min-width:1800px\)\{\.games-list/.test(html),
+  'V8 build plan: spec D3/D4 cutoff at 1440. CompactGrid 3-col promoted from 1800.');
+
 // ── A587 / V7: 44px touch-target floor on primary mobile targets ────────────
 assert('A587 — V7: 44px min-height on .filter-btn / .date-nav-btn / .share-btn / .watch-btn at mobile',
   html.includes('V7: Apple HIG') &&
