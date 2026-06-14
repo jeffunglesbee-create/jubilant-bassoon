@@ -3153,11 +3153,20 @@ body.wc-mode #ambient-panel{display:none !important}
   position:fixed;right:0;top:106px;
   width:380px;height:calc(100dvh - 106px);
   overflow-y:auto;overflow-x:hidden;
+  /* iPad-6: iOS Safari needs -webkit-overflow-scrolling:touch on
+     position:fixed + overflow-y:auto to actually enable touch scrolling.
+     Without it the panel renders but momentum scroll doesn't engage. */
+  -webkit-overflow-scrolling:touch;
   background:var(--card);
   border-left:1px solid var(--edge);
   padding:1rem 1.1rem 2rem;
   z-index:22;
 }
+/* iPad-6: flex children need min-height:0 to allow shrinking inside a
+   flex column with overflow-y:auto on the parent. Without this rule
+   tall children (Game Recap card with multi-paragraph brief) expand
+   beyond the panel height and clip rather than scroll. */
+#ambient-panel > *{min-height:0}
 @media(min-width:820px) and (max-width:1199px){
   #ambient-panel{display:flex;top:0;height:100dvh;padding-top:1rem;
     background:#0c1118;border-left:1px solid rgba(255,255,255,.09)}
