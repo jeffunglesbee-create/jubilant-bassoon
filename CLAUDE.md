@@ -22,6 +22,7 @@ A 34,000+ line single-file PWA (index.html) for global sports intelligence. Depl
 5. **Single-concern commits** — one logical change per commit
 6. **ADR-002 / RUWT compliance** — READ `docs/ADR-002-CONTEXT.md` before any compliance audit. Contains full defense architecture, mitigations, amnesty zone, and severity classification. Many patterns that look like violations are already mitigated.
 7. **Rule 47** — no drama scoring/classification in relay worker
+8. **Prompt architecture** — READ `docs/CLAUDE-CODE-PROMPT-RULES.md` before implementing any hardware-dependent fix (CSS viewport, scroll, touch, iOS Safari). Follow the diagnosis-first pattern. Never repeat a failed approach.
 
 ## Deploy
 - Sole deploy path: `.github/workflows/deploy-gate.yml`
