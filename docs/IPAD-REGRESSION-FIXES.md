@@ -1,108 +1,121 @@
-# iPad Regression Fix Spec — Post-Viewport Build
+# iPad Regression Fix Spec — Post-Viewport Build (Updated)
 
-## Context
-After the viewport v4 build (V1-V12 commits), five iPad-specific bugs were reported.
-These are REGRESSIONS introduced by the viewport build, not pre-existing issues.
-All fixes must be verified for BOTH portrait (820px) AND landscape (~1180px) on iPad.
-
-## Pre-fix
-1. `git pull`
-2. Run `node smoke.js index.html` — record baseline (should be 635/0)
-3. Read this file completely before starting
+## Status
+- iPad-1 through iPad-5: SHIPPED (Claude Code, commits 18c0775–2f075d6)
+- V3/iPad-1 routing: REVERTED (bottom sheet restored, commit 4e60b6e)
+- Path B (ambient panel injection): SPECCED below, not yet built
+- Screenshot bugs: SPECCED below, not yet built
 
 ---
 
-## Bug 1: Bottom sheet doesn't populate on tap (some game cards)
+## Completed fixes (do not re-implement)
+- iPad-2: _expandedCards Set persists expand state across re-renders
+- iPad-3: contain:layout style + overflow-anchor on .games-list/.game-card
+- iPad-4: 44px tap floor on nav links (desk/journal/groups) at ≤1199
+- iPad-5: hover styles wrapped in @media(hover:hover) + touch-action:manipulation
 
-**Root cause:** V3 commit `1d42e49` added CSS `@media(min-width:820px){ .bottom-sheet{ display:none !important; } }` but the JS tap handler (`openGameSheet` reference at line ~4857, and the sheet open logic at line ~34291) still tries to open the bottom sheet regardless of viewport width. On iPad (≥820px), the sheet gets `classList.add('open')` but CSS hides it with `display:none !important`. Result: tap does nothing visible.
-
-**Fix:** The JS that opens the bottom sheet (around line 34291) must check viewport width. If `window.innerWidth >= 820`, route the tap to the ambient panel injection or inline card expand instead of the bottom sheet. The spec (VIEWPORT-V4-SPEC.md lines 68-73) defines the routing:
-- P1-P3, L1-L2 (< 820px): bottom sheet
-- T1/T2 (820-1199px): ambient panel injection
-- D1-D4 (≥1200px): inline LEFT/RIGHT/CENTRE expansion
-
-If ambient panel injection isn't fully wired yet, at minimum scroll the tapped card into view and expand its inline brief (F16 behavior) as a fallback for ≥820px.
-
-**Verify:** Tap a game card on iPad portrait AND landscape. Something visible must happen.
-
-**Commit:** `fix(iPad-1): viewport-aware tap routing — bottom sheet on phone, ambient/inline on tablet+`
+## Reverted (intentionally)
+- V3 bottom sheet CSS gate (was @media(min-width:820px){.bottom-sheet{display:none}})
+- iPad-1 JS routing (openBottomSheet early-return at ≥820)
+- Reason: ambient panel injection (Path B) not built yet. Bottom sheet is the
+  only game-detail surface. Hiding it with no working replacement = regression.
+- _openGameSheetTablet function PRESERVED as dead code for Path B.
 
 ---
 
-## Bug 2: Brief cards revert to untapped position after 5-10 seconds
+## Path B: Ambient Panel Injection (future build)
 
-**Root cause:** The ESPN poll cycle (every 20-45s via `computeLiveInterval`) re-renders card HTML, destroying DOM state. `_deskCardToggle` sets `data-expanded="1"` on the element, but when the poll fires and rebuilds cards, the element is replaced with fresh HTML that has no `data-expanded` attribute. The expanded state is lost.
+### What it is
+When a user taps a game card on iPad (820-1199px), instead of opening the
+bottom sheet, inject that game's details into the ambient panel. This is
+the spec's intended T1/T2 routing (VIEWPORT-V4-SPEC.md lines 68-73).
 
-**Fix:** Persist expand state outside the DOM. When `_deskCardToggle` is called, store the expanded gameId in a Set (e.g., `_expandedCards`). When cards are re-rendered, check the Set and re-apply `data-expanded="1"` to matching cards. Clear entries from the Set when the user explicitly collapses.
+### Architecture
+1. Extract bottom sheet content builder (~line 34280 in index.html) into a
+   shared function: `_buildGameDetailHTML(gameId)` → returns HTML sections
+   (brief, streams, standings, drama arc, series context, pin/share buttons)
+2. Create `_injectGameToAmbient(gameId)`:
+   - Calls _buildGameDetailHTML(gameId)
+   - Wraps content in ap-card styling (matching existing ambient panel cards)
+   - Injects at TOP of #ambient-panel (above Live scores)
+   - Scrolls panel to top to show injected content
+   - Adds a dismiss button that removes the injection and restores general view
+3. Re-enable iPad-1 routing in openBottomSheet:
+   - Uncomment the `if (window.innerWidth >= 820)` check
+   - Change `_openGameSheetTablet(gameId)` to `_injectGameToAmbient(gameId)`
+4. Re-enable V3 CSS gate:
+   - Add back `@media(min-width:820px){.bottom-sheet,.bottom-sheet-overlay{display:none !important}}`
+5. Update smoke assertions A583, A593, A596 back to gate-checking
 
-**Verify:** Tap a brief card to expand it. Wait 30+ seconds. The card should remain expanded through a poll cycle.
+### Dependencies
+- Ambient panel must be scrollable first (see Bug 6 below)
+- renderAmbientPanel() must not clobber the injected game card on re-render
 
-**Commit:** `fix(iPad-2): persist brief expand state across re-renders`
-
----
-
-## Bug 3: Scrolling behavior randomly jumps
-
-**Root cause:** Likely layout shifts from:
-- V2 (`b3b3377`): new P1/P2/P3 media queries may fire on iPad during orientation changes or resize, causing layout recalculation
-- V8 (`8bffeeb`): CompactGrid 3-col at 1440 changes grid column count, which can cause scroll position jumps when the grid reflows
-- V4 (`804c388`): card tiering classes changing card sizes mid-render
-
-**Fix:** 
-1. Audit the new media queries from V2 — ensure none fire on iPad widths (820-1199) with unintended rules that change card/grid sizing.
-2. Add `contain: layout style` to `.games-list` and `.game-card` to prevent layout shifts from propagating upward.
-3. If grid column count changes trigger scroll jumps, add `overflow-anchor: auto` to the scroll container.
-
-**Verify:** Scroll through the game list on iPad portrait and landscape. No unexpected jumps.
-
-**Commit:** `fix(iPad-3): contain layout shifts in game list + card grid`
-
----
-
-## Bug 4: Tapping "Desk" doesn't navigate to desk location
-
-**Root cause:** The filter bar tab switching mechanism may have been affected by V7 (touch target changes) or V4 (card tiering). Check if the Desk filter button's click handler still fires and scrolls to the correct anchor. Also check if the `desk-jump-link` click handler at line ~9910 is still wired.
-
-**Fix:** Verify the filter-btn click → tab switch → scroll-to-section pipeline. The Desk button should:
-1. Set active tab state
-2. Scroll to the desk section
-3. Show desk content
-
-If the 44px touch target change (V7) added padding that broke the click target, fix the padding/sizing.
-
-**Verify:** Tap "Desk" in the filter bar on iPad portrait AND landscape. App should scroll to the desk section.
-
-**Commit:** `fix(iPad-4): restore desk tab navigation`
+### Estimated effort: ~45 min
 
 ---
 
-## Bug 5: Journal tab takes multiple taps
+## Remaining bugs from screenshots (June 14 4:21 PM)
 
-**Root cause:** Similar to Bug 4 — the filter bar button may have touch target or z-index issues. The journalism-mode toggle (line ~2097) requires `body.journalism-mode` class. If the button's tap handler has a race condition with the touch target changes, it may require multiple taps.
-
-Also check: if the bottom sheet is still trying to open (Bug 1) and intercepting the first tap, that could consume the touch event before the filter button processes it.
-
+### Bug 6: Ambient panel not scrollable (clipped brief)
+**Symptom:** Game Recap card clips at "late tension. Washi..." — content below
+viewport is inaccessible. No scroll on the ambient panel.
+**Root cause:** `position:fixed` + `overflow-y:auto` on iOS Safari needs
+`-webkit-overflow-scrolling:touch`. Flex children lack `min-height:0`.
 **Fix:**
-1. Check if the Journal filter button's click handler fires on first tap
-2. Ensure no overlapping touch targets (bottom sheet overlay, attention bar) intercept the tap
-3. If the `bs-overlay` (line 4221) is still receiving clicks on iPad (even though the sheet is hidden), its click handler may be consuming events. Add `pointer-events: none` to the overlay when the sheet is hidden.
+1. Add `-webkit-overflow-scrolling:touch` to #ambient-panel iPad override
+2. Add `min-height:0` to all direct children of #ambient-panel
+3. Verify panel scrolls on iPad portrait AND landscape
+**Commit:** `fix(iPad-6): ambient panel scrollable on iOS Safari`
 
-**Verify:** Tap Journal in the filter bar once on iPad portrait AND landscape. Journalism tab should appear immediately.
+### Bug 7: AI refusal text exposed to user (CRITICAL)
+**Symptom:** FIELD SERIES BRIEF for SCF Game 6 shows Haiku's raw refusal:
+"I appreciate the detailed framework, but I need to flag a critical issue..."
+followed by "Which approach do you prefer?" This appears both on the game card
+and in the Journal J2 Series Preview view.
+**Root cause:** The compound editorial prompt sends sport-generic exemplars
+(NBA PPG, MLB ERA) regardless of sport. For NHL, the model has no hockey stats
+to verify against and correctly refuses to fabricate. The JQ Gate has no filter
+for model refusals — the raw meta-commentary reaches the user.
+**Fix (two parts):**
+1. JQ Gate refusal filter: detect patterns like "I appreciate the detailed
+   framework", "I need to flag", "Which approach do you prefer", "I cannot write",
+   "I can write this brief in two ways". If detected, suppress the output and
+   fall back to a factual-only brief: "{Away} @ {Home} · {league} · {series/context}"
+2. Sport-specific exemplars: the prompt's exemplar section should match the
+   sport being briefed. NHL games get hockey exemplars, not NBA/MLB ones.
+**Commit:** `fix(iPad-7): JQ Gate refusal filter + sport-specific exemplars`
 
-**Commit:** `fix(iPad-5): journal tab single-tap activation`
+### Bug 8: Team names showing as "W" in ambient panel
+**Symptom:** Two live scores show "W 43-35 W" and "W 52-42 W" instead of
+team names. Likely WNBA games.
+**Root cause:** `teamNick()` or tricode lookup returns first character of
+team name when no short-name mapping exists for WNBA teams.
+**Fix:** Add WNBA team entries to the teamNick/tricode mapping. At minimum:
+Aces, Dream, Fever, Liberty, Lynx, Mercury, Mystics, Sky, Sparks, Storm, Sun, Wings.
+**Commit:** `fix(iPad-8): WNBA team name mappings for ambient panel`
+
+### Bug 9: U.S. Open venue mismatch
+**Symptom:** Card header says "Shinnecock Hills Golf Club" but brief text says
+"Oakmont Country Club." Venue in brief contradicts structured data.
+**Root cause:** Either stale cached brief or AI hallucination. The 2026 U.S. Open
+venue needs verification — search before fixing.
+**Fix:** Verify 2026 U.S. Open venue. If cached brief is wrong, invalidate cache
+key. If the brief is being generated with wrong context, fix the prompt's venue
+injection.
+**Commit:** `fix(iPad-9): U.S. Open venue verification + cache invalidation`
 
 ---
 
-## Post-fix
-1. Run `node smoke.js index.html` — confirm 0 failures
-2. Run `node field_unit.js` — confirm 0 failures  
-3. Bump SW_VERSION
-4. Update HANDOFF.md
-5. Push and report commit ledger
+## Build order
+1. Bug 6 (ambient panel scrollable) — prerequisite for Path B
+2. Bug 7 (AI refusal filter) — CRITICAL user-facing issue
+3. Bug 8 (WNBA team names) — quick fix
+4. Bug 9 (U.S. Open venue) — needs web search verification
+5. Path B (ambient panel injection) — depends on Bug 6
 
 ## Rules
-- One commit per bug fix
+- One commit per fix
 - Smoke must pass after each commit
-- Test BOTH portrait and landscape on iPad (820px and ~1180px)
-- Do NOT revert any V1-V12 changes — fix forward
-- The bottom sheet CSS gate (V3) is CORRECT — the JS routing must adapt to it
+- Test iPad portrait AND landscape
+- Do NOT re-gate the bottom sheet until Path B is verified working
