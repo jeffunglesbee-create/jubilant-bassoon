@@ -4108,6 +4108,13 @@ assert('A580 — fieldDatesToQuery: replaces hardcoded -4h offset in V2 poll dua
 assert('A581 — fetchV2AllScores uses fieldDatesToQuery (no hardcoded UTC offset)',
   html.includes('fieldDatesToQuery()') && !html.includes('new Date(_nowUTC - 4 * 3600 * 1000)'));
 
+// ── A597 / iPad-5: journal tab single-tap activation ────────────────────────
+assert('A597 — iPad-5: hover styles gated behind (hover: hover) — single-tap on iPad',
+  /@media \(hover: hover\)\{\s*\.desk-jump-link:hover/.test(html) &&
+  /@media \(hover: hover\)\{\.filter-btn:hover/.test(html) &&
+  /\.desk-jump-link\{[^}]*touch-action:manipulation/.test(html),
+  'iPad-5 regression fix: iOS Safari treats first tap as :hover and second tap as click on devices without a real mouse. Gating :hover behind (hover: hover) lets the click fire on the first tap. touch-action:manipulation also removes the 300ms tap delay.');
+
 // ── A596 / iPad-4: restore desk tab navigation on iPad ──────────────────────
 assert('A596 — iPad-4: nav-link 44px + bottom-sheet-overlay hidden above 820',
   // V3 hide rule now includes the overlay defensively

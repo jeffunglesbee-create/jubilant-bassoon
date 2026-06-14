@@ -335,7 +335,7 @@ body::before{
   cursor:pointer;transition:all .2s;white-space:nowrap;flex-shrink:0;
   animation:fadeIn .25s ease both;animation-delay:calc(var(--i, 0) * 20ms);
 }
-.filter-btn:hover{color:var(--white);border-color:var(--edge2);background:var(--card2)}
+@media (hover: hover){.filter-btn:hover{color:var(--white);border-color:var(--edge2);background:var(--card2)}}  /* iPad-5: gate hover behind hover-capable devices */
 .filter-btn.active{
   color:var(--obsidian);border-color:var(--gold);
   background:linear-gradient(135deg,var(--gold2),var(--gold));
@@ -626,8 +626,13 @@ body::before{
 .game-card.soon  .card-accent{background:var(--gold)}
 .card-body{padding:.75rem 1rem .75rem .85rem;display:flex;flex-direction:column;gap:.3rem;grid-row:1;grid-column:2;min-width:0;overflow:hidden}
 /* Desk jump link in filter bar */
-.desk-jump-link{font-size:.62rem;font-weight:600;color:var(--muted);text-decoration:none;letter-spacing:.04em;padding:.25rem .5rem;border-radius:4px;white-space:nowrap;transition:color .15s,background .15s;flex-shrink:0}
-.desk-jump-link:hover{color:var(--gold2);background:rgba(201,168,76,.1)}
+.desk-jump-link{font-size:.62rem;font-weight:600;color:var(--muted);text-decoration:none;letter-spacing:.04em;padding:.25rem .5rem;border-radius:4px;white-space:nowrap;transition:color .15s,background .15s;flex-shrink:0;touch-action:manipulation}
+/* iPad-5: gate :hover behind (hover: hover) so touch devices don't treat
+   the first tap as "hover" and the second tap as "click" (the classic
+   iOS sticky-hover bug). On iPad, taps fire onclick directly. */
+@media (hover: hover){
+  .desk-jump-link:hover{color:var(--gold2);background:rgba(201,168,76,.1)}
+}
 .card-tap-hint{display:block;font-size:.6rem;letter-spacing:.18em;color:var(--muted);opacity:.4;margin-top:.35rem;text-align:right;pointer-events:none;user-select:none}
 /* card-body is the intel tap zone — pointer + touch active feedback */
 /* touch-action:manipulation set directly (not just inherited from .game-card) —
