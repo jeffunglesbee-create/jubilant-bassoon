@@ -1,85 +1,58 @@
 # FIELD HANDOFF
+**HEAD:** 7db3223 · 2026-06-14 · via mcp
+**SW_VERSION:** 2026-06-14g
+**Smoke:** 635/0 (was 550/0 at session start)
+**Units:** 66/0
 
-## Current State
-- **Client HEAD:** main @ 7fe82e6 (Viewport v4 build complete; SW_VERSION bumped below)
-- **Relay HEAD:** 0aa14d9 (field-relay-nba)
-- **Smoke:** 635/0
-- **Units:** 66/0
-- **SW_VERSION:** 2026-06-14g
-- **Last session:** June 14 2026
+## What shipped today (June 14 2026)
 
-## Viewport v4 Build (June 14 2026 — main)
-Executed `docs/VIEWPORT-BUILD-PLAN.md` (12 tasks, one commit each, smoke
-after every change).
+### Chat-driven builds (13 commits to main)
+1. NBA post-game brief pipeline (relay + client)
+2. NHL post-game brief pipeline (relay + client)
+3. Live in-play odds — all 8 spec steps (relay + client)
+4. Temporal polyfill (fieldNowET + fieldDatesToQuery)
+5. Claude Code infrastructure (CLAUDE.md, SessionStart hook, Codespaces)
+6. ADR-002 context document (docs/ADR-002-CONTEXT.md)
+7. Viewport v4 spec + build plan (docs/VIEWPORT-V4-SPEC.md, docs/VIEWPORT-BUILD-PLAN.md)
 
-- **Phase 1 (BROKEN fixes):** V1 typography migration (Chakra Petch +
-  DM Sans), V2 explicit P1/P2/P3 breakpoints + T1/T2 orientation gates.
-- **Phase 2 (PARTIAL fixes):** V3 bottom-sheet phone-only gate, V4
-  card-tier classes on `.game-card`, V5 journalism brief MID tier
-  (2-line), V6 `--sport-*` tokens + SPORT_COLORS refactor, V7 44px
-  touch-target floor, V8 CompactGrid 3-col at 1440.
-- **Phase 3 (Token foundation):** V9 `--caution` token (was undefined
-  on live), V10 COLOUR-SYS-A scaffold (drama / access / angle /
-  card-highlight), V11 motion + opacity tokens, V12 typography role
-  tokens.
+### Claude Code builds (branch merged to main)
+8. ADR-002 refactor — 16 commits:
+   - Foundation: fieldGameTier + fieldTierRank + fieldTierLabel + leagueImportanceTier
+   - 3 CRITICAL: raw drama numbers removed from DOM (Double Feature, Halftime Switch, RightNow)
+   - 7 HIGH: hardcoded composite thresholds replaced with named tiers
+   - 2 MODERATE: Drama Dial paths migrated to categorical
+   - 1 LOW: polling cadence by aggregate tier
+9. Viewport v4 build — 12 commits:
+   - Typography migration: Chakra Petch + DM Sans (replaces Playfair/Barlow)
+   - Breakpoints: explicit P1/P2/P3 + T1/T2 orientation gates
+   - Bottom sheet gated to phone-only
+   - Card tiering classes (featured/standard/compact)
+   - Journalism brief MID tier (2-line)
+   - Sport stripe tokens + SPORT_COLORS refactor (NHL hex fixed)
+   - 44px touch targets
+   - CompactGrid 3-col at 1440 (was 1800)
+   - --caution token defined (was broken on live)
+   - COLOUR-SYS-A + motion/opacity + typography role token foundation
 
-11 new smoke assertions added (A582-A592). Smoke went from 624/0 →
-635/0. A406 / A418 / A514 updated to track refactored patterns.
+## Relay commits (field-relay-nba)
+- NBA brief pipeline, NHL brief pipeline, live odds (4 commits)
 
-## ADR-002 Refactor (June 14 2026 — branch claude/elegant-shannon-t2dvt0)
-Added `fieldGameTier(gameId)` (and `fieldTierRank`, `fieldTierLabel`,
-`leagueImportanceTier`, `leagueImportanceRank`) as the single source of truth
-for game tier classification. Migrated all 13 audit findings from
-`outbox/adr-002-audit-v2.md`:
+## Stats
+- Smoke: 550 → 635 (+85 assertions, 0 failures)
+- Client commits: 13 (chat) + 28 (Claude Code) = 41
+- Relay commits: 4
+- SW_VERSION: 2026-06-13h → 2026-06-14g
 
-- **CRITICAL × 3** — Double Feature, Halftime Switch, RightNow badge: raw
-  drama number removed from DOM; tier label used instead.
-- **HIGH × 7** — computeWatchValue verdict, selectRightNowGames sort, marquee
-  sibling, renderWatchWindow, STATE 4 TOP PICK, mobile live bar, buildCompoundPrompt:
-  hardcoded composite thresholds replaced with named-tier checks.
-- **MODERATE × 2** — ViewingConditions, _otwFindLiveGame: badge/selection now
-  driven by named tier (Drama Dial mitigation no longer relied on).
-- **LOW × 1** — computeLiveInterval polling cadence: aggregate fieldTierRank
-  across section games drives cadence.
-
-Smoke A514 updated to track `leagueImportanceTier` instead of `_importanceScore`.
-
-## Claude Code Setup (NEW)
-- CLAUDE.md added to repo root — Claude Code reads this automatically
-- Cloud environment configured: setup script `npm install && bash scripts/setup.sh`
-- Pre-commit hook activates on every Claude Code session (smoke + units + lint gate)
-- Codespaces devcontainer also available (Node 20 + wrangler 3.109.0)
-- Verified working from iPad via claude.ai/code (624/0 smoke confirmed)
-
-## Today's Shipped Features
-
-### Post-Game Brief Pipelines (NBA + NHL)
-- Relay: NBA (`2b9f62e`), NHL (`053d44e`)
-- Client: NBA (`33cdae2`), NHL (`5c75fdc`)
-- Three sports (WC + NBA + NHL) share one queue consumer and KV namespace
-
-### Live In-Play Odds (Complete — all 8 spec steps)
-- Relay (`0aa14d9`): AmbientDO _fetchLiveOdds, teamNameMatch, priority tiers, peak/urgency, wp_update SSE, /live-wp/test
-- Client (`bab2a1e`): wp_update SSE handler, espnScores writeback
-- Client (`ebf5bba`): WP bar on live cards + attention bar (fixed-bottom, urgency chips)
-
-### Temporal Polyfill
-- Client (`3ddb632`): fieldNowET() + fieldDatesToQuery() — DST-correct, eliminates hardcoded -4h offset
-
-### Infrastructure
-- Client (`e8caf38`): Codespaces devcontainer
-- Client (`9d0d5d4`): CLAUDE.md for Claude Code
-
-## Priority Queue
-- [ ] Dixon-Coles BLEND mode for soccer WP (~45 min, gated on visual verification)
+## Open items
+- [ ] Dixon-Coles BLEND mode for soccer WP (~45 min)
+- [ ] Viewport artifact v4 (React visual, ~120 min TYPE D)
+- [ ] V5 brief MID tier fires at 600-819, not full 414-819 (existing 600px hide rule)
+- [ ] V6 visual deltas: legacy --c-* tokens retain old hex values
+- [ ] V10-V12 tokens are scaffold only (not consumed by CSS yet)
+- [ ] Follow-up grep for hidden composites
 - [ ] web-push-browser (~120 min)
 - [ ] winkNLP JQ Gate pre-filter (~60 min)
-- [ ] Viewport artifact v4 (~150 min)
 - [ ] Design system BUILD (~110 min)
 - [ ] xG model pipeline
-- [ ] WC knockout prep (group ends June 27)
+- [ ] WC knockout prep (groups end June 27)
 - [ ] Wimbledon draw (before July 7)
-
-## Spec Documents
-- Vision: 1ZEvy5rSQgVM-_m_liiA7lvz0YDc-jYbxJEUPiGOQ_TQ
-- Live odds spec: 17ErKnOlE0Hikq64Lvh8NjNwglEDRyWdyuqPlnTpiMJI
