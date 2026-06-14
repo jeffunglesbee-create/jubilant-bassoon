@@ -32382,6 +32382,13 @@ function buildWCBars(g) {
   const scoreKey = `${g.home}|${g.away}`;
   const currentState = (typeof espnScores !== 'undefined' && espnScores[scoreKey]?.state) || g.state;
   if (currentState === 'post' || g.state === 'post' || g.state === 'final') return '';
+  // iPad-16: also suppress for LIVE games. The pre-game P(win)/P(advance)
+  // probabilities are stale once the match starts; the live WP bar
+  // (injected separately at line ~19214) is the live state surface. If
+  // the-odds-api ODDS_SPORT_KEYS doesn't cover the WC tournament (relay
+  // concern), the live WP bar stays empty — graceful suppression beats
+  // showing pre-game probabilities next to a 1-1 live scoreline.
+  if (currentState === 'in' || g.state === 'in' || g.state === 'live') return '';
   const sport = (g._sport || g.league || '').toLowerCase();
   if (!sport.includes('world cup') && !sport.includes('wc26')) return '';
 
