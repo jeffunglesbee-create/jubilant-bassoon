@@ -1,0 +1,156 @@
+name: Whoop Fetch
+on:
+  push:
+    paths:
+      - 'outbox/.trigger-whoop'
+  workflow_dispatch:
+    inputs:
+      days:
+        description: 'Days of history to fetch'
+        required: false
+        default: '7'
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fetch Whoop data
+        env:
+          WHOOP_EMAIL: ${{ secrets.WHOOP_EMAIL }}
+          WHOOP_PASSWORD: ${{ secrets.WHOOP_PASSWORD }}
+        run: |
+          DAYS="${{ github.event.inputs.days || '7' }}"
+          if [ -f outbox/.trigger-whoop ]; then
+            FILE_DAYS=$(grep -oP 'days=\K\d+' outbox/.trigger-whoop 2>/dev/null || echo "")
+            [ -n "$FILE_DAYS" ] && DAYS="$FILE_DAYS"
+          fi
+
+          mkdir -p outbox
+
+          python3 << 'PYEOF'
+          import json, os, sys
+          from datetime import datetime, timedelta
+          from urllib.request import Request, urlopen
+          from urllib.error import HTTPError
+
+          email = os.environ["WHOOP_EMAIL"]
+          password = os.environ["WHOOP_PASSWORD"]
+          days = int(os.environ.get("DAYS", "7"))
+
+          BASE = "https://api.prod.whoop.com"
+          result = {"fetched_at": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"), "days": days}
+
+          # Step 1: Authenticate via Cognito proxy
+          print("Authenticating via Cognito...")
+          auth_payload = json.dumps({
+              "AuthParameters": {
+                  "USERNAME": email,
+                  "PASSWORD": password
+              },
+              "ClientId": "",
+              "AuthFlow": "USER_PASSWORD_AUTH"
+          }).encode()
+
+          auth_req = Request(
+              f"{BASE}/auth-service/v3/whoop/",
+              data=auth_payload,
+              headers={
+                  "Content-Type": "application/x-amz-json-1.1",
+                  "X-Amz-Target": "AWSCognitoIdentityProviderService.InitiateAuth",
+                  "Host": "api.prod.whoop.com",
+                  "Accept": "*/*",
+                  "User-Agent": "WHOOP/15.0 CFNetwork/1568.200.51 Darwin/24.1.0"
+              }
+          )
+
+          try:
+              resp = urlopen(auth_req)
+              auth_data = json.loads(resp.read())
+          except HTTPError as e:
+              body = e.read().decode()
+              print(f"Auth failed: {e.code} - {body}")
+              result["auth_error"] = {"code": e.code, "body": body}
+              # Check for MFA challenge
+              if "ChallengeName" in body or "SMS_MFA" in body:
+                  result["auth_error"]["note"] = "MFA required - need SMS code"
+              with open("outbox/whoop-data.json", "w") as f:
+                  json.dump(result, f, indent=2)
+              sys.exit(0)
+
+          auth_result = auth_data.get("AuthenticationResult", {})
+          access_token = auth_result.get("AccessToken")
+          
+          if not access_token:
+              # Might be MFA challenge
+              challenge = auth_data.get("ChallengeName", "unknown")
+              print(f"Auth challenge: {challenge}")
+              result["auth_challenge"] = challenge
+              result["session"] = auth_data.get("Session", "")[:20] + "..."
+              with open("outbox/whoop-data.json", "w") as f:
+                  json.dump(result, f, indent=2)
+              sys.exit(0)
+
+          print(f"Authenticated. Token expires in {auth_result.get('ExpiresIn', '?')}s")
+
+          # Step 2: Get user ID
+          def api_get(path):
+              req = Request(
+                  f"{BASE}{path}",
+                  headers={
+                      "Authorization": f"Bearer {access_token}",
+                      "User-Agent": "WHOOP/15.0 CFNetwork/1568.200.51 Darwin/24.1.0",
+                      "Accept": "application/json"
+                  }
+              )
+              try:
+                  resp = urlopen(req)
+                  return {"status": 200, "data": json.loads(resp.read())}
+              except HTTPError as e:
+                  return {"status": e.code, "data": e.read().decode()[:500]}
+
+          # Get profile
+          print("Fetching profile...")
+          profile = api_get("/developer/v1/user/profile/basic")
+          result["profile"] = profile
+          user_id = profile.get("data", {}).get("user_id", "")
+          print(f"User ID: {user_id}")
+
+          # Step 3: Fetch data endpoints
+          start = (datetime.utcnow() - timedelta(days=days)).strftime("%Y-%m-%dT00:00:00.000Z")
+          end = datetime.utcnow().strftime("%Y-%m-%dT23:59:59.999Z")
+          params = f"start={start}&end={end}&limit=50"
+
+          endpoints = {
+              "recovery": f"/developer/v1/recovery?{params}",
+              "sleep": f"/developer/v1/activity/sleep?{params}",
+              "cycle": f"/developer/v1/cycle?{params}",
+              "workout": f"/developer/v1/activity/workout?{params}",
+          }
+
+          for name, path in endpoints.items():
+              print(f"Fetching {name}...")
+              result[name] = api_get(path)
+
+          # Also try the v1 user endpoint for body measurements
+          result["body"] = api_get("/developer/v1/user/measurement/body")
+
+          with open("outbox/whoop-data.json", "w") as f:
+              json.dump(result, f, indent=2)
+
+          print("\n=== Summary ===")
+          for k, v in result.items():
+              if isinstance(v, dict) and "status" in v:
+                  data = v.get("data", {})
+                  count = len(data.get("records", data.get("data", []))) if isinstance(data, dict) else "?"
+                  print(f"  {k:20s} HTTP {v['status']}  records: {count}")
+          PYEOF
+
+      - name: Commit results
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add outbox/whoop-data.json -f
+          git commit -m "whoop: fetch $(date +%Y-%m-%d) [skip ci]" || echo "Nothing to commit"
+          git push || true
