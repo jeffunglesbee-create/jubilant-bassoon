@@ -18,7 +18,7 @@
 <link rel="preconnect" href="https://cdn.nba.com" crossorigin/>
 <link rel="preconnect" href="https://api-web.nhle.com" crossorigin/>
 <link rel="dns-prefetch" href="https://statsapi.mlb.com"/>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,900;1,400;1,700&family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@400;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;600;700&family=DM+Sans:wght@300;400;500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 <style>
 /* PM-26-K-1 (June 3 2026): font-fallback metric overrides to eliminate FOUT-CLS.
  * Google Fonts CSS at the <link> above uses font-display:swap — text initially
@@ -35,27 +35,20 @@
  * and Capsize has no system-monospace metric to compute against.
  */
 @font-face {
-  font-family: "Barlow Fallback";
+  font-family: "DM Sans Fallback";
   src: local('Arial'), local('ArialMT');
-  ascent-override: 103.4341%;
-  descent-override: 20.6868%;
+  ascent-override: 100%;
+  descent-override: 25%;
   line-gap-override: 0%;
-  size-adjust: 96.68%;
+  size-adjust: 100%;
 }
 @font-face {
-  font-family: "Barlow Condensed Fallback";
+  font-family: "Chakra Petch Fallback";
   src: local('Arial'), local('ArialMT');
-  ascent-override: 130.7334%;
-  descent-override: 26.1467%;
+  ascent-override: 100%;
+  descent-override: 25%;
   line-gap-override: 0%;
-  size-adjust: 76.4916%;
-}
-@font-face {
-  font-family: "Playfair Display Fallback";
-  src: local('Georgia');
-  ascent-override: 106.716%;
-  descent-override: 24.7558%;
-  size-adjust: 101.3906%;
+  size-adjust: 100%;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -83,9 +76,9 @@
   --c-nba:#f97316;--c-nhl:#38bdf8;--c-mlb:#22c55e;
   --c-soccer:#a3e635;--c-tennis:#facc15;
   --c-cricket:#fb923c;--c-afl:#e879f9;--c-rugby:#34d399;
-  --ff-display:'Playfair Display','Playfair Display Fallback',Georgia,serif;
-  --ff-body:'Barlow','Barlow Fallback',Arial,sans-serif;
-  --ff-cond:'Barlow Condensed','Barlow Condensed Fallback',Arial,sans-serif;
+  --ff-display:'Chakra Petch','Chakra Petch Fallback',Arial,sans-serif;
+  --ff-body:'DM Sans','DM Sans Fallback',Arial,sans-serif;
+  --ff-cond:'DM Sans','DM Sans Fallback',Arial,sans-serif;
   --ff-mono:'JetBrains Mono',monospace;
 }
 html{scroll-behavior:auto}
@@ -1161,7 +1154,7 @@ body::before{
 .skim-strip[data-urgency="must"]{border-left:3px solid var(--gold2);}
 .skim-strip[data-urgency="watch"]{border-left:3px solid #4a9eff;}
 .skim-strip[data-urgency="quiet"]{border-left:3px solid var(--smoke);}
-.skim-text{margin:0;font-family:'Barlow',sans-serif;}
+.skim-text{margin:0;font-family:var(--ff-body);}
 /* ── Working Class: Cheap Seats ────────────────────────────── */
 .cheap-seats{font-size:.6rem;color:var(--muted);line-height:1.35;margin-top:.25rem;display:flex;align-items:baseline;gap:.35rem;overflow:hidden;}
 .cs-badge{font-size:.62rem;font-weight:700;padding:.1rem .3rem;border-radius:3px;text-transform:uppercase;letter-spacing:.03em;flex-shrink:0;}

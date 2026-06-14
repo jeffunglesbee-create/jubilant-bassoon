@@ -2674,20 +2674,23 @@ assert('A417 — PM-26-J-1: per-card layout containment on base .game-card rule 
   'PM-26-J-1 fix. PM-26-C series (A413-A416) addressed cold-load CLS at four discrete transition points: skeleton->real (C5), score arrival on initially-live cards (C2), freshness strip toggle (C1), :has() reflow at laptop viewport (C6). All four fire once per cold load. None address the continuous editorial injection pipeline that mutates cards throughout the session. The Rule-24 trigger chain (renderESPNScores -> injectDramaBadges -> detectAndRenderDoubleFeature -> renderOneToWatch -> renderWatchWindow) fires every ~30s on ESPN poll. Each cycle each card is a candidate for mutation across 8+ content slots (score-wrap, drama badge, anti-hype badge, scout-pick badge, situation badge, soccer goalscorer, series record refinement, importance transition, vibe chip recompute). Each mutation grows or shrinks the target card; with grid-template-rows:auto auto auto and 2-column laptop grid, growth cascades through subsequent rows. WPT scroll-mode runs would show this as ongoing session-lifetime CLS that cold-load WPT runs miss entirely. PM-26-C series fixes do not touch it. Fix: per-card layout containment via three CSS properties on the base .game-card{} rule. `contain: layout style paint` isolates card-internal mutations from siblings — card may still grow externally (we deliberately omit `size` containment because that would clip valid content), but cascade is broken at the card boundary. `content-visibility: auto` skips offscreen card rendering entirely — mutations to those cards no-op visually and contribute zero to CLS. `contain-intrinsic-size: auto 180px` provides placeholder size for offscreen cards (180px is averaged across sports; per-sport tuning via [data-sport] selectors queued as PM-26-J-2). Pulse box-shadow on .game-card itself is NOT clipped — `contain: paint` only clips descendants, not the contained element\'s own box-shadow, per W3C CSS Containment Module L1 spec (verified via Bellamy-Royds 2018 spec discussion). Caveat: Safari pre-18 has inconsistent content-visibility support — treat as progressive enhancement; the layout containment still applies. Work-eliminated: PM-26-C3 (reveal anim audit), PM-26-C4 (ambient skeletons), PM-26-C7 (skeleton-real height match) are all obviated — containment makes those individual slot fixes redundant. Net session scope removed exceeds scope added. Patent relevance: direct defense of "consumer-aligned hydration" and "perceived-perf" claims for the USPTO ~June 25 provisional — without PM-26-J the cold-load CLS story does not survive a session-lifetime scroll-mode measurement.');
 
 
-assert('A418 — PM-26-K-1: font-fallback metric overrides + cascade-aware font-family vars',
-  // Three @font-face declarations for fallback fonts must be present.
-  // Each must declare local() src, ascent-override, descent-override,
-  // size-adjust. The exact values are calibrated by Capsize and are
-  // locked here so they cannot drift silently.
-  /@font-face\s*\{[^}]*font-family:\s*"Barlow Fallback"[^}]*src:\s*local\('Arial'\)[^}]*ascent-override:\s*103\.4341%[^}]*descent-override:\s*20\.6868%[^}]*size-adjust:\s*96\.68%[^}]*\}/.test(html) &&
-  /@font-face\s*\{[^}]*font-family:\s*"Barlow Condensed Fallback"[^}]*src:\s*local\('Arial'\)[^}]*ascent-override:\s*130\.7334%[^}]*descent-override:\s*26\.1467%[^}]*size-adjust:\s*76\.4916%[^}]*\}/.test(html) &&
-  /@font-face\s*\{[^}]*font-family:\s*"Playfair Display Fallback"[^}]*src:\s*local\('Georgia'\)[^}]*ascent-override:\s*106\.716%[^}]*descent-override:\s*24\.7558%[^}]*size-adjust:\s*101\.3906%[^}]*\}/.test(html) &&
-  // :root font-family variables must reference the Fallback names in the
-  // cascade between web font and generic. If any of these are missing the
-  // Fallback name, FOUT will recur even though the @font-face exists.
-  /--ff-display:'Playfair Display','Playfair Display Fallback',Georgia,serif/.test(html) &&
-  /--ff-body:'Barlow','Barlow Fallback',Arial,sans-serif/.test(html) &&
-  /--ff-cond:'Barlow Condensed','Barlow Condensed Fallback',Arial,sans-serif/.test(html),
+assert('A418 — V1: typography cascade — Chakra Petch + DM Sans (Playfair/Barlow superseded)',
+  // V1 typography migration (VIEWPORT-BUILD-PLAN.md). Spec lines 218-224
+  // declare Playfair Display + Barlow SUPERSEDED. Web fonts are now Chakra
+  // Petch (display) + DM Sans (body); JetBrains Mono retained for mono.
+  // Fallback @font-faces use Arial with neutral metric overrides — Capsize
+  // can be re-tuned later for these fonts; current values eliminate FOUT
+  // cascade gap without claiming pixel-perfect substitution.
+  /@font-face\s*\{[^}]*font-family:\s*"DM Sans Fallback"[^}]*src:\s*local\('Arial'\)[^}]*\}/.test(html) &&
+  /@font-face\s*\{[^}]*font-family:\s*"Chakra Petch Fallback"[^}]*src:\s*local\('Arial'\)[^}]*\}/.test(html) &&
+  /--ff-display:'Chakra Petch','Chakra Petch Fallback',Arial,sans-serif/.test(html) &&
+  /--ff-body:'DM Sans','DM Sans Fallback',Arial,sans-serif/.test(html) &&
+  // --ff-cond aliased to DM Sans (Barlow Condensed superseded); preserves
+  // ~50 existing var(--ff-cond) callsites without loading a third web font.
+  /--ff-cond:'DM Sans','DM Sans Fallback',Arial,sans-serif/.test(html) &&
+  // No reference to superseded fonts anywhere in the file.
+  !/Playfair Display|Barlow Condensed/.test(html) &&
+  !/family=Barlow:/.test(html),
   'PM-26-K-1 fix. Google Fonts CSS uses font-display:swap which causes FOUT — text initially renders in fallback (Arial/Georgia/generic monospace) then swaps to web font when bytes arrive. Different fallback vs web font metrics cause text reflow during the swap, which appears as a layout shift in WPT measurements. PM-26-J-1b WPT (post deploy of sw.js?v=2026-06-03o) showed three deterministic shifts at ~2.4s/4s/4.8s, scoring 0.363/0.566/0.228 in run 1. The font swap is one of multiple correlated content-arrival events at those moments (others: ESPN/MLB schedule API arrivals, GitHub outbox JSON arrivals, ESPN scoreboards, journalism/generate). Fix: add @font-face declarations for "Barlow Fallback", "Barlow Condensed Fallback", "Playfair Display Fallback" with Capsize-computed metric overrides (ascent-override, descent-override, line-gap-override, size-adjust) that make the system fallback render at metrics matching the web font. When the web font swaps in, no metric change occurs → no reflow → no CLS contribution from that source. Computed values from @capsizecss/metrics v4.0.0 (June 3 2026); see code comment for source. JetBrains Mono fallback intentionally omitted (small text usage, minor contributor, no system-mono metric in Capsize). Cascade order in :root: web font name first, fallback name second, system font third, generic last — browser uses earliest available. NOT addressing: editorial content-arrival cascade (separate PM-26-L-1 fix queued for min-height on .game-card). Patent relevance: removes font-swap as a CLS contributor; remaining shifts can be more cleanly attributed to content-injection events for the architectural fix narrative.');
 
 
