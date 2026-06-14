@@ -1,11 +1,30 @@
 # FIELD HANDOFF
 
 ## Current State
-- **Client HEAD:** 9d0d5d4 (jubilant-bassoon)
+- **Client HEAD:** cc5cc68 (jubilant-bassoon, branch claude/elegant-shannon-t2dvt0)
 - **Relay HEAD:** 0aa14d9 (field-relay-nba)
 - **Smoke:** 624/0
-- **SW_VERSION:** 2026-06-14e
+- **Units:** 66/0
+- **SW_VERSION:** 2026-06-14f
 - **Last session:** June 14 2026
+
+## ADR-002 Refactor (June 14 2026 — branch claude/elegant-shannon-t2dvt0)
+Added `fieldGameTier(gameId)` (and `fieldTierRank`, `fieldTierLabel`,
+`leagueImportanceTier`, `leagueImportanceRank`) as the single source of truth
+for game tier classification. Migrated all 13 audit findings from
+`outbox/adr-002-audit-v2.md`:
+
+- **CRITICAL × 3** — Double Feature, Halftime Switch, RightNow badge: raw
+  drama number removed from DOM; tier label used instead.
+- **HIGH × 7** — computeWatchValue verdict, selectRightNowGames sort, marquee
+  sibling, renderWatchWindow, STATE 4 TOP PICK, mobile live bar, buildCompoundPrompt:
+  hardcoded composite thresholds replaced with named-tier checks.
+- **MODERATE × 2** — ViewingConditions, _otwFindLiveGame: badge/selection now
+  driven by named tier (Drama Dial mitigation no longer relied on).
+- **LOW × 1** — computeLiveInterval polling cadence: aggregate fieldTierRank
+  across section games drives cadence.
+
+Smoke A514 updated to track `leagueImportanceTier` instead of `_importanceScore`.
 
 ## Claude Code Setup (NEW)
 - CLAUDE.md added to repo root — Claude Code reads this automatically

@@ -4630,30 +4630,27 @@ function showFieldHealthPanel() {
 // Rule 28: tap -> openGameSheet() already exists. CLEAR.
 
 function selectRightNowGames(sections) {
-  // Collect all games across sections
+  // ADR-002 (H2): rank games by named tier, not composite drama + boost.
   const all = [];
   (sections || []).forEach(sec => {
     (sec.games || []).forEach(g => {
       const eData = typeof findESPNScore === 'function' ? findESPNScore(g) : null;
       const isLive = eData?.state === 'in';
-      const drama = (typeof dramaScoreLive === 'function' ? dramaScoreLive(g._id) : null) || 0;
-      // Boost for game importance
-      const importanceBoost = g._gameImportance === 'elimination' ? 20
-                            : g._gameImportance === 'playoffs'    ? 10 : 0;
-      const score = (isLive ? drama + 30 : drama) + importanceBoost;
-      all.push({ g, eData, isLive, score });
+      const tier = fieldGameTier(g._id);
+      const rank = fieldTierRank(tier);
+      all.push({ g, eData, isLive, tier, rank });
     });
   });
 
   if (!all.length) return [];
 
-  // Sort: live first, then by score desc
+  // Sort: live first, then by tier rank desc (named-tier ordering).
   all.sort((a, b) => {
     if (a.isLive !== b.isLive) return a.isLive ? -1 : 1;
-    return b.score - a.score;
+    return b.rank - a.rank;
   });
 
-  // P1/P2/L2: 1 card. P3: up to 2 if both live + drama >= 50
+  // P1/P2/L2: 1 card. P3: up to 2 if both live AND second hits CLOSE_LATE+ tier.
   const vw = window.innerWidth;
   const vh = window.innerHeight;
   const landscape = vw > vh;
@@ -4664,11 +4661,11 @@ function selectRightNowGames(sections) {
   // If no live and no upcoming games, return nothing
   const upcoming = all.filter(x => !x.isLive && (x.g.start_time > new Date().toISOString()));
   if (!top.isLive && !upcoming.length && all.every(x => !x.isLive)) {
-    // All games are post — section less useful, still show best
     return [top];
   }
 
-  if (isP3 && all[1]?.isLive && all[1]?.score >= 50) {
+  const CLOSE_LATE_RANK = fieldTierRank('CLOSE_LATE');
+  if (isP3 && all[1]?.isLive && (all[1]?.rank ?? 0) >= CLOSE_LATE_RANK) {
     return [top, all[1]];
   }
   return [top];
@@ -4680,7 +4677,6 @@ function buildRightNowTiers(g, eData) {
   const away = g.away || '';
   const homeScore = eData?.homeScore ?? '';
   const awayScore = eData?.awayScore ?? '';
-  const drama = (typeof dramaScoreLive === 'function' ? dramaScoreLive(g._id) : null) || 0;
   const series = g.seriesRecord && g.seriesRecord !== '0-0' ? g.seriesRecord : '';
 
   // Score display
@@ -4688,9 +4684,11 @@ function buildRightNowTiers(g, eData) {
     ? `${away} ${awayScore} · ${home} ${homeScore}`
     : `${away} @ ${home}`;
 
-  // Drama badge
-  const dramaEl = drama >= 40
-    ? `<span class="drama-mini" style="background:rgba(201,168,76,.15);color:#c9a84c;border:1px solid rgba(201,168,76,.3);border-radius:4px;padding:.1rem .3rem;font-size:.55rem;font-weight:700">${drama}</span>`
+  // ADR-002 (C3): tier-gated badge, factual tier label, no raw drama number.
+  const _rnTier = fieldGameTier(g._id);
+  const _rnTense = _rnTier === 'CRUNCH' || _rnTier === 'EXTRA_TIME' || _rnTier === 'CLOSE_LATE';
+  const dramaEl = _rnTense
+    ? `<span class="drama-mini" style="background:rgba(201,168,76,.15);color:#c9a84c;border:1px solid rgba(201,168,76,.3);border-radius:4px;padding:.1rem .3rem;font-size:.55rem;font-weight:700">${fieldTierLabel(_rnTier)}</span>`
     : '';
 
   // Live badge
@@ -8795,12 +8793,17 @@ function detectArcType(g) {
   if (bni === 'elimination-inflation') return 'elimination-inflation';
   if (bni === 'home-market')           return 'home-market';
   // Scout's Pick: high drama, not on national TV — hidden gem framing
-  const pgScore = (typeof preGameScore === 'function') ? preGameScore(g) : 0;
   if (isScoutsPick(g)) return 'hidden-gem';
   // Series context: any active playoff/series game
   if (g.seriesRecord && g.seriesRecord !== '0-0') return 'series';
-  // Marquee: high preGameScore on national TV (legit big game)
-  if (pgScore > 50 && isNationalGame(g)) return 'marquee';
+  // ADR-002 (H3): marquee = national broadcast AND named-tier signal.
+  // Old gate `pgScore > 50` composited importance+broadcast+milestones into a
+  // hardcoded threshold; replaced with isNationalGame + named tier check.
+  if (isNationalGame(g)) {
+    const _tierH3 = fieldGameTier(g._id);
+    if (_tierH3 === 'FINALS' || _tierH3 === 'ELIMINATION' ||
+        _tierH3 === 'PLAYOFF_SERIES' || _tierH3 === 'MARQUEE_NATIONAL') return 'marquee';
+  }
   return null;
 }
 function isNationalGame(g){return !!(g.nationalBundle);}
@@ -17075,29 +17078,27 @@ async function fetchNHLRelayScores() {
   } catch(e) {}
 }
 
-// #11b — Tempo-adjusted polling: live interval varies 20–45s by drama score
-// High-drama games poll faster; garbage-time games poll slower.
-// Drama score = max preGameScore across all live games in the section.
+// #11b — Tempo-adjusted polling: cadence varies 20-45s by aggregate named tier
+// across the section's games. High-tier games poll faster; quiet sections slower.
+// ADR-002 (L1): tier-driven cadence — was composite drama + 3 hardcoded
+// thresholds. Internal logic only (poll interval, never user-visible).
 function computeLiveInterval(sectionSport) {
   if(!allData?.sports) return ESPN_REFRESH_LIVE;
   const sec = allData.sports.find(s => s.sport === sectionSport);
-  // Use smoothed live drama when available (incorporates #11a situation bonus)
-  // Falls back to preGameScore() for pre-game sections
-  const drama = sec ? Math.max(0, ...(sec.games||[]).map(g => {
-    const smoothed = g._id ? getSmoothedDrama(g._id) : null;
-    return smoothed != null ? smoothed : preGameScore(g);
-  })) : 0;
+  if(!sec) return 45000;
+  const topRank = Math.max(0, ...(sec.games||[]).map(g => g._id ? fieldTierRank(fieldGameTier(g._id)) : 0));
   // NOTE: SSE (AmbientDO) delivers subscriber events (Night Owl, lead change burst,
   // CRUNCH) at ~3s latency via emitScoreEvent(source:'sse'). However SSE does NOT
   // write to espnScores[] — card score display is updated only by polling.
-  // Therefore polling must run at full drama-based cadence; reducing it would stale
-  // the score shown on cards even while SSE events fire correctly.
+  // Therefore polling must run at full cadence; reducing it would stale the score
+  // shown on cards even while SSE events fire correctly.
   // Future: if SSE handler writes to espnScores + triggers renderESPNScores, then
   // polling could be reduced safely. Until then: do not gate on isSSECovered here.
-  if(drama > 75) return 20000;  // 20s — critical game, tight score, final period
-  if(drama > 50) return 25000;  // 25s — elevated drama
-  if(drama > 30) return 30000;  // 30s — normal live game
-  return 45000;                  // 45s — low drama / blowout / between innings
+  if(topRank >= fieldTierRank('CRUNCH'))            return 20000; // 20s — CRUNCH/EXTRA_TIME and above
+  if(topRank >= fieldTierRank('CLOSE_LATE'))        return 25000; // 25s — CLOSE_LATE
+  if(topRank >= fieldTierRank('MARQUEE_NATIONAL'))  return 30000; // 30s — marquee/playoff series
+  if(topRank >= fieldTierRank('LIVE'))              return 30000; // 30s — generic live game
+  return 45000;                                                    // 45s — pre-game / quiet section
 }
 
 // Fetch all sport scoreboards and merge into espnScores
@@ -19772,6 +19773,8 @@ function _aflDramaScore(margin, period, dramaScorePeak){
 
 const ViewingConditions = {
   evaluate(gameId, period, margin, sport) {
+    // score field retained for back-compat (internal callers may inspect it);
+    // ADR-002 (M1): badge comes from named tier, not composite + dial threshold.
     const dramaScorePeak = Number(localStorage.getItem('field_drama_peak_' + gameId)) || 50;
     let score = dramaScorePeak;
     let isCrunchTime = false;
@@ -19779,8 +19782,7 @@ const ViewingConditions = {
       const p = String(period).toLowerCase();
       isCrunchTime = SPORT_CRUNCH_RULES[sport].some(rule => p.includes(rule));
     }
-    // AFL uses its own drama scoring (6-pt goals = wider margin scale)
-    if(sport === 'Australian Football (AFL)'){
+    if (sport === 'Australian Football (AFL)') {
       score = _aflDramaScore(margin, period, dramaScorePeak);
     } else {
       if (isCrunchTime && margin <= 5) score += 30;
@@ -19788,10 +19790,12 @@ const ViewingConditions = {
       score = Math.max(0, Math.min(100, score));
     }
     const isBlowout = sport === 'Australian Football (AFL)' ? margin > 36 : margin > 20;
-    const dial=getDramaDial();
-    if (score >= Math.min(dial+20,95)) return { score, badge: 'CRUNCH TIME',    color: 'var(--c-nba)', pulse: true,  isBlowout };
-    if (score >= dial) return { score, badge: 'WORTH WATCHING', color: 'var(--c-nhl)', pulse: false, isBlowout };
-    return             { score, badge: null,           color: null,          pulse: false, isBlowout };
+    const tier = fieldGameTier(gameId);
+    if (tier === 'CRUNCH' || tier === 'EXTRA_TIME')
+      return { score, badge: 'CRUNCH TIME',    color: 'var(--c-nba)', pulse: true,  isBlowout };
+    if (tier === 'CLOSE_LATE')
+      return { score, badge: 'WORTH WATCHING', color: 'var(--c-nhl)', pulse: false, isBlowout };
+    return   { score, badge: null,             color: null,           pulse: false, isBlowout };
   }
 };
 
@@ -20265,7 +20269,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-14e';
+  const SW_VERSION = '2026-06-14f';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -23094,23 +23098,11 @@ function buildLayer3Rules(games) {
 }
 
 function buildCompoundPrompt(sections) {
-  // Sort games by importance tier before slicing so the highest-stakes games
-  // always appear first in the prompt context — reduces risk of model leading
-  // with lower-tier content when a Finals/WC game is buried in the array.
-  const _importanceScore = (g) => {
-    const l = (g.league || g._sport || '').toLowerCase();
-    if (/nba finals|stanley cup final|wc.*final|world cup.*final/i.test(l)) return 10;
-    if (/wc.*semifinal|wc.*quarter|wc.*knockout|wc.*r16|wc.*r32/i.test(l)) return 9;
-    if (/conference finals|cf g\d|wcf|ecf/i.test(l)) return 8;
-    if (/conference semi|second round|round 2/i.test(l)) return 7;
-    if (/fifa world cup|wc26/i.test(l)) return 6;  // WC group stage
-    if (g.seriesRecord) return 5;  // any playoff series
-    if (/elimination/i.test(g._gameImportance || '')) return 5;
-    if (/playoffs/i.test(g._gameImportance || '')) return 4;
-    return 1;
-  };
+  // ADR-002 (H7): rank games by named league tier (leagueImportanceTier),
+  // not a per-game numeric scalar. Tier string drives downstream filters;
+  // leagueImportanceRank is the sort key only — never thresholded for display.
   const games = (sections || []).flatMap(s => s.games || [])
-    .sort((a, b) => _importanceScore(b) - _importanceScore(a))
+    .sort((a, b) => leagueImportanceRank(leagueImportanceTier(b)) - leagueImportanceRank(leagueImportanceTier(a)))
     .slice(0, 12);
   const seriesGames = games.filter(g => g.seriesRecord);
 
@@ -23118,7 +23110,9 @@ function buildCompoundPrompt(sections) {
   const _suppressedCounts = {};
   if (hasTier1) {
     games.forEach(g => {
-      if (_importanceScore(g) >= 6) return; // not suppressed
+      // ADR-002 (H7): named-tier check — was '_importanceScore(g) >= 6'.
+      const _tH7 = leagueImportanceTier(g);
+      if (_tH7 !== 'reg' && _tH7 !== 'series') return; // not suppressed
       const league = (g.league || g._sport || g._section || '').toLowerCase();
       const leagueKey = league.includes('mlb') || league.includes('baseball') ? 'MLB'
         : league.includes('wnba') ? 'WNBA'
@@ -23166,8 +23160,9 @@ function buildCompoundPrompt(sections) {
   // Tier ordering preserved — highest-importance game in each league always included.
   // Prevents MLB/WNBA regular season consuming word budget on Finals nights
   // while ensuring every sport on the slate gets at least one entry.
-  const hasTier1 = games.some(g => _importanceScore(g) >= 8);
-  const hasTier2 = games.some(g => _importanceScore(g) >= 6 && _importanceScore(g) < 8);
+  // ADR-002 (H7): named-tier presence checks — were '>= 8' and '>= 6 && < 8'.
+  const hasTier1 = games.some(g => { const t = leagueImportanceTier(g); return t === 'final' || t === 'semifinal'; });
+  const hasTier2 = games.some(g => { const t = leagueImportanceTier(g); return t === 'quarterfinal' || t === 'group'; });
   const _leagueCount = {};
   const gamesForContext = games.filter(g => {
     const league = (g.league || g._sport || g._section || '').toLowerCase();
@@ -29247,9 +29242,19 @@ function renderWatchWindow(){
   const el=document.getElementById('watch-window');
   if(!el||_wwDismissed||!allData) return;
   const now=Date.now(),WINDOW_MS=60*60*1000; // extended to 60 min (was 35)
-  let best=null,bestScore=0;
-  (allData.sports||[]).forEach(sec=>{(sec.games||[]).forEach(g=>{if(!g.start_time) return;const startMs=new Date(g.start_time).getTime();const minsAway=(startMs-now)/60000;if(minsAway<-2||minsAway>60) return;const score=preGameScore(g);if(score>bestScore){bestScore=score;best={g,sec,minsAway};}});});
-  if(!best||bestScore<20){el.style.display='none';if(_wwInterval){clearInterval(_wwInterval);_wwInterval=null;}return;}
+  // ADR-002 (H4): pick best upcoming by named tier rank, not composite preGameScore.
+  let best=null,bestRank=-1;
+  (allData.sports||[]).forEach(sec=>{(sec.games||[]).forEach(g=>{
+    if(!g.start_time) return;
+    const startMs=new Date(g.start_time).getTime();
+    const minsAway=(startMs-now)/60000;
+    if(minsAway<-2||minsAway>60) return;
+    const rank=fieldTierRank(fieldGameTier(g._id));
+    if(rank>bestRank){bestRank=rank;best={g,sec,minsAway};}
+  });});
+  // Show only when top candidate hits a named tier worth surfacing (MARQUEE+).
+  const _wwMinRank=fieldTierRank('MARQUEE_NATIONAL');
+  if(!best||bestRank<_wwMinRank){el.style.display='none';if(_wwInterval){clearInterval(_wwInterval);_wwInterval=null;}return;}
   const {g,sec,minsAway}=best;
   const _wwSport=(sec.sport||'').toLowerCase();
   const _wwVerb=_wwSport.includes('baseball')?'First pitch':_wwSport.includes('hockey')||_wwSport.includes('nhl')?'Puck drop':_wwSport.includes('football')||_wwSport.includes('nfl')||_wwSport.includes('soccer')||_wwSport.includes('league')||_wwSport.includes('mls')||_wwSport.includes('efl')||_wwSport.includes('world cup')||_wwSport.includes('fifa')||_wwSport.includes('wc26')?'Kickoff':_wwSport.includes('afl')||_wwSport.includes('aussie')?'Bounce':'Tip-off';
@@ -30552,6 +30557,149 @@ function _otwTierLabel(tier) {
   return 'LIVE';
 }
 
+// ── ADR-002 Tier Foundation (June 14 2026) ───────────────────────────────────
+// Single source of truth for game-tier classification across the app.
+// Replaces composite preGameScore / dramaScoreLive thresholds at 13 audit sites
+// (see outbox/adr-002-audit-v2.md) with named categorical tiers. Internal
+// helpers may compute composites; every consumer reads a named tier, never a
+// raw number. Sort order via fieldTierRank() is a sort key only — never a
+// threshold gating display.
+//
+// Hierarchy (highest priority first):
+//   FINALS              — championship-round game (NBA Finals, Stanley Cup Final, …)
+//   ELIMINATION         — _gameImportance: 'elimination' | 'series_deciding'
+//   CRUNCH              — live, sport-specific crunch period + margin ≤ 5
+//   EXTRA_TIME          — live, overtime / extra innings / shootout
+//   CLOSE_LATE          — live, late period + close margin (not yet CRUNCH)
+//   PLAYOFF_SERIES      — _gameImportance: 'clinch' | 'playoff_impl', or active series
+//   MARQUEE_NATIONAL    — national broadcast + semifinal/conf-final tier
+//   LIVE                — any live game (state === 'in') not captured above
+//   UPCOMING            — scheduled, not yet started
+//   NONE                — postponed / final / no data
+function fieldGameTier(gameId) {
+  if (!gameId) return 'NONE';
+  let game = null, sport = '';
+  const sections = (typeof allData !== 'undefined' && allData?.sports) || [];
+  for (const sec of sections) {
+    const found = (sec.games||[]).find(g => g._id === gameId);
+    if (found) { game = found; sport = sec.sport; break; }
+  }
+  if (!game || game._postponed) return 'NONE';
+  const lbl = String(game.league||'');
+  // T1: championship round
+  if (/nba finals|stanley cup final|world series|super bowl|champions league final/i.test(lbl)) return 'FINALS';
+  if (/FIFA World Cup 2026.*(Final|Third Place)/i.test(lbl)) return 'FINALS';
+  // T2: elimination
+  if (game._gameImportance === 'elimination' || game._gameImportance === 'series_deciding') return 'ELIMINATION';
+  // Live-state tiers
+  const eData = (typeof findESPNScore === 'function') ? findESPNScore(game) : null;
+  if (eData && eData.state === 'in') {
+    const period = String(eData.period||'').toLowerCase();
+    const margin = Math.abs((eData.homeScore||0) - (eData.awayScore||0));
+    const sp = (sport||'').toLowerCase();
+    // T3: CRUNCH
+    const crunchRules = (typeof SPORT_CRUNCH_RULES !== 'undefined') ? SPORT_CRUNCH_RULES[sport] : null;
+    if (crunchRules && crunchRules.some(r => period.includes(r.toLowerCase())) && margin <= 5) return 'CRUNCH';
+    // T4: EXTRA_TIME
+    if (period.includes('ot') || period.includes('overtime') || period.includes('extra') ||
+        period.includes('so') || period.includes('shootout')) return 'EXTRA_TIME';
+    if (sp.includes('baseball') && (parseInt(eData.period)||0) > 9) return 'EXTRA_TIME';
+    // T5: CLOSE_LATE — sport-aware late period + close margin
+    const periodNum = parseInt(eData.period) || 0;
+    const clockMin  = parseInt(eData.clock) || 0;
+    const inLate = sp.includes('soccer') || sp.includes('league') || sp.includes('mls') ||
+                   sp.includes('liga') || sp.includes('ligue') || sp.includes('premier')
+                     ? clockMin >= 70
+                 : sp.includes('baseball') || sp.includes('mlb')
+                     ? periodNum >= 7
+                 : sp.includes('nhl') || sp.includes('hockey')
+                     ? periodNum >= 3
+                 : sp.includes('nfl') || sp.includes('football') || sp.includes('cfl')
+                     ? periodNum >= 4
+                 : periodNum >= 3;
+    if (inLate && margin <= 8) return 'CLOSE_LATE';
+  }
+  // T6: PLAYOFF_SERIES
+  if (game._gameImportance === 'clinch' || game._gameImportance === 'playoff_impl') return 'PLAYOFF_SERIES';
+  if (game.seriesRecord && game.seriesRecord !== '0-0') return 'PLAYOFF_SERIES';
+  // T7: MARQUEE_NATIONAL
+  if (typeof isNationalGame === 'function' && isNationalGame(game)) {
+    if (/conference finals|cf g\d|wcf|ecf g\d|conference semi|semifinal|copa final/i.test(lbl)) return 'MARQUEE_NATIONAL';
+    if (/FIFA World Cup 2026.*(Semi|Quarter|Round of 16|Round of 32)/i.test(lbl)) return 'MARQUEE_NATIONAL';
+  }
+  // T8: LIVE
+  if (eData && eData.state === 'in') return 'LIVE';
+  // T9: UPCOMING
+  if (eData && eData.state === 'pre') return 'UPCOMING';
+  if (game.start_time && new Date(game.start_time).getTime() > Date.now()) return 'UPCOMING';
+  return 'NONE';
+}
+
+// Numeric rank for sort comparisons ONLY. Higher = higher priority.
+// Never thresholded against display — use the named tier directly for that.
+function fieldTierRank(tier) {
+  switch (tier) {
+    case 'FINALS':           return 10;
+    case 'ELIMINATION':      return 9;
+    case 'CRUNCH':           return 8;
+    case 'EXTRA_TIME':       return 7;
+    case 'CLOSE_LATE':       return 6;
+    case 'PLAYOFF_SERIES':   return 5;
+    case 'MARQUEE_NATIONAL': return 4;
+    case 'LIVE':             return 3;
+    case 'UPCOMING':         return 2;
+    default:                 return 0;
+  }
+}
+
+// User-visible label for a tier. Factual condition string, never a number.
+function fieldTierLabel(tier) {
+  switch (tier) {
+    case 'FINALS':           return 'FINALS';
+    case 'ELIMINATION':      return 'ELIMINATION';
+    case 'CRUNCH':           return 'CRUNCH TIME';
+    case 'EXTRA_TIME':       return 'OT / EXTRA';
+    case 'CLOSE_LATE':       return 'CLOSE GAME';
+    case 'PLAYOFF_SERIES':   return 'PLAYOFF';
+    case 'MARQUEE_NATIONAL': return 'MARQUEE';
+    case 'LIVE':             return 'LIVE';
+    default:                 return '';
+  }
+}
+
+// Separate dimension: league-importance classifier for LLM prompt context.
+// Returns a named tier string, not a numeric scalar. Replaces the
+// _importanceScore bucket pattern at audit finding H7.
+// Accepts a game object (preferred) or a bare label string.
+function leagueImportanceTier(gameOrLabel) {
+  const g = (gameOrLabel && typeof gameOrLabel === 'object') ? gameOrLabel : null;
+  const l = String((g && (g.league || g._sport)) || gameOrLabel || '').toLowerCase();
+  if (/nba finals|stanley cup final|world series|super bowl/i.test(l)) return 'final';
+  if (/fifa world cup 2026.*(final|third place)/i.test(l)) return 'final';
+  if (/conference finals|cf g\d|wcf|ecf|copa final|champions league final/i.test(l)) return 'final';
+  if (/fifa world cup 2026.*semi/i.test(l) || /wc.*semifinal/i.test(l)) return 'semifinal';
+  if (/conference semi|semifinal/i.test(l)) return 'semifinal';
+  if (/fifa world cup 2026.*(quarter|round of 16|round of 32)/i.test(l) || /wc.*(quarter|knockout|r16|r32)/i.test(l)) return 'quarterfinal';
+  if (/fifa world cup|wc26/i.test(l)) return 'group';
+  if (g && g.seriesRecord) return 'series';
+  if (g && /elimination/i.test(g._gameImportance||'')) return 'series';
+  if (/playoff|round 2|second round/i.test(l)) return 'series';
+  if (g && /playoffs/i.test(g._gameImportance||'')) return 'series';
+  return 'reg';
+}
+
+// Sort rank for league tiers — internal sort key only, never thresholded for display.
+function leagueImportanceRank(tier) {
+  switch (tier) {
+    case 'final':        return 10;
+    case 'semifinal':    return 9;
+    case 'quarterfinal': return 8;
+    case 'group':        return 6;
+    case 'series':       return 5;
+    default:             return 1;
+  }
+}
+
 // ── PM-32-VI: Viewer Intelligence Chip ──────────────────────────────────────
 // Pre-game card chip surfacing game-specific intelligence at the intelligence
 // level the user has configured. Three modes (STAKES / STORIES / MY TEAMS)
@@ -30824,32 +30972,38 @@ function injectDramaBadges(){
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// FEATURE: DOUBLE FEATURE — Banner when 2+ games exceed drama 75 simultaneously
-// Cross-sport: "NBA Game (88) + NHL Game (76) both live right now"
+// FEATURE: DOUBLE FEATURE — Banner when 2+ live games hit a tense named tier
+// Cross-sport: "NBA Game · CRUNCH TIME + NHL Game · CLOSE GAME" simultaneously.
 // Unique editorial product — no other sports app does this across leagues.
+// ADR-002: tier-gated (named conditions), no composite score, no number in DOM.
 // ═══════════════════════════════════════════════════════════════════════════
-const _doubleFeatureThreshold = 75;
 
 function detectAndRenderDoubleFeature() {
-  // Collect all live games with smoothed drama >= threshold
+  const HOT_TIERS = new Set(['CRUNCH','EXTRA_TIME','CLOSE_LATE']);
   const hotGames = [];
-  Object.entries(espnScores).forEach(([gid, eData]) => {
-    if (!eData || eData.status === 'pre' || eData.status === 'post') return;
-    const smoothed = getSmoothedDrama(gid) ?? dramaScoreLive(eData, eData._sport || '');
-    if (smoothed >= _doubleFeatureThreshold) {
-      hotGames.push({gid, smoothed, label: (eData.away||'?') + ' @ ' + (eData.home||'?')});
-    }
+  (allData?.sports||[]).forEach(sec => {
+    (sec.games||[]).forEach(g => {
+      if (!g._id) return;
+      const tier = fieldGameTier(g._id);
+      if (HOT_TIERS.has(tier)) {
+        hotGames.push({
+          gid: g._id,
+          tier,
+          rank: fieldTierRank(tier),
+          label: (g.away||'?') + ' @ ' + (g.home||'?'),
+        });
+      }
+    });
   });
 
   let banner = document.getElementById('double-feature-banner');
 
   if (hotGames.length >= 2) {
-    // Sort by score descending for display
-    hotGames.sort((a, b) => b.smoothed - a.smoothed);
+    hotGames.sort((a, b) => b.rank - a.rank);
     const top2 = hotGames.slice(0, 2);
     const text = '🎬 Double Feature — '
-      + top2[0].label + ' (' + top2[0].smoothed + ')'
-      + ' + ' + top2[1].label + ' (' + top2[1].smoothed + ')';
+      + top2[0].label + ' · ' + fieldTierLabel(top2[0].tier)
+      + ' + ' + top2[1].label + ' · ' + fieldTierLabel(top2[1].tier);
 
     if (!banner) {
       banner = document.createElement('div');
@@ -31191,8 +31345,12 @@ let _prevOTWId=null;
 // PM-27: WS freshness tracking — Map<canonical_key, timestamp_ms> (field:ws_fresh emitter)
 const _lastWSMessageTime = new Map();
 
+// ADR-002 (M2): categorical-tier selection mirroring _otwFindWCLiveGame.
+// minScore arg retained for back-compat; treated as a minimum named-tier
+// rank only — the caller's getDramaDial() bound is interpreted as a tier
+// floor, not a composite threshold. Highest tier wins.
 function _otwFindLiveGame(minScore){
-  let best=null,bestScore=0;
+  let best=null,bestRank=-1;
   (allData?.sports||[]).forEach(sec=>{
     (sec.games||[]).forEach(g=>{
       if(!g._id) return;
@@ -31206,8 +31364,17 @@ function _otwFindLiveGame(minScore){
       });
       if(!eKey) return;
       const ed=espnScores[eKey];
-      const s=dramaScoreLive(ed,sec.sport);
-      if(s>=minScore&&s>bestScore){bestScore=s;best={g,ed,sport:sec.sport,score:s};}
+      const tier=fieldGameTier(g._id);
+      const rank=fieldTierRank(tier);
+      // Only consider tiers above plain LIVE (i.e. CLOSE_LATE+).
+      if(rank<fieldTierRank('CLOSE_LATE')) return;
+      if(rank>bestRank){
+        bestRank=rank;
+        // score retained for back-compat with downstream _otwGetLiveTier call
+        // (uses it as smoothed-drama fallback). Internal sort uses tier rank.
+        const _s=dramaScoreLive(ed,sec.sport);
+        best={g,ed,sport:sec.sport,tier,score:_s};
+      }
     });
   });
   return best;
@@ -31451,13 +31618,17 @@ function renderOneToWatch(){
   }
 
   // ── STATE 4: TONIGHT — best upcoming game today ───────────────────────────
+  // ADR-002 (H5): rank by named tier, not composite preGameScore + hardcoded
+  // 55 threshold. Surface only when top candidate hits MARQUEE_NATIONAL+.
   if(_otwDismissedId!=='tonight'){
-    let top=null,topS=0;
+    let top=null,topRank=-1;
     (allData?.sports||[]).forEach(sec=>{(sec.games||[]).forEach(g=>{
       if(!g.home||!g.away) return;
-      const s=preGameScore(g);if(s>topS){topS=s;top={g,sport:sec.sport,score:s};}
+      const r=fieldTierRank(fieldGameTier(g._id));
+      if(r>topRank){topRank=r;top={g,sport:sec.sport,rank:r};}
     });});
-    if(top&&topS>=55){
+    const _tonightMinRank=fieldTierRank('MARQUEE_NATIONAL');
+    if(top&&topRank>=_tonightMinRank){
       const {g}=top;
       const why=buildOTWWhyLine(g,{},top.sport,true);
       banner.innerHTML=`<div class="otw-inner otw-pregame" id="otw-inner" role="button" tabindex="0">
@@ -31516,18 +31687,21 @@ function renderMobileLiveBar(){
       });
       if(!eKey) return;
       const ed=espnScores[eKey];
-      const score=dramaScoreLive(ed,sec.sport);
-      liveGames.push({g,ed,sport:sec.sport,drama:score});
+      // ADR-002 (H6): tier-driven chip, not composite drama + 4-band thresholds.
+      const _mlbTier=fieldGameTier(g._id);
+      liveGames.push({g,ed,sport:sec.sport,tier:_mlbTier,rank:fieldTierRank(_mlbTier)});
     });
   });
   if(liveGames.length<2){bar.style.display='none';return;}
-  // Sort by drama descending
-  liveGames.sort((a,b)=>b.drama-a.drama);
-  // Show top 5 max
+  liveGames.sort((a,b)=>b.rank-a.rank);
   const top=liveGames.slice(0,5);
-  const chips=top.map(({g,ed,drama})=>{
-    const tier=drama>=85?'fire':drama>=65?'crunch':drama>=45?'warm':'low';
-    const tierLabel=drama>=85?'🔥':drama>=65?'⚡':drama>=45?'●':'';
+  const chips=top.map(({g,ed,tier:_t})=>{
+    const tier = (_t==='CRUNCH'||_t==='EXTRA_TIME') ? 'fire'
+               : _t==='CLOSE_LATE'                  ? 'crunch'
+               : _t==='LIVE'                        ? 'warm' : 'low';
+    const tierLabel = (_t==='CRUNCH'||_t==='EXTRA_TIME') ? '🔥'
+                    : _t==='CLOSE_LATE'                  ? '⚡'
+                    : _t==='LIVE'                        ? '●' : '';
     const tn=typeof teamNick==='function'?teamNick:n=>n;
     const away=tn(g.away||'').slice(0,12);
     const home=tn(g.home||'').slice(0,12);
@@ -33241,8 +33415,19 @@ function computeWatchValue(game, sport){
   if(typeof isRivalGame==='function'&&isRivalGame(game)){value+=5;factors.push('rivalry');}
 
   // ── Verdict ──────────────────────────────────────────────────
+  // ADR-002 (H1): hardcoded composite threshold replaced with named-tier verdict.
+  // Factor accumulation above stays as the internal sort key (value); the
+  // user-visible verdict comes from fieldGameTier + pref overlays.
   value=Math.min(100,value);
-  const verdict=value>=60?'must':value>=30?'watch':'skip';
+  const _tierH1 = fieldGameTier(game._id);
+  const _hasMyTeam = (MY_TEAMS.has(game.home) || MY_TEAMS.has(game.away));
+  let verdict;
+  if (_tierH1 === 'FINALS' || _tierH1 === 'ELIMINATION' || _tierH1 === 'CRUNCH') verdict = 'must';
+  else if (_hasMyTeam)                                                            verdict = 'must';
+  else if (_tierH1 === 'EXTRA_TIME' || _tierH1 === 'CLOSE_LATE' ||
+           _tierH1 === 'PLAYOFF_SERIES' || _tierH1 === 'MARQUEE_NATIONAL' ||
+           _tierH1 === 'LIVE')                                                    verdict = 'watch';
+  else                                                                            verdict = 'skip';
   const reason=factors.length?factors.slice(0,3).join(' \u00b7 '):'nothing notable';
   return {value,verdict,reason};
 }
@@ -34641,7 +34826,7 @@ function renderHalftimeSwitch(){
       }
       if(isHalftime) htGame = {game, eData, sport:sec.sport};
       else liveGames.push({game, eData, sport:sec.sport,
-        drama: dramaScoreLive(eData, sec.sport)
+        tier: fieldGameTier(game._id)
       });
     });
   });
@@ -34650,10 +34835,13 @@ function renderHalftimeSwitch(){
   const htKey = htGame.game._id;
   if(_htShownGames.has(htKey+'_done')){ panel.style.display='none'; return; }
 
-  // Find highest drama OTHER live game with score >= 65
+  // ADR-002 (C2): pick the OTHER live game with the highest named tier.
+  // Only surface games that are actually in a tense tier — anything below
+  // PLAYOFF_SERIES (rank 5) is just "live", not switchworthy.
+  const SWITCHWORTHY_MIN = fieldTierRank('PLAYOFF_SERIES');
   const best = liveGames
-    .filter(g=>g.game._id!==htGame.game._id && g.drama>=getDramaDial())
-    .sort((a,b)=>b.drama-a.drama)[0];
+    .filter(g => g.game._id !== htGame.game._id && fieldTierRank(g.tier) >= SWITCHWORTHY_MIN)
+    .sort((a,b) => fieldTierRank(b.tier) - fieldTierRank(a.tier))[0];
 
   if(!best){ panel.style.display='none'; return; }
   _htShownGames.add(htKey);
@@ -34666,7 +34854,7 @@ function renderHalftimeSwitch(){
     <span class="ht-icon">🎯</span>
     <span class="ht-label">Perfect Switch</span>
     <span class="ht-matchup">${best.game.away||''} @ ${best.game.home||''} &nbsp;${scoreStr}${clockStr}</span>
-    <span class="ht-drama">${best.drama}% 🔥</span>
+    <span class="ht-drama">${fieldTierLabel(best.tier)}</span>
     <button class="ht-close" id="ht-close" aria-label="Dismiss">✕</button>
   </div>`;
 
