@@ -153,3 +153,36 @@ Why: correctness requires real device; must prevent repeat failures.
 **Acceptance-criteria prompt (open-ended):**
 Use for: new features where multiple implementation paths exist.
 Why: Claude Code may find a better approach than what we'd prescribe.
+
+---
+
+## STANDARDS.md Rules That Apply Here
+
+These rules from STANDARDS.md are BINDING on Claude Code. They are
+cross-referenced in CLAUDE.md rules 10-16. Read the full text in
+STANDARDS.md if you need the rationale.
+
+| Rule | Name | How it prevents failure |
+|------|------|------------------------|
+| 7 | One concern per commit | Each commit independently revertable |
+| 13 | Code review gate | Diff before commit catches missing dependencies (margin-right) |
+| 24 | Execution path contracts | Map re-render frequency before touching live-data renderers |
+| 29 | Viewport Style Guide | Check spec before inventing breakpoint behavior |
+| 39 | Diagnose before touching | Write diagnostic before modifying infrastructure/layout |
+| 42 | Five-minute novel thinking | Stop iterating same approach; look at what system literally shows |
+| 48 | DO NOT ASSUME | Verify before diagnosing; five assumption classes |
+
+**Rule 13 in practice:** Before any commit, run `git diff --staged` and answer:
+- Does this change touch a function called from multiple places?
+- What elements depend on the CSS property I'm changing?
+- List every caller of the function I'm modifying.
+
+**Rule 24 in practice:** Before changing a render function, answer:
+- How often does this function fire? (once? every 15s? on resize?)
+- What triggers it? (user action? timer? event?)
+- Does it replace innerHTML? (if yes, any DOM state is destroyed)
+
+**Rule 42 in practice:** After 3 failed attempts at the same class of fix:
+- STOP. Do not try a 4th variation.
+- State what the system is literally doing (not what you expect).
+- Check if the problem is in a different layer (JS, not CSS; timer, not layout).
