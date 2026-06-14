@@ -4074,6 +4074,9 @@ assert('A570 — WC game brief consumption: dedup Set + final-state fetch + matc
 assert('A571 — NBA post-game brief consumption: dedup Set + final-state fetch + matchupNote inject',
   html.includes('_nbaBriefsFetched') && html.includes("e.state === 'post'") && html.includes('/nba/i.test'));
 
+assert('A572 — NHL post-game brief consumption: dedup Set + final-state fetch + matchupNote inject',
+  html.includes('_nhlBriefsFetched') && html.includes('/nhl/i.test') && html.includes('[V2-NHL] brief consumed'));
+
 
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);
