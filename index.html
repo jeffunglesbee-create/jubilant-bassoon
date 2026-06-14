@@ -3149,24 +3149,35 @@ body.wc-mode #ambient-panel{display:none !important}
 
 /* ── Ambient Panel — iPad Couch Mode (820–1199px) ───────────────────────── */
 #ambient-panel{
-  display:none;flex-direction:column;gap:.75rem;
+  /* iPad-11: panel is the FIXED layout shell — no scroll properties here.
+     An inner .ambient-scroll-inner div owns scrolling. iOS Safari refuses
+     to scroll a position:fixed element reliably even with every workaround
+     applied (-webkit-overflow-scrolling:touch, -webkit-fill-available,
+     overscroll-behavior:contain, min-height:0). Splitting the layout
+     responsibility from the scroll responsibility is the documented
+     workaround that actually works on real devices. */
+  display:none;flex-direction:column;
   position:fixed;right:0;top:106px;
   width:380px;height:calc(100dvh - 106px);
-  overflow-y:auto;overflow-x:hidden;
-  /* iPad-6: iOS Safari needs -webkit-overflow-scrolling:touch on
-     position:fixed + overflow-y:auto to actually enable touch scrolling.
-     Without it the panel renders but momentum scroll doesn't engage. */
-  -webkit-overflow-scrolling:touch;
+  overflow:hidden;
   background:var(--card);
   border-left:1px solid var(--edge);
-  padding:1rem 1.1rem 2rem;
   z-index:22;
 }
-/* iPad-6: flex children need min-height:0 to allow shrinking inside a
-   flex column with overflow-y:auto on the parent. Without this rule
-   tall children (Game Recap card with multi-paragraph brief) expand
-   beyond the panel height and clip rather than scroll. */
-#ambient-panel > *{min-height:0}
+/* iPad-11: dedicated scroll container that lives inside #ambient-panel.
+   This is the element iOS actually scrolls — height:100% of the fixed
+   parent, overflow-y:auto for the scroll, -webkit-overflow-scrolling:touch
+   for momentum. gap + padding moved here so the visual layout matches
+   what was previously rendered directly inside #ambient-panel. */
+.ambient-scroll-inner{
+  display:flex;flex-direction:column;gap:.75rem;
+  height:100%;width:100%;
+  overflow-y:auto;overflow-x:hidden;
+  -webkit-overflow-scrolling:touch;
+  padding:1rem 1.1rem 2rem;
+  box-sizing:border-box;
+}
+.ambient-scroll-inner > *{min-height:0}
 @media(min-width:820px) and (max-width:1199px){
   #ambient-panel{display:flex;top:0;
     /* iPad-6 fix: 100dvh extends behind iOS dynamic toolbar, preventing scroll.
@@ -29396,8 +29407,11 @@ function renderAmbientPanel(){
     }
   }
 
+    // iPad-11: wrap rendered content in .ambient-scroll-inner — the inner
+    // div is the scroll container; #ambient-panel is the fixed shell.
     const _apHTML=`${otwHTML}${scoresHTML?`<div class="ap-divider"></div>${scoresHTML}`:''}${soonHTML?`<div class="ap-divider"></div>${soonHTML}`:''}${upcomingHTML?`<div class="ap-divider"></div>${upcomingHTML}`:''}${ctxHTML?`<div class="ap-divider"></div>${ctxHTML}`:''}${arbHTML?`<div class="ap-divider"></div>${arbHTML}`:''}${briefHTML?`<div class="ap-divider"></div>${briefHTML}`:''}`;
-  if(panel.dataset.lastAp!==_apHTML||panel.querySelector('.ambient-skeleton')){panel.dataset.lastAp=_apHTML;panel.innerHTML=_apHTML;}
+  const _apWrapped=`<div class="ambient-scroll-inner">${_apHTML}</div>`;
+  if(panel.dataset.lastAp!==_apHTML||panel.querySelector('.ambient-skeleton')){panel.dataset.lastAp=_apHTML;panel.innerHTML=_apWrapped;}
 }
 
 // ── Broadcast Arbitrage Finder ──────────────────────────────────────────────

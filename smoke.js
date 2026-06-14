@@ -4154,11 +4154,18 @@ assert('A599 — iPad-7: _isModelRefusal filter wired into generateJournalismVia
   html.includes("['A','B','C','D']"),
   'iPad-7 regression fix: (a) refusal filter in JQ Gate suppresses raw model meta-commentary; (b) series-preview prompt sends sport-specific exemplars. Soccer/WC/EPL/MLS routed to Exemplar D (real soccer exemplar); tennis/golf/F1/AFL/NFL routed to closest tonal match among A/B/C.');
 
-// ── A598 / iPad-6: ambient panel scrollable on iOS Safari ───────────────────
-assert('A598 — iPad-6: -webkit-overflow-scrolling:touch + min-height:0 children on #ambient-panel',
-  /#ambient-panel\{[\s\S]{0,500}-webkit-overflow-scrolling:touch/.test(html) &&
-  /#ambient-panel > \*\{min-height:0\}/.test(html),
-  'iPad-6 regression fix: iOS Safari requires -webkit-overflow-scrolling:touch to enable momentum scroll on position:fixed overflow containers; flex children need min-height:0 to shrink inside an overflow-y:auto parent.');
+// ── A598 / iPad-11: ambient panel scroll via inner-div wrapper ──────────────
+assert('A598 — iPad-11: .ambient-scroll-inner is the scroll container; #ambient-panel is the fixed shell',
+  // #ambient-panel is the fixed shell with overflow:hidden (not auto)
+  /#ambient-panel\{[\s\S]+?overflow:hidden;[\s\S]+?z-index:22/.test(html) &&
+  // .ambient-scroll-inner owns scrolling + iOS momentum + flex min-height fix
+  html.includes('.ambient-scroll-inner{') &&
+  html.includes('overflow-y:auto;overflow-x:hidden;') &&
+  html.includes('-webkit-overflow-scrolling:touch;') &&
+  html.includes('.ambient-scroll-inner > *{min-height:0}') &&
+  // renderAmbientPanel wraps panel content in the inner div
+  html.includes('<div class="ambient-scroll-inner">'),
+  'iPad-11 regression fix: position:fixed + overflow-y:auto on the same element does not scroll reliably on iOS Safari. Split layout (fixed shell #ambient-panel, overflow:hidden) from scrolling (inner .ambient-scroll-inner div with overflow-y:auto + momentum).');
 
 // ── A597 / iPad-5: journal tab single-tap activation ────────────────────────
 assert('A597 — iPad-5: hover styles gated behind (hover: hover) — single-tap on iPad',
