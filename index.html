@@ -19775,6 +19775,8 @@ function _aflDramaScore(margin, period, dramaScorePeak){
 
 const ViewingConditions = {
   evaluate(gameId, period, margin, sport) {
+    // score field retained for back-compat (internal callers may inspect it);
+    // ADR-002 (M1): badge comes from named tier, not composite + dial threshold.
     const dramaScorePeak = Number(localStorage.getItem('field_drama_peak_' + gameId)) || 50;
     let score = dramaScorePeak;
     let isCrunchTime = false;
@@ -19782,8 +19784,7 @@ const ViewingConditions = {
       const p = String(period).toLowerCase();
       isCrunchTime = SPORT_CRUNCH_RULES[sport].some(rule => p.includes(rule));
     }
-    // AFL uses its own drama scoring (6-pt goals = wider margin scale)
-    if(sport === 'Australian Football (AFL)'){
+    if (sport === 'Australian Football (AFL)') {
       score = _aflDramaScore(margin, period, dramaScorePeak);
     } else {
       if (isCrunchTime && margin <= 5) score += 30;
@@ -19791,10 +19792,12 @@ const ViewingConditions = {
       score = Math.max(0, Math.min(100, score));
     }
     const isBlowout = sport === 'Australian Football (AFL)' ? margin > 36 : margin > 20;
-    const dial=getDramaDial();
-    if (score >= Math.min(dial+20,95)) return { score, badge: 'CRUNCH TIME',    color: 'var(--c-nba)', pulse: true,  isBlowout };
-    if (score >= dial) return { score, badge: 'WORTH WATCHING', color: 'var(--c-nhl)', pulse: false, isBlowout };
-    return             { score, badge: null,           color: null,          pulse: false, isBlowout };
+    const tier = fieldGameTier(gameId);
+    if (tier === 'CRUNCH' || tier === 'EXTRA_TIME')
+      return { score, badge: 'CRUNCH TIME',    color: 'var(--c-nba)', pulse: true,  isBlowout };
+    if (tier === 'CLOSE_LATE')
+      return { score, badge: 'WORTH WATCHING', color: 'var(--c-nhl)', pulse: false, isBlowout };
+    return   { score, badge: null,             color: null,           pulse: false, isBlowout };
   }
 };
 
