@@ -3168,7 +3168,12 @@ body.wc-mode #ambient-panel{display:none !important}
    beyond the panel height and clip rather than scroll. */
 #ambient-panel > *{min-height:0}
 @media(min-width:820px) and (max-width:1199px){
-  #ambient-panel{display:flex;top:0;height:100dvh;padding-top:1rem;
+  #ambient-panel{display:flex;top:0;
+    /* iPad-6 fix: 100dvh extends behind iOS dynamic toolbar, preventing scroll.
+       -webkit-fill-available respects the visible viewport. Fallback to 100vh. */
+    height:100vh;height:-webkit-fill-available;
+    padding-top:1rem;
+    overscroll-behavior:contain;
     background:#0c1118;border-left:1px solid rgba(255,255,255,.09)}
   /* Masthead confined to left 430px — streak badge + settings stay in left pane */
   header.masthead{margin-right:390px}
@@ -20467,7 +20472,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-14i';
+  const SW_VERSION = '2026-06-14j';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
