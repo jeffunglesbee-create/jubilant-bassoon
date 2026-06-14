@@ -2229,6 +2229,36 @@ body.journalism-mode #field-journalism-section{animation:jrnFadeIn 220ms ease-ou
 .wc-adv-gap{background:rgba(30,41,59,.4);flex:1}
 .wc-adv-meta{font-size:.60rem;color:#475569;margin-top:2px;padding-left:2px}
 
+/* ── Live WP bar — all sports (live in-play odds, Step 6) ────────────── */
+/* Reuses WC WP bar design. Injected by renderESPNScores on live cards  */
+/* with espnScores.wp set (from SSE wp_update or Savant).               */
+.live-wp-wrap{padding:4px 8px 2px;width:100%}
+.live-wp-bar{display:flex;width:100%;height:20px;border-radius:4px;overflow:hidden;font-size:.65rem;font-weight:600;letter-spacing:.01em;transition:all .3s ease}
+.live-wp-home{background:rgba(74,222,128,.25);color:#4ade80;display:flex;align-items:center;justify-content:flex-start;padding:0 5px;min-width:24px;white-space:nowrap;overflow:hidden;transition:width .4s ease}
+.live-wp-draw{background:rgba(148,163,184,.18);color:#94a3b8;display:flex;align-items:center;justify-content:center;padding:0 3px;min-width:20px;white-space:nowrap;overflow:hidden;transition:width .4s ease}
+.live-wp-away{background:rgba(251,191,36,.22);color:#fbbf24;display:flex;align-items:center;justify-content:flex-end;padding:0 5px;min-width:24px;white-space:nowrap;overflow:hidden;transition:width .4s ease}
+.live-wp-bar[data-confidence="low"]{opacity:.7;border:1px dashed rgba(251,191,36,.3)}
+.live-wp-comeback{font-size:.58rem;color:#ef4444;font-weight:700;margin-left:6px;animation:comeback-pulse 1.5s ease infinite}
+@keyframes comeback-pulse{0%,100%{opacity:1}50%{opacity:.5}}
+
+/* ── Attention bar — fixed bottom viewport (Step 7) ──────────────────── */
+#field-attention-bar{position:fixed;bottom:0;left:0;right:0;z-index:200;background:rgba(15,15,25,.92);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-top:1px solid rgba(201,168,76,.2);padding:6px 12px;display:none;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+#field-attention-bar::-webkit-scrollbar{display:none}
+#field-attention-bar.active{display:flex;gap:8px;align-items:center}
+.attn-chip{display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:8px;min-height:44px;min-width:140px;max-width:220px;flex-shrink:0;font-size:.68rem;cursor:pointer;transition:background .2s;scroll-snap-align:start}
+.attn-chip:active{opacity:.7}
+.attn-chip.urgency-high{background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.3);color:#fca5a5}
+.attn-chip.urgency-med{background:rgba(251,191,36,.12);border:1px solid rgba(251,191,36,.25);color:#fde68a}
+.attn-chip.urgency-low{background:rgba(100,116,139,.12);border:1px solid rgba(100,116,139,.25);color:#94a3b8}
+.attn-chip-score{font-weight:700;font-size:.72rem}
+.attn-chip-wp{font-size:.60rem;opacity:.8}
+.attn-chip-badge{font-size:.55rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em}
+/* Safe area for iOS home indicator */
+#field-attention-bar{padding-bottom:calc(6px + env(safe-area-inset-bottom,0px))}
+/* Give cards breathing room when attention bar is active */
+body.attn-bar-active .main{padding-bottom:60px}
+@media(max-width:600px){.attn-chip{min-width:120px;max-width:180px;padding:5px 10px;font-size:.62rem}}
+
 /* GF/GA hidden on mobile */
 @media(max-width:819px){.wc-th-gf,.wc-th-ga,.wc-td-gf,.wc-td-ga{display:none}}
 
@@ -4084,6 +4114,11 @@ var _DOM = null;
 <main class="main" id="main"><div class="skeleton-set" aria-hidden="true"><div class="game-card-skeleton" data-lcp-anchor="1"></div><div class="game-card-skeleton"></div><div class="game-card-skeleton"></div></div></main>
 <!-- ── iPad Ambient Panel (820–1199px couch mode) ───────────────────── -->
 <aside id="ambient-panel" aria-live="polite" aria-label="Live intelligence panel"><div class="ambient-skeleton" aria-hidden="true"><div class="ambient-skeleton-label">Live Intelligence</div><div class="ambient-skeleton-block"></div></div></aside>
+
+<!-- ── Attention bar — live odds urgency (Step 7) ─────────────────────── -->
+<!-- Fixed bottom viewport bar. Top 3 games by urgency. Scroll-snap chips. -->
+<!-- Populated by field:wp_update events. Hidden when no live WP data.     -->
+<div id="field-attention-bar" role="complementary" aria-label="Live game urgency"></div>
 
 <!-- Bottom-sheet overlay -->
 <div id="bs-overlay" class="bottom-sheet-overlay" onclick="closeBottomSheet()"></div>
@@ -18878,6 +18913,42 @@ function renderESPNScores(){
         // Remove pre-game WC probability bars on final cards
         const wcBarsWrap = card.querySelector('.wc-bars-wrap');
         if (wcBarsWrap) wcBarsWrap.remove();
+        // Remove live WP bar on final cards
+        const liveWpWrap = card.querySelector('.live-wp-wrap');
+        if (liveWpWrap) liveWpWrap.remove();
+      }
+
+      // ── Live WP bar injection (Step 6) ──────────────────────────────────
+      // When a live game has WP data (from SSE wp_update or Savant), inject
+      // or update a WP bar on the card. Soccer gets 3-way (home/draw/away),
+      // non-soccer gets 2-way. Reuses WC WP bar visual design.
+      if (isLive && score.wp != null) {
+        const _wpH = score.wp;
+        const _wpOdds = score._liveOddsWP || {};
+        const _wpA = _wpOdds.awayWP ?? (1 - _wpH);
+        const _wpD = _wpOdds.drawWP ?? 0;
+        const _hPct = Math.round(_wpH * 100);
+        const _aPct = _wpD > 0 ? Math.round(_wpA * 100) : (100 - _hPct);
+        const _dPct = _wpD > 0 ? (100 - _hPct - _aPct) : 0;
+        const _conf = _wpOdds.confidence || 'normal';
+        const _collapse = _wpOdds.peakCollapse || 0;
+        const _hName = (score.homeName || score.home || '').split(' ').pop();
+        const _aName = (score.awayName || score.away || '').split(' ').pop();
+        const _hLabel = _hPct >= 12 ? `${_hName} ${_hPct}%` : `${_hPct}%`;
+        const _aLabel = _aPct >= 12 ? `${_aPct}% ${_aName}` : `${_aPct}%`;
+        const _dLabel = _dPct >= 6 ? `D ${_dPct}%` : '';
+        const _comebackBadge = _collapse > 0.15
+          ? `<span class="live-wp-comeback">COMEBACK ${Math.round(_collapse*100)}pp</span>` : '';
+        const drawSeg = _dPct > 0
+          ? `<div class="live-wp-draw" style="width:${_dPct}%">${_dLabel}</div>` : '';
+        const wpHTML = `<div class="live-wp-wrap"><div class="live-wp-bar" data-confidence="${_conf}" title="Live WP · ${_hPct}% home${_dPct ? ` · ${_dPct}% draw` : ''} · ${_aPct}% away"><div class="live-wp-home" style="width:${_hPct}%">${_hLabel}</div>${drawSeg}<div class="live-wp-away" style="width:${_aPct}%">${_aLabel}</div></div>${_comebackBadge}</div>`;
+        let wpEl = card.querySelector('.live-wp-wrap');
+        if (wpEl) {
+          wpEl.outerHTML = wpHTML;
+        } else {
+          const scoreWrap = card.querySelector('.score-wrap');
+          if (scoreWrap) scoreWrap.insertAdjacentHTML('afterend', wpHTML);
+        }
       }
 
       // Proactively open GameDO WebSocket on live cards (not just at CRUNCH).
@@ -20164,7 +20235,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-14c';
+  const SW_VERSION = '2026-06-14d';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -24364,6 +24435,85 @@ document.addEventListener('visibilitychange', () => {
 
 const fieldEvents = new EventTarget();
 const _fieldEventCache = {}; // `${gameId}:${type}` → scoreline (for dedup)
+
+// ── Attention bar — live urgency (Step 7) ────────────────────────────────
+// Tracks top games by urgency from wp_update events. Updates the fixed-bottom
+// bar with up to 3 chips. Red = urgency >= 3 (comeback territory).
+// Yellow = urgency >= 1.5. Gray = everything else.
+const _attnGames = {}; // gameId → {sport,home,away,homeScore,awayScore,homeWP,urgency,peakCollapse,ts}
+let _attnRenderTimer = null;
+
+if (typeof fieldEvents !== 'undefined') {
+  fieldEvents.addEventListener('field:wp_update', function(e) {
+    const d = e.detail;
+    if (!d || !d.gameId) return;
+    // Update or insert
+    _attnGames[d.gameId] = {
+      sport: d.sport, home: d.home, away: d.away,
+      homeWP: d.homeWP, awayWP: d.awayWP,
+      urgency: d.urgency || 0,
+      peakCollapse: d.peakCollapse || 0,
+      ts: d.ts || Date.now(),
+    };
+    // Also inject scores from espnScores if available
+    if (typeof espnScores !== 'undefined') {
+      const k = d.home + '|' + d.away;
+      const s = espnScores[k];
+      if (s) {
+        _attnGames[d.gameId].homeScore = s.homeScore ?? 0;
+        _attnGames[d.gameId].awayScore = s.awayScore ?? 0;
+      }
+    }
+    // Coalesce rapid updates
+    if (!_attnRenderTimer) {
+      _attnRenderTimer = setTimeout(function() {
+        _attnRenderTimer = null;
+        _renderAttentionBar();
+      }, 200);
+    }
+  });
+}
+
+function _renderAttentionBar() {
+  const bar = document.getElementById('field-attention-bar');
+  if (!bar) return;
+  // Sort by urgency descending, take top 3
+  const sorted = Object.entries(_attnGames)
+    .filter(([,g]) => g.urgency > 0)
+    .sort((a, b) => b[1].urgency - a[1].urgency)
+    .slice(0, 3);
+  if (sorted.length === 0) {
+    bar.classList.remove('active');
+    document.body.classList.remove('attn-bar-active');
+    bar.innerHTML = '';
+    return;
+  }
+  bar.classList.add('active');
+  document.body.classList.add('attn-bar-active');
+  const chips = sorted.map(([gId, g]) => {
+    const cls = g.urgency >= 3 ? 'urgency-high' : g.urgency >= 1.5 ? 'urgency-med' : 'urgency-low';
+    const hPct = Math.round((g.homeWP || 0) * 100);
+    const aPct = 100 - hPct;
+    const hShort = (g.home || '').split(' ').pop();
+    const aShort = (g.away || '').split(' ').pop();
+    const scoreTxt = (g.homeScore != null) ? `${g.homeScore}-${g.awayScore}` : '';
+    const comebackBadge = g.peakCollapse > 0.15
+      ? `<span class="attn-chip-badge" style="color:#ef4444">COMEBACK</span>` : '';
+    return `<div class="attn-chip ${cls}" data-gameid="${gId}" title="${g.home} vs ${g.away} · urgency ${g.urgency.toFixed(1)}">
+      <div><span class="attn-chip-score">${hShort} ${scoreTxt} ${aShort}</span></div>
+      <div><span class="attn-chip-wp">${hPct}%-${aPct}%</span> ${comebackBadge}</div>
+    </div>`;
+  }).join('');
+  bar.innerHTML = chips;
+}
+
+// Clean up stale attention games (games that went final)
+if (typeof fieldEvents !== 'undefined') {
+  fieldEvents.addEventListener('field:all_final', function() {
+    Object.keys(_attnGames).forEach(k => delete _attnGames[k]);
+    _renderAttentionBar();
+  });
+}
 
 function _dispatchIfChanged(type, detail) {
   if (!detail || !detail.gameId) return false;

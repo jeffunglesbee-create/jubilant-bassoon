@@ -4083,6 +4083,18 @@ assert('A573 — Live odds wp_update SSE handler: writeback to espnScores + fiel
 assert('A574 — Live odds wp_update SSE listener registered on AmbientEventSource',
   html.includes("addEventListener('wp_update'"));
 
+assert('A575 — Live WP bar: injection in renderESPNScores for live games with WP data',
+  html.includes('live-wp-wrap') && html.includes('live-wp-bar') && html.includes('live-wp-home') && html.includes('live-wp-away'));
+
+assert('A576 — Live WP bar: comeback badge on peakCollapse > 15pp',
+  html.includes('live-wp-comeback') && html.includes('COMEBACK'));
+
+assert('A577 — Attention bar: field-attention-bar element + urgency chip rendering',
+  html.includes('field-attention-bar') && html.includes('attn-chip') && html.includes('urgency-high'));
+
+assert('A578 — Attention bar: populated from field:wp_update events + sorted by urgency',
+  html.includes('_attnGames') && html.includes('_renderAttentionBar') && html.includes('.urgency'));
+
 
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);
