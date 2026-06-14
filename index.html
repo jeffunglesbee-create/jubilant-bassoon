@@ -13723,7 +13723,10 @@ async function renderMajorPreviewCard(container){
   const major = getUpcomingMajor();
   if(!major||!container) return;
 
-  const cacheKey = "major_preview_" + major.key;
+  // iPad-9: cache key bumped to v2 — invalidates briefs that were
+  // generated with the unhardened prompt (some contained venue mismatches,
+  // e.g. "Oakmont" for the 2026 U.S. Open which is at Shinnecock Hills).
+  const cacheKey = "major_preview_" + major.key + "_v2";
   let claudeNote = localStorage.getItem(cacheKey);
 
   // staticNote: hardcoded fallback — always works without API auth
@@ -13731,7 +13734,11 @@ async function renderMajorPreviewCard(container){
 
   if(!claudeNote){
     try{
-      const prompt = `Write exactly one sentence contextualizing this upcoming golf major for a casual sports fan.\nUse only these facts: ${major.edition} ${major.name} at ${major.venue}, ${major.city}.\nDefending champion: ${major.defender} (${major.defenderNote}).\nStarts ${major.dates[0]}.\nDO NOT INVENT: no player career stats, course records, hole numbers, weather predictions, prize money figures, past tournament results, course architects, yardage, par numbers, or any specific facts beyond what is provided above. If you cannot write a sentence using only the given facts, return the string "TBD" instead.\nBe specific to the facts given, factual, and engaging.`;
+      // iPad-9: prompt hardening. The defenderNote previously read
+      // "won 2025 U.S. Open at Oakmont; defending at Shinnecock Hills" —
+      // the model occasionally latched onto the prior-year venue. Split
+      // venue + defender context and pin the current venue at the top.
+      const prompt = `Write exactly one sentence contextualizing this upcoming golf major for a casual sports fan.\n\nCURRENT VENUE (use this — DO NOT substitute any other course name): ${major.venue}, ${major.city}.\n\nFacts you may use: ${major.edition} ${major.name} at ${major.venue}. Defending champion ${major.defender}. ${major.defenderNote}. Starts ${major.dates[0]}.\n\nDO NOT INVENT: no player career stats, course records, hole numbers, weather predictions, prize money figures, past tournament results, course architects, yardage, par numbers, or any specific facts beyond what is provided above.\nDO NOT substitute a different venue (e.g. a prior year's course mentioned in the defender's record) for the CURRENT VENUE above. If you cannot write a sentence using only the given facts, return the string "TBD" instead.\nBe specific to the facts given, factual, and engaging.`;
       if(!canUseAPI()) throw new Error("MAX_USES reached");
       incrementUsage();
       const resp = await fetch(CLAUDE_PROXY_URL,{
@@ -13747,6 +13754,18 @@ async function renderMajorPreviewCard(container){
       claudeNote = (data.content||[]).find(b=>b.type==="text")?.text?.trim()||"";
       // B4: model returns "TBD" when it cannot write a confident sentence from given facts.
       if(claudeNote === "TBD" || claudeNote.toUpperCase() === "TBD") claudeNote = "";
+      // iPad-9: venue-contradiction guard. If the generated brief omits
+      // the current venue OR mentions a different course name that the
+      // structured data does not list, reject it and fall back to
+      // staticNote rather than render a hallucination to the user.
+      if (claudeNote && major.venue) {
+        const noteText = claudeNote.toLowerCase();
+        const venueKey = major.venue.toLowerCase().split(' ')[0]; // first token, e.g. "shinnecock"
+        if (!noteText.includes(venueKey)) {
+          if (FIELD_DEBUG) console.warn('[MajorPreview] venue mismatch — generated brief omits', major.venue);
+          claudeNote = '';
+        }
+      }
       if(claudeNote) localStorage.setItem(cacheKey, claudeNote);
     }catch(e){
       if(FIELD_DEBUG) console.warn("[MajorPreview]",e.message);

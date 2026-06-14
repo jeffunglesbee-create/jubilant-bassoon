@@ -4110,6 +4110,18 @@ assert('A580 — fieldDatesToQuery: replaces hardcoded -4h offset in V2 poll dua
 assert('A581 — fetchV2AllScores uses fieldDatesToQuery (no hardcoded UTC offset)',
   html.includes('fieldDatesToQuery()') && !html.includes('new Date(_nowUTC - 4 * 3600 * 1000)'));
 
+// ── A601 / iPad-9: U.S. Open venue verification + cache invalidation ────────
+assert('A601 — iPad-9: 2026 U.S. Open venue locked + prompt hardened + cache key bumped',
+  // Structured data still has the correct venue
+  /"us-open-2026":[\s\S]{0,300}venue:\s*"Shinnecock Hills Golf Club"/.test(html) &&
+  // Cache key bumped to v2 — invalidates briefs generated before the prompt hardening
+  /"major_preview_" \+ major\.key \+ "_v2"/.test(html) &&
+  // Prompt now declares CURRENT VENUE as a do-not-substitute fact
+  /CURRENT VENUE \(use this — DO NOT substitute any other course name\)/.test(html) &&
+  // Venue-contradiction guard rejects briefs that omit the venue key
+  /noteText\.includes\(venueKey\)/.test(html),
+  'iPad-9 regression fix: brief said "Oakmont Country Club" for the 2026 U.S. Open (Shinnecock Hills). Structured data was correct; the AI brief drifted to the 2025 venue mentioned in the defender note. Fix pins CURRENT VENUE at top of prompt, bumps cache key to invalidate stale briefs, and rejects generated briefs that omit the venue.');
+
 // ── A600 / iPad-8: WNBA team-name mappings ──────────────────────────────────
 assert('A600 — iPad-8: WNBA teams present in _multiWordNicks + _teamAbbr',
   /'Las Vegas Aces':'Aces'/.test(html) &&
