@@ -31347,8 +31347,12 @@ let _prevOTWId=null;
 // PM-27: WS freshness tracking — Map<canonical_key, timestamp_ms> (field:ws_fresh emitter)
 const _lastWSMessageTime = new Map();
 
+// ADR-002 (M2): categorical-tier selection mirroring _otwFindWCLiveGame.
+// minScore arg retained for back-compat; treated as a minimum named-tier
+// rank only — the caller's getDramaDial() bound is interpreted as a tier
+// floor, not a composite threshold. Highest tier wins.
 function _otwFindLiveGame(minScore){
-  let best=null,bestScore=0;
+  let best=null,bestRank=-1;
   (allData?.sports||[]).forEach(sec=>{
     (sec.games||[]).forEach(g=>{
       if(!g._id) return;
@@ -31362,8 +31366,17 @@ function _otwFindLiveGame(minScore){
       });
       if(!eKey) return;
       const ed=espnScores[eKey];
-      const s=dramaScoreLive(ed,sec.sport);
-      if(s>=minScore&&s>bestScore){bestScore=s;best={g,ed,sport:sec.sport,score:s};}
+      const tier=fieldGameTier(g._id);
+      const rank=fieldTierRank(tier);
+      // Only consider tiers above plain LIVE (i.e. CLOSE_LATE+).
+      if(rank<fieldTierRank('CLOSE_LATE')) return;
+      if(rank>bestRank){
+        bestRank=rank;
+        // score retained for back-compat with downstream _otwGetLiveTier call
+        // (uses it as smoothed-drama fallback). Internal sort uses tier rank.
+        const _s=dramaScoreLive(ed,sec.sport);
+        best={g,ed,sport:sec.sport,tier,score:_s};
+      }
     });
   });
   return best;
