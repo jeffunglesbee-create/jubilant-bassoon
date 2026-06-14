@@ -1404,7 +1404,14 @@ body::before{
 .card-brief-inline-label{font-size:.62rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--gold2,#c9a84c);opacity:.8;margin-bottom:.3rem}
 .card-brief-inline-text{font-size:.71rem;color:var(--text-muted,#b0b0c0);line-height:1.55;font-style:italic;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;max-height:calc(1.55em * 3)}
 .card-brief-inline-text.loaded{color:var(--fg,#e8e8f0);font-style:normal}
-@media(min-width:601px){.card-brief-inline-text{-webkit-line-clamp:unset;display:block;overflow:visible}}
+/* V5: P3-L2 MID tier — 2-line brief between phone (1 line) and tablet (full) */
+@media(min-width:414px) and (max-width:819px){
+  .card-brief-inline-text{-webkit-line-clamp:2;max-height:calc(1.55em * 2)}
+}
+@media(min-width:820px){.card-brief-inline-text{-webkit-line-clamp:unset;display:block;overflow:visible}}
+/* V5: brief visibility gated by card tier — featured shows, compact hides.
+   Standard keeps the default clamp behaviour set by the media queries above. */
+.game-card.card-tier-compact .card-brief-inline-text{display:none}
 /* EPL Match Brief card */
 .epl-match-brief-card{background:rgba(124,58,237,.06);border:1px solid rgba(124,58,237,.2);border-left:3px solid rgba(124,58,237,.5);border-radius:8px;padding:.45rem .75rem .4rem;margin-bottom:.35rem;cursor:pointer;transition:background .2s}
 .epl-match-brief-card:hover{background:rgba(124,58,237,.1)}

@@ -4108,6 +4108,15 @@ assert('A580 — fieldDatesToQuery: replaces hardcoded -4h offset in V2 poll dua
 assert('A581 — fetchV2AllScores uses fieldDatesToQuery (no hardcoded UTC offset)',
   html.includes('fieldDatesToQuery()') && !html.includes('new Date(_nowUTC - 4 * 3600 * 1000)'));
 
+// ── A585 / V5: Journalism brief MID tier (2-line) at P3-L2 ──────────────────
+assert('A585 — V5: card-brief-inline-text MID tier — 2-line clamp at 414-819 + tier gating',
+  /@media\(min-width:414px\) and \(max-width:819px\)\s*\{\s*\.card-brief-inline-text\s*\{\s*-webkit-line-clamp:\s*2/.test(html) &&
+  // 820+ rule remains for the FULL tier
+  /@media\(min-width:820px\)\s*\{\s*\.card-brief-inline-text\s*\{\s*-webkit-line-clamp:\s*unset/.test(html) &&
+  // Per-tier visibility gating
+  html.includes('.game-card.card-tier-compact .card-brief-inline-text{display:none}'),
+  'V5 build plan: spec lines 78/255 require 2-line MID brief for P3-L2 (414-819). Existing 1-line and FULL tiers stay; this adds the missing intermediate. Tier gating: compact hides the brief entirely.');
+
 // ── A584 / V4: Card tiering classes (.card-tier-featured/standard/compact) ─
 assert('A584 — V4: card-tier-{featured,standard,compact} classes scaffolded on .game-card',
   html.includes('.game-card.card-tier-featured') &&
