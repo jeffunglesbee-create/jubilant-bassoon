@@ -1,5 +1,3 @@
 {
-  "status": "no_code",
-  "final_url": "https://api.prod.whoop.com/oauth/oauth2/fallbacks/error?error=invalid_request&error_description=The+request+is+missing+a+required+parameter%2C+includes+an+invalid+parameter+value%2C+includes+a+parameter+more+than+once%2C+or+is+otherwise+malformed&error_hint=The+%22redirect_uri%22+parameter+does+not+",
-  "page_text": "The OAuth2 request resulted in an error.\nError: invalid_request\nDescription: The request is missing a required parameter, includes an invalid parameter value, includes a parameter more than once, or is otherwise malformed\nHint: The \"redirect_uri\" parameter does not match any of the OAuth 2.0 Client's pre-registered redirect urls.\nDebug:\n\nYou are seeing this page because configuration key urls.error is not set.\n\nIf you are an administrator, please read the guide to understand what you need to do. If you are a user, please contact the administrator."
+  "error": "Page.goto: Timeout 30000ms exceeded.\nCall log:\n  - navigating to \"https://api.prod.whoop.com/oauth/oauth2/auth?response_type=code&client_id=a4c9151b-0a51-461c-808a-120fe5735bfc&redirect_uri=https%3A%2F%2Fwhoop.com%2F&scope=read%3Arecovery+read%3Acycles+read%3Asleep+read%3Aworkout+read%3Aprofile+read%3Abody_measurement+offline&state=auto_auth\", waiting until \"networkidle\"\n"
 }
