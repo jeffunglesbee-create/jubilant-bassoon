@@ -29250,9 +29250,19 @@ function renderWatchWindow(){
   const el=document.getElementById('watch-window');
   if(!el||_wwDismissed||!allData) return;
   const now=Date.now(),WINDOW_MS=60*60*1000; // extended to 60 min (was 35)
-  let best=null,bestScore=0;
-  (allData.sports||[]).forEach(sec=>{(sec.games||[]).forEach(g=>{if(!g.start_time) return;const startMs=new Date(g.start_time).getTime();const minsAway=(startMs-now)/60000;if(minsAway<-2||minsAway>60) return;const score=preGameScore(g);if(score>bestScore){bestScore=score;best={g,sec,minsAway};}});});
-  if(!best||bestScore<20){el.style.display='none';if(_wwInterval){clearInterval(_wwInterval);_wwInterval=null;}return;}
+  // ADR-002 (H4): pick best upcoming by named tier rank, not composite preGameScore.
+  let best=null,bestRank=-1;
+  (allData.sports||[]).forEach(sec=>{(sec.games||[]).forEach(g=>{
+    if(!g.start_time) return;
+    const startMs=new Date(g.start_time).getTime();
+    const minsAway=(startMs-now)/60000;
+    if(minsAway<-2||minsAway>60) return;
+    const rank=fieldTierRank(fieldGameTier(g._id));
+    if(rank>bestRank){bestRank=rank;best={g,sec,minsAway};}
+  });});
+  // Show only when top candidate hits a named tier worth surfacing (MARQUEE+).
+  const _wwMinRank=fieldTierRank('MARQUEE_NATIONAL');
+  if(!best||bestRank<_wwMinRank){el.style.display='none';if(_wwInterval){clearInterval(_wwInterval);_wwInterval=null;}return;}
   const {g,sec,minsAway}=best;
   const _wwSport=(sec.sport||'').toLowerCase();
   const _wwVerb=_wwSport.includes('baseball')?'First pitch':_wwSport.includes('hockey')||_wwSport.includes('nhl')?'Puck drop':_wwSport.includes('football')||_wwSport.includes('nfl')||_wwSport.includes('soccer')||_wwSport.includes('league')||_wwSport.includes('mls')||_wwSport.includes('efl')||_wwSport.includes('world cup')||_wwSport.includes('fifa')||_wwSport.includes('wc26')?'Kickoff':_wwSport.includes('afl')||_wwSport.includes('aussie')?'Bounce':'Tip-off';
