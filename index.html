@@ -30950,32 +30950,38 @@ function injectDramaBadges(){
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// FEATURE: DOUBLE FEATURE — Banner when 2+ games exceed drama 75 simultaneously
-// Cross-sport: "NBA Game (88) + NHL Game (76) both live right now"
+// FEATURE: DOUBLE FEATURE — Banner when 2+ live games hit a tense named tier
+// Cross-sport: "NBA Game · CRUNCH TIME + NHL Game · CLOSE GAME" simultaneously.
 // Unique editorial product — no other sports app does this across leagues.
+// ADR-002: tier-gated (named conditions), no composite score, no number in DOM.
 // ═══════════════════════════════════════════════════════════════════════════
-const _doubleFeatureThreshold = 75;
 
 function detectAndRenderDoubleFeature() {
-  // Collect all live games with smoothed drama >= threshold
+  const HOT_TIERS = new Set(['CRUNCH','EXTRA_TIME','CLOSE_LATE']);
   const hotGames = [];
-  Object.entries(espnScores).forEach(([gid, eData]) => {
-    if (!eData || eData.status === 'pre' || eData.status === 'post') return;
-    const smoothed = getSmoothedDrama(gid) ?? dramaScoreLive(eData, eData._sport || '');
-    if (smoothed >= _doubleFeatureThreshold) {
-      hotGames.push({gid, smoothed, label: (eData.away||'?') + ' @ ' + (eData.home||'?')});
-    }
+  (allData?.sports||[]).forEach(sec => {
+    (sec.games||[]).forEach(g => {
+      if (!g._id) return;
+      const tier = fieldGameTier(g._id);
+      if (HOT_TIERS.has(tier)) {
+        hotGames.push({
+          gid: g._id,
+          tier,
+          rank: fieldTierRank(tier),
+          label: (g.away||'?') + ' @ ' + (g.home||'?'),
+        });
+      }
+    });
   });
 
   let banner = document.getElementById('double-feature-banner');
 
   if (hotGames.length >= 2) {
-    // Sort by score descending for display
-    hotGames.sort((a, b) => b.smoothed - a.smoothed);
+    hotGames.sort((a, b) => b.rank - a.rank);
     const top2 = hotGames.slice(0, 2);
     const text = '🎬 Double Feature — '
-      + top2[0].label + ' (' + top2[0].smoothed + ')'
-      + ' + ' + top2[1].label + ' (' + top2[1].smoothed + ')';
+      + top2[0].label + ' · ' + fieldTierLabel(top2[0].tier)
+      + ' + ' + top2[1].label + ' · ' + fieldTierLabel(top2[1].tier);
 
     if (!banner) {
       banner = document.createElement('div');
