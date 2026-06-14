@@ -17078,29 +17078,25 @@ async function fetchNHLRelayScores() {
   } catch(e) {}
 }
 
-// #11b — Tempo-adjusted polling: live interval varies 20–45s by drama score
-// High-drama games poll faster; garbage-time games poll slower.
-// Drama score = max preGameScore across all live games in the section.
+// #11b — Tempo-adjusted polling: cadence varies 20-45s by aggregate named tier
+// across the section's games. High-tier games poll faster; quiet sections slower.
+// ADR-002 (L1): tier-driven cadence — was composite drama + 3 hardcoded
+// thresholds. Internal logic only (poll interval, never user-visible).
 function computeLiveInterval(sectionSport) {
   if(!allData?.sports) return ESPN_REFRESH_LIVE;
   const sec = allData.sports.find(s => s.sport === sectionSport);
-  // Use smoothed live drama when available (incorporates #11a situation bonus)
-  // Falls back to preGameScore() for pre-game sections
-  const drama = sec ? Math.max(0, ...(sec.games||[]).map(g => {
-    const smoothed = g._id ? getSmoothedDrama(g._id) : null;
-    return smoothed != null ? smoothed : preGameScore(g);
-  })) : 0;
+  if(!sec) return 45000;
+  const topRank = Math.max(0, ...(sec.games||[]).map(g => g._id ? fieldTierRank(fieldGameTier(g._id)) : 0));
   // NOTE: SSE (AmbientDO) delivers subscriber events (Night Owl, lead change burst,
   // CRUNCH) at ~3s latency via emitScoreEvent(source:'sse'). However SSE does NOT
   // write to espnScores[] — card score display is updated only by polling.
-  // Therefore polling must run at full drama-based cadence; reducing it would stale
-  // the score shown on cards even while SSE events fire correctly.
-  // Future: if SSE handler writes to espnScores + triggers renderESPNScores, then
-  // polling could be reduced safely. Until then: do not gate on isSSECovered here.
-  if(drama > 75) return 20000;  // 20s — critical game, tight score, final period
-  if(drama > 50) return 25000;  // 25s — elevated drama
-  if(drama > 30) return 30000;  // 30s — normal live game
-  return 45000;                  // 45s — low drama / blowout / between innings
+  // Therefore polling must run at full cadence; reducing it would stale the score
+  // shown on cards even while SSE events fire correctly.
+  if(topRank >= fieldTierRank('CRUNCH'))            return 20000; // 20s — CRUNCH/EXTRA_TIME and above
+  if(topRank >= fieldTierRank('CLOSE_LATE'))        return 25000; // 25s — CLOSE_LATE
+  if(topRank >= fieldTierRank('MARQUEE_NATIONAL'))  return 30000; // 30s — marquee/playoff series
+  if(topRank >= fieldTierRank('LIVE'))              return 30000; // 30s — generic live game
+  return 45000;                                                    // 45s — pre-game / quiet section
 }
 
 // Fetch all sport scoreboards and merge into espnScores
