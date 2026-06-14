@@ -4108,6 +4108,11 @@ assert('A580 — fieldDatesToQuery: replaces hardcoded -4h offset in V2 poll dua
 assert('A581 — fetchV2AllScores uses fieldDatesToQuery (no hardcoded UTC offset)',
   html.includes('fieldDatesToQuery()') && !html.includes('new Date(_nowUTC - 4 * 3600 * 1000)'));
 
+// ── A583 / V3: Bottom sheet gated to phone+L1/L2 only ───────────────────────
+assert('A583 — V3: bottom-sheet hidden above 820px (T1+ routes through ambient/inline)',
+  /@media\(min-width:820px\)\s*\{\s*\.bottom-sheet\s*\{\s*display:\s*none\s*!important/.test(html),
+  'V3 build plan: spec lines 68-73 route drama-badge tap to ambient panel (T1/T2) or inline LEFT/RIGHT/CENTRE expansion (D1-D4). Bottom sheet must not show above 820.');
+
 // ── A582 / V2: Viewport v4 explicit P2/T1/T2 breakpoint sentinels ──────────
 assert('A582 — V2: explicit P2 / T1 portrait / T2 landscape breakpoint sentinels',
   /@media\(min-width:375px\) and \(max-width:413px\)/.test(html) &&

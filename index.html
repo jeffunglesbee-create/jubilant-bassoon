@@ -1016,6 +1016,14 @@ body::before{
 .bs-jrn-link:hover{opacity:.85;background:rgba(201,168,76,.06)}
 .bs-jrn-link .bs-section-label{color:var(--gold2);margin-bottom:0;cursor:pointer}
 
+/* V3: bottom sheet is phone+L1/L2 only — spec lines 68-73 route T1+ to
+   ambient panel injection (T1/T2) or inline LEFT/RIGHT/CENTRE expansion
+   (D1-D4). Hide unconditionally above 820 so the sheet cannot fire on
+   surfaces that should route elsewhere. */
+@media(min-width:820px){
+  .bottom-sheet{ display:none !important; }
+}
+
 /* Card Life Stage content */
 .card-stage-content{padding:.25rem 0 .1rem;font-size:.62rem;line-height:1.5;color:rgba(232,232,240,.75)}
 .card-stage-content.big-game-note{font-size:.65rem;color:rgba(232,232,240,.88);line-height:1.6}
