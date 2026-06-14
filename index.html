@@ -701,6 +701,15 @@ body::before{
 .game-card.card-tier-featured{ box-shadow:inset 0 0 0 1px rgba(201,168,76,.18) }
 .game-card.card-tier-standard{ /* default — no override */ }
 .game-card.card-tier-compact{ opacity:.88 }
+/* iPad-1: inline expand fallback for tablet+ taps (V3 hid the bottom sheet
+   above 820; this is the visible tap response in its place). */
+.game-card[data-expanded="1"] .card-brief-inline-text{
+  -webkit-line-clamp:unset;max-height:none;display:block;overflow:visible;
+}
+.game-card[data-expanded="1"]{
+  background:var(--card-highlight,#181830);
+  outline:1px solid rgba(201,168,76,.25);
+}
 .game-card.my-team-card{
   border-left:2px solid var(--gold);
   box-shadow:inset 0 0 24px rgba(201,168,76,.06);
@@ -34204,7 +34213,28 @@ function buildComebackProbability(gameId, eData, sport) {
 }
 
 // ── Bottom-sheet ──────────────────────────────────────────────────────────────
+// iPad-1: tablet+ tap fallback. Scrolls the tapped card into view and
+// expands its inline brief (data-expanded="1" → unclamps .card-brief-inline-text).
+// Lighter than the bottom-sheet payload; matches spec's "inline expand" routing
+// for T1+ until ambient-panel injection is fully wired.
+function _openGameSheetTablet(gameId) {
+  const card = document.querySelector(`.game-card[data-gameid="${gameId}"]`);
+  if (!card) return;
+  card.dataset.expanded = '1';
+  if (typeof _expandedCards !== 'undefined') _expandedCards.add(gameId);
+  card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
 function openBottomSheet(gameId) {
+  // iPad-1 (regression fix): V3 CSS hides .bottom-sheet at min-width:820px.
+  // Tap handlers on game cards still call this function regardless of
+  // viewport. Route ≥820 to a scroll-into-view + inline-expand fallback
+  // so taps have a visible effect; spec lines 68-73 designate ambient
+  // panel injection / inline expand for T1+ viewports.
+  if (typeof window !== 'undefined' && window.innerWidth >= 820) {
+    _openGameSheetTablet(gameId);
+    return;
+  }
   let game = null, sport = '';
   (allData?.sports||[]).forEach(s=>(s.games||[]).forEach(g=>{ if(g._id===gameId){game=g;sport=s.sport;} }));
   if (!game) return;

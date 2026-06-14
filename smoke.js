@@ -4108,6 +4108,16 @@ assert('A580 — fieldDatesToQuery: replaces hardcoded -4h offset in V2 poll dua
 assert('A581 — fetchV2AllScores uses fieldDatesToQuery (no hardcoded UTC offset)',
   html.includes('fieldDatesToQuery()') && !html.includes('new Date(_nowUTC - 4 * 3600 * 1000)'));
 
+// ── A593 / iPad-1: viewport-aware tap routing ───────────────────────────────
+assert('A593 — iPad-1: openBottomSheet routes ≥820 to inline-expand fallback',
+  html.includes('_openGameSheetTablet(gameId)') &&
+  /function _openGameSheetTablet\s*\(/.test(html) &&
+  // The early-return gate at the top of openBottomSheet
+  /if \(typeof window !== 'undefined' && window\.innerWidth >= 820\)\s*\{\s*_openGameSheetTablet/.test(html) &&
+  // The CSS that makes the expanded state visible
+  /\.game-card\[data-expanded="1"\] \.card-brief-inline-text\{[\s\S]{0,80}line-clamp:unset/.test(html),
+  'iPad-1 regression fix: V3 CSS hides .bottom-sheet at min-width:820px; tap handlers must route ≥820 elsewhere. Adds inline-expand fallback for T1+ until ambient panel injection is wired.');
+
 // ── A592 / V12: typography role tokens ──────────────────────────────────────
 assert('A592 — V12: typography role tokens (--type-verdict/headline/data/label/chip/context)',
   /--type-verdict:600 1\.1rem\/1\.3 var\(--ff-display\)/.test(html) &&
