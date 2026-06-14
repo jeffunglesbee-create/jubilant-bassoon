@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       authorization_code:
-        description: 'Authorization code from OAuth redirect'
+        description: 'Authorization code'
         required: true
 
 jobs:
@@ -14,84 +14,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - name: Exchange code for tokens
+      - name: Exchange code
         env:
           WHOOP_CLIENT_ID: ${{ secrets.WHOOP_CLIENT_ID }}
           WHOOP_CLIENT_SECRET: ${{ secrets.WHOOP_CLIENT_SECRET }}
           WHOOP_REDIRECT_URI: ${{ secrets.WHOOP_REDIRECT_URI }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          # Get code from input or trigger file
-          CODE="${{ github.event.inputs.authorization_code }}"
-          if [ -z "$CODE" ] && [ -f outbox/.trigger-whoop-auth ]; then
-            CODE=$(cat outbox/.trigger-whoop-auth | tr -d '\n')
-          fi
-          
-          echo "Code length: ${#CODE}"
-          echo "Redirect URI: $WHOOP_REDIRECT_URI"
-          
-          mkdir -p outbox
-          
-          # Try multiple redirect_uri variants
-          for URI in "$WHOOP_REDIRECT_URI" "${WHOOP_REDIRECT_URI%/}" "https://www.whoop.com/" "https://www.whoop.com"; do
-            echo ""
-            echo "=== Trying redirect_uri: $URI ==="
-            
-            RESPONSE=$(curl -s -X POST "https://api.prod.whoop.com/oauth/oauth2/token" \
-              -H "Content-Type: application/x-www-form-urlencoded" \
-              -d "grant_type=authorization_code" \
-              -d "code=$CODE" \
-              -d "client_id=$WHOOP_CLIENT_ID" \
-              -d "client_secret=$WHOOP_CLIENT_SECRET" \
-              -d "redirect_uri=$URI")
-            
-            echo "Response: ${RESPONSE:0:200}"
-            
-            if echo "$RESPONSE" | grep -q "access_token"; then
-              echo ""
-              echo "SUCCESS with redirect_uri: $URI"
-              
-              ACCESS_TOKEN=$(echo "$RESPONSE" | python3 -c "import sys,json; print(json.load(sys.stdin)['access_token'])")
-              REFRESH_TOKEN=$(echo "$RESPONSE" | python3 -c "import sys,json; print(json.load(sys.stdin).get('refresh_token',''))")
-              EXPIRES=$(echo "$RESPONSE" | python3 -c "import sys,json; print(json.load(sys.stdin).get('expires_in','?'))")
-              
-              echo "Access token: ${#ACCESS_TOKEN} chars"
-              echo "Refresh token: ${#REFRESH_TOKEN} chars"
-              echo "Expires in: $EXPIRES"
-              
-              # Store tokens using GitHub API
-              pip install pynacl -q 2>/dev/null
-              python3 << PYEOF
-import os, base64, requests
-from nacl import encoding, public
-
-pat = os.environ["GH_TOKEN"]
-repo = "${{ github.repository }}"
-headers = {"Authorization": f"token {pat}", "Accept": "application/vnd.github+json"}
-
-pk_r = requests.get(f"https://api.github.com/repos/{repo}/actions/secrets/public-key", headers=headers)
-pk = pk_r.json()
-pub_key = public.PublicKey(pk["key"].encode("utf-8"), encoding.Base64Encoder)
-sealed = public.SealedBox(pub_key)
-
-for name, val in [("WHOOP_REFRESH_TOKEN", "$REFRESH_TOKEN"), ("WHOOP_ACCESS_TOKEN", "$ACCESS_TOKEN")]:
-    if val:
-        enc = base64.b64encode(sealed.encrypt(val.encode())).decode()
-        requests.put(f"https://api.github.com/repos/{repo}/actions/secrets/{name}", headers=headers, json={"encrypted_value": enc, "key_id": pk["key_id"]})
-        print(f"Stored {name}")
-PYEOF
-              
-              echo '{"status":"success","expires_in":'$EXPIRES',"has_refresh":true}' > outbox/whoop-auth-result.json
-              break
-            fi
-          done
-          
-          # If all failed
-          if ! echo "$RESPONSE" | grep -q "access_token"; then
-            echo "$RESPONSE" > outbox/whoop-auth-result.json
-          fi
-
+          GH_REPO: ${{ github.repository }}
+        run: bash scripts/whoop_exchange.sh "${{ github.event.inputs.authorization_code }}"
       - name: Commit
         run: |
           git config user.name "github-actions[bot]"
