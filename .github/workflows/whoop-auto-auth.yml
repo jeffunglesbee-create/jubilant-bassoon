@@ -8,7 +8,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Playwright
+      - name: Install deps
         run: |
           pip install playwright requests pynacl -q
           python3 -m playwright install chromium
@@ -22,7 +22,7 @@ jobs:
           WHOOP_PASSWORD: ${{ secrets.WHOOP_PASSWORD }}
         run: |
           python3 << 'PYEOF'
-          import os, json, base64, time, requests
+          import os, json, base64, time, requests, sys
           from urllib.parse import urlencode, urlparse, parse_qs
           from playwright.sync_api import sync_playwright
           from nacl import encoding, public
@@ -38,7 +38,6 @@ jobs:
           os.makedirs("outbox", exist_ok=True)
           result = {}
 
-          # Build OAuth URL
           auth_url = "https://api.prod.whoop.com/oauth/oauth2/auth?" + urlencode({
               "response_type": "code",
               "client_id": client_id,
@@ -47,131 +46,143 @@ jobs:
               "state": "auto_auth"
           })
 
-          print(f"Auth URL: {auth_url[:80]}...")
+          print(f"Redirect URI: {redirect_uri}")
+          print(f"Auth URL constructed")
 
           with sync_playwright() as p:
-              browser = p.chromium.launch(headless=True)
-              context = browser.new_context(
-                  user_agent="Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1"
+              browser = p.chromium.launch(
+                  headless=True,
+                  args=[
+                      "--disable-blink-features=AutomationControlled",
+                      "--no-sandbox"
+                  ]
               )
+              context = browser.new_context(
+                  user_agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+                  viewport={"width": 1280, "height": 720}
+              )
+              # Remove webdriver flag
+              context.add_init_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
               page = context.new_page()
 
               try:
                   print("Loading auth page...")
-                  page.goto(auth_url, wait_until="networkidle", timeout=30000)
-                  time.sleep(2)
+                  resp = page.goto(auth_url, wait_until="domcontentloaded", timeout=60000)
+                  print(f"Response status: {resp.status if resp else 'None'}")
+                  time.sleep(3)
 
-                  # Screenshot for debugging
                   page.screenshot(path="outbox/whoop-auth-1.png")
-                  print(f"Page title: {page.title()}")
-                  print(f"Page URL: {page.url[:100]}")
+                  print(f"Title: {page.title()}")
+                  print(f"URL: {page.url[:150]}")
 
-                  # Look for email/username field
-                  email_sel = page.query_selector('input[type="email"], input[name="email"], input[name="username"], input[id="email"], input[id="username"]')
-                  if email_sel:
-                      print("Found email field, filling...")
-                      email_sel.fill(email)
+                  # Check for Cloudflare challenge
+                  content = page.content()[:2000]
+                  if "challenge" in content.lower() or "blocked" in content.lower() or "cloudflare" in content.lower():
+                      result["error"] = "Cloudflare WAF blocked headless browser"
+                      result["page_snippet"] = page.inner_text("body")[:500]
+                  elif "error" in page.url.lower():
+                      result["error"] = "OAuth error page"
+                      result["page_text"] = page.inner_text("body")[:500]
+                      result["url"] = page.url[:300]
                   else:
-                      # Try broader selector
-                      inputs = page.query_selector_all('input[type="text"], input[type="email"]')
-                      print(f"Found {len(inputs)} text/email inputs")
-                      if inputs:
-                          inputs[0].fill(email)
+                      # Try to find and fill login form
+                      page.wait_for_timeout(2000)
+                      
+                      # Get all input fields
+                      inputs = page.query_selector_all("input")
+                      print(f"Found {len(inputs)} input fields")
+                      for inp in inputs:
+                          itype = inp.get_attribute("type") or "?"
+                          iname = inp.get_attribute("name") or inp.get_attribute("id") or "?"
+                          print(f"  input: type={itype} name={iname}")
 
-                  # Look for password field
-                  pass_sel = page.query_selector('input[type="password"], input[name="password"]')
-                  if pass_sel:
-                      print("Found password field, filling...")
-                      pass_sel.fill(password)
+                      # Fill email
+                      filled_email = False
+                      for sel in ['input[name="username"]', 'input[name="email"]', 'input[type="email"]', 'input[id="username"]', 'input[id="email"]']:
+                          el = page.query_selector(sel)
+                          if el:
+                              el.fill(email)
+                              filled_email = True
+                              print(f"Filled email via {sel}")
+                              break
+                      if not filled_email and inputs:
+                          text_inputs = [i for i in inputs if (i.get_attribute("type") or "") in ("text", "email", "")]
+                          if text_inputs:
+                              text_inputs[0].fill(email)
+                              filled_email = True
+                              print("Filled email via first text input")
 
-                  time.sleep(1)
-                  page.screenshot(path="outbox/whoop-auth-2.png")
+                      # Fill password
+                      pass_el = page.query_selector('input[type="password"]')
+                      if pass_el:
+                          pass_el.fill(password)
+                          print("Filled password")
 
-                  # Look for submit button
-                  submit = page.query_selector('button[type="submit"], input[type="submit"], button:has-text("Log In"), button:has-text("Sign In"), button:has-text("Continue")')
-                  if submit:
-                      print("Clicking submit...")
-                      submit.click()
-                      time.sleep(5)
-                  else:
-                      # Try pressing Enter
-                      print("No submit button found, pressing Enter...")
-                      page.keyboard.press("Enter")
-                      time.sleep(5)
+                      page.screenshot(path="outbox/whoop-auth-2.png")
 
-                  page.screenshot(path="outbox/whoop-auth-3.png")
-                  print(f"After login URL: {page.url[:150]}")
-
-                  # Check for authorize/consent button
-                  auth_btn = page.query_selector('button:has-text("Authorize"), button:has-text("Allow"), button:has-text("Accept"), button:has-text("Grant")')
-                  if auth_btn:
-                      print("Found authorize button, clicking...")
-                      auth_btn.click()
-                      time.sleep(5)
-                      page.screenshot(path="outbox/whoop-auth-4.png")
-
-                  final_url = page.url
-                  print(f"Final URL: {final_url[:200]}")
-
-                  # Extract code from URL
-                  parsed = urlparse(final_url)
-                  params = parse_qs(parsed.query)
-                  code = params.get("code", [None])[0]
-
-                  if code:
-                      print(f"Got authorization code: {code[:20]}...")
-                      result["code_obtained"] = True
-
-                      # Exchange code for tokens
-                      print("Exchanging code for tokens...")
-                      r = requests.post("https://api.prod.whoop.com/oauth/token", data={
-                          "grant_type": "authorization_code",
-                          "code": code,
-                          "client_id": client_id,
-                          "client_secret": client_secret,
-                          "redirect_uri": redirect_uri
-                      })
-
-                      print(f"Token exchange: HTTP {r.status_code}")
-                      if r.status_code == 200:
-                          tokens = r.json()
-                          access_token = tokens.get("access_token", "")
-                          refresh_token = tokens.get("refresh_token", "")
-
-                          # Store tokens as secrets
-                          headers_gh = {"Authorization": f"token {pat}", "Accept": "application/vnd.github+json"}
-                          pk_r = requests.get(f"https://api.github.com/repos/{repo}/actions/secrets/public-key", headers=headers_gh)
-                          pk_data = pk_r.json()
-                          pub_key = public.PublicKey(pk_data["key"].encode("utf-8"), encoding.Base64Encoder)
-                          sealed = public.SealedBox(pub_key)
-
-                          for name, val in [("WHOOP_REFRESH_TOKEN", refresh_token), ("WHOOP_ACCESS_TOKEN", access_token)]:
-                              enc = base64.b64encode(sealed.encrypt(val.encode())).decode()
-                              requests.put(
-                                  f"https://api.github.com/repos/{repo}/actions/secrets/{name}",
-                                  headers=headers_gh,
-                                  json={"encrypted_value": enc, "key_id": pk_data["key_id"]}
-                              )
-
-                          result["status"] = "success"
-                          result["has_refresh"] = bool(refresh_token)
-                          result["expires_in"] = tokens.get("expires_in")
-                          print("SUCCESS: Tokens stored as GitHub secrets")
+                      # Submit
+                      for btn_sel in ['button[type="submit"]', 'button:has-text("Log In")', 'button:has-text("Sign In")', 'button:has-text("Continue")', 'input[type="submit"]']:
+                          btn = page.query_selector(btn_sel)
+                          if btn:
+                              print(f"Clicking {btn_sel}")
+                              btn.click()
+                              break
                       else:
-                          result["token_error"] = r.text[:500]
-                  else:
-                      result["status"] = "no_code"
-                      result["final_url"] = final_url[:300]
-                      # Save page content for debugging
-                      result["page_text"] = page.inner_text("body")[:1000]
+                          page.keyboard.press("Enter")
+                          print("Pressed Enter")
+
+                      page.wait_for_timeout(8000)
+                      page.screenshot(path="outbox/whoop-auth-3.png")
+                      print(f"After submit URL: {page.url[:200]}")
+
+                      # Check for consent/authorize screen
+                      auth_btn = page.query_selector('button:has-text("Authorize"), button:has-text("Allow"), button:has-text("Accept")')
+                      if auth_btn:
+                          print("Clicking authorize")
+                          auth_btn.click()
+                          page.wait_for_timeout(5000)
+                          page.screenshot(path="outbox/whoop-auth-4.png")
+
+                      final_url = page.url
+                      print(f"Final: {final_url[:250]}")
+
+                      parsed = urlparse(final_url)
+                      params = parse_qs(parsed.query)
+                      code = params.get("code", [None])[0]
+
+                      if code:
+                          print(f"CODE OBTAINED: {code[:20]}...")
+                          r = requests.post("https://api.prod.whoop.com/oauth/token", data={
+                              "grant_type": "authorization_code",
+                              "code": code,
+                              "client_id": client_id,
+                              "client_secret": client_secret,
+                              "redirect_uri": redirect_uri
+                          })
+                          if r.status_code == 200:
+                              tokens = r.json()
+                              headers_gh = {"Authorization": f"token {pat}", "Accept": "application/vnd.github+json"}
+                              pk_r = requests.get(f"https://api.github.com/repos/{repo}/actions/secrets/public-key", headers=headers_gh)
+                              pk_data = pk_r.json()
+                              pub_key = public.PublicKey(pk_data["key"].encode("utf-8"), encoding.Base64Encoder)
+                              sealed = public.SealedBox(pub_key)
+                              for name, val in [("WHOOP_REFRESH_TOKEN", tokens.get("refresh_token","")), ("WHOOP_ACCESS_TOKEN", tokens.get("access_token",""))]:
+                                  enc = base64.b64encode(sealed.encrypt(val.encode())).decode()
+                                  requests.put(f"https://api.github.com/repos/{repo}/actions/secrets/{name}", headers=headers_gh, json={"encrypted_value": enc, "key_id": pk_data["key_id"]})
+                              result = {"status": "success", "has_refresh": bool(tokens.get("refresh_token")), "expires_in": tokens.get("expires_in")}
+                              print("SUCCESS — tokens stored")
+                          else:
+                              result = {"status": "token_exchange_failed", "code": r.status_code, "body": r.text[:500]}
+                      else:
+                          result["status"] = "no_code"
+                          result["final_url"] = final_url[:300]
+                          result["page_text"] = page.inner_text("body")[:1000]
 
               except Exception as e:
                   result["error"] = str(e)
                   print(f"Error: {e}")
-                  try:
-                      page.screenshot(path="outbox/whoop-auth-error.png")
-                  except:
-                      pass
+                  try: page.screenshot(path="outbox/whoop-auth-error.png")
+                  except: pass
 
               browser.close()
 
