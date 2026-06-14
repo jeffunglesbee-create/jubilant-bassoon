@@ -4095,6 +4095,15 @@ assert('A577 — Attention bar: field-attention-bar element + urgency chip rende
 assert('A578 — Attention bar: populated from field:wp_update events + sorted by urgency',
   html.includes('_attnGames') && html.includes('_renderAttentionBar') && html.includes('.urgency'));
 
+assert('A579 — fieldNowET: Temporal-inspired DST-correct ET date/hour helper',
+  html.includes('function fieldNowET') && html.includes('Intl.DateTimeFormat') && html.includes('formatToParts'));
+
+assert('A580 — fieldDatesToQuery: replaces hardcoded -4h offset in V2 poll dual-date logic',
+  html.includes('function fieldDatesToQuery') && html.includes('fieldNowET()'));
+
+assert('A581 — fetchV2AllScores uses fieldDatesToQuery (no hardcoded UTC offset)',
+  html.includes('fieldDatesToQuery()') && !html.includes('new Date(_nowUTC - 4 * 3600 * 1000)'));
+
 
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);

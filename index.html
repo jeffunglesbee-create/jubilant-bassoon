@@ -5948,6 +5948,48 @@ function fieldDateKey(d){
     .toLocaleDateString('en-CA', { timeZone: FIELD_TZ });
 }
 
+// ── fieldNowET: Temporal-inspired timezone-aware date helpers ────────────
+// Replaces hardcoded UTC offset math (e.g. `Date.now() - 4*3600*1000`)
+// with DST-correct Intl.DateTimeFormat. Handles EDT→EST transitions
+// automatically. Zero dependencies.
+//
+// Returns {date, year, month, day, hour, minute} in FIELD_TZ.
+// date is YYYY-MM-DD (same format as fieldDateKey).
+function fieldNowET() {
+  const fmt = new Intl.DateTimeFormat('en-CA', {
+    timeZone: FIELD_TZ,
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', hour12: false,
+  });
+  const parts = {};
+  fmt.formatToParts(new Date()).forEach(p => { parts[p.type] = p.value; });
+  return {
+    date: `${parts.year}-${parts.month}-${parts.day}`,
+    year: parseInt(parts.year),
+    month: parseInt(parts.month),
+    day: parseInt(parts.day),
+    hour: parseInt(parts.hour === '24' ? '0' : parts.hour),
+    minute: parseInt(parts.minute),
+  };
+}
+
+// Returns {dates, etDate, utcDate, etHour} for V2 polling.
+// Eliminates the hardcoded -4h offset that would break during EST.
+// dates: array of YYYY-MM-DD to query (deduped).
+// Evening expansion: after 4 PM ET, adds tomorrow UTC to catch
+// US evening games crossing the UTC midnight boundary.
+function fieldDatesToQuery() {
+  const et = fieldNowET();
+  const utcDate = new Date().toISOString().slice(0, 10);
+  const etDate = et.date;
+  const dates = utcDate === etDate ? [utcDate] : [etDate, utcDate];
+  if (et.hour >= 16) {
+    const tomorrow = new Date(Date.now() + 24 * 3600 * 1000).toISOString().slice(0, 10);
+    if (!dates.includes(tomorrow)) dates.push(tomorrow);
+  }
+  return { dates, etDate, utcDate, etHour: et.hour };
+}
+
 // Format an ISO timestamp to user's selected timezone (ET, local, or custom)
 function fmtTime(iso){
   const tz = selectedTz==="local"?localTz():selectedTz;
@@ -15033,25 +15075,12 @@ async function fetchV2AllScores() {
   // Date strategy: US evening games span two UTC dates.
   // - 7pm ET games start at 23:00 UTC on the ET date (e.g. Jun 5 UTC)
   // - 8:30pm ET games start at 00:30 UTC the next day (e.g. Jun 6 UTC)
-  // Solution: query BOTH ET date and UTC date when they differ.
-  // The stale-final guard (UTC-based) prevents yesterday's finished games
-  // from polluting today's cards. Dedup by game ID after merging.
-  const _nowUTC  = new Date();
-  const utcDate  = _nowUTC.toISOString().slice(0, 10);
-  const etDate   = new Date(_nowUTC - 4 * 3600 * 1000).toISOString().slice(0, 10);
-  // Build list of dates to query — dedup if ET and UTC are the same
-  const datesToQuery = utcDate === etDate ? [utcDate] : [etDate, utcDate];
-  // Evening expansion: after 4 PM ET, also query tomorrow's UTC date to catch
-  // US evening games that cross the UTC midnight boundary.
-  // e.g. USA vs Paraguay at 9 PM ET = 1 AM UTC next day — api-sports returns
-  // it on the next UTC date, not today's. Without this, the game is invisible
-  // until 8 PM ET when the UTC date flips and the dual-date logic catches it.
-  const etHour = new Date(_nowUTC - 4 * 3600 * 1000).getUTCHours();
-  if (etHour >= 16) {
-    const tomorrowUTC = new Date(_nowUTC.getTime() + 24 * 3600 * 1000).toISOString().slice(0, 10);
-    if (!datesToQuery.includes(tomorrowUTC)) datesToQuery.push(tomorrowUTC);
-  }
-  const date = utcDate; // used by stale-final guard and anyLive check
+  // Solution: fieldDatesToQuery() handles this DST-correctly via Intl.DateTimeFormat.
+  // No hardcoded UTC offsets — works for both EDT (-4) and EST (-5).
+  const _dtq = fieldDatesToQuery();
+  const datesToQuery = _dtq.dates;
+  const etDate = _dtq.etDate;
+  const date = _dtq.utcDate; // used by stale-final guard and anyLive check
   const enabled = Object.entries(FIELD_V2_SOURCES).filter(([,v]) => v).map(([k]) => k);
   if (!enabled.length) return scheduleV2Poll(60000);
 
@@ -17949,9 +17978,10 @@ async function fetchMLSLive() {
     // MLS relay match_date field uses ET date. Query both ET and UTC dates
     // to cover the full evening window (same dual-date pattern as fetchV2AllScores).
     // 7:30pm ET MLS games = ET date Jun 5 but UTC date Jun 6.
-    const _now   = new Date();
-    const utcDate = _now.toISOString().slice(0,10);
-    const etDate  = new Date(_now - 4 * 3600 * 1000).toISOString().slice(0,10);
+    // Uses fieldNowET() — DST-correct, no hardcoded offset.
+    const _mlsET = fieldNowET();
+    const utcDate = new Date().toISOString().slice(0,10);
+    const etDate  = _mlsET.date;
     // Query the earlier date (ET); if ET==UTC, one query suffices.
     // The relay returns all matches for that date — dedup by opta key is safe.
     const datesToFetch = utcDate === etDate ? [utcDate] : [etDate, utcDate];
@@ -20235,7 +20265,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-14d';
+  const SW_VERSION = '2026-06-14e';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
