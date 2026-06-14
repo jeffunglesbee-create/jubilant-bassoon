@@ -8793,12 +8793,17 @@ function detectArcType(g) {
   if (bni === 'elimination-inflation') return 'elimination-inflation';
   if (bni === 'home-market')           return 'home-market';
   // Scout's Pick: high drama, not on national TV — hidden gem framing
-  const pgScore = (typeof preGameScore === 'function') ? preGameScore(g) : 0;
   if (isScoutsPick(g)) return 'hidden-gem';
   // Series context: any active playoff/series game
   if (g.seriesRecord && g.seriesRecord !== '0-0') return 'series';
-  // Marquee: high preGameScore on national TV (legit big game)
-  if (pgScore > 50 && isNationalGame(g)) return 'marquee';
+  // ADR-002 (H3): marquee = national broadcast AND named-tier signal.
+  // Old gate `pgScore > 50` composited importance+broadcast+milestones into a
+  // hardcoded threshold; replaced with isNationalGame + named tier check.
+  if (isNationalGame(g)) {
+    const _tierH3 = fieldGameTier(g._id);
+    if (_tierH3 === 'FINALS' || _tierH3 === 'ELIMINATION' ||
+        _tierH3 === 'PLAYOFF_SERIES' || _tierH3 === 'MARQUEE_NATIONAL') return 'marquee';
+  }
   return null;
 }
 function isNationalGame(g){return !!(g.nationalBundle);}
