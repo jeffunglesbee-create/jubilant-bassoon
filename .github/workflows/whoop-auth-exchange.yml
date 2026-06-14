@@ -34,6 +34,12 @@ jobs:
 
           # Exchange auth code for tokens
           print("Exchanging authorization code...")
+          # Debug: print what we're sending
+          print(f"DEBUG redirect_uri: [{redirect_uri}]")
+          print(f"DEBUG client_id: [{client_id[:8]}...]")
+          print(f"DEBUG code length: {len(auth_code)}")
+          
+          # Try with exact redirect_uri first
           r = requests.post("https://api.prod.whoop.com/oauth/oauth2/token", data={
               "grant_type": "authorization_code",
               "code": auth_code,
@@ -44,6 +50,32 @@ jobs:
 
           print(f"Token exchange: HTTP {r.status_code}")
 
+          if r.status_code != 200:
+              print(f"First attempt failed: {r.text[:200]}")
+              # Try without trailing slash
+              alt_uri = redirect_uri.rstrip("/")
+              if alt_uri != redirect_uri:
+                  print(f"Retrying with redirect_uri: [{alt_uri}]")
+                  r = requests.post("https://api.prod.whoop.com/oauth/oauth2/token", data={
+                      "grant_type": "authorization_code",
+                      "code": auth_code,
+                      "client_id": client_id,
+                      "client_secret": client_secret,
+                      "redirect_uri": alt_uri
+                  })
+                  print(f"Retry result: {r.status_code}")
+              if r.status_code != 200:
+                  # Try with www
+                  www_uri = redirect_uri.replace("://whoop.com", "://www.whoop.com")
+                  print(f"Retrying with redirect_uri: [{www_uri}]")
+                  r = requests.post("https://api.prod.whoop.com/oauth/oauth2/token", data={
+                      "grant_type": "authorization_code",
+                      "code": auth_code,
+                      "client_id": client_id,
+                      "client_secret": client_secret,
+                      "redirect_uri": www_uri
+                  })
+                  print(f"www retry result: {r.status_code}")
           if r.status_code != 200:
               print(f"ERROR: {r.text}")
               with open("outbox/whoop-auth-result.json", "w") as f:
