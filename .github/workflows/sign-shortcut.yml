@@ -11,63 +11,43 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Check shortcuts CLI
+      - name: Diagnose and sign
         run: |
-          which shortcuts || echo "shortcuts CLI not found"
-          shortcuts --help 2>&1 | head -20 || true
+          set -x
           sw_vers
-
-      - name: Sign shortcut
-        run: |
+          which shortcuts
+          shortcuts help 2>&1 || true
+          shortcuts sign --help 2>&1 || true
+          
           INPUT="scripts/Oura_SPO2_Guarded.unsigned.plist"
           OUTPUT="outbox/Oura_SPO2_Guarded.shortcut"
-          
-          if [ ! -f "$INPUT" ]; then
-            echo "ERROR: unsigned plist not found at $INPUT"
-            exit 1
-          fi
-          
+          DIAG="outbox/sign-diagnostic.txt"
           mkdir -p outbox
           
-          # Try signing with shortcuts CLI
-          echo "Attempting: shortcuts sign --mode anyone"
+          echo "=== ATTEMPT 1: shortcuts sign ===" | tee "$DIAG"
           shortcuts sign \
             --input "$INPUT" \
             --output "$OUTPUT" \
-            --mode anyone 2>&1 || {
-            
-            echo ""
-            echo "=== shortcuts sign failed ==="
-            echo "Trying alternative: direct copy as .shortcut ==="
-            
-            # Fallback: convert XML plist to binary plist (.shortcut format)
-            # Apple may accept binary plist even unsigned from AirDrop/Files
-            plutil -convert binary1 -o "$OUTPUT" "$INPUT" 2>&1 || {
-              echo "plutil fallback also failed"
-              cp "$INPUT" "$OUTPUT"
-            }
-          }
+            --mode anyone 2>&1 | tee -a "$DIAG"
+          SIGN_EXIT=$?
+          echo "EXIT CODE: $SIGN_EXIT" | tee -a "$DIAG"
           
-          echo ""
-          echo "=== Result ==="
-          ls -la "$OUTPUT" 2>/dev/null || echo "No output file"
-          file "$OUTPUT" 2>/dev/null || true
+          if [ $SIGN_EXIT -ne 0 ] || [ ! -f "$OUTPUT" ]; then
+            echo "=== SIGN FAILED — trying plutil ===" | tee -a "$DIAG"
+            plutil -convert binary1 -o "$OUTPUT" "$INPUT" 2>&1 | tee -a "$DIAG"
+            echo "FALLBACK: plutil binary conversion (NOT signed)" >> "$DIAG"
+          else
+            echo "SIGN SUCCEEDED" >> "$DIAG"
+            file "$OUTPUT" >> "$DIAG"
+            xxd "$OUTPUT" | head -5 >> "$DIAG"
+          fi
+          
+          ls -la "$OUTPUT" >> "$DIAG" 2>&1
 
-      - name: Commit signed shortcut
+      - name: Commit results
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          
-          if [ -f "outbox/Oura_SPO2_Guarded.shortcut" ]; then
-            git add outbox/Oura_SPO2_Guarded.shortcut
-            git commit -m "signed shortcut: Oura SPO2 Guarded [skip ci]" || echo "Nothing to commit"
-            git push || echo "Push failed"
-            echo "SUCCESS: Signed shortcut committed"
-          else
-            echo "FAIL: No signed shortcut produced"
-            # Write diagnostic info
-            echo "Sign failed on $(date)" > outbox/sign-result.txt
-            git add outbox/sign-result.txt
-            git commit -m "sign diagnostic [skip ci]"
-            git push || true
-          fi
+          git add outbox/ -f
+          git commit -m "sign shortcut diagnostic [skip ci]" || echo "Nothing to commit"
+          git push || true
