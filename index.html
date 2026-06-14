@@ -21675,14 +21675,36 @@ const FIELD_PROSE_STYLE=[
 function _fieldVoiceExemplarsForSport(sport) {
   if (!sport) return FIELD_VOICE_EXEMPLARS;
   const sp = String(sport).toLowerCase();
-  // Map sport → which exemplar block to keep (A=NBA, B=WNBA, C=NHL).
-  const keep = (sp.includes('nhl') || sp.includes('hockey'))             ? 'C'
-             : (sp.includes('wnba'))                                     ? 'B'
-             : (sp.includes('nba') || sp.includes('basketball'))         ? 'A'
-             : (sp.includes('mlb') || sp.includes('baseball'))           ? 'A'  // closest tone
+  // Map sport → which exemplar block to keep.
+  //   A = NBA Finals setup            (basketball — tactical/star-driven)
+  //   B = WNBA Commissioner's Cup     (slower thoughtful pace — tonal match for golf/tennis)
+  //   C = NHL playoff matchup         (tactical flow — tonal match for AFL, F1)
+  //   D = Soccer / World Cup group    (deliberate buildup, substitutions, group math)
+  const keep = (sp.includes('nhl') || sp.includes('hockey'))                                          ? 'C'
+             : (sp.includes('wnba'))                                                                   ? 'B'
+             : (sp.includes('nba') || sp.includes('basketball'))                                       ? 'A'
+             : (sp.includes('mlb') || sp.includes('baseball'))                                         ? 'A'  // closest tone
+             // Soccer / WC family — all routed to D (real soccer exemplar)
+             : (sp.includes('soccer') || sp.includes('fifa') || sp.includes('world cup') ||
+                sp.includes('wc26')   || sp.includes('mls')  || sp.includes('epl') ||
+                sp.includes('premier league') || sp.includes('la liga') || sp.includes('serie a') ||
+                sp.includes('bundesliga') || sp.includes('ligue 1') || sp.includes('efl') ||
+                sp.includes('champions league') || sp.includes('europa') || sp.includes('conference league') ||
+                sp.includes('scottish premiership') || sp.includes('nwsl'))                            ? 'D'
+             // Tennis — individual momentum, set-based; tonally closest to NHL C
+             : (sp.includes('tennis') || sp.includes('atp') || sp.includes('wta'))                    ? 'C'
+             // Golf — slower thoughtful pace; tonally closest to WNBA B
+             : (sp.includes('golf')   || sp.includes('pga') || sp.includes('lpga'))                   ? 'B'
+             // F1 — strategic, technical; tonally closest to NHL C
+             : (sp.includes('f1')     || sp.includes('formula 1') || sp.includes('formula1'))         ? 'C'
+             // AFL — high-pace team sport; tonally closest to NHL C
+             : (sp.includes('afl')    || sp.includes('australian football'))                          ? 'C'
+             // CFL / NFL — tactical drive-based; tonally closest to NBA A
+             : (sp.includes('nfl')    || sp.includes('cfl') || sp.includes('football'))               ? 'A'
+             // Rugby / IPL / cricket — keep the full array (no close exemplar)
              : null;
   if (!keep) return FIELD_VOICE_EXEMPLARS;
-  const others = ['A','B','C'].filter(x => x !== keep);
+  const others = ['A','B','C','D'].filter(x => x !== keep);
   const out = [];
   let skipUntilBlank = false;
   for (const line of FIELD_VOICE_EXEMPLARS) {
@@ -21691,7 +21713,7 @@ function _fieldVoiceExemplarsForSport(sport) {
       if (line === '') { skipUntilBlank = false; continue; }
       continue;
     }
-    const m = /^— Exemplar ([ABC])/.exec(line);
+    const m = /^— Exemplar ([ABCD])/.exec(line);
     if (m && others.includes(m[1])) { skipUntilBlank = true; continue; }
     out.push(line);
   }
@@ -21719,6 +21741,9 @@ const FIELD_VOICE_EXEMPLARS = [
   '',
   '— Exemplar C (NHL playoff matchup, ~100 words):',
   'Vegas at home in May is a different team than Vegas anywhere else. Carolina knows this and will spend the first period trying to slow the rink — dump-and-chase, kill the building. If it works, this is a 2-1 hockey game and the Hurricanes are inside Vegas\'s heads. If it doesn\'t, Vegas runs the next period at 5-on-5 and the building does the rest. Stone is questionable, which is the kind of update that lands either as "cleared, will play" an hour before puck drop or "precautionary, out" five minutes after warmups. The warmups are the tell.',
+  '',
+  '— Exemplar D (Soccer / World Cup group-stage matchup, ~115 words):',
+  'Mexico and the USA in group play is the kind of fixture that decides which side gets to write its own knockout-round story and which one starts doing math on goal differential. Mexico has been tactically tidy through the openers, but the USA\'s press in the middle third is the test — if Lozano can\'t get on the ball under pressure, the transitions break down before they start. A center back making decisions under pressure is a center back making the wrong one, and the wrong one is the goal. Group standings sit where one result reshapes everything: a Mexico draw and the USA is into a second-place bracket nobody wants. Expect the first half to feel deliberate, then the 60th-minute substitutions to be the actual game.',
   '',
   '═══ ANTI-EXEMPLAR — WIRE COPY (NOT FIELD VOICE — AVOID THIS) ═══',
   '',

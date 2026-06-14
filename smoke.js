@@ -4138,8 +4138,21 @@ assert('A599 — iPad-7: _isModelRefusal filter wired into generateJournalismVia
   /if \(_isModelRefusal\(data\.text\)\)/.test(html) &&
   /function _fieldVoiceExemplarsForSport\s*\(/.test(html) &&
   // Series-preview prompt construction routes through the sport-specific helper.
-  /const prompt=\[_fieldVoiceExemplarsForSport\(/.test(html),
-  'iPad-7 regression fix: (a) refusal filter in JQ Gate suppresses raw model meta-commentary (e.g. "I appreciate the detailed framework") and lets caller fall back to factual stub; (b) series-preview prompt sends sport-specific exemplars so NHL games get hockey exemplars, not NBA/MLB ones.');
+  /const prompt=\[_fieldVoiceExemplarsForSport\(/.test(html) &&
+  // Exemplar D (Soccer / WC) present in FIELD_VOICE_EXEMPLARS
+  html.includes("— Exemplar D (Soccer / World Cup group-stage matchup") &&
+  // Mapping mentions each sport family with explicit tier letter on the same logical block
+  html.includes("sp.includes('soccer')") &&
+  html.includes("sp.includes('tennis')") &&
+  html.includes("sp.includes('golf')") &&
+  html.includes("sp.includes('f1')") &&
+  html.includes("sp.includes('afl')") &&
+  html.includes("sp.includes('nfl')") &&
+  // Helper regex extended from [ABC] to [ABCD] to recognise the new exemplar
+  html.includes("— Exemplar ([ABCD])") &&
+  // others array includes 'D'
+  html.includes("['A','B','C','D']"),
+  'iPad-7 regression fix: (a) refusal filter in JQ Gate suppresses raw model meta-commentary; (b) series-preview prompt sends sport-specific exemplars. Soccer/WC/EPL/MLS routed to Exemplar D (real soccer exemplar); tennis/golf/F1/AFL/NFL routed to closest tonal match among A/B/C.');
 
 // ── A598 / iPad-6: ambient panel scrollable on iOS Safari ───────────────────
 assert('A598 — iPad-6: -webkit-overflow-scrolling:touch + min-height:0 children on #ambient-panel',
