@@ -31665,18 +31665,21 @@ function renderMobileLiveBar(){
       });
       if(!eKey) return;
       const ed=espnScores[eKey];
-      const score=dramaScoreLive(ed,sec.sport);
-      liveGames.push({g,ed,sport:sec.sport,drama:score});
+      // ADR-002 (H6): tier-driven chip, not composite drama + 4-band thresholds.
+      const _mlbTier=fieldGameTier(g._id);
+      liveGames.push({g,ed,sport:sec.sport,tier:_mlbTier,rank:fieldTierRank(_mlbTier)});
     });
   });
   if(liveGames.length<2){bar.style.display='none';return;}
-  // Sort by drama descending
-  liveGames.sort((a,b)=>b.drama-a.drama);
-  // Show top 5 max
+  liveGames.sort((a,b)=>b.rank-a.rank);
   const top=liveGames.slice(0,5);
-  const chips=top.map(({g,ed,drama})=>{
-    const tier=drama>=85?'fire':drama>=65?'crunch':drama>=45?'warm':'low';
-    const tierLabel=drama>=85?'🔥':drama>=65?'⚡':drama>=45?'●':'';
+  const chips=top.map(({g,ed,tier:_t})=>{
+    const tier = (_t==='CRUNCH'||_t==='EXTRA_TIME') ? 'fire'
+               : _t==='CLOSE_LATE'                  ? 'crunch'
+               : _t==='LIVE'                        ? 'warm' : 'low';
+    const tierLabel = (_t==='CRUNCH'||_t==='EXTRA_TIME') ? '🔥'
+                    : _t==='CLOSE_LATE'                  ? '⚡'
+                    : _t==='LIVE'                        ? '●' : '';
     const tn=typeof teamNick==='function'?teamNick:n=>n;
     const away=tn(g.away||'').slice(0,12);
     const home=tn(g.home||'').slice(0,12);
