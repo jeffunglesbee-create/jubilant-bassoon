@@ -33,7 +33,9 @@ with sync_playwright() as p:
     try:
         print("1. Loading OAuth auth page...")
         page.goto(auth_url, wait_until="domcontentloaded", timeout=60000)
-        time.sleep(5)  # Wait for SPA/redirect
+        # Wait for SPA hydration
+        page.wait_for_load_state("networkidle", timeout=30000)
+        time.sleep(3)
         
         print(f"   URL: {page.url[:150]}")
         page.screenshot(path="outbox/whoop-auth-1.png")
@@ -41,7 +43,7 @@ with sync_playwright() as p:
         # Wait for any input field to appear (SPA rendering)
         print("2. Waiting for login form...")
         try:
-            page.wait_for_selector("input", timeout=15000)
+            page.wait_for_selector("input", timeout=30000)
         except:
             print("   No input found after 15s, checking page...")
         
@@ -134,7 +136,8 @@ with sync_playwright() as p:
 
         # Wait for navigation
         print("6. Waiting for response...")
-        time.sleep(8)
+        page.wait_for_load_state("networkidle", timeout=30000)
+        time.sleep(3)
         page.screenshot(path="outbox/whoop-auth-4.png")
         print(f"   URL: {page.url[:200]}")
 
