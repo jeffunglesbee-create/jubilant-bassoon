@@ -1,11 +1,20 @@
-=== ATTEMPT 1: shortcuts sign ===
-Error: The file couldn’t be opened because it isn’t in the correct format.
-EXIT CODE: 0
-SIGN SUCCEEDED
-outbox/Oura_SPO2_Guarded.shortcut: Apple binary property list
-00000000: 6270 6c69 7374 3030 d701 0203 0405 0607  bplist00........
-00000010: 080b 1011 1213 145f 1021 5746 576f 726b  ......._.!WFWork
-00000020: 666c 6f77 496e 7075 7443 6f6e 7465 6e74  flowInputContent
-00000030: 4974 656d 436c 6173 7365 735e 5746 576f  ItemClasses^WFWo
-00000040: 726b 666c 6f77 4963 6f6e 5f10 1e57 4657  rkflowIcon_..WFW
--rw-r--r--  1 runner  staff  3770 Jun 14 00:37 outbox/Oura_SPO2_Guarded.shortcut
+=== macOS 15.7.7 ===
+
+=== Trying scripts/Oura_SPO2_Guarded.xml ===
+OUTPUT: Error: The file couldn’t be opened because it isn’t in the correct format.
+NO OUTPUT FILE
+SKIP: scripts/Oura_SPO2_Guarded.plist not found
+
+=== Trying binary plist input ===
+OUTPUT: ERROR: Unrecognized attribute string flag '?' in attribute string "T@"NSString",?,R,C" for property debugDescription
+ERROR: Unrecognized attribute string flag '?' in attribute string "T@"NSString",?,R,C" for property debugDescription
+ERROR: Unrecognized attribute string flag '?' in attribute string "T@"NSString",?,R,C" for property debugDescription
+ERROR: Unrecognized attribute string flag '?' in attribute string "T@"NSString",?,R,C" for property debugDescription
+ERROR: Unrecognized attribute string flag '?' in attribute string "T@"NSString",?,R,C" for property debugDescription
+Error: In order to do this, you must be signed into iCloud.
+
+=== shortcuts list ===
+
+=== iCloud status ===
+2026-06-14 00:39:42.289 defaults[24382:61660] 
+Domain MobileMeAccounts does not exist
