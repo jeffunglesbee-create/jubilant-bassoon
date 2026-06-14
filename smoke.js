@@ -4108,6 +4108,14 @@ assert('A580 — fieldDatesToQuery: replaces hardcoded -4h offset in V2 poll dua
 assert('A581 — fetchV2AllScores uses fieldDatesToQuery (no hardcoded UTC offset)',
   html.includes('fieldDatesToQuery()') && !html.includes('new Date(_nowUTC - 4 * 3600 * 1000)'));
 
+// ── A594 / iPad-2: persisted expand state across re-renders ─────────────────
+assert('A594 — iPad-2: _expandedCards Set + _restoreCardExpandState() hooked into renderAll',
+  /const _expandedCards = new Set\(\)/.test(html) &&
+  /function _restoreCardExpandState\s*\(/.test(html) &&
+  // Restore called after the renderAll tap-wiring forEach (right before major preview block)
+  /_restoreCardExpandState\(\);[\s\S]{0,200}Major preview card/.test(html),
+  'iPad-2 regression fix: ESPN poll cycle rebuilds .game-card HTML every 20-45s, wiping data-expanded. Persist expand state in a Set and re-apply after each render.');
+
 // ── A593 / iPad-1: viewport-aware tap routing ───────────────────────────────
 assert('A593 — iPad-1: openBottomSheet routes ≥820 to inline-expand fallback',
   html.includes('_openGameSheetTablet(gameId)') &&

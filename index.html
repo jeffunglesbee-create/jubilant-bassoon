@@ -9859,6 +9859,8 @@ function renderAll(){
       if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openBottomSheet(gameId); }
     });
   });
+  // iPad-2: re-apply expand state after card HTML is rebuilt by renderAll.
+  _restoreCardExpandState();
   // Major preview card (Wow #14) — upcoming majors within 5 days
   const majorContainer = document.getElementById("major-preview-container");
   if(majorContainer) renderMajorPreviewCard(majorContainer);
@@ -34213,6 +34215,19 @@ function buildComebackProbability(gameId, eData, sport) {
 }
 
 // ── Bottom-sheet ──────────────────────────────────────────────────────────────
+// iPad-2: persisted expand state across re-renders. ESPN poll cycle
+// rebuilds .game-card HTML every 20-45s, which would otherwise wipe the
+// data-expanded="1" attribute set by an iPad-1 tap. The Set survives
+// re-render; _restoreCardExpandState() walks it after each render and
+// re-applies data-expanded to matching cards.
+const _expandedCards = new Set();
+function _restoreCardExpandState() {
+  if (!_expandedCards.size) return;
+  document.querySelectorAll('.game-card[data-gameid]').forEach(card => {
+    if (_expandedCards.has(card.dataset.gameid)) card.dataset.expanded = '1';
+  });
+}
+
 // iPad-1: tablet+ tap fallback. Scrolls the tapped card into view and
 // expands its inline brief (data-expanded="1" → unclamps .card-brief-inline-text).
 // Lighter than the bottom-sheet payload; matches spec's "inline expand" routing
@@ -34221,7 +34236,7 @@ function _openGameSheetTablet(gameId) {
   const card = document.querySelector(`.game-card[data-gameid="${gameId}"]`);
   if (!card) return;
   card.dataset.expanded = '1';
-  if (typeof _expandedCards !== 'undefined') _expandedCards.add(gameId);
+  _expandedCards.add(gameId);
   card.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
