@@ -3176,8 +3176,49 @@ body.wc-mode #ambient-panel{display:none !important}
   -webkit-overflow-scrolling:touch;
   padding:1rem 1.1rem 2rem;
   box-sizing:border-box;
+  /* iPad-17: force a compositor layer so iOS Safari treats this as a
+     real scroll container. position:fixed parent + overflow-y:auto
+     child historically fails to scroll on iPad without GPU compositing
+     hints; translateZ(0) is the documented WebKit workaround. */
+  transform:translateZ(0);
+  will-change:scroll-position;
 }
 .ambient-scroll-inner > *{min-height:0}
+
+/* ── iPad-17 structural escalation: removing position:fixed at 820-1199.
+   Inner-div + iOS workarounds (iPad-6, iPad-11) still failed to scroll on
+   real iPad Safari. The remaining option per the spec is to take the
+   panel out of fixed positioning entirely.
+   Strategy: body becomes a CSS grid with two columns. Every existing
+   body child stays in column 1 by default (DOM order preserved). The
+   ambient panel is explicitly placed in column 2, spanning all rows, and
+   uses position:sticky to ride the viewport while the document scrolls
+   naturally. The .ambient-scroll-inner div inside continues to own its
+   own scroll, but it's no longer fighting iOS Safari's position:fixed
+   compositing quirks. */
+@media(min-width:820px) and (max-width:1199px){
+  body{
+    display:grid;
+    grid-template-columns:1fr 380px;
+    grid-auto-rows:max-content;
+    grid-auto-flow:row dense;
+    /* Body itself remains the document scroll container — no overflow
+       override needed; height stays auto so content drives length. */
+  }
+  body > *{ grid-column:1; }
+  body > #ambient-panel{
+    grid-column:2;
+    grid-row:1 / span 9999;
+    position:sticky;
+    top:0;
+    height:100dvh;
+    /* Existing margin-right:390px rules on .main, nav.controls, etc.
+       become redundant inside grid column 1 — left in place so the
+       layout is identical visually, but the panel column itself now
+       holds the panel rather than empty space + an overlapping fixed
+       element. */
+  }
+}
 @media(min-width:820px) and (max-width:1199px){
   #ambient-panel{display:flex;top:0;
     /* iPad-6 fix: 100dvh extends behind iOS dynamic toolbar, preventing scroll.
