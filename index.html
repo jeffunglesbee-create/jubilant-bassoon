@@ -17092,6 +17092,8 @@ function computeLiveInterval(sectionSport) {
   // write to espnScores[] — card score display is updated only by polling.
   // Therefore polling must run at full cadence; reducing it would stale the score
   // shown on cards even while SSE events fire correctly.
+  // Future: if SSE handler writes to espnScores + triggers renderESPNScores, then
+  // polling could be reduced safely. Until then: do not gate on isSSECovered here.
   if(topRank >= fieldTierRank('CRUNCH'))            return 20000; // 20s — CRUNCH/EXTRA_TIME and above
   if(topRank >= fieldTierRank('CLOSE_LATE'))        return 25000; // 25s — CLOSE_LATE
   if(topRank >= fieldTierRank('MARQUEE_NATIONAL'))  return 30000; // 30s — marquee/playoff series
