@@ -115,6 +115,8 @@ jobs:
         env:
           IOS_DEVICE: ${{ matrix.device.name }}
           DEVICE_ID: ${{ matrix.device.id }}
+          DEVICE_UDID: ${{ env.DEVICE_UDID }}
+          IOS_VERSION: ${{ env.IOS_VERSION }}
         run: |
           set -o pipefail
           mkdir -p outbox

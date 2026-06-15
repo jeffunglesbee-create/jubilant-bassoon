@@ -13,8 +13,9 @@ const { remote } = require('webdriverio');
 const LIVE_URL = 'https://jubilant-bassoon.jeffunglesbee.workers.dev/?wpt';
 
 const DEVICE_ID = process.env.DEVICE_ID || 'P2';
-const IOS_DEVICE = process.env.IOS_DEVICE || 'iPhone 15 Pro';
+const IOS_DEVICE = process.env.IOS_DEVICE || 'iPhone 16';
 const IOS_VERSION = process.env.IOS_VERSION || '18.1';
+const DEVICE_UDID = process.env.DEVICE_UDID || undefined;
 
 const IS_PHONE = ['P1', 'P2', 'P3'].includes(DEVICE_ID);
 const IS_IPAD = ['T1', 'T2'].includes(DEVICE_ID);
@@ -243,7 +244,9 @@ async function run() {
         'appium:browserName': 'Safari',
         'appium:deviceName': IOS_DEVICE,
         'appium:platformVersion': IOS_VERSION,
+        ...(DEVICE_UDID ? { 'appium:udid': DEVICE_UDID } : {}),
         'appium:noReset': true,
+        'appium:safari:automaticInspection': true,
       },
       logLevel: 'warn',
     });
