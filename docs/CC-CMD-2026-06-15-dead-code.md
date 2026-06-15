@@ -93,26 +93,58 @@ const REGULAR_SEASON_ARCHIVE = {
 
 Compact format — drop these fields (not useful in archive):
 - `confirmed` (always true for completed games)
-- `streams` / `resolveBundle()` calls (broadcast info is in the `league` string if needed)
-- `venue` (keep only for finals/special events)
 - `start_time` ISO string (replaced by `date` key)
 
-Keep these fields:
-- `sport`, `league` — identity
-- `home`, `away` — teams
-- `homeScore`, `awayScore` — result (if present in original)
-- `note` — the matchupNote text (FIELD's editorial voice)
-- `tags[]` — categorization: 'final-day', 'rivalry', 'final', 'one-off', 'milestone', 'elimination'
+Keep ALL other fields intact — do not strip `streams`, `venue`, `seriesRecord`, `seriesMargins`, `crew`, or any other field. These move to D1 in the next phase:
 
-Tag assignment rules:
-- League final day (MW38, Matchday 38) → `'final-day'`
-- UCL/UEL/UECL Final → `'final'`, `'one-off'`
-- UFL regular season (non-eliminator) → no special tag
-- AFL regular rounds → no special tag
-- IPL matches → no special tag
-- WNBA regular season → no special tag
-- WWE → `'entertainment'`
-- MLS last before WC break → `'milestone'`
+### D1 migration plan (next session, not this one)
+
+The in-file archive is an intermediate step. The long-term home is D1 (not R2 — the value is in structured queries, not blob storage). FIELD already uses D1 for WC data via the relay.
+
+**Tables:**
+```sql
+CREATE TABLE postseason_games (
+  id TEXT PRIMARY KEY,           -- 'nba-ecf-2026-g1'
+  sport TEXT NOT NULL,
+  series_key TEXT NOT NULL,      -- 'nba-ecf-2026'
+  round TEXT,                    -- 'East CF'
+  game_number INTEGER,
+  date TEXT,                     -- '2026-05-20'
+  home TEXT, away TEXT,
+  home_score INTEGER, away_score INTEGER,
+  venue TEXT,
+  streams TEXT,                  -- JSON array
+  note TEXT,                     -- matchupNote editorial
+  series_record TEXT,
+  series_margins TEXT,           -- JSON array
+  importance TEXT,               -- 'elimination', null
+  narrative TEXT                 -- series-level summary (on final game only)
+);
+
+CREATE TABLE regular_season_games (
+  id TEXT PRIMARY KEY,           -- '2026-05-25-epl-mw38-ars-new'
+  sport TEXT NOT NULL,
+  league TEXT,
+  date TEXT,
+  home TEXT, away TEXT,
+  home_score INTEGER, away_score INTEGER,
+  venue TEXT,
+  streams TEXT,
+  note TEXT,
+  tags TEXT,                     -- JSON array: ['final-day','standings-deciding']
+  crew TEXT
+);
+```
+
+**Relay endpoints:**
+- `GET /archive/series/:key` — full series with all games
+- `GET /archive/last-meeting?teamA=X&teamB=Y` — most recent game between two teams
+- `GET /archive/date/:iso` — all games on a date
+- `GET /archive/tagged/:tag` — all games with a tag (final-day, elimination, etc.)
+
+**ADR-002 status:** CLEAN — factual game results and editorial, no drama/interest scores. Same pattern as existing WC D1 data.
+
+This CC command builds the in-file intermediate. D1 migration is a separate CC command or Type C session.
 
 ### Consumers to wire
 
@@ -213,7 +245,7 @@ Update or remove these misleading comments:
 1. Task 1 (GAME_ARCHIVE) is the largest and most important. Build BOTH archive objects, add all 3 lookup functions, wire `getSeriesArchive` into `buildChampionshipContext()`, remove original entries from schedule arrays. ALL 213 entries preserved in archive form — zero editorial data deleted. Single commit.
 2. Tasks 2-7 (betting CSS, dead functions, dead variables, dead localStorage, stale comments, gray items): one commit per task. 6 commits max.
 3. Run smoke after EACH commit. Baseline: 652/0. Archive restructure should not affect smoke. CSS/function removal should not affect smoke.
-4. After all tasks, report: `wc -c index.html` before and after. Net change may be SMALL (data restructured, not deleted) — the savings come from Tasks 2-7 (~2KB dead code) and compact archive format (dropped streams/confirmed/venue fields saves ~15-20KB).
+4. After all tasks, report: `wc -c index.html` before and after. Net change will be SMALL — data is restructured with all fields preserved, not stripped. Savings come from Tasks 2-7 (~2KB dead code) and removing `isToday()` filter overhead. File may be slightly larger due to archive object overhead — this is acceptable. D1 migration in next session will move the archive out of index.html entirely.
 5. Write the full manifest to outbox/cc-dead-code-removal-2026-06-15.md with before/after byte counts, grep verification, archive key lists (both POSTSEASON and REGULAR_SEASON), and any items you chose NOT to archive with reasoning.
 6. Add smoke assertion A610 — GAME_ARCHIVE present: `POSTSEASON_ARCHIVE` has ≥3 series entries, `REGULAR_SEASON_ARCHIVE` has ≥5 date keys, `getSeriesArchive` and `getLastMeeting` functions exist.
 7. Push when complete.
@@ -223,5 +255,6 @@ Update or remove these misleading comments:
 - Line numbers are approximate — betting removal and subsequent commits shifted them. Use content matching, not line numbers.
 - The moneyline function (Task 3) needs its parent function identified before removal. If the parent function has other live callers, only remove the moneyline branch, not the whole function.
 - Some May entries may lack homeScore/awayScore (pre-game entries that were never updated with results). Archive these with `homeScore: null, awayScore: null` — the matchupNote still has value.
-- The REGULAR_SEASON_ARCHIVE keyed by date may have many entries per date. This is fine — the lookup functions handle arrays.
-- Long-term, both archives should migrate to D1 or R2 to avoid unbounded index.html growth. For now, in-file is correct — it keeps the data accessible to the client-side journalism layer without a relay call.
+- The archive keeps ALL fields from original entries (except `confirmed` and `start_time` which are replaced by the archive structure). Do NOT strip `streams`, `venue`, `crew`, `seriesMargins`, or any other field — these move to D1 intact.
+- `resolveBundle()` calls in `streams` fields will need evaluation: if the function is available at archive definition time, keep the call. If not (archive defined before the function), convert to the resolved string value.
+- The in-file archive is an intermediate step. D1 is the long-term home. File size increase from preserving all fields is acceptable for one release cycle.
