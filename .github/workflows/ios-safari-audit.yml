@@ -98,18 +98,32 @@ jobs:
           ")
           echo "Detected iOS version: $IOS_VER"
           echo "IOS_VERSION=$IOS_VER" >> "$GITHUB_ENV"
-          appium --relaxed-security --log-level warn &
+
+          # Start Appium with log capture
+          appium --relaxed-security --log-level info > /tmp/appium.log 2>&1 &
           APPIUM_PID=$!
           echo "APPIUM_PID=$APPIUM_PID" >> "$GITHUB_ENV"
-          # Wait for Appium to accept connections
-          for i in $(seq 1 20); do
+
+          # Wait up to 60s for Appium to accept connections
+          for i in $(seq 1 60); do
+            if ! kill -0 $APPIUM_PID 2>/dev/null; then
+              echo "ERROR: Appium process died"
+              cat /tmp/appium.log | tail -30
+              exit 1
+            fi
             if curl -s http://localhost:4723/status > /dev/null 2>&1; then
               echo "Appium ready after ${i}s"
               break
             fi
             sleep 1
           done
-          curl -s http://localhost:4723/status || echo "WARNING: Appium not responding"
+
+          if ! curl -s http://localhost:4723/status > /dev/null 2>&1; then
+            echo "ERROR: Appium not responding after 60s"
+            cat /tmp/appium.log | tail -50
+            exit 1
+          fi
+          curl -s http://localhost:4723/status
 
       - name: Run viewport assertions
         env:
@@ -129,6 +143,10 @@ jobs:
           mkdir -p outbox
           xcrun simctl io "$DEVICE_UDID" screenshot \
             "outbox/ios-${{ matrix.device.id }}-screenshot.png" 2>&1 || echo "Screenshot failed"
+
+      - name: Appium log (on failure)
+        if: failure()
+        run: cat /tmp/appium.log | tail -80
 
       - name: Shutdown simulator
         if: always()
