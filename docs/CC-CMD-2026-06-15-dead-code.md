@@ -18,89 +18,144 @@ Betting intelligence was removed May 29, 2026. CSS, functions, variables, and co
 - Any function with "WP" or "winProb" or "drama" in its name
 - `fetchWCOddsProbabilities`, `fetchCFLOddsProbabilities`
 
-## TASK 1: POSTSEASON_ARCHIVE (restructure, not delete)
+## TASK 1: GAME_ARCHIVE — regular season + postseason (restructure, not delete)
 
 ### What
 
-Extract the 17 May playoff entries (8 NBA ECF/WCF + 9 NHL CF/Semis) into a `POSTSEASON_ARCHIVE` object keyed by series. Delete the 196 non-playoff May entries.
+Extract ALL 213 expired May entries into two archive structures:
+- `POSTSEASON_ARCHIVE` — playoff/elimination/championship games (keyed by series)
+- `REGULAR_SEASON_ARCHIVE` — all other games (keyed by date + league)
+
+Delete ZERO game data. Every matchupNote is FIELD's proprietary editorial — preserve it.
 
 ### Why
 
-The playoff entries contain editorial context no API provides — matchupNotes with stats, series margins, game importance flags, narrative arc from G1→G7. The journalism layer (`buildChampionshipContext`, Night Owl, series previews) needs this when writing about current Finals matchups.
+FIELD already has a series brief system. The archive feeds it with historical context:
+- **Postseason**: series arc, per-game margins, elimination narratives, MVP performances
+- **Regular season**: "last time these teams met" context, league narrative ("EPL Final Day saw X relegated"), broadcast history, venue context, season arc
 
-### Structure
+The journalism layer writes better briefs when it knows what happened before.
+
+### Structure — POSTSEASON_ARCHIVE (keyed by series)
 
 ```javascript
-// ── POSTSEASON_ARCHIVE — completed 2026 playoff series ─────────────────
-// Keyed by series slug. Feeds buildChampionshipContext(), Night Owl
-// championship prompts, and bracket display. NOT rendered as game cards.
-// Source: restructured from expired schedule entries (June 15 2026).
 const POSTSEASON_ARCHIVE = {
   'nba-ecf-2026': {
     sport: 'NBA', round: 'East CF', season: 2026,
     teams: { higher: 'New York Knicks', lower: 'Cleveland Cavaliers' },
     result: { winner: 'New York Knicks', games: '4-0' },
-    seriesMargins: [11, null, 13, 37],  // positive = higher seed win margin
     mvp: 'Jalen Brunson',
     games: [
-      {
-        game: 1, date: '2026-05-20', home: 'New York Knicks',
+      { game: 1, date: '2026-05-20', home: 'New York Knicks', away: 'Cleveland Cavaliers',
         homeScore: 115, awayScore: 104,
-        note: 'Brunson 38 pts. Knicks erased a 22-point Q4 deficit to win in OT.',
-      },
+        note: 'Brunson 38 pts. Knicks erased a 22-point Q4 deficit to win in OT.' },
       // ... G2-G4
     ],
     narrative: 'NYK swept CLE. Brunson named ECF MVP. First Finals since 1999.',
   },
-  'nba-wcf-2026': {
-    sport: 'NBA', round: 'West CF', season: 2026,
-    teams: { higher: 'Oklahoma City Thunder', lower: 'San Antonio Spurs' },
-    result: { winner: 'San Antonio Spurs', games: '4-3' },
-    seriesMargins: [9, 9, 15, -21, 13, -27, null],  // from OKC perspective
-    games: [
-      // ... G1-G7 with notes from matchupNote fields
-    ],
-    narrative: 'SAS won G7 on the road. Wembanyama 28.2 PPG, 3.7 BPG. Road teams won 4 straight.',
-  },
-  'nhl-ecf-2026': { /* CAR series */ },
-  'nhl-wcf-2026': { /* VGK series */ },
-  'nhl-east-semis-2026': { /* MTL-BUF G6-G7 */ },
+  // nba-wcf-2026, nhl-ecf-2026, nhl-wcf-2026, nhl-east-semis-2026,
+  // ufl-playoffs-2026 (Week 9-10 Playoff Eliminator)
 };
 ```
 
-### Fields per series
+Include these as postseason:
+- NBA Playoffs (ECF G1-G4, WCF G1-G7)
+- NHL Playoffs (East Semis G6-G7, East CF G2-G5, West CF G2-G4)
+- UFL Playoff Eliminator weeks
+- Any game with `_gameImportance: "elimination"`
 
-- `sport`, `round`, `season` — identifiers
-- `teams.higher` / `teams.lower` — by seed
-- `result.winner`, `result.games` — outcome
-- `seriesMargins[]` — per-game margin (positive = higher seed won)
-- `mvp` — if known (NBA only)
-- `games[]` — array of `{ game, date, home, homeScore, awayScore, note }` — the `note` is the matchupNote text from the original entry
-- `narrative` — 1-2 sentence series summary for journalism prompts
+### Structure — REGULAR_SEASON_ARCHIVE (keyed by date)
+
+```javascript
+const REGULAR_SEASON_ARCHIVE = {
+  '2026-05-17': [
+    { sport: 'EPL', league: 'Premier League – Matchweek 36',
+      home: 'Arsenal', away: 'Newcastle',
+      homeScore: 2, awayScore: 1,
+      note: 'Original matchupNote text preserved here.',
+      tags: [] },
+  ],
+  '2026-05-25': [
+    { sport: 'EPL', league: 'Premier League – Final Day MW38',
+      home: 'Manchester City', away: 'Southampton',
+      homeScore: 3, awayScore: 0,
+      note: 'Original matchupNote text.',
+      tags: ['final-day', 'standings-deciding'] },
+    { sport: 'La Liga', league: 'La Liga — Matchday 38 · Final Day',
+      // ...
+      tags: ['final-day'] },
+    { sport: 'UCL', league: 'UEFA Champions League – Final',
+      // ...
+      tags: ['final', 'one-off'] },
+  ],
+};
+```
+
+Compact format — drop these fields (not useful in archive):
+- `confirmed` (always true for completed games)
+- `streams` / `resolveBundle()` calls (broadcast info is in the `league` string if needed)
+- `venue` (keep only for finals/special events)
+- `start_time` ISO string (replaced by `date` key)
+
+Keep these fields:
+- `sport`, `league` — identity
+- `home`, `away` — teams
+- `homeScore`, `awayScore` — result (if present in original)
+- `note` — the matchupNote text (FIELD's editorial voice)
+- `tags[]` — categorization: 'final-day', 'rivalry', 'final', 'one-off', 'milestone', 'elimination'
+
+Tag assignment rules:
+- League final day (MW38, Matchday 38) → `'final-day'`
+- UCL/UEL/UECL Final → `'final'`, `'one-off'`
+- UFL regular season (non-eliminator) → no special tag
+- AFL regular rounds → no special tag
+- IPL matches → no special tag
+- WNBA regular season → no special tag
+- WWE → `'entertainment'`
+- MLS last before WC break → `'milestone'`
 
 ### Consumers to wire
 
-After building the archive, add a lookup function:
-
 ```javascript
-// Returns series archive entry or null. Used by journalism prompts.
+// Lookup postseason series. Used by buildChampionshipContext, Night Owl.
 function getSeriesArchive(sport, round) {
   const key = `${sport.toLowerCase()}-${round.toLowerCase().replace(/\s+/g,'-')}-2026`;
   return POSTSEASON_ARCHIVE[key] || null;
 }
+
+// Lookup regular season games by date. Used by "last time" context.
+function getArchivedGames(dateISO) {
+  return REGULAR_SEASON_ARCHIVE[dateISO] || [];
+}
+
+// Find last meeting between two teams in archive.
+function getLastMeeting(teamA, teamB) {
+  const normA = teamA.toLowerCase(), normB = teamB.toLowerCase();
+  const dates = Object.keys(REGULAR_SEASON_ARCHIVE).sort().reverse();
+  for (const d of dates) {
+    for (const g of REGULAR_SEASON_ARCHIVE[d]) {
+      if ((g.home.toLowerCase().includes(normA) && g.away.toLowerCase().includes(normB)) ||
+          (g.home.toLowerCase().includes(normB) && g.away.toLowerCase().includes(normA))) {
+        return { ...g, date: d };
+      }
+    }
+  }
+  return null;
+}
 ```
 
-Then wire into `buildChampionshipContext()` — when generating context for a Finals game, include the path-to-Finals narrative from the archive. Example: "The Spurs who won Game 7 on the road at OKC (Wembanyama 28.2 PPG) now face the Knicks who swept Cleveland."
+Wire `getSeriesArchive` into `buildChampionshipContext()` — when generating context for a Finals game, include the path-to-Finals narrative.
 
-### Delete (non-playoff May entries)
+### Verify after
 
-Delete all 196 May entries where `league` does NOT contain "Playoff" or "Playoffs". These are AFL, IPL, MLS, EPL, Ligue 1, La Liga, UFL, WNBA, WWE regular season — no journalism value.
-
-**Verify after:** `grep -c '"2026-05-' index.html` should be ~17 (the archive game dates) plus 1-2 code references. NOT 213.
+- `grep -c '"2026-05-' index.html` — should drop from 213 to ~1-2 (code references only)
+- `grep -c 'POSTSEASON_ARCHIVE' index.html` — should be ≥ 2 (declaration + consumer)
+- `grep -c 'REGULAR_SEASON_ARCHIVE' index.html` — should be ≥ 2
+- All matchupNote text from original entries preserved in archive (spot-check 5 entries)
 
 ### Commit
 
-Single commit: "refactor: POSTSEASON_ARCHIVE from expired playoff entries; delete 196 dead non-playoff May entries"
+Single commit: "refactor: GAME_ARCHIVE — postseason series + regular season history from expired May entries"
 
 ## TASK 2: Betting CSS (~12 rules)
 
@@ -155,16 +210,18 @@ Update or remove these misleading comments:
 
 ## INSTRUCTIONS
 
-1. Task 1 (POSTSEASON_ARCHIVE) is the largest and most important. Build the archive object, add `getSeriesArchive()`, wire into `buildChampionshipContext()`, delete 196 non-playoff entries. Single commit.
+1. Task 1 (GAME_ARCHIVE) is the largest and most important. Build BOTH archive objects, add all 3 lookup functions, wire `getSeriesArchive` into `buildChampionshipContext()`, remove original entries from schedule arrays. ALL 213 entries preserved in archive form — zero editorial data deleted. Single commit.
 2. Tasks 2-7 (betting CSS, dead functions, dead variables, dead localStorage, stale comments, gray items): one commit per task. 6 commits max.
 3. Run smoke after EACH commit. Baseline: 652/0. Archive restructure should not affect smoke. CSS/function removal should not affect smoke.
-4. After all tasks, report: `wc -c index.html` before and after. Expected savings: ~40KB net (46KB non-playoff removed, ~3KB archive added, ~2KB dead code removed).
-5. Write the full manifest to outbox/cc-dead-code-removal-2026-06-15.md with before/after byte counts, grep verification, POSTSEASON_ARCHIVE key list, and any items you chose NOT to remove with reasoning.
-6. Add a smoke assertion: A610 — POSTSEASON_ARCHIVE exists with at least 3 series entries and `getSeriesArchive` function present.
+4. After all tasks, report: `wc -c index.html` before and after. Net change may be SMALL (data restructured, not deleted) — the savings come from Tasks 2-7 (~2KB dead code) and compact archive format (dropped streams/confirmed/venue fields saves ~15-20KB).
+5. Write the full manifest to outbox/cc-dead-code-removal-2026-06-15.md with before/after byte counts, grep verification, archive key lists (both POSTSEASON and REGULAR_SEASON), and any items you chose NOT to archive with reasoning.
+6. Add smoke assertion A610 — GAME_ARCHIVE present: `POSTSEASON_ARCHIVE` has ≥3 series entries, `REGULAR_SEASON_ARCHIVE` has ≥5 date keys, `getSeriesArchive` and `getLastMeeting` functions exist.
 7. Push when complete.
 
 ## KNOWN LIMITATIONS
 
 - Line numbers are approximate — betting removal and subsequent commits shifted them. Use content matching, not line numbers.
-- The moneyline function (item 3) needs its parent function identified before removal. If the parent function has other live callers, only remove the moneyline branch, not the whole function.
-- May schedule entries are interspersed with June entries in the same arrays. Surgical deletion required — don't accidentally remove array commas or break JSON-like structure.
+- The moneyline function (Task 3) needs its parent function identified before removal. If the parent function has other live callers, only remove the moneyline branch, not the whole function.
+- Some May entries may lack homeScore/awayScore (pre-game entries that were never updated with results). Archive these with `homeScore: null, awayScore: null` — the matchupNote still has value.
+- The REGULAR_SEASON_ARCHIVE keyed by date may have many entries per date. This is fine — the lookup functions handle arrays.
+- Long-term, both archives should migrate to D1 or R2 to avoid unbounded index.html growth. For now, in-file is correct — it keeps the data accessible to the client-side journalism layer without a relay call.
