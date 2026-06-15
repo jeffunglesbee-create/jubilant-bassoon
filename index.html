@@ -2406,6 +2406,8 @@ body.wc-mode #wc-section[hidden]{display:block}
 /* Desktop: full viewport swap like mobile, but centered + capped width */
 @media(min-width:1200px){
   body.wc-mode #wc-section{display:block;max-width:1300px;margin:0 auto}
+  /* WC nav link: visible on desktop too (initWCNav clears inline style) */
+  #wc-nav-link{display:inline-flex !important;align-items:center;font-size:.68rem;padding:.22rem .65rem;white-space:nowrap}
   body.wc-mode .wc-back-pill{display:none}
   /* Ambient panel hidden (global rule above) → reset margins that assume it's present */
   body.wc-mode nav.controls{margin-right:0 !important}
