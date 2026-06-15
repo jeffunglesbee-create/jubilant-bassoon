@@ -82,22 +82,26 @@ jobs:
             [ -z "$TITLE" ] && TITLE=$(basename "$FILE" .md)
 
             # Read content and escape for JSON
-            CONTENT=$(python3 -c "import json,sys; print(json.dumps(open(sys.argv[1],'r').read()))" "$FILE")
 
-            # POST to Apps Script
-            RESPONSE=$(curl -s -L --post301 --post302 --post303 -w "\n%{http_code}" -X POST "$APPS_SCRIPT_URL" \
-              -H "Content-Type: application/json" \
-              -d "{\"secret\":\"$APPS_SCRIPT_SECRET\",\"title\":\"$TITLE\",\"content\":$CONTENT,\"folderId\":\"$FOLDER\"}")
+            # POST to Apps Script via Python (curl drops POST body on Google's 302)
+            echo 'import json,sys,urllib.request,urllib.error' > /tmp/upload.py
+            echo 'url,sec,ttl,fid,fp=sys.argv[1:6]' >> /tmp/upload.py
+            echo 'payload=json.dumps({"secret":sec,"title":ttl,"content":open(fp).read(),"folderId":fid}).encode()' >> /tmp/upload.py
+            echo 'req=urllib.request.Request(url,data=payload,headers={"Content-Type":"application/json"},method="POST")' >> /tmp/upload.py
+            echo 'try:' >> /tmp/upload.py
+            echo '  resp=urllib.request.urlopen(req); print(resp.read().decode())' >> /tmp/upload.py
+            echo 'except urllib.error.HTTPError as e:' >> /tmp/upload.py
+            echo '  print(json.dumps({"error":str(e),"code":e.code,"body":e.read().decode()[:200]}))' >> /tmp/upload.py
+            echo 'except Exception as e:' >> /tmp/upload.py
+            echo '  print(json.dumps({"error":str(e)}))' >> /tmp/upload.py
+            RESULT=$(python3 /tmp/upload.py "$APPS_SCRIPT_URL" "$APPS_SCRIPT_SECRET" "$TITLE" "$FOLDER" "$FILE")
 
-            HTTP_CODE=$(echo "$RESPONSE" | tail -1)
-            BODY=$(echo "$RESPONSE" | head -1)
-
-            if echo "$BODY" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('id',''))" 2>/dev/null | grep -q .; then
-              DOC_ID=$(echo "$BODY" | python3 -c "import sys,json; print(json.load(sys.stdin)['id'])")
+            if echo "$RESULT" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('id',''))" 2>/dev/null | grep -q .; then
+              DOC_ID=$(echo "$RESULT" | python3 -c "import sys,json; print(json.load(sys.stdin)['id'])")
               echo "✅ $FILE -> Drive doc $DOC_ID"
               SUCCESS=$((SUCCESS + 1))
             else
-              echo "⚠️  $FILE upload response: $BODY (HTTP $HTTP_CODE)"
+              echo "⚠️  $FILE upload response: $RESULT"
               FAIL=$((FAIL + 1))
             fi
           done < /tmp/new-files.txt
