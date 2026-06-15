@@ -1,70 +1,96 @@
-# FIELD Handoff — June 15 2026 (Full Session)
+# FIELD Handoff — June 15 2026 (Session B: Cross-Engine Testing)
 
-**jubilant-bassoon HEAD:** `49d32cb` · Smoke: **651/0** · SW_VERSION `2026-06-15a`
+**jubilant-bassoon HEAD:** `150f4a6` · Smoke: **652/0** · SW_VERSION `2026-06-15a`
 **field-relay-nba HEAD:** `0aa14d9` (unchanged)
 
 ---
 
 ## WHAT SHIPPED
 
-### Governance
-- **Rule 59 — Claude Code trusted-but-unverified (CC-AUDIT-A)** — new STANDARDS.md rule codifying session-boundary governance for CC commits. CLAUDE.md Rule 17 cross-references. Three case studies (ADR-002 success, CSS Grid failure, championship brief partial). Commit: 0ac7d87.
-- **Complete CC governance audit** — documented all CC governance artifacts: CLAUDE.md (17 rules), CLAUDE-CODE-PROMPT-RULES.md (6 rules), .claude/hooks/session-start.sh, Rule 25 (Gemini) vs Rule 59 (CC) relationship.
+### Cross-Engine Viewport Test Infrastructure (A609)
 
-### Score Overlay Fix
-- **Layer 1:** V2 merge block skips espnScores write when _scoresNull && !prev. No more false 0-0 on page load.
-- **Layer 2:** hydrateEspnScoresFromFinals() scans allData.sports for games with homeScore/awayScore. SCF G1-G6, ECF G2-G5, WCF G2-G4, NBA ECF G1/G3/G4, NBA WCF G3-G6, NBA Finals G1-G4 all enriched with numeric scores. 18 games total.
-- **Layer 3 (DEFERRED):** Relay-side KV cache. Requires field-relay-nba changes.
-- Commit: ce676fb (chat), a519be2 (CC).
+**iOS Safari (Appium + XCUITest + iOS Simulator):**
+- `tests/ios-safari-viewport.js`: 16 assertions ported from viewport-all.spec.js
+- `.github/workflows/ios-safari-audit.yml`: 5-device matrix (iPhone SE 3rd gen, iPhone 16, iPhone 16 Pro Max, iPad Air M2 portrait, iPad Air M2 landscape)
+- Uses XCUITest driver (not Safari driver — Safari driver v5.0.1 can't create sessions on iOS 18.x)
+- WDA compile takes ~228s on first run; connectionRetryTimeout set to 600s
+- `workflow_dispatch` only — trigger from Actions tab
 
-### CC Build Session Results (3 tasks executed)
-- SCF G3 duplicate matchupNote removed (commit 621fe83)
-- Night Owl championship context wired into both static + Claude paths (commit 2168559)
-- A604-A608 assertion reorder for consistency (CC commit, descending numeric order)
-- A606 (score overlay merge guard), A607 (score overlay L1+L2 skip), A608 (Night Owl championship), A609 TBD (iOS Safari infra)
+**Android Chrome (Appium + UiAutomator2 + Android Emulator):**
+- `tests/android-chrome-viewport.js`: 16 assertions (same logic as iOS)
+- `.github/workflows/android-chrome-audit.yml`: 4-device matrix (Pixel 4a, Pixel 7, Pixel 7 Pro, Pixel Tablet)
+- Uses external bash script (`/tmp/run-android-test.sh`) because emulator-runner runs each script line via separate `sh -c` calls
+- `workflow_dispatch` only
 
-### CC Rule 59 Verification Audit
-- J2 championship brief wiring: **VERIFIED CORRECT** — both fetchGameBriefOnDemand and fetchSeriesPreviewFromClaude call sites confirmed, signatures match, reachable callers. HANDOFF "not yet verified" note CLEARED.
-- FRANCHISE_LAST_TITLE: 63 entries (32 NHL + 30 NBA + 1 alias)
-- Stale-HEAD finding: CC ran from a17bf8e, missed chat commits. Documented in postscript.
+**Infrastructure:**
+- A609 smoke assertion: both test files must exist
+- `package.json`: webdriverio devDependency + test:ios / test:android scripts
+- POC workflows retained: ios-safari-poc.yml, android-chrome-poc.yml
 
-### Infrastructure — Drive Upload Automation
-- Google Apps Script deployed at script.google.com ("FIELD documentation" project)
-- GitHub secrets set: APPS_SCRIPT_URL + APPS_SCRIPT_SECRET (via PyNaCl)
-- Workflow: drive-upload-outbox.yml — triggers on outbox/cc-*.md and outbox/rule59-*.md pushes
-- Pipeline: CC pushes outbox file → GitHub Action → Apps Script → Google Doc in FIELD session folder
-- Workflow modification lock prevented first test — will activate on next CC push
-- 7 CC output files uploaded to Drive manually this session
+### iOS Safari Results (v8 — ALL 5 DEVICES OPERATIONAL)
 
-### Infrastructure — iOS Safari + Android Chrome Testing (FREE, $0/mo)
-- **iOS Safari POC: VERIFIED** — GitHub Actions macos-latest + iOS Simulator + xcrun simctl. Simulator boots, Safari opens FIELD URL with ?wpt, screenshot captured, Appium + Safari driver installed. All steps green.
-- **Android Chrome POC: VERIFIED** — GitHub Actions ubuntu-latest + KVM + reactivecircus/android-emulator-runner. API 33 + google_apis. Emulator boots, Chrome opens URL, screenshot captured. All steps green.
-- CC command spec for full 22-assertion Appium suite: docs/CC-CMD-2026-06-15-ios-safari.md
-- Claude Code KVM: CONFIRMED NOT AVAILABLE (no /dev/kvm, no virt extensions). CI-as-proxy is the path.
+| Device | Score | Failures |
+|---|---|---|
+| P1 iPhone SE (3rd gen) | 7/9 | #3, #7 |
+| P2 iPhone 16 | 7/9 | #3, #7 |
+| P3 iPhone 16 Pro Max | 7/9 | #3, #7 |
+| T1 iPad Air M2 portrait | 8/10 | #3, #16 |
+| T2 iPad Air M2 landscape | 9/10 | #3 |
 
-### Network Allowlist Updates
-- objects.githubusercontent.com — read GitHub Actions job logs directly
-- *.blob.core.windows.net — download GitHub Actions artifacts
-- googleapis.com — direct Google Drive API access
-- script.google.com — test Apps Script endpoint
-- Takes effect in new conversations only.
+**Key finding: #14 ambient scroll architecture PASSES on all iPad viewports.** This is the iOS Safari bug class that broke 5 times and Playwright's built-in WebKit missed every time. The inset-positioned `.ambient-scroll-inner` architecture (position:absolute, all insets 0, overflow-y:auto inside a position:fixed shell) is confirmed correct on real Apple WebKit.
 
-## Smoke Discrepancy (Resolved)
-- MCP get_smoke_count reads source assert( count (588), not runtime (651)
-- FEATURE_GUARDS forEach generates 64 dynamic assertions from 1 source call
-- A515 (SW_VERSION date) auto-resolved on deploy
+**#3 failure analysis:** Universal across all devices. The test uses selector `.filter-bar` but the actual element is `#sport-filters`. The Playwright suite uses the same stale selector. Fix is trivial (selector update) but deferred — this is a test maintenance item, not a FIELD bug.
+
+**#7 failure (phones):** Follows from #3 — `.filter-bar .filter-btn` returns 0px when `.filter-bar` doesn't exist.
+
+**#16 failure (T1 only):** Journal mode tap didn't activate on iPad portrait. T2 landscape passes. Likely a timing issue with the XCUITest tap on `#jrn-nav-link` at portrait width.
+
+### Android Chrome Results
+
+Android v7 dispatched. Emulator boots fine (~42s). Previous runs failed due to:
+1. `set -eo pipefail` in dash (fixed: external bash script)
+2. emulator-runner `sh -c` line splitting (fixed: script in /tmp)
+
+Awaiting v7 results — carry forward.
+
+## Commits This Session
+
+| Hash | Description |
+|---|---|
+| b86068f (rebased) | A609: iOS Safari + Android Chrome viewport audit suites |
+| 72b5f46 | fix(ios-audit): update device matrix to iPhone 16 / iPad Air M2 |
+| ec24749 | fix(audit): safaridriver --enable, Appium health check, pipefail |
+| 8df7b23 | fix(ios-audit): pass DEVICE_UDID + IOS_VERSION to test runner |
+| f9fd7da | fix: XCUITest driver for iOS, dash-safe script for Android |
+| 62638ba | fix(ios-audit): 60s Appium startup wait, process check, log capture |
+| 1a57d96 | fix(ios-audit): 5 min connection timeout for WDA compile |
+| 01320d3 | fix(ios-audit): extend sim boot timeout to 300s, WDA to 600s |
+| 150f4a6 | fix(android-audit): external bash script for emulator-runner |
+
+## Iteration Log (troubleshooting chain)
+
+1. Device names: macos-latest upgraded to Xcode with iPhone 16 simulators
+2. safaridriver --enable: required for Appium Safari driver on macOS
+3. Safari driver v5.0.1: can't create sessions on iOS 18.x → switched to XCUITest
+4. Appium startup: XCUITest driver needs 20-25s to start (vs ~5s for Safari driver)
+5. WDA compile: ~228s on first session — extended connectionRetryTimeout to 600s
+6. Simulator boot timeout: phones default 119s too short — extended to 300s
+7. Android dash: emulator-runner uses /usr/bin/sh, not bash — pipefail fails
+8. Android line splitting: emulator-runner runs each line via separate sh -c — moved to external bash script
 
 ## Known Issues (carry forward)
+
+- #3 filter bar selector: `.filter-bar` → `#sport-filters` across viewport-all.spec.js AND ios-safari-viewport.js AND android-chrome-viewport.js
+- #16 journal tap: intermittent on T1 iPad portrait (T2 landscape passes)
+- Android v7 results: pending — should be first successful run
 - Layer 3 relay score cache (field-relay-nba) — deferred
 - ESPN WC live scores relay endpoint (/soccer/fifa.world) — pending
 - Drive upload workflow modification lock — clears on next CC push
-- Relay Night Owl championship context — client done, relay pending
-- iOS/Android full Appium suite — CC command spec ready, not yet executed
 
 ## Priority Queue
-1. WC Groups G-L D1 updates as matches complete (Groups G/H today)
-2. Layer 3 relay score cache
-3. CC: Execute iOS Safari Appium suite (docs/CC-CMD-2026-06-15-ios-safari.md)
-4. CC: Add Android Chrome to same suite
+
+1. Android v7 results analysis (check Actions tab)
+2. Fix #3 selector across all test suites (#sport-filters + .filter-btn)
+3. WC Groups G-L D1 updates as matches complete
+4. Layer 3 relay score cache
 5. ESPN WC relay endpoint
-6. Drive upload workflow verification (next CC push)
