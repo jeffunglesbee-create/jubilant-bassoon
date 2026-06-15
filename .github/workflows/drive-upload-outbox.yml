@@ -1,0 +1,111 @@
+# .github/workflows/drive-upload-outbox.yml
+#
+# FIELD OUTBOX → Google Drive via Apps Script
+#
+# HOW IT WORKS:
+#   1. Claude Code writes outbox/cc-*.md or outbox/rule59-*.md and pushes
+#   2. This workflow triggers on new .md files matching CC output patterns
+#   3. Reads each new file, POSTs to Apps Script which creates a Google Doc
+#   4. Apps Script runs as Jeff's Google account — full Drive access
+#
+# SECRETS REQUIRED:
+#   APPS_SCRIPT_URL    — deployed Apps Script web app URL
+#   APPS_SCRIPT_SECRET — shared verification token
+#
+# APPS SCRIPT SOURCE (script.google.com, "FIELD documentation" project):
+#   function doPost(e) {
+#     var d = JSON.parse(e.postData.contents);
+#     if (d.secret !== '<SECRET>') return ContentService.createTextOutput('unauthorized');
+#     var folder = DriveApp.getFolderById(d.folderId || '0ABxH84VndHL7Uk9PVA');
+#     var doc = folder.createFile(d.title, d.content, MimeType.PLAIN_TEXT);
+#     return ContentService.createTextOutput(JSON.stringify({id: doc.getId(), url: doc.getUrl()}));
+#   }
+
+name: FIELD Outbox → Drive
+
+on:
+  push:
+    paths:
+      - 'outbox/cc-*.md'
+      - 'outbox/rule59-*.md'
+    branches:
+      - main
+
+jobs:
+  upload:
+    runs-on: ubuntu-latest
+    name: Upload CC output to Drive
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Find new outbox .md files
+        id: files
+        run: |
+          # Detect newly added files in this push
+          NEW=$(git diff --name-only --diff-filter=A HEAD~1 HEAD -- 'outbox/cc-*.md' 'outbox/rule59-*.md' 2>/dev/null || echo "")
+          if [ -z "$NEW" ]; then
+            echo "⏭ No new CC output files in this push"
+            echo "found=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "📄 New files:"
+            echo "$NEW"
+            echo "found=true" >> "$GITHUB_OUTPUT"
+            # Write to file for multi-line safety
+            echo "$NEW" > /tmp/new-files.txt
+          fi
+
+      - name: Upload to Drive via Apps Script
+        if: steps.files.outputs.found == 'true'
+        env:
+          APPS_SCRIPT_URL: ${{ secrets.APPS_SCRIPT_URL }}
+          APPS_SCRIPT_SECRET: ${{ secrets.APPS_SCRIPT_SECRET }}
+        run: |
+          if [ -z "$APPS_SCRIPT_URL" ] || [ -z "$APPS_SCRIPT_SECRET" ]; then
+            echo "❌ APPS_SCRIPT_URL or APPS_SCRIPT_SECRET not set"
+            exit 1
+          fi
+
+          FOLDER="0ABxH84VndHL7Uk9PVA"
+          SUCCESS=0
+          FAIL=0
+
+          while IFS= read -r FILE; do
+            [ -z "$FILE" ] && continue
+            echo "📤 Uploading: $FILE"
+
+            # Extract title from first # heading, fallback to filename
+            TITLE=$(head -1 "$FILE" | sed 's/^# //')
+            [ -z "$TITLE" ] && TITLE=$(basename "$FILE" .md)
+
+            # Read content and escape for JSON
+            CONTENT=$(python3 -c "
+import json, sys
+with open(sys.argv[1], 'r') as f:
+    print(json.dumps(f.read()))
+" "$FILE")
+
+            # POST to Apps Script
+            RESPONSE=$(curl -s -L -w "\n%{http_code}" -X POST "$APPS_SCRIPT_URL" \
+              -H "Content-Type: application/json" \
+              -d "{\"secret\":\"$APPS_SCRIPT_SECRET\",\"title\":\"$TITLE\",\"content\":$CONTENT,\"folderId\":\"$FOLDER\"}")
+
+            HTTP_CODE=$(echo "$RESPONSE" | tail -1)
+            BODY=$(echo "$RESPONSE" | head -1)
+
+            if echo "$BODY" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('id',''))" 2>/dev/null | grep -q .; then
+              DOC_ID=$(echo "$BODY" | python3 -c "import sys,json; print(json.load(sys.stdin)['id'])")
+              echo "✅ $FILE → Drive doc $DOC_ID"
+              SUCCESS=$((SUCCESS + 1))
+            else
+              echo "⚠️  $FILE upload response: $BODY (HTTP $HTTP_CODE)"
+              FAIL=$((FAIL + 1))
+            fi
+          done < /tmp/new-files.txt
+
+          echo ""
+          echo "── Results: $SUCCESS uploaded, $FAIL failed ──"
+          [ "$FAIL" -gt 0 ] && exit 1 || exit 0
