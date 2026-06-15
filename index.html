@@ -10175,14 +10175,6 @@ function buildTodaySchedule(){
   // ── NBA Finals 2026 — All on ABC, 8:30pm ET ─────────────────────────
   //   NYK vs WCF winner (SAS or OKC). G1 June 3 at Western champion's arena.
   const nbaGames=[
-    {home:"New York Knicks",       away:"Cleveland Cavaliers",  league:"NBA Playoffs \u2013 East CF G1 \u00b7 NYK wins 115-104",  start_time:"2026-05-20T00:00:00Z", confirmed:true, venue:"Madison Square Garden, New York NY",  streams:resolveBundle("NBA_ESPN"), seriesRecord:"NYK wins 115-104", homeScore:115, awayScore:104, matchupNote:"Brunson 38 pts. Knicks erased a 22-point Q4 deficit to win in OT. Sam Merrill nearly hit the buzzer-beater. NYK leads series 1-0."},
-    {home:"Cleveland Cavaliers",   away:"New York Knicks",      league:"NBA Playoffs \u2013 East CF G3 \u00b7 NYK wins G3, leads 3-0",   start_time:"2026-05-24T00:00:00Z", confirmed:true, venue:"Rocket Mortgage FieldHouse, Cleveland OH", streams:resolveBundle("NBA_ABC"), seriesRecord:"NYK leads 2-0", homeScore:108, awayScore:121, matchupNote:"NYK wins G3 121-108 Saturday at Cleveland. Knicks lead 3-0 — one win from first Finals since 1999. G4 Monday at Cleveland, 8pm ET, ESPN."},
-    {home:"Cleveland Cavaliers",   away:"New York Knicks",      league:"NBA Playoffs \u2013 East CF G4 \u00b7 NYK wins 130-93, SWEEP",  start_time:"2026-05-26T00:00:00Z", confirmed:true, venue:"Rocket Mortgage FieldHouse, Cleveland OH",  streams:resolveBundle("NBA_ESPN"), seriesRecord:"NYK wins 4-0", homeScore:93, awayScore:130, matchupNote:"Knicks complete the sweep 130-93. KAT 19pts/14reb, Anunoby 17pts. Brunson 15pts 5ast (sat Q4). Mitchell led CLE with 31pts. Brunson named ECF MVP. NYK to Finals for first time since 1999."},
-    {home:"San Antonio Spurs",     away:"Oklahoma City Thunder", league:"NBA Playoffs \u2013 West CF G3 \u00b7 OKC wins 123-108",  start_time:"2026-05-23T00:30:00Z", confirmed:true, venue:"Frost Bank Center, San Antonio TX",     streams:resolveBundle("NBA_NBC"), seriesRecord:"OKC leads 2-1", homeScore:108, awayScore:123, seriesMargins:[9,9,15,-1,-1,-1,-1], matchupNote:"OKC wins G3 123-108 (Gilgeous-Alexander 36pts). SAS won G4 103-82 (Wembanyama 33pts). Series tied 2-2. G5 Tuesday at OKC."},
-    {home:"San Antonio Spurs",     away:"Oklahoma City Thunder", league:"NBA Playoffs \u2013 West CF G4 \u00b7 SAS wins 103-82, series tied 2-2",  start_time:"2026-05-25T00:00:00Z", confirmed:true, venue:"Frost Bank Center, San Antonio TX", streams:resolveBundle("NBA_NBC"), seriesRecord:"Series tied 2-2", homeScore:103, awayScore:82, seriesMargins:[9,9,15,-21,-1,-1,-1], matchupNote:"SAS evens series with dominant 103-82 G4 win. Wembanyama 33pts/8reb/5ast/3blk. SGA held to 19pts (6-15 FG). OKC shot 33% FG, 18% from 3. Series returns to Paycom Center for G5 Tuesday."},
-    {home:"Oklahoma City Thunder", away:"San Antonio Spurs",    league:"NBA Playoffs \u2013 West CF G5 \u00b7 OKC wins 127-114, leads 3-2",  start_time:"2026-05-27T00:30:00Z", confirmed:true, venue:"Paycom Center, Oklahoma City OK", streams:resolveBundle("NBA_NBC"), seriesRecord:"OKC leads 3-2", homeScore:127, awayScore:114, matchupNote:"OKC wins G5 127-114 to seize 3-2 series lead. SGA 32pts (7-19 FG, 16-17 FT, 9ast) — 14th 30-point game this postseason. Caruso off the bench: 22pts, 4/8 from three, 8/8 FT, 6ast, 3stl. Holmgren 16pts/11reb and Hartenstein 12pts/15reb gave OKC two double-doubles in the frontcourt. OKC led by as many as 20 and outscored SAS 40-31 in Q2. SAS: Castle 24pts (7-11 FG), Champagnie 22pts (4/8 3PT), Wembanyama 20pts (4-15 FG, 0/5 3PT, 12-12 FT). G6 Thu at Frost Bank Center."},
-    {home:"San Antonio Spurs",     away:"Oklahoma City Thunder", league:"NBA Playoffs \u2013 West CF G6 \u00b7 SAS wins 118-91, series tied 3-3",  start_time:"2026-05-29T00:30:00Z", confirmed:true, venue:"Frost Bank Center, San Antonio TX", streams:resolveBundle("NBA_NBC"), seriesRecord:"Series tied 3-3", homeScore:118, awayScore:91, matchupNote:"SAS dominates G6 118-91. Wembanyama 28pts/10reb/3blk. SGA 15pts (6-18 FG). SAS dominant 32-13 Q3 including 20-0 run — OKC's lowest Q output this postseason. Never trailed. Series tied 3-3. G7 Saturday at Paycom Center, 8pm ET, NBC/Peacock."},
-    {home:"Oklahoma City Thunder", away:"San Antonio Spurs",    league:"NBA Playoffs \u2013 West CF G7 \u00b7 SAS wins — WCF Champions",  start_time:"2026-05-31T00:00:00Z", confirmed:true, venue:"Paycom Center, Oklahoma City OK", streams:resolveBundle("NBA_NBC"), seriesRecord:"SAS wins series 4-3", matchupNote:"WCF Game 7 — SAS wins, advances to NBA Finals vs NYK. Road teams won 4 straight + 6 of last 9 conference final G7s. Wembanyama (28.2 PPG, 3.7 BPG this postseason) led SAS past OKC (64-18 regular season, defending champions). Sat May 30, 8pm ET, NBC/Peacock.", _gameImportance:"elimination"},
     // ── NBA Finals 2026 — All games ABC, 8:30pm ET ─────────────────────
     {home:"San Antonio Spurs", away:"New York Knicks",        league:"NBA Finals 2026 \u2013 G1 \u00b7 NYK wins 105-95",  start_time:"2026-06-04T00:30:00Z", confirmed:true, venue:"Frost Bank Center, San Antonio TX", streams:resolveBundle("NBA_ABC"), seriesRecord:"NYK wins 105-95", crew:"Mike Breen · Richard Jefferson · Tim Legler (ABC)", _gameImportance:"playoffs", homeScore:95, awayScore:105, seriesMargins:[10,-1,-1,-1,-1,-1,-1], matchupNote:"NYK wins G1 105-95 at Frost Bank Center. Brunson 30pts (13 in Q4) — hit clutch shots to erase a 14-point Q3 deficit, then closed an 11-0 run after SAS briefly led 95-94 late in Q4. KAT 18pts. Wembanyama 26pts/12reb but 6-21 FG (2-9 from 3) in Finals debut — SAS couldn't hold the lead. NYK's 12th straight playoff win (3rd team in NBA history). Knicks steal home-court advantage."},
     {home:"San Antonio Spurs", away:"New York Knicks",        league:"NBA Finals 2026 \u2013 G2 \u00b7 NYK wins 105-104, leads 2-0",  start_time:"2026-06-06T00:30:00Z", confirmed:true, venue:"Frost Bank Center, San Antonio TX", streams:resolveBundle("NBA_ABC"), seriesRecord:"NYK wins 105-104", crew:"Mike Breen \u00b7 Richard Jefferson \u00b7 Tim Legler (ABC)", _gameImportance:"playoffs", homeScore:104, awayScore:105, seriesMargins:[10,1,-1,-1,-1,-1,-1], matchupNote:"NYK wins G2 105-104 at Frost Bank Center — series 2-0. KAT 21pts/13reb (double-double), Bridges 20pts (8-13 FG, 4-6 from 3). Brunson 20pts/6ast but 7-25 FG. Wembanyama 29pts (11-21 FG) — efficient but SAS couldn't hold the lead. NYK wins both San Antonio games to seize full home-court control. First Finals team to win G1+G2 on road since 2016. G3 Mon Jun 8 at MSG, 8:30pm ET, ABC."},
@@ -10209,15 +10201,9 @@ function buildTodaySchedule(){
   //   East CF: CAR (8-0 sweep machine) vs MTL (won G7 OT vs BUF to advance)
   const nhlGames=[
     // R2 complete: COL 4-1 MIN, VGK 4-2 ANA, MTL 4-3 BUF
-    {home:"Montreal Canadiens", away:"Buffalo Sabres",   league:"NHL Playoffs – East Semis G6 · BUF wins 8-3, series tied 3-3", start_time:"2026-05-17T00:00:00Z", confirmed:true, venue:"Bell Centre, Montreal QC",   streams:resolveBundle("NHL_ABC"), crew:"Sean McDonough · Ray Ferraro · Haley Skarupa (ESPN/ABC)"},
-    {home:"Buffalo Sabres",     away:"Montreal Canadiens", league:"NHL Playoffs – East Semis G7 · MTL wins series 4-3", start_time:"2026-05-18T23:30:00Z", confirmed:true, venue:"KeyBank Center, Buffalo NY", streams:resolveBundle("NHL_ESPN"), crew:"Sean McDonough · Ray Ferraro · Haley Skarupa (ESPN)", seriesRecord:"MTL wins 4-3"},
     // ── NHL Eastern Conference Finals — Carolina Hurricanes vs Montreal Canadiens ──
     // CAR wins East Semis 4-0 (vs Philadelphia) · MTL wins East Semis 4-3 (vs Buffalo)
     // Broadcast: TNT / truTV / Max (US) · SN / CBC / TVAS (Canada)
-    {home:"Carolina Hurricanes", away:"Montreal Canadiens", league:"NHL Playoffs – East CF G2 · CAR wins 3-2 OT, series tied 1-1", start_time:"2026-05-23T23:00:00Z", confirmed:true, venue:"Lenovo Center, Raleigh NC",      streams:resolveBundle("NHL_TNT"), crew:"John Forslund · Eddie Olczyk (TNT)", seriesRecord:"Series tied 1-1", homeScore:3, awayScore:2, matchupNote:"CAR wins G2 3-2 in OT after MTL stunned CAR 6-2 in G1 (Slafkovsky 2G 1A) — first CAR loss of playoffs, ending bid for perfect 16-0. G2 Saturday at Lenovo Center, 7pm ET, TNT/truTV/Max."},
-    {home:"Montreal Canadiens",  away:"Carolina Hurricanes", league:"NHL Playoffs – East CF G3 · CAR wins 3-2 OT, leads 2-1", start_time:"2026-05-26T00:00:00Z", confirmed:true, venue:"Bell Centre, Montreal QC",   streams:resolveBundle("NHL_TNT"), seriesRecord:"CAR leads 2-1", homeScore:2, awayScore:3, matchupNote:"CAR wins G3 3-2 OT (Svechnikov 14:06 OT). Gostisbehere and Hall scored in reg for CAR; Matheson and Hutson for MTL. CAR outshot MTL 38-13. Dobes 35 saves. CAR leads 2-1 — have won all 5 OT games this postseason. G4 Wed at Bell Centre."},
-    {home:"Montreal Canadiens",  away:"Carolina Hurricanes", league:"NHL Playoffs \u2013 East CF G4 \u00b7 CAR wins 4-0, leads 3-1", start_time:"2026-05-28T00:00:00Z", confirmed:true, venue:"Bell Centre, Montreal QC",   streams:resolveBundle("NHL_TNT"), seriesRecord:"CAR leads 3-1", homeScore:0, awayScore:4, matchupNote:"CAR dominates G4 4-0 (Aho, Staal, Stankoven scored in P1 for 3-0 lead). Andersen shutout. CAR outshot MTL 43-13 according to team stats. Carolina one win from Stanley Cup Final vs VGK. G5 Fri May 29 at Lenovo Center, 8pm ET, TNT/truTV/Max."},
-    {home:"Carolina Hurricanes", away:"Montreal Canadiens",  league:"NHL Playoffs \u2013 East CF G5 \u00b7 CAR wins 6-1, CAR wins 4-1", start_time:"2026-05-30T00:00:00Z", confirmed:true, venue:"Lenovo Center, Raleigh NC",    streams:resolveBundle("NHL_TNT"), seriesRecord:"CAR wins 4-1", homeScore:6, awayScore:1, matchupNote:"CAR completes ECF 6-1. Carolina wins series 4-1 — first Stanley Cup Final appearance since winning the Cup in 2006. Face VGK in the Final starting June 2 at Lenovo Center."},
     // ── NHL Stanley Cup Final 2026 — Carolina Hurricanes vs Vegas Golden Knights ──
     // CAR: Conf champions 4-1 (MTL), have home ice (higher point total)
     // VGK: Conf champions 4-0 sweep of COL, third Final in 9 seasons (won 2023)
@@ -10234,106 +10220,29 @@ function buildTodaySchedule(){
     // COL wins Presidents' Trophy (best record) · COL wins R2 4-1 (vs Minnesota) · VGK wins R2 4-2 (vs Anaheim)
     // Key players: MacKinnon (COL), Marner (VGK), Dorofeyev (VGK — playoff scoring leader)
     // Broadcast: ESPN (G1-G4, G5, G7) · ABC (G6 only)
-    {home:"Colorado Avalanche",  away:"Vegas Golden Knights", league:"NHL Playoffs – West CF G2 · VGK wins 3-1",                     start_time:"2026-05-23T00:00:00Z", confirmed:true, venue:"Ball Arena, Denver CO",      streams:resolveBundle("NHL_ESPN"), crew:"Sean McDonough · Ray Ferraro · Haley Skarupa (ESPN)", seriesRecord:"VGK leads 2-0", homeScore:1, awayScore:3, matchupNote:"VGK wins G2 3-1 at COL. Dorofeyev 1G 1A. VGK has outscored COL 7-3 through two games. Series shifts to T-Mobile Arena for G3 Sunday."},
-    {home:"Vegas Golden Knights", away:"Colorado Avalanche",  league:"NHL Playoffs \u2013 West CF G3 \u00b7 VGK wins 5-3, leads 3-0",  start_time:"2026-05-25T00:00:00Z", confirmed:true, venue:"T-Mobile Arena, Las Vegas NV",      streams:resolveBundle("NHL_ESPN"), crew:"Sean McDonough \u00b7 Ray Ferraro \u00b7 Haley Skarupa (ESPN)", seriesRecord:"VGK leads 3-0", homeScore:5, awayScore:3, matchupNote:"VGK wins G3 5-3 at T-Mobile Arena. Vegas leads 3-0 — one win from Stanley Cup Final. COL offense struggling: 7 goals in 3 games."},
-    {home:"Vegas Golden Knights", away:"Colorado Avalanche",  league:"NHL Playoffs \u2013 West CF G4 \u00b7 VGK wins 2-1, SWEEP 4-0",  start_time:"2026-05-27T01:00:00Z", confirmed:true, venue:"T-Mobile Arena, Las Vegas NV",      streams:resolveBundle("NHL_ESPN"), seriesRecord:"VGK wins 4-0", homeScore:2, awayScore:1, matchupNote:"VGK completes the sweep 2-1. Mark Stone scored the game-winner (1st star) as VGK controlled faceoffs (54.7%) and limited COL to 21 shots. MacKinnon held scoreless for the first time this series. Landeskog scored COL's lone goal in P3. VGK outscored COL 14-7 across the series. Golden Knights advance to Stanley Cup Final — opponent TBD (ECF: CAR leads MTL 2-1)."},
   ].filter(g=>isToday(g.start_time));
   // Sources: MLB.com official schedule. GOTD: ESPN Press Room + Peacock blog.
   // Old entries removed May 31 2026 (pre-May 25 entries unreachable via isToday)
   const mlbRaw=[
     // ── MLB — Monday May 25, 2026 — Memorial Day slate (13 games) ──────
     // Sources: MLB.com schedule verified May 25, 2026. NYY @ KC on ESPN (national exclusive).
-    {home:"Pittsburgh Pirates",    away:"Chicago Cubs",         start_time:"2026-05-25T17:35:00Z", confirmed:true, venue:"PNC Park, Pittsburgh PA"},
-    {home:"Baltimore Orioles",     away:"Tampa Bay Rays",       start_time:"2026-05-25T17:35:00Z", confirmed:true, venue:"Oriole Park at Camden Yards, Baltimore MD"},
-    {home:"Milwaukee Brewers",     away:"St. Louis Cardinals",  start_time:"2026-05-25T18:10:00Z", confirmed:true, venue:"American Family Field, Milwaukee WI"},
-    {home:"Chicago White Sox",     away:"Minnesota Twins",      start_time:"2026-05-25T18:10:00Z", confirmed:true, venue:"Guaranteed Rate Field, Chicago IL"},
-    {home:"Kansas City Royals",    away:"New York Yankees",     start_time:"2026-05-25T19:40:00Z", confirmed:true, venue:"Kauffman Stadium, Kansas City MO", nationalBundle:"MLB_ESPN", streams:resolveBundle("MLB_ESPN"),
-     matchupNote:"NYY @ KC — Monday Night Baseball on ESPN. 3:40pm ET. Memorial Day matinee."},
-    {home:"New York Mets",         away:"Cincinnati Reds",      start_time:"2026-05-25T20:10:00Z", confirmed:true, venue:"Citi Field, New York NY"},
-    {home:"San Francisco Giants",  away:"Arizona Diamondbacks", start_time:"2026-05-25T21:05:00Z", confirmed:true, venue:"Oracle Park, San Francisco CA"},
-    {home:"Cleveland Guardians",   away:"Washington Nationals", start_time:"2026-05-25T22:10:00Z", confirmed:true, venue:"Progressive Field, Cleveland OH"},
-    {home:"San Diego Padres",      away:"Philadelphia Phillies",start_time:"2026-05-25T22:40:00Z", confirmed:true, venue:"Petco Park, San Diego CA", espnGOTD:true, matchupNote:"ESPN App GOTD — PHI @ SD, 6:40pm ET. ESPN Unlimited exclusive. Local RSN blacked out."},
-    {home:"Texas Rangers",         away:"Houston Astros",       start_time:"2026-05-25T23:05:00Z", confirmed:true, venue:"Globe Life Field, Arlington TX"},
-    {home:"Toronto Blue Jays",     away:"Miami Marlins",        start_time:"2026-05-25T23:07:00Z", confirmed:true, venue:"Rogers Centre, Toronto ON"},
-    {home:"Los Angeles Dodgers",   away:"Colorado Rockies",     start_time:"2026-05-26T01:10:00Z", confirmed:true, venue:"Dodger Stadium, Los Angeles CA"},
-    {home:"Athletics",             away:"Seattle Mariners",     start_time:"2026-05-26T01:40:00Z", confirmed:true, venue:"Sutter Health Park, West Sacramento CA"},
     // ── MLB — Tuesday May 26, 2026 — 15 games ──────────────────────
     // Sources: MLB.com schedule verified May 26. TBS Tuesday: ATL @ BOS.
     // ESPN GOTD: SEA @ ATH (Daily Update Ref confirmed).
     // Peacock GOTD: not announced for Tue (weekly cadence, check Wed).
-    {home:"Cleveland Guardians",   away:"Washington Nationals", start_time:"2026-05-26T22:10:00Z", confirmed:true, venue:"Progressive Field, Cleveland OH"},
-    {home:"Baltimore Orioles",     away:"Tampa Bay Rays",       start_time:"2026-05-26T22:35:00Z", confirmed:true, venue:"Oriole Park at Camden Yards, Baltimore MD"},
-    {home:"Detroit Tigers",        away:"Los Angeles Angels",   start_time:"2026-05-26T22:40:00Z", confirmed:true, venue:"Comerica Park, Detroit MI"},
-    {home:"Pittsburgh Pirates",    away:"Chicago Cubs",         start_time:"2026-05-26T22:40:00Z", confirmed:true, venue:"PNC Park, Pittsburgh PA"},
-    {home:"Boston Red Sox",        away:"Atlanta Braves",       start_time:"2026-05-26T22:45:00Z", confirmed:true, venue:"Fenway Park, Boston MA",
-     nationalBundle:"MLB_TBS", streams:resolveBundle("MLB_TBS"),
-     matchupNote:"TBS Tuesday — ATL @ BOS, 6:45pm ET. National broadcast on TBS + streaming on Max."},
-    {home:"Toronto Blue Jays",     away:"Miami Marlins",        start_time:"2026-05-26T23:07:00Z", confirmed:true, venue:"Rogers Centre, Toronto ON"},
-    {home:"New York Mets",         away:"Cincinnati Reds",      start_time:"2026-05-26T23:10:00Z", confirmed:true, venue:"Citi Field, New York NY"},
-    {home:"Chicago White Sox",     away:"Minnesota Twins",      start_time:"2026-05-26T23:40:00Z", confirmed:true, venue:"Guaranteed Rate Field, Chicago IL"},
-    {home:"Kansas City Royals",    away:"New York Yankees",     start_time:"2026-05-26T23:40:00Z", confirmed:true, venue:"Kauffman Stadium, Kansas City MO"},
-    {home:"Milwaukee Brewers",     away:"St. Louis Cardinals",  start_time:"2026-05-26T23:40:00Z", confirmed:true, venue:"American Family Field, Milwaukee WI"},
-    {home:"Texas Rangers",         away:"Houston Astros",       start_time:"2026-05-27T00:05:00Z", confirmed:true, venue:"Globe Life Field, Arlington TX"},
-    {home:"Athletics",             away:"Seattle Mariners",     start_time:"2026-05-27T01:40:00Z", confirmed:true, venue:"Sutter Health Park, West Sacramento CA",
-     espnGOTD:true, matchupNote:"ESPN App GOTD — SEA @ ATH, 9:40pm ET. ESPN Unlimited exclusive. Local RSN blacked out."},
-    {home:"San Diego Padres",      away:"Philadelphia Phillies",start_time:"2026-05-27T01:40:00Z", confirmed:true, venue:"Petco Park, San Diego CA"},
-    {home:"San Francisco Giants",  away:"Arizona Diamondbacks", start_time:"2026-05-27T01:45:00Z", confirmed:true, venue:"Oracle Park, San Francisco CA"},
-    {home:"Los Angeles Dodgers",   away:"Colorado Rockies",     start_time:"2026-05-27T02:10:00Z", confirmed:true, venue:"Dodger Stadium, Los Angeles CA"},
     // ── MLB — Wednesday May 27, 2026 — 15 games ───────────────────────
     // Sources: MLB.com schedule verified May 27, 2026. No standard national broadcast Wed.
     // Check ESPN Press Room + peacocktv.com/sports/mlb for any GOTD before adding chips.
-    {home:"Toronto Blue Jays",     away:"Miami Marlins",        start_time:"2026-05-27T17:07:00Z", confirmed:true, venue:"Rogers Centre, Toronto ON"},
-    {home:"Cleveland Guardians",   away:"Washington Nationals", start_time:"2026-05-27T17:10:00Z", confirmed:true, venue:"Progressive Field, Cleveland OH"},
-    {home:"Milwaukee Brewers",     away:"St. Louis Cardinals",  start_time:"2026-05-27T17:40:00Z", confirmed:true, venue:"American Family Field, Milwaukee WI"},
-    {home:"Athletics",             away:"Seattle Mariners",     start_time:"2026-05-27T19:05:00Z", confirmed:true, venue:"Sutter Health Park, West Sacramento CA"},
-    {home:"San Francisco Giants",  away:"Arizona Diamondbacks", start_time:"2026-05-27T19:45:00Z", confirmed:true, venue:"Oracle Park, San Francisco CA"},
-    {home:"San Diego Padres",      away:"Philadelphia Phillies",start_time:"2026-05-27T20:10:00Z", confirmed:true, venue:"Petco Park, San Diego CA"},
-    {home:"Baltimore Orioles",     away:"Tampa Bay Rays",       start_time:"2026-05-27T22:35:00Z", confirmed:true, venue:"Oriole Park at Camden Yards, Baltimore MD"},
-    {home:"Detroit Tigers",        away:"Los Angeles Angels",   start_time:"2026-05-27T22:40:00Z", confirmed:true, venue:"Comerica Park, Detroit MI"},
-    {home:"Pittsburgh Pirates",    away:"Chicago Cubs",         start_time:"2026-05-27T22:40:00Z", confirmed:true, venue:"PNC Park, Pittsburgh PA"},
-    {home:"Boston Red Sox",        away:"Atlanta Braves",       start_time:"2026-05-27T22:45:00Z", confirmed:true, venue:"Fenway Park, Boston MA"},
-    {home:"New York Mets",         away:"Cincinnati Reds",      start_time:"2026-05-27T23:10:00Z", confirmed:true, venue:"Citi Field, New York NY"},
-    {home:"Kansas City Royals",    away:"New York Yankees",     start_time:"2026-05-27T23:40:00Z", confirmed:true, venue:"Kauffman Stadium, Kansas City MO"},
-    {home:"Chicago White Sox",     away:"Minnesota Twins",      start_time:"2026-05-27T23:40:00Z", confirmed:true, venue:"Guaranteed Rate Field, Chicago IL"},
-    {home:"Texas Rangers",         away:"Houston Astros",       start_time:"2026-05-28T00:05:00Z", confirmed:true, venue:"Globe Life Field, Arlington TX"},
-    {home:"Los Angeles Dodgers",   away:"Colorado Rockies",     start_time:"2026-05-28T02:10:00Z", confirmed:true, venue:"Dodger Stadium, Los Angeles CA"},
     // ── MLB — Thursday May 28, 2026 — 6 games ───────────────────────
     // Sources: MLB.com schedule verified May 28, 2026.
     // ESPN GOTD: HOU @ TEX 8:05pm ET (auto-tagged via ESPN_GOTD_SCHEDULE)
     // Peacock GOTD: CHC @ PIT 6:40pm ET (auto-tagged via PEACOCK_GOTD_SCHEDULE)
-    {home:"Detroit Tigers",        away:"Los Angeles Angels",   start_time:"2026-05-28T17:10:00Z", confirmed:true, venue:"Comerica Park, Detroit MI"},
-    {home:"Chicago White Sox",     away:"Minnesota Twins",      start_time:"2026-05-28T18:10:00Z", confirmed:true, venue:"Guaranteed Rate Field, Chicago IL"},
-    {home:"Boston Red Sox",        away:"Atlanta Braves",       start_time:"2026-05-28T20:10:00Z", confirmed:true, venue:"Fenway Park, Boston MA"},
-    {home:"Baltimore Orioles",     away:"Toronto Blue Jays",    start_time:"2026-05-28T22:35:00Z", confirmed:true, venue:"Oriole Park at Camden Yards, Baltimore MD"},
-    {home:"Pittsburgh Pirates",    away:"Chicago Cubs",         start_time:"2026-05-28T22:40:00Z", confirmed:true, venue:"PNC Park, Pittsburgh PA",
-     matchupNote:"Peacock Game of the Day — CHC @ PIT, 6:40pm ET. Series rubber game: PIT won G1 12-1, CHC won G2 10-4. Nationally streamed on Peacock."},
-    {home:"Texas Rangers",         away:"Houston Astros",       start_time:"2026-05-29T00:05:00Z", confirmed:true, venue:"Globe Life Field, Arlington TX",
-     matchupNote:"ESPN App Game of the Day — HOU @ TEX, 8:05pm ET. ESPN Unlimited exclusive. Series finale: TEX won G1 10-7 (Tue), HOU won G2 4-3 (Wed). Third and final game of the set at Globe Life Field."},
     // ── MLB — Sunday May 31, 2026 — 15 games ──────────────────────────
     // Source: MLB.com schedule verified May 31, 2026.
     // Sunday Leadoff (Peacock): TOR @ BAL — 12:15pm ET — FIRST NBC game starts May 31
     // Sunday Night Baseball (NBC + Peacock): CHC @ STL — 7:20pm ET
     //   May 31 is first SNB game on NBC proper (prior weeks Peacock-only)
     // No ESPN GOTD confirmed for Sunday — verify via ESPN Press Room
-    {home:"Baltimore Orioles",     away:"Toronto Blue Jays",    start_time:"2026-05-31T16:15:00Z", confirmed:true, venue:"Oriole Park at Camden Yards, Baltimore MD",
-     nationalBundle:"MLB_LEADOFF", streams:resolveBundle("MLB_LEADOFF"),
-     matchupNote:"MLB Sunday Leadoff on Peacock — TOR @ BAL, 12:15pm ET. National exclusive on Peacock. Part of series: TOR visits BAL."},
-    {home:"Washington Nationals",  away:"San Diego Padres",     start_time:"2026-05-31T17:35:00Z", confirmed:true, venue:"Nationals Park, Washington DC"},
-    {home:"Pittsburgh Pirates",    away:"Minnesota Twins",      start_time:"2026-05-31T17:35:00Z", confirmed:true, venue:"PNC Park, Pittsburgh PA"},
-    {home:"Cleveland Guardians",   away:"Boston Red Sox",       start_time:"2026-05-31T17:40:00Z", confirmed:true, venue:"Progressive Field, Cleveland OH"},
-    {home:"Tampa Bay Rays",        away:"Los Angeles Angels",   start_time:"2026-05-31T17:40:00Z", confirmed:true, venue:"Tropicana Field, St. Petersburg FL"},
-    {home:"Cincinnati Reds",       away:"Atlanta Braves",       start_time:"2026-05-31T17:40:00Z", confirmed:true, venue:"Great American Ball Park, Cincinnati OH"},
-    {home:"New York Mets",         away:"Miami Marlins",        start_time:"2026-05-31T17:40:00Z", confirmed:true, venue:"Citi Field, New York NY"},
-    {home:"Chicago White Sox",     away:"Detroit Tigers",       start_time:"2026-05-31T18:10:00Z", confirmed:true, venue:"Guaranteed Rate Field, Chicago IL"},
-    {home:"Houston Astros",        away:"Milwaukee Brewers",    start_time:"2026-05-31T18:10:00Z", confirmed:true, venue:"Minute Maid Park, Houston TX"},
-    {home:"Texas Rangers",         away:"Kansas City Royals",   start_time:"2026-05-31T18:35:00Z", confirmed:true, venue:"Globe Life Field, Arlington TX"},
-    {home:"Colorado Rockies",      away:"San Francisco Giants", start_time:"2026-05-31T19:10:00Z", confirmed:true, venue:"Coors Field, Denver CO"},
-    {home:"Athletics",             away:"New York Yankees",     start_time:"2026-05-31T20:05:00Z", confirmed:true, venue:"Sutter Health Park, West Sacramento CA"},
-    {home:"Seattle Mariners",      away:"Arizona Diamondbacks", start_time:"2026-05-31T20:10:00Z", confirmed:true, venue:"T-Mobile Park, Seattle WA"},
-    {home:"Los Angeles Dodgers",   away:"Philadelphia Phillies",start_time:"2026-05-31T20:10:00Z", confirmed:true, venue:"Dodger Stadium, Los Angeles CA"},
-    {home:"St. Louis Cardinals",   away:"Chicago Cubs",         start_time:"2026-05-31T23:20:00Z", confirmed:true, venue:"Busch Stadium, St. Louis MO",
-     nationalBundle:"MLB_NBC", streams:resolveBundle("MLB_NBC"),
-     matchupNote:"Sunday Night Baseball on NBC + Peacock — CHC @ STL, 7:20pm ET. First SNB game on NBC proper (prior weeks Peacock-only). Cubs-Cardinals NL Central rivalry. Nationally exclusive on NBC and Peacock."},
     // ── MLB — Tuesday June 2, 2026 — 15 games (Lou Gehrig Day, all 30 teams in action) ──
     // Source: MLB.com schedule verified June 2, 2026.
     // TBS Tuesday: SD @ PHI 6:40pm ET (national, non-exclusive — keeps local RSN chips).
@@ -10489,11 +10398,6 @@ function buildTodaySchedule(){
   // Kickoff: 18:00 CET / 16:00 UTC = NOON ET (earlier than prior years)
   // US: CBS + Paramount+
   const uclGames=[
-    {home:"Paris Saint-Germain", away:"Arsenal",
-     league:"UEFA Champions League – Final", start_time:"2026-05-30T16:00:00Z", confirmed:true,
-     venue:"Puskás Aréna, Budapest",
-     streams:resolveBundle("UCL"),
-     matchupNote:"PSG (holders — bid to become first back-to-back winner since Real Madrid 2016-18) vs Arsenal (first UCL final since 2006). Kickoff noon ET."},
   ].filter(g=>isToday(g.start_time));
 
 
@@ -10505,11 +10409,6 @@ function buildTodaySchedule(){
   // Crystal Palace vs Rayo Vallecano · Kickoff: 21:00 CEST / 19:00 UTC = 3pm ET
   // Palace's first continental final · Rayo's first UEFA final ever
   const ueclGames=[
-    {home:"Crystal Palace",  away:"Rayo Vallecano",
-     league:"UEFA Conference League – Final", start_time:"2026-05-27T19:00:00Z", confirmed:true,
-     venue:"Red Bull Arena, Leipzig",
-     streams:resolveBundle("UECL"),
-     matchupNote:"Crystal Palace's first-ever European final vs Rayo Vallecano's maiden UEFA decider. Palace won the FA Cup last year — can they add Europe? 3pm ET."},
   ].filter(g=>isToday(g.start_time));
 
     // ── EFL Playoffs — Finals at Wembley (May 23-25) ────────────────────────
@@ -10517,36 +10416,14 @@ function buildTodaySchedule(){
   const eflGames=[
     // EFL Championship semi-finals (May 8-12) removed — all completed
     // Championship Final — Sat May 23, 3:30pm BST (10:30am ET)
-    {home:"Middlesbrough", away:"Hull City",
-     league:"EFL Championship Playoff – Final · Hull City 1-0 · Promoted to Premier League",
-     start_time:"2026-05-23T14:30:00Z", confirmed:true, venue:"Wembley Stadium, London", neutral:true, nationalBundle:"EFL_FINAL",
-     streams:resolveBundle("EFL_FINAL"),
-     // SPYGATE — Southampton expelled; Middlesbrough reinstated (May 20 2026)
-     // Southampton admitted unauthorised filming of Middlesbrough, Ipswich, Oxford training
-     // EFL independent commission expelled Saints; appeal dismissed May 20
-     // Boro returned to training May 18 — 6 days after apparent elimination
-     // Southampton: 4-point deduction applied to 2026-27 Championship table
-     _angle:"SCANDAL",
-     _gameImportance:"elimination",
-     matchupNote:"Hull City 1-0 Middlesbrough. McBurnie stoppage-time winner (90+5') seals PL promotion amid Spygate scandal. Southampton expelled after admitting training espionage vs Boro, Oxford, Ipswich. Hull first PL season since 2017."},
   ].filter(g=>isToday(g.start_time));
 
   // ── EFL League One Playoff Final — Sun May 24, 1pm BST ─────────────────
   const eflL1Games=[
-    {home:"Stockport County",  away:"Bolton Wanderers",
-     league:"EFL League One Playoff – Final · Bolton 4-1 · Promoted to Championship",
-     start_time:"2026-05-24T12:00:00Z", confirmed:true, venue:"Wembley Stadium, London", neutral:true, nationalBundle:"EFL_PLAYOFF",
-     streams:resolveBundle("EFL_PLAYOFF"),
-     matchupNote:"Bolton 4-1 Stockport. Rodrigues 2 (incl. pen), Wootton OG, Dalby. Bolton back in Championship for first time since 2019."},
   ].filter(g=>isToday(g.start_time));
 
   // ── EFL League Two Playoff Final — Mon May 25, 3pm BST ─────────────────
   const eflL2Games=[
-    {home:"Salford City",  away:"Notts County",
-     league:"EFL League Two Playoff – Final · Winner promoted to League One",
-     start_time:"2026-05-25T14:00:00Z", confirmed:true, venue:"Wembley Stadium, London", neutral:true, nationalBundle:"EFL_PLAYOFF",
-     streams:resolveBundle("EFL_PLAYOFF"),
-     matchupNote:"Salford vs Notts County — League Two final. 3pm BST / 10am ET. Sky Sports (UK) · Paramount+ (US)."},
   ].filter(g=>isToday(g.start_time));
 
     // ── EPL: NO games May 6 (next: May 9) ───────────────────────
@@ -10562,57 +10439,14 @@ function buildTodaySchedule(){
   const uflGames=[
     // ── Week 9 (May 22–24) ───────────────────────────────────────────────
     // Fri May 22 8pm ET — DC @ Orlando · FOX
-    {home:"Orlando Storm",      away:"DC Defenders",
-     league:"UFL Week 9",       start_time:"2026-05-23T00:00:00Z", confirmed:true,
-     venue:"Inter&Co Stadium, Orlando, FL",
-     nationalBundle:"UFL_FOX",  streams:resolveBundle("UFL_FOX"),
-     matchupNote:"DC (4-4) enters on a 2-game losing streak. Orlando (6-2) has clinched and won 6 straight. Jack Plummer vs Xazavian Valladay. 8pm ET on FOX — free with an antenna."},
     // Sat May 23 3pm ET — Birmingham @ Columbus · ABC
-    {home:"Columbus Aviators",  away:"Birmingham Stallions",
-     league:"UFL Week 9",       start_time:"2026-05-23T19:00:00Z", confirmed:true,
-     venue:"Historic Crew Stadium, Columbus, OH",
-     nationalBundle:"UFL_ABC",  streams:resolveBundle("UFL_ABC"),
-     matchupNote:"Birmingham (4-4) controls playoff destiny — 3 wins in a row, DTR leading the charge. H2H tiebreaker over Louisville already secured. Columbus (2-6) eliminated. 3pm ET on ABC — free with an antenna."},
     // Sun May 24 4pm ET — Dallas @ Louisville · FOX
-    {home:"Louisville Kings",   away:"Dallas Renegades",
-     league:"UFL Week 9",       start_time:"2026-05-24T20:00:00Z", confirmed:true,
-     venue:"Lynn Family Stadium, Louisville, KY",
-     nationalBundle:"UFL_FOX",  streams:resolveBundle("UFL_FOX"),
-     matchupNote:"Louisville (4-4) hosts the Court Jester Renegades (2-6). A win keeps the Kings alive heading into Week 10. Dallas has nothing to play for. 4pm ET on FOX — free with an antenna."},
     // Sun May 24 7pm ET — St. Louis @ Houston · ESPN2 — KEY GAME
-    {home:"Houston Gamblers",   away:"St. Louis Battlehawks",
-     league:"UFL Week 9 — Playoff Eliminator", start_time:"2026-05-25T00:00:00Z", confirmed:true,
-     venue:"Shell Energy Stadium, Houston, TX",
-     nationalBundle:"UFL_ESPN2", streams:resolveBundle("UFL_ESPN2"),
-     seriesRecord:"HOU won W8 23-16 (Houston owns H2H)",
-     matchupNote:"St. Louis (5-3) goes to Houston for revenge after a 23-16 road upset in Week 8. The Gamblers (3-5, Crown Holder 👑) now own the H2H tiebreaker over the Battlehawks. Luis Perez needs a bounce-back. Hunter Dekkers has Houston believing. 7pm ET on ESPN2.",
-     _gameImportance:"elimination"},
     // ── Week 10 (May 29–31) ──────────────────────────────────────────────
     // Fri May 29 8pm ET — Dallas @ St. Louis · FOX
-    {home:"St. Louis Battlehawks", away:"Dallas Renegades",
-     league:"UFL Week 10",      start_time:"2026-05-30T00:00:00Z", confirmed:true,
-     venue:"The Dome at America\'s Center, St. Louis, MO",
-     nationalBundle:"UFL_FOX",  streams:resolveBundle("UFL_FOX"),
-     matchupNote:"St. Louis closes at home vs the Court Jester. Battlehawks need a win and help to stay safe in any 5-5 tiebreaker scenario heading into the playoffs. 8pm ET on FOX — free with an antenna."},
     // Sat May 30 3pm ET — Houston @ Birmingham · ESPN2
-    {home:"Birmingham Stallions", away:"Houston Gamblers",
-     league:"UFL Week 10 — Playoff Eliminator", start_time:"2026-05-30T19:00:00Z", confirmed:true,
-     venue:"Protective Stadium, Birmingham, AL",
-     nationalBundle:"UFL_ESPN2", streams:resolveBundle("UFL_ESPN2"),
-     matchupNote:"Season finale with full playoff stakes. Birmingham (must win to feel safe) vs Houston (spoiler role). DTR vs Dekkers, Round 2. 3pm ET on ESPN2.",
-     _gameImportance:"elimination"},
     // Sun May 31 noon ET — Orlando @ DC · ABC
-    {home:"DC Defenders",       away:"Orlando Storm",
-     league:"UFL Week 10",      start_time:"2026-05-31T16:00:00Z", confirmed:true,
-     venue:"Audi Field, Washington, DC",
-     nationalBundle:"UFL_ABC",  streams:resolveBundle("UFL_ABC"),
-     matchupNote:"Orlando (clinched, seeding only) at DC. Defenders need this win to clinch a playoff spot with certainty. Jack Plummer may be in rest mode. Noon ET on ABC — free with an antenna."},
     // Sun May 31 6pm ET — Louisville @ Columbus · FOX
-    {home:"Columbus Aviators",  away:"Louisville Kings",
-     league:"UFL Week 10",      start_time:"2026-05-31T22:00:00Z", confirmed:true,
-     venue:"Historic Crew Stadium, Columbus, OH",
-     nationalBundle:"UFL_FOX",  streams:resolveBundle("UFL_FOX"),
-     matchupNote:"Louisville needs a win to lock up a playoff spot. Columbus (eliminated) is playing spoiler. Final regular season game in Columbus. 6pm ET on FOX — free with an antenna."},
   ].filter(g=>isToday(g.start_time));
   uflGames.forEach(g=>g._sport="UFL");
 
@@ -10620,42 +10454,20 @@ function buildTodaySchedule(){
   // Schedule: typically one game daily at 7:30pm IST = 14:00 UTC on weekdays
   const iplGames=[
     // ── May 9 — Match 52 ──
-    {home:"Rajasthan Royals",    away:"Gujarat Titans",     league:"IPL 2026 — Match 52", start_time:"2026-05-09T14:00:00Z", confirmed:true, venue:"Sawai Mansingh Stadium, Jaipur", streams:resolveBundle("IPL")},
     // ── May 11 — Match 53 ──
-    {home:"Delhi Capitals",      away:"Lucknow Super Giants", league:"IPL 2026 — Match 53", start_time:"2026-05-11T14:00:00Z", confirmed:true, venue:"Arun Jaitley Stadium, Delhi",   streams:resolveBundle("IPL")},
   ].filter(g=>isToday(g.start_time));  // ── AFL Round 9 — Melbourne vs West Coast Eagles ─────────────────────────
   // Verified from Watch AFL match centre + Stats Insider fixture list.
   // Game is Sunday May 10 at 1:10pm AEST at Marvel Stadium, NOT Wednesday May 6.
   // Round 9 runs Thu May 7–Sun May 10. There is NO AFL game on Wed May 6.
   // ── WWE — Raw Monday nights on Netflix ───────────────────────────────────
   const wweGames=[
-    {home:"WWE Raw", away:"Monday Night Live",
-     league:"WWE — Monday Night Raw (Netflix)", start_time:"2026-05-12T00:00:00Z", confirmed:true, venue:"Live arena — check WWE.com",
-     streams:resolveBundle("NETFLIX_SPORTS"),
-     localNote:"WWE Raw live on Netflix 8pm ET (no ESPN — PLEs only on ESPN in US)"},
   ].filter(g=>isToday(g.start_time));
 
   const aflGames=[
     // ── Round 11 seed — May 21-24 2026 AEST · Updated from Squiggle live data ──
     // squigglePrefetchAll() fires at T+2500ms and replaces this with live Squiggle data.
     // Times are UTC derived from Squiggle unixtime field. Squiggle game IDs in _id.
-    {home:"Hawthorn",             away:"Adelaide",           league:"AFL 2026 — Round 11", start_time:"2026-05-21T09:30:00Z", confirmed:true, venue:"York Park, Launceston",        streams:resolveBundle("AFL_USA"), _id:"afl_38584"},
-    {home:"Richmond",             away:"Essendon",           league:"AFL 2026 — Round 11", start_time:"2026-05-22T09:40:00Z", confirmed:true, venue:"M.C.G., Melbourne",            streams:resolveBundle("AFL_USA"), _id:"afl_38585"},
-    {home:"Fremantle",            away:"St Kilda",           league:"AFL 2026 — Round 11", start_time:"2026-05-22T10:30:00Z", confirmed:true, venue:"Perth Stadium",                streams:resolveBundle("AFL_USA"), _id:"afl_38586"},
-    {home:"North Melbourne",      away:"Gold Coast",         league:"AFL 2026 — Round 11", start_time:"2026-05-23T03:15:00Z", confirmed:true, venue:"Docklands (Marvel Stadium)",   streams:resolveBundle("AFL_USA"), _id:"afl_38587"},
-    {home:"Geelong",              away:"Sydney",             league:"AFL 2026 — Round 11", start_time:"2026-05-23T06:15:00Z", confirmed:true, venue:"Kardinia Park, Geelong",        streams:resolveBundle("AFL_USA"), _id:"afl_38588"},
-    {home:"Collingwood",          away:"West Coast",         league:"AFL 2026 — Round 11", start_time:"2026-05-23T06:35:00Z", confirmed:true, venue:"M.C.G., Melbourne",            streams:resolveBundle("AFL_USA"), _id:"afl_38589"},
-    {home:"Port Adelaide",        away:"Carlton",            league:"AFL 2026 — Round 11", start_time:"2026-05-23T09:35:00Z", confirmed:true, venue:"Adelaide Oval",                streams:resolveBundle("AFL_USA"), _id:"afl_38590"},
-    {home:"Greater Western Sydney",away:"Brisbane Lions",   league:"AFL 2026 — Round 11", start_time:"2026-05-24T02:30:00Z", confirmed:true, venue:"Sydney Showground",             streams:resolveBundle("AFL_USA"), _id:"afl_38591"},
-    {home:"Western Bulldogs",     away:"Melbourne",          league:"AFL 2026 — Round 11", start_time:"2026-05-24T05:15:00Z", confirmed:true, venue:"Docklands (Marvel Stadium)",   streams:resolveBundle("AFL_USA"), _id:"afl_38592"},
     // ── Round 12 — May 28–31 2026 · Byes: Adelaide, Gold Coast, North Melbourne, Port Adelaide ──
-    {home:"St Kilda",             away:"Hawthorn",           league:"AFL 2026 — Round 12", start_time:"2026-05-28T09:30:00Z", confirmed:true, venue:"Docklands (Marvel Stadium)",   streams:resolveBundle("AFL_USA"), _id:"afl_38593"},
-    {home:"Carlton",              away:"Geelong",            league:"AFL 2026 — Round 12", start_time:"2026-05-29T09:40:00Z", confirmed:true, venue:"M.C.G., Melbourne",            streams:resolveBundle("AFL_USA"), _id:"afl_38594"},
-    {home:"Sydney",               away:"Richmond",           league:"AFL 2026 — Round 12", start_time:"2026-05-30T03:15:00Z", confirmed:true, venue:"Sydney Cricket Ground",         streams:resolveBundle("AFL_USA"), _id:"afl_38595"},
-    {home:"Brisbane Lions",       away:"Fremantle",          league:"AFL 2026 — Round 12", start_time:"2026-05-30T06:15:00Z", confirmed:true, venue:"The Gabba, Brisbane",           streams:resolveBundle("AFL_USA"), _id:"afl_38596"},
-    {home:"Western Bulldogs",     away:"Collingwood",        league:"AFL 2026 — Round 12", start_time:"2026-05-30T09:35:00Z", confirmed:true, venue:"Docklands (Marvel Stadium)",   streams:resolveBundle("AFL_USA"), _id:"afl_38597"},
-    {home:"Melbourne",            away:"Greater Western Sydney", league:"AFL 2026 — Round 12", start_time:"2026-05-31T05:15:00Z", confirmed:true, venue:"TIO Traeger Park, Alice Springs", streams:resolveBundle("AFL_USA"), _id:"afl_38598"},
-    {home:"West Coast",           away:"Essendon",           league:"AFL 2026 — Round 12", start_time:"2026-05-31T09:20:00Z", confirmed:true, venue:"Perth Stadium",                streams:resolveBundle("AFL_USA"), _id:"afl_38599"},
   ].filter(g=>isToday(g.start_time));
   // ── MLS Soccer — live from fetchSoccerFixtures (ESPN usa.1) ────────────
   const mlsSoccer=[
@@ -10665,21 +10477,11 @@ function buildTodaySchedule(){
     // fetchSoccerFixtures enriches with logos, live scores, _id; adds Colorado/DC opponents.
 
     // 1:30 PM CDT (UTC-5) = 18:30 UTC
-    {home:"St. Louis City SC",        away:"Austin FC",              league:"MLS — Matchday 15",                           start_time:"2026-05-23T18:30:00Z", confirmed:true, venue:"Energizer Park, St. Louis MO",           streams:resolveBundle("MLS_SOCCER")},
     // 3:30 PM CDT (UTC-5) = 20:30 UTC
-    {home:"Minnesota United FC",       away:"Real Salt Lake",         league:"MLS — Matchday 15",                           start_time:"2026-05-23T20:30:00Z", confirmed:true, venue:"Allianz Field, St. Paul MN",             streams:resolveBundle("MLS_SOCCER")},
     // 6:30 PM PDT (UTC-7) = 01:30 UTC May 24
-    {home:"Portland Timbers",          away:"San Jose Earthquakes",   league:"MLS — Matchday 15",                           start_time:"2026-05-24T01:30:00Z", confirmed:true, venue:"Providence Park, Portland OR",           streams:resolveBundle("MLS_SOCCER")},
-    {home:"San Diego FC",              away:"Vancouver Whitecaps",    league:"MLS — Matchday 15",                           start_time:"2026-05-24T01:30:00Z", confirmed:true, venue:"Snapdragon Stadium, San Diego CA",       streams:resolveBundle("MLS_SOCCER")},
     // 7:30 PM EDT (UTC-4) = 23:30 UTC — Charlotte and Cincinnati are Eastern
-    {home:"Charlotte FC",              away:"New England Revolution", league:"MLS — Matchday 15 · Last Before World Cup Break", start_time:"2026-05-23T23:30:00Z", confirmed:true, venue:"Bank of America Stadium, Charlotte NC",  streams:resolveBundle("MLS_SOCCER")},
-    {home:"FC Cincinnati",             away:"Orlando City SC",        league:"MLS — Matchday 15 · Last Before World Cup Break", start_time:"2026-05-23T23:30:00Z", confirmed:true, venue:"TQL Stadium, Cincinnati OH",             streams:resolveBundle("MLS_SOCCER")},
     // 7:30 PM CDT (UTC-5) = 00:30 UTC May 24 — Chicago, Nashville, KC are Central
-    {home:"Chicago Fire FC",           away:"Toronto FC",             league:"MLS — Matchday 15 · Last Before World Cup Break", start_time:"2026-05-24T00:30:00Z", confirmed:true, venue:"Soldier Field, Chicago IL",              streams:resolveBundle("MLS_SOCCER")},
-    {home:"Nashville SC",              away:"New York City FC",       league:"MLS — Matchday 15 · Last Before World Cup Break", start_time:"2026-05-24T00:30:00Z", confirmed:true, venue:"GEODIS Park, Nashville TN",              streams:resolveBundle("MLS_SOCCER")},
-    {home:"Sporting Kansas City",      away:"Red Bull New York",      league:"MLS — Matchday 15 · Last Before World Cup Break", start_time:"2026-05-24T00:30:00Z", confirmed:true, venue:"Children's Mercy Park, Kansas City",    streams:resolveBundle("MLS_SOCCER")},
     // 7:30 PM PDT (UTC-7) = 02:30 UTC May 24 — LA is Pacific
-    {home:"LA Galaxy",                 away:"Houston Dynamo FC",      league:"MLS — Matchday 15 · Last Before World Cup Break", start_time:"2026-05-24T02:30:00Z", confirmed:true, venue:"Dignity Health Sports Park, Carson CA",  streams:resolveBundle("MLS_SOCCER")},
     // Colorado Rapids (MDT, 7:30 PM = 01:30 UTC) and D.C. United (EDT, 7:30 PM = 23:30 UTC) via ESPN
   ].filter(g=>isToday(g.start_time))
 
@@ -10767,109 +10569,24 @@ function buildTodaySchedule(){
   // MW36: Sat May 9 (complete) · Sun May 10 (complete) · MW37: Wed May 13 (1 midweek makeup)
   const eplRaw=[
     // MW36 Saturday May 9 — verified per-game from NBC Sports
-    {home:"Liverpool",               away:"Chelsea",                  league:"Premier League – Matchweek 36", start_time:"2026-05-09T11:30:00Z", confirmed:true, venue:"Anfield, Liverpool",          streams:resolveBundle("EPL_PEACOCK"), localNote:"Peacock only"},
-    {home:"Sunderland AFC",          away:"Manchester United",        league:"Premier League – Matchweek 36", start_time:"2026-05-09T14:00:00Z", confirmed:true, venue:"Stadium of Light, Sunderland", streams:resolveBundle("EPL_PEACOCK"), localNote:"Peacock only"},
-    {home:"Brighton & Hove Albion",  away:"Wolverhampton Wanderers",  league:"Premier League – Matchweek 36", start_time:"2026-05-09T14:00:00Z", confirmed:true, venue:"Amex Stadium, Brighton",      streams:resolveBundle("EPL_PEACOCK"), localNote:"Peacock only"},
-    {home:"Fulham",                  away:"AFC Bournemouth",          league:"Premier League – Matchweek 36", start_time:"2026-05-09T14:00:00Z", confirmed:true, venue:"Craven Cottage, London",      streams:resolveBundle("EPL_PEACOCK"), localNote:"Peacock only"},
-    {home:"Manchester City",         away:"Brentford",                league:"Premier League – Matchweek 36", start_time:"2026-05-09T16:30:00Z", confirmed:true, venue:"Etihad Stadium, Manchester",  streams:resolveBundle("EPL_NBC"),     localNote:"NBC OTA (free) + Peacock"},
     // MW36 Sunday May 10 — verified per-game from NBC Sports
-    {home:"Burnley",                 away:"Aston Villa",              league:"Premier League – Matchweek 36", start_time:"2026-05-10T13:00:00Z", confirmed:true, venue:"Turf Moor, Burnley",          streams:resolveBundle("EPL_PEACOCK"), localNote:"Peacock only"},
-    {home:"Crystal Palace",          away:"Everton",                  league:"Premier League – Matchweek 36", start_time:"2026-05-10T13:00:00Z", confirmed:true, venue:"Selhurst Park, London",       streams:resolveBundle("EPL_USA"), localNote:"Syfy + Peacock"},
-    {home:"Nottingham Forest",       away:"Newcastle United",         league:"Premier League – Matchweek 36", start_time:"2026-05-10T13:00:00Z", confirmed:true, venue:"City Ground, Nottingham",     streams:resolveBundle("EPL_USA"),     localNote:"USA Network (cable)"},
 
     // ── EPL Matchweek 38 — Final Day — Sun May 24 2026 — ALL 4pm BST (15:00 UTC / 11am EDT) ──
     // Arsenal are CHAMPIONS (first title in 22 years). Spurs + West Ham fighting relegation.
     // Mo Salah farewell (Liverpool). Potentially Pep Guardiola's final game (Man City).
     // UTC: 2026-05-24T15:00:00Z. Jeff specified: 11am EST = 11am EDT (May = daylight saving) = 15:00 UTC.
-    {home:"Brighton & Hove Albion", away:"Manchester United",        league:"Premier League – Final Day MW38", start_time:"2026-05-24T15:00:00Z", confirmed:true, venue:"Amex Stadium, Brighton",       streams:resolveBundle("EPL_PEACOCK"), localNote:"Peacock only"},
-    {home:"Burnley",               away:"Wolverhampton Wanderers",  league:"Premier League – Final Day MW38", start_time:"2026-05-24T15:00:00Z", confirmed:true, venue:"Turf Moor, Burnley",           streams:resolveBundle("EPL_PEACOCK"), localNote:"Peacock only"},
-    {home:"Crystal Palace",        away:"Arsenal",                  league:"Premier League – Final Day MW38", start_time:"2026-05-24T15:00:00Z", confirmed:true, venue:"Selhurst Park, London",        streams:resolveBundle("EPL_USA"),     localNote:"CNBC linear + Peacock. Arsenal lift the Premier League trophy — first title in 22 years."},
-    {home:"Fulham",                away:"Newcastle United",         league:"Premier League – Final Day MW38", start_time:"2026-05-24T15:00:00Z", confirmed:true, venue:"Craven Cottage, London",       streams:resolveBundle("EPL_PEACOCK"), localNote:"Peacock only"},
-    {home:"Liverpool",             away:"Brentford",                league:"Premier League – Final Day MW38", start_time:"2026-05-24T15:00:00Z", confirmed:true, venue:"Anfield, Liverpool",           streams:resolveBundle("EPL_USA"),     localNote:"Syfy linear + Peacock. Mo Salah farewell game at Anfield."},
-    {home:"Manchester City",       away:"Aston Villa",              league:"Premier League – Final Day MW38", start_time:"2026-05-24T15:00:00Z", confirmed:true, venue:"Etihad Stadium, Manchester",   streams:resolveBundle("EPL_PEACOCK"), localNote:"Peacock only. Potentially Pep Guardiola's final game as Man City manager."},
-    {home:"Nottingham Forest",     away:"AFC Bournemouth",          league:"Premier League – Final Day MW38", start_time:"2026-05-24T15:00:00Z", confirmed:true, venue:"City Ground, Nottingham",      streams:resolveBundle("EPL_PEACOCK"), localNote:"Peacock only"},
-    {home:"Sunderland",            away:"Chelsea",                  league:"Premier League – Final Day MW38", start_time:"2026-05-24T15:00:00Z", confirmed:true, venue:"Stadium of Light, Sunderland", streams:resolveBundle("EPL_PEACOCK"), localNote:"Peacock only"},
-    {home:"Tottenham Hotspur",     away:"Everton",                  league:"Premier League – Final Day MW38", start_time:"2026-05-24T15:00:00Z", confirmed:true, venue:"Tottenham Hotspur Stadium",    streams:resolveBundle("EPL_NBC"),     localNote:"NBC OTA (free with antenna) + Peacock. Spurs fighting to avoid relegation."},
-    {home:"West Ham United",       away:"Leeds United",             league:"Premier League – Final Day MW38", start_time:"2026-05-24T15:00:00Z", confirmed:true, venue:"London Stadium",               streams:resolveBundle("EPL_PEACOCK"), localNote:"Peacock only. West Ham also fighting relegation."},
-    {home:"West Ham United",         away:"Arsenal",                  league:"Premier League – Matchweek 36", start_time:"2026-05-10T15:30:00Z", confirmed:true, venue:"London Stadium",              streams:resolveBundle("EPL_USA"),     localNote:"USA Network (cable)"},
     // MW37 Wednesday May 13 — verified from Soccerway / ESPN schedule
-    {home:"Manchester City",         away:"Crystal Palace",           league:"Premier League – Matchweek 37", start_time:"2026-05-13T18:45:00Z", confirmed:true, venue:"Etihad Stadium, Manchester",  streams:resolveBundle("EPL_PEACOCK"), localNote:"Peacock only"},
     // MW37 Sunday May 17 — verified from NBC Sports schedule May 17, 2026
     // Title race context: Arsenal 1st (79pts) leads Man City 2nd (77pts) by 2pts — both play next week GW37/38
     // Relegation battle: Wolves (20th 18pts) vs Fulham (11th 48pts) — WOL effectively relegated
     // Survival fight: West Ham (18th 36pts, in drop zone) at Newcastle (13th 46pts) — must-win for WHU
-    {home:"Manchester United",        away:"Nottingham Forest",        league:"Premier League – Matchweek 37", start_time:"2026-05-17T11:30:00Z", confirmed:true, venue:"Old Trafford, Manchester",          streams:resolveBundle("EPL_USA"),     localNote:"USA Network (cable)"},
-    {home:"Brentford",                away:"Crystal Palace",           league:"Premier League – Matchweek 37", start_time:"2026-05-17T14:00:00Z", confirmed:true, venue:"Gtech Community Stadium, London",  streams:resolveBundle("EPL_PEACOCK"), localNote:"Peacock only"},
-    {home:"Everton",                  away:"Sunderland AFC",           league:"Premier League – Matchweek 37", start_time:"2026-05-17T14:00:00Z", confirmed:true, venue:"Goodison Park, Liverpool",         streams:resolveBundle("EPL_PEACOCK"), localNote:"Peacock only"},
-    {home:"Leeds United",             away:"Brighton & Hove Albion",   league:"Premier League – Matchweek 37", start_time:"2026-05-17T14:00:00Z", confirmed:true, venue:"Elland Road, Leeds",               streams:resolveBundle("EPL_USA"),     localNote:"USA Network (cable)"},
-    {home:"Wolverhampton Wanderers",  away:"Fulham",                   league:"Premier League – Matchweek 37", start_time:"2026-05-17T14:00:00Z", matchupNote:"20th vs 11th — Wolves (18pts) are effectively relegated with 2 games left. Fulham (48pts) comfortably 11th. Arsenal lead Man City by 2pts in the title race — both play next week.", confirmed:true, venue:"Molineux, Wolverhampton",          streams:resolveBundle("EPL_PEACOCK"), localNote:"Peacock only"},
-    {home:"Newcastle United",         away:"West Ham United",          league:"Premier League – Matchweek 37", start_time:"2026-05-17T16:30:00Z", matchupNote:"Relegation battle: West Ham (18th 36pts) are in the drop zone, 2pts below Tottenham (17th 38pts). Newcastle (13th 46pts) are safe. A must-win for the Hammers with 2 games remaining.", confirmed:true, venue:"St. James' Park, Newcastle",        streams:resolveBundle("EPL_USA"),     localNote:"USA Network (cable)"},
     // ── MW38 rearranged — Tue May 19 ──────────────────────────────────────────
     // Arsenal beat Burnley Sunday → title gap widens. City MUST WIN at Bournemouth or it's over.
     // Tottenham win vs Chelsea = West Ham mathematically relegated before the final day.
-    {home:"AFC Bournemouth",          away:"Manchester City",           league:"Premier League – Matchweek 38",
-     start_time:"2026-05-19T18:30:00Z", confirmed:true, venue:"Vitality Stadium, Bournemouth",
-     streams:resolveBundle("EPL_USA"), localNote:"USA Network (cable)",
-     matchupNote:"City's title is on the line tonight — anything but three points at Dean Court and Arsenal are Premier League champions, confirmed before a ball is kicked on final day. Guardiola's side cannot afford a slip."},
-    {home:"Chelsea",                  away:"Tottenham Hotspur",         league:"Premier League – Matchweek 38",
-     start_time:"2026-05-19T19:15:00Z", confirmed:true, venue:"Stamford Bridge, London",
-     streams:resolveBundle("EPL_PEACOCK"), localNote:"Peacock only",
-     matchupNote:"A derby that never needs extra stakes — but it has them. A Tottenham win at Stamford Bridge mathematically relegates West Ham before they play another minute, sending the Hammers down ahead of Sunday's final day. One of the great London rivalries, with survival and supremacy both on the table."},
     // ── MW38 Final Day — Sun May 24 · ALL 10 games kick off simultaneously 4pm BST / 11am ET / 15:00 UTC ──
     // Source: NBC Sports / Premier League confirmed fixture list
     // Title: Crystal Palace vs Arsenal (potential decider if City won tonight) · City must beat Villa AND hope Arsenal drop pts
     // Relegation: West Ham + Burnley + Wolves all fighting for survival
-    {home:"Crystal Palace",        away:"Arsenal",                 league:"Premier League \u2013 Matchweek 38 \u00b7 Final Day",
-     start_time:"2026-05-24T15:00:00Z", confirmed:true, venue:"Selhurst Park, London",
-     streams:resolveBundle("EPL_USA"), localNote:"CNBC + Peacock",
-     _gameImportance:"series_deciding", nationalBundle:"EPL_USA",
-     narrative:{boost:25, label:"Premier League Final Day — Arsenal lift the trophy", source:"manual"},
-     matchupNote:_plTitleNote()},
-    {home:"Manchester City",        away:"Aston Villa",            league:"Premier League \u2013 Matchweek 38 \u00b7 Final Day",
-     start_time:"2026-05-24T15:00:00Z", confirmed:true, venue:"Etihad Stadium, Manchester",
-     streams:resolveBundle("EPL_PEACOCK"), localNote:"Peacock only",
-     _gameImportance:"playoff_impl", nationalBundle:"EPL_PEACOCK",
-     matchupNote:_plCityNote()},
-    {home:"Brighton & Hove Albion", away:"Manchester United",      league:"Premier League \u2013 Matchweek 38 \u00b7 Final Day",
-     start_time:"2026-05-24T15:00:00Z", confirmed:true, venue:"Amex Stadium, Brighton",
-     streams:resolveBundle("EPL_PEACOCK"), localNote:"Peacock only",
-     _gameImportance:"playoff_impl", nationalBundle:"EPL_PEACOCK",
-     matchupNote:_plEuroNote("Brighton & Hove Albion","Manchester United")},
-    {home:"Burnley",                away:"Wolverhampton Wanderers", league:"Premier League \u2013 Matchweek 38 \u00b7 Final Day",
-     start_time:"2026-05-24T15:00:00Z", confirmed:true, venue:"Turf Moor, Burnley",
-     streams:resolveBundle("EPL_PEACOCK"), localNote:"Peacock only",
-     matchupNote:"Both clubs are already relegated — this match is played for pride and next season's Championship preparation."},
-    {home:"Fulham",                 away:"Newcastle United",        league:"Premier League \u2013 Matchweek 38 \u00b7 Final Day",
-     start_time:"2026-05-24T15:00:00Z", confirmed:true, venue:"Craven Cottage, London",
-     streams:resolveBundle("EPL_PEACOCK"), localNote:"Peacock only",
-     matchupNote:"Final Day at Craven Cottage — Fulham and Newcastle close out their campaigns."},
-    {home:"Liverpool",              away:"Brentford",               league:"Premier League \u2013 Matchweek 38 \u00b7 Final Day",
-     start_time:"2026-05-24T15:00:00Z", confirmed:true, venue:"Anfield, Liverpool",
-     streams:resolveBundle("EPL_USA"), localNote:"Syfy + Peacock",
-     _gameImportance:"playoff_impl", nationalBundle:"EPL_USA",
-     narrative:{boost:12, label:"Champions League 4th place — linked to Man City vs Villa", source:"manual"},
-     matchupNote:"Liverpool need to win AND hope Man City beat Aston Villa to steal 4th place and Champions League football. Three points behind Villa going into the final day — possible, but Liverpool cannot do it alone."},
-    {home:"Nottingham Forest",      away:"AFC Bournemouth",         league:"Premier League \u2013 Matchweek 38 \u00b7 Final Day",
-     start_time:"2026-05-24T15:00:00Z", confirmed:true, venue:"City Ground, Nottingham",
-     streams:resolveBundle("EPL_PEACOCK"), localNote:"Peacock only",
-     _gameImportance:"playoff_impl", nationalBundle:"EPL_PEACOCK",
-     matchupNote:_plEuroNote("Nottingham Forest","AFC Bournemouth")},
-    {home:"Sunderland",             away:"Chelsea",                 league:"Premier League \u2013 Matchweek 38 \u00b7 Final Day",
-     start_time:"2026-05-24T15:00:00Z", confirmed:true, venue:"Stadium of Light, Sunderland",
-     streams:resolveBundle("EPL_PEACOCK"), localNote:"Peacock only",
-     matchupNote:"Sunderland’s debut Premier League season reaches its close at the Stadium of Light. Chelsea wrap up their campaign in Wearside."},
-    {home:"Tottenham Hotspur",      away:"Everton",                 league:"Premier League \u2013 Matchweek 38 \u00b7 Final Day",
-     start_time:"2026-05-24T15:00:00Z", confirmed:true, venue:"Tottenham Hotspur Stadium, London",
-     streams:resolveBundle("EPL_NBC"), localNote:"NBC (free OTA) + Peacock",
-     _gameImportance:"elimination", nationalBundle:"EPL_NBC",
-     narrative:{boost:22, label:"Relegation battle — Spurs fight to stay up", source:"manual"},
-     matchupNote:_plTotNote()},
-    {home:"West Ham United",        away:"Leeds United",            league:"Premier League \u2013 Matchweek 38 \u00b7 Final Day",
-     start_time:"2026-05-24T15:00:00Z", confirmed:true, venue:"London Stadium",
-     streams:resolveBundle("EPL_USA"), localNote:"USA Network (cable)",
-     _gameImportance:"elimination", nationalBundle:"EPL_USA",
-     narrative:{boost:22, label:"Relegation battle — West Ham’s survival at stake", source:"manual"},
-     matchupNote:_plWhuNote()},
   ].filter(g=>isToday(g.start_time));
   const eplGames = eplRaw.map((g,i)=>({...g, _id:"epl_mw36mw37_"+i, _sport:"Premier League"}));
 
@@ -10882,27 +10599,15 @@ function buildTodaySchedule(){
   // Stakes: Barcelona = champions; Atletico = last CL spot; Girona/Mallorca/Oviedo fight relegation
   const laLigaRaw=[
     // Relegation battle — maximum stakes
-    {home:"Girona",          away:"Elche",             league:"La Liga — Matchday 38 · Final Day", start_time:"2026-05-24T16:00:00Z", confirmed:true, venue:"Estadi Montilivi, Girona",               streams:resolveBundle("LALIGA"), _gameImportance:"elimination", matchupNote:"Girona (40 pts) needs a win to survive. Oviedo (29 pts) already down. Mallorca also in danger. Relegation 3-way battle resolves simultaneously."},
-    {home:"Mallorca",        away:"Real Oviedo",       league:"La Liga — Matchday 38 · Final Day", start_time:"2026-05-24T16:00:00Z", confirmed:true, venue:"Estadio Son Moix, Palma",                streams:resolveBundle("LALIGA"), _gameImportance:"elimination", matchupNote:"Mallorca (39 pts) vs the already-relegated Oviedo (29 pts). A win keeps Mallorca safe if Girona falters. Simultaneous kickoff with Girona."},
     // Champions League battle
-    {home:"Villarreal",      away:"Atletico Madrid",   league:"La Liga — Matchday 38 · Final Day", start_time:"2026-05-24T16:00:00Z", confirmed:true, venue:"Estadio de la Cerámica, Villarreal",   streams:resolveBundle("LALIGA"), _gameImportance:"playoff_impl", matchupNote:"Atletico (69 pts, 3rd) locked into the Champions League. Villarreal battles for the Conference League berth. Final chance to move up."},
-    {home:"Valencia",        away:"Barcelona",         league:"La Liga — Matchday 38 · Final Day", start_time:"2026-05-24T16:00:00Z", confirmed:true, venue:"Mestalla, Valencia",                     streams:resolveBundle("LALIGA"), matchupNote:"Champions Barcelona (94 pts) close the season at Mestalla. Valencia’s season finale — nothing but pride at stake after a difficult campaign."},
     // Real Madrid season finale
-    {home:"Real Madrid",     away:"Athletic Club",     league:"La Liga — Matchday 38 · Final Day", start_time:"2026-05-24T16:00:00Z", confirmed:true, venue:"Santiago Bernéu, Madrid",              streams:resolveBundle("LALIGA"), matchupNote:"Real Madrid (83 pts, 2nd) host Athletic Club (Conference League hopefuls) on the final day. Mbappe’s 24-goal season ends at the Berneu."},
     // European battle + relegation survival
-    {home:"Real Sociedad",   away:"Getafe",            league:"La Liga — Matchday 38 · Final Day", start_time:"2026-05-24T16:00:00Z", confirmed:true, venue:"Reale Arena, San Sebastián",            streams:resolveBundle("LALIGA")},
-    {home:"Rayo Vallecano",  away:"Español",         league:"La Liga — Matchday 38 · Final Day", start_time:"2026-05-24T16:00:00Z", confirmed:true, venue:"Estadio de Vallecas, Madrid",            streams:resolveBundle("LALIGA")},
-    {home:"Sevilla",         away:"Alavés",           league:"La Liga — Matchday 38 · Final Day", start_time:"2026-05-24T16:00:00Z", confirmed:true, venue:"Estadio Ramón Sánchez-Pizjuán, Sevilla", streams:resolveBundle("LALIGA")},
-    {home:"Osasuna",         away:"Celta Vigo",        league:"La Liga — Matchday 38 · Final Day", start_time:"2026-05-24T16:00:00Z", confirmed:true, venue:"El Sadar, Pamplona",                      streams:resolveBundle("LALIGA")},
-    {home:"Real Betis",      away:"Levante",           league:"La Liga — Matchday 38 · Final Day", start_time:"2026-05-24T16:00:00Z", confirmed:true, venue:"Estadio Benito Villamárín, Seville",  streams:resolveBundle("LALIGA")},
   ].filter(g=>isToday(g.start_time));
   const laLigaGames = laLigaRaw.map((g,i)=>({...g, _id:"laliga_md38_"+i, _sport:"La Liga"}));
 
   // ── Ligue 1 GW34 (hardcoded fallback — fetchSoccerFixtures provides live data) ────────────────────
   // Wed May 13 — 2 games verified from Soccerway. beIN Sports in the US (LIGUE_1 bundle).
   const ligue1Raw=[
-    {home:"Brest",          away:"Strasbourg",        league:"Ligue 1 – Gameweek 34", start_time:"2026-05-13T17:45:00Z", confirmed:true, venue:"Stade Francis-Le Blé, Brest",  streams:resolveBundle("LIGUE_1")},
-    {home:"Lens",           away:"Paris Saint-Germain",league:"Ligue 1 – Gameweek 34", start_time:"2026-05-13T19:00:00Z", confirmed:true, venue:"Stade Bollaert-Delelis, Lens", streams:resolveBundle("LIGUE_1")},
   ].filter(g=>isToday(g.start_time));
   const ligue1Games = ligue1Raw.map((g,i)=>({...g, _id:"ligue1_gw34_"+i, _sport:"Ligue 1"}));
 
@@ -11066,13 +10771,6 @@ function buildTodaySchedule(){
     // Defending: Ben Griffin. Top players: JJ Spaun (#9), Russell Henley (#11), Ludvig Åberg.
     // Scheffler and Spieth not playing. Weather delay in R1 — 6 players tied at -6.
     // Broadcast: Golf Channel (ESPN+) Thu-Fri 4-7 PM ET · CBS/Golf Channel Sat-Sun
-    {home:"Charles Schwab Challenge",  away:"",
-     league:"PGA Tour",
-     start_time:"2026-05-28T16:00:00Z",  // R1 Thu: Golf Channel coverage 4 PM ET / noon UTC
-     tournEnd:"2026-05-31",              // R4 Sunday
-     confirmed:true, venue:"Colonial CC, Fort Worth TX",
-     streams:resolveBundle("GOLF_CHANNEL"),  // Thu-Fri: Golf Channel. CBS Sat-Sun via leaderNote
-     leaderNote:"Charles Schwab Challenge · R2 Complete · CBS Sat-Sun"},
   ].filter(g=>{
     // Show for full tournament duration (Thu-Sun), not just isToday of start_time
     const todayStr = new Date().toLocaleDateString('en-CA',{timeZone:localTz()||'America/New_York'});
@@ -11103,47 +10801,28 @@ function buildTodaySchedule(){
     // No national games
     //
     // ── Tuesday May 19 ──────────────────────────────────────────────────────
-    {home:"Washington Mystics",  away:"Dallas Wings",        league:"WNBA – 2026 Season", start_time:"2026-05-19T23:00:00Z", confirmed:true, venue:"Entertainment & Sports Arena, Washington DC", streams:resolveBundle("WNBA_NBCSN"),  localNote:"NBCSN / Peacock"},
-    {home:"Connecticut Sun",     away:"Portland Fire",       league:"WNBA – 2026 Season", start_time:"2026-05-20T01:00:00Z", confirmed:true, venue:"Mohegan Sun Arena, Uncasville CT",             streams:resolveBundle("WNBA_NBCSN"),  localNote:"NBCSN / Peacock"},
     //
     // ── Wednesday May 20 ─────────────────────────────────────────────────────
-    {home:"Toronto Tempo",       away:"Phoenix Mercury",     league:"WNBA – 2026 Season", start_time:"2026-05-20T23:30:00Z", confirmed:true, venue:"Scotiabank Arena, Toronto",                  streams:resolveBundle("WNBA_USA"),    localNote:"USA Network"},
     //
     // ── Thursday May 21 — Prime Video Thursday Night ─────────────────────────
-    {home:"Portland Fire",       away:"Indiana Fever",       league:"WNBA – 2026 Season", start_time:"2026-05-22T00:00:00Z", confirmed:true, venue:"Moda Center, Portland OR",                   streams:resolveBundle("WNBA_PRIME"),  localNote:"Prime Video"},
-    {home:"Dallas Wings",        away:"Chicago Sky",         league:"WNBA – 2026 Season", start_time:"2026-05-22T00:00:00Z", confirmed:true, venue:"College Park Center, Arlington TX",           streams:resolveBundle("WNBA_PRIME"),  localNote:"Prime Video"},
-    {home:"Connecticut Sun",     away:"Seattle Storm",       league:"WNBA – 2026 Season", start_time:"2026-05-22T00:30:00Z", confirmed:true, venue:"Mohegan Sun Arena, Uncasville CT",            streams:resolveBundle("WNBA_ION"),    localNote:"ION (free OTA)"},
     //
     // ── Friday May 22 — ION Friday doubleheader ──────────────────────────────
-    {home:"Golden State Valkyries",away:"New York Liberty",  league:"WNBA – 2026 Season", start_time:"2026-05-23T00:00:00Z", confirmed:true, venue:"Chase Center, San Francisco CA",             streams:resolveBundle("WNBA_ION"),    localNote:"ION (free OTA)"},
-    {home:"Toronto Tempo",       away:"Minnesota Lynx",      league:"WNBA – 2026 Season", start_time:"2026-05-23T01:30:00Z", confirmed:true, venue:"Scotiabank Arena, Toronto",                  streams:resolveBundle("WNBA_ION"),    localNote:"ION (free OTA)"},
     //
     // ── Saturday May 23 ──────────────────────────────────────────────────────
-    {home:"Dallas Wings",        away:"Atlanta Dream",       league:"WNBA – 2026 Season", start_time:"2026-05-23T20:00:00Z", confirmed:true, venue:"College Park Center, Arlington TX",           streams:resolveBundle("WNBA_CBS"),    localNote:"CBS / Paramount+"},
-    {home:"Golden State Valkyries",away:"Indiana Fever",     league:"WNBA – 2026 Season", start_time:"2026-05-23T22:00:00Z", confirmed:true, venue:"Chase Center, San Francisco CA",             streams:resolveBundle("WNBA_CBS"),    localNote:"CBS / Paramount+"},
     //
     // ── Sunday May 24 ────────────────────────────────────────────────────────
-    {home:"Los Angeles Sparks",  away:"Las Vegas Aces",      league:"WNBA – 2026 Season", start_time:"2026-05-24T20:00:00Z", confirmed:true, venue:"Crypto.com Arena, Los Angeles CA",            streams:resolveBundle("WNBA_NBC"),    localNote:"NBC / Peacock"},
-    {home:"Dallas Wings",        away:"New York Liberty",    league:"WNBA – 2026 Season", start_time:"2026-05-24T22:30:00Z", confirmed:true, venue:"College Park Center, Arlington TX",           streams:resolveBundle("WNBA_NBC"),    localNote:"NBC / Peacock"},
     //
     // ── Monday May 25 ────────────────────────────────────────────────────────
-    {home:"New York Liberty",    away:"Portland Fire",       league:"WNBA – 2026 Season", start_time:"2026-05-26T00:00:00Z", confirmed:true, venue:"Barclays Center, Brooklyn NY",               streams:resolveBundle("WNBA_NBCSN"), localNote:"Peacock / NBCSN"},
     //
     // ── Wednesday May 27 — USA Network doubleheader ───────────────────────────
-    {home:"New York Liberty",    away:"Phoenix Mercury",     league:"WNBA – 2026 Season", start_time:"2026-05-27T23:00:00Z", confirmed:true, venue:"Barclays Center, Brooklyn NY",               streams:resolveBundle("WNBA_USA"),   localNote:"USA Network"},
-    {home:"Minnesota Lynx",      away:"Atlanta Dream",       league:"WNBA – 2026 Season", start_time:"2026-05-28T01:00:00Z", confirmed:true, venue:"Target Center, Minneapolis MN",              streams:resolveBundle("WNBA_USA"),   localNote:"USA Network"},
     //
     // ── Thursday May 28 — Prime Video ────────────────────────────────────────
-    {home:"Golden State Valkyries", away:"Indiana Fever",   league:"WNBA – 2026 Season", start_time:"2026-05-29T02:00:00Z", confirmed:true, venue:"Chase Center, San Francisco CA",             streams:resolveBundle("WNBA_PRIME"), localNote:"Prime Video"},
     //
     // ── Friday May 29 — ION doubleheader (Game 1 confirmed; nightcap TBD) ────
-    {home:"New York Liberty",    away:"Phoenix Mercury",     league:"WNBA – 2026 Season", start_time:"2026-05-29T22:30:00Z", confirmed:true, venue:"Barclays Center, Brooklyn NY",               streams:resolveBundle("WNBA_ION"),   localNote:"ION (free OTA)"},
     //
     // ── Saturday May 30 — CBS ─────────────────────────────────────────────────
-    {home:"Portland Fire",       away:"Indiana Fever",       league:"WNBA – 2026 Season", start_time:"2026-05-31T00:00:00Z", confirmed:true, venue:"Moda Center, Portland OR",                   streams:resolveBundle("WNBA_CBS"),   localNote:"CBS / Paramount+"},
     //
     // ── Sunday May 31 — NBC / Peacock ─────────────────────────────────────────
-    {home:"Golden State Valkyries", away:"Las Vegas Aces",  league:"WNBA – 2026 Season", start_time:"2026-05-31T19:30:00Z", confirmed:true, venue:"Chase Center, San Francisco CA",             streams:resolveBundle("WNBA_NBC"),   localNote:"NBC / Peacock"},
     //
     // ── Monday June 1 — WNBA Commissioner's Cup Day 1 ────────────────────────
     // Cup runs June 1–17, championship game June 30.
@@ -20563,7 +20242,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-15a';
+  const SW_VERSION = '2026-06-15b';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
