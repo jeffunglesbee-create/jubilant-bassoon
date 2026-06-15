@@ -86,12 +86,40 @@ ESSENTIALS/WHOLE FIELD toggle.
 
 ## INSTRUCTIONS
 
-1. Test at D1 (1366x768) and D3 (1920x1080) viewports using Playwright
-2. For each bug, identify the exact CSS or JS that's broken
-3. Check for specificity conflicts between wc-mode, wf-mode, and journalism-mode
-4. Fix all three bugs with the minimum changes needed
-5. Verify fixes at D1, D2, D3, D4 viewports
-6. Verify no regressions at T1 (820x1180) and P2 (390x844)
-7. Run smoke after each fix — baseline 654/0
-8. Write findings to outbox/cc-desktop-layout-2026-06-15.md
-9. Push when all three bugs are verified fixed
+1. Use WebDriverIO (NOT Playwright) for all browser testing — same pattern as
+   tests/ios-safari-viewport.js and tests/android-chrome-viewport.js shipped today.
+   Create tests/desktop-chrome-viewport.js and tests/desktop-safari-viewport.js
+   using the same assertion structure.
+
+2. Desktop Chrome test: WebDriverIO + chromedriver on ubuntu-latest.
+   Test at D1 (1366x768) and D3 (1920x1080) viewports.
+   Use browser.setWindowSize(width, height) to set viewport.
+
+3. Desktop Safari test: WebDriverIO + safaridriver on macos-latest.
+   Test at D1 (1366x768) and D3 (1920x1080) viewports.
+   Run `sudo safaridriver --enable` before starting.
+
+4. For each bug, test these scenarios:
+   - Page load in ESSENTIALS mode (default): verify schedule visible, ambient hidden
+   - Click WHOLE FIELD toggle: verify body.wf-mode set, ambient panel visible
+   - Click ESSENTIALS toggle: verify body.wf-mode removed, ambient panel hidden
+   - Click WC Groups nav link: verify body.wc-mode set, schedule hidden, WC section visible
+   - Click Groups sub-tab: verify #wc-groups visible, #wc-bracket hidden
+   - Click journalism nav link: verify body.journalism-mode set, journalism section visible
+   - Mutual exclusion: wc-mode and journalism-mode should not coexist
+
+5. Identify exact CSS or JS causing each failure. Check for specificity conflicts
+   between wc-mode, wf-mode, and journalism-mode rules.
+
+6. Fix all three bugs with minimum changes needed.
+
+7. Verify no regressions at T1 (820x1180) and P2 (390x844) using the existing
+   iOS Safari and Android Chrome test suites.
+
+8. Run smoke after each fix — baseline 654/0.
+
+9. Add GitHub Actions workflows:
+   - .github/workflows/desktop-chrome-audit.yml (ubuntu-latest, chromedriver)
+   - .github/workflows/desktop-safari-audit.yml (macos-latest, safaridriver)
+
+10. Write findings to outbox/cc-desktop-layout-2026-06-15.md. Push when complete.
