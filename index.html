@@ -23899,15 +23899,21 @@ async function fetchSeriesPreviewFromClaude(g){
   // is byte-for-byte unchanged. Word rule lifted from 80-100 to 120-160
   // when champCtx is present so the historical weight has room.
   const _j2ChampEData = (typeof findESPNScore === 'function') ? findESPNScore(g) : null;
-  const _j2ChampCtx = (typeof buildChampionshipContext === 'function')
+  let _j2ChampCtx = (typeof buildChampionshipContext === 'function')
     ? buildChampionshipContext(g, _j2ChampEData) : null;
+  // Archive enrichment (parallel async — path-to-finals narrative from D1).
+  // Cached in sessionStorage by fetchSeriesArchive, so repeat calls are instant.
+  if (_j2ChampCtx && typeof enrichChampionshipFromArchive === 'function') {
+    try { _j2ChampCtx = await enrichChampionshipFromArchive(g, _j2ChampCtx); } catch(_) {}
+  }
   const _j2ChampBlock = _j2ChampCtx
     ? `[CHAMPIONSHIP CONTEXT]
 This is a championship-clinching game. ${_j2ChampCtx.winner} wins the ${_j2ChampCtx.trophy}.
 ${_j2ChampCtx.drought}.
 Playoff record: ${_j2ChampCtx.playoffRecord}.
 Journey: ${_j2ChampCtx.journey}.
-Clinch type: ${_j2ChampCtx.clinchType}.
+Clinch type: ${_j2ChampCtx.clinchType}.${_j2ChampCtx.pathToFinals ? `
+Path to Finals: ${_j2ChampCtx.pathToFinals}` : ''}
 Write this brief at the level the moment deserves. Do not undersell a championship.`
     : '';
   const _j2WordRule = _j2ChampCtx
@@ -27104,6 +27110,37 @@ function buildChampionshipContext(game, eData) {
   return { winner, trophy, drought, playoffRecord, journey, clinchType };
 }
 
+// enrichChampionshipFromArchive — async wrapper that augments a champCtx
+// with the winner's path-to-finals narrative from D1. buildChampionshipContext
+// stays synchronous; this is the optional async patch layer. Returns the
+// (possibly augmented) ctx. Null-safe: returns ctx unchanged on any failure
+// or when ARCHIVE_RELAY_READY is false (fetchSeriesArchive short-circuits).
+// Mapping is winner→conference-final series_key for the four 2026 Finals teams.
+const _PATH_TO_FINALS_KEY = {
+  // NBA Finals 2026 — NYK (East) via ECF, SAS (West) via WCF
+  'New York Knicks':       'nba-ecf-2026',
+  'San Antonio Spurs':     'nba-wcf-2026',
+  // NHL SCF 2026 — CAR (East) via ECF, VGK (West) via WCF
+  'Carolina Hurricanes':   'nhl-ecf-2026',
+  'Vegas Golden Knights':  'nhl-wcf-2026',
+};
+async function enrichChampionshipFromArchive(game, ctx) {
+  if (!ctx || !ctx.winner) return ctx;
+  if (typeof fetchSeriesArchive !== 'function') return ctx;
+  const key = _PATH_TO_FINALS_KEY[ctx.winner];
+  if (!key) return ctx;
+  try {
+    const data = await fetchSeriesArchive(key);
+    if (!data || data.ok === false || !data.series) return ctx;
+    const s = data.series;
+    const pathToFinals = s.narrative ||
+      `Path to ${ctx.trophy}: defeated ${s.lower_seed || s.higher_seed || ''} ${s.result || ''} in ${s.round || ''}${s.mvp ? ` (${s.mvp} MVP)` : ''}.`.replace(/\s+/g,' ').trim();
+    return { ...ctx, pathToFinals };
+  } catch(_) {
+    return ctx;
+  }
+}
+
 // fetchGameBriefOnDemand — generic per-card brief generator.
 // Dispatches to sport-specific brief function or generic fallback.
 // Result stored in _gameBriefCache so subsequent opens are instant.
@@ -27160,14 +27197,19 @@ async function fetchGameBriefOnDemand(game, sport) {
     // is lifted to 60-90 when championship context is present so the
     // weight of the moment isn't crushed by the 35-50 floor.
     const _champEData = (typeof findESPNScore === 'function') ? findESPNScore(game) : null;
-    const champCtx = buildChampionshipContext(game, _champEData);
+    let champCtx = buildChampionshipContext(game, _champEData);
+    // Archive enrichment — path-to-finals narrative from D1 (cached, instant on repeat).
+    if (champCtx && typeof enrichChampionshipFromArchive === 'function') {
+      try { champCtx = await enrichChampionshipFromArchive(game, champCtx); } catch(_) {}
+    }
     const champBlock = champCtx
       ? `[CHAMPIONSHIP CONTEXT]
 This is a championship-clinching game. ${champCtx.winner} wins the ${champCtx.trophy}.
 ${champCtx.drought}.
 Playoff record: ${champCtx.playoffRecord}.
 Journey: ${champCtx.journey}.
-Clinch type: ${champCtx.clinchType}.
+Clinch type: ${champCtx.clinchType}.${champCtx.pathToFinals ? `
+Path to Finals: ${champCtx.pathToFinals}` : ''}
 Write this brief at the level the moment deserves. Do not undersell a championship.`
       : '';
     const wordRule = champCtx
@@ -33306,15 +33348,20 @@ async function fetchNightOwlFromClaude(topGame){
   // prompts are byte-for-byte unchanged. When non-null, the [CHAMPIONSHIP
   // CONTEXT] block lifts the prompt to acknowledge the trophy and drought.
   const _noChampEData = {homeScore: _homeS, awayScore: _awayS};
-  const _noChampCtx = (typeof buildChampionshipContext === 'function')
+  let _noChampCtx = (typeof buildChampionshipContext === 'function')
     ? buildChampionshipContext(topGame, _noChampEData) : null;
+  // Archive enrichment — path-to-finals narrative from D1 (cached, instant on repeat).
+  if (_noChampCtx && typeof enrichChampionshipFromArchive === 'function') {
+    try { _noChampCtx = await enrichChampionshipFromArchive(topGame, _noChampCtx); } catch(_) {}
+  }
   const _noChampBlock = _noChampCtx
     ? `[CHAMPIONSHIP CONTEXT]
 This is a championship-clinching game. ${_noChampCtx.winner} wins the ${_noChampCtx.trophy}.
 ${_noChampCtx.drought}.
 Playoff record: ${_noChampCtx.playoffRecord}.
 Journey: ${_noChampCtx.journey}.
-Clinch type: ${_noChampCtx.clinchType}.
+Clinch type: ${_noChampCtx.clinchType}.${_noChampCtx.pathToFinals ? `
+Path to Finals: ${_noChampCtx.pathToFinals}` : ''}
 Write this Night Owl at the level the moment deserves. Do not undersell a championship.`
     : '';
   const prompt=['Write a FIELD Night Owl recap.',
@@ -34962,6 +35009,30 @@ async function renderNightOwlRecap(){
     if(FIELD_DEBUG) console.warn('[Night Owl] Busting contaminated cache: sport vocab violations',_cachedViolations);
   }
   renderCard(buildNightOwlStatic(topGame),false);
+  // CC-CMD-2026-06-15 Task C: async patch — fetch path-to-finals from D1
+  // archive and splice into the rendered static line. Fire-and-forget;
+  // ARCHIVE_RELAY_READY=false short-circuits to null instantly, fetch failures
+  // leave the original text unchanged. Patches DOM after initial render so
+  // first paint is never blocked by archive latency.
+  (async () => {
+    try {
+      if (typeof buildChampionshipContext !== 'function') return;
+      if (typeof enrichChampionshipFromArchive !== 'function') return;
+      const _staticEData = {homeScore: topGame.homeScore||0, awayScore: topGame.awayScore||0};
+      const _staticCtx = buildChampionshipContext(topGame, _staticEData);
+      if (!_staticCtx) return;
+      const _enriched = await enrichChampionshipFromArchive(topGame, _staticCtx);
+      if (!_enriched || !_enriched.pathToFinals) return;
+      const _textEl = el.querySelector('.night-owl-text');
+      if (!_textEl) return;
+      const _cur = _textEl.textContent || '';
+      const _patched = _cur.replace(
+        /Full breakdown in tomorrow/,
+        _enriched.pathToFinals + ' Full breakdown in tomorrow'
+      );
+      if (_patched !== _cur) _textEl.textContent = _patched;
+    } catch(_) {}
+  })();
   // ── J5 isBlowout gate (Combo B-1+) ──────────────────────────────────
   // Skip Claude call if the final game was a blowout — no tactical brief needed.
   // Margin > 20 at final = blowout. Show static recap only.
