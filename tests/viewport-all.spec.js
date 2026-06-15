@@ -82,10 +82,12 @@ for (const vp of VIEWPORTS) {
     });
 
     // ── #3 UNIVERSAL: filter bar visible and interactive ───────────────────
+    // Fixed June 15 2026 — actual container ID is #sport-filters (a div),
+    // not the .filter-bar class which never existed in the DOM.
     test('#3 filter bar visible and interactive', async ({ page }) => {
-      const bar = page.locator('.filter-bar');
+      const bar = page.locator('#sport-filters');
       await expect(bar).toBeVisible();
-      const btnCount = await page.locator('.filter-bar .filter-btn').count();
+      const btnCount = await page.locator('#sport-filters .filter-btn').count();
       expect(btnCount).toBeGreaterThan(0);
     });
 
@@ -120,7 +122,7 @@ for (const vp of VIEWPORTS) {
     // ── #7 PHONE: filter buttons ≥44px tap height ──────────────────────────
     if (IS_PHONE(vp.id)) {
       test('#7 filter button tap height ≥44px', async ({ page }) => {
-        const btn = page.locator('.filter-bar .filter-btn').first();
+        const btn = page.locator('#sport-filters .filter-btn').first();
         const box = await btn.boundingBox();
         expect(box).toBeTruthy();
         expect(box.height).toBeGreaterThanOrEqual(44);

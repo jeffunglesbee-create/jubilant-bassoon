@@ -39,7 +39,9 @@ const UNIVERSAL = [
     id: '#3', name: 'filter bar visible',
     fn: async (browser) => {
       const result = await browser.execute(() => {
-        const bar = document.querySelector('.filter-bar');
+        // Fixed June 15 2026 — actual filter container ID is #sport-filters,
+        // not the legacy .filter-bar class.
+        const bar = document.querySelector('#sport-filters');
         if (!bar) return { visible: false, btnCount: 0 };
         const cs = getComputedStyle(bar);
         const visible = cs.display !== 'none' && cs.visibility !== 'hidden';
@@ -91,7 +93,7 @@ const PHONE_ONLY = [
     id: '#7', name: 'filter button tap height ≥44px',
     fn: async (browser) => {
       const height = await browser.execute(() => {
-        const btn = document.querySelector('.filter-bar .filter-btn');
+        const btn = document.querySelector('#sport-filters .filter-btn');
         if (!btn) return 0;
         return btn.getBoundingClientRect().height;
       });
