@@ -57,7 +57,7 @@ jobs:
           emulator-options: -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect
           disable-animations: true
           script: |
-            set -e
+            set -eo pipefail
             echo "=== Device info ==="
             adb devices
             ANDROID_VER=$(adb shell getprop ro.build.version.release)
@@ -70,8 +70,15 @@ jobs:
             # Start Appium in background
             appium --relaxed-security --log-level warn &
             APPIUM_PID=$!
-            sleep 8
-            echo "Appium started (PID $APPIUM_PID)"
+            # Wait for Appium to accept connections
+            for i in $(seq 1 20); do
+              if curl -s http://localhost:4723/status > /dev/null 2>&1; then
+                echo "Appium ready after ${i}s"
+                break
+              fi
+              sleep 1
+            done
+            curl -s http://localhost:4723/status || echo "WARNING: Appium not responding"
 
             # Run assertions
             mkdir -p outbox
@@ -79,7 +86,6 @@ jobs:
               node tests/android-chrome-viewport.js \
               2>outbox/android-${{ matrix.device.id }}-stderr.log \
               | tee outbox/android-${{ matrix.device.id }}-results.json
-            echo "Exit code: $?"
 
             # Screenshot
             adb exec-out screencap -p > outbox/android-${{ matrix.device.id }}-screenshot.png || echo "screencap failed"

@@ -36,6 +36,8 @@ jobs:
 
       - name: Install Appium + Safari driver
         run: |
+          # Enable macOS safaridriver (required for Appium Safari driver)
+          sudo safaridriver --enable
           npm install -g appium@latest
           appium driver install safari
           npm install webdriverio@latest
@@ -99,18 +101,25 @@ jobs:
           appium --relaxed-security --log-level warn &
           APPIUM_PID=$!
           echo "APPIUM_PID=$APPIUM_PID" >> "$GITHUB_ENV"
-          sleep 8
-          echo "Appium started (PID $APPIUM_PID)"
+          # Wait for Appium to accept connections
+          for i in $(seq 1 20); do
+            if curl -s http://localhost:4723/status > /dev/null 2>&1; then
+              echo "Appium ready after ${i}s"
+              break
+            fi
+            sleep 1
+          done
+          curl -s http://localhost:4723/status || echo "WARNING: Appium not responding"
 
       - name: Run viewport assertions
         env:
           IOS_DEVICE: ${{ matrix.device.name }}
           DEVICE_ID: ${{ matrix.device.id }}
         run: |
+          set -o pipefail
           mkdir -p outbox
           node tests/ios-safari-viewport.js 2>outbox/ios-${{ matrix.device.id }}-stderr.log \
             | tee outbox/ios-${{ matrix.device.id }}-results.json
-          echo "Exit code: $?"
 
       - name: Screenshot
         if: always()
