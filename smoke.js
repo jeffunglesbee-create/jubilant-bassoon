@@ -4154,6 +4154,24 @@ assert('A599 — iPad-7: _isModelRefusal filter wired into generateJournalismVia
   html.includes("['A','B','C','D']"),
   'iPad-7 regression fix: (a) refusal filter in JQ Gate suppresses raw model meta-commentary; (b) series-preview prompt sends sport-specific exemplars. Soccer/WC/EPL/MLS routed to Exemplar D (real soccer exemplar); tennis/golf/F1/AFL/NFL routed to closest tonal match among A/B/C.');
 
+// ── A606 / Rule 59 audit task 1d: score overlay L1+L2 guard present ─────────
+// Numbering note: audit prompt asked for "A605" but A605 was already used by
+// CHAMPIONSHIP-BRIEF-J2 wiring (commit a17bf8e). See outbox/rule59-audit-2026-06-15.md.
+// Pins what is ACTUALLY in the code today (not what the audit text described).
+assert('A606 — Rule 59 audit task 1d: score overlay L1+L2 — _scoresNull merge guard + hydrateEspnScoresFromFinals fallback present',
+  // Layer 1 — V2 merge guard preserves prev.homeScore/awayScore when
+  // v2Entry._scoresNull is true. This is a MERGE GUARD, not a SKIP (audit
+  // task description said "skipped"; actual code merges).
+  /v2Entry\._scoresNull && prev\?\.homeScore/.test(html) &&
+  /v2Entry\._scoresNull && prev\?\.awayScore/.test(html) &&
+  // Layer 2 — hydrateEspnScoresFromFinals reads from localStorage cache
+  // via loadTonightFinals(), NOT from allData.sports (audit task
+  // description said allData.sports; actual code uses localStorage).
+  /function hydrateEspnScoresFromFinals\s*\(/.test(html) &&
+  html.includes('const finals = loadTonightFinals();') &&
+  html.includes('existingIsBlank'),
+  'Rule 59 audit (CC-AUDIT-A) Task 1d: pins the L1 merge guard and L2 localStorage-cache fallback. Three divergences from the audit text are documented in outbox/rule59-audit-2026-06-15.md: (1) L1 merges rather than skipping when prev is missing — a 0-0 entry can still be written; (2) L2 scans loadTonightFinals() not allData.sports; (3) no explicit start_time guard exists (the ET-date cache key is the implicit protection).');
+
 // ── A605 / CHAMPIONSHIP-BRIEF: J2 series-preview path wires championship context
 assert('A605 — CHAMPIONSHIP-BRIEF: buildChampionshipContext wired into fetchSeriesPreviewFromClaude (J2)',
   // Same builder reused in the J2 path — championship-aware prompt.
