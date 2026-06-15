@@ -6,7 +6,7 @@ A 34,000+ line single-file PWA (index.html) for global sports intelligence. Depl
 ## Key Files
 - `index.html` — the entire app (HTML + CSS + JS)
 - `sw.js` — service worker (SW_VERSION must match index.html)
-- `smoke.js` — 624+ structural assertions (Layer 0, blocks deploy)
+- `smoke.js` — 648+ structural assertions (Layer 0, blocks deploy)
 - `field_smoke.js` — per-day invariant tests
 - `field_unit.js` — unit tests
 - `field_utils.js` — shared utilities
@@ -36,6 +36,7 @@ These rules exist in STANDARDS.md with full rationale. Claude Code MUST follow t
 14. **STANDARDS Rule 42 — Five-minute novel thinking.** If a fix hasn't worked after 5 minutes (or 3 attempts), STOP iterating the same approach. Look at what the system is literally showing you. The ambient panel scroll failed 4 times with CSS property additions. The novel insight was that `renderAmbientPanel()` resets innerHTML every 15-30s, destroying scroll position — a JS problem, not a CSS problem. Novel thinking finds root causes that iteration misses.
 15. **STANDARDS Rule 48 — DO NOT ASSUME.** Before making a diagnosis or architectural recommendation, verify it. Five assumption classes: (A) system state — verify deployed state, not code; (B) limits/quotas — check the actual account; (C) model/API validity — search before declaring invalid; (D) root cause — eliminate alternatives before committing; (E) capability — verify before claiming impossible. Claude Code assumed CSS Grid margins "become redundant" (Class D violation). They do not.
 16. **STANDARDS Rule 29 — Viewport Style Guide.** Design contracts per breakpoint are documented in `docs/VIEWPORT-V4-SPEC.md`. Do not invent new breakpoint behavior — check the spec first.
+17. **STANDARDS Rule 59 — Trusted-but-unverified (CC-AUDIT-A).** Claude Code commits are trusted (same model family) but lack session context. Chat sessions that find Claude Code commits since the last HANDOFF must verify: smoke delta, feature wiring, no invented patterns, no unauthorized structural changes. See STANDARDS.md Rule 59 for full protocol and case studies.
 
 ## Deploy
 - Sole deploy path: `.github/workflows/deploy-gate.yml`

@@ -3156,3 +3156,93 @@ rejected at code review (Rule 13). If a journalism source is needed for a fact,
 find the same fact in a structured data source instead. If no structured source
 exists, the fact may be hardcoded in matchupNote or localNote with attribution,
 subject to DO NOT INVENT verification.
+
+## Rule 59 — Claude Code commits are trusted-but-unverified (CC-AUDIT-A)
+
+Claude Code is a trusted model family (Claude/Anthropic). Its commits are NOT
+quarantined like Gemini output (Rule 25). However, Claude Code operates without
+session context — no HANDOFF read, no session type, no Drive doc awareness, no
+smoke baseline declaration. This makes its output structurally different from
+chat-session commits.
+
+### Classification
+
+Claude Code commits are **trusted-but-unverified**: the code is presumed
+correct (same model family, same DO NOT INVENT discipline via CLAUDE.md),
+but integration claims, feature-complete declarations, and architectural
+decisions have not been validated against the full project state.
+
+### Identification
+
+Claude Code commits are identifiable by:
+- Author: `FIELD CI <claude@field.dev>` (configured in CLAUDE.md)
+- Commit messages: typically `feat(...)`, `fix(...)`, `refactor(...)` prefixes
+- Presence of corresponding `ci: update current state HASH` auto-commits
+- HANDOFF.md references with "Claude Code command given" or similar phrasing
+
+### What requires verification at next session start
+
+When a chat session starts and the commit log shows Claude Code commits since
+the last chat-session HANDOFF:
+
+**1. Smoke delta** — Compare HANDOFF smoke count to current `node smoke.js`.
+Any increase must correspond to real assertions (not duplicates or no-ops).
+Any decrease indicates a regression that Claude Code introduced.
+
+**2. Feature wiring** — Every feature Claude Code claims to have "wired" must
+be verified: find the call site, confirm it's reachable at runtime, confirm
+the target function exists and has the expected signature. The championship
+brief J2 wiring (commit a17bf8e) is the case study: HANDOFF said "wired into
+fetchSeriesPreviewFromClaude" but verification was deferred.
+
+**3. No invented patterns** — Same as Rule 25 check 4. If Claude Code
+introduced a coding pattern not in STANDARDS.md (e.g. new global variable
+naming convention, new DOM structure, new relay route), flag it for review.
+Do not build on it until confirmed.
+
+**4. CLAUDE.md Rule 9 compliance** — Verify no structural layout changes were
+made without authorization. The CSS Grid escalation (commit 9ce7ef2, reverted
+fb72cc1) is the case study: Claude Code changed position:fixed to CSS Grid,
+passed smoke, broke on real hardware.
+
+### What does NOT require verification
+
+- Data-only commits (schedule updates, score data, matchupNotes)
+- Smoke assertion additions (self-verifying — they either pass or fail)
+- Documentation commits (specs, ADRs, outbox/ files)
+- Commits that already passed full CI (smoke + live verify workflow)
+
+### HANDOFF protocol
+
+When a chat session writes HANDOFF.md after Claude Code work:
+- List Claude Code commits separately from chat commits
+- Mark any unverified claims explicitly: "CC: not yet verified"
+- Do NOT claim Claude Code features in the "WHAT SHIPPED" section unless
+  verified in the current chat session
+
+### Why this is lighter than Rule 25
+
+Rule 25 exists because Gemini fabricates commit hashes, feature descriptions,
+and architectural decisions. Claude Code does not fabricate — it writes real
+code that compiles and passes smoke. The failure mode is different: not
+fabrication but incomplete integration (wiring to wrong call site, missing
+runtime path, structural changes that pass static analysis but fail on real
+hardware). The audit is targeted, not comprehensive.
+
+### Case studies
+
+**Success — ADR-002 refactor (June 14 Part 2):** 16 Claude Code commits on
+branch, merged after chat audit. Every commit independently verified.
+Smoke 624/0 after each. Zero regressions. Worked because chat audited
+before merge.
+
+**Failure — CSS Grid escalation (June 14 Part 3):** Claude Code changed
+ambient panel from position:fixed to CSS Grid. Passed smoke. Broke on real
+iPad. Reverted (9ce7ef2 → fb72cc1). Led to CLAUDE.md Rule 9 (structural
+change guardrail).
+
+**Partial — Championship brief (June 14 Part 3b):** Claude Code built
+`buildChampionshipContext()` + wired into `fetchGameBriefOnDemand` (verified).
+Also given command to wire into `fetchSeriesPreviewFromClaude` (J2 inline) —
+commit a17bf8e landed but was flagged "not yet verified" in HANDOFF. Correct
+governance: the unverified claim was documented, not silently shipped.
