@@ -2380,30 +2380,30 @@ body.attn-bar-active .main{padding-bottom:60px}
 body.wc-mode #wc-section{animation:wcFadeIn 220ms ease-out}
 @media(prefers-reduced-motion:reduce){body.wc-mode #wc-section{animation:none}}
 
-/* Mobile/tablet tab-swap */
+/* WC mode: full viewport swap at ALL widths. Groups/bracket replaces schedule. */
 /* Ambient panel always hidden in wc-mode — at all viewport widths.
    WC section is a full viewport swap; ambient panel would compete for space
    and is irrelevant when browsing groups or bracket. */
 body.wc-mode #ambient-panel{display:none !important}
+body.wc-mode .main,
+body.wc-mode #night-owl,
+body.wc-mode #field-desk-section,
+body.wc-mode #media-section,
+body.wc-mode .page-divider,
+body.wc-mode .legend-section,
+body.wc-mode #upper-slots,
+body.wc-mode #field-right-now{display:none !important}
+body.wc-mode #wc-section{display:block}
+body.wc-mode #wc-section[hidden]{display:block}
 
 @media(max-width:1199px){
-  body.wc-mode .main,
-  body.wc-mode #night-owl,
-  body.wc-mode #field-desk-section,
-  body.wc-mode #media-section,
-  body.wc-mode .page-divider,
-  body.wc-mode .legend-section,
-  body.wc-mode #upper-slots,
-  body.wc-mode #field-right-now{display:none !important}
-  body.wc-mode #wc-section{display:block}
-  body.wc-mode #wc-section[hidden]{display:block}
   body.wc-mode .wc-back-pill{display:inline-block;position:sticky;top:calc(env(safe-area-inset-top,0px) + .5rem);z-index:50;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);background:rgba(20,20,28,.78)}
   body.wc-mode nav.controls{margin-right:0 !important} /* ambient panel hidden in wc-mode — full-width nav */
   body.wc-mode header.masthead{margin-right:0 !important}
   body:not(.wc-mode) #wc-section{display:none}
 }
 
-/* Desktop: co-resident with schedule */
+/* Desktop: full viewport swap like mobile, but centered + capped width */
 @media(min-width:1200px){
   body.wc-mode #wc-section{display:block;max-width:900px;margin:0 auto}
   body.wc-mode .wc-back-pill{display:none}
