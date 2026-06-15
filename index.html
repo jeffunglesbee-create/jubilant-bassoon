@@ -26989,7 +26989,7 @@ async function fetchMLBGameBriefFromClaude(g) {
 // for ad-hoc probing once the relay is ready.
 //
 // Cache: 30-min sessionStorage TTL matching the spec. Keyed by endpoint.
-const ARCHIVE_RELAY_READY = false;
+const ARCHIVE_RELAY_READY = true; // Relay live — 5 /archive/* endpoints deployed June 15 2026
 const _archiveBase = (typeof V2_RELAY_BASE !== 'undefined')
   ? V2_RELAY_BASE : 'https://field-relay-nba.jeffunglesbee.workers.dev';
 

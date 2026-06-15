@@ -4169,7 +4169,7 @@ assert('A610 — Archive D1: fetchSeriesArchive + fetchLastMeeting + fetchArchiv
   /async function fetchArchiveDate\s*\(iso\)/.test(html) &&
   // ARCHIVE_RELAY_READY flag exists — gates the helpers from firing while
   // field-relay-nba endpoints are still pending.
-  /const ARCHIVE_RELAY_READY = false;/.test(html) &&
+  /const ARCHIVE_RELAY_READY = true;/.test(html) &&
   // _archiveBase derives from V2_RELAY_BASE so the existing relay URL is
   // the single source of truth.
   /const _archiveBase = \(typeof V2_RELAY_BASE !== 'undefined'\)/.test(html),
