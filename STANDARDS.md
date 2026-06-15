@@ -3105,3 +3105,54 @@ a naive screenshot is almost always this artifact, not a real bug.
 ### Smoke enforcement
 If a screenshot-based bug report is filed without probe confirmation, run
 screenshot_probe.js and read the manifest before taking further action.
+
+
+## Rule 58 — No Article Scraping; Facts and Quotations Only (JOURNALISM-SOURCE-A)
+
+### Derivation
+Follows from DO NOT INVENT (FIELD is a renderer of verified facts, not an
+analyst generating its own assertions) and Rule 45 (Source Clearance Gate:
+no new data source enters FIELD without ToS review and informed risk acceptance).
+
+### The rule
+FIELD must NEVER scrape, fetch, parse, cache, or reproduce the prose of any
+third-party journalism article — from ESPN, Sky Sports, The Athletic, CBS Sports,
+Yahoo Sports, BBC, or any other outlet. No relay route, GitHub Action, or
+client-side fetch may target article URLs for text extraction.
+
+### What FIELD may use
+1. **Verifiable match facts** — scores, goalscorers, minutes, cards, lineups,
+   substitutions, penalties. These are events, not prose. Available from
+   structured data sources (API-Sports, ESPN scoreboard API, FBref, Football-Data.org).
+2. **Public press conference quotations** — statements made by managers and players
+   to assembled media. These are public speech acts, not proprietary content.
+   Source must be attributed ("Ancelotti said in his post-match press conference").
+3. **Official competition records** — standings, fixture lists, squad announcements,
+   disciplinary records, tournament regulations. Published by FIFA, UEFA, leagues.
+4. **Structured statistical data** — xG, passing networks, possession, pressing
+   metrics from licensed or open data providers (FBref, Understat, StatsBomb Open Data).
+
+### What FIELD must not use
+1. **Article text** — no paragraph, sentence, or phrase from any published article.
+2. **Editorial analysis** — no journalist's opinion, interpretation, or narrative framing.
+   "Gabriel looked unsettled" is Sky Sports' editorial judgment. "Gabriel missed the
+   decisive penalty" is a verifiable fact. FIELD uses the fact, not the judgment.
+3. **Proprietary statistics or models** — metrics branded by an outlet (e.g., ESPN's QBR,
+   The Athletic's proprietary rankings) unless separately licensed.
+
+### How this applies to the Team Fit / Cohesion metric
+The cohesion metric synthesizes verifiable facts into a new signal:
+- Club fixture data → who played against whom, when (structured data)
+- Squad lists → who is on the same national team (structured data)
+- Match events → penalty misses, red cards, injuries (structured data)
+- Press conference quotes → emotional state signals (public speech, attributed)
+
+FIELD's journalism layer then writes about these facts in its own voice.
+The synthesis is FIELD's contribution. The facts belong to reality.
+
+### Enforcement
+Any relay route or client fetch that targets a journalism article URL must be
+rejected at code review (Rule 13). If a journalism source is needed for a fact,
+find the same fact in a structured data source instead. If no structured source
+exists, the fact may be hardcoded in matchupNote or localNote with attribution,
+subject to DO NOT INVENT verification.
