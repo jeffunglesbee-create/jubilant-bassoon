@@ -4057,8 +4057,8 @@ assert('A558 — AmbientES: connected seed writes to espnScores if key exists',
 assert('A559 — fetchWCStandings uses V2_RELAY_BASE not RELAY_BASE (Incident 12 fix)',
   html.includes('fetchWCStandings') && html.includes("V2_RELAY_BASE !== 'undefined'") &&
   !/ RELAY_BASE\b[^_]/.test(html.slice(html.indexOf('function fetchWCStandings'), html.indexOf('function fetchWCStandings') + 500).replace('V2_RELAY_BASE', '')));
-assert('A560 — D1 standings merge: _d1NameFix normalizes Czech Republic → Czechia',
-  html.includes("_d1NameFix") && html.includes("'Czech Republic':'Czechia'") && html.includes('mergedStandings'));
+assert('A560 — D1 standings merge: _WC_NAME_FIX normalizes Czech Republic → Czechia',
+  html.includes("_WC_NAME_FIX") && html.includes("'Czech Republic':'Czechia'") && html.includes('mergedStandings'));
 assert('A561 — D1 standings merge: WC_TEAMS fallback for groups without D1 data',
   html.includes('mergedStandings[g]') && html.includes('WC_TEAMS[g]') && html.includes('played: 0'));
 assert('A562 — teamNick: _multiWordNicks includes WC national team overrides',
@@ -4158,6 +4158,14 @@ assert('A599 — iPad-7: _isModelRefusal filter wired into generateJournalismVia
   // others array includes 'D'
   html.includes("['A','B','C','D']"),
   'iPad-7 regression fix: (a) refusal filter in JQ Gate suppresses raw model meta-commentary; (b) series-preview prompt sends sport-specific exemplars. Soccer/WC/EPL/MLS routed to Exemplar D (real soccer exemplar); tennis/golf/F1/AFL/NFL routed to closest tonal match among A/B/C.');
+
+// ── A613: Cape Verde team name normalization (June 15 2026) ──
+assert('A613 — WC name fix: _WC_NAME_FIX + _wcFixTeamName normalize D1 names (Cape Verde Islands → Cape Verde) in standings + results',
+  html.includes("'Cape Verde Islands':'Cape Verde'") &&
+  html.includes('function _wcFixTeamName') &&
+  // Results in _wcBuildGroupInput also go through _wcFixTeamName
+  html.includes('_wcFixTeamName(r.home)') && html.includes('_wcFixTeamName(r.away)'),
+  'API-Sports returns "Cape Verde Islands" but FIELD uses "Cape Verde". Without normalization, Group H gets a duplicate row (D1 "Cape Verde Islands" + WC_TEAMS fallback "Cape Verde") and Monte Carlo H2H lookups fail. _WC_NAME_FIX promoted to module level so both standings merge and _wcBuildGroupInput results share the same map.');
 
 // ── A604-A612: Championship Brief + Score Overlay + Night Owl + Cross-Engine + Archive D1 + Archive Enrichment + Desktop Layout (June 14-15 2026) ──
 // Reordered 2026-06-15 (CC-CMD assertion-reorder commit) so the block reads

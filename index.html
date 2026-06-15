@@ -27469,6 +27469,19 @@ function initSeriesPreviews(){
 // Called after fetchV2AllScores when sport=wc26 games are in the slate.
 // Returns: { groups: { A: [{team, played, points, gd, gf, ...}], ... } }
 // DO NOT CALL during non-WC periods — gate on wcActive flag.
+// API-Sports → display name normalization (shared by standings merge + results + scenarios)
+const _WC_NAME_FIX = {
+  'Czech Republic':'Czechia',
+  'Bosnia & Herzegovina':'Bosnia and Herzegovina',
+  'USA':'United States',
+  'Turkey':'Türkiye',
+  'Curacao':'Curaçao',
+  "Cote D'Ivoire":'Ivory Coast',
+  'Korea Republic':'South Korea',
+  'Cape Verde Islands':'Cape Verde',
+};
+function _wcFixTeamName(n) { return _WC_NAME_FIX[n] || n; }
+
 let _wcStandings = null;  // cached standings, refreshed each poll cycle
 let _wcStandingsTs = 0;   // timestamp of last successful fetch
 
@@ -28065,18 +28078,10 @@ async function renderWCSection() {
   // Render groups table
   // Merge D1 standings with WC_TEAMS fallback for groups without D1 data yet.
   // Normalise D1 team names (API-Sports sends "Czech Republic", display uses "Czechia").
-  const _d1NameFix = {
-    'Czech Republic':'Czechia',
-    'Bosnia & Herzegovina':'Bosnia and Herzegovina',
-    'USA':'United States',
-    'Turkey':'Türkiye',
-    'Curacao':'Curaçao',
-    "Cote D'Ivoire":'Ivory Coast',
-    'Korea Republic':'South Korea',
-  };
+  // Uses module-level _wcFixTeamName (shared with _wcBuildGroupInput).
   const mergedStandings = {};
   for (const g of 'ABCDEFGHIJKL'.split('')) {
-    const d1Teams = (standings && standings[g]) ? standings[g].map(r => ({...r, team: _d1NameFix[r.team] || r.team})) : [];
+    const d1Teams = (standings && standings[g]) ? standings[g].map(r => ({...r, team: _wcFixTeamName(r.team)})) : [];
     const d1Names = new Set(d1Teams.map(r => r.team));
     const allTeams = WC_TEAMS[g] || [];
     // Start with D1 teams (have match data), then append missing teams at 0-0-0
@@ -28357,7 +28362,7 @@ function _wcBuildGroupInput(groupLetter, groupStandings, allFixtures, nowMs, mat
   }));
   const played = (Array.isArray(matchResults) ? matchResults : [])
     .filter(r => r.group_id === groupLetter || r.group_id === `Group ${groupLetter}`)
-    .map(r => ({home: r.home, away: r.away, homeScore: r.home_score, awayScore: r.away_score}));
+    .map(r => ({home: _wcFixTeamName(r.home), away: _wcFixTeamName(r.away), homeScore: r.home_score, awayScore: r.away_score}));
   const groupFixtures = allFixtures.filter(g => g.league && g.league.includes(`Group ${groupLetter}`));
   const remaining = groupFixtures
     .filter(g => new Date(g.start_time).getTime() > nowMs)
