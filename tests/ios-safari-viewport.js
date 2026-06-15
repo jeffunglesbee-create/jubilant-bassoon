@@ -238,6 +238,8 @@ async function run() {
   try {
     browser = await remote({
       port: 4723,
+      connectionRetryTimeout: 300000,  // 5 min — WDA compile on first use
+      connectionRetryCount: 1,
       capabilities: {
         platformName: 'iOS',
         'appium:automationName': 'XCUITest',
@@ -246,6 +248,8 @@ async function run() {
         'appium:platformVersion': IOS_VERSION,
         ...(DEVICE_UDID ? { 'appium:udid': DEVICE_UDID } : {}),
         'appium:noReset': true,
+        'appium:wdaLaunchTimeout': 300000,
+        'appium:wdaConnectionTimeout': 300000,
       },
       logLevel: 'warn',
     });
