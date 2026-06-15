@@ -2683,27 +2683,6 @@ body.wc-mode #ambient-panel{display:none !important}
 .jrn-quality-row-value.good{color:var(--gold2)}
 .jrn-quality-row-value.warn{color:var(--smoke)}
 .jrn-companion-empty{font-size:.7rem;color:var(--muted);font-style:italic}
-.betting-head{
-  display:flex;align-items:center;gap:.75rem;
-  margin-bottom:1.2rem;padding-bottom:.65rem;
-  border-bottom:1px solid var(--edge);position:relative;
-}
-.betting-head::after{
-  content:'';position:absolute;bottom:-1px;left:0;width:60px;height:1px;
-  background:linear-gradient(90deg,#4ade80,transparent);
-}
-.betting-title{font-family:var(--ff-display);font-size:1.5rem;font-weight:700;color:var(--white)}
-.betting-icon{
-  width:30px;height:30px;border-radius:6px;display:flex;align-items:center;
-  justify-content:center;font-size:15px;background:rgba(74,222,128,.1);
-  border:1px solid rgba(74,222,128,.2);
-}
-.betting-disclaimer{
-  font-family:var(--ff-cond);font-size:.65rem;letter-spacing:.08em;color:var(--smoke);
-  margin-bottom:1rem;padding:.4rem .75rem;background:rgba(255,255,255,.03);
-  border-left:2px solid rgba(74,222,128,.3);border-radius:0 4px 4px 0;
-}
-
 /* ── FIELD Health Panel ──────────────────────────────────────────── */
 .fhp-row{font-size:.62rem;line-height:1.55;padding:.18rem 0;border-bottom:1px solid rgba(255,255,255,.05)}
 .fhp-row b{color:var(--white)}
@@ -2744,8 +2723,6 @@ body.wc-mode #ambient-panel{display:none !important}
 .inj-player{font-weight:600;color:inherit}
 .inj-status{opacity:.8}
 .odds-source-ai{font-family:var(--ff-mono);font-size:.6rem;color:var(--smoke);letter-spacing:.03em}
-@keyframes oddsFlash{0%{background:rgba(201,168,76,.25)}100%{background:transparent}}
-.bet-odd.changed{animation:oddsFlash .8s ease-out}
 
     /* ── SETUP / ENTITLEMENT MODAL ── */
 .setup-overlay{
@@ -3084,10 +3061,6 @@ body.wc-mode #ambient-panel{display:none !important}
   /* Chips */
   .stream-chip{font-size:.62rem;padding:.12rem .4rem}
   .stream-chip .chip-tip{right:auto;left:0;max-width:220px}
-
-  /* Betting section */
-  .bet-grid{grid-template-columns:1fr}
-  .bet-title{font-size:.92rem}
 
   /* Media section */
   .media-grid{grid-template-columns:1fr}
@@ -3440,7 +3413,7 @@ body.wc-mode #ambient-panel{display:none !important}
 /* ── Wide (> 1600px) — expand max widths ── */
 @media(min-width:1600px){
   .main,.masthead-inner,.controls-inner,
-  .betting-section,.media-section,.streaming-section{
+  .media-section,.streaming-section{
     max-width:1700px;
   }
 }
@@ -3604,11 +3577,6 @@ body.wc-mode #ambient-panel{display:none !important}
     align-items:center;
   }
   .setup-svc-dot{ width:10px !important; height:10px !important; }
-}
-
-/* Betting section: single column on mobile */
-@media(max-width:600px){
-  .bet-grid{ grid-template-columns:1fr !important; }
 }
 
 /* OTW banner: compact on mobile */
@@ -4273,7 +4241,7 @@ var _DOM = null;
 <!-- ── iPad Ambient Panel (820–1199px couch mode) ───────────────────── -->
 <aside id="ambient-panel" aria-live="polite" aria-label="Live intelligence panel"><div class="ambient-skeleton" aria-hidden="true"><div class="ambient-skeleton-label">Live Intelligence</div><div class="ambient-skeleton-block"></div></div></aside>
 
-<!-- ── Attention bar — live odds urgency (Step 7) ─────────────────────── -->
+<!-- ── Attention bar — live game urgency (Step 7) ─────────────────────── -->
 <!-- Fixed bottom viewport bar. Top 3 games by urgency. Scroll-snap chips. -->
 <!-- Populated by field:wp_update events. Hidden when no live WP data.     -->
 <div id="field-attention-bar" role="complementary" aria-label="Live game urgency"></div>
@@ -4634,14 +4602,6 @@ function buildFieldHealthPanel() {
   } catch(e) {
     rows.push(warn('Journalism', 'Check failed: ' + (e?.message||'unknown')));
   }
-
-  // ── localStorage health ───────────────────────────────────────────────────
-  try {
-    const oddsReq = JSON.parse(localStorage.getItem('odds_req') || '{}');
-    const count = oddsReq.count || 0;
-    const date = oddsReq.date || 'never';
-    rows.push(ok('Odds Budget', `${count} req today (limit 60) · date: ${date}`));
-  } catch(e) { rows.push(warn('Odds Budget', 'Could not read localStorage')); }
 
   // ── Prose Quality rolling average (patent prior art) ─────────────────────
   try {
@@ -5192,8 +5152,6 @@ const FIELD_FEATURES = {
   'b1plus-garbage-time':    '2026-05-18',
   'b1plus-j5-isblowout':    '2026-05-18',
   'drama-arc-storage':      '2026-05-18',
-  // Odds API
-  'odds-relay-adapter':     '2026-05-18',
   // Journalism enrichments
   'drama-score-smoothing':  '2026-05-18',
   'standings-in-prompts':   '2026-05-18',
@@ -6021,7 +5979,7 @@ const isoDate = today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0
 // and cache-poisoning from old game entries. Never touches user preferences.
 //
 // Covers:
-//   field_brief_*, field_drama_history_*, field_odds_* — timestamp-based TTL
+//   field_brief_*, field_drama_history_* — timestamp-based TTL
 //   field_drama_peak_* — plain numbers, cheap to regenerate, always prune
 //   field_game_notes_*  — plain strings, cheap to regenerate (P1-P4 stack)
 //   Any key with embedded YYYY-MM-DD older than 15 days
@@ -6045,7 +6003,7 @@ const isoDate = today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0
       const dm=k.match(/(\d{4}-\d{2}-\d{2})/);
       if(dm&&new Date(dm[1]).getTime()<cutoff){localStorage.removeItem(k);pruned++;return;}
       // Keys with stored JSON containing a timestamp/fetchedAt field
-      if(k.startsWith('field_brief_')||k.startsWith('field_drama_history_')||k.startsWith('field_odds_')){
+      if(k.startsWith('field_brief_')||k.startsWith('field_drama_history_')){
         try{
           const v=JSON.parse(localStorage.getItem(k)||'{}');
           const ts=v.timestamp||v.fetchedAt||v.t||0;
@@ -7700,7 +7658,6 @@ mvSyncMvPanel(); // Set initial empty state
   // Always stop live pollers when leaving today — fetchSchedule() restarts them if returning
   if(iso !== TODAY_ISO){
     if(espnIntervalId){ clearTimeout(espnIntervalId); espnIntervalId=null; }
-    if(oddsIntervalId){ clearTimeout(oddsIntervalId); oddsIntervalId=null; }
   }
 
   if(iso === TODAY_ISO){
@@ -7757,7 +7714,7 @@ mvSyncMvPanel(); // Set initial empty state
   allData = {sports: sections};
   buildFilters(allData.sports);
   renderAll();
-  // Note: odds polling, media and betting are today-specific — skipped for other dates
+  // Note: media is today-specific — skipped for other dates
 }
 
 // ── Date nav button wiring ──────────────────────────────────────
@@ -11686,16 +11643,6 @@ function renderMedia(){
 
 
 
-
-function toImplied(oddsStr){
-  if(!oddsStr) return null;
-  const s = String(oddsStr).trim();
-  if(["EV","PK","EVEN","+0","0"].includes(s.toUpperCase())) return "50%";
-  const n = parseInt(s);
-  if(isNaN(n)) return null;
-  const pct = n < 0 ? (-n / (-n + 100)) * 100 : (100 / (n + 100)) * 100;
-  return pct < 5 ? pct.toFixed(1)+"%" : Math.round(pct)+"%";
-}
 
 // ── FIELD Desk ────────────────────────────────────────────────────────────────
 // Aggregates editorial content already generated by other journalism systems.
@@ -15858,12 +15805,6 @@ async function fetchNBAChannelsViaRelay() {
   if (!r.ok) throw new Error(`RELAY channels ${r.status}`);
   return r.json();
 }
-async function fetchNBAOddsViaRelay() {
-  const r = await fetch(`${RELAY_BASE}/liveData/odds_todaysGames.json`, {signal:AbortSignal.timeout(6000)});
-  if (!r.ok) throw new Error(`RELAY odds ${r.status}`);
-  return r.json();
-}
-
 // Parallel validation + primary path — fires after each ESPN poll cycle
 async function fetchNBARelayScores() {
   if (!RELAY_HEALTHY) return;
@@ -15928,7 +15869,6 @@ try {
 } catch(e_mid_outer) {} // swallow — must not block fetchSchedule()
 
 let espnIntervalId = null;
-let oddsIntervalId = null;  // declared here; set when/if odds polling is wired (currently unused)
 const ESPN_REFRESH_LIVE     = 30000;   // baseline live — overridden by computeLiveInterval (#11b)
 const ESPN_REFRESH_IDLE     = 300000;  // 5min — games scheduled later today
 const ESPN_REFRESH_FINISHED = 900000;  // 15min — all today's games final
@@ -19271,8 +19211,6 @@ async function fetchSchedule(){
   setTimeout(squigglePrefetchAll, 2500); // Squiggle standings
   // OpenF1 — only starts if a live F1 session is detected (self-gating)
   startOpenF1Engine().catch(()=>{});
-  // Odds chips — inject after sport odds load from The Odds API cache
-  // Also re-renders Betting Intelligence section if it was empty on first try
   setTimeout(fdPrefetchSoccerLive, 3000)
   setTimeout(slashGolfPrefetchAll, 3500); // Slash Golf: schedule + live leaderboard
   // Pre-fetch BDL season averages once (ROOT 3 — feeds milestones for all tonight's NBA games)
@@ -19302,7 +19240,7 @@ async function fetchSchedule(){
   maybeShowSetup();
   renderLastNight();
   if(Object.keys(espnScores).length) { injectDramaBadges(); detectAndRenderDoubleFeature(); renderOneToWatch(); renderMobileLiveBar(); renderWatchWindow(); renderAmbientPanel(); }
-  // Media + betting rendered lazily by IntersectionObserver
+  // Media rendered lazily by IntersectionObserver
 }
 
 // ── Squiggle AFL engine (moved to top-level scope 2026-05-31)
@@ -19310,7 +19248,7 @@ async function fetchSchedule(){
 // hoisted in strict mode, causing setTimeout callbacks in renderAll to throw
 // ReferenceError on injectSquiggleTips. Moved here to restore global scope.
 // ── Squiggle AFL engine — restored May 30 2026 ────────────────────────────────
-// All functions below were inadvertently dropped in the betting-engine removal commit.
+// All Squiggle functions below were inadvertently dropped in an earlier removal commit.
 // startSquiggleEngine() + squigglePrefetchAll() were still called → 5 ReferenceErrors/load.
 
 const AFL_TEAM_ABBR={
@@ -21187,15 +21125,6 @@ function shiftTime(iso, minutes) {
 function parseMatchweek(leagueStr) {
   const m = (leagueStr||'').match(/Matchweek\s*(\d+)/i);
   return m ? parseInt(m[1]) : null;
-}
-
-function toImpliedNum(oddsStr){
-  if(!oddsStr) return null;
-  const s = String(oddsStr).trim();
-  if(["EV","PK","EVEN","+0","0"].includes(s.toUpperCase())) return 50;
-  const n = parseInt(s);
-  if(isNaN(n)) return null;
-  return n < 0 ? (-n / (-n + 100)) * 100 : (100 / (n + 100)) * 100;
 }
 
 function dramaTier(score){
