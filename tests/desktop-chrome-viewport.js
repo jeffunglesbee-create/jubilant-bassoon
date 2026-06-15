@@ -28,14 +28,16 @@ const UNIVERSAL = [
   {
     id: '#1', name: 'no uncaught JS errors',
     fn: async (browser) => {
-      // chromedriver exposes the browser console via getLogs('browser').
-      // FIELD also stows uncaught errors on window._fieldErrors as a backup.
-      let logs = [];
-      try { logs = await browser.getLogs('browser'); } catch (_) {}
-      const severe = logs.filter(l => l.level === 'SEVERE' || l.level === 'severe');
+      // Only inspect the FIELD-side window._fieldErrors catcher (matches the
+      // iOS Safari + Android Chrome suites + the Playwright spec — Playwright
+      // uses page.on('pageerror') which is uncaught exceptions only). The
+      // earlier chromedriver getLogs('browser') SEVERE inspection was too
+      // broad: SEVERE-level entries on a real production page include
+      // resource 404s (favicon, manifest, optional relay endpoints), CSP
+      // warnings, and deprecated-API notices — none of which are uncaught
+      // JS exceptions that would surface to a user.
       const fieldErrors = await browser.execute(() => window._fieldErrors || []);
-      const total = severe.length + fieldErrors.length;
-      return { pass: total === 0, actual: total === 0 ? 'clean' : { severeCount: severe.length, fieldErrors } };
+      return { pass: fieldErrors.length === 0, actual: fieldErrors.length === 0 ? 'clean' : fieldErrors };
     }
   },
   {
@@ -288,8 +290,17 @@ async function run() {
       port: 9515, // chromedriver default
       path: '/',
       logLevel: 'warn',
+      // Force classic WebDriver protocol — WebDriverIO 9 auto-upgrades to
+      // BiDi when chromedriver advertises support, but BiDi was losing
+      // page context at the D3 (1920x1080) viewport on June-15 run
+      // (script.callFunction "Cannot find context with specified id" at
+      // the first browser.execute call). Classic WebDriver is sufficient
+      // for our execute()-based assertions and matches the iOS / Android
+      // suite protocols.
+      automationProtocol: 'webdriver',
       capabilities: {
         browserName: 'chrome',
+        webSocketUrl: false, // belt-and-suspenders BiDi opt-out
         'goog:chromeOptions': {
           args: [
             '--headless=new',
@@ -299,7 +310,6 @@ async function run() {
             `--window-size=${VP.width},${VP.height}`,
           ],
         },
-        'goog:loggingPrefs': { browser: 'ALL' },
       },
     });
 
