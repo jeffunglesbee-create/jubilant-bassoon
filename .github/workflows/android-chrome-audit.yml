@@ -47,6 +47,50 @@ jobs:
           appium driver install uiautomator2
           npm install webdriverio@latest
 
+      - name: Prepare test script
+        run: |
+          cat > /tmp/run-android-test.sh << 'TESTSCRIPT'
+          #!/bin/bash
+          set -eo pipefail
+          echo "=== Device info ==="
+          adb devices
+          ANDROID_VER=$(adb shell getprop ro.build.version.release)
+          echo "Android $ANDROID_VER"
+
+          # Check Chrome
+          adb shell pm list packages | grep chrome || echo "WARNING: No chrome package"
+
+          # Start Appium in background
+          appium --relaxed-security --log-level warn &
+          APPIUM_PID=$!
+
+          # Wait for Appium to accept connections
+          for i in $(seq 1 30); do
+            if curl -s http://localhost:4723/status > /dev/null 2>&1; then
+              echo "Appium ready after ${i}s"
+              break
+            fi
+            sleep 1
+          done
+          curl -s http://localhost:4723/status || echo "WARNING: Appium not responding"
+
+          # Run assertions
+          mkdir -p outbox
+          DEVICE_ID="${DEVICE_ID}" \
+            node tests/android-chrome-viewport.js \
+            2>outbox/android-${DEVICE_ID}-stderr.log \
+            > outbox/android-${DEVICE_ID}-results.json
+          EXIT_CODE=$?
+          cat outbox/android-${DEVICE_ID}-results.json
+
+          # Screenshot
+          adb exec-out screencap -p > outbox/android-${DEVICE_ID}-screenshot.png || echo "screencap failed"
+
+          kill $APPIUM_PID 2>/dev/null || true
+          exit $EXIT_CODE
+          TESTSCRIPT
+          chmod +x /tmp/run-android-test.sh
+
       - name: Run emulator + assertions
         uses: reactivecircus/android-emulator-runner@v2
         with:
@@ -56,42 +100,7 @@ jobs:
           profile: ${{ matrix.device.profile }}
           emulator-options: -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect
           disable-animations: true
-          script: |
-            echo "=== Device info ==="
-            adb devices
-            ANDROID_VER=$(adb shell getprop ro.build.version.release)
-            echo "Android $ANDROID_VER"
-            echo ""
-
-            # Check Chrome
-            adb shell pm list packages | grep chrome || echo "WARNING: No chrome package"
-
-            # Start Appium in background
-            appium --relaxed-security --log-level warn &
-            APPIUM_PID=$!
-            # Wait for Appium to accept connections
-            for i in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20; do
-              if curl -s http://localhost:4723/status > /dev/null 2>&1; then
-                echo "Appium ready after ${i}s"
-                break
-              fi
-              sleep 1
-            done
-            curl -s http://localhost:4723/status || echo "WARNING: Appium not responding"
-
-            # Run assertions — capture exit code since sh doesn't support pipefail
-            mkdir -p outbox
-            DEVICE_ID=${{ matrix.device.id }} \
-              node tests/android-chrome-viewport.js \
-              2>outbox/android-${{ matrix.device.id }}-stderr.log \
-              > outbox/android-${{ matrix.device.id }}-results.json
-            EXIT_CODE=$?
-            cat outbox/android-${{ matrix.device.id }}-results.json
-
-            # Screenshot
-            adb exec-out screencap -p > outbox/android-${{ matrix.device.id }}-screenshot.png || echo "screencap failed"
-
-            kill $APPIUM_PID 2>/dev/null || true
+          script: DEVICE_ID=${{ matrix.device.id }} bash /tmp/run-android-test.sh
 
       - name: Upload artifacts
         if: always()
