@@ -240,13 +240,12 @@ async function run() {
       port: 4723,
       capabilities: {
         platformName: 'iOS',
-        'appium:automationName': 'Safari',
+        'appium:automationName': 'XCUITest',
         'appium:browserName': 'Safari',
         'appium:deviceName': IOS_DEVICE,
         'appium:platformVersion': IOS_VERSION,
         ...(DEVICE_UDID ? { 'appium:udid': DEVICE_UDID } : {}),
         'appium:noReset': true,
-        'appium:safari:automaticInspection': true,
       },
       logLevel: 'warn',
     });

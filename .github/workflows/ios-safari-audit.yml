@@ -34,12 +34,12 @@ jobs:
         with:
           node-version: 20
 
-      - name: Install Appium + Safari driver
+      - name: Install Appium + XCUITest driver
         run: |
-          # Enable macOS safaridriver (required for Appium Safari driver)
+          # Enable macOS safaridriver (required for WebDriver protocol)
           sudo safaridriver --enable
           npm install -g appium@latest
-          appium driver install safari
+          appium driver install xcuitest
           npm install webdriverio@latest
 
       - name: List available simulators

@@ -57,7 +57,6 @@ jobs:
           emulator-options: -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect
           disable-animations: true
           script: |
-            set -eo pipefail
             echo "=== Device info ==="
             adb devices
             ANDROID_VER=$(adb shell getprop ro.build.version.release)
@@ -71,7 +70,7 @@ jobs:
             appium --relaxed-security --log-level warn &
             APPIUM_PID=$!
             # Wait for Appium to accept connections
-            for i in $(seq 1 20); do
+            for i in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20; do
               if curl -s http://localhost:4723/status > /dev/null 2>&1; then
                 echo "Appium ready after ${i}s"
                 break
@@ -80,12 +79,14 @@ jobs:
             done
             curl -s http://localhost:4723/status || echo "WARNING: Appium not responding"
 
-            # Run assertions
+            # Run assertions — capture exit code since sh doesn't support pipefail
             mkdir -p outbox
             DEVICE_ID=${{ matrix.device.id }} \
               node tests/android-chrome-viewport.js \
               2>outbox/android-${{ matrix.device.id }}-stderr.log \
-              | tee outbox/android-${{ matrix.device.id }}-results.json
+              > outbox/android-${{ matrix.device.id }}-results.json
+            EXIT_CODE=$?
+            cat outbox/android-${{ matrix.device.id }}-results.json
 
             # Screenshot
             adb exec-out screencap -p > outbox/android-${{ matrix.device.id }}-screenshot.png || echo "screencap failed"
