@@ -4154,6 +4154,16 @@ assert('A599 — iPad-7: _isModelRefusal filter wired into generateJournalismVia
   html.includes("['A','B','C','D']"),
   'iPad-7 regression fix: (a) refusal filter in JQ Gate suppresses raw model meta-commentary; (b) series-preview prompt sends sport-specific exemplars. Soccer/WC/EPL/MLS routed to Exemplar D (real soccer exemplar); tennis/golf/F1/AFL/NFL routed to closest tonal match among A/B/C.');
 
+// ── A603 / iPad-20: WC schedule consistency — maybePushWorldCup runs on today path
+assert('A603 — iPad-20: buildTodaySchedule pushes WC/FrenchOpen/AFLFinals via maybePush*',
+  // Mirror of buildDateSchedule lines 6504-6506 must be present in
+  // buildTodaySchedule just before its return — otherwise the today
+  // path never inserts the FIFA section from wc26Raw and the section
+  // only appears IF V2 polling succeeds with wc26 data. Any V2 failure
+  // leaves WC missing for the entire session.
+  /maybePushFrenchOpen\(sections\);\s*\n\s*maybePushWorldCup\(sections\);\s*\n\s*maybePushAFLFinals\(sections\);\s*\n\s*\n\s*return sections;/.test(html),
+  'iPad-20 fix: WC schedule consistency. buildTodaySchedule must invoke maybePushWorldCup (and the French Open / AFL Finals helpers) before returning. Without these the today path never pushes a FIFA section from wc26Raw — V2 polling becomes the only source, which fails whenever the relay does. See outbox/wc-schedule-diagnosis.md.');
+
 // ── A602 / iPad-19: scroll position preserved across renderAmbientPanel polls
 assert('A602 — iPad-19: renderAmbientPanel preserves scrollTop across innerHTML re-render (STANDARDS Rule 24)',
   // Saves scrollTop before innerHTML write

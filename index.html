@@ -11206,6 +11206,22 @@ function buildTodaySchedule(){
   });
   if(cflGames.length) sections.push({sport:"Canadian Football (CFL)", games:cflGames});
 
+  // iPad-20: WC schedule consistency fix. buildTodaySchedule previously did
+  // not invoke maybePushFrenchOpen / maybePushWorldCup / maybePushAFLFinals,
+  // even though buildDateSchedule() and fetchESPNFixtures() do. The today
+  // path therefore never pushed a FIFA section from wc26Raw — the FIFA
+  // section only appeared on the second render IF the V2 wc26 poll
+  // succeeded. Any V2 failure left WC games missing for the entire
+  // session. Mirroring the buildDateSchedule pattern here guarantees the
+  // wc26Raw section enters allData.sports before the first renderAll.
+  // The V2 dedup pre-flight (line 15461-15466, iPad-10) handles the
+  // existing FIFA section on subsequent polls — V2 still merges live
+  // state on top via the home|away key match. See
+  // outbox/wc-schedule-diagnosis.md.
+  maybePushFrenchOpen(sections);
+  maybePushWorldCup(sections);
+  maybePushAFLFinals(sections);
+
   return sections;
 }
 
