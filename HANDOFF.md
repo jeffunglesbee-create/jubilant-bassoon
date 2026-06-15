@@ -1,96 +1,104 @@
-# FIELD Handoff — June 15 2026 (Session B: Cross-Engine Testing)
+# FIELD Handoff — June 15 2026 (Extended Session: Testing + Archive + Audits)
 
-**jubilant-bassoon HEAD:** `150f4a6` · Smoke: **652/0** · SW_VERSION `2026-06-15a`
-**field-relay-nba HEAD:** `0aa14d9` (unchanged)
+**jubilant-bassoon HEAD:** `6033bae` · Smoke: **653/0** · SW_VERSION `2026-06-15a`
+**field-relay-nba HEAD:** `4133d59` (archive endpoints deployed)
 
 ---
 
 ## WHAT SHIPPED
 
-### Cross-Engine Viewport Test Infrastructure (A609)
+### 1. Cross-Engine Viewport Testing (A609)
 
-**iOS Safari (Appium + XCUITest + iOS Simulator):**
-- `tests/ios-safari-viewport.js`: 16 assertions ported from viewport-all.spec.js
+iOS Safari + Android Chrome viewport audit suites using Appium + real device simulators on GitHub Actions ($0/mo vs BrowserStack $129/mo).
+
+**iOS Safari (XCUITest + iOS Simulator on macos-latest):**
+- `tests/ios-safari-viewport.js`: 16 assertions from viewport-all.spec.js
 - `.github/workflows/ios-safari-audit.yml`: 5-device matrix (iPhone SE 3rd gen, iPhone 16, iPhone 16 Pro Max, iPad Air M2 portrait, iPad Air M2 landscape)
-- Uses XCUITest driver (not Safari driver — Safari driver v5.0.1 can't create sessions on iOS 18.x)
-- WDA compile takes ~228s on first run; connectionRetryTimeout set to 600s
-- `workflow_dispatch` only — trigger from Actions tab
+- ALL 5 DEVICES PRODUCING RESULTS (v8 run):
+  - P1 iPhone SE: 7/9 | P2 iPhone 16: 7/9 | P3 iPhone 16 Pro Max: 7/9
+  - T1 iPad Air portrait: 8/10 | T2 iPad Air landscape: 9/10
+- **#14 ambient scroll architecture PASSES on all iPad viewports** — the iOS Safari bug class that Playwright missed 5 times, confirmed fixed on real Apple WebKit
+- Universal failure: #3 filter bar selector (`.filter-bar` → should be `#sport-filters`) — stale selector in all 3 test suites
+- XCUITest driver required (Safari driver v5.0.1 incompatible with iOS 18.x). WDA compile ~228s on first session.
 
-**Android Chrome (Appium + UiAutomator2 + Android Emulator):**
-- `tests/android-chrome-viewport.js`: 16 assertions (same logic as iOS)
-- `.github/workflows/android-chrome-audit.yml`: 4-device matrix (Pixel 4a, Pixel 7, Pixel 7 Pro, Pixel Tablet)
-- Uses external bash script (`/tmp/run-android-test.sh`) because emulator-runner runs each script line via separate `sh -c` calls
-- `workflow_dispatch` only
+**Android Chrome (UiAutomator2 + Android Emulator on ubuntu-latest):**
+- `tests/android-chrome-viewport.js`: 16 assertions
+- `.github/workflows/android-chrome-audit.yml`: 4-device matrix (Pixel 4a, 7, 7 Pro, Pixel Tablet)
+- External bash script pattern (emulator-runner runs each line via separate `sh -c`)
+- Emulator boots in ~42s. Awaiting first successful assertion run (v7 pending).
 
-**Infrastructure:**
-- A609 smoke assertion: both test files must exist
-- `package.json`: webdriverio devDependency + test:ios / test:android scripts
-- POC workflows retained: ios-safari-poc.yml, android-chrome-poc.yml
+### 2. Game Archive D1 (A610)
 
-### iOS Safari Results (v8 — ALL 5 DEVICES OPERATIONAL)
+**D1 database `field-archive` (cc49101c-0569-4d41-8e7a-be139cde4f26):**
 
-| Device | Score | Failures |
+| Table | Rows | Content |
 |---|---|---|
-| P1 iPhone SE (3rd gen) | 7/9 | #3, #7 |
-| P2 iPhone 16 | 7/9 | #3, #7 |
-| P3 iPhone 16 Pro Max | 7/9 | #3, #7 |
-| T1 iPad Air M2 portrait | 8/10 | #3, #16 |
-| T2 iPad Air M2 landscape | 9/10 | #3 |
+| postseason_games | 19 | NBA ECF (3G) + WCF (5G), NHL ECF (4G) + WCF (3G) + East Semis (2G), UFL (2G) |
+| postseason_series | 5 | Series summaries with narratives, winners, MVPs |
+| regular_season_games | 146 | MLB 61, EPL 26, WNBA 19, AFL 16, La Liga 10, MLS 10, IPL 2, Ligue 1 2 |
 
-**Key finding: #14 ambient scroll architecture PASSES on all iPad viewports.** This is the iOS Safari bug class that broke 5 times and Playwright's built-in WebKit missed every time. The inset-positioned `.ambient-scroll-inner` architecture (position:absolute, all insets 0, overflow-y:auto inside a position:fixed shell) is confirmed correct on real Apple WebKit.
+**Relay endpoints (field-relay-nba, all live and verified):**
+- `GET /archive/series/:key` — full series with games (verified: WCF returns 5 games, SAS winner)
+- `GET /archive/last-meeting?home=X&away=Y` — fuzzy team match (verified: Dodgers vs Rockies)
+- `GET /archive/date/:iso` — all games on a date (verified: 14 games on May 25)
+- `GET /archive/tagged/:tag` — tagged games (verified: 20 final-day games)
+- `GET /archive/sport/:sport` — sport filter (verified: 26 EPL games)
 
-**#3 failure analysis:** Universal across all devices. The test uses selector `.filter-bar` but the actual element is `#sport-filters`. The Playwright suite uses the same stale selector. Fix is trivial (selector update) but deferred — this is a test maintenance item, not a FIELD bug.
+**Client consumers (index.html):**
+- `fetchSeriesArchive(seriesKey)` — 30-min sessionStorage cache
+- `fetchLastMeeting(teamA, teamB)` — 2.5s timeout
+- `fetchArchiveDate(iso)` — 2.5s timeout
+- `ARCHIVE_RELAY_READY = true` — consumers active
 
-**#7 failure (phones):** Follows from #3 — `.filter-bar .filter-btn` returns 0px when `.filter-bar` doesn't exist.
+### 3. Audit Catalog + CC Commands
 
-**#16 failure (T1 only):** Journal mode tap didn't activate on iPad portrait. T2 landscape passes. Likely a timing issue with the XCUITest tap on `#jrn-nav-link` at portrait width.
+**`outbox/audit-catalog-2026-06-15.md`** — 7 audit surfaces identified:
+1. Pattern extraction: 197 candidates (AbortSignal.timeout: 95, allData?.sports: 71, split(' ').pop(): 31)
+2. RUWT risk register: 12 days stale, 1 MODERATE item deferred
+3. Dead code + betting residue: 144 refs, 28 expired entries
+4. Stale architecture references
+5. Test selector alignment (#sport-filters)
+6. CC governance
+7. WC data integrity (rolling)
 
-### Android Chrome Results
+**CC command specs pushed:**
+- `docs/CC-CMD-2026-06-15-dead-code.md` — Tasks 2-7 (betting CSS, dead functions, dead variables, dead localStorage, stale comments, gray items)
+- `docs/CC-CMD-2026-06-15-archive-d1.md` — D1 seed + relay + client wiring (partially executed by CC, partially by this session)
+- `docs/seed_*.sql` — D1 seed SQL files (executed)
 
-Android v7 dispatched. Emulator boots fine (~42s). Previous runs failed due to:
-1. `set -eo pipefail` in dash (fixed: external bash script)
-2. emulator-runner `sh -c` line splitting (fixed: script in /tmp)
+### 4. Wikimedia Flag SVG Opportunity (documented)
 
-Awaiting v7 results — carry forward.
+Country flag SVGs for World Cup 2026 — 48 teams, public domain from Wikimedia Commons. Verified clean against ADR-002, RUWT, Source Clearance Gate. Documented in audit catalog.
 
-## Commits This Session
+## Iteration Log (iOS Safari troubleshooting)
 
-| Hash | Description |
-|---|---|
-| b86068f (rebased) | A609: iOS Safari + Android Chrome viewport audit suites |
-| 72b5f46 | fix(ios-audit): update device matrix to iPhone 16 / iPad Air M2 |
-| ec24749 | fix(audit): safaridriver --enable, Appium health check, pipefail |
-| 8df7b23 | fix(ios-audit): pass DEVICE_UDID + IOS_VERSION to test runner |
-| f9fd7da | fix: XCUITest driver for iOS, dash-safe script for Android |
-| 62638ba | fix(ios-audit): 60s Appium startup wait, process check, log capture |
-| 1a57d96 | fix(ios-audit): 5 min connection timeout for WDA compile |
-| 01320d3 | fix(ios-audit): extend sim boot timeout to 300s, WDA to 600s |
-| 150f4a6 | fix(android-audit): external bash script for emulator-runner |
-
-## Iteration Log (troubleshooting chain)
-
-1. Device names: macos-latest upgraded to Xcode with iPhone 16 simulators
-2. safaridriver --enable: required for Appium Safari driver on macOS
-3. Safari driver v5.0.1: can't create sessions on iOS 18.x → switched to XCUITest
-4. Appium startup: XCUITest driver needs 20-25s to start (vs ~5s for Safari driver)
-5. WDA compile: ~228s on first session — extended connectionRetryTimeout to 600s
-6. Simulator boot timeout: phones default 119s too short — extended to 300s
-7. Android dash: emulator-runner uses /usr/bin/sh, not bash — pipefail fails
-8. Android line splitting: emulator-runner runs each line via separate sh -c — moved to external bash script
+8-step chain to get real WebKit testing working:
+1. Device names → macos-latest has iPhone 16, not 15 Pro
+2. safaridriver --enable required
+3. Safari driver v5.0.1 → XCUITest driver (iOS 18.x incompatible)
+4. Appium startup 20s → 60s wait with health check
+5. WDA compile 228s → connectionRetryTimeout 600s
+6. Simulator boot 119s default → simulatorStartupTimeout 300s
+7. Android dash shell → external bash script
+8. Android line splitting → script in /tmp
 
 ## Known Issues (carry forward)
 
-- #3 filter bar selector: `.filter-bar` → `#sport-filters` across viewport-all.spec.js AND ios-safari-viewport.js AND android-chrome-viewport.js
-- #16 journal tap: intermittent on T1 iPad portrait (T2 landscape passes)
-- Android v7 results: pending — should be first successful run
-- Layer 3 relay score cache (field-relay-nba) — deferred
-- ESPN WC live scores relay endpoint (/soccer/fifa.world) — pending
-- Drive upload workflow modification lock — clears on next CC push
+- May entry removal: entries span multi-line, need CC with AST-aware removal (D1 has the data, entries are dead weight)
+- Missing archive entries: 23 entries lost in extraction (UCL Final, UECL Final, UFL, WWE, some EPL) — re-extract needed
+- Regular season archive has 0 scores and only 8 editorial notes — backfill from API-Sports historical data
+- Journalism wiring: `enrichChampionshipFromArchive` wrapper needed (CC deferred — correct)
+- Android Chrome audit: awaiting first successful assertion run (v7)
+- #3 test selector: `.filter-bar` → `#sport-filters` across 3 test suites
+- Layer 3 relay score cache — deferred
+- ESPN WC live scores relay endpoint — pending
 
 ## Priority Queue
 
-1. Android v7 results analysis (check Actions tab)
-2. Fix #3 selector across all test suites (#sport-filters + .filter-btn)
-3. WC Groups G-L D1 updates as matches complete
-4. Layer 3 relay score cache
-5. ESPN WC relay endpoint
+1. CC: Remove May entries from index.html (AST-aware, multi-line)
+2. CC: Dead code cleanup (Tasks 2-7 from dead-code spec)
+3. CC: Wire enrichChampionshipFromArchive into journalism
+4. Backfill archive: re-extract 23 missing entries + seed scores
+5. Fix #3 test selector across all 3 suites
+6. WC Groups G-L D1 updates
+7. Flag SVGs from Wikimedia Commons
