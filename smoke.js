@@ -4167,6 +4167,25 @@ assert('A613 — WC name fix: _WC_NAME_FIX + _wcFixTeamName normalize D1 names (
   html.includes('_wcFixTeamName(r.home)') && html.includes('_wcFixTeamName(r.away)'),
   'API-Sports returns "Cape Verde Islands" but FIELD uses "Cape Verde". Without normalization, Group H gets a duplicate row (D1 "Cape Verde Islands" + WC_TEAMS fallback "Cape Verde") and Monte Carlo H2H lookups fail. _WC_NAME_FIX promoted to module level so both standings merge and _wcBuildGroupInput results share the same map.');
 
+// ── A614 / CC-CMD-2026-06-15-brief-archive: archiveBrief() fire-and-forget D1 write ──
+assert('A614 — Brief archive: archiveBrief() fire-and-forget helper wired to brief call sites',
+  html.includes('function archiveBrief(') &&
+  html.includes('/archive/brief') &&
+  // .catch(() => {}) on the fetch — the fire-and-forget contract
+  html.includes('.catch(() => {})') &&
+  // At least the 11 spec types must appear as the type arg of an archiveBrief() call
+  /archiveBrief\('slate'/.test(html) &&
+  /archiveBrief\('compound'/.test(html) &&
+  /archiveBrief\('mlb_game'/.test(html) &&
+  /archiveBrief\('wnba_game'/.test(html) &&
+  /archiveBrief\('epl_match'/.test(html) &&
+  /archiveBrief\('stakes'/.test(html) &&
+  /archiveBrief\('night_owl'/.test(html) &&
+  /archiveBrief\('wc_tab'/.test(html) &&
+  /archiveBrief\('series_preview'/.test(html) &&
+  /archiveBrief\('game_ondemand'/.test(html),
+  'archiveBrief() persists AI-generated brief text to D1 via relay POST /archive/brief. Fire-and-forget — the .catch(() => {}) on the fetch is mandatory so an archive write failure never blocks UI. All 11 spec brief types are wired (slate/compound/mlb_game/wnba_game/epl_match/stakes/night_owl/wc_tab/series_preview/game_ondemand) — fetchPrerenderedJournalism (#11) is covered indirectly via the relayJournalism.brief setItem in fetchFIELDBriefFromClaude which calls archiveBrief(slate,...). See outbox/cc-brief-archive-2026-06-15.md for the D1 schema and the relay-side carry-forward.');
+
 // ── A604-A612: Championship Brief + Score Overlay + Night Owl + Cross-Engine + Archive D1 + Archive Enrichment + Desktop Layout (June 14-15 2026) ──
 // Reordered 2026-06-15 (CC-CMD assertion-reorder commit) so the block reads
 // in descending numeric order (A609 first, A604 last) — newest at the top of
