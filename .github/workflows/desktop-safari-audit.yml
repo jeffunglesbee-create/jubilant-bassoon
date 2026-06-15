@@ -1,0 +1,113 @@
+# .github/workflows/desktop-safari-audit.yml
+# Desktop Safari viewport audit — runs tests/desktop-safari-viewport.js at
+# D1 (1366x768) and D3 (1920x1080) against the deployed Worker. Real WebKit
+# coverage of A612 (wf-mode:not(.wc-mode):not(.journalism-mode) cascade).
+name: Desktop Safari Viewport Audit
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - 'HANDOFF.md'
+      - 'outbox/**'
+      - 'docs/**'
+      - '**/*.md'
+  workflow_dispatch:
+
+jobs:
+  desktop-safari:
+    runs-on: macos-latest
+    timeout-minutes: 15
+    strategy:
+      matrix:
+        device:
+          - id: D1
+            label: "Laptop ESSENTIALS"
+          - id: D3
+            label: "Desktop ESSENTIALS"
+      fail-fast: false
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Enable safaridriver
+        run: |
+          # safaridriver is bundled with macOS Safari. Enable WebDriver protocol.
+          sudo safaridriver --enable
+          safaridriver --version
+
+      - name: Install WebDriverIO
+        run: npm install --no-save webdriverio@latest
+
+      - name: Start safaridriver
+        run: |
+          safaridriver --port 4444 > /tmp/safaridriver.log 2>&1 &
+          SD_PID=$!
+          echo "SAFARIDRIVER_PID=$SD_PID" >> "$GITHUB_ENV"
+          # Wait up to 30s for safaridriver.
+          for i in $(seq 1 30); do
+            if ! kill -0 $SD_PID 2>/dev/null; then
+              echo "ERROR: safaridriver died"
+              tail -50 /tmp/safaridriver.log
+              exit 1
+            fi
+            if curl -s http://localhost:4444/status > /dev/null; then
+              echo "safaridriver ready after ${i}s"
+              break
+            fi
+            sleep 1
+          done
+          curl -s http://localhost:4444/status || (echo "safaridriver not responding" && exit 1)
+
+      - name: Run viewport assertions
+        env:
+          DEVICE_ID: ${{ matrix.device.id }}
+        run: |
+          set -o pipefail
+          mkdir -p outbox
+          node tests/desktop-safari-viewport.js \
+            2>outbox/desktop-safari-${{ matrix.device.id }}-stderr.log \
+            | tee outbox/desktop-safari-${{ matrix.device.id }}-results.json
+
+      - name: safaridriver log on failure
+        if: failure()
+        run: tail -80 /tmp/safaridriver.log
+
+      - name: Shutdown safaridriver
+        if: always()
+        run: kill "$SAFARIDRIVER_PID" 2>/dev/null || true
+
+      - name: Upload artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: desktop-safari-${{ matrix.device.id }}
+          path: outbox/desktop-safari-${{ matrix.device.id }}-*
+
+  summary:
+    needs: desktop-safari
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: results
+
+      - name: Summarize results
+        run: |
+          echo "# Desktop Safari Viewport Audit Results"
+          echo "Timestamp: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          echo ""
+          for f in results/desktop-safari-*/desktop-safari-*-results.json; do
+            [ -f "$f" ] || continue
+            echo "---"
+            DEVICE=$(python3 -c "import json,sys; d=json.load(open('$f')); print(f\"{d.get('deviceId','?')} — {d.get('label','?')}\")" 2>/dev/null || echo "parse error")
+            PASSED=$(python3 -c "import json,sys; d=json.load(open('$f')); print(d.get('passed',0))" 2>/dev/null || echo "?")
+            TOTAL=$(python3 -c "import json,sys; d=json.load(open('$f')); print(d.get('total',0))" 2>/dev/null || echo "?")
+            echo "$DEVICE: $PASSED/$TOTAL passed"
+          done

@@ -1,0 +1,118 @@
+# .github/workflows/desktop-chrome-audit.yml
+# Desktop Chrome viewport audit — runs tests/desktop-chrome-viewport.js at
+# D1 (1366x768) and D3 (1920x1080) against the deployed Worker. Pairs with
+# the Playwright deploy-gate suite for cross-engine coverage of A612.
+name: Desktop Chrome Viewport Audit
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - 'HANDOFF.md'
+      - 'outbox/**'
+      - 'docs/**'
+      - '**/*.md'
+  workflow_dispatch:
+
+jobs:
+  desktop-chrome:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      matrix:
+        device:
+          - id: D1
+            label: "Laptop ESSENTIALS"
+          - id: D3
+            label: "Desktop ESSENTIALS"
+      fail-fast: false
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Chrome + chromedriver
+        run: |
+          # Chromium ships with chromedriver-matching ChromeForTesting.
+          # Use the official setup-chrome approach: install via apt.
+          sudo apt-get update
+          sudo apt-get install -y google-chrome-stable
+          CHROME_VER=$(google-chrome --version | awk '{print $3}')
+          echo "Chrome: $CHROME_VER"
+
+          # Install matching chromedriver via @wdio/chromedriver-service.
+          # The service auto-downloads the chromedriver matching the
+          # installed Chrome major version.
+          npm install --no-save webdriverio@latest @wdio/chromedriver-service@latest chromedriver@latest
+
+      - name: Start chromedriver
+        run: |
+          npx chromedriver --port=9515 --whitelisted-ips= > /tmp/chromedriver.log 2>&1 &
+          CD_PID=$!
+          echo "CHROMEDRIVER_PID=$CD_PID" >> "$GITHUB_ENV"
+          # Wait up to 30s for chromedriver to accept connections.
+          for i in $(seq 1 30); do
+            if ! kill -0 $CD_PID 2>/dev/null; then
+              echo "ERROR: chromedriver died"
+              tail -50 /tmp/chromedriver.log
+              exit 1
+            fi
+            if curl -s http://localhost:9515/status > /dev/null; then
+              echo "chromedriver ready after ${i}s"
+              break
+            fi
+            sleep 1
+          done
+          curl -s http://localhost:9515/status || (echo "chromedriver not responding" && exit 1)
+
+      - name: Run viewport assertions
+        env:
+          DEVICE_ID: ${{ matrix.device.id }}
+        run: |
+          set -o pipefail
+          mkdir -p outbox
+          node tests/desktop-chrome-viewport.js \
+            2>outbox/desktop-chrome-${{ matrix.device.id }}-stderr.log \
+            | tee outbox/desktop-chrome-${{ matrix.device.id }}-results.json
+
+      - name: chromedriver log on failure
+        if: failure()
+        run: tail -80 /tmp/chromedriver.log
+
+      - name: Shutdown chromedriver
+        if: always()
+        run: kill "$CHROMEDRIVER_PID" 2>/dev/null || true
+
+      - name: Upload artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: desktop-chrome-${{ matrix.device.id }}
+          path: outbox/desktop-chrome-${{ matrix.device.id }}-*
+
+  summary:
+    needs: desktop-chrome
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: results
+
+      - name: Summarize results
+        run: |
+          echo "# Desktop Chrome Viewport Audit Results"
+          echo "Timestamp: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          echo ""
+          for f in results/desktop-chrome-*/desktop-chrome-*-results.json; do
+            [ -f "$f" ] || continue
+            echo "---"
+            DEVICE=$(python3 -c "import json,sys; d=json.load(open('$f')); print(f\"{d.get('deviceId','?')} — {d.get('label','?')}\")" 2>/dev/null || echo "parse error")
+            PASSED=$(python3 -c "import json,sys; d=json.load(open('$f')); print(d.get('passed',0))" 2>/dev/null || echo "?")
+            TOTAL=$(python3 -c "import json,sys; d=json.load(open('$f')); print(d.get('total',0))" 2>/dev/null || echo "?")
+            echo "$DEVICE: $PASSED/$TOTAL passed"
+          done
