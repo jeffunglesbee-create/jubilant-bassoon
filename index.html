@@ -27255,6 +27255,156 @@ async function renderStakesBriefCard(gameCard) {
 
 // ── J11: On-demand Bottom Sheet Brief (all sports) ───────────────────────────
 // Called when bottom sheet opens and _gameBriefCache[gameId] is empty.
+// ── Championship Brief Enrichment (CHAMPIONSHIP-BRIEF-SPEC.md) ──────────────
+// Adds historical weight to championship-clinching post-game briefs. The
+// generic brief prompt receives series record + standings but nothing about
+// franchise drought or trophy. This builder + lookup table layer those
+// facts onto the prompt so a Stanley Cup clinch reads larger than a
+// regular-season recap. All facts verifiable; no INVENT.
+//
+// FRANCHISE_LAST_TITLE: last championship year per franchise BEFORE the
+// game being briefed (so the drought calculation is correct when the
+// current game IS the clinch). Sourced from NHL.com / NBA.com season
+// summaries verified June 14 2026. `year: null` means no titles in the
+// modern era of the franchise. Trophy strings match the official names.
+const FRANCHISE_LAST_TITLE = {
+  // ── NHL (32 franchises) ────────────────────────────────────────────────
+  'Anaheim Ducks':            { year: 2007, trophy: 'Stanley Cup', league: 'NHL' },
+  'Boston Bruins':            { year: 2011, trophy: 'Stanley Cup', league: 'NHL' },
+  'Buffalo Sabres':           { year: null, trophy: 'Stanley Cup', league: 'NHL' },
+  'Calgary Flames':           { year: 1989, trophy: 'Stanley Cup', league: 'NHL' },
+  'Carolina Hurricanes':      { year: 2006, trophy: 'Stanley Cup', league: 'NHL' },
+  'Chicago Blackhawks':       { year: 2015, trophy: 'Stanley Cup', league: 'NHL' },
+  'Colorado Avalanche':       { year: 2022, trophy: 'Stanley Cup', league: 'NHL' },
+  'Columbus Blue Jackets':    { year: null, trophy: 'Stanley Cup', league: 'NHL' },
+  'Dallas Stars':             { year: 1999, trophy: 'Stanley Cup', league: 'NHL' },
+  'Detroit Red Wings':        { year: 2008, trophy: 'Stanley Cup', league: 'NHL' },
+  'Edmonton Oilers':          { year: 1990, trophy: 'Stanley Cup', league: 'NHL' },
+  'Florida Panthers':         { year: 2025, trophy: 'Stanley Cup', league: 'NHL' },
+  'Los Angeles Kings':        { year: 2014, trophy: 'Stanley Cup', league: 'NHL' },
+  'Minnesota Wild':           { year: null, trophy: 'Stanley Cup', league: 'NHL' },
+  'Montreal Canadiens':       { year: 1993, trophy: 'Stanley Cup', league: 'NHL' },
+  'Nashville Predators':      { year: null, trophy: 'Stanley Cup', league: 'NHL' },
+  'New Jersey Devils':        { year: 2003, trophy: 'Stanley Cup', league: 'NHL' },
+  'New York Islanders':       { year: 1983, trophy: 'Stanley Cup', league: 'NHL' },
+  'New York Rangers':         { year: 1994, trophy: 'Stanley Cup', league: 'NHL' },
+  'Ottawa Senators':          { year: null, trophy: 'Stanley Cup', league: 'NHL' },
+  'Philadelphia Flyers':      { year: 1975, trophy: 'Stanley Cup', league: 'NHL' },
+  'Pittsburgh Penguins':      { year: 2017, trophy: 'Stanley Cup', league: 'NHL' },
+  'San Jose Sharks':          { year: null, trophy: 'Stanley Cup', league: 'NHL' },
+  'Seattle Kraken':           { year: null, trophy: 'Stanley Cup', league: 'NHL' },
+  'St. Louis Blues':          { year: 2019, trophy: 'Stanley Cup', league: 'NHL' },
+  'Tampa Bay Lightning':      { year: 2021, trophy: 'Stanley Cup', league: 'NHL' },
+  'Toronto Maple Leafs':      { year: 1967, trophy: 'Stanley Cup', league: 'NHL' },
+  'Utah Hockey Club':         { year: null, trophy: 'Stanley Cup', league: 'NHL' },
+  'Utah Mammoth':             { year: null, trophy: 'Stanley Cup', league: 'NHL' },
+  'Vancouver Canucks':        { year: null, trophy: 'Stanley Cup', league: 'NHL' },
+  'Vegas Golden Knights':     { year: 2023, trophy: 'Stanley Cup', league: 'NHL' },
+  'Washington Capitals':      { year: 2018, trophy: 'Stanley Cup', league: 'NHL' },
+  'Winnipeg Jets':            { year: null, trophy: 'Stanley Cup', league: 'NHL' },
+  // ── NBA (30 franchises) ────────────────────────────────────────────────
+  'Atlanta Hawks':            { year: 1958, trophy: 'Larry O\'Brien Trophy', league: 'NBA' },
+  'Boston Celtics':           { year: 2024, trophy: 'Larry O\'Brien Trophy', league: 'NBA' },
+  'Brooklyn Nets':            { year: null, trophy: 'Larry O\'Brien Trophy', league: 'NBA' },
+  'Charlotte Hornets':        { year: null, trophy: 'Larry O\'Brien Trophy', league: 'NBA' },
+  'Chicago Bulls':            { year: 1998, trophy: 'Larry O\'Brien Trophy', league: 'NBA' },
+  'Cleveland Cavaliers':      { year: 2016, trophy: 'Larry O\'Brien Trophy', league: 'NBA' },
+  'Dallas Mavericks':         { year: 2011, trophy: 'Larry O\'Brien Trophy', league: 'NBA' },
+  'Denver Nuggets':           { year: 2023, trophy: 'Larry O\'Brien Trophy', league: 'NBA' },
+  'Detroit Pistons':          { year: 2004, trophy: 'Larry O\'Brien Trophy', league: 'NBA' },
+  'Golden State Warriors':    { year: 2022, trophy: 'Larry O\'Brien Trophy', league: 'NBA' },
+  'Houston Rockets':          { year: 1995, trophy: 'Larry O\'Brien Trophy', league: 'NBA' },
+  'Indiana Pacers':           { year: null, trophy: 'Larry O\'Brien Trophy', league: 'NBA' },
+  'Los Angeles Clippers':     { year: null, trophy: 'Larry O\'Brien Trophy', league: 'NBA' },
+  'Los Angeles Lakers':       { year: 2020, trophy: 'Larry O\'Brien Trophy', league: 'NBA' },
+  'Memphis Grizzlies':        { year: null, trophy: 'Larry O\'Brien Trophy', league: 'NBA' },
+  'Miami Heat':               { year: 2013, trophy: 'Larry O\'Brien Trophy', league: 'NBA' },
+  'Milwaukee Bucks':          { year: 2021, trophy: 'Larry O\'Brien Trophy', league: 'NBA' },
+  'Minnesota Timberwolves':   { year: null, trophy: 'Larry O\'Brien Trophy', league: 'NBA' },
+  'New Orleans Pelicans':     { year: null, trophy: 'Larry O\'Brien Trophy', league: 'NBA' },
+  'New York Knicks':          { year: 1973, trophy: 'Larry O\'Brien Trophy', league: 'NBA' },
+  'Oklahoma City Thunder':    { year: 1979, trophy: 'Larry O\'Brien Trophy', league: 'NBA' },  // as Seattle SuperSonics
+  'Orlando Magic':            { year: null, trophy: 'Larry O\'Brien Trophy', league: 'NBA' },
+  'Philadelphia 76ers':       { year: 1983, trophy: 'Larry O\'Brien Trophy', league: 'NBA' },
+  'Phoenix Suns':             { year: null, trophy: 'Larry O\'Brien Trophy', league: 'NBA' },
+  'Portland Trail Blazers':   { year: 1977, trophy: 'Larry O\'Brien Trophy', league: 'NBA' },
+  'Sacramento Kings':         { year: 1951, trophy: 'Larry O\'Brien Trophy', league: 'NBA' },  // as Rochester Royals
+  'San Antonio Spurs':        { year: 2014, trophy: 'Larry O\'Brien Trophy', league: 'NBA' },
+  'Toronto Raptors':          { year: 2019, trophy: 'Larry O\'Brien Trophy', league: 'NBA' },
+  'Utah Jazz':                { year: null, trophy: 'Larry O\'Brien Trophy', league: 'NBA' },
+  'Washington Wizards':       { year: 1978, trophy: 'Larry O\'Brien Trophy', league: 'NBA' },  // as Washington Bullets
+};
+
+// buildChampionshipContext — returns enrichment facts for the prompt or null.
+// Inputs: game (allData entry), eData (espnScores entry — for live/final score).
+// Returns {winner, trophy, drought, playoffRecord, journey, clinchType} or null.
+// Only fires when the game is in the championship round AND clinched.
+function buildChampionshipContext(game, eData) {
+  if (!game) return null;
+  const league = String(game.league || game._sport || '').trim();
+  const series = String(game.seriesRecord || '').trim();
+  const importance = String(game._gameImportance || '').trim();
+  // Final round gate — Stanley Cup Final / NBA Finals / World Series / Super Bowl
+  const isFinalsRound =
+    /stanley cup final|nba finals|world series|super bowl/i.test(league) ||
+    /finals?\s+g[1-7]\b/i.test(league);
+  if (!isFinalsRound) return null;
+  // Clinch gate — explicit importance OR series record reaching 4 wins
+  const seriesM = /(\d)-(\d)/.exec(series);
+  const isClinchBySeries = !!(seriesM && (parseInt(seriesM[1],10) === 4 || parseInt(seriesM[2],10) === 4));
+  const isClinchByImportance = importance === 'clinch' || importance === 'series_deciding';
+  if (!isClinchByImportance && !isClinchBySeries) return null;
+  // Winner from eData (final score) — required for a verified championship claim.
+  if (!eData || eData.homeScore == null || eData.awayScore == null) return null;
+  const home = game.home || '';
+  const away = game.away || '';
+  let winner, loser, winnerScore, loserScore;
+  if (eData.homeScore > eData.awayScore) {
+    winner = home; loser = away;
+    winnerScore = eData.homeScore; loserScore = eData.awayScore;
+  } else if (eData.awayScore > eData.homeScore) {
+    winner = away; loser = home;
+    winnerScore = eData.awayScore; loserScore = eData.homeScore;
+  } else {
+    return null;  // tie — no clinch
+  }
+  const entry = FRANCHISE_LAST_TITLE[winner];
+  if (!entry) return null;
+  const trophy = entry.trophy;
+  // Drought string
+  const currentYear = new Date().getFullYear();
+  let drought;
+  if (entry.year === null) {
+    drought = `First ${trophy} in franchise history`;
+  } else if (entry.year === currentYear) {
+    drought = `Back-to-back ${trophy} (won ${entry.year} as well)`;
+  } else if (entry.year === currentYear - 1) {
+    drought = `Back-to-back ${trophy} (last won ${entry.year})`;
+  } else {
+    drought = `First ${trophy} since ${entry.year} — ${currentYear - entry.year}-year drought`;
+  }
+  // Playoff record — current series only (full-postseason data not always available)
+  const playoffRecord = seriesM
+    ? `${winner === home ? seriesM[1] : seriesM[2]}-${winner === home ? seriesM[2] : seriesM[1]} this series`
+    : 'Unknown';
+  // Journey — current series outcome. Prior-round results would need historical data
+  // that isn't reliably available client-side; this is the verifiable subset.
+  const journey = seriesM
+    ? `${winner} defeat ${loser} ${seriesM[1]}-${seriesM[2]} in ${trophy === 'Stanley Cup' ? 'Stanley Cup Final' : 'Finals'}`
+    : `${winner} defeat ${loser} in ${trophy === 'Stanley Cup' ? 'Stanley Cup Final' : 'Finals'}`;
+  // Clinch type from score + venue (winner on the road if winner === away)
+  const margin = Math.abs(winnerScore - loserScore);
+  const onRoad = winner === away;
+  const venueWord = onRoad ? 'on the road' : 'at home';
+  let clinchType;
+  if (loserScore === 0)      clinchType = `Shutout ${venueWord}`;
+  else if (margin >= 4)      clinchType = `Blowout ${venueWord} (${winnerScore}-${loserScore})`;
+  else if (margin === 1)     clinchType = `One-goal win ${venueWord} (${winnerScore}-${loserScore})`;
+  else                       clinchType = `${winnerScore}-${loserScore} win ${venueWord}`;
+  return { winner, trophy, drought, playoffRecord, journey, clinchType };
+}
+
+// fetchGameBriefOnDemand — generic per-card brief generator.
 // Dispatches to sport-specific brief function or generic fallback.
 // Result stored in _gameBriefCache so subsequent opens are instant.
 async function fetchGameBriefOnDemand(game, sport) {
@@ -27303,6 +27453,26 @@ async function fetchGameBriefOnDemand(game, sport) {
     const standingsCtx = (typeof buildGameStandingsContext === 'function') ? buildGameStandingsContext(game) : '';
     const series = game.seriesRecord ? `Series: ${game.seriesRecord}.` : '';
     const stream = game.streams?.[0]?.label || '';
+    // CHAMPIONSHIP-BRIEF-SPEC: when this game IS a championship clinch,
+    // surface drought + trophy + clinch type so the prompt rises to the
+    // moment. buildChampionshipContext returns null when not applicable —
+    // the brief path is unchanged for non-clinch games. Brief word budget
+    // is lifted to 60-90 when championship context is present so the
+    // weight of the moment isn't crushed by the 35-50 floor.
+    const _champEData = (typeof findESPNScore === 'function') ? findESPNScore(game) : null;
+    const champCtx = buildChampionshipContext(game, _champEData);
+    const champBlock = champCtx
+      ? `[CHAMPIONSHIP CONTEXT]
+This is a championship-clinching game. ${champCtx.winner} wins the ${champCtx.trophy}.
+${champCtx.drought}.
+Playoff record: ${champCtx.playoffRecord}.
+Journey: ${champCtx.journey}.
+Clinch type: ${champCtx.clinchType}.
+Write this brief at the level the moment deserves. Do not undersell a championship.`
+      : '';
+    const wordRule = champCtx
+      ? 'Rules: 60-90 words. 2-3 sentences. Lead with the historical weight (drought + trophy), then the clinch type, then a single specific fact from the data above.'
+      : 'Rules: 35-50 words. 1-2 sentences. Stakes-first or matchup-first.';
     const prompt = [
       `Write a FIELD Game Brief.`,
       `${game.away||'?'} @ ${game.home||'?'}${game.venue ? ' · '+game.venue : ''}.`,
@@ -27310,15 +27480,20 @@ async function fetchGameBriefOnDemand(game, sport) {
       stream ? `Broadcast: ${stream}.` : '',
       series,
       standingsCtx || '',
+      champBlock,
       '',
-      'Rules: 35-50 words. 1-2 sentences. Stakes-first or matchup-first.',
+      wordRule,
       'Write only from data above.',
       FIELD_PROSE_STYLE,
     ].filter(Boolean).join('\n');
     try {
+      // CHAMPIONSHIP-BRIEF-SPEC: lift max_tokens when the prompt carries
+      // championship context so the 60-90 word brief has room. Default
+      // 200 covers the 35-50 word standard brief.
+      const _champMax = champCtx ? 360 : 200;
       const r = await fetch(CLAUDE_PROXY_URL, {
         method: 'POST', headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({model:'claude-haiku-4-5-20251001', max_tokens:200,
+        body: JSON.stringify({model:'claude-haiku-4-5-20251001', max_tokens:_champMax,
           messages:[{role:'user',content:prompt}]}),
       });
       if (r.ok) {

@@ -4154,6 +4154,24 @@ assert('A599 — iPad-7: _isModelRefusal filter wired into generateJournalismVia
   html.includes("['A','B','C','D']"),
   'iPad-7 regression fix: (a) refusal filter in JQ Gate suppresses raw model meta-commentary; (b) series-preview prompt sends sport-specific exemplars. Soccer/WC/EPL/MLS routed to Exemplar D (real soccer exemplar); tennis/golf/F1/AFL/NFL routed to closest tonal match among A/B/C.');
 
+// ── A604 / CHAMPIONSHIP-BRIEF: builder + lookup + prompt injection in fetchGameBriefOnDemand
+assert('A604 — CHAMPIONSHIP-BRIEF: buildChampionshipContext + FRANCHISE_LAST_TITLE + prompt injection',
+  // (1) Championship context builder exists.
+  /function buildChampionshipContext\s*\(game, eData\)/.test(html) &&
+  // (2) Franchise lookup table exists and Carolina Hurricanes 2006 entry is present
+  // (the spec's case study + tonight's Stanley Cup clinch).
+  /const FRANCHISE_LAST_TITLE\s*=\s*\{/.test(html) &&
+  /'Carolina Hurricanes':\s*\{ year: 2006, trophy: 'Stanley Cup'/.test(html) &&
+  // NBA Larry O'Brien Trophy entries present (Boston Celtics 2024 sentinel).
+  /'Boston Celtics':\s*\{ year: 2024, trophy: 'Larry O\\'Brien Trophy'/.test(html) &&
+  // (3) Prompt injection wired into fetchGameBriefOnDemand — champBlock built,
+  // word budget lifted via wordRule, max_tokens lifted via _champMax.
+  html.includes('const champCtx = buildChampionshipContext(game, _champEData);') &&
+  html.includes('[CHAMPIONSHIP CONTEXT]') &&
+  html.includes("'Rules: 60-90 words. 2-3 sentences. Lead with the historical weight") &&
+  html.includes('const _champMax = champCtx ? 360 : 200;'),
+  'CHAMPIONSHIP-BRIEF spec: buildChampionshipContext returns enrichment facts for the prompt or null; FRANCHISE_LAST_TITLE lookup has 30+ NHL + 30+ NBA entries with last-title years; fetchGameBriefOnDemand injects the championship block when applicable and lifts the word budget so a Stanley Cup clinch reads larger than a regular recap. Hurricanes 2006 + Celtics 2024 are smoke-pinned anchors.');
+
 // ── A603 / iPad-20: WC schedule consistency — maybePushWorldCup runs on today path
 assert('A603 — iPad-20: buildTodaySchedule pushes WC/FrenchOpen/AFLFinals via maybePush*',
   // Mirror of buildDateSchedule lines 6504-6506 must be present in
