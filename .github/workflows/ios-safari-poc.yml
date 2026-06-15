@@ -1,0 +1,93 @@
+# .github/workflows/ios-safari-poc.yml
+# Proof of concept: boot iOS Simulator, open Safari, screenshot
+name: iOS Safari POC
+
+on: workflow_dispatch
+
+jobs:
+  ios-safari:
+    runs-on: macos-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: List available iOS simulators
+        run: |
+          echo "=== Xcode version ==="
+          xcodebuild -version
+          echo ""
+          echo "=== Available iPhone simulators ==="
+          xcrun simctl list devices available | grep -E "iPhone (SE|15|16)" || echo "No iPhone matches"
+          echo ""
+          echo "=== Available iPad simulators ==="
+          xcrun simctl list devices available | grep -E "iPad (Air|Pro)" || echo "No iPad matches"
+
+      - name: Boot iPhone simulator
+        run: |
+          # Find first available iPhone 15 Pro (or fallback)
+          UDID=$(xcrun simctl list devices available -j | python3 -c "
+          import json, sys
+          data = json.load(sys.stdin)
+          targets = ['iPhone 15 Pro', 'iPhone 16 Pro', 'iPhone 15', 'iPhone 14 Pro']
+          for ver, devs in data['devices'].items():
+            for dev in devs:
+              if dev['isAvailable'] and dev['name'] in targets:
+                print(dev['udid'])
+                sys.exit(0)
+          # Fallback: any available iPhone
+          for ver, devs in data['devices'].items():
+            for dev in devs:
+              if dev['isAvailable'] and 'iPhone' in dev['name']:
+                print(dev['udid'])
+                sys.exit(0)
+          ")
+          echo "Booting UDID: $UDID"
+          DEVICE_NAME=$(xcrun simctl list devices available -j | python3 -c "
+          import json, sys
+          data = json.load(sys.stdin)
+          for ver, devs in data['devices'].items():
+            for dev in devs:
+              if dev['udid'] == '$UDID':
+                print(dev['name']); sys.exit(0)
+          ")
+          echo "Device: $DEVICE_NAME"
+          xcrun simctl boot "$UDID"
+          echo "DEVICE_UDID=$UDID" >> "$GITHUB_ENV"
+          echo "DEVICE_NAME=$DEVICE_NAME" >> "$GITHUB_ENV"
+          sleep 15
+          echo "✅ Simulator booted"
+
+      - name: Open FIELD in Safari
+        run: |
+          xcrun simctl openurl "$DEVICE_UDID" "https://jubilant-bassoon.jeffunglesbee.workers.dev/?wpt"
+          echo "Waiting 20s for page load + data..."
+          sleep 20
+
+      - name: Take screenshot
+        run: |
+          mkdir -p outbox/ios-poc
+          xcrun simctl io "$DEVICE_UDID" screenshot outbox/ios-poc/iphone-safari.png
+          echo "✅ Screenshot captured"
+          ls -la outbox/ios-poc/
+
+      - name: Test Safari WebDriver availability
+        run: |
+          echo "=== Check safaridriver ==="
+          which safaridriver && safaridriver --version || echo "safaridriver not found"
+          echo ""
+          echo "=== Check Appium installability ==="
+          npm install -g appium 2>&1 | tail -3
+          appium driver install safari 2>&1 | tail -5
+          echo "✅ Appium + Safari driver installed"
+
+      - name: Push results
+        run: |
+          git config user.email "claude@field.dev"
+          git config user.name "FIELD CI"
+          echo "device: $DEVICE_NAME" > outbox/ios-poc/manifest.txt
+          echo "udid: $DEVICE_UDID" >> outbox/ios-poc/manifest.txt
+          echo "xcode: $(xcodebuild -version | head -1)" >> outbox/ios-poc/manifest.txt
+          echo "timestamp: $(date -u +%Y-%m-%dT%H:%M:%SZ)" >> outbox/ios-poc/manifest.txt
+          git add outbox/ios-poc/
+          git commit -m "probe: iOS Safari POC — simulator screenshot [skip ci]"
+          git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git HEAD:main
