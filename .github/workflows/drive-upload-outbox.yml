@@ -1,16 +1,16 @@
 # .github/workflows/drive-upload-outbox.yml
 #
-# FIELD OUTBOX → Google Drive via Apps Script
+# FIELD OUTBOX -> Google Drive via Apps Script
 #
 # HOW IT WORKS:
 #   1. Claude Code writes outbox/cc-*.md or outbox/rule59-*.md and pushes
 #   2. This workflow triggers on new .md files matching CC output patterns
 #   3. Reads each new file, POSTs to Apps Script which creates a Google Doc
-#   4. Apps Script runs as Jeff's Google account — full Drive access
+#   4. Apps Script runs as Jeff's Google account -- full Drive access
 #
 # SECRETS REQUIRED:
-#   APPS_SCRIPT_URL    — deployed Apps Script web app URL
-#   APPS_SCRIPT_SECRET — shared verification token
+#   APPS_SCRIPT_URL    -- deployed Apps Script web app URL
+#   APPS_SCRIPT_SECRET -- shared verification token
 #
 # APPS SCRIPT SOURCE (script.google.com, "FIELD documentation" project):
 #   function doPost(e) {
@@ -21,7 +21,7 @@
 #     return ContentService.createTextOutput(JSON.stringify({id: doc.getId(), url: doc.getUrl()}));
 #   }
 
-name: FIELD Outbox → Drive
+name: FIELD Outbox to Drive
 
 on:
   push:
@@ -82,11 +82,7 @@ jobs:
             [ -z "$TITLE" ] && TITLE=$(basename "$FILE" .md)
 
             # Read content and escape for JSON
-            CONTENT=$(python3 -c "
-import json, sys
-with open(sys.argv[1], 'r') as f:
-    print(json.dumps(f.read()))
-" "$FILE")
+            CONTENT=$(python3 -c "import json,sys; print(json.dumps(open(sys.argv[1],'r').read()))" "$FILE")
 
             # POST to Apps Script
             RESPONSE=$(curl -s -L -w "\n%{http_code}" -X POST "$APPS_SCRIPT_URL" \
@@ -98,7 +94,7 @@ with open(sys.argv[1], 'r') as f:
 
             if echo "$BODY" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('id',''))" 2>/dev/null | grep -q .; then
               DOC_ID=$(echo "$BODY" | python3 -c "import sys,json; print(json.load(sys.stdin)['id'])")
-              echo "✅ $FILE → Drive doc $DOC_ID"
+              echo "✅ $FILE -> Drive doc $DOC_ID"
               SUCCESS=$((SUCCESS + 1))
             else
               echo "⚠️  $FILE upload response: $BODY (HTTP $HTTP_CODE)"
