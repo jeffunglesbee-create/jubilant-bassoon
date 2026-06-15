@@ -2163,21 +2163,22 @@ assert('A385 — PM-19 Journalism Tab: toggleJournalismView + body.journalism-mo
   html.includes('id="field-journalism-section"'),
   'PM-19 C1+C2: Journalism Tab toggle must create body.journalism-mode class, persist to localStorage, hide irrelevant sections at mobile/tablet, and surface 📖 Journal anchor parallel to 📰 Desk');
 
-assert('A386 — PM-19 Journalism Tab: laptop (1200-1439px) side-by-side + desktop (1440px+) three-pane layouts',
+assert('A386 — PM-19 Journalism Tab: laptop + desktop centered reading layout with companion rail',
   // Laptop media query
   html.includes('@media(min-width:1200px) and (max-width:1439px)') &&
   // Desktop media query
   html.includes('@media(min-width:1440px)') &&
-  // Fixed-left rail pattern on .main
-  /body\.journalism-mode \.main\s*\{[^}]*position:fixed[^}]*left:0/.test(html) &&
-  // Companion only shown at desktop
-  /body\.journalism-mode \.jrn-companion\s*\{\s*display:block[^}]*position:fixed[^}]*right:0/.test(html) &&
-  // Reading column constraints
+  // Reading column constraints (laptop + desktop)
   html.includes('body.journalism-mode .jrn-reading{max-width:640px}') &&
   html.includes('body.journalism-mode .jrn-reading{max-width:720px}') &&
+  // Companion still shown at desktop 1440+ (fixed right rail — patent-visible J1-J5 architecture)
+  /body\.journalism-mode \.jrn-companion\s*\{\s*display:block[^}]*position:fixed[^}]*right:0/.test(html) &&
+  // Schedule hidden globally in journalism-mode (CC-CMD-2026-06-15-desktop-layout Bug 2 fix)
+  /body\.journalism-mode \.main,/.test(html) &&
+  /body:not\(\.journalism-mode\) #field-journalism-section\{display:none\}/.test(html) &&
   // renderJournalismCompanion present
   html.includes('function renderJournalismCompanion('),
-  'PM-19 C3: laptop layout fixes .main as 280px left rail; desktop adds .jrn-companion as fixed right rail. Reading column capped at 640px (laptop) / 720px (desktop). renderJournalismCompanion populates Tonight Read counts, Archive link, Later Tonight playoff list, and field_jq_scores quality telemetry');
+  'PM-19 + desktop-layout bug fix: journalism-mode is a full viewport swap at all widths (mobile, iPad, laptop, desktop). Schedule (.main) hidden globally when journalism-mode active. Reading column capped at 640px (laptop) / 720px (desktop). At 1440px+ the .jrn-companion (J1-J5 patent-visible context rail) remains as a fixed right rail. Below 1199px the back pill is sticky. renderJournalismCompanion populates Tonight Read counts, Archive link, Later Tonight playoff list, and field_jq_scores quality telemetry.');
 
 assert('A387 — PM-19 Journalism Tab: bottom-sheet "Read full coverage →" cross-link + openJournalismForGame helper',
   // Cross-link CSS class
@@ -3993,7 +3994,11 @@ assert('A533 — WHOLE FIELD: #wf-toggle button in nav controls',
 assert('A534 — WHOLE FIELD: initWFToggle IIFE defined',
   html.includes('function initWFToggle'));
 assert('A535 — WHOLE FIELD: body.wf-mode CSS at 1200px',
-  html.includes('body.wf-mode #ambient-panel'));
+  // Desktop-layout bug fix (June 15 2026): wf-mode rules are qualified with
+  // :not(.wc-mode):not(.journalism-mode) so they yield to the full-viewport
+  // modes. Either form is acceptable.
+  html.includes('body.wf-mode #ambient-panel') ||
+  html.includes('body.wf-mode:not(.wc-mode):not(.journalism-mode) #ambient-panel'));
 assert('A536 — WHOLE FIELD: field_desktop_mode localStorage key',
   html.includes("'field_desktop_mode'"));
 
@@ -4154,13 +4159,35 @@ assert('A599 — iPad-7: _isModelRefusal filter wired into generateJournalismVia
   html.includes("['A','B','C','D']"),
   'iPad-7 regression fix: (a) refusal filter in JQ Gate suppresses raw model meta-commentary; (b) series-preview prompt sends sport-specific exemplars. Soccer/WC/EPL/MLS routed to Exemplar D (real soccer exemplar); tennis/golf/F1/AFL/NFL routed to closest tonal match among A/B/C.');
 
-// ── A604-A611: Championship Brief + Score Overlay + Night Owl + Cross-Engine + Archive D1 + Archive Enrichment (June 14-15 2026) ──
+// ── A604-A612: Championship Brief + Score Overlay + Night Owl + Cross-Engine + Archive D1 + Archive Enrichment + Desktop Layout (June 14-15 2026) ──
 // Reordered 2026-06-15 (CC-CMD assertion-reorder commit) so the block reads
 // in descending numeric order (A609 first, A604 last) — newest at the top of
 // the prepend pattern, oldest at the bottom. Two label renames in this pass
 // (A606 + A607) clarify which assertion pins the PRE-EXISTING merge guard
 // vs the NEW ce676fb skip/scan/guard additions. No assertion logic changed —
 // only labels and ordering. See outbox/cc-assertion-reorder-2026-06-15.md.
+
+// ── A612 / CC-CMD-2026-06-15 Desktop Layout: WC + journalism own viewport + ambient panel toggle ──
+assert('A612 — Desktop layout fix: WC tab + journalism own viewport at >=1200px, ambient panel responds to ESSENTIALS/WHOLE FIELD toggle',
+  // (1) wc-mode hide list now includes #field-journalism-section so
+  // a journalism→WC switch doesn't leave both sections stacked.
+  /body\.wc-mode #field-journalism-section,?\s*$/m.test(html.split('{').slice(0,2000).join('{')) || html.includes('body.wc-mode #field-journalism-section,') &&
+  // (2) wc-section default-hidden rule is global (not inside @media).
+  /^body:not\(\.wc-mode\) #wc-section\{display:none\}/m.test(html) &&
+  // (3) journalism-mode hide list is global (not wrapped in @media).
+  /^body\.journalism-mode \.main,/m.test(html) &&
+  // (4) journalism section default-hidden rule is global.
+  /^body:not\(\.journalism-mode\) #field-journalism-section\{display:none\}/m.test(html) &&
+  // (5) wf-mode rules qualified with :not(.wc-mode):not(.journalism-mode) so the
+  // full-viewport modes win the cascade when both classes are set.
+  /body\.wf-mode:not\(\.wc-mode\):not\(\.journalism-mode\) #ambient-panel/.test(html) &&
+  // (6) renderAmbientPanel allows rendering at desktop when wf-mode is active.
+  html.includes('const isWfDesktop = w >= 1200 && document.body.classList.contains(\'wf-mode\')') &&
+  // (7) toggleWCView restores hidden attr on journalism section when activating wc-mode.
+  /jrnSec\.setAttribute\('hidden', ''\)/.test(html) &&
+  // (8) toggleJournalismView restores hidden attr on journalism section when deactivating.
+  /sec\.setAttribute\('hidden', ''\); sec\.style\.display = ''/.test(html),
+  'CC-CMD-2026-06-15-desktop-layout: three interconnected desktop bugs fixed. (1) WC groups tab now enters its own viewport at >=1200px — wc-mode hide list includes #field-journalism-section, wc-section default-hidden moved global. (2) Journalism tab gets its own viewport at >=1200px — hide list moved out of @media(max-width:1199px), schedule-rail position:fixed override removed. (3) Ambient panel responds correctly to ESSENTIALS/WHOLE FIELD — renderAmbientPanel renders content when wf-mode active at desktop, clears inline display when not. wf-mode rules qualified with :not(.wc-mode):not(.journalism-mode) so cascade order is deterministic when multiple body classes coexist. Toggle handlers restore [hidden] attribute on the inactive section. No mobile/tablet regressions: hide rules are global supersets of the previous mobile-only rules.');
 
 // ── A611 / CC-CMD-2026-06-15 Task C: enrichChampionshipFromArchive wired into 4 prompts ──
 assert('A611 — Archive D1: enrichChampionshipFromArchive wraps champCtx with path-to-finals; wired into J2 + card-tap + static Night Owl + Claude Night Owl',

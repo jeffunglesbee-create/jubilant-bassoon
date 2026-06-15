@@ -2196,21 +2196,28 @@ body.journalism-mode #field-journalism-section{animation:jrnFadeIn 220ms ease-ou
   body.journalism-mode #field-journalism-section{animation:none}
 }
 
-/* Tab-swap behavior on mobile/tablet: when journalism mode active,
-   hide schedule + desk + media; show journalism. Companion stays hidden
-   at this viewport regardless. */
+/* Global journalism-mode hide list — full viewport swap at ALL widths.
+   Desktop bug fix (June 15 2026): rules moved out of @media(max-width:1199px)
+   so journalism gets its own viewport on laptop/desktop too, matching mobile/iPad.
+   Removed the desktop "fixed schedule rail" rules — schedule is hidden, not shrunk. */
+body.journalism-mode .main,
+body.journalism-mode #night-owl,
+body.journalism-mode #field-desk-section,
+body.journalism-mode #media-section,
+body.journalism-mode #streaming-section,
+body.journalism-mode #wc-section,
+body.journalism-mode .page-divider,
+body.journalism-mode .legend-section,
+body.journalism-mode #upper-slots,
+body.journalism-mode #field-right-now,
+body.journalism-mode #ambient-panel{display:none !important}
+body.journalism-mode #field-journalism-section{display:block}
+body.journalism-mode #field-journalism-section[hidden]{display:block}
+body:not(.journalism-mode) #field-journalism-section{display:none}
+
+/* Mobile/iPad-only back pill styling — laptop+ shows journalism standalone, no pill needed */
 @media(max-width:1199px){
-  body.journalism-mode .main,
-  body.journalism-mode #night-owl,
-  body.journalism-mode #field-desk-section,
-  body.journalism-mode #media-section,
-  body.journalism-mode .page-divider,
-  body.journalism-mode .legend-section,
-  body.journalism-mode #ambient-panel{display:none !important}
-  body.journalism-mode #field-journalism-section{display:block}
-  body.journalism-mode #field-journalism-section[hidden]{display:block}
   body.journalism-mode .jrn-back-pill{display:inline-block;position:sticky;top:calc(env(safe-area-inset-top,0px) + .5rem);z-index:50;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);background:rgba(20,20,28,.78)}
-  body:not(.journalism-mode) #field-journalism-section{display:none}
 }
 
 /* ── WC2026 Groups/Bracket Tab ──────────────────────────────────────────────
@@ -2383,24 +2390,27 @@ body.wc-mode #wc-section{animation:wcFadeIn 220ms ease-out}
 /* WC mode: full viewport swap at ALL widths. Groups/bracket replaces schedule. */
 /* Ambient panel always hidden in wc-mode — at all viewport widths.
    WC section is a full viewport swap; ambient panel would compete for space
-   and is irrelevant when browsing groups or bracket. */
+   and is irrelevant when browsing groups or bracket.
+   Desktop bug fix (June 15 2026): added #field-journalism-section to hide list
+   so a journalism→WC transition doesn't leave both sections stacked. */
 body.wc-mode #ambient-panel{display:none !important}
 body.wc-mode .main,
 body.wc-mode #night-owl,
 body.wc-mode #field-desk-section,
 body.wc-mode #media-section,
+body.wc-mode #field-journalism-section,
 body.wc-mode .page-divider,
 body.wc-mode .legend-section,
 body.wc-mode #upper-slots,
 body.wc-mode #field-right-now{display:none !important}
 body.wc-mode #wc-section{display:block}
 body.wc-mode #wc-section[hidden]{display:block}
+body:not(.wc-mode) #wc-section{display:none}
 
 @media(max-width:1199px){
   body.wc-mode .wc-back-pill{display:inline-block;position:sticky;top:calc(env(safe-area-inset-top,0px) + .5rem);z-index:50;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);background:rgba(20,20,28,.78)}
   body.wc-mode nav.controls{margin-right:0 !important} /* ambient panel hidden in wc-mode — full-width nav */
   body.wc-mode header.masthead{margin-right:0 !important}
-  body:not(.wc-mode) #wc-section{display:none}
 }
 
 /* Desktop: full viewport swap like mobile, but centered + capped width */
@@ -2420,56 +2430,62 @@ body.wc-mode #wc-section[hidden]{display:block}
    Laptop 1200-1439px: LEFT (schedule) + RIGHT (ambient panel)
    Desktop 1440px+:    LEFT (schedule) + CENTRE (journalism) + RIGHT (ambient)
    Toggle button: #wf-toggle (hidden below 1200px)
-   Persisted: localStorage 'field_desktop_mode' = 'whole' | 'essentials' */
+   Persisted: localStorage 'field_desktop_mode' = 'whole' | 'essentials'
+
+   :not(.wc-mode):not(.journalism-mode) qualification (June 15 2026 bug fix):
+   wc-mode and journalism-mode are full-viewport swaps; their hide rules must
+   beat wf-mode's display:flex on the ambient panel when modes coexist (e.g.
+   user has WHOLE FIELD on, then clicks WC tab). Without the qualifier, the
+   wf-mode rule's later source position breaks the wc/journalism-mode hide. */
 
 /* Laptop WHOLE FIELD: show ambient panel on the right */
 @media(min-width:1200px) and (max-width:1439px){
-  body.wf-mode #ambient-panel{
+  body.wf-mode:not(.wc-mode):not(.journalism-mode) #ambient-panel{
     display:flex !important;
     top:0;height:100dvh;padding-top:1rem;
     background:#0c1118;border-left:1px solid rgba(255,255,255,.09);
     width:380px;right:0;
   }
-  body.wf-mode .main,
-  body.wf-mode header.masthead,
-  body.wf-mode nav.controls,
-  body.wf-mode #score-ticker-wrap,
-  body.wf-mode #field-brief,
-  body.wf-mode #night-owl,
-  body.wf-mode #double-feature,
-  body.wf-mode #offline-banner,
-  body.wf-mode .mv-panel{
+  body.wf-mode:not(.wc-mode):not(.journalism-mode) .main,
+  body.wf-mode:not(.wc-mode):not(.journalism-mode) header.masthead,
+  body.wf-mode:not(.wc-mode):not(.journalism-mode) nav.controls,
+  body.wf-mode:not(.wc-mode):not(.journalism-mode) #score-ticker-wrap,
+  body.wf-mode:not(.wc-mode):not(.journalism-mode) #field-brief,
+  body.wf-mode:not(.wc-mode):not(.journalism-mode) #night-owl,
+  body.wf-mode:not(.wc-mode):not(.journalism-mode) #double-feature,
+  body.wf-mode:not(.wc-mode):not(.journalism-mode) #offline-banner,
+  body.wf-mode:not(.wc-mode):not(.journalism-mode) .mv-panel{
     margin-right:390px;
   }
-  body.wf-mode #score-ticker-wrap{display:block !important}
+  body.wf-mode:not(.wc-mode):not(.journalism-mode) #score-ticker-wrap{display:block !important}
   /* 2-col game grid stays but constrained to narrower left pane */
-  body.wf-mode .games-list{grid-template-columns:1fr !important}
+  body.wf-mode:not(.wc-mode):not(.journalism-mode) .games-list{grid-template-columns:1fr !important}
 }
 
 /* Desktop WHOLE FIELD: LEFT + CENTRE + RIGHT */
 @media(min-width:1440px){
-  body.wf-mode #ambient-panel{
+  body.wf-mode:not(.wc-mode):not(.journalism-mode) #ambient-panel{
     display:flex !important;
     top:0;height:100dvh;padding-top:1rem;
     background:#0c1118;border-left:1px solid rgba(255,255,255,.09);
     width:380px;right:0;
   }
   /* RIGHT margin for ambient panel */
-  body.wf-mode .main,
-  body.wf-mode header.masthead,
-  body.wf-mode nav.controls,
-  body.wf-mode #score-ticker-wrap,
-  body.wf-mode #double-feature,
-  body.wf-mode #offline-banner,
-  body.wf-mode .mv-panel{
+  body.wf-mode:not(.wc-mode):not(.journalism-mode) .main,
+  body.wf-mode:not(.wc-mode):not(.journalism-mode) header.masthead,
+  body.wf-mode:not(.wc-mode):not(.journalism-mode) nav.controls,
+  body.wf-mode:not(.wc-mode):not(.journalism-mode) #score-ticker-wrap,
+  body.wf-mode:not(.wc-mode):not(.journalism-mode) #double-feature,
+  body.wf-mode:not(.wc-mode):not(.journalism-mode) #offline-banner,
+  body.wf-mode:not(.wc-mode):not(.journalism-mode) .mv-panel{
     margin-right:390px;
   }
-  body.wf-mode #score-ticker-wrap{display:block !important}
-  body.wf-mode .games-list{grid-template-columns:1fr !important}
+  body.wf-mode:not(.wc-mode):not(.journalism-mode) #score-ticker-wrap{display:block !important}
+  body.wf-mode:not(.wc-mode):not(.journalism-mode) .games-list{grid-template-columns:1fr !important}
   /* CENTRE: journalism section visible inline (not modal) */
-  body.wf-mode #field-desk-section,
-  body.wf-mode #night-owl,
-  body.wf-mode #field-brief{
+  body.wf-mode:not(.wc-mode):not(.journalism-mode) #field-desk-section,
+  body.wf-mode:not(.wc-mode):not(.journalism-mode) #night-owl,
+  body.wf-mode:not(.wc-mode):not(.journalism-mode) #field-brief{
     display:block;
     margin-right:390px;
   }
@@ -2611,43 +2627,20 @@ body.wc-mode #wc-section[hidden]{display:block}
 /* ── C3: Laptop multi-pane (1200-1439px) ──────────────────────────────────
    Schedule rail fixed left (280px), journalism reading shifted right.
    Companion stays hidden at laptop. */
+/* Desktop journalism-mode: full-viewport reading layout (June 15 2026 bug fix).
+   Schedule is hidden globally above — journalism takes the centered column.
+   Companion (J1-J5 patent-visible) remains in the right rail at 1440px+. */
 @media(min-width:1200px) and (max-width:1439px){
-  body.journalism-mode .main{
-    position:fixed;top:0;left:0;
-    width:280px;max-height:100vh;overflow-y:auto;
-    z-index:5;padding:1rem .5rem;
-    background:var(--bg);border-right:1px solid var(--edge);
-    margin:0;
-  }
   body.journalism-mode #field-journalism-section{
-    margin-left:300px;
-    max-width:calc(100vw - 320px);
+    max-width:960px;margin:0 auto;
   }
   body.journalism-mode .jrn-reading{max-width:640px}
-  body.journalism-mode .jrn-back-pill{display:none} /* not needed at laptop+ — schedule already visible */
-  body.journalism-mode #night-owl,
-  body.journalism-mode #field-desk-section,
-  body.journalism-mode #media-section,
-  body.journalism-mode #streaming-section,
-  body.journalism-mode .page-divider,
-  body.journalism-mode .legend-section,
-  body.journalism-mode #ambient-panel{display:none !important}
+  body.journalism-mode .jrn-back-pill{display:none}
 }
 
-/* ── C3: Desktop three-pane (1440px+) ─────────────────────────────────────
-   Schedule rail fixed left, companion fixed right, journalism in middle.
-   Companion is the patent-visible J1-J5 architecture surfaced. */
 @media(min-width:1440px){
-  body.journalism-mode .main{
-    position:fixed;top:0;left:0;
-    width:280px;max-height:100vh;overflow-y:auto;
-    z-index:5;padding:1rem .5rem;
-    background:var(--bg);border-right:1px solid var(--edge);
-    margin:0;
-  }
   body.journalism-mode #field-journalism-section{
-    margin-left:300px;margin-right:300px;
-    max-width:calc(100vw - 620px);
+    max-width:calc(100vw - 320px);margin:0 auto;margin-right:320px;
   }
   body.journalism-mode .jrn-reading{max-width:720px}
   body.journalism-mode .jrn-companion{
@@ -2658,13 +2651,6 @@ body.wc-mode #wc-section[hidden]{display:block}
     background:var(--bg);border-left:1px solid var(--edge);
   }
   body.journalism-mode .jrn-back-pill{display:none}
-  body.journalism-mode #night-owl,
-  body.journalism-mode #field-desk-section,
-  body.journalism-mode #media-section,
-  body.journalism-mode #streaming-section,
-  body.journalism-mode .page-divider,
-  body.journalism-mode .legend-section,
-  body.journalism-mode #ambient-panel{display:none !important}
 }
 
 /* ── C3: Companion content styles (visible at desktop only) ───────────── */
@@ -11900,7 +11886,8 @@ function toggleJournalismView() {
   if (willActivate && body.classList.contains('wc-mode')) {
     body.classList.remove('wc-mode');
     document.getElementById('wc-nav-link')?.classList.remove('active');
-    document.getElementById('wc-section')?.setAttribute('hidden', '');
+    const wcSec = document.getElementById('wc-section');
+    if (wcSec) { wcSec.setAttribute('hidden', ''); wcSec.style.display = ''; }
   }
   const navLink = document.getElementById('jrn-nav-link');
   if (navLink) navLink.classList.toggle('active', willActivate);
@@ -11918,6 +11905,12 @@ function toggleJournalismView() {
       }
     }, 50);
   } else {
+    // Re-add hidden attribute so the section is hidden across all viewports
+    // when journalism-mode is off. The CSS body:not(.journalism-mode) rule
+    // also hides it, but the attribute is belt-and-suspenders for older
+    // browsers / inline-style residue.
+    const sec = document.getElementById('field-journalism-section');
+    if (sec) { sec.setAttribute('hidden', ''); sec.style.display = ''; }
     // C2: restore prior schedule scroll position rather than jumping to top
     const restoreY = (typeof window._fieldScheduleScrollY === 'number') ? window._fieldScheduleScrollY : 0;
     window.scrollTo({top: restoreY, behavior: 'smooth'});
@@ -20182,7 +20175,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-15b';
+  const SW_VERSION = '2026-06-15c';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -27833,11 +27826,15 @@ function toggleWCView() {
     navLink?.classList.add('active');
     section?.removeAttribute('hidden');
     if (section) section.style.display = 'block'; // belt-and-suspenders: iOS Safari hidden attribute
-    // Mutual exclusion: dismiss journalism-mode if active
+    // Mutual exclusion: dismiss journalism-mode if active. Re-add hidden
+    // attribute to its section so CSS body:not(.journalism-mode) #field-journalism-section{display:none}
+    // is reinforced even if a later style override clears the rule.
     if (document.body.classList.contains('journalism-mode')) {
       document.body.classList.remove('journalism-mode');
       document.getElementById('jrn-nav-link')?.classList.remove('active');
     }
+    const jrnSec = document.getElementById('field-journalism-section');
+    if (jrnSec) { jrnSec.setAttribute('hidden', ''); jrnSec.style.display = ''; }
     renderWCSection();
   } else {
     navLink?.classList.remove('active');
@@ -28897,8 +28894,11 @@ async function renderWCBracketTree() {
       ? 'Switch to ESSENTIALS (schedule only)'
       : 'Switch to WHOLE FIELD (schedule + ambient panel)';
     try { localStorage.setItem(LS_KEY, m); } catch(e_) {}
-    // Trigger ambient panel render if switching into wf-mode for the first time
-    if (isWhole && typeof renderAmbientPanel === 'function') {
+    // Trigger ambient panel render on every toggle: populates content when
+    // entering WHOLE FIELD, clears the inline display:flex (set during prior
+    // iPad-range renders) when returning to ESSENTIALS so the CSS base rule
+    // hides the panel cleanly.
+    if (typeof renderAmbientPanel === 'function') {
       renderAmbientPanel();
     }
   }
@@ -29182,8 +29182,27 @@ function renderAmbientPanel(){
   const panel=(_DOM?.ambientPanel||document.getElementById('ambient-panel'));
   if(!panel) return;
   const w=window.innerWidth;
-  if(w<820||w>=1200){panel.style.display='none';return;}
-  panel.style.display='flex';
+  // Desktop bug fix (June 15 2026): allow rendering at >=1200px when wf-mode
+  // is active (WHOLE FIELD shows the panel via the @media wf-mode rules).
+  // Without this branch the panel was visible-but-empty on desktop wf-mode
+  // because the function returned before populating content.
+  const isWfDesktop = w >= 1200 && document.body.classList.contains('wf-mode')
+    && !document.body.classList.contains('wc-mode')
+    && !document.body.classList.contains('journalism-mode');
+  if (w < 820 || (w >= 1200 && !isWfDesktop)) {
+    // Clear any inline display we may have set previously; CSS will hide
+    // via base rule (#ambient-panel{display:none}) when no mode shows it.
+    panel.style.display = '';
+    return;
+  }
+  // iPad path (820-1199) keeps the inline display:flex for compat with
+  // existing iPad-18 inset positioning. Desktop wf-mode lets the CSS
+  // !important rule set display:flex — clear inline so we don't conflict.
+  if (isWfDesktop) {
+    panel.style.display = '';
+  } else {
+    panel.style.display = 'flex';
+  }
 
   // ── Section 1: OTW fire state mirror ──────────────────────────────────
   // Drama Dial wiring: use getDramaDial() so user's sensitivity setting governs
