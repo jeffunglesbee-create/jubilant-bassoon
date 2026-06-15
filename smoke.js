@@ -4154,23 +4154,13 @@ assert('A599 — iPad-7: _isModelRefusal filter wired into generateJournalismVia
   html.includes("['A','B','C','D']"),
   'iPad-7 regression fix: (a) refusal filter in JQ Gate suppresses raw model meta-commentary; (b) series-preview prompt sends sport-specific exemplars. Soccer/WC/EPL/MLS routed to Exemplar D (real soccer exemplar); tennis/golf/F1/AFL/NFL routed to closest tonal match among A/B/C.');
 
-// ── A606 / Rule 59 audit task 1d: score overlay L1+L2 guard present ─────────
-// Numbering note: audit prompt asked for "A605" but A605 was already used by
-// CHAMPIONSHIP-BRIEF-J2 wiring (commit a17bf8e). See outbox/rule59-audit-2026-06-15.md.
-// Pins what is ACTUALLY in the code today (not what the audit text described).
-assert('A606 — Rule 59 audit task 1d: score overlay L1+L2 — _scoresNull merge guard + hydrateEspnScoresFromFinals fallback present',
-  // Layer 1 — V2 merge guard preserves prev.homeScore/awayScore when
-  // v2Entry._scoresNull is true. This is a MERGE GUARD, not a SKIP (audit
-  // task description said "skipped"; actual code merges).
-  /v2Entry\._scoresNull && prev\?\.homeScore/.test(html) &&
-  /v2Entry\._scoresNull && prev\?\.awayScore/.test(html) &&
-  // Layer 2 — hydrateEspnScoresFromFinals reads from localStorage cache
-  // via loadTonightFinals(), NOT from allData.sports (audit task
-  // description said allData.sports; actual code uses localStorage).
-  /function hydrateEspnScoresFromFinals\s*\(/.test(html) &&
-  html.includes('const finals = loadTonightFinals();') &&
-  html.includes('existingIsBlank'),
-  'Rule 59 audit (CC-AUDIT-A) Task 1d: pins the L1 merge guard and L2 localStorage-cache fallback. Three divergences from the audit text are documented in outbox/rule59-audit-2026-06-15.md: (1) L1 merges rather than skipping when prev is missing — a 0-0 entry can still be written; (2) L2 scans loadTonightFinals() not allData.sports; (3) no explicit start_time guard exists (the ET-date cache key is the implicit protection).');
+// ── A604-A608: Championship Brief + Score Overlay + Night Owl (June 14-15 2026) ──
+// Reordered 2026-06-15 (CC-CMD assertion-reorder commit) so the block reads
+// in descending numeric order (A608 first, A604 last) — newest at the top of
+// the prepend pattern, oldest at the bottom. Two label renames in this pass
+// (A606 + A607) clarify which assertion pins the PRE-EXISTING merge guard
+// vs the NEW ce676fb skip/scan/guard additions. No assertion logic changed —
+// only labels and ordering. See outbox/cc-assertion-reorder-2026-06-15.md.
 
 // ── A608 / CC-CMD-2026-06-15 Task 3: Night Owl championship context ─────
 // Numbering note: the spec asked for "A607" but A607 was already used by the
@@ -4191,12 +4181,12 @@ assert('A608 — CC-CMD-2026-06-15 Task 3: championship context wired into Night
   /topGame\.seriesRecord\?'Series: '\+topGame\.seriesRecord:'',\s*\n\s*_noChampBlock,/.test(html),
   'CC-CMD-2026-06-15 Task 3: buildNightOwlStatic and fetchNightOwlFromClaude both consult buildChampionshipContext. When a Stanley Cup / NBA Finals / World Series / Super Bowl clinch fires, the static line gets "{Winner} wins the {Trophy}. {Drought}." appended, and the Claude prompt receives the same [CHAMPIONSHIP CONTEXT] block used in fetchGameBriefOnDemand / fetchSeriesPreviewFromClaude. Non-clinch games are unchanged.');
 
-// ── A607 / Rule 59 audit postscript — ce676fb additions ───────────────────
-// After my audit pushed, I discovered the chat surface had committed ce676fb
-// in parallel — which added the three patterns my audit said were missing.
-// This assertion pins the NEW (ce676fb) patterns so they survive future
-// regressions. See outbox/rule59-audit-2026-06-15.md "Postscript" section.
-assert('A607 — Rule 59 audit postscript: ce676fb explicit skip + allData.sports scan + start_time guard',
+// ── A607 / Score overlay L1+L2: ce676fb additions ─────────────────────────
+// Pins the patterns commit ce676fb added to fix the SCF 0-0-on-load bug:
+// (a) explicit early-return when v2Entry._scoresNull && !prev (Layer 1 skip),
+// (b) allData.sports scan inside hydrateEspnScoresFromFinals (Layer 2 fallback),
+// (c) start_time guard inside that scan to prevent future-game backfill.
+assert('A607 — Score overlay L1+L2: explicit null-score skip + allData.sports fallback + start_time guard',
   // Layer 1 — explicit early-return SKIP (added by ce676fb).
   /if \(v2Entry\._scoresNull && !prev\)\s*\{[\s\S]{0,200}return;/.test(html) &&
   // Layer 2b — allData.sports scan inside hydrateEspnScoresFromFinals
@@ -4206,7 +4196,25 @@ assert('A607 — Rule 59 audit postscript: ce676fb explicit skip + allData.sport
   // (added by ce676fb).
   html.includes('// Only backfill past games (start_time already passed)') &&
   /new Date\(g\.start_time\)\.getTime\(\) > Date\.now\(\)/.test(html),
-  'Pins the three patterns ce676fb added that my audit reported as missing. The audit was reading pre-rebase HEAD; ce676fb landed via chat surface between my pull and my push, then was carried through by rebase. Honest disclosure in outbox/rule59-audit-2026-06-15.md postscript.');
+  'Pins the three patterns ce676fb added to the V2 score-overlay path: the Layer 1 explicit skip, the Layer 2 allData.sports fallback scan inside hydrateEspnScoresFromFinals, and the start_time guard preventing future games from being backfilled. Companion to A606 (which pins the pre-existing merge guard). See outbox/rule59-audit-2026-06-15.md postscript for the discovery narrative.');
+
+// ── A606 / Score overlay: pre-existing _scoresNull merge guard ─────────────
+// Pins the PRE-EXISTING V2 merge-guard code path (not the ce676fb additions).
+// When v2Entry._scoresNull is true AND a prev entry has homeScore/awayScore,
+// the merge ternary preserves the prev values. This is independent from
+// A607's explicit skip — both code paths now coexist after ce676fb.
+assert('A606 — Score overlay: pre-existing _scoresNull merge guard in V2 write path',
+  // Layer 1 — V2 merge guard preserves prev.homeScore/awayScore when
+  // v2Entry._scoresNull is true. This is a MERGE GUARD (not the SKIP — see A607).
+  /v2Entry\._scoresNull && prev\?\.homeScore/.test(html) &&
+  /v2Entry\._scoresNull && prev\?\.awayScore/.test(html) &&
+  // Layer 2 — hydrateEspnScoresFromFinals reads from localStorage cache
+  // via loadTonightFinals() (the original Layer 2; ce676fb added the
+  // allData.sports fallback alongside this, see A607).
+  /function hydrateEspnScoresFromFinals\s*\(/.test(html) &&
+  html.includes('const finals = loadTonightFinals();') &&
+  html.includes('existingIsBlank'),
+  'Pins the pre-existing V2 merge guard (v2Entry._scoresNull && prev?.homeScore ternary) and the original Layer 2 localStorage-cache fallback (loadTonightFinals + existingIsBlank). Companion to A607 which pins the ce676fb additions (explicit skip + allData.sports scan + start_time guard). See outbox/rule59-audit-2026-06-15.md.');
 
 // ── A605 / CHAMPIONSHIP-BRIEF: J2 series-preview path wires championship context
 assert('A605 — CHAMPIONSHIP-BRIEF: buildChampionshipContext wired into fetchSeriesPreviewFromClaude (J2)',
