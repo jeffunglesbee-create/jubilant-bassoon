@@ -24273,6 +24273,27 @@ async function fetchSeriesPreviewFromClaude(g){
   })();
   // iPad-7: send sport-specific exemplars only — NHL series briefs get
   // hockey exemplars, not NBA/MLB ones. Reduces refusal frequency.
+  // CHAMPIONSHIP-BRIEF-SPEC: same pattern as fetchGameBriefOnDemand —
+  // when this game IS a championship clinch, surface drought + trophy +
+  // clinch type so the prompt rises to the moment. buildChampionshipContext
+  // returns null when not applicable; for non-clinch games the J2 prompt
+  // is byte-for-byte unchanged. Word rule lifted from 80-100 to 120-160
+  // when champCtx is present so the historical weight has room.
+  const _j2ChampEData = (typeof findESPNScore === 'function') ? findESPNScore(g) : null;
+  const _j2ChampCtx = (typeof buildChampionshipContext === 'function')
+    ? buildChampionshipContext(g, _j2ChampEData) : null;
+  const _j2ChampBlock = _j2ChampCtx
+    ? `[CHAMPIONSHIP CONTEXT]
+This is a championship-clinching game. ${_j2ChampCtx.winner} wins the ${_j2ChampCtx.trophy}.
+${_j2ChampCtx.drought}.
+Playoff record: ${_j2ChampCtx.playoffRecord}.
+Journey: ${_j2ChampCtx.journey}.
+Clinch type: ${_j2ChampCtx.clinchType}.
+Write this brief at the level the moment deserves. Do not undersell a championship.`
+    : '';
+  const _j2WordRule = _j2ChampCtx
+    ? 'Rules: 120-160 words. 4-5 sentences. Lead with the historical weight (drought + trophy), then the clinch type, then a tactical fact from this series, then what tonight settles for the franchise.'
+    : 'Rules: 80-100 words. 2-3 sentences. Tactical focus — what to watch tonight.';
   const prompt=[_fieldVoiceExemplarsForSport(g._sport||g._section||g.league||''),
     'Write a FIELD Series Brief for this playoff game.',
     'Home: '+g.home+'. Away: '+g.away+'.'+(g.venue?' Venue: '+g.venue+'.':''),
@@ -24282,8 +24303,9 @@ async function fetchSeriesPreviewFromClaude(g){
     g.matchupNote?'Context: '+g.matchupNote:'',
     g.journalNote&&g.journalNote!==g.matchupNote?'Series history: '+g.journalNote:'',
     g.league&&!g.matchupNote?'League: '+g.league+'.':'',
+    _j2ChampBlock,
     ' ',
-    'Rules: 80-100 words. 2-3 sentences. Tactical focus — what to watch tonight.',
+    _j2WordRule,
     'SERIES RECORD LOCKDOWN: The series record is EXACTLY ' + (g.seriesRecord || '') + '. Do NOT write any other record. Copy the series record verbatim from the data above.',
     'STRUCTURE: Sentence 1 = the specific stakes (clinch/elimination/advantage — cite the series record and what winning/losing means). Sentence 2 = the key tactical or narrative fact from this series (player performance, matchup, trend). Sentence 3 = what to watch tonight that decides the game.',
     'If Context is provided, use specific facts from it — player names, stats, game results.',

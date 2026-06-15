@@ -4154,6 +4154,18 @@ assert('A599 — iPad-7: _isModelRefusal filter wired into generateJournalismVia
   html.includes("['A','B','C','D']"),
   'iPad-7 regression fix: (a) refusal filter in JQ Gate suppresses raw model meta-commentary; (b) series-preview prompt sends sport-specific exemplars. Soccer/WC/EPL/MLS routed to Exemplar D (real soccer exemplar); tennis/golf/F1/AFL/NFL routed to closest tonal match among A/B/C.');
 
+// ── A605 / CHAMPIONSHIP-BRIEF: J2 series-preview path wires championship context
+assert('A605 — CHAMPIONSHIP-BRIEF: buildChampionshipContext wired into fetchSeriesPreviewFromClaude (J2)',
+  // Same builder reused in the J2 path — championship-aware prompt.
+  /const _j2ChampCtx = \(typeof buildChampionshipContext === 'function'\)\s*\n?\s*\?\s*buildChampionshipContext\(g, _j2ChampEData\)/.test(html) &&
+  // Championship block + word-rule lift wired into the J2 prompt array.
+  html.includes('const _j2ChampBlock = _j2ChampCtx') &&
+  html.includes('Rules: 120-160 words. 4-5 sentences. Lead with the historical weight') &&
+  // The block + rule are inserted into the prompt array near the other context lines.
+  html.includes('_j2ChampBlock,') &&
+  html.includes('_j2WordRule,'),
+  'CHAMPIONSHIP-BRIEF: J2 inline series-preview brief (fetchSeriesPreviewFromClaude) now sees the same championship context as the card-tap brief. When buildChampionshipContext returns non-null, the [CHAMPIONSHIP CONTEXT] block is appended to the J2 prompt and the word rule lifts from 80-100 to 120-160 so a Stanley Cup clinch reads at the moments weight. Non-clinch games are unchanged.');
+
 // ── A604 / CHAMPIONSHIP-BRIEF: builder + lookup + prompt injection in fetchGameBriefOnDemand
 assert('A604 — CHAMPIONSHIP-BRIEF: buildChampionshipContext + FRANCHISE_LAST_TITLE + prompt injection',
   // (1) Championship context builder exists.
