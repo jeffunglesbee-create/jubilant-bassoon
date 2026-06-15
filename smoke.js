@@ -4172,6 +4172,25 @@ assert('A606 — Rule 59 audit task 1d: score overlay L1+L2 — _scoresNull merg
   html.includes('existingIsBlank'),
   'Rule 59 audit (CC-AUDIT-A) Task 1d: pins the L1 merge guard and L2 localStorage-cache fallback. Three divergences from the audit text are documented in outbox/rule59-audit-2026-06-15.md: (1) L1 merges rather than skipping when prev is missing — a 0-0 entry can still be written; (2) L2 scans loadTonightFinals() not allData.sports; (3) no explicit start_time guard exists (the ET-date cache key is the implicit protection).');
 
+// ── A608 / CC-CMD-2026-06-15 Task 3: Night Owl championship context ─────
+// Numbering note: the spec asked for "A607" but A607 was already used by the
+// Rule 59 audit postscript (commit 29c99b6). Using A608. See
+// outbox/cc-scores-nightowl-2026-06-15.md for the rationale.
+assert('A608 — CC-CMD-2026-06-15 Task 3: championship context wired into Night Owl path (static + Claude)',
+  // Static Night Owl line (buildNightOwlStatic): champCtx call + drought
+  // append. Variable prefix _no to avoid collision with the J2 _j2 prefix.
+  /const _noChampEData = \{homeScore: f\.homeScore\|\|0, awayScore: f\.awayScore\|\|0\}/.test(html) &&
+  /const _noChampCtx = \(typeof buildChampionshipContext === 'function'\)/.test(html) &&
+  /line \+= ' ' \+ _noChampCtx\.winner \+ ' wins the ' \+ _noChampCtx\.trophy \+ '\.';/.test(html) &&
+  // Claude Night Owl path (fetchNightOwlFromClaude): champ block + prompt
+  // array entry.
+  /const _noChampBlock = _noChampCtx/.test(html) &&
+  html.includes('[CHAMPIONSHIP CONTEXT]') &&
+  // The block sits in the prompt array between seriesRecord and dramaPeak
+  // (verified by reading the construct in index.html).
+  /topGame\.seriesRecord\?'Series: '\+topGame\.seriesRecord:'',\s*\n\s*_noChampBlock,/.test(html),
+  'CC-CMD-2026-06-15 Task 3: buildNightOwlStatic and fetchNightOwlFromClaude both consult buildChampionshipContext. When a Stanley Cup / NBA Finals / World Series / Super Bowl clinch fires, the static line gets "{Winner} wins the {Trophy}. {Drought}." appended, and the Claude prompt receives the same [CHAMPIONSHIP CONTEXT] block used in fetchGameBriefOnDemand / fetchSeriesPreviewFromClaude. Non-clinch games are unchanged.');
+
 // ── A607 / Rule 59 audit postscript — ce676fb additions ───────────────────
 // After my audit pushed, I discovered the chat surface had committed ce676fb
 // in parallel — which added the three patterns my audit said were missing.

@@ -33362,6 +33362,18 @@ function buildNightOwlStatic(f){
   const _n=computeGameNarrative(f,_synth,_sc);
   let line=_n.leaderName+' defeated '+_n.trailerName+' '+_n.scoreline+'.';
   if(f.seriesRecord) line+=' Series: '+f.seriesRecord+'.';
+  // CC-CMD-2026-06-15 Task 3: championship context. For Stanley Cup / NBA
+  // Finals / World Series / Super Bowl clinching games, append the trophy
+  // + drought from buildChampionshipContext. Gates inside the helper
+  // return null for non-clinch games — non-clinch Night Owl line is
+  // unchanged byte-for-byte.
+  const _noChampEData = {homeScore: f.homeScore||0, awayScore: f.awayScore||0};
+  const _noChampCtx = (typeof buildChampionshipContext === 'function')
+    ? buildChampionshipContext(f, _noChampEData) : null;
+  if (_noChampCtx) {
+    line += ' ' + _noChampCtx.winner + ' wins the ' + _noChampCtx.trophy + '.';
+    if (_noChampCtx.drought) line += ' ' + _noChampCtx.drought + '.';
+  }
   line+=' Full breakdown in tomorrow\'s FIELD Brief.';
   return line;
 }
@@ -33621,12 +33633,30 @@ async function fetchNightOwlFromClaude(topGame){
     }
   } catch(_) {}
 
+  // CC-CMD-2026-06-15 Task 3: championship context. Same pattern as
+  // fetchGameBriefOnDemand / fetchSeriesPreviewFromClaude. The helper returns
+  // null when the game isn't a championship clinch — non-clinch Night Owl
+  // prompts are byte-for-byte unchanged. When non-null, the [CHAMPIONSHIP
+  // CONTEXT] block lifts the prompt to acknowledge the trophy and drought.
+  const _noChampEData = {homeScore: _homeS, awayScore: _awayS};
+  const _noChampCtx = (typeof buildChampionshipContext === 'function')
+    ? buildChampionshipContext(topGame, _noChampEData) : null;
+  const _noChampBlock = _noChampCtx
+    ? `[CHAMPIONSHIP CONTEXT]
+This is a championship-clinching game. ${_noChampCtx.winner} wins the ${_noChampCtx.trophy}.
+${_noChampCtx.drought}.
+Playoff record: ${_noChampCtx.playoffRecord}.
+Journey: ${_noChampCtx.journey}.
+Clinch type: ${_noChampCtx.clinchType}.
+Write this Night Owl at the level the moment deserves. Do not undersell a championship.`
+    : '';
   const prompt=['Write a FIELD Night Owl recap.',
       'Game: '+topGame.away+' @ '+topGame.home+(topGame.venue?' · '+topGame.venue:''),
       'Final: '+score+' ('+winner+' wins)'+_xiNote,
       _marginLine,
       _terms,
       topGame.seriesRecord?'Series: '+topGame.seriesRecord:'',
+      _noChampBlock,
       topGame.dramaPeak?'Drama peak: '+Math.round(topGame.dramaPeak)+'/100':'',
       // EMBER: if this was a buried-lead game, include that framing with peak context
       (()=>{try{const _gidE=topGame.id||topGame._id||'';const er=_emberResultCache[_gidE];if(!er)return '';const _pkE=topGame.dramaPeak>=65?` · peak ${Math.round(topGame.dramaPeak)}/100`:'';return`  [EMBER BURIED LEAD: Tier${er.tier} on ${er.channel}${_pkE}${er.lateClose?' · late-close game':''}]`;}catch(e_){return ''}})(),
