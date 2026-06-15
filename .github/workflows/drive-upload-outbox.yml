@@ -85,7 +85,7 @@ jobs:
             CONTENT=$(python3 -c "import json,sys; print(json.dumps(open(sys.argv[1],'r').read()))" "$FILE")
 
             # POST to Apps Script
-            RESPONSE=$(curl -s -L -w "\n%{http_code}" -X POST "$APPS_SCRIPT_URL" \
+            RESPONSE=$(curl -s -L --post301 --post302 --post303 -w "\n%{http_code}" -X POST "$APPS_SCRIPT_URL" \
               -H "Content-Type: application/json" \
               -d "{\"secret\":\"$APPS_SCRIPT_SECRET\",\"title\":\"$TITLE\",\"content\":$CONTENT,\"folderId\":\"$FOLDER\"}")
 
