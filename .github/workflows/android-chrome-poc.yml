@@ -1,5 +1,4 @@
 # .github/workflows/android-chrome-poc.yml
-# Proof of concept: boot Android emulator, open Chrome, screenshot
 name: Android Chrome POC
 
 on: workflow_dispatch
@@ -16,72 +15,42 @@ jobs:
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
-          echo "✅ KVM enabled"
 
       - uses: actions/setup-node@v4
         with:
           node-version: 20
 
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: Run Android emulator and test
+      - name: Run emulator test
         uses: reactivecircus/android-emulator-runner@v2
         with:
-          api-level: 34
-          target: google_apis_playstore
+          api-level: 33
+          target: google_apis
           arch: x86_64
-          profile: pixel_7
-          emulator-options: -no-window -no-audio -no-boot-anim -memory 4096
+          emulator-options: -no-window -no-audio -no-boot-anim
           disable-animations: true
           script: |
-            echo "=== Emulator info ==="
+            set -e
+            echo "=== Device info ==="
             adb devices
             adb shell getprop ro.build.version.release
-            adb shell getprop ro.product.model
-
             echo ""
-            echo "=== Open FIELD in Chrome ==="
-            adb shell am start -a android.intent.action.VIEW \
-              -d "https://jubilant-bassoon.jeffunglesbee.workers.dev/?wpt" \
-              com.android.chrome
-
-            echo "Waiting 20s for page load + data..."
+            echo "=== Check if Chrome exists ==="
+            adb shell pm list packages | grep chrome || echo "No chrome package found"
+            echo ""
+            echo "=== Try opening URL ==="
+            adb shell am start -a android.intent.action.VIEW -d "https://jubilant-bassoon.jeffunglesbee.workers.dev/?wpt" 2>&1 || echo "am start failed"
             sleep 20
-
             echo ""
-            echo "=== Take screenshot ==="
+            echo "=== Screenshot ==="
             mkdir -p outbox/android-poc
-            adb exec-out screencap -p > outbox/android-poc/android-chrome.png
+            adb exec-out screencap -p > outbox/android-poc/android.png || echo "screencap failed"
             ls -la outbox/android-poc/
-
             echo ""
-            echo "=== Check Chrome version ==="
-            adb shell dumpsys package com.android.chrome | grep versionName || echo "Chrome version unknown"
-
-            echo ""
-            echo "=== Check Appium installability ==="
-            npm install -g appium 2>&1 | tail -3
-            appium driver install uiautomator2 2>&1 | tail -5
-            echo "✅ Appium + UiAutomator2 driver installed"
-
-            echo ""
-            echo "=== Write manifest ==="
-            echo "android_version: $(adb shell getprop ro.build.version.release)" > outbox/android-poc/manifest.txt
-            echo "model: $(adb shell getprop ro.product.model)" >> outbox/android-poc/manifest.txt
-            echo "chrome: $(adb shell dumpsys package com.android.chrome | grep versionName | head -1 | tr -d ' ')" >> outbox/android-poc/manifest.txt
+            echo "=== Manifest ==="
+            echo "android: $(adb shell getprop ro.build.version.release)" > outbox/android-poc/manifest.txt
             echo "timestamp: $(date -u +%Y-%m-%dT%H:%M:%SZ)" >> outbox/android-poc/manifest.txt
-            echo "✅ Android Chrome POC complete"
 
-      - name: Push results
-        run: |
-          git config user.email "claude@field.dev"
-          git config user.name "FIELD CI"
-          git add outbox/android-poc/ || true
-          git commit -m "probe: Android Chrome POC — emulator screenshot [skip ci]" || echo "Nothing to commit"
-          git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git HEAD:main || echo "Push failed — will upload as artifact"
-
-      - name: Upload artifacts (fallback)
+      - name: Upload artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
