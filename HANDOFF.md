@@ -1,98 +1,69 @@
-# FIELD HANDOFF
-**HEAD:** main @ 41bb8df (ambient scroll RESOLVED) · 2026-06-14
-**SW_VERSION:** 2026-06-14k
-**Smoke:** 645/0 (was 550/0 at session start)
-**Units:** 66/0
+# FIELD Handoff — June 14 2026 (Mega-Session Part 3 Close)
 
-## Ambient panel scroll — RESOLVED June 14 2026
-After four failed attempts, the fix is confirmed working on real iPad
-Safari (portrait + landscape). Two-layer fix:
+**jubilant-bassoon HEAD:** `821d445` (Rule 58: No Article Scraping) · Smoke: **646/0** · SW_VERSION `2026-06-14k`
+**field-relay-nba HEAD:** `0aa14d9` (unchanged this part)
+**Session span:** ~14 hours total across 3 parts, iPad-only
 
-1. **iPad-18 (`59c78fd`)** — CSS: `.ambient-scroll-inner` now uses
-   `position:absolute; top:0; right:0; bottom:0; left:0; display:block;
-   overflow-y:auto`. Inset positioning gives iOS Safari a determinate
-   height before overflow:auto activates — bypasses the flex-height
-   resolution bug that broke the prior inner-div attempt (iPad-11).
-2. **iPad-19 (`41bb8df`)** — JS: `renderAmbientPanel()` saves
-   `.ambient-scroll-inner.scrollTop` before the innerHTML write and
-   restores it after. Without this, the 15-30s ESPN poll cycle yanked
-   the reader back to scrollTop=0 mid-read.
+---
 
-`#ambient-panel` stays `position:fixed` per Rule 9 / CLAUDE.md Rule 9.
-No body-level layout change. Documented in `docs/AMBIENT-SCROLL-SPEC.md`
-(`What Worked` section).
+## WHAT SHIPPED THIS SESSION (Part 3 — governance + fixes)
 
-Bug 6 in `docs/IPAD-REGRESSION-FIXES.md` marked RESOLVED.
+### Claude Code Governance Framework
+- `docs/CLAUDE-CODE-PROMPT-RULES.md` — 6 rules: failed-attempts registry, explain-before-implement, acceptance criteria over implementation, separate diagnosis from implementation, Playwright as gate, no structural escalation without authorization
+- `CLAUDE.md` Rules 8-16 — prompt architecture, structural guardrail, 7 STANDARDS.md cross-references (Rules 7, 13, 24, 29, 39, 42, 48)
+- CSS Grid escalation (`9ce7ef2`) REVERTED (`fb72cc1`) — broke ambient panel visibility
+- Rule 9: ambient panel is position:fixed, must not be replaced without authorization
 
-## iPad regression sweep (June 14 2026 — main)
-Executed `docs/IPAD-REGRESSION-FIXES.md` after the viewport v4 build
-shipped regressions on iPad. Five bugs, one commit per fix:
-1. **iPad-1** (`18c0775`): viewport-aware tap routing — openBottomSheet
-   early-returns to a scroll-into-view + inline-expand fallback at ≥820.
-2. **iPad-2** (`7f247c5`): `_expandedCards` Set + `_restoreCardExpandState()`
-   hook into renderAll so expand state survives the 20-45s poll cycle.
-3. **iPad-3** (`6346e47`): `contain:layout style` + `overflow-anchor:auto`
-   on `.games-list` and `.game-card` to stop per-card height changes from
-   rippling into ancestor scroll position.
-4. **iPad-4** (`3cf273f`): 44px tap floor on `.desk-jump-link` /
-   `.jrn-nav-link` / `#wc-nav-link` at ≤1199 + defensive hide of
-   `.bottom-sheet-overlay` above 820.
-5. **iPad-5** (`2f075d6`): hover styles gated behind `@media (hover: hover)`
-   + `touch-action:manipulation` on nav links — kills the iOS sticky-hover
-   double-tap.
+### Ambient Panel Scroll — RESOLVED (5th attempt)
+- **iPad-18** (`59c78fd`): CSS inset-positioned inner div. `.ambient-scroll-inner` changed to `position:absolute; top:0; right:0; bottom:0; left:0; display:block; overflow-y:auto`. Filament Group/Bootstrap 5 iOS pattern.
+- **iPad-19** (`41bb8df`): JS scrollTop preservation across re-renders. Save before innerHTML write, restore after. Rule 24 case study.
+- **Confirmed working on real iPad** — portrait and landscape.
+- `docs/AMBIENT-SCROLL-SPEC.md` updated to RESOLVED status.
 
-Five new smoke assertions A593-A597. Two existing assertions updated
-(A406 / A583).
+### WC Schedule Consistency — RESOLVED
+- **iPad-20** (`ca335e1`): `buildTodaySchedule()` never called `maybePushWorldCup()`. Added three `maybePush*` calls before `return sections`. wc26Raw is static data — zero network risk. V2 merges live state on top via existing dedup logic. A603 pins the calls.
 
-## What shipped today (June 14 2026)
+### Rule 58 — No Article Scraping (JOURNALISM-SOURCE-A)
+- `821d445`: FIELD never scrapes journalism prose. Uses verifiable match facts, public press conference quotes, official records, structured statistical data. The synthesis is FIELD's contribution.
 
-### Chat-driven builds (13 commits to main)
-1. NBA post-game brief pipeline (relay + client)
-2. NHL post-game brief pipeline (relay + client)
-3. Live in-play odds — all 8 spec steps (relay + client)
-4. Temporal polyfill (fieldNowET + fieldDatesToQuery)
-5. Claude Code infrastructure (CLAUDE.md, SessionStart hook, Codespaces)
-6. ADR-002 context document (docs/ADR-002-CONTEXT.md)
-7. Viewport v4 spec + build plan (docs/VIEWPORT-V4-SPEC.md, docs/VIEWPORT-BUILD-PLAN.md)
+### Team Fit + Cohesion Spec v2
+- Drive: `1m0fMR0ojbxugxmq1Re4jgw_MmqF2KiCGXPchT1u_FAo`
+- Supersedes Section B of Soccer Analytics Spec v1 (May 27)
+- 3 new dimensions: B8 Club Adversaries, B9 Decompression Window, updated B5 compound (7 dims)
+- Case study: Gabriel (Arsenal) vs Marquinhos (PSG) — CL final 14 days before WC opener
+- DECISION: journalism/editorial display only. Does NOT feed Monte Carlo. ADR-002 prevents composite scores; DO NOT INVENT prevents unvalidated weighting.
 
-### Claude Code builds (branch merged to main)
-8. ADR-002 refactor — 16 commits:
-   - Foundation: fieldGameTier + fieldTierRank + fieldTierLabel + leagueImportanceTier
-   - 3 CRITICAL: raw drama numbers removed from DOM (Double Feature, Halftime Switch, RightNow)
-   - 7 HIGH: hardcoded composite thresholds replaced with named tiers
-   - 2 MODERATE: Drama Dial paths migrated to categorical
-   - 1 LOW: polling cadence by aggregate tier
-9. Viewport v4 build — 12 commits:
-   - Typography migration: Chakra Petch + DM Sans (replaces Playfair/Barlow)
-   - Breakpoints: explicit P1/P2/P3 + T1/T2 orientation gates
-   - Bottom sheet gated to phone-only
-   - Card tiering classes (featured/standard/compact)
-   - Journalism brief MID tier (2-line)
-   - Sport stripe tokens + SPORT_COLORS refactor (NHL hex fixed)
-   - 44px touch targets
-   - CompactGrid 3-col at 1440 (was 1800)
-   - --caution token defined (was broken on live)
-   - COLOUR-SYS-A + motion/opacity + typography role token foundation
+---
 
-## Relay commits (field-relay-nba)
-- NBA brief pipeline, NHL brief pipeline, live odds (4 commits)
+## PENDING (carry forward)
 
-## Stats
-- Smoke: 550 → 635 (+85 assertions, 0 failures)
-- Client commits: 13 (chat) + 28 (Claude Code) = 41
-- Relay commits: 4
-- SW_VERSION: 2026-06-13h → 2026-06-14g
+### WC Immediate
+- [ ] ESPN WC live scores (relay `soccer/fifa.world` — Claude Code command given, not yet executed)
+- [ ] WC match minute display (depends on ESPN integration)
+- [ ] Duplicate LIVE indicators on WC cards
+- [ ] Germany "F·52" status parsing
+- [ ] Live WP bar on WC matches (odds API coverage TBD)
+- [ ] Dixon-Coles BLEND mode for soccer WP
 
-## Open items
-- [ ] Dixon-Coles BLEND mode for soccer WP (~45 min)
-- [ ] Viewport artifact v4 (React visual, ~120 min TYPE D)
-- [ ] V5 brief MID tier fires at 600-819, not full 414-819 (existing 600px hide rule)
-- [ ] V6 visual deltas: legacy --c-* tokens retain old hex values
-- [ ] V10-V12 tokens are scaffold only (not consumed by CSS yet)
-- [ ] Follow-up grep for hidden composites
-- [ ] web-push-browser (~120 min)
-- [ ] winkNLP JQ Gate pre-filter (~60 min)
-- [ ] Design system BUILD (~110 min)
-- [ ] xG model pipeline
-- [ ] WC knockout prep (groups end June 27)
-- [ ] Wimbledon draw (before July 7)
+### Team Fit Build
+- [ ] B8 Club Adversaries ~30 min (Wave 1)
+- [ ] B9 Decompression Window ~20 min (Wave 1)
+- [ ] B1 Club Pairs ~25 min (Wave 1)
+- [ ] B5 Compound Display v2 ~15 min (Wave 1)
+
+### Infrastructure
+- [ ] Path B: ambient panel injection (future build)
+- [ ] Playwright viewport tests need browser binaries in CI
+- [ ] V10-V12 design tokens scaffold only (not consumed by CSS)
+
+---
+
+## KEY DOCS CREATED/UPDATED
+- `docs/CLAUDE-CODE-PROMPT-RULES.md` — 6 rules + STANDARDS.md cross-reference table
+- `docs/AMBIENT-SCROLL-SPEC.md` — RESOLVED, 5 attempts documented
+- `docs/WC-SCHEDULE-SPEC.md` — diagnosis-first spec, RESOLVED
+- `outbox/ambient-scroll-diagnosis.md` — Claude Code's diagnosis (inset positioning)
+- `outbox/wc-schedule-diagnosis.md` — Claude Code's diagnosis (missing maybePush calls)
+- Drive: Team Fit v2 spec (`1m0fMR0ojbxugxmq1Re4jgw_MmqF2KiCGXPchT1u_FAo`)
+- STANDARDS.md Rule 58 (JOURNALISM-SOURCE-A)
+- CLAUDE.md Rules 8-16
