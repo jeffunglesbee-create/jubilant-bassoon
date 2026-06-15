@@ -1,11 +1,20 @@
-# FIELD Handoff — June 15 2026 (Session End)
+# FIELD Handoff — June 15 2026 (Session B — Cape Verde name fix)
 
-**jubilant-bassoon HEAD:** `eb9fa8e` · Smoke: **655/0** · SW_VERSION `2026-06-15c`
+**jubilant-bassoon HEAD:** `7826c38` · Smoke: **656/0** · SW_VERSION `2026-06-15c`
 **field-relay-nba HEAD:** `4133d59`
 
 ---
 
 ## SHIPPED THIS SESSION
+
+### Cape Verde Team Name Normalization (7826c38, A613)
+- API-Sports D1 returns "Cape Verde Islands"; FIELD uses "Cape Verde"
+- Without fix: Group H gets duplicate row + Monte Carlo H2H lookups fail
+- Promoted local `_d1NameFix` to module-level `_WC_NAME_FIX` + `_wcFixTeamName()`
+- Applied normalization in both standings merge AND `_wcBuildGroupInput` results mapping
+- A560 updated for renamed constant; A613 added
+
+## PRIOR SESSION (same day)
 
 ### Game Archive D1 — FULLY OPERATIONAL
 - D1 field-archive (cc49101c): 19 postseason + 146 regular + 5 series
@@ -25,10 +34,8 @@
 - Ambient panel: renderAmbientPanel() early-return at >=1200; inline display residue
 
 ### Drive Upload Automation — FIXED
-- YAML parse error: flush-left Python broke block scalar (26 runs, 0 jobs)
-- curl POST→GET on Google 302: replaced with Python urllib
-- Apps Script deployed v4 with real secret + Anyone access
-- First successful upload: run #30
+- YAML parse error + curl POST→GET on Google 302 → Python urllib
+- Apps Script deployed v4; first successful upload: run #30
 
 ### Cross-Engine Viewport Testing (A609)
 - iOS Safari: 5-device matrix, all producing results
