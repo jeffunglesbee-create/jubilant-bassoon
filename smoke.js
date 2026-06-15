@@ -4154,13 +4154,18 @@ assert('A599 — iPad-7: _isModelRefusal filter wired into generateJournalismVia
   html.includes("['A','B','C','D']"),
   'iPad-7 regression fix: (a) refusal filter in JQ Gate suppresses raw model meta-commentary; (b) series-preview prompt sends sport-specific exemplars. Soccer/WC/EPL/MLS routed to Exemplar D (real soccer exemplar); tennis/golf/F1/AFL/NFL routed to closest tonal match among A/B/C.');
 
-// ── A604-A608: Championship Brief + Score Overlay + Night Owl (June 14-15 2026) ──
+// ── A604-A609: Championship Brief + Score Overlay + Night Owl + Cross-Engine Testing (June 14-15 2026) ──
 // Reordered 2026-06-15 (CC-CMD assertion-reorder commit) so the block reads
-// in descending numeric order (A608 first, A604 last) — newest at the top of
+// in descending numeric order (A609 first, A604 last) — newest at the top of
 // the prepend pattern, oldest at the bottom. Two label renames in this pass
 // (A606 + A607) clarify which assertion pins the PRE-EXISTING merge guard
 // vs the NEW ce676fb skip/scan/guard additions. No assertion logic changed —
 // only labels and ordering. See outbox/cc-assertion-reorder-2026-06-15.md.
+
+// ── A609 / iOS Safari + Android Chrome viewport test infrastructure ──────
+assert('A609 — Cross-engine viewport test infrastructure: iOS Safari + Android Chrome Appium suites',
+  fs.existsSync('tests/ios-safari-viewport.js') && fs.existsSync('tests/android-chrome-viewport.js'),
+  'tests/ios-safari-viewport.js and tests/android-chrome-viewport.js must both exist — iOS Safari viewport audit runner using Appium + WebDriverIO against real WebKit on iOS Simulator, plus Android Chrome equivalent. Both runners port assertions from viewport-all.spec.js (ambient scroll #14 being the key iOS-specific test). Workflows: ios-safari-audit.yml (5 devices) and android-chrome-audit.yml (4 devices). $0/mo alternative to BrowserStack $129/mo.');
 
 // ── A608 / CC-CMD-2026-06-15 Task 3: Night Owl championship context ─────
 // Numbering note: the spec asked for "A607" but A607 was already used by the

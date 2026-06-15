@@ -1,0 +1,157 @@
+# .github/workflows/ios-safari-audit.yml
+name: iOS Safari Viewport Audit
+
+on: workflow_dispatch
+
+jobs:
+  ios-safari:
+    runs-on: macos-latest
+    timeout-minutes: 20
+    strategy:
+      matrix:
+        device:
+          - name: "iPhone SE (3rd generation)"
+            id: P1
+            orientation: portrait
+          - name: "iPhone 15 Pro"
+            id: P2
+            orientation: portrait
+          - name: "iPhone 15 Pro Max"
+            id: P3
+            orientation: portrait
+          - name: "iPad Air (5th generation)"
+            id: T1
+            orientation: portrait
+          - name: "iPad Air (5th generation)"
+            id: T2
+            orientation: landscape
+      fail-fast: false
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Appium + Safari driver
+        run: |
+          npm install -g appium@latest
+          appium driver install safari
+          npm install webdriverio@latest
+
+      - name: List available simulators
+        run: |
+          echo "=== Xcode ==="
+          xcodebuild -version
+          echo ""
+          echo "=== Available iPhones ==="
+          xcrun simctl list devices available | grep -E "iPhone|iPad"
+
+      - name: Boot simulator
+        id: boot
+        run: |
+          DEVICE="${{ matrix.device.name }}"
+          echo "Looking for: $DEVICE"
+          UDID=$(xcrun simctl list devices available -j | \
+            python3 -c "
+          import json, sys
+          data = json.load(sys.stdin)
+          for ver, devs in data['devices'].items():
+            if 'iOS' not in ver and 'iPadOS' not in ver: continue
+            for dev in devs:
+              if dev['name'] == '$DEVICE' and dev['isAvailable']:
+                print(dev['udid']); sys.exit(0)
+          print('NOT_FOUND'); sys.exit(1)
+          ")
+          echo "Booting $DEVICE ($UDID)"
+          xcrun simctl boot "$UDID" 2>&1 || true
+          echo "Waiting 30s for full boot..."
+          sleep 30
+          xcrun simctl list devices | grep "$UDID"
+          echo "DEVICE_UDID=$UDID" >> "$GITHUB_ENV"
+
+      - name: Set orientation (landscape only)
+        if: matrix.device.orientation == 'landscape'
+        run: |
+          # Rotate iPad to landscape
+          xcrun simctl spawn "$DEVICE_UDID" notifyutil -s \
+            com.apple.springboard.orientation 3
+          sleep 5
+
+      - name: Start Appium
+        run: |
+          # Detect iOS version from booted simulator
+          IOS_VER=$(xcrun simctl list devices booted -j | \
+            python3 -c "
+          import json, sys
+          data = json.load(sys.stdin)
+          for ver, devs in data['devices'].items():
+            for dev in devs:
+              if dev['state'] == 'Booted':
+                # Extract version from runtime string like com.apple.CoreSimulator.SimRuntime.iOS-18-1
+                parts = ver.replace('com.apple.CoreSimulator.SimRuntime.', '').replace('iOS-', '').replace('iPadOS-', '').split('-')
+                print('.'.join(parts)); sys.exit(0)
+          print('18.1'); sys.exit(0)
+          ")
+          echo "Detected iOS version: $IOS_VER"
+          echo "IOS_VERSION=$IOS_VER" >> "$GITHUB_ENV"
+          appium --relaxed-security --log-level warn &
+          APPIUM_PID=$!
+          echo "APPIUM_PID=$APPIUM_PID" >> "$GITHUB_ENV"
+          sleep 8
+          echo "Appium started (PID $APPIUM_PID)"
+
+      - name: Run viewport assertions
+        env:
+          IOS_DEVICE: ${{ matrix.device.name }}
+          DEVICE_ID: ${{ matrix.device.id }}
+        run: |
+          mkdir -p outbox
+          node tests/ios-safari-viewport.js 2>outbox/ios-${{ matrix.device.id }}-stderr.log \
+            | tee outbox/ios-${{ matrix.device.id }}-results.json
+          echo "Exit code: $?"
+
+      - name: Screenshot
+        if: always()
+        run: |
+          mkdir -p outbox
+          xcrun simctl io "$DEVICE_UDID" screenshot \
+            "outbox/ios-${{ matrix.device.id }}-screenshot.png" 2>&1 || echo "Screenshot failed"
+
+      - name: Shutdown simulator
+        if: always()
+        run: |
+          xcrun simctl shutdown "$DEVICE_UDID" 2>/dev/null || true
+          kill "$APPIUM_PID" 2>/dev/null || true
+
+      - name: Upload artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-safari-${{ matrix.device.id }}
+          path: outbox/ios-${{ matrix.device.id }}-*
+
+  summary:
+    needs: ios-safari
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: results
+
+      - name: Summarize results
+        run: |
+          echo "# iOS Safari Viewport Audit Results"
+          echo "Timestamp: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          echo ""
+          for f in results/ios-safari-*/ios-*-results.json; do
+            [ -f "$f" ] || continue
+            echo "---"
+            DEVICE=$(cat "$f" | python3 -c "import json,sys; d=json.load(sys.stdin); print(f\"{d.get('deviceId','?')} — {d.get('device','?')}\")" 2>/dev/null || echo "parse error")
+            PASSED=$(cat "$f" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('passed',0))" 2>/dev/null || echo "?")
+            TOTAL=$(cat "$f" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('total',0))" 2>/dev/null || echo "?")
+            echo "$DEVICE: $PASSED/$TOTAL passed"
+          done
