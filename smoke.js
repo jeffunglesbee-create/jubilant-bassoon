@@ -4172,6 +4172,23 @@ assert('A606 — Rule 59 audit task 1d: score overlay L1+L2 — _scoresNull merg
   html.includes('existingIsBlank'),
   'Rule 59 audit (CC-AUDIT-A) Task 1d: pins the L1 merge guard and L2 localStorage-cache fallback. Three divergences from the audit text are documented in outbox/rule59-audit-2026-06-15.md: (1) L1 merges rather than skipping when prev is missing — a 0-0 entry can still be written; (2) L2 scans loadTonightFinals() not allData.sports; (3) no explicit start_time guard exists (the ET-date cache key is the implicit protection).');
 
+// ── A607 / Rule 59 audit postscript — ce676fb additions ───────────────────
+// After my audit pushed, I discovered the chat surface had committed ce676fb
+// in parallel — which added the three patterns my audit said were missing.
+// This assertion pins the NEW (ce676fb) patterns so they survive future
+// regressions. See outbox/rule59-audit-2026-06-15.md "Postscript" section.
+assert('A607 — Rule 59 audit postscript: ce676fb explicit skip + allData.sports scan + start_time guard',
+  // Layer 1 — explicit early-return SKIP (added by ce676fb).
+  /if \(v2Entry\._scoresNull && !prev\)\s*\{[\s\S]{0,200}return;/.test(html) &&
+  // Layer 2b — allData.sports scan inside hydrateEspnScoresFromFinals
+  // (added by ce676fb).
+  /for \(const sec of allData\.sports\)/.test(html) &&
+  // Layer 2b — start_time guard prevents future games from being backfilled
+  // (added by ce676fb).
+  html.includes('// Only backfill past games (start_time already passed)') &&
+  /new Date\(g\.start_time\)\.getTime\(\) > Date\.now\(\)/.test(html),
+  'Pins the three patterns ce676fb added that my audit reported as missing. The audit was reading pre-rebase HEAD; ce676fb landed via chat surface between my pull and my push, then was carried through by rebase. Honest disclosure in outbox/rule59-audit-2026-06-15.md postscript.');
+
 // ── A605 / CHAMPIONSHIP-BRIEF: J2 series-preview path wires championship context
 assert('A605 — CHAMPIONSHIP-BRIEF: buildChampionshipContext wired into fetchSeriesPreviewFromClaude (J2)',
   // Same builder reused in the J2 path — championship-aware prompt.
