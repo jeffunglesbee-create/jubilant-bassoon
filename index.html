@@ -26975,6 +26975,65 @@ async function fetchMLBGameBriefFromClaude(g) {
 // for network round-trip + Worker cold start. Was 3000ms — reduced May 31
 // 2026 so a slow/degraded KV doesn't drag the bottom-sheet UX. Falling
 // through to live LLM after 1.5s is preferable to waiting 3s for nothing.
+// ── GAME ARCHIVE consumers (CC-CMD-2026-06-15-archive-d1.md Task 3) ─────────
+// Three fetch helpers that read from the relay's /archive/* endpoints backed
+// by the field-archive D1 database (19 postseason_games + 146 regular_season
+// _games + 5 postseason_series as of 2026-06-15 seed). Endpoints are NOT
+// yet live in field-relay-nba — this client-side surface is scaffolded so
+// the consumer can fire as soon as the relay endpoints ship.
+//
+// All calls gated by ARCHIVE_RELAY_READY — flip to true once
+// `/archive/series/nba-ecf-2026` returns 200 from the relay. Until then the
+// helpers return null without making a request (avoids 404 noise + speeds
+// up the dev loop). Set via `window.ARCHIVE_RELAY_READY = true` at runtime
+// for ad-hoc probing once the relay is ready.
+//
+// Cache: 30-min sessionStorage TTL matching the spec. Keyed by endpoint.
+const ARCHIVE_RELAY_READY = false;
+const _archiveBase = (typeof V2_RELAY_BASE !== 'undefined')
+  ? V2_RELAY_BASE : 'https://field-relay-nba.jeffunglesbee.workers.dev';
+
+async function fetchSeriesArchive(seriesKey) {
+  if (!ARCHIVE_RELAY_READY || !seriesKey) return null;
+  const cacheKey = `field_archive_series_${seriesKey}`;
+  try {
+    const cached = sessionStorage.getItem(cacheKey);
+    if (cached) {
+      const c = JSON.parse(cached);
+      if (Date.now() - c.ts < 1800000) return c.data;
+    }
+  } catch (_) { /* cache parse errors are non-fatal */ }
+  try {
+    const r = await fetch(`${_archiveBase}/archive/series/${encodeURIComponent(seriesKey)}`);
+    if (!r.ok) return null;
+    const data = await r.json();
+    try { sessionStorage.setItem(cacheKey, JSON.stringify({ ts: Date.now(), data })); } catch (_) {}
+    return data;
+  } catch (_) { return null; }
+}
+
+async function fetchLastMeeting(teamA, teamB) {
+  if (!ARCHIVE_RELAY_READY || !teamA || !teamB) return null;
+  try {
+    const r = await fetch(
+      `${_archiveBase}/archive/last-meeting?home=${encodeURIComponent(teamA)}&away=${encodeURIComponent(teamB)}`,
+      { signal: AbortSignal.timeout(2500) }
+    );
+    if (!r.ok) return null;
+    return r.json();
+  } catch (_) { return null; }
+}
+
+async function fetchArchiveDate(iso) {
+  if (!ARCHIVE_RELAY_READY || !iso) return null;
+  try {
+    const r = await fetch(`${_archiveBase}/archive/date/${encodeURIComponent(iso)}`,
+      { signal: AbortSignal.timeout(2500) });
+    if (!r.ok) return null;
+    return r.json();
+  } catch (_) { return null; }
+}
+
 async function fetchPrerenderedGameBrief(espnEventId) {
   if (!espnEventId) return null;
   try {

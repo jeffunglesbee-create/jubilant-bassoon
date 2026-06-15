@@ -4154,13 +4154,26 @@ assert('A599 — iPad-7: _isModelRefusal filter wired into generateJournalismVia
   html.includes("['A','B','C','D']"),
   'iPad-7 regression fix: (a) refusal filter in JQ Gate suppresses raw model meta-commentary; (b) series-preview prompt sends sport-specific exemplars. Soccer/WC/EPL/MLS routed to Exemplar D (real soccer exemplar); tennis/golf/F1/AFL/NFL routed to closest tonal match among A/B/C.');
 
-// ── A604-A609: Championship Brief + Score Overlay + Night Owl + Cross-Engine Testing (June 14-15 2026) ──
+// ── A604-A610: Championship Brief + Score Overlay + Night Owl + Cross-Engine + Archive D1 (June 14-15 2026) ──
 // Reordered 2026-06-15 (CC-CMD assertion-reorder commit) so the block reads
 // in descending numeric order (A609 first, A604 last) — newest at the top of
 // the prepend pattern, oldest at the bottom. Two label renames in this pass
 // (A606 + A607) clarify which assertion pins the PRE-EXISTING merge guard
 // vs the NEW ce676fb skip/scan/guard additions. No assertion logic changed —
 // only labels and ordering. See outbox/cc-assertion-reorder-2026-06-15.md.
+
+// ── A610 / CC-CMD-2026-06-15-archive-d1 Task 3: client archive consumers ──
+assert('A610 — Archive D1: fetchSeriesArchive + fetchLastMeeting + fetchArchiveDate scaffolded behind ARCHIVE_RELAY_READY flag',
+  /async function fetchSeriesArchive\s*\(seriesKey\)/.test(html) &&
+  /async function fetchLastMeeting\s*\(teamA, teamB\)/.test(html) &&
+  /async function fetchArchiveDate\s*\(iso\)/.test(html) &&
+  // ARCHIVE_RELAY_READY flag exists — gates the helpers from firing while
+  // field-relay-nba endpoints are still pending.
+  /const ARCHIVE_RELAY_READY = false;/.test(html) &&
+  // _archiveBase derives from V2_RELAY_BASE so the existing relay URL is
+  // the single source of truth.
+  /const _archiveBase = \(typeof V2_RELAY_BASE !== 'undefined'\)/.test(html),
+  'CC-CMD-2026-06-15-archive-d1 Task 3: client-side fetch surface for the field-archive D1 database. Three helpers (series / last-meeting / date) read from relay /archive/* routes with 30-min sessionStorage cache for series. Gated behind ARCHIVE_RELAY_READY=false until the relay endpoints ship (relay repo work is out of session scope — see outbox/cc-archive-d1-2026-06-15.md).');
 
 // ── A609 / iOS Safari + Android Chrome viewport test infrastructure ──────
 assert('A609 — Cross-engine viewport test infrastructure: iOS Safari + Android Chrome Appium suites',
