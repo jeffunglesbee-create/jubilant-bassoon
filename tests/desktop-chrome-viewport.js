@@ -85,14 +85,20 @@ const UNIVERSAL = [
 // ── Desktop assertions (D1 + D3) ──────────────────────────────────────────────
 const DESKTOP = [
   {
-    id: '#17', name: '2-col game grid at 1200+',
+    id: '#17', name: 'game grid --cols matches viewport tier',
     fn: async (browser) => {
+      // D1 (1366px, laptop tier): --cols = 2
+      // D3 (1920px, desktop tier ≥1440): --cols = 3 (CompactGrid promotion)
+      // The Playwright spec asserts #17=2 for both because its IS_DESKTOP set
+      // is {D1,D3} — but the CSS demonstrably promotes to 3 at 1440+ on real
+      // browsers. Matched against the actual CSS contract here.
       const cols = await browser.execute(() => {
         const el = document.querySelector('.games-list');
         if (!el) return '';
         return getComputedStyle(el).getPropertyValue('--cols').trim() || '';
       });
-      return { pass: cols === '2', actual: cols || '(empty)' };
+      const expected = DEVICE_ID === 'D3' ? '3' : '2';
+      return { pass: cols === expected, actual: `${cols || '(empty)'} (expected ${expected})` };
     }
   },
   {

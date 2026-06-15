@@ -34,23 +34,38 @@ jobs:
         with:
           node-version: 20
 
-      - name: Install Chrome + chromedriver
+      - name: Install chromedriver (Chrome pre-installed on ubuntu-latest)
         run: |
-          # Chromium ships with chromedriver-matching ChromeForTesting.
-          # Use the official setup-chrome approach: install via apt.
-          sudo apt-get update
-          sudo apt-get install -y google-chrome-stable
-          CHROME_VER=$(google-chrome --version | awk '{print $3}')
-          echo "Chrome: $CHROME_VER"
-
-          # Install matching chromedriver via @wdio/chromedriver-service.
-          # The service auto-downloads the chromedriver matching the
-          # installed Chrome major version.
-          npm install --no-save webdriverio@latest @wdio/chromedriver-service@latest chromedriver@latest
+          # google-chrome-stable is pre-installed on GitHub-hosted ubuntu runners.
+          # We do NOT apt-install it (would attempt to upgrade Chrome and pull
+          # the chrome-stable apt repo which is not configured on this runner
+          # for the matching chromedriver). The npm `chromedriver` package
+          # auto-downloads the chromedriver matching the installed Chrome
+          # major version at install time. `@wdio/chromedriver-service` is
+          # NOT used here — it has been deprecated and removed from npm
+          # (404 on registry as of June 2026). The minimal install is
+          # webdriverio + chromedriver.
+          which google-chrome
+          google-chrome --version
+          # Install chromedriver matching the installed Chrome's major version.
+          # `chromedriver` postinstall script reads CHROMEDRIVER_VERSION env
+          # (defaults to LATEST_RELEASE which matches Chrome stable).
+          CHROME_MAJOR=$(google-chrome --version | awk '{print $3}' | cut -d. -f1)
+          echo "Chrome major: $CHROME_MAJOR"
+          DETECT_CHROMEDRIVER_VERSION=true npm install --no-save --silent \
+            webdriverio@latest chromedriver@latest
+          # Locate the installed chromedriver binary
+          CHROMEDRIVER_BIN="$(npx --no-install which chromedriver 2>/dev/null || true)"
+          if [ -z "$CHROMEDRIVER_BIN" ]; then
+            CHROMEDRIVER_BIN="$(node -e 'console.log(require("chromedriver").path)')"
+          fi
+          echo "chromedriver: $CHROMEDRIVER_BIN"
+          "$CHROMEDRIVER_BIN" --version
+          echo "CHROMEDRIVER_BIN=$CHROMEDRIVER_BIN" >> "$GITHUB_ENV"
 
       - name: Start chromedriver
         run: |
-          npx chromedriver --port=9515 --whitelisted-ips= > /tmp/chromedriver.log 2>&1 &
+          "$CHROMEDRIVER_BIN" --port=9515 > /tmp/chromedriver.log 2>&1 &
           CD_PID=$!
           echo "CHROMEDRIVER_PID=$CD_PID" >> "$GITHUB_ENV"
           # Wait up to 30s for chromedriver to accept connections.
