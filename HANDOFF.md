@@ -1,43 +1,47 @@
-# FIELD Handoff — June 15 2026 (Mega-Session Part 3b Close)
+# FIELD Handoff — June 15 2026
 
-**jubilant-bassoon HEAD:** `3b6e107` (SW_VERSION bump l — SCF championship data) · Smoke: **648/0** · SW_VERSION `2026-06-14l`
+**jubilant-bassoon HEAD:** `ce676fb` (score overlay fix L1+L2) · Smoke: **648/0** · SW_VERSION `2026-06-15a`
 **field-relay-nba HEAD:** `0aa14d9` (unchanged)
 
 ---
 
-## WHAT SHIPPED (Part 3b — post session-end continuation)
+## WHAT SHIPPED (June 15 session)
 
-### Championship Brief Enrichment
-- `docs/CHAMPIONSHIP-BRIEF-SPEC.md` — spec for championship-clinching game prompt context
-- `buildChampionshipContext()` + `FRANCHISE_LAST_TITLE` (30 NHL + 30 NBA) built by Claude Code
-- Wired into `fetchGameBriefOnDemand` (card tap path). A604 smoke assertion.
-- Claude Code command given to also wire into `fetchSeriesPreviewFromClaude` (J2 inline) — not yet verified.
-- Night Owl relay path does NOT have championship context (relay repo change needed).
+### Rule 59 — Claude Code trusted-but-unverified (CC-AUDIT-A)
+- New STANDARDS.md rule codifying session-boundary governance for Claude Code commits
+- Lighter than Rule 25 (Gemini quarantine) — no quarantine, targeted audit only
+- Covers: smoke delta, feature wiring verification, no invented patterns, structural compliance
+- CLAUDE.md Rule 17 cross-references Rule 59
+- Three case studies documented (ADR-002 success, CSS Grid failure, championship brief partial)
+- Commit: 0ac7d87
 
-### SCF Results Updated
-- G5: CAR 4-2 VGK, CAR leads 3-2. seriesRecord + matchupNote + _gameImportance:clinch.
-- G6: CAR 3-0 VGK, series over. "CAR wins 4-2 — Stanley Cup Champions." Full matchupNote with 16-3 playoff record, first since 2006, road shutout.
-- G7: removed (not played).
+### Score Overlay Fix — Layers 1+2 (NHL SCF 0-0 bug)
+- **Root cause:** api-sports.io returns NHL finals with state:final + score:null. mapV2ToESPN defaults to 0-0. No prev on page load. localStorage finals expire after game day.
+- **Layer 1:** V2 merge block skips espnScores write when _scoresNull && !prev. No more false 0-0.
+- **Layer 2:** hydrateEspnScoresFromFinals() scans allData.sports for games with homeScore/awayScore fields. SCF G1-G6 enriched with numeric scores.
+- **Layer 3 (DEFERRED):** Relay-side KV cache for final scores. Requires field-relay-nba changes.
+- Commit: ce676fb
 
-### Known Issues (carry forward)
-- V2 score overlay failing for NHL SCF — card shows 0-0 instead of 3-0. Same class as WC ESPN scores. Relay-side diagnosis needed.
-- ESPN WC live scores still pending (relay `soccer/fifa.world` endpoint).
-- Championship context not in Night Owl relay path.
-- J2 inline championship wiring — Claude Code command given, not yet verified.
+### Smoke discrepancy diagnosed
+- MCP get_smoke_count tool reads source `assert(` count (588), not runtime assertion count (648)
+- FEATURE_GUARDS forEach loop generates 64 dynamic assertions from 1 source call
+- HANDOFF claim of 648/0 was correct; MCP tool undercounts
+- 1 expected failure: A515 (SW_VERSION date) — auto-resolves on deploy, fixed in ce676fb
 
----
+## WC Status (Day 5 — June 15)
+Groups A-F: 1 match played each, all results in D1
+Groups G-H: open today (Spain-Cape Verde 12pm, Belgium-Egypt 3pm, Saudi Arabia-Uruguay 6pm, Iran-New Zealand 9pm)
+Groups I-J: open June 16, Groups K-L: open June 17
 
-## WC Analysis (non-code)
-- Group E: Germany 3pts (+6 GD), Ivory Coast 3pts (+1), Ecuador 0, Curaçao 0
-- Group F: NED 1pt, JPN 1pt, SWE-TUN upcoming
-- Team Fit v2 spec written (Drive: 1m0fMR0ojbxugxmq1Re4jgw_MmqF2KiCGXPchT1u_FAo) — journalism only, no Monte Carlo
-- Rule 58 (JOURNALISM-SOURCE-A) shipped
-- Gabriel-Marquinhos CL Final Split case study documented
-- Isak Liverpool→Sweden change of scenery analysis verified
-- Slot sacked after 5th-place finish, worst run since 1953
+## Known Issues (carry forward)
+- **Layer 3 deferred:** Relay-side V2 score cache for null-score finals (relay repo change needed)
+- ESPN WC live scores relay endpoint pending (`/soccer/fifa.world`)
+- Championship context not in Night Owl relay path
+- J2 inline championship wiring — CC commit a17bf8e, not yet verified (Rule 59 applies)
+- V2 score overlay for WC: api-sports returns real scores (not null), but ESPN secondary source missing
 
-## Stanley Cup
-- Carolina Hurricanes win Stanley Cup, beat Vegas 4-2
-- 16-3 playoff record (swept OTT, swept PHI, beat MTL 4-1, beat VGK 4-2)
-- First championship since 2006 (20 years)
-- Road shutout to clinch
+## Priority Queue
+1. Layer 3 relay score cache (field-relay-nba)
+2. WC Groups G-L D1 seeding as matches complete
+3. ESPN WC relay endpoint
+4. Championship brief J2 wiring verification (Rule 59 audit)
