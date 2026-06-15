@@ -238,7 +238,7 @@ async function run() {
   try {
     browser = await remote({
       port: 4723,
-      connectionRetryTimeout: 300000,  // 5 min — WDA compile on first use
+      connectionRetryTimeout: 600000,  // 10 min total — WDA compile + sim boot
       connectionRetryCount: 1,
       capabilities: {
         platformName: 'iOS',
@@ -248,8 +248,10 @@ async function run() {
         'appium:platformVersion': IOS_VERSION,
         ...(DEVICE_UDID ? { 'appium:udid': DEVICE_UDID } : {}),
         'appium:noReset': true,
-        'appium:wdaLaunchTimeout': 300000,
-        'appium:wdaConnectionTimeout': 300000,
+        'appium:wdaLaunchTimeout': 600000,
+        'appium:wdaConnectionTimeout': 600000,
+        'appium:simulatorStartupTimeout': 300000,
+        'appium:wdaStartupRetries': 3,
       },
       logLevel: 'warn',
     });
