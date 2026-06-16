@@ -12313,6 +12313,8 @@ function renderJournalism() {
     try { if (typeof loadArchiveTimeline === 'function') loadArchiveTimeline(); } catch(_) {}
     // CC-CMD-2026-06-15-client-features-2 Commit 1: Upset archaeology fire-and-forget.
     try { if (typeof loadUpsets === 'function') loadUpsets(); } catch(_) {}
+    // CC-CMD-2026-06-15-client-features-2 Commit 2: Market consensus fire-and-forget.
+    try { if (typeof loadMarketConsensus === 'function') loadMarketConsensus(); } catch(_) {}
   } catch(_) {}
 }
 
@@ -12514,6 +12516,147 @@ function renderUpsets(games) {
       <span class="jrn-upsets-sub">underdog wins · biggest first</span>
     </div>
     <ul class="jrn-upsets-list">${rows}</ul>`;
+}
+
+// ── CC-CMD-2026-06-15-client-features-2 Commit 2: Market Consensus Tracker ───
+// "MARKET WATCH" stats block — aggregate market outcomes per sport.
+// Pure derivation over archived games with opening_odds; rendered as a
+// compact label/stats grid. If no games carry odds data the section
+// stays hidden (relay still deploying).
+
+function _consensusFavoriteWonRate(games) {
+  let n = 0, fav = 0;
+  for (const g of games) {
+    const ml = (g.opening_odds && g.opening_odds.moneyline) || g.opening_odds || g.odds?.moneyline;
+    if (!ml) continue;
+    const mlH = Number(ml.home);
+    const mlA = Number(ml.away);
+    if (!isFinite(mlH) || !isFinite(mlA)) continue;
+    const hs = g.home_score ?? g.homeScore;
+    const as = g.away_score ?? g.awayScore;
+    if (hs == null || as == null) continue;
+    n++;
+    const favHome = mlH < mlA; // lower (or more negative) = favorite
+    const homeWon = hs > as;
+    if (favHome === homeWon) fav++;
+  }
+  return n ? { rate: fav / n, n } : null;
+}
+
+function _consensusHomeWinRate(games) {
+  let n = 0, home = 0;
+  for (const g of games) {
+    const hs = g.home_score ?? g.homeScore;
+    const as = g.away_score ?? g.awayScore;
+    if (hs == null || as == null) continue;
+    n++;
+    if (hs > as) home++;
+  }
+  return n ? { rate: home / n, n } : null;
+}
+
+function _consensusOverRate(games) {
+  let n = 0, over = 0;
+  for (const g of games) {
+    const total = g.opening_odds?.total ?? g.odds?.total;
+    if (total == null) continue;
+    const t = Number(total);
+    if (!isFinite(t)) continue;
+    const hs = g.home_score ?? g.homeScore;
+    const as = g.away_score ?? g.awayScore;
+    if (hs == null || as == null) continue;
+    const sum = Number(hs) + Number(as);
+    if (!isFinite(sum)) continue;
+    if (sum === t) continue; // push
+    n++;
+    if (sum > t) over++;
+  }
+  return n ? { rate: over / n, n } : null;
+}
+
+// computeMarketConsensus(games) — bucket games by sport, derive rates.
+// Returns [{sport, favRate, homeRate, overRate, n}] for sports with >= 3
+// games carrying opening_odds. Sorted by sample size descending.
+function computeMarketConsensus(games) {
+  if (!Array.isArray(games)) return [];
+  const buckets = new Map();
+  for (const g of games) {
+    if (!g) continue;
+    const ml = (g.opening_odds && g.opening_odds.moneyline) || g.opening_odds || g.odds?.moneyline;
+    if (!ml) continue;
+    const sport = String(g.sport || g._sport || g.league || 'Other').trim() || 'Other';
+    if (!buckets.has(sport)) buckets.set(sport, []);
+    buckets.get(sport).push(g);
+  }
+  const out = [];
+  for (const [sport, list] of buckets.entries()) {
+    if (list.length < 3) continue;
+    const fav = _consensusFavoriteWonRate(list);
+    const home = _consensusHomeWinRate(list);
+    const over = _consensusOverRate(list);
+    out.push({
+      sport,
+      n: list.length,
+      favRate: fav ? fav.rate : null,
+      homeRate: home ? home.rate : null,
+      overRate: over ? over.rate : null,
+    });
+  }
+  out.sort((a, b) => b.n - a.n);
+  return out;
+}
+
+function renderMarketConsensus(games) {
+  const target = document.getElementById('jrn-market-consensus');
+  if (!target) return;
+  const rows = computeMarketConsensus(games);
+  if (!rows.length) { target.setAttribute('hidden',''); return; }
+  const pct = v => v == null ? '—' : Math.round(v * 100) + '%';
+  const html = rows.slice(0, 6).map(r => {
+    const stats = [];
+    if (r.favRate != null) stats.push(`Favorites <b>${pct(r.favRate)}</b>`);
+    if (r.homeRate != null) stats.push(`Home <b>${pct(r.homeRate)}</b>`);
+    if (r.overRate != null) stats.push(`Overs <b>${pct(r.overRate)}</b>`);
+    return `<li class="jrn-mc-row">
+      <span class="jrn-mc-label">${r.sport}</span>
+      <span class="jrn-mc-stats">${stats.join(' · ')}</span>
+    </li>`;
+  }).join('');
+  target.removeAttribute('hidden');
+  target.innerHTML = `<div class="jrn-mc-head">Market Watch</div>
+    <ul class="jrn-mc-list">${html}</ul>`;
+}
+
+// Fire-and-forget. Same /archive/query pull as the upset loader serves
+// double-duty here — the sessionStorage cache from loadUpsets is reused
+// when present to avoid a duplicate fetch.
+function loadMarketConsensus() {
+  if (typeof renderMarketConsensus !== 'function') return;
+  // Prefer the cached upset payload if it's the broader query shape.
+  try {
+    const cached = sessionStorage.getItem('field_archive_upsets');
+    if (cached) {
+      const c = JSON.parse(cached);
+      if (c && Array.isArray(c.games) && (Date.now() - (c.ts || 0)) < 1800000) {
+        renderMarketConsensus(c.games);
+        // Still keep the cached pull authoritative — return.
+        return;
+      }
+    }
+  } catch(_) {}
+  const base = (typeof V2_RELAY_BASE !== 'undefined')
+    ? V2_RELAY_BASE : 'https://field-relay-nba.jeffunglesbee.workers.dev';
+  fetch(base + '/archive/query?limit=50')
+    .then(r => r.ok ? r.json() : null)
+    .then(payload => {
+      if (!payload) return;
+      const games = _upsetExtractGames(payload);
+      if (!games.length) return;
+      try { sessionStorage.setItem('field_archive_upsets',
+        JSON.stringify({ ts: Date.now(), games })); } catch(_) {}
+      renderMarketConsensus(games);
+    })
+    .catch(() => {});
 }
 
 // Fire-and-forget upset loader. Try /archive/upsets first; on any failure
