@@ -1237,6 +1237,9 @@ body::before{
 .gotd-badge.espn-gotd{color:#ff3c3c;border-color:rgba(255,60,60,.4);background:rgba(255,60,60,.08)}
 .gotd-badge.local-cov{color:var(--teal);border-color:rgba(0,212,170,.35);background:rgba(0,212,170,.07);cursor:help}
 .crew-line{font-size:.65rem;color:var(--muted);padding:.1rem .85rem .2rem;opacity:.8;white-space:normal;overflow:visible;text-overflow:unset;line-height:1.4}
+/* CC-CMD-2026-06-15-client-features-2 Commit 4: Crew Tracker chip — compact
+   commentator badge rendered in card-right below the broadcast stream-row. */
+.crew-chip{font-size:.7rem;color:var(--text-dim,#888);display:block;margin-top:2px;line-height:1.35;letter-spacing:.01em;text-align:right;padding-right:.25rem;opacity:.85}
 
 /* [DRAMA-LINE-A] */
 .card-drama-line{font-size:.62rem;color:var(--smoke);line-height:1.4;margin-top:.3rem;padding-top:.25rem;border-top:1px solid var(--edge);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-height:1.5em}
@@ -10073,6 +10076,7 @@ function renderAll(){
           ${liveBadge}
           <div class="${timeCls}">${(()=>{ try { const _ed = typeof findESPNScore==='function' ? findESPNScore(g) : null; return buildCardTimeDisplay(isLive, _ed, timeStr); } catch(_) { return timeStr; } })()}</div>
           <div class="stream-row">${window.innerWidth<=600?buildMobileSmartChip(g.streams):(streamsHTMLCapped(g.streams,3)+(()=>{const pk=g.streams?.[0]?.key||'';const firstVisible=(g.streams||[]).slice(0,3).some(s=>(typeof s==='string'?s:(s.key||''))===pk);if(firstVisible)return '';return FREE_OTA.has(pk)?'<span class="free-badge">FREE</span>':FREE_CABLE.has(pk)?'<span class="free-badge free-cable">FREE W/ CABLE</span>':''})())}<button class="cal-btn" aria-label="Add to calendar" title="Add to Apple Calendar, Google Calendar, or Outlook (.ics)" data-game-id="${g._id||''}">📅</button><button class="share-btn" aria-label="Share" title="Share this game" onclick="event.stopPropagation();(navigator.share?navigator.share({title:'${(g.away||'').replace(/'/g,'')} @ ${(g.home||'').replace(/'/g,'')}',text:'${(g.away||'').replace(/'/g,'')} @ ${(g.home||'').replace(/'/g,'')} · ${g.league||sec.sport||''}\n${timeStr} ET',url:location.href}):navigator.clipboard&&navigator.clipboard.writeText('${(g.away||'').replace(/'/g,'')} @ ${(g.home||'').replace(/'/g,'')} – ${timeStr} ET via FIELD\n'+location.href)).catch(()=>{})">⬆</button></div>
+          ${g.crew?`<span class="crew-chip" title="Broadcast crew">🎙 ${g.crew}</span>`:""}
           ${FD_LEAGUE_MAP[sec.sport]||ESPN_STANDINGS_MAP[sec.sport]?`<button class="standings-btn" onclick="event.stopPropagation();toggleStandings(this,'${sec.sport}','2025')" title="Show ${(FD_LEAGUE_MAP[sec.sport]||ESPN_STANDINGS_MAP[sec.sport]?.isSoccer)?'table':'standings'}">▼ ${(FD_LEAGUE_MAP[sec.sport]||ESPN_STANDINGS_MAP[sec.sport]?.isSoccer)?'Table':'Standings'}</button>`:""}
         </div>
       </div>`;
