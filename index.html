@@ -1925,6 +1925,25 @@ body:not(:has(#main .game-card)) :is(
   border:1px solid rgba(129,140,248,.25);
 }
 .streaming-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px}
+
+/* CC-CMD-2026-06-15-client-features Commit 2: Broadcast Archaeology */
+.broadcast-archaeology{margin-top:1.5rem;padding-top:1.25rem;border-top:1px solid var(--edge)}
+.broadcast-archaeology-head{display:flex;align-items:baseline;gap:.5rem;margin-bottom:.85rem}
+.broadcast-archaeology-eyebrow{font-family:var(--ff-cond,'DM Sans');font-size:.6rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--gold2)}
+.broadcast-archaeology-sub{font-size:.62rem;color:var(--smoke);letter-spacing:.03em}
+.broadcast-archaeology-list{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:.3rem}
+.bcast-row{display:flex;align-items:center;gap:.7rem;padding:.45rem .65rem;background:rgba(255,255,255,.02);border:1px solid var(--edge);border-radius:5px;font-family:var(--ff-body)}
+.bcast-stripe{width:3px;height:1.05rem;border-radius:2px;background:var(--gold2);flex-shrink:0}
+.bcast-stripe.sport-nba{background:#f5b400}
+.bcast-stripe.sport-nhl{background:#3b82f6}
+.bcast-stripe.sport-mlb{background:#ef4444}
+.bcast-stripe.sport-wnba{background:#fb923c}
+.bcast-stripe.sport-cfl,.bcast-stripe.sport-nfl{background:#10b981}
+.bcast-stripe.sport-wc26{background:#4ade80}
+.bcast-stripe.sport-epl{background:#a855f7}
+.bcast-name{font-size:.72rem;color:var(--platinum);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bcast-count{font-family:var(--ff-mono);font-size:.65rem;color:var(--smoke);letter-spacing:.04em}
+.bcast-empty{font-size:.65rem;color:var(--muted);font-style:italic;padding:.5rem 0}
 .app-card{
   background:var(--card);border:1px solid var(--edge);border-radius:var(--radius);
   overflow:hidden;transition:.18s;
@@ -4374,6 +4393,10 @@ var _DOM = null;
   </div>
   <div class="streaming-grid" id="streaming-grid">
     <!-- Populated by JS -->
+  </div>
+  <!-- CC-CMD-2026-06-15-client-features Commit 2: Broadcast Archaeology -->
+  <div id="broadcast-archaeology" class="broadcast-archaeology" aria-label="Broadcast history from FIELD archive" hidden>
+    <!-- Populated by renderBroadcastArchaeology() from /archive/date sweep -->
   </div>
 </section>
 
@@ -20225,6 +20248,113 @@ function renderStreaming(){
   }).join("");
 }
 
+// ── CC-CMD-2026-06-15-client-features Commit 2: Broadcast Archaeology ────────
+// Aggregate broadcast / bundle usage from the archived games. The archive
+// /archive/query endpoint serves briefs; for game records with streams we
+// use the existing fetchArchiveDate() helper (also fire-and-forget) over a
+// short rolling window. A pure-derived count per bundle is rendered as a
+// compact list, sorted by usage count descending.
+
+// buildBroadcastSummary(games) — derives a sorted [{bundle,count}] list.
+// Tolerant of partial inputs: each game may have streams[] as objects with
+// .label / .bundle / .id fields, or the WC26 path's nationalBundle string,
+// or the older relay-bundle string. Unknown shapes contribute 'Unknown'.
+function buildBroadcastSummary(games) {
+  if (!Array.isArray(games)) return [];
+  const counts = new Map();
+  const sportOf = new Map();
+  for (const g of games) {
+    if (!g) continue;
+    const sport = String(g.sport || g._sport || g.league || '').toLowerCase();
+    const bundles = [];
+    if (g.nationalBundle) bundles.push(String(g.nationalBundle));
+    if (Array.isArray(g.streams)) {
+      for (const s of g.streams) {
+        if (!s) continue;
+        if (typeof s === 'string') bundles.push(s);
+        else if (s.bundle) bundles.push(s.bundle);
+        else if (s.label) bundles.push(s.label);
+        else if (s.id) bundles.push(s.id);
+      }
+    } else if (typeof g.streams === 'string') {
+      bundles.push(g.streams);
+    }
+    const seen = new Set();
+    for (const b of bundles) {
+      const key = String(b).replace(/[_-]+/g,' ').trim() || 'Unknown';
+      if (seen.has(key)) continue;
+      seen.add(key);
+      counts.set(key, (counts.get(key) || 0) + 1);
+      if (!sportOf.has(key)) sportOf.set(key, sport);
+    }
+  }
+  const arr = Array.from(counts.entries())
+    .map(([bundle, count]) => ({ bundle, count, sport: sportOf.get(bundle) || '' }))
+    .sort((a, b) => b.count - a.count || a.bundle.localeCompare(b.bundle));
+  return arr;
+}
+
+function renderBroadcastArchaeology(games) {
+  const target = document.getElementById('broadcast-archaeology');
+  if (!target) return;
+  const rows = buildBroadcastSummary(games);
+  if (!rows.length) { target.setAttribute('hidden',''); return; }
+  const head = `<div class="broadcast-archaeology-head">
+    <span class="broadcast-archaeology-eyebrow">Broadcast History</span>
+    <span class="broadcast-archaeology-sub">recent archived bundles · top ${Math.min(rows.length, 12)}</span>
+  </div>`;
+  const listHTML = rows.slice(0, 12).map(r => {
+    const stripeCls = ['nba','nhl','mlb','wnba','cfl','nfl','wc26','epl'].find(s => r.sport.includes(s)) || '';
+    return `<li class="bcast-row">
+      <span class="bcast-stripe ${stripeCls ? 'sport-' + stripeCls : ''}"></span>
+      <span class="bcast-name">${r.bundle}</span>
+      <span class="bcast-count">${r.count} game${r.count === 1 ? '' : 's'}</span>
+    </li>`;
+  }).join('');
+  target.removeAttribute('hidden');
+  target.innerHTML = head + `<ul class="broadcast-archaeology-list">${listHTML}</ul>`;
+}
+
+// Fire-and-forget archive sweep. Tries 14 days back from today; aggregates
+// returned game records into the bundle counts. ARCHIVE_RELAY_READY gates
+// the fetch; any failure leaves the target hidden.
+function loadBroadcastArchaeology() {
+  if (typeof fetchArchiveDate !== 'function') return;
+  const cacheKey = 'field_broadcast_archaeology';
+  try {
+    const cached = sessionStorage.getItem(cacheKey);
+    if (cached) {
+      const c = JSON.parse(cached);
+      if (c && (Date.now() - (c.ts || 0)) < 1800000 && Array.isArray(c.games)) {
+        renderBroadcastArchaeology(c.games);
+        return;
+      }
+    }
+  } catch(_) {}
+  const today = new Date();
+  const dates = [];
+  for (let i = 1; i <= 14; i++) {
+    const d = new Date(today.getTime() - i * 86400000);
+    dates.push(d.toISOString().slice(0, 10));
+  }
+  Promise.all(dates.map(iso => fetchArchiveDate(iso).catch(() => null)))
+    .then(results => {
+      const games = [];
+      for (const r of results) {
+        if (!r) continue;
+        const arr = Array.isArray(r) ? r
+                  : Array.isArray(r.games) ? r.games
+                  : Array.isArray(r.results) ? r.results
+                  : [];
+        for (const g of arr) games.push(g);
+      }
+      if (!games.length) return;
+      try { sessionStorage.setItem(cacheKey, JSON.stringify({ ts: Date.now(), games })); } catch(_) {}
+      renderBroadcastArchaeology(games);
+    })
+    .catch(() => {});
+}
+
 // ── Lazy-load below-fold sections ────────────────────────────────────────────
 let mediaRendered   = false;
 
@@ -20232,7 +20362,12 @@ const lazyObs=new IntersectionObserver(entries=>{
   entries.forEach(e=>{
     if(!e.isIntersecting) return;
     if(e.target.id==="media-section"&&!mediaRendered){renderMedia();mediaRendered=true;}
-    if(e.target.id==="streaming-section"){renderStreaming();}
+    if(e.target.id==="streaming-section"){
+      renderStreaming();
+      // CC-CMD-2026-06-15-client-features Commit 2: Broadcast Archaeology.
+      // Fire-and-forget archive sweep; never blocks streaming render.
+      try { if (typeof loadBroadcastArchaeology === 'function') loadBroadcastArchaeology(); } catch(_) {}
+    }
     if(e.target.id==="field-desk-section"){
       // Delay 800ms — let compound prompt + series briefs settle first
       setTimeout(renderFieldDesk, 800);
