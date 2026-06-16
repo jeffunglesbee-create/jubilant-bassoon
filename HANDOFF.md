@@ -9,11 +9,7 @@
 
 **Fix:** Removed the shell comment line from `_utils.js` via GitHub API (commit `092d0ba`). Deploy workflow `27639153435` completed successfully.
 
-**Diagnosis path:** CF dashboard → API Tokens page → all 5 tokens Active with no expiry → GitHub Actions API (authenticated via PAT from past chat) → downloaded workflow logs → found esbuild syntax error in step 8 → patched file via Contents API → deploy succeeded.
-
 **Prevention:** Deploy triggers should write to `outbox/.trigger-deploy` or similar no-op file, never to `src/` JS files. Guard needed in CC governance (CLAUDE.md or session hooks).
-
-**Next:** Trigger cross-engine viewport workflows (iOS Safari + Android Chrome) — expect 10/10 against fresh deploy. Then wire STAT_PAT Worker secret.
 
 ### FIELD Session (June 15-16) — unchanged from prior HANDOFF
 
@@ -27,6 +23,10 @@
 - Odds Layer (schema, snapshot, injection, backfill, dead-hour cron)
 - Client Features 1+2 (timeline, broadcast, conflict map, upsets, consensus, corpus, crew)
 - Smoke: 664/0, SW_VERSION: 2026-06-15f
+
+### Smoke Tool Artifact — NOT A REGRESSION
+MCP `get_smoke_count` reports **601**. Actual runtime is **664/0**. Delta = **63**.
+Root cause: FEATURE_GUARDS forEach-dispatched assertions are dynamically generated at runtime but not matched by the tool's static regex parser. This delta has been constant since at least June 12 (then: tool=538, actual=601, delta=63). **Always treat the HANDOFF smoke number as authoritative, not the tool output.** Run `node smoke.js` for ground truth.
 
 ### Drive Specs
 1. Archive Intelligence — 1fMZFs2WOi_hPcX5hUB1UJf5mWvItTLB6EwZ881LcC3s
@@ -45,7 +45,12 @@
 - Apps Script bridge (script.google.com "FIELD documentation" project)
 - Folder: `0ABxH84VndHL7Uk9PVA`
 
+### Gemini API Rate Limits (June 16)
+- Gemini 3.1 Flash Lite: RPM 88% (3.54K/4K), **TPM 157% (6.27M/4M)**, RPD 66% (98.73K/150K)
+- Haiku fallback expected for some briefs during TPM throttle period
+- Mitigation: pacing backfill, throttling relay-side calls. Model-split (3.1 live / 2.5 backfill) available if needed.
+
 ### CC Task Queue
-1. **Remove zombie NBA clutch GH Actions workflow** — `git rm .github/workflows/nba-clutch-update.yml scripts/nba-clutch-update.py` + commit
+1. **Remove zombie NBA clutch GH Actions workflow** — `git rm .github/workflows/nba-clutch-update.yml scripts/nba-clutch-update.py` + commit. Relay-native since 467b35e.
 2. **Add deploy-trigger guard to CLAUDE.md** — rule: deploy triggers must target `outbox/.trigger-deploy`, never `src/` files
 3. Context Graph, relay compound, client compound CC prompts ready (~35 hrs specced)
