@@ -1,17 +1,21 @@
 # FIELD HANDOFF
 ## HEAD: 028b3de · 2026-06-16 · via chat
 
+### P0: Odds API Quota Exhausted
+19,999/20,000 credits used. /wc/odds-probs returns 401. All WP bars show stale data.
+Budget analysis (June 14) projected max 53% usage — actual hit 100% in 28 days.
+AmbientDO `_fetchLiveOdds()` is burning credits far beyond the designed rate.
+Next reset: June 19. Root cause must be fixed before reset or it repeats.
+CC spec pushed: `docs/CC-CMD-2026-06-16-odds-quota-audit.md` in both repos.
+Starter key (500 credits, 0 used) available as emergency bridge: 8452c3ac6e226ca6eff8b087391d3c76
+
 ### STAT Deploy — RESOLVED (092d0ba)
 
-**Problem:** STAT Worker deploy failed twice on June 16. Initial hypothesis was expired CF API token — proved wrong (all 5 tokens active, no expiry).
+**Actual root cause:** CC wrote shell comment into `src/routes/_utils.js`. esbuild rejected `#`. Fixed via Contents API.
 
-**Actual root cause:** CC's deploy-trigger mechanism wrote a shell comment (`# deploy trigger 2026-06-16T17:25:29Z`) into `src/routes/_utils.js` (a JavaScript file). esbuild rejected the `#` as invalid syntax. Wrangler dry-run passed (doesn't bundle), but `wrangler deploy` failed instantly.
+**Prevention:** Deploy triggers must target `outbox/.trigger-deploy`, never `src/` files.
 
-**Fix:** Removed the shell comment line from `_utils.js` via GitHub API (commit `092d0ba`). Deploy workflow `27639153435` completed successfully.
-
-**Prevention:** Deploy triggers should write to `outbox/.trigger-deploy` or similar no-op file, never to `src/` JS files. Guard needed in CC governance (CLAUDE.md or session hooks).
-
-### FIELD Session (June 15-16) — unchanged from prior HANDOFF
+### FIELD Session (June 15-16)
 
 **What Shipped:**
 - Cape Verde name fix (7826c38, A613)
@@ -26,7 +30,11 @@
 
 ### Smoke Tool Artifact — NOT A REGRESSION
 MCP `get_smoke_count` reports **601**. Actual runtime is **664/0**. Delta = **63**.
-Root cause: FEATURE_GUARDS forEach-dispatched assertions are dynamically generated at runtime but not matched by the tool's static regex parser. This delta has been constant since at least June 12 (then: tool=538, actual=601, delta=63). **Always treat the HANDOFF smoke number as authoritative, not the tool output.** Run `node smoke.js` for ground truth.
+FEATURE_GUARDS forEach-dispatched assertions not matched by tool regex. Constant since June 12. **HANDOFF number is authoritative.** Run `node smoke.js` for ground truth.
+
+### Gemini API Rate Limits (June 16)
+- Gemini 3.1 Flash Lite: RPM 88% (3.54K/4K), **TPM 157% (6.27M/4M)**, RPD 66%
+- Haiku fallback expected for some briefs during TPM throttle period
 
 ### Drive Specs
 1. Archive Intelligence — 1fMZFs2WOi_hPcX5hUB1UJf5mWvItTLB6EwZ881LcC3s
@@ -40,17 +48,8 @@ Root cause: FEATURE_GUARDS forEach-dispatched assertions are dynamically generat
 9. Journalism Loop — 1PKkEGpe306ovRngvBCAZgoQyjeaj02SQ0khAp0OrOfU
 10. External API — 1kLEZnwLmmvvGdEtPn26jC8iUKbSR_9PK4ZxSpjDvkvE
 
-### Drive upload outbox
-- `.github/workflows/drive-upload-outbox.yml` — triggers on `outbox/cc-*.md` or `outbox/rule59-*.md` pushes
-- Apps Script bridge (script.google.com "FIELD documentation" project)
-- Folder: `0ABxH84VndHL7Uk9PVA`
-
-### Gemini API Rate Limits (June 16)
-- Gemini 3.1 Flash Lite: RPM 88% (3.54K/4K), **TPM 157% (6.27M/4M)**, RPD 66% (98.73K/150K)
-- Haiku fallback expected for some briefs during TPM throttle period
-- Mitigation: pacing backfill, throttling relay-side calls. Model-split (3.1 live / 2.5 backfill) available if needed.
-
 ### CC Task Queue
-1. **Remove zombie NBA clutch GH Actions workflow** — `git rm .github/workflows/nba-clutch-update.yml scripts/nba-clutch-update.py` + commit. Relay-native since 467b35e.
-2. **Add deploy-trigger guard to CLAUDE.md** — rule: deploy triggers must target `outbox/.trigger-deploy`, never `src/` files
-3. Context Graph, relay compound, client compound CC prompts ready (~35 hrs specced)
+1. **P0: Odds API quota audit + fix** — spec at `docs/CC-CMD-2026-06-16-odds-quota-audit.md` in both repos. Diagnose _fetchLiveOdds() credit burn, add hard credit guard, fix cooldowns/caching, wire Starter key fallback. RELAY REPO.
+2. **Remove zombie NBA clutch GH Actions workflow** — `git rm .github/workflows/nba-clutch-update.yml scripts/nba-clutch-update.py`. CLIENT REPO.
+3. **Add deploy-trigger guard to CLAUDE.md** — deploy triggers must target `outbox/`, never `src/`. BOTH REPOS.
+4. Context Graph, relay compound, client compound CC prompts ready (~35 hrs specced)
