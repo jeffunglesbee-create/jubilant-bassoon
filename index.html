@@ -1944,6 +1944,20 @@ body:not(:has(#main .game-card)) :is(
 .bcast-name{font-size:.72rem;color:var(--platinum);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .bcast-count{font-family:var(--ff-mono);font-size:.65rem;color:var(--smoke);letter-spacing:.04em}
 .bcast-empty{font-size:.65rem;color:var(--muted);font-style:italic;padding:.5rem 0}
+
+/* CC-CMD-2026-06-15-client-features Commit 3: Schedule Conflict Map */
+.conflict-chip-wrap{display:flex;align-items:center;gap:.35rem;position:relative}
+.conflict-chip{display:inline-flex;align-items:center;gap:.35rem;font-family:var(--ff-cond,'DM Sans');font-size:.62rem;font-weight:600;letter-spacing:.04em;padding:.22rem .55rem;border-radius:4px;background:rgba(245,158,11,.1);color:var(--caution,#f59e0b);border:1px solid rgba(245,158,11,.35);cursor:pointer;white-space:nowrap;transition:background .15s,border-color .15s}
+.conflict-chip:hover{background:rgba(245,158,11,.18);border-color:rgba(245,158,11,.55)}
+.conflict-chip-icon{font-size:.7rem;line-height:1}
+.conflict-chip-count{font-family:var(--ff-mono);font-size:.6rem;color:var(--caution,#f59e0b)}
+.conflict-detail{position:absolute;top:calc(100% + .35rem);right:0;min-width:240px;max-width:340px;background:var(--card,#0e1116);border:1px solid rgba(245,158,11,.4);border-radius:6px;padding:.65rem .75rem;font-family:var(--ff-body);font-size:.66rem;line-height:1.5;color:var(--platinum);z-index:50;box-shadow:0 8px 24px rgba(0,0,0,.6)}
+.conflict-detail-head{font-family:var(--ff-cond,'DM Sans');font-size:.58rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--caution,#f59e0b);margin-bottom:.4rem}
+.conflict-detail-row{display:flex;gap:.5rem;padding:.18rem 0;border-bottom:1px solid rgba(255,255,255,.05)}
+.conflict-detail-row:last-child{border-bottom:none}
+.conflict-detail-time{font-family:var(--ff-mono);font-size:.62rem;color:var(--smoke);min-width:3rem}
+.conflict-detail-game{flex:1;color:var(--platinum)}
+.conflict-detail-bundle{color:var(--smoke);font-size:.6rem}
 .app-card{
   background:var(--card);border:1px solid var(--edge);border-radius:var(--radius);
   overflow:hidden;transition:.18s;
@@ -4219,6 +4233,8 @@ var _DOM = null;
     </div>
     <div class="divider"></div>
     <div id="sport-filters"><span class="filter-chip-skeleton" aria-hidden="true"></span><span class="filter-chip-skeleton" aria-hidden="true"></span><span class="filter-chip-skeleton" aria-hidden="true"></span><span class="filter-chip-skeleton" aria-hidden="true"></span><span class="filter-chip-skeleton" aria-hidden="true"></span><span class="filter-chip-skeleton" aria-hidden="true"></span></div>
+    <!-- CC-CMD-2026-06-15-client-features Commit 3: Schedule Conflict Map -->
+    <div id="conflict-chip-wrap" class="conflict-chip-wrap" hidden></div>
     <button class="tz-pill" id="tz-pill" title="Change timezone"></button>
     <a class="desk-jump-link" id="desk-jump-link" href="#field-desk-section" title="FIELD Desk — editorial briefings and series previews">📰 Desk</a>
     <a class="desk-jump-link jrn-nav-link" id="jrn-nav-link" href="#field-journalism-section" title="Journalism — Tonight's editorial reading">📖 Journal</a>
@@ -9722,6 +9738,104 @@ function applyMainHTML(html){
   }
 }
 
+// ── CC-CMD-2026-06-15-client-features Commit 3: Schedule Conflict Map ────────
+// Pure client-side conflict detector. Groups games by their start_time hour
+// (YYYY-MM-DDTHH) and flags any slot with ≥3 games. No relay dependency.
+// Returns [{slot, hour, games[], count}], sorted by count desc then time.
+function findConflicts(games) {
+  if (!Array.isArray(games)) return [];
+  const slots = {};
+  for (const g of games) {
+    if (!g || !g.start_time) continue;
+    try {
+      const hour = new Date(g.start_time).toISOString().slice(0, 13); // YYYY-MM-DDTHH
+      if (!slots[hour]) slots[hour] = [];
+      slots[hour].push(g);
+    } catch(_) {}
+  }
+  const conflicts = Object.entries(slots)
+    .filter(([_, gs]) => gs.length >= 3)
+    .map(([slot, gs]) => ({
+      slot,
+      hour: parseInt(slot.slice(11, 13), 10),
+      games: gs,
+      count: gs.length,
+    }))
+    .sort((a, b) => b.count - a.count || a.slot.localeCompare(b.slot));
+  return conflicts;
+}
+
+// renderConflictChip(conflicts) — paints the amber CAUTION chip on the
+// filter bar when any slot has ≥3 games. Tap to expand into a detail panel
+// listing each conflicting game with its platform/bundle hint.
+function renderConflictChip(conflicts) {
+  const wrap = document.getElementById('conflict-chip-wrap');
+  if (!wrap) return;
+  if (!Array.isArray(conflicts) || !conflicts.length) {
+    wrap.setAttribute('hidden','');
+    wrap.innerHTML = '';
+    return;
+  }
+  const top = conflicts[0];
+  const hourLabel = top.hour === 0 ? '12am' : top.hour < 12 ? top.hour + 'am' : top.hour === 12 ? '12pm' : (top.hour - 12) + 'pm';
+  const totalSlots = conflicts.length;
+  const chipLabel = totalSlots > 1
+    ? `${top.count} games at ${hourLabel} · +${totalSlots - 1} more`
+    : `${top.count} games at ${hourLabel}`;
+  wrap.removeAttribute('hidden');
+  wrap.innerHTML = `<button type="button" class="conflict-chip" id="conflict-chip-btn" title="Schedule conflict — multiple games in the same hour">
+    <span class="conflict-chip-icon">⚠</span>
+    <span class="conflict-chip-label">${chipLabel}</span>
+  </button>`;
+  const btn = wrap.querySelector('#conflict-chip-btn');
+  if (btn) {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const existing = wrap.querySelector('.conflict-detail');
+      if (existing) { existing.remove(); return; }
+      const detail = document.createElement('div');
+      detail.className = 'conflict-detail';
+      const rowsHTML = conflicts.slice(0, 4).map(c => {
+        const h = c.hour === 0 ? '12am' : c.hour < 12 ? c.hour + 'am' : c.hour === 12 ? '12pm' : (c.hour - 12) + 'pm';
+        const gameRows = c.games.slice(0, 6).map(g => {
+          const matchup = (g.away || '?') + ' @ ' + (g.home || '?');
+          const bundle = g.nationalBundle
+            || (Array.isArray(g.streams) && g.streams[0] && (g.streams[0].label || g.streams[0].bundle || g.streams[0]))
+            || '';
+          return `<div class="conflict-detail-row">
+            <span class="conflict-detail-time">${h}</span>
+            <span class="conflict-detail-game">${matchup}${bundle ? ` <span class="conflict-detail-bundle">· ${String(bundle).replace(/[_-]+/g,' ')}</span>` : ''}</span>
+          </div>`;
+        }).join('');
+        return `<div>${gameRows}</div>`;
+      }).join('');
+      detail.innerHTML = `<div class="conflict-detail-head">Overlapping slots</div>${rowsHTML}`;
+      wrap.appendChild(detail);
+      const close = (ev) => {
+        if (!wrap.contains(ev.target)) {
+          detail.remove();
+          document.removeEventListener('click', close, true);
+        }
+      };
+      setTimeout(() => document.addEventListener('click', close, true), 0);
+    });
+  }
+}
+
+// Run after renderAll() — derives the conflicts from the same flat game
+// list the filter pipeline already uses. Idempotent.
+function updateConflictChip() {
+  if (!allData || !Array.isArray(allData.sports)) {
+    renderConflictChip([]);
+    return;
+  }
+  const games = [];
+  for (const sec of allData.sports) {
+    if (Array.isArray(sec.games)) for (const g of sec.games) games.push(g);
+  }
+  renderConflictChip(findConflicts(games));
+}
+
 function renderAll(){
   if(!allData) return;
   const main=document.getElementById("main");
@@ -10013,6 +10127,9 @@ function renderAll(){
   // Right Now section — surface highest-drama game above schedule on phones
   renderRightNow(filtered);
   if(!window._rnIdxInit){initRightNowIndexer();window._rnIdxInit=true;}
+  // CC-CMD-2026-06-15-client-features Commit 3: conflict chip on filter bar.
+  // Pure client-side derivation — no relay. Idempotent.
+  try { if (typeof updateConflictChip === 'function') updateConflictChip(); } catch(_) {}
 }
 function buildFilters(sports){
   const c=document.getElementById("sport-filters"); if(!c) return;
