@@ -1,48 +1,47 @@
 # FIELD HANDOFF
-## HEAD: c088c91 (client) · 6d28348 (relay) · 2026-06-16 · via chat + CC
+## HEAD: 0d8beb4 (client) · 6d28348 (relay) · 2026-06-16 · via chat + CC
 
 ### Session Summary (June 16 2026)
-Daily update session that escalated into P0 triage. Odds API quota exhausted (19,999/20K), diagnosed as CC self-inflicted bug from earlier today. Pivoted WP bars to Monte Carlo projections. Fixed 4 UI bugs found during live WC coverage. France 3-1 Senegal was the first live test of the full pipeline.
+Daily update → P0 odds triage → Monte Carlo WP pivot → 4 bug fixes → Group H data fix. 9 relay commits + 10 client commits across 4 CC sessions + 1 chat session.
 
 ### What Shipped — Relay (field-relay-nba)
-- **Odds quota audit** (4ec92e8, 6a02d70, afe7b9c) — F1: KV monthly credit guard (18K hard cap). F2: cacheEverything on fetchSportOddsLive/Historical + skip-on-no-progress for backfill. F3: Starter key fallback on 401/429.
-- **Root cause documented** (8183f80) — commit a1c4d74 (today 01:54 UTC) added two helpers missing cacheEverything:true. Dead-hour cron picked same failing date repeatedly at 10× credit cost. Burned ~7K credits in 19 hours.
-- **Group I-L projections fix** (5a63ecc) — deriveTeamStrengths falls back to BASE_LAMBDA when oddsProbs empty. computeTournamentProjections synthesizes remaining round-robin from WC_TEAM_CONTEXT.
-- **/wc/match-wp endpoint** (2731727, 6d28348) — per-match P(win) from Monte Carlo. Bayesian update from D1 results. FRA vs SEN returned homeWP:0.628 after 3-1 win. 15-min edge cache.
+- Odds quota audit: KV credit guard 18K cap, cacheEverything fix, Starter key fallback (4ec92e8, 6a02d70, afe7b9c)
+- Root cause: a1c4d74 added uncached helpers, dead-hour cron burned ~7K credits in 19hr
+- Group I-L projections fallback: BASE_LAMBDA when oddsProbs empty (5a63ecc)
+- /wc/match-wp endpoint: Bayesian-updated Monte Carlo WP (2731727, 6d28348)
 
 ### What Shipped — Client (jubilant-bassoon)
-- **Monte Carlo WP fallback** (90f7277) — when _liveOddsWP is absent or stale >5min, fetches /wc/match-wp. Desaturated tint + dashed border + "(proj)" label distinguishes from odds-sourced.
-- **P(advance) from projections** (fb31cad) — reads pR32 from /wc/projections via shared _wcProjectionsCache. No second fetch — reuses bracket renderer's existing call.
-- **Phantom NBA Finals G6 fix** (4ef63a4) — series-closed guard in nbaGames.reduce(). G5 result updated (NYK 94-90, series 4-1). NHL verified clean.
-- **Overlapping slots times** (f1afad5) — findConflicts now buckets by LOCAL hour, detail rows show per-game local start time.
-- **Overlapping slots broadcaster** (26201b1) — _bundleLabel prefers resolved streams[0].name over g.nationalBundle.
-- **Overlapping slots z-index** (c088c91) — panel detached from .conflict-chip-wrap, mounted to document.body with position:fixed; z-index:9000. _positionDetail() anchors via getBoundingClientRect.
+- Monte Carlo WP fallback: desaturated tint + dashed border + "(proj)" label (90f7277)
+- P(advance) from /wc/projections pR32 via shared cache (fb31cad)
+- Phantom NBA Finals G6: series-closed guard in nbaGames.reduce() (4ef63a4)
+- Overlapping slots times: LOCAL hour bucketing (f1afad5)
+- Overlapping slots broadcaster: resolved streams[0].name (26201b1)
+- Overlapping slots z-index: body-mounted position:fixed z-index:9000 (c088c91)
+- Group H data fix: manual D1 insert KSA 1-1 URU + standings recompute (f7cd4c6)
 
 ### Smoke & Version
-- Smoke: 664/0 (tool reports 601 — known FEATURE_GUARDS artifact, delta=63)
-- SW_VERSION: 2026-06-16e (a→b→c→d→e, one bump per functional commit)
+- Smoke: 664/0 (tool reports 601 — FEATURE_GUARDS artifact, delta=63)
+- SW_VERSION: 2026-06-16e
 
 ### API Rate Limits
-- **Odds API:** EXHAUSTED (19,999/20K). Resets June 19. Starter key (500 credits) wired as fallback. Root cause fixed. CC hard credit guard at 18K prevents recurrence.
-- **Gemini 3.1 Flash Lite:** RPM 88%, TPM 157% (over limit). Haiku fallback active. Pacing backfill.
+- Odds API: EXHAUSTED (19,999/20K). Resets June 19. Starter key wired. Credit guard at 18K.
+- Gemini 3.1 Flash Lite: TPM 157% over limit. Haiku fallback active.
 
-### WC Status
-- Groups A-H: complete (1 game each). Groups I-L: opening June 16-17.
-- France 3-1 Senegal (Group I) — first live test of Monte Carlo WP pipeline.
-- Iraq vs Norway, Argentina vs Algeria still to come today.
-- Monte Carlo projections now populate for all 48 teams (was 0 for I-L before fix).
+### WC Status — All 8 groups now have complete standings
+- Groups A-H: 2 results each, 4 teams each (Group H fixed this session)
+- Group I: France 3-1 Senegal (1 result, 2 teams). Iraq vs Norway, Argentina vs Algeria today.
+- Groups J-L: opening June 16-17
+- Monte Carlo projections now populate all 48 teams
 
-### Key Decisions
-- Monte Carlo WP as fallback, not replacement. Odds-sourced WP remains primary when SSE healthy.
-- Odds API provider research: SharpAPI free tier is pre-match only (bust), OddsPapi free tier is 250 req/month (too small), SportsGameOdds free tier has no WC. Best short-term: bump The Odds API to $59/mo (100K credits) after reset, or ride Starter key + Monte Carlo through June 19.
-- The position:fixed + body-mount + _positionDetail() pattern for z-index escapes is reusable for future dropdowns/popovers.
-
-### CC Task Queue
-1. ~~P0: Odds API quota audit + fix~~ ✅ DONE
-2. **Remove zombie NBA clutch GH Actions workflow** — git rm .github/workflows/nba-clutch-update.yml scripts/nba-clutch-update.py. CLIENT REPO.
-3. **Add deploy-trigger guard to CLAUDE.md** — deploy triggers must target outbox/, never src/. BOTH REPOS.
-4. **NHL phantom game guard** — mirror NBA series-closed pattern to nhlGames.filter() for future-proofing. CLIENT REPO.
-5. Context Graph, relay compound, client compound CC prompts ready (~35 hrs specced)
+### Carry-Forward (relay)
+- Tighten handleV2Games finals filter: accept score-populated fixtures past scheduled end
+- Add 30-min post-match-end grace re-poll
+- Drop {cache:"no-store"} from runWCTournamentProjections
+- When real api-sports ID lands for KSA-URU, drop manual: row and re-recompute
+- Remove zombie NBA clutch GH Actions workflow
+- Add deploy-trigger guard to CLAUDE.md
+- NHL phantom game guard (future-proofing)
+- Context Graph, relay compound, client compound (~35 hrs specced)
 
 ### Drive Specs (unchanged)
 1. Archive Intelligence — 1fMZFs2WOi_hPcX5hUB1UJf5mWvItTLB6EwZ881LcC3s
