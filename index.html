@@ -9948,17 +9948,36 @@ function renderConflictChip(conflicts) {
         h = h % 12 || 12;
         return m === 0 ? `${h}${ap}` : `${h}:${String(m).padStart(2,'0')}${ap}`;
       };
+      // CC-CMD-2026-06-16 Bug 3: broadcaster label. The previous code
+      // preferred g.nationalBundle (a bundle ID like "MLB_TBS" used by
+      // resolveBundle for routing) and only fell back to streams[0] —
+      // so every MLB game showed "MLB TBS" regardless of network. The
+      // expandStreams() output puts the actual network name on
+      // streams[0].name (e.g. "TBS", "Apple TV+", "ESPN"). Prefer that;
+      // strip the sport prefix from nationalBundle if we ever fall through.
+      const _bundleLabel = (g) => {
+        const s = Array.isArray(g.streams) && g.streams[0];
+        if (s) {
+          if (typeof s === 'object' && (s.name || s.label)) return s.name || s.label;
+          if (typeof s === 'string' && typeof SR !== 'undefined' && SR[s]) return SR[s][0];
+          if (typeof s === 'string') return s;
+        }
+        if (g.nationalBundle) {
+          return String(g.nationalBundle)
+            .replace(/^(MLB|NBA|NHL|NFL|CFL|WC26|EPL)_/, '')
+            .replace(/[_-]+/g, ' ');
+        }
+        return '';
+      };
       const rowsHTML = conflicts.slice(0, 4).map(c => {
         const gameRows = c.games.slice(0, 6).map(g => {
           let t = '';
           try { t = _fmtLocalTime(new Date(g.start_time)); } catch(_) {}
           const matchup = (g.away || '?') + ' @ ' + (g.home || '?');
-          const bundle = g.nationalBundle
-            || (Array.isArray(g.streams) && g.streams[0] && (g.streams[0].label || g.streams[0].bundle || g.streams[0]))
-            || '';
+          const bundle = _bundleLabel(g);
           return `<div class="conflict-detail-row">
             <span class="conflict-detail-time">${t}</span>
-            <span class="conflict-detail-game">${matchup}${bundle ? ` <span class="conflict-detail-bundle">· ${String(bundle).replace(/[_-]+/g,' ')}</span>` : ''}</span>
+            <span class="conflict-detail-game">${matchup}${bundle ? ` <span class="conflict-detail-bundle">· ${bundle}</span>` : ''}</span>
           </div>`;
         }).join('');
         return `<div>${gameRows}</div>`;
@@ -21036,7 +21055,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-16c';
+  const SW_VERSION = '2026-06-16d';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
