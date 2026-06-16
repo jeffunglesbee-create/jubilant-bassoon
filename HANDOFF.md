@@ -1,42 +1,50 @@
 # FIELD HANDOFF
-## HEAD: 028b3de · 2026-06-16 · via chat
+## HEAD: c088c91 (client) · 6d28348 (relay) · 2026-06-16 · via chat + CC
 
-### P0: Odds API Quota Exhausted
-19,999/20,000 credits used. /wc/odds-probs returns 401. All WP bars show stale data.
-Budget analysis (June 14) projected max 53% usage — actual hit 100% in 28 days.
-AmbientDO `_fetchLiveOdds()` is burning credits far beyond the designed rate.
-Next reset: June 19. Root cause must be fixed before reset or it repeats.
-CC spec pushed: `docs/CC-CMD-2026-06-16-odds-quota-audit.md` in both repos.
-Starter key (500 credits, 0 used) available as emergency bridge: 8452c3ac6e226ca6eff8b087391d3c76
+### Session Summary (June 16 2026)
+Daily update session that escalated into P0 triage. Odds API quota exhausted (19,999/20K), diagnosed as CC self-inflicted bug from earlier today. Pivoted WP bars to Monte Carlo projections. Fixed 4 UI bugs found during live WC coverage. France 3-1 Senegal was the first live test of the full pipeline.
 
-### STAT Deploy — RESOLVED (092d0ba)
+### What Shipped — Relay (field-relay-nba)
+- **Odds quota audit** (4ec92e8, 6a02d70, afe7b9c) — F1: KV monthly credit guard (18K hard cap). F2: cacheEverything on fetchSportOddsLive/Historical + skip-on-no-progress for backfill. F3: Starter key fallback on 401/429.
+- **Root cause documented** (8183f80) — commit a1c4d74 (today 01:54 UTC) added two helpers missing cacheEverything:true. Dead-hour cron picked same failing date repeatedly at 10× credit cost. Burned ~7K credits in 19 hours.
+- **Group I-L projections fix** (5a63ecc) — deriveTeamStrengths falls back to BASE_LAMBDA when oddsProbs empty. computeTournamentProjections synthesizes remaining round-robin from WC_TEAM_CONTEXT.
+- **/wc/match-wp endpoint** (2731727, 6d28348) — per-match P(win) from Monte Carlo. Bayesian update from D1 results. FRA vs SEN returned homeWP:0.628 after 3-1 win. 15-min edge cache.
 
-**Actual root cause:** CC wrote shell comment into `src/routes/_utils.js`. esbuild rejected `#`. Fixed via Contents API.
+### What Shipped — Client (jubilant-bassoon)
+- **Monte Carlo WP fallback** (90f7277) — when _liveOddsWP is absent or stale >5min, fetches /wc/match-wp. Desaturated tint + dashed border + "(proj)" label distinguishes from odds-sourced.
+- **P(advance) from projections** (fb31cad) — reads pR32 from /wc/projections via shared _wcProjectionsCache. No second fetch — reuses bracket renderer's existing call.
+- **Phantom NBA Finals G6 fix** (4ef63a4) — series-closed guard in nbaGames.reduce(). G5 result updated (NYK 94-90, series 4-1). NHL verified clean.
+- **Overlapping slots times** (f1afad5) — findConflicts now buckets by LOCAL hour, detail rows show per-game local start time.
+- **Overlapping slots broadcaster** (26201b1) — _bundleLabel prefers resolved streams[0].name over g.nationalBundle.
+- **Overlapping slots z-index** (c088c91) — panel detached from .conflict-chip-wrap, mounted to document.body with position:fixed; z-index:9000. _positionDetail() anchors via getBoundingClientRect.
 
-**Prevention:** Deploy triggers must target `outbox/.trigger-deploy`, never `src/` files.
+### Smoke & Version
+- Smoke: 664/0 (tool reports 601 — known FEATURE_GUARDS artifact, delta=63)
+- SW_VERSION: 2026-06-16e (a→b→c→d→e, one bump per functional commit)
 
-### FIELD Session (June 15-16)
+### API Rate Limits
+- **Odds API:** EXHAUSTED (19,999/20K). Resets June 19. Starter key (500 credits) wired as fallback. Root cause fixed. CC hard credit guard at 18K prevents recurrence.
+- **Gemini 3.1 Flash Lite:** RPM 88%, TPM 157% (over limit). Haiku fallback active. Pacing backfill.
 
-**What Shipped:**
-- Cape Verde name fix (7826c38, A613)
-- June game archive — 90 games to D1
-- Brief archive client+relay (20 call sites, 11 brief types, backfill engine)
-- Desktop viewport tests (Chrome + Safari WebDriverIO)
-- Close the Loop (temporal context, voice exemplars, /archive/query)
-- Event Pipeline (/archive/game, GameDO hook, KV brief capture)
-- Odds Layer (schema, snapshot, injection, backfill, dead-hour cron)
-- Client Features 1+2 (timeline, broadcast, conflict map, upsets, consensus, corpus, crew)
-- Smoke: 664/0, SW_VERSION: 2026-06-15f
+### WC Status
+- Groups A-H: complete (1 game each). Groups I-L: opening June 16-17.
+- France 3-1 Senegal (Group I) — first live test of Monte Carlo WP pipeline.
+- Iraq vs Norway, Argentina vs Algeria still to come today.
+- Monte Carlo projections now populate for all 48 teams (was 0 for I-L before fix).
 
-### Smoke Tool Artifact — NOT A REGRESSION
-MCP `get_smoke_count` reports **601**. Actual runtime is **664/0**. Delta = **63**.
-FEATURE_GUARDS forEach-dispatched assertions not matched by tool regex. Constant since June 12. **HANDOFF number is authoritative.** Run `node smoke.js` for ground truth.
+### Key Decisions
+- Monte Carlo WP as fallback, not replacement. Odds-sourced WP remains primary when SSE healthy.
+- Odds API provider research: SharpAPI free tier is pre-match only (bust), OddsPapi free tier is 250 req/month (too small), SportsGameOdds free tier has no WC. Best short-term: bump The Odds API to $59/mo (100K credits) after reset, or ride Starter key + Monte Carlo through June 19.
+- The position:fixed + body-mount + _positionDetail() pattern for z-index escapes is reusable for future dropdowns/popovers.
 
-### Gemini API Rate Limits (June 16)
-- Gemini 3.1 Flash Lite: RPM 88% (3.54K/4K), **TPM 157% (6.27M/4M)**, RPD 66%
-- Haiku fallback expected for some briefs during TPM throttle period
+### CC Task Queue
+1. ~~P0: Odds API quota audit + fix~~ ✅ DONE
+2. **Remove zombie NBA clutch GH Actions workflow** — git rm .github/workflows/nba-clutch-update.yml scripts/nba-clutch-update.py. CLIENT REPO.
+3. **Add deploy-trigger guard to CLAUDE.md** — deploy triggers must target outbox/, never src/. BOTH REPOS.
+4. **NHL phantom game guard** — mirror NBA series-closed pattern to nhlGames.filter() for future-proofing. CLIENT REPO.
+5. Context Graph, relay compound, client compound CC prompts ready (~35 hrs specced)
 
-### Drive Specs
+### Drive Specs (unchanged)
 1. Archive Intelligence — 1fMZFs2WOi_hPcX5hUB1UJf5mWvItTLB6EwZ881LcC3s
 2. Backfill Enrichment — 1Zs0fFrokCnd3D7UhTlFFykRgPHAW0_ygqgPSYyedzXI
 3. Compound Architecture — 1cWgNEs3uanFh_PDi2ISSrIBTINdousbHcE1VQphvZ2I
@@ -47,9 +55,3 @@ FEATURE_GUARDS forEach-dispatched assertions not matched by tool regex. Constant
 8. Info Disclosure — 11T6jE6z2R7WFVGFKrSq2JO7MU76Hr_xmAYGIMiafRug
 9. Journalism Loop — 1PKkEGpe306ovRngvBCAZgoQyjeaj02SQ0khAp0OrOfU
 10. External API — 1kLEZnwLmmvvGdEtPn26jC8iUKbSR_9PK4ZxSpjDvkvE
-
-### CC Task Queue
-1. **P0: Odds API quota audit + fix** — spec at `docs/CC-CMD-2026-06-16-odds-quota-audit.md` in both repos. Diagnose _fetchLiveOdds() credit burn, add hard credit guard, fix cooldowns/caching, wire Starter key fallback. RELAY REPO.
-2. **Remove zombie NBA clutch GH Actions workflow** — `git rm .github/workflows/nba-clutch-update.yml scripts/nba-clutch-update.py`. CLIENT REPO.
-3. **Add deploy-trigger guard to CLAUDE.md** — deploy triggers must target `outbox/`, never `src/`. BOTH REPOS.
-4. Context Graph, relay compound, client compound CC prompts ready (~35 hrs specced)
