@@ -10428,7 +10428,7 @@ function buildTodaySchedule(){
     {home:"San Antonio Spurs", away:"New York Knicks",        league:"NBA Finals 2026 \u2013 G2 \u00b7 NYK wins 105-104, leads 2-0",  start_time:"2026-06-06T00:30:00Z", confirmed:true, venue:"Frost Bank Center, San Antonio TX", streams:resolveBundle("NBA_ABC"), seriesRecord:"NYK wins 105-104", crew:"Mike Breen \u00b7 Richard Jefferson \u00b7 Tim Legler (ABC)", _gameImportance:"playoffs", homeScore:104, awayScore:105, seriesMargins:[10,1,-1,-1,-1,-1,-1], matchupNote:"NYK wins G2 105-104 at Frost Bank Center — series 2-0. KAT 21pts/13reb (double-double), Bridges 20pts (8-13 FG, 4-6 from 3). Brunson 20pts/6ast but 7-25 FG. Wembanyama 29pts (11-21 FG) — efficient but SAS couldn't hold the lead. NYK wins both San Antonio games to seize full home-court control. First Finals team to win G1+G2 on road since 2016. G3 Mon Jun 8 at MSG, 8:30pm ET, ABC."},
     {home:"New York Knicks", away:"San Antonio Spurs", league:"NBA Finals 2026 \u2013 G3 \u00b7 SAS wins 115-111",  start_time:"2026-06-09T00:30:00Z", confirmed:true, venue:"Madison Square Garden, New York NY", streams:resolveBundle("NBA_ABC"), seriesRecord:"SAS wins 115-111 \u00b7 NYK leads 2-1", crew:"Mike Breen \u00b7 Richard Jefferson \u00b7 Tim Legler (ABC)", _gameImportance:"playoffs", homeScore:111, awayScore:115, seriesMargins:[10,1,4,-1,-1,-1,-1],matchupNote:"NYK leads 2-0. Brunson averaged 29.0 PPG this series but shot 7-of-25 in G2. Wembanyama 23.2 PPG this series across G1-G2 — efficient but not dominant. The matchup beneath the stars: Stephon Castle (7.4 APG this postseason) guarding Brunson in pick-and-roll; Castle forced 3 turnovers in G2. OG Anunoby held Harrison Barnes to 4 points in G1 but Barnes posted +12 in G2 — that adjustment is critical. Miles McBride is 44% from 3 this series off the bench; NYK second unit has outscored SAS reserves by 14 across both games. NYK\'s 107.7 DRTG (best in NBA this postseason) has held SAS to 2-of-12 from 3 when Wembanyama is off the floor."},
     {home:"New York Knicks", away:"San Antonio Spurs", league:"NBA Finals 2026 \u2013 G4 \u00b7 NYK wins 107-106, leads 3-1",  start_time:"2026-06-11T00:30:00Z", confirmed:true, venue:"Madison Square Garden, New York NY", streams:resolveBundle("NBA_ABC"), seriesRecord:"NYK wins 107-106 \u00b7 NYK leads 3-1", crew:"Mike Breen \u00b7 Richard Jefferson \u00b7 Tim Legler (ABC)", _gameImportance:"playoffs", homeScore:107, awayScore:106, seriesMargins:[10,1,4,1,-1,-1,-1], matchupNote:"NYK wins G4 107-106 — largest comeback in NBA Finals history. Down 29, erased by Brunson 36pts (12-25 FG, 9-11 FT) and Anunoby 33pts (10-15 FG, 7-9 3PT). OG Anunoby tip-in with 1.2 sec left — also had a clutch block on Fox in final 15 seconds. SAS led by 29, scored 76 pts on 59.6% shooting in first half, then managed just 30 pts on 20.5% in second half. Wembanyama 24pts/13reb (9-25 FG). Fox 7ast. SAS led 97% of game time. KAT 10reb. NYK leads series 3-1 — one win from first championship since 1973. G5 Sunday at Frost Bank Center."},
-    {home:"San Antonio Spurs", away:"New York Knicks",        league:"NBA Finals 2026 \u2013 G5 \u00b7 NYK leads 3-1",  start_time:"2026-06-14T00:30:00Z", confirmed:true, venue:"Frost Bank Center, San Antonio TX", streams:resolveBundle("NBA_ABC"), seriesRecord:"NYK leads 3-1", crew:"Mike Breen \u00b7 Richard Jefferson \u00b7 Tim Legler (ABC)", _gameImportance:"elimination"},
+    {home:"San Antonio Spurs", away:"New York Knicks",        league:"NBA Finals 2026 \u2013 G5 \u00b7 NYK wins 94-90, wins series 4-1 \u2014 CHAMPIONS",  start_time:"2026-06-14T00:30:00Z", confirmed:true, venue:"Frost Bank Center, San Antonio TX", streams:resolveBundle("NBA_ABC"), seriesRecord:"NYK wins 4-1 \u2014 NBA Champions", crew:"Mike Breen \u00b7 Richard Jefferson \u00b7 Tim Legler (ABC)", _gameImportance:"clinch", homeScore:90, awayScore:94, seriesMargins:[10,1,4,1,4,-1,-1], matchupNote:"NYK wins G5 94-90 at Frost Bank Center \u2014 Knicks clinch series 4-1 and capture the franchise's first NBA Championship since 1973. Brunson named Finals MVP. Wembanyama 30pts/12reb in the SAS finale but the Knicks held on through a tight fourth quarter. G6 and G7 not played \u2014 series ended in 5 games."},
     {home:"New York Knicks", away:"San Antonio Spurs", league:"NBA Finals 2026 \u2013 G6 \u00b7 NYK leads 3-1",  start_time:"2026-06-17T00:30:00Z", confirmed:true, venue:"Madison Square Garden, New York NY", streams:resolveBundle("NBA_ABC"), seriesRecord:"NYK leads 3-1", crew:"Mike Breen \u00b7 Richard Jefferson \u00b7 Tim Legler (ABC)", _gameImportance:"playoffs"},
     {home:"San Antonio Spurs", away:"New York Knicks",        league:"NBA Finals 2026 \u2013 G7 \u00b7 NYK leads 3-1",  start_time:"2026-06-20T00:30:00Z", confirmed:true, venue:"Frost Bank Center, San Antonio TX", streams:resolveBundle("NBA_ABC"), seriesRecord:"NYK leads 3-1", crew:"Mike Breen \u00b7 Richard Jefferson \u00b7 Tim Legler (ABC)"},
   ].reduce((acc,g)=>{
@@ -10437,6 +10437,19 @@ function buildTodaySchedule(){
     if(g.seriesRecord&&g.seriesRecord!=='0-0'){
       const key=[teamNick(g.home||''),teamNick(g.away||'')].sort().join('|');
       if(!window._seriesMap) window._seriesMap={};
+      // CC-CMD-2026-06-16 Bug 1: phantom playoff game guard.
+      // If an earlier entry in this array already recorded a series-closing
+      // record for this matchup AND this entry has no score data, it's a
+      // tentative pre-loaded slot for a game that won't be played
+      // (G6/G7 stubs in a 5-game series). Skip the seriesMap overwrite so
+      // the closing record stays authoritative AND the isToday push so the
+      // phantom card never reaches the schedule.
+      const _isSeriesClosed = s => /wins\s+(?:series\s+)?4-[0-3]\b|Champion/i.test(String(s||''));
+      const prior = window._seriesMap[key];
+      const hasResult = g.homeScore != null || g.awayScore != null;
+      if (prior && _isSeriesClosed(prior) && !hasResult) {
+        return acc;
+      }
       window._seriesMap[key]=g.seriesRecord; // later entries (newer games) overwrite earlier
     }
     if(isToday(g.start_time)) acc.push(g);
@@ -21006,7 +21019,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-16a';
+  const SW_VERSION = '2026-06-16b';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
