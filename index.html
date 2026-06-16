@@ -2177,6 +2177,27 @@ body:not(:has(#main .game-card)) :is(
 .jrn-archive-link a{font-size:.68rem;color:var(--smoke);text-decoration:none;letter-spacing:.06em;text-transform:uppercase}
 .jrn-archive-link a:hover{color:var(--gold2)}
 
+/* CC-CMD-2026-06-15-client-features Commit 1: Archive Timeline */
+.jrn-archive-timeline{margin-top:1.75rem;padding-top:1.25rem;border-top:1px solid var(--edge)}
+.jrn-archive-timeline-head{display:flex;align-items:baseline;gap:.5rem;margin-bottom:.85rem}
+.jrn-archive-timeline-eyebrow{font-family:var(--ff-cond,'DM Sans');font-size:.6rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--gold2)}
+.jrn-archive-timeline-sub{font-size:.62rem;color:var(--smoke);letter-spacing:.03em}
+.jrn-archive-timeline-list{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:.5rem}
+.jrn-arch-row{display:flex;gap:.65rem;align-items:flex-start;padding:.6rem .65rem;background:rgba(255,255,255,.02);border:1px solid var(--edge);border-radius:5px;cursor:pointer;transition:background .15s,border-color .15s}
+.jrn-arch-row:hover{background:rgba(255,255,255,.04);border-color:rgba(201,168,76,.25)}
+.jrn-arch-row.expanded{background:rgba(255,255,255,.05);border-color:var(--gold2)}
+.jrn-arch-date{font-family:var(--ff-mono);font-size:.62rem;color:var(--smoke);min-width:3.5rem;letter-spacing:.04em;text-transform:uppercase;padding-top:.1rem}
+.jrn-arch-body{flex:1;min-width:0}
+.jrn-arch-meta{display:flex;align-items:center;gap:.45rem;margin-bottom:.25rem}
+.jrn-arch-type{font-size:.55rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:.1rem .45rem;border-radius:3px;background:rgba(201,168,76,.1);color:var(--gold2);border:1px solid rgba(201,168,76,.25)}
+.jrn-arch-type.slate{background:rgba(0,212,170,.08);color:var(--teal,#00d4aa);border-color:rgba(0,212,170,.25)}
+.jrn-arch-type.wc_tab{background:rgba(74,222,128,.08);color:#4ade80;border-color:rgba(74,222,128,.25)}
+.jrn-arch-type.game_recap,.jrn-arch-type.night_owl{background:rgba(251,191,36,.08);color:var(--amber,#fbbf24);border-color:rgba(251,191,36,.25)}
+.jrn-arch-qs{font-family:var(--ff-mono);font-size:.55rem;color:var(--smoke);background:rgba(255,255,255,.04);border:1px solid var(--edge);border-radius:3px;padding:.1rem .35rem;letter-spacing:.03em}
+.jrn-arch-snippet{font-family:var(--ff-body);font-size:.72rem;line-height:1.5;color:var(--platinum);word-break:break-word}
+.jrn-arch-row.expanded .jrn-arch-snippet{white-space:pre-wrap}
+.jrn-arch-empty{font-size:.65rem;color:var(--muted);font-style:italic;padding:.5rem 0}
+
 /* Journalism nav link — same visual as desk-jump-link, distinct icon */
 .jrn-nav-link{color:var(--platinum)}
 .jrn-nav-link.active{color:var(--gold2);background:rgba(201,168,76,.08)}
@@ -4278,6 +4299,10 @@ var _DOM = null;
       </div>
       <div class="jrn-content" id="jrn-content">
         <!-- Populated by renderJournalism() -->
+      </div>
+      <!-- CC-CMD-2026-06-15-client-features Commit 1: Archive Timeline -->
+      <div id="jrn-archive-timeline" class="jrn-archive-timeline" aria-label="FIELD archive timeline" hidden>
+        <!-- Populated by renderArchiveTimeline() from relay /archive/query -->
       </div>
     </div>
     <aside class="jrn-companion" id="jrn-companion" aria-label="Journalism companion content">
@@ -12108,6 +12133,9 @@ function renderJournalism() {
   // so always-render is cheap). Pass counts so we don't re-iterate.
   try {
     renderJournalismCompanion({ briefCount, seriesCount, gameBriefCount });
+    // CC-CMD-2026-06-15-client-features Commit 1: Archive timeline fire-and-forget.
+    // Never blocks the main journalism render; .catch(()=>{}) in loadArchiveTimeline.
+    try { if (typeof loadArchiveTimeline === 'function') loadArchiveTimeline(); } catch(_) {}
   } catch(_) {}
 }
 
@@ -12150,6 +12178,89 @@ function openJournalismForGame(gameId) {
       }
     }, 250);
   }, 100);
+}
+
+// ── CC-CMD-2026-06-15-client-features Commit 1: Archive Timeline ──────────
+// renderArchiveTimeline — fire-and-forget pull from relay /archive/query.
+// Source-cited briefs from D1 (slate cron writes). On failure, the section
+// remains hidden; the main journalism rail is unaffected. sessionStorage
+// cache keyed 'field_archive_timeline' avoids re-fetch on tab switches.
+function renderArchiveTimeline(briefs) {
+  const target = document.getElementById('jrn-archive-timeline');
+  if (!target) return;
+  const arr = Array.isArray(briefs) ? briefs
+            : Array.isArray(briefs?.results) ? briefs.results
+            : Array.isArray(briefs?.briefs) ? briefs.briefs
+            : [];
+  if (!arr.length) { target.setAttribute('hidden',''); return; }
+  const rows = arr.slice(0, 10).map(b => {
+    const date = String(b.date || '').slice(5).replace('-', '/');
+    const type = String(b.brief_type || 'brief').toLowerCase();
+    const text = String(b.brief_text || '').replace(/\s+/g,' ').trim();
+    const snippet = text.length > 110 ? text.slice(0, 110) + '…' : text;
+    const qs = (b.quality_score != null) ? `<span class="jrn-arch-qs">QS ${Math.round(b.quality_score)}</span>` : '';
+    const id = (b.id || '').replace(/[^a-z0-9_-]/gi,'');
+    return `<li class="jrn-arch-row" data-id="${id}" data-full="${encodeURIComponent(text)}">
+      <span class="jrn-arch-date">${date}</span>
+      <div class="jrn-arch-body">
+        <div class="jrn-arch-meta">
+          <span class="jrn-arch-type ${type}">${type.replace('_',' ')}</span>
+          ${qs}
+        </div>
+        <div class="jrn-arch-snippet">${snippet}</div>
+      </div>
+    </li>`;
+  }).join('');
+  target.removeAttribute('hidden');
+  target.innerHTML = `<div class="jrn-archive-timeline-head">
+      <span class="jrn-archive-timeline-eyebrow">FIELD Archive</span>
+      <span class="jrn-archive-timeline-sub">recent editorial · tap to expand</span>
+    </div>
+    <ul class="jrn-archive-timeline-list">${rows || '<li class="jrn-arch-empty">No archived briefs yet.</li>'}</ul>`;
+  target.querySelectorAll('.jrn-arch-row').forEach(row => {
+    row.addEventListener('click', () => {
+      const expanded = row.classList.toggle('expanded');
+      const snippet = row.querySelector('.jrn-arch-snippet');
+      if (snippet) {
+        if (expanded) {
+          try { snippet.textContent = decodeURIComponent(row.dataset.full || ''); }
+          catch(_) {}
+        } else {
+          const t = decodeURIComponent(row.dataset.full || '');
+          snippet.textContent = t.length > 110 ? t.slice(0, 110) + '…' : t;
+        }
+      }
+    });
+  });
+}
+
+// Fire-and-forget archive fetch. The .catch(()=>{}) is mandatory.
+// sessionStorage 'field_archive_timeline' caches the parsed response for
+// the session; tab-switch re-renders read the cache instead of hitting
+// the relay again. 30-min stale-after-write soft cap.
+function loadArchiveTimeline() {
+  if (typeof renderArchiveTimeline !== 'function') return;
+  const cacheKey = 'field_archive_timeline';
+  try {
+    const cached = sessionStorage.getItem(cacheKey);
+    if (cached) {
+      const c = JSON.parse(cached);
+      if (c && (Date.now() - (c.ts || 0)) < 1800000 && c.data) {
+        renderArchiveTimeline(c.data);
+        return;
+      }
+    }
+  } catch(_) {}
+  const base = (typeof V2_RELAY_BASE !== 'undefined')
+    ? V2_RELAY_BASE : 'https://field-relay-nba.jeffunglesbee.workers.dev';
+  fetch(base + '/archive/query?brief_type=slate&source=cron&limit=7')
+    .then(r => r.ok ? r.json() : null)
+    .then(data => {
+      if (!data) return;
+      try { sessionStorage.setItem(cacheKey, JSON.stringify({ ts: Date.now(), data })); } catch(_) {}
+      renderArchiveTimeline(data);
+    })
+    .catch(() => {});
 }
 
 // C3: Companion sidebar at desktop (1440px+). Sources are read-only — same
