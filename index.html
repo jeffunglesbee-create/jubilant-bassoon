@@ -4775,6 +4775,13 @@ function buildFieldHealthPanel() {
     <div style="color:#8888aa;font-size:.58rem">${_sc_lines.join('')}</div>
   </div>`);
 
+  // ── CC-CMD-2026-06-15-client-features-2 Commit 3: Brief Corpus Intelligence
+  // Populated asynchronously by loadBriefQualityRow() — placeholder row here
+  // so layout doesn't jump when the data lands.
+  rows.push(`<div id="fhp-brief-quality" class="fhp-row" style="opacity:.75">
+    ⏳ <b>Brief Quality</b> Loading from /archive/query…
+  </div>`);
+
   // ── Relay/CI status (async — populated after panel renders) ─────────────
   // Was 'MCP RELAY' (called auth-gated /mcp tools). Now reads CI + smoke
   // directly from public GitHub API — same data, no auth surface in client.
@@ -4825,6 +4832,86 @@ function showFieldHealthPanel() {
   document.body.appendChild(panel);
   // Fire MCP status fetch after panel is in DOM
   setTimeout(fetchMCPStatus, 100);
+  // CC-CMD-2026-06-15-client-features-2 Commit 3: Brief Quality row from archive.
+  // Fire-and-forget; placeholder stays "Loading…" on relay 404 or empty payload.
+  setTimeout(() => { try { if (typeof loadBriefQualityRow === 'function') loadBriefQualityRow(); } catch(_) {} }, 120);
+}
+
+// ── CC-CMD-2026-06-15-client-features-2 Commit 3: Brief Corpus Intelligence ──
+// Average quality_score across the last 14 archived slate-cron briefs,
+// with a 7-day trend arrow comparing the most recent half to the prior
+// half. Color routing: green if avg > 200, amber if 150-200, red if < 150.
+
+function _briefQualityClassify(avg) {
+  if (avg == null || !isFinite(avg)) return { cls: 'fhp-warn', icon: '⚠️' };
+  if (avg > 200) return { cls: 'fhp-ok',   icon: '✅' };
+  if (avg >= 150) return { cls: 'fhp-warn', icon: '⚠️' };
+  return { cls: 'fhp-err', icon: '❌' };
+}
+
+function renderBriefQualityRow(briefs) {
+  const target = document.getElementById('fhp-brief-quality');
+  if (!target) return;
+  const list = Array.isArray(briefs) ? briefs
+            : Array.isArray(briefs?.results) ? briefs.results
+            : Array.isArray(briefs?.briefs) ? briefs.briefs
+            : [];
+  // Sort by date desc so the half-split lines up with the trend.
+  const withScore = list
+    .filter(b => b && b.quality_score != null && isFinite(Number(b.quality_score)))
+    .map(b => ({ ...b, _qs: Number(b.quality_score) }))
+    .sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
+  if (!withScore.length) {
+    target.outerHTML = `<div id="fhp-brief-quality" class="fhp-row" style="opacity:.6">
+      — <b>Brief Quality</b> No archived briefs with quality_score yet
+    </div>`;
+    return;
+  }
+  const last14 = withScore.slice(0, 14);
+  const avg = last14.reduce((a, b) => a + b._qs, 0) / last14.length;
+  // Last 7 vs prior 7 trend
+  let trend = '→';
+  if (last14.length >= 4) {
+    const half = Math.floor(last14.length / 2);
+    const recent = last14.slice(0, half);
+    const prior = last14.slice(half);
+    if (recent.length && prior.length) {
+      const ra = recent.reduce((a, b) => a + b._qs, 0) / recent.length;
+      const pa = prior.reduce((a, b) => a + b._qs, 0) / prior.length;
+      const delta = ra - pa;
+      if (delta > 5)       trend = '↑';
+      else if (delta < -5) trend = '↓';
+    }
+  }
+  const cls = _briefQualityClassify(avg);
+  target.outerHTML = `<div id="fhp-brief-quality" class="fhp-row ${cls.cls}">
+    ${cls.icon} <b>Brief Quality</b> avg ${Math.round(avg)} ${trend} · ${last14.length} archived
+  </div>`;
+}
+
+function loadBriefQualityRow() {
+  if (typeof renderBriefQualityRow !== 'function') return;
+  const cacheKey = 'field_archive_brief_quality';
+  try {
+    const cached = sessionStorage.getItem(cacheKey);
+    if (cached) {
+      const c = JSON.parse(cached);
+      if (c && (Date.now() - (c.ts || 0)) < 1800000 && c.data) {
+        renderBriefQualityRow(c.data);
+        return;
+      }
+    }
+  } catch(_) {}
+  const base = (typeof V2_RELAY_BASE !== 'undefined')
+    ? V2_RELAY_BASE : 'https://field-relay-nba.jeffunglesbee.workers.dev';
+  fetch(base + '/archive/query?brief_type=slate&source=cron&limit=14')
+    .then(r => r.ok ? r.json() : null)
+    .then(data => {
+      if (!data) return;
+      try { sessionStorage.setItem(cacheKey, JSON.stringify({ ts: Date.now(), data })); } catch(_) {}
+      renderBriefQualityRow(data);
+    })
+    .catch(() => {});
 }
 
 // ── MOBILE-INTEL-A: Right Now Section (debounce fix 800b0e8) ──────────────
