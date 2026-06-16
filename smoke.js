@@ -4167,6 +4167,57 @@ assert('A613 — WC name fix: _WC_NAME_FIX + _wcFixTeamName normalize D1 names (
   html.includes('_wcFixTeamName(r.home)') && html.includes('_wcFixTeamName(r.away)'),
   'API-Sports returns "Cape Verde Islands" but FIELD uses "Cape Verde". Without normalization, Group H gets a duplicate row (D1 "Cape Verde Islands" + WC_TEAMS fallback "Cape Verde") and Monte Carlo H2H lookups fail. _WC_NAME_FIX promoted to module level so both standings merge and _wcBuildGroupInput results share the same map.');
 
+// ── A615-A617 / CC-CMD-2026-06-15-client-features: archive timeline + broadcast archaeology + conflict map ──
+
+// ── A615 / Commit 1: Archive Timeline in Journal tab ──
+assert('A615 — Archive Timeline: renderArchiveTimeline + loadArchiveTimeline wired into Journal tab',
+  // (1) Render function exists.
+  /function renderArchiveTimeline\s*\(/.test(html) &&
+  // (2) Fire-and-forget loader hits /archive/query with the spec's filter set.
+  /function loadArchiveTimeline\s*\(\)/.test(html) &&
+  html.includes('/archive/query?brief_type=slate&source=cron&limit=7') &&
+  // (3) sessionStorage cache key matches the spec ('field_archive_timeline').
+  html.includes("'field_archive_timeline'") &&
+  // (4) Target div placed inside the journalism section.
+  /id="jrn-archive-timeline"/.test(html) &&
+  // (5) Wired into renderJournalism so it fires when the Journal tab renders.
+  html.includes("if (typeof loadArchiveTimeline === 'function') loadArchiveTimeline();") &&
+  // (6) Fire-and-forget contract — .catch(() => {}) present on the loader.
+  html.includes('.catch(() => {});'),
+  'CC-CMD-2026-06-15-client-features Commit 1: Archive Timeline section in the Journal tab. Renders briefs from relay /archive/query (brief_type=slate, source=cron, limit=7) in a tap-to-expand list. sessionStorage field_archive_timeline cached 30 min. Fire-and-forget — .catch(() => {}) on the fetch is mandatory so a relay outage never blocks the journalism rail.');
+
+// ── A616 / Commit 2: Broadcast Archaeology in Streaming Discovery ──
+assert('A616 — Broadcast Archaeology: buildBroadcastSummary + renderBroadcastArchaeology in #streaming-section',
+  // (1) Pure derivation function exists.
+  /function buildBroadcastSummary\s*\(games\)/.test(html) &&
+  // (2) Render hook + DOM target exist.
+  /function renderBroadcastArchaeology\s*\(games\)/.test(html) &&
+  /id="broadcast-archaeology"/.test(html) &&
+  // (3) Fan-out loader pulls archive games via fetchArchiveDate over a rolling window.
+  /function loadBroadcastArchaeology\s*\(\)/.test(html) &&
+  html.includes('fetchArchiveDate(iso).catch(() => null)') &&
+  // (4) sessionStorage cache key.
+  html.includes("'field_broadcast_archaeology'") &&
+  // (5) Hook into the existing streaming-section IntersectionObserver.
+  html.includes("if (typeof loadBroadcastArchaeology === 'function') loadBroadcastArchaeology();"),
+  'CC-CMD-2026-06-15-client-features Commit 2: Broadcast Archaeology subsection in the Streaming Discovery section. /archive/query serves briefs only, so the spec fallback is used: fan-out fetchArchiveDate over 14 days, aggregate streams[] bundles via buildBroadcastSummary (tolerant of string entries, {bundle}, {label}, {id}, or WC26 nationalBundle). 30-min sessionStorage cache. All fetches fire-and-forget with .catch(() => null) and .catch(() => {}).');
+
+// ── A617 / Commit 3: Schedule Conflict Map on filter bar ──
+assert('A617 — Schedule Conflict Map: findConflicts + renderConflictChip wired into renderAll',
+  // (1) Pure conflict-detection function — groups by YYYY-MM-DDTHH, ≥3 games per slot.
+  /function findConflicts\s*\(games\)/.test(html) &&
+  html.includes('.filter(([_, gs]) => gs.length >= 3)') &&
+  // (2) Chip painter + outside-click detail panel.
+  /function renderConflictChip\s*\(conflicts\)/.test(html) &&
+  /id="conflict-chip-wrap"/.test(html) &&
+  /class="conflict-chip"/.test(html) &&
+  // (3) Pure client-side derivation hooked into the renderAll pipeline.
+  /function updateConflictChip\s*\(\)/.test(html) &&
+  html.includes("if (typeof updateConflictChip === 'function') updateConflictChip();") &&
+  // (4) CAUTION semantic color (--caution token) — amber per spec.
+  html.includes('color:var(--caution,#f59e0b)'),
+  'CC-CMD-2026-06-15-client-features Commit 3: Schedule Conflict Map. Pure client-side — no relay. findConflicts groups by start_time hour (UTC YYYY-MM-DDTHH) and flags ≥3 games per slot. renderConflictChip paints the amber CAUTION chip inside #conflict-chip-wrap on nav.controls, with tap-to-expand detail. updateConflictChip runs after every renderAll(). Idempotent.');
+
 // ── A614 / CC-CMD-2026-06-15-brief-archive: archiveBrief() fire-and-forget D1 write ──
 assert('A614 — Brief archive: archiveBrief() fire-and-forget helper wired to brief call sites',
   html.includes('function archiveBrief(') &&
@@ -4186,7 +4237,7 @@ assert('A614 — Brief archive: archiveBrief() fire-and-forget helper wired to b
   /archiveBrief\('game_ondemand'/.test(html),
   'archiveBrief() persists AI-generated brief text to D1 via relay POST /archive/brief. Fire-and-forget — the .catch(() => {}) on the fetch is mandatory so an archive write failure never blocks UI. All 11 spec brief types are wired (slate/compound/mlb_game/wnba_game/epl_match/stakes/night_owl/wc_tab/series_preview/game_ondemand) — fetchPrerenderedJournalism (#11) is covered indirectly via the relayJournalism.brief setItem in fetchFIELDBriefFromClaude which calls archiveBrief(slate,...). See outbox/cc-brief-archive-2026-06-15.md for the D1 schema and the relay-side carry-forward.');
 
-// ── A604-A612: Championship Brief + Score Overlay + Night Owl + Cross-Engine + Archive D1 + Archive Enrichment + Desktop Layout (June 14-15 2026) ──
+// ── A604-A617: Championship Brief + Score Overlay + Night Owl + Cross-Engine + Archive D1 + Desktop Layout + Brief Archive + Archive Timeline + Broadcast Archaeology + Conflict Map (June 14-16 2026) ──
 // Reordered 2026-06-15 (CC-CMD assertion-reorder commit) so the block reads
 // in descending numeric order (A609 first, A604 last) — newest at the top of
 // the prepend pattern, oldest at the bottom. Two label renames in this pass
