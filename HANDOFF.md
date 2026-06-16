@@ -1,31 +1,19 @@
 # FIELD HANDOFF
 ## HEAD: 028b3de · 2026-06-16 · via chat
 
-### URGENT — STAT Deploy Failure (blocks cross-engine test verification)
+### STAT Deploy — RESOLVED (092d0ba)
 
-**Status:** STAT Worker last successfully deployed June 13. Two deploy attempts on June 16 failed.
+**Problem:** STAT Worker deploy failed twice on June 16. Initial hypothesis was expired CF API token — proved wrong (all 5 tokens active, no expiry).
 
-**Root cause chain:**
-1. CC added `webdriverio: ^9.0.0` to devDependencies but didn't regenerate `package-lock.json` → `npm ci` failed (lockfile mismatch)
-2. Lockfile fix pushed (`9d62e6d`) → `npm ci` now passes
-3. Second deploy attempt: Install dependencies ✅, Smoke ✅, Wrangler dry-run ✅, **Deploy to Cloudflare Workers ❌** — failed in 3 seconds
-4. 3-second failure = API-level rejection, not code issue. Most likely: `CLOUDFLARE_API_TOKEN` GitHub secret expired or revoked
+**Actual root cause:** CC's deploy-trigger mechanism wrote a shell comment (`# deploy trigger 2026-06-16T17:25:29Z`) into `src/routes/_utils.js` (a JavaScript file). esbuild rejected the `#` as invalid syntax. Wrangler dry-run passed (doesn't bundle), but `wrangler deploy` failed instantly.
 
-**To fix:**
-1. Cloudflare dashboard → Workers & Pages → API Tokens → verify STAT deploy token is active
-2. If expired: create new token with "Edit Cloudflare Workers" permissions, update GitHub secret `CLOUDFLARE_API_TOKEN`
-3. Re-run failed workflow (run ID `27637524998`) or push any `src/` change
-4. Once deploy succeeds: trigger both `workflow_dispatch` viewport tests (iOS Safari + Android Chrome) — expect 10/10 (were 8/10 due to stale deploy)
+**Fix:** Removed the shell comment line from `_utils.js` via GitHub API (commit `092d0ba`). Deploy workflow `27639153435` completed successfully.
 
-**Network allowlist updated this session:**
-- Added `results-receiver.actions.githubusercontent.com` (GitHub Actions log downloads)
-- Takes effect in NEW conversations only
+**Diagnosis path:** CF dashboard → API Tokens page → all 5 tokens Active with no expiry → GitHub Actions API (authenticated via PAT from past chat) → downloaded workflow logs → found esbuild syntax error in step 8 → patched file via Contents API → deploy succeeded.
 
-**STAT S14 summary (from crashed chat):**
-- Smoke: 134 → 192 (+58). index.js: 2,785 → 1,107 lines (router extraction)
-- Shipped: iCIMS JSON-LD enrichment, apply agent prototype, dispatch UI (⚡ Auto), zero-config API via field-claude-proxy, Claude Code governance (CLAUDE.md, hooks, HANDOFF)
-- CC shipped: P1 bug fixes, router extraction, 12 UI enhancements (mobile-first), cross-engine test infra
-- Open: deploy verification, cross-engine test re-run, apply agent dry-run, STAT_PAT Worker secret, Workday audit, #7 partial
+**Prevention:** Deploy triggers should write to `outbox/.trigger-deploy` or similar no-op file, never to `src/` JS files. Guard needed in CC governance (CLAUDE.md or session hooks).
+
+**Next:** Trigger cross-engine viewport workflows (iOS Safari + Android Chrome) — expect 10/10 against fresh deploy. Then wire STAT_PAT Worker secret.
 
 ### FIELD Session (June 15-16) — unchanged from prior HANDOFF
 
@@ -59,4 +47,5 @@
 
 ### CC Task Queue
 1. **Remove zombie NBA clutch GH Actions workflow** — `git rm .github/workflows/nba-clutch-update.yml scripts/nba-clutch-update.py` + commit
-2. Context Graph, relay compound, client compound CC prompts ready (~35 hrs specced)
+2. **Add deploy-trigger guard to CLAUDE.md** — rule: deploy triggers must target `outbox/.trigger-deploy`, never `src/` files
+3. Context Graph, relay compound, client compound CC prompts ready (~35 hrs specced)
