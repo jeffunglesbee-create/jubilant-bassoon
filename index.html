@@ -2231,6 +2231,33 @@ body:not(:has(#main .game-card)) :is(
 .jrn-arch-row.expanded .jrn-arch-snippet{white-space:pre-wrap}
 .jrn-arch-empty{font-size:.65rem;color:var(--muted);font-style:italic;padding:.5rem 0}
 
+/* CC-CMD-2026-06-15-client-features-2 Commit 1: Upset Archaeology */
+.jrn-upsets{margin-top:1.75rem;padding-top:1.25rem;border-top:1px solid var(--edge)}
+.jrn-upsets-head{display:flex;align-items:baseline;gap:.5rem;margin-bottom:.85rem}
+.jrn-upsets-eyebrow{font-family:var(--ff-cond,'DM Sans');font-size:.6rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--gold2)}
+.jrn-upsets-sub{font-size:.62rem;color:var(--smoke);letter-spacing:.03em}
+.jrn-upsets-list{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:.55rem}
+.jrn-upset-card{display:flex;gap:.65rem;align-items:flex-start;padding:.55rem .65rem;background:rgba(255,255,255,.02);border:1px solid var(--edge);border-radius:5px;border-left:3px solid var(--gold2)}
+.jrn-upset-card.major{border-left-color:var(--teal,#00d4aa);background:rgba(0,212,170,.04)}
+.jrn-upset-date{font-family:var(--ff-mono);font-size:.6rem;color:var(--smoke);min-width:3.5rem;letter-spacing:.04em;text-transform:uppercase;padding-top:.1rem}
+.jrn-upset-body{flex:1;min-width:0}
+.jrn-upset-matchup{font-size:.72rem;color:var(--platinum);line-height:1.4;margin-bottom:.18rem;word-break:break-word}
+.jrn-upset-matchup b{color:var(--white)}
+.jrn-upset-meta{font-family:var(--ff-mono);font-size:.6rem;color:var(--smoke);letter-spacing:.04em}
+.jrn-upset-meta .jrn-upset-tag{display:inline-block;padding:.08rem .35rem;border-radius:3px;background:rgba(201,168,76,.08);color:var(--gold2);border:1px solid rgba(201,168,76,.25);margin-right:.35rem}
+.jrn-upset-card.major .jrn-upset-tag{background:rgba(0,212,170,.08);color:var(--teal,#00d4aa);border-color:rgba(0,212,170,.25)}
+.jrn-upset-empty{font-size:.65rem;color:var(--muted);font-style:italic;padding:.4rem 0}
+
+/* CC-CMD-2026-06-15-client-features-2 Commit 2: Market Consensus Tracker */
+.jrn-market-consensus{margin-top:1.75rem;padding-top:1.25rem;border-top:1px solid var(--edge)}
+.jrn-mc-head{font-family:var(--ff-display,'Chakra Petch','DM Sans');font-size:.62rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--gold2);margin-bottom:.6rem}
+.jrn-mc-list{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:.32rem}
+.jrn-mc-row{display:flex;gap:.55rem;align-items:baseline;font-family:var(--ff-body);font-size:.7rem;color:var(--platinum);padding:.18rem 0;border-bottom:1px dotted rgba(255,255,255,.05)}
+.jrn-mc-row:last-child{border-bottom:none}
+.jrn-mc-label{font-weight:600;color:var(--white);min-width:6.5rem}
+.jrn-mc-stats{flex:1;font-family:var(--ff-mono);font-size:.65rem;color:var(--smoke);letter-spacing:.03em}
+.jrn-mc-stats b{color:var(--platinum);font-weight:600}
+
 /* Journalism nav link — same visual as desk-jump-link, distinct icon */
 .jrn-nav-link{color:var(--platinum)}
 .jrn-nav-link.active{color:var(--gold2);background:rgba(201,168,76,.08)}
@@ -4338,6 +4365,14 @@ var _DOM = null;
       <!-- CC-CMD-2026-06-15-client-features Commit 1: Archive Timeline -->
       <div id="jrn-archive-timeline" class="jrn-archive-timeline" aria-label="FIELD archive timeline" hidden>
         <!-- Populated by renderArchiveTimeline() from relay /archive/query -->
+      </div>
+      <!-- CC-CMD-2026-06-15-client-features-2 Commit 1: Upset Archaeology -->
+      <div id="jrn-upsets" class="jrn-upsets" aria-label="Upsets from FIELD archive" hidden>
+        <!-- Populated by renderUpsets() from relay /archive/upsets or /archive/query -->
+      </div>
+      <!-- CC-CMD-2026-06-15-client-features-2 Commit 2: Market Consensus Tracker -->
+      <div id="jrn-market-consensus" class="jrn-market-consensus" aria-label="Aggregate market outcomes" hidden>
+        <!-- Populated by renderMarketConsensus() from archived games with odds -->
       </div>
     </div>
     <aside class="jrn-companion" id="jrn-companion" aria-label="Journalism companion content">
@@ -12276,6 +12311,8 @@ function renderJournalism() {
     // CC-CMD-2026-06-15-client-features Commit 1: Archive timeline fire-and-forget.
     // Never blocks the main journalism render; .catch(()=>{}) in loadArchiveTimeline.
     try { if (typeof loadArchiveTimeline === 'function') loadArchiveTimeline(); } catch(_) {}
+    // CC-CMD-2026-06-15-client-features-2 Commit 1: Upset archaeology fire-and-forget.
+    try { if (typeof loadUpsets === 'function') loadUpsets(); } catch(_) {}
   } catch(_) {}
 }
 
@@ -12399,6 +12436,126 @@ function loadArchiveTimeline() {
       if (!data) return;
       try { sessionStorage.setItem(cacheKey, JSON.stringify({ ts: Date.now(), data })); } catch(_) {}
       renderArchiveTimeline(data);
+    })
+    .catch(() => {});
+}
+
+// ── CC-CMD-2026-06-15-client-features-2 Commit 1: Upset Archaeology ──────────
+// Pulls games where the moneyline underdog won. Primary endpoint is
+// /archive/upsets; on 404 we fall back to /archive/query?limit=20 and
+// filter client-side. Both paths .catch(() => {}). Major upset = ML > +300.
+
+// Normalize a games array out of multiple possible response envelopes.
+function _upsetExtractGames(payload) {
+  if (!payload) return [];
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload.results)) return payload.results;
+  if (Array.isArray(payload.upsets)) return payload.upsets;
+  if (Array.isArray(payload.games)) return payload.games;
+  return [];
+}
+
+// True when the underdog (per moneyline) actually won the game.
+function _isUpset(g) {
+  if (!g) return false;
+  const hs = g.home_score ?? g.homeScore;
+  const as = g.away_score ?? g.awayScore;
+  if (hs == null || as == null) return false;
+  const homeWon = hs > as;
+  // Find a moneyline pair. Accept opening_odds.{home,away} or odds.moneyline.{home,away}
+  const ml = (g.opening_odds && g.opening_odds.moneyline) || g.opening_odds || g.odds?.moneyline;
+  if (!ml) return false;
+  const mlH = Number(ml.home);
+  const mlA = Number(ml.away);
+  if (!isFinite(mlH) || !isFinite(mlA)) return false;
+  // American odds: higher positive number = bigger underdog
+  const homeIsDog = mlH > mlA;
+  return homeWon ? homeIsDog : !homeIsDog;
+}
+
+function _upsetDogPrice(g) {
+  const ml = (g.opening_odds && g.opening_odds.moneyline) || g.opening_odds || g.odds?.moneyline;
+  if (!ml) return null;
+  const mlH = Number(ml.home);
+  const mlA = Number(ml.away);
+  if (!isFinite(mlH) || !isFinite(mlA)) return null;
+  return Math.max(mlH, mlA); // The positive (dog) price
+}
+
+function renderUpsets(games) {
+  const target = document.getElementById('jrn-upsets');
+  if (!target) return;
+  const list = Array.isArray(games) ? games.filter(_isUpset) : [];
+  if (!list.length) { target.setAttribute('hidden',''); return; }
+  // Sort by dog price desc — biggest upsets first.
+  list.sort((a, b) => (_upsetDogPrice(b) || 0) - (_upsetDogPrice(a) || 0));
+  const rows = list.slice(0, 8).map(g => {
+    const date = String(g.date || '').slice(5).replace('-', '/');
+    const home = g.home || g.home_team || '?';
+    const away = g.away || g.away_team || '?';
+    const hs = g.home_score ?? g.homeScore ?? '';
+    const as = g.away_score ?? g.awayScore ?? '';
+    const dogPrice = _upsetDogPrice(g);
+    const isMajor = dogPrice != null && dogPrice > 300;
+    const dogLabel = dogPrice != null
+      ? `<span class="jrn-upset-tag">${dogPrice > 0 ? '+' : ''}${dogPrice} underdog</span>`
+      : '<span class="jrn-upset-tag">underdog win</span>';
+    return `<li class="jrn-upset-card ${isMajor ? 'major' : ''}">
+      <span class="jrn-upset-date">${date}</span>
+      <div class="jrn-upset-body">
+        <div class="jrn-upset-matchup"><b>${away}</b> ${as} @ <b>${home}</b> ${hs}</div>
+        <div class="jrn-upset-meta">${dogLabel}${g.sport ? `<span>${String(g.sport)}</span>` : ''}</div>
+      </div>
+    </li>`;
+  }).join('');
+  target.removeAttribute('hidden');
+  target.innerHTML = `<div class="jrn-upsets-head">
+      <span class="jrn-upsets-eyebrow">Upsets</span>
+      <span class="jrn-upsets-sub">underdog wins · biggest first</span>
+    </div>
+    <ul class="jrn-upsets-list">${rows}</ul>`;
+}
+
+// Fire-and-forget upset loader. Try /archive/upsets first; on any failure
+// fall back to /archive/query?limit=20 and filter locally. Both paths
+// .catch(() => {}) — the journalism rail is never blocked.
+function loadUpsets() {
+  if (typeof renderUpsets !== 'function') return;
+  const cacheKey = 'field_archive_upsets';
+  try {
+    const cached = sessionStorage.getItem(cacheKey);
+    if (cached) {
+      const c = JSON.parse(cached);
+      if (c && (Date.now() - (c.ts || 0)) < 1800000 && Array.isArray(c.games)) {
+        renderUpsets(c.games);
+        return;
+      }
+    }
+  } catch(_) {}
+  const base = (typeof V2_RELAY_BASE !== 'undefined')
+    ? V2_RELAY_BASE : 'https://field-relay-nba.jeffunglesbee.workers.dev';
+  fetch(base + '/archive/upsets')
+    .then(r => r.ok ? r.json() : null)
+    .then(payload => {
+      if (payload) {
+        const games = _upsetExtractGames(payload);
+        if (games.length) {
+          try { sessionStorage.setItem(cacheKey, JSON.stringify({ ts: Date.now(), games })); } catch(_) {}
+          renderUpsets(games);
+          return;
+        }
+      }
+      // Fallback: /archive/query?limit=20 with client-side filter.
+      fetch(base + '/archive/query?limit=20')
+        .then(r2 => r2.ok ? r2.json() : null)
+        .then(payload2 => {
+          if (!payload2) return;
+          const games2 = _upsetExtractGames(payload2);
+          if (!games2.length) return;
+          try { sessionStorage.setItem(cacheKey, JSON.stringify({ ts: Date.now(), games: games2 })); } catch(_) {}
+          renderUpsets(games2);
+        })
+        .catch(() => {});
     })
     .catch(() => {});
 }
