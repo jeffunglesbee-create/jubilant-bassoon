@@ -4167,6 +4167,67 @@ assert('A613 — WC name fix: _WC_NAME_FIX + _wcFixTeamName normalize D1 names (
   html.includes('_wcFixTeamName(r.home)') && html.includes('_wcFixTeamName(r.away)'),
   'API-Sports returns "Cape Verde Islands" but FIELD uses "Cape Verde". Without normalization, Group H gets a duplicate row (D1 "Cape Verde Islands" + WC_TEAMS fallback "Cape Verde") and Monte Carlo H2H lookups fail. _WC_NAME_FIX promoted to module level so both standings merge and _wcBuildGroupInput results share the same map.');
 
+// ── A618-A621 / CC-CMD-2026-06-15-client-features-2: upsets + market consensus + brief corpus + crew chip ──
+
+// ── A618 / Commit 1: Upset Archaeology ──
+assert('A618 — Upset Archaeology: renderUpsets + loadUpsets wired into Journal tab',
+  // (1) Render + filter fns exist.
+  /function renderUpsets\s*\(/.test(html) &&
+  /function loadUpsets\s*\(\)/.test(html) &&
+  /function _isUpset\s*\(g\)/.test(html) &&
+  // (2) Primary endpoint /archive/upsets and fallback /archive/query are both tried.
+  html.includes("'/archive/upsets'") &&
+  html.includes("'/archive/query?limit=20'") &&
+  // (3) Target div + sessionStorage cache key.
+  /id="jrn-upsets"/.test(html) &&
+  html.includes("'field_archive_upsets'") &&
+  // (4) Wired into renderJournalism with fire-and-forget contract.
+  html.includes("if (typeof loadUpsets === 'function') loadUpsets();") &&
+  html.includes('.catch(() => {});'),
+  'CC-CMD-2026-06-15-client-features-2 Commit 1: Upset Archaeology section in the Journal tab. Tries relay /archive/upsets first, falls back to /archive/query?limit=20 with client-side _isUpset() filter. Major upsets (dog price > +300) use the DISCOVERY tier (teal). 30-min sessionStorage cache (field_archive_upsets). Fire-and-forget — .catch(() => {}) on every fetch.');
+
+// ── A619 / Commit 2: Market Consensus Tracker ──
+assert('A619 — Market Consensus Tracker: computeMarketConsensus + Market Watch label render',
+  // (1) Pure derivation + render hooks.
+  /function computeMarketConsensus\s*\(games\)/.test(html) &&
+  /function renderMarketConsensus\s*\(games\)/.test(html) &&
+  /function loadMarketConsensus\s*\(\)/.test(html) &&
+  // (2) Target div + spec label.
+  /id="jrn-market-consensus"/.test(html) &&
+  html.includes('Market Watch') &&
+  // (3) Three rate helpers (favorite / home / over).
+  /function _consensusFavoriteWonRate/.test(html) &&
+  /function _consensusHomeWinRate/.test(html) &&
+  /function _consensusOverRate/.test(html) &&
+  // (4) Wired into renderJournalism.
+  html.includes("if (typeof loadMarketConsensus === 'function') loadMarketConsensus();"),
+  'CC-CMD-2026-06-15-client-features-2 Commit 2: Market Watch block in the Journal tab. Per-sport favorite/home/over rates derived client-side from archived opening_odds. Requires >=3 odds-carrying games per sport bucket to render. Cache shared with the upset loader (field_archive_upsets). Section stays hidden on empty payload or relay 404.');
+
+// ── A620 / Commit 3: Brief Corpus Intelligence (Health panel) ──
+assert('A620 — Brief Corpus: fhp-brief-quality row + loadBriefQualityRow with 7-day trend',
+  // (1) Health-panel placeholder + render + loader.
+  /id="fhp-brief-quality"/.test(html) &&
+  /function renderBriefQualityRow\s*\(briefs\)/.test(html) &&
+  /function loadBriefQualityRow\s*\(\)/.test(html) &&
+  // (2) Pulls slate-cron archive at limit=14 (the spec's window).
+  html.includes('/archive/query?brief_type=slate&source=cron&limit=14') &&
+  // (3) Trend arrows present (↑ ↓ →).
+  /'↑'/.test(html) && /'↓'/.test(html) &&
+  // (4) Quality classifier present with the spec's three tiers (>200 / 150-200 / <150).
+  /function _briefQualityClassify/.test(html) &&
+  html.includes('avg > 200') && html.includes('avg >= 150'),
+  'CC-CMD-2026-06-15-client-features-2 Commit 3: Brief Quality row in the FIELD Health panel. Pulls /archive/query?brief_type=slate&source=cron&limit=14, computes a rolling average quality_score and a 7-day trend arrow comparing recent half to prior half. Green if avg > 200, amber if 150-200, red if < 150. 30-min sessionStorage cache (field_archive_brief_quality). Loader fires after panel mount.');
+
+// ── A621 / Commit 4: Crew Tracker chip ──
+assert('A621 — Crew Tracker: .crew-chip class + g.crew render in card-right',
+  // (1) CSS class with the spec's font-size + display.
+  /\.crew-chip\{font-size:\.7rem;color:var\(--text-dim,#888\);display:block;margin-top:2px/.test(html) &&
+  // (2) Conditional render checks g.crew and emits a span with class crew-chip.
+  html.includes('g.crew?`<span class="crew-chip"') &&
+  // (3) Placed in card-right (below stream-row, before the standings button).
+  /class="crew-chip"[^>]*>\u{1F399}/u.test(html) || html.includes('class="crew-chip" title="Broadcast crew"'),
+  'CC-CMD-2026-06-15-client-features-2 Commit 4: Crew Tracker chip. .crew-chip class with the spec\'s exact styling (.7rem, var(--text-dim,#888), display:block, margin-top:2px). Renders in card-right below the broadcast stream-row when g.crew is populated. Pure client-side — no relay dependency.');
+
 // ── A615-A617 / CC-CMD-2026-06-15-client-features: archive timeline + broadcast archaeology + conflict map ──
 
 // ── A615 / Commit 1: Archive Timeline in Journal tab ──
@@ -4237,7 +4298,7 @@ assert('A614 — Brief archive: archiveBrief() fire-and-forget helper wired to b
   /archiveBrief\('game_ondemand'/.test(html),
   'archiveBrief() persists AI-generated brief text to D1 via relay POST /archive/brief. Fire-and-forget — the .catch(() => {}) on the fetch is mandatory so an archive write failure never blocks UI. All 11 spec brief types are wired (slate/compound/mlb_game/wnba_game/epl_match/stakes/night_owl/wc_tab/series_preview/game_ondemand) — fetchPrerenderedJournalism (#11) is covered indirectly via the relayJournalism.brief setItem in fetchFIELDBriefFromClaude which calls archiveBrief(slate,...). See outbox/cc-brief-archive-2026-06-15.md for the D1 schema and the relay-side carry-forward.');
 
-// ── A604-A617: Championship Brief + Score Overlay + Night Owl + Cross-Engine + Archive D1 + Desktop Layout + Brief Archive + Archive Timeline + Broadcast Archaeology + Conflict Map (June 14-16 2026) ──
+// ── A604-A621: Championship Brief + Score Overlay + Night Owl + Cross-Engine + Archive D1 + Desktop Layout + Brief Archive + Archive Timeline + Broadcast Archaeology + Conflict Map + Upsets + Market Consensus + Brief Corpus + Crew Chip (June 14-16 2026) ──
 // Reordered 2026-06-15 (CC-CMD assertion-reorder commit) so the block reads
 // in descending numeric order (A609 first, A604 last) — newest at the top of
 // the prepend pattern, oldest at the bottom. Two label renames in this pass
