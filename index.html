@@ -2437,6 +2437,18 @@ body:not(.journalism-mode) #field-journalism-section{display:none}
 .live-wp-bar[data-confidence="low"]{opacity:.7;border:1px dashed rgba(251,191,36,.3)}
 .live-wp-comeback{font-size:.58rem;color:#ef4444;font-weight:700;margin-left:6px;animation:comeback-pulse 1.5s ease infinite}
 @keyframes comeback-pulse{0%,100%{opacity:1}50%{opacity:.5}}
+/* CC-CMD-2026-06-16 (odds-quota pivot): Monte Carlo WP fallback.
+   Odds API exhausted → relay /wc/match-wp serves MC-derived probabilities.
+   Subtle desaturation + dashed border so a viewer can tell at a glance the
+   bar is projection-derived rather than market-derived. */
+.live-wp-bar[data-wp-source="monte-carlo"]{
+  background:rgba(148,163,184,.05);
+  border:1px dashed rgba(148,163,184,.3);
+}
+.live-wp-bar[data-wp-source="monte-carlo"] .live-wp-home{background:rgba(74,222,128,.16);color:#86efac}
+.live-wp-bar[data-wp-source="monte-carlo"] .live-wp-draw{background:rgba(148,163,184,.12);color:#b8c2cf}
+.live-wp-bar[data-wp-source="monte-carlo"] .live-wp-away{background:rgba(251,191,36,.14);color:#fcd34d}
+.live-wp-proj-tag{font-size:.55rem;color:#94a3b8;font-weight:600;margin-left:6px;letter-spacing:.06em;text-transform:uppercase;opacity:.85;vertical-align:1px}
 
 /* ── Attention bar — fixed bottom viewport (Step 7) ──────────────────── */
 #field-attention-bar{position:fixed;bottom:0;left:0;right:0;z-index:200;background:rgba(15,15,25,.92);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-top:1px solid rgba(201,168,76,.2);padding:6px 12px;display:none;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
@@ -19532,16 +19544,50 @@ function renderESPNScores(){
       // When a live game has WP data (from SSE wp_update or Savant), inject
       // or update a WP bar on the card. Soccer gets 3-way (home/draw/away),
       // non-soccer gets 2-way. Reuses WC WP bar visual design.
-      if (isLive && score.wp != null) {
-        const _wpH = score.wp;
-        const _wpOdds = score._liveOddsWP || {};
-        const _wpA = _wpOdds.awayWP ?? (1 - _wpH);
-        const _wpD = _wpOdds.drawWP ?? 0;
+      //
+      // CC-CMD-2026-06-16 (odds-quota pivot): when this is a WC game AND the
+      // odds-sourced _liveOddsWP is missing or stale (>5 min since last SSE
+      // wp_update), fall back to Monte Carlo WP from relay /wc/match-wp.
+      // The odds path remains primary when available — MC only fills the
+      // hole. Source is marked via data-wp-source + "(proj)" tag so a
+      // viewer can tell which engine produced the bar.
+      const _sportLower = String((score.sport || sport || '')).toLowerCase();
+      const _isWCGame = _sportLower.includes('wc26')
+        || _sportLower.includes('world cup')
+        || _sportLower.includes('fifa');
+      let _mcWP = null;
+      if (isLive && _isWCGame && _isLiveOddsWPStale(score)) {
+        _mcWP = _lookupWCMatchWP(score.home || score.homeName, score.away || score.awayName);
+        if (!_mcWP) {
+          // Kick the loader. Fire-and-forget; .catch(()=>{}) inside.
+          try { loadWCMatchWP(); } catch (_) {}
+        }
+      }
+      const _hasOddsWP = isLive && score.wp != null;
+      const _useMC = !!(isLive && _mcWP && !_hasOddsWP);
+      if (_hasOddsWP || _useMC) {
+        const _src = _useMC ? 'monte-carlo' : 'odds-api';
+        // Pull the canonical {homeWP, drawWP, awayWP} from whichever source
+        // we landed on. MC source is normalised to the same {0..1} scale.
+        let _wpH, _wpA, _wpD;
+        if (_useMC) {
+          // _flipped marker means the cache hit was the reverse pairing.
+          const _flip = !!_mcWP._flipped;
+          _wpH = _flip ? _mcWP.awayWP : _mcWP.homeWP;
+          _wpA = _flip ? _mcWP.homeWP : _mcWP.awayWP;
+          _wpD = _mcWP.drawWP || 0;
+        } else {
+          const _wpOdds = score._liveOddsWP || {};
+          _wpH = score.wp;
+          _wpA = _wpOdds.awayWP ?? (1 - _wpH);
+          _wpD = _wpOdds.drawWP ?? 0;
+        }
         const _hPct = Math.round(_wpH * 100);
         const _aPct = _wpD > 0 ? Math.round(_wpA * 100) : (100 - _hPct);
         const _dPct = _wpD > 0 ? (100 - _hPct - _aPct) : 0;
-        const _conf = _wpOdds.confidence || 'normal';
-        const _collapse = _wpOdds.peakCollapse || 0;
+        const _wpOdds = score._liveOddsWP || {};
+        const _conf = _useMC ? 'mc' : (_wpOdds.confidence || 'normal');
+        const _collapse = _useMC ? 0 : (_wpOdds.peakCollapse || 0);
         const _hName = (score.homeName || score.home || '').split(' ').pop();
         const _aName = (score.awayName || score.away || '').split(' ').pop();
         const _hLabel = _hPct >= 12 ? `${_hName} ${_hPct}%` : `${_hPct}%`;
@@ -19549,9 +19595,11 @@ function renderESPNScores(){
         const _dLabel = _dPct >= 6 ? `D ${_dPct}%` : '';
         const _comebackBadge = _collapse > 0.15
           ? `<span class="live-wp-comeback">COMEBACK ${Math.round(_collapse*100)}pp</span>` : '';
+        const _projTag = _useMC ? '<span class="live-wp-proj-tag" title="Monte Carlo projection — Odds API unavailable">proj</span>' : '';
         const drawSeg = _dPct > 0
           ? `<div class="live-wp-draw" style="width:${_dPct}%">${_dLabel}</div>` : '';
-        const wpHTML = `<div class="live-wp-wrap"><div class="live-wp-bar" data-confidence="${_conf}" title="Live WP · ${_hPct}% home${_dPct ? ` · ${_dPct}% draw` : ''} · ${_aPct}% away"><div class="live-wp-home" style="width:${_hPct}%">${_hLabel}</div>${drawSeg}<div class="live-wp-away" style="width:${_aPct}%">${_aLabel}</div></div>${_comebackBadge}</div>`;
+        const _titleSrc = _useMC ? 'Monte Carlo projection' : 'Live WP';
+        const wpHTML = `<div class="live-wp-wrap"><div class="live-wp-bar" data-confidence="${_conf}" data-wp-source="${_src}" title="${_titleSrc} · ${_hPct}% home${_dPct ? ` · ${_dPct}% draw` : ''} · ${_aPct}% away"><div class="live-wp-home" style="width:${_hPct}%">${_hLabel}</div>${drawSeg}<div class="live-wp-away" style="width:${_aPct}%">${_aLabel}</div></div>${_projTag}${_comebackBadge}</div>`;
         let wpEl = card.querySelector('.live-wp-wrap');
         if (wpEl) {
           wpEl.outerHTML = wpHTML;
@@ -20958,7 +21006,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-15f';
+  const SW_VERSION = '2026-06-16a';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -28971,6 +29019,101 @@ function _cflMatchOdds(game) {
     }
   }
   return null;
+}
+
+// ── CC-CMD-2026-06-16 (odds-quota pivot): Monte Carlo WP fallback ──────────
+// Odds API is exhausted; relay /wc/match-wp serves Monte Carlo-derived
+// {home_team, away_team, homeWP, drawWP, awayWP}. We pull lazily when the
+// primary odds-WP path is stale or missing for a WC game.
+//
+// Cache: keyed by `${normHome}|${normAway}`, sessionStorage persists across
+// route changes within a session. 60-second fetch coalesce so multiple
+// stale-WC games on the same render don't trigger 6 simultaneous requests.
+const _LIVE_ODDS_WP_STALE_MS = 5 * 60 * 1000;   // spec: ">5 min"
+const _WC_MATCH_WP_TTL_MS    = 60 * 1000;       // re-fetch at most every 60s
+let _wcMatchWPInflight = null;
+let _wcMatchWPLastFetch = 0;
+
+function _normWCName(s) {
+  return (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
+}
+
+// Predicate: is the odds-sourced live WP missing OR older than the staleness
+// window? Used to decide whether to overlay the MC fallback.
+function _isLiveOddsWPStale(score) {
+  const wp = score && score._liveOddsWP;
+  if (!wp) return true;
+  const ts = Number(wp.ts) || 0;
+  if (!ts) return true;
+  return (Date.now() - ts) > _LIVE_ODDS_WP_STALE_MS;
+}
+
+// Lookup MC WP for a fixture by (home, away) — tolerant to flipped pairings.
+function _lookupWCMatchWP(home, away) {
+  const cache = window._wcMatchWPCache;
+  if (!cache) return null;
+  const hk = _normWCName(home), ak = _normWCName(away);
+  return cache[`${hk}|${ak}`] || (cache[`${ak}|${hk}`]
+    ? { ...cache[`${ak}|${hk}`], _flipped: true }
+    : null);
+}
+
+// Fire-and-forget loader for /wc/match-wp. Idempotent within the TTL.
+// Result lands in window._wcMatchWPCache, then renderESPNScores re-runs to
+// repaint the bars. .catch(() => {}) on the fetch is mandatory.
+function loadWCMatchWP() {
+  const now = Date.now();
+  if (_wcMatchWPInflight) return _wcMatchWPInflight;
+  if (now - _wcMatchWPLastFetch < _WC_MATCH_WP_TTL_MS) return Promise.resolve();
+  // Try sessionStorage first
+  if (!window._wcMatchWPCache) {
+    try {
+      const raw = sessionStorage.getItem('field_wc_match_wp');
+      if (raw) {
+        const c = JSON.parse(raw);
+        if (c && (now - (c.ts || 0)) < _WC_MATCH_WP_TTL_MS) {
+          window._wcMatchWPCache = c.data || {};
+        }
+      }
+    } catch (_) {}
+  }
+  const base = (typeof V2_RELAY_BASE !== 'undefined')
+    ? V2_RELAY_BASE : 'https://field-relay-nba.jeffunglesbee.workers.dev';
+  _wcMatchWPLastFetch = now;
+  _wcMatchWPInflight = fetch(`${base}/wc/match-wp`, { signal: AbortSignal.timeout(2500) })
+    .then(r => r.ok ? r.json() : null)
+    .then(payload => {
+      if (!payload) return;
+      const arr = Array.isArray(payload) ? payload
+                : Array.isArray(payload.matches) ? payload.matches
+                : Array.isArray(payload.results) ? payload.results
+                : Array.isArray(payload.games) ? payload.games
+                : [];
+      if (!arr.length) return;
+      const cache = {};
+      for (const m of arr) {
+        const h = m.home_team || m.home || m.homeName;
+        const a = m.away_team || m.away || m.awayName;
+        if (!h || !a) continue;
+        const k = `${_normWCName(h)}|${_normWCName(a)}`;
+        cache[k] = {
+          homeWP: Number(m.homeWP ?? m.pHome ?? m.home_wp) || 0,
+          drawWP: Number(m.drawWP ?? m.pDraw ?? m.draw_wp) || 0,
+          awayWP: Number(m.awayWP ?? m.pAway ?? m.away_wp) || 0,
+          ts: Date.now(),
+          source: 'monte-carlo',
+        };
+      }
+      window._wcMatchWPCache = cache;
+      try { sessionStorage.setItem('field_wc_match_wp', JSON.stringify({ ts: Date.now(), data: cache })); } catch (_) {}
+      // Repaint live cards so the fallback bars land without waiting for the
+      // next ESPN poll cycle.
+      try { if (typeof renderESPNScores === 'function') renderESPNScores(); } catch (_) {}
+    })
+    .catch(() => {})
+    .finally(() => { _wcMatchWPInflight = null; });
+  return _wcMatchWPInflight;
 }
 
 // v1.3.2 — fetch no-vig match probabilities from relay /wc/odds-probs
