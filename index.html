@@ -28552,6 +28552,12 @@ async function renderWCTournamentBracket() {
 
     // 3. Probability table
     const teams = projData?.teams;
+    // CC-CMD-2026-06-16 (odds-quota pivot, Task 2): share the projections
+    // payload with the WC WP bar (buildWCBars) so P(advance) reads pR32
+    // without issuing a second fetch.
+    if (teams?.length && typeof _wcProjectionsApplyTeams === 'function') {
+      try { _wcProjectionsApplyTeams(teams); } catch (_) {}
+    }
     if (teams?.length) {
       const pct = v => Math.round(v * 100);
       const cls = v => v >= 0.5 ? 'hi' : v >= 0.15 ? 'mid' : 'lo';
@@ -29114,6 +29120,66 @@ function loadWCMatchWP() {
     .catch(() => {})
     .finally(() => { _wcMatchWPInflight = null; });
   return _wcMatchWPInflight;
+}
+
+// ── CC-CMD-2026-06-16 (odds-quota pivot, Task 2): /wc/projections pR32 ─────
+// P(advance) for each WC team is the pR32 field on the per-team row in
+// /wc/projections. This data is Monte Carlo-derived from the relay and
+// does NOT consume Odds API credits. The bracket renderer
+// (renderWCTournamentBracket) already fetches /wc/projections — we
+// piggyback on that cache; if it hasn't run yet, loadWCProjectionsCache
+// triggers it lazily.
+//
+// Cache: window._wcProjectionsCache = { ts, byTeam: { normName → row } }.
+// renderWCTournamentBracket populates the same cache after its own fetch.
+const _WC_PROJ_TTL_MS = 5 * 60 * 1000;
+
+function _wcProjectionsApplyTeams(teams) {
+  if (!Array.isArray(teams) || !teams.length) return;
+  const byTeam = {};
+  for (const t of teams) {
+    if (!t || !t.name) continue;
+    byTeam[_normWCName(t.name)] = t;
+  }
+  window._wcProjectionsCache = { ts: Date.now(), byTeam };
+  try { sessionStorage.setItem('field_wc_projections',
+    JSON.stringify({ ts: Date.now(), teams })); } catch (_) {}
+}
+
+function _wcLookupAdvance(teamName) {
+  const cache = window._wcProjectionsCache;
+  if (!cache || !cache.byTeam) return null;
+  const t = cache.byTeam[_normWCName(teamName)];
+  if (!t || t.pR32 == null) return null;
+  return Number(t.pR32);
+}
+
+function loadWCProjectionsCache() {
+  const now = Date.now();
+  const cur = window._wcProjectionsCache;
+  if (cur && (now - (cur.ts || 0)) < _WC_PROJ_TTL_MS) return Promise.resolve();
+  // Hydrate from sessionStorage first
+  if (!cur) {
+    try {
+      const raw = sessionStorage.getItem('field_wc_projections');
+      if (raw) {
+        const c = JSON.parse(raw);
+        if (c && (now - (c.ts || 0)) < _WC_PROJ_TTL_MS && Array.isArray(c.teams)) {
+          _wcProjectionsApplyTeams(c.teams);
+          return Promise.resolve();
+        }
+      }
+    } catch (_) {}
+  }
+  const base = (typeof V2_RELAY_BASE !== 'undefined')
+    ? V2_RELAY_BASE : 'https://field-relay-nba.jeffunglesbee.workers.dev';
+  return fetch(`${base}/wc/projections`, { signal: AbortSignal.timeout(2500) })
+    .then(r => r.ok ? r.json() : null)
+    .then(data => {
+      const teams = data && Array.isArray(data.teams) ? data.teams : null;
+      if (teams) _wcProjectionsApplyTeams(teams);
+    })
+    .catch(() => {});
 }
 
 // v1.3.2 — fetch no-vig match probabilities from relay /wc/odds-probs
@@ -33342,10 +33408,25 @@ function buildWCBars(g) {
   const drawWP  = oddsData?.draw     != null ? Math.round(oddsData.draw     * 100) : 25;
   const awayWP  = oddsData?.awayWin  != null ? Math.round(oddsData.awayWin  * 100) : 30;
 
-  // Advancement probabilities — from permutations engine if available
-  // Stored as g._homeAdv / g._awayAdv when permutations have run
-  const homeAdv = g._homeAdv != null ? Math.round(g._homeAdv * 100) : Math.min(homeWP + 20, 99);
-  const awayAdv = g._awayAdv != null ? Math.round(g._awayAdv * 100) : Math.min(awayWP + 15, 99);
+  // Advancement probabilities — preference order:
+  //   1. g._homeAdv / g._awayAdv (permutations engine, when it has run)
+  //   2. window._wcProjectionsCache pR32 (CC-CMD-2026-06-16 Task 2 — Monte
+  //      Carlo P(R32) from relay /wc/projections, no Odds API credits used)
+  //   3. heuristic fallback derived from homeWP/awayWP
+  // The cache is populated by loadWCProjectionsCache() and also by
+  // renderWCTournamentBracket() — fire-and-forget here so the first paint
+  // gets MC P(advance) on the next render cycle.
+  if (typeof loadWCProjectionsCache === 'function') {
+    try { loadWCProjectionsCache(); } catch (_) {}
+  }
+  const _pR32H = (typeof _wcLookupAdvance === 'function') ? _wcLookupAdvance(g.home) : null;
+  const _pR32A = (typeof _wcLookupAdvance === 'function') ? _wcLookupAdvance(g.away) : null;
+  const homeAdv = g._homeAdv != null ? Math.round(g._homeAdv * 100)
+    : _pR32H != null ? Math.round(_pR32H * 100)
+    : Math.min(homeWP + 20, 99);
+  const awayAdv = g._awayAdv != null ? Math.round(g._awayAdv * 100)
+    : _pR32A != null ? Math.round(_pR32A * 100)
+    : Math.min(awayWP + 15, 99);
 
   const homeName = g.home.split(' ').pop(); // last word e.g. "Mexico" → "Mexico"
   const awayName = g.away.split(' ').pop();
