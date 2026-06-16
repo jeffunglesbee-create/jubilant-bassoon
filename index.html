@@ -1954,7 +1954,13 @@ body:not(:has(#main .game-card)) :is(
 .conflict-chip:hover{background:rgba(245,158,11,.18);border-color:rgba(245,158,11,.55)}
 .conflict-chip-icon{font-size:.7rem;line-height:1}
 .conflict-chip-count{font-family:var(--ff-mono);font-size:.6rem;color:var(--caution,#f59e0b)}
-.conflict-detail{position:absolute;top:calc(100% + .35rem);right:0;min-width:240px;max-width:340px;background:var(--card,#0e1116);border:1px solid rgba(245,158,11,.4);border-radius:6px;padding:.65rem .75rem;font-family:var(--ff-body);font-size:.66rem;line-height:1.5;color:var(--platinum);z-index:50;box-shadow:0 8px 24px rgba(0,0,0,.6)}
+/* CC-CMD-2026-06-16 Bug 4: panel is now position:fixed (attached to body
+   instead of .conflict-chip-wrap) so it escapes the .controls sticky
+   stacking context (z=50). With z=9000 it floats above every page
+   layer — the Edition bar AND the main schedule cards — and never bleeds
+   over content that lives in a parent stacking context. Position is
+   computed at open time via getBoundingClientRect on the chip. */
+.conflict-detail{position:fixed;min-width:240px;max-width:340px;background:var(--card,#0e1116);border:1px solid rgba(245,158,11,.4);border-radius:6px;padding:.65rem .75rem;font-family:var(--ff-body);font-size:.66rem;line-height:1.5;color:var(--platinum);z-index:9000;box-shadow:0 8px 24px rgba(0,0,0,.6)}
 .conflict-detail-head{font-family:var(--ff-cond,'DM Sans');font-size:.58rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--caution,#f59e0b);margin-bottom:.4rem}
 .conflict-detail-row{display:flex;gap:.5rem;padding:.18rem 0;border-bottom:1px solid rgba(255,255,255,.05)}
 .conflict-detail-row:last-child{border-bottom:none}
@@ -9933,7 +9939,13 @@ function renderConflictChip(conflicts) {
   if (btn) {
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
-      const existing = wrap.querySelector('.conflict-detail');
+      // CC-CMD-2026-06-16 Bug 4: detail panel now lives directly under
+      // document.body so it escapes the .controls sticky stacking context
+      // (z=50) — that context was clipping the panel relative to the
+      // surrounding chrome and producing the inverted stacking the bug
+      // report described (panel over Edition bar but under main cards).
+      // With position:fixed + z=9000 the panel sits on its own top layer.
+      const existing = document.body.querySelector('.conflict-detail');
       if (existing) { existing.remove(); return; }
       const detail = document.createElement('div');
       detail.className = 'conflict-detail';
@@ -9983,11 +9995,32 @@ function renderConflictChip(conflicts) {
         return `<div>${gameRows}</div>`;
       }).join('');
       detail.innerHTML = `<div class="conflict-detail-head">Overlapping slots</div>${rowsHTML}`;
-      wrap.appendChild(detail);
+      // CC-CMD-2026-06-16 Bug 4: attach to body + compute fixed position
+      // anchored to the chip. The panel is right-aligned to the chip and
+      // sits just below it. Viewport-edge clamps keep the panel on-screen
+      // at narrow desktop widths.
+      document.body.appendChild(detail);
+      const _positionDetail = () => {
+        if (!detail.isConnected) return;
+        const r = btn.getBoundingClientRect();
+        const vw = window.innerWidth || document.documentElement.clientWidth;
+        const pw = detail.offsetWidth || 280;
+        let top = r.bottom + 6;
+        let right = Math.max(8, vw - r.right);
+        if (right + pw > vw - 8) right = Math.max(8, vw - pw - 8);
+        detail.style.top = top + 'px';
+        detail.style.right = right + 'px';
+        detail.style.left = '';
+      };
+      _positionDetail();
+      window.addEventListener('resize', _positionDetail, { passive: true });
+      window.addEventListener('scroll', _positionDetail, { passive: true });
       const close = (ev) => {
-        if (!wrap.contains(ev.target)) {
+        if (!wrap.contains(ev.target) && !detail.contains(ev.target)) {
           detail.remove();
           document.removeEventListener('click', close, true);
+          window.removeEventListener('resize', _positionDetail);
+          window.removeEventListener('scroll', _positionDetail);
         }
       };
       setTimeout(() => document.addEventListener('click', close, true), 0);
@@ -21055,7 +21088,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-16d';
+  const SW_VERSION = '2026-06-16e';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
