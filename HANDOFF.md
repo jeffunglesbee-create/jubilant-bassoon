@@ -1,22 +1,43 @@
 # FIELD HANDOFF
-## HEAD: multiple commits across both repos · 2026-06-16 · via chat + CC
+## HEAD: 028b3de · 2026-06-16 · via chat
 
-### Session Summary (June 15-16 2026)
-Massive infrastructure + architecture session. 36+ CC commits across both repos. Archive intelligence system shipped end-to-end. 10 Drive specs produced. RUWT/MetaBet deep analysis completed.
+### URGENT — STAT Deploy Failure (blocks cross-engine test verification)
 
-### What Shipped
+**Status:** STAT Worker last successfully deployed June 13. Two deploy attempts on June 16 failed.
+
+**Root cause chain:**
+1. CC added `webdriverio: ^9.0.0` to devDependencies but didn't regenerate `package-lock.json` → `npm ci` failed (lockfile mismatch)
+2. Lockfile fix pushed (`9d62e6d`) → `npm ci` now passes
+3. Second deploy attempt: Install dependencies ✅, Smoke ✅, Wrangler dry-run ✅, **Deploy to Cloudflare Workers ❌** — failed in 3 seconds
+4. 3-second failure = API-level rejection, not code issue. Most likely: `CLOUDFLARE_API_TOKEN` GitHub secret expired or revoked
+
+**To fix:**
+1. Cloudflare dashboard → Workers & Pages → API Tokens → verify STAT deploy token is active
+2. If expired: create new token with "Edit Cloudflare Workers" permissions, update GitHub secret `CLOUDFLARE_API_TOKEN`
+3. Re-run failed workflow (run ID `27637524998`) or push any `src/` change
+4. Once deploy succeeds: trigger both `workflow_dispatch` viewport tests (iOS Safari + Android Chrome) — expect 10/10 (were 8/10 due to stale deploy)
+
+**Network allowlist updated this session:**
+- Added `results-receiver.actions.githubusercontent.com` (GitHub Actions log downloads)
+- Takes effect in NEW conversations only
+
+**STAT S14 summary (from crashed chat):**
+- Smoke: 134 → 192 (+58). index.js: 2,785 → 1,107 lines (router extraction)
+- Shipped: iCIMS JSON-LD enrichment, apply agent prototype, dispatch UI (⚡ Auto), zero-config API via field-claude-proxy, Claude Code governance (CLAUDE.md, hooks, HANDOFF)
+- CC shipped: P1 bug fixes, router extraction, 12 UI enhancements (mobile-first), cross-engine test infra
+- Open: deploy verification, cross-engine test re-run, apply agent dry-run, STAT_PAT Worker secret, Workday audit, #7 partial
+
+### FIELD Session (June 15-16) — unchanged from prior HANDOFF
+
+**What Shipped:**
 - Cape Verde name fix (7826c38, A613)
 - June game archive — 90 games to D1
-- Brief archive client (d91012e, A614) — 20 call sites, 11 brief types
-- Brief archive relay (7 commits) — POST endpoint, cron write, backfill engine
-- Backfill enrichment (bb98ba0) — 130 rows
-- Relay governance — CLAUDE.md + brief-archive-spec.md
-- Desktop viewport tests (6 commits) — Chrome + Safari WebDriverIO
-- Close the Loop (4 commits) — /archive/query, temporal context, voice exemplars
-- Event Pipeline (4 commits) — /archive/game, GameDO hook, KV brief capture
-- Odds Layer (7 commits) — schema, snapshot, injection, backfill, dead-hour cron
-- Client Features 1 (5 commits, A615-A617) — timeline, broadcast, conflict map
-- Client Features 2 (6 commits, A618-A621) — upsets, consensus, corpus, crew
+- Brief archive client+relay (20 call sites, 11 brief types, backfill engine)
+- Desktop viewport tests (Chrome + Safari WebDriverIO)
+- Close the Loop (temporal context, voice exemplars, /archive/query)
+- Event Pipeline (/archive/game, GameDO hook, KV brief capture)
+- Odds Layer (schema, snapshot, injection, backfill, dead-hour cron)
+- Client Features 1+2 (timeline, broadcast, conflict map, upsets, consensus, corpus, crew)
 - Smoke: 664/0, SW_VERSION: 2026-06-15f
 
 ### Drive Specs
@@ -31,25 +52,11 @@ Massive infrastructure + architecture session. 36+ CC commits across both repos.
 9. Journalism Loop — 1PKkEGpe306ovRngvBCAZgoQyjeaj02SQ0khAp0OrOfU
 10. External API — 1kLEZnwLmmvvGdEtPn26jC8iUKbSR_9PK4ZxSpjDvkvE
 
-### Key Decisions
-- The Debrief = post-game product name (replaces amnesty)
-- Circadian = schedule-state-driven, per-sport, not clock
-- shouldUnseal(game) = sole disclosure boundary, per-game not per-mode
-- Cards never reorder by computed state — chronological + temporal tiers
-- Named states only in live DOM; numbers in Debrief only
-- Show sporting performance components individually; hide composite (drama)
-- Subscription-aware: INCLUDED/FREE/NEEDS_SUB chips, no FOMO
-- RUWT/MetaBet: patent requires interest level + notification; FIELD editorial avoids both
-- Context Graph = unified game intelligence API
-
-### D1 State
-- field-archive: 394+ rows, odds populating, backfill cron active
-- wc2026: Groups A-H, I-L opening June 16-17
-
-### Pending
-- Context Graph, relay compound, client compound CC prompts ready
-- Circadian system specced, not built
-- ~35 hours CC work specced across 10 Drive docs
+### Drive upload outbox
+- `.github/workflows/drive-upload-outbox.yml` — triggers on `outbox/cc-*.md` or `outbox/rule59-*.md` pushes
+- Apps Script bridge (script.google.com "FIELD documentation" project)
+- Folder: `0ABxH84VndHL7Uk9PVA`
 
 ### CC Task Queue
-1. **Remove zombie NBA clutch GH Actions workflow** — `git rm .github/workflows/nba-clutch-update.yml scripts/nba-clutch-update.py` + commit. Relay-native replacement shipped June 10 (relay 467b35e, `src/nba-clutch-r2.js`). Workflow still on cron `0 6 */3 6,7 *`, failing every 3 days. Also clean up `outbox/nba/` if present. Single commit, no SW_VERSION bump (no functional change).
+1. **Remove zombie NBA clutch GH Actions workflow** — `git rm .github/workflows/nba-clutch-update.yml scripts/nba-clutch-update.py` + commit
+2. Context Graph, relay compound, client compound CC prompts ready (~35 hrs specced)
