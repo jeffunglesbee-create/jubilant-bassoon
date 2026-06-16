@@ -9882,19 +9882,24 @@ function applyMainHTML(html){
 function findConflicts(games) {
   if (!Array.isArray(games)) return [];
   const slots = {};
+  // CC-CMD-2026-06-16 Bug 2: bucket by LOCAL hour, not UTC hour. The schedule
+  // cards display times in the user's local zone (ET for most US users), so
+  // bucketing on UTC mis-labels evening US games as morning UTC times.
+  const pad = n => String(n).padStart(2, '0');
   for (const g of games) {
     if (!g || !g.start_time) continue;
     try {
-      const hour = new Date(g.start_time).toISOString().slice(0, 13); // YYYY-MM-DDTHH
-      if (!slots[hour]) slots[hour] = [];
-      slots[hour].push(g);
+      const d = new Date(g.start_time);
+      const slot = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}`;
+      if (!slots[slot]) slots[slot] = [];
+      slots[slot].push(g);
     } catch(_) {}
   }
   const conflicts = Object.entries(slots)
     .filter(([_, gs]) => gs.length >= 3)
     .map(([slot, gs]) => ({
       slot,
-      hour: parseInt(slot.slice(11, 13), 10),
+      hour: parseInt(slot.slice(11, 13), 10), // local hour now
       games: gs,
       count: gs.length,
     }))
@@ -9932,15 +9937,27 @@ function renderConflictChip(conflicts) {
       if (existing) { existing.remove(); return; }
       const detail = document.createElement('div');
       detail.className = 'conflict-detail';
+      // CC-CMD-2026-06-16 Bug 2: render each game's individual LOCAL start
+      // time (e.g. "7:05pm") rather than the bucket hour. The bucket-hour
+      // label hid the spread (a 7:05/7:20/7:45 cluster all read as the same
+      // hour) and the UTC source mis-labeled evening US games as morning.
+      const _fmtLocalTime = (d) => {
+        let h = d.getHours();
+        const m = d.getMinutes();
+        const ap = h >= 12 ? 'pm' : 'am';
+        h = h % 12 || 12;
+        return m === 0 ? `${h}${ap}` : `${h}:${String(m).padStart(2,'0')}${ap}`;
+      };
       const rowsHTML = conflicts.slice(0, 4).map(c => {
-        const h = c.hour === 0 ? '12am' : c.hour < 12 ? c.hour + 'am' : c.hour === 12 ? '12pm' : (c.hour - 12) + 'pm';
         const gameRows = c.games.slice(0, 6).map(g => {
+          let t = '';
+          try { t = _fmtLocalTime(new Date(g.start_time)); } catch(_) {}
           const matchup = (g.away || '?') + ' @ ' + (g.home || '?');
           const bundle = g.nationalBundle
             || (Array.isArray(g.streams) && g.streams[0] && (g.streams[0].label || g.streams[0].bundle || g.streams[0]))
             || '';
           return `<div class="conflict-detail-row">
-            <span class="conflict-detail-time">${h}</span>
+            <span class="conflict-detail-time">${t}</span>
             <span class="conflict-detail-game">${matchup}${bundle ? ` <span class="conflict-detail-bundle">· ${String(bundle).replace(/[_-]+/g,' ')}</span>` : ''}</span>
           </div>`;
         }).join('');
@@ -21019,7 +21036,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-16b';
+  const SW_VERSION = '2026-06-16c';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
