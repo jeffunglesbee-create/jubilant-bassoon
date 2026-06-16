@@ -50,3 +50,6 @@ Massive infrastructure + architecture session. 36+ CC commits across both repos.
 - Context Graph, relay compound, client compound CC prompts ready
 - Circadian system specced, not built
 - ~35 hours CC work specced across 10 Drive docs
+
+### CC Task Queue
+1. **Remove zombie NBA clutch GH Actions workflow** — `git rm .github/workflows/nba-clutch-update.yml scripts/nba-clutch-update.py` + commit. Relay-native replacement shipped June 10 (relay 467b35e, `src/nba-clutch-r2.js`). Workflow still on cron `0 6 */3 6,7 *`, failing every 3 days. Also clean up `outbox/nba/` if present. Single commit, no SW_VERSION bump (no functional change).
