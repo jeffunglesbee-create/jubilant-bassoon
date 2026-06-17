@@ -7074,6 +7074,33 @@ const ESPN_GOTD_SCHEDULE = {
   '2026-06-28':'PHI@NYM',   '2026-06-29':'LAA@SEA',
   '2026-06-30':'LAD@OAK',
 };
+// ESPN Cable Schedule (Sunday Night Baseball + ABC tentpoles): 30 games/season on ESPN's
+// linear cable channel. DISTINCT from ESPN GOTD (daily streaming on ESPN Unlimited/ESPN+).
+// Cable telecasts are EXCLUSIVE (local RSN blacked out); ABC telecasts add the ABC chip.
+// Source: ESPN Press Room schedule announcements.
+// KEY FORMAT: 'YYYY-MM-DD' → {matchup:'AWAY@HOME', abc:bool} | [ {...}, ... ]
+const ESPN_CABLE_SCHEDULE = {
+  '2026-04-15': { matchup: 'NYM@LAD', abc: false },
+  '2026-05-07': [
+    { matchup: 'TBR@BOS', abc: false },
+    { matchup: 'STL@SDP', abc: false },
+  ],
+  '2026-05-25': { matchup: 'NYY@KCR', abc: false },
+  '2026-06-11': { matchup: 'SEA@BAL', abc: false },
+  '2026-06-14': { matchup: 'CHC@SFG', abc: true  },
+  '2026-06-15': { matchup: 'TBR@LAD', abc: false },
+  '2026-06-22': { matchup: 'ATL@SDP', abc: false },
+  '2026-06-27': { matchup: 'NYY@BOS', abc: true  },
+  '2026-07-16': { matchup: 'NYM@PHI', abc: false },
+  '2026-08-16': { matchup: 'STL@CHC', abc: true  },
+  '2026-08-23': { matchup: 'ATL@MIL', abc: false },
+};
+function _lookupEspnCableSlot(dateStr, gotdKey){
+  const entry = ESPN_CABLE_SCHEDULE[dateStr];
+  if (!entry) return null;
+  const list = Array.isArray(entry) ? entry : [entry];
+  return list.find(s => s.matchup === gotdKey) || null;
+}
 // Peacock GOTD: Announced weekly (Mon/Tue for upcoming week).
 // Paste each week's games. Source: peacocktv.com/blog
 const PEACOCK_GOTD_SCHEDULE = {
@@ -10729,8 +10756,12 @@ function buildTodaySchedule(){
       const _isMLBN      = g.mlbnShowcase || (_mlbnDay && (
         _mlbnDay === _gk || (Array.isArray(_mlbnDay) && _mlbnDay.includes(_gk))
       ));
+      // ESPN cable exclusive — independent of GOTD streaming pick. ABC variant adds ABC chip.
+      // Client-side fallback when field-data-today.json is absent/stale.
+      const _cableSlot   = _lookupEspnCableSlot(TODAY_ISO, _gk);
       if (_isEspnGotd)      baseStreams = resolveBundle("MLB_ESPNU_GOTD");  // ESPN App exclusive, no RSN
       else if (_isPcokGotd) baseStreams = resolveBundle("MLB_PEACOCK_GOTD"); // Peacock + NBCSN, no RSN
+      else if (_cableSlot)  baseStreams = resolveBundle(_cableSlot.abc ? "MLB_ABC" : "MLB_ESPN_CABLE");
       else if (_isMLBN)     baseStreams = resolveBundle("MLB_NETWORK");      // MLBN non-exclusive, RSN still airs
       else                  baseStreams = mlbStreams();                       // Default: MLB.TV + Local RSN
     }
@@ -21125,7 +21156,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-17c';
+  const SW_VERSION = '2026-06-17d';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
