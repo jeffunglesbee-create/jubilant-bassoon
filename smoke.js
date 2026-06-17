@@ -4169,6 +4169,16 @@ assert('A613 — WC name fix: _WC_NAME_FIX + _wcFixTeamName normalize D1 names (
 
 // ── A630-A633 / CC-CMD-2026-06-17 Journalism gap fixes ──
 
+// ── A631 / Commit F: Quality panel prose-score denominator = 300 ──
+assert('A631 — Companion Quality panel: prose-score denominator is /300 (was /180); /110 absent',
+  // Prose-score line uses /300 ceiling — Math.round(avgScore)}/300
+  /\$\{Math\.round\(avgScore\)\}\/300/.test(html) &&
+  // No /110 ceiling anywhere in the companion quality rendering.
+  !/\$\{Math\.round\(avgScore\)\}\/110/.test(html) &&
+  // Sanity: stat-depth /sent label remains unchanged.
+  /\$\{avgStat\.toFixed\(1\)\}\/sent/.test(html),
+  'CC-CMD-2026-06-17 Commit F: The composite prose-score scale is /300 (Layer 3 max with Datamuse freshness + per-sport target). Companion panel was rendering /180 which under-represents the achievable range. Stat-depth /sent unchanged.');
+
 // ── A630 / Commit E: journalism-mode hide list gated to <=1199px ──
 assert('A630 — Journalism-mode hide list gated inside @media(max-width:1199px); desktop schedule co-resides',
   // The hide rule must NOT appear at column 0 (would mean it is global, not @media-wrapped).
