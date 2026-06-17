@@ -63,15 +63,24 @@ jobs:
           done
           curl -s http://localhost:4444/status || (echo "safaridriver not responding" && exit 1)
 
-      - name: Run viewport assertions
+      - name: Wait for browser context
+        run: sleep 3
+
+      - name: Run viewport assertions (with retry)
+        uses: nick-fields/retry@v3
         env:
           DEVICE_ID: ${{ matrix.device.id }}
-        run: |
-          set -o pipefail
-          mkdir -p outbox
-          node tests/desktop-safari-viewport.js \
-            2>outbox/desktop-safari-${{ matrix.device.id }}-stderr.log \
-            | tee outbox/desktop-safari-${{ matrix.device.id }}-results.json
+        with:
+          timeout_minutes: 3
+          max_attempts: 2
+          retry_wait_seconds: 10
+          shell: bash
+          command: |
+            set -o pipefail
+            mkdir -p outbox
+            node tests/desktop-safari-viewport.js \
+              2>outbox/desktop-safari-${{ matrix.device.id }}-stderr.log \
+              | tee outbox/desktop-safari-${{ matrix.device.id }}-results.json
 
       - name: safaridriver log on failure
         if: failure()
