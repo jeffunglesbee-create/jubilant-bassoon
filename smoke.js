@@ -4195,6 +4195,14 @@ assert('A613 — WC name fix: _WC_NAME_FIX + _wcFixTeamName normalize D1 names (
 
 // ── A630-A633 / CC-CMD-2026-06-17 Journalism gap fixes ──
 
+// ── A636 / CC-CMD-2026-06-17 Commit A: vibe-chip post label renamed AMNESTY → NIGHT OWL ──
+assert('A636 — Vibe chip post label is "NIGHT OWL" (not "AMNESTY"); internal amnesty identifiers preserved',
+  // The user-facing chip label is "NIGHT OWL".
+  /label: 'NIGHT OWL', cls: 'post'/.test(html) &&
+  // The previous "AMNESTY" label is NOT emitted as a chip render value.
+  !/label: 'AMNESTY'/.test(html),
+  'CC-CMD-2026-06-17 Commit A: display-string change in buildVibeChips for state=post. The internal state machine names (isAmnesty, STATE_AMNESTY, getDramaHistory, amnestyArc, the post-game amnesty comment block in fetchOwl prompts) are intentionally preserved — only the rendered chip label changed so the user sees "NIGHT OWL" matching the editorial brand. The string "AMNESTY" may still appear in JS identifiers and comments; this assertion targets the chip label specifically.');
+
 // ── A633 / Commit G: J2 series preview wires _archiveBrief ──
 assert('A633 — J2 series preview: _archiveBrief({briefType:\'series_preview\',...}) wired after sessionStorage.setItem',
   // The call carries briefType:'series_preview' and lives in the series preview render flow.
