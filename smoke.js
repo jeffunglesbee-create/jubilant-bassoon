@@ -4212,13 +4212,28 @@ assert('A637 — buildLifeStageContent live case skips "In progress · Xh Ym in"
   html.indexOf("if (eData?.state === 'post')") < html.indexOf('In progress · ${elapsedStr}'),
   'CC-CMD-2026-06-17 Commit B: computeCardStage routes a post-state game into "live" when eData.period>0 (period stays truthy after final). The wall-clock fallback in the live case rendered "In progress · Xh Ym in" against a score chip that already shows F. Final-state guard returns the empty stage container before the fallback runs. The state machine logic and computeCardStage routing are intentionally untouched — this is a display-layer guard only.');
 
-// ── A636 / CC-CMD-2026-06-17 Commit A: vibe-chip post label renamed AMNESTY → NIGHT OWL ──
-assert('A636 — Vibe chip post label is "NIGHT OWL" (not "AMNESTY"); internal amnesty identifiers preserved',
-  // The user-facing chip label is "NIGHT OWL".
-  /label: 'NIGHT OWL', cls: 'post'/.test(html) &&
-  // The previous "AMNESTY" label is NOT emitted as a chip render value.
-  !/label: 'AMNESTY'/.test(html),
-  'CC-CMD-2026-06-17 Commit A: display-string change in buildVibeChips for state=post. The internal state machine names (isAmnesty, STATE_AMNESTY, getDramaHistory, amnestyArc, the post-game amnesty comment block in fetchOwl prompts) are intentionally preserved — only the rendered chip label changed so the user sees "NIGHT OWL" matching the editorial brand. The string "AMNESTY" may still appear in JS identifiers and comments; this assertion targets the chip label specifically.');
+// ── A636 / CC-CMD-2026-06-17 (revised): vibe-chip post label is DEBRIEF (was NIGHT OWL, prior AMNESTY) ──
+assert('A636 — Vibe chip post label is "DEBRIEF"; AMNESTY/NIGHT OWL no longer rendered as chip labels',
+  // The user-facing chip label is "DEBRIEF".
+  /label: 'DEBRIEF', cls: 'post'/.test(html) &&
+  // The previous "AMNESTY" and "NIGHT OWL" labels are NOT emitted as chip render values.
+  !/label: 'AMNESTY'/.test(html) &&
+  !/label: 'NIGHT OWL'/.test(html),
+  'CC-CMD-2026-06-17 (revised): display-string change in buildVibeChips for state=post. The internal state machine names (isAmnesty, STATE_AMNESTY, getDramaHistory, amnestyArc, the post-game amnesty comment block in fetchOwl prompts) are intentionally preserved — only the rendered chip label changed so the user sees "DEBRIEF". Label history: AMNESTY → NIGHT OWL → DEBRIEF. The strings AMNESTY / NIGHT OWL may still appear in JS identifiers and comments; this assertion targets the chip label specifically.');
+
+// ── A639 / CC-CMD-2026-06-17 DEBRIEF chip click handler references toggleJournalismView ──
+assert('A639 — DEBRIEF chip onclick references toggleJournalismView so clicking opens the journalism tab',
+  // The chip onclick string built in buildVibeChips invokes toggleJournalismView when journalism-mode is off.
+  /label: 'DEBRIEF'[\s\S]{0,400}toggleJournalismView/.test(html) ||
+  /toggleJournalismView[\s\S]{0,400}label: 'DEBRIEF'/.test(html),
+  'CC-CMD-2026-06-17 DEBRIEF chip: the onclick handler built in buildVibeChips for the post-state chip checks document.body.classList.contains("journalism-mode") and calls toggleJournalismView() when the journalism tab is not already open, then scrollIntoView on the data-gameid hook 150ms later. The vibe-chip render template at the card surface (.ganalytics) emits the onclick attribute conditionally only when v.onclick is present.');
+
+// ── A640 / CC-CMD-2026-06-17 DEBRIEF chip gated on brief existence in _gameBriefCache ──
+assert('A640 — DEBRIEF chip only renders when _gameBriefCache has an entry for this game; otherwise returns []',
+  // buildVibeChips post branch checks _gameBriefCache[_gid] and returns [] when absent.
+  /_gameBriefCache\[_gid\]/.test(html) &&
+  /if \(!_hasBrief\) return \[\]/.test(html),
+  'CC-CMD-2026-06-17 DEBRIEF chip: the chip should not link to a brief that does not exist. The brief existence gate reads _gameBriefCache[game._id] (same key the journalism section uses to populate jrn-slate-item and jrn-series-tonight blocks). When no entry exists the post branch returns the empty array so no DEBRIEF chip renders. The FINAL score chip alone is sufficient post-game when no editorial brief has been generated for the matchup.');
 
 // ── A633 / Commit G: J2 series preview wires _archiveBrief ──
 assert('A633 — J2 series preview: _archiveBrief({briefType:\'series_preview\',...}) wired after sessionStorage.setItem',
