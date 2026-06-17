@@ -2,37 +2,25 @@
 ============================================================
 scripts/probe_img1.jpg
 ============================================================
-ERROR: HTTP 403
+ERROR: HTTP 404
 {
   "error": {
-    "code": 403,
-    "message": "Requests to this API vision.googleapis.com method google.cloud.vision.v1.ImageAnnotator.BatchAnnotateImages are blocked.",
-    "status": "PERMISSION_DENIED",
-    "details": [
-      {
-        "@type": "type.googleapis.com/google.rpc.ErrorInfo",
-        "reason": "API_KEY_SERVICE_BLOCKED",
-        "domain": "googleapis.com",
-        "metadata": {
-          "consumer": "projects/11086864792",
-          "service": "vision.googleapis.com",
-          "ap
+    "code": 404,
+    "message": "This model models/gemini-2.0-flash is no longer available. Please update your code to use a newer model for the latest features and improvements.",
+    "status": "NOT_FOUND"
+  }
+}
+
 
 ============================================================
 scripts/probe_img2.jpg
 ============================================================
-ERROR: HTTP 403
+ERROR: HTTP 404
 {
   "error": {
-    "code": 403,
-    "message": "Requests to this API vision.googleapis.com method google.cloud.vision.v1.ImageAnnotator.BatchAnnotateImages are blocked.",
-    "status": "PERMISSION_DENIED",
-    "details": [
-      {
-        "@type": "type.googleapis.com/google.rpc.ErrorInfo",
-        "reason": "API_KEY_SERVICE_BLOCKED",
-        "domain": "googleapis.com",
-        "metadata": {
-          "service": "vision.googleapis.com",
-          "consumer": "projects/11086864792",
-          "ap
+    "code": 404,
+    "message": "This model models/gemini-2.0-flash is no longer available. Please update your code to use a newer model for the latest features and improvements.",
+    "status": "NOT_FOUND"
+  }
+}
+
