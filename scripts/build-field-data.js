@@ -28,6 +28,40 @@ const TODAY = process.env.TODAY || new Date().toISOString().slice(0, 10);
 const ESPN_GOTD_IDS   = (process.env.ESPN_GOTD_IDS   || '').split(',').filter(Boolean);
 const PEACOCK_GOTD_IDS= (process.env.PEACOCK_GOTD_IDS || '').split(',').filter(Boolean);
 
+// ESPN GOTD schedule — authoritative source: ESPN Press Room (espnpressroom.com/us)
+// Format: 'YYYY-MM-DD': 'Away Team|Home Team' (full team names as returned by statsapi)
+const ESPN_GOTD_LOOKUP = {
+  '2026-06-02':'Los Angeles Dodgers|Arizona Diamondbacks',
+  '2026-06-03':'Texas Rangers|St. Louis Cardinals',
+  '2026-06-04':'Baltimore Orioles|Boston Red Sox',
+  '2026-06-05':'Milwaukee Brewers|Colorado Rockies',
+  '2026-06-06':'Kansas City Royals|Minnesota Twins',
+  '2026-06-07':'Boston Red Sox|New York Yankees',
+  '2026-06-08':'Cincinnati Reds|San Diego Padres',
+  '2026-06-09':'Washington Nationals|San Francisco Giants',
+  '2026-06-10':'St. Louis Cardinals|New York Mets',
+  '2026-06-11':'Chicago Cubs|Colorado Rockies',
+  '2026-06-12':'Miami Marlins|Pittsburgh Pirates',
+  '2026-06-13':'Arizona Diamondbacks|Cincinnati Reds',
+  '2026-06-14':'Philadelphia Phillies|Milwaukee Brewers',
+  '2026-06-15':'Kansas City Royals|Washington Nationals',
+  '2026-06-16':'Tampa Bay Rays|Los Angeles Dodgers',
+  '2026-06-17':'Cleveland Guardians|Milwaukee Brewers',
+  '2026-06-18':'Minnesota Twins|Texas Rangers',
+  '2026-06-19':'Baltimore Orioles|Los Angeles Dodgers',
+  '2026-06-20':'Washington Nationals|Tampa Bay Rays',
+  '2026-06-21':'Milwaukee Brewers|Atlanta Braves',
+  '2026-06-22':'Houston Astros|Toronto Blue Jays',
+  '2026-06-23':'Atlanta Braves|San Diego Padres',
+  '2026-06-24':'Kansas City Royals|Tampa Bay Rays',
+  '2026-06-25':'Arizona Diamondbacks|St. Louis Cardinals',
+  '2026-06-26':'New York Yankees|Boston Red Sox',
+  '2026-06-27':'Cincinnati Reds|Pittsburgh Pirates',
+  '2026-06-28':'Philadelphia Phillies|New York Mets',
+  '2026-06-29':'Los Angeles Angels|Seattle Mariners',
+  '2026-06-30':'Los Angeles Dodgers|Athletics',
+};
+
 // ── NHL abbreviation → full name ──────────────────────────────────────────
 const NHL_TEAMS = {
   ANA:'Anaheim Ducks',       BOS:'Boston Bruins',        BUF:'Buffalo Sabres',
@@ -81,16 +115,27 @@ function assignMLBBroadcast(game, dateStr, rawBroadcasts) {
   const hasNBC     = names.some(n => n === 'nbc' || n === 'nbcsn');
   const hasPeacock = names.some(n => n.includes('peacock'));
 
-  // Detect Peacock GOTD: Peacock-branded national broadcast on a non-Sunday
-  // (Sunday Leadoff and SNB are always on Peacock — only tag GOTD for non-Sunday nationals)
+  // Detect Peacock GOTD: check broadcast type field for streaming-only Peacock
+  // Sunday Leadoff and SNB are always on Peacock — only tag GOTD for non-Sunday
+  // where Peacock appears with type 'N' (national) not 'H'/'A' (local RSN)
   if (hasPeacock && dow !== 0) {
-    game.peacockGOTD = true;
+    const peacockEntry = bcast.find(b => (b.name || '').toLowerCase().includes('peacock'));
+    const pType = (peacockEntry?.type || '').toUpperCase();
+    // Type 'N' = national broadcast, type 'I' = internet/streaming — both indicate GOTD on non-Sunday
+    // Type 'H'/'A' = local home/away RSN simulcast — NOT a GOTD indicator
+    if (pType === 'N' || pType === 'I' || pType === '') {
+      game.peacockGOTD = true;
+    }
   }
 
-  // Detect ESPN GOTD: ESPN national broadcast on a non-national-window day
-  // (ESPN has ~30 select games/season; Mon/Wed aren't guaranteed ESPN days)
-  if (hasESPN && !game.espnGOTD) {
-    game.espnGOTD = true;
+  // Detect ESPN GOTD: cross-reference against ESPN Press Room schedule lookup
+  // DO NOT auto-tag from broadcast name — 'ESPN' appears for many non-GOTD games
+  if (!game.espnGOTD) {
+    const lookupKey = `${game.away}|${game.home}`;
+    const scheduledGOTD = ESPN_GOTD_LOOKUP[dateStr];
+    if (scheduledGOTD === lookupKey || ESPN_GOTD_IDS.includes(`${game.home}|${game.away}`)) {
+      game.espnGOTD = true;
+    }
   }
 
   // Detect MLB Network: any MLBN national carry
