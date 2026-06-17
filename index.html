@@ -25033,7 +25033,7 @@ async function renderSeriesPreviewCard(gameCard){
     const cached=sessionStorage.getItem(cacheKey);
     if(cached){textEl.textContent=trimToCompleteSentence(cached);textEl.classList.add('loaded');return;}
     const text=await fetchSeriesPreviewFromClaude(game);
-    if(text){textEl.textContent=trimToCompleteSentence(text);textEl.classList.add('loaded');sessionStorage.setItem(cacheKey,text);try{archiveBrief('series_preview',(game&&(game._sport||game._section||game.league))||null,game&&(game._id||game.id)||null,text,null);}catch(_){}}
+    if(text){textEl.textContent=trimToCompleteSentence(text);textEl.classList.add('loaded');sessionStorage.setItem(cacheKey,text);try{archiveBrief('series_preview',(game&&(game._sport||game._section||game.league))||null,game&&(game._id||game.id)||null,text,null);}catch(_){}_archiveBrief({briefType:'series_preview',sport:(game&&(game._sport||game._section||game.league))||null,gameId:game&&(game._id||game.id)||null,briefText:text,qualityScore:null});}
     else if(staticText){textEl.textContent=staticText;textEl.classList.add('loaded');}
     return;
   }
@@ -25049,7 +25049,7 @@ async function renderSeriesPreviewCard(gameCard){
   const cached=sessionStorage.getItem(cacheKey);
   if(cached){placeholder.querySelector('.series-preview-text').textContent=trimToCompleteSentence(cached);placeholder.querySelector('.series-preview-text').classList.add('loaded');return;}
   const text=await fetchSeriesPreviewFromClaude(game);
-  if(text){placeholder.querySelector('.series-preview-text').textContent=trimToCompleteSentence(text);placeholder.querySelector('.series-preview-text').classList.add('loaded');sessionStorage.setItem(cacheKey,text);try{archiveBrief('series_preview',(game&&(game._sport||game._section||game.league))||null,game&&(game._id||game.id)||null,text,null);}catch(_){}}
+  if(text){placeholder.querySelector('.series-preview-text').textContent=trimToCompleteSentence(text);placeholder.querySelector('.series-preview-text').classList.add('loaded');sessionStorage.setItem(cacheKey,text);try{archiveBrief('series_preview',(game&&(game._sport||game._section||game.league))||null,game&&(game._id||game.id)||null,text,null);}catch(_){}_archiveBrief({briefType:'series_preview',sport:(game&&(game._sport||game._section||game.league))||null,gameId:game&&(game._id||game.id)||null,briefText:text,qualityScore:null});}
   else if(staticText){placeholder.querySelector('.series-preview-text').textContent=staticText;placeholder.querySelector('.series-preview-text').classList.add('loaded');}
 }
 

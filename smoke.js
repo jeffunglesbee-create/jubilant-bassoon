@@ -4195,6 +4195,14 @@ assert('A613 — WC name fix: _WC_NAME_FIX + _wcFixTeamName normalize D1 names (
 
 // ── A630-A633 / CC-CMD-2026-06-17 Journalism gap fixes ──
 
+// ── A633 / Commit G: J2 series preview wires _archiveBrief ──
+assert('A633 — J2 series preview: _archiveBrief({briefType:\'series_preview\',...}) wired after sessionStorage.setItem',
+  // The call carries briefType:'series_preview' and lives in the series preview render flow.
+  /_archiveBrief\(\{briefType:'series_preview'/.test(html) &&
+  // Both render branches (big-game inline + non-big-game placeholder) have the call.
+  (html.match(/_archiveBrief\(\{briefType:'series_preview'/g) || []).length >= 2,
+  'CC-CMD-2026-06-17 Commit G: J2 series preview is generated client-side and never enters the relay queue/KV. The _archiveBrief call sits AFTER sessionStorage.setItem in both renderSeriesPreviewCard branches (big-game inline card-brief-row and non-big-game external placeholder). It runs alongside the legacy positional archiveBrief() — not as a replacement — so the richer payload (model + source:client) lands in D1 while the old call remains as belt-and-suspenders for the legacy schema.');
+
 // ── A632 / Commit D: _archiveBrief helper present ──
 assert('A632 — _archiveBrief({briefType,sport,gameId,briefText,qualityScore,model}) helper defined at module scope',
   // Function declaration with object-destructured args.
