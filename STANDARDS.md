@@ -3246,3 +3246,11 @@ change guardrail).
 Also given command to wire into `fetchSeriesPreviewFromClaude` (J2 inline) —
 commit a17bf8e landed but was flagged "not yet verified" in HANDOFF. Correct
 governance: the unverified claim was documented, not silently shipped.
+
+## Known CI Flakiness
+
+Desktop Chrome D1 / Desktop Safari D1+D3: WebDriver Bidi "Cannot find context"
+intermittent failure on viewport assertion step. Root cause: browser context
+not ready at test start. Mitigation: 3s pre-assertion sleep + 2-attempt retry
+(nick-fields/retry@v3). If D1/D3 fail after retry, investigate as real failure.
+First observed: 2026-06-17. Fixed: Commit 317fefe.
