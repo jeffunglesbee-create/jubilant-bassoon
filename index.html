@@ -12359,6 +12359,39 @@ function archiveBrief(type, sport, gameId, text, hash) {
   }).catch(() => {});
 }
 
+// CC-CMD-2026-06-17: richer client-side archive helper for brief types that
+// never reach the relay queue/KV (currently: series_preview and stakes_brief).
+// Game_recap (Night Owl) and game_brief (J1 compound) writes are owned by
+// the relay queue consumer + dead-hour KV sweep — do NOT call this helper
+// from those paths. Object-keyed signature carries quality_score + model so
+// the archive captures the L3 telemetry alongside the prose, and source:'client'
+// lets the D1 dashboard distinguish browser-emitted rows from queue rows.
+// Fire-and-forget; the try/catch + .catch() guarantee that an archive failure
+// cannot block sessionStorage writes or the visible brief render.
+async function _archiveBrief({briefType, sport, gameId, briefText, qualityScore, model}) {
+  try {
+    if (!briefText || typeof briefText !== 'string') return;
+    const date = new Date().toISOString().slice(0, 10);
+    const id = `${briefType}_${gameId || sport || 'unknown'}_${date}_${Date.now()}`;
+    const base = (typeof V2_RELAY_BASE !== 'undefined')
+      ? V2_RELAY_BASE : 'https://field-relay-nba.jeffunglesbee.workers.dev';
+    await fetch(base + '/archive/brief', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        id, date, brief_type: briefType,
+        sport: sport || null,
+        game_id: gameId || null,
+        brief_text: briefText,
+        model: model || 'gemini-3.1-flash-lite',
+        quality_score: qualityScore || null,
+        word_count: briefText.split(/\s+/).filter(Boolean).length,
+        source: 'client',
+      }),
+    }).catch(() => {});
+  } catch(_) {}
+}
+
 // ── FIELD Journalism Tab (PM-19, June 2 2026) ──────────────────────────────
 // Magazine-style vertical-read destination. Sources from same caches as
 // renderFieldDesk but presents in editorial reading order with J3 → J2 → J1
