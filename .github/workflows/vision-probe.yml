@@ -1,11 +1,6 @@
 name: Vision Probe
 on:
   workflow_dispatch:
-    inputs:
-      vision_key:
-        description: 'GCP Vision API key'
-        required: true
-        type: string
 
 jobs:
   probe:
@@ -14,7 +9,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Run vision probe
         env:
-          VISION_KEY: ${{ inputs.vision_key }}
+          VISION_KEY: ${{ secrets.GEMINI_KEY }}
         run: python3 scripts/vision_probe.py
       - name: Commit results
         run: |
