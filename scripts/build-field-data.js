@@ -156,6 +156,10 @@ function assignMLBBroadcast(game, dateStr, rawBroadcasts) {
   const hasTBS     = names.some(n => n === 'tbs');
   const hasNBC     = names.some(n => n === 'nbc' || n === 'nbcsn');
   const hasPeacock = names.some(n => n.includes('peacock'));
+  // CC-CMD-2026-06-16 broadcast overhaul Commit 5: Netflix MLB carries
+  // the small exclusive-event slate — Opening Night (Mar 25), Field of
+  // Dreams (Aug 13), Home Run Derby. EXCLUSIVE; locals blacked out.
+  const hasNetflix = names.some(n => n === 'netflix' || n.startsWith('netflix '));
 
   // Detect Peacock GOTD: check broadcast type field for streaming-only Peacock
   // Sunday Leadoff and SNB are always on Peacock — only tag GOTD for non-Sunday
@@ -187,6 +191,7 @@ function assignMLBBroadcast(game, dateStr, rawBroadcasts) {
 
   // Assign primary nationalBundle from live broadcast data
   if (bcast.length > 0) {
+    if (hasNetflix)        { game.nationalBundle = 'MLB_NETFLIX'; return; }
     if (hasApple)          { game.nationalBundle = 'MLB_APPLE'; return; }
     if (hasFOX)            { game.nationalBundle = 'MLB_FOX';   return; }
     if (hasFS1)            { game.nationalBundle = 'MLB_FS1';   return; }
