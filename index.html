@@ -10225,7 +10225,7 @@ function renderAll(){
           ${(()=>{ const _nb=buildNHLAnalyticsBadges(g); return _nb ? `<div class="badge-row nhl-analytics-badges">${_nb}</div>` : ''; })()}
           ${g.crew?`<div class="crew-line">🎙 ${g.crew}</div>`:""}
           ${g._gameImportance?`<div class="importance-badge ${g._gameImportance==='series_deciding'?'series-deciding':g._gameImportance==='elimination'?'elimination':g._gameImportance==='clinch'?'clinch':'playoff-impl'}">${g._importanceIcon||''} ${g.narrative?.label||''}</div>`:""}
-          ${(()=>{const _va=typeof findESPNScore==='function'?findESPNScore(g):null;const _vc=typeof buildVibeChips==='function'?buildVibeChips(g,_va,sec.sport):[];return _vc.length?'<div class="ganalytics">'+_vc.map(v=>'<span class="vibe '+v.cls+'">'+v.label+'</span>').join('')+'</div>':'';})()} 
+          ${(()=>{const _va=typeof findESPNScore==='function'?findESPNScore(g):null;const _vc=typeof buildVibeChips==='function'?buildVibeChips(g,_va,sec.sport):[];return _vc.length?'<div class="ganalytics">'+_vc.map(v=>'<span class="vibe '+v.cls+'"'+(v.onclick?' role="button" tabindex="0" style="cursor:pointer" onclick="'+v.onclick+'"':'')+'>'+v.label+'</span>').join('')+'</div>':'';})()}
           ${(()=>{ const _wcB=typeof buildWCBars==='function'?buildWCBars(g):''; return _wcB?`<div class="wc-bars-wrap">${_wcB}</div>`:''; })()}
           ${(()=>{const _ed=typeof findESPNScore==='function'?findESPNScore(g):null;const _dl=buildDramaLineTiers(g,_ed,sec.sport);if(_dl.tight){const _q=s=>s.replace(/"/g,'&quot;');return `<div class="card-drama-line" data-drama-tight="${_q(_dl.tight)}" data-drama-mid="${_q(_dl.mid)}" data-drama-full="${_q(_dl.full)}">${_dl.tight}</div>`;}return g.narrative?.label&&!g._gameImportance?`<div class="narrative-line${(g.narrative.boost||0)>=20?' narrative-hi':''}">${g.narrative.label}</div>`:'';})()}
           ${(()=>{const _cs=buildCheapSeats(g);if(!_cs)return '';return `<div class="cheap-seats"><span class="cs-badge ${_cs.badgeClass}">${_cs.badge}</span><span class="cs-text">${_cs.text}</span></div>`;})()}
@@ -33865,7 +33865,19 @@ function buildVibeChips(game, eData, sport) {
   const st = eData?.state || 'pre';
   const isLive = st === 'in', isPost = st === 'post', isPre = !isLive && !isPost;
 
-  if (isPost) return [{ label: 'NIGHT OWL', cls: 'post' }];
+  if (isPost) {
+    // Brief existence gate: only surface DEBRIEF when a J1 brief exists for
+    // this game in _gameBriefCache (keyed by g._id, same key the journalism
+    // section reads). No brief → no chip; the score chip's F is sufficient.
+    const _gid = game?._id;
+    const _hasBrief = _gid && typeof _gameBriefCache !== 'undefined' && _gameBriefCache[_gid];
+    if (!_hasBrief) return [];
+    // Click: open journalism (if not already open) then scroll to this game's
+    // brief via the data-gameid hook in renderJournalism. Single quotes around
+    // the CSS attr-value so the outer onclick="..." quoting stays clean.
+    const _onclick = `event.stopPropagation();if(!document.body.classList.contains('journalism-mode'))toggleJournalismView();setTimeout(()=>{const _el=document.querySelector('[data-gameid=\\'${_gid}\\']');if(_el)_el.scrollIntoView({behavior:'smooth',block:'start'});},150)`;
+    return [{ label: 'DEBRIEF', cls: 'post', onclick: _onclick }];
+  }
 
   // MUTED — BNI fired (categorical string, not a numeric threshold gate)
   if (isPre) {
