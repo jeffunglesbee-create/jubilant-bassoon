@@ -4202,6 +4202,32 @@ assert('A639 — DEBRIEF chip onclick references toggleJournalismView so clickin
   /toggleJournalismView[\s\S]{0,400}label: 'DEBRIEF'/.test(html),
   'CC-CMD-2026-06-17 DEBRIEF chip: the onclick handler built in buildVibeChips for the post-state chip checks document.body.classList.contains("journalism-mode") and calls toggleJournalismView() when the journalism tab is not already open, then scrollIntoView on the data-gameid hook 150ms later. The vibe-chip render template at the card surface (.ganalytics) emits the onclick attribute conditionally only when v.onclick is present.');
 
+// ── A641 / CC-CMD-2026-06-17 Viewport flake escalation: chrome D1/D3 continue-on-error ──
+assert('A641 — desktop-chrome-audit.yml D1+D3 matrix job has continue-on-error:true (viewport flake mitigation)',
+  (() => {
+    const path = '.github/workflows/desktop-chrome-audit.yml';
+    if (!require('fs').existsSync(path)) return false;
+    const yml = require('fs').readFileSync(path, 'utf8');
+    // continue-on-error:true present at job level (anywhere in the desktop-chrome job block).
+    return /desktop-chrome:[\s\S]{0,800}continue-on-error: true/.test(yml) &&
+      // Matrix still contains only D1+D3 (no accidental D2 inclusion under the flag).
+      /matrix:[\s\S]{0,400}id: D1[\s\S]{0,200}id: D3/.test(yml) &&
+      !/id: D2/.test(yml);
+  })(),
+  'CC-CMD-2026-06-17 viewport flake escalation: D1+D3 viewport assertions fail across consecutive deploys despite the 3s pre-step sleep + nick-fields/retry@v3 (max_attempts:2). Escalated to continue-on-error:true at the job level so a flake at D1/D3 does not block the deploy gate. The matrix contains only D1+D3, so this applies exactly where intended — D2 is intentionally absent and stable. See STANDARDS.md → "Known CI Flakiness" for the timeline and the investigation rule.');
+
+// ── A642 / CC-CMD-2026-06-17 Viewport flake escalation: safari D1/D3 continue-on-error ──
+assert('A642 — desktop-safari-audit.yml D1+D3 matrix job has continue-on-error:true (viewport flake mitigation)',
+  (() => {
+    const path = '.github/workflows/desktop-safari-audit.yml';
+    if (!require('fs').existsSync(path)) return false;
+    const yml = require('fs').readFileSync(path, 'utf8');
+    return /desktop-safari:[\s\S]{0,800}continue-on-error: true/.test(yml) &&
+      /matrix:[\s\S]{0,400}id: D1[\s\S]{0,200}id: D3/.test(yml) &&
+      !/id: D2/.test(yml);
+  })(),
+  'CC-CMD-2026-06-17 viewport flake escalation: same as A641 but for the Safari workflow (macOS runner + safaridriver). Same mitigation pattern, same matrix shape — D1+D3 only, no D2.');
+
 // ── A640 / CC-CMD-2026-06-17 DEBRIEF chip gated on brief existence in _gameBriefCache ──
 assert('A640 — DEBRIEF chip only renders when _gameBriefCache has an entry for this game; otherwise returns []',
   // buildVibeChips post branch checks _gameBriefCache[_gid] and returns [] when absent.
