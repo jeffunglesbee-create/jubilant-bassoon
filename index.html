@@ -27990,10 +27990,12 @@ async function renderStakesBriefCard(gameCard) {
   const text = await fetchStakesBriefFromClaude(game);
   const textEl = inner.querySelector('.stakes-text');
   if (text && textEl) {
-    textEl.textContent = trimToCompleteSentence(stripMarkdown(text));
+    const _stakesClean = stripMarkdown(text);
+    textEl.textContent = trimToCompleteSentence(_stakesClean);
     textEl.classList.replace('pending','loaded');
-    sessionStorage.setItem(cacheKey, stripMarkdown(text));
-    try { archiveBrief('stakes', (game&&(game._sport||game._section||game.league))||null, game&&(game._id||game.id)||null, stripMarkdown(text), null); } catch(_){}
+    sessionStorage.setItem(cacheKey, _stakesClean);
+    try { archiveBrief('stakes', (game&&(game._sport||game._section||game.league))||null, game&&(game._id||game.id)||null, _stakesClean, null); } catch(_){}
+    _archiveBrief({briefType:'stakes_brief', sport:(game&&(game._sport||game._section||game.league))||null, gameId:game&&(game._id||game.id)||null, briefText:_stakesClean});
   } else {
     try { card.remove(); } catch(_) {}
   }
