@@ -4195,6 +4195,15 @@ assert('A613 — WC name fix: _WC_NAME_FIX + _wcFixTeamName normalize D1 names (
 
 // ── A630-A633 / CC-CMD-2026-06-17 Journalism gap fixes ──
 
+// ── A638 / CC-CMD-2026-06-17 Commit C: NBA & NHL Finals season-context badge has hard expiry ──
+assert('A638 — getCalendarContext NBA & NHL Finals branch gated by FINALS_SEASON_CONTEXT_EXPIRES',
+  // Hard-coded expiry constant present.
+  /const FINALS_SEASON_CONTEXT_EXPIRES = '2026-06-14'/.test(html) &&
+  // The "NBA & NHL Finals" return is conjoined with a TODAY_ISO comparison against the expiry,
+  // so the badge does not render unconditionally when the calendar window matches.
+  /_todayIso <= FINALS_SEASON_CONTEXT_EXPIRES\)[\s\S]{0,200}label:'NBA & NHL Finals'/.test(html),
+  'CC-CMD-2026-06-17 Commit C: the Finals season-context badge fired on a pure date-range check (May 28 – Jun 22), so it stayed live through June 17 even though the Stanley Cup Final ended Jun 14 and the NBA Finals concluded earlier. Added a FINALS_SEASON_CONTEXT_EXPIRES = 2026-06-14 hard expiry. When today is past the expiry, the branch falls through and getCalendarContext returns the next applicable context (currently World Cup 2026). No replacement badge added — just suppress per spec.');
+
 // ── A637 / CC-CMD-2026-06-17 Commit B: elapsed-time render gated by non-final state ──
 assert('A637 — buildLifeStageContent live case skips "In progress · Xh Ym in" when eData.state === "post"',
   // Final-state guard returns the empty stage container before any "In progress" string is emitted.
