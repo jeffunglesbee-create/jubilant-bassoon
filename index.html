@@ -7237,8 +7237,15 @@ function getCalendarContext(){
   const d=now.getDate();
   const y=now.getFullYear();
 
-  // NBA/NHL Finals window (late May – late June)
-  if((m===4&&d>=28)||(m===5&&d<=22))
+  // NBA/NHL Finals window (late May – late June).
+  // Hard expiry: Stanley Cup Final ended 2026-06-14 (CAR won) and the NBA
+  // Finals concluded as well. Past this date the badge is stale (the calendar
+  // window alone would keep it on through June 22). When expired, fall through
+  // to the next applicable context (currently World Cup 2026, Jun 11–Jul 19).
+  const FINALS_SEASON_CONTEXT_EXPIRES = '2026-06-14';
+  const _todayIso = (typeof window !== 'undefined' && window.TODAY_ISO)
+    ? window.TODAY_ISO : now.toISOString().slice(0, 10);
+  if(((m===4&&d>=28)||(m===5&&d<=22)) && _todayIso <= FINALS_SEASON_CONTEXT_EXPIRES)
     return {flag:'finals',label:'NBA & NHL Finals',urgency:'max',relevantLeagues:['NBA','NHL']};
 
   // NBA/NHL Conference Finals / Playoffs (Apr 15 – late May)
