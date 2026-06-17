@@ -4228,12 +4228,15 @@ assert('A642 — desktop-safari-audit.yml D1+D3 matrix job has continue-on-error
   })(),
   'CC-CMD-2026-06-17 viewport flake escalation: same as A641 but for the Safari workflow (macOS runner + safaridriver). Same mitigation pattern, same matrix shape — D1+D3 only, no D2.');
 
-// ── A640 / CC-CMD-2026-06-17 DEBRIEF chip gated on brief existence in _gameBriefCache ──
-assert('A640 — DEBRIEF chip only renders when _gameBriefCache has an entry for this game; otherwise returns []',
-  // buildVibeChips post branch checks _gameBriefCache[_gid] and returns [] when absent.
-  /_gameBriefCache\[_gid\]/.test(html) &&
-  /if \(!_hasBrief\) return \[\]/.test(html),
-  'CC-CMD-2026-06-17 DEBRIEF chip: the chip should not link to a brief that does not exist. The brief existence gate reads _gameBriefCache[game._id] (same key the journalism section uses to populate jrn-slate-item and jrn-series-tonight blocks). When no entry exists the post branch returns the empty array so no DEBRIEF chip renders. The FINAL score chip alone is sufficient post-game when no editorial brief has been generated for the matchup.');
+// ── A640 / CC-CMD-2026-06-17 (revised): DEBRIEF chip renders for all post-state games ──
+assert('A640 — DEBRIEF chip renders for every post-state game; no _gameBriefCache render-gate; scroll degrades to journalism section root',
+  // No early-return brief-existence gate on the chip render.
+  !/if \(!_hasBrief\) return \[\]/.test(html) &&
+  // Post branch unconditionally returns a DEBRIEF chip (no conditional that skips the return).
+  /if \(isPost\) \{[\s\S]{0,1500}return \[\{ label: 'DEBRIEF'/.test(html) &&
+  // The scroll target falls back to the journalism section root when the data-gameid lookup is null.
+  /document\.querySelector\('\[data-gameid=[^)]+\)\|\|document\.getElementById\('field-journalism-section'\)/.test(html),
+  'CC-CMD-2026-06-17 (revised): the post state IS the amnesty / quiet-game tier — those games rarely receive a game-specific J1 brief because they were not interesting enough during live play. Gating the chip on _gameBriefCache[g._id] suppressed it on the matchups it was designed for. The render gate is removed; the cache is now only a scroll-target selector. When the game-specific brief element does not exist, the scrollIntoView falls back to #field-journalism-section root so the chip still does something useful. Prior version of this assertion (briefly shipped) demanded the gate — replaced wholesale.');
 
 // ── A633 / Commit G: J2 series preview wires _archiveBrief ──
 assert('A633 — J2 series preview: _archiveBrief({briefType:\'series_preview\',...}) wired after sessionStorage.setItem',

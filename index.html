@@ -21205,7 +21205,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-17g';
+  const SW_VERSION = '2026-06-17h';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -33866,16 +33866,19 @@ function buildVibeChips(game, eData, sport) {
   const isLive = st === 'in', isPost = st === 'post', isPre = !isLive && !isPost;
 
   if (isPost) {
-    // Brief existence gate: only surface DEBRIEF when a J1 brief exists for
-    // this game in _gameBriefCache (keyed by g._id, same key the journalism
-    // section reads). No brief → no chip; the score chip's F is sufficient.
+    // DEBRIEF renders for ALL post-state games. The post state IS the
+    // amnesty / quiet-game tier — exactly the cards that rarely receive a
+    // game-specific J1 brief. Gating the chip on _gameBriefCache[g._id]
+    // suppressed it on the matchups it was designed for; the journalism
+    // section always has J3 + other content the user can land on instead.
     const _gid = game?._id;
-    const _hasBrief = _gid && typeof _gameBriefCache !== 'undefined' && _gameBriefCache[_gid];
-    if (!_hasBrief) return [];
-    // Click: open journalism (if not already open) then scroll to this game's
-    // brief via the data-gameid hook in renderJournalism. Single quotes around
-    // the CSS attr-value so the outer onclick="..." quoting stays clean.
-    const _onclick = `event.stopPropagation();if(!document.body.classList.contains('journalism-mode'))toggleJournalismView();setTimeout(()=>{const _el=document.querySelector('[data-gameid=\\'${_gid}\\']');if(_el)_el.scrollIntoView({behavior:'smooth',block:'start'});},150)`;
+    // Click: open journalism (toggleJournalismView is a toggle, so only
+    // call it when journalism-mode is currently off), then 150ms later try
+    // to scroll to this game's brief via the data-gameid hook. If the
+    // game-specific brief element doesn't exist (quiet-game path), fall
+    // back to scrolling the journalism section root into view so the chip
+    // still does something useful.
+    const _onclick = `event.stopPropagation();if(!document.body.classList.contains('journalism-mode'))toggleJournalismView();setTimeout(()=>{const _el=document.querySelector('[data-gameid=\\'${_gid}\\']')||document.getElementById('field-journalism-section');if(_el)_el.scrollIntoView({behavior:'smooth',block:'start'});},150)`;
     return [{ label: 'DEBRIEF', cls: 'post', onclick: _onclick }];
   }
 
