@@ -1,4 +1,6 @@
 import base64, json, urllib.request, urllib.error, os
+import os
+os.makedirs("outbox/vision-probe", exist_ok=True)
 
 API_KEY = os.environ.get("VISION_KEY", "")
 results = {}
