@@ -2286,24 +2286,33 @@ body.journalism-mode #field-journalism-section{animation:jrnFadeIn 220ms ease-ou
   body.journalism-mode #field-journalism-section{animation:none}
 }
 
-/* Global journalism-mode hide list — full viewport swap at ALL widths.
-   Desktop bug fix (June 15 2026): rules moved out of @media(max-width:1199px)
-   so journalism gets its own viewport on laptop/desktop too, matching mobile/iPad.
-   Removed the desktop "fixed schedule rail" rules — schedule is hidden, not shrunk. */
-body.journalism-mode .main,
-body.journalism-mode #night-owl,
-body.journalism-mode #field-desk-section,
-body.journalism-mode #media-section,
-body.journalism-mode #streaming-section,
-body.journalism-mode #wc-section,
-body.journalism-mode .page-divider,
-body.journalism-mode .legend-section,
-body.journalism-mode #upper-slots,
-body.journalism-mode #field-right-now,
-body.journalism-mode #ambient-panel{display:none !important}
+/* Journalism-mode visibility rules.
+   - Section default-hidden across all viewports when not in journalism-mode.
+   - Section visible when journalism-mode is on (overrides [hidden] attr).
+   - At <=1199px (mobile/iPad): full viewport swap — schedule + related panels
+     are hidden so journalism gets the full reading column.
+   - At >=1200px (laptop+): journalism is ADDITIVE — schedule remains visible
+     alongside the companion column (see jrn-companion / C3 layout).
+   June 17 2026 — restored the @media gate that the June 15 "desktop bug fix"
+   removed. Tab-swap is the mobile contract; on laptop the schedule must NOT
+   disappear when the journalism tab activates. */
 body.journalism-mode #field-journalism-section{display:block}
 body.journalism-mode #field-journalism-section[hidden]{display:block}
 body:not(.journalism-mode) #field-journalism-section{display:none}
+
+@media(max-width:1199px){
+  body.journalism-mode .main,
+  body.journalism-mode #night-owl,
+  body.journalism-mode #field-desk-section,
+  body.journalism-mode #media-section,
+  body.journalism-mode #streaming-section,
+  body.journalism-mode #wc-section,
+  body.journalism-mode .page-divider,
+  body.journalism-mode .legend-section,
+  body.journalism-mode #upper-slots,
+  body.journalism-mode #field-right-now,
+  body.journalism-mode #ambient-panel{display:none !important}
+}
 
 /* Mobile/iPad-only back pill styling — laptop+ shows journalism standalone, no pill needed */
 @media(max-width:1199px){
