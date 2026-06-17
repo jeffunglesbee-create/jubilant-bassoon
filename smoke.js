@@ -4193,6 +4193,18 @@ assert('A613 — WC name fix: _WC_NAME_FIX + _wcFixTeamName normalize D1 names (
   html.includes('_wcFixTeamName(r.home)') && html.includes('_wcFixTeamName(r.away)'),
   'API-Sports returns "Cape Verde Islands" but FIELD uses "Cape Verde". Without normalization, Group H gets a duplicate row (D1 "Cape Verde Islands" + WC_TEAMS fallback "Cape Verde") and Monte Carlo H2H lookups fail. _WC_NAME_FIX promoted to module level so both standings merge and _wcBuildGroupInput results share the same map.');
 
+// ── A630-A633 / CC-CMD-2026-06-17 Journalism gap fixes ──
+
+// ── A630 / Commit E: journalism-mode hide list gated to <=1199px ──
+assert('A630 — Journalism-mode hide list gated inside @media(max-width:1199px); desktop schedule co-resides',
+  // The hide rule must NOT appear at column 0 (would mean it is global, not @media-wrapped).
+  !/^body\.journalism-mode \.main,/m.test(html) &&
+  // The rule must appear inside a @media(max-width:1199px){ ... } block — match within 600 chars.
+  /@media\(max-width:1199px\)\{[\s\S]{0,600}body\.journalism-mode \.main,/.test(html) &&
+  // Section default-hidden rule stays global (so the section is hidden when journalism-mode is off at all widths).
+  /^body:not\(\.journalism-mode\) #field-journalism-section\{display:none\}/m.test(html),
+  'CC-CMD-2026-06-17 Commit E: At >=1200px the journalism tab is additive alongside the schedule, not a full-viewport tab-swap. The hide list (.main, #night-owl, #field-desk-section, .page-divider, #ambient-panel, etc.) must live INSIDE @media(max-width:1199px). The June 15 desktop-bug-fix that promoted the rules to global is reversed; mobile/iPad still get the swap because the @media wraps them.');
+
 // ── A618-A621 / CC-CMD-2026-06-15-client-features-2: upsets + market consensus + brief corpus + crew chip ──
 
 // ── A618 / Commit 1: Upset Archaeology ──
@@ -4339,20 +4351,18 @@ assert('A612 — Desktop layout fix: WC tab + journalism own viewport at >=1200p
   /body\.wc-mode #field-journalism-section,?\s*$/m.test(html.split('{').slice(0,2000).join('{')) || html.includes('body.wc-mode #field-journalism-section,') &&
   // (2) wc-section default-hidden rule is global (not inside @media).
   /^body:not\(\.wc-mode\) #wc-section\{display:none\}/m.test(html) &&
-  // (3) journalism-mode hide list is global (not wrapped in @media).
-  /^body\.journalism-mode \.main,/m.test(html) &&
-  // (4) journalism section default-hidden rule is global.
+  // (3) journalism section default-hidden rule is global.
   /^body:not\(\.journalism-mode\) #field-journalism-section\{display:none\}/m.test(html) &&
-  // (5) wf-mode rules qualified with :not(.wc-mode):not(.journalism-mode) so the
+  // (4) wf-mode rules qualified with :not(.wc-mode):not(.journalism-mode) so the
   // full-viewport modes win the cascade when both classes are set.
   /body\.wf-mode:not\(\.wc-mode\):not\(\.journalism-mode\) #ambient-panel/.test(html) &&
-  // (6) renderAmbientPanel allows rendering at desktop when wf-mode is active.
+  // (5) renderAmbientPanel allows rendering at desktop when wf-mode is active.
   html.includes('const isWfDesktop = w >= 1200 && document.body.classList.contains(\'wf-mode\')') &&
-  // (7) toggleWCView restores hidden attr on journalism section when activating wc-mode.
+  // (6) toggleWCView restores hidden attr on journalism section when activating wc-mode.
   /jrnSec\.setAttribute\('hidden', ''\)/.test(html) &&
-  // (8) toggleJournalismView restores hidden attr on journalism section when deactivating.
+  // (7) toggleJournalismView restores hidden attr on journalism section when deactivating.
   /sec\.setAttribute\('hidden', ''\); sec\.style\.display = ''/.test(html),
-  'CC-CMD-2026-06-15-desktop-layout: three interconnected desktop bugs fixed. (1) WC groups tab now enters its own viewport at >=1200px — wc-mode hide list includes #field-journalism-section, wc-section default-hidden moved global. (2) Journalism tab gets its own viewport at >=1200px — hide list moved out of @media(max-width:1199px), schedule-rail position:fixed override removed. (3) Ambient panel responds correctly to ESSENTIALS/WHOLE FIELD — renderAmbientPanel renders content when wf-mode active at desktop, clears inline display when not. wf-mode rules qualified with :not(.wc-mode):not(.journalism-mode) so cascade order is deterministic when multiple body classes coexist. Toggle handlers restore [hidden] attribute on the inactive section. No mobile/tablet regressions: hide rules are global supersets of the previous mobile-only rules.');
+  'CC-CMD-2026-06-15-desktop-layout: desktop layout invariants. WC groups tab enters its own viewport at >=1200px (wc-mode hide list includes #field-journalism-section, wc-section default-hidden is global). Journalism section default-hidden is global. Ambient panel responds correctly to ESSENTIALS/WHOLE FIELD — renderAmbientPanel renders content when wf-mode active at desktop, clears inline display when not. wf-mode rules qualified with :not(.wc-mode):not(.journalism-mode) so cascade order is deterministic when multiple body classes coexist. Toggle handlers restore [hidden] attribute on the inactive section. (Journalism-mode schedule hide list is gated to <=1199px — see A630.)');
 
 // ── A611 / CC-CMD-2026-06-15 Task C: enrichChampionshipFromArchive wired into 4 prompts ──
 assert('A611 — Archive D1: enrichChampionshipFromArchive wraps champCtx with path-to-finals; wired into J2 + card-tap + static Night Owl + Claude Night Owl',
