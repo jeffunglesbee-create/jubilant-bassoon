@@ -4169,6 +4169,14 @@ assert('A613 — WC name fix: _WC_NAME_FIX + _wcFixTeamName normalize D1 names (
 
 // ── A630-A633 / CC-CMD-2026-06-17 Journalism gap fixes ──
 
+// ── A637 / CC-CMD-2026-06-17 Commit B: elapsed-time render gated by non-final state ──
+assert('A637 — buildLifeStageContent live case skips "In progress · Xh Ym in" when eData.state === "post"',
+  // Final-state guard returns the empty stage container before any "In progress" string is emitted.
+  /if \(eData\?\.state === 'post'\) \{[\s\S]{0,200}card-stage-live-basic"><\/div>'/.test(html) &&
+  // The guard appears BEFORE the "In progress · ${elapsedStr}" fallback (same function body).
+  html.indexOf("if (eData?.state === 'post')") < html.indexOf('In progress · ${elapsedStr}'),
+  'CC-CMD-2026-06-17 Commit B: computeCardStage routes a post-state game into "live" when eData.period>0 (period stays truthy after final). The wall-clock fallback in the live case rendered "In progress · Xh Ym in" against a score chip that already shows F. Final-state guard returns the empty stage container before the fallback runs. The state machine logic and computeCardStage routing are intentionally untouched — this is a display-layer guard only.');
+
 // ── A636 / CC-CMD-2026-06-17 Commit A: vibe-chip post label renamed AMNESTY → NIGHT OWL ──
 assert('A636 — Vibe chip post label is "NIGHT OWL" (not "AMNESTY"); internal amnesty identifiers preserved',
   // The user-facing chip label is "NIGHT OWL".
