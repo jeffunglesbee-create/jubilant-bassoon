@@ -1,10 +1,10 @@
 {
   "scripts/probe_img1.jpg": {
-    "error": "HTTP 401",
-    "body": "{\n  \"error\": {\n    \"code\": 401,\n    \"message\": \"API keys are not supported by this API. Expected OAuth2 access token or other authentication credentials that assert a principal. See https://cloud.google.com/docs/authentication\",\n    \"status\": \"UNAUTHENTICATED\",\n    \"details\": [\n      {\n        \"@type\": \"type.googleapis.com/google.rpc.ErrorInfo\",\n        \"reason\": \"CREDENTIALS_MISSING\",\n        \"domain\": \"googleapis.com\",\n        \"metadata\": {\n          \"service\": \"vision.googleapis.com\",\n       "
+    "error": "HTTP 403",
+    "body": "{\n  \"error\": {\n    \"code\": 403,\n    \"message\": \"Requests to this API vision.googleapis.com method google.cloud.vision.v1.ImageAnnotator.BatchAnnotateImages are blocked.\",\n    \"status\": \"PERMISSION_DENIED\",\n    \"details\": [\n      {\n        \"@type\": \"type.googleapis.com/google.rpc.ErrorInfo\",\n        \"reason\": \"API_KEY_SERVICE_BLOCKED\",\n        \"domain\": \"googleapis.com\",\n        \"metadata\": {\n          \"consumer\": \"projects/11086864792\",\n          \"service\": \"vision.googleapis.com\",\n          \"ap"
   },
   "scripts/probe_img2.jpg": {
-    "error": "HTTP 401",
-    "body": "{\n  \"error\": {\n    \"code\": 401,\n    \"message\": \"API keys are not supported by this API. Expected OAuth2 access token or other authentication credentials that assert a principal. See https://cloud.google.com/docs/authentication\",\n    \"status\": \"UNAUTHENTICATED\",\n    \"details\": [\n      {\n        \"@type\": \"type.googleapis.com/google.rpc.ErrorInfo\",\n        \"reason\": \"CREDENTIALS_MISSING\",\n        \"domain\": \"googleapis.com\",\n        \"metadata\": {\n          \"service\": \"vision.googleapis.com\",\n       "
+    "error": "HTTP 403",
+    "body": "{\n  \"error\": {\n    \"code\": 403,\n    \"message\": \"Requests to this API vision.googleapis.com method google.cloud.vision.v1.ImageAnnotator.BatchAnnotateImages are blocked.\",\n    \"status\": \"PERMISSION_DENIED\",\n    \"details\": [\n      {\n        \"@type\": \"type.googleapis.com/google.rpc.ErrorInfo\",\n        \"reason\": \"API_KEY_SERVICE_BLOCKED\",\n        \"domain\": \"googleapis.com\",\n        \"metadata\": {\n          \"service\": \"vision.googleapis.com\",\n          \"consumer\": \"projects/11086864792\",\n          \"ap"
   }
 }

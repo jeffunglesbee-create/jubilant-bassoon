@@ -2,35 +2,37 @@
 ============================================================
 scripts/probe_img1.jpg
 ============================================================
-ERROR: HTTP 401
+ERROR: HTTP 403
 {
   "error": {
-    "code": 401,
-    "message": "API keys are not supported by this API. Expected OAuth2 access token or other authentication credentials that assert a principal. See https://cloud.google.com/docs/authentication",
-    "status": "UNAUTHENTICATED",
+    "code": 403,
+    "message": "Requests to this API vision.googleapis.com method google.cloud.vision.v1.ImageAnnotator.BatchAnnotateImages are blocked.",
+    "status": "PERMISSION_DENIED",
     "details": [
       {
         "@type": "type.googleapis.com/google.rpc.ErrorInfo",
-        "reason": "CREDENTIALS_MISSING",
+        "reason": "API_KEY_SERVICE_BLOCKED",
         "domain": "googleapis.com",
         "metadata": {
+          "consumer": "projects/11086864792",
           "service": "vision.googleapis.com",
-       
+          "ap
 
 ============================================================
 scripts/probe_img2.jpg
 ============================================================
-ERROR: HTTP 401
+ERROR: HTTP 403
 {
   "error": {
-    "code": 401,
-    "message": "API keys are not supported by this API. Expected OAuth2 access token or other authentication credentials that assert a principal. See https://cloud.google.com/docs/authentication",
-    "status": "UNAUTHENTICATED",
+    "code": 403,
+    "message": "Requests to this API vision.googleapis.com method google.cloud.vision.v1.ImageAnnotator.BatchAnnotateImages are blocked.",
+    "status": "PERMISSION_DENIED",
     "details": [
       {
         "@type": "type.googleapis.com/google.rpc.ErrorInfo",
-        "reason": "CREDENTIALS_MISSING",
+        "reason": "API_KEY_SERVICE_BLOCKED",
         "domain": "googleapis.com",
         "metadata": {
           "service": "vision.googleapis.com",
-       
+          "consumer": "projects/11086864792",
+          "ap
