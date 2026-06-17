@@ -1,10 +1,346 @@
 {
   "scripts/probe_img1.jpg": {
-    "error": "HTTP 404",
-    "body": "{\n  \"error\": {\n    \"code\": 404,\n    \"message\": \"This model models/gemini-2.0-flash is no longer available. Please update your code to use a newer model for the latest features and improvements.\",\n    \"status\": \"NOT_FOUND\"\n  }\n}\n"
+    "candidates": [
+      {
+        "content": {
+          "parts": [
+            {
+              "text": "The image displays a mirror selfie of a woman in what appears to be a locker room or changing area.\n\n**Identifying Details:**\n\n*   **Person:** The image features a woman with long, dark, wavy hair. She is taking a mirror selfie.\n*   **Clothing:** She is wearing a black, off-the-shoulder or wide-neck top and a red, ruched (gathered fabric) mini-skirt. No specific clothing brands are visible.\n*   **Jewelry:** No prominent jewelry is visible.\n*   **Phone Case:** The phone she is holding has a light purple or lavender-colored case, with a matching or complementary colored pop socket or grip accessory on the back. The phone appears to be an iPhone, indicated by the camera array.\n*   **Background Location Clues:** The setting is an indoor space, strongly resembling a gym or spa locker room. Visible elements include:\n    *   Wooden lockers with horizontal paneling.\n    *   A light-colored wooden bench in front of the lockers.\n    *   White walls.\n    *   A black, upright scale, typically found in gyms or medical facilities.\n    *   The vanity countertop where the mirror rests is white with grey veining, suggesting marble or quartz.\n*   **Setting Type:** An indoor changing room or locker room.\n*   **Text or Logos Visible:**\n    *   **Top Left:** An overlay shows \"1-3\" positioned between two sports team logos. One logo is orange and black, resembling the Baltimore Orioles bird head. The other is blue and white with a stylized 'S', possibly representing a team like the Seattle Mariners. This likely indicates a sports score or betting odds.\n    *   **Top Right:** The number \"45\" is visible, which could be a timestamp, a battery percentage, or potentially an age, given the context of a dating app.\n    *   **Right Side (vertically oriented):** The text \"@bumble\" is clearly visible, indicating that the image was likely sourced from or shared on the Bumble dating application.\n    *   **Bottom Right:** A yellow circular icon with a black star in the center is present, which is a common user interface element, possibly for \"likes\" or \"favorites\" within an application.\n    *   **Bottom Navigation Bar:** Standard Android navigation buttons (back, home, recent apps) are visible, suggesting the image is a screenshot from an Android device.\n\n**Reverse Image Search Findings:**\n\nA direct URL to this exact image or the person's social media profile was not found through the reverse image search. However, the prominent \"@bumble\" watermark strongly suggests that the image originated from a Bumble dating profile. Discussions on platforms like Reddit confirm that such watermarks are often present on Bumble profile pictures, particularly when viewed via the desktop API. While the specific profile could not be identified, the presence of the Bumble watermark is a definitive indicator of the image's source platform. Reverse image search tools are often used to verify profile pictures on dating apps and detect fake accounts."
+            }
+          ],
+          "role": "model"
+        },
+        "finishReason": "STOP",
+        "index": 0,
+        "groundingMetadata": {
+          "searchEntryPoint": {
+            "renderedContent": "<style>\n.container {\n  align-items: center;\n  border-radius: 8px;\n  display: flex;\n  font-family: Google Sans, Roboto, sans-serif;\n  font-size: 14px;\n  line-height: 20px;\n  padding: 8px 12px;\n}\n.chip {\n  display: inline-block;\n  border: solid 1px;\n  border-radius: 16px;\n  min-width: 14px;\n  padding: 5px 16px;\n  text-align: center;\n  user-select: none;\n  margin: 0 8px;\n  -webkit-tap-highlight-color: transparent;\n}\n.carousel {\n  overflow: auto;\n  scrollbar-width: none;\n  white-space: nowrap;\n  margin-right: -12px;\n}\n.headline {\n  display: flex;\n  margin-right: 4px;\n}\n.gradient-container {\n  position: relative;\n}\n.gradient {\n  position: absolute;\n  transform: translate(3px, -9px);\n  height: 36px;\n  width: 9px;\n}\n@media (prefers-color-scheme: light) {\n  .container {\n    background-color: #fafafa;\n    box-shadow: 0 0 0 1px #0000000f;\n  }\n  .headline-label {\n    color: #1f1f1f;\n  }\n  .chip {\n    background-color: #ffffff;\n    border-color: #d2d2d2;\n    color: #5e5e5e;\n    text-decoration: none;\n  }\n  .chip:hover {\n    background-color: #f2f2f2;\n  }\n  .chip:focus {\n    background-color: #f2f2f2;\n  }\n  .chip:active {\n    background-color: #d8d8d8;\n    border-color: #b6b6b6;\n  }\n  .logo-dark {\n    display: none;\n  }\n  .gradient {\n    background: linear-gradient(90deg, #fafafa 15%, #fafafa00 100%);\n  }\n}\n@media (prefers-color-scheme: dark) {\n  .container {\n    background-color: #1f1f1f;\n    box-shadow: 0 0 0 1px #ffffff26;\n  }\n  .headline-label {\n    color: #fff;\n  }\n  .chip {\n    background-color: #2c2c2c;\n    border-color: #3c4043;\n    color: #fff;\n    text-decoration: none;\n  }\n  .chip:hover {\n    background-color: #353536;\n  }\n  .chip:focus {\n    background-color: #353536;\n  }\n  .chip:active {\n    background-color: #464849;\n    border-color: #53575b;\n  }\n  .logo-light {\n    display: none;\n  }\n  .gradient {\n    background: linear-gradient(90deg, #1f1f1f 15%, #1f1f1f00 100%);\n  }\n}\n</style>\n<div class=\"container\">\n  <div class=\"headline\">\n    <svg class=\"logo-light\" width=\"18\" height=\"18\" viewBox=\"9 9 35 35\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\">\n      <path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M42.8622 27.0064C42.8622 25.7839 42.7525 24.6084 42.5487 23.4799H26.3109V30.1568H35.5897C35.1821 32.3041 33.9596 34.1222 32.1258 35.3448V39.6864H37.7213C40.9814 36.677 42.8622 32.2571 42.8622 27.0064V27.0064Z\" fill=\"#4285F4\"/>\n      <path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M26.3109 43.8555C30.9659 43.8555 34.8687 42.3195 37.7213 39.6863L32.1258 35.3447C30.5898 36.3792 28.6306 37.0061 26.3109 37.0061C21.8282 37.0061 18.0195 33.9811 16.6559 29.906H10.9194V34.3573C13.7563 39.9841 19.5712 43.8555 26.3109 43.8555V43.8555Z\" fill=\"#34A853\"/>\n      <path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M16.6559 29.8904C16.3111 28.8559 16.1074 27.7588 16.1074 26.6146C16.1074 25.4704 16.3111 24.3733 16.6559 23.3388V18.8875H10.9194C9.74388 21.2072 9.06992 23.8247 9.06992 26.6146C9.06992 29.4045 9.74388 32.022 10.9194 34.3417L15.3864 30.8621L16.6559 29.8904V29.8904Z\" fill=\"#FBBC05\"/>\n      <path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M26.3109 16.2386C28.85 16.2386 31.107 17.1164 32.9095 18.8091L37.8466 13.8719C34.853 11.082 30.9659 9.3736 26.3109 9.3736C19.5712 9.3736 13.7563 13.245 10.9194 18.8875L16.6559 23.3388C18.0195 19.2636 21.8282 16.2386 26.3109 16.2386V16.2386Z\" fill=\"#EA4335\"/>\n    </svg>\n    <svg class=\"logo-dark\" width=\"18\" height=\"18\" viewBox=\"0 0 48 48\" xmlns=\"http://www.w3.org/2000/svg\">\n      <circle cx=\"24\" cy=\"23\" fill=\"#FFF\" r=\"22\"/>\n      <path d=\"M33.76 34.26c2.75-2.56 4.49-6.37 4.49-11.26 0-.89-.08-1.84-.29-3H24.01v5.99h8.03c-.4 2.02-1.5 3.56-3.07 4.56v.75l3.91 2.97h.88z\" fill=\"#4285F4\"/>\n      <path d=\"M15.58 25.77A8.845 8.845 0 0 0 24 31.86c1.92 0 3.62-.46 4.97-1.31l4.79 3.71C31.14 36.7 27.65 38 24 38c-5.93 0-11.01-3.4-13.45-8.36l.17-1.01 4.06-2.85h.8z\" fill=\"#34A853\"/>\n      <path d=\"M15.59 20.21a8.864 8.864 0 0 0 0 5.58l-5.03 3.86c-.98-2-1.53-4.25-1.53-6.64 0-2.39.55-4.64 1.53-6.64l1-.22 3.81 2.98.22 1.08z\" fill=\"#FBBC05\"/>\n      <path d=\"M24 14.14c2.11 0 4.02.75 5.52 1.98l4.36-4.36C31.22 9.43 27.81 8 24 8c-5.93 0-11.01 3.4-13.45 8.36l5.03 3.85A8.86 8.86 0 0 1 24 14.14z\" fill=\"#EA4335\"/>\n    </svg>\n    <div class=\"gradient-container\"><div class=\"gradient\"></div></div>\n  </div>\n  <div class=\"carousel\">\n    <a class=\"chip\" href=\"https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQFtIvcmHnt0e9mT6nZxZ4nqzsvxzs6PcM4UC4Jnb0p3WtzJEPgE5iXr-8rQz2P4iXBAUSe8FVyMVfZZWZQoy_IKi22Ec3w279g1GPdiEfxsSBuvhBv-2TEGWqMQ_SEKhWnRpyCHqWC3ubQ2nwpEBlWjxaKAIlx6dmskVNl1X89km8jnDeR61cj2NWFJc-XrVLFz41bneU-iwxMc--HwAVRJ6vbJowVQhS4YcpS-73dZOrU8U7d5\">image with @bumble watermark 1-3 sports score 45</a>\n    <a class=\"chip\" href=\"https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQF8Xq4uKlp2Xy1Z9_B6jDzosvgT1c48xLM9wPnpM-sWAmrWoR95U_xKURx0Onf4ToXqBgOHXO1LRbZEvpvqpPnuTqx389YMGTQqTNWsG1vCWIwPvFU6GuA6nmYqnd-e4y_-UKaFZSTOWo360-PeW7iHWJCOYH6SdfWn2qCQBqZWT2yAc9O_-tppBSSOUAHLTBV_my1UsNKfHqyYaCobqKfeCndzWzfa9N4dleZVOycDDQ==\">bumble profile image woman black top red skirt</a>\n    <a class=\"chip\" href=\"https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQHI8ES24bpAlD_3J4MTB8PHcQmMBKBDKQipnIGX1iJN2ql8_wTrkKOE80E8BRUslKAFgBGxNJdgV4SrIcJR4sYOcmRYS67H_7qcUEfdPnQoZg966wIOUD118ZUiMRKPYwdsY70EZx4-tWuMPdTBKVp6sbjkVK0cJyrQ9Q5vJX296_0IsGyynYivH4YqomZobX0MVjs5DDBytBvTNwN8lxDmlYNmRUYpJIzr2BLiIbHvxSNQnUDVsL_6UCG4yrDH7X_2xOR9Lr1IsLlM\">reverse image search of woman in black top red skirt locker room bumble</a>\n    <a class=\"chip\" href=\"https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQHog4loxPs85_l-hz1GNm0SBw2kzGjBWAKhK0bvWrpmQnYLh_oH6qO6fASBvIvRhnp0c8TGXxvJbIame0bm_HIQ2R8zYQkZy-aeDh4ANqMtt0A6G1Dzm0jtAUFopUc3Zl5FOpLB_Mov1oxkH90H2RHzdwCjLjy6dm-uZVMQMOR8LdZF9PhcwqVTi08b_--SOqYTay2qSm8gOlKIGKEwl9YJbq-EXxVoxtlQKb8Hok74eKgNJWcOK8Na0KBdrek=\">woman black top red skirt mirror selfie locker room bumble</a>\n    <a class=\"chip\" href=\"https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQHOvkV1DBcJzhIG1ENaCJ1SxLueQIX5HiCTOJ5bjdZBihtpJ6MKo2L4JUJ3NPZbBxWLG0daeA9f34aiCABf59Tv6w4hqFkHuIMhVu_9KdiCiFVgCh_7CAmwVLg1UUNEIFvqkhknfEasjarrEHx6cSNtRfc_xdclStFTllDYY0dW9Dig8ty2wRFHvYLI826b4dHbuz6ErmxVLGxGRufZ9PhnoWH-Ky8SKXL5d4_YLHwbG69SKjDqGQ==\">woman in gym locker room selfie red skirt black top</a>\n  </div>\n</div>\n"
+          },
+          "groundingChunks": [
+            {
+              "web": {
+                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQE9jqHYQ1ASCcnA-4oQMLyyg4RgDDcgw3NdUz9Aa_i5Ey6kLp7CTgyRdQwlFWW9bJ5cRbldDoodMZ9i7mYijyu368BWmLwdor_S-61vz6pq5D2M2h4BoIDeuPuRYgwoSKgWEBpnEzWadBPVcRfa",
+                "title": "magnific.com"
+              }
+            },
+            {
+              "web": {
+                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQHtlh4LzO-3k-wBlNh6hEzKadRZsEk-9FeZ85E-U7ikwX8G08znytcuRzozvrd8Vusbf-iaKvjadCKHOGQqpoyiostvyT9voCuf9Vg-K7RMSOijYRXctwFEQYlEmv29-Phsd_GVm0GgpBjHmGktNkXLtWXECsw_HQGIyuym",
+                "title": "reddit.com"
+              }
+            },
+            {
+              "web": {
+                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQHGVqPLLuYKoMc4XmQtF4gsyK4oUznj4pIKApfChB5z3X96gDnOwTaldt66WEatJv3uJj2yBlYfI8W7iPYD4SLmtHDPbr8MHlNS4YBbBRr_LJbl3oKQ3P-6ZjurzJU_z1pn58W7bj2MaeU=",
+                "title": "shutterstock.com"
+              }
+            },
+            {
+              "web": {
+                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQFNGBcjbj48usv9d9mJzDgfVCD0K6KE5_ucLcrZWH1RK4LwB4yud4oeEMOxPQ6RskWo3uJSDg1DL8uV2rUdjpvCtP12x9TES9xueRcDfJBy3mr8SeS-lXYs1DiCSzfwFHEPd98VBnrp8PzuEd55lpB0tV8=",
+                "title": "newoldnorth.com"
+              }
+            },
+            {
+              "web": {
+                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQFCjpwWRz-CQLCh1tWlkcOQoE0dLSsetRrN244EzyPloAmP5KiuBnBEjJ3ds0HtA0uLQLG8-Bk3eLb3ac5oUZCjw7v5iHGfEKhgBKT57M3iGlx4SVfWlMafO1uh-Io=",
+                "title": "reverseimagesearch.com"
+              }
+            },
+            {
+              "web": {
+                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQGuDQH6GQH8KUNjEFfjuVQcnC67jaqDzVsC-kImqCJnCBRmXQbqDHCBiK7cgat0YCs6iIcGTKlEYPw_VLaVKsYv4XKy2Cpli1URH4h6ub6yGbJXHg==",
+                "title": "reversely.ai"
+              }
+            },
+            {
+              "web": {
+                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQHm96BdYbcdLGLz7tP0cVZ45q-bcI80EcOme5KYu5XsiD3K74geY3LPZmjFSfOI9gx2uJkJbWNGHBXzwyOgS8MTG5EB9Ll8rsBVvXD8JvASxueDyLcCmRa56yH_umi4M_XzLP_Uwb2V5PsjhRgaNfpi6m9BnBeiZdSF",
+                "title": "digitalwebsolutions.com"
+              }
+            },
+            {
+              "web": {
+                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQFEmNTD14dcf5sfevC70IWFzIzJ8HQXeBHoORNh0my4EFe9AX_BaLtLP6N8vIn18I2X3iQCeA4Cr-NHs80n-EdKrGaC_x5rj3auFHCI1m4Cdc73uWczjP7M",
+                "title": "labnol.org"
+              }
+            }
+          ],
+          "groundingSupports": [
+            {
+              "segment": {
+                "startIndex": 1502,
+                "endIndex": 1554,
+                "text": "This likely indicates a sports score or betting odds"
+              },
+              "groundingChunkIndices": [
+                0
+              ]
+            },
+            {
+              "segment": {
+                "startIndex": 1719,
+                "endIndex": 1892,
+                "text": "*   **Right Side (vertically oriented):** The text \"@bumble\" is clearly visible, indicating that the image was likely sourced from or shared on the Bumble dating application"
+              },
+              "groundingChunkIndices": [
+                1,
+                2
+              ]
+            },
+            {
+              "segment": {
+                "startIndex": 2414,
+                "endIndex": 2529,
+                "text": "However, the prominent \"@bumble\" watermark strongly suggests that the image originated from a Bumble dating profile"
+              },
+              "groundingChunkIndices": [
+                1
+              ]
+            },
+            {
+              "segment": {
+                "startIndex": 2531,
+                "endIndex": 2687,
+                "text": "Discussions on platforms like Reddit confirm that such watermarks are often present on Bumble profile pictures, particularly when viewed via the desktop API"
+              },
+              "groundingChunkIndices": [
+                1
+              ]
+            },
+            {
+              "segment": {
+                "startIndex": 2836,
+                "endIndex": 2944,
+                "text": "Reverse image search tools are often used to verify profile pictures on dating apps and detect fake accounts"
+              },
+              "groundingChunkIndices": [
+                3,
+                4,
+                5,
+                6,
+                7
+              ]
+            }
+          ],
+          "webSearchQueries": [
+            "reverse image search of woman in black top red skirt locker room bumble",
+            "woman black top red skirt mirror selfie locker room bumble",
+            "bumble profile image woman black top red skirt",
+            "image with @bumble watermark 1-3 sports score 45",
+            "woman in gym locker room selfie red skirt black top"
+          ]
+        }
+      }
+    ],
+    "usageMetadata": {
+      "promptTokenCount": 325,
+      "candidatesTokenCount": 714,
+      "totalTokenCount": 3903,
+      "promptTokensDetails": [
+        {
+          "modality": "TEXT",
+          "tokenCount": 67
+        },
+        {
+          "modality": "IMAGE",
+          "tokenCount": 258
+        }
+      ],
+      "toolUsePromptTokenCount": 1312,
+      "toolUsePromptTokensDetails": [
+        {
+          "modality": "TEXT",
+          "tokenCount": 1054
+        },
+        {
+          "modality": "IMAGE",
+          "tokenCount": 258
+        }
+      ],
+      "thoughtsTokenCount": 1552,
+      "serviceTier": "standard"
+    },
+    "modelVersion": "gemini-2.5-flash",
+    "responseId": "MYgyatviLeKV_uMP58Sa4As"
   },
   "scripts/probe_img2.jpg": {
-    "error": "HTTP 404",
-    "body": "{\n  \"error\": {\n    \"code\": 404,\n    \"message\": \"This model models/gemini-2.0-flash is no longer available. Please update your code to use a newer model for the latest features and improvements.\",\n    \"status\": \"NOT_FOUND\"\n  }\n}\n"
+    "candidates": [
+      {
+        "content": {
+          "parts": [
+            {
+              "text": "Here's an analysis of the image for reverse image search purposes:\n\n**Identifying Details:**\n\n*   **Person:** The image features a woman with long, dark, wavy hair and brown eyes. She has a fair complexion with some redness on her cheeks and appears to be wearing minimal makeup. Her lips are slightly pursed.\n*   **Clothing:** She is wearing an orange or rust-colored ribbed top, possibly a camisole or a strapless design, with a sweetheart neckline. The top has gold-colored clasps or buckles running down the front. A black lace bra strap is visible underneath the top. Light-colored (possibly off-white or beige) pants or shorts are visible at the bottom of the frame.\n*   **Jewelry:** She is wearing a delicate gold-colored chain necklace with a small, round pendant. The pendant appears to have an emblem or a figure depicted on it.\n*   **Background/Location Clues:** The setting appears to be indoors, likely a personal space such as a bedroom, indicated by a light pink or peach-colored pillow or blanket visible behind her.\n*   **Phone Case:** A phone case is not visible in the image. The image itself appears to be a screenshot from a mobile device.\n*   **Setting Type:** The setting is an intimate, indoor environment, likely a home.\n*   **Text or Logos Visible:**\n    *   In the top left corner, there is a graphic displaying \"1-3 $\" with an orange icon (resembling a flame or stylized 'B') and a blue icon with a dollar sign. This likely indicates an in-app currency or feature.\n    *   In the top right corner, the number \"45\" is visible, which could be a timer, score, or another app-specific metric.\n    *   Along the right edge of the image, oriented vertically, the text \"@bumble\" is clearly visible, indicating that the screenshot was taken from the Bumble dating application.\n    *   In the bottom right corner, there is a yellow circular icon with a black star inside, which is a common user interface element in many applications, often signifying a \"favorite\" or \"like\" action.\n    *   The bottom of the image shows standard Android navigation buttons (back, home, recent apps), confirming it's a mobile screenshot.\n\n**Reverse Image Search Results:**\n\n"
+            },
+            {
+              "text": "The image appears to be a screenshot from the Bumble dating app, as indicated by the \"@bumble\" logo on the right side of the image. The \"1-3 $\" and \"45\" in the top corners, along with the yellow star icon at the bottom, are also consistent with dating app user interface elements.\n\nWhile a direct match for this *exact* image or person across various social media or dating profiles could not be definitively found through general reverse image search queries, the presence of the Bumble logo strongly suggests its origin. Tools like TinEye and Surfface AI are designed for reverse image searching and can be used to find where images appear online, including on social media and dating apps, by analyzing visual similarities or facial recognition. Some services specifically scan dating apps like Tinder, Bumble, and Hinge to find matching profiles.\n\nThe clothing, an orange ribbed top with gold clasps, is a common style, and similar items can be found from various retailers. However, without a specific brand visible, it's difficult to pinpoint the exact item. The necklace is a delicate gold chain with a small, round pendant, a popular jewelry style.\n\nGiven the clear Bumble branding, the image is highly likely a profile picture or a photo shared within the Bumble app."
+            }
+          ],
+          "role": "model"
+        },
+        "finishReason": "STOP",
+        "index": 0,
+        "groundingMetadata": {
+          "searchEntryPoint": {
+            "renderedContent": "<style>\n.container {\n  align-items: center;\n  border-radius: 8px;\n  display: flex;\n  font-family: Google Sans, Roboto, sans-serif;\n  font-size: 14px;\n  line-height: 20px;\n  padding: 8px 12px;\n}\n.chip {\n  display: inline-block;\n  border: solid 1px;\n  border-radius: 16px;\n  min-width: 14px;\n  padding: 5px 16px;\n  text-align: center;\n  user-select: none;\n  margin: 0 8px;\n  -webkit-tap-highlight-color: transparent;\n}\n.carousel {\n  overflow: auto;\n  scrollbar-width: none;\n  white-space: nowrap;\n  margin-right: -12px;\n}\n.headline {\n  display: flex;\n  margin-right: 4px;\n}\n.gradient-container {\n  position: relative;\n}\n.gradient {\n  position: absolute;\n  transform: translate(3px, -9px);\n  height: 36px;\n  width: 9px;\n}\n@media (prefers-color-scheme: light) {\n  .container {\n    background-color: #fafafa;\n    box-shadow: 0 0 0 1px #0000000f;\n  }\n  .headline-label {\n    color: #1f1f1f;\n  }\n  .chip {\n    background-color: #ffffff;\n    border-color: #d2d2d2;\n    color: #5e5e5e;\n    text-decoration: none;\n  }\n  .chip:hover {\n    background-color: #f2f2f2;\n  }\n  .chip:focus {\n    background-color: #f2f2f2;\n  }\n  .chip:active {\n    background-color: #d8d8d8;\n    border-color: #b6b6b6;\n  }\n  .logo-dark {\n    display: none;\n  }\n  .gradient {\n    background: linear-gradient(90deg, #fafafa 15%, #fafafa00 100%);\n  }\n}\n@media (prefers-color-scheme: dark) {\n  .container {\n    background-color: #1f1f1f;\n    box-shadow: 0 0 0 1px #ffffff26;\n  }\n  .headline-label {\n    color: #fff;\n  }\n  .chip {\n    background-color: #2c2c2c;\n    border-color: #3c4043;\n    color: #fff;\n    text-decoration: none;\n  }\n  .chip:hover {\n    background-color: #353536;\n  }\n  .chip:focus {\n    background-color: #353536;\n  }\n  .chip:active {\n    background-color: #464849;\n    border-color: #53575b;\n  }\n  .logo-light {\n    display: none;\n  }\n  .gradient {\n    background: linear-gradient(90deg, #1f1f1f 15%, #1f1f1f00 100%);\n  }\n}\n</style>\n<div class=\"container\">\n  <div class=\"headline\">\n    <svg class=\"logo-light\" width=\"18\" height=\"18\" viewBox=\"9 9 35 35\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\">\n      <path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M42.8622 27.0064C42.8622 25.7839 42.7525 24.6084 42.5487 23.4799H26.3109V30.1568H35.5897C35.1821 32.3041 33.9596 34.1222 32.1258 35.3448V39.6864H37.7213C40.9814 36.677 42.8622 32.2571 42.8622 27.0064V27.0064Z\" fill=\"#4285F4\"/>\n      <path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M26.3109 43.8555C30.9659 43.8555 34.8687 42.3195 37.7213 39.6863L32.1258 35.3447C30.5898 36.3792 28.6306 37.0061 26.3109 37.0061C21.8282 37.0061 18.0195 33.9811 16.6559 29.906H10.9194V34.3573C13.7563 39.9841 19.5712 43.8555 26.3109 43.8555V43.8555Z\" fill=\"#34A853\"/>\n      <path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M16.6559 29.8904C16.3111 28.8559 16.1074 27.7588 16.1074 26.6146C16.1074 25.4704 16.3111 24.3733 16.6559 23.3388V18.8875H10.9194C9.74388 21.2072 9.06992 23.8247 9.06992 26.6146C9.06992 29.4045 9.74388 32.022 10.9194 34.3417L15.3864 30.8621L16.6559 29.8904V29.8904Z\" fill=\"#FBBC05\"/>\n      <path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M26.3109 16.2386C28.85 16.2386 31.107 17.1164 32.9095 18.8091L37.8466 13.8719C34.853 11.082 30.9659 9.3736 26.3109 9.3736C19.5712 9.3736 13.7563 13.245 10.9194 18.8875L16.6559 23.3388C18.0195 19.2636 21.8282 16.2386 26.3109 16.2386V16.2386Z\" fill=\"#EA4335\"/>\n    </svg>\n    <svg class=\"logo-dark\" width=\"18\" height=\"18\" viewBox=\"0 0 48 48\" xmlns=\"http://www.w3.org/2000/svg\">\n      <circle cx=\"24\" cy=\"23\" fill=\"#FFF\" r=\"22\"/>\n      <path d=\"M33.76 34.26c2.75-2.56 4.49-6.37 4.49-11.26 0-.89-.08-1.84-.29-3H24.01v5.99h8.03c-.4 2.02-1.5 3.56-3.07 4.56v.75l3.91 2.97h.88z\" fill=\"#4285F4\"/>\n      <path d=\"M15.58 25.77A8.845 8.845 0 0 0 24 31.86c1.92 0 3.62-.46 4.97-1.31l4.79 3.71C31.14 36.7 27.65 38 24 38c-5.93 0-11.01-3.4-13.45-8.36l.17-1.01 4.06-2.85h.8z\" fill=\"#34A853\"/>\n      <path d=\"M15.59 20.21a8.864 8.864 0 0 0 0 5.58l-5.03 3.86c-.98-2-1.53-4.25-1.53-6.64 0-2.39.55-4.64 1.53-6.64l1-.22 3.81 2.98.22 1.08z\" fill=\"#FBBC05\"/>\n      <path d=\"M24 14.14c2.11 0 4.02.75 5.52 1.98l4.36-4.36C31.22 9.43 27.81 8 24 8c-5.93 0-11.01 3.4-13.45 8.36l5.03 3.85A8.86 8.86 0 0 1 24 14.14z\" fill=\"#EA4335\"/>\n    </svg>\n    <div class=\"gradient-container\"><div class=\"gradient\"></div></div>\n  </div>\n  <div class=\"carousel\">\n    <a class=\"chip\" href=\"https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQF1Jm3Z8w0fSES3VGfoZKYN_mIM1ihMeVq1GRDjWS65sU9f8cn3i9te2DPoEtTOV-rbOzChdypdWNb-FIRZohm-5648hHYM_xDIVX7skdIV2gYBFL8gy0U9c-X5h84qaIK-mQx5w9R3xw8pgCbwfOqceWnGHrky597P6vWLeVME5-RqLYoZHkB-cV6fsXutYLcQ_J3MdwuTQmlTTEdZyVcrp1l-GdIul837trFhYIg2OleN34uLP9I=\">woman in orange ribbed top gold clasps bumble profile</a>\n    <a class=\"chip\" href=\"https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQH0JKOS_cHBWD1VO5vdm1lZTw7a4hEFLyLgPqL5kCXFODBoDj9oVHdLmkKxbef1nUA-l6maOZKgOFKCc0ZHNQwZ44OW1Dl5FIzKztV51FJspHP5noZF1mlTu2IgVTCV11qFu5rDwokJgdrQthDveR4hJau1TO-KtrVRHBrqLJxfB5lgPD7eLoN60gaF-KYhtXh0uDHInX2I2vwv7i-SDlnIbrWB5hYeEkzC98NJ4tvWPQsobv0=\">reverse image search of woman in orange top bumble</a>\n    <a class=\"chip\" href=\"https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQGig8zgzQgpjSJK1UHJmzSYjhOb92QyxRlyyGB9tbHpoAimqrKCeIFHGhgRQ6rQebru95GR0vcZOwVlmDH_f2Rb2_rC-EHYpRTFmI8oIlV-jGRlyXM0K8eihMXmzOMCXb0v6Setis88_zHT0T6Wz_06H0_jDAtRHZcmJa8FwY7IS49BFIFHpiDRtzeHdEqVH2E-2HAs9jo-oq_9GcmhM4-z0YeFR731Ea5absPtV_p9NHMbwNayGQ==\">Bumble profile screenshot woman dark hair orange top</a>\n  </div>\n</div>\n"
+          },
+          "groundingChunks": [
+            {
+              "web": {
+                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQE7iZvISCPbMrAJph5g3aCATslKsZ5vyJ6rHkEl4mtV5P_qzY-qpq_tOX3FpKKJv83W9ChdrG-iY3skoFWjGoYwprlqG8a61BIjy0y6Ro6_eo0MEkK29Kjp6RFmd_QYz2Te7mRIPQTBjqMCjHvWd0dpcO4=",
+                "title": "boredpanda.com"
+              }
+            },
+            {
+              "web": {
+                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQHqvf4BHvJMwKJ0tGpd_FpNuXNY5_rDeBwsC-loBVGWbYlDAI-AFbwx9xJxUM2uzAfMngFWRkZ44sc88In0_NDWkXAJE79NC77UkLla",
+                "title": "tineye.com"
+              }
+            },
+            {
+              "web": {
+                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQG9fa0UsEPkFi6RTTFzDgYVhn367SRcIDwBoXLWT_AVC1jD7jOH-yvtS_tPgzn-YKIlbSARLfi8UeTYR9ldrxJly94TcLmS38p71yNkuMA=",
+                "title": "surfface.com"
+              }
+            },
+            {
+              "web": {
+                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQE4hkMbX1mg5HjmPKu6vAXLaRWcmiR0IjvAYdtUwnpuIO4ZXm0t8JfcKU8MRiLGYlRLFjRWVyr4r5m31ZPz-8otgo05toZ8VxH30HjlwaVd81KYkw==",
+                "title": "photosherlock.com"
+              }
+            },
+            {
+              "web": {
+                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQH5v7BYUzUhyKO_KSJXvcgOdKx3IIcGqL2Fppa-GPmB72XkcEFyzEBZKsiSMnFZl9PRN4RroZh7UT_y-BQidWetCsv-MOMc0jxWTaOx3_mZWGWKw8h9JOy3tA5A6CN1-EsV2YynjCIlQtuetVc=",
+                "title": "socialfinder.ai"
+              }
+            },
+            {
+              "web": {
+                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQErSS5DLqshirgJkaWa6dcMEyAX17hqzOv22M7k2lN4aJRLj3suhD3s3re8YeAYFyq1Nq2-KnG0lOOizG-qby4ooiGgTzd7WdwwfTs4ozlRT7CSr-s_bGkZ7O5ul4p47I3DWu-dqC4=",
+                "title": "freepeople.com"
+              }
+            },
+            {
+              "web": {
+                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQFnA8voSz79Bak3P-h9OyS_2iJlXDXBRIJL5OmBmxhBkFVNy2OIGf_zVDPlUCLWs-tt_o5iOynVsxt9E4GuK6QLx3y3UjCkLJSAX-XdSzL7EfRG9fAW8viqZx0JtV9TyiiGwqVLPacdsNBwYtMd6NPwBiFGeQ7uQw6_MwwpcZc1QP9hqIRHeJE9ip_hspI=",
+                "title": "poshmark.com"
+              }
+            },
+            {
+              "web": {
+                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQFk0GiHDPiKEWyNAycLvasxZ64hMTrxhkqpSQqYYaA28j3UMfnh8Vzsy9atUxlKXm4TDd2Vq0bbuh7u4wV68T7TnSz3ulh60B-GT-AMkr-c_5CN7NwjRFKlG6I3eYSsBwdy89BUb2l8WKYXxIHzJEKv",
+                "title": "belk.com"
+              }
+            },
+            {
+              "web": {
+                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQH4uDEMfuPGwVzq9ahLDow8sfZGOHQ2rx3NsvHFIYOXtbvorSTOCt4iUh-WJm0W-GiXc5BHyAiPj1Qas5hdOQhFP9osWHkhP7Ottu9vDcaBAigwshKJ6wZ2XDobZLkh",
+                "title": "ebay.com"
+              }
+            },
+            {
+              "web": {
+                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQE8tJtrk5Er6eTvDI7BeZGsjBECL4uaVLmQblIVu9tD9NXOZkyssPv3cEQ8afyDdRrg9VtHAmmTndYCkl8_meNoUqdeh_-qcQzyiqJnu-G-kFrz7jnHEw32G1D2qjcrFEEEubASJOcmo_nKNMlb5l4zT4ZfleRRvAFK74aWmruUIKnFW7hsWL6RsDshYyU_",
+                "title": "bloomingdales.com"
+              }
+            }
+          ],
+          "groundingSupports": [
+            {
+              "segment": {
+                "startIndex": 2176,
+                "endIndex": 2306,
+                "text": "The image appears to be a screenshot from the Bumble dating app, as indicated by the \"@bumble\" logo on the right side of the image"
+              },
+              "groundingChunkIndices": [
+                0
+              ]
+            },
+            {
+              "segment": {
+                "startIndex": 2308,
+                "endIndex": 2455,
+                "text": "The \"1-3 $\" and \"45\" in the top corners, along with the yellow star icon at the bottom, are also consistent with dating app user interface elements"
+              },
+              "groundingChunkIndices": [
+                0
+              ]
+            },
+            {
+              "segment": {
+                "startIndex": 2699,
+                "endIndex": 2923,
+                "text": "Tools like TinEye and Surfface AI are designed for reverse image searching and can be used to find where images appear online, including on social media and dating apps, by analyzing visual similarities or facial recognition"
+              },
+              "groundingChunkIndices": [
+                1,
+                2,
+                3
+              ]
+            },
+            {
+              "segment": {
+                "startIndex": 2925,
+                "endIndex": 3025,
+                "text": "Some services specifically scan dating apps like Tinder, Bumble, and Hinge to find matching profiles"
+              },
+              "groundingChunkIndices": [
+                4
+              ]
+            },
+            {
+              "segment": {
+                "startIndex": 3028,
+                "endIndex": 3153,
+                "text": "The clothing, an orange ribbed top with gold clasps, is a common style, and similar items can be found from various retailers"
+              },
+              "groundingChunkIndices": [
+                5,
+                6,
+                7,
+                8,
+                9
+              ]
+            }
+          ],
+          "webSearchQueries": [
+            "reverse image search of woman in orange top bumble",
+            "woman in orange ribbed top gold clasps bumble profile",
+            "Bumble profile screenshot woman dark hair orange top"
+          ]
+        }
+      }
+    ],
+    "usageMetadata": {
+      "promptTokenCount": 325,
+      "candidatesTokenCount": 798,
+      "totalTokenCount": 3164,
+      "promptTokensDetails": [
+        {
+          "modality": "TEXT",
+          "tokenCount": 67
+        },
+        {
+          "modality": "IMAGE",
+          "tokenCount": 258
+        }
+      ],
+      "toolUsePromptTokenCount": 1453,
+      "toolUsePromptTokensDetails": [
+        {
+          "modality": "IMAGE",
+          "tokenCount": 258
+        },
+        {
+          "modality": "TEXT",
+          "tokenCount": 1195
+        }
+      ],
+      "thoughtsTokenCount": 588,
+      "serviceTier": "standard"
+    },
+    "modelVersion": "gemini-2.5-flash",
+    "responseId": "QYgyavqmCOGOjMcPgLuaoAw"
   }
 }
