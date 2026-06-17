@@ -228,25 +228,19 @@ function assignMLBBroadcast(game, dateStr, rawBroadcasts) {
     // is authoritative.
   }
 
-  // Fallback: day-of-week rules (used when broadcasts array is empty or all-local)
-  switch (dow) {
-    case 5: game.nationalBundle = 'MLB_APPLE'; break;   // Friday: Apple TV+
-    case 6: game.nationalBundle = 'MLB_FOX';   break;   // Saturday: FOX
-    case 1: game.nationalBundle = 'MLB_FOX';   break;   // Monday: FOX
-    case 2: game.nationalBundle = 'MLB_TBS';   break;   // Tuesday: TBS
-    case 0: {
-      if (startHourUTC >= 15 && startHourUTC < 18) {
-        game.nationalBundle = 'MLB_LEADOFF';
-        game.peacockGOTD = true;
-      } else {
-        const [yr, mo, dy] = dateStr.split('-').map(Number);
-        const isPostMay31 = (mo > 5) || (mo === 5 && dy >= 31);
-        game.nationalBundle = isPostMay31 ? 'MLB_NBC' : 'MLB_PEACOCK_SNB';
-      }
-      break;
-    }
-    default: game.nationalBundle = null;
-  }
+  // CC-CMD-2026-06-16 broadcast overhaul Commit 4: day-of-week fallback
+  // removed. The previous switch(dow) block applied a national bundle to
+  // EVERY game on Apple Friday / FOX Saturday / FOX Monday / TBS Tuesday
+  // / Peacock Sunday — but only ONE game per day actually gets the
+  // national pick. The result was 14/15 games per day mis-tagged with a
+  // national bundle they don't carry.
+  //
+  // The MLB Stats API broadcasts(all) hydration is authoritative. If it
+  // does NOT identify a national broadcast (no FOX/FS1/TBS/Apple/Peacock/
+  // ESPN-cable/Netflix entry in the broadcast array AND the game is not
+  // in any GOTD lookup), the game is local-only and nationalBundle stays
+  // null. The client side defaults local-only games to MLB_LOCAL via
+  // loadMLBSlate.
 }
 
 // ── Parse NHL scoreboard
