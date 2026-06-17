@@ -5837,20 +5837,33 @@ const BUNDLES = {
   NHL_ABC:      ["abc","espn","fubo"],
   // ── MLB 2026 verified broadcast windows ──────────────────────────────────
   // KEY: Truly EXCLUSIVE windows (no local RSN, no MLB.TV) vs NON-EXCLUSIVE (locals also carry).
-  //   EXCLUSIVE: MLB_APPLE, MLB_LEADOFF, MLB_PEACOCK, MLB_PEACOCK_SNB, MLB_PEACOCK_GOTD, MLB_NETFLIX
-  //   NON-EXCLUSIVE: MLB_FOX, MLB_TBS, MLB_ESPN, MLB_NETWORK, MLB_NBC (post-May 31)
+  //   EXCLUSIVE: MLB_APPLE, MLB_LEADOFF, MLB_PEACOCK, MLB_PEACOCK_SNB, MLB_PEACOCK_GOTD,
+  //              MLB_NETFLIX, MLB_FOX (Saturday FOX exclusive), MLB_ESPN_CABLE (30 games/yr),
+  //              MLB_ABC (subset of ESPN_CABLE), MLB_ESPNU_GOTD
+  //   NON-EXCLUSIVE: MLB_FS1, MLB_TBS, MLB_ESPN (legacy), MLB_NETWORK, MLB_NBC (post-May 31)
   // For non-exclusive, "rsn" is in the bundle so Local RSN chip appears for in-market viewers
   // (the national feed is blacked out in local markets; local RSN carries the game instead).
   //
   // FRIDAY: Apple TV+ Friday Night Baseball (2 games/week, exclusive, no blackouts)
   MLB_APPLE:       ["apple"],                        // Friday Night Baseball: Apple TV+ exclusive — NOT on MLB.TV or any cable, NOT on local RSN
-  // SATURDAY+MONDAY: FOX + FS1 (NON-EXCLUSIVE — locals also carry, national blacked out in local markets)
-  MLB_FOX:         ["fox","fs1","rsn","fubo","youtubetv","sling","directv"],     // FS1/FOX national + Local RSN (in-market only)
+  // CC-CMD-2026-06-16 broadcast overhaul Commit 1: split MLB_FOX / MLB_FS1
+  // SATURDAY: FOX exclusive Saturday Baseball — locals blacked out in 2026 contract.
+  MLB_FOX:         ["fox","fubo","youtubetv","sling","directv"],     // FOX Saturday Baseball — EXCLUSIVE; locals blacked out
+  // SATURDAY: FS1 covers the non-FOX national window — NON-EXCLUSIVE; locals also carry.
+  MLB_FS1:         ["fs1","rsn","fubo","youtubetv","sling","directv"], // FS1 national + Local RSN (in-market only)
   // TUESDAY: TBS Tuesday Night Baseball (NON-EXCLUSIVE — locals also carry, national blacked out in local markets)
   MLB_TBS:         ["tbs","max","rsn","sling","youtubetv","fubo","directv"],     // TBS national + Local RSN (in-market only)
-  // SELECT WEEKNIGHTS: ESPN midweek (30 games total, not weekly — Jackie Robinson Day,
-  //   Memorial Day, Little League Classic, select Mon/Wed Jun–Aug) — NON-EXCLUSIVE
+  // SELECT WEEKNIGHTS: ESPN legacy NON-EXCLUSIVE bundle (kept for compatibility with
+  // historical entries; new assignments should prefer MLB_ESPN_CABLE / MLB_ABC).
   MLB_ESPN:        ["espn","espnplus","rsn","fubo","youtubetv","sling","directv"],  // ESPN national + Local RSN (in-market only)
+  // CC-CMD-2026-06-16 broadcast overhaul Commit 1: ESPN cable exclusive bundle
+  // Used for the 30-games-per-season ESPN cable slate (Sunday Night Baseball, Wed Night
+  // Baseball, holiday matinees). Treated as exclusive — locals blacked out.
+  MLB_ESPN_CABLE:  ["espn","espnplus","fubo","youtubetv","sling","directv"],        // ESPN cable exclusive — EXCLUSIVE; no RSN, no MLB.TV
+  // CC-CMD-2026-06-16 broadcast overhaul Commit 1: ABC cable exclusive bundle
+  // Subset of ESPN_CABLE; the small number of ESPN slate games that air on ABC OTA.
+  // Free over-the-air; ESPN App / ESPN+ also carries via "Watch ESPN".
+  MLB_ABC:         ["abc","espn","espnplus","fubo","youtubetv","sling","directv"], // ABC OTA + ESPN App simulcast — EXCLUSIVE; no RSN, no MLB.TV
   // SUNDAY LEADOFF (~11:30am ET): Peacock + NBCSN EXCLUSIVE. May 3–Aug 30.
   //   Exclusive window — no other MLB starts before 1:30pm ET on Leadoff days.
   MLB_LEADOFF:     ["peacock","nbcsn","youtubetv","fubo","hulu"],    // Sunday Leadoff (noon ET): Peacock/NBCSN EXCLUSIVE — NOT on NBC OTA or MLB.TV or RSN
@@ -5998,7 +6011,9 @@ function resolveBundle(key){ return expandStreams(BUNDLES[key]||[]); }
 const VALID_SR_KEYS = new Set(Object.keys(SR));
 const VALID_BUNDLE_KEYS = new Set(Object.keys(BUNDLES));
 const VALID_NATIONAL_BUNDLES = new Set([
-  "MLB_TBS","MLB_FOX","MLB_APPLE","MLB_NBC","MLB_PEACOCK_SNB","MLB_LEADOFF","MLB_LOCAL","MLB_FS1",
+  "MLB_TBS","MLB_FOX","MLB_FS1","MLB_APPLE","MLB_NBC","MLB_PEACOCK_SNB","MLB_LEADOFF","MLB_LOCAL",
+  "MLB_ESPN","MLB_ESPN_CABLE","MLB_ABC","MLB_ESPNU_GOTD","MLB_NETFLIX","MLB_NETWORK",
+  "MLB_PEACOCK","MLB_PEACOCK_GOTD",
   "NBA_ESPN","NBA_ABC","NBA_NBC","NBA_PRIME",
   "NHL_ESPN","NHL_ABC","NHL_TNT","NHL_NBC","NHL_PRIME",
   "WNBA_ESPN","WNBA_ABC","WNBA_NBC","WNBA_PRIME","WNBA_CBS","WNBA_USA","WNBA_ION","WNBA_LOCAL",
@@ -6009,7 +6024,6 @@ const VALID_NATIONAL_BUNDLES = new Set([
   "TENNIS_TC","TENNIS_FO","TENNIS_TC_PLUS",
   "MLS_SOCCER","MLS_FS1","MLS_FOX",
   "GOLF_CBS","GOLF_NBC","GOLF_ESPN","GOLF_CHANNEL","GOLF_PRIME","GOLF_LIVE",
-  "MLB_FOX","MLB_FS1"
 ]);
 function validateBundles(games, sourceName){
   if(!games||!FIELD_DEBUG) return;
@@ -21103,7 +21117,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-16e';
+  const SW_VERSION = '2026-06-17a';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
