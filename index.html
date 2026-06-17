@@ -35282,6 +35282,15 @@ function buildLifeStageContent(game, eData, stage) {
       if (_isSoccer) {
         return '<div class="card-stage-content card-stage-live-basic">LIVE</div>';
       }
+      // Final-state guard: if ESPN reports the game is post (final), do NOT
+      // render the wall-clock "In progress · Xh Ym in" fallback. computeCardStage
+      // can route a post-state game into 'live' when eData.period>0 (period is
+      // truthy after final), and without this guard the score chip shows F
+      // while this text layer still reads "In progress". The score chip is the
+      // authoritative final signal; suppress the elapsed line entirely.
+      if (eData?.state === 'post') {
+        return '<div class="card-stage-content card-stage-live-basic"></div>';
+      }
       // PM-19 retro: surface that the game IS live when no score data yet
       if (game.start_time) {
         const minsAgo = Math.round((Date.now() - new Date(game.start_time).getTime()) / 60000);
