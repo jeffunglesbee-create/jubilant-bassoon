@@ -62,6 +62,48 @@ const ESPN_GOTD_LOOKUP = {
   '2026-06-30':'Los Angeles Dodgers|Athletics',
 };
 
+// CC-CMD-2026-06-16 broadcast overhaul Commit 3: ESPN cable / ABC schedule.
+// The ESPN cable slate is the ~30-games-per-season national EXCLUSIVE
+// window — distinct from ESPN App / Unlimited GOTD (which is the daily
+// out-of-market streaming pick handled by ESPN_GOTD_LOOKUP above).
+//
+// Format: '<YYYY-MM-DD>': '<Away Team>|<Home Team>' (statsapi full names).
+// 'abc: true' marks dates the slate airs on ABC OTA (simulcast on ESPN
+// App). Without the flag, the game maps to MLB_ESPN_CABLE.
+//
+// Authoritative source: ESPN Press Room MLB schedule pages + ESPN PR
+// announcements. Confirmed dates per the CC spec:
+//   2026-04-15 NYM|LAD · 2026-05-07 TB|BOS · 2026-05-07 STL|SD
+//   2026-05-25 NYY|KC  · 2026-06-11 SEA|BAL · 2026-06-14 CHC|SFG (ABC)
+//   2026-06-15 TB|LAD  · 2026-06-22 ATL|SD  · 2026-06-27 NYY|BOS (ABC)
+//   2026-07-16 NYM|PHI · 2026-08-16 STL|CHC (ABC) · 2026-08-23 ATL|MIL
+const ESPN_CABLE_SCHEDULE = {
+  '2026-04-15': { matchup: 'New York Mets|Los Angeles Dodgers',         abc: false },
+  '2026-05-07': [
+    { matchup: 'Tampa Bay Rays|Boston Red Sox',                          abc: false },
+    { matchup: 'St. Louis Cardinals|San Diego Padres',                   abc: false },
+  ],
+  '2026-05-25': { matchup: 'New York Yankees|Kansas City Royals',        abc: false },
+  '2026-06-11': { matchup: 'Seattle Mariners|Baltimore Orioles',         abc: false },
+  '2026-06-14': { matchup: 'Chicago Cubs|San Francisco Giants',          abc: true  },
+  '2026-06-15': { matchup: 'Tampa Bay Rays|Los Angeles Dodgers',         abc: false },
+  '2026-06-22': { matchup: 'Atlanta Braves|San Diego Padres',            abc: false },
+  '2026-06-27': { matchup: 'New York Yankees|Boston Red Sox',            abc: true  },
+  '2026-07-16': { matchup: 'New York Mets|Philadelphia Phillies',        abc: false },
+  '2026-08-16': { matchup: 'St. Louis Cardinals|Chicago Cubs',           abc: true  },
+  '2026-08-23': { matchup: 'Atlanta Braves|Milwaukee Brewers',           abc: false },
+};
+
+// _lookupEspnCableSlot — returns the slot object {matchup, abc} that matches
+// the away|home pair on this date, or null. Tolerates the multi-game day
+// shape (May 7 has two slate entries).
+function _lookupEspnCableSlot(dateStr, awayHomeKey) {
+  const entry = ESPN_CABLE_SCHEDULE[dateStr];
+  if (!entry) return null;
+  const list = Array.isArray(entry) ? entry : [entry];
+  return list.find(s => s.matchup === awayHomeKey) || null;
+}
+
 // ── NHL abbreviation → full name ──────────────────────────────────────────
 const NHL_TEAMS = {
   ANA:'Anaheim Ducks',       BOS:'Boston Bruins',        BUF:'Buffalo Sabres',
@@ -163,9 +205,27 @@ function assignMLBBroadcast(game, dateStr, rawBroadcasts) {
       }
       return;
     }
-    if (hasESPN) { game.nationalBundle = 'MLB_ESPN'; return; }
+    // CC-CMD-2026-06-16 broadcast overhaul Commit 3: ESPN cable schedule.
+    // 'ESPN' (or 'ESPN '-prefixed entries) in broadcasts() is NOT a reliable
+    // signal that a game is on the ESPN national cable slate — it appears
+    // for many local-affiliate carries too. Authoritative source is the
+    // ESPN_CABLE_SCHEDULE lookup. Only assign MLB_ESPN_CABLE (or MLB_ABC
+    // for the OTA simulcast subset) when the date+matchup actually matches.
+    if (hasESPN) {
+      const slot = _lookupEspnCableSlot(dateStr, `${game.away}|${game.home}`);
+      if (slot) {
+        game.nationalBundle = slot.abc ? 'MLB_ABC' : 'MLB_ESPN_CABLE';
+        return;
+      }
+      // ESPN in broadcasts without a cable-schedule match → local feed only.
+      // Do not assign any ESPN national bundle here. ESPN Unlimited GOTD is
+      // handled separately above via ESPN_GOTD_LOOKUP / espnGOTD flag.
+    }
     if (hasMLBN) { game.nationalBundle = 'MLB_NETWORK'; return; }
-    // Has broadcasts but only local — fall through to day-of-week for any remaining nationals
+    // Has broadcasts but no national signal — leave nationalBundle = null
+    // (game is local-only). The day-of-week fallback below was removing
+    // 14/15 games' local-only status per day; the broadcasts(all) hydration
+    // is authoritative.
   }
 
   // Fallback: day-of-week rules (used when broadcasts array is empty or all-local)
