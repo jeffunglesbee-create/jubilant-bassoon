@@ -6997,10 +6997,15 @@ const BASEBALL_CONST = {
   PARK_EXTREME_PITCHER_THRESHOLD:  88,
 };
 
+// CC-CMD-2026-06-16 broadcast overhaul Commit 2: split FOX / FS1.
+// 'FS1' previously mapped to 'MLB_FOX' which conflated the exclusive FOX
+// Saturday Baseball slate with the non-exclusive FS1 slate. The two now
+// resolve to distinct bundles: MLB_FOX (exclusive, no rsn) and MLB_FS1
+// (non-exclusive, has rsn) — see BUNDLES at the top of this file.
 const MLB_BROADCAST_CHIP_MAP = {
   'Apple TV+': 'MLB_APPLE',
   'FOX':       'MLB_FOX',
-  'FS1':       'MLB_FOX',
+  'FS1':       'MLB_FS1',
   'TBS':       'MLB_TBS',
   'NBC':       'MLB_NBC',
 };
@@ -21117,7 +21122,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-17a';
+  const SW_VERSION = '2026-06-17b';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
