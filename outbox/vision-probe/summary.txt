@@ -1,0 +1,36 @@
+
+============================================================
+scripts/probe_img1.jpg
+============================================================
+ERROR: HTTP 401
+{
+  "error": {
+    "code": 401,
+    "message": "API keys are not supported by this API. Expected OAuth2 access token or other authentication credentials that assert a principal. See https://cloud.google.com/docs/authentication",
+    "status": "UNAUTHENTICATED",
+    "details": [
+      {
+        "@type": "type.googleapis.com/google.rpc.ErrorInfo",
+        "reason": "CREDENTIALS_MISSING",
+        "domain": "googleapis.com",
+        "metadata": {
+          "service": "vision.googleapis.com",
+       
+
+============================================================
+scripts/probe_img2.jpg
+============================================================
+ERROR: HTTP 401
+{
+  "error": {
+    "code": 401,
+    "message": "API keys are not supported by this API. Expected OAuth2 access token or other authentication credentials that assert a principal. See https://cloud.google.com/docs/authentication",
+    "status": "UNAUTHENTICATED",
+    "details": [
+      {
+        "@type": "type.googleapis.com/google.rpc.ErrorInfo",
+        "reason": "CREDENTIALS_MISSING",
+        "domain": "googleapis.com",
+        "metadata": {
+          "service": "vision.googleapis.com",
+       
