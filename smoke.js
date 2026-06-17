@@ -4195,6 +4195,16 @@ assert('A613 — WC name fix: _WC_NAME_FIX + _wcFixTeamName normalize D1 names (
 
 // ── A630-A633 / CC-CMD-2026-06-17 Journalism gap fixes ──
 
+// ── A632 / Commit D: _archiveBrief helper present ──
+assert('A632 — _archiveBrief({briefType,sport,gameId,briefText,qualityScore,model}) helper defined at module scope',
+  // Function declaration with object-destructured args.
+  /async function _archiveBrief\(\{briefType, sport, gameId, briefText, qualityScore, model\}\)/.test(html) &&
+  // POSTs to /archive/brief on V2_RELAY_BASE.
+  /_archiveBrief[\s\S]{0,2000}\/archive\/brief/.test(html) &&
+  // Carries source:'client' so D1 dashboard can distinguish browser-emitted rows.
+  /_archiveBrief[\s\S]{0,2000}source: 'client'/.test(html),
+  'CC-CMD-2026-06-17 Commit D: forward-going client archive helper for brief types that never reach relay KV (series_preview, stakes_brief). Game_recap/game_brief are owned relay-side and must NOT call this helper. Object-keyed signature includes quality_score + model so L3 telemetry is captured alongside prose. try/catch + .catch() guarantee a backend failure cannot block sessionStorage writes or visible brief render.');
+
 // ── A631 / Commit F: Quality panel prose-score denominator = 300 ──
 assert('A631 — Companion Quality panel: prose-score denominator is /300 (was /180); /110 absent',
   // Prose-score line uses /300 ceiling — Math.round(avgScore)}/300
