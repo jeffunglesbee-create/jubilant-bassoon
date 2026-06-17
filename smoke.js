@@ -76,6 +76,32 @@ assert('resolveBundle defined', html.includes('function resolveBundle'));
 assert('NBA_ABC in bundles', html.includes('NBA_ABC'));
 assert('MLB_APPLE in bundles', html.includes('MLB_APPLE'));
 
+// ── MLB Broadcast Overhaul (2026-06-17) ──────────────────────────────────────
+assert('A622 — MLB_FS1 bundle defined (non-exclusive, distinct from MLB_FOX)',
+  html.includes('MLB_FS1'),
+  'MLB_FS1 is non-exclusive (RSN shows alongside). Was previously conflated with MLB_FOX (exclusive). Split in broadcast overhaul b1e60f0.');
+assert('A623 — MLB_ESPN_CABLE bundle defined (exclusive, 30 games/season)',
+  html.includes('MLB_ESPN_CABLE'),
+  'ESPN cable national games (30/season) are exclusive — different from ESPN Unlimited GOTD (non-exclusive streaming). Must be separately defined.');
+assert('A624 — MLB_ABC bundle defined (ESPN Saturday/Monday national ABC games)',
+  html.includes('MLB_ABC'),
+  'ABC games (June 14 CHC@SFG, June 27 NYY@BOS, Aug 16 STL@CHC) are exclusive national broadcasts distinct from ESPN cable games.');
+assert('A625 — MLB_NETFLIX bundle defined (Opening Night, Field of Dreams, HR Derby)',
+  html.includes('MLB_NETFLIX'),
+  'Netflix exclusive games (March 25 Opening Night, Aug 13 Field of Dreams, HR Derby) require dedicated bundle. Added in broadcast overhaul.');
+assert('A626 — _lookupEspnCableSlot defined in loadMLBSlate (client-side ESPN cable detection)',
+  html.includes('_lookupEspnCableSlot'),
+  'Client-side ESPN_CABLE_SCHEDULE cross-reference for when field-data-today.json is stale. Prevents false-positive MLB_ESPN_CABLE tagging.');
+assert('A627 — ESPN_CABLE_SCHEDULE lookup table defined (30 confirmed dates)',
+  html.includes('ESPN_CABLE_SCHEDULE'),
+  'Authoritative schedule from ESPN Press Room. Gated ESPN cable assignment — prevents ESPN broadcast name false positives (e.g. CWS@NYY tagged as cable game).');
+assert('A628 — ESPN_GOTD_SCHEDULE June 2026 backfill present (29 entries)',
+  html.includes("'2026-06-17':'CLE@MIL'") || html.includes("'2026-06-17':"),
+  'June GOTD schedule from ESPN Press Room. Static fallback for when field-data-today.json pipeline is stale. Fixed false-positive where CWS@NYY was tagged instead of CLE@MIL.');
+assert('A629 — day-of-week fallback ABSENT from assignMLBBroadcast (no switch(dow) broadcast assignment)',
+  !html.includes('switch(dow)') && !html.includes('switch (dow)'),
+  'Day-of-week fallback was applying national bundles to ALL games on a given day. Removed in broadcast overhaul — MLB Stats API broadcasts(all) is now the sole authority.');
+
 // 8. Sport sections render
 assert('renderAll calls buildTodaySchedule', html.includes('buildTodaySchedule'));
 assert('buildFilters defined', html.includes('function buildFilters'));
