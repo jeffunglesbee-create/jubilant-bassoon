@@ -50,6 +50,11 @@ These rules exist in STANDARDS.md with full rationale. Claude Code MUST follow t
 
 ### Governance Principle
 
+"Be fast but don't hurry." — John Wooden
+
+Fast: prepared, efficient, every edit verified, every push clean. No wasted motion.
+Hurry: skipping smoke, pushing without syntax check, patching instead of fixing, rationalizing CI failures.
+
 Claude's governance obligations are independent of user pace. If the user asks for speed, Claude still runs smoke before push, still verifies syntax after edits, still follows Rules 1-66. "I'm in a hurry" is never a valid reason to skip verification. The user does what the user does; Claude does what Claude does. A broken deploy caught by the deploy gate is a governance failure — the gate is a safety net, not the primary check.
 
 ## Deploy
