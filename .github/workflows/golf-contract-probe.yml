@@ -1,0 +1,48 @@
+name: Golf Relay Contract Probe
+on:
+  push:
+    paths: ['outbox/.trigger-golf-contract-probe']
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Probe relay contract
+        run: |
+          set +e
+          RELAY="https://field-relay-nba.jeffunglesbee.workers.dev"
+          TS=$(date -u +%Y%m%dT%H%M%SZ)
+          OUT="outbox/golf-contract-result-${TS}.txt"
+          TODAY=$(date +%Y-%m-%d)
+          echo "Golf Relay Contract Probe — $TS" > "$OUT"
+          curl -s "$RELAY/v2/golf/enriched?date=$TODAY" > /tmp/golf.json 2>&1
+          python3 -c "
+          import json
+          d = json.load(open('/tmp/golf.json'))
+          checks = []
+          checks.append(('name in top-level', 'name' in d and 'eventName' not in d))
+          p = d.get('leaderboard', [{}])[0] if d.get('leaderboard') else {}
+          checks.append(('position not pos', 'position' in p and 'pos' not in p))
+          checks.append(('stats object exists', 'stats' in p))
+          s = p.get('stats', {})
+          checks.append(('stats.gir', 'gir' in s))
+          checks.append(('stats.drivingDistance', 'drivingDistance' in s))
+          checks.append(('no flat driveDistAvg', 'driveDistAvg' not in p))
+          all_pass = all(v for _, v in checks)
+          for label, passed in checks:
+              print(f'  {\"PASS\" if passed else \"FAIL\"}: {label}')
+          print(f'RESULT: {\"ALL PASSED\" if all_pass else \"FAILURES DETECTED\"}')
+          print(f'Event: {d.get(\"name\", \"?\")} Active: {d.get(\"active\", \"?\")}')
+          print(f'Sample: {json.dumps(p, indent=2)[:400]}')
+          " >> "$OUT" 2>&1
+          echo "OUT=$OUT" >> $GITHUB_ENV
+      - name: Push result
+        run: |
+          git config user.email "claude@field.dev"
+          git config user.name "FIELD CI"
+          git add outbox/
+          git commit -m "probe: golf relay contract [skip ci]" || exit 0
+          git push
