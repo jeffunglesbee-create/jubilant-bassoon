@@ -14835,6 +14835,94 @@ async function loadPGASlate() {
   }
 }
 
+// Build a golf-specific context block for journalism prompt injection.
+// Consumed by J1/J2 brief generators when game._sport indicates PGA. Emits
+// the tournament header, top-5 leaderboard rows, and per-player narrative
+// translations for leaders' stats. The narrative translations are what turn
+// raw numbers into prose the model can build on — e.g. a GIR around 78%
+// becomes "hit the green in regulation on about 4 of every 5 holes, well
+// above tour average (~65%)."
+//
+// Only stats present in the ESPN enriched payload are referenced:
+//   - GIR percentage
+//   - driving distance (yards)
+//   - driving accuracy (fairways hit %)
+//   - putts per GIR
+//   - sand saves (up-and-down from bunker %)
+// Tour-average reference points are baked in so the model has a comparison
+// anchor without inventing numbers.
+function buildGolfPromptContext(pgaData) {
+  if (!pgaData || pgaData.active === false) {
+    const ne = pgaData?.nextEvent || {};
+    const name = ne.name || ne.event || '';
+    const date = ne.startDate || ne.date || '';
+    return name
+      ? `[GOLF CONTEXT]\nNo active PGA tournament today. Next event: ${name}${date ? ' (' + date + ')' : ''}.`
+      : '';
+  }
+  const ev = pgaData.event || pgaData.tournament || {};
+  const evName = ev.name || pgaData.name || 'PGA Tour event';
+  const round = ev.round || pgaData.round || '';
+  const status = ev.status || pgaData.status || '';
+  const location = ev.location || ev.course || '';
+  const headerBits = [evName];
+  if (round) headerBits.push(`Round ${round}`);
+  if (status) headerBits.push(status);
+  if (location) headerBits.push(location);
+
+  const players = (pgaData.leaderboard || pgaData.players || []).slice(0, 5);
+  const lbLines = players.map(p => {
+    const pos = p.position || p.pos || '';
+    const name = p.name || p.displayName || `${p.firstName||''} ${p.lastName||''}`.trim();
+    const tp = (p.toPar != null) ? p.toPar : (p.total != null ? p.total : '');
+    const today = (p.today != null) ? ` (today ${p.today})` : '';
+    const thru = p.thru ? ` thru ${p.thru}` : '';
+    return `${pos} ${name} ${tp}${today}${thru}`.trim();
+  }).filter(Boolean);
+
+  const statLines = [];
+  players.forEach(p => {
+    const name = p.name || p.displayName || `${p.firstName||''} ${p.lastName||''}`.trim();
+    const s = p.stats || {};
+    const bits = [];
+    if (s.gir != null) {
+      const v = Math.round(s.gir);
+      bits.push(`GIR ${v}% (tour avg ~65%; ${v >= 75 ? 'elite ball-striking' : v >= 65 ? 'on tour avg' : 'below tour avg'})`);
+    }
+    if (s.drivingDistance != null) {
+      const v = Math.round(s.drivingDistance);
+      bits.push(`drives ${v}yd${v >= 310 ? ' (long off the tee)' : ''}`);
+    }
+    if (s.drivingAccuracy != null) {
+      const v = Math.round(s.drivingAccuracy);
+      bits.push(`fairways ${v}%${v >= 68 ? ' (accurate)' : v < 55 ? ' (wayward)' : ''}`);
+    }
+    if (s.puttsPerGir != null) {
+      bits.push(`${(+s.puttsPerGir).toFixed(2)} putts/GIR${(+s.puttsPerGir) <= 1.75 ? ' (sharp on the greens)' : ''}`);
+    }
+    if (s.sandSaves != null) {
+      const v = Math.round(s.sandSaves);
+      bits.push(`sand saves ${v}%`);
+    }
+    if (bits.length) statLines.push(`${name}: ${bits.join(' · ')}`);
+  });
+
+  const parts = [
+    '[GOLF CONTEXT]',
+    headerBits.join(' · '),
+  ];
+  if (lbLines.length) {
+    parts.push('Leaderboard top 5:');
+    lbLines.forEach(l => parts.push('  ' + l));
+  }
+  if (statLines.length) {
+    parts.push('Leaders by the numbers:');
+    statLines.forEach(l => parts.push('  ' + l));
+    parts.push('Use these stats to anchor narrative — translate the percentages to plain prose (e.g. 78% GIR = ~4 of every 5 greens, well above tour average). Cite only the numbers above; never invent figures the data does not contain.');
+  }
+  return parts.join('\n');
+}
+
 // ══════════════════════════════════════════════════════════════════════════════
 // Football-Data.org engine
 // Free tier: 10 req/min, no commercial use, attribution required

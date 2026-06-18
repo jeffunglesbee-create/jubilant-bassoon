@@ -4202,6 +4202,21 @@ assert('A639 — DEBRIEF chip onclick references toggleJournalismView so clickin
   /toggleJournalismView[\s\S]{0,400}label: 'DEBRIEF'/.test(html),
   'CC-CMD-2026-06-17 DEBRIEF chip: the onclick handler built in buildVibeChips for the post-state chip checks document.body.classList.contains("journalism-mode") and calls toggleJournalismView() when the journalism tab is not already open, then scrollIntoView on the data-gameid hook 150ms later. The vibe-chip render template at the card surface (.ganalytics) emits the onclick attribute conditionally only when v.onclick is present.');
 
+// ── A646 / CC-CMD-2026-06-17 ESPN Golf: buildGolfPromptContext omits strokes-gained ──
+assert('A646 — buildGolfPromptContext defined and does NOT reference strokes-gained (not in ESPN payload)',
+  // Helper defined.
+  /function buildGolfPromptContext\(pgaData\)/.test(html) &&
+  // Translates available stats narratively.
+  /tour avg ~65%/.test(html) &&
+  // Body of buildGolfPromptContext does not mention strokes gained in any casing or hyphenation.
+  (() => {
+    const m = html.match(/function buildGolfPromptContext\(pgaData\)[\s\S]+?\n\}/);
+    if (!m) return false;
+    const body = m[0];
+    return !/strokes[\s\-_]?gained/i.test(body) && !/strokes gained/i.test(body);
+  })(),
+  'CC-CMD-2026-06-17 Commit D: golf-specific journalism prompt context. Translates GIR%, driving distance, accuracy, putts/GIR, and sand saves into narrative anchors with tour-average reference points so the model can frame stats in prose without inventing numbers. ESPN does not surface strokes gained (PGA Tour proprietary) — the helper must NEVER reference strokes gained in any form (neither to include nor as a forbidden-phrase warning), so the prompt simply never raises the concept.');
+
 // ── A645 / CC-CMD-2026-06-17 ESPN Golf: renderPGALeaderboard + loadPGASlate defined ──
 assert('A645 — renderPGALeaderboard(data) and async loadPGASlate() defined; both branches present',
   // Renderer defined.
