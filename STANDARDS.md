@@ -3615,3 +3615,50 @@ live model data (win probabilities, skill ratings) that doesn't depend on
 ESPN's stats pipeline. The $19/mo decision should have been made on May 29
 when the live-stats gap was identifiable — if anyone had probed a live
 tournament instead of a completed one.
+
+## Case Study: DO NOT ASSUME — ESPN live stats (June 18 2026)
+
+**Context:** May 29 session probed ESPN competitor-stats endpoint against
+The American Express (a completed tournament). Scheffler showed GIR 80.56%,
+driving 317.9yd — rich traditional stats. Conclusion: "ESPN provides per-player
+stats at $0, DataGolf is now a T1 decision, add it post-World Cup."
+
+June 18 session (this one) repeated the claim in a Drive doc: "DataGolf
+value delta is SMALLER now because FIELD has estimated SG" and "Not blocking:
+estimated SG is good enough for journalism." Both statements were written
+WHILE the US Open R1 was about to start — Claude could have probed the
+endpoint against the live tournament and discovered the truth.
+
+**The truth:** ESPN returns ALL ZEROS for traditional stats (GIR, driving,
+accuracy, putts/GIR, sand saves) during live rounds. Stats populate
+POST-ROUND only. The May 29 probe tested a completed event. Nobody tested
+a live one. The assumption propagated across 3 weeks and 2 Drive docs
+unchallenged.
+
+**Impact:**
+- The estimated SG engine was built on data that doesn't exist during live play
+- The GIR/Drive columns in the leaderboard are empty during live rounds
+- The journalism prompt has no stats to work with during the most important hours
+- DataGolf was deprioritized based on a false premise
+- Multiple documents now contain incorrect claims
+
+**Root cause:** Rule 2 violation (DO NOT ASSUME). Claude should have verified
+the claim before writing it. Specifically:
+1. May 29: Probe was against a completed event. The claim "ESPN provides
+   per-player stats" should have been qualified: "per-player stats FOR
+   COMPLETED EVENTS — live availability unverified."
+2. June 18: Claude wrote "estimated SG is good enough" without probing
+   the live US Open. The probe was trivial — one curl command. Claude
+   chose to repeat the assumption instead of verifying it.
+
+**Rule:** When making a claim about data availability, PROBE THE ACTUAL
+CONDITION. "ESPN has stats" means nothing without specifying WHEN — during
+live play, between rounds, post-tournament, or post-season. A completed-event
+probe does not verify live-event behavior. Different states produce different
+data. Test the state you're claiming about.
+
+**Correction applied:** The June 18 Drive doc "Golf Layer — Current State &
+DataGolf Decision" is being updated to reflect that ESPN traditional stats
+are POST-ROUND ONLY and the estimated SG engine is non-functional during
+live play. DataGolf is not a deferrable T1 decision — it's the only source
+of live analytics for golf.
