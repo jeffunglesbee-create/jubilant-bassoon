@@ -21639,7 +21639,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-18c';
+  const SW_VERSION = '2026-06-18d';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -24800,7 +24800,7 @@ function buildCompoundPrompt(sections) {
       awayMisery  ? `  [FRANCHISE_CONTEXT:${teamNick(g.away)}] ${awayMisery}` : '',
       extremeNote ? `  [LIVE EXTREME] ${extremeNote}` : '',
       // PM-28k: linescore + goal timeline + NBA box context
-      (()=>{try{const _eS=findESPNScore?.(g);return buildLinescoreContext(_eS,g._id)||''}catch(e_){return ''}})(),
+      (()=>{try{const _eS=findESPNScore?.(g);return buildLinescoreContext(_eS,g._id,g.home,g.away)||''}catch(e_){return ''}})(),
       (()=>{try{const _eS=findESPNScore?.(g);return buildGoalTimeline(g,_eS)||''}catch(e_){return ''}})(),
       (()=>{try{const _eS=findESPNScore?.(g);return buildNBAPlayerContext(g,_eS)||''}catch(e_){return ''}})(),
       // PM-30: live NBA context (live games only — RUWT-clean named observables)
@@ -33196,9 +33196,12 @@ function getLinescores(gameId) {
 // PM-28f: buildLinescoreContext() — formats per-period/quarter/inning scores for AI context
 // Live path: eData.homeLinescores / eData.awayLinescores (in-memory, updated each poll)
 // Postgame path: getLinescores(gameId) (localStorage, persisted by recordLinescores)
-// Output: "[LINE SCORE] Q1: 28-26 | Q2: 22-29 | Q3: 31-24 | Q4: 19-21"
+// Output: "[LINE SCORE] Q1: Suns 28, Knicks 26 | Q2: Suns 50, Knicks 55 | ..."
+// Team labels are mandatory in the output to prevent LLM convention ambiguity
+// (broadcast convention reads pairs as away-home; raw cum-score pairs in home-away
+// order caused inverted narratives — see CC-CMD-2026-06-18 Night Owl inversion).
 // Guard: returns '' if fewer than 2 completed periods (insufficient signal)
-function buildLinescoreContext(eData, gameId) {
+function buildLinescoreContext(eData, gameId, homeLabel, awayLabel) {
   try {
     let homeLS = eData?.homeLinescores || [];
     let awayLS  = eData?.awayLinescores || [];
@@ -33219,13 +33222,18 @@ function buildLinescoreContext(eData, gameId) {
         return i === 0 ? '1H' : i === 1 ? '2H' : `ET${i-1}`;
       return `P${i+1}`;
     };
+    // Team nicks for unambiguous labelling. Convention: AWAY listed first
+    // (matches "AWAY @ HOME" already in the prompt header and the way broadcasters
+    // read box scores). Falls back to 'Away'/'Home' if nicks unavailable.
+    const hNick = (typeof teamNick === 'function' && teamNick(homeLabel || '')) || homeLabel || 'Home';
+    const aNick = (typeof teamNick === 'function' && teamNick(awayLabel || '')) || awayLabel || 'Away';
     // Build cumulative running score after each period/inning (not per-period isolated)
-    // "Inn3: 3-1" (isolated) is ambiguous; "Inn3: 3-2" (cumulative, home leads 3-2 after 3) is clear.
+    // Explicit team names per slot — no positional ambiguity left for the LLM.
     let cumH = 0, cumA = 0;
     const parts = homeLS.map((h, i) => {
       cumH += Number(h) || 0;
       cumA += Number(awayLS[i] ?? 0) || 0;
-      return `${label(i)}: ${cumH}-${cumA}`;
+      return `${label(i)}: ${aNick} ${cumA}, ${hNick} ${cumH}`;
     });
     return `[LINE SCORE] ${parts.join(' | ')}`;
   } catch(e_) { return ''; }
@@ -34599,7 +34607,7 @@ function saveEspnFinal(game, eData){
         const owlEd = Object.values(espnScores||{}).find(v =>
           (v.homeName||'').toLowerCase().replace(/[^a-z]/g,'')
             .endsWith((game.home||'').toLowerCase().replace(/[^a-z]/g,'').slice(-5)));
-        const lsCtx = buildLinescoreContext(owlEd, game._id);
+        const lsCtx = buildLinescoreContext(owlEd, game._id, game.home, game.away);
         if (lsCtx) statCtx += (statCtx?'\n':'') + '  ' + lsCtx;
       }
     } catch(_) {}
@@ -34906,7 +34914,7 @@ async function fetchNightOwlFromClaude(topGame){
         (v.homeName||'').toLowerCase().includes((topGame.home||'').toLowerCase().slice(-5)) ||
         (v.home||'').toLowerCase().includes((topGame.home||'').toLowerCase().slice(-5))
       );
-      const _lineCtx = buildLinescoreContext(_owlEData, topGame._id);
+      const _lineCtx = buildLinescoreContext(_owlEData, topGame._id, topGame.home, topGame.away);
       if (_lineCtx) _owlStatCtx += (_owlStatCtx?'\n':'')+'  '+_lineCtx;
     } catch(e_) {}
     // PM-28j: soccer goal timeline
@@ -36002,6 +36010,14 @@ function buildScoreNarrativeContext(gameId, homeLabel, awayLabel, sport) {
     if (loserMaxLead >= 2) {
       const unitStr = `${loserMaxLead}-${unit}${loserMaxLead === 1 ? '' : 's'}`;
       parts.push(`${finalLoser} led by ${unitStr}`);
+    }
+
+    // Wire-to-wire signal — explicit so the LLM cannot invent lead changes or
+    // a loser-led "early advantage" narrative. Fires when there were 0 lead
+    // changes AND the loser never led by ≥2. Pairs with winnerMaxLead so
+    // briefs frame a never-trailed blowout correctly.
+    if (winnerMaxLead >= 2 && leadChanges === 0 && loserMaxLead === 0) {
+      parts.push(`wire-to-wire (${finalLoser} never led)`);
     }
 
     if (!parts.length) return '';

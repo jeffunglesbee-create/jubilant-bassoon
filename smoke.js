@@ -4255,6 +4255,22 @@ assert('A649 — ESPN enriched loadPGASlate callback creates Golf section in all
   /scheduleRenderAll\(\)/.test(html),
   'ESPN enriched is the primary PGA Tour Golf section creator. SlashGolf is supplemental for LIV/DP World/LPGA only. The loadPGASlate callback (T+4000ms) creates the Golf section from relay data and calls scheduleRenderAll, then injectPGALeaderboard attaches the leaderboard table.');
 
+// ── A651 / CC-CMD-2026-06-18 Night Owl narrative inversion fix ──
+assert('A651 — buildLinescoreContext emits explicit team-labelled output; buildScoreNarrativeContext flags wire-to-wire',
+  // Signature accepts homeLabel + awayLabel so call sites can pass game.home / game.away.
+  /function buildLinescoreContext\(eData, gameId, homeLabel, awayLabel\)/.test(html) &&
+  // Output format is `<period>: <awayNick> <cumA>, <homeNick> <cumH>` — fully labelled.
+  /\$\{label\(i\)\}: \$\{aNick\} \$\{cumA\}, \$\{hNick\} \$\{cumH\}/.test(html) &&
+  // All three call sites pass team labels (no signature stragglers).
+  !/buildLinescoreContext\([^)]*g\._id\)/.test(html) &&
+  !/buildLinescoreContext\([^)]*game\._id\)/.test(html) &&
+  !/buildLinescoreContext\([^)]*topGame\._id\)/.test(html) &&
+  // Score narrative emits a wire-to-wire marker when the loser never led (closes
+  // the prompt gap that let the LLM invent "early advantage" + phantom lead changes).
+  /wire-to-wire \(\$\{finalLoser\} never led\)/.test(html) &&
+  /winnerMaxLead >= 2 && leadChanges === 0 && loserMaxLead === 0/.test(html),
+  'CC-CMD-2026-06-18 Night Owl inversion: buildLinescoreContext used to emit "Inn1: 0-4" (cumH-cumA) on a wire-to-wire MIN @ TEX game. Broadcast convention reads pairs as away-home, so the LLM rendered "Rangers held an early advantage, leading by as many as 4-runs" and hallucinated "10-run lead" + "3 lead changes" — all inverted. Two fixes: (1) linescore output now includes nick + cum score per slot in away-first order ("Inn1: Twins 4, Rangers 0"), and (2) buildScoreNarrativeContext appends "wire-to-wire (loser never led)" when leadChanges=0 AND loserMaxLead=0 alongside a ≥2 winner lead, so the LLM cannot invent ups-and-downs.');
+
 // ── A650 / CC-CMD-2026-06-18 Client Golf Band-Aid Removal: relay returns canonical shape, normalization deleted ──
 assert('A650 — loadPGASlate consumes canonical /v2/golf/enriched shape with no band-aids; derived metrics in standalone computeGolfDerivedMetrics',
   // The estimated-SG engine is now a named function (not inline in loadPGASlate).
