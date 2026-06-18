@@ -4217,6 +4217,16 @@ assert('A646 — buildGolfPromptContext defined and does NOT reference strokes-g
   })(),
   'CC-CMD-2026-06-17 Commit D: golf-specific journalism prompt context. Translates GIR%, driving distance, accuracy, putts/GIR, and sand saves into narrative anchors with tour-average reference points so the model can frame stats in prose without inventing numbers. ESPN does not surface strokes gained (PGA Tour proprietary) — the helper must NEVER reference strokes gained in any form (neither to include nor as a forbidden-phrase warning), so the prompt simply never raises the concept.');
 
+// ── A648 / CC-CMD-2026-06-17 Client Golf Wiring: fetchGameBriefOnDemand reads buildGolfPromptContext for PGA ──
+assert('A648 — fetchGameBriefOnDemand golf path reads window._pgaDataCache through buildGolfPromptContext',
+  // Sport gate: brief generator detects golf/pga.
+  /sp\.includes\('golf'\) \|\| sp\.includes\('pga'\)/.test(html) &&
+  // Read of the boot-populated cache through the prompt context helper.
+  /buildGolfPromptContext\(window\._pgaDataCache\)/.test(html) &&
+  // The golf context line is spliced into the prompt array (referenced as _golfCtx).
+  /champBlock,\s*\n?\s*_golfCtx,/.test(html),
+  'CC-CMD-2026-06-17 Client Golf Wiring Commit 4: the generic else-branch of fetchGameBriefOnDemand now splices buildGolfPromptContext(window._pgaDataCache) into the prompt array between champBlock and the word-rule footer. Sport gate is sp.includes("golf") || sp.includes("pga") so the read is byte-for-byte a no-op on non-golf briefs (buildGolfPromptContext returns "" when _pgaDataCache is null, and .filter(Boolean) drops the empty line). Strokes gained is still never referenced — A646 continues to enforce that on the helper body.');
+
 // ── A647 / CC-CMD-2026-06-17 Client Golf Wiring: injectPGALeaderboard wired into golf cards ──
 assert('A647 — injectPGALeaderboard(pgaData) defined and emits .pga-leaderboard-block alongside .golf-leaderboard',
   // Inject function defined.

@@ -28572,6 +28572,16 @@ Write this brief at the level the moment deserves. Do not undersell a championsh
     const wordRule = champCtx
       ? 'Rules: 60-90 words. 2-3 sentences. Lead with the historical weight (drought + trophy), then the clinch type, then a single specific fact from the data above.'
       : 'Rules: 35-50 words. 1-2 sentences. Stakes-first or matchup-first.';
+    // Golf-specific enrichment: when this game is a PGA card and the boot
+    // path has populated window._pgaDataCache from /v2/golf/enriched, splice
+    // the [GOLF CONTEXT] block (tournament header + leaderboard top 5 + per-
+    // leader narrative-anchored stats) into the prompt. buildGolfPromptContext
+    // returns '' when no PGA data is available so non-golf briefs are byte-for-
+    // byte unchanged. Strokes gained is never referenced — pinned by A646.
+    const _isGolfBrief = sp.includes('golf') || sp.includes('pga');
+    const _golfCtx = (_isGolfBrief && typeof buildGolfPromptContext === 'function'
+      && typeof window !== 'undefined' && window._pgaDataCache)
+      ? buildGolfPromptContext(window._pgaDataCache) : '';
     const prompt = [
       `Write a FIELD Game Brief.`,
       `${game.away||'?'} @ ${game.home||'?'}${game.venue ? ' · '+game.venue : ''}.`,
@@ -28580,6 +28590,7 @@ Write this brief at the level the moment deserves. Do not undersell a championsh
       series,
       standingsCtx || '',
       champBlock,
+      _golfCtx,
       '',
       wordRule,
       'Write only from data above.',
