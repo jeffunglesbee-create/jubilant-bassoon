@@ -46,6 +46,11 @@ These rules exist in STANDARDS.md with full rationale. Claude Code MUST follow t
 21. **STANDARDS Rule 63 — No dead code in commits.** Every committed function must have a caller. Every committed endpoint must have a consumer. If code is for future use, mark it `// STAGED — called by [feature]` and document in the outbox. `buildSlashGolfGamesForToday()` was committed without a caller and sat dead for weeks.
 22. **STANDARDS Rule 64 — Band-aid detection.** A band-aid is code that compensates for a bug in another layer. Indicators: client-side field mapping, client-side date conversion for relay params, client-side section creation for missing data, duplicate normalization in both layers. When a cross-layer bug is found, identify which layer owns the contract, fix it there, remove compensating code from the other layer.
 23. **STANDARDS Rule 65 — Session handoff includes integration state.** Every session touching relay + client must document: (1) RELAY CONTRACT — endpoint URL, response shape with field names, cache TTL; (2) CLIENT CONSUMER — function name, expected input shape, render target; (3) INTEGRATION STATUS — VERIFIED / STAGED / UNTESTED; (4) KNOWN MISMATCHES — any field name, format, or shape differences.
+24. **STANDARDS Rule 66 — Mandatory local smoke before push from chat.** After every file edit: syntax check. Before every `git push`: `node smoke.js index.html` must pass. Python string edits to index.html require post-edit syntax verification (extract block, `node --check`). This rule cannot be overridden by time pressure. Claude maintains code integrity regardless of session pace.
+
+### Governance Principle
+
+Claude's governance obligations are independent of user pace. If the user asks for speed, Claude still runs smoke before push, still verifies syntax after edits, still follows Rules 1-66. "I'm in a hurry" is never a valid reason to skip verification. The user does what the user does; Claude does what Claude does. A broken deploy caught by the deploy gate is a governance failure — the gate is a safety net, not the primary check.
 
 ## Deploy
 - Sole deploy path: `.github/workflows/deploy-gate.yml`

@@ -3455,3 +3455,112 @@ in the outbox carry-forward or HANDOFF.md:
 **A handoff that says "smoke passes" without integration status is a Rule 65
 violation.** The next session will discover the same bugs this session should
 have documented.
+
+## Rule 66 — Mandatory local smoke before push from chat sessions (CHAT-SMOKE-A)
+
+**Added:** June 18 2026
+**Incident:** Chat session pushed 3 consecutive commits with broken
+JavaScript (missing closing brace). None ran `node smoke.js index.html`
+before `git push`. Deploy gate failed 6 times. The brace error was
+introduced by a Python string replacement that was not syntax-checked
+after application.
+**Severity:** 3 broken deploys, 6 CI failures, feature completely broken.
+
+When pushing code from a chat session (not Claude Code):
+
+1. After EVERY file edit, run syntax check:
+   ```
+   python3 -c "import re; [print(f'Block {i}: OK') if not '<<<<' in s else print(f'Block {i}: CONFLICT') for i,s in enumerate(re.findall(r'<script[^>]*>(.*?)</script>', open('index.html').read(), re.DOTALL)) if len(s)>100]"
+   ```
+   AND for extracted JS blocks:
+   ```
+   node --check <extracted_block>
+   ```
+
+2. Before EVERY `git push`, run full smoke:
+   ```
+   node smoke.js index.html
+   ```
+   If smoke fails, DO NOT PUSH. Fix the failure first.
+
+3. Python string edits to index.html are fragile. After any Python
+   `content.replace()` or `content[:idx] + insert + content[idx:]`:
+   - Re-extract the affected script block
+   - Run `node --check` on it
+   - Count open/close braces match
+
+This rule cannot be overridden by time pressure. "The user asked for
+speed" is not a valid reason to skip smoke. Claude's job is to maintain
+code integrity regardless of session pace.
+
+**Violation:** Pushing without smoke is a governance failure equivalent
+to Rule 3 violation. The deploy gate exists as a safety net — it should
+never be the first place a syntax error is caught.
+
+---
+
+## Case Study: Golf Layer Integration Failure (June 18 2026)
+
+**Context:** Golf layer built across 4 Claude sessions (2 CC, 2 chat).
+Each session produced working code in isolation. Together: completely
+broken feature requiring 6+ hours of debugging.
+
+**Failures found:**
+1. Date format: `YYYY-MM-DD` sent to ESPN which expects `YYYYMMDD`
+   (Rule 62 violation — handleV2Games convention not followed)
+2. Data shape: relay returned flat fields, client expected nested
+   (Rule 60 violation — no data contract)
+3. Dead function: `buildSlashGolfGamesForToday()` committed but never
+   called (Rule 63 violation)
+4. Empty hardcoded array: `golfGames=[]` while dynamic builder unused
+   (Rule 63 violation)
+5. Missing brace: Python edit dropped `}` for `if` block, breaking
+   all JS after that function (Rule 66 violation — no smoke before push)
+6. Band-aid accumulation: 60+ lines of client-side normalization,
+   date conversion, and section auto-creation — all compensating for
+   bugs that should have been fixed at source (Rule 64 violation)
+
+**CI impact:**
+- 6 failed runs on jubilant-bassoon (smoke + deploy gate × 3 commits)
+- 1 failed run on field-relay-nba (FPL probe blocking downstream steps)
+- Steps 24-31 of relay deploy skipped due to non-critical probe failure
+
+**Governance rules created in response:**
+- Rule 60: Relay owns data contract
+- Rule 61: End-to-end before done
+- Rule 62: Follow existing conventions
+- Rule 63: No dead code in commits
+- Rule 64: Band-aid detection
+- Rule 65: Session handoff includes integration state
+- Rule 66: Mandatory local smoke before push from chat
+
+**Root cause:** No cross-session integration verification. Each session
+declared "done" based on smoke passing (structural correctness) without
+testing the full user path (integration correctness). Chat session then
+compounded the damage by pushing syntax-broken fixes without running
+smoke locally.
+
+---
+
+## Case Study: External Probe Blocking Deploy Pipeline (June 18 2026)
+
+**Context:** Relay deploy workflow PROBE C (FPL fixtures, GW37) failed
+during a deploy. Steps 24-31 (FD matches, FD standings, Summary,
+Courier health check, OIDC bootstrap) all skipped.
+
+**Root cause:** GitHub Actions uses `bash -eo pipefail` by default.
+FPL API transient failure → curl non-zero exit → `set -e` kills script
+→ step fails → all subsequent steps skip.
+
+**Impact:** Courier and OIDC verification skipped — these check FIELD's
+own infrastructure, not external services. A transient FPL failure
+(outside FIELD's control) prevented verification of FIELD's own systems.
+
+**Architecture fix:** External service probes (PROBE A through E) now
+use `continue-on-error: true`. They report results but don't block.
+Structural checks (health, whitelist, CORS, journalism e2e) remain
+blocking because they test FIELD's own code.
+
+**Principle:** Distinguish between checks that test YOUR code (blocking)
+and checks that test EXTERNAL services (informational). An upstream
+API outage should not prevent verification of your own systems.
