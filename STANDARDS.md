@@ -3564,3 +3564,54 @@ blocking because they test FIELD's own code.
 **Principle:** Distinguish between checks that test YOUR code (blocking)
 and checks that test EXTERNAL services (informational). An upstream
 API outage should not prevent verification of your own systems.
+
+## Case Study: DO NOT ASSUME — ESPN Live Stats (June 18 2026)
+
+**The assumption:** ESPN provides per-player traditional stats (GIR%, driving
+distance, accuracy, putts/GIR) during live tournament play.
+
+**Where it was made:** May 29 2026 chat session ("Web API golf investigation").
+Probed ESPN competitor-stats endpoint against The American Express — a
+COMPLETED tournament. Scheffler showed GIR 80.56%, driving 317.9yd. Conclusion:
+"ESPN covers it at $0" and "DataGolf is now cleanly a T1 decision."
+
+**Where it propagated unchallenged:**
+- May 29 relay spec, Section 7: "DataGolf not actionable"
+- June 18 Drive doc (Golf Layer Current State): "DataGolf value delta is
+  SMALLER now because FIELD has estimated SG"
+- June 18 chat session (this one): "estimated SG is good enough for journalism"
+- Multiple CC prompts assumed the derived metrics engine would fire during R1
+
+**When it was disproven:** June 18 2026, US Open Round 1. Burns had 5 holes
+completed. ESPN competitor-stats returned GIR: 0, driveDistAvg: 0,
+driveAccuracyPct: 0, puttsGirAvg: 0. ALL ZEROS. Confirmed for multiple
+players across multiple holes completed.
+
+**The reality:** ESPN populates traditional stats AFTER the round completes,
+not during live play. The per-event competitor-stats endpoint returns zeros
+for all stat fields while the round is in progress. Scores (toPar, today,
+thru, linescores) are live. Stats are not.
+
+**Impact:**
+- The FIELD estimated SG engine has nothing to estimate from during live play
+- GIR and DRIVE leaderboard columns show 0% and 0yd during the most important
+  hours (live round coverage)
+- Journalism prompt cited "zero percent fairways hit" as if it were real data
+- DataGolf was deprioritized for 3 weeks based on a false premise
+
+**Rule violation:** Rule 2 / Rule 15 (DO NOT ASSUME). Specifically:
+Class D — root cause assumption. The probes tested a completed tournament
+and the result was generalized to live play without verification. The
+assumption propagated through 4 documents and 3 sessions unchallenged.
+
+**Governance fix:** When probing a data source for live-use features,
+verify against LIVE conditions, not just historical/completed data.
+"Works for a completed event" ≠ "works during live play." Add this as
+an explicit check to Rule 62 (follow existing conventions): the convention
+for data source evaluation is to test the exact scenario the feature needs.
+
+**DataGolf consequence:** DataGolf was never "not needed." It provides
+live model data (win probabilities, skill ratings) that doesn't depend on
+ESPN's stats pipeline. The $19/mo decision should have been made on May 29
+when the live-stats gap was identifiable — if anyone had probed a live
+tournament instead of a completed one.
