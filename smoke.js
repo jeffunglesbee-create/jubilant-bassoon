@@ -4255,6 +4255,28 @@ assert('A649 — slashGolfPrefetchAll backfills allData.sports Golf section via 
   /scheduleRenderAll\(\)/.test(html),
   'CC-CMD-2026-06-17 Client Golf Proper Fix: buildSlashGolfGamesForToday was defined (line ~14715) but had no callers — orphan code. Now invoked from slashGolfPrefetchAll step 2b, gated on absence of an existing Golf section. The hardcoded golfGames array in buildTodaySchedule is intentionally empty by design; golf is data-driven. Without this wiring, active SlashGolf tournaments produced no .game-card target for injectSlashGolfLeaderNotes or for ESPN PGA injectPGALeaderboard (T+4000ms) to attach to. The schedule fetch is sessionStorage-cached so the extra call costs nothing on the budget.');
 
+// ── A650 / CC-CMD-2026-06-18 Client Golf Band-Aid Removal: relay returns canonical shape, normalization deleted ──
+assert('A650 — loadPGASlate consumes canonical /v2/golf/enriched shape with no band-aids; derived metrics in standalone computeGolfDerivedMetrics',
+  // The estimated-SG engine is now a named function (not inline in loadPGASlate).
+  /function computeGolfDerivedMetrics\(data\)/.test(html) &&
+  // loadPGASlate delegates to it instead of inlining Phase 2/3.
+  /loadPGASlate[\s\S]+?computeGolfDerivedMetrics\(data\)/.test(html) &&
+  // Band-aids gone: no flat-field → nested-stats mapping (Rule 64).
+  !/Normalize enriched payload/.test(html) &&
+  !/p\.driveDistAvg/.test(html) &&
+  !/p\.driveAccuracyPct/.test(html) &&
+  !/p\.puttsGirAvg/.test(html) &&
+  // Band-aid gone: no client-side YYYY-MM-DD → YYYYMMDD conversion (relay accepts dashes now).
+  !/espnDateForCache/.test(html) &&
+  !/ESPN expects YYYYMMDD/.test(html) &&
+  // Band-aid gone: no eventName → name fallback (relay returns canonical `name`).
+  !/data\.eventName && !data\.name/.test(html) &&
+  // Band-aid gone: no pos → position fallback (relay returns canonical `position`).
+  !/!p\.position && p\.pos/.test(html) &&
+  // Band-aid gone: ESPN PGA auto-create Golf section block (slashGolfPrefetchAll 2b owns this).
+  !/created Golf section from ESPN/.test(html),
+  'CC-CMD-2026-06-18 Client Golf Proper Fix: relay commit a2df1e4 migrated /v2/golf/enriched to canonical shape (top-level `name`, row `position`, nested `stats` with drivingDistance/drivingAccuracy/puttsPerGir/sandSaves) and accepts both YYYY-MM-DD and YYYYMMDD. The client-side compensating layers in loadPGASlate (field name mapping, date conversion, eventName fallback, pos fallback) are now dead weight per Rule 64. Auto-create Golf section in the T+4000ms boot block is also dead — superseded by slashGolfPrefetchAll step 2b (A649). The estimated-SG engine survives as standalone computeGolfDerivedMetrics, called once per fetch on canonical data. Verified end-to-end via outbox/golf-contract-result-20260618T144721Z.txt (CI-as-proxy probe ALL PASSED, US Open active).');
+
 // ── A648 / CC-CMD-2026-06-17 Client Golf Wiring: fetchGameBriefOnDemand reads buildGolfPromptContext for PGA ──
 assert('A648 — fetchGameBriefOnDemand golf path reads window._pgaDataCache through buildGolfPromptContext',
   // Sport gate: brief generator detects golf/pga.

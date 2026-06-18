@@ -14914,10 +14914,58 @@ function injectPGALeaderboard(pgaData) {
 // Returns the parsed response (active:true|false branch), or null on failure.
 // Independent of SlashGolf — does not call SlashGolf endpoints or consume its
 // SLASH_GOLF_DAILY_LIMIT budget.
+// FIELD estimated Strokes Gained engine — derived metrics from canonical
+// /v2/golf/enriched data. Computes field averages and per-player SG proxies
+// using Broadie methodology. Called after loadPGASlate fetch; reads canonical
+// field names (p.stats.gir, p.stats.drivingDistance, etc.) directly — no
+// shape mapping. Mutates data: adds data._fieldAvg and p.stats._derived.
+function computeGolfDerivedMetrics(data) {
+  if (!data || !data.leaderboard) return;
+  const lb = data.leaderboard.filter(p => p.stats && p.stats.gir > 0);
+  if (lb.length < 10) return; // pre-tournament stats are 0/null
+  const avg = (arr, fn) => { const vals = arr.map(fn).filter(v => v != null && v > 0); return vals.length ? vals.reduce((a,b) => a+b, 0) / vals.length : null; };
+  const fieldAvg = {
+    gir: avg(lb, p => p.stats.gir),
+    dist: avg(lb, p => p.stats.drivingDistance),
+    acc: avg(lb, p => p.stats.drivingAccuracy),
+    ppg: avg(lb, p => p.stats.puttsPerGir),
+  };
+  data._fieldAvg = fieldAvg;
+  data.leaderboard.forEach(p => {
+    const s = p.stats;
+    if (!s || !s.gir || s.gir <= 0) return;
+    const d = s._derived = {};
+    if (s.gir != null && s.drivingAccuracy != null) {
+      d.ballStriking = Math.round(s.gir * 0.7 + s.drivingAccuracy * 0.3);
+    }
+    if (s.puttsPerGir != null && fieldAvg.ppg != null) {
+      const greensPerRound = (s.gir / 100) * 18;
+      d.sgPuttingEst = +((fieldAvg.ppg - s.puttsPerGir) * greensPerRound).toFixed(2);
+    }
+    if (fieldAvg.gir != null) {
+      d.sgApproachEst = +(((s.gir - fieldAvg.gir) / 100) * 18 * 0.4).toFixed(2);
+    }
+    if (s.drivingDistance != null && fieldAvg.dist != null) {
+      const distAdv = (s.drivingDistance - fieldAvg.dist) / 10 * 0.18;
+      const accFactor = (s.drivingAccuracy != null && fieldAvg.acc != null)
+        ? (s.drivingAccuracy - fieldAvg.acc) / 100 * 0.5 : 0;
+      d.sgOTTEst = +(distAdv + accFactor).toFixed(2);
+    }
+    if (p.rounds && p.rounds.length >= 2) {
+      const scores = p.rounds.map(r => typeof r === 'number' ? r : (r && r.score ? r.score : null)).filter(v => v != null);
+      if (scores.length >= 2) {
+        d.momentum = scores[scores.length - 1] - scores[scores.length - 2];
+        d.trend = scores.length >= 3
+          ? (scores.slice(-3).reduce((a,b) => a+b, 0) / 3 < scores.slice(0, -1).reduce((a,b) => a+b, 0) / (scores.length - 1) ? 'improving' : 'steady')
+          : null;
+      }
+    }
+  });
+}
+
 async function loadPGASlate() {
   const today = (typeof TODAY_ISO !== 'undefined') ? TODAY_ISO : new Date().toISOString().slice(0,10);
-  const espnDateForCache = today.replace(/-/g, '');
-  const cacheKey = `pga:${espnDateForCache}`;
+  const cacheKey = `pga:${today}`;
   try {
     const cached = sessionStorage.getItem(cacheKey);
     if (cached) {
@@ -14928,81 +14976,12 @@ async function loadPGASlate() {
   const base = (typeof V2_RELAY_BASE !== 'undefined')
     ? V2_RELAY_BASE : 'https://field-relay-nba.jeffunglesbee.workers.dev';
   try {
-    const espnDate = today.replace(/-/g, ''); // ESPN expects YYYYMMDD, not YYYY-MM-DD
-    const r = await fetch(`${base}/v2/golf/enriched?date=${espnDate}`, {
+    const r = await fetch(`${base}/v2/golf/enriched?date=${today}`, {
       signal: AbortSignal.timeout(8000),
     });
     if (!r.ok) return null;
     const data = await r.json();
-    // Normalize enriched payload to match renderPGALeaderboard + buildGolfPromptContext shape.
-    // Relay returns flat fields (gir, driveDistAvg); renderers expect nested p.stats with
-    // canonical names (drivingDistance, drivingAccuracy, puttsPerGir). Also lift eventName → name.
-    if (data) {
-      if (data.eventName && !data.name) data.name = data.eventName;
-      if (data.leaderboard) {
-        // Phase 1: normalize flat relay fields → nested stats object
-        data.leaderboard.forEach(p => {
-          if (!p.stats) {
-            p.stats = {};
-            if (p.gir != null) p.stats.gir = p.gir;
-            if (p.driveDistAvg != null) p.stats.drivingDistance = p.driveDistAvg;
-            if (p.driveAccuracyPct != null) p.stats.drivingAccuracy = p.driveAccuracyPct;
-            if (p.puttsGirAvg != null) p.stats.puttsPerGir = p.puttsGirAvg;
-            if (p.sandSaves != null) p.stats.sandSaves = p.sandSaves;
-          }
-          if (!p.position && p.pos) p.position = p.pos;
-        });
-        // Phase 2: compute field averages from the leaderboard for derived metrics.
-        // Only meaningful once round data populates (pre-tournament stats are 0/null).
-        const lb = data.leaderboard.filter(p => p.stats && p.stats.gir > 0);
-        if (lb.length >= 10) {
-          const avg = (arr, fn) => { const vals = arr.map(fn).filter(v => v != null && v > 0); return vals.length ? vals.reduce((a,b) => a+b, 0) / vals.length : null; };
-          const fieldAvg = {
-            gir: avg(lb, p => p.stats.gir),
-            dist: avg(lb, p => p.stats.drivingDistance),
-            acc: avg(lb, p => p.stats.drivingAccuracy),
-            ppg: avg(lb, p => p.stats.puttsPerGir),
-          };
-          data._fieldAvg = fieldAvg;
-          // Phase 3: derive per-player advanced metrics
-          data.leaderboard.forEach(p => {
-            const s = p.stats;
-            if (!s || !s.gir || s.gir <= 0) return;
-            const d = s._derived = {};
-            // Ball-striking composite (GIR-weighted)
-            if (s.gir != null && s.drivingAccuracy != null) {
-              d.ballStriking = Math.round(s.gir * 0.7 + s.drivingAccuracy * 0.3);
-            }
-            // SG: Putting proxy — (tourAvg - playerPPG) × greensHitPerRound
-            if (s.puttsPerGir != null && fieldAvg.ppg != null) {
-              const greensPerRound = (s.gir / 100) * 18;
-              d.sgPuttingEst = +((fieldAvg.ppg - s.puttsPerGir) * greensPerRound).toFixed(2);
-            }
-            // SG: Approach proxy — GIR delta × 18 × 0.4 (Broadie scaling)
-            if (fieldAvg.gir != null) {
-              d.sgApproachEst = +(((s.gir - fieldAvg.gir) / 100) * 18 * 0.4).toFixed(2);
-            }
-            // SG: Off-the-tee proxy — distance advantage + accuracy factor
-            if (s.drivingDistance != null && fieldAvg.dist != null) {
-              const distAdv = (s.drivingDistance - fieldAvg.dist) / 10 * 0.18;
-              const accFactor = (s.drivingAccuracy != null && fieldAvg.acc != null)
-                ? (s.drivingAccuracy - fieldAvg.acc) / 100 * 0.5 : 0;
-              d.sgOTTEst = +(distAdv + accFactor).toFixed(2);
-            }
-            // Momentum — round-over-round delta if linescores available
-            if (p.rounds && p.rounds.length >= 2) {
-              const scores = p.rounds.map(r => typeof r === 'number' ? r : (r && r.score ? r.score : null)).filter(v => v != null);
-              if (scores.length >= 2) {
-                d.momentum = scores[scores.length - 1] - scores[scores.length - 2];
-                d.trend = scores.length >= 3
-                  ? (scores.slice(-3).reduce((a,b) => a+b, 0) / 3 < scores.slice(0, -1).reduce((a,b) => a+b, 0) / (scores.length - 1) ? 'improving' : 'steady')
-                  : null;
-              }
-            }
-          });
-        }
-      }
-    }
+    computeGolfDerivedMetrics(data);
     try { sessionStorage.setItem(cacheKey, JSON.stringify({ ts: Date.now(), data })); } catch(_) {}
     return data;
   } catch(e) {
@@ -20545,34 +20524,6 @@ async function fetchSchedule(){
     loadPGASlate().then(d => {
       window._pgaDataCache = d || null;
       if (!d) return;
-      // If no Golf section exists in allData.sports, create one from ESPN enriched data.
-      // The hardcoded golfGames array may be empty between manual updates.
-      // ESPN enriched is now the primary PGA Tour source — it should self-populate.
-      const hasGolfSection = (allData?.sports || []).some(s => s.sport === 'Golf');
-      if (!hasGolfSection && allData && allData.sports) {
-        const evName = d.name || d.eventName || 'PGA Tour Event';
-        const evVenue = d.event?.location || d.event?.course || '';
-        const round = d.round ? 'R' + d.round : '';
-        const status = d.active ? (round || 'In Progress') : 'Upcoming';
-        const golfGame = {
-          home: evName, away: '',
-          league: 'PGA Tour' + (round ? ' · ' + round : ''),
-          start_time: new Date().toISOString(),
-          venue: evVenue,
-          status: d.active ? 'live' : 'pre',
-          _sport: 'golf',
-          _id: 'espn_pga_' + (d.eventId || Date.now()),
-          streams: typeof resolveBundle === 'function' ? resolveBundle('GOLF_CBS') : [],
-        };
-        allData.sports.push({ sport: 'Golf', games: [golfGame] });
-        // Re-render schedule to show the new Golf section
-        if (typeof scheduleRenderAll === 'function') {
-          try { scheduleRenderAll(); } catch (_) {}
-        } else if (typeof renderAll === 'function') {
-          try { renderAll(); } catch (_) {}
-        }
-        if (typeof FIELD_DEBUG !== 'undefined' && FIELD_DEBUG) console.debug('[PGA] created Golf section from ESPN enriched:', evName);
-      }
       if (typeof injectPGALeaderboard === 'function') {
         try { injectPGALeaderboard(d); } catch (e) {
           if (typeof FIELD_DEBUG !== 'undefined' && FIELD_DEBUG) console.warn('[PGA] inject', e.message);
@@ -21659,7 +21610,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-18a';
+  const SW_VERSION = '2026-06-18b';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
