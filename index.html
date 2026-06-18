@@ -14361,7 +14361,7 @@ function slashGolfHeaders(){
 // ── Daily request counter — hard ceiling of 18 req/day ──────────────────────
 // Free tier: 20 req/day. We cap at 18 to leave 2 as buffer.
 // Counter resets at midnight UTC. Stored in localStorage.
-const SLASH_GOLF_DAILY_LIMIT = 18;
+const SLASH_GOLF_DAILY_LIMIT = 60;
 let _slashGolf429Until = 0; // backoff timestamp — set on RapidAPI 429, clears after 60min
 function slashGolfReqCount(){
   const today = TODAY_ISO;
