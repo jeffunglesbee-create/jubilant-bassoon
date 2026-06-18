@@ -3270,3 +3270,188 @@ infrastructure noise — see the `continue-on-error` rationale comment in
 each workflow file. Both D1+D3 failing simultaneously with D2 passing is
 still infrastructure noise; D2 failing alongside is the signal that the
 flake escaped its envelope and the run warrants real investigation.
+
+## Rule 60 — Relay owns the data contract (RELAY-CONTRACT-A)
+
+**Added:** June 18 2026
+**Incident:** Golf layer — 4 Claude sessions produced code with incompatible
+field names between relay and client. Client needed 30-line normalization layer.
+**Severity:** Integration failure — feature shipped broken.
+
+The relay defines the response shape for every endpoint it serves. Field names,
+nesting structure, and value types are the relay's contract. The client consumes
+relay output as-is, with zero transformation.
+
+**If the client needs a normalization or field-mapping layer to use relay output,
+the relay is wrong. Fix the relay.**
+
+Before building a relay endpoint:
+1. Check client code for the expected field names (`grep` the destructuring)
+2. Return those exact names — do not invent new ones
+3. Document the response shape in the handler's comment block
+
+Before building client code that consumes a relay endpoint:
+1. `curl` the actual endpoint and read the response
+2. Use field names exactly as returned — no mapping
+3. If the shape doesn't match what the client needs, file a relay fix
+
+**Violation test:** `grep` for field-name mapping in client code. Any pattern like
+`p.fieldA → p.stats.fieldB` or `data.eventName → data.name` is a Rule 60 violation.
+
+**Case study:** ESPN enriched returned `gir`, `driveDistAvg`, `driveAccuracyPct`.
+Client expected `stats.gir`, `stats.drivingDistance`, `stats.drivingAccuracy`.
+A 30-line normalization layer was written in `loadPGASlate` as a band-aid.
+The correct fix: relay maps ESPN field names to FIELD's canonical names once,
+in the handler, before responding.
+
+---
+
+## Rule 61 — End-to-end before "done" (E2E-GATE-A)
+
+**Added:** June 18 2026
+**Incident:** Golf layer declared "shipped" with 4 deferred wiring items. Smoke
+passed (678/0) but the feature was completely non-functional.
+**Severity:** False positive — CI green, feature broken.
+
+A feature is not done until the full user path works:
+
+    data source → relay endpoint → client fetch → DOM render → user sees it
+
+"All commits pushed, smoke passes" is NOT done. Smoke tests verify that functions
+exist and follow naming conventions. They do not verify integration.
+
+If a session CANNOT verify end-to-end (sandbox blocks HTTP, no browser preview):
+1. Document the feature as **STAGED** (not SHIPPED) in the outbox
+2. List exact verification steps for the next session:
+   - `curl` command for the relay endpoint
+   - Expected response shape with field names
+   - Function call chain: fetch → parse → render → DOM selector
+   - What the user should see on screen
+3. Do NOT declare the feature complete
+
+**A session that declares "done" without this verification is in violation.**
+
+---
+
+## Rule 62 — Follow existing conventions (CONVENTION-FIRST-A)
+
+**Added:** June 18 2026
+**Incident:** Golf enriched handler passed `YYYY-MM-DD` to ESPN which expects
+`YYYYMMDD`. The conversion pattern already existed in `handleV2Games` — the
+golf handler didn't follow it.
+**Severity:** Silent data failure — endpoint returned wrong results.
+
+Before writing any new code in either repo:
+1. `grep` for the same pattern that already exists
+2. Follow the same convention — do not invent a new one
+3. If you must diverge, document why in the commit message
+
+**Applies to:**
+- Date formats (relay already has `YYYY-MM-DD` → `YYYYMMDD` conversion)
+- Stats object shapes (client uses `stats.fieldName` nesting for all sports)
+- Schedule section builders (every sport uses API-driven builders, not hardcoded arrays)
+- Boot path loader ordering (specific `setTimeout` delays and dependency chains)
+- Cache key formats (consistent patterns across all sport caches)
+
+**Violation test:** `diff` the new code pattern against the existing convention
+for the same category. If they diverge without a documented reason, it's a
+Rule 62 violation.
+
+---
+
+## Rule 63 — No dead code in commits (DEAD-CODE-A)
+
+**Added:** June 18 2026
+**Incident:** `buildSlashGolfGamesForToday()` was committed, pushed, and
+smoke-passed — but never called by anything. The golf schedule section
+depended on a hardcoded empty array while this perfectly good dynamic
+builder sat unused for weeks.
+**Severity:** Wasted work — function exists but feature doesn't work.
+
+Every committed function must have at least one caller.
+Every committed endpoint must have at least one consumer.
+
+If code is written for future use:
+1. Add a comment: `// STAGED — will be called by [feature name]`
+2. Document in the outbox carry-forward: "Function X is staged, not wired"
+3. The commit message must say "staged" — not imply the feature works
+
+**Pre-push check (CC sessions):**
+```bash
+# For each new function, verify it has callers
+grep -c "functionName" index.html
+# Count of 1 = definition only, no callers → violation
+```
+
+**Smoke assertion candidates:**
+- A650: `buildSlashGolfGamesForToday` is called in `buildTodaySchedule`
+- A651: `golfGames` is populated from API data, not a hardcoded empty array
+
+---
+
+## Rule 64 — Band-aid detection (BAND-AID-A)
+
+**Added:** June 18 2026
+**Incident:** Chat session found 3 bugs in golf layer and fixed each one with
+compensating code in the client — 60+ lines of shims that should not exist.
+**Severity:** Technical debt — correct behavior from wrong architecture.
+
+A band-aid is code that compensates for a bug in another layer rather than
+fixing the bug at its source.
+
+**Band-aid indicators:**
+- Client-side field name mapping/translation of relay output
+- Client-side date format conversion for a relay endpoint parameter
+- Client-side DOM section creation to compensate for missing schedule data
+- Duplicate normalization in both client AND relay (same conversion twice)
+- Comments containing "defense in depth" that paper over a single-point failure
+
+**When a cross-layer bug is found:**
+1. Identify which layer owns the contract (usually the relay for data shape)
+2. Fix it in that layer
+3. Remove compensating code from the other layer
+4. If time pressure requires a band-aid: mark it with `// BAND-AID — Rule 64`
+   and file the proper fix in the outbox carry-forward. Band-aids must be
+   removed within 2 sessions.
+
+**Violation test:** `grep -r "BAND-AID\|normalization\|normalize.*payload\|
+field.*mapping" index.html` — any match is either a documented temporary
+band-aid or an undocumented violation.
+
+---
+
+## Rule 65 — Session handoff includes integration state (HANDOFF-INTEGRATION-A)
+
+**Added:** June 18 2026
+**Incident:** CC session handoff said "all five commits pushed, smoke 678/0"
+with no mention that the relay response shape didn't match client expectations,
+the date format was incompatible, or 4 wiring items were deferred.
+**Severity:** Next session built on false confidence.
+
+Every session that touches a feature spanning relay + client must document
+in the outbox carry-forward or HANDOFF.md:
+
+1. **RELAY CONTRACT**
+   - Endpoint URL
+   - Response shape with exact field names
+   - Cache TTL
+   - Date format accepted
+
+2. **CLIENT CONSUMER**
+   - Function name that calls the endpoint
+   - Expected input shape (what fields it destructures)
+   - Where it renders (DOM selector or injection target)
+
+3. **INTEGRATION STATUS** — one of:
+   - **VERIFIED:** Full path tested (curl → fetch → render → visible in DOM)
+   - **STAGED:** Code exists, not wired, deferred items listed
+   - **UNTESTED:** Wired but not verified end-to-end
+
+4. **KNOWN MISMATCHES**
+   - Any field name differences between relay output and client expectation
+   - Any date/format differences
+   - Any shape differences (flat vs nested, array vs object)
+
+**A handoff that says "smoke passes" without integration status is a Rule 65
+violation.** The next session will discover the same bugs this session should
+have documented.
