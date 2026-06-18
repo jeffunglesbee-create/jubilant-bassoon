@@ -4243,17 +4243,17 @@ assert('A646 — buildGolfPromptContext defined and does NOT reference strokes-g
   })(),
   'CC-CMD-2026-06-17 Commit D: golf-specific journalism prompt context. Translates GIR%, driving distance, accuracy, putts/GIR, and sand saves into narrative anchors with tour-average reference points so the model can frame stats in prose without inventing numbers. ESPN does not surface strokes gained (PGA Tour proprietary) — the helper must NEVER reference strokes gained in any form (neither to include nor as a forbidden-phrase warning), so the prompt simply never raises the concept.');
 
-// ── A649 / CC-CMD-2026-06-17 Client Golf Proper Fix: buildSlashGolfGamesForToday wired into slashGolfPrefetchAll ──
-assert('A649 — slashGolfPrefetchAll backfills allData.sports Golf section via buildSlashGolfGamesForToday when missing',
-  // slashGolfPrefetchAll references buildSlashGolfGamesForToday (formerly an orphan definition).
-  /slashGolfPrefetchAll[\s\S]+?buildSlashGolfGamesForToday\(\)/.test(html) &&
-  // Backfill guard: only creates the section if it does not already exist.
+// ── A649 / Golf section creation: ESPN enriched is PRIMARY source ──
+assert('A649 — ESPN enriched loadPGASlate callback creates Golf section in allData.sports when missing',
+  // ESPN creates the Golf section at T+4000ms — not SlashGolf.
+  /ESPN enriched is the PRIMARY Golf section creator/.test(html) &&
+  // Section creation guard: hasGolfSection check before push
   /hasGolfSection = \(allData\?\.sports \|\| \[\]\)\.some/.test(html) &&
-  // Pushes a Golf section with the returned games array.
-  /allData\.sports\.push\(\{ sport: 'Golf', games: golfGames \}\)/.test(html) &&
-  // Calls scheduleRenderAll so the section appears in the DOM.
+  // Creates section with sport: 'Golf'
+  /allData\.sports\.push\(\{ sport: 'Golf'/.test(html) &&
+  // Calls scheduleRenderAll after creation
   /scheduleRenderAll\(\)/.test(html),
-  'CC-CMD-2026-06-17 Client Golf Proper Fix: buildSlashGolfGamesForToday was defined (line ~14715) but had no callers — orphan code. Now invoked from slashGolfPrefetchAll step 2b, gated on absence of an existing Golf section. The hardcoded golfGames array in buildTodaySchedule is intentionally empty by design; golf is data-driven. Without this wiring, active SlashGolf tournaments produced no .game-card target for injectSlashGolfLeaderNotes or for ESPN PGA injectPGALeaderboard (T+4000ms) to attach to. The schedule fetch is sessionStorage-cached so the extra call costs nothing on the budget.');
+  'ESPN enriched is the primary PGA Tour Golf section creator. SlashGolf is supplemental for LIV/DP World/LPGA only. The loadPGASlate callback (T+4000ms) creates the Golf section from relay data and calls scheduleRenderAll, then injectPGALeaderboard attaches the leaderboard table.');
 
 // ── A650 / CC-CMD-2026-06-18 Client Golf Band-Aid Removal: relay returns canonical shape, normalization deleted ──
 assert('A650 — loadPGASlate consumes canonical /v2/golf/enriched shape with no band-aids; derived metrics in standalone computeGolfDerivedMetrics',
