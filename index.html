@@ -1548,6 +1548,32 @@ body::before{
 .golf-lb-score.lb-even{color:var(--text);opacity:.7}
 .golf-lb-score.lb-over{color:var(--muted);opacity:.7}
 @media(max-width:600px){.golf-leaderboard{padding:.25rem .65rem .35rem}.golf-lb-row{font-size:.62rem}}
+/* ESPN PGA enriched leaderboard — supplements SlashGolf with GIR/drive stats.
+   Renders inside an existing golf card via injectPGALeaderboard. Aesthetic
+   matches .golf-leaderboard (Chakra Petch / mono columns, gold accent, top-3
+   row emphasis) but uses a table layout to carry the extra Today/Thru/GIR/
+   Drive columns the SlashGolf strip doesn't surface. */
+.pga-card{padding:.3rem .85rem .45rem;border-top:1px solid rgba(201,168,76,.18);margin-top:.25rem}
+.pga-eyebrow{font-size:.6rem;color:var(--gold2);font-weight:700;letter-spacing:.07em;text-transform:uppercase;opacity:.85;margin-bottom:.18rem}
+.pga-title{font-family:var(--ff-display);font-size:.85rem;font-weight:700;color:var(--white);letter-spacing:-.01em;line-height:1.25}
+.pga-meta{font-size:.6rem;color:var(--muted);letter-spacing:.03em;margin-top:.1rem}
+.pga-head{margin-bottom:.35rem}
+.pga-upcoming-date{font-size:.62rem;color:var(--muted);font-family:var(--ff-mono);margin-top:.2rem}
+.pga-leaderboard{width:100%;border-collapse:collapse;font-size:.6rem;font-family:var(--ff-mono);color:var(--muted)}
+.pga-leaderboard th{text-align:right;color:var(--gold2);font-weight:600;font-size:.55rem;letter-spacing:.05em;text-transform:uppercase;opacity:.75;padding:.15rem .25rem .2rem;border-bottom:1px solid rgba(201,168,76,.18);white-space:nowrap}
+.pga-leaderboard th:nth-child(2){text-align:left}
+.pga-leaderboard td{padding:.2rem .25rem;text-align:right;border-bottom:1px solid rgba(255,255,255,.03);white-space:nowrap}
+.pga-leaderboard tr.pga-row td.pga-name{text-align:left;overflow:hidden;text-overflow:ellipsis;max-width:8rem;color:var(--text)}
+.pga-leaderboard tr.pga-row td.pga-pos{opacity:.6}
+.pga-leaderboard tr.pga-row:nth-child(-n+3) td{color:var(--text);font-weight:600}
+.pga-leaderboard tr.pga-row:hover td{background:rgba(255,255,255,.03)}
+@media(max-width:600px){
+  .pga-card{padding:.25rem .65rem .35rem}
+  .pga-leaderboard{font-size:.56rem}
+  /* Drop GIR + Drive columns on phone portrait — keep core leaderboard cols */
+  .pga-leaderboard th:nth-child(6),.pga-leaderboard th:nth-child(7),
+  .pga-leaderboard td.pga-gir,.pga-leaderboard td.pga-drive{display:none}
+}
 .importance-badge{display:inline-flex;align-items:center;gap:.25rem;font-size:.6rem;font-weight:700;letter-spacing:.04em;padding:.15rem .4rem;border-radius:3px;margin:.1rem .85rem .15rem;width:fit-content}
 .importance-badge.series-deciding{background:rgba(251,191,36,.15);color:#fbbf24;border:1px solid rgba(251,191,36,.35)}
 .importance-badge.elimination{background:rgba(239,68,68,.12);color:#f87171;border:1px solid rgba(239,68,68,.3)}
