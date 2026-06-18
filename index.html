@@ -15034,22 +15034,22 @@ function buildGolfPromptContext(pgaData) {
     const name = p.name || p.displayName || `${p.firstName||''} ${p.lastName||''}`.trim();
     const s = p.stats || {};
     const bits = [];
-    if (s.gir != null) {
+    if (s.gir != null && s.gir > 0) {
       const v = Math.round(s.gir);
       bits.push(`GIR ${v}% (tour avg ~65%; ${v >= 75 ? 'elite ball-striking' : v >= 65 ? 'on tour avg' : 'below tour avg'})`);
     }
-    if (s.drivingDistance != null) {
+    if (s.drivingDistance != null && s.drivingDistance > 0) {
       const v = Math.round(s.drivingDistance);
       bits.push(`drives ${v}yd${v >= 310 ? ' (long off the tee)' : ''}`);
     }
-    if (s.drivingAccuracy != null) {
+    if (s.drivingAccuracy != null && s.drivingAccuracy > 0) {
       const v = Math.round(s.drivingAccuracy);
       bits.push(`fairways ${v}%${v >= 68 ? ' (accurate)' : v < 55 ? ' (wayward)' : ''}`);
     }
-    if (s.puttsPerGir != null) {
+    if (s.puttsPerGir != null && s.puttsPerGir > 0) {
       bits.push(`${(+s.puttsPerGir).toFixed(2)} putts/GIR${(+s.puttsPerGir) <= 1.75 ? ' (sharp on the greens)' : ''}`);
     }
-    if (s.sandSaves != null) {
+    if (s.sandSaves != null && s.sandSaves > 0) {
       const v = Math.round(s.sandSaves);
       bits.push(`sand saves ${v}%`);
     }
