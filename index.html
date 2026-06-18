@@ -14919,6 +14919,7 @@ async function loadPGASlate() {
     if (data) {
       if (data.eventName && !data.name) data.name = data.eventName;
       if (data.leaderboard) {
+        // Phase 1: normalize flat relay fields → nested stats object
         data.leaderboard.forEach(p => {
           if (!p.stats) {
             p.stats = {};
@@ -14930,6 +14931,55 @@ async function loadPGASlate() {
           }
           if (!p.position && p.pos) p.position = p.pos;
         });
+        // Phase 2: compute field averages from the leaderboard for derived metrics.
+        // Only meaningful once round data populates (pre-tournament stats are 0/null).
+        const lb = data.leaderboard.filter(p => p.stats && p.stats.gir > 0);
+        if (lb.length >= 10) {
+          const avg = (arr, fn) => { const vals = arr.map(fn).filter(v => v != null && v > 0); return vals.length ? vals.reduce((a,b) => a+b, 0) / vals.length : null; };
+          const fieldAvg = {
+            gir: avg(lb, p => p.stats.gir),
+            dist: avg(lb, p => p.stats.drivingDistance),
+            acc: avg(lb, p => p.stats.drivingAccuracy),
+            ppg: avg(lb, p => p.stats.puttsPerGir),
+          };
+          data._fieldAvg = fieldAvg;
+          // Phase 3: derive per-player advanced metrics
+          data.leaderboard.forEach(p => {
+            const s = p.stats;
+            if (!s || !s.gir || s.gir <= 0) return;
+            const d = s._derived = {};
+            // Ball-striking composite (GIR-weighted)
+            if (s.gir != null && s.drivingAccuracy != null) {
+              d.ballStriking = Math.round(s.gir * 0.7 + s.drivingAccuracy * 0.3);
+            }
+            // SG: Putting proxy — (tourAvg - playerPPG) × greensHitPerRound
+            if (s.puttsPerGir != null && fieldAvg.ppg != null) {
+              const greensPerRound = (s.gir / 100) * 18;
+              d.sgPuttingEst = +((fieldAvg.ppg - s.puttsPerGir) * greensPerRound).toFixed(2);
+            }
+            // SG: Approach proxy — GIR delta × 18 × 0.4 (Broadie scaling)
+            if (fieldAvg.gir != null) {
+              d.sgApproachEst = +(((s.gir - fieldAvg.gir) / 100) * 18 * 0.4).toFixed(2);
+            }
+            // SG: Off-the-tee proxy — distance advantage + accuracy factor
+            if (s.drivingDistance != null && fieldAvg.dist != null) {
+              const distAdv = (s.drivingDistance - fieldAvg.dist) / 10 * 0.18;
+              const accFactor = (s.drivingAccuracy != null && fieldAvg.acc != null)
+                ? (s.drivingAccuracy - fieldAvg.acc) / 100 * 0.5 : 0;
+              d.sgOTTEst = +(distAdv + accFactor).toFixed(2);
+            }
+            // Momentum — round-over-round delta if linescores available
+            if (p.rounds && p.rounds.length >= 2) {
+              const scores = p.rounds.map(r => typeof r === 'number' ? r : (r && r.score ? r.score : null)).filter(v => v != null);
+              if (scores.length >= 2) {
+                d.momentum = scores[scores.length - 1] - scores[scores.length - 2];
+                d.trend = scores.length >= 3
+                  ? (scores.slice(-3).reduce((a,b) => a+b, 0) / 3 < scores.slice(0, -1).reduce((a,b) => a+b, 0) / (scores.length - 1) ? 'improving' : 'steady')
+                  : null;
+              }
+            }
+          });
+        }
       }
     }
     try { sessionStorage.setItem(cacheKey, JSON.stringify({ ts: Date.now(), data })); } catch(_) {}
@@ -15010,6 +15060,22 @@ function buildGolfPromptContext(pgaData) {
       bits.push(`sand saves ${v}%`);
     }
     if (bits.length) statLines.push(`${name}: ${bits.join(' · ')}`);
+    // Derived metrics from FIELD analytics engine
+    const d = s._derived || {};
+    const dBits = [];
+    if (d.sgPuttingEst != null && Math.abs(d.sgPuttingEst) >= 0.3) {
+      dBits.push('est. ' + (d.sgPuttingEst > 0 ? '+' : '') + d.sgPuttingEst + ' SG putting/rd');
+    }
+    if (d.sgApproachEst != null && Math.abs(d.sgApproachEst) >= 0.2) {
+      dBits.push('est. ' + (d.sgApproachEst > 0 ? '+' : '') + d.sgApproachEst + ' SG approach/rd');
+    }
+    if (d.ballStriking != null) {
+      dBits.push('ball-striking ' + d.ballStriking + (d.ballStriking >= 75 ? ' (elite)' : d.ballStriking >= 65 ? '' : ' (struggling)'));
+    }
+    if (d.momentum != null && d.momentum !== 0) {
+      dBits.push('momentum ' + (d.momentum > 0 ? '+' : '') + d.momentum + ' vs prev rd');
+    }
+    if (dBits.length) statLines.push('  ' + name + ' FIELD est.: ' + dBits.join(' · '));
   });
 
   const parts = [
@@ -15023,8 +15089,18 @@ function buildGolfPromptContext(pgaData) {
   if (statLines.length) {
     parts.push('Leaders by the numbers:');
     statLines.forEach(l => parts.push('  ' + l));
-    parts.push('Use these stats to anchor narrative — translate the percentages to plain prose (e.g. 78% GIR = ~4 of every 5 greens, well above tour average). Cite only the numbers above; never invent figures the data does not contain.');
+    parts.push('FIELD estimated SG values are derived from traditional stats using Broadie methodology. Label as estimates, not official PGA Tour figures.');
+    parts.push('Use these stats to anchor narrative — translate percentages to plain prose. Cite only the numbers above; never invent figures the data does not contain.');
   }
+  // Field averages block
+  if (pgaData._fieldAvg) {
+    const fa = pgaData._fieldAvg;
+    const faBits = [];
+    if (fa.gir) faBits.push('GIR ' + Math.round(fa.gir) + '%');
+    if (fa.dist) faBits.push('driving ' + Math.round(fa.dist) + 'yd');
+    if (fa.acc) faBits.push('fairways ' + Math.round(fa.acc) + '%');
+    if (fa.ppg) faBits.push('putts/GIR ' + fa.ppg.toFixed(2));
+    if (faBits.length) parts.push('Field averages this week: ' + faBits.join(' \xb7 '));
   return parts.join('\n');
 }
 
