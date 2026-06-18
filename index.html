@@ -14687,6 +14687,25 @@ async function slashGolfPrefetchAll(){
     if(FIELD_DEBUG) console.debug(`[SlashGolf] ${active.length} active/upcoming events`);
     if(!active.length) return;
 
+    // 2b. Backfill the Golf section in allData.sports if buildTodaySchedule
+    // didn't create it. The hardcoded golfGames array in buildTodaySchedule
+    // is intentionally empty — golf is data-driven, populated by SlashGolf
+    // here. Without this backfill, active tournaments have no .game-card
+    // target for injectSlashGolfLeaderNotes (step 4) or for the ESPN PGA
+    // injectPGALeaderboard (T+4000ms boot step) to attach to.
+    // The schedule fetch on line above is sessionStorage-cached, so the
+    // buildSlashGolfGamesForToday call below reuses it for free.
+    try {
+      const hasGolfSection = (allData?.sports || []).some(s => s.sport === 'Golf');
+      if (!hasGolfSection) {
+        const golfGames = await buildSlashGolfGamesForToday();
+        if (golfGames.length && allData?.sports) {
+          allData.sports.push({ sport: 'Golf', games: golfGames });
+          if (typeof scheduleRenderAll === 'function') scheduleRenderAll();
+        }
+      }
+    } catch (_) {}
+
     // 3. Leaderboards ONLY for in-progress events (not upcoming)
     // On Mon-Wed there are no in-progress events → 0 leaderboard requests
     const inProgress = active.filter(t => {
