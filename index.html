@@ -14897,7 +14897,8 @@ function injectPGALeaderboard(pgaData) {
 // SLASH_GOLF_DAILY_LIMIT budget.
 async function loadPGASlate() {
   const today = (typeof TODAY_ISO !== 'undefined') ? TODAY_ISO : new Date().toISOString().slice(0,10);
-  const cacheKey = `pga:${today}`;
+  const espnDateForCache = today.replace(/-/g, '');
+  const cacheKey = `pga:${espnDateForCache}`;
   try {
     const cached = sessionStorage.getItem(cacheKey);
     if (cached) {
@@ -14908,7 +14909,8 @@ async function loadPGASlate() {
   const base = (typeof V2_RELAY_BASE !== 'undefined')
     ? V2_RELAY_BASE : 'https://field-relay-nba.jeffunglesbee.workers.dev';
   try {
-    const r = await fetch(`${base}/v2/golf/enriched?date=${today}`, {
+    const espnDate = today.replace(/-/g, ''); // ESPN expects YYYYMMDD, not YYYY-MM-DD
+    const r = await fetch(`${base}/v2/golf/enriched?date=${espnDate}`, {
       signal: AbortSignal.timeout(8000),
     });
     if (!r.ok) return null;
