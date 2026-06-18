@@ -4202,6 +4202,20 @@ assert('A639 — DEBRIEF chip onclick references toggleJournalismView so clickin
   /toggleJournalismView[\s\S]{0,400}label: 'DEBRIEF'/.test(html),
   'CC-CMD-2026-06-17 DEBRIEF chip: the onclick handler built in buildVibeChips for the post-state chip checks document.body.classList.contains("journalism-mode") and calls toggleJournalismView() when the journalism tab is not already open, then scrollIntoView on the data-gameid hook 150ms later. The vibe-chip render template at the card surface (.ganalytics) emits the onclick attribute conditionally only when v.onclick is present.');
 
+// ── A645 / CC-CMD-2026-06-17 ESPN Golf: renderPGALeaderboard + loadPGASlate defined ──
+assert('A645 — renderPGALeaderboard(data) and async loadPGASlate() defined; both branches present',
+  // Renderer defined.
+  /function renderPGALeaderboard\(data\)/.test(html) &&
+  // Active and upcoming branches both present.
+  /data\.active === false/.test(html) &&
+  /class="pga-leaderboard"/.test(html) &&
+  // Loader defined and async.
+  /async function loadPGASlate\(\)/.test(html) &&
+  // Loader hits /v2/golf/enriched and uses TODAY_ISO with sessionStorage cache.
+  /\/v2\/golf\/enriched\?date=/.test(html) &&
+  /sessionStorage\.setItem\(cacheKey/.test(html),
+  'CC-CMD-2026-06-17 Commit B: ESPN PGA leaderboard card. renderPGALeaderboard consumes the enriched response and renders one of two cards — active tournament (header + top-10 with toPar / today / thru / GIR% / drive yd) or upcoming event from nextEvent metadata. Per-player stats degrade gracefully (empty cell when missing). loadPGASlate fetches /v2/golf/enriched?date=TODAY_ISO with sessionStorage 10-min cache. Does not call SlashGolf endpoints; SLASH_GOLF_DAILY_LIMIT is unaffected.');
+
 // ── A644 / CC-CMD-2026-06-17 ESPN Golf: V2_LEAGUES registry + PGA entry ──
 assert('A644 — V2_LEAGUES registers pga with { sport:"golf", league:"pga", label:"PGA TOUR", espnSource:true }',
   // Registry constant defined at module scope (not a property add elsewhere).
