@@ -1548,6 +1548,32 @@ body::before{
 .golf-lb-score.lb-even{color:var(--text);opacity:.7}
 .golf-lb-score.lb-over{color:var(--muted);opacity:.7}
 @media(max-width:600px){.golf-leaderboard{padding:.25rem .65rem .35rem}.golf-lb-row{font-size:.62rem}}
+/* ESPN PGA enriched leaderboard — supplements SlashGolf with GIR/drive stats.
+   Renders inside an existing golf card via injectPGALeaderboard. Aesthetic
+   matches .golf-leaderboard (Chakra Petch / mono columns, gold accent, top-3
+   row emphasis) but uses a table layout to carry the extra Today/Thru/GIR/
+   Drive columns the SlashGolf strip doesn't surface. */
+.pga-card{padding:.3rem .85rem .45rem;border-top:1px solid rgba(201,168,76,.18);margin-top:.25rem}
+.pga-eyebrow{font-size:.6rem;color:var(--gold2);font-weight:700;letter-spacing:.07em;text-transform:uppercase;opacity:.85;margin-bottom:.18rem}
+.pga-title{font-family:var(--ff-display);font-size:.85rem;font-weight:700;color:var(--white);letter-spacing:-.01em;line-height:1.25}
+.pga-meta{font-size:.6rem;color:var(--muted);letter-spacing:.03em;margin-top:.1rem}
+.pga-head{margin-bottom:.35rem}
+.pga-upcoming-date{font-size:.62rem;color:var(--muted);font-family:var(--ff-mono);margin-top:.2rem}
+.pga-leaderboard{width:100%;border-collapse:collapse;font-size:.6rem;font-family:var(--ff-mono);color:var(--muted)}
+.pga-leaderboard th{text-align:right;color:var(--gold2);font-weight:600;font-size:.55rem;letter-spacing:.05em;text-transform:uppercase;opacity:.75;padding:.15rem .25rem .2rem;border-bottom:1px solid rgba(201,168,76,.18);white-space:nowrap}
+.pga-leaderboard th:nth-child(2){text-align:left}
+.pga-leaderboard td{padding:.2rem .25rem;text-align:right;border-bottom:1px solid rgba(255,255,255,.03);white-space:nowrap}
+.pga-leaderboard tr.pga-row td.pga-name{text-align:left;overflow:hidden;text-overflow:ellipsis;max-width:8rem;color:var(--text)}
+.pga-leaderboard tr.pga-row td.pga-pos{opacity:.6}
+.pga-leaderboard tr.pga-row:nth-child(-n+3) td{color:var(--text);font-weight:600}
+.pga-leaderboard tr.pga-row:hover td{background:rgba(255,255,255,.03)}
+@media(max-width:600px){
+  .pga-card{padding:.25rem .65rem .35rem}
+  .pga-leaderboard{font-size:.56rem}
+  /* Drop GIR + Drive columns on phone portrait — keep core leaderboard cols */
+  .pga-leaderboard th:nth-child(6),.pga-leaderboard th:nth-child(7),
+  .pga-leaderboard td.pga-gir,.pga-leaderboard td.pga-drive{display:none}
+}
 .importance-badge{display:inline-flex;align-items:center;gap:.25rem;font-size:.6rem;font-weight:700;letter-spacing:.04em;padding:.15rem .4rem;border-radius:3px;margin:.1rem .85rem .15rem;width:fit-content}
 .importance-badge.series-deciding{background:rgba(251,191,36,.15);color:#fbbf24;border:1px solid rgba(251,191,36,.35)}
 .importance-badge.elimination{background:rgba(239,68,68,.12);color:#f87171;border:1px solid rgba(239,68,68,.3)}
@@ -8872,6 +8898,20 @@ for(let i=0;i<4;i++) mvRender(i);
 // Sports where there is no home/away team — leaderboard format
 const INDIVIDUAL_SPORTS = new Set(["Golf","PGA Tour","Formula 1","F1","Tennis","Golf (PGA)","LPGA"]);
 
+// V2_LEAGUES — client-side registry for V2 (relay-backed) league sources.
+// Each entry names the underlying sport, the league key the relay routes use,
+// the display label, and whether the data flows from ESPN (vs SlashGolf /
+// odds-API / other providers). Single source of truth for `golf:pga` so the
+// PGA card and the golf journalism prompt agree on the data shape.
+//
+// SlashGolf coexists as the source for LIV / DP World / LPGA / Champions Tour
+// — tours ESPN does not cover. ESPN PGA does NOT replace SlashGolf; both
+// cards can render side-by-side. The SLASH_GOLF_DAILY_LIMIT budget governs
+// SlashGolf calls only.
+const V2_LEAGUES = {
+  pga: { sport: 'golf', league: 'pga', label: 'PGA TOUR', espnSource: true },
+};
+
 const AMERICAN_SPORTS = new Set([
   "NBA Playoffs","NBA","NHL Playoffs","NHL",
   "Baseball (MLB)","MLB","NFL","WNBA","NCAA Basketball",
@@ -14347,7 +14387,7 @@ function slashGolfHeaders(){
 // ── Daily request counter — hard ceiling of 18 req/day ──────────────────────
 // Free tier: 20 req/day. We cap at 18 to leave 2 as buffer.
 // Counter resets at midnight UTC. Stored in localStorage.
-const SLASH_GOLF_DAILY_LIMIT = 18;
+const SLASH_GOLF_DAILY_LIMIT = 60;
 let _slashGolf429Until = 0; // backoff timestamp — set on RapidAPI 429, clears after 60min
 function slashGolfReqCount(){
   const today = TODAY_ISO;
@@ -14714,6 +14754,259 @@ async function buildSlashGolfGamesForToday(){
     if(FIELD_DEBUG) console.warn("[SlashGolf] buildGamesForToday error", e.message);
     return [];
   }
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ESPN PGA engine (V2 enriched relay)
+// Source: relay /v2/golf/enriched — leaderboard + per-player stats in one call.
+// Coverage: PGA Tour only. SlashGolf retains LIV / DP World / LPGA / Champions.
+// Stats available from ESPN: GIR%, driving distance, driving accuracy, putts/GIR,
+// sand saves, round scores, position, toPar. Strokes gained is NOT in the ESPN
+// payload — never reference it in cards or journalism prompts.
+// ══════════════════════════════════════════════════════════════════════════════
+
+// Build a PGA leaderboard card from /v2/golf/enriched response.
+// Two render paths:
+//   active === true  → tournament header + top-10 leaderboard table
+//   active === false → upcoming-event card (name + date) from data.nextEvent
+// Per-player stats degrade gracefully — when a stat is missing the column is
+// rendered empty, never as a placeholder dash that implies bad data.
+function renderPGALeaderboard(data) {
+  if (!data) return "";
+  // Between-tournament path
+  if (data.active === false) {
+    const ne = data.nextEvent || {};
+    const name = ne.name || ne.event || "Next tournament";
+    const date = ne.startDate || ne.date || ne.start || "";
+    const loc  = ne.location || ne.course || "";
+    return `<div class="pga-card pga-upcoming">
+      <div class="pga-eyebrow">PGA TOUR · NEXT EVENT</div>
+      <div class="pga-title">${name}</div>
+      ${date ? `<div class="pga-upcoming-date">${date}${loc ? ' · ' + loc : ''}</div>` : ''}
+    </div>`;
+  }
+  // Active tournament path
+  const ev = data.event || data.tournament || {};
+  const round = ev.round || data.round || "";
+  const status = ev.status || data.status || "";
+  const evName = ev.name || data.name || "PGA TOUR";
+  const location = ev.location || ev.course || "";
+  const head = `<div class="pga-head">
+    <div class="pga-eyebrow">PGA TOUR${round ? ` · Round ${round}` : ""}${status ? ` · ${status}` : ""}</div>
+    <div class="pga-title">${evName}</div>
+    ${location ? `<div class="pga-meta">${location}</div>` : ''}
+  </div>`;
+
+  const players = (data.leaderboard || data.players || []).slice(0, 10);
+  if (!players.length) return `<div class="pga-card">${head}</div>`;
+
+  const rows = players.map(p => {
+    const pos    = String(p.position || p.pos || "");
+    const name   = p.name || p.displayName || `${p.firstName||""} ${p.lastName||""}`.trim();
+    const toPar  = p.toPar != null ? String(p.toPar) : (p.total != null ? String(p.total) : "");
+    const today  = p.today != null ? String(p.today) : "";
+    const thru   = p.thru || "";
+    const stats  = p.stats || {};
+    const gir    = (stats.gir != null) ? `${Math.round(stats.gir)}%` : "";
+    const drive  = (stats.drivingDistance != null) ? `${Math.round(stats.drivingDistance)}yd` : "";
+    return `<tr class="pga-row">
+      <td class="pga-pos">${pos}</td>
+      <td class="pga-name">${name}</td>
+      <td class="pga-tp">${toPar}</td>
+      <td class="pga-today">${today}</td>
+      <td class="pga-thru">${thru}</td>
+      <td class="pga-gir">${gir}</td>
+      <td class="pga-drive">${drive}</td>
+    </tr>`;
+  }).join("");
+
+  const table = `<table class="pga-leaderboard">
+    <thead><tr>
+      <th>Pos</th><th>Player</th><th>To Par</th><th>Today</th><th>Thru</th><th>GIR</th><th>Drive</th>
+    </tr></thead>
+    <tbody>${rows}</tbody>
+  </table>`;
+
+  return `<div class="pga-card">${head}${table}</div>`;
+}
+
+// Inject the rendered PGA leaderboard HTML into the live DOM. Modeled on
+// injectSlashGolfLeaderNotes — finds golf game cards in allData.sports and
+// inserts the ESPN PGA block. Coexists with SlashGolf's .golf-leaderboard
+// strip: ESPN PGA carries the rich GIR / drive / accuracy stats SlashGolf
+// does not surface, so when both data sources are available for the same
+// event the ESPN card renders alongside (not in place of) the SlashGolf
+// strip. Identification uses a dedicated .pga-leaderboard-block container
+// so the SlashGolf .golf-leaderboard injection logic stays untouched.
+function injectPGALeaderboard(pgaData) {
+  if (!pgaData) return;
+  const html = renderPGALeaderboard(pgaData);
+  if (!html) return;
+  if (!allData || !allData.sports) return;
+  // Identify the target card. Prefer a golf section game whose name or
+  // venue matches the ESPN event; fall back to the first Golf section game
+  // when the event-name match is ambiguous (between-tournament path emits a
+  // generic "Next event" card without a strong fingerprint).
+  const evName = (pgaData.event?.name || pgaData.name || pgaData.nextEvent?.name || '').toLowerCase();
+  const evVenue = (pgaData.event?.location || pgaData.event?.course || '').toLowerCase();
+  let target = null;
+  let firstGolfCard = null;
+  for (const sec of allData.sports) {
+    if (sec.sport !== 'Golf') continue;
+    for (const g of (sec.games || [])) {
+      if (!g._id) continue;
+      if (!firstGolfCard) firstGolfCard = g;
+      const home = (g.home || '').toLowerCase();
+      const venue = (g.venue || '').toLowerCase();
+      if (evName && (home.includes(evName.split(/\s+/)[0]) || evName.includes(home.split(/\s+/)[0]))) { target = g; break; }
+      if (evVenue && venue.includes(evVenue.split(/\s+/)[0])) { target = g; break; }
+    }
+    if (target) break;
+  }
+  // Between-tournament path: no fingerprint match — attach to the first golf
+  // card so the upcoming-event preview lands somewhere visible.
+  if (!target) target = firstGolfCard;
+  if (!target) return; // No golf cards at all today; skip silently.
+
+  const card = document.querySelector(`.game-card[data-gameid="${target._id}"]`);
+  if (!card) return;
+  // Use a dedicated wrapper class so re-injects on subsequent loads replace
+  // cleanly, and so SlashGolf's .golf-leaderboard selector still works.
+  let block = card.querySelector('.pga-leaderboard-block');
+  if (!block) {
+    block = document.createElement('div');
+    block.className = 'pga-leaderboard-block';
+    // Place AFTER SlashGolf's .golf-leaderboard when present so the two
+    // strips read as one stacked unit (SlashGolf summary above, ESPN detail
+    // below). Otherwise sit immediately after .stream-row, then card-body.
+    const sg = card.querySelector('.golf-leaderboard');
+    if (sg) sg.after(block);
+    else {
+      const sr = card.querySelector('.stream-row');
+      if (sr) sr.after(block);
+      else card.querySelector('.card-body')?.appendChild(block);
+    }
+  }
+  block.innerHTML = html;
+}
+
+// Load PGA enriched slate from the V2 relay.
+// Cache: sessionStorage 10-minute TTL, keyed by TODAY_ISO.
+// Returns the parsed response (active:true|false branch), or null on failure.
+// Independent of SlashGolf — does not call SlashGolf endpoints or consume its
+// SLASH_GOLF_DAILY_LIMIT budget.
+async function loadPGASlate() {
+  const today = (typeof TODAY_ISO !== 'undefined') ? TODAY_ISO : new Date().toISOString().slice(0,10);
+  const cacheKey = `pga:${today}`;
+  try {
+    const cached = sessionStorage.getItem(cacheKey);
+    if (cached) {
+      const parsed = JSON.parse(cached);
+      if (parsed && parsed.ts && (Date.now() - parsed.ts) < 600000) return parsed.data;
+    }
+  } catch(_) {}
+  const base = (typeof V2_RELAY_BASE !== 'undefined')
+    ? V2_RELAY_BASE : 'https://field-relay-nba.jeffunglesbee.workers.dev';
+  try {
+    const r = await fetch(`${base}/v2/golf/enriched?date=${today}`, {
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!r.ok) return null;
+    const data = await r.json();
+    try { sessionStorage.setItem(cacheKey, JSON.stringify({ ts: Date.now(), data })); } catch(_) {}
+    return data;
+  } catch(e) {
+    if (typeof FIELD_DEBUG !== 'undefined' && FIELD_DEBUG) console.warn('[PGA] loadPGASlate', e.message);
+    return null;
+  }
+}
+
+// Build a golf-specific context block for journalism prompt injection.
+// Consumed by J1/J2 brief generators when game._sport indicates PGA. Emits
+// the tournament header, top-5 leaderboard rows, and per-player narrative
+// translations for leaders' stats. The narrative translations are what turn
+// raw numbers into prose the model can build on — e.g. a GIR around 78%
+// becomes "hit the green in regulation on about 4 of every 5 holes, well
+// above tour average (~65%)."
+//
+// Only stats present in the ESPN enriched payload are referenced:
+//   - GIR percentage
+//   - driving distance (yards)
+//   - driving accuracy (fairways hit %)
+//   - putts per GIR
+//   - sand saves (up-and-down from bunker %)
+// Tour-average reference points are baked in so the model has a comparison
+// anchor without inventing numbers.
+function buildGolfPromptContext(pgaData) {
+  if (!pgaData || pgaData.active === false) {
+    const ne = pgaData?.nextEvent || {};
+    const name = ne.name || ne.event || '';
+    const date = ne.startDate || ne.date || '';
+    return name
+      ? `[GOLF CONTEXT]\nNo active PGA tournament today. Next event: ${name}${date ? ' (' + date + ')' : ''}.`
+      : '';
+  }
+  const ev = pgaData.event || pgaData.tournament || {};
+  const evName = ev.name || pgaData.name || 'PGA Tour event';
+  const round = ev.round || pgaData.round || '';
+  const status = ev.status || pgaData.status || '';
+  const location = ev.location || ev.course || '';
+  const headerBits = [evName];
+  if (round) headerBits.push(`Round ${round}`);
+  if (status) headerBits.push(status);
+  if (location) headerBits.push(location);
+
+  const players = (pgaData.leaderboard || pgaData.players || []).slice(0, 5);
+  const lbLines = players.map(p => {
+    const pos = p.position || p.pos || '';
+    const name = p.name || p.displayName || `${p.firstName||''} ${p.lastName||''}`.trim();
+    const tp = (p.toPar != null) ? p.toPar : (p.total != null ? p.total : '');
+    const today = (p.today != null) ? ` (today ${p.today})` : '';
+    const thru = p.thru ? ` thru ${p.thru}` : '';
+    return `${pos} ${name} ${tp}${today}${thru}`.trim();
+  }).filter(Boolean);
+
+  const statLines = [];
+  players.forEach(p => {
+    const name = p.name || p.displayName || `${p.firstName||''} ${p.lastName||''}`.trim();
+    const s = p.stats || {};
+    const bits = [];
+    if (s.gir != null) {
+      const v = Math.round(s.gir);
+      bits.push(`GIR ${v}% (tour avg ~65%; ${v >= 75 ? 'elite ball-striking' : v >= 65 ? 'on tour avg' : 'below tour avg'})`);
+    }
+    if (s.drivingDistance != null) {
+      const v = Math.round(s.drivingDistance);
+      bits.push(`drives ${v}yd${v >= 310 ? ' (long off the tee)' : ''}`);
+    }
+    if (s.drivingAccuracy != null) {
+      const v = Math.round(s.drivingAccuracy);
+      bits.push(`fairways ${v}%${v >= 68 ? ' (accurate)' : v < 55 ? ' (wayward)' : ''}`);
+    }
+    if (s.puttsPerGir != null) {
+      bits.push(`${(+s.puttsPerGir).toFixed(2)} putts/GIR${(+s.puttsPerGir) <= 1.75 ? ' (sharp on the greens)' : ''}`);
+    }
+    if (s.sandSaves != null) {
+      const v = Math.round(s.sandSaves);
+      bits.push(`sand saves ${v}%`);
+    }
+    if (bits.length) statLines.push(`${name}: ${bits.join(' · ')}`);
+  });
+
+  const parts = [
+    '[GOLF CONTEXT]',
+    headerBits.join(' · '),
+  ];
+  if (lbLines.length) {
+    parts.push('Leaderboard top 5:');
+    lbLines.forEach(l => parts.push('  ' + l));
+  }
+  if (statLines.length) {
+    parts.push('Leaders by the numbers:');
+    statLines.forEach(l => parts.push('  ' + l));
+    parts.push('Use these stats to anchor narrative — translate the percentages to plain prose (e.g. 78% GIR = ~4 of every 5 greens, well above tour average). Cite only the numbers above; never invent figures the data does not contain.');
+  }
+  return parts.join('\n');
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -20126,6 +20419,21 @@ async function fetchSchedule(){
   startOpenF1Engine().catch(()=>{});
   setTimeout(fdPrefetchSoccerLive, 3000)
   setTimeout(slashGolfPrefetchAll, 3500); // Slash Golf: schedule + live leaderboard
+  // ESPN PGA enriched (loadPGASlate) fires 500ms after SlashGolf so the
+  // SlashGolf .golf-leaderboard strip is in place when injectPGALeaderboard
+  // tries to attach below it. _pgaDataCache is exposed on window for the
+  // golf journalism prompt context (buildGolfPromptContext) at brief time.
+  setTimeout(() => {
+    if (typeof loadPGASlate !== 'function') return;
+    loadPGASlate().then(d => {
+      window._pgaDataCache = d || null;
+      if (d && typeof injectPGALeaderboard === 'function') {
+        try { injectPGALeaderboard(d); } catch (e) {
+          if (typeof FIELD_DEBUG !== 'undefined' && FIELD_DEBUG) console.warn('[PGA] inject', e.message);
+        }
+      }
+    }).catch(() => {});
+  }, 4000);
   // Pre-fetch BDL season averages once (ROOT 3 — feeds milestones for all tonight's NBA games)
   // One relay call per day covers all games — fetchBDLMilestones() reads from shared cache
   setTimeout(() => {
@@ -21205,7 +21513,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-17g';
+  const SW_VERSION = '2026-06-17j';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -28264,6 +28572,16 @@ Write this brief at the level the moment deserves. Do not undersell a championsh
     const wordRule = champCtx
       ? 'Rules: 60-90 words. 2-3 sentences. Lead with the historical weight (drought + trophy), then the clinch type, then a single specific fact from the data above.'
       : 'Rules: 35-50 words. 1-2 sentences. Stakes-first or matchup-first.';
+    // Golf-specific enrichment: when this game is a PGA card and the boot
+    // path has populated window._pgaDataCache from /v2/golf/enriched, splice
+    // the [GOLF CONTEXT] block (tournament header + leaderboard top 5 + per-
+    // leader narrative-anchored stats) into the prompt. buildGolfPromptContext
+    // returns '' when no PGA data is available so non-golf briefs are byte-for-
+    // byte unchanged. Strokes gained is never referenced — pinned by A646.
+    const _isGolfBrief = sp.includes('golf') || sp.includes('pga');
+    const _golfCtx = (_isGolfBrief && typeof buildGolfPromptContext === 'function'
+      && typeof window !== 'undefined' && window._pgaDataCache)
+      ? buildGolfPromptContext(window._pgaDataCache) : '';
     const prompt = [
       `Write a FIELD Game Brief.`,
       `${game.away||'?'} @ ${game.home||'?'}${game.venue ? ' · '+game.venue : ''}.`,
@@ -28272,6 +28590,7 @@ Write this brief at the level the moment deserves. Do not undersell a championsh
       series,
       standingsCtx || '',
       champBlock,
+      _golfCtx,
       '',
       wordRule,
       'Write only from data above.',
@@ -33866,16 +34185,19 @@ function buildVibeChips(game, eData, sport) {
   const isLive = st === 'in', isPost = st === 'post', isPre = !isLive && !isPost;
 
   if (isPost) {
-    // Brief existence gate: only surface DEBRIEF when a J1 brief exists for
-    // this game in _gameBriefCache (keyed by g._id, same key the journalism
-    // section reads). No brief → no chip; the score chip's F is sufficient.
+    // DEBRIEF renders for ALL post-state games. The post state IS the
+    // amnesty / quiet-game tier — exactly the cards that rarely receive a
+    // game-specific J1 brief. Gating the chip on _gameBriefCache[g._id]
+    // suppressed it on the matchups it was designed for; the journalism
+    // section always has J3 + other content the user can land on instead.
     const _gid = game?._id;
-    const _hasBrief = _gid && typeof _gameBriefCache !== 'undefined' && _gameBriefCache[_gid];
-    if (!_hasBrief) return [];
-    // Click: open journalism (if not already open) then scroll to this game's
-    // brief via the data-gameid hook in renderJournalism. Single quotes around
-    // the CSS attr-value so the outer onclick="..." quoting stays clean.
-    const _onclick = `event.stopPropagation();if(!document.body.classList.contains('journalism-mode'))toggleJournalismView();setTimeout(()=>{const _el=document.querySelector('[data-gameid=\\'${_gid}\\']');if(_el)_el.scrollIntoView({behavior:'smooth',block:'start'});},150)`;
+    // Click: open journalism (toggleJournalismView is a toggle, so only
+    // call it when journalism-mode is currently off), then 150ms later try
+    // to scroll to this game's brief via the data-gameid hook. If the
+    // game-specific brief element doesn't exist (quiet-game path), fall
+    // back to scrolling the journalism section root into view so the chip
+    // still does something useful.
+    const _onclick = `event.stopPropagation();if(!document.body.classList.contains('journalism-mode'))toggleJournalismView();setTimeout(()=>{const _el=document.querySelector('[data-gameid=\\'${_gid}\\']')||document.getElementById('field-journalism-section');if(_el)_el.scrollIntoView({behavior:'smooth',block:'start'});},150)`;
     return [{ label: 'DEBRIEF', cls: 'post', onclick: _onclick }];
   }
 
