@@ -14913,6 +14913,25 @@ async function loadPGASlate() {
     });
     if (!r.ok) return null;
     const data = await r.json();
+    // Normalize enriched payload to match renderPGALeaderboard + buildGolfPromptContext shape.
+    // Relay returns flat fields (gir, driveDistAvg); renderers expect nested p.stats with
+    // canonical names (drivingDistance, drivingAccuracy, puttsPerGir). Also lift eventName → name.
+    if (data) {
+      if (data.eventName && !data.name) data.name = data.eventName;
+      if (data.leaderboard) {
+        data.leaderboard.forEach(p => {
+          if (!p.stats) {
+            p.stats = {};
+            if (p.gir != null) p.stats.gir = p.gir;
+            if (p.driveDistAvg != null) p.stats.drivingDistance = p.driveDistAvg;
+            if (p.driveAccuracyPct != null) p.stats.drivingAccuracy = p.driveAccuracyPct;
+            if (p.puttsGirAvg != null) p.stats.puttsPerGir = p.puttsGirAvg;
+            if (p.sandSaves != null) p.stats.sandSaves = p.sandSaves;
+          }
+          if (!p.position && p.pos) p.position = p.pos;
+        });
+      }
+    }
     try { sessionStorage.setItem(cacheKey, JSON.stringify({ ts: Date.now(), data })); } catch(_) {}
     return data;
   } catch(e) {
