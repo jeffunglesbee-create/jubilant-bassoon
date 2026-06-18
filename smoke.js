@@ -4217,6 +4217,18 @@ assert('A646 — buildGolfPromptContext defined and does NOT reference strokes-g
   })(),
   'CC-CMD-2026-06-17 Commit D: golf-specific journalism prompt context. Translates GIR%, driving distance, accuracy, putts/GIR, and sand saves into narrative anchors with tour-average reference points so the model can frame stats in prose without inventing numbers. ESPN does not surface strokes gained (PGA Tour proprietary) — the helper must NEVER reference strokes gained in any form (neither to include nor as a forbidden-phrase warning), so the prompt simply never raises the concept.');
 
+// ── A647 / CC-CMD-2026-06-17 Client Golf Wiring: injectPGALeaderboard wired into golf cards ──
+assert('A647 — injectPGALeaderboard(pgaData) defined and emits .pga-leaderboard-block alongside .golf-leaderboard',
+  // Inject function defined.
+  /function injectPGALeaderboard\(pgaData\)/.test(html) &&
+  // Renders by calling the renderer.
+  /injectPGALeaderboard[\s\S]{0,400}renderPGALeaderboard\(pgaData\)/.test(html) &&
+  // Uses a dedicated wrapper class so it does not collide with SlashGolf .golf-leaderboard.
+  /pga-leaderboard-block/.test(html) &&
+  // Places the block AFTER SlashGolf's .golf-leaderboard when present.
+  /\.golf-leaderboard'\)[\s\S]{0,80}sg\.after\(block\)/.test(html),
+  'CC-CMD-2026-06-17 Client Golf Wiring Commit 2: ESPN PGA leaderboard DOM injection. Modeled on injectSlashGolfLeaderNotes — finds a golf card in allData.sports (matched by event name or venue, with first-golf-card fallback for between-tournament path), then injects renderPGALeaderboard(pgaData) HTML into a dedicated .pga-leaderboard-block wrapper. Coexists with SlashGolf — ESPN strip sits below the SlashGolf strip so the two read as one stacked unit. SlashGolf .golf-leaderboard selector logic stays untouched; both cards can render side by side per the spec.');
+
 // ── A645 / CC-CMD-2026-06-17 ESPN Golf: renderPGALeaderboard + loadPGASlate defined ──
 assert('A645 — renderPGALeaderboard(data) and async loadPGASlate() defined; both branches present',
   // Renderer defined.

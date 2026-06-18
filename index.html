@@ -14830,6 +14830,66 @@ function renderPGALeaderboard(data) {
   return `<div class="pga-card">${head}${table}</div>`;
 }
 
+// Inject the rendered PGA leaderboard HTML into the live DOM. Modeled on
+// injectSlashGolfLeaderNotes — finds golf game cards in allData.sports and
+// inserts the ESPN PGA block. Coexists with SlashGolf's .golf-leaderboard
+// strip: ESPN PGA carries the rich GIR / drive / accuracy stats SlashGolf
+// does not surface, so when both data sources are available for the same
+// event the ESPN card renders alongside (not in place of) the SlashGolf
+// strip. Identification uses a dedicated .pga-leaderboard-block container
+// so the SlashGolf .golf-leaderboard injection logic stays untouched.
+function injectPGALeaderboard(pgaData) {
+  if (!pgaData) return;
+  const html = renderPGALeaderboard(pgaData);
+  if (!html) return;
+  if (!allData || !allData.sports) return;
+  // Identify the target card. Prefer a golf section game whose name or
+  // venue matches the ESPN event; fall back to the first Golf section game
+  // when the event-name match is ambiguous (between-tournament path emits a
+  // generic "Next event" card without a strong fingerprint).
+  const evName = (pgaData.event?.name || pgaData.name || pgaData.nextEvent?.name || '').toLowerCase();
+  const evVenue = (pgaData.event?.location || pgaData.event?.course || '').toLowerCase();
+  let target = null;
+  let firstGolfCard = null;
+  for (const sec of allData.sports) {
+    if (sec.sport !== 'Golf') continue;
+    for (const g of (sec.games || [])) {
+      if (!g._id) continue;
+      if (!firstGolfCard) firstGolfCard = g;
+      const home = (g.home || '').toLowerCase();
+      const venue = (g.venue || '').toLowerCase();
+      if (evName && (home.includes(evName.split(/\s+/)[0]) || evName.includes(home.split(/\s+/)[0]))) { target = g; break; }
+      if (evVenue && venue.includes(evVenue.split(/\s+/)[0])) { target = g; break; }
+    }
+    if (target) break;
+  }
+  // Between-tournament path: no fingerprint match — attach to the first golf
+  // card so the upcoming-event preview lands somewhere visible.
+  if (!target) target = firstGolfCard;
+  if (!target) return; // No golf cards at all today; skip silently.
+
+  const card = document.querySelector(`.game-card[data-gameid="${target._id}"]`);
+  if (!card) return;
+  // Use a dedicated wrapper class so re-injects on subsequent loads replace
+  // cleanly, and so SlashGolf's .golf-leaderboard selector still works.
+  let block = card.querySelector('.pga-leaderboard-block');
+  if (!block) {
+    block = document.createElement('div');
+    block.className = 'pga-leaderboard-block';
+    // Place AFTER SlashGolf's .golf-leaderboard when present so the two
+    // strips read as one stacked unit (SlashGolf summary above, ESPN detail
+    // below). Otherwise sit immediately after .stream-row, then card-body.
+    const sg = card.querySelector('.golf-leaderboard');
+    if (sg) sg.after(block);
+    else {
+      const sr = card.querySelector('.stream-row');
+      if (sr) sr.after(block);
+      else card.querySelector('.card-body')?.appendChild(block);
+    }
+  }
+  block.innerHTML = html;
+}
+
 // Load PGA enriched slate from the V2 relay.
 // Cache: sessionStorage 10-minute TTL, keyed by TODAY_ISO.
 // Returns the parsed response (active:true|false branch), or null on failure.
