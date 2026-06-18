@@ -8872,6 +8872,20 @@ for(let i=0;i<4;i++) mvRender(i);
 // Sports where there is no home/away team — leaderboard format
 const INDIVIDUAL_SPORTS = new Set(["Golf","PGA Tour","Formula 1","F1","Tennis","Golf (PGA)","LPGA"]);
 
+// V2_LEAGUES — client-side registry for V2 (relay-backed) league sources.
+// Each entry names the underlying sport, the league key the relay routes use,
+// the display label, and whether the data flows from ESPN (vs SlashGolf /
+// odds-API / other providers). Single source of truth for `golf:pga` so the
+// PGA card and the golf journalism prompt agree on the data shape.
+//
+// SlashGolf coexists as the source for LIV / DP World / LPGA / Champions Tour
+// — tours ESPN does not cover. ESPN PGA does NOT replace SlashGolf; both
+// cards can render side-by-side. The SLASH_GOLF_DAILY_LIMIT budget governs
+// SlashGolf calls only.
+const V2_LEAGUES = {
+  pga: { sport: 'golf', league: 'pga', label: 'PGA TOUR', espnSource: true },
+};
+
 const AMERICAN_SPORTS = new Set([
   "NBA Playoffs","NBA","NHL Playoffs","NHL",
   "Baseball (MLB)","MLB","NFL","WNBA","NCAA Basketball",

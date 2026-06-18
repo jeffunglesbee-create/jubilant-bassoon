@@ -4202,6 +4202,17 @@ assert('A639 — DEBRIEF chip onclick references toggleJournalismView so clickin
   /toggleJournalismView[\s\S]{0,400}label: 'DEBRIEF'/.test(html),
   'CC-CMD-2026-06-17 DEBRIEF chip: the onclick handler built in buildVibeChips for the post-state chip checks document.body.classList.contains("journalism-mode") and calls toggleJournalismView() when the journalism tab is not already open, then scrollIntoView on the data-gameid hook 150ms later. The vibe-chip render template at the card surface (.ganalytics) emits the onclick attribute conditionally only when v.onclick is present.');
 
+// ── A644 / CC-CMD-2026-06-17 ESPN Golf: V2_LEAGUES registry + PGA entry ──
+assert('A644 — V2_LEAGUES registers pga with { sport:"golf", league:"pga", label:"PGA TOUR", espnSource:true }',
+  // Registry constant defined at module scope (not a property add elsewhere).
+  /const V2_LEAGUES = \{/.test(html) &&
+  // pga entry with the four required fields.
+  /pga: \{ sport: 'golf', league: 'pga', label: 'PGA TOUR', espnSource: true \}/.test(html) &&
+  // "PGA Tour" remains in INDIVIDUAL_SPORTS so the leaderboard render path
+  // continues to skip the away@home matchup template for PGA games.
+  /INDIVIDUAL_SPORTS = new Set\([^)]*"PGA Tour"/.test(html),
+  'CC-CMD-2026-06-17 Commit A: client-side V2 leagues registry. The pga entry names the relay route key (league:"pga"), the display label, and the espnSource flag so the journalism prompt context and the leaderboard card share a single source of truth. SlashGolf is unaffected — V2_LEAGUES.pga is additive coverage for the tours ESPN provides, not a replacement for SlashGolf coverage of LIV / DP World / LPGA / Champions Tour.');
+
 // ── A641 / CC-CMD-2026-06-17 Viewport flake escalation: chrome D1/D3 continue-on-error ──
 assert('A641 — desktop-chrome-audit.yml D1+D3 matrix job has continue-on-error:true (viewport flake mitigation)',
   (() => {
