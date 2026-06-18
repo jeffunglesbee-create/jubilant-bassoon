@@ -20522,7 +20522,36 @@ async function fetchSchedule(){
     if (typeof loadPGASlate !== 'function') return;
     loadPGASlate().then(d => {
       window._pgaDataCache = d || null;
-      if (d && typeof injectPGALeaderboard === 'function') {
+      if (!d) return;
+      // If no Golf section exists in allData.sports, create one from ESPN enriched data.
+      // The hardcoded golfGames array may be empty between manual updates.
+      // ESPN enriched is now the primary PGA Tour source — it should self-populate.
+      const hasGolfSection = (allData?.sports || []).some(s => s.sport === 'Golf');
+      if (!hasGolfSection && allData && allData.sports) {
+        const evName = d.name || d.eventName || 'PGA Tour Event';
+        const evVenue = d.event?.location || d.event?.course || '';
+        const round = d.round ? 'R' + d.round : '';
+        const status = d.active ? (round || 'In Progress') : 'Upcoming';
+        const golfGame = {
+          home: evName, away: '',
+          league: 'PGA Tour' + (round ? ' · ' + round : ''),
+          start_time: new Date().toISOString(),
+          venue: evVenue,
+          status: d.active ? 'live' : 'pre',
+          _sport: 'golf',
+          _id: 'espn_pga_' + (d.eventId || Date.now()),
+          streams: typeof resolveBundle === 'function' ? resolveBundle('GOLF_CBS') : [],
+        };
+        allData.sports.push({ sport: 'Golf', games: [golfGame] });
+        // Re-render schedule to show the new Golf section
+        if (typeof scheduleRenderAll === 'function') {
+          try { scheduleRenderAll(); } catch (_) {}
+        } else if (typeof renderAll === 'function') {
+          try { renderAll(); } catch (_) {}
+        }
+        if (typeof FIELD_DEBUG !== 'undefined' && FIELD_DEBUG) console.debug('[PGA] created Golf section from ESPN enriched:', evName);
+      }
+      if (typeof injectPGALeaderboard === 'function') {
         try { injectPGALeaderboard(d); } catch (e) {
           if (typeof FIELD_DEBUG !== 'undefined' && FIELD_DEBUG) console.warn('[PGA] inject', e.message);
         }
