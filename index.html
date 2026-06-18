@@ -20538,7 +20538,16 @@ async function fetchSchedule(){
           venue: evVenue,
           _sport: 'golf',
           _id: 'espn_pga_' + (d.eventId || Date.now()),
-          streams: typeof resolveBundle === 'function' ? resolveBundle('GOLF_CBS') : [],
+          streams: (() => {
+            // Use broadcasts from ESPN relay if available (US Open = NBC/USA/Peacock)
+            if (d.broadcasts && Array.isArray(d.broadcasts)) {
+              return d.broadcasts.map(name => {
+                const key = name.toLowerCase().replace(/\s+/g, '');
+                return { key: key, name: name, url: '' };
+              });
+            }
+            return typeof resolveBundle === 'function' ? resolveBundle('GOLF_CBS') : [];
+          })(),
         }]});
         if (typeof scheduleRenderAll === 'function') {
           try { scheduleRenderAll(); } catch (_) {}
