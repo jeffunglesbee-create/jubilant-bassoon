@@ -20419,6 +20419,21 @@ async function fetchSchedule(){
   startOpenF1Engine().catch(()=>{});
   setTimeout(fdPrefetchSoccerLive, 3000)
   setTimeout(slashGolfPrefetchAll, 3500); // Slash Golf: schedule + live leaderboard
+  // ESPN PGA enriched (loadPGASlate) fires 500ms after SlashGolf so the
+  // SlashGolf .golf-leaderboard strip is in place when injectPGALeaderboard
+  // tries to attach below it. _pgaDataCache is exposed on window for the
+  // golf journalism prompt context (buildGolfPromptContext) at brief time.
+  setTimeout(() => {
+    if (typeof loadPGASlate !== 'function') return;
+    loadPGASlate().then(d => {
+      window._pgaDataCache = d || null;
+      if (d && typeof injectPGALeaderboard === 'function') {
+        try { injectPGALeaderboard(d); } catch (e) {
+          if (typeof FIELD_DEBUG !== 'undefined' && FIELD_DEBUG) console.warn('[PGA] inject', e.message);
+        }
+      }
+    }).catch(() => {});
+  }, 4000);
   // Pre-fetch BDL season averages once (ROOT 3 — feeds milestones for all tonight's NBA games)
   // One relay call per day covers all games — fetchBDLMilestones() reads from shared cache
   setTimeout(() => {
