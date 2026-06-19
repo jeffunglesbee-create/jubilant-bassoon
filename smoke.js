@@ -4271,6 +4271,21 @@ assert('A651 — buildLinescoreContext emits explicit team-labelled output; buil
   /winnerMaxLead >= 2 && leadChanges === 0 && loserMaxLead === 0/.test(html),
   'CC-CMD-2026-06-18 Night Owl inversion: buildLinescoreContext used to emit "Inn1: 0-4" (cumH-cumA) on a wire-to-wire MIN @ TEX game. Broadcast convention reads pairs as away-home, so the LLM rendered "Rangers held an early advantage, leading by as many as 4-runs" and hallucinated "10-run lead" + "3 lead changes" — all inverted. Two fixes: (1) linescore output now includes nick + cum score per slot in away-first order ("Inn1: Twins 4, Rangers 0"), and (2) buildScoreNarrativeContext appends "wire-to-wire (loser never led)" when leadChanges=0 AND loserMaxLead=0 alongside a ≥2 winner lead, so the LLM cannot invent ups-and-downs.');
 
+// ── A652 / CC-CMD-2026-06-18 WC standings: aggregate duplicate D1 rows post-rename ──
+assert('A652 — mergedStandings aggregates D1 rows that share a normalized team name (Czech Republic + Czechia → one Czechia row)',
+  // After the .map applies _wcFixTeamName, an aggregation pass folds duplicates
+  // before the d1Names Set and mergedStandings[g] spread consume the array.
+  /const d1Teams = .+_wcFixTeamName\(r\.team\)/.test(html) &&
+  /const merged = \{\};[\s\S]{0,400}?if \(!merged\[r\.team\]\) \{ merged\[r\.team\] = \{\.\.\.r\}; continue; \}/.test(html) &&
+  // Sums counters and recomputes derived columns.
+  /m\.played \+= r\.played; m\.won \+= r\.won; m\.drawn \+= r\.drawn; m\.lost \+= r\.lost;/.test(html) &&
+  /m\.gd = m\.gf - m\.ga;\s*\n\s*m\.points = m\.won \* 3 \+ m\.drawn;/.test(html) &&
+  // Downstream consumers use the merged array, not the raw d1Teams.
+  /const d1Merged = Object\.values\(merged\);/.test(html) &&
+  /const d1Names = new Set\(d1Merged\.map\(r => r\.team\)\);/.test(html) &&
+  /mergedStandings\[g\] = \[\.\.\.d1Merged\];/.test(html),
+  'CC-CMD-2026-06-18 WC duplicate Czechia row: relay D1 stored one match under "Czech Republic" and another under "Czechia". _wcFixTeamName at line 28983 renamed both to "Czechia" but the merger only spread the renamed array, so Group A showed two split-stat Czechia rows. Defensive client-side aggregation now folds rows sharing a normalized team name (sums played/won/drawn/lost/gf/ga, recomputes gd and points = won*3 + drawn) before the d1Names Set and the [...d1Merged] spread. Relay-side root cause (writeWCResult not normalizing names) is being fixed separately in field-relay-nba; this layer keeps the client resilient to any name collision regardless of relay behavior.');
+
 // ── A650 / CC-CMD-2026-06-18 Client Golf Band-Aid Removal: relay returns canonical shape, normalization deleted ──
 assert('A650 — loadPGASlate consumes canonical /v2/golf/enriched shape with no band-aids; derived metrics in standalone computeGolfDerivedMetrics',
   // The estimated-SG engine is now a named function (not inline in loadPGASlate).

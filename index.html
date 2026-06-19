@@ -29589,10 +29589,26 @@ async function renderWCSection() {
   const mergedStandings = {};
   for (const g of 'ABCDEFGHIJKL'.split('')) {
     const d1Teams = (standings && standings[g]) ? standings[g].map(r => ({...r, team: _wcFixTeamName(r.team)})) : [];
-    const d1Names = new Set(d1Teams.map(r => r.team));
+    // Defensive: when the relay's D1 has multiple rows for the same team under
+    // different raw names (e.g. "Czech Republic" + "Czechia" → both rename to
+    // "Czechia"), aggregate them into a single row before downstream use. Sums
+    // counters and recomputes derived columns (gd, points). Relay-side root
+    // cause is being addressed separately; this layer makes the client
+    // resilient to any current or future name collisions.
+    const merged = {};
+    for (const r of d1Teams) {
+      if (!merged[r.team]) { merged[r.team] = {...r}; continue; }
+      const m = merged[r.team];
+      m.played += r.played; m.won += r.won; m.drawn += r.drawn; m.lost += r.lost;
+      m.gf += r.gf; m.ga += r.ga;
+      m.gd = m.gf - m.ga;
+      m.points = m.won * 3 + m.drawn;
+    }
+    const d1Merged = Object.values(merged);
+    const d1Names = new Set(d1Merged.map(r => r.team));
     const allTeams = WC_TEAMS[g] || [];
     // Start with D1 teams (have match data), then append missing teams at 0-0-0
-    mergedStandings[g] = [...d1Teams];
+    mergedStandings[g] = [...d1Merged];
     for (const t of allTeams) {
       if (!d1Names.has(t)) {
         mergedStandings[g].push({
