@@ -220,7 +220,11 @@ body::before{
 .wc-group-pill{display:inline-block;background:rgba(74,222,128,.1);
   border:1px solid rgba(74,222,128,.3);color:var(--green);
   font-family:var(--ff-mono);font-size:.6rem;padding:.08rem .3rem;
-  border-radius:3px;letter-spacing:.06em;margin-left:.3rem;vertical-align:middle}
+  border-radius:3px;letter-spacing:.06em;margin-left:.3rem;vertical-align:middle;
+  cursor:pointer;transition:background .15s,border-color .15s}
+.wc-group-pill:hover,.wc-group-pill:focus-visible{background:rgba(74,222,128,.2);border-color:rgba(74,222,128,.6);outline:none}
+/* Brief flash on the destination group block after openWcGroup scrolls to it */
+.wc-group-block.group-highlight{border-color:var(--accent-gold,#d4a843);transition:border-color .6s ease}
 
 /* ── UX QUICK WINS (Jun 9 2026 audit) ─────────────────────────────────────── */
 
@@ -21660,7 +21664,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-19d';
+  const SW_VERSION = '2026-06-19e';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -29385,6 +29389,33 @@ function toggleWCView() {
   }
 }
 
+// openWcGroup — bridge from a schedule WC card to the in-mode Groups view.
+// Activates wc-mode (if not already), selects the Groups sub-tab, scrolls
+// the matching .wc-group-block[data-group="X"] into view, and flashes a
+// gold border for 600ms so the destination is obvious after the scroll.
+// Wired from the group pill (rendered in the WC card builder) and called
+// with stopPropagation so the surrounding card click doesn't fire.
+function openWcGroup(letter) {
+  if (!letter) return;
+  const wasInWc = document.body.classList.contains('wc-mode');
+  if (!wasInWc && typeof toggleWCView === 'function') toggleWCView();
+  if (typeof switchWCTab === 'function') switchWCTab('groups');
+  // Allow the WC section to render (renderWCSection runs inside toggleWCView)
+  // before we look for the target block. requestAnimationFrame is enough on
+  // a warm cache; cold renders settle within the 80ms timeout below.
+  const scrollTo = () => {
+    const target = document.querySelector(`.wc-group-block[data-group="${letter}"]`);
+    if (!target) return false;
+    try { target.scrollIntoView({behavior:'smooth', block:'start'}); } catch(_) { target.scrollIntoView(); }
+    target.classList.add('group-highlight');
+    setTimeout(() => target.classList.remove('group-highlight'), 600);
+    return true;
+  };
+  if (!scrollTo()) {
+    setTimeout(scrollTo, wasInWc ? 0 : 80);
+  }
+}
+
 // Entry point — called by toggleWCView
 // ── WC Journalism Tab Brief ───────────────────────────────────────────────────
 // AI-generated preview injected above #wc-groups in the WC tab.
@@ -29978,7 +30009,7 @@ function renderWCGroupsLoading() {
   const el = (_DOM?.wcGroups||document.getElementById('wc-groups'));
   if (!el) return;
   el.innerHTML = 'ABCDEFGHIJKL'.split('').map(g => `
-    <div class="wc-group-block">
+    <div class="wc-group-block" data-group="${g}">
       <div class="wc-group-label">Group ${g}</div>
       <div class="wc-skeleton" style="width:80%"></div>
       <div class="wc-skeleton" style="width:90%"></div>
@@ -34085,7 +34116,8 @@ function buildWCBars(g) {
 
   // Extract group from league string e.g. "FIFA World Cup 2026 — Group A · Opening Match"
   const groupMatch = (g.league || '').match(/Group ([A-L])/i);
-  const groupLabel = groupMatch ? `GRP ${groupMatch[1].toUpperCase()}` : '';
+  const groupLetter = groupMatch ? groupMatch[1].toUpperCase() : '';
+  const groupLabel = groupLetter ? `GRP ${groupLetter}` : '';
 
   // Get odds/probability data for this fixture
   const _normOdds = s => (s||'').toLowerCase()
@@ -34123,7 +34155,7 @@ function buildWCBars(g) {
   const awayName = g.away.split(' ').pop();
 
   const groupPill = groupLabel
-    ? `<span class="wc-group-pill">${groupLabel}</span>`
+    ? `<span class="wc-group-pill" role="button" tabindex="0" aria-label="Open Group ${groupLetter} standings" onclick="event.stopPropagation();openWcGroup('${groupLetter}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();event.stopPropagation();openWcGroup('${groupLetter}')}">${groupLabel}</span>`
     : '';
 
   const legend = `<div class="wc-bar-legend">

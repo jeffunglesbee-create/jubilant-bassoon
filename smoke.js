@@ -4271,6 +4271,20 @@ assert('A651 — buildLinescoreContext emits explicit team-labelled output; buil
   /winnerMaxLead >= 2 && leadChanges === 0 && loserMaxLead === 0/.test(html),
   'CC-CMD-2026-06-18 Night Owl inversion: buildLinescoreContext used to emit "Inn1: 0-4" (cumH-cumA) on a wire-to-wire MIN @ TEX game. Broadcast convention reads pairs as away-home, so the LLM rendered "Rangers held an early advantage, leading by as many as 4-runs" and hallucinated "10-run lead" + "3 lead changes" — all inverted. Two fixes: (1) linescore output now includes nick + cum score per slot in away-first order ("Inn1: Twins 4, Rangers 0"), and (2) buildScoreNarrativeContext appends "wire-to-wire (loser never led)" when leadChanges=0 AND loserMaxLead=0 alongside a ≥2 winner lead, so the LLM cannot invent ups-and-downs.');
 
+// ── A654 / CC-CMD-2026-06-19 WC group pill bridges to in-mode Groups view ──
+assert('A654 — WC card group pill has onclick → openWcGroup with stopPropagation + keyboard handler + data-group on group blocks',
+  // Group pill carries the click handler with stopPropagation and the keyboard activator.
+  /class="wc-group-pill" role="button" tabindex="0"[\s\S]*?onclick="event\.stopPropagation\(\);openWcGroup\('\$\{groupLetter\}'\)"[\s\S]*?onkeydown="if\(event\.key==='Enter'\|\|event\.key===' '\)/.test(html) &&
+  // openWcGroup activates wc-mode, switches to Groups tab, scrolls + flashes the target.
+  /function openWcGroup\(letter\)[\s\S]{0,800}?toggleWCView\(\)[\s\S]{0,400}?switchWCTab\('groups'\)[\s\S]{0,400}?wc-group-block\[data-group="\$\{letter\}"\][\s\S]{0,400}?scrollIntoView\(\{behavior:'smooth'/.test(html) &&
+  // Highlight class is added and removed after 600ms.
+  /classList\.add\('group-highlight'\);\s*\n\s*setTimeout\(\(\) => target\.classList\.remove\('group-highlight'\), 600\);/.test(html) &&
+  // Loading-state render also carries data-group so a scroll on cold cache still lands somewhere.
+  /<div class="wc-group-block" data-group="\$\{g\}">/.test(html) &&
+  // CSS flash rule exists.
+  /\.wc-group-block\.group-highlight\{border-color:var\(--accent-gold/.test(html),
+  'CC-CMD-2026-06-19 WC group pill navigation bridge: tapping the GRP X chip on a WC schedule card now activates wc-mode (via existing toggleWCView), selects the Groups sub-tab (switchWCTab), scrolls to .wc-group-block[data-group="X"], and flashes a gold border for 600ms so the destination is obvious. Pill is role=button + tabindex=0 + Enter/Space keyboard handler; stopPropagation prevents the surrounding card click from also firing. data-group was already on the full-data render path (line 30330); added to the loading-skeleton render path too so a cold-cache scroll still finds its target.');
+
 // ── A653 / CC-CMD-2026-06-18 Desktop back-to-schedule pill visibility ──
 assert('A653 — journalism + WC back pills are visible at desktop widths (no display:none in 1200px+ media)',
   // Combined desktop rule shows both pills as inline-flex.
