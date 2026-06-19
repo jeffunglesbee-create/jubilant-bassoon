@@ -3499,6 +3499,54 @@ never be the first place a syntax error is caught.
 
 ---
 
+## Rule 67 — CC sessions must document to Drive (CC-DOC-A)
+
+**Added:** June 19 2026
+**Incident:** June 14-18 saw 26 Claude Code sessions produce significant
+architectural work (archive intelligence, golf integration, desktop layout,
+WC data fixes) with zero Google Drive documentation. Chat sessions that
+inherited this work had to reverse-engineer what changed from git log.
+The cross-model documentation rule was effectively unenforced for CC.
+**Severity:** Complete documentation gap for 5 days of development.
+
+Every CC session that produces code changes MUST write a session document.
+
+### Required contents:
+1. Date and HEAD progression (start → end commit hashes)
+2. Smoke count at session start and end
+3. SW_VERSION if bumped (start → end)
+4. Per-commit summary: hash, description, files changed
+5. What was verified end-to-end vs what was left STAGED
+6. Open carry-forwards for next session
+
+### How to document:
+- **If CC can access Drive:** write directly with title format
+  `FIELD App — {Date} CC Session Documentation`
+- **If CC cannot access Drive:** write to
+  `outbox/cc-session-{date}-{scope}.md`
+
+### HANDOFF.md requirement:
+The session-end HANDOFF.md write MUST include one of:
+```
+Session doc: Drive {file_id}
+Session doc: outbox/cc-session-{date}-{scope}.md
+```
+
+If neither line is present in the HANDOFF, the session violated Rule 67.
+
+### Rationale:
+The cross-model documentation rule (FIELD cross-model rule HARD) states
+all architectural decisions must be documented so Opus and Sonnet can
+hand off. CC sessions that skip documentation break this rule. The CC
+handoff markdowns in the outbox prove CC CAN document — it just wasn't
+required to put docs where cross-model sessions find them (Drive).
+
+**Violation:** Equivalent to Rule 61 violation (declaring done without
+verification). A session without documentation is invisible to future
+sessions — the work may as well not exist.
+
+---
+
 ## Case Study: Golf Layer Integration Failure (June 18 2026)
 
 **Context:** Golf layer built across 4 Claude sessions (2 CC, 2 chat).
