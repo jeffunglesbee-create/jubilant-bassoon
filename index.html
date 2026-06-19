@@ -20754,11 +20754,17 @@ async function fetchSchedule(){
           try { scheduleRenderAll(); } catch (_) {}
         }
       }
-      if (typeof injectPGALeaderboard === 'function') {
-        try { injectPGALeaderboard(d); } catch (e) {
-          if (typeof FIELD_DEBUG !== 'undefined' && FIELD_DEBUG) console.warn('[PGA] inject', e.message);
+      // Delay injection past scheduleRenderAll's 150ms debounce so the Golf
+      // card DOM exists when injectPGALeaderboard's querySelector runs.
+      // Covers both branches: section-just-created (via scheduleRenderAll
+      // above) and section-already-present (prior render cycle).
+      setTimeout(() => {
+        if (typeof injectPGALeaderboard === 'function') {
+          try { injectPGALeaderboard(d); } catch (e) {
+            if (typeof FIELD_DEBUG !== 'undefined' && FIELD_DEBUG) console.warn('[PGA] inject', e.message);
+          }
         }
-      }
+      }, 300);
     }).catch(() => {});
   }, 4000);
   // Pre-fetch BDL season averages once (ROOT 3 — feeds milestones for all tonight's NBA games)
@@ -21840,7 +21846,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-19g';
+  const SW_VERSION = '2026-06-19h';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
