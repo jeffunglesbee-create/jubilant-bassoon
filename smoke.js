@@ -4271,6 +4271,15 @@ assert('A651 — buildLinescoreContext emits explicit team-labelled output; buil
   /winnerMaxLead >= 2 && leadChanges === 0 && loserMaxLead === 0/.test(html),
   'CC-CMD-2026-06-18 Night Owl inversion: buildLinescoreContext used to emit "Inn1: 0-4" (cumH-cumA) on a wire-to-wire MIN @ TEX game. Broadcast convention reads pairs as away-home, so the LLM rendered "Rangers held an early advantage, leading by as many as 4-runs" and hallucinated "10-run lead" + "3 lead changes" — all inverted. Two fixes: (1) linescore output now includes nick + cum score per slot in away-first order ("Inn1: Twins 4, Rangers 0"), and (2) buildScoreNarrativeContext appends "wire-to-wire (loser never led)" when leadChanges=0 AND loserMaxLead=0 alongside a ≥2 winner lead, so the LLM cannot invent ups-and-downs.');
 
+// ── A653 / CC-CMD-2026-06-18 Desktop back-to-schedule pill visibility ──
+assert('A653 — journalism + WC back pills are visible at desktop widths (no display:none in 1200px+ media)',
+  // Combined desktop rule shows both pills as inline-flex.
+  /@media\(min-width:1200px\)\s*\{\s*\n\s*body\.journalism-mode \.jrn-back-pill,\s*\n\s*body\.wc-mode \.wc-back-pill\s*\{\s*\n\s*display:inline-flex/.test(html) &&
+  // The three explicit display:none overrides at desktop widths are gone.
+  !/body\.journalism-mode \.jrn-back-pill\{display:none\}/.test(html) &&
+  !/body\.wc-mode \.wc-back-pill\{display:none\}/.test(html),
+  'CC-CMD-2026-06-18 desktop back-pill: journalism-mode + wc-mode set display:none on .jrn-back-pill / .wc-back-pill inside min-width:1200px and min-width:1440px media queries — desktop users had no visible affordance to return to the schedule. Removed all three display:none overrides and added a single combined min-width:1200px rule showing both as inline-flex with desktop sizing (font-size .72rem, margin-bottom 1.5rem, position relative). Click handlers (toggleJournalismView / toggleWcView) were already wired on the pills; no JS change needed.');
+
 // ── A652 / CC-CMD-2026-06-18 WC standings: aggregate duplicate D1 rows post-rename ──
 assert('A652 — mergedStandings aggregates D1 rows that share a normalized team name (Czech Republic + Czechia → one Czechia row)',
   // After the .map applies _wcFixTeamName, an aggregation pass folds duplicates

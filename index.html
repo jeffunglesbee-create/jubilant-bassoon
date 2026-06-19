@@ -2555,7 +2555,6 @@ body:not(.wc-mode) #wc-section{display:none}
   body.wc-mode #wc-section{display:block;max-width:1300px;margin:0 auto}
   /* WC nav link: visible on desktop too (initWCNav clears inline style) */
   #wc-nav-link{display:inline-flex !important;align-items:center;font-size:.68rem;padding:.22rem .65rem;white-space:nowrap}
-  body.wc-mode .wc-back-pill{display:none}
   /* Ambient panel hidden (global rule above) → reset margins that assume it's present */
   body.wc-mode nav.controls{margin-right:0 !important}
   body.wc-mode header.masthead{margin-right:0 !important}
@@ -2772,7 +2771,6 @@ body:not(.wc-mode) #wc-section{display:none}
     max-width:960px;margin:0 auto;
   }
   body.journalism-mode .jrn-reading{max-width:640px}
-  body.journalism-mode .jrn-back-pill{display:none}
 }
 
 @media(min-width:1440px){
@@ -2787,7 +2785,20 @@ body:not(.wc-mode) #wc-section{display:none}
     z-index:5;padding:1.5rem 1rem;
     background:var(--bg);border-left:1px solid var(--edge);
   }
-  body.journalism-mode .jrn-back-pill{display:none}
+}
+
+/* Desktop back-to-schedule pill: journalism + WC modes. Mobile gets the
+   sticky-on-scroll variant in the max-width:1199px blocks above; desktop
+   shows a static inline-flex pill at the top of the panel so there's a
+   visible exit affordance regardless of scroll position. */
+@media(min-width:1200px){
+  body.journalism-mode .jrn-back-pill,
+  body.wc-mode .wc-back-pill{
+    display:inline-flex;
+    position:relative;
+    margin-bottom:1.5rem;
+    font-size:.72rem;
+  }
 }
 
 /* ── C3: Companion content styles (visible at desktop only) ───────────── */
@@ -21649,7 +21660,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-19c';
+  const SW_VERSION = '2026-06-19d';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
