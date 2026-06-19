@@ -1,57 +1,77 @@
 # FIELD HANDOFF
-## HEAD: ccc244b (client) · 5fede09 (relay) · 2026-06-18 · via chat + CC
+## HEAD: 95053ed (client) · a597a9a (relay) · 2026-06-19 · via chat
 
-### Session Summary (June 18 2026)
-Golf layer end-to-end build for US Open R1. Governance overhaul (Rules 60-66) after cross-session integration failures. DataGolf reassessment: ESPN stats are POST-ROUND ONLY.
+### Session Summary (June 19 2026)
+Marathon analysis/strategy + build session (~1AM–4PM ET). 13 Drive docs produced. GameDO WebSocket fix deployed. Outbox cleaned (403MB→31MB). Scout's Pick gates tightened. Rule 67 governance shipped. Full canonical backlog reconciliation completed. Priority list rebuilt with verified compound spec status.
 
 ### What Shipped — Relay (field-relay-nba)
-- Canonical response shape in handleGolfEnriched (CC a2df1e4): eventName→name, pos→position, flat stats→nested stats
-- Date normalization: accepts YYYY-MM-DD and YYYYMMDD (226fe19, 516b89b)
-- thru + today extracted from linescores (1d0227a)
-- Broadcasts from ESPN competitions (5fede09)
-- Golf cron context: buildGolfCronContext (14e9cc6)
-- External probes non-blocking: continue-on-error (8e6ea98)
-- Cache key v2: golf:enriched:v2:{date_clean}
-- Rules 60-66 in CLAUDE.md
+- GameDO ID mismatch fix (372640a): V2 prefixed IDs never matched client stripped IDs. WebSocket silently broken all WC week 1. Fix: strip prefix both sides.
+- Rule 67 in CLAUDE.md (c3852f1): CC sessions must document to Drive
+- FPL PROBE C dynamic GW (a597a9a): reads current GW from bootstrap, not hardcoded 37
 
 ### What Shipped — Client (jubilant-bassoon)
-- ESPN PRIMARY Golf section creator (3048dc7). SlashGolf removed from PGA Tour.
-- buildSlashGolfGamesForToday wired (CC 17721de → db0d7d0)
-- Band-aids removed: normalization, date conversion, auto-create hack (CC fc8b62b)
-- computeGolfDerivedMetrics standalone function (CC fc8b62b)
-- Broadcast from relay data, not hardcoded GOLF_CBS (a17fb01)
-- Zero-stat gate in journalism prompt (55de318)
-- Estimated SG engine: Putting/Approach/OTT/ball-striking/momentum (ce83266)
-- Outbox→Drive workflow fix (3d12453)
-- Rules 60-66 + case studies + governance principle in CLAUDE.md + STANDARDS.md
-- A649: ESPN primary assertion. A650: band-aid regression guard.
-- CI-as-proxy golf contract probe workflow
+- Outbox cleanup (22c4725): 1,290→194 files, 403MB→31MB. outbox/fixtures/ created. Sensitive health data removed.
+- Rule 67 in CLAUDE.md + STANDARDS.md (b08a7d1)
+- SW_VERSION bump (4dcf3cf): 2026-06-18d → 2026-06-19a
+- Scout's Pick tap handler (e3598a4): badge opens bottom sheet. role=button, tabindex=0, keyboard.
+- Scout's Pick gate tightening (1e1f8fa): ERA 3.00→2.50, gap 1.20→2.00. 11/14→~2-3/14 qualifying.
 
 ### Smoke & Version
-- Smoke: 690/0
-- SW_VERSION: 2026-06-18c
+- Smoke: 692/0
+- SW_VERSION: 2026-06-19c
 
-### CRITICAL: ESPN stats are POST-ROUND ONLY
-ESPN returns ALL ZEROS for GIR/driving/accuracy/putts during live rounds.
-Verified US Open R1: Burns thru 5, McDowell thru 6 — all stats zero.
-Stats populate after round completion. FIELD estimated SG engine non-functional during live play.
-DataGolf ($19/mo) is the ONLY source of live analytics.
-Correction doc: 11uLW4P3uOzhZHNtC52X0mkgdREBgf-BLaUCDcHqKD_4
+### Documentation (13 Drive docs)
+1. NFL Coverage Gap Analysis (1ymJhQZS)
+2. GameDO Architecture & Fixes (1AFhEiAV)
+3. Product Philosophy (10HSugxz)
+4. Soccer Live Intelligence (1PLvTcUh)
+5. Journalism Expansion (14owPhTY)
+6. Multiview & Attention Management (1ldrB0Jf)
+7. UserDO Sessions & Backfilling (1t0GKf7X)
+8. UI Surface Optimization Spec (1GmDRpJx)
+9. Outbox Value Assessment (14lHRaiobos)
+10. Session Documentation (local, pending Drive)
+11. CC Sessions June 14-18 Consolidated (1Uft9f5P)
+12. June 11 Session Backfilled (1pfa7MjB)
+13. Revised Priority List + Canonical Backlog Update (1WYHeVqsrySX)
 
-### Governance — Rules 60-66
-- R60: Relay owns data contract
-- R61: End-to-end before done (STAGED vs SHIPPED)
-- R62: Follow existing conventions
-- R63: No dead code
-- R64: Band-aid detection
-- R65: Handoff includes integration state
-- R66: Mandatory smoke before push
-- Principle: "Be fast but don't hurry" — John Wooden
+Session doc: pending Drive upload
+
+### Context Graph — VERIFIED
+Spec complete (docs/CC-CMD-context-graph.md). Building blocks exist (finals-context.js, wc-team-context.js, ARCHIVE_DB). /context/game/{id} endpoint NOT wired. ~30 min relay build unblocks Debrief + Circadian + Replay (~12 hrs downstream).
+
+### Compound Specs — VERIFIED (June 2-16, none fully built)
+- Compound Architecture (1cWgNEs3): Schedule + Primitives + Debrief + Replay ~10.5 hrs
+- Circadian (1NeAFkfKhBKhq): 5 phases ~6.5 hrs
+- Live In-Play Odds (June 14): fully specced, approved ~3-4 hrs
+- Journalism Tab (10udrJmsVd0FS): C1 scaffolded uncommitted ~4 hrs
+- Archive Intelligence: partially shipped (CC smoke 650→664), audit needed
+
+### API Spend — Decision PAUSED 1 week
+- The Odds API: $59/mo (100K, reset June 19)
+- API-Sports: 5 Pro plans expire June 29. Football ($19) must renew for WC R32. Basketball/Hockey/NBA ($57) off-season. Baseball ($19) needs evaluation.
+- Cloudflare: $5/mo. Claude: $20-100/mo. Gemini: ~$0-5/mo.
+
+### Verified Already Solved
+- V2 UTC boundary: fieldDatesToQuery() dual-date query
+- Golf stats zeros: buildGolfPromptContext > 0 guards
+- GOLF_NBC "usa": cosmetic (ESPN path bypasses BUNDLES), T2
+
+### Priority — Tier 1 (next session)
+1. Golf T0: cut line projection (~45 min)
+2. Golf T0: pack density badge (~20 min)
+3. Desktop back-to-schedule (CSS 5 min)
+4. WC group pill navigation bridge (15 min)
+5. Context Graph endpoint (~30 min relay, highest leverage)
+6. F09 REST Countries (10 min, 18 days overdue)
+7. UserDO read loop (~45 min)
+
+### Governance
+Rules 60-67 active in both repos. Rule 67: CC sessions must document to Drive or outbox markdown. HANDOFF must reference session doc.
 
 ### Carry-Forward
-- DataGolf subscription ($19/mo) — urgent given ESPN limitation
-- Golf T0: cut line projection, pack density, drama score
-- Drift detection agent (~1hr CC)
-- CFL data source (ESPN stale)
-- CC web sandbox can't curl relay — use CI-as-proxy
-- CC pushes to main, not branches
+- Build Backlog Canonical v1.0 (1ugUh6Um): 18 days stale, needs ~30 §A additions
+- Doc 10 pending Drive upload
+- Outbox patents (48 files) pending Drive move
+- NFL pipeline: Sept 9 deadline, ~2-3 sessions
+- DataGolf: $19/mo, deferred
