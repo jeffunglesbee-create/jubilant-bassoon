@@ -21,7 +21,7 @@ jobs:
           echo "WC V2 Situation Contract Probe — $TS" > "$OUT"
           echo "Goal: enumerate keys present on game.situation for wc26 games" >> "$OUT"
           echo "" >> "$OUT"
-          for D in "$TODAY" "$YESTERDAY"; do
+          for D in "$TODAY" "$YESTERDAY" "2026-06-17" "2026-06-16" "2026-06-15"; do
             echo "=== date=$D ===" >> "$OUT"
             curl -s "$RELAY/v2/games?sport=wc26&date=$D" > /tmp/wc.json 2>&1
             python3 -c "
@@ -29,22 +29,32 @@ jobs:
           try:
               d = json.load(open('/tmp/wc.json'))
           except Exception as e:
+              raw = open('/tmp/wc.json').read()[:400]
               print('  parse error:', e)
+              print('  raw:', raw)
               raise SystemExit(0)
+          if isinstance(d, dict):
+              print('  top-level keys:', sorted(d.keys()))
           games = d if isinstance(d, list) else d.get('games') or d.get('response') or []
-          print(f'  games returned: {len(games)}')
-          for g in games:
+          print(f'  games count: {len(games)}')
+          if not games and isinstance(d, dict):
+              print('  raw (first 600):', json.dumps(d)[:600])
+          for g in games[:6]:
               home = (g.get('home') or {}).get('name', '?')
               away = (g.get('away') or {}).get('name', '?')
               state = g.get('state', '?')
               sit = g.get('situation')
+              gkeys = sorted(g.keys())
+              print(f'  {state:6s} {away} @ {home}')
+              print(f'    game top-keys: {gkeys}')
               if sit is None:
-                  print(f'  {state:6s} {away} @ {home} :: situation=null')
+                  print(f'    situation=null')
                   continue
-              keys = sorted(sit.keys()) if isinstance(sit, dict) else type(sit).__name__
-              print(f'  {state:6s} {away} @ {home} :: situation keys = {keys}')
-              # Print raw sit so we see types/values
-              print(f'    raw: {json.dumps(sit)[:600]}')
+              if isinstance(sit, dict):
+                  print(f'    situation keys: {sorted(sit.keys())}')
+                  print(f'    situation raw: {json.dumps(sit)[:600]}')
+              else:
+                  print(f'    situation type: {type(sit).__name__} value: {sit}')
           " >> "$OUT" 2>&1
             echo "" >> "$OUT"
           done
