@@ -18082,10 +18082,10 @@ function getStatOfDay(game, sport) {
           // Helper: "Carlos Rodón" → "Rodón"
           const lastName = n => (n || '').split(' ').pop();
 
-          // 1. Ace on mound — ERA <= 3.00 (normalised vs league avg 4.55)
+          // 1. Ace on mound — ERA <= 2.50 (normalised vs league avg 4.55)
           for (const [p, side] of [[hP, game.home], [aP, game.away]]) {
             if (!p.era || p.gamesStarted < MIN_GS) continue;
-            if (p.era <= 3.00) {
+            if (p.era <= 2.50) {
               const dev = (_MLB_PITCHER_AVGS.era - p.era) / _MLB_PITCHER_AVGS.era;
               candidates.push({
                 deviation: dev,
@@ -18099,10 +18099,10 @@ function getStatOfDay(game, sport) {
             }
           }
 
-          // 2. ERA differential — gap >= 1.20 between starters
+          // 2. ERA differential — gap >= 2.00 between starters
           if (hP.era && aP.era && hP.gamesStarted >= MIN_GS && aP.gamesStarted >= MIN_GS) {
             const eraGap = Math.abs(hP.era - aP.era);
-            if (eraGap >= 1.20) {
+            if (eraGap >= 2.00) {
               const better = hP.era < aP.era ? hP : aP;
               const worse  = hP.era < aP.era ? aP : hP;
               const side   = hP.era < aP.era ? game.home : game.away;
@@ -21649,7 +21649,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-19b';
+  const SW_VERSION = '2026-06-19c';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
