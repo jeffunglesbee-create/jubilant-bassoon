@@ -1542,6 +1542,13 @@ body::before{
 .atp-score-live{color:var(--c-live,#f87171)!important;font-style:normal!important}
 /* Golf top-10 leaderboard — injected by injectSlashGolfLeaderNotes when tournament active */
 .golf-leaderboard{padding:.3rem .85rem .45rem;border-top:1px solid rgba(201,168,76,.12);margin-top:.25rem}
+/* Pack-density chip: "field compression" signal on a golf card. Dense pack
+   (>=8 within 3) renders green; moderate (5-7) renders neutral. Below 5
+   we skip rendering entirely (thin field, not newsworthy). */
+.golf-pack-chip{display:inline-block;font-size:.6rem;line-height:1.4;padding:.1rem .42rem;
+  margin:.2rem .85rem .3rem;border-radius:3px;letter-spacing:.04em;
+  background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);color:var(--muted)}
+.golf-pack-chip.dense{background:rgba(74,222,128,.1);border-color:rgba(74,222,128,.32);color:var(--green)}
 .golf-lb-title{font-size:.62rem;color:var(--gold2);font-weight:700;letter-spacing:.06em;text-transform:uppercase;opacity:.8;margin-bottom:.2rem}
 .golf-lb-row{display:grid;grid-template-columns:1.8rem 1fr auto;font-size:.61rem;line-height:1.65;color:var(--muted);gap:0 .35rem;white-space:nowrap}
 .golf-lb-row.lb-top3{color:var(--text)}
@@ -14868,6 +14875,32 @@ function renderPGALeaderboard(data) {
   return `<div class="pga-card">${head}${table}</div>`;
 }
 
+// Pack-density signal — how many players sit within 3 strokes of the leader.
+// A dense pack signals field compression (more dramatic than a runaway).
+// Returns null when insufficient data (<10 players with valid toPar) or when
+// the field is thin (<5 within 3 — not newsworthy). When non-null:
+//   { count, tier: 'dense' | 'moderate', leaderToPar }
+// Dense ≥ 8 within 3; moderate 5–7.
+function computeGolfPackDensity(pgaData) {
+  const lb = pgaData && pgaData.leaderboard;
+  if (!Array.isArray(lb) || lb.length === 0) return null;
+  const parseTP = (v) => {
+    if (v == null) return null;
+    if (typeof v === 'number' && Number.isFinite(v)) return v;
+    const s = String(v).trim();
+    if (s === '' || s === '—' || s === 'CUT' || s === 'WD' || s === 'MDF') return null;
+    if (s === 'E' || s.toUpperCase() === 'EVEN') return 0;
+    const n = parseFloat(s.replace(/^\+/, ''));
+    return Number.isFinite(n) ? n : null;
+  };
+  const valid = lb.map(p => parseTP(p && p.toPar)).filter(v => v != null);
+  if (valid.length < 10) return null; // insufficient signal
+  const leaderToPar = Math.min(...valid);
+  const count = valid.filter(v => Math.abs(v - leaderToPar) <= 3).length;
+  if (count < 5) return null; // thin field, skip
+  return { count, leaderToPar, tier: count >= 8 ? 'dense' : 'moderate' };
+}
+
 // Inject the rendered PGA leaderboard HTML into the live DOM. Modeled on
 // injectSlashGolfLeaderNotes — finds golf game cards in allData.sports and
 // inserts the ESPN PGA block. Coexists with SlashGolf's .golf-leaderboard
@@ -14926,6 +14959,17 @@ function injectPGALeaderboard(pgaData) {
     }
   }
   block.innerHTML = html;
+  // Append pack-density chip below the leaderboard (skipped when null —
+  // either insufficient data or the pack is too thin to be newsworthy).
+  try {
+    const pack = computeGolfPackDensity(pgaData);
+    if (pack) {
+      const chip = document.createElement('div');
+      chip.className = 'golf-pack-chip' + (pack.tier === 'dense' ? ' dense' : '');
+      chip.textContent = `Pack: ${pack.count} within 3`;
+      block.appendChild(chip);
+    }
+  } catch(_) {}
 }
 
 // Load PGA enriched slate from the V2 relay.
@@ -15105,6 +15149,16 @@ function buildGolfPromptContext(pgaData) {
     parts.push('Leaderboard top 5:');
     lbLines.forEach(l => parts.push('  ' + l));
   }
+  // Field-compression signal: how many players sit within 3 strokes of the
+  // lead. Same helper that drives the on-card chip; lets the journalism
+  // model frame "crowded leaderboard" vs "runaway" without inventing it.
+  try {
+    const pack = (typeof computeGolfPackDensity === 'function') ? computeGolfPackDensity(pgaData) : null;
+    if (pack) {
+      const label = pack.tier === 'dense' ? 'dense' : 'moderate';
+      parts.push(`Pack density: ${pack.count} players within 3 strokes of the lead — ${label} field`);
+    }
+  } catch(_) {}
   if (statLines.length) {
     parts.push('Leaders by the numbers:');
     statLines.forEach(l => parts.push('  ' + l));
@@ -21664,7 +21718,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-19e';
+  const SW_VERSION = '2026-06-19f';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)

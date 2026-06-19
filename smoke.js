@@ -4271,6 +4271,22 @@ assert('A651 — buildLinescoreContext emits explicit team-labelled output; buil
   /winnerMaxLead >= 2 && leadChanges === 0 && loserMaxLead === 0/.test(html),
   'CC-CMD-2026-06-18 Night Owl inversion: buildLinescoreContext used to emit "Inn1: 0-4" (cumH-cumA) on a wire-to-wire MIN @ TEX game. Broadcast convention reads pairs as away-home, so the LLM rendered "Rangers held an early advantage, leading by as many as 4-runs" and hallucinated "10-run lead" + "3 lead changes" — all inverted. Two fixes: (1) linescore output now includes nick + cum score per slot in away-first order ("Inn1: Twins 4, Rangers 0"), and (2) buildScoreNarrativeContext appends "wire-to-wire (loser never led)" when leadChanges=0 AND loserMaxLead=0 alongside a ≥2 winner lead, so the LLM cannot invent ups-and-downs.');
 
+// ── A655 / CC-CMD-2026-06-19 Golf pack-density signal on card + in prompt ──
+assert('A655 — computeGolfPackDensity computes field compression; injectPGALeaderboard renders chip; buildGolfPromptContext emits a line',
+  // Helper exists with the right thresholds.
+  /function computeGolfPackDensity\(pgaData\)/.test(html) &&
+  /tier: count >= 8 \? 'dense' : 'moderate'/.test(html) &&
+  /if \(count < 5\) return null/.test(html) &&
+  /if \(valid\.length < 10\) return null/.test(html) &&
+  // injectPGALeaderboard appends the chip below the leaderboard.
+  /const pack = computeGolfPackDensity\(pgaData\);[\s\S]{0,400}?chip\.className = 'golf-pack-chip'[\s\S]{0,200}?chip\.textContent = `Pack: \$\{pack\.count\} within 3`/.test(html) &&
+  // Prompt context line for the journalism model.
+  /Pack density: \$\{pack\.count\} players within 3 strokes of the lead — \$\{label\} field/.test(html) &&
+  // CSS chip rules present (base + dense variant).
+  /\.golf-pack-chip\{display:inline-block/.test(html) &&
+  /\.golf-pack-chip\.dense\{background:rgba\(74,222,128/.test(html),
+  'CC-CMD-2026-06-19 golf T0 pack-density: a crowded leaderboard is more dramatic than a runaway. computeGolfPackDensity reads window._pgaDataCache.leaderboard, parses toPar (handles strings: "-2", "+1", "E", numeric), finds the leader, counts players within 3 strokes. Guards: <10 valid toPar → null (insufficient data); <5 within 3 → null (thin field, not newsworthy); ≥8 → dense (green chip); 5-7 → moderate (neutral). Rendered as .golf-pack-chip below the .pga-leaderboard-block HTML and injected into the journalism prompt as a "Pack density: N players within 3 strokes of the lead — dense/moderate field" line right after the leaderboard top-5.');
+
 // ── A654 / CC-CMD-2026-06-19 WC group pill bridges to in-mode Groups view ──
 assert('A654 — WC card group pill has onclick → openWcGroup with stopPropagation + keyboard handler + data-group on group blocks',
   // Group pill carries the click handler with stopPropagation and the keyboard activator.
