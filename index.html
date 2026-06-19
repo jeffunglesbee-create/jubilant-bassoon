@@ -21878,7 +21878,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-19i';
+  const SW_VERSION = '2026-06-19j';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -35190,6 +35190,48 @@ async function fetchNightOwlFromClaude(topGame){
       const _nhlKey=Object.keys(window._nhlAnalyticsCache||{}).find(k=>k.includes((topGame.home||'').slice(0,4).toLowerCase()));
       const _nhlCtx=_nhlKey?window._nhlAnalyticsCache[_nhlKey]:null;
       if(_nhlCtx?.pp&&_nhlCtx?.pk) _owlStatCtx += (_owlStatCtx?'\n':'')+'  [PP/PK] PP '+_nhlCtx.pp+'% · PK '+_nhlCtx.pk+'%';
+    }
+    // P6B: Soccer/WC live match stats from localStorage (persisted by P6A in
+    // fetchV2AllScores). V2 nulls situation at final, so the last live poll's
+    // stats live in soccer_stats_${home}|${away}. Try both team orderings —
+    // if the rev key matches, treat the relay's home* fields as the client's
+    // away team and vice versa so labels stay correct.
+    if (_sp.includes('soccer') || _sp.includes('wc26') || _sp.includes('world cup') ||
+        _sp.includes('epl') || _sp.includes('mls') || _sp.includes('ucl')) {
+      try {
+        const _kFwd = 'soccer_stats_' + (topGame.home||'') + '|' + (topGame.away||'');
+        const _kRev = 'soccer_stats_' + (topGame.away||'') + '|' + (topGame.home||'');
+        let _raw = localStorage.getItem(_kFwd);
+        let _flip = false;
+        if (!_raw) { _raw = localStorage.getItem(_kRev); _flip = !!_raw; }
+        if (_raw) {
+          const _payload = JSON.parse(_raw);
+          const s = _payload?.situation || {};
+          const homeP = _flip ? s.awayPossession : s.homePossession;
+          const awayP = _flip ? s.homePossession : s.awayPossession;
+          const homeSh = _flip ? s.awayShots : s.homeShots;
+          const awaySh = _flip ? s.homeShots : s.awayShots;
+          const homeSOT = _flip ? s.awaySOT : s.homeSOT;
+          const awaySOT = _flip ? s.homeSOT : s.awaySOT;
+          const homeC = _flip ? s.awayCorners : s.homeCorners;
+          const awayC = _flip ? s.homeCorners : s.awayCorners;
+          const lines = [];
+          if (homeP != null && awayP != null) {
+            lines.push(`Possession: ${topGame.home} ${homeP}% — ${topGame.away} ${awayP}%`);
+          }
+          if (homeSh != null && awaySh != null) {
+            const _hOT = homeSOT != null ? ` (${homeSOT} on target)` : '';
+            const _aOT = awaySOT != null ? ` (${awaySOT} on target)` : '';
+            lines.push(`Shots: ${topGame.home} ${homeSh}${_hOT} — ${topGame.away} ${awaySh}${_aOT}`);
+          }
+          if (homeC != null && awayC != null) {
+            lines.push(`Corners: ${topGame.home} ${homeC} — ${topGame.away} ${awayC}`);
+          }
+          if (lines.length) {
+            _owlStatCtx += (_owlStatCtx?'\n':'') + '  [MATCH STATS] ' + lines.join(' · ');
+          }
+        }
+      } catch(_) { /* parse / quota / missing — skip silently */ }
     }
     // PM-28j: linescore context (all sports with period scores)
     try {
