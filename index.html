@@ -13535,6 +13535,16 @@ function injectJ1J4Badges() {
       } catch(_) {}
       const badge = document.createElement('span');
       badge.className = 'scout-pick-badge';
+      badge.setAttribute('role', 'button');
+      badge.setAttribute('tabindex', '0');
+      badge.style.cursor = 'pointer';
+      badge.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (typeof openBottomSheet === 'function') openBottomSheet(g._id);
+      });
+      badge.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); if (typeof openBottomSheet === 'function') openBottomSheet(g._id); }
+      });
       // Option B: stat folds into badge text when available.
       // "🔍 Scout's Pick: CAR 93.5% PK%" — one signal, not two parallel badges.
       // .stat-day-badge suppressed for Scout's Pick games (info already in badge).
@@ -21639,7 +21649,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-19a';
+  const SW_VERSION = '2026-06-19b';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
