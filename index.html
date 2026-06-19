@@ -16496,6 +16496,38 @@ async function fetchV2AllScores() {
         };
         if (fg.state === 'live' || v2Entry.state === 'in') anyLive = true;
 
+        // ── Soccer/WC live-stats persistence (P6A, June 19 2026) ─────────────
+        // V2 clears situation to null when a soccer match goes final, so the
+        // Night Owl recap prompt gets zero shot/possession data and hallucinates
+        // stats. Every poll cycle while the game is live, mirror the relay's
+        // raw situation object to localStorage under a stable team-pair key.
+        // The last live poll before final wins, leaving the closing stats
+        // intact even after V2 nulls the situation.
+        //
+        // Persist shape verbatim (Rule 60 — relay owns the contract). No
+        // field renaming, no normalisation. Recap consumer reads back the
+        // same shape the live UI saw. wc-situation-probe (2026-06-19) showed
+        // every final wc26 game returns situation=null; no live game was in
+        // flight at probe time, so the exact key set is captured live by
+        // whatever the relay emits — see outbox/wc-situation-result-*.txt.
+        if (V2_PERIOD_PREFIX[sport] === "'" &&  // soccer family (wc26/mls/epl/etc.)
+            v2Entry.state !== 'post' &&
+            fg.situation &&
+            typeof fg.situation === 'object' &&
+            Object.keys(fg.situation).length > 0) {
+          try {
+            const stash = {
+              situation: fg.situation,
+              homeScore: v2Entry.homeScore,
+              awayScore: v2Entry.awayScore,
+              periodLabel: v2Entry.detail,
+              state: v2Entry.state,
+              ts: Date.now(),
+            };
+            localStorage.setItem('soccer_stats_' + key, JSON.stringify(stash));
+          } catch(_) { /* quota / private mode — silent */ }
+        }
+
         // MLB Savant WP trigger — was in ESPN poll loop; MLB removed from ESPN_SPORTS
         // so must fire here instead when a live MLB game is detected.
         if (sport === 'mlb' && (fg.state === 'live' || v2Entry.state === 'in') && !espnScores[key].wp) {
@@ -21846,7 +21878,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-19h';
+  const SW_VERSION = '2026-06-19i';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
