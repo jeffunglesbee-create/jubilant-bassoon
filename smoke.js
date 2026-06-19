@@ -4271,6 +4271,34 @@ assert('A651 — buildLinescoreContext emits explicit team-labelled output; buil
   /winnerMaxLead >= 2 && leadChanges === 0 && loserMaxLead === 0/.test(html),
   'CC-CMD-2026-06-18 Night Owl inversion: buildLinescoreContext used to emit "Inn1: 0-4" (cumH-cumA) on a wire-to-wire MIN @ TEX game. Broadcast convention reads pairs as away-home, so the LLM rendered "Rangers held an early advantage, leading by as many as 4-runs" and hallucinated "10-run lead" + "3 lead changes" — all inverted. Two fixes: (1) linescore output now includes nick + cum score per slot in away-first order ("Inn1: Twins 4, Rangers 0"), and (2) buildScoreNarrativeContext appends "wire-to-wire (loser never led)" when leadChanges=0 AND loserMaxLead=0 alongside a ≥2 winner lead, so the LLM cannot invent ups-and-downs.');
 
+// ── A656 / CC-CMD-2026-06-19 Golf cut-line projection (R2) + final + historical ──
+assert('A656 — computeCutLineProjection returns null pre-R2; injectPGALeaderboard renders projection/final/historical badge; prompt context emits cut line',
+  // Helper exists.
+  /function computeCutLineProjection\(pgaData\)/.test(html) &&
+  // Pre-R2 guard: returns null when round < 2 or non-numeric.
+  /if \(!Number\.isFinite\(round\) \|\| round < 2\) return null/.test(html) &&
+  // Field-size guard.
+  /if \(!Array\.isArray\(lb\) \|\| lb\.length < 60\) return null/.test(html) &&
+  // Three modes.
+  /mode: isFinal \? 'final' : 'projection'/.test(html) &&
+  /mode: 'historical'/.test(html) &&
+  // Cut position at index 59 (60th-best score).
+  /sorted\[cutPosition - 1\]/.test(html) &&
+  // Badge render with three branches.
+  /Projected cut: \$\{v\} \(\$\{cut\.playersCompleted\} of \$\{cut\.playersInField\} done\)/.test(html) &&
+  /badge\.textContent = `Cut: \$\{v\}`/.test(html) &&
+  /badge\.textContent = `Made cut at \$\{v\}`/.test(html) &&
+  // Prompt context emits one cut-line line per mode.
+  /Cut line: projected \$\{v\} \(\$\{cut\.playersCompleted\}\/\$\{cut\.playersInField\} players through R2\)/.test(html) &&
+  /Cut line: \$\{v\} \(final\)/.test(html) &&
+  /Cut line: \$\{v\} \(made-cut floor in current field\)/.test(html) &&
+  // Notable-player-near-cut framing activates only when relay supplies pgaData.notablePlayers.
+  /pgaData\.notablePlayers/.test(html) &&
+  /at \$\{tpFmt\} — \$\{side\} the projected cut line/.test(html) &&
+  // CSS badge rule.
+  /\.cut-line-badge\{display:block/.test(html),
+  'CC-CMD-2026-06-19 golf T0 cut-line projection: standardized 60+ties cut threshold for the four majors. computeCutLineProjection returns { mode, value, playersInField, playersCompleted, cutPosition } where mode = projection (R2 in progress) | final (R2 complete, all thru >= 18) | historical (R3+, value = worst toPar still in field — only made-cut players remain). Guarded: null before R2, null when field < 60. Rendered as .cut-line-badge (block, muted, mono). Prompt context emits one line per mode for the journalism model. Notable-player-near-cut framing reads pgaData.notablePlayers (athleteId or name strings) — silent until the relay supplies that, per Rule 1 (no client-side WGR invention).');
+
 // ── A655 / CC-CMD-2026-06-19 Golf pack-density signal on card + in prompt ──
 assert('A655 — computeGolfPackDensity computes field compression; injectPGALeaderboard renders chip; buildGolfPromptContext emits a line',
   // Helper exists with the right thresholds.
