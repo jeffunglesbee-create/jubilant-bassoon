@@ -21993,7 +21993,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-20e';
+  const SW_VERSION = '2026-06-20f';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -25153,8 +25153,7 @@ function buildCompoundPrompt(sections) {
       bni ? `  [BNI: ${bni.replace(/-/g,' ').toUpperCase()}]` : '',
       awayMisery  ? `  [FRANCHISE_CONTEXT:${teamNick(g.away)}] ${awayMisery}` : '',
       extremeNote ? `  [LIVE EXTREME] ${extremeNote}` : '',
-      // PM-28k: linescore + goal timeline + NBA box context
-      (()=>{try{const _eS=findESPNScore?.(g);return buildLinescoreContext(_eS,g._id,g.home,g.away)||''}catch(e_){return ''}})(),
+      // PM-28k: goal timeline + NBA box context (linescore removed — analytical buildScoreNarrativeContext injected separately)
       (()=>{try{const _eS=findESPNScore?.(g);return buildGoalTimeline(g,_eS)||''}catch(e_){return ''}})(),
       (()=>{try{const _eS=findESPNScore?.(g);return buildNBAPlayerContext(g,_eS)||''}catch(e_){return ''}})(),
       // PM-30: live NBA context (live games only — RUWT-clean named observables)
@@ -35199,14 +35198,7 @@ function saveEspnFinal(game, eData){
           ? (_nhlLiveStatsCache[nhlLiveKey] || _nhlLiveStatsCache[`${game.away||''}|${game.home||''}`] || '') : '';
         if (nhlLive) statCtx += (statCtx?'\n':'') + '  [NHL LIVE] ' + nhlLive;
       }
-      // Linescore (all sports)
-      if (typeof buildLinescoreContext==='function') {
-        const owlEd = Object.values(espnScores||{}).find(v =>
-          (v.homeName||'').toLowerCase().replace(/[^a-z]/g,'')
-            .endsWith((game.home||'').toLowerCase().replace(/[^a-z]/g,'').slice(-5)));
-        const lsCtx = buildLinescoreContext(owlEd, game._id, game.home, game.away);
-        if (lsCtx) statCtx += (statCtx?'\n':'') + '  ' + lsCtx;
-      }
+      // Linescore removed from prompt (June 20 2026) — analytical buildScoreNarrativeContext used instead.
     } catch(_) {}
     const entry = {
       id, home:game.home||'', away:game.away||'',
@@ -35547,15 +35539,11 @@ async function fetchNightOwlFromClaude(topGame){
         }
       } catch(_) { /* parse / quota / missing — skip silently */ }
     }
-    // PM-28j: linescore context (all sports with period scores)
-    try {
-      const _owlEData = Object.values(espnScores).find(v =>
-        (v.homeName||'').toLowerCase().includes((topGame.home||'').toLowerCase().slice(-5)) ||
-        (v.home||'').toLowerCase().includes((topGame.home||'').toLowerCase().slice(-5))
-      );
-      const _lineCtx = buildLinescoreContext(_owlEData, topGame._id, topGame.home, topGame.away);
-      if (_lineCtx) _owlStatCtx += (_owlStatCtx?'\n':'')+'  '+_lineCtx;
-    } catch(e_) {}
+    // PM-28j: linescore context REMOVED from prompt (June 20 2026).
+    // Raw [LINE SCORE] was reproduced verbatim by the AI instead of being
+    // used analytically. buildScoreNarrativeContext (injected via _owlDramaPromptCtx)
+    // already provides the analytical output: lead changes, comebacks, max leads.
+    // The raw per-period scores are input to that analysis, not prompt material.
     // PM-28j: soccer goal timeline
     try {
       const _owlEData2 = Object.values(espnScores).find(v =>
