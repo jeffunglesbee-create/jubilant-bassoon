@@ -3774,6 +3774,268 @@ detection for any tournament where the relay cache is stale and
 
 ---
 
+## Rule 72 — Inherited claims must be re-verified (CHALLENGE-A)
+
+When a session reads a claim from HANDOFF.md, a Drive doc, a prior session
+summary, or memories, and that claim influences a build decision, the
+session MUST verify the claim independently before acting on it.
+
+### What counts as a "build decision"
+
+- Which data source to use
+- What fields are available from an endpoint
+- Whether a feature is feasible or deferred
+- Whether a dependency is active or deprecated
+
+### Verification methods
+
+- Probe the endpoint: `curl -s URL | node -e "..."`
+- Check the code: `grep -n 'functionName' index.html`
+- Check the account: Cloudflare dashboard, API provider portal
+- Check the repo: `git log --oneline -10`, file contents
+
+### What this does NOT require
+
+You don't need to re-verify every claim in every document you read.
+Only claims that will influence the work you're about to do. If the
+HANDOFF says "smoke 702/0" and you're about to run smoke anyway, the
+claim will verify itself. If the HANDOFF says "ESPN has per-player
+stats" and you're about to write code that reads those stats, probe.
+
+### Case study
+
+The ESPN stats claim propagated for 3 weeks (May 29 → June 18) because
+every session trusted the prior session's claim. One curl command would
+have revealed ESPN returns zeros during live play. The May 29 probe
+tested a completed event. Nobody tested a live one. Three weeks of
+architecture and prioritization decisions were built on a false premise.
+
+---
+
+## Rule 73 — Drive doc claims require verification context (CLAIM-CONTEXT-A)
+
+Every factual claim in a Drive doc about data availability, API behavior,
+or system state must include:
+
+1. **Date verified** — when was this last confirmed?
+2. **Method** — curl command, browser inspection, CI probe, code audit?
+3. **Conditions** — live event, completed event, off-season, maintenance?
+
+### Examples
+
+**Violation:** "ESPN provides per-player stats"
+
+**Correct:** "ESPN provides per-player stats for completed events
+(verified May 29 via curl against The American Express 2025;
+live-event availability UNVERIFIED)"
+
+### Staleness threshold
+
+Claims older than 14 days in referenced Drive docs must be re-verified
+before being cited in a new session or document.
+
+### Cross-reference
+
+- Rule 2: DO NOT ASSUME
+- Rule 72: Inherited claims require verification
+
+---
+
+## Rule 74 — STAGED requires explicit unblock criteria (STAGED-GATE-A)
+
+When marking a feature as STAGED (per Rule 61), the documentation must
+include:
+
+1. **What** is staged (specific feature or code path)
+2. **Blocked by** what (specific technical blocker)
+3. **Unblocked when** (specific event or action)
+4. **Verify with** (exact terminal command)
+
+### Examples
+
+**Violation:** "STAGED: golf venue display"
+
+**Correct:** "STAGED: golf venue display. Blocked by: relay not serving
+venue field. Unblocked when: P13 relay deploys. Verify:
+`curl -s RELAY/enriched/pga | node -e '..assert(d.venue)..'`"
+
+### Orphan detection
+
+Features missing unblock criteria are treated as orphaned. At session
+start, grep outbox for STAGED items without verify commands and flag them.
+
+---
+
+## Rule 75 — CC prompt minimum specificity (PROMPT-SPEC-A)
+
+CC prompts must specify:
+
+1. **Target files and functions** — by name, not description
+2. **Expected input and output shapes** — field names, types
+3. **Scope boundary** — what NOT to touch
+4. **Success criteria** — what must pass for the prompt to be done
+
+### Examples
+
+**Violation:** "Fix the golf section"
+
+**Correct:** "In index.html, modify `injectPGALeaderboard` to read
+venue from `pgaData.venue` instead of `pgaData.event?.location`.
+Do not modify any other function. A662 smoke assertion must pass."
+
+### Rationale
+
+Vague prompts produce scope creep (Rule 69), assumption-based code
+(Rule 2), and rework cycles. Every vague CC prompt in June 2026
+produced at least one follow-up fix.
+
+### Cross-reference
+
+- Rule 69: TOUCH-ONLY — specificity prevents scope creep
+- Rule 79: PROMPT-HEAD — specificity includes file existence
+
+---
+
+## Rule 76 — Fallback chain limit (FALLBACK-CAP-A)
+
+No data access path may have more than 2 levels of fallback.
+
+### Acceptable
+
+```javascript
+const venue = pgaData.venue || "Unknown";
+```
+
+### Violation
+
+```javascript
+const venue = pgaData.event?.location || pgaData.event?.course
+  || pgaData.venue || "Unknown";
+```
+
+Three or more levels indicate the data contract is broken. Each
+fallback was added by a different session guessing where the data
+lives. The fix is Rule 60 (relay owns the contract) — identify
+which layer owns the field, fix it there, collapse the chain.
+
+### Case study
+
+The golf venue read path accumulated four levels, each one a guess
+from a different session about where venue data lives. The correct
+answer (flat `pgaData.venue`) required one relay probe to discover.
+
+### Cross-reference
+
+- Rule 60: Relay owns the data contract
+- Rule 64: Band-aid detection
+
+---
+
+## Rule 77 — Failure is failure (NO-RATIONALIZE-A)
+
+When CI fails, smoke drops, or a deploy breaks, the first response
+is investigation, not explanation.
+
+### The anti-pattern
+
+CI fails → "That's expected because [explanation]" → move on
+
+### The correct pattern
+
+CI fails → read the actual error → reproduce locally → identify
+root cause → fix or escalate
+
+### Why rationalization is costly
+
+A rationalized failure that later turns out to be real has higher
+cost than one investigated immediately. The investigation takes
+minutes. The rationalization trains the reflex to skip investigation
+on future failures, some of which will be real.
+
+### Case study
+
+Smoke count drop 664→601 was rationalized as "feature guards" — true
+in that case, but the same reflex applied to a June 16 CI failure
+delayed the real fix. The rationalization prevented reading the
+actual error output.
+
+### Cross-reference
+
+- Rule 42: Five-minute novel thinking — stop iterating, investigate
+- Rule 66: Mandatory smoke before push
+
+---
+
+## Rule 78 — Rate-limited API guard (API-COST-A)
+
+Before writing or modifying any function that calls an external API:
+
+1. **Identify** the API's rate limit and cost model
+2. **grep** existing call sites for caching patterns
+3. **Replicate** those patterns exactly
+
+### Common caching patterns in FIELD
+
+- Cloudflare Workers: `cf: { cacheEverything: true, cacheTtl: N }`
+- KV cache: check KV before fetch, write after
+- ETag/If-None-Match: conditional GET
+
+### CC vulnerability
+
+CC sessions are especially dangerous for rate-limited APIs because:
+- CC doesn't see the cost dashboard
+- CC writes helpers that look correct but miss caching
+- CC cron jobs run repeatedly, multiplying uncached calls
+- A single missing `cacheEverything` in a cron can burn months of quota
+
+### Case study
+
+June 16 CC session wrote two Odds API fetch helpers without
+`cacheEverything`. A dead-hour cron picked a failing date and
+retried repeatedly. Result: 19,999/20,000 credits exhausted in
+one session ($59/month quota burned).
+
+### Cross-reference
+
+- Rule 62: Follow existing conventions — caching IS a convention
+- Rule 71: Read before write — read existing fetch helpers first
+
+---
+
+## Rule 79 — CC prompts resolve against current HEAD (PROMPT-HEAD-A)
+
+Every CC prompt must:
+
+1. **Reference only files that exist in the target repo.** `STANDARDS.md`
+   in a relay prompt is wrong if the relay has no STANDARDS.md. Use
+   `CLAUDE.md` or say "See jubilant-bassoon STANDARDS.md Rule X."
+2. **Not describe code state that doesn't match HEAD.** Don't say
+   "function X already done" without verifying it's at HEAD. The prompt
+   author must check the repo's current state before writing the prompt.
+3. **Include `git log --oneline -5` as the first command** so CC can
+   confirm it's working from the expected commit.
+
+### Why this matters
+
+If the prompt describes a state that doesn't match HEAD, CC will either:
+- Conflict with existing code and waste time resolving
+- Build on the wrong base, producing code that passes in isolation
+  but breaks when integrated
+
+### Case study
+
+June 18 relay prompt referenced STANDARDS.md (doesn't exist in
+field-relay-nba) and described `buildGolfCronContext` as "already done"
+(wasn't at HEAD CC was using). CC adapted silently on the file reference
+but hit conflicts on the stale state description, requiring re-prompting.
+
+### Cross-reference
+
+- Rule 75: CC prompt specificity — HEAD verification is specificity
+- Rule 68: Probe before building — applies to repo state too
+
+---
+
 ## Case Study: Golf Layer Integration Failure (June 18 2026)
 
 **Context:** Golf layer built across 4 Claude sessions (2 CC, 2 chat).
