@@ -15,6 +15,9 @@ A 34,000+ line single-file PWA (index.html) for global sports intelligence. Depl
 - `.assetsignore` — excludes non-app files from CF upload
 
 ## Rules (non-negotiable)
+
+**PRIME DIRECTIVE: DO NOT RATIONALIZE (Rule 77 / NO-RATIONALIZE-A).** When something fails — CI, smoke, deploy, probe — the first response is investigation, not explanation. "That's expected because..." is not investigation. It prevents investigation. It enables violations of Rules 2, 42, 66, and 68 by training the reflex to explain away failures instead of reading the actual error. Investigate first. Always.
+
 1. **DO NOT INVENT** — never fabricate data, stats, scores, or content
 2. **DO NOT ASSUME** — verify before acting; read the code, don't guess
 3. **Smoke must pass before push** — `node smoke.js index.html` must show 0 failed
