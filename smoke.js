@@ -4271,6 +4271,31 @@ assert('A651 — buildLinescoreContext emits explicit team-labelled output; buil
   /winnerMaxLead >= 2 && leadChanges === 0 && loserMaxLead === 0/.test(html),
   'CC-CMD-2026-06-18 Night Owl inversion: buildLinescoreContext used to emit "Inn1: 0-4" (cumH-cumA) on a wire-to-wire MIN @ TEX game. Broadcast convention reads pairs as away-home, so the LLM rendered "Rangers held an early advantage, leading by as many as 4-runs" and hallucinated "10-run lead" + "3 lead changes" — all inverted. Two fixes: (1) linescore output now includes nick + cum score per slot in away-first order ("Inn1: Twins 4, Rangers 0"), and (2) buildScoreNarrativeContext appends "wire-to-wire (loser never led)" when leadChanges=0 AND loserMaxLead=0 alongside a ≥2 winner lead, so the LLM cannot invent ups-and-downs.');
 
+// ── A657 / CC-CMD-2026-06-19 F09 REST Countries — country context for WC briefs ──
+assert('A657 — fetchCountryContext function + cache + edge-case map + Night Owl injection',
+  // Function defined with the documented signature.
+  /async function fetchCountryContext\(countryName\)/.test(html) &&
+  // Module-level cache Map.
+  /const _countryCtxCache = new Map\(\)/.test(html) &&
+  // Edge-case name map present for the five known mismatches.
+  /const WC_COUNTRY_API_NAME = \{/.test(html) &&
+  /'USA': 'United States'/.test(html) &&
+  /'South Korea': 'Korea'/.test(html) &&
+  /'Türkiye': 'Turkey'/.test(html) &&
+  /'DR Congo': 'Congo'/.test(html) &&
+  /'Ivory Coast': "Côte d'Ivoire"/.test(html) &&
+  // restcountries.com endpoint with the documented field set.
+  /https:\/\/restcountries\.com\/v3\.1\/name\/\$\{encodeURIComponent\(apiName\)\}\?fields=name,population,capital,fifa,region,subregion/.test(html) &&
+  // 5s timeout via AbortSignal.
+  /AbortSignal\.timeout\(5000\)/.test(html) &&
+  // Returns the documented shape {population, capital, fifaCode, region}.
+  /fifaCode:\s+c\.fifa \|\| null/.test(html) &&
+  // Night Owl WC block fires fetchCountryContext per team, gated by WC_NAME_TO_CODE.
+  /if \(code && typeof fetchCountryContext === 'function'\)/.test(html) &&
+  // Injection format: "[COUNTRY: <team>] Population <pop>, capital <cap>, FIFA code <fifa>, <region>".
+  /\[COUNTRY: \$\{teamName\}\] \$\{parts\.join\(', '\)\}/.test(html),
+  'CC-CMD-2026-06-19 F09 REST Countries: free no-auth CORS-open enrichment for WC team briefs. fetchCountryContext(name) hits https://restcountries.com/v3.1/name/{name}?fields=name,population,capital,fifa,region,subregion with 5s AbortSignal, caches the result (including null on miss) in a module-level Map keyed by the original team name so each country is fetched at most once per session. WC_COUNTRY_API_NAME translates the five known mismatches (USA→United States, South Korea→Korea, Türkiye→Turkey, DR Congo→Congo, Ivory Coast→Côte d\'Ivoire); everything else passes through. Population formatted as "7.4M" / "950K" / raw. Injection lives in fetchNightOwlFromClaude alongside [WC: …] narratives; gated on WC_NAME_TO_CODE match so stray non-WC labels never trigger a fetch. Pure prompt enhancement — no UI, any error returns null silently.');
+
 // ── A656 / CC-CMD-2026-06-19 Golf cut-line projection (R2) + final + historical ──
 assert('A656 — computeCutLineProjection returns null pre-R2; injectPGALeaderboard renders projection/final/historical badge; prompt context emits cut line',
   // Helper exists.

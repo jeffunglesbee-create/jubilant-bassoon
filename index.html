@@ -21878,7 +21878,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-19j';
+  const SW_VERSION = '2026-06-19k';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -27693,6 +27693,57 @@ async function fetchGameNotes(game){
   if(!note&&game.home&&game.away) note=await fetchLeagueRSS(sport,game.home,game.away);
   try{if(note) localStorage.setItem(cKey,note);}catch(e){}
   return note;
+}
+
+// ── F09: REST Countries — country context for WC game briefs ─────────────
+// Free, no auth, CORS open. Populates an in-memory cache per session so
+// each country is fetched at most once. Used by the WC team context block
+// in fetchNightOwlFromClaude to inject "[COUNTRY: Paraguay] Population
+// 7.4M, capital Asunción, FIFA code PAR, South America" into the recap
+// prompt alongside WC_TEAM_CONTEXT narratives.
+//
+// API spec: docs/F09 — restcountries.com/v3.1/name/{name}?fields=...
+// Country context is enhancement; any error returns null silently so
+// the recap still ships without it.
+const _countryCtxCache = new Map();
+// Edge cases where the team name doesn't match restcountries.com's primary
+// name. For everything else (the vast majority), pass the team name as-is.
+const WC_COUNTRY_API_NAME = {
+  'USA': 'United States',
+  'South Korea': 'Korea',
+  'Türkiye': 'Turkey',
+  'DR Congo': 'Congo',
+  'Ivory Coast': "Côte d'Ivoire",
+};
+function _fmtCountryPop(n) {
+  if (n == null || !isFinite(n)) return null;
+  if (n >= 1_000_000) return (n / 1_000_000).toFixed(1).replace(/\.0$/, '') + 'M';
+  if (n >= 1_000)     return (n / 1_000).toFixed(1).replace(/\.0$/, '')     + 'K';
+  return String(n);
+}
+async function fetchCountryContext(countryName) {
+  if (!countryName) return null;
+  if (_countryCtxCache.has(countryName)) return _countryCtxCache.get(countryName);
+  const apiName = WC_COUNTRY_API_NAME[countryName] || countryName;
+  try {
+    const url = `https://restcountries.com/v3.1/name/${encodeURIComponent(apiName)}?fields=name,population,capital,fifa,region,subregion`;
+    const r = await fetch(url, { signal: AbortSignal.timeout(5000) });
+    if (!r.ok) { _countryCtxCache.set(countryName, null); return null; }
+    const arr = await r.json();
+    const c = Array.isArray(arr) ? arr[0] : null;
+    if (!c) { _countryCtxCache.set(countryName, null); return null; }
+    const ctx = {
+      population: _fmtCountryPop(c.population),
+      capital:    Array.isArray(c.capital) ? c.capital[0] : (c.capital || null),
+      fifaCode:   c.fifa || null,
+      region:     c.subregion || c.region || null,
+    };
+    _countryCtxCache.set(countryName, ctx);
+    return ctx;
+  } catch(_) {
+    _countryCtxCache.set(countryName, null);
+    return null;
+  }
 }
 
 
@@ -35294,13 +35345,34 @@ async function fetchNightOwlFromClaude(topGame){
     if (_isWCOwl) {
       // Team narrative context (manager, key players, historical note) from WC_TEAM_CONTEXT
       // Same data used in buildCompoundPrompt — surfaces the team story in the recap.
+      // F09 (REST Countries): also fetch population/capital/FIFA code/region in
+      // parallel and inject [COUNTRY: ...] lines alongside the WC narrative.
       const _wcCtxLines = [];
+      const _countryFetches = [];
       for (const teamName of [topGame.home, topGame.away]) {
         if (!teamName) continue;
         const code = typeof WC_NAME_TO_CODE !== 'undefined' ? WC_NAME_TO_CODE[teamName] : null;
         const ctx  = code && typeof WC_TEAM_CONTEXT !== 'undefined' ? WC_TEAM_CONTEXT[code] : null;
         if (ctx?.narrativeNote) _wcCtxLines.push(`  [WC: ${ctx.displayName}] ${ctx.narrativeNote}`);
         if (ctx?.guardrail)     _wcCtxLines.push(`  [WC GUARDRAIL: ${ctx.displayName}] ${ctx.guardrail}`);
+        // F09: only fire restcountries fetch when this looks like a real WC team
+        // (WC_NAME_TO_CODE match) — avoids stray fetches for non-WC labels.
+        if (code && typeof fetchCountryContext === 'function') {
+          _countryFetches.push(
+            fetchCountryContext(teamName).then(cc => {
+              if (!cc) return;
+              const parts = [];
+              if (cc.population) parts.push(`Population ${cc.population}`);
+              if (cc.capital)    parts.push(`capital ${cc.capital}`);
+              if (cc.fifaCode)   parts.push(`FIFA code ${cc.fifaCode}`);
+              if (cc.region)     parts.push(cc.region);
+              if (parts.length)  _wcCtxLines.push(`  [COUNTRY: ${teamName}] ${parts.join(', ')}`);
+            }).catch(()=>{})
+          );
+        }
+      }
+      if (_countryFetches.length) {
+        try { await Promise.all(_countryFetches); } catch(_) {}
       }
       if (_wcCtxLines.length) {
         _owlStatCtx += (_owlStatCtx ? '\n' : '') + _wcCtxLines.join('\n');
