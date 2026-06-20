@@ -4271,6 +4271,45 @@ assert('A651 — buildLinescoreContext emits explicit team-labelled output; buil
   /winnerMaxLead >= 2 && leadChanges === 0 && loserMaxLead === 0/.test(html),
   'CC-CMD-2026-06-18 Night Owl inversion: buildLinescoreContext used to emit "Inn1: 0-4" (cumH-cumA) on a wire-to-wire MIN @ TEX game. Broadcast convention reads pairs as away-home, so the LLM rendered "Rangers held an early advantage, leading by as many as 4-runs" and hallucinated "10-run lead" + "3 lead changes" — all inverted. Two fixes: (1) linescore output now includes nick + cum score per slot in away-first order ("Inn1: Twins 4, Rangers 0"), and (2) buildScoreNarrativeContext appends "wire-to-wire (loser never led)" when leadChanges=0 AND loserMaxLead=0 alongside a ≥2 winner lead, so the LLM cannot invent ups-and-downs.');
 
+// ── A661 / CC-CMD-2026-06-19 Prompt 12C Golf archive hook ──
+assert('A661 — saveGolfRoundFinal + _isGolfRoundComplete + boot wire after injectPGALeaderboard',
+  // Helpers defined.
+  /function _isGolfRoundComplete\(pgaData\)/.test(html) &&
+  /function saveGolfRoundFinal\(pgaData\)/.test(html) &&
+  // Module-level dedup map.
+  /const _golfRoundSaved = \{\};/.test(html) &&
+  // Round-complete detection: status substring match OR every top-60 player has thru >= 18.
+  /\/\(complete\|official\|final\)\/\.test\(status\)/.test(html) &&
+  /top60\.every\(p => \{[\s\S]{0,160}?thru >= 18/.test(html) &&
+  // Dedup key format eventId + '_R' + round.
+  /const dedup = eventId \+ '_R' \+ round;/.test(html) &&
+  /if \(_golfRoundSaved\[dedup\]\) return;/.test(html) &&
+  // /archive/game post: sport='golf', league='PGA Tour', source_id 'golf_' + ...
+  /relayBase \+ '\/archive\/game'/.test(html) &&
+  /sport: 'golf', league: 'PGA Tour'/.test(html) &&
+  /source_id: 'golf_' \+ \(eventId \|\| today\)/.test(html) &&
+  // golfDrama composition matches the spec.
+  /let golfDrama = 40;/.test(html) &&
+  /if \(pack\?\.count >= 8\) golfDrama \+= 25;/.test(html) &&
+  /else if \(pack\?\.count >= 5\) golfDrama \+= 15;/.test(html) &&
+  /if \(cut\?\.mode === 'projection' \|\| cut\?\.mode === 'final'\) \{[\s\S]{0,120}?golfDrama \+= 10;/.test(html) &&
+  /if \(margin <= 1\) golfDrama \+= 15;/.test(html) &&
+  /else if \(margin <= 3\) golfDrama \+= 5;/.test(html) &&
+  /else golfDrama -= 10;/.test(html) &&
+  /golfDrama = Math\.max\(0, Math\.min\(100, golfDrama\)\);/.test(html) &&
+  // Arc classification thresholds.
+  /classification: golfDrama >= 70 \? 'thriller' : golfDrama >= 50 \? 'nail-biter' : 'sleeper'/.test(html) &&
+  // /archive/drama post with source_id, drama_peak, drama_arc.
+  /relayBase \+ '\/archive\/drama'/.test(html) &&
+  /drama_peak: golfDrama/.test(html) &&
+  /drama_arc: JSON\.stringify\(arcPayload\)/.test(html) &&
+  // Boot wire: archive call lives inside the same setTimeout(...,300) block that
+  // delays injectPGALeaderboard past scheduleRenderAll's debounce.
+  /_isGolfRoundComplete\(d\)\) \{[\s\S]{0,80}?saveGolfRoundFinal\(d\)/.test(html) &&
+  // Both fetches are fire-and-forget with keepalive.
+  /keepalive: true,\s*\}\)\.catch\(\(\) => \{\}\);/.test(html),
+  'CC-CMD-2026-06-19 Prompt 12C golf archive hook: golf doesn\'t flow through V2/GameDO/saveEspnFinal, so /archive/game and /archive/drama never see a golf round. saveGolfRoundFinal mirrors saveEspnFinal: it posts a game row with sport=golf, league="PGA Tour", source_id="golf_<eventId>", home=evName, away="R<round>", home_score=leader.toPar; and it posts a drama row built from golf-specific signals — pack density (+25 for ≥8 within 3 strokes, +15 for ≥5), cut-line stakes (+10 when projection or final mode is active), and leader margin (+15 for ≤1, +5 for ≤3, -10 for ≥4). Three-class arc (thriller ≥70, nail-biter ≥50, sleeper otherwise). _isGolfRoundComplete detects round-done either via a substring match on status (complete/official/final, case-insensitive) or via every top-60 leaderboard player having thru ≥ 18. _golfRoundSaved keyed by eventId+_R+round dedupes within a session; the relay must idempotently dedupe across sessions because loadPGASlate sessionStorage-caches the same payload for 10 min and re-fires on tab reload.');
+
 // ── A660 / CC-CMD-2026-06-19 Prompt 12B AFL V2 client wiring ──
 assert('A660 — afl key enabled in FIELD_V2_SOURCES so fetchV2AllScores polls AFL alongside other V2 sports',
   // afl: true sits inside the FIELD_V2_SOURCES object literal alongside the other enabled sports.

@@ -15110,6 +15110,102 @@ function computeGolfDerivedMetrics(data) {
   });
 }
 
+// ── Golf archive hook (CC-CMD-2026-06-19 / Prompt 12C) ────────────────────
+// Golf doesn't flow through V2/GameDO/saveEspnFinal, so the per-game
+// /archive/game + /archive/drama signals miss the entire sport. This pair
+// (detector + sender) mirrors saveEspnFinal for a round at completion.
+// Dedup: in-memory per session keyed by "{eventId}_R{round}"; the relay
+// must idempotently dedupe across sessions.
+const _golfRoundSaved = {};
+function _isGolfRoundComplete(pgaData) {
+  if (!pgaData) return false;
+  const ev = pgaData.event || pgaData.tournament || {};
+  const status = String(ev.status || pgaData.status || '').toLowerCase();
+  // Permissive substring match — ESPN status text varies ("Final", "Round
+  // Complete", "Official"). Any of these is treated as round-done.
+  if (/(complete|official|final)/.test(status)) return true;
+  // Fallback: every leaderboard player in the top 60 has thru >= 18.
+  const lb = pgaData.leaderboard;
+  if (!Array.isArray(lb) || lb.length < 60) return false;
+  const top60 = lb.slice(0, 60);
+  return top60.every(p => {
+    const thru = Number(p && p.thru);
+    return Number.isFinite(thru) && thru >= 18;
+  });
+}
+function saveGolfRoundFinal(pgaData) {
+  if (!pgaData) return;
+  const eventId = pgaData.eventId || pgaData.event?.id || '';
+  const round = pgaData.round || pgaData.event?.round || '';
+  const dedup = eventId + '_R' + round;
+  if (_golfRoundSaved[dedup]) return;
+  _golfRoundSaved[dedup] = true;
+
+  const evName = pgaData.name || pgaData.event?.name || 'PGA Tour Event';
+  const leader = pgaData.leaderboard?.[0];
+  const leaderNote = leader ? `${leader.name} ${leader.toPar}` : '';
+
+  // Archive game row
+  const relayBase = (typeof V2_RELAY_BASE !== 'undefined')
+    ? V2_RELAY_BASE : 'https://field-relay-nba.jeffunglesbee.workers.dev';
+  const today = (typeof TODAY_ISO !== 'undefined') ? TODAY_ISO : new Date().toISOString().slice(0,10);
+
+  fetch(relayBase + '/archive/game', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      sport: 'golf', league: 'PGA Tour', date: today,
+      home: evName, away: 'R' + round,
+      home_score: leader?.toPar ?? null,
+      venue: pgaData.event?.location || pgaData.event?.course || '',
+      source_id: 'golf_' + (eventId || today),
+      note: leaderNote,
+    }),
+    keepalive: true,
+  }).catch(() => {});
+
+  // Drama from golf-specific signals
+  const pack = (typeof computeGolfPackDensity === 'function') ? computeGolfPackDensity(pgaData) : null;
+  const cut  = (typeof computeCutLineProjection === 'function') ? computeCutLineProjection(pgaData) : null;
+
+  // Golf drama: pack density drives tension, cut line proximity adds stakes
+  let golfDrama = 40; // baseline
+  if (pack?.count >= 8) golfDrama += 25;      // dense pack = high tension
+  else if (pack?.count >= 5) golfDrama += 15;
+  if (cut?.mode === 'projection' || cut?.mode === 'final') {
+    // Notable players near cut = drama
+    golfDrama += 10;
+  }
+  // Leader margin: 1-stroke lead = exciting, 5+ = boring
+  if (leader && pgaData.leaderboard?.[1]) {
+    const margin = Math.abs((leader.toPar||0) - (pgaData.leaderboard[1].toPar||0));
+    if (margin <= 1) golfDrama += 15;
+    else if (margin <= 3) golfDrama += 5;
+    else golfDrama -= 10;
+  }
+  golfDrama = Math.max(0, Math.min(100, golfDrama));
+
+  const arcPayload = {
+    peak: golfDrama,
+    peakPeriod: 'R' + round,
+    sustainedMinutes: 0, // golf doesn't have minute-level drama tracking
+    trend: 'steady',
+    classification: golfDrama >= 70 ? 'thriller' : golfDrama >= 50 ? 'nail-biter' : 'sleeper',
+    samples: [{ s: golfDrama, p: round }],
+  };
+
+  fetch(relayBase + '/archive/drama', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      source_id: 'golf_' + (eventId || today),
+      drama_peak: golfDrama,
+      drama_arc: JSON.stringify(arcPayload),
+    }),
+    keepalive: true,
+  }).catch(() => {});
+}
+
 async function loadPGASlate() {
   const today = (typeof TODAY_ISO !== 'undefined') ? TODAY_ISO : new Date().toISOString().slice(0,10);
   const cacheKey = `pga:${today}`;
@@ -20804,6 +20900,15 @@ async function fetchSchedule(){
             if (typeof FIELD_DEBUG !== 'undefined' && FIELD_DEBUG) console.warn('[PGA] inject', e.message);
           }
         }
+        // CC-CMD-2026-06-19 Prompt 12C: archive the round if it just completed.
+        // Detector + sender both gate internally; dedup is in-memory per session.
+        try {
+          if (typeof _isGolfRoundComplete === 'function' &&
+              typeof saveGolfRoundFinal === 'function' &&
+              _isGolfRoundComplete(d)) {
+            saveGolfRoundFinal(d);
+          }
+        } catch (_) {}
       }, 300);
     }).catch(() => {});
   }, 4000);
@@ -21886,7 +21991,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-20a';
+  const SW_VERSION = '2026-06-20b';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
