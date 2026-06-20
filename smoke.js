@@ -4271,6 +4271,46 @@ assert('A651 — buildLinescoreContext emits explicit team-labelled output; buil
   /winnerMaxLead >= 2 && leadChanges === 0 && loserMaxLead === 0/.test(html),
   'CC-CMD-2026-06-18 Night Owl inversion: buildLinescoreContext used to emit "Inn1: 0-4" (cumH-cumA) on a wire-to-wire MIN @ TEX game. Broadcast convention reads pairs as away-home, so the LLM rendered "Rangers held an early advantage, leading by as many as 4-runs" and hallucinated "10-run lead" + "3 lead changes" — all inverted. Two fixes: (1) linescore output now includes nick + cum score per slot in away-first order ("Inn1: Twins 4, Rangers 0"), and (2) buildScoreNarrativeContext appends "wire-to-wire (loser never led)" when leadChanges=0 AND loserMaxLead=0 alongside a ≥2 winner lead, so the LLM cannot invent ups-and-downs.');
 
+// ── A658 / CC-CMD-2026-06-19 Prompt 10 UserDO read loop + Context Graph hydration ──
+assert('A658 — fetchUserState + visibilitychange re-fetch + USER CONTEXT gating',
+  // Function defined with the documented signature.
+  /async function fetchUserState\(\)/.test(html) &&
+  // Boot wire: setTimeout(...fetchUserState..., 2000) after first render.
+  /setTimeout\(\(\) => \{ if \(typeof fetchUserState === 'function'\) fetchUserState\(\); \}, 2000\)/.test(html) &&
+  // GET /user/state with the same userId pattern as the writers, 5s AbortSignal.
+  /\/user\/state\?userId=\$\{encodeURIComponent\(userId\)\}/.test(html) &&
+  /AbortSignal\.timeout\(5000\)/.test(html) &&
+  // Cache populated on window so downstream consumers can read it.
+  /window\._userState = data/.test(html) &&
+  // Context Graph hydration: bounded to USER_STATE_HYDRATE_MAX per cycle.
+  /const USER_STATE_HYDRATE_MAX = 5/.test(html) &&
+  /hydrateMissedRecaps\(window\._userState\.dramaticMomentsMissed\.slice\(0, USER_STATE_HYDRATE_MAX\)/.test(html) &&
+  /\/context\/game\/\$\{encodeURIComponent\(m\.gameId\)\}/.test(html) &&
+  /briefs\.find\(b => b\?\.type === 'game_recap'\)/.test(html) &&
+  /m\.recapSnippet = String\(text\)\.slice\(0, 160\)/.test(html) &&
+  // Promise.allSettled fan-out so a single bad gameId doesn't kill the cycle.
+  /await Promise\.allSettled\(entries\.map/.test(html) &&
+  // Watch affinity computed, 14-day window, sorted desc.
+  /function computeWatchAffinity\(watchHistory\)/.test(html) &&
+  /14 \* 24 \* 60 \* 60 \* 1000/.test(html) &&
+  /\.sort\(\(a, b\) => b\.count - a\.count\)/.test(html) &&
+  // visibilitychange re-fetches when visible AND > USER_STATE_REFETCH_MS since last fetch.
+  /const USER_STATE_REFETCH_MS = 60_000/.test(html) &&
+  /if \(Date\.now\(\) - _userStateFetchedAt < USER_STATE_REFETCH_MS\) return/.test(html) &&
+  /if \(document\.visibilityState !== 'visible'\) return/.test(html) &&
+  // Night Owl injection: USER CONTEXT line gated on watchHistory being non-empty.
+  /if \(window\._userState\?\.watchHistory\?\.length\)/.test(html) &&
+  /\[USER CONTEXT\] Viewer watched: /.test(html) &&
+  /Tailor the recap assuming they saw these games live\./.test(html) &&
+  // MISSED PEAKS line gated on dramaticMomentsMissed being non-empty.
+  /if \(window\._userState\?\.dramaticMomentsMissed\?\.length\)/.test(html) &&
+  /\[MISSED PEAKS\] Viewer missed /.test(html) &&
+  /Lead with what they missed\./.test(html) &&
+  // Top-game tiebreaker uses affinity only when sustained AND peak both tie.
+  /const _owlAffinity = window\._userState\?\._affinity \|\| \[\]/.test(html) &&
+  /return _affScore\(b\)-_affScore\(a\)/.test(html),
+  'CC-CMD-2026-06-19 Prompt 10 UserDO read loop closes the loop opened in the May UserDO writer wiring. fetchUserState() pulls /user/state?userId=... with a 5s AbortSignal and caches the result in window._userState plus a fetched-at timestamp; visibilitychange re-fetches on visible when > 60s have elapsed (disjoint from the existing peak_missed visibilitychange listener which only fires on hidden). hydrateMissedRecaps fans out at most 5 /context/game/{gameId} hydrations in parallel via Promise.allSettled and attaches the first game_recap brief\'s first 160 chars as recapSnippet on each entry. computeWatchAffinity tallies the trailing 14 days of watchHistory by sport and exposes a sorted array as window._userState._affinity. Night Owl prompt assembly appends [USER CONTEXT] and [MISSED PEAKS] lines (each gated on the respective array being non-empty), and the top-game selector now uses affinity as a true tiebreaker — only resolves when sustained drama AND dramaPeak both tie. Boot wires setTimeout(fetchUserState, 2000) after first render, before the journalism path needs the data.');
+
 // ── A657 / CC-CMD-2026-06-19 F09 REST Countries — country context for WC briefs ──
 assert('A657 — fetchCountryContext function + cache + edge-case map + Night Owl injection',
   // Function defined with the documented signature.

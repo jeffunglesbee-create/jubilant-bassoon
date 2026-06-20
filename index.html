@@ -20733,6 +20733,9 @@ async function fetchSchedule(){
   setTimeout(fetchSoccerFixtures, 500); // no-op with empty SOCCER_LEAGUES (all soccer on V2)
   setTimeout(fetchMLSLive, 800);         // MLS relay: stats-api.mlssoccer.com → canonical opta_id keys in espnScores
   fetchFPLLiveScores();  // FPL relay — EPL live scores (official PL data, CORS bypass via relay)
+  // UserDO read loop (CC-CMD-2026-06-19 / Prompt 10): hydrate state after first
+  // render but before the journalism build path needs it.
+  setTimeout(() => { if (typeof fetchUserState === 'function') fetchUserState(); }, 2000);
 
 
   // startSportsDBEngine / startFotmobEngine removed — soccer now fully on api-sports.io V2
@@ -21878,7 +21881,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-19k';
+  const SW_VERSION = '2026-06-19l';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -25903,6 +25906,101 @@ document.addEventListener('visibilitychange', () => {
       }
     }
   } catch(_) {}
+});
+
+// ── UserDO read loop (CC-CMD-2026-06-19 / Prompt 10) ─────────────────────
+// Companion to the fire-and-forget writers above. GET /user/state hydrates
+// window._userState with { watchHistory, seriesLedger, dramaticMomentsMissed }
+// and computes a sport-affinity tally from the trailing 14 days.
+//
+// Boot wires setTimeout(fetchUserState, 2000) after first render so the
+// first journalism build can see the state. visibilitychange re-fetches
+// on return when at least USER_STATE_REFETCH_MS has elapsed.
+//
+// All paths are enhancement, never blocking: any error returns null and
+// downstream consumers gate on window._userState being truthy.
+const USER_STATE_REFETCH_MS = 60_000;
+const USER_STATE_HYDRATE_MAX = 5;
+let _userStateFetchedAt = 0;
+let _userStateInFlight  = false;
+
+async function fetchUserState() {
+  if (_userStateInFlight) return window._userState || null;
+  const userId = (typeof getFieldUserId === 'function') ? getFieldUserId() : null;
+  if (!userId) return null; // private mode / localStorage blocked — skip silently
+  const base = typeof V2_RELAY_BASE !== 'undefined'
+    ? V2_RELAY_BASE : 'https://field-relay-nba.jeffunglesbee.workers.dev';
+  _userStateInFlight = true;
+  try {
+    const r = await fetch(`${base}/user/state?userId=${encodeURIComponent(userId)}`,
+      { signal: AbortSignal.timeout(5000) });
+    if (!r.ok) return null;
+    const data = await r.json();
+    window._userState = data || null;
+    _userStateFetchedAt = Date.now();
+    // Hydrate missed dramatic moments with recap snippets from the relay's
+    // Context Graph. Bounded to USER_STATE_HYDRATE_MAX per cycle so a long
+    // backlog doesn't fan out into the relay.
+    if (window._userState?.dramaticMomentsMissed?.length) {
+      hydrateMissedRecaps(window._userState.dramaticMomentsMissed.slice(0, USER_STATE_HYDRATE_MAX), base)
+        .catch(()=>{});
+    }
+    // Compute sport affinity for the Night Owl tiebreaker.
+    if (Array.isArray(window._userState?.watchHistory)) {
+      window._userState._affinity = computeWatchAffinity(window._userState.watchHistory);
+    }
+    return window._userState;
+  } catch(_) {
+    return null;
+  } finally {
+    _userStateInFlight = false;
+  }
+}
+
+// Hydrate each missed-peak entry with a 160-char snippet from its game_recap
+// brief. Mutates the entries in-place; window._userState references the same
+// objects so downstream prompt injection sees the snippets without a re-assign.
+async function hydrateMissedRecaps(entries, base) {
+  if (!Array.isArray(entries) || !entries.length) return;
+  await Promise.allSettled(entries.map(async m => {
+    if (!m?.gameId || m.recapSnippet) return;
+    try {
+      const r = await fetch(`${base}/context/game/${encodeURIComponent(m.gameId)}`,
+        { signal: AbortSignal.timeout(5000) });
+      if (!r.ok) return;
+      const data = await r.json();
+      const briefs = data?.briefs || data?.context?.briefs || [];
+      const recap = briefs.find(b => b?.type === 'game_recap');
+      const text = recap?.text || recap?.body || '';
+      if (text) m.recapSnippet = String(text).slice(0, 160);
+    } catch(_) { /* hydration failure is silent — recap snippet is enhancement */ }
+  }));
+}
+
+// Tally games watched per sport in the trailing 14 days. Returns a sorted
+// descending list so [0] is the favoured sport; consumed as a tiebreaker
+// by the Night Owl top-game selector when sustained drama is essentially
+// equal. RUWT: pure tally, no composite drama math.
+function computeWatchAffinity(watchHistory) {
+  if (!Array.isArray(watchHistory)) return [];
+  const cutoff = Date.now() - 14 * 24 * 60 * 60 * 1000;
+  const tally = Object.create(null);
+  for (const w of watchHistory) {
+    if (!w?.sport || !w.ts || w.ts < cutoff) continue;
+    tally[w.sport] = (tally[w.sport] || 0) + 1;
+  }
+  return Object.entries(tally)
+    .map(([sport, count]) => ({ sport, count }))
+    .sort((a, b) => b.count - a.count);
+}
+
+// Re-fetch when the user returns to the tab after at least USER_STATE_REFETCH_MS
+// have elapsed. Disjoint from the peak_missed visibilitychange listener above
+// (that one fires on hidden, this one on visible).
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState !== 'visible') return;
+  if (Date.now() - _userStateFetchedAt < USER_STATE_REFETCH_MS) return;
+  fetchUserState();
 });
 
 //
@@ -35405,6 +35503,33 @@ async function fetchNightOwlFromClaude(topGame){
     }
   } catch(e_) {}
 
+  // User context (Prompt 10): inject what the viewer already watched tonight
+  // and any high-drama games they missed. Both blocks gate on window._userState
+  // being populated by fetchUserState — silent otherwise so private-mode users
+  // and cold sessions render the same recap.
+  try {
+    if (window._userState?.watchHistory?.length) {
+      const todayWatched = window._userState.watchHistory
+        .filter(w => w.ts && (Date.now() - w.ts) < 12 * 3600 * 1000)
+        .map(w => w.gameId);
+      if (todayWatched.length) {
+        _owlStatCtx += '\n  [USER CONTEXT] Viewer watched: ' +
+          todayWatched.slice(0, 3).join(', ') +
+          '. Tailor the recap assuming they saw these games live.';
+      }
+    }
+    if (window._userState?.dramaticMomentsMissed?.length) {
+      const missed = window._userState.dramaticMomentsMissed
+        .filter(m => m.ts && (Date.now() - m.ts) < 12 * 3600 * 1000);
+      if (missed.length) {
+        _owlStatCtx += '\n  [MISSED PEAKS] Viewer missed ' + missed.length +
+          ' high-drama game(s): ' +
+          missed.slice(0, 3).map(m => m.gameId + ' (drama ' + m.peakDrama + ')').join(', ') +
+          '. Lead with what they missed.';
+      }
+    }
+  } catch(_) {}
+
   // Drama narrative context — all three postgame drama metrics + arc + score sequence
   let _owlDramaPromptCtx = '';
   try {
@@ -37037,11 +37162,24 @@ async function renderNightOwlRecap(){
   // Night Owl is designed to show at end of night; the hour gate caused more
   // misses than it prevented premature shows (early games end at 7:30pm).
 
-  // Rank by sustained drama (minutes above 65 in last hour), tiebreak: dramaPeak
+  // Rank by sustained drama (minutes above 65 in last hour), tiebreak: dramaPeak,
+  // then user sport-affinity (Prompt 10) — drama still wins outright; affinity
+  // only resolves the long-tail tie where both sustained AND peak are equal.
+  const _owlAffinity = window._userState?._affinity || [];
+  const _affScore = (game) => {
+    const sp = (game?.sport || game?._sport || '').toLowerCase();
+    if (!sp) return 0;
+    const hit = _owlAffinity.find(a => sp.includes(String(a.sport).toLowerCase()));
+    return hit ? hit.count : 0;
+  };
   const topGame=finals.slice().sort((a,b)=>{
     const aSustained=(typeof getDramaSustained==='function')?getDramaSustained(a.id||a._id||'',65,60*60*1000):0;
     const bSustained=(typeof getDramaSustained==='function')?getDramaSustained(b.id||b._id||'',65,60*60*1000):0;
-    if(Math.abs(aSustained-bSustained)<2) return (b.dramaPeak||0)-(a.dramaPeak||0);
+    if(Math.abs(aSustained-bSustained)<2){
+      const peakDelta=(b.dramaPeak||0)-(a.dramaPeak||0);
+      if(peakDelta!==0) return peakDelta;
+      return _affScore(b)-_affScore(a);
+    }
     return bSustained-aSustained;
   })[0];
   if(!topGame){el.style.display='none';return;}
