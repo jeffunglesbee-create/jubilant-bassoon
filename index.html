@@ -6492,7 +6492,7 @@ const _multiWordNicks={'Boston Red Sox':'Red Sox','Chicago White Sox':'White Sox
 // Game objects use _sport, _section, sport, or league depending on source.
 // This function is the SINGLE place the fallback chain lives.
 // All downstream code calls _gameSport(g) instead of raw chains.
-function _gameSport(g){ return g && (_gameSport(g)) || ''; }
+function _gameSport(g){ return g && (g._sport || g._section || g.league || '') || ''; }
 
 function teamNick(name){
   if(!name) return '';
@@ -21993,7 +21993,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-20f';
+  const SW_VERSION = '2026-06-20g';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
