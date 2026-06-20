@@ -21881,7 +21881,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-19l';
+  const SW_VERSION = '2026-06-19m';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -35001,6 +35001,59 @@ function saveEspnFinal(game, eData){
     if(existing.some(f=>f.id===id)) return; // already saved
     const dpKey2='field_drama_peak_'+(game._id||'');
     const dramaPeak=parseFloat(localStorage.getItem(dpKey2)||'0');
+    // ── Drama persistence: POST summary to relay archive (CC-CMD-2026-06-19 / Prompt 11B)
+    // Fires once per game at final state — the existing-check above gates
+    // this same as the entry write. Relay stores in D1 for Context Graph /
+    // Debrief / WOW features. RUWT compliant: client computes, server stores
+    // — no server-side drama scoring.
+    try {
+      const _gameId = game._id || '';
+      if (_gameId && dramaPeak > 0) {
+        const _peakInfo = (typeof getDramaPeakWithTime === 'function')
+          ? getDramaPeakWithTime(_gameId) : { s: dramaPeak, t: 0, p: 0 };
+        const _sustained = (typeof getDramaSustained === 'function')
+          ? getDramaSustained(_gameId, 65) : 0;
+        const _trend = (typeof getDramaTrend === 'function')
+          ? getDramaTrend(_gameId) : 0;
+        const _hist = (typeof getDramaHistory === 'function')
+          ? getDramaHistory(_gameId) : [];
+
+        // Downsample history to ~10 points for sparkline reconstruction.
+        const _step = Math.max(1, Math.floor(_hist.length / 10));
+        const _samples = _hist.filter((_, i) => i % _step === 0 || i === _hist.length - 1)
+          .map(h => ({ s: h.s, p: h.p }));
+
+        // Classify arc shape from the data.
+        const _cls = dramaPeak >= 80 && _sustained >= 5 ? 'thriller'
+          : dramaPeak >= 70 && _trend > 10 ? 'nail-biter'
+          : dramaPeak < 35 ? 'blowout'
+          : _trend > 15 && _peakInfo.s > 60 ? 'comeback'
+          : 'sleeper';
+
+        const _arcPayload = {
+          peak: Math.round(dramaPeak),
+          peakPeriod: _peakInfo.p || 0,
+          peakMinute: null, // future: compute from game start time delta
+          sustainedMinutes: _sustained,
+          trend: _trend > 5 ? 'escalating' : _trend < -5 ? 'declining' : 'steady',
+          classification: _cls,
+          samples: _samples,
+        };
+
+        const _relayBase = (typeof V2_RELAY_BASE !== 'undefined')
+          ? V2_RELAY_BASE : 'https://field-relay-nba.jeffunglesbee.workers.dev';
+        fetch(_relayBase + '/archive/drama', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            source_id: _gameId,
+            drama_peak: Math.round(dramaPeak),
+            drama_arc: JSON.stringify(_arcPayload),
+          }),
+          keepalive: true,
+        }).catch(() => {}); // fire-and-forget, never blocks saveEspnFinal
+      }
+    } catch(_) {} // drama persistence failure cannot affect final save
     // Snapshot stat context at game completion while caches are still warm.
     // Night Owl reads this back via entry.statCtx so it has player stats even
     // after ESPN clears the live box score (the cold-cache J5 ceiling fix).

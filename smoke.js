@@ -4271,6 +4271,40 @@ assert('A651 — buildLinescoreContext emits explicit team-labelled output; buil
   /winnerMaxLead >= 2 && leadChanges === 0 && loserMaxLead === 0/.test(html),
   'CC-CMD-2026-06-18 Night Owl inversion: buildLinescoreContext used to emit "Inn1: 0-4" (cumH-cumA) on a wire-to-wire MIN @ TEX game. Broadcast convention reads pairs as away-home, so the LLM rendered "Rangers held an early advantage, leading by as many as 4-runs" and hallucinated "10-run lead" + "3 lead changes" — all inverted. Two fixes: (1) linescore output now includes nick + cum score per slot in away-first order ("Inn1: Twins 4, Rangers 0"), and (2) buildScoreNarrativeContext appends "wire-to-wire (loser never led)" when leadChanges=0 AND loserMaxLead=0 alongside a ≥2 winner lead, so the LLM cannot invent ups-and-downs.');
 
+// ── A659 / CC-CMD-2026-06-19 Prompt 11B drama persistence — client signal at final ──
+assert('A659 — saveEspnFinal POSTs drama summary to /archive/drama with arc classification + downsampled samples',
+  // Drama persistence block lives inside saveEspnFinal, after the dramaPeak read.
+  /POST summary to relay archive \(CC-CMD-2026-06-19 \/ Prompt 11B\)/.test(html) &&
+  // Gated on a real game id AND a peak above zero — never fires for cold games.
+  /if \(_gameId && dramaPeak > 0\)/.test(html) &&
+  // Reads from the four drama helpers; each one guarded with typeof check.
+  /typeof getDramaPeakWithTime === 'function'/.test(html) &&
+  /typeof getDramaSustained === 'function'/.test(html) &&
+  /typeof getDramaTrend === 'function'/.test(html) &&
+  /typeof getDramaHistory === 'function'/.test(html) &&
+  // Downsample to ~10 points: step = max(1, floor(history.length / 10)).
+  /const _step = Math\.max\(1, Math\.floor\(_hist\.length \/ 10\)\)/.test(html) &&
+  /_hist\.filter\(\(_, i\) => i % _step === 0 \|\| i === _hist\.length - 1\)/.test(html) &&
+  /\.map\(h => \(\{ s: h\.s, p: h\.p \}\)\)/.test(html) &&
+  // Five-class arc classification with the documented thresholds.
+  /dramaPeak >= 80 && _sustained >= 5 \? 'thriller'/.test(html) &&
+  /dramaPeak >= 70 && _trend > 10 \? 'nail-biter'/.test(html) &&
+  /dramaPeak < 35 \? 'blowout'/.test(html) &&
+  /_trend > 15 && _peakInfo\.s > 60 \? 'comeback'/.test(html) &&
+  /: 'sleeper'/.test(html) &&
+  // Trend label derived from _trend with the documented ±5 thresholds.
+  /trend: _trend > 5 \? 'escalating' : _trend < -5 \? 'declining' : 'steady'/.test(html) &&
+  // POST to /archive/drama with source_id + drama_peak + drama_arc (stringified payload).
+  /_relayBase \+ '\/archive\/drama'/.test(html) &&
+  /method: 'POST'/.test(html) &&
+  /source_id: _gameId/.test(html) &&
+  /drama_peak: Math\.round\(dramaPeak\)/.test(html) &&
+  /drama_arc: JSON\.stringify\(_arcPayload\)/.test(html) &&
+  // keepalive + .catch(() => {}) so the fetch is fire-and-forget.
+  /keepalive: true/.test(html) &&
+  /fire-and-forget, never blocks saveEspnFinal/.test(html),
+  'CC-CMD-2026-06-19 Prompt 11B drama persistence: at game final saveEspnFinal already reads field_drama_peak from localStorage and dedupes via existing-check; the new block POSTs a single summary to the relay /archive/drama for D1 storage. Payload carries source_id, the rounded peak, and a stringified drama_arc that includes peak, peakPeriod, sustainedMinutes, a trend label (escalating/declining/steady derived from getDramaTrend), one of five arc classes (thriller/nail-biter/comeback/sleeper/blowout) derived from peak + sustained + trend, and ~10 downsampled {s,p} samples for sparkline reconstruction. Gated on _gameId truthy AND dramaPeak > 0, wrapped in try/catch with keepalive fire-and-forget so any failure path cannot affect the rest of saveEspnFinal. RUWT compliant: client computes the named classifications, server only stores.');
+
 // ── A658 / CC-CMD-2026-06-19 Prompt 10 UserDO read loop + Context Graph hydration ──
 assert('A658 — fetchUserState + visibilitychange re-fetch + USER CONTEXT gating',
   // Function defined with the documented signature.
