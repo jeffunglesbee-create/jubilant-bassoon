@@ -1,0 +1,31 @@
+Golf Relay Contract Probe — 20260620T115904Z
+  status: 'Play Complete'
+  venue: 'Shinnecock Hills Golf Club'
+  venueLocation: 'Southampton, NY'
+  PASS: name in top-level
+  PASS: position not pos
+  PASS: stats object exists
+  PASS: stats.gir
+  PASS: stats.drivingDistance
+  PASS: no flat driveDistAvg
+  PASS: top-level status present
+  PASS: top-level venue present
+  PASS: top-level venueLocation present
+RESULT: ALL PASSED
+Event: U.S. Open Active: True
+Sample: {
+  "position": "1",
+  "athleteId": "11119",
+  "name": "Wyndham Clark",
+  "toPar": "-7",
+  "today": "-6",
+  "thru": 18,
+  "round": 2,
+  "stats": {
+    "gir": 0,
+    "drivingDistance": 0,
+    "drivingAccuracy": 0,
+    "puttsPerGir": 0,
+    "sandSaves": 0
+  }
+}
