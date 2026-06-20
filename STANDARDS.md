@@ -3612,6 +3612,168 @@ probed the endpoint before specifying field names.
 
 ---
 
+## Rule 69 — No unprompted rewrites (TOUCH-ONLY-A)
+
+Only modify code specified in the prompt or required by its direct dependencies.
+
+### What counts as "direct dependency"
+
+If the prompt says "add a venue field to the leaderboard render," you may:
+- Modify the leaderboard render function
+- Modify the data-fetch function IF it needs to pass venue data through
+- Add a smoke assertion for the new field
+
+You may NOT:
+- Reformat the leaderboard render function "while you're in there"
+- Rename variables to "better" names
+- Restructure the fetch function into smaller helpers
+- Add error handling to unrelated code paths you noticed
+- "Clean up" adjacent CSS
+
+### What to do with adjacent issues
+
+If you notice a bug, style problem, or improvement opportunity outside your
+prompt scope, write it to `outbox/noticed-{date}.md` with:
+- File and line number
+- What you observed
+- Why it might be a problem
+- DO NOT FIX IT
+
+### Rationale
+
+Multiple sessions (June 14-20) modified code outside their prompt scope and
+introduced regressions in features that were previously working. The pattern:
+1. Prompt says "fix X"
+2. Claude fixes X
+3. Claude also "improves" Y, Z, and W
+4. Y breaks because Claude didn't read Y's callers (Rule 71 violation)
+5. Next session debugs Y, not knowing it was working before
+
+Refactoring is valid work — it gets its own prompt, its own commit, its own
+smoke run. It does not hitchhike on unrelated changes.
+
+### Cross-reference
+
+- Rule 7: One concern per commit
+- Rule 13: Code review gate — impact analysis before changes
+- Rule 71: Read before write — understand before touching
+
+---
+
+## Rule 70 — Cross-repo atomic changes (ATOMIC-A)
+
+When a change requires modifications to both relay and client, both changes
+MUST be planned in the same prompt (or explicitly paired prompts with
+documented dependency).
+
+### Ordering
+
+1. Relay change deploys first (relay has its own deploy pipeline)
+2. Client consumer is updated to match the ACTUAL deployed shape
+3. Both changes verified together before declaring done (Rule 61)
+
+### Never
+
+- Change a relay response shape without updating the client consumer in
+  the same session
+- Write client code that reads fields the relay doesn't serve yet
+- Commit a client change that depends on a relay change that hasn't been
+  deployed
+- Assume the relay shape matches the spec — probe it (Rule 68)
+
+### Violation indicators
+
+- Client code referencing field names that don't appear in `curl` output
+  from the relay
+- Relay fields that no client code reads (Rule 63 — dead code)
+- Client fallback chains longer than 2 levels (`a?.b || c?.d || e?.f`)
+  suggesting multiple attempts to guess the right shape
+
+### Prompt template for cross-repo changes
+
+```
+SCOPE: relay + client
+RELAY CHANGE: [what the endpoint will return]
+CLIENT CHANGE: [what the client will read]
+PRE-BUILD PROBE: curl -s RELAY_URL | node -e "console.log(Object.keys(d))"
+POST-BUILD VERIFY: curl -s RELAY_URL | node -e "console.assert(d.newField)"
+DEPLOY ORDER: relay first, then client
+```
+
+### Case study
+
+P12C (June 20) wrote `pgaData.event?.location` for an endpoint with no
+`event` object. P13 then added `venue` to the relay. P14 then fixed the
+client to read `pgaData.venue`. Three prompts, three commits, three smoke
+runs — for what should have been one atomic change with a pre-build probe.
+
+**Cost:** ~45 minutes of rework across 3 prompts. The relay-first pattern
+with a probe would have taken ~15 minutes in one prompt.
+
+### Cross-reference
+
+- Rule 60: Relay owns the data contract
+- Rule 61: End-to-end before done
+- Rule 65: Session handoff includes integration state
+- Rule 68: Probe before writing (PROBE-FIRST-A)
+
+---
+
+## Rule 71 — Read before write (CONTEXT-A)
+
+Before modifying any function, you must understand it. Understanding means:
+
+### Required steps
+
+1. **Read the function body.** Not skim — read. Note edge cases, fallbacks,
+   and conditional paths.
+2. **grep for every call site.** `grep -n 'functionName' index.html | head -20`.
+   Know who calls it, how often, and with what arguments.
+3. **Understand WHY.** If the code does something that looks wrong or
+   redundant, it may exist for a reason:
+   - Edge case in a specific sport or league
+   - Workaround for API behavior (e.g., ESPN returning zeros during live play)
+   - Patent compliance (ADR-002)
+   - Historical bug fix (check git log for the commit message)
+
+### The test
+
+If you cannot explain the current behavior to the user in one sentence,
+you do not understand it well enough to change it. Ask in the outbox
+rather than rewriting.
+
+### Special case: code from other sessions
+
+Code written by other Claude sessions (CC or chat) deserves extra caution.
+It may look suboptimal but exist because:
+- The author probed the actual API and found a shape you haven't seen
+- A prior attempt at the "clean" approach failed and this is the fix
+- The user explicitly requested this pattern
+
+### Violation
+
+Rewriting a function's internals and breaking its callers because you
+didn't check who calls it. Removing a "redundant" fallback that exists
+because the primary path fails under specific conditions.
+
+### Case study
+
+The `_isGolfRoundComplete` function had a `thru>=18` fallback because
+ESPN's `status` field wasn't available from the relay at the time it was
+written. The status field was added later (P13). A session seeing
+"redundant" fallback code and removing it would have broken round
+detection for any tournament where the relay cache is stale and
+`status` is undefined — the fallback is a safety net, not dead code.
+
+### Cross-reference
+
+- Rule 2: DO NOT ASSUME
+- Rule 13: Code review gate — impact analysis
+- Rule 24: Execution path contracts — map the call chain
+- Rule 69: TOUCH-ONLY — don't expand scope beyond the prompt
+
+---
+
 ## Case Study: Golf Layer Integration Failure (June 18 2026)
 
 **Context:** Golf layer built across 4 Claude sessions (2 CC, 2 chat).
