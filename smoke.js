@@ -1219,10 +1219,12 @@ assert('A262 — SPARINGLY_PHRASES + countSparingly: use-sparingly list with 2x 
   html.includes('OVERUSED WORDS'),
   'SPARINGLY_PHRASES must be defined with countSparingly() and wired into retry prompt');
 
-assert('A263 — Night Owl sport detection reads topGame.sport + league fallback (saved finals field name)',
-  html.includes('topGame._section || topGame._sport || topGame.sport || topGame.league') &&
-  html.includes('topGame._section||topGame._sport||topGame.sport||topGame.league'),
-  'Night Owl _sp must include topGame.sport (the field name saved to localStorage) and topGame.league as fallback');
+assert('A263 — Rule 76: Night Owl sport normalized once at selection, no downstream chains',
+  // Normalization line exists
+  html.includes('if(!topGame._sport) topGame._sport = topGame._section || topGame.sport || topGame.league') &&
+  // No 4-level chains remain in Night Owl (all should be topGame._sport || '')
+  !(/topGame\._section\s*\|\|\s*topGame\._sport\s*\|\|\s*topGame\.sport/.test(html)),
+  'Rule 76: topGame._sport is normalized once at selection. All downstream reads use topGame._sport only. No 4-level sport chains.');
 
 assert('A264 — Night Owl cache validation: contaminated cached brief is busted on sport vocab violations',
   html.includes('Busting contaminated cache: sport vocab violations') &&
@@ -1234,9 +1236,9 @@ assert('A265 — P1: Night Owl cache key versioned with SW_VERSION (busts on dep
   html.includes("'field_nightowl_v'+_owlSwV+'_'+topGame.id"),
   'Night Owl cache key must include SW_VERSION to auto-bust stale briefs on every deploy');
 
-assert('A266 — P6: Secondary capsule sport detection includes g.league fallback',
-  html.includes("g._section||g._sport||g.sport||g.league||''"),
-  'Secondary capsule _sp must include g.league fallback — same fix as A263 for primary');
+assert('A266 — Rule 76: Secondary capsule sport detection uses _gameSport centralizer',
+  html.includes('_gameSport(g)'),
+  'Rule 76: secondary capsule must use _gameSport(g), not raw fallback chains');
 
 assert('A267 — JQ rule: prose score persists to localStorage but NEVER renders technical info in brief UI (Jeff rule, June 1 2026)',
   html.includes('field_jq_scores') &&
@@ -1372,9 +1374,9 @@ assert('A289 — sport-specific voice arrays defined: FIELD_BASEBALL_VOICE, FIEL
 assert('A290 — sport voices wired into MLB brief, Night Owl, J2 series, EPL',
   html.includes('FIELD_BASEBALL_VOICE,') &&
   html.includes('getFieldVoice(_sp),') &&
-  html.includes('getFieldVoice(g._sport||g._section||g.league||') &&
+  html.includes('getFieldVoice(_gameSport(g))') &&
   html.includes('FIELD_SOCCER_VOICE,'),
-  'Sport voices must be injected into sport-specific journalism prompts');
+  'Sport voices must be injected into sport-specific journalism prompts. Voice calls use _gameSport(g) per Rule 76.');
 
 assert('A291 — J3 and J2 have mandatory three-part arc structure rules',
   html.includes('STRUCTURE: Paragraph 1 opens on the highest-stakes game') &&
@@ -2004,7 +2006,8 @@ assert('A372 — Voice Positioning v2 Move A: FIELD_VOICE_EXEMPLARS hoisted to t
   // J2 series preview prompt array starts with FIELD_VOICE_EXEMPLARS
   // (iPad-7 wraps this in _fieldVoiceExemplarsForSport(...) — accept both forms)
   (/\[FIELD_VOICE_EXEMPLARS,\s*\n?\s*'Write a FIELD Series Brief/.test(html) ||
-   /\[_fieldVoiceExemplarsForSport\([^)]*\),\s*\n?\s*'Write a FIELD Series Brief/.test(html)) &&
+   /\[_fieldVoiceExemplarsForSport\([^)]*\),\s*\n?\s*'Write a FIELD Series Brief/.test(html) ||
+   /\[_fieldVoiceExemplarsForSport\(_gameSport\(g\)\),\s*\n?\s*'Write a FIELD Series Brief/.test(html)) &&
   // J3 standalone prompt array starts with FIELD_VOICE_EXEMPLARS
   /\[FIELD_VOICE_EXEMPLARS,"Write a FIELD Brief for tonight/.test(html) &&
   // Total identifier references: 1 def + 3 wirings = 4
@@ -5211,7 +5214,15 @@ assert('A714 — Rule 60: no FIELD_NAME_MAP or fieldMap remapping objects',
   'Client must not have field name mapping objects — relay normalizes, client consumes as-is');
 
 
+// ── Rule 76 enforcement: _gameSport centralizer ──
+assert('A715 — Rule 76: _gameSport centralizer defined and no raw sport fallback chains remain',
+  // Helper exists
+  html.includes('function _gameSport(g)') &&
+  // No raw chains outside the helper and topGame normalizer
+  !/(?<!function _gameSport\(g\)\{[^}]*)(?<!topGame\._sport\s*=\s*)g\._sport\s*\|\|\s*g\._section\s*\|\|\s*g\.league/.test(html) &&
+  // No game._sport||game._section||game.league chains
+  !/game\._sport\s*\|\|\s*game\._section\s*\|\|\s*game\.league/.test(html),
+  'Rule 76: all sport detection must use _gameSport(g), not raw _sport||_section||league chains. Chain lives in one place only.');
+
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);
-
-

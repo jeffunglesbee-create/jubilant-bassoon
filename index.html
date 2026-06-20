@@ -6488,6 +6488,12 @@ const _multiWordNicks={'Boston Red Sox':'Red Sox','Chicago White Sox':'White Sox
   'South Africa':'S. Africa','Congo DR':'Congo','DR Congo':'Congo',
   'Ivory Coast':'Ivory Coast','Costa Rica':'Costa Rica',
   'Saudi Arabia':'Saudi Arabia','New Zealand':'New Zealand'};
+// Rule 76 (FALLBACK-CAP-A): canonical sport field accessor.
+// Game objects use _sport, _section, sport, or league depending on source.
+// This function is the SINGLE place the fallback chain lives.
+// All downstream code calls _gameSport(g) instead of raw chains.
+function _gameSport(g){ return g && (_gameSport(g)) || ''; }
+
 function teamNick(name){
   if(!name) return '';
   if(_multiWordNicks[name]) return _multiWordNicks[name];
@@ -7503,7 +7509,7 @@ function buildUmpWatchBadge(game) {
 // Only includes signals that are loaded and above noise threshold.
 function _buildAnalyticsChips(game) {
   const chips = [];
-  const sp = (game?._sport || game?._section || '').toLowerCase();
+  const sp = (_gameSport(game)).toLowerCase();
 
   // NHL: series-adjusted PP%/PK% + PDO
   if (sp.includes('nhl') || sp.includes('hockey')) {
@@ -9327,7 +9333,7 @@ function buildSlateScoutsPick(allGames) {
     let rank = 0;
     try {
       // Stat anomaly: highest deviation wins
-      const sd = (typeof getStatOfDay === 'function') ? getStatOfDay(g, g._sport||g._section||'') : null;
+      const sd = (typeof getStatOfDay === 'function') ? getStatOfDay(g, _gameSport(g)) : null;
       if (sd?.deviation >= 0.25) rank += 100 + Math.round(sd.deviation * 100);
     } catch(e_) {}
     try {
@@ -9376,7 +9382,7 @@ function isScoutsPick(g) {
   // Fires year-round on regular-season games with genuine analytical signal.
   let hasStatAnomaly = false;
   try {
-    const sp = (typeof getStatOfDay === 'function') ? getStatOfDay(g, g._sport || g._section || '') : null;
+    const sp = (typeof getStatOfDay === 'function') ? getStatOfDay(g, _gameSport(g)) : null;
     hasStatAnomaly = !!(sp?.deviation >= 0.25);
   } catch(e_) {}
 
@@ -9817,7 +9823,7 @@ function getVolatilityLabel(gameId) {
 
 function shouldShowMLBNAlert(game, smoothedDrama) {
   if (!smoothedDrama) return null;
-  const sp = (game._section || game._sport || '').toLowerCase();
+  const sp = (_gameSport(game)).toLowerCase();
   if (!sp.includes('mlb') && !sp.includes('baseball')) return null;
   // National broadcast = already on primary TV; Big Inning is supplementary
   if (game.nationalBundle) return null;
@@ -12273,7 +12279,7 @@ function renderFieldDesk(){
     const topPick = (typeof buildSlateScoutsPick === 'function') ? buildSlateScoutsPick(allGames) : null;
     if(topPick){
       const sd = (typeof getStatOfDay === 'function')
-        ? getStatOfDay(topPick, topPick._sport||topPick._section||'') : null;
+        ? getStatOfDay(topPick, _gameSport(topPick)) : null;
       const statLine = sd ? `<div style="font-size:.64rem;color:#2dd4bf;margin-top:.2rem">📊 ${sd.fullText}</div>` : '';
       const gameKey = topPick._id || `${topPick.home}_${topPick.away}`;
       const ms = (typeof _bdlMilestonesCache !== 'undefined') ? _bdlMilestonesCache?.[gameKey] : null;
@@ -12951,7 +12957,7 @@ function computeMarketConsensus(games) {
     if (!g) continue;
     const ml = (g.opening_odds && g.opening_odds.moneyline) || g.opening_odds || g.odds?.moneyline;
     if (!ml) continue;
-    const sport = String(g.sport || g._sport || g.league || 'Other').trim() || 'Other';
+    const sport = String(_gameSport(g)||'Other').trim() || 'Other';
     if (!buckets.has(sport)) buckets.set(sport, []);
     buckets.get(sport).push(g);
   }
@@ -13606,7 +13612,7 @@ function injectJ1J4Badges() {
           (topPick2.home === g.home && topPick2.away === g.away));
         if (isTopPick && JOURNALISM_ENQUEUE_RELAY) {
           const series2 = g.seriesRecord || '';
-          const sd2 = (typeof getStatOfDay === 'function') ? getStatOfDay(g, g._sport||g._section||'') : null;
+          const sd2 = (typeof getStatOfDay === 'function') ? getStatOfDay(g, _gameSport(g)) : null;
           const spBriefKey = `field_sp_brief_v${_swv}_${g._id||''}_${series2.replace(/\s/g,'_')}`;
           const spJobKey   = `field_sp_job_v${_swv}_${g._id||''}_${series2.replace(/\s/g,'_')}`;
           // Check sessionStorage for completed brief first
@@ -17034,7 +17040,7 @@ async function fetchESPNAthleteContextAll(games) {
   const tasks = [];
   for (const g of (games||[]).slice(0,8)) {
     if (_espnAthleteContextCache[g._id]) continue; // already warm
-    const sport = g._sport||g._section||'';
+    const sport = _gameSport(g);
     const espnPath = ESPN_ATHLETE_SPORT_MAP[sport];
     if (!espnPath) continue;
     tasks.push((async()=>{
@@ -19997,7 +20003,7 @@ async function fetchSoccerFixtures(){
 // Canonical sport flags — replaces 100+ scattered sp.includes() checks.
 // All downstream pipeline stages and any feature needing sport context use this.
 function classifySport(game, espnScore){
-  const sp=((game._sport||game._section||game.league||game.sport||'')).toLowerCase();
+  const sp=((_gameSport(game)||game.sport||'')).toLowerCase();
   // league checked independently: _sport short-circuits via || before league is reached
   // e.g. _sport="NBA Playoffs" is truthy so league="NBA Playoffs – East CF G2" never runs
   const lg=(game.league||'').toLowerCase();
@@ -21802,7 +21808,7 @@ function buildBroadcastSummary(games) {
   const sportOf = new Map();
   for (const g of games) {
     if (!g) continue;
-    const sport = String(g.sport || g._sport || g.league || '').toLowerCase();
+    const sport = String(_gameSport(g)).toLowerCase();
     const bundles = [];
     if (g.nationalBundle) bundles.push(String(g.nationalBundle));
     if (Array.isArray(g.streams)) {
@@ -21987,7 +21993,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-20d';
+  const SW_VERSION = '2026-06-20e';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -24643,7 +24649,7 @@ function computeTemporalPrecision(text) {
 // Computed from sport string (game._sport) + text patterns. Zero API calls.
 function computeVoiceConsistency(text, game) {
   if (!text) return {score:15, sport:'unknown', signals:0}; // neutral when no text
-  const sport = ((game?._sport || game?.league || game?._section || '')).toLowerCase();
+  const sport = ((_gameSport(game))).toLowerCase();
   const tl = text.toLowerCase();
   let score = 15; // neutral baseline — don't penalize when sport unknown
   let signals = 0;
@@ -24860,7 +24866,7 @@ function renderProseScore(scoreObj, label){
 function buildLayer3Rules(games) {
   const rules = [];
   (games||[]).forEach(g => {
-    const sp = (g._section||g._sport||'').toLowerCase();
+    const sp = (_gameSport(g)).toLowerCase();
     const name = (teamNick(g.away)) + ' @ ' + (teamNick(g.home));
     if (g._gameImportance === 'elimination')
       rules.push('- ELIMINATION ['+name+']: Lead with who goes home tonight. Stakes before any stat.');
@@ -24927,7 +24933,7 @@ function buildCompoundPrompt(sections) {
       // ADR-002 (H7): named-tier check — was '_importanceScore(g) >= 6'.
       const _tH7 = leagueImportanceTier(g);
       if (_tH7 !== 'reg' && _tH7 !== 'series') return; // not suppressed
-      const league = (g.league || g._sport || g._section || '').toLowerCase();
+      const league = (g.league || _gameSport(g)).toLowerCase();
       const leagueKey = league.includes('mlb') || league.includes('baseball') ? 'MLB'
         : league.includes('wnba') ? 'WNBA'
         : league.includes('mls') ? 'MLS'
@@ -24979,7 +24985,7 @@ function buildCompoundPrompt(sections) {
   const hasTier2 = games.some(g => { const t = leagueImportanceTier(g); return t === 'quarterfinal' || t === 'group'; });
   const _leagueCount = {};
   const gamesForContext = games.filter(g => {
-    const league = (g.league || g._sport || g._section || '').toLowerCase();
+    const league = (g.league || _gameSport(g)).toLowerCase();
     const leagueKey = league.includes('mlb') || league.includes('baseball') ? 'mlb'
       : league.includes('wnba') ? 'wnba'
       : league.includes('mls') ? 'mls'
@@ -25047,7 +25053,7 @@ function buildCompoundPrompt(sections) {
     // Maps internal _sport/_section/league strings to canonical league codes:
     // NBA, NHL, MLB, NFL, MLS, EPL, UCL, WNBA, AFL, NCAA, F1, PGA, ATP
     const _leagueTag = (()=>{
-      const raw = (g.league || g._sport || g._section || '').toLowerCase();
+      const raw = (g.league || _gameSport(g)).toLowerCase();
       if (/\bnba\b|basketball.*nba/i.test(raw)) return 'NBA';
       if (/\bnhl\b|hockey/i.test(raw)) return 'NHL';
       if (/\bmlb\b|baseball/i.test(raw)) return 'MLB';
@@ -25089,15 +25095,15 @@ function buildCompoundPrompt(sections) {
       `  Network: ${stream}`,
       crewCtx ? `  Crew: ${crewCtx}` : '',
       // Item 2: MLB probable pitchers
-      (()=>{try{const sp=(g._sport||g._section||'').toLowerCase();if(!(sp.includes('mlb')||sp.includes('baseball'))) return '';const hp=g.homePitcher,ap=g.awayPitcher;if(!hp&&!ap) return '';const fmt=p=>p?`${p.lastName||p.fullName||''}${p.era?` (${p.era} ERA)`:p.wins!=null?` (${p.wins}-${p.losses})`:''}`:'TBD';return `  Pitchers: ${fmt(ap)} vs ${fmt(hp)}`;}catch(e_){return ''}})(),
+      (()=>{try{const sp=(_gameSport(g)).toLowerCase();if(!(sp.includes('mlb')||sp.includes('baseball'))) return '';const hp=g.homePitcher,ap=g.awayPitcher;if(!hp&&!ap) return '';const fmt=p=>p?`${p.lastName||p.fullName||''}${p.era?` (${p.era} ERA)`:p.wins!=null?` (${p.wins}-${p.losses})`:''}`:'TBD';return `  Pitchers: ${fmt(ap)} vs ${fmt(hp)}`;}catch(e_){return ''}})(),
       // Wave 1 MLB analytics
       (()=>{ try { const ctx=getMLBAnalyticsContext(g); return ctx.length ? ctx.join('\n') : ''; } catch(e_){return '';} })(),
       // Wave 1 NHL analytics
-      (()=>{ try { const sp=(g._sport||g._section||'').toLowerCase(); if(!(sp.includes('nhl')||sp.includes('hockey'))) return ''; const ctx=getNHLAnalyticsContext(g); return ctx.length ? ctx : ''; } catch(e_){return '';} })(),
-      (()=>{ try { const sp=(g._sport||g._section||'').toLowerCase(); if(!(sp.includes('nba')||sp.includes('basketball'))) return ''; const ctx=getNBAAnalyticsContext(g); return ctx.length ? ctx : ''; } catch(e_){return '';} })(),
+      (()=>{ try { const sp=(_gameSport(g)).toLowerCase(); if(!(sp.includes('nhl')||sp.includes('hockey'))) return ''; const ctx=getNHLAnalyticsContext(g); return ctx.length ? ctx : ''; } catch(e_){return '';} })(),
+      (()=>{ try { const sp=(_gameSport(g)).toLowerCase(); if(!(sp.includes('nba')||sp.includes('basketball'))) return ''; const ctx=getNBAAnalyticsContext(g); return ctx.length ? ctx : ''; } catch(e_){return '';} })(),
       // FBref xG context for EPL/soccer games (async — injected when available)
       (()=>{ try {
-        const sp=(g._sport||g._section||'').toLowerCase();
+        const sp=(_gameSport(g)).toLowerCase();
         if (!sp.includes('soccer') && !sp.includes('epl') && !sp.includes('premier') &&
             !sp.includes('bundesliga') && !sp.includes('ligue') && !sp.includes('serie') &&
             !sp.includes('laliga') && !sp.includes('la liga')) return '';
@@ -25128,7 +25134,7 @@ function buildCompoundPrompt(sections) {
         return lines.length ? '[SOCCER ANALYTICS] ' + lines.join(' | ') : '';
       } catch(e_){ return ''; } })(),
       // Stat of Day
-      (()=>{ try { if(!isScoutsPick(g)) return ''; const s=getStatOfDay(g,g._sport||g._section||''); return s ? `  [FEATURED STAT] ${s.fullText}` : ''; } catch(e_){return '';} })(),
+      (()=>{ try { if(!isScoutsPick(g)) return ''; const s=getStatOfDay(g,_gameSport(g)); return s ? `  [FEATURED STAT] ${s.fullText}` : ''; } catch(e_){return '';} })(),
       g.matchupNote ? `  Context: ${g.matchupNote}` : '',
       // Gap D: MD3 final-matchday simultaneous kickoff injection (Jun 10 2026)
       // Relay cron path handles this in buildWCTeamContextBlock; client on-demand path did not.
@@ -25155,7 +25161,7 @@ function buildCompoundPrompt(sections) {
       (()=>{try{
         const _eS=findESPNScore?.(g);
         if(!_eS||_eS.state==='post') return '';
-        const _sp30=(g._sport||g._section||'').toLowerCase();
+        const _sp30=(_gameSport(g)).toLowerCase();
         if(!(_sp30.includes('nba')||_sp30.includes('basketball'))) return '';
         const _hN=teamNick(g.home||'').toLowerCase(), _aN=teamNick(g.away||'').toLowerCase();
         const _nbaId30=_nbaGameIdMap[`${_hN}_${_aN}`]||_nbaGameIdMap[`${_aN}_${_hN}`];
@@ -25180,7 +25186,7 @@ function buildCompoundPrompt(sections) {
       }catch(e_){return ''}})(),
       // Postgame drama arc + score narrative (only for finished games — RUWT-clean)
       (()=>{try{const _eS=findESPNScore?.(g);if(_eS?.state!=='post')return '';return buildDramaArcDescription(g._id||'')||'';}catch(e_){return ''}})(),
-      (()=>{try{const _eS=findESPNScore?.(g);if(_eS?.state!=='post')return '';const _sp28c=(g._sport||g._section||'').toLowerCase();return buildScoreNarrativeContext(g._id||'',g.home||'',g.away||'',_sp28c)||'';}catch(e_){return ''}})(),
+      (()=>{try{const _eS=findESPNScore?.(g);if(_eS?.state!=='post')return '';const _sp28c=(_gameSport(g)).toLowerCase();return buildScoreNarrativeContext(g._id||'',g.home||'',g.away||'',_sp28c)||'';}catch(e_){return ''}})(),
       // CFL pre-game odds context
       (()=>{try{if(g._cflSpread==null&&g._cflTotal==null)return '';const sp=g._cflSpread!=null?`${g._cflSpread>0?'+':''}${g._cflSpread}`:'';const tot=g._cflTotal!=null?`O/U ${g._cflTotal}`:'';const pct=g.wp!=null?` · home ${Math.round(g.wp*100)}%`:'';const parts=[sp,tot].filter(Boolean).join(' · ');return parts?`  [CFL ODDS] ${parts}${pct}`:''}catch(e_){return ''}})(),
       // Fix 7: EMBER buried lead — tier + channel context for editorial framing
@@ -25198,17 +25204,17 @@ function buildCompoundPrompt(sections) {
       // isMarqueeBroadcast() signals A-team network priority assignment
       (()=>{try{const cc=getCrewContext(g);const mq=isMarqueeBroadcast(g);if(!cc)return '';return `  Crew: ${cc}${mq?' [MARQUEE BROADCAST]':''}`}catch(e_){return ''}})(),
       // Fix 6: Weather context in compound prompt for outdoor games
-      (()=>{try{const spG=(g._sport||g._section||'').toLowerCase();const isOut=spG.includes('baseball')||spG.includes('mlb')||spG.includes('nfl')||spG.includes('soccer')||spG.includes('league')||spG.includes('mls')||spG.includes('afl');if(!isOut) return '';const wxE=Object.values(wxCache||{}).find(wx=>wx?.alert);return wxE?`  [WEATHER ALERT: ${wxE.alert}]`:''}catch(e_){return ''}})(),
+      (()=>{try{const spG=(_gameSport(g)).toLowerCase();const isOut=spG.includes('baseball')||spG.includes('mlb')||spG.includes('nfl')||spG.includes('soccer')||spG.includes('league')||spG.includes('mls')||spG.includes('afl');if(!isOut) return '';const wxE=Object.values(wxCache||{}).find(wx=>wx?.alert);return wxE?`  [WEATHER ALERT: ${wxE.alert}]`:''}catch(e_){return ''}})(),
       // Wikimedia trending — cultural significance signal (Patent Defense #5)
       (()=>{try{const hW=_wikiCache['field_wiki_'+(WIKI_TITLES[g.home||'']||'')+'_'+TODAY_ISO];const aW=_wikiCache['field_wiki_'+(WIKI_TITLES[g.away||'']||'')+'_'+TODAY_ISO];if(hW?.trending&&aW?.trending) return `  [WIKI TRENDING: Both teams trending nationally — cultural spotlight game]`;if(hW?.trending) return `  [WIKI TRENDING: ${teamNick(g.home)} trending (+${Math.round((hW.spikeRatio-1)*100)}%) — elevated national interest]`;if(aW?.trending) return `  [WIKI TRENDING: ${teamNick(g.away)} trending (+${Math.round((aW.spikeRatio-1)*100)}%) — elevated national interest]`;if(hW&&aW&&hW.spikeRatio<0.5&&aW.spikeRatio<0.5) return `  [WIKI LOW: Both teams below normal interest — true hidden gem if drama develops]`;return ''}catch(e_){return ''}})(),
       // Item 5: NHL shot/save context (from pre-fetched _nhlLiveStatsCache)
-      (()=>{try{const sp=(g._sport||g._section||'').toLowerCase();if(!(sp.includes('nhl')||sp.includes('hockey'))) return '';const key=`${g.home}|${g.away}`;const note=_nhlLiveStatsCache[key]||_nhlLiveStatsCache[`${g.away}|${g.home}`]||'';return note?`  [NHL LIVE] ${note}`:''}catch(e_){return ''}})(),
+      (()=>{try{const sp=(_gameSport(g)).toLowerCase();if(!(sp.includes('nhl')||sp.includes('hockey'))) return '';const key=`${g.home}|${g.away}`;const note=_nhlLiveStatsCache[key]||_nhlLiveStatsCache[`${g.away}|${g.home}`]||'';return note?`  [NHL LIVE] ${note}`:''}catch(e_){return ''}})(),
       // Item 6: MLB boxscore pitcher/batting stats (from pre-fetched _mlbBoxscoreCache)
-      (()=>{try{const sp=(g._sport||g._section||'').toLowerCase();if(!(sp.includes('mlb')||sp.includes('baseball'))) return '';if(!g.sourceId) return '';const cached=_mlbBoxscoreCache[`mlb_box_${g.sourceId}`];return cached?.line?`  [MLB BOX] ${cached.line}`:''}catch(e_){return ''}})(),
+      (()=>{try{const sp=(_gameSport(g)).toLowerCase();if(!(sp.includes('mlb')||sp.includes('baseball'))) return '';if(!g.sourceId) return '';const cached=_mlbBoxscoreCache[`mlb_box_${g.sourceId}`];return cached?.line?`  [MLB BOX] ${cached.line}`:''}catch(e_){return ''}})(),
       // Item 6b: MLB live at-bat context — current batter/pitcher from platoon cache
-      (()=>{try{const sp=(g._sport||g._section||'').toLowerCase();if(!(sp.includes('mlb')||sp.includes('baseball'))) return '';const eS=findESPNScore?.(g);if(eS?.state!=='in') return '';const labelKey=`${g.home||''}|${g.away||''}`;const p=(_mlbPlatoonCache[g.sourceId]||_mlbPlatoonCache[labelKey])?.result;if(!p?.batterName&&!p?.pitcherName) return '';const parts=[];if(p.batterName) parts.push(`batting: ${p.batterName}`);if(p.pitcherName) parts.push(`pitching: ${p.pitcherName}`);if(p.platoonLabel) parts.push(p.platoonLabel);return parts.length?`  [MLB AT-BAT] ${parts.join(' · ')}`:''}catch(e_){return ''}})(),
+      (()=>{try{const sp=(_gameSport(g)).toLowerCase();if(!(sp.includes('mlb')||sp.includes('baseball'))) return '';const eS=findESPNScore?.(g);if(eS?.state!=='in') return '';const labelKey=`${g.home||''}|${g.away||''}`;const p=(_mlbPlatoonCache[g.sourceId]||_mlbPlatoonCache[labelKey])?.result;if(!p?.batterName&&!p?.pitcherName) return '';const parts=[];if(p.batterName) parts.push(`batting: ${p.batterName}`);if(p.pitcherName) parts.push(`pitching: ${p.pitcherName}`);if(p.platoonLabel) parts.push(p.platoonLabel);return parts.length?`  [MLB AT-BAT] ${parts.join(' · ')}`:''}catch(e_){return ''}})(),
       // Item 6c: BDL pre-game leader averages for NBA games (non-series)
-      (()=>{try{const sp=(g._sport||g._section||'').toLowerCase();if(!sp.includes('basketball')&&!sp.includes('nba')) return '';const eS=findESPNScore?.(g);if(eS?.state==='in') return ''; // live leaders handled by Item 1
+      (()=>{try{const sp=(_gameSport(g)).toLowerCase();if(!sp.includes('basketball')&&!sp.includes('nba')) return '';const eS=findESPNScore?.(g);if(eS?.state==='in') return ''; // live leaders handled by Item 1
         if(!window._bdlSeasonAvgByTeam) return '';
         const hNick=teamNick(g.home||'').toLowerCase(), aNick=teamNick(g.away||'').toLowerCase();
         const pick=(nick)=>{const pool=(window._bdlSeasonAvgByTeam[nick]||[]);if(!pool.length) return null;const top=pool[0];const name=`${top.player?.first_name||top.first_name||''} ${top.player?.last_name||top.last_name||''}`.trim();const pts=top.pts;return (name&&pts)?`${name} ${pts.toFixed(1)} PPG`:null;};
@@ -25336,7 +25342,7 @@ async function fetchCompoundEditorial(sections) {
     // PM-30: NBA live boxscore for live NBA games (oncourt, foul trouble, stint +/-)
     ...games
       .filter(g => {
-        const sp = (g._sport||g._section||'').toLowerCase();
+        const sp = (_gameSport(g)).toLowerCase();
         return (sp.includes('nba')||sp.includes('basketball')) && findESPNScore(g)?.state==='in';
       })
       .slice(0, 2)
@@ -25451,7 +25457,7 @@ async function fetchCompoundEditorial(sections) {
         s.id && (s.id.includes((g.home||'').toLowerCase().replace(/\s+/g,'_')) ||
                  s.id.includes((g.away||'').toLowerCase().replace(/\s+/g,'_'))));
       if(seriesGame){
-        const viol=checkSportVocab(s.preview, seriesGame._sport||seriesGame._section||'');
+        const viol=checkSportVocab(s.preview, _gameSport(seriesGame));
         if(viol.length&&FIELD_DEBUG) console.warn(`[JQ Layer 2b] Series[${i}] sport vocab:`,viol);
         // Layer 2g telemetry — series preview hallucinations with state context
         const nh=hasNarrativeHallucination(s.preview, {seriesRecord:seriesGame.seriesRecord||'', isGame1:/\bG1\b|Game\s*1\b/i.test(seriesGame.league||'')});
@@ -25469,7 +25475,7 @@ async function fetchCompoundEditorial(sections) {
         b.id && (b.id.includes((g.home||'').toLowerCase().replace(/\s+/g,'_')) ||
                  b.id.includes((g.away||'').toLowerCase().replace(/\s+/g,'_'))));
       if(briefGame){
-        const viol=checkSportVocab(b.brief, briefGame._sport||briefGame._section||'');
+        const viol=checkSportVocab(b.brief, _gameSport(briefGame));
         if(viol.length&&FIELD_DEBUG) console.warn(`[JQ Layer 2b] GameBrief[${i}] sport vocab:`,viol);
         const nhB=hasNarrativeHallucination(b.brief, {seriesRecord:briefGame.seriesRecord||'', isGame1:/\bG1\b|Game\s*1\b/i.test(briefGame.league||'')});
         if(nhB.length&&FIELD_DEBUG) console.warn(`[JQ Layer 2g] GameBrief[${i}] narrative hallucination:`,nhB);
@@ -25739,7 +25745,7 @@ Write this brief at the level the moment deserves. Do not undersell a championsh
   const _j2WordRule = _j2ChampCtx
     ? 'Rules: 120-160 words. 4-5 sentences. Lead with the historical weight (drought + trophy), then the clinch type, then a tactical fact from this series, then what tonight settles for the franchise.'
     : 'Rules: 80-100 words. 2-3 sentences. Tactical focus — what to watch tonight.';
-  const prompt=[_fieldVoiceExemplarsForSport(g._sport||g._section||g.league||''),
+  const prompt=[_fieldVoiceExemplarsForSport(_gameSport(g)),
     'Write a FIELD Series Brief for this playoff game.',
     'Home: '+g.home+'. Away: '+g.away+'.'+(g.venue?' Venue: '+g.venue+'.':''),
     'Series: '+(g.seriesRecord||'')+'. Stakes: '+stakes+'.'+(gameNum?' Tonight is '+gameNum+'.':''),
@@ -25758,13 +25764,13 @@ Write this brief at the level the moment deserves. Do not undersell a championsh
     'MATCHUP DEPTH: Do not default to only the two star players. If the context includes role players, secondary matchups, or non-scoring stats (assists, +/-, defensive rating, 3P%, PP%, WHIP), surface at least one of these. A brief that only discusses the two most famous names scores lower.',
     'TEMPORAL PRECISION: Every stat must be temporally located. Not "Brunson averages 29.0 PPG" — "Brunson averaged 29.0 PPG this series." Never leave a stat in a time vacuum.',
     FIELD_PROSE_STYLE,
-    getFieldVoice(g._sport||g._section||g.league||''),
-    getQualityTarget(g._sport||g._section||g.league||''),
+    getFieldVoice(_gameSport(g)),
+    getQualityTarget(_gameSport(g)),
     'Third person only — never use "you" or address the reader directly. No markdown.'
   ].filter(Boolean).join('\n');
   try{
     // ── WOW 6 Phase 2: route through relay quality gate
-    const _sportHint = g._sport||g._section||g.league||'';
+    const _sportHint = _gameSport(g);
     const _viaRelay = await generateJournalismViaRelay(prompt, {
       sport: _sportHint, briefType: 'j2-series', max_tokens: 1000,
     });
@@ -25822,7 +25828,7 @@ async function renderSeriesPreviewCard(gameCard){
     const cached=sessionStorage.getItem(cacheKey);
     if(cached){textEl.textContent=trimToCompleteSentence(cached);textEl.classList.add('loaded');return;}
     const text=await fetchSeriesPreviewFromClaude(game);
-    if(text){textEl.textContent=trimToCompleteSentence(text);textEl.classList.add('loaded');sessionStorage.setItem(cacheKey,text);try{archiveBrief('series_preview',(game&&(game._sport||game._section||game.league))||null,game&&(game._id||game.id)||null,text,null);}catch(_){}_archiveBrief({briefType:'series_preview',sport:(game&&(game._sport||game._section||game.league))||null,gameId:game&&(game._id||game.id)||null,briefText:text,qualityScore:null});}
+    if(text){textEl.textContent=trimToCompleteSentence(text);textEl.classList.add('loaded');sessionStorage.setItem(cacheKey,text);try{archiveBrief('series_preview',(game&&(_gameSport(game)))||null,game&&(game._id||game.id)||null,text,null);}catch(_){}_archiveBrief({briefType:'series_preview',sport:(game&&(_gameSport(game)))||null,gameId:game&&(game._id||game.id)||null,briefText:text,qualityScore:null});}
     else if(staticText){textEl.textContent=staticText;textEl.classList.add('loaded');}
     return;
   }
@@ -25838,7 +25844,7 @@ async function renderSeriesPreviewCard(gameCard){
   const cached=sessionStorage.getItem(cacheKey);
   if(cached){placeholder.querySelector('.series-preview-text').textContent=trimToCompleteSentence(cached);placeholder.querySelector('.series-preview-text').classList.add('loaded');return;}
   const text=await fetchSeriesPreviewFromClaude(game);
-  if(text){placeholder.querySelector('.series-preview-text').textContent=trimToCompleteSentence(text);placeholder.querySelector('.series-preview-text').classList.add('loaded');sessionStorage.setItem(cacheKey,text);try{archiveBrief('series_preview',(game&&(game._sport||game._section||game.league))||null,game&&(game._id||game.id)||null,text,null);}catch(_){}_archiveBrief({briefType:'series_preview',sport:(game&&(game._sport||game._section||game.league))||null,gameId:game&&(game._id||game.id)||null,briefText:text,qualityScore:null});}
+  if(text){placeholder.querySelector('.series-preview-text').textContent=trimToCompleteSentence(text);placeholder.querySelector('.series-preview-text').classList.add('loaded');sessionStorage.setItem(cacheKey,text);try{archiveBrief('series_preview',(game&&(_gameSport(game)))||null,game&&(game._id||game.id)||null,text,null);}catch(_){}_archiveBrief({briefType:'series_preview',sport:(game&&(_gameSport(game)))||null,gameId:game&&(game._id||game.id)||null,briefText:text,qualityScore:null});}
   else if(staticText){placeholder.querySelector('.series-preview-text').textContent=staticText;placeholder.querySelector('.series-preview-text').classList.add('loaded');}
 }
 
@@ -27025,7 +27031,7 @@ async function fetchStandingsForPrompt(sport) {
 //         "Table: Arsenal: 2★ (75pts) · Chelsea: 4 (68pts)"
 //         "" if no data available
 function buildGameStandingsContext(game) {
-  const sport = game._section || game._sport || '';
+  const sport = _gameSport(game);
 
   // ── Soccer: FD standings ────────────────────────────────────────────────
   const fdCode = typeof FD_LEAGUE_MAP !== 'undefined' && FD_LEAGUE_MAP[sport];
@@ -27183,7 +27189,7 @@ function getHeadCoachForTeam(teamName, sport) {
 function getSeriesHistoricalAnchor(game) {
   if (!game) return null;
   const league = (game.league || '').toLowerCase();
-  const sport = (game._section || game._sport || '').toLowerCase();
+  const sport = (_gameSport(game)).toLowerCase();
   try {
     if ((sport.includes('nhl') || sport.includes('hockey')) && /stanley\s*cup\s*final/.test(league)) {
       return SERIES_HISTORICAL_ANCHORS['NHL_SCF_2026'] || null;
@@ -27304,7 +27310,7 @@ async function fetchESPNInjuries(sportKey) {
 // "ABBR Player (POS) — Status / Type" lines or null when cache empty.
 function getESPNInjuriesForGame(game) {
   if (!game) return null;
-  const slug = _espnInjurySportSlug(game._section || game._sport || '');
+  const slug = _espnInjurySportSlug(_gameSport(game));
   if (!slug) return null;
   const data = _espnInjuryCache[slug.key]?.data;
   if (!data) return null;
@@ -27467,7 +27473,7 @@ async function fetchNHLPlayoffLeaders() {
 // data cached yet (degrades gracefully — no [PLAYOFF STATS:] tag emitted).
 function getNHLPlayoffLeadersForGame(game) {
   if (!game) return null;
-  const sport = (game._section || game._sport || '').toLowerCase();
+  const sport = (_gameSport(game)).toLowerCase();
   if (!sport.includes('nhl') && !sport.includes('hockey')) return null;
   const data = _nhlPlayoffLeadersCache.data;
   if (!data) return null;
@@ -27625,7 +27631,7 @@ async function fetchNBAPlayoffLeaders() {
 // sets game._playoffLeadersAttribution = 'NBA.com' alongside the leader lines).
 function getNBAPlayoffLeadersForGame(game) {
   if (!game) return null;
-  const sport = (game._section || game._sport || '').toLowerCase();
+  const sport = (_gameSport(game)).toLowerCase();
   if (!sport.includes('nba') && !sport.includes('basketball')) return null;
   const data = _nbaPlayoffLeadersCache.data;
   if (!data) return null;
@@ -27683,7 +27689,7 @@ function populateSeriesContext(game) {
   try {
     // Subtask 6 — Coaches (STABLE, hardcoded)
     if (!game.coaches) {
-      const sport = game._section || game._sport || '';
+      const sport = _gameSport(game);
       const homeCoach = getHeadCoachForTeam(game.home || '', sport);
       const awayCoach = getHeadCoachForTeam(game.away || '', sport);
       if (homeCoach || awayCoach) {
@@ -27800,7 +27806,7 @@ function buildSeriesContextTags(game) {
 // P3: assemble note from data FIELD already holds — zero API calls
 function assembleNoteFromContext(game){
   const parts=[];
-  const sport=game._section||game._sport||'';
+  const sport=_gameSport(game);
   if(game.seriesRecord) parts.push(game.seriesRecord);
   return parts.length?parts.join(' \u00b7 '):null;
 }
@@ -27874,7 +27880,7 @@ async function fetchLeagueRSS(sport,home,away){
 
 // Master dispatcher — P1→P2→P3→P4
 async function fetchGameNotes(game){
-  const sport=game._section||game._sport||'';
+  const sport=_gameSport(game);
   // P1: manual curation — return immediately, no API
   if(game.matchupNote) return game.matchupNote;
   // Cache check
@@ -27958,7 +27964,7 @@ async function fetchCountryContext(countryName) {
 // Called once per game per render cycle — consumers read from the returned object.
 function buildGameContext(g) {
   const gid = g._id || `${g.home}_${g.away}`;
-  const sport = g._section || g._sport || '';
+  const sport = _gameSport(g);
 
   // Drama trend from history (positive = rising, negative = cooling)
   let dramaTrend = 0;
@@ -28304,7 +28310,7 @@ async function initFIELDBrief(sections){
             const _lp2=slug.split('_').filter(Boolean).pop()||'';
             if(_lp2&&(slug.includes(h.slice(-6))||slug.includes(a.slice(-6))||h.includes(slug.split('_')[0])||a.includes(_lp2))){
               // Tier 2B: check sport vocab before caching game brief
-              const _gbSp=g._sport||g._section||'';
+              const _gbSp=_gameSport(g);
               const _gbViol=(typeof checkSportVocab==='function')?checkSportVocab(b.brief,_gbSp):[];
               if(_gbViol.length&&FIELD_DEBUG) console.warn('[JQ T2B] game_brief sport vocab:',_gbViol,'for',g._id);
               // ADR-003: per-game brief uses single-game scope so attribution
@@ -28831,7 +28837,7 @@ async function fetchStakesBriefFromClaude(g) {
 
   try {
     // ── WOW 6 Phase 2: route through relay quality gate
-    const _sportHint = g._sport || g._section || g.league || '';
+    const _sportHint = _gameSport(g);
     const _viaRelay = await generateJournalismViaRelay(prompt, {
       sport: _sportHint, briefType: 'stakes-brief', max_tokens: 200,
     });
@@ -28918,7 +28924,7 @@ async function renderStakesBriefCard(gameCard) {
     const textEl = inner.querySelector('.stakes-text'); // fix: was .sgb-text (wrong)
     if (textEl) { textEl.textContent = trimToCompleteSentence(stripMarkdown(kvBriefS)); textEl.classList.replace('pending','loaded'); }
     sessionStorage.setItem(cacheKey, stripMarkdown(kvBriefS));
-    try { archiveBrief('stakes', (game&&(game._sport||game._section||game.league))||null, game&&(game._id||game.id)||null, stripMarkdown(kvBriefS), null); } catch(_){}
+    try { archiveBrief('stakes', (game&&(_gameSport(game)))||null, game&&(game._id||game.id)||null, stripMarkdown(kvBriefS), null); } catch(_){}
     return;
   }
 
@@ -28929,8 +28935,8 @@ async function renderStakesBriefCard(gameCard) {
     textEl.textContent = trimToCompleteSentence(_stakesClean);
     textEl.classList.replace('pending','loaded');
     sessionStorage.setItem(cacheKey, _stakesClean);
-    try { archiveBrief('stakes', (game&&(game._sport||game._section||game.league))||null, game&&(game._id||game.id)||null, _stakesClean, null); } catch(_){}
-    _archiveBrief({briefType:'stakes_brief', sport:(game&&(game._sport||game._section||game.league))||null, gameId:game&&(game._id||game.id)||null, briefText:_stakesClean});
+    try { archiveBrief('stakes', (game&&(_gameSport(game)))||null, game&&(game._id||game.id)||null, _stakesClean, null); } catch(_){}
+    _archiveBrief({briefType:'stakes_brief', sport:(game&&(_gameSport(game)))||null, gameId:game&&(game._id||game.id)||null, briefText:_stakesClean});
   } else {
     try { card.remove(); } catch(_) {}
   }
@@ -29142,7 +29148,7 @@ async function fetchGameBriefOnDemand(game, sport) {
     }
   }
 
-  const sp = (sport || game._sport || game._section || '').toLowerCase();
+  const sp = (sport || _gameSport(game)).toLowerCase();
   // At Tier 1 (4000 RPM), the shared budget (50/session) is essentially never
   // exhausted. Budget gates are now primarily a safety backstop against stuck
   // retry loops, not RPM protection. All sport paths share the same pool.
@@ -29264,7 +29270,7 @@ async function fetchEPLMatchBriefFromClaude(g) {
       if(h2h) h2hLine = buildH2HSummary(fdId);
     }
     // FD standings form string — already in fdStandingsCache from fdPrefetchSoccerLive
-    const fdCode = FD_LEAGUE_MAP[g._sport||g._section||''];
+    const fdCode = FD_LEAGUE_MAP[_gameSport(g)];
     if(fdCode && fdStandingsCache[fdCode]?.length) {
       const rows = fdStandingsCache[fdCode];
       const find = name => { const n=teamNick(name).toLowerCase(); return rows.find(r=>(r.team||'').toLowerCase().includes(n)); };
@@ -31222,7 +31228,7 @@ async function fetchFinalsDesk(game, sport) {
         const result = await pr.json();
         if (result.status === 'done' && result.text && result.text.length > 80) {
           try { sessionStorage.setItem(cacheKey, result.text); } catch(e_) {}
-          try { archiveBrief('game_ondemand', (game&&(game._sport||game._section||game.league))||null, game&&(game._id||game.id)||null, result.text, null); } catch(_){}
+          try { archiveBrief('game_ondemand', (game&&(_gameSport(game)))||null, game&&(game._id||game.id)||null, result.text, null); } catch(_){}
           try { sessionStorage.removeItem(jobIdKey); } catch(e_) {}
           return result.text;
         }
@@ -31246,7 +31252,7 @@ async function fetchFinalsDesk(game, sport) {
       text = await retryWithoutCliches(prompt, text, CLAUDE_PROXY_URL);
       text = await checkStatVerification(prompt, text, CLAUDE_PROXY_URL);
       try { sessionStorage.setItem(cacheKey, text); } catch(e_) {}
-      try { archiveBrief('game_ondemand', (game&&(game._sport||game._section||game.league))||null, game&&(game._id||game.id)||null, text, null); } catch(_){}
+      try { archiveBrief('game_ondemand', (game&&(_gameSport(game)))||null, game&&(game._id||game.id)||null, text, null); } catch(_){}
       return text;
     }
   } catch(e_) {}
@@ -33332,7 +33338,7 @@ function buildViewerIntelChip(g,sections,mode){
   const hasNarrative=!!(g.matchupNote&&g.matchupNote.length>40&&g._gameImportance);
 
   // Q: Scarcity — sole game in this sport tonight
-  const sport=(g._sport||g._section||'').toLowerCase().split('(')[0].trim();
+  const sport=(_gameSport(g)).toLowerCase().split('(')[0].trim();
   const sportGames=(sections||[]).filter(s=>(s.sport||'').toLowerCase().includes(sport.split(' ')[0])).flatMap(s=>s.games||[]).length;
   const isOnlyGame=sportGames===1;
 
@@ -33784,7 +33790,7 @@ function buildLinescoreContext(eData, gameId, homeLabel, awayLabel) {
 const _afEventCache = {}; // gameId → [{time:{elapsed},team:{name},player:{name},assist:{name},type,detail}]
 function buildGoalTimeline(game, eData) {
   try {
-    const sp = (game?._sport || game?._section || eData?._sport || '').toLowerCase();
+    const sp = (_gameSport(game) || _gameSport(eData)).toLowerCase();
     if (!(sp.includes('soccer') || sp.includes('league') || sp.includes('mls') ||
           sp.includes('epl')    || sp.includes('ucl')    || sp.includes('liga') ||
           sp.includes('serie')  || sp.includes('ligue')  || sp.includes('bundesliga') ||
@@ -33820,7 +33826,7 @@ function buildGoalTimeline(game, eData) {
 // Output: "[NBA BOX] Brunson 32pts/7ast · KAT 24pts/11reb (NYK)"
 function buildNBAPlayerContext(game, eData) {
   try {
-    const sp = (game?._sport || game?._section || eData?._sport || '').toLowerCase();
+    const sp = (_gameSport(game) || _gameSport(eData)).toLowerCase();
     if (!(sp.includes('nba') || sp.includes('basketball'))) return '';
     // Look up by all possible ID forms
     const hNick = teamNick(game?.home||'').toLowerCase();
@@ -35409,7 +35415,7 @@ async function fetchNightOwlFromClaude(topGame){
   const budget=journalismCallsToday();
   if(!budget.canCall()) return null;
   // Pre-fetch standings from relay/API — not ESPN
-  await fetchStandingsForPrompt(topGame._section || topGame._sport || topGame.sport || '').catch(()=>{});
+  await fetchStandingsForPrompt(topGame._sport || '').catch(()=>{});
   const note=await fetchGameNotes(topGame).catch(()=>null);
   const standingsCtx = buildGameStandingsContext(topGame);
   const crewCtx = getCrewContext(topGame);
@@ -35420,7 +35426,7 @@ async function fetchNightOwlFromClaude(topGame){
   // and the stored score may reflect the last known value before the final out.
   // Use the actual score difference to determine winner; if still tied, home wins.
   const winner = _awayS > _homeS ? topGame.away : topGame.home;
-  const _sp = (topGame._section || topGame._sport || topGame.sport || topGame.league || '').toLowerCase();
+  const _sp = (topGame._sport || '').toLowerCase();
   const _xiNote = (_isTiedScore && (_sp.includes('baseball')||_sp.includes('mlb')))
     ? ' (went to extra innings — one team scored the winning run after the 9th)' : '';
   const score = _awayS+'\u2013'+_homeS;
@@ -35819,7 +35825,7 @@ Write this Night Owl at the level the moment deserves. Do not undersell a champi
     // ── WOW 6: try relay quality gate first (live-path quality enforcement)
     // Relay runs Layers 1, 2, 2b, 2c, 2d, 2e, 3b structurally before returning.
     // Falls back to direct proxy + browser-side chain if relay unavailable.
-    const _sportHint = topGame._section || topGame._sport || topGame.sport || topGame.league || '';
+    const _sportHint = topGame._sport || '';
     const _viaRelay = await generateJournalismViaRelay(prompt, {
       sport: _sportHint,
       briefType: 'night-owl',
@@ -35840,7 +35846,7 @@ Write this Night Owl at the level the moment deserves. Do not undersell a champi
       text=await retryWithoutCliches(prompt,text,CLAUDE_PROXY_URL);
       text=await checkLeadSentence(prompt,text,CLAUDE_PROXY_URL); // P3: lead check on J5
       // Layer 2b: sport vocab — catches "one-possession game" for baseball etc.
-      const _sp=topGame._section||topGame._sport||topGame.sport||topGame.league||'';
+      const _sp=topGame._sport||'';
       text=await retryWithSportVocab(prompt,text,_sp,CLAUDE_PROXY_URL,'J5 Night Owl');
       // Layer 2c: hard strip — last resort if AI retry still contains violations
       const _spCls=detectSportClass(_sp);
@@ -36336,7 +36342,7 @@ function computeCardStage(game, eData) {
   const minsUntil = start ? (start - now) / 60000 : 999;
   // Live check BEFORE time-based final — eData.state overrides wrong hardcoded start_times
   if (eData?.state === 'in' || eData?.period > 0) {
-    const sp = (game._section||game._sport||'').toLowerCase();
+    const sp = (_gameSport(game)).toLowerCase();
     const p = eData?.period || 0;
     const clk = fmtESPNClock(eData?.clock||''); // normalise ISO before comparing
     if ((sp.includes('hockey')||sp.includes('nhl')) && p === 2 && (clk==='0:00'||clk==='')) return 'halftime';
@@ -36362,7 +36368,7 @@ function computeCardStage(game, eData) {
 }
 
 function buildLifeStageContent(game, eData, stage) {
-  const sp = (game._section||game._sport||'').toLowerCase();
+  const sp = (_gameSport(game)).toLowerCase();
   switch(stage) {
     case 'postponed':
       return '<div class="card-stage-content card-stage-ppd">⛈ Postponed</div>';
@@ -37342,6 +37348,10 @@ async function renderNightOwlRecap(){
     return bSustained-aSustained;
   })[0];
   if(!topGame){el.style.display='none';return;}
+  // Rule 76: normalize sport to single canonical field at selection.
+  // Game objects use _section, _sport, sport, or league depending on source.
+  // Normalize once here so all downstream reads use topGame._sport only.
+  if(!topGame._sport) topGame._sport = topGame._section || topGame.sport || topGame.league || '';
 
   // Override stale localStorage seriesRecord with live schedule data
   // Fixes: Night Owl shows "SAS leads 1-0" after OKC evened series to 1-1
@@ -37436,7 +37446,7 @@ async function renderNightOwlRecap(){
   // Validate cached brief — if sport vocab violations exist (e.g. basketball terms in baseball brief),
   // bust the cache and regenerate. Catches stale briefs from before the sport-detection fix.
   if(cached){
-    const _cachedSp=(topGame._section||topGame._sport||topGame.sport||topGame.league||'');
+    const _cachedSp=(topGame._sport||'');
     const _cachedSpCls=typeof detectSportClass==='function'?detectSportClass(_cachedSp):null;
     const _cachedViolations=(_cachedSpCls&&typeof checkSportVocab==='function')
       ?checkSportVocab(cached,_cachedSp):[];
@@ -37508,7 +37518,7 @@ async function renderNightOwlRecap(){
     }
     // Fallback: full-context fetchNightOwlFromClaude (live box scores, linescore, etc.)
     if (!claudeText) claudeText = await fetchNightOwlFromClaude(topGame);
-    if(claudeText){const textEl=el.querySelector('.night-owl-text');if(textEl){textEl.textContent=trimToCompleteSentence(claudeText);textEl.classList.remove('pending');textEl.classList.add('loaded');}sessionStorage.setItem(cacheKey,claudeText);try{archiveBrief('night_owl',(topGame&&(topGame._sport||topGame._section||topGame.league))||null,topGame&&(topGame._id||topGame.id)||null,claudeText,null);}catch(_){}}
+    if(claudeText){const textEl=el.querySelector('.night-owl-text');if(textEl){textEl.textContent=trimToCompleteSentence(claudeText);textEl.classList.remove('pending');textEl.classList.add('loaded');}sessionStorage.setItem(cacheKey,claudeText);try{archiveBrief('night_owl',(topGame&&topGame._sport)||null,topGame&&(topGame._id||topGame.id)||null,claudeText,null);}catch(_){}}
     else{const textEl=el.querySelector('.night-owl-text');if(textEl){textEl.classList.remove('pending');textEl.classList.add('loaded');}}
   }
 
@@ -37533,7 +37543,7 @@ async function renderNightOwlRecap(){
 
     if (secCached) {
       // Validate cache — bust if sport vocab contaminated
-      const _sSp=(game._section||game._sport||game.sport||game.league||'');
+      const _sSp=(_gameSport(game));
       const _sViol=(typeof checkSportVocab==='function')?checkSportVocab(secCached,_sSp):[];
       if(!_sViol.length){
         secDiv.querySelector('.no-text')?.classList.replace('pending','loaded');
@@ -37547,7 +37557,7 @@ async function renderNightOwlRecap(){
       try {
         const budget = journalismCallsToday();
         if (!budget.canCall()) { div.remove(); return; }
-        const sp = (g._section||g._sport||g.sport||g.league||'').toLowerCase();
+        const sp = (_gameSport(g)).toLowerCase();
         const _terms = sp.includes('baseball')||sp.includes('mlb')
           ? 'Sport: Baseball. Score in RUNS. Use baseball vocabulary only.'
           : sp.includes('hockey')||sp.includes('nhl')
