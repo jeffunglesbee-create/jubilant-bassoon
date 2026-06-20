@@ -3547,6 +3547,71 @@ sessions — the work may as well not exist.
 
 ---
 
+## Rule 68 — CC prompts include executable verification (PROBE-FIRST-A)
+
+CC prompts must include runnable terminal commands, not prose instructions.
+Two mandatory phases:
+
+### PRE-BUILD (prevents bugs)
+
+Before writing code that reads from an API, endpoint, or data structure,
+the prompt must include a probe command that extracts the actual field
+names and shapes. CC runs this FIRST, reads the output, and writes code
+against the REAL shape — not the prompt author's assumed shape.
+
+Example:
+```
+curl -s URL | node -e "const d=JSON.parse(require('fs')
+  .readFileSync('/dev/stdin','utf8'));
+  console.log('keys:', Object.keys(d));
+  console.log('sample:', JSON.stringify(d.leaderboard?.[0]))"
+```
+
+If sandbox blocks the probe (e.g. direct curl to the relay), use
+CI-as-proxy or document as STAGED per Rule 61.
+
+### POST-BUILD (catches bugs)
+
+After shipping, the prompt must include assertion commands that verify
+the output. Not "check that it works" — a node -e block with
+console.assert that fails loudly.
+
+**Violation:** "Verify the endpoint returns status"
+**Correct:** `curl URL | node -e '...console.assert(d.status !== null)...'`
+
+### Rationale
+
+P12C (June 20 2026) wrote `pgaData.event?.location` against an endpoint
+that has no `event` object. The enriched endpoint returns flat keys:
+`{ active, eventId, name, round, ... }`. A 10-second pre-build probe
+(`curl enriched | node -e "console.log(Object.keys(d))"`) would have
+shown the actual keys and prevented the bug.
+
+**Cost of the missing probe:** Three prompts of rework:
+1. P12C shipped with dead venue path and dead status path
+2. P13 (relay) added status + venue fields the client couldn't read
+3. P14 (client) fixed the read paths to match the actual response shape
+
+All three could have been one prompt if the original P12C prompt had
+probed the endpoint before specifying field names.
+
+### Cross-reference
+
+- Rule 2: DO NOT ASSUME — probe before claiming
+- Rule 60: Relay owns the data contract — probe to learn it
+- Rule 61: End-to-end before done — probe is how you verify
+- Rule 62: Follow existing conventions — probe to discover them
+
+### Quick reference
+
+| Phase | Prose (violation) | Command (correct) |
+|-------|------------------|-------------------|
+| Pre-build | "The endpoint returns an event object" | `curl URL \| node -e "console.log(Object.keys(d))"` |
+| Post-build | "Verify status is populated" | `curl URL \| node -e "console.assert(d.status)"` |
+| Sandbox-blocked | "Check the relay manually" | CI-as-proxy workflow or STAGED per Rule 61 |
+
+---
+
 ## Case Study: Golf Layer Integration Failure (June 18 2026)
 
 **Context:** Golf layer built across 4 Claude sessions (2 CC, 2 chat).
