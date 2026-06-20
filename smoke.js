@@ -4271,6 +4271,15 @@ assert('A651 — buildLinescoreContext emits explicit team-labelled output; buil
   /winnerMaxLead >= 2 && leadChanges === 0 && loserMaxLead === 0/.test(html),
   'CC-CMD-2026-06-18 Night Owl inversion: buildLinescoreContext used to emit "Inn1: 0-4" (cumH-cumA) on a wire-to-wire MIN @ TEX game. Broadcast convention reads pairs as away-home, so the LLM rendered "Rangers held an early advantage, leading by as many as 4-runs" and hallucinated "10-run lead" + "3 lead changes" — all inverted. Two fixes: (1) linescore output now includes nick + cum score per slot in away-first order ("Inn1: Twins 4, Rangers 0"), and (2) buildScoreNarrativeContext appends "wire-to-wire (loser never led)" when leadChanges=0 AND loserMaxLead=0 alongside a ≥2 winner lead, so the LLM cannot invent ups-and-downs.');
 
+// ── A660 / CC-CMD-2026-06-19 Prompt 12B AFL V2 client wiring ──
+assert('A660 — afl key enabled in FIELD_V2_SOURCES so fetchV2AllScores polls AFL alongside other V2 sports',
+  // afl: true sits inside the FIELD_V2_SOURCES object literal alongside the other enabled sports.
+  /const FIELD_V2_SOURCES = \{[\s\S]{0,400}?afl: true,/.test(html) &&
+  // Squiggle engine wiring untouched — coexists per Prompt 12B step 2.
+  /startSquiggleEngine\(\)/.test(html) &&
+  /squigglePrefetchAll/.test(html),
+  'CC-CMD-2026-06-19 Prompt 12B AFL V2 client wiring: the relay-side adapter shipped in 12A so the client just opts AFL into the V2 polling loop. afl: true joins nba/nhl/mlb/wnba/mls in FIELD_V2_SOURCES; fetchV2AllScores then queries AFL via the same fieldDatesToQuery dual-date pattern that already feeds everyone else (the ≥16 ET tomorrow-add covers the typical Saturday/Sunday AEST evening match window since AEST evening kickoffs map to UTC next-day, which the dual-date pattern includes). Squiggle (tips, predictions, model) stays intact — V2 owns score/state, Squiggle owns the AFL-specific tipping/predictions layer. No other client change required.');
+
 // ── A659 / CC-CMD-2026-06-19 Prompt 11B drama persistence — client signal at final ──
 assert('A659 — saveEspnFinal POSTs drama summary to /archive/drama with arc classification + downsampled samples',
   // Drama persistence block lives inside saveEspnFinal, after the dramaPeak read.

@@ -16097,6 +16097,11 @@ const V2_RELAY_BASE = 'https://field-relay-nba.jeffunglesbee.workers.dev';
 const FIELD_V2_SOURCES = {
   nba: true, nhl: true, mlb: true, wnba: true, // Phase 1/2: LIVE
   mls: true,
+  afl: true, // Prompt 12B (CC-CMD-2026-06-19): adapter shipped in 12A. Coexists with Squiggle —
+             // V2 owns score/state pipeline; Squiggle keeps tips/predictions/model.
+             // Date coverage: fieldDatesToQuery's ≥16 ET tomorrow-add captures the
+             // typical Saturday/Sunday AEST evening match window (AEST evening =
+             // UTC next day ≈ ET afternoon previous day).
   epl: false, ucl: false, europa: false, conference: false,  // European — season ended, re-enable 2026-27
   eflchamp: false, eflone: false, efltwo: false,             // EFL — season ended May 25 2026
   laliga: false, seriea: false, bundesliga: false, ligue1: false,
@@ -21881,7 +21886,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-19m';
+  const SW_VERSION = '2026-06-20a';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
