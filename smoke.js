@@ -5121,6 +5121,91 @@ assert('A582 — V2: explicit P2 / T1 portrait / T2 landscape breakpoint sentine
   'V2 build plan (VIEWPORT-BUILD-PLAN.md). Adds explicit anchors for spec breakpoints P2 (375-413), T1 portrait (820-1199 portrait), T2 landscape (820-1199 landscape). Resolves the 768-900 / 820-1199 overlap.');
 
 
+// ── Governance enforcement assertions (Rules 69-79) ──────────────────────────
+// Mechanical enforcement: governance rules must exist in repo files and
+// code-level anti-patterns must be absent. These block deploy when violated.
+
+const claudeMd = (() => { try { return fs.readFileSync('CLAUDE.md', 'utf8'); } catch(_) { return ''; } })();
+const standardsMd = (() => { try { return fs.readFileSync('STANDARDS.md', 'utf8'); } catch(_) { return ''; } })();
+const handoffMd = (() => { try { return fs.readFileSync('HANDOFF.md', 'utf8'); } catch(_) { return ''; } })();
+
+// ── Governance file integrity ──
+
+assert('A700 — CLAUDE.md contains PRIME DIRECTIVE (Rule 77 elevated)',
+  claudeMd.includes('PRIME DIRECTIVE') && claudeMd.includes('NO-RATIONALIZE-A'),
+  'PRIME DIRECTIVE must be the first rule in CLAUDE.md — rationalization is the meta-failure');
+
+assert('A701 — CLAUDE.md references Rules 1-79 (governance completeness)',
+  claudeMd.includes('Rules 1-79'),
+  'Rule range in governance principle must match actual rule count');
+
+assert('A702 — CLAUDE.md contains all 11 governance codes from Rules 69-79',
+  ['TOUCH-ONLY-A', 'ATOMIC-A', 'CONTEXT-A', 'CHALLENGE-A', 'CLAIM-CONTEXT-A',
+   'STAGED-GATE-A', 'PROMPT-SPEC-A', 'FALLBACK-CAP-A', 'NO-RATIONALIZE-A',
+   'API-COST-A', 'PROMPT-HEAD-A'].every(code => claudeMd.includes(code)),
+  'All governance codes must be present — a missing code means a rule was accidentally deleted');
+
+assert('A703 — STANDARDS.md contains Rule 72-79 section headers',
+  [72,73,74,75,76,77,78,79].every(n => standardsMd.includes(`## Rule ${n}`)),
+  'Full specs for Rules 72-79 must exist in STANDARDS.md');
+
+assert('A704 — HANDOFF.md exists and contains required fields',
+  handoffMd.includes('HEAD') && handoffMd.includes('Smoke') && handoffMd.includes('SW'),
+  'HANDOFF.md must contain HEAD, Smoke count, and SW version');
+
+assert('A705 — CLAUDE.md DO NOT INVENT and DO NOT ASSUME present',
+  claudeMd.includes('DO NOT INVENT') && claudeMd.includes('DO NOT ASSUME'),
+  'Core rules 1-2 must not be accidentally deleted');
+
+// ── Rule 63: Dead code detection — critical functions must have callers ──
+
+assert('A706 — Rule 63: saveEspnFinal is defined AND called',
+  /function saveEspnFinal\(/.test(html) &&
+  (html.match(/saveEspnFinal\(/g) || []).length >= 2,
+  'saveEspnFinal must be defined and called at least once — dead functions violate Rule 63');
+
+assert('A707 — Rule 63: saveGolfRoundFinal is defined AND called',
+  /function saveGolfRoundFinal\(/.test(html) &&
+  (html.match(/saveGolfRoundFinal\(/g) || []).length >= 2,
+  'saveGolfRoundFinal must be defined and called — dead functions violate Rule 63');
+
+assert('A708 — Rule 63: fetchCountryContext is defined AND called',
+  /function fetchCountryContext\(/.test(html) &&
+  (html.match(/fetchCountryContext\(/g) || []).length >= 2,
+  'fetchCountryContext must be defined and called — dead functions violate Rule 63');
+
+assert('A709 — Rule 63: fetchUserState is defined AND called',
+  /function fetchUserState\(/.test(html) &&
+  (html.match(/fetchUserState\(/g) || []).length >= 2,
+  'fetchUserState must be defined and called — dead functions violate Rule 63');
+
+assert('A710 — Rule 63: computeGolfPackDensity is defined AND called',
+  /function computeGolfPackDensity\(/.test(html) &&
+  (html.match(/computeGolfPackDensity\(/g) || []).length >= 2,
+  'computeGolfPackDensity must be defined and called — dead functions violate Rule 63');
+
+assert('A711 — Rule 63: hydrateMissedRecaps is defined AND called',
+  /function hydrateMissedRecaps\(/.test(html) &&
+  (html.match(/hydrateMissedRecaps\(/g) || []).length >= 2,
+  'hydrateMissedRecaps must be defined and called — dead functions violate Rule 63');
+
+// ── Rule 78: Rate-limited API guard — no direct client calls to rate-limited APIs ──
+
+assert('A712 — Rule 78: no direct client fetch to api-sports.io (must go through relay)',
+  !html.includes("api-sports.io") || html.includes("// api-sports"),
+  'Client must never call api-sports.io directly — all V2 data goes through relay');
+
+assert('A713 — Rule 78: no direct client fetch to api.the-odds-api.com (must go through relay)',
+  !(/fetch\([^)]*api\.the-odds-api\.com/.test(html)),
+  'Client must never fetch Odds API directly — goes through AmbientDO relay');
+
+// ── Rule 60: Relay owns data contract — no client-side field mapping objects ──
+
+assert('A714 — Rule 60: no FIELD_NAME_MAP or fieldMap remapping objects',
+  !(/(?:FIELD_NAME_MAP|fieldNameMap|FIELD_MAP|nameMapping)\s*=\s*\{/.test(html)),
+  'Client must not have field name mapping objects — relay normalizes, client consumes as-is');
+
+
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);
 
