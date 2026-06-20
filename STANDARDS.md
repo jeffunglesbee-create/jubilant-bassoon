@@ -4036,6 +4036,186 @@ but hit conflicts on the stale state description, requiring re-prompting.
 
 ---
 
+## Rule 80 — Credential boundary (CREDENTIAL-BOUNDARY-A)
+
+No credential — API key, PAT, signed cookie, OAuth token, HMAC secret —
+may appear in conversation context, agent memory, HANDOFF.md, or any
+file committed to the repo. The relay is the sole credential holder.
+Tools that expose remote resources to a session return signed URLs
+(e.g. `get_archive_url` returns an HMAC-signed URL with a short TTL),
+never the credential itself.
+
+### Why this matters
+
+Credentials in conversation context survive snapshots, session
+compaction, and Drive sync. A leaked PAT or HMAC key in a transcript
+can be replayed for the life of the credential. Signed URLs expire;
+credentials do not. Keeping the credential server-side keeps the
+blast radius scoped to a single signed URL.
+
+### Operational rules
+
+1. If a tool would need a credential to operate, it MUST proxy through
+   the relay rather than accepting the credential as a parameter.
+2. If a credential is observed in conversation context, treat it as
+   leaked: rotate immediately, then audit recent uses.
+3. Memory edits / HANDOFF.md / outbox/ are not safe credential stores.
+   Use the relay's credential store (env vars / Worker secrets).
+
+---
+
+## Rule 81 — Write gate (WRITE-GATE-A)
+
+Repo writes from a session MUST go through the MCP `commit_file` tool
+with an explicit commit message and a `parent_sha`. Raw `git push` from
+a session is prohibited. The target path must be in `WRITE_ALLOWLIST`.
+The tool auto-prefixes `[skip ci]` where appropriate (e.g. for
+machine-generated artefacts like CODE_MAP.json) so write traffic
+doesn't trigger deploy cascades.
+
+### Why this matters
+
+A single chokepoint makes write traffic auditable: every change carries
+an explicit message, parent, and path that passes the allowlist. Raw
+`git push` is unauditable — the session decides what's written, when,
+and where. The `commit_file` gate also lets the relay reject paths the
+session shouldn't be touching (e.g. `wrangler.jsonc`, `.github/secrets/`).
+
+### Operational rules
+
+1. WRITE_ALLOWLIST lives in the relay config; sessions cannot mutate it.
+2. Sessions wanting to add a new writable path must request it explicitly
+   in the prompt and it must be approved before the next write.
+3. `commit_file` returns the new HEAD SHA so the session can chain
+   subsequent commits with the right `parent_sha`.
+
+---
+
+## Rule 82 — Archive freshness (ARCHIVE-FRESHNESS-A)
+
+`commit_file` MUST verify that the supplied `parent_sha` matches the
+live HEAD on the target branch at write time. Stale commits — where the
+session was working from an older snapshot — are rejected at the relay
+with a freshness error, not silently rebased.
+
+### Why this matters
+
+A session can run for an hour without re-fetching. In that time the
+upstream branch can advance. A blind merge or force-push from a stale
+snapshot overwrites real work. Rejecting at the gate forces the session
+to re-fetch, re-read the relevant files, and re-stage — which is the
+correct behaviour, not a bug.
+
+### Operational rules
+
+1. The relay refresh window is the only safe SLA — if `parent_sha` is
+   older than that, retry after re-fetching HEAD.
+2. The session MUST NOT auto-rebase after a freshness rejection.
+   Human or chat-session review is required because the conflict may
+   indicate a deeper integration issue.
+3. Freshness errors are logged with `(session_id, target_sha, live_sha,
+   diff_count)` so cross-session contention is visible.
+
+---
+
+## Rule 83 — No exfiltration (NO-EXFIL-A)
+
+The relay serves only the hardcoded repo tarball; `read_file` and
+`read_source` are gated by `READ_ALLOWLIST`. No arbitrary path traversal.
+Encoded paths (`%2e%2e`), absolute paths, symlink targets outside the
+repo root, and `.git/` internals all return 403 at the relay, not the
+session boundary.
+
+### Why this matters
+
+A session is a partial-trust environment. If a session can request
+arbitrary file content from the relay, it can be used as an
+exfiltration channel for adjacent secrets (env files, key files,
+neighbour repos). Hardcoding the tarball + allowlist constrains
+read traffic the same way `WRITE_ALLOWLIST` constrains writes.
+
+### Operational rules
+
+1. READ_ALLOWLIST is opt-in per path glob, not opt-out.
+2. Reads of paths outside the allowlist are logged and rate-limited
+   even when they return 403 (denial-of-detection mitigation).
+3. The relay normalises paths before allowlist checks (no
+   case-sensitive bypass, no encoded-traversal bypass).
+
+---
+
+## Rule 84 — Codex discipline (CODEX-DISCIPLINE-A)
+
+Every session that modifies code MUST write codex entries at session
+close using `mcp__FIELD_Handoff__codex_write`. Codex entries capture
+what was LEARNED — invariants, gotchas, surprising failure modes,
+diagnostic shortcuts — not what shipped (that's the commit log). Zero
+deletions: codex entries are append-only. Corrections happen via
+follow-up entries that reference and supersede earlier ones.
+
+### Why this matters
+
+The commit log is a record of what code changed. The codex is a record
+of what knowledge was gained. Without the codex, every subsequent
+session re-derives the same gotchas. A session that learned "ESPN's
+status field reads 'Play Complete' not 'Complete'" should leave that
+knowledge for the next session, even if the code change was a one-liner.
+
+### Operational rules
+
+1. Codex entries are organised by domain (golf, wc, drama, journalism,
+   relay, infra). Session close MUST write at least one entry per
+   touched domain.
+2. Entries include: date, session_id, summary (one sentence), detail
+   (multi-paragraph), and `supersedes` references for corrections.
+3. Codex entries are searchable via `codex_search`; sessions MUST run
+   a search before declaring a hypothesis novel (see Rule 85).
+
+---
+
+## Rule 85 — Session memory protocol (SESSION-MEMORY-PROTOCOL-A)
+
+Session startup MUST load three layers of memory before any work:
+
+  L2: `read_handoff`     — current HEAD, smoke count, priority queue
+  L3: `read_codemap`     — structure of index.html (functions, sections,
+                           constants, boot sequence)
+  L4: `codex_search`     — relevant codex entries for the domain
+
+A session that has not loaded L3 + L4 MUST NOT make architectural
+decisions. It may run mechanical edits (typo fixes, single-call-site
+rename, dependency bump) but anything that touches a function called
+from more than one place, or any cross-cutting change (e.g. SW
+strategy, layout paradigm, drama scoring, prompt context shape),
+requires the full L2+L3+L4 load.
+
+### Why this matters
+
+Architectural decisions without L3 produce regressions — the session
+doesn't know which call sites are affected. Architectural decisions
+without L4 re-derive prior learnings the slow way and may repeat
+mistakes the codex already captured. Mechanical edits don't need
+the full load; architectural ones do.
+
+### Operational rules
+
+1. L2/L3/L4 loads are instrumented. A session that skips them and
+   then writes architectural code is flagged in the trusted-but-
+   unverified audit (Rule 59).
+2. L3 freshness: if CODE_MAP.json is older than the current
+   index.html (per `git log`), regenerate before reading.
+3. L4 search MUST include the touched domain and any neighbouring
+   domain whose contract the change crosses.
+
+### Cross-reference
+
+- Rule 59: trusted-but-unverified — L3+L4 skip is the audit signal
+- Rule 84: codex discipline — L4 only works if sessions write codex
+- Rule 72: inherited claims must be re-verified — L4 entries are
+  hypotheses until re-verified for the current task
+
+---
+
 ## Case Study: Golf Layer Integration Failure (June 18 2026)
 
 **Context:** Golf layer built across 4 Claude sessions (2 CC, 2 chat).
