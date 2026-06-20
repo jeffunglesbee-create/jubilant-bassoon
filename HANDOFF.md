@@ -1,96 +1,103 @@
-# HANDOFF.md — FIELD
+# FIELD HANDOFF — June 20 2026
 
-## Current State
-- **Client HEAD:** f313a00 (jubilant-bassoon)
-- **Relay HEAD:** 8766f2b (field-relay-nba)
-- **Client SW:** 2026-06-20c
-- **Client Smoke:** 702/0
-- **Session:** June 19-20, 2026 (~1 AM – 9 AM ET, two-part marathon)
+## State
+- Client: `eb33d5a` (2026-06-20h)
+- Relay: `73f707a` (odds backfill) + `a99ad2f` (voice v4 prompts)
+- Relay CC: `202a087` (odds backfill budget-aware rewrite)
+- Smoke: 718/0
+- Rules: 1-79 (Rule 77 = PRIME DIRECTIVE)
 
-## Session: 17 prompts, 32 commits
+## Shipped This Session
 
-### Client commits (P1-P14): 15 code commits
-| # | Commit | What |
-|---|---|---|
-| P1 | 80ba46a | Desktop back-to-schedule pills at ≥1200px |
-| P2 | 2c17fa4 | WC group pill bridge (openWcGroup + gold flash) |
-| P3 | 813c142 | Golf pack density (computeGolfPackDensity) |
-| P4 | db645d6 | Golf cut-line projection (3 modes) |
-| P5 | a98bb72 | Golf leaderboard inject timing fix (setTimeout 300) |
-| P6A | bf57555 | Persist V2 soccer situation stats to localStorage |
-| P6B | e564e0d | Inject persisted soccer stats into Night Owl |
-| P9 | 033893b | F09 REST Countries (fetchCountryContext) |
-| P10 | 8b5a8a1 | UserDO read loop + Context Graph hydration + Night Owl personalization |
-| P11B | 99929e9 | Drama persistence client signal at final state |
-| P12B | 4fd7dcf | AFL V2 client wiring (FIELD_V2_SOURCES afl:true) |
-| P12C | ba43307 | Golf archive hook (saveGolfRoundFinal) |
-| P14 | 78fce57 | Golf venue read fix (pgaData.venue fallback chain) |
-| — | 0ff6cd8 | Rule 68 governance (CLAUDE.md + STANDARDS.md) |
+### Governance (Rules 69-79)
+- Rules 69-71: anti-rewrite (TOUCH-ONLY-A, ATOMIC-A, CONTEXT-A)
+- Rules 72-79: CHALLENGE-A, CLAIM-CONTEXT-A, STAGED-GATE-A, PROMPT-SPEC-A, FALLBACK-CAP-A, NO-RATIONALIZE-A, API-COST-A, PROMPT-HEAD-A
+- Rule 77 elevated to PRIME DIRECTIVE (above Rules 1 and 2)
+- Client commits: d28fde6 → e545cfa → c410ce3
+- Relay commits: 412964f → cfd2914 → 202e9ad
 
-### Relay commits (P7-P15): 17 code commits
-| # | Commit | What |
-|---|---|---|
-| P7 | 8 commits | Context Graph API (/context/game, /context/date) |
-| P8 | 2 commits | Archive enrichment + backfill endpoint |
-| P11A | 8e35b79 | Drama persistence schema + POST /archive/drama |
-| P12A | 8330a54 | AFL V2 adapter (V2_LEAGUES + adaptAFL + GameDO) |
-| P13 | 1498a63 | Golf enriched: round status + course/venue |
-| P15 | 8766f2b | Archive catch-up cron + brief type classification |
-| — | 8d202d3 | Rule 68 governance (CLAUDE.md) |
+### Rule 76 Full Enforcement
+- `_gameSport(g)` centralizer: 64 raw sport fallback chains replaced
+- 10 dead golf `pgaData.event`/`pgaData.tournament` paths collapsed
+- Assertions rewritten: A662, A263, A266, A290, A372, new A715
+- P0 bug found + fixed: `_gameSport` infinite recursion from bulk regex replacing function body
 
-## P15 KNOWN BUG — OPEN
+### Linescore Fix
+- Raw `[LINE SCORE]` removed from all 3 journalism prompt surfaces
+- `buildScoreNarrativeContext` (analytical) remains as sole score source
 
-Archive catch-up block is placed BEFORE the morning brief guard (verified by P15B pre-build probe). However, the catch-up has its own ESPN fetch loop independent of gameLines. The Valkyries game (bball:494889, final 75-81) has NOT been verified as archived yet. Manual trigger returned early before catch-up could be confirmed. Next cron tick should fill it — verify with:
+### Voice Positioning v4
+- Register: WARM / WISE / UPLIFTING / CHEEKY / WRY
+- Core synthesis: institutional duty and joyful storytelling are intertwined
+- "The truth is the fun part. Let it be fun."
+- Client FIELD_VOICE_EXEMPLARS updated (eb33d5a)
+- 4 relay cron prompts updated (a99ad2f)
+- A370 smoke assertion updated for v4 verification
 
-```
-curl -s "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/bball:494889" \
-  | node -e "const d=JSON.parse(require('fs').readFileSync('/dev/stdin','utf8'));
-     console.log(d.game ? 'PASS' : 'STILL MISSING');"
-```
+### Golf Per-Round Briefs
+- Relay cron enqueues recap when round status = complete/official/final
+- Top 15 leaderboard, venue, cut line in prompt
+- Dedup via KV key `brief:golf:round:{eventId}:R{round}` (24h TTL)
+- Current: US Open R3 in progress, Clark -7 at Shinnecock Hills
 
-## P16 NOT EXECUTED — READY
+### Null-Sport Brief Fix
+- KV sweep checks D1 for existing sport-tagged brief before inserting null-sport row
+- Cleanup query deletes null-sport rows where sport-tagged sibling exists
 
-Retroactive drama estimation (client). Prompt written but not executed. Fills drama_peak for overnight finals that have scores but no drama. Boot at T+6000ms, fetches Context Graph, estimates drama from score differential per sport.
+### Odds History Backfill
+- GitHub Actions workflow + Node.js script (CC-parsed, 202a087)
+- Budget-aware: checks x-requests-remaining FIRST, stops at 2,700 TOTAL daily ceiling
+- Fully automated — no manual inputs, self-managing
+- Relay endpoint: GET /odds/history/:game_id
+- D1 tables: odds_history, odds_backfill_progress
 
-## Rule 68 — SHIPPED
+### WC Journalism Verification
+- 69 WC briefs across 5 types verified healthy
+- 4 WARNs investigated — all transient or working-as-designed
 
-CC prompts must include executable terminal commands, not prose. Pre-build probes discover actual data shapes. Post-build assertions verify output. Control flow analysis required when inserting into existing functions (grep for early returns). Added to CLAUDE.md + STANDARDS.md in both repos.
+## Documents Created
 
-## Architecture shipped this session
+| Document | Drive ID |
+|----------|----------|
+| The 33: Definitive Feature List | `1XDR6lzgP3vBH4Yg9Byb9C4GGAjKxuJRcV7bkF8pf4wk` |
+| Product Feature Inventory v2 | `1BbOqlV9JhFlCvwgfizNQW9LMG6lnNrNTp4yUgi7ZC2o` |
+| Analytics Cron Engine Spec | `11ZEVhxGoFxapYGkigjapmM6-ruaYVTKBu1G0NQF5jfw` |
+| Unified Health Layer v2 | `1SeBzCABXWjaMhiL021vffYjfVIYcI5YOVBKk5XD5BkU` |
 
-1. **Context Graph API** — /context/game/{id} and /context/date/{iso}. Both live, 138+ briefs per date.
-2. **Archive enrichment** — GameDO writes complete rows (team names, venue, league) at final state.
-3. **Drama persistence** — Client signals drama_peak + drama_arc to relay at final. Schema: drama_peak REAL + drama_arc TEXT on both game tables.
-4. **UserDO read loop** — fetchUserState at boot + visibility re-fetch. hydrateMissedRecaps via Context Graph. Night Owl [USER CONTEXT] + [MISSED PEAKS] injection.
-5. **AFL V2 adapter** — API-Sports AFL through V2 pipeline. GameDO opens for AFL. Squiggle coexists.
-6. **Golf archive hook** — saveGolfRoundFinal mirrors saveEspnFinal. Pack density + cut line + leader margin drama.
-7. **Golf enriched upgrade** — status ("Play Complete") + venue ("Shinnecock Hills Golf Club") + venueLocation ("Southampton, NY") from ESPN event details.
-8. **Server-side archive catch-up** — Cron fills game rows for finals no client saw. Brief type classification (narrative_context vs game_recap).
+## Key Decisions
+
+- **Voice v4**: Register shifted from wise/intelligent/cheeky/wry/lightly cynical → warm/wise/uplifting/cheeky/wry. Institutional duty and joy are intertwined, not in tension.
+- **The 33**: 42 specced features consolidated to 33 via v4 voice combines. 5 merges: Morning Report (from #89/#100/#94/#104/#109), FIELD's Pick (from #92/#98), Reality Check (from #95/#99), The Flip Side (Rewrite + Flip Side), The Truth Is (v4-native).
+- **Zero deletion policy**: Context Graph data is never pruned. Briefs are an appreciating asset (~24MB/year, D1 5GB = 200+ years).
+- **Circadian is cornerstone**: Should not have been excluded from v4 analysis. v4 register per mode: PREVIEW→wise, PRIME→uplifting, NIGHT→cheeky, LATE→warm.
+- **Cost analysis updated**: At 100 users with full O(1) Newspaper: $6/mo total. Break-even: 33 subscribers at $5/mo.
+
+## Compliance Verified
+- RUWT: zero interestLevel/compositeScore refs, drama classification client-side only
+- ADR-002: relay stores but never computes drama
+- Rule 47: dramaScore/watchVerdict/preGameScore all client-side only
+- BNI/EMBER patent fixes: COMPLETE (verified May 28)
+- All data sources legitimate (paid subscriptions or public APIs)
+- Zero article prose scraping
+
+## Today's Slate (June 20)
+- 14 MLB (auto V2)
+- 3 WNBA (auto V2)
+- 4 WC: BRA 3-0 HAI ✓, TUR 0-1 PAR ✓, NED 5-1 SWE ✓, GER vs CIV 20:00Z
+- US Open R3: Clark -7, in progress
+- 0 NHL, 0 NBA
+- No manual schedule changes needed
+
+## Next Session Priority
+1. Analytics Cron CC Prompt 1 (foundation + Night Stars + health module) — 65 min
+2. O(1) Newspaper full KV coverage — 30 min
+3. Analytics Cron CC Prompt 2 (Morning Report + Truth Is + Pick) — 55 min
+4. The Debrief — 4 hrs
+5. Soccer Intelligence commentary endpoint — 65 min (WC live)
 
 ## Pending
-
-- [ ] P15 Valkyries game verification (check after next cron tick)
-- [ ] P16 retroactive drama estimation (prompt ready, not executed)
-- [ ] Analytics cron (~45 min relay) — daily WOW feature computation
-- [ ] Night Stars client render (~25 min) — first WOW feature
-- [ ] NFL in SPORT_TO_V2 (one-line, before Sept 9)
-- [ ] HANDOFF session doc to Drive (quota permitting)
-- [ ] API-Sports Football Pro renewal decision (before June 29)
-
-## WOW Features Specced (10 total)
-
-Round 1 (Context Graph): Jinx Counter, Sport of the Week, Night Stars, Contradiction Finder, Composite Brief
-Round 2 (described): Streak Board, Cross-Exam, The Rewrite, The Flip Side, The Broken Record
-
-Spec file: /home/claude/wow-context-graph-spec.md (local to session)
-
-## API Spend
-| Service | Cost | Status |
-|---|---|---|
-| API-Sports (5 Pro) | $95/mo | Active, Football Pro expires ~June 29 |
-| The Odds API (100K) | $59/mo | Reset June 19, 99,996 remaining |
-| Cloudflare Workers+ | $5/mo | Active |
-
-## Usage
-- CC weekly: 5% used (resets Tue 9:59 AM)
-- CC session: 56% at last check (5-hr rolling window)
+- API-Sports Football Pro renewal decision (June 29 deadline)
+- NFL SPORT_TO_V2 (Sept 9 deadline)
+- Privacy Policy + GDPR (commercial deployment gate)
+- P16 retroactive drama estimation (prompt written, not executed)
+- Odds backfill workflow running daily (deployed, self-managing)
