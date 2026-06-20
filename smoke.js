@@ -1958,30 +1958,31 @@ assert('A369 — ADR-003 attribution extended to compound series + scouts_pick +
   (html.match(/_enforceNBAAttributionFooter\(/g) || []).length >= 7,
   'ADR-003 attribution must extend beyond the FIELD Brief to other AI-generated surfaces that can carry NBA leader data through the compound editorial prompt (which includes [PLAYOFF STATS:] tag per-game): J2 series preview (compound.series), J4-equivalent scouts pick (compound.scouts_pick), and per-game briefs (compound.game_briefs). Per-game briefs use single-game scope [{games:[g]}] so attribution only fires when THIS game has the NBA flag, not slate-wide');
 
-assert('A370 — Voice Positioning Move 2: FIELD_VOICE_EXEMPLARS constant has 3 exemplars + anti-exemplar (Move B v2) + priority statement (Move C v2)',
+assert('A370 — Voice Positioning v4: warm/wise/uplifting/cheeky/wry register + joy synthesis',
   // Constant exists
   html.includes('const FIELD_VOICE_EXEMPLARS') &&
-  // Voice register language present (Jeff direction)
-  html.includes('WISE') && html.includes('INTELLIGENT') &&
-  html.includes('CHEEKY') && html.includes('WRY') &&
-  html.includes('LIGHTLY CYNICAL') &&
-  // All three positive exemplars present (header markers)
+  // v4 voice register (Jeff June 20 approval)
+  html.includes('WARM') && html.includes('WISE') &&
+  html.includes('UPLIFTING') && html.includes('CHEEKY') && html.includes('WRY') &&
+  // v4 synthesis: duty and joy intertwined
+  html.includes('not in tension') && html.includes('intertwined') &&
+  // All three positive exemplars present
   html.includes('Exemplar A (NBA Finals') &&
   html.includes('Exemplar B (WNBA') &&
   html.includes('Exemplar C (NHL') &&
-  // Anti-copy safeguard present
+  // Anti-copy safeguard
   html.includes('Do NOT copy the exemplars\\\' phrasing, players, teams, or numbers') &&
-  // Move B: anti-exemplar present (PM-9 v2)
+  // Anti-exemplar
   html.includes('ANTI-EXEMPLAR') &&
   html.includes('WIRE COPY') &&
   html.includes('press release could have written this') &&
-  // Move C: priority statement present (PM-9 v2)
+  // v4 priority: truth is the fun part
   html.includes('Voice over completeness') &&
-  html.includes('Compression through selection') &&
+  html.includes('The truth is the fun part') &&
   // Delimiters
   html.includes('FIELD VOICE FRAMING') &&
   html.includes('END FRAMING — DATA AND RULES BELOW'),
-  'Voice Positioning Move 2 (v1 + v2): FIELD_VOICE_EXEMPLARS demonstrates voice register (wise/intelligent/cheeky/wry/lightly cynical) via three POSITIVE exemplars + one ANTI-EXEMPLAR (PM-9 Move B, the live failing brief paraphrase) + PRIORITY statement (PM-9 Move C, "voice over completeness"). v1 buried these in the rules; v2 makes them the opening framing the AI reads first');
+  'Voice Positioning v4: register updated to warm/wise/uplifting/cheeky/wry. Institutional duty and joyful storytelling intertwined. Priority: the truth is the fun part.');
 
 assert('A371 — Voice Positioning Move 1: TIME-PERIOD ANCHORING loosened to permit elided constructions',
   // The loosened rule permits elision when context unambiguous
