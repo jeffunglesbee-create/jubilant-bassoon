@@ -14889,9 +14889,7 @@ function renderPGALeaderboard(data) {
 // Output: { mode, value, playersInField, playersCompleted, cutPosition }
 function computeCutLineProjection(pgaData) {
   if (!pgaData) return null;
-  const ev = pgaData.event || pgaData.tournament || {};
-  const roundRaw = ev.round != null ? ev.round : pgaData.round;
-  const round = Number(roundRaw);
+  const round = Number(pgaData.round);
   if (!Number.isFinite(round) || round < 2) return null; // suppress before R2
   const lb = pgaData.leaderboard;
   if (!Array.isArray(lb) || lb.length < 60) return null; // not enough field for a 60+ties cut
@@ -14984,8 +14982,8 @@ function injectPGALeaderboard(pgaData) {
   // venue matches the ESPN event; fall back to the first Golf section game
   // when the event-name match is ambiguous (between-tournament path emits a
   // generic "Next event" card without a strong fingerprint).
-  const evName = (pgaData.event?.name || pgaData.name || pgaData.nextEvent?.name || '').toLowerCase();
-  const evVenue = (pgaData.venue || pgaData.event?.location || pgaData.event?.course || '').toLowerCase();
+  const evName = (pgaData.name || '').toLowerCase();
+  const evVenue = (pgaData.venue || '').toLowerCase();
   let target = null;
   let firstGolfCard = null;
   for (const sec of allData.sports) {
@@ -15119,8 +15117,7 @@ function computeGolfDerivedMetrics(data) {
 const _golfRoundSaved = {};
 function _isGolfRoundComplete(pgaData) {
   if (!pgaData) return false;
-  const ev = pgaData.event || pgaData.tournament || {};
-  const status = String(ev.status || pgaData.status || '').toLowerCase();
+  const status = String(pgaData.status || '').toLowerCase();
   // Permissive substring match — ESPN status text varies ("Final", "Round
   // Complete", "Official"). Any of these is treated as round-done.
   if (/(complete|official|final)/.test(status)) return true;
@@ -15135,13 +15132,13 @@ function _isGolfRoundComplete(pgaData) {
 }
 function saveGolfRoundFinal(pgaData) {
   if (!pgaData) return;
-  const eventId = pgaData.eventId || pgaData.event?.id || '';
-  const round = pgaData.round || pgaData.event?.round || '';
+  const eventId = pgaData.eventId || '';
+  const round = pgaData.round || '';
   const dedup = eventId + '_R' + round;
   if (_golfRoundSaved[dedup]) return;
   _golfRoundSaved[dedup] = true;
 
-  const evName = pgaData.name || pgaData.event?.name || 'PGA Tour Event';
+  const evName = pgaData.name || 'PGA Tour Event';
   const leader = pgaData.leaderboard?.[0];
   const leaderNote = leader ? `${leader.name} ${leader.toPar}` : '';
 
@@ -15157,7 +15154,7 @@ function saveGolfRoundFinal(pgaData) {
       sport: 'golf', league: 'PGA Tour', date: today,
       home: evName, away: 'R' + round,
       home_score: leader?.toPar ?? null,
-      venue: pgaData.venue || pgaData.event?.location || pgaData.event?.course || '',
+      venue: pgaData.venue || '',
       source_id: 'golf_' + (eventId || today),
       note: leaderNote,
     }),
@@ -15258,11 +15255,10 @@ function buildGolfPromptContext(pgaData) {
       ? `[GOLF CONTEXT]\nNo active PGA tournament today. Next event: ${name}${date ? ' (' + date + ')' : ''}.`
       : '';
   }
-  const ev = pgaData.event || pgaData.tournament || {};
-  const evName = ev.name || pgaData.name || 'PGA Tour event';
-  const round = ev.round || pgaData.round || '';
-  const status = ev.status || pgaData.status || '';
-  const location = ev.location || ev.course || '';
+  const evName = pgaData.name || 'PGA Tour event';
+  const round = pgaData.round || '';
+  const status = pgaData.status || '';
+  const location = pgaData.venue || '';
   const headerBits = [evName];
   if (round) headerBits.push(`Round ${round}`);
   if (status) headerBits.push(status);
@@ -20866,7 +20862,7 @@ async function fetchSchedule(){
       const hasGolfSection = (allData?.sports || []).some(s => s.sport === 'Golf');
       if (!hasGolfSection && allData && allData.sports) {
         const evName = d.name || 'PGA Tour Event';
-        const evVenue = d.venue || d.event?.location || d.event?.course || '';
+        const evVenue = d.venue || '';
         const round = d.round ? 'R' + d.round : '';
         allData.sports.push({ sport: 'Golf', games: [{
           home: evName, away: '',
@@ -21991,7 +21987,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-20c';
+  const SW_VERSION = '2026-06-20d';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
