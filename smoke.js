@@ -4271,6 +4271,20 @@ assert('A651 — buildLinescoreContext emits explicit team-labelled output; buil
   /winnerMaxLead >= 2 && leadChanges === 0 && loserMaxLead === 0/.test(html),
   'CC-CMD-2026-06-18 Night Owl inversion: buildLinescoreContext used to emit "Inn1: 0-4" (cumH-cumA) on a wire-to-wire MIN @ TEX game. Broadcast convention reads pairs as away-home, so the LLM rendered "Rangers held an early advantage, leading by as many as 4-runs" and hallucinated "10-run lead" + "3 lead changes" — all inverted. Two fixes: (1) linescore output now includes nick + cum score per slot in away-first order ("Inn1: Twins 4, Rangers 0"), and (2) buildScoreNarrativeContext appends "wire-to-wire (loser never led)" when leadChanges=0 AND loserMaxLead=0 alongside a ≥2 winner lead, so the LLM cannot invent ups-and-downs.');
 
+// ── A662 / CC-CMD-2026-06-20 Prompt 14 Golf venue read fix ──
+assert('A662 — saveGolfRoundFinal and the boot Golf section reader read pgaData.venue first',
+  // saveGolfRoundFinal's venue chain now begins with pgaData.venue.
+  /venue: pgaData\.venue \|\| pgaData\.event\?\.location \|\| pgaData\.event\?\.course \|\| ''/.test(html) &&
+  // injectPGALeaderboard's evVenue normalisation also reads pgaData.venue first.
+  /const evVenue = \(pgaData\.venue \|\| pgaData\.event\?\.location \|\| pgaData\.event\?\.course \|\| ''\)\.toLowerCase\(\)/.test(html) &&
+  // The boot block's Golf section creator now reads d.venue first too.
+  /const evVenue = d\.venue \|\| d\.event\?\.location \|\| d\.event\?\.course \|\| ''/.test(html) &&
+  // No bare pgaData.event?.location or pgaData.event?.course references survive
+  // — every read must consult pgaData.venue first.
+  !/(?<!\|\| )pgaData\.event\?\.location/.test(html) &&
+  !/(?<!\|\| )pgaData\.event\?\.course/.test(html),
+  'CC-CMD-2026-06-20 Prompt 14: Prompt 13 added top-level status / venue / venueLocation to /v2/golf/enriched. The client previously read venue from pgaData.event?.location which the enriched endpoint never set (no event sub-object), so saveGolfRoundFinal posted empty venue strings and the boot Golf section card lacked venue context. All three venue read sites (saveGolfRoundFinal payload, injectPGALeaderboard evVenue normalisation, boot section creator evVenue) now read pgaData.venue / d.venue first and fall back to the legacy event.location|event.course chain for backward compat. The golf-contract-probe workflow now also asserts the three new top-level fields are non-null. Offline verification: /(complete|official|final)/.test("play complete") === true so _isGolfRoundComplete activates the status path immediately when the relay sends "Play Complete".');
+
 // ── A661 / CC-CMD-2026-06-19 Prompt 12C Golf archive hook ──
 assert('A661 — saveGolfRoundFinal + _isGolfRoundComplete + boot wire after injectPGALeaderboard',
   // Helpers defined.

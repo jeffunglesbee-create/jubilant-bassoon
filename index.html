@@ -14985,7 +14985,7 @@ function injectPGALeaderboard(pgaData) {
   // when the event-name match is ambiguous (between-tournament path emits a
   // generic "Next event" card without a strong fingerprint).
   const evName = (pgaData.event?.name || pgaData.name || pgaData.nextEvent?.name || '').toLowerCase();
-  const evVenue = (pgaData.event?.location || pgaData.event?.course || '').toLowerCase();
+  const evVenue = (pgaData.venue || pgaData.event?.location || pgaData.event?.course || '').toLowerCase();
   let target = null;
   let firstGolfCard = null;
   for (const sec of allData.sports) {
@@ -15157,7 +15157,7 @@ function saveGolfRoundFinal(pgaData) {
       sport: 'golf', league: 'PGA Tour', date: today,
       home: evName, away: 'R' + round,
       home_score: leader?.toPar ?? null,
-      venue: pgaData.event?.location || pgaData.event?.course || '',
+      venue: pgaData.venue || pgaData.event?.location || pgaData.event?.course || '',
       source_id: 'golf_' + (eventId || today),
       note: leaderNote,
     }),
@@ -20866,7 +20866,7 @@ async function fetchSchedule(){
       const hasGolfSection = (allData?.sports || []).some(s => s.sport === 'Golf');
       if (!hasGolfSection && allData && allData.sports) {
         const evName = d.name || 'PGA Tour Event';
-        const evVenue = d.event?.location || d.event?.course || '';
+        const evVenue = d.venue || d.event?.location || d.event?.course || '';
         const round = d.round ? 'R' + d.round : '';
         allData.sports.push({ sport: 'Golf', games: [{
           home: evName, away: '',
@@ -21991,7 +21991,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-20b';
+  const SW_VERSION = '2026-06-20c';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)

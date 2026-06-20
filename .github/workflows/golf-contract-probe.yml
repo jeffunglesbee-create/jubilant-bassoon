@@ -31,7 +31,14 @@ jobs:
           checks.append(('stats.gir', 'gir' in s))
           checks.append(('stats.drivingDistance', 'drivingDistance' in s))
           checks.append(('no flat driveDistAvg', 'driveDistAvg' not in p))
+          # Prompt 13 / 14 enriched additions
+          checks.append(('top-level status present', d.get('status') is not None))
+          checks.append(('top-level venue present', d.get('venue') is not None))
+          checks.append(('top-level venueLocation present', d.get('venueLocation') is not None))
           all_pass = all(v for _, v in checks)
+          print(f'  status: {d.get(\"status\")!r}')
+          print(f'  venue: {d.get(\"venue\")!r}')
+          print(f'  venueLocation: {d.get(\"venueLocation\")!r}')
           for label, passed in checks:
               print(f'  {\"PASS\" if passed else \"FAIL\"}: {label}')
           print(f'RESULT: {\"ALL PASSED\" if all_pass else \"FAILURES DETECTED\"}')
