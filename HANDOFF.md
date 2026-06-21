@@ -7,7 +7,7 @@
 - SW: 21a
 - Rules: 1-86 (Rule 86 = CONTRACT-READ-A)
 - CONTRACTS.md: 10 contracts, synced in both repos
-- L-Cache: L1 ✅ L2 ✅ L3 ✅ (CODE_MAP.json live) L4 ✅ (12 codex entries) L5 ✅
+- L-Cache: L1 ✅ L2 ✅ L3 ✅ (CODE_MAP.json live) L4 ✅ (15 codex entries) L5 ✅
 
 ## Shipped This Session (cont.)
 
@@ -20,11 +20,14 @@
 - Memory edit #17 updated to include Rule 85 L3+L4 steps
 - L-Cache full audit completed: all layers operational
 
-### Adapter Audit + Specs (2 new Drive specs)
+### Adapter Audit + Specs (4 new Drive specs)
 - Full 13-adapter inventory verified against June 21 session docs
 - HANDOFF was missing #6 (Sync Reconciler) and #7 (Savant → Journalism) — restored
 - Sync Reconciler upgraded from data plumbing to O(1) Newspaper changelog engine
 - Savant → Journalism specced standalone; pitcher xERA gap identified
+- Brief Freshness Guard (#14) identified — stale brief detection via changelog
+- Multi-sport R2 → Journalism gap documented (NHL/NBA/Soccer same pattern as MLB Savant)
+- Context Assembler source registry designed (12 sources, priority-ordered, budget-gated)
 - Codemap CI bug (#13) fixed this session
 
 ## Shipped Earlier This Day
@@ -56,7 +59,7 @@
 ### NBA Clutch Fix (prompt written, not executed)
 - CC-CMD-nba-clutch-fix.md ready
 
-## Drive Specs Written (15)
+## Drive Specs Written (17)
 - O(1) Newspaper v2: 17hGuvozh3a8XNCNSnqCEQfkNUeXoA8lTpVuWsZjkWjE
 - Circadian Revised: 1KkpQtzHIM-sKHsWTON-VohAbTkEsnNeCShXsfSPiQiA
 - Slate-Driven Density: 1zkPJIBVkKoYlwXJkoJh6oXvoufuf4Crux8JqFdTkXc0
@@ -66,8 +69,10 @@
 - Superseded Reconciliation: 1QQw9U33_cVzDXlJErLmmMnWGhpN6nttVx15YNjp6IhI
 - Feature Fold Reconciliation: 1Yf-znA75VOrebd2BvpS5jnzj9r9mD127DnMCAfCNjmY
 - Deferred Items Reconciliation: 14zskNhSO_3TKkPxlQPD_nC4QDSBmzzXceRIam1uSvN0
-- Sync Reconciler + Changelog: 1edcpJptVPaA7VP6svP4QjDuhtq-POrJrbZJYAhxcppc ← NEW
-- Savant → Journalism: 1O0G68_lS_HWYWdYYLWkWiJ-8dLWsURuE9RKMhF3_Cjo ← NEW
+- Sync Reconciler + Changelog: 1edcpJptVPaA7VP6svP4QjDuhtq-POrJrbZJYAhxcppc
+- Savant → Journalism: 1O0G68_lS_HWYWdYYLWkWiJ-8dLWsURuE9RKMhF3_Cjo
+- Brief Freshness Guard: 1tEru3BaKjaJgvpWO8DoQFM3Z5pJKs49bSJiGhMTdy5Q ← NEW
+- Multi-Sport R2 → Journalism: 1JgZynP8o6jgsPjmSRjbTYxcntVwtxIYeX9LbtmqxyzA ← NEW
 
 ## Key Decisions
 - Circadian = per-game state, not global mode
@@ -76,34 +81,38 @@
 - Momentum sort KILLED → Pulse Chip (factual annotation)
 - Narrative Depth DEMOTED to prompt quality gate
 - Watch Engine + What to Skip PERMANENTLY KILLED
-- 13 adapters identified for cross-system integration (3 shipped/fixed, 2 specced, 8 open)
+- 14 adapters identified for cross-system integration (3 shipped/fixed, 4 specced, 7 open)
 - Weather API: Visual Crossing (commercial-free) recommended
 - Sync Reconciler changelog = O(1) Newspaper "What's Moving" content engine
 - Savant → Journalism ships standalone, folds into Context Assembler later
 - Enrichment coverage (isEnrichmentRich) feeds Slate-Driven Density gravity
+- Brief Freshness Guard depends on Sync Reconciler changelog
+- R2 → Journalism gap is four-sport (MLB Savant, NHL series, NBA clutch, Soccer FBref)
+- Context Assembler registry: 12 sources, priority-ordered, ~1500 token budget
 
-## Adapter Inventory (13 total)
+## Adapter Inventory (14 total)
 
-### Shipped/Fixed
+### Shipped/Fixed (3)
 - Event Bus Consumers (Pulse Chip + CASCADE) — SHIPPED
 - Decision Registry / CONTRACTS.md — SHIPPED (Rule 86)
 - Codemap CI fix — FIXED (71adfa8, CODE_MAP.json generating)
 
-### Specced (ready to build)
+### Specced (4, ready to build)
 - Sync Reconciler + Changelog (20 min) — 1edcpJptVPaA7VP6svP4QjDuhtq-POrJrbZJYAhxcppc
 - Savant → Journalism (15 min) — 1O0G68_lS_HWYWdYYLWkWiJ-8dLWsURuE9RKMhF3_Cjo
+- Brief Freshness Guard (15 min) — 1tEru3BaKjaJgvpWO8DoQFM3Z5pJKs49bSJiGhMTdy5Q
+- Multi-Sport R2 → Journalism (35 min NHL+NBA+Soccer) — 1JgZynP8o6jgsPjmSRjbTYxcntVwtxIYeX9LbtmqxyzA
 
-### Open (unspecced)
+### Open (7, unspecced)
 - Budget Coordinator (10 min) — shared KV daily key
-- Context Assembler (30 min) — 15 sources → one prompt function
+- Context Assembler (30 min) — 12 sources → one prompt function (registry designed in multi-sport spec)
 - Game State Transition Hook (15 min) — closing odds capture + live bracket
 - Identity Resolver (30 min) — team name matching (+77 odds matches)
-- Sync Reconciler pattern consumers: Savant, weather, drama, injuries
 - Brief Write Integrity (10 min) — KV vs D1 reconciliation
 - Game Archive Completeness (10 min) — daily check
 - Post-Deploy Verification (15 min) — SHA check
 
-### Folded
+### Folded (1)
 - Context Assembler (expanded) — folded into Context Assembler
 
 ## Priority List
