@@ -1,58 +1,98 @@
-# FIELD HANDOFF — June 20 2026 (Session 2)
+# FIELD HANDOFF — June 21 2026
 
 ## State
-- Client: `eb33d5a` (2026-06-20h) — unchanged
-- Relay: `a0a31e6` (L4+L5 session memory tools)
-- Client HEAD: `20fb15c` (Rules 80-85 + Code Map CI)
-- Smoke: 718/0 — unchanged
-- Rules: 1-85 (Rule 77 = PRIME DIRECTIVE)
-- Codex: 9 entries (5 CC-seeded + 4 session-close)
-- MCP Tools: 20 total (11 existing + 9 new L4/L5)
+- Client HEAD: `7f3e144` (CONTRACTS.md + Rule 86)
+- Relay HEAD: `e4e5c54` (CONTRACTS.md + odds pipeline + bracket bridge)
+- Smoke: 720/1 (A704 HANDOFF format pre-existing)
+- SW: 21a
+- Rules: 1-86 (Rule 86 = CONTRACT-READ-A)
+- CONTRACTS.md: 10 contracts, synced in both repos
 
 ## Shipped This Session
 
-### Session Memory Architecture (L-Cache Hierarchy)
-- **L3 Code Map**: generate-codemap.js + codemap.yml CI (commit 9dd1dd9)
-  - 887 functions, 699 sections, 132 constants, 170 boot calls
-  - Auto-regenerates on push to index.html/smoke.js/STANDARDS.md
-- **L4 Codex**: D1 table on ARCHIVE_DB, 4 MCP tools, 9 entries
-  - Zero-deletion policy, drive_refs, wip category
-- **L5 Repo Source**: 5 MCP tools + /repo/archive HTTP endpoint
-  - read_source is file-level (not grep), use read_lines for line inspection
-  - commit_file has parent_sha guard + WRITE_ALLOWLIST
-  - /repo/archive uses `exp` and `sig` params
+### Odds Infrastructure (10 relay commits, sandbox push)
+- /d1/execute relay endpoint (table allowlist, auth header)
+- Odds backfill routed through relay Worker binding (D1 403 fixed)
+- Budget calc fixed (monthly ≠ daily)
+- Backfill extended to May 9 (full archive)
+- Sync: odds_history → game table opening_odds + closing_odds
+- Result: 130 opening_odds + 124 closing_odds (from 10/0)
 
-### Governance: Rules 80-85 (commit 20fb15c)
-- 80 CREDENTIAL-BOUNDARY-A
-- 81 WRITE-GATE-A
-- 82 ARCHIVE-FRESHNESS-A
-- 83 NO-EXFIL-A
-- 84 CODEX-DISCIPLINE-A
-- 85 SESSION-MEMORY-PROTOCOL-A
+### Event Bus — Relay (CC session)
+- AmbientDO → BracketDO live WC score forwarding
+- BracketDO /bracket/live-score provisional Monte Carlo
+- 30s cooldown, transient snapshots, name-mismatch fallback
 
-### Key Discoveries
-- D1 binding is ARCHIVE_DB not FIELD_DB
-- MCP connector caches tools/list at connector level — reconnection required for new tools
-- /repo/archive uses `exp` param not `expires`
+### Event Bus — Client (CC session)
+- Pulse Chip: getPulseChip with 4 signal types (⚡🔥📊⚾)
+- CASCADE narrative: cross-group ripple effects on bracket tab
+- WC mini-card: sticky panel for simultaneous group games
+- _sseScoreTs migrated to {type, ts, data?}
 
-## Session Startup Protocol (Rule 85)
-```
-1. tool_search("FIELD Handoff")      → load MCP tools
-2. read_handoff                      → L2: current state
-3. codex_search("{work area}")       → L4: relevant learnings
-4. get_head_sha                      → verify HEAD
-```
+### Contract Alignment
+- bracket:updated shifts field aliases (team=name, pChampDelta)
+- CONTRACTS.md pushed to both repos (10 contracts)
+- Rule 86 (CONTRACT-READ-A) in both CLAUDE.md files
 
-## Next Session Priority
-1. Analytics Cron CC Prompt 1 — 65 min
-2. O(1) Newspaper full KV coverage — 30 min
-3. Analytics Cron CC Prompt 2 — 55 min
-4. The Debrief — 4 hrs
-5. Soccer Intelligence commentary endpoint — 65 min
+### NBA Clutch Fix (prompt written, not executed)
+- CC-CMD-nba-clutch-fix.md ready
 
-## Pending
-- API-Sports Football Pro renewal (June 29 deadline)
-- NFL SPORT_TO_V2 (Sept 9 deadline)
-- Privacy Policy + GDPR (commercial gate)
-- read_codemap relay tool (CODE_MAP.json exists, tool not yet on relay)
-- Dispatcher refactor: 9 tools → 2 (repo + codex) to avoid future connector refreshes
+## Drive Specs Written (13)
+- O(1) Newspaper v2: 17hGuvozh3a8XNCNSnqCEQfkNUeXoA8lTpVuWsZjkWjE
+- Circadian Revised: 1KkpQtzHIM-sKHsWTON-VohAbTkEsnNeCShXsfSPiQiA
+- Slate-Driven Density: 1zkPJIBVkKoYlwXJkoJh6oXvoufuf4Crux8JqFdTkXc0
+- Odds Story v3: 1L5lDV3UGP5LQDQarT6zS8mPqy8pILeWmMmA6yIl4UY8
+- Context Dimensions Revised: 1j3HA7JbVF7PZMWKbr8nWqNwr8vr6YZMfU7gpv_JkmHo
+- Data Retention UI: 1iG0Pe0CVTSFCzUzs8PDaxou7WRQN0S1lhpvf6iytuGo
+- Superseded Reconciliation: 1QQw9U33_cVzDXlJErLmmMnWGhpN6nttVx15YNjp6IhI
+- Feature Fold Reconciliation: 1Yf-znA75VOrebd2BvpS5jnzj9r9mD127DnMCAfCNjmY
+- Deferred Items Reconciliation: 14zskNhSO_3TKkPxlQPD_nC4QDSBmzzXceRIam1uSvN0
+
+## Key Decisions
+- Circadian = per-game state, not global mode
+- Three-intent disclosure (anticipation/attention/reflection)
+- shouldUnseal = one-liner from getCardCircadian
+- Momentum sort KILLED → Pulse Chip (factual annotation)
+- Narrative Depth DEMOTED to prompt quality gate
+- Watch Engine + What to Skip PERMANENTLY KILLED
+- 13 adapters identified for cross-system integration
+- Weather API: Visual Crossing (commercial-free) recommended
+
+## Priority List
+1. O(1) Newspaper (45 min)
+2. API-Sports Football Pro renewal (June 29)
+3. Close the Loop — expanded (60 min)
+4. P16 Drama + GLYPH (45 min)
+5. Odds Story client (45 min, data ready)
+6. Soccer Intelligence (65 min)
+7. Slate-Driven Density (30 min)
+8. Circadian System (2 hrs)
+9. The Debrief + Scorecard (3 hrs)
+10. Unified Cross-Layer Search (50 min)
+11. NFL SPORT_TO_V2 (1 hr, Sept 9)
+12. Intent-Based MCP (30 min)
+
+## CC Prompts Ready
+- CC-CMD-close-the-loop.md (jubilant-bassoon)
+- CC-CMD-odds-story.md (field-relay-nba)
+- CC-CMD-nba-clutch-fix.md (jubilant-bassoon)
+
+## Self-Managing
+- Odds backfill: daily 10 UTC, fully caught up
+- Analytics Cron: daily 9 UTC, 12 phases
+- AI Gateway: 89% cache hit, $1.56/day
+
+## Open Adapters
+- Budget Coordinator (shared KV daily key)
+- Context Assembler (15 sources → one prompt function)
+- Game State Transition Hook (closing odds capture)
+- Identity Resolver (team name matching)
+- Brief Write Integrity (KV vs D1 reconciliation)
+- Game Archive Completeness (daily check)
+- Post-Deploy Verification (SHA check)
+- Codemap CI bug (git add before git diff)
+
+## Deadlines
+- June 25: WC MD3 starts (CASCADE + mini-card ready)
+- June 29: API-Sports Football Pro renewal
+- Sept 9: NFL in SPORT_TO_V2
