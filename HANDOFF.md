@@ -1,14 +1,33 @@
 # FIELD HANDOFF — June 21 2026
 
 ## State
-- Client HEAD: `7f3e144` (CONTRACTS.md + Rule 86)
+- Client HEAD: `4cde516` (codemap CI fix + auto-generated CODE_MAP.json)
 - Relay HEAD: `e4e5c54` (CONTRACTS.md + odds pipeline + bracket bridge)
 - Smoke: 720/1 (A704 HANDOFF format pre-existing)
 - SW: 21a
 - Rules: 1-86 (Rule 86 = CONTRACT-READ-A)
 - CONTRACTS.md: 10 contracts, synced in both repos
+- L-Cache: L1 ✅ L2 ✅ L3 ✅ (CODE_MAP.json live) L4 ✅ (12 codex entries) L5 ✅
 
-## Shipped This Session
+## Shipped This Session (cont.)
+
+### L3 Codemap Fix
+- codemap.yml: git add before git diff --staged (was checking untracked file)
+- CODE_MAP.json now generates on every push: 893 functions, 702 sections, 132 constants, 170 boot calls
+- Commit: 71adfa8 → CI auto-committed CODE_MAP.json → HEAD 4cde516
+
+### Session Protocol Update
+- Memory edit #17 updated to include Rule 85 L3+L4 steps
+- L-Cache full audit completed: all layers operational
+
+### Adapter Audit + Specs (2 new Drive specs)
+- Full 13-adapter inventory verified against June 21 session docs
+- HANDOFF was missing #6 (Sync Reconciler) and #7 (Savant → Journalism) — restored
+- Sync Reconciler upgraded from data plumbing to O(1) Newspaper changelog engine
+- Savant → Journalism specced standalone; pitcher xERA gap identified
+- Codemap CI bug (#13) fixed this session
+
+## Shipped Earlier This Day
 
 ### Odds Infrastructure (10 relay commits, sandbox push)
 - /d1/execute relay endpoint (table allowlist, auth header)
@@ -37,7 +56,7 @@
 ### NBA Clutch Fix (prompt written, not executed)
 - CC-CMD-nba-clutch-fix.md ready
 
-## Drive Specs Written (13)
+## Drive Specs Written (15)
 - O(1) Newspaper v2: 17hGuvozh3a8XNCNSnqCEQfkNUeXoA8lTpVuWsZjkWjE
 - Circadian Revised: 1KkpQtzHIM-sKHsWTON-VohAbTkEsnNeCShXsfSPiQiA
 - Slate-Driven Density: 1zkPJIBVkKoYlwXJkoJh6oXvoufuf4Crux8JqFdTkXc0
@@ -47,6 +66,8 @@
 - Superseded Reconciliation: 1QQw9U33_cVzDXlJErLmmMnWGhpN6nttVx15YNjp6IhI
 - Feature Fold Reconciliation: 1Yf-znA75VOrebd2BvpS5jnzj9r9mD127DnMCAfCNjmY
 - Deferred Items Reconciliation: 14zskNhSO_3TKkPxlQPD_nC4QDSBmzzXceRIam1uSvN0
+- Sync Reconciler + Changelog: 1edcpJptVPaA7VP6svP4QjDuhtq-POrJrbZJYAhxcppc ← NEW
+- Savant → Journalism: 1O0G68_lS_HWYWdYYLWkWiJ-8dLWsURuE9RKMhF3_Cjo ← NEW
 
 ## Key Decisions
 - Circadian = per-game state, not global mode
@@ -55,8 +76,35 @@
 - Momentum sort KILLED → Pulse Chip (factual annotation)
 - Narrative Depth DEMOTED to prompt quality gate
 - Watch Engine + What to Skip PERMANENTLY KILLED
-- 13 adapters identified for cross-system integration
+- 13 adapters identified for cross-system integration (3 shipped/fixed, 2 specced, 8 open)
 - Weather API: Visual Crossing (commercial-free) recommended
+- Sync Reconciler changelog = O(1) Newspaper "What's Moving" content engine
+- Savant → Journalism ships standalone, folds into Context Assembler later
+- Enrichment coverage (isEnrichmentRich) feeds Slate-Driven Density gravity
+
+## Adapter Inventory (13 total)
+
+### Shipped/Fixed
+- Event Bus Consumers (Pulse Chip + CASCADE) — SHIPPED
+- Decision Registry / CONTRACTS.md — SHIPPED (Rule 86)
+- Codemap CI fix — FIXED (71adfa8, CODE_MAP.json generating)
+
+### Specced (ready to build)
+- Sync Reconciler + Changelog (20 min) — 1edcpJptVPaA7VP6svP4QjDuhtq-POrJrbZJYAhxcppc
+- Savant → Journalism (15 min) — 1O0G68_lS_HWYWdYYLWkWiJ-8dLWsURuE9RKMhF3_Cjo
+
+### Open (unspecced)
+- Budget Coordinator (10 min) — shared KV daily key
+- Context Assembler (30 min) — 15 sources → one prompt function
+- Game State Transition Hook (15 min) — closing odds capture + live bracket
+- Identity Resolver (30 min) — team name matching (+77 odds matches)
+- Sync Reconciler pattern consumers: Savant, weather, drama, injuries
+- Brief Write Integrity (10 min) — KV vs D1 reconciliation
+- Game Archive Completeness (10 min) — daily check
+- Post-Deploy Verification (15 min) — SHA check
+
+### Folded
+- Context Assembler (expanded) — folded into Context Assembler
 
 ## Priority List
 1. O(1) Newspaper (45 min)
@@ -81,16 +129,7 @@
 - Odds backfill: daily 10 UTC, fully caught up
 - Analytics Cron: daily 9 UTC, 12 phases
 - AI Gateway: 89% cache hit, $1.56/day
-
-## Open Adapters
-- Budget Coordinator (shared KV daily key)
-- Context Assembler (15 sources → one prompt function)
-- Game State Transition Hook (closing odds capture)
-- Identity Resolver (team name matching)
-- Brief Write Integrity (KV vs D1 reconciliation)
-- Game Archive Completeness (daily check)
-- Post-Deploy Verification (SHA check)
-- Codemap CI bug (git add before git diff)
+- Codemap CI: generates CODE_MAP.json on every push to index.html/smoke.js/STANDARDS.md
 
 ## Deadlines
 - June 25: WC MD3 starts (CASCADE + mini-card ready)
