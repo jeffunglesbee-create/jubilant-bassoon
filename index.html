@@ -29790,19 +29790,18 @@ async function renderWCTournamentBracket() {
   const RELAY = typeof V2_RELAY_BASE !== 'undefined'
     ? V2_RELAY_BASE : 'https://field-relay-nba.jeffunglesbee.workers.dev';
   try {
-    // Fetch projections, movers, brief, bracket traps, third-place in parallel
-    const [projRes, moversRes, briefRes, trapsRes, thirdRes] = await Promise.allSettled([
+    // Fetch projections, movers, brief, bracket traps in parallel
+    // Third-place ranking now comes from projData (computed from live standings)
+    const [projRes, moversRes, briefRes, trapsRes] = await Promise.allSettled([
       fetch(`${RELAY}/wc/projections`,       { cache: 'no-store' }),
       fetch(`${RELAY}/wc/movers`,            { cache: 'no-store' }),
       fetch(`${RELAY}/wc/brief/tournament`,  { cache: 'no-store' }),
       fetch(`${RELAY}/wc/traps`,             { cache: 'no-store' }),
-      fetch(`${RELAY}/wc/third-place`,       { cache: 'no-store' }),
     ]);
     const projData   = projRes.status   === 'fulfilled' && projRes.value.ok   ? await projRes.value.json()   : null;
     const moversData = moversRes.status === 'fulfilled' && moversRes.value.ok ? await moversRes.value.json() : null;
     const briefData  = briefRes.status  === 'fulfilled' && briefRes.value.ok  ? await briefRes.value.json()  : null;
     const trapsData  = trapsRes.status  === 'fulfilled' && trapsRes.value.ok  ? await trapsRes.value.json()  : null;
-    const thirdData  = thirdRes.status  === 'fulfilled' && thirdRes.value.ok  ? await thirdRes.value.json()  : null;
 
     let html = '';
 
@@ -29835,8 +29834,8 @@ async function renderWCTournamentBracket() {
       html += `</div>`;
     }
 
-    // 2b. Best 8 third-place ranking
-    const thirdTeams = thirdData?.third_place;
+    // 2b. Best 8 third-place ranking (from projections — live with every goal)
+    const thirdTeams = projData?.thirdPlaceRanking;
     if (thirdTeams?.length) {
       html += `<div class="wc-third-place"><div class="wc-third-head">Best 8 Third-Place · Best 8 third-place teams also advance</div>`;
       html += `<div class="wc-third-table-wrap"><table class="wc-third-table">`;
