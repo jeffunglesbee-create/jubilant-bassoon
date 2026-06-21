@@ -24,12 +24,12 @@ jobs:
         run: node -e "JSON.parse(require('fs').readFileSync('CODE_MAP.json','utf8'))"
       - name: Commit if changed
         run: |
-          if git diff --quiet -- CODE_MAP.json; then
+          git add CODE_MAP.json
+          if git diff --staged --quiet -- CODE_MAP.json; then
             echo "CODE_MAP.json unchanged"
             exit 0
           fi
           git config user.email "claude@field.dev"
           git config user.name  "FIELD CI"
-          git add CODE_MAP.json
           git commit -m "codemap: refresh from ${GITHUB_SHA::7} [skip ci]"
           git push
