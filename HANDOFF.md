@@ -105,7 +105,7 @@
 
 ### Open (7, unspecced)
 - Budget Coordinator (10 min) — shared KV daily key
-- Context Assembler (30 min) — 12 sources → one prompt function (registry designed in multi-sport spec)
+- Context Assembler (30 min) — CC-CMD ready: docs/CC-CMD-2026-06-21-context-assembler.md
 - Game State Transition Hook (15 min) — closing odds capture + live bracket
 - Identity Resolver (30 min) — team name matching (+77 odds matches)
 - Brief Write Integrity (10 min) — KV vs D1 reconciliation
@@ -130,6 +130,7 @@
 12. Intent-Based MCP (30 min)
 
 ## CC Prompts Ready
+- CC-CMD-2026-06-21-context-assembler.md (field-relay-nba) ← NEW
 - CC-CMD-close-the-loop.md (jubilant-bassoon)
 - CC-CMD-odds-story.md (field-relay-nba)
 - CC-CMD-nba-clutch-fix.md (jubilant-bassoon)
