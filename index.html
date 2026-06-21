@@ -26329,9 +26329,31 @@ document.addEventListener('visibilitychange', () => {
           });
         }
       } catch (_e) {}
+
+      // ── WC live standings overlay ──────────────────────────────────────
+      // When a WC game score arrives via SSE, apply it to the cached group
+      // standings and re-render. D1 only updates on game completion, so
+      // this overlay is the only way to show live standings changes.
+      try {
+        if (data.sport === 'wc26' && window._wcLastStandings) {
+          if (!window._wcLiveScores) window._wcLiveScores = {};
+          window._wcLiveScores[data.gameId] = {
+            home: data.home, away: data.away,
+            homeScore: data.homeScore ?? 0, awayScore: data.awayScore ?? 0,
+          };
+          if (typeof window._wcRenderWithLiveOverlay === 'function') window._wcRenderWithLiveOverlay();
+        }
+      } catch (_e) {}
     }
 
     if (eventType === 'final') {
+      // Clear WC live overlay for completed games — D1 will have final data
+      try {
+        if (data.sport === 'wc26' && window._wcLiveScores && data.gameId) {
+          delete window._wcLiveScores[data.gameId];
+          if (typeof window._wcRenderWithLiveOverlay === 'function') window._wcRenderWithLiveOverlay();
+        }
+      } catch (_e) {}
       // Write final state to espnScores immediately
       try {
         if (typeof espnScores !== 'undefined' && data.home && data.away) {
@@ -30733,6 +30755,93 @@ function _wcMatchOdds(fixture, oddsProbs) {
 
 // Loading state
 function renderWCGroupsLoading() {
+
+// ── WC Live Standings Overlay ────────────────────────────────────────────
+// Applies live SSE scores to cached D1 standings and re-renders the groups
+// table. Called on every WC SSE score event. The overlay tracks live games
+// in window._wcLiveScores (map of gameId → {home, away, homeScore, awayScore}).
+// D1 standings don't update mid-game, so this is the only way to show
+// real-time group table changes when a goal is scored.
+function _wcRenderWithLiveOverlay() {
+  const base = window._wcLastStandings;
+  if (!base || !window._wcLiveScores) return;
+
+  // Deep-clone standings so we don't mutate the D1-sourced cache
+  const overlaid = {};
+  for (const g of Object.keys(base)) {
+    overlaid[g] = base[g].map(r => ({...r}));
+  }
+
+  // Apply each live game score as if it were a completed result
+  for (const [gid, live] of Object.entries(window._wcLiveScores)) {
+    for (const g of Object.keys(overlaid)) {
+      const norm = s => (s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]/g,'');
+      const homeRow = overlaid[g].find(r => norm(r.team) === norm(live.home));
+      const awayRow = overlaid[g].find(r => norm(r.team) === norm(live.away));
+      if (!homeRow || !awayRow) continue;
+
+      // Check if this game's result is already in D1 standings
+      // (played count would include it). If not, overlay it.
+      // Simple heuristic: track overlay by gameId to avoid double-counting
+      if (homeRow._liveOverlayId === gid) {
+        // Already overlaid — update in place (score changed)
+        homeRow.gf = (homeRow._baseGf ?? homeRow.gf) + live.homeScore;
+        homeRow.ga = (homeRow._baseGa ?? homeRow.ga) + live.awayScore;
+        awayRow.gf = (awayRow._baseGf ?? awayRow.gf) + live.awayScore;
+        awayRow.ga = (awayRow._baseGa ?? awayRow.ga) + live.homeScore;
+      } else {
+        // First overlay for this game — save base values
+        homeRow._baseGf = homeRow.gf; homeRow._baseGa = homeRow.ga;
+        homeRow._basePts = homeRow.points; homeRow._baseW = homeRow.won;
+        homeRow._baseD = homeRow.drawn; homeRow._baseL = homeRow.lost;
+        homeRow._basePlayed = homeRow.played;
+        awayRow._baseGf = awayRow.gf; awayRow._baseGa = awayRow.ga;
+        awayRow._basePts = awayRow.points; awayRow._baseW = awayRow.won;
+        awayRow._baseD = awayRow.drawn; awayRow._baseL = awayRow.lost;
+        awayRow._basePlayed = awayRow.played;
+
+        homeRow.gf += live.homeScore; homeRow.ga += live.awayScore;
+        awayRow.gf += live.awayScore; awayRow.ga += live.homeScore;
+        homeRow.played++; awayRow.played++;
+        homeRow._liveOverlayId = gid; awayRow._liveOverlayId = gid;
+      }
+
+      // Recalculate W/D/L and points from base + live result
+      const hBase = { w: homeRow._baseW, d: homeRow._baseD, l: homeRow._baseL };
+      const aBase = { w: awayRow._baseW, d: awayRow._baseD, l: awayRow._baseL };
+      if (live.homeScore > live.awayScore) {
+        homeRow.won = hBase.w + 1; homeRow.drawn = hBase.d; homeRow.lost = hBase.l;
+        awayRow.won = aBase.w; awayRow.drawn = aBase.d; awayRow.lost = aBase.l + 1;
+      } else if (live.homeScore < live.awayScore) {
+        homeRow.won = hBase.w; homeRow.drawn = hBase.d; homeRow.lost = hBase.l + 1;
+        awayRow.won = aBase.w + 1; awayRow.drawn = aBase.d; awayRow.lost = aBase.l;
+      } else {
+        homeRow.won = hBase.w; homeRow.drawn = hBase.d + 1; homeRow.lost = hBase.l;
+        awayRow.won = aBase.w; awayRow.drawn = aBase.d + 1; awayRow.lost = aBase.l;
+      }
+      homeRow.gd = homeRow.gf - homeRow.ga;
+      awayRow.gd = awayRow.gf - awayRow.ga;
+      homeRow.points = homeRow.won * 3 + homeRow.drawn;
+      awayRow.points = awayRow.won * 3 + awayRow.drawn;
+
+      // Re-sort group by FIFA criteria
+      overlaid[g].sort((a, b) =>
+        (b.points - a.points) || ((b.gf - b.ga) - (a.gf - a.ga)) || (b.gf - a.gf)
+      );
+      break; // Found the group, done
+    }
+  }
+
+  // Re-render groups with overlaid standings
+  if (typeof renderWCGroups === 'function') {
+    renderWCGroups(overlaid,
+      window._wcLastMatchResults || {},
+      window._wcLastOddsProbs || [],
+      window._wcLastLiveGames || []);
+  }
+}
+// Expose for SSE handler
+window._wcRenderWithLiveOverlay = _wcRenderWithLiveOverlay;
   const el = (_DOM?.wcGroups||document.getElementById('wc-groups'));
   if (!el) return;
   el.innerHTML = 'ABCDEFGHIJKL'.split('').map(g => `
