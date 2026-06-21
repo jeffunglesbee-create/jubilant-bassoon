@@ -2417,6 +2417,20 @@ body:not(.journalism-mode) #field-journalism-section{display:none}
 .wc-mover-delta.up{color:#4ade80}
 .wc-mover-delta.down{color:#f87171}
 .wc-mover-secondary{font-size:.56rem;color:var(--smoke)}
+.wc-third-place{margin:.5rem 0 1rem}
+.wc-third-head{font-size:.6rem;font-weight:700;letter-spacing:.08em;color:var(--smoke);text-transform:uppercase;margin-bottom:.4rem}
+.wc-third-table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.wc-third-table{width:100%;border-collapse:collapse;font-size:.63rem}
+.wc-third-table th{color:var(--smoke);font-weight:600;font-size:.56rem;padding:.25rem .2rem;text-align:center;border-bottom:1px solid var(--edge);white-space:nowrap}
+.wc-third-table th.left{text-align:left;padding-left:.35rem}
+.wc-third-table td{padding:.28rem .2rem;text-align:center;border-bottom:1px solid rgba(255,255,255,.03);color:var(--platinum)}
+.wc-third-rank{font-size:.55rem;color:var(--smoke);text-align:right !important;padding-right:.3rem !important;width:1.4rem}
+.wc-third-team{text-align:left !important;padding-left:.35rem !important;font-weight:600}
+.wc-third-grp{font-size:.55rem;color:var(--smoke)}
+.wc-third-in td{color:var(--platinum)}
+.wc-third-out td{color:var(--smoke);opacity:.6}
+.wc-third-cutline td{text-align:center;padding:.15rem 0;border-bottom:none}
+.wc-third-cutline span{font-size:.5rem;color:var(--amber,#f59e0b);letter-spacing:.1em;text-transform:uppercase}
 .wc-proj-table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
 .wc-proj-table{width:100%;border-collapse:collapse;font-size:.63rem}
 .wc-proj-table th{color:var(--smoke);font-weight:600;font-size:.56rem;padding:.25rem .2rem;text-align:center;border-bottom:1px solid var(--edge);white-space:nowrap}
@@ -29776,17 +29790,19 @@ async function renderWCTournamentBracket() {
   const RELAY = typeof V2_RELAY_BASE !== 'undefined'
     ? V2_RELAY_BASE : 'https://field-relay-nba.jeffunglesbee.workers.dev';
   try {
-    // Fetch projections, movers, brief, bracket traps in parallel
-    const [projRes, moversRes, briefRes, trapsRes] = await Promise.allSettled([
+    // Fetch projections, movers, brief, bracket traps, third-place in parallel
+    const [projRes, moversRes, briefRes, trapsRes, thirdRes] = await Promise.allSettled([
       fetch(`${RELAY}/wc/projections`,       { cache: 'no-store' }),
       fetch(`${RELAY}/wc/movers`,            { cache: 'no-store' }),
       fetch(`${RELAY}/wc/brief/tournament`,  { cache: 'no-store' }),
       fetch(`${RELAY}/wc/traps`,             { cache: 'no-store' }),
+      fetch(`${RELAY}/wc/third-place`,       { cache: 'no-store' }),
     ]);
     const projData   = projRes.status   === 'fulfilled' && projRes.value.ok   ? await projRes.value.json()   : null;
     const moversData = moversRes.status === 'fulfilled' && moversRes.value.ok ? await moversRes.value.json() : null;
     const briefData  = briefRes.status  === 'fulfilled' && briefRes.value.ok  ? await briefRes.value.json()  : null;
     const trapsData  = trapsRes.status  === 'fulfilled' && trapsRes.value.ok  ? await trapsRes.value.json()  : null;
+    const thirdData  = thirdRes.status  === 'fulfilled' && thirdRes.value.ok  ? await thirdRes.value.json()  : null;
 
     let html = '';
 
@@ -29817,6 +29833,31 @@ async function renderWCTournamentBracket() {
         </div>`;
       }
       html += `</div>`;
+    }
+
+    // 2b. Best 8 third-place ranking
+    const thirdTeams = thirdData?.third_place;
+    if (thirdTeams?.length) {
+      html += `<div class="wc-third-place"><div class="wc-third-head">Best 8 Third-Place · Best 8 third-place teams also advance</div>`;
+      html += `<div class="wc-third-table-wrap"><table class="wc-third-table">`;
+      html += `<thead><tr><th class="left"></th><th class="left">Team</th><th>Grp</th><th>Pts</th><th>GD</th><th>GF</th></tr></thead><tbody>`;
+      for (let i = 0; i < thirdTeams.length; i++) {
+        const t = thirdTeams[i];
+        const qualifying = i < 8;
+        const cutline = i === 7;
+        html += `<tr class="${qualifying ? 'wc-third-in' : 'wc-third-out'}">`;
+        html += `<td class="wc-third-rank">${i + 1}.</td>`;
+        html += `<td class="wc-third-team">${t.team}</td>`;
+        html += `<td class="wc-third-grp">${t.group_id}</td>`;
+        html += `<td>${t.points}</td>`;
+        html += `<td>${t.gd >= 0 ? '+' : ''}${t.gd}</td>`;
+        html += `<td>${t.gf}</td>`;
+        html += `</tr>`;
+        if (cutline) {
+          html += `<tr class="wc-third-cutline"><td colspan="6"><span>── qualifying cutline ──</span></td></tr>`;
+        }
+      }
+      html += `</tbody></table></div></div>`;
     }
 
     // 3. Probability table
