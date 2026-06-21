@@ -4275,6 +4275,58 @@ assert('A651 — buildLinescoreContext emits explicit team-labelled output; buil
   /winnerMaxLead >= 2 && leadChanges === 0 && loserMaxLead === 0/.test(html),
   'CC-CMD-2026-06-18 Night Owl inversion: buildLinescoreContext used to emit "Inn1: 0-4" (cumH-cumA) on a wire-to-wire MIN @ TEX game. Broadcast convention reads pairs as away-home, so the LLM rendered "Rangers held an early advantage, leading by as many as 4-runs" and hallucinated "10-run lead" + "3 lead changes" — all inverted. Two fixes: (1) linescore output now includes nick + cum score per slot in away-first order ("Inn1: Twins 4, Rangers 0"), and (2) buildScoreNarrativeContext appends "wire-to-wire (loser never led)" when leadChanges=0 AND loserMaxLead=0 alongside a ≥2 winner lead, so the LLM cannot invent ups-and-downs.');
 
+// ── A663 / CC-CMD pulse-cascade Pulse Chip ──
+assert('A663 — _sseScoreTs stores typed events; getPulseChip emits 4 signal types; chip rendered on live cards',
+  // _sseScoreTs is documented as the typed-event ring buffer.
+  /gameId → array of \{type, ts, data\} events/.test(html) &&
+  // score / lead_change writer stores the {type, ts, data} shape.
+  /events\.push\(\{ type: eventType, ts: Date\.now\(\), data \}\)/.test(html) &&
+  // wp_update writer also lands in _sseScoreTs.
+  /events\.push\(\{[\s\S]{0,160}?type: 'wp_update', ts: Date\.now\(\)/.test(html) &&
+  // _getVelocity remains backward compatible with raw-number entries.
+  /events\.filter\(e => \(typeof e === 'number' \? e : e\.ts\) > cutoff\)/.test(html) &&
+  // getPulseChip function defined with four signal types.
+  /function getPulseChip\(gameId, espnGame\)/.test(html) &&
+  /leadChanges\.length >= 2/.test(html) &&
+  /scores\.length >= 3/.test(html) &&
+  /totalDelta >= 0\.08/.test(html) &&
+  /sit && sit\.outs >= 2/.test(html) &&
+  // Returns {icon, text}; window export.
+  /icon: '⚡'/.test(html) &&
+  /icon: '🔥'/.test(html) &&
+  /icon: '📊'/.test(html) &&
+  /icon: '⚾'/.test(html) &&
+  /window\.getPulseChip = getPulseChip/.test(html) &&
+  // Card template invokes getPulseChip only on live cards.
+  /if\(!isLive\|\|typeof window\.getPulseChip!=='function'\) return ''/.test(html) &&
+  /pulse-chip/.test(html),
+  'CC-CMD pulse-cascade Pulse Chip: factual per-card annotation when notable live events arrive. _sseScoreTs migrated from raw-number timestamps to {type, ts, data} objects (legacy entries still tolerated by _getVelocity/_isSSECovered during rollout). score/lead_change/wp_update all push into the same ring buffer (max 20 entries). getPulseChip checks four signals in priority order — lead_change >=2 → ⚡, score >=3 → 🔥, cumulative wp_update |Δ| >= 0.08 → 📊, MLB close & late w/ runners on + 2 outs → ⚾ — and returns the first match as {icon, text}. Card template renders the chip only when isLive (state === in) so the chip disappears on its own once events age out of the 5-min window. RUWT-clean — every signal is a count or sum of named factual observations from the relay.');
+
+// ── A664 / CC-CMD pulse-cascade CASCADE narrative ──
+assert('A664 — renderCascadeNarrative consumes bracket:updated delta and renders ripple lines on bracket tab',
+  /function renderCascadeNarrative\(bracketUpdate\)/.test(html) &&
+  /s\.group !== sourceGroup && Math\.abs\(s\.pChampDelta \|\| 0\) >= 0\.005/.test(html) &&
+  /\.sort\(\(a, b\) => Math\.abs\(b\.pChampDelta\) - Math\.abs\(a\.pChampDelta\)\)/.test(html) &&
+  /\.slice\(0, 3\)/.test(html) &&
+  /document\.querySelector\('\.wc-bracket-panel, \.bracket-tab'\)/.test(html) &&
+  /cascade-narrative/.test(html) &&
+  /RIPPLE EFFECTS/.test(html) &&
+  /if \(data\.isLive && data\.delta\) \{[\s\S]{0,80}?renderCascadeNarrative\(data\)/.test(html) &&
+  /\.cascade-narrative\{padding:8px 12px/.test(html),
+  'CC-CMD pulse-cascade CASCADE: when a live WC goal triggers bracket:updated with isLive flag, render which teams in OTHER groups had their pChamp shift. Filters to cross-group shifts (sourceGroup excluded), |delta| >= 0.5pp threshold, top 3 by magnitude. Renders into .wc-bracket-panel / .bracket-tab as a "⚡ RIPPLE EFFECTS" panel with team (group) ↑/↓pp lines. Final-only deltas without isLive silently skip — the existing per-final re-render path is untouched. Relay-side AmbientDO → BracketDO live score bridge is the carry-forward; without it CASCADE only fires post-final.');
+
+// ── A665 / CC-CMD pulse-cascade WC mini-card ──
+assert('A665 — getLinkedWCGame + renderWCMiniCard + renderESPNScores hook for simultaneous WC kickoffs',
+  /function getLinkedWCGame\(currentGame, allGames\)/.test(html) &&
+  /function renderWCMiniCard\(linkedGame\)/.test(html) &&
+  /g\.round === currentGame\.round/.test(html) &&
+  /document\.getElementById\('wc-mini-card'\)/.test(html) &&
+  /\.scrollIntoView\(\{ behavior: 'smooth'/.test(html) &&
+  /wcLiveGames\.length >= 2/.test(html) &&
+  /renderWCMiniCard\(linked\)/.test(html) &&
+  /\.wc-mini-card\{position:sticky;top:0;z-index:10/.test(html),
+  'CC-CMD pulse-cascade WC mini-card: during MD3 simultaneous group kickoffs, the linked WC game (same round, also live) is pinned as a sticky mini-card at the top of #main. Tap scrolls to the full card via data-gameid. Wired into renderESPNScores so it piggybacks on existing SSE coalesced re-renders. No-op when fewer than two WC games are live in the same round, so the mini-card auto-clears at FT.');
+
 // ── A662 / Rule 76 (FALLBACK-CAP-A) — Golf: relay serves flat fields, no dead sub-objects ──
 assert('A662 — Rule 76: no dead pgaData.event/tournament sub-object paths',
   // No pgaData.event?.* anywhere (relay has no event sub-object)
