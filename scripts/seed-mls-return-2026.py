@@ -1,0 +1,144 @@
+#!/usr/bin/env python3
+"""
+Seed post-WC MLS schedule (July 19 – October 2026) into ARCHIVE_DB
+regular_season_games. One-time backfill so context-assembler can resolve
+'mls' on return weekend (July 19-20). MLS paused May 24 for the WC.
+
+Source : api-sports.io Football /fixtures?league=253&season=2026
+Sink   : ARCHIVE_DB (cc49101c-0569-4d41-8e7a-be139cde4f26) via relay
+         /d1/execute, batched 20 rows per request.
+
+INSERT OR IGNORE — never overwrites a game row that already carries scores.
+
+Env required:
+  APISPORTS_KEY       — same key the relay uses
+  RELAY_URL           — defaults to field-relay-nba.jeffunglesbee.workers.dev
+
+Audit artefact: outbox/mls-schedule-2026.json (raw rows pre-INSERT).
+"""
+
+import json, os, sys, urllib.request, urllib.error
+from datetime import datetime, timezone
+
+APISPORTS_KEY = os.environ.get("APISPORTS_KEY", "").strip()
+RELAY         = os.environ.get("RELAY_URL", "https://field-relay-nba.jeffunglesbee.workers.dev").rstrip("/")
+LEAGUE_ID     = 253
+SEASON        = 2026
+DATE_FROM     = "2026-07-19"
+DATE_TO       = "2026-10-31"
+BATCH         = 20
+
+if not APISPORTS_KEY:
+    print("❌ APISPORTS_KEY env var missing — cannot fetch fixtures.")
+    sys.exit(1)
+
+def fetch_fixtures():
+    url = (f"https://v3.football.api-sports.io/fixtures"
+           f"?league={LEAGUE_ID}&season={SEASON}"
+           f"&from={DATE_FROM}&to={DATE_TO}")
+    print(f"GET {url}")
+    req = urllib.request.Request(url, headers={
+        "x-apisports-key": APISPORTS_KEY,
+        "Accept": "application/json",
+    })
+    with urllib.request.urlopen(req, timeout=30) as r:
+        data = json.loads(r.read())
+    errs = data.get("errors")
+    if errs:
+        print(f"❌ api-sports errors: {errs}")
+        sys.exit(1)
+    fixtures = data.get("response", [])
+    print(f"✅ {len(fixtures)} fixtures returned")
+    return fixtures
+
+def to_row(fx):
+    date = (fx.get("fixture", {}).get("date") or "")[:10]
+    home = (fx.get("teams", {}).get("home", {}) or {}).get("name") or ""
+    away = (fx.get("teams", {}).get("away", {}) or {}).get("name") or ""
+    if not date or not home or not away:
+        return None
+    home_abbr = home[:5].lower().replace(" ", "")
+    away_abbr = away[:5].lower().replace(" ", "")
+    return {
+        "id":         f"{date}-mls-{home_abbr}-{away_abbr}",
+        "date":       date,
+        "sport":      "MLS",
+        "home":       home,
+        "away":       away,
+        "home_score": None,
+        "away_score": None,
+    }
+
+def sql_escape(v):
+    if v is None:
+        return "NULL"
+    return "'" + str(v).replace("'", "''") + "'"
+
+def build_batch_sql(rows):
+    values = []
+    for r in rows:
+        values.append(
+            "(" + ",".join([
+                sql_escape(r["id"]),
+                sql_escape(r["date"]),
+                sql_escape(r["sport"]),
+                sql_escape(r["home"]),
+                sql_escape(r["away"]),
+                "NULL" if r["home_score"] is None else str(int(r["home_score"])),
+                "NULL" if r["away_score"] is None else str(int(r["away_score"])),
+            ]) + ")"
+        )
+    return ("INSERT OR IGNORE INTO regular_season_games "
+            "(id, date, sport, home, away, home_score, away_score) VALUES "
+            + ",".join(values))
+
+def post_d1(sql):
+    url  = f"{RELAY}/d1/execute"
+    body = json.dumps({"sql": sql}).encode("utf-8")
+    req  = urllib.request.Request(url, data=body, method="POST", headers={
+        "Content-Type":  "application/json",
+        "Content-Length": str(len(body)),
+    })
+    try:
+        with urllib.request.urlopen(req, timeout=30) as r:
+            return json.loads(r.read())
+    except urllib.error.HTTPError as e:
+        return {"ok": False, "status": e.code, "body": e.read().decode("utf-8", "replace")[:200]}
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+
+def main():
+    fixtures = fetch_fixtures()
+    rows = [r for r in (to_row(f) for f in fixtures) if r]
+    print(f"✅ {len(rows)} valid rows")
+
+    os.makedirs("outbox", exist_ok=True)
+    audit = {
+        "fetched_at": datetime.now(timezone.utc).isoformat(),
+        "league":     LEAGUE_ID,
+        "season":     SEASON,
+        "from":       DATE_FROM,
+        "to":         DATE_TO,
+        "count":      len(rows),
+        "rows":       rows,
+    }
+    with open("outbox/mls-schedule-2026.json", "w") as f:
+        json.dump(audit, f, indent=2)
+    print("✅ outbox/mls-schedule-2026.json written")
+
+    inserted = 0
+    for i in range(0, len(rows), BATCH):
+        chunk = rows[i:i+BATCH]
+        sql = build_batch_sql(chunk)
+        resp = post_d1(sql)
+        ok = resp.get("ok") if isinstance(resp, dict) else False
+        if ok:
+            inserted += len(chunk)
+            print(f"  batch {i//BATCH + 1}: {len(chunk)} rows OK")
+        else:
+            print(f"  batch {i//BATCH + 1}: FAILED {resp}")
+
+    print(f"\n✅ Done — {inserted}/{len(rows)} rows attempted via INSERT OR IGNORE")
+
+if __name__ == "__main__":
+    main()
