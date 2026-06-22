@@ -5394,6 +5394,22 @@ if (typeof location !== 'undefined' && location.search.includes('debug=1')) {
   window.addEventListener('load', () => setTimeout(showFieldHealthPanel, 800));
 }
 
+// ?tab=journal|groups — headless browser / automated viewport verification
+// Activates the named tab after load without requiring a click. Safe to use
+// in production: has no effect unless the param is present.
+if (typeof location !== 'undefined') {
+  const _tabParam = new URLSearchParams(location.search).get('tab');
+  if (_tabParam === 'journal') {
+    window.addEventListener('load', () => setTimeout(() => {
+      if (typeof toggleJournalismView === 'function') toggleJournalismView();
+    }, 800));
+  } else if (_tabParam === 'groups') {
+    window.addEventListener('load', () => setTimeout(() => {
+      if (typeof toggleWCView === 'function') toggleWCView();
+    }, 800));
+  }
+}
+
 // ── FIELD Feature Registry ────────────────────────────────────────────────
 // SINGLE SOURCE OF TRUTH for what's built. Updated when features ship.
 // Drive docs are derived summaries. If unsure what's built: look here first.
