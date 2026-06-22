@@ -1,9 +1,9 @@
-# FIELD HANDOFF — June 22 2026 (final update ~2:00am ET)
+# FIELD HANDOFF — June 22 2026 (updated ~2:20pm ET)
 
 ## State
 - CLIENT HEAD: 83ade4c · 2026-06-22 · via chat
-- RELAY HEAD:  7ad31ee · 2026-06-22 · via chat (docs); RELAY LIVE 621726e · via CC
-- Smoke: 724/2 (2 failures — markers not printing individual lines)
+- RELAY HEAD:  0971f31 · 2026-06-22 · via chat (docs only); RELAY LIVE 621726e · via CC
+- Smoke: 663 (regressed from 724 — root cause unknown, investigate next session)
 - SW_VERSION: 2026-06-22a
 
 ## Session Start Protocol (Rule 85)
@@ -36,12 +36,25 @@ Do NOT read_handoff as primary state source — this document goes stale.
 ### CFL Schedule (client c8d62d5)
 - Weeks 1-10 (Jun 4 – Aug 8), 38 games
 
-## Pending CC-CMDs (relay field-relay-nba)
-- docs/CC-CMD-2026-06-22-v4-voice-and-scoring.md (HEAD 2cf9f29)
-  ONE-LINER: git pull. Read docs/CC-CMD-2026-06-22-v4-voice-and-scoring.md. Execute all tasks.
-  After CC: /backfill/game-briefs?force=true&limit=50 (re-gen 59 bad briefs)
-- docs/CC-CMD-2026-06-22-stale-data-sentinel.md (existing, unexecuted)
-- docs/CC-CMD-2026-06-22-odds-story-materializer.md (existing, unexecuted)
+### Browser Rendering MCP — spec + CC-CMD (relay 0971f31, docs only)
+- Spec: Drive 1Fite5hBaJviHxvqp33EwR-vqnOeHXYe9fli6C34_cuE
+- CC-CMD: docs/CC-CMD-2026-06-22-browser-mcp.md
+- Adds 5 MCP tools: browser_quick, browser_navigate, browser_interact,
+  browser_extract, browser_close
+- Phase 0: stateless Quick Actions (screenshot/json/markdown/links)
+- Phase 1: BrowserDO — Puppeteer session persistence across MCP calls
+- Works from iPad chat — no Claude in Chrome extension required
+- ONE-LINER: git pull. Read docs/CC-CMD-2026-06-22-browser-mcp.md. Execute all phases.
+
+## Pending CC-CMDs (relay field-relay-nba) — PRIORITY ORDER
+1. docs/CC-CMD-2026-06-22-v4-voice-and-scoring.md (HEAD 2cf9f29) ← DO FIRST
+   ONE-LINER: git pull. Read docs/CC-CMD-2026-06-22-v4-voice-and-scoring.md. Execute all tasks.
+   After CC: /backfill/game-briefs?force=true&limit=50 (re-gen 59 bad briefs)
+2. docs/CC-CMD-2026-06-22-browser-mcp.md (HEAD 0971f31)
+   ONE-LINER: git pull. Read docs/CC-CMD-2026-06-22-browser-mcp.md. Execute all phases.
+   Note: commit section uses ${FIELD_PAT} placeholder — CC must set remote manually.
+3. docs/CC-CMD-2026-06-22-stale-data-sentinel.md (existing, unexecuted)
+4. docs/CC-CMD-2026-06-22-odds-story-materializer.md (existing, unexecuted)
 
 ## Probe Endpoints (all live)
 - /analytics/newspaper/{date}     — O(1) bundle
@@ -68,17 +81,20 @@ Do NOT read_handoff as primary state source — this document goes stale.
 8. WC sport label mismatch (FIFA World Cup 2026 vs wc26) — fixed in v4 CC-CMD
 9. pitch_arsenals.json stale (heals Monday cron)
 10. wc2026.json FBref empty (heals every 3 days)
-11. Smoke 724/2 — 2 failures unidentified
+11. Smoke regressed 724→663 — root cause unknown (investigate before next build)
 12. /health/sources not built (CC-CMD exists)
 13. Odds Story Materializer not built (CC-CMD exists)
 14. FIELD's Pick badge game_id format unverified
 15. CFL matchup accuracy unverified (Weeks 2-10 from web search)
 16. API-Sports Football Pro renewal — JUNE 29 DEADLINE
 17. NFL SPORT_TO_V2 — September 9 deadline
+18. Browser MCP CC-CMD PAT placeholder — CC must set git remote manually
 
 ## Priority (next session)
 1. Execute v4 voice CC-CMD (2cf9f29), then force re-gen backfill briefs
-2. Verify /session/record POST from CC environment
-3. Stale Data Sentinel (/health/sources)
-4. Odds Story Materializer
-5. API-Sports renewal decision (June 29)
+2. Execute Browser MCP CC-CMD (0971f31)
+3. Verify /session/record POST from CC environment
+4. Stale Data Sentinel (/health/sources)
+5. Odds Story Materializer
+6. Investigate smoke regression 724→663
+7. API-Sports renewal decision (June 29)
