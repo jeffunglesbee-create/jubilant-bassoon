@@ -4,15 +4,15 @@ Seed post-WC MLS schedule (July 19 – October 2026) into ARCHIVE_DB
 regular_season_games. One-time backfill so context-assembler can resolve
 'mls' on return weekend (July 19-20). MLS paused May 24 for the WC.
 
-Source : api-sports.io Football /fixtures?league=253&season=2026
+Source : relay /apisports/football/fixtures proxy (relay holds APISPORTS_KEY
+         as a Worker secret — no key needed in CI)
 Sink   : ARCHIVE_DB (cc49101c-0569-4d41-8e7a-be139cde4f26) via relay
          /d1/execute, batched 20 rows per request.
 
 INSERT OR IGNORE — never overwrites a game row that already carries scores.
 
 Env required:
-  APISPORTS_KEY       — same key the relay uses
-  RELAY_URL           — defaults to field-relay-nba.jeffunglesbee.workers.dev
+  RELAY_URL  — defaults to field-relay-nba.jeffunglesbee.workers.dev
 
 Audit artefact: outbox/mls-schedule-2026.json (raw rows pre-INSERT).
 """
@@ -20,27 +20,20 @@ Audit artefact: outbox/mls-schedule-2026.json (raw rows pre-INSERT).
 import json, os, sys, urllib.request, urllib.error
 from datetime import datetime, timezone
 
-APISPORTS_KEY = os.environ.get("APISPORTS_KEY", "").strip()
-RELAY         = os.environ.get("RELAY_URL", "https://field-relay-nba.jeffunglesbee.workers.dev").rstrip("/")
-LEAGUE_ID     = 253
-SEASON        = 2026
-DATE_FROM     = "2026-07-19"
-DATE_TO       = "2026-10-31"
-BATCH         = 20
-
-if not APISPORTS_KEY:
-    print("❌ APISPORTS_KEY env var missing — cannot fetch fixtures.")
-    sys.exit(1)
+RELAY     = os.environ.get("RELAY_URL", "https://field-relay-nba.jeffunglesbee.workers.dev").rstrip("/")
+LEAGUE_ID = 253
+SEASON    = 2026
+DATE_FROM = "2026-07-19"
+DATE_TO   = "2026-10-31"
+BATCH     = 20
 
 def fetch_fixtures():
-    url = (f"https://v3.football.api-sports.io/fixtures"
+    # Use relay proxy — relay holds APISPORTS_KEY as Worker secret, no key in CI
+    url = (f"{RELAY}/apisports/football/fixtures"
            f"?league={LEAGUE_ID}&season={SEASON}"
            f"&from={DATE_FROM}&to={DATE_TO}")
     print(f"GET {url}")
-    req = urllib.request.Request(url, headers={
-        "x-apisports-key": APISPORTS_KEY,
-        "Accept": "application/json",
-    })
+    req = urllib.request.Request(url, headers={"Accept": "application/json"})
     with urllib.request.urlopen(req, timeout=30) as r:
         data = json.loads(r.read())
     errs = data.get("errors")
