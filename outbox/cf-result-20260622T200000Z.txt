@@ -1,0 +1,146 @@
+=== CF API Probe [20260622T200000Z] ===
+Request: GET https://api.cloudflare.com/client/v4/accounts/b57e9af57ab46c52ca9215804e689c29/workers/scripts/field-relay-nba/bindings
+
+{
+    "result": [
+        {
+            "class_name": "AmbientDO",
+            "name": "AMBIENT_DO",
+            "namespace_id": "71d4356276bd4fb7b1f18a39c975840f",
+            "type": "durable_object_namespace"
+        },
+        {
+            "name": "APISPORTS_KEY",
+            "type": "secret_text"
+        },
+        {
+            "database_id": "cc49101c-0569-4d41-8e7a-be139cde4f26",
+            "id": "cc49101c-0569-4d41-8e7a-be139cde4f26",
+            "name": "ARCHIVE_DB",
+            "type": "d1"
+        },
+        {
+            "name": "BDL_API_KEY",
+            "type": "secret_text"
+        },
+        {
+            "class_name": "BracketDO",
+            "name": "BRACKET_DO",
+            "namespace_id": "5fd10c0a5931446c9c5cbe396d0272c2",
+            "type": "durable_object_namespace"
+        },
+        {
+            "name": "BROWSER",
+            "type": "browser",
+            "version": 2
+        },
+        {
+            "database_id": "f26669de-e772-4b56-a6d1-f8fdea08a4d4",
+            "id": "f26669de-e772-4b56-a6d1-f8fdea08a4d4",
+            "name": "DB",
+            "type": "d1"
+        },
+        {
+            "name": "DROPBOX_TOKEN",
+            "type": "secret_text"
+        },
+        {
+            "bucket_name": "field-relay-data",
+            "name": "FIELD_DATA",
+            "type": "r2_bucket"
+        },
+        {
+            "name": "FIELD_JOURNALISM",
+            "namespace_id": "83edf19398da4ed184a42746cb85c9d7",
+            "type": "kv_namespace"
+        },
+        {
+            "name": "FIELD_MCP_SECRET",
+            "type": "secret_text"
+        },
+        {
+            "class_name": "GameDO",
+            "name": "GAME_DO",
+            "namespace_id": "c2a832ba1d264a0398286379bde4e69e",
+            "type": "durable_object_namespace"
+        },
+        {
+            "name": "GITHUB_PAT",
+            "type": "secret_text"
+        },
+        {
+            "name": "JOURNALISM_QUEUE",
+            "queue_name": "field-journalism-queue",
+            "type": "queue"
+        },
+        {
+            "dataset": "field_jq_analytics",
+            "name": "JQ_ANALYTICS",
+            "type": "analytics_engine"
+        },
+        {
+            "name": "MCP_OAUTH",
+            "namespace_id": "f61e51036f9d4969b873cdc7602aad27",
+            "type": "kv_namespace"
+        },
+        {
+            "name": "NFL_API_KEY",
+            "type": "secret_text"
+        },
+        {
+            "name": "ODDS_API_KEY",
+            "type": "secret_text"
+        },
+        {
+            "name": "PUSH_SUBS",
+            "namespace_id": "46b6d8db59ea49eca8b1d89c576a6158",
+            "type": "kv_namespace"
+        },
+        {
+            "name": "REALTIMESPORTS_KEY",
+            "type": "secret_text"
+        },
+        {
+            "name": "RELAY_BASE",
+            "text": "https://field-relay-nba.jeffunglesbee.workers.dev",
+            "type": "plain_text"
+        },
+        {
+            "name": "SPORTRADAR_UFL_KEY",
+            "type": "secret_text"
+        },
+        {
+            "class_name": "UserDO",
+            "name": "USER_DO",
+            "namespace_id": "d3d9c19655934da88b94ffafb79a593c",
+            "type": "durable_object_namespace"
+        },
+        {
+            "name": "VAPID_PRIVATE_KEY",
+            "type": "secret_text"
+        },
+        {
+            "name": "VAPID_PUBLIC_KEY",
+            "type": "secret_text"
+        },
+        {
+            "database_id": "f26669de-e772-4b56-a6d1-f8fdea08a4d4",
+            "id": "f26669de-e772-4b56-a6d1-f8fdea08a4d4",
+            "name": "WC2026_DB",
+            "type": "d1"
+        },
+        {
+            "name": "WHOOP_CLIENT_ID",
+            "text": "a4c9151b-0a51-461c-808a-120fe5735bfc",
+            "type": "plain_text"
+        },
+        {
+            "name": "WHOOP_CLIENT_SECRET",
+            "text": "03dcff790c95a368e8f294a56d9134a5ee7c545b456d36cf61dfc7b33775d8b0",
+            "type": "plain_text"
+        }
+    ],
+    "success": true,
+    "errors": [],
+    "messages": []
+}
