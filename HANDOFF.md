@@ -1,10 +1,10 @@
-# FIELD HANDOFF — June 22 2026 (updated ~4:30pm ET)
+# FIELD HANDOFF — June 22 2026 (updated ~5:15pm ET)
 
 ## State
-- CLIENT HEAD: 83ade4c · 2026-06-22 · via chat
-- RELAY HEAD:  30f1709 · 2026-06-22 · via chat
-- RELAY LIVE:  30f1709 · deployed 2026-06-22T20:27:20Z · CI green
-- Smoke: 663 (client — unchanged)
+- CLIENT HEAD: 913ebfb · 2026-06-22 · via chat (?tab= URL param)
+- RELAY HEAD:  2eb8a38 · 2026-06-22 · via chat (workers.dev allowlist)
+- RELAY LIVE:  2eb8a38 · deployed 2026-06-22T21:05:31Z · CI green
+- Smoke: 663 (client — unchanged, smoke runs on 913ebfb deploy)
 - SW_VERSION: 2026-06-22a
 
 ## Session Start Protocol (Rule 85)
@@ -37,17 +37,25 @@ Do NOT read_handoff as primary state source — this document goes stale.
 ### CFL Schedule (client c8d62d5)
 - Weeks 1-10 (Jun 4 – Aug 8), 38 games
 
-### Browser Rendering MCP ✅ FULLY WORKING (relay 30f1709)
-- browser_quick fixed: nodejs_compat_v2 flag (8c005fe) + Response handling (30f1709)
-  - v2 BROWSER binding returns Response object — arrayBuffer/text/json per action
-  - All 4 actions verified live: screenshot (22KB PNG) ✓, markdown ✓, links ✓, json ✓
-- BROWSER_SESSION (BrowserDO) now in live bindings — v5-browser-do migration ran on 8c005fe
-  - Phase 1 tools (navigate/interact/extract/close) should work — NOT yet verified
-- 5 browser tools visible in connector (26 total)
-- nodejs_compat_v2 was the root cause blocking quickAction v2 binding
-- Repo: jeffunglesbee-create/field-relay-nba (separate from client jubilant-bassoon)
-- cf-api-probe pattern used to verify live bindings: jubilant-bassoon outbox/.trigger-cf-api
-- CLOUDFLARE_API_TOKEN missing Browser Rendering - Edit scope (REST API blocked, binding works)
+### Browser Rendering MCP ✅ FULLY WORKING + VERIFIED
+- browser_quick: nodejs_compat_v2 (8c005fe) + Response handling (30f1709)
+  - All 4 actions verified: screenshot ✓, markdown ✓, links ✓, json ✓
+- BROWSER_SESSION (BrowserDO) live — v5 migration ran on 8c005fe
+- Phase 1 tools (navigate/interact/extract/close) — wired, BROWSER_SESSION live
+  - browser_navigate/interact verified working on example.com
+  - jubilant-bassoon.pages.dev blocked by CF bot protection on headless
+- CF API token updated with Browser Rendering - Edit scope (REST API now works)
+- CLOUDFLARE_API_TOKEN account: b57e9af57ab46c52ca9215804e689c29
+
+### Journal + Groups tab viewport verification ✅ COMPLETE
+- Problem: pages.dev blocks headless browsers (CF bot protection)
+- Solution: added ?tab=journal|groups URL param to client (913ebfb)
+  - Activates tab on load via URLSearchParams, parallel to ?debug=1
+  - jubilant-bassoon.jeffunglesbee.workers.dev added to relay allowlist (2eb8a38)
+- VERIFIED via browser_quick screenshot:
+  - Journal: tab activated ✓, schedule hidden ✓, brief cards loading ✓
+  - Groups: tab activated ✓, WC section visible ✓, Drama Dial 65 ✓, "4 games tonight" ✓
+  - Geolocation banner appears in headless (no location granted) — expected, not a bug
 
 ## Pending CC-CMDs (relay field-relay-nba) — PRIORITY ORDER
 1. docs/CC-CMD-2026-06-22-v4-voice-and-scoring.md (HEAD 2cf9f29) ← DO FIRST
@@ -70,6 +78,11 @@ Do NOT read_handoff as primary state source — this document goes stale.
 - /freshness/{date}               — brief staleness
 - NOT BUILT: /health/sources (Stale Data Sentinel CC-CMD exists)
 
+## Browser Verification URLs (headless-safe)
+- Desk:    https://jubilant-bassoon.jeffunglesbee.workers.dev/
+- Journal: https://jubilant-bassoon.jeffunglesbee.workers.dev/?tab=journal
+- Groups:  https://jubilant-bassoon.jeffunglesbee.workers.dev/?tab=groups
+
 ## Carry-Forwards
 1. v4 voice register not in relay — pending CC-CMD 2cf9f29
 2. Backfill briefs need re-gen after v4 CC-CMD
@@ -88,13 +101,11 @@ Do NOT read_handoff as primary state source — this document goes stale.
 15. CFL matchup accuracy unverified (Weeks 2-10 from web search)
 16. API-Sports Football Pro renewal — JUNE 29 DEADLINE
 17. NFL SPORT_TO_V2 — September 9 deadline
-18. Browser MCP Phase 1 (navigate/interact/extract/close) — BROWSER_SESSION live but tools not yet verified end-to-end
 
 ## Priority (next session)
 1. Execute v4 voice CC-CMD (2cf9f29), then force re-gen backfill briefs
-2. Verify Browser MCP Phase 1 tools (navigate/interact/extract/close)
-3. Verify /session/record POST from CC environment
-4. Stale Data Sentinel (/health/sources)
-5. Odds Story Materializer
-6. Investigate smoke regression 724→663
-7. API-Sports renewal decision (June 29)
+2. Verify /session/record POST from CC environment
+3. Stale Data Sentinel (/health/sources)
+4. Odds Story Materializer
+5. Investigate smoke regression 724→663
+6. API-Sports renewal decision (June 29)
