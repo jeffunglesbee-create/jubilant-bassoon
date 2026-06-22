@@ -11449,9 +11449,54 @@ function buildTodaySchedule(){
 
   // ── CFL ──────────────────────────────────────────────────────────────────────
   const cflGames = [
-    // Week 1 regular season
-    {home:"Calgary Stampeders",  away:"Winnipeg Blue Bombers", league:"CFL – 2026 Season · Week 1", start_time:"2026-06-06T01:00:00Z", confirmed:true, venue:"McMahon Stadium, Calgary AB",      streams:resolveBundle("CFL_CBSSN"), localNote:"CBSSN · 9pm ET", matchupNote:"CFL Week 1 Friday night game. Winnipeg at Calgary on CBS Sports Network. Season opener for both clubs — first regular-season game between these rivals since last October. CFL+ streams free internationally."},
-    {home:"Ottawa Redblacks",    away:"Edmonton Elks",         league:"CFL – 2026 Season · Week 1", start_time:"2026-06-06T23:00:00Z", confirmed:true, venue:"TD Place, Ottawa ON",               streams:resolveBundle("CFL_CBSSN"), localNote:"CBSSN · 7pm ET Sat", matchupNote:"CFL Week 1 Saturday game. Edmonton at Ottawa on CBS Sports Network."},
+    // Week 1 (Jun 4-6) — completed
+    {home:"Hamilton Tiger-Cats", away:"Montreal Alouettes",     league:"CFL – 2026 Season · Week 1", start_time:"2026-06-04T23:30:00Z", confirmed:true, venue:"Tim Hortons Field, Hamilton ON",      streams:resolveBundle("CFL_CBSSN"), localNote:"CBSSN · 7:30pm ET"},
+    {home:"Calgary Stampeders",  away:"Winnipeg Blue Bombers",  league:"CFL – 2026 Season · Week 1", start_time:"2026-06-06T01:00:00Z", confirmed:true, venue:"McMahon Stadium, Calgary AB",        streams:resolveBundle("CFL_CBSSN"), localNote:"CBSSN · 9pm ET"},
+    {home:"Ottawa Redblacks",    away:"Edmonton Elks",          league:"CFL – 2026 Season · Week 1", start_time:"2026-06-06T23:00:00Z", confirmed:true, venue:"TD Place, Ottawa ON",                streams:resolveBundle("CFL_CBSSN"), localNote:"CBSSN · 7pm ET"},
+    // Week 2 (Jun 11-13)
+    {home:"Winnipeg Blue Bombers",away:"Hamilton Tiger-Cats",   league:"CFL – 2026 Season · Week 2", start_time:"2026-06-12T00:30:00Z", confirmed:true, venue:"IG Field, Winnipeg MB",              streams:resolveBundle("CFL_CBSSN"), localNote:"TSN · 8:30pm ET"},
+    {home:"Montreal Alouettes",  away:"Toronto Argonauts",      league:"CFL – 2026 Season · Week 2", start_time:"2026-06-12T23:00:00Z", confirmed:true, venue:"Percival Molson Stadium, Montreal QC",streams:resolveBundle("CFL_PLUS"),  localNote:"TSN · 7pm ET"},
+    {home:"Saskatchewan Roughriders",away:"BC Lions",           league:"CFL – 2026 Season · Week 2", start_time:"2026-06-13T23:00:00Z", confirmed:true, venue:"Mosaic Stadium, Regina SK",           streams:resolveBundle("CFL_PLUS"),  localNote:"TSN · 7pm ET"},
+    // Week 3 (Jun 19-20) — completed
+    {home:"Hamilton Tiger-Cats", away:"BC Lions",               league:"CFL – 2026 Season · Week 3", start_time:"2026-06-19T23:30:00Z", confirmed:true, venue:"Tim Hortons Field, Hamilton ON",      streams:resolveBundle("CFL_PLUS"),  localNote:"TSN · 7:30pm ET"},
+    {home:"Ottawa Redblacks",    away:"Toronto Argonauts",      league:"CFL – 2026 Season · Week 3", start_time:"2026-06-20T17:00:00Z", confirmed:true, venue:"TD Place, Ottawa ON",                streams:resolveBundle("CFL_PLUS"),  localNote:"TSN · 1pm ET"},
+    {home:"Edmonton Elks",       away:"Montreal Alouettes",     league:"CFL – 2026 Season · Week 3", start_time:"2026-06-20T20:00:00Z", confirmed:true, venue:"Commonwealth Stadium, Edmonton AB",   streams:resolveBundle("CFL_PLUS"),  localNote:"TSN · 4pm ET"},
+    {home:"Calgary Stampeders",  away:"Saskatchewan Roughriders",league:"CFL – 2026 Season · Week 3", start_time:"2026-06-20T23:00:00Z", confirmed:true, venue:"McMahon Stadium, Calgary AB",        streams:resolveBundle("CFL_PLUS"),  localNote:"TSN · 7pm ET"},
+    // Week 4 (Jun 25-28)
+    {home:"Winnipeg Blue Bombers",away:"Edmonton Elks",         league:"CFL – 2026 Season · Week 4", start_time:"2026-06-26T00:30:00Z", confirmed:true, venue:"IG Field, Winnipeg MB",              streams:resolveBundle("CFL_CBSSN"), localNote:"TSN · 8:30pm ET"},
+    {home:"Saskatchewan Roughriders",away:"Toronto Argonauts",  league:"CFL – 2026 Season · Week 4", start_time:"2026-06-27T01:00:00Z", confirmed:true, venue:"Mosaic Stadium, Regina SK",           streams:resolveBundle("CFL_PLUS"),  localNote:"TSN · 9pm ET"},
+    {home:"BC Lions",            away:"Calgary Stampeders",     league:"CFL – 2026 Season · Week 4", start_time:"2026-06-27T23:00:00Z", confirmed:true, venue:"BC Place, Vancouver BC",              streams:resolveBundle("CFL_PLUS"),  localNote:"TSN · 7pm ET"},
+    {home:"Montreal Alouettes",  away:"Ottawa Redblacks",       league:"CFL – 2026 Season · Week 4", start_time:"2026-06-28T23:00:00Z", confirmed:true, venue:"Percival Molson Stadium, Montreal QC",streams:resolveBundle("CFL_PLUS"),  localNote:"TSN · 7pm ET"},
+    // Week 5 (Jul 2-5)
+    {home:"Calgary Stampeders",  away:"Toronto Argonauts",      league:"CFL – 2026 Season · Week 5", start_time:"2026-07-03T01:00:00Z", confirmed:true, venue:"McMahon Stadium, Calgary AB",        streams:resolveBundle("CFL_CBSSN"), localNote:"TSN · 9pm ET"},
+    {home:"Ottawa Redblacks",    away:"Saskatchewan Roughriders",league:"CFL – 2026 Season · Week 5", start_time:"2026-07-03T23:30:00Z", confirmed:true, venue:"TD Place, Ottawa ON",                streams:resolveBundle("CFL_PLUS"),  localNote:"TSN · 7:30pm ET"},
+    {home:"BC Lions",            away:"Edmonton Elks",          league:"CFL – 2026 Season · Week 5", start_time:"2026-07-04T23:00:00Z", confirmed:true, venue:"BC Place, Vancouver BC",              streams:resolveBundle("CFL_PLUS"),  localNote:"TSN · 7pm ET"},
+    {home:"Hamilton Tiger-Cats", away:"Winnipeg Blue Bombers",  league:"CFL – 2026 Season · Week 5", start_time:"2026-07-05T23:00:00Z", confirmed:true, venue:"Tim Hortons Field, Hamilton ON",      streams:resolveBundle("CFL_PLUS"),  localNote:"TSN · 7pm ET"},
+    // Week 6 (Jul 9-12)
+    {home:"Edmonton Elks",       away:"Ottawa Redblacks",       league:"CFL – 2026 Season · Week 6", start_time:"2026-07-10T01:00:00Z", confirmed:true, venue:"Commonwealth Stadium, Edmonton AB",   streams:resolveBundle("CFL_PLUS"),  localNote:"TSN · 9pm ET"},
+    {home:"Winnipeg Blue Bombers",away:"Toronto Argonauts",     league:"CFL – 2026 Season · Week 6", start_time:"2026-07-11T00:30:00Z", confirmed:true, venue:"IG Field, Winnipeg MB",              streams:resolveBundle("CFL_PLUS"),  localNote:"TSN · 8:30pm ET"},
+    {home:"Montreal Alouettes",  away:"Calgary Stampeders",     league:"CFL – 2026 Season · Week 6", start_time:"2026-07-11T23:00:00Z", confirmed:true, venue:"Percival Molson Stadium, Montreal QC",streams:resolveBundle("CFL_PLUS"),  localNote:"TSN · 7pm ET"},
+    {home:"Saskatchewan Roughriders",away:"Hamilton Tiger-Cats",league:"CFL – 2026 Season · Week 6", start_time:"2026-07-12T23:00:00Z", confirmed:true, venue:"Mosaic Stadium, Regina SK",           streams:resolveBundle("CFL_PLUS"),  localNote:"TSN · 7pm ET"},
+    // Week 7 (Jul 17-19)
+    {home:"Edmonton Elks",       away:"BC Lions",               league:"CFL – 2026 Season · Week 7", start_time:"2026-07-18T01:00:00Z", confirmed:true, venue:"Commonwealth Stadium, Edmonton AB",   streams:resolveBundle("CFL_PLUS"),  localNote:"TSN · 9pm ET"},
+    {home:"Calgary Stampeders",  away:"Montreal Alouettes",     league:"CFL – 2026 Season · Week 7", start_time:"2026-07-18T20:00:00Z", confirmed:true, venue:"McMahon Stadium, Calgary AB",        streams:resolveBundle("CFL_PLUS"),  localNote:"TSN · 4pm ET"},
+    {home:"Hamilton Tiger-Cats", away:"Toronto Argonauts",      league:"CFL – 2026 Season · Week 7", start_time:"2026-07-18T23:00:00Z", confirmed:true, venue:"Tim Hortons Field, Hamilton ON",      streams:resolveBundle("CFL_PLUS"),  localNote:"TSN · 7pm ET"},
+    {home:"Ottawa Redblacks",    away:"Winnipeg Blue Bombers",  league:"CFL – 2026 Season · Week 7", start_time:"2026-07-19T23:00:00Z", confirmed:true, venue:"TD Place, Ottawa ON",                streams:resolveBundle("CFL_PLUS"),  localNote:"TSN · 7pm ET"},
+    // Week 8 (Jul 23-26)
+    {home:"Saskatchewan Roughriders",away:"Edmonton Elks",      league:"CFL – 2026 Season · Week 8", start_time:"2026-07-24T01:00:00Z", confirmed:true, venue:"Mosaic Stadium, Regina SK",           streams:resolveBundle("CFL_PLUS"),  localNote:"TSN · 9pm ET"},
+    {home:"Winnipeg Blue Bombers",away:"Calgary Stampeders",    league:"CFL – 2026 Season · Week 8", start_time:"2026-07-25T00:30:00Z", confirmed:true, venue:"IG Field, Winnipeg MB",              streams:resolveBundle("CFL_PLUS"),  localNote:"TSN · 8:30pm ET"},
+    {home:"BC Lions",            away:"Toronto Argonauts",      league:"CFL – 2026 Season · Week 8", start_time:"2026-07-25T23:00:00Z", confirmed:true, venue:"BC Place, Vancouver BC",              streams:resolveBundle("CFL_PLUS"),  localNote:"TSN · 7pm ET"},
+    {home:"Montreal Alouettes",  away:"Hamilton Tiger-Cats",    league:"CFL – 2026 Season · Week 8", start_time:"2026-07-26T23:00:00Z", confirmed:true, venue:"Percival Molson Stadium, Montreal QC",streams:resolveBundle("CFL_PLUS"),  localNote:"TSN · 7pm ET"},
+    // Week 9 (Jul 30 – Aug 1)
+    {home:"Winnipeg Blue Bombers",away:"BC Lions",              league:"CFL – 2026 Season · Week 9", start_time:"2026-07-31T00:30:00Z", confirmed:true, venue:"IG Field, Winnipeg MB",              streams:resolveBundle("CFL_PLUS"),  localNote:"TSN · 8:30pm ET"},
+    {home:"Ottawa Redblacks",    away:"Montreal Alouettes",     league:"CFL – 2026 Season · Week 9", start_time:"2026-07-31T23:30:00Z", confirmed:true, venue:"TD Place, Ottawa ON",                streams:resolveBundle("CFL_PLUS"),  localNote:"TSN · 7:30pm ET"},
+    {home:"Hamilton Tiger-Cats", away:"Calgary Stampeders",     league:"CFL – 2026 Season · Week 9", start_time:"2026-08-01T19:00:00Z", confirmed:true, venue:"Tim Hortons Field, Hamilton ON",      streams:resolveBundle("CFL_PLUS"),  localNote:"TSN · 3pm ET"},
+    {home:"Edmonton Elks",       away:"Saskatchewan Roughriders",league:"CFL – 2026 Season · Week 9", start_time:"2026-08-01T23:00:00Z", confirmed:true, venue:"Commonwealth Stadium, Edmonton AB",  streams:resolveBundle("CFL_PLUS"),  localNote:"TSN · 7pm ET"},
+    // Week 10 (Aug 6-8)
+    {home:"Toronto Argonauts",   away:"Calgary Stampeders",     league:"CFL – 2026 Season · Week 10",start_time:"2026-08-06T23:30:00Z", confirmed:true, venue:"BMO Field, Toronto ON",              streams:resolveBundle("CFL_PLUS"),  localNote:"TSN · 7:30pm ET"},
+    {home:"Saskatchewan Roughriders",away:"Ottawa Redblacks",   league:"CFL – 2026 Season · Week 10",start_time:"2026-08-08T01:00:00Z", confirmed:true, venue:"Mosaic Stadium, Regina SK",           streams:resolveBundle("CFL_PLUS"),  localNote:"TSN · 9pm ET"},
+    {home:"Montreal Alouettes",  away:"Edmonton Elks",          league:"CFL – 2026 Season · Week 10",start_time:"2026-08-08T19:00:00Z", confirmed:true, venue:"Percival Molson Stadium, Montreal QC",streams:resolveBundle("CFL_PLUS"),  localNote:"TSN · 3pm ET"},
+    {home:"BC Lions",            away:"Hamilton Tiger-Cats",    league:"CFL – 2026 Season · Week 10",start_time:"2026-08-08T23:00:00Z", confirmed:true, venue:"BC Place, Vancouver BC",              streams:resolveBundle("CFL_PLUS"),  localNote:"TSN · 7pm ET"},
   ].filter(g=>isToday(g.start_time));
   // Attach odds (pHome/pAway/spread/total) from relay if available
   cflGames.forEach(g => {
@@ -22272,7 +22317,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-21b';
+  const SW_VERSION = '2026-06-21c';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
