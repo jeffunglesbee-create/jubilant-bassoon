@@ -1,0 +1,18 @@
+=== CF API Probe [20260622T200301Z] ===
+Request: GET https://api.cloudflare.com/client/v4/user/tokens/verify
+
+{
+    "result": {
+        "id": "edd38088ccc8b77414abe20797cf137b",
+        "status": "active"
+    },
+    "success": true,
+    "errors": [],
+    "messages": [
+        {
+            "code": 10000,
+            "message": "This API Token is valid and active",
+            "type": null
+        }
+    ]
+}
