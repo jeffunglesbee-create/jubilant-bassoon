@@ -13,10 +13,8 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Fetch MLS fixtures Jul 19–Oct 31 and insert into ARCHIVE_DB
-        env:
-          APISPORTS_KEY: ${{ secrets.APISPORTS_KEY }}
-          CLOUDFLARE_ACCOUNT_ID: b57e9af57ab46c52ca9215804e689c29
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        # No APISPORTS_KEY needed — script calls relay proxy which holds the key
+        # as a Worker secret. Only CLOUDFLARE_API_TOKEN needed for /d1/execute auth.
         run: python3 scripts/seed-mls-return-2026.py
 
       - name: Commit audit JSON
