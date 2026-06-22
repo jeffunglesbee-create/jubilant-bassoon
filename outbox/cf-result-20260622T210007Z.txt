@@ -1,0 +1,14 @@
+=== CF API Probe [20260622T210007Z] ===
+Request: GET https://api.cloudflare.com/client/v4/accounts/b57e9af57ab46c52ca9215804e689c29/pages/projects/jubilant-bassoon/deployments?per_page=3
+
+{
+    "result": null,
+    "success": false,
+    "errors": [
+        {
+            "code": 8000007,
+            "message": "Project not found. The specified project name does not match any of your existing projects."
+        }
+    ],
+    "messages": []
+}
