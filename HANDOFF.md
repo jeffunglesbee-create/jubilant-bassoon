@@ -1,9 +1,10 @@
-# FIELD HANDOFF — June 22 2026 (updated ~2:20pm ET)
+# FIELD HANDOFF — June 22 2026 (updated ~2:45pm ET)
 
 ## State
 - CLIENT HEAD: 83ade4c · 2026-06-22 · via chat
-- RELAY HEAD:  0971f31 · 2026-06-22 · via chat (docs only); RELAY LIVE 621726e · via CC
-- Smoke: 663 (regressed from 724 — root cause unknown, investigate next session)
+- RELAY HEAD:  16be68a · 2026-06-22 · via CC (Browser MCP Phase 1)
+- RELAY LIVE:  16be68a · deployed 2026-06-22T18:31:56Z · CI green
+- Smoke: 663 (client — unchanged; browser MCP is relay-only)
 - SW_VERSION: 2026-06-22a
 
 ## Session Start Protocol (Rule 85)
@@ -36,25 +37,26 @@ Do NOT read_handoff as primary state source — this document goes stale.
 ### CFL Schedule (client c8d62d5)
 - Weeks 1-10 (Jun 4 – Aug 8), 38 games
 
-### Browser Rendering MCP — spec + CC-CMD (relay 0971f31, docs only)
+### Browser Rendering MCP (relay cf21215 + 16be68a) ✅ FULLY SHIPPED
+- Phase 0 (cf21215): browser_quick — stateless Quick Actions
+  screenshot / json / markdown / links via CF Browser Rendering REST API
+- Phase 1 (16be68a): BrowserDO — Puppeteer session persistence
+  browser_navigate / browser_interact / browser_extract / browser_close
+- Meta-infra: added package.json (@cloudflare/puppeteer ^0.0.14, type:module)
+  + removed empty package-lock.json so wrangler-action@v3 auto-runs npm install
+- v5-browser-do DO migration applied — CI green
 - Spec: Drive 1Fite5hBaJviHxvqp33EwR-vqnOeHXYe9fli6C34_cuE
-- CC-CMD: docs/CC-CMD-2026-06-22-browser-mcp.md
-- Adds 5 MCP tools: browser_quick, browser_navigate, browser_interact,
-  browser_extract, browser_close
-- Phase 0: stateless Quick Actions (screenshot/json/markdown/links)
-- Phase 1: BrowserDO — Puppeteer session persistence across MCP calls
-- Works from iPad chat — no Claude in Chrome extension required
-- ONE-LINER: git pull. Read docs/CC-CMD-2026-06-22-browser-mcp.md. Execute all phases.
+- Outbox: outbox/cc-browser-mcp-2026-06-22.md
+- VERIFICATION PENDING: MCP tools/list gated by OAuth — end-to-end
+  tool verification requires claude.ai connector or OAuth-authenticated client.
+  5 new tools visible only after connector reconnect or new chat session.
 
 ## Pending CC-CMDs (relay field-relay-nba) — PRIORITY ORDER
 1. docs/CC-CMD-2026-06-22-v4-voice-and-scoring.md (HEAD 2cf9f29) ← DO FIRST
    ONE-LINER: git pull. Read docs/CC-CMD-2026-06-22-v4-voice-and-scoring.md. Execute all tasks.
    After CC: /backfill/game-briefs?force=true&limit=50 (re-gen 59 bad briefs)
-2. docs/CC-CMD-2026-06-22-browser-mcp.md (HEAD 0971f31)
-   ONE-LINER: git pull. Read docs/CC-CMD-2026-06-22-browser-mcp.md. Execute all phases.
-   Note: commit section uses ${FIELD_PAT} placeholder — CC must set remote manually.
-3. docs/CC-CMD-2026-06-22-stale-data-sentinel.md (existing, unexecuted)
-4. docs/CC-CMD-2026-06-22-odds-story-materializer.md (existing, unexecuted)
+2. docs/CC-CMD-2026-06-22-stale-data-sentinel.md (existing, unexecuted)
+3. docs/CC-CMD-2026-06-22-odds-story-materializer.md (existing, unexecuted)
 
 ## Probe Endpoints (all live)
 - /analytics/newspaper/{date}     — O(1) bundle
@@ -81,18 +83,18 @@ Do NOT read_handoff as primary state source — this document goes stale.
 8. WC sport label mismatch (FIFA World Cup 2026 vs wc26) — fixed in v4 CC-CMD
 9. pitch_arsenals.json stale (heals Monday cron)
 10. wc2026.json FBref empty (heals every 3 days)
-11. Smoke regressed 724→663 — root cause unknown (investigate before next build)
+11. Smoke 663 — regressed from 724, root cause unknown (investigate before next client build)
 12. /health/sources not built (CC-CMD exists)
 13. Odds Story Materializer not built (CC-CMD exists)
 14. FIELD's Pick badge game_id format unverified
 15. CFL matchup accuracy unverified (Weeks 2-10 from web search)
 16. API-Sports Football Pro renewal — JUNE 29 DEADLINE
 17. NFL SPORT_TO_V2 — September 9 deadline
-18. Browser MCP CC-CMD PAT placeholder — CC must set git remote manually
+18. Browser MCP end-to-end verification pending (OAuth gate blocks curl — use claude.ai connector)
 
 ## Priority (next session)
 1. Execute v4 voice CC-CMD (2cf9f29), then force re-gen backfill briefs
-2. Execute Browser MCP CC-CMD (0971f31)
+2. Verify Browser MCP tools via claude.ai connector (reconnect or new chat)
 3. Verify /session/record POST from CC environment
 4. Stale Data Sentinel (/health/sources)
 5. Odds Story Materializer
