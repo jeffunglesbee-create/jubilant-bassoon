@@ -1,0 +1,37 @@
+name: Soccer FBref MLS Stats Update
+
+on:
+  schedule:
+    # Every Monday 11:00 UTC (matches MLB weekly cadence).
+    # MLS resumes July 19-20 2026 after the WC final. First Monday: July 20.
+    # Runs year-round; FBref returns empty tables off-season — uploaded as-is
+    # so the R2 key never goes missing for context-assembler.
+    - cron: '0 11 * * 1'
+  workflow_dispatch:   # Manual trigger any time
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Parse FBref MLS squad stats and upload to R2
+        env:
+          CLOUDFLARE_ACCOUNT_ID: b57e9af57ab46c52ca9215804e689c29
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: python3 scripts/soccer-fbref-mls.py
+
+      - name: Commit outbox fallback
+        run: |
+          git config user.email "soccer-fbref@field"
+          git config user.name "Soccer-FBref-Bot"
+          git add outbox/soccer/
+          git diff --cached --quiet && echo "No changes to commit" && exit 0
+          git commit -m "MLS FBref update $(date -u +%Y-%m-%d) [skip ci]"
+          for i in 1 2 3; do
+            git pull --rebase --autostash origin main && git push origin main && break
+            sleep $((i * 5))
+          done
