@@ -1,75 +1,96 @@
-# FIELD HANDOFF — June 22 2026
+# FIELD HANDOFF — June 22 2026 (updated 10:30pm ET)
 
 ## State
-- CLIENT HEAD: acceac2 (jubilant-bassoon)
-- RELAY HEAD: c5e4192 (field-relay-nba)
-- Deploy: match=true (verified via /deploy/verify)
-- Smoke: 692 client
-- Adapters: 14/14 shipped, 2 specs queued
+- CLIENT HEAD: ed0d7d2 (jubilant-bassoon) · auto-overlay 2026-06-22
+- RELAY HEAD: 8dd42f7 (field-relay-nba) · backfill quality manifest
+- RELAY DEPLOYED: 931fd05 (deploy/verify match:false — 8dd42f7 is docs-only [skip ci])
+- Smoke: 723/3 (3 failures unidentified — not printing individual fail lines)
+- SW_VERSION: 2026-06-21c
 
-## Adapter Inventory — All 14 Shipped
+## What Shipped Since Last HANDOFF (acceac2/c5e4192)
 
-1. Event Bus Consumers — CASCADE verified via live screenshots
-2. CONTRACTS.md — HTTP 200 both repos
-3. Codemap CI — 895 functions
-4. Savant → Journalism — ABS grades ✅, pitch arsenals 0 data (Savant CSV stale)
-5. Multi-Sport R2 → Journalism — NHL/NBA/Soccer builders deployed
-6. Context Assembler — BUG FIXED: was reading R2 (empty), now reads GitHub outbox (commit 461faec). Verified via /journalism/context-probe + AI Gateway.
-7. Sync Reconciler Phase 1 — deployed, 0 changelog entries (temporal)
-8. Brief Freshness Guard — /freshness returns 80 briefs, stale:false
-9. Game State Transition Hook — closing odds capture on pre→live (CC ee0488c)
-10. Identity Resolver — centralized resolveTeamKey (CC 5a7902c)
-11. Budget Coordinator — shared KV daily 3800, monthly 85K (CC c4056d6+d6946f9)
-12. Brief Write Integrity — /integrity/briefs with auto-repair (CC a9b2264)
-13. Game Archive Completeness — /integrity/games (CC a9b2264)
-14. Post-Deploy Verification — /deploy/verify (CC a9b2264)
+### O(1) Newspaper (relay 64f71d7 + client db5ded4)
+- Relay: GET /analytics/newspaper/{date} bundles recap (yesterday) + preview (today)
+- Client: fetchNewspaper → renderNewspaper → prepends to <main> above schedule
+- 11-viewport CSS coverage + WHOLE FIELD mode
+- Smoke A692-A696 (source-regex pattern)
+- Carry-forwards: wentToOT hardcoded false, KV editorial keys not consulted, recap nulls until 09:00 UTC cron
+
+### Brief Archive Pipeline (relay f50fb1b + d64a9c8)
+- sweepKVBriefs extracted + runs every cron tick (not just dead hours)
+- game_brief backfill gate widened (skipped || ok)
+- GET /backfill/game-briefs — on-demand historical backfill with ?dry=true, ?limit=N, ?force=true
+- 59 game_brief rows backfilled (all completed games in D1)
+- QUALITY PROBLEM: backfill briefs are low quality — thin prompt, no voice register, no quality chain. MLB briefs fixate on ABS stats. Golf/WC briefs are nameless/generic.
+
+### CFL Schedule (client c8d62d5)
+- Expanded from Week 1 only (2 games) to Weeks 1-10 (38 games, through Aug 8)
+- All 9 teams, correct venues, TSN/CBSSN broadcast tags
+
+### CC-CMDs Pushed (not yet executed)
+- docs/CC-CMD-2026-06-22-backfill-prompt-quality.md — JQ_STYLE + quality chain for backfill
+- docs/CC-CMD-2026-06-22-v4-register-port.md — port FIELD_VOICE_EXEMPLARS to relay
+- docs/CC-CMD-2026-06-22-quality-scoring-everywhere.md — score all brief types
+- docs/CC-CMD-2026-06-22-quality-auto-feedback.md — automated quality feedback loop
+- docs/CC-CMD-2026-06-22-newspaper-relay.md — (already executed)
+- docs/CC-CMD-2026-06-22-newspaper-client.md — (already executed)
+
+## Known Quality Gaps
+
+### Voice Register
+- v4 register (FIELD_VOICE_EXEMPLARS) exists ONLY in client index.html
+- Used by: J3 omnibus brief, compound prompt (2 surfaces)
+- NOT used by: relay cron briefs, per-game card briefs, backfill, /journalism/generate
+- Per-game briefs use FIELD_PROSE_STYLE (rules only, no voice palette)
+- Fix: one-line port to journalism-quality.js + wire into prompt paths
+
+### Quality Scoring
+- Only 12 of 540+ briefs have quality_score (10 slate, 2 series_preview)
+- game_recap, game_brief, night_owl, mlb_game, wc_matchup, wnba_game: all NULL
+- runQualityChain exists but isn't called on most paths
+- Analytics Engine receives data from 2 paths, nobody reads it
+- Prompt Observatory (specced) never built
+- Fix: wire runQualityChain into all LLM paths, scoreProse into capture paths
+
+### Data Gaps (sport context for briefs)
+- Golf: no player names in context — assembleContext returns nothing
+- WNBA: no player data — assembleContext returns nothing
+- WC: FBref data empty (soccer-fbref-wc.yml cron not producing)
+- MLB: ABS challenge stats dominate because they're the only context
+- Fix: ESPN summary data per game (requires game ID mapping)
 
 ## Probe Endpoints (all live)
-- /journalism/context-probe — zero-cost Context Assembler verification
-- /journalism/run?force=true — bypass context hash check
+- /analytics/newspaper/{date} — O(1) bundle
+- /backfill/game-briefs?dry=true — archive gap check
+- /journalism/context-probe — Context Assembler verification
 - /budget/odds — daily + monthly spend
 - /identity/mismatches — unmatched team names
 - /integrity/briefs — KV vs D1 divergence
 - /integrity/games — ESPN vs D1 archive gaps
 - /deploy/verify — GitHub HEAD vs deployed SHA
 - /freshness/{date} — brief staleness
-- /odds-story/preview — line movement (spec ready, not built)
-- /health/sources — data source freshness (spec ready, not built)
+- NOT BUILT: /health/sources, /odds-story/preview, /quality/report
 
-## Bugs Found + Fixed This Session
-- Context Assembler R2 vs GitHub outbox mismatch (461faec)
-- ODDS_HARD_LIMIT 18K→85K (0f39fdf) — actual plan is 100K/month
-- AI Gateway payload logging was disabled (toggled on in dashboard)
-- Bracket tree third-place used Monte Carlo instead of current standings (4e67aa5)
-- WC group/third-place tables not live (SSE overlay shipped, acceac2)
-- Deploy/verify match:false from CI test timeout (resolved via c5e4192)
+## Carry-Forwards (accumulated)
+1. wentToOT hardcoded false — D1 lacks column, needs GameDO write
+2. KV editorial keys not consulted by newspaper endpoint
+3. Recap nulls until 09:00 UTC cron fires
+4. WC label mismatch: "FIFA World Cup" vs "FIFA World Cup 2026" in D1
+5. WNBA archive gap: 1 game missing June 21
+6. Client-side third-place at SSE speed
+7. pitch_arsenals.json 0 entries (Savant CSV stale since June 15)
+8. Soccer FBref wc2026.json empty
+9. Smoke 723/3 — 3 failures unidentified
+10. Voice register not in relay (per-game briefs have no personality)
+11. Quality scoring missing on most brief types
+12. Backfill briefs are low quality (need re-generation after voice fix)
+13. HANDOFF.md was stale for entire June 22 session
+14. Codex has 15 entries, should have 50+
 
-## CC-CMD Specs Queued
-- Stale Data Sentinel: docs/CC-CMD-2026-06-22-stale-data-sentinel.md
-- Odds Story Materializer: docs/CC-CMD-2026-06-22-odds-story-materializer.md
-
-## Carry-Forwards
-- WC label mismatch: "FIFA World Cup" vs "FIFA World Cup 2026" in D1
-- WNBA archive gap: 1 game missing June 21
-- Client-side third-place at SSE speed (identified, not built)
-- Prompt instruction gap: LLM receives [SAVANT CONTEXT] but doesn't reference ABS grades
-- pitch_arsenals.json 0 entries (Savant CSV empty since June 15)
-- Soccer FBref wc2026.json empty
-- Smoke discrepancy 658 vs 720 unresolved
-- Savant expansion: pitcher xERA, per-batter xBA/xSLG, sprint speed
-
-## Priority List
-1. Stale Data Sentinel + Odds Story Materializer (CC specs ready)
-2. Prompt instruction gap (add ABS/arsenal reference instruction)
-3. Savant data expansion (xERA, sprint speed)
-4. Client-side third-place computation
-5. O(1) Newspaper implementation
-6. Circadian System
-7. Slate-Driven Density
-8. Odds Story v3 client rendering
-
-## Memory Protocol Updates This Session
-- Anchor tracks BOTH client + relay HEADs
-- Session start adds probe step (/deploy/verify + /health/sources)
-- Infrastructure constants captured (100K plan, 85K limit, AI Gateway config)
-- Session end adds /deploy/verify probe + dual-HEAD format
+## Priority (next session)
+1. Port v4 register to relay + wire into all paths (one clean prompt)
+2. Wire quality scoring on all brief types
+3. Populate Codex with full rule set + endpoints + carry-forwards
+4. Stale Data Sentinel (/health/sources)
+5. Odds Story Materializer
+6. ESPN summary integration for golf/WNBA/WC brief enrichment
