@@ -443,6 +443,73 @@ body::before{
 /* ── MAIN ── */
 .main{max-width:1400px;margin:0 auto;padding:1.25rem 2rem 2.5rem;position:relative;z-index:5}
 
+/* ── O(1) NEWSPAPER (CC-CMD-2026-06-22-newspaper-client) ────────── */
+.field-newspaper{margin-bottom:1.2rem}
+.np-inner{background:var(--c-card,#1a1a2e);border-radius:12px;padding:1.2rem 1rem;border:1px solid rgba(255,255,255,.06)}
+.np-section{margin-bottom:.8rem}
+.np-section:last-child{margin-bottom:0}
+.np-label{font-size:.65rem;letter-spacing:.12em;text-transform:uppercase;color:var(--c-muted,#888);margin-bottom:.35rem;font-weight:600}
+.np-prose{font-size:.82rem;line-height:1.65;color:var(--c-text,#e0e0e0);margin:0}
+.np-stars{display:flex;align-items:center;gap:.5rem;padding:.4rem 0}
+.np-stars-glyphs{font-size:1.1rem;letter-spacing:2px;color:#fbbf24}
+.np-stars-label{font-size:.78rem;color:var(--c-muted,#888)}
+.np-degraded{font-size:.65rem;color:var(--c-muted,#666);font-style:italic}
+.np-missed-list{list-style:none;padding:0;margin:.2rem 0 0}
+.np-missed-list li{font-size:.78rem;line-height:1.5;color:var(--c-text,#e0e0e0);padding:.15rem 0}
+.np-missed-list li::before{content:'• ';color:var(--c-muted,#888)}
+.np-streak-row{display:flex;flex-wrap:wrap;gap:.4rem}
+.np-streak-chip{font-size:.7rem;padding:.2rem .5rem;border-radius:6px;background:rgba(255,255,255,.05);white-space:nowrap}
+.np-freshness{font-size:.6rem;color:var(--c-muted,#666);text-align:right;margin-top:.6rem}
+.np-divider{text-align:center;font-size:.6rem;letter-spacing:.15em;color:var(--c-muted,#666);padding:.8rem 0 .2rem;position:relative}
+.np-divider::before,.np-divider::after{content:'';position:absolute;top:50%;width:calc(50% - 5rem);height:1px;background:rgba(255,255,255,.08)}
+.np-divider::before{left:0}
+.np-divider::after{right:0}
+.np-pick .np-prose{font-style:italic}
+.field-pick-badge{font-size:.6rem;letter-spacing:.08em;color:#fbbf24;padding:.15rem .4rem;opacity:.8}
+@media(max-width:600px){
+  .np-inner{padding:.9rem .75rem}
+  .np-prose{font-size:.78rem;line-height:1.55}
+  .np-label{font-size:.6rem}
+  .np-stars-glyphs{font-size:1rem}
+  .np-stars-label{font-size:.72rem}
+  .np-missed-list li{font-size:.74rem}
+  .np-streak-chip{font-size:.65rem;padding:.15rem .4rem}
+}
+@media(max-width:375px){
+  .np-inner{padding:.75rem .6rem;border-radius:8px}
+  .np-prose{font-size:.74rem}
+  .np-section{margin-bottom:.6rem}
+}
+@media(min-width:601px) and (max-width:819px){
+  .np-inner{padding:1rem;max-width:680px;margin:0 auto}
+  .np-prose{font-size:.8rem}
+}
+@media(orientation:landscape) and (max-width:819px){
+  .field-newspaper{margin-bottom:.8rem}
+  .np-inner{padding:.7rem .9rem}
+  .np-section{margin-bottom:.5rem}
+  .np-prose{font-size:.76rem;line-height:1.45}
+}
+@media(min-width:820px) and (max-width:1199px){
+  .np-inner{max-width:760px;margin:0 auto;padding:1.2rem 1.2rem}
+  .np-prose{font-size:.84rem}
+}
+@media(min-width:820px) and (max-width:1199px) and (orientation:portrait){
+  .np-inner{max-width:640px}
+}
+@media(min-width:1200px) and (max-width:1439px){
+  .np-inner{max-width:800px;padding:1.4rem 1.5rem}
+  .np-prose{font-size:.85rem;line-height:1.7}
+  .np-stars-glyphs{font-size:1.2rem}
+}
+@media(min-width:1440px) and (max-width:1799px){
+  .np-inner{max-width:860px;padding:1.5rem 1.8rem}
+}
+@media(min-width:1800px){
+  .np-inner{max-width:900px;padding:1.6rem 2rem}
+}
+body.wf-mode .np-inner{max-width:100%}
+
 /* ── SPORT SECTION ── */
 .sport-section{margin-bottom:1.6rem;animation:fadeUp .4s ease both;animation-delay:min(calc(var(--i, 0) * 50ms), 250ms);content-visibility:auto;contain-intrinsic-size:auto 380px}
 @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
@@ -10513,6 +10580,9 @@ function renderAll(){
   // CC-CMD-2026-06-15-client-features Commit 3: conflict chip on filter bar.
   // Pure client-side derivation — no relay. Idempotent.
   try { if (typeof updateConflictChip === 'function') updateConflictChip(); } catch(_) {}
+  // CC-CMD-2026-06-22 Newspaper: re-tag FIELD's Pick after every renderAll.
+  // applyFieldPickBadge is idempotent — no-op when no bundle or no match.
+  try { if (typeof applyFieldPickBadge === 'function') applyFieldPickBadge(); } catch(_) {}
 }
 function buildFilters(sports){
   const c=document.getElementById("sport-filters"); if(!c) return;
@@ -20706,6 +20776,167 @@ async function fetchScheduleData() {
 }
 
 // ── Main load ─────────────────────────────────────────────────
+// ── O(1) NEWSPAPER (CC-CMD-2026-06-22-newspaper-client) ──────────────────
+// One relay call, one render. Analytics Cron output painted above the
+// schedule. Zero per-user LLM cost. Renders independently of fetchSchedule —
+// newspaper appears immediately; schedule cards fill in below when ready.
+// If the relay endpoint 404s or times out, fetchNewspaper returns null and
+// renderNewspaper exits as a no-op (zero degradation).
+async function fetchNewspaper(date) {
+  const base = (typeof V2_RELAY_BASE !== 'undefined')
+    ? V2_RELAY_BASE : 'https://field-relay-nba.jeffunglesbee.workers.dev';
+  try {
+    const r = await fetch(`${base}/analytics/newspaper/${date}`, {
+      signal: AbortSignal.timeout(5000),
+    });
+    if (!r.ok) return null;
+    const data = await r.json();
+    return data.ok ? data : null;
+  } catch (_) {
+    return null;
+  }
+}
+// "Since You Were Last Here" — personalized catch-up. Uses the existing
+// field_last_visit localStorage key set by the streak init; no new keys.
+// Returns up to 5 structurally-notable completed games, most-recent first.
+// Empty array for first visits, same-day visits, and >24h-stale visits
+// (Morning Report covers the long-stale case).
+function getWhatYouMissed(completedGames) {
+  if (!completedGames || !completedGames.length) return [];
+  const lastVisit = localStorage.getItem('field_last_visit');
+  if (!lastVisit) return [];
+  const tz = 'America/New_York';
+  const today = new Date().toLocaleDateString('en-CA', { timeZone: tz });
+  if (lastVisit === today) return [];
+  const yesterday = new Date(Date.now() - 86400000)
+    .toLocaleDateString('en-CA', { timeZone: tz });
+  if (lastVisit < yesterday) return [];
+  // Structural notability — wentToOT is not stored in D1 archive so it
+  // never qualifies. Close margin / upset / clinch / elimination only.
+  const notable = completedGames.filter(g =>
+    g.margin <= 1 || g.wasUpset || g.isSeriesClinch || g.isElimination
+  );
+  return notable.slice(0, 5);
+}
+function renderNewspaper(bundle) {
+  if (!bundle) return;
+  // Stash globally so the FIELD's Pick badge hook can attach on every
+  // renderAll without re-fetching the bundle.
+  window._newspaperBundle = bundle;
+  const existing = document.getElementById('field-newspaper');
+  if (existing) existing.remove();
+  const el = document.createElement('section');
+  el.id = 'field-newspaper';
+  el.className = 'field-newspaper';
+  el.setAttribute('aria-label', 'FIELD Newspaper');
+  const parts = [];
+
+  // 1. Since You Were Last Here
+  const missed = (typeof getWhatYouMissed === 'function')
+    ? getWhatYouMissed(bundle.completed_games) : [];
+  if (missed.length) {
+    const lines = missed.map(g => {
+      const winner = (g.homeScore > g.awayScore) ? g.home : g.away;
+      const loser  = (g.homeScore > g.awayScore) ? g.away : g.home;
+      const fact = g.wasUpset       ? `upset ${loser}`
+                 : g.isSeriesClinch ? 'clinched the series'
+                 : g.isElimination  ? 'survived elimination'
+                 : g.margin <= 1    ? 'won by 1'
+                 : `won by ${g.margin}`;
+      return `<li>${winner} ${fact} (${g.homeScore}-${g.awayScore})</li>`;
+    }).join('');
+    parts.push(`<div class="np-section np-missed"><div class="np-label">SINCE YOU WERE LAST HERE</div><ul class="np-missed-list">${lines}</ul></div>`);
+  }
+
+  // 2. Night Stars
+  if (bundle.night_stars && bundle.night_stars.stars) {
+    const s = bundle.night_stars;
+    const filled = '★'.repeat(s.stars);
+    const empty  = '☆'.repeat(5 - s.stars);
+    const label = s.stars >= 4 ? 'a great night'
+                : s.stars === 3 ? 'a solid night'
+                : s.stars === 2 ? 'a quiet night'
+                : 'a slow night';
+    parts.push(`<div class="np-section np-stars"><span class="np-stars-glyphs">${filled}${empty}</span><span class="np-stars-label">Last night was ${label}</span>${s.degraded ? '<span class="np-degraded">(limited data)</span>' : ''}</div>`);
+  }
+
+  // 3. Morning Report
+  if (bundle.morning_report) {
+    parts.push(`<div class="np-section np-report"><div class="np-label">THE MORNING REPORT</div><p class="np-prose">${bundle.morning_report}</p></div>`);
+  }
+
+  // 4. Truth Is
+  if (bundle.truth_is && bundle.truth_is.brief) {
+    parts.push(`<div class="np-section np-truth"><div class="np-label">THE TRUTH IS</div><p class="np-prose">${bundle.truth_is.brief}</p></div>`);
+  }
+
+  // 5. Tonight's Pick
+  if (bundle.pick) {
+    const pickText = bundle.pick.type === 'pass'
+      ? (bundle.pick.brief || "Not every night has a must-watch. Tonight's one of those.")
+      : (bundle.pick.brief || '');
+    if (pickText) {
+      parts.push(`<div class="np-section np-pick"><div class="np-label">TONIGHT'S PICK</div><p class="np-prose">${pickText}</p></div>`);
+    }
+  }
+
+  // 6. Preview
+  if (bundle.preview) {
+    parts.push(`<div class="np-section np-preview"><div class="np-label">TONIGHT</div><p class="np-prose">${bundle.preview}</p></div>`);
+  }
+
+  // 7. Streak Board
+  if (bundle.streak_board && !bundle.streak_board.degraded) {
+    const hot  = (bundle.streak_board.hot  || []).map(s => `<span class="np-streak-chip np-hot">🔥 ${s.team} × ${s.streak}</span>`).join('');
+    const cold = (bundle.streak_board.cold || []).map(s => `<span class="np-streak-chip np-cold">🧊 ${s.team} × ${s.streak}</span>`).join('');
+    if (hot || cold) {
+      parts.push(`<div class="np-section np-streaks"><div class="np-label">STREAK BOARD</div><div class="np-streak-row">${hot}${cold}</div></div>`);
+    }
+  }
+
+  if (!parts.length) return; // nothing to show — silent
+
+  let freshness = '';
+  if (bundle.generated_at) {
+    try {
+      const d = new Date(bundle.generated_at);
+      freshness = d.toLocaleTimeString('en-US', {
+        hour: 'numeric', minute: '2-digit', timeZone: 'America/New_York',
+      });
+    } catch (_) {}
+  }
+
+  el.innerHTML = `<div class="np-inner">${parts.join('')}${freshness ? `<div class="np-freshness">Updated at ${freshness} ET</div>` : ''}</div><div class="np-divider">TODAY'S SCHEDULE</div>`;
+
+  const main = document.getElementById('main');
+  if (main) main.prepend(el);
+
+  // FIELD's Pick badge — apply now (cards may already be painted) and
+  // re-apply on every renderAll via the post-render hook.
+  if (typeof applyFieldPickBadge === 'function') {
+    try { applyFieldPickBadge(); } catch (_) {}
+  }
+}
+// Idempotent — safe to call from end of renderAll() on every paint. Reads
+// the stashed bundle and tags the matching card. Handles data-game-id,
+// data-gameid, and data-espn-id so both external relay IDs and internal
+// IDs resolve. Removes prior badges before re-applying so the tag follows
+// the card if the schedule re-renders.
+function applyFieldPickBadge() {
+  const pickId = window._newspaperBundle?.pick?.game_id;
+  if (!pickId) return;
+  document.querySelectorAll('.field-pick-badge').forEach(b => b.remove());
+  const safe = String(pickId).replace(/"/g, '');
+  const card = document.querySelector(
+    `[data-game-id="${safe}"], [data-gameid="${safe}"], [data-espn-id="${safe}"]`
+  );
+  if (!card) return;
+  const badge = document.createElement('div');
+  badge.className = 'field-pick-badge';
+  badge.textContent = "⭐ FIELD's Pick";
+  card.prepend(badge);
+}
+
 async function fetchSchedule(){
   const main=document.getElementById("main");
   const today2=new Date();
@@ -22041,7 +22272,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-21a';
+  const SW_VERSION = '2026-06-21b';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -38343,6 +38574,17 @@ recordOpenHour();
 // Fire after first paint so we don't compete with the critical-path startup work.
 setTimeout(registerAnticipatoryPrefetch, 4000);
 
+// O(1) Newspaper (CC-CMD-2026-06-22-newspaper-client) — fetch and paint
+// above the schedule before fetchSchedule kicks. Independent path: any
+// failure (404, timeout, parse) leaves the schedule rendering as today
+// with zero degradation. Pass TODAY's date — the relay assembles recap
+// from yesterday + preview from today internally.
+(async function bootNewspaper() {
+  const tz = 'America/New_York';
+  const today = new Date().toLocaleDateString('en-CA', { timeZone: tz });
+  const bundle = await fetchNewspaper(today);
+  if (bundle) renderNewspaper(bundle);
+})();
 // Kick: restore first (paints cached DOM if any), then fetchSchedule (which renderAll-replaces with fresh).
 // .finally() so a failing restore still proceeds to fetchSchedule — restoration is opportunistic.
 restoreSnapshot().finally(() => { fetchSchedule().then(markFreshnessLive); });

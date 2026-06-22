@@ -4315,6 +4315,65 @@ assert('A664 — renderCascadeNarrative consumes bracket:updated delta and rende
   /\.cascade-narrative\{padding:8px 12px/.test(html),
   'CC-CMD pulse-cascade CASCADE: when a live WC goal triggers bracket:updated with isLive flag, render which teams in OTHER groups had their pChamp shift. Filters to cross-group shifts (sourceGroup excluded), |delta| >= 0.5pp threshold, top 3 by magnitude. Renders into .wc-bracket-panel / .bracket-tab as a "⚡ RIPPLE EFFECTS" panel with team (group) ↑/↓pp lines. Final-only deltas without isLive silently skip — the existing per-final re-render path is untouched. Relay-side AmbientDO → BracketDO live score bridge is the carry-forward; without it CASCADE only fires post-final.');
 
+// ── A692-A696 / CC-CMD-2026-06-22 O(1) Newspaper client ──
+assert('A692 — fetchNewspaper top-level async; GET /analytics/newspaper/{date} with 5s AbortSignal',
+  /^async function fetchNewspaper\(date\)/m.test(html) &&
+  /\/analytics\/newspaper\/\$\{date\}/.test(html) &&
+  /AbortSignal\.timeout\(5000\)/.test(html) &&
+  /return data\.ok \? data : null/.test(html),
+  'CC-CMD-2026-06-22 Newspaper Task 2: top-level fetchNewspaper(date) hits the relay /analytics/newspaper/{date} endpoint with a 5s AbortSignal and returns the {ok:true,...} bundle or null on any error. Defined at module scope (not nested inside fetchSchedule) so the bootNewspaper IIFE and any future caller can reach it.');
+
+assert('A693 — renderNewspaper top-level; stashes bundle; assembles 7 sections; prepends #field-newspaper to #main',
+  /^function renderNewspaper\(bundle\)/m.test(html) &&
+  /window\._newspaperBundle = bundle/.test(html) &&
+  /SINCE YOU WERE LAST HERE/.test(html) &&
+  /np-stars-glyphs/.test(html) &&
+  /THE MORNING REPORT/.test(html) &&
+  /THE TRUTH IS/.test(html) &&
+  /TONIGHT'S PICK/.test(html) &&
+  /STREAK BOARD/.test(html) &&
+  /el\.id = 'field-newspaper'/.test(html) &&
+  /main\.prepend\(el\)/.test(html) &&
+  /TODAY'S SCHEDULE/.test(html),
+  'CC-CMD-2026-06-22 Newspaper Task 4: renderNewspaper at module scope assembles up to seven sections (Since You Were Last Here, Night Stars, Morning Report, Truth Is, Tonight\'s Pick, Tonight preview, Streak Board) plus optional freshness timestamp and the TODAY\'S SCHEDULE divider. Bundle stashed on window so applyFieldPickBadge can re-tag across re-renders. main.prepend places the newspaper above all schedule sections.');
+
+assert('A694 — getWhatYouMissed top-level; uses field_last_visit; structural notability only; caps at 5',
+  /^function getWhatYouMissed\(completedGames\)/m.test(html) &&
+  /localStorage\.getItem\('field_last_visit'\)/.test(html) &&
+  /g\.margin <= 1 \|\| g\.wasUpset \|\| g\.isSeriesClinch \|\| g\.isElimination/.test(html) &&
+  /\.slice\(0, 5\)/.test(html),
+  'CC-CMD-2026-06-22 Newspaper Task 3: getWhatYouMissed reads the existing field_last_visit localStorage key (no new keys per scope-boundary) and returns up to five structurally-notable completed games. Returns [] for first visits, same-day visits, and >24h stale visits where the Morning Report already covers the gap.');
+
+assert('A695 — bootNewspaper IIFE awaits fetchNewspaper and renders before fetchSchedule fires',
+  /async function bootNewspaper\(\)/.test(html) &&
+  /const bundle = await fetchNewspaper\(today\)/.test(html) &&
+  /if \(bundle\) renderNewspaper\(bundle\)/.test(html) &&
+  // Boot IIFE comes BEFORE the restoreSnapshot/fetchSchedule kick.
+  html.indexOf('async function bootNewspaper') < html.indexOf('restoreSnapshot().finally'),
+  'CC-CMD-2026-06-22 Newspaper Task 5: bootNewspaper IIFE runs at module-load time, awaits the relay bundle, and renders. Positioned before the restoreSnapshot().finally(fetchSchedule) bootstrap so the newspaper paints first. fetchSchedule keeps running in parallel — newspaper failure is a no-op, schedule keeps rendering.');
+
+assert('A696 — .field-newspaper CSS + applyFieldPickBadge + renderAll re-tag hook + 11-viewport coverage',
+  // CSS rules present.
+  /\.field-newspaper\{margin-bottom:1\.2rem\}/.test(html) &&
+  /\.field-pick-badge\{font-size:\.6rem/.test(html) &&
+  /\.np-inner\{background:var\(--c-card/.test(html) &&
+  // Pick-badge function + DOM selector chain (data-game-id | data-gameid | data-espn-id).
+  /^function applyFieldPickBadge\(\)/m.test(html) &&
+  /\[data-game-id="\$\{safe\}"\], \[data-gameid="\$\{safe\}"\], \[data-espn-id="\$\{safe\}"\]/.test(html) &&
+  // renderAll calls applyFieldPickBadge at end of its tail block.
+  /if \(typeof applyFieldPickBadge === 'function'\) applyFieldPickBadge\(\)/.test(html) &&
+  // 11 breakpoint media queries from the spec.
+  /@media\(max-width:600px\)\{[\s\S]{0,400}?\.np-inner/.test(html) &&
+  /@media\(max-width:375px\)/.test(html) &&
+  /@media\(min-width:601px\) and \(max-width:819px\)/.test(html) &&
+  /@media\(orientation:landscape\) and \(max-width:819px\)/.test(html) &&
+  /@media\(min-width:820px\) and \(max-width:1199px\)/.test(html) &&
+  /@media\(min-width:1200px\) and \(max-width:1439px\)/.test(html) &&
+  /@media\(min-width:1440px\) and \(max-width:1799px\)/.test(html) &&
+  /@media\(min-width:1800px\)/.test(html) &&
+  /body\.wf-mode \.np-inner\{max-width:100%\}/.test(html),
+  'CC-CMD-2026-06-22 Newspaper Tasks 1+6: full CSS block (newspaper container, sections, labels, prose, stars, missed-list, streak chips, freshness, divider, pick badge) plus 11 viewport breakpoints (mobile-portrait, mobile-small, mobile-landscape range, landscape-orientation, tablet-ambient, tablet-portrait, laptop, desktop, ultrawide, plus the wf-mode override). applyFieldPickBadge re-tags the picked card after every renderAll via the post-render hook; idempotent and safe when no bundle is loaded.');
+
 // ── A665 / CC-CMD pulse-cascade WC mini-card ──
 assert('A665 — getLinkedWCGame + renderWCMiniCard + renderESPNScores hook for simultaneous WC kickoffs',
   /function getLinkedWCGame\(currentGame, allGames\)/.test(html) &&
