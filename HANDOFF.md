@@ -1,96 +1,84 @@
-# FIELD HANDOFF — June 22 2026 (updated 10:30pm ET)
+# FIELD HANDOFF — June 22 2026 (final update ~2:00am ET)
 
 ## State
-- CLIENT HEAD: ed0d7d2 (jubilant-bassoon) · auto-overlay 2026-06-22
-- RELAY HEAD: 8dd42f7 (field-relay-nba) · backfill quality manifest
-- RELAY DEPLOYED: 931fd05 (deploy/verify match:false — 8dd42f7 is docs-only [skip ci])
-- Smoke: 723/3 (3 failures unidentified — not printing individual fail lines)
-- SW_VERSION: 2026-06-21c
+- CLIENT HEAD: 83ade4c · 2026-06-22 · via chat
+- RELAY HEAD:  7ad31ee · 2026-06-22 · via chat (docs); RELAY LIVE 621726e · via CC
+- Smoke: 724/2 (2 failures — markers not printing individual lines)
+- SW_VERSION: 2026-06-22a
 
-## What Shipped Since Last HANDOFF (acceac2/c5e4192)
+## Session Start Protocol (Rule 85)
+Call session_health MCP tool FIRST. Returns live HEADs, deploy match,
+quality degradation, degraded analytics phases, open Codex incidents.
+Do NOT read_handoff as primary state source — this document goes stale.
+
+## What Shipped This Session (June 22 full day)
 
 ### O(1) Newspaper (relay 64f71d7 + client db5ded4)
-- Relay: GET /analytics/newspaper/{date} bundles recap (yesterday) + preview (today)
-- Client: fetchNewspaper → renderNewspaper → prepends to <main> above schedule
-- 11-viewport CSS coverage + WHOLE FIELD mode
-- Smoke A692-A696 (source-regex pattern)
-- Carry-forwards: wentToOT hardcoded false, KV editorial keys not consulted, recap nulls until 09:00 UTC cron
+- GET /analytics/newspaper/{date} — relay bundles recap+preview
+- Client renders above schedule, 11-viewport CSS, smoke A692-A696
 
-### Brief Archive Pipeline (relay f50fb1b + d64a9c8)
-- sweepKVBriefs extracted + runs every cron tick (not just dead hours)
-- game_brief backfill gate widened (skipped || ok)
-- GET /backfill/game-briefs — on-demand historical backfill with ?dry=true, ?limit=N, ?force=true
-- 59 game_brief rows backfilled (all completed games in D1)
-- QUALITY PROBLEM: backfill briefs are low quality — thin prompt, no voice register, no quality chain. MLB briefs fixate on ABS stats. Golf/WC briefs are nameless/generic.
+### Brief Archive Pipeline (relay f50fb1b + 931fd05)
+- sweepKVBriefs every cron tick
+- /backfill/game-briefs endpoint (dry/limit/force)
+- 59 game_briefs backfilled (low quality — pending v4 re-gen)
+- 931fd05: JQ_STYLE + runQualityChain + force mode in backfill
+
+### Automation Loop (relay 621726e + client 83ade4c)
+- GET /quality/report — brief quality degradation by type
+- GET /briefs/spot-check — prose quality gate (FAIL = session not done)
+- POST /session/record — session state to Codex at close
+- session_health MCP tool — machine-generated session start state
+- Phase 8b quality_alert → analytics_output → O(1) Newspaper
+- Client renders quality_alert section in newspaper (83ade4c)
+- SESSION-END template: docs/CC-CMD-TEMPLATE-session-end.md
+- Codex seeded: 38 CLAUDE.md rules
 
 ### CFL Schedule (client c8d62d5)
-- Expanded from Week 1 only (2 games) to Weeks 1-10 (38 games, through Aug 8)
-- All 9 teams, correct venues, TSN/CBSSN broadcast tags
+- Weeks 1-10 (Jun 4 – Aug 8), 38 games
 
-### CC-CMDs Pushed (not yet executed)
-- docs/CC-CMD-2026-06-22-backfill-prompt-quality.md — JQ_STYLE + quality chain for backfill
-- docs/CC-CMD-2026-06-22-v4-register-port.md — port FIELD_VOICE_EXEMPLARS to relay
-- docs/CC-CMD-2026-06-22-quality-scoring-everywhere.md — score all brief types
-- docs/CC-CMD-2026-06-22-quality-auto-feedback.md — automated quality feedback loop
-- docs/CC-CMD-2026-06-22-newspaper-relay.md — (already executed)
-- docs/CC-CMD-2026-06-22-newspaper-client.md — (already executed)
-
-## Known Quality Gaps
-
-### Voice Register
-- v4 register (FIELD_VOICE_EXEMPLARS) exists ONLY in client index.html
-- Used by: J3 omnibus brief, compound prompt (2 surfaces)
-- NOT used by: relay cron briefs, per-game card briefs, backfill, /journalism/generate
-- Per-game briefs use FIELD_PROSE_STYLE (rules only, no voice palette)
-- Fix: one-line port to journalism-quality.js + wire into prompt paths
-
-### Quality Scoring
-- Only 12 of 540+ briefs have quality_score (10 slate, 2 series_preview)
-- game_recap, game_brief, night_owl, mlb_game, wc_matchup, wnba_game: all NULL
-- runQualityChain exists but isn't called on most paths
-- Analytics Engine receives data from 2 paths, nobody reads it
-- Prompt Observatory (specced) never built
-- Fix: wire runQualityChain into all LLM paths, scoreProse into capture paths
-
-### Data Gaps (sport context for briefs)
-- Golf: no player names in context — assembleContext returns nothing
-- WNBA: no player data — assembleContext returns nothing
-- WC: FBref data empty (soccer-fbref-wc.yml cron not producing)
-- MLB: ABS challenge stats dominate because they're the only context
-- Fix: ESPN summary data per game (requires game ID mapping)
+## Pending CC-CMDs (relay field-relay-nba)
+- docs/CC-CMD-2026-06-22-v4-voice-and-scoring.md (HEAD 2cf9f29)
+  ONE-LINER: git pull. Read docs/CC-CMD-2026-06-22-v4-voice-and-scoring.md. Execute all tasks.
+  After CC: /backfill/game-briefs?force=true&limit=50 (re-gen 59 bad briefs)
+- docs/CC-CMD-2026-06-22-stale-data-sentinel.md (existing, unexecuted)
+- docs/CC-CMD-2026-06-22-odds-story-materializer.md (existing, unexecuted)
 
 ## Probe Endpoints (all live)
-- /analytics/newspaper/{date} — O(1) bundle
-- /backfill/game-briefs?dry=true — archive gap check
-- /journalism/context-probe — Context Assembler verification
-- /budget/odds — daily + monthly spend
-- /identity/mismatches — unmatched team names
-- /integrity/briefs — KV vs D1 divergence
-- /integrity/games — ESPN vs D1 archive gaps
-- /deploy/verify — GitHub HEAD vs deployed SHA
-- /freshness/{date} — brief staleness
-- NOT BUILT: /health/sources, /odds-story/preview, /quality/report
+- /analytics/newspaper/{date}     — O(1) bundle
+- /quality/report?days=7          — brief quality degradation
+- /briefs/spot-check?n=5          — prose quality gate
+- /backfill/game-briefs?dry=true  — archive gap check
+- /journalism/context-probe       — Context Assembler
+- /budget/odds                    — daily + monthly spend
+- /identity/mismatches            — unmatched team names
+- /integrity/briefs               — KV vs D1 divergence
+- /integrity/games                — ESPN vs D1 gaps
+- /deploy/verify                  — GitHub HEAD vs deployed SHA
+- /freshness/{date}               — brief staleness
+- NOT BUILT: /health/sources (Stale Data Sentinel CC-CMD exists)
 
-## Carry-Forwards (accumulated)
-1. wentToOT hardcoded false — D1 lacks column, needs GameDO write
-2. KV editorial keys not consulted by newspaper endpoint
-3. Recap nulls until 09:00 UTC cron fires
-4. WC label mismatch: "FIFA World Cup" vs "FIFA World Cup 2026" in D1
-5. WNBA archive gap: 1 game missing June 21
-6. Client-side third-place at SSE speed
-7. pitch_arsenals.json 0 entries (Savant CSV stale since June 15)
-8. Soccer FBref wc2026.json empty
-9. Smoke 723/3 — 3 failures unidentified
-10. Voice register not in relay (per-game briefs have no personality)
-11. Quality scoring missing on most brief types
-12. Backfill briefs are low quality (need re-generation after voice fix)
-13. HANDOFF.md was stale for entire June 22 session
-14. Codex has 15 entries, should have 50+
+## Carry-Forwards
+1. v4 voice register not in relay — pending CC-CMD 2cf9f29
+2. Backfill briefs need re-gen after v4 CC-CMD
+3. /session/record POST returns "Method not allowed" from direct curl — needs CC verification
+4. Phase 8b threshold tuning — re-baseline after June 29
+5. session_health analytics_phases — phases not using value.degraded won't surface
+6. wentToOT hardcoded false in newspaper
+7. KV editorial keys not consulted by newspaper
+8. WC sport label mismatch (FIFA World Cup 2026 vs wc26) — fixed in v4 CC-CMD
+9. pitch_arsenals.json stale (heals Monday cron)
+10. wc2026.json FBref empty (heals every 3 days)
+11. Smoke 724/2 — 2 failures unidentified
+12. /health/sources not built (CC-CMD exists)
+13. Odds Story Materializer not built (CC-CMD exists)
+14. FIELD's Pick badge game_id format unverified
+15. CFL matchup accuracy unverified (Weeks 2-10 from web search)
+16. API-Sports Football Pro renewal — JUNE 29 DEADLINE
+17. NFL SPORT_TO_V2 — September 9 deadline
 
 ## Priority (next session)
-1. Port v4 register to relay + wire into all paths (one clean prompt)
-2. Wire quality scoring on all brief types
-3. Populate Codex with full rule set + endpoints + carry-forwards
-4. Stale Data Sentinel (/health/sources)
-5. Odds Story Materializer
-6. ESPN summary integration for golf/WNBA/WC brief enrichment
+1. Execute v4 voice CC-CMD (2cf9f29), then force re-gen backfill briefs
+2. Verify /session/record POST from CC environment
+3. Stale Data Sentinel (/health/sources)
+4. Odds Story Materializer
+5. API-Sports renewal decision (June 29)
