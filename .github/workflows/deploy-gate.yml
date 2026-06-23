@@ -36,7 +36,7 @@ on:
       - 'wrangler.jsonc'
 
 permissions:
-  contents: read
+  contents: write  # write needed to commit SW_VERSION sync back to repo
 
 jobs:
   smoke-and-deploy:
@@ -63,6 +63,24 @@ jobs:
           # Also sync index.html so A190 (sw.js === index.html) passes
           sed -i "s/const SW_VERSION = '[^']*'/const SW_VERSION = '${NEW_VERSION}'/" index.html
           echo "✅ SW_VERSION synced to ${NEW_VERSION} in sw.js + index.html (ET)"
+
+      - name: Commit SW_VERSION sync back to repo
+        run: |
+          # A190 root-cause fix (June 23 2026):
+          # Direct API commits to index.html bypass this workflow's sed sync,
+          # leaving sw.js SW_VERSION stale in git. This step commits the sync
+          # back so smoke-and-verify.yml always sees consistent files.
+          # [skip ci] prevents a deploy loop.
+          git config user.email "deploy-gate@field"
+          git config user.name "Deploy-Gate"
+          git diff --quiet sw.js index.html && echo "SW_VERSION already in sync — no commit needed" && exit 0
+          git add sw.js index.html
+          git commit -m "chore: sync SW_VERSION $(TZ='America/New_York' date +%Y-%m-%d) — A190 auto-fix [skip ci]"
+          for i in 1 2 3; do
+            git pull --rebase --autostash origin main && git push origin main && break
+            sleep $((i * 3))
+          done
+          echo "✅ SW_VERSION sync committed back to repo"
 
       - name: Fast smoke (smoke.js only)
         run: |
