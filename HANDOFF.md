@@ -5,50 +5,74 @@
 
 ## STAT — Current State
 
-**HEAD: ca40c47 · 2026-06-23 · deployed**
-Smoke: 213/213 · Active DOs: 115 · Watched: 566 companies
+**HEAD: 2d18fff · 2026-06-23 · deployed**
+Smoke: 213/213 · total: 572 companies · totalMonitored: 628 · batchWatchlist: 56
 
 **Completed this session:**
 - ✅ wd5 unblock — 88 companies back in scan cycle
 - ✅ fetchWorkday warn logging
-- ✅ Viewport auto-trigger wired (workflow_run on Deploy STAT worker)
+- ✅ Viewport auto-trigger wired (workflow_run)
 - ✅ STAT_PAT synced to Worker
-- ✅ Viewport tests 10/10 (iOS Safari + Android Chrome, manual dispatch confirmed)
+- ✅ SmartRecruiters adapter built (src/adapters.js)
+- ✅ hiringcafe explicit no-op case added to dispatcher
+- ✅ Registry +6: Wilshire Group (GH), UMMS (SR), 4 consulting firms (hiringcafe fallback)
+- ✅ Registry -23: logistics (12) + e-commerce (7) + insurtech (4) marked inactive
+- ✅ Tegria confirmed in registry at config.js:339 as Greenhouse
+- ✅ /companies dump completed — full runtime platform map obtained
+
+**Source file layout (CRITICAL for future CC prompts):**
+- Adapters: `src/adapters.js`
+- Dispatcher: `src/platform-do.js`
+- Registry/config: `src/config.js`
+- NOT src/index.js — compiled bundle only
 
 ---
 
-## PRIORITY 1 — Registry audit + SmartRecruiters adapter CC
+## PRIORITY 1 — iOS Safari iPad Air (T1) simulator boot failure
 
-**CC one-liner:**
-```
-git pull. Read CLAUDE.md. Execute all tasks in CC-CMD-2026-06-23-stat-registry-audit.md.
-```
+**Status:** Persistent — failed both attempts at "Boot simulator" step.
+iPhone SE (P1) and iPhone 16 (P2) both passing. Android Chrome: passing.
 
-**Gaps confirmed pre-CC:**
-- `hiringcafe` switch case missing (1 company returns [] instead of routing to fetchHcPage)
-- ~255 companies hit `default: return []` — never polled
-- Nordic Global + Tegria: keyword-only (fit scoring), NOT company objects
-- Missing from registry: The Wilshire Group (Greenhouse), UMMS (SmartRecruiters),
-  Stoltenberg, Incisive, Evergreen Healthcare Partners, Anura Connect
-- SmartRecruiters: public API (`api.smartrecruiters.com/v1/companies/{token}/postings`),
-  no auth, 1856 US companies, UMMS confirmed. Sandbox-blocked but works from CF Worker egress.
+**Root cause:** iPad Air 11" (M2) simulator not booting on GitHub macOS runner.
+Not a code regression — assertions were never reached. Prior manual run passed.
 
-**What CC will do:**
-1. Fix hiringcafe switch case
-2. Build SmartRecruiters adapter + add to switch
-3. Add The Wilshire Group (Greenhouse/thewilshiregroup)
-4. Add UMMS (SmartRecruiters/UniversityOfMarylandMedicalSystem)
-5. Probe and add Nordic Global + Tegria
-6. Probe and add Stoltenberg, Incisive, Evergreen, Anura Connect
-7. Sample-audit 20 of the 255 silent companies
-8. Run tests → deploy → spot-verify UMMS
-9. Write outbox manifest
+**Fix options:**
+1. Replace iPad Air 11" M2 with iPad Air 11" M3 or iPad Pro in the matrix
+2. Add `xcrun simctl list devices` step before boot to confirm availability
+3. Add retry logic to the boot step
+
+**This is a viewport workflow fix in `.github/workflows/ios-safari-audit.yml`.**
 
 ---
 
-## PRIORITY 2 — Remaining S14 Items
+## PRIORITY 2 — Four open deferrals from registry audit CC
 
-- [ ] Registry audit + SR adapter (Priority 1)
+1. **hiringcafe signature** — `fetchHiringCafe(keyword, environment)` not `(company, env)`.
+   Explicit no-op case ships semantically equivalent behavior. True wiring is a follow-up.
+
+2. **4 consulting firms tagged hiringcafe** — sandbox can't reach external HTTP for ATS
+   probes. Fix: dispatch `workday-simple-probe.yml` or similar to identify their real ATS
+   from CI runner (unrestricted network). Firms: Stoltenberg, Incisive, Evergreen, Anura Connect.
+
+3. **UMMS spot-verify** — SmartRecruiters adapter built but DO inactive. Needs SR probe
+   route or bootstrap call. Try: `GET /platform/smartrecruiters/status`
+
+4. **255 silent figure was wrong** — runtime shows 572 total with 38 ATS types,
+   many with inactive DOs. Biggest inactive buckets to build adapters for (next session):
+   - icims2: 44 companies (largest gap)
+   - oraclecloud: 26 companies
+   - taleo_careersection: 20 companies
+   - ultipro: 16 companies (UKG Pro)
+   - inforhcm: 16 companies (may be naming variant of infor_hcm — check)
+   - avature: 7 companies
+   - dayforce: 6 companies (Ceridian)
+   - adp: 6 companies
+   - paycom: 5 companies
+
+---
+
+## PRIORITY 3 — Remaining S14 Items
+
 - [ ] Apply agent dry-run
 - [ ] Issue #7 partial
 
