@@ -12360,6 +12360,12 @@ function _deskCardToggle(el) {
   }
 }
 
+// Debounce state — coalesces rapid successive calls into one render (CLS fix)
+let _rfdTimer = null;
+function scheduleFieldDesk(delay) {
+  if (_rfdTimer) clearTimeout(_rfdTimer);
+  _rfdTimer = setTimeout(() => { _rfdTimer = null; renderFieldDesk(); }, delay || 200);
+}
 function renderFieldDesk(){
   const grid = document.getElementById('field-desk-grid');
   if(!grid) return;
@@ -12560,7 +12566,11 @@ function renderFieldDesk(){
     if(!cards.length){ if(desksec) desksec.style.display='none'; return; }
   }
   if(desksec) desksec.style.display='';
-  grid.innerHTML = cards.join('');
+  // CLS fix: skip DOM wipe if content hasn't changed — prevents collapse-expand shift
+  const _newHTML = cards.join('');
+  if (grid.innerHTML !== _newHTML) {
+    grid.innerHTML = _newHTML;
+  }
 }
 
 
@@ -22281,7 +22291,7 @@ const lazyObs=new IntersectionObserver(entries=>{
     }
     if(e.target.id==="field-desk-section"){
       // Delay 800ms — let compound prompt + series briefs settle first
-      setTimeout(renderFieldDesk, 800);
+      scheduleFieldDesk(800);
       setTimeout(renderJournalism, 800);
     }
   });
@@ -28673,7 +28683,7 @@ async function initFIELDBrief(sections){
       }
     }catch(e_){
     if(typeof window._fieldErrors !== 'undefined') window._fieldErrors.push({fn:'initFIELDBrief',err:e_?.message||String(e_),ts:Date.now()});}
-    setTimeout(renderFieldDesk, 400); // Cached-brief path: Desk was never triggered on reload
+    scheduleFieldDesk(400); // Cached-brief path: Desk was never triggered on reload
     setTimeout(renderJournalism, 400);
     return;
   }
@@ -28695,7 +28705,7 @@ async function initFIELDBrief(sections){
     try { archiveBrief('slate', null, null, relayJournalism.brief, null); } catch(_){}
     if (FIELD_DEBUG) console.log('[O(1)] Brief served from relay KV — no AI call');
     if (typeof renderAmbientPanel === 'function') setTimeout(renderAmbientPanel, 50);
-    setTimeout(renderFieldDesk, 300); // Relay path: Desk was never triggered here
+    scheduleFieldDesk(300); // Relay path: Desk was never triggered here
     setTimeout(renderJournalism, 300);
     // Still try compound for series/game_briefs (non-brief fields) — but respect delta
     const currentHash = buildJournalismContextHash(sections);
@@ -28806,7 +28816,7 @@ async function initFIELDBrief(sections){
       if(smtBar){smtBar.textContent='📋 '+trimToCompleteSentence(compound.smt_note);smtBar.style.display='block';}
     }
     // FIELD Desk: refresh after compound dispatch so it has all briefs available
-    setTimeout(renderFieldDesk, 200);
+    scheduleFieldDesk(200);
     setTimeout(renderJournalism, 200);
     return;
   }
@@ -28819,7 +28829,7 @@ async function initFIELDBrief(sections){
     sessionStorage.setItem(cacheKey,claudeText);
     try { archiveBrief('slate', null, null, claudeText, null); } catch(_){}
     // FIELD Desk: must be triggered here too — compound null path never called renderFieldDesk
-    setTimeout(renderFieldDesk, 300);
+    scheduleFieldDesk(300);
     setTimeout(renderJournalism, 300);
   } else {
     // ── JQ Gate brand-safe fallback (PM-31-JQ) ──────────────────────────────
@@ -28844,7 +28854,7 @@ async function initFIELDBrief(sections){
     }
   }
   // FIELD Desk: also refresh after series queue fires (series cards populated ~3s later)
-  setTimeout(()=>{initJournalismQueue(sections);setTimeout(renderFieldDesk,500);setTimeout(renderJournalism,500);},3000);
+  setTimeout(()=>{initJournalismQueue(sections);scheduleFieldDesk(500);setTimeout(renderJournalism,500);},3000);
 // Re-inject scores on renderAll completion — catches cards rendered after initial ESPN poll
 // Fixes: Galaxy A36 blank scores when ESPN data was already fetched before render
 if(Object.keys(espnScores||{}).length){
