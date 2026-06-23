@@ -4380,30 +4380,53 @@ are POST-ROUND ONLY and the estimated SG engine is non-functional during
 live play. DataGolf is not a deferrable T1 decision — it's the only source
 of live analytics for golf.
 
-## Rule 86 — Crash recovery protocol (CRASH-RECOVERY-A)
+## Rule 87 — CC-CMDs must be self-completing (SELF-COMPLETE-A)
 
-**Signal:** At session start, if `get_head_sha` returns a SHA that does not
-match the FIELD HANDOFF anchor in memory, the prior session closed without
-completing its end protocol — either a crash, a tab close, or a missed
-session-end checklist.
+A CC-CMD is complete when the session that executes it leaves the system in
+a verified, documented state with no deferred work. Follow-ups, post-deploy
+verifications, and carry-forwards are spec failures — they mean the done
+condition was not defined upfront or tasks were intentionally punted.
 
-**Required response:** Before starting any new work, close out the prior
-session:
+### Required in every CC-CMD
 
-1. Run `git diff <anchor>...<current_head>` to reconstruct what shipped.
-2. Write a Drive session doc covering the unrecorded work (outbox or direct).
-3. Trigger `drive-upload-outbox.yml` dispatch if using outbox path.
-4. Update the FIELD HANDOFF anchor memory edit (REPLACE) with current HEAD.
-5. Only then declare the new session open and proceed with new work.
+1. **Probe block first.** Read every constant, function name, and file
+   location from current HEAD before writing any code. Never write a URL,
+   function call, or line reference from memory — probe it. The probe block
+   populates the spec; the spec does not guess and hope the probe confirms.
 
-**CC-CMD path:** If the reconstruction is complex, write a CC-CMD with tasks:
-write outbox session doc + trigger `drive-upload-outbox.yml`. The memory
-anchor REPLACE must happen in chat — CC cannot update memory.
+2. **Explicit done condition.** The final task must define what "done" looks
+   like as a verifiable probe output: a specific endpoint returning a specific
+   value, a D1 count reaching zero, a smoke assertion passing. "Deploy
+   succeeded" is not a done condition.
 
-**Do not skip:** Starting new work on top of an unclosed session means the
-Drive record has a permanent gap. The git history is recoverable; the session
-narrative is not.
+3. **Execution inside the session.** If the task requires running something
+   after deploy (a backfill loop, a verification curl, a D1 query), that
+   execution is a task in the CC-CMD — not a carry-forward. CC deploys and
+   then runs the verification in the same session.
 
-**Applies to:** All session types (TYPE A/B/C/D). HEAD drift from HANDOFF-only
-commits (e.g. STAT session bookkeeping in jubilant-bassoon) does not trigger
-this rule — verify commit messages before treating drift as a crash signal.
+4. **No deferred rows or states.** If there are 325 NULL rows that need
+   scoring, scoring them is Task N in this CC-CMD, not a note saying
+   "worth a separate session." If the work is genuinely out of scope,
+   write a second CC-CMD for it before closing the first session.
+
+5. **Outbox manifest as last task.** Every CC-CMD ends with writing an
+   outbox manifest covering: commit hash, deploy run ID, done-condition
+   probe output, and any genuine residual (proxy failures, not deferred work).
+
+### Violation signals
+
+- A CC-CMD that ends with "carry-forward: X remains" without a second
+  CC-CMD written to handle X.
+- A verification step that is "STAGED" because the sandbox blocks egress —
+  the verification must use an endpoint the relay can self-probe, not a
+  sandbox curl.
+- A spec that writes a URL or constant from memory rather than from a probe
+  (, function names, line numbers).
+
+### Cross-reference
+
+- Rule 68: Probe before building — the probe block is required, not optional
+- Rule 79: CC prompts resolve against current HEAD
+- Rule 86: Crash recovery — unclosed sessions are the downstream cost of
+  incomplete CC-CMDs
+- Rule 77: Failure is failure — "scored: 0 but endpoint exists" is a failure
