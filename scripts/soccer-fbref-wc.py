@@ -34,9 +34,16 @@ _pw_context = None
 def _init_playwright():
     global _pw_instance, _pw_browser, _pw_context
     from playwright.sync_api import sync_playwright
+    from playwright_stealth import stealth_sync
     _pw_instance = sync_playwright().start()
     proxy_url = os.environ.get("DATAIMPULSE_PROXY", "")
-    launch_args = {"headless": True}
+    launch_args = {
+        "headless": False,  # non-headless under Xvfb to evade detection
+        "args": [
+            "--disable-blink-features=AutomationControlled",
+            "--no-sandbox",
+        ],
+    }
     if proxy_url:
         from urllib.parse import urlparse
         p = urlparse(proxy_url)
@@ -50,7 +57,9 @@ def _init_playwright():
         user_agent=HEADERS["User-Agent"],
         extra_http_headers={k: v for k, v in HEADERS.items() if k != "User-Agent"},
     )
-    print("    ℹ️  Playwright browser launched" + (" with proxy" if proxy_url else ""))
+    # Store stealth_sync for page-level patching
+    _pw_context._stealth_sync = stealth_sync
+    print("    ℹ️  Playwright stealth browser launched" + (" with proxy" if proxy_url else ""))
 
 def _cleanup_playwright():
     global _pw_instance, _pw_browser, _pw_context
@@ -138,10 +147,11 @@ def fetch_html(url, label="", pause=4):
     if _pw_context is None:
         _init_playwright()
     page = _pw_context.new_page()
+    _pw_context._stealth_sync(page)
     try:
-        page.goto(url, wait_until="networkidle", timeout=45000)
+        page.goto(url, wait_until="domcontentloaded", timeout=60000)
         # Wait for CF challenge to resolve (body content appears)
-        page.wait_for_selector("table", timeout=15000)
+        page.wait_for_selector("table", timeout=30000)
         html = page.content()
         return html
     except Exception as e:
