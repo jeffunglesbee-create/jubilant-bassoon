@@ -41,8 +41,14 @@ def fetch_html(url, label="", pause=4):
     if label:
         print(f"    {label}...")
     time.sleep(pause)
+    proxy_url = os.environ.get("DATAIMPULSE_PROXY", "")
+    if proxy_url:
+        handler = urllib.request.ProxyHandler({"http": proxy_url, "https": proxy_url})
+        opener = urllib.request.build_opener(handler)
+    else:
+        opener = urllib.request.build_opener()
     req = urllib.request.Request(url, headers=HEADERS)
-    with urllib.request.urlopen(req, timeout=30) as r:
+    with opener.open(req, timeout=30) as r:
         return r.read().decode("utf-8", errors="replace")
 
 def parse_squad_table(html, table_id):
