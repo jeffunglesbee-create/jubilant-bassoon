@@ -107,3 +107,35 @@ Never generate content containing: "stunned", "shocked", "thriller", "instant cl
 2. Run smoke before and after changes
 3. Bump SW_VERSION on every deploy-triggering commit (both index.html and sw.js)
 4. After work: update HANDOFF.md with new state
+
+## CC-CMD Self-Completion (Rule 87 — SELF-COMPLETE-A)
+
+Every CC-CMD must be self-completing. Follow-ups, post-deploy verifications,
+and carry-forwards are spec failures.
+
+**Required in every CC-CMD:**
+
+1. **Probe block first.** Read every constant, URL, function name, and line
+   reference from current HEAD before writing any code. Never write from
+   memory — probe it. The probe block populates the spec.
+
+2. **Explicit done condition.** Define what done looks like as a verifiable
+   probe output: a specific endpoint returning a specific value, a D1 count
+   reaching zero, a smoke assertion passing. "Deploy succeeded" is not a
+   done condition.
+
+3. **Execution inside the session.** If the task requires running something
+   after deploy (backfill loop, verification curl, D1 query), that execution
+   is a numbered task in this CC-CMD — not a carry-forward.
+
+4. **No deferred work without a second CC-CMD.** If work is out of scope,
+   write a second CC-CMD before closing the first. "Worth a separate session"
+   is a carry-forward and a spec failure.
+
+5. **Outbox manifest is the last task.** Covers: commit hash, deploy run ID,
+   done-condition probe output, any genuine residual (proxy failures only —
+   not deferred work).
+
+**Violation signals:** carry-forwards without a second CC-CMD; verification
+steps blocked by sandbox egress (use relay self-probe endpoints instead);
+URLs or function names written from memory rather than probed from source.
