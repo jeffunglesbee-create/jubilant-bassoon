@@ -6,8 +6,9 @@ Fetches squad-level xG/pressing/passing/GK analytics from FBref for:
   - FIFA World Cup 2026
   - EPL 2025-26, La Liga, Bundesliga, Serie A, Ligue 1
 
-GitHub Actions fetches via DataImpulse residential proxy (FBref blocks
-datacenter IPs from both GH Actions and CF Workers since June 2026).
+GitHub Actions uses Playwright headless Chromium + DataImpulse residential
+proxy to bypass Cloudflare JS challenges. FBref has Cloudflare managed
+challenge mode enabled since ~June 2026.
 Output written to R2 field-relay-data/soccer/fbref/{league}.json via CF API.
 
 Spec: Sport-Specific × Workers Plus SOCCER-A (extended June 10 2026)
@@ -24,6 +25,45 @@ HEADERS = {
     "Referer": "https://fbref.com/",
 }
 BASE = "https://fbref.com"
+
+# ── Playwright browser lifecycle ───────────────────────────────────────────────
+_pw_instance = None
+_pw_browser = None
+_pw_context = None
+
+def _init_playwright():
+    global _pw_instance, _pw_browser, _pw_context
+    from playwright.sync_api import sync_playwright
+    _pw_instance = sync_playwright().start()
+    proxy_url = os.environ.get("DATAIMPULSE_PROXY", "")
+    launch_args = {"headless": True}
+    if proxy_url:
+        from urllib.parse import urlparse
+        p = urlparse(proxy_url)
+        launch_args["proxy"] = {
+            "server": f"http://{p.hostname}:{p.port}",
+            "username": p.username or "",
+            "password": p.password or "",
+        }
+    _pw_browser = _pw_instance.chromium.launch(**launch_args)
+    _pw_context = _pw_browser.new_context(
+        user_agent=HEADERS["User-Agent"],
+        extra_http_headers={k: v for k, v in HEADERS.items() if k != "User-Agent"},
+    )
+    print("    ℹ️  Playwright browser launched" + (" with proxy" if proxy_url else ""))
+
+def _cleanup_playwright():
+    global _pw_instance, _pw_browser, _pw_context
+    try:
+        if _pw_context: _pw_context.close()
+        if _pw_browser: _pw_browser.close()
+        if _pw_instance: _pw_instance.stop()
+    except:
+        pass
+
+import atexit
+atexit.register(_cleanup_playwright)
+
 
 # ── League configs ─────────────────────────────────────────────────────────────
 LEAGUES = [
@@ -90,48 +130,32 @@ def make_url(league, table_type):
     return f"{BASE}/en/comps/{c}/{s}/{table_type}/{s}-{slug}-Stats"
 
 def fetch_html(url, label="", pause=4):
+    """Fetch via Playwright headless Chromium to solve Cloudflare JS challenges."""
+    global _pw_context
     if label:
         print(f"    {label}...")
     time.sleep(pause)
-    proxy_url = os.environ.get("DATAIMPULSE_PROXY", "")
-    if proxy_url:
-        import subprocess
-        # Diagnostic: capture status, headers, and body separately
-        cmd = [
-            "curl", "-s", "--max-time", "30", "--proxy", proxy_url,
-            "-w", "\n__HTTP_CODE__:%{http_code}\n__REDIRECT_URL__:%{redirect_url}\n",
-            "-D", "/dev/stderr",  # headers to stderr
-        ]
-        for k, v in HEADERS.items():
-            cmd += ["-H", f"{k}: {v}"]
-        cmd.append(url)
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
-        body = result.stdout
-        headers_raw = result.stderr
-        # Parse HTTP code from body tail
-        http_code = 0
-        for line in body.split("\n"):
-            if line.startswith("__HTTP_CODE__:"):
-                http_code = int(line.split(":")[1])
-                body = body[:body.index("__HTTP_CODE__")]
-                break
-        if http_code >= 400:
-            # Print diagnostic info
-            print(f"      ┌ HTTP {http_code} from {url[:80]}")
-            # Show response headers (first 500 chars)
-            for hl in headers_raw.strip().split("\n")[:10]:
-                print(f"      │ {hl.strip()}")
-            # Show body snippet
-            snippet = body[:300].replace("\n", " ").strip()
-            print(f"      └ Body: {snippet[:200]}")
-            raise Exception(f"HTTP {http_code}")
-        if result.returncode != 0:
-            raise Exception(f"curl exit {result.returncode}: {result.stderr.strip()[:200]}")
-        return body
-    else:
-        req = urllib.request.Request(url, headers=HEADERS)
-        with urllib.request.urlopen(req, timeout=30) as r:
-            return r.read().decode("utf-8", errors="replace")
+    if _pw_context is None:
+        _init_playwright()
+    page = _pw_context.new_page()
+    try:
+        page.goto(url, wait_until="networkidle", timeout=45000)
+        # Wait for CF challenge to resolve (body content appears)
+        page.wait_for_selector("table", timeout=15000)
+        html = page.content()
+        return html
+    except Exception as e:
+        # Try to capture what we got
+        try:
+            html = page.content()
+            if "Just a moment" in html:
+                raise Exception(f"Cloudflare challenge not solved: {e}")
+        except:
+            pass
+        raise
+    finally:
+        page.close()
+
 
 def parse_squad_table(html, table_id):
     pattern = rf'<table[^>]+id="{re.escape(table_id)}"[^>]*>(.*?)</table>'
@@ -296,7 +320,7 @@ for league in LEAGUES:
         "updated": datetime.now(timezone.utc).isoformat(),
         "competition": name,
         "season": league["season"],
-        "source": "FBref squad stats via GH Actions + residential proxy",
+        "source": "FBref squad stats via Playwright + residential proxy",
         "schema": {
             "xGFor": "Expected goals from attack",
             "xGAgainst": "Expected goals conceded",
