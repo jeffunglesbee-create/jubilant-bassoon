@@ -4379,3 +4379,31 @@ DataGolf Decision" is being updated to reflect that ESPN traditional stats
 are POST-ROUND ONLY and the estimated SG engine is non-functional during
 live play. DataGolf is not a deferrable T1 decision — it's the only source
 of live analytics for golf.
+
+## Rule 86 — Crash recovery protocol (CRASH-RECOVERY-A)
+
+**Signal:** At session start, if `get_head_sha` returns a SHA that does not
+match the FIELD HANDOFF anchor in memory, the prior session closed without
+completing its end protocol — either a crash, a tab close, or a missed
+session-end checklist.
+
+**Required response:** Before starting any new work, close out the prior
+session:
+
+1. Run `git diff <anchor>...<current_head>` to reconstruct what shipped.
+2. Write a Drive session doc covering the unrecorded work (outbox or direct).
+3. Trigger `drive-upload-outbox.yml` dispatch if using outbox path.
+4. Update the FIELD HANDOFF anchor memory edit (REPLACE) with current HEAD.
+5. Only then declare the new session open and proceed with new work.
+
+**CC-CMD path:** If the reconstruction is complex, write a CC-CMD with tasks:
+write outbox session doc + trigger `drive-upload-outbox.yml`. The memory
+anchor REPLACE must happen in chat — CC cannot update memory.
+
+**Do not skip:** Starting new work on top of an unclosed session means the
+Drive record has a permanent gap. The git history is recoverable; the session
+narrative is not.
+
+**Applies to:** All session types (TYPE A/B/C/D). HEAD drift from HANDOFF-only
+commits (e.g. STAT session bookkeeping in jubilant-bassoon) does not trigger
+this rule — verify commit messages before treating drift as a crash signal.
