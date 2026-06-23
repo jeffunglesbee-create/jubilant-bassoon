@@ -22371,7 +22371,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-23a';
+  const SW_VERSION = '2026-06-23b';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -36412,6 +36412,59 @@ async function fetchNightOwlFromClaude(topGame){
       _owlStatCtx += (_owlStatCtx ? '\n' : '') + `  [PRE-GAME STAT EDGE] ${_owlSd.fullText}`;
     }
   } catch(e_) {}
+
+  // ── ESPN Summary leaders — cold-cache fallback ────────────────────────────
+  // When in-memory caches are cold (user opens Night Owl post-game), _owlStatCtx
+  // lacks player names and stats. Fetch ESPN Summary from relay to inject leaders.
+  // Only fires when stat context is missing player-specific data. Fail-silent.
+  try {
+    const _espnId = topGame.sourceId || topGame.espnEventId;
+    const _hasSportStats = _owlStatCtx && (
+      _owlStatCtx.includes('[MLB BOX]') ||
+      _owlStatCtx.includes('[PPG LEADERS]') ||
+      _owlStatCtx.includes('[NHL LIVE]') ||
+      _owlStatCtx.includes('[GOAL TIMELINE]') ||
+      _owlStatCtx.includes('[NBA BOX]')
+    );
+    if (_espnId && !_hasSportStats) {
+      const _sumSlug = _sp.includes('baseball') || _sp.includes('mlb')
+        ? 'baseball/mlb'
+        : _sp.includes('wnba')
+        ? 'basketball/wnba'
+        : _sp.includes('basketball') || _sp.includes('nba')
+        ? 'basketball/nba'
+        : _sp.includes('hockey') || _sp.includes('nhl')
+        ? 'hockey/nhl'
+        : (_sp.includes('soccer') || _sp.includes('world cup') ||
+           _sp.includes('wc26') || _sp.includes('fifa'))
+        ? 'soccer/fifa.world'
+        : null;
+      if (_sumSlug) {
+        const _sumRes = await fetch(
+          `https://field-relay-nba.jeffunglesbee.workers.dev/espn-summary/sports/${_sumSlug}/summary?event=${encodeURIComponent(String(_espnId))}`,
+          { signal: AbortSignal.timeout(4000) }
+        );
+        if (_sumRes.ok) {
+          const _sumData = await _sumRes.json();
+          const _leaders = _sumData.leaders || [];
+          const _leaderLines = [];
+          for (const cat of _leaders.slice(0, 5)) {
+            const ls = Array.isArray(cat.leaders)
+              ? cat.leaders
+              : (cat.leaders?.leaders || []);
+            const top = ls[0];
+            if (top?.athlete?.displayName && top.displayValue) {
+              _leaderLines.push(`${cat.displayName}: ${top.athlete.displayName} ${top.displayValue}`);
+            }
+          }
+          if (_leaderLines.length) {
+            _owlStatCtx += (_owlStatCtx ? '\n' : '') +
+              '  [ESPN LEADERS] ' + _leaderLines.join(' · ');
+          }
+        }
+      }
+    }
+  } catch(_) {}
 
   // Scout's Pick: check if this game was pre-designated as under-the-radar.
   // Item 2: read enriched payload (statShort + statFull + gate) so verdict is specific.
