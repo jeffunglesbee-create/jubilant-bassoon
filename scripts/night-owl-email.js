@@ -308,12 +308,122 @@ function getSportLanguage(game, diff) {
   return { otShort, otSubject, otSignal, descriptor };
 }
 
+// ── Level 3: Quick Recap row (template-only) ────────────────────────────────
+function buildQuickRecapRow(game) {
+  const diff = Math.abs((game.homeScore || 0) - (game.awayScore || 0));
+  const homeWon = (game.homeScore || 0) >= (game.awayScore || 0);
+  const winner = homeWon ? game.home : game.away;
+  const { descriptor } = getSportLanguage(game, diff);
+  const seriesTail = game.isPlayoff && game.seriesRecord
+    ? `<span style="color:#64748b;font-size:.85em"> Series: ${game.seriesRecord}</span>`
+    : '';
+  return `<tr>
+    <td style="padding:6px 0;border-bottom:1px solid #1e293b;color:#94a3b8;font-size:.8em">
+      <span style="color:#f1f5f9;font-weight:600">${game.away} ${game.awayScore}-${game.homeScore} ${game.home}</span>
+      &nbsp;— ${winner} in a ${descriptor} finish.${seriesTail}
+    </td>
+  </tr>`;
+}
+
+// ── Level 3: Tonight slate (NBA + NHL + MLB + WC pre-game) ──────────────────
+async function fetchTonightSlate(dateStr) {
+  if (!dateStr) return [];
+  const espnDate = dateStr.replace(/-/g, '');
+  const sports = [
+    { key: 'basketball/nba',   label: 'NBA' },
+    { key: 'hockey/nhl',       label: 'NHL' },
+    { key: 'baseball/mlb',     label: 'MLB' },
+    { key: 'soccer/fifa.world',label: 'WC'  },
+  ];
+  const upcoming = [];
+  for (const { key, label } of sports) {
+    try {
+      const url = `https://site.api.espn.com/apis/site/v2/sports/${key}/scoreboard?dates=${espnDate}`;
+      const opts = FETCH_HAS_TIMEOUT ? { signal: AbortSignal.timeout(5000) } : {};
+      const res = await fetch(url, opts);
+      if (!res.ok) continue;
+      const data = await res.json();
+      for (const ev of data.events || []) {
+        const comp = ev.competitions?.[0];
+        if (!comp) continue;
+        const status = comp.status?.type?.state;
+        if (status !== 'pre') continue;
+        const teams = comp.competitors || [];
+        const home = teams.find(t => t.homeAway === 'home');
+        const away = teams.find(t => t.homeAway === 'away');
+        const notes = (comp.notes || []).map(n => n.headline || '').join(' ').toLowerCase();
+        const isPlayoff = notes.includes('playoff') || ev.season?.type === 3
+          || (ev.season?.slug || '').includes('knockout');
+        const startTime = ev.date
+          ? new Date(ev.date).toLocaleTimeString('en-US',
+              { hour: 'numeric', minute: '2-digit', timeZone: 'America/New_York' }) + ' ET'
+          : 'TBD';
+        upcoming.push({
+          label,
+          espnEventId: ev.id,
+          isPlayoff,
+          home: home?.team?.shortDisplayName || home?.team?.displayName || '?',
+          away: away?.team?.shortDisplayName || away?.team?.displayName || '?',
+          startTime,
+          priority: isPlayoff ? 2 : label === 'WC' ? 1 : 0,
+        });
+      }
+    } catch (_) { /* silent per game source */ }
+  }
+  return upcoming.sort((a, b) => b.priority - a.priority).slice(0, 3);
+}
+
+// ── Level 4a: Odds Story (line movement narrative) ──────────────────────────
+async function fetchOddsStory(espnEventId) {
+  if (!espnEventId) return null;
+  try {
+    const url = `https://field-relay-nba.jeffunglesbee.workers.dev/odds/history/${espnEventId}`;
+    const opts = FETCH_HAS_TIMEOUT ? { signal: AbortSignal.timeout(5000) } : {};
+    const res = await fetch(url, opts);
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (!data.opening || !data.current) return null;
+    const drift = Math.abs(data.current.spread - data.opening.spread);
+    if (drift < 2) return null;
+    const dir = data.current.spread < data.opening.spread ? 'shortened' : 'drifted out';
+    const fmt = n => `${n > 0 ? '+' : ''}${n}`;
+    return `Line ${dir} from ${fmt(data.opening.spread)} to ${fmt(data.current.spread)}.`;
+  } catch (_) { return null; }
+}
+
+// ── Level 4b: Lineup staleness (MLB only — SP change since brief written) ──
+async function checkLineupsChanged(espnEventId, briefText) {
+  if (!espnEventId || !briefText) return null;
+  try {
+    const url = `https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/summary?event=${espnEventId}`;
+    const opts = FETCH_HAS_TIMEOUT ? { signal: AbortSignal.timeout(5000) } : {};
+    const res = await fetch(url, opts);
+    if (!res.ok) return null;
+    const data = await res.json();
+    const starterName = data.lineups?.home?.starters?.[0]?.athlete?.displayName;
+    if (!starterName) return null;
+    const lastName = starterName.split(' ').pop();
+    if (!briefText.includes(lastName)) {
+      return 'Lineup may have changed since this was written.';
+    }
+    return null;
+  } catch (_) { return null; }
+}
+
 // ── Email builder ────────────────────────────────────────────────────────────
 // Level 1: briefText (relay journalism) replaces the template headline when present.
 // Level 2: design system — Chakra Petch + DM Mono, gold #f59e0b, chip taxonomy,
 //          hyphen score format.
+// Level 3: quickRecaps + tonightSlate render as Sections 2 and 3 below the
+//          hero card. Each is optional — empty array hides the section.
+// Level 4a: tonightOdds map ({espnEventId: "Line shortened from ..."} ) appends
+//           a line-movement sentence under matching slate rows.
+// Level 4b: stalenessWarning (string|null) renders above briefText prose when
+//           the MLB summary endpoint says SP changed since the brief was written.
 // Level 5: scorecard (precomputed in main()) injected between brief and CTA.
-function buildEmailHTML(game, yesterdayStr, briefText, scorecard) {
+function buildEmailHTML(game, yesterdayStr, briefText, scorecard,
+                        quickRecaps = [], tonightSlate = [], tonightOdds = {},
+                        stalenessWarning = null) {
   const {
     away, home, awayScore, homeScore,
     sport, isOT, isShootout,
@@ -340,6 +450,45 @@ function buildEmailHTML(game, yesterdayStr, briefText, scorecard) {
     : `${winner} ${diff <= 1 ? 'edged' : diff <= 3 ? 'held off' : 'defeated'} ${loser} ${winnerScore}-${loserScore} in ${/^[aeiou]/i.test(descriptor) ? 'an' : 'a'} ${descriptor} finish.`;
 
   const scorecardHTML = scorecard ? buildScorecardHTML(scorecard, game) : '';
+
+  // Level 4b: SP-changed warning above the brief prose
+  const stalenessHTML = stalenessWarning ? `
+        <div style="color:#f59e0b;font-size:.75em;font-weight:600;margin-bottom:6px">
+          ⚠ ${stalenessWarning}
+        </div>` : '';
+
+  // Level 3: Quick Recaps section (template, no LLM)
+  const recapsHTML = quickRecaps.length ? `
+    <div style="margin-bottom:20px">
+      <div style="font-size:.55em;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#64748b;margin-bottom:8px">
+        QUICK RECAPS
+      </div>
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:collapse">
+        ${quickRecaps.map(buildQuickRecapRow).join('')}
+      </table>
+    </div>` : '';
+
+  // Level 3: What to Watch Tonight section + Level 4a odds story
+  const tonightHTML = tonightSlate.length ? `
+    <div style="margin-bottom:20px">
+      <div style="font-size:.55em;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#64748b;margin-bottom:8px">
+        WHAT TO WATCH TONIGHT
+      </div>
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:collapse">
+        ${tonightSlate.map(g => {
+          const oddsLine = tonightOdds[g.espnEventId];
+          return `<tr>
+            <td style="padding:8px 0;border-bottom:1px solid #1e293b;color:#94a3b8;font-size:.8em;line-height:1.5">
+              <span style="background:#1e293b;color:#94a3b8;font-size:.65em;font-weight:700;padding:.12rem .4rem;border-radius:4px;letter-spacing:.06em;margin-right:.4rem">${g.label}</span>
+              ${g.isPlayoff ? '<span style="background:#1e3a5f;color:#0d9488;font-size:.65em;font-weight:700;padding:.12rem .4rem;border-radius:4px;letter-spacing:.06em;margin-right:.4rem">PLAYOFF</span>' : ''}
+              <span style="color:#f1f5f9;font-weight:600">${g.away} @ ${g.home}</span>
+              <span style="color:#64748b"> · ${g.startTime}</span>
+              ${oddsLine ? `<div style="color:#64748b;font-size:.85em;margin-top:3px">${oddsLine}</div>` : ''}
+            </td>
+          </tr>`;
+        }).join('')}
+      </table>
+    </div>` : '';
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -375,7 +524,7 @@ function buildEmailHTML(game, yesterdayStr, briefText, scorecard) {
       </div>
 
       <!-- Headline / relay brief -->
-      <div style="color:#94a3b8;font-size:.85em;line-height:1.5">
+      <div style="color:#94a3b8;font-size:.85em;line-height:1.5">${stalenessHTML}
         ${headlineProse}
       </div>
     </div>
@@ -391,6 +540,8 @@ function buildEmailHTML(game, yesterdayStr, briefText, scorecard) {
       }
     </div>
 ${scorecardHTML}
+${recapsHTML}
+${tonightHTML}
     <!-- Open FIELD CTA -->
     <div style="text-align:center;margin:24px 0">
       <a href="https://jubilant-bassoon.jeffunglesbee.workers.dev"
@@ -495,7 +646,44 @@ async function main() {
   const scorecard = computeScorecardCI(top.game);
   console.log(`🏷️  Scorecard: drama ${scorecard.dramaGrade} · close ${scorecard.closenessGrade} · plot ${scorecard.plotGrade}`);
 
-  const html = buildEmailHTML(top.game, yesterdayStr, briefText, scorecard);
+  // Level 3: Quick recaps — next 2-3 drama-scoring games (excluding the top).
+  const quickRecaps = scored.slice(1, 4)
+    .filter(s => s.drama >= 2)
+    .map(s => s.game);
+  if (quickRecaps.length) {
+    console.log(`📰 Quick recaps: ${quickRecaps.length} game(s)`);
+  }
+
+  // Level 3: Tonight slate (only when TODAY_DATE is set by the workflow).
+  const tonightSlate = process.env.TODAY_DATE
+    ? await fetchTonightSlate(process.env.TODAY_DATE)
+    : [];
+  console.log(`🌙 Tonight slate: ${tonightSlate.length} game(s)`);
+
+  // Level 4a: Odds story per slate row (silent null on failure).
+  const tonightOdds = {};
+  for (const g of tonightSlate) {
+    const line = await fetchOddsStory(g.espnEventId);
+    if (line) {
+      tonightOdds[g.espnEventId] = line;
+      console.log(`📈 Odds story (${g.away} @ ${g.home}): ${line}`);
+    }
+  }
+
+  // Level 4b: Staleness warning — MLB top game only.
+  let stalenessWarning = null;
+  const topSport = (top.game.sport || '').toLowerCase();
+  if (briefText && (topSport === 'baseball' || topSport === 'mlb')) {
+    stalenessWarning = await checkLineupsChanged(top.game.espnEventId, briefText);
+    if (stalenessWarning) {
+      console.log(`⚠ Staleness warning: ${stalenessWarning}`);
+    }
+  }
+
+  const html = buildEmailHTML(
+    top.game, yesterdayStr, briefText, scorecard,
+    quickRecaps, tonightSlate, tonightOdds, stalenessWarning,
+  );
 
   try {
     const result = await sendEmail({ to: FIELD_EMAIL, subject, html });

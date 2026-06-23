@@ -75,6 +75,10 @@ jobs:
           echo "yesterday=$YESTERDAY" >> $GITHUB_OUTPUT
           # ESPN API date format: YYYYMMDD
           echo "espn_date=$(echo $YESTERDAY | tr -d '-')" >> $GITHUB_OUTPUT
+          # Today (ET) for "What to Watch Tonight" upcoming-games fetch
+          TODAY=$(date -u -d '4 hours ago' +%Y-%m-%d)
+          echo "today=$TODAY" >> $GITHUB_OUTPUT
+          echo "espn_today=$(echo $TODAY | tr -d '-')" >> $GITHUB_OUTPUT
 
       # ── Fetch NBA results ────────────────────────────────────────────────
       - name: Fetch NBA results
@@ -190,22 +194,60 @@ jobs:
           " 2>/dev/null || echo '[]')
           echo "games=$GAMES" >> $GITHUB_OUTPUT
 
+      # ── Fetch WC results ─────────────────────────────────────────────────
+      - name: Fetch WC results
+        id: wc
+        run: |
+          DATE="${{ steps.dates.outputs.espn_date }}"
+          DATA=$(curl -sf --max-time 15 \
+            "https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard?dates=$DATE" \
+            || echo '{}')
+          GAMES=$(echo "$DATA" | node -e "
+            const d = JSON.parse(require('fs').readFileSync('/dev/stdin','utf8'));
+            const games = (d.events || []).map(ev => {
+              const comp = ev.competitions?.[0];
+              if (!comp) return null;
+              const status = comp.status?.type?.name || '';
+              if (!status.includes('Final') && !status.includes('STATUS_FINAL')) return null;
+              const teams = comp.competitors || [];
+              const home = teams.find(t=>t.homeAway==='home');
+              const away = teams.find(t=>t.homeAway==='away');
+              return {
+                sport: 'soccer', league: 'WC 2026',
+                espnEventId: ev.id,
+                home: home?.team?.displayName || '?',
+                away: away?.team?.displayName || '?',
+                homeScore: parseInt(home?.score||0),
+                awayScore: parseInt(away?.score||0),
+                isOT: comp.status?.period > 2,
+                isPlayoff: ev.season?.slug?.includes('knockout') || false,
+                isNational: true,
+              };
+            }).filter(Boolean);
+            console.log(JSON.stringify(games));
+          " 2>/dev/null || echo '[]')
+          echo "games=$GAMES" >> $GITHUB_OUTPUT
+          echo "WC games found: $(echo $GAMES | node -e "const g=JSON.parse(require('fs').readFileSync('/dev/stdin','utf8')); console.log(g.length)" 2>/dev/null || echo '?')"
+
       # ── Combine and send ─────────────────────────────────────────────────
       - name: Evaluate drama and send email
         env:
           RESEND_API_KEY:   ${{ secrets.RESEND_API_KEY }}
           FIELD_EMAIL:      jeffunglesbee@gmail.com
           YESTERDAY_DATE:   ${{ steps.dates.outputs.yesterday }}
+          TODAY_DATE:       ${{ steps.dates.outputs.today }}
           NBA_GAMES:        ${{ steps.nba.outputs.games }}
           NHL_GAMES:        ${{ steps.nhl.outputs.games }}
           MLB_GAMES:        ${{ steps.mlb.outputs.games }}
+          WC_GAMES:         ${{ steps.wc.outputs.games }}
         run: |
           # Merge all sports into one JSON array, pass to email script
           node -e "
             const nba = JSON.parse(process.env.NBA_GAMES || '[]');
             const nhl = JSON.parse(process.env.NHL_GAMES || '[]');
             const mlb = JSON.parse(process.env.MLB_GAMES || '[]');
-            const all = [...nba, ...nhl, ...mlb];
+            const wc  = JSON.parse(process.env.WC_GAMES  || '[]');
+            const all = [...nba, ...nhl, ...mlb, ...wc];
             process.env.ESPN_GAMES_JSON = JSON.stringify(all);
             console.log('Combined games:', all.length);
             require('./scripts/night-owl-email.js');
