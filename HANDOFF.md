@@ -3,87 +3,87 @@
 
 ---
 
+## FIELD — Current State
+
+**CLIENT HEAD: 8661cf7 · 2026-06-23 · via CC**
+**RELAY HEAD: 49599fa · 2026-06-23 · deployed**
+Smoke: 726/0 · SW_VERSION: 2026-06-23b
+CF account: b57e9af57ab46c52ca9215804e689c29
+
+---
+
+## WHAT SHIPPED THIS SESSION
+
+### Governance (STANDARDS.md + all docs)
+- Rule 86 — Crash recovery protocol (CRASH-RECOVERY-A)
+- Rule 87 — CC-CMDs must be self-completing (SELF-COMPLETE-A)
+- Rule 88 — Correct route, fast execution (CORRECT-FAST-A)
+- All three in: STANDARDS.md, CLAUDE.md (both repos), CONTRIBUTING.md, CONTRACTS.md (both repos), docs/CLAUDE-CODE-PROMPT-RULES.md, GOVERNANCE.json, memory
+
+### Quality infrastructure
+- /quality/report alert recalibration (dc01e44): ENRICHMENT_TYPES exclusion, per-type thresholds (game_brief:130, night_owl:140, full-prose:170), golf excluded. alert_count 10→4.
+- /backfill/brief-scores endpoint (f883975): retroactive scoring of 452 NULL rows
+- /archive/brief POST (5c0b63e): runQualityChain wired, now scores night_owl/mlb_game/wc_matchup on arrival
+
+### Context assembler (field-relay-nba)
+- buildESPNSummaryContext added (e314c60): ESPN leaders for MLB/NBA/WNBA/NHL/WC via /espn-summary/*
+- espn_event_id schema change (49599fa): ALTER TABLE on both archive tables, /archive/game INSERT persists it, backfill SELECTs include it, venue added to backfill prompts
+- buildSoccerXGContext + buildESPNSummaryContext WC fix (CC-CMD 292b117): PENDING CC EXECUTION
+
+### Client (jubilant-bassoon)
+- Night Owl ESPN leaders cold-cache fallback (5cf0fea): ESPN Summary fetch in fetchNightOwlFromClaude when in-memory caches cold
+
+### Quality results (verified live)
+- game_brief MLB: 159.6 → 167.8/245 (+8.2)
+- game_brief WC: 136.7 → 151.0/245 (+14.3)
+- game_brief WNBA: 139.3 → 152.3/245 (+13.0)
+- game_brief golf: 91.4 → 106.4/245 (+15.0)
+- alert_count: 10 → 4
+
+---
+
+## PENDING CC-CMDS (unexecuted)
+
+### field-relay-nba
+1. `docs/CC-CMD-2026-06-23-wc-context-fix.md` (292b117) — Fix buildSoccerXGContext + buildESPNSummaryContext WC sport normalization. One-liner: `git pull. Read docs/CC-CMD-2026-06-23-wc-context-fix.md. Execute all tasks.`
+
+### jubilant-bassoon
+2. Night Owl and WC game_brief quality will improve overnight as new ESPN leaders accumulate. Check /quality/report tomorrow.
+
+---
+
+## OPEN ITEMS
+
+### FIELD P0
+- API-Sports Football Pro renewal — JUNE 29 DEADLINE (6 days). JQ quality improving — renewal decision gate.
+
+### FIELD P3
+- wentToOT hardcoded false in newspaper
+- KV editorial keys not consulted by newspaper
+- mlb_pitch_arsenals entries:0 (Savant scraper, heals Monday)
+- golf/WNBA no assembleContext builder (low urgency — no active season)
+
+### FIELD P4
+- NFL SPORT_TO_V2 — Sep 9
+- Phase 8b quality_alert threshold tuning — after Jun 29
+- /backfill/game-briefs self-terminating loop (force=true doesn't converge — date-walking workaround)
+
+---
+
 ## STAT — Current State
 
 **HEAD: 2d18fff · 2026-06-23 · deployed**
-Smoke: 213/213 · total: 572 companies · totalMonitored: 628 · batchWatchlist: 56
+Smoke: 213/213 · total: 572 companies · totalMonitored: 628
 
-**Completed this session:**
-- ✅ wd5 unblock — 88 companies back in scan cycle
-- ✅ fetchWorkday warn logging
-- ✅ Viewport auto-trigger wired (workflow_run)
-- ✅ STAT_PAT synced to Worker
-- ✅ SmartRecruiters adapter built (src/adapters.js)
-- ✅ hiringcafe explicit no-op case added to dispatcher
-- ✅ Registry +6: Wilshire Group (GH), UMMS (SR), 4 consulting firms (hiringcafe fallback)
-- ✅ Registry -23: logistics (12) + e-commerce (7) + insurtech (4) marked inactive
-- ✅ Tegria confirmed in registry at config.js:339 as Greenhouse
-- ✅ /companies dump completed — full runtime platform map obtained
-
-**Source file layout (CRITICAL for future CC prompts):**
-- Adapters: `src/adapters.js`
-- Dispatcher: `src/platform-do.js`
-- Registry/config: `src/config.js`
-- NOT src/index.js — compiled bundle only
+**Open:**
+- iOS Safari iPad Air T1 simulator boot failure (viewport workflow)
+- hiringcafe signature fix
+- 4 consulting firms ATS probe (Stoltenberg, Incisive, Evergreen, Anura)
+- UMMS SR spot-verify
+- Apply agent dry-run
+- Issue #7 partial
 
 ---
-
-## PRIORITY 1 — iOS Safari iPad Air (T1) simulator boot failure
-
-**Status:** Persistent — failed both attempts at "Boot simulator" step.
-iPhone SE (P1) and iPhone 16 (P2) both passing. Android Chrome: passing.
-
-**Root cause:** iPad Air 11" (M2) simulator not booting on GitHub macOS runner.
-Not a code regression — assertions were never reached. Prior manual run passed.
-
-**Fix options:**
-1. Replace iPad Air 11" M2 with iPad Air 11" M3 or iPad Pro in the matrix
-2. Add `xcrun simctl list devices` step before boot to confirm availability
-3. Add retry logic to the boot step
-
-**This is a viewport workflow fix in `.github/workflows/ios-safari-audit.yml`.**
-
----
-
-## PRIORITY 2 — Four open deferrals from registry audit CC
-
-1. **hiringcafe signature** — `fetchHiringCafe(keyword, environment)` not `(company, env)`.
-   Explicit no-op case ships semantically equivalent behavior. True wiring is a follow-up.
-
-2. **4 consulting firms tagged hiringcafe** — sandbox can't reach external HTTP for ATS
-   probes. Fix: dispatch `workday-simple-probe.yml` or similar to identify their real ATS
-   from CI runner (unrestricted network). Firms: Stoltenberg, Incisive, Evergreen, Anura Connect.
-
-3. **UMMS spot-verify** — SmartRecruiters adapter built but DO inactive. Needs SR probe
-   route or bootstrap call. Try: `GET /platform/smartrecruiters/status`
-
-4. **255 silent figure was wrong** — runtime shows 572 total with 38 ATS types,
-   many with inactive DOs. Biggest inactive buckets to build adapters for (next session):
-   - icims2: 44 companies (largest gap)
-   - oraclecloud: 26 companies
-   - taleo_careersection: 20 companies
-   - ultipro: 16 companies (UKG Pro)
-   - inforhcm: 16 companies (may be naming variant of infor_hcm — check)
-   - avature: 7 companies
-   - dayforce: 6 companies (Ceridian)
-   - adp: 6 companies
-   - paycom: 5 companies
-
----
-
-## PRIORITY 3 — Remaining S14 Items
-
-- [ ] Apply agent dry-run
-- [ ] Issue #7 partial
-
----
-
-## FIELD — Current State (unchanged)
-CLIENT HEAD: ac83449 · 2026-06-23 · via CC
-RELAY HEAD: c3494a5 · 2026-06-23 · deployed
-Smoke: 725/0 · SW_VERSION: 2026-06-23a
-CRITICAL: API-Sports Football Pro renewal JUNE 29
-CF account: b57e9af57ab46c52ca9215804e689c29
 
 ## Drive Specs
 1. Archive Intelligence — 1fMZFs2WOi_hPcX5hUB1UJf5mWvItTLB6EwZ881LcC3s
