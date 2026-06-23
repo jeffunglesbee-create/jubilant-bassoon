@@ -99,11 +99,14 @@ jobs:
               const isOT = comp.status?.period > 4;
               const notes = (comp.notes||[]).map(n=>n.headline||'').join(' ').toLowerCase();
               const isPlayoff = notes.includes('playoff') || notes.includes('series') || ev.season?.type === 3;
+              const broadcasts = (comp.broadcasts||[]).flatMap(b => (b.names||[])).join(' ').toUpperCase();
+              const isNational = /\b(ABC|NBC|ESPN|TNT|FOX|CBS)\b/.test(broadcasts);
               return {
                 sport: 'NBA', league: 'NBA Playoffs',
+                espnEventId: ev.id,
                 home: home?.team?.displayName || '?',
                 away: away?.team?.displayName || '?',
-                homeScore, awayScore, isOT, isPlayoff,
+                homeScore, awayScore, isOT, isPlayoff, isNational,
                 seriesRecord: (comp.series?.summary||''),
               };
             }).filter(Boolean);
@@ -137,11 +140,14 @@ jobs:
               const isShootout = desc.toLowerCase().includes('shootout') || desc.toLowerCase().includes('so');
               const notes = (comp.notes||[]).map(n=>n.headline||'').join(' ').toLowerCase();
               const isPlayoff = notes.includes('playoff') || notes.includes('series') || ev.season?.type === 3;
+              const broadcasts = (comp.broadcasts||[]).flatMap(b => (b.names||[])).join(' ').toUpperCase();
+              const isNational = /\b(ABC|NBC|ESPN|TNT|FOX|CBS)\b/.test(broadcasts);
               return {
                 sport: 'NHL', league: 'NHL Playoffs',
+                espnEventId: ev.id,
                 home: home?.team?.displayName || '?',
                 away: away?.team?.displayName || '?',
-                homeScore, awayScore, isOT, isShootout, isPlayoff,
+                homeScore, awayScore, isOT, isShootout, isPlayoff, isNational,
                 seriesRecord: (comp.series?.summary||''),
               };
             }).filter(Boolean);
@@ -170,11 +176,14 @@ jobs:
               const homeScore = parseInt(home?.score||0);
               const awayScore = parseInt(away?.score||0);
               const isOT = comp.status?.period > 9; // extra innings
+              const broadcasts = (comp.broadcasts||[]).flatMap(b => (b.names||[])).join(' ').toUpperCase();
+              const isNational = /\b(ABC|NBC|ESPN|TNT|FOX|CBS|FS1)\b/.test(broadcasts);
               return {
                 sport: 'baseball', league: 'MLB',
+                espnEventId: ev.id,
                 home: home?.team?.shortDisplayName || home?.team?.displayName || '?',
                 away: away?.team?.shortDisplayName || away?.team?.displayName || '?',
-                homeScore, awayScore, isOT,
+                homeScore, awayScore, isOT, isNational,
               };
             }).filter(Boolean);
             console.log(JSON.stringify(games));
