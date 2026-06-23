@@ -13,7 +13,8 @@
       "Drive doc updates",
       "session lifecycle",
       "staleness check",
-      "archive policy"
+      "archive policy",
+      "CC-CMD self-completion (Rule 87 SELF-COMPLETE-A)"
     ],
     "principle": "Move governance metadata from Tier B to Tier A. Content stays in Drive. Metadata belongs in repo."
   },
@@ -108,5 +109,25 @@
       "staleness_days": 30,
       "last_verified": "2026-05-23"
     }
-  ]
+  ],
+  "cc_cmd_rules": {
+    "rule": "Rule 87 \u2014 SELF-COMPLETE-A",
+    "locations": [
+      "STANDARDS.md",
+      "CLAUDE.md (jubilant-bassoon)",
+      "CLAUDE.md (field-relay-nba)",
+      "CONTRIBUTING.md",
+      "CONTRACTS.md (both repos)",
+      "docs/CLAUDE-CODE-PROMPT-RULES.md",
+      "GOVERNANCE.json (this file)",
+      "memory item 26"
+    ],
+    "requirements": [
+      "Probe block reads every constant/URL/function from HEAD before writing code",
+      "Explicit done condition defined as verifiable probe output",
+      "Backfill/verification/execution runs inside the CC session \u2014 never deferred",
+      "No carry-forwards without a second CC-CMD written to handle them",
+      "Outbox manifest is the last task"
+    ]
+  }
 }
