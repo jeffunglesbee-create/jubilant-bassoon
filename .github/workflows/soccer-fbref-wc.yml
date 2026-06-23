@@ -7,20 +7,11 @@ jobs:
   update:
     runs-on: ubuntu-latest
     steps:
-      - name: Trigger relay FBref fetch
-        run: |
-          RESULT=$(curl -s -f -X POST \
-            -H "X-FIELD-Relay: field-relay-cron-2026" \
-            -H "Content-Type: application/json" \
-            -d '{"leagues":["wc2026","epl","mls","laliga","seriea","bundesliga","ligue1"]}' \
-            https://field-relay-nba.jeffunglesbee.workers.dev/soccer/fbref/fetch)
-          echo "$RESULT"
-          echo "$RESULT" | python3 -c "
-          import json,sys
-          d=json.load(sys.stdin)
-          failed=[r for r in d.get('results',[]) if not r.get('ok')]
-          if failed:
-              print('FAILED leagues:', [r['league'] for r in failed])
-              exit(1)
-          print('All leagues OK')
-          "
+      - uses: actions/checkout@v4
+
+      - name: Fetch FBref stats via residential proxy
+        env:
+          CLOUDFLARE_ACCOUNT_ID: b57e9af57ab46c52ca9215804e689c29
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          DATAIMPULSE_PROXY: "http://${{ secrets.DATAIMPULSE_USER }}:${{ secrets.DATAIMPULSE_PASS }}@gw.dataimpulse.com:823"
+        run: python3 scripts/soccer-fbref-wc.py
