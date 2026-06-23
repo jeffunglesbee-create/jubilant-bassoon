@@ -20986,7 +20986,11 @@ function renderNewspaper(bundle) {
   el.innerHTML = `<div class="np-inner">${parts.join('')}${freshness ? `<div class="np-freshness">Updated at ${freshness} ET</div>` : ''}</div><div class="np-divider">TODAY'S SCHEDULE</div>`;
 
   const main = document.getElementById('main');
-  if (main) main.prepend(el);
+  if (main) {
+    main.prepend(el);
+    // Ensure newspaper is visible — scroll to top so user sees it first, not the schedule
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  }
 
   // FIELD's Pick badge — apply now (cards may already be painted) and
   // re-apply on every renderAll via the post-render hook.
@@ -21294,7 +21298,12 @@ async function fetchSchedule(){
   setTimeout(nhlPlayoffLeadersPrefetch, 3000); // Phase B subtask 9: NHL playoff leaders feed (15-min TTL)
   setTimeout(nbaPlayoffLeadersPrefetch, 3100); // ADR-003: NBA playoff leaders via /nba-stats/leagueLeaders (15-min TTL)
   setTimeout(espnInjuriesPrefetch, 3200);      // ESPN injuries (NHL + NBA league-wide; 30-min TTL)
-  maybeShowSetup();
+  // Defer first-visit modal if newspaper rendered — user sees content first, modal follows
+  if (document.getElementById('field-newspaper')) {
+    setTimeout(maybeShowSetup, 2500);
+  } else {
+    maybeShowSetup();
+  }
   renderLastNight();
   if(Object.keys(espnScores).length) { injectDramaBadges(); detectAndRenderDoubleFeature(); renderOneToWatch(); renderMobileLiveBar(); renderWatchWindow(); renderAmbientPanel(); }
   // Media rendered lazily by IntersectionObserver
