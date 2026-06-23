@@ -9,14 +9,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Playwright
+      - name: Install Playwright + stealth
         run: |
-          pip install playwright
+          pip install playwright playwright-stealth
           playwright install chromium --with-deps
+          sudo apt-get install -y xvfb
 
-      - name: Fetch FBref stats via Playwright + residential proxy
+      - name: Fetch FBref stats via stealth browser + proxy
         env:
           CLOUDFLARE_ACCOUNT_ID: b57e9af57ab46c52ca9215804e689c29
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           DATAIMPULSE_PROXY: "http://${{ secrets.DATAIMPULSE_USER }}:${{ secrets.DATAIMPULSE_PASS }}@gw.dataimpulse.com:823"
-        run: python3 scripts/soccer-fbref-wc.py
+        run: xvfb-run --auto-servernum python3 scripts/soccer-fbref-wc.py
