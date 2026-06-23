@@ -9,7 +9,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Fetch FBref stats via residential proxy
+      - name: Install Playwright
+        run: |
+          pip install playwright
+          playwright install chromium --with-deps
+
+      - name: Fetch FBref stats via Playwright + residential proxy
         env:
           CLOUDFLARE_ACCOUNT_ID: b57e9af57ab46c52ca9215804e689c29
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
