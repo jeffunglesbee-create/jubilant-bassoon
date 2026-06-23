@@ -21298,8 +21298,11 @@ async function fetchSchedule(){
   setTimeout(nhlPlayoffLeadersPrefetch, 3000); // Phase B subtask 9: NHL playoff leaders feed (15-min TTL)
   setTimeout(nbaPlayoffLeadersPrefetch, 3100); // ADR-003: NBA playoff leaders via /nba-stats/leagueLeaders (15-min TTL)
   setTimeout(espnInjuriesPrefetch, 3200);      // ESPN injuries (NHL + NBA league-wide; 30-min TTL)
-  // Defer first-visit modal if newspaper rendered — user sees content first, modal follows
-  if (document.getElementById('field-newspaper')) {
+  // Defer first-visit modal so newspaper always wins the bootNewspaper() race.
+  // bootNewspaper() and fetchSchedule() run in parallel — newspaper may not exist
+  // in DOM yet when renderAll fires. Always defer 2.5s on first visit so user
+  // sees newspaper content before the modal appears.
+  if (!localStorage.getItem('field_setup_done')) {
     setTimeout(maybeShowSetup, 2500);
   } else {
     maybeShowSetup();
