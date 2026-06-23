@@ -5,42 +5,29 @@
 
 ## STAT — Current State
 
-**HEAD: 1b509c5 · 2026-06-23 · deployed**
+**HEAD: ca40c47 · 2026-06-23 · deployed**
 Smoke: 213/213 · Active DOs: 115 · Watched: 566 companies
 
 **Completed this session:**
 - ✅ wd5 unblock — 88 companies back in scan cycle
 - ✅ `wd5-recovery-watch.yml` + `wd5-playwright-poll.yml` deleted
 - ✅ DataImpulse: no runtime usage confirmed
-- ✅ `fetchWorkday()` warn logging — per-tenant non-200s now visible in CF logs
-- ⏭ Viewport auto-trigger — deferred (see Priority 1)
+- ✅ `fetchWorkday()` warn logging — per-tenant non-200s visible in CF logs
+- ✅ Viewport auto-trigger — `workflow_run: ["Deploy STAT worker"]` wired to both
+  `ios-safari-audit.yml` + `android-chrome-audit.yml` with job-level success guard.
+  smoke.js assertions relaxed from exact-match to presence-check.
+
+**Chain note:** First auto-trigger fires on next `src/**` push to main. Manual
+`workflow_dispatch` on either viewport workflow proves end-to-end now if desired.
 
 ---
 
-## PRIORITY 1 — Viewport auto-trigger follow-up CC
+## PRIORITY 1 — Remaining S14 Items
 
-**Blocker:** `smoke.js:152` and `:170` assert `workflow_dispatch only`. Adding
-`workflow_run` triggers the assertion. Fix: update both to presence checks, then add trigger.
-
-**CC one-liner:**
-```
-git pull. Read CLAUDE.md. Read outbox/cc-stat-viewport-warn-2026-06-23.md. Execute all tasks in CC-CMD-2026-06-23-stat-viewport-trigger.md.
-```
-
-**What it does:**
-1. Updates two smoke assertions from exact-match to presence-check
-2. Adds `workflow_run` trigger + job condition to both viewport workflows
-3. Runs smoke (expect 213/213)
-4. Pushes — CI deploy auto-triggers viewport tests
-
----
-
-## PRIORITY 2 — Remaining S14 Items
-
-- [ ] Viewport auto-trigger (Priority 1 above)
 - [ ] Apply agent dry-run
 - [ ] STAT_PAT Worker secret (verify still set in CF Worker secrets)
 - [ ] Issue #7 partial
+- [ ] Optional: manual `workflow_dispatch` on ios-safari-audit.yml to prove viewport chain
 
 ---
 
