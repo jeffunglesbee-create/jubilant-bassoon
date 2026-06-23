@@ -165,9 +165,9 @@ function becauseSentence(dimension, grade, game) {
   if (dimension === 'closeness') {
     if (game.isOT) {
       const _sp = (game.sport || '').toLowerCase();
-      if (_sp.includes('baseball')) return 'Went to extra innings — competitive throughout.';
-      if (_sp.includes('soccer'))   return 'Went to extra time — closely contested.';
-      return 'Tied at the buzzer — competitive throughout.';
+      if (_sp.includes('baseball')) return 'Tied through nine — competitive throughout.';
+      if (_sp.includes('soccer'))   return 'Tied through ninety — contested throughout.';
+      return 'Tied through regulation — competitive throughout.';
     }
     return `Final margin of ${diff} — closely contested from start.`;
   }
