@@ -10,28 +10,34 @@ Smoke: 213/213 · Active DOs: 115 · Watched: 566 companies
 
 **Completed this session:**
 - ✅ wd5 unblock — `WORKDAY_CF_BLOCKED_CLUSTERS` guard removed from `fetchWorkday()`
-- ✅ `wd5-recovery-watch.yml` deleted (existed)
-- ✅ `wd5-playwright-poll.yml` deleted (existed)
-- ✅ DataImpulse audit — no runtime usage in worker (was only in deleted workflows)
-- ✅ Deploy succeeded — `CLOUDFLARE_API_TOKEN` was healthy (prior 3s failure cause unclear)
-- ✅ Verification: adobe.wd5 = HTTP 200 at all 6 timing variants; jhbmc.wd5 = 422 (tenant maintenance, self-recovers); imh.wd108 = 200 + 4 jobs
-- ~88 companies (85 wd5 + 3 wd3) now re-enter normal scan cycle on next platform-DO tick
+- ✅ `wd5-recovery-watch.yml` deleted
+- ✅ `wd5-playwright-poll.yml` deleted
+- ✅ DataImpulse: no runtime usage in worker
+- ✅ Deploy succeeded — token healthy
+- ✅ 88 companies (85 wd5 + 3 wd3) re-enter normal scan cycle
 
 ---
 
-## PRIORITY 1 — Cross-engine viewport tests
+## PRIORITY 1 — CC prompt ready to run
 
-**Action:** `workflow_dispatch` both viewport test workflows in the STAT repo:
-- iOS Safari viewport test
-- Android Chrome viewport test
+**CC one-liner:**
+```
+git pull. Read CLAUDE.md. Execute all tasks in CC-CMD-2026-06-23-stat-viewport-warn.md.
+```
 
-**Expected:** 10/10 (were 8/10 against stale June 13 build; c622d79 has all S14 UI changes)
+**What it does:**
+1. Discovers deploy workflow name + viewport workflow filenames
+2. Adds `workflow_run` trigger to both viewport workflows (fires on successful deploy to main)
+3. Adds `console.warn` on `!res.ok` in `fetchWorkday()` — makes per-tenant 422s visible in CF logs
+4. Runs tests (no manual deploy — CI handles on push)
+
+**After CC runs:** next deploy will auto-trigger both viewport tests. Expect 10/10.
 
 ---
 
 ## PRIORITY 2 — Remaining S14 Items
 
-- [ ] Cross-engine viewport tests (see Priority 1)
+- [ ] Viewport auto-trigger + warn logging CC (Priority 1 above)
 - [ ] Apply agent dry-run
 - [ ] STAT_PAT Worker secret (verify still set in CF Worker secrets)
 - [ ] Issue #7 partial
