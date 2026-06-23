@@ -3,75 +3,37 @@
 
 ---
 
-## PRIORITY 1 — STAT wd5 Unblock CC (READY TO RUN)
+## STAT — Current State
 
-**Status: CC prompt written. Run in Claude Code against the STAT repo.**
+**HEAD: c622d79 · 2026-06-23 · deployed**
+Smoke: 213/213 · Active DOs: 115 · Watched: 566 companies
 
-**Finding confirmed this session (bash probe from CF datacenter IP):**
-- Adobe wd5 → 200 OK, 725 jobs ✅
-- NVIDIA wd5 → 200 OK, 2000 jobs ✅
-- JHHS wd5 → 422 (tenant maintenance, not cluster block)
-- Mayo wd5 → 422 (tenant maintenance)
-- wd3 (teleperformance, atos) → 422 (likely maintenance)
-
-**Root cause of S26/S27 "IP block" conclusion:** Those sessions hit during a wd5
-cluster-wide maintenance outage. The 422s were maintenance responses, not WAF blocks.
-
-**Impact:** Current deployed worker silently skips ~85 wd5 + 3 wd3 companies (88 total).
-Includes JHHS, Mayo, Kaiser, UHG, Cigna, Humana, Duke, CommonSpirit, Vanderbilt, etc.
-
-**CC one-liner:**
-```
-git pull. Read CLAUDE.md. Execute all tasks in CC-CMD-2026-06-23-stat-wd5-unblock.md.
-```
-
-The CC doc is at `docs/CC-CMD-2026-06-23-stat-wd5-unblock.md` in jubilant-bassoon
-(already committed). Copy to STAT repo if needed, or paste directly into CC.
-
-**What CC will do:**
-1. Remove `WORKDAY_CF_BLOCKED_CLUSTERS` set + guard block from `fetchWorkday()`
-2. Delete `wd5-recovery-watch.yml` and `wd5-playwright-poll.yml` if present
-3. Audit DataImpulse usage (report only, don't remove without review)
-4. Run tests → deploy → verify via `/cxs-get-probe?tenant=adobe&...`
-
-**Note:** CC will also encounter Priority 2 (deploy token likely expired).
-The CC prompt includes token-expiry detection and stop-and-report instructions.
+**Completed this session:**
+- ✅ wd5 unblock — `WORKDAY_CF_BLOCKED_CLUSTERS` guard removed from `fetchWorkday()`
+- ✅ `wd5-recovery-watch.yml` deleted (existed)
+- ✅ `wd5-playwright-poll.yml` deleted (existed)
+- ✅ DataImpulse audit — no runtime usage in worker (was only in deleted workflows)
+- ✅ Deploy succeeded — `CLOUDFLARE_API_TOKEN` was healthy (prior 3s failure cause unclear)
+- ✅ Verification: adobe.wd5 = HTTP 200 at all 6 timing variants; jhbmc.wd5 = 422 (tenant maintenance, self-recovers); imh.wd108 = 200 + 4 jobs
+- ~88 companies (85 wd5 + 3 wd3) now re-enter normal scan cycle on next platform-DO tick
 
 ---
 
-## PRIORITY 2 — STAT Deploy Broken (expired CF API token)
+## PRIORITY 1 — Cross-engine viewport tests
 
-**Last successful deploy:** June 13 (feat: auto-apply dispatch)
-**Two failed deploys:** June 16
+**Action:** `workflow_dispatch` both viewport test workflows in the STAT repo:
+- iOS Safari viewport test
+- Android Chrome viewport test
 
-**Failure chain:**
-- Run 27635810458: `npm ci` failed — lockfile missing webdriverio. Fixed (9d62e6d).
-- Run 27637524998: Install ✅, Smoke ✅, Wrangler dry-run ✅, **Deploy ❌ in 3 seconds**
-
-**Root cause:** 3-second wrangler deploy = API-level rejection = expired `CLOUDFLARE_API_TOKEN`.
-
-**Fix:**
-1. CF dashboard → My Profile → API Tokens → verify STAT token active
-2. If expired: create new "Edit Cloudflare Workers" token scoped to stat-job-watcher
-3. Update GitHub secret `CLOUDFLARE_API_TOKEN` in STAT repo → Settings → Secrets
-4. Re-run workflow (ID 27637524998) or push any change to trigger CI
-
-**Once deploy lands:**
-- Run viewport tests (iOS Safari + Android Chrome workflow_dispatch)
-- Expect 10/10 (were 8/10 against stale June 13 build)
-
-**CI logs now accessible:** `results-receiver.actions.githubusercontent.com` is allowlisted.
-Pull run 27637524998 logs to confirm token error if needed.
+**Expected:** 10/10 (were 8/10 against stale June 13 build; c622d79 has all S14 UI changes)
 
 ---
 
-## STAT S14 Open Items
+## PRIORITY 2 — Remaining S14 Items
 
-- [ ] wd5 unblock CC (Priority 1)
-- [ ] Deploy token fix + redeploy (Priority 2)
-- [ ] Cross-engine viewport test re-run after deploy
+- [ ] Cross-engine viewport tests (see Priority 1)
 - [ ] Apply agent dry-run
-- [ ] STAT_PAT Worker secret (verify still set)
+- [ ] STAT_PAT Worker secret (verify still set in CF Worker secrets)
 - [ ] Issue #7 partial
 
 ---
