@@ -43,13 +43,19 @@ def fetch_html(url, label="", pause=4):
     time.sleep(pause)
     proxy_url = os.environ.get("DATAIMPULSE_PROXY", "")
     if proxy_url:
-        handler = urllib.request.ProxyHandler({"http": proxy_url, "https": proxy_url})
-        opener = urllib.request.build_opener(handler)
+        import subprocess
+        cmd = ["curl", "-s", "-f", "--max-time", "30", "--proxy", proxy_url]
+        for k, v in HEADERS.items():
+            cmd += ["-H", f"{k}: {v}"]
+        cmd.append(url)
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
+        if result.returncode != 0:
+            raise Exception(f"curl exit {result.returncode}: {result.stderr.strip()[:200]}")
+        return result.stdout
     else:
-        opener = urllib.request.build_opener()
-    req = urllib.request.Request(url, headers=HEADERS)
-    with opener.open(req, timeout=30) as r:
-        return r.read().decode("utf-8", errors="replace")
+        req = urllib.request.Request(url, headers=HEADERS)
+        with urllib.request.urlopen(req, timeout=30) as r:
+            return r.read().decode("utf-8", errors="replace")
 
 def parse_squad_table(html, table_id):
     pattern = rf'<table[^>]+id="{re.escape(table_id)}"[^>]*>(.*?)</table>'
