@@ -1,35 +1,26 @@
-name: Soccer FBref WC Stats Update
-
+name: Soccer FBref Stats Update
 on:
   schedule:
-    # Every 3 days during WC group stage (June 11 – July 5)
-    # UTC 08:00 — morning after European/S.American evening games
     - cron: '0 8 */3 * *'
-  workflow_dispatch:   # Manual trigger any time
-
-permissions:
-  contents: write
-
+  workflow_dispatch:
 jobs:
   update:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Parse FBref WC squad stats and upload to R2
-        env:
-          CLOUDFLARE_ACCOUNT_ID: b57e9af57ab46c52ca9215804e689c29
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-        run: python3 scripts/soccer-fbref-wc.py
-
-      - name: Commit outbox fallback
+      - name: Trigger relay FBref fetch
         run: |
-          git config user.email "soccer-fbref@field"
-          git config user.name "Soccer-FBref-Bot"
-          git add outbox/soccer/
-          git diff --cached --quiet && echo "No changes to commit" && exit 0
-          git commit -m "Soccer FBref WC update $(date -u +%Y-%m-%d) [skip ci]"
-          for i in 1 2 3; do
-            git pull --rebase --autostash origin main && git push origin main && break
-            sleep $((i * 5))
-          done
+          RESULT=$(curl -s -f -X POST \
+            -H "X-FIELD-Relay: field-relay-cron-2026" \
+            -H "Content-Type: application/json" \
+            -d '{"leagues":["wc2026","epl","mls","laliga","seriea","bundesliga","ligue1"]}' \
+            https://field-relay-nba.jeffunglesbee.workers.dev/soccer/fbref/fetch)
+          echo "$RESULT"
+          echo "$RESULT" | python3 -c "
+          import json,sys
+          d=json.load(sys.stdin)
+          failed=[r for r in d.get('results',[]) if not r.get('ok')]
+          if failed:
+              print('FAILED leagues:', [r['league'] for r in failed])
+              exit(1)
+          print('All leagues OK')
+          "
