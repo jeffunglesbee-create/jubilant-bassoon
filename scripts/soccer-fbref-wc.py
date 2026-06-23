@@ -6,7 +6,8 @@ Fetches squad-level xG/pressing/passing/GK analytics from FBref for:
   - FIFA World Cup 2026
   - EPL 2025-26, La Liga, Bundesliga, Serie A, Ligue 1
 
-GitHub Actions fetches on ubuntu-latest (FBref blocks CF Worker IPs).
+GitHub Actions fetches via DataImpulse residential proxy (FBref blocks
+datacenter IPs from both GH Actions and CF Workers since June 2026).
 Output written to R2 field-relay-data/soccer/fbref/{league}.json via CF API.
 
 Spec: Sport-Specific × Workers Plus SOCCER-A (extended June 10 2026)
@@ -92,8 +93,14 @@ def fetch_html(url, label="", pause=4):
     if label:
         print(f"    {label}...")
     time.sleep(pause)
+    proxy_url = os.environ.get("DATAIMPULSE_PROXY", "")
+    if proxy_url:
+        handler = urllib.request.ProxyHandler({"http": proxy_url, "https": proxy_url})
+        opener = urllib.request.build_opener(handler)
+    else:
+        opener = urllib.request.build_opener()
     req = urllib.request.Request(url, headers=HEADERS)
-    with urllib.request.urlopen(req, timeout=30) as r:
+    with opener.open(req, timeout=30) as r:
         return r.read().decode("utf-8", errors="replace")
 
 def parse_squad_table(html, table_id):
@@ -259,7 +266,7 @@ for league in LEAGUES:
         "updated": datetime.now(timezone.utc).isoformat(),
         "competition": name,
         "season": league["season"],
-        "source": "FBref squad stats via GitHub Actions (not CF-blocked)",
+        "source": "FBref squad stats via GH Actions + residential proxy",
         "schema": {
             "xGFor": "Expected goals from attack",
             "xGAgainst": "Expected goals conceded",
