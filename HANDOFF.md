@@ -1,4 +1,4 @@
-# FIELD HANDOFF — June 22 2026 (updated ~9:10pm ET)
+# FIELD HANDOFF — June 23 2026 (updated ~1:35am ET)
 
 ## State
 - CLIENT HEAD: 961da82 · 2026-06-22 · via chat
@@ -13,46 +13,46 @@ deploy_match false on relay is expected.
 ## Session Start Protocol (Rule 85)
 Call session_health MCP tool FIRST. Do NOT use read_handoff as primary state.
 
-## What Shipped This Session (June 22 full day)
+## What Shipped (June 22 full day + June 23 early)
 
 ### Browser Rendering MCP ✅ (relay)
-- browser_quick + BrowserDO working. Verification URLs: /?tab=journal|groups
-
 ### v4 Voice + Quality Chain ✅
-- FIELD_VOICE_REGISTER at 7 call sites, queue consumer runQualityChain
-
-### Backfill Re-gen ✅
-- 60/60 game_briefs scored, avg 159, zero NULLs
-
-### Stale Data Sentinel ✅ (relay 73a4a52)
-- GET /health/sources — 13 sources, 8 healthy, 4 stale, 1 skipped
-
-### MLS Return Prep ✅
-- 263 MLS games seeded to D1 (July 22 – Oct 31)
-- soccer/fbref/mls.json in R2 green
-- POST /fixtures/fetch relay endpoint (permanent, bypasses CF Bot Fight Mode)
-
-### Odds Story Materializer ✅ (relay 2350242)
-- GET /odds-story/preview?date=YYYY-MM-DD live, 4/5 games with movement
+### Backfill Re-gen ✅ (60/60 scored, avg 159)
+### Stale Data Sentinel ✅ (relay 73a4a52, GET /health/sources)
+### MLS Return Prep ✅ (263 games D1, R2 green, POST /fixtures/fetch)
+### Odds Story Materializer ✅ (relay 2350242, /odds-story/preview)
 
 ### Smoke / A190 fix ✅ (5e172ba)
-- sw.js SW_VERSION synced to 2026-06-22a — A190 resolved
+- sw.js SW_VERSION synced to 2026-06-22a
+- Root cause: 913ebfb pushed via Contents API, bypassed deploy gate SW sync
 
 ### Newspaper UX fixes ✅ (6b452fa + da10743)
-- Fix 1: scroll-to-top after renderNewspaper (window.scrollTo instant)
-- Fix 2: first-visit modal deferred 2500ms unconditionally when field_setup_done not set
-  (race fix: bootNewspaper + fetchSchedule run in parallel; defer is unconditional)
-- ?wpt bypasses modal for returning visitors; headless browser has no localStorage
+- scroll-to-top after renderNewspaper (window.scrollTo instant)
+- first-visit modal deferred 2500ms unconditionally (race fix)
+  Race: bootNewspaper + fetchSchedule run in parallel; conditional check
+  on #field-newspaper was unreliable. Fix: check localStorage directly.
 
 ### Desk CLS fix ✅ (3050b30 + 961da82)
-- renderFieldDesk was called 6× per page load (journalism pipeline async paths)
-- Each call wiped grid.innerHTML → section collapsed 60px → re-expanded → CLS spike
-- Root cause in screenshot: CLS 8.3285 total, max window 5.5056, 14 events
-- Fix 1: scheduleFieldDesk(delay) debounce wrapper — coalesces all calls into one
-- Fix 2: skip-if-same guard — grid.innerHTML only written when content changes
-- All 6 setTimeout(renderFieldDesk, N) call sites replaced with scheduleFieldDesk(N)
-- Smoke assertions A254/A257 updated to match new function name
-- Expected CLS reduction: ~8.3 → ~0.4–0.5 (one unavoidable initial population)
+- CLS 8.3285 total, max window 5.5056 (screenshot confirmed)
+- Root cause: renderFieldDesk called 6× per load, each wiped grid.innerHTML
+- Fix 1: scheduleFieldDesk() debounce — coalesces all calls into one render
+- Fix 2: skip-if-same guard — no DOM write if content unchanged
+- A254/A257 smoke assertions updated for scheduleFieldDesk rename
+- Expected CLS: ~8.3 → ~0.4–0.5
+
+### assembleContext root cause identified (June 23 session)
+- ALL soccer contexts empty: WC, EPL, MLS, all leagues
+- Root cause: FBref blocks GitHub Actions runner IPs with HTTP 403
+- Every soccer-fbref-wc.yml run since June 10 uploaded teams:{} to R2
+- Health sentinel shows "ok" (file exists + fresh) but 0 teams — bug
+- CC-CMD written: field-relay-nba docs/CC-CMD-2026-06-23-soccer-fbref-fetch.md (7425738)
+- Fix: POST /soccer/fbref/fetch relay endpoint (CF IPs not blocked by FBref)
+  Same pattern as /fixtures/fetch. Workflows replaced with curl to relay.
+
+## Drive Docs (this session)
+- 1n29dNf7_689ztxo4EzZtlS_FBER6O8khzij-c8GjKlE — Smoke analysis + newspaper UX
+- 1U4KnG5zV6O-AYRZEqjGYQWH6JuS_EAroEmC_UEcgWCc — Desk CLS fix
+- 1lOqcuv0fJM5zWegk89tyXXQeoPTEAq2P4SDVS1nUSUA — assembleContext root cause + CC-CMD
 
 ## Probe Endpoints (all live)
 - /analytics/newspaper/{date}
@@ -71,18 +71,22 @@ Call session_health MCP tool FIRST. Do NOT use read_handoff as primary state.
 - /fixtures/fetch (POST)          ✅ Server-side schedule seed
 
 ## Carry-Forwards
-1. assembleContext sport-label mismatch — golf/WNBA still get empty context
-2. Phase 8b quality_alert threshold tuning — re-baseline after June 29
-3. wentToOT hardcoded false in newspaper
-4. KV editorial keys not consulted by newspaper
-5. nba_clutch + nhl_series R2 stale (seasons over — heals Oct/Nov)
-6. API-Sports Football Pro renewal — JUNE 29 DEADLINE
-7. NFL SPORT_TO_V2 — September 9 deadline
-8. CLS residual: initial desk populate (~0.5) still unavoidable — consider content-visibility:auto
-9. soccer_fbref_mls weekly cron first run July 20 (not yet confirmed)
+1. EXECUTE CC-CMD: field-relay-nba docs/CC-CMD-2026-06-23-soccer-fbref-fetch.md
+   One-liner: "git pull. Read docs/CC-CMD-2026-06-23-soccer-fbref-fetch.md. Execute all tasks."
+   Then verify: /journalism/context-probe WC contextLength > 0
+2. assembleContext golf/WNBA — separate from FBref fix. No builder in CONTEXT_SOURCES.
+3. Stale Data Sentinel improvement: check team count > 0 for soccer sources
+4. Phase 8b quality_alert threshold tuning — re-baseline after June 29
+5. wentToOT hardcoded false in newspaper
+6. KV editorial keys not consulted by newspaper
+7. nba_clutch + nhl_series R2 stale (seasons over — heals Oct/Nov)
+8. API-Sports Football Pro renewal — JUNE 29 DEADLINE
+9. NFL SPORT_TO_V2 — September 9 deadline
+10. CLS residual: initial desk populate (~0.5) — consider content-visibility:auto
+11. soccer_fbref_mls weekly cron first run July 20 (not yet confirmed)
 
 ## Priority (next session)
-1. API-Sports renewal decision (June 29 DEADLINE)
-2. assembleContext golf/WNBA empty context
-3. wentToOT newspaper carry-forward
-4. Phase 8b threshold tuning
+1. EXECUTE CC-CMD soccer-fbref-fetch (Priority 1 from last session — CC executes the fix)
+2. Verify context-probe WC contextLength > 0 after CC ships
+3. API-Sports renewal decision (June 29 DEADLINE)
+4. wentToOT newspaper carry-forward
