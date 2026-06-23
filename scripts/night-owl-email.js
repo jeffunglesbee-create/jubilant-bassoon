@@ -71,9 +71,16 @@ const PLAYOFF_CHIP = `<span style="background:#1e3a5f;color:#0d9488;font-size:.6
   + `font-weight:700;padding:.15rem .45rem;border-radius:4px;`
   + `text-transform:uppercase;letter-spacing:.06em;margin-left:.4rem">PLAYOFF</span>`;
 
-const OT_CHIP = `<span style="background:#2d2000;color:#f59e0b;font-size:.65em;`
-  + `font-weight:700;padding:.15rem .45rem;border-radius:4px;`
-  + `text-transform:uppercase;letter-spacing:.06em;margin-left:.4rem">OT</span>`;
+function buildOTChip(sport, isShootout) {
+  const sp = (sport || '').toLowerCase();
+  const label = isShootout        ? 'SO'
+              : sp.includes('baseball') ? 'XI'
+              : sp.includes('soccer')   ? 'ET'
+              : 'OT';
+  return `<span style="background:#2d2000;color:#f59e0b;font-size:.65em;`
+    + `font-weight:700;padding:.15rem .45rem;border-radius:4px;`
+    + `text-transform:uppercase;letter-spacing:.06em;margin-left:.4rem">${label}</span>`;
+}
 
 // ── Level 5: Scorecard (CI adaptation — no localStorage) ────────────────────
 function scoreToGrade(score) {
@@ -147,12 +154,21 @@ function becauseSentence(dimension, grade, game) {
   if (!['A+','A','A-','B+'].includes(grade)) return '';
   const diff = Math.abs((game.homeScore || 0) - (game.awayScore || 0));
   if (dimension === 'drama') {
-    if (game.isOT || game.isShootout) return 'Went to overtime — maximum late-game tension.';
+    if (game.isOT || game.isShootout) {
+      const _sp = (game.sport || '').toLowerCase();
+      if (_sp.includes('baseball')) return 'Went to extra innings — maximum late-game tension.';
+      return 'Went to overtime — maximum late-game tension.';
+    }
     if (diff <= 2) return `Final margin of ${diff === 1 ? 'one' : 'two'} — decided in the closing moments.`;
     return 'High-drama finish by heuristic score.';
   }
   if (dimension === 'closeness') {
-    if (game.isOT) return 'Tied at the buzzer — competitive throughout.';
+    if (game.isOT) {
+      const _sp = (game.sport || '').toLowerCase();
+      if (_sp.includes('baseball')) return 'Went to extra innings — competitive throughout.';
+      if (_sp.includes('soccer'))   return 'Went to extra time — closely contested.';
+      return 'Tied at the buzzer — competitive throughout.';
+    }
     return `Final margin of ${diff} — closely contested from start.`;
   }
   if (dimension === 'plot') {
@@ -442,7 +458,7 @@ function buildEmailHTML(game, yesterdayStr, briefText, scorecard,
 
   const leagueChip   = buildLeagueChip(game);
   const playoffChip  = isPlayoff               ? PLAYOFF_CHIP : '';
-  const otChip       = (isOT || isShootout)    ? OT_CHIP      : '';
+  const otChip       = (isOT || isShootout)    ? buildOTChip(sport, isShootout) : '';
   const seriesStr    = seriesRecord ? `<br><span style="color:#94a3b8;font-size:.85em">${seriesRecord}</span>` : '';
 
   const headlineProse = briefText
