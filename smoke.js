@@ -1156,11 +1156,11 @@ assert('A253 — Squiggle engine restored: all functions defined (dropped in bet
   html.includes('async function startSquiggleEngine'),
   'All 7 Squiggle engine symbols must be defined — were dropped in betting removal causing 5 ReferenceErrors/load');
 
-assert('A254 — FIELD Desk: renderFieldDesk called after Claude fallback J3 path',
+assert('A254 — FIELD Desk: scheduleFieldDesk called after Claude fallback J3 path',
   html.includes('sessionStorage.setItem(cacheKey,claudeText)') &&
-  html.includes('setTimeout(renderFieldDesk, 300)') &&
-  html.includes('initJournalismQueue(sections);setTimeout(renderFieldDesk,500)'),
-  'renderFieldDesk must be called after J3 Claude fallback stores brief — was never triggered in non-compound path');
+  html.includes('scheduleFieldDesk(300)') &&
+  html.includes('initJournalismQueue(sections);scheduleFieldDesk(500)'),
+  'scheduleFieldDesk must be called after J3 Claude fallback stores brief — renderFieldDesk now debounced via scheduleFieldDesk');
 
 assert('A255 — AFL engine complete: AFL_TEAM_ABBR + fetchAFLStandings + renderAFLStandingsWidget restored',
   html.includes('const AFL_TEAM_ABBR=') &&
@@ -1174,12 +1174,12 @@ assert('A256 — injectSquiggleTips is a hoisted function declaration (not var e
   !html.includes('var injectSquiggleTips='),
   'injectSquiggleTips must be function declaration — var expression not hoisted, causes ReferenceError when called at line 6711');
 
-assert('A257 — renderFieldDesk triggered in all 4 journalism paths (relay KV, compound, J3 fallback, cached reload)',
+assert('A257 — scheduleFieldDesk triggered in all 4 journalism paths (relay KV, compound, J3 fallback, cached reload)',
   html.includes('Relay path: Desk was never triggered here') &&
   html.includes('Cached-brief path: Desk was never triggered on reload') &&
-  html.includes('setTimeout(renderFieldDesk, 200)') &&
-  html.includes('setTimeout(renderFieldDesk, 300)'),
-  'renderFieldDesk must fire in every journalism resolution path — was missing from relay KV and cached-brief paths');
+  html.includes('scheduleFieldDesk(200)') &&
+  html.includes('scheduleFieldDesk(300)'),
+  'scheduleFieldDesk must fire in every journalism resolution path — renderFieldDesk now debounced via scheduleFieldDesk');
 
 assert('A258 — Layer 2c: checkLeadSentence detects and retries "The [Team]..." leads',
   html.includes('async function checkLeadSentence') &&
