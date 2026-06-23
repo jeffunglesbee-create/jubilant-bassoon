@@ -22371,7 +22371,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-23b';
+  const SW_VERSION = '2026-06-23c';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -38251,7 +38251,7 @@ async function renderNightOwlRecap(){
     }
     // Fallback: full-context fetchNightOwlFromClaude (live box scores, linescore, etc.)
     if (!claudeText) claudeText = await fetchNightOwlFromClaude(topGame);
-    if(claudeText){const textEl=el.querySelector('.night-owl-text');if(textEl){textEl.textContent=trimToCompleteSentence(claudeText);textEl.classList.remove('pending');textEl.classList.add('loaded');}sessionStorage.setItem(cacheKey,claudeText);try{archiveBrief('night_owl',(topGame&&topGame._sport)||null,topGame&&(topGame._id||topGame.id)||null,claudeText,null);}catch(_){}}
+    if(claudeText){const textEl=el.querySelector('.night-owl-text');if(textEl){textEl.textContent=trimToCompleteSentence(claudeText);textEl.classList.remove('pending');textEl.classList.add('loaded');}sessionStorage.setItem(cacheKey,claudeText);try{archiveBrief('night_owl',(topGame&&topGame._sport)||null,topGame&&(topGame.sourceId||topGame._id||topGame.id)||null,claudeText,null);}catch(_){}}
     else{const textEl=el.querySelector('.night-owl-text');if(textEl){textEl.classList.remove('pending');textEl.classList.add('loaded');}}
   }
 
