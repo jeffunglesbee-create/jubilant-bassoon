@@ -20,6 +20,8 @@ jobs:
       skip_visual: ${{ steps.committype.outputs.skip_visual }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: main  # A190 fix: see latest HEAD so deploy-gate SW_VERSION sync is visible
 
       - name: Detect commit type (TYPE A skip gate)
         id: committype
