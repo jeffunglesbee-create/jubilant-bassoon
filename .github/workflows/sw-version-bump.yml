@@ -16,21 +16,27 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Bump SW_VERSION in index.html
+      - name: Bump SW_VERSION in index.html and sw.js
         run: |
           TODAY=$(TZ=America/New_York date +%Y-%m-%d)
           echo "Target: ${TODAY}a"
+
+          # index.html: const SW_VERSION = '2026-06-22a';
           sed -i "s/const SW_VERSION = '[0-9-]*[a-z]'/const SW_VERSION = '${TODAY}a'/" index.html
-          grep "const SW_VERSION = " index.html | head -1
+          echo "index.html: $(grep "const SW_VERSION = " index.html | head -1 | xargs)"
+
+          # sw.js: const SW_VERSION  = '2026-06-22a';  (note double space)
+          sed -i "s/const SW_VERSION  = '[0-9-]*[a-z]'/const SW_VERSION  = '${TODAY}a'/" sw.js
+          echo "sw.js:      $(grep "const SW_VERSION" sw.js | head -1 | xargs)"
 
       - name: Commit and push
         run: |
           git config user.email "sw-bump@field"
           git config user.name "SW-Bump"
-          git diff --quiet index.html && echo "Already current - no change" && exit 0
+          git diff --quiet index.html sw.js && echo "Already current" && exit 0
           TODAY=$(TZ=America/New_York date +%Y-%m-%d)
-          git add index.html
-          git commit -m "chore: SW_VERSION ${TODAY}a (Rule 23)"
+          git add index.html sw.js
+          git commit -m "chore: SW_VERSION ${TODAY}a — index.html + sw.js (Rule 23)"
           for i in 1 2 3; do
             git pull --rebase --autostash origin main && git push origin main && break
             sleep $((i * 5))
