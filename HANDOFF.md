@@ -10,32 +10,54 @@ Smoke: 213/213 · Active DOs: 115 · Watched: 566 companies
 
 **Completed this session:**
 - ✅ wd5 unblock — 88 companies back in scan cycle
-- ✅ `wd5-recovery-watch.yml` + `wd5-playwright-poll.yml` deleted
-- ✅ DataImpulse: no runtime usage confirmed
-- ✅ `fetchWorkday()` warn logging — per-tenant non-200s visible in CF logs
-- ✅ Viewport auto-trigger — `workflow_run: ["Deploy STAT worker"]` wired to both
-  `ios-safari-audit.yml` + `android-chrome-audit.yml` with job-level success guard.
-  smoke.js assertions relaxed from exact-match to presence-check.
-
-**Chain note:** First auto-trigger fires on next `src/**` push to main. Manual
-`workflow_dispatch` on either viewport workflow proves end-to-end now if desired.
+- ✅ fetchWorkday warn logging
+- ✅ Viewport auto-trigger wired (workflow_run on Deploy STAT worker)
+- ✅ STAT_PAT synced to Worker
+- ✅ Viewport tests 10/10 (iOS Safari + Android Chrome, manual dispatch confirmed)
 
 ---
 
-## PRIORITY 1 — Remaining S14 Items
+## PRIORITY 1 — Registry audit + SmartRecruiters adapter CC
 
+**CC one-liner:**
+```
+git pull. Read CLAUDE.md. Execute all tasks in CC-CMD-2026-06-23-stat-registry-audit.md.
+```
+
+**Gaps confirmed pre-CC:**
+- `hiringcafe` switch case missing (1 company returns [] instead of routing to fetchHcPage)
+- ~255 companies hit `default: return []` — never polled
+- Nordic Global + Tegria: keyword-only (fit scoring), NOT company objects
+- Missing from registry: The Wilshire Group (Greenhouse), UMMS (SmartRecruiters),
+  Stoltenberg, Incisive, Evergreen Healthcare Partners, Anura Connect
+- SmartRecruiters: public API (`api.smartrecruiters.com/v1/companies/{token}/postings`),
+  no auth, 1856 US companies, UMMS confirmed. Sandbox-blocked but works from CF Worker egress.
+
+**What CC will do:**
+1. Fix hiringcafe switch case
+2. Build SmartRecruiters adapter + add to switch
+3. Add The Wilshire Group (Greenhouse/thewilshiregroup)
+4. Add UMMS (SmartRecruiters/UniversityOfMarylandMedicalSystem)
+5. Probe and add Nordic Global + Tegria
+6. Probe and add Stoltenberg, Incisive, Evergreen, Anura Connect
+7. Sample-audit 20 of the 255 silent companies
+8. Run tests → deploy → spot-verify UMMS
+9. Write outbox manifest
+
+---
+
+## PRIORITY 2 — Remaining S14 Items
+
+- [ ] Registry audit + SR adapter (Priority 1)
 - [ ] Apply agent dry-run
-- [ ] STAT_PAT Worker secret (verify still set in CF Worker secrets)
 - [ ] Issue #7 partial
-- [ ] Optional: manual `workflow_dispatch` on ios-safari-audit.yml to prove viewport chain
 
 ---
 
 ## FIELD — Current State (unchanged)
-CLIENT HEAD: ac83449 · 2026-06-23 · via CC (fetchKeyPlayer L6 email attribution)
+CLIENT HEAD: ac83449 · 2026-06-23 · via CC
 RELAY HEAD: c3494a5 · 2026-06-23 · deployed
 Smoke: 725/0 · SW_VERSION: 2026-06-23a
-A190 structurally enforced (b151efb)
 CRITICAL: API-Sports Football Pro renewal JUNE 29
 CF account: b57e9af57ab46c52ca9215804e689c29
 
