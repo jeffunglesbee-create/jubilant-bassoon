@@ -4430,3 +4430,45 @@ condition was not defined upfront or tasks were intentionally punted.
 - Rule 86: Crash recovery — unclosed sessions are the downstream cost of
   incomplete CC-CMDs
 - Rule 77: Failure is failure — "scored: 0 but endpoint exists" is a failure
+
+## Rule 88 — Correct route, fast execution (CORRECT-FAST-A)
+
+The correct approach and fast execution are not in tension. When facing a
+choice between a shortcut and the right approach, take the right approach
+and execute it at pace.
+
+**"Fast" means:** minimize the time to correct completion — not the time to
+first attempt. A correct approach that takes five minutes is faster than a
+shortcut that requires three iterations to undo.
+
+**The test:** Before executing, ask "Is this the right way to do this, or
+the quick way?" If the answer is "quick way," stop and find the right way.
+Then move as fast as possible.
+
+**Corollary:** If the correct approach isn't obvious, that's a signal to
+probe more — not to guess faster. Uncertainty is not permission to shortcut.
+
+### Case study: ESPN Summary CC-CMD (June 23 2026)
+
+The spec stated `regular_season_games.source_id` was a stored D1 column,
+citing L5147 where `source_id: gm.eventId` appears in a POST body. The fast
+route: write the spec from that signal and ship. The correct route: run
+`PRAGMA table_info(regular_season_games)` first. The probe takes 30 seconds.
+The shortcut produced a failed deploy, a D1 error, a hotfix commit, and a
+builder that deployed but produced no context.
+
+The correct route with the PRAGMA probe would have taken 35 seconds total
+and shipped first-time correct. The shortcut cost 45 minutes of iteration.
+The "fast" route was slower.
+
+### How this interacts with Rule 68 (PROBE-FIRST)
+
+Rule 68 requires probing before building. Rule 88 is the meta-principle:
+correctness of approach is always non-negotiable, and the expectation is
+that correct approaches are executed fast. These are not competing values.
+
+### Cross-reference
+
+- Rule 68: Probe before building — the mechanism that makes this possible
+- Rule 87: CC-CMDs must be self-completing — correct first-time is required
+- Rule 77: Failure is failure — a fast wrong answer is still wrong
