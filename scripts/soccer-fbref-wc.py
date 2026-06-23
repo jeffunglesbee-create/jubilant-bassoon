@@ -96,14 +96,38 @@ def fetch_html(url, label="", pause=4):
     proxy_url = os.environ.get("DATAIMPULSE_PROXY", "")
     if proxy_url:
         import subprocess
-        cmd = ["curl", "-s", "-f", "--max-time", "30", "--proxy", proxy_url]
+        # Diagnostic: capture status, headers, and body separately
+        cmd = [
+            "curl", "-s", "--max-time", "30", "--proxy", proxy_url,
+            "-w", "\n__HTTP_CODE__:%{http_code}\n__REDIRECT_URL__:%{redirect_url}\n",
+            "-D", "/dev/stderr",  # headers to stderr
+        ]
         for k, v in HEADERS.items():
             cmd += ["-H", f"{k}: {v}"]
         cmd.append(url)
         result = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
+        body = result.stdout
+        headers_raw = result.stderr
+        # Parse HTTP code from body tail
+        http_code = 0
+        for line in body.split("\n"):
+            if line.startswith("__HTTP_CODE__:"):
+                http_code = int(line.split(":")[1])
+                body = body[:body.index("__HTTP_CODE__")]
+                break
+        if http_code >= 400:
+            # Print diagnostic info
+            print(f"      ┌ HTTP {http_code} from {url[:80]}")
+            # Show response headers (first 500 chars)
+            for hl in headers_raw.strip().split("\n")[:10]:
+                print(f"      │ {hl.strip()}")
+            # Show body snippet
+            snippet = body[:300].replace("\n", " ").strip()
+            print(f"      └ Body: {snippet[:200]}")
+            raise Exception(f"HTTP {http_code}")
         if result.returncode != 0:
             raise Exception(f"curl exit {result.returncode}: {result.stderr.strip()[:200]}")
-        return result.stdout
+        return body
     else:
         req = urllib.request.Request(url, headers=HEADERS)
         with urllib.request.urlopen(req, timeout=30) as r:
