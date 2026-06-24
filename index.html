@@ -12143,11 +12143,25 @@ function _fetchWCTournBriefForSchedule() {
     fetch(relay + '/wc/brief/tournament', { cache: 'no-store' }).then(r => r.ok ? r.json() : null).catch(() => null),
     fetch(relay + '/wc/bracket', { cache: 'no-store' }).then(r => r.ok ? r.json() : null).catch(() => null),
     fetch(relay + '/wc/traps', { cache: 'no-store' }).then(r => r.ok ? r.json() : null).catch(() => null),
-  ]).then(([briefData, bracketData, trapsResult]) => {
+    (typeof fetchWCStandings === 'function' ? fetchWCStandings() : Promise.resolve(null)).catch(() => null),
+    (typeof fetchWCResults === 'function' ? fetchWCResults() : Promise.resolve(null)).catch(() => null),
+  ]).then(([briefData, bracketData, trapsResult, standings, matchResults]) => {
     // Cache path traps for game card TRAP chip
     if (trapsResult?.bracketTraps?.length) {
       _wcPathTraps = trapsResult.bracketTraps;
     }
+    // Pre-populate scenarios cache so night owl advancement context fires
+    // without requiring the user to have opened the WC Groups tab.
+    try {
+      if (typeof _wcComputeAllScenarios === 'function' && standings
+          && Object.keys(standings).length > 0) {
+        window._wcScenariosCache = _wcComputeAllScenarios(
+          standings, matchResults || [], null,
+          window._wcOddsProbsCache || null,
+          null
+        );
+      }
+    } catch (_) { /* non-blocking */ }
     // Find the tournament brief card in the DOM
     const cards = document.querySelectorAll('.smt-card, .desk-card');
     for (const card of cards) {
@@ -22403,7 +22417,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-24a';
+  const SW_VERSION = '2026-06-24b';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -31283,6 +31297,7 @@ function renderWCGroups(standings, matchResults, oddsProbs, liveGames) {
   if (!el) return;
   const groups = 'ABCDEFGHIJKL'.split('');
   const scenarios = _wcComputeAllScenarios(standings, matchResults, null, oddsProbs, liveGames);
+  window._wcScenariosCache = scenarios;
   const groupInputs = (scenarios && scenarios.groupInputs) || [];
   el.innerHTML = groups.map(g => {
     const gi = groupInputs.find(x => x.groupId === g) || {};
@@ -36401,12 +36416,22 @@ async function fetchNightOwlFromClaude(topGame){
             const _ptAway = _cachedScenarios.perGroup[_grp].perTeam?.[topGame.away];
             const _advLines = [];
             if (_ptHome) {
-              if (_ptHome.alwaysQualify) _advLines.push(`${topGame.home}: QUALIFIED for Round of 32`);
-              else if (_ptHome.alwaysEliminated) _advLines.push(`${topGame.home}: ELIMINATED from tournament`);
+              const _pAdvHome = _wcGetPAdv?.(_cachedScenarios, _grp, topGame.home) ?? null;
+              if (_ptHome.alwaysQualify || (_pAdvHome !== null && _pAdvHome > 0.98))
+                _advLines.push(`${topGame.home}: QUALIFIED for Round of 32`);
+              else if (_ptHome.alwaysEliminated || (_pAdvHome !== null && _pAdvHome < 0.02))
+                _advLines.push(`${topGame.home}: ELIMINATED from tournament`);
+              else if (_pAdvHome !== null)
+                _advLines.push(`${topGame.home}: P(advance) ${Math.round(_pAdvHome * 100)}%`);
             }
             if (_ptAway) {
-              if (_ptAway.alwaysQualify) _advLines.push(`${topGame.away}: QUALIFIED for Round of 32`);
-              else if (_ptAway.alwaysEliminated) _advLines.push(`${topGame.away}: ELIMINATED from tournament`);
+              const _pAdvAway = _wcGetPAdv?.(_cachedScenarios, _grp, topGame.away) ?? null;
+              if (_ptAway.alwaysQualify || (_pAdvAway !== null && _pAdvAway > 0.98))
+                _advLines.push(`${topGame.away}: QUALIFIED for Round of 32`);
+              else if (_ptAway.alwaysEliminated || (_pAdvAway !== null && _pAdvAway < 0.02))
+                _advLines.push(`${topGame.away}: ELIMINATED from tournament`);
+              else if (_pAdvAway !== null)
+                _advLines.push(`${topGame.away}: P(advance) ${Math.round(_pAdvAway * 100)}%`);
             }
             if (_advLines.length) {
               _owlStatCtx += (_owlStatCtx ? '\n' : '') + '  [WC ADVANCEMENT] ' + _advLines.join(' · ');

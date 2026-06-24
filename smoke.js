@@ -5366,5 +5366,18 @@ assert('A722 — JQ game context: Night Owl passes topGame to relay',
   html.includes("briefType: 'night-owl'") && html.includes('game: topGame'),
   'Night Owl generateJournalismViaRelay call must include game: topGame');
 
+// ── WC MD3 client: scenarios cache pre-pop + advancement threshold ──
+assert('A723 — WC MD3: _wcScenariosCache pre-populated outside renderWCGroups',
+  (html.match(/window\._wcScenariosCache\s*=/g) || []).length >= 2,
+  'window._wcScenariosCache must be assigned in at least two places (schedule pre-pop + renderWCGroups)');
+
+assert('A724 — WC MD3: night owl uses _pAdv threshold instead of pure alwaysEliminated',
+  html.includes('_pAdvHome < 0.02') && html.includes('_pAdvAway < 0.02'),
+  'night owl advancement block must use _pAdv < 0.02 threshold');
+
+assert('A725 — WC MD3: night owl emits P(advance) % label for mid-range teams',
+  html.includes('P(advance)'),
+  'night owl must emit a P(advance) label for non-binary cases');
+
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);
