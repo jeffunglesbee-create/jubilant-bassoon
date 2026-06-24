@@ -1,46 +1,56 @@
 # FIELD HANDOFF
-## Session: 2026-06-24 (full day) · via chat
+## Session: 2026-06-24 (full day) · via chat + CC
 
 ---
 
 ## FIELD — Current State
 
-**CLIENT HEAD: 05f5721 · 2026-06-24 · auto-overlay**
-**RELAY HEAD: 85c3f8f · 2026-06-24 · deployed**
-Smoke: 733/0 · SW_VERSION: 2026-06-23f
+**CLIENT HEAD: 14d08c7 · 2026-06-24 · night owl WC drama**
+**RELAY HEAD: 8caf865 · 2026-06-24 · deployed (5b2ea9e)**
+Smoke: 745/0 · SW_VERSION: 2026-06-24e
 CF account: b57e9af57ab46c52ca9215804e689c29
 D1 field-archive: cc49101c-0569-4d41-8e7a-be139cde4f26
+D1 wc2026: f26669de-e772-4b56-a6d1-f8fdea08a4d4
 
 ---
 
-## WHAT SHIPPED THIS SESSION
+## MD3 STACK — ALL SHIPPED (before 19:00 UTC)
 
-### Relay
-- **Phase 8b cleanup** (5793fa4): stale quality_alert writer deleted; session_health quality.degraded → 240/7-day threshold
-- **Bracket Snapshots Phase 1** (ffe6911): bracket_snapshots D1 table, POST /archive/bracket-snapshot, GET /archive/bracket-replay, BracketDO Step 10 hook, 48-team backfill
-- **Bracket Traps + Debrief Phase 2+3** (54f668f + 9340960): detectEliminationTraps, /wc/elimination-traps, findBracketImpact, advancementState, bracket_impact + path_traps CONTEXT_SOURCES, team name matcher hotfix
-- **Bracket Impact Wiring Phase 4** (ddf6527): findBracketImpact + advancementState exported, imported in index.js, bracketTriggeredBy in WC queue send, [BRACKET IMPACT] appended in consumer. **Side fix: writeWCResult had undeclared home/away/gameId — WC brief pipeline broken since June 13, now fixed.**
-- **JQ game context relay** (d73d7fd): /journalism/generate extracts game + matchupNote from body, series preview L4325 wired with {home:higherSeed, away:lowerSeed}
-- **Layer 2d-score** (7236e4d): score contradiction check between 2d and 2e; requires opts.game.homeScore/awayScore; valid set covers both orientations + both dash types
-- **Layer 2d-score hotfix** (85c3f8f): leading-zero filter excludes date patterns (06-24) from contradiction scan; caught in verification before production harm
-
-### Client (jubilant-bassoon)
-- **Bracket client** (94a203b): advancementState() helper, R32 named state badges, _wcPathTraps cache, TRAP chip on game cards, /wc/elimination-traps in renderWCTournamentBracket
-- **JQ game context client** (1467559): generateJournalismViaRelay forwards opts.game + opts.matchupNote; Night Owl (topGame), MLB Brief, Stakes Brief, J2 Series all wired
-- **Travelers Championship golf card** (e0d6a56): comment block updated, golfGames entry with matchupNote — Scheffler/Clark/Bradley, Jun 25-28 TPC River Highlands, SW 2026-06-23f
-
-### Infrastructure
-- APPS_SCRIPT_URL + APPS_SCRIPT_SECRET set on field-relay-nba repo
-- 14+ relay outbox manifests backfilled to Drive
+| Item | Commit |
+|------|--------|
+| Group standings in WC brief prompt | bc2dc9c (relay) |
+| POST /wc/matchup/cache + PRE-GAME CONTEXT injection | 39b6815 (relay) |
+| _wcScenariosCache pre-population on schedule load | 1a9a079 (client) |
+| alwaysEliminated → P(advance) threshold (<2%/>98%) | 1a9a079 (client) |
+| Client POSTs wc26Raw matchupNotes to relay KV | a39f869 (client) |
+| Permutations: draw GF fallback + Poisson fair play (Option B) | aecb909 (client) |
+| Night owl WC drama sport family + preGameScore topGame fallback | 6f6bada (client) |
+| assembleContext soccer→wc26 via league signal | 5b2ea9e (relay) |
 
 ---
 
-## QUALITY STATE (as of session end)
+## QUALITY CHAIN — CURRENT STATE
 
-- Layer chain: 1 → 2a → 2b → 2c → 2d → **2d-score** → 2e → 2f → 2g → 2h → 3b
-- 300-point scale, 240 excellence threshold, session_health aligned
-- Night Owl averaging 150-170 (old briefs in 7-day window; new briefs with game context will score higher as window rolls)
-- WC game-brief pipeline: first brief generated (Colombia 1-0 Congo DR, 258/300); hallucinated "2-3 result" caught as root cause for 2d-score
+Layer chain: 1 → 2a → 2b → 2c → 2d → 2d-score → 2e → 2f → 2g → 2h → 3b
+300-point scale, 240 excellence threshold.
+Layer 2d-score: score contradiction check + leading-zero date filter.
+JQ game context wired: Night Owl, MLB Brief, Stakes Brief, J2 Series, series preview.
+
+---
+
+## CARRY-FORWARD AUDIT (verified this session)
+
+CLOSED — confirmed not open:
+- Soccer context (FBref): ✅ ESPN xG live since June 23 (buildSoccerXGContext)
+- Stale Data Sentinel: ✅ /health/sources live since June 22
+- Odds Story Materializer: ✅ /odds-story/preview live June 22
+- Smoke regression 724→663: ✅ currently 745/0, net positive
+- assembleContext sport-label mismatch: ✅ CLOSED this session (5b2ea9e)
+
+GENUINE OPEN ITEMS:
+- **wentToOT hardcoded false** (L9107) — needs D1 schema ALTER TABLE + GameDO write + backfill. No CC-CMD yet.
+- **relay deploy.yml no path filter** — outbox commits trigger relay redeploy; [skip ci] required; blocks auto drive-upload. Fix: add path filter excluding docs/ outbox/. jubilant-bassoon already path-filtered.
+- field_smoke.js L26546 pre-existing lint — low priority
 
 ---
 
@@ -53,26 +63,31 @@ D1 field-archive: cc49101c-0569-4d41-8e7a-be139cde4f26
 | 3: findBracketImpact + CONTEXT_SOURCES | ✓ |
 | 4: bracketTriggeredBy wired to WC queue | ✓ |
 | 4b: named states + TRAP chip + elim display (client) | ✓ |
-| Debrief buildBracketImpact (client renderer) | Pending first live result with pre/post snapshots |
+| Debrief buildBracketImpact (client renderer) | Pending first live [BRACKET IMPACT] confirmation |
 
 ---
 
 ## OPEN ITEMS
 
 ### FIELD P0
-- API-Sports Football Pro renewal — JUNE 29 (5 days)
+- API-Sports Football Pro renewal — **JUNE 29 (5 days)**
 
-### FIELD carry-forwards
-- Quality degraded: 14 brief types below 240 (7-day window clearing as new briefs land)
-- Soccer context empty (FBref block) — CC-CMD at docs/CC-CMD-2026-06-23-soccer-fbref-fetch.md
-- relay [skip ci] + drive-upload: manifests need manual dispatch
-- Unexecuted CC-CMDs: Stale Data Sentinel + Odds Story Materializer
-- Smoke regression 724→663: root cause unknown
-- wentToOT hardcoded false in newspaper
+### FIELD genuine carry-forwards
+- wentToOT hardcoded false (L9107) — D1 schema + GameDO + backfill
+- relay deploy.yml path filter — fixes auto drive-upload (one workflow change)
 
 ### FIELD P4
-- NFL SPORT_TO_V2 — Sep 9
+- NFL SPORT_TO_V2 — September 9
 - Client buildBracketImpact Debrief renderer (after first live result)
+
+---
+
+## TONIGHT WATCH
+
+Groups B (3 PM ET), C (6 PM ET), A (9 PM ET) MD3 finales.
+First full-stack WC brief test: writeWCResult → PRE-GAME CONTEXT + STANDINGS + EVENTS → [BRACKET IMPACT] → 2d-score → runQualityChain.
+Night_stars stale until tomorrow 5 AM ET cron (Group A finishes 3 AM UTC).
+Travelers Championship R1 tomorrow June 25 — golf card set.
 
 ---
 
@@ -83,11 +98,6 @@ Smoke: 213/213 · 572 companies
 **Open:** iOS Safari T1, hiringcafe, 4 ATS probes, UMMS, apply agent, Issue #7
 
 ---
-
-## Drive Docs (session)
-- Phase 8b + quality align, bracket snapshots P1, traps P2+3, bracket impact wiring P4
-- Bracket client, JQ game context (relay + client), Layer 2d-score
-- All outbox manifests uploaded to Drive (relay + client)
 
 ## Drive Specs (permanent)
 1. Archive Intelligence — 1fMZFs2WOi_hPcX5hUB1UJf5mWvItTLB6EwZ881LcC3s
