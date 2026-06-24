@@ -22417,7 +22417,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-24b';
+  const SW_VERSION = '2026-06-24c';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -22968,7 +22968,30 @@ function wcSortByTiebreakers(teams, playedMatches, fairPlayPoints) {
  * @param {Array<Object>} playedSink — push the synthetic match here so H2H sees it
  * @param {{lambdaHome?: number, lambdaAway?: number}} [matchMeta]
  */
-function wcApplyOutcome(teamMap, home, away, outcome, playedSink, matchMeta) {
+// WC_DRAW_AVG_LAMBDA: WC 2022 group-stage draws averaged ~1.1 goals per team.
+// Used when Poisson lambdas are absent (no odds/totals line). Gives draws a
+// 1-1 scoreline floor for GF tiebreaker realism instead of 0-0.
+const WC_DRAW_AVG_LAMBDA = 1.1;
+
+// Fair play Poisson card rates — WC 2022 group-stage empirical averages.
+// FP_LAMBDA_YELLOW: 153 yellows / 48 matches / 2 teams = 1.59 → 1.6
+// FP_LAMBDA_RED:    direct reds + second-yellow reds ≈ 0.20/team/match
+// FIFA fair play scoring: yellow = −1, direct red = −3, second yellow = −3,
+// yellow then red = −4. We model yellow (−1) and red (−3) only; the
+// combined yellow+red case (~5% of reds) is absorbed into the red rate.
+const FP_LAMBDA_YELLOW = 1.6;
+const FP_LAMBDA_RED    = 0.2;
+
+// Knuth Poisson sampler — O(λ) per call, adequate for λ ≤ 5.
+// Requires rand: () => [0,1) PRNG supplied by caller.
+function wcPoissonSample(lambda, rand) {
+  const L = Math.exp(-lambda);
+  let k = 0, p = 1;
+  do { k++; p *= rand(); } while (p > L);
+  return k - 1;
+}
+
+function wcApplyOutcome(teamMap, home, away, outcome, playedSink, matchMeta, rand = null) {
   const h = teamMap[home], a = teamMap[away];
   h.P += 1; a.P += 1;
   // v1.4: Poisson-expected GD if lambdas provided; else minimum-margin (1 or 0).
@@ -22991,11 +23014,23 @@ function wcApplyOutcome(teamMap, home, away, outcome, playedSink, matchMeta) {
     playedSink.push({home, away, homeScore: hg, awayScore: safeAg});
   } else {
     // Draw — expected goals each side (whole goals; uses ceiling so at least 0)
-    const drHg = lH ? Math.round(lH * 0.6) : 0;  // rough fraction of shots in draw
-    const drAg = lA ? Math.round(lA * 0.6) : 0;
+    const drHg = Math.round((lH ?? WC_DRAW_AVG_LAMBDA) * 0.6);  // ~1 goal each in avg WC draw
+    const drAg = Math.round((lA ?? WC_DRAW_AVG_LAMBDA) * 0.6);
     h.D += 1; h.Pts += 1; h.GF += drHg; h.GA += drAg;
     a.D += 1; a.Pts += 1; a.GF += drAg; a.GA += drHg;
     playedSink.push({home, away, homeScore: drHg, awayScore: drAg});
+  }
+  // Fair play accumulation — Monte Carlo path only (rand provided by wcSampleScenario).
+  // Enumeration path (wcEnumerateScenarios) passes rand = null → no FP sampling.
+  // FIFA: yellow = −1, red = −3. Higher (less negative) FP = better ranking.
+  if (rand) {
+    const hT = teamMap[home], aT = teamMap[away];
+    const hY = wcPoissonSample(FP_LAMBDA_YELLOW, rand);
+    const aY = wcPoissonSample(FP_LAMBDA_YELLOW, rand);
+    const hR = wcPoissonSample(FP_LAMBDA_RED,    rand);
+    const aR = wcPoissonSample(FP_LAMBDA_RED,    rand);
+    hT.FP = (hT.FP ?? 0) - hY - 3 * hR;
+    aT.FP = (aT.FP ?? 0) - aY - 3 * aR;
   }
 }
 
@@ -23256,7 +23291,7 @@ function wcSampleScenario({teams, played, remaining, outcomeProbabilities}, rand
       // Uniform — equal probability for H/D/A
       outcome = r < 1/3 ? 'H' : r < 2/3 ? 'D' : 'A';
     }
-    wcApplyOutcome(teamMap, remaining[k].home, remaining[k].away, outcome, playedCopy);
+    wcApplyOutcome(teamMap, remaining[k].home, remaining[k].away, outcome, playedCopy, null, rand);
   }
   const finalArr = Object.values(teamMap);
   wcSortByTiebreakers(finalArr, playedCopy);
@@ -23266,15 +23301,35 @@ function wcSampleScenario({teams, played, remaining, outcomeProbabilities}, rand
   };
 }
 
+// FNV-1a 32-bit hash of team name — deterministic drawing-of-lots tiebreaker
+// (FIFA criteria 5). Reproducible across renders. Different teams produce
+// distinct hashes with ~uniform distribution.
+function _wcTeamNameHash(name) {
+  let h = 2166136261;
+  for (let i = 0; i < name.length; i++) {
+    h ^= name.charCodeAt(i);
+    h = (h * 16777619) >>> 0;
+  }
+  return h;
+}
+
 /**
  * Sort the third-place finishers across groups by FIFA cross-group criteria
- * (points → GD → GF). Returns the array sorted with index 0 = best 3rd.
+ * (points → GD → GF → FP → drawing of lots). Returns the array sorted with
+ * index 0 = best 3rd.
  */
 function wcSortThirdPlaceAcrossGroups(thirdPlaceArr) {
+  // FIFA cross-group best-3rd criteria (WC 2026):
+  // 1. Points  2. GD  3. GF
+  // 4. Fair play — accumulated via Poisson-sampled cards in wcSampleScenario
+  //    (FP_LAMBDA_YELLOW=1.6, FP_LAMBDA_RED=0.2; less negative = better)
+  // 5. Drawing of lots — seeded FNV-1a name hash (deterministic approximation)
   return thirdPlaceArr.slice().sort((a, b) =>
     (b.Pts - a.Pts)
       || ((b.GF - b.GA) - (a.GF - a.GA))
       || (b.GF - a.GF)
+      || ((a.FP ?? 0) - (b.FP ?? 0))
+      || (_wcTeamNameHash(a.name || '') - _wcTeamNameHash(b.name || ''))
   );
 }
 

@@ -5379,5 +5379,35 @@ assert('A725 — WC MD3: night owl emits P(advance) % label for mid-range teams'
   html.includes('P(advance)'),
   'night owl must emit a P(advance) label for non-binary cases');
 
+// ── Permutations engine: draw fallback + fair play Poisson ──
+assert('A726 — permutations: WC_DRAW_AVG_LAMBDA = 1.1 defined',
+  html.includes('const WC_DRAW_AVG_LAMBDA = 1.1'),
+  'WC_DRAW_AVG_LAMBDA must be defined');
+
+assert('A727 — permutations: draw branch uses ?? fallback not : 0',
+  html.includes('lH ?? WC_DRAW_AVG_LAMBDA') && html.includes('lA ?? WC_DRAW_AVG_LAMBDA'),
+  'draw branch must use ?? WC_DRAW_AVG_LAMBDA fallback');
+
+assert('A728 — permutations: wcPoissonSample defined',
+  html.includes('function wcPoissonSample(lambda, rand)'),
+  'wcPoissonSample helper must be defined');
+
+assert('A729 — permutations: FP accumulated in wcApplyOutcome when rand provided',
+  html.includes('FP_LAMBDA_YELLOW, rand') && html.includes('FP_LAMBDA_RED,    rand'),
+  'wcApplyOutcome must sample FP when rand is provided');
+
+assert('A730 — permutations: wcSortThirdPlaceAcrossGroups uses 5 criteria',
+  html.includes('a.FP ?? 0') && html.includes('_wcTeamNameHash') &&
+  html.includes('FIFA cross-group best-3rd criteria'),
+  'wcSortThirdPlaceAcrossGroups must implement 5-criteria FIFA sort');
+
+assert('A731 — permutations: wcSampleScenario passes rand to wcApplyOutcome',
+  (() => {
+    const idx = html.indexOf('function wcSampleScenario');
+    const chunk = html.slice(idx, idx + 2000);
+    return chunk.includes('wcApplyOutcome') && chunk.includes(', null, rand)');
+  })(),
+  'wcSampleScenario must pass rand as 7th arg to wcApplyOutcome');
+
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);
