@@ -108,6 +108,61 @@ D1 wc2026: f26669de-e772-4b56-a6d1-f8fdea08a4d4
 
 ---
 
+## ALL-STAR EDITORIAL BRIEF TYPE — SEPARATE CARRY-FORWARD
+
+**Target:** Build before MLB All-Star Game July 14. Separate session from selector.
+**Scope:** Sport-agnostic. Applies to MLB, NBA, NHL, Pro Bowl, any exhibition.
+
+**Problem (verified June 24):**
+- MLB Stats API uses `gameType: "A"` for All-Star Game. Daily brief workflow does
+  not filter on gameType — All-Star Game flows into MLB_COUNT and MLB_GAMES_JSON
+  as a regular game.
+- Standard JQ chain (Drama/Closeness/Plot) breaks structurally on exhibition games:
+  no standings implications → Drama floors; pitchers throw 1-2 innings → game
+  pattern unrecognizable; no rivalry/playoff context → Plot has nothing to work with.
+- Home Run Derby does NOT appear in statsapi.mlb.com at all — not a game.
+  Current pipeline: complete silence on July 13.
+
+**Solution:**
+
+1. **Detection guard in journalism queue consumer:**
+   - MLB: detect `gameType: "A"` in Stats API response
+   - NBA: detect equivalent exhibition flag (verify field name at build time)
+   - NHL: same
+   - Set `briefType: "allstar_game"` — skip standard JQ chain entirely
+
+2. **`allstar_game` brief type — new editorial prompt:**
+   Different questions than a regular game brief:
+   - Regular game: did this matter, who was the story, how close was it?
+   - All-Star game: who showed out on the biggest stage, which moments will be
+     remembered, what does this reveal about the sport's stars right now?
+
+   Grades replace Drama/Closeness/Plot with:
+   - **Star Power** — did the marquee names deliver?
+   - **Moment Quality** — was there a defining moment? (walk-off, 100mph FB, etc.)
+   - **Representation** — did the right players make the case for their sport?
+
+   Framing is showcase, not stakes. No standings language. No clutch/pressure framing.
+   Historical context encouraged — "first time since...", "youngest player to..."
+
+3. **Home Run Derby — static editorial card (July 13):**
+   Same pattern as Travelers golf card. Pre-written, KV-stored, rendered on July 13.
+   Contents: participants, format explainer, FIELD pick to win, historical notes.
+   No pipeline. No score. Manual write before July 13.
+   KV key: `allstar:2026:hrd`
+
+**Build sequence (separate session, target ~July 10-12):**
+1. Read journalism queue consumer — find where briefType is set
+2. Add gameType: "A" guard → briefType: "allstar_game"
+3. Write allstar_game prompt template (exhibition framing, 3 new grades)
+4. Wire into runQualityChain with allstar_game branch
+5. Write HRD static card to KV
+6. Smoke: verify allstar_game brief type doesn't break regular mlb_game path
+
+**Do NOT build before June 29. Do NOT touch JQ chain until selector is shipped.**
+
+---
+
 ## TONIGHT
 
 Groups B (19:00), C (22:00), A (01:00 UTC) MD3 finales.
@@ -128,7 +183,7 @@ Open: iOS Safari T1, hiringcafe, 4 ATS probes, UMMS, apply agent, Issue #7
 1. Archive Intelligence — 1fMZFs2WOi_hPcX5hUB1UJf5mWvItTLB6EwZ881LcC3s
 2. Bracket Compound — 1Wm29D2KYtEPR1G3N-n__7KPm6FKR-0L6_4S99mtsAxU
 3. Compound Architecture — 1cWgNEs3uanFh_PDi2ISSrIBTINdousbHcE1VQphvZ2I
-4. Circadian + Gap Closers — 1NeAFkfKhBKhqeez-broEmb-q-ULB9u6L8tvwEWYyMeU
+4. Circadian + Gap Closers — 1NeAFkfKhBKhqeez-broEmb-q-ULB9u6L8pvwEWYyMeU
 5. Context Dimensions — 1XulILxMMU4MtDI6NhwVs5kMv8XsKOmANWUly3_JsCwQ
 6. Surface Compounds — 1UxVjbcsven_Nbf7L1g2mDGZA-KDT5D4HG-3rWxlwBQU
 7. Info Disclosure — 11T6jE6z2R7WFVGFKrSq2JO7MU76Jr_xmAYGIMiafRug
