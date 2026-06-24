@@ -4524,7 +4524,7 @@ assert('A658 — fetchUserState + visibilitychange re-fetch + USER CONTEXT gatin
   /Lead with what they missed\./.test(html) &&
   // Top-game tiebreaker uses affinity only when sustained AND peak both tie.
   /const _owlAffinity = window\._userState\?\._affinity \|\| \[\]/.test(html) &&
-  /return _affScore\(b\)-_affScore\(a\)/.test(html),
+  /_affScore\(b\)\s*-\s*_affScore\(a\)/.test(html),
   'CC-CMD-2026-06-19 Prompt 10 UserDO read loop closes the loop opened in the May UserDO writer wiring. fetchUserState() pulls /user/state?userId=... with a 5s AbortSignal and caches the result in window._userState plus a fetched-at timestamp; visibilitychange re-fetches on visible when > 60s have elapsed (disjoint from the existing peak_missed visibilitychange listener which only fires on hidden). hydrateMissedRecaps fans out at most 5 /context/game/{gameId} hydrations in parallel via Promise.allSettled and attaches the first game_recap brief\'s first 160 chars as recapSnippet on each entry. computeWatchAffinity tallies the trailing 14 days of watchHistory by sport and exposes a sorted array as window._userState._affinity. Night Owl prompt assembly appends [USER CONTEXT] and [MISSED PEAKS] lines (each gated on the respective array being non-empty), and the top-game selector now uses affinity as a true tiebreaker — only resolves when sustained drama AND dramaPeak both tie. Boot wires setTimeout(fetchUserState, 2000) after first render, before the journalism path needs the data.');
 
 // ── A657 / CC-CMD-2026-06-19 F09 REST Countries — country context for WC briefs ──
@@ -5413,6 +5413,18 @@ assert('A731 — permutations: wcSampleScenario passes rand to wcApplyOutcome',
 assert('A732 — WC matchup: client POSTs matchupNote to /wc/matchup/cache on schedule load',
   html.includes('/wc/matchup/cache') && html.includes('g.matchupNote'),
   'client must POST wc26Raw matchupNotes to relay KV');
+
+assert('A733 — night owl: WC sport strings added to soccer isFinalPeriod check',
+  html.includes("sp.includes('wc26')") && html.includes('period === 2'),
+  'drama isFinalPeriod must include wc26 in soccer family');
+
+assert('A734 — night owl: preGameScore fallback in topGame sort',
+  (() => {
+    const idx = html.indexOf('const topGame=finals');
+    const chunk = html.slice(idx, idx + 1500);
+    return chunk.includes('preGameScore');
+  })(),
+  'topGame sort must fall back to preGameScore after affinity');
 
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);

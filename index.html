@@ -22447,7 +22447,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-24d';
+  const SW_VERSION = '2026-06-24e';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -32915,7 +32915,7 @@ function isLateCloseGame(g, ed, sport) {
     (sp.includes('basketball') || sp.includes('nba'))   ? period >= 4  :
     (sp.includes('hockey') || sp.includes('nhl'))       ? period >= 3  :
     (sp.includes('football') || sp.includes('nfl'))     ? period >= 4  :
-    (sp.includes('soccer') || sp.includes('epl'))       ? period === 2 :
+    (sp.includes('soccer') || sp.includes('epl') || sp.includes('wc26') || sp.includes('world cup') || sp.includes('fifa')) ? period === 2 :
     false;
   return isLate && isClose;
 }
@@ -34260,7 +34260,8 @@ function injectDramaBadges(){
       (sp.includes('basketball')||sp.includes('nba'))  ? period >= 4 :
       (sp.includes('hockey')||sp.includes('nhl'))       ? period >= 3 :
       (sp.includes('football')||sp.includes('nfl'))     ? period >= 4 :
-      (sp.includes('baseball')||sp.includes('mlb'))     ? period >= 9 : false
+      (sp.includes('baseball')||sp.includes('mlb'))     ? period >= 9 :
+      (sp.includes('soccer')||sp.includes('epl')||sp.includes('wc26')||sp.includes('world cup')||sp.includes('fifa')) ? period === 2 : false
     );
     if (isFinalPeriod && margin > 24) score = Math.min(score, 20);
 
@@ -38257,7 +38258,13 @@ async function renderNightOwlRecap(){
     if(Math.abs(aSustained-bSustained)<2){
       const peakDelta=(b.dramaPeak||0)-(a.dramaPeak||0);
       if(peakDelta!==0) return peakDelta;
-      return _affScore(b)-_affScore(a);
+      const affinityDelta = _affScore(b) - _affScore(a);
+      if (affinityDelta !== 0) return affinityDelta;
+      // Final fallback: preGameScore (stake tier) so WC group-deciding
+      // games (tierBoost=40) beat regular MLB (tierBoost=0) when drama
+      // is identical. Ensures night owl covers tonight's stakes.
+      return (typeof preGameScore === 'function')
+        ? preGameScore(b) - preGameScore(a) : 0;
     }
     return bSustained-aSustained;
   })[0];
