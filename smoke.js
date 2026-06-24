@@ -5409,5 +5409,10 @@ assert('A731 — permutations: wcSampleScenario passes rand to wcApplyOutcome',
   })(),
   'wcSampleScenario must pass rand as 7th arg to wcApplyOutcome');
 
+// ── WC matchup KV: client POSTs matchupNote on schedule load ──
+assert('A732 — WC matchup: client POSTs matchupNote to /wc/matchup/cache on schedule load',
+  html.includes('/wc/matchup/cache') && html.includes('g.matchupNote'),
+  'client must POST wc26Raw matchupNotes to relay KV');
+
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);

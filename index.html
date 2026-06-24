@@ -12162,6 +12162,36 @@ function _fetchWCTournBriefForSchedule() {
         );
       }
     } catch (_) { /* non-blocking */ }
+    // POST matchupNotes for upcoming WC games so relay's writeWCResult
+    // can inject PRE-GAME CONTEXT into journalism prompts.
+    // Fires once per schedule load — fire-and-forget, never blocks.
+    // Note: wc26Raw entries don't carry homeScore/awayScore — completion is
+    // encoded in the league string (e.g. "· USA wins 4-1", "· 1-1 Draw"),
+    // so the unfinished check uses a league-string regex instead.
+    try {
+      const nowMs = Date.now();
+      const _isFinished = (s) => / wins \d+-\d+| draw\b|·\s*\d+-\d+/i.test(s || '');
+      const upcoming = (typeof wc26Raw !== 'undefined' && Array.isArray(wc26Raw))
+        ? wc26Raw.filter(g =>
+            g.matchupNote &&
+            g.home && g.away &&
+            !_isFinished(g.league) &&
+            new Date(g.start_time).getTime() > nowMs - 4 * 3600 * 1000 &&  // started ≤4h ago
+            new Date(g.start_time).getTime() < nowMs + 7 * 24 * 3600 * 1000 // within 7 days
+          )
+        : [];
+      for (const g of upcoming.slice(0, 20)) {  // cap at 20 POSTs
+        fetch(relay + '/wc/matchup/cache', {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify({
+            home: g.home,
+            away: g.away,
+            note: g.matchupNote,
+          }),
+        }).catch(() => {});  // fire-and-forget
+      }
+    } catch (_) { /* non-blocking */ }
     // Find the tournament brief card in the DOM
     const cards = document.querySelectorAll('.smt-card, .desk-card');
     for (const card of cards) {
@@ -22417,7 +22447,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-24c';
+  const SW_VERSION = '2026-06-24d';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
