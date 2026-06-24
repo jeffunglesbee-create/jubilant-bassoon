@@ -11365,16 +11365,24 @@ function buildTodaySchedule(){
   if(ligue1Games.length)   sections.push({sport:"Ligue 1", games:ligue1Games});
 
   // ── Golf (PGA Tour) ───────────────────────────────────────────────────────
-  // MAJOR CONFIG — PGA Championship May 14-17 at Aronimink (Newtown Square PA)
-  //   Rory McIlroy defending champion (won 2026 Masters + 2025 PGA)
-  //   Broadcast: ESPN+/Golf Channel Thu-Fri early rounds · CBS + ESPN Sat-Sun
-  //   Truist Championship (Signature) and Myrtle Beach Classic both finished May 10.
-  //   No PGA Tour event Mon May 11 — Travelers Championship starts Thu Jun 26.
+  // Travelers Championship — Jun 25-28 2026, TPC River Highlights, Cromwell CT
+  //   Final PGA Tour Signature Event of 2026 season. Purse: $20M ($3.6M winner).
+  //   Defending: Keegan Bradley (won 2023 + 2025; New England native).
+  //   Key field: Scheffler (#1, 2024 champ here), Wyndham Clark (#8, fresh off U.S. Open),
+  //   Cameron Young (#3), Fleetwood (#7, runner-up 2025), Morikawa (#9). McIlroy skipping.
+  //   Course: par-70, 6,841 yds, Bentgrass. Short + birdie-friendly, stadium crowds.
+  //   Broadcast: Golf Channel Thu-Fri 3-6 PM ET · Golf Channel Sat 1-3, Sun 2-4 · NBC Sat 3-6, Sun 4-7
+  //   ESPN+/PGA Tour Live + Peacock streaming all week.
   const golfGames=[
-    // ── Charles Schwab Challenge — R1-R4 May 28-31 2026, Colonial CC Fort Worth TX ─
-    // Defending: Ben Griffin. Top players: JJ Spaun (#9), Russell Henley (#11), Ludvig Åberg.
-    // Scheffler and Spieth not playing. Weather delay in R1 — 6 players tied at -6.
-    // Broadcast: Golf Channel (ESPN+) Thu-Fri 4-7 PM ET · CBS/Golf Channel Sat-Sun
+    // ── Travelers Championship — R1-R4 Jun 25-28 2026, TPC River Highlands Cromwell CT ─
+    {
+      home: 'Travelers Championship', away: '',
+      league: 'PGA Tour · Signature Event · Cromwell, CT',
+      start_time: '2026-06-25T19:00:00Z', // R1 Thu Jun 25 — Golf Channel 3 PM ET
+      tournEnd: '2026-06-28',
+      _sport: 'golf', _id: 'golf_travelers_2026',
+      matchupNote: 'Final Signature Event of 2026. Scheffler (world #1, 2024 champion here) vs. Wyndham Clark (fresh off U.S. Open at Shinnecock) vs. defending champion Keegan Bradley. McIlroy skipping — third Signature Event missed this season.',
+    },
   ].filter(g=>{
     // Show for full tournament duration (Thu-Sun), not just isToday of start_time
     const todayStr = new Date().toLocaleDateString('en-CA',{timeZone:localTz()||'America/New_York'});
@@ -22395,7 +22403,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-23e';
+  const SW_VERSION = '2026-06-23f';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
