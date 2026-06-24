@@ -5357,5 +5357,14 @@ assert('A720 — WC elimination traps: /wc/elimination-traps fetched in renderWC
   html.includes('/wc/elimination-traps'),
   'renderWCTournamentBracket must fetch /wc/elimination-traps');
 
+// ── JQ game context: client forwards game + matchupNote to relay ──
+assert('A721 — JQ game context: generateJournalismViaRelay sends opts.game',
+  html.includes('game:           opts.game') || html.includes('game: opts.game'),
+  'generateJournalismViaRelay must forward opts.game to relay body');
+
+assert('A722 — JQ game context: Night Owl passes topGame to relay',
+  html.includes("briefType: 'night-owl'") && html.includes('game: topGame'),
+  'Night Owl generateJournalismViaRelay call must include game: topGame');
+
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);

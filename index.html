@@ -16179,6 +16179,8 @@ async function generateJournalismViaRelay(prompt, opts = {}) {
       briefType: opts.briefType || 'generic',
       max_tokens: opts.max_tokens || 1500,
       scoreThreshold: opts.scoreThreshold || 130,
+      game:           opts.game           || null,
+      matchupNote:    opts.matchupNote    || null,
     };
     const r = await fetch(JOURNALISM_GENERATE_RELAY, {
       method: 'POST',
@@ -22393,7 +22395,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-23d';
+  const SW_VERSION = '2026-06-23e';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -26174,6 +26176,8 @@ Write this brief at the level the moment deserves. Do not undersell a championsh
     const _sportHint = _gameSport(g);
     const _viaRelay = await generateJournalismViaRelay(prompt, {
       sport: _sportHint, briefType: 'j2-series', max_tokens: 1000,
+      game: g || null,
+      matchupNote: g?.matchupNote || g?.note || null,
     });
     if (_viaRelay && _viaRelay.length > 30) {
       budget.inc();
@@ -29033,6 +29037,8 @@ async function fetchMLBGameBriefFromClaude(g) {
     // ── WOW 6 Phase 2: route through relay quality gate
     const _viaRelay = await generateJournalismViaRelay(prompt, {
       sport: 'baseball', briefType: 'mlb-brief', max_tokens: 400,
+      game: g || null,
+      matchupNote: g?.matchupNote || g?.note || null,
     });
     if (_viaRelay && _viaRelay.length > 20) {
       cardBudget.inc();
@@ -29351,6 +29357,8 @@ async function fetchStakesBriefFromClaude(g) {
     const _sportHint = _gameSport(g);
     const _viaRelay = await generateJournalismViaRelay(prompt, {
       sport: _sportHint, briefType: 'stakes-brief', max_tokens: 200,
+      game: g || null,
+      matchupNote: g?.matchupNote || g?.note || null,
     });
     if (_viaRelay && _viaRelay.length > 20) {
       cardBudget.inc();
@@ -36616,6 +36624,8 @@ Write this Night Owl at the level the moment deserves. Do not undersell a champi
       sport: _sportHint,
       briefType: 'night-owl',
       max_tokens: 1000,
+      game: topGame || null,
+      matchupNote: topGame?.matchupNote || null,
     });
     if (_viaRelay && _viaRelay.length > 40) {
       budget.inc();
