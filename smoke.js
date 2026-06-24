@@ -5336,5 +5336,26 @@ assert('A715 — Rule 76: _gameSport centralizer defined and no raw sport fallba
   !/game\._sport\s*\|\|\s*game\._section\s*\|\|\s*game\.league/.test(html),
   'Rule 76: all sport detection must use _gameSport(g), not raw _sport||_section||league chains. Chain lives in one place only.');
 
+// ── Bracket client: named states + TRAP chip + elimination traps ──
+assert('A716 — WC named states: advancementState() defined',
+  html.includes('function advancementState(prob)'),
+  'advancementState helper must be defined');
+
+assert('A717 — WC named states: wc-proj-state CSS class defined',
+  html.includes('.wc-proj-state{'),
+  'wc-proj-state CSS must be present');
+
+assert('A718 — WC named states: R32 column uses stateLabel not pct',
+  html.includes('wc-proj-state') && html.includes('stateLabel(t.pR32)'),
+  'R32 column must use stateLabel not raw pct');
+
+assert('A719 — WC TRAP chip: wc-trap-chip CSS defined',
+  html.includes('.wc-trap-chip{'),
+  'wc-trap-chip CSS must be present');
+
+assert('A720 — WC elimination traps: /wc/elimination-traps fetched in renderWCTournamentBracket',
+  html.includes('/wc/elimination-traps'),
+  'renderWCTournamentBracket must fetch /wc/elimination-traps');
+
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);

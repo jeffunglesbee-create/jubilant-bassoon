@@ -2510,11 +2510,19 @@ body:not(.journalism-mode) #field-journalism-section{display:none}
 .wc-proj-pct.hi{color:#4ade80}
 .wc-proj-pct.mid{color:var(--gold)}
 .wc-proj-pct.lo{color:var(--smoke)}
+.wc-proj-state{font-family:var(--ff-cond,'monospace');font-size:.56rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;white-space:nowrap}
+.state-through{color:#4ade80}
+.state-watch{color:var(--gold)}
+.state-info{color:var(--platinum)}
+.state-caution{color:#f97316}
+.state-danger{color:#ef4444}
+.state-elim{color:var(--smoke);text-decoration:line-through}
 .wc-proj-loading{font-size:.65rem;color:var(--smoke);padding:2rem 0;text-align:center}
 /* Bracket traps */
 .wc-traps{margin:.75rem 0 1rem;padding:.5rem .65rem;background:rgba(251,191,36,.05);border-left:2px solid rgba(251,191,36,.4);border-radius:0 6px 6px 0}
 .wc-traps-head{font-size:.55rem;font-weight:700;letter-spacing:.08em;color:var(--gold2);text-transform:uppercase;margin-bottom:.4rem}
 .wc-trap-row{display:flex;align-items:center;gap:.4rem;padding:.25rem 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:.63rem;flex-wrap:wrap}
+.wc-trap-chip{font-size:.58rem;font-weight:700;color:var(--gold);background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.25);border-radius:4px;padding:.18rem .4rem;margin-top:.3rem;display:inline-block;letter-spacing:.03em}
 .wc-trap-team{font-weight:700;color:var(--fg);min-width:5rem;flex-shrink:0}
 .wc-trap-grp{color:var(--smoke);font-size:.56rem;min-width:3rem}
 .wc-trap-stat{color:var(--platinum);white-space:nowrap}
@@ -12076,6 +12084,12 @@ function buildWCMediaCards() {
 
       const leagueShort = (game.league || '').replace('FIFA World Cup 2026 — ', '').replace('FIFA World Cup 2026', 'Group Stage');
 
+      // Trap teams: which path-trapped team(s) are playing in this game?
+      const _trapTeams = (_wcPathTraps || [])
+        .filter(t => t.team === game.home || t.team === game.away ||
+                     t.fifaCode === game.home || t.fifaCode === game.away)
+        .map(t => ({ team: t.team, delta: t.delta }));
+
       cards.push({
         show: game.away + ' vs ' + game.home,
         network, chip,
@@ -12085,6 +12099,7 @@ function buildWCMediaCards() {
         journalNote,
         _gameId: game._id,
         _scoutPick: !!(typeof isScoutsPick === 'function' && isScoutsPick(game)),
+        _trapTeams,
       });
     }
   }
@@ -12110,6 +12125,7 @@ function buildWCMediaCards() {
 
 // Async: fetch /wc/brief/tournament and inject into the tournament brief card on schedule
 let _wcTournBriefFetched = false;
+let _wcPathTraps = null; // cached bracketTraps array for TRAP chip on game cards
 function _fetchWCTournBriefForSchedule() {
   if (_wcTournBriefFetched) return;
   _wcTournBriefFetched = true;
@@ -12118,7 +12134,12 @@ function _fetchWCTournBriefForSchedule() {
   Promise.all([
     fetch(relay + '/wc/brief/tournament', { cache: 'no-store' }).then(r => r.ok ? r.json() : null).catch(() => null),
     fetch(relay + '/wc/bracket', { cache: 'no-store' }).then(r => r.ok ? r.json() : null).catch(() => null),
-  ]).then(([briefData, bracketData]) => {
+    fetch(relay + '/wc/traps', { cache: 'no-store' }).then(r => r.ok ? r.json() : null).catch(() => null),
+  ]).then(([briefData, bracketData, trapsResult]) => {
+    // Cache path traps for game card TRAP chip
+    if (trapsResult?.bracketTraps?.length) {
+      _wcPathTraps = trapsResult.bracketTraps;
+    }
     // Find the tournament brief card in the DOM
     const cards = document.querySelectorAll('.smt-card, .desk-card');
     for (const card of cards) {
@@ -12316,6 +12337,7 @@ function renderMedia(){
         </div>
         <div class="media-desc">${m.desc}</div>
         ${m.journalNote?`<div class="field-note">${m.journalNote}</div>`:""}
+        ${(m._trapTeams && m._trapTeams.length) ? m._trapTeams.map(tr => `<div class="wc-trap-chip">⚠ TRAP · ${tr.team} +${Math.round(tr.delta * 100)}pp as runner-up</div>`).join('') : ''}
         <a class="stream-chip" href="${m.link}" target="_blank" rel="noopener" style="color:${col};border-color:${col};background:${col}1a;font-size:.6rem;padding:.12rem .45rem">Watch →</a>
       </div>
     </div>`;
@@ -22371,7 +22393,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-23c';
+  const SW_VERSION = '2026-06-23d';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -30130,6 +30152,18 @@ function resolveWCBracketTeam(slot, perGroupTable) {
 // Renders all 16 R32 matchups using current group standings.
 // "If today's results hold" — one concrete bracket, most-likely path.
 // Handles early-tournament state where groups have 0 games played (shows TBD gracefully).
+// advancementState — maps pR32 probability to named advancement state.
+// Live DOM: named label only. Debrief DOM (game final): label + pct.
+// Thresholds match relay's advancementState in context-assembler.js.
+function advancementState(prob) {
+  if (prob <= 0)    return { label: 'ELIMINATED',   cls: 'state-elim' };
+  if (prob < 0.15)  return { label: 'LIFE SUPPORT', cls: 'state-danger' };
+  if (prob < 0.40)  return { label: 'DANGER',       cls: 'state-caution' };
+  if (prob < 0.70)  return { label: 'ALIVE',        cls: 'state-info' };
+  if (prob < 0.90)  return { label: 'STRONG',       cls: 'state-watch' };
+  return                   { label: 'THROUGH',      cls: 'state-through' };
+}
+
 // ── renderWCTournamentBracket ──────────────────────────────────────────────────
 // Primary Bracket tab renderer. Shows tournament path probabilities for all 48
 // teams (from relay /wc/projections), daily movers, and journalism brief.
@@ -30144,16 +30178,18 @@ async function renderWCTournamentBracket() {
   try {
     // Fetch projections, movers, brief, bracket traps in parallel
     // Third-place ranking now comes from projData (computed from live standings)
-    const [projRes, moversRes, briefRes, trapsRes] = await Promise.allSettled([
+    const [projRes, moversRes, briefRes, trapsRes, elimTrapsRes] = await Promise.allSettled([
       fetch(`${RELAY}/wc/projections`,       { cache: 'no-store' }),
       fetch(`${RELAY}/wc/movers`,            { cache: 'no-store' }),
       fetch(`${RELAY}/wc/brief/tournament`,  { cache: 'no-store' }),
       fetch(`${RELAY}/wc/traps`,             { cache: 'no-store' }),
+      fetch(`${RELAY}/wc/elimination-traps`, { cache: 'no-store' }),
     ]);
-    const projData   = projRes.status   === 'fulfilled' && projRes.value.ok   ? await projRes.value.json()   : null;
-    const moversData = moversRes.status === 'fulfilled' && moversRes.value.ok ? await moversRes.value.json() : null;
-    const briefData  = briefRes.status  === 'fulfilled' && briefRes.value.ok  ? await briefRes.value.json()  : null;
-    const trapsData  = trapsRes.status  === 'fulfilled' && trapsRes.value.ok  ? await trapsRes.value.json()  : null;
+    const projData     = projRes.status     === 'fulfilled' && projRes.value.ok     ? await projRes.value.json()     : null;
+    const moversData   = moversRes.status   === 'fulfilled' && moversRes.value.ok   ? await moversRes.value.json()   : null;
+    const briefData    = briefRes.status    === 'fulfilled' && briefRes.value.ok    ? await briefRes.value.json()    : null;
+    const trapsData    = trapsRes.status    === 'fulfilled' && trapsRes.value.ok    ? await trapsRes.value.json()    : null;
+    const elimTrapsData = elimTrapsRes?.status === 'fulfilled' && elimTrapsRes.value.ok ? await elimTrapsRes.value.json() : null;
 
     let html = '';
 
@@ -30222,6 +30258,8 @@ async function renderWCTournamentBracket() {
     if (teams?.length) {
       const pct = v => Math.round(v * 100);
       const cls = v => v >= 0.5 ? 'hi' : v >= 0.15 ? 'mid' : 'lo';
+      const stateLabel = v => advancementState(v).label;
+      const stateCls   = v => advancementState(v).cls;
       const N = projData.N || 0;
       const ts = projData.generatedAt ? new Date(projData.generatedAt).toLocaleTimeString('en-US', {hour:'2-digit',minute:'2-digit'}) : '';
       html += `<p class="wc-bracket-note">Path probabilities · ${N.toLocaleString()} simulations${ts ? ' · ' + ts : ''}</p>`;
@@ -30234,7 +30272,7 @@ async function renderWCTournamentBracket() {
         html += `<tr>
           <td class="team-cell">${t.name}</td>
           <td class="grp">${t.group}</td>
-          <td><span class="wc-proj-pct ${cls(t.pR32)}">${pct(t.pR32)}%</span></td>
+          <td><span class="wc-proj-state ${stateCls(t.pR32)}" title="${pct(t.pR32)}%">${stateLabel(t.pR32)}</span></td>
           <td><span class="wc-proj-pct ${cls(t.pR16)}">${pct(t.pR16)}%</span></td>
           <td><span class="wc-proj-pct ${cls(t.pQF)}">${pct(t.pQF)}%</span></td>
           <td><span class="wc-proj-pct ${cls(t.pSF)}">${pct(t.pSF)}%</span></td>
@@ -30255,6 +30293,21 @@ async function renderWCTournamentBracket() {
             <span class="wc-trap-stat">1st→Win <strong>${Math.round(t.pChampIf1st*100)}%</strong></span>
             <span class="wc-trap-stat">2nd→Win <strong>${Math.round(t.pChampIf2nd*100)}%</strong></span>
             <span class="wc-trap-delta">+${delta}pp if 2nd</span>
+          </div>`;
+        }
+        html += `</div>`;
+      }
+
+      // Elimination traps — idle teams at risk from today's other games
+      const elimTraps = elimTrapsData?.traps || [];
+      if (elimTraps.length) {
+        html += `<div class="wc-traps"><div class="wc-traps-head">🚨 Elimination Risk — at risk from today’s other games</div>`;
+        for (const t of elimTraps) {
+          html += `<div class="wc-trap-row">
+            <span class="wc-trap-team">${t.team}</span>
+            <span class="wc-trap-grp">Grp ${t.group}</span>
+            <span class="wc-trap-stat"><strong>${t.type === 'ELIMINATION_TRAP' ? 'ELIMINATION' : 'DANGER'}</strong></span>
+            <span class="wc-trap-delta" style="color:${t.type === 'ELIMINATION_TRAP' ? '#ef4444' : '#f97316'}">${t.type === 'ELIMINATION_TRAP' ? '☠' : '⚠'}</span>
           </div>`;
         }
         html += `</div>`;
