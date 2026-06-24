@@ -5426,5 +5426,17 @@ assert('A734 — night owl: preGameScore fallback in topGame sort',
   })(),
   'topGame sort must fall back to preGameScore after affinity');
 
+assert('A735 — WC debrief: renderWCBracketImpact function defined',
+  html.includes('async function renderWCBracketImpact('),
+  'renderWCBracketImpact must be defined');
+
+assert('A736 — WC debrief: bracket-replay endpoint called with triggered_by key',
+  html.includes('/archive/bracket-replay?triggered_by='),
+  'debrief renderer must call /archive/bracket-replay');
+
+assert('A737 — WC debrief: CSS class wc-bracket-impact-card present',
+  html.includes('.wc-bracket-impact-card'),
+  'CSS for debrief card must be present');
+
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);

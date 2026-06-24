@@ -2523,6 +2523,14 @@ body:not(.journalism-mode) #field-journalism-section{display:none}
 .wc-traps-head{font-size:.55rem;font-weight:700;letter-spacing:.08em;color:var(--gold2);text-transform:uppercase;margin-bottom:.4rem}
 .wc-trap-row{display:flex;align-items:center;gap:.4rem;padding:.25rem 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:.63rem;flex-wrap:wrap}
 .wc-trap-chip{font-size:.58rem;font-weight:700;color:var(--gold);background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.25);border-radius:4px;padding:.18rem .4rem;margin-top:.3rem;display:inline-block;letter-spacing:.03em}
+.wc-bracket-impact-card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-top:none;border-radius:0 0 6px 6px;padding:8px 12px;margin-bottom:8px;font-size:11px}
+.wc-impact-label{font-size:9px;font-weight:600;letter-spacing:.08em;opacity:.5;text-transform:uppercase;margin-bottom:5px}
+.wc-impact-row{display:flex;align-items:center;gap:8px;padding:2px 0}
+.wc-impact-team{flex:0 0 120px;font-weight:500}
+.wc-impact-state{flex:1;opacity:.75}
+.wc-impact-delta{font-weight:600;font-variant-numeric:tabular-nums}
+.wc-impact-delta.pos{color:#4ade80}
+.wc-impact-delta.neg{color:#f87171}
 .wc-trap-team{font-weight:700;color:var(--fg);min-width:5rem;flex-shrink:0}
 .wc-trap-grp{color:var(--smoke);font-size:.56rem;min-width:3rem}
 .wc-trap-stat{color:var(--platinum);white-space:nowrap}
@@ -16691,6 +16699,70 @@ const _nhlBriefsFetched = new Set(); // dedup: NHL game IDs we've already fetche
 const _v2LeaderCache = {}; // gameNumericId → {ts} — prevents re-fetching within TTL
 const V2_LEADER_TTL  = 55000; // 55s — slightly under poll interval
 
+// renderWCBracketImpact — fetches bracket impact from D1 and renders
+// a compact delta table adjacent to a finished WC game card.
+// Called fire-and-forget from the V2 WC poll loop after brief is fetched.
+// Requires relay CC-CMD-2026-06-24-bracket-impact-pre-snapshot deployed.
+async function renderWCBracketImpact(gameId, home, away, relayBase) {
+  try {
+    const today = new Date().toLocaleDateString('en-CA', {timeZone: 'America/New_York'});
+    const key   = `${home}_${away}_${today}`.replace(/\s+/g, '_').slice(0, 120);
+    const r = await fetch(
+      `${relayBase}/archive/bracket-replay?triggered_by=${encodeURIComponent(key)}`,
+      { signal: AbortSignal.timeout(2500) }
+    );
+    if (!r.ok) return;
+    const d = await r.json();
+    const rows = d.rows || [];
+    if (rows.length < 2) return;  // need pre + post rows
+
+    // Build impact: rows ordered by team, created_at — first = before, second = after
+    const byTeam = {};
+    for (const row of rows) {
+      const t = row.team;
+      if (!byTeam[t]) {
+        byTeam[t] = { before: row.champion_prob, r32Before: row.r32_prob };
+      } else {
+        byTeam[t].after    = row.champion_prob;
+        byTeam[t].r32After = row.r32_prob;
+      }
+    }
+    const entries = Object.entries(byTeam)
+      .filter(([, d]) => d.before != null && d.after != null
+                      && Math.abs(d.after - d.before) >= 0.002)
+      .map(([team, d]) => {
+        const change = Math.round((d.after - d.before) * 1000) / 1000;
+        const pct    = Math.round(Math.abs(change) * 100 * 10) / 10;
+        const arrow  = change > 0 ? '↑' : '↓';
+        const stB    = d.r32Before >= 0.98 ? 'QUALIFIED' : d.r32Before <= 0.02 ? 'ELIMINATED' : `P(${Math.round(d.r32Before*100)}%)`;
+        const stA    = d.r32After  >= 0.98 ? 'QUALIFIED' : d.r32After  <= 0.02 ? 'ELIMINATED' : `P(${Math.round(d.r32After *100)}%)`;
+        const state  = stB !== stA ? `${stB} → ${stA}` : stA;
+        return { team, state, arrow, pct, change };
+      })
+      .sort((a, b) => Math.abs(b.change) - Math.abs(a.change))
+      .slice(0, 5);
+    if (!entries.length) return;
+
+    // Find the game card in the DOM
+    const gameCard = document.querySelector(`[data-gameid="${CSS.escape(gameId)}"]`);
+    if (!gameCard) return;
+    if (gameCard.nextElementSibling?.classList.contains('wc-bracket-impact-card')) return;
+
+    const card = document.createElement('div');
+    card.className = 'wc-bracket-impact-card';
+    card.innerHTML =
+      '<div class="wc-impact-label">BRACKET IMPACT</div>'
+      + entries.map(e =>
+          `<div class="wc-impact-row">`
+          + `<span class="wc-impact-team">${e.team}</span>`
+          + `<span class="wc-impact-state">${e.state}</span>`
+          + `<span class="wc-impact-delta ${e.change > 0 ? 'pos' : 'neg'}">${e.arrow}${e.pct}%</span>`
+          + `</div>`
+        ).join('');
+    gameCard.insertAdjacentElement('afterend', card);
+  } catch (_) { /* non-blocking */ }
+}
+
 // ── V2 in-game leaders — /games/statistics/players (basketball only) ────────
 // VERIFIED 2026-05-30: endpoint exists, returns 28 player objects per game.
 // player.name is REVERSED ("Vassell Devin") — must split/reverse before display.
@@ -17049,6 +17121,9 @@ async function fetchV2AllScores() {
                 if (g) g.matchupNote = brief;
               }
               scheduleRenderAll();
+              // Render bracket impact debrief card if snapshots exist
+              renderWCBracketImpact(gameId, wg.home || '', wg.away || '', _wcRelayBase)
+                .catch(() => {});
               if (FIELD_DEBUG) console.debug('[V2-WC] brief consumed for', gameId, brief.slice(0, 60) + '…');
             } catch(_) { /* timeout or network — silent */ }
           })(wg._id, wcKeys.find(k => {
@@ -22447,7 +22522,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-24e';
+  const SW_VERSION = '2026-06-24f';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
