@@ -71,6 +71,43 @@ D1 wc2026: f26669de-e772-4b56-a6d1-f8fdea08a4d4
 
 ---
 
+## ALL-STAR SELECTOR — JULY 6 TARGET
+
+**Spec:** Locked June 24. Full CC-CMD in chat history (session: "all-star baseball").
+
+**Methodology:**
+- Primary: ESPN composite WAR (confirmed includes defense + position)
+- Secondary: OPS (batters) / ERA+WHIP (pitchers) as tiebreaker within 0.3 WAR
+- Traditional stats (AVG, HR, RBI) as narrative labels only
+- Fan vote starters accepted as-is — FIELD selects reserves + pitchers only
+- One rep per team enforced. 32 per league (20 pos, 12 pitchers, ≥3 RP).
+
+**Data source verified June 24:**
+- `https://site.web.api.espn.com/apis/common/v3/sports/baseball/mlb/statistics/byathlete?season=2026&seasontype=2&category=batting&limit=100&page=N`
+- Batting cols (0-16): GP, AB, R, H, AVG, 2B, 3B, HR, RBI, TB, SB, SO, BB, OBP, SLG, OPS, WAR
+- Pitching: ERA=[3], IP=[8], K=[13], WHIP=[15], WAR=[16]
+- ESPN batting WAR is composite (offense+defense+position) — do NOT add DWAR separately
+- Fielding endpoint DWAR unreliable (FP=1.000 all players) — ignore
+
+**Key finding June 24:** Rafaela .766 OPS → 3.5 WAR (CF premium), Yordan 1.076 OPS → 3.9 WAR (DH penalty). WAR does the defensive work already.
+
+**Execution sequence (July 6):**
+1. Fan vote starters announced July 2 — hardcode from official MLB announcement
+2. Official rosters announced ~5 PM ET July 6 — hardcode for comparison
+3. `node scripts/allstar-selector.js` → JSON output
+4. Write to KV: `wrangler kv key put allstar:2026:picks`
+5. Verify `.allstar-selector-card` renders in PWA
+6. Commit: `feat: All-Star Selector — FIELD picks vs official roster 2026`
+
+**Deliverables:**
+- `scripts/allstar-selector.js` — new file, standalone Node.js
+- `.allstar-selector-card` section in `index.html` — same pattern as `.wc-bracket-impact-card`
+- KV key `allstar:2026:picks` — one-time write, no cron
+
+**Do NOT wire into nightly pipeline, JQ chain, or journalism prompts.**
+
+---
+
 ## TONIGHT
 
 Groups B (19:00), C (22:00), A (01:00 UTC) MD3 finales.
