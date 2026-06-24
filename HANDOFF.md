@@ -5,12 +5,27 @@
 
 ## FIELD — Current State
 
-**CLIENT HEAD: 14d08c7 · 2026-06-24 · night owl WC drama**
-**RELAY HEAD: 8caf865 · 2026-06-24 · deployed (5b2ea9e)**
-Smoke: 745/0 · SW_VERSION: 2026-06-24e
+**CLIENT HEAD: a3b0740 · 2026-06-24 · WC debrief renderer**
+**RELAY HEAD: e6cdd36 · 2026-06-24 · deployed (e97fffd)**
+Smoke: 748/0 · SW_VERSION: 2026-06-24f
 CF account: b57e9af57ab46c52ca9215804e689c29
 D1 field-archive: cc49101c-0569-4d41-8e7a-be139cde4f26
 D1 wc2026: f26669de-e772-4b56-a6d1-f8fdea08a4d4
+
+---
+
+## BRACKET COMPOUND — FULLY CLOSED
+
+| Phase | Commit |
+|-------|--------|
+| 1: bracket_snapshots + replay | ffe6911 |
+| 2: elimination traps | 9340960 |
+| 3: findBracketImpact + CONTEXT_SOURCES | 9340960 |
+| 4: bracketTriggeredBy wired to WC queue | ddf6527 |
+| 4b: named states + TRAP chip + client display | 94a203b |
+| Pre-snapshot write fix (was silently empty) | e97fffd |
+| findBracketImpact dual-key query | e97fffd |
+| Debrief renderer (.wc-bracket-impact-card) | 55cef28 |
 
 ---
 
@@ -18,84 +33,57 @@ D1 wc2026: f26669de-e772-4b56-a6d1-f8fdea08a4d4
 
 | Item | Commit |
 |------|--------|
-| Group standings in WC brief prompt | bc2dc9c (relay) |
-| POST /wc/matchup/cache + PRE-GAME CONTEXT injection | 39b6815 (relay) |
-| _wcScenariosCache pre-population on schedule load | 1a9a079 (client) |
-| alwaysEliminated → P(advance) threshold (<2%/>98%) | 1a9a079 (client) |
-| Client POSTs wc26Raw matchupNotes to relay KV | a39f869 (client) |
-| Permutations: draw GF fallback + Poisson fair play (Option B) | aecb909 (client) |
-| Night owl WC drama sport family + preGameScore topGame fallback | 6f6bada (client) |
-| assembleContext soccer→wc26 via league signal | 5b2ea9e (relay) |
+| Group standings in WC brief prompt | bc2dc9c |
+| POST /wc/matchup/cache + PRE-GAME CONTEXT | 39b6815 |
+| _wcScenariosCache pre-population | 1a9a079 |
+| alwaysEliminated → P(advance) threshold | 1a9a079 |
+| Client POSTs wc26Raw matchupNotes to KV | a39f869 |
+| Permutations: draw fallback + Poisson FP | aecb909 |
+| Night owl WC drama + topGame fallback | 6f6bada |
+| assembleContext soccer→wc26 league signal | 5b2ea9e |
 
 ---
 
-## QUALITY CHAIN — CURRENT STATE
+## CARRY-FORWARDS AUDITED — CLOSED THIS SESSION
 
-Layer chain: 1 → 2a → 2b → 2c → 2d → 2d-score → 2e → 2f → 2g → 2h → 3b
-300-point scale, 240 excellence threshold.
-Layer 2d-score: score contradiction check + leading-zero date filter.
-JQ game context wired: Night Owl, MLB Brief, Stakes Brief, J2 Series, series preview.
-
----
-
-## CARRY-FORWARD AUDIT (verified this session)
-
-CLOSED — confirmed not open:
-- Soccer context (FBref): ✅ ESPN xG live since June 23 (buildSoccerXGContext)
-- Stale Data Sentinel: ✅ /health/sources live since June 22
-- Odds Story Materializer: ✅ /odds-story/preview live June 22
-- Smoke regression 724→663: ✅ currently 745/0, net positive
-- assembleContext sport-label mismatch: ✅ CLOSED this session (5b2ea9e)
-
-GENUINE OPEN ITEMS:
-- **wentToOT hardcoded false** (L9107) — needs D1 schema ALTER TABLE + GameDO write + backfill. No CC-CMD yet.
-- **relay deploy.yml no path filter** — outbox commits trigger relay redeploy; [skip ci] required; blocks auto drive-upload. Fix: add path filter excluding docs/ outbox/. jubilant-bassoon already path-filtered.
-- field_smoke.js L26546 pre-existing lint — low priority
+- Soccer/FBref: ✅ ESPN xG live since June 23
+- Stale Data Sentinel: ✅ live since June 22
+- Odds Story Materializer: ✅ live since June 22
+- Smoke regression 724→663: ✅ 748/0 net positive
+- assembleContext sport-label mismatch: ✅ 5b2ea9e
+- relay [skip ci] + drive-upload: ✅ path filter added (02f4a85); auto-fires verified
 
 ---
 
-## BRACKET COMPOUND STATUS
+## INFRASTRUCTURE
 
-| Phase | Status |
-|-------|--------|
-| 1: bracket_snapshots + replay | ✓ |
-| 2: elimination traps + /wc/elimination-traps | ✓ |
-| 3: findBracketImpact + CONTEXT_SOURCES | ✓ |
-| 4: bracketTriggeredBy wired to WC queue | ✓ |
-| 4b: named states + TRAP chip + elim display (client) | ✓ |
-| Debrief buildBracketImpact (client renderer) | Pending first live [BRACKET IMPACT] confirmation |
+- relay deploy.yml: path filter added (src/, wrangler.toml, workers/ only)
+  Outbox commits no longer need [skip ci] — drive-upload auto-fires on push
+- Travelers Championship golf card: set (Jun 25-28 TPC River Highlands)
 
 ---
 
-## OPEN ITEMS
+## GENUINE OPEN ITEMS
 
-### FIELD P0
-- API-Sports Football Pro renewal — **JUNE 29 (5 days)**
-
-### FIELD genuine carry-forwards
-- wentToOT hardcoded false (L9107) — D1 schema + GameDO + backfill
-- relay deploy.yml path filter — fixes auto drive-upload (one workflow change)
-
-### FIELD P4
+- **wentToOT hardcoded false** (L9107) — D1 ALTER TABLE + GameDO write + backfill
 - NFL SPORT_TO_V2 — September 9
-- Client buildBracketImpact Debrief renderer (after first live result)
+- API-Sports Football Pro renewal — **JUNE 29**
 
 ---
 
-## TONIGHT WATCH
+## TONIGHT
 
-Groups B (3 PM ET), C (6 PM ET), A (9 PM ET) MD3 finales.
-First full-stack WC brief test: writeWCResult → PRE-GAME CONTEXT + STANDINGS + EVENTS → [BRACKET IMPACT] → 2d-score → runQualityChain.
-Night_stars stale until tomorrow 5 AM ET cron (Group A finishes 3 AM UTC).
-Travelers Championship R1 tomorrow June 25 — golf card set.
+Groups B (19:00), C (22:00), A (01:00 UTC) MD3 finales.
+First full-stack WC brief: PRE-GAME CONTEXT + STANDINGS + EVENTS + [BRACKET IMPACT] → 2d-score.
+First live debrief card (.wc-bracket-impact-card) after game goes final.
+Night_stars stale for Group A (finishes 3 AM UTC → heals tomorrow 5 AM ET cron).
 
 ---
 
-## STAT — Current State
+## STAT
 
-**HEAD: 2d18fff · 2026-06-23 · deployed**
-Smoke: 213/213 · 572 companies
-**Open:** iOS Safari T1, hiringcafe, 4 ATS probes, UMMS, apply agent, Issue #7
+HEAD: 2d18fff · 572 companies
+Open: iOS Safari T1, hiringcafe, 4 ATS probes, UMMS, apply agent, Issue #7
 
 ---
 
@@ -109,9 +97,6 @@ Smoke: 213/213 · 572 companies
 7. Info Disclosure — 11T6jE6z2R7WFVGFKrSq2JO7MU76Jr_xmAYGIMiafRug
 8. Journalism Loop — 1PKkEGpe306ovRngvBCAZgoQyjeaj02SX0khAp0OrOfU
 9. External API — 1kLEZnwLmmvvGdEtPn26jC8iUKbSR_9PK4ZxSpjDvkvE
-
-## Drive upload outbox
-`.github/workflows/drive-upload-outbox.yml` → folder 0ABxH84VndHL7Uk9PVA
 
 ## SESSION START PROTOCOL
 Call session_health MCP tool first.
