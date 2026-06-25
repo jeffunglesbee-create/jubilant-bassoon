@@ -5438,6 +5438,12 @@ assert('A737 — WC debrief: CSS class wc-bracket-impact-card present',
   html.includes('.wc-bracket-impact-card'),
   'CSS for debrief card must be present');
 
+assert('A738 — applyMainHTML preserves #field-newspaper: save+remove+prepend pattern present',
+  html.includes("const savedNewspaper = document.getElementById('field-newspaper')") &&
+  html.includes('if (savedNewspaper) savedNewspaper.remove()') &&
+  /savedNewspaper\) main\.prepend\(savedNewspaper\)/.test(html),
+  'applyMainHTML must save #field-newspaper before replaceChildren and re-prepend at every exit');
+
 assert('A_BR_1 — brief always-render: initFIELDBrief receives full sports[], not filtered subset',
   html.includes('initFIELDBrief(sports)'),
   'initFIELDBrief must be called with the full sports array so filter state never suppresses the brief');

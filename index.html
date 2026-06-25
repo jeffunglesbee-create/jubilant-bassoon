@@ -10109,8 +10109,14 @@ function scheduleRenderAll(){
 function applyMainHTML(html){
   const main = document.getElementById('main');
   if (!main) return;
+  // Preserve #field-newspaper across schedule re-renders. renderAll() calls
+  // this function on every poll/filter/score update and would wipe the newspaper
+  // via replaceChildren. Detach now; re-prepend at every exit path.
+  const savedNewspaper = document.getElementById('field-newspaper');
+  if (savedNewspaper) savedNewspaper.remove();
   if (!html || !html.trim()) {
     main.innerHTML = '';
+    if (savedNewspaper) main.prepend(savedNewspaper);
     return;
   }
   const tmp = document.createElement('div');
@@ -10141,6 +10147,7 @@ function applyMainHTML(html){
     } catch(e) {
       // Defensive: if morph fails for any reason, fall back to plain innerHTML.
       main.innerHTML = html;
+      if (savedNewspaper) main.prepend(savedNewspaper);
       return;
     }
   }
@@ -10153,6 +10160,7 @@ function applyMainHTML(html){
     // Defensive: extremely old browsers without replaceChildren — fall back.
     main.innerHTML = html;
   }
+  if (savedNewspaper) main.prepend(savedNewspaper);
 }
 
 // ── CC-CMD-2026-06-15-client-features Commit 3: Schedule Conflict Map ────────
@@ -22522,7 +22530,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-24h';
+  const SW_VERSION = '2026-06-24i';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
