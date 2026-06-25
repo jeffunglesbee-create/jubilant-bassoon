@@ -16691,6 +16691,7 @@ function mapV2ToESPN(fg) {
     // WP and leaders start null; filled by Savant (MLB), statistics endpoint (NBA/NHL), or NHL relay
     espnEventId: null, wp: null, wp_prev: null,
     homeLeader: null, awayLeader: null,
+    bsdEventId: fg.bsdEventId || null,  // BSD event ID — activates pitch/momentum when set
     start_time: fg.start || '',
   };
 }
@@ -26764,6 +26765,12 @@ document.addEventListener('visibilitychange', () => {
 
     if (eventType === 'ping') return; // keepalive — no action
 
+    // BSD ball tracking and stats frames — routed through AmbientDO SSE
+    if (eventType === 'bsd:ball' || eventType === 'bsd:stats') {
+      try { if (typeof _bsdOnSSEFrame === 'function') _bsdOnSSEFrame(eventType, data); } catch (_e) {}
+      return;
+    }
+
     if (eventType === 'connected') {
       // Immediately seed the score store with current live state from DO
       const liveGames = data.liveGames || [];
@@ -27004,6 +27011,8 @@ document.addEventListener('visibilitychange', () => {
       _es.addEventListener('all_final',   e => _onMessage(e, 'all_final'));
       _es.addEventListener('wp_update',   e => _onMessage(e, 'wp_update'));
       _es.addEventListener('ping',        e => _onMessage(e, 'ping'));
+      _es.addEventListener('bsd:ball',    e => _onMessage(e, 'bsd:ball'));
+      _es.addEventListener('bsd:stats',   e => _onMessage(e, 'bsd:stats'));
 
       _es.onopen = function() {
         _attempts  = 0;
@@ -30626,13 +30635,105 @@ function toggleWCView() {
     const jrnSec = document.getElementById('field-journalism-section');
     if (jrnSec) { jrnSec.setAttribute('hidden', ''); jrnSec.style.display = ''; }
     renderWCSection();
+    // Subscribe to BSD for any live WC game with bsdEventId
+    setTimeout(_bsdActivateForWC, 500); // defer 500ms — let V2 poll populate espnScores first
   } else {
     navLink?.classList.remove('active');
     section?.setAttribute('hidden', '');
     if (section) section.style.display = ''; // clear inline override
     // Close BracketDO WebSocket — no bracket updates needed off-screen
     if (window._bracketWS) window._bracketWS.close();
+    // Unsubscribe BSD WebSocket fan-out
+    _bsdDeactivate();
   }
+}
+
+// ── BSD pitch helpers (2026-06-25) ────────────────────────────────────────
+// Vanilla JS. Extends existing _es SSE singleton (no second EventSource).
+// Subscribe/unsubscribe lifecycle tied to wc-mode panel state.
+
+// Track active BSD subscription
+var _bsdActiveId = null;
+var _bsdShotData = [];
+var _bsdBallPos  = null;
+
+// Called on bsd:ball and bsd:stats frames from _onMessage
+function _bsdOnSSEFrame(type, data) {
+  if (type === 'bsd:ball') {
+    _bsdBallPos = data;
+    _bsdRepaint();
+  } else if (type === 'bsd:stats') {
+    if (Array.isArray(data.shots)) { _bsdShotData = data.shots; _bsdRepaint(); }
+  }
+}
+
+// Subscribe to BSD WebSocket via AmbientDO
+function _bsdActivate(eventId) {
+  if (_bsdActiveId === eventId) return;
+  _bsdActiveId = eventId;
+  var base = (typeof V2_RELAY_BASE !== 'undefined') ? V2_RELAY_BASE : '';
+  fetch(base + '/ambient/bsd/subscribe', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ event_id: eventId }),
+  }).catch(function() {});
+}
+
+// Unsubscribe when leaving WC view
+function _bsdDeactivate() {
+  if (!_bsdActiveId) return;
+  var base = (typeof V2_RELAY_BASE !== 'undefined') ? V2_RELAY_BASE : '';
+  fetch(base + '/ambient/bsd/unsubscribe', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ event_id: _bsdActiveId }),
+  }).catch(function() {});
+  _bsdActiveId = null;
+  _bsdBallPos  = null;
+  _bsdShotData = [];
+}
+
+// Find a live WC game with bsdEventId and subscribe
+function _bsdActivateForWC() {
+  try {
+    if (typeof espnScores === 'undefined') return;
+    var entry = null;
+    Object.keys(espnScores).forEach(function(k) {
+      var s = espnScores[k];
+      if (s && s._sport === 'wc26' && s.state === 'in' && s.bsdEventId && !entry) {
+        entry = s;
+      }
+    });
+    if (entry) _bsdActivate(entry.bsdEventId);
+  } catch (_e) {}
+}
+
+// SVG pitch renderer — called on each bsd:ball / bsd:stats frame
+function _bsdRepaint() {
+  var el = document.getElementById('bsd-pitch');
+  if (!el) return;
+  var W = el.clientWidth  || 300;
+  var H = Math.round(W * 0.667);
+  var shots = (_bsdShotData || []).map(function(s) {
+    var cx = s.x * W / 100;
+    var cy = (100 - s.y) * H / 100;
+    var r  = 3 + (s.xg || 0) * 10;
+    var col = s.team === 'home' ? 'rgba(99,179,237,0.75)' : 'rgba(252,129,74,0.75)';
+    return '<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="'+col+'" stroke="rgba(255,255,255,0.4)" stroke-width="0.8"/>';
+  }).join('');
+  var ball = '';
+  if (_bsdBallPos && _bsdBallPos.x != null) {
+    var bx = _bsdBallPos.x * W / 100;
+    var by = (100 - _bsdBallPos.y) * H / 100;
+    ball = '<circle cx="'+bx+'" cy="'+by+'" r="5" fill="#fff" stroke="rgba(0,0,0,0.4)" stroke-width="1"/>';
+  }
+  el.innerHTML =
+    '<svg width="'+W+'" height="'+H+'" viewBox="0 0 '+W+' '+H+'" style="display:block;background:#2d5a27;border-radius:6px">'+
+    '<rect x="'+W*.05+'" y="'+H*.05+'" width="'+W*.9+'" height="'+H*.9+'" fill="none" stroke="rgba(255,255,255,0.35)" stroke-width="1.5"/>'+
+    '<line x1="'+W/2+'" y1="'+H*.05+'" x2="'+W/2+'" y2="'+H*.95+'" stroke="rgba(255,255,255,0.35)" stroke-width="1.5"/>'+
+    '<circle cx="'+W/2+'" cy="'+H/2+'" r="'+Math.min(W,H)*.1+'" fill="none" stroke="rgba(255,255,255,0.35)" stroke-width="1.5"/>'+
+    shots + ball +
+    '</svg>';
 }
 
 // openWcGroup — bridge from a schedule WC card to the in-mode Groups view.

@@ -5448,6 +5448,14 @@ assert('A739 — win probability chip uses 0-1 scale threshold (not 0-100)',
   html.includes('trailingWp <= 0.25') || html.includes('trailingWp < 0.25'),
   'WP threshold must use 0-1 scale: espnScores[key].wp is a fraction not a percent');
 
+assert('A_BSD_7 — bsdEventId in mapV2ToESPN return object',
+  html.includes('bsdEventId: fg.bsdEventId || null'),
+  'mapV2ToESPN must forward bsdEventId so client can track BSD live events');
+
+assert('A_BSD_8 — bsd:ball SSE listener in _connect()',
+  html.includes("addEventListener('bsd:ball'"),
+  '_connect() must register bsd:ball listener on existing _es singleton');
+
 assert('A_BR_1 — brief always-render: initFIELDBrief receives full sports[], not filtered subset',
   html.includes('initFIELDBrief(sports)'),
   'initFIELDBrief must be called with the full sports array so filter state never suppresses the brief');
