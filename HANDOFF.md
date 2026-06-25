@@ -90,6 +90,7 @@ Four silent failure causes fixed. Smoke 748→752/0.
 ## GENUINE OPEN ITEMS
 
 - **wentToOT hardcoded false** (L9107) — D1 ALTER TABLE + GameDO write + backfill
+- **read_codemap relay tool** — not yet built; L3 uses bash workaround until shipped
 - NFL SPORT_TO_V2 — September 9
 - API-Sports Football Pro renewal — **JUNE 29**
 
@@ -147,5 +148,27 @@ Open: iOS Safari T1, hiringcafe, 4 ATS probes, UMMS, apply agent, Issue #7
 8. Journalism Loop — 1PKkEGpe306ovRngvBCAZgoQyjeaj02SX0khAp0OrOfU
 9. External API — 1kLEZnwLmmvvGdEtPn26jC8iUKbSR_9PK4ZxSpjDvkvE
 
-## SESSION START PROTOCOL
-Call session_health MCP tool first.
+---
+
+## SESSION START PROTOCOL — Rule 85 (SESSION-MEMORY-PROTOCOL-A)
+
+Load all three layers before any work. Sessions without L3+L4 MUST NOT make
+architectural decisions — mechanical edits only until both are loaded.
+
+**L2 (two tool_search calls):**
+1. tool_search("FIELD Handoff session health") → session_health + read_handoff
+2. tool_search("codex commit write file source") → codex_search, read_file, commit_file, write_handoff, get_head_sha
+
+**L3 (bash — read_file offloads to disk, never use it for CODE_MAP):**
+```bash
+curl -s "https://raw.githubusercontent.com/jeffunglesbee-create/jubilant-bassoon/main/CODE_MAP.json" \
+  | python3 -c "import json,sys; m=json.load(sys.stdin); [print(f) for f in m['functions'] if '{domain}' in f['name']]"
+```
+Note: read_codemap relay tool not yet built — bash is the workaround.
+
+**L4:**
+codex_search("{session domain}") — include touched domain + any neighbouring domain
+whose contract the change crosses.
+
+**Declare:** START · Type · Scope · Baseline (HEAD + drift + L3/L4 status)
+First output = tool calls, no prose.
