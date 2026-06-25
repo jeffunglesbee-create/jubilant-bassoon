@@ -1,351 +1,311 @@
-# CC-CMD G: jubilant-bassoon — BSD Live Pitch Component
-**Date:** 2026-06-25 · **Repo:** jubilant-bassoon (NOT field-relay-nba) · **Sequence:** After field-relay-nba CC-CMDs A→F + `/bsd/contract` shipped (HEAD `e49debf`). · **Rule 87:** Self-completing.
+# CC-CMD G (revised): jubilant-bassoon — BSD Live Pitch Integration
+**Date:** 2026-06-25 · **Repo:** jubilant-bassoon · **Rule 87:** Self-completing.
+**Revision:** Rewritten after probe block stopped at 5 blockers (architecture mismatch).
+**Cross-repo dep:** field-relay-nba HEAD ≥ e49debf (bsdEventId in handleV2Games).
 
 ---
 
-## WHAT THIS ADDS
+## WHAT CHANGED FROM ORIGINAL SPEC
 
-A pitch SVG overlay on WC game views that renders:
-- **Live ball position** (animated dot, ~5s tick from BSD WebSocket via AmbientDO SSE)
-- **Shotmap** (per-shot xG circles, post-game or in-running)
-- **Average player positions** (player labels at avg coords)
+Five blockers corrected:
+1. Architecture: NO React/JSX/ES modules. All vanilla JS inline in index.html.
+   Pattern: extend existing functions in-place. No new files.
+2. Probe: NO curl to field-relay-nba.jeffunglesbee.workers.dev (sandbox blocks it).
+   All probe steps are grep-only on local source.
+3. bsdEventId: mapV2ToESPN at L16662 strips it. Must be added to return object.
+4. SSE: extend existing _connect() listener block (L27000-27006). No second EventSource.
+5. Lifecycle: subscribe/unsubscribe hooks attach to toggleWCView() (L30611), not useEffect.
 
-Activation gate: `game.bsdEventId` is set (relay's `handleV2Games` populates it
-when BSD has the fixture in its live pool — CC-CMD-F).
-
-All data flows are already shipped relay-side:
-- REST: `/bsd/events/:id/shotmap`, `/bsd/events/:id/average-positions`
-- SSE: `/live/ambient` emits `bsd:ball` and `bsd:stats` events
-- Subscribe: `POST /ambient/bsd/subscribe { event_id }`
-- Unsubscribe: `POST /ambient/bsd/unsubscribe { event_id }`
-- **Coord contract:** `GET /bsd/contract` (single source of truth — fetch once on app load, cache 5min)
+Pitch SVG rendering is INCLUDED as inline functions — no separate module file.
 
 ---
 
-## CONTRACT (read from `/bsd/contract`, do NOT hardcode)
+## PROBE BLOCK — grep only, no relay curls
 
-```json
-{
-  "coordinateSystem": {
-    "space": "normalized-pitch",
-    "xRange": [0, 100],
-    "yRange": [0, 100],
-    "origin": "home-team-defending-goal-line, bottom-left corner",
-    "axes": { "x": "0 = home goal, 100 = away goal", "y": "0 = bottom touchline, 100 = top" }
-  },
-  "transformReference": {
-    "toScreenSVG": "cx = x * width / 100; cy = (100 - y) * height / 100",
-    "mirrorForAwayPerspective": "x = 100 - x; y = 100 - y"
+```bash
+cd /home/claude/jubilant-bassoon && git pull
+
+# 1. Confirm bsdEventId is absent from client (blocker 3)
+grep -c 'bsdEventId' index.html
+# Expected: 0
+
+# 2. Confirm mapV2ToESPN return object location
+grep -n 'start_time: fg.start' index.html
+# Expected: 1 line at ~L16694
+
+# 3. Confirm _connect listener block for str_replace anchor
+grep -n "addEventListener('ping'" index.html
+# Expected: 1 line at ~L27006
+
+# 4. Confirm toggleWCView location and structure
+grep -n 'function toggleWCView' index.html
+grep -n 'renderWCSection()' index.html | head -3
+# Expected: function at ~L30611, renderWCSection() call at ~L30628
+
+# 5. Confirm _onMessage ping check for str_replace anchor
+grep -n "eventType === 'ping') return" index.html
+# Expected: 1 line at ~L26765
+
+# 6. Confirm V2_RELAY_BASE is accessible in scope
+grep -n 'V2_RELAY_BASE' index.html | head -5
+# Expected: defined somewhere in the global JS scope
+
+# 7. No bsd:ball listener yet
+grep -c "bsd:ball" index.html
+# Expected: 0
+```
+
+---
+
+## TASK 1 — mapV2ToESPN: forward bsdEventId
+
+**str_replace in index.html:**
+
+OLD (exact match, ~L16694):
+```
+    start_time: fg.start || '',
+  };
+}
+```
+
+NEW:
+```
+    bsdEventId: fg.bsdEventId || null,  // BSD event ID — activates pitch/momentum when set
+    start_time: fg.start || '',
+  };
+}
+```
+
+---
+
+## TASK 2 — _connect(): add bsd:ball and bsd:stats listeners
+
+**str_replace in index.html:**
+
+OLD (exact match, ~L27006-27007):
+```
+      _es.addEventListener('ping',        e => _onMessage(e, 'ping'));
+
+      _es.onopen = function() {
+```
+
+NEW:
+```
+      _es.addEventListener('ping',        e => _onMessage(e, 'ping'));
+      _es.addEventListener('bsd:ball',    e => _onMessage(e, 'bsd:ball'));
+      _es.addEventListener('bsd:stats',   e => _onMessage(e, 'bsd:stats'));
+
+      _es.onopen = function() {
+```
+
+---
+
+## TASK 3 — _onMessage: handle bsd:ball and bsd:stats
+
+**str_replace in index.html:**
+
+OLD (exact match, ~L26765-26766):
+```
+    if (eventType === 'ping') return; // keepalive — no action
+
+    if (eventType === 'connected') {
+```
+
+NEW:
+```
+    if (eventType === 'ping') return; // keepalive — no action
+
+    // BSD ball tracking and stats frames — routed through AmbientDO SSE
+    if (eventType === 'bsd:ball' || eventType === 'bsd:stats') {
+      try { if (typeof _bsdOnSSEFrame === 'function') _bsdOnSSEFrame(eventType, data); } catch (_e) {}
+      return;
+    }
+
+    if (eventType === 'connected') {
+```
+
+---
+
+## TASK 4 — toggleWCView: subscribe/unsubscribe hooks
+
+**str_replace in index.html:**
+
+OLD (exact match, ~L30628-30634):
+```
+    renderWCSection();
+  } else {
+    navLink?.classList.remove('active');
+    section?.setAttribute('hidden', '');
+    if (section) section.style.display = ''; // clear inline override
+    // Close BracketDO WebSocket — no bracket updates needed off-screen
+    if (window._bracketWS) window._bracketWS.close();
   }
 }
 ```
 
-Status field on contract is `provisional` — first live game tonight may
-require an axis flip. Build the transform util on top of the contract so
-swapping is a one-line patch.
+NEW:
+```
+    renderWCSection();
+    // Subscribe to BSD for any live WC game with bsdEventId
+    setTimeout(_bsdActivateForWC, 500); // defer 500ms — let V2 poll populate espnScores first
+  } else {
+    navLink?.classList.remove('active');
+    section?.setAttribute('hidden', '');
+    if (section) section.style.display = ''; // clear inline override
+    // Close BracketDO WebSocket — no bracket updates needed off-screen
+    if (window._bracketWS) window._bracketWS.close();
+    // Unsubscribe BSD WebSocket fan-out
+    _bsdDeactivate();
+  }
+}
 
----
+// ── BSD pitch helpers (2026-06-25) ────────────────────────────────────────
+// Vanilla JS. Extends existing _es SSE singleton (no second EventSource).
+// Subscribe/unsubscribe lifecycle tied to wc-mode panel state.
 
-## PROBE BLOCK
+// Track active BSD subscription
+var _bsdActiveId = null;
+var _bsdShotData = [];
+var _bsdBallPos  = null;
 
-```bash
-# 1. Confirm relay contract endpoint is live
-curl -s https://field-relay-nba.jeffunglesbee.workers.dev/bsd/contract | jq '.coordinateSystem'
-# Expected: {space, xRange, yRange, origin, axes, sampleRate}
+// Called on bsd:ball and bsd:stats frames from _onMessage
+function _bsdOnSSEFrame(type, data) {
+  if (type === 'bsd:ball') {
+    _bsdBallPos = data;
+    _bsdRepaint();
+  } else if (type === 'bsd:stats') {
+    if (Array.isArray(data.shots)) { _bsdShotData = data.shots; _bsdRepaint(); }
+  }
+}
 
-# 2. Confirm AmbientDO subscribe endpoint is live (POST-only — expect 400 on GET)
-curl -X POST https://field-relay-nba.jeffunglesbee.workers.dev/ambient/bsd/subscribe \
-  -H 'Content-Type: application/json' -d '{"event_id":"test"}'
-# Expected: {ok:true, subscribed:"test"} (sandbox-side will get 503 if no BSD token,
-#   but the route itself must exist)
+// Subscribe to BSD WebSocket via AmbientDO
+function _bsdActivate(eventId) {
+  if (_bsdActiveId === eventId) return;
+  _bsdActiveId = eventId;
+  var base = (typeof V2_RELAY_BASE !== 'undefined') ? V2_RELAY_BASE : '';
+  fetch(base + '/ambient/bsd/subscribe', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ event_id: eventId }),
+  }).catch(function() {});
+}
 
-# 3. Find the WC game view component
-grep -rn "bsdEventId\|wc26" src --include='*.{ts,tsx,js,jsx}' | head -10
+// Unsubscribe when leaving WC view
+function _bsdDeactivate() {
+  if (!_bsdActiveId) return;
+  var base = (typeof V2_RELAY_BASE !== 'undefined') ? V2_RELAY_BASE : '';
+  fetch(base + '/ambient/bsd/unsubscribe', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ event_id: _bsdActiveId }),
+  }).catch(function() {});
+  _bsdActiveId = null;
+  _bsdBallPos  = null;
+  _bsdShotData = [];
+}
 
-# 4. Confirm SSE listener exists (AmbientDO ambient channel)
-grep -rn "/live/ambient\|EventSource" src --include='*.{ts,tsx,js,jsx}' | head -5
+// Find a live WC game with bsdEventId and subscribe
+function _bsdActivateForWC() {
+  try {
+    if (typeof espnScores === 'undefined') return;
+    var entry = null;
+    Object.keys(espnScores).forEach(function(k) {
+      var s = espnScores[k];
+      if (s && s._sport === 'wc26' && s.state === 'in' && s.bsdEventId && !entry) {
+        entry = s;
+      }
+    });
+    if (entry) _bsdActivate(entry.bsdEventId);
+  } catch (_e) {}
+}
+
+// SVG pitch renderer — called on each bsd:ball / bsd:stats frame
+function _bsdRepaint() {
+  var el = document.getElementById('bsd-pitch');
+  if (!el) return;
+  var W = el.clientWidth  || 300;
+  var H = Math.round(W * 0.667);
+  var shots = (_bsdShotData || []).map(function(s) {
+    var cx = s.x * W / 100;
+    var cy = (100 - s.y) * H / 100;
+    var r  = 3 + (s.xg || 0) * 10;
+    var col = s.team === 'home' ? 'rgba(99,179,237,0.75)' : 'rgba(252,129,74,0.75)';
+    return '<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="'+col+'" stroke="rgba(255,255,255,0.4)" stroke-width="0.8"/>';
+  }).join('');
+  var ball = '';
+  if (_bsdBallPos && _bsdBallPos.x != null) {
+    var bx = _bsdBallPos.x * W / 100;
+    var by = (100 - _bsdBallPos.y) * H / 100;
+    ball = '<circle cx="'+bx+'" cy="'+by+'" r="5" fill="#fff" stroke="rgba(0,0,0,0.4)" stroke-width="1"/>';
+  }
+  el.innerHTML =
+    '<svg width="'+W+'" height="'+H+'" viewBox="0 0 '+W+' '+H+'" style="display:block;background:#2d5a27;border-radius:6px">'+
+    '<rect x="'+W*.05+'" y="'+H*.05+'" width="'+W*.9+'" height="'+H*.9+'" fill="none" stroke="rgba(255,255,255,0.35)" stroke-width="1.5"/>'+
+    '<line x1="'+W/2+'" y1="'+H*.05+'" x2="'+W/2+'" y2="'+H*.95+'" stroke="rgba(255,255,255,0.35)" stroke-width="1.5"/>'+
+    '<circle cx="'+W/2+'" cy="'+H/2+'" r="'+Math.min(W,H)*.1+'" fill="none" stroke="rgba(255,255,255,0.35)" stroke-width="1.5"/>'+
+    shots + ball +
+    '</svg>';
+}
 ```
 
 ---
 
-## TASK 1 — Coord transform util + contract fetch
+## TASK 5 — Smoke assertions
 
-Create `src/lib/bsd-pitch.js` (or .ts):
+Add after the last existing assertion (near end of JS, before `</script>`):
 
 ```javascript
-// BSD pitch coordinate transform. Reads the live contract from the relay
-// on first use, then memoizes. If the relay's contract `status` flips from
-// `provisional` to `verified` (or the axes change), reload the page —
-// the contract is fetched once per session.
+// A_BSD_7 — bsdEventId forwarded through mapV2ToESPN
+assert('A_BSD_7 — bsdEventId in mapV2ToESPN return object',
+  html.includes('bsdEventId: fg.bsdEventId || null'),
+  'mapV2ToESPN must forward bsdEventId so client can track BSD live events');
 
-let _contractCache = null;
-async function getBSDContract() {
-    if (_contractCache) return _contractCache;
-    try {
-        const r = await fetch('https://field-relay-nba.jeffunglesbee.workers.dev/bsd/contract');
-        if (r.ok) _contractCache = await r.json();
-    } catch (_) {}
-    // Fallback contract — matches the relay default. Keep in sync if
-    // the relay default changes (it shouldn't, since the relay IS the source).
-    return _contractCache || {
-        coordinateSystem: { xRange: [0,100], yRange: [0,100] },
-        transformReference: { toScreenSVG: 'cx = x * w / 100; cy = (100 - y) * h / 100' },
-    };
-}
-
-// Transform BSD pitch coords (0-100, 0-100) → SVG cx/cy.
-// width/height are the SVG viewBox dimensions in pixels (or viewBox units).
-// awayPerspective: when true, mirrors so the rendering team always attacks
-// left-to-right (useful for showing both sides from "their" view).
-function bsdToScreen({ x, y }, { width, height, awayPerspective = false } = {}) {
-    let px = x, py = y;
-    if (awayPerspective) { px = 100 - px; py = 100 - py; }
-    return {
-        cx: (px * width) / 100,
-        cy: ((100 - py) * height) / 100,
-    };
-}
-
-export { getBSDContract, bsdToScreen };
+// A_BSD_8 — bsd:ball listener wired in _connect()
+assert('A_BSD_8 — bsd:ball SSE listener in _connect()',
+  html.includes("addEventListener('bsd:ball'"),
+  '_connect() must register bsd:ball listener on existing _es singleton');
 ```
-
----
-
-## TASK 2 — Pitch SVG component
-
-Create `src/components/BSDPitch.jsx` (or .tsx):
-
-```jsx
-import { useEffect, useState, useRef } from 'react';
-import { bsdToScreen } from '../lib/bsd-pitch';
-
-// width/height in viewBox units. Pitch is 105×68 meters in real life;
-// we use 100×100 normalized so coords map 1:1 to viewBox.
-const W = 100, H = 100;
-
-export function BSDPitch({ bsdEventId, ballFrame, shots = [], avgPositions = [] }) {
-    return (
-        <svg viewBox={`0 0 ${W} ${H}`} className="bsd-pitch">
-            {/* Background */}
-            <rect x="0" y="0" width={W} height={H} fill="#0d4d2a" />
-            {/* Halfway line */}
-            <line x1={W/2} y1="0" x2={W/2} y2={H} stroke="#fff" strokeWidth="0.4" />
-            {/* Center circle */}
-            <circle cx={W/2} cy={H/2} r="9.15" fill="none" stroke="#fff" strokeWidth="0.4" />
-            {/* Penalty boxes */}
-            <rect x="0" y="21" width="16" height="58" fill="none" stroke="#fff" strokeWidth="0.4" />
-            <rect x={W-16} y="21" width="16" height="58" fill="none" stroke="#fff" strokeWidth="0.4" />
-
-            {/* Average positions */}
-            {avgPositions.map((p, i) => {
-                const { cx, cy } = bsdToScreen({ x: p.x, y: p.y }, { width: W, height: H });
-                return (
-                    <g key={`avg-${i}`}>
-                        <circle cx={cx} cy={cy} r="2" fill="rgba(255,255,255,0.4)" />
-                        <text x={cx} y={cy - 3} fontSize="2" fill="#fff" textAnchor="middle">
-                            {p.player?.split(' ').pop()}
-                        </text>
-                    </g>
-                );
-            })}
-
-            {/* Shots */}
-            {shots.map((s, i) => {
-                const { cx, cy } = bsdToScreen({ x: s.x, y: s.y }, { width: W, height: H });
-                const r = 1 + (s.xg ?? 0.1) * 5;        // size by xG
-                const fill = s.result === 'goal' ? '#fb923c' : 'rgba(251,146,60,0.3)';
-                return <circle key={`shot-${i}`} cx={cx} cy={cy} r={r} fill={fill}
-                               stroke="#fff" strokeWidth="0.2" />;
-            })}
-
-            {/* Live ball */}
-            {ballFrame?.coords && (() => {
-                const { cx, cy } = bsdToScreen(ballFrame.coords, { width: W, height: H });
-                return (
-                    <circle cx={cx} cy={cy} r="1.4" fill="#facc15"
-                            stroke="#fff" strokeWidth="0.3">
-                        <animate attributeName="opacity" values="1;0.6;1" dur="2s" repeatCount="indefinite" />
-                    </circle>
-                );
-            })()}
-        </svg>
-    );
-}
-```
-
-CSS (or styled-component):
-```css
-.bsd-pitch {
-    width: 100%;
-    max-width: 600px;
-    aspect-ratio: 1;            /* viewBox is square */
-    border-radius: 8px;
-    background: #0d4d2a;
-}
-```
-
----
-
-## TASK 3 — Live ball subscription hook
-
-Create `src/lib/use-bsd-live.js`:
-
-```javascript
-import { useEffect, useState, useRef } from 'react';
-
-const RELAY = 'https://field-relay-nba.jeffunglesbee.workers.dev';
-
-// Subscribe to live BSD ball/stats frames for a given event_id.
-// Manages: POST /ambient/bsd/subscribe on mount, SSE filter on event_id,
-// POST /ambient/bsd/unsubscribe on unmount. Returns latest ball + stats frames.
-export function useBSDLive(bsdEventId) {
-    const [ballFrame, setBallFrame] = useState(null);
-    const [statsFrame, setStatsFrame] = useState(null);
-    const esRef = useRef(null);
-
-    useEffect(() => {
-        if (!bsdEventId) return;
-        let cancelled = false;
-
-        // 1. Subscribe relay-side
-        fetch(`${RELAY}/ambient/bsd/subscribe`, {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ event_id: bsdEventId }),
-        }).catch(() => {});
-
-        // 2. Open SSE if not already open
-        if (!esRef.current) {
-            esRef.current = new EventSource(`${RELAY}/live/ambient`);
-        }
-        const es = esRef.current;
-        const onBall = (e) => {
-            if (cancelled) return;
-            try {
-                const d = JSON.parse(e.data);
-                if (String(d.id) === String(bsdEventId)) setBallFrame(d);
-            } catch (_) {}
-        };
-        const onStats = (e) => {
-            if (cancelled) return;
-            try {
-                const d = JSON.parse(e.data);
-                if (String(d.id) === String(bsdEventId)) setStatsFrame(d);
-            } catch (_) {}
-        };
-        es.addEventListener('bsd:ball', onBall);
-        es.addEventListener('bsd:stats', onStats);
-
-        return () => {
-            cancelled = true;
-            es.removeEventListener('bsd:ball', onBall);
-            es.removeEventListener('bsd:stats', onStats);
-            // Unsubscribe relay-side (others may still subscribe to other games on same SSE)
-            fetch(`${RELAY}/ambient/bsd/unsubscribe`, {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ event_id: bsdEventId }),
-            }).catch(() => {});
-        };
-    }, [bsdEventId]);
-
-    return { ballFrame, statsFrame };
-}
-```
-
----
-
-## TASK 4 — Wire into WC game view
-
-Find the existing WC game view component (the one that consumes
-`/v2/games?sport=wc26`). Add a "Live Pitch" tab visible only when
-`game.bsdEventId` is set.
-
-```jsx
-import { BSDPitch } from './components/BSDPitch';
-import { useBSDLive } from './lib/use-bsd-live';
-
-function WCGameView({ game }) {
-    const { ballFrame, statsFrame } = useBSDLive(game.bsdEventId);
-    const [shots, setShots] = useState([]);
-    const [avgPos, setAvgPos] = useState([]);
-
-    useEffect(() => {
-        if (!game.bsdEventId) return;
-        fetch(`https://field-relay-nba.jeffunglesbee.workers.dev/bsd/events/${game.bsdEventId}/shotmap`)
-            .then(r => r.ok ? r.json() : null)
-            .then(d => setShots(d?.shots || d?.results || []))
-            .catch(() => {});
-        fetch(`https://field-relay-nba.jeffunglesbee.workers.dev/bsd/events/${game.bsdEventId}/average-positions`)
-            .then(r => r.ok ? r.json() : null)
-            .then(d => setAvgPos(d?.average_positions || d?.results || []))
-            .catch(() => {});
-    }, [game.bsdEventId]);
-
-    if (!game.bsdEventId) {
-        return <div className="muted">Live pitch unavailable for this match.</div>;
-    }
-
-    return (
-        <section>
-            <BSDPitch bsdEventId={game.bsdEventId}
-                      ballFrame={ballFrame}
-                      shots={shots}
-                      avgPositions={avgPos} />
-            {statsFrame?.stats && (
-                <div className="bsd-stats">
-                    xG: {statsFrame.stats.home_xg?.toFixed(2)} – {statsFrame.stats.away_xg?.toFixed(2)}
-                    {' · '}Pos: {Math.round((statsFrame.stats.possession_home ?? 0) * 100)}%
-                </div>
-            )}
-        </section>
-    );
-}
-```
-
----
-
-## TASK 5 — Smoke
-
-Manual verification when Ecuador @ Germany (20:00 UTC tonight) goes live:
-- `/v2/games?sport=wc26` includes `bsdEventId` on the Ecuador/Germany game
-- Opening the WC game view in browser subscribes (network tab: POST `/ambient/bsd/subscribe`)
-- SSE stream shows `bsd:ball` events flowing
-- Ball dot animates on the pitch
-- xG stats update every ~30s
-
-If the dot appears on the wrong side, the axes need flipping. Two-line fix in
-`bsd-pitch.js`: set `awayPerspective: true` by default OR change the relay's
-`/bsd/contract` to swap the axis description (then bump `revision`).
 
 ---
 
 ## DONE CONDITIONS
 
-- [ ] `src/lib/bsd-pitch.js` exists with `getBSDContract` + `bsdToScreen`
-- [ ] `src/components/BSDPitch.jsx` exists
-- [ ] `src/lib/use-bsd-live.js` exists with `useBSDLive` hook
-- [ ] WC game view conditionally renders `<BSDPitch>` when `game.bsdEventId`
-      is set
-- [ ] Subscribe POST fires on mount, unsubscribe POST fires on unmount
-      (network tab confirmation)
-- [ ] No console errors when `game.bsdEventId` is undefined (defensive guard)
-- [ ] Hardcoded coord transforms grep zero hits — all goes through `bsdToScreen`
-
-## COMMIT (in jubilant-bassoon)
-
 ```bash
-git add src/lib/bsd-pitch.js src/lib/use-bsd-live.js src/components/BSDPitch.jsx \
-        <WC game view file>
-git commit -m "feat(wc): BSD live pitch — ball tracking + shotmap + avg positions"
-git push origin main
+# 1. Smoke passes
+node smoke.js 2>&1 | tail -3
+# Expected: N passed, 0 failed (N ≥ 755, two new assertions added)
+
+# 2. bsdEventId appears in index.html (mapV2ToESPN + smoke)
+grep -c 'bsdEventId' index.html
+# Expected: ≥ 3
+
+# 3. bsd:ball listener wired
+grep -c "addEventListener('bsd:ball'" index.html
+# Expected: 1
+
+# 4. _bsdOnSSEFrame defined
+grep -c 'function _bsdOnSSEFrame' index.html
+# Expected: 1
+
+# 5. Subscribe/unsubscribe functions defined
+grep -c 'function _bsdActivate\b' index.html && grep -c 'function _bsdDeactivate' index.html
+# Expected: 1 each
+
+# 6. A_BSD_7 and A_BSD_8 in smoke.js
+grep -c 'A_BSD_7\|A_BSD_8' smoke.js
+# Expected: 2
+
+# 7. diff — index.html and smoke.js only
+git diff --stat
+# Expected: index.html + smoke.js (no new files)
 ```
 
 ---
 
-## CROSS-REPO NOTE (Rule 70)
+## COMMIT
 
-This CC-CMD assumes field-relay-nba HEAD ≥ `e49debf` (the commit that ships
-`/bsd/contract`). All other relay infrastructure (events/shotmap/momentum
-routes, AmbientDO subscribe routes, bsdEventId enrichment) shipped earlier
-this session — verified live via probe_relay_route. If any relay endpoint
-returns 404 to the client, check the relay deploy is current via
-`/deploy/verify`.
+```bash
+git add index.html smoke.js
+git commit -m "feat(bsd): wire bsdEventId + bsd:ball/stats SSE + pitch renderer (A_BSD_7, A_BSD_8)"
+git push origin main
+```
