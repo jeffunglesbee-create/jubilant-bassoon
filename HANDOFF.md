@@ -5,9 +5,9 @@
 
 ## FIELD — Current State
 
-**CLIENT HEAD: a3b0740 · 2026-06-24 · WC debrief renderer**
+**CLIENT HEAD: 7f11ee5 · 2026-06-24 · brief-always-render**
 **RELAY HEAD: e6cdd36 · 2026-06-24 · deployed (e97fffd)**
-Smoke: 748/0 · SW_VERSION: 2026-06-24f
+Smoke: 752/0 · SW_VERSION: 2026-06-24g
 CF account: b57e9af57ab46c52ca9215804e689c29
 D1 field-archive: cc49101c-0569-4d41-8e7a-be139cde4f26
 D1 wc2026: f26669de-e772-4b56-a6d1-f8fdea08a4d4
@@ -29,7 +29,7 @@ D1 wc2026: f26669de-e772-4b56-a6d1-f8fdea08a4d4
 
 ---
 
-## MD3 STACK — ALL SHIPPED (before 19:00 UTC)
+## MD3 STACK — ALL SHIPPED
 
 | Item | Commit |
 |------|--------|
@@ -44,27 +44,58 @@ D1 wc2026: f26669de-e772-4b56-a6d1-f8fdea08a4d4
 
 ---
 
-## CARRY-FORWARDS AUDITED — CLOSED THIS SESSION
+## BRIEF ALWAYS-RENDER — SHIPPED (c8f9d3a / HEAD 7f11ee5)
+
+Four silent failure causes fixed. Smoke 748→752/0.
+
+| Task | Fix | Location |
+|------|-----|----------|
+| 1 | filtered fallback: filtered&&filtered.length?filtered:visible | L10593 |
+| 2 | fieldBriefCacheKey() now uses FIELD_TZ (writer/visible/archive aligned) | L26442 |
+| 3 | journalismCallsToday key: UTC→fieldDateKey(new Date()) | budget key |
+| 4 | fetchFIELDBriefFromClaude bypasses _compoundRetryAfter bleed | L28696 |
+| 5 | Smoke A_BR_1..A_BR_4 added (A_BR_4 comment reworded per Rule 77) | 748→752 |
+| 6 | SW_VERSION 2026-06-24f → 2026-06-24g | both files |
+
+Probe findings: CASE A — visible reader already symmetric with writer via
+fieldBriefCacheKey(); only archive reader at L13444 needed alignment.
+budget.inc() symmetric at L28814 — no missing increment.
+
+CI: Deploy gate + Desktop Chrome + Desktop Safari all green on c8f9d3a.
+
+**Secondary finding — next CC-CMD candidate:**
+L28860 hides brief entirely when any sport filter is active.
+Not touched in this session. Separate CC-CMD required.
+
+---
+
+## CARRY-FORWARDS — CLOSED THIS SESSION
 
 - Soccer/FBref: ✅ ESPN xG live since June 23
 - Stale Data Sentinel: ✅ live since June 22
 - Odds Story Materializer: ✅ live since June 22
-- Smoke regression 724→663: ✅ 748/0 net positive
+- Smoke regression 724→663: ✅ 752/0 net positive
 - assembleContext sport-label mismatch: ✅ 5b2ea9e
-- relay [skip ci] + drive-upload: ✅ path filter added (02f4a85); auto-fires verified
+- relay [skip ci] + drive-upload: ✅ path filter added (02f4a85)
+- drive-upload workflow_dispatch: ✅ automatable via api.github.com (204 confirmed)
+- Brief render diagnosis: ✅ four root causes found and fixed
 
 ---
 
 ## INFRASTRUCTURE
 
-- relay deploy.yml: path filter added (src/, wrangler.toml, workers/ only)
-  Outbox commits no longer need [skip ci] — drive-upload auto-fires on push
-- Travelers Championship golf card: set (Jun 25-28 TPC River Highlands)
+- relay deploy.yml: path filter (src/, wrangler.toml, workers/ only)
+- Travelers Championship golf card: set (Jun 25-28 TPC River Highlights)
+- workflow_dispatch: automatable via api.github.com — POST to
+  /repos/jeffunglesbee-create/jubilant-bassoon/actions/workflows/
+  drive-upload-outbox.yml/dispatches with repo+workflow scoped PAT.
+  HTTP 204 = accepted. PAT stored in GitHub Actions & Cloudflare Reference doc.
 
 ---
 
 ## GENUINE OPEN ITEMS
 
+- **L28860 sport-filter hides brief** — brief hidden when sport filter active — next CC-CMD
 - **wentToOT hardcoded false** (L9107) — D1 ALTER TABLE + GameDO write + backfill
 - NFL SPORT_TO_V2 — September 9
 - API-Sports Football Pro renewal — **JUNE 29**
@@ -73,102 +104,35 @@ D1 wc2026: f26669de-e772-4b56-a6d1-f8fdea08a4d4
 
 ## ALL-STAR SELECTOR — JULY 6 TARGET
 
-**Spec:** Locked June 24. Full CC-CMD in chat history (session: "all-star baseball").
+Methodology: ESPN composite WAR primary (confirmed composite June 24).
+OPS/ERA+WHIP tiebreaker within 0.3 WAR. Traditional stats narrative only.
+Fan vote starters accepted. One rep per team. 32 per league (20 pos, 12 pitchers).
 
-**Methodology:**
-- Primary: ESPN composite WAR (confirmed includes defense + position)
-- Secondary: OPS (batters) / ERA+WHIP (pitchers) as tiebreaker within 0.3 WAR
-- Traditional stats (AVG, HR, RBI) as narrative labels only
-- Fan vote starters accepted as-is — FIELD selects reserves + pitchers only
-- One rep per team enforced. 32 per league (20 pos, 12 pitchers, ≥3 RP).
+Data verified: byathlete endpoint, batting cols 0-16 (WAR=[16]),
+pitching ERA=[3] IP=[8] K=[13] WHIP=[15] WAR=[16].
 
-**Data source verified June 24:**
-- `https://site.web.api.espn.com/apis/common/v3/sports/baseball/mlb/statistics/byathlete?season=2026&seasontype=2&category=batting&limit=100&page=N`
-- Batting cols (0-16): GP, AB, R, H, AVG, 2B, 3B, HR, RBI, TB, SB, SO, BB, OBP, SLG, OPS, WAR
-- Pitching: ERA=[3], IP=[8], K=[13], WHIP=[15], WAR=[16]
-- ESPN batting WAR is composite (offense+defense+position) — do NOT add DWAR separately
-- Fielding endpoint DWAR unreliable (FP=1.000 all players) — ignore
-
-**Key finding June 24:** Rafaela .766 OPS → 3.5 WAR (CF premium), Yordan 1.076 OPS → 3.9 WAR (DH penalty). WAR does the defensive work already.
-
-**Execution sequence (July 6):**
-1. Fan vote starters announced July 2 — hardcode from official MLB announcement
-2. Official rosters announced ~5 PM ET July 6 — hardcode for comparison
-3. `node scripts/allstar-selector.js` → JSON output
-4. Write to KV: `wrangler kv key put allstar:2026:picks`
-5. Verify `.allstar-selector-card` renders in PWA
-6. Commit: `feat: All-Star Selector — FIELD picks vs official roster 2026`
-
-**Deliverables:**
-- `scripts/allstar-selector.js` — new file, standalone Node.js
-- `.allstar-selector-card` section in `index.html` — same pattern as `.wc-bracket-impact-card`
-- KV key `allstar:2026:picks` — one-time write, no cron
-
-**Do NOT wire into nightly pipeline, JQ chain, or journalism prompts.**
+Execution July 6: fan starters July 2, official rosters July 6 ~5 PM ET.
+Deliverables: scripts/allstar-selector.js + .allstar-selector-card + KV allstar:2026:picks.
+Do NOT wire into pipeline, JQ chain, or journalism prompts.
 
 ---
 
-## ALL-STAR EDITORIAL BRIEF TYPE — SEPARATE CARRY-FORWARD
+## ALL-STAR EDITORIAL BRIEF TYPE — ~JULY 10-12
 
-**Target:** Build before MLB All-Star Game July 14. Separate session from selector.
-**Scope:** Sport-agnostic. Applies to MLB, NBA, NHL, Pro Bowl, any exhibition.
-
-**Problem (verified June 24):**
-- MLB Stats API uses `gameType: "A"` for All-Star Game. Daily brief workflow does
-  not filter on gameType — All-Star Game flows into MLB_COUNT and MLB_GAMES_JSON
-  as a regular game.
-- Standard JQ chain (Drama/Closeness/Plot) breaks structurally on exhibition games:
-  no standings implications → Drama floors; pitchers throw 1-2 innings → game
-  pattern unrecognizable; no rivalry/playoff context → Plot has nothing to work with.
-- Home Run Derby does NOT appear in statsapi.mlb.com at all — not a game.
-  Current pipeline: complete silence on July 13.
-
-**Solution:**
-
-1. **Detection guard in journalism queue consumer:**
-   - MLB: detect `gameType: "A"` in Stats API response
-   - NBA: detect equivalent exhibition flag (verify field name at build time)
-   - NHL: same
-   - Set `briefType: "allstar_game"` — skip standard JQ chain entirely
-
-2. **`allstar_game` brief type — new editorial prompt:**
-   Different questions than a regular game brief:
-   - Regular game: did this matter, who was the story, how close was it?
-   - All-Star game: who showed out on the biggest stage, which moments will be
-     remembered, what does this reveal about the sport's stars right now?
-
-   Grades replace Drama/Closeness/Plot with:
-   - **Star Power** — did the marquee names deliver?
-   - **Moment Quality** — was there a defining moment? (walk-off, 100mph FB, etc.)
-   - **Representation** — did the right players make the case for their sport?
-
-   Framing is showcase, not stakes. No standings language. No clutch/pressure framing.
-   Historical context encouraged — "first time since...", "youngest player to..."
-
-3. **Home Run Derby — static editorial card (July 13):**
-   Same pattern as Travelers golf card. Pre-written, KV-stored, rendered on July 13.
-   Contents: participants, format explainer, FIELD pick to win, historical notes.
-   No pipeline. No score. Manual write before July 13.
-   KV key: `allstar:2026:hrd`
-
-**Build sequence (separate session, target ~July 10-12):**
-1. Read journalism queue consumer — find where briefType is set
-2. Add gameType: "A" guard → briefType: "allstar_game"
-3. Write allstar_game prompt template (exhibition framing, 3 new grades)
-4. Wire into runQualityChain with allstar_game branch
-5. Write HRD static card to KV
-6. Smoke: verify allstar_game brief type doesn't break regular mlb_game path
-
-**Do NOT build before June 29. Do NOT touch JQ chain until selector is shipped.**
+gameType:"A" guard → briefType:"allstar_game" → skip JQ chain.
+Grades: Star Power / Moment Quality / Representation.
+HRD static card → KV allstar:2026:hrd by July 13.
+Do NOT build before June 29.
 
 ---
 
-## TONIGHT
+## SW ARCHITECTURE (verified June 24)
 
-Groups B (19:00), C (22:00), A (01:00 UTC) MD3 finales.
-First full-stack WC brief: PRE-GAME CONTEXT + STANDINGS + EVENTS + [BRACKET IMPACT] → 2d-score.
-First live debrief card (.wc-bracket-impact-card) after game goes final.
-Night_stars stale for Group A (finishes 3 AM UTC → heals tomorrow 5 AM ET cron).
+Two caches: SHELL_CACHE (SWR for /index.html), API_CACHE (network-first for isAPI).
+isAPI: site.api.espn.com, open-meteo.com, api.sportsdb, api.the-odds,
+fantasy.premierleague, statsapi.mlb.com.
+Relay NOT in isAPI — all relay calls direct network, no cache, no fallback.
+Brief-fetch failures are silent (no SW visibility).
 
 ---
 
