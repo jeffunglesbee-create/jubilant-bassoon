@@ -1,16 +1,64 @@
 # FIELD HANDOFF
-## Session: 2026-06-24 (full day) · via chat + CC
+## Session: 2026-06-24 (end of day) · via chat + CC
 
 ---
 
 ## FIELD — Current State
 
-**CLIENT HEAD: 7f11ee5 · 2026-06-24 · brief-always-render**
+**CLIENT HEAD: 86afce8 · 2026-06-24 · L28860-fix-ready**
 **RELAY HEAD: e6cdd36 · 2026-06-24 · deployed (e97fffd)**
 Smoke: 752/0 · SW_VERSION: 2026-06-24g
 CF account: b57e9af57ab46c52ca9215804e689c29
 D1 field-archive: cc49101c-0569-4d41-8e7a-be139cde4f26
 D1 wc2026: f26669de-e772-4b56-a6d1-f8fdea08a4d4
+
+---
+
+## 🔴 CC-CMD: L28860 SPORT-FILTER HIDES BRIEF — EXECUTE NEXT
+
+**Status: READY. Two sed commands. Self-completing (Rule 87).**
+
+### Bug
+When any sport filter tab is active (NBA, MLB, etc.), the FIELD Brief
+is hidden entirely. Two root causes cooperate:
+
+1. **L28864 — gate in `initFIELDBrief`:**
+   `if(activeFilter!=='all'||!sections.length)` hides brief when any filter active.
+
+2. **L10593 — call site passes filtered data:**
+   `initFIELDBrief(filtered&&filtered.length?filtered:visible)` gives the brief
+   only the filtered sport subset instead of the full `sports` array.
+
+### Fix
+```bash
+curl -s "https://raw.githubusercontent.com/jeffunglesbee-create/jubilant-bassoon/main/index.html" \
+  -o /tmp/index.html
+
+# Fix 1: remove activeFilter gate (L28864)
+sed -i "s/if(activeFilter!=='all'||!sections\.length){el\.style\.display='none';return;}/if(!sections.length){el.style.display='none';return;}/g" /tmp/index.html
+
+# Fix 2: call site passes full sports array (L10593)
+sed -i 's/initFIELDBrief(filtered\&\&filtered\.length?filtered:visible)/initFIELDBrief(sports)/g' /tmp/index.html
+
+# Verify — must match exactly
+grep -n "initFIELDBrief(sports)" /tmp/index.html
+grep -n "if(!sections.length){el.style.display='none';return;}" /tmp/index.html
+# Expected: 10593 and 28864
+
+# Bump SW_VERSION (g → h) then commit
+```
+
+### Checklist
+- [ ] Download fresh index.html
+- [ ] Apply Fix 1 (activeFilter gate removal at L28864)
+- [ ] Apply Fix 2 (call site passes `sports` at L10593)
+- [ ] Grep verification passes (both lines found)
+- [ ] SW_VERSION bumped: 2026-06-24g → 2026-06-24h
+- [ ] Commit: `fix: L28860 sport-filter hides brief — pass sports[], drop activeFilter gate`
+- [ ] Update HANDOFF: L28860 → CLOSED
+
+**Smoke:** No new tests needed. A_BR_5 (brief renders when filter active) is a
+nice-to-have post-fix.
 
 ---
 
@@ -57,29 +105,6 @@ Four silent failure causes fixed. Smoke 748→752/0.
 | 5 | Smoke A_BR_1..A_BR_4 added (A_BR_4 comment reworded per Rule 77) | 748→752 |
 | 6 | SW_VERSION 2026-06-24f → 2026-06-24g | both files |
 
-Probe findings: CASE A — visible reader already symmetric with writer via
-fieldBriefCacheKey(); only archive reader at L13444 needed alignment.
-budget.inc() symmetric at L28814 — no missing increment.
-
-CI: Deploy gate + Desktop Chrome + Desktop Safari all green on c8f9d3a.
-
-**Secondary finding — next CC-CMD candidate:**
-L28860 hides brief entirely when any sport filter is active.
-Not touched in this session. Separate CC-CMD required.
-
----
-
-## CARRY-FORWARDS — CLOSED THIS SESSION
-
-- Soccer/FBref: ✅ ESPN xG live since June 23
-- Stale Data Sentinel: ✅ live since June 22
-- Odds Story Materializer: ✅ live since June 22
-- Smoke regression 724→663: ✅ 752/0 net positive
-- assembleContext sport-label mismatch: ✅ 5b2ea9e
-- relay [skip ci] + drive-upload: ✅ path filter added (02f4a85)
-- drive-upload workflow_dispatch: ✅ automatable via api.github.com (204 confirmed)
-- Brief render diagnosis: ✅ four root causes found and fixed
-
 ---
 
 ## INFRASTRUCTURE
@@ -95,7 +120,7 @@ Not touched in this session. Separate CC-CMD required.
 
 ## GENUINE OPEN ITEMS
 
-- **L28860 sport-filter hides brief** — brief hidden when sport filter active — next CC-CMD
+- **L28860 sport-filter hides brief** — CC-CMD authored above, READY TO EXECUTE
 - **wentToOT hardcoded false** (L9107) — D1 ALTER TABLE + GameDO write + backfill
 - NFL SPORT_TO_V2 — September 9
 - API-Sports Football Pro renewal — **JUNE 29**
