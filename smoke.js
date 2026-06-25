@@ -5438,5 +5438,22 @@ assert('A737 — WC debrief: CSS class wc-bracket-impact-card present',
   html.includes('.wc-bracket-impact-card'),
   'CSS for debrief card must be present');
 
+assert('A_BR_1 — brief filtered fallback: filtered&&filtered.length?filtered:visible in setTimeout',
+  html.includes('filtered&&filtered.length?filtered:visible') ||
+  html.includes('filtered&&filtered.length?filtered:sections'),
+  'initFIELDBrief setTimeout must fall back to visible when filtered is empty');
+
+assert('A_BR_2 — brief cache key TZ-invariant: fieldBriefCacheKey uses FIELD_TZ not localTz',
+  !html.match(/function fieldBriefCacheKey[\s\S]{0,100}localTz\(\)/),
+  'fieldBriefCacheKey must be timezone-invariant (FIELD_TZ only)');
+
+assert('A_BR_3 — journalismCallsToday uses ET key: fieldDateKey not toISOString',
+  html.includes("field_j_calls_'+fieldDateKey"),
+  'journalismCallsToday must use fieldDateKey (FIELD_TZ) instead of UTC');
+
+assert('A_BR_4 — J3 brief bypasses compound backoff: no _compoundRetryAfter in fetchFIELDBriefFromClaude ceiling',
+  !html.match(/fetchFIELDBriefFromClaude[\s\S]{0,500}_compoundRetryAfter/),
+  'fetchFIELDBriefFromClaude must read budget directly, not via canCall()');
+
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);

@@ -10590,7 +10590,7 @@ function renderAll(){
     if(typeof toggleWCView==='function') toggleWCView();
   });
   setTimeout(injectJ1J4Badges, 300);    // J1/J4: Anti-Hype + Scout's Pick per-card badges
-  setTimeout(()=>initFIELDBrief(filtered).then(()=>renderAmbientPanel()).catch(e=>{
+  setTimeout(()=>initFIELDBrief(filtered&&filtered.length?filtered:visible).then(()=>renderAmbientPanel()).catch(e=>{
     captureFieldError('initFIELDBrief',e,false);
     const slot=(_DOM?.fieldBrief||document.getElementById('field-brief'));
     if(slot&&!slot.querySelector('.field-brief-card'))
@@ -13441,7 +13441,7 @@ function renderJournalismArchive() {
     const d = new Date(today);
     d.setDate(d.getDate() - i);
     const ds = fieldDateKey(d);
-    const key = 'field_brief_' + ds;
+    const key = 'field_brief_' + ds;  // matches fieldBriefCacheKey now that it uses FIELD_TZ
     const text = sessionStorage.getItem(key);
     if (text && text.length > 30) {
       archiveEntries.push({ date: d, dateStr: ds, text });
@@ -22522,7 +22522,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-24f';
+  const SW_VERSION = '2026-06-24g';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -23590,7 +23590,7 @@ function espnTeamMatch(espnName, fieldName){
 }
 
 function journalismCallsToday(){
-  const k='field_j_calls_'+new Date().toISOString().slice(0,10);
+  const k='field_j_calls_'+fieldDateKey(new Date());
   return {
     get(){return parseInt(sessionStorage.getItem(k)||'0');},
     inc(){sessionStorage.setItem(k,String(this.get()+1));},
@@ -26437,9 +26437,10 @@ async function renderSeriesPreviewCard(gameCard){
 
 // J3: FIELD BRIEF CARD
 function fieldBriefCacheKey(){
-  const tz = localTz();
-  const d=new Date();const tzStr=(typeof tz==='string'?tz:'America/New_York');
-  const ds=d.toLocaleDateString('en-CA',{timeZone:tzStr});return 'field_brief_'+ds;
+  // TZ-invariant: always FIELD_TZ (America/New_York) so writer and archive reader
+  // (which uses fieldDateKey → FIELD_TZ) produce identical keys for non-ET users.
+  const d=new Date();
+  const ds=d.toLocaleDateString('en-CA',{timeZone:FIELD_TZ});return 'field_brief_'+ds;
 }
 
 // J-SERIES UTILITY: Trim AI response to last complete sentence.
@@ -28695,7 +28696,10 @@ function buildGameContext(g) {
 
 async function fetchFIELDBriefFromClaude(sections){
   const budget=journalismCallsToday();
-  if(!budget.canCall()) return null;
+  // J3 brief is served from relay KV (no Gemini call); compound 429 backoff must not gate it.
+  // Hard ceiling only — read the counter directly, bypassing canCall() backoff bleed.
+  const _jCount = parseInt(sessionStorage.getItem('field_j_calls_'+fieldDateKey(new Date()))||'0');
+  if (_jCount >= 50) return null;
   // Pre-fetch standings from relay/API sources (MLB Stats API, NBA relay, NHL relay — not ESPN)
   await Promise.allSettled(sections.slice(0, 5).map(s => fetchStandingsForPrompt(s.sport)));
   const all=sections.flatMap(s=>(s.games||[]).map(g=>({...g,_section:s.sport})));
