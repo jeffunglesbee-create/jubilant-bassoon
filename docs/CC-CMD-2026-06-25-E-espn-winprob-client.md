@@ -1,111 +1,185 @@
-# CC-CMD E: ESPN Win Probability — Client Rendering
+# CC-CMD E (revised): ESPN Win Probability Chip
 **Date:** 2026-06-25 · **Repo:** jubilant-bassoon · **Rule 87:** Self-completing.
+**Revision:** Rewritten after probe block stopped at 7 contract mismatches.
 
-## WHAT THIS ADDS
+---
 
-The relay already fetches win probability from ESPN summary (L8838: winprobability[].homeWinPercentage).
-This CC-CMD wires it to the CLIENT for the Comeback Framing WOW feature.
+## WHAT CHANGED FROM ORIGINAL SPEC
 
-Display: a single text chip on live + close post-game cards showing the home team's win probability.
-Example: "NYK 23%" when Knicks trail in the 4th. "NYK 8% → won" post-game.
+Original spec had 7 contract mismatches with HEAD — CC correctly stopped.
+This revision is ground-truth: all code uses verified client APIs.
 
-No new API. No new relay route. Extends existing winprobability[] data already in the relay response.
-`buildComebackProbability` already exists at L37931 (client) — this wires its output to a chip.
+Mismatches corrected:
+1. No `game.winprobability[]` array — client has scalar `espnScores[key].wp` (0-1 fraction)
+2. No `fieldChip()` helper — chip pattern is `chips.push({label, cls})`
+3. Scale is 0-1 NOT 0-100 — threshold must be `<= 0.25` not `<= 25`
+4. Game state on `eData?.state` NOT `game.status?.type?.state`
+5. Team fields: `game.home` + `game._homeAbbr` NOT `game.homeTeam.abbreviation`
+6. `buildComebackProbability` already exists at L37931 — do not duplicate
+7. Comeback badge (historical WP minimum) deferred — requires relay to pass
+   `wpLowest` server-side (Rule 70 atomic cross-repo change, separate CC-CMD)
+
+---
 
 ## PROBE BLOCK
 
 ```bash
-cd /home/claude/jubilant-bassoon
+cd /home/claude/jubilant-bassoon && git pull
 
-# 1. Find buildComebackProbability
-grep -n 'buildComebackProbability\|comebackProb\|winProbability\|homeWinPercentage' index.html | head -20
-# Note L37931+ implementation
+# 1. Confirm SW_VERSION mismatch (A190 failure from auto-commit)
+grep -n "SW_VERSION" sw.js | head -2
+grep -n "SW_VERSION" index.html | head -3
+# Expected: sw.js has 2026-06-24i, index.html has 2026-06-25a — MISMATCH
 
-# 2. Find where winprobability is returned from relay (where it enters the client)
-grep -n 'winprobability\|win_probability' index.html | head -10
+# 2. Confirm espnScores[key].wp scalar (not array)
+grep -n "\.wp" index.html | grep -i "espn\|winprob\|fetchESPN" | head -10
+# Expected: scalar wp field, not winprobability[]
 
-# 3. Find chip rendering area (where to inject the probability chip)
-grep -n 'buildVibeChips\|enrichRow\|chipRow' index.html | head -10
+# 3. Find chip push pattern (not fieldChip function)
+grep -n "chips.push\|chip.push" index.html | head -5
+# Expected: chips.push({label, cls}) or similar object pattern
 
-# 4. Confirm current smoke count
-node smoke.js 2>&1 | tail -1
+# 4. Find eData?.state game state pattern
+grep -n "eData.*state\|eData\?\.state" index.html | head -5
+# Expected: eData?.state used for game state checks
+
+# 5. Find buildComebackProbability and its callers
+grep -n "buildComebackProbability\|ComebackProbability" index.html | head -10
+# Expected: function at L37931, callers at ~L37904/L38027
+
+# 6. Find game.home and game._homeAbbr pattern
+grep -n "game\._homeAbbr\|game\.home[^T]" index.html | head -5
+# Expected: string team name + abbrev companion
+
+# 7. Confirm wp value format in a live game (if available)
+# Search for where wp is set from ESPN response
+grep -n "\.wp\s*=" index.html | grep -v "swap\|newp\|ewp\|checkpoint" | head -10
 ```
 
-## TASK 1 — Wire winprobability into buildVibeChips or equivalent
+---
 
-Find the chip-building function for game cards. Add win probability chip
-for live games where the trailing team has < 30% win probability:
+## TASK 1 — Fix SW_VERSION sync (A190 blocker)
+
+Auto-commit during git pull bumped index.html SW → 2026-06-25a but sw.js stayed
+at 2026-06-24i. Must fix before any deploy or A190 will fail smoke.
+
+In sw.js, find and replace:
+```
+const SW_VERSION = '2026-06-24i';
+```
+with:
+```
+const SW_VERSION = '2026-06-25a';
+```
+
+Verify sync:
+```bash
+grep "SW_VERSION" sw.js index.html
+# Expected: both show 2026-06-25a
+```
+
+---
+
+## TASK 2 — Win probability chip on live game cards
+
+The scalar `espnScores[key].wp` (0-1 fraction, home team win probability)
+is already fetched by the client. Wire it to a chip on live cards when the
+trailing team has < 25% win probability.
+
+Find the chip-building section for live game cards — look for where chips
+array is populated for a live game. Add AFTER any existing chips:
 
 ```javascript
-// ── Win probability chip (ESPN data, no new API) ──────────────────────────
-// Only shown when: game is live OR final within 24h, and probability is notable.
-// Data: game.winprobability from ESPN summary (already in relay response).
-if (game.winprobability?.length) {
-    const latest = game.winprobability[game.winprobability.length - 1];
-    const homePct = Math.round(latest.homeWinPercentage ?? 50);
-    const awayPct = 100 - homePct;
-    const isLive = game.status?.type?.state === 'in';
-    const isFinal = game.status?.type?.completed;
-    // Only chip when outcome is in genuine doubt or a dramatic comeback occurred
-    if (isLive && (homePct <= 25 || awayPct <= 25)) {
-        const trailingTeam = homePct < awayPct ? game.homeTeam : game.awayTeam;
-        const trailingPct = Math.min(homePct, awayPct);
-        chips.push(fieldChip(`${trailingTeam?.abbreviation || '?'} ${trailingPct}%`, 'LONG', { small: true }));
-    }
-    if (isFinal && game._winProbabilityAtLowest != null && game._winProbabilityAtLowest <= 15) {
-        // Comeback: team won from ≤15% probability
-        chips.push(fieldChip(`COMEBACK`, 'DRAMA', { small: true }));
+// ── Win probability chip (ESPN scalar wp, 0-1 scale) ─────────────────
+// espnScores[key].wp is the home team win probability as a 0-1 fraction.
+// Only show when game is live and outcome is genuinely in doubt (<25%).
+// eData?.state drives live/final — game.status?.type?.state is unreliable.
+const wpVal = game._espnKey && espnScores[game._espnKey]?.wp;
+if (wpVal != null && eData?.state === 'in') {
+    const homeWp = wpVal;          // 0-1 fraction (e.g. 0.23 = 23%)
+    const awayWp = 1 - homeWp;
+    const trailingWp = Math.min(homeWp, awayWp);
+    if (trailingWp <= 0.25) {
+        const trailingAbbr = homeWp < awayWp
+            ? (game._homeAbbr || game.home || 'HOME')
+            : (game._awayAbbr || game.away || 'AWAY');
+        const pct = Math.round(trailingWp * 100);
+        chips.push({ label: `${trailingAbbr} ${pct}%`, cls: 'chip-long' });
     }
 }
 ```
 
-## TASK 2 — Store minimum win probability for comeback detection
+NOTE: Find the correct chip push pattern in context first — adapt to whatever
+object shape `chips.push` takes in the actual code (may be `{label, cls}` or
+`[label, cls]` or another shape). Do NOT invent a new pattern.
 
-In the game data assembly path (where winprobability[] is processed):
+---
 
-```javascript
-// Find the lowest win probability the eventual winner faced
-if (game.winprobability?.length && game.status?.type?.completed) {
-    const winner = game.homeScore > game.awayScore ? 'home' : 'away';
-    const winnerPcts = game.winprobability.map(p =>
-        winner === 'home' ? (p.homeWinPercentage ?? 50) : (100 - (p.homeWinPercentage ?? 50))
-    );
-    game._winProbabilityAtLowest = Math.min(...winnerPcts);
-}
-```
+## TASK 3 — Smoke assertion A739
 
-## TASK 3 — Smoke assertions
+Add one smoke assertion for the win probability chip:
 
 ```javascript
-// A739 — win probability chip
-assert('A739 — win probability chip: trailingPct chip', 
-    /trailingPct.*chip|fieldChip.*\$\{.*Pct\}%/.test(html) || 
-    html.includes('homeWinPercentage') && html.includes('trailingPct'));
-assert('A740 — comeback chip', html.includes("'COMEBACK'") || html.includes('"COMEBACK"'));
+assert('A739 — win probability chip uses 0-1 scale threshold (not 0-100)',
+  html.includes('trailingWp <= 0.25') || html.includes('trailingWp < 0.25'),
+  'WP threshold must use 0-1 scale: espnScores[key].wp is a fraction not a percent');
 ```
+
+Do NOT add A740 (comeback badge) — deferred to paired relay+client CC-CMD.
+
+---
+
+## TASK 4 — SW_VERSION bump
+
+SW was fixed in Task 1 (2026-06-24i → 2026-06-25a). Verify both files match:
+```bash
+grep "SW_VERSION" sw.js index.html | head -4
+# Expected: both 2026-06-25a
+```
+
+---
 
 ## DONE CONDITIONS
 
 ```bash
-# 1. Smoke passes (≥ 754, 0 failed)
+# 1. Smoke passes (A190 now passes because SW synced)
 node smoke.js 2>&1 | tail -3
+# Expected: N passed, 0 failed (N > 754)
 
-# 2. Win probability referenced in chip path
-grep -c 'homeWinPercentage\|trailingPct\|winprobability' index.html
-# Expected: ≥ 3
+# 2. A739 specifically passes
+node smoke.js 2>&1 | grep "A739"
+# Expected: pass line, no FAIL
 
-# 3. SW_VERSION bumped
-grep 'SW_VERSION' sw.js index.html | head -2
+# 3. SW_VERSION synced
+grep "SW_VERSION" sw.js index.html
+# Expected: 2026-06-25a in both
 
-# 4. diff check
+# 4. Threshold uses correct scale
+grep "trailingWp" index.html | head -3
+# Expected: 0.25 threshold (not 25)
+
+# 5. diff — only index.html + sw.js + smoke.js
 git diff --stat
-# Expected: index.html smoke.js sw.js only
+# Expected: those 3 files only
 ```
+
+---
+
+## OUT OF SCOPE (deferred)
+
+Comeback badge ("COMEBACK" shown post-game when winner was at ≤15% WP):
+- Requires relay to compute `wpLowest` server-side (running min over the array)
+  and inject it into the game payload
+- Rule 70: atomic cross-repo change (relay + client must ship together)
+- Spec as a paired CC-CMD pair: relay adds `wpLowest`, client reads it
+- Do NOT implement in this CC-CMD
+
+---
 
 ## COMMIT
 
 ```bash
-git add index.html smoke.js sw.js
-git commit -m "feat(client): win probability chip + comeback detection (ESPN data, A739-A740)"
+git add index.html sw.js smoke.js
+git commit -m "feat(client): win probability chip (A739) + SW sync fix 2026-06-25a"
 git push origin main
 ```
