@@ -1,149 +1,156 @@
 # FIELD HANDOFF
-## Session: 2026-06-25 · Diagnostic (no code commits)
+## Session: 2026-06-25 · Build + Journalism Audit
 
 ---
 
 ## FIELD — Current State
 
-**CLIENT HEAD: fa57eb0 · 2026-06-24 · L28860-sport-filter-brief-fix**
+**CLIENT HEAD: 36e4c7d · 2026-06-25 · codemap refresh (code at 8d533bc)**
 **RELAY HEAD: e6cdd36 · 2026-06-24 · deployed (e97fffd)**
-Smoke: 753/0 · SW_VERSION: 2026-06-24h
+Smoke: 754/0 · SW_VERSION: 2026-06-24i
 CF account: b57e9af57ab46c52ca9215804e689c29
 D1 field-archive: cc49101c-0569-4d41-8e7a-be139cde4f26
 D1 wc2026: f26669de-e772-4b56-a6d1-f8fdea08a4d4
 
 ---
 
+## SHIPPED THIS SESSION
+
+### fix: preserve #field-newspaper across applyMainHTML (8d533bc, A738)
+
+Root cause verified: `applyMainHTML()` → `main.replaceChildren()` wiped
+`#field-newspaper` on every `renderAll()`. `bootNewspaper()` only fires
+once per page load — newspaper was permanently gone after first schedule
+re-render.
+
+Fix: detach `#field-newspaper` at top of `applyMainHTML`, re-prepend at
+all three exit paths (empty-html, morph catch, replaceChildren normal).
+savedNewspaper count: 5. LCP morph logic unaffected.
+
+SW: 2026-06-24h → 2026-06-24i (ET 23:55 on Jun 24; A515 caught incorrect
+2026-06-25a attempt; corrected per Rule 77).
+
+---
+
 ## ⚠️ SESSION_HEALTH IS COMPROMISED — DO NOT TAKE AS ABSOLUTE TRUTH
 
-Three verified failures in session_health:
+1. Quality threshold wrong — avg_score < 240 flags nearly everything
+2. Incidents never close — no resolved flag in codex schema
+3. Golf quality hidden — explicitly filtered out of degraded list
+Ground truth: /quality/report endpoint + live probes
 
-1. **Quality threshold wrong** — uses `avg_score < 240` on a 300-point scale.
-   Typical scores are 150–220. Almost everything shows as degraded. Noise.
-   Ground truth: `/quality/report` endpoint directly.
+---
 
-2. **Incidents never close** — queries codex `WHERE category='incident'`, no
-   resolved flag. All 15 newest incidents appear as "open" regardless of status.
-   Confirmed stale: Stale Data Sentinel (LIVE), Odds Story Materializer (LIVE),
-   smoke regression (now 753/0), assembleContext WC (FIXED June 24).
+## "THE 33" JOURNALISM FEATURES
 
-3. **Golf quality hidden** — code explicitly filters golf OUT of degraded list.
-   Golf game_brief avg 106 is the worst quality in the system. session_health
-   conceals it. Check /quality/report for golf rows directly.
+Drive: 1XDR6lzgP3vBH4Yg9Byb9C4GGAjKxuJRcV7bkF8pf4wk
+"FIELD — The 33: Definitive Feature List" — June 20 2026
 
-Trustworthy from session_health: client_head, relay_head, deploy_match, checked_at.
+These are EDITORIAL OUTPUT features, not quality chain items.
+5 Merged + 10 Candy + 4 Alcohol + 6 PTI + 8 Analytics Cron = 33
++ 3 infrastructure (I1 Cron, I2 Newspaper, I3 Debrief)
+
+SHIPPED (7 of 36): I1 ✅ I2 ✅ M1 Morning Report ✅ M2 Field's Pick ✅
+M5 Truth Is ✅ R1-1 Night Stars ✅ R2-1 Streak Board ✅
+All confirmed live in /analytics/newspaper/2026-06-24.
+
+PENDING: 26 features + I3 The Debrief (partial only).
+
+---
+
+## THE DEBRIEF (I3) — PARTIAL
+
+What exists: DEBRIEF chip on post-state cards → toggleJournalismView()
+(A636/639/640), WC-specific renderWCBracketImpact() (A735-737).
+What's NOT built: general card transformation at final state, NIGHT mode
+auto-trigger, Circadian System integration.
+Blocks: Replay Engine (PF2), Circadian System (PF4).
 
 ---
 
 ## QUALITY SCORING — ACTUAL STATE
 
-96% scored (563/585 briefs, 7 days). Journalism is running.
-
-**Two genuine quality gaps (both one-liners in context-assembler.js):**
-
-| Issue | Root cause | Fix |
-|-------|-----------|-----|
-| golf game_brief avg 106 | `'golf'` not in any CONTEXT_SOURCES sports array | Add `'golf'` to `espn_summary` sports list |
-| game_recap/football: 0/14 NULL | `'football'` not in `_SPORT_NORMALIZE` | Add `'football': 'wc26'` to normalize map |
-
-Single CC-CMD covers both. File: `src/context-assembler.js`.
+96% scored (563/585 briefs, 7 days). Journalism running.
+Two genuine gaps (one-liners in context-assembler.js, field-relay-nba):
+- golf not in CONTEXT_SOURCES → avg 106 (worst quality in system)
+- 'football' not in _SPORT_NORMALIZE → 0/14 NULL scores
 
 ---
 
-## CARRY-FORWARDS — CORRECTED THIS SESSION
+## 5 NEW WOW FEATURE IDEAS (first-principles, no new APIs)
 
-**CLOSED (were listed as open in prior HANDOFF):**
-- Stale Data Sentinel — LIVE, `/health/sources` confirmed working
-- Odds Story Materializer — LIVE, `/odds-story/preview` HTTP 200
-- assembleContext WC/soccer — FIXED June 24 (5b2ea9e)
-- assembleContext WNBA — was never broken, espn_summary covers it
-- Quality scoring broken — was session_health threshold noise, 96% scored
+1. SPOILER GATE — hold result behind tap if user hasn't checked in within
+   20min of final. Uses WOW-39 stream delay infra.
+2. THE ASTERISK — flag wins under compromised circumstances (back-to-back,
+   missing starters, travel). Broadcaster honesty as a feature.
+3. DEAD TIME DETECTOR — surface editorial during pitching changes/timeouts.
+   GameDO knows game state. "You have ~2 min. Other game tied in 9th."
+4. SLEEP CLOCK — compute finish time in user's local TZ as a chip.
+   "~12:40 AM PT." Viewer's fiduciary thesis made literal.
+5. MISS RATE — "You were present for 3 of your team's 7 highest-drama
+   moments. Their avg drama peak without you: 81." Uses drama history +
+   MY_TEAMS. Gives push notifications purpose beyond "game tonight."
 
 ---
 
-## GENUINE OPEN ITEMS
+## OPEN ITEMS
 
-- **context-assembler.js quality gaps** — golf + football one-liners (CC-CMD needed)
-- **wentToOT hardcoded false** (L9107) — limited impact: affects newspaper
-  `completed_games[].wentToOT` only, not drama scoring or journalism prompts
-- **KV editorial keys not consulted** — resilience gap only, newspaper works via D1
-- **session_health threshold** — re-baseline after June 29 (Phase 8b, one-liner)
-- **session_health incident resolution** — no resolved flag in codex schema
-- **CI/Deploy Reference doc** — severely outdated (last updated May 31),
-  must be updated before next restore scenario
-- **read_codemap relay tool** — L3 uses bash workaround until built
-- **WC26 rate limiting** — persistent 503 retryable, API-Sports quota exhaustion
-- NFL SPORT_TO_V2 — September 9
 - **API-Sports Football Pro renewal — JUNE 29 ⚠️**
+- context-assembler.js: golf + football label (single CC-CMD, relay)
+- session_health threshold re-baseline (after June 29)
+- WIMBLEDON draw context (July 7)
+- All-Star Selector (July 6)
+- wentToOT hardcoded false (L9107, limited impact — newspaper only)
+- CI/Deploy Reference doc severely outdated
+- The 33: 26 features + I3 pending
+- NFL SPORT_TO_V2 — September 9
 
 ---
 
-## L28860 SPORT-FILTER BRIEF FIX — SHIPPED (a50edcf / HEAD fa57eb0)
+## SESSION START PROTOCOL — Rule 85 (SESSION-MEMORY-PROTOCOL-A)
 
-| Fix | Location | Change |
-|-----|----------|--------|
-| Remove activeFilter gate | L28864 | `activeFilter!=='all'\|\|!sections.length` → `!sections.length` only |
-| Call site passes full array | L10593 | `initFIELDBrief(filtered&&…:visible)` → `initFIELDBrief(sports)` |
-| A_BR_1 reworked | smoke.js | Asserts `initFIELDBrief(sports)` |
-| A_BR_5 added | smoke.js | Asserts old `activeFilter` gate string is absent |
-| SW_VERSION bump | both files | 2026-06-24g → 2026-06-24h |
+**L2 (two tool_search calls — both required):**
+1. `tool_search("FIELD Handoff session health")` → session_health + read_handoff
+   NOTE: session_health is compromised. Use /quality/report + live probes for
+   ground truth on quality and incidents.
+2. `tool_search("codex commit write file source")` → codex_search, read_file,
+   commit_file, write_handoff, get_head_sha
+
+**L3 (bash only — read_file offloads to disk):**
+```bash
+curl -s "https://raw.githubusercontent.com/jeffunglesbee-create/jubilant-bassoon/main/CODE_MAP.json" \
+  | python3 -c "import json,sys; m=json.load(sys.stdin); \
+    [print(f) for f in m['functions'] if '{domain}' in f['name']]"
+```
+
+**L4:** `codex_search("{session domain}")`
+
+**CC-CMD delivery:** relay commit_file cannot create new docs/ files (404 on
+non-existent path). Use GitHub Contents API PUT via bash with FIELD PAT for new files.
+
+**Declare:** START · Type · Scope · Baseline (HEAD + drift + L3/L4 status)
+First output = tool calls, no prose.
 
 ---
 
 ## INFRASTRUCTURE — VERIFIED 2026-06-25
 
 All workers live: relay ✅ field-deploy v4 ✅ field-claude-proxy ✅
-All D1/R2/KV/DO/Queue/Analytics bindings declared in wrangler.toml ✅
-All FIELD GH secrets present (jubilant-bassoon 7, field-relay-nba 11) ✅
-GEMINI_KEY live (journalism/tonight returning prose) ✅
-APISPORTS_KEY live (rate limit response = key valid) ✅
+APISPORTS_KEY ✅ GEMINI_KEY ✅ All FIELD secrets present (both repos) ✅
 Dropbox: durable OAuth (APP_KEY + APP_SECRET + REFRESH_TOKEN) ✅
-DROPBOX_TOKEN absent intentionally — replaced by OAuth ✅
-ANTHROPIC_KEY: dangling in field-relay-nba GH Actions, not injected, wrong name
-  in code (ANTHROPIC_API_KEY vs ANTHROPIC_KEY). L3283 feature dead.
-  Journalism unaffected — Gemini is primary via field-claude-proxy.
-
-STALE (expected, heals automatically):
-- nba_clutch + nhl_series R2: seasons over, heals Oct/Nov
-- WC26 /v2/games: 503 retryable — API-Sports quota exhaustion
+Stale Data Sentinel: LIVE ✅ Odds Story Materializer: LIVE ✅
+WC26 /v2/games: 503 retryable (API-Sports quota exhaustion, persistent)
 
 ---
 
-## BRACKET COMPOUND — FULLY CLOSED
-
-| Phase | Commit |
-|-------|--------|
-| 1–4b + fixes | ffe6911 → 55cef28 |
+## BRACKET COMPOUND — FULLY CLOSED (ffe6911→55cef28)
 
 ---
 
-## MD3 STACK — ALL SHIPPED
+## ALL-STAR — TARGET DATES
 
-| Item | Commit |
-|------|--------|
-| Group standings + PRE-GAME CONTEXT + permutations + night owl WC | bc2dc9c → 6f6bada |
-| assembleContext soccer→wc26 league signal | 5b2ea9e |
-
----
-
-## ALL-STAR SELECTOR — JULY 6 TARGET
-
-Methodology: ESPN composite WAR. OPS/ERA+WHIP tiebreaker within 0.3 WAR.
-Do NOT wire into pipeline. Do NOT build before June 29.
-
----
-
-## ALL-STAR EDITORIAL BRIEF TYPE — ~JULY 10-12
-
-gameType:"A" → briefType:"allstar_game" → skip JQ chain.
+Selector: July 6 · Editorial brief type: July 10-12
 Do NOT build before June 29.
-
----
-
-## SW ARCHITECTURE (verified June 24)
-
-Two caches: SHELL_CACHE (SWR /index.html), API_CACHE (network-first isAPI).
-Relay NOT in isAPI — all relay calls direct network, no cache, no fallback.
 
 ---
 
@@ -154,7 +161,7 @@ Open: iOS Safari T1, hiringcafe, 4 ATS probes, UMMS, apply agent, Issue #7
 
 ---
 
-## Drive Specs (permanent)
+## Drive Specs
 1. Archive Intelligence — 1fMZFs2WOi_hPcX5hUB1UJf5mWvItTLB6EwZ881LcC3s
 2. Bracket Compound — 1Wm29D2KYtEPR1G3N-n__7KPm6FKR-0L6_4S99mtsAxU
 3. Compound Architecture — 1cWgNEs3uanFh_PDi2ISSrIBTINdousbHcE1VQphvZ2I
@@ -164,32 +171,7 @@ Open: iOS Safari T1, hiringcafe, 4 ATS probes, UMMS, apply agent, Issue #7
 7. Info Disclosure — 11T6jE6z2R7WFVGFKrSq2JO7MU76Jr_xmAYGIMiafRug
 8. Journalism Loop — 1PKkEGpe306ovRngvBCAZgoQyjeaj02SX0khAp0OrOfU
 9. External API — 1kLEZnwLmmvvGdEtPn26jC8iUKbSR_9PK4ZxSpjDvkvE
-Session doc (2026-06-25) — 1Ht9REDGoHUi_A_3dndTLqJV503_VQchBH866S0F1J_U
-
----
-
-## SESSION START PROTOCOL — Rule 85 (SESSION-MEMORY-PROTOCOL-A)
-
-Load all three layers before any work. Sessions without L3+L4 MUST NOT make
-architectural decisions — mechanical edits only until both are loaded.
-
-**L2 (two tool_search calls — both required):**
-1. `tool_search("FIELD Handoff session health")` → session_health + read_handoff
-   NOTE: session_health is compromised — see warning above. Use /quality/report
-   and live endpoint probes for ground truth on quality and incidents.
-2. `tool_search("codex commit write file source")` → codex_search, read_file,
-   commit_file, write_handoff, get_head_sha
-
-**L3 (bash only — read_file offloads to disk, never use it for CODE_MAP):**
-```bash
-curl -s "https://raw.githubusercontent.com/jeffunglesbee-create/jubilant-bassoon/main/CODE_MAP.json" \
-  | python3 -c "import json,sys; m=json.load(sys.stdin); \
-    [print(f) for f in m['functions'] if '{domain}' in f['name']]"
-```
-read_codemap relay tool not yet built — bash is the workaround.
-
-**L4:**
-`codex_search("{session domain}")` — include touched domain + neighbouring domains.
-
-**Declare:** START · Type · Scope · Baseline (HEAD + drift + L3/L4 status)
-First output = tool calls, no prose.
+The 33 — 1XDR6lzgP3vBH4Yg9Byb9C4GGAjKxuJRcV7bkF8pf4wk
+Product Feature Inventory v2 — 1BbOqlV9JhFlCvwgfizNQW9LMG6lnNrNTp4yUgi7ZC2o
+Session doc (2026-06-25 build) — 1JVSpkcZtV24OgbAuEwCZqSGh_ACKX145pkDq2scJq7Y
+Session doc (2026-06-25 infra) — 1Ht9REDGoHUi_A_3dndTLqJV503_VQchBH866S0F1J_U
