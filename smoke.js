@@ -5444,6 +5444,10 @@ assert('A738 — applyMainHTML preserves #field-newspaper: save+remove+prepend p
   /savedNewspaper\) main\.prepend\(savedNewspaper\)/.test(html),
   'applyMainHTML must save #field-newspaper before replaceChildren and re-prepend at every exit');
 
+assert('A739 — win probability chip uses 0-1 scale threshold (not 0-100)',
+  html.includes('trailingWp <= 0.25') || html.includes('trailingWp < 0.25'),
+  'WP threshold must use 0-1 scale: espnScores[key].wp is a fraction not a percent');
+
 assert('A_BR_1 — brief always-render: initFIELDBrief receives full sports[], not filtered subset',
   html.includes('initFIELDBrief(sports)'),
   'initFIELDBrief must be called with the full sports array so filter state never suppresses the brief');

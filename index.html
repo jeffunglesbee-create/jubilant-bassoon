@@ -1326,6 +1326,7 @@ body.wf-mode .np-inner{max-width:100%}
 .vibe.mission{background:rgba(201,168,76,.1);border-color:var(--gold);color:var(--gold)}
 .vibe.mute{background:rgba(55,65,81,.2);border-color:#374151;color:#6b7280}
 .vibe.post{background:rgba(74,222,128,.08);border-color:var(--green);color:var(--green);font-size:.62rem}
+.vibe.long{background:rgba(251,191,36,.08);border-color:var(--amber);color:var(--amber);font-variant-numeric:tabular-nums}
 @media(max-width:430px){.ganalytics{display:none;}}
 @media(min-width:431px) and (max-width:599px){.vibe~.vibe{display:none;}}
 @media(min-width:600px) and (max-width:819px){.vibe:nth-of-type(n+3){display:none;}}
@@ -35855,6 +35856,25 @@ function buildVibeChips(game, eData, sport) {
   // GRINDING — named conditions only (no dramaScore gate)
   if (isLive && isGrindingGame(eData, sport))
     chips.push({ label: 'GRINDING', cls: 'grind' });
+
+  // ── Win probability chip (ESPN scalar wp, 0-1 scale) ─────────────────
+  // eData.wp is the home team win probability as a 0-1 fraction (L19293
+  // verified: 0.872 = 87.2%). Shown only when game is live AND the trailing
+  // team has <= 25% chance — outcome in genuine doubt. Data path verified:
+  // eData IS the espnScores entry passed via findESPNScore(g) at L10430.
+  const wpVal = eData?.wp;
+  if (isLive && wpVal != null) {
+    const homeWp = wpVal;
+    const awayWp = 1 - homeWp;
+    const trailingWp = Math.min(homeWp, awayWp);
+    if (trailingWp <= 0.25) {
+      const trailingAbbr = homeWp < awayWp
+        ? (game._homeAbbr || game.home || 'HOME')
+        : (game._awayAbbr || game.away || 'AWAY');
+      const pct = Math.round(trailingWp * 100);
+      chips.push({ label: `${trailingAbbr} ${pct}%`, cls: 'long' });
+    }
+  }
 
   return chips;
 }
