@@ -1,69 +1,47 @@
 # FIELD HANDOFF
-## Session: 2026-06-25 · Golf _derived + BSD Pipeline Complete
+## Session: 2026-06-25 · Final State
 
 ---
 
 ## FIELD — Current State
 
 **CLIENT HEAD: 05a1aef · 2026-06-25 · bsdEventId + pitch A_BSD_7/8 · Smoke 757/0**
-**RELAY HEAD: e8ccef1 · 2026-06-25 · deployed ✅ — golf _derived + syntax fix**
+**RELAY HEAD: 1e355cb · 2026-06-25 · deployed ✅ — BSD endgame capture + score fix**
 SW_VERSION: 2026-06-25a · CF account: b57e9af57ab46c52ca9215804e689c29
 
 ---
 
-## CRITICAL: Silent Deploy Failure (resolved e8ccef1)
+## BSD PIPELINE — FULLY OPERATIONAL
 
-Every deploy from `647d627` → `6b501f8` silently failed at wrangler build due to
-raw newlines inside single-quoted strings in `src/context-assembler.js:693`.
-`continue-on-error: true` on wrangler step + `/deploy/verify` checking only
-HEAD SHA (not bundle content) caused all CI runs to appear green.
+Pipeline confirmed live 2026-06-25 against Curaçao vs Ivory Coast (8341)
+and Ecuador vs Germany (8342):
+- `bsd_event_id` written to D1 for both matched games ✅
+- R2: incidents.json + stats.json captured for 8341 ✅
+- WC league_id = 27 confirmed ✅
+- Ecuador score corrected to 2-1 via D1 direct UPDATE ✅
 
-**Detection:** `workers_get_worker_code` showed live bundle was pre-`647d627`.
-**Fix:** `e8ccef1` — escape sequences corrected. All code since `647d627` now live.
-**Process fix going forward:** CC now runs `node --check src/*.js` before every
-commit and verifies via bundle content, not just `/deploy/verify`.
+Endgame capture (1e355cb — live):
+- `runBSDEndgameCapture` fires every 5 min via existing cron
+- Captures all 4 BSD endpoints at current_minute >= 83
+- `captureWithRetry` in writeWCResult: 7 attempts × 15s post-final backstop
+- Score UPDATE added after INSERT OR IGNORE — future games correct own score
 
-**Open governance item:** wrangler deploy step `continue-on-error: true` should
-gate on `steps.wrangler_deploy.outcome` OR compare CF API `version_id` against
-target SHA. Separate CC-CMD needed to harden the deploy gate.
-
----
-
-## GOLF _DERIVED — LIVE ✅
-
-`/v2/golf/enriched` now returns `stats._derived` for all players with complete
-ESPN stats (20/72 players mid-R1). Live from Travelers Championship R1:
-
-- Eric Cole (-7): sgPutt +1.11 · sgApp +1.64 · "earning every stroke"
-- Nico Echavarria (-6): sgPutt -0.89 · sgApp +1.64 · "striping it but leaving putts"
-- Ben Griffin (-6): sgPutt +2.41 · sgApp -2.36 · "putter carrying them"
-
-Client `buildGolfPromptContext` consumes `_derived` at L15566–15580 (already wired).
-Cache key bumped to v5 to invalidate pre-_derived KV entries.
-
----
-
-## BSD PIPELINE — WIRED (a55ebd3 + 4202055)
-
-When WC game goes final with `bsdEventId`:
-1. `bsd_event_id` → `wc_results` D1 (54 rows, all null until tonight)
-2. momentum + stats + incidents + avg-positions → R2 `bsd/wc26/{id}/{type}.json`
-3. Auto-backfill fires via KV gate at first game-final per day
-4. `buildBSDHistoryContext` CONTEXT_SOURCE reads R2 for prior match data
+R2 state: bsd/wc26/8341/incidents.json (3569b) + stats.json (14886b)
+Momentum + average-positions: not captured for today's games (deployed too late)
+Next test: Japan vs Sweden + Tunisia vs Netherlands tonight
 
 ---
 
 ## ⚡ PENDING: CC-CMD-H (field-relay-nba)
 
-**Run AFTER Ecuador vs Germany goes final (~22:00 UTC tonight)**
-
 ```
 cd /home/claude/field-relay-nba && git pull && cat docs/CC-CMD-2026-06-25-H-bsd-history-context.md
 ```
 
-Tasks: (1) BSD WC league_id discovery + MD1-MD2 backfill,
-(2) `buildBSDHistoryContext` CONTEXT_SOURCE (already shipped 6170de0/54d1036),
-(3) `/bsd/r2/list` relay route (already shipped).
+Tasks: (1) WC league_id=27 backfill for MD1-MD2 rows,
+(2) buildBSDHistoryContext already deployed (6170de0/54d1036),
+(3) /bsd/r2/list already deployed.
+Note: Use POST /admin/wc/bsd-backfill with leagueId=27 — no CF_API_TOKEN needed.
 
 ---
 
@@ -81,38 +59,63 @@ Tasks: (1) BSD WC league_id discovery + MD1-MD2 backfill,
 | `a55ebd3` | R2 capture at game-final |
 | `6170de0` `54d1036` | buildBSDHistoryContext + /bsd/r2/list |
 | `4202055` | auto-backfill + admin endpoint |
-| `647d627` | golf: pga→golf + golf_leaderboard CONTEXT_SOURCE ← **build was broken** |
-| `6b501f8` | golf: _derived IIFE (deployed via e8ccef1 fix) |
-| `0224ec6` | fix: _derived moved to correct handler |
-| `461ed74` | fix: cache key v4→v5 |
-| `e8ccef1` | fix: escape newlines in context-assembler (unblocked all above) |
+| `647d627`→`e8ccef1` | golf layer (syntax fix unblocked all) |
+| `1e355cb` | endgame cron capture + retry + score fix |
+
+---
+
+## WC D1 STATE (2026-06-25 games)
+
+| Game | Score | bsd_event_id |
+|------|-------|--------------|
+| South Africa vs S. Korea | 1-0 | null |
+| Curaçao vs Ivory Coast | 0-2 | 8341 |
+| Ecuador vs Germany | 2-1 | 8342 |
+| Czechia vs Mexico | 0-3 | null |
+
+Czechia/Mexico + South Africa/Korea: null (different BSD league_id or pre-enrichment)
+Score bug (INSERT OR IGNORE) fixed in 1e355cb — future games self-correct
+
+---
+
+## GOLF LAYER — LIVE
+
+_derived SG proxy live: e8ccef1 deployed
+Travelers Championship R1: Cole -7, SG +1.11 putt / +1.64 approach
+golf_leaderboard CONTEXT_SOURCE: 647d627 (syntax fix via e8ccef1)
 
 ---
 
 ## OPEN ITEMS
 
 - **API-Sports Football Pro renewal — JUNE 29 ⚠️** (4 days) — DO NOT RENEW
-- Deploy gate hardening CC-CMD (continue-on-error + version_id check)
-- Golf win probability from golf odds normalization (The Odds API)
-- Golf `notablePlayers` + `momentum` _derived fields (follow-ups to e8ccef1)
-- identity-resolver.js: add Ecuador, Germany + MD3 teams before 20:00 UTC
+- CC-CMD-H: MD1-MD2 backfill with leagueId=27 (use /admin/wc/bsd-backfill)
+- Deploy gate hardening CC-CMD (continue-on-error fix)
+- Golf win probability from The Odds API golf outrights
+- Golf notablePlayers + momentum _derived fields
+- identity-resolver.js: Ecuador + Germany missing (5-char prefix worked today)
 - Wimbledon draw June 27 — ATP/WTA routes live
 - All-Star Selector (July 6)
 - session_health compromised — use /quality/report + live probes
 
 ---
 
+## VERIFIED PROCESS NOTES
+
+- /deploy/verify match=True is NOT proof of deployment — verify via bundle
+- node --check src/*.js before every relay commit (CC responsibility)
+- No credentials in docs/ — use env var references
+- HANDOFF = state + one-liners only, no CC-CMD specs
+
 ## SESSION START PROTOCOL — Rule 85
 
-L2: `tool_search("FIELD Handoff session health")` + `tool_search("codex commit write source")`
-L3: `curl -s https://raw.githubusercontent.com/jeffunglesbee-create/jubilant-bassoon/main/CODE_MAP.json | python3 -c "import json,sys; m=json.load(sys.stdin); print(f'{len(m[\"functions\"])} functions')"`
+L2: tool_search("FIELD Handoff session health") + tool_search("codex commit write source")
+L3: curl -s https://raw.githubusercontent.com/jeffunglesbee-create/jubilant-bassoon/main/CODE_MAP.json | python3 -c "import json,sys; m=json.load(sys.stdin); print(f'{len(m[\"functions\"])} functions')"
 
-NOTE: `/deploy/verify` match=True is NOT sufficient proof of deployment.
-Verify via bundle content (`workers_get_worker_code`) or live endpoint probe.
-
-## Drive Docs
-The 33 — 1XDR6lzgP3vBH4Yg9Byb9C4GGAjKxuJRcV7bkF8pf4wk
-Product Feature Inventory v2 — 1BbOqlV9JhFlCvwgfizNQW9LMG6lnNrNTp4yUgi7ZC2o
+## Drive Docs (2026-06-25 session)
+Build Record — 1Gh1fiPPuVqAEw4DMwtElfbzVE6HnSz-zxOHArRvOuXA
+Golf Intelligence Research — 1b7mQWlHzpca6fHg-lUm4iUEaacG-gjAlvikLbwTJpLo
+Incident Report + Process — 1eNvq5XBHM3O07pwla2BcvkmsqDrDtNdTaxqpoGRJEdM
 
 ## STAT
 HEAD: 2d18fff · 572 companies · smoke 213/213
