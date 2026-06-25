@@ -5,60 +5,44 @@
 
 ## FIELD — Current State
 
-**CLIENT HEAD: 86afce8 · 2026-06-24 · L28860-fix-ready**
+**CLIENT HEAD: fa57eb0 · 2026-06-24 · L28860-sport-filter-brief-fix**
 **RELAY HEAD: e6cdd36 · 2026-06-24 · deployed (e97fffd)**
-Smoke: 752/0 · SW_VERSION: 2026-06-24g
+Smoke: 753/0 · SW_VERSION: 2026-06-24h
 CF account: b57e9af57ab46c52ca9215804e689c29
 D1 field-archive: cc49101c-0569-4d41-8e7a-be139cde4f26
 D1 wc2026: f26669de-e772-4b56-a6d1-f8fdea08a4d4
 
 ---
 
-## 🔴 CC-CMD: L28860 SPORT-FILTER HIDES BRIEF — EXECUTE NEXT
+## L28860 SPORT-FILTER BRIEF FIX — SHIPPED (a50edcf / HEAD fa57eb0)
 
-**Status: READY. Two sed commands. Self-completing (Rule 87).**
+Brief was hidden entirely when any sport filter tab was active. Two root causes fixed.
 
-### Bug
-When any sport filter tab is active (NBA, MLB, etc.), the FIELD Brief
-is hidden entirely. Two root causes cooperate:
+| Fix | Location | Change |
+|-----|----------|--------|
+| Remove activeFilter gate | L28864 | `activeFilter!=='all'\|\|!sections.length` → `!sections.length` only |
+| Call site passes full array | L10593 | `initFIELDBrief(filtered&&…:visible)` → `initFIELDBrief(sports)` |
+| A_BR_1 reworked | smoke.js | Asserts `initFIELDBrief(sports)` — strictly stronger than prior fallback shape |
+| A_BR_5 added | smoke.js | Asserts old `activeFilter` gate string is absent |
+| SW_VERSION bump | both files | 2026-06-24g → 2026-06-24h (1 occurrence per file) |
 
-1. **L28864 — gate in `initFIELDBrief`:**
-   `if(activeFilter!=='all'||!sections.length)` hides brief when any filter active.
+State verification: both grep counts = 1, single call site at L10593 ✓
+Smoke: 752 → 753/0.
 
-2. **L10593 — call site passes filtered data:**
-   `initFIELDBrief(filtered&&filtered.length?filtered:visible)` gives the brief
-   only the filtered sport subset instead of the full `sports` array.
+---
 
-### Fix
-```bash
-curl -s "https://raw.githubusercontent.com/jeffunglesbee-create/jubilant-bassoon/main/index.html" \
-  -o /tmp/index.html
+## BRIEF ALWAYS-RENDER — SHIPPED (c8f9d3a / HEAD 7f11ee5)
 
-# Fix 1: remove activeFilter gate (L28864)
-sed -i "s/if(activeFilter!=='all'||!sections\.length){el\.style\.display='none';return;}/if(!sections.length){el.style.display='none';return;}/g" /tmp/index.html
+Four silent failure causes fixed. Smoke 748→752/0.
 
-# Fix 2: call site passes full sports array (L10593)
-sed -i 's/initFIELDBrief(filtered\&\&filtered\.length?filtered:visible)/initFIELDBrief(sports)/g' /tmp/index.html
-
-# Verify — must match exactly
-grep -n "initFIELDBrief(sports)" /tmp/index.html
-grep -n "if(!sections.length){el.style.display='none';return;}" /tmp/index.html
-# Expected: 10593 and 28864
-
-# Bump SW_VERSION (g → h) then commit
-```
-
-### Checklist
-- [ ] Download fresh index.html
-- [ ] Apply Fix 1 (activeFilter gate removal at L28864)
-- [ ] Apply Fix 2 (call site passes `sports` at L10593)
-- [ ] Grep verification passes (both lines found)
-- [ ] SW_VERSION bumped: 2026-06-24g → 2026-06-24h
-- [ ] Commit: `fix: L28860 sport-filter hides brief — pass sports[], drop activeFilter gate`
-- [ ] Update HANDOFF: L28860 → CLOSED
-
-**Smoke:** No new tests needed. A_BR_5 (brief renders when filter active) is a
-nice-to-have post-fix.
+| Task | Fix | Location |
+|------|-----|----------|
+| 1 | filtered fallback: filtered&&filtered.length?filtered:visible | L10593 |
+| 2 | fieldBriefCacheKey() now uses FIELD_TZ (writer/visible/archive aligned) | L26442 |
+| 3 | journalismCallsToday key: UTC→fieldDateKey(new Date()) | budget key |
+| 4 | fetchFIELDBriefFromClaude bypasses _compoundRetryAfter bleed | L28696 |
+| 5 | Smoke A_BR_1..A_BR_4 added | 748→752 |
+| 6 | SW_VERSION 2026-06-24f → 2026-06-24g | both files |
 
 ---
 
@@ -92,21 +76,6 @@ nice-to-have post-fix.
 
 ---
 
-## BRIEF ALWAYS-RENDER — SHIPPED (c8f9d3a / HEAD 7f11ee5)
-
-Four silent failure causes fixed. Smoke 748→752/0.
-
-| Task | Fix | Location |
-|------|-----|----------|
-| 1 | filtered fallback: filtered&&filtered.length?filtered:visible | L10593 |
-| 2 | fieldBriefCacheKey() now uses FIELD_TZ (writer/visible/archive aligned) | L26442 |
-| 3 | journalismCallsToday key: UTC→fieldDateKey(new Date()) | budget key |
-| 4 | fetchFIELDBriefFromClaude bypasses _compoundRetryAfter bleed | L28696 |
-| 5 | Smoke A_BR_1..A_BR_4 added (A_BR_4 comment reworded per Rule 77) | 748→752 |
-| 6 | SW_VERSION 2026-06-24f → 2026-06-24g | both files |
-
----
-
 ## INFRASTRUCTURE
 
 - relay deploy.yml: path filter (src/, wrangler.toml, workers/ only)
@@ -120,7 +89,6 @@ Four silent failure causes fixed. Smoke 748→752/0.
 
 ## GENUINE OPEN ITEMS
 
-- **L28860 sport-filter hides brief** — CC-CMD authored above, READY TO EXECUTE
 - **wentToOT hardcoded false** (L9107) — D1 ALTER TABLE + GameDO write + backfill
 - NFL SPORT_TO_V2 — September 9
 - API-Sports Football Pro renewal — **JUNE 29**
