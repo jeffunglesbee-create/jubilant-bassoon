@@ -5438,10 +5438,13 @@ assert('A737 — WC debrief: CSS class wc-bracket-impact-card present',
   html.includes('.wc-bracket-impact-card'),
   'CSS for debrief card must be present');
 
-assert('A_BR_1 — brief filtered fallback: filtered&&filtered.length?filtered:visible in setTimeout',
-  html.includes('filtered&&filtered.length?filtered:visible') ||
-  html.includes('filtered&&filtered.length?filtered:sections'),
-  'initFIELDBrief setTimeout must fall back to visible when filtered is empty');
+assert('A_BR_1 — brief always-render: initFIELDBrief receives full sports[], not filtered subset',
+  html.includes('initFIELDBrief(sports)'),
+  'initFIELDBrief must be called with the full sports array so filter state never suppresses the brief');
+
+assert('A_BR_5 — brief shown regardless of activeFilter: activeFilter gate removed at L28864',
+  !html.includes("if(activeFilter!=='all'||!sections.length){el.style.display='none';return;}"),
+  'activeFilter gate must not hide the FIELD Brief when a sport tab is selected');
 
 assert('A_BR_2 — brief cache key TZ-invariant: fieldBriefCacheKey uses FIELD_TZ not localTz',
   !html.match(/function fieldBriefCacheKey[\s\S]{0,100}localTz\(\)/),

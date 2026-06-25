@@ -10590,7 +10590,7 @@ function renderAll(){
     if(typeof toggleWCView==='function') toggleWCView();
   });
   setTimeout(injectJ1J4Badges, 300);    // J1/J4: Anti-Hype + Scout's Pick per-card badges
-  setTimeout(()=>initFIELDBrief(filtered&&filtered.length?filtered:visible).then(()=>renderAmbientPanel()).catch(e=>{
+  setTimeout(()=>initFIELDBrief(sports).then(()=>renderAmbientPanel()).catch(e=>{
     captureFieldError('initFIELDBrief',e,false);
     const slot=(_DOM?.fieldBrief||document.getElementById('field-brief'));
     if(slot&&!slot.querySelector('.field-brief-card'))
@@ -22522,7 +22522,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-24g';
+  const SW_VERSION = '2026-06-24h';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -28861,7 +28861,7 @@ async function initFIELDBrief(sections){
   const tz = localTz();
   const el=(_DOM?.fieldBrief||document.getElementById('field-brief'));
   if(!el) return;
-  if(activeFilter!=='all'||!sections.length){el.style.display='none';return;}
+  if(!sections.length){el.style.display='none';return;}
   // #field-brief and #night-owl are now separate elements — no slot-contention guard needed.
   // Night Owl renders into #night-owl; FIELD Brief renders into #field-brief independently.
   const d=new Date();const tzStr=(typeof tz==='string'?tz:'America/New_York');
