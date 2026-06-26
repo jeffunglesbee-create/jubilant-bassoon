@@ -5456,6 +5456,23 @@ assert('A_BSD_8 — bsd:ball SSE listener in _connect()',
   html.includes("addEventListener('bsd:ball'"),
   '_connect() must register bsd:ball listener on existing _es singleton');
 
+assert('A_DEV_1 — _isFieldDevMode helper defined (?dev=1 or field_dev localStorage)',
+  html.includes('function _isFieldDevMode()') &&
+  html.includes("get('dev') === '1'") &&
+  html.includes("localStorage.getItem('field_dev')"),
+  'dev-mode helper must check both URL ?dev=1 and field_dev localStorage flag');
+
+assert('A_DEV_2 — BRIEF QUALITY block gated on _isFieldDevMode()',
+  /_isFieldDevMode\(\)\s*&&\s*bundle\.quality_alert/.test(html),
+  'newspaper BRIEF QUALITY render must be wrapped in _isFieldDevMode() gate');
+
+assert('A_DEV_3 — long-press on .np-stars-glyphs toggles field_dev + reloads',
+  html.includes(".np-stars-glyphs'") &&
+  html.includes("'pointerdown'") &&
+  html.includes("localStorage.removeItem('field_dev')") &&
+  html.includes("localStorage.setItem('field_dev'"),
+  'Night Stars glyphs must wire pointerdown long-press to toggle field_dev flag');
+
 assert('A_BR_1 — brief always-render: initFIELDBrief receives full sports[], not filtered subset',
   html.includes('initFIELDBrief(sports)'),
   'initFIELDBrief must be called with the full sports array so filter state never suppresses the brief');

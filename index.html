@@ -21050,6 +21050,19 @@ function getWhatYouMissed(completedGames) {
   );
   return notable.slice(0, 5);
 }
+// ── FIELD dev mode (2026-06-26) ───────────────────────────────────────────
+// Gates the BRIEF QUALITY diagnostic in the newspaper. On by default for
+// neither query param nor localStorage flag. Toggle via long-press (500ms)
+// on the Night Stars glyphs OR ?dev=1 in the URL.
+function _isFieldDevMode() {
+  try {
+    if (new URLSearchParams(location.search).get('dev') === '1') return true;
+    if (localStorage.getItem('field_dev') === '1') return true;
+  } catch (_) {}
+  return false;
+}
+let _devLongPressTimer = null;
+
 function renderNewspaper(bundle) {
   if (!bundle) return;
   // Stash globally so the FIELD's Pick badge hook can attach on every
@@ -21138,8 +21151,11 @@ function renderNewspaper(bundle) {
     } catch (_) {}
   }
 
-  // Quality alert — surfaces relay-detected brief degradation
-  if (bundle.quality_alert && bundle.quality_alert.brief) {
+  // Quality alert — surfaces relay-detected brief degradation.
+  // Dev-gated: BRIEF QUALITY diagnostic is for editorial debugging only.
+  // The (limited data) annotation on np-stars (above) stays visible to all
+  // users since it explains a visible numerical change in the star count.
+  if (_isFieldDevMode() && bundle.quality_alert && bundle.quality_alert.brief) {
     const a = bundle.quality_alert;
     const degraded = (a.alerts || []).map(r => r.brief_type).join(', ');
     const unscored = (a.unscored || []).map(r => r.brief_type).join(', ');
@@ -21155,6 +21171,28 @@ function renderNewspaper(bundle) {
   }
 
   el.innerHTML = `<div class="np-inner">${parts.join('')}${freshness ? `<div class="np-freshness">Updated at ${freshness} ET</div>` : ''}</div><div class="np-divider">TODAY'S SCHEDULE</div>`;
+
+  // Long-press (500ms) on Night Stars glyphs toggles dev mode + reloads.
+  // Re-attached on every render since el is rebuilt from innerHTML each time.
+  const _starsEl = el.querySelector('.np-stars-glyphs');
+  if (_starsEl) {
+    _starsEl.style.cursor = 'pointer';
+    _starsEl.style.touchAction = 'none';
+    const _onDown = () => {
+      clearTimeout(_devLongPressTimer);
+      _devLongPressTimer = setTimeout(() => {
+        const isDev = localStorage.getItem('field_dev') === '1';
+        if (isDev) localStorage.removeItem('field_dev');
+        else       localStorage.setItem('field_dev', '1');
+        location.reload();
+      }, 500);
+    };
+    const _onUp = () => clearTimeout(_devLongPressTimer);
+    _starsEl.addEventListener('pointerdown',   _onDown);
+    _starsEl.addEventListener('pointerup',     _onUp);
+    _starsEl.addEventListener('pointerleave',  _onUp);
+    _starsEl.addEventListener('pointercancel', _onUp);
+  }
 
   const main = document.getElementById('main');
   if (main) {
