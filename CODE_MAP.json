@@ -1,7 +1,7 @@
 {
   "file": "index.html",
-  "lineCount": 39219,
-  "generatedAt": "2026-06-26T12:01:38.418Z",
+  "lineCount": 39243,
+  "generatedAt": "2026-06-26T12:24:09.226Z",
   "summary": {
     "functionCount": 915,
     "sectionCount": 709,
@@ -11,8 +11,8 @@
       {
         "name": "RIVALRIES",
         "line": 35916,
-        "endLine": 39049,
-        "approximateBytes": 171395
+        "endLine": 39073,
+        "approximateBytes": 172800
       },
       {
         "name": "BDL_MILESTONE_THRESHOLDS",
@@ -64,8 +64,8 @@
       },
       {
         "name": "_gameBriefCache",
-        "line": 38478,
-        "endLine": 38819,
+        "line": 38502,
+        "endLine": 38843,
         "approximateBytes": 19342
       }
     ],
@@ -4330,61 +4330,61 @@
     {
       "name": "Bottom-sheet",
       "startLine": 38160,
-      "endLine": 38305,
-      "lineCount": 146
+      "endLine": 38329,
+      "lineCount": 170
     },
     {
       "name": "Bottom sheet: swipe-to-dismiss + focus trap ─",
-      "startLine": 38306,
-      "endLine": 38407,
+      "startLine": 38330,
+      "endLine": 38431,
       "lineCount": 102
     },
     {
       "name": "Wow#45 Stage 2: Drama Sparkline",
-      "startLine": 38408,
-      "endLine": 38437,
+      "startLine": 38432,
+      "endLine": 38461,
       "lineCount": 30
     },
     {
       "name": "Series Margins Display",
-      "startLine": 38438,
-      "endLine": 38690,
+      "startLine": 38462,
+      "endLine": 38714,
       "lineCount": 253
     },
     {
       "name": "J5 isBlowout gate (Combo B-1+)",
-      "startLine": 38691,
-      "endLine": 38939,
+      "startLine": 38715,
+      "endLine": 38963,
       "lineCount": 249
     },
     {
       "name": "═",
-      "startLine": 38940,
-      "endLine": 38944,
+      "startLine": 38964,
+      "endLine": 38968,
       "lineCount": 5
     },
     {
       "name": "═",
-      "startLine": 38945,
-      "endLine": 39026,
+      "startLine": 38969,
+      "endLine": 39050,
       "lineCount": 82
     },
     {
       "name": "Bootstrap: kick off the initial schedule load ─",
-      "startLine": 39027,
-      "endLine": 39033,
+      "startLine": 39051,
+      "endLine": 39057,
       "lineCount": 7
     },
     {
       "name": "P1 — Last-Known-State Hydration (startup polish bundle, June 3 2026)",
-      "startLine": 39034,
-      "endLine": 39150,
+      "startLine": 39058,
+      "endLine": 39174,
       "lineCount": 117
     },
     {
       "name": "P5 — Anticipatory Pre-fetch (startup polish bundle, June 3 2026)",
-      "startLine": 39151,
-      "endLine": 39219,
+      "startLine": 39175,
+      "endLine": 39243,
       "lineCount": 69
     }
   ],
@@ -10579,217 +10579,217 @@
     },
     {
       "name": "initBottomSheetSwipe",
-      "line": 38310,
+      "line": 38334,
       "params": "",
       "async": false,
       "section": "Bottom sheet: swipe-to-dismiss + focus trap ─"
     },
     {
       "name": "onStart",
-      "line": 38319,
+      "line": 38343,
       "params": "e",
       "async": false,
       "section": "Bottom sheet: swipe-to-dismiss + focus trap ─"
     },
     {
       "name": "onMove",
-      "line": 38330,
+      "line": 38354,
       "params": "e",
       "async": false,
       "section": "Bottom sheet: swipe-to-dismiss + focus trap ─"
     },
     {
       "name": "onEnd",
-      "line": 38359,
+      "line": 38383,
       "params": "",
       "async": false,
       "section": "Bottom sheet: swipe-to-dismiss + focus trap ─"
     },
     {
       "name": "closeBottomSheet",
-      "line": 38402,
+      "line": 38426,
       "params": "",
       "async": false,
       "section": "Bottom sheet: swipe-to-dismiss + focus trap ─"
     },
     {
       "name": "buildDramaSparklineSVG",
-      "line": 38412,
+      "line": 38436,
       "params": "gameId, w=140, h=28",
       "async": false,
       "section": "Wow#45 Stage 2: Drama Sparkline"
     },
     {
       "name": "buildSeriesMarginsArc",
-      "line": 38443,
+      "line": 38467,
       "params": "seriesMargins",
       "async": false,
       "section": "Series Margins Display"
     },
     {
       "name": "clampM",
-      "line": 38448,
+      "line": 38472,
       "params": "m",
       "async": false,
       "section": "Series Margins Display"
     },
     {
       "name": "tension",
-      "line": 38449,
+      "line": 38473,
       "params": "m",
       "async": false,
       "section": "Series Margins Display"
     },
     {
       "name": "buildSeriesMarginsDots",
-      "line": 38464,
+      "line": 38488,
       "params": "game",
       "async": false,
       "section": "Series Margins Display"
     },
     {
       "name": "renderNightOwlRecap",
-      "line": 38480,
+      "line": 38504,
       "params": "",
       "async": true,
       "section": "Series Margins Display"
     },
     {
       "name": "_affScore",
-      "line": 38534,
+      "line": 38558,
       "params": "game",
       "async": false,
       "section": "Series Margins Display"
     },
     {
       "name": "_owlDate",
-      "line": 38608,
+      "line": 38632,
       "params": "(",
       "async": false,
       "section": "Series Margins Display"
     },
     {
       "name": "renderCard",
-      "line": 38621,
+      "line": 38645,
       "params": "text,loaded",
       "async": false,
       "section": "Series Margins Display"
     },
     {
       "name": "_owlJobId",
-      "line": 38705,
+      "line": 38729,
       "params": "(",
       "async": false,
       "section": "J5 isBlowout gate (Combo B-1+)"
     },
     {
       "name": "renderLastNight",
-      "line": 38822,
+      "line": 38846,
       "params": "",
       "async": false,
       "section": "J5 isBlowout gate (Combo B-1+)"
     },
     {
       "name": "checkForNewFinals",
-      "line": 38859,
+      "line": 38883,
       "params": "",
       "async": false,
       "section": "J5 isBlowout gate (Combo B-1+)"
     },
     {
       "name": "toLS",
-      "line": 38888,
+      "line": 38912,
       "params": "periods",
       "async": false,
       "section": "J5 isBlowout gate (Combo B-1+)"
     },
     {
       "name": "topPlayers",
-      "line": 38892,
+      "line": 38916,
       "params": "players, teamLabel",
       "async": false,
       "section": "J5 isBlowout gate (Combo B-1+)"
     },
     {
       "name": "renderHalftimeSwitch",
-      "line": 38949,
+      "line": 38973,
       "params": "",
       "async": false,
       "section": "═"
     },
     {
       "name": "currentBucket",
-      "line": 39050,
+      "line": 39074,
       "params": "",
       "async": false,
       "section": "P1 — Last-Known-State Hydration (startup polish bundle, June 3 2026)"
     },
     {
       "name": "_snapshotOpen",
-      "line": 39057,
+      "line": 39081,
       "params": "",
       "async": false,
       "section": "P1 — Last-Known-State Hydration (startup polish bundle, June 3 2026)"
     },
     {
       "name": "idbGet",
-      "line": 39072,
+      "line": 39096,
       "params": "store, key",
       "async": true,
       "section": "P1 — Last-Known-State Hydration (startup polish bundle, June 3 2026)"
     },
     {
       "name": "idbSet",
-      "line": 39083,
+      "line": 39107,
       "params": "store, key, value",
       "async": true,
       "section": "P1 — Last-Known-State Hydration (startup polish bundle, June 3 2026)"
     },
     {
       "name": "saveSnapshot",
-      "line": 39094,
+      "line": 39118,
       "params": "",
       "async": true,
       "section": "P1 — Last-Known-State Hydration (startup polish bundle, June 3 2026)"
     },
     {
       "name": "restoreSnapshot",
-      "line": 39111,
+      "line": 39135,
       "params": "",
       "async": true,
       "section": "P1 — Last-Known-State Hydration (startup polish bundle, June 3 2026)"
     },
     {
       "name": "showFreshnessStrip",
-      "line": 39129,
+      "line": 39153,
       "params": "ageMin",
       "async": false,
       "section": "P1 — Last-Known-State Hydration (startup polish bundle, June 3 2026)"
     },
     {
       "name": "markFreshnessLive",
-      "line": 39139,
+      "line": 39163,
       "params": "",
       "async": false,
       "section": "P1 — Last-Known-State Hydration (startup polish bundle, June 3 2026)"
     },
     {
       "name": "recordOpenHour",
-      "line": 39161,
+      "line": 39185,
       "params": "",
       "async": false,
       "section": "P5 — Anticipatory Pre-fetch (startup polish bundle, June 3 2026)"
     },
     {
       "name": "predictNextOpenHour",
-      "line": 39171,
+      "line": 39195,
       "params": "",
       "async": false,
       "section": "P5 — Anticipatory Pre-fetch (startup polish bundle, June 3 2026)"
     },
     {
       "name": "registerAnticipatoryPrefetch",
-      "line": 39186,
+      "line": 39210,
       "params": "",
       "async": true,
       "section": "P5 — Anticipatory Pre-fetch (startup polish bundle, June 3 2026)"
@@ -11567,8 +11567,8 @@
     {
       "name": "RIVALRIES",
       "line": 35916,
-      "endLine": 39049,
-      "approximateBytes": 171395
+      "endLine": 39073,
+      "approximateBytes": 172800
     },
     {
       "name": "PACKAGE_INCLUDES",
@@ -11578,14 +11578,14 @@
     },
     {
       "name": "_gameBriefCache",
-      "line": 38478,
-      "endLine": 38819,
+      "line": 38502,
+      "endLine": 38843,
       "approximateBytes": 19342
     },
     {
       "name": "_emberResultCache",
-      "line": 38479,
-      "endLine": 38819,
+      "line": 38503,
+      "endLine": 38843,
       "approximateBytes": 19291
     }
   ],
@@ -12417,47 +12417,47 @@
     },
     {
       "call": "setTimeout",
-      "line": 38286,
+      "line": 38292,
       "context": "setTimeout(() => {"
     },
     {
       "call": "setTimeout",
-      "line": 38372,
+      "line": 38396,
       "context": "setTimeout(closeBottomSheet, 260);"
     },
     {
       "call": "setTimeout",
-      "line": 38722,
+      "line": 38746,
       "context": "if (_i < 2) await new Promise(r => setTimeout(r, 2000));"
     },
     {
       "call": "setTimeout",
-      "line": 39022,
+      "line": 39046,
       "context": "setTimeout(()=>{ _htShownGames.add(htKey+'_done'); panel.style.display='none'; }, 90000);"
     },
     {
       "call": "fetchSchedule",
-      "line": 39028,
+      "line": 39052,
       "context": "// fetchSchedule() populates allData from buildTodaySchedule() then calls renderAll()"
     },
     {
       "call": "setTimeout",
-      "line": 39145,
+      "line": 39169,
       "context": "setTimeout(() => { strip.classList.remove('is-visible'); strip.classList.remove('freshness-live'); }, 2000);"
     },
     {
       "call": "setTimeout",
-      "line": 39200,
+      "line": 39224,
       "context": "setTimeout(registerAnticipatoryPrefetch, 4000);"
     },
     {
       "call": "fetchSchedule",
-      "line": 39213,
+      "line": 39237,
       "context": "// Kick: restore first (paints cached DOM if any), then fetchSchedule (which renderAll-replaces with fresh)."
     },
     {
       "call": "fetchSchedule",
-      "line": 39215,
+      "line": 39239,
       "context": "restoreSnapshot().finally(() => { fetchSchedule().then(markFreshnessLive); });"
     }
   ]
