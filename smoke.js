@@ -5456,6 +5456,20 @@ assert('A_BSD_8 — bsd:ball SSE listener in _connect()',
   html.includes("addEventListener('bsd:ball'"),
   '_connect() must register bsd:ball listener on existing _es singleton');
 
+assert('A_BSD_9 — bottom sheet renders bsd-pitch container gated on WC + bsdEventId',
+  /_bsIsWC\s*=\s*\/wc26\|world cup\|fifa\/i\.test/.test(html) &&
+  /_bsBsdEventId\s*=\s*eData\?\.bsdEventId/.test(html) &&
+  /\(_bsIsWC\s*&&\s*_bsBsdEventId\)\s*\?\s*`<div class="bs-section">[^`]*id="bsd-pitch"/.test(html),
+  'openBottomSheet must include a bsd-pitch container conditioned on _bsIsWC && _bsBsdEventId');
+
+assert('A_BSD_10 — post-game WC bottom sheet fetches /bsd/r2/read and feeds _bsdRepaint',
+  /bsd\/wc26\/\$\{_bsBsdEventId\}\/stats\.json/.test(html) &&
+  /\/bsd\/r2\/read\?key=\$\{encodeURIComponent\(_r2Key\)\}/.test(html) &&
+  /eData\?\.state\s*===\s*'post'/.test(html) &&
+  /_bsdShotData\s*=\s*d\.shotmap/.test(html) &&
+  /_bsdRepaint\(\)/.test(html),
+  'post-game WC bottom sheet must fetch /bsd/r2/read with stats.json key, assign shotmap to _bsdShotData, and call _bsdRepaint()');
+
 assert('A_DEV_1 — _isFieldDevMode helper defined (?dev=1 or field_dev localStorage)',
   html.includes('function _isFieldDevMode()') &&
   html.includes("get('dev') === '1'") &&

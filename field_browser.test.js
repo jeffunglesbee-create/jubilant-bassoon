@@ -465,6 +465,67 @@ test.describe('Data-dependent — skip if no games', () => {
     }
   });
 
+  test('F21 — Bottom sheet renders #bsd-pitch for WC games with bsdEventId', async ({ page }) => {
+    await page.goto(LIVE_URL, { waitUntil: 'domcontentloaded', timeout: 30000 });
+    await awaitReady(page, 3000);
+
+    // Find a WC game in allData whose eData carries bsdEventId. Skips when:
+    //  • No FIFA section (off-day for WC)
+    //  • No espnScores entry matched (V2 wc26 ingest not populated)
+    //  • Matched entry has no bsdEventId (relay STEP 1 not flowing yet)
+    const target = await page.evaluate(() => {
+      if (typeof allData === 'undefined' || typeof espnScores === 'undefined') return null;
+      for (const sec of (allData.sports || [])) {
+        if (!/wc26|world cup|fifa/i.test(sec.sport || '')) continue;
+        for (const g of (sec.games || [])) {
+          const h = (g.home || '').toLowerCase().slice(0, 6);
+          const a = (g.away || '').toLowerCase().slice(0, 6);
+          if (!h || !a) continue;
+          const eData = Object.values(espnScores).find(e => {
+            const eh = (e.homeName || '').toLowerCase();
+            const ea = (e.awayName || '').toLowerCase();
+            return eh.includes(h) || ea.includes(a);
+          });
+          if (eData?.bsdEventId) {
+            return { gameId: g._id, state: eData.state || 'unknown', bsdEventId: eData.bsdEventId };
+          }
+        }
+      }
+      return null;
+    });
+
+    if (!target) {
+      test.skip(true, 'No WC games with bsdEventId in espnScores — data dependency unmet');
+      return;
+    }
+
+    // Open the sheet imperatively (avoid card-click flakiness across viewports)
+    const opened = await page.evaluate(gid => {
+      if (typeof openBottomSheet !== 'function') return false;
+      try { openBottomSheet(gid); return true; } catch (_) { return false; }
+    }, target.gameId);
+    expect(opened, 'openBottomSheet should be callable').toBe(true);
+
+    // bs-content is rebuilt synchronously inside openBottomSheet, so the pitch
+    // div is already in DOM by the time the call returns. Verify presence.
+    const pitchCount = await page.locator('#bs-content #bsd-pitch').count();
+    expect(
+      pitchCount,
+      `#bsd-pitch should render in bs-content for WC games with bsdEventId (state=${target.state}, bsdEventId=${target.bsdEventId})`
+    ).toBe(1);
+
+    // For post-game finals, the R2 fetch fires immediately after innerHTML.
+    // Wait for the SVG to populate. Skip the strict SVG check if the relay
+    // doesn't return a shotmap (could happen for newly-finalized games).
+    if (target.state === 'post') {
+      await page.waitForTimeout(2000); // 2s budget for /bsd/r2/read round-trip
+      const svgCount = await page.locator('#bs-content #bsd-pitch svg').count();
+      if (svgCount === 0) {
+        console.warn(`F21 SVG render skipped — R2 may not have stats.json for bsdEventId=${target.bsdEventId} yet`);
+      }
+    }
+  });
+
   test('F20 — Editorial sections NOT in left pane on iPad (migrated to right)', async ({ page }) => {
     await page.setViewportSize({ width: 820, height: 1180 });
     await page.goto(LIVE_URL, { waitUntil: 'domcontentloaded', timeout: 30000 });
