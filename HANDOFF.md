@@ -1,5 +1,5 @@
 # FIELD HANDOFF
-## Session: 2026-06-25 · Final State
+## Session: 2026-06-26 · Final State
 
 ---
 
@@ -8,6 +8,43 @@
 **CLIENT HEAD: 05a1aef · 2026-06-25 · bsdEventId + pitch A_BSD_7/8 · Smoke 757/0**
 **RELAY HEAD: 1e355cb · 2026-06-25 · deployed ✅ — BSD endgame capture + score fix**
 SW_VERSION: 2026-06-25a · CF account: b57e9af57ab46c52ca9215804e689c29
+
+---
+
+## ⚡ PENDING: outbox/ WRITE_ALLOWLIST (field-relay-nba)
+
+**Requires: `jeffunglesbee-create/field-relay-nba` in session scope**
+
+Two-step task:
+
+**Step 1 — Add `outbox/` to WRITE_ALLOWLIST in field-relay-nba source:**
+```javascript
+var WRITE_ALLOWLIST = [
+  "docs/",
+  "HANDOFF.md",
+  "CODE_MAP.json",
+  "outbox/"    // ← add this line
+];
+```
+Commit + push → CI redeploys worker.
+
+**Step 2 — Once deployed, write verification file via `commit_file`:**
+Path: `outbox/whoop-status.json`
+Content should include:
+```json
+{
+  "updated_at": "<ISO timestamp>",
+  "source": "field-relay-nba /whoop/fetch",
+  "token_valid": true,
+  "token_expires_at": "2026-06-26T18:34:15.552Z",
+  "refresh_token_present": true,
+  "cycle": { "strain": 4.09, "avg_hr": 60 },
+  "body": { "weight_kg": 82.93 },
+  "profile": { "user_id": 31127063, "email": "jeffunglesbee@gmail.com" }
+}
+```
+
+**Context:** WHOOP OAuth re-auth completed 2026-06-26T17:34Z. D1 `wc2026.whoop_tokens` has valid access + refresh tokens. `/whoop/fetch?days=1` returns HTTP 200 with live data. Documented in `health-protocol` repo, branch `claude/health-protocol-worker-docs-jeeqel`, file `docs/CC-CMD-2026-06-26-health-protocol-worker.md` (commit `fce4039`).
 
 ---
 
@@ -88,6 +125,7 @@ golf_leaderboard CONTEXT_SOURCE: 647d627 (syntax fix via e8ccef1)
 
 ## OPEN ITEMS
 
+- **outbox/ WRITE_ALLOWLIST** — requires field-relay-nba session scope (see top of HANDOFF)
 - **API-Sports Football Pro renewal — JUNE 29 ⚠️** (4 days) — DO NOT RENEW
 - CC-CMD-H: MD1-MD2 backfill with leagueId=27 (use /admin/wc/bsd-backfill)
 - Deploy gate hardening CC-CMD (continue-on-error fix)
