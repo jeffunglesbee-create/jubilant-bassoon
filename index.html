@@ -38234,6 +38234,11 @@ function openBottomSheet(gameId) {
     : '';
   // Postgame: build richer drama context from history + score log
   const _bsIsFinal = eData?.state === 'post';
+  // WC pitch: bottom sheet renders the bsd-pitch SVG canvas when a WC game
+  // has a BSD event ID. Container is always present for WC games (live + post)
+  // so _bsdRepaint has something to paint; post-game fetch fills it from R2.
+  const _bsIsWC       = /wc26|world cup|fifa/i.test(sport || game._sport || '');
+  const _bsBsdEventId = eData?.bsdEventId || game.bsdEventId || null;
   let _bsPostgameDrama = '';
   if (_bsIsFinal) {
     try {
@@ -38274,6 +38279,7 @@ function openBottomSheet(gameId) {
     ${standingsStr||seriesMargins ? `<div class="bs-section"><div class="bs-section-label">Standings</div><div class="bs-section-body">${standingsStr}</div>${seriesMargins}</div>` : ''}
     ${game.streams?.length ? `<div class="bs-section"><div class="bs-section-label">Watch On</div><div class="bs-section-body">${game.peacockGOTD?'🦚 Peacock GOTD · Free to stream · ':game.espnGOTD?'📺 Free on ESPN App/Unlimited · ':''}${game.streams.slice(0,4).map(s=>s.label||s.name).filter(Boolean).join(' · ')}</div></div>` : ''}
     ${game.crew ? `<div class="bs-section"><div class="bs-section-label">Crew</div><div class="bs-section-body">${game.crew}</div></div>` : ''}
+    ${(_bsIsWC && _bsBsdEventId) ? `<div class="bs-section"><div class="bs-section-label">Pitch</div><div id="bsd-pitch" style="width:100%;min-height:200px"></div></div>` : ''}
     <div style="margin-top:1rem;display:flex;gap:.6rem">
       <button onclick="pinGame('${gameId}');closeBottomSheet()" style="flex:1;padding:.55rem;border-radius:.6rem;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);color:inherit;font-size:.7rem;cursor:pointer">📌 Pin game</button>
       <button onclick="navigator.share&&navigator.share({title:'${(game.away||'').replace(/'/g,'')} @ ${(game.home||'').replace(/'/g,'')}',text:'${(game.away||'').replace(/'/g,'')} @ ${(game.home||'').replace(/'/g,'')} · ${game.league||sport||''}',url:location.href}).catch(()=>{});closeBottomSheet()" style="flex:1;padding:.55rem;border-radius:.6rem;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);color:inherit;font-size:.7rem;cursor:pointer">⬆ Share</button>
@@ -38287,6 +38293,24 @@ function openBottomSheet(gameId) {
       const first = _bsEl2.querySelector('button,[href],[tabindex]:not([tabindex="-1"])');
       if (first) first.focus();
     }, 290);
+  }
+
+  // Post-game shot map from R2: completed WC game with bsd_event_id has its
+  // shotmap captured to R2 (bsd/wc26/{id}/stats.json) by runBSDEndgameCapture.
+  // Fetch via relay /bsd/r2/read and render the same bsd-pitch SVG canvas the
+  // live branch uses (no extra DOM scaffolding needed).
+  if (_bsIsWC && _bsBsdEventId && (eData?.state === 'post' || eData?.state === 'final')) {
+    const _r2Key = `bsd/wc26/${_bsBsdEventId}/stats.json`;
+    const _relay = (typeof V2_RELAY_BASE !== 'undefined') ? V2_RELAY_BASE : '';
+    fetch(`${_relay}/bsd/r2/read?key=${encodeURIComponent(_r2Key)}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(d => {
+        if (!d?.shotmap?.length) return;
+        _bsdShotData = d.shotmap;
+        _bsdBallPos  = null; // no live ball post-game
+        _bsdRepaint();
+      })
+      .catch(() => {});
   }
 
   // J11: on-demand brief — fires after sheet opens, fills placeholder if cache was empty
