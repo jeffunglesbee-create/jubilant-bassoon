@@ -22690,10 +22690,26 @@ function applyQW1SituationBonus(eData, sport){
     else if(sit.isRedZone)                                sitBonus +=  5;
   }
 
-  // ── SOCCER ── (stoppage time marker)
+  // ── SOCCER / WC ── (stoppage time + advancement stake)
   if(sp.includes('soccer')||sp.includes('league')||sp.includes('mls')||
-     sp.includes('liga')||sp.includes('ligue')||sp.includes('premier')){
+     sp.includes('liga')||sp.includes('ligue')||sp.includes('premier')||
+     /world.cup|fifa/i.test(sp)){
     if((eData.clock||'').includes('+')) sitBonus += 8;   // "90+2" stoppage time
+    // WC advancement stake — qualification on the line amplifies drama.
+    // _wcAdvProb merged onto eData by fetchWCLiveGames() after relay fetch.
+    // RUWT-safe: factual P(advance) comparison, never a composite interest level.
+    const _adv = eData._wcAdvProb;
+    if(_adv){
+      const _minAdv = Math.min(_adv.homeAdvance??1, _adv.awayAdvance??1);
+      if(_minAdv < 0.20) sitBonus += 15;        // at least one team near elimination
+      else if(_minAdv < 0.40) sitBonus += 8;   // both teams with tight path to advance
+      // Swing from kickoff: ≥20pp shift means result is reshaping the group
+      const _open = eData._wcOpeningAdvProb;
+      if(_open){
+        const _minOpen = Math.min(_open.homeAdvance??1, _open.awayAdvance??1);
+        if((_minOpen - _minAdv) >= 0.20) sitBonus += 8;
+      }
+    }
   }
 
   return sitBonus;
@@ -31374,6 +31390,24 @@ async function fetchWCLiveGames() {
     const data = await r.json();
     const live = (data.games || []).filter(g => g.state === 'live' && g.winProb);
     _wcLiveGamesCache = live;  // expose to Watch Engine
+    // Merge advancementProb onto matching espnScores entries so
+    // applyQW1SituationBonus() can use it as a drama signal without
+    // a second lookup. Keyed by home team suffix (last 6 alphanum chars).
+    for (const _g of live) {
+      if (!_g.advancementProb) continue;
+      const _hNorm = (_g.home?.name || '').toLowerCase().replace(/[^a-z]/g,'').slice(-6);
+      if (_hNorm.length < 4) continue;
+      const _eKey = Object.keys(espnScores).find(k => {
+        const _ed = espnScores[k];
+        if (_ed.state !== 'in') return false;
+        const _vh = (_ed.homeName || '').toLowerCase().replace(/[^a-z]/g,'');
+        return _vh.endsWith(_hNorm);
+      });
+      if (_eKey) {
+        espnScores[_eKey]._wcAdvProb        = _g.advancementProb;
+        espnScores[_eKey]._wcOpeningAdvProb = _g.openingAdvanceProb || null;
+      }
+    }
     return live;
   } catch (e) { return []; }
 }
@@ -34204,6 +34238,14 @@ function fieldGameTier(gameId) {
     const margin = Math.abs((eData.homeScore||0) - (eData.awayScore||0));
     const sp = (sport||'').toLowerCase();
     // T3: CRUNCH
+    const periodNum = parseInt(eData.period) || 0;
+    const clockMin  = parseInt(eData.clock) || 0;
+    const _isSoccer = sp.includes('soccer') || sp.includes('league') || sp.includes('mls') ||
+                      sp.includes('liga')   || sp.includes('ligue')   || sp.includes('premier') ||
+                      /world.cup|fifa/i.test(sp);
+    // WC/soccer: clock-based crunch — 80'+ and ≤1 goal. Named binary condition (RUWT-safe).
+    // No period-based crunch rule exists for soccer; clock is the signal.
+    if (_isSoccer && clockMin >= 80 && margin <= 1) return 'CRUNCH';
     const crunchRules = (typeof SPORT_CRUNCH_RULES !== 'undefined') ? SPORT_CRUNCH_RULES[sport] : null;
     if (crunchRules && crunchRules.some(r => period.includes(r.toLowerCase())) && margin <= 5) return 'CRUNCH';
     // T4: EXTRA_TIME
@@ -34211,10 +34253,7 @@ function fieldGameTier(gameId) {
         period.includes('so') || period.includes('shootout')) return 'EXTRA_TIME';
     if (sp.includes('baseball') && (parseInt(eData.period)||0) > 9) return 'EXTRA_TIME';
     // T5: CLOSE_LATE — sport-aware late period + close margin
-    const periodNum = parseInt(eData.period) || 0;
-    const clockMin  = parseInt(eData.clock) || 0;
-    const inLate = sp.includes('soccer') || sp.includes('league') || sp.includes('mls') ||
-                   sp.includes('liga') || sp.includes('ligue') || sp.includes('premier')
+    const inLate = _isSoccer
                      ? clockMin >= 70
                  : sp.includes('baseball') || sp.includes('mlb')
                      ? periodNum >= 7
