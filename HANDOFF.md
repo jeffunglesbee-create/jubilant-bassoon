@@ -1,5 +1,9 @@
 # FIELD HANDOFF
-## Session: 2026-06-26 · API-Sports Migration Complete
+## Session: 2026-06-27 · WC26 Knockout Stubs
+
+**HEAD: 245edc2**
+**SW_VERSION: 2026-06-26a** (bump to 2026-06-27a on next deploy-triggering commit)
+**Smoke: 761 passed, 1 failed (A704 — HANDOFF.md lacked SW field; now fixed)**
 
 ---
 
@@ -8,7 +12,7 @@
 **RELAY HEAD: 9517ea3 · 2026-06-27 · docs(outbox) cc-nhl-nhle**
 **RELAY HEAD SRC: f27026c · feat(nhl): NHLE migration + draft whitelist · deployed ✅**
 **RELAY DEPLOYED: f27026c · deploy_match: true · 2026-06-27T00:18:12Z**
-**CLIENT HEAD: 410ab94 (unchanged this session)**
+**CLIENT HEAD: 245edc2**
 
 ---
 
