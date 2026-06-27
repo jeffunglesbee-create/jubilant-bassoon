@@ -30717,7 +30717,7 @@ function _bsdOnSSEFrame(type, data) {
     _bsdBallPos = data;
     _bsdRepaint();
   } else if (type === 'bsd:stats') {
-    if (Array.isArray(data.shots)) { _bsdShotData = data.shots; _bsdRepaint(); }
+    const _bsdShots = data.shots || data.shotmap; if (Array.isArray(_bsdShots)) { _bsdShotData = _bsdShots; _bsdRepaint(); }
   }
 }
 
@@ -38338,7 +38338,8 @@ function openBottomSheet(gameId) {
   // shotmap captured to R2 (bsd/wc26/{id}/stats.json) by runBSDEndgameCapture.
   // Fetch via relay /bsd/r2/read and render the same bsd-pitch SVG canvas the
   // live branch uses (no extra DOM scaffolding needed).
-  if (_bsIsWC && _bsBsdEventId && (eData?.state === 'post' || eData?.state === 'final')) {
+  const _bsGameAge = game.start_time ? (Date.now() - new Date(game.start_time).getTime()) / 60000 : 0;
+  if (_bsIsWC && _bsBsdEventId && (eData?.state === 'post' || eData?.state === 'final' || _bsGameAge > 95)) {
     const _r2Key = `bsd/wc26/${_bsBsdEventId}/stats.json`;
     const _relay = (typeof V2_RELAY_BASE !== 'undefined') ? V2_RELAY_BASE : '';
     fetch(`${_relay}/bsd/r2/read?key=${encodeURIComponent(_r2Key)}`)
