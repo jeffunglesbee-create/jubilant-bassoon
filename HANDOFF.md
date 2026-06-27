@@ -1,7 +1,7 @@
 # FIELD HANDOFF
 ## Session: 2026-06-27 · WC26 Knockout Phase + Client Stubs
 
-**HEAD: 5f486f3**
+**HEAD: 4b89227**
 **SW_VERSION: 2026-06-26b**
 **Smoke: 762 passed, 0 failed**
 
@@ -12,7 +12,7 @@
 **RELAY HEAD: e680c9e · 2026-06-27 · docs(outbox) cc-relay-knockout-phase**
 **RELAY HEAD SRC: 1cad397 · feat(wc): knockout phase D1 write path — extractWCPhase + r32/r16/qf/sf/final writes · deployed ✅**
 **RELAY DEPLOYED: 1cad397 · deploy_match: true · 2026-06-27T01:05:00Z**
-**CLIENT HEAD: 5f486f3**
+**CLIENT HEAD: 4b89227**
 
 ---
 
@@ -22,15 +22,38 @@
 - `extractWCPhase(round)` added after `extractWCGroup` — maps ESPN/BSD round strings ("Round of 32", "Quarterfinals", etc.) → phase codes (r32, r16, qf, sf, third, final)
 - `writeWCResult` extended: when `extractWCGroup` returns null, tries `extractWCPhase`; if match, writes to `wc_results` with `group_id = phase.toUpperCase()` (satisfies NOT NULL) and `phase = 'r32'` etc.
 - Group-stage path unchanged. First activation: South Africa vs Canada, June 28 ~21:00Z
-- Odds API confirmed already listing R32 fixtures: South Africa/Canada (Jun 28), Brazil/Japan (Jun 29), Netherlands/Morocco (Jun 30), Ivory Coast/Norway (Jun 30), USA/Bosnia (Jul 2)
 
-### Client: R32+ stubs in wc26Raw (cd46327)
-- Added R32×16, R16×8, QF×4, SF×2, 3rd place, Final stubs after group stage entries
-- Confirmed R32 matchups sourced from Odds API at execution time; remaining from bracket prob>0.80
-- R16/QF/SF use estimated FIFA schedule dates (TBD teams) — update as bracket resolves
+### Client: R32+ stubs in wc26Raw (ced7622 → 4b89227 codemap)
+- 102 total wc26Raw entries: 74 group + 28 knockout (R32×14 + R16×8 + QF×4 + SF×2 + 3rd×1 + Final×1)
+- Stubs use `league` field for round identification (e.g. "FIFA World Cup 2026 — Round of 32")
+- 14/16 R32 slots named with real teams (Odds API ground truth):
 
-### Known gap (non-blocking)
-- BracketDO slot mismatch: R32_74 shows Ivory Coast vs South Korea, R32_78 shows Ecuador vs Norway — but Odds API (23+ bookmakers) prices Ivory Coast vs Norway. Indicates WC_R32 slot pairing matrix at L30363 has Group E/I cross-pairing inverted vs actual FIFA predetermined bracket. Monte Carlo projections running on wrong pairings. Fix next session once correct FIFA bracket matrix confirmed.
+| Slot | Home | Away | Time (UTC) |
+|------|------|------|-----------|
+| - | South Africa | Canada | Jun 28 19:00Z |
+| R32_77 | France | Paraguay | Jun 28 22:00Z |
+| R32_79 | Mexico | Germany | Jun 29 01:00Z |
+| - | Brazil | Japan | Jun 29 17:00Z |
+| - | Netherlands | Morocco | Jun 30 01:00Z |
+| - | Ivory Coast | Norway | Jun 30 17:00Z |
+| R32_80 | England | Senegal | Jul 1 17:00Z |
+| R32_82 | Egypt | Algeria | Jul 1 22:00Z |
+| - | United States | Bosnia and Herzegovina | Jul 2 00:00Z |
+| R32_83 | Colombia | Croatia | Jul 2 17:00Z |
+| R32_84 | Spain | Austria | Jul 3 01:00Z |
+| R32_86 | Argentina | Cape Verde | Jul 3 17:00Z |
+| R32_87 | Portugal | Ghana | Jul 4 01:00Z |
+| R32_88 | Belgium | Australia | Jul 4 17:00Z |
+
+- 2/16 R32 slots omitted (Ecuador's matchup + Switzerland/Sweden — bracket discrepancy, see below)
+- R16/QF/SF/3rd/Final: all TBD teams, estimated times
+
+### Known gap: BracketDO R32 slot mismatch (multiple slots)
+Odds API (23+ bookmakers) prices matchups that contradict BracketDO slot assignments:
+- Odds API: South Africa vs Canada → BracketDO: R32_73 South Africa vs Switzerland
+- Odds API: Ivory Coast vs Norway → BracketDO: R32_74 Ivory Coast vs South Korea, R32_78 Ecuador vs Norway
+- Implication: WC_R32 slot pairing matrix at client L30363 has multiple cross-group pairings wrong vs actual FIFA predetermined bracket. Ecuador's actual R32 opponent unknown until FIFA bracket matrix confirmed.
+- Monte Carlo projections (BracketDO) running on wrong pairings. Fix in next session.
 
 ---
 
@@ -54,8 +77,6 @@ All V2_LEAGUES sports migrated. API-Sports Football Pro: do-not-renew confirmed,
 
 ### Kali AFL Stats (/kali/*)
 - KALI_AFL_TOKEN in GH secrets + deploy.yml secrets+env
-- Endpoints: /predictions, /tips, /standings, /player-stats, /player-stats-advanced, /leaderboards, /head-to-head (params: team_a= team_b=), /teams, /matches
-- round join key: ev.week.number (from ESPN AFL scoreboard)
 - Quota: 5,000 req/day, resets 00:00 UTC
 
 ### NBA CDN (cdn.nba.com)
@@ -64,12 +85,11 @@ All V2_LEAGUES sports migrated. API-Sports Football Pro: do-not-renew confirmed,
 
 ### NHL NHLE (api-web.nhle.com)
 - adaptNhle() — scoreboard gamesByDate shape, clock null-guarded
-- Draft whitelist: /v1/draft/picks/now, /v1/draft-tracker/picks/now, /v1/draft/rankings/now + prefixes
-- Off-season: source=nhle, 0 games (today not in gamesByDate)
+- Draft whitelist: /v1/draft/picks/now, /v1/draft-tracker/picks/now + prefixes
+- Off-season: source=nhle, 0 games
 
 ### BSD group_name + weather (WC26)
-- Gate fixed: cfg.bsdLeagueId (undefined for wc26) → sport === 'wc26'
-- Verified MD3 live: 5/6 games enriched
+- Gate fixed: cfg.bsdLeagueId → sport === 'wc26', hardcoded league_id=27
 - round: 'Group I/H/G/J/K/L' ✅, weather: {description, temp, wind} ✅
 
 ---
@@ -79,12 +99,12 @@ All V2_LEAGUES sports migrated. API-Sports Football Pro: do-not-renew confirmed,
 - Odds Story Materializer — CC-CMD exists (docs/CC-CMD-2026-06-22-odds-story-materializer.md)
 - wentToOT hardcoded false in newspaper (needs GameDO/AmbientDO write)
 - KV editorial keys not consulted by newspaper endpoint
-- nba_clutch + nhl_series R2 stale — heals Oct/Nov with new seasons
+- nba_clutch + nhl_series R2 stale — heals Oct/Nov
 - Stale Data Sentinel — CC-CMD exists (unexecuted)
-- Smoke regression 724→663 — possibly resolved (CC reported 762 on knockout stubs session; verify)
+- Smoke regression 724→663 — resolved (762 on ced7622; verify persists)
 - NFL SPORT_TO_V2 — September 9 deadline
 - session_health phase degradation signal gap
-- BracketDO R32 slot mismatch (Group E/I pairing inverted vs FIFA bracket) — see above
+- BracketDO R32 slot mismatch (multiple cross-group pairings wrong vs FIFA bracket)
 - Carry-forwards from June 22
 
 ---
@@ -92,12 +112,13 @@ All V2_LEAGUES sports migrated. API-Sports Football Pro: do-not-renew confirmed,
 ## NEXT PRIORITIES
 
 **WC26:**
-- Fix BracketDO R32 slot pairing (Group E/I inverted vs FIFA bracket)
-- Update R16/QF/SF stub times as FIFA publishes bracket-dependent schedule
+- Fix BracketDO R32 slot pairing matrix (multiple slots wrong vs FIFA bracket)
+- Add 2 missing R32 stubs once Ecuador's matchup confirmed (post bracket fix)
 - Verify first knockout D1 write fires (South Africa vs Canada Jun 28 ~21:00Z)
+- Update R16/QF/SF stub times as FIFA publishes schedule
 
 **RELAY:**
-- NHL draft route (/nhl/v1/draft/picks/now) now whitelisted — wiring optional
+- NHL draft route whitelisted — wiring optional
 - NBA odds/channels endpoints whitelisted but unwired — defer to Oct
 
 **CLIENT:**
@@ -122,4 +143,4 @@ L3: curl CODE_MAP.json check
 ## STAT
 HEAD: 2d18fff · 572 companies · smoke 213/213
 
-SESSION END: RELAY HEAD SRC 1cad397 · CLIENT HEAD 5f486f3 · 2026-06-27 · via chat
+SESSION END: RELAY HEAD SRC 1cad397 · CLIENT HEAD 4b89227 · 2026-06-27 · via chat
