@@ -1,7 +1,7 @@
 # FIELD HANDOFF
-## Session: 2026-06-28 · Golf Orchestrator Probe + Daily Update + CC-CMDs
+## Session: 2026-06-28 · L1-L5 Bootstrap + Drive Architecture Audit + Golf Research
 
-**CLIENT HEAD: 4b89227**
+**CLIENT HEAD: 536b857**
 **SW_VERSION: 2026-06-26b**
 
 ---
@@ -9,7 +9,32 @@
 ## RELAY STATE
 
 **RELAY HEAD SRC: 1cad397 · deployed ✅**
-**CLIENT HEAD: 4b89227**
+**CLIENT HEAD: 536b857**
+
+---
+
+## SESSION SUMMARY (June 28 — late session)
+
+Type: Diagnostic + Research (no code changes)
+
+Work completed:
+- Full Drive search of FIELD session architecture docs (30+ docs reviewed)
+- L-Cache Hierarchy shortfalls doc (1CLZGvF) read and analyzed
+- L1-L5 startup protocol executed and verified
+- Codex session entry written (session-2026-06-28-startup)
+- Golf broadcast extraction research (FFmpeg/Tesseract, AWS Lambda cost analysis)
+- AWS Lambda vs Cloudflare Workers feature comparison completed
+- GolfClip accuracy claims debunked (fabricated benchmarks)
+- Golf-Ball-Broadcast-Model (RyanShihabi) identified as real alternative
+
+Output files created:
+1. FFMPEG-TESSERACT-VERIFICATION-2026-06-28.md
+2. CLOUDFLARE-COST-ANALYSIS-GOLF-BROADCAST-2026-06-28.md
+3. GOLF-SOURCING-WITHOUT-VIDEO-PROCESSING-2026-06-28.md
+4. 95-PERCENT-UNDER-145-VERIFIED-SOLUTION-2026-06-28.md
+5. GOLFCLIP-VERIFICATION-REALITY-CHECK-2026-06-28.md
+6. AWS-LAMBDA-FIELD-MIGRATION-ANALYSIS-2026-06-28.md
+7. AWS-LAMBDA-COSTS-CORRECTED-2026-06-28.md
 
 ---
 
@@ -26,101 +51,52 @@ python3 docs/orchestrator-probe.py
 ```
 
 Script is committed at docs/orchestrator-probe.py (SHA 5433028).
-Tests 4 GraphQL queries: Leaderboard, ShotDetails, PlayerShots (with and
-without API key). Reports coordinate fields if found.
-
-Known API key: da2-gsrx5bibzbb4njvhl7t37wqyl4 (may have rotated since 2023).
-If rotated: extract current x-api-key from pgatour.com DevTools Network tab.
-
-**Domains verified June 28:**
-- orchestrator.pgatour.com: EXISTS, blocked by sandbox
-- tourcast.pgatour.com: EXISTS, blocked by sandbox
-- www.pgatour.com: EXISTS, blocked by sandbox
-- statdata.pgatour.com: NXDOMAIN (decommissioned 2023)
-- livedata.pgatour.com: NXDOMAIN
-- cdn.pgatour.com: NXDOMAIN
-- api.pgatour.com: NXDOMAIN
 
 ---
 
-## GOLF COORDINATES PROBE — COMPLETE FINDINGS
+## PRIORITY LIST
 
-### Phase 1: ESPN Core API (CONCLUSIVE)
-- Traversed 5 nested API levels ($ref lazy-loading)
-- Travellers Championship event 401811953 (IN_PROGRESS)
-- Competitor object: id, athlete, score, linescores, statistics, movement, earnings
-- Athlete object: name, height, weight, DOB, college, headshot, hand
-- **NO lat/lon/position/coordinate fields anywhere in ESPN golf API**
+### ⏰ CRITICAL
+1. **API-Sports Football Pro renewal — JUNE 29** — verify cancelled/no auto-renew
+2. **WC26 R32 stub reconciliation** — wrong pairings in wc26Raw
 
-### Phase 2: TourCast Browser (SKIPPED — sandbox lacks Playwright binary)
-- Manual alternative documented in probe report
+### 🔧 QUEUED CC-CMDs
+3. Relay: /journalism/game-lines (docs/CC-CMD-2026-06-27-relay-game-lines.md)
+4. Client: card brief line (docs/CC-CMD-2026-06-27-client-card-brief-line.md) — depends on #3
 
-### Phase 3: Orchestrator (BLOCKED BY SANDBOX — NOT BY PGA TOUR)
-- orchestrator.pgatour.com responds HTTP 403 from sandbox egress proxy
-- Parse.bot documents get_player_shots returning GPS coordinates from this endpoint
-- shotdetailsv4compressed: NOT referenced in FIELD codebase (confirmed via GitHub search)
-- Probe script ready: docs/orchestrator-probe.py
+### 🔨 INFRASTRUCTURE
+5. Bosnia DB fix + identity-resolver CANONICAL map
+6. team_form CONTEXT_SOURCE (Drive spec v3 ready)
+7. Golf orchestrator probe (add to egress first)
 
----
+### 📉 QUALITY
+8. game_recap degraded (4x in session_health)
+9. night_owl degraded (2x)
+10. Smoke regression 724→663 (filesystem-dependent assertions in MCP vs CI)
 
-## CC-CMDs QUEUED (not yet executed)
+### 📋 OPEN INCIDENTS
+11. Odds Story Materializer CC-CMD — unexecuted
+12. Stale Data Sentinel CC-CMD — unexecuted
+13. wentToOT hardcoded false in newspaper
+14. KV editorial keys not consulted by newspaper
+15. NFL SPORT_TO_V2 — September 9 deadline
 
-### 1. Relay: /journalism/game-lines
-Doc: docs/CC-CMD-2026-06-27-relay-game-lines.md
-Drive: 13oEW5QJ2VaQa2bVEYBVOWcGkfcooBk9j
-One-liner: Read docs/CC-CMD-2026-06-27-relay-game-lines.md and execute it.
-
-### 2. Client: card brief line + buildLiveCardLine
-Doc: docs/CC-CMD-2026-06-27-client-card-brief-line.md
-Drive: 1tPjm9eZ8mhpsAmb3IKMYhdGV9qW_tB49
-One-liner: Read docs/CC-CMD-2026-06-27-client-card-brief-line.md and execute it.
-DEPENDENCY: relay CC-CMD must deploy first.
-
----
-
-## DRIVE DOCS THIS SESSION
-
-| Doc | Drive ID |
-|---|---|
-| team_form CONTEXT_SOURCE Spec v3 FINAL | 1S---UbRREfhHGFPSvMtwUEtvFX8Mfaig |
-| CC-CMD relay /journalism/game-lines | 13oEW5QJ2VaQa2bVEYBVOWcGkfcooBk9j |
-| CC-CMD client card brief line | 1tPjm9eZ8mhpsAmb3IKMYhdGV9qW_tB49 |
+### 🏗️ PRODUCT BACKLOG
+16. Lacuna Item 1 Phase 1A: BriefContextProfile
+17. Lacuna Item 4: Card Face Contract
+18. Golf Path 3 (GIS-anchored via OpenGolfAPI) — Week 1
+19. Golf Path 1 (broadcast OCR) — Week 2-3
+20. Golf Path 2 (YOLOv8 Golf-Ball-Broadcast-Model) — Week 4+
 
 ---
 
-## VERIFIED ARCHIVE_DB STATE
+## GOLF SOURCING PATHS (from this session)
 
-Binding: ARCHIVE_DB (NOT FIELD_ARCHIVE)
-regular_season_games: 543 rows
-Bosnia fix needed: UPDATE SET home='Bosnia and Herzegovina' WHERE home='Bosnia-Herz'
-identity-resolver.js: Bosnia missing from CANONICAL map
+- **Path 3 (GIS-anchored):** OpenGolfAPI (api.opengolfapi.org, 1K req/day free) → 85-92% accuracy. Week 1.
+- **Path 1 (Broadcast OCR):** FFmpeg + Tesseract via CF Containers or Lambda → 92%+. Week 2-3.
+- **Path 2 (Computer vision):** Golf-Ball-Broadcast-Model (Recall 94%, Precision 96%) on Lambda → 94-95%. Week 4+.
 
----
-
-## WC26 — GROUP STAGE COMPLETE
-
-**June 27 Results:** England 2-0 Panama · Croatia 2-1 Ghana · Colombia 0-0 Portugal · DR Congo 3-1 Uzbekistan · Argentina 3-1 Jordan · Austria 3-3 Algeria
-
-**⚠️ wc26Raw stubs need reconciliation:** England vs DR Congo (not Senegal), Algeria vs Switzerland, Colombia vs Ghana
-
-**R32 TODAY:** South Africa vs Canada, 19:00Z, Los Angeles
-
----
-
-## GOLF — TRAVELERS CHAMPIONSHIP
-
-Hovland -20 leads Scheffler -19 heading into Sunday final round.
-
----
-
-## NEXT PRIORITIES
-
-1. Add orchestrator.pgatour.com to egress → run probe → determine coordinates
-2. Reconcile wc26Raw stubs vs confirmed FIFA bracket
-3. Execute relay CC-CMD: /journalism/game-lines
-4. Execute client CC-CMD: card brief line (after relay)
-5. Bosnia DB fix + team_form CONTEXT_SOURCE
-6. Verify first R32 D1 write (SAF vs CAN)
+**AWS Lambda:** Free tier covers all FIELD golf workloads ($0/month). Hybrid strategy: Workers for real-time, Lambda for video/ML/batch.
 
 ---
 
@@ -131,4 +107,4 @@ Hovland -20 leads Scheffler -19 heading into Sunday final round.
 - Relay: field-relay-nba.jeffunglesbee.workers.dev
 - CF account: b57e9af57ab46c52ca9215804e689c29
 
-SESSION END: RELAY 1cad397 · CLIENT 4b89227 · 2026-06-28 · via chat
+SESSION END: RELAY 1cad397 · CLIENT 536b857 · 2026-06-28 · via chat
