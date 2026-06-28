@@ -1,5 +1,5 @@
 # FIELD HANDOFF
-## Session: 2026-06-27 · WC26 Knockout Phase + Client Stubs
+## Session: 2026-06-27 · UI/Architecture + Lacuna Analysis + CC-CMDs
 
 **HEAD: 4b89227**
 **SW_VERSION: 2026-06-26b**
@@ -9,120 +9,89 @@
 
 ## RELAY STATE
 
-**RELAY HEAD: e680c9e · 2026-06-27 · docs(outbox) cc-relay-knockout-phase**
-**RELAY HEAD SRC: 1cad397 · feat(wc): knockout phase D1 write path — extractWCPhase + r32/r16/qf/sf/final writes · deployed ✅**
-**RELAY DEPLOYED: 1cad397 · deploy_match: true · 2026-06-27T01:05:00Z**
+**RELAY HEAD: e680c9e · docs(outbox)**
+**RELAY HEAD SRC: 1cad397 · feat(wc): knockout phase D1 write path · deployed ✅**
+**RELAY DEPLOYED: 1cad397 · deploy_match: true**
 **CLIENT HEAD: 4b89227**
 
 ---
 
-## ✅ WC26 KNOCKOUT CONTEXT SHIPPED (2026-06-27)
+## ✅ WC26 KNOCKOUT CONTEXT SHIPPED
 
-### Relay: extractWCPhase + knockout D1 writes (1cad397)
-- `extractWCPhase(round)` added after `extractWCGroup` — maps ESPN/BSD round strings ("Round of 32", "Quarterfinals", etc.) → phase codes (r32, r16, qf, sf, third, final)
-- `writeWCResult` extended: when `extractWCGroup` returns null, tries `extractWCPhase`; if match, writes to `wc_results` with `group_id = phase.toUpperCase()` (satisfies NOT NULL) and `phase = 'r32'` etc.
-- Group-stage path unchanged. First activation: South Africa vs Canada, June 28 ~21:00Z
-
-### Client: R32+ stubs in wc26Raw (ced7622 → 4b89227 codemap)
-- 102 total wc26Raw entries: 74 group + 28 knockout (R32×14 + R16×8 + QF×4 + SF×2 + 3rd×1 + Final×1)
-- Stubs use `league` field for round identification (e.g. "FIFA World Cup 2026 — Round of 32")
-- 14/16 R32 slots named with real teams (Odds API ground truth):
-
-| Slot | Home | Away | Time (UTC) |
-|------|------|------|-----------|
-| - | South Africa | Canada | Jun 28 19:00Z |
-| R32_77 | France | Paraguay | Jun 28 22:00Z |
-| R32_79 | Mexico | Germany | Jun 29 01:00Z |
-| - | Brazil | Japan | Jun 29 17:00Z |
-| - | Netherlands | Morocco | Jun 30 01:00Z |
-| - | Ivory Coast | Norway | Jun 30 17:00Z |
-| R32_80 | England | Senegal | Jul 1 17:00Z |
-| R32_82 | Egypt | Algeria | Jul 1 22:00Z |
-| - | United States | Bosnia and Herzegovina | Jul 2 00:00Z |
-| R32_83 | Colombia | Croatia | Jul 2 17:00Z |
-| R32_84 | Spain | Austria | Jul 3 01:00Z |
-| R32_86 | Argentina | Cape Verde | Jul 3 17:00Z |
-| R32_87 | Portugal | Ghana | Jul 4 01:00Z |
-| R32_88 | Belgium | Australia | Jul 4 17:00Z |
-
-- 2/16 R32 slots omitted (Ecuador's matchup + Switzerland/Sweden — bracket discrepancy, see below)
-- R16/QF/SF/3rd/Final: all TBD teams, estimated times
-
-### Known gap: BracketDO R32 slot mismatch (multiple slots)
-Odds API (23+ bookmakers) prices matchups that contradict BracketDO slot assignments:
-- Odds API: South Africa vs Canada → BracketDO: R32_73 South Africa vs Switzerland
-- Odds API: Ivory Coast vs Norway → BracketDO: R32_74 Ivory Coast vs South Korea, R32_78 Ecuador vs Norway
-- Implication: WC_R32 slot pairing matrix at client L30363 has multiple cross-group pairings wrong vs actual FIFA predetermined bracket. Ecuador's actual R32 opponent unknown until FIFA bracket matrix confirmed.
-- Monte Carlo projections (BracketDO) running on wrong pairings. Fix in next session.
+- relay 1cad397: extractWCPhase + knockout D1 write path live
+- client 4b89227: 102 wc26Raw entries (74 group + 28 knockout, R32×14 named)
+- First live test: South Africa vs Canada Jun 28 ~21:00Z
+- BracketDO R32 slot mismatch (Group E/I pairing inverted) — OPEN
 
 ---
 
-## ✅ API-SPORTS MIGRATION COMPLETE (2026-06-26)
+## ✅ PITCH MAP FIX
 
-All V2_LEAGUES sports migrated. API-Sports Football Pro: do-not-renew confirmed, already off.
-
-| Sport | Source | Key Commit |
-|-------|--------|------------|
-| Soccer (12 leagues) | `espn-wc` + BSD | b8a825a |
-| MLB | `espn-wc` | e6f5f6e |
-| WNBA | `espn-wc` | 62b115f |
-| AFL | `espn-wc` + Kali + Squiggle | c1d33f2 + bb25036 |
-| NBA | `nba-cdn-empty`/`nba-cdn` | f12e156 |
-| NHL | `nhle` | f27026c |
-| WC26 | `espn-wc` | b8a825a |
+- _bsdOnSSEFrame: accepts data.shots || data.shotmap
+- R2 fetch gate: fires when _bsGameAge > 95 min
 
 ---
 
-## NEW RELAY INFRASTRUCTURE (2026-06-26)
+## CC-CMDs QUEUED (not yet executed)
 
-### Kali AFL Stats (/kali/*)
-- KALI_AFL_TOKEN in GH secrets + deploy.yml secrets+env
-- Quota: 5,000 req/day, resets 00:00 UTC
+### 1. Relay: /journalism/game-lines
+Repo: field-relay-nba
+Doc: docs/CC-CMD-2026-06-27-relay-game-lines.md
+Drive: 13oEW5QJ2VaQa2bVEYBVOWcGkfcooBk9j
+One-liner: Read docs/CC-CMD-2026-06-27-relay-game-lines.md and execute it in the field-relay-nba repo.
 
-### NBA CDN (cdn.nba.com)
-- adaptNbaCDN() — CDN scoreboard shape (gameStatus 1/2/3, homeTeam.teamTricode)
-- Off-season: source=nba-cdn-empty, 0 games, no 502
+### 2. Client: card brief line + buildLiveCardLine
+Repo: jubilant-bassoon
+Doc: docs/CC-CMD-2026-06-27-client-card-brief-line.md
+Drive: 1tPjm9eZ8mhpsAmb3IKMYhdGV9qW_tB49
+One-liner: Read docs/CC-CMD-2026-06-27-client-card-brief-line.md and execute it in the jubilant-bassoon repo.
+DEPENDENCY: relay CC-CMD must deploy first
 
-### NHL NHLE (api-web.nhle.com)
-- adaptNhle() — scoreboard gamesByDate shape, clock null-guarded
-- Draft whitelist: /v1/draft/picks/now, /v1/draft-tracker/picks/now + prefixes
-- Off-season: source=nhle, 0 games
+---
 
-### BSD group_name + weather (WC26)
-- Gate fixed: cfg.bsdLeagueId → sport === 'wc26', hardcoded league_id=27
-- round: 'Group I/H/G/J/K/L' ✅, weather: {description, temp, wind} ✅
+## VERIFIED ARCHIVE_DB STATE
+
+Binding: ARCHIVE_DB (NOT FIELD_ARCHIVE — does not exist)
+regular_season_games: 543 rows (MLB 137, WNBA 49, MLS 273, EPL 26, AFL 16, WC 14, CFL 2)
+Bosnia fix needed: UPDATE regular_season_games SET home='Bosnia and Herzegovina' WHERE home='Bosnia-Herz'
+identity-resolver.js: Bosnia missing from CANONICAL map
+
+---
+
+## LACUNA ANALYSIS
+
+### Lacuna 1: team_form CONTEXT_SOURCE
+Spec v3 in Drive (1S---UbRREfhHGFPSvMtwUEtvFX8Mfaig)
+regular_season_games exists, no DDL needed. CC-CMD not yet written.
+Bosnia fix is prerequisite.
+
+### Lacuna 2: card brief line + buildLiveCardLine
+CC-CMD written, pushed to both repos + Drive. Ready to execute.
+Relay CC-CMD must go first.
 
 ---
 
 ## OPEN INCIDENTS
 
-- Odds Story Materializer — CC-CMD exists (docs/CC-CMD-2026-06-22-odds-story-materializer.md)
-- wentToOT hardcoded false in newspaper (needs GameDO/AmbientDO write)
+- BracketDO R32 slot mismatch (Group E/I inverted vs FIFA bracket)
+- Bosnia-Herz DB name (1 UPDATE needed)
+- Bosnia missing from identity-resolver.js CANONICAL
+- Odds Story Materializer — CC-CMD exists unexecuted
+- wentToOT hardcoded false in newspaper
 - KV editorial keys not consulted by newspaper endpoint
-- nba_clutch + nhl_series R2 stale — heals Oct/Nov
-- Stale Data Sentinel — CC-CMD exists (unexecuted)
-- Smoke regression 724→663 — resolved (762 on ced7622; verify persists)
+- Stale Data Sentinel — CC-CMD exists unexecuted
 - NFL SPORT_TO_V2 — September 9 deadline
-- session_health phase degradation signal gap
-- BracketDO R32 slot mismatch (multiple cross-group pairings wrong vs FIFA bracket)
 - Carry-forwards from June 22
 
 ---
 
 ## NEXT PRIORITIES
 
-**WC26:**
-- Fix BracketDO R32 slot pairing matrix (multiple slots wrong vs FIFA bracket)
-- Add 2 missing R32 stubs once Ecuador's matchup confirmed (post bracket fix)
-- Verify first knockout D1 write fires (South Africa vs Canada Jun 28 ~21:00Z)
-- Update R16/QF/SF stub times as FIFA publishes schedule
-
-**RELAY:**
-- NHL draft route whitelisted — wiring optional
-- NBA odds/channels endpoints whitelisted but unwired — defer to Oct
-
-**CLIENT:**
-- Odds Story Materializer CC-CMD
+1. Run relay CC-CMD: /journalism/game-lines
+2. Run client CC-CMD: card brief line (after relay deploys)
+3. Bosnia DB fix + team_form CC-CMD
+4. Fix BracketDO R32 slot pairing matrix
+5. Verify first knockout D1 write (SAF vs CAN Jun 28 ~21:00Z)
 
 ---
 
@@ -133,14 +102,13 @@ All V2_LEAGUES sports migrated. API-Sports Football Pro: do-not-renew confirmed,
 - Drive FIELD folder: 0ABxH84VndHL7Uk9PVA
 - Relay: field-relay-nba.jeffunglesbee.workers.dev
 - CF account: b57e9af57ab46c52ca9215804e689c29
-- KALI_AFL_TOKEN: see GH secrets (DO NOT log in HANDOFF)
 
 ## SESSION START PROTOCOL — Rule 85
 
 L2: tool_search("FIELD Handoff session health") + tool_search("codex commit write source")
-L3: curl CODE_MAP.json check
+L3: CODE_MAP.json grep
 
 ## STAT
 HEAD: 2d18fff · 572 companies · smoke 213/213
 
-SESSION END: RELAY HEAD SRC 1cad397 · CLIENT HEAD 4b89227 · 2026-06-27 · via chat
+SESSION END: RELAY 1cad397 · CLIENT 4b89227 · 2026-06-27 · via chat
