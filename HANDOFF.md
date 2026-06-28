@@ -1,101 +1,126 @@
 # FIELD HANDOFF
-## Session: 2026-06-28 · Golf Coordinates Automation Probe + Daily Update
+## Session: 2026-06-28 · Golf Orchestrator Probe + Daily Update + CC-CMDs
 
-**HEAD: 4b89227**
+**CLIENT HEAD: 4b89227**
 **SW_VERSION: 2026-06-26b**
 
 ---
 
-## GOLF COORDINATES PROBE COMPLETE (Phases 1-3)
+## RELAY STATE
 
-### Phase 1: ESPN API (conclusive ✓)
-- All endpoints 403/404 or gated
+**RELAY HEAD SRC: 1cad397 · deployed ✅**
+**CLIENT HEAD: 4b89227**
+
+---
+
+## ⚠️ NEXT SESSION: ADD orchestrator.pgatour.com TO EGRESS ALLOWLIST
+
+The PGA Tour GraphQL orchestrator EXISTS (not NXDOMAIN) but is blocked
+by sandbox egress proxy. All 403s this session were sandbox, not PGA Tour.
+
+**Action:** Add `orchestrator.pgatour.com` to network egress settings BEFORE
+starting next session. Then run:
+
+```
+python3 docs/orchestrator-probe.py
+```
+
+Script is committed at docs/orchestrator-probe.py (SHA 5433028).
+Tests 4 GraphQL queries: Leaderboard, ShotDetails, PlayerShots (with and
+without API key). Reports coordinate fields if found.
+
+Known API key: da2-gsrx5bibzbb4njvhl7t37wqyl4 (may have rotated since 2023).
+If rotated: extract current x-api-key from pgatour.com DevTools Network tab.
+
+**Domains verified June 28:**
+- orchestrator.pgatour.com: EXISTS, blocked by sandbox
+- tourcast.pgatour.com: EXISTS, blocked by sandbox
+- www.pgatour.com: EXISTS, blocked by sandbox
 - statdata.pgatour.com: NXDOMAIN (decommissioned 2023)
-- Finding: No public REST API exposes PGA Tour GPS coordinates
-
-### Phase 2: Browser Automation (script ready ✓)
-- Full Playwright automation script created: `/tmp/tourcast_browser_probe_full.py`
-- To run locally: `pip install playwright && python3 tourcast_browser_probe_full.py`
-- Time: ~2 minutes execution
-- Outcome: Definitive answer on whether TourCast exposes coordinates
-
-### Phase 3: Decision Framework (approved ✓)
-**Tier 1 (immediate, $0, 30 min):** Wire Broadie proxy into golf journalism
-  - Broadie SG already computed but never surfaced
-  - Gain: 65% of DataGolf narrative value
-  - No external dependencies
-
-**Tier 2 (convenient, $0, 30 min–2 hrs):** Run Phase 2 automation
-  - Determines if TourCast provides coordinates
-  - If yes → build relay proxy (2 hrs)
-  - If no → accept tracking unavailable
-
-**Tier 3 (deferred, $270/yr):** DataGolf decision
-  - Only after Tier 1 live + Phase 2 results
-  - Solves strokes gained, not coordinates (different problems)
-
-**Key insight:** Broadie proxy covers 65% of golf narrative gap. Coordinates are nice-to-have, not essential.
-
-Drive doc: `Golf Coordinates Probe — Phases 1-3 Complete (June 28 2026)` (1YLm4sQABkIHxSNu-qGB8QeigWb3DtaoU)
+- livedata.pgatour.com: NXDOMAIN
+- cdn.pgatour.com: NXDOMAIN
+- api.pgatour.com: NXDOMAIN
 
 ---
 
-## WC26 DAILY UPDATE — JUNE 28
+## GOLF COORDINATES PROBE — COMPLETE FINDINGS
 
-### Group Stage Complete — All 48 Teams Locked
+### Phase 1: ESPN Core API (CONCLUSIVE)
+- Traversed 5 nested API levels ($ref lazy-loading)
+- Travellers Championship event 401811953 (IN_PROGRESS)
+- Competitor object: id, athlete, score, linescores, statistics, movement, earnings
+- Athlete object: name, height, weight, DOB, college, headshot, hand
+- **NO lat/lon/position/coordinate fields anywhere in ESPN golf API**
 
-**June 27 MD3 Results (Groups J/K/L):**
-- England 2–0 Panama (Bellingham, Kane 11th WC goal)
-- Croatia 2–1 Ghana (Vlasic winner)
-- Colombia 0–0 Portugal (Colombia top group)
-- DR Congo 3–1 Uzbekistan (first-ever WC win)
-- Argentina 3–1 Jordan (Messi 6th goal, 7 consecutive WC matches scoring)
-- Austria 3–3 Algeria (wild finish, Iran eliminated)
+### Phase 2: TourCast Browser (SKIPPED — sandbox lacks Playwright binary)
+- Manual alternative documented in probe report
 
-### ⚠️ wc26Raw Stubs Need Urgent Reconciliation
+### Phase 3: Orchestrator (BLOCKED BY SANDBOX — NOT BY PGA TOUR)
+- orchestrator.pgatour.com responds HTTP 403 from sandbox egress proxy
+- Parse.bot documents get_player_shots returning GPS coordinates from this endpoint
+- shotdetailsv4compressed: NOT referenced in FIELD codebase (confirmed via GitHub search)
+- Probe script ready: docs/orchestrator-probe.py
 
-Confirmed mismatches between stubs and FIFA bracket:
-| Stub (wrong) | Confirmed R32 |
+---
+
+## CC-CMDs QUEUED (not yet executed)
+
+### 1. Relay: /journalism/game-lines
+Doc: docs/CC-CMD-2026-06-27-relay-game-lines.md
+Drive: 13oEW5QJ2VaQa2bVEYBVOWcGkfcooBk9j
+One-liner: Read docs/CC-CMD-2026-06-27-relay-game-lines.md and execute it.
+
+### 2. Client: card brief line + buildLiveCardLine
+Doc: docs/CC-CMD-2026-06-27-client-card-brief-line.md
+Drive: 1tPjm9eZ8mhpsAmb3IKMYhdGV9qW_tB49
+One-liner: Read docs/CC-CMD-2026-06-27-client-card-brief-line.md and execute it.
+DEPENDENCY: relay CC-CMD must deploy first.
+
+---
+
+## DRIVE DOCS THIS SESSION
+
+| Doc | Drive ID |
 |---|---|
-| England vs Senegal | England vs DR Congo (Atlanta, Jul 2) |
-| Egypt vs Algeria | Algeria vs Switzerland |
-| Colombia vs Croatia | Colombia vs Ghana |
-
-**Status:** Most stubs correct (Argentina/Spain/USA/Netherlands/Brazil/Ivory Coast/France/Germany), but England+Egypt mismatch is critical before first R32 game (19:00Z today).
-
-**R32 Today (19:00 ET):** South Africa vs Canada (Los Angeles)
+| team_form CONTEXT_SOURCE Spec v3 FINAL | 1S---UbRREfhHGFPSvMtwUEtvFX8Mfaig |
+| CC-CMD relay /journalism/game-lines | 13oEW5QJ2VaQa2bVEYBVOWcGkfcooBk9j |
+| CC-CMD client card brief line | 1tPjm9eZ8mhpsAmb3IKMYhdGV9qW_tB49 |
 
 ---
 
-## MLB — JUNE 28
+## VERIFIED ARCHIVE_DB STATE
 
-Sunday slate: 15 games, 1:35 PM–10 PM ET
-Notable: ATH @ LAD 3:15 PM Peacock (free), LAD @ SD series finale 4:10 PM (LAD up 2–0)
+Binding: ARCHIVE_DB (NOT FIELD_ARCHIVE)
+regular_season_games: 543 rows
+Bosnia fix needed: UPDATE SET home='Bosnia and Herzegovina' WHERE home='Bosnia-Herz'
+identity-resolver.js: Bosnia missing from CANONICAL map
+
+---
+
+## WC26 — GROUP STAGE COMPLETE
+
+**June 27 Results:** England 2-0 Panama · Croatia 2-1 Ghana · Colombia 0-0 Portugal · DR Congo 3-1 Uzbekistan · Argentina 3-1 Jordan · Austria 3-3 Algeria
+
+**⚠️ wc26Raw stubs need reconciliation:** England vs DR Congo (not Senegal), Algeria vs Switzerland, Colombia vs Ghana
+
+**R32 TODAY:** South Africa vs Canada, 19:00Z, Los Angeles
 
 ---
 
 ## GOLF — TRAVELERS CHAMPIONSHIP
 
-**R3 Final (Saturday):**
-Hovland –20 leads Scheffler –19 by 1 heading into final round Sunday
-Bhatia/Cantlay T3 –15, remaining field T5 –13 or worse
-
----
-
-## HANDOFF PROTOCOL
-
-**RELAY:** SRC 1cad397 · deployed ✅ (WC knockout phase)
-**CLIENT:** 4b89227 · deployed ✅
+Hovland -20 leads Scheffler -19 heading into Sunday final round.
 
 ---
 
 ## NEXT PRIORITIES
 
-1. Verify first R32 D1 write (SAF vs CAN, 19:00Z today)
-2. Reconcile wc26Raw stubs vs FIFA bracket before first match starts
-3. Execute Tier 1: Wire Broadie proxy to golf journalism
-4. Phase 2 optional: Run TourCast browser automation when convenient
-5. Monitor Hovland vs Scheffler Travelers final (golf narrative test)
+1. Add orchestrator.pgatour.com to egress → run probe → determine coordinates
+2. Reconcile wc26Raw stubs vs confirmed FIFA bracket
+3. Execute relay CC-CMD: /journalism/game-lines
+4. Execute client CC-CMD: card brief line (after relay)
+5. Bosnia DB fix + team_form CONTEXT_SOURCE
+6. Verify first R32 D1 write (SAF vs CAN)
 
 ---
 
@@ -104,5 +129,6 @@ Bhatia/Cantlay T3 –15, remaining field T5 –13 or worse
 - ARCHIVE_DB: cc49101c-0569-4d41-8e7a-be139cde4f26
 - WC2026_DB: f26669de-e772-4b56-a6d1-f8fdea08a4d4
 - Relay: field-relay-nba.jeffunglesbee.workers.dev
+- CF account: b57e9af57ab46c52ca9215804e689c29
 
-SESSION END: RELAY 1cad397 · CLIENT 4b89227 · 2026-06-28 · via chat (golf probe + daily update)
+SESSION END: RELAY 1cad397 · CLIENT 4b89227 · 2026-06-28 · via chat
