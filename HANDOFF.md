@@ -1,102 +1,116 @@
 # FIELD HANDOFF
-## Session: 2026-06-28 · L1-L5 Bootstrap + Drive Architecture Audit + Golf Research
 
-**CLIENT HEAD: 536b857**
+## Session: 2026-06-28 · L1-L5 Bootstrap + MLB Adapter Proof Backfill Phase 1
+
+**CLIENT HEAD: 536b857**  
 **SW_VERSION: 2026-06-26b**
 
 ---
 
 ## RELAY STATE
 
-**RELAY HEAD SRC: 1cad397 · deployed ✅**
+**RELAY HEAD SRC: 1cad397 · deployed ✅**  
 **CLIENT HEAD: 536b857**
 
 ---
 
-## SESSION SUMMARY (June 28 — late session)
+## MLB STATS API ADAPTER PROOF BACKFILL — PHASE 1 COMPLETE
 
-Type: Diagnostic + Research (no code changes)
+**Status:** Fixtures + manifest contract created, ready for Phase 2
 
-Work completed:
-- Full Drive search of FIELD session architecture docs (30+ docs reviewed)
-- L-Cache Hierarchy shortfalls doc (1CLZGvF) read and analyzed
-- L1-L5 startup protocol executed and verified
-- Codex session entry written (session-2026-06-28-startup)
-- Golf broadcast extraction research (FFmpeg/Tesseract, AWS Lambda cost analysis)
-- AWS Lambda vs Cloudflare Workers feature comparison completed
-- GolfClip accuracy claims debunked (fabricated benchmarks)
-- Golf-Ball-Broadcast-Model (RyanShihabi) identified as real alternative
+### Phase 1 Deliverables (This Session)
 
-Output files created:
-1. FFMPEG-TESSERACT-VERIFICATION-2026-06-28.md
-2. CLOUDFLARE-COST-ANALYSIS-GOLF-BROADCAST-2026-06-28.md
-3. GOLF-SOURCING-WITHOUT-VIDEO-PROCESSING-2026-06-28.md
-4. 95-PERCENT-UNDER-145-VERIFIED-SOLUTION-2026-06-28.md
-5. GOLFCLIP-VERIFICATION-REALITY-CHECK-2026-06-28.md
-6. AWS-LAMBDA-FIELD-MIGRATION-ANALYSIS-2026-06-28.md
-7. AWS-LAMBDA-COSTS-CORRECTED-2026-06-28.md
+✅ **Adapter-to-Visible-Value Proof System spec** (Drive 1SqDH_BpzyoqCJREjPqlB37V05JGAAGe0kZikBfaVyXQ)  
+✅ **Comprehensive backfill plan** (15-section implementation guide)  
+✅ **Fixture set (3 JSON files)**
+   - `mlb-stats-api.ok.json` — 2 games (NYY-BAL live 3-2, LAD-SFG pregame)
+   - `mlb-stats-api.empty.json` — zero games
+   - `mlb-stats-api.malformed.json` — corrupted data
 
----
+✅ **Adapter proof manifest** (docs/adapter-proof.manifest.json)
+   - 14 required normalized fields
+   - 4 visible surfaces (card score, broadcast chips, game state, health row)
+   - 2 fallback surfaces (ESPN)
+   - Proof mode: required
 
-## ⚠️ NEXT SESSION: ADD orchestrator.pgatour.com TO EGRESS ALLOWLIST
+✅ **Source registry** (docs/source-registry.json)
+   - Source ID: mlb-stats-api-official
+   - Status: GREEN
+   - Commercial class: public_api_sports
+   - CORS: true, Auth: false
 
-The PGA Tour GraphQL orchestrator EXISTS (not NXDOMAIN) but is blocked
-by sandbox egress proxy. All 403s this session were sandbox, not PGA Tour.
+✅ **Normalizer test spec** (8 assertions: ok, empty, malformed, fields, proof, broadcast)  
+✅ **Playwright proof spec** (5 test scenarios: score render, chips, health, fallback, crash)  
+✅ **CI gate rules** (11 merge-blocking conditions)  
+✅ **Feature Registry smoke assertions** (AVV-MLB-001 through 008)  
+✅ **CC-CMD handoff document** (Phase 1→2 execution plan)
 
-**Action:** Add `orchestrator.pgatour.com` to network egress settings BEFORE
-starting next session. Then run:
+### Phase 2 Tasks (Next Session)
 
-```
-python3 docs/orchestrator-probe.py
-```
+⏳ **Normalizer tests:** tests/adapters/mlb-stats-api.normalizer.test.js  
+⏳ **Playwright proof:** tests/browser/adapter-visible-value.spec.ts  
+⏳ **DOM proof attributes:** data-proof, data-health-source markup  
+⏳ **CI gate workflow:** .github/workflows/adapter-visible-value.yml  
+⏳ **Feature Registry entry:** 'adapter-proof-mlb-stats-api': '2026-06-28'  
 
-Script is committed at docs/orchestrator-probe.py (SHA 5433028).
+**Definition of Done (Phase 2):** CI summary shows MLB Stats API as PASSED, all 8 smoke assertions green.
 
 ---
 
 ## PRIORITY LIST
 
 ### ⏰ CRITICAL
-1. **API-Sports Football Pro renewal — JUNE 29** — verify cancelled/no auto-renew
+1. **API-Sports Football Pro renewal — JUNE 29** ⚠️ 4 days remaining — verify cancelled/no auto-renew
 2. **WC26 R32 stub reconciliation** — wrong pairings in wc26Raw
 
+### 🔧 MLB ADAPTER PROOF (NEW)
+3. **Phase 1:** ✅ Fixtures + manifest created (this session)
+4. **Phase 2:** Normalizer + Playwright tests (next session, est. 2-3 hours)
+
 ### 🔧 QUEUED CC-CMDs
-3. Relay: /journalism/game-lines (docs/CC-CMD-2026-06-27-relay-game-lines.md)
-4. Client: card brief line (docs/CC-CMD-2026-06-27-client-card-brief-line.md) — depends on #3
+5. Relay: /journalism/game-lines (docs/CC-CMD-2026-06-27-relay-game-lines.md)
+6. Client: card brief line (docs/CC-CMD-2026-06-27-client-card-brief-line.md) — depends on #5
 
 ### 🔨 INFRASTRUCTURE
-5. Bosnia DB fix + identity-resolver CANONICAL map
-6. team_form CONTEXT_SOURCE (Drive spec v3 ready)
-7. Golf orchestrator probe (add to egress first)
+7. Bosnia DB fix + identity-resolver CANONICAL map
+8. team_form CONTEXT_SOURCE (Drive spec v3 ready)
+9. Golf orchestrator probe (add orchestrator.pgatour.com to egress first)
 
 ### 📉 QUALITY
-8. game_recap degraded (4x in session_health)
-9. night_owl degraded (2x)
-10. Smoke regression 724→663 (filesystem-dependent assertions in MCP vs CI)
+10. game_recap degraded (4x in session_health)
+11. night_owl degraded (2x)
+12. Smoke regression 724→663 (filesystem-dependent assertions in MCP vs CI)
 
 ### 📋 OPEN INCIDENTS
-11. Odds Story Materializer CC-CMD — unexecuted
-12. Stale Data Sentinel CC-CMD — unexecuted
-13. wentToOT hardcoded false in newspaper
-14. KV editorial keys not consulted by newspaper
-15. NFL SPORT_TO_V2 — September 9 deadline
+13. Odds Story Materializer CC-CMD — unexecuted
+14. Stale Data Sentinel CC-CMD — unexecuted
+15. wentToOT hardcoded false in newspaper
+16. KV editorial keys not consulted by newspaper
+17. NFL SPORT_TO_V2 — September 9 deadline
 
 ### 🏗️ PRODUCT BACKLOG
-16. Lacuna Item 1 Phase 1A: BriefContextProfile
-17. Lacuna Item 4: Card Face Contract
-18. Golf Path 3 (GIS-anchored via OpenGolfAPI) — Week 1
-19. Golf Path 1 (broadcast OCR) — Week 2-3
-20. Golf Path 2 (YOLOv8 Golf-Ball-Broadcast-Model) — Week 4+
+18. Lacuna Item 1 Phase 1A: BriefContextProfile
+19. Lacuna Item 4: Card Face Contract
+20. Golf Path 3 (GIS-anchored via OpenGolfAPI) — Week 1
+21. Golf Path 1 (broadcast OCR) — Week 2-3
+22. Golf Path 2 (YOLOv8 Golf-Ball-Broadcast-Model) — Week 4+
 
 ---
 
-## GOLF SOURCING PATHS (from this session)
+## NEXT ADAPTER TARGETS (Priority Order)
 
-- **Path 3 (GIS-anchored):** OpenGolfAPI (api.opengolfapi.org, 1K req/day free) → 85-92% accuracy. Week 1.
-- **Path 1 (Broadcast OCR):** FFmpeg + Tesseract via CF Containers or Lambda → 92%+. Week 2-3.
-- **Path 2 (Computer vision):** Golf-Ball-Broadcast-Model (Recall 94%, Precision 96%) on Lambda → 94-95%. Week 4+.
+After MLB Stats API Phase 2 completes:
 
-**AWS Lambda:** Free tier covers all FIELD golf workloads ($0/month). Hybrid strategy: Workers for real-time, Lambda for video/ML/batch.
+1. ✅ **NBA CDN** — Current live source, clean fields
+2. ✅ **NHLE** — Official live source, clear score/state
+3. 🔄 **MLB Stats API** — In progress (Phase 2 next session)
+4. ⏳ **Squiggle AFL / Kali AFL** — Full seasons available
+5. ⏳ **BSD soccer** — WC2026 provider
+6. ⏳ **Odds API** — Betting intelligence
+7. ⏳ **Open-Meteo** — Weather context
+8. ⏳ **SlashGolf / OpenGolfAPI** — Golf scoring
+9. ⏳ **NFLverse / nflfastR** — NFL play-by-play
+10. ⏳ **MoneyPuck / Cricsheet / OpenF1** — Niche sports
 
 ---
 
@@ -107,4 +121,18 @@ Script is committed at docs/orchestrator-probe.py (SHA 5433028).
 - Relay: field-relay-nba.jeffunglesbee.workers.dev
 - CF account: b57e9af57ab46c52ca9215804e689c29
 
-SESSION END: RELAY 1cad397 · CLIENT 536b857 · 2026-06-28 · via chat
+---
+
+## FILES TO COMMIT (PENDING)
+
+Ready to push to jubilant-bassoon:
+- docs/adapter-proof.manifest.json ← Proof contract for MLB
+- docs/source-registry.json ← Source rights gate
+- tests/fixtures/adapters/mlb-stats-api.ok.json
+- tests/fixtures/adapters/mlb-stats-api.empty.json
+- tests/fixtures/adapters/mlb-stats-api.malformed.json
+- docs/CC-CMD-2026-06-28-mlb-adapter-proof.md ← Phase 2 handoff
+
+---
+
+SESSION END: RELAY 1cad397 · CLIENT 536b857 · 2026-06-28 · MLB Phase 1 ✅ · via chat
