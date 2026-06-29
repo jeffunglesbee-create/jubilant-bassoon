@@ -48,7 +48,7 @@ Confidence: 100/100 via chat session (CC blocked by *.workers.dev:443 egress).
 
 ---
 
-## SMOKE
+## Smoke
 
 **787/0** (up from 779 at session start)
 

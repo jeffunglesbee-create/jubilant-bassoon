@@ -45,6 +45,24 @@
       },
       "lastTermsCheckedAt": "2026-06-25",
       "notes": "Free REST tier. BSD_API_TOKEN in relay secrets. CORS not available — relay proxies all requests."
+    },
+    "kali-aflstats": {
+      "status": "green",
+      "sourceUrl": "https://kaliaflstats.com/api/afl/v1",
+      "allowedUses": [
+        "analytics_display",
+        "journalism_context",
+        "win_probability",
+        "factor_breakdown"
+      ],
+      "rawRedistributionAllowed": false,
+      "commercialUseClass": "licensed_analytics",
+      "authRequired": true,
+      "authMethod": "KALI_AFL_TOKEN Bearer",
+      "cost": "free, 5000 req/day",
+      "coverage": "AFL — predictions, tips, player-stats, standings, head-to-head, matches, fixture",
+      "lastTermsCheckedAt": "2026-06-26",
+      "notes": "CORS not available — relay proxies all requests. Token injected server-side."
     }
   }
 }

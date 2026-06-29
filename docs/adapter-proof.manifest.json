@@ -128,6 +128,48 @@
       ],
       "proofMode": "required",
       "lastVerifiedAt": null
+    },
+    "kali-afl": {
+      "status": "active",
+      "sourceId": "kali-aflstats",
+      "sport": "AFL",
+      "architecture": "relay-injected",
+      "note": "Kali is not a standalone normalizer. Data is injected into game.journalism.kali by buildAFLJournalismContext() in handleV2Games.",
+      "relayFunction": "buildAFLJournalismContext",
+      "requiredRelayFields": [
+        "homeWinPct",
+        "awayWinPct",
+        "squiggleConsensus",
+        "factors",
+        "homeBreakdown",
+        "awayBreakdown"
+      ],
+      "visibleSurfaces": [
+        {
+          "surface": "journalism-brief",
+          "proof": "game.journalism.kali.factors[] with named labels and impact scores appear in AFL briefs"
+        },
+        {
+          "surface": "card",
+          "proof": "game.journalism.kali.homeWinPct / awayWinPct available for AFL card WP display"
+        }
+      ],
+      "fallbackSurfaces": [
+        {
+          "surface": "journalism-brief",
+          "proof": "AFL brief renders without Kali data when KALI_AFL_TOKEN absent or API error"
+        }
+      ],
+      "fixtures": {
+        "ok": "docs/adapter-fixtures-kali-ok.json",
+        "empty": "docs/adapter-fixtures-kali-empty.json",
+        "malformed": "docs/adapter-fixtures-kali-malformed.json"
+      },
+      "knownGaps": [
+        "No client-side normalizer — data is relay-injected",
+        "No dedicated CONTEXT_SOURCE in context-assembler.js — inline in handleV2Games"
+      ],
+      "lastVerifiedAt": null
     }
   }
 }

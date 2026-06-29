@@ -1,0 +1,54 @@
+{
+  "sourceId": "kali-aflstats",
+  "note": "Real data from /v2/games?sport=afl&date=2026-06-28 — Round 16",
+  "round": 16,
+  "year": 2026,
+  "games": [
+    {
+      "home": "North Melbourne",
+      "away": "Essendon",
+      "homeScore": 79,
+      "awayScore": 65,
+      "state": "post",
+      "espnEventId": "afl_r16_nm_ess",
+      "journalism": {
+        "kali": {
+          "homeWinPct": 80.2,
+          "awayWinPct": 19.8,
+          "squiggleConsensus": 67,
+          "factors": [
+            { "team": "home", "label": "Strong form (3W-2L)", "impact": 12 },
+            { "team": "home", "label": "Tipster consensus", "impact": 6.76 },
+            { "team": "away", "label": "Dominant H2H record", "impact": 6 }
+          ],
+          "homeBreakdown": { "h2h": 20, "form": 60, "stats": 36, "venue": 55, "scoring": 31, "squiggle": 66 },
+          "awayBreakdown": { "h2h": 80, "form": 40, "stats": 64, "venue": 45, "scoring": 69, "squiggle": 34 }
+        },
+        "squiggle": { "homeConfidence": 67, "awayConfidence": 33 }
+      }
+    },
+    {
+      "home": "Fremantle",
+      "away": "Gold Coast SUNS",
+      "homeScore": 80,
+      "awayScore": 29,
+      "state": "post",
+      "espnEventId": "afl_r16_fre_gcs",
+      "journalism": {
+        "kali": {
+          "homeWinPct": 96.7,
+          "awayWinPct": 3.3,
+          "squiggleConsensus": 78,
+          "factors": [
+            { "team": "home", "label": "Strong form (5W-0L)", "impact": 16 },
+            { "team": "home", "label": "Tipster consensus", "impact": 11.1 },
+            { "team": "home", "label": "Superior scoring power", "impact": 7.0 }
+          ],
+          "homeBreakdown": { "h2h": 75, "form": 100, "stats": 59, "venue": 55, "scoring": 78 },
+          "awayBreakdown": { "h2h": 25, "form": 0, "stats": 41, "venue": 45, "scoring": 22 }
+        },
+        "squiggle": { "homeConfidence": 78, "awayConfidence": 22 }
+      }
+    }
+  ]
+}
