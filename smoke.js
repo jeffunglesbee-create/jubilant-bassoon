@@ -116,6 +116,18 @@ assert('AVV-DS-001 — _dataSource carried through card schema',
   html.includes('_dataSource: g.source || null') && html.includes('window._mlbDataReady'),
   'Card schema spread must carry _dataSource from normalized game.source; sentinel must be set');
 
+assert('MLB-SIMP-001 — isPlayoff derived from gameType in normalizeMLBGame',
+  html.includes('g.gameType') && html.includes('isPlayoff'),
+  'normalizeMLBGame must derive isPlayoff from gameType');
+
+assert('MLB-SIMP-002 — parseBroadcasts reads b.isNational',
+  html.includes('b.isNational') || html.includes('.isNational'),
+  'parseBroadcasts must read isNational from API broadcast object');
+
+assert('MLB-SIMP-003 — fetchMLBStandingsParsed reads magicNumber and clinchIndicator',
+  html.includes('magicNumber') && html.includes('clinchIndicator'),
+  'Standings must read magicNumber and clinchIndicator from API response');
+
 // 5. RELAY NBA Adapters (Session 3)
 assert('RELAY_BASE defined', html.includes("const RELAY_BASE = 'https://field-relay-nba"));
 assert('relayHealthCheck defined', html.includes('async function relayHealthCheck'));

@@ -19498,11 +19498,19 @@ function parseBroadcasts(broadcasts, gameDate, date) {
     espnGOTD:        false, // set by ESPN_GOTD_SCHEDULE only — not auto-detected from API
     peacockGOTD:     false, // set by ESPN_GOTD_SCHEDULE only — not auto-detected from API
     mlbnShowcase:    false,
+    apiRsnName:      null,  // home-market RSN name from API broadcasts (homeAway==='home')
+    freeGame:        false,
+    availableForStreaming: false,
   };
   const d = date instanceof Date ? date : new Date(date);
 
   for (const b of broadcasts) {
     const name = b.name ?? '';
+
+    // API RSN — capture home-market non-national broadcast name as primary RSN source
+    if (b.homeAway === 'home' && !b.isNational && !result.apiRsnName) {
+      result.apiRsnName = name || null;
+    }
 
     // Direct chip mapping — national exclusives (automatic)
     if (MLB_BROADCAST_CHIP_MAP[name]) {
@@ -19542,7 +19550,14 @@ function parseBroadcasts(broadcasts, gameDate, date) {
       result.localBlackedOut = true;
       continue;
     }
+
+    // Unknown national broadcast — catch-all for future new national TV partners
+    if (b.isNational && !result.nationalBundle) {
+      result.localBlackedOut = true;
+    }
   }
+  result.freeGame             = broadcasts.some(b => b.freeGame === true);
+  result.availableForStreaming = broadcasts.some(b => b.availableForStreaming === true);
   return result;
 }
 
@@ -19591,10 +19606,14 @@ function normalizeMLBGame(g, date) {
     start_time:     g.gameDate,
     confirmed:      true,   // Stats API is authoritative — confirmed source
     nationalBundle: broadcast.nationalBundle,
-    localRsn:       broadcast.localBlackedOut ? null : (MLB_TEAM_RSN[homeAbbr] ?? 'MLB_LOCAL'),
+    localRsn:       broadcast.localBlackedOut ? null : (broadcast.apiRsnName ?? MLB_TEAM_RSN[homeAbbr] ?? 'MLB_LOCAL'),
     espnGOTD:       broadcast.espnGOTD,
     peacockGOTD:    broadcast.peacockGOTD,
     mlbnShowcase:   broadcast.mlbnShowcase,
+    isPlayoff:      !['R', 'S', 'E', 'A'].includes(g.gameType ?? 'R'),
+    startTimeTBD:   g.status?.startTimeTBD || false,
+    freeGame:       broadcast.freeGame || false,
+    availableForStreaming: broadcast.availableForStreaming || false,
     inning:         g.linescore?.currentInning ?? 0,
     inningHalf:     g.linescore?.inningHalf ?? '',
     outs:           g.linescore?.outs ?? 0,
@@ -22665,7 +22684,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-29a';
+  const SW_VERSION = '2026-06-29b';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -27634,6 +27653,9 @@ async function fetchMLBStandingsParsed() {
           losses:  String(t.losses || 0),
           pct:     t.winningPercentage || '',
           gb:      t.gamesBack || '0',
+          magic:   t.magicNumber ?? null,
+          clinch:  t.clinchIndicator ?? null,
+          elim:    t.eliminationNumber ?? null,
         });
       });
     });
