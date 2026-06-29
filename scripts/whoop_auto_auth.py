@@ -1,5 +1,5 @@
 import os, json, base64, time, requests
-from urllib.parse import urlencode, urlparse, parse_qs
+from urllib.parse import urlencode, urlparse, parse_qs, quote
 from datetime import datetime, timedelta
 from patchright.sync_api import sync_playwright
 from nacl import encoding, public
@@ -17,6 +17,8 @@ CF_ACCOUNT_ID = "b57e9af57ab46c52ca9215804e689c29"
 CF_DB_ID      = "f26669de-e772-4b56-a6d1-f8fdea08a4d4"
 
 os.makedirs("outbox", exist_ok=True)
+print(f"Client ID: {client_id[:8]}...{client_id[-4:]}")
+print(f"Email: {email[:3]}...@...")
 
 # Build URI variants to try (same pattern as whoop_exchange.sh)
 def uri_variants(base):
@@ -32,17 +34,20 @@ def uri_variants(base):
 
 VARIANTS = uri_variants(base_redirect)
 print(f"Will try {len(VARIANTS)} redirect_uri variants: {VARIANTS}")
+print(f"Base redirect raw bytes: {base_redirect.encode().hex()}")
+print(f"Base redirect repr: {repr(base_redirect)}")
 
 
 def attempt_oauth(redirect_uri):
     """Run browser OAuth flow with a specific redirect_uri. Returns auth code or None."""
-    auth_url = "https://api.prod.whoop.com/oauth/oauth2/auth?" + urlencode({
-        "response_type": "code",
-        "client_id": client_id,
-        "redirect_uri": redirect_uri,
-        "scope": "read:recovery read:cycles read:sleep read:workout read:profile read:body_measurement offline",
-        "state": "auto_auth"
-    })
+    auth_url = (
+        "https://api.prod.whoop.com/oauth/oauth2/auth"
+        f"?response_type=code"
+        f"&client_id={client_id}"
+        f"&redirect_uri={quote(redirect_uri, safe='')}"
+        f"&scope={quote('read:recovery read:cycles read:sleep read:workout read:profile read:body_measurement offline', safe='')}"
+        f"&state=auto_auth"
+    )
 
     captured_code = [None]
 
@@ -72,12 +77,18 @@ def attempt_oauth(redirect_uri):
 
         try:
             print(f"  Loading OAuth page...")
+            print(f"  AUTH URL: {auth_url[:200]}")
+            print(f"  redirect_uri param value: [{redirect_uri}]")
+            print(f"  redirect_uri encoded: [{quote(redirect_uri, safe='')}]")
             page.goto(auth_url, wait_until="domcontentloaded", timeout=60000)
             try:
                 page.wait_for_load_state("networkidle", timeout=30000)
             except:
                 pass
             time.sleep(3)
+
+            page_url = page.url
+            print(f"  Landed on: {page_url[:200]}")
 
             # Check for OAuth error page
             body_text = ""
@@ -87,7 +98,10 @@ def attempt_oauth(redirect_uri):
                 pass
 
             if "OAuth 2.0 Error" in body_text or "invalid_request" in body_text:
+                error_detail = body_text[:300]
                 print(f"  OAuth error page — URI rejected")
+                print(f"  Error detail: {error_detail}")
+                page.screenshot(path=f"outbox/whoop-auth-err-v{i+1}.png")
                 browser.close()
                 return None
 
@@ -268,6 +282,10 @@ for i, uri in enumerate(VARIANTS):
             result["tried"].append({"uri": uri, "code_captured": True, "exchange": "failed"})
     else:
         result["tried"].append({"uri": uri, "code_captured": False})
+
+# Include diagnostic info
+result["client_id_prefix"] = client_id[:8]
+result["base_redirect_repr"] = repr(base_redirect)
 
 with open("outbox/whoop-auth-result.json", "w") as f:
     json.dump(result, f, indent=2)
