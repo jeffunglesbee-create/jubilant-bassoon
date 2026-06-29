@@ -1,0 +1,73 @@
+{
+  "version": 1,
+  "generatedAt": "2026-06-28T20:35:00Z",
+  "adapters": {
+    "mlb-stats-api": {
+      "status": "active",
+      "sourceId": "mlb-stats-api-official",
+      "sport": "Baseball",
+      "relayRoutes": [
+        "/mlb/v1/schedule/{date}",
+        "/mlb/v1/live/{gamePk}",
+        "/mlb/standings"
+      ],
+      "normalizer": "adaptMLBStats",
+      "requiredNormalizedFields": [
+        "gameId",
+        "home",
+        "away",
+        "homeScore",
+        "awayScore",
+        "status",
+        "inning",
+        "inningHalf",
+        "outs",
+        "startTime",
+        "nationalBundle",
+        "sourceTrail"
+      ],
+      "presentationConsumers": [
+        "buildGameCardPacket",
+        "renderCardScoreLine",
+        "renderBroadcastChips",
+        "renderGameState"
+      ],
+      "visibleSurfaces": [
+        {
+          "surface": "card",
+          "selector": ".game-card[data-source*='mlb-stats'] .score-wrap",
+          "proof": "score line visible (e.g., '3-2 · Top 5 · 1 out')"
+        },
+        {
+          "surface": "card",
+          "selector": ".game-card[data-sport='Baseball'] [data-proof='broadcast-chips']",
+          "proof": "broadcast chip visible (national/local)"
+        },
+        {
+          "surface": "card",
+          "selector": ".game-card[data-sport='Baseball'] [data-proof='game-state']",
+          "proof": "game state (live/final/pregame)"
+        },
+        {
+          "surface": "health-panel",
+          "selector": "[data-health-source='mlb-stats-api']",
+          "proof": "adapter health row visible"
+        }
+      ],
+      "fallbackSurfaces": [
+        {
+          "surface": "card",
+          "selector": ".game-card[data-sport='Baseball'][data-source='espn'] .score-wrap",
+          "proof": "ESPN fallback visible when MLB Stats API unavailable"
+        }
+      ],
+      "fixtures": {
+        "ok": "tests/fixtures/adapters/mlb-stats-api.ok.json",
+        "empty": "tests/fixtures/adapters/mlb-stats-api.empty.json",
+        "malformed": "tests/fixtures/adapters/mlb-stats-api.malformed.json"
+      },
+      "proofMode": "required",
+      "lastVerifiedAt": null
+    }
+  }
+}
