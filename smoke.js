@@ -51,6 +51,45 @@ assert('loadMLBSlate defined', html.includes('async function loadMLBSlate'));
 assert('MLB_TEAM_RSN defined', html.includes('const MLB_TEAM_RSN'));
 assert('ESPN_GOTD_SCHEDULE defined', html.includes('const ESPN_GOTD_SCHEDULE'));
 
+// ── MLB Adapter Visible Value Proof (AVV — 2026-06-29) ───────────────────────
+
+assert('AVV-MLB-001 — adapter-proof.manifest.json exists in docs/',
+  require('fs').existsSync('./docs/adapter-proof.manifest.json'),
+  'docs/adapter-proof.manifest.json must exist — source of truth for adapter proof contract');
+
+assert("AVV-MLB-002 — normalizeMLBGame assigns source: 'mlb-stats'",
+  /source:\s+'mlb-stats'/.test(html),
+  "normalizeMLBGame must set source field to 'mlb-stats' for source trail attribution");
+
+assert('AVV-MLB-003 — normalizeMLBGame assigns homeScore and awayScore',
+  html.includes('homeScore,') && html.includes('awayScore,') &&
+  html.includes('home.score') && html.includes('away.score'),
+  'normalizeMLBGame must extract homeScore/awayScore from MLB Stats API home/away.score fields');
+
+assert('AVV-MLB-004 — parseBroadcasts returns mlbnShowcase for MLB Network',
+  /result\.mlbnShowcase\s*=\s*true/.test(html),
+  'parseBroadcasts must set mlbnShowcase=true when MLB Network appears in broadcasts array');
+
+assert('AVV-MLB-005 — fetchMLBFixtures tries MLB Stats API before ESPN fallback',
+  html.includes('async function fetchMLBFixtures') &&
+  html.includes('loadMLBSlate') &&
+  html.includes('Stats API unavailable'),
+  'fetchMLBFixtures must call loadMLBSlate first and fall through to ESPN on null return');
+
+assert('AVV-MLB-006 — ESPN_GOTD_SCHEDULE declared with espnGOTD and peacockGOTD',
+  html.includes('ESPN_GOTD_SCHEDULE') &&
+  html.includes('espnGOTD') &&
+  html.includes('peacockGOTD'),
+  'ESPN_GOTD_SCHEDULE must have espnGOTD and peacockGOTD slots for manual day-of overrides');
+
+assert('AVV-MLB-007 — buildFieldHealthPanel defined',
+  html.includes('function buildFieldHealthPanel'),
+  'Health panel function must exist — adapter health row depends on this infrastructure');
+
+assert("AVV-MLB-008 — 'adapter-proof-mlb-stats-api' in Feature Registry",
+  html.includes("'adapter-proof-mlb-stats-api'"),
+  'Feature Registry must contain adapter-proof-mlb-stats-api entry per Rule: every FIELD_FEATURES entry has a smoke assertion');
+
 // 5. RELAY NBA Adapters (Session 3)
 assert('RELAY_BASE defined', html.includes("const RELAY_BASE = 'https://field-relay-nba"));
 assert('relayHealthCheck defined', html.includes('async function relayHealthCheck'));

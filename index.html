@@ -5520,6 +5520,7 @@ const FIELD_FEATURES = {
   'relay-fd':               '2026-05-17',
   'mlb-stats-adapter':      '2026-05-16',
   'mlb-thin-client':        '2026-05-18',
+  'adapter-proof-mlb-stats-api': '2026-06-29',
   'sw-version-cache-bust':  '2026-05-17',
   'auto-deploy-guard-v5':   '2026-05-18',
   // Quick wins
@@ -19562,6 +19563,11 @@ function normalizeMLBGame(g, date) {
       ah: i.away?.hits  ?? 0,
       ae: i.away?.errors ?? 0,
     })),
+    _adapterProof: {
+      adapterId: 'mlb-stats-api',
+      sourceId:  'mlb-stats-api-official',
+      gamePk:    String(g.gamePk),
+    },
   };
 }
 
@@ -22570,7 +22576,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-28a';
+  const SW_VERSION = '2026-06-29a';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
