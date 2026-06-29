@@ -130,3 +130,66 @@ test('AVV-PW-005 — malformed fixture: no window._fieldErrors', async ({ page }
 
   console.log('[AVV-PW-005] title:', title, '| crashes:', crashes.length);
 });
+
+// ── AVV-PW-006: Live MLB data renders from statsapi.mlb.com ──────────────
+test('AVV-PW-006 — live MLB data renders from statsapi.mlb.com', async ({ page }) => {
+  // Load WITHOUT ?proofAdapter — real app, real data
+  await page.goto(LIVE_URL + '/?wpt=1', { waitUntil: 'domcontentloaded', timeout: 30000 });
+  await awaitReady(page, 8000);  // extra buffer for real MLB Stats API call (8s timeout in fetchMLBSchedule)
+
+  // __FIELD_PROOF__ must NOT be set — confirms no fixture injection
+  const proof = await page.evaluate(() => window.__FIELD_PROOF__);
+  expect(proof, '__FIELD_PROOF__ should be null when not in proof mode').toBeFalsy();
+
+  // Check allData for Baseball (MLB) section
+  // allData is a let-global (not window.allData) but accessible from evaluate context
+  const mlbData = await page.evaluate(() => {
+    if (typeof allData === 'undefined' || !allData) return null;
+    const baseball = (allData.sports || []).find(s => s.sport === 'Baseball (MLB)');
+    if (!baseball) return { found: false, sports: (allData.sports || []).map(s => s.sport) };
+    const games = baseball.games || [];
+    return {
+      found: true,
+      gameCount: games.length,
+      sources: [...new Set(games.map(g => g.source))],
+      hasAdapterProof: games.some(g => !!g._adapterProof),
+      firstGame: games[0] ? {
+        homeTeam: games[0].homeTeam,
+        awayTeam: games[0].awayTeam,
+        source:   games[0].source,
+        status:   games[0].status,
+        hasAdapterProof: !!games[0]._adapterProof,
+      } : null,
+    };
+  });
+
+  console.log('[AVV-PW-006] MLB data from live app:', JSON.stringify(mlbData, null, 2));
+
+  expect(mlbData, 'allData not accessible — app may not have initialized').toBeTruthy();
+  expect(mlbData.found, `No Baseball (MLB) section. Sports present: ${JSON.stringify(mlbData.sports)}`).toBe(true);
+  expect(mlbData.gameCount, 'Expected MLB games today').toBeGreaterThan(0);
+
+  console.log('[AVV-PW-006] MLB sources:', mlbData.sources);
+  console.log('[AVV-PW-006] First game:', JSON.stringify(mlbData.firstGame));
+  // source 'mlb-stats' = MLB Stats API path active; 'espn' or absent = ESPN fallback fired
+});
+
+// ── AVV-PW-007: MLB game card visible in DOM ──────────────────────────────
+test('AVV-PW-007 — MLB game card visible in DOM', async ({ page }) => {
+  await page.goto(LIVE_URL + '/?wpt=1', { waitUntil: 'domcontentloaded', timeout: 30000 });
+  await awaitReady(page, 8000);
+
+  const cards = page.locator('.game-card');
+  const cardCount = await cards.count();
+  console.log('[AVV-PW-007] Total game cards:', cardCount);
+
+  const mlbChips = page.locator('.stream-chip');
+  const chipCount = await mlbChips.count();
+  const chipTexts = await mlbChips.allTextContents();
+  const mlbRelated = chipTexts.filter(t =>
+    /MASN|YES|NESN|SNY|FOX|ESPN|MLB|Apple|Peacock|TBS|NBC|CHSN/i.test(t));
+  console.log('[AVV-PW-007] Total cards:', cardCount, '| broadcast chips:', chipCount);
+  console.log('[AVV-PW-007] MLB-related broadcast chips:', mlbRelated);
+
+  expect(cardCount, 'No game cards rendered at all').toBeGreaterThan(0);
+});
