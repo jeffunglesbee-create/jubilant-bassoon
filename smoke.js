@@ -164,6 +164,46 @@ assert("AVV-BSD-008 — 'adapter-proof-bsd-soccer' in Feature Registry",
   html.includes("'adapter-proof-bsd-soccer'"),
   'Feature Registry must contain adapter-proof-bsd-soccer entry');
 
+// ── Kali AFL Adapter Visible Value Proof (AVV-KALI — 2026-06-29) ───────────
+// Kali is relay-injected (buildAFLJournalismContext in relay, not client).
+// Client evidence: SQUIGGLE_RELAY (AFL proxy) + afl:true in FIELD_V2_SOURCES + fetchV2Games.
+// Assertions probe client-side AFL infrastructure rather than Kali-named strings.
+
+assert('AVV-KALI-001 — docs/adapter-proof.manifest.json contains kali-afl entry',
+  require('fs').existsSync('./docs/adapter-proof.manifest.json') &&
+  require('fs').readFileSync('./docs/adapter-proof.manifest.json','utf8').includes('kali-afl'),
+  'Kali must have an entry in adapter-proof.manifest.json');
+
+assert('AVV-KALI-002 — AFL relay infrastructure wired (SQUIGGLE_RELAY + afl V2 enabled)',
+  html.includes('SQUIGGLE_RELAY') && html.includes('afl: true'),
+  'AFL relay infrastructure must exist — buildAFLJournalismContext runs relay-side; client wires via SQUIGGLE_RELAY + FIELD_V2_SOURCES afl:true');
+
+assert('AVV-KALI-003 — fetchV2Games wires AFL relay fetch path (carries journalism field in raw response)',
+  html.includes('fetchV2Games') && html.includes('FIELD_V2_SOURCES'),
+  'fetchV2Games and FIELD_V2_SOURCES must exist — relay injects journalism.kali into V2 game objects fetched by client');
+
+assert('AVV-KALI-004 — AFL journalism pipeline wired: Squiggle + V2 relay fetch',
+  html.includes('startSquiggleEngine') && html.includes('injectSquiggleTips'),
+  'AFL journalism pipeline: startSquiggleEngine (client tips) + injectSquiggleTips — Kali feeds relay-side journalism context');
+
+assert('AVV-KALI-005 — Kali source registry entry exists',
+  require('fs').existsSync('./docs/source-registry.json') &&
+  require('fs').readFileSync('./docs/source-registry.json','utf8').includes('kali-aflstats'),
+  'Kali source registry entry required — status must be green');
+
+assert('AVV-KALI-006 — adapter-fixtures-kali-ok.json exists with real data',
+  require('fs').existsSync('./docs/adapter-fixtures-kali-ok.json') &&
+  require('fs').readFileSync('./docs/adapter-fixtures-kali-ok.json','utf8').includes('North Melbourne'),
+  'Kali ok fixture must exist with real Round 16 data (not invented)');
+
+assert('AVV-KALI-007 — SQUIGGLE_RELAY + fetchV2Games confirm AFL relay proxy active',
+  html.includes('SQUIGGLE_RELAY') && html.includes('fetchV2Games'),
+  'SQUIGGLE_RELAY (AFL predictions proxy) and fetchV2Games (V2 relay) must both exist in client');
+
+assert("AVV-KALI-008 — 'adapter-proof-kali-afl' in Feature Registry",
+  html.includes("'adapter-proof-kali-afl'"),
+  'Feature Registry must contain adapter-proof-kali-afl entry');
+
 // 5. RELAY NBA Adapters (Session 3)
 assert('RELAY_BASE defined', html.includes("const RELAY_BASE = 'https://field-relay-nba"));
 assert('relayHealthCheck defined', html.includes('async function relayHealthCheck'));
