@@ -4735,6 +4735,15 @@ const _proofAdapter = _proofParams.get('proofAdapter') || null;
 const _proofFixture = _proofParams.get('fixture')      || 'ok';
 const _proofMode    = !!_proofAdapter;
 
+// In proof mode, intercept ALL fetch calls and return {} — prevents JSON parse errors
+// from any API endpoint (relay, ESPN, proxy, etc.) that returns HTML error pages in
+// sandboxed test environments. The app HTML is served via browser navigation, not fetch().
+if (_proofMode) {
+  window.fetch = async function _proofFetch() {
+    return new Response('{}', {status:200, headers:{'Content-Type':'application/json'}});
+  };
+}
+
 const _MLB_PROOF_FIXTURES = {
   ok: {
     dates: [{ games: [
@@ -4768,18 +4777,16 @@ const _MLB_PROOF_FIXTURES = {
   malformed: { dates: [{ games: [{ gamePk: 'bad', status: null, teams: { home: null, away: { team: { abbreviation: 'NYY' } } }, linescore: 'invalid', broadcasts: 'not-array' }] }] }
 };
 
-// Deferred proof mode setup — runs after all functions are declared
+// Proof mode: override fetchMLBSchedule to return fixture (hoisted fn — safe to reassign here)
 if (_proofMode && _proofAdapter === 'mlb-stats-api') {
-  document.addEventListener('DOMContentLoaded', () => {
-    fetchMLBSchedule = async (date) => {
-      const fixture = _MLB_PROOF_FIXTURES[_proofFixture] || _MLB_PROOF_FIXTURES.ok;
-      const games = fixture.dates?.[0]?.games ?? [];
-      return games.map(g => {
-        try { return normalizeMLBGame(g, date instanceof Date ? date : new Date(date)); }
-        catch(e) { captureFieldError('proof:normalizeMLBGame', e); return null; }
-      }).filter(Boolean);
-    };
-  });
+  fetchMLBSchedule = async (date) => {
+    const fixture = _MLB_PROOF_FIXTURES[_proofFixture] || _MLB_PROOF_FIXTURES.ok;
+    const games = fixture.dates?.[0]?.games ?? [];
+    return games.map(g => {
+      try { return normalizeMLBGame(g, date instanceof Date ? date : new Date(date)); }
+      catch(e) { captureFieldError('proof:normalizeMLBGame', e); return null; }
+    }).filter(Boolean);
+  };
 }
 
 // ── Runtime error capture (Rule 18 — field_browser.test.js reads this) ──────
@@ -12800,7 +12807,8 @@ function toggleJournalismView() {
   // Mutual exclusion: dismiss wc-mode if activating journalism
   if (willActivate && body.classList.contains('wc-mode')) {
     body.classList.remove('wc-mode');
-    document.getElementById('wc-nav-link')?.classList.remove('active');
+    const _wcNavLnk = document.getElementById('wc-nav-link');
+    if (_wcNavLnk) _wcNavLnk.classList.remove('active');
     const wcSec = document.getElementById('wc-section');
     if (wcSec) { wcSec.setAttribute('hidden', ''); wcSec.style.display = ''; }
   }
@@ -16296,6 +16304,7 @@ function _isModelRefusal(text) {
 // Audit fields (score, retries, layers_fired) are logged when FIELD_DEBUG is on
 // and stored on window._lastJQAudit for the debug panel.
 async function generateJournalismViaRelay(prompt, opts = {}) {
+  if (_proofMode) return null; // proof mode: no relay calls
   if (!prompt || prompt.length < 10) return null;
   try {
     const body = {
@@ -21321,18 +21330,28 @@ async function fetchSchedule(){
   // instead of waitForTimeout(15000). Typically resolves in ~1.5s not 15s.
   window._fieldDataReady = Date.now();
   if (_proofMode) {
-    const _allMLBGames = (allData?.sports || [])
-      .filter(s => (s.sport || '').toLowerCase().includes('baseball'))
-      .flatMap(s => s.games || []);
     window.__FIELD_PROOF__ = {
-      adapterId:           _proofAdapter,
-      fixture:             _proofFixture,
-      normalizedObjects:   _allMLBGames,
-      presentationPackets: _allMLBGames.map(g => g._adapterProof || null).filter(Boolean),
-      visibleSelectors:    ['.game-card', '.stream-chip'],
-      errors:              window._fieldErrors || [],
-      generatedAt:         new Date().toISOString(),
+      adapterId:        _proofAdapter,
+      fixture:          _proofFixture,
+      visibleSelectors: ['.game-card', '.stream-chip'],
+      generatedAt:      new Date().toISOString(),
     };
+    // Live getters: read allData at access time so tests always see current data
+    // regardless of when fetchMLBFixtures() resolves (it runs after _fieldDataReady is set).
+    const _pfSports = () => (allData?.sports || [])
+      .filter(s => (s.sport || '').toLowerCase().includes('baseball'));
+    Object.defineProperty(window.__FIELD_PROOF__, 'normalizedObjects', {
+      get() { return _pfSports().flatMap(s => s.games || []); },
+      enumerable: true, configurable: true,
+    });
+    Object.defineProperty(window.__FIELD_PROOF__, 'errors', {
+      get() { return window._fieldErrors || []; },
+      enumerable: true, configurable: true,
+    });
+    Object.defineProperty(window.__FIELD_PROOF__, 'presentationPackets', {
+      get() { return _pfSports().flatMap(s => s.games || []).map(g => g._adapterProof || null).filter(Boolean); },
+      enumerable: true, configurable: true,
+    });
   }
   try { performance.mark('field:ready'); } catch(_) {}
   loadOverlayData(); // async enhancement — editorial patches from relay
@@ -25650,6 +25669,9 @@ function buildCompoundPrompt(sections) {
     .sort((a, b) => leagueImportanceRank(leagueImportanceTier(b)) - leagueImportanceRank(leagueImportanceTier(a)))
     .slice(0, 12);
   const seriesGames = games.filter(g => g.seriesRecord);
+  // ADR-002 (H7): named-tier presence checks — were '>= 8' and '>= 6 && < 8'.
+  const hasTier1 = games.some(g => { const t = leagueImportanceTier(g); return t === 'final' || t === 'semifinal'; });
+  const hasTier2 = games.some(g => { const t = leagueImportanceTier(g); return t === 'quarterfinal' || t === 'group'; });
 
   // Build a count summary for leagues with suppressed Tier 3 context
   const _suppressedCounts = {};
@@ -25705,9 +25727,6 @@ function buildCompoundPrompt(sections) {
   // Tier ordering preserved — highest-importance game in each league always included.
   // Prevents MLB/WNBA regular season consuming word budget on Finals nights
   // while ensuring every sport on the slate gets at least one entry.
-  // ADR-002 (H7): named-tier presence checks — were '>= 8' and '>= 6 && < 8'.
-  const hasTier1 = games.some(g => { const t = leagueImportanceTier(g); return t === 'final' || t === 'semifinal'; });
-  const hasTier2 = games.some(g => { const t = leagueImportanceTier(g); return t === 'quarterfinal' || t === 'group'; });
   const _leagueCount = {};
   const gamesForContext = games.filter(g => {
     const league = (g.league || _gameSport(g)).toLowerCase();
@@ -26035,6 +26054,7 @@ ${buildLayer3Rules(games)}`;
 }
 
 async function fetchCompoundEditorial(sections) {
+  if (_proofMode) return null; // proof mode: no AI calls — prevents _fieldErrors entries
   const budget = journalismCallsToday();
   if (!budget.canCall()) return null;
 
@@ -28772,8 +28792,8 @@ const WC_COUNTRY_API_NAME = {
 };
 function _fmtCountryPop(n) {
   if (n == null || !isFinite(n)) return null;
-  if (n >= 1_000_000) return (n / 1_000_000).toFixed(1).replace(/\.0$/, '') + 'M';
-  if (n >= 1_000)     return (n / 1_000).toFixed(1).replace(/\.0$/, '')     + 'K';
+  if (n >= 1000000) return (n / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
+  if (n >= 1000)    return (n / 1000).toFixed(1).replace(/\.0$/, '')   + 'K';
   return String(n);
 }
 async function fetchCountryContext(countryName) {
@@ -28842,6 +28862,7 @@ function buildGameContext(g) {
 }
 
 async function fetchFIELDBriefFromClaude(sections){
+  if (_proofMode) return null; // proof mode: no AI calls
   const budget=journalismCallsToday();
   // J3 brief is served from relay KV (no Gemini call); compound 429 backoff must not gate it.
   // Hard ceiling only — read the counter directly, bypassing canCall() backoff bleed.
@@ -30759,7 +30780,8 @@ function toggleWCView() {
     // is reinforced even if a later style override clears the rule.
     if (document.body.classList.contains('journalism-mode')) {
       document.body.classList.remove('journalism-mode');
-      document.getElementById('jrn-nav-link')?.classList.remove('active');
+      const _jrnNavLnk = document.getElementById('jrn-nav-link');
+      if (_jrnNavLnk) _jrnNavLnk.classList.remove('active');
     }
     const jrnSec = document.getElementById('field-journalism-section');
     if (jrnSec) { jrnSec.setAttribute('hidden', ''); jrnSec.style.display = ''; }
@@ -31103,8 +31125,8 @@ function renderCascadeNarrative(bracketUpdate) {
     if (data.isLive && data.delta) {
       try { renderCascadeNarrative(data); } catch (_e) {}
     }
-    const bracketActive = document.getElementById('wc-tab-bracket-btn') &&
-      document.getElementById('wc-tab-bracket-btn').classList.contains('active');
+    const _wcBracketBtn = document.getElementById('wc-tab-bracket-btn');
+    const bracketActive = _wcBracketBtn && _wcBracketBtn.classList.contains('active');
     if (bracketActive) {
       const isWide = typeof window !== 'undefined' && window.matchMedia('(min-width:1180px)').matches;
       if (isWide && typeof renderWCBracketTree === 'function') {
@@ -31168,10 +31190,12 @@ async function renderWCSection() {
     if (title) title.textContent = 'Group Stage';
     if (navLink) navLink.textContent = '⚽ Groups';
     // Show groups tab by default unless user previously selected bracket
-    const activeBkt = document.getElementById('wc-tab-bracket-btn')?.classList.contains('active');
+    const _wcBktBtn2 = document.getElementById('wc-tab-bracket-btn');
+    const activeBkt = _wcBktBtn2 && _wcBktBtn2.classList.contains('active');
     if (!activeBkt) switchWCTab('groups');
   }
-  document.getElementById('wc-filter-pill')?.classList.toggle('active', document.body.classList.contains('wc-mode'));
+  const _wcFilterPill = document.getElementById('wc-filter-pill');
+  if (_wcFilterPill) _wcFilterPill.classList.toggle('active', document.body.classList.contains('wc-mode'));
   // Open BracketDO WebSocket for live bracket updates
   if (window._bracketWS) window._bracketWS.open();
   renderWCGroupsLoading();
@@ -31237,7 +31261,8 @@ async function renderWCSection() {
   }
   renderWCGroups(mergedStandings, matchResults, oddsProbs, liveGames);
   // If bracket tab is active, render it with fresh data
-  if (document.getElementById('wc-tab-bracket-btn')?.classList.contains('active')) {
+  const _wcBktBtn3 = document.getElementById('wc-tab-bracket-btn');
+  if (_wcBktBtn3 && _wcBktBtn3.classList.contains('active')) {
     renderWCTournamentBracket().catch(() => {
       renderWCConditionalBracket(standings, matchResults, oddsProbs, liveGames);
     });

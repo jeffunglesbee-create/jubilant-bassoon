@@ -8,7 +8,7 @@
 
 const { test, expect } = require('@playwright/test');
 
-const LIVE_URL  = 'https://jubilant-bassoon.jeffunglesbee.workers.dev';
+const LIVE_URL  = process.env.FIELD_TEST_URL || 'https://jubilant-bassoon.jeffunglesbee.workers.dev';
 const PROOF_URL = `${LIVE_URL}/?wpt=1&proofAdapter=mlb-stats-api&fixture=`;
 
 // Wait for app load sentinel + buffer
@@ -60,6 +60,10 @@ test('AVV-PW-002 — ok fixture: broadcast chips visible on MLB cards', async ({
 test('AVV-PW-003 — ok fixture: window.__FIELD_PROOF__ populated', async ({ page }) => {
   await page.goto(PROOF_URL + 'ok', { waitUntil: 'domcontentloaded', timeout: 30000 });
   await awaitReady(page);
+
+  // Wait for cards to ensure fetchMLBFixtures has completed (it runs after _fieldDataReady is set)
+  const cards = page.locator('.game-card');
+  try { await cards.first().waitFor({ timeout: 10000 }); } catch(_) {}
 
   const proof = await page.evaluate(() => window.__FIELD_PROOF__);
   expect(proof,                  '__FIELD_PROOF__ not set').toBeTruthy();

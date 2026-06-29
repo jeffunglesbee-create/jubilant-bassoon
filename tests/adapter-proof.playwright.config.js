@@ -18,6 +18,15 @@ module.exports = defineConfig({
     video: 'off',
   },
   projects: [
-    { name: 'chromium', use: { browserName: 'chromium' } },
+    {
+      name: 'chromium',
+      use: {
+        browserName: 'chromium',
+        // Use pre-installed Chromium in remote execution environments
+        launchOptions: process.env.PLAYWRIGHT_BROWSERS_PATH
+          ? { executablePath: '/opt/pw-browsers/chromium' }
+          : {},
+      },
+    },
   ],
 });
