@@ -78,9 +78,9 @@ def attempt_oauth(redirect_uri):
 
         def handle_route(route, request):
             url = request.url
-            # Intercept ANY redirect carrying an auth code — the registered redirect URI
-            # may be on whoop.com OR on a custom domain (e.g. workers.dev callback)
-            if "code=" in url and "api.prod.whoop.com/oauth" not in url:
+            # ONLY intercept the final OAuth redirect to the registered callback URL
+            # Previous bug: intercepting ANY url with "code=" broke Next.js resources on id.whoop.com
+            if redirect_uri.rstrip("/") in url and "code=" in url:
                 parsed = urlparse(url)
                 code = parse_qs(parsed.query).get("code", [None])[0]
                 if code:
