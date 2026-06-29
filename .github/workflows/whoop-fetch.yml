@@ -1,5 +1,7 @@
 name: Whoop Fetch
 on:
+  schedule:
+    - cron: '15 9 * * *'   # 9:15AM UTC daily — 15min after Oura
   push:
     paths:
       - 'outbox/.trigger-whoop'
