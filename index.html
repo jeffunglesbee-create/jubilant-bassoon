@@ -19662,7 +19662,7 @@ async function fetchMLBSchedule(date) {
     if (!r.ok) throw new Error(`MLB Stats API ${r.status}`);
     const data  = await r.json();
     const games = data.dates?.[0]?.games ?? [];
-    return games.map(g => normalizeMLBGame(g, d));
+    return games.map(g => normalizeMLBGame(g, date));
   } catch (err) {
     if (FIELD_DEBUG) console.warn('[MLB Stats API] unavailable — ESPN fallback', err.message);
     return null;
