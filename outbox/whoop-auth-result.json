@@ -1,4 +1,29 @@
 {
-  "error": "oauth_error_page",
-  "body": "The OAuth2 request resulted in an error.\nError: invalid_request\nDescription: The request is missing a required parameter, includes an invalid parameter value, includes a parameter more than once, or is otherwise malformed\nHint: The \"redirect_uri\" parameter does not match any of the OAuth 2.0 Client's pre-registered redirect urls.\nDebug:\n\nYou are seeing this page because configuration key urls.error is not set.\n\nIf you are an administrator, please read the guide to understand what you need to do."
+  "status": "all_variants_failed",
+  "tried": [
+    {
+      "uri": "https://field-relay-nba.jeffunglesbee.workers.dev/whoop/callback",
+      "code_captured": false
+    },
+    {
+      "uri": "https://field-relay-nba.jeffunglesbee.workers.dev/whoop/callback/",
+      "code_captured": false
+    },
+    {
+      "uri": "https://www.whoop.com",
+      "code_captured": false
+    },
+    {
+      "uri": "https://www.whoop.com/",
+      "code_captured": false
+    },
+    {
+      "uri": "https://whoop.com",
+      "code_captured": false
+    },
+    {
+      "uri": "https://whoop.com/",
+      "code_captured": false
+    }
+  ]
 }
