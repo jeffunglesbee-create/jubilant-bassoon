@@ -80,17 +80,37 @@ Note: NED vs MAR may be final by the time this runs — any completed WC game is
 
 ---
 
-## PHASE D: [ODDS STORY] verification
+## PHASE D: [ODDS STORY] verification via /odds-story/preview
 
-Verify computeOddsStory fires correctly with real WNBA D1 data:
+Use the relay's dedicated proof endpoint with date=2026-06-28 (yesterday).
+Today's games are not archived yet — this is expected system behavior.
 
 ```bash
-curl -s "https://field-relay-nba.jeffunglesbee.workers.dev/odds/history/wnba-gsv-nyl-2026-06-28" 2>/dev/null || echo "not found"
-
-# Direct D1 query approach — probe via CF MCP (ARCHIVE_DB cc49101c)
-# Query: SELECT opening_odds, closing_odds FROM regular_season_games
-#        WHERE date='2026-06-28' AND home='Golden State Valkyries'
+curl -s "https://field-relay-nba.jeffunglesbee.workers.dev/odds-story/preview?date=2026-06-28" |   python3 -c "
+import sys, json
+d = json.load(sys.stdin)
+print(f'total: {d.get("total")} withStory: {d.get("withStory")} missingClosing: {d.get("missingClosing")}')
+for g in (d.get("games") or []):
+    if g.get("story"):
+        print(f'[ODDS STORY] game: {g.get("home")} vs {g.get("away")}')
+        print(f'  story: {g["story"]}')
+        odds_json = g.get("opening_odds") or "{}"
+        import json as j2
+        parsed = j2.loads(odds_json) if isinstance(odds_json, str) else odds_json
+        proof = parsed.get("_oddsProof")
+        if proof:
+            print(f'  _oddsProof: {proof}')
+        else:
+            print("  _oddsProof: absent (rows written before bef1c5c — future rows will have it)")
+"
 ```
+
+Expected: WNBA GSV vs NYL appears with [ODDS STORY] block:
+  "ML moved 212 pts underdog-ward (opened -112, closed 100). Total moved 12.0 ... — under pressure."
+
+NOTE: _oddsProof will be absent in June 28 rows (written before relay bef1c5c).
+Future rows (from tonight's games onward) will carry _oddsProof. This is correct
+and documented in the outbox.
 
 Run computeOddsStory simulation:
 ```python
