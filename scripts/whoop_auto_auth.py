@@ -56,12 +56,14 @@ def attempt_oauth(redirect_uri):
 
         def handle_route(route, request):
             url = request.url
-            if "whoop.com" in url and "code=" in url and "api.prod.whoop.com" not in url:
+            # Intercept ANY redirect carrying an auth code — the registered redirect URI
+            # may be on whoop.com OR on a custom domain (e.g. workers.dev callback)
+            if "code=" in url and "api.prod.whoop.com/oauth" not in url:
                 parsed = urlparse(url)
                 code = parse_qs(parsed.query).get("code", [None])[0]
                 if code:
                     captured_code[0] = code
-                    print(f"  CODE INTERCEPTED: {code[:20]}...")
+                    print(f"  CODE INTERCEPTED from {urlparse(url).netloc}: {code[:20]}...")
                 route.abort()
             else:
                 route.continue_()
