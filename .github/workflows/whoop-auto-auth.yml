@@ -10,9 +10,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Install deps
-        run: |
-          pip install patchright requests pynacl -q
-          python3 -m patchright install chromium
+        run: pip install requests pynacl -q
       - name: Run OAuth automation
         env:
           WHOOP_CLIENT_ID:     ${{ secrets.WHOOP_CLIENT_ID }}

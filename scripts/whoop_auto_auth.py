@@ -1,7 +1,22 @@
-import os, json, base64, time, sys, requests
+"""
+Whoop Auto Auth — Raw HTTP approach (no browser)
+
+The Whoop login page at id.whoop.com is a Next.js app that crashes in
+headless browsers (Patchright/Playwright). This script bypasses the browser
+entirely and uses raw HTTP requests against the ORY Hydra OAuth endpoints.
+
+Flow:
+1. GET auth URL → 302 to id.whoop.com/sign-in?login_challenge=XXX
+2. POST credentials to id.whoop.com API (no JS rendering needed)
+3. Follow redirects through consent → callback URL
+4. Capture code from callback redirect
+5. Exchange code for tokens
+6. Store tokens in GitHub secrets + D1
+"""
+
+import os, json, base64, sys, time, requests
 from urllib.parse import urlencode, urlparse, parse_qs, quote
 from datetime import datetime, timedelta
-from patchright.sync_api import sync_playwright
 from nacl import encoding, public
 
 client_id     = os.environ["WHOOP_CLIENT_ID"]
@@ -11,15 +26,14 @@ password      = os.environ["WHOOP_PASSWORD"]
 pat           = os.environ["GH_TOKEN"]
 repo          = os.environ["GH_REPO"]
 cf_token      = os.environ.get("CLOUDFLARE_API_TOKEN", "")
-base_redirect = os.environ.get("WHOOP_REDIRECT_URI", "https://www.whoop.com")
+redirect_uri  = os.environ.get("WHOOP_REDIRECT_URI", "https://www.whoop.com")
 
 CF_ACCOUNT_ID = "b57e9af57ab46c52ca9215804e689c29"
 CF_DB_ID      = "f26669de-e772-4b56-a6d1-f8fdea08a4d4"
 
 os.makedirs("outbox", exist_ok=True)
 
-# Tee stdout to log file for diagnostic retrieval
-import io
+# Tee stdout to log file
 class TeeWriter:
     def __init__(self, original, logfile):
         self.original = original
@@ -35,205 +49,11 @@ _logfile = open("outbox/whoop-auth-log.txt", "w")
 sys.stdout = TeeWriter(sys.__stdout__, _logfile)
 
 print(f"Client ID: {client_id[:8]}...{client_id[-4:]}")
-print(f"Email: {email[:3]}...@...")
+print(f"Email: {email}")
+print(f"Redirect URI: {redirect_uri}")
+print(f"Approach: Raw HTTP (no browser)")
 
-# Build URI variants to try (same pattern as whoop_exchange.sh)
-def uri_variants(base):
-    seen = []
-    for u in [base, base.rstrip("/"), base.rstrip("/") + "/",
-              base.replace("www.", ""), base.replace("www.", "").rstrip("/"),
-              base.replace("www.", "").rstrip("/") + "/",
-              "https://www.whoop.com", "https://www.whoop.com/",
-              "https://whoop.com", "https://whoop.com/"]:
-        if u not in seen:
-            seen.append(u)
-    return seen
-
-VARIANTS = uri_variants(base_redirect)
-print(f"Will try {len(VARIANTS)} redirect_uri variants: {VARIANTS}")
-print(f"Base redirect raw bytes: {base_redirect.encode().hex()}")
-print(f"Base redirect repr: {repr(base_redirect)}")
-
-
-def attempt_oauth(redirect_uri):
-    """Run browser OAuth flow with a specific redirect_uri. Returns auth code or None."""
-    auth_url = (
-        "https://api.prod.whoop.com/oauth/oauth2/auth"
-        f"?response_type=code"
-        f"&client_id={client_id}"
-        f"&redirect_uri={quote(redirect_uri, safe='')}"
-        f"&scope={quote('read:recovery read:cycles read:sleep read:workout read:profile read:body_measurement offline', safe='')}"
-        f"&state=auto_auth"
-    )
-
-    captured_code = [None]
-
-    with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True, args=[])
-        context = browser.new_context(
-            user_agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
-            viewport={"width": 1280, "height": 720}
-        )
-        page = context.new_page()
-
-        def handle_route(route, request):
-            url = request.url
-            # ONLY intercept the final OAuth redirect to the registered callback URL
-            # Previous bug: intercepting ANY url with "code=" broke Next.js resources on id.whoop.com
-            if redirect_uri.rstrip("/") in url and "code=" in url:
-                parsed = urlparse(url)
-                code = parse_qs(parsed.query).get("code", [None])[0]
-                if code:
-                    captured_code[0] = code
-                    print(f"  CODE INTERCEPTED from {urlparse(url).netloc}: {code[:20]}...")
-                route.abort()
-            else:
-                route.continue_()
-
-        page.route("**/*", handle_route)
-
-        try:
-            print(f"  Loading OAuth page...")
-            print(f"  AUTH URL: {auth_url[:200]}")
-            print(f"  redirect_uri param value: [{redirect_uri}]")
-            print(f"  redirect_uri encoded: [{quote(redirect_uri, safe='')}]")
-            page.goto(auth_url, wait_until="domcontentloaded", timeout=60000)
-            try:
-                page.wait_for_load_state("networkidle", timeout=30000)
-            except:
-                pass
-            time.sleep(3)
-
-            page_url = page.url
-            print(f"  Landed on: {page_url[:200]}")
-
-            # Check for OAuth error page
-            body_text = ""
-            try:
-                body_text = page.inner_text("body") or ""
-            except:
-                pass
-
-            if "OAuth 2.0 Error" in body_text or "invalid_request" in body_text:
-                error_detail = body_text[:300]
-                print(f"  OAuth error page — URI rejected")
-                print(f"  Error detail: {error_detail}")
-                page.screenshot(path=f"outbox/whoop-auth-err-v{i+1}.png")
-                browser.close()
-                return None
-
-            # PASSED the error check — save diagnostic screenshot
-            page.screenshot(path=f"outbox/whoop-auth-pass-v{i+1}.png")
-            print(f"  OAuth check PASSED — page body length: {len(body_text)}")
-            print(f"  Page body[:200]: {body_text[:200]}")
-            print(f"  Page HTML[:500]: {page.content()[:500]}")
-
-            # Fill login form
-            print("  Waiting for login form...")
-            try:
-                page.wait_for_selector("input", timeout=30000)
-            except:
-                pass
-            time.sleep(2)
-
-            # Fill email
-            filled = False
-            for sel in ['input[name="email"]','input[type="email"]','input[id="email"]',
-                         'input[name="username"]','input[autocomplete="email"]','input[autocomplete="username"]',
-                         'input[placeholder*="email" i]','input[aria-label*="email" i]']:
-                el = page.query_selector(sel)
-                if el and el.is_visible():
-                    el.click(); el.fill(email)
-                    print(f"  Filled email: {sel}"); filled = True; break
-
-            if not filled:
-                for inp in page.query_selector_all("input"):
-                    t = inp.get_attribute("type") or ""
-                    if t in ("text","email","") and inp.is_visible():
-                        inp.click(); inp.fill(email)
-                        print(f"  Filled email fallback"); filled = True; break
-
-            if not filled:
-                print("  FAIL: no email field")
-                browser.close()
-                return None
-
-            # Fill password
-            p_el = page.query_selector('input[type="password"]')
-            if p_el and p_el.is_visible():
-                p_el.click(); p_el.fill(password); print("  Filled password")
-
-            time.sleep(1)
-
-            # Submit
-            submitted = False
-            for sel in ['button[type="submit"]','button:has-text("Log in")','button:has-text("Log In")',
-                          'button:has-text("Sign in")','button:has-text("Sign In")','button:has-text("Continue")',
-                          'button:has-text("Next")','input[type="submit"]']:
-                btn = page.query_selector(sel)
-                if btn and btn.is_visible():
-                    btn.click(); print(f"  Clicked: {sel}"); submitted = True; break
-            if not submitted:
-                page.keyboard.press("Enter"); print("  Pressed Enter")
-
-            try:
-                page.wait_for_load_state("networkidle", timeout=30000)
-            except:
-                pass
-            time.sleep(3)
-
-            # Multi-step password
-            p_el2 = page.query_selector('input[type="password"]')
-            if p_el2 and p_el2.is_visible():
-                print("  Multi-step password screen")
-                p_el2.click(); p_el2.fill(password); time.sleep(1)
-                for sel in ['button[type="submit"]','button:has-text("Log in")','button:has-text("Continue")']:
-                    btn = page.query_selector(sel)
-                    if btn and btn.is_visible():
-                        btn.click(); break
-                try:
-                    page.wait_for_load_state("networkidle", timeout=15000)
-                except:
-                    pass
-                time.sleep(5)
-
-            # Authorize consent
-            for sel in ['button:has-text("Authorize")','button:has-text("Allow")','button:has-text("Accept")']:
-                btn = page.query_selector(sel)
-                if btn and btn.is_visible():
-                    print("  Clicking authorize")
-                    btn.click()
-                    try:
-                        page.wait_for_load_state("networkidle", timeout=15000)
-                    except:
-                        pass
-                    time.sleep(5); break
-
-            time.sleep(5)
-
-        except Exception as e:
-            print(f"  Exception: {e}")
-            try: page.screenshot(path="outbox/whoop-auth-error.png")
-            except: pass
-
-        browser.close()
-
-    return captured_code[0]
-
-
-def exchange_code(code, redirect_uri):
-    """Exchange auth code for tokens. Returns token dict or None."""
-    r = requests.post("https://api.prod.whoop.com/oauth/oauth2/token", data={
-        "grant_type": "authorization_code",
-        "code": code,
-        "client_id": client_id,
-        "client_secret": client_secret,
-        "redirect_uri": redirect_uri
-    })
-    if r.status_code == 200:
-        return r.json()
-    print(f"  Exchange failed ({r.status_code}): {r.text[:200]}")
-    return None
+result = {}
 
 
 def store_tokens(tokens):
@@ -263,56 +83,194 @@ def store_tokens(tokens):
         print(f"  D1 update: {d1.status_code}")
 
 
-# Main: try each URI variant until one works
-result = {"status": "all_variants_failed", "tried": []}
+# Step 1: Initiate OAuth — get login_challenge
+auth_url = (
+    "https://api.prod.whoop.com/oauth/oauth2/auth"
+    f"?response_type=code"
+    f"&client_id={client_id}"
+    f"&redirect_uri={quote(redirect_uri, safe='')}"
+    f"&scope={quote('read:recovery read:cycles read:sleep read:workout read:profile read:body_measurement offline', safe='')}"
+    f"&state=auto_auth"
+)
 
-for i, uri in enumerate(VARIANTS):
-    print(f"\n=== Variant {i+1}/{len(VARIANTS)}: {uri} ===")
-    code = attempt_oauth(uri)
+print(f"\n1. Initiating OAuth flow...")
+print(f"   Auth URL: {auth_url[:200]}")
 
-    if code:
-        print(f"  Got code, exchanging with redirect_uri={uri}")
-        tokens = exchange_code(code, uri)
+session = requests.Session()
+session.headers.update({
+    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
+})
 
-        if not tokens:
-            # Try exchange with other URI variants (code captured with one, exchange may need another)
-            for ex_uri in VARIANTS:
-                if ex_uri != uri:
-                    print(f"  Retrying exchange with: {ex_uri}")
-                    tokens = exchange_code(code, ex_uri)
-                    if tokens:
-                        break
+# Follow redirects manually to capture login_challenge
+r = session.get(auth_url, allow_redirects=True)
+print(f"   Final URL: {r.url[:200]}")
+print(f"   Status: {r.status_code}")
 
-        if tokens:
-            print(f"\nSUCCESS with: {uri}")
-            print(f"  has_refresh={bool(tokens.get('refresh_token'))} expires_in={tokens.get('expires_in')}")
-            store_tokens(tokens)
+# Extract login_challenge from URL
+parsed_url = urlparse(r.url)
+login_challenge = parse_qs(parsed_url.query).get("login_challenge", [None])[0]
+print(f"   Login challenge: {login_challenge}")
 
-            # Update WHOOP_REDIRECT_URI secret to the working value
-            headers_gh = {"Authorization": f"token {pat}", "Accept": "application/vnd.github+json"}
-            pk_r = requests.get(f"https://api.github.com/repos/{repo}/actions/secrets/public-key", headers=headers_gh)
-            pk_data = pk_r.json()
-            pk = public.PublicKey(pk_data["key"].encode(), encoding.Base64Encoder)
-            sealed = public.SealedBox(pk)
-            enc = base64.b64encode(sealed.encrypt(uri.encode())).decode()
-            requests.put(f"https://api.github.com/repos/{repo}/actions/secrets/WHOOP_REDIRECT_URI",
-                headers=headers_gh, json={"encrypted_value": enc, "key_id": pk_data["key_id"]})
-            print(f"  Updated WHOOP_REDIRECT_URI secret to: {uri}")
-
-            result = {"status": "success", "redirect_uri": uri, "has_refresh": bool(tokens.get("refresh_token")), "expires_in": tokens.get("expires_in")}
+if not login_challenge:
+    print("   FAIL: no login_challenge in redirect URL")
+    print(f"   Response body[:300]: {r.text[:300]}")
+    result = {"error": "no_login_challenge", "final_url": r.url[:200], "body": r.text[:500]}
+else:
+    # Step 2: Try multiple login approaches
+    print(f"\n2. Attempting login...")
+    
+    login_success = False
+    code = None
+    
+    # Approach A: POST to id.whoop.com login API
+    login_apis = [
+        # ORY Hydra self-service login
+        f"https://id.whoop.com/api/auth/login",
+        f"https://id.whoop.com/api/auth/signin",
+        # Next.js API routes
+        f"https://id.whoop.com/api/login",
+        # Direct Hydra admin
+        f"https://api.prod.whoop.com/oauth/oauth2/auth/requests/login/accept",
+    ]
+    
+    for api_url in login_apis:
+        print(f"\n   Trying: {api_url}")
+        for payload in [
+            # JSON body variants
+            {"email": email, "password": password, "login_challenge": login_challenge},
+            {"email": email, "password": password, "challenge": login_challenge},
+            {"username": email, "password": password, "login_challenge": login_challenge},
+            {"identifier": email, "password": password, "login_challenge": login_challenge},
+        ]:
+            try:
+                r2 = session.post(api_url, json=payload, allow_redirects=False, timeout=15)
+                print(f"     Payload keys={list(payload.keys())[:3]} → HTTP {r2.status_code}")
+                
+                # Check for redirect with code
+                if r2.status_code in (301, 302, 303, 307, 308):
+                    loc = r2.headers.get("Location", "")
+                    print(f"     Redirect: {loc[:150]}")
+                    if "code=" in loc:
+                        code = parse_qs(urlparse(loc).query).get("code", [None])[0]
+                        if code:
+                            print(f"     CODE CAPTURED: {code[:20]}...")
+                            login_success = True
+                            break
+                    # Follow redirect chain
+                    r3 = session.get(loc, allow_redirects=False, timeout=15)
+                    if r3.status_code in (301, 302, 303, 307, 308):
+                        loc2 = r3.headers.get("Location", "")
+                        print(f"     Redirect 2: {loc2[:150]}")
+                        if "code=" in loc2:
+                            code = parse_qs(urlparse(loc2).query).get("code", [None])[0]
+                            if code:
+                                print(f"     CODE CAPTURED: {code[:20]}...")
+                                login_success = True
+                                break
+                
+                elif r2.status_code == 200:
+                    body = r2.text[:300]
+                    print(f"     Body[:100]: {body[:100]}")
+                    # Check if response contains a redirect URL or code
+                    try:
+                        rj = r2.json()
+                        redirect_to = rj.get("redirect_to", rj.get("redirect", rj.get("redirectTo", "")))
+                        if redirect_to:
+                            print(f"     JSON redirect: {redirect_to[:150]}")
+                            if "code=" in redirect_to:
+                                code = parse_qs(urlparse(redirect_to).query).get("code", [None])[0]
+                                if code:
+                                    print(f"     CODE CAPTURED: {code[:20]}...")
+                                    login_success = True
+                                    break
+                            # Follow the redirect
+                            r4 = session.get(redirect_to, allow_redirects=False, timeout=15)
+                            print(f"     Following → HTTP {r4.status_code}")
+                            if r4.status_code in (301, 302, 303, 307, 308):
+                                loc3 = r4.headers.get("Location", "")
+                                print(f"     Redirect 3: {loc3[:150]}")
+                                if "code=" in loc3:
+                                    code = parse_qs(urlparse(loc3).query).get("code", [None])[0]
+                                    if code:
+                                        print(f"     CODE CAPTURED: {code[:20]}...")
+                                        login_success = True
+                                        break
+                    except:
+                        pass
+                elif r2.status_code in (401, 403, 404):
+                    print(f"     Not found / unauthorized")
+                else:
+                    print(f"     Body[:100]: {r2.text[:100]}")
+                    
+            except Exception as e:
+                print(f"     Error: {e}")
+            
+            if login_success:
+                break
+        if login_success:
             break
-        else:
-            result["tried"].append({"uri": uri, "code_captured": True, "exchange": "failed"})
-    else:
-        result["tried"].append({"uri": uri, "code_captured": False})
+    
+    # Approach B: Try form POST to the login page URL itself
+    if not login_success:
+        print(f"\n   Approach B: Form POST to {r.url[:100]}")
+        for payload in [
+            {"email": email, "password": password, "login_challenge": login_challenge},
+            {"email": email, "password": password},
+        ]:
+            try:
+                r5 = session.post(r.url, data=payload, allow_redirects=False, timeout=15)
+                print(f"     Form POST → HTTP {r5.status_code}")
+                if r5.status_code in (301, 302, 303, 307, 308):
+                    loc = r5.headers.get("Location", "")
+                    print(f"     Redirect: {loc[:150]}")
+                    # Follow full redirect chain
+                    while "code=" not in loc and r5.status_code in (301, 302, 303, 307, 308):
+                        r5 = session.get(loc, allow_redirects=False, timeout=15)
+                        loc = r5.headers.get("Location", "") if r5.status_code in (301, 302, 303, 307, 308) else ""
+                        if loc:
+                            print(f"     → {loc[:150]}")
+                    if "code=" in loc:
+                        code = parse_qs(urlparse(loc).query).get("code", [None])[0]
+                        if code:
+                            print(f"     CODE CAPTURED: {code[:20]}...")
+                            login_success = True
+                            break
+            except Exception as e:
+                print(f"     Error: {e}")
 
-# Include diagnostic info
-result["client_id_prefix"] = client_id[:8]
-result["base_redirect_repr"] = repr(base_redirect)
+    if not login_success:
+        print(f"\n   FAIL: Could not authenticate via any API endpoint")
+        result = {"error": "login_api_not_found", "login_challenge": login_challenge}
+    
+    # Step 3: Exchange code for tokens
+    if code:
+        print(f"\n3. Exchanging code for tokens...")
+        r_token = requests.post("https://api.prod.whoop.com/oauth/oauth2/token", data={
+            "grant_type": "authorization_code",
+            "code": code,
+            "client_id": client_id,
+            "client_secret": client_secret,
+            "redirect_uri": redirect_uri
+        })
+        
+        if r_token.status_code == 200:
+            tokens = r_token.json()
+            print(f"   SUCCESS! has_refresh={bool(tokens.get('refresh_token'))} expires_in={tokens.get('expires_in')}")
+            
+            print(f"\n4. Storing tokens...")
+            store_tokens(tokens)
+            
+            result = {
+                "status": "success",
+                "redirect_uri": redirect_uri,
+                "has_refresh": bool(tokens.get("refresh_token")),
+                "expires_in": tokens.get("expires_in")
+            }
+        else:
+            print(f"   Exchange FAILED: {r_token.status_code} {r_token.text[:200]}")
+            result = {"error": "token_exchange_failed", "status": r_token.status_code, "body": r_token.text[:500]}
 
 with open("outbox/whoop-auth-result.json", "w") as f:
     json.dump(result, f, indent=2)
-
-# Also save full stdout log to file for diagnostic retrieval
-import sys
-print(f"\nFinal: {result.get('status')}")
+print(f"\nFinal: {result.get('status') or result.get('error')}")
+_logfile.close()
