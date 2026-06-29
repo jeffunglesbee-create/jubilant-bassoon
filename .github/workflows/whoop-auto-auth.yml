@@ -10,7 +10,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Install deps
-        run: pip install requests pynacl -q
+        run: |
+          pip install patchright requests pynacl -q
+          python3 -m patchright install chromium
       - name: Run OAuth automation
         env:
           WHOOP_CLIENT_ID:     ${{ secrets.WHOOP_CLIENT_ID }}
@@ -26,6 +28,6 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add outbox/whoop-auth-result.json outbox/whoop-auth-*.png outbox/whoop-auth-log.txt -f 2>/dev/null || true
+          git add outbox/whoop-auth-result.json outbox/whoop-auth-*.png -f 2>/dev/null || true
           git commit -m "whoop: auto-auth result [skip ci]" || echo "Nothing to commit"
           git push || true
