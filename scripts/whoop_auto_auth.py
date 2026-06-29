@@ -14,7 +14,7 @@ cf_token      = os.environ.get("CLOUDFLARE_API_TOKEN", "")
 
 # Registered in Whoop developer app (created June 14 2026, per session docs)
 # Exchange script (whoop_exchange.sh) confirmed this with https://www.whoop.com/ fallback
-redirect_uri = "https://www.whoop.com/"
+redirect_uri = "https://www.whoop.com"  # Drive doc confirmed: registered WITHOUT trailing slash
 
 CF_ACCOUNT_ID = "b57e9af57ab46c52ca9215804e689c29"
 CF_DB_ID      = "f26669de-e772-4b56-a6d1-f8fdea08a4d4"  # wc2026 db — whoop_tokens table
