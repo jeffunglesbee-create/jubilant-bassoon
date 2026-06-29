@@ -9,6 +9,8 @@
 ---
 
 ## DONE CONDITION
+**CONFIDENCE GATE: Do not commit unless score ≥ 95. Report score verbatim if below threshold.**
+
 
 `node smoke.js index.html` passes with 8 new AVV-BSD assertions green.
 `adapter-proof-bsd-soccer` in Feature Registry.
