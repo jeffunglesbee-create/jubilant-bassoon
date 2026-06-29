@@ -13,18 +13,18 @@ jobs:
           python3 -m patchright install chromium
       - name: Run OAuth automation
         env:
-          WHOOP_CLIENT_ID: ${{ secrets.WHOOP_CLIENT_ID }}
+          WHOOP_CLIENT_ID:     ${{ secrets.WHOOP_CLIENT_ID }}
           WHOOP_CLIENT_SECRET: ${{ secrets.WHOOP_CLIENT_SECRET }}
-          WHOOP_REDIRECT_URI: ${{ secrets.WHOOP_REDIRECT_URI }}
-          WHOOP_EMAIL: ${{ secrets.WHOOP_EMAIL }}
-          WHOOP_PASSWORD: ${{ secrets.WHOOP_PASSWORD }}
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GH_REPO: ${{ github.repository }}
+          WHOOP_EMAIL:         ${{ secrets.WHOOP_EMAIL }}
+          WHOOP_PASSWORD:      ${{ secrets.WHOOP_PASSWORD }}
+          GH_TOKEN:            ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO:             ${{ github.repository }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
         run: python3 scripts/whoop_auto_auth.py
       - name: Commit results
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add outbox/whoop-auth-result.json outbox/whoop-auth-*.png -f 2>/dev/null
+          git add outbox/whoop-auth-result.json outbox/whoop-auth-*.png -f 2>/dev/null || true
           git commit -m "whoop: auto-auth result [skip ci]" || echo "Nothing to commit"
           git push || true
