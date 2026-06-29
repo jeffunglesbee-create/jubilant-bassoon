@@ -22,6 +22,8 @@
 ---
 
 ## DONE CONDITION
+**CONFIDENCE GATE: Do not commit unless score ≥ 95. Report score verbatim if below threshold.**
+
 
 Outbox file `outbox/bsd-journalism-proof-2026-06-29.md` committed with:
 - `/bsd/events/live` showing at least 1 live event during execution
