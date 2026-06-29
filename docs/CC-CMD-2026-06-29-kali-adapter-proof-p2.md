@@ -90,6 +90,39 @@ In index.html Feature Registry, add:
 
 ---
 
+## SW_VERSION BUMP
+
+index.html is changing (Feature Registry entry). Check current SW_VERSION
+and bump the patch letter before committing:
+
+```bash
+grep -n "const SW_VERSION" index.html | head -3
+# If SW_VERSION = '2026-06-29c', bump to '2026-06-29d' in both index.html and sw.js
+```
+
+Also add `_kaliProof` to the injected journalism object in `buildAFLJournalismContext`
+(in field-relay-nba src/index.js — relay change required):
+
+```javascript
+// Inside buildAFLJournalismContext, after setting ctx[g.espnEventId].kali:
+ctx[g.espnEventId].kali._kaliProof = {
+    adapterId: 'kali-afl',
+    sourceId:  'kali-aflstats',
+    round:     round,
+    year:      year,
+};
+```
+
+This field lets Phase 3 verify Kali's data reached the browser by reading
+`game.journalism.kali._kaliProof.adapterId` from `allData`.
+Without it, Phase 3 can only use indirect evidence (same render-pipeline
+stripping problem MLB hit with `source` and `_adapterProof`).
+
+Note: `_kaliProof` is added in the relay (field-relay-nba), not in jubilant-bassoon.
+Create a separate relay CC-CMD for this change, then reference it in Phase 3.
+
+---
+
 ## IMPORTANT: AVV-KALI-002 through 007 probe client code
 
 Run probe block first. If `game.journalism` or `homeWinPct` or `kali` do not
@@ -102,12 +135,40 @@ strings that aren't in the file.
 ## COMMIT
 
 ```bash
-git add smoke.js index.html
+git add smoke.js index.html sw.js
 git commit -m "feat(kali): adapter proof Phase 2 — AVV-KALI-001-008 + Feature Registry"
 git push origin main  # 2 attempts max
 ```
 
-Verify: `node smoke.js index.html 2>&1 | grep -E "AVV-KALI|Results:"`
+Verify done condition explicitly:
+```bash
+node smoke.js index.html 2>&1 | grep -E "AVV-KALI|Results:"
+```
+
+Expected:
+```
+  ✅ AVV-KALI-001 — docs/adapter-proof.manifest.json contains kali-afl entry
+  ✅ AVV-KALI-002 — buildAFLJournalismContext defined in relay
+  ✅ AVV-KALI-003 — game.journalism field consumed from relay response
+  ✅ AVV-KALI-004 — Kali factors[] referenced in client
+  ✅ AVV-KALI-005 — Kali source registry entry exists
+  ✅ AVV-KALI-006 — adapter-fixtures-kali-ok.json exists with real data
+  ✅ AVV-KALI-007 — Kali relay route confirmed
+  ✅ AVV-KALI-008 — 'adapter-proof-kali-afl' in Feature Registry
+── Results: NNN passed, 0 failed ──
+```
+
+---
+
+## OUTBOX MANIFEST
+
+| Item | File | Status |
+|------|------|--------|
+| 8 AVV-KALI assertions | smoke.js | ⏳ Edit |
+| Feature Registry entry | index.html | ⏳ Edit |
+| SW_VERSION bump | index.html + sw.js | ⏳ Edit |
+| Smoke verification | — | ⏳ Run |
+| Commit + push | — | ⏳ Run |
 
 ---
 
