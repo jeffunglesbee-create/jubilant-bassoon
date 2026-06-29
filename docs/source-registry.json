@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "generatedAt": "2026-06-28T20:35:00Z",
+  "sources": {
+    "mlb-stats-api-official": {
+      "status": "green",
+      "sourceUrl": "https://statsapi.mlb.com/api/v1",
+      "allowedUses": [
+        "live_state",
+        "schedule",
+        "broadcast_display",
+        "derived_display"
+      ],
+      "rawRedistributionAllowed": false,
+      "commercialUseClass": "public_api_sports",
+      "corsAvailable": true,
+      "authRequired": false,
+      "rateLimitPerHour": 3600,
+      "lastTermsCheckedAt": "2026-06-28",
+      "notes": "MLB official free API. No license. CORS-open."
+    }
+  }
+}
