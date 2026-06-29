@@ -18,23 +18,72 @@
 
 ---
 
-## PREREQUISITE CHECK
+## PREREQUISITE CHECK — Relay probe must have succeeded
 
 ```bash
 # Confirm this is jubilant-bassoon
 basename $(git remote get-url origin)
 # Expected: jubilant-bassoon
-
-# Fetch relay probe data from field-relay-nba
-curl -s "https://api.github.com/repos/jeffunglesbee-create/field-relay-nba/contents/outbox/mlb-probe-raw-2026-06-29.json" \
-  -H "Authorization: token FIELD_PAT_FROM_MEMORY" | \
-  python3 -c "import sys,json,base64; d=json.load(sys.stdin); open('/tmp/mlb-probe-raw.json','wb').write(base64.b64decode(d['content']))"
-
-# Verify file has data
-python3 -c "import json; d=json.load(open('/tmp/mlb-probe-raw.json')); print(f'Games: {d.get(\"gameCount\",0)}')"
 ```
 
-**If file is missing or empty: STOP. Run the relay probe CC-CMD first.**
+```python
+import urllib.request, json, base64, sys
+
+PAT  = "FIELD_PAT_FROM_MEMORY"
+REPO = "jeffunglesbee-create/field-relay-nba"
+
+# Step 1: Check if relay probe output exists
+try:
+    req = urllib.request.Request(
+        f"https://api.github.com/repos/{REPO}/contents/outbox/mlb-probe-raw-2026-06-29.json",
+        headers={"Authorization": f"token {PAT}", "User-Agent": "FIELD/1.0"}
+    )
+    with urllib.request.urlopen(req) as r:
+        data = json.loads(r.read())
+    raw = base64.b64decode(data["content"])
+    probe = json.loads(raw)
+except Exception as e:
+    print(f"⛔ RELAY PROBE NOT FOUND: {e}")
+    print("Run docs/CC-CMD-2026-06-29-mlb-relay-probe.md in field-relay-nba FIRST.")
+    sys.exit(1)
+
+# Step 2: Validate relay probe succeeded — not just that file exists
+checks = {
+    "ok field is True":         probe.get("ok") == True,
+    "HTTP status is 200":       probe.get("statusCode") == 200,
+    "gameCount > 0":            probe.get("gameCount", 0) > 0,
+    "games array not empty":    len(probe.get("games", [])) > 0,
+    "game[0] has teams":        "teams" in (probe.get("games", [{}])[0] if probe.get("games") else {}),
+    "game[0] has linescore":    "linescore" in (probe.get("games", [{}])[0] if probe.get("games") else {}),
+}
+
+print("=== RELAY PROBE VALIDATION ===")
+all_pass = True
+for desc, result in checks.items():
+    status = "✅" if result else "❌"
+    print(f"  {status} {desc}")
+    if not result:
+        all_pass = False
+
+if not all_pass:
+    print("\n⛔ RELAY PROBE DATA IS INVALID OR INCOMPLETE.")
+    print("The relay probe ran but did not return usable MLB Stats API data.")
+    print("Check the relay probe outbox file for error details.")
+    print("Re-run docs/CC-CMD-2026-06-29-mlb-relay-probe.md before continuing.")
+    sys.exit(1)
+
+# Step 3: Save validated data locally
+with open("/tmp/mlb-probe-raw.json", "wb") as f:
+    f.write(raw)
+
+g = probe["games"][0]
+away = g.get("teams",{}).get("away",{}).get("team",{}).get("abbreviation","?")
+home = g.get("teams",{}).get("home",{}).get("team",{}).get("abbreviation","?")
+print(f"\n✅ Relay probe validated: {probe['gameCount']} games, first: {away} @ {home}")
+print("Proceeding to Phase A.")
+```
+
+**If any check fails: STOP. Do not proceed. Fix the relay probe first.**
 
 ---
 
