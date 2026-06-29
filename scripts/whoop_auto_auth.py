@@ -1,4 +1,4 @@
-import os, json, base64, time, requests
+import os, json, base64, time, sys, requests
 from urllib.parse import urlencode, urlparse, parse_qs, quote
 from datetime import datetime, timedelta
 from patchright.sync_api import sync_playwright
@@ -17,6 +17,23 @@ CF_ACCOUNT_ID = "b57e9af57ab46c52ca9215804e689c29"
 CF_DB_ID      = "f26669de-e772-4b56-a6d1-f8fdea08a4d4"
 
 os.makedirs("outbox", exist_ok=True)
+
+# Tee stdout to log file for diagnostic retrieval
+import io
+class TeeWriter:
+    def __init__(self, original, logfile):
+        self.original = original
+        self.logfile = logfile
+    def write(self, data):
+        self.original.write(data)
+        self.logfile.write(data)
+    def flush(self):
+        self.original.flush()
+        self.logfile.flush()
+
+_logfile = open("outbox/whoop-auth-log.txt", "w")
+sys.stdout = TeeWriter(sys.__stdout__, _logfile)
+
 print(f"Client ID: {client_id[:8]}...{client_id[-4:]}")
 print(f"Email: {email[:3]}...@...")
 
@@ -104,6 +121,12 @@ def attempt_oauth(redirect_uri):
                 page.screenshot(path=f"outbox/whoop-auth-err-v{i+1}.png")
                 browser.close()
                 return None
+
+            # PASSED the error check — save diagnostic screenshot
+            page.screenshot(path=f"outbox/whoop-auth-pass-v{i+1}.png")
+            print(f"  OAuth check PASSED — page body length: {len(body_text)}")
+            print(f"  Page body[:200]: {body_text[:200]}")
+            print(f"  Page HTML[:500]: {page.content()[:500]}")
 
             # Fill login form
             print("  Waiting for login form...")
@@ -289,4 +312,7 @@ result["base_redirect_repr"] = repr(base_redirect)
 
 with open("outbox/whoop-auth-result.json", "w") as f:
     json.dump(result, f, indent=2)
+
+# Also save full stdout log to file for diagnostic retrieval
+import sys
 print(f"\nFinal: {result.get('status')}")
