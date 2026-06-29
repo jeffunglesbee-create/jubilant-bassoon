@@ -72,6 +72,55 @@ North Melbourne vs Essendon
 
 ---
 
+## PHASE B2: CI log fetch fallback (if CC cannot reach relay)
+
+If *.workers.dev is blocked from CC egress (same as MLB/BSD pattern),
+use this Python fallback to trigger CI and parse logs:
+
+```python
+import requests, time, zipfile, io
+
+REPO = "jeffunglesbee-create/jubilant-bassoon"
+PAT  = "FIELD_PAT_FROM_MEMORY"
+H    = {"Authorization": f"token {PAT}"}
+
+# Trigger adapter-visible-value.yml
+requests.post(
+    f"https://api.github.com/repos/{REPO}/actions/workflows/adapter-visible-value.yml/dispatches",
+    headers=H, json={"ref": "main"}
+)
+time.sleep(15)
+
+# Poll for completion
+for i in range(45):
+    runs = requests.get(
+        f"https://api.github.com/repos/{REPO}/actions/workflows/adapter-visible-value.yml/runs",
+        headers=H, params={"per_page": 1}
+    ).json()
+    run = runs["workflow_runs"][0]
+    if run["status"] == "completed":
+        break
+    time.sleep(20)
+
+# Fetch and parse logs
+log_resp = requests.get(
+    f"https://api.github.com/repos/{REPO}/actions/runs/{run['id']}/logs",
+    headers=H, allow_redirects=True
+)
+with zipfile.ZipFile(io.BytesIO(log_resp.content)) as zf:
+    for name in zf.namelist():
+        content = zf.read(name).decode("utf-8", errors="replace")
+        if "kali" in content.lower() or "journalism" in content.lower() or "AVV-KALI" in content:
+            for line in content.split("\n"):
+                if any(x in line for x in ["kali", "journalism", "homeWinPct", "factors", "passed", "failed"]):
+                    print(line.strip()[:120])
+
+print(f"Run: {run['html_url']}")
+print(f"Conclusion: {run['conclusion']}")
+```
+
+---
+
 ## PHASE C: Also probe /kali/predictions directly
 
 ```bash
@@ -131,6 +180,21 @@ git add outbox/kali-journalism-proof-2026-06-29.md
 git commit -m "docs(outbox): Kali AFL journalism proof 2026-06-29 — confidence {score}/100 [skip ci]"
 git push origin main  # 2 attempts max
 ```
+
+---
+
+## OUTBOX MANIFEST
+
+| Item | Owner |
+|------|-------|
+| Verify relay deploy (Phase A) | CC |
+| Probe /v2/games?sport=afl&date=2026-06-28 (Phase B) | CC |
+| Probe /kali/predictions?round=16 (Phase C) | CC |
+| Confidence score ≥ 95 gate (Phase C) | CC |
+| Write outbox/kali-journalism-proof-2026-06-29.md | CC |
+| Commit [skip ci] + push (2 attempts max, only if ≥ 95) | CC |
+
+**If score < 95: report score verbatim, state which factor failed, stop. Do not invent results.**
 
 ---
 
