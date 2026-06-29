@@ -1,85 +1,93 @@
 # FIELD HANDOFF
 
-## Session: 2026-06-28 · L1-L5 Bootstrap + MLB Adapter Proof Backfill Phase 1
+## Session: 2026-06-29 · MLB Adapter Proof Phase 2 Setup
 
-**CLIENT HEAD: 536b857**  
+**CLIENT HEAD: 536b857**
 **SW_VERSION: 2026-06-26b**
 
 ---
 
 ## RELAY STATE
 
-**RELAY HEAD SRC: 1cad397 · deployed ✅**  
+**RELAY HEAD SRC: 1cad397 · deployed ✅**
 **CLIENT HEAD: 536b857**
 
 ---
 
-## MLB STATS API ADAPTER PROOF BACKFILL — PHASE 1 COMPLETE
+## MLB ADAPTER PROOF — PHASE 2 STATUS
 
-**Status:** Fixtures + manifest contract created, ready for Phase 2
+### Phase 1 (2026-06-28) ✅ COMPLETE
+Fixtures + manifest contract created and committed.
 
-### Phase 1 Deliverables (This Session)
+### Phase 2 (2026-06-29) ✅ DOCS COMMITTED — CC-CMD READY
 
-✅ **Adapter-to-Visible-Value Proof System spec** (Drive 1SqDH_BpzyoqCJREjPqlB37V05JGAAGe0kZikBfaVyXQ)  
-✅ **Comprehensive backfill plan** (15-section implementation guide)  
-✅ **Fixture set (3 JSON files)**
-   - `mlb-stats-api.ok.json` — 2 games (NYY-BAL live 3-2, LAD-SFG pregame)
-   - `mlb-stats-api.empty.json` — zero games
-   - `mlb-stats-api.malformed.json` — corrupted data
+**Commits on main (all [skip ci]):**
+- `be7cc816` — CC-CMD-2026-06-29-mlb-adapter-proof-phase2.md
+- `038d981d` — docs/adapter-proof.manifest.json
+- `52655e85` — docs/source-registry.json
+- `1967e36c` — docs/adapter-fixtures-mlb-ok.json
+- `20d96f18` — docs/adapter-fixtures-mlb-empty.json
+- `eed2b2fb` — docs/adapter-fixtures-mlb-malformed.json
 
-✅ **Adapter proof manifest** (docs/adapter-proof.manifest.json)
-   - 14 required normalized fields
-   - 4 visible surfaces (card score, broadcast chips, game state, health row)
-   - 2 fallback surfaces (ESPN)
-   - Proof mode: required
+**HEAD after Phase 2 doc push: `eed2b2fb`**
 
-✅ **Source registry** (docs/source-registry.json)
-   - Source ID: mlb-stats-api-official
-   - Status: GREEN
-   - Commercial class: public_api_sports
-   - CORS: true, Auth: false
+### Phase 2 CC-CMD awaits CC execution
 
-✅ **Normalizer test spec** (8 assertions: ok, empty, malformed, fields, proof, broadcast)  
-✅ **Playwright proof spec** (5 test scenarios: score render, chips, health, fallback, crash)  
-✅ **CI gate rules** (11 merge-blocking conditions)  
-✅ **Feature Registry smoke assertions** (AVV-MLB-001 through 008)  
-✅ **CC-CMD handoff document** (Phase 1→2 execution plan)
+**File:** `docs/CC-CMD-2026-06-29-mlb-adapter-proof-phase2.md`
 
-### Phase 2 Tasks (Next Session)
+**CC one-liner:**
+```
+Read docs/CC-CMD-2026-06-29-mlb-adapter-proof-phase2.md and execute all steps. Run probe block first, then add AVV-MLB-001 through 008 smoke assertions to smoke.js, add 'adapter-proof-mlb-stats-api' to Feature Registry in index.html, add _adapterProof field to normalizeMLBGame return, run node smoke.js index.html to verify all 8 new assertions pass with exit 0, then commit and push.
+```
 
-⏳ **Normalizer tests:** tests/adapters/mlb-stats-api.normalizer.test.js  
-⏳ **Playwright proof:** tests/browser/adapter-visible-value.spec.ts  
-⏳ **DOM proof attributes:** data-proof, data-health-source markup  
-⏳ **CI gate workflow:** .github/workflows/adapter-visible-value.yml  
-⏳ **Feature Registry entry:** 'adapter-proof-mlb-stats-api': '2026-06-28'  
+**Done condition:** `node smoke.js index.html 2>&1 | grep -E "AVV-MLB|Results:"` shows 8 ✅ and 0 failed.
 
-**Definition of Done (Phase 2):** CI summary shows MLB Stats API as PASSED, all 8 smoke assertions green.
+### Phase 3 (Not yet started)
+- Proof mode query params (`?proofAdapter=`, `?fixture=`)
+- `window.__FIELD_PROOF__` object
+- `data-proof` DOM attributes on MLB cards
+- Playwright test: `tests/browser/adapter-visible-value.spec.ts`
+- CI merge-blocking gate: `.github/workflows/adapter-visible-value.yml`
+- Health heartbeat KV write
+
+---
+
+## WHAT THE PHASE 2 CC-CMD DOES
+
+1. **Probe** — confirms normalizeMLBGame fields, card selectors, smoke count
+2. **docs/adapter-proof.manifest.json** — already committed ✅
+3. **docs/source-registry.json** — already committed ✅
+4. **smoke.js** — adds 8 AVV-MLB assertions (structural proof layer)
+5. **index.html Feature Registry** — adds `'adapter-proof-mlb-stats-api': '2026-06-29'`
+6. **index.html normalizeMLBGame** — adds `_adapterProof` field to return object
+7. **Verifies** all 8 new assertions pass
+8. **Commits + pushes** index.html + smoke.js
 
 ---
 
 ## PRIORITY LIST
 
-### ⏰ CRITICAL
-1. **API-Sports Football Pro renewal — JUNE 29** ⚠️ 4 days remaining — verify cancelled/no auto-renew
-2. **WC26 R32 stub reconciliation** — wrong pairings in wc26Raw
+### 🔧 MLB ADAPTER PROOF
+1. **Phase 2:** Execute CC-CMD (docs committed, CC-CMD ready) ← NEXT
+2. **Phase 3:** Playwright + proof mode + CI gate (after Phase 2 verified)
 
-### 🔧 MLB ADAPTER PROOF (NEW)
-3. **Phase 1:** ✅ Fixtures + manifest created (this session)
-4. **Phase 2:** Normalizer + Playwright tests (next session, est. 2-3 hours)
+### ⏰ CRITICAL
+3. **API-Sports Football Pro renewal — JUNE 29** ⚠️ TODAY — verify cancelled
+4. **WC26 R32 stub reconciliation** — wrong pairings in wc26Raw
 
 ### 🔧 QUEUED CC-CMDs
 5. Relay: /journalism/game-lines (docs/CC-CMD-2026-06-27-relay-game-lines.md)
-6. Client: card brief line (docs/CC-CMD-2026-06-27-client-card-brief-line.md) — depends on #5
+6. Client: card brief line (docs/CC-CMD-2026-06-27-client-card-brief-line.md)
 
 ### 🔨 INFRASTRUCTURE
 7. Bosnia DB fix + identity-resolver CANONICAL map
-8. team_form CONTEXT_SOURCE (Drive spec v3 ready)
+8. team_form CONTEXT_SOURCE
 9. Golf orchestrator probe (add orchestrator.pgatour.com to egress first)
 
 ### 📉 QUALITY
-10. game_recap degraded (4x in session_health)
+10. game_recap degraded (4x)
 11. night_owl degraded (2x)
-12. Smoke regression 724→663 (filesystem-dependent assertions in MCP vs CI)
+12. Smoke regression 724→663
 
 ### 📋 OPEN INCIDENTS
 13. Odds Story Materializer CC-CMD — unexecuted
@@ -88,29 +96,11 @@
 16. KV editorial keys not consulted by newspaper
 17. NFL SPORT_TO_V2 — September 9 deadline
 
-### 🏗️ PRODUCT BACKLOG
-18. Lacuna Item 1 Phase 1A: BriefContextProfile
-19. Lacuna Item 4: Card Face Contract
-20. Golf Path 3 (GIS-anchored via OpenGolfAPI) — Week 1
-21. Golf Path 1 (broadcast OCR) — Week 2-3
-22. Golf Path 2 (YOLOv8 Golf-Ball-Broadcast-Model) — Week 4+
-
 ---
 
-## NEXT ADAPTER TARGETS (Priority Order)
+## NEXT ADAPTER TARGETS (after MLB Phase 2+3)
 
-After MLB Stats API Phase 2 completes:
-
-1. ✅ **NBA CDN** — Current live source, clean fields
-2. ✅ **NHLE** — Official live source, clear score/state
-3. 🔄 **MLB Stats API** — In progress (Phase 2 next session)
-4. ⏳ **Squiggle AFL / Kali AFL** — Full seasons available
-5. ⏳ **BSD soccer** — WC2026 provider
-6. ⏳ **Odds API** — Betting intelligence
-7. ⏳ **Open-Meteo** — Weather context
-8. ⏳ **SlashGolf / OpenGolfAPI** — Golf scoring
-9. ⏳ **NFLverse / nflfastR** — NFL play-by-play
-10. ⏳ **MoneyPuck / Cricsheet / OpenF1** — Niche sports
+Backfill order: NBA CDN → NHLE → MLB (in progress) → Squiggle AFL → Kali AFL → BSD Soccer → Odds API → Open-Meteo → SlashGolf → OpenGolfAPI → NFLverse → MoneyPuck → Cricsheet → OpenF1
 
 ---
 
@@ -120,19 +110,6 @@ After MLB Stats API Phase 2 completes:
 - WC2026_DB: f26669de-e772-4b56-a6d1-f8fdea08a4d4
 - Relay: field-relay-nba.jeffunglesbee.workers.dev
 - CF account: b57e9af57ab46c52ca9215804e689c29
+- Repo: jeffunglesbee-create/jubilant-bassoon
 
----
-
-## FILES TO COMMIT (PENDING)
-
-Ready to push to jubilant-bassoon:
-- docs/adapter-proof.manifest.json ← Proof contract for MLB
-- docs/source-registry.json ← Source rights gate
-- tests/fixtures/adapters/mlb-stats-api.ok.json
-- tests/fixtures/adapters/mlb-stats-api.empty.json
-- tests/fixtures/adapters/mlb-stats-api.malformed.json
-- docs/CC-CMD-2026-06-28-mlb-adapter-proof.md ← Phase 2 handoff
-
----
-
-SESSION END: RELAY 1cad397 · CLIENT 536b857 · 2026-06-28 · MLB Phase 1 ✅ · via chat
+SESSION END: RELAY 1cad397 · CLIENT 536b857 · 2026-06-29 · MLB Phase 2 docs ✅ · via chat
