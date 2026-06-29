@@ -39,6 +39,11 @@ test('AVV-PW-001 — ok fixture: score line renders on MLB game card', async ({ 
   // Verify data-proof-adapter attribute on at least one card
   const proofCard = page.locator('[data-proof-adapter="mlb-stats-api"]');
   await expect(proofCard.first(), 'No card has data-proof-adapter attribute').toBeAttached({ timeout: 5000 });
+
+  // Report actual values
+  const cardText = await page.locator('.game-card').first().textContent();
+  console.log('[AVV-PW-001] First card text:', cardText?.trim().slice(0, 120));
+  console.log('[AVV-PW-001] __FIELD_PROOF__:', JSON.stringify(proof, null, 2));
 });
 
 // ── AVV-PW-002: Broadcast chips visible on MLB cards ────────────────────────
@@ -54,6 +59,9 @@ test('AVV-PW-002 — ok fixture: broadcast chips visible on MLB cards', async ({
   const chips = page.locator('.stream-chip');
   const chipCount = await chips.count();
   expect(chipCount, 'No broadcast chips rendered — adapter data not reaching card').toBeGreaterThan(0);
+
+  const chipTexts = await chips.allTextContents();
+  console.log('[AVV-PW-002] Broadcast chips found:', chipTexts);
 });
 
 // ── AVV-PW-003: window.__FIELD_PROOF__ populated with adapter data ────────
@@ -77,6 +85,8 @@ test('AVV-PW-003 — ok fixture: window.__FIELD_PROOF__ populated', async ({ pag
     expect(obj._adapterProof, `_adapterProof missing on ${obj.homeTeam}`).toBeTruthy();
     expect(obj._adapterProof.adapterId).toBe('mlb-stats-api');
   }
+
+  console.log('[AVV-PW-003] normalizedObjects:', JSON.stringify(proof.normalizedObjects, null, 2));
 });
 
 // ── AVV-PW-004: Empty fixture renders without crash ──────────────────────────
@@ -98,6 +108,8 @@ test('AVV-PW-004 — empty fixture: renders without crash', async ({ page }) => 
   const proof = await page.evaluate(() => window.__FIELD_PROOF__);
   expect(proof, '__FIELD_PROOF__ missing on empty fixture').toBeTruthy();
   expect(proof.normalizedObjects).toHaveLength(0);
+
+  console.log('[AVV-PW-004] proof.normalizedObjects.length:', proof?.normalizedObjects?.length);
 });
 
 // ── AVV-PW-005: Malformed fixture does not crash ─────────────────────────────
@@ -115,4 +127,6 @@ test('AVV-PW-005 — malformed fixture: no window._fieldErrors', async ({ page }
   // Verify the page is still functional (title present, no white screen)
   const title = await page.title();
   expect(title, 'Page title missing — white screen crash?').toContain('FIELD');
+
+  console.log('[AVV-PW-005] title:', title, '| crashes:', crashes.length);
 });
