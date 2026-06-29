@@ -203,6 +203,17 @@ cat docs/source-registry.json
 
 ---
 
+## OUTBOX MANIFEST
+
+| Item | File | Status |
+|------|------|--------|
+| Adapter manifest | docs/adapter-proof.manifest.json | ⏳ Edit |
+| Source registry | docs/source-registry.json | ⏳ Edit |
+| ok fixture | docs/adapter-fixtures-kali-ok.json | ⏳ Create |
+| empty fixture | docs/adapter-fixtures-kali-empty.json | ⏳ Create |
+| malformed fixture | docs/adapter-fixtures-kali-malformed.json | ⏳ Create |
+| Commit + push | — | ⏳ Run |
+
 ## COMMIT
 
 ```bash
