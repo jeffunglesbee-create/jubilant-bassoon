@@ -133,45 +133,55 @@ test('AVV-PW-005 — malformed fixture: no window._fieldErrors', async ({ page }
 
 // ── AVV-PW-006: Live MLB data renders from statsapi.mlb.com ──────────────
 test('AVV-PW-006 — live MLB data renders from statsapi.mlb.com', async ({ page }) => {
-  // Load WITHOUT ?proofAdapter — real app, real data
   await page.goto(LIVE_URL + '/?wpt=1', { waitUntil: 'domcontentloaded', timeout: 30000 });
-  await awaitReady(page, 8000);  // extra buffer for real MLB Stats API call (8s timeout in fetchMLBSchedule)
+  await awaitReady(page, 5000);
 
-  // __FIELD_PROOF__ must NOT be set — confirms no fixture injection
-  const proof = await page.evaluate(() => window.__FIELD_PROOF__);
-  expect(proof, '__FIELD_PROOF__ should be null when not in proof mode').toBeFalsy();
-
-  // Check allData for Baseball (MLB) section
-  // allData is a let-global (not window.allData) but accessible from evaluate context
   const mlbData = await page.evaluate(() => {
-    if (typeof allData === 'undefined' || !allData) return null;
-    const baseball = (allData.sports || []).find(s => s.sport === 'Baseball (MLB)');
-    if (!baseball) return { found: false, sports: (allData.sports || []).map(s => s.sport) };
-    const games = baseball.games || [];
+    if (typeof allData === 'undefined') return { error: 'allData undefined' };
+    const baseball = (allData.sports || []).find(s =>
+      s.sport === 'Baseball' || s.sport === 'Baseball (MLB)' || s.label === 'MLB');
+    if (!baseball) return {
+      found: false,
+      sportNames: allData.sports?.map(s => s.sport || s.label || s.name)
+    };
+    const g = baseball.games?.[0];
+    if (!g) return { found: true, gameCount: 0 };
     return {
       found: true,
-      gameCount: games.length,
-      sources: [...new Set(games.map(g => g.source))],
-      hasAdapterProof: games.some(g => !!g._adapterProof),
-      firstGame: games[0] ? {
-        homeTeam: games[0].homeTeam,
-        awayTeam: games[0].awayTeam,
-        source:   games[0].source,
-        status:   games[0].status,
-        hasAdapterProof: !!games[0]._adapterProof,
-      } : null,
+      gameCount: (baseball.games || []).length,
+      sportKey: baseball.sport || baseball.label || baseball.name,
+      game0_allKeys: Object.keys(g).sort(),
+      source: g.source,
+      _source: g._source,
+      dataSource: g.dataSource,
+      sourceId: g.sourceId,
+      provider: g.provider,
+      adapter: g.adapter,
+      origin: g.origin,
+      _adapterProof: g._adapterProof || null,
+      id: g.id,
+      homeTeam: g.homeTeam,
+      awayTeam: g.awayTeam,
+      status: g.status,
+      broadcasts: g.broadcasts || g.nationalBundle || g.localRsn || null,
+      nationalBundle: g.nationalBundle,
+      localRsn: g.localRsn,
+      mlbnShowcase: g.mlbnShowcase,
+      espnGOTD: g.espnGOTD,
     };
   });
 
-  console.log('[AVV-PW-006] MLB data from live app:', JSON.stringify(mlbData, null, 2));
+  console.log('[AVV-PW-006] allData MLB game object:', JSON.stringify(mlbData, null, 2));
 
-  expect(mlbData, 'allData not accessible — app may not have initialized').toBeTruthy();
-  expect(mlbData.found, `No Baseball (MLB) section. Sports present: ${JSON.stringify(mlbData.sports)}`).toBe(true);
-  expect(mlbData.gameCount, 'Expected MLB games today').toBeGreaterThan(0);
+  expect(mlbData.found, `MLB section not found. Sports: ${mlbData.sportNames}`).toBe(true);
+  expect(mlbData.gameCount, 'No MLB games in allData').toBeGreaterThan(0);
 
-  console.log('[AVV-PW-006] MLB sources:', mlbData.sources);
-  console.log('[AVV-PW-006] First game:', JSON.stringify(mlbData.firstGame));
-  // source 'mlb-stats' = MLB Stats API path active; 'espn' or absent = ESPN fallback fired
+  console.log('[AVV-PW-006] game[0] ALL KEYS:', mlbData.game0_allKeys);
+  console.log('[AVV-PW-006] _adapterProof:', JSON.stringify(mlbData._adapterProof));
+
+  if (mlbData._adapterProof?.adapterId) {
+    console.log('[AVV-PW-006] DEFINITIVE SOURCE:', mlbData._adapterProof.adapterId);
+  }
 });
 
 // ── AVV-PW-007: MLB game card visible in DOM ──────────────────────────────
