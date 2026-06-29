@@ -1,0 +1,79 @@
+Client ID: a4c9151b...5bfc
+Email: jef...@...
+Will try 6 redirect_uri variants: ['https://field-relay-nba.jeffunglesbee.workers.dev/whoop/callback', 'https://field-relay-nba.jeffunglesbee.workers.dev/whoop/callback/', 'https://www.whoop.com', 'https://www.whoop.com/', 'https://whoop.com', 'https://whoop.com/']
+Base redirect raw bytes: 68747470733a2f2f6669656c642d72656c61792d6e62612e6a656666756e676c65736265652e776f726b6572732e6465762f77686f6f702f63616c6c6261636b
+Base redirect repr: 'https://field-relay-nba.jeffunglesbee.workers.dev/whoop/callback'
+
+=== Variant 1/6: https://field-relay-nba.jeffunglesbee.workers.dev/whoop/callback ===
+  Loading OAuth page...
+  AUTH URL: https://api.prod.whoop.com/oauth/oauth2/auth?response_type=code&client_id=a4c9151b-0a51-461c-808a-120fe5735bfc&redirect_uri=https%3A%2F%2Ffield-relay-nba.jeffunglesbee.workers.dev%2Fwhoop%2Fcallback&s
+  redirect_uri param value: [https://field-relay-nba.jeffunglesbee.workers.dev/whoop/callback]
+  redirect_uri encoded: [https%3A%2F%2Ffield-relay-nba.jeffunglesbee.workers.dev%2Fwhoop%2Fcallback]
+  Landed on: https://id.whoop.com/us/en/sign-in/?login_challenge=f33ef10e62e647ab9bfd220820d7203d
+  OAuth check PASSED — page body length: 103
+  Page body[:200]: Application error: a client-side exception has occurred (see the browser console for more information).
+  Page HTML[:500]: <!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="stylesheet" href="/_next/static/css/c8f69a5b5f466268.css" data-precedence="next"><link rel="preload" as="script" fetchpriority="low" href="/_next/static/chunks/webpack-9586ecd37a9cc1d9.js"><script src="/_next/static/chunks/1149cdbb-e9695b307ee07227.js" async=""></script><script src="/_next/static/chunks/670-6b431b1a9e597304.js" async=""></script><script src="/
+  Waiting for login form...
+  FAIL: no email field
+
+=== Variant 2/6: https://field-relay-nba.jeffunglesbee.workers.dev/whoop/callback/ ===
+  Loading OAuth page...
+  AUTH URL: https://api.prod.whoop.com/oauth/oauth2/auth?response_type=code&client_id=a4c9151b-0a51-461c-808a-120fe5735bfc&redirect_uri=https%3A%2F%2Ffield-relay-nba.jeffunglesbee.workers.dev%2Fwhoop%2Fcallback%2
+  redirect_uri param value: [https://field-relay-nba.jeffunglesbee.workers.dev/whoop/callback/]
+  redirect_uri encoded: [https%3A%2F%2Ffield-relay-nba.jeffunglesbee.workers.dev%2Fwhoop%2Fcallback%2F]
+  Landed on: https://api.prod.whoop.com/oauth/oauth2/fallbacks/error?error=invalid_request&error_description=The+request+is+missing+a+required+parameter%2C+includes+an+invalid+parameter+value%2C+includes+a+paramet
+  OAuth error page — URI rejected
+  Error detail: The OAuth2 request resulted in an error.
+Error: invalid_request
+Description: The request is missing a required parameter, includes an invalid parameter value, includes a parameter more than once, or is otherwise malformed
+Hint: The "redirect_uri" parameter does not match any of the OAuth 2.0 Client'
+
+=== Variant 3/6: https://www.whoop.com ===
+  Loading OAuth page...
+  AUTH URL: https://api.prod.whoop.com/oauth/oauth2/auth?response_type=code&client_id=a4c9151b-0a51-461c-808a-120fe5735bfc&redirect_uri=https%3A%2F%2Fwww.whoop.com&scope=read%3Arecovery%20read%3Acycles%20read%3As
+  redirect_uri param value: [https://www.whoop.com]
+  redirect_uri encoded: [https%3A%2F%2Fwww.whoop.com]
+  Landed on: https://api.prod.whoop.com/oauth/oauth2/fallbacks/error?error=invalid_request&error_description=The+request+is+missing+a+required+parameter%2C+includes+an+invalid+parameter+value%2C+includes+a+paramet
+  OAuth error page — URI rejected
+  Error detail: The OAuth2 request resulted in an error.
+Error: invalid_request
+Description: The request is missing a required parameter, includes an invalid parameter value, includes a parameter more than once, or is otherwise malformed
+Hint: The "redirect_uri" parameter does not match any of the OAuth 2.0 Client'
+
+=== Variant 4/6: https://www.whoop.com/ ===
+  Loading OAuth page...
+  AUTH URL: https://api.prod.whoop.com/oauth/oauth2/auth?response_type=code&client_id=a4c9151b-0a51-461c-808a-120fe5735bfc&redirect_uri=https%3A%2F%2Fwww.whoop.com%2F&scope=read%3Arecovery%20read%3Acycles%20read%
+  redirect_uri param value: [https://www.whoop.com/]
+  redirect_uri encoded: [https%3A%2F%2Fwww.whoop.com%2F]
+  Landed on: https://api.prod.whoop.com/oauth/oauth2/fallbacks/error?error=invalid_request&error_description=The+request+is+missing+a+required+parameter%2C+includes+an+invalid+parameter+value%2C+includes+a+paramet
+  OAuth error page — URI rejected
+  Error detail: The OAuth2 request resulted in an error.
+Error: invalid_request
+Description: The request is missing a required parameter, includes an invalid parameter value, includes a parameter more than once, or is otherwise malformed
+Hint: The "redirect_uri" parameter does not match any of the OAuth 2.0 Client'
+
+=== Variant 5/6: https://whoop.com ===
+  Loading OAuth page...
+  AUTH URL: https://api.prod.whoop.com/oauth/oauth2/auth?response_type=code&client_id=a4c9151b-0a51-461c-808a-120fe5735bfc&redirect_uri=https%3A%2F%2Fwhoop.com&scope=read%3Arecovery%20read%3Acycles%20read%3Asleep
+  redirect_uri param value: [https://whoop.com]
+  redirect_uri encoded: [https%3A%2F%2Fwhoop.com]
+  Landed on: https://api.prod.whoop.com/oauth/oauth2/fallbacks/error?error=invalid_request&error_description=The+request+is+missing+a+required+parameter%2C+includes+an+invalid+parameter+value%2C+includes+a+paramet
+  OAuth error page — URI rejected
+  Error detail: The OAuth2 request resulted in an error.
+Error: invalid_request
+Description: The request is missing a required parameter, includes an invalid parameter value, includes a parameter more than once, or is otherwise malformed
+Hint: The "redirect_uri" parameter does not match any of the OAuth 2.0 Client'
+
+=== Variant 6/6: https://whoop.com/ ===
+  Loading OAuth page...
+  AUTH URL: https://api.prod.whoop.com/oauth/oauth2/auth?response_type=code&client_id=a4c9151b-0a51-461c-808a-120fe5735bfc&redirect_uri=https%3A%2F%2Fwhoop.com%2F&scope=read%3Arecovery%20read%3Acycles%20read%3Asl
+  redirect_uri param value: [https://whoop.com/]
+  redirect_uri encoded: [https%3A%2F%2Fwhoop.com%2F]
+  Landed on: https://api.prod.whoop.com/oauth/oauth2/fallbacks/error?error=invalid_request&error_description=The+request+is+missing+a+required+parameter%2C+includes+an+invalid+parameter+value%2C+includes+a+paramet
+  OAuth error page — URI rejected
+  Error detail: The OAuth2 request resulted in an error.
+Error: invalid_request
+Description: The request is missing a required parameter, includes an invalid parameter value, includes a parameter more than once, or is otherwise malformed
+Hint: The "redirect_uri" parameter does not match any of the OAuth 2.0 Client'
+
+Final: all_variants_failed
