@@ -1,80 +1,70 @@
 # FIELD HANDOFF
 
-## Session: 2026-06-29 · MLB Stats API — FULLY CONFIRMED
+## Session: 2026-06-29 · MLB Schedule Simplification — COMPLETE
 
-**CLIENT HEAD: 4eb5c65**
-**SW_VERSION: 2026-06-29a**
-
----
-
-## MLB STATS API — DEFINITIVE PROOF COMPLETE ✅
-
-```
-[AVV-PW-006] DEFINITIVE SOURCE: mlb-stats
-```
-
-**Smoke:** 776/0
-**CI Playwright:** 7/7 passed (run 28384125710)
-**Confidence:** 100/100
-
-### What was proven today (full chain)
-
-1. **R1** — MLB Stats API returns HTTP 200, 13 games, real broadcast/linescore data
-2. **R2** — 12/15 endpoints return 200; 3 require live/final game state
-3. **R3** — 14/15 confirmed with completed gamePk; game_decisions deprecated (use GUMBO liveData.decisions)
-4. **C1** — normalizeMLBGame reads 19 fields, all present in real API; `d→date` bug fixed
-5. **C2** — 6/15 endpoints CONSUMED by client; 9/15 not referenced (backlog)
-6. **C3** — `_adapterProof` doesn't survive render pipeline; card schema has 18 keys, none are source
-7. **C4** — `_dataSource: game.source || null` added to card schema + `window._mlbDataReady` sentinel
-8. **CI** — `[AVV-PW-006] DEFINITIVE SOURCE: mlb-stats` confirmed from live production app
-
-### Key architectural finding
-
-The render pipeline strips `source` and `_adapterProof` from normalized game objects.
-Proof mode tests (AVV-PW-001/003) read `window.__FIELD_PROOF__.normalizedObjects` which
-is pre-transformation, so they see `_adapterProof`. The live path did not — until the
-`_dataSource` fix. This gap applies to ALL adapters, not just MLB.
-
-### Commits today
-
-- `186b4c1` — Phase 2: AVV-MLB-001–008 smoke assertions + Feature Registry
-- `8636978` (bd9bb2f) — Phase 3: proof mode + Playwright 5/5
-- `39e35ef` — package-lock.json regenerated (npm ci fix)
-- `005d740` — C1: fetchMLBSchedule d→date bug + real fixture
-- `17c1075` — _dataSource carry + _mlbDataReady sentinel
-- `4eb5c65` — FINAL confirmation report (100/100)
+**CLIENT HEAD: 78c5fd49**
+**SW_VERSION: 2026-06-29b**
 
 ---
 
-## NEXT: MLB Render Pipeline Audit
+## MLB STATS API — FULL SESSION SUMMARY
 
-CC-CMD ready: `docs/CC-CMD-2026-06-29-mlb-render-audit.md`
+### Proven today (8 CC-CMD sessions, all ≥ 85/100 confidence)
 
-Analysis only — reads parseBroadcasts, MLB_TEAM_RSN, Peacock logic, standings,
-and maps card fields to sources. Identifies where MLB Stats API fields can
-replace manual logic. Output is a Drive doc.
+| # | What | Confidence | Key result |
+|---|------|-----------|------------|
+| R1 | Schedule probe | 100/100 | 13 games, broadcast fields |
+| R2 | Full endpoint (15) | 100/100 | 12 OK, 3 pre-game |
+| R3 | Complete (final gamePk) | 80/100 | game_decisions deprecated |
+| C1 | Source verify | 100/100 | 19/19 fields, d→date bug fixed |
+| C2 | Client audit | 85/100 | 6/15 consumed, 9 not referenced |
+| C3 | Source confirm | 100/100 | DEFINITIVE SOURCE: mlb-stats |
+| C4 | _dataSource carry | 100/100 | 776/0, proof system gap closed |
+| C5 | Render audit | 100/100 | 19/19 mapped, 5 opportunities |
+| C6 | Fetch path audit | — | 4 DIRECT, 3 RELAY |
+| C7 | Simplification | 100/100 | 779/0, 3 layers shipped |
+
+### Simplification shipped (bc5ce18)
+
+- parseBroadcasts: `b.isNational` + `apiRsnName` from `b.homeAway` + `freeGame`
+- normalizeMLBGame: `isPlayoff` from `gameType`, `startTimeTBD`, `freeGame`, `availableForStreaming`
+- fetchMLBStandingsParsed: `magicNumber` + `clinchIndicator` + `eliminationNumber`
+- MLB_TEAM_RSN demoted to fallback
+- 3 new smoke assertions (MLB-SIMP-001/002/003)
+
+### CC deviations from spec (correct decisions)
+
+- `isPlayoff` re-derive sites NOT removed — multi-sport functions (NHL/NBA/etc), not MLB-only
+- `apiRsnName` returned from parseBroadcasts, consumed in normalizeMLBGame (homeAbbr scope)
+
+### Dropbox backup
+
+`index-2026-06-29-mlb-simplify.html` uploaded to Dropbox (run 28387754085, success)
+
+---
+
+## SMOKE: 779/0
 
 ---
 
 ## PRIORITY LIST
 
-### 🔧 MLB
-1. ✅ Source confirmed (mlb-stats, 100/100)
-2. ⏳ Render pipeline audit (simplification opportunities)
-
 ### 🔧 QUEUED CC-CMDs
-3. Relay: /journalism/game-lines
-4. Client: card brief line
+1. Relay: /journalism/game-lines
+2. Client: card brief line
 
 ### 🔨 INFRASTRUCTURE
-5. Bosnia DB fix + identity-resolver CANONICAL map
-6. team_form CONTEXT_SOURCE v3
-7. Golf: wire Broadie proxy (Tier 1, $0)
+3. Bosnia DB fix + identity-resolver CANONICAL map
+4. team_form CONTEXT_SOURCE v3
+5. Golf: wire Broadie proxy (Tier 1, $0)
 
 ### 📋 OPEN INCIDENTS
-8. wentToOT hardcoded false
-9. KV editorial keys not consulted
-10. NFL SPORT_TO_V2 — September 9
+6. wentToOT hardcoded false
+7. KV editorial keys not consulted
+8. NFL SPORT_TO_V2 — September 9
+
+### 🏗️ NEXT ADAPTER BACKFILL
+NBA CDN → NHLE → Squiggle AFL → ...
 
 ---
 
@@ -85,4 +75,4 @@ replace manual logic. Output is a Drive doc.
 - CF account: b57e9af57ab46c52ca9215804e689c29
 - Repo: jeffunglesbee-create/jubilant-bassoon
 
-SESSION END: RELAY 1cad397 · CLIENT 4eb5c65 · 2026-06-29 · MLB CONFIRMED mlb-stats 100/100 · via chat
+SESSION END: RELAY 1cad397 · CLIENT 78c5fd49 · 2026-06-29 · MLB SIMPLIFICATION ✅ 779/0 · via chat
