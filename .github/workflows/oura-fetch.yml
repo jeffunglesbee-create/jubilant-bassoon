@@ -1,5 +1,7 @@
 name: Oura Fetch
 on:
+  schedule:
+    - cron: '0 9 * * *'
   push:
     paths:
       - 'outbox/.trigger-oura'
@@ -22,7 +24,6 @@ jobs:
         run: |
           DAYS="${{ github.event.inputs.days || '7' }}"
           
-          # Also check trigger file for days param
           if [ -f outbox/.trigger-oura ]; then
             FILE_DAYS=$(grep -oP 'days=\K\d+' outbox/.trigger-oura 2>/dev/null || echo "")
             [ -n "$FILE_DAYS" ] && DAYS="$FILE_DAYS"
@@ -30,20 +31,10 @@ jobs:
           
           START=$(date -d "-${DAYS} days" +%Y-%m-%d)
           END=$(date -d "+1 day" +%Y-%m-%d)
-          
           echo "Fetching $DAYS days: $START to $END"
-          
           mkdir -p outbox
           
-          ENDPOINTS=(
-            "daily_readiness"
-            "daily_sleep"
-            "daily_spo2"
-            "daily_activity"
-            "daily_stress"
-            "heartrate"
-            "personal_info"
-          )
+          ENDPOINTS=(daily_readiness daily_sleep daily_spo2 daily_activity daily_stress heartrate personal_info)
           
           echo "{" > outbox/oura-data.json
           echo "  \"fetched_at\": \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"," >> outbox/oura-data.json
@@ -57,29 +48,19 @@ jobs:
             else
               URL="https://api.ouraring.com/v2/usercollection/${EP}?start_date=${START}&end_date=${END}"
             fi
-            
-            RESPONSE=$(curl -s -w "\n%{http_code}" \
-              -H "Authorization: Bearer ${OURA_TOKEN}" \
-              "$URL")
-            
+            RESPONSE=$(curl -s -w "\n%{http_code}" -H "Authorization: Bearer ${OURA_TOKEN}" "$URL")
             HTTP_CODE=$(echo "$RESPONSE" | tail -1)
             BODY=$(echo "$RESPONSE" | sed '$d')
-            
             if [ "$FIRST" = true ]; then
               FIRST=false
             else
               echo "," >> outbox/oura-data.json
             fi
-            
             echo "  \"${EP}\": {\"status\": ${HTTP_CODE}, \"data\": ${BODY:-null}}" >> outbox/oura-data.json
             echo "  $EP: HTTP $HTTP_CODE"
           done
-          
           echo "" >> outbox/oura-data.json
           echo "}" >> outbox/oura-data.json
-          
-          echo ""
-          echo "=== Result ==="
           wc -c outbox/oura-data.json
 
       - name: Commit results
