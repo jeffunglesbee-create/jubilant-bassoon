@@ -24,6 +24,8 @@ journalism briefs + the WP chip, not a score line.
 ---
 
 ## DONE CONDITION
+**CONFIDENCE GATE: Do not commit unless score ≥ 95. Report score verbatim if below threshold.**
+
 
 Files committed to jubilant-bassoon:
 - `docs/adapter-proof.manifest.json` — BSD entry added alongside MLB
