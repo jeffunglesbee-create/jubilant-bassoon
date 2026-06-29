@@ -90,6 +90,28 @@ assert("AVV-MLB-008 — 'adapter-proof-mlb-stats-api' in Feature Registry",
   html.includes("'adapter-proof-mlb-stats-api'"),
   'Feature Registry must contain adapter-proof-mlb-stats-api entry per Rule: every FIELD_FEATURES entry has a smoke assertion');
 
+// ── MLB Adapter Proof — Phase 3 (AVV-PW — 2026-06-29) ───────────────────────
+
+assert('AVV-PW-INFRA-1 — _proofMode const declared in index.html',
+  html.includes('_proofMode') && html.includes('proofAdapter'),
+  'Proof mode query param handling must be present in index.html');
+
+assert('AVV-PW-INFRA-2 — _MLB_PROOF_FIXTURES object defined',
+  html.includes('_MLB_PROOF_FIXTURES'),
+  'Inline fixture object must be in index.html — fixtures are not served at runtime');
+
+assert('AVV-PW-INFRA-3 — window.__FIELD_PROOF__ set in proof mode',
+  html.includes('__FIELD_PROOF__'),
+  'window.__FIELD_PROOF__ must be exposed in proof mode for Playwright to read');
+
+assert('AVV-PW-INFRA-4 — data-proof-adapter emitted on game card HTML',
+  html.includes('data-proof-adapter'),
+  'game card outer div must emit data-proof-adapter attribute when _adapterProof present');
+
+assert('AVV-PW-INFRA-5 — adapter-visible-value.spec.js exists',
+  require('fs').existsSync('./tests/adapter-visible-value.spec.js'),
+  'Playwright proof spec must exist at tests/adapter-visible-value.spec.js');
+
 // 5. RELAY NBA Adapters (Session 3)
 assert('RELAY_BASE defined', html.includes("const RELAY_BASE = 'https://field-relay-nba"));
 assert('relayHealthCheck defined', html.includes('async function relayHealthCheck'));

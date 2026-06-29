@@ -1,0 +1,46 @@
+name: Adapter Visible Value Proof (MLB)
+
+on:
+  workflow_dispatch:
+  # Enable on push once proof mode is stable:
+  # push:
+  #   branches: [main]
+  #   paths: [index.html, tests/adapter-visible-value.spec.js]
+
+jobs:
+  adapter-proof:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    name: MLB Stats API — Visible Value Proof
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Run adapter proof tests
+        run: npx playwright test tests/adapter-visible-value.spec.js --config=tests/adapter-proof.playwright.config.js
+
+      - name: Upload proof screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: adapter-proof-screenshots-mlb
+          path: test-results/
+          retention-days: 30
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "════════════════════════════════════════"
+          echo "  MLB Adapter Visible Value Proof"
+          echo "  $(date '+%Y-%m-%d %H:%M UTC')"
+          echo "════════════════════════════════════════"

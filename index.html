@@ -4727,6 +4727,61 @@ try {
   }
 } catch(e) { /* private mode — bypass disabled, modal will show as normal */ }
 
+// ── Adapter Proof Mode (AVV — 2026-06-29) ──────────────────────────────────
+// ?proofAdapter=mlb-stats-api&fixture=ok|empty|malformed&wpt=1
+// Injects fixture data instead of live API calls. Exposes window.__FIELD_PROOF__.
+const _proofParams  = new URLSearchParams(location.search);
+const _proofAdapter = _proofParams.get('proofAdapter') || null;
+const _proofFixture = _proofParams.get('fixture')      || 'ok';
+const _proofMode    = !!_proofAdapter;
+
+const _MLB_PROOF_FIXTURES = {
+  ok: {
+    dates: [{ games: [
+      {
+        gamePk: 718800,
+        gameDate: '2026-06-28T18:05:00Z',
+        status: { statusCode: 'I', detailedState: 'In Progress' },
+        teams: {
+          home: { team: { abbreviation: 'NYY', name: 'New York Yankees' }, score: 3 },
+          away: { team: { abbreviation: 'BAL', name: 'Baltimore Orioles' }, score: 2 }
+        },
+        linescore: { currentInning: 5, currentInningOrd: '5th', inningHalf: 'Top', outs: 1 },
+        venue: { name: 'Yankee Stadium' },
+        broadcasts: [{ name: 'ESPN', type: 'TV' }]
+      },
+      {
+        gamePk: 718801,
+        gameDate: '2026-06-28T20:10:00Z',
+        status: { statusCode: 'S', detailedState: 'Scheduled' },
+        teams: {
+          home: { team: { abbreviation: 'LAD', name: 'Los Angeles Dodgers' }, score: 0 },
+          away: { team: { abbreviation: 'SFG', name: 'San Francisco Giants' }, score: 0 }
+        },
+        linescore: { currentInning: null, currentInningOrd: null, inningHalf: null, outs: null },
+        venue: { name: 'Dodger Stadium' },
+        broadcasts: [{ name: 'MLB Network', type: 'TV' }]
+      }
+    ]}]
+  },
+  empty:    { dates: [{ games: [] }] },
+  malformed: { dates: [{ games: [{ gamePk: 'bad', status: null, teams: { home: null, away: { team: { abbreviation: 'NYY' } } }, linescore: 'invalid', broadcasts: 'not-array' }] }] }
+};
+
+// Deferred proof mode setup — runs after all functions are declared
+if (_proofMode && _proofAdapter === 'mlb-stats-api') {
+  document.addEventListener('DOMContentLoaded', () => {
+    fetchMLBSchedule = async (date) => {
+      const fixture = _MLB_PROOF_FIXTURES[_proofFixture] || _MLB_PROOF_FIXTURES.ok;
+      const games = fixture.dates?.[0]?.games ?? [];
+      return games.map(g => {
+        try { return normalizeMLBGame(g, date instanceof Date ? date : new Date(date)); }
+        catch(e) { captureFieldError('proof:normalizeMLBGame', e); return null; }
+      }).filter(Boolean);
+    };
+  });
+}
+
 // ── Runtime error capture (Rule 18 — field_browser.test.js reads this) ──────
 // window._fieldErrors collects errors from critical path functions.
 // Read by: Playwright browser test, ?debug=1 panel, Night Owl diagnostics.
@@ -10398,7 +10453,7 @@ function renderAll(){
       const isLive=st==="live";
       const timeCls=isLive?"game-time live-t":"game-time";
       const liveBadge=isLive?'<div class="live-badge"><span class="live-dot"></span>LIVE</div>':"";
-      return `<div class="game-card ${_cardTierClass(g)} ${st}${isLive?" espn-live":""}${MY_TEAMS.has(g.home)||MY_TEAMS.has(g.away)?" my-team-card":""}" data-gameid="${g._id}" data-sport="${sec.sport}" data-home="${(g.home||"").replace(/"/g,"")}" data-away="${(g.away||"").replace(/"/g,"")}" data-starttime="${g.start_time||""}" data-venue="${(g.venue||"").replace(/"/g,"")}" data-confirmed="${g.confirmed===true?'true':'false'}"${g._gameImportance?` data-gameimportance="${g._gameImportance}"`:''} style="--i:${gi}">
+      return `<div class="game-card ${_cardTierClass(g)} ${st}${isLive?" espn-live":""}${MY_TEAMS.has(g.home)||MY_TEAMS.has(g.away)?" my-team-card":""}" data-gameid="${g._id}" data-sport="${sec.sport}" data-home="${(g.home||"").replace(/"/g,"")}" data-away="${(g.away||"").replace(/"/g,"")}" data-starttime="${g.start_time||""}" data-venue="${(g.venue||"").replace(/"/g,"")}" data-confirmed="${g.confirmed===true?'true':'false'}"${g._gameImportance?` data-gameimportance="${g._gameImportance}"`:''} ${g._adapterProof?`data-proof-adapter="${g._adapterProof.adapterId}" data-proof-source="${g._adapterProof.sourceId}"`:''}style="--i:${gi}">
         <div class="card-accent"></div>
         <button class="pin-btn" aria-label="Pin game to widget" title="Pin to corner widget" onclick="event.stopPropagation();pinGame('${g._id}')">📌</button><button class="star-btn ${MY_TEAMS.has(g.home)||MY_TEAMS.has(g.away)?"starred":""}" aria-label="Follow team" title="${MY_TEAMS.has(g.away)?"Unfollow "+g.away:MY_TEAMS.has(g.home)?"Unfollow "+g.home:"Follow "+g.away+" / "+g.home}">★</button>
         <div class="card-body" role="button" tabindex="0" data-open="${g._id}" aria-label="Game intel for ${(g.away||'').replace(/'/g,'')} at ${(g.home||'').replace(/'/g,'')}">
@@ -21265,6 +21320,20 @@ async function fetchSchedule(){
   // Sentinel for Playwright test optimization: tests waitForFunction(() => window._fieldDataReady)
   // instead of waitForTimeout(15000). Typically resolves in ~1.5s not 15s.
   window._fieldDataReady = Date.now();
+  if (_proofMode) {
+    const _allMLBGames = (allData?.sports || [])
+      .filter(s => (s.sport || '').toLowerCase().includes('baseball'))
+      .flatMap(s => s.games || []);
+    window.__FIELD_PROOF__ = {
+      adapterId:           _proofAdapter,
+      fixture:             _proofFixture,
+      normalizedObjects:   _allMLBGames,
+      presentationPackets: _allMLBGames.map(g => g._adapterProof || null).filter(Boolean),
+      visibleSelectors:    ['.game-card', '.stream-chip'],
+      errors:              window._fieldErrors || [],
+      generatedAt:         new Date().toISOString(),
+    };
+  }
   try { performance.mark('field:ready'); } catch(_) {}
   loadOverlayData(); // async enhancement — editorial patches from relay
 
