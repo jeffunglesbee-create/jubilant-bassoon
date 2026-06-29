@@ -1,0 +1,23 @@
+{
+  "sourceId": "odds-api-the-odds-api",
+  "note": "Real D1 data — Golden State Valkyries vs New York Liberty, WNBA 2026-06-28. Only confirmed game with BOTH opening_odds AND closing_odds in ARCHIVE_DB as of 2026-06-29.",
+  "home": "Golden State Valkyries",
+  "away": "New York Liberty",
+  "date": "2026-06-28",
+  "sport": "WNBA",
+  "opening_odds": {
+    "source": "draftkings",
+    "captured_at": "2026-06-28T00:00:22.692Z",
+    "moneyline": { "home": -112, "away": -108 },
+    "spread": { "home": -1.5, "away": 1.5 },
+    "total": { "over": 163.5, "under": 163.5 }
+  },
+  "closing_odds": {
+    "source": "fanduel",
+    "captured_at": "2026-06-28T23:55:27Z",
+    "moneyline": { "home": 100, "away": -128 },
+    "total": { "over": 151.5, "under": 151.5 }
+  },
+  "note_spread": "closing_odds has no spread — FanDuel rows omit spread field. null-guard required.",
+  "expectedOddsStory": "[ODDS STORY] ML moved 212 pts underdog-ward (opened -112, closed 100). Total moved 12.0 (opened 163.5, closed 151.5) — under pressure."
+}

@@ -63,6 +63,35 @@
       "coverage": "AFL — predictions, tips, player-stats, standings, head-to-head, matches, fixture",
       "lastTermsCheckedAt": "2026-06-26",
       "notes": "CORS not available — relay proxies all requests. Token injected server-side."
+    },
+    "odds-api-the-odds-api": {
+      "status": "green",
+      "sourceUrl": "https://api.the-odds-api.com",
+      "allowedUses": ["pre_game_odds", "line_movement", "journalism_context", "win_probability"],
+      "rawRedistributionAllowed": false,
+      "commercialUseClass": "licensed_data",
+      "authRequired": true,
+      "authMethod": "apiKey query param (ODDS_API_KEY env, fallback hardcoded)",
+      "cost": "20K credits/month primary, 500/month fallback",
+      "sportKeys": {
+        "mlb": "baseball_mlb",
+        "nba": "basketball_nba",
+        "wnba": "basketball_wnba",
+        "nhl": "icehockey_nhl",
+        "epl": "soccer_epl",
+        "wc26": "soccer_fifa_world_cup",
+        "cfl": "americanfootball_cfl",
+        "nfl": "americanfootball_nfl",
+        "afl": "aussierules_afl"
+      },
+      "creditCost": {
+        "live": "1 credit per request",
+        "historical": "10 credits per request",
+        "hardLimit": 85000,
+        "quotaFloor": 50
+      },
+      "lastTermsCheckedAt": "2026-06-29",
+      "notes": "CORS available — client can call directly. Relay proxies for key hiding. Fallback key de44fdf870b3a4b5ee9d46993b2e1038 is starter tier (500/mo)."
     }
   }
 }

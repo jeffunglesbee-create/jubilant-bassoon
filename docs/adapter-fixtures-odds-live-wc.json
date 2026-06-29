@@ -1,0 +1,26 @@
+{
+  "sourceId": "odds-api-the-odds-api",
+  "note": "Real data from /v4/sports/soccer_fifa_world_cup/odds — DraftKings — 2026-06-29",
+  "sport_key": "soccer_fifa_world_cup",
+  "game": {
+    "id": "5a34afe2de99513ba48360b983cfe80c",
+    "sport_key": "soccer_fifa_world_cup",
+    "sport_title": "FIFA World Cup",
+    "commence_time": "2026-06-30T01:00:00Z",
+    "home_team": "Netherlands",
+    "away_team": "Morocco",
+    "bookmakers": [{
+      "key": "draftkings",
+      "title": "DraftKings",
+      "last_update": "2026-06-29T23:04:10Z",
+      "markets": [
+        { "key": "h2h", "outcomes": [
+          { "name": "Netherlands", "price": 2.4 },
+          { "name": "Morocco", "price": 3.3 },
+          { "name": "Draw", "price": 3.05 }
+        ]}
+      ]
+    }]
+  },
+  "note_draw": "Soccer h2h has 3 outcomes including Draw — extractOddsForGame handles this correctly"
+}

@@ -170,6 +170,64 @@
         "No dedicated CONTEXT_SOURCE in context-assembler.js — inline in handleV2Games"
       ],
       "lastVerifiedAt": null
+    },
+    "odds-api": {
+      "status": "active",
+      "sourceId": "odds-api-the-odds-api",
+      "sport": "Multi-sport (MLB, WNBA, WC26, NBA, NHL, EPL, CFL, AFL)",
+      "architecture": "multi-component",
+      "components": {
+        "relay": {
+          "passthrough": "/odds/v4/sports/{sport_key}/odds",
+          "cronWriter": "snapshotCronOdds() → ARCHIVE_DB opening_odds + closing_odds",
+          "contextSource": "buildOddsStoryContext (priority 5, budget 100)"
+        },
+        "oddsStory": {
+          "file": "src/odds-story.js",
+          "function": "computeOddsStory(openingOdds, closingOdds)",
+          "output": "[ODDS STORY] ML moved X pts direction. Total moved X.X.",
+          "requires": "both opening_odds AND closing_odds non-null in D1"
+        },
+        "wcPregame": {
+          "description": "Direct odds fetch for WC win probability lambdas",
+          "sportKey": "soccer_fifa_world_cup"
+        }
+      },
+      "requiredFields": {
+        "live": ["id", "sport_key", "commence_time", "home_team", "away_team",
+                 "bookmakers[].key", "bookmakers[].markets[].key",
+                 "bookmakers[].markets[].outcomes[].name",
+                 "bookmakers[].markets[].outcomes[].price",
+                 "bookmakers[].markets[].outcomes[].point"],
+        "extracted": ["source", "captured_at", "moneyline.home", "moneyline.away",
+                      "spread.home", "spread.away", "total.over", "total.under"],
+        "note": "spread absent from FanDuel rows — always null-guard"
+      },
+      "visibleSurfaces": [
+        {
+          "surface": "journalism-brief",
+          "proof": "[ODDS STORY] block in journalism context when opening + closing odds exist"
+        },
+        {
+          "surface": "live-passthrough",
+          "proof": "MLB and WC26 odds return from /odds/v4/sports/{key}/odds"
+        },
+        {
+          "surface": "wc-card",
+          "proof": "WC game cards carry win probability derived from soccer_fifa_world_cup odds"
+        }
+      ],
+      "fixtures": {
+        "live-mlb": "docs/adapter-fixtures-odds-live-mlb.json",
+        "live-wc": "docs/adapter-fixtures-odds-live-wc.json",
+        "odds-story-wnba": "docs/adapter-fixtures-odds-story-wnba.json"
+      },
+      "knownGaps": [
+        "computeOddsStory requires BOTH opening_odds AND closing_odds — fires only for completed games",
+        "MLB today has no opening_odds in D1 yet (cron runs at game start)",
+        "WP source='default-lambda' on MLB objects — odds feed D1 not live WP"
+      ],
+      "lastVerifiedAt": null
     }
   }
 }

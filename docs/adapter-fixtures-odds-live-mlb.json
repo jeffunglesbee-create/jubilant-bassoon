@@ -1,0 +1,39 @@
+{
+  "sourceId": "odds-api-the-odds-api",
+  "note": "Real data from /v4/sports/baseball_mlb/odds — DraftKings — 2026-06-29",
+  "sport_key": "baseball_mlb",
+  "game": {
+    "id": "da58edb8a6932f91a04f398f83ed0658",
+    "sport_key": "baseball_mlb",
+    "sport_title": "MLB",
+    "commence_time": "2026-06-29T22:36:00Z",
+    "home_team": "Baltimore Orioles",
+    "away_team": "Chicago White Sox",
+    "bookmakers": [{
+      "key": "draftkings",
+      "title": "DraftKings",
+      "last_update": "2026-06-29T23:03:25Z",
+      "markets": [
+        { "key": "h2h", "outcomes": [
+          { "name": "Baltimore Orioles", "price": 1.38 },
+          { "name": "Chicago White Sox", "price": 2.96 }
+        ]},
+        { "key": "spreads", "outcomes": [
+          { "name": "Baltimore Orioles", "price": 1.9, "point": -1.5 },
+          { "name": "Chicago White Sox", "price": 1.85, "point": 1.5 }
+        ]},
+        { "key": "totals", "outcomes": [
+          { "name": "Over", "price": 1.92, "point": 8.5 },
+          { "name": "Under", "price": 1.84, "point": 8.5 }
+        ]}
+      ]
+    }]
+  },
+  "extractedOdds": {
+    "source": "draftkings",
+    "captured_at": "2026-06-29T23:03:25Z",
+    "moneyline": { "home": 1.38, "away": 2.96 },
+    "spread": { "home": -1.5, "away": 1.5 },
+    "total": { "over": 8.5, "under": 8.5 }
+  }
+}
