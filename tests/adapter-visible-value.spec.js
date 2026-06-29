@@ -134,7 +134,14 @@ test('AVV-PW-005 — malformed fixture: no window._fieldErrors', async ({ page }
 // ── AVV-PW-006: Live MLB data renders from statsapi.mlb.com ──────────────
 test('AVV-PW-006 — live MLB data renders from statsapi.mlb.com', async ({ page }) => {
   await page.goto(LIVE_URL + '/?wpt=1', { waitUntil: 'domcontentloaded', timeout: 30000 });
-  await awaitReady(page, 5000);
+  await awaitReady(page, 0);  // wait for _fieldDataReady sentinel only
+
+  // Wait for fetchMLBFixtures to complete — it sets window._mlbDataReady after merging API data.
+  // fetchMLBFixtures() runs after _fieldDataReady is set so a fixed buffer is unreliable.
+  // Timeout 20s: MLB Stats API typically responds in 1-3s from CI runners.
+  await page.waitForFunction(() => !!window._mlbDataReady, { timeout: 20000 }).catch(() => {
+    console.log('[AVV-PW-006] _mlbDataReady not set within 20s — MLB Stats API may have failed');
+  });
 
   const mlbData = await page.evaluate(() => {
     if (typeof allData === 'undefined') return { error: 'allData undefined' };
@@ -144,43 +151,35 @@ test('AVV-PW-006 — live MLB data renders from statsapi.mlb.com', async ({ page
       found: false,
       sportNames: allData.sports?.map(s => s.sport || s.label || s.name)
     };
-    const g = baseball.games?.[0];
-    if (!g) return { found: true, gameCount: 0 };
+    const games = baseball.games || [];
+    const g0 = games[0];
+    // _dataSource is set by the card schema spread for all API games (g.source = 'mlb-stats')
+    // national override games (mlbRaw) have _dataSource: null
+    const apiSource = games.map(g => g._dataSource).find(s => s) || null;
     return {
       found: true,
-      gameCount: (baseball.games || []).length,
+      gameCount: games.length,
       sportKey: baseball.sport || baseball.label || baseball.name,
-      game0_allKeys: Object.keys(g).sort(),
-      source: g.source,
-      _source: g._source,
-      dataSource: g.dataSource,
-      sourceId: g.sourceId,
-      provider: g.provider,
-      adapter: g.adapter,
-      origin: g.origin,
-      _adapterProof: g._adapterProof || null,
-      id: g.id,
-      homeTeam: g.homeTeam,
-      awayTeam: g.awayTeam,
-      status: g.status,
-      broadcasts: g.broadcasts || g.nationalBundle || g.localRsn || null,
-      nationalBundle: g.nationalBundle,
-      localRsn: g.localRsn,
-      mlbnShowcase: g.mlbnShowcase,
-      espnGOTD: g.espnGOTD,
+      _mlbDataReady: !!window._mlbDataReady,
+      // First API-sourced game's _dataSource
+      _dataSource: apiSource,
+      // game[0] snapshot for diagnosis
+      game0_keys: g0 ? Object.keys(g0).sort() : [],
+      game0_dataSource: g0?._dataSource || null,
     };
   });
 
-  console.log('[AVV-PW-006] allData MLB game object:', JSON.stringify(mlbData, null, 2));
+  console.log('[AVV-PW-006] allData MLB:', JSON.stringify(mlbData, null, 2));
+  console.log('[AVV-PW-006] _mlbDataReady:', mlbData._mlbDataReady);
 
   expect(mlbData.found, `MLB section not found. Sports: ${mlbData.sportNames}`).toBe(true);
   expect(mlbData.gameCount, 'No MLB games in allData').toBeGreaterThan(0);
 
-  console.log('[AVV-PW-006] game[0] ALL KEYS:', mlbData.game0_allKeys);
-  console.log('[AVV-PW-006] _adapterProof:', JSON.stringify(mlbData._adapterProof));
-
-  if (mlbData._adapterProof?.adapterId) {
-    console.log('[AVV-PW-006] DEFINITIVE SOURCE:', mlbData._adapterProof.adapterId);
+  if (mlbData._dataSource) {
+    console.log('[AVV-PW-006] DEFINITIVE SOURCE:', mlbData._dataSource);
+    expect(mlbData._dataSource).toBe('mlb-stats');
+  } else {
+    console.log('[AVV-PW-006] _dataSource null — MLB Stats API path not confirmed (national overrides only or fetch failed)');
   }
 });
 

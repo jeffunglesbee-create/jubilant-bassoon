@@ -112,6 +112,10 @@ assert('AVV-PW-INFRA-5 — adapter-visible-value.spec.js exists',
   require('fs').existsSync('./tests/adapter-visible-value.spec.js'),
   'Playwright proof spec must exist at tests/adapter-visible-value.spec.js');
 
+assert('AVV-DS-001 — _dataSource carried through card schema',
+  html.includes('_dataSource: g.source || null') && html.includes('window._mlbDataReady'),
+  'Card schema spread must carry _dataSource from normalized game.source; sentinel must be set');
+
 // 5. RELAY NBA Adapters (Session 3)
 assert('RELAY_BASE defined', html.includes("const RELAY_BASE = 'https://field-relay-nba"));
 assert('relayHealthCheck defined', html.includes('async function relayHealthCheck'));

@@ -19779,7 +19779,7 @@ async function fetchMLBFixtures(){
       // Deterministic time-sort — without this the MLB section renders in raw
       // MLB-API order plus appended overrides, so the list reorders between renders.
       mlbSec.games = mergedGames
-        .map(g => ({...g, _sport:'Baseball (MLB)'}))
+        .map(g => ({...g, _sport:'Baseball (MLB)', _dataSource: g.source || null}))
         .sort((a,b)=>{
           const ta=+new Date(a.start_time||0), tb=+new Date(b.start_time||0);
           return ta!==tb ? ta-tb : String(a._id||a.home||'').localeCompare(String(b._id||b.home||''));
@@ -19802,6 +19802,7 @@ async function fetchMLBFixtures(){
       // eventually causing 4+ parallel pollers. Instead, signal the existing chain
       // to reschedule itself to 1s if MLB still hasn't been polled.
       window.dispatchEvent(new CustomEvent('field:data-ready', {detail:{sport:'mlb'}}));
+      window._mlbDataReady = true; // Playwright sentinel — set only by MLB Stats API path
       setTimeout(()=>{
         checkForNewFinals();
         renderNightOwlRecap().catch(e=>captureFieldError('night-owl',e,false));
