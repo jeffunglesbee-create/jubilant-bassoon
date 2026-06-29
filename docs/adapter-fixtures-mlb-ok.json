@@ -1,0 +1,86 @@
+{
+  "sourceId": "mlb-stats-api-official",
+  "date": "2026-06-28",
+  "games": [
+    {
+      "gamePk": 718800,
+      "gameDate": "2026-06-28T18:05:00Z",
+      "status": {
+        "statusCode": "I",
+        "detailedState": "In Progress"
+      },
+      "teams": {
+        "home": {
+          "team": {
+            "abbreviation": "NYY",
+            "name": "Yankees"
+          },
+          "score": 3
+        },
+        "away": {
+          "team": {
+            "abbreviation": "BAL",
+            "name": "Orioles"
+          },
+          "score": 2
+        }
+      },
+      "linescore": {
+        "currentInning": 5,
+        "inningHalf": "Top",
+        "outs": 1
+      },
+      "venue": {
+        "name": "Yankee Stadium"
+      },
+      "broadcasts": [
+        {
+          "name": "ESPN",
+          "type": "TV"
+        },
+        {
+          "name": "WFAN 660",
+          "type": "RADIO"
+        }
+      ]
+    },
+    {
+      "gamePk": 718801,
+      "gameDate": "2026-06-28T20:10:00Z",
+      "status": {
+        "statusCode": "S",
+        "detailedState": "Scheduled"
+      },
+      "teams": {
+        "home": {
+          "team": {
+            "abbreviation": "LAD",
+            "name": "Dodgers"
+          },
+          "score": 0
+        },
+        "away": {
+          "team": {
+            "abbreviation": "SFG",
+            "name": "Giants"
+          },
+          "score": 0
+        }
+      },
+      "linescore": {
+        "currentInning": null,
+        "inningHalf": null,
+        "outs": null
+      },
+      "venue": {
+        "name": "Dodger Stadium"
+      },
+      "broadcasts": [
+        {
+          "name": "MLB Network",
+          "type": "TV"
+        }
+      ]
+    }
+  ]
+}
