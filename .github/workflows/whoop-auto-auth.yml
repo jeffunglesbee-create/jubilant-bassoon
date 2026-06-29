@@ -1,5 +1,7 @@
 name: Whoop Auto Auth
 on:
+  schedule:
+    - cron: '0 10 * * 1'   # Weekly Monday 10:00 UTC — keepalive refresh
   workflow_dispatch:
 
 jobs:
@@ -15,6 +17,7 @@ jobs:
         env:
           WHOOP_CLIENT_ID:     ${{ secrets.WHOOP_CLIENT_ID }}
           WHOOP_CLIENT_SECRET: ${{ secrets.WHOOP_CLIENT_SECRET }}
+          WHOOP_REDIRECT_URI:  ${{ secrets.WHOOP_REDIRECT_URI }}
           WHOOP_EMAIL:         ${{ secrets.WHOOP_EMAIL }}
           WHOOP_PASSWORD:      ${{ secrets.WHOOP_PASSWORD }}
           GH_TOKEN:            ${{ secrets.GITHUB_TOKEN }}
