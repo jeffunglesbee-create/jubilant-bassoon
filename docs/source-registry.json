@@ -18,6 +18,33 @@
       "rateLimitPerHour": 3600,
       "lastTermsCheckedAt": "2026-06-28",
       "notes": "MLB official free API. No license. CORS-open."
+    },
+    "bsd-bzzoiro-soccer": {
+      "status": "green",
+      "sourceUrl": "https://sports.bzzoiro.com",
+      "allowedUses": [
+        "analytics_display",
+        "journalism_context",
+        "live_tracking",
+        "post_match_stats"
+      ],
+      "rawRedistributionAllowed": false,
+      "commercialUseClass": "licensed_analytics",
+      "authRequired": true,
+      "authMethod": "BSD_API_TOKEN header",
+      "cost": "$0 REST + $3/mo WebSocket",
+      "leagueCoverage": {
+        "wc26": "lid=27",
+        "epl": "lid=1",
+        "mls": "lid=18",
+        "ucl": "lid=7",
+        "laliga": "lid=3",
+        "seriea": "lid=4",
+        "bundesliga": "lid=5",
+        "ligue1": "lid=6"
+      },
+      "lastTermsCheckedAt": "2026-06-25",
+      "notes": "Free REST tier. BSD_API_TOKEN in relay secrets. CORS not available — relay proxies all requests."
     }
   }
 }

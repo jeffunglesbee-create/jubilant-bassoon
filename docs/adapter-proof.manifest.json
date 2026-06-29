@@ -68,6 +68,66 @@
       },
       "proofMode": "required",
       "lastVerifiedAt": null
+    },
+    "bsd-soccer": {
+      "status": "active",
+      "sourceId": "bsd-bzzoiro-soccer",
+      "sport": "Soccer",
+      "components": {
+        "relay": {
+          "routes": [
+            "/bsd/events/live",
+            "/bsd/events/:id/shotmap",
+            "/bsd/events/:id/momentum",
+            "/bsd/events/:id/incidents"
+          ],
+          "contextSources": ["bsd_momentum", "bsd_history"],
+          "d1Write": "wc_results.bsd_event_id via writeWCResult",
+          "r2Write": "bsd/wc26/{id}/stats.json + incidents.json"
+        },
+        "client": {
+          "functions": ["_bsdActivateForWC", "_bsdRepaint"],
+          "cards": ["WC26 win probability chip A739"]
+        }
+      },
+      "normalizer": "bsdEventId injection via handleV2Games teamNameMatch",
+      "requiredNormalizedFields": [
+        "bsdEventId",
+        "momentum",
+        "xg_home",
+        "xg_away",
+        "home_possession",
+        "shots_on_target_home",
+        "shots_on_target_away"
+      ],
+      "visibleSurfaces": [
+        {
+          "surface": "journalism-brief",
+          "proof": "[BSD MOMENTUM] block appears in WC journalism context when game is live"
+        },
+        {
+          "surface": "card",
+          "proof": "Win probability chip A739 visible on WC game cards"
+        }
+      ],
+      "fallbackSurfaces": [
+        {
+          "surface": "journalism-brief",
+          "proof": "Brief renders without [BSD MOMENTUM] when bsdEventId absent"
+        }
+      ],
+      "fixtures": {
+        "ok": "docs/adapter-fixtures-bsd-ok.json",
+        "empty": "docs/adapter-fixtures-bsd-empty.json",
+        "malformed": "docs/adapter-fixtures-bsd-malformed.json"
+      },
+      "knownGaps": [
+        "SVG pitch div not yet in WC card DOM (CC-CMD-G June 25 incomplete)",
+        "bsdEventId only populated during BSD live window — captured to D1 at game-final",
+        "momentum route was 404 until 2026-06-29 cd68c60 fix"
+      ],
+      "proofMode": "required",
+      "lastVerifiedAt": null
     }
   }
 }

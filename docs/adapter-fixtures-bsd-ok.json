@@ -1,0 +1,25 @@
+{
+  "sourceId": "bsd-bzzoiro-soccer",
+  "note": "Real data from BSD event 8360 — Brazil 2-1 Japan, R32, 2026-06-29",
+  "event_id": "8360",
+  "bsd_event_id": "8360",
+  "home": "Brazil",
+  "away": "Japan",
+  "home_score": 2,
+  "away_score": 1,
+  "status": "finished",
+  "stats": {
+    "home": { "xg": {"actual": 1.74}, "ball_possession": 62, "shots_on_target": 6, "total_shots": 14 },
+    "away": { "xg": {"actual": 0.23}, "ball_possession": 38, "shots_on_target": 2, "total_shots": 7 }
+  },
+  "momentum": [{"m": 1, "v": 8}, {"m": 30, "v": 45}, {"m": 60, "v": 72}, {"m": 90, "v": 100}],
+  "xg_per_minute": [
+    {"m": 2, "xg_home": 0.032, "xg_away": 0.0, "cum_home": 0.032, "cum_away": 0.0},
+    {"m": 90, "xg_home": 0.211, "xg_away": 0.0, "cum_home": 1.74, "cum_away": 0.23}
+  ],
+  "shotmap": [{"min": 90, "home": true, "type": "goal", "xg": 0.21, "xgot": 0.30}],
+  "average_positions": {
+    "home": [{"x": 65, "y": 50}],
+    "away": [{"x": 35, "y": 50}]
+  }
+}
