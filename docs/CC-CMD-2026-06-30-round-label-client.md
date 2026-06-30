@@ -12,6 +12,27 @@ Write findings to outbox/cc-round-label-client-2026-06-30.md.
 
 ---
 
+## NETWORK CONSTRAINT — READ FIRST, DO NOT TRY TO ROUTE AROUND
+
+This sandbox cannot reach `*.workers.dev` from bash, and Chromium in this
+sandbox has hit the same block on prior sessions. This means: you can write
+and commit code here, but you CANNOT verify it against the live relay/app
+from inside this session. This has been true on every CC-CMD this session
+(tournament-multiplexer, dual-source, AVV-MLS) — it is not a one-off, do
+not spend time trying workarounds (no proxy tricks, no alternate fetch
+methods, no retry loops hoping it resolves).
+
+**What this means practically:** once your code is committed and pushed,
+and the deploy/CI gate for this repo passes (that part runs on GitHub's
+infrastructure, not your sandbox, so it works normally), STOP. Write
+STAGED in the outbox with exactly what couldn't be checked from here and
+why. Chat will independently verify against the live system and trigger
+any dedicated CI workflow (e.g. adapter-visible-value.yml) after this
+session ends — that is expected, not a gap in your work.
+
+Do not mark something as definitively verified if the only check available
+was from inside this sandbox's network-restricted bash or browser.
+
 ## DEPENDENCY — READ BEFORE STARTING
 
 This doc has **two independent parts** with different readiness:
