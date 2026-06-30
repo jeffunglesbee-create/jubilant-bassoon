@@ -5717,5 +5717,14 @@ assert('A_BR_4 — J3 brief bypasses compound backoff: no _compoundRetryAfter in
     '/archive/game POST body must not include source_id — espn_event_id column is ESPN-namespaced');
 }
 
+// ── Round Label Badge (A-ROUND — 2026-06-30) ─────────────────────────────────
+assert('A-ROUND-1 — buildRoundBadge defined and wired into card template',
+  html.includes('function buildRoundBadge') && html.includes('buildRoundBadge(g)'),
+  'buildRoundBadge must be defined and called from the game card template');
+
+assert('A-ROUND-2 — aggregate score line gated on game.series.homeAggregate + leg !== 1',
+  html.includes('homeAggregate') && html.includes('awayAggregate') && html.includes('.leg !== 1'),
+  'buildRoundBadge must render Agg: X-Y only when homeAggregate/awayAggregate present and leg !== 1');
+
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);

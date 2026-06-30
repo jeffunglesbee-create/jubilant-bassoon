@@ -7709,6 +7709,21 @@ function buildUmpWatchBadge(game) {
   return `<span class="mlb-ump-badge" title="${ump.context}">[${ump.badge}]</span>`;
 }
 
+// ── buildRoundBadge: round label + aggregate score for playoff/tournament games ──
+// Renders when game.round is a non-empty string (NBA "Finals", NHL "Stanley Cup Final",
+// UFL "Playoff Eliminator", MLS "Quarterfinal", soccer "1st Leg"/"2nd Leg", etc.).
+// Part B: also shows "Agg: X-Y" when game.series has both aggregates and leg !== 1.
+function buildRoundBadge(game) {
+  if (!game?.round) return '';
+  const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  let html = `<span class="round-badge">${esc(game.round)}</span>`;
+  const s = game.series;
+  if (s?.homeAggregate != null && s?.awayAggregate != null && s.leg !== 1) {
+    html += `<span class="round-badge">Agg: ${s.homeAggregate}-${s.awayAggregate}</span>`;
+  }
+  return html;
+}
+
 // ── _buildAnalyticsChips: R2 data → chip HTML for a game ─────────────────────
 // Used by Scout's Pick brief footer (Option A) and Analytics Edge desk card (Option C).
 // Returns array of {html, cls} objects for chip rendering.
@@ -10508,6 +10523,7 @@ function renderAll(){
           </div>`:""}
           ${(()=>{ const _pb=buildParkFactorBadge(g); const _ub=buildUmpWatchBadge(g); return (_pb||_ub) ? `<div class="badge-row mlb-analytics-badges">${_pb}${_ub}</div>` : ''; })()}
           ${(()=>{ const _nb=buildNHLAnalyticsBadges(g); return _nb ? `<div class="badge-row nhl-analytics-badges">${_nb}</div>` : ''; })()}
+          ${(()=>{ const _rb=buildRoundBadge(g); return _rb?`<div class="badge-row round-badge-row">${_rb}</div>`:''; })()}
           ${g.crew?`<div class="crew-line">🎙 ${g.crew}</div>`:""}
           ${g._gameImportance?`<div class="importance-badge ${g._gameImportance==='series_deciding'?'series-deciding':g._gameImportance==='elimination'?'elimination':g._gameImportance==='clinch'?'clinch':'playoff-impl'}">${g._importanceIcon||''} ${g.narrative?.label||''}</div>`:""}
           ${(()=>{const _va=typeof findESPNScore==='function'?findESPNScore(g):null;const _vc=typeof buildVibeChips==='function'?buildVibeChips(g,_va,sec.sport):[];return _vc.length?'<div class="ganalytics">'+_vc.map(v=>'<span class="vibe '+v.cls+'"'+(v.onclick?' role="button" tabindex="0" style="cursor:pointer" onclick="'+v.onclick+'"':'')+'>'+v.label+'</span>').join('')+'</div>':'';})()}
@@ -16777,6 +16793,8 @@ function mapV2ToESPN(fg) {
     homeLeader: null, awayLeader: null,
     bsdEventId: fg.bsdEventId || null,  // BSD event ID — activates pitch/momentum when set
     start_time: fg.start || '',
+    round: fg.round || '',
+    series: fg.series || null,
   };
 }
 
@@ -16876,6 +16894,7 @@ async function fetchV2AllScores() {
   if (!enabled.length) return scheduleV2Poll(60000);
 
   let anyLive = false;
+  let _roundDataNewThisPoll = false;
   // Query each sport across all dates (ET + UTC when they differ) to catch
   // full US evening schedule: 7pm ET games on ET date, 8:30pm ET on UTC date.
   await Promise.allSettled(enabled.flatMap(sport =>
@@ -16955,6 +16974,18 @@ async function fetchV2AllScores() {
           ts:           Date.now(),
         };
         if (fg.state === 'live' || v2Entry.state === 'in') anyLive = true;
+
+        // ── Round/Series propagation to allData.sports game objects ──────────
+        // V2 relay populates fg.round (from postseason_games) and fg.series
+        // (from ESPN /soccer/xg for two-legged ties). Propagate to allData.sports
+        // so the card template's buildRoundBadge(g) can display them.
+        if (fg.round || fg.series) {
+          const _rGame = (allData?.sports || []).flatMap(s => s.games || []).find(g => `${g.home}|${g.away}` === key);
+          if (_rGame) {
+            if (fg.round && _rGame.round !== fg.round) { _rGame.round = fg.round; _roundDataNewThisPoll = true; }
+            if (fg.series) _rGame.series = fg.series;
+          }
+        }
 
         // ── Soccer/WC live-stats persistence (P6A, June 19 2026) ─────────────
         // V2 clears situation to null when a soccer match goes final, so the
@@ -17079,6 +17110,8 @@ async function fetchV2AllScores() {
             streams: resolveBundle('WC26_FOX'),
             nationalBundle: e.nationalBundle || 'WC26_FOX',
             matchupNote: e.matchupNote || '',
+            round: e.round || '',
+            series: e.series || null,
           };
         });
         if (!_wcSectionInjected) {
@@ -17249,6 +17282,7 @@ async function fetchV2AllScores() {
     }
   }
 
+  if (_roundDataNewThisPoll) scheduleRenderAll(); // cards re-render when round data first arrives
   renderESPNScores(); // re-render with fresh V2 data
   scheduleV2Poll(anyLive ? 30000 : 60000);
 }
@@ -22673,7 +22707,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-30a';
+  const SW_VERSION = '2026-06-30b';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)

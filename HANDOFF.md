@@ -1,11 +1,11 @@
 # FIELD HANDOFF
 
-## Session: 2026-06-30 · MLS Full Stack (Part 9: Round-Label Relay Shipped)
+## Session: 2026-06-30 · Round Label Badge (Client)
 
-**CLIENT HEAD: dd419c87** (jubilant-bassoon)
+**CLIENT HEAD: (pending — see commit below)**
 **RELAY HEAD: f4c5fba9** (field-relay-nba, CONTRACTS.md sync — code at 5911f0b5)
-**SW_VERSION: 2026-06-30a**
-**SMOKE: 807/0**
+**SW_VERSION: 2026-06-30b**
+**Smoke: 809/0**
 
 ---
 
