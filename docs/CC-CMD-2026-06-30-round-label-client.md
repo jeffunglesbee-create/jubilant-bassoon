@@ -1,6 +1,10 @@
 # CC-CMD — Round Label Badge (CLIENT)
 
 **Repo:** jubilant-bassoon ONLY
+**Branch:** main — commit directly, do not create a feature branch or PR
+(see CONTRIBUTING.md, updated 2026-06-30: CC-CMD work is governed by
+Rule 87 + smoke gate + chat's independent post-deploy verification,
+which supersedes the PR/CodeRabbit step for this category of work)
 **Date:** 2026-06-30 (split from CC-CMD-2026-06-30-round-label-aggregate.md)
 **Baseline:** jubilant-bassoon HEAD b5ab3142
 **Companion doc:** docs/CC-CMD-2026-06-30-round-label-relay.md (field-relay-nba
