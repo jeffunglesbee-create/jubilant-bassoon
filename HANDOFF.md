@@ -1,69 +1,74 @@
 # FIELD HANDOFF
 
-## Session: 2026-06-30 · MLS Full Stack (Part 7: Doc Quality Correction)
+## Session: 2026-06-30 · MLS Full Stack (Part 8: AVV-MLS Verified in Real CI)
 
-**CLIENT HEAD: 10058d83**
+**CLIENT HEAD: 418e1d4f** (+ auto codemap refresh on top)
 **SW_VERSION: 2026-06-30a**
-**RELAY HEAD: 1a2d7696** (unchanged this part — docs only)
-**Smoke: 807/0**
+**RELAY HEAD: 1a2d7696** (unchanged — all work this part was client-side)
+**SMOKE: 807/0** (confirmed via full clone + local run, then live CI)
 
 ---
 
-## THIS SESSION — CORRECTED
+## THIS SESSION — VERIFIED END TO END
 
-### Doc quality called out directly: sloppy, unorganized, low quality
+### AVV-MLS: CC executed it, I independently verified all of it
 
-Accurate. Concrete pattern this session: round-label-aggregate written,
-amended (soccer-only → all-sports, because NBA/NHL/UFL data wasn't checked
-before the original scope was written), then split into two docs, original
-marked superseded — four touches for one correct pass. soccer-stats-
-dual-source shipped a fix that only solved half the problem (widened the
-relay route, never traced through to the consumer that gates on it) —
-found by accident later, not by design. avv-mls.md reasoned its way to
-"must skip until July 22" using logic already written correctly for the
-AFL precedent in the same document, then didn't apply it to its own tests
-— required a second document to patch the first. Docs also ran narrative-
-heavy (long "why I'm doing this" prose) where a tight spec should state
-the requirement and stop.
+CC ran the consolidated avv-mls.md CC-CMD (commit 3ae21de), correctly
+deviating from my draft fixture shape after tracing the real
+`allData.sports`/`fetchSupplemental` merge pipeline — used a flat game
+shape instead of ESPN-nested, kept fixture injection and test assertions
+internally consistent (substring match on 'MLS Soccer', not strict
+equality on 'mls'). Good engineering. CC reported all 5 tests "STAGED for
+CI" because its sandbox blocks `*.workers.dev` from both bash and
+Chromium — genuinely couldn't verify locally.
 
-Root cause: writing CC-CMDs before fully tracing the dependency chain, then
-patching forward instead of getting it right the first time.
+Verification chain, not trusted on report alone:
+1. Replicated AVV-MLS-002/003/004/005's exact assertion logic directly
+   against the live relay (I have `*.workers.dev` access) — all 4 passed
+   with real data before any CI ran.
+2. Found a real regression: `git log` showed "Smoke Test + Live Verify"
+   failing on my own subsequent commit. Root cause traced via full git
+   clone + local smoke.js run: my own HANDOFF.md write (011dc283)
+   reintroduced A704's case bug (`SMOKE` vs `Smoke`) that CC had already
+   fixed in 3ae21de — I overwrote CC's fix without knowing it was there.
+   Confirmed via genuine full clone: 806 passed, 1 failed (A704 only —
+   every other apparent failure from my earlier partial-file local test
+   was an artifact of incomplete copying, not real).
+3. Fixed (commit 418e1d4f), confirmed 807/0 locally before pushing,
+   confirmed again via live "Smoke Test + Live Verify" CI run (all jobs
+   green: static smoke, live smoke, viewport Layer 1, Playwright Layer 3).
+4. Found `adapter-visible-value.yml` (the dedicated AVV CI workflow) hadn't
+   run since June 29 — neither CC nor the general smoke pipeline had
+   triggered it. Dispatched it directly. Downloaded the actual log text
+   (not just conclusion status): all 5 AVV-MLS tests produced their
+   DEFINITIVE lines with real data, 14/14 passed in 48.4s, real Chromium,
+   real network, real relay responses.
 
-### Concrete fix this turn (not a promise — done)
+### Cleanup
 
-`docs/CC-CMD-2026-06-30-avv-mls.md` and `docs/CC-CMD-2026-06-30-avv-mls-
-proof-mode.md` deleted. Replaced with a single consolidated
-`docs/CC-CMD-2026-06-30-avv-mls.md` — re-verified live before merging
-(context-probe still returns the same 3 games at the same contextLengths,
-confirmed not stale), narrative trimmed to what's load-bearing, all 5 tests
-in one describe block with zero skip logic.
-
-**Deliberately not touched this turn:** round-label-relay.md, round-label-
-client.md, soccer-stats-dual-source.md (historical, already executed —
-worth a note that its Task 1 was incomplete, not a rewrite), tournament-
-multiplexer.md (historical, executed, fine as a record). Doing all of them
-in one pass would repeat the exact pattern being corrected. If a pass on
-these is wanted, that's a deliberate next ask, not assumed.
+`claude/elegant-shannon-t2dvt0` branch reappeared (same name as the one
+deleted earlier this session, zero unique commits this time too) —
+deleted again. `cloudflare/workers-autoconfig` noted but left alone
+(3693 commits behind, unrelated to anything this session touched).
 
 ---
 
 ## CC-CMDS QUEUED — NEXT SESSION
 
-**#1 (jubilant-bassoon, no dependency):**
-"git pull. Read docs/CC-CMD-2026-06-30-avv-mls.md. Execute all tasks.
-Nothing commits without confidence ≥ 95. Zero skip logic in any of the 5
-tests — a skip means something in the plan was wrong."
-
-**#2 (field-relay-nba):**
+**#1 (field-relay-nba):**
 "git pull. Read docs/CC-CMD-2026-06-30-round-label-relay.md. Execute all
 tasks. Nothing commits without confidence ≥ 95. Do not include [skip ci]."
 
-**#3 (jubilant-bassoon, after #2 ships and deploys):**
+**#2 (jubilant-bassoon, after #1 ships and deploys):**
 "git pull. Read docs/CC-CMD-2026-06-30-round-label-client.md. Confirm the
 Part B dependency check before starting Part B."
 
-**#4 (separate scope, not urgent):**
-identity-resolver MLS club-ID mapping (name → MLS-CLU-xxxxxx).
+**#3 (separate scope, not urgent):**
+identity-resolver MLS club-ID mapping (name → MLS-CLU-xxxxxx) to unblock
+buildSoccerSeasonFormContext.
+
+AVV-MLS is genuinely DONE — verified in real CI, not staged, not
+self-reported. Remove from queue.
 
 ---
 
@@ -71,33 +76,33 @@ identity-resolver MLS club-ID mapping (name → MLS-CLU-xxxxxx).
 
 - postseason_games round vocabulary normalization
 - European club coverage in identity-resolver before August
-- Two-legged tie game_number=2 — stats-api-sourced ties (TELUS) have no
-  aggregate field
-- **NEW:** before writing any future CC-CMD, trace the full consumer chain
-  (not just the first layer touched) before specifying tasks — the
-  dual-source gap (route fixed, consumer not) is the pattern to not repeat
+- Two-legged tie game_number=2 — stats-api-sourced ties have no aggregate
+  field, flagged in round-label split docs
+- **Process note:** when chat writes HANDOFF.md or other shared docs in a
+  window where a CC session may also be writing to the same repo, check
+  `git log` for what CC actually changed before overwriting — don't
+  assume chat's last-known content is still current.
 
 ---
 
 ## PRIORITY LIST
 
-### 🔧 CC-CMDs (in order; #1 has no dependency on #2/#3)
-1. CC-CMD-2026-06-30-avv-mls.md (jubilant-bassoon)
-2. CC-CMD-2026-06-30-round-label-relay.md (field-relay-nba)
-3. CC-CMD-2026-06-30-round-label-client.md (jubilant-bassoon, after #2)
-4. identity-resolver MLS club-ID mapping (new spec needed)
+### 🔧 CC-CMDs (in order)
+1. CC-CMD-2026-06-30-round-label-relay.md (field-relay-nba)
+2. CC-CMD-2026-06-30-round-label-client.md (jubilant-bassoon, after #1)
+3. identity-resolver MLS club-ID mapping (new spec needed)
 
 ### 🔨 INFRASTRUCTURE
-5. Bosnia DB fix + identity-resolver CANONICAL map
-6. team_form CONTEXT_SOURCE v3
-7. Golf: wire Broadie proxy (Tier 1, $0)
+4. Bosnia DB fix + identity-resolver CANONICAL map
+5. team_form CONTEXT_SOURCE v3
+6. Golf: wire Broadie proxy (Tier 1, $0)
 
 ### 📋 OPEN INCIDENTS
-8. wentToOT hardcoded false
-9. KV editorial keys not consulted
-10. NFL SPORT_TO_V2 — September 9
-11. Odds Daily Counter stale
-12. night_stars phase degraded
+7. wentToOT hardcoded false
+8. KV editorial keys not consulted
+9. NFL SPORT_TO_V2 — September 9
+10. Odds Daily Counter stale
+11. night_stars phase degraded
 
 ---
 
@@ -108,6 +113,6 @@ identity-resolver MLS club-ID mapping (name → MLS-CLU-xxxxxx).
 - Relay: field-relay-nba.jeffunglesbee.workers.dev
 - CF account: b57e9af57ab46c52ca9215804e689c29
 - Repo: jeffunglesbee-create/jubilant-bassoon
-- MLS proof-mode reference game: event 761644, STL 3-0 ATX, 2026-05-23
+- AVV-MLS proof fixture: STL 3-0 ATX, event 761644, 2026-05-23
 
-SESSION END: RELAY 1a2d7696 · CLIENT 10058d83 · 2026-06-30 · AVV-MLS docs consolidated to one, doc-quality root cause identified · via chat
+SESSION END: RELAY 1a2d7696 · CLIENT 418e1d4f · 2026-06-30 · AVV-MLS verified 14/14 in real CI, A704 regression found+fixed · via chat
