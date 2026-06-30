@@ -5695,5 +5695,27 @@ assert('A_BR_4 — J3 brief bypasses compound backoff: no _compoundRetryAfter in
   !html.match(/fetchFIELDBriefFromClaude[\s\S]{0,500}_compoundRetryAfter/),
   'fetchFIELDBriefFromClaude must read budget directly, not via canCall()');
 
+// ── MLS Tournament Multiplexer (A-TOURN — 2026-06-30) ────────────────────────
+{
+  const tournScript = (() => { try { return require('fs').readFileSync('scripts/seed-mls-tournaments-2026.py', 'utf8'); } catch(_) { return ''; } })();
+  const tournYml    = (() => { try { return require('fs').readFileSync('.github/workflows/mls-tournaments-seed.yml', 'utf8'); } catch(_) { return ''; } })();
+
+  assert('A-TOURN-1 — scripts/seed-mls-tournaments-2026.py exists and non-empty',
+    tournScript.length > 500 && tournScript.includes('def main()') && tournScript.includes('post_archive_game'),
+    'seed-mls-tournaments-2026.py must exist and contain main() + post_archive_game()');
+
+  assert('A-TOURN-2 — .github/workflows/mls-tournaments-seed.yml exists with daily schedule',
+    tournYml.length > 100 && tournYml.includes("cron: '0 11 * * *'") && tournYml.includes('seed-mls-tournaments-2026.py'),
+    'mls-tournaments-seed.yml must exist with daily 11am UTC cron and call the seed script');
+
+  assert('A-TOURN-3 — tournament script uses generic Competition iteration (no hardcoded comp allowlist)',
+    (tournScript.match(/MLS-COM-0000/g) || []).length === 1,
+    'seed-mls-tournaments-2026.py must reference MLS-COM-0000 only once (REG_SEASON_COMP) — no hand-maintained competition list');
+
+  assert('A-TOURN-4 — tournament script does not set source_id in /archive/game payload',
+    tournScript.includes('/archive/game') && !tournScript.includes('"source_id"') && !tournScript.includes("'source_id'"),
+    '/archive/game POST body must not include source_id — espn_event_id column is ESPN-namespaced');
+}
+
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);
