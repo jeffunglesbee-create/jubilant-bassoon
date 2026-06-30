@@ -54,21 +54,42 @@ Smoke: 807/0 ✅
 
 ---
 
-## D1 Verification — STAGED (CI dispatch required)
+## D1 Verification — STAGED
 
-relay `/archive/game` POST blocked from CC bash (proxy 403 on *.workers.dev).  
-CI runners can reach the relay. Dispatching `mls-tournaments-seed.yml` via workflow_dispatch.
+### Pre-seed state (confirmed via D1 MCP direct query, 2026-06-30)
+```
+postseason_games: NBA 15, NHL 15, UFL 2, MLS 0
+```
+MLS rows confirmed absent — seed has not run yet. Table exists with correct schema.
 
-**Verification commands (run after CI completes):**
+### Blocker
+Two proxy restrictions prevent in-session execution:
+1. `*.workers.dev:443` → 403 Tunnel from CC bash — relay `/archive/game` POST blocked
+2. `stats-api.mlssoccer.com` → 403 Tunnel from CC bash — roster fetch blocked
+3. Workflow dispatch → 404 because `.github/workflows/mls-tournaments-seed.yml` is only on `claude/elegant-shannon-t2dvt0`, not `main` (GitHub only registers workflows from default branch)
+
+### Unblock criteria (per Rule 74 — STAGED-GATE-A)
+**Blocked by:** PR merge to main  
+**Unblocked when:** `mls-tournaments-seed.yml` lands on main  
+**Auto-runs:** daily at 11am UTC from that point  
+**Manual trigger:** `workflow_dispatch` via GitHub Actions UI or `gh workflow run mls-tournaments-seed.yml`
+
+### Verification queries (run after first CI execution)
 ```sql
-SELECT id, sport, round, home, away, date FROM postseason_games WHERE sport='MLS' ORDER BY date;
-SELECT COUNT(*) as c FROM postseason_games WHERE sport='MLS' AND (home LIKE '%TBC%' OR away LIKE '%TBC%');
+-- Row count by competition
+SELECT league, COUNT(*) as cnt FROM postseason_games WHERE sport='MLS' GROUP BY league ORDER BY cnt DESC;
+
+-- All MLS rows (spot-check bracket IDs, rounds, teams)
+SELECT id, league, round, home, away, date FROM postseason_games WHERE sport='MLS' ORDER BY date LIMIT 20;
+
+-- TBC exclusion (expect 0)
+SELECT COUNT(*) as tbc_count FROM postseason_games WHERE sport='MLS' AND (home LIKE '%TBC%' OR away LIKE '%TBC%');
 ```
 
 **Expected:**
-- Rows exist for MLS Cup Playoffs, US Open Cup, Leagues Cup, Campeones Cup, CONCACAF Champions Cup
-- TBC count = 0 (entity filter excludes placeholder teams)
-- Second run = same or lower total (idempotent via COALESCE UPSERT)
+- Leagues with rows: MLS Cup Playoffs, US Open Cup, Leagues Cup, Campeones Cup, CONCACAF Champions Cup
+- TBC count = 0 (entity filter excludes MLS-CLU-00001H / MLS-CLU-00001J)
+- Idempotency: rerun → same total count, no duplicates (COALESCE UPSERT)
 
 ---
 
