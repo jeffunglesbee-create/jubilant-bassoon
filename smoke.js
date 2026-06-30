@@ -204,6 +204,43 @@ assert("AVV-KALI-008 — 'adapter-proof-kali-afl' in Feature Registry",
   html.includes("'adapter-proof-kali-afl'"),
   'Feature Registry must contain adapter-proof-kali-afl entry');
 
+// ── Odds API Adapter Visible Value Proof (AVV-ODDS — 2026-06-29) ────────────
+
+assert('AVV-ODDS-001 — docs/adapter-proof.manifest.json contains odds-api entry',
+  require('fs').existsSync('./docs/adapter-proof.manifest.json') &&
+  require('fs').readFileSync('./docs/adapter-proof.manifest.json', 'utf8').includes('odds-api'),
+  'Odds API must have an entry in adapter-proof.manifest.json');
+
+assert('AVV-ODDS-002 — ODDS_SPORT_KEYS referenced in client',
+  html.includes('ODDS_SPORT_KEYS'),
+  'ODDS_SPORT_KEYS must be referenced — routes MLB and WC26 odds to correct API sport key');
+
+assert('AVV-ODDS-003 — moneyline + bookmakers schema present in client',
+  html.includes('extractOddsForGame') || (html.includes('moneyline') && html.includes('bookmakers')),
+  'moneyline and bookmakers schema must exist — client reads Odds API response shape');
+
+assert('AVV-ODDS-004 — opening_odds archive schema consumed in client',
+  html.includes('opening_odds') || html.includes('openingWP') || html.includes('wpDelta'),
+  'opening_odds (or derivative WP fields) must be present — D1 archive schema consumed by client');
+
+assert("AVV-ODDS-005 — odds-api named as WP source or [ODDS] journalism block wired",
+  html.includes("source: 'odds-api'") || html.includes('[ODDS]'),
+  "odds-api named as live WP source (L27150) — relay provides [ODDS STORY] journalism block");
+
+assert('AVV-ODDS-006 — Odds source registry entry exists',
+  require('fs').existsSync('./docs/source-registry.json') &&
+  require('fs').readFileSync('./docs/source-registry.json', 'utf8').includes('odds-api-the-odds-api'),
+  'Odds source registry entry required — includes all sport keys and credit cost');
+
+assert('AVV-ODDS-007 — adapter-fixtures-odds-story-wnba.json exists with [ODDS STORY] output',
+  require('fs').existsSync('./docs/adapter-fixtures-odds-story-wnba.json') &&
+  require('fs').readFileSync('./docs/adapter-fixtures-odds-story-wnba.json', 'utf8').includes('[ODDS STORY]'),
+  'WNBA odds-story fixture must exist with real opening + closing odds and expected output');
+
+assert("AVV-ODDS-008 — 'adapter-proof-odds-api' in Feature Registry",
+  html.includes("'adapter-proof-odds-api'"),
+  'Feature Registry must contain adapter-proof-odds-api entry');
+
 // 5. RELAY NBA Adapters (Session 3)
 assert('RELAY_BASE defined', html.includes("const RELAY_BASE = 'https://field-relay-nba"));
 assert('relayHealthCheck defined', html.includes('async function relayHealthCheck'));
