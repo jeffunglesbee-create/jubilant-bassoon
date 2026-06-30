@@ -50,7 +50,7 @@ If a future competition uses two-legged ties, `series_type` will be non-empty �
 | `.github/workflows/mls-tournaments-seed.yml` | NEW | Daily 11am UTC cron, workflow_dispatch |
 | `smoke.js` | MODIFIED | +4 assertions (A-TOURN-1 through A-TOURN-4), 803→807 |
 
-Smoke: 807/0 ✅
+Smoke: 807/0 ✅ (on local main branch)
 
 ---
 
@@ -66,7 +66,7 @@ MLS rows confirmed absent — seed has not run yet. Table exists with correct sc
 Two proxy restrictions prevent in-session execution:
 1. `*.workers.dev:443` → 403 Tunnel from CC bash — relay `/archive/game` POST blocked
 2. `stats-api.mlssoccer.com` → 403 Tunnel from CC bash — roster fetch blocked
-3. Workflow dispatch → 404 because `.github/workflows/mls-tournaments-seed.yml` is only on `claude/elegant-shannon-t2dvt0`, not `main` (GitHub only registers workflows from default branch)
+3. Workflow dispatch → 404 because `.github/workflows/mls-tournaments-seed.yml` is only on feature branch, not `main` (GitHub only registers workflows from default branch)
 
 ### Unblock criteria (per Rule 74 — STAGED-GATE-A)
 **Blocked by:** PR merge to main  
