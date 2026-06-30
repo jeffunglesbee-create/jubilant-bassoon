@@ -1276,14 +1276,12 @@ assert('A348 — JQ-1: fetchGameBriefOnDemand checks KV (fetchPrerenderedGameBri
 
 
 
-assert('A245 — V2 in-game leaders: fetchV2Leaders + _v2LeaderCache + name-reversal + wired for live basketball',
-  html.includes('function fetchV2Leaders') &&
-  html.includes('_v2LeaderCache') &&
-  html.includes('V2_LEADER_TTL') &&
-  html.includes("split(' ').reverse().join(' ')") &&
-  html.includes("sport === 'nba' || sport === 'wnba') && (fg.state === 'live' || v2Entry.state === 'in')") &&
-  html.includes('fetchV2Leaders(sport, gameNum'),
-  'V2 leaders: fetchV2Leaders must be defined, wired for live NBA/WNBA, and reverse player name');
+assert('A245 — V2 in-game leaders REMOVED (API-Sports.io subscription lapsed, 2026-06-30)',
+  !html.includes('function fetchV2Leaders') &&
+  !html.includes('_v2LeaderCache') &&
+  !html.includes('V2_LEADER_TTL') &&
+  !html.includes('fetchV2Leaders(sport, gameNum'),
+  'V2 leaders must be fully removed — fetchV2Leaders/_v2LeaderCache/V2_LEADER_TTL must not exist');
 
 assert('A246 — NHL in-game leaders: pickSkaterLeader in fetchNHLLiveStats, writes homeLeader/awayLeader from playerByGameStats',
   html.includes('pickSkaterLeader') &&

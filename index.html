@@ -16774,8 +16774,6 @@ let _wcSectionInjected = false; // true once FIFA section added to allData.sport
 const _wcBriefsFetched = new Set(); // dedup: game IDs we've already fetched post-match briefs for
 const _nbaBriefsFetched = new Set(); // dedup: NBA game IDs we've already fetched post-game briefs for
 const _nhlBriefsFetched = new Set(); // dedup: NHL game IDs we've already fetched post-game briefs for
-const _v2LeaderCache = {}; // gameNumericId → {ts} — prevents re-fetching within TTL
-const V2_LEADER_TTL  = 55000; // 55s — slightly under poll interval
 
 // renderWCBracketImpact — fetches bracket impact from D1 and renders
 // a compact delta table adjacent to a finished WC game card.
@@ -16841,60 +16839,11 @@ async function renderWCBracketImpact(gameId, home, away, relayBase) {
   } catch (_) { /* non-blocking */ }
 }
 
-// ── V2 in-game leaders — /games/statistics/players (basketball only) ────────
-// VERIFIED 2026-05-30: endpoint exists, returns 28 player objects per game.
-// player.name is REVERSED ("Vassell Devin") — must split/reverse before display.
-// team.id matches teams.home.id / teams.away.id from the games endpoint.
-// Only fires for live basketball games; cached V2_LEADER_TTL between calls.
-async function fetchV2Leaders(sport, gameNumericId, homeTeamId, awayTeamId, espnKey) {
-  const cacheKey = `${sport}:${gameNumericId}`;
-  const cached = _v2LeaderCache[cacheKey];
-  if (cached && Date.now() - cached.ts < V2_LEADER_TTL) return;
-  _v2LeaderCache[cacheKey] = { ts: Date.now() }; // mark attempted even on failure
-
-  const apisportsSport = (sport === 'nba' || sport === 'wnba') ? 'basketball' : null;
-  if (!apisportsSport || !gameNumericId || !homeTeamId || !awayTeamId) return;
-
-  try {
-    const r = await fetch(
-      `${V2_RELAY_BASE}/apisports/${apisportsSport}/games/statistics/players?id=${gameNumericId}`,
-      { signal: AbortSignal.timeout(8000) }
-    );
-    if (!r.ok) return;
-    const data = await r.json();
-    const players = data?.response || [];
-    if (!players.length) return;
-
-    // Group by team.id
-    const byTeam = {};
-    players.forEach(p => {
-      const tid = p?.team?.id;
-      if (tid == null) return;
-      (byTeam[tid] = byTeam[tid] || []).push(p);
-    });
-
-    const pickLeader = (teamId) => {
-      const group = byTeam[teamId] || [];
-      if (!group.length) return null;
-      group.sort((a, b) => (b?.points ?? 0) - (a?.points ?? 0));
-      const top = group[0];
-      const pts = top?.points ?? 0;
-      if (!pts) return null;
-      // VERIFIED: name is "Vassell Devin" format — reverse to "Devin Vassell"
-      const raw  = top?.player?.name || '';
-      const name = raw.includes(' ') ? raw.split(' ').reverse().join(' ') : raw;
-      return { name, val: pts, unit: 'PTS' };
-    };
-
-    if (espnScores[espnKey]) {
-      espnScores[espnKey].homeLeader = pickLeader(homeTeamId);
-      espnScores[espnKey].awayLeader = pickLeader(awayTeamId);
-      if (FIELD_DEBUG) console.debug(`[V2-Leaders] ${espnKey}: home=${espnScores[espnKey].homeLeader?.name} away=${espnScores[espnKey].awayLeader?.name}`);
-    }
-  } catch(e) {
-    if (FIELD_DEBUG) console.warn('[V2-Leaders]', e.message);
-  }
-}
+// V2 in-game leaders (fetchV2Leaders) — REMOVED 2026-06-30. API-Sports.io
+// basketball-tier subscription lapsed (do-not-renew, June 26 2026 decision).
+// Called the relay's /apisports/basketball/games/statistics/players passthrough,
+// which no longer exists. homeLeader/awayLeader fields remain in espnScores
+// shape (always null now) — downstream renderers already null-safe by design.
 
 async function fetchV2AllScores() {
   _v2PollCycle++;
@@ -17041,16 +16990,9 @@ async function fetchV2AllScores() {
           } catch(e_sav) { if(FIELD_DEBUG) console.warn('[V2-Savant]', e_sav.message); }
         }
 
-        // Basketball leaders — /games/statistics/players (NBA + WNBA)
-        // VERIFIED 2026-05-30: endpoint exists, 28 players, name reversed, points field present.
-        if ((sport === 'nba' || sport === 'wnba') && (fg.state === 'live' || v2Entry.state === 'in')) {
-          const gameNum   = (fg.id || '').replace(/^bball:/, '');
-          const homeTId   = fg.home?.teamId;
-          const awayTId   = fg.away?.teamId;
-          if (gameNum && homeTId && awayTId) {
-            fetchV2Leaders(sport, gameNum, homeTId, awayTId, key).catch(() => {});
-          }
-        }
+        // Basketball leaders (homeLeader/awayLeader) — REMOVED 2026-06-30.
+        // fetchV2Leaders + the /apisports passthrough it called are gone
+        // (API-Sports.io subscription lapsed). See HANDOFF for removal log.
 
         // MLB pitcher leaders — StatsAPI boxscore (VERIFIED: teams.{home|away}.pitchers[last] = current pitcher)
         // gamePk sourced from allData (same pattern as Savant WP trigger).
