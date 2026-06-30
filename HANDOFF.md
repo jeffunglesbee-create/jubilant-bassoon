@@ -1,74 +1,88 @@
 # FIELD HANDOFF
 
-## Session: 2026-06-30 · MLS Full Stack (Part 4: CC-CMD Doc Split)
+## Session: 2026-06-30 · MLS Full Stack (Part 5: Context Gate Fix + AVV-MLS)
 
-**CLIENT HEAD: 64b73c91**
+**CLIENT HEAD: ae588c2a**
 **SW_VERSION: 2026-06-30a**
-**RELAY HEAD: 4daaf058** (unchanged — this part was docs only)
+**RELAY HEAD: 810cccea** (buildSoccerXGContext gate fix)
 **SMOKE: 807/0**
 
 ---
 
 ## THIS SESSION — SHIPPED
 
-### CC-CMD doc split: round-label-aggregate → relay-only + client-only
+### Real gap found and fixed: buildSoccerXGContext never consumed _hasMatchStats
 
-The combined `docs/CC-CMD-2026-06-30-round-label-aggregate.md` required one
-CC session to operate across both repos in sequence. This is exactly the
-failure mode hit earlier this session (CC opened against field-relay-nba,
-couldn't find a spec doc that lives in jubilant-bassoon per the two-repo
-separation rule, correctly asked rather than fabricated). Split into two
-self-contained, single-repo CC-CMDs to remove the cross-repo juggling
-entirely:
+While verifying readiness to write the AVV-MLS CC-CMD, direct inspection
+of the live context-assembler.js found that dual-source CC-CMD's Task 1
+(relay commit ea84747d) widened the **relay route** `/soccer/xg` to return
+`_hasMatchStats`, but never updated `buildSoccerXGContext` — the actual
+**consumer** — which still gated purely on `if (!d?._hasXG) return ''`.
+MLS games (where `_hasXG` is always false) were therefore STILL getting
+zero soccer context despite the route-level fix. Confirmed live before
+fixing: `_hasXG: false, _hasMatchStats: true`, function still returned `''`.
 
-- `docs/CC-CMD-2026-06-30-round-label-relay.md` (field-relay-nba only) —
-  Tasks 1 (round label fix), 2a (series extraction in /soccer/xg), 2b
-  (conditional second-leg enrichment). Re-verified against the CURRENT
-  post-dual-source code before splitting — Task 2a's target
-  (`/soccer/xg`'s summary-fetch block) is untouched by the dual-source
-  edits (those touched the separate statistics-fetch block further down
-  the same route); Tasks 1 and 2b's targets are upstream of all dual-source
-  insertions, completely unshifted. Includes an explicit DEPLOY section
-  warning against `[skip ci]` on runtime-code commits, referencing the
-  exact mistake made and caught during the dual-source session.
+Fixed: gate now passes on `_hasXG OR _hasMatchStats`; added a fallback
+formatting block (possession/shots/passes/cards) that fires when the
+existing xG-specific lines produce nothing but match stats are present.
+Commit `810cccea` — deliberately NOT `[skip ci]` this time. Auto-trigger
+on push didn't fire for an unexplained reason (touched `src/**`, no
+skip-ci, should have triggered per deploy.yml's path filter — worth
+investigating if it recurs); caught via direct run-list check rather than
+assumed, manually dispatched, confirmed deployed.
 
-- `docs/CC-CMD-2026-06-30-round-label-client.md` (jubilant-bassoon only) —
-  Task 3 (client badge), restructured into two explicit parts: Part A
-  (NBA/NHL/UFL/MLS-tournament round badge — no dependency, ready now,
-  postseason_games.round already has real data) and Part B (soccer
-  "1st/2nd Leg" label + aggregate score — depends on the relay doc shipping
-  and deploying first; includes a live curl check to confirm before
-  starting Part B, with explicit instruction to stop and document as
-  blocked rather than fabricate the relay payload shape if unmet).
+Live verification: `/journalism/context-probe` returns no MLS entry today
+(season paused, confirmed separately) so full pipeline re-confirmation
+waits for July 22 — but the underlying relay-route data (AVV-MLS-003's
+target) and the gate-fix code path are both independently verified.
 
-Original combined doc marked SUPERSEDED (banner added, content preserved
-for historical reference, not deleted) — commit `64b73c91`.
+### AVV-MLS CC-CMD written
+
+`docs/CC-CMD-2026-06-30-avv-mls.md` — jubilant-bassoon only, adds
+`test.describe('MLS — Tournament + Stats')` with AVV-MLS-001 through 005,
+following the established MLB/AFL pattern.
+
+**Important honesty check baked into the doc:** MLS is paused May 24–Jul 22
+(World Cup) — confirmed live, zero MLS games exist to test a DOM-rendering
+check against today. Three of five tests (002, 003, 005) don't need a live
+game at all — they test relay routes/D1 data directly against known
+historical/future-dated targets and should produce real DEFINITIVE output
+today, no skip excuse. Two tests (001, 004) genuinely need a live game for
+full pipeline proof and use the same graceful-skip pattern established for
+AFL on 2026-06-29 — log clearly, return without failing, self-activate
+July 22. The doc is explicit that 002/003/005 skipping would signal a real
+regression, not an expected gap — these two skip-categories are not
+interchangeable and the doc's DONE CONDITION enforces that distinction.
+
+Also confirmed during this work (previously assumed, now verified): the
+client (index.html) has extensive MLS support already wired —
+`'usa.1':'mls'` league-slug mapping plus dozens of sport-detection call
+sites (broadcast verb selection, weather alerts, push-notification
+scoring). AVV-MLS-001 is gated on season timing only, not on missing
+client support.
 
 ---
 
 ## CC-CMDS QUEUED — NEXT SESSION
 
-**#1a (field-relay-nba, run first):**
+**#1a (field-relay-nba):**
 "git pull. Read docs/CC-CMD-2026-06-30-round-label-relay.md. Execute all
-tasks. Nothing commits without confidence ≥ 95. Do not include [skip ci] —
-this changes runtime code; confirm deploy.yml actually ran before claiming
-done."
+tasks. Nothing commits without confidence ≥ 95. Do not include [skip ci]."
 
-**#1b (jubilant-bassoon, run after #1a ships and deploys):**
+**#1b (jubilant-bassoon, after #1a ships and deploys):**
 "git pull. Read docs/CC-CMD-2026-06-30-round-label-client.md. Confirm the
-Part B dependency check (live curl against /v2/games) before starting Part
-B — if unmet, do Part A only and document Part B as blocked. Execute all
-tasks. Nothing commits without confidence ≥ 95."
+Part B dependency check before starting Part B. Execute all tasks. Nothing
+commits without confidence ≥ 95."
 
-**#2 (after #1a and #1b — final close-out):**
-Write AVV describe block for MLS: tests/adapter-visible-value.spec.js,
-AVV-MLS-001 through AVV-MLS-005.
+**#2 (jubilant-bassoon, no dependency — can run anytime, including before #1a/#1b):**
+"git pull. Read docs/CC-CMD-2026-06-30-avv-mls.md. Execute all tasks.
+Nothing commits without confidence ≥ 95. AVV-MLS-002/003/005 must produce
+real DEFINITIVE output, not skips — that distinguishes them from
+AVV-MLS-001/004's expected graceful-skip during the MLS World Cup pause."
 
 **#3 (separate scope, not urgent):**
 identity-resolver MLS club-ID mapping (name → MLS-CLU-xxxxxx) to unblock
-buildSoccerSeasonFormContext. Needs its own spec — touches gameMeta
-construction in the live cron path, treat with same care as the dual-source
-session's Probe 3.
+buildSoccerSeasonFormContext.
 
 ---
 
@@ -76,22 +90,21 @@ session's Probe 3.
 
 - postseason_games round vocabulary: "East CF" → "Eastern Conference Finals" etc.
 - European club coverage in identity-resolver before August (EPL, La Liga, UCL, etc.)
-- Two-legged tie game_number=2 handling — CONFIRMED PRESENT (TELUS Jul 9–14),
-  not speculative. The relay-only round-label CC-CMD addresses the ESPN-
-  sourced path only (aggregateScore is ESPN-native). Stats-api-sourced
-  two-legged ties (TELUS, confirmed; any future MLS-club tournament with
-  real legs) have NO aggregate field at all — separate handling needed,
-  flagged explicitly in both new split docs' KNOWN GAPS sections so it
-  isn't rediscovered by surprise.
+- Two-legged tie game_number=2 handling — stats-api-sourced ties (TELUS,
+  confirmed Jul 9–14) have no aggregate field; flagged in both round-label
+  split docs' KNOWN GAPS sections.
+- **NEW:** investigate why the 810cccea push didn't auto-trigger deploy.yml
+  despite touching src/** with no [skip ci] — manual dispatch worked, but
+  the auto-trigger gap is worth a root-cause pass if it recurs.
 
 ---
 
 ## PRIORITY LIST
 
-### 🔧 CC-CMDs (in order)
+### 🔧 CC-CMDs (in order, #2 has no dependency on #1a/#1b)
 1. CC-CMD-2026-06-30-round-label-relay.md (field-relay-nba)
 2. CC-CMD-2026-06-30-round-label-client.md (jubilant-bassoon, after #1)
-3. AVV-MLS describe block (jubilant-bassoon)
+3. CC-CMD-2026-06-30-avv-mls.md (jubilant-bassoon, independent)
 4. identity-resolver MLS club-ID mapping (new spec needed)
 
 ### 🔨 INFRASTRUCTURE
@@ -117,4 +130,4 @@ session's Probe 3.
 - Repo: jeffunglesbee-create/jubilant-bassoon
 - MLS stats API: stats-api.mlssoccer.com (no key) — see codex mls-schedule-stats-api-2026-06-30
 
-SESSION END: RELAY 4daaf058 · CLIENT 64b73c91 · 2026-06-30 · Round-label CC-CMD split into relay-only + client-only, original marked superseded · via chat
+SESSION END: RELAY 810cccea · CLIENT ae588c2a · 2026-06-30 · buildSoccerXGContext gate fix shipped+deployed, AVV-MLS CC-CMD written · via chat
