@@ -1,91 +1,120 @@
 # FIELD HANDOFF
 
-## Session: 2026-06-30 · Round Label Badge (Client)
+## Session: 2026-06-30 · MLS Full Stack (Part 10: Round-Label Complete)
 
-**CLIENT HEAD: (pending — see commit below)**
-**RELAY HEAD: f4c5fba9** (field-relay-nba, CONTRACTS.md sync — code at 5911f0b5)
-**SW_VERSION: 2026-06-30b**
-**Smoke: 809/0**
+**CLIENT HEAD: 8ae4fb6d**
+**RELAY HEAD: 4e2398c6** (CONTRACTS.md sync only — code unchanged since f4c5fba9)
+**SW_VERSION: 2026-06-30a**
+**SMOKE: 809/0**
 
 ---
 
-## THIS SESSION — SHIPPED + VERIFIED
+## ROUND-LABEL FEATURE: COMPLETE END TO END
 
-### round-label-relay.md: executed by CC, independently re-verified, real data
+Both halves shipped and independently verified — not self-reported.
 
-CC found the doc correctly this time (file-placement fix from the prior
-session worked — relay-scoped CC-CMD was actually in field-relay-nba where
-CC opens its sessions). Shipped relay commit `5911f0b5`, deployed
-successfully (confirmed via Deploy RELAY Worker run, not just CC's
-self-report). CC correctly followed the new network-constraint instruction
-— didn't try to route around the sandbox block, marked Task 4 STAGED and
-explicitly handed live verification to chat.
+### Client side: round-label-client.md executed by CC
 
-Verified all three tasks by reading the actual deployed source and
-querying live data, not trusting the summary:
-- Task 1: `adaptESPNWCSoccer` round field confirmed at the exact line
-  CC claimed (1328), WC26 BSD block at line 3040 confirmed untouched.
-- Task 2a: `/soccer/xg` series extraction confirmed at line 10449,
-  exact shape match.
-- Task 2b: conditional second-leg pre-filter confirmed at line 3078,
-  exact regex match.
-- Task 4 (live verification, run by chat): no live games today across
-  any club league (genuinely off-season June 30) — used a past UCL
-  Round-of-16 date instead, same approach as the AVV-MLS verification.
-  Real result: `round: "2nd Leg - Arsenal advance 3-1 on aggregate"`,
-  `series: {leg:2, totalLegs:2, completed:true, homeAggregate:3,
-  awayAggregate:1, otherLegEventId:"401862578"}` — confirmed across 7
-  real ties (Arsenal, Sporting CP, PSG, Real Madrid, Barcelona, Bayern,
-  Liverpool, Atlético). N+1 avoidance confirmed empirically: a same-day
-  EPL slate with no leg notes triggered zero extra fetches.
+Commit `989f098`. CC's own narration showed real engineering judgment: hit
+a known pre-existing `field_smoke.js` environment issue (wrong path
+assumption, unrelated to this work, "has been the case all session"),
+correctly diagnosed it as pre-existing rather than something it broke,
+used `--no-verify` with a documented reason rather than either blocking on
+an unrelated issue or silently skipping verification.
 
-### CONTRACTS.md updated: queued → SHIPPED, both repos
+Pushed to both main and a feature branch (`claude/elegant-shannon-t2dvt0`)
+— this predates the `**Branch:** main` header fix added to this doc later
+in the session; not a failure of that fix. Branch confirmed 0 ahead/4
+behind main (zero unique content), deleted.
 
-`game.round` and `_series`/`game.series` entries updated with the real
-verified example data above, in place of the "queued, not yet shipped"
-placeholder language from when these were first registered.
+**Verified independently, every claim checked against actual deployed
+source, not trusted from the summary:**
+- `buildRoundBadge(game)` at index.html:7716 — exact implementation
+  matches spec, plus HTML-escaping that wasn't explicitly required but is
+  good practice. Aggregate gate (`leg !== 1`) confirmed correct.
+- Card template wiring confirmed positioned exactly where claimed — right
+  after the NHL analytics badge row, using the identical IIFE pattern as
+  the existing `mlb-analytics-badges`/`nhl-analytics-badges` rows.
+- Data pipeline confirmed: `mapV2ToESPN` maps `round`/`series`;
+  `fetchV2AllScores` re-renders only when round data is newly arrived
+  (`_roundDataNewThisPoll` flag) — avoids redundant re-renders on every
+  poll, a detail neither I nor the CC-CMD explicitly specified.
+- Smoke: re-ran via a genuine full git clone (learned from an earlier
+  session mistake — partial local file copies produce false failures).
+  Real result: 809/0, both A-ROUND-1 and A-ROUND-2 present and passing by
+  exact name.
+- Full CI confirmed green for the actual commit: static smoke, live
+  smoke, viewport Layer 1, and Browser runtime tests (Playwright) — real
+  Chromium, real network, the closest available proxy for visual
+  verification chat doesn't have direct access to.
+
+### CONTRACTS.md: round-label fully marked SHIPPED, both repos
+
+Both the relay producer (`game.round`/`game.series`, shipped earlier this
+session) and the client consumer (`buildRoundBadge`, shipped this part)
+are now documented as SHIPPED with real implementation details, replacing
+all "queued" placeholder language.
+
+---
+
+## WHAT'S NOW AUTOMATED vs. STILL MANUAL
+
+**Automated:** round labels render for every sport with non-empty
+`game.round` (NBA/NHL/UFL series, MLS tournaments, live ESPN-sourced
+soccer including ongoing two-legged ties) with zero per-sport branching.
+Aggregate scores render automatically for ESPN-sourced two-legged ties
+once the second leg is reached.
+
+**Still manual / genuinely open, not new findings:**
+- No dedicated AVV-style Playwright test exists for the round badge
+  specifically (asserting visible text/correct rendering) — the general
+  Playwright suite passing confirms no crash, not that the badge text is
+  pixel-correct. Low priority, not blocking.
+- Stats-api-sourced two-legged ties (TELUS Canadian Championship, real
+  data, Jul 9–14) still show round label only, no aggregate — that data
+  model has no aggregate field at all, flagged multiple times this
+  session, still unsolved.
+- identity-resolver MLS club-ID mapping (unblocks
+  `buildSoccerSeasonFormContext`) — separate scope, not started.
 
 ---
 
 ## CC-CMDS QUEUED — NEXT SESSION
 
-**#1 (jubilant-bassoon — client-side round badge, now unblocked):**
-"git pull. Read docs/CC-CMD-2026-06-30-round-label-client.md. Confirm the
-Part B dependency check before starting Part B (relay has shipped —
-check should now pass). Nothing commits without confidence ≥ 95."
-
-**#2 (separate scope, not urgent):**
+**#1 (separate scope, not urgent):**
 identity-resolver MLS club-ID mapping (name → MLS-CLU-xxxxxx) to unblock
-buildSoccerSeasonFormContext.
+buildSoccerSeasonFormContext. Needs its own spec.
+
+No other CC-CMDs currently queued — both round-label docs are now
+complete and verified.
 
 ---
 
 ## CONSISTENCY ITEMS OUTSTANDING (standing approval)
 
-- postseason_games round vocabulary normalization
-- European club coverage in identity-resolver before August
-- Two-legged tie game_number=2 — stats-api-sourced ties (TELUS) have no
-  aggregate field; ESPN-sourced ties (just shipped) do, via `_series`
+- postseason_games round vocabulary normalization ("East CF" → "Eastern
+  Conference Finals" etc.) — still open, low priority, display is correct
+  as-is.
+- European club coverage in identity-resolver before August.
+- Stats-api-sourced two-legged tie aggregate support (TELUS and similar)
+  — no data model exists for this yet.
 
 ---
 
 ## PRIORITY LIST
 
-### 🔧 CC-CMDs
-1. CC-CMD-2026-06-30-round-label-client.md (jubilant-bassoon)
-2. identity-resolver MLS club-ID mapping (new spec needed)
-
 ### 🔨 INFRASTRUCTURE
-3. Bosnia DB fix + identity-resolver CANONICAL map
-4. team_form CONTEXT_SOURCE v3
-5. Golf: wire Broadie proxy (Tier 1, $0)
+1. identity-resolver MLS club-ID mapping (new spec needed)
+2. Bosnia DB fix + identity-resolver CANONICAL map
+3. team_form CONTEXT_SOURCE v3
+4. Golf: wire Broadie proxy (Tier 1, $0)
 
 ### 📋 OPEN INCIDENTS
-6. wentToOT hardcoded false
-7. KV editorial keys not consulted
-8. NFL SPORT_TO_V2 — September 9
-9. Odds Daily Counter stale
-10. night_stars phase degraded
+5. wentToOT hardcoded false
+6. KV editorial keys not consulted
+7. NFL SPORT_TO_V2 — September 9
+8. Odds Daily Counter stale
+9. night_stars phase degraded
 
 ---
 
@@ -96,7 +125,6 @@ buildSoccerSeasonFormContext.
 - Relay: field-relay-nba.jeffunglesbee.workers.dev
 - CF account: b57e9af57ab46c52ca9215804e689c29
 - Repo: jeffunglesbee-create/jubilant-bassoon
-- Round-label verified reference tie: Arsenal v Bayer Leverkusen, UCL R16,
-  events 401862578 (1st leg)/401862581 (2nd leg)
+- Round-label client reference: buildRoundBadge, index.html:7716
 
-SESSION END: RELAY f4c5fba9 (code 5911f0b5) · CLIENT dd419c87 · 2026-06-30 · round-label-relay shipped + verified with real UCL data, CONTRACTS.md updated · via chat
+SESSION END: RELAY 4e2398c6 (code f4c5fba9) · CLIENT 8ae4fb6d (code 989f098) · 2026-06-30 · Round-label feature complete end to end, relay+client both independently verified · via chat
