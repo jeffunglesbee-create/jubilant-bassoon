@@ -5,7 +5,7 @@
 **CLIENT HEAD: 10058d83**
 **SW_VERSION: 2026-06-30a**
 **RELAY HEAD: 1a2d7696** (unchanged this part — docs only)
-**SMOKE: 807/0**
+**Smoke: 807/0**
 
 ---
 
