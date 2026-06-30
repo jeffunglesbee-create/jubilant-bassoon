@@ -1,61 +1,77 @@
 # FIELD HANDOFF
 
-## Session: 2026-06-30 · Daily Update + API-Sports.io Removal + MLS Source Research
+## Session: 2026-06-30 · MLS Adapter Build (Part 1: Relay Fix + Schedule Seed)
 
-**CLIENT HEAD: 159814c**
+**CLIENT HEAD: d7f9a4c6**
 **SW_VERSION: 2026-06-30a**
-**RELAY HEAD: cbedf44**
-**SMOKE: 803/0** (fixed this write — prior HANDOFF used "SMOKE" all-caps, A704 checks case-sensitive "Smoke")
+**RELAY HEAD: d78db9d4**
+**SMOKE: 803/0**
 
 ---
 
-## THIS SESSION — THREE PARTS
+## THIS SESSION
 
-### Part 1: Daily update
-- A190 fixed: sw.js SW_VERSION synced to 2026-06-30a
-- A704 fixed (then re-broken by a later write, now fixed again — see above)
-- NBA Finals closed: Knicks 4-1 over Spurs, Brunson MVP
-- Health pipelines green: Oura, Whoop (+auto-auth), Night Owl
+### Relay fix (1 commit: d78db9d4)
+- Added missing `const MLS_STATS_BASE = 'https://stats-api.mlssoccer.com'` — route handler referenced it but constant was never defined (caused 1101 JS exception on every `/mls/stats/*` request)
+- Fixed `/competitions` allowlist prefix: changed `'/competitions/'` to `'/competitions'` so bare `/competitions` path (full registry endpoint) passes the allowlist check
+- Fixed `mlsStatsTtl()` to match same prefix pattern
+- Deploy verified: both `/mls/stats/competitions` and `/mls/stats/matches/seasons/...` confirmed working
 
-### Part 2: API-Sports.io complete removal
-Already documented in prior HANDOFF body (commit 159814c was this write). Summary: 4 relay commits removed dead V2 fallback, handleV2Standings, fetchWCInjuries+routes, /apisports passthrough, /fixtures/fetch, 6 orphaned adapters, fixed an AmbientDO landmine (key-presence guard that would've killed SSE), fixed a deploy.yml CI bug (hardcoded health-string check). 1 client commit removed fetchV2Leaders. Codex incident `cf/2026-06-22/api-sports-football-pro-renewal--june-2` marked RESOLVED with full context — this was a deliberate June 26 decision, not an oversight, that just never got closed out.
+### Network confirmation
+- `stats-api.mlssoccer.com` **now accessible from chat sandbox** (was blocked at prior session close; Jeff's allowlist addition took effect between sessions)
 
-### Part 3: MLS schedule/stats/competitions source research (NEW — no adapter built, research only)
-ESPN confirmed as a working baseline. Then went further: read mlssoccer.com's actual page-source (3 pages: Schedule, Stats, Competitions — Jeff captured via browser save) and the application JS bundle (`base.js`, identical across all 3 pages) to reverse-engineer the real API rather than blind-guess paths. Used the relay's own egress as a temporary diagnostic probe (added → tested → removed, 6 iterations, all confirmed cleanly removed — `cbedf44` deploy verified, zero probe routes live) since mlssoccer.com domains weren't in the chat sandbox's network allowlist.
+### D1 schedule seed (live execution, not committed to CI yet)
+- Deleted 262 stale api-sports rows (all unscored, `date >= 2026-07-22`)
+- Fetched 279 games from stats-api (3 pages, `next_page_token` pagination)
+- Inserted 279 rows with canonical three-letter-code IDs (`{date}-mls-{h}-{a}`)
+- Final state: 289 MLS games (12 pre-WC + 277 post-WC), March 7 to Nov 7
+- 2 rescheduled games (originally Mar/Apr, moved post-WC) have their original `start_date` in pre-WC range — harmless
+- **Decision Day Nov 7 fully covered** (16 games, missing in old seed)
 
-**Confirmed working: `stats-api.mlssoccer.com`** (no auth). Full details, endpoint shapes, error patterns, and key IDs written to **codex key `mls-schedule-stats-api-2026-06-30`** — read that before building the adapter, don't re-derive.
+### Client commits (2, both [skip ci])
+1. `5c80f5d3` — Rewrote `scripts/seed-mls-return-2026.py` for stats-api (was api-sports.io)
+2. `d7f9a4c6` — Updated `.github/workflows/mls-schedule-seed.yml` with weekly Monday cron
 
-Headline findings:
-- Single competitions registry (20 total) covers Regular Season, Leagues Cup, US Open Cup, Gold Cup, Nations League, Copa America, Club World Cup, FIFA World Cup, MLS NEXT Pro, and more — all through the same `matches/seasons/{season_id}?competition_id=X` shape. No per-competition page ingestion needed.
-- `match_date[gte]`/`match_date[lte]` are REQUIRED query params on the matches endpoint, not optional — omitting them returns a validation error, not an empty list (this bit me mid-investigation — false "zero matches" reading until caught).
-- Corrected the old `mls-schedule-seed.yml` date assumptions: resumption is July 22 (not 19), season ends Nov 7 Decision Day (not Oct 31).
-- No bulk player-stats leaderboard exists in this API (searched exhaustively, confirmed absent) — team/club stats and standings are fully covered, player-level leaders are not.
+### Key learnings / gotchas
+- D1 `/d1/execute` batch INSERT fails at 20 rows (500 error); 5 rows per batch works
+- Python urllib default UA triggers Cloudflare Bot Fight Mode (1010); browser-like UA required
+- stats-api `match_date[gte/lte]` filters by effective date but `start_date` field reports original date — rescheduled games have date mismatch
 
-**Network allowlist**: Jeff added `stats-api.mlssoccer.com`, `dapi.mlssoccer.com`, `sportapi.mlssoccer.com`, `www.mlssoccer.com` to the chat sandbox's egress allowlist. **Not confirmed live as of session close** — direct curl still returned 403 after the addition. Re-test at next session start before relying on direct access; fall back to the relay-probe pattern (documented in codex) if still blocked.
+---
+
+## WHAT'S AUTOMATED vs. STILL MANUAL
+
+**Now automated:**
+- MLS schedule seed runs weekly (Monday 10am UTC cron) — catches rescheduled games
+- Relay `/mls/stats/*` passthrough operational — competitions, standings, schedule, match data all accessible
+
+**Still manual / not yet built:**
+- No client-side MLS adapter function (no `adaptMls` or equivalent) — ESPN still provides live MLS scores via `usa.1` league, so game cards work, but stats-api enrichment (venue, match_day, sub_league) isn't consumed
+- No journalism context integration from stats-api (FBref is the current MLS context source)
+- The weekly cron hasn't run yet (first scheduled run: Monday July 6 2026)
 
 ---
 
 ## PRIORITY LIST
 
 ### 🔧 QUEUED CC-CMDs
-1. **Build MLS schedule adapter** using confirmed `stats-api.mlssoccer.com` shape (codex: mls-schedule-stats-api-2026-06-30) — replaces the removed `/fixtures/fetch`, needed before the post-WC MLS schedule (July 22–Nov 7) is otherwise unaccounted for
-2. Relay: /journalism/game-lines (docs/CC-CMD-2026-06-27-relay-game-lines.md)
-3. Client: card brief line (docs/CC-CMD-2026-06-27-client-card-brief-line.md)
+1. Relay: /journalism/game-lines (docs/CC-CMD-2026-06-27-relay-game-lines.md)
+2. Client: card brief line (docs/CC-CMD-2026-06-27-client-card-brief-line.md)
 
 ### 🔨 INFRASTRUCTURE
-4. Bosnia DB fix + identity-resolver CANONICAL map
-5. team_form CONTEXT_SOURCE v3
-6. Golf: wire Broadie proxy (Tier 1, $0)
+3. Bosnia DB fix + identity-resolver CANONICAL map
+4. team_form CONTEXT_SOURCE v3
+5. Golf: wire Broadie proxy (Tier 1, $0)
 
 ### 📋 OPEN INCIDENTS
-7. wentToOT hardcoded false
-8. KV editorial keys not consulted
-9. NFL SPORT_TO_V2 — September 9
-10. Odds Daily Counter stale
-11. night_stars phase degraded
+6. wentToOT hardcoded false
+7. KV editorial keys not consulted
+8. NFL SPORT_TO_V2 — September 9
+9. Odds Daily Counter stale
+10. night_stars phase degraded
 
 ### 🏗️ NEXT ADAPTER BACKFILL
-NBA CDN → NHLE → Squiggle AFL → MLS (stats-api.mlssoccer.com, confirmed) → ...
+NBA CDN → NHLE → Squiggle AFL → MLS (✅ relay + seed done) → client enrichment TBD
 
 ---
 
@@ -68,4 +84,4 @@ NBA CDN → NHLE → Squiggle AFL → MLS (stats-api.mlssoccer.com, confirmed) �
 - Repo: jeffunglesbee-create/jubilant-bassoon
 - MLS stats API: stats-api.mlssoccer.com (no key) — see codex mls-schedule-stats-api-2026-06-30
 
-SESSION END: RELAY cbedf44 · CLIENT 159814c · 2026-06-30 · API-Sports removed + MLS source confirmed (research, no adapter) · via chat
+SESSION END: RELAY d78db9d4 · CLIENT d7f9a4c6 · 2026-06-30 · MLS adapter relay fix + D1 seed + weekly cron · via chat
