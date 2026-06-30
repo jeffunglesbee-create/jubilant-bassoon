@@ -1,19 +1,41 @@
-# FIELD — PR Workflow
+# FIELD — Workflow
 
-## When to use a PR (not direct push to main)
+## Default: direct push to main (updated 2026-06-30)
 
-Direct push to `main` is fine for:
-- Daily score/game updates
-- Small copy fixes
-- `[skip ci]` housekeeping commits
+CC-CMD-driven work (anything specced as docs/CC-CMD-*.md) commits directly
+to `main` regardless of size or architectural scope. The PR/CodeRabbit
+review step this doc used to require for "any architectural change" or
+"anything that took more than 30 minutes" is SUPERSEDED for this category
+of work by a stricter, faster governance loop:
 
-Open a PR for:
-- Any new feature (new analytics, new section, new sport)  
-- Any architectural change (touch events, CSS structure, relay routes)
-- Any change to smoke.js assertions
-- Anything that took more than 30 minutes to build
+- Rule 87 (SELF-COMPLETE-A): every CC-CMD has a probe block (reads real
+  state before writing code) and an explicit, verifiable done condition
+- The smoke gate (deploy-gate.yml / Deploy RELAY Worker) still blocks any
+  bad commit from actually deploying
+- Chat independently re-verifies every CC-CMD's claims against live
+  systems after execution — reading deployed source, running smoke
+  locally, checking CI logs, querying live endpoints — before considering
+  anything done
 
-## Opening a PR
+This catches the same class of problems CodeRabbit was added for (silent
+failures, missing wiring, structural issues) without the latency of a
+PR review cycle, and is required at every CC-CMD HANDOFF/outbox close-out
+regardless of whether a PR exists.
+
+**Do not create a feature branch for CC-CMD work.** Every CC-CMD will state
+`**Branch:** main` explicitly in its header — commit straight to main per
+that instruction, even for large or architectural changes. If a CC-CMD's
+header doesn't state the branch explicitly, treat that as a spec error and
+default to main, not to creating a branch.
+
+## When a PR still makes sense
+
+Manual, non-CC-CMD work that doesn't have a probe block, a done condition,
+or a planned chat-side verification pass — e.g. something built directly
+in a long freeform CC session without a spec doc — can still go through a
+PR if Jeff explicitly asks for one. Use the steps below in that case.
+
+## Opening a PR (only when explicitly requested)
 
 ```bash
 # 1. Create a branch named after the feature
