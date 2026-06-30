@@ -38,7 +38,12 @@ def get_real_club_roster():
 
 def get_tournament_competitions():
     data = api_get(f"{MLS_API}/competitions")
-    return [c for c in data.get("competitions", []) if c.get("competition_type") == "Tournament"]
+    # Exclude MLS Test (MLS-COM-00002R) — test/placeholder competition with
+    # garbled section_name values (e.g. "Total") and no real fixtures
+    EXCLUDE = {"MLS Test"}
+    return [c for c in data.get("competitions", [])
+            if c.get("competition_type") == "Tournament"
+            and c.get("competition_name") not in EXCLUDE]
 
 def fetch_matches(comp_id):
     all_games = []
