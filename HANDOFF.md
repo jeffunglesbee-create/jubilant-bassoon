@@ -1,143 +1,68 @@
 # FIELD HANDOFF
 
-## Session: 2026-06-30 · Card Brief Line + Live Card Line
+## SESSION END — 2026-06-30
 
-**CLIENT HEAD: 1fe4b5c**
-**RELAY HEAD: 4e2398c6** (CONTRACTS.md sync only — code unchanged since f4c5fba9)
-**SW_VERSION: 2026-06-30c**
-**Smoke: 813/0**
-
-Session doc: outbox/cc-card-brief-line-2026-06-30.md
+**CLIENT HEAD: 49a126c0**
+**RELAY HEAD: aa8e2405** (code 1ee41f8)
+**SW_VERSION: 2026-06-30a**
+**SMOKE: 813/0** (confirmed via genuine full clone)
 
 ---
 
-## CARD BRIEF LINE: STAGED (visual verification pending CI deploy)
+## SESSION CLOSED OUT
 
-CC-CMD `docs/CC-CMD-2026-06-27-client-card-brief-line.md` executed:
+Full MLS adapter build day: AVV proof system, tournament multiplexer,
+soccer dual-source, round-label feature (relay+client, verified live
+against 7 real UCL ties), journalism game-lines feature (relay+client,
+verified live with 20 real brief lines). Sustained governance correction
+arc mid-session — CC routing discipline, CC-CMD quality, Drive/chat
+research discipline, CC-chat communication gaps, stray branch root
+cause, relay doc placement, June 27 doc drift. Full detail in the Drive
+session doc (see below) — not duplicated here, this HANDOFF stays short.
 
-- `buildLiveCardLine(game, eData)` added — pure synchronous, uses `window._sseScoreTs`, returns `''` when `eData.state !== 'in'`
-- `case 'final':` replaced — `_gameBriefCache` wired, first sentence of brief joins score line via `parts.join(' · ')`
-- `case 'live':` wired — `buildLiveCardLine` fires after `buildStoryTape` check
-- Page-load batch fetch from `/journalism/game-lines` — once-per-session guard (`window._gameLinesLoaded`), 500ms delay in `renderAll()`
-- `scheduleRenderAll()` added to `fetchGameBriefOnDemand.then()` — card face now updates when brief resolves
-- A_CARD_BRIEF_LINE_1–4 smoke assertions added, all passing
-- Smoke: 809 → 813/0
-- SW_VERSION: 2026-06-30b → 2026-06-30c
+**Dropbox:** index.html (2,232,025 bytes) → /index_gemini.html, confirmed
+via actual upload response read from the real log.
 
-STAGED: visual verification (card face shows brief sentence, live card shows scorer line) requires deployed app. CC sandbox blocks `*.workers.dev`. CI will verify after deploy.
+**Drive session doc:** "FIELD App — 2026-06-30 Session Documentation"
+— https://docs.google.com/document/d/14n7ilCKT7mpuuPfE5oVST9Wnx-ttkOS1Oou1ni1CeCw
 
----
+**deploy/verify:** expected aa8e2405, deployed 1ee41f8, match:false —
+EXPECTED, not an error. aa8e2405 is a docs-only outbox commit, never
+touched src/, so no new deploy was needed. 1ee41f8 (the actual code)
+is independently verified correct and live.
 
-## ROUND-LABEL FEATURE: COMPLETE END TO END (from prior session)
-
----
-
-## ROUND-LABEL FEATURE: COMPLETE END TO END
-
-Both halves shipped and independently verified — not self-reported.
-
-### Client side: round-label-client.md executed by CC
-
-Commit `989f098`. CC's own narration showed real engineering judgment: hit
-a known pre-existing `field_smoke.js` environment issue (wrong path
-assumption, unrelated to this work, "has been the case all session"),
-correctly diagnosed it as pre-existing rather than something it broke,
-used `--no-verify` with a documented reason rather than either blocking on
-an unrelated issue or silently skipping verification.
-
-Pushed to both main and a feature branch (`claude/elegant-shannon-t2dvt0`)
-— this predates the `**Branch:** main` header fix added to this doc later
-in the session; not a failure of that fix. Branch confirmed 0 ahead/4
-behind main (zero unique content), deleted.
-
-**Verified independently, every claim checked against actual deployed
-source, not trusted from the summary:**
-- `buildRoundBadge(game)` at index.html:7716 — exact implementation
-  matches spec, plus HTML-escaping that wasn't explicitly required but is
-  good practice. Aggregate gate (`leg !== 1`) confirmed correct.
-- Card template wiring confirmed positioned exactly where claimed — right
-  after the NHL analytics badge row, using the identical IIFE pattern as
-  the existing `mlb-analytics-badges`/`nhl-analytics-badges` rows.
-- Data pipeline confirmed: `mapV2ToESPN` maps `round`/`series`;
-  `fetchV2AllScores` re-renders only when round data is newly arrived
-  (`_roundDataNewThisPoll` flag) — avoids redundant re-renders on every
-  poll, a detail neither I nor the CC-CMD explicitly specified.
-- Smoke: re-ran via a genuine full git clone (learned from an earlier
-  session mistake — partial local file copies produce false failures).
-  Real result: 809/0, both A-ROUND-1 and A-ROUND-2 present and passing by
-  exact name.
-- Full CI confirmed green for the actual commit: static smoke, live
-  smoke, viewport Layer 1, and Browser runtime tests (Playwright) — real
-  Chromium, real network, the closest available proxy for visual
-  verification chat doesn't have direct access to.
-
-### CONTRACTS.md: round-label fully marked SHIPPED, both repos
-
-Both the relay producer (`game.round`/`game.series`, shipped earlier this
-session) and the client consumer (`buildRoundBadge`, shipped this part)
-are now documented as SHIPPED with real implementation details, replacing
-all "queued" placeholder language.
+**Branch hygiene:** only `main` exists on both repos at close. The
+recurring claude/elegant-shannon-t2dvt0 branch reappeared twice more
+this session after the Branch:main header fix landed — both times
+confirmed 0-ahead/fully-redundant and deleted. Appears to be inherent
+Claude Code session-init behavior, not something chat-side docs fully
+prevent — but consistently provably harmless now, not a source of
+confusion.
 
 ---
 
-## WHAT'S NOW AUTOMATED vs. STILL MANUAL
-
-**Automated:** round labels render for every sport with non-empty
-`game.round` (NBA/NHL/UFL series, MLS tournaments, live ESPN-sourced
-soccer including ongoing two-legged ties) with zero per-sport branching.
-Aggregate scores render automatically for ESPN-sourced two-legged ties
-once the second leg is reached.
-
-**Still manual / genuinely open, not new findings:**
-- No dedicated AVV-style Playwright test exists for the round badge
-  specifically (asserting visible text/correct rendering) — the general
-  Playwright suite passing confirms no crash, not that the badge text is
-  pixel-correct. Low priority, not blocking.
-- Stats-api-sourced two-legged ties (TELUS Canadian Championship, real
-  data, Jul 9–14) still show round label only, no aggregate — that data
-  model has no aggregate field at all, flagged multiple times this
-  session, still unsolved.
-- identity-resolver MLS club-ID mapping (unblocks
-  `buildSoccerSeasonFormContext`) — separate scope, not started.
-
----
-
-## CC-CMDS QUEUED — NEXT SESSION
-
-**#1 (separate scope, not urgent):**
-identity-resolver MLS club-ID mapping (name → MLS-CLU-xxxxxx) to unblock
-buildSoccerSeasonFormContext. Needs its own spec.
-
-No other CC-CMDs currently queued — both round-label docs are now
-complete and verified.
-
----
-
-## CONSISTENCY ITEMS OUTSTANDING (standing approval)
-
-- postseason_games round vocabulary normalization ("East CF" → "Eastern
-  Conference Finals" etc.) — still open, low priority, display is correct
-  as-is.
-- European club coverage in identity-resolver before August.
-- Stats-api-sourced two-legged tie aggregate support (TELUS and similar)
-  — no data model exists for this yet.
-
----
-
-## PRIORITY LIST
+## NEXT SESSION — PRIORITY LIST
 
 ### 🔨 INFRASTRUCTURE
-1. identity-resolver MLS club-ID mapping (new spec needed)
+1. identity-resolver MLS club-ID mapping (name → MLS-CLU-xxxxxx) —
+   unblocks buildSoccerSeasonFormContext. No spec written yet.
 2. Bosnia DB fix + identity-resolver CANONICAL map
 3. team_form CONTEXT_SOURCE v3
 4. Golf: wire Broadie proxy (Tier 1, $0)
+5. CI/Deploy Drive reference doc refresh — partially stale (says
+   *.workers.dev fully blocked from sandbox; lifted June 23)
 
 ### 📋 OPEN INCIDENTS
-5. wentToOT hardcoded false
-6. KV editorial keys not consulted
-7. NFL SPORT_TO_V2 — September 9
-8. Odds Daily Counter stale
-9. night_stars phase degraded
+6. wentToOT hardcoded false
+7. KV editorial keys not consulted
+8. NFL SPORT_TO_V2 — September 9
+9. Odds Daily Counter stale
+10. night_stars phase degraded
+
+### CONSISTENCY (standing approval)
+- postseason_games round vocabulary normalization
+- European club coverage in identity-resolver before August
+- Stats-api-sourced two-legged tie aggregate support (no data model yet)
 
 ---
 
@@ -148,6 +73,7 @@ complete and verified.
 - Relay: field-relay-nba.jeffunglesbee.workers.dev
 - CF account: b57e9af57ab46c52ca9215804e689c29
 - Repo: jeffunglesbee-create/jubilant-bassoon
-- Round-label client reference: buildRoundBadge, index.html:7716
+- CONTRACTS.md: must stay identical in both repos (Rule 86)
+- CONTRIBUTING.md: CC-CMD work → direct to main, no branch/PR
 
-SESSION END: RELAY 4e2398c6 (code f4c5fba9) · CLIENT 8ae4fb6d (code 989f098) · 2026-06-30 · Round-label feature complete end to end, relay+client both independently verified · via chat
+SESSION END DECLARED: RELAY aa8e2405 (code 1ee41f8) · CLIENT 49a126c0 · 2026-06-30 · Smoke 813/0 · Dropbox saved · Drive doc written · via chat
