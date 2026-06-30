@@ -1,4 +1,4 @@
-# CC-CMD — Round Label Display + Two-Legged Tie Aggregate (All Soccer Competitions)
+# CC-CMD — Round Label Display + Two-Legged Tie Aggregate (All Soccer + All Sports)
 
 **Repos:** field-relay-nba (Tasks 1-2), jubilant-bassoon (Task 3 — client)
 **Date:** 2026-06-30
@@ -203,7 +203,7 @@ Place this after the existing AFL/BSD enrichment blocks, same pattern
 
 ---
 
-## TASK 3 — Client: round badge on game cards (jubilant-bassoon)
+## TASK 3 — Client: round badge on game cards, all sports (jubilant-bassoon)
 
 Use whatever single card-rendering location probe 5 identifies. Requirements:
 
@@ -222,11 +222,16 @@ Use whatever single card-rendering location probe 5 identifies. Requirements:
   uses elsewhere (check frontend-design conventions already in place before
   inventing new styling) rather than introducing a new visual language for
   a single field.
-- Do not attempt this for NBA/NHL series in this CC-CMD even though
-  `postseason_games.round` already has data for them ("East CF" etc.) —
-  scope this to soccer only for now per Rule 69; once the component exists
-  it's a one-line extension to apply elsewhere, but verifying NBA/NHL
-  round-label correctness is a separate review this CC-CMD doesn't cover.
+- Apply to ALL sports with a non-empty `game.round` — not soccer only.
+  Data verified correct in postseason_games.round (SELECT * via /context/date
+  games.postseason, confirmed 2026-06-30):
+    NBA: "East CF" / "West CF" / "Finals"
+    NHL: "East CF" / "East Semis" / "West CF" / "Stanley Cup Final"
+    UFL: "Playoff Eliminator"
+    MLS tournaments: "Quarterfinal" / "Semifinal" / "Final" / "Round of 16"
+    Soccer live: "1st Leg" / "2nd Leg" / "Round of 16" (ESPN notes, Task 1)
+  All strings are already human-readable. One badge component, no sport
+  branching. `game.round` is the single field across all paths.
 
 ---
 
@@ -272,7 +277,7 @@ DO:
 - `adaptESPNWCSoccer` round fix (Task 1)
 - `/soccer/xg` series extraction (Task 2a)
 - Conditional second-leg enrichment in `handleV2Games` (Task 2b)
-- One client-side round badge component, soccer cards only (Task 3)
+- One client-side round badge component, all-sport game cards (Task 3)
 - Single commit per repo
 
 DO NOT:
@@ -280,7 +285,6 @@ DO NOT:
   and is more specific
 - Fetch `/soccer/xg` unconditionally for every soccer game — defeats the
   entire point of Task 2b
-- Extend the round badge to NBA/NHL series in this CC-CMD
 - Build FIELD-side aggregate-score computation — ESPN's `aggregateScore`
   already does this correctly; do not duplicate it
 - Touch `regular_season_games` or `postseason_games` schema — this CC-CMD
@@ -295,11 +299,10 @@ DO NOT:
    regex pre-filter in Task 2b may miss some. Not solvable generically;
    note any misses found during probe 4/Task 5 verification for a future
    pass.
-2. MLS tournament rounds (postseason_games.round, stats-api-sourced) use
-   different label strings ("Quarterfinal") than ESPN's notes-based labels
-   ("1st Leg", "Round of 16") — Task 3's badge renders whatever string is
-   in `game.round` as-is; no normalization between the two vocabularies is
-   attempted here.
+2. Round label vocabulary differs across sources ("East CF" for NBA, "1st Leg"
+   for UCL, "Quarterfinal" for MLS tournaments) — rendered as-is, which is
+   correct. All strings are already human-readable. A unified taxonomy is a
+   future data-layer decision if ever needed; not required now.
 
 ---
 
