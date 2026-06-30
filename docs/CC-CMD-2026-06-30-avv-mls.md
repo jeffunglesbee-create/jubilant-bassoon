@@ -34,10 +34,10 @@ the difference between an honest proof and a padded one.
 
 | Test | Needs live game today? | Why |
 |---|---|---|
-| AVV-MLS-001 | **Yes — graceful skip until Jul 22** | Tests DOM card rendering from `allData`, which only reflects today's live ESPN scoreboard |
+| AVV-MLS-001 | **No — runs today via fixture/past-date param, see CC-CMD-2026-06-30-avv-mls-proof-mode.md** | Proof-mode fixture (STL 3-0 ATX, May 23 2026) injected directly into allData.sports; no live game needed |
 | AVV-MLS-002 | No — runs today | Tests `postseason_games.round` via direct relay fetch against known future tournament dates (data already seeded) |
 | AVV-MLS-003 | No — runs today | Tests `/soccer/xg` directly against a known historical event id |
-| AVV-MLS-004 | Partial — see Task 1 below | Full pipeline needs a live game; underlying preconditions are independently checkable today |
+| AVV-MLS-004 | **No — runs today via fixture/past-date param, see CC-CMD-2026-06-30-avv-mls-proof-mode.md** | Uses relay context-probe `?date=2026-05-23` (field-relay-nba commit 1a2d7696); real past-date MLS context confirmed live |
 | AVV-MLS-005 | No — runs today | Tests `/soccer/season-form` directly against a known club id |
 
 ---

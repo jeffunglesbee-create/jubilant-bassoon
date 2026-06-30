@@ -5,7 +5,7 @@
 **CLIENT HEAD: 5bde4b3e**
 **SW_VERSION: 2026-06-30a**
 **RELAY HEAD: 1a2d7696** (context-probe ?date= param)
-**SMOKE: 807/0**
+**Smoke: 807/0**
 
 ---
 

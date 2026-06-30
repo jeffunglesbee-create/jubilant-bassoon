@@ -4789,6 +4789,22 @@ if (_proofMode && _proofAdapter === 'mlb-stats-api') {
   };
 }
 
+const _MLS_PROOF_FIXTURES = {
+  ok: { games: [{
+    home:       'St. Louis CITY SC',
+    away:       'Austin FC',
+    homeScore:  3,
+    awayScore:  0,
+    state:      'post',
+    league:     'MLS',
+    start_time: '2026-05-23T18:45:00Z',
+    venue:      'Energizer Park',
+    confirmed:  true,
+  }] },
+  empty:    { games: [] },
+  malformed: { games: [{ home: '', away: '' }] },
+};
+
 // ── Runtime error capture (Rule 18 — field_browser.test.js reads this) ──────
 // window._fieldErrors collects errors from critical path functions.
 // Read by: Playwright browser test, ?debug=1 panel, Night Owl diagnostics.
@@ -21301,10 +21317,38 @@ async function fetchSchedule(){
       visibleSelectors: ['.game-card', '.stream-chip'],
       generatedAt:      new Date().toISOString(),
     };
+    // MLS proof mode: inject fixture section into allData.sports so cards render.
+    // Also push into `verified` (in scope from fetchSchedule closure) so the
+    // section survives fetchSupplemental's allData={sports:[...verified,...supplemental]}.
+    if (_proofAdapter === 'mls-stats-api') {
+      const _mlsFix = _MLS_PROOF_FIXTURES[_proofFixture] || _MLS_PROOF_FIXTURES.ok;
+      const _mlsProofGames = (_mlsFix.games || []).map(g => ({
+        home: g.home || '', away: g.away || '',
+        homeScore: g.homeScore != null ? g.homeScore : 0,
+        awayScore: g.awayScore != null ? g.awayScore : 0,
+        state: g.state || 'post', league: g.league || 'MLS',
+        start_time: g.start_time || '', venue: g.venue || '',
+        streams: g.streams || [], confirmed: !!g.confirmed,
+        _sport: 'MLS Soccer',
+        _adapterProof: { adapterId: 'mls-stats-api', fixture: _proofFixture },
+      }));
+      if (_mlsProofGames.length) {
+        const _mlsSection = { sport: 'MLS Soccer', games: _mlsProofGames };
+        verified.push(_mlsSection);
+        allData.sports.push(_mlsSection);
+        if (typeof buildFilters === 'function') buildFilters(allData.sports);
+        scheduleRenderAll();
+      }
+    }
+
     // Live getters: read allData at access time so tests always see current data
     // regardless of when fetchMLBFixtures() resolves (it runs after _fieldDataReady is set).
-    const _pfSports = () => (allData?.sports || [])
-      .filter(s => (s.sport || '').toLowerCase().includes('baseball'));
+    const _pfSports = () => {
+      if (_proofAdapter === 'mls-stats-api') {
+        return (allData?.sports || []).filter(s => (s.sport || '').toLowerCase().includes('mls'));
+      }
+      return (allData?.sports || []).filter(s => (s.sport || '').toLowerCase().includes('baseball'));
+    };
     Object.defineProperty(window.__FIELD_PROOF__, 'normalizedObjects', {
       get() { return _pfSports().flatMap(s => s.games || []); },
       enumerable: true, configurable: true,

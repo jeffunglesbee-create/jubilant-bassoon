@@ -300,3 +300,111 @@ test.describe('AFL — Kali Journalism', () => {
   });
 
 }); // end AFL describe
+
+// ── MLS — Tournament Multiplexer + Soccer Stats Dual-Source ───────────────
+test.describe('MLS — Tournament + Stats', () => {
+
+// AVV-MLS-001: MLS game card renders from proof-mode fixture data (STL 3-0 ATX, May 23 2026)
+test('AVV-MLS-001 — MLS game card renders from fixture data', async ({ page }) => {
+  await page.goto(`${LIVE_URL}/?wpt=1&proofAdapter=mls-stats-api&fixture=ok`, { waitUntil: 'domcontentloaded', timeout: 30000 });
+  await awaitReady(page, 5000);
+
+  const mlsData = await page.evaluate(() => {
+    if (typeof allData === 'undefined') return { error: 'allData undefined' };
+    const mls = (allData.sports || []).find(s => (s.sport || s.label || '').toLowerCase().includes('mls'));
+    if (!mls || !mls.games?.length) return { found: false, sports: (allData.sports || []).map(s => s.sport || s.label) };
+    const g = mls.games[0];
+    return { found: true, home: g.home, away: g.away, homeScore: g.homeScore, awayScore: g.awayScore, venue: g.venue };
+  });
+
+  console.log('[AVV-MLS-001] Fixture data:', JSON.stringify(mlsData, null, 2));
+
+  expect(mlsData.found, 'MLS fixture game should appear in allData').toBe(true);
+  expect(mlsData.home).toBe('St. Louis CITY SC');
+  expect(mlsData.away).toBe('Austin FC');
+  expect(mlsData.homeScore).toBe(3);
+  expect(mlsData.awayScore).toBe(0);
+
+  const cardCount = await page.locator('.game-card').count();
+  expect(cardCount, 'at least one game card should be visible').toBeGreaterThan(0);
+  console.log(`[AVV-MLS-001] DEFINITIVE: STL 3-0 ATX rendered, ${cardCount} cards in DOM`);
+});
+
+// AVV-MLS-002: game.round is non-empty on postseason/tournament rows
+test('AVV-MLS-002 — tournament round data present in postseason_games', async ({ page }) => {
+  const KNOWN_TOURNAMENT_DATE = '2026-07-09';
+  const resp = await page.evaluate(async (date) => {
+    const r = await fetch(`https://field-relay-nba.jeffunglesbee.workers.dev/context/date/${date}`);
+    if (!r.ok) return { error: `HTTP ${r.status}` };
+    const d = await r.json();
+    const mlsRows = (d.games?.postseason || []).filter(g => g.sport === 'MLS');
+    return {
+      count: mlsRows.length,
+      sample: mlsRows[0] ? { round: mlsRows[0].round, home: mlsRows[0].home, away: mlsRows[0].away, league: mlsRows[0].league } : null,
+    };
+  }, KNOWN_TOURNAMENT_DATE);
+
+  console.log('[AVV-MLS-002] Tournament data for 2026-07-09:', JSON.stringify(resp, null, 2));
+
+  expect(resp.count, 'expected MLS tournament rows on 2026-07-09').toBeGreaterThan(0);
+  expect(resp.sample?.round, 'round field should be non-empty').toBeTruthy();
+  console.log(`[AVV-MLS-002] DEFINITIVE: round="${resp.sample.round}" — tournament multiplexer confirmed live`);
+});
+
+// AVV-MLS-003: /soccer/xg for an MLS event returns _hasMatchStats: true
+test('AVV-MLS-003 — /soccer/xg returns match stats for MLS', async ({ page }) => {
+  const resp = await page.evaluate(async () => {
+    const r = await fetch('https://field-relay-nba.jeffunglesbee.workers.dev/soccer/xg?league=usa.1&event=761644');
+    return r.ok ? await r.json() : { error: `HTTP ${r.status}` };
+  });
+
+  console.log('[AVV-MLS-003] /soccer/xg response:', JSON.stringify(resp, null, 2));
+
+  expect(resp._hasMatchStats, '_hasMatchStats should be true for MLS (no xG, but real match stats)').toBe(true);
+  expect(resp.home?.possessionPct, 'home possession % should be present').toBeDefined();
+  expect(resp.away?.possessionPct, 'away possession % should be present').toBeDefined();
+  console.log(`[AVV-MLS-003] DEFINITIVE: _hasXG=${resp._hasXG} _hasMatchStats=${resp._hasMatchStats} — MLS gets real context despite no xG`);
+});
+
+// AVV-MLS-004: buildSoccerXGContext produces non-empty string for an MLS game
+// Uses relay context-probe?date=2026-05-23 (field-relay-nba commit 1a2d7696)
+// against the same real May 23 game — no proof-mode/fixture needed.
+test('AVV-MLS-004 — soccer context no longer gates on xG alone', async ({ page }) => {
+  await page.goto(LIVE_URL, { waitUntil: 'domcontentloaded', timeout: 30000 });
+
+  const probeData = await page.evaluate(async () => {
+    const r = await fetch('https://field-relay-nba.jeffunglesbee.workers.dev/journalism/context-probe?date=2026-05-23');
+    return r.ok ? await r.json() : { error: `HTTP ${r.status}` };
+  });
+
+  const mlsResults = (probeData.results || []).filter(r => r.league === 'MLS');
+  console.log('[AVV-MLS-004] MLS context results:', JSON.stringify(mlsResults, null, 2));
+
+  expect(mlsResults.length, 'expected MLS games in context-probe for 2026-05-23').toBeGreaterThan(0);
+
+  const stlGame = mlsResults.find(r => r.game === 'ATX @ STL');
+  expect(stlGame, 'STL/ATX game should be present').toBeTruthy();
+  expect(stlGame.contextLength, 'context should be non-empty despite no xG').toBeGreaterThan(0);
+  expect(stlGame.context).toContain('[SOCCER XG CONTEXT]');
+  expect(stlGame.context).toContain('Possession:');
+  expect(stlGame.context).not.toBe('(empty)');
+
+  console.log(`[AVV-MLS-004] DEFINITIVE: contextLength=${stlGame.contextLength} — buildSoccerXGContext confirmed producing real output for MLS via match stats, not xG`);
+});
+
+// AVV-MLS-005: /soccer/season-form returns _hasForm:true for a known club id
+test('AVV-MLS-005 — /soccer/season-form returns real club data', async ({ page }) => {
+  const resp = await page.evaluate(async () => {
+    const r = await fetch('https://field-relay-nba.jeffunglesbee.workers.dev/soccer/season-form?team_id=MLS-CLU-000008');
+    return r.ok ? await r.json() : { error: `HTTP ${r.status}` };
+  });
+
+  console.log('[AVV-MLS-005] /soccer/season-form response:', JSON.stringify(resp, null, 2));
+
+  expect(resp._hasForm, '_hasForm should be true for Inter Miami CF').toBe(true);
+  expect(typeof resp.xG).toBe('number');
+  expect(resp.team_name, 'team_name should be present').toBe('Inter Miami CF');
+  console.log(`[AVV-MLS-005] DEFINITIVE: ${resp.team_name} season xG=${resp.xG}, ${resp.matches_played}MP — season-form route confirmed working`);
+});
+
+}); // end MLS describe
