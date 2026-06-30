@@ -1,63 +1,10 @@
 # FIELD HANDOFF
 
-## Session: 2026-06-29 · Kali AFL Adapter Proof + AVV Workflow Generalization — COMPLETE
+## Session: 2026-06-29 · Odds API Adapter Proof — ALL PHASES COMPLETE
 
-**CLIENT HEAD: 5e0653a**
-**SW_VERSION: 2026-06-29d**
-
----
-
-## RELAY STATE
-
-**RELAY HEAD SRC: 01b4056 · deployed ✅**
-**CLIENT HEAD: 6ccb5054**
-
-Note: Relay HEAD updated from 1cad397 today through gap fixes:
-- cd68c60 — BSD momentum route fix
-- e7cc101 — WP elapsed threading
-- 01b4056 — goal scorers via comp.details
-
----
-
-## BSD ADAPTER PROOF — FULLY COMPLETE ✅
-
-All three phases done. Live CI + chat session verified. 100/100.
-
-### Phase 1 ✅ (effb645)
-Manifest + registry + fixtures. Real Brazil 2-1 Japan data.
-
-### Phase 2 ✅ (6ccb505)
-8 AVV-BSD smoke assertions. 787/0. Feature Registry.
-Note: AVV-BSD-006 corrected — actual WP identifier is _wcBuildWPBar/wc-wp-bar.
-
-### Phase 3 ✅ (outbox committed)
-Live journalism proof. Germany vs Paraguay (bsdEventId=8361, 40', elapsed=39).
-/bsd/events/8361/momentum → 200, 40 points, range -35 to +71.
-[BSD MOMENTUM] block simulated output confirmed. R2: 40 files, 20 events.
-Confidence: 100/100 via chat session (CC blocked by *.workers.dev:443 egress).
-
----
-
-## RELAY GAP FIXES SHIPPED TODAY
-
-- cd68c60 — BSD /momentum route fixed (extracts from /stats/ not non-existent endpoint)
-- e7cc101 — situation.elapsed = BSD current_minute (live WP accuracy)
-- 01b4056 — matchEvents from ESPN comp.details (goal scorers in briefs)
-- 1cad397 — extractWCPhase (R32/R16/QF/SF write to D1 wc_results)
-- D1 backfill — South Africa vs Canada + Brazil vs Japan → phase='r32'
-
----
-
-## Smoke
-
-**795/0** (up from 787 at BSD proof session; +8 AVV-KALI assertions added in Kali P2)
-
-New assertions added today (cumulative):
-- MLB-SIMP-001/002/003 (MLB simplification layer)
-- AVV-BSD-001 through 008 (BSD adapter proof)
-- AVV-KALI-001 through 008 (Kali AFL adapter proof)
-
-**NOTE:** get_smoke_count MCP tool is NOT authoritative (~62 gap from filesystem assertions). CI node smoke.js is the canonical count.
+**CLIENT HEAD: 1c0e797c**
+**SW_VERSION: 2026-06-29e**
+**RELAY HEAD: 96dea28**
 
 ---
 
@@ -69,16 +16,76 @@ New assertions added today (cumulative):
 | 2 | NHLE | ⏳ |
 | 3 | MLB Stats API | ✅ DONE |
 | 4 | BSD Soccer | ✅ DONE |
-| 5 | Kali AFL | ✅ DONE |
-| 6–14 | Remaining | ⏳ |
+| 5 | Squiggle AFL | ⏳ |
+| 6 | Kali AFL | ✅ DONE |
+| 7 | Odds API | ✅ DONE |
+| 8–14 | Remaining | ⏳ |
+
+---
+
+## ODDS API ADAPTER — COMPLETE
+
+### Relay (field-relay-nba)
+- bef1c5c — _oddsProof in extractOddsForGame() return object
+- 96dea28 — AFL + CFL added to odds_story CONTEXT_SOURCE sports filter
+
+### Client (jubilant-bassoon)
+- aaece86 — Phase 1: manifest + registry + 3 real fixtures
+  - adapter-fixtures-odds-live-mlb.json (BAL vs CWS, real DraftKings data)
+  - adapter-fixtures-odds-live-wc.json (NED vs MAR, 3-way h2h)
+  - adapter-fixtures-odds-story-wnba.json (GSV vs NYL, opening + closing, expectedOddsStory corrected to 'closed +100')
+- 1c0e797 — Phase 2: 8 AVV-ODDS assertions, Feature Registry, SW 2026-06-29e, 803/0
+- 033b24a — Phase 3 outbox: 100/100, 5 factors, WNBA fixture corrected
+
+### Key findings
+- Archive lags ~24hr — use date=2026-06-28 for D1 probes, not today
+- [ODDS STORY] requires BOTH opening_odds AND closing_odds — fires for completed games only
+- _oddsProof absent from pre-bef1c5c D1 rows — tonight's MLB rows will be first to carry it
+- Gap 2 (AFL/CFL filter): Round 17 starts July 2 — will fire automatically
+- Gap 3 (archive timing): self-resolving, no code change needed
+
+### Dropbox backup
+index-2026-06-29-odds-adapter-proof.html uploaded (run 28411761628)
+
+---
+
+## SESSION SUMMARY — 2026-06-29 FULL DAY
+
+### Adapters proven today (4 total, 3 new)
+- MLB Stats API (all phases, carry-forward from yesterday)
+- BSD Soccer (all phases + 4 relay gap fixes)
+- Kali AFL (all phases + AVV workflow generalization 9/9 CI)
+- Odds API (all phases + 2 relay changes + archive timing diagnosis)
+
+### Relay gap fixes shipped today
+- cd68c60 — BSD momentum route fix (extracts from /stats/ not non-existent endpoint)
+- e7cc101 — situation.elapsed = BSD current_minute (live WP accuracy)
+- 01b4056 — matchEvents from ESPN comp.details (goal scorers in briefs)
+- 1cad397 — extractWCPhase (R32/R16/QF write to D1)
+- 9fc71ac — _kaliProof in buildAFLJournalismContext
+- bef1c5c — _oddsProof in extractOddsForGame
+- 96dea28 — AFL + CFL in odds_story sports filter
+
+### AVV workflow
+adapter-visible-value.yml generalized (no sport suffix). 9/9 CI.
+AFL describe block added — graceful skip between rounds.
+When Round 17 starts July 2: AVV-AFL-001 will log DEFINITIVE SOURCE: kali-afl.
+
+### AVV model documented
+Drive: 1nvPefa5Bs_nYIuUsZiL9dwWS37z-e8vuIYxOG3ZcmOE
+"FIELD — Adapter-to-Visible-Value Proof Model (June 29 2026)"
+
+---
+
+## SMOKE: 803/0
 
 ---
 
 ## PRIORITY LIST
 
 ### 🔧 QUEUED CC-CMDs
-1. relay: /journalism/game-lines (docs/CC-CMD-2026-06-27-relay-game-lines.md)
-2. client: card brief line (docs/CC-CMD-2026-06-27-client-card-brief-line.md)
+1. Relay: /journalism/game-lines (docs/CC-CMD-2026-06-27-relay-game-lines.md)
+2. Client: card brief line (docs/CC-CMD-2026-06-27-client-card-brief-line.md)
 
 ### 🔨 INFRASTRUCTURE
 3. Bosnia DB fix + identity-resolver CANONICAL map
@@ -90,6 +97,9 @@ New assertions added today (cumulative):
 7. KV editorial keys not consulted
 8. NFL SPORT_TO_V2 — September 9
 
+### 🏗️ NEXT ADAPTER BACKFILL
+NBA CDN → NHLE → Squiggle AFL → ...
+
 ---
 
 ## KEY CONSTANTS
@@ -100,36 +110,4 @@ New assertions added today (cumulative):
 - CF account: b57e9af57ab46c52ca9215804e689c29
 - Repo: jeffunglesbee-create/jubilant-bassoon
 
----
-
-## KALI AFL ADAPTER PROOF — FULLY COMPLETE ✅
-
-All three phases done. 100/100.
-
-### Phase 1 ✅ (998e2ac)
-Manifest (adapter-proof.manifest.json kali-afl entry), source registry (kali-aflstats),
-3 fixture files (ok/empty/malformed) with real Round 16 data.
-
-### Phase 2 ✅ (97a5926)
-8 AVV-KALI smoke assertions. 795/0. Feature Registry entry. SW_VERSION bumped 2026-06-29c→d.
-Assertions use actual client strings (SQUIGGLE_RELAY, afl: true, fetchV2Games, FIELD_V2_SOURCES)
-because Kali is relay-injected only — no client-side Kali code exists.
-
-### Phase 3 ✅ (outbox committed by chat session at c7d78c6)
-Relay probe confirmed journalism.kali populated on past round (Round 16, 2026-06-28).
-CC blocked by *.workers.dev:443 egress — scored 15/100, gate held, chat session ran probe.
-Confidence: 100/100 via chat session.
-
----
-
-## AVV WORKFLOW GENERALIZATION — COMPLETE ✅ (5e0653a)
-
-- adapter-visible-value.yml renamed: "Adapter Visible Value Proof (MLB)" → "Adapter Visible Value Proof"
-- spec: 7 MLB tests wrapped in test.describe('MLB Stats API')
-- spec: added test.describe('AFL — Kali Journalism') with AVV-AFL-001 + AVV-AFL-002
-- AFL tests skip gracefully (no games between rounds — Round 16 ended June 28, Round 17 starts July 2)
-- CI run 28407017073: 9/9 passed (7 MLB + 2 AFL graceful skips) ✅
-
----
-
-SESSION END: RELAY 01b4056 · CLIENT 5e0653a · 2026-06-29 · Kali AFL ✅ + AVV generalized ✅ · 795/0
+SESSION END: RELAY 96dea28 · CLIENT 1c0e797c · 2026-06-29 · ODDS API ✅ 803/0 · via chat
