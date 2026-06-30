@@ -1,31 +1,3 @@
 {
-  "status": "all_variants_failed",
-  "tried": [
-    {
-      "uri": "https://field-relay-nba.jeffunglesbee.workers.dev/whoop/callback",
-      "code_captured": false
-    },
-    {
-      "uri": "https://field-relay-nba.jeffunglesbee.workers.dev/whoop/callback/",
-      "code_captured": false
-    },
-    {
-      "uri": "https://www.whoop.com",
-      "code_captured": false
-    },
-    {
-      "uri": "https://www.whoop.com/",
-      "code_captured": false
-    },
-    {
-      "uri": "https://whoop.com",
-      "code_captured": false
-    },
-    {
-      "uri": "https://whoop.com/",
-      "code_captured": false
-    }
-  ],
-  "client_id_prefix": "a4c9151b",
-  "base_redirect_repr": "'https://field-relay-nba.jeffunglesbee.workers.dev/whoop/callback'"
+  "error": "Timeout 30000ms exceeded.\n=========================== logs ===========================\n\"load\" event fired\n============================================================"
 }
