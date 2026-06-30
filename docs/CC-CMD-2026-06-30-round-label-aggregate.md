@@ -1,3 +1,18 @@
+# SUPERSEDED 2026-06-30 — split into two self-contained, single-repo CC-CMDs:
+#   - docs/CC-CMD-2026-06-30-round-label-relay.md   (field-relay-nba only)
+#   - docs/CC-CMD-2026-06-30-round-label-client.md  (jubilant-bassoon only)
+#
+# Reason: a combined cross-repo doc required one CC session to juggle two
+# repo contexts in sequence. A real session opened against field-relay-nba
+# couldn't find this doc (spec files live in jubilant-bassoon per the
+# two-repo separation rule regardless of target repo) and correctly asked
+# rather than fabricate. The split removes that ambiguity — each doc is
+# now fully self-contained for its own repo, runnable as its own CC session
+# with no cross-repo dependency to track mid-session.
+#
+# Kept below for historical reference. Do not execute this combined version.
+# ─────────────────────────────────────────────────────────────────────────
+
 # CC-CMD — Round Label Display + Two-Legged Tie Aggregate (All Soccer + All Sports)
 
 **Repos:** field-relay-nba (Tasks 1-2), jubilant-bassoon (Task 3 — client)
