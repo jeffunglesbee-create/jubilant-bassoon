@@ -1,93 +1,74 @@
 # FIELD HANDOFF
 
-## Session: 2026-06-30 · MLS Full Stack (Part 3: Verification + Dual-Source)
+## Session: 2026-06-30 · MLS Full Stack (Part 4: CC-CMD Doc Split)
 
-**CLIENT HEAD: 4d7839bb**
+**CLIENT HEAD: 64b73c91**
 **SW_VERSION: 2026-06-30a**
-**RELAY HEAD: 4daaf058** (soccer stats dual-source)
+**RELAY HEAD: 4daaf058** (unchanged — this part was docs only)
 **SMOKE: 807/0**
 
 ---
 
 ## THIS SESSION — SHIPPED
 
-### 1. Tournament multiplexer — verified FULLY complete (was STAGED)
-CC's session screenshots showed a blocked, STAGED state (sandboxed against
-*.workers.dev, workflow stuck on a feature branch). Real history showed CC
-continued past that: pushed files directly to main, found and fixed a real
-bug (MLS Test leaking in as a fake tournament), wrote a final HANDOFF
-claiming "60 rows, idempotent." None of that was trusted at face value —
-independently verified:
-- D1 query confirmed exact breakdown: Leagues Cup 54, TELUS QF 4, US Open
-  Cup SF 2 = 60. 0 TBC, 0 duplicates, 0 MLS Test.
-- Triggered `workflow_dispatch` on mls-tournaments-seed.yml directly — CI
-  path (not just CC's manual run) confirmed idempotent, same 60 rows.
-- Found real two-legged tie in actual seeded data (TELUS Canadian
-  Championship, Jul 9–14) that the original CC-CMD's narrower probe
-  (US Open Cup only) didn't surface — elevates round-label-aggregate
-  CC-CMD priority.
-- Deleted stale branch `claude/elegant-shannon-t2dvt0` (741 commits behind,
-  fully superseded — confirmed via diff before deleting).
+### CC-CMD doc split: round-label-aggregate → relay-only + client-only
 
-### 2. Soccer stats dual-source — shipped (field-relay-nba)
-CC-CMD-2026-06-30-soccer-stats-dual-source.md executed directly in chat
-(originally dispatched to a CC session against the wrong repo for the spec
-file — CC correctly refused to fabricate and asked; re-routed to direct
-execution since this is relay-only JS, same class as earlier fixes this
-session).
+The combined `docs/CC-CMD-2026-06-30-round-label-aggregate.md` required one
+CC session to operate across both repos in sequence. This is exactly the
+failure mode hit earlier this session (CC opened against field-relay-nba,
+couldn't find a spec doc that lives in jubilant-bassoon per the two-repo
+separation rule, correctly asked rather than fabricated). Split into two
+self-contained, single-repo CC-CMDs to remove the cross-repo juggling
+entirely:
 
-**Probe 3 (critical dependency check) — STOP CONDITION did not trigger.**
-Traced all 4 `assembleContext(` call sites; confirmed `handleJournalismCycle`
-(the real live cron) has MLS in its LEAGUES array and `gameMeta` always
-carries `eventId`+`espnLeague` for every soccer league, no gap. (The
-`espn_event_id IS NULL` D1 column finding from earlier is a *different*,
-unrelated pipeline — backfill/season-form, not the live cron.)
+- `docs/CC-CMD-2026-06-30-round-label-relay.md` (field-relay-nba only) —
+  Tasks 1 (round label fix), 2a (series extraction in /soccer/xg), 2b
+  (conditional second-leg enrichment). Re-verified against the CURRENT
+  post-dual-source code before splitting — Task 2a's target
+  (`/soccer/xg`'s summary-fetch block) is untouched by the dual-source
+  edits (those touched the separate statistics-fetch block further down
+  the same route); Tasks 1 and 2b's targets are upstream of all dual-source
+  insertions, completely unshifted. Includes an explicit DEPLOY section
+  warning against `[skip ci]` on runtime-code commits, referencing the
+  exact mistake made and caught during the dual-source session.
 
-Commits: `ea84747d` (index.js — widened `/soccer/xg` to return match stats
-when xG absent; new `/statistics/` allowlist entry; new
-`/soccer/season-form` route) + `4daaf058` (context-assembler.js —
-`buildSoccerSeasonFormContext` + CONTEXT_SOURCES entry).
+- `docs/CC-CMD-2026-06-30-round-label-client.md` (jubilant-bassoon only) —
+  Task 3 (client badge), restructured into two explicit parts: Part A
+  (NBA/NHL/UFL/MLS-tournament round badge — no dependency, ready now,
+  postseason_games.round already has real data) and Part B (soccer
+  "1st/2nd Leg" label + aggregate score — depends on the relay doc shipping
+  and deploying first; includes a live curl check to confirm before
+  starting Part B, with explicit instruction to stop and document as
+  blocked rather than fabricate the relay payload shape if unmet).
 
-**Process error caught and fixed:** both commits included `[skip ci]`
-(copied reflexively from earlier doc-only commits) which suppressed the
-automatic deploy for actual runtime code. Caught via direct probe before
-claiming success — manually dispatched `deploy.yml`, all 8 structural
-gates passed.
-
-**Live verification (post-deploy):**
-- `/soccer/xg?league=usa.1&event=761644` → `_hasMatchStats: true`, real
-  possession/shots/passes/cards for both teams. MLS games that previously
-  got zero soccer context (hard-gated on absent xG) now get real context.
-- `/soccer/season-form?team_id=MLS-CLU-000008` → Inter Miami: 15MP, xG
-  34.484, xG_efficiency 4.516, clean_sheets 3, possession 56.29%.
-- `/mls/stats/statistics/...` → 200 (was 403).
-
-**Known gap, documented not solved:** `buildSoccerSeasonFormContext`
-returns `''` for every game today — `game.mlsHomeTeamId`/`mlsAwayTeamId`
-don't exist anywhere yet. Needs identity-resolver extended with a
-name → `MLS-CLU-xxxxxx` mapping, wired into `gameMeta` construction
-(index.js:5571, same call site Probe 3 confirmed clean). Separate CC-CMD.
-
-Outbox: `outbox/cc-soccer-dual-source-2026-06-30.md` (field-relay-nba).
+Original combined doc marked SUPERSEDED (banner added, content preserved
+for historical reference, not deleted) — commit `64b73c91`.
 
 ---
 
 ## CC-CMDS QUEUED — NEXT SESSION
 
-**#1 (next, now higher priority — real two-legged tie confirmed in live data):**
-"git pull both repos. Read docs/CC-CMD-2026-06-30-round-label-aggregate.md.
-Execute all tasks across both repos in order: field-relay-nba first
-(Tasks 1–2), jubilant-bassoon second (Task 3). Nothing commits without
-confidence ≥ 95."
+**#1a (field-relay-nba, run first):**
+"git pull. Read docs/CC-CMD-2026-06-30-round-label-relay.md. Execute all
+tasks. Nothing commits without confidence ≥ 95. Do not include [skip ci] —
+this changes runtime code; confirm deploy.yml actually ran before claiming
+done."
 
-**#2 (after #1 — final close-out):**
+**#1b (jubilant-bassoon, run after #1a ships and deploys):**
+"git pull. Read docs/CC-CMD-2026-06-30-round-label-client.md. Confirm the
+Part B dependency check (live curl against /v2/games) before starting Part
+B — if unmet, do Part A only and document Part B as blocked. Execute all
+tasks. Nothing commits without confidence ≥ 95."
+
+**#2 (after #1a and #1b — final close-out):**
 Write AVV describe block for MLS: tests/adapter-visible-value.spec.js,
 AVV-MLS-001 through AVV-MLS-005.
 
 **#3 (separate scope, not urgent):**
 identity-resolver MLS club-ID mapping (name → MLS-CLU-xxxxxx) to unblock
 buildSoccerSeasonFormContext. Needs its own spec — touches gameMeta
-construction in the live cron path, treat with same care as Probe 3.
+construction in the live cron path, treat with same care as the dual-source
+session's Probe 3.
 
 ---
 
@@ -96,36 +77,34 @@ construction in the live cron path, treat with same care as Probe 3.
 - postseason_games round vocabulary: "East CF" → "Eastern Conference Finals" etc.
 - European club coverage in identity-resolver before August (EPL, La Liga, UCL, etc.)
 - Two-legged tie game_number=2 handling — CONFIRMED PRESENT (TELUS Jul 9–14),
-  not speculative. round-label-aggregate CC-CMD #1 above addresses display;
-  the underlying leg-pairing/aggregate-score data model is ESPN-native
-  (aggregateScore field) for ESPN-sourced soccer, but TELUS Canadian
-  Championship is stats-api-sourced (via tournament multiplexer) — that
-  source has NO aggregate field, legs are just two independent rows linked
-  only by team-pair + date proximity. round-label-aggregate CC-CMD only
-  covers the ESPN path; stats-api-sourced two-legged ties (TELUS, and any
-  future MLS-club tournament with real legs) need separate handling — flag
-  this gap explicitly when running CC-CMD #1.
+  not speculative. The relay-only round-label CC-CMD addresses the ESPN-
+  sourced path only (aggregateScore is ESPN-native). Stats-api-sourced
+  two-legged ties (TELUS, confirmed; any future MLS-club tournament with
+  real legs) have NO aggregate field at all — separate handling needed,
+  flagged explicitly in both new split docs' KNOWN GAPS sections so it
+  isn't rediscovered by surprise.
 
 ---
 
 ## PRIORITY LIST
 
 ### 🔧 CC-CMDs (in order)
-1. CC-CMD-2026-06-30-round-label-aggregate.md (field-relay-nba + jubilant-bassoon)
-2. AVV-MLS describe block (jubilant-bassoon)
-3. identity-resolver MLS club-ID mapping (new spec needed)
+1. CC-CMD-2026-06-30-round-label-relay.md (field-relay-nba)
+2. CC-CMD-2026-06-30-round-label-client.md (jubilant-bassoon, after #1)
+3. AVV-MLS describe block (jubilant-bassoon)
+4. identity-resolver MLS club-ID mapping (new spec needed)
 
 ### 🔨 INFRASTRUCTURE
-4. Bosnia DB fix + identity-resolver CANONICAL map
-5. team_form CONTEXT_SOURCE v3
-6. Golf: wire Broadie proxy (Tier 1, $0)
+5. Bosnia DB fix + identity-resolver CANONICAL map
+6. team_form CONTEXT_SOURCE v3
+7. Golf: wire Broadie proxy (Tier 1, $0)
 
 ### 📋 OPEN INCIDENTS
-7. wentToOT hardcoded false
-8. KV editorial keys not consulted
-9. NFL SPORT_TO_V2 — September 9
-10. Odds Daily Counter stale
-11. night_stars phase degraded
+8. wentToOT hardcoded false
+9. KV editorial keys not consulted
+10. NFL SPORT_TO_V2 — September 9
+11. Odds Daily Counter stale
+12. night_stars phase degraded
 
 ---
 
@@ -138,4 +117,4 @@ construction in the live cron path, treat with same care as Probe 3.
 - Repo: jeffunglesbee-create/jubilant-bassoon
 - MLS stats API: stats-api.mlssoccer.com (no key) — see codex mls-schedule-stats-api-2026-06-30
 
-SESSION END: RELAY 4daaf058 · CLIENT 4d7839bb · 2026-06-30 · Tournament multiplexer verified complete, soccer dual-source shipped + deployed · via chat
+SESSION END: RELAY 4daaf058 · CLIENT 64b73c91 · 2026-06-30 · Round-label CC-CMD split into relay-only + client-only, original marked superseded · via chat
