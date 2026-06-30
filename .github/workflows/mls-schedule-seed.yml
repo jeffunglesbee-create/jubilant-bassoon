@@ -1,7 +1,9 @@
-name: MLS Schedule Seed (one-time, post-WC)
+name: MLS Schedule Seed (stats-api.mlssoccer.com)
 
 on:
-  workflow_dispatch:   # Manual trigger only — one-time seed
+  workflow_dispatch:   # Manual trigger — re-seed as needed
+  schedule:
+    - cron: '0 10 * * 1'  # Weekly Monday 10am UTC — catches schedule changes
 
 permissions:
   contents: write
@@ -12,9 +14,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Fetch MLS fixtures Jul 19–Oct 31 and insert into ARCHIVE_DB
-        # No APISPORTS_KEY needed — script calls relay proxy which holds the key
-        # as a Worker secret. Only CLOUDFLARE_API_TOKEN needed for /d1/execute auth.
+      - name: Seed MLS schedule (Jul 22 – Nov 7) into ARCHIVE_DB
+        # No API keys needed — stats-api.mlssoccer.com is auth-free.
+        # D1 writes go through relay /d1/execute (X-FIELD-Relay header).
         run: python3 scripts/seed-mls-return-2026.py
 
       - name: Commit audit JSON
