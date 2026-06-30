@@ -10704,6 +10704,33 @@ function renderAll(){
       slot.innerHTML='<div class="field-brief-card"><div class="field-brief-header"><span class="field-brief-label">FIELD Brief</span></div><div class="field-brief-text pending">Tonight\'s brief is unavailable.</div></div>';
     renderAmbientPanel(); // render ambient panel even if brief fails
   }), 1000); // J3: brief last — highest value, staggered
+  // Pre-populate _gameBriefCache from relay batch endpoint (once per page session).
+  // Fires ~500ms after first render settles. If relay returns 0 lines, no-ops cleanly.
+  if (!window._gameLinesLoaded) {
+    window._gameLinesLoaded = true;
+    setTimeout((() => (async () => {
+      try {
+        const _glBase = (typeof V2_RELAY_BASE !== 'undefined')
+          ? V2_RELAY_BASE
+          : 'https://field-relay-nba.jeffunglesbee.workers.dev';
+        const _glResp = await fetch(`${_glBase}/journalism/game-lines`, { cache: 'no-store' });
+        if (!_glResp.ok) return;
+        const _glData = await _glResp.json();
+        if (!_glData?.lines || !Object.keys(_glData.lines).length) return;
+        let _glUpdated = 0;
+        (typeof allData !== 'undefined' ? allData.sports || [] : [])
+          .flatMap(sec => sec.games || [])
+          .forEach(g => {
+            const eid = g._espnId || g.espnEventId || '';
+            if (!eid || !_glData.lines[eid]) return;
+            if (_gameBriefCache[g._id]) return; // already populated — don't overwrite
+            _gameBriefCache[g._id] = _glData.lines[eid];
+            _glUpdated++;
+          });
+        if (_glUpdated > 0) scheduleRenderAll();
+      } catch (_) {}
+    })()), 500);
+  }
   setTimeout(injectWeatherBadges, 300); // re-apply wx badges from cache after render
   setTimeout(renderArbitrageBar, 400);   // arbitrage bar — after schedule renders
   setTimeout(renderAmbientPanel, 1200); // ambient panel — after schedule renders
@@ -22707,7 +22734,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-06-30b';
+  const SW_VERSION = '2026-06-30c';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -37803,6 +37830,8 @@ function buildLifeStageContent(game, eData, stage) {
       // Live: story tape or current score context
       const tape = buildStoryTape(game._id, 2);
       if (tape) return tape;
+      const _liveLine = buildLiveCardLine(game, eData);
+      if (_liveLine) return `<div class="card-stage-content">${_liveLine}</div>`;
       // When we have live score data, show it — even if detail/periodLabel is empty (MLB V2)
       if (eData && eData.state === 'in' && (eData.homeScore != null || eData.awayScore != null)) {
         const _h = eData.homeScore ?? 0, _a = eData.awayScore ?? 0;
@@ -37864,7 +37893,14 @@ function buildLifeStageContent(game, eData, stage) {
     case 'final': {
       if (!eData) return '';
       if (eData.source === 'squiggle') return ''; // AFL: squiggle chip handles it
-      // Show final score + optional drama peak
+      const _cardBrief = (typeof _gameBriefCache !== 'undefined' && game._id)
+        ? (_gameBriefCache[game._id] || '')
+        : '';
+      let _briefLine = '';
+      if (_cardBrief) {
+        const _firstSentence = _cardBrief.split(/\.\s+/)[0].trim();
+        _briefLine = _firstSentence.endsWith('.') ? _firstSentence : _firstSentence + '.';
+      }
       const fh = eData.homeScore ?? null, fa = eData.awayScore ?? null;
       if (fh !== null && fa !== null) {
         const fhN = teamNick(game.home||''), faN = teamNick(game.away||'');
@@ -37878,13 +37914,20 @@ function buildLifeStageContent(game, eData, stage) {
         // without the number.
         const peak = parseFloat(localStorage.getItem('field_drama_peak_'+(game._id||''))||'0');
         const peakStr = peak >= 65 ? ` ${peak >= 85 ? '🔥' : '⚡'}` : '';
-        return `<div class="card-stage-content card-stage-live-basic">${fLeader} ${fLS}–${fTS} ${fTrailer} F${peakStr}</div>`;
+        const parts = [`${fLeader} ${fLS}–${fTS} ${fTrailer} F${peakStr}`];
+        if (_briefLine) parts.push(_briefLine);
+        return `<div class="card-stage-content card-stage-live-basic">${parts.join(' · ')}</div>`;
       }
-      // No score data — fall back to drama peak only
+      // No score data — fall back to drama peak and/or brief
       const peak = parseFloat(localStorage.getItem('field_drama_peak_'+(game._id||''))||'0');
-      if (peak < 50) return '';
-      const peakIcon = peak >= 85 ? '🔥' : peak >= 65 ? '⚡' : '·';
-      return `<div class="card-stage-content"><span class="stage-final-score">${peakIcon} ${Math.round(peak)}</span></div>`;
+      if (peak < 50 && !_briefLine) return '';
+      const parts = [];
+      if (peak >= 50) {
+        const peakIcon = peak >= 85 ? '🔥' : peak >= 65 ? '⚡' : '·';
+        parts.push(`<span class="stage-final-score">${peakIcon} ${Math.round(peak)}</span>`);
+      }
+      if (_briefLine) parts.push(_briefLine);
+      return `<div class="card-stage-content">${parts.join(' · ')}</div>`;
     }
     default: return '';
   }
@@ -38507,6 +38550,7 @@ function openBottomSheet(gameId) {
       placeholder.querySelector('.bs-section-body').textContent = text;
       placeholder.querySelector('.bs-section-body').style.cssText = 'font-size:.74rem;line-height:1.6';
       placeholder.id = '';
+      scheduleRenderAll(); // update card face with brief line
     }).catch(() => {
       document.getElementById('bs-brief-pending')?.remove();
     });
@@ -38687,6 +38731,32 @@ let _nightOwlRendered=false;
 let _nightOwlGameId=null; // tracks which game is currently displayed
 const _gameBriefCache = {}; // gameId → brief text
 const _emberResultCache = {}; // gameId → {tier, channel, dramaScore, contextFlag} — live EMBER state
+
+// buildLiveCardLine — pure synchronous template for live game cards.
+// Returns a factual one-liner from espnScores + window._sseScoreTs Map.
+// No AI call. No drama math. RUWT-clean: named binary facts only.
+// Priority in card: _gameBriefCache (post-game AI brief) beats this.
+function buildLiveCardLine(game, eData) {
+  if (!eData || eData.state !== 'in') return '';
+  const hs = eData.homeScore ?? 0;
+  const as = eData.awayScore ?? 0;
+  const score = `${as}–${hs}`;     // away–home (card shows away @ home)
+  const clock = eData.clock ? ` ${eData.clock}'` : '';
+  const gameId = game._id || game.id || '';
+  const _sseMap = (typeof window._sseScoreTs !== 'undefined') ? window._sseScoreTs : null;
+  const events = (_sseMap && gameId) ? (_sseMap.get(gameId) || []) : [];
+  // Last two score events — show scorer names if data available
+  const scorers = events
+    .filter(e => e.type === 'score' || e.type === 'lead_change')
+    .slice(-2)
+    .map(e => e.data?.scorer || e.data?.player || '')
+    .filter(Boolean);
+  const redCards = events.filter(e => e.type === 'red_card').length;
+  let line = `${score}${clock}`;
+  if (scorers.length) line += ` — ${scorers.join(', ')}`;
+  if (redCards) line += ` \xb7 ${redCards} red${redCards > 1 ? 's' : ''}`;
+  return line;
+}
 async function renderNightOwlRecap(){
   const tz = localTz();
   // Night Owl renders into #night-owl — kept separate from #field-brief.

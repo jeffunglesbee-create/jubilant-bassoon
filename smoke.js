@@ -5726,5 +5726,27 @@ assert('A-ROUND-2 — aggregate score line gated on game.series.homeAggregate + 
   html.includes('homeAggregate') && html.includes('awayAggregate') && html.includes('.leg !== 1'),
   'buildRoundBadge must render Agg: X-Y only when homeAggregate/awayAggregate present and leg !== 1');
 
+// ── Card brief line + live card line (A_CARD_BRIEF_LINE — 2026-06-27) ────────
+assert('A_CARD_BRIEF_LINE_1 — buildLiveCardLine defined',
+  html.includes('function buildLiveCardLine('),
+  'buildLiveCardLine must be defined for live card one-liner');
+
+assert('A_CARD_BRIEF_LINE_2 — _gameBriefCache read in card template',
+  html.includes('_cardBrief') && html.includes('_firstSentence'),
+  'case final must read _gameBriefCache via _cardBrief and extract _firstSentence');
+
+assert('A_CARD_BRIEF_LINE_3 — game-lines batch pre-population present',
+  html.includes('/journalism/game-lines'),
+  'page-load batch fetch from /journalism/game-lines must be present');
+
+assert('A_CARD_BRIEF_LINE_4 — scheduleRenderAll in fetchGameBriefOnDemand.then',
+  (() => {
+    const idx = html.indexOf('fetchGameBriefOnDemand(game, sport).then');
+    if (idx < 0) return false;
+    const block = html.slice(idx, idx + 600);
+    return block.includes('scheduleRenderAll');
+  })(),
+  'fetchGameBriefOnDemand.then must call scheduleRenderAll to update the card face');
+
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);
