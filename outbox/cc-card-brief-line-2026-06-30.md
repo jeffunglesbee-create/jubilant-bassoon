@@ -2,7 +2,7 @@
 
 **Date:** 2026-06-30
 **CC-CMD:** docs/CC-CMD-2026-06-27-client-card-brief-line.md
-**Commit:** (see below)
+**Commit:** 1fe4b5c
 **SW_VERSION:** 2026-06-30c (bumped from 2026-06-30b)
 **Smoke:** 813/0 (was 809/0; +4 from A_CARD_BRIEF_LINE_1–4)
 

@@ -1,11 +1,34 @@
 # FIELD HANDOFF
 
-## Session: 2026-06-30 · MLS Full Stack (Part 10: Round-Label Complete)
+## Session: 2026-06-30 · Card Brief Line + Live Card Line
 
-**CLIENT HEAD: 8ae4fb6d**
+**CLIENT HEAD: 1fe4b5c**
 **RELAY HEAD: 4e2398c6** (CONTRACTS.md sync only — code unchanged since f4c5fba9)
-**SW_VERSION: 2026-06-30a**
-**SMOKE: 809/0**
+**SW_VERSION: 2026-06-30c**
+**Smoke: 813/0**
+
+Session doc: outbox/cc-card-brief-line-2026-06-30.md
+
+---
+
+## CARD BRIEF LINE: STAGED (visual verification pending CI deploy)
+
+CC-CMD `docs/CC-CMD-2026-06-27-client-card-brief-line.md` executed:
+
+- `buildLiveCardLine(game, eData)` added — pure synchronous, uses `window._sseScoreTs`, returns `''` when `eData.state !== 'in'`
+- `case 'final':` replaced — `_gameBriefCache` wired, first sentence of brief joins score line via `parts.join(' · ')`
+- `case 'live':` wired — `buildLiveCardLine` fires after `buildStoryTape` check
+- Page-load batch fetch from `/journalism/game-lines` — once-per-session guard (`window._gameLinesLoaded`), 500ms delay in `renderAll()`
+- `scheduleRenderAll()` added to `fetchGameBriefOnDemand.then()` — card face now updates when brief resolves
+- A_CARD_BRIEF_LINE_1–4 smoke assertions added, all passing
+- Smoke: 809 → 813/0
+- SW_VERSION: 2026-06-30b → 2026-06-30c
+
+STAGED: visual verification (card face shows brief sentence, live card shows scorer line) requires deployed app. CC sandbox blocks `*.workers.dev`. CI will verify after deploy.
+
+---
+
+## ROUND-LABEL FEATURE: COMPLETE END TO END (from prior session)
 
 ---
 
