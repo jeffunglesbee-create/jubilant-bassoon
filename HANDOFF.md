@@ -1,92 +1,83 @@
 # FIELD HANDOFF
 
-## Session: 2026-06-30 · MLS Adapter Build (Part 2: Tournament Multiplexer)
+## Session: 2026-06-30 · MLS Full Stack (Part 2: Tournament Multiplexer + CC-CMDs Queued)
 
-**CLIENT HEAD: fb78e38**
+**CLIENT HEAD: 33d36834**
 **SW_VERSION: 2026-06-30a**
-**RELAY HEAD: d78db9d4**
-**Smoke: 807/0**
+**RELAY HEAD: e7f8bd56** (identity-resolver: all 30 MLS clubs)
+**SMOKE: 807/0** (A-TOURN-1–4 verified in main smoke.js lines 5698-5718)
 
 ---
 
-## THIS SESSION
+## THIS SESSION — SHIPPED
 
-### Relay fix (1 commit: d78db9d4)
-- Added missing `const MLS_STATS_BASE = 'https://stats-api.mlssoccer.com'` — route handler referenced it but constant was never defined (caused 1101 JS exception on every `/mls/stats/*` request)
-- Fixed `/competitions` allowlist prefix: changed `'/competitions/'` to `'/competitions'` so bare `/competitions` path (full registry endpoint) passes the allowlist check
-- Fixed `mlsStatsTtl()` to match same prefix pattern
-- Deploy verified: both `/mls/stats/competitions` and `/mls/stats/matches/seasons/...` confirmed working
+### 1. Identity resolver: all 30 MLS clubs (relay commit e7f8bd56)
+Was 10 of 30. All 30 clubs now canonicalized against stats-api names, including ESPN display-name variants and old api-sports seed variants.
 
-### Network confirmation
-- `stats-api.mlssoccer.com` **now accessible from chat sandbox** (was blocked at prior session close; Jeff's allowlist addition took effect between sessions)
-
-### D1 schedule seed (live execution, not committed to CI yet)
-- Deleted 262 stale api-sports rows (all unscored, `date >= 2026-07-22`)
-- Fetched 279 games from stats-api (3 pages, `next_page_token` pagination)
-- Inserted 279 rows with canonical three-letter-code IDs (`{date}-mls-{h}-{a}`)
-- Final state: 289 MLS games (12 pre-WC + 277 post-WC), March 7 to Nov 7
-- 2 rescheduled games (originally Mar/Apr, moved post-WC) have their original `start_date` in pre-WC range — harmless
-- **Decision Day Nov 7 fully covered** (16 games, missing in old seed)
-
-### Client commits (2, both [skip ci])
-1. `5c80f5d3` — Rewrote `scripts/seed-mls-return-2026.py` for stats-api (was api-sports.io)
-2. `d7f9a4c6` — Updated `.github/workflows/mls-schedule-seed.yml` with weekly Monday cron
-
-### Key learnings / gotchas (Part 1)
-- D1 `/d1/execute` batch INSERT fails at 20 rows (500 error); 5 rows per batch works
-- Python urllib default UA triggers Cloudflare Bot Fight Mode (1010); browser-like UA required
-- stats-api `match_date[gte/lte]` filters by effective date but `start_date` field reports original date — rescheduled games have date mismatch
-
-### Part 2: Tournament Multiplexer (branch: claude/elegant-shannon-t2dvt0, commit fb78e38)
-- `scripts/seed-mls-tournaments-2026.py` — entity-filtered sync of all 15 Tournament-type competitions via relay `/archive/game` COALESCE UPSERT
+### 2. Tournament multiplexer: 60 rows in postseason_games
+Files on main (jubilant-bassoon):
+- `scripts/seed-mls-tournaments-2026.py` — entity-filtered, generic competition iteration, no hardcoded allowlist. Excludes MLS Test (patched after first run revealed garbled "Total" section_name). commit 33d36834.
 - `.github/workflows/mls-tournaments-seed.yml` — daily 11am UTC cron + workflow_dispatch
-- `smoke.js` — +4 assertions (A-TOURN-1 through A-TOURN-4), 803→807
-- Probes confirmed: 20 competitions / 15 Tournament, Open Cup bracket_structure_id shape OK, series_type empty (no two-legged ties), /archive/game exists at relay index.js:7685
-- D1 pre-seed state confirmed: postseason_games = NBA 15 / NHL 15 / UFL 2 / MLS 0
-- **STAGED: end-to-end verification blocked** — relay POST and stats-api both blocked by CC sandbox proxy; workflow dispatch requires file on main branch. Unblock: merge PR → workflow auto-registers, cron fires daily 11am UTC or manual dispatch. See outbox/cc-tournament-multiplexer-2026-06-30.md for exact verification SQL.
+- `outbox/cc-tournament-multiplexer-2026-06-30.md` — CC outbox
 
-### CC bash environment limits (this session)
-- `*.workers.dev:443` — 403 Tunnel from CC bash proxy (relay POST/GET blocked)
-- `stats-api.mlssoccer.com` — 403 Tunnel from CC bash proxy
-- Relay accessible ONLY via `mcp__FIELD_Handoff__browser_quick` for allow-listed GET paths (`/mls/stats/competitions`, `/mls/stats/matches/*`)
-- D1 MCP (`mcp__Cloudflare_Developer_Platform__d1_database_query`) works for direct DB queries
+D1 postseason_games MLS state (confirmed, idempotency verified):
+- Leagues Cup Phase One: 54 games (Aug 4–14)
+- TELUS Canadian Championship Quarterfinals: 4 games (Jul 9–14)
+- US Open Cup Semifinals: 2 games (Sep 16–17)
+- Total: 60 rows, 0 TBC rows, idempotent ✅
+
+**STAGED:** End-to-end smoke of A-TOURN-3 and A-TOURN-4 against committed files still needs a CI run to confirm. The workflow registers on main now; smoke can be triggered via workflow_dispatch on mls-tournaments-seed.yml to confirm D1 writes live, or wait for 11am UTC cron.
+
+### 3. CC-CMD amendment: round-label-aggregate extended to all sports
+`docs/CC-CMD-2026-06-30-round-label-aggregate.md` amended (77e2592b) — removed soccer-only restriction. NBA/NHL/UFL `round` data verified correct in postseason_games. One badge component, all sports.
+
+### 4. Standing approval rule saved to memory
+Consistency and correctness follow-ups always approved: data normalization, canonicalization, identity-mapping gaps, vocabulary standardization, missing coverage in registries/resolvers, schema consistency fixes.
 
 ---
 
-## WHAT'S AUTOMATED vs. STILL MANUAL
+## CC-CMDS QUEUED — NEXT SESSION
 
-**Now automated:**
-- MLS schedule seed runs weekly (Monday 10am UTC cron) — catches rescheduled games
-- Relay `/mls/stats/*` passthrough operational — competitions, standings, schedule, match data all accessible
-- MLS tournament sync: `mls-tournaments-seed.yml` ready (daily 11am UTC) — **activates after PR merge to main**
+Run in this order. All docs in jubilant-bassoon.
 
-**Still manual / not yet built:**
-- No client-side MLS adapter function (no `adaptMls` or equivalent) — ESPN still provides live MLS scores via `usa.1` league, so game cards work, but stats-api enrichment (venue, match_day, sub_league) isn't consumed
-- No journalism context integration from stats-api (FBref is the current MLS context source)
-- The weekly Regular Season cron hasn't run yet (first scheduled run: Monday July 6 2026)
+**#1 (unblocked):**
+"git pull. Read docs/CC-CMD-2026-06-30-soccer-stats-dual-source.md. Execute all tasks. Nothing commits without confidence ≥ 95. If probe 3 stop condition triggers, halt and write findings to outbox only."
+
+**#2 (run after #1 completes):**
+"git pull both repos. Read docs/CC-CMD-2026-06-30-round-label-aggregate.md. Execute all tasks across both repos in order: field-relay-nba first (Tasks 1–2), jubilant-bassoon second (Task 3). Nothing commits without confidence ≥ 95."
+
+**#3 (after #1 and #2 — final close-out):**
+Write AVV describe block for MLS: tests/adapter-visible-value.spec.js, AVV-MLS-001 through AVV-MLS-005 (see session notes for spec).
+
+---
+
+## CONSISTENCY ITEMS OUTSTANDING (standing approval)
+
+- postseason_games round vocabulary: "East CF" → "Eastern Conference Finals" etc. One SQL UPDATE + write-path patch.
+- espn_event_id null on all MLS rows (cross-reference gap — separate identity-resolver session)
+- European club coverage in identity-resolver before August (EPL, La Liga, UCL, etc.)
+- Two-legged tie game_number=2 handling — confirmed absent from TELUS Canadian Championship data (two legs stored as separate series_keys via different match_ids); spec needed before August UCL qualifying
 
 ---
 
 ## PRIORITY LIST
 
-### 🔧 QUEUED CC-CMDs
-1. Relay: /journalism/game-lines (docs/CC-CMD-2026-06-27-relay-game-lines.md)
-2. Client: card brief line (docs/CC-CMD-2026-06-27-client-card-brief-line.md)
+### 🔧 CC-CMDs (in order)
+1. CC-CMD-2026-06-30-soccer-stats-dual-source.md (field-relay-nba)
+2. CC-CMD-2026-06-30-round-label-aggregate.md (field-relay-nba + jubilant-bassoon)
+3. AVV-MLS describe block (jubilant-bassoon)
 
 ### 🔨 INFRASTRUCTURE
-3. Bosnia DB fix + identity-resolver CANONICAL map
-4. team_form CONTEXT_SOURCE v3
-5. Golf: wire Broadie proxy (Tier 1, $0)
+4. Bosnia DB fix + identity-resolver CANONICAL map
+5. team_form CONTEXT_SOURCE v3
+6. Golf: wire Broadie proxy (Tier 1, $0)
 
 ### 📋 OPEN INCIDENTS
-6. wentToOT hardcoded false
-7. KV editorial keys not consulted
-8. NFL SPORT_TO_V2 — September 9
-9. Odds Daily Counter stale
-10. night_stars phase degraded
-
-### 🏗️ NEXT ADAPTER BACKFILL
-NBA CDN → NHLE → Squiggle AFL → MLS (✅ relay + seed done) → client enrichment TBD
+7. wentToOT hardcoded false
+8. KV editorial keys not consulted
+9. NFL SPORT_TO_V2 — September 9
+10. Odds Daily Counter stale
+11. night_stars phase degraded
 
 ---
 
@@ -99,4 +90,4 @@ NBA CDN → NHLE → Squiggle AFL → MLS (✅ relay + seed done) → client enr
 - Repo: jeffunglesbee-create/jubilant-bassoon
 - MLS stats API: stats-api.mlssoccer.com (no key) — see codex mls-schedule-stats-api-2026-06-30
 
-SESSION END: RELAY d78db9d4 · CLIENT fb78e38 · 2026-06-30 · MLS tournament multiplexer (script + workflow + smoke 807) · branch claude/elegant-shannon-t2dvt0 · via CC
+SESSION END: RELAY e7f8bd56 · CLIENT 33d36834 · 2026-06-30 · Tournament multiplexer shipped, 60 D1 rows, dual-source + round-label CC-CMDs queued · via chat
