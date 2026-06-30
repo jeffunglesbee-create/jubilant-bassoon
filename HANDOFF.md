@@ -1,11 +1,12 @@
 # FIELD HANDOFF
 
-## Session: 2026-06-30 · MLS Full Stack (Part 6: Routing Correction + AVV Proof-Mode)
+## Session: 2026-06-30 · MLS Full Stack (Part 7: AVV-MLS Proof-Mode Execution)
 
-**CLIENT HEAD: 5bde4b3e**
+**CLIENT HEAD: 3ae21de**
 **SW_VERSION: 2026-06-30a**
 **RELAY HEAD: 1a2d7696** (context-probe ?date= param)
 **Smoke: 807/0**
+**Session doc:** outbox/cc-avv-mls-proof-mode-2026-06-30.md
 
 ---
 
