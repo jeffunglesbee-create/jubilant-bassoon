@@ -11,6 +11,17 @@ git diff --staged --stat
 echo "   Check: new variable names, removed functions, changes to shared functions."
 echo ""
 
+# Fast SW_VERSION sync check — catches A190 mismatches before full smoke (< 0.1s)
+_HTML_SWV=$(grep -m1 "const SW_VERSION = '" "$REPO/index.html" | sed "s/.*'\([^']*\)'.*/\1/")
+_SW_SWV=$(grep -m1 "const SW_VERSION = '" "$REPO/sw.js" | sed "s/.*'\([^']*\)'.*/\1/")
+if [ -n "$_HTML_SWV" ] && [ "$_HTML_SWV" != "$_SW_SWV" ]; then
+  echo "❌  A190 SW_VERSION mismatch — commit blocked"
+  echo "    index.html: '$_HTML_SWV'"
+  echo "    sw.js:      '$_SW_SWV'"
+  echo "    Fix: set sw.js SW_VERSION = '$_HTML_SWV' before committing"
+  exit 1
+fi
+
 echo "🔍 Smoke test (structural)..."
 node "$REPO/smoke.js" "$REPO/index.html" >/dev/null 2>&1; SMOKE_S=$?
 
