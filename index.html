@@ -7385,6 +7385,10 @@ const PEACOCK_GOTD_SCHEDULE = {
   // PRIMARY: field-data-today.json (build-field-data.js broadcasts(all)) auto-detects daily
   // FALLBACK: static entries below for when JSON is absent/stale
   '2026-06-06':'BOS@NYY',   // Fri 7:05pm ET — BOS @ NYY (Peacock GOTD)
+  // ── July 2026 (source: Peacock blog + NBC Sports/NBCUniversal press releases, 2026-07-01) ─
+  // Time discrepancy: Peacock blog says 1:30pm ET, NBC Sports/NBCUniversal say 1:35pm ET.
+  // Using 1:35pm (rightsholder-direct). field-data-today.json auto-detect missed this (peacockGOTD: false).
+  '2026-07-01':'DET@NYY',   // Wed 1:35pm ET — DET @ NYY (Peacock GOTD)
 };
 // MLB NETWORK: ALL non-exclusive out-of-market games (Showcase + regular).
 // NON-EXCLUSIVE: local RSN still airs; mlbnShowcase flag adds MLBN chip alongside RSN chip.
