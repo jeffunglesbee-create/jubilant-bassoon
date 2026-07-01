@@ -1,0 +1,33 @@
+name: MLB Umpire Zone Backfill (one-time)
+
+# Manually-triggered ONLY — deliberately no schedule. This backfills
+# `zones`/`weakness` for games already in processed_game_pks whose
+# challenge/overturn counts are correct but predate the zone-tracking
+# feature (commit db4fd9c7, 2026-07-01). Run once; re-running is safe
+# (idempotent merge) but pointless once the backfill is complete.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  backfill:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Backfill umpire zone data
+        run: python3 scripts/mlb-umpire-zone-backfill.py
+      - name: Commit updated umpire_abs.json
+        run: |
+          git config user.email "mlb-stats@field"
+          git config user.name "MLB-Stats-Bot"
+          git add outbox/mlb/umpire_abs.json
+          git diff --cached --quiet && echo "No changes to commit" && exit 0
+          git commit -m "data: backfill umpire zone data [skip ci]"
+          for i in 1 2 3; do
+            git pull --rebase --autostash origin main && git push origin main && break
+            sleep $((i * 5))
+          done
