@@ -278,6 +278,11 @@ assert('AVV-SAVANT-004 — fetchSavantGameFeed wp is distinguishable from odds-d
   html.includes('_liveOddsWP'),
   '_savantWP provenance marker must be set alongside espnScores[key].wp writes so Savant-sourced values are distinguishable from the odds-api _liveOddsWP marker on the same field');
 
+assert('SCOUT-ARSENAL-1 — buildScoutingReport fmtP extracts last name before calling getPitchArsenal',
+  /const pLast = \(p\.name \|\| p\.lastName \|\| ''\)\.split\(' '\)\.pop\(\)/.test(html) &&
+  html.includes('getPitchArsenal?.(pLast)'),
+  'PITCHER_ARSENAL is keyed by last-name-only but p.name (normalizeMLBPitcher) is always a full name — fmtP must extract last name via split(\' \').pop() before lookup, matching the working getMLBAnalyticsContext pattern (L7693), or the arsenal line silently never renders');
+
 // 5. RELAY NBA Adapters (Session 3)
 assert('RELAY_BASE defined', html.includes("const RELAY_BASE = 'https://field-relay-nba"));
 assert('relayHealthCheck defined', html.includes('async function relayHealthCheck'));

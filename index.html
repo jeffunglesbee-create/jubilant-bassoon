@@ -18424,7 +18424,21 @@ function buildScoutingReport(game, sport) {
         const rec = (p.wins != null && p.losses != null) ? ` · ${p.wins}-${p.losses}` : '';
         const tempo = getPitchTempo?.(p.name || p.lastName || '');
         const tempoStr = tempo ? ` · <em>${tempo.tempoClass}</em> tempo` : '';
-        return `${p.name || p.lastName || '?'}${era}${rec}${tempoStr}`;
+        // getPitchArsenal/PITCHER_ARSENAL is keyed by last-name-only, but
+        // p.name (from normalizeMLBPitcher) is always a full name — extract
+        // the last name the same way getMLBAnalyticsContext already does
+        // (index.html ~L7693: .split(' ').pop()), otherwise this line would
+        // never match and would silently never render (CC-CMD-2026-07-01
+        // scouting-report-arsenal).
+        const pLast = (p.name || p.lastName || '').split(' ').pop();
+        const arsenal = getPitchArsenal?.(pLast);
+        // Skip the line entirely when whiffRate is null (source CSV's
+        // whiff_percent empty for this pitch) rather than show a false "0%
+        // whiff" — null is "no data", not "zero whiffs".
+        const arsenalStr = (arsenal?.topWhiff && arsenal.topWhiff.whiffRate != null)
+          ? ` · <em>${arsenal.topWhiff.type}</em> ${Math.round(arsenal.topWhiff.whiffRate * 100)}% whiff`
+          : '';
+        return `${p.name || p.lastName || '?'}${era}${rec}${tempoStr}${arsenalStr}`;
       };
       if (ap) rows.push({ lbl: teamNick(game.away||''), val: fmtP(ap) });
       if (hp) rows.push({ lbl: teamNick(game.home||''), val: fmtP(hp) });
