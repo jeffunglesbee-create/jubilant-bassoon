@@ -7619,6 +7619,18 @@ function getParkFactor(teamAbbr) {
   return { ...d, badge, badgeClass, context };
 }
 
+// Shared by any call site that needs to key into PITCHER_ARSENAL/
+// PITCHER_TEMPO, which are last-name-only. Both scouting-report call
+// sites (starting pitcher) and the At-Bat Edge call site (live current
+// pitcher) need this — same bug class fixed twice before this helper
+// existed (CC-CMD-2026-07-01 scouting-report-arsenal + -tempo-fix).
+function lastNameOf(fullNameOrObj) {
+  const raw = typeof fullNameOrObj === 'string'
+    ? fullNameOrObj
+    : (fullNameOrObj?.name || fullNameOrObj?.lastName || fullNameOrObj?.fullName || '');
+  return raw.split(' ').pop();
+}
+
 function getPitchTempo(pitcherLastName) {
   if (!pitcherLastName) return null;
   const d = PITCHER_TEMPO[pitcherLastName.toLowerCase()];
@@ -18424,12 +18436,11 @@ function buildScoutingReport(game, sport) {
         const rec = (p.wins != null && p.losses != null) ? ` · ${p.wins}-${p.losses}` : '';
         // getPitchTempo/getPitchArsenal (PITCHER_TEMPO/PITCHER_ARSENAL) are
         // keyed by last-name-only, but p.name (from normalizeMLBPitcher) is
-        // always a full name — extract the last name once, the same way
-        // getMLBAnalyticsContext already does (index.html ~L7693:
-        // .split(' ').pop()), and reuse it for both lookups. Without this,
-        // either line silently never matches and never renders
-        // (CC-CMD-2026-07-01 scouting-report-arsenal + -tempo-fix).
-        const pLast = (p.name || p.lastName || '').split(' ').pop();
+        // always a full name — extract the last name once via the shared
+        // lastNameOf() helper (index.html ~L7622) and reuse it for both
+        // lookups. Without this, either line silently never matches and
+        // never renders (CC-CMD-2026-07-01 scouting-report-arsenal + -tempo-fix).
+        const pLast = lastNameOf(p);
         const tempo = getPitchTempo?.(pLast);
         const tempoStr = tempo ? ` · <em>${tempo.tempoClass}</em> tempo` : '';
         const arsenal = getPitchArsenal?.(pLast);
@@ -18505,12 +18516,22 @@ function buildScoutingReport(game, sport) {
     if (p?.platoonLabel) {
       const edgeCls = p.platoonEdge === 'batter' ? 'rai-pos' : p.platoonEdge === 'pitcher' ? 'rai-neg' : '';
       const countLine = p.countLabel ? `<div style="font-size:.63rem;color:var(--smoke);margin-top:.15rem">${p.countLabel}</div>` : '';
+      // Live current-pitcher arsenal/tempo — updates every at-bat including
+      // reliever substitutions, unlike the Scouting Report's one-time
+      // pre-game starter line (CC-CMD-2026-07-01 atbat-edge-arsenal).
+      const pitcherLast = p.pitcherName ? lastNameOf(p.pitcherName) : '';
+      const pArsenal = pitcherLast ? getPitchArsenal?.(pitcherLast) : null;
+      const pTempo   = pitcherLast ? getPitchTempo?.(pitcherLast)   : null;
+      const arsenalStr = (pArsenal?.topWhiff && pArsenal.topWhiff.whiffRate != null)
+        ? ` · <em>${pArsenal.topWhiff.type}</em> ${Math.round(pArsenal.topWhiff.whiffRate * 100)}% whiff`
+        : '';
+      const tempoStr = pTempo ? ` · <em>${pTempo.tempoClass}</em> tempo` : '';
       raiSection = `<div class="bs-section">
         <div class="bs-section-label">At-Bat Edge</div>
         <div class="bs-section-body">
           <div class="rai-row"><span class="rai-lbl">Matchup</span><span class="rai-val ${edgeCls}">${p.platoonLabel}</span></div>
           ${p.batterName ? `<div class="rai-row"><span class="rai-lbl">Batter</span><span style="font-size:.67rem">${p.batterName}</span></div>` : ''}
-          ${p.pitcherName ? `<div class="rai-row"><span class="rai-lbl">Pitcher</span><span style="font-size:.67rem">${p.pitcherName}</span></div>` : ''}
+          ${p.pitcherName ? `<div class="rai-row"><span class="rai-lbl">Pitcher</span><span style="font-size:.67rem">${p.pitcherName}${arsenalStr}${tempoStr}</span></div>` : ''}
           ${countLine}
         </div>
       </div>`;
