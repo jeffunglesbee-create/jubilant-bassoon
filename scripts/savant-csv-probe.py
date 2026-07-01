@@ -34,6 +34,13 @@ ENDPOINTS = [
     ("statcast_2026-05-01", "https://baseballsavant.mlb.com/statcast_search/csv?type=details&game_date=2026-05-01"),
     # Try date range format instead of single date
     ("statcast_range_may01", "https://baseballsavant.mlb.com/statcast_search/csv?all=true&hfGT=R%7C&hfSea=2026%7C&game_date_gt=2026-05-01&game_date_lt=2026-05-02&type=details"),
+    # ── UMPIRE WEAKNESS ZONE PROBE (CC-CMD-2026-07-01) ─────────────────────
+    # 14-day range matching mlb-weekly-update.py's "subsequent run" window,
+    # to maximize odds of finding real ABS challenge rows with zone data.
+    ("statcast_ump_zone_probe",
+     "https://baseballsavant.mlb.com/statcast_search/csv?all=true&hfGT=R%7C&hfSea=2026%7C"
+     f"&game_date_gt={(datetime.now(timezone.utc) - timedelta(days=15)).strftime('%Y-%m-%d')}"
+     f"&game_date_lt={(datetime.now(timezone.utc) - timedelta(days=1)).strftime('%Y-%m-%d')}&type=details"),
 ]
 
 ts  = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
@@ -90,6 +97,36 @@ for label, url in ENDPOINTS:
                     ump_vals = sorted(set(row[ump_idx] for row in all_rows if ump_idx < len(row) and row[ump_idx]))
                     extra["umpire_sample_values"] = ump_vals[:10]
                 except: pass
+                # CC-CMD-2026-07-01 umpire-weakness-zone: for real ABS challenge
+                # rows specifically (des matches the challenge pattern), extract
+                # zone + plate_x + plate_z + full des so the zone-to-label
+                # mapping can be verified against real data, not assumed.
+                try:
+                    challenge_re = __import__('re').compile(
+                        r'challenged \(pitch result\), call on the field was (confirmed|overturned)', __import__('re').IGNORECASE)
+                    des_idx = header.index('des')
+                    zone_idx = header.index('zone') if 'zone' in header else None
+                    px_idx = header.index('plate_x') if 'plate_x' in header else None
+                    pz_idx = header.index('plate_z') if 'plate_z' in header else None
+                    extra['zone_column_present'] = zone_idx is not None
+                    extra['plate_x_column_present'] = px_idx is not None
+                    extra['plate_z_column_present'] = pz_idx is not None
+                    zone_dist = {}
+                    challenge_samples = []
+                    for row in all_rows:
+                        if des_idx >= len(row) or not row[des_idx]: continue
+                        if not challenge_re.search(row[des_idx]): continue
+                        z = row[zone_idx] if zone_idx is not None and zone_idx < len(row) else None
+                        px = row[px_idx] if px_idx is not None and px_idx < len(row) else None
+                        pz = row[pz_idx] if pz_idx is not None and pz_idx < len(row) else None
+                        if z: zone_dist[z] = zone_dist.get(z, 0) + 1
+                        if len(challenge_samples) < 40:
+                            challenge_samples.append({'zone': z, 'plate_x': px, 'plate_z': pz, 'des': row[des_idx]})
+                    extra['challenge_row_count'] = len(challenge_samples) if len(challenge_samples) < 40 else f"{len(challenge_samples)}+ (capped sample)"
+                    extra['challenge_zone_distribution'] = zone_dist
+                    extra['challenge_zone_samples'] = challenge_samples
+                except Exception as e:
+                    extra['zone_probe_error'] = str(e)
 
             print(f"{'✅' if r.status == 200 else '⚠️ '} {label}: HTTP {r.status} | {len(rows)} rows")
             print(f"   Columns ({len(header)}): {header[:10]}")
