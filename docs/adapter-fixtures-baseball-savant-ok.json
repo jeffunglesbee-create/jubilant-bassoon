@@ -1,0 +1,29 @@
+{
+  "sourceId": "baseball-savant-leaderboards",
+  "note": "Real data from mlb-weekly-update.yml run 28543470974 (2026-07-01, post-fix, commit ab715d3) — pitch-arsenal-stats endpoint, 120 pitchers total, 3-pitcher excerpt",
+  "updated": "20260701T194711Z",
+  "data": {
+    "gausman": {
+      "team": "TOR",
+      "pitches": [
+        { "type": "4-Seam Fastball", "usage": 0.52, "whiffRate": 0.181, "runValuePer100": 1.5 },
+        { "type": "Split-Finger", "usage": 0.386, "whiffRate": 0.392, "runValuePer100": -0.2 }
+      ]
+    },
+    "peralta": {
+      "team": "NYM",
+      "pitches": [
+        { "type": "4-Seam Fastball", "usage": 0.528, "whiffRate": 0.215, "runValuePer100": 0.6 },
+        { "type": "Changeup", "usage": 0.228, "whiffRate": 0.28, "runValuePer100": -1.0 }
+      ]
+    },
+    "pérez": {
+      "team": "MIA",
+      "pitches": [
+        { "type": "4-Seam Fastball", "usage": 0.472, "whiffRate": 0.231, "runValuePer100": 0.3 },
+        { "type": "Sinker", "usage": 0.316, "whiffRate": 0.092, "runValuePer100": 0.7 },
+        { "type": "Changeup", "usage": 0.315, "whiffRate": 0.319, "runValuePer100": 0.8 }
+      ]
+    }
+  }
+}

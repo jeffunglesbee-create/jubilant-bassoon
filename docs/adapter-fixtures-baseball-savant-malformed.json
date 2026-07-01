@@ -1,0 +1,16 @@
+{
+  "sourceId": "baseball-savant-leaderboards",
+  "note": "Malformed pitch-arsenal-stats CSV row: real field values from the 2026-05-30 probe (Gausman/TOR/FF/4-Seam Fastball/run_value_per_100=1.7/pitches=590/pa=167) with the pitch_usage column entirely absent (simulates a truncated or schema-drifted CSV row). Verified 2026-07-01: fetch_csv's DictReader leaves the key missing, safe_float(r.get('pitch_usage')) defaults to 0.0, and the 'usage <= 3: continue' guard skips the row without raising — parser does not crash on malformed input.",
+  "malformedRow": {
+    "last_name, first_name": "Gausman, Kevin",
+    "player_id": "592332",
+    "team_name_alt": "TOR",
+    "pitch_type": "FF",
+    "pitch_name": "4-Seam Fastball",
+    "run_value_per_100": "1.7",
+    "run_value": "10",
+    "pitches": "590",
+    "pa": "167"
+  },
+  "expectedBehavior": "row skipped (usage defaults to 0.0, fails usage > 3 threshold) — no exception, no fabricated data, pitcher not added to arsenals dict"
+}

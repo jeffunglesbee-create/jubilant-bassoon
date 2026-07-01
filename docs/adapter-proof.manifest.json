@@ -228,6 +228,68 @@
         "WP source='default-lambda' on MLB objects — odds feed D1 not live WP"
       ],
       "lastVerifiedAt": null
+    },
+    "baseball-savant": {
+      "status": "active",
+      "sourceId": "baseball-savant-leaderboards",
+      "sport": "Baseball",
+      "components": {
+        "weeklyBatch": {
+          "script": "scripts/mlb-weekly-update.py",
+          "workflow": ".github/workflows/mlb-weekly-update.yml",
+          "outputs": [
+            "outbox/mlb/team_abs.json",
+            "outbox/mlb/expected_stats.json",
+            "outbox/mlb/sprint_speed.json",
+            "outbox/mlb/pitch_tempo.json",
+            "outbox/mlb/pitch_arsenals.json",
+            "outbox/mlb/umpire_abs.json"
+          ]
+        },
+        "liveFeed": {
+          "function": "fetchSavantGameFeed",
+          "endpoint": "https://baseballsavant.mlb.com/gf?game_pk={sourceId}",
+          "field": "wp (win probability), tagged with a _savantWP provenance marker ({wp, wpa, ts, source:'savant'}) on espnScores[key] alongside the existing _liveOddsWP marker set by the odds-api wp_update SSE path — both write the same .wp field, so the provenance marker is what distinguishes a Savant-sourced value from an odds-derived one (fixed 2026-07-01, previously undistinguishable)"
+        }
+      },
+      "normalizer": "N/A — direct CSV/JSON consumption, no shared normalizer function",
+      "requiredNormalizedFields": [
+        "TEAM_ABS_RANKINGS entries: grade, battingWon, battingAttempted, battingRate",
+        "PITCHER_ARSENAL entries: team, pitches[] (type, usage, whiffRate, runValuePer100)"
+      ],
+      "presentationConsumers": [
+        "getPitchArsenal / getMLBAnalyticsContext (index.html) — client-side journalism prompt context",
+        "client-side card win-probability display (index.html ~line 10522)"
+      ],
+      "visibleSurfaces": [
+        {
+          "surface": "journalism-context",
+          "selector": "N/A (assembled client-side, not DOM) — proof is a getMLBAnalyticsContext line containing '<pitcher>: <type> +/-X RV/100 (Y% K)'",
+          "proof": "getMLBAnalyticsContext output includes a pitcher-arsenal line, not just ABS challenge grade"
+        },
+        {
+          "surface": "card",
+          "selector": ".game-card[data-sport='Baseball'] [data-proof='win-probability']",
+          "proof": "win probability percentage visible, sourced from Savant gf feed specifically (tagged via _savantWP)"
+        }
+      ],
+      "fallbackSurfaces": [
+        {
+          "surface": "journalism-context",
+          "proof": "getMLBAnalyticsContext gracefully omits the pitcher-arsenal line when PITCHER_ARSENAL has no entry for that pitcher — ABS grade line still renders alone (this already worked; the actual bug being fixed was pitch_arsenals.json producing zero data, not a fallback gap)"
+        }
+      ],
+      "fixtures": {
+        "ok": "docs/adapter-fixtures-baseball-savant-ok.json",
+        "empty": "docs/adapter-fixtures-baseball-savant-empty.json",
+        "malformed": "docs/adapter-fixtures-baseball-savant-malformed.json"
+      },
+      "knownGaps": [
+        "pitch-arsenal-stats has no velocity column — runValuePer100 replaces velocity as the pitch-quality metric shown to users",
+        "whiffRate is null when whiff_percent is missing from a given CSV row — consumer (getPitchArsenal) renders 'n/a whiff' rather than fabricating a value"
+      ],
+      "proofMode": "required",
+      "lastVerifiedAt": "2026-07-01"
     }
   }
 }

@@ -241,6 +241,43 @@ assert("AVV-ODDS-008 — 'adapter-proof-odds-api' in Feature Registry",
   html.includes("'adapter-proof-odds-api'"),
   'Feature Registry must contain adapter-proof-odds-api entry');
 
+// ── Baseball Savant Adapter Visible Value Proof (AVV-SAVANT — 2026-07-01) ───
+// Fixes the pitch_arsenals silent-empty bug (long-format CSV mis-parsed as
+// wide-format since June 1). Scope: pitch_arsenals only — team_abs,
+// expected_stats, sprint_speed, pitch_tempo, umpire_abs were already healthy
+// and are untouched by this fix.
+
+assert('AVV-SAVANT-001 — ok fixture proves pitch_arsenals fix produces non-empty data',
+  (() => {
+    try {
+      const fx = JSON.parse(require('fs').readFileSync('./docs/adapter-fixtures-baseball-savant-ok.json', 'utf8'));
+      return Object.keys(fx.data || {}).length > 0 &&
+        Object.values(fx.data).every(p => Array.isArray(p.pitches) && p.pitches.length > 0);
+    } catch { return false; }
+  })(),
+  'docs/adapter-fixtures-baseball-savant-ok.json must contain real, non-empty per-pitcher pitch arrays (real weekly-update output, not invented)');
+
+assert('AVV-SAVANT-002 — empty fixture reproduces the real pre-fix broken state',
+  (() => {
+    try {
+      const fx = JSON.parse(require('fs').readFileSync('./docs/adapter-fixtures-baseball-savant-empty.json', 'utf8'));
+      return fx.data && Object.keys(fx.data).length === 0;
+    } catch { return false; }
+  })(),
+  'docs/adapter-fixtures-baseball-savant-empty.json must reproduce the actual pre-fix {"data":{}} state — proves the fix, not a hypothetical');
+
+assert('AVV-SAVANT-003 — getPitchArsenal/getMLBAnalyticsContext render a pitcher-arsenal line from PITCHER_ARSENAL',
+  html.includes('function getPitchArsenal') &&
+  html.includes('function getMLBAnalyticsContext') &&
+  /arsenal\.context\.replace\('Arsenal: ',''\)/.test(html),
+  'Client-side equivalent of relay buildSavantContext: getMLBAnalyticsContext must push a getPitchArsenal() line into journalism context when PITCHER_ARSENAL has data for a pitcher');
+
+assert('AVV-SAVANT-004 — fetchSavantGameFeed wp is distinguishable from odds-derived wp via _savantWP',
+  html.includes('async function fetchSavantGameFeed') &&
+  /_savantWP\s*=\s*\{\s*wp:\s*savant\.wp/.test(html) &&
+  html.includes('_liveOddsWP'),
+  '_savantWP provenance marker must be set alongside espnScores[key].wp writes so Savant-sourced values are distinguishable from the odds-api _liveOddsWP marker on the same field');
+
 // 5. RELAY NBA Adapters (Session 3)
 assert('RELAY_BASE defined', html.includes("const RELAY_BASE = 'https://field-relay-nba"));
 assert('relayHealthCheck defined', html.includes('async function relayHealthCheck'));
