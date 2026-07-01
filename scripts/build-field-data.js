@@ -104,6 +104,51 @@ function _lookupEspnCableSlot(dateStr, awayHomeKey) {
   return list.find(s => s.matchup === awayHomeKey) || null;
 }
 
+// ── ESPN MLB GOTD structural detection ───────────────────────────────────
+// Fetches site.api.espn.com MLB scoreboard and returns a Set of 'home|away'
+// keys (ESPN displayName strings) for games where 'ESPN Unlmtd' appears as a
+// national broadcast — the specific GOTD signal, distinct from generic 'ESPN'
+// (cable exclusive) which is NOT a reliable GOTD indicator.
+// Called once per build in main(); passed into parseMLBFull → assignMLBBroadcast.
+function fetchEspnMlbGotd(dateStr) {
+  const espnDate = dateStr.replace(/-/g, '');
+  const gotdKeys = new Set();
+  return new Promise((resolve) => {
+    const req = https.request({
+      hostname: 'site.api.espn.com',
+      path: `/apis/site/v2/sports/baseball/mlb/scoreboard?dates=${espnDate}`,
+      method: 'GET',
+      headers: { 'User-Agent': 'FIELD-DataBot/1.0', 'Accept': 'application/json' },
+    }, res => {
+      let data = '';
+      res.on('data', c => data += c);
+      res.on('end', () => {
+        try {
+          const parsed = JSON.parse(data);
+          for (const ev of parsed.events || []) {
+            const comp = (ev.competitions || [])[0];
+            if (!comp) continue;
+            const national = (comp.broadcasts || []).find(b => b.market === 'national');
+            const names = (national?.names || []).map(n => n.toLowerCase());
+            if (names.some(n => n.includes('espn unlmtd') || n.includes('espn unlimited'))) {
+              const home = (comp.competitors || []).find(c => c.homeAway === 'home')?.team?.displayName;
+              const away = (comp.competitors || []).find(c => c.homeAway === 'away')?.team?.displayName;
+              if (home && away) {
+                gotdKeys.add(`${home}|${away}`);
+                console.log(`ESPN GOTD (structural): ${away} @ ${home}`);
+              }
+            }
+          }
+        } catch (e) { console.warn('ESPN GOTD fetch error:', e.message); }
+        resolve(gotdKeys);
+      });
+    });
+    req.on('error', () => resolve(gotdKeys));
+    req.setTimeout(10000, () => { req.destroy(); resolve(gotdKeys); });
+    req.end();
+  });
+}
+
 // ── NHL abbreviation → full name ──────────────────────────────────────────
 const NHL_TEAMS = {
   ANA:'Anaheim Ducks',       BOS:'Boston Bruins',        BUF:'Buffalo Sabres',
@@ -129,7 +174,7 @@ function nhlFullName(abbrev, fallback) {
 // Detects: MLB Network (mlbnShowcase), ESPN Unlimited GOTD (espnGOTD), Peacock GOTD (peacockGOTD).
 // FALLBACK: day-of-week rules when broadcast data absent or game is pre-game/no hydration.
 // Manual ESPN_GOTD_IDS / PEACOCK_GOTD_IDS env overrides always win.
-function assignMLBBroadcast(game, dateStr, rawBroadcasts) {
+function assignMLBBroadcast(game, dateStr, rawBroadcasts, espnGotdKeysFromApi) {
   const dow = new Date(dateStr + 'T12:00:00Z').getUTCDay(); // 0=Sun,1=Mon,...,6=Sat
   const startUTC = game.start_time ? new Date(game.start_time) : null;
   const startHourUTC = startUTC ? startUTC.getUTCHours() : 18;
@@ -175,11 +220,16 @@ function assignMLBBroadcast(game, dateStr, rawBroadcasts) {
   }
 
   // Detect ESPN GOTD: cross-reference against ESPN Press Room schedule lookup
-  // DO NOT auto-tag from broadcast name — 'ESPN' appears for many non-GOTD games
+  // AND structural signal from site.api.espn.com (espnGotdKeysFromApi).
+  // DO NOT auto-tag from broadcast name — 'ESPN' appears for many non-GOTD games.
+  // 'ESPN Unlmtd' in ESPN's own feed IS the specific GOTD signal (distinct from 'ESPN' cable).
   if (!game.espnGOTD) {
     const lookupKey = `${game.away}|${game.home}`;
     const scheduledGOTD = ESPN_GOTD_LOOKUP[dateStr];
-    if (scheduledGOTD === lookupKey || ESPN_GOTD_IDS.includes(`${game.home}|${game.away}`)) {
+    const structuralKey = `${game.home}|${game.away}`;
+    if (scheduledGOTD === lookupKey
+        || ESPN_GOTD_IDS.includes(structuralKey)
+        || (espnGotdKeysFromApi && espnGotdKeysFromApi.has(structuralKey))) {
       game.espnGOTD = true;
     }
   }
@@ -337,7 +387,7 @@ function parseNBA() {
 
 // ── Fetch full MLB schedule (Phase 1) ─────────────────────────────────────
 // Returns full game objects: home, away, start_time, venue, nationalBundle
-function parseMLBFull() {
+function parseMLBFull(espnGotdKeys) {
   return new Promise((resolve) => {
     const req = https.request({
       hostname: 'statsapi.mlb.com',
@@ -392,7 +442,7 @@ function parseMLBFull() {
             };
 
             // Assign broadcast: live broadcasts(all) first, then day-of-week fallback
-            if (!isPlayoff) assignMLBBroadcast(game, TODAY, rawBroadcasts);
+            if (!isPlayoff) assignMLBBroadcast(game, TODAY, rawBroadcasts, espnGotdKeys);
 
             return game;
           }).filter(Boolean);
@@ -550,7 +600,8 @@ async function parseMLS() {
 async function main() {
   const nhlGames  = parseNHL();
   const nbaGames  = parseNBA();
-  const mlbGames  = await parseMLBFull();   // Phase 1: full MLB schedule
+  const espnGotdKeys = await fetchEspnMlbGotd(TODAY);  // once per build — structural GOTD signal
+  const mlbGames  = await parseMLBFull(espnGotdKeys);   // Phase 1: full MLB schedule
   const mlsGames  = await parseMLS();
 
   console.log(`Parsed: ${nhlGames.length} NHL + ${nbaGames.length} NBA + ${mlbGames.length} MLB + ${mlsGames.length} MLS game(s) for ${TODAY}`);
