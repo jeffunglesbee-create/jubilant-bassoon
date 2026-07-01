@@ -24,7 +24,7 @@ Add a new named assertion in `smoke.js` for every FIELD_FEATURES entry (presence
 
 ```
 0. Read HANDOFF NOTE — `HANDOFF.md` in repo root (read after git pull, before everything)
-   0a. Read FIELD CURRENT STATE — Drive ID: 1GvsfnTH9Xhqzg_NdYrPhPpk1d1Rnm0lkeG6ip-tLUlA
+   0a. Read FIELD CURRENT STATE — Drive ID: 1ahx6cS_Z5sfjb9sMS2Uqjypgy37xbI3M08PjZOh4G74
        What FIELD is TODAY — features live, smoke state, active rules, known gaps.
        Read after handoff, before CI/Deploy ref. Takes 2 minutes. Prevents stale-state decisions.
    ⚠️  GEMINI QUARANTINE CHECK: if the handoff was produced by a Gemini session,
@@ -44,9 +44,9 @@ Add a new named assertion in `smoke.js` for every FIELD_FEATURES entry (presence
 - Handoff Note (read first): `HANDOFF.md` (repo root — no Drive ID needed)
 - CI/Deploy Error Reference (read every session): `18JMUd-Uq_m2DomuCua2B5UMiWOel81yzc1JU7SY6f20`
 - Build Session List: `19TicpFBU2ORbypNBteCXuhwbX1FoP14Y2NGuU9e3drQ`
-- FIELD Current State: `1GvsfnTH9Xhqzg_NdYrPhPpk1d1Rnm0lkeG6ip-tLUlA`
+- FIELD Current State: `1ahx6cS_Z5sfjb9sMS2Uqjypgy37xbI3M08PjZOh4G74`
 - Master Improvement Ranking: `1rW90JQ5a4ybrE9l5acrbqd0q0yl_QYmPIOnEJr__GEY`
-- Daily Update Reference: `1oSHqnDskN04p95g6e85--4hhgIsKISZ3ZflLXKPM08E`
+- Daily Update Reference: `12QY-zSOpWhAbT3VVTxxDXt7mvIhQ5HwQW5VhJHoPUXw`
 - Wow Features: `1QJCiwEav5VEofrdL4ba-jKsSMrcZq7EPdFehTMX-_i8`
 - UI Evaluation: `1D98AsQqsNJSe0UKkVaRFrPO9SwDcdTMvS_Ll81kUVqo`
 - Standards (Drive): `1twYHSCalULEWE1XjKB5lUVDRK5lzUP-l`
@@ -114,8 +114,8 @@ never worked despite being documented as complete.*
 | **UI Evaluation** | `1D98AsQqsNJSe0UKkVaRFrPO9SwDcdTMvS_Ll81kUVqo` | Any session with CSS, layout, or card design changes — edit in place, no version numbers |
 | **Viewport Style Guide** | `1X_u98rkvqB4l6H5fYr1IiOZlLcZzap6cUDojgE85C2A` | Any session that changes section labels, font sizes, touch targets, or surface identifiers |
 | **Master Improvement Ranking** | `1rW90JQ5a4ybrE9l5acrbqd0q0yl_QYmPIOnEJr__GEY` | Any session that ships a feature — add to FIELD_FEATURES registry with ship date |
-| **FIELD Current State** | `1GvsfnTH9Xhqzg_NdYrPhPpk1d1Rnm0lkeG6ip-tLUlA` | Every session end — update HEAD, smoke state, and any changed capability sections |
-| **Daily Update Reference** | `1oSHqnDskN04p95g6e85--4hhgIsKISZ3ZflLXKPM08E` | Any session that changes broadcast chip rules, thresholds, or update protocol |
+| **FIELD Current State** | `1ahx6cS_Z5sfjb9sMS2Uqjypgy37xbI3M08PjZOh4G74` | Every session end — update HEAD, smoke state, and any changed capability sections |
+| **Daily Update Reference** | `12QY-zSOpWhAbT3VVTxxDXt7mvIhQ5HwQW5VhJHoPUXw` | Any session that changes broadcast chip rules, thresholds, or update protocol |
 | **Handoff Note** | `HANDOFF.md` (repo root) | Every session end — overwrite file, commit with code |
 | **CI/Deploy Error Reference** | `18JMUd-Uq_m2DomuCua2B5UMiWOel81yzc1JU7SY6f20` | When a new CI/deploy failure pattern is resolved |
 
@@ -304,7 +304,7 @@ attempting blocked operations (api.github.com, *.workers.dev).
 **Claude reads FIELD Current State automatically:**  
 Two sources, both read before any work begins:  
 1. `FIELD-CURRENT-STATE.md` in the repo (auto-updated by CI — always reflects last deploy)  
-2. Drive doc `1GvsfnTH9Xhqzg_NdYrPhPpk1d1Rnm0lkeG6ip-tLUlA` (full narrative version)  
+2. Drive doc `1ahx6cS_Z5sfjb9sMS2Uqjypgy37xbI3M08PjZOh4G74` (full narrative version)  
 No user request needed. The repo file gives HEAD/smoke/gaps. The Drive doc gives capability depth.
 
 **Claude reads canonical doc IDs from GOVERNANCE.json:**  
@@ -385,7 +385,7 @@ git intentionally does not auto-run hooks from cloned repos (security boundary).
 ## Rule 11 — TYPE A sessions must read Daily Update Reference first
 
 Before changing any data in a daily update, open the Daily Update Reference
-(`1oSHqnDskN04p95g6e85--4hhgIsKISZ3ZflLXKPM08E`) and verify each of the
+(`12QY-zSOpWhAbT3VVTxxDXt7mvIhQ5HwQW5VhJHoPUXw`) and verify each of the
 following. Do not update game data until every check passes.
 
 ### TYPE A verification checklist
@@ -2226,7 +2226,7 @@ it stops, declares it, then answers.
 
 Required reading before the declaration (Rule 10, Rule 12):
   1. Read Handoff Note (Drive ID in STANDARDS.md canonical table)
-  2. Read FIELD Current State (Drive ID: 1GvsfnTH9Xhqzg_NdYrPhPpk1d1Rnm0lkeG6ip-tLUlA)
+  2. Read FIELD Current State (Drive ID: 1ahx6cS_Z5sfjb9sMS2Uqjypgy37xbI3M08PjZOh4G74)
   3. Read CI/Deploy Error Reference (Drive ID in STANDARDS.md canonical table)
   4. Run: git pull && node smoke.js index.html
 

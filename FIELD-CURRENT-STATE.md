@@ -3,7 +3,7 @@
 
 **HEAD:** b7f37b4 · **Deployed:** 2026-07-01 · **File:** ~2180KB · **Smoke:** 813/0 · **L3:** 15/15
 
-Drive doc (full narrative): https://docs.google.com/document/d/1QD3P9eG2pSdabNTMPZYHwaMc1DawmmKpRVrv0ZqQdVs
+Drive doc (full narrative): https://docs.google.com/document/d/1ahx6cS_Z5sfjb9sMS2Uqjypgy37xbI3M08PjZOh4G74
 
 ---
 
