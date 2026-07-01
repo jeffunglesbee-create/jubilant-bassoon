@@ -278,10 +278,11 @@ assert('AVV-SAVANT-004 — fetchSavantGameFeed wp is distinguishable from odds-d
   html.includes('_liveOddsWP'),
   '_savantWP provenance marker must be set alongside espnScores[key].wp writes so Savant-sourced values are distinguishable from the odds-api _liveOddsWP marker on the same field');
 
-assert('SCOUT-ARSENAL-1 — buildScoutingReport fmtP extracts last name before calling getPitchArsenal',
+assert('SCOUT-ARSENAL-1 — buildScoutingReport fmtP extracts last name once and reuses it for both getPitchTempo and getPitchArsenal',
   /const pLast = \(p\.name \|\| p\.lastName \|\| ''\)\.split\(' '\)\.pop\(\)/.test(html) &&
+  html.includes('getPitchTempo?.(pLast)') &&
   html.includes('getPitchArsenal?.(pLast)'),
-  'PITCHER_ARSENAL is keyed by last-name-only but p.name (normalizeMLBPitcher) is always a full name — fmtP must extract last name via split(\' \').pop() before lookup, matching the working getMLBAnalyticsContext pattern (L7693), or the arsenal line silently never renders');
+  'PITCHER_TEMPO and PITCHER_ARSENAL are keyed by last-name-only but p.name (normalizeMLBPitcher) is always a full name — fmtP must extract last name via split(\' \').pop() into a single pLast and reuse it for BOTH lookups (matching the working getMLBAnalyticsContext pattern, L7693) or either line silently never renders. Second occurrence of this exact bug class in this function (arsenal fix, then tempo fix) — this assertion covers both call sites so a future edit cannot regress either one independently.');
 
 // 5. RELAY NBA Adapters (Session 3)
 assert('RELAY_BASE defined', html.includes("const RELAY_BASE = 'https://field-relay-nba"));

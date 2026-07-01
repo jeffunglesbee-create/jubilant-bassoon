@@ -18422,15 +18422,16 @@ function buildScoutingReport(game, sport) {
         if (!p) return 'TBD';
         const era = p.era != null ? ` · ${p.era} ERA` : '';
         const rec = (p.wins != null && p.losses != null) ? ` · ${p.wins}-${p.losses}` : '';
-        const tempo = getPitchTempo?.(p.name || p.lastName || '');
-        const tempoStr = tempo ? ` · <em>${tempo.tempoClass}</em> tempo` : '';
-        // getPitchArsenal/PITCHER_ARSENAL is keyed by last-name-only, but
-        // p.name (from normalizeMLBPitcher) is always a full name — extract
-        // the last name the same way getMLBAnalyticsContext already does
-        // (index.html ~L7693: .split(' ').pop()), otherwise this line would
-        // never match and would silently never render (CC-CMD-2026-07-01
-        // scouting-report-arsenal).
+        // getPitchTempo/getPitchArsenal (PITCHER_TEMPO/PITCHER_ARSENAL) are
+        // keyed by last-name-only, but p.name (from normalizeMLBPitcher) is
+        // always a full name — extract the last name once, the same way
+        // getMLBAnalyticsContext already does (index.html ~L7693:
+        // .split(' ').pop()), and reuse it for both lookups. Without this,
+        // either line silently never matches and never renders
+        // (CC-CMD-2026-07-01 scouting-report-arsenal + -tempo-fix).
         const pLast = (p.name || p.lastName || '').split(' ').pop();
+        const tempo = getPitchTempo?.(pLast);
+        const tempoStr = tempo ? ` · <em>${tempo.tempoClass}</em> tempo` : '';
         const arsenal = getPitchArsenal?.(pLast);
         // Skip the line entirely when whiffRate is null (source CSV's
         // whiff_percent empty for this pitch) rather than show a false "0%
