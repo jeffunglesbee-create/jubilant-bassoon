@@ -7661,8 +7661,14 @@ function getPitchArsenal(pitcherLastName, topN) {
   const d = PITCHER_ARSENAL[pitcherLastName.toLowerCase()];
   if (!d?.pitches?.length) return null;
   const best = d.pitches.slice(0, topN || 3);
-  const parts = best.map(p => `${p.type} ${p.vel}mph (${Math.round(p.whiffRate*100)}% K)`);
-  const topWhiff = [...d.pitches].sort((a,b)=>b.whiffRate-a.whiffRate)[0];
+  // Savant pitch-arsenal-stats has no velocity column — runValuePer100 replaces
+  // it as the pitch-quality metric (CC-CMD-2026-07-01 avv-savant).
+  const parts = best.map(p => {
+    const rv = p.runValuePer100 != null ? `${p.runValuePer100 > 0 ? '+' : ''}${p.runValuePer100} RV/100` : 'n/a RV';
+    const whiffStr = p.whiffRate != null ? `${Math.round(p.whiffRate*100)}% K` : 'n/a whiff';
+    return `${p.type} ${rv} (${whiffStr})`;
+  });
+  const topWhiff = [...d.pitches].sort((a,b)=>(b.whiffRate??-1)-(a.whiffRate??-1))[0];
   return { pitches:d.pitches, topWhiff, context:`Arsenal: ${parts.join(' · ')}` };
 }
 
@@ -17062,6 +17068,10 @@ async function fetchV2AllScores() {
                 if (savant?.wp != null && espnScores[key]) {
                   espnScores[key].wp_prev = espnScores[key].wp;
                   espnScores[key].wp = savant.wp;
+                  // Provenance tag mirrors _liveOddsWP (odds-api SSE path) so
+                  // Savant-sourced wp is distinguishable from odds-derived wp
+                  // on the same espnScores[key].wp field (CC-CMD avv-savant).
+                  espnScores[key]._savantWP = { wp: savant.wp, wpa: savant.wpa ?? null, ts: Date.now(), source: 'savant' };
                 }
               });
             }
@@ -19290,6 +19300,10 @@ async function fetchESPNScores(){
               if (savant && espnScores[key]) {
                 espnScores[key].wp_prev = espnScores[key].wp;
                 espnScores[key].wp = savant.wp;
+                // Provenance tag mirrors _liveOddsWP (odds-api SSE path) so
+                // Savant-sourced wp is distinguishable from odds-derived wp
+                // on the same espnScores[key].wp field (CC-CMD avv-savant).
+                espnScores[key]._savantWP = { wp: savant.wp, wpa: savant.wpa ?? null, ts: Date.now(), source: 'savant' };
               }
             });
           }

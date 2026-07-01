@@ -168,33 +168,38 @@ except Exception as e:
 # ── 5. PITCH ARSENAL STATS (velocity + whiff rate) ────────────────────────────
 print("Fetching pitch arsenal stats...")
 try:
-    # pitch-arsenal-stats has velocity + whiff rates (different from pitch-arsenals)
+    # pitch-arsenal-stats is LONG format: one row per pitch type per pitcher,
+    # not one row per pitcher. Confirmed 2026-05-30 probe (rows:49, real CSV
+    # columns: last_name, first_name, player_id, team_name_alt, pitch_type,
+    # pitch_name, run_value_per_100, run_value, pitches, pitch_usage, pa, ba,
+    # slg, woba, whiff_percent, k_percent, put_away, est_ba, est_slg,
+    # est_woba, hard_hit_percent). There is no velocity column in this
+    # dataset — run_value_per_100 is used instead as the pitch-quality metric.
+    # pitch_usage and whiff_percent are 0-100 percentages (not 0-1 fractions),
+    # confirmed from probe sample row (Gausman FF: pitch_usage=53.3).
     rows = fetch_csv("https://baseballsavant.mlb.com/leaderboard/pitch-arsenal-stats"
                      "?type=pitcher&year=2026&min=100&csv=true")
     arsenals = {}
-    PITCH_MAP = [
-        ("ff","4-Seam"),("si","Sinker"),("sl","Slider"),("ch","Changeup"),
-        ("cu","Curveball"),("kc","Knuckle-Curve"),("fc","Cutter"),
-        ("fs","Splitter"),("st","Sweeper"),("sv","Sweeper"),("fp","Forkball"),
-    ]
     for r in rows:
         name_raw = r.get("last_name, first_name") or r.get("last_name") or ""
         last = name_key(name_raw)
         if not last: continue
-        pitches = []
-        for code, label in PITCH_MAP:
-            try:
-                usage = safe_float(r.get(f"{code}_usage") or r.get(f"{code}_pa_used"))
-                vel   = safe_float(r.get(f"{code}_avg_speed") or r.get(f"{code}_velocity"))
-                whiff = safe_float(r.get(f"{code}_whiff_percent") or r.get(f"{code}_whiff"))
-                if usage > 0.03 and vel > 65:
-                    pitches.append({"type":label,"vel":round(vel,1),
-                                    "whiffRate":round(whiff/100,3),"usage":round(usage,3)})
-            except: pass
-        if pitches:
-            pitches.sort(key=lambda p: p["usage"], reverse=True)
-            team = r.get("team","").strip()
-            arsenals[last] = {"team": team, "pitches": pitches}
+        pitch_type = r.get("pitch_name") or r.get("pitch_type") or ""
+        if not pitch_type: continue
+        usage = safe_float(r.get("pitch_usage"))
+        whiff = r.get("whiff_percent")
+        rv100 = safe_float(r.get("run_value_per_100"))
+        if usage <= 3:  # pitch_usage is a 0-100 percentage; skip negligible pitch types
+            continue
+        arsenals.setdefault(last, {"team": r.get("team_name_alt","").strip(), "pitches": []})
+        arsenals[last]["pitches"].append({
+            "type": pitch_type,
+            "usage": round(usage / 100, 3),
+            "whiffRate": round(safe_float(whiff) / 100, 3) if whiff not in (None, "") else None,
+            "runValuePer100": rv100,
+        })
+    for v in arsenals.values():
+        v["pitches"].sort(key=lambda p: p["usage"], reverse=True)
     with open("outbox/mlb/pitch_arsenals.json","w") as f:
         json.dump({"updated": TS, "data": arsenals}, f, indent=2)
     print(f"  ✅ {len(arsenals)} pitchers")
