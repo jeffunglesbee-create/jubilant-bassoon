@@ -37,19 +37,27 @@ ENDPOINTS = [
     # ── UMPIRE WEAKNESS ZONE PROBE (CC-CMD-2026-07-01) ─────────────────────
     # 14-day range matching mlb-weekly-update.py's "subsequent run" window,
     # to maximize odds of finding real ABS challenge rows with zone data.
+    # Needs a long timeout (180s, matching mlb-weekly-update.py's own
+    # statcast fetch — "large file — 3min timeout") — the default 30s used
+    # by every other endpoint here timed out on this range (confirmed via
+    # a real run, not assumed): probe run 28554345808 returned
+    # {"status": 0, "error": "The read operation timed out"}.
     ("statcast_ump_zone_probe",
      "https://baseballsavant.mlb.com/statcast_search/csv?all=true&hfGT=R%7C&hfSea=2026%7C"
      f"&game_date_gt={(datetime.now(timezone.utc) - timedelta(days=15)).strftime('%Y-%m-%d')}"
-     f"&game_date_lt={(datetime.now(timezone.utc) - timedelta(days=1)).strftime('%Y-%m-%d')}&type=details"),
+     f"&game_date_lt={(datetime.now(timezone.utc) - timedelta(days=1)).strftime('%Y-%m-%d')}&type=details",
+     180),
 ]
 
 ts  = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
 out = {"probeTime": ts, "statcastDate": yesterday, "endpoints": {}}
 
-for label, url in ENDPOINTS:
+for entry in ENDPOINTS:
+    label, url = entry[0], entry[1]
+    timeout = entry[2] if len(entry) > 2 else 30
     try:
         req = urllib.request.Request(url, headers=HEADERS)
-        with urllib.request.urlopen(req, timeout=30) as r:
+        with urllib.request.urlopen(req, timeout=timeout) as r:
             body = r.read().decode("utf-8", errors="replace")
             rows = list(csv.reader(io.StringIO(body)))
             header = rows[0] if rows else []
