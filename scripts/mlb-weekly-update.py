@@ -293,7 +293,7 @@ try:
     )
 
     # Group challenge events by (game_pk, game_date)
-    # {game_pk: {date, challenged, overturned}}
+    # {game_pk: {date, challenged, overturned, zones}}
     game_events = {}
     for row in sc_rows:
         des = row.get("des", "") or ""
@@ -303,11 +303,18 @@ try:
         gpk = (row.get("game_pk") or "").strip()
         gdate = (row.get("game_date") or "").strip()
         if not gpk or gpk in processed_pks: continue
+        zone = (row.get("zone") or "").strip()
         if gpk not in game_events:
-            game_events[gpk] = {"date": gdate, "challenged": 0, "overturned": 0}
+            game_events[gpk] = {"date": gdate, "challenged": 0, "overturned": 0, "zones": {}}
         game_events[gpk]["challenged"] += 1
-        if m.group(1).lower() == "overturned":
+        overturned = m.group(1).lower() == "overturned"
+        if overturned:
             game_events[gpk]["overturned"] += 1
+        if zone:
+            z = game_events[gpk]["zones"].setdefault(zone, {"challenged": 0, "overturned": 0})
+            z["challenged"] += 1
+            if overturned:
+                z["overturned"] += 1
 
     new_game_count = len(game_events)
     print(f"  New games with ABS challenges: {new_game_count}")
@@ -350,12 +357,40 @@ try:
         last = ump_full.split()[-1].lower().replace("'","").replace(".","").replace("-","_")
         if last not in ump_stats:
             ump_stats[last] = {"challenged": 0, "overturned": 0,
-                               "fullName": ump_full, "weakness": None}
+                               "fullName": ump_full, "weakness": None, "zones": {}}
         ump_stats[last]["challenged"] += ev["challenged"]
+        ump_stats[last].setdefault("zones", {})
+        for z, zc in ev.get("zones", {}).items():
+            uz = ump_stats[last]["zones"].setdefault(z, {"challenged": 0, "overturned": 0})
+            uz["challenged"] += zc["challenged"]
+            uz["overturned"] += zc["overturned"]
         ump_stats[last]["overturned"] += ev["overturned"]
         if not ump_stats[last].get("fullName"):
             ump_stats[last]["fullName"] = ump_full
         processed_pks.add(gpk)
+
+    # Zone-to-label mapping — verified 2026-07-01 against real ABS challenge
+    # rows (workflow run 28554428622, savant-csv-probe.yml, 40-row sample of
+    # a real 14-day challenge set): zone number correlates with a consistent
+    # plate_x sign (negative=catcher's-left/3B-side, positive=catcher's-
+    # right/1B-side, standard Statcast plate_x convention) and plate_z tier
+    # (high/mid/low), matching the standard 3x3 strike-zone grid (1-9) plus
+    # 4-corner shadow/edge zones (11-14). Directly sampled and confirmed:
+    # 1 (neg-x,high), 4 (neg-x,mid), 6 (pos-x,mid), 7 (neg-x,low), 8 (~0-x,low),
+    # 9 (pos-x,low), 11 (neg-x,high), 12 (pos-x,high), 14 (pos-x,low).
+    # 2/3/5/13 not directly sampled (zero real challenges in the probe
+    # window) — filled in by the now-confirmed grid pattern (2=top-center,
+    # 3=top-right, 5=heart/center, 13=bottom-left corner), not invented from
+    # scratch. Labels use catcher's-eye view (same as every broadcast strike-
+    # zone graphic), not batter-handedness-relative terms (inside/outside
+    # would be wrong ~half the time since this is a season aggregate mixing
+    # LHB/RHB at-bats).
+    ZONE_LABELS = {
+        "1": "up-left",    "2": "up",         "3": "up-right",
+        "4": "left",       "5": "middle",     "6": "right",
+        "7": "down-left",  "8": "down",       "9": "down-right",
+        "11": "up-left",   "12": "up-right",  "13": "down-left", "14": "down-right",
+    }
 
     # Compute rates
     final_ump = {}
@@ -364,10 +399,20 @@ try:
         o = s.get("overturned", 0)
         if c < 3: continue  # min 3 challenges for meaningful rate
         rate = round(o / c, 3) if c > 0 else 0.0
+        weakness = None
+        zones = s.get("zones", {})
+        # Min 2 challenges in a zone to avoid a 1-challenge zone producing a
+        # misleading 100% "weakness".
+        candidates = [(z, zc["overturned"] / zc["challenged"]) for z, zc in zones.items() if zc["challenged"] >= 2]
+        if candidates:
+            worst_zone, worst_rate = max(candidates, key=lambda x: x[1])
+            if worst_rate > rate:  # only flag if genuinely worse than their overall rate
+                weakness = ZONE_LABELS.get(worst_zone, worst_zone)  # fall back to raw zone number if unmapped
         final_ump[last] = {
             "challenged": c, "overturned": o, "rate": rate,
             "fullName": s.get("fullName",""),
-            "weakness": s.get("weakness", None)
+            "weakness": weakness,
+            "zones": zones,
         }
 
     with open(ump_path, "w") as f:
