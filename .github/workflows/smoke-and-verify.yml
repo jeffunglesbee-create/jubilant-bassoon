@@ -317,32 +317,55 @@ jobs:
         run: |
           git config user.name  "FIELD Deploy"
           git config user.email "field-deploy@users.noreply.github.com"
+          # Reset to latest remote HEAD first — no stash/pop, no silent conflict swallowing.
+          # Values are always regenerated fresh from scratch, so nothing is lost by resetting.
+          git fetch origin main
+          git reset --hard origin/main
+
+          HEAD=$(git rev-parse --short HEAD)
+          DATE=$(date '+%Y-%m-%d')
+          SIZE=$(wc -c < index.html | awk '{printf "%.0f", $1/1024}')
+          SMOKE=$(node smoke.js index.html 2>&1 | grep -oP '\d+ passed' | grep -oP '\d+' | head -1)
+
+          sed -i "s/\*\*HEAD:\*\* [a-f0-9]*/\*\*HEAD:\*\* ${HEAD}/" FIELD-CURRENT-STATE.md
+          sed -i "s/\*\*Deployed:\*\* [0-9-]*/\*\*Deployed:\*\* ${DATE}/" FIELD-CURRENT-STATE.md
+          sed -i "s/\*\*File:\*\* ~[0-9]*KB/\*\*File:\*\* ~${SIZE}KB/" FIELD-CURRENT-STATE.md
+          sed -i "s/\*\*Smoke:\*\* [0-9]*\/0/\*\*Smoke:\*\* ${SMOKE}\/0/" FIELD-CURRENT-STATE.md
+
+          python3 -c "
+          import json
+          with open('GOVERNANCE.json') as f: g = json.load(f)
+          g['_last_governance_audit'] = '${DATE}'
+          with open('GOVERNANCE.json', 'w') as f: json.dump(g, f, indent=2)
+          "
+
           git add FIELD-CURRENT-STATE.md GOVERNANCE.json
           if git diff --staged --quiet; then
             echo "No changes to current state — skipping commit"
           else
-            # Stash our generated changes, fetch latest remote, restore
-            # Prevents non-fast-forward rejection when commits arrive during CI run
-            git stash
-            git fetch origin main
-            git reset --hard origin/main
-            git stash pop || true
-            # Re-stage after reset
-            git add FIELD-CURRENT-STATE.md GOVERNANCE.json
-            if git diff --staged --quiet; then
-              echo "No changes after sync — skipping commit"
-            else
-              git commit -m "ci: update current state $(git rev-parse --short HEAD 2>/dev/null) [skip ci]"
-              # On non-fast-forward rejection (second commit arrived during this job),
-              # rebase our commit on the new remote HEAD and retry once.
-              git push origin main || {
-                echo "Push rejected — rebasing on latest and retrying..."
-                git fetch origin main
-                git rebase origin/main
-                git push origin main || echo "⚠️ State update deferred — will retry on next CI run"
-              }
-              echo "✅ Current state handling complete"
-            fi
+            git commit -m "ci: update current state ${HEAD} [skip ci]"
+            git push origin main || {
+              echo "Push rejected — one more retry: reset, regenerate, recommit"
+              git fetch origin main
+              git reset --hard origin/main
+              HEAD=$(git rev-parse --short HEAD)
+              DATE=$(date '+%Y-%m-%d')
+              SIZE=$(wc -c < index.html | awk '{printf "%.0f", $1/1024}')
+              SMOKE=$(node smoke.js index.html 2>&1 | grep -oP '\d+ passed' | grep -oP '\d+' | head -1)
+              sed -i "s/\*\*HEAD:\*\* [a-f0-9]*/\*\*HEAD:\*\* ${HEAD}/" FIELD-CURRENT-STATE.md
+              sed -i "s/\*\*Deployed:\*\* [0-9-]*/\*\*Deployed:\*\* ${DATE}/" FIELD-CURRENT-STATE.md
+              sed -i "s/\*\*File:\*\* ~[0-9]*KB/\*\*File:\*\* ~${SIZE}KB/" FIELD-CURRENT-STATE.md
+              sed -i "s/\*\*Smoke:\*\* [0-9]*\/0/\*\*Smoke:\*\* ${SMOKE}\/0/" FIELD-CURRENT-STATE.md
+              python3 -c "
+              import json
+              with open('GOVERNANCE.json') as f: g = json.load(f)
+              g['_last_governance_audit'] = '${DATE}'
+              with open('GOVERNANCE.json', 'w') as f: json.dump(g, f, indent=2)
+              "
+              git add FIELD-CURRENT-STATE.md GOVERNANCE.json
+              git diff --staged --quiet || git commit -m "ci: update current state ${HEAD} [skip ci]"
+              git push origin main || echo "⚠️  State update deferred — will retry on next CI run"
+            }
           fi
 
 
