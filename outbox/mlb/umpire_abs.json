@@ -1,5 +1,5 @@
 {
-  "updated": "20260629T143951Z",
+  "updated": "20260701T194711Z",
   "source": "Statcast des + MLB Stats API officials",
   "processed_game_pks": [
     "822717",
@@ -12,6 +12,8 @@
     "822729",
     "822731",
     "822732",
+    "822792",
+    "822793",
     "822796",
     "822797",
     "822798",
@@ -48,6 +50,8 @@
     "823052",
     "823053",
     "823054",
+    "823121",
+    "823122",
     "823123",
     "823125",
     "823127",
@@ -91,6 +95,8 @@
     "823377",
     "823378",
     "823380",
+    "823444",
+    "823445",
     "823449",
     "823451",
     "823452",
@@ -99,6 +105,8 @@
     "823457",
     "823458",
     "823460",
+    "823528",
+    "823529",
     "823531",
     "823532",
     "823534",
@@ -132,6 +140,7 @@
     "823700",
     "823701",
     "823702",
+    "823768",
     "823769",
     "823778",
     "823780",
@@ -170,6 +179,7 @@
     "824024",
     "824026",
     "824095",
+    "824096",
     "824097",
     "824098",
     "824100",
@@ -181,6 +191,7 @@
     "824107",
     "824108",
     "824109",
+    "824175",
     "824177",
     "824178",
     "824182",
@@ -203,6 +214,7 @@
     "824269",
     "824270",
     "824275",
+    "824338",
     "824340",
     "824341",
     "824343",
@@ -246,6 +258,7 @@
     "824596",
     "824597",
     "824598",
+    "824662",
     "824663",
     "824665",
     "824666",
@@ -255,6 +268,8 @@
     "824672",
     "824675",
     "824676",
+    "824741",
+    "824742",
     "824744",
     "824745",
     "824746",
@@ -266,6 +281,8 @@
     "824757",
     "824758",
     "824759",
+    "824819",
+    "824822",
     "824823",
     "824824",
     "824825",
@@ -275,6 +292,7 @@
     "824835",
     "824838",
     "824840",
+    "824907",
     "824909",
     "824910",
     "824913",
@@ -284,6 +302,8 @@
     "824918",
     "824919",
     "824920",
+    "824984",
+    "824986",
     "824987",
     "824988",
     "824989",
@@ -298,6 +318,7 @@
     "825001",
     "825004",
     "825005",
+    "825066",
     "825069",
     "825070",
     "825071",
@@ -325,9 +346,9 @@
       "weakness": null
     },
     "tumpane": {
-      "challenged": 4,
-      "overturned": 3,
-      "rate": 0.75,
+      "challenged": 7,
+      "overturned": 5,
+      "rate": 0.714,
       "fullName": "John Tumpane",
       "weakness": null
     },
@@ -360,9 +381,9 @@
       "weakness": null
     },
     "estabrook": {
-      "challenged": 5,
-      "overturned": 2,
-      "rate": 0.4,
+      "challenged": 6,
+      "overturned": 3,
+      "rate": 0.5,
       "fullName": "Mike Estabrook",
       "weakness": null
     },
@@ -374,9 +395,9 @@
       "weakness": null
     },
     "barber": {
-      "challenged": 6,
-      "overturned": 4,
-      "rate": 0.667,
+      "challenged": 8,
+      "overturned": 6,
+      "rate": 0.75,
       "fullName": "Sean Barber",
       "weakness": null
     },
@@ -402,9 +423,9 @@
       "weakness": null
     },
     "wolcott": {
-      "challenged": 7,
-      "overturned": 3,
-      "rate": 0.429,
+      "challenged": 11,
+      "overturned": 5,
+      "rate": 0.455,
       "fullName": "Quinn Wolcott",
       "weakness": null
     },
@@ -507,23 +528,23 @@
       "weakness": null
     },
     "lentz": {
-      "challenged": 3,
+      "challenged": 4,
       "overturned": 2,
-      "rate": 0.667,
+      "rate": 0.5,
       "fullName": "Nic Lentz",
       "weakness": null
     },
     "moscoso": {
-      "challenged": 4,
-      "overturned": 3,
-      "rate": 0.75,
+      "challenged": 7,
+      "overturned": 5,
+      "rate": 0.714,
       "fullName": "Edwin Moscoso",
       "weakness": null
     },
     "ripperger": {
-      "challenged": 7,
-      "overturned": 3,
-      "rate": 0.429,
+      "challenged": 9,
+      "overturned": 4,
+      "rate": 0.444,
       "fullName": "Mark Ripperger",
       "weakness": null
     },
@@ -542,9 +563,9 @@
       "weakness": null
     },
     "wegner": {
-      "challenged": 3,
-      "overturned": 1,
-      "rate": 0.333,
+      "challenged": 4,
+      "overturned": 2,
+      "rate": 0.5,
       "fullName": "Mark Wegner",
       "weakness": null
     },
@@ -595,6 +616,27 @@
       "overturned": 2,
       "rate": 0.667,
       "fullName": "Mike Muchlinski",
+      "weakness": null
+    },
+    "ceja": {
+      "challenged": 3,
+      "overturned": 3,
+      "rate": 1.0,
+      "fullName": "Nestor Ceja",
+      "weakness": null
+    },
+    "jaschinski": {
+      "challenged": 3,
+      "overturned": 2,
+      "rate": 0.667,
+      "fullName": "Steven Jaschinski",
+      "weakness": null
+    },
+    "dreckman": {
+      "challenged": 4,
+      "overturned": 2,
+      "rate": 0.5,
+      "fullName": "Bruce Dreckman",
       "weakness": null
     }
   }
