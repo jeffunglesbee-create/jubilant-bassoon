@@ -59,7 +59,9 @@ jobs:
         env:
           GEMINI_KEY: ${{ secrets.GEMINI_KEY }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-          TODAY: ${{ github.event.inputs.force_date || '' }}
+          TODAY:            ${{ github.event.inputs.force_date  || '' }}
+          ESPN_GOTD_IDS:    ${{ github.event.inputs.espn_gotd    || '' }}
+          PEACOCK_GOTD_IDS: ${{ github.event.inputs.peacock_gotd || '' }}
         run: node scripts/build-field-data.js
 
       - name: Push overlay to outbox
