@@ -3753,6 +3753,47 @@ assert('A495 — RUWT Rule 51 RESOLVED: OTW FIRE state uses _otwGetLiveTier not 
   !html.includes("const tier=dramaTier(score)||'warm'"),
   'RUWT Rule 51 RESOLVED (A495): OTW FIRE state must use _otwGetLiveTier() for named-condition tier derivation. The prior pattern (dramaTier(score)||\'warm\') mapped a numeric composite score to CSS tier bands — even though the threshold was user-controlled (A490), the pattern still matched RUWT claim structure for displaying a combined interest level. After this change: tier label is derived from binary factual conditions (period/margin/crunch rules) via _otwGetLiveTier(), same architectural pattern as _otwFindWCLiveGame which was already fully RUWT-compliant. Composite score is still used internally for getDramaDial() threshold gate (A490 — user-controlled) but the displayed label is now a factual named condition. Rule 51 MODERATE → RESOLVED.');
 
+// ── Drama Score Display Compliance lock-in (DRAMA-COMPLIANCE — 2026-07-01) ──
+// Manually verified 2026-07-01 (chat-side): dramaScoreLive() computes a real
+// weighted composite for live games, but every consumer converts it via
+// dramaTier(score) to exactly one of 'fire'|'hot'|'warm'|'' before display —
+// the raw number is never template-interpolated into rendered HTML/text.
+// These two assertions lock that verified state into CI so a future change
+// can't silently reintroduce a raw drama-number display without failing.
+
+assert('DRAMA-COMPLIANCE-001 — dramaTier returns only the 4 named tiers, never a raw number',
+  (() => {
+    const fnMatch = html.match(/function dramaTier\(score\)\{([\s\S]*?)\n\}/);
+    if (!fnMatch) return false;
+    const returns = [...fnMatch[1].matchAll(/return\s+([^;]+);/g)].map(m => m[1].trim());
+    const allowed = new Set(["'fire'", "'hot'", "'warm'", "''"]);
+    return returns.length > 0 && returns.every(r => allowed.has(r));
+  })(),
+  'dramaTier(score) must only ever return one of \'fire\'/\'hot\'/\'warm\'/\'\' — never `return score` or any other raw passthrough. Manually verified compliant 2026-07-01; this locks that state into CI so a future edit can\'t silently reintroduce a raw drama-number return.');
+
+assert('DRAMA-COMPLIANCE-002 — no raw dramaScoreLive() output is template-interpolated into display text',
+  (() => {
+    // Heuristic, not a full AST proof — regex-based, catches the specific
+    // mistake pattern already found and fixed once during manual audit (a
+    // new consumer forgetting to call dramaTier() before display), not
+    // every conceivable variant (e.g. assigning score to a differently-
+    // named variable before interpolation would not be caught). See
+    // outbox/cc-drama-score-compliance-smoke-2026-07-01.md for the full
+    // limitation discussion.
+    const lines = html.split('\n');
+    const violations = [];
+    lines.forEach((line, i) => {
+      if (/dramaScoreLive\(/.test(line)) {
+        const window = lines.slice(i, i + 15).join('\n');
+        const hasRawInterp = /\$\{score(\.toFixed|\.round)?\}/.test(window) || /\$\{Math\.round\(score\)\}/.test(window);
+        const hasTierConversion = /dramaTier\(/.test(window);
+        if (hasRawInterp && !hasTierConversion) violations.push(`line ${i + 1}`);
+      }
+    });
+    return violations.length === 0;
+  })(),
+  'Regex heuristic tripwire, not a proof: flags a raw ${score}-style template interpolation within 15 lines of a dramaScoreLive( call with no intervening dramaTier( conversion. A determined or careless future edit could still route around this (e.g. via a differently-named variable) — this catches the specific mistake pattern already found once, not every possible variant.');
+
 // ── PM-25 Rich-visual confidence glyph (A496) ────────────────────────────────
 // Verifies four things:
 // (1) .cg CSS classes exist in index.html (verified/mismatch/single/mismatch::after)
