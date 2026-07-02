@@ -167,54 +167,72 @@ for entry in ENDPOINTS:
         print(f"❌ {label}: {e}")
         out["endpoints"][label] = {"status": 0, "error": str(e)}
 
-# ── ESPN ROSTER JSON SHAPE + ABBREVIATION-MAPPING PROBE
+# ── ESPN ROSTER ABBREVIATION MAPPING — ALL 30 REAL TEAM CODES
 # (CC-CMD-2026-07-02 player-mismatch-detector) ──────────────────────────
-# Confirms the real athletes[]/lastName/fullName nesting AND whether
-# ESPN's team abbreviation scheme actually matches Savant-sourced
-# outbox/mlb/*.json's team codes — the two data providers are known to
-# diverge on some codes (e.g. Athletics, Arizona, White Sox), and the
-# detector script's team->roster URL mapping depends entirely on this
-# matching 1:1. Probes TOR (baseline, known-standard) plus the 3 most
-# likely divergent real codes actually present in the source data: ATH,
-# AZ, CWS.
-for _team in ("tor", "ath", "az", "cws"):
-    print(f"\nProbing ESPN roster JSON shape ({_team.upper()})...")
-    try:
-        req = urllib.request.Request(
-            f"https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/{_team}/roster",
-            headers=HEADERS,
-        )
-        with urllib.request.urlopen(req, timeout=30) as r:
-            roster = json.loads(r.read())
-        top_keys = list(roster.keys())
-        athletes_block = roster.get("athletes")
-        team_block = roster.get("team")
-        shape = {
-            "status": r.status, "top_level_keys": top_keys,
-            "resolved_team_name": (team_block or {}).get("displayName") if isinstance(team_block, dict) else None,
-            "resolved_team_abbrev": (team_block or {}).get("abbreviation") if isinstance(team_block, dict) else None,
-        }
-        if isinstance(athletes_block, list) and athletes_block:
-            first_group = athletes_block[0]
-            shape["athletes_is_list"] = True
-            shape["athletes_group_keys"] = list(first_group.keys()) if isinstance(first_group, dict) else None
-            items = first_group.get("items") if isinstance(first_group, dict) else None
-            if isinstance(items, list) and items:
-                shape["items_present"] = True
-                shape["sample_athlete_keys"] = list(items[0].keys())
-                shape["sample_athlete"] = {k: items[0].get(k) for k in
-                    ("id", "fullName", "displayName", "shortName", "lastName", "firstName") if k in items[0]}
-            else:
-                shape["items_present"] = False
-        else:
-            shape["athletes_is_list"] = False
-            shape["athletes_raw_type"] = type(athletes_block).__name__
-        out["endpoints"][f"espn_roster_{_team}"] = shape
-        print(f"  ✅ resolved team: {shape.get('resolved_team_name')} ({shape.get('resolved_team_abbrev')})")
-        print(f"  sample_athlete: {shape.get('sample_athlete')}")
-    except Exception as e:
-        print(f"  ❌ {e}")
-        out["endpoints"][f"espn_roster_{_team}"] = {"status": 0, "error": str(e)}
+# A prior probe round (2 of 4 codes tested: ATH ok, TOR ok, AZ 400,
+# CWS 400) confirmed ESPN's team abbreviation scheme does NOT match
+# Savant-sourced outbox/mlb/*.json's codes 1:1 for every team. Rather
+# than guess alternates for the 2 known-divergent codes and hope the
+# other 26 are fine, tests ALL 30 real codes actually present in the
+# source data (outbox/mlb/sprint_speed.json's real team set) — for each,
+# tries the Savant code verbatim first, then a small set of common ESPN
+# alternates if that 400s. Builds a complete, verified SAVANT_TO_ESPN_TEAM
+# map for the detector script, not a partial one.
+SAVANT_TEAM_CODES = ["ATH","ATL","AZ","BAL","BOS","CHC","CIN","CLE","COL","CWS",
+                      "DET","HOU","KC","LAA","LAD","MIA","MIL","MIN","NYM","NYY",
+                      "PHI","PIT","SD","SEA","SF","STL","TB","TEX","TOR","WSH"]
+ESPN_ALTERNATES = {
+    "AZ": ["az", "ari"], "CWS": ["cws", "chw"], "KC": ["kc", "kan"],
+    "SD": ["sd", "sdp"], "SF": ["sf", "sfg"], "TB": ["tb", "tbr"],
+    "WSH": ["wsh", "was"],
+}
+
+def _try_espn_team(code):
+    """Try each candidate ESPN abbreviation for a Savant code; return
+    (working_code, resolved_name, resolved_abbrev) or (None, None, None)."""
+    candidates = ESPN_ALTERNATES.get(code, [code.lower()])
+    for cand in candidates:
+        try:
+            req = urllib.request.Request(
+                f"https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/{cand}/roster",
+                headers=HEADERS,
+            )
+            with urllib.request.urlopen(req, timeout=15) as r:
+                roster = json.loads(r.read())
+            team_block = roster.get("team") or {}
+            return cand, team_block.get("displayName"), team_block.get("abbreviation"), roster
+        except Exception:
+            continue
+    return None, None, None, None
+
+team_mapping = {}
+first_roster_shape_captured = False
+for code in SAVANT_TEAM_CODES:
+    working, name, abbrev, roster = _try_espn_team(code)
+    if working:
+        team_mapping[code] = working
+        print(f"  ✅ {code} -> espn/{working} ({name})")
+        if not first_roster_shape_captured and roster:
+            # Capture full shape detail once, from whichever team resolves first.
+            athletes_block = roster.get("athletes")
+            shape = {"top_level_keys": list(roster.keys())}
+            if isinstance(athletes_block, list) and athletes_block:
+                first_group = athletes_block[0]
+                shape["athletes_group_keys"] = list(first_group.keys()) if isinstance(first_group, dict) else None
+                items = first_group.get("items") if isinstance(first_group, dict) else None
+                if isinstance(items, list) and items:
+                    shape["sample_athlete_keys"] = list(items[0].keys())
+                    shape["sample_athlete"] = {k: items[0].get(k) for k in
+                        ("id", "fullName", "displayName", "shortName", "lastName", "firstName") if k in items[0]}
+            out["endpoints"]["espn_roster_shape"] = shape
+            first_roster_shape_captured = True
+    else:
+        team_mapping[code] = None
+        print(f"  ❌ {code} -> no working ESPN code found (tried {ESPN_ALTERNATES.get(code, [code.lower()])})")
+
+out["endpoints"]["espn_team_abbrev_mapping"] = team_mapping
+unmapped = [k for k, v in team_mapping.items() if v is None]
+print(f"\n{len(team_mapping) - len(unmapped)}/{len(team_mapping)} team codes resolved; unmapped: {unmapped}")
 
 os.makedirs("outbox/mlb", exist_ok=True)
 fn = f"outbox/mlb/savant-probe-{ts}.json"
