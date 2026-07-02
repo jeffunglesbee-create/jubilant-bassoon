@@ -167,6 +167,44 @@ for entry in ENDPOINTS:
         print(f"❌ {label}: {e}")
         out["endpoints"][label] = {"status": 0, "error": str(e)}
 
+# ── ESPN ROSTER JSON SHAPE PROBE (CC-CMD-2026-07-02 player-mismatch-detector) ──
+# Confirms the real athletes[]/lastName/fullName nesting on ESPN's roster
+# endpoint before the detector script is written against an assumed shape —
+# this repo has no prior confirmed probe of this specific endpoint. Uses
+# TOR (Toronto) since it's a real team present in outbox/mlb/pitch_arsenals.json.
+print("\nProbing ESPN roster JSON shape (TOR)...")
+try:
+    req = urllib.request.Request(
+        "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/tor/roster",
+        headers=HEADERS,
+    )
+    with urllib.request.urlopen(req, timeout=30) as r:
+        roster = json.loads(r.read())
+    top_keys = list(roster.keys())
+    athletes_block = roster.get("athletes")
+    shape = {"status": r.status, "top_level_keys": top_keys}
+    if isinstance(athletes_block, list) and athletes_block:
+        first_group = athletes_block[0]
+        shape["athletes_is_list"] = True
+        shape["athletes_group_keys"] = list(first_group.keys()) if isinstance(first_group, dict) else None
+        items = first_group.get("items") if isinstance(first_group, dict) else None
+        if isinstance(items, list) and items:
+            shape["items_present"] = True
+            shape["sample_athlete_keys"] = list(items[0].keys())
+            shape["sample_athlete"] = {k: items[0].get(k) for k in
+                ("id", "fullName", "displayName", "shortName", "lastName", "firstName") if k in items[0]}
+        else:
+            shape["items_present"] = False
+    else:
+        shape["athletes_is_list"] = False
+        shape["athletes_raw_type"] = type(athletes_block).__name__
+    out["endpoints"]["espn_roster_tor"] = shape
+    print(f"  ✅ top-level keys: {top_keys}")
+    print(f"  sample_athlete: {shape.get('sample_athlete')}")
+except Exception as e:
+    print(f"  ❌ {e}")
+    out["endpoints"]["espn_roster_tor"] = {"status": 0, "error": str(e)}
+
 os.makedirs("outbox/mlb", exist_ok=True)
 fn = f"outbox/mlb/savant-probe-{ts}.json"
 with open(fn, "w") as f:
