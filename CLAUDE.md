@@ -1,5 +1,17 @@
 # CLAUDE.md — FIELD Project Configuration
 
+## Branch policy (read this first)
+Every commit goes directly to `main`. Never create a feature branch,
+never open a PR, never wait for a separate merge step. If a session
+ends with commits on anything other than `main`, that session failed
+its own task, regardless of whether the code itself is correct. This
+has happened at least once in the companion field-relay-nba repo on
+2026-07-01 despite an explicit per-CC-CMD instruction saying the same
+thing — it is now written here instead, because the per-task
+instruction alone was not reliably followed. Before reporting a task
+complete, confirm via `git branch --show-current` (or equivalent) that
+you are on `main`, not a `claude/*`-prefixed branch.
+
 ## What is FIELD?
 A 34,000+ line single-file PWA (index.html) for global sports intelligence. Deployed on Cloudflare Workers as a pure static assets worker. Companion relay worker at field-relay-nba (separate repo).
 
