@@ -167,7 +167,15 @@ if pitcher_rows:
             headers={"Content-Type": "application/json", "User-Agent": HEADERS["User-Agent"]},
             method="POST",
         )
-        with urllib.request.urlopen(req, timeout=30) as resp:
+        # 30s timed out twice in a row (runs 28564267039, 28564309809) after
+        # the User-Agent fix resolved the earlier Cloudflare 1010 block —
+        # the request is getting through, just not completing in time.
+        # ~700 pitcher rows written to D1 could plausibly exceed 30s if the
+        # relay's reconcile() does synchronous per-row writes rather than a
+        # single batch insert. Bumped to 90s as a client-side-only,
+        # low-risk adjustment before concluding this needs relay-side
+        # investigation (Worker/D1 logs this session has no access to).
+        with urllib.request.urlopen(req, timeout=90) as resp:
             result = json.loads(resp.read())
         print(f"  ✅ {len(pitcher_rows)} pitchers posted | relay result: {result}")
     except urllib.error.HTTPError as e:
