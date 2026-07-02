@@ -234,6 +234,84 @@ out["endpoints"]["espn_team_abbrev_mapping"] = team_mapping
 unmapped = [k for k, v in team_mapping.items() if v is None]
 print(f"\n{len(team_mapping) - len(unmapped)}/{len(team_mapping)} team codes resolved; unmapped: {unmapped}")
 
+# ── ESPN SUMMARY ENDPOINT PROBES (CC-CMD-2026-07-02 drama-backfill-client) ──
+# The existing fetchESPNWinProb() precedent in index.html routes ESPN's
+# `summary` endpoint through a relay proxy (ESPN_SUMMARY_RELAY), NOT a
+# direct fetch — comment there states "CORS locked to espn.com". That's a
+# browser-side restriction; this probe runs server-side (no CORS
+# enforcement), so a direct fetch here is a valid way to inspect the real
+# shape even though the CLIENT script must still go through the relay.
+#
+# MLB: confirms plays[] has homeScore/awayScore/period.number/wallclock
+# (dramaScoreLive()'s required input shape) — event 401815989 (Rays 4,
+# Royals 0, real confirmed result).
+print("\nProbing ESPN MLB summary (event 401815989, Rays 4 Royals 0)...")
+try:
+    req = urllib.request.Request(
+        "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/summary?event=401815989",
+        headers=HEADERS,
+    )
+    with urllib.request.urlopen(req, timeout=30) as r:
+        summary = json.loads(r.read())
+    plays = summary.get("plays") or []
+    result = {"status": r.status, "top_level_keys": list(summary.keys()), "plays_count": len(plays)}
+    if plays:
+        last = plays[-1]
+        result["sample_play_keys"] = list(last.keys())
+        result["last_play"] = {k: last.get(k) for k in
+            ("homeScore", "awayScore", "period", "wallclock", "text") if k in last}
+        result["final_homeScore"] = last.get("homeScore")
+        result["final_awayScore"] = last.get("awayScore")
+    out["endpoints"]["espn_mlb_summary_401815989"] = result
+    print(f"  ✅ plays: {result['plays_count']}, final score: {result.get('final_homeScore')}-{result.get('final_awayScore')} (expect 4-0 or 0-4 depending on home/away)")
+    print(f"  last_play: {result.get('last_play')}")
+except Exception as e:
+    print(f"  ❌ {e}")
+    out["endpoints"]["espn_mlb_summary_401815989"] = {"status": 0, "error": str(e)}
+
+# Soccer: resolves Task 3's explicitly stated gap — which field identifies
+# the scoring team on a keyEvents entry. Event 760495 (England 2-1 Congo
+# DR, real confirmed result) — verify the reconstructed final score
+# actually matches 2-1 before trusting any field-name guess. League slug
+# unknown — try a small set of plausible candidates for an England vs
+# Congo DR fixture rather than guess one and assume it's right.
+print("\nProbing ESPN soccer summary (event 760495, England 2-1 Congo DR)...")
+_SOCCER_LEAGUE_CANDIDATES = ["fifa.friendly", "uefa.friendly", "fifa.world"]
+_soccer_result = None
+for _league in _SOCCER_LEAGUE_CANDIDATES:
+    try:
+        req = urllib.request.Request(
+            f"https://site.api.espn.com/apis/site/v2/sports/soccer/{_league}/summary?event=760495",
+            headers=HEADERS,
+        )
+        with urllib.request.urlopen(req, timeout=30) as r:
+            summary = json.loads(r.read())
+        key_events = summary.get("keyEvents") or []
+        header = summary.get("header") or {}
+        competitions = (header.get("competitions") or [{}])[0]
+        competitors = competitions.get("competitors") or []
+        result = {
+            "status": r.status, "league_used": _league,
+            "top_level_keys": list(summary.keys()),
+            "key_events_count": len(key_events),
+            "competitors": [{"homeAway": c.get("homeAway"), "team_id": (c.get("team") or {}).get("id"),
+                              "team_name": (c.get("team") or {}).get("displayName")} for c in competitors],
+        }
+        scoring_events = [e for e in key_events if e.get("scoringPlay")]
+        result["scoring_events_count"] = len(scoring_events)
+        if scoring_events:
+            result["sample_scoring_event_keys"] = list(scoring_events[0].keys())
+            result["sample_scoring_events_full"] = scoring_events[:3]
+        _soccer_result = result
+        print(f"  ✅ league={_league}: keyEvents={result['key_events_count']}, scoring={result['scoring_events_count']}")
+        print(f"  competitors: {result['competitors']}")
+        if scoring_events:
+            print(f"  sample scoring event: {json.dumps(scoring_events[0], indent=2)[:800]}")
+        break
+    except Exception as e:
+        print(f"  ❌ league={_league}: {e}")
+out["endpoints"]["espn_soccer_summary_760495"] = _soccer_result or {"status": 0, "error": "no candidate league slug worked", "tried": _SOCCER_LEAGUE_CANDIDATES}
+
 os.makedirs("outbox/mlb", exist_ok=True)
 fn = f"outbox/mlb/savant-probe-{ts}.json"
 with open(fn, "w") as f:
