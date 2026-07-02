@@ -148,6 +148,14 @@ except Exception as e:
 
 if pitcher_rows:
     try:
+        # Cloudflare error 1010 ("blocked based on your browser's
+        # signature") on the first live attempt (run 28564197874,
+        # 2026-07-02) — root cause confirmed via the captured response
+        # body, not guessed: this was the ONLY request in this entire
+        # script without a User-Agent header (urllib defaults to
+        # "Python-urllib/3.x", a well-known bot signature). Every other
+        # request here — Savant GETs (HEADERS) and MLB Stats API (
+        # MLB_JSON_HEADERS) — already sets one and succeeds.
         req = urllib.request.Request(
             "https://field-relay-nba.jeffunglesbee.workers.dev/savant/sync",
             data=json.dumps({
@@ -156,7 +164,7 @@ if pitcher_rows:
                 "source": "savant",
                 "label": "pitcher_xera",
             }).encode(),
-            headers={"Content-Type": "application/json"},
+            headers={"Content-Type": "application/json", "User-Agent": HEADERS["User-Agent"]},
             method="POST",
         )
         with urllib.request.urlopen(req, timeout=30) as resp:
