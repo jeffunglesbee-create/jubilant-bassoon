@@ -47,6 +47,15 @@ ENDPOINTS = [
      f"&game_date_gt={(datetime.now(timezone.utc) - timedelta(days=15)).strftime('%Y-%m-%d')}"
      f"&game_date_lt={(datetime.now(timezone.utc) - timedelta(days=1)).strftime('%Y-%m-%d')}&type=details",
      180),
+    # ── PITCHER xERA PROBE (CC-CMD-2026-07-01 savant-xera-fetch-post) ──────
+    # Confirms the exact column names (expecting era, xera) on the
+    # pitcher-side expected_statistics endpoint before writing fetch code
+    # against them — the batter-side variant of this endpoint (probed
+    # above as "expected_stats") uses "est_ba"/"est_slg"/"est_woba", NOT a
+    # bare "xera"-style name, so the pitcher-side naming should not be
+    # assumed identical without checking.
+    ("expected_stats_pitcher",
+     "https://baseballsavant.mlb.com/leaderboard/expected_statistics?type=pitcher&year=2026&min=50&csv=true"),
 ]
 
 ts  = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
