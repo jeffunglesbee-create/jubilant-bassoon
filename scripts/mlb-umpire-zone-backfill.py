@@ -99,18 +99,20 @@ for _last in existing.get("data", {}):
     existing["data"][_last]["zones"] = {}
     existing["data"][_last]["weakness"] = None
 
-# Build 5-day chunks from 2026-04-01 through yesterday. 5 days, not 14:
-# a first real run of this script (2026-07-01, run 28555611187) found every
-# one of its 7 originally-planned 14-day chunks returned EXACTLY 25000
-# rows — Baseball Savant's statcast_search/csv endpoint has a hard
-# server-side row cap. A real 14-16 day MLB window is ~65,000-70,000
-# pitches (~15 games/day x ~290 combined pitches/game), meaning those
-# chunks were silently truncated to roughly their first ~5-6 days each —
-# NOT a genuine "no challenges" result for the untruncated remainder.
-# 5-day chunks stay safely under the cap (~21,750 estimated pitches) with
-# margin. This script is idempotent (resets zones/weakness before
-# merging, see below) specifically so it can be safely re-run with a
-# different chunk size without double-counting the prior run's results.
+# Build 2-day chunks from 2026-04-01 through yesterday. Two prior sizes
+# both still hit Savant's ~25000-row hard cap: the first run (2026-07-01,
+# 28555611187) used 14-day chunks — all 7 hit exactly 25000 rows. A
+# second run (28555988842) dropped to 5-day chunks expecting ~21,750
+# pitches/chunk (based on a ~4350 pitches/day estimate) to clear safely
+# under the cap — but 17 of 19 chunks STILL hit exactly 25000, meaning
+# the real per-day volume during full 30-team season play is higher than
+# that estimate. Recovered 306/327 games (up from 201/327) but still
+# incomplete — do not trust that result as final either. Dropped to 2-day
+# chunks for real safety margin (even a generous 5000 pitches/day
+# estimate puts a 2-day window at ~10,000, well under 25,000). This
+# script is idempotent (resets zones/weakness before merging, see below)
+# specifically so it can be safely re-run with a different chunk size
+# without double-counting a prior run's results.
 #
 # Intended calendar ranges are perfectly adjacent (no overlap, no gap):
 # [start, end], then [end+1day, next_end], etc. game_date_gt/game_date_lt
@@ -128,7 +130,7 @@ range_end = today_utc - timedelta(days=1)
 chunks = []
 cursor = range_start
 while cursor <= range_end:
-    intended_end = min(cursor + timedelta(days=4), range_end)  # 5 inclusive days
+    intended_end = min(cursor + timedelta(days=1), range_end)  # 2 inclusive days
     query_since = (cursor - timedelta(days=1)).strftime("%Y-%m-%d")
     query_until = (intended_end + timedelta(days=1)).strftime("%Y-%m-%d")
     chunks.append((query_since, query_until))
