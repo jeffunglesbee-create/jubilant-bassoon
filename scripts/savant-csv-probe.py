@@ -312,6 +312,36 @@ for _league in _SOCCER_LEAGUE_CANDIDATES:
         print(f"  ❌ league={_league}: {e}")
 out["endpoints"]["espn_soccer_summary_760495"] = _soccer_result or {"status": 0, "error": "no candidate league slug worked", "tried": _SOCCER_LEAGUE_CANDIDATES}
 
+# ── RELAY /archive/drama-missing DEPLOYMENT CHECK
+# (CC-CMD-2026-07-02 drama-backfill-client, Task 4) ────────────────────
+# Real cross-repo dependency from a companion field-relay-nba CC-CMD.
+# This repo has no GitHub API access to field-relay-nba (confirmed
+# earlier this session — access denied), so the only way to check
+# whether the endpoint is deployed is a live HTTP probe. Proxy-blocked
+# from the CC sandbox directly; this runs server-side via
+# workflow_dispatch, which has unrestricted internet access.
+print("\nProbing relay /archive/drama-missing deployment status...")
+try:
+    req = urllib.request.Request(
+        "https://field-relay-nba.jeffunglesbee.workers.dev/archive/drama-missing?limit=3",
+        headers={"User-Agent": "FIELD-MLB-Updater/1.0", "Accept": "application/json"},
+    )
+    with urllib.request.urlopen(req, timeout=15) as r:
+        body = r.read().decode("utf-8", errors="replace")
+        try:
+            parsed = json.loads(body)
+        except Exception:
+            parsed = None
+    out["endpoints"]["relay_drama_missing"] = {"status": r.status, "body_sample": body[:1000], "parsed": parsed}
+    print(f"  ✅ HTTP {r.status}: {body[:300]}")
+except urllib.error.HTTPError as e:
+    body = e.read().decode("utf-8", errors="replace")
+    out["endpoints"]["relay_drama_missing"] = {"status": e.code, "error": str(e), "body": body[:500]}
+    print(f"  ❌ HTTP {e.code}: {body[:300]}")
+except Exception as e:
+    out["endpoints"]["relay_drama_missing"] = {"status": 0, "error": str(e)}
+    print(f"  ❌ {e}")
+
 os.makedirs("outbox/mlb", exist_ok=True)
 fn = f"outbox/mlb/savant-probe-{ts}.json"
 with open(fn, "w") as f:
