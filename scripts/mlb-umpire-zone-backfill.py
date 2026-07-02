@@ -83,23 +83,52 @@ with open(ump_path) as f:
 target_pks = set(existing.get("processed_game_pks", []))
 print(f"Backfilling zone data for {len(target_pks)} already-processed games")
 
-# Build 14-day chunks from 2026-04-01 through yesterday. Intended calendar
-# ranges are perfectly adjacent (no overlap, no gap): [start, end], then
-# [end+1day, next_end], etc. game_date_gt/game_date_lt are STRICT
-# inequalities (confirmed by param naming — standard gt/lt convention), so
-# back-to-back chunks sharing a literal boundary date as both bounds would
-# silently skip any game dated exactly on that boundary. Fixed by padding
-# each chunk's ACTUAL query bounds by 1 day beyond its intended calendar
-# range on each side, while keeping the intended ranges themselves
-# perfectly adjacent — guarantees full coverage with zero gap and zero
-# double-count (each calendar day belongs to exactly one intended range).
+# Idempotency: reset zones/weakness for every umpire before merging, so
+# this script can be safely re-run (e.g. with different chunk sizing,
+# exactly what happened here — the first run's 14-day chunks turned out
+# to be truncated by Savant's row cap, see chunk-size comment below) WITHOUT
+# double-counting a prior run's already-merged results. This is correct
+# right now because 100% of any existing zones data was written by a PRIOR
+# RUN OF THIS SAME SCRIPT — the normal weekly flow's own incremental
+# zone-tracking (mlb-weekly-update.py, post-db4fd9c7) has captured zero new
+# games since the feature shipped (confirmed: run ab715d3 found 0 new
+# games). If this script is ever re-run after the normal flow HAS
+# accumulated real zone data for newer games, this reset would incorrectly
+# wipe that — re-verify this assumption before any future re-run.
+for _last in existing.get("data", {}):
+    existing["data"][_last]["zones"] = {}
+    existing["data"][_last]["weakness"] = None
+
+# Build 5-day chunks from 2026-04-01 through yesterday. 5 days, not 14:
+# a first real run of this script (2026-07-01, run 28555611187) found every
+# one of its 7 originally-planned 14-day chunks returned EXACTLY 25000
+# rows — Baseball Savant's statcast_search/csv endpoint has a hard
+# server-side row cap. A real 14-16 day MLB window is ~65,000-70,000
+# pitches (~15 games/day x ~290 combined pitches/game), meaning those
+# chunks were silently truncated to roughly their first ~5-6 days each —
+# NOT a genuine "no challenges" result for the untruncated remainder.
+# 5-day chunks stay safely under the cap (~21,750 estimated pitches) with
+# margin. This script is idempotent (resets zones/weakness before
+# merging, see below) specifically so it can be safely re-run with a
+# different chunk size without double-counting the prior run's results.
+#
+# Intended calendar ranges are perfectly adjacent (no overlap, no gap):
+# [start, end], then [end+1day, next_end], etc. game_date_gt/game_date_lt
+# are STRICT inequalities (confirmed by param naming — standard gt/lt
+# convention), so back-to-back chunks sharing a literal boundary date as
+# both bounds would silently skip any game dated exactly on that
+# boundary. Fixed by padding each chunk's ACTUAL query bounds by 1 day
+# beyond its intended calendar range on each side, while keeping the
+# intended ranges themselves perfectly adjacent — guarantees full
+# coverage with zero gap and zero double-count (each calendar day belongs
+# to exactly one intended range).
 today_utc = datetime.now(timezone.utc)
 range_start = datetime(2026, 4, 1, tzinfo=timezone.utc)
 range_end = today_utc - timedelta(days=1)
 chunks = []
 cursor = range_start
 while cursor <= range_end:
-    intended_end = min(cursor + timedelta(days=13), range_end)  # 14 inclusive days
+    intended_end = min(cursor + timedelta(days=4), range_end)  # 5 inclusive days
     query_since = (cursor - timedelta(days=1)).strftime("%Y-%m-%d")
     query_until = (intended_end + timedelta(days=1)).strftime("%Y-%m-%d")
     chunks.append((query_since, query_until))
@@ -110,6 +139,7 @@ print(f"Chunks ({len(chunks)}): {chunks}")
 # games, collecting zone tallies keyed by game_pk (not umpire — we don't
 # know the umpire yet).
 pk_zone_updates = {}  # {gpk: {date, zones: {zone: {challenged, overturned}}}}
+truncated_chunks = []
 for since_str, until_str in chunks:
     statcast_url = (
         "https://baseballsavant.mlb.com/statcast_search/csv"
@@ -121,7 +151,15 @@ for since_str, until_str in chunks:
     except Exception as e:
         print(f"  {since_str}→{until_str}: FAILED ({e})")
         continue
-    print(f"  {since_str}→{until_str}: {len(rows)} pitches")
+    # 25000 is Savant's observed hard row cap (confirmed: every 14-16 day
+    # chunk in the first run of this script hit exactly 25000). If a
+    # smaller chunk STILL hits it, that window is still being truncated —
+    # flag it loudly rather than silently treat it as complete.
+    if len(rows) >= 25000:
+        truncated_chunks.append((since_str, until_str, len(rows)))
+        print(f"  {since_str}→{until_str}: {len(rows)} pitches  ⚠️ SUSPECTED TRUNCATION (>=25000)")
+    else:
+        print(f"  {since_str}→{until_str}: {len(rows)} pitches")
     for row in rows:
         gpk = (row.get("game_pk") or "").strip()
         if gpk not in target_pks: continue
@@ -208,3 +246,10 @@ with open(ump_path, "w") as f:
 
 after_count = sum(1 for v in existing["data"].values() if v.get("weakness"))
 print(f"✅ weakness populated: {before_count} → {after_count} of {len(existing['data'])} umpires")
+print(f"Games with recoverable zone data: {len(pk_zone_updates)}/{len(target_pks)}")
+if truncated_chunks:
+    print(f"⚠️  {len(truncated_chunks)} chunk(s) still hit the row cap — some data in that window may still be missing:")
+    for since_str, until_str, n in truncated_chunks:
+        print(f"    {since_str}→{until_str}: {n} rows")
+else:
+    print("No chunks hit the row cap — full coverage of all chunks' date ranges.")
