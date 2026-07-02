@@ -3849,6 +3849,27 @@ assert('DRAMA-COMPLIANCE-002 — no raw dramaScoreLive() output is template-inte
   })(),
   'Regex heuristic tripwire, not a proof: flags a raw ${score}-style template interpolation within 15 lines of a dramaScoreLive( call with no intervening dramaTier( conversion. A determined or careless future edit could still route around this (e.g. via a differently-named variable) — this catches the specific mistake pattern already found once, not every possible variant.');
 
+// ── Retroactive Drama Backfill (DRAMA-BACKFILL — 2026-07-02) ────────────────
+// Locks in the critical bug found and fixed during pre-build probe:
+// dramaScoreLive() returns 0 immediately unless eData.state==='in' (state
+// defaults to 'pre', which short-circuits). Historical snapshots have no
+// natural state field — without this fix, the entire backfill computation
+// would silently produce all-zero drama scores.
+
+assert('DRAMA-BACKFILL-001 — computeDramaRetroactive tags every snapshot state:\'in\' before calling dramaScoreLive',
+  html.includes("dramaScoreLive({ ...st, state: 'in' }, sport)"),
+  'dramaScoreLive() returns 0 immediately unless eData.state===\'in\' (state defaults to \'pre\', both \'pre\'/\'post\' short-circuit to 0) — historical snapshots reconstructed from ESPN summary data have no natural state field, so computeDramaRetroactive must explicitly tag state:\'in\' on each one or the entire backfill silently computes all zeros.');
+
+assert('DRAMA-BACKFILL-002 — getDramaSustained accepts an optional nowOverride, backward compatible with all existing callers',
+  /function getDramaSustained\(gameId, threshold = 65, windowMs = 30 \* 60 \* 1000, nowOverride\)/.test(html) &&
+  html.includes('const now = nowOverride ?? Date.now();'),
+  'getDramaSustained\'s original cutoff=Date.now()-windowMs always computes 0 for a historical/completed game (every real sample is older than a "now minus 30 min" cutoff anchored to the live present) — nowOverride lets computeDramaRetroactive anchor the window to the historical game\'s own end-of-data timestamp instead, while defaulting to Date.now() (unchanged behavior) for all 8 pre-existing call sites that don\'t pass a 4th argument.');
+
+assert('DRAMA-BACKFILL-003 — backfill discovery loop hard-caps at 3 games per session',
+  html.includes("fetch(`${relayBase}/archive/drama-missing?limit=3`") &&
+  html.includes('.slice(0, 3)'),
+  'runDramaBackfillDiscovery must cap at 3 games per app session (both via the relay query param and a client-side slice(0,3) even if the relay ever returns more) — same conservative, rate-limit-conscious pattern already used elsewhere in this codebase.');
+
 // ── PM-25 Rich-visual confidence glyph (A496) ────────────────────────────────
 // Verifies four things:
 // (1) .cg CSS classes exist in index.html (verified/mismatch/single/mismatch::after)

@@ -33317,8 +33317,17 @@ function getDramaTrend(gameId, n = 4) {
 
 // Minutes drama has been sustained above threshold in the given window
 // Used by: J5 game selection (sustained > peak), EMBER context boost
-function getDramaSustained(gameId, threshold = 65, windowMs = 30 * 60 * 1000) {
-  const cutoff = Date.now() - windowMs;
+// nowOverride (CC-CMD-2026-07-02 drama-backfill-client): optional 4th
+// param, defaults to Date.now() — 100% backward compatible with every
+// existing call site (none pass a 4th arg). Needed because retroactive
+// backfill computes drama for games whose real timestamps are in the
+// past; without an override, `cutoff = Date.now() - windowMs` would
+// always be more recent than every historical sample, silently forcing
+// sustainedMinutes to 0 for any backfilled game regardless of its real
+// data.
+function getDramaSustained(gameId, threshold = 65, windowMs = 30 * 60 * 1000, nowOverride) {
+  const now = nowOverride ?? Date.now();
+  const cutoff = now - windowMs;
   const inWindow = getDramaHistory(gameId).filter(h => h.t >= cutoff && h.s >= threshold);
   return Math.round(inWindow.length * 0.5 * 10) / 10; // minutes, 1dp
 }
@@ -33339,6 +33348,204 @@ function getSmoothedDrama(gameId, n = 3) {
   const recent = getRecentDrama(gameId, n);
   if (recent.length < 2) return null; // insufficient history — caller falls back to raw
   return Math.round(recent.reduce((sum, h) => sum + h.s, 0) / recent.length);
+}
+
+// ── Retroactive Drama Backfill (CC-CMD-2026-07-02 drama-backfill-client) ──
+// Fixes: drama_peak is NULL for completed games where no live session was
+// open long enough to accumulate samples (structural gap since at least
+// 2026-06-20 — the existing archival trigger at saveEspnFinal()'s drama-
+// persistence block only fires if dramaPeak>0 was accumulated live).
+// This replays the EXACT existing dramaScoreLive() against reconstructed
+// historical game state instead — same function, historical snapshots
+// instead of live ones. Does not touch RUWT/ADR-002; relay role unchanged.
+
+// Classify arc shape — copied verbatim from the existing live archival
+// trigger (saveEspnFinal, ~L36583) so backfilled and live-tracked games
+// get identical classification logic, not a second diverging copy.
+function _dramaArcClassify(peak, sustained, trend, peakScore) {
+  return peak >= 80 && sustained >= 5 ? 'thriller'
+    : peak >= 70 && trend > 10 ? 'nail-biter'
+    : peak < 35 ? 'blowout'
+    : trend > 15 && peakScore > 60 ? 'comeback'
+    : 'sleeper';
+}
+
+// TASK 1: replays dramaScoreLive() against each historical snapshot,
+// building the same {t,s,p}-shaped history recordDramaHistory() would
+// have built live (t is the real historical wallclock, not Date.now()).
+// Reuses getDramaHistory/getDramaPeakWithTime/getDramaSustained/
+// getDramaTrend UNMODIFIED by writing the reconstructed history to a
+// TEMPORARY, namespaced localStorage key — never the real live-tracking
+// key for this gameId (avoids any collision with a concurrently-open
+// live session) — then removing it immediately after reading the
+// derived values. Nothing is left behind afterward: "compute in
+// memory... discard" in effect, even though the existing consumer
+// functions only know how to read from localStorage by gameId.
+//
+// IMPORTANT: dramaScoreLive() returns 0 immediately unless
+// eData.state==='in' (confirmed via probe — state defaults to 'pre' and
+// both 'pre'/'post' short-circuit to 0). Historical snapshots have no
+// natural state field; every snapshot must be tagged state:'in' or this
+// entire computation silently produces all zeros.
+function computeDramaRetroactive(historicalStates, sport) {
+  if (!historicalStates || !historicalStates.length) return null;
+  const hist = historicalStates.map(st => {
+    const score = dramaScoreLive({ ...st, state: 'in' }, sport);
+    return { t: st.t, s: Math.round(score), p: st.period || 0 };
+  });
+
+  const tempId = `_backfill_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+  const tempKey = DRAMA_HISTORY_KEY + tempId;
+  try {
+    localStorage.setItem(tempKey, JSON.stringify(hist));
+    const peakInfo  = getDramaPeakWithTime(tempId);
+    const lastT     = hist[hist.length - 1].t;
+    // nowOverride=lastT: "sustained in the final 30 min of available
+    // data", the historical equivalent of the live version's "last 30
+    // min relative to now" — see getDramaSustained's nowOverride comment.
+    const sustained = getDramaSustained(tempId, 65, 30 * 60 * 1000, lastT);
+    const trend     = getDramaTrend(tempId);
+    const fullHist  = getDramaHistory(tempId);
+
+    const step = Math.max(1, Math.floor(fullHist.length / 10));
+    const samples = fullHist.filter((_, i) => i % step === 0 || i === fullHist.length - 1)
+      .map(h => ({ s: h.s, p: h.p }));
+
+    return {
+      peak: peakInfo.s,
+      peakPeriod: peakInfo.p || 0,
+      peakMinute: null, // same as the live path — future: compute from game start delta
+      sustainedMinutes: sustained,
+      trend: trend > 5 ? 'escalating' : trend < -5 ? 'declining' : 'steady',
+      classification: _dramaArcClassify(peakInfo.s, sustained, trend, peakInfo.s),
+      samples,
+    };
+  } finally {
+    try { localStorage.removeItem(tempKey); } catch(e) {}
+  }
+}
+
+// TASK 2: MLB retroactive state reconstruction. Fetches via
+// ESPN_SUMMARY_RELAY, NOT a direct fetch to site.api.espn.com — ESPN's
+// summary endpoint has CORS locked to espn.com in the browser (confirmed
+// via the existing fetchESPNWinProb() precedent, same relay route
+// pattern already proven working in this file). MLB's dramaScoreLive
+// branch only reads period (extra-innings threshold), not clock —
+// confirmed against the real function body during pre-build probe, and
+// plays[] shape confirmed live against event 401815989 (Rays 4, Royals
+// 0): 505 real entries, homeScore/awayScore/period.number/wallclock all
+// present, final play matches the real 4-0 result.
+async function fetchMLBHistoricalStates(espnEventId) {
+  try {
+    const url = `${ESPN_SUMMARY_RELAY}/sports/baseball/mlb/summary?event=${encodeURIComponent(String(espnEventId))}`;
+    const r = await fetch(url, { signal: AbortSignal.timeout(15000) });
+    if (!r.ok) return [];
+    const data = await r.json();
+    return (data.plays || [])
+      .filter(p => p.wallclock)
+      .map(p => ({
+        homeScore: p.homeScore || 0,
+        awayScore: p.awayScore || 0,
+        period: p.period?.number || 1,
+        clock: '', // MLB dramaScoreLive doesn't use clock, only period
+        t: new Date(p.wallclock).getTime(),
+      }));
+  } catch(e) {
+    if (typeof FIELD_DEBUG !== 'undefined' && FIELD_DEBUG) console.log('[DRAMA-BACKFILL] MLB fetch error:', e?.message);
+    return [];
+  }
+}
+
+// TASK 3: Soccer retroactive state reconstruction. keyEvents[] does NOT
+// carry running score directly — reconstructed by iterating events in
+// order and incrementing the scoring team's tally on each
+// scoringPlay:true entry. Scoring team identified by event.team.id
+// compared against the home team's ID from
+// header.competitions[0].competitors — confirmed via a real probe
+// against event 760495 (England 2-1 Congo DR): tracing all 3 real
+// scoring events (team.id 2850/away then 448/home twice) reproduces
+// exactly 2-1, not assumed from a guessed field name. League slug
+// defaults to 'fifa.world', matching the existing blanket-slug pattern
+// already used elsewhere in this file (~L37203 for all soccer/WC
+// content) — confirmed via probe that 'fifa.world' ALSO resolves a
+// genuine non-WC26 friendly (event 760495), so this is not a WC26-only
+// special case; ESPN's summary routing is lenient about the league path
+// segment for at least these two soccer leagues.
+async function fetchSoccerHistoricalStates(espnEventId, league) {
+  try {
+    const slug = league || 'fifa.world';
+    const url = `${ESPN_SUMMARY_RELAY}/sports/soccer/${slug}/summary?event=${encodeURIComponent(String(espnEventId))}`;
+    const r = await fetch(url, { signal: AbortSignal.timeout(15000) });
+    if (!r.ok) return [];
+    const data = await r.json();
+    const competitors = data.header?.competitions?.[0]?.competitors || [];
+    const homeTeamId = competitors.find(c => c.homeAway === 'home')?.team?.id;
+    if (!homeTeamId) return [];
+    let homeScore = 0, awayScore = 0;
+    return (data.keyEvents || [])
+      .filter(e => e.wallclock)
+      .map(e => {
+        if (e.scoringPlay) {
+          if (String(e.team?.id) === String(homeTeamId)) homeScore++; else awayScore++;
+        }
+        return {
+          homeScore, awayScore,
+          period: e.period?.number || 1,
+          clock: e.clock?.displayValue || '',
+          t: new Date(e.wallclock).getTime(),
+        };
+      });
+  } catch(e) {
+    if (typeof FIELD_DEBUG !== 'undefined' && FIELD_DEBUG) console.log('[DRAMA-BACKFILL] Soccer fetch error:', e?.message);
+    return [];
+  }
+}
+
+// TASK 4: Discovery + backfill loop. Fires once per app session, capped
+// at 3 games — same conservative per-session cap pattern already used
+// elsewhere in this codebase (slice(0,3) multi-league scoreboard fetch).
+// Fire-and-forget per game, never blocks app startup — same keepalive/
+// .catch(()=>{}) pattern as the existing live drama POST. source_id in
+// the POST uses the discovery response's own `id` field (its composite
+// SPORT_DATE_HOME_AWAY identifier), not espn_event_id — the discovery
+// endpoint's entire purpose is "this D1 row (keyed by source_id=id) is
+// missing drama_peak"; espn_event_id is only used to know which ESPN
+// summary endpoint to fetch for reconstruction.
+async function runDramaBackfillDiscovery() {
+  try {
+    const relayBase = (typeof V2_RELAY_BASE !== 'undefined') ? V2_RELAY_BASE : 'https://field-relay-nba.jeffunglesbee.workers.dev';
+    const r = await fetch(`${relayBase}/archive/drama-missing?limit=3`, { signal: AbortSignal.timeout(8000) });
+    if (!r.ok) return;
+    const data = await r.json();
+    const games = (data.games || []).slice(0, 3); // hard cap even if the relay ever returns more
+    for (const g of games) {
+      _backfillOneDramaGame(g).catch(() => {}); // fire-and-forget, never blocks
+    }
+  } catch(e) {
+    if (typeof FIELD_DEBUG !== 'undefined' && FIELD_DEBUG) console.log('[DRAMA-BACKFILL] discovery error:', e?.message);
+  }
+}
+
+async function _backfillOneDramaGame(g) {
+  const sp = (g.sport || '').toLowerCase();
+  const isMLB = sp.includes('mlb') || sp.includes('baseball');
+  const states = isMLB
+    ? await fetchMLBHistoricalStates(g.espn_event_id)
+    : await fetchSoccerHistoricalStates(g.espn_event_id);
+  if (!states.length) return;
+  const arc = computeDramaRetroactive(states, isMLB ? 'mlb' : 'soccer');
+  if (!arc) return;
+  const relayBase = (typeof V2_RELAY_BASE !== 'undefined') ? V2_RELAY_BASE : 'https://field-relay-nba.jeffunglesbee.workers.dev';
+  fetch(`${relayBase}/archive/drama`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      source_id: g.id || g.espn_event_id,
+      drama_peak: arc.peak,
+      drama_arc: JSON.stringify(arc),
+    }),
+    keepalive: true,
+  }).catch(() => {});
 }
 
 // ── Broadcast Narrative Index (BNI) ──────────────────────────────────────────
@@ -39579,6 +39786,9 @@ setTimeout(registerAnticipatoryPrefetch, 4000);
 // Kick: restore first (paints cached DOM if any), then fetchSchedule (which renderAll-replaces with fresh).
 // .finally() so a failing restore still proceeds to fetchSchedule — restoration is opportunistic.
 restoreSnapshot().finally(() => { fetchSchedule().then(markFreshnessLive); });
+// Retroactive drama backfill (CC-CMD-2026-07-02) — best-effort, never
+// blocks boot; capped at 3 games per session inside the function itself.
+runDramaBackfillDiscovery().catch(() => {});
 </script>
 </body>
 </html>
