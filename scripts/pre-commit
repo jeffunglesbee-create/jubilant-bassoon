@@ -1,6 +1,29 @@
 #!/bin/sh
-# FIELD pre-commit hook — runs smoke + unit tests + lint before every commit
+# FIELD pre-commit hook — branch enforcement + smoke + unit tests + lint
+# before every commit.
 # Rule 16: --no-verify bypass requires [no-verify: reason] in commit message
+#
+# Branch check added 2026-07-02, ported from field-relay-nba's pre-commit
+# hook (added there 2026-07-01 after two stray-branch incidents in one
+# session despite explicit written instructions being ignored both times).
+# jubilant-bassoon's own CLAUDE.md states the same policy ("Every commit
+# goes directly to main. Never create a feature branch...") but never had
+# the corresponding structural enforcement — this closes that gap.
+
+BRANCH="$(git rev-parse --abbrev-ref HEAD)"
+# Detached HEAD means git rebase/cherry-pick/bisect is in progress — skip
+# branch check so rebase --exec amends (e.g. for signing) aren't blocked.
+if [ "$BRANCH" = "HEAD" ]; then
+  :  # rebase in progress — branch check skipped
+elif [ "$BRANCH" != "main" ]; then
+  echo ""
+  echo "╔══════════════════════════════════════════════════════════╗"
+  echo "║  COMMIT BLOCKED — not on main                            ║"
+  echo "║  Current branch: $BRANCH"
+  echo "║  This repo commits directly to main. See CLAUDE.md.       ║"
+  echo "╚══════════════════════════════════════════════════════════╝"
+  exit 1
+fi
 
 REPO="$(git rev-parse --show-toplevel)"
 command -v node >/dev/null 2>&1 || { echo "⚠  node not found — skipping checks"; exit 0; }
@@ -61,5 +84,5 @@ if [ $SMOKE -ne 0 ] || [ $UNIT -ne 0 ] || [ $LINT -ne 0 ]; then
   exit 1
 fi
 
-echo "✅ Smoke + units + lint passed"
+echo "✅ Branch + smoke + units + lint passed"
 exit 0
