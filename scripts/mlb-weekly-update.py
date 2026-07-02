@@ -142,7 +142,12 @@ try:
         era  = safe_float(r.get("era"))
         xera = safe_float(r.get("xera"))
         pitcher_rows.append({"id": last, "era": era, "xera": xera})
-    if pitcher_rows:
+except Exception as e:
+    print(f"  ❌ Savant fetch failed: {e}")
+    pitcher_rows = None
+
+if pitcher_rows:
+    try:
         req = urllib.request.Request(
             "https://field-relay-nba.jeffunglesbee.workers.dev/savant/sync",
             data=json.dumps({
@@ -157,10 +162,19 @@ try:
         with urllib.request.urlopen(req, timeout=30) as resp:
             result = json.loads(resp.read())
         print(f"  ✅ {len(pitcher_rows)} pitchers posted | relay result: {result}")
-    else:
-        print("  ⚠️ no pitcher xERA rows parsed")
-except Exception as e:
-    print(f"  ❌ {e}")
+    except urllib.error.HTTPError as e:
+        # Capture the response BODY, not just the status line — the relay
+        # may return a diagnostic JSON error (missing auth, unknown table,
+        # payload shape mismatch) that a bare str(e) would discard.
+        try:
+            body = e.read().decode('utf-8', errors='replace')[:500]
+        except Exception:
+            body = '<could not read response body>'
+        print(f"  ❌ relay POST failed: HTTP {e.code} {e.reason} | body: {body}")
+    except Exception as e:
+        print(f"  ❌ relay POST failed: {e}")
+elif pitcher_rows is not None:
+    print("  ⚠️ no pitcher xERA rows parsed")
 
 # ── 3. SPRINT SPEED ───────────────────────────────────────────────────────────
 print("Fetching sprint speed...")
