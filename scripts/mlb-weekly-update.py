@@ -112,6 +112,56 @@ try:
 except Exception as e:
     print(f"  ❌ {e}")
 
+# ── 2b. PITCHER xERA (POSTs to generic relay reconcile-sync endpoint,
+#        not a local JSON file — first Savant field to flow into
+#        change_log rather than a static outbox/mlb/*.json snapshot) ──
+# Column names (era, xera) verified live 2026-07-02 via savant-csv-probe.yml
+# run 28563922390: real columns are last_name/first_name (combined field,
+# same as elsewhere in this script), player_id, year, pa, bip, ba, est_ba,
+# est_ba_minus_ba_diff, slg, est_slg, est_slg_minus_slg_diff, woba,
+# est_woba, est_woba_minus_woba_diff, era, xera, era_minus_xera_diff.
+# Note the pitcher side uses bare "era"/"xera" — NOT the "est_*" prefix
+# the batter-side variant of this same endpoint uses for its own expected
+# fields (est_ba/est_slg/est_woba) — confirmed via probe, not assumed
+# consistent across the two `type=` variants of one endpoint.
+print("Fetching pitcher xERA...")
+try:
+    rows = fetch_csv("https://baseballsavant.mlb.com/leaderboard/expected_statistics"
+                     "?type=pitcher&year=2026&min=50&csv=true")
+    pitcher_rows = []
+    for r in rows:
+        name_raw = r.get("last_name, first_name") or r.get("last_name") or ""
+        last = name_key(name_raw)
+        if not last: continue
+        # Check the raw string before conversion — safe_float() never
+        # returns None (its own default is 0.0 on missing/invalid input),
+        # so `if xera is None` after conversion would be dead code and
+        # would silently record a real 0.0 ERA for a pitcher with
+        # genuinely missing xera data instead of skipping them.
+        if not r.get("xera"): continue
+        era  = safe_float(r.get("era"))
+        xera = safe_float(r.get("xera"))
+        pitcher_rows.append({"id": last, "era": era, "xera": xera})
+    if pitcher_rows:
+        req = urllib.request.Request(
+            "https://field-relay-nba.jeffunglesbee.workers.dev/savant/sync",
+            data=json.dumps({
+                "table": "pitcher_expected_stats",
+                "rows": pitcher_rows,
+                "source": "savant",
+                "label": "pitcher_xera",
+            }).encode(),
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            result = json.loads(resp.read())
+        print(f"  ✅ {len(pitcher_rows)} pitchers posted | relay result: {result}")
+    else:
+        print("  ⚠️ no pitcher xERA rows parsed")
+except Exception as e:
+    print(f"  ❌ {e}")
+
 # ── 3. SPRINT SPEED ───────────────────────────────────────────────────────────
 print("Fetching sprint speed...")
 try:
