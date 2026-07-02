@@ -2,9 +2,10 @@
 
 ## SESSION END — 2026-07-02 (session ran 2026-07-01 evening through 2026-07-02 early morning)
 
-**CLIENT HEAD: 5d1d803**
-**RELAY HEAD SRC: daac637** (deployed: 8c63457 — deploy_match: false, see note below)
-**SMOKE: 823/0 client-side (last full verified run)**
+**CLIENT HEAD: 41d7556** (2026-07-02 — pre-commit branch-enforcement hook ported from field-relay-nba)
+**RELAY HEAD SRC: daac637** (deployed: 4907772 — deploy_match: true, verified live via /deploy/verify 2026-07-02T13:58Z; daac637 itself deployed, main has since moved further via merges)
+**SMOKE: 823/0 client-side (last full verified run — pre-commit hook change does not affect index.html)**
+**SW_VERSION: 2026-07-02a** (index.html and sw.js confirmed in sync)
 
 ---
 
