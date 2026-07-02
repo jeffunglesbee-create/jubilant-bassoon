@@ -167,43 +167,54 @@ for entry in ENDPOINTS:
         print(f"❌ {label}: {e}")
         out["endpoints"][label] = {"status": 0, "error": str(e)}
 
-# ── ESPN ROSTER JSON SHAPE PROBE (CC-CMD-2026-07-02 player-mismatch-detector) ──
-# Confirms the real athletes[]/lastName/fullName nesting on ESPN's roster
-# endpoint before the detector script is written against an assumed shape —
-# this repo has no prior confirmed probe of this specific endpoint. Uses
-# TOR (Toronto) since it's a real team present in outbox/mlb/pitch_arsenals.json.
-print("\nProbing ESPN roster JSON shape (TOR)...")
-try:
-    req = urllib.request.Request(
-        "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/tor/roster",
-        headers=HEADERS,
-    )
-    with urllib.request.urlopen(req, timeout=30) as r:
-        roster = json.loads(r.read())
-    top_keys = list(roster.keys())
-    athletes_block = roster.get("athletes")
-    shape = {"status": r.status, "top_level_keys": top_keys}
-    if isinstance(athletes_block, list) and athletes_block:
-        first_group = athletes_block[0]
-        shape["athletes_is_list"] = True
-        shape["athletes_group_keys"] = list(first_group.keys()) if isinstance(first_group, dict) else None
-        items = first_group.get("items") if isinstance(first_group, dict) else None
-        if isinstance(items, list) and items:
-            shape["items_present"] = True
-            shape["sample_athlete_keys"] = list(items[0].keys())
-            shape["sample_athlete"] = {k: items[0].get(k) for k in
-                ("id", "fullName", "displayName", "shortName", "lastName", "firstName") if k in items[0]}
+# ── ESPN ROSTER JSON SHAPE + ABBREVIATION-MAPPING PROBE
+# (CC-CMD-2026-07-02 player-mismatch-detector) ──────────────────────────
+# Confirms the real athletes[]/lastName/fullName nesting AND whether
+# ESPN's team abbreviation scheme actually matches Savant-sourced
+# outbox/mlb/*.json's team codes — the two data providers are known to
+# diverge on some codes (e.g. Athletics, Arizona, White Sox), and the
+# detector script's team->roster URL mapping depends entirely on this
+# matching 1:1. Probes TOR (baseline, known-standard) plus the 3 most
+# likely divergent real codes actually present in the source data: ATH,
+# AZ, CWS.
+for _team in ("tor", "ath", "az", "cws"):
+    print(f"\nProbing ESPN roster JSON shape ({_team.upper()})...")
+    try:
+        req = urllib.request.Request(
+            f"https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/{_team}/roster",
+            headers=HEADERS,
+        )
+        with urllib.request.urlopen(req, timeout=30) as r:
+            roster = json.loads(r.read())
+        top_keys = list(roster.keys())
+        athletes_block = roster.get("athletes")
+        team_block = roster.get("team")
+        shape = {
+            "status": r.status, "top_level_keys": top_keys,
+            "resolved_team_name": (team_block or {}).get("displayName") if isinstance(team_block, dict) else None,
+            "resolved_team_abbrev": (team_block or {}).get("abbreviation") if isinstance(team_block, dict) else None,
+        }
+        if isinstance(athletes_block, list) and athletes_block:
+            first_group = athletes_block[0]
+            shape["athletes_is_list"] = True
+            shape["athletes_group_keys"] = list(first_group.keys()) if isinstance(first_group, dict) else None
+            items = first_group.get("items") if isinstance(first_group, dict) else None
+            if isinstance(items, list) and items:
+                shape["items_present"] = True
+                shape["sample_athlete_keys"] = list(items[0].keys())
+                shape["sample_athlete"] = {k: items[0].get(k) for k in
+                    ("id", "fullName", "displayName", "shortName", "lastName", "firstName") if k in items[0]}
+            else:
+                shape["items_present"] = False
         else:
-            shape["items_present"] = False
-    else:
-        shape["athletes_is_list"] = False
-        shape["athletes_raw_type"] = type(athletes_block).__name__
-    out["endpoints"]["espn_roster_tor"] = shape
-    print(f"  ✅ top-level keys: {top_keys}")
-    print(f"  sample_athlete: {shape.get('sample_athlete')}")
-except Exception as e:
-    print(f"  ❌ {e}")
-    out["endpoints"]["espn_roster_tor"] = {"status": 0, "error": str(e)}
+            shape["athletes_is_list"] = False
+            shape["athletes_raw_type"] = type(athletes_block).__name__
+        out["endpoints"][f"espn_roster_{_team}"] = shape
+        print(f"  ✅ resolved team: {shape.get('resolved_team_name')} ({shape.get('resolved_team_abbrev')})")
+        print(f"  sample_athlete: {shape.get('sample_athlete')}")
+    except Exception as e:
+        print(f"  ❌ {e}")
+        out["endpoints"][f"espn_roster_{_team}"] = {"status": 0, "error": str(e)}
 
 os.makedirs("outbox/mlb", exist_ok=True)
 fn = f"outbox/mlb/savant-probe-{ts}.json"
