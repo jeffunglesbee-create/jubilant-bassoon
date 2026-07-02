@@ -312,6 +312,31 @@ for _league in _SOCCER_LEAGUE_CANDIDATES:
         print(f"  ❌ league={_league}: {e}")
 out["endpoints"]["espn_soccer_summary_760495"] = _soccer_result or {"status": 0, "error": "no candidate league slug worked", "tried": _SOCCER_LEAGUE_CANDIDATES}
 
+# Existing index.html code (~L37203) uses a blanket 'fifa.world' slug for
+# ALL soccer/WC content regardless of actual competition. But 760495
+# (a genuine friendly, not a WC26 match) needed 'fifa.friendly' above --
+# never actually confirmed whether 'fifa.world' would ALSO resolve this
+# same non-WC event (ESPN's summary routing might key off event= alone,
+# tolerating a "wrong" league path segment) or whether the existing
+# codebase's blanket slug is a latent bug for non-WC26 soccer games.
+print("\nChecking whether 'fifa.world' (existing index.html's blanket slug) also resolves event 760495 (a non-WC26 friendly)...")
+try:
+    req = urllib.request.Request(
+        "https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/summary?event=760495",
+        headers=HEADERS,
+    )
+    with urllib.request.urlopen(req, timeout=15) as r:
+        summary = json.loads(r.read())
+    key_events = summary.get("keyEvents") or []
+    out["endpoints"]["espn_soccer_fifa_world_slug_check"] = {
+        "status": r.status, "key_events_count": len(key_events),
+        "resolved_same_event": len(key_events) == (out["endpoints"]["espn_soccer_summary_760495"].get("key_events_count") or -1),
+    }
+    print(f"  ✅ fifa.world ALSO resolves 760495: keyEvents={len(key_events)}")
+except Exception as e:
+    out["endpoints"]["espn_soccer_fifa_world_slug_check"] = {"status": 0, "error": str(e)}
+    print(f"  ❌ fifa.world does NOT resolve 760495: {e}")
+
 # ── RELAY /archive/drama-missing DEPLOYMENT CHECK
 # (CC-CMD-2026-07-02 drama-backfill-client, Task 4) ────────────────────
 # Real cross-repo dependency from a companion field-relay-nba CC-CMD.
