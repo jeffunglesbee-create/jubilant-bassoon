@@ -292,6 +292,61 @@ assert('SCOUT-ARSENAL-2 — At-Bat Edge pitcher row shows live arsenal/tempo via
   /\$\{p\.pitcherName\}\$\{arsenalStr\}\$\{tempoStr\}/.test(html),
   'At-Bat Edge is the live per-at-bat pitcher surface (updates on reliever substitutions), distinct from the Scouting Report\'s one-time pre-game starter line — must show the CURRENT pitcher\'s arsenal/tempo via lastNameOf(p.pitcherName), not just the name');
 
+// ── MLB player/pitcher key normalization (MLBKEY — 2026-07-01) ─────────────
+// getSprintSpeed/getRegressionAlert used their own inline normalization
+// (.toLowerCase().replace(/\s+/g,'_')) that did NOT strip Jr./Sr./II/III
+// suffixes, unlike name_key() (mlb-weekly-update.py) which generates the
+// real PLAYER_SPEED/PLAYER_EXPECTED_STATS/PITCHER_TEMPO/PITCHER_ARSENAL
+// keys. Confirmed with a real example: sprint_speed.json stores Bobby
+// Witt Jr. under key "witt"; the old inline normalizer on "Witt Jr."
+// produced "witt_jr." — zero match, silently returning null in production.
+// These assertions actually EXECUTE the real committed functions (via
+// extraction + new Function()) against real test inputs, not just a
+// static pattern check — this is the test that validates the fix works,
+// not merely that the code exists.
+
+assert('MLBKEY-001 — _mlbPlayerKey exactly mirrors name_key() (Python), including its Jr./Sr./II/III-substring quirk',
+  (() => {
+    const fnMatch = html.match(/function _mlbPlayerKey\(playerLastName\) \{[\s\S]*?\n\}/);
+    if (!fnMatch) return false;
+    try {
+      const fn = new Function(`${fnMatch[0]}\nreturn _mlbPlayerKey;`)();
+      // "Witt Jr." -> "witt" is the real key in the live sprint_speed.json
+      // (verified 2026-07-01). "Smith III" -> "smithi" (not "smith") is
+      // intentionally bug-compatible with name_key()'s real behavior:
+      // " ii" is stripped before " iii", and " ii" is a substring prefix
+      // of " iii", so Python's own function produces "smithi" for a real
+      // Player III — verified via direct execution of the actual Python
+      // function, not assumed. A "corrected" client-side key would
+      // silently break the moment a real Player III enters the dataset.
+      return fn('Witt Jr.') === 'witt' && fn('Smith III') === 'smithi' &&
+        fn('Jones II') === 'jones' && fn('Wood') === 'wood' &&
+        fn('De La Cruz') === 'de_la_cruz';
+    } catch (e) { return false; }
+  })(),
+  '_mlbPlayerKey("Witt Jr.") must produce "witt" — the real key Bobby Witt Jr.\'s sprint speed data lives under in sprint_speed.json. Also verifies bug-for-bug parity with name_key() (Python) on III-suffix and multi-word last names, executed against the real committed function, not a static pattern check.');
+
+assert('MLBKEY-002 — lastNameOf reattaches a trailing suffix token instead of discarding the real surname',
+  (() => {
+    const constMatch = html.match(/const _MLB_SUFFIX_TOKENS = new Set\(\[[^\]]*\]\);/);
+    const fnMatch = html.match(/function lastNameOf\(fullNameOrObj\) \{[\s\S]*?\n\}/);
+    if (!constMatch || !fnMatch) return false;
+    try {
+      const fn = new Function(`${constMatch[0]}\n${fnMatch[0]}\nreturn lastNameOf;`)();
+      // Before the fix, .split(' ').pop() on "Bobby Witt Jr." returned
+      // "Jr." (the wrong word entirely) — getPitchTempo("Jr.")/
+      // getPitchArsenal("Jr.") would never match any real pitcher.
+      // "Trey Lynch IV" must keep "IV" attached (not discard it) — the
+      // real pitch_tempo.json key is "lynch_iv" (verified), and
+      // _mlbPlayerKey() deliberately does NOT strip "iv" (name_key()
+      // doesn't either), so lastNameOf() must hand it "Lynch IV" whole.
+      return fn('Bobby Witt Jr.') === 'Witt Jr.' &&
+        fn('Trey Lynch IV') === 'Lynch IV' &&
+        fn('Kevin Gausman') === 'Gausman';
+    } catch (e) { return false; }
+  })(),
+  'lastNameOf("Bobby Witt Jr.") must return "Witt Jr." (surname + suffix together, for _mlbPlayerKey to process), not "Jr." (the pre-fix bug: .split(\' \').pop() grabbed the wrong word entirely) or "Witt" alone (which would silently break IV-suffixed pitchers like the real "lynch_iv" key, since _mlbPlayerKey does not strip IV).');
+
 // 5. RELAY NBA Adapters (Session 3)
 assert('RELAY_BASE defined', html.includes("const RELAY_BASE = 'https://field-relay-nba"));
 assert('relayHealthCheck defined', html.includes('async function relayHealthCheck'));

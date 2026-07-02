@@ -7619,21 +7619,53 @@ function getParkFactor(teamAbbr) {
   return { ...d, badge, badgeClass, context };
 }
 
+// Mirrors mlb-weekly-update.py's name_key() EXACTLY, including its
+// known quirk: " ii" is stripped before " iii", and " ii" is a substring
+// prefix of " iii", so a real "Player III" input produces "playeri" (not
+// "player") — verified bug-for-bug identical via cross-check against the
+// real Python function (CC-CMD-2026-07-01 sprintspeed-key-fix). This is
+// intentional: the client must match whatever key the data generator
+// ACTUALLY produces, not an idealized "corrected" version — a client-side
+// fix that produces the "right" key would silently break lookups the
+// moment a real Player III enters PLAYER_SPEED/PITCHER_TEMPO/etc. Does
+// NOT strip " iv" — Python's name_key() doesn't either (confirmed: real
+// pitch_tempo.json key "lynch_iv" keeps the suffix).
+function _mlbPlayerKey(playerLastName) {
+  let s = String(playerLastName || '').toLowerCase();
+  s = s.split(',')[0].trim();
+  s = s.replace(' jr.', '').replace(' sr.', '').replace(' ii', '').replace(' iii', '');
+  return s.replace(/[\s-]/g, '_');
+}
+
 // Shared by any call site that needs to key into PITCHER_ARSENAL/
 // PITCHER_TEMPO, which are last-name-only. Both scouting-report call
 // sites (starting pitcher) and the At-Bat Edge call site (live current
 // pitcher) need this — same bug class fixed twice before this helper
 // existed (CC-CMD-2026-07-01 scouting-report-arsenal + -tempo-fix).
+// Fixed 2026-07-01 (sprintspeed-key-fix): .split(' ').pop() alone
+// returned the wrong word entirely for a suffixed full name — e.g.
+// "Bobby Witt Jr." -> "Jr." instead of "Witt". Now reattaches a
+// recognized trailing suffix token to the preceding word (e.g. returns
+// "Witt Jr." or "Lynch IV", not just "Witt"/"Lynch") and lets
+// _mlbPlayerKey() decide what to strip — it must NOT discard "IV" here,
+// since _mlbPlayerKey() deliberately keeps IV (matching name_key(), a
+// real key is "lynch_iv") while stripping jr/sr/ii/iii.
+const _MLB_SUFFIX_TOKENS = new Set(['jr','jr.','sr','sr.','ii','iii','iv']);
 function lastNameOf(fullNameOrObj) {
   const raw = typeof fullNameOrObj === 'string'
     ? fullNameOrObj
     : (fullNameOrObj?.name || fullNameOrObj?.lastName || fullNameOrObj?.fullName || '');
-  return raw.split(' ').pop();
+  const parts = raw.split(' ').filter(Boolean);
+  if (parts.length > 1 && _MLB_SUFFIX_TOKENS.has(parts[parts.length - 1].toLowerCase())) {
+    const suffix = parts.pop();
+    return `${parts.pop() || ''} ${suffix}`.trim();
+  }
+  return parts.pop() || '';
 }
 
 function getPitchTempo(pitcherLastName) {
   if (!pitcherLastName) return null;
-  const d = PITCHER_TEMPO[pitcherLastName.toLowerCase()];
+  const d = PITCHER_TEMPO[_mlbPlayerKey(pitcherLastName)];
   if (!d) return null;
   const badge = d.tempoClass === 'Fast' ? 'QUICK TEMPO' : d.tempoClass === 'Slow' ? 'SLOW TEMPO' : null;
   return { ...d, badge, context: `${d.tempoClass} tempo (${d.medianTempo}s · ${d.timerEquiv}s timer equiv)` };
@@ -7641,7 +7673,7 @@ function getPitchTempo(pitcherLastName) {
 
 function getSprintSpeed(playerLastName, teamAbbr) {
   if (!playerLastName) return null;
-  const key = playerLastName.toLowerCase().replace(/\s+/g,'_');
+  const key = _mlbPlayerKey(playerLastName);
   const d = PLAYER_SPEED[key];
   if (!d) return null;
   if (teamAbbr && d.team && teamAbbr.toUpperCase() !== d.team) return null;
@@ -7651,7 +7683,7 @@ function getSprintSpeed(playerLastName, teamAbbr) {
 
 function getRegressionAlert(playerLastName) {
   if (!playerLastName) return null;
-  const key = playerLastName.toLowerCase().replace(/\s+/g,'_');
+  const key = _mlbPlayerKey(playerLastName);
   const d = PLAYER_EXPECTED_STATS[key];
   if (!d) return null;
   const diff = Math.round((d.ba - d.xba) * 1000) / 1000;
@@ -7670,7 +7702,7 @@ function getRegressionAlert(playerLastName) {
 
 function getPitchArsenal(pitcherLastName, topN) {
   if (!pitcherLastName) return null;
-  const d = PITCHER_ARSENAL[pitcherLastName.toLowerCase()];
+  const d = PITCHER_ARSENAL[_mlbPlayerKey(pitcherLastName)];
   if (!d?.pitches?.length) return null;
   const best = d.pitches.slice(0, topN || 3);
   // Savant pitch-arsenal-stats has no velocity column — runValuePer100 replaces
