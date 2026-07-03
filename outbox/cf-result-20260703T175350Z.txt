@@ -1,0 +1,16 @@
+=== CF API Probe [20260703T175350Z] ===
+Request: POST https://api.cloudflare.com/client/v4/graphql
+
+{
+    "data": null,
+    "errors": [
+        {
+            "message": "error parsing args for \"httpRequestsAdaptiveGroups\": filter: unknown arg clientRequestPath_contains",
+            "path": null,
+            "extensions": {
+                "timestamp": "2026-07-03T17:53:50.491988759Z",
+                "ray_id": "a157c081fb3e3496-SEA"
+            }
+        }
+    ]
+}
