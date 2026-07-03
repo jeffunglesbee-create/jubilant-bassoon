@@ -10741,6 +10741,7 @@ function renderAll(){
   // Nav link listeners — replaces inline onclick= handlers (CSP hygiene)
   document.getElementById('desk-jump-link')?.addEventListener('click', e => {
     e.preventDefault();
+    if (!_deskModeEntered) { _deskModeEntered = true; scheduleFieldDesk(0); }
     document.getElementById('field-desk-section')?.scrollIntoView({behavior:'smooth',block:'start'});
   });
   document.getElementById('jrn-nav-link')?.addEventListener('click', e => {
@@ -12631,9 +12632,19 @@ function _deskCardToggle(el) {
   }
 }
 
-// Debounce state — coalesces rapid successive calls into one render (CLS fix)
+// Desk mode gate, added 2026-07-03 -- real, confirmed problem: FIELD Desk
+// populated on every single page load via 6 real trigger call sites (normal
+// journalism-pipeline events), regardless of whether the user ever looks at
+// it -- the exact "stacked into the main consumer flow" issue identified
+// earlier. Fixed by gating the single shared choke point (this function,
+// not each of the 6 call sites individually -- lower risk, one change) 
+// behind explicit entry. Reuses the section's own existing cold-load
+// laziness as the mechanism (confirmed real: ~60px until populated) --
+// just tightens WHEN "populate" fires, no new framework.
+let _deskModeEntered = false;
 let _rfdTimer = null;
 function scheduleFieldDesk(delay) {
+  if (!_deskModeEntered) return; // not yet entered -- stay cold
   if (_rfdTimer) clearTimeout(_rfdTimer);
   _rfdTimer = setTimeout(() => { _rfdTimer = null; renderFieldDesk(); }, delay || 200);
 }
