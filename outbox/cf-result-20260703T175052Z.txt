@@ -1,0 +1,41 @@
+=== CF API Probe [20260703T175052Z] ===
+Request: POST https://api.cloudflare.com/client/v4/graphql
+
+{
+    "data": {
+        "viewer": {
+            "accounts": [
+                {
+                    "workersInvocationsAdaptive": [
+                        {
+                            "dimensions": {
+                                "datetime": "2026-07-02T00:00:03Z"
+                            }
+                        },
+                        {
+                            "dimensions": {
+                                "datetime": "2026-07-02T00:00:56Z"
+                            }
+                        },
+                        {
+                            "dimensions": {
+                                "datetime": "2026-07-02T00:00:57Z"
+                            }
+                        },
+                        {
+                            "dimensions": {
+                                "datetime": "2026-07-02T00:01:01Z"
+                            }
+                        },
+                        {
+                            "dimensions": {
+                                "datetime": "2026-07-02T00:01:04Z"
+                            }
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+    "errors": null
+}
