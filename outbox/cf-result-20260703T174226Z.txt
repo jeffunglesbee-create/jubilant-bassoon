@@ -1,0 +1,14 @@
+=== CF API Probe [20260703T174226Z] ===
+Request: PATCH https://api.cloudflare.com/client/v4/accounts/b57e9af57ab46c52ca9215804e689c29/workers/scripts/field-relay-nba/settings
+
+{
+    "result": null,
+    "success": false,
+    "errors": [
+        {
+            "code": 10001,
+            "message": "Content-Type must be one of: multipart/form-data"
+        }
+    ],
+    "messages": []
+}
