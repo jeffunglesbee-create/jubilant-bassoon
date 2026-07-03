@@ -1,0 +1,136 @@
+=== CF API Probe [20260703T175203Z] ===
+Request: POST https://api.cloudflare.com/client/v4/graphql
+
+{
+    "data": {
+        "viewer": {
+            "accounts": [
+                {
+                    "httpRequestsAdaptiveGroups": [
+                        {
+                            "count": 221294,
+                            "dimensions": {
+                                "clientRequestPath": "/words"
+                            }
+                        },
+                        {
+                            "count": 43401,
+                            "dimensions": {
+                                "clientRequestPath": "/v2/games"
+                            }
+                        },
+                        {
+                            "count": 42840,
+                            "dimensions": {
+                                "clientRequestPath": "/"
+                            }
+                        },
+                        {
+                            "count": 31656,
+                            "dimensions": {
+                                "clientRequestPath": "/api/v2/events/live/"
+                            }
+                        },
+                        {
+                            "count": 12455,
+                            "dimensions": {
+                                "clientRequestPath": "/static/json/liveData/scoreboard/todaysScoreboard_00.json"
+                            }
+                        },
+                        {
+                            "count": 11488,
+                            "dimensions": {
+                                "clientRequestPath": "/archive/game"
+                            }
+                        },
+                        {
+                            "count": 9277,
+                            "dimensions": {
+                                "clientRequestPath": "/apis/site/v2/sports/soccer/fifa.world/scoreboard"
+                            }
+                        },
+                        {
+                            "count": 9151,
+                            "dimensions": {
+                                "clientRequestPath": "/api/v2/events/"
+                            }
+                        },
+                        {
+                            "count": 8660,
+                            "dimensions": {
+                                "clientRequestPath": "/journalism/generate"
+                            }
+                        },
+                        {
+                            "count": 7733,
+                            "dimensions": {
+                                "clientRequestPath": "/apis/site/v2/sports/soccer/usa.1/scoreboard"
+                            }
+                        },
+                        {
+                            "count": 7601,
+                            "dimensions": {
+                                "clientRequestPath": "/apis/site/v2/sports/basketball/wnba/scoreboard"
+                            }
+                        },
+                        {
+                            "count": 7511,
+                            "dimensions": {
+                                "clientRequestPath": "/archive/brief"
+                            }
+                        },
+                        {
+                            "count": 7434,
+                            "dimensions": {
+                                "clientRequestPath": "/apis/site/v2/sports/baseball/mlb/scoreboard"
+                            }
+                        },
+                        {
+                            "count": 5523,
+                            "dimensions": {
+                                "clientRequestPath": "/apis/site/v2/sports/baseball/mlb/summary"
+                            }
+                        },
+                        {
+                            "count": 5004,
+                            "dimensions": {
+                                "clientRequestPath": "/wc/matchup/cache"
+                            }
+                        },
+                        {
+                            "count": 4879,
+                            "dimensions": {
+                                "clientRequestPath": "/jobs/search"
+                            }
+                        },
+                        {
+                            "count": 4711,
+                            "dimensions": {
+                                "clientRequestPath": "/hcm/Jobs/form/JobPosting%5BJobPostingSet%5D.JobSearch"
+                            }
+                        },
+                        {
+                            "count": 4574,
+                            "dimensions": {
+                                "clientRequestPath": "/apis/site/v2/sports/australian-football/afl/scoreboard"
+                            }
+                        },
+                        {
+                            "count": 4426,
+                            "dimensions": {
+                                "clientRequestPath": "/v4/sports/soccer_fifa_world_cup/odds"
+                            }
+                        },
+                        {
+                            "count": 4419,
+                            "dimensions": {
+                                "clientRequestPath": "/squiggle"
+                            }
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+    "errors": null
+}
