@@ -3865,10 +3865,10 @@ assert('DRAMA-BACKFILL-002 — getDramaSustained accepts an optional nowOverride
   html.includes('const now = nowOverride ?? Date.now();'),
   'getDramaSustained\'s original cutoff=Date.now()-windowMs always computes 0 for a historical/completed game (every real sample is older than a "now minus 30 min" cutoff anchored to the live present) — nowOverride lets computeDramaRetroactive anchor the window to the historical game\'s own end-of-data timestamp instead, while defaulting to Date.now() (unchanged behavior) for all 8 pre-existing call sites that don\'t pass a 4th argument.');
 
-assert('DRAMA-BACKFILL-003 — backfill discovery loop hard-caps at 3 games per session',
-  html.includes("fetch(`${relayBase}/archive/drama-missing?limit=3`") &&
-  html.includes('.slice(0, 3)'),
-  'runDramaBackfillDiscovery must cap at 3 games per app session (both via the relay query param and a client-side slice(0,3) even if the relay ever returns more) — same conservative, rate-limit-conscious pattern already used elsewhere in this codebase.');
+assert('DRAMA-BACKFILL-003 — backfill discovery loop hard-caps at 20 games per session',
+  html.includes("fetch(`${relayBase}/archive/drama-missing?limit=20`") &&
+  html.includes('.slice(0, 20)'),
+  'runDramaBackfillDiscovery must cap at 20 games per app session (both via the relay query param and a client-side slice(0,20) even if the relay ever returns more). Raised 2026-07-02 from an original cap of 3 — real backlog grew 128->137 under the original cap, confirmed unable to keep pace with real daily volume (17-20 games/day on a full slate). 20 matches both the relay discovery endpoint (its) own max and real observed daily volume.');
 
 // ── PM-25 Rich-visual confidence glyph (A496) ────────────────────────────────
 // Verifies four things:
