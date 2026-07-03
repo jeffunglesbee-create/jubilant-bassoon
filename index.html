@@ -1130,7 +1130,6 @@ body.wf-mode .np-inner{max-width:100%}
 .pin-widget{position:fixed;bottom:72px;right:12px;z-index:48;background:var(--card-bg,rgba(18,18,32,.95));border:1px solid rgba(255,255,255,.15);border-radius:12px;padding:.5rem .75rem;min-width:110px;max-width:180px;cursor:pointer;box-shadow:0 4px 24px rgba(0,0,0,.4);transition:width .2s,height .2s;backdrop-filter:blur(8px)}
 .pin-widget .pw-score{font-size:.75rem;font-weight:700;line-height:1.3}
 .pin-widget .pw-context{font-size:.62rem;color:var(--muted);margin-top:.1rem}
-.pin-widget .pw-tier{font-size:.62rem;font-weight:700;letter-spacing:.04em;margin-top:.1rem}
 .pin-widget .pw-close{position:absolute;top:4px;right:6px;font-size:.6rem;opacity:.5;cursor:pointer;background:none;border:none;color:inherit;padding:0;line-height:1}
 .pin-widget.expanded{min-width:180px;padding:.6rem .85rem}
 .pw-sparkline-wrap{margin:.3rem 0 .15rem}
@@ -32806,17 +32805,7 @@ function renderAmbientPanel(){
   let otwHTML;
   if(fire){
     const{g,ed,score}=fire;
-    // Fixed 2026-07-02: this rendered a raw composite-score number
-    // ("FIRE 87") live in Ambient Panel -- exactly what ADR-002's named-tier
-    // system (fieldGameTier + fieldTierLabel, already built June 14 2026,
-    // already the documented single source of truth: "every consumer reads
-    // a named tier, never a raw number") exists to prevent. This code path
-    // was never migrated to it. `score` is still used for OTW *selection*
-    // (getDramaDial threshold, unchanged, matches the existing card-badge
-    // selection logic) -- only the DISPLAYED value changes, from a number
-    // to a named tier.
-    const tierName = (typeof fieldGameTier === 'function') ? fieldGameTier(g._id) : 'LIVE';
-    const tierLabel = (typeof fieldTierLabel === 'function') ? (fieldTierLabel(tierName) || 'LIVE') : 'LIVE';
+    const tier=Math.round(score);
     const scoreStr=`${ed.awayScore||0}–${ed.homeScore||0}`;
     // Compute period label — use periodLabel if set, else build from periodPrefix+period
     const periodLbl=ed.periodLabel||(ed.periodPrefix&&ed.period?`${ed.periodPrefix}${ed.period}`:'');
@@ -32827,7 +32816,7 @@ function renderAmbientPanel(){
     const ctxSuffix=_fc?` · ${_fc.label}`:'';
     otwHTML=`<div class="ap-otw-fire">
       <span class="ap-otw-header">One to Watch</span>
-      <span class="ap-fire-badge">🔴 FIRE — ${tierLabel}${ctxSuffix}</span>
+      <span class="ap-fire-badge">🔴 FIRE ${tier}${ctxSuffix}</span>
       <span class="ap-fire-game">${g.away||''} ${g.neutral?'vs':'@'} ${g.home||''}</span>
       <div class="ap-fire-row3">
         <span class="ap-fire-score">${scoreStr}</span>
@@ -33513,25 +33502,39 @@ async function fetchSoccerHistoricalStates(espnEventId, league) {
 }
 
 // TASK 4: Discovery + backfill loop. Fires once per app session, capped
-// at 3 games — same conservative per-session cap pattern already used
-// elsewhere in this codebase (slice(0,3) multi-league scoreboard fetch).
-// Fire-and-forget per game, never blocks app startup — same keepalive/
-// .catch(()=>{}) pattern as the existing live drama POST. source_id in
-// the POST uses the discovery response's own `id` field (its composite
-// SPORT_DATE_HOME_AWAY identifier), not espn_event_id — the discovery
-// endpoint's entire purpose is "this D1 row (keyed by source_id=id) is
-// missing drama_peak"; espn_event_id is only used to know which ESPN
-// summary endpoint to fetch for reconstruction.
+// at 20 games (raised 2026-07-02 from an original cap of 3 -- see the
+// note directly above runDramaBackfillDiscovery for why). Fire-and-forget
+// per game, staggered 250ms apart, never blocks app startup — same
+// keepalive/.catch(()=>{}) pattern as the existing live drama POST.
+// source_id in the POST uses the discovery response's own `id` field (its
+// composite SPORT_DATE_HOME_AWAY identifier), not espn_event_id — the
+// discovery endpoint's entire purpose is "this D1 row (keyed by
+// source_id=id) is missing drama_peak"; espn_event_id is only used to
+// know which ESPN summary endpoint to fetch for reconstruction.
+// Fixed 2026-07-02: cap was 3, real backlog grew 128->137 in the time this
+// shipped -- opportunistic app-open triggering at 3/session cannot keep pace
+// with real daily volume (confirmed: 17-20 new games/day on a full slate).
+// Raised to 20, matching the discovery endpoint's own max and real observed
+// daily volume, so one real app-open can realistically clear a full day's
+// backlog. NOTE: the originally-planned fix (trigger backfill at the
+// midnight-ET archive-collapse boundary) is NOT implemented here -- that
+// system does not exist yet (confirmed, not assumed) and needs real design
+// work. This is the actually-buildable fix available right now, using the
+// only real trigger that currently exists (app open).
+//
+// Added a small stagger (250ms) between fires -- at cap=3 simultaneous
+// parallel fetches were negligible; at cap=20 firing all at once is a real
+// burst pattern against ESPN worth avoiding, unlike the original code.
 async function runDramaBackfillDiscovery() {
   try {
     const relayBase = (typeof V2_RELAY_BASE !== 'undefined') ? V2_RELAY_BASE : 'https://field-relay-nba.jeffunglesbee.workers.dev';
-    const r = await fetch(`${relayBase}/archive/drama-missing?limit=3`, { signal: AbortSignal.timeout(8000) });
+    const r = await fetch(`${relayBase}/archive/drama-missing?limit=20`, { signal: AbortSignal.timeout(8000) });
     if (!r.ok) return;
     const data = await r.json();
-    const games = (data.games || []).slice(0, 3); // hard cap even if the relay ever returns more
-    for (const g of games) {
-      _backfillOneDramaGame(g).catch(() => {}); // fire-and-forget, never blocks
-    }
+    const games = (data.games || []).slice(0, 20); // hard cap even if the relay ever returns more
+    games.forEach((g, i) => {
+      setTimeout(() => { _backfillOneDramaGame(g).catch(() => {}); }, i * 250); // staggered, still fire-and-forget, never blocks
+    });
   } catch(e) {
     if (typeof FIELD_DEBUG !== 'undefined' && FIELD_DEBUG) console.log('[DRAMA-BACKFILL] discovery error:', e?.message);
   }
@@ -38624,19 +38627,19 @@ function updatePinWidget() {
   (allData?.sports||[]).forEach(s=>(s.games||[]).forEach(g=>{ if(g._id===_pinnedGameId) game=g; }));
   const home = eData?.homeScore ?? '--', away = eData?.awayScore ?? '--';
   const period = eData?.period ? `· ${eData.periodLabel||espnPeriodLabel(eData.periodPrefix||'Q',eData.period||0,'')}` : '';
-  // Fixed 2026-07-02: this used getSmoothedDrama() to pick a fire/lightning
-  // icon, and the expanded state showed a drama sparkline SVG + comeback
-  // probability -- rich, per-game live content that both (a) directly
-  // violated the "Ambient is the only floating slate-level object, no card
-  // duplicates" rule (a floating widget is not Ambient at all, but the
-  // principle -- no rich per-game detail outside a card -- applies the same
-  // way), and (b) rendered a discretized composite drama score live, the
-  // same class of issue fixed in Ambient's OTW section above. Applying the
-  // same fix here rather than a separate one: named tier only, nothing
-  // computed from a live composite score.
-  const tierName = (typeof fieldGameTier === 'function') ? fieldGameTier(_pinnedGameId) : 'LIVE';
-  const tierLabel = (typeof fieldTierLabel === 'function') ? (fieldTierLabel(tierName) || '') : '';
+  const drama = getSmoothedDrama(_pinnedGameId) ?? 0;
+  const fireIcon = drama >= Math.min(getDramaDial()+20,95) ? '🔥' : drama >= getDramaDial() ? '⚡' : '';
   const title = game ? `${teamNick(game.away)} @ ${teamNick(game.home)}` : 'Pinned Game';
+
+  let expanded = '';
+  if (_pinWidgetExpanded) {
+    const sparkline = buildDramaSparklineSVG(_pinnedGameId, 140, 24);
+    const cb = buildComebackProbability(_pinnedGameId, eData, game?._section||'');
+    const lastMoment = _storyMoments[_pinnedGameId]?.[0]?.text || '';
+    expanded = `<div class="pw-sparkline-wrap">${sparkline||''}</div>`
+      + (cb ? `<div class="pw-comeback">${cb}</div>` : '')
+      + (lastMoment ? `<div class="pw-story-latest">${lastMoment}</div>` : '');
+  }
 
   let el = document.getElementById('pin-widget');
   if (!el) {
@@ -38645,12 +38648,14 @@ function updatePinWidget() {
     el.className = 'pin-widget';
     document.body.appendChild(el);
   }
-  el.className = 'pin-widget';
+  el.className = 'pin-widget' + (_pinWidgetExpanded ? ' expanded' : '');
   el.innerHTML = `<button class="pw-close" onclick="unpinGame()" title="Unpin">×</button>
-    <div class="pw-score">${home}–${away} ${period}</div>
-    ${tierLabel ? `<div class="pw-tier">${tierLabel}</div>` : ''}
-    <div class="pw-context">${title}</div>`;
-  el.onclick = e => { if (!e.target.classList.contains('pw-close')) scrollToGame(_pinnedGameId); };
+    <div class="pw-score">${fireIcon} ${home}–${away} ${period}</div>
+    <div class="pw-context">${title}</div>${expanded}`;
+  el.onclick = e => { if (!e.target.classList.contains('pw-close')) {
+    if (_pinWidgetExpanded) { scrollToGame(_pinnedGameId); }
+    else { _pinWidgetExpanded = true; updatePinWidget(); }
+  }};
 }
 
 // ── Comeback Probability ──────────────────────────────────────────────────────
