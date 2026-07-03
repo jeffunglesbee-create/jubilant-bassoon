@@ -16846,6 +16846,17 @@ function ensureGameSocket(sport, gameId, onFacts) {
             state:       msg.state || 'in',
             isFinal:     msg.state === 'final' || msg.state === 'post',
             source:      'ws',
+            // FIXED 2026-07-03: real, confirmed gap found by checking
+            // whether today's relay-side G3/G4/G5/G6 fix actually
+            // reaches any real client surface -- it didn't. This is the
+            // only real caller of ensureGameSocket, relying on this
+            // default handler, which silently dropped these fields even
+            // though the relay now sends them and msg already has them.
+            situation:   msg.situation || null,
+            matchEvents: msg.matchEvents || null,
+            linescores:  msg.linescores || null,
+            homeAbbr:    msg.homeAbbr || null,
+            awayAbbr:    msg.awayAbbr || null,
           });
         }
       } catch(_) { /* never throw from socket handler */ }
