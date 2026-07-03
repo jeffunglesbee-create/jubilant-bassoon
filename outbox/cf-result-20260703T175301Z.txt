@@ -1,0 +1,17 @@
+=== CF API Probe [20260703T175301Z] ===
+Request: POST https://api.cloudflare.com/client/v4/graphql
+
+{
+    "data": {
+        "viewer": {
+            "accounts": [
+                {
+                    "momentumCount": [],
+                    "shotmapCount": [],
+                    "statsCount": []
+                }
+            ]
+        }
+    },
+    "errors": null
+}
