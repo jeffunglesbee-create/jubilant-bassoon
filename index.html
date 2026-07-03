@@ -16656,6 +16656,15 @@ const FIELD_V2_SOURCES = {
   eflchamp: false, eflone: false, efltwo: false,             // EFL — season ended May 25 2026
   laliga: false, seriea: false, bundesliga: false, ligue1: false,
   wc26: new Date() >= new Date('2026-06-11T00:00:00Z'), // auto-activates June 11 2026 UTC
+  // NFL/CFB — added 2026-07-03, same day the backend adapter shipped.
+  // Real follow-up caught before calling the wiring "complete": the
+  // backend serving /v2/games?sport=nfl now works, but without an entry
+  // here the client never actually calls it. Date-gated matching the
+  // wc26 pattern, using confirmed real 2026 season start dates (checked
+  // live against ESPN before choosing these, not guessed) -- avoids
+  // polling ESPN for NFL/CFB scores all year during genuine off-season.
+  nfl: new Date() >= new Date('2026-09-10T00:00:00Z'),
+  cfb: new Date() >= new Date('2026-08-29T00:00:00Z'),
 };
 // ESPN league ID → FIELD V2 sport key (belt-and-suspenders safety net in fetchESPNScores)
 const ESPN_TO_V2_MAP = {
@@ -16672,6 +16681,7 @@ const V2_PERIOD_PREFIX = {
   mls:"'", epl:"'", ucl:"'", europa:"'", conference:"'",
   eflchamp:"'", eflone:"'", efltwo:"'",
   laliga:"'", seriea:"'", bundesliga:"'", ligue1:"'", wc26:"'",
+  nfl:'Q', cfb:'Q',
 };
 async function fetchV2Games(sport, date) {
   try {
