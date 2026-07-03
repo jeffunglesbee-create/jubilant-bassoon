@@ -1,0 +1,106 @@
+=== CF API Probe [20260703T174013Z] ===
+Request: POST https://api.cloudflare.com/client/v4/graphql
+
+{
+    "data": {
+        "viewer": {
+            "accounts": [
+                {
+                    "workersInvocationsAdaptive": [
+                        {
+                            "dimensions": {
+                                "datetime": "2026-07-01T00:00:24Z"
+                            },
+                            "sum": {
+                                "errors": 0,
+                                "requests": 6
+                            }
+                        },
+                        {
+                            "dimensions": {
+                                "datetime": "2026-07-01T00:00:58Z"
+                            },
+                            "sum": {
+                                "errors": 0,
+                                "requests": 22
+                            }
+                        },
+                        {
+                            "dimensions": {
+                                "datetime": "2026-07-01T00:00:59Z"
+                            },
+                            "sum": {
+                                "errors": 0,
+                                "requests": 2
+                            }
+                        },
+                        {
+                            "dimensions": {
+                                "datetime": "2026-07-01T00:01:00Z"
+                            },
+                            "sum": {
+                                "errors": 0,
+                                "requests": 30
+                            }
+                        },
+                        {
+                            "dimensions": {
+                                "datetime": "2026-07-01T00:01:01Z"
+                            },
+                            "sum": {
+                                "errors": 0,
+                                "requests": 10
+                            }
+                        },
+                        {
+                            "dimensions": {
+                                "datetime": "2026-07-01T00:01:12Z"
+                            },
+                            "sum": {
+                                "errors": 0,
+                                "requests": 5
+                            }
+                        },
+                        {
+                            "dimensions": {
+                                "datetime": "2026-07-01T00:01:29Z"
+                            },
+                            "sum": {
+                                "errors": 0,
+                                "requests": 6
+                            }
+                        },
+                        {
+                            "dimensions": {
+                                "datetime": "2026-07-01T00:02:30Z"
+                            },
+                            "sum": {
+                                "errors": 0,
+                                "requests": 6
+                            }
+                        },
+                        {
+                            "dimensions": {
+                                "datetime": "2026-07-01T00:03:33Z"
+                            },
+                            "sum": {
+                                "errors": 0,
+                                "requests": 6
+                            }
+                        },
+                        {
+                            "dimensions": {
+                                "datetime": "2026-07-01T00:04:34Z"
+                            },
+                            "sum": {
+                                "errors": 0,
+                                "requests": 6
+                            }
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+    "errors": null
+}
