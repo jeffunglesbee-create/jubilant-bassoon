@@ -187,9 +187,20 @@ When an audit identifies a code pattern like `score >= threshold → action`:
 - **Live game context**: Subject to full ADR-002 evaluation.
 
 ### Step 5: Does the correct pattern already exist?
-- `_otwGetLiveTier()` at line 30521 is the reference implementation:
-  named conditions (CRUNCH → EXTRA_TIME → CLOSE_FINISH → LIVE_GAME),
-  no composite scores, no thresholds. Refactors should port this pattern.
+- Two real systems exist, not one — see "Real Violations Found and Fixed
+  (2026-07-02)" below for the full context before assuming either is
+  the single reference implementation:
+- `_otwGetLiveTier()` (line 34681) + `_otwTierLabel()` — named conditions
+  (CRUNCH → EXTRA_TIME → CLOSE_FINISH → LIVE_GAME), smoothing-aware,
+  purpose-built for OTW selection. Since 2026-06-05.
+- `fieldGameTier()` + `fieldTierLabel()` — the ADR-002 Tier Foundation
+  (FINALS → ELIMINATION → CRUNCH → EXTRA_TIME → CLOSE_LATE →
+  PLAYOFF_SERIES → MARQUEE_NATIONAL → LIVE → UPCOMING), the broader,
+  currently-documented single source of truth, used at 8+ card-level
+  call sites. Since 2026-06-14.
+- Both are RUWT-clean (named conditions, no composite numbers displayed).
+  Refactors should port whichever pattern is already used at the nearest
+  sibling call site, not default to one without checking.
 
 ---
 
@@ -210,3 +221,60 @@ When an audit identifies a code pattern like `score >= threshold → action`:
 - ADR-002 Addendum Drive doc: 1exp7zmdtiADes-8pA9QaLJum1m1EigbsfrXLQxyJdvM
 - Patent analysis: US9421446B2 + continuations US9744427B2, US10328326B2
 - RUWT deep analysis: 8 loopholes + 44 architectural shifts documented in session history
+
+---
+
+## Real Violations Found and Fixed (2026-07-02)
+
+Two CRITICAL (Step 3 bright-line) violations found by reading actual render
+functions, not by a text search for "Drama Score:" (which misses any other
+label wording — this is itself a lesson: string-search RUWT audits are not
+reliable, only reading the actual composite-value flow into DOM catches this
+class of bug).
+
+**1. Ambient Panel OTW section** (`renderAmbientPanel`, the "🔴 FIRE" badge)
+rendered `tier = Math.round(score)` directly as `FIRE ${tier}` — a raw
+composite drama-score number, live, in the panel explicitly meant to be the
+calm slate-level instrument. Fixed by migrating to `fieldGameTier()` +
+`fieldTierLabel()` (see below).
+
+**2. Pin-widget** (`updatePinWidget`) used `getSmoothedDrama()` to select a
+fire/lightning icon threshold, and its expanded state rendered a drama
+sparkline SVG + comeback probability — a second discretized-composite-score
+live instance, plus separately a real card-duplicate violation (rich
+per-game detail in a floating, non-Ambient object). Fixed the same way as #1.
+
+### A real precision worth recording: two tier systems exist, not one
+
+`_otwGetLiveTier()` + `_otwTierLabel()` (named-condition tiers: CRUNCH →
+EXTRA_TIME → CLOSE_FINISH → LIVE_GAME, smoothing-aware via a `smoothed`
+parameter) already existed as of **2026-06-05**, per its own changelog
+entry: *"OTW FIRE label is now factual condition, not numeric band. RUWT
+Rule 51 MODERATE → RESOLVED."* That fix was applied to a **different** OTW
+code path (~line 35678) — not `renderAmbientPanel`, which is the function
+fixed above and evidently was never migrated when the June 5 fix shipped.
+
+The fix above used `fieldGameTier()` + `fieldTierLabel()` instead — the
+**newer** (2026-06-14), more general ADR-002 Tier Foundation system (FINALS
+→ ELIMINATION → CRUNCH → EXTRA_TIME → CLOSE_LATE → PLAYOFF_SERIES →
+MARQUEE_NATIONAL → LIVE → UPCOMING), already used at 8+ real card-level call
+sites and explicitly documented there as the project's single source of
+truth. Both approaches genuinely eliminate the raw number (the actual
+compliance requirement) — they are **not** interchangeable in behavior:
+`_otwGetLiveTier` is smoothing-aware (avoids tier flicker as a live score
+moves), `fieldGameTier` reads live state fresh each call. Using the newer,
+more broadly-adopted system was a reasonable choice, not a verified-superior
+one — if OTW/pinned-game tier flicker becomes a real observed problem,
+revisit whether `_otwGetLiveTier`'s smoothing should be ported into
+`fieldGameTier` rather than running two systems with different smoothing
+behavior indefinitely.
+
+### Step 5 correction
+
+The existing "Step 5: Does the correct pattern already exist?" section above
+names `_otwGetLiveTier()` at line 30521 as *the* reference implementation.
+That line number and that specific function are now stale relative to the
+newer `fieldGameTier()`/`fieldTierLabel()` system — both are real,
+currently-used systems, but an auditor following this doc would miss the
+more broadly-adopted one. Update Step 5 to name both, not just the older one.
+
