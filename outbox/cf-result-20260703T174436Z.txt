@@ -1,0 +1,28 @@
+=== CF API Probe [20260703T174436Z] ===
+Request: GET https://api.cloudflare.com/client/v4/accounts/b57e9af57ab46c52ca9215804e689c29/workers/scripts/field-relay-nba/script-settings
+
+{
+    "result": {
+        "logpush": false,
+        "tags": null,
+        "tail_consumers": null,
+        "observability": {
+            "enabled": true,
+            "head_sampling_rate": 1,
+            "logs": {
+                "enabled": true,
+                "head_sampling_rate": 1,
+                "persist": true,
+                "invocation_logs": true
+            },
+            "traces": {
+                "enabled": false,
+                "persist": true,
+                "head_sampling_rate": 1
+            }
+        }
+    },
+    "success": true,
+    "errors": [],
+    "messages": []
+}
