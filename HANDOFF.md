@@ -1,121 +1,54 @@
 # FIELD HANDOFF
 
-## SESSION END — 2026-07-02 (session ran 2026-07-01 evening through 2026-07-02 early morning)
+## SESSION END — 2026-07-03 (chat-side review/verification session, no new features shipped by this session)
 
-**CLIENT HEAD: 41d7556** (2026-07-02 — pre-commit branch-enforcement hook ported from field-relay-nba)
-**RELAY HEAD SRC: daac637** (deployed: 4907772 — deploy_match: true, verified live via /deploy/verify 2026-07-02T13:58Z; daac637 itself deployed, main has since moved further via merges)
-**SMOKE: 823/0 client-side (last full verified run — pre-commit hook change does not affect index.html)**
-**SW_VERSION: 2026-07-02a** (index.html and sw.js confirmed in sync)
-
----
-
-## SESSION CLOSED OUT
-
-Long session, several real threads, closing deliberately rather than
-continuing to spawn follow-ups. Summary by thread, not exhaustive:
-
-**Team_form + identity foundation:** team_form CONTEXT_SOURCE shipped
-and verified live via `/journalism/context-probe` (13 real games,
-Bosnia entry correctly resolving). Found and fixed a self-inflicted
-regression: an earlier manual DB rename for identity-resolver broke
-team_form's exact-match lookup — reverted, documented as a general
-lesson (fix the resolver layer, not stored data). `resolveEntity`
-generalization (team vs player, separate stripForm algorithms) is
-written and corrected once already (diacritic handling) but **still
-not executed** — genuinely open, oldest item in the queue.
-
-**Baseball Savant / xERA pipeline (the long arc):** pitch_arsenals.json
-was silently empty every week since ~June 1 — root-caused (wide-format
-parser against Savant's real long-format CSV), fixed, AVV-proven (5th
-adapter). Surfaced that Savant pitcher xERA was never fetched at all
-(only batter-side expected_statistics). Built the generic `/savant/sync`
-reconcile endpoint (not bespoke per-field), found and fixed a real,
-general `reconcile()` bug along the way — D1's real 100-bound-parameter
-limit (not SQLite's 999), confirmed against Cloudflare's own docs,
-caught via a genuine 633-row production failure. Pipeline is now live:
-633 real pitchers in `pitcher_expected_stats`. Also fixed two other real
-bugs found in the same investigation: `getSprintSpeed`/`getRegressionAlert`
-never stripped Jr./Sr. suffixes (Bobby Witt Jr.'s data was silently
-unreachable), and replicated a genuine upstream Python quirk correctly
-rather than "fixing" it (name_key's sequential-replace bug turns
-"Player III" into "playeri" — the JS port matches this on purpose,
-since it has to match whatever key the real data generator produces).
-
-**Completion-triggered journalism:** GameDO's existing state-transition
-detection now also fires journalism generation immediately on game
-completion (not just the next cron tick), via a new
-`/journalism/game-complete` relay endpoint that builds the prompt
-(DO stays "dumb," RELAY-IS-DUMB compliant). Shipped, code-verified, but
-**never confirmed against a real live game ending** — the actual proof
-is still open.
-
-**Automated follow-up verification:** a scheduled workflow now checks
-whether the xERA pipeline and completion-triggered journalism have
-produced real evidence in `change_log`/`briefs`, and logs results to
-`codex` automatically — this is the commit sitting undeployed right now
-(`daac637`, deploy_match:false). Real code, not docs-only — worth
-confirming it actually deploys next session rather than assuming.
-
-**Branch enforcement (four real attempts, in order of increasing
-strength):** per-CC-CMD text instruction (failed twice), CLAUDE.md
-policy (failed once despite being read), a local pre-commit hook
-(works, but has a real persistence gap — `.git/hooks/pre-commit` isn't
-git-tracked, won't survive a fresh clone automatically, no reliable
-`npm install` hook exists in this repo to bootstrap it), and finally a
-CI-side auto-merge safety net (`push`-triggered, genuinely proven live
-— caught and merged a real stray branch within seconds). Found a real
-gap in that too: `[skip ci]` in a commit message (a convention used all
-session, including by chat) bypasses all push-triggered workflows,
-including this one — closed with a 30-minute scheduled sweep job,
-independent of any commit-message convention. **Note for future
-sessions:** the prior (2026-06-30) HANDOFF already documented this same
-stray-branch pattern as "inherent Claude Code session-init behavior,"
-recurring across sessions, not fully preventable by chat-side docs
-alone — tonight's CI safety net is the first fix that doesn't depend on
-CC's compliance at all, which may be the actual right level for this,
-rather than continuing to try prevention.
-
-**AVV / Baseball Savant:** now 5 proven adapters (MLB Stats API, BSD
-Soccer, Kali AFL, Odds API, Baseball Savant).
-
-**Scouting Report / At-Bat Edge:** pitch arsenal + tempo now surface in
-both the pre-game Scouting Report and the live At-Bat Edge section
-(genuinely different surfaces — one-time pre-game snapshot vs.
-live-updating per-at-bat, including reliever substitutions). Found and
-fixed two real dead-render bugs along the way (last-name vs full-name
-key mismatches) via dry-running against real data before shipping,
-extracted a shared `lastNameOf()` helper once a genuine third call site
-existed (not built speculatively).
-
-**Drama score / RUWT compliance:** manually audited — confirmed the
-raw composite score is never displayed as a number anywhere, live or
-postgame; only named tiers (`fire`/`hot`/`warm`) reach the user. Locked
-this into two smoke assertions so it doesn't require a repeat manual
-audit.
+**CLIENT HEAD: 4fe971b** (per live `get_head_sha` — this session)
+**RELAY HEAD SRC: e3d7b92** / **RELAY DEPLOYED: e3d7b92** — deploy_match: true, deployed_at 2026-07-03T23:21:14Z (per live `session_health`)
+**SMOKE: 763 assertions** (per live `get_smoke_count`, this session) — **UNRECONCILED: prior HANDOFF (2026-07-02) recorded 823/0. This is a decrease of ~60. Cause not investigated this session — do not assume either a harmless count-method change or a real loss of coverage. Needs a real diff of assertion count history before next feature work.**
+**LAST KNOWN-GOOD CI RUN: commit 68d1775, 2026-07-03T23:29–23:32Z, all green** (Smoke Test + Live Verify, Desktop Safari/Chrome Viewport Audit, Code Map L3, Deploy gate fast smoke — all success)
+**CI GAP: current HEAD (4fe971b) is a different commit than the last CI-verified commit (68d1775). No CI run has been confirmed against 4fe971b specifically as of this write. Do not assume it's covered by the 68d1775 green run — verify before treating HEAD as CI-clean.**
 
 ---
 
-## OPEN ITEMS FOR NEXT SESSION (real, current — not the stale list
-`session_health` still surfaces; several of those are already fixed
-above and the incident-tracking itself has drifted, same pattern as
-everything else tonight — worth a cleanup pass but not tonight)
+## WHAT THIS SESSION ACTUALLY DID
 
-1. **`resolveEntity`/`CANONICAL_PLAYER` generalization** — written,
-   corrected once, never executed. Oldest open item.
-2. **Confirm `daac637` actually deploys** — real code sitting
-   undeployed right now (deploy_match:false), not docs-only.
-3. **Confirm completion-triggered journalism against a real game
-   ending** — code is live, proof isn't yet.
-4. **`jubilant-bassoon`'s own pre-commit hook** — never got the same
-   branch-check addition; was out of session scope when attempted.
-5. **Incident-tracking drift** — `session_health`'s `open_incidents`
-   list contains at least 3 items already resolved tonight
-   (pitch_arsenals, pre-game slate seeding, UTC boundary gap). Worth a
-   dedicated pass, not urgent.
-6. Everything already in the 2026-06-30 handoff's priority list that
-   wasn't touched tonight (MLS club-ID identity mapping, golf Broadie
-   proxy, European club coverage, two-legged tie aggregates) — still
-   open, not re-verified this session.
+This was a verification/governance session (chat-side, FIELD Handoff MCP only — no relay-repo source access, client-repo read-only used for HANDOFF/HEAD checks). No code was written or deployed. Work was: review the open CC-CMD queue and incident list, live-verify claimed fixes against real endpoints rather than trusting codex status fields, close what was confirmed, leave open what wasn't, and catch that this very file had gone stale.
+
+**Live-verified and closed this session (incident category, status:resolved):**
+- `cf/2026-06-22/nfl-sporttov2--september-9-deadline` — confirmed via direct curl: `GET /v2/games?sport=nfl` and `?sport=cfb` both return well-formed responses (0 games today = correct, July off-season). Structural "Unknown sport" gap is closed. Recommend one more live check near Sept 10 (real in-season data) before fully trusting it.
+- `cf/2026-06-22/odds-story-materializer--cc-cmd-exists-` — confirmed via `GET /odds-story/preview?date=2026-07-02`: missingClosing:0, hasClosing:true across sampled games, one real story materialized (Mercury/Storm). Closing-odds capture path is live.
+- `cf/2026-06-22/nbaclutch--nhlseries-r2-stale` — reclassified resolved-as-expected (off-season staleness by design, not a defect; re-open only if still stale after each season's opening week).
+- `carry-forwards/june-22` — the 18-item bundle re-audited item-by-item. 7 confirmed resolved with cited evidence, 3 flagged "likely resolved but not independently re-verified this session" (WC label consistency, quality-scoring backfill, golf ESPN-summary coverage), 7 still genuinely open with zero evidence of a fix (see below). Not closed as a whole — left open, annotated.
+
+**Explicitly NOT closed (checked, evidence insufficient):**
+- `CC-CMD-2026-07-01-completion-triggered-journalism.md` — manual `POST /journalism/game-complete` returns `{ok:true}`, so the endpoint is deployed and responding. But this session had no relay-repo source access to confirm the GameDO state-transition hook actually *fires* it automatically at real game-final, vs. it only being manually callable. Marked "partially_verified," not done. **Still needs: observe a real live game ending and confirm the trigger fires without manual intervention.**
+- `cf/2026-07-03/gap-sweep-cc-cmds-written` — these are freshly-written CC-CMDs (relay field-mismatch sweep, client spec-vs-shipped sweep) queued for Claude Code to execute. Genuinely pending, nothing to verify yet.
+
+---
+
+## OPEN ITEMS FOR NEXT SESSION (verified-current as of 2026-07-03 chat review)
+
+1. **Smoke count discrepancy (823→763)** — unreconciled, see above. Check first, before anything else touches test infra.
+2. **HEAD (4fe971b) vs last CI-verified commit (68d1775)** — confirm CI has actually run clean against current HEAD.
+3. **`resolveEntity`/`CANONICAL_PLAYER`** — this file previously called this "never executed." That was stale: codex confirms it shipped and was verified live 2026-07-02 (`CC-CMD-2026-07-01-identity-resolver-generalize.md`, status DONE). No longer an open item — flagging the correction so it doesn't get resurrected again.
+4. **Completion-triggered journalism real-game confirmation** — endpoint live, auto-trigger-on-real-completion still unconfirmed (see above).
+5. **`wentToOT` hardcoded false** — D1 lacks column, needs GameDO/AmbientDO write. No evidence of fix found this session.
+6. **KV editorial keys** (`field:circadian:preview:{date}`) not consulted by newspaper endpoint. No evidence of fix found.
+7. **`session_health` phase-degradation signal gap** — no evidence of fix found.
+8. **WNBA archive gap** (1 game missing June 21) — minor, historical, unconfirmed either way.
+9. **Client-side third-place SSE speed** — still decoupled from BracketDO's 30s cooldown per original note, unconfirmed either way.
+10. **v4 voice register in relay** — unconfirmed either way; if still missing, per-game briefs still lack personality.
+11. **Prompt Observatory** — never built per last check; AI Gateway data still unread. Unconfirmed either way this session.
+12. **Gap-sweep CC-CMDs** (relay field-mismatch sweep, client spec-vs-shipped sweep) — written 2026-07-03, awaiting Claude Code execution.
+13. Everything in the 2026-06-30 handoff's priority list not touched since (MLS club-ID identity mapping, golf Broadie proxy, European club coverage, two-legged tie aggregates) — still open, not re-verified.
+
+---
+
+## CURRENT QUALITY/ANALYTICS STATE (per live `session_health`, 2026-07-03T23:50Z)
+
+- Degraded quality scoring on: game_brief (x2), game_recap (x5), mlb_game, night_owl (x2) — not investigated this session, just surfaced.
+- `night_stars` analytics phase degraded for 2026-07-02 (structural trigger flaw, per earlier-session diagnosis — not re-investigated this session).
+- All other analytics phases (field_pick, circadian_preview, truth_is, morning_report, circadian_late, streak_board, quality_feedback, quality_alert) reporting not-degraded.
 
 ---
 
@@ -126,16 +59,8 @@ everything else tonight — worth a cleanup pass but not tonight)
 - Relay: field-relay-nba.jeffunglesbee.workers.dev
 - CF account: b57e9af57ab46c52ca9215804e689c29
 - Repo: jeffunglesbee-create/jubilant-bassoon (client), field-relay-nba (relay)
-- Direct D1 access: Cloudflare Developer Platform MCP `d1_database_query`
-  — bypasses the relay's `/d1/execute` allowlist entirely, default over
-  relay-proxied access from now on (confirmed working, used heavily
-  tonight after being rediscovered mid-session — was previously known,
-  had gone unused)
+- Direct D1 access: Cloudflare Developer Platform MCP `d1_database_query` — bypasses relay's `/d1/execute` allowlist, default over relay-proxied access.
 
-SESSION END DECLARED: RELAY SRC daac637 (deployed 8c63457, deploy match
-pending) · CLIENT 5d1d803 · 2026-07-02 · Smoke 823/0 (last full run) ·
-via chat. Closing deliberately here rather than continuing the
-follow-up chain — several real threads finished end-to-end tonight
-(team_form, xERA pipeline, completion-triggered journalism, branch
-safety net), several genuinely remain open and are listed above rather
-than chased further this session.
+---
+
+SESSION END DECLARED: CLIENT HEAD 4fe971b (live) · RELAY e3d7b92 deployed, deploy_match true · Smoke 763 (unreconciled vs. prior 823) · via chat, FIELD Handoff MCP only, no relay-repo source access this session. This session did governance/verification work only (incident cleanup, doc-staleness fix) — no features shipped, no code touched.
