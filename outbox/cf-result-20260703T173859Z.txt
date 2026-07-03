@@ -1,0 +1,370 @@
+=== CF API Probe [20260703T173859Z] ===
+Request: GET https://api.cloudflare.com/client/v4/accounts/b57e9af57ab46c52ca9215804e689c29/workers/scripts
+
+{
+    "result": [
+        {
+            "created_on": "2026-05-15T16:24:58.246089Z",
+            "modified_on": "2026-07-03T17:22:49.253391Z",
+            "id": "field-claude-proxy",
+            "tag": "00cc7cbc858f47d38493363539443070",
+            "tags": [],
+            "deployment_id": "",
+            "tail_consumers": null,
+            "logpush": false,
+            "has_assets": false,
+            "has_modules": true,
+            "etag": "fb27ac52d87719010263d8dd141d7bd48a49b14136b156f7cde8c2b5578ff77c",
+            "handlers": [
+                "fetch"
+            ],
+            "last_deployed_from": "wrangler",
+            "compatibility_date": "2026-05-18",
+            "usage_model": "standard",
+            "routes": null
+        },
+        {
+            "created_on": "2026-05-16T18:55:08.58953Z",
+            "modified_on": "2026-07-03T17:22:44.994533Z",
+            "id": "field-deploy",
+            "tag": "fd2d728344ec4da2bdb10f3b43fcd63a",
+            "tags": [],
+            "deployment_id": "",
+            "tail_consumers": null,
+            "logpush": false,
+            "has_assets": false,
+            "has_modules": true,
+            "etag": "a26573369c9a5e6566e2ea5acbd40e0b980a1aa9f535f5a2f75a1e3c52ee9f15",
+            "handlers": [
+                "fetch"
+            ],
+            "last_deployed_from": "wrangler",
+            "compatibility_date": "2026-05-18",
+            "usage_model": "standard",
+            "routes": null
+        },
+        {
+            "created_on": "2026-05-16T17:58:58.213975Z",
+            "modified_on": "2026-05-16T17:58:58.961624Z",
+            "id": "field-proxy-nba",
+            "tag": "b163c5d7f0344759bb0c08ed51908abc",
+            "tags": null,
+            "deployment_id": "",
+            "tail_consumers": null,
+            "logpush": false,
+            "observability": {
+                "enabled": true,
+                "head_sampling_rate": 1,
+                "logs": {
+                    "enabled": true,
+                    "head_sampling_rate": 1,
+                    "persist": true,
+                    "invocation_logs": true
+                },
+                "traces": {
+                    "enabled": false,
+                    "persist": true,
+                    "head_sampling_rate": 1
+                }
+            },
+            "has_assets": false,
+            "has_modules": true,
+            "etag": "153bb77414ad50f2a4541a22e9fe18504a8e68c224957b7bc0be2e4c69785d80",
+            "handlers": [
+                "fetch"
+            ],
+            "last_deployed_from": "dash_template",
+            "compatibility_date": "2026-05-16",
+            "usage_model": "standard",
+            "routes": null
+        },
+        {
+            "created_on": "2026-05-17T02:23:04.278077Z",
+            "modified_on": "2026-07-03T17:22:37.251053Z",
+            "id": "field-relay-nba",
+            "tag": "c7873a6cf1574489a9755ed8da702a71",
+            "tags": [],
+            "deployment_id": "",
+            "tail_consumers": null,
+            "logpush": false,
+            "has_assets": false,
+            "has_modules": true,
+            "etag": "01215cfc96dd7c3a62e7940e934e927d418add1152423b2b1e6f51da0ace9047",
+            "handlers": [
+                "scheduled",
+                "fetch",
+                "queue"
+            ],
+            "named_handlers": [
+                {
+                    "name": "AmbientDO",
+                    "handlers": [
+                        "class"
+                    ]
+                },
+                {
+                    "name": "BracketDO",
+                    "handlers": [
+                        "class"
+                    ]
+                },
+                {
+                    "name": "BrowserDO",
+                    "handlers": [
+                        "class"
+                    ]
+                },
+                {
+                    "name": "GameDO",
+                    "handlers": [
+                        "class"
+                    ]
+                },
+                {
+                    "name": "UserDO",
+                    "handlers": [
+                        "class"
+                    ]
+                }
+            ],
+            "last_deployed_from": "wrangler",
+            "migration_tag": "v5-browser-do",
+            "compatibility_date": "2026-06-22",
+            "compatibility_flags": [
+                "global_fetch_strictly_public",
+                "nodejs_compat_v2"
+            ],
+            "usage_model": "standard",
+            "limits": {
+                "cpu_ms": 300000,
+                "subrequests": 100000
+            },
+            "routes": null
+        },
+        {
+            "created_on": "2026-06-26T18:44:35.600228Z",
+            "modified_on": "2026-06-29T10:11:24.825617Z",
+            "id": "health-protocol",
+            "tag": "f6979b1cbdbf49a0904b70a203639c00",
+            "tags": [],
+            "deployment_id": "",
+            "tail_consumers": null,
+            "logpush": false,
+            "has_assets": false,
+            "has_modules": true,
+            "etag": "946810a1c9103d7ce1f04d09a5cbaff7b393c5fb7ccf804acba3db833ea72fab",
+            "handlers": [
+                "fetch"
+            ],
+            "last_deployed_from": "wrangler",
+            "compatibility_date": "2026-06-26",
+            "usage_model": "standard",
+            "routes": null
+        },
+        {
+            "created_on": "2026-05-14T10:42:23.832069Z",
+            "modified_on": "2026-07-03T17:11:47.530665Z",
+            "id": "jubilant-bassoon",
+            "tag": "779aef2a55144dac87a7ecf6a087f52c",
+            "tags": [],
+            "deployment_id": "",
+            "tail_consumers": null,
+            "logpush": false,
+            "has_assets": true,
+            "has_modules": false,
+            "etag": "",
+            "handlers": [
+                "fetch"
+            ],
+            "last_deployed_from": "",
+            "compatibility_date": "2026-05-23",
+            "compatibility_flags": [
+                "nodejs_compat"
+            ],
+            "usage_model": "standard",
+            "routes": null
+        },
+        {
+            "created_on": "2026-05-14T05:09:12.718188Z",
+            "modified_on": "2026-05-14T05:09:18.13591Z",
+            "id": "misty-dream-c3f6",
+            "tag": "f6108854f67c4339b55ab6793865d651",
+            "tags": null,
+            "deployment_id": "",
+            "tail_consumers": null,
+            "logpush": false,
+            "has_assets": true,
+            "has_modules": false,
+            "etag": "",
+            "handlers": [
+                "fetch"
+            ],
+            "last_deployed_from": "",
+            "compatibility_date": "2026-05-14",
+            "usage_model": "standard",
+            "routes": null
+        },
+        {
+            "created_on": "2026-06-06T06:35:20.727535Z",
+            "modified_on": "2026-06-23T19:20:49.317433Z",
+            "id": "stat-job-watcher",
+            "tag": "e02b616b5ce242c2a36eece1eb315423",
+            "tags": [],
+            "deployment_id": "",
+            "tail_consumers": null,
+            "logpush": false,
+            "has_assets": false,
+            "has_modules": true,
+            "etag": "8fb618fc17377006ccd85c39bebd7bf34754890b48b550335a51145fc34a0438",
+            "handlers": [
+                "scheduled",
+                "fetch"
+            ],
+            "named_handlers": [
+                {
+                    "name": "AshbyDO",
+                    "handlers": [
+                        "class"
+                    ]
+                },
+                {
+                    "name": "BatchPollerDO",
+                    "handlers": [
+                        "class"
+                    ]
+                },
+                {
+                    "name": "GreenhouseDO",
+                    "handlers": [
+                        "class"
+                    ]
+                },
+                {
+                    "name": "IcimsDO",
+                    "handlers": [
+                        "class"
+                    ]
+                },
+                {
+                    "name": "InforHcmDO",
+                    "handlers": [
+                        "class"
+                    ]
+                },
+                {
+                    "name": "LeverDO",
+                    "handlers": [
+                        "class"
+                    ]
+                },
+                {
+                    "name": "OracleHcmDO",
+                    "handlers": [
+                        "class"
+                    ]
+                },
+                {
+                    "name": "SalaryInferenceDO",
+                    "handlers": [
+                        "class"
+                    ]
+                },
+                {
+                    "name": "SelectMindsDO",
+                    "handlers": [
+                        "class"
+                    ]
+                },
+                {
+                    "name": "StateStoreDO",
+                    "handlers": [
+                        "class"
+                    ]
+                },
+                {
+                    "name": "SuccessFactorsDO",
+                    "handlers": [
+                        "class"
+                    ]
+                },
+                {
+                    "name": "TaleoDO",
+                    "handlers": [
+                        "class"
+                    ]
+                },
+                {
+                    "name": "WorkdayDO",
+                    "handlers": [
+                        "class"
+                    ]
+                },
+                {
+                    "name": "bootstrapDOs",
+                    "handlers": [
+                        "class"
+                    ]
+                },
+                {
+                    "name": "cleanDesc",
+                    "handlers": [
+                        "class"
+                    ]
+                },
+                {
+                    "name": "detectAts",
+                    "handlers": [
+                        "class"
+                    ]
+                },
+                {
+                    "name": "fetchResumeFromOneDrive",
+                    "handlers": [
+                        "class"
+                    ]
+                },
+                {
+                    "name": "generateAndStoreKeywords",
+                    "handlers": [
+                        "class"
+                    ]
+                },
+                {
+                    "name": "matchesEpicTerms",
+                    "handlers": [
+                        "class"
+                    ]
+                },
+                {
+                    "name": "parseCSVRow",
+                    "handlers": [
+                        "class"
+                    ]
+                },
+                {
+                    "name": "runHiringCafeScrape",
+                    "handlers": [
+                        "class"
+                    ]
+                },
+                {
+                    "name": "splitCSVRows",
+                    "handlers": [
+                        "class"
+                    ]
+                }
+            ],
+            "last_deployed_from": "wrangler",
+            "migration_tag": "v7",
+            "compatibility_date": "2025-09-15",
+            "compatibility_flags": [
+                "nodejs_compat"
+            ],
+            "usage_model": "standard",
+            "routes": null
+        }
+    ],
+    "success": true,
+    "errors": [],
+    "messages": []
+}
