@@ -139,32 +139,62 @@ jobs:
           echo "earliest=${EARLIEST:-}" >> $GITHUB_OUTPUT
           echo "games_json=$GAMES" >> $GITHUB_OUTPUT
 
-      - name: Fetch WNBA schedule
+      - name: Fetch WNBA schedule via ESPN
         id: wnba
         run: |
-          # KNOWN GAP (May 23 2026): todaysScoreboard_00.json is the NBA-only CDN file.
-          # Appending ?leagueId=10 to a static JSON URL is inert — the relay returned
-          # NBA data, which surfaced the NBA game inside the WNBA slot of the brief.
-          # Until a verified WNBA feed is wired (WNBA CDN / stats endpoint via relay),
-          # emit an explicit empty slate rather than publish NBA data as WNBA.
-          # TODO: wire a real WNBA source, then restore a fetch + filter here.
-          echo "count=0" >> $GITHUB_OUTPUT
-          echo "earliest=" >> $GITHUB_OUTPUT
-          echo "games_json=[]" >> $GITHUB_OUTPUT
+          # Fixed 2026-07-03: was a hardcoded empty stub since 2026-05-23
+          # (NBA CDN's todaysScoreboard_00.json is NBA-only; a leagueId param
+          # on that static file is inert). Confirmed a real, working
+          # alternative before wiring it: site.api.espn.com's WNBA
+          # scoreboard is public/CORS-open (same category as the ATP tennis
+          # fetch below, no relay needed) and returned 3 real live games
+          # when checked. Excludes completed games via the real
+          # `completed` status field, same pattern as the NBA step above.
+          DATA=$(curl -sf --max-time 10 \
+            "https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/scoreboard" \
+            || echo '{}')
+          echo "$DATA" > /tmp/wnba.json
+          COUNT=$(jq '[.events[]? | select(.competitions[0].status.type.completed != true)] | length' /tmp/wnba.json 2>/dev/null || echo 0)
+          EARLIEST=$(jq -r '[.events[]? | select(.competitions[0].status.type.completed != true) | .date] | sort | .[0] // empty' /tmp/wnba.json 2>/dev/null)
+          GAMES=$(jq -c '[.events[]? | select(.competitions[0].status.type.completed != true) | {
+            away: (.competitions[0].competitors[] | select(.homeAway=="away") | .team.displayName),
+            home: (.competitions[0].competitors[] | select(.homeAway=="home") | .team.displayName),
+            time: (.date | split("T")[1] | split(":")[0:2] | join(":"))
+          }]' /tmp/wnba.json 2>/dev/null || echo '[]')
+          echo "count=$COUNT" >> $GITHUB_OUTPUT
+          echo "earliest=${EARLIEST:-}" >> $GITHUB_OUTPUT
+          echo "games_json=$GAMES" >> $GITHUB_OUTPUT
 
       - name: Fetch AFL schedule via Squiggle
         id: afl
         run: |
           RELAY="https://field-relay-nba.jeffunglesbee.workers.dev"
-          # Squiggle: free, CORS-open, no auth. Via relay for consistency + caching.
-          # Etiquette: identify FIELD traffic with User-Agent header.
-          # NOTE: complete=0 only returns unstarted games. AFL games that have kicked off
-          # (complete>0) are invisible. Query by round instead — same fix as index.html.
+          # Fixed 2026-07-03: was hardcoded to round=11 (real current round,
+          # confirmed live, is 17 -- had been stale for weeks, silently
+          # returning empty/wrong AFL data every day). First attempt at this
+          # fix queried complete=0 directly -- caught before shipping that
+          # this reintroduces the EXACT bug the round-based design was
+          # already built to avoid (the comment removed below: "complete=0
+          # only returns unstarted games... query by round instead"). The
+          # real fix derives the round dynamically instead of hardcoding it:
+          # fetch the full season once (only 216 games total, one request),
+          # find the round containing games within +/-4 days of today
+          # (regardless of completion status), then filter to that round.
+          # Squiggle: free, CORS-open, no auth. Via relay for consistency +
+          # caching. Etiquette: identify FIELD traffic with User-Agent header.
           DATA=$(curl -sf --max-time 10 \
             -H "User-Agent: FIELD-Global-Sports-Intelligence" \
-            "$RELAY/squiggle/?q=games;year=2026;round=11" \
+            "$RELAY/squiggle/?q=games;year=2026" \
             || echo '{"games":[]}')
-          echo "$DATA" > /tmp/afl.json
+          echo "$DATA" > /tmp/afl_full.json
+          NOW=$(date -u +%s)
+          WSTART=$((NOW - 4*86400))
+          WEND=$((NOW + 4*86400))
+          CURRENT_ROUND=$(jq --argjson ws "$WSTART" --argjson we "$WEND" \
+            '[.games[] | select((.unixtime // -1) >= $ws and (.unixtime // -1) <= $we) | .round] | first // empty' \
+            /tmp/afl_full.json 2>/dev/null)
+          jq --argjson r "${CURRENT_ROUND:-null}" '{games: [.games[] | select(.round == $r)]}' \
+            /tmp/afl_full.json > /tmp/afl.json 2>/dev/null || echo '{"games":[]}' > /tmp/afl.json
           # Squiggle field notes (verified May 23 2026 against live API):
           #   date      — "YYYY-MM-DD HH:MM:SS" in AEST (UTC+10), NOT UTC.
           #               Comparing .date against a UTC date string is wrong by ~10h —
