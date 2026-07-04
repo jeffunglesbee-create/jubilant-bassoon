@@ -265,7 +265,6 @@ DO NOT:
 
 ## ONE-LINER
 git pull. Read docs/CC-CMD-2026-07-04-soccer-drama-scoring-fix.md. Find
-git pull. Read docs/CC-CMD-2026-07-04-soccer-drama-scoring-fix.md. Find
 a real extra-time WC26 game and confirm its period values BEFORE
 writing TASK 1 — do not hardcode period>=3 on assumption alone. TASK 4
 is explicitly deferred — do not implement it, do not attempt to find an
