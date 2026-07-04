@@ -21668,9 +21668,14 @@ function renderNewspaper(bundle) {
     parts.push(`<div class="np-section np-stars"><span class="np-stars-glyphs">${filled}${empty}</span><span class="np-stars-label">Last night was ${label}</span>${s.degraded ? '<span class="np-degraded">(limited data)</span>' : ''}</div>`);
   }
 
-  // 3. Morning Report
-  if (bundle.morning_report) {
-    parts.push(`<div class="np-section np-report"><div class="np-label">THE MORNING REPORT</div><p class="np-prose">${bundle.morning_report}</p></div>`);
+  // 3. Morning Report (prefers bundle.late when present -- verified
+  // 2026-07-04 to contain the same content as morning_report, sourced
+  // from Phase 10B's copy of it. Merged into one section rather than
+  // two to avoid showing the identical paragraph twice. See this
+  // CC-CMD's own header note if the two fields ever diverge in content.
+  const morningText = bundle.late || bundle.morning_report;
+  if (morningText) {
+    parts.push(`<div class="np-section np-report"><div class="np-label">THE MORNING REPORT</div><p class="np-prose">${morningText}</p></div>`);
   }
 
   // 4. Truth Is
@@ -23185,7 +23190,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-07-04h';
+  const SW_VERSION = '2026-07-04i';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)

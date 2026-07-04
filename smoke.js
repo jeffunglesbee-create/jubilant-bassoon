@@ -6199,5 +6199,14 @@ assert('A-NPVOICE-2 — an all-LATE slate (no live/finals/upcoming) resolves to 
   !!html.match(/if \(late > 0\) return 'recap';\s*\n\s*return 'morning';/),
   'getNewspaperVoice must check "if (late > 0) return \'recap\';" immediately before the final "return \'morning\';" fallback — a slate where every game has crossed the 120-minute freshness window (all LATE, none live/recently-finished/upcoming) means everything already happened, not that nothing has started yet, so it must not get the morning show-everything treatment.');
 
+// ── Newspaper late-section merge (A-NPLATE — CC-CMD-2026-07-04-newspaper-late-section-render) ──
+assert('A-NPLATE-1 — newspaper prefers bundle.late over morning_report without duplicating content',
+  !!html.match(/const morningText = bundle\.late \|\| bundle\.morning_report;/),
+  'renderNewspaper must build one prose block that prefers bundle.late, falling back to bundle.morning_report — the two fields are confirmed to carry the same content (Phase 10B copies morning_report into late), so rendering them as two separate sections would show the identical paragraph twice.');
+
+assert('A-NPLATE-2 — no separate np-late section was added',
+  !(/np-section np-late/.test(html)),
+  'renderNewspaper must not add a second, separate ".np-section np-late" block anywhere — that would recreate the exact duplication bug this CC-CMD exists to prevent. bundle.late must be merged into the existing .np-report section only.');
+
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);
