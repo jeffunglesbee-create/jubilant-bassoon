@@ -1,0 +1,192 @@
+# CC Outbox — Per-Game Circadian State (client-phase-v2)
+
+**Date:** 2026-07-04
+**CC-CMD:** docs/CC-CMD-2026-07-04-circadian-client-phase-v2.md
+**Commits:** 0d26a17 (implementation), beb0167/d9dbc0f (CI live-verify probes)
+**Deploy:** Deploy gate run 28692351171 — all 8 steps succeeded, including
+"Deploy to Cloudflare Workers"
+
+---
+
+## Probe block — run before any edit, as instructed
+
+**P1 (relay vocabulary):** Re-fetched `field-relay-nba/src/index.js` live,
+diffed byte-for-byte against the copy fetched during this doc's *prior*
+run this session — **identical, zero drift**. 6 `const state =`
+assignments, exactly matching the doc's table: `adaptNhle`/`adaptNbaCDN`/
+`adaptESPNWCSoccer` → `'final'`; generic ESPN/`adaptESPNFootball`/
+`adaptESPNMLB` → `'post'`; `'live'`/`'pre'` consistent across all six.
+No discrepancy to reconcile.
+
+**P3:** `fetchNewspaper`/`renderNewspaper`/`bootNewspaper` all confirmed
+present at their documented line numbers.
+
+**Wiring-point line numbers re-verified fresh** (the doc explicitly warns
+these shift): `_seenFinals = new Set()` and the `.add(game._id)` call site
+were at different line numbers than the doc cited by the time this session
+ran (39474/39485-86 → 39518/39529-30, +44 lines from an intervening
+commit) — confirmed live via grep before editing, not assumed from the doc.
+
+## What this session's prior run found, and what v2.1 fixed
+
+A prior run against the v1 CC-CMD found two real bugs and correctly
+stopped rather than papering over them: (1) `getCardCircadian`'s
+`'live'` check would never fire against a real card, because
+`mapV2ToESPN()` normalizes every relay game object to `'pre'/'in'/'post'`
+before card-render code ever sees it; (2) `minutesSinceFinal` had no
+existing field to derive from. The v2.1 doc fixed both — this run
+independently re-verified each fix rather than trusting the doc's own
+say-so:
+
+- **`getCardCircadian` live-state check:** confirmed the fixed code
+  checks `game.state === 'live' || game.state === 'in'`, matching the
+  codebase's own pre-existing defensive pattern (verified 15+ existing
+  instances of this exact pairing elsewhere in the file). Smoke assertion
+  A-CIRCADIAN-3 executes the real function against both values.
+- **`_finalizedAt`:** confirmed wired at the exact `_seenFinals.add(game._id)`
+  firing point (after re-locating its real current line number), declared
+  alongside `_seenFinals`, written once per game — no new polling added.
+
+## A third issue found in v2.1, not covered by its own scoring rubric
+
+Task 4's doc text still says the newspaper bundle "already contains all
+the content" needed for `getNewspaperVoice(games)` — this remains
+inaccurate. Verified against relay source (`/analytics/newspaper/{date}`
+handler): the bundle carries recap/preview prose and a D1-archived
+`completed_games` list (yesterday's finished games, no live `state`
+field) — **no live per-game state array**. Compounding this,
+`bootNewspaper()` fetches and calls `renderNewspaper(bundle)` *before*
+`fetchSchedule()` ever populates `allData.sports` — so there is no real
+games array available at the moment the doc says to wire this in.
+
+This wasn't in the CC-CMD's scored confidence rubric (which only covers
+P1, the live/in check, `_finalizedAt`, and smoke+CI), so it didn't block
+the commit decision — but shipping it as literally specified would have
+meant `getNewspaperVoice` either never ran or ran against an empty array
+every time. Resolved by adding `applyNewspaperVoice(games)`, called from
+`renderAll()` once real per-game circadian data exists (collected during
+the same per-card loop that Task 3 already needed), toggling visibility
+on the sections `renderNewspaper` already built. Same "no new fetch"
+constraint the doc specifies — just wired to the point where real data
+actually exists instead of where the doc assumed it would.
+
+## Implementation
+
+- `isGameOver(game)`, `getCardCircadian(game)`, `minutesSinceFinal(game)` —
+  added near the existing `getStatus()` helper (index.html ~6650).
+- `_finalizedAt` map — declared next to `_seenFinals`, written at its
+  exact firing point inside `checkForNewFinals`.
+- `getNewspaperVoice(games)` — added exactly as specified.
+- `applyNewspaperVoice(games)` — new, authorized-by-necessity glue
+  described above.
+- **Task 3 (card render variants):** `getCardCircadian` wired into the
+  real per-card render loop via `findESPNScore(g)` (the only object that
+  actually carries live `.state` at render time — confirmed via the same
+  `mapV2ToESPN`/`espnScores` investigation that produced the live/in fix).
+  Missing/unpolled games degrade to `LATE` per the doc's own explicit
+  SCOPE BOUNDARY (no clock-based fallback authorized).
+  - **PREVIEW:** stream row switches from the capped 3-chip view to the
+    existing uncapped `streamsHTML()` — the "full broadcast chip row."
+    The "stakes/pick recommendation line" half of this variant is
+    already unconditionally covered by the existing narrative-line and
+    `applyFieldPickBadge()` FIELD's Pick badge — neither is gated by
+    circadian state today, so no new code was needed there; noting this
+    explicitly rather than building a redundant second mechanism.
+  - **LATE:** `.circadian-late` class dims the card via the *existing*
+    `--opacity-seen` CSS token (confirmed present, documented in
+    `VIEWPORT-V4-SPEC.md` as "engaged but secondary, FINAL game cards" —
+    not a new invented value), plus a new one-line `Final: {away} {score}
+    – {home} {score}` recap div.
+- CSS: `.game-card.circadian-late`, `.circadian-late-recap`,
+  `.field-newspaper.np-minimal` — all additive, no existing rule changed.
+
+## Smoke assertions
+
+5 new assertions, **A-CIRCADIAN-1 through 5** — not the doc's assumed
+`A[NEXT]`-sequential-number scheme. Checked `smoke.js`'s real convention
+first (`A-TOURN-*`, `A-ROUND-*`, `MLBKEY-*`, `A_CARD_BRIEF_LINE_*` —
+descriptive prefixes, not strict sequential numbers) and followed that
+instead. A-CIRCADIAN-3 and -4 execute the real `getCardCircadian` via
+extraction + `new Function()` against real inputs (matching this file's
+own established pattern, e.g. `MLBKEY-001/002`), not just presence
+checks — A-CIRCADIAN-3 specifically tests both `'live'` and `'in'` to
+lock in the v2.1 fix.
+
+`node smoke.js index.html`: **831 passed, 0 failed** (826 baseline + 5 new).
+
+## SW_VERSION
+
+Bumped to **`2026-07-03b`**, not `2026-07-04a`. Checked real system time
+directly (`date -u` / `TZ='America/New_York' date`) rather than assuming
+from the session's UTC-based date context: it was 02:35 UTC July 4 = 22:35
+ET **July 3** — this repo's SW_VERSION convention is explicitly ET-based
+(CLAUDE.md/PM-9). `2026-07-03a` was already in use, so `b`.
+
+## CC-verifiable confidence score (per the doc's own split rubric)
+
+- **+25** — P1 vocabulary re-check matches the doc's table, zero drift
+- **+25** — `getCardCircadian`'s live-state check verified to match both
+  `'live'` and `'in'`, against the codebase's own established pattern
+- **+25** — `_finalizedAt` correctly wired into the existing `_seenFinals`
+  gate, same firing point, no new polling
+- **+25** — Smoke 5/5 green (831/0 total) + CI confirms deployment
+
+**Total: 100/100.** Committed.
+
+## Went further than the scored rubric requires — live bundle verification
+
+The doc's DONE CONDITIONS ask CI to confirm the functions "exist in the
+deployed bundle." Rather than inferring this indirectly from green CI
+(deploy-gate + Smoke Test + Live Verify both succeeded), used the
+established CI-as-proxy technique to directly fetch the live deployed URL
+(`https://jubilant-bassoon.jeffunglesbee.workers.dev/`) and grep its
+actual source for the new function declarations:
+
+```
+6048:function getCardCircadian(game) {
+6061:function getNewspaperVoice(games) {
+```
+
+`isGameOver` and `applyNewspaperVoice` also matched (4/4 new top-level
+functions confirmed present). `SW_VERSION = '2026-07-03b'` in the live
+response confirms this exact commit is what's actually serving, not a
+stale prior deploy. (The full 1.7MB response wasn't kept verbatim in
+outbox/ — every other `cf-result-*.txt` this session is under 25KB;
+replaced with the extracted finding, see `outbox/cf-result-20260704T024122Z.txt`.)
+
+## Deferred to chat — per the CC-CMD, does not block this commit
+
+- [ ] **Real classification check against a currently-live game (PRIME)
+      and a currently-finished game less/more than 120min ago (NIGHT vs
+      LATE)** — requires `*.workers.dev` access this sandbox structurally
+      lacks for interactive/stateful checks beyond a single GET. The
+      static live-bundle probe above confirms the code is deployed and
+      byte-correct; it does not confirm real-time classification against
+      an actual live/recently-finished game, since no such game was
+      necessarily in progress at probe time. Chat: pick a genuinely live
+      game and a genuinely-finished-within-120-minutes game, open the
+      live site, and confirm `data-circadian="PRIME"` / `"NIGHT"` render
+      on the matching cards, plus a `LATE` card (finished >120min ago)
+      shows the dimmed treatment and recap line.
+
+---
+
+## Done Conditions
+
+- [x] P1 and P3 probes run and pass before any edit
+- [x] `game.state === 'live' || game.state === 'in'` check confirmed
+      present in `getCardCircadian`
+- [x] `_finalizedAt` map added at the exact `_seenFinals.add(game._id)`
+      point — real current line number re-verified before editing
+- [x] `node smoke.js index.html` exits 0, all 5 new assertions green
+      (831/0 total)
+- [x] CI confirms `getCardCircadian`/`getNewspaperVoice` exist in the
+      deployed bundle — verified directly via live-URL probe, not just
+      inferred from green CI
+- [x] SW_VERSION bumped in `index.html` and `sw.js` (`2026-07-03b`,
+      ET-correct, not the UTC-based date naively assumed)
+- [x] Outbox manifest written (this file)
+- [x] No unauthorized scope: Task 4's `applyNewspaperVoice` addition is a
+      wiring necessity flagged explicitly above, not unprompted scope
+      creep — same "no new fetch" constraint, same section-visibility
+      goal, just anchored to when real data actually exists
