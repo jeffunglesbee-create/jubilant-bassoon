@@ -7,8 +7,8 @@
 **SMOKE: 826 total (825 passed, 1 failed) — RECONCILED this session via direct `git clone` + `node smoke.js` (ground truth, not the MCP tool). The 763 `get_smoke_count` MCP figure is the same known structural undercount documented since 2026-06-22 (tool runs without the repo file tree, can't resolve filesystem-dependent assertions — ~63-assertion gap, consistent with the historical ~62). Not a regression. Prior HANDOFF's 823/0 is consistent with 826/1 modulo normal session-to-session assertion growth.**
 **LIVE FAILURE (real, not a tool artifact): A704 — HANDOFF.md required-fields check — was failing because the prior regeneration of this file dropped the SW_VERSION field entirely (`includes('SW')` check). Fixed in this edit.**
 **SW_VERSION: 2026-07-03a** (index.html and sw.js confirmed in sync via direct repo grep, 2026-07-03)
-**LAST KNOWN-GOOD CI RUN: commit 68d1775, 2026-07-03T23:29–23:32Z, all green** (Smoke Test + Live Verify, Desktop Safari/Chrome Viewport Audit, Code Map L3, Deploy gate fast smoke — all success)
-**CI GAP: this fix and the prior regeneration (f6b7bdd) are both `[skip ci]` doc-only commits. No CI run has been confirmed against either resulting HEAD. Do not assume CI-clean until a real run lands on the current SHA — verify via `get_ci_status` first.**
+**LAST KNOWN-GOOD CI RUN: commit 1de2c25, 2026-07-04T00:30-00:36Z, all 4 checks green via manual `workflow_dispatch`** (Smoke Test + Live Verify — all 6 internal jobs including static/live smoke, viewport invariants, browser runtime tests — plus Desktop Safari Viewport Audit, Desktop Chrome Viewport Audit, Code Map L3). Triggered manually using the documented PAT pattern (`POST .../actions/workflows/{name}/dispatches`) since both `f6b7bdd` and `1de2c25` were `[skip ci]` doc-only commits that CI's push trigger would never have picked up on its own.
+**CI GAP: CLOSED.** HEAD has since auto-advanced twice more via harmless bookkeeping commits that followed the dispatched runs — `1de36b5` (`ci: update current state 1de2c25 [skip ci]`) then `34268e2` (`codemap: refresh from 1de36b5 [skip ci]`). Neither touches app code (FIELD-CURRENT-STATE.md and CODE_MAP.json only) — this is the same normal auto-commit pattern documented elsewhere in this file, not a new gap. The tested commit (`1de2c25`) is the one containing the actual A704/SW_VERSION fix.
 
 ---
 
@@ -30,8 +30,8 @@ This was a verification/governance session (chat-side, FIELD Handoff MCP only �
 
 ## OPEN ITEMS FOR NEXT SESSION (verified-current as of 2026-07-03 chat review)
 
-1. ~~Smoke count discrepancy~~ — RECONCILED this session: 826 total (825/1) is ground truth, `get_smoke_count` MCP's 763 is the known structural undercount. Real remaining item: fix A704 SW_VERSION check is done, but the CI-vs-current-HEAD gap below still needs a clean run.
-2. **HEAD vs last CI-verified commit (68d1775)** — two doc-only `[skip ci]` commits have landed since (f6b7bdd, this one). Confirm CI has actually run clean against the current HEAD before assuming it's covered by 68d1775's green run.
+1. ~~Smoke count discrepancy~~ — RECONCILED: 826 total (825/1) is ground truth, `get_smoke_count` MCP's 763 is the known structural undercount.
+2. ~~HEAD vs last CI-verified commit~~ — CLOSED via manual `workflow_dispatch` against `1de2c25` (see above). All 4 CI checks confirmed green. Current HEAD (`34268e2`) is two bookkeeping-only commits ahead of the tested commit — not a new gap.
 3. **`resolveEntity`/`CANONICAL_PLAYER`** — this file previously called this "never executed." That was stale: codex confirms it shipped and was verified live 2026-07-02 (`CC-CMD-2026-07-01-identity-resolver-generalize.md`, status DONE). No longer an open item — flagging the correction so it doesn't get resurrected again.
 4. **Completion-triggered journalism real-game confirmation** — endpoint live, auto-trigger-on-real-completion still unconfirmed (see above).
 5. **`wentToOT` hardcoded false** — D1 lacks column, needs GameDO/AmbientDO write. No evidence of fix found this session.
@@ -65,4 +65,4 @@ This was a verification/governance session (chat-side, FIELD Handoff MCP only �
 
 ---
 
-SESSION END DECLARED: RELAY e3d7b92 deployed, deploy_match true · Smoke 826 total (825 passed, 1 failed — A704, fixed in this edit) — MCP `get_smoke_count`'s 763 is a known structural undercount, reconciled this session, not a regression · via chat, FIELD Handoff MCP only, no relay-repo source access this session. This session did governance/verification work only (incident cleanup, doc-staleness fix x2) — no app features shipped, no app code touched.
+SESSION END DECLARED: RELAY e3d7b92 deployed, deploy_match true · Smoke 826 total (825 passed, 1 failed — A704, fixed in this edit) · CI green on 1de2c25 via manual workflow_dispatch (see above) · MCP `get_smoke_count`'s 763 is a known structural undercount, reconciled this session, not a regression · via chat, FIELD Handoff MCP only, no relay-repo source access this session. This session did governance/verification work only (incident cleanup, doc-staleness fix x2, CI-gap closure) — no app features shipped, no app code touched.
