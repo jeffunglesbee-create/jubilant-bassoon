@@ -22,12 +22,18 @@ jobs:
           echo "Target: ${TODAY}a"
 
           # index.html: const SW_VERSION = '2026-06-22a';
-          sed -i "s/const SW_VERSION = '[0-9-]*[a-z]'/const SW_VERSION = '${TODAY}a'/" index.html
+          sed -i -E "s/const SW_VERSION[[:space:]]*= '[0-9-]*[a-z]'/const SW_VERSION = '${TODAY}a'/" index.html
           echo "index.html: $(grep "const SW_VERSION = " index.html | head -1 | xargs)"
 
-          # sw.js: const SW_VERSION  = '2026-06-22a';  (note double space)
-          sed -i "s/const SW_VERSION  = '[0-9-]*[a-z]'/const SW_VERSION  = '${TODAY}a'/" sw.js
+          # sw.js: const SW_VERSION = '2026-06-22a';
+          sed -i -E "s/const SW_VERSION[[:space:]]*= '[0-9-]*[a-z]'/const SW_VERSION = '${TODAY}a'/" sw.js
           echo "sw.js:      $(grep "const SW_VERSION" sw.js | head -1 | xargs)"
+
+      - name: Verify both files actually updated
+        run: |
+          TODAY=$(TZ=America/New_York date +%Y-%m-%d)
+          grep -q "const SW_VERSION = '${TODAY}a'" index.html || { echo "::error::index.html SW_VERSION not updated"; exit 1; }
+          grep -q "const SW_VERSION = '${TODAY}a'" sw.js || { echo "::error::sw.js SW_VERSION not updated"; exit 1; }
 
       - name: Commit and push
         run: |
