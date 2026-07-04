@@ -5921,5 +5921,43 @@ assert('A_CARD_BRIEF_LINE_4 — scheduleRenderAll in fetchGameBriefOnDemand.then
   })(),
   'fetchGameBriefOnDemand.then must call scheduleRenderAll to update the card face');
 
+// ── Per-game Circadian State (A-CIRCADIAN — CC-CMD-2026-07-04-circadian-client-phase-v2) ──
+// Real codebase convention here is descriptive prefixes (A-TOURN, A-ROUND,
+// MLBKEY), not strictly-sequential A-numbers — the CC-CMD's own snippet
+// assumed the latter without checking; following the real convention.
+assert('A-CIRCADIAN-1 — isGameOver function exists',
+  html.includes('function isGameOver('),
+  'isGameOver must be defined');
+
+assert('A-CIRCADIAN-2 — getCardCircadian function exists',
+  html.includes('function getCardCircadian('),
+  'getCardCircadian must be defined');
+
+assert('A-CIRCADIAN-3 — getCardCircadian treats both \'live\' and \'in\' as PRIME (v2.1 fix — the client normalizes relay \'live\' to \'in\' before card-render code ever sees it, confirmed via mapV2ToESPN)',
+  (() => {
+    const fnMatch = html.match(/function getCardCircadian\(game\) \{[\s\S]*?\n\}/);
+    if (!fnMatch) return false;
+    try {
+      const fn = new Function(`function isGameOver(g){return g.state==='final'||g.state==='post';}\nfunction minutesSinceFinal(){return Infinity;}\n${fnMatch[0]}\nreturn getCardCircadian;`)();
+      return fn({state:'live'}) === 'PRIME' && fn({state:'in'}) === 'PRIME';
+    } catch (e) { return false; }
+  })(),
+  'getCardCircadian({state:\'live\'}) and getCardCircadian({state:\'in\'}) must both return PRIME — real card objects from findESPNScore() only ever carry \'in\', never \'live\' (mapV2ToESPN normalizes at ingestion), so checking \'live\' alone would never classify a real live game as PRIME.');
+
+assert('A-CIRCADIAN-4 — getCardCircadian pre state maps to PREVIEW',
+  (() => {
+    const fnMatch = html.match(/function getCardCircadian\(game\) \{[\s\S]*?\n\}/);
+    if (!fnMatch) return false;
+    try {
+      const fn = new Function(`function isGameOver(g){return g.state==='final'||g.state==='post';}\nfunction minutesSinceFinal(){return Infinity;}\n${fnMatch[0]}\nreturn getCardCircadian;`)();
+      return fn({state:'pre'}) === 'PREVIEW';
+    } catch (e) { return false; }
+  })(),
+  'getCardCircadian({state:\'pre\'}) must return PREVIEW');
+
+assert('A-CIRCADIAN-5 — getNewspaperVoice function exists',
+  html.includes('function getNewspaperVoice('),
+  'getNewspaperVoice must be defined');
+
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);
