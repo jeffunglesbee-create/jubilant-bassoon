@@ -15,8 +15,10 @@ Newspaper shipped) June 22, explicitly deferred the same day ("separate
 spec"), and has not appeared in any CC-CMD, incident, or codex entry since
 — it fell out of tracking entirely rather than being deprioritized. This
 CC-CMD is the corrected version of an attempt made 2026-07-04 that got
-the architecture wrong (see RETRACTED-*.md in this same docs/ folder for
-what was wrong and why) — corrected here after live-verifying the actual
+the architecture wrong (see the retraction notices committed in place at
+`CC-CMD-2026-07-04-circadian-kv-read-endpoint.md` in field-relay-nba and
+`CC-CMD-2026-07-04-circadian-client-phase.md` in this repo — both
+overwritten with SUPERSEDED notices, not renamed) — corrected here after live-verifying the actual
 production data contract rather than trusting either the spec or the
 retracted attempt.
 **Target time:** ~2 hrs (matches the spec's own revised estimate for
@@ -63,7 +65,43 @@ spec was written). TASK 1 below includes a probe step to re-verify this
 before writing the function, and the function itself is written to treat
 BOTH values as terminal rather than picking one.
 
-## PROBE BLOCK (run before any edits)
+## CORRECTION (v2.1, same day) — CC found two real bugs and correctly refused to guess a third
+
+A prior CC run against this doc found, live-verified against real source
+(not assumed), and correctly declined to paper over:
+
+1. **The vocabulary this doc verified is not what the client ever
+   renders against.** `mapV2ToESPN()` (index.html:16876) normalizes
+   every relay game object's `state` to `'pre'/'in'/'post'` BEFORE it's
+   ever stored or reachable by card-render code — `'live'` and `'final'`
+   (this doc's Task 1 vocabulary) never survive past that function. As
+   literally specified, `getCardCircadian`'s `game.state === 'live'`
+   branch would never fire against a real card; every live game would
+   fall through to the default `'LATE'` branch instead of `'PRIME'`.
+   Confirmed independently via 15+ existing defensive checks already in
+   the codebase pairing `'live'` with `'in'` (e.g. index.html:27127:
+   `if (g.state === 'live' || g.state === 'in') ...`, and
+   index.html:31210). **Fixed below: TASK 2 now checks both.**
+
+2. **`minutesSinceFinal` has no field to derive from, confirmed not
+   guessed.** CC checked every real candidate: `espnScoreTs[key]`
+   re-stamps to `Date.now()` on every poll of an already-final game (no
+   guard against rewriting an unchanged final) — reflects "last poll,"
+   not "went final," unusable for a 120-min threshold. `saveEspnFinal`'s
+   persisted entry has only a calendar-date string, not a precise
+   moment. `_seenFinals` itself is an ID-only Set with no timestamp,
+   reset on every page load. **Correctly, CC did not invent new state
+   unprompted. Authorizing it now below: TASK 2 adds one.**
+
+3. **My own doc had a bad reference** — "see RETRACTED-*.md" was
+   descriptive shorthand, not a real filename; CC correctly reported no
+   such file exists. The real files are
+   `CC-CMD-2026-07-04-circadian-kv-read-endpoint.md` (field-relay-nba)
+   and `CC-CMD-2026-07-04-circadian-client-phase.md` (this repo) — both
+   overwritten in place with retraction notices, not renamed. Fixed
+   below.
+
+
 ```bash
 # P1 — re-verify the state vocabulary is still what this doc claims
 # (raw.githubusercontent.com is reachable from CC — this is NOT the same
@@ -121,8 +159,14 @@ function isGameOver(game) {
 // Per-game circadian state. Pure function of game.state + elapsed time
 // since final — no clock dependency, no global mode, no KV fetch.
 // Matches "FIELD — Circadian System Spec Revised" (June 20-21 2026).
+//
+// CORRECTED v2.1: mapV2ToESPN() normalizes every game object's state to
+// 'pre'/'in'/'post' before card-render code ever sees it — 'live' and
+// 'final' (the relay's own raw vocabulary) never reach this function.
+// Check BOTH, matching the codebase's own established defensive pattern
+// (index.html:27127, 31210: `state === 'live' || state === 'in'`).
 function getCardCircadian(game) {
-    if (game.state === 'live') return 'PRIME';
+    if (game.state === 'live' || game.state === 'in') return 'PRIME';
     if (game.state === 'pre') return 'PREVIEW';
     if (isGameOver(game)) {
         return minutesSinceFinal(game) < 120 ? 'NIGHT' : 'LATE';
@@ -130,19 +174,43 @@ function getCardCircadian(game) {
     return 'LATE'; // unknown/unexpected state — degrade safely, don't crash
 }
 
-// game.start is the pre-game start time (ISO). For finished games, if no
-// explicit final timestamp field exists on the object, this needs a real
-// probe of what timestamp IS available (check `linescores`/`situation`
-// for a last-update field) before assuming game.start can substitute —
-// CC: verify against a real finished game's actual fields before writing
-// this function's body, do not guess a field name.
+// CORRECTED v2.1 — real, authorized implementation. No existing field
+// carries a genuine finalized-at moment (confirmed: espnScoreTs is
+// re-stamped on every poll, saveEspnFinal has only a date string,
+// _seenFinals has no timestamp and resets on page load). Rather than
+// adding a relay dependency (cross-repo, violates hard separation, and
+// not needed), extend the EXISTING _seenFinals gate — it already fires
+// exactly once per game at the exact moment a game is first observed
+// final (checkForNewFinals, index.html:39475-39486). Add a companion
+// map at that same, already-correct firing point.
+//
+// Find this exact block in checkForNewFinals (index.html ~39485-39486):
+//   if(_seenFinals.has(game._id)) return;
+//   _seenFinals.add(game._id);
+// Change to:
+//   if(_seenFinals.has(game._id)) return;
+//   _seenFinals.add(game._id);
+//   _finalizedAt[game._id] = Date.now();
+// And declare the new map next to the existing Set (index.html ~39474):
+//   const _seenFinals = new Set();
+//   const _finalizedAt = {};  // NEW — gameId -> Date.now() at first-seen-final
+//
+// minutesSinceFinal then reads it:
 function minutesSinceFinal(game) {
-    // PLACEHOLDER — CC must confirm the real field via a live probe of
-    // an actual finished game's full object (not available in this
-    // morning's probe since most games were still 'pre') before
-    // finalizing this function. Report the field used in the outbox.
+    const ts = _finalizedAt[game._id];
+    // No recorded final time (e.g. game finished before this session's
+    // checkForNewFinals ever ran, or page just loaded) — default to
+    // LATE's safe, compressed treatment rather than guessing NIGHT's
+    // enhanced one for a game we have no real timing evidence for.
+    if (!ts) return Infinity;
+    return (Date.now() - ts) / 60000;
 }
 ```
+
+**This is real, new client-side state (`_finalizedAt`), authorized
+explicitly here — do not treat this as scope CC invented unprompted.**
+It reuses the existing, already-correct `_seenFinals` firing point
+rather than adding new polling or a relay dependency.
 
 ## TASK 3 — Card render variants (PREVIEW, LATE only — NIGHT reuses existing Night Owl, PRIME reuses existing live rendering)
 
@@ -223,15 +291,16 @@ DO NOT:
 - Implement per-sport global modes (June 15 model) — superseded by the
   per-game model, do not resurrect it
 - Wire the orphaned KV circadian keys — confirmed not needed by this
-  design (see RETRACTED-relay.md)
+  design (see the retraction notice at `CC-CMD-2026-07-04-circadian-kv-read-endpoint.md`, field-relay-nba)
 
 ## DONE CONDITIONS
 
 **CC completes and commits once these are done — do not wait past this list:**
 - [ ] P1 and P3 probes run and pass before any edit (P2 is chat-only, see above)
+- [ ] `game.state === 'live' || game.state === 'in'` check confirmed present in getCardCircadian (v2.1 fix)
+- [ ] `_finalizedAt` map added at the exact `_seenFinals.add(game._id)` point in `checkForNewFinals` (index.html ~39486) — confirm the real current line number before editing, this file changes
 - [ ] `node smoke.js index.html` exits 0 with all 5 new assertions green
 - [ ] CI Playwright confirms getCardCircadian/getNewspaperVoice exist in deployed bundle
-- [ ] `minutesSinceFinal`'s actual field source confirmed against a real finished game object (use any real archived/past game data reachable via GitHub-hosted fixtures or D1 read if available to you — do not guess the field name)
 - [ ] SW_VERSION bumped in index.html and sw.js
 - [ ] Outbox manifest written to `docs/outbox/cc-circadian-client-phase-v2-{date}.md`, explicitly listing the deferred items below as "pending chat verification"
 
@@ -245,9 +314,9 @@ DO NOT:
 
 ## CONFIDENCE SCORING — CC-VERIFIABLE ONLY (commit once this hits 95; live checks below are deferred, not scored by you)
 +25  P1 vocabulary re-check matches this doc's table (or discrepancy explicitly reconciled)
-+25  minutesSinceFinal's field source confirmed against a real object, not guessed
-+25  Smoke 5/5 green
-+25  CI confirms functions deployed in the bundle
++25  getCardCircadian's live-state check matches BOTH 'live' and 'in' (v2.1 fix) — verify against the codebase's own existing pattern at index.html:27127/31210, not just this doc's say-so
++25  `_finalizedAt` correctly wired into the existing `_seenFinals` gate — same firing point, no new polling added
++25  Smoke 5/5 green + CI confirms functions deployed in the bundle
 
 ## ONE-LINER
 git pull. Read docs/CC-CMD-2026-07-04-circadian-client-phase-v2.md. Run
