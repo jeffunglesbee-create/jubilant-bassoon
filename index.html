@@ -10309,7 +10309,7 @@ function rankGamesByDrama(games) {
 let _renderAllPending = null;
 function scheduleRenderAll(){
   if(_renderAllPending) clearTimeout(_renderAllPending);
-  _renderAllPending = setTimeout(()=>{ _renderAllPending=null; renderAll(); renderESPNScores(); }, 150);
+  _renderAllPending = setTimeout(()=>{ _renderAllPending=null; renderAll(true); renderESPNScores(); }, 150);
 }
 
 // ── PM-26-C5 (June 3 2026) ───────────────────────────────────────────────
@@ -10397,6 +10397,35 @@ function applyMainHTML(html){
       if (savedNewspaper) main.prepend(savedNewspaper);
       return;
     }
+  }
+  // Card-level DOM reconciliation (Phase 2, CC-CMD-2026-07-04-card-dom-
+  // reconciliation-phase2). For every OTHER card (not the LCP anchor,
+  // already handled above), if a card with the same data-gameid exists
+  // in main's CURRENT children and its outerHTML is byte-identical to
+  // the newly-computed one, keep the OLD element instead of the new one.
+  // This is intentionally an OUTPUT-level comparison, not an input-data
+  // diff -- any real change (game data, MY_TEAMS, viewport, filter state)
+  // already produces a different computed HTML string, so this cannot
+  // silently skip a card that actually needs updating. Only genuinely
+  // identical output gets its DOM node preserved.
+  try {
+    const existingCards = new Map();
+    main.querySelectorAll('[data-gameid]').forEach(el => {
+      if (!existingCards.has(el.dataset.gameid)) existingCards.set(el.dataset.gameid, el);
+    });
+    tmp.querySelectorAll('[data-gameid]').forEach(newCard => {
+      if (newCard.hasAttribute('data-lcp-anchor')) return; // already handled above
+      const gid = newCard.dataset.gameid;
+      const existing = existingCards.get(gid);
+      if (existing && existing.outerHTML === newCard.outerHTML) {
+        newCard.replaceWith(existing);
+      }
+    });
+  } catch (e) {
+    // Defensive: reconciliation is a pure optimization -- any failure
+    // here must never block the render. Fall through to the normal
+    // replaceChildren path below with tmp's (all-new) children.
+    captureFieldError?.('card-dom-reconciliation', e, false);
   }
   // Commit: replace main's children with tmp's children. If the morph above
   // succeeded, the morphed anchor is among tmp's children; if not, plain new
@@ -10571,7 +10600,18 @@ function updateConflictChip() {
   renderConflictChip(findConflicts(games));
 }
 
-function renderAll(){
+// Per-card string computation cache (CC-CMD-2026-07-04-card-dom-
+// reconciliation-phase2, TASK 2). Keyed on game._id; invalidated by
+// (a) the game's own data changing (JSON.stringify fingerprint, cheap --
+// measured 0.5ms for 23 games, negligible against the ~38.8ms of badge-
+// builder + template-literal cost it lets us skip), or (b) any direct
+// (non-scheduleRenderAll) renderAll() call, which clears the whole cache
+// unconditionally -- see renderAll's own top for why this is safe and
+// sufficient without touching MY_TEAMS/activeFilter/viewport directly.
+const _cardStringCache = new Map(); // gameId -> {fingerprint, html, circInput}
+
+function renderAll(skipUnchanged){
+  if (!skipUnchanged) _cardStringCache.clear();
   if(!allData) return;
   const main=document.getElementById("main");
   const sports=allData.sports||[];
@@ -10641,6 +10681,18 @@ function renderAll(){
     const sportColor=SPORT_COLORS[sec.sport]||"#c9a84c";
     const cards=games.map((g,gi)=>{
       if(!g._id) g._id="g"+(++_gid);
+      // Per-card string computation cache (CC-CMD-2026-07-04-card-dom-
+      // reconciliation-phase2, TASK 2). Whole-object fingerprint (not a
+      // hand-picked field list) so it cannot miss a per-game-scoped
+      // dependency by construction. Cache-clear-on-direct-renderAll()-call
+      // (see renderAll's own top) is the sole invalidation mechanism for
+      // anything outside `g` itself (MY_TEAMS, activeFilter, viewport).
+      const _fingerprint = JSON.stringify(g);
+      const _cached = _cardStringCache.get(g._id);
+      if (_cached && _cached.fingerprint === _fingerprint) {
+        _renderAllCircadianGames.push(_cached.circInput);
+        return _cached.html;
+      }
       g._insights=computeInsights(g, sec.sport); // Stage 3.5: typed data bridge
       const st=getStatus(g.start_time, g._aflComplete!==undefined?{aflComplete:g._aflComplete}:undefined);
       const timeStr=fmtTime(g.start_time);
@@ -10659,7 +10711,7 @@ function renderAll(){
       const _circadian=getCardCircadian(_circInput);
       const _circCls="circadian-"+_circadian.toLowerCase();
       _renderAllCircadianGames.push(_circInput);
-      return `<div class="game-card ${_cardTierClass(g)} ${st}${isLive?" espn-live":""}${MY_TEAMS.has(g.home)||MY_TEAMS.has(g.away)?" my-team-card":""} ${_circCls}" data-gameid="${g._id}" data-sport="${sec.sport}" data-home="${(g.home||"").replace(/"/g,"")}" data-away="${(g.away||"").replace(/"/g,"")}" data-starttime="${g.start_time||""}" data-venue="${(g.venue||"").replace(/"/g,"")}" data-confirmed="${g.confirmed===true?'true':'false'}" data-circadian="${_circadian}"${g._gameImportance?` data-gameimportance="${g._gameImportance}"`:''} ${g._adapterProof?`data-proof-adapter="${g._adapterProof.adapterId}" data-proof-source="${g._adapterProof.sourceId}"`:''}style="--i:${gi}">
+      const _html = `<div class="game-card ${_cardTierClass(g)} ${st}${isLive?" espn-live":""}${MY_TEAMS.has(g.home)||MY_TEAMS.has(g.away)?" my-team-card":""} ${_circCls}" data-gameid="${g._id}" data-sport="${sec.sport}" data-home="${(g.home||"").replace(/"/g,"")}" data-away="${(g.away||"").replace(/"/g,"")}" data-starttime="${g.start_time||""}" data-venue="${(g.venue||"").replace(/"/g,"")}" data-confirmed="${g.confirmed===true?'true':'false'}" data-circadian="${_circadian}"${g._gameImportance?` data-gameimportance="${g._gameImportance}"`:''} ${g._adapterProof?`data-proof-adapter="${g._adapterProof.adapterId}" data-proof-source="${g._adapterProof.sourceId}"`:''}style="--i:${gi}">
         <div class="card-accent"></div>
         <button class="pin-btn" aria-label="Pin game to widget" title="Pin to corner widget" onclick="event.stopPropagation();pinGame('${g._id}')">📌</button><button class="star-btn ${MY_TEAMS.has(g.home)||MY_TEAMS.has(g.away)?"starred":""}" aria-label="Follow team" title="${MY_TEAMS.has(g.away)?"Unfollow "+g.away:MY_TEAMS.has(g.home)?"Unfollow "+g.home:"Follow "+g.away+" / "+g.home}">★</button>
         <div class="card-body" role="button" tabindex="0" data-open="${g._id}" aria-label="Game intel for ${(g.away||'').replace(/'/g,'')} at ${(g.home||'').replace(/'/g,'')}">
@@ -10709,6 +10761,8 @@ function renderAll(){
           ${FD_LEAGUE_MAP[sec.sport]||ESPN_STANDINGS_MAP[sec.sport]?`<button class="standings-btn" onclick="event.stopPropagation();toggleStandings(this,'${sec.sport}','2025')" title="Show ${(FD_LEAGUE_MAP[sec.sport]||ESPN_STANDINGS_MAP[sec.sport]?.isSoccer)?'table':'standings'}">▼ ${(FD_LEAGUE_MAP[sec.sport]||ESPN_STANDINGS_MAP[sec.sport]?.isSoccer)?'Table':'Standings'}</button>`:""}
         </div>
       </div>`;
+      _cardStringCache.set(g._id, {fingerprint: _fingerprint, html: _html, circInput: _circInput});
+      return _html;
     }).join("");
     return `<div class="sport-section" data-sport="${sec.sport}" style="--i:${si}">
       <div class="section-head" style="border-left:3px solid ${sportColor};padding-left:.75rem">
@@ -23105,7 +23159,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-07-04a';
+  const SW_VERSION = '2026-07-04b';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)

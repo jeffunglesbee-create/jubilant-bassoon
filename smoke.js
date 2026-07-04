@@ -6089,5 +6089,31 @@ assert('A-MLBSTATUS-3 — refreshMLBStatus does NOT trigger a full re-render (ta
   })(),
   'refreshMLBStatus must never call scheduleRenderAll(), renderAll(), or buildFilters() — calling fetchMLBFixtures() (or anything that triggers those) on an interval would reintroduce the exact expensive 77KB/690-node full-rebuild problem this CC-CMD exists to avoid.');
 
+// ── Card DOM reconciliation + per-card string cache (A-PHASE2 — CC-CMD-2026-07-04-card-dom-reconciliation-phase2) ──
+assert('A-PHASE2-1 — applyMainHTML has card-level DOM reconciliation logic',
+  html.includes('Card-level DOM reconciliation') && html.includes('existingCards'),
+  'applyMainHTML must contain the card-level reconciliation block (existingCards map + per-card outerHTML comparison)');
+
+assert('A-PHASE2-2 — reconciliation compares OUTPUT html, not a hand-picked input field list',
+  !!html.match(/existing\.outerHTML === newCard\.outerHTML/),
+  'Reconciliation must compare existing.outerHTML === newCard.outerHTML (output-level) — any real change to game data, MY_TEAMS, viewport, or filter state already produces a different computed HTML string, so this cannot silently skip a card that needs updating');
+
+assert('A-PHASE2-3 — reconciliation failure path is defensive and does not block rendering',
+  html.includes('card-dom-reconciliation'),
+  'A reconciliation failure must be caught and reported via captureFieldError, never block the normal replaceChildren render path');
+
+assert('A-PHASE2-4 — per-card string cache exists',
+  html.includes('_cardStringCache'),
+  '_cardStringCache must be declared');
+
+assert('A-PHASE2-5 — renderAll clears the cache on every direct (non-scheduled) call — the single centralized invalidation point this design relies on for safety against MY_TEAMS/activeFilter/viewport changes',
+  !!html.match(/renderAll\(skipUnchanged\)\{\s*if\s*\(\s*!skipUnchanged\s*\)\s*_cardStringCache\.clear\(\)/),
+  'function renderAll(skipUnchanged){ if (!skipUnchanged) _cardStringCache.clear(); ... } must be the exact shape — every existing direct call site (boot, toggleMyTeam, TZ change, filter clicks, date nav) calls renderAll() with no argument and must keep getting a full cache-clearing rebuild with zero code changes at those call sites');
+
+assert('A-PHASE2-6 — scheduleRenderAll is the ONLY call site passing true (cache-preserving) — every other call site must default to full-clear',
+  !!html.match(/scheduleRenderAll\(\)\{[\s\S]{0,300}renderAll\(true\)/) &&
+  (html.match(/renderAll\(true\)/g) || []).length === 1,
+  'scheduleRenderAll() must call renderAll(true), and renderAll(true) must appear exactly once in the whole file — if any other call site ever passes true, cache-invalidation safety silently breaks for that path');
+
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);
