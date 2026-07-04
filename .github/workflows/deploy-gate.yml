@@ -35,6 +35,17 @@ on:
       - 'field_utils.js'
       - 'wrangler.jsonc'
 
+concurrency:
+  group: deploy-gate-main
+  # Deliberately false: this must QUEUE runs so each one still fully
+  # completes (smoke tests, deploy) rather than CANCEL an in-progress
+  # run when a new one starts, which could abort a legitimate in-flight
+  # deploy. Queueing means a later run's checkout will correctly see
+  # the previous run's completed SW_VERSION sync-back commit before
+  # computing its own, eliminating the stale-read race
+  # (CC-CMD-2026-07-04-deploy-gate-sw-sync-race).
+  cancel-in-progress: false
+
 permissions:
   contents: write  # write needed to commit SW_VERSION sync back to repo
 
@@ -56,6 +67,15 @@ jobs:
           # day. Result: Health Panel showed "2026-06-02" at 10pm ET on
           # June 1. ET tracks the product's local day.
           DEPLOY_DATE=$(TZ='America/New_York' date +%Y-%m-%d)
+          # Defense in depth beyond the concurrency group above: a long-
+          # running earlier job could still finish between THIS job's
+          # checkout and this specific step, so refresh to actual current
+          # main immediately before reading sw.js's suffix, rather than
+          # relying on the workflow-start-time checkout (CC-CMD-2026-07-04-
+          # deploy-gate-sw-sync-race). `|| true` -- a pull failure here must
+          # not fail the whole sync step; the existing logic still runs
+          # against whatever checkout is present, same as today's behavior.
+          git pull --rebase --autostash origin main 2>/dev/null || true
           CURRENT=$(grep "^const SW_VERSION" sw.js | grep -o "'[^']*'" | tr -d "'")
           SUFFIX=$(echo "$CURRENT" | grep -o '[a-z]$' || echo "a")
           NEW_VERSION="${DEPLOY_DATE}${SUFFIX}"
