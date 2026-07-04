@@ -11888,6 +11888,144 @@ function buildTodaySchedule(){
   if(wnbaGames.length) { applyNarrativeContext(wnbaGames); sections.push({sport:"WNBA", games:wnbaGames}); }
 
   // ── CFL ──────────────────────────────────────────────────────────────────────
+  // CC-CMD-2026-07-04-cfl-live-scoreboard-wire: the static, score-less
+  // hardcoded schedule this section used to build synchronously has been
+  // replaced with a live fetch against the relay's /cfl/scoreboard/rounds
+  // endpoint, wired async (loadCFLScoreboard, called from fetchSchedule
+  // following the same delayed-injection pattern golf's loadPGASlate
+  // uses) so it doesn't block initial render. See buildCFLStaticFallback
+  // (defined right after this function) for the fallback-ONLY path used
+  // if the live fetch fails or returns no games for today -- never
+  // rendered simultaneously with live data, avoiding the exact
+  // coexisting-hardcoded-and-live duplicate-section bug found elsewhere
+  // in this file (golfGames) earlier today.
+
+  // iPad-20: WC schedule consistency fix. buildTodaySchedule previously did
+  // not invoke maybePushFrenchOpen / maybePushWorldCup / maybePushAFLFinals,
+  // even though buildDateSchedule() and fetchESPNFixtures() do. The today
+  // path therefore never pushed a FIFA section from wc26Raw — the FIFA
+  // section only appeared on the second render IF the V2 wc26 poll
+  // succeeded. Any V2 failure left WC games missing for the entire
+  // session. Mirroring the buildDateSchedule pattern here guarantees the
+  // wc26Raw section enters allData.sports before the first renderAll.
+  // The V2 dedup pre-flight (line 15461-15466, iPad-10) handles the
+  // existing FIFA section on subsequent polls — V2 still merges live
+  // state on top via the home|away key match. See
+  // outbox/wc-schedule-diagnosis.md.
+  maybePushFrenchOpen(sections);
+  maybePushWorldCup(sections);
+  maybePushAFLFinals(sections);
+
+  return sections;
+}
+
+// ── CFL live scoreboard wire (CC-CMD-2026-07-04-cfl-live-scoreboard-wire) ────
+// Real, live CFL data source discovered/wired at the relay June 27 2026
+// (cflscoreboard.cfl.ca via the open-source ha-teamtracker project) but
+// never called from the client until now. Small, minimal lookup -- CFL
+// has a fixed 9-team league with fixed home stadiums; values copied
+// directly from this file's own prior hardcoded cflGames array (now
+// buildCFLStaticFallback below), not invented. Keyed by the LIVE
+// source's own team-name spelling (confirmed via live probe 2026-07-04,
+// e.g. "Ottawa RedBlacks" -- capital B -- not the old hardcoded array's
+// "Ottawa Redblacks") so the live-fetch path's lookups actually match.
+const CFL_TEAM_VENUES = {
+  'Hamilton Tiger-Cats': 'Tim Hortons Field, Hamilton ON',
+  'Calgary Stampeders': 'McMahon Stadium, Calgary AB',
+  'Ottawa RedBlacks': 'TD Place, Ottawa ON',
+  'Winnipeg Blue Bombers': 'IG Field, Winnipeg MB',
+  'Montreal Alouettes': 'Percival Molson Stadium, Montreal QC',
+  'Saskatchewan Roughriders': 'Mosaic Stadium, Regina SK',
+  'BC Lions': 'BC Place, Vancouver BC',
+  'Edmonton Elks': 'Commonwealth Stadium, Edmonton AB',
+  'Toronto Argonauts': 'BMO Field, Toronto ON',
+};
+
+// Maps the live CFL scoreboard's tournament-level `status` to this
+// codebase's V2/WC26 state convention ('pre'/'in'/'post') that
+// getCardCircadian/isGameOver already expect (checked via probe before
+// writing this, not invented). Only 'scheduled' and 'complete' were
+// observed live during this session's verification -- any other value
+// (e.g. the round-level 'playing' vocabulary, if it also ever appears
+// at the tournament level) is treated as in-progress by exclusion,
+// which is correct by construction regardless of the exact unconfirmed
+// live label. Real observation of a genuinely in-progress game's exact
+// status string is explicitly deferred to chat per this CC-CMD.
+function _cflStateFromStatus(status) {
+  if (status === 'scheduled') return 'pre';
+  if (status === 'complete') return 'post';
+  return 'in';
+}
+
+// Live fetch, mirrors loadPGASlate's shape/error-handling pattern.
+// Flattens every round's tournaments[] and filters to today (ET) via the
+// same isToday() helper the old hardcoded cflGames array already used --
+// reused rather than inventing a round-date-range selector, since the
+// per-tournament date field makes that unnecessary and this stays
+// consistent with the established convention. Returns null on any
+// failure (network, non-2xx, non-array body) so the caller can fall back
+// to buildCFLStaticFallback -- never both at once.
+async function loadCFLScoreboard() {
+  const base = (typeof V2_RELAY_BASE !== 'undefined')
+    ? V2_RELAY_BASE : 'https://field-relay-nba.jeffunglesbee.workers.dev';
+  try {
+    const r = await fetch(`${base}/cfl/scoreboard/rounds`, {
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!r.ok) return null;
+    const rounds = await r.json();
+    if (!Array.isArray(rounds)) return null;
+    const todays = [];
+    rounds.forEach(round => {
+      (round.tournaments || []).forEach(t => {
+        if (!t.date || !isToday(t.date)) return;
+        const home = t.homeSquad?.name || '';
+        const away = t.awaySquad?.name || '';
+        if (!home || !away) return;
+        todays.push({
+          home, away,
+          league: 'CFL – 2026 Season · ' + (round.name || ''),
+          start_time: t.date,
+          confirmed: true,
+          venue: CFL_TEAM_VENUES[home] || '',
+          // Live source has no broadcast field -- CFL_PLUS (TSN/CFL+) is
+          // the dominant real broadcaster for current/recent weeks per
+          // this file's own prior hardcoded array, used here as the
+          // explicit default rather than silently dropping stream info.
+          streams: (typeof resolveBundle === 'function') ? resolveBundle('CFL_PLUS') : [],
+          homeScore: t.homeSquad?.score ?? 0,
+          awayScore: t.awaySquad?.score ?? 0,
+          state: _cflStateFromStatus(t.status),
+          _id: 'cfl_' + t.id,
+        });
+      });
+    });
+    // Attach odds (pHome/pAway/spread/total) from relay if available --
+    // same step the old hardcoded array applied, unchanged.
+    todays.forEach(g => {
+      const odds = (typeof _cflMatchOdds === 'function') ? _cflMatchOdds(g) : null;
+      if (odds) {
+        g.wp = odds.pHome;
+        g._cflSpread = odds.spread;
+        g._cflTotal  = odds.total;
+        g._cflBookmakers = odds.bookmakers;
+      }
+    });
+    return todays;
+  } catch (e) {
+    if (typeof FIELD_DEBUG !== 'undefined' && FIELD_DEBUG) console.warn('[CFL] loadCFLScoreboard', e.message);
+    return null;
+  }
+}
+
+// Fallback-ONLY static schedule -- used exclusively when loadCFLScoreboard
+// fails or returns no games for today (see the single push-gate in
+// fetchSchedule's CFL injection below). Never rendered simultaneously
+// with live data -- this is the exact class of coexisting-hardcoded-and-
+// live duplicate-section bug found elsewhere in this file (golfGames)
+// earlier today, avoided here by construction: only one of
+// loadCFLScoreboard's result or this function's result is ever pushed.
+function buildCFLStaticFallback() {
   const cflGames = [
     // Week 1 (Jun 4-6) — completed
     {home:"Hamilton Tiger-Cats", away:"Montreal Alouettes",     league:"CFL – 2026 Season · Week 1", start_time:"2026-06-04T23:30:00Z", confirmed:true, venue:"Tim Hortons Field, Hamilton ON",      streams:resolveBundle("CFL_CBSSN"), localNote:"CBSSN · 7:30pm ET"},
@@ -11938,35 +12076,16 @@ function buildTodaySchedule(){
     {home:"Montreal Alouettes",  away:"Edmonton Elks",          league:"CFL – 2026 Season · Week 10",start_time:"2026-08-08T19:00:00Z", confirmed:true, venue:"Percival Molson Stadium, Montreal QC",streams:resolveBundle("CFL_PLUS"),  localNote:"TSN · 3pm ET"},
     {home:"BC Lions",            away:"Hamilton Tiger-Cats",    league:"CFL – 2026 Season · Week 10",start_time:"2026-08-08T23:00:00Z", confirmed:true, venue:"BC Place, Vancouver BC",              streams:resolveBundle("CFL_PLUS"),  localNote:"TSN · 7pm ET"},
   ].filter(g=>isToday(g.start_time));
-  // Attach odds (pHome/pAway/spread/total) from relay if available
   cflGames.forEach(g => {
-    const odds = _cflMatchOdds(g);
+    const odds = (typeof _cflMatchOdds === 'function') ? _cflMatchOdds(g) : null;
     if (odds) {
-      g.wp = odds.pHome;              // home win probability (for drama engine)
-      g._cflSpread = odds.spread;     // home spread (negative = home favored)
-      g._cflTotal  = odds.total;      // over/under total
+      g.wp = odds.pHome;
+      g._cflSpread = odds.spread;
+      g._cflTotal  = odds.total;
       g._cflBookmakers = odds.bookmakers;
     }
   });
-  if(cflGames.length) sections.push({sport:"Canadian Football (CFL)", games:cflGames});
-
-  // iPad-20: WC schedule consistency fix. buildTodaySchedule previously did
-  // not invoke maybePushFrenchOpen / maybePushWorldCup / maybePushAFLFinals,
-  // even though buildDateSchedule() and fetchESPNFixtures() do. The today
-  // path therefore never pushed a FIFA section from wc26Raw — the FIFA
-  // section only appeared on the second render IF the V2 wc26 poll
-  // succeeded. Any V2 failure left WC games missing for the entire
-  // session. Mirroring the buildDateSchedule pattern here guarantees the
-  // wc26Raw section enters allData.sports before the first renderAll.
-  // The V2 dedup pre-flight (line 15461-15466, iPad-10) handles the
-  // existing FIFA section on subsequent polls — V2 still merges live
-  // state on top via the home|away key match. See
-  // outbox/wc-schedule-diagnosis.md.
-  maybePushFrenchOpen(sections);
-  maybePushWorldCup(sections);
-  maybePushAFLFinals(sections);
-
-  return sections;
+  return cflGames;
 }
 
 // ── Supplemental AI call (rugby only — cricket/IPL/AFL now hardcoded) ─────────
@@ -22121,6 +22240,32 @@ async function fetchSchedule(){
       }, 300);
     }).catch(() => {});
   }, 4000);
+  // CFL live scoreboard (CC-CMD-2026-07-04-cfl-live-scoreboard-wire):
+  // async-injection pattern mirrors golf's loadPGASlate above. Single
+  // push-gate (hasCFLSection) ensures only ONE of {live fetch result,
+  // static fallback} ever gets pushed to allData.sports -- never both,
+  // avoiding the golfGames-style duplicate-section bug found elsewhere
+  // in this file earlier today.
+  setTimeout(() => {
+    if (typeof loadCFLScoreboard !== 'function') return;
+    const pushCFLSection = (games) => {
+      const hasCFLSection = (allData?.sports || []).some(s => s.sport === 'Canadian Football (CFL)');
+      if (hasCFLSection || !games || !games.length || !allData || !allData.sports) return;
+      allData.sports.push({ sport: 'Canadian Football (CFL)', games });
+      if (typeof scheduleRenderAll === 'function') { try { scheduleRenderAll(); } catch (_) {} }
+    };
+    loadCFLScoreboard().then(games => {
+      if (games && games.length) { pushCFLSection(games); return; }
+      // Live fetch returned no games for today (or empty array) -- fall
+      // back to the static schedule, fallback-ONLY per Task 2's decision.
+      if (typeof buildCFLStaticFallback === 'function') pushCFLSection(buildCFLStaticFallback());
+    }).catch(() => {
+      // loadCFLScoreboard already catches its own errors and resolves
+      // null/[] rather than rejecting -- this .catch is a last-resort
+      // safety net, not the primary fallback path.
+      if (typeof buildCFLStaticFallback === 'function') pushCFLSection(buildCFLStaticFallback());
+    });
+  }, 4300);
   // Pre-fetch BDL season averages once (ROOT 3 — feeds milestones for all tonight's NBA games)
   // One relay call per day covers all games — fetchBDLMilestones() reads from shared cache
   setTimeout(() => {
@@ -23208,7 +23353,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-07-04n';
+  const SW_VERSION = '2026-07-04o';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)

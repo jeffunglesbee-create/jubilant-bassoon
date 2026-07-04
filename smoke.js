@@ -6217,5 +6217,22 @@ assert('A-CIRCSORT-2 — games are sorted by circadian tier before the per-card 
   !!html.match(/games\.sort\(\(a, b\) => \{/),
   'renderAll must sort each section\'s games array by circadian tier before building cards — otherwise a stale LATE card can sit above a live PRIME card within the same sport section, undercutting the point of circadian classification.');
 
+// ── CFL live scoreboard wire (A-CFLWIRE — CC-CMD-2026-07-04-cfl-live-scoreboard-wire) ──
+assert('A-CFLWIRE-1 — loadCFLScoreboard fetches the real live relay endpoint',
+  !!html.match(/async function loadCFLScoreboard\(\)/) && !!html.match(/\/cfl\/scoreboard\/rounds/),
+  'A live loadCFLScoreboard() function must exist and fetch {relayBase}/cfl/scoreboard/rounds — the real, dormant-until-now CFL data source. Without it CFL keeps rendering from a static, score-less array.');
+
+assert('A-CFLWIRE-2 — buildCFLStaticFallback exists as a fallback-only path',
+  !!html.match(/function buildCFLStaticFallback\(\)/),
+  'The old hardcoded CFL schedule must survive only as an explicit fallback function, not as a synchronous top-level push inside buildTodaySchedule — otherwise it risks coexisting with live data, the exact duplicate-section bug found elsewhere in this file (golfGames) the same day.');
+
+assert('A-CFLWIRE-3 — single push-gate prevents live+fallback from ever coexisting',
+  !!html.match(/hasCFLSection/),
+  'The CFL section push must be gated by a single hasCFLSection check shared by both the live-fetch success path and the fallback path, so only ONE of them ever calls allData.sports.push for CFL — never both simultaneously.');
+
+assert('A-CFLWIRE-4 — no synchronous top-level CFL section push remains in buildTodaySchedule',
+  !html.match(/if\(cflGames\.length\) sections\.push\(\{sport:"Canadian Football \(CFL\)"/),
+  'buildTodaySchedule must no longer synchronously build+push a CFL section from the hardcoded array at schedule-build time — that logic now lives only inside buildCFLStaticFallback, called exclusively from the async injection\'s fallback branch.');
+
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);
