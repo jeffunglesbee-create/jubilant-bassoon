@@ -1,0 +1,21 @@
+=== OG Worker Run-First Verify Probe [20260704T202029Z] ===
+
+--- 1. Bot UA (Twitterbot/1.0) against root ---
+
+HTTP=200 time=0.232953s
+cf-cache-status: cf-cache-status: HIT
+og:description present: NO
+(no og:description tag found)
+
+--- 2. Normal browser UA against root ---
+
+HTTP=200 time=0.192711s
+cf-cache-status: cf-cache-status: HIT
+og:description present: NO
+
+--- 3. Non-HTML asset (sw.js) with both UAs ---
+content-type=application/javascript time=0.088996s
+content-type=application/javascript time=0.091116s
+asset bytes match: YES
+
+--- Diff check: bot HTML vs normal HTML (should differ only by the injected tag) ---
