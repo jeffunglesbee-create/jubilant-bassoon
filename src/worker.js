@@ -29,40 +29,6 @@ class MetaTagRewriter {
 
 export default {
     async fetch(request, env, ctx) {
-        // TEMPORARY DIAGNOSTIC (CC-CMD-2026-07-04-og-worker-relay-fetch-
-        // diagnostic) -- tests whether THIS Worker's own fetch() to the
-        // relay actually succeeds, since every prior check only tested
-        // this from a GitHub Actions runner, never from inside a real
-        // Cloudflare Worker execution context.
-        const url = new URL(request.url);
-        if (url.pathname === '/__diag_relay_fetch') {
-            const result = { attempted: true };
-            try {
-                const tz = 'America/New_York';
-                const today = new Date().toLocaleDateString('en-CA', { timeZone: tz });
-                const targetUrl = `https://field-relay-nba.jeffunglesbee.workers.dev/circadian/preview/${today}`;
-                result.targetUrl = targetUrl;
-                const r = await fetch(targetUrl, { signal: AbortSignal.timeout(2000) });
-                result.status = r.status;
-                result.ok = r.ok;
-                const text = await r.text();
-                result.bodySnippet = text.slice(0, 300);
-                try {
-                    const data = JSON.parse(text);
-                    result.parsedOk = data.ok;
-                    result.parsedTextPresent = !!data.text;
-                } catch (parseErr) {
-                    result.jsonParseError = parseErr.message;
-                }
-            } catch (fetchErr) {
-                result.fetchError = fetchErr.message;
-                result.fetchErrorName = fetchErr.name;
-            }
-            return new Response(JSON.stringify(result, null, 2), {
-                headers: { 'Content-Type': 'application/json' },
-            });
-        }
-
         // Non-bot traffic: pure passthrough, identical to today's behavior.
         if (!isBotRequest(request)) {
             return env.ASSETS.fetch(request);
