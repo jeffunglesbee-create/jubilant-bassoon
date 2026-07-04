@@ -368,3 +368,115 @@ the probe block FIRST, especially P1 — do not trust this doc's vocabulary
 table without re-checking it live. Implement exactly as specified. Do not
 commit unless confidence ≥ 95. If score < 95 report verbatim and stop —
 do not invent results.
+
+## CORRECTION (v2.3, same day) — classification never refreshes after initial render
+
+A later chat session opened the live PWA and found every MLB card frozen
+at whatever circadian state it had when the page first loaded —
+including games confirmed (via direct JS check) to have `status:'final'`
+still showing `data-circadian="PRIME"` in the live DOM, with stale
+`"0-0 0:00'"` placeholder text. Root cause, confirmed by reading actual
+source (not inferred): `getCardCircadian` is only invoked once, inside
+`renderAll()`'s card-template string (index.html ~10659). Live score
+updates for in-progress/finished games are handled by a SEPARATE
+function, `renderESPNScores()` (index.html:20960), which patches
+`.score-wrap` and toggles `espn-live`/`espn-final` classes directly on
+the existing card element (index.html:21119: `card.classList.remove
+("espn-live","espn-final"); if(isLive) card.classList.add("espn-live");
+if(isFinal) card.classList.add("espn-final");`) WITHOUT ever calling
+`renderAll()` again or touching `data-circadian`/`circadian-*`. This is
+a legitimate, intentional performance pattern (avoiding a full ~77KB DOM
+rebuild on every score poll, per the comment at index.html:10302) — it
+just was never extended to also refresh circadian state, since v2.1/v2.2
+only wired the classification into the one-time render path and never
+checked whether it needed to survive subsequent partial updates.
+
+**The fix is small and low-risk: mirror the exact existing
+`espn-live`/`espn-final` toggle pattern, in the same function, using the
+same already-computed `isLive`/`isFinal` (from `_n.state`, ESPN-based
+cross-sport score matching — this already reliably tracks live/final
+transitions for MLB/AFL/every sport via ESPN score matching, the same
+mechanism `_isLiveOrFinal` a few lines above already relies on).** No
+new field-reading logic needed here — `_n.state` in THIS function's
+scope already normalizes to the same `'in'/'post'` shape `getCardCircadian`
+expects for its WC26/V2 branch, so this call site doesn't even need the
+MLB/AFL-specific branches added in v2.2 — those remain necessary for the
+one-time `renderAll()` path (since MLB/AFL's *own* native adapters set
+`game.status`/`_aflComplete` at fetch time, separately from ESPN score
+matching), but this ESPN-score-matching path already has a
+cross-sport-normalized signal for free.
+
+## TASK 6 — Wire circadian refresh into renderESPNScores() (v2.3)
+
+Find this exact block in `renderESPNScores()` (index.html ~21119-21122,
+re-verify the real current line number before editing — this file
+changes):
+```javascript
+      // Update card class for accent colour
+      card.classList.remove("espn-live","espn-final");
+      if(isLive)  card.classList.add("espn-live");
+      if(isFinal) {
+```
+Immediately after the `card.classList.remove("espn-live","espn-final");`
+line (before the `if(isLive)`/`if(isFinal)` toggles, order doesn't
+matter but keep them adjacent for readability), add:
+```javascript
+      // v2.3: circadian classification must be refreshed here too --
+      // it's otherwise only computed once at renderAll() time and goes
+      // stale the moment a game's real status changes afterward (the
+      // exact bug this fix closes: MLB games showing PRIME long after
+      // going final). Reuses this function's own already-normalized
+      // isLive/isFinal (from _n.state) -- no new field-reading needed,
+      // this is the same signal already driving espn-live/espn-final.
+      const _newCircadian = isFinal
+          ? (getCardCircadian({state:'post', _id: game._id}))
+          : isLive
+              ? 'PRIME'
+              : card.dataset.circadian; // no signal change -- leave as-is rather than guessing
+      if (_newCircadian && _newCircadian !== card.dataset.circadian) {
+          card.classList.remove('circadian-prime','circadian-preview','circadian-night','circadian-late');
+          card.classList.add('circadian-' + _newCircadian.toLowerCase());
+          card.dataset.circadian = _newCircadian;
+      }
+```
+
+**Why call `getCardCircadian({state:'post', _id: game._id})` instead of
+hardcoding `'NIGHT'` or `'LATE'` directly:** reuses the same
+`minutesSinceFinal`/`_finalizedAt` logic already governing the
+NIGHT-vs-LATE split elsewhere, so a game that JUST went final via this
+path gets the same real timing-based treatment as one detected via
+`checkForNewFinals` -- avoids two different finals-classification
+systems disagreeing with each other.
+
+## SCOPE BOUNDARY (v2.3 addendum)
+
+DO:
+- Wire the refresh into `renderESPNScores()` exactly as specified above
+- Reuse existing `isLive`/`isFinal`/`getCardCircadian` -- no new field-reading logic
+
+DO NOT:
+- Touch the `renderAll()` card-template path -- that's already correct (v2.2)
+- Add a new polling loop or timer -- `renderESPNScores()` already runs on
+  whatever cadence it currently does; this fix piggybacks on that
+  existing cadence, it doesn't change it
+- Attempt to fix CFL/Golf's classification freshness here -- they don't
+  have a working classification to refresh in the first place (v2.2's
+  documented scope boundary), so there's nothing for this fix to do for
+  them yet
+
+## DONE CONDITIONS (v2.3)
+- [ ] Exact current line number of the `espn-live`/`espn-final` toggle block re-confirmed before editing (file changes daily)
+- [ ] New circadian-refresh block added immediately adjacent, using the pattern above verbatim
+- [ ] `node smoke.js index.html` exits 0 -- note: this fix touches a function `renderESPNScores()` that likely has no existing circadian-specific smoke coverage; add ONE new assertion confirming the refresh block exists (`smoke.assert(src.includes("_newCircadian"), 'A[NEXT]: renderESPNScores refreshes circadian classification')`) rather than zero
+- [ ] SW_VERSION bumped
+- [ ] **Deferred to chat, cannot be verified by CC:** open the live PWA in a real browser (or via the CI-as-proxy pattern if feasible for this kind of DOM-level check), find a real card that is `status:'final'`/`_n.state === 'post'`, and confirm its `data-circadian` attribute updates to `NIGHT` or `LATE` on the next live-score poll cycle, not just that the code exists. This is the exact failure mode that shipped silently in v2.1/v2.2 -- code existing and being correct is not sufficient evidence; the actual DOM must be observed changing.
+
+## ONE-LINER (v2.3)
+git pull. Read docs/CC-CMD-2026-07-04-circadian-client-phase-v2.md,
+specifically the v2.3 correction and TASK 6. Re-confirm the exact
+current line number of the espn-live/espn-final toggle block before
+editing. Implement exactly as specified. Do not commit unless confidence
+≥ 95 on the CC-verifiable portion (code correctness, smoke assertion
+exists). The DOM-refresh-over-time verification is explicitly deferred
+to chat -- do not attempt to simulate it, do not skip the fix because
+you can't verify it end-to-end yourself.
