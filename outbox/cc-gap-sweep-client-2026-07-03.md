@@ -197,3 +197,29 @@ only commit.
 - [x] Task 5: manifest written, including an explicit scope-coverage gap
       in gap-class 4 rather than silently claiming full coverage
 - [x] No functional code changes made — only this file is committed
+
+---
+
+## Addendum (2026-07-04) — Task 2 correction
+
+Re-verified this manifest against current HEAD after a repeat request to
+run this same CC-CMD. The core Task 1/2 finding (BSD momentum) is still
+accurate — `_bsdOnSSEFrame`/`_bsdRepaint` are unchanged, `data.momentum`
+is still never read anywhere in `index.html`.
+
+**One line in the original Task 2 write-up was wrong.** It called
+`ensureGameSocket`'s WebSocket `.onmessage` handler (index.html:16744)
+"single-purpose, nothing else in the payload to check." A separate
+session, working after this manifest was committed, found a real partial-
+consumption gap in that exact handler: the object it built for `onFacts`
+dropped `situation`, `matchEvents`, `linescores`, `homeAbbr`, `awayAbbr`
+even though the relay was already sending them — the same failure class
+as the BSD momentum gap, just in a different handler this sweep didn't
+look closely enough at. That session's fix is now live at
+index.html:16846-16856 (commit range between 592c5ec and current HEAD).
+
+Net effect on the Task 5 table: gap-class 2's real instance count for
+*that specific handler* was actually 2, not 1 — this sweep only caught
+one of them at the time. It's since been fixed independently, so there is
+no outstanding code change to make; this addendum exists so the record is
+accurate rather than leaving an incomplete assessment uncorrected.
