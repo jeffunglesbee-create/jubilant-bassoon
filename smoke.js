@@ -6015,5 +6015,22 @@ assert('A-CIRCADIAN-9 — getNewspaperVoice function exists',
   html.includes('function getNewspaperVoice('),
   'getNewspaperVoice must be defined');
 
+assert('A-CIRCADIAN-10 — renderESPNScores refreshes circadian classification on live-score updates (v2.3)',
+  (() => {
+    const idx = html.indexOf('function renderESPNScores(');
+    if (idx < 0) return false;
+    const block = html.slice(idx, idx + 25000);
+    const removeIdx = block.indexOf('card.classList.remove("espn-live","espn-final")');
+    if (removeIdx < 0) return false;
+    // _newCircadian must appear between the espn-live/espn-final class
+    // removal and the isFinal branch — confirms this fix sits at the
+    // exact firing point v2.3 specifies, not just somewhere in the file.
+    const after = block.slice(removeIdx, removeIdx + 1200);
+    return after.includes('_newCircadian') &&
+      after.includes("getCardCircadian({state:'post'") &&
+      after.includes("card.dataset.circadian");
+  })(),
+  'renderESPNScores() must refresh card.dataset.circadian/circadian-* class on every live-score update, not just once at renderAll() time — otherwise a card\'s circadian state (e.g. PRIME) goes stale the moment the real game status changes after initial render (the v2.3 bug: MLB cards showing PRIME long after going final).');
+
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);

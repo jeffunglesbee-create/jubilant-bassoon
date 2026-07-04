@@ -21117,6 +21117,23 @@ function renderESPNScores(){
 
       // Update card class for accent colour
       card.classList.remove("espn-live","espn-final");
+      // v2.3: circadian classification must be refreshed here too --
+      // it's otherwise only computed once at renderAll() time and goes
+      // stale the moment a game's real status changes afterward (the
+      // exact bug this fix closes: MLB games showing PRIME long after
+      // going final). Reuses this function's own already-normalized
+      // isLive/isFinal (from _n.state) -- no new field-reading needed,
+      // this is the same signal already driving espn-live/espn-final.
+      const _newCircadian = isFinal
+          ? (getCardCircadian({state:'post', _id: game._id}))
+          : isLive
+              ? 'PRIME'
+              : card.dataset.circadian; // no signal change -- leave as-is rather than guessing
+      if (_newCircadian && _newCircadian !== card.dataset.circadian) {
+          card.classList.remove('circadian-prime','circadian-preview','circadian-night','circadian-late');
+          card.classList.add('circadian-' + _newCircadian.toLowerCase());
+          card.dataset.circadian = _newCircadian;
+      }
       if(isLive)  card.classList.add("espn-live");
       if(isFinal) {
         card.classList.add("espn-final");
@@ -22992,7 +23009,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-07-03c';
+  const SW_VERSION = '2026-07-03d';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
