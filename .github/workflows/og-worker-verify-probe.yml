@@ -1,0 +1,69 @@
+name: OG Worker Run-First Verify Probe
+# Live TASK 2 verification for CC-CMD-2026-07-04-og-worker-run-first-fix:
+# confirms run_worker_first actually causes src/worker.js's fetch()
+# handler to run for both bot and non-bot User-Agents against the
+# deployed root document, and that a non-HTML asset request is
+# unaffected.
+
+on:
+  push:
+    paths: ['outbox/.trigger-og-worker-probe']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Probe bot UA, non-bot UA, and a static asset
+        run: |
+          TS=$(date -u +%Y%m%dT%H%M%SZ)
+          OUT="outbox/og-worker-probe-${TS}.txt"
+          URL="https://jubilant-bassoon.jeffunglesbee.workers.dev/"
+          ASSET_URL="https://jubilant-bassoon.jeffunglesbee.workers.dev/sw.js"
+
+          {
+            echo "=== OG Worker Run-First Verify Probe [$TS] ==="
+            echo ""
+            echo "--- 1. Bot UA (Twitterbot/1.0) against root ---"
+            curl -sL -H "User-Agent: Twitterbot/1.0" -w "\nHTTP=%{http_code} time=%{time_total}s\n" "$URL" -o /tmp/bot.html -D /tmp/bot_headers.txt
+            echo "cf-cache-status: $(grep -i '^cf-cache-status:' /tmp/bot_headers.txt || echo 'not present')"
+            echo "og:description present: $(grep -q 'og:description' /tmp/bot.html && echo YES || echo NO)"
+            grep -o '<meta property="og:description"[^>]*>' /tmp/bot.html || echo "(no og:description tag found)"
+            echo ""
+
+            echo "--- 2. Normal browser UA against root ---"
+            curl -sL -H "User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36" -w "\nHTTP=%{http_code} time=%{time_total}s\n" "$URL" -o /tmp/normal.html -D /tmp/normal_headers.txt
+            echo "cf-cache-status: $(grep -i '^cf-cache-status:' /tmp/normal_headers.txt || echo 'not present')"
+            echo "og:description present: $(grep -q 'og:description' /tmp/normal.html && echo YES || echo NO)"
+            echo ""
+
+            echo "--- 3. Non-HTML asset (sw.js) with both UAs ---"
+            curl -sL -H "User-Agent: Twitterbot/1.0" -w "content-type=%{content_type} time=%{time_total}s\n" "$ASSET_URL" -o /tmp/asset_bot.js
+            curl -sL -H "User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36" -w "content-type=%{content_type} time=%{time_total}s\n" "$ASSET_URL" -o /tmp/asset_normal.js
+            echo "asset bytes match: $(cmp -s /tmp/asset_bot.js /tmp/asset_normal.js && echo YES || echo NO)"
+            echo ""
+
+            echo "--- Diff check: bot HTML vs normal HTML (should differ only by the injected tag) ---"
+            diff /tmp/bot.html /tmp/normal.html | head -20 || echo "(no diff -- identical, would indicate the fix did not take effect)"
+          } > "$OUT" 2>&1
+          cat "$OUT"
+          echo "OUT=$OUT" >> $GITHUB_ENV
+
+      - name: Push result
+        run: |
+          git config user.email "probe@field"
+          git config user.name "OG Worker Verify Probe"
+          git add "$OUT" 2>/dev/null || true
+          git diff --cached --quiet && echo "Nothing to commit" && exit 0
+          git commit -m "og worker verify probe result [skip ci]"
+          for i in 1 2 3; do
+            git pull --rebase --autostash origin main && git push origin main && break
+            sleep $((i * 5))
+          done
+        env:
+          OUT: ${{ env.OUT }}
