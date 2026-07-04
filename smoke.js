@@ -3862,8 +3862,13 @@ assert('DRAMA-COMPLIANCE-002 — no raw dramaScoreLive() output is template-inte
 // would silently produce all-zero drama scores.
 
 assert('DRAMA-BACKFILL-001 — computeDramaRetroactive tags every snapshot state:\'in\' before calling dramaScoreLive',
-  html.includes("dramaScoreLive({ ...st, state: 'in' }, sport)"),
-  'dramaScoreLive() returns 0 immediately unless eData.state===\'in\' (state defaults to \'pre\', both \'pre\'/\'post\' short-circuit to 0) — historical snapshots reconstructed from ESPN summary data have no natural state field, so computeDramaRetroactive must explicitly tag state:\'in\' on each one or the entire backfill silently computes all zeros.');
+  // CC-CMD-2026-07-04-soccer-drama-scoring-fix TASK 4 legitimately changed
+  // the exact literal text here (added homeRank/awayRank to the spread) —
+  // updated to check the semantic property (state:'in' still tagged, ...st
+  // still spread) rather than an exact-string match that a real, necessary
+  // change would otherwise break.
+  !!html.match(/dramaScoreLive\(\{[^}]*\.\.\.st,\s*state:\s*'in'\s*\}, sport\)/),
+  'dramaScoreLive() returns 0 immediately unless eData.state===\'in\' (state defaults to \'pre\', both \'pre\'/\'post\' short-circuit to 0) — historical snapshots reconstructed from ESPN summary data have no natural state field, so computeDramaRetroactive must explicitly tag state:\'in\' on each one (alongside any other fields, e.g. homeRank/awayRank) or the entire backfill silently computes all zeros.');
 
 assert('DRAMA-BACKFILL-002 — getDramaSustained accepts an optional nowOverride, backward compatible with all existing callers',
   /function getDramaSustained\(gameId, threshold = 65, windowMs = 30 \* 60 \* 1000, nowOverride\)/.test(html) &&
@@ -6143,6 +6148,30 @@ assert('A-CIRCVIS-4 — circadian accent rules are placed AFTER espn-live/espn-f
     return espnFinalIdx > -1 && circPrimeIdx > -1 && circPrimeIdx > espnFinalIdx;
   })(),
   '.game-card.circadian-prime/.circadian-preview/.circadian-night .card-accent rules must appear AFTER .game-card.espn-final .card-accent in source order — same-specificity CSS rules resolve ties by source order, so placing circadian rules earlier (e.g. merely grouped near .circadian-late) would let espn-live/espn-final silently win the cascade instead, defeating the entire point of this CC-CMD for MLB specifically.');
+
+// ── Soccer drama scoring fix (A-SOCCERDRAMA — CC-CMD-2026-07-04-soccer-drama-scoring-fix) ──
+assert('A-SOCCERDRAMA-1 — soccer dramaScoreLive has an extra-time bonus tier, threshold verified against a real WC26 knockout extra-time game',
+  !!html.match(/soccer[\s\S]{0,900}period>=3\)\s*timeBonus=24/),
+  'dramaScoreLive\'s soccer time-bonus branch must include "if(period>=3) timeBonus=24" — verified 2026-07-04 against real ESPN keyEvents for Australia 1-1 Egypt (event 760499, decided by penalties): period 1-2 are normal halves, period 3-4 are extra time, period 5 is the shootout, so period>=3 correctly captures all of it as one bucket.');
+
+assert('A-SOCCERDRAMA-2 — soccer dramaScoreLive branch also matches the real WC26 sport string ("FIFA World Cup 2026"), not just generic soccer leagues',
+  !!html.match(/soccer[\s\S]{0,200}world cup[\s\S]{0,900}period>=3\)\s*timeBonus=24/),
+  'The soccer time-bonus branch must also check sp.includes(\'wc26\')||sp.includes(\'world cup\') — confirmed live that the real WC26 section sport label is literally "FIFA World Cup 2026", which never matched the original soccer/league/mls/liga/ligue/premier-only condition, so this fix (and TASK 4\'s upset bonus) would never have fired for a real live WC26 game without it.');
+
+assert('A-SOCCERDRAMA-3 — fetchSoccerHistoricalStates interpolates quiet stretches, preserving real event data points unchanged',
+  html.includes('FIVE_MIN_MS') && !!html.match(/interpolated\.push\(curr\)/),
+  'fetchSoccerHistoricalStates must interpolate synthetic 5-minute sample points between real keyEvents (FIVE_MIN_MS) and must still push the real curr event unchanged (interpolated.push(curr)) — this is additive filling of gaps, not a replacement of real data.');
+
+assert('A-SOCCERDRAMA-4 — soccer upset-factor bonus exists and is conditional on the underdog actually competing now, not a flat pre-game bonus',
+  html.includes('upsetBonus') && !!html.match(/rankGap >= 30 && diff <= 1/),
+  'dramaScoreLive must compute upsetBonus only when rankGap >= 30 AND diff <= 1 are BOTH true — a big-favorite blowout must get zero upset bonus regardless of ranking gap size, matching RUWT/ADR-002 (internal signal reflecting current game state, not a pre-game-expectation score).');
+
+assert('A-SOCCERDRAMA-5 — FIFA rank fetch/cache exists and threads homeRank/awayRank into eData at all three real dramaScoreLive call sites',
+  html.includes('async function fetchTeamRank(') &&
+  html.includes('function getCachedTeamRank(') &&
+  !!html.match(/computeDramaRetroactive\(historicalStates, sport, homeRank, awayRank\)/) &&
+  !!html.match(/computeDramaRetroactive\(states, isMLB \? 'mlb' : 'soccer', homeRank, awayRank\)/),
+  'fetchTeamRank/getCachedTeamRank must exist, and computeDramaRetroactive must accept and use homeRank/awayRank params, threaded from _backfillOneDramaGame — without this, the upset bonus logic would be correct in isolation but never receive real rank data at its real call sites (the same failure class already caught twice tonight for the circadian classification and card-attribute-sync work).');
 
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);

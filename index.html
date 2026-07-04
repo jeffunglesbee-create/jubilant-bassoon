@@ -23175,7 +23175,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-07-04a';
+  const SW_VERSION = '2026-07-04d';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -23358,6 +23358,78 @@ function applyQW1SituationBonus(eData, sport){
   return sitBonus;
 }
 
+// ── FIFA team rank cache (soccer upset-factor bonus, CC-CMD-2026-07-04-
+// soccer-drama-scoring-fix TASK 4) ───────────────────────────────────────
+// Real relay endpoint (Parse.bot-backed, confirmed live 2026-07-04):
+// GET {V2_RELAY_BASE}/fifa-rankings/{team} -> {ok:true,rank,points,team}
+// or {ok:false,error:"team not found in rankings"} for unmapped teams
+// (confirmed real and expected via live probe against a nonexistent team
+// name — not a crash, not a bug, just no upset bonus for that team).
+// Ranks don't change per-game, so cached with a long (7-day) TTL, matching
+// the relay's own KV cache lifetime and fetchBDLRecentForm's established
+// in-memory + localStorage cache pattern (index.html ~17804), reused here
+// rather than inventing a new caching mechanism.
+const _fifaRankCache = {};
+const FIFA_RANK_TTL = 7 * 24 * 60 * 60 * 1000; // 7 days
+function _fifaRankCacheKey(teamName) {
+  return `fifa_rank_${teamName.toLowerCase().replace(/\s+/g,'_')}`;
+}
+// Synchronous cache-only read (in-memory, then localStorage). Returns
+// undefined if never looked up yet (caller should decide what to do),
+// or the cached rank (a number, or null if the relay said "not found" /
+// the fetch failed) if a fresh cache entry exists.
+function _readCachedRank(ck) {
+  if (_fifaRankCache[ck] !== undefined) return _fifaRankCache[ck];
+  try {
+    const cached = localStorage.getItem(ck);
+    if (cached) {
+      const p = JSON.parse(cached);
+      if (Date.now() - p.ts < FIFA_RANK_TTL) { _fifaRankCache[ck] = p.rank; return p.rank; }
+    }
+  } catch(_) {}
+  return undefined;
+}
+// Async fetch + cache. Use from paths that can await (the historical/
+// backfill path — computeDramaRetroactive's caller already awaits
+// fetchSoccerHistoricalStates, so awaiting this too adds no new blocking
+// behavior class, just one more per-game relay call).
+async function fetchTeamRank(teamName) {
+  if (!teamName) return null;
+  const ck = _fifaRankCacheKey(teamName);
+  const cached = _readCachedRank(ck);
+  if (cached !== undefined) return cached;
+  let rank = null;
+  try {
+    const r = await fetch(`${V2_RELAY_BASE}/fifa-rankings/${encodeURIComponent(teamName)}`,
+      { signal: AbortSignal.timeout(5000) });
+    if (r.ok) {
+      const d = await r.json();
+      // d.ok:false ("team not found in rankings") is expected for
+      // unmapped teams (confirmed real error shape, not guessed) — rank
+      // simply stays null, meaning no upset bonus is possible for them.
+      rank = d.ok ? d.rank : null;
+    }
+  } catch(_) {}
+  _fifaRankCache[ck] = rank;
+  try { localStorage.setItem(ck, JSON.stringify({ rank, ts: Date.now() })); } catch(_) {}
+  return rank;
+}
+// Sync cache-only read for hot render paths that cannot await a fetch
+// (injectDramaBadges, getOneToWatchGame run on every render/poll cycle).
+// Returns the cached rank if known, else kicks off a background fetch
+// (fire-and-forget) so it's available on a LATER render pass, and
+// returns null for THIS pass rather than blocking — matches the
+// CC-CMD's instruction to fall back to no upset bonus, not crash or
+// retry indefinitely, for a rank that isn't resolved yet.
+function getCachedTeamRank(teamName) {
+  if (!teamName) return null;
+  const ck = _fifaRankCacheKey(teamName);
+  const cached = _readCachedRank(ck);
+  if (cached !== undefined) return cached;
+  fetchTeamRank(teamName).catch(() => {});
+  return null;
+}
+
 // FEATURE: DRAMA SCORE LIVE — QW-1 (Drama Cross-Reference doc)
 // espnScores.situation modifiers on top of score-diff + time-urgency base
 // Returns 0–100 integer. 0 = pregame/final, >80 = "fire" urgency.
@@ -23377,7 +23449,16 @@ function dramaScoreLive(eData, sport){
   if(sp.includes('mlb') || sp.includes('baseball')){
     base = diff===0?1.0 : diff===1?0.85 : diff===2?0.55 : diff<=4?0.28 : 0.08;
   } else if(sp.includes('soccer')||sp.includes('league')||sp.includes('mls')||
-            sp.includes('liga')||sp.includes('ligue')||sp.includes('premier')){
+            sp.includes('liga')||sp.includes('ligue')||sp.includes('premier')||
+            sp.includes('wc26')||sp.includes('world cup')){
+    // wc26/world cup added (CC-CMD-2026-07-04-soccer-drama-scoring-fix):
+    // confirmed live, the real WC26 section's sport label is literally
+    // "FIFA World Cup 2026" (index.html section-injection + hardcoded
+    // fallback schedule, both checked) -- this never matched the prior
+    // condition, so a live WC26 game fell to the NBA/NHL/NFL else-branch
+    // below and used the WRONG base-score calibration. Same substring
+    // check classifySport() already uses for its own isWC26 (verified
+    // via grep, reused rather than invented).
     base = diff===0?1.0 : diff===1?0.72 : diff===2?0.32 : 0.06;
   } else {
     // NBA / NHL / NFL — higher scoring, tighter windows
@@ -23403,9 +23484,22 @@ function dramaScoreLive(eData, sport){
     else if(period>=9) timeBonus=16;
     else if(period>=7) timeBonus=7;
   } else if(sp.includes('soccer')||sp.includes('league')||sp.includes('mls')||
-            sp.includes('liga')||sp.includes('ligue')||sp.includes('premier')){
+            sp.includes('liga')||sp.includes('ligue')||sp.includes('premier')||
+            sp.includes('wc26')||sp.includes('world cup')){
+    // wc26/world cup added — see the matching base-score branch above for
+    // why (the real WC26 sport label never matched this condition before).
     const minNum = parseInt(clock)||0;
-    if(minNum>=90) timeBonus=18;    // stoppage time
+    // Extra time gets its own tier, matching every other sport's overtime
+    // bonus in this function (NHL +25, NBA/MLB +22, NFL +20) — soccer
+    // previously had none, conflating stoppage time and actual extra time
+    // into the same generic "≥90 minute" bucket. Threshold verified
+    // 2026-07-04 against a real WC26 knockout-stage extra-time game
+    // (Australia 1, Egypt 1, decided by penalties, ESPN event 760499):
+    // real keyEvents confirm period 1-2 = normal halves, period 3 =
+    // "Extra Time First Half", period 4 = "2nd Half Extra Time", period 5
+    // = "Shootout" — period>=3 correctly captures all of it as one bucket.
+    if(period>=3) timeBonus=24;         // extra time (incl. shootout)
+    else if(minNum>=90) timeBonus=18;   // stoppage time (unchanged)
     else if(minNum>=80) timeBonus=10;
     else if(minNum>=70) timeBonus=5;
   } else if(sp.includes('nfl')||sp.includes('football')){
@@ -23470,7 +23564,35 @@ function dramaScoreLive(eData, sport){
     }catch(e){}
   }
 
-  const raw = base*52 + timeBonus + sitBonus;
+  // ── Upset-factor bonus (soccer only, CC-CMD-2026-07-04-soccer-drama-
+  // scoring-fix TASK 4) ─────────────────────────────────────────────────
+  // Real FIFA rank data via the relay (Parse.bot-backed, 7-day cached,
+  // confirmed live 2026-07-04: Argentina rank 1, Cape Verde/"Cabo Verde"
+  // rank 67, gap 66). Deliberately CONDITIONAL, not a flat bonus for any
+  // big ranking-gap game: only applies when the underdog is actually
+  // competing RIGHT NOW (tied or within 1 goal) -- a 5-0 blowout by the
+  // favorite gets nothing extra just because the ranking gap is large.
+  // This matches how every other bonus in this function only rewards
+  // currently-true conditions, not pre-game expectations (RUWT/ADR-002:
+  // internal signal, not a pre-game-narrative score).
+  let upsetBonus = 0;
+  if (sp.includes('soccer') || sp.includes('league') || sp.includes('mls') ||
+      sp.includes('liga') || sp.includes('ligue') || sp.includes('premier') ||
+      sp.includes('wc26') || sp.includes('world cup')) {
+      const rankGap = (typeof eData.homeRank === 'number' && typeof eData.awayRank === 'number')
+          ? Math.abs(eData.homeRank - eData.awayRank) : 0;
+      // Threshold: 30+ confirmed reasonable against the real Argentina
+      // (1) vs Cape Verde (67) case (gap 66) -- fires correctly for the
+      // motivating example. Not verified against the full real rank
+      // distribution/every possible matchup; sanity-check against a few
+      // more real WC26 pairings once live and adjust if it fires too
+      // often/rarely.
+      if (rankGap >= 30 && diff <= 1) {
+          upsetBonus = Math.min(15, Math.floor(rankGap / 10)); // capped, scales with gap size
+      }
+  }
+
+  const raw = base*52 + timeBonus + sitBonus + upsetBonus;
   // ── WP Delta bonus (ESPN Gambit Win Probability) ─────────────────────
   // wpDelta of 15+ pts across consecutive polls = significant swing
   // Contribution capped at 25pts to prevent WP from dominating score
@@ -33752,10 +33874,15 @@ function _dramaArcClassify(peak, sustained, trend, peakScore) {
 // both 'pre'/'post' short-circuit to 0). Historical snapshots have no
 // natural state field; every snapshot must be tagged state:'in' or this
 // entire computation silently produces all zeros.
-function computeDramaRetroactive(historicalStates, sport) {
+function computeDramaRetroactive(historicalStates, sport, homeRank, awayRank) {
   if (!historicalStates || !historicalStates.length) return null;
   const hist = historicalStates.map(st => {
-    const score = dramaScoreLive({ ...st, state: 'in' }, sport);
+    // CC-CMD-2026-07-04-soccer-drama-scoring-fix TASK 4: homeRank/awayRank
+    // are optional (undefined for MLB, which never passes them) — spread
+    // order puts them before state:'in' so they're always present as real
+    // values (or undefined) rather than accidentally overwritten by
+    // anything on st.
+    const score = dramaScoreLive({ homeRank, awayRank, ...st, state: 'in' }, sport);
     return { t: st.t, s: Math.round(score), p: st.period || 0 };
   });
 
@@ -33847,7 +33974,7 @@ async function fetchSoccerHistoricalStates(espnEventId, league) {
     const homeTeamId = competitors.find(c => c.homeAway === 'home')?.team?.id;
     if (!homeTeamId) return [];
     let homeScore = 0, awayScore = 0;
-    return (data.keyEvents || [])
+    const eventStates = (data.keyEvents || [])
       .filter(e => e.wallclock)
       .map(e => {
         if (e.scoringPlay) {
@@ -33860,6 +33987,38 @@ async function fetchSoccerHistoricalStates(espnEventId, league) {
           t: new Date(e.wallclock).getTime(),
         };
       });
+    if (eventStates.length < 2) return eventStates; // nothing to interpolate between
+
+    // CC-CMD-2026-07-04-soccer-drama-scoring-fix TASK 2: keyEvents-only
+    // sampling has no representation of time passing without a goal/card/
+    // sub -- confirmed real gap via the Argentina/Cape Verde case (a tense
+    // scoreless stretch approaching stoppage time had no keyEvent marking
+    // it, so the peak-finder never evaluated that moment at all). Interpolate
+    // synthetic sample points every 5 real minutes between consecutive
+    // events, carrying forward the last-known score/period and synthesizing
+    // an advancing clock value, so dramaScoreLive's time-bonus logic still
+    // sees rising urgency even when nothing "key" happened. Real event
+    // points are preserved unchanged -- this only fills the gaps.
+    const FIVE_MIN_MS = 5 * 60 * 1000;
+    const interpolated = [eventStates[0]];
+    for (let i = 1; i < eventStates.length; i++) {
+      const prev = eventStates[i - 1];
+      const curr = eventStates[i];
+      const gap = curr.t - prev.t;
+      const steps = Math.floor(gap / FIVE_MIN_MS);
+      for (let s = 1; s < steps; s++) {
+        const prevClockMin = parseInt(prev.clock) || 0;
+        interpolated.push({
+          homeScore: prev.homeScore,
+          awayScore: prev.awayScore,
+          period: prev.period,
+          clock: String(prevClockMin + s * 5), // approximate advancing minute
+          t: prev.t + s * FIVE_MIN_MS,
+        });
+      }
+      interpolated.push(curr);
+    }
+    return interpolated;
   } catch(e) {
     if (typeof FIELD_DEBUG !== 'undefined' && FIELD_DEBUG) console.log('[DRAMA-BACKFILL] Soccer fetch error:', e?.message);
     return [];
@@ -33900,7 +34059,21 @@ async function _backfillOneDramaGame(g) {
     ? await fetchMLBHistoricalStates(g.espn_event_id)
     : await fetchSoccerHistoricalStates(g.espn_event_id);
   if (!states.length) return;
-  const arc = computeDramaRetroactive(states, isMLB ? 'mlb' : 'soccer');
+  // CC-CMD-2026-07-04-soccer-drama-scoring-fix TASK 4: fetch real FIFA
+  // ranks for soccer games only (MLB has no rank concept here). Awaited
+  // directly since this whole function is already async/fire-and-forget
+  // from its own caller — adds one more per-game relay call, not a new
+  // blocking behavior class. "Team not found" (unmapped team) resolves
+  // to null via fetchTeamRank, which dramaScoreLive's upsetBonus already
+  // treats as "no upset bonus for that game" rather than an error.
+  let homeRank = null, awayRank = null;
+  if (!isMLB) {
+    [homeRank, awayRank] = await Promise.all([
+      fetchTeamRank(g.home),
+      fetchTeamRank(g.away),
+    ]);
+  }
+  const arc = computeDramaRetroactive(states, isMLB ? 'mlb' : 'soccer', homeRank, awayRank);
   if (!arc) return;
   const relayBase = (typeof V2_RELAY_BASE !== 'undefined') ? V2_RELAY_BASE : 'https://field-relay-nba.jeffunglesbee.workers.dev';
   fetch(`${relayBase}/archive/drama`, {
@@ -35347,7 +35520,19 @@ function injectDramaBadges(){
     });
     if(!eData) return;
     const sport = card.dataset.sport||'';
-    let score = dramaScoreLive(eData, sport);
+    // CC-CMD-2026-07-04-soccer-drama-scoring-fix TASK 4: thread FIFA ranks
+    // into a shallow copy (never mutate the shared espnScores entry) for
+    // soccer/WC26 games only — sync cache-only read, never blocks this
+    // render; getCachedTeamRank kicks off a background fetch on a cache
+    // miss so ranks become available on a later pass.
+    const _sp4 = sport.toLowerCase();
+    const _isSoccer4 = _sp4.includes('soccer')||_sp4.includes('league')||_sp4.includes('mls')||
+      _sp4.includes('liga')||_sp4.includes('ligue')||_sp4.includes('premier')||
+      _sp4.includes('wc26')||_sp4.includes('world cup');
+    const _dramaEData = _isSoccer4
+      ? { ...eData, homeRank: getCachedTeamRank(eData.homeName), awayRank: getCachedTeamRank(eData.awayName) }
+      : eData;
+    let score = dramaScoreLive(_dramaEData, sport);
 
     // ── Wow#41: Garbage Time cap ─────────────────────────────────────────
     // Cap drama at 20 when game is in its final period and margin > 24.
@@ -35910,7 +36095,17 @@ function _otwFindLiveGame(minScore){
         bestRank=rank;
         // score retained for back-compat with downstream _otwGetLiveTier call
         // (uses it as smoothed-drama fallback). Internal sort uses tier rank.
-        const _s=dramaScoreLive(ed,sec.sport);
+        // CC-CMD-2026-07-04-soccer-drama-scoring-fix TASK 4: thread FIFA
+        // ranks for soccer/WC26 only, same sync cache-only pattern as
+        // injectDramaBadges — never mutates the shared espnScores entry.
+        const _sp4b=(sec.sport||'').toLowerCase();
+        const _isSoccer4b=_sp4b.includes('soccer')||_sp4b.includes('league')||_sp4b.includes('mls')||
+          _sp4b.includes('liga')||_sp4b.includes('ligue')||_sp4b.includes('premier')||
+          _sp4b.includes('wc26')||_sp4b.includes('world cup');
+        const _dramaEd=_isSoccer4b
+          ? {...ed, homeRank:getCachedTeamRank(ed.homeName), awayRank:getCachedTeamRank(ed.awayName)}
+          : ed;
+        const _s=dramaScoreLive(_dramaEd,sec.sport);
         best={g,ed,sport:sec.sport,tier,score:_s};
       }
     });
