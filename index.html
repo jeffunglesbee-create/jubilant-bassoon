@@ -6651,30 +6651,54 @@ function getStatus(iso, opts){
 // nhlStreams and mlbStreams defined in SR block above
 
 // ── Per-game Circadian State (CC-CMD-2026-07-04-circadian-client-phase-v2) ──
-// Handles the real, split terminal-state vocabulary confirmed live
-// 2026-07-04: NHL/NBA/WC26 use 'final', MLB/NFL/CFB use 'post'. Treats
-// both as terminal rather than assuming either is universal — re-verify
-// via P1 in the CC-CMD if a new adapter is added later and this stops matching.
+// v2.2: cross-sport, per-adapter field awareness — confirmed via live
+// browser inspection 2026-07-04 that getCardCircadian's v2.1 version only
+// worked for WC26. WC26/V2-normalized sports use game.state ('final'/'post'
+// terminal). MLB uses a different field entirely, game.status (via
+// normalizeMLBStatus(), index.html:19788: 'pregame'/'live'/'final'/'postponed').
+// AFL uses game._aflComplete (0-100 numeric, index.html:21995/22039).
+// CFL and Golf have no reliable completion signal on their base game
+// objects at all — left on the explicit LATE fallback below, not given
+// invented logic (guessing start_time + a fixed duration risks being
+// confidently wrong). Re-verify via the CC-CMD's probe block if a new
+// adapter shape is added later and this stops matching.
 function isGameOver(game) {
-  return game.state === 'final' || game.state === 'post';
+  if (game.state === 'final' || game.state === 'post') return true;       // WC26/V2-normalized sports
+  if (game.status === 'final' || game.status === 'postponed') return true; // MLB (normalizeMLBStatus vocabulary)
+  if (typeof game._aflComplete === 'number' && game._aflComplete >= 100) return true; // AFL
+  return false;
 }
 
-// Per-game circadian state. Pure function of game.state + elapsed time
-// since final — no clock dependency, no global mode, no KV fetch.
-// Matches "FIELD — Circadian System Spec Revised" (June 20-21 2026).
+// Per-game circadian state. Pure function of game.state/status/_aflComplete
+// + elapsed time since final — no clock dependency, no global mode, no KV
+// fetch. Matches "FIELD — Circadian System Spec Revised" (June 20-21 2026).
 //
-// mapV2ToESPN() normalizes every game object's state to 'pre'/'in'/'post'
-// before card-render code ever sees it — 'live' and 'final' (the relay's
-// own raw vocabulary) never reach this function in practice. Check BOTH,
-// matching the codebase's own established defensive pattern (e.g. this
-// file's ensureGameSocket and wp_update handlers: `state === 'live' || state === 'in'`).
+// mapV2ToESPN() normalizes every V2/WC26 game object's state to
+// 'pre'/'in'/'post' before card-render code ever sees it — 'live' and
+// 'final' (the relay's own raw vocabulary) never reach this function for
+// those sports in practice. Check BOTH, matching the codebase's own
+// established defensive pattern (e.g. this file's ensureGameSocket and
+// wp_update handlers: `state === 'live' || state === 'in'`). MLB and AFL
+// carry no `state` field at all — see isGameOver's comment above.
 function getCardCircadian(game) {
-  if (game.state === 'live' || game.state === 'in') return 'PRIME';
-  if (game.state === 'pre') return 'PREVIEW';
+  // PRIME (live)
+  if (game.state === 'live' || game.state === 'in') return 'PRIME';           // WC26/V2
+  if (game.status === 'live') return 'PRIME';                                  // MLB
+  if (typeof game._aflComplete === 'number' && game._aflComplete > 0 && game._aflComplete < 100) return 'PRIME'; // AFL
+
+  // PREVIEW (not started)
+  if (game.state === 'pre') return 'PREVIEW';           // WC26/V2
+  if (game.status === 'pregame') return 'PREVIEW';       // MLB
+  if (game._aflComplete === 0) return 'PREVIEW';         // AFL, explicit 0 (not merely absent/undefined)
+
+  // NIGHT/LATE (over)
   if (isGameOver(game)) {
     return minutesSinceFinal(game) < 120 ? 'NIGHT' : 'LATE';
   }
-  return 'LATE'; // unknown/unexpected state — degrade safely, don't crash
+
+  // CFL, Golf, and anything else with no recognized field: explicit,
+  // documented fallback — not a silent gap.
+  return 'LATE';
 }
 
 // No existing field carries a genuine finalized-at moment (espnScoreTs is
@@ -6695,7 +6719,8 @@ function minutesSinceFinal(game) {
 }
 
 // Aggregate voice for the newspaper banner. Pure function of a games array
-// (each item just needs .state/._id — same shape getCardCircadian expects).
+// (each item just needs the same shape getCardCircadian expects: .state/
+// .status/._aflComplete/._id, per-sport as documented there).
 // Does not change what fetchNewspaper fetches — see applyNewspaperVoice,
 // which supplies the real games array once one exists (renderAll time, not
 // bootNewspaper time — the newspaper bundle itself carries no live per-game
@@ -10622,14 +10647,18 @@ function renderAll(){
       const isLive=st==="live";
       const timeCls=isLive?"game-time live-t":"game-time";
       const liveBadge=isLive?'<div class="live-badge"><span class="live-dot"></span>LIVE</div>':"";
-      // Per-game circadian state (CC-CMD-2026-07-04-circadian-client-phase-v2).
-      // Real per-game state lives on findESPNScore(g), not on g itself —
-      // missing/unpolled games degrade to LATE per the CC-CMD's own SCOPE
-      // BOUNDARY (no clock-based fallback).
+      // Per-game circadian state (CC-CMD-2026-07-04-circadian-client-phase-v2, v2.2).
+      // Cross-sport: WC26/V2's live .state lives on findESPNScore(g), not on
+      // g itself — but MLB's .status and AFL's ._aflComplete live directly
+      // on g (set by normalizeMLBGame/squiggleToFieldGame at schedule build
+      // time), never on the ESPN-score lookup object. Both must be threaded
+      // through; missing/unrecognized shapes (CFL, Golf) degrade to LATE
+      // per the CC-CMD's own SCOPE BOUNDARY (no clock-based fallback).
       const _circEData=typeof findESPNScore==='function'?findESPNScore(g):null;
-      const _circadian=getCardCircadian({state:_circEData?_circEData.state:null,_id:g._id});
+      const _circInput={state:_circEData?_circEData.state:null,status:g.status,_aflComplete:g._aflComplete,_id:g._id};
+      const _circadian=getCardCircadian(_circInput);
       const _circCls="circadian-"+_circadian.toLowerCase();
-      _renderAllCircadianGames.push({state:_circEData?_circEData.state:null,_id:g._id});
+      _renderAllCircadianGames.push(_circInput);
       return `<div class="game-card ${_cardTierClass(g)} ${st}${isLive?" espn-live":""}${MY_TEAMS.has(g.home)||MY_TEAMS.has(g.away)?" my-team-card":""} ${_circCls}" data-gameid="${g._id}" data-sport="${sec.sport}" data-home="${(g.home||"").replace(/"/g,"")}" data-away="${(g.away||"").replace(/"/g,"")}" data-starttime="${g.start_time||""}" data-venue="${(g.venue||"").replace(/"/g,"")}" data-confirmed="${g.confirmed===true?'true':'false'}" data-circadian="${_circadian}"${g._gameImportance?` data-gameimportance="${g._gameImportance}"`:''} ${g._adapterProof?`data-proof-adapter="${g._adapterProof.adapterId}" data-proof-source="${g._adapterProof.sourceId}"`:''}style="--i:${gi}">
         <div class="card-accent"></div>
         <button class="pin-btn" aria-label="Pin game to widget" title="Pin to corner widget" onclick="event.stopPropagation();pinGame('${g._id}')">📌</button><button class="star-btn ${MY_TEAMS.has(g.home)||MY_TEAMS.has(g.away)?"starred":""}" aria-label="Follow team" title="${MY_TEAMS.has(g.away)?"Unfollow "+g.away:MY_TEAMS.has(g.home)?"Unfollow "+g.home:"Follow "+g.away+" / "+g.home}">★</button>
@@ -22963,7 +22992,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-07-03b';
+  const SW_VERSION = '2026-07-03c';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)

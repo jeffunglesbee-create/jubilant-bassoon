@@ -5921,10 +5921,21 @@ assert('A_CARD_BRIEF_LINE_4 — scheduleRenderAll in fetchGameBriefOnDemand.then
   })(),
   'fetchGameBriefOnDemand.then must call scheduleRenderAll to update the card face');
 
-// ── Per-game Circadian State (A-CIRCADIAN — CC-CMD-2026-07-04-circadian-client-phase-v2) ──
+// ── Per-game Circadian State (A-CIRCADIAN — CC-CMD-2026-07-04-circadian-client-phase-v2, v2.2) ──
 // Real codebase convention here is descriptive prefixes (A-TOURN, A-ROUND,
 // MLBKEY), not strictly-sequential A-numbers — the CC-CMD's own snippet
 // assumed the latter without checking; following the real convention.
+// v2.2 harness note: isGameOver stub below mirrors the real cross-sport
+// function (state/status/_aflComplete) since getCardCircadian's NIGHT/LATE
+// branch calls the real isGameOver, not a same-file-scope reference —
+// extraction runs each function in isolation via new Function().
+const _CIRCADIAN_ISGAMEOVER_STUB = `function isGameOver(g){
+  if(g.state==='final'||g.state==='post')return true;
+  if(g.status==='final'||g.status==='postponed')return true;
+  if(typeof g._aflComplete==='number'&&g._aflComplete>=100)return true;
+  return false;
+}`;
+
 assert('A-CIRCADIAN-1 — isGameOver function exists',
   html.includes('function isGameOver('),
   'isGameOver must be defined');
@@ -5933,29 +5944,74 @@ assert('A-CIRCADIAN-2 — getCardCircadian function exists',
   html.includes('function getCardCircadian('),
   'getCardCircadian must be defined');
 
-assert('A-CIRCADIAN-3 — getCardCircadian treats both \'live\' and \'in\' as PRIME (v2.1 fix — the client normalizes relay \'live\' to \'in\' before card-render code ever sees it, confirmed via mapV2ToESPN)',
+assert('A-CIRCADIAN-3 — getCardCircadian treats both \'live\' and \'in\' as PRIME for WC26/V2 (v2.1 fix — the client normalizes relay \'live\' to \'in\' before card-render code ever sees it, confirmed via mapV2ToESPN)',
   (() => {
     const fnMatch = html.match(/function getCardCircadian\(game\) \{[\s\S]*?\n\}/);
     if (!fnMatch) return false;
     try {
-      const fn = new Function(`function isGameOver(g){return g.state==='final'||g.state==='post';}\nfunction minutesSinceFinal(){return Infinity;}\n${fnMatch[0]}\nreturn getCardCircadian;`)();
+      const fn = new Function(`${_CIRCADIAN_ISGAMEOVER_STUB}\nfunction minutesSinceFinal(){return Infinity;}\n${fnMatch[0]}\nreturn getCardCircadian;`)();
       return fn({state:'live'}) === 'PRIME' && fn({state:'in'}) === 'PRIME';
     } catch (e) { return false; }
   })(),
-  'getCardCircadian({state:\'live\'}) and getCardCircadian({state:\'in\'}) must both return PRIME — real card objects from findESPNScore() only ever carry \'in\', never \'live\' (mapV2ToESPN normalizes at ingestion), so checking \'live\' alone would never classify a real live game as PRIME.');
+  'getCardCircadian({state:\'live\'}) and getCardCircadian({state:\'in\'}) must both return PRIME — real card objects from findESPNScore() only ever carry \'in\', never \'live\' (mapV2ToESPN normalizes at ingestion), so checking \'live\' alone would never classify a real live WC26/V2 game as PRIME.');
 
-assert('A-CIRCADIAN-4 — getCardCircadian pre state maps to PREVIEW',
+assert('A-CIRCADIAN-4 — getCardCircadian pre state maps to PREVIEW (WC26/V2)',
   (() => {
     const fnMatch = html.match(/function getCardCircadian\(game\) \{[\s\S]*?\n\}/);
     if (!fnMatch) return false;
     try {
-      const fn = new Function(`function isGameOver(g){return g.state==='final'||g.state==='post';}\nfunction minutesSinceFinal(){return Infinity;}\n${fnMatch[0]}\nreturn getCardCircadian;`)();
+      const fn = new Function(`${_CIRCADIAN_ISGAMEOVER_STUB}\nfunction minutesSinceFinal(){return Infinity;}\n${fnMatch[0]}\nreturn getCardCircadian;`)();
       return fn({state:'pre'}) === 'PREVIEW';
     } catch (e) { return false; }
   })(),
   'getCardCircadian({state:\'pre\'}) must return PREVIEW');
 
-assert('A-CIRCADIAN-5 — getNewspaperVoice function exists',
+assert('A-CIRCADIAN-5 — getCardCircadian handles MLB (game.status, not game.state — v2.2 cross-sport fix)',
+  (() => {
+    const fnMatch = html.match(/function getCardCircadian\(game\) \{[\s\S]*?\n\}/);
+    if (!fnMatch) return false;
+    try {
+      const fn = new Function(`${_CIRCADIAN_ISGAMEOVER_STUB}\nfunction minutesSinceFinal(){return Infinity;}\n${fnMatch[0]}\nreturn getCardCircadian;`)();
+      return fn({status:'live'}) === 'PRIME' && fn({status:'pregame'}) === 'PREVIEW';
+    } catch (e) { return false; }
+  })(),
+  'getCardCircadian({status:\'live\'}) must return PRIME and getCardCircadian({status:\'pregame\'}) must return PREVIEW — MLB game objects (normalizeMLBGame, index.html:19788 normalizeMLBStatus) carry .status, never .state, so a state-only check would never classify a real MLB game correctly.');
+
+assert('A-CIRCADIAN-6 — getCardCircadian handles AFL (game._aflComplete numeric 0-100 — v2.2 cross-sport fix)',
+  (() => {
+    const fnMatch = html.match(/function getCardCircadian\(game\) \{[\s\S]*?\n\}/);
+    if (!fnMatch) return false;
+    try {
+      const fn = new Function(`${_CIRCADIAN_ISGAMEOVER_STUB}\nfunction minutesSinceFinal(){return Infinity;}\n${fnMatch[0]}\nreturn getCardCircadian;`)();
+      return fn({_aflComplete:50}) === 'PRIME' && fn({_aflComplete:0}) === 'PREVIEW';
+    } catch (e) { return false; }
+  })(),
+  'getCardCircadian({_aflComplete:50}) must return PRIME and getCardCircadian({_aflComplete:0}) must return PREVIEW — AFL game objects (squiggleToFieldGame, index.html:21995/22039) carry ._aflComplete, never .state or .status.');
+
+assert('A-CIRCADIAN-7 — getCardCircadian degrades to LATE for unrecognized shapes (CFL/Golf — no invented field guessing)',
+  (() => {
+    const fnMatch = html.match(/function getCardCircadian\(game\) \{[\s\S]*?\n\}/);
+    if (!fnMatch) return false;
+    try {
+      const fn = new Function(`${_CIRCADIAN_ISGAMEOVER_STUB}\nfunction minutesSinceFinal(){return Infinity;}\n${fnMatch[0]}\nreturn getCardCircadian;`)();
+      return fn({}) === 'LATE';
+    } catch (e) { return false; }
+  })(),
+  'getCardCircadian({}) must return LATE without throwing — CFL and Golf carry no state/status/_aflComplete field at all on their base game objects; this must degrade safely, not crash or guess at an invented signal.');
+
+assert('A-CIRCADIAN-8 — isGameOver handles MLB status and AFL _aflComplete terminal values (v2.2)',
+  (() => {
+    const fnMatch = html.match(/function isGameOver\(game\) \{[\s\S]*?\n\}/);
+    if (!fnMatch) return false;
+    try {
+      const fn = new Function(`${fnMatch[0]}\nreturn isGameOver;`)();
+      return fn({status:'final'}) === true && fn({status:'postponed'}) === true &&
+        fn({_aflComplete:100}) === true && fn({_aflComplete:50}) === false;
+    } catch (e) { return false; }
+  })(),
+  'isGameOver must treat MLB status \'final\'/\'postponed\' and AFL _aflComplete>=100 as terminal, and _aflComplete:50 (still in progress) as not terminal.');
+
+assert('A-CIRCADIAN-9 — getNewspaperVoice function exists',
   html.includes('function getNewspaperVoice('),
   'getNewspaperVoice must be defined');
 
