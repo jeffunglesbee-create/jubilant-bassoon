@@ -6066,5 +6066,28 @@ assert('A-CARDSYNC-3 — circadian is registered in CARD_ATTRIBUTE_SYNC',
   })(),
   'CARD_ATTRIBUTE_SYNC must include a circadian entry with isClass:true and a real compute function');
 
+// ── Live MLB status refresh (A-MLBSTATUS — CC-CMD-2026-07-04-mlb-status-live-refresh) ──
+assert('A-MLBSTATUS-1 — refreshMLBStatus function exists',
+  html.includes('async function refreshMLBStatus('),
+  'refreshMLBStatus must be defined');
+
+assert('A-MLBSTATUS-2 — MLB status poll is initialized',
+  html.includes('initMLBStatusPoll'),
+  'initMLBStatusPoll must exist and wire refreshMLBStatus into a poll loop');
+
+assert('A-MLBSTATUS-3 — refreshMLBStatus does NOT trigger a full re-render (targeted patch only, matches its own design intent)',
+  (() => {
+    const idx = html.indexOf('async function refreshMLBStatus(');
+    if (idx < 0) return false;
+    // Bound the search to this function's own body, not the whole file —
+    // scheduleRenderAll/renderAll/buildFilters legitimately exist elsewhere
+    // (e.g. fetchMLBFixtures, which this CC-CMD explicitly must NOT mirror).
+    const closeIdx = html.indexOf('\n}', idx);
+    if (closeIdx < 0) return false;
+    const body = html.slice(idx, closeIdx);
+    return !/scheduleRenderAll\(\)|renderAll\(\)|buildFilters\(/.test(body);
+  })(),
+  'refreshMLBStatus must never call scheduleRenderAll(), renderAll(), or buildFilters() — calling fetchMLBFixtures() (or anything that triggers those) on an interval would reintroduce the exact expensive 77KB/690-node full-rebuild problem this CC-CMD exists to avoid.');
+
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);

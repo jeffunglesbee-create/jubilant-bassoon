@@ -20010,6 +20010,64 @@ async function loadMLBSlate(date) {
   return null;
 }
 
+// ── Live MLB status refresh (dedicated, lightweight — no full re-render) ──
+// fetchMLBFixtures() only ever runs once (boot). ESPN score-matching
+// (_n.state, driving espn-live/espn-final/circadian via renderESPNScores)
+// can lag up to 15 min behind real status (ESPN_REFRESH_FINISHED mode --
+// see initNightOwlPoll's own comment for the same characterization).
+// This keeps MLB's own, faster, authoritative status current without
+// paying for a full renderAll() rebuild on every refresh.
+async function refreshMLBStatus() {
+  if (!allData?.sports) return;
+  const mlbSec = allData.sports.find(s => s.sport === 'Baseball (MLB)');
+  if (!mlbSec || !mlbSec.games?.length) return;
+
+  let freshGames;
+  try {
+    freshGames = await loadMLBSlate(new Date());
+  } catch (e) {
+    captureFieldError('mlb-status-refresh', e, false);
+    return;
+  }
+  if (!freshGames || !freshGames.length) return;
+
+  // Match by the same home|away|hour key fetchMLBFixtures() already uses
+  // for doubleheader-safe matching -- reuse the established convention,
+  // don't invent a new key shape.
+  const keyOf = g => `${g.home}|${g.away}|${(g.start_time||'').slice(0,13)}`;
+  const freshByKey = new Map(freshGames.map(g => [keyOf(g), g]));
+
+  for (const game of mlbSec.games) {
+    const fresh = freshByKey.get(keyOf(game));
+    if (!fresh || fresh.status === game.status) continue; // no change
+
+    const oldStatus = game.status;
+    game.status = fresh.status;
+    // Also refresh score fields -- a status change to 'final' without
+    // an updated final score would be a half-applied, misleading patch.
+    if (fresh.homeScore != null) game.homeScore = fresh.homeScore;
+    if (fresh.awayScore != null) game.awayScore = fresh.awayScore;
+
+    const card = document.querySelector(`[data-gameid="${game._id}"]`);
+    if (!card) continue; // card not currently rendered (filtered out, etc.) -- fine, allData is still correct for next full render
+
+    const isLive  = fresh.status === 'live';
+    const isFinal = fresh.status === 'final' || fresh.status === 'postponed';
+    syncCardAttributes(card, game, null, isLive, isFinal);
+
+    if (FIELD_DEBUG) console.debug('[MLB] status refresh:', game.home, oldStatus, '->', fresh.status);
+  }
+}
+
+// Mirrors initNightOwlPoll's exact proven cadence (90s interval, first
+// check shortly after boot) -- same reasoning applies here: MLB games
+// need a check faster than whatever the slow path (ESPN, or in
+// fetchMLBFixtures' case, nothing at all after boot) provides.
+(function initMLBStatusPoll(){
+  setTimeout(refreshMLBStatus, 10000); // first check: 10s after load (after initial fixtures settle)
+  setInterval(refreshMLBStatus, 90000); // then every 90s, matching Night Owl's cadence
+})();
+
 async function fetchMLBFixtures(){
   if(!allData||!allData.sports) return;
   const today = new Date();
@@ -23047,7 +23105,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-07-03e';
+  const SW_VERSION = '2026-07-04a';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
