@@ -1,0 +1,11 @@
+=== CF API Probe [20260704T204109Z] ===
+Request: GET https://jubilant-bassoon.jeffunglesbee.workers.dev/__diag_relay_fetch
+
+{
+    "attempted": true,
+    "targetUrl": "https://field-relay-nba.jeffunglesbee.workers.dev/circadian/preview/2026-07-04",
+    "status": 404,
+    "ok": false,
+    "bodySnippet": "error code: 1042\n",
+    "jsonParseError": "Unexpected token 'e', \"error code: 1042\n\" is not valid JSON"
+}
