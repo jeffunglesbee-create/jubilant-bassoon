@@ -6182,5 +6182,9 @@ assert('A-NPWIPE-2 — no remaining direct main.innerHTML bypasses in goToDate �
   (html.match(/main\.innerHTML\s*=\s*`<div class="(empty-note|loading-wrap)"/g) || []).length === 0,
   'goToDate()\'s 4 branches (no-major-events under hardcoded dates, the Loading… transient state, the ESPN-error state, and no-major-events under unknown dates) must all call applyMainHTML(...) — verified this regex has zero matches after the fix (not just fewer), confirming all 4 were converted, not just some.');
 
+assert('A-NPWIPE-3 — renderAll\'s second empty-check (post-render) also preserves the newspaper via applyMainHTML',
+  !!html.match(/if\(!main\.innerHTML\.trim\(\)\)\s*applyMainHTML\(/),
+  'renderAll()\'s second empty-check, immediately after applyMainHTML(_renderAllHTML), must itself call applyMainHTML(...) rather than reassigning main.innerHTML directly — this is the 6th bypass found (and correctly reported, not fixed) by the prior newspaper-repaint-wipe-fix CC-CMD: without this, it would re-wipe the newspaper applyMainHTML had just restored one line earlier, whenever a full render\'s HTML happens to be blank.');
+
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);
