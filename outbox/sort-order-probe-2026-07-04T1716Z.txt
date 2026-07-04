@@ -1,0 +1,24 @@
+=== Sort Order Verify Probe [2026-07-04T1716Z] ===
+URL: https://jubilant-bassoon.jeffunglesbee.workers.dev
+[page console error] Failed to load resource: the server responded with a status of 404 (Not Found)
+App booted: allData.sports populated.
+BEFORE (all PREVIEW, stable order expected A,B,C): [{"id":"circtest-A","circadian":"PREVIEW"},{"id":"circtest-B","circadian":"PREVIEW"},{"id":"circtest-C","circadian":"PREVIEW"}]
+Initial order matches source order (A,B,C) -- stable sort within same tier: true
+Initial tiers all PREVIEW: true
+[page console error] Failed to load resource: the server responded with a status of 400 ()
+[page console error] Failed to load resource: the server responded with a status of 404 ()
+[page console error] Failed to load resource: the server responded with a status of 404 ()
+[page console error] Failed to load resource: the server responded with a status of 404 ()
+[page console error] Failed to load resource: the server responded with a status of 404 ()
+AFTER (C flipped to live/PRIME, expected order C,A,B): []
+Card C visibly moved to top position after tier change: false
+Card C reclassified to PRIME: false
+Cards A/B remain PREVIEW and keep relative order (stable sort, no unwanted tie-break reordering): false
+[page console error] Failed to load resource: the server responded with a status of 404 ()
+[page console error] Failed to load resource: the server responded with a status of 404 ()
+[page console error] Failed to load resource: the server responded with a status of 403 ()
+[page console error] Failed to load resource: the server responded with a status of 400 ()
+Cross-section isolation intact (no circtest-* leaked into other sections' DOM): true
+
+RESULT: FAIL -- see above.
+[page console error] Failed to load resource: the server responded with a status of 403 ()
