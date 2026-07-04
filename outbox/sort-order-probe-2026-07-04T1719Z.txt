@@ -1,0 +1,25 @@
+=== Sort Order Verify Probe [2026-07-04T1719Z] ===
+URL: https://jubilant-bassoon.jeffunglesbee.workers.dev
+App booted: allData.sports populated.
+BEFORE (all PREVIEW, stable order expected A,B,C): [{"id":"circtest-A","circadian":"PREVIEW"},{"id":"circtest-B","circadian":"PREVIEW"},{"id":"circtest-C","circadian":"PREVIEW"}]
+Initial order matches source order (A,B,C) -- stable sort within same tier: true
+Initial tiers all PREVIEW: true
+AFTER (C flipped to live/PRIME, expected order C,A,B): [{"id":"circtest-C","circadian":"PRIME"},{"id":"circtest-A","circadian":"PREVIEW"},{"id":"circtest-B","circadian":"PREVIEW"}]
+DIAG: {"renderErr":null,"allCards":20,"mainChildren":5,"circTestSectionPresent":true}
+DIAG circTestSectionHTML (first 500 chars): <div class="sport-section" data-sport="CircTestSport" style="--i:3">
+      <div class="section-head" style="border-left:3px solid #c9a84c;padding-left:.75rem">
+        <div class="s-icon" style="background:#c9a84c1a;border-color:#c9a84c40">🏅</div>
+        <span class="s-name">CircTestSport</span>
+        <span class="s-count">3 games</span>
+      </div>
+      <div class="games-list"><div class="game-card card-tier-compact upcoming circadian-prime" data-gameid="circtest-C" data-sport="CircTestSp
+Card C visibly moved to top position after tier change: true
+Card C reclassified to PRIME: true
+Cards A/B remain PREVIEW and keep relative order (stable sort, no unwanted tie-break reordering): true
+[page console error] Failed to load resource: the server responded with a status of 404 ()
+[page console error] Failed to load resource: the server responded with a status of 404 ()
+[page console error] Failed to load resource: the server responded with a status of 404 ()
+[page console error] Failed to load resource: the server responded with a status of 404 (Not Found)
+Cross-section isolation intact (no circtest-* leaked into other sections' DOM): true
+
+RESULT: PASS -- circadian card sort composes safely with Phase 1/2 DOM reconciliation.
