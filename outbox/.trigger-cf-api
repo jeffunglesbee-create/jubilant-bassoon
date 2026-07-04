@@ -1,3 +1,2 @@
-method=POST
-url=https://api.cloudflare.com/client/v4/graphql
-body={"query":"query { viewer { accounts(filter: {accountTag: \"b57e9af57ab46c52ca9215804e689c29\"}) { shotmapCount: httpRequestsAdaptiveGroups(limit: 5, filter: {datetime_geq: \"2026-07-02T00:00:00Z\", datetime_leq: \"2026-07-03T18:00:00Z\", clientRequestPath_contains: \"shotmap\"}) { count dimensions { clientRequestPath } } momentumCount: httpRequestsAdaptiveGroups(limit: 5, filter: {datetime_geq: \"2026-07-02T00:00:00Z\", datetime_leq: \"2026-07-03T18:00:00Z\", clientRequestPath_contains: \"momentum\"}) { count dimensions { clientRequestPath } } statsCount: httpRequestsAdaptiveGroups(limit: 5, filter: {datetime_geq: \"2026-07-02T00:00:00Z\", datetime_leq: \"2026-07-03T18:00:00Z\", clientRequestPath_contains: \"stats\"}) { count dimensions { clientRequestPath } } } } }"}
+method=GET
+url=https://field-relay-nba.jeffunglesbee.workers.dev/circadian/preview/2026-07-04
