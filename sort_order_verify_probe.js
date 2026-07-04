@@ -34,6 +34,16 @@ const OUT = `outbox/sort-order-probe-${TS}.txt`;
   );
   log('App booted: allData.sports populated.');
 
+  // fetchSchedule()'s supplemental merge (index.html ~21904-21909) does a
+  // ONE-TIME async `allData = {sports:[...verified,...supplemental]}`
+  // wholesale reassignment sometime after initial boot, discarding anything
+  // appended to allData.sports before it resolves. A first run of this probe
+  // raced exactly this and lost the injected synthetic section between the
+  // BEFORE and AFTER steps. Wait it out before injecting synthetic data so
+  // the sort/reconciliation check isn't confounded by this one-shot merge.
+  await page.waitForTimeout(6000);
+  log('Waited 6s past boot for fetchSchedule()\'s one-time supplemental merge to settle.');
+
   // Inject a synthetic section with 3 games, ALL initially PREVIEW tier
   // (status='pregame'), then call the REAL renderAll() -- exercising the
   // actual shipped sort + render pipeline, not a reimplementation.
