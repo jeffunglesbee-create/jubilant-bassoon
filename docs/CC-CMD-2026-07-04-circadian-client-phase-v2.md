@@ -66,7 +66,8 @@ BOTH values as terminal rather than picking one.
 ## PROBE BLOCK (run before any edits)
 ```bash
 # P1 — re-verify the state vocabulary is still what this doc claims
-# (read-only GitHub API call against field-relay-nba — do not edit that repo)
+# (raw.githubusercontent.com is reachable from CC — this is NOT the same
+# as *.workers.dev, do not confuse the two)
 curl -s -H "Authorization: token \$FIELD_PAT" \
   "https://raw.githubusercontent.com/jeffunglesbee-create/field-relay-nba/main/src/index.js" \
   | grep -n "const state\s*="
@@ -74,12 +75,24 @@ curl -s -H "Authorization: token \$FIELD_PAT" \
 # If the count or values differ, STOP and report — do not proceed on a
 # stale assumption a second time.
 
-# P2 — confirm current live game.state values across sports actually
-# appearing in the real schedule right now
-for sport in mlb nba nhl wnba afl nfl cfb wc26; do
-  curl -s "https://field-relay-nba.jeffunglesbee.workers.dev/v2/games?sport=$sport" \
-    | python3 -c "import json,sys; d=json.load(sys.stdin); print('$sport', set(g.get('state') for g in d.get('games',[])))"
-done
+# P2 — CANNOT BE RUN BY CC. field-relay-nba.jeffunglesbee.workers.dev is
+# *.workers.dev — confirmed structurally blocked from CC egress (this is
+# the exact issue that caused a sibling CC-CMD to stall today; do not
+# attempt this, do not let a stop-hook force a commit while stuck on it).
+# Chat will run this after your push and report results via codex:
+#   for sport in mlb nba nhl wnba afl nfl cfb wc26; do
+#     curl -s "https://field-relay-nba.jeffunglesbee.workers.dev/v2/games?sport=$sport" ...
+#   done
+# Proceed using P1's vocabulary table (grepped directly from source,
+# confirmed accurate as of 2026-07-04). Chat ran this exact P2 check on
+# 2026-07-04 01:30 UTC and found ONLY 'pre' states across all 8 sports
+# (no live or finished games at that hour) — this confirms 'pre' handling
+# is consistent but does NOT fully exercise the 'final'/'post' terminal-
+# state split from P1. That split is still unconfirmed against real live
+# data. Do not treat this as fully verified — it's partially verified,
+# stated honestly. If your own execution window happens to catch a real
+# live or finished game, use that as the real confirmation and report
+# which game ID was used.
 
 # P3 — confirm renderNewspaper / fetchNewspaper still exist at expected
 # locations (this CC-CMD extends them, doesn't replace them)
@@ -213,25 +226,28 @@ DO NOT:
   design (see RETRACTED-relay.md)
 
 ## DONE CONDITIONS
-- [ ] P1-P3 probes run and results match or explicitly reconcile with the table above
+
+**CC completes and commits once these are done — do not wait past this list:**
+- [ ] P1 and P3 probes run and pass before any edit (P2 is chat-only, see above)
 - [ ] `node smoke.js index.html` exits 0 with all 5 new assertions green
 - [ ] CI Playwright confirms getCardCircadian/getNewspaperVoice exist in deployed bundle
-- [ ] Manual verification against real live games in each of the 3 covered states (PRIME via a currently-live game if one exists at test time, PREVIEW via any upcoming game, LATE via any game finished >120min ago) — report which real game IDs were used for each check, do not simulate
-- [ ] `minutesSinceFinal`'s actual field source confirmed against a real finished game object and documented in the outbox (this doc intentionally left it unresolved — see TASK 2 placeholder)
+- [ ] `minutesSinceFinal`'s actual field source confirmed against a real finished game object (use any real archived/past game data reachable via GitHub-hosted fixtures or D1 read if available to you — do not guess the field name)
 - [ ] SW_VERSION bumped in index.html and sw.js
-- [ ] Outbox manifest written to `docs/outbox/cc-circadian-client-phase-v2-{date}.md`
+- [ ] Outbox manifest written to `docs/outbox/cc-circadian-client-phase-v2-{date}.md`, explicitly listing the deferred items below as "pending chat verification"
+
+**Deferred to chat after your push — do NOT block your commit on these:**
+- [ ] Real classification check against a currently-live game (PRIME) and a currently-finished game less than/more than 120min ago (NIGHT vs LATE) — requires *.workers.dev, chat will run this and report back via codex
 
 ## COMPLIANCE
 - Rule 47/ADR-002/RUWT: PREVIEW/LATE variants show named states and existing chip/score data only — no new composite scores, no interest values
-- Rule 68: probe block (including P1's live re-verification of the state vocabulary) must run and pass before any edits — this doc was itself written after a prior attempt skipped this exact check
-- Rule 87: self-completing — done conditions checkable in-session
+- Rule 68: probe block (P1/P3, both CC-reachable) must run and pass before any edits — this doc was itself revised 2026-07-04 after a sibling CC-CMD's confidence gate wrongly included CC-unreachable live checks in its own score
+- Rule 87: self-completing — CC-verifiable done conditions checkable in-session; live conditions explicitly deferred, not blocking
 
-## CONFIDENCE SCORING TABLE
-+20  P1 vocabulary re-check matches this doc's table (or discrepancy explicitly reconciled)
-+20  getCardCircadian correctly classifies real live games in all 3 reachable states (PRIME/PREVIEW/LATE) at test time — NIGHT not required to test in-session if no game happens to be in that window, but reasoned through
-+20  minutesSinceFinal's field source confirmed against a real object, not guessed
-+20  Newspaper banner voice correctly reflects real aggregate game state at test time
-+20  Smoke 5/5 green + CI confirms functions deployed
+## CONFIDENCE SCORING — CC-VERIFIABLE ONLY (commit once this hits 95; live checks below are deferred, not scored by you)
++25  P1 vocabulary re-check matches this doc's table (or discrepancy explicitly reconciled)
++25  minutesSinceFinal's field source confirmed against a real object, not guessed
++25  Smoke 5/5 green
++25  CI confirms functions deployed in the bundle
 
 ## ONE-LINER
 git pull. Read docs/CC-CMD-2026-07-04-circadian-client-phase-v2.md. Run
