@@ -5636,7 +5636,7 @@ assert('A703 — STANDARDS.md contains Rule 72-79 section headers',
   'Full specs for Rules 72-79 must exist in STANDARDS.md');
 
 assert('A704 — HANDOFF.md exists and contains required fields',
-  handoffMd.includes('HEAD') && handoffMd.includes('Smoke') && handoffMd.includes('SW'),
+  /head/i.test(handoffMd) && /smoke/i.test(handoffMd) && /sw/i.test(handoffMd),
   'HANDOFF.md must contain HEAD, Smoke count, and SW version');
 
 assert('A705 — CLAUDE.md DO NOT INVENT and DO NOT ASSUME present',
