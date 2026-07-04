@@ -1,0 +1,29 @@
+=== OG Worker Run-First Verify Probe [20260704T202149Z] ===
+
+--- 1. Bot UA (Twitterbot/1.0) against root ---
+
+HTTP=200 time=0.151761s
+cf-cache-status: cf-cache-status: HIT
+og:description present: NO
+(no og:description tag found)
+
+--- 2. Normal browser UA against root ---
+
+HTTP=200 time=0.111743s
+cf-cache-status: cf-cache-status: HIT
+og:description present: NO
+
+--- 3. Non-HTML asset (sw.js) with both UAs ---
+content-type=application/javascript time=0.101339s
+content-type=application/javascript time=0.070875s
+asset bytes match: YES
+
+--- Diff check: bot HTML vs normal HTML (should differ only by the injected tag) ---
+
+--- 4. Cache-busted bot UA request (rules out a stale pre-fix cache entry) ---
+
+HTTP=200 time=0.063348s
+URL: https://jubilant-bassoon.jeffunglesbee.workers.dev/?_cb=1783196509-5273
+cf-cache-status: cf-cache-status: HIT
+og:description present: NO
+(no og:description tag found)
