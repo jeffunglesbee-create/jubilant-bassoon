@@ -1,0 +1,11 @@
+=== CFL Wire Verify Probe [2026-07-04T1956Z] ===
+URL: https://jubilant-bassoon.jeffunglesbee.workers.dev
+App booted.
+RESULT: {"sectionPresent":true,"cardCount":1,"cards":[{"gameid":"cfl_13419690","circadian":"LATE","home":"BC Lions","away":"Edmonton Elks","starttime":"2026-07-04T23:00:00+00:00"}]}
+CFL section present with 1 card(s).
+Live-path cards (gameid starts with "cfl_"): 1
+Fallback-path cards (no "cfl_" prefix): 0
+Live and fallback both present simultaneously (would be the duplicate-section bug): false
+  card cfl_13419690: Edmonton Elks @ BC Lions, start 2026-07-04T23:00:00+00:00, data-circadian="LATE"
+
+RESULT: PASS -- no live/fallback coexistence detected.
