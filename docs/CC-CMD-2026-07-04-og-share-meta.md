@@ -140,21 +140,21 @@ references wrangler.jsonc's shape before changing it).
 ## rather than inventing a fake assertion for code smoke.js can't see.
 
 ## DONE CONDITIONS
+
+**CC completes and commits once these are done — do not wait past this list:**
 - [ ] P1-P3 probes run and pass before any edit
-- [ ] Deploy succeeds with the new `main` field — confirm via a real
-      request to the live site that normal (non-bot) traffic is
-      byte-for-byte unchanged (diff the HTML response before/after this
-      change for a plain curl with no special User-Agent)
-- [ ] A request with `User-Agent: Twitterbot` (or another listed bot UA)
-      to the live root URL shows a real `<meta property="og:description">`
-      tag with today's actual preview text — paste the real response
-      into the outbox, not a description of what should happen
-- [ ] A request with a normal browser User-Agent shows NO og:description
-      tag added (confirms the bot-gating actually works, not just that
-      the feature works when forced)
-- [ ] If the relay call times out or 404s, confirm the page still serves
-      normally (test by temporarily pointing the fetch at a bad URL, or
-      reasoning through the timeout/catch path — state which method used)
+- [ ] `node --check src/worker.js` clean
+- [ ] Code review confirms bot-UA gating, HTMLRewriter usage, and the
+      try/catch degradation path all match this doc exactly
+- [ ] Push and confirm CI/deploy workflow reports success (this is
+      checkable via GitHub API status, which CC CAN reach — this is
+      different from hitting the live `*.workers.dev` URL directly)
+
+**Deferred to chat after your push — do NOT block your commit on these,
+list them in your outbox as "pending chat verification":**
+- [ ] Real request with `User-Agent: Twitterbot` shows a real injected `<meta property="og:description">` with today's actual text
+- [ ] Real request with a normal browser User-Agent shows NO tag added
+- [ ] Relay-timeout graceful degradation confirmed against the live site
 - [ ] Outbox manifest written to `docs/outbox/cc-og-share-meta-{date}.md`
 
 ## COMPLIANCE
@@ -174,11 +174,28 @@ references wrangler.jsonc's shape before changing it).
       per-game CC-CMD (v2) is a separate, unrelated feature that does not
       touch these KV keys
 
-## CONFIDENCE SCORING TABLE
-+25  Deploy succeeds with new main field, site still loads normally
-+25  Bot UA request shows real injected og:description with today's actual text
-+25  Normal UA request shows unmodified response (bot-gating confirmed, not just feature-works-when-forced)
-+25  Graceful degradation confirmed if the relay call fails/times out
+## CONFIDENCE SCORING — SPLIT INTO CC-VERIFIABLE AND LIVE-VERIFIABLE
+
+**Process fix (2026-07-04): a sibling CC-CMD run into a structural bind
+today — its confidence table put live-endpoint checks in the same score
+as code checks, so CC could never reach 95 on its own (`*.workers.dev`
+is blocked from CC egress, long-documented, not a CC failure). CC
+correctly stopped and asked for authorization; a session stop-hook then
+force-committed anyway at a low score, which looked like a violated
+instruction but was really a design flaw in the CC-CMD. Fixed here by
+splitting the score explicitly:**
+
+**CC-VERIFIABLE (compute this score yourself; commit once it hits 95 —
+do not wait on anything below this line):**
++40  Worker script is syntactically valid (`node --check src/worker.js`), bot-UA list and HTMLRewriter usage match the spec exactly
++30  wrangler.jsonc change is minimal and doesn't collide with anything deploy.yml or other workflows expect (check before assuming)
++30  Graceful-degradation path (relay timeout/failure) is present in the code and reasoned through — you cannot trigger a real timeout from your own sandbox, but you CAN verify the try/catch structure is correct and doesn't leave the response unhandled
+
+**LIVE-VERIFIABLE (cannot be scored by CC — explicitly deferred, does
+NOT block your commit decision):**
+- Bot UA request shows real injected og:description with today's actual text
+- Normal UA request shows unmodified response (bot-gating actually works, not just works-when-forced)
+- These two will be checked by chat (or CI-as-proxy) AFTER your commit and reported back via the outbox/codex — commit once the CC-verifiable score above hits 95, do not wait for these.
 
 ## ONE-LINER
 git pull. Read docs/CC-CMD-2026-07-04-og-share-meta.md. Verify the relay
