@@ -11791,15 +11791,6 @@ function buildTodaySchedule(){
       _sport: 'golf', _id: 'golf_travelers_2026',
       matchupNote: 'Final Signature Event of 2026. Scheffler (world #1, 2024 champion here) vs. Wyndham Clark (fresh off U.S. Open at Shinnecock) vs. defending champion Keegan Bradley. McIlroy skipping — third Signature Event missed this season.',
     },
-    // ── John Deere Classic — R1-R4 Jul 2-5 2026, TPC Deere Run, Silvis IL ─
-    {
-      home: 'John Deere Classic', away: '',
-      league: 'PGA Tour · TPC Deere Run, Silvis, IL',
-      start_time: '2026-07-02T20:00:00Z', // R1 Thu Jul 2 — Golf Channel 4 PM ET
-      tournEnd: '2026-07-05',
-      _sport: 'golf', _id: 'golf_johndeere_2026',
-      matchupNote: 'Non-Signature event, $8.8M purse. Field includes Jordan Spieth, a two-time champion here (2013, his first career Tour win; 2015). Final tune-up before The Open Championship at Royal Birkdale in two weeks.',
-    },
   ].filter(g=>{
     // Show for full tournament duration (Thu-Sun), not just isToday of start_time
     const todayStr = new Date().toLocaleDateString('en-CA',{timeZone:localTz()||'America/New_York'});
@@ -23217,7 +23208,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-07-04j';
+  const SW_VERSION = '2026-07-04l';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
