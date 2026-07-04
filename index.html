@@ -8392,18 +8392,18 @@ mvSyncMvPanel(); // Set initial empty state
     renderAll();
     const main = document.getElementById("main");
     if(!hardcoded.length){
-      main.innerHTML = `<div class="empty-note" style="padding:3rem 2rem">
+      applyMainHTML(`<div class="empty-note" style="padding:3rem 2rem">
         <div style="font-size:1.5rem;margin-bottom:.75rem">📅</div>
         <div style="color:var(--white);margin-bottom:.5rem">No major events on ${label}</div>
         <div style="font-size:.72rem;color:var(--smoke)">Try a different date with the ‹ › arrows</div>
-      </div>`;
+      </div>`);
     }
     return;
   }
 
   // Unknown date: try ESPN fixtures first (free, zero tokens), then AI fallback
   const main = document.getElementById("main");
-  main.innerHTML = `<div class="loading-wrap"><div class="loading-ring"></div><div class="loading-txt">Loading ${label}'s schedule…</div></div>`;
+  applyMainHTML(`<div class="loading-wrap"><div class="loading-ring"></div><div class="loading-txt">Loading ${label}'s schedule…</div></div>`);
 
   // Try ESPN first — free, no tokens, covers NBA/NHL/MLB + 9 soccer leagues
   const espnSections = await fetchESPNFixturesForDate(iso);
@@ -8411,21 +8411,21 @@ mvSyncMvPanel(); // Set initial empty state
 
   if(sections === null){
     // Error — show friendly message with retry option
-    main.innerHTML = `<div class="empty-note" style="padding:3rem 2rem">
+    applyMainHTML(`<div class="empty-note" style="padding:3rem 2rem">
       <div style="font-size:1.5rem;margin-bottom:.75rem">⚠️</div>
       <div style="color:var(--white);margin-bottom:.5rem">Couldn't load ${label}'s schedule</div>
       <div style="font-size:.72rem;color:var(--smoke);margin-bottom:1.2rem">Check the browser console for details</div>
       <button class="refresh-btn" onclick="goToDate('${iso}')" style="font-size:.7rem">↺ Retry</button>
-    </div>`;
+    </div>`);
     return;
   }
 
   if(!sections.length){
-    main.innerHTML = `<div class="empty-note" style="padding:3rem 2rem">
+    applyMainHTML(`<div class="empty-note" style="padding:3rem 2rem">
       <div style="font-size:1.5rem;margin-bottom:.75rem">📅</div>
       <div style="color:var(--white);margin-bottom:.5rem">No major events on ${label}</div>
       <div style="font-size:.72rem;color:var(--smoke)">Try a different date with the ‹ › arrows</div>
-    </div>`;
+    </div>`);
     return;
   }
 
@@ -10681,7 +10681,7 @@ function renderAll(skipUnchanged){
     : freeOnlyFilter
       ? visible.map(s=>({...s, games:(s.games||[]).filter(gameHasFreeStream)}))
       : visible;
-  if(!filtered.length||filtered.every(s=>!(s.games||[]).length)){ main.innerHTML='<div class="empty-note">No '+(freeOnlyFilter?"free ":"")+'events found for this filter</div>'; return; }
+  if(!filtered.length||filtered.every(s=>!(s.games||[]).length)){ applyMainHTML('<div class="empty-note">No '+(freeOnlyFilter?"free ":"")+'events found for this filter</div>'); return; }
   // J3 FIELD Brief supersedes Tonight Summary Card — rendered in #field-brief above main
   // PM-26-C5: build HTML string, then call applyMainHTML to preserve LCP
   // anchor identity across the skeleton→real transition. See applyMainHTML
@@ -23175,7 +23175,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-07-04d';
+  const SW_VERSION = '2026-07-04e';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)

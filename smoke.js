@@ -6173,5 +6173,14 @@ assert('A-SOCCERDRAMA-5 — FIFA rank fetch/cache exists and threads homeRank/aw
   !!html.match(/computeDramaRetroactive\(states, isMLB \? 'mlb' : 'soccer', homeRank, awayRank\)/),
   'fetchTeamRank/getCachedTeamRank must exist, and computeDramaRetroactive must accept and use homeRank/awayRank params, threaded from _backfillOneDramaGame — without this, the upset bonus logic would be correct in isolation but never receive real rank data at its real call sites (the same failure class already caught twice tonight for the circadian classification and card-attribute-sync work).');
 
+// ── Newspaper repaint-wipe fix (A-NPWIPE — CC-CMD-2026-07-04-newspaper-repaint-wipe-fix) ──
+assert('A-NPWIPE-1 — renderAll empty-filter branch preserves the newspaper via applyMainHTML',
+  !!html.match(/filtered\.every\(s=>!\(s\.games\|\|\[\]\)\.length\)\)\{\s*applyMainHTML\(/),
+  'renderAll()\'s empty-filter branch must call applyMainHTML(...) instead of assigning main.innerHTML directly — a direct assignment bypasses applyMainHTML\'s #field-newspaper preserve/re-prepend logic and permanently wipes the newspaper banner until a full reload.');
+
+assert('A-NPWIPE-2 — no remaining direct main.innerHTML bypasses in goToDate — all route through applyMainHTML',
+  (html.match(/main\.innerHTML\s*=\s*`<div class="(empty-note|loading-wrap)"/g) || []).length === 0,
+  'goToDate()\'s 4 branches (no-major-events under hardcoded dates, the Loading… transient state, the ESPN-error state, and no-major-events under unknown dates) must all call applyMainHTML(...) — verified this regex has zero matches after the fix (not just fewer), confirming all 4 were converted, not just some.');
+
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);
