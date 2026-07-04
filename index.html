@@ -10703,6 +10703,24 @@ function renderAll(skipUnchanged){
   const _renderAllHTML = filtered.map((sec,si)=>{
     const games=sec.games||[];
     if(!games.length) return "";
+    // Circadian sort order (CC-CMD-2026-07-04-circadian-card-sort-order):
+    // the original spec's "PRIME first, then NIGHT, then PREVIEW, then
+    // LATE" -- deferred since the v2.1 circadian CC-CMD, never
+    // implemented until now. Scoped to WITHIN each sport section only
+    // (does not merge/reorder across sections) -- a stale LATE MLB game
+    // should not jump above a live PRIME NHL game in a DIFFERENT
+    // section; it should only be reordered relative to other games in
+    // its OWN section. Stable sort (spec-guaranteed since ES2019):
+    // games within the same tier keep their existing relative order,
+    // only cross-tier ordering changes.
+    const _CIRCADIAN_SORT_RANK = { PRIME: 0, NIGHT: 1, PREVIEW: 2, LATE: 3 };
+    games.sort((a, b) => {
+      const aEData = typeof findESPNScore === 'function' ? findESPNScore(a) : null;
+      const bEData = typeof findESPNScore === 'function' ? findESPNScore(b) : null;
+      const aTier = getCardCircadian({ state: aEData ? aEData.state : null, status: a.status, _aflComplete: a._aflComplete, _id: a._id });
+      const bTier = getCardCircadian({ state: bEData ? bEData.state : null, status: b.status, _aflComplete: b._aflComplete, _id: b._id });
+      return (_CIRCADIAN_SORT_RANK[aTier] ?? 4) - (_CIRCADIAN_SORT_RANK[bTier] ?? 4);
+    });
     const icon=SPORT_ICONS[sec.sport]||SPORT_ICONS.default;
     const sportColor=SPORT_COLORS[sec.sport]||"#c9a84c";
     const cards=games.map((g,gi)=>{
@@ -23190,7 +23208,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-07-04i';
+  const SW_VERSION = '2026-07-04j';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)

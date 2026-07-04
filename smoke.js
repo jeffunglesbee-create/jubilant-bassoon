@@ -6208,5 +6208,14 @@ assert('A-NPLATE-2 — no separate np-late section was added',
   !(/np-section np-late/.test(html)),
   'renderNewspaper must not add a second, separate ".np-section np-late" block anywhere — that would recreate the exact duplication bug this CC-CMD exists to prevent. bundle.late must be merged into the existing .np-report section only.');
 
+// ── Circadian card sort order (A-CIRCSORT — CC-CMD-2026-07-04-circadian-card-sort-order) ──
+assert('A-CIRCSORT-1 — circadian card sort rank map exists with the spec-correct tier order',
+  !!html.match(/_CIRCADIAN_SORT_RANK\s*=\s*\{\s*PRIME:\s*0,\s*NIGHT:\s*1,\s*PREVIEW:\s*2,\s*LATE:\s*3\s*\}/),
+  'renderAll must define a PRIME=0/NIGHT=1/PREVIEW=2/LATE=3 rank map matching the original spec\'s "PRIME first, then NIGHT, then PREVIEW, then LATE" order — without it there is no way to sort games by circadian priority.');
+
+assert('A-CIRCSORT-2 — games are sorted by circadian tier before the per-card render map',
+  !!html.match(/games\.sort\(\(a, b\) => \{/),
+  'renderAll must sort each section\'s games array by circadian tier before building cards — otherwise a stale LATE card can sit above a live PRIME card within the same sport section, undercutting the point of circadian classification.');
+
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);
