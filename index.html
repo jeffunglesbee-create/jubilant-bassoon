@@ -6745,9 +6745,19 @@ function getNewspaperVoice(games) {
   const live = games.filter(g => getCardCircadian(g) === 'PRIME').length;
   const finals = games.filter(g => getCardCircadian(g) === 'NIGHT').length;
   const upcoming = games.filter(g => getCardCircadian(g) === 'PREVIEW').length;
+  const late = games.filter(g => getCardCircadian(g) === 'LATE').length;
   if (live > 0) return 'minimal';
   if (finals > upcoming) return 'recap';
   if (upcoming > 0) return 'preview';
+  // Real gap fixed here (CC-CMD-2026-07-04-newspaper-voice-late-gap-fix):
+  // previously fell through to 'morning' (show everything) whenever every
+  // game was LATE and nothing was live/recently-finished/upcoming -- the
+  // wrong default, since 'morning' is "nothing has started yet" and an
+  // all-LATE slate means the opposite (everything already happened, just
+  // outside the 120-min freshness window). Reuses the existing 'recap'
+  // voice (no new section-visibility logic needed in applyNewspaperVoice)
+  // rather than inventing a new voice value for this case.
+  if (late > 0) return 'recap';
   return 'morning';
 }
 
@@ -23175,7 +23185,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-07-04g';
+  const SW_VERSION = '2026-07-04h';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)

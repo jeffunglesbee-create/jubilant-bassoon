@@ -6190,5 +6190,14 @@ assert('A-SWUPDATE-1 — service worker registration actively checks for updates
   !!html.match(/reg\.update\(\)\.catch/),
   'The SW registration\'s .then(reg=>{...}) callback must call reg.update().catch(()=>{}) on visibilitychange-becomes-visible — updatefound alone only fires on the browser\'s own background check cycle, which is documented to be meaningfully less frequent for installed PWAs on iOS Safari than Android Chrome, so the already-correct auto-reload logic can sit dormant far longer on iOS without this.');
 
+// ── Newspaper voice LATE gap fix (A-NPVOICE — CC-CMD-2026-07-04-newspaper-voice-late-gap-fix) ──
+assert('A-NPVOICE-1 — getNewspaperVoice counts LATE games',
+  !!html.match(/const late = games\.filter\(g => getCardCircadian\(g\) === 'LATE'\)\.length;/),
+  'getNewspaperVoice must compute a late count alongside live/finals/upcoming — without it, a slate where every game is LATE has no way to be distinguished from a genuinely empty games array.');
+
+assert('A-NPVOICE-2 — an all-LATE slate (no live/finals/upcoming) resolves to recap, not the morning show-everything default',
+  !!html.match(/if \(late > 0\) return 'recap';\s*\n\s*return 'morning';/),
+  'getNewspaperVoice must check "if (late > 0) return \'recap\';" immediately before the final "return \'morning\';" fallback — a slate where every game has crossed the 120-minute freshness window (all LATE, none live/recently-finished/upcoming) means everything already happened, not that nothing has started yet, so it must not get the morning show-everything treatment.');
+
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);
