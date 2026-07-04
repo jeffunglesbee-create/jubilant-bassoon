@@ -1,7 +1,7 @@
 name: OG Worker Latency Probe
 # Measures real request latency to a static asset (sw.js), N=20 samples,
-# reporting min/max/median. Run once BEFORE run_worker_first:true ships
-# (baseline) and once AFTER (post-deploy), per
+# reporting min/max/median/mean. Run once BEFORE run_worker_first:true
+# ships (baseline) and once AFTER (post-deploy), per
 # CC-CMD-2026-07-04-og-worker-run-first-fix-v2 TASK 2. Same asset, same
 # method, same N both times so the two runs are a fair comparison.
 
@@ -45,17 +45,24 @@ jobs:
           done
 
           echo "" >> "$OUT"
-          python3 -c "
-times = [float(l.strip()) for l in open('/tmp/times.txt') if l.strip()]
-times.sort()
-n = len(times)
-median = times[n//2] if n % 2 else (times[n//2-1]+times[n//2])/2
-print(f'min:    {times[0]:.4f}s')
-print(f'max:    {times[-1]:.4f}s')
-print(f'median: {median:.4f}s')
-print(f'mean:   {sum(times)/n:.4f}s')
-print(f'all sorted: {times}')
-" >> "$OUT"
+          sort -n /tmp/times.txt > /tmp/times_sorted.txt
+          N_LINES=$(wc -l < /tmp/times_sorted.txt)
+          MIN=$(head -1 /tmp/times_sorted.txt)
+          MAX=$(tail -1 /tmp/times_sorted.txt)
+          MEAN=$(awk '{sum+=$1} END{printf "%.4f", sum/NR}' /tmp/times_sorted.txt)
+          if [ $((N_LINES % 2)) -eq 0 ]; then
+            MID1=$((N_LINES/2))
+            MID2=$((N_LINES/2+1))
+            MEDIAN=$(awk -v a=$MID1 -v b=$MID2 'NR==a{x=$1} NR==b{y=$1} END{printf "%.4f", (x+y)/2}' /tmp/times_sorted.txt)
+          else
+            MID=$(((N_LINES+1)/2))
+            MEDIAN=$(awk -v m=$MID 'NR==m{printf "%.4f", $1}' /tmp/times_sorted.txt)
+          fi
+          echo "min:    ${MIN}s" >> "$OUT"
+          echo "max:    ${MAX}s" >> "$OUT"
+          echo "median: ${MEDIAN}s" >> "$OUT"
+          echo "mean:   ${MEAN}s" >> "$OUT"
+          echo "all sorted: $(tr '\n' ' ' < /tmp/times_sorted.txt)" >> "$OUT"
 
           cat "$OUT"
           echo "OUT=$OUT" >> $GITHUB_ENV
