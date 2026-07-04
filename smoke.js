@@ -9,6 +9,11 @@
 //
 // Run: node smoke.js  (from repo root, after checkout)
 // Exit 0 = pass; 1 = fail
+//
+// NOT COVERED HERE: src/worker.js (dynamic OG share meta via HTMLRewriter,
+// added 2026-07-04). It's a separate request-time Worker script gating on
+// bot user-agents, not part of index.html — this file has no path to
+// exercise it. Verification lives in docs/outbox/cc-og-share-meta-2026-07-04.md.
 
 const fs = require('fs');
 const html = fs.readFileSync(process.argv[2] || 'index.html', 'utf8');
