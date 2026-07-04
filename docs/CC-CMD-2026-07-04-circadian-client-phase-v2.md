@@ -141,65 +141,93 @@ string, or a sport not in the table), do not guess — stop, report the
 actual values found, and treat this as a new probe finding requiring a
 doc update before continuing.
 
-## TASK 1 — isGameOver(game) helper (handles the real, split vocabulary)
+## CORRECTION (v2.2, same day) — cross-sport scope gap found via live browser inspection
+
+A later chat session opened the live PWA directly (browser automation,
+not simulated) and traced `getCardCircadian` against every currently
+loaded game across every sport. Result: **it only worked for WC26.**
+Real field-by-field findings, verified against actual loaded game
+objects, not assumed:
+
+| Sport | Live-state field | Value(s) seen |
+|---|---|---|
+| WC26 | `game.state` | `'pre'/'in'/'post'` (via `mapV2ToESPN`) — v2.1's fix was correct for this one sport |
+| MLB | `game.status` (NOT `state` — field doesn't exist) | `'pregame'/'live'/'final'/'postponed'` — confirmed via reading `normalizeMLBStatus()`, index.html:19788 |
+| AFL | neither `state` nor `status` exists | has `_aflComplete` (0-100 numeric, index.html:21995: `_aflComplete: g.complete`) |
+| CFL | neither `state`/`status`/any completion field exists | genuinely no signal available on the base object |
+| Golf | neither `state`/`status`/any completion field exists | only a separate leaderboard-fetch subsystem, nothing on the base game object |
+
+**Also found: the codebase's existing `getStatus(iso, opts)` helper
+(index.html:6636) is NOT safe to reuse here.** It conflates "hasn't
+started yet" and "already finished" into the same return string,
+`"upcoming"` — confirmed by reading its own source, not assumed. Its
+existing caller (the schedule picker, index.html:9126) never needed to
+tell those two apart, so this was never a bug until something
+(circadian) actually needed the distinction. Do not route through
+`getStatus()` for circadian purposes.
+
+**TASK 1/2 below are corrected to handle MLB (real fields) and AFL
+(real field) properly. CFL and Golf are explicitly, intentionally left
+on the LATE default — not silently, this doc states why: no reliable
+completion signal exists on their base game objects, and inventing one
+(e.g., guessing at start_time + a fixed duration) risks being
+confidently wrong rather than honestly conservative. This is a real
+scope boundary, not laziness — closing it needs its own investigation
+into whatever data these sports' adapters actually have access to,
+which is out of scope for this pass.**
+## TASK 1 — isGameOver(game) helper (cross-sport, v2.2)
 
 ```javascript
-// Handles the real, split terminal-state vocabulary confirmed live
-// 2026-07-04: NHL/NBA/WC26 use 'final', MLB/NFL/CFB use 'post'. Treats
-// both as terminal rather than assuming either is universal — re-verify
-// via P1 above if a new adapter is added later and this stops matching.
+// v2.2: handles the real, per-sport-adapter vocabulary split confirmed
+// via live browser inspection 2026-07-04 -- WC26 uses game.state,
+// MLB uses a completely different field (game.status) with its own
+// vocabulary. Re-verify via the CC-CMD's probe block if a new adapter
+// shape is added later and this stops matching.
 function isGameOver(game) {
-    return game.state === 'final' || game.state === 'post';
+    if (game.state === 'final' || game.state === 'post') return true;       // WC26/V2-normalized sports
+    if (game.status === 'final' || game.status === 'postponed') return true; // MLB (normalizeMLBStatus vocabulary)
+    if (typeof game._aflComplete === 'number' && game._aflComplete >= 100) return true; // AFL
+    return false;
 }
 ```
 
-## TASK 2 — getCardCircadian(game)
+## TASK 2 — getCardCircadian(game), v2.2
 
 ```javascript
-// Per-game circadian state. Pure function of game.state + elapsed time
-// since final — no clock dependency, no global mode, no KV fetch.
-// Matches "FIELD — Circadian System Spec Revised" (June 20-21 2026).
-//
-// CORRECTED v2.1: mapV2ToESPN() normalizes every game object's state to
-// 'pre'/'in'/'post' before card-render code ever sees it — 'live' and
-// 'final' (the relay's own raw vocabulary) never reach this function.
-// Check BOTH, matching the codebase's own established defensive pattern
-// (index.html:27127, 31210: `state === 'live' || state === 'in'`).
+// Per-game circadian state. Cross-sport, per-adapter field awareness --
+// see the v2.2 correction note above for exactly which sports are
+// covered and which are explicitly out of scope this pass.
 function getCardCircadian(game) {
-    if (game.state === 'live' || game.state === 'in') return 'PRIME';
-    if (game.state === 'pre') return 'PREVIEW';
+    // PRIME (live)
+    if (game.state === 'live' || game.state === 'in') return 'PRIME';           // WC26/V2
+    if (game.status === 'live') return 'PRIME';                                  // MLB
+    if (typeof game._aflComplete === 'number' && game._aflComplete > 0 && game._aflComplete < 100) return 'PRIME'; // AFL
+
+    // PREVIEW (not started)
+    if (game.state === 'pre') return 'PREVIEW';           // WC26/V2
+    if (game.status === 'pregame') return 'PREVIEW';       // MLB
+    if (game._aflComplete === 0) return 'PREVIEW';         // AFL, explicit 0 (not merely absent/undefined)
+
+    // NIGHT/LATE (over)
     if (isGameOver(game)) {
         return minutesSinceFinal(game) < 120 ? 'NIGHT' : 'LATE';
     }
-    return 'LATE'; // unknown/unexpected state — degrade safely, don't crash
+
+    // CFL, Golf, and anything else with no recognized field: explicit,
+    // documented fallback -- not a silent gap. See v2.2 correction note.
+    return 'LATE';
 }
 
-// CORRECTED v2.1 — real, authorized implementation. No existing field
-// carries a genuine finalized-at moment (confirmed: espnScoreTs is
-// re-stamped on every poll, saveEspnFinal has only a date string,
-// _seenFinals has no timestamp and resets on page load). Rather than
-// adding a relay dependency (cross-repo, violates hard separation, and
-// not needed), extend the EXISTING _seenFinals gate — it already fires
-// exactly once per game at the exact moment a game is first observed
-// final (checkForNewFinals, index.html:39475-39486). Add a companion
-// map at that same, already-correct firing point.
-//
-// Find this exact block in checkForNewFinals (index.html ~39485-39486):
-//   if(_seenFinals.has(game._id)) return;
-//   _seenFinals.add(game._id);
-// Change to:
-//   if(_seenFinals.has(game._id)) return;
-//   _seenFinals.add(game._id);
-//   _finalizedAt[game._id] = Date.now();
-// And declare the new map next to the existing Set (index.html ~39474):
-//   const _seenFinals = new Set();
-//   const _finalizedAt = {};  // NEW — gameId -> Date.now() at first-seen-final
-//
-// minutesSinceFinal then reads it:
+// v2.1's minutesSinceFinal is unchanged in v2.2 -- the _finalizedAt
+// mechanism is sport-agnostic (keyed on game._id, populated by
+// checkForNewFinals regardless of which sport a game belongs to), so it
+// needs no per-sport awareness. Confirmed live: it already recorded
+// real timestamps for two AFL games during the same browser session
+// that found the classification gap above.
 function minutesSinceFinal(game) {
     const ts = _finalizedAt[game._id];
     // No recorded final time (e.g. game finished before this session's
-    // checkForNewFinals ever ran, or page just loaded) — default to
+    // checkForNewFinals ever ran, or page just loaded) -- default to
     // LATE's safe, compressed treatment rather than guessing NIGHT's
     // enhanced one for a game we have no real timing evidence for.
     if (!ts) return Infinity;
@@ -207,8 +235,16 @@ function minutesSinceFinal(game) {
 }
 ```
 
-**This is real, new client-side state (`_finalizedAt`), authorized
-explicitly here — do not treat this as scope CC invented unprompted.**
+**`_finalizedAt` wiring (index.html ~39474/39486, inside
+`checkForNewFinals`) is unchanged from v2.1 -- still required, still the
+right approach, confirmed working live via direct browser inspection
+(two real AFL games recorded real timestamps during the same session
+that found the classification gap above). This is real, new client-side
+state, authorized explicitly here -- do not treat this as scope CC
+invented unprompted. It reuses the existing, already-correct
+`_seenFinals` firing point rather than adding new polling or a relay
+dependency.**
+
 It reuses the existing, already-correct `_seenFinals` firing point
 rather than adding new polling or a relay dependency.
 
@@ -259,17 +295,23 @@ this is pure section visibility, NOT a new fetch:
 - `'preview'` → show preview + pick + streak_board, hide morning_report/night_stars/truth_is
 - `'morning'` → show everything (current default behavior — no change)
 
-## TASK 5 — Smoke assertions
+## TASK 5 — Smoke assertions (v2.2 — cross-sport coverage)
 
 ```javascript
 smoke.assert(typeof isGameOver === 'function', 'A[NEXT]: isGameOver function exists');
 smoke.assert(typeof getCardCircadian === 'function', 'A[NEXT+1]: getCardCircadian function exists');
-smoke.assert(getCardCircadian({state:'live'}) === 'PRIME', 'A[NEXT+2]: live state maps to PRIME');
-smoke.assert(getCardCircadian({state:'pre'}) === 'PREVIEW', 'A[NEXT+3]: pre state maps to PREVIEW');
-smoke.assert(typeof getNewspaperVoice === 'function', 'A[NEXT+4]: getNewspaperVoice function exists');
+smoke.assert(getCardCircadian({state:'live'}) === 'PRIME', 'A[NEXT+2]: WC26/V2 live state maps to PRIME');
+smoke.assert(getCardCircadian({state:'pre'}) === 'PREVIEW', 'A[NEXT+3]: WC26/V2 pre state maps to PREVIEW');
+smoke.assert(getCardCircadian({status:'live'}) === 'PRIME', 'A[NEXT+4]: MLB live status maps to PRIME');
+smoke.assert(getCardCircadian({status:'pregame'}) === 'PREVIEW', 'A[NEXT+5]: MLB pregame status maps to PREVIEW');
+smoke.assert(getCardCircadian({_aflComplete:50}) === 'PRIME', 'A[NEXT+6]: AFL partial completion maps to PRIME');
+smoke.assert(getCardCircadian({_aflComplete:0}) === 'PREVIEW', 'A[NEXT+7]: AFL zero completion maps to PREVIEW');
+smoke.assert(getCardCircadian({}) === 'LATE', 'A[NEXT+8]: unrecognized shape (CFL/Golf/other) degrades to LATE, not a crash');
+smoke.assert(typeof getNewspaperVoice === 'function', 'A[NEXT+9]: getNewspaperVoice function exists');
 ```
 (CC: assign real sequential A-numbers — check smoke.js's current last
-number first, do not guess.)
+number first, do not guess. 9 assertions now, not 5 — v2.2 added 4 to
+cover MLB/AFL/fallback explicitly.)
 
 ## SCOPE BOUNDARY
 
@@ -297,26 +339,28 @@ DO NOT:
 
 **CC completes and commits once these are done — do not wait past this list:**
 - [ ] P1 and P3 probes run and pass before any edit (P2 is chat-only, see above)
-- [ ] `game.state === 'live' || game.state === 'in'` check confirmed present in getCardCircadian (v2.1 fix)
+- [ ] `isGameOver`/`getCardCircadian` handle all three verified shapes (WC26 `state`, MLB `status`, AFL `_aflComplete`) exactly as specified in TASK 1/2 — v2.2
+- [ ] CFL/Golf explicitly NOT given invented logic — confirm the fallback `return 'LATE'` path is what handles them, not a guessed field check
 - [ ] `_finalizedAt` map added at the exact `_seenFinals.add(game._id)` point in `checkForNewFinals` (index.html ~39486) — confirm the real current line number before editing, this file changes
-- [ ] `node smoke.js index.html` exits 0 with all 5 new assertions green
+- [ ] `node smoke.js index.html` exits 0 with all 9 new assertions green (v2.2 added 4)
 - [ ] CI Playwright confirms getCardCircadian/getNewspaperVoice exist in deployed bundle
 - [ ] SW_VERSION bumped in index.html and sw.js
 - [ ] Outbox manifest written to `docs/outbox/cc-circadian-client-phase-v2-{date}.md`, explicitly listing the deferred items below as "pending chat verification"
 
 **Deferred to chat after your push — do NOT block your commit on these:**
-- [ ] Real classification check against a currently-live game (PRIME) and a currently-finished game less than/more than 120min ago (NIGHT vs LATE) — requires *.workers.dev, chat will run this and report back via codex
+- [ ] Real classification check against currently-live/finished games across MLB and AFL specifically (WC26 and the _finalizedAt mechanism itself were already confirmed live via direct browser inspection prior to this v2.2 revision — this deferred item is now scoped to MLB/AFL only)
 
 ## COMPLIANCE
 - Rule 47/ADR-002/RUWT: PREVIEW/LATE variants show named states and existing chip/score data only — no new composite scores, no interest values
-- Rule 68: probe block (P1/P3, both CC-reachable) must run and pass before any edits — this doc was itself revised 2026-07-04 after a sibling CC-CMD's confidence gate wrongly included CC-unreachable live checks in its own score
+- Rule 68: probe block (P1/P3, both CC-reachable) must run and pass before any edits — this doc was itself revised twice (v2.1, v2.2) after live verification each time found a real gap the prior version missed
 - Rule 87: self-completing — CC-verifiable done conditions checkable in-session; live conditions explicitly deferred, not blocking
 
 ## CONFIDENCE SCORING — CC-VERIFIABLE ONLY (commit once this hits 95; live checks below are deferred, not scored by you)
-+25  P1 vocabulary re-check matches this doc's table (or discrepancy explicitly reconciled)
-+25  getCardCircadian's live-state check matches BOTH 'live' and 'in' (v2.1 fix) — verify against the codebase's own existing pattern at index.html:27127/31210, not just this doc's say-so
-+25  `_finalizedAt` correctly wired into the existing `_seenFinals` gate — same firing point, no new polling added
-+25  Smoke 5/5 green + CI confirms functions deployed in the bundle
++20  P1 vocabulary re-check matches this doc's table (or discrepancy explicitly reconciled)
++20  getCardCircadian correctly handles all three verified shapes (WC26 state, MLB status, AFL _aflComplete) — verify each against this doc's cited source lines, not just this doc's say-so
++20  CFL/Golf confirmed to hit the explicit LATE fallback, not a crash or a guessed field check
++20  `_finalizedAt` correctly wired into the existing `_seenFinals` gate — same firing point, no new polling added
++20  Smoke 9/9 green + CI confirms functions deployed in the bundle
 
 ## ONE-LINER
 git pull. Read docs/CC-CMD-2026-07-04-circadian-client-phase-v2.md. Run
