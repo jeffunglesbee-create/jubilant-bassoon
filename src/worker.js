@@ -29,6 +29,42 @@ class MetaTagRewriter {
 
 export default {
     async fetch(request, env, ctx) {
+        // TEMPORARY DIAGNOSTIC (CC-CMD-2026-07-04-og-worker-global-fetch-
+        // fix) -- re-tests the exact same in-Worker fetch to the relay
+        // that failed with Cloudflare error 1042 before
+        // global_fetch_strictly_public was added, to confirm the flag
+        // actually fixes it. Added before the bot-detection branch so it
+        // works regardless of User-Agent. Temporary -- removed in this
+        // same CC-CMD once the live result is captured.
+        const url = new URL(request.url);
+        if (url.pathname === '/__diag_relay_fetch') {
+            const result = { attempted: true };
+            try {
+                const tz = 'America/New_York';
+                const today = new Date().toLocaleDateString('en-CA', { timeZone: tz });
+                const targetUrl = `https://field-relay-nba.jeffunglesbee.workers.dev/circadian/preview/${today}`;
+                result.targetUrl = targetUrl;
+                const r = await fetch(targetUrl, { signal: AbortSignal.timeout(2000) });
+                result.status = r.status;
+                result.ok = r.ok;
+                const text = await r.text();
+                result.bodySnippet = text.slice(0, 300);
+                try {
+                    const data = JSON.parse(text);
+                    result.parsedOk = data.ok;
+                    result.parsedTextPresent = !!data.text;
+                } catch (parseErr) {
+                    result.jsonParseError = parseErr.message;
+                }
+            } catch (fetchErr) {
+                result.fetchError = fetchErr.message;
+                result.fetchErrorName = fetchErr.name;
+            }
+            return new Response(JSON.stringify(result, null, 2), {
+                headers: { 'Content-Type': 'application/json' },
+            });
+        }
+
         // Non-bot traffic: pure passthrough, identical to today's behavior.
         if (!isBotRequest(request)) {
             return env.ASSETS.fetch(request);
