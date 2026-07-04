@@ -19,9 +19,10 @@ class MetaTagRewriter {
     }
     element(element) {
         if (this.description) {
-            element.after('html', {
-                html: `<meta property="og:description" content="${this.description.replace(/"/g, '&quot;')}">`,
-            });
+            element.after(
+                `<meta property="og:description" content="${this.description.replace(/"/g, '&quot;')}">`,
+                { html: true }
+            );
         }
     }
 }
