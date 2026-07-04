@@ -1,9 +1,10 @@
 name: OG Worker Run-First Verify Probe
-# Live TASK 2 verification for CC-CMD-2026-07-04-og-worker-run-first-fix:
-# confirms run_worker_first actually causes src/worker.js's fetch()
-# handler to run for both bot and non-bot User-Agents against the
-# deployed root document, and that a non-HTML asset request is
-# unaffected.
+# Live TASK 2 verification for CC-CMD-2026-07-04-og-worker-htmlrewriter-
+# arg-fix: confirms the corrected Element.after(content, {html:true})
+# call actually injects a real og:description tag for bot UAs, that
+# normal UAs see zero change, and that the OLD bug's literal stray
+# "html" text is gone. Cache-busted (unique query string) on every
+# request so no result can be explained by a stale pre-fix cache entry.
 
 on:
   push:
@@ -19,46 +20,50 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Probe bot UA, non-bot UA, and a static asset
+      - name: Probe bot UA and normal UA, both cache-busted
         run: |
           TS=$(date -u +%Y%m%dT%H%M%SZ)
           OUT="outbox/og-worker-probe-${TS}.txt"
-          URL="https://jubilant-bassoon.jeffunglesbee.workers.dev/"
+          BASE="https://jubilant-bassoon.jeffunglesbee.workers.dev/"
           ASSET_URL="https://jubilant-bassoon.jeffunglesbee.workers.dev/sw.js"
+          BOT_URL="${BASE}?_cb=$(date +%s)-$RANDOM-bot"
+          NORMAL_URL="${BASE}?_cb=$(date +%s)-$RANDOM-normal"
 
           {
-            echo "=== OG Worker Run-First Verify Probe [$TS] ==="
+            echo "=== OG Worker Verify Probe [$TS] ==="
             echo ""
-            echo "--- 1. Bot UA (Twitterbot/1.0) against root ---"
-            curl -sL -H "User-Agent: Twitterbot/1.0" -w "\nHTTP=%{http_code} time=%{time_total}s\n" "$URL" -o /tmp/bot.html -D /tmp/bot_headers.txt
+            echo "--- 1. Bot UA (Twitterbot/1.0), cache-busted ---"
+            echo "URL: $BOT_URL"
+            curl -sL -H "User-Agent: Twitterbot/1.0" -w "\nHTTP=%{http_code} time=%{time_total}s\n" "$BOT_URL" -o /tmp/bot.html -D /tmp/bot_headers.txt
             echo "cf-cache-status: $(grep -i '^cf-cache-status:' /tmp/bot_headers.txt || echo 'not present')"
             echo "og:description present: $(grep -q 'og:description' /tmp/bot.html && echo YES || echo NO)"
-            grep -o '<meta property="og:description"[^>]*>' /tmp/bot.html || echo "(no og:description tag found)"
+            echo "Tag found: $(grep -o '<meta property="og:description"[^>]*>' /tmp/bot.html || echo '(none)')"
             echo ""
 
-            echo "--- 2. Normal browser UA against root ---"
-            curl -sL -H "User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36" -w "\nHTTP=%{http_code} time=%{time_total}s\n" "$URL" -o /tmp/normal.html -D /tmp/normal_headers.txt
+            echo "--- 2. Normal browser UA, cache-busted ---"
+            echo "URL: $NORMAL_URL"
+            curl -sL -H "User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36" -w "\nHTTP=%{http_code} time=%{time_total}s\n" "$NORMAL_URL" -o /tmp/normal.html -D /tmp/normal_headers.txt
             echo "cf-cache-status: $(grep -i '^cf-cache-status:' /tmp/normal_headers.txt || echo 'not present')"
             echo "og:description present: $(grep -q 'og:description' /tmp/normal.html && echo YES || echo NO)"
             echo ""
 
-            echo "--- 3. Non-HTML asset (sw.js) with both UAs ---"
+            echo "--- 3. Stray 'html' text check (the OLD bug's literal visible side effect) ---"
+            echo "Bot response — standalone '>html<' or 'html' immediately after <title> close: $(grep -oE '</title>\s*html|^html$' /tmp/bot.html || echo '(not found -- clean)')"
+            echo "Bot response line count containing bare word 'html' outside tags/attrs: $(grep -cE '(^|>)\s*html\s*(<|$)' /tmp/bot.html || echo 0)"
+            echo ""
+
+            echo "--- 4. Non-HTML asset (sw.js) unaffected, both UAs ---"
             curl -sL -H "User-Agent: Twitterbot/1.0" -w "content-type=%{content_type} time=%{time_total}s\n" "$ASSET_URL" -o /tmp/asset_bot.js
             curl -sL -H "User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36" -w "content-type=%{content_type} time=%{time_total}s\n" "$ASSET_URL" -o /tmp/asset_normal.js
             echo "asset bytes match: $(cmp -s /tmp/asset_bot.js /tmp/asset_normal.js && echo YES || echo NO)"
             echo ""
 
-            echo "--- Diff check: bot HTML vs normal HTML (should differ only by the injected tag) ---"
-            diff /tmp/bot.html /tmp/normal.html | head -20 || echo "(no diff -- identical, would indicate the fix did not take effect)"
+            echo "--- 5. Full bot response excerpt around <title> (evidence, not just verdict) ---"
+            grep -o '.\{0,80\}</title>.\{0,300\}' /tmp/bot.html | head -3
             echo ""
 
-            echo "--- 4. Cache-busted bot UA request (rules out a stale pre-fix cache entry) ---"
-            CB_URL="${URL}?_cb=$(date +%s)-$RANDOM"
-            curl -sL -H "User-Agent: Twitterbot/1.0" -w "\nHTTP=%{http_code} time=%{time_total}s\n" "$CB_URL" -o /tmp/bot_cb.html -D /tmp/bot_cb_headers.txt
-            echo "URL: $CB_URL"
-            echo "cf-cache-status: $(grep -i '^cf-cache-status:' /tmp/bot_cb_headers.txt || echo 'not present')"
-            echo "og:description present: $(grep -q 'og:description' /tmp/bot_cb.html && echo YES || echo NO)"
-            grep -o '<meta property="og:description"[^>]*>' /tmp/bot_cb.html || echo "(no og:description tag found)"
+            echo "--- Diff check: bot HTML vs normal HTML (should differ only by the injected tag) ---"
+            diff /tmp/bot.html /tmp/normal.html | head -20
           } > "$OUT" 2>&1
           cat "$OUT"
           echo "OUT=$OUT" >> $GITHUB_ENV
