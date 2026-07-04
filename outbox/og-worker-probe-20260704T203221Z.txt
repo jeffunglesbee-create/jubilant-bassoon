@@ -1,0 +1,31 @@
+=== OG Worker Verify Probe [20260704T203221Z] ===
+
+--- 1. Bot UA (Twitterbot/1.0), cache-busted ---
+URL: https://jubilant-bassoon.jeffunglesbee.workers.dev/?_cb=1783197141-14086-bot
+
+HTTP=200 time=0.091155s
+cf-cache-status: cf-cache-status: HIT
+og:description present: NO
+Tag found: (none)
+
+--- 2. Normal browser UA, cache-busted ---
+URL: https://jubilant-bassoon.jeffunglesbee.workers.dev/?_cb=1783197141-12589-normal
+
+HTTP=200 time=0.073329s
+cf-cache-status: cf-cache-status: HIT
+og:description present: NO
+
+--- 3. Stray 'html' text check (the OLD bug's literal visible side effect) ---
+Bot response — standalone '>html<' or 'html' immediately after <title> close: (not found -- clean)
+Bot response line count containing bare word 'html' outside tags/attrs: 0
+0
+
+--- 4. Non-HTML asset (sw.js) unaffected, both UAs ---
+content-type=application/javascript time=0.080392s
+content-type=application/javascript time=0.109810s
+asset bytes match: YES
+
+--- 5. Full bot response excerpt around <title> (evidence, not just verdict) ---
+<title>FIELD — Global Sports Intelligence</title>
+
+--- Diff check: bot HTML vs normal HTML (should differ only by the injected tag) ---
