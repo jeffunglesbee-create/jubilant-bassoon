@@ -1,0 +1,75 @@
+name: OG Worker Latency Probe
+# Measures real request latency to a static asset (sw.js), N=20 samples,
+# reporting min/max/median. Run once BEFORE run_worker_first:true ships
+# (baseline) and once AFTER (post-deploy), per
+# CC-CMD-2026-07-04-og-worker-run-first-fix-v2 TASK 2. Same asset, same
+# method, same N both times so the two runs are a fair comparison.
+
+on:
+  push:
+    paths: ['outbox/.trigger-og-worker-latency-probe']
+  workflow_dispatch:
+    inputs:
+      label:
+        description: 'Label for this run (e.g. "before" or "after")'
+        required: true
+        default: 'unlabeled'
+
+permissions:
+  contents: write
+
+jobs:
+  measure:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Measure latency (N=20) against /sw.js
+        run: |
+          TS=$(date -u +%Y%m%dT%H%M%SZ)
+          LABEL="${{ github.event.inputs.label || 'unlabeled' }}"
+          OUT="outbox/og-worker-latency-${LABEL}-${TS}.txt"
+          URL="https://jubilant-bassoon.jeffunglesbee.workers.dev/sw.js"
+          N=20
+
+          echo "=== OG Worker Latency Probe [$TS] label=$LABEL ===" > "$OUT"
+          echo "URL: $URL" >> "$OUT"
+          echo "Samples: $N" >> "$OUT"
+          echo "" >> "$OUT"
+
+          > /tmp/times.txt
+          for i in $(seq 1 $N); do
+            t=$(curl -s -o /dev/null -w "%{time_total}" -H "Cache-Control: no-cache" "$URL?_cb=$i-$RANDOM")
+            echo "$t" >> /tmp/times.txt
+            echo "sample $i: ${t}s" >> "$OUT"
+          done
+
+          echo "" >> "$OUT"
+          python3 -c "
+times = [float(l.strip()) for l in open('/tmp/times.txt') if l.strip()]
+times.sort()
+n = len(times)
+median = times[n//2] if n % 2 else (times[n//2-1]+times[n//2])/2
+print(f'min:    {times[0]:.4f}s')
+print(f'max:    {times[-1]:.4f}s')
+print(f'median: {median:.4f}s')
+print(f'mean:   {sum(times)/n:.4f}s')
+print(f'all sorted: {times}')
+" >> "$OUT"
+
+          cat "$OUT"
+          echo "OUT=$OUT" >> $GITHUB_ENV
+
+      - name: Push result
+        run: |
+          git config user.email "probe@field"
+          git config user.name "OG Worker Latency Probe"
+          git add "$OUT" 2>/dev/null || true
+          git diff --cached --quiet && echo "Nothing to commit" && exit 0
+          git commit -m "og worker latency probe result [skip ci]"
+          for i in 1 2 3; do
+            git pull --rebase --autostash origin main && git push origin main && break
+            sleep $((i * 5))
+          done
+        env:
+          OUT: ${{ env.OUT }}
