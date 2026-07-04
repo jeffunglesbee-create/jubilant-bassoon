@@ -6115,5 +6115,34 @@ assert('A-PHASE2-6 — scheduleRenderAll is the ONLY call site passing true (cac
   (html.match(/renderAll\(true\)/g) || []).length === 1,
   'scheduleRenderAll() must call renderAll(true), and renderAll(true) must appear exactly once in the whole file — if any other call site ever passes true, cache-invalidation safety silently breaks for that path');
 
+// ── Circadian visual treatment (A-CIRCVIS — CC-CMD-2026-07-04-circadian-visual-treatment) ──
+assert('A-CIRCVIS-1 — circadian PRIME has visual accent treatment',
+  !!html.match(/\.game-card\.circadian-prime\s*\.card-accent\{background:var\(--live\)\}/),
+  '.game-card.circadian-prime .card-accent must set background:var(--live)');
+
+assert('A-CIRCVIS-2 — circadian PREVIEW has visual accent treatment',
+  !!html.match(/\.game-card\.circadian-preview\s*\.card-accent\{background:var\(--gold\)\}/),
+  '.game-card.circadian-preview .card-accent must set background:var(--gold)');
+
+assert('A-CIRCVIS-3 — circadian NIGHT has visual accent treatment',
+  !!html.match(/\.game-card\.circadian-night\s*\.card-accent\{background:var\(--drama-watch\)\}/),
+  '.game-card.circadian-night .card-accent must set background:var(--drama-watch)');
+
+assert('A-CIRCVIS-4 — circadian accent rules are placed AFTER espn-live/espn-final in source order (cascade-order regression guard)',
+  (() => {
+    const espnFinalIdx = html.indexOf('.game-card.espn-final .card-accent{background:#3a3a4a}');
+    const circPrimeIdx = html.indexOf('.game-card.circadian-prime .card-accent{background:var(--live)}');
+    // Same specificity (.game-card.X .card-accent) on both sides, so CSS
+    // resolves the tie by source order. Circadian must come AFTER
+    // espn-live/espn-final, not merely be grouped near .circadian-late —
+    // this is load-bearing (MLB's refreshMLBStatus is the more accurate,
+    // faster signal and must win when both classes apply to one card),
+    // not cosmetic. A prior implementation attempt placed these rules
+    // near .circadian-late instead (which is BEFORE espn-live/espn-final
+    // in the file) — this assertion would have caught that mistake.
+    return espnFinalIdx > -1 && circPrimeIdx > -1 && circPrimeIdx > espnFinalIdx;
+  })(),
+  '.game-card.circadian-prime/.circadian-preview/.circadian-night .card-accent rules must appear AFTER .game-card.espn-final .card-accent in source order — same-specificity CSS rules resolve ties by source order, so placing circadian rules earlier (e.g. merely grouped near .circadian-late) would let espn-live/espn-final silently win the cascade instead, defeating the entire point of this CC-CMD for MLB specifically.');
+
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);

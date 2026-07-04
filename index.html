@@ -1844,6 +1844,22 @@ body.wf-mode .np-inner{max-width:100%}
 .score-leader{color:var(--gold2)!important}
 .game-card.espn-live .card-accent{background:var(--live)}
 .game-card.espn-final .card-accent{background:#3a3a4a}
+/* Circadian PRIME/PREVIEW/NIGHT accent — "turn on the lights" pass.
+   LATE already has opacity dimming (index.html ~689, .circadian-late).
+   These three reuse existing .card-accent tokens, matching the
+   already-shipped .live/.soon/.espn-* pattern above -- no new colors
+   invented. Placed AFTER .espn-live/.espn-final (not merely grouped
+   next to .circadian-late) because that placement is load-bearing, not
+   cosmetic: same specificity (.game-card.X .card-accent), so CSS
+   cascade resolves the tie by source order. Circadian is the more
+   accurate signal for MLB specifically (refreshMLBStatus can beat
+   ESPN's score-matching by up to ~15 min per 2026-07-04's dual-source
+   investigation), so it must win the cascade where both classes apply
+   to the same card — which requires these rules to come AFTER, not
+   merely near, .espn-live/.espn-final's own accent rules. */
+.game-card.circadian-prime .card-accent{background:var(--live)}
+.game-card.circadian-preview .card-accent{background:var(--gold)}
+.game-card.circadian-night .card-accent{background:var(--drama-watch)}
 
 .live-badge{
   display:inline-flex;align-items:center;gap:4px;
@@ -23159,7 +23175,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-07-04b';
+  const SW_VERSION = '2026-07-04c';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
