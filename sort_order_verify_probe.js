@@ -63,15 +63,26 @@ const OUT = `outbox/sort-order-probe-${TS}.txt`;
   ok = ok && beforeOrderOk && beforeTiersOk;
 
   // Simulate a poll cycle: game C flips from PREVIEW (pregame) to PRIME (live).
-  const after = await page.evaluate(() => {
+  const afterDiag = await page.evaluate(() => {
     const synth = window.__circSortTest;
     const g = synth.games.find(g => g._id === 'circtest-C');
     g.status = 'live';
-    renderAll();
+    let renderErr = null;
+    try { renderAll(); } catch (e) { renderErr = e.message + '\n' + e.stack; }
     const cards = Array.from(document.querySelectorAll('.game-card[data-gameid^="circtest-"]'));
-    return cards.map(c => ({ id: c.dataset.gameid, circadian: c.dataset.circadian }));
+    const allCards = document.querySelectorAll('.game-card').length;
+    const mainChildren = document.getElementById('main').children.length;
+    const circTestSectionPresent = !!document.querySelector('.sport-section[data-sport="CircTestSport"]');
+    const circTestSectionHTML = document.querySelector('.sport-section[data-sport="CircTestSport"]')?.outerHTML?.slice(0, 500) || null;
+    return {
+      cards: cards.map(c => ({ id: c.dataset.gameid, circadian: c.dataset.circadian })),
+      renderErr, allCards, mainChildren, circTestSectionPresent, circTestSectionHTML,
+    };
   });
+  const after = afterDiag.cards;
   log('AFTER (C flipped to live/PRIME, expected order C,A,B): ' + JSON.stringify(after));
+  log('DIAG: ' + JSON.stringify({ renderErr: afterDiag.renderErr, allCards: afterDiag.allCards, mainChildren: afterDiag.mainChildren, circTestSectionPresent: afterDiag.circTestSectionPresent }));
+  if (afterDiag.circTestSectionHTML) log('DIAG circTestSectionHTML (first 500 chars): ' + afterDiag.circTestSectionHTML);
 
   const expectedAfter = ['circtest-C', 'circtest-A', 'circtest-B'];
   const afterIds = after.map(c => c.id);
