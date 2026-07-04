@@ -6186,5 +6186,9 @@ assert('A-NPWIPE-3 — renderAll\'s second empty-check (post-render) also preser
   !!html.match(/if\(!main\.innerHTML\.trim\(\)\)\s*applyMainHTML\(/),
   'renderAll()\'s second empty-check, immediately after applyMainHTML(_renderAllHTML), must itself call applyMainHTML(...) rather than reassigning main.innerHTML directly — this is the 6th bypass found (and correctly reported, not fixed) by the prior newspaper-repaint-wipe-fix CC-CMD: without this, it would re-wipe the newspaper applyMainHTML had just restored one line earlier, whenever a full render\'s HTML happens to be blank.');
 
+assert('A-SWUPDATE-1 — service worker registration actively checks for updates on visibilitychange, not just the browser\'s own background cycle',
+  !!html.match(/reg\.update\(\)\.catch/),
+  'The SW registration\'s .then(reg=>{...}) callback must call reg.update().catch(()=>{}) on visibilitychange-becomes-visible — updatefound alone only fires on the browser\'s own background check cycle, which is documented to be meaningfully less frequent for installed PWAs on iOS Safari than Android Chrome, so the already-correct auto-reload logic can sit dormant far longer on iOS without this.');
+
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);
