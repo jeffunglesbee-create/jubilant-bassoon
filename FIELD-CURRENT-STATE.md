@@ -1,7 +1,7 @@
 # FIELD Current State
 > Auto-updated by CI on each successful deploy and by Claude at session end. Commit history = changelog.
 
-**HEAD:** 40b59d4 · **Deployed:** 2026-07-04 · **File:** ~2229KB · **Smoke:** 863/0 · **L3:** 15/15
+**HEAD:** a360c77 · **Deployed:** 2026-07-04 · **File:** ~2229KB · **Smoke:** 863/0 · **L3:** 15/15
 
 Drive doc (full narrative): https://docs.google.com/document/d/1ahx6cS_Z5sfjb9sMS2Uqjypgy37xbI3M08PjZOh4G74
 
