@@ -294,3 +294,82 @@ verbatim — replaced with the extracted finding in
 above is now narrowed to MLB/AFL specifically — WC26 and the
 `_finalizedAt` mechanism itself were already confirmed live via direct
 browser inspection prior to this v2.2 revision.
+
+---
+
+## Addendum (v2.3, same day) — classification never refreshed after initial render
+
+**Commits:** 21137d3 (implementation), 2cbf93f (rebase/push landed as),
+f7b33b7 (shrink probe result). **Deploy:** run 28693561581 — succeeded.
+
+A later chat session opened the live PWA and found every card's circadian
+classification frozen at whatever it was on first render — including a
+real MLB game confirmed via direct JS inspection to have `status:'final'`
+still showing `data-circadian="PRIME"` in the live DOM. Root cause: v2.1/
+v2.2 only ever invoked `getCardCircadian` once, inside `renderAll()`'s
+card-template string. Live score updates run through a completely
+separate function, `renderESPNScores()`, which patches the score display
+and toggles `espn-live`/`espn-final` directly on the existing card
+element — without ever calling `renderAll()` again or touching
+`data-circadian`/`circadian-*`.
+
+**Line number re-confirmed fresh, per explicit instruction — no drift
+this time:** the doc warned this file changes daily, but the
+`espn-live`/`espn-final` toggle block was at the *exact* cited location
+(index.html:21119-21122) when checked.
+
+**TASK 6 implemented verbatim:** the new block sits immediately after
+`card.classList.remove("espn-live","espn-final")`, reuses this function's
+own already-computed `isLive`/`isFinal` (from `_n.state` via
+`computeGameNarrative` — already normalized to the same `'in'/'post'`
+shape `getCardCircadian`'s WC26/V2 branch expects, so no MLB/AFL-specific
+field reading is needed at this particular call site), and calls
+`getCardCircadian({state:'post', _id: game._id})` for the final
+transition specifically — reusing the same `minutesSinceFinal`/
+`_finalizedAt` timing logic rather than hardcoding `NIGHT`/`LATE`, so a
+game going final through this path gets classified identically to one
+detected via `checkForNewFinals`.
+
+**Smoke:** one new assertion, A-CIRCADIAN-10, checks the refresh block
+exists at the *correct firing point* — inside the 1200 characters
+immediately following the exact `card.classList.remove("espn-live",
+"espn-final")` line, not just anywhere in the file — so a future edit
+that moves or removes this logic without moving the assertion's anchor
+would genuinely fail, not pass on a stale full-file match. **10/10 new
+assertions green, 836/0 total** (up from 835).
+
+**SW_VERSION:** bumped to `2026-07-03d` — checked real system time again
+(still 23:28 ET July 3 at commit time); `c` was already used earlier this
+same ET day for the v2.2 commit.
+
+**CC-verifiable confidence:** 100% on all four self-assessed criteria —
+line number exact-match confirmed, code matches the doc's TASK 6 snippet
+verbatim (diffed), smoke assertion added and rigorously anchored (not a
+loose file-wide substring check), SW_VERSION bumped correctly. Committed.
+
+**Live bundle re-verified directly**, via `workflow_dispatch` (third time
+this pattern was needed this session — the trigger file's URL was
+already correct, so a plain push produces no diff to fire on):
+
+```
+16940: const _newCircadian = isFinal
+16945: if (_newCircadian && _newCircadian !== card.dataset.circadian) {
+16947: card.classList.add('circadian-' + _newCircadian.toLowerCase());
+16948: card.dataset.circadian = _newCircadian;
+```
+
+`SW_VERSION = '2026-07-03d'` in the live response confirms this exact
+commit is deployed. Full response (31,247 lines) not kept verbatim —
+replaced with the extracted finding in
+`outbox/cf-result-20260704T033054Z.txt`.
+
+**Explicitly NOT attempted, per instruction:** the DOM-refresh-over-time
+verification — opening the live PWA, finding a real card whose status
+changes, and confirming `data-circadian` actually updates on the next
+poll cycle. This sandbox has no way to hold a page open across a live
+polling interval and observe a DOM mutation happen; a static single-GET
+probe (used above) can confirm the code shipped correctly, but cannot
+substitute for watching it fire. This remains the one deferred item,
+now scoped to: does the refresh actually happen in a real running
+session, not just "does the code that should cause it exist and match
+the spec."
