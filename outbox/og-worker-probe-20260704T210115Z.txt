@@ -1,0 +1,35 @@
+=== OG Worker Verify Probe [20260704T210115Z] ===
+
+--- 1. Bot UA (Twitterbot/1.0), cache-busted ---
+URL: https://jubilant-bassoon.jeffunglesbee.workers.dev/?_cb=1783198875-21008-bot
+
+HTTP=200 time=0.248483s
+cf-cache-status: cf-cache-status: HIT
+og:description present: YES
+Tag found: <meta property="og:description" content="The marquee matchup between the Dodgers and Padres anchors a massive slate, promising high-stakes drama as these division rivals battle for late-night supremacy. With a full day of action spanning from the Nationals' early start to the final pitch in Southern California, fans should monitor how recent bullpen fatigue impacts these critical divisional series.">
+
+--- 2. Normal browser UA, cache-busted ---
+URL: https://jubilant-bassoon.jeffunglesbee.workers.dev/?_cb=1783198875-22571-normal
+
+HTTP=200 time=0.058281s
+cf-cache-status: cf-cache-status: HIT
+og:description present: NO
+
+--- 3. Stray 'html' text check (the OLD bug's literal visible side effect) ---
+Bot response — standalone '>html<' or 'html' immediately after <title> close: (not found -- clean)
+Bot response line count containing bare word 'html' outside tags/attrs: 0
+0
+
+--- 4. Non-HTML asset (sw.js) unaffected, both UAs ---
+content-type=application/javascript time=0.043182s
+content-type=application/javascript time=0.048036s
+asset bytes match: YES
+
+--- 5. Full bot response excerpt around <title> (evidence, not just verdict) ---
+<title>FIELD — Global Sports Intelligence</title><meta property="og:description" content="The marquee matchup between the Dodgers and Padres anchors a massive slate, promising high-stakes drama as these division rivals battle for late-night supremacy. With a full day of action spanning from the Nationals' early start to the final pitch in Southern
+
+--- Diff check: bot HTML vs normal HTML (should differ only by the injected tag) ---
+7c7
+< <title>FIELD — Global Sports Intelligence</title><meta property="og:description" content="The marquee matchup between the Dodgers and Padres anchors a massive slate, promising high-stakes drama as these division rivals battle for late-night supremacy. With a full day of action spanning from the Nationals' early start to the final pitch in Southern California, fans should monitor how recent bullpen fatigue impacts these critical divisional series.">
+---
+> <title>FIELD — Global Sports Intelligence</title>
