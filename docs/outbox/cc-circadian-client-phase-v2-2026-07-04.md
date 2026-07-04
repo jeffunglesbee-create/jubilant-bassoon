@@ -190,3 +190,107 @@ replaced with the extracted finding, see `outbox/cf-result-20260704T024122Z.txt`
       wiring necessity flagged explicitly above, not unprompted scope
       creep — same "no new fetch" constraint, same section-visibility
       goal, just anchored to when real data actually exists
+
+---
+
+## Addendum (v2.2, same day) — cross-sport fix
+
+**Commits:** 918de65 (implementation), a0188a4 (rebase/push landed as),
+c82f8b8 (shrink probe result). **Deploy:** run 28693117200 — all steps
+succeeded.
+
+A later chat session opened the live PWA via real browser automation and
+found `getCardCircadian` v2.1 **only worked for WC26** — MLB and AFL game
+objects never carried a `.state` field at all, so every MLB/AFL game
+silently fell through to the `LATE` default regardless of its real status.
+The doc was revised to v2.2 with the real per-sport fields.
+
+**Probe block re-run fresh, as instructed (P1 especially):** relay
+source re-fetched, byte-identical to every prior fetch this session —
+zero drift, still matches the doc's table exactly.
+
+**Independently verified both v2.2-cited source lines rather than
+trusting the doc's citations:**
+- `normalizeMLBStatus()` at the exact cited line (index.html:19788) —
+  confirmed real output vocabulary `'pregame'/'live'/'final'/'postponed'`
+  matches the doc's table exactly.
+- `status: normalizeMLBStatus(...)` confirmed assigned directly onto the
+  MLB game object returned by `normalizeMLBGame` (index.html:19827) —
+  i.e., on the raw schedule object, not on the ESPN-score lookup object.
+- `_aflComplete: g.complete` confirmed at the cited lines
+  (index.html:21995, 22039) — also on the raw schedule object.
+
+**A wiring bug found beyond what v2.2's own text called out:** the
+existing Task 3 wiring (from the v2.1 pass) only ever passed
+`findESPNScore(g)`'s `.state` into `getCardCircadian` — it never threaded
+`g.status` or `g._aflComplete` through at all. Fixing only the pure
+function per v2.2's spec, without also updating the render-loop call
+site, would have shipped correct logic that never actually receives the
+fields it checks for — the exact same class of bug (correct-in-isolation,
+never-triggered-in-practice) as the original `'live'` vs `'in'` issue.
+Fixed by building one merged input object per card:
+`{state, status: g.status, _aflComplete: g._aflComplete, _id: g._id}`,
+threaded through to both the card's own classification and the
+`_renderAllCircadianGames` array `applyNewspaperVoice` consumes.
+
+**CFL/Golf fallback verified, not assumed:** `getCardCircadian({})`
+executed via smoke A-CIRCADIAN-7 returns `'LATE'` without throwing — no
+guessed field check was added for these two sports, matching the doc's
+explicit instruction not to invent a signal that doesn't exist.
+
+**Known, honest limitation not asked to be fixed:** MLB's `.status` is
+populated once, at boot, by `fetchMLBFixtures()` (confirmed: exactly one
+call site, no interval, no re-fetch) — so an MLB game's circadian state
+derived from `.status` alone will go stale for the rest of the session
+unless that same game also gets a matching `findESPNScore(g)` entry via
+V2 polling (MLB is V2-enabled — `FIELD_V2_SOURCES.mlb: true` — so this
+is the common case, but not guaranteed for every game). `getCardCircadian`
+checks `.state` before `.status`, so a live V2 match takes priority
+automatically when present; this is existing, sensible fallback ordering,
+not something this pass needed to change further. Flagging for honesty,
+not proposing a fix — out of this CC-CMD's scope.
+
+**Smoke:** 4 new assertions added (A-CIRCADIAN-5 through 8 — MLB, AFL,
+unrecognized-shape/LATE, and `isGameOver`'s MLB/AFL terminal values), all
+executing the real functions via extraction + `new Function()`, not
+presence checks. `getNewspaperVoice`'s existence check renumbered to
+A-CIRCADIAN-9. **9/9 new assertions green, 835/0 total** (up from 831).
+
+**SW_VERSION:** bumped to `2026-07-03c` — checked real system time again
+(still 23:09 ET July 3 at commit time), not assumed; `b` was already used
+earlier this same ET day for the v2.1 commit.
+
+**CC-verifiable confidence score (v2.2's own rubric, 20 points × 5):**
+- **+20** — P1 vocabulary re-check, zero drift
+- **+20** — `getCardCircadian` handles all three verified shapes (WC26
+  `state`, MLB `status`, AFL `_aflComplete`) — verified via smoke
+  A-CIRCADIAN-3/4/5/6 executing the real function
+- **+20** — CFL/Golf confirmed to hit the explicit `LATE` fallback via
+  A-CIRCADIAN-7, no guessed field check added
+- **+20** — `_finalizedAt` wiring confirmed unchanged and intact (this
+  pass didn't touch it — verified, not assumed)
+- **+20** — Smoke 9/9 green (835/0 total) + CI confirms deployment
+
+**Total: 100/100.** Committed.
+
+**Live bundle re-verified directly** (not just inferred from green CI),
+via `workflow_dispatch` (the trigger file's content was already correct
+from an earlier same-session probe, so a plain push would have been a
+no-op with no diff to fire on):
+
+```
+if (game.status === 'final' || game.status === 'postponed') return true; // MLB
+if (typeof game._aflComplete === 'number' && game._aflComplete >= 100) return true; // AFL
+if (game.status === 'live') return 'PRIME'; // MLB
+```
+
+`SW_VERSION = '2026-07-03c'` in the live response confirms this exact
+commit is what's serving. Full response (31,237 lines) not kept
+verbatim — replaced with the extracted finding in
+`outbox/cf-result-20260704T031159Z.txt`, consistent with every other
+`cf-result-*.txt` this session.
+
+**Deferred to chat (updated scope):** the classification-check deferral
+above is now narrowed to MLB/AFL specifically — WC26 and the
+`_finalizedAt` mechanism itself were already confirmed live via direct
+browser inspection prior to this v2.2 revision.
