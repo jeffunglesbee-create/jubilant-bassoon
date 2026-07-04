@@ -5,7 +5,11 @@
 **Branch:** main
 **Scope:** Three real, separately-verified issues found while investigating
 a specific complaint (Argentina 3-2 Cape Verde showing "drama peak of
-43/100"). One explicitly NOT attempted — see EXCLUDED below.
+43/100"). A fourth item — the ranking/upset factor — was initially
+excluded as needing its own investigation, then actually investigated
+per direct instruction: real, usable data sources were found (see
+TASK 4 below), so it's included here as a paired, dependent task rather
+than left out.
 
 **Why — three real, verified findings, not one:**
 
@@ -38,15 +42,22 @@ a specific complaint (Argentina 3-2 Cape Verde showing "drama peak of
    +18 ceiling that's the LOWEST overtime bonus of any sport in this
    function.
 
-**EXCLUDED, deliberately, not attempted here:** a team-ranking/upset
-factor (the "#1 vs 67th" dimension). Confirmed via source search: there
-is no FIFA ranking, seed, or pot data anywhere in this codebase —
-`grep` for `fifaRank`/`worldRanking`/seed/pot data returns nothing
-relevant. Adding this would require integrating a new external data
-source (a FIFA rankings API or similar), which is a materially larger
-scope than the three fixes above and needs its own investigation into
-what's actually available and how it'd be fetched/cached — not
-something to bolt onto this CC-CMD as an afterthought.
+**RANKING/UPSET FACTOR — now included as TASK 4, not excluded.**
+Investigated directly: ESPN itself does not carry FIFA ranking data
+(confirmed via live probe of both `site.api.espn.com` team and summary
+endpoints for Argentina/Cape Verde specifically — no rank field in
+either response). Real, usable external sources do exist —
+footballdata.io's FIFA Rankings API returns clean JSON with real rank/
+points data. **Hard dependency:** `CC-CMD-2026-07-04-fifa-rankings-relay.md`
+(field-relay-nba repo) must be deployed first, and it in turn needs a
+real API key Jeff provisions — this is NOT something CC or chat can
+acquire. Verify the relay endpoint is live before starting TASK 4:
+```bash
+curl -s "https://field-relay-nba.jeffunglesbee.workers.dev/fifa-rankings/Argentina"
+```
+If this returns a 503 "not configured" error, the key hasn't been
+provisioned yet — TASK 4 can still be written and its logic reviewed,
+but cannot be verified live until it has been.
 
 **Target time:** ~1.5 hrs (fixes) + backfill runs opportunistically per
 the existing session-capped mechanism (see TASK 3)
@@ -186,17 +197,62 @@ if the existing cap means 31 games will take many days to fully
 backfill, report that plainly as a real tradeoff for Jeff to decide on,
 don't unilaterally change it.
 
-## TASK 4 — Smoke assertions
+## TASK 5 — Smoke assertions
 
 ```javascript
 smoke.assert(!!html.match(/soccer[\s\S]{0,400}period>=3\)\s*timeBonus=24/), 'A[NEXT]: soccer dramaScoreLive has an extra-time bonus tier');
 smoke.assert(html.includes('FIVE_MIN_MS'), 'A[NEXT+1]: fetchSoccerHistoricalStates interpolates quiet stretches');
 smoke.assert(!!html.match(/interpolated\.push\(curr\)/), 'A[NEXT+2]: interpolation preserves real event data points, does not replace them');
+smoke.assert(html.includes('upsetBonus'), 'A[NEXT+3]: soccer upset-factor bonus exists');
+smoke.assert(!!html.match(/rankGap >= 30 && diff <= 1/), 'A[NEXT+4]: upset bonus is conditional on the underdog actually competing now, not a flat pre-game bonus');
 ```
 (CC: assign real sequential A-numbers; adjust the first assertion's
 exact match if the probe-verified threshold differs from 24.)
 
-## SCOPE BOUNDARY
+## TASK 4 — Upset bonus in dramaScoreLive (soccer only, hard dependency on the relay CC-CMD above)
+
+```javascript
+// Upset-factor bonus. Real FIFA rank data via the relay (7-day cached,
+// see CC-CMD-2026-07-04-fifa-rankings-relay.md). Deliberately
+// CONDITIONAL, not a flat bonus for any big ranking-gap game: only
+// applies when the underdog is actually competing RIGHT NOW (tied or
+// within 1 goal) -- a 5-0 blowout by the favorite gets nothing extra
+// just because the ranking gap is large. This matches how every other
+// bonus in this function only rewards currently-true conditions, not
+// pre-game expectations (RUWT/ADR-002: internal signal, not a
+// pre-game-narrative score).
+let upsetBonus = 0;
+if (sp.includes('soccer') || sp.includes('league') || sp.includes('mls') ||
+    sp.includes('liga') || sp.includes('ligue') || sp.includes('premier')) {
+    const rankGap = (typeof eData.homeRank === 'number' && typeof eData.awayRank === 'number')
+        ? Math.abs(eData.homeRank - eData.awayRank) : 0;
+    // Threshold: verify against real FIFA rank spread once live data
+    // exists -- 30+ is a reasonable starting guess (top-10 vs 40+) but
+    // not verified against real rank distributions. CC: sanity-check
+    // this threshold against a handful of real WC26 matchups once the
+    // relay endpoint has real data, adjust if it fires too often/rarely.
+    if (rankGap >= 30 && diff <= 1) {
+        upsetBonus = Math.min(15, Math.floor(rankGap / 10)); // capped, scales with gap size
+    }
+}
+```
+
+Thread `homeRank`/`awayRank` into the `eData` object passed to
+`dramaScoreLive` — find the real call sites (live path in the main
+render loop, and `computeDramaRetroactive`'s historical-state mapping)
+via probe, and fetch each team's rank via the new relay endpoint,
+cached client-side (localStorage, matching the existing drama-history
+caching pattern) since ranks don't change per-game.
+
+Add `upsetBonus` into the final `raw` calculation (find the exact
+current line via probe — this doc read it as
+`const raw = base*52 + timeBonus + sitBonus;` on 2026-07-04, re-verify
+before editing):
+```javascript
+const raw = base*52 + timeBonus + sitBonus + upsetBonus;
+```
+
+
 
 DO:
 - Add the extra-time bonus tier (TASK 1), verified against a real extra-time game first
@@ -206,7 +262,8 @@ DO:
 - Bump SW_VERSION
 
 DO NOT:
-- Add any ranking/seed/upset factor — explicitly out of scope, needs its own data-source investigation (see EXCLUDED above)
+- Start TASK 4 without first confirming the relay's `/fifa-rankings/:team` endpoint is at least deployed (even if returning 503 pending a key) — the paired CC-CMD must exist first
+- Invent a ranking data source other than the one specified — if footballdata.io turns out to be unworkable, stop and report rather than substituting a different, unverified provider
 - Touch MLB/NHL/NBA/NFL/AFL/CFL/tennis branches of `dramaScoreLive` — soccer only
 - Raise the backfill session cap without flagging the tradeoff explicitly
 - Apply interpolation to `fetchMLBHistoricalStates` or any other sport's historical-state fetcher — scoped to soccer, where the keyEvents-only gap was specifically found
@@ -215,29 +272,36 @@ DO NOT:
 - [ ] Probe block re-run; a real extra-time WC26 game's `period` values confirmed before finalizing TASK 1's threshold
 - [ ] Extra-time bonus added, using the verified (not assumed) period threshold
 - [ ] Interpolation added, preserves all real event data points unchanged, only fills gaps between them
-- [ ] `node smoke.js index.html` exits 0 with all 3 new assertions green
+- [ ] Relay dependency (`/fifa-rankings/:team`) confirmed live before starting TASK 4 — if it 503s (key not yet provisioned), TASK 4's code can still be written and reviewed, but report clearly that live verification is blocked, don't fabricate a working test
+- [ ] Upset bonus added, confirmed conditional (rank gap AND close-game check both required), not a flat pre-game bonus
+- [ ] `node smoke.js index.html` exits 0 with all 5 new assertions green
 - [ ] CI confirms deployed
 - [ ] SW_VERSION bumped
-- [ ] Outbox manifest written to `docs/outbox/cc-soccer-drama-scoring-fix-{date}.md`, explicitly recording the real extra-time period values found during probe (not the hypothesized ones in this doc, if they differ)
+- [ ] Outbox manifest written to `docs/outbox/cc-soccer-drama-scoring-fix-{date}.md`, explicitly recording the real extra-time period values found during probe, and explicitly stating whether the FIFA rankings relay endpoint had a real key configured at the time of this work or was still in graceful-failure mode
 
 **Deferred to chat — do NOT block your commit on this:**
 - [ ] Real observation that the backfill discovery loop, run after this ships, actually produces a materially different (higher, where warranted) drama_peak for the Argentina/Cape Verde game or another genuinely tense WC26 match — confirms the fix works end-to-end, not just that the code is correct in isolation.
+- [ ] Real observation that the upset bonus fires correctly for a genuine ranking-mismatch match once real FIFA rank data exists (blocked on Jeff provisioning the API key — see the relay CC-CMD)
 
 ## COMPLIANCE
-- Rule 47/ADR-002/RUWT: this modifies an internal scoring computation only — verify the existing RUWT constraint (drama scores are internal signals feeding display logic, not raw displayed "excitement ratings") still holds; do not change what gets displayed to users, only how the internal drama_peak number is computed and backfilled
+- Rule 47/ADR-002/RUWT: this modifies an internal scoring computation only — verify the existing RUWT constraint (drama scores are internal signals feeding display logic, not raw displayed "excitement ratings") still holds; do not change what gets displayed to users, only how the internal drama_peak number is computed and backfilled. The upset bonus specifically must remain conditional on currently-true game state (close score), never a pre-game-expectation-only score.
 - Rule 68: probe block first, especially the real extra-time game check — do not hardcode period thresholds from assumption
-- Rule 87: self-completing on the CC-verifiable portion; end-to-end backfill observation is necessarily deferred by the existing session-cap mechanism's own timing
+- Rule 87: self-completing on the CC-verifiable portion; end-to-end backfill observation and real upset-bonus firing are necessarily deferred — the former by the existing session-cap mechanism's timing, the latter by external API key provisioning
 
 ## CONFIDENCE SCORING TABLE
-+25  Extra-time threshold verified against a real game before use, not assumed
-+25  Interpolation logic correct — confirmed via code read that real event points are preserved unchanged, only gaps are filled
-+25  Smoke 3/3 green
-+25  CI confirms deployed
++20  Extra-time threshold verified against a real game before use, not assumed
++20  Interpolation logic correct — confirmed via code read that real event points are preserved unchanged, only gaps are filled
++20  Upset bonus correctly conditional (rank gap AND close-game both required), threading of rank data into eData confirmed via code read
++20  Smoke 5/5 green
++20  CI confirms deployed
 
 ## ONE-LINER
 git pull. Read docs/CC-CMD-2026-07-04-soccer-drama-scoring-fix.md. Find
 a real extra-time WC26 game and confirm its period values BEFORE
-writing TASK 1 — do not hardcode period>=3 on assumption alone.
-Implement exactly as specified. The ranking/upset factor is explicitly
-excluded, do not attempt it. Do not commit unless confidence ≥ 95. If
-score < 95 report verbatim and stop — do not invent results.
+writing TASK 1 — do not hardcode period>=3 on assumption alone. For
+TASK 4, verify the FIFA rankings relay endpoint's current live status
+first (paired CC-CMD, field-relay-nba repo) — if the API key isn't
+provisioned yet, write and review the code but report clearly that live
+verification is blocked, don't fabricate a working test. Implement
+exactly as specified. Do not commit unless confidence ≥ 95. If score
+< 95 report verbatim and stop — do not invent results.
