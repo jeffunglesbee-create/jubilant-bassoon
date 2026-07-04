@@ -1,56 +1,62 @@
 # FIELD HANDOFF
 
-## SESSION END — 2026-07-03 (chat-side review/verification session, no new features shipped by this session)
+## MID-SESSION UPDATE — 2026-07-04 (session ongoing, not closed)
 
-**CLIENT HEAD: this file's own commit supersedes 4fe971b/f6b7bdd — always re-run `get_head_sha` fresh rather than trusting a value carried over from earlier in a session (it lagged real `main` by one commit at last check).**
-**RELAY HEAD SRC: e3d7b92** / **RELAY DEPLOYED: e3d7b92** — deploy_match: true, deployed_at 2026-07-03T23:21:14Z (per live `session_health`)
-**SMOKE: 826 total (825 passed, 1 failed) — RECONCILED this session via direct `git clone` + `node smoke.js` (ground truth, not the MCP tool). The 763 `get_smoke_count` MCP figure is the same known structural undercount documented since 2026-06-22 (tool runs without the repo file tree, can't resolve filesystem-dependent assertions — ~63-assertion gap, consistent with the historical ~62). Not a regression. Prior HANDOFF's 823/0 is consistent with 826/1 modulo normal session-to-session assertion growth.**
-**LIVE FAILURE (real, not a tool artifact): A704 — HANDOFF.md required-fields check — was failing because the prior regeneration of this file dropped the SW_VERSION field entirely (`includes('SW')` check). Fixed in this edit.**
-**SW_VERSION: 2026-07-03a** (index.html and sw.js confirmed in sync via direct repo grep, 2026-07-03)
-**LAST KNOWN-GOOD CI RUN: commit 1de2c25, 2026-07-04T00:30-00:36Z, all 4 checks green via manual `workflow_dispatch`** (Smoke Test + Live Verify — all 6 internal jobs including static/live smoke, viewport invariants, browser runtime tests — plus Desktop Safari Viewport Audit, Desktop Chrome Viewport Audit, Code Map L3). Triggered manually using the documented PAT pattern (`POST .../actions/workflows/{name}/dispatches`) since both `f6b7bdd` and `1de2c25` were `[skip ci]` doc-only commits that CI's push trigger would never have picked up on its own.
-**CI GAP: CLOSED.** HEAD has since auto-advanced twice more via harmless bookkeeping commits that followed the dispatched runs — `1de36b5` (`ci: update current state 1de2c25 [skip ci]`) then `34268e2` (`codemap: refresh from 1de36b5 [skip ci]`). Neither touches app code (FIELD-CURRENT-STATE.md and CODE_MAP.json only) — this is the same normal auto-commit pattern documented elsewhere in this file, not a new gap. The tested commit (`1de2c25`) is the one containing the actual A704/SW_VERSION fix.
+**CLIENT HEAD: 51df7a8** (bookkeeping commit; last real feature commit `7e88d06` — global_fetch_strictly_public fix). Always re-run `git log -1` fresh rather than trusting this value later in the session.
+**RELAY HEAD: c8086bf** — unchanged since early this session; all later work today was client-only.
+**SMOKE: 871 total, 0 failed** — ground truth via direct `node smoke.js index.html`, confirmed fresh at time of this update.
+**SW_VERSION: 2026-07-04t** — index.html and sw.js confirmed in sync via direct grep AND independently confirmed live (`curl` against the deployed URL returns the same value).
+**Live deploy confirmed matching HEAD** at time of this update.
 
 ---
 
-## WHAT THIS SESSION ACTUALLY DID
+## WHAT THIS SESSION ACTUALLY DID (extremely long session, multiple real feature arcs)
 
-This was a verification/governance session (chat-side, FIELD Handoff MCP only — no relay-repo source access, client-repo read-only used for HANDOFF/HEAD checks). No code was written or deployed. Work was: review the open CC-CMD queue and incident list, live-verify claimed fixes against real endpoints rather than trusting codex status fields, close what was confirmed, leave open what wasn't, and catch that this very file had gone stale.
+### Circadian per-game state system
+- v2.1-v2.3 shipped: `live/in` vocabulary fix, cross-sport support (WC26/MLB/AFL), wired into live re-renders (previously frozen at initial render).
+- Card-level DOM reconciliation + string cache (Phase 2) and CARD_ATTRIBUTE_SYNC registry (Phase 1) shipped, live-measured (`applyMainHTML`=7ms, string-build=38.8ms).
+- **Circadian card sort order** (PRIME>NIGHT>PREVIEW>LATE) shipped — this was in the ORIGINAL spec, deferred since v2.1, never implemented until found and closed this session. Live-verified: a card whose tier flips visibly reorders, composes safely with Phase 1/2 reconciliation.
+- **`getNewspaperVoice`'s missing LATE bucket** fixed — an all-LATE slate no longer wrongly defaults to the 'morning' show-everything voice.
+- **Real, NEW open item found, not yet fixed**: `renderAll`'s `_circInput` only ever reads `state` from `findESPNScore(g)` (ESPN lookup), never from the game object's own `state` field directly. This makes ANY sport whose live state comes from a non-ESPN source (confirmed for CFL, see below) permanently classify as LATE regardless of real state. CC-CMD written (`cfl-circadian-state-wire.md`), **genuinely pending, not yet executed.**
 
-**Live-verified and closed this session (incident category, status:resolved):**
-- `cf/2026-06-22/nfl-sporttov2--september-9-deadline` — confirmed via direct curl: `GET /v2/games?sport=nfl` and `?sport=cfb` both return well-formed responses (0 games today = correct, July off-season). Structural "Unknown sport" gap is closed. Recommend one more live check near Sept 10 (real in-season data) before fully trusting it.
-- `cf/2026-06-22/odds-story-materializer--cc-cmd-exists-` — confirmed via `GET /odds-story/preview?date=2026-07-02`: missingClosing:0, hasClosing:true across sampled games, one real story materialized (Mercury/Storm). Closing-odds capture path is live.
-- `cf/2026-06-22/nbaclutch--nhlseries-r2-stale` — reclassified resolved-as-expected (off-season staleness by design, not a defect; re-open only if still stale after each season's opening week).
-- `carry-forwards/june-22` — the 18-item bundle re-audited item-by-item. 7 confirmed resolved with cited evidence, 3 flagged "likely resolved but not independently re-verified this session" (WC label consistency, quality-scoring backfill, golf ESPN-summary coverage), 7 still genuinely open with zero evidence of a fix (see below). Not closed as a whole — left open, annotated.
+### Newspaper banner — 6 real "wipe on repaint" bugs found and fixed
+- `applyMainHTML()` already tried to preserve `#field-newspaper` across re-renders, but 6 separate code paths (renderAll's empty-filter branch, goToDate's 4 branches, renderAll's post-render empty-check) bypassed it with direct `main.innerHTML=` assignments. All 6 found and fixed across two CC-CMDs (found via careful diff review, not all found on the first pass — CC caught a 6th one I'd missed in the original spec).
+- Added `reg.update()` on `visibilitychange` to close a real iOS-vs-Android PWA update-propagation gap (confirmed root cause: no explicit update-check call anywhere, relying solely on the browser's own — on iOS, less frequent — background check cycle).
 
-**Explicitly NOT closed (checked, evidence insufficient):**
-- `CC-CMD-2026-07-01-completion-triggered-journalism.md` — manual `POST /journalism/game-complete` returns `{ok:true}`, so the endpoint is deployed and responding. But this session had no relay-repo source access to confirm the GameDO state-transition hook actually *fires* it automatically at real game-final, vs. it only being manually callable. Marked "partially_verified," not done. **Still needs: observe a real live game ending and confirm the trigger fires without manual intervention.**
-- `cf/2026-07-03/gap-sweep-cc-cmds-written` — these are freshly-written CC-CMDs (relay field-mismatch sweep, client spec-vs-shipped sweep) queued for Claude Code to execute. Genuinely pending, nothing to verify yet.
+### FIFA rankings / soccer drama scoring
+- footballdata.io confirmed permanently paid-plan-gated for FIFA rankings (live 403, `paid_plan_required`).
+- **Parse.bot integration shipped instead** — real, live, free-tier FIFA World Ranking data, confirmed working (Argentina rank 1, Cape Verde/"Cabo Verde" rank 67 — matching the exact motivating example). 3 real FIFA-official-naming aliases handled (Cabo Verde, Korea Republic, Côte d'Ivoire).
+- Soccer drama scoring shipped: extra-time bonus tier (verified against a real WC26 extra-time game's actual ESPN keyEvents), quiet-stretch interpolation, upset-factor bonus (now live via the Parse.bot data) — plus a previously-undetected bug found and fixed in the same pass: `dramaScoreLive`'s soccer branch conditions never matched WC26's real sport string ("FIFA World Cup 2026"), meaning the whole soccer calibration silently never fired for WC26 games until this session.
+
+### CFL — real, dormant live infrastructure found and wired
+- A June 27 session had already found, tested, and wired a real live CFL scoreboard API (`cflscoreboard.cfl.ca`) into the relay (`/cfl/scoreboard/rounds`) — confirmed still live and accurate today (Calgary 58–Toronto 36, Ottawa 22–Saskatchewan 27, both matching independent verification). **The client never called it** — confirmed via grep, zero references. Wired this session: `loadCFLScoreboard()` (async, golf's delayed-injection pattern), old hardcoded array kept as explicit fallback-ONLY (mutual-exclusion gate, avoiding the exact golf duplicate-section bug class — see below).
+- This surfaced the `_circInput`/circadian-inert finding above.
+
+### A real, live production bug caused and fixed this session (own mistake, corrected)
+- Added a hardcoded golf tournament entry (John Deere Classic) to `golfGames` based on an unverified claim ("golf coverage missing 6 days") — never checked the live app first. Real, live app already had this tournament correctly, via a completely separate ESPN-driven pipeline (`loadPGASlate`) that this session didn't know existed. Caused a real, live duplicate-section bug (confirmed 2x rendering), found via user-provided screenshot, reverted same-session. **Lesson applied since**: search chat history before claiming something "doesn't exist" — a code check alone proves "not wired," never "never existed."
+
+### OG share-meta feature — 5-CC-CMD chain, fully resolved
+- A prior CC-CMD (`og-share-meta.md`) had shipped bot-gated OG meta-tag injection via `src/worker.js` + HTMLRewriter, but it never actually worked in production. Root-caused across 3 real, distinct bugs, fixed in sequence:
+  1. `wrangler.jsonc` missing `assets.run_worker_first` — static assets were served ahead of the Worker script by Cloudflare's own default routing.
+  2. `Element.after()` called with swapped/malformed arguments in `MetaTagRewriter` — the actual meta tag was buried inside a malformed options object, never inserted.
+  3. **Cloudflare error 1042** — the Worker's own in-process fetch to the relay's `*.workers.dev` URL was blocked (same-account Worker-to-Worker anti-loop restriction). Fixed with `global_fetch_strictly_public` — the SAME flag already proven fixing the identical error class in the relay itself since May 29 (found via chat-history search, not rediscovered from scratch).
+- **Fully verified live, independently, end-to-end**: real bot UA gets a real `og:description` tag with live, current content; normal UA unchanged; diff between the two responses is exactly one line.
+
+### Deploy/CI infrastructure — 2 real, distinct bugs found and fixed
+- `sw-version-bump.yml`'s daily cron: double-space sed pattern for `sw.js` silently never matched (real file uses single space) — fixed, made whitespace-tolerant, added loud-failure verification.
+- `deploy-gate.yml`'s own SW_VERSION sync-back step: a genuine race condition where a stale checkout from an earlier-triggered run could overwrite a later, already-correct commit. Fixed with a `concurrency` group (`cancel-in-progress: false`, deliberately) plus a defensive `git pull` immediately before reading the current version. **Confidence on this one is explicitly lower than usual** — CI concurrency behavior can't be fully verified by static review alone; one clean observation so far, not yet "proven" from repeated real-world pushes.
+
+### Daily update (real gap found, real gap avoided)
+- Golf: real gap found and fixed (see above, before the duplicate-bug detour).
+- CFL: no real gap — first pass used a wrong grep pattern and nearly reported a false gap, caught before acting on it.
 
 ---
 
-## OPEN ITEMS FOR NEXT SESSION (verified-current as of 2026-07-03 chat review)
+## OPEN ITEMS FOR NEXT SESSION (verified-current as of this update)
 
-1. ~~Smoke count discrepancy~~ — RECONCILED: 826 total (825/1) is ground truth, `get_smoke_count` MCP's 763 is the known structural undercount.
-2. ~~HEAD vs last CI-verified commit~~ — CLOSED via manual `workflow_dispatch` against `1de2c25` (see above). All 4 CI checks confirmed green. Current HEAD (`34268e2`) is two bookkeeping-only commits ahead of the tested commit — not a new gap.
-3. **`resolveEntity`/`CANONICAL_PLAYER`** — this file previously called this "never executed." That was stale: codex confirms it shipped and was verified live 2026-07-02 (`CC-CMD-2026-07-01-identity-resolver-generalize.md`, status DONE). No longer an open item — flagging the correction so it doesn't get resurrected again.
-4. **Completion-triggered journalism real-game confirmation** — endpoint live, auto-trigger-on-real-completion still unconfirmed (see above).
-5. **`wentToOT` hardcoded false** — D1 lacks column, needs GameDO/AmbientDO write. No evidence of fix found this session.
-6. **KV editorial keys** (`field:circadian:preview:{date}`) not consulted by newspaper endpoint. No evidence of fix found.
-7. **`session_health` phase-degradation signal gap** — no evidence of fix found.
-8. **WNBA archive gap** (1 game missing June 21) — minor, historical, unconfirmed either way.
-9. **Client-side third-place SSE speed** — still decoupled from BracketDO's 30s cooldown per original note, unconfirmed either way.
-10. **v4 voice register in relay** — unconfirmed either way; if still missing, per-game briefs still lack personality.
-11. **Prompt Observatory** — never built per last check; AI Gateway data still unread. Unconfirmed either way this session.
-12. **Gap-sweep CC-CMDs** (relay field-mismatch sweep, client spec-vs-shipped sweep) — written 2026-07-03, awaiting Claude Code execution.
-13. Everything in the 2026-06-30 handoff's priority list not touched since (MLS club-ID identity mapping, golf Broadie proxy, European club coverage, two-legged tie aggregates) — still open, not re-verified.
-
----
-
-## CURRENT QUALITY/ANALYTICS STATE (per live `session_health`, 2026-07-03T23:50Z)
-
-- Degraded quality scoring on: game_brief (x2), game_recap (x5), mlb_game, night_owl (x2) — not investigated this session, just surfaced.
-- `night_stars` analytics phase degraded for 2026-07-02 (structural trigger flaw, per earlier-session diagnosis — not re-investigated this session).
-- All other analytics phases (field_pick, circadian_preview, truth_is, morning_report, circadian_late, streak_board, quality_feedback, quality_alert) reporting not-degraded.
+1. **`cfl-circadian-state-wire.md`** (client, genuinely pending) — fixes `_circInput` to also read `g.state` directly, not just ESPN lookups. Needed for CFL (and any future non-ESPN sport) to classify correctly for sort-order/newspaper-voice purposes.
+2. **`circadian-kv-read-endpoint.md`** (relay, genuinely pending) — adds a `/circadian/:phase/:date` read endpoint for the two orphaned KV keys. Real consumer now confirmed: the OG share-meta feature (shipped this session) currently reads `/circadian/preview/{date}` directly; this endpoint generalizes/completes that read path properly.
+3. Everything in the 2026-07-03 handoff not touched this session (completion-triggered journalism real-game confirmation, `wentToOT` hardcoded false, session_health phase-degradation gap, WNBA archive gap, v4 voice register in relay, Prompt Observatory, 2026-06-30 priority list items) — not re-verified, carry forward as-is.
 
 ---
 
@@ -61,8 +67,9 @@ This was a verification/governance session (chat-side, FIELD Handoff MCP only �
 - Relay: field-relay-nba.jeffunglesbee.workers.dev
 - CF account: b57e9af57ab46c52ca9215804e689c29
 - Repo: jeffunglesbee-create/jubilant-bassoon (client), field-relay-nba (relay)
+- New this session: `PARSEBOT_FIFA_KEY` (Worker secret, both repos synced), Parse.bot FIFA.com wrapper (free tier, real data)
 - Direct D1 access: Cloudflare Developer Platform MCP `d1_database_query` — bypasses relay's `/d1/execute` allowlist, default over relay-proxied access.
 
 ---
 
-SESSION END DECLARED: RELAY e3d7b92 deployed, deploy_match true · Smoke 826 total (825 passed, 1 failed — A704, fixed in this edit) · CI green on 1de2c25 via manual workflow_dispatch (see above) · MCP `get_smoke_count`'s 763 is a known structural undercount, reconciled this session, not a regression · via chat, FIELD Handoff MCP only, no relay-repo source access this session. This session did governance/verification work only (incident cleanup, doc-staleness fix x2, CI-gap closure) — no app features shipped, no app code touched.
+**Not a session-end entry — session is ongoing. This update exists so a crash or restart mid-session doesn't lose today's real state.**
