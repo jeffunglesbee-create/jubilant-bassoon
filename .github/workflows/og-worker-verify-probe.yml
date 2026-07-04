@@ -50,6 +50,15 @@ jobs:
 
             echo "--- Diff check: bot HTML vs normal HTML (should differ only by the injected tag) ---"
             diff /tmp/bot.html /tmp/normal.html | head -20 || echo "(no diff -- identical, would indicate the fix did not take effect)"
+            echo ""
+
+            echo "--- 4. Cache-busted bot UA request (rules out a stale pre-fix cache entry) ---"
+            CB_URL="${URL}?_cb=$(date +%s)-$RANDOM"
+            curl -sL -H "User-Agent: Twitterbot/1.0" -w "\nHTTP=%{http_code} time=%{time_total}s\n" "$CB_URL" -o /tmp/bot_cb.html -D /tmp/bot_cb_headers.txt
+            echo "URL: $CB_URL"
+            echo "cf-cache-status: $(grep -i '^cf-cache-status:' /tmp/bot_cb_headers.txt || echo 'not present')"
+            echo "og:description present: $(grep -q 'og:description' /tmp/bot_cb.html && echo YES || echo NO)"
+            grep -o '<meta property="og:description"[^>]*>' /tmp/bot_cb.html || echo "(no og:description tag found)"
           } > "$OUT" 2>&1
           cat "$OUT"
           echo "OUT=$OUT" >> $GITHUB_ENV
