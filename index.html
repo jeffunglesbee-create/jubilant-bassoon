@@ -10751,7 +10751,7 @@ function renderAll(skipUnchanged){
       // through; missing/unrecognized shapes (CFL, Golf) degrade to LATE
       // per the CC-CMD's own SCOPE BOUNDARY (no clock-based fallback).
       const _circEData=typeof findESPNScore==='function'?findESPNScore(g):null;
-      const _circInput={state:_circEData?_circEData.state:null,status:g.status,_aflComplete:g._aflComplete,_id:g._id};
+      const _circInput={state:(_circEData?_circEData.state:null)??g.state??null,status:g.status,_aflComplete:g._aflComplete,_id:g._id};
       const _circadian=getCardCircadian(_circInput);
       const _circCls="circadian-"+_circadian.toLowerCase();
       _renderAllCircadianGames.push(_circInput);
@@ -23353,7 +23353,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-07-04t';
+  const SW_VERSION = '2026-07-04u';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
