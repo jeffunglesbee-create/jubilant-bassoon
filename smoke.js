@@ -6015,22 +6015,56 @@ assert('A-CIRCADIAN-9 — getNewspaperVoice function exists',
   html.includes('function getNewspaperVoice('),
   'getNewspaperVoice must be defined');
 
-assert('A-CIRCADIAN-10 — renderESPNScores refreshes circadian classification on live-score updates (v2.3)',
+assert('A-CIRCADIAN-10 — renderESPNScores refreshes circadian classification on live-score updates (v2.3, generalized via the card-attribute sync registry in the CC-CMD-2026-07-04-card-attribute-sync-registry pass)',
   (() => {
     const idx = html.indexOf('function renderESPNScores(');
     if (idx < 0) return false;
     const block = html.slice(idx, idx + 25000);
     const removeIdx = block.indexOf('card.classList.remove("espn-live","espn-final")');
     if (removeIdx < 0) return false;
-    // _newCircadian must appear between the espn-live/espn-final class
-    // removal and the isFinal branch — confirms this fix sits at the
-    // exact firing point v2.3 specifies, not just somewhere in the file.
-    const after = block.slice(removeIdx, removeIdx + 1200);
-    return after.includes('_newCircadian') &&
-      after.includes("getCardCircadian({state:'post'") &&
-      after.includes("card.dataset.circadian");
+    // syncCardAttributes(...) must appear between the espn-live/espn-final
+    // class removal and the isLive branch — confirms the refresh call
+    // sits at the exact firing point v2.3 originally specified, not just
+    // somewhere in the file. The refresh logic itself (getCardCircadian
+    // for the final case, 'PRIME' for the live case) now lives in
+    // CARD_ATTRIBUTE_SYNC's circadian entry, checked separately below.
+    const after = block.slice(removeIdx, removeIdx + 400);
+    if (!after.includes('syncCardAttributes(card, game, score, isLive, isFinal)')) return false;
+    const registryIdx = html.indexOf('const CARD_ATTRIBUTE_SYNC');
+    if (registryIdx < 0) return false;
+    const registryBlock = html.slice(registryIdx, registryIdx + 1500);
+    return registryBlock.includes("name: 'circadian'") &&
+      registryBlock.includes("getCardCircadian({ state: 'post'") &&
+      registryBlock.includes("card.dataset.circadian");
   })(),
-  'renderESPNScores() must refresh card.dataset.circadian/circadian-* class on every live-score update, not just once at renderAll() time — otherwise a card\'s circadian state (e.g. PRIME) goes stale the moment the real game status changes after initial render (the v2.3 bug: MLB cards showing PRIME long after going final).');
+  'renderESPNScores() must call syncCardAttributes(card, game, score, isLive, isFinal) at the exact point v2.3 originally refreshed circadian inline, and CARD_ATTRIBUTE_SYNC\'s circadian entry must still compute the same getCardCircadian({state:\'post\',...})/\'PRIME\'/card.dataset.circadian-fallback logic — otherwise a card\'s circadian state goes stale the moment the real game status changes after initial render (the v2.3 bug this registry generalizes, not reintroduces).');
+
+// ── Card attribute sync registry (A-CARDSYNC — CC-CMD-2026-07-04-card-attribute-sync-registry) ──
+assert('A-CARDSYNC-1 — syncCardAttributes function exists',
+  html.includes('function syncCardAttributes('),
+  'syncCardAttributes must be defined');
+
+assert('A-CARDSYNC-2 — CARD_ATTRIBUTE_SYNC registry exists and is non-empty',
+  (() => {
+    const m = html.match(/const CARD_ATTRIBUTE_SYNC = \[[\s\S]*?\n\];/);
+    if (!m) return false;
+    try {
+      const arr = new Function(`${m[0]}\nreturn CARD_ATTRIBUTE_SYNC;`)();
+      return Array.isArray(arr) && arr.length >= 1;
+    } catch (e) { return false; }
+  })(),
+  'CARD_ATTRIBUTE_SYNC must be a non-empty array');
+
+assert('A-CARDSYNC-3 — circadian is registered in CARD_ATTRIBUTE_SYNC',
+  (() => {
+    const m = html.match(/const CARD_ATTRIBUTE_SYNC = \[[\s\S]*?\n\];/);
+    if (!m) return false;
+    try {
+      const arr = new Function(`function getCardCircadian(){return 'NIGHT';}\n${m[0]}\nreturn CARD_ATTRIBUTE_SYNC;`)();
+      return arr.some(e => e.name === 'circadian' && e.isClass === true && typeof e.compute === 'function');
+    } catch (e) { return false; }
+  })(),
+  'CARD_ATTRIBUTE_SYNC must include a circadian entry with isClass:true and a real compute function');
 
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);
