@@ -5,12 +5,17 @@
 **Branch:** main
 **Scope:** Relocate one function's rendering target. Preserve everything else from `702fb7b` as-is.
 
-**Real, confirmed context — a genuine timing race, not a design or execution
-error by either side:** `702fb7b` (the card-based first slice) committed
-at 18:52:07 UTC. The superseding surface-design doc was pushed 63 seconds
-later, 18:53:10 UTC. CC could not have known about the supersession — it
-didn't exist yet when the work was committed. This CC-CMD reconciles the
-two, it does not correct a mistake either side made.
+**Real, confirmed context — the original CC-CMD was dispatched and already
+running before the surface-design question was even raised, not a
+symmetric coincidence:** `pick-em-ui.md` was written and its one-liner
+sent to CC first. The question of whether this belonged on the card at
+all only came up afterward, in the following chat turn. By the time
+`702fb7b` committed (18:52:07 UTC), CC was finishing work against a spec
+that predated the design conversation — it had no way to know a
+supersession was coming, because the sequencing put dispatch before the
+verification that should have preceded it. Confirmed live and smoke-
+clean (877/0) as of this reconciliation — nothing broke as a result,
+this doc is a design correction, not a bug fix.
 
 **What `702fb7b` actually built, confirmed via direct diff read — most of
 it is correct and should NOT be touched:**
