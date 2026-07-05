@@ -1,5 +1,53 @@
 # FIELD HANDOFF
 
+## MID-SESSION UPDATE — 2026-07-05 (client gap sweep re-run, research only)
+
+**CLIENT HEAD: 523d7f7.** No index.html/sw.js changes this round —
+research/documentation only, per this CC-CMD's own scope. Smoke unchanged.
+
+**Gap sweep re-run closed out.** Full detail: the addendum appended to
+`outbox/cc-gap-sweep-client-2026-07-03.md` (a prior sweep from 07-03/07-04
+already existed; this re-run independently re-derived findings via fresh
+grep-driven agents rather than trusting the old file, then personally
+spot-checked every claim via direct grep before writing anything down).
+
+**Four new, independently-verified findings, none fixed (research-only
+scope):**
+1. `seriesLedger` — real write-side pipeline (`recordSeriesGame` → `GET
+   /user/state`), zero client-side reads anywhere. Same pattern as the
+   original BSD momentum gap this CC-CMD was built around. No public-repo
+   match found after two honest searches.
+2. `recapSnippet` — fetched and written, never read for its value anywhere
+   — a pointless fetch.
+3. **Three real, currently-shipping bugs**: `buildLayer3Rules`,
+   `detectAndStoreStoryMoment`, and `buildComebackProbability` all check
+   `.status` on `espnScores`-derived objects that only ever carry `.state`
+   (confirmed: zero of the 12 `espnScores` writers ever set `.status`).
+   Permanently disables the EXTREME EVENT journalism cue, the Story
+   Moments "Final:"/"underway" tape entries (and corrupts that event's
+   bus-emitted state field), and the "don't show comeback odds for a
+   finished game" guard.
+4. `isLateCloseGame({ _section: sport }, sport)` malformed call
+   (index.html:35606) — 2 args against a 3-param function, permanently
+   disabling the CLOSING UNIT lineup-advantage badge. This closes the one
+   gap-class (comment-vs-runtime claims) the original 07-03 sweep
+   explicitly flagged as never attempted.
+
+Also flagged per Rule 72: HANDOFF's own `resolveWinProbability(sport,...)`
+claim (below, from an earlier entry this same file) has **zero matches**
+anywhere in this repo's actual code — independently grepped, not trusted.
+NBA/MLB/AFL/CFL/soccer WP are each confirmed real and rendered under
+different, real function names; NHL/NFL/MLS/EPL/CFB depend entirely on a
+server-side component (AmbientDO) not present in this checkout, so that
+part of the claim can't be confirmed or denied from here.
+
+**Not fixed — explicitly out of this CC-CMD's scope** (research/
+documentation only, stated in its own header): findings 2-4 above are
+real, safely-scoped, likely one-line fixes. Worth a dedicated follow-up
+CC-CMD.
+
+---
+
 ## NEW SESSION — 2026-07-05 (continuation after the prior session close below)
 
 **CLIENT HEAD: 0d9eb22.** SW_VERSION `2026-07-05i`, confirmed synced
