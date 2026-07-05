@@ -2702,8 +2702,13 @@ body.wc-mode #field-journalism-section,
 body.wc-mode #pickem-section,
 body.wc-mode .page-divider,
 body.wc-mode .legend-section,
-body.wc-mode #upper-slots,
 body.wc-mode #field-right-now{display:none !important}
+/* #upper-slots wraps header.masthead + nav.controls alongside the loading-
+   slot region (PM-26-M-1) -- hiding the whole wrapper hid nav.controls too,
+   leaving no way to exit wc-mode at desktop widths (the back-pill is gated
+   to max-width:1199px). Same bug and same fix as pickem-mode's 8435247;
+   consolidated here per CC-CMD-2026-07-05-nav-mode-consolidate TASK 2. */
+body.wc-mode #upper-slots>*:not(header.masthead):not(nav.controls){display:none !important}
 body.wc-mode #wc-section{display:block}
 body.wc-mode #wc-section[hidden]{display:block}
 body:not(.wc-mode) #wc-section{display:none}
@@ -10748,6 +10753,28 @@ function updateConflictChip() {
 // sufficient without touching MY_TEAMS/activeFilter/viewport directly.
 const _cardStringCache = new Map(); // gameId -> {fingerprint, html, circInput}
 
+// Shared, de-duped nav-link click attachment (CC-CMD-2026-07-05-nav-mode-
+// consolidate). renderAll() re-runs every ~15-30s poll cycle and on filter
+// changes, and document.getElementById(id) returns the SAME persistent DOM
+// node every time (nav.controls is never replaced by applyMainHTML) -- but
+// a fresh inline arrow function passed to addEventListener each call is a
+// new reference the browser can't de-duplicate, so listeners silently
+// accumulate the longer a session stays open and a single click can fire a
+// toggle multiple times, net-cancelling back to the original state. Marking
+// the element itself (rather than a per-link global) makes this scale to
+// any number of nav-links without a new guard flag each time. Originally
+// found and fixed for pickem-nav-link only in d46f2e7; consolidated here
+// into the one shared helper all four nav-links now use.
+function attachNavLinkOnce(id, handler) {
+  const el = document.getElementById(id);
+  if (!el || el._navWired) return;
+  el._navWired = true;
+  el.addEventListener('click', e => {
+    e.preventDefault();
+    handler(e);
+  });
+}
+
 function renderAll(skipUnchanged){
   if (!skipUnchanged) _cardStringCache.clear();
   if(!allData) return;
@@ -11060,41 +11087,23 @@ function renderAll(skipUnchanged){
     settingsBtn:     document.getElementById('settings-btn'),
   };
 
-  // Nav link listeners — replaces inline onclick= handlers (CSP hygiene)
-  document.getElementById('desk-jump-link')?.addEventListener('click', e => {
-    e.preventDefault();
+  // Nav link listeners — replaces inline onclick= handlers (CSP hygiene).
+  // De-duped via the shared attachNavLinkOnce() helper (defined above
+  // renderAll) so re-running this every poll cycle doesn't accumulate
+  // listeners — see that helper's own comment for why.
+  attachNavLinkOnce('desk-jump-link', () => {
     if (!_deskModeEntered) { _deskModeEntered = true; scheduleFieldDesk(0); }
     document.getElementById('field-desk-section')?.scrollIntoView({behavior:'smooth',block:'start'});
   });
-  document.getElementById('jrn-nav-link')?.addEventListener('click', e => {
-    e.preventDefault();
+  attachNavLinkOnce('jrn-nav-link', () => {
     if(typeof toggleJournalismView==='function') toggleJournalismView();
   });
-  document.getElementById('wc-nav-link')?.addEventListener('click', e => {
-    e.preventDefault();
+  attachNavLinkOnce('wc-nav-link', () => {
     if(typeof toggleWCView==='function') toggleWCView();
   });
-  // Guarded against re-registration: this whole block sits inside
-  // renderAll(), which re-runs every poll cycle (~15-30s) and on filter
-  // changes. document.getElementById('pickem-nav-link') returns the SAME
-  // persistent DOM node every time (nav.controls is never replaced by
-  // applyMainHTML), but each addEventListener call here uses a fresh
-  // inline arrow function -- a new reference each time -- so the browser
-  // cannot de-duplicate them the way it would for the same function
-  // reference. Without this guard, listeners silently accumulate the
-  // longer a session stays open, and a single click can fire the toggle
-  // multiple times, net-cancelling back to the original state (found via
-  // this CC-CMD's own live verification, CC-CMD-2026-07-05-pick-em-
-  // reconcile -- confirmed flaky on/off behavior across two live runs).
-  // The same latent issue affects desk-jump-link/jrn-nav-link/wc-nav-link
-  // above (out of this CC-CMD's scope to fix), flagged in its outbox.
-  if (!window._pickemNavWired) {
-    window._pickemNavWired = true;
-    document.getElementById('pickem-nav-link')?.addEventListener('click', e => {
-      e.preventDefault();
-      if(typeof togglePickEmView==='function') togglePickEmView();
-    });
-  }
+  attachNavLinkOnce('pickem-nav-link', () => {
+    if(typeof togglePickEmView==='function') togglePickEmView();
+  });
   setTimeout(injectJ1J4Badges, 300);    // J1/J4: Anti-Hype + Scout's Pick per-card badges
   setTimeout(()=>initFIELDBrief(sports).then(()=>renderAmbientPanel()).catch(e=>{
     captureFieldError('initFIELDBrief',e,false);
@@ -23494,7 +23503,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-07-05f';
+  const SW_VERSION = '2026-07-05g';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)

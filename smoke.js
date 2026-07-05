@@ -6298,5 +6298,23 @@ assert('A-PICKEMSURF-4 — buildPickWidgetHTML/makePick/_resolvePickIfExists int
   !!html.match(/function _resolvePickIfExists\(gameId, game, eData\) \{/),
   'Per this CC-CMD\'s explicit scope, only the render TARGET moves — the three functions\' own signatures and bodies must be exactly as 702fb7b shipped them, not rewritten.');
 
+assert('A-NAVCONSOLIDATE-1 — one shared attachNavLinkOnce() helper exists and all four nav-links use it',
+  !!html.match(/function attachNavLinkOnce\(id, handler\)/) &&
+  (html.match(/attachNavLinkOnce\('(desk-jump-link|jrn-nav-link|wc-nav-link|pickem-nav-link)'/g) || []).length === 4,
+  'Per CC-CMD-2026-07-05-nav-mode-consolidate TASK 1: all four nav-links must go through the one shared, de-duped helper — no inline addEventListener copies left behind.');
+
+assert('A-NAVCONSOLIDATE-2 — no raw addEventListener(\'click\' left on any of the four nav-link ids',
+  !html.match(/getElementById\('(desk-jump-link|jrn-nav-link|wc-nav-link|pickem-nav-link)'\)\?\.addEventListener\('click'/),
+  'The four inline addEventListener call sites (desk-jump-link, jrn-nav-link, wc-nav-link, pickem-nav-link) must be fully replaced by attachNavLinkOnce(), not left alongside it.');
+
+assert('A-NAVCONSOLIDATE-3 — wc-mode uses the same safe #upper-slots hide-pattern pickem-mode already verified',
+  !!html.match(/body\.wc-mode #upper-slots>\*:not\(header\.masthead\):not\(nav\.controls\)\{display:none !important\}/) &&
+  !html.match(/body\.wc-mode #upper-slots,/),
+  'Per TASK 2: wc-mode\'s #upper-slots hide-rule must be the confirmed-safe per-child pattern from pickem-mode\'s 8435247 fix, not the old unconditional wrapper-hide that also hid nav.controls (and thus the mode\'s own exit toggle).');
+
+assert('A-NAVCONSOLIDATE-4 — journalism-mode\'s #upper-slots hide stays scoped to its mobile-only media query (unchanged, confirmed not broken)',
+  !!html.match(/@media\(max-width:1199px\)\{\s*\n\s*body\.journalism-mode \.main,[\s\S]{0,500}body\.journalism-mode #upper-slots,/),
+  'Journalism-mode\'s #upper-slots hide only applies at <=1199px, the same range its .jrn-back-pill becomes visible in -- co-existing with the schedule on desktop means nav.controls is never hidden there. Confirmed via live probe this is NOT the same bug as wc-mode/pickem-mode; this assertion guards against a future edit accidentally making it unconditional.');
+
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);
