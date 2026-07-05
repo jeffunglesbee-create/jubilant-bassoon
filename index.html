@@ -2465,6 +2465,7 @@ body:not(.journalism-mode) #field-journalism-section{display:none}
   body.journalism-mode #media-section,
   body.journalism-mode #streaming-section,
   body.journalism-mode #wc-section,
+  body.journalism-mode #pickem-section,
   body.journalism-mode .page-divider,
   body.journalism-mode .legend-section,
   body.journalism-mode #upper-slots,
@@ -2698,6 +2699,7 @@ body.wc-mode #night-owl,
 body.wc-mode #field-desk-section,
 body.wc-mode #media-section,
 body.wc-mode #field-journalism-section,
+body.wc-mode #pickem-section,
 body.wc-mode .page-divider,
 body.wc-mode .legend-section,
 body.wc-mode #upper-slots,
@@ -2722,6 +2724,45 @@ body:not(.wc-mode) #wc-section{display:none}
   body.wc-mode header.masthead{margin-right:0 !important}
   body.wc-mode .main{margin-right:0 !important}
 }
+
+/* ── PICK 'EM mode (body.pickem-mode) ─────────────────────────────────────
+   Third mode (CC-CMD-2026-07-05-pick-em-reconcile), mirroring wc-mode's
+   simpler full-viewport-swap-at-all-widths pattern rather than
+   journalism-mode's mobile-only swap, since pick 'em is cross-sport and
+   has no desktop-coexist requirement of its own. Not nested inside any
+   single-sport mode by design. */
+body.pickem-mode #ambient-panel{display:none !important}
+body.pickem-mode .main,
+body.pickem-mode #night-owl,
+body.pickem-mode #field-desk-section,
+body.pickem-mode #media-section,
+body.pickem-mode #field-journalism-section,
+body.pickem-mode #wc-section,
+body.pickem-mode .page-divider,
+body.pickem-mode .legend-section,
+body.pickem-mode #upper-slots,
+body.pickem-mode #field-right-now{display:none !important}
+body.pickem-mode #pickem-section{display:block}
+body.pickem-mode #pickem-section[hidden]{display:block}
+body:not(.pickem-mode) #pickem-section{display:none}
+body.pickem-mode nav.controls{margin-right:0 !important}
+body.pickem-mode header.masthead{margin-right:0 !important}
+body.pickem-mode .main{margin-right:0 !important}
+@media(max-width:1199px){
+  body.pickem-mode .pickem-back-pill{display:inline-block;position:sticky;top:calc(env(safe-area-inset-top,0px) + .5rem);z-index:50;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);background:rgba(20,20,28,.78)}
+}
+@media(min-width:1200px){
+  body.pickem-mode #pickem-section{max-width:1300px;margin:0 auto}
+}
+.pickem-back-pill{display:none;align-self:flex-start;padding:.4rem .75rem;background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.22);border-radius:18px;font-size:.66rem;color:var(--gold2);cursor:pointer;margin-bottom:1rem;letter-spacing:.04em;transition:.15s}
+.pickem-back-pill:hover{background:rgba(201,168,76,.14);border-color:rgba(201,168,76,.38)}
+.pickem-section{padding:.75rem .75rem 2rem;min-height:60vh}
+.pickem-eyebrow{font-size:.62rem;font-weight:700;letter-spacing:.1em;color:var(--gold2);text-transform:uppercase;margin-bottom:.3rem}
+.pickem-title{font-family:var(--ff-display);font-size:1.5rem;font-weight:700;color:var(--white);margin:0 0 .2rem}
+.pickem-meta{font-size:.62rem;color:var(--smoke);letter-spacing:.04em;margin-bottom:1rem}
+.pickem-row{display:flex;flex-direction:column;gap:.25rem;padding:.6rem 0;border-bottom:1px solid var(--edge)}
+.pickem-matchup{font-size:.78rem;color:var(--ink,#e8e8f0);font-weight:600}
+.pickem-empty{color:var(--smoke,#888);font-size:.75rem;padding:1rem 0}
 
 /* ── WHOLE FIELD mode (body.wf-mode) ─────────────────────────────────────
    Toggle: ESSENTIALS (default) ↔ WHOLE FIELD
@@ -4495,6 +4536,7 @@ var _DOM = null;
     <a class="desk-jump-link" id="desk-jump-link" href="#field-desk-section" title="FIELD Desk — editorial briefings and series previews">📰 Desk</a>
     <a class="desk-jump-link jrn-nav-link" id="jrn-nav-link" href="#field-journalism-section" title="Journalism — Tonight's editorial reading">📖 Journal</a>
     <a class="desk-jump-link wc-nav-link" id="wc-nav-link" href="#wc-section" title="World Cup — Group standings and bracket" style="display:none">⚽ Groups</a>
+    <a class="desk-jump-link pickem-nav-link" id="pickem-nav-link" href="#pickem-section" title="Pick 'em — your cross-sport predictions">🎯 Picks</a>
     <button id="wf-toggle" title="Toggle between ESSENTIALS (schedule only) and WHOLE FIELD (schedule + ambient panel)">ESSENTIALS</button>
   </div>
 </nav>
@@ -4639,6 +4681,26 @@ var _DOM = null;
   <!-- Phase 2: Projections (group stage) / Bracket tree (from ~June 25 when R32 slots fill) -->
   <div class="wc-bracket" id="wc-bracket" hidden>
     <!-- Populated by renderWCBracket() -->
+  </div>
+</section>
+
+<!-- ══ PICK 'EM ═══════════════════════════════════════════════
+     Mirror of #wc-section's pattern (CC-CMD-2026-07-05-pick-em-reconcile).
+     Activated by body.pickem-mode via togglePickEmView(). Cross-sport by
+     design -- not nested inside any single sport's mode. Tab link:
+     #pickem-nav-link in controls. -->
+<section class="pickem-section" id="pickem-section" aria-label="Pick 'em — your cross-sport predictions" hidden>
+  <div class="pickem-back-pill" id="pickem-back-pill"
+       onclick="togglePickEmView()" role="button" tabindex="0" aria-label="Back to schedule">
+    ← Back to Schedule
+  </div>
+  <header class="pickem-head">
+    <div class="pickem-eyebrow">PICK 'EM</div>
+    <h1 class="pickem-title">Your Predictions</h1>
+    <div class="pickem-meta">Cross-sport — pick any upcoming game, reveal shows the real probability</div>
+  </header>
+  <div class="pickem-content" id="pickem-content">
+    <!-- Populated by renderPickEmSection() -->
   </div>
 </section>
 
@@ -10835,7 +10897,6 @@ function renderAll(skipUnchanged){
           ${(()=>{const _cs=buildCheapSeats(g);if(!_cs)return '';return `<div class="cheap-seats"><span class="cs-badge ${_cs.badgeClass}">${_cs.badge}</span><span class="cs-text">${_cs.text}</span></div>`;})()}
                     ${(()=>{const _ii=assessInjuryPriceImpact(g);if(!_ii)return '';return `<div class="injury-intel"><span class="ii-badge ${_ii.cls}">${_ii.badge}</span><span class="ii-text">${_ii.text}</span></div>`;})()}
           ${(()=>{ if(g._sport!=='UFL'||!g._epaLive?.lastPlay) return ''; return _buildUFLEpaHTML(g._epaLive); })()}
-          ${_circadian==='PREVIEW'&&typeof buildPickWidgetHTML==='function'?buildPickWidgetHTML(g,g.sport||sec.sport):''}
           <span class="card-tap-hint">tap for intel ›</span>
         </div>
         <div class="card-right">
@@ -11004,6 +11065,10 @@ function renderAll(skipUnchanged){
   document.getElementById('wc-nav-link')?.addEventListener('click', e => {
     e.preventDefault();
     if(typeof toggleWCView==='function') toggleWCView();
+  });
+  document.getElementById('pickem-nav-link')?.addEventListener('click', e => {
+    e.preventDefault();
+    if(typeof togglePickEmView==='function') togglePickEmView();
   });
   setTimeout(injectJ1J4Badges, 300);    // J1/J4: Anti-Hype + Scout's Pick per-card badges
   setTimeout(()=>initFIELDBrief(sports).then(()=>renderAmbientPanel()).catch(e=>{
@@ -13311,6 +13376,14 @@ function toggleJournalismView() {
     if (_wcNavLnk) _wcNavLnk.classList.remove('active');
     const wcSec = document.getElementById('wc-section');
     if (wcSec) { wcSec.setAttribute('hidden', ''); wcSec.style.display = ''; }
+  }
+  // Mutual exclusion: dismiss pickem-mode too (CC-CMD-2026-07-05-pick-em-reconcile — 3-way now).
+  if (willActivate && body.classList.contains('pickem-mode')) {
+    body.classList.remove('pickem-mode');
+    const _pickemNavLnk = document.getElementById('pickem-nav-link');
+    if (_pickemNavLnk) _pickemNavLnk.classList.remove('active');
+    const pickemSec = document.getElementById('pickem-section');
+    if (pickemSec) { pickemSec.setAttribute('hidden', ''); pickemSec.style.display = ''; }
   }
   const navLink = document.getElementById('jrn-nav-link');
   if (navLink) navLink.classList.toggle('active', willActivate);
@@ -23396,7 +23469,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-07-05b';
+  const SW_VERSION = '2026-07-05c';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -31762,6 +31835,14 @@ function toggleWCView() {
     }
     const jrnSec = document.getElementById('field-journalism-section');
     if (jrnSec) { jrnSec.setAttribute('hidden', ''); jrnSec.style.display = ''; }
+    // Mutual exclusion: dismiss pickem-mode too (CC-CMD-2026-07-05-pick-em-reconcile — 3-way now).
+    if (document.body.classList.contains('pickem-mode')) {
+      document.body.classList.remove('pickem-mode');
+      const _pickemNavLnk = document.getElementById('pickem-nav-link');
+      if (_pickemNavLnk) _pickemNavLnk.classList.remove('active');
+    }
+    const pickemSec = document.getElementById('pickem-section');
+    if (pickemSec) { pickemSec.setAttribute('hidden', ''); pickemSec.style.display = ''; }
     renderWCSection();
     // Subscribe to BSD for any live WC game with bsdEventId
     setTimeout(_bsdActivateForWC, 500); // defer 500ms — let V2 poll populate espnScores first
@@ -31774,6 +31855,71 @@ function toggleWCView() {
     // Unsubscribe BSD WebSocket fan-out
     _bsdDeactivate();
   }
+}
+
+// ── Pick 'em top-level surface (CC-CMD-2026-07-05-pick-em-reconcile) ────────
+// Third mode, mirroring toggleWCView()'s exact shape (the simpler of the
+// two existing precedents, per the surface-design doc's own recommendation
+// docs/design-pick-em-surface-2026-07-05.md). Cross-sport by design, so it
+// is NOT nested inside wc-mode or any other single-sport surface.
+function togglePickEmView() {
+  const isPickEm = document.body.classList.toggle('pickem-mode');
+  const navLink = document.getElementById('pickem-nav-link');
+  const section = document.getElementById('pickem-section');
+  if (isPickEm) {
+    navLink?.classList.add('active');
+    section?.removeAttribute('hidden');
+    if (section) section.style.display = 'block'; // belt-and-suspenders: iOS Safari hidden attribute
+    // Mutual exclusion: dismiss journalism-mode if active.
+    if (document.body.classList.contains('journalism-mode')) {
+      document.body.classList.remove('journalism-mode');
+      const _jrnNavLnk = document.getElementById('jrn-nav-link');
+      if (_jrnNavLnk) _jrnNavLnk.classList.remove('active');
+    }
+    const jrnSec = document.getElementById('field-journalism-section');
+    if (jrnSec) { jrnSec.setAttribute('hidden', ''); jrnSec.style.display = ''; }
+    // Mutual exclusion: dismiss wc-mode if active.
+    if (document.body.classList.contains('wc-mode')) {
+      document.body.classList.remove('wc-mode');
+      const _wcNavLnk = document.getElementById('wc-nav-link');
+      if (_wcNavLnk) _wcNavLnk.classList.remove('active');
+    }
+    const wcSec = document.getElementById('wc-section');
+    if (wcSec) { wcSec.setAttribute('hidden', ''); wcSec.style.display = ''; }
+    renderPickEmSection();
+  } else {
+    navLink?.classList.remove('active');
+    section?.setAttribute('hidden', '');
+    if (section) section.style.display = ''; // clear inline override
+  }
+}
+
+// Builds the pick 'em surface's content: every currently-known game across
+// all sports that's in the PREVIEW circadian tier (upcoming, pickable),
+// rendered via the existing buildPickWidgetHTML() -- reused as-is, not
+// rebuilt (CC-CMD-2026-07-05-pick-em-reconcile TASK 2). Reads from
+// allData.sports, the same source renderAll() reads from, so this always
+// reflects the current schedule without a separate fetch.
+function renderPickEmSection() {
+  const content = document.getElementById('pickem-content');
+  if (!content) return;
+  const games = [];
+  (allData?.sports || []).forEach(sec => {
+    (sec.games || []).forEach(g => {
+      const _circEData = typeof findESPNScore === 'function' ? findESPNScore(g) : null;
+      const _circInput = { state: (_circEData ? _circEData.state : null) ?? g.state ?? null, status: g.status, _aflComplete: g._aflComplete, _id: g._id };
+      if (typeof getCardCircadian === 'function' && getCardCircadian(_circInput) === 'PREVIEW') {
+        games.push({ g, sport: g.sport || sec.sport });
+      }
+    });
+  });
+  if (!games.length) {
+    content.innerHTML = '<div class="pickem-empty">No upcoming games to pick right now — check back closer to game time.</div>';
+    return;
+  }
+  content.innerHTML = games.map(({ g, sport }) =>
+    `<div class="pickem-row"><div class="pickem-matchup">${(g.away||'').replace(/</g,'&lt;')} @ ${(g.home||'').replace(/</g,'&lt;')}</div>${typeof buildPickWidgetHTML === 'function' ? buildPickWidgetHTML(g, sport) : ''}</div>`
+  ).join('');
 }
 
 // ── BSD pitch helpers (2026-06-25) ────────────────────────────────────────

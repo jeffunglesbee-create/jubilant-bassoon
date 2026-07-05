@@ -6235,9 +6235,10 @@ assert('A-CFLWIRE-4 — no synchronous top-level CFL section push remains in bui
   'buildTodaySchedule must no longer synchronously build+push a CFL section from the hardcoded array at schedule-build time — that logic now lives only inside buildCFLStaticFallback, called exclusively from the async injection\'s fallback branch.');
 
 // ── Pick 'em UI (A-PICKEM — CC-CMD-2026-07-05-pick-em-ui) ──────────────────
-assert('A-PICKEM-1 — pick widget is gated to circadian PREVIEW state, not shown unconditionally',
-  !!html.match(/_circadian===['"]PREVIEW['"]&&typeof buildPickWidgetHTML/),
-  'The pick affordance must only render for pre-game (PREVIEW) cards, reusing the existing circadian gate rather than inventing a new pre-game check.');
+assert('A-PICKEM-1 — pick widget is gated to circadian PREVIEW state inside the pick-em surface, and the old card call site is gone',
+  !html.match(/_circadian===['"]PREVIEW['"]&&typeof buildPickWidgetHTML/) &&
+  !!html.match(/getCardCircadian\(_circInput\) === ['"]PREVIEW['"]\)\s*\{\s*\n\s*games\.push/),
+  'Per CC-CMD-2026-07-05-pick-em-reconcile: the pick affordance must no longer render directly on game cards (that call site must be gone), and renderPickEmSection() must gate its game list to the PREVIEW circadian tier, reusing the existing getCardCircadian() check rather than inventing a new pre-game check.');
 
 assert('A-PICKEM-2 — pick_made fires via the existing _userDoRelay helper, no new fetch call',
   !!html.match(/_userDoRelay\('\/user\/event', 'POST', \{ type: 'pick_made'/),
@@ -6277,6 +6278,25 @@ assert('A-PICKEM-5 — reveal displays the server-echoed probabilityLabel verbat
     !/streak|current[-_]?run|consecutive[-_]?day/i.test(pickEmJs + statsJs + pickEmCss),
     'No streak, current-run, or consecutive-day display may exist anywhere in the pick-em feature\'s own code — that data does not exist in the backend by design and must not be approximated client-side either. (Checked scoped to this feature\'s own source since "streak" legitimately appears elsewhere, e.g. the newspaper\'s Streak Board.)');
 }
+
+// ── Pick 'em surface reconcile (A-PICKEMSURF — CC-CMD-2026-07-05-pick-em-reconcile) ──
+assert('A-PICKEMSURF-1 — togglePickEmView/renderPickEmSection exist, matching the existing mode pattern',
+  !!html.match(/function togglePickEmView\(\)/) && !!html.match(/function renderPickEmSection\(\)/) &&
+  !!html.match(/document\.body\.classList\.toggle\('pickem-mode'\)/),
+  'A third top-level mode must exist, following toggleWCView()/toggleJournalismView()\'s exact body-class-toggle shape — not a new, invented mechanism.');
+
+assert('A-PICKEMSURF-2 — pickem-nav-link and pickem-section exist in the markup',
+  !!html.match(/id="pickem-nav-link"/) && !!html.match(/id="pickem-section"/),
+  'The new mode needs a real nav-bar link and a real top-level section container, matching the existing #wc-nav-link/#wc-section and #jrn-nav-link/#field-journalism-section pairs.');
+
+assert('A-PICKEMSURF-3 — 3-way mutual exclusion: both existing modes dismiss pickem-mode too',
+  (html.match(/classList\.remove\('pickem-mode'\)/g) || []).length >= 2,
+  'toggleWCView() and toggleJournalismView() must both dismiss pickem-mode when they activate — otherwise two modes could show simultaneously, the exact stacking bug the WC/Journalism pair already guards against for each other.');
+
+assert('A-PICKEMSURF-4 — buildPickWidgetHTML/makePick/_resolvePickIfExists internal logic untouched',
+  !!html.match(/function buildPickWidgetHTML\(g, sport\) \{/) && !!html.match(/function makePick\(gameId, predictedWinner, sport\) \{/) &&
+  !!html.match(/function _resolvePickIfExists\(gameId, game, eData\) \{/),
+  'Per this CC-CMD\'s explicit scope, only the render TARGET moves — the three functions\' own signatures and bodies must be exactly as 702fb7b shipped them, not rewritten.');
 
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);
