@@ -1,5 +1,37 @@
 # FIELD HANDOFF
 
+## MID-SESSION UPDATE #3 — 2026-07-05 (session ongoing, not closed)
+
+**CLIENT HEAD: 2c774de.** SW_VERSION `2026-07-05f`, confirmed synced
+index.html/sw.js. **Smoke: 881/0.**
+
+**Pick 'em reconcile CC-CMD closed out, 100/100 confidence.** Full detail:
+`docs/outbox/cc-pick-em-reconcile-2026-07-05.md`. Summary: relocated the
+`702fb7b` card-based pick widget into a new top-level `pickem-mode` surface
+(`togglePickEmView()`/`#pickem-nav-link`/`#pickem-section`/
+`renderPickEmSection()`), matching the existing `toggleWCView()`/
+`toggleJournalismView()` pattern. Found and fixed 3 real bugs via live
+Playwright CI verification (not just code review): (1) `g._id` unassigned
+for games outside `renderAll()`'s filtered loop, (2) `renderAll()`
+re-registering the nav-link click listener every poll cycle with a fresh
+closure, causing accumulating listeners to net-cancel a toggle, (3)
+`nav.controls` nested inside `#upper-slots`, whose hide-list (copied from
+wc-mode) collaterally hid the pickem-mode exit toggle itself at desktop
+widths. Final live run: `outbox/pickem-surface-probe-2026-07-05T1959Z.txt`,
+`RESULT: PASS`.
+
+**Two findings flagged for follow-up, not fixed here (out of scope):**
+- `desk-jump-link`/`jrn-nav-link`/`wc-nav-link` share the same listener-
+  accumulation bug as (2) above — only the new pickem-nav-link listener was
+  guarded.
+- **wc-mode likely shares bug (3) above** — its own hide-list also
+  unconditionally hides `#upper-slots` at all widths, so `#wc-nav-link` is
+  very likely a 0×0 box (no desktop exit) once `wc-mode` is active.
+  Unverified this session (WC nav-link is hidden out-of-season, couldn't be
+  exercised live) — worth its own CC-CMD.
+
+---
+
 ## MID-SESSION UPDATE #2 — 2026-07-05 (session ongoing, not closed)
 
 **CLIENT HEAD: 50f0a4e** (routine daily-cron bookkeeping only — whoop/oura fetch, mlbn-schedule, auto-overlay; last real feature commit unchanged at `4071026`, CFL circadian state wire). SW_VERSION `2026-07-05a`, confirmed synced index.html/sw.js.
