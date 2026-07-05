@@ -1,5 +1,53 @@
 # FIELD HANDOFF
 
+## MID-SESSION UPDATE #5 — 2026-07-05 (session ongoing, not closed)
+
+**CLIENT HEAD: b4a4b48.** SW_VERSION `2026-07-05h`, confirmed synced
+index.html/sw.js. **Smoke: 885/0.**
+
+**Pick 'em MLB+CFL gaps CC-CMD closed out.** Full detail:
+`docs/outbox/cc-pickem-cfl-mlb-gaps-2026-07-05.md`. Both of the CC-CMD's
+own static-reading leads turned out **wrong** — real causes were confirmed
+via live investigation first, per the doc's explicit requirement:
+
+- **MLB gap** ("soon-starting game missing from Pick 'em"): NOT ESPN
+  flipping the primary `status` field early (it stayed `"pregame"`
+  correctly the whole time). Real cause: `mapV2ToESPN()`'s
+  live-detection heuristic (built for a real but *opposite* bug — a
+  genuinely-live NBA Finals G2 game api-sports.io mislabeled `"pre"`) had
+  two false-positive paths for a freshly-scheduled game: a clock-string
+  check that didn't recognize `"0:00"` (the relay's actual pregame
+  format) as zero, and treating a valid `0` score as "has a score."
+  Fixed by parsing the clock to total seconds and requiring a real (`>0`)
+  score. Verified live post-deploy: 3 genuinely-pregame MLB games now
+  correctly appear in the Pick 'em list; the NBA Finals G2 case is still
+  correctly caught as live.
+- **CFL gap** ("pick doesn't display"): the `_id`-format lead was wrong —
+  confirmed live that `makePick()`, the DOM lookup, and the "pick made"
+  render all work correctly, in every tested scenario, including after a
+  forced re-render. No fix needed for that half. The *real*, confirmed
+  gap is narrower and different: CFL games never resolve (no win
+  probability ever appears), because `loadCFLScoreboard()` fetches once
+  (no recurring poll) and never feeds `espnScores`/`_scoresBySource` —
+  the only stores `checkForNewFinals()` checks to detect a finished game.
+  Fixed with a CFL-scoped fallback in `checkForNewFinals()` reusing the
+  existing `saveEspnFinal()`/`_resolvePickIfExists()` hook. Verified live
+  via a simulated game completion: real relay round trip, pick correctly
+  resolved to `pick-correct` with a ✓.
+
+**Known remaining gap, explicitly not fixed (flagged for follow-up):**
+CFL still can't resolve a pick *live, mid-session* — only once the game
+has ended and the page is reloaded, since CFL data never refreshes after
+its one-time fetch. Closing that needs a recurring CFL poll, which
+requires a rate-limit/cost probe (Rule 78) before building — a dedicated
+follow-up CC-CMD, not done here.
+
+Note: `docs/CC-CMD-2026-07-05-pickem-coverage-check.md` was pushed by the
+user mid-session, sequenced to run *after* this investigation. Not yet
+read or started as of this update.
+
+---
+
 ## MID-SESSION UPDATE #4 — 2026-07-05 (session ongoing, not closed)
 
 **CLIENT HEAD: a54642a.** SW_VERSION `2026-07-05g`, confirmed synced
