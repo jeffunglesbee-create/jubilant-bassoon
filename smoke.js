@@ -6316,5 +6316,21 @@ assert('A-NAVCONSOLIDATE-4 — journalism-mode\'s #upper-slots hide stays scoped
   !!html.match(/@media\(max-width:1199px\)\{\s*\n\s*body\.journalism-mode \.main,[\s\S]{0,500}body\.journalism-mode #upper-slots,/),
   'Journalism-mode\'s #upper-slots hide only applies at <=1199px, the same range its .jrn-back-pill becomes visible in -- co-existing with the schedule on desktop means nav.controls is never hidden there. Confirmed via live probe this is NOT the same bug as wc-mode/pickem-mode; this assertion guards against a future edit accidentally making it unconditional.');
 
+assert('A-CFLLIVEPOLL-1 — CFL refresh step exists inside the existing initNightOwlPoll() tick, no new timer added',
+  (() => {
+    const idx = html.indexOf('function initNightOwlPoll()');
+    if (idx === -1) return false;
+    const block = html.slice(idx, idx + 2000);
+    return block.includes('CC-CMD-2026-07-05-cfl-live-poll') &&
+      block.includes('loadCFLScoreboard().then') &&
+      block.indexOf('loadCFLScoreboard().then') < block.indexOf('setInterval(poll, 90000)') &&
+      (html.match(/setInterval\(poll, 90000\)/g) || []).length === 1;
+  })(),
+  'Per CC-CMD-2026-07-05-cfl-live-poll: the CFL refresh must live inside the existing initNightOwlPoll() poll() tick (piggybacking on its 90s setInterval), not a second independent timer -- exactly one setInterval(poll, 90000) call must remain. This is a structural presence check only; it cannot assert live mid-session CFL resolution behavior.');
+
+assert('A-CFLLIVEPOLL-2 — self-gating guard present, scoped to CFL games not yet post',
+  !!html.match(/\(cflSection\.games \|\| \[\]\)\.some\(g => g\.state !== 'post'\)/),
+  'Without this guard the CFL refresh would keep re-fetching forever even after every CFL game today has gone final -- self-gating means no manual cleanup is needed once a day\'s games are all resolved.');
+
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);

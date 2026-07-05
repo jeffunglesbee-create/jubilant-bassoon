@@ -22227,6 +22227,33 @@ async function fetchSchedule(){
   // mode — the normal ESPN cycle doesn't re-check fast enough for Night Owl.
   (function initNightOwlPoll(){
     const poll = () => {
+      // CFL live refresh (CC-CMD-2026-07-05-cfl-live-poll): loadCFLScoreboard()
+      // only ever fires once at page load, so CFL game objects' state/scores
+      // never update without this. Piggybacks on the existing 90s tick rather
+      // than adding a second timer. Relay's /cfl/scoreboard/rounds endpoint
+      // sends cache-control: public, max-age=30 (confirmed live 2026-07-05
+      // via raw curl headers, independent of the relay-side claim this
+      // CC-CMD cites) -- safe to call this often regardless of concurrent
+      // user count.
+      if (typeof loadCFLScoreboard === 'function' && allData?.sports?.length) {
+        const cflSection = allData.sports.find(s => s.sport === 'Canadian Football (CFL)');
+        if (cflSection && (cflSection.games || []).some(g => g.state !== 'post')) {
+          loadCFLScoreboard().then(fresh => {
+            if (!fresh || !fresh.length) return;
+            const byId = {};
+            fresh.forEach(g => { byId[g._id] = g; });
+            cflSection.games.forEach(existing => {
+              const f = byId[existing._id];
+              if (!f) return;
+              existing.state = f.state;
+              existing.homeScore = f.homeScore;
+              existing.awayScore = f.awayScore;
+            });
+            checkForNewFinals();
+            if (typeof scheduleRenderAll === 'function') scheduleRenderAll();
+          }).catch(() => {});
+        }
+      }
       if(allData?.sports?.length) checkForNewFinals();
       renderNightOwlRecap().catch(e=>captureFieldError('night-owl',e,false));
     };
@@ -23523,7 +23550,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-07-05h';
+  const SW_VERSION = '2026-07-05i';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
