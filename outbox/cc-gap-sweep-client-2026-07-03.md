@@ -223,3 +223,210 @@ Net effect on the Task 5 table: gap-class 2's real instance count for
 one of them at the time. It's since been fixed independently, so there is
 no outstanding code change to make; this addendum exists so the record is
 accurate rather than leaving an incomplete assessment uncorrected.
+
+---
+
+## Addendum (2026-07-05) — Full re-run, gap-class 4 finally covered, three new findings
+
+The same CC-CMD was dispatched again. `index.html` has grown from 34,574
+to 40,965 lines since the original sweep (line numbers below reflect
+current HEAD, not the originals above). Rather than re-reading the prior
+findings and assuming they still hold, this pass re-ran all four
+gap-classes independently — fresh grep-driven agents working directly
+from source, with no knowledge of the prior manifest's conclusions — then
+cross-checked the fresh results against what's written above. Every
+finding below that overlaps a prior claim was independently re-derived,
+not copied.
+
+### Task 1 (spec-vs-shipped) — re-confirmed, plus two new findings
+
+BSD momentum gap: **still present, unchanged** — `_bsdRepaint()` still has
+zero momentum render path.
+
+Every other "already shipped" Vision-doc feature re-confirmed independently
+with fresh line numbers (Attention Intelligence — `dramaScoreLive`/
+`injectDramaBadges`/WC WP+advancement bars; Journalism Infrastructure —
+`BANNED_PHRASES`/`hasCliche`/`renderProseScore`/`renderJournalismCompanion`;
+Tournament Intelligence — `renderWCTournamentBracket`'s movers/third-place/
+traps/Monte-Carlo-probability sections, all real call sites).
+
+**New finding — `seriesLedger`: CONFIRMED-GAP, same pattern as BSD momentum.**
+`recordSeriesGame()` (index.html:27859) fires real `series_game` events
+server-side, with an explicit comment that this "Builds the seriesLedger
+for NW-3 Rival Intelligence and PREF-SYNC-QR state sync," and a second
+comment (27899-27901) documents that `GET /user/state` returns
+`seriesLedger` as part of the hydrated user state. Independently confirmed
+via `grep -n "seriesLedger" index.html`: it appears in exactly those two
+comment lines and **nowhere else** — no `.seriesLedger` property read
+exists anywhere in the file. `grep -rn "NW-3\|Rival Intelligence\|PREF-SYNC-QR"`
+across the whole repo returns only that one comment. This is the write
+side of a named, spec'd feature with no client-side consumer at all — not
+even an orphaned stub render function, the render logic simply doesn't
+exist.
+
+**New, minor finding — `recapSnippet`: CONFIRMED-GAP (dead write).**
+`hydrateMissedRecaps()` (27950) fetches per-game context and writes
+`m.recapSnippet` (27962), with a comment claiming "downstream prompt
+injection sees the snippets without a re-assign." Independently confirmed
+via `grep -n "\.recapSnippet\b" index.html`: it is written once and its
+only other reference is a truthiness guard (line 27953, `m.recapSnippet`
+checked only to avoid re-fetching) — never read for its actual string
+value anywhere, including the one prompt block (`[MISSED PEAKS]`,
+38478-38487) that plausibly should use it. The fetch that populates it is
+currently pointless.
+
+**Cross-repo claim flagged, not confirmed either way — `resolveWinProbability`.**
+HANDOFF.md (line 57) claims a function literally named
+`resolveWinProbability(sport, ...)` was built, routing to ESPN's
+`winprobability[]` (MLB/WNBA/NBA), Squiggle `confidence` (AFL), FIELD's
+own `computeLiveWP()` (soccer), and market odds via `noVigProb()`
+(CFL/NHL/MLS/EPL/NFL/CFB). Per Rule 72, independently checked rather than
+trusted: `grep -rn "resolveWinProbability\|computeLiveWP\|noVigProb"`
+across the entire repo returns **zero hits in any code file** — the only
+match anywhere is the HANDOFF.md line itself. What IS independently
+confirmed real and rendered: NBA (`fetchESPNWinProb`, 20004), MLB
+(`fetchSavantGameFeed`, 20033), AFL (Squiggle `confidence` in
+`injectSquiggleTips`), CFL (`_cflMatchOdds`, 32523), and soccer/WC26
+(Dixon-Coles + Monte Carlo) each have their own real, differently-named,
+sport-specific pipeline terminating in a genuine DOM render call site —
+and the render side is sport-agnostic (gates purely on `.wp != null`, not
+on which sport), so it would display a value for NHL/NFL/MLS/EPL/CFB too
+if one ever arrived via the generic AmbientDO `wp_update` SSE handler.
+Whether those five sports' `.wp` actually gets populated depends on a
+server-side `resolveWinProbability`-equivalent that would live in
+AmbientDO — code not present anywhere in this checkout, so its existence
+can't be confirmed or denied from here. Reporting the discrepancy plainly:
+either the HANDOFF entry describes real work in a repo this session can't
+see, or the entry is inaccurate — not resolvable from client-side source
+alone.
+
+### Task 2 (SSE consumption) — re-confirmed, one new inconclusive flag
+
+BSD momentum gap reconfirmed unchanged (same root cause as Task 1). The
+`ensureGameSocket` default-`onFacts` gap documented in the 2026-07-04
+addendum above is reconfirmed still fixed and live.
+
+**New, honestly-inconclusive flag — AmbientDO `score`/`lead_change` SSE branch.**
+This branch (index.html:28092-28179) reads `data.gameId/sport/home/away/
+homeScore/awayScore/period/periodLabel/clock/state`. Given the GameDO
+`facts` channel was proven (commit `68d1775`) to have silently dropped
+`situation/matchEvents/linescores/homeAbbr/awayAbbr` that the relay was
+already sending, it's plausible the AmbientDO SSE channel has the same
+gap — but the block's own comment (28106-28107) explicitly says "Only
+update the fields SSE knows — preserve leaders, wp, linescores,
+espnEventId set by other sources," which reads like deliberate scoping,
+not an oversight. Cannot be resolved without the relay's actual
+`/live/ambient` `score` event payload shape (relay repo inaccessible this
+session) — flagged as inconclusive rather than claimed as a confirmed gap.
+
+### Task 3 (duplicate-state consistency) — re-confirmed writers, THREE new reader-side bugs found
+
+`espnScores` writer-side: now 12 real assignment sites (one more than the
+11 originally found — expected, given six weeks of feature work since).
+All 12 reconfirmed field-name-consistent on the write side, matching the
+original finding.
+
+**New finding — three real, currently-shipping `.status`/`.state` confusion
+bugs, CONFIRMED.** Extending the audit to READERS (not just writers, which
+is what the original sweep checked) found that every one of the 12
+`espnScores` writers sets the game-state field as `.state` (values
+`'pre'|'in'|'post'`) — confirmed via direct grep that no writer anywhere
+ever sets `.status` on an `espnScores` entry (`.status` is a real field,
+but belongs to a *different* object, the raw MLB schedule game with a
+different vocabulary `'pregame'|'live'|'final'|'postponed'`, correctly
+used elsewhere). Three live, reachable functions read an `eData` object
+sourced directly from `espnScores` and check `.status` where they clearly
+meant `.state` (the value literals used — `'in'`, `'pre'`, `'post'` — are
+the `.state` vocabulary, not the `.status` one):
+
+- **`buildLayer3Rules(games)`** (26634, bug at 26667): `if (eData.status==='in' ...)` never trips, so the "EXTREME EVENT" journalism instruction is never injected into any live game's compound prompt, even though `getStatisticalExtremes` (called inside this same dead branch) is itself correctly implemented and correctly gated elsewhere.
+- **`detectAndStoreStoryMoment(gameId, eData, sport)`** (39408, bugs at 39409/39414/39456/39477): the guard at 39409 never trips, `isFinal` (39414) can never be true, so the Story Moments tape never records a "Final: X defeated Y" moment or an "... underway" moment for any game, ever, and the bus-emitted `state` field (39477) is hard-coded to `'pre'` regardless of the real game state — corrupting whatever else subscribes to that event (the code's own comment names "Night Owl, lead change burst, future consumers").
+- **`buildComebackProbability(gameId, eData, sport)`** (39790, bug at 39791): the explicit "don't compute comeback odds for a finished game" guard never trips, so a truly final game can still show a comeback-probability percentage in the bottom sheet (the only other guard present checks period number, not game-over-ness).
+
+All three call sites independently confirmed reachable in production
+(`injectDramaBadges` calls, journalism compound-prompt build, bottom-sheet
+open handler). Root cause: these three sites conflate the MLB-specific
+`allData` schedule-object schema with the `espnScores` schema — the value
+literals confirm the intent was always `.state`, only the property name is
+wrong.
+
+One same-field-name (not naming-mismatch) case flagged as
+could-not-determine: `espnScores[key].situation` is set by two writer
+families using the identical field name, but the legacy ESPN path and the
+`mapV2ToESPN` V2 path may source it from different upstream shapes — can't
+confirm a real shape mismatch without the relay's source.
+
+All other keyed caches checked (`_scoresBySource`, `_relayStandingsCache`,
+`_mlbBoxscoreCache`, and ~15 others) — no inconsistencies found.
+
+### Gap-class 4 (comment-vs-runtime claims) — swept for the first time, one confirmed finding
+
+The 2026-07-03 manifest explicitly flagged this class as *not attempted*
+("A true sweep for this class would need its own systematic pass... not
+attempted here"). This pass finally covers it: ~28 falsifiable trigger/
+activation comments (phrasing like "when set", "activates", "fires when",
+"only fires once") were deep-verified by tracing every read/write/call
+site for the named variable or function.
+
+**CONFIRMED-GAP: `isLateCloseGame({ _section: sport }, sport)` malformed
+call, index.html:35606.** The comment at 35599 reads "Fires when trailing
+team has lineup advantage AND isLateCloseGame" — gating the "CLOSING UNIT"
+badge. `isLateCloseGame` is defined (34748) as `function
+isLateCloseGame(g, ed, sport)`, but this call site passes only 2 arguments:
+`{ _section: sport }` becomes `g`, and the string `sport` itself becomes
+`ed` (with the real `sport` parameter left `undefined`). Inside the
+function: `if (!ed || ed.state !== 'in') return false;` (34749) — since
+`ed` is a plain string, `ed.state` is always `undefined`, so this always
+returns `false`, regardless of the real game's period/score/margin.
+Independently spot-checked by reading both the call site and the function
+definition directly: confirmed. There is exactly one correct call to this
+function elsewhere (`evaluateEMBER()`, matching the 3-param signature) —
+this is the only broken one. The "CLOSING UNIT" badge described by the
+comment is permanently dead.
+
+~25 other claims checked in the same pass all held up as accurate (sample
+included Night Owl poll setup, `_espnFirstPoll`'s one-time-set claim,
+`bsdEventId`'s activation chain, `wc26`'s date-gate, EMBER's *correct*
+`isLateCloseGame` call site, and ~20 more) — reported for sample-size
+transparency, not claimed as an exhaustive list.
+
+### Task 4 (public solution research) — this pass's new findings
+
+**`seriesLedger` / "Rival Intelligence" (genuine spec'd-but-unbuilt gap,
+same class as BSD momentum):** two honest search passes (general
+head-to-head/rivalry-tracker sports repos; personalized cross-device
+watch-progress/companion apps) turned up no genuine conceptual match.
+Closest candidates considered and rejected as poor fits: generic
+football head-to-head stats/analytics repos (league-wide historical
+data, not a personal per-user series-progress signal) and `Watcharr`
+(open-source self-hostable watched-list tracker — media-library episode/
+season tracking, not sports-series rivalry personalization). Reporting
+as an honest miss rather than forcing a weak analog, consistent with this
+manifest's existing discipline (the BSD momentum search rejected `d3-soccer`/
+`soccermatics` on the same grounds).
+
+**`recapSnippet` dead write, the three `.status`/`.state` bugs, and the
+`isLateCloseGame` malformed call:** no public-solution search applies to
+any of these. They are wiring/typo-class bugs (wrong property name, wrong
+argument count, an unconsumed fetch result) — not missing capability the
+way BSD momentum or `seriesLedger` are. There is no "existing tool" to
+search for when the fix is "use the right property name" or "pass the
+right number of arguments." Stating this plainly rather than forcing an
+irrelevant search to fill out the section.
+
+### Updated Task 5 summary (this addendum's net new findings)
+
+| Gap-class | New confirmed instances this pass | Public-repo match |
+|---|---|---|
+| 1. Spec'd/data-flowing but unrendered feature | 1 new (`seriesLedger`) + 1 minor (`recapSnippet` dead write) | No genuine match found for `seriesLedger` (honest miss); N/A for `recapSnippet` (not a capability gap) |
+| 2. Partial SSE/live-frame consumption | 0 new confirmed (1 new *inconclusive* flag: AmbientDO score/lead_change, can't resolve without relay access) | N/A |
+| 3. Duplicate-state population inconsistency | 3 new (reader-side `.status`/`.state` confusion in `buildLayer3Rules`/`detectAndStoreStoryMoment`/`buildComebackProbability`) | N/A — bug fix, not a capability gap |
+| 4. Comment claims a behavior that isn't real | 1 new (`isLateCloseGame` malformed call, permanently disabling the CLOSING UNIT badge) — first real sweep of this class, explicitly skipped in the original manifest | N/A — bug fix, not a capability gap |
+
+No functional code changes were made in this addendum either, per the
+CC-CMD's own header ("no functional code changes... commit the outbox
+manifest directly") — every finding above is documentation only. The
+`.status`/`.state` bugs and the `isLateCloseGame` malformed call in
+particular are real, safely-scoped, well-understood one-line fixes that
+would be quick to apply in a dedicated follow-up CC-CMD, but fixing them
+was out of this task's stated scope.
