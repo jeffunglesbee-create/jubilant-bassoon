@@ -1,0 +1,11 @@
+=== Pick 'em Surface Verify Probe [2026-07-05T1932Z] ===
+URL: https://jubilant-bassoon.jeffunglesbee.workers.dev
+App booted.
+Pick widgets rendered on game cards (must be 0): 0
+#pickem-nav-link exists: true
+Mode state after clicking #pickem-nav-link: {"pickemModeActive":true,"sectionHidden":false,"sectionComputedDisplay":"block","mainComputedDisplay":"none","navLinkActive":true}
+#pickem-content state: {"hasContent":true,"widgetCount":0,"rowCount":2,"isEmptyState":false}
+No unpicked widget available this run (all PREVIEW games already picked, or none upcoming) — pick_made click test skipped, not a failure.
+State after exiting via back-pill: {"pickemModeActive":true,"mainComputedDisplay":"none"}
+
+RESULT: FAIL -- see above.
