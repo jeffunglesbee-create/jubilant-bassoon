@@ -1,0 +1,23 @@
+=== Nav Mode Consolidate Verify Probe [2026-07-05T2015Z] ===
+URL: https://jubilant-bassoon.jeffunglesbee.workers.dev
+App booted.
+Simulated 5 extra renderAll() poll cycles before any nav-link click.
+[pickem-mode] #pickem-nav-link before click: {"exists":true,"w":58.78125,"h":21}
+[pickem-mode] state after entering: {"modeActive":true,"mainDisplay":"none"}
+[pickem-mode] #pickem-nav-link rect while mode active: {"w":58.78125,"h":21}
+[pickem-mode] state after exit re-click: {"modeActive":false,"mainDisplay":"block"}
+[pickem-mode] round-trip result: PASS
+[wc-mode] #wc-nav-link before click: {"exists":true,"w":80.265625,"h":21.03125}
+[wc-mode] state after entering: {"modeActive":true,"mainDisplay":"none"}
+[wc-mode] #wc-nav-link rect while mode active: {"w":83.703125,"h":21.03125}
+[wc-mode] state after exit re-click: {"modeActive":false,"mainDisplay":"block"}
+[wc-mode] round-trip result: PASS
+[journalism-mode] #jrn-nav-link before click: {"exists":true,"w":69.578125,"h":21}
+[journalism-mode] state after entering: {"modeActive":true,"mainDisplay":"block"}
+[journalism-mode] #jrn-nav-link rect while mode active: {"w":69.578125,"h":21}
+[journalism-mode] state after exit re-click: {"modeActive":false,"mainDisplay":"block"}
+[journalism-mode] round-trip result: PASS
+[journalism-mode mobile] state after entering at 500x900: {"modeActive":true,"backPillRect":{"w":131.15625,"h":27.78125}}
+[journalism-mode mobile] modeActive after back-pill exit: false
+
+RESULT: PASS
