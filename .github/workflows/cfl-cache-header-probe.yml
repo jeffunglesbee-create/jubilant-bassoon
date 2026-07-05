@@ -1,0 +1,47 @@
+name: CFL Cache Header Probe
+# One-off verification for CC-CMD-2026-07-05-cfl-live-poll: independently
+# confirms the relay-side cache guard the CC-CMD cites (Rule 72/78 --
+# inherited claims from a repo this session can't read directly must be
+# verified, not just trusted). Dumps raw response headers via curl
+# (unaffected by browser CORS header-exposure restrictions) across several
+# quick repeat requests to /cfl/scoreboard/rounds.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fetch CFL endpoint 3x, dump headers
+        run: |
+          TS=$(date -u +%Y%m%dT%H%M%SZ)
+          OUT="outbox/cfl-cache-header-probe-${TS}.txt"
+          echo "=== CFL Cache Header Probe [$TS] ===" > "$OUT"
+          for i in 1 2 3; do
+            echo "" >> "$OUT"
+            echo "--- Attempt $i ---" >> "$OUT"
+            curl -sD - -o /dev/null "https://field-relay-nba.jeffunglesbee.workers.dev/cfl/scoreboard/rounds" >> "$OUT"
+            sleep 1
+          done
+          cat "$OUT"
+          echo "OUT=$OUT" >> $GITHUB_ENV
+
+      - name: Commit result
+        run: |
+          git config user.email "probe@field"
+          git config user.name "CFL Cache Header Probe"
+          git add "$OUT"
+          git diff --cached --quiet && echo "Nothing to commit" && exit 0
+          git commit -m "cfl cache header probe result [skip ci]"
+          for i in 1 2 3; do
+            git pull --rebase --autostash origin main && git push origin main && break
+            sleep $((i * 5))
+          done
+        env:
+          OUT: ${{ env.OUT }}
