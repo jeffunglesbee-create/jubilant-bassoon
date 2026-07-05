@@ -1,5 +1,39 @@
 # FIELD HANDOFF
 
+## MID-SESSION UPDATE #6 — 2026-07-05 (session ongoing, not closed)
+
+**CLIENT HEAD: 3aafcc9.** SW_VERSION unchanged at `2026-07-05h` (no
+index.html/sw.js changes this round — test-tooling only). **Smoke: 885/0**
+(unchanged, no product-code edits this session).
+
+**Pick 'em full-sport coverage check CC-CMD closed out, 100/100
+confidence.** Full detail: `docs/outbox/cc-pickem-coverage-check-2026-07-05.md`.
+Confirmed the prerequisite (`CC-CMD-2026-07-05-pickem-cfl-mlb-gaps`) had
+completed before starting, per its own sequencing requirement. Built two
+fast, non-visual scripts and ran them against every sport in the CC-CMD's
+list, not just the two originally reported:
+
+- `pickem_circadian_coverage_check.js` — ports `getCardCircadian()`
+  verbatim, fetches real data directly (V2 relay, CFL rounds endpoint,
+  Squiggle AFL relay), no rendering. **MLB (3/3), WNBA (1/1), WC/Soccer
+  (1/1), CFL (1/1) all PASS.** NBA/NHL/EPL/NFL/CFB/MLS/AFL correctly
+  reported N/A (no real games today — off-season or date-gated), not
+  assumed to pass.
+- `pickem_jsdom_display_check.js` — ports `makePick()`/
+  `buildPickWidgetHTML()` verbatim into a minimal jsdom DOM (network
+  stubbed — that layer was already verified live in the prerequisite),
+  one real game per sport. **MLB, WNBA, WC/Soccer, AFL, CFL all PASS**
+  (same N/A set as above for sports with no real game today).
+
+**No new failures found.** The prerequisite CC-CMD's two fixes (the
+`mapV2ToESPN()` clock/score heuristic fix, and the CFL
+`checkForNewFinals()` resolution fallback) hold broadly — confirmed here
+across every sport that shares those code paths (WNBA and WC/Soccer both
+exercise the same fixed `mapV2ToESPN()` as MLB and passed), not just the
+two sports originally reported. No code changes made this round.
+
+---
+
 ## MID-SESSION UPDATE #5 — 2026-07-05 (session ongoing, not closed)
 
 **CLIENT HEAD: b4a4b48.** SW_VERSION `2026-07-05h`, confirmed synced
