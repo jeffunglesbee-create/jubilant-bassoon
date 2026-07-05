@@ -1,5 +1,40 @@
 # FIELD HANDOFF
 
+## SESSION END — 2026-07-05 (session closed, not mid-session)
+
+**CLIENT HEAD: 6cc7365** (routine CI state-sync; last real feature commit `20758d7`, pick-em full-sport coverage scripts). **RELAY HEAD: ed80885** (WP source resolver outbox). Smoke **885/0**, confirmed fresh. Relay health confirmed live.
+
+This closes out the session — MID-SESSION UPDATE #2 (below) covers everything through the drama backfill/Container/name-consolidation arcs; this entry covers everything after that, through session close.
+
+---
+
+## WHAT SHIPPED SINCE UPDATE #2
+
+### Win probability — real sources wired for every sport checked
+Built `resolveWinProbability(sport, ...)`, routing to whichever real source actually exists per sport: ESPN's native `winprobability[]` (MLB/WNBA/NBA), Kali or Squiggle's `confidence` field (AFL), FIELD's own live `computeLiveWP()` (soccer/WC — confirmed already running, not dormant), and real market odds via Odds API + `noVigProb()` (CFL/NHL/MLS/EPL/NFL, plus CFB after adding its missing odds-key mapping). Labels strictly "Market estimate" or "Statistical probability" per this project's own RUWT-safe convention — never a bare "win probability." A real, serious bug was caught live (not by review): ESPN's `homeWinPercentage` is 0-1 decimal, not 0-100 — an earlier `/100` division would have silently corrupted every ESPN-sourced probability by two orders of magnitude. Fixed and re-verified against real games per source type.
+
+### Name-normalization consolidated — two real, honest CC stops along the way
+Found three independent, duplicate team-name-matching implementations (AFL's `normAFL`, `WC_NAME_FIX`, `FIFA_NAME_ALIASES`) alongside the existing canonical `identity-resolver.js`. Both consolidation attempts required a real correction: the first CC-CMD for each wrongly assumed `resolveTeamKey()` was a drop-in replacement — CC correctly stopped at 70/100 and 45/100 respectively, having found the actual output shapes were incompatible (strip-form match-key vs. required human-readable/nickname-aware output). Corrected versions: AFL's algorithm registered as its own `afl_team` type (following the existing `soccer_player` precedent); a new `resolveTeamName()` added for the display-name cases, correctly excluding `FIFA_NAME_ALIASES` from the merge (direction-incompatible with the canonical map). Both real, evidenced pairs migrated; both verified live.
+
+### Pick 'em — built completely, end-to-end, backend through UI through two real live-found bugs
+Cumulative, non-resetting `pickLedger` in `UserDO` (permanent record, zero streak/consecutive-day field anywhere — the structural resolution to Rule 33's previously-held gamification question). Real design correction mid-build: a card-based first UI slice was dispatched, then found too dense (39+ existing chip classes) and moved to a proper new top-level surface (`togglePickEmView`, matching the existing `toggleWCView`/`toggleJournalismView` pattern exactly) — this was a genuine dispatch-before-design-question sequencing issue, named directly rather than framed as an unavoidable coincidence. That same investigation surfaced and fixed two real, shared bugs affecting all four nav-links and multiple modes (listener accumulation, an `#upper-slots`-hides-exit-toggle CSS bug), consolidated once rather than patched four times.
+
+Two more real bugs were found by actual live use (not code review, not a probe) once the feature was live: MLB games incorrectly excluded from the Pick 'em list (a live-detection heuristic built for an unrelated bug had two false-positive paths for freshly-scheduled games), and CFL picks unable to ever resolve (CFL's one-time data fetch never fed the two stores game-completion detection depends on). Both fixed and verified. A full-sport, non-rendering coverage check (two scripts — a pure-data circadian check with zero DOM dependency, and a jsdom-based post-pick check avoiding a full browser) now passes cleanly across every sport with real games today (MLB, WNBA, CFL, AFL, WC/Soccer — NBA/NHL/EPL/CFB/NFL/MLS correctly off-season/N/A).
+
+**Known, explicitly-scoped remaining gap**: CFL picks can only resolve after page reload, not live mid-session — closing that needs a recurring CFL poll, which needs a rate-limit investigation (Rule 78) before building. Flagged, not silently dropped.
+
+### Process — a new standing rule, from a real self-caught failure
+Added Behavior Rules item (8): chat applies the same ≥95 confidence discipline to itself before writing a CC-CMD that CC-CMDs already require before committing. Directly motivated by the pick-em card-density mistake above — the design question should have blocked writing that doc, not followed it.
+
+---
+
+## OPEN ITEMS FOR NEXT SESSION
+1. CFL live mid-session pick resolution — needs a Rule 78 rate-limit probe before building recurring polling.
+2. `container-upset-model.md`'s real-world model is live and verified (this was closed earlier tonight) — no further action needed there.
+3. Nothing else known-pending. Queue is genuinely clear as of this close.
+
+**Not a mid-session entry — session is closed.**
+
 ## MID-SESSION UPDATE #6 — 2026-07-05 (session ongoing, not closed)
 
 **CLIENT HEAD: 3aafcc9.** SW_VERSION unchanged at `2026-07-05h` (no
