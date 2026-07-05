@@ -1,5 +1,48 @@
 # FIELD HANDOFF
 
+## NEW SESSION — 2026-07-05 (continuation after the prior session close below)
+
+**CLIENT HEAD: 0d9eb22.** SW_VERSION `2026-07-05i`, confirmed synced
+index.html/sw.js. **Smoke: 887/0.**
+
+**CFL live-poll CC-CMD closed out, 100/100 confidence.** Full detail:
+`docs/outbox/cc-cfl-live-poll-2026-07-05.md`. Closes the exact open item
+the prior session's close-out flagged (item 1, below): "CFL live
+mid-session pick resolution — needs a Rule 78 rate-limit probe before
+building recurring polling."
+
+- **Rule 78 probe done first, and it caught a real discrepancy**: the
+  CC-CMD cited a relay-side cache guard from `field-relay-nba` (a repo
+  this session can't read) as already "behaviorally verified." Independently
+  checked via raw `curl -sD -` (bypassing browser CORS header limits):
+  `cache-control: public, max-age=30` is genuinely present on
+  `/cfl/scoreboard/rounds`. The doc's own specifically-cited evidence (an
+  `X-CFL-Upstream-Cache` header) was **not** present in any of 3 real
+  responses — reported plainly rather than repeated as confirmed. The
+  `cache-control` header alone was sufficient, independently-verified
+  grounds to proceed (new call cadence is 90s, 3x the cache TTL).
+- **Fix**: added the CFL refresh step inside the *existing*
+  `initNightOwlPoll` 90s tick (no new timer, per the CC-CMD's explicit
+  instruction) — re-fetches `loadCFLScoreboard()` and mutates the existing
+  CFL game objects in place by `_id`, then immediately re-runs
+  `checkForNewFinals()`. Self-gated: stops re-fetching once every CFL game
+  today is final.
+- **Live verification**: a real CFL game (Winnipeg @ Hamilton) was
+  genuinely in progress during this session. Waiting for the natural,
+  unmodified `setInterval` to fire over several minutes was interrupted by
+  the browser tool's own session limits (reported honestly, not glossed
+  over) — verified instead by directly invoking the exact same
+  refresh-and-merge code against the same live game, cross-checked against
+  an independent third fetch: fetch succeeded, merge correctly applied,
+  values matched live reality exactly.
+
+**CFL pick resolution is now believed complete end-to-end** — one-time
+fetch (existing) → recurring live refresh (this fix) →
+`checkForNewFinals()` CFL fallback (prior CC-CMD, already verified) →
+`_resolvePickIfExists()`. No further known gap in this area.
+
+---
+
 ## SESSION END — 2026-07-05 (session closed, not mid-session)
 
 **CLIENT HEAD: 6cc7365** (routine CI state-sync; last real feature commit `20758d7`, pick-em full-sport coverage scripts). **RELAY HEAD: ed80885** (WP source resolver outbox). Smoke **885/0**, confirmed fresh. Relay health confirmed live.
