@@ -35,6 +35,23 @@ const OUT = `outbox/nav-mode-consolidate-probe-${TS}.txt`;
   );
   log('App booted.');
 
+  // Neutralize the app's own first-visit "My Services setup" modal
+  // (maybeShowSetup(), index.html ~22447-22450, fires via
+  // setTimeout(maybeShowSetup, 2500) whenever localStorage has no
+  // field_setup_done flag -- true for every fresh CI browser context).
+  // Confirmed via run 28753434877: it opened mid-run and intercepted the
+  // journalism-mode exit click with a genuine TimeoutError ("<div
+  // role=dialog ... id=setup-overlay> intercepts pointer events"), purely
+  // because that mode happened to be third in sequence and landed past the
+  // 2.5s mark. Not a regression in the nav-link/mode fixes themselves --
+  // setting the flag before it fires mirrors a returning user's browser
+  // state, which is what these mode-toggle tests are actually about.
+  await page.evaluate(() => {
+    try { localStorage.setItem('field_setup_done', '1'); } catch (e) {}
+    const ov = document.getElementById('setup-overlay');
+    if (ov) ov.style.display = 'none';
+  });
+
   // --- TASK 1 regression test: simulate several renderAll() poll cycles
   // BEFORE any click, then confirm a single click still toggles exactly
   // once (no accumulation). This is the exact failure mode d46f2e7/this
