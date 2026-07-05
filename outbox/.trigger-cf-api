@@ -1,2 +1,3 @@
-method=GET
-url=https://jubilant-bassoon.jeffunglesbee.workers.dev/__diag_relay_fetch
+method=POST
+url=https://field-relay-nba.jeffunglesbee.workers.dev/user/event?userId=test-pick-diag-00000000-0000-0000-0000-000000000000
+body={"type":"pick_made","gameId":"test_pick_diag_temporary","sport":"Test","predictedWinner":"Test Team A"}
