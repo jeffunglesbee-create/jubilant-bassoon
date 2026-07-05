@@ -1,5 +1,43 @@
 # FIELD HANDOFF
 
+## MID-SESSION UPDATE #4 — 2026-07-05 (session ongoing, not closed)
+
+**CLIENT HEAD: a54642a.** SW_VERSION `2026-07-05g`, confirmed synced
+index.html/sw.js. **Smoke: 885/0.**
+
+**Nav mode consolidate CC-CMD closed out, 100/100 confidence.** Full
+detail: `docs/outbox/cc-nav-mode-consolidate-2026-07-05.md`. This closes
+both follow-up findings flagged at the end of the pick-em reconcile
+CC-CMD (see UPDATE #3 below): (1) all four nav-links
+(`desk-jump-link`/`jrn-nav-link`/`wc-nav-link`/`pickem-nav-link`) now
+share one `attachNavLinkOnce(id, handler)` helper instead of four
+copy-pasted inline `addEventListener` sites — live-regression-tested by
+simulating 5 extra `renderAll()` poll cycles before clicking, confirming
+no listener accumulation on any of the three testable modes; (2) wc-mode's
+`#upper-slots` hide-list had the identical bug pickem-mode's `8435247` fixed
+(hiding the wrapper also hid `nav.controls`, the mode's own exit toggle) —
+confirmed live via non-zero nav-link rect while wc-mode is active.
+journalism-mode was checked (not assumed) and confirmed to already be
+correct — its `#upper-slots` hide is scoped to `@media(max-width:1199px)`,
+the same range its mobile back-pill becomes visible in, so desktop never
+hides its own exit toggle.
+
+One bug found along the way was in the *live verify probe itself*, not the
+product: the app's pre-existing first-visit "My Services" setup modal
+(`maybeShowSetup()`, fires via `setTimeout(...,2500)` when
+`localStorage.field_setup_done` is unset — true for every fresh CI browser)
+opened mid-test on the first attempt and intercepted a click. Fixed by
+setting the flag right after boot in the probe, mirroring a returning
+user's browser state.
+
+Final live run: `outbox/nav-mode-consolidate-probe-2026-07-05T2015Z.txt`,
+`RESULT: PASS` — pickem/wc/journalism all round-tripped correctly, plus
+journalism's mobile back-pill exit path.
+
+No new follow-up findings this round.
+
+---
+
 ## MID-SESSION UPDATE #3 — 2026-07-05 (session ongoing, not closed)
 
 **CLIENT HEAD: 2c774de.** SW_VERSION `2026-07-05f`, confirmed synced
