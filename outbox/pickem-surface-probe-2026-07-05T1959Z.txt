@@ -1,0 +1,13 @@
+=== Pick 'em Surface Verify Probe [2026-07-05T1959Z] ===
+URL: https://jubilant-bassoon.jeffunglesbee.workers.dev
+App booted.
+Pick widgets rendered on game cards (must be 0): 0
+#pickem-nav-link exists: true
+Mode state after clicking #pickem-nav-link: {"pickemModeActive":true,"sectionHidden":false,"sectionComputedDisplay":"block","mainComputedDisplay":"none","navLinkActive":true}
+#pickem-content state: {"hasContent":true,"widgetCount":2,"rowCount":2,"isEmptyState":false}
+Clicked a pick-btn inside the new surface: true
+pick_made network requests captured: 1
+First pick_made body: {"type":"pick_made","gameId":"g17","sport":"Baseball (MLB)","predictedWinner":"Toronto Blue Jays"}
+State after exiting via nav-link toggle: {"pickemModeActive":false,"mainComputedDisplay":"block"}
+
+RESULT: PASS
