@@ -1,0 +1,52 @@
+=== CFL Cache Header Probe [20260705T230940Z] ===
+
+--- Attempt 1 ---
+HTTP/2 200 
+date: Sun, 05 Jul 2026 23:09:40 GMT
+content-type: application/json
+content-length: 102346
+access-control-allow-origin: *
+cache-control: public, max-age=30
+access-control-allow-headers: Content-Type, Authorization, X-Requested-With
+access-control-allow-methods: GET, POST, OPTIONS
+access-control-expose-headers: X-JQ-Score, X-JQ-Retries, X-JQ-Layers, X-FIELD-Proxy
+report-to: {"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=E4qeUE%2BVNnFwCXcIXNyg56E6vHHe6zl8YioY2%2Fx57H2LD%2BEe8efcUSQumk3S8nl2E2LmYU4GoGgzVR1jorSyYk%2BIycoovE7lPD%2BgqbZ6LiQ3JYQ7BgsR6B7FfEe4MYcSW5XocvENdKCoMxgtDxfdgnnoOH0CNPPukmUDOQ%3D%3D"}]}
+nel: {"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}
+server: cloudflare
+cf-ray: a16a09e68bdfcc90-SJC
+alt-svc: h3=":443"; ma=86400
+
+
+--- Attempt 2 ---
+HTTP/2 200 
+date: Sun, 05 Jul 2026 23:09:41 GMT
+content-type: application/json
+content-length: 102346
+access-control-allow-origin: *
+cache-control: public, max-age=30
+access-control-allow-headers: Content-Type, Authorization, X-Requested-With
+access-control-allow-methods: GET, POST, OPTIONS
+access-control-expose-headers: X-JQ-Score, X-JQ-Retries, X-JQ-Layers, X-FIELD-Proxy
+report-to: {"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=3zRe0eXSwbL3nkUtvnTYhwwB9JMfqJTREu56n0Lzzv%2BgMXZLS2cUcukOqbu8MqqN%2FFQUUzK3yPPGOgEJ9obgNNN6b6WK8srplSRjCkowETRwWudIagaM66s0e8KlfoQcMrvu7Ncj7VcgxtzM%2Fys%2BNUFkAf8HNwUllod8iQ%3D%3D"}]}
+nel: {"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}
+server: cloudflare
+cf-ray: a16a09f07e722b29-SJC
+alt-svc: h3=":443"; ma=86400
+
+
+--- Attempt 3 ---
+HTTP/2 200 
+date: Sun, 05 Jul 2026 23:09:43 GMT
+content-type: application/json
+content-length: 102346
+access-control-allow-origin: *
+cache-control: public, max-age=30
+access-control-allow-headers: Content-Type, Authorization, X-Requested-With
+access-control-allow-methods: GET, POST, OPTIONS
+access-control-expose-headers: X-JQ-Score, X-JQ-Retries, X-JQ-Layers, X-FIELD-Proxy
+report-to: {"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=Xj3VvJAVWGzUSWGhCVeDT%2B9ckVkp4ZtKYRZVw2pXFxC8unTz7M8VZSfjzrFjZh5AfO8ZlpuSGyiEpdd7O8PPgsPLw7PVvYT0EuwdpTwj3vEV3DLWSfYtXybxzb%2F9FCOhmB%2BiYYJkBwFjERUs94AUpZGDLBG8wOe2zEwbug%3D%3D"}]}
+nel: {"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}
+server: cloudflare
+cf-ray: a16a09f70e065bc0-SJC
+alt-svc: h3=":443"; ma=86400
+
