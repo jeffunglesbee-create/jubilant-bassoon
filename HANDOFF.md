@@ -1,5 +1,58 @@
 # FIELD HANDOFF
 
+## MID-SESSION UPDATE #2 — 2026-07-05 (session ongoing, not closed)
+
+**CLIENT HEAD: 50f0a4e** (routine daily-cron bookkeeping only — whoop/oura fetch, mlbn-schedule, auto-overlay; last real feature commit unchanged at `4071026`, CFL circadian state wire). SW_VERSION `2026-07-05a`, confirmed synced index.html/sw.js.
+**RELAY HEAD: c5b6b1d** (WNBA/AFL/EPL classification fix CC-CMD, just pushed, not yet executed).
+**Smoke: 871/0**, confirmed fresh at time of this update.
+
+This entry covers everything since MID-SESSION UPDATE #1 — that entry remains below, unedited, as the record of the first half of this session.
+
+---
+
+## WHAT HAPPENED SINCE UPDATE #1
+
+### The drama_peak backfill saga — real, multi-stage, mostly resolved
+- **Container attempt v1**: honestly stopped at 40/100 after hitting three real blockers (no `CF_API_TOKEN` in CC's own sandbox, ESPN egress issues from CC's sandbox, cross-repo read tool malfunction on a large file). Correctly refused to invent workarounds — reported verbatim per its own gate, exactly as designed.
+- **All three blockers resolved directly** (not by CC, by chat): confirmed `deploy.yml` already has a working `CLOUDFLARE_API_TOKEN` GitHub secret; read the exact `dramaScoreLive`/`applyQW1SituationBonus` formulas directly from source; redirected the whole approach to GitHub Actions instead of CC's own sandbox.
+- **v2 shipped clean**: 0→202 populated via a new GitHub Actions workflow (`drama-backfill.yml`) + relay endpoints (`/archive/drama-missing`, `/archive/drama-by-id`, D1-binding-based, no token scope needed).
+- **Score-fill + event-ID backfill** (separate CC-CMD, real commits `e17bd49`/`9124f8f`): of 107 real past null-score rows, 62 gained a real score, 45 remained genuinely unresolvable (unmatchable against any real source). Confirmed the `drama_peak=0` sentinel is safe on the relay's real D1-read path (`findGame()`, no `||` fallback) — the earlier-found `0 → 50` collision is confined to a separate client-side `localStorage` cache, not this column.
+- **Schedule fix** (real commit `e6a2fca`): `drama-backfill.yml` now runs on a 2-hour cron, not just `workflow_dispatch` — closes a real logical gap (with concurrent sports, "wait for everything to finish" has no actual endpoint).
+- **Real, current D1 state** (verified fresh at this update): 643 total games since June 1, 277 future (can't be scored), 335 with any `drama_peak` value, 224 with a genuine non-zero score, 111 zero-placeholders.
+- **The 111 zero-placeholders root-caused precisely, not assumed**: `classifySport()` in `drama-backfill.mjs` only recognizes `mlb` and a soccer substring set — WNBA (47), AFL (138... wait, all-time count), and EPL (26) all fall through to `'other'` and get immediately zeroed, *before any ESPN fetch is attempted*. This is a classification gap, not a missing-formula problem — the client's `dramaScoreLive` already has complete, calibrated WNBA and AFL formulas that the backfill script never ported.
+- **Fix CC-CMD written and pushed** (`CC-CMD-2026-07-05-backfill-wnba-afl-epl.md`, not yet executed): WNBA and EPL's real ESPN paths independently verified live by chat (`sports/basketball/wnba/summary`, 409 real plays; EPL league slug `eng.1`, 16 real keyEvents) — both ready to build directly. **AFL is a real, separate finding**: ESPN is confirmed dead for AFL (three path conventions all 404/400'd against a real event ID) — AFL's actual, established source is Squiggle (`api.squiggle.com.au`), confirmed via the client's own `SQUIGGLE_BASE`. Whether Squiggle provides quarter-by-quarter granularity (needed for a real drama score) is genuinely unverified — outside this sandbox's allowed domains, left as a required, explicit check rather than guessed.
+
+### Real Cloudflare Container deployed — first one ever on this account
+- Confirmed via the dashboard hours into this session: Workers Paid is active (later directly confirmed via the billing API too — real subscription record, not inferred from Durable Objects usage), Containers available and enabled, zero deployed.
+- **Deployed successfully**: `field-hello-container`, via a new GitHub Actions workflow that scaffolds from Cloudflare's own official template (`npm create cloudflare@latest -- --template=cloudflare/templates/containers-template`) into an isolated location — deliberately not touching `field-relay-nba`'s production `wrangler.toml` at all. Independently verified: real Worker listing (`workers_list`), live URL returns `HTTP:200`, real Application ID (`a03fc720-44b3-4dff-8454-b8084b5dd1ef`).
+- **Real lesson from this**: the original plan (CC's own sandbox running `docker build` directly) was never going to work — CC's sandbox is Anthropic's own ephemeral cloud container, not a local machine, and has no proven privileged-build capability. GitHub Actions runners are the actual reliable "always-on machine" this project has, already authenticated via the existing `CLOUDFLARE_API_TOKEN` secret.
+- **Not yet done**: `container-upset-model.md` (fitting a real statistical model for the soccer upset-bonus threshold against the now-real drama data) — written, gated on real data existing (it does now), never executed.
+
+### Cloudflare API token — real permission expansion, fully verified
+- Added `Workers Scripts:Read`, `Workers Tail:Read`, `Workers KV Storage:Read`, `Billing:Read` to the existing "Cloudflare usage check" token (previously Account Analytics:Read only). All four independently verified working via real API calls, not assumed from the dashboard save.
+- **Real, useful findings unlocked by this**: `CF_AI_GATEWAY_BASE` is genuinely set as a secret on `field-claude-proxy` (resolved a previously-open question); Workers Paid confirmed active via direct subscription read; `vectorize_enabled: 1` and Workers AI's neuron billing components both already present in the account's plan, meaning zero subscription blocker exists for either the newspaper-archive-via-Vectorize idea or the Workers-AI-for-JQ-cost-reduction idea discussed earlier — neither has been built, both are just unblocked at the plan level.
+- Containers itself needed a separate `Cloudchamber` permission, added later — real, exists in the dashboard, though the specific REST API path for inspecting Containers turned out not to exist publicly at all (confirmed via Cloudflare's own docs index) — Containers are Wrangler-CLI/dashboard-only, not API-inspectable the way KV/R2/D1 are.
+
+### OG share-meta feature — fully resolved, 5-CC-CMD chain (all real bugs, not busywork)
+1. Missing `assets.run_worker_first` in `wrangler.jsonc` — static assets were served ahead of the Worker by Cloudflare's own default routing.
+2. Array-form `run_worker_first: ["/"]` failed — this repo's pinned Wrangler version (3.109.0) only accepts a boolean. Resolved with `run_worker_first: true` plus real, measured before/after latency (~1.5-1.9ms delta, confirmed negligible).
+3. `Element.after()` called with swapped/malformed arguments in `MetaTagRewriter` — found by direct code read, not inference.
+4. Cloudflare error 1042 — Worker-to-Worker same-account fetch to `*.workers.dev` blocked. Fixed with `global_fetch_strictly_public`, the *same* flag already proven fixing this exact error class in the relay since May 29 (found via chat-history search, not rediscovered).
+5. **Fully verified live, independently**: real bot UA gets a real `og:description` tag with live content; normal UA unchanged; diff between the two responses is exactly one line.
+
+---
+
+## OPEN ITEMS FOR NEXT SESSION (verified-current as of this update)
+
+1. **`backfill-wnba-afl-epl.md`** (relay, genuinely pending) — WNBA/EPL ready to build directly (paths verified), AFL needs the Squiggle-granularity check first.
+2. **`container-upset-model.md`** (relay, genuinely pending, unblocked) — real drama data now exists to fit a model against.
+3. **MLB's 20 zero-drama rows** (out of 216 scored) — real, unresolved open question raised in a separate CC conversation thread: genuinely low-drama games, or a cache-miss/ESPN-fetch failure during the original backfill run. Not investigated this session.
+4. Everything carried forward from UPDATE #1's open items, not re-touched this session (see below).
+
+---
+
+**Not a session-end entry — session is ongoing.**
+
 ## MID-SESSION UPDATE — 2026-07-04 (session ongoing, not closed)
 
 **CLIENT HEAD: 51df7a8** (bookkeeping commit; last real feature commit `7e88d06` — global_fetch_strictly_public fix). Always re-run `git log -1` fresh rather than trusting this value later in the session.
