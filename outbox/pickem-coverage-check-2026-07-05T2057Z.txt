@@ -1,0 +1,33 @@
+=== Pick 'em Circadian Coverage Check (pure-data, no rendering) ===
+Run at: 2026-07-05T20:57:30.965Z
+[NBA] no games returned today (off-season or none scheduled)
+[NHL] no games returned today (off-season or none scheduled)
+[CFL] total=1 confirmedPregame=1 passed=1 -> PASS
+[AFL] no games today (AEST calendar day) in rounds 17/18
+[EPL] no games returned today (off-season or none scheduled)
+[CFB] no games returned today (off-season or none scheduled)
+[NFL] no games returned today (off-season or none scheduled)
+[MLS] no games returned today (off-season or none scheduled)
+[WNBA] total=2 confirmedPregame=1 passed=1 -> PASS
+[MLB] total=15 confirmedPregame=3 passed=3 -> PASS
+[WC (Soccer)] total=2 confirmedPregame=1 passed=1 -> PASS
+
+RESULT: PASS
+
+----------------------------------------
+
+=== Pick 'em jsdom Post-Pick Display Check ===
+Run at: 2026-07-05T20:57:39.084Z
+[NHL] no real game available today -- N/A
+[NBA] no real game available today -- N/A
+[EPL] no real game available today -- N/A
+[CFB] no real game available today -- N/A
+[MLS] no real game available today -- N/A
+[WNBA] gameId=espn:401857041 away=Dallas Wings home=Toronto Tempo -> PASS
+[NFL] no real game available today -- N/A
+[MLB] gameId=espn:401816033 away=New York Mets home=Atlanta Braves -> PASS
+[WC (Soccer)] gameId=espn:760504 away=Norway home=Brazil -> PASS
+[AFL] gameId=afl_38630 away=Brisbane Lions home=Geelong -> PASS
+[CFL] gameId=cfl_13419665 away=Saskatchewan Roughriders home=Calgary Stampeders -> PASS
+
+RESULT: PASS
