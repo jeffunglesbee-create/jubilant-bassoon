@@ -6234,5 +6234,49 @@ assert('A-CFLWIRE-4 — no synchronous top-level CFL section push remains in bui
   !html.match(/if\(cflGames\.length\) sections\.push\(\{sport:"Canadian Football \(CFL\)"/),
   'buildTodaySchedule must no longer synchronously build+push a CFL section from the hardcoded array at schedule-build time — that logic now lives only inside buildCFLStaticFallback, called exclusively from the async injection\'s fallback branch.');
 
+// ── Pick 'em UI (A-PICKEM — CC-CMD-2026-07-05-pick-em-ui) ──────────────────
+assert('A-PICKEM-1 — pick widget is gated to circadian PREVIEW state, not shown unconditionally',
+  !!html.match(/_circadian===['"]PREVIEW['"]&&typeof buildPickWidgetHTML/),
+  'The pick affordance must only render for pre-game (PREVIEW) cards, reusing the existing circadian gate rather than inventing a new pre-game check.');
+
+assert('A-PICKEM-2 — pick_made fires via the existing _userDoRelay helper, no new fetch call',
+  !!html.match(/_userDoRelay\('\/user\/event', 'POST', \{ type: 'pick_made'/),
+  'pick_made must be sent through _userDoRelay(\'/user/event\', ...) — the same helper watch_open/series_game/peak_missed already use — not a new relay-calling mechanism.');
+
+assert('A-PICKEM-3 — pick_resolved sends only wasCorrect, never a client-computed probability',
+  !!html.match(/_userDoRelay\('\/user\/event', 'POST', \{ type: 'pick_resolved', gameId, wasCorrect \}\)/) &&
+  !html.match(/revealedProbability|probabilitySource\s*:/),
+  'pick_resolved\'s request body must contain only gameId/wasCorrect — no revealedProbability or probabilitySource field computed client-side. The resolver fills those in server-side; sending a client-computed value would bypass that.');
+
+assert('A-PICKEM-4 — resolution is hooked into the existing saveEspnFinal() completion point',
+  !!html.match(/_resolvePickIfExists\(id, game, eData\)/) && html.indexOf('function saveEspnFinal') < html.indexOf('_resolvePickIfExists(id, game, eData)'),
+  'Pick resolution must fire from inside saveEspnFinal() — the established game-complete hook — not a separate polling mechanism.');
+
+assert('A-PICKEM-5 — reveal displays the server-echoed probabilityLabel verbatim, not renamed',
+  !!html.match(/esc\(pick\.probabilityLabel\)/) && !html.match(/'Market estimate'|'Statistical probability'/),
+  'The reveal must display whatever probabilityLabel the relay response contains verbatim (via variable interpolation) — the client must not hardcode, paraphrase, or rename the label strings itself.');
+
+{
+  // Scoped, not file-wide: "streak" legitimately appears ~30 times elsewhere
+  // (the newspaper's Streak Board section, team win-streak analytics) —
+  // unrelated to pick 'em. Extract only the pick-em feature's own source
+  // (PICKS_KEY through _resolvePickIfExists, plus the stats section and
+  // CSS block) and check those specifically.
+  const pickEmStart = html.indexOf("const PICKS_KEY = 'field_picks_v1';");
+  const pickEmEnd = html.indexOf('// ── initUserDO');
+  const pickEmJs = (pickEmStart >= 0 && pickEmEnd > pickEmStart) ? html.slice(pickEmStart, pickEmEnd) : '';
+  const statsStart = html.indexOf('function buildPickEmStatsSection(){');
+  const statsEnd = statsStart >= 0 ? html.indexOf('\n}', statsStart) : -1;
+  const statsJs = (statsStart >= 0 && statsEnd > statsStart) ? html.slice(statsStart, statsEnd) : '';
+  const cssStart = html.indexOf("/* Pick 'em widget (CC-CMD-2026-07-05-pick-em-ui)");
+  const cssEnd = cssStart >= 0 ? html.indexOf('\n', html.indexOf('.pick-widget .pick-prob', cssStart)) : -1;
+  const pickEmCss = (cssStart >= 0 && cssEnd > cssStart) ? html.slice(cssStart, cssEnd) : '';
+
+  assert('A-PICKEM-6 — zero streak/consecutive-day/current-run UI in the pick-em feature itself',
+    pickEmJs.length > 0 && statsJs.length > 0 && pickEmCss.length > 0 &&
+    !/streak|current[-_]?run|consecutive[-_]?day/i.test(pickEmJs + statsJs + pickEmCss),
+    'No streak, current-run, or consecutive-day display may exist anywhere in the pick-em feature\'s own code — that data does not exist in the backend by design and must not be approximated client-side either. (Checked scoped to this feature\'s own source since "streak" legitimately appears elsewhere, e.g. the newspaper\'s Streak Board.)');
+}
+
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);

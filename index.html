@@ -688,6 +688,20 @@ body.wf-mode .np-inner{max-width:100%}
    game cards"), not a new invented value. */
 .game-card.circadian-late{opacity:var(--opacity-seen)}
 .circadian-late-recap{font-size:.72rem;color:var(--smoke,#888);margin:.2rem 0}
+/* Pick 'em widget (CC-CMD-2026-07-05-pick-em-ui) — shown on PREVIEW-state
+   cards only. Three states: unpicked (two team buttons), picked (read-only
+   choice), resolved (correct/incorrect + server-echoed probability). */
+.pick-widget{display:flex;align-items:center;flex-wrap:wrap;gap:.35rem;font-size:.72rem;margin:.35rem 0;padding:.3rem .5rem;border-radius:6px;background:rgba(201,168,76,.06);border:1px solid rgba(201,168,76,.2)}
+.pick-widget .pick-label{color:var(--gold,#c9a84c);font-weight:600}
+.pick-widget .pick-btn{font:inherit;font-size:.7rem;padding:.2rem .55rem;border-radius:20px;border:1px solid rgba(201,168,76,.35);background:rgba(201,168,76,.1);color:var(--gold,#c9a84c);cursor:pointer}
+.pick-widget .pick-btn:hover{background:rgba(201,168,76,.2)}
+.pick-widget .pick-choice{color:var(--ink,#e8e8f0)}
+.pick-widget.pick-resolved.pick-correct{border-color:rgba(0,212,170,.35);background:rgba(0,212,170,.07)}
+.pick-widget.pick-resolved.pick-incorrect{border-color:rgba(255,60,60,.3);background:rgba(255,60,60,.06)}
+.pick-widget .pick-result{font-weight:700}
+.pick-widget.pick-correct .pick-result{color:var(--teal,#00d4aa)}
+.pick-widget.pick-incorrect .pick-result{color:#ff6b6b}
+.pick-widget .pick-prob{color:var(--smoke,#888);font-size:.68rem}
 @keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
 @keyframes scoreFlash{0%{background:rgba(201,168,76,.25)}60%{background:rgba(201,168,76,.12)}100%{background:transparent}}
 .score-flash{animation:scoreFlash .7s ease-out}
@@ -8672,6 +8686,25 @@ function buildJournalismQualitySection(){
   </div>`;
 }
 
+// Pick 'em cumulative stats (CC-CMD-2026-07-05-pick-em-ui TASK 4). Reads
+// totalMade/totalCorrect/accuracyRate from window._userState, already
+// populated by the existing fetchUserState() GET /user/state call -- no
+// new relay-calling mechanism. Reuses the Journalism Quality section's
+// own CSS classes so this needs zero new styling. Deliberately no
+// streak/current-run/consecutive-day element anywhere in this section.
+function buildPickEmStatsSection(){
+  const st = (typeof window !== 'undefined') ? window._userState : null;
+  const hasStats = st && (st.totalMade != null || st.totalCorrect != null || st.accuracyRate != null);
+  const body = hasStats
+    ? `<div class="jq-row"><span class="jq-k">made</span><span class="jq-v">${st.totalMade ?? 0}</span><span class="jq-k">correct</span><span class="jq-v">${st.totalCorrect ?? 0}</span><span class="jq-k">accuracy</span><span class="jq-v">${st.accuracyRate != null ? Math.round(st.accuracyRate) + '%' : '—'}</span></div>`
+    : `<span class="jq-empty">no picks yet — make one from any upcoming game card</span>`;
+  return `<div class="jq-quality-section pick-em-section">
+    <div class="jq-section-title">Pick 'em</div>
+    <div class="jq-section-sub">Your prediction record. Read-only.</div>
+    ${body}
+  </div>`;
+}
+
 function renderSetupBody(){
   const body = document.getElementById("setup-body");
   const intro = body.querySelector(".setup-intro");
@@ -8695,6 +8728,15 @@ function renderSetupBody(){
   existing.forEach(el=>el.remove());
   body.insertAdjacentHTML("beforeend", html);
   body.insertAdjacentHTML("beforeend", buildJournalismQualitySection());
+  body.insertAdjacentHTML("beforeend", buildPickEmStatsSection());
+  // Refresh from /user/state so stats reflect any picks resolved since the
+  // last fetch, then re-render this one section in place once it lands.
+  if (typeof fetchUserState === 'function') {
+    fetchUserState().then(() => {
+      const sec = body.querySelector(".pick-em-section");
+      if (sec && typeof buildPickEmStatsSection === 'function') sec.outerHTML = buildPickEmStatsSection();
+    }).catch(() => {});
+  }
 
   // Wire toggles
   body.querySelectorAll(".setup-svc").forEach(el=>{
@@ -10793,6 +10835,7 @@ function renderAll(skipUnchanged){
           ${(()=>{const _cs=buildCheapSeats(g);if(!_cs)return '';return `<div class="cheap-seats"><span class="cs-badge ${_cs.badgeClass}">${_cs.badge}</span><span class="cs-text">${_cs.text}</span></div>`;})()}
                     ${(()=>{const _ii=assessInjuryPriceImpact(g);if(!_ii)return '';return `<div class="injury-intel"><span class="ii-badge ${_ii.cls}">${_ii.badge}</span><span class="ii-text">${_ii.text}</span></div>`;})()}
           ${(()=>{ if(g._sport!=='UFL'||!g._epaLive?.lastPlay) return ''; return _buildUFLEpaHTML(g._epaLive); })()}
+          ${_circadian==='PREVIEW'&&typeof buildPickWidgetHTML==='function'?buildPickWidgetHTML(g,g.sport||sec.sport):''}
           <span class="card-tap-hint">tap for intel ›</span>
         </div>
         <div class="card-right">
@@ -23353,7 +23396,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-07-05a';
+  const SW_VERSION = '2026-07-05b';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -27519,17 +27562,121 @@ function getFieldUserId() {
 function _userDoRelay(path, method, body) {
   try {
     const userId = getFieldUserId();
-    if (!userId) return;
+    if (!userId) return Promise.resolve(null);
     const base = typeof V2_RELAY_BASE !== 'undefined'
       ? V2_RELAY_BASE : 'https://field-relay-nba.jeffunglesbee.workers.dev';
     const url = `${base}${path}?userId=${encodeURIComponent(userId)}`;
-    fetch(url, {
+    // Returns the parsed response body (or null on any failure) so callers
+    // that need an echoed value (e.g. pick_resolved's server-computed
+    // probability, CC-CMD-2026-07-05-pick-em-ui) can read it. Existing
+    // fire-and-forget callers (watch_open/series_game/peak_missed/init)
+    // never use the return value, so this is a backward-compatible
+    // extension, not a behavior change for them.
+    return fetch(url, {
       method,
       headers: { 'Content-Type': 'application/json' },
       body: body ? JSON.stringify(body) : undefined,
       keepalive: true,
-    }).catch(() => {}); // intentional swallow — analytics path, not critical
-  } catch(_) {}
+    }).then(r => r.ok ? r.json() : null).catch(() => null);
+  } catch(_) { return Promise.resolve(null); }
+}
+
+// ── Pick 'em (CC-CMD-2026-07-05-pick-em-ui) ──────────────────────────────────
+// First slice: pick affordance on pre-game cards, resolved at the same
+// point saveEspnFinal() already fires. Client never computes probability —
+// the resolver (already live on the relay) fills resolvedProbability/
+// probabilityLabel in server-side; the client only sends wasCorrect and
+// displays whatever comes back, verbatim.
+const PICKS_KEY = 'field_picks_v1';
+
+function _getPickCache() {
+  try { return JSON.parse(localStorage.getItem(PICKS_KEY) || '{}'); } catch(_) { return {}; }
+}
+function _savePickCache(cache) {
+  try { localStorage.setItem(PICKS_KEY, JSON.stringify(cache)); } catch(_) {}
+}
+
+// Tapping a team button in the pick widget. Fires pick_made via the
+// existing _userDoRelay helper (no new relay-calling mechanism) and
+// updates the card's own pick widget in place, matching pinGame()'s
+// direct-DOM-update convention rather than forcing a full re-render.
+function makePick(gameId, predictedWinner, sport) {
+  if (!gameId || !predictedWinner) return;
+  const cache = _getPickCache();
+  if (cache[gameId]) return; // already picked — no repick
+  cache[gameId] = {
+    predictedWinner, sport: sport || '',
+    madeAt: Date.now(), resolved: false,
+    wasCorrect: null, resolvedProbability: null, probabilityLabel: null,
+  };
+  _savePickCache(cache);
+  initUserDO();
+  _userDoRelay('/user/event', 'POST', { type: 'pick_made', gameId, sport: sport || '', predictedWinner });
+  const widget = document.querySelector(`.pick-widget[data-gameid="${CSS.escape(gameId)}"]`);
+  if (widget) widget.outerHTML = buildPickWidgetHTML({ _id: gameId, home: widget.dataset.home, away: widget.dataset.away }, sport);
+}
+
+// Renders the pick widget's current state for one game, read synchronously
+// from the local pick cache (server-authoritative /user/state isn't polled
+// continuously, per this CC-CMD's own design). Three states: no pick yet
+// (two team buttons), pick made but game not final (read-only), resolved
+// (correct/incorrect + the server-echoed probability label, verbatim).
+function buildPickWidgetHTML(g, sport) {
+  const gid = g._id || '';
+  if (!gid) return '';
+  const esc = s => String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+  const cache = _getPickCache();
+  const pick = cache[gid];
+  if (!pick) {
+    return `<div class="pick-widget" data-gameid="${esc(gid)}" data-home="${esc(g.home)}" data-away="${esc(g.away)}">
+      <span class="pick-label">🎯 Pick:</span>
+      <button class="pick-btn" onclick="event.stopPropagation();makePick('${esc(gid)}','${esc(g.away)}','${esc(sport)}')">${esc(g.away)}</button>
+      <button class="pick-btn" onclick="event.stopPropagation();makePick('${esc(gid)}','${esc(g.home)}','${esc(sport)}')">${esc(g.home)}</button>
+    </div>`;
+  }
+  if (!pick.resolved) {
+    return `<div class="pick-widget pick-made" data-gameid="${esc(gid)}" data-home="${esc(g.home)}" data-away="${esc(g.away)}">
+      <span class="pick-label">🎯 Your pick:</span> <span class="pick-choice">${esc(pick.predictedWinner)}</span>
+    </div>`;
+  }
+  const resultCls = pick.wasCorrect ? 'pick-correct' : 'pick-incorrect';
+  const resultIcon = pick.wasCorrect ? '✓' : '✗';
+  const probLine = (pick.resolvedProbability != null && pick.probabilityLabel)
+    ? `<span class="pick-prob">${esc(pick.probabilityLabel)}: ${esc(pick.resolvedProbability)}%</span>` : '';
+  return `<div class="pick-widget pick-resolved ${resultCls}" data-gameid="${esc(gid)}" data-home="${esc(g.home)}" data-away="${esc(g.away)}">
+    <span class="pick-label">🎯 ${esc(pick.predictedWinner)}</span> <span class="pick-result">${resultIcon}</span> ${probLine}
+  </div>`;
+}
+
+// Called from saveEspnFinal() (the established game-complete hook) via the
+// `id` it already resolves games by. Ties (no winner) are left unresolved
+// rather than guessed at -- the pick's predictedWinner is a team, not a
+// draw option, so there's no correct/incorrect answer to compute.
+function _resolvePickIfExists(gameId, game, eData) {
+  const cache = _getPickCache();
+  const pick = cache[gameId];
+  if (!pick || pick.resolved) return;
+  const homeScore = eData?.homeScore, awayScore = eData?.awayScore;
+  if (homeScore == null || awayScore == null) return;
+  if (homeScore === awayScore) return; // tie -- ambiguous, leave unresolved
+  const winner = awayScore > homeScore ? game.away : game.home;
+  const wasCorrect = pick.predictedWinner === winner;
+  pick.resolved = true;
+  pick.wasCorrect = wasCorrect;
+  _savePickCache(cache);
+  _userDoRelay('/user/event', 'POST', { type: 'pick_resolved', gameId, wasCorrect }).then(resp => {
+    if (!resp) return;
+    const cache2 = _getPickCache();
+    const p2 = cache2[gameId];
+    if (!p2) return;
+    if (resp.resolvedProbability != null) p2.resolvedProbability = resp.resolvedProbability;
+    if (resp.probabilityLabel) p2.probabilityLabel = resp.probabilityLabel;
+    _savePickCache(cache2);
+    try {
+      const widget = document.querySelector(`.pick-widget[data-gameid="${CSS.escape(gameId)}"]`);
+      if (widget) widget.outerHTML = buildPickWidgetHTML({ _id: gameId, home: widget.dataset.home, away: widget.dataset.away }, p2.sport);
+    } catch(_) {}
+  });
 }
 
 // ── initUserDO ───────────────────────────────────────────────────────────────
@@ -37518,6 +37665,12 @@ function saveEspnFinal(game, eData){
     const existing = JSON.parse(localStorage.getItem(FINALS_KEY)||'[]');
     const id = game._id || (game.home+game.away);
     if(existing.some(f=>f.id===id)) return; // already saved
+    // Pick 'em resolution (CC-CMD-2026-07-05-pick-em-ui TASK 2): fires at
+    // this exact existing game-complete hook, using the same `id` this
+    // function already resolves games by. No client-side probability
+    // computation — only wasCorrect is sent; the resolver fills in
+    // resolvedProbability/probabilityLabel server-side.
+    if (typeof _resolvePickIfExists === 'function') { try { _resolvePickIfExists(id, game, eData); } catch(_) {} }
     const dpKey2='field_drama_peak_'+(game._id||'');
     const dramaPeak=parseFloat(localStorage.getItem(dpKey2)||'0');
     // ── Drama persistence: POST summary to relay archive (CC-CMD-2026-06-19 / Prompt 11B)
