@@ -17357,10 +17357,30 @@ function mapV2ToESPN(fg) {
   // api-sports.io sometimes returns state:"pre" even when a game is live
   // (confirmed NBA Finals G2 2026-06-06: state="pre", clock="10:12", periodNum=2).
   // Detect live state from clock/periodNum presence when state is wrong.
-  const hasLiveClock = fg.clock && fg.clock !== '' && fg.clock !== '00:00';
+  //
+  // CC-CMD-2026-07-05-pickem-cfl-mlb-gaps TASK 1: this heuristic had the
+  // opposite false-positive for MLB, confirmed live via direct relay fetch
+  // (/v2/games?sport=mlb) -- a freshly-scheduled, genuinely pregame game
+  // returns state:"pre", periodNum:1, clock:"0:00" (single leading zero,
+  // not "00:00"), home/away score both 0 (not null). The old string-equality
+  // clock check (`fg.clock !== '00:00'`) let "0:00" through as a "live"
+  // clock, and separately `score != null` treated a valid 0 score as
+  // evidence of live play -- either alone flipped every pregame MLB game to
+  // state:"in" the moment the relay started tracking it, which excluded it
+  // from getCardCircadian's PREVIEW gate (used by the Pick 'em list) well
+  // before the game actually started. Parse the clock to total seconds so
+  // any zero-padding variant reads as "no elapsed time", and require a real
+  // (>0) score alongside periodNum -- both still correctly catch the
+  // original NBA Finals G2 case (clock "10:12" -> 622s > 0).
+  const clockSeconds = (() => {
+    if (!fg.clock) return null;
+    const parts = String(fg.clock).split(':').map(Number);
+    return parts.some(isNaN) ? null : parts.reduce((acc, v) => acc * 60 + v, 0);
+  })();
+  const hasLiveClock = clockSeconds != null && clockSeconds > 0;
+  const hasLiveScore = (fg.home?.score ?? 0) > 0 || (fg.away?.score ?? 0) > 0;
   const isActuallyLive = fg.state === 'live' ||
-    (fg.state !== 'final' && (hasLiveClock || (fg.periodNum != null && fg.periodNum > 0 &&
-      (fg.home?.score != null || fg.away?.score != null))));
+    (fg.state !== 'final' && (hasLiveClock || (fg.periodNum != null && fg.periodNum > 0 && hasLiveScore)));
   const state = fg.state==='final' ? 'post' : isActuallyLive ? 'in' : 'pre';
   // Guard: api-sports.io sometimes returns null scores for final games.
   // When both scores are null on a final, preserve previous values via merge guard
@@ -23503,7 +23523,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-07-05g';
+  const SW_VERSION = '2026-07-05h';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -40532,7 +40552,29 @@ function checkForNewFinals(){
       const eData = Object.values(espnScores).find(v=>
         (v.homeName||'').toLowerCase().replace(/[^a-z]/g,'').endsWith(home)
       );
-      if(!eData || eData.state !== 'post') return;
+      if(!eData || eData.state !== 'post') {
+        // CFL fallback (CC-CMD-2026-07-05-pickem-cfl-mlb-gaps TASK 2):
+        // loadCFLScoreboard() fetches once (no recurring poll) and sets
+        // state/homeScore/awayScore directly on the game object rather
+        // than feeding espnScores/_scoresBySource, so the primary match
+        // above can never succeed for CFL -- confirmed live: a CFL pick's
+        // "eventual win probability" never displayed because
+        // _resolvePickIfExists() is only ever called from this function,
+        // which never saw a CFL game as final. Scoped strictly to the CFL
+        // section so every other sport's existing espnScores-based path is
+        // untouched. Catches a CFL game that's already final by the time
+        // its one-time fetch runs (or on a later page load after the game
+        // has ended) -- it cannot catch a live mid-session transition,
+        // since CFL data itself never refreshes after that one fetch.
+        if ((sec.sport||'') === 'Canadian Football (CFL)' && game.state === 'post') {
+          if(_seenFinals.has(game._id)) return;
+          _seenFinals.add(game._id);
+          _finalizedAt[game._id] = Date.now();
+          saveEspnFinal(game, game); // game object already carries homeScore/awayScore
+          renderNightOwlRecap().catch(e=>captureFieldError('night-owl',e,false));
+        }
+        return;
+      }
       if(_seenFinals.has(game._id)) return;
       _seenFinals.add(game._id);
       _finalizedAt[game._id] = Date.now();
