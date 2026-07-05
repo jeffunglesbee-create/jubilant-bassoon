@@ -1,0 +1,72 @@
+name: Pick 'em Coverage Check
+# Fast, non-visual verification for CC-CMD-2026-07-05-pickem-coverage-check:
+# TASK 1 ports getCardCircadian()'s exact logic against real live data for
+# every sport (pure-data, no rendering). TASK 2 uses jsdom to exercise
+# makePick()/buildPickWidgetHTML() against a real game per sport (DOM-only,
+# no full browser). No Playwright needed for either.
+
+on:
+  push:
+    paths: ['outbox/.trigger-pickem-coverage-check']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install jsdom (TASK 2 only)
+        run: npm install jsdom
+
+      - name: Run TASK 1 -- pure-data circadian coverage check
+        id: task1
+        continue-on-error: true
+        run: node pickem_circadian_coverage_check.js | tee outbox/.task1-output.txt
+
+      - name: Run TASK 2 -- jsdom post-pick display check
+        id: task2
+        continue-on-error: true
+        run: node pickem_jsdom_display_check.js | tee outbox/.task2-output.txt
+
+      - name: Combine results
+        run: |
+          TS=$(date -u +%Y-%m-%dT%H%MZ)
+          OUT="outbox/pickem-coverage-check-${TS}.txt"
+          {
+            cat outbox/.task1-output.txt
+            echo ""
+            echo "----------------------------------------"
+            echo ""
+            cat outbox/.task2-output.txt
+          } > "$OUT"
+          rm -f outbox/.task1-output.txt outbox/.task2-output.txt
+          echo "COMBINED_OUT=$OUT" >> "$GITHUB_ENV"
+
+      - name: Fail the job if either task failed
+        if: steps.task1.outcome == 'failure' || steps.task2.outcome == 'failure'
+        run: exit 1
+
+      - name: Commit results
+        if: always()
+        run: |
+          git config user.email "probe@field"
+          git config user.name "Pick 'em Coverage Check"
+          git add outbox/pickem-coverage-check-*.txt
+          git status --short
+          if git diff --cached --quiet; then
+            echo "Nothing to commit"
+            exit 0
+          fi
+          git commit -m "pickem coverage check result [skip ci]"
+          for i in 1 2 3; do
+            git pull --rebase --autostash origin main && git push origin main && break
+            sleep $((i * 5))
+          done
