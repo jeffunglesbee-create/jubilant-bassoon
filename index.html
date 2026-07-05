@@ -31906,6 +31906,12 @@ function renderPickEmSection() {
   const games = [];
   (allData?.sports || []).forEach(sec => {
     (sec.games || []).forEach(g => {
+      // Same ID-assignment convention renderAll's own per-card loop uses
+      // (index.html ~10831) -- games outside the main feed's current
+      // filter (activeFilter/myTeamsFilter/etc.) may never have passed
+      // through that loop, so g._id can genuinely be unset here. Assign
+      // before any circadian computation, matching renderAll's own order.
+      if (!g._id) g._id = "g" + (++_gid);
       const _circEData = typeof findESPNScore === 'function' ? findESPNScore(g) : null;
       const _circInput = { state: (_circEData ? _circEData.state : null) ?? g.state ?? null, status: g.status, _aflComplete: g._aflComplete, _id: g._id };
       if (typeof getCardCircadian === 'function' && getCardCircadian(_circInput) === 'PREVIEW') {

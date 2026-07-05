@@ -99,13 +99,19 @@ const OUT = `outbox/pickem-surface-probe-${TS}.txt`;
   }
 
   // --- Confirm exiting the mode restores the main feed ---
-  await page.click('#pickem-back-pill').catch(() => {});
+  // #pickem-back-pill is display:none by default, only shown via
+  // @media(max-width:1199px) -- mirrors WC/Journalism's own established
+  // mobile-only back-pill convention exactly (verified: .jrn-back-pill and
+  // .wc-back-pill are both gated the same way), so it's correctly
+  // invisible on this runner's desktop viewport. The universally-correct
+  // exit path at any viewport is re-clicking the nav-link (a true toggle).
+  await page.click('#pickem-nav-link');
   await page.waitForTimeout(300);
   const afterExit = await page.evaluate(() => ({
     pickemModeActive: document.body.classList.contains('pickem-mode'),
     mainComputedDisplay: document.querySelector('.main') ? getComputedStyle(document.querySelector('.main')).display : null,
   }));
-  log('State after exiting via back-pill: ' + JSON.stringify(afterExit));
+  log('State after exiting via nav-link toggle: ' + JSON.stringify(afterExit));
   ok = ok && afterExit.pickemModeActive === false && afterExit.mainComputedDisplay !== 'none';
 
   log('');
