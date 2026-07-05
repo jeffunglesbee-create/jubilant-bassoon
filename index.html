@@ -11066,10 +11066,27 @@ function renderAll(skipUnchanged){
     e.preventDefault();
     if(typeof toggleWCView==='function') toggleWCView();
   });
-  document.getElementById('pickem-nav-link')?.addEventListener('click', e => {
-    e.preventDefault();
-    if(typeof togglePickEmView==='function') togglePickEmView();
-  });
+  // Guarded against re-registration: this whole block sits inside
+  // renderAll(), which re-runs every poll cycle (~15-30s) and on filter
+  // changes. document.getElementById('pickem-nav-link') returns the SAME
+  // persistent DOM node every time (nav.controls is never replaced by
+  // applyMainHTML), but each addEventListener call here uses a fresh
+  // inline arrow function -- a new reference each time -- so the browser
+  // cannot de-duplicate them the way it would for the same function
+  // reference. Without this guard, listeners silently accumulate the
+  // longer a session stays open, and a single click can fire the toggle
+  // multiple times, net-cancelling back to the original state (found via
+  // this CC-CMD's own live verification, CC-CMD-2026-07-05-pick-em-
+  // reconcile -- confirmed flaky on/off behavior across two live runs).
+  // The same latent issue affects desk-jump-link/jrn-nav-link/wc-nav-link
+  // above (out of this CC-CMD's scope to fix), flagged in its outbox.
+  if (!window._pickemNavWired) {
+    window._pickemNavWired = true;
+    document.getElementById('pickem-nav-link')?.addEventListener('click', e => {
+      e.preventDefault();
+      if(typeof togglePickEmView==='function') togglePickEmView();
+    });
+  }
   setTimeout(injectJ1J4Badges, 300);    // J1/J4: Anti-Hype + Scout's Pick per-card badges
   setTimeout(()=>initFIELDBrief(sports).then(()=>renderAmbientPanel()).catch(e=>{
     captureFieldError('initFIELDBrief',e,false);
@@ -23469,7 +23486,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-07-05d';
+  const SW_VERSION = '2026-07-05e';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
