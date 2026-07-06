@@ -35603,7 +35603,7 @@ async function injectLineupEdge(card, eData, sport) {
   const homeTrailing = homeScore < awayScore;
   const awayTrailing = awayScore < homeScore;
   const trailingHasEdge = (homeTrailing && rai.edge > 5) || (awayTrailing && rai.edge < -5);
-  if (trailingHasEdge && isLateCloseGame({ _section: sport }, sport)) {
+  if (trailingHasEdge && isLateCloseGame({ _section: sport }, eData, sport)) {
     const liveEl = card.querySelector('.live-indicator,.live-dot');
     if (liveEl) {
       const cb = document.createElement('span');

@@ -6336,5 +6336,10 @@ assert('A-GAPFIX-1 — zero eData.status reads remain (all renamed to eData.stat
   !html.match(/eData\.status/),
   'Per CC-CMD-2026-07-05-gap-sweep-fixes TASK 1: every espnScores writer sets .state, never .status -- any eData.status read is permanently false/undefined. All 5 real occurrences (buildLayer3Rules, detectAndStoreStoryMoment x3, buildComebackProbability) must be renamed to eData.state, not just the 4 the CC-CMD doc explicitly cited (its own probe window missed 2 in detectAndStoreStoryMoment).');
 
+assert('A-GAPFIX-2 — isLateCloseGame call passes real eData, not a re-passed sport string',
+  !!html.match(/isLateCloseGame\(\{ _section: sport \}, eData, sport\)/) &&
+  !html.match(/isLateCloseGame\(\{ _section: sport \}, sport\)\)/),
+  'Per TASK 2: the CLOSING UNIT badge call was missing its eData argument -- sport (a string) was passed where eData belongs, so ed.state inside isLateCloseGame was always undefined and the badge could never render. g is confirmed unused in the function body, so only the missing eData argument needed adding.');
+
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);
