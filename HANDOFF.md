@@ -1,5 +1,45 @@
 # FIELD HANDOFF
 
+## MID-SESSION UPDATE — 2026-07-05 (gap-sweep fixes shipped, 100/100)
+
+**CLIENT HEAD: 6e48c95.** SW_VERSION `2026-07-05j`, confirmed synced and
+deployed. **Smoke: 890/0.**
+
+**All 5 findings from the gap-sweep re-run (below) fixed and live-verified.**
+Full detail: `docs/outbox/cc-gap-sweep-fixes-2026-07-05.md`. Five
+single-concern commits, one deploy batch:
+
+1. `eData.status` → `eData.state` (5 real occurrences across
+   `buildLayer3Rules`/`detectAndStoreStoryMoment`/`buildComebackProbability`
+   — the CC-CMD's own probe window only caught 4; re-grepped and found 2
+   more in the same function before its own DONE CONDITION would have
+   been violated). Live-verified against a real live MLB game (Royals @
+   Phillies, 9th inning): fixed gates now correctly open/close where the
+   old `.status` checks were permanently stuck.
+2. `isLateCloseGame`'s missing `eData` argument — live-verified against
+   the same real game: fixed call returns `true`, old buggy call
+   reproducibly returns `false`. The CLOSING UNIT badge can now actually
+   render.
+3. `seriesKey` sorted at the write site (home/away-order-independent) —
+   verified against the real cited NBA Finals 2026 Spurs/Knicks matchup:
+   G1 and G3 (home court flipped) now produce the identical key.
+4. `[SERIES CONTEXT]` Night Owl injection built for `seriesLedger`
+   (written since the feature shipped, never read until now) — 3-way
+   backward-compat lookup verified against a correctly-reconstructed
+   legacy key (note: the CC-CMD doc's own prose example key didn't match
+   what the real pre-fix formula actually produces — computed it
+   directly rather than trusting the shorthand).
+5. `recapSnippet` wired into `[MISSED PEAKS]` — confirmed via grep no
+   longer a dead write.
+
+**Not verified end-to-end** (honestly noted, not skipped): the actual
+AI-generated Night Owl brief text for `[SERIES CONTEXT]`/the wired
+`recapSnippet` requires real accumulated user history not available in a
+fresh test session — the injection mechanisms themselves (key
+construction, lookup, guard structure) are confirmed correct.
+
+---
+
 ## MID-SESSION UPDATE — 2026-07-05 (client gap sweep re-run, research only)
 
 **CLIENT HEAD: 523d7f7.** No index.html/sw.js changes this round —
