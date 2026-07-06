@@ -1,5 +1,47 @@
 # FIELD HANDOFF
 
+## MID-SESSION UPDATE — 2026-07-06 (wiki trending client consume, race condition caught pre-ship, 100/100)
+
+**CLIENT HEAD: f486bfc.** SW_VERSION `2026-07-06e`, confirmed synced and
+deployed (deploy-gate run `28815827281`, success). **Smoke: 890/0.**
+
+**Replaced per-team direct Wikimedia fetches with the relay's bulk
+`/wiki/trending` endpoint.** Full detail:
+`docs/outbox/cc-wiki-trending-client-consume-2026-07-06.md`. Confirmed the
+relay dependency was actually live before touching anything (browser-tool
+navigation to the real endpoint — direct `curl` is proxy-blocked for
+`*.workers.dev` in this sandbox — returned real `spikeRatio`/`trending`
+data for ~85 real teams). `fetchAllWikiTrending()` now makes one bulk fetch
+per page load; `fetchWikiSignificance(teamName)` resolves from that cache.
+Removed `WIKI_TITLES` (40+ team map) and the old per-team
+fetch/localStorage-cache logic — the relay owns the mapping now.
+
+**Two things found and fixed beyond the CC-CMD's literal scope**, both
+necessary to avoid a regression or a missed done-condition:
+
+1. A third, undocumented consumer (`buildCompoundPrompt`'s compound
+   editorial journalism prompt) read `_wikiCache`/`WIKI_TITLES` directly,
+   not through `fetchWikiSignificance`. Removing those without updating
+   this site would have silently and permanently disabled the
+   `[WIKI TRENDING]`/`[WIKI LOW]` editorial tag (caught by its own
+   try/catch — no crash, just silent feature loss). Updated to read the
+   new `_wikiTrendingCache` directly by team name.
+2. Real network inspection (Performance API against the live page, not
+   just code review) caught a race condition in the CC-CMD's own literal
+   code sample: `injectWikiChips()` calls `fetchWikiSignificance` for home
+   and away concurrently via `Promise.all`; a plain
+   `if(_wikiTrendingCache) return` guard doesn't stop both concurrent
+   calls from firing their own fetch before either resolves. First test
+   showed 2 relay hits, not 1. Fixed by caching the in-flight promise.
+
+**Verified end-to-end**: 0 `wikimedia.org` requests, exactly 1 relay
+request, a real trending chip rendered (`Kansas City Royals (+150% on
+Wikipedia)`, matching live relay data), and the second fixed consumer
+(`buildCompoundPrompt`) independently confirmed to emit the correct
+`[WIKI TRENDING]` text for the same real data.
+
+---
+
 ## MID-SESSION UPDATE — 2026-07-06 (zero-change render fast path, critical bug caught pre-ship, 100/100)
 
 **CLIENT HEAD: a1ea9f8.** SW_VERSION `2026-07-06d`, confirmed synced and
