@@ -38481,7 +38481,8 @@ async function fetchNightOwlFromClaude(topGame){
       if (missed.length) {
         _owlStatCtx += '\n  [MISSED PEAKS] Viewer missed ' + missed.length +
           ' high-drama game(s): ' +
-          missed.slice(0, 3).map(m => m.gameId + ' (drama ' + m.peakDrama + ')').join(', ') +
+          missed.slice(0, 3).map(m => m.gameId + ' (drama ' + m.peakDrama + ')' +
+            (m.recapSnippet ? ' — ' + m.recapSnippet : '')).join(', ') +
           '. Lead with what they missed.';
       }
     }
