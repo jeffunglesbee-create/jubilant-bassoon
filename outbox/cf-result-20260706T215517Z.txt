@@ -1,0 +1,22 @@
+=== CF API Probe [20260706T215517Z] ===
+Request: GET https://api.cloudflare.com/client/v4/accounts/b57e9af57ab46c52ca9215804e689c29/storage/kv/namespaces/46b6d8db59ea49eca8b1d89c576a6158/keys
+
+{
+    "result": [
+        {
+            "name": "sub:aHR0cHM6Ly93ZWIucHVzaC5hcHBsZS5j",
+            "expiration": 1812370721
+        },
+        {
+            "name": "sub:aHR0cHM6Ly93bnMyLWNoMXAubm90aWZ5",
+            "expiration": 1811854918
+        }
+    ],
+    "errors": [],
+    "messages": [],
+    "success": true,
+    "result_info": {
+        "count": 2,
+        "cursor": ""
+    }
+}
