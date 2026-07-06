@@ -10513,6 +10513,24 @@ function applyMainHTML(html){
   tmp.innerHTML = html;
   const anchor = main.querySelector('[data-lcp-anchor]');
   const firstNewCard = tmp.querySelector('.game-card');
+  // Captured BEFORE the morph below can run -- the morph unconditionally
+  // MOVES `anchor` out of `main` into `tmp` via firstNewCard.replaceWith(anchor)
+  // (a real DOM node can only have one parent; inserting it into tmp detaches
+  // it from main), every single time an anchor+firstNewCard pair exists --
+  // which, per this function's own design ("Preserve data-lcp-anchor through
+  // all subsequent morph cycles" / "anchor stays as the same DOM node across
+  // all of them"), is effectively every render for the page's entire
+  // lifetime, not just the first paint. If the zero-change fast path below
+  // (CC-CMD-2026-07-06-zero-change-render-fast-path) were to trigger after
+  // this move, `main` would be missing the anchor's entire subtree
+  // permanently (the only place that reattaches everything from tmp is the
+  // replaceChildren commit the fast path skips) -- confirmed via real live
+  // instrumentation: an otherwise-correct true no-op pass with an active
+  // anchor left `main` with zero game cards after the "successful" skip.
+  // main.querySelector('[data-lcp-anchor]') checked AFTER the morph (as the
+  // fast path's own guard does) cannot catch this, since by then it
+  // correctly returns null -- the anchor really did just move out of main.
+  const anchorMorphWillRun = !!(anchor && firstNewCard);
   if (anchor && firstNewCard) {
     try {
       // Morph the anchor to match firstNewCard, then swap them.
@@ -10551,24 +10569,66 @@ function applyMainHTML(html){
   // already produces a different computed HTML string, so this cannot
   // silently skip a card that actually needs updating. Only genuinely
   // identical output gets its DOM node preserved.
+  // anyCardChanged / newCardIds (CC-CMD-2026-07-06-zero-change-render-fast-
+  // path): bookkeeping added ALONGSIDE the existing reconciliation loop
+  // below, not a second loop -- the card-matching/reuse decision itself
+  // (the `existing.outerHTML === newCard.outerHTML` check and
+  // `newCard.replaceWith(existing)`) is untouched, so there is exactly one
+  // place that decides whether a card is reused, never two copies that
+  // could drift out of sync.
+  let anyCardChanged = false;
   try {
     const existingCards = new Map();
     main.querySelectorAll('[data-gameid]').forEach(el => {
       if (!existingCards.has(el.dataset.gameid)) existingCards.set(el.dataset.gameid, el);
     });
+    const newCardIds = new Set();
     tmp.querySelectorAll('[data-gameid]').forEach(newCard => {
       if (newCard.hasAttribute('data-lcp-anchor')) return; // already handled above
       const gid = newCard.dataset.gameid;
+      newCardIds.add(gid);
       const existing = existingCards.get(gid);
       if (existing && existing.outerHTML === newCard.outerHTML) {
         newCard.replaceWith(existing);
+      } else {
+        anyCardChanged = true;
       }
     });
+    // A card existed before and is now gone entirely -- also counts as a real change.
+    if (!anyCardChanged) {
+      for (const gid of existingCards.keys()) {
+        if (!newCardIds.has(gid)) { anyCardChanged = true; break; }
+      }
+    }
   } catch (e) {
     // Defensive: reconciliation is a pure optimization -- any failure
     // here must never block the render. Fall through to the normal
     // replaceChildren path below with tmp's (all-new) children.
     captureFieldError?.('card-dom-reconciliation', e, false);
+    // anyCardChanged's true state is unknown if the loop threw partway
+    // through -- force it true so the fast path below is never taken on
+    // an error, never silently skipping a DOM update the caller expects.
+    anyCardChanged = true;
+  }
+  // Zero-change fast path (CC-CMD-2026-07-06-zero-change-render-fast-path):
+  // every card was just proven identical and reused above, and section
+  // count in tmp matches main exactly -- the DOM is already correct.
+  // Skip the commit entirely rather than force a no-op detach/reattach of
+  // every section wrapper. main.children.length === tmp.children.length
+  // guards against a section being added or removed entirely (e.g. a
+  // sport with zero games today disappearing from the list) -- that's a
+  // real structural change even if every remaining card is unchanged, and
+  // must still commit. !anchorMorphWillRun is required in addition to the
+  // main.querySelector('[data-lcp-anchor]') check below: that check runs
+  // AFTER the morph above has already moved the anchor out of main (see
+  // anchorMorphWillRun's own comment), so it alone cannot detect that main
+  // has already been mutated and a commit is required to reattach it.
+  if (!anyCardChanged
+      && !anchorMorphWillRun
+      && !(main.querySelector('[data-lcp-anchor]') && !tmp.querySelector('[data-lcp-anchor]'))
+      && main.children.length === tmp.children.length) {
+    if (savedNewspaper) main.prepend(savedNewspaper);
+    return;
   }
   // Commit: replace main's children with tmp's children. If the morph above
   // succeeded, the morphed anchor is among tmp's children; if not, plain new
@@ -23585,7 +23645,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-07-06c';
+  const SW_VERSION = '2026-07-06d';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
