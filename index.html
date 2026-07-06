@@ -10751,7 +10751,36 @@ function updateConflictChip() {
 // (non-scheduleRenderAll) renderAll() call, which clears the whole cache
 // unconditionally -- see renderAll's own top for why this is safe and
 // sufficient without touching MY_TEAMS/activeFilter/viewport directly.
-const _cardStringCache = new Map(); // gameId -> {fingerprint, html, circInput}
+const _cardStringCache = new Map(); // gameId -> {fingerprint, html, circInput, circadianTier}
+
+// Circadian sort order (CC-CMD-2026-07-04-circadian-card-sort-order):
+// the original spec's "PRIME first, then NIGHT, then PREVIEW, then LATE".
+// Hoisted to module scope (CC-CMD-2026-07-06-reduce-rerender-overhead) --
+// was being reallocated once per sport section on every render for no
+// reason; it never changes at runtime.
+const _CIRCADIAN_SORT_RANK = { PRIME: 0, NIGHT: 1, PREVIEW: 2, LATE: 3 };
+
+// Cache-first circadian tier lookup for the sort comparator
+// (CC-CMD-2026-07-06-reduce-rerender-overhead). _cardStringCache already
+// skips re-building a card's HTML when nothing about that game changed,
+// but the sort comparator ran BEFORE that cache check and unconditionally
+// recomputed findESPNScore()+getCardCircadian() for every game on every
+// render. This reads the same cache -- populated by the PREVIOUS render
+// pass, since the current pass's cache write happens later, inside the
+// cards.map loop below -- and reuses the stored circadianTier when this
+// game's fingerprint is unchanged, falling back to a full recompute
+// otherwise. Same staleness characteristics as the existing HTML cache
+// (fingerprint covers g's own fields, not a separately cross-referenced
+// live-score object) -- not a new tradeoff, just extending the same one.
+// The .sort() call itself always still runs in full; only the per-game
+// tier computation is cached.
+function getCachedCircadianTier(g) {
+  const cached = _cardStringCache.get(g._id);
+  const fp = JSON.stringify(g);
+  if (cached && cached.fingerprint === fp) return cached.circadianTier;
+  const eData = typeof findESPNScore === 'function' ? findESPNScore(g) : null;
+  return getCardCircadian({ state: eData ? eData.state : null, status: g.status, _aflComplete: g._aflComplete, _id: g._id });
+}
 
 // Shared, de-duped nav-link click attachment (CC-CMD-2026-07-05-nav-mode-
 // consolidate). renderAll() re-runs every ~15-30s poll cycle and on filter
@@ -10775,30 +10804,34 @@ function attachNavLinkOnce(id, handler) {
   });
 }
 
+// Fix: patch _homeAbbr eagerly on every renderAll so badges never miss it.
+// nhlAnalyticsInit is also called at T+4500ms but that's too late for early renders.
+// MLB: two sources — API games (homeTeam=abbr) + mlbRaw overrides (home=full name, no homeTeam).
+// _MLB_NAME_ABBR provides full-name→abbr for mlbRaw games using FIELD canonical abbrevs (MLB_TEAM_RSN keys).
+// Hoisted to module scope (CC-CMD-2026-07-06-reduce-rerender-overhead) --
+// a pure static lookup table that never changes at runtime was being
+// reallocated on every single renderAll() call for no reason.
+const _MLB_NAME_ABBR = {
+  'New York Yankees':'NYY','Baltimore Orioles':'BAL','Boston Red Sox':'BOS',
+  'Tampa Bay Rays':'TBR','Toronto Blue Jays':'TOR',
+  'Chicago White Sox':'CHW','Cleveland Guardians':'CLE','Detroit Tigers':'DET',
+  'Kansas City Royals':'KCR','Minnesota Twins':'MIN',
+  'Houston Astros':'HOU','Los Angeles Angels':'LAA',
+  'Athletics':'OAK','Oakland Athletics':'OAK','Seattle Mariners':'SEA','Texas Rangers':'TEX',
+  'Atlanta Braves':'ATL','Miami Marlins':'MIA','New York Mets':'NYM',
+  'Philadelphia Phillies':'PHI','Washington Nationals':'WSN',
+  'Chicago Cubs':'CHC','Cincinnati Reds':'CIN','Milwaukee Brewers':'MIL',
+  'Pittsburgh Pirates':'PIT','St. Louis Cardinals':'STL',
+  'Arizona Diamondbacks':'ARI','Colorado Rockies':'COL',
+  'Los Angeles Dodgers':'LAD','San Diego Padres':'SDP','San Francisco Giants':'SFG',
+};
+
 function renderAll(skipUnchanged){
   if (!skipUnchanged) _cardStringCache.clear();
   if(!allData) return;
   const main=document.getElementById("main");
   const sports=allData.sports||[];
 
-  // Fix: patch _homeAbbr eagerly on every renderAll so badges never miss it.
-  // nhlAnalyticsInit is also called at T+4500ms but that's too late for early renders.
-  // MLB: two sources — API games (homeTeam=abbr) + mlbRaw overrides (home=full name, no homeTeam).
-  // _MLB_NAME_ABBR provides full-name→abbr for mlbRaw games using FIELD canonical abbrevs (MLB_TEAM_RSN keys).
-  const _MLB_NAME_ABBR = {
-    'New York Yankees':'NYY','Baltimore Orioles':'BAL','Boston Red Sox':'BOS',
-    'Tampa Bay Rays':'TBR','Toronto Blue Jays':'TOR',
-    'Chicago White Sox':'CHW','Cleveland Guardians':'CLE','Detroit Tigers':'DET',
-    'Kansas City Royals':'KCR','Minnesota Twins':'MIN',
-    'Houston Astros':'HOU','Los Angeles Angels':'LAA',
-    'Athletics':'OAK','Oakland Athletics':'OAK','Seattle Mariners':'SEA','Texas Rangers':'TEX',
-    'Atlanta Braves':'ATL','Miami Marlins':'MIA','New York Mets':'NYM',
-    'Philadelphia Phillies':'PHI','Washington Nationals':'WSN',
-    'Chicago Cubs':'CHC','Cincinnati Reds':'CIN','Milwaukee Brewers':'MIL',
-    'Pittsburgh Pirates':'PIT','St. Louis Cardinals':'STL',
-    'Arizona Diamondbacks':'ARI','Colorado Rockies':'COL',
-    'Los Angeles Dodgers':'LAD','San Diego Padres':'SDP','San Francisco Giants':'SFG',
-  };
   sports.forEach(sec => {
     const sport = (sec.sport||'').toLowerCase();
     if (sport.includes('nhl') || sport.includes('hockey')) {
@@ -10851,13 +10884,15 @@ function renderAll(skipUnchanged){
     // section; it should only be reordered relative to other games in
     // its OWN section. Stable sort (spec-guaranteed since ES2019):
     // games within the same tier keep their existing relative order,
-    // only cross-tier ordering changes.
-    const _CIRCADIAN_SORT_RANK = { PRIME: 0, NIGHT: 1, PREVIEW: 2, LATE: 3 };
+    // only cross-tier ordering changes. This .sort() call always runs in
+    // full every render (relative ordering can change even when no
+    // individual card's fingerprint changed, e.g. a different game
+    // entering PRIME as its start time approaches) -- only the per-game
+    // tier computation itself is cache-first (getCachedCircadianTier,
+    // CC-CMD-2026-07-06-reduce-rerender-overhead).
     games.sort((a, b) => {
-      const aEData = typeof findESPNScore === 'function' ? findESPNScore(a) : null;
-      const bEData = typeof findESPNScore === 'function' ? findESPNScore(b) : null;
-      const aTier = getCardCircadian({ state: aEData ? aEData.state : null, status: a.status, _aflComplete: a._aflComplete, _id: a._id });
-      const bTier = getCardCircadian({ state: bEData ? bEData.state : null, status: b.status, _aflComplete: b._aflComplete, _id: b._id });
+      const aTier = getCachedCircadianTier(a);
+      const bTier = getCachedCircadianTier(b);
       return (_CIRCADIAN_SORT_RANK[aTier] ?? 4) - (_CIRCADIAN_SORT_RANK[bTier] ?? 4);
     });
     const icon=SPORT_ICONS[sec.sport]||SPORT_ICONS.default;
@@ -10944,7 +10979,7 @@ function renderAll(skipUnchanged){
           ${FD_LEAGUE_MAP[sec.sport]||ESPN_STANDINGS_MAP[sec.sport]?`<button class="standings-btn" onclick="event.stopPropagation();toggleStandings(this,'${sec.sport}','2025')" title="Show ${(FD_LEAGUE_MAP[sec.sport]||ESPN_STANDINGS_MAP[sec.sport]?.isSoccer)?'table':'standings'}">▼ ${(FD_LEAGUE_MAP[sec.sport]||ESPN_STANDINGS_MAP[sec.sport]?.isSoccer)?'Table':'Standings'}</button>`:""}
         </div>
       </div>`;
-      _cardStringCache.set(g._id, {fingerprint: _fingerprint, html: _html, circInput: _circInput});
+      _cardStringCache.set(g._id, {fingerprint: _fingerprint, html: _html, circInput: _circInput, circadianTier: _circadian});
       return _html;
     }).join("");
     return `<div class="sport-section" data-sport="${sec.sport}" style="--i:${si}">
@@ -23550,7 +23585,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-07-06b';
+  const SW_VERSION = '2026-07-06c';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
