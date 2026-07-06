@@ -1,5 +1,40 @@
 # FIELD HANDOFF
 
+## MID-SESSION UPDATE — 2026-07-06 (renderAll re-render overhead reduced, 100/100)
+
+**CLIENT HEAD: afb06b3.** SW_VERSION `2026-07-06c`, confirmed synced and
+deployed. **Smoke: 890/0.**
+
+**Two renderAll performance findings fixed.** Full detail:
+`docs/outbox/cc-reduce-rerender-overhead-2026-07-06.md`.
+
+1. `_MLB_NAME_ABBR` (30 pairs, rebuilt every `renderAll` call) and
+   `_CIRCADIAN_SORT_RANK` (rebuilt once per sport section, every render)
+   hoisted to module scope — byte-identical content, confirmed via
+   `git diff`.
+2. The sort comparator was calling `findESPNScore`+`getCardCircadian` for
+   every game on every render, ahead of the existing per-card HTML cache
+   check. Added `circadianTier` to that cache's entry shape and a
+   cache-first `getCachedCircadianTier(g)` helper the comparator now uses.
+   `.sort()` itself still runs unconditionally every render (only the
+   per-game tier computation is cached) — confirmed via diff, not just
+   description.
+
+**Verified twice via real instrumentation** (never touched committed
+source): an isolated copy-based test against 11 real live games (11/11
+cache hits when unchanged, correctly 1 miss when one game was mutated),
+and — after deploying — a test against the actual shipped function and
+cache. That second test's first attempt showed 12 "misses," which looked
+like a bug at first; investigated rather than assumed (Rule 77) and found
+it was correct behavior — real background polling had genuinely changed
+game data (a golf leaderboard entry's fingerprint had grown from 356 to
+980 characters) in the real gap between page boot and the check. A
+synchronous, zero-time-gap re-test against the same real code then showed
+0 recompute calls across all 12 real games — 100% cache-hit rate when
+nothing has actually changed.
+
+---
+
 ## MID-SESSION UPDATE — 2026-07-06 (wentToOT client filter wired, 100/100)
 
 **CLIENT HEAD: 991cce3.** SW_VERSION `2026-07-06b`, confirmed synced and
