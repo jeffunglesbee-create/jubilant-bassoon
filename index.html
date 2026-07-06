@@ -23550,7 +23550,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-07-05i';
+  const SW_VERSION = '2026-07-05j';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -26664,7 +26664,7 @@ function buildLayer3Rules(games) {
           const xtKey   = isXI ? 'EXTRA INNINGS' : isET ? 'EXTRA TIME' : 'OVERTIME';
           rules.push('- '+xtKey+' ['+name+']: Extra period in progress. Lead with "In '+xtLabel+'".');
         }
-        if (eData.status==='in' && typeof getStatisticalExtremes==='function') {
+        if (eData.state==='in' && typeof getStatisticalExtremes==='function') {
           const ext = getStatisticalExtremes(eData, sp).note;
           if (ext) rules.push('- EXTREME EVENT ['+name+']: '+ext+'. Feature this prominently.');
         }
@@ -39406,12 +39406,12 @@ function updateCardLifeStages() {
 // DO NOT INVENT: all events derived from espnScores delta (score/period changes)
 // No play-by-play API — just score + period detection.
 function detectAndStoreStoryMoment(gameId, eData, sport) {
-  if (!eData || eData.status === 'pre') return;
+  if (!eData || eData.state === 'pre') return;
   const prev = _prevEspnScores[gameId];
   const home = parseInt(eData.homeScore||0), away = parseInt(eData.awayScore||0);
   const period = eData.period || 0;
   const sp = (sport||'').toLowerCase();
-  const isFinal = eData.status === 'post';
+  const isFinal = eData.state === 'post';
   const now = Date.now();
   if (!_storyMoments[gameId]) _storyMoments[gameId] = [];
   const tape = _storyMoments[gameId];
@@ -39453,7 +39453,7 @@ function detectAndStoreStoryMoment(gameId, eData, sport) {
     if (isFinal && !prev.final) push(`Final: ${teamNick(eData.home)||'Home'} ${home}–${away} ${teamNick(eData.away)||'Away'}`);
   } else {
     // First detection: game is live
-    if (eData.status === 'in') push(`${teamNick(eData.home)||'Home'} ${home}–${away} ${teamNick(eData.away)||'Away'} · underway`);
+    if (eData.state === 'in') push(`${teamNick(eData.home)||'Home'} ${home}–${away} ${teamNick(eData.away)||'Away'} · underway`);
   }
   _prevEspnScores[gameId] = {homeScore: home, awayScore: away, period, final: isFinal};
   // ── S0 Event Bus emitter (polling path) ───────────────────────────────
@@ -39474,7 +39474,7 @@ function detectAndStoreStoryMoment(gameId, eData, sport) {
         period,
         periodLabel: eData.detail || '',
         clock:  eData.clock || '',
-        state:  isFinal ? 'post' : (eData.status === 'in' ? 'in' : 'pre'),
+        state:  isFinal ? 'post' : (eData.state === 'in' ? 'in' : 'pre'),
         isFinal,
         source: 'poll',
       });
@@ -39788,7 +39788,7 @@ function updatePinWidget() {
 // DO NOT INVENT: probability from real deficit × time remaining curves only.
 // No ML, no external data — pure mathematical approximation from game state.
 function buildComebackProbability(gameId, eData, sport) {
-  if (!eData || eData.status === 'post') return null;
+  if (!eData || eData.state === 'post') return null;
   const home = parseInt(eData.homeScore||0), away = parseInt(eData.awayScore||0);
   const margin = Math.abs(home - away);
   if (margin === 0) return 'Tied \u2014 anyone\u2019s game';
