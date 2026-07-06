@@ -779,9 +779,10 @@ assert('A152 — JQ wired: J5 Night Owl uses FIELD_PROSE_STYLE',
   html.includes("FIELD_PROSE_STYLE,") && html.includes("renderProseScore(s,'J5 Night Owl')"),
   'J5 Night Owl prompt must inject FIELD_PROSE_STYLE and score prose');
 
-assert('A153 — Wikimedia: WIKI_TITLES has 40+ teams',
-  (html.match(/WIKI_TITLES=\{[^}]+\}/s)?.[0]||'').split("'").length > 80,
-  'WIKI_TITLES should map 40+ teams across NBA/NHL/MLB/EPL');
+assert('A153 — Wikimedia: bulk relay fetch replaces per-team WIKI_TITLES mapping',
+  html.includes('fetchAllWikiTrending') && html.includes('/wiki/trending?date=')
+    && !html.includes('WIKI_TITLES') && !html.includes('wikimedia.org/api'),
+  'Client must consume the relay bulk endpoint, not hold its own team-to-wiki-title map or fetch wikimedia.org directly');
 
 assert('A154 — Wikimedia: wiki trending feeds compound prompt',
   html.includes('WIKI TRENDING') && html.includes('WIKI LOW'),

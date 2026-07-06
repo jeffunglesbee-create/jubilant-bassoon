@@ -23203,88 +23203,35 @@ const STREAMING_APPS = [
 ];
 
 // ── Wikimedia Pageviews — Cultural Significance Signal (Patent Defense #5) ────
-// Free, no auth, CORS-open. Detects when teams are trending on Wikipedia.
-// No sports app does this — it's organic cultural interest, not broadcast hype.
-const WIKI_TITLES={
-  // NBA
-  'New York Knicks':'New_York_Knicks','Cleveland Cavaliers':'Cleveland_Cavaliers',
-  'San Antonio Spurs':'San_Antonio_Spurs','Oklahoma City Thunder':'Oklahoma_City_Thunder',
-  'Boston Celtics':'Boston_Celtics','Milwaukee Bucks':'Milwaukee_Bucks',
-  'Indiana Pacers':'Indiana_Pacers','Miami Heat':'Miami_Heat',
-  'Philadelphia 76ers':'Philadelphia_76ers','Orlando Magic':'Orlando_Magic',
-  'Denver Nuggets':'Denver_Nuggets','Minnesota Timberwolves':'Minnesota_Timberwolves',
-  'Dallas Mavericks':'Dallas_Mavericks','Los Angeles Lakers':'Los_Angeles_Lakers',
-  'Golden State Warriors':'Golden_State_Warriors','Los Angeles Clippers':'Los_Angeles_Clippers',
-  'Phoenix Suns':'Phoenix_Suns','Sacramento Kings':'Sacramento_Kings',
-  'Memphis Grizzlies':'Memphis_Grizzlies','New Orleans Pelicans':'New_Orleans_Pelicans',
-  'Houston Rockets':'Houston_Rockets','Atlanta Hawks':'Atlanta_Hawks',
-  'Chicago Bulls':'Chicago_Bulls','Brooklyn Nets':'Brooklyn_Nets',
-  'Toronto Raptors':'Toronto_Raptors','Detroit Pistons':'Detroit_Pistons',
-  // NHL
-  'Carolina Hurricanes':'Carolina_Hurricanes','Montreal Canadiens':'Montreal_Canadiens',
-  'Vegas Golden Knights':'Vegas_Golden_Knights','Colorado Avalanche':'Colorado_Avalanche',
-  'Florida Panthers':'Florida_Panthers','New York Rangers':'New_York_Rangers',
-  'Dallas Stars':'Dallas_Stars','Edmonton Oilers':'Edmonton_Oilers',
-  'Boston Bruins':'Boston_Bruins','Toronto Maple Leafs':'Toronto_Maple_Leafs',
-  'Tampa Bay Lightning':'Tampa_Bay_Lightning','New York Islanders':'New_York_Islanders',
-  'Winnipeg Jets':'Winnipeg_Jets','Nashville Predators':'Nashville_Predators',
-  'Washington Capitals':'Washington_Capitals','Pittsburgh Penguins':'Pittsburgh_Penguins',
-  // MLB
-  'New York Yankees':'New_York_Yankees','Los Angeles Dodgers':'Los_Angeles_Dodgers',
-  'Philadelphia Phillies':'Philadelphia_Phillies','Houston Astros':'Houston_Astros',
-  'San Diego Padres':'San_Diego_Padres','New York Mets':'New_York_Mets',
-  'Athletics':'Oakland_Athletics','Boston Red Sox':'Boston_Red_Sox',
-  'Chicago Cubs':'Chicago_Cubs','San Francisco Giants':'San_Francisco_Giants',
-  'Baltimore Orioles':'Baltimore_Orioles','Cleveland Guardians':'Cleveland_Guardians',
-  'Texas Rangers':'Texas_Rangers_(baseball)','Atlanta Braves':'Atlanta_Braves',
-  'Milwaukee Brewers':'Milwaukee_Brewers','Cincinnati Reds':'Cincinnati_Reds',
-  'Minnesota Twins':'Minnesota_Twins','Seattle Mariners':'Seattle_Mariners',
-  'St. Louis Cardinals':'St._Louis_Cardinals','Detroit Tigers':'Detroit_Tigers',
-  'Arizona Diamondbacks':'Arizona_Diamondbacks','Tampa Bay Rays':'Tampa_Bay_Rays',
-  'Kansas City Royals':'Kansas_City_Royals','Toronto Blue Jays':'Toronto_Blue_Jays',
-  // EPL
-  'Arsenal':'Arsenal_F.C.','Manchester City':'Manchester_City_F.C.',
-  'Liverpool':'Liverpool_F.C.','Manchester United':'Manchester_United_F.C.',
-  'Chelsea':'Chelsea_F.C.','Tottenham Hotspur':'Tottenham_Hotspur_F.C.',
-  'Newcastle United':'Newcastle_United_F.C.','Aston Villa':'Aston_Villa_F.C.',
-  'Brighton & Hove Albion':'Brighton_%26_Hove_Albion_F.C.',
-  'West Ham United':'West_Ham_United_F.C.','Everton':'Everton_F.C.',
-  'Crystal Palace':'Crystal_Palace_F.C.','Fulham':'Fulham_F.C.',
-  'Brentford':'Brentford_F.C.','Wolverhampton':'Wolverhampton_Wanderers_F.C.',
-  'Nottingham Forest':'Nottingham_Forest_F.C.',
-  // EFL
-  'Hull City':'Hull_City_A.F.C.','Bolton Wanderers':'Bolton_Wanderers_F.C.',
-  'Sunderland':'Sunderland_A.F.C.','Burnley':'Burnley_F.C.',
-};
-const _wikiCache={};
+// Detects when teams are trending on Wikipedia — organic cultural interest,
+// not broadcast hype. The relay's /wiki/trending endpoint now aggregates
+// this server-side in one bulk call, keyed by team name; the client no
+// longer holds its own team-name-to-wiki-title mapping or makes per-team
+// wikimedia.org requests.
+let _wikiTrendingCache=null;
+let _wikiTrendingPromise=null;
+// injectWikiChips() awaits fetchWikiSignificance(home) and fetchWikiSignificance(away)
+// concurrently via Promise.all -- a plain "if(_wikiTrendingCache) return" guard only
+// stops re-fetching AFTER the first call resolves, so the first card's two concurrent
+// calls both see a null cache and both fire a real network request. Caching the
+// in-flight promise (not just the resolved value) makes the second concurrent caller
+// await the same request instead of starting its own.
+async function fetchAllWikiTrending(){
+  if(_wikiTrendingCache) return _wikiTrendingCache;
+  if(_wikiTrendingPromise) return _wikiTrendingPromise;
+  _wikiTrendingPromise=(async()=>{
+    try{
+      const today=new Date().toISOString().slice(0,10);
+      const r=await fetch(`https://field-relay-nba.jeffunglesbee.workers.dev/wiki/trending?date=${today}`);
+      _wikiTrendingCache=r.ok?await r.json():{};
+    }catch(e){_wikiTrendingCache={};}
+    return _wikiTrendingCache;
+  })();
+  return _wikiTrendingPromise;
+}
 async function fetchWikiSignificance(teamName){
-  const title=WIKI_TITLES[teamName];
-  if(!title) return null;
-  const cacheKey='field_wiki_'+title+'_'+TODAY_ISO;
-  // Check memory cache
-  if(_wikiCache[cacheKey]) return _wikiCache[cacheKey];
-  // Check localStorage cache
-  try{const cached=localStorage.getItem(cacheKey);if(cached){const p=JSON.parse(cached);_wikiCache[cacheKey]=p;return p;}}catch(e){}
-  // Fetch 8 days of data (today + 7 trailing)
-  try{
-    const end=TODAY_ISO.replace(/-/g,'');
-    const d=new Date(TODAY_ISO);d.setDate(d.getDate()-7);
-    const start=d.toISOString().slice(0,10).replace(/-/g,'');
-    const url=`https://wikimedia.org/api/rest_v1/metrics/pageviews/per-article/en.wikipedia/all-access/all-agents/${title}/daily/${start}/${end}`;
-    const r=await fetch(url);if(!r.ok) return null;
-    const j=await r.json();
-    const items=j.items||[];
-    if(items.length<2) return null;
-    // Wikimedia pageviews has a ~1 day lag — items[-1] is yesterday's actual data.
-    // "todayViews" here means "most recent available day", not strictly today.
-    const todayViews=items[items.length-1]?.views||0;
-    const avgViews=items.slice(0,-1).reduce((s,i)=>s+(i.views||0),0)/Math.max(items.length-1,1);
-    const spikeRatio=avgViews>0?todayViews/avgViews:1;
-    const result={todayViews,avgViews:Math.round(avgViews),spikeRatio:Math.round(spikeRatio*10)/10,trending:spikeRatio>2.0};
-    _wikiCache[cacheKey]=result;
-    try{localStorage.setItem(cacheKey,JSON.stringify(result));}catch(e){}
-    return result;
-  }catch(e){return null;}
+  const all=await fetchAllWikiTrending();
+  return all[teamName]||null;
 }
 // Inject wiki trending chips on cards after schedule renders
 async function injectWikiChips(){
@@ -23645,7 +23592,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-07-06d';
+  const SW_VERSION = '2026-07-06e';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -27068,7 +27015,7 @@ function buildCompoundPrompt(sections) {
       // Fix 6: Weather context in compound prompt for outdoor games
       (()=>{try{const spG=(_gameSport(g)).toLowerCase();const isOut=spG.includes('baseball')||spG.includes('mlb')||spG.includes('nfl')||spG.includes('soccer')||spG.includes('league')||spG.includes('mls')||spG.includes('afl');if(!isOut) return '';const wxE=Object.values(wxCache||{}).find(wx=>wx?.alert);return wxE?`  [WEATHER ALERT: ${wxE.alert}]`:''}catch(e_){return ''}})(),
       // Wikimedia trending — cultural significance signal (Patent Defense #5)
-      (()=>{try{const hW=_wikiCache['field_wiki_'+(WIKI_TITLES[g.home||'']||'')+'_'+TODAY_ISO];const aW=_wikiCache['field_wiki_'+(WIKI_TITLES[g.away||'']||'')+'_'+TODAY_ISO];if(hW?.trending&&aW?.trending) return `  [WIKI TRENDING: Both teams trending nationally — cultural spotlight game]`;if(hW?.trending) return `  [WIKI TRENDING: ${teamNick(g.home)} trending (+${Math.round((hW.spikeRatio-1)*100)}%) — elevated national interest]`;if(aW?.trending) return `  [WIKI TRENDING: ${teamNick(g.away)} trending (+${Math.round((aW.spikeRatio-1)*100)}%) — elevated national interest]`;if(hW&&aW&&hW.spikeRatio<0.5&&aW.spikeRatio<0.5) return `  [WIKI LOW: Both teams below normal interest — true hidden gem if drama develops]`;return ''}catch(e_){return ''}})(),
+      (()=>{try{const _wt=_wikiTrendingCache||{};const hW=_wt[g.home||''];const aW=_wt[g.away||''];if(hW?.trending&&aW?.trending) return `  [WIKI TRENDING: Both teams trending nationally — cultural spotlight game]`;if(hW?.trending) return `  [WIKI TRENDING: ${teamNick(g.home)} trending (+${Math.round((hW.spikeRatio-1)*100)}%) — elevated national interest]`;if(aW?.trending) return `  [WIKI TRENDING: ${teamNick(g.away)} trending (+${Math.round((aW.spikeRatio-1)*100)}%) — elevated national interest]`;if(hW&&aW&&hW.spikeRatio<0.5&&aW.spikeRatio<0.5) return `  [WIKI LOW: Both teams below normal interest — true hidden gem if drama develops]`;return ''}catch(e_){return ''}})(),
       // Item 5: NHL shot/save context (from pre-fetched _nhlLiveStatsCache)
       (()=>{try{const sp=(_gameSport(g)).toLowerCase();if(!(sp.includes('nhl')||sp.includes('hockey'))) return '';const key=`${g.home}|${g.away}`;const note=_nhlLiveStatsCache[key]||_nhlLiveStatsCache[`${g.away}|${g.home}`]||'';return note?`  [NHL LIVE] ${note}`:''}catch(e_){return ''}})(),
       // Item 6: MLB boxscore pitcher/batting stats (from pre-fetched _mlbBoxscoreCache)
