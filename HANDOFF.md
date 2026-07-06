@@ -1,5 +1,44 @@
 # FIELD HANDOFF
 
+## MID-SESSION UPDATE — 2026-07-06 (zero-change render fast path, critical bug caught pre-ship, 100/100)
+
+**CLIENT HEAD: a1ea9f8.** SW_VERSION `2026-07-06d`, confirmed synced and
+deployed (deploy-gate run `28812236253`, success). **Smoke: 890/0.**
+
+**Added a zero-change fast path to `applyMainHTML`**, skipping
+`main.replaceChildren(...)` entirely when the existing per-card
+reconciliation loop found no real difference and section count matches.
+Full detail: `docs/outbox/cc-zero-change-render-fast-path-2026-07-06.md`.
+
+**Critical bug found and fixed before it ever shipped.** The CC-CMD's own
+literal code sample, implemented as written, causes total data loss (every
+card vanishes) on the first genuinely-unchanged poll tick for every real
+user. Root cause: the pre-existing LCP-anchor morph (PM-26-C5) always
+detaches the persistent anchor node from `main` before the fast-path check
+runs; the fast path's own anchor guard checks `main` *after* that
+detachment already happened, so it can't see it — if the fast path then
+fires, the anchor (and everything with it) is permanently orphaned in the
+discarded template fragment. Confirmed empirically (not assumed) via
+injected-copy testing with frozen data against the live app: 0 cards
+survived a textbook no-op render before the fix.
+
+**Fix:** capture `anchorMorphWillRun` before the morph runs (one read-only
+line) and require `!anchorMorphWillRun` for the fast path — the morph and
+reconciliation loop are otherwise untouched (confirmed via diff). Honest
+consequence: the fast path can only actually trigger when no LCP anchor is
+present in `main`, narrower than the CC-CMD's own text implies, but the
+only safe option given the anchor's by-design indefinite persistence.
+
+**Verified via real DOM node identity**, pre-commit (injected copy, frozen
+data, live production data) and post-deploy (actual shipped code, SW
+version confirmed live): true no-op with anchor present, normal
+real-change case, and section add/remove edge case all behave correctly;
+post-deploy spot-check against the real deployed function showed no
+crash/orphaning and stable card counts across two frozen-data
+`renderAll(true)` calls.
+
+---
+
 ## MID-SESSION UPDATE — 2026-07-06 (renderAll re-render overhead reduced, 100/100)
 
 **CLIENT HEAD: afb06b3.** SW_VERSION `2026-07-06c`, confirmed synced and
