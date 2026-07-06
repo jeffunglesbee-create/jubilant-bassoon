@@ -1,5 +1,38 @@
 # FIELD HANDOFF
 
+## MID-SESSION UPDATE — 2026-07-06 (wentToOT client filter wired, 100/100)
+
+**CLIENT HEAD: 991cce3.** SW_VERSION `2026-07-06b`, confirmed synced and
+deployed. **Smoke: 890/0.**
+
+**`wentToOT` wired into `getWhatYouMissed`'s notability filter.** Full
+detail: `docs/outbox/cc-wenttoot-client-filter-wire-2026-07-06.md`. This
+depended on a relay-side CC-CMD
+(`field-relay-nba` CC-CMD-2026-07-06-wenttoot-newspaper-bundle-wire.md) —
+confirmed genuinely deployed before touching anything, not assumed:
+`/analytics/newspaper` now returns a real `wentToOT` field on every
+`completed_games` entry, and its all-`false` values for July 4 were
+independently cross-checked against the real V2 relay period data (every
+one of that date's 15 MLB + 2 WNBA games genuinely ended in regulation) —
+confirming `false` is correct data, not a hardcoded stub.
+
+Added `g.wentToOT` to the filter's OR-chain, updated the now-stale
+comment. **Honest gap, not glossed over**: searched 26 real dates
+(~91+ completed games) for a naturally-occurring `wentToOT:true` case to
+test end-to-end — found none. Verified instead by calling the real,
+live, deployed `getWhatYouMissed()` directly with a controlled synthetic
+case (OT-only qualifying vs. otherwise-identical non-qualifying game) —
+confirmed the fixed filter correctly includes/excludes as intended.
+
+Note: two other CC-CMDs surfaced this session targeted `field-relay-nba`
+directly (`CC-CMD-2026-07-06-fields-pick-fix.md`,
+`CC-CMD-2026-07-06-stale-cc-cmd-detection.md`) — this session has no
+mechanism to add that repo to scope (no `list_repos`/`add_repo` tool
+available), so neither was executed. Both reported back plainly, not
+guessed at.
+
+---
+
 ## MID-SESSION UPDATE — 2026-07-05 (gap-sweep fixes shipped, 100/100)
 
 **CLIENT HEAD: 6e48c95.** SW_VERSION `2026-07-05j`, confirmed synced and
