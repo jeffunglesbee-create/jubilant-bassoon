@@ -39863,10 +39863,11 @@ function openBottomSheet(gameId) {
   // UserDO: record watch_open + series context (fire-and-forget)
   if (typeof recordWatchOpen === 'function') recordWatchOpen(gameId, sport);
   if (typeof recordSeriesGame === 'function' && game.seriesRecord && game.seriesRecord !== '0-0') {
-    const home = (game.home||'').replace(/\s+/g,'_').toUpperCase().slice(0,6);
-    const away = (game.away||'').replace(/\s+/g,'_').toUpperCase().slice(0,6);
-    const yr   = new Date().getFullYear();
-    recordSeriesGame(gameId, sport, `${home}_${away}_${yr}`);
+    const t1 = (game.home||'').replace(/\s+/g,'_').toUpperCase().slice(0,6);
+    const t2 = (game.away||'').replace(/\s+/g,'_').toUpperCase().slice(0,6);
+    const [a, b] = [t1, t2].sort();
+    const yr = new Date().getFullYear();
+    recordSeriesGame(gameId, sport, `${a}_${b}_${yr}`);
   }
   const eData = Object.values(espnScores||{}).find(e => {
     const h = teamNick(game.home).toLowerCase();
