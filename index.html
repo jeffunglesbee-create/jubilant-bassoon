@@ -38485,6 +38485,24 @@ async function fetchNightOwlFromClaude(topGame){
           '. Lead with what they missed.';
       }
     }
+    if (window._userState?.seriesLedger && topGame.seriesRecord && topGame.seriesRecord !== '0-0') {
+      const t1 = (topGame.home||'').replace(/\s+/g,'_').toUpperCase().slice(0,6);
+      const t2 = (topGame.away||'').replace(/\s+/g,'_').toUpperCase().slice(0,6);
+      const [a, b] = [t1, t2].sort();
+      const yr = new Date().getFullYear();
+      const key = `${a}_${b}_${yr}`;
+      // Backward-compat: older entries may have been written with the
+      // pre-Task-3 unsorted key. Check both real historical key shapes so
+      // existing user data isn't silently dropped by this fix.
+      const games = window._userState.seriesLedger[key]
+        || window._userState.seriesLedger[`${t1}_${t2}_${yr}`]
+        || window._userState.seriesLedger[`${t2}_${t1}_${yr}`]
+        || null;
+      if (games && games.length) {
+        _owlStatCtx += '\n  [SERIES CONTEXT] Viewer has watched ' + games.length +
+          ' prior game(s) in this series live. Reference their ongoing investment in this matchup.';
+      }
+    }
   } catch(_) {}
 
   // Drama narrative context — all three postgame drama metrics + arc + score sequence

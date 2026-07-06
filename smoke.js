@@ -6341,5 +6341,10 @@ assert('A-GAPFIX-2 — isLateCloseGame call passes real eData, not a re-passed s
   !html.match(/isLateCloseGame\(\{ _section: sport \}, sport\)\)/),
   'Per TASK 2: the CLOSING UNIT badge call was missing its eData argument -- sport (a string) was passed where eData belongs, so ed.state inside isLateCloseGame was always undefined and the badge could never render. g is confirmed unused in the function body, so only the missing eData argument needed adding.');
 
+assert('A-GAPFIX-4 — [SERIES CONTEXT] Night Owl injection exists with 3-way backward-compat key lookup',
+  !!html.match(/\[SERIES CONTEXT\] Viewer has watched/) &&
+  !!html.match(/window\._userState\.seriesLedger\[key\]\s*\n\s*\|\| window\._userState\.seriesLedger\[`\$\{t1\}_\$\{t2\}_\$\{yr\}`\]\s*\n\s*\|\| window\._userState\.seriesLedger\[`\$\{t2\}_\$\{t1\}_\$\{yr\}`\]/),
+  'Per TASK 4: seriesLedger (written but never read, per the 2026-07-05 gap-sweep addendum) must now feed a real Night Owl prompt block, matching the existing [MISSED PEAKS] pattern exactly, with a 3-way key lookup (sorted key + both unsorted orderings) so pre-TASK-3 historical entries are not silently dropped.');
+
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);
