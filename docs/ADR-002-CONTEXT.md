@@ -24,11 +24,16 @@ A system that:
 All four elements must be present for infringement. Remove any one and the
 claim does not read on the implementation.
 
-### Coupled apparatus requirement
-The patent claims require "a first device" and "a second device" in a coupled
-apparatus (server computes → transmits → client displays). FIELD is a
-single-page PWA running in one browser tab. There is no coupled apparatus
-in the patented sense.
+### Coupled apparatus (removed 2026-07-06)
+Previously argued FIELD's single-tab architecture avoided a
+multi-device requirement in the claims. Re-checked against the actual
+patent specification: US9421446B2 explicitly states the processing and
+notification engines "may be software (or firmware) modules that are
+executed by a single piece of hardware." This defense was not
+supported and has been removed. No other defense in this document
+relied on it — Rules A-E each stand independently — so this is a
+documentation correction only, not a change to FIELD's actual risk
+posture.
 
 ---
 
@@ -92,6 +97,17 @@ real-time recommendations during live events. After a game ends:
 The amnesty zone begins when `state === 'final'` or `state === 'post'`.
 Any code that only runs in the post-game context is not subject to ADR-002.
 
+### Note on patent family variance (added 2026-07-06)
+US9421446B2 claim 1 explicitly requires the feeds to describe "a
+sporting event that is in progress" — the amnesty-zone defense is
+textually solid here. US10328326B2 claim 1 does not contain that
+qualifier; its trigger is "the rating...has changed" instead. The
+amnesty zone's real basis for '326 is that a rating computed exactly
+once, and never recomputed for a completed event (see the drama_peak
+immutability guard, CC-CMD-2026-07-06-drama-peak-immutability-guard.md,
+field-relay-nba), has no second value to have "changed" from — not
+that the event is over.
+
 ---
 
 ## ADR-002 Rules
@@ -100,9 +116,20 @@ Any code that only runs in the post-game context is not subject to ADR-002.
 The relay NEVER computes or transmits drama scores, watch values, or
 interest-level classifications. Scores, game state, and factual data only.
 
-### Rule B: classifyGame() NEVER runs on a server
-Game classification by interest/excitement runs exclusively in the browser.
-No exceptions, regardless of file size or performance pressure.
+### Rule B: No scalar or summed interest-level value is ever computed
+or stored on the relay
+Any function that produces a single derived number representing "how
+exciting" or "how interesting" a game is (a composite score, a summed
+value, anything with multiple meaningful threshold levels) runs
+exclusively in the browser. This does NOT prohibit factual,
+independent boolean conditions from being evaluated on the relay — see
+the relay's `latePhase && closeGame` gate
+(field-relay-nba, `docs/session-2026-05-29-relay-adr002-ruleD.md`),
+which triggers a `type:SCORE_CHANGE` notification from raw game facts
+only (scores, period, clock, broadcast) — no drama field, no threshold
+on a computed value. Those are observations about raw game state, not
+a computed interest-level value, and are a structurally different
+operation (AND vs. sum).
 
 ### Rule C: Drama scoring stays client-side
 `dramaScoreLive()`, `preGameScore()`, `computeWatchValue()`, and all
