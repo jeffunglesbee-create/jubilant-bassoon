@@ -11,7 +11,7 @@
 //
 // Bump SW_VERSION on every deploy. CI smoke.js verifies it matches index.html.
 
-const SW_VERSION = '2026-07-06e';
+const SW_VERSION = '2026-07-06f';
 const SHELL_CACHE = `field-shell-${SW_VERSION}`;
 const API_CACHE   = 'field-api-v4';
 const SHELL_URL   = '/';
@@ -131,51 +131,78 @@ async function networkFirstWithFallback(cacheName, request){
 //   only sends visible payload when drama ≥ drama_min threshold.
 //   Result: lock-screen notification with full context, no app open needed.
 
-// ── Drama Dial — Service Worker side (Patent Defense Layer 2+3) ──────────
-// Server pushes FACTS (score changed). Client evaluates EXCITEMENT.
-// _swDramaDial is synced from main thread via postMessage on every page load.
-let _swDramaDial = 65; // default — overwritten by postMessage sync
+// ── Push trigger — Service Worker side (Patent Defense Layer 2+3) ────────
+// Server pushes FACTS (score changed). Client evaluates a factual crunch
+// gate — no scalar, no summed value, no user-adjustable threshold. This
+// mirrors the isCrunchTimeGame()-style pattern already used client-side
+// in index.html (period/margin AND, no intermediate numeric scale).
+// The Drama Dial (_swDramaDial, removed 2026-07-06) no longer gates
+// pushes -- it is purely a client-side display filter now (see
+// getDramaDial() usages in index.html for badge/OTW/fire-icon rendering).
+
+// isCrunchLikePush: single boolean, no scalar. The relay (Component 3)
+// only emits SCORE_CHANGE for games already past its per-sport late +
+// close gate, so every payload is already a late-game situation; this
+// re-confirms lateness from the payload's own fields (tolerant of both
+// SCORE_CHANGE's `period`/`periodNum` and legacy DRAMA_THRESHOLD's
+// `periodLabel`) AND requires a genuinely close margin. AND, not a sum —
+// no intermediate value is ever computed or compared to a threshold.
+function isCrunchLikePush(d) {
+  const period = String(d.period || d.periodLabel || '').toLowerCase();
+  if (period.includes('final')) return false;
+  const margin = Math.abs((d.homeScore||0) - (d.awayScore||0));
+  const pn = Number(d.periodNum || 0);
+  const veryLate = pn >= 4 || /\bot\b|\bso\b|extra/.test(period) ||
+                   period.includes('9th') || period.includes("90'");
+  return veryLate && margin <= 5;
+}
+
+// ── My Teams — Service Worker side sync (2026-07-06) ──────────────────────
+// Reuses the SAME keyed PREF_UPDATE postMessage + IndexedDB pattern
+// originally built for the Drama Dial -- it was always a generic, keyed
+// channel, not dial-specific. The dial itself no longer needs SW-side sync
+// (see isCrunchLikePush above), so this listener now only handles the
+// 'my_teams' key. MY_TEAMS is a plain array of team name strings
+// (index.html saveMyTeams()).
+let _swMyTeams = new Set();
 
 self.addEventListener('message', e => {
-  if (e.data?.type === 'PREF_UPDATE' && e.data.key === 'drama_dial') {
-    _swDramaDial = e.data.value;
-  }
+  if (e.data?.type !== 'PREF_UPDATE' || e.data.key !== 'my_teams') return;
+  const teams = Array.isArray(e.data.value) ? e.data.value : [];
+  _swMyTeams = new Set(teams);
+  try {
+    const req = indexedDB.open('field_prefs', 1);
+    req.onupgradeneeded = ev => { ev.target.result.createObjectStore('prefs'); };
+    req.onsuccess = ev => {
+      const db = ev.target.result;
+      const tx = db.transaction('prefs', 'readwrite');
+      tx.objectStore('prefs').put(teams, 'my_teams');
+    };
+  } catch(err) {}
 });
 
-// Load dial from IndexedDB on SW startup (fallback if postMessage hasn't fired)
-(async function loadDialFromIDB(){
+// Load My Teams from IndexedDB on SW startup (fallback if postMessage hasn't fired yet)
+(async function loadMyTeamsFromIDB(){
   try {
     const req = indexedDB.open('field_prefs', 1);
     req.onupgradeneeded = e => { e.target.result.createObjectStore('prefs'); };
     req.onsuccess = e => {
       const db = e.target.result;
       const tx = db.transaction('prefs', 'readonly');
-      const get = tx.objectStore('prefs').get('drama_dial');
-      get.onsuccess = () => { if (get.result >= 45 && get.result <= 90) _swDramaDial = get.result; };
+      const get = tx.objectStore('prefs').get('my_teams');
+      get.onsuccess = () => { if (Array.isArray(get.result)) _swMyTeams = new Set(get.result); };
     };
   } catch(e) {}
 })();
 
-// Client-side drama computation from raw game state.
-// The relay (Component 3) only emits SCORE_CHANGE for games already past its
-// per-sport late + close gate, so every payload is a late-game situation. Score
-// off margin (always reliable from scores) rather than matching fragile period
-// strings; add a small bonus for the very latest phases (OT / shootout / final
-// frame), detected loosely from the period label or numeric period when present.
-// A missed bonus just omits +10 — it never suppresses, so there is no fragile gate.
-function computePushDrama(d) {
-  const period = String(d.period || '').toLowerCase();
-  if (period.includes('final')) return 0;
-  const margin = Math.abs((d.homeScore||0) - (d.awayScore||0));
-  const pn = Number(d.periodNum || 0);
-  const veryLate = pn >= 4 || /\bot\b|\bso\b|extra/.test(period) ||
-                   period.includes('9th') || period.includes("90'");
-  const bonus = veryLate ? 10 : 0;
-  if (margin <= 1)  return Math.min(100, 90 + bonus);
-  if (margin <= 3)  return Math.min(100, 80 + bonus);
-  if (margin <= 7)  return 65 + bonus;
-  if (margin <= 12) return 50 + bonus;
-  return 40;
+// isUserSelectedGame: does this push's game involve a team the user follows?
+// Empty-favorites fallback (explicit choice, not left ambiguous): if the
+// user hasn't favorited any team yet, show for all games clearing the
+// crunch-like gate -- don't silently notify for nothing just because
+// preferences aren't set up, but once they pick teams, scope to those.
+function isUserSelectedGame(d) {
+  if (_swMyTeams.size === 0) return true;
+  return _swMyTeams.has(d.home) || _swMyTeams.has(d.away);
 }
 
 self.addEventListener('push', e => {
@@ -192,17 +219,18 @@ async function handlePush(data) {
   // ── SCORE_CHANGE: factual push from server (post-handleCron refactor) ──
   // Server sends raw game state. Client evaluates excitement.
   if (payload.type === 'SCORE_CHANGE') {
-    const drama = computePushDrama(payload);
-    if (drama < _swDramaDial) return; // suppress — below user's dial
-    const margin = Math.abs((payload.homeScore||0) - (payload.awayScore||0));
-    const crunchThreshold = Math.min(_swDramaDial + 20, 95);
-    const isCrunch = drama >= crunchThreshold;
+    const isCrunchLike = isCrunchLikePush(payload);
+    if (!isCrunchLike) return;
     // ── WOW 2 (SW-side signal): if CRUNCH TIME determined here, signal DO ──
     // SW runs when the page is closed/backgrounded — this path emits the
     // signal so the DO can fan out to other pinned subscribers who don't
     // share the same heartbeat schedule. RUWT compliance: SW computed the
     // named binary condition locally; DO only delivers.
-    if (isCrunch && payload.gameId && payload.sport) {
+    // Fires regardless of THIS device's own My Teams preference -- it fans
+    // out to other subscribers pinned to this specific game (pinGame()), a
+    // separate selection mechanism from My Teams. Only the local
+    // showNotification() below is scoped to this device's followed teams.
+    if (payload.gameId && payload.sport) {
       const sportKey = String(payload.sport).toLowerCase();
       const gameIdRaw = String(payload.gameId).replace(/^[a-z]+:/, '');
       try {
@@ -224,12 +252,14 @@ async function handlePush(data) {
         }).catch(()=>{ /* signal failure is non-blocking */ });
       } catch(_) { /* never block notification render on signal failure */ }
     }
-    const title = isCrunch ? `🔥 CRUNCH TIME` : `⚡ Worth watching`;
+    // Scope THIS device's own notification to the user's followed teams.
+    if (!isUserSelectedGame(payload)) return;
+    const title = `🔥 CRUNCH TIME`;
     const body = `${payload.away||'Away'} ${payload.awayScore||0}–${payload.homeScore||0} ${payload.home||'Home'} · ${payload.clock||''} ${payload.period||''}`;
     await self.registration.showNotification(title, {
       body, icon: '/icon-192.png', badge: '/icon-192.png',
       tag: `field-drama-${payload.gameId}`,
-      renotify: isCrunch, // re-buzz for crunch time
+      renotify: true, // every push that reaches here is already crunch-like
       data: { gameId: payload.gameId, watchUrl: payload.watchUrl || '/', type: 'SCORE_CHANGE' },
       actions: payload.watchUrl ? [{action: 'watch', title: 'Watch Now'}] : []
     });
@@ -237,20 +267,18 @@ async function handlePush(data) {
   }
 
   // ── DRAMA_THRESHOLD: legacy push (pre-refactor server still sends these) ──
-  // Now filtered by Drama Dial — client decides whether to show
+  // Same factual boolean gate as SCORE_CHANGE — no scalar, no dial threshold.
   if (payload.type === 'DRAMA_THRESHOLD') {
-    const drama = payload.drama || 0;
-    if (drama < _swDramaDial) return; // suppress — below user's dial
     const { sport, home, away, homeScore, awayScore, periodLabel,
             broadcast, gameId, watchUrl } = payload;
-    const crunchThreshold = Math.min(_swDramaDial + 20, 95);
-    const isCrunch = drama >= crunchThreshold;
-    const title = isCrunch ? `🔥 CRUNCH TIME — ${sport || 'Game'}` : `⚡ ${sport || 'Game'} — ${homeScore}–${awayScore}`;
+    if (!isCrunchLikePush(payload)) return;
+    if (!isUserSelectedGame(payload)) return;
+    const title = `🔥 CRUNCH TIME — ${sport || 'Game'}`;
     const body  = `${home} vs ${away} · ${periodLabel || ''} · ${broadcast || 'Live'}`;
     await self.registration.showNotification(title, {
       body, icon: '/icon-192.png', badge: '/icon-192.png',
       tag: `field-drama-${gameId}`,
-      renotify: isCrunch,
+      renotify: true,
       data: { gameId, watchUrl: watchUrl || '/', type: 'DRAMA_THRESHOLD' },
       actions: watchUrl ? [{action: 'watch', title: 'Watch Now'}] : []
     });

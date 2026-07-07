@@ -6923,21 +6923,15 @@ function getDramaDial(){
   return(v>=45&&v<=90)?v:65;
 }
 function setDramaDial(value){
+  // Display-filter only (2026-07-06) -- no longer synced to the SW. The SW's
+  // push trigger is now a factual isCrunchLikePush() boolean gate that does
+  // not read this value; the dial controls on-screen badge/OTW sensitivity
+  // in the already-open app only. See getDramaDial() call sites.
   const v=Math.max(45,Math.min(90,parseInt(value)||65));
   localStorage.setItem('field_drama_dial',v);
-  // Sync to Service Worker via postMessage
-  if(navigator.serviceWorker?.controller){
-    navigator.serviceWorker.controller.postMessage({type:'PREF_UPDATE',key:'drama_dial',value:v});
-  }
-  // IndexedDB fallback for SW restart
-  try{
-    const req=indexedDB.open('field_prefs',1);
-    req.onupgradeneeded=e=>{e.target.result.createObjectStore('prefs');};
-    req.onsuccess=e=>{const db=e.target.result;const tx=db.transaction('prefs','readwrite');tx.objectStore('prefs').put(v,'drama_dial');};
-  }catch(e){}
   // Update preview text if slider exists
   const preview=document.getElementById('dial-preview');
-  if(preview) preview.textContent=`Close games get badges · ${Math.min(v+20,95)===95?'Only the tightest':v<=50?'Nearly all':'Most'} close games get alerts`;
+  if(preview) preview.textContent=`Close games get badges · ${Math.min(v+20,95)===95?'Only the tightest':v<=50?'Nearly all':'Most'} close games get badged as CRUNCH TIME`;
   // Re-evaluate badges with new threshold
   if(typeof injectDramaBadges==='function') try{injectDramaBadges();}catch(e){}
   // Update header chip
@@ -8904,7 +8898,7 @@ function openSetup(){
   if(dial){
     dial.value=getDramaDial();
     const preview=document.getElementById('dial-preview');
-    if(preview){const v=getDramaDial();preview.textContent=`Close games get badges · ${Math.min(v+20,95)===95?'Only the tightest':v<=50?'Nearly all':'Most'} close games get alerts`;}
+    if(preview){const v=getDramaDial();preview.textContent=`Close games get badges · ${Math.min(v+20,95)===95?'Only the tightest':v<=50?'Nearly all':'Most'} close games get badged as CRUNCH TIME`;}
     dial.oninput=function(){setDramaDial(this.value);};
   }
   // ── Viewer Intel Mode init ─────────────────────────────────────────
@@ -8988,7 +8982,8 @@ document.getElementById("settings-btn").addEventListener("click", openSetup);
 // Public key only (safe to ship). Pairs with VAPID_PRIVATE_KEY held as a
 // field-relay-nba Worker secret. Subscription is sent to the relay's
 // /push/subscribe; the relay (ADR-002 Component 3) later pushes SCORE_CHANGE
-// facts and the SW (Drama Dial) decides whether to surface a notification.
+// facts and the SW's isCrunchLikePush() factual boolean gate (sw.js)
+// decides whether to surface a notification -- no dial, no scalar.
 const VAPID_PUBLIC_KEY = 'BA94Jhq_0-6Hm07vN40MkakAdW4EMqMbiQh3ZkoWlvOnoes4Ds-IhKoLSe39BhL6vR8HAE2KLClmHyaLaldqFXg';
 const PUSH_SUBSCRIBE_URL = 'https://field-relay-nba.jeffunglesbee.workers.dev/push/subscribe';
 function urlBase64ToUint8Array(b64){
@@ -22960,7 +22955,14 @@ function showEUPushConsent(onAccept){
 
 // Filter state vars must be initialized before goToDate() triggers buildFilters()/renderAll()
 let MY_TEAMS = new Set(JSON.parse(localStorage.getItem('field_my_teams')||'[]'));
-function saveMyTeams(){ try{ localStorage.setItem('field_my_teams', JSON.stringify([...MY_TEAMS])); }catch(e){} }
+function saveMyTeams(){
+  try{ localStorage.setItem('field_my_teams', JSON.stringify([...MY_TEAMS])); }catch(e){}
+  // Sync to Service Worker via the same keyed PREF_UPDATE channel (2026-07-06)
+  // so push notifications can be scoped to followed teams.
+  if(navigator.serviceWorker?.controller){
+    navigator.serviceWorker.controller.postMessage({type:'PREF_UPDATE',key:'my_teams',value:[...MY_TEAMS]});
+  }
+}
 let rivalsFilter   = false; // true = show only My Teams rivals
 let myTeamsFilter  = false; // true = show only My Teams games
 let _wwDismissed   = false; // Watch Window dismissed flag
@@ -23592,7 +23594,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-07-06e';
+  const SW_VERSION = '2026-07-06f';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -23607,9 +23609,13 @@ let _pwaPrompt = null;
       if(swPath){
         navigator.serviceWorker.register(swPath, {scope:'/'})
           .then(reg=>{
-            // Sync Drama Dial to SW on every page load
+            // Drama Dial sync to SW removed 2026-07-06 -- the SW's push
+            // trigger no longer reads this value (see isCrunchLikePush()
+            // in sw.js). The dial is now a display-filter-only setting.
+            // Sync My Teams to the SW on every page load, so it has a fresh
+            // copy even if the user hasn't changed teams this session.
             if(navigator.serviceWorker.controller){
-              navigator.serviceWorker.controller.postMessage({type:'PREF_UPDATE',key:'drama_dial',value:getDramaDial()});
+              navigator.serviceWorker.controller.postMessage({type:'PREF_UPDATE',key:'my_teams',value:[...MY_TEAMS]});
             }
             // Auto-reload when new SW activates (skipWaiting pattern).
             // Ensures users always get the current build within one load cycle —
