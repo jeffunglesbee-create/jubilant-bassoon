@@ -469,6 +469,9 @@ body::before{
 .np-divider::after{right:0}
 .np-pick .np-prose{font-style:italic}
 .field-pick-badge{font-size:.6rem;letter-spacing:.08em;color:#fbbf24;padding:.15rem .4rem;opacity:.8}
+.ww-row{margin-top:.3rem;display:flex;align-items:center;gap:.4rem}
+.ww-tier-badge{font-size:.6rem;letter-spacing:.08em;text-transform:uppercase;font-weight:700;color:#fbbf24}
+.ww-matchup{font-size:.78rem;color:var(--platinum);font-weight:600}
 @media(max-width:600px){
   .np-inner{padding:.9rem .75rem}
   .np-prose{font-size:.78rem;line-height:1.55}
@@ -22085,8 +22088,21 @@ function renderNewspaper(bundle) {
     const pickText = bundle.pick.type === 'pass'
       ? (bundle.pick.brief || "Not every night has a must-watch. Tonight's one of those.")
       : (bundle.pick.brief || '');
-    if (pickText) {
-      parts.push(`<div class="np-section np-pick"><div class="np-label">TONIGHT'S PICK</div><p class="np-prose">${pickText}</p></div>`);
+    // Ranked rows folded into this existing section, not a new one -- "What's
+    // Worth Watching" would collide with the live per-card WORTH WATCHING
+    // badge (different criteria). Only tier 0 gets a badge (ELIMINATION);
+    // tier 1/2 rely on list position alone. Never render g.score (RUWT
+    // bright-line rule -- the relay's real ranked[] entries carry a raw
+    // score field for ranking purposes only, never for display).
+    let rankedHTML = '';
+    if (Array.isArray(bundle.pick.ranked) && bundle.pick.ranked.length) {
+      rankedHTML = bundle.pick.ranked.map(g => {
+        const badge = g.tier === 0 ? '<span class="ww-tier-badge">ELIMINATION</span>' : '';
+        return `<div class="ww-row">${badge}<span class="ww-matchup">${g.away} @ ${g.home}</span></div>`;
+      }).join('');
+    }
+    if (pickText || rankedHTML) {
+      parts.push(`<div class="np-section np-pick"><div class="np-label">TONIGHT'S PICK</div><p class="np-prose">${pickText}</p>${rankedHTML}</div>`);
     }
   }
 
@@ -23594,7 +23610,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-07-07b';
+  const SW_VERSION = '2026-07-07c';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
