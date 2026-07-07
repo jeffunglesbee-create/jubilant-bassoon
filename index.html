@@ -695,7 +695,7 @@ body.wf-mode .np-inner{max-width:100%}
 .pick-widget .pick-label{color:var(--gold,#c9a84c);font-weight:600}
 .pick-widget .pick-btn{font:inherit;font-size:.7rem;padding:.2rem .55rem;border-radius:20px;border:1px solid rgba(201,168,76,.35);background:rgba(201,168,76,.1);color:var(--gold,#c9a84c);cursor:pointer}
 .pick-widget .pick-btn:hover{background:rgba(201,168,76,.2)}
-.pick-widget .pick-choice{color:var(--ink,#e8e8f0)}
+.pick-widget .pick-choice{color:var(--platinum)}
 .pick-widget.pick-resolved.pick-correct{border-color:rgba(0,212,170,.35);background:rgba(0,212,170,.07)}
 .pick-widget.pick-resolved.pick-incorrect{border-color:rgba(255,60,60,.3);background:rgba(255,60,60,.06)}
 .pick-widget .pick-result{font-weight:700}
@@ -2774,7 +2774,7 @@ body.pickem-mode .main{margin-right:0 !important}
 .pickem-title{font-family:var(--ff-display);font-size:1.5rem;font-weight:700;color:var(--white);margin:0 0 .2rem}
 .pickem-meta{font-size:.62rem;color:var(--smoke);letter-spacing:.04em;margin-bottom:1rem}
 .pickem-row{display:flex;flex-direction:column;gap:.25rem;padding:.6rem 0;border-bottom:1px solid var(--edge)}
-.pickem-matchup{font-size:.78rem;color:var(--ink,#e8e8f0);font-weight:600}
+.pickem-matchup{font-size:.78rem;color:var(--platinum);font-weight:600}
 .pickem-empty{color:var(--smoke,#888);font-size:.75rem;padding:1rem 0}
 
 /* ── WHOLE FIELD mode (body.wf-mode) ─────────────────────────────────────
@@ -23594,7 +23594,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-07-07a';
+  const SW_VERSION = '2026-07-07b';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
