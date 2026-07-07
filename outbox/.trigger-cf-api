@@ -1,3 +1,3 @@
 method=POST
 url=https://api.cloudflare.com/client/v4/graphql
-body={"query":"query { __type(name: \"AccountWorkersInvocationsAdaptiveGroupsQuantiles\") { name fields { name description } } }"}
+body={"query":"query { __schema { types { name fields { name type { name ofType { name } } } } } }"}
