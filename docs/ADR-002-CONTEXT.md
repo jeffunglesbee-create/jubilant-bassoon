@@ -57,19 +57,25 @@ personalization, not a system determination.
 by this defense.** The threshold comparison still exists in code, but the
 threshold value is user-controlled, not system-determined.
 
-### Defense 2: Stateless Relay Incompatibility (ADR-002 Core)
-The relay worker (`field-relay-nba`) is stateless and NEVER:
-- Computes interest levels or drama scores
-- Stores interest-level state
-- Transmits interest-level scores to the client
-- Classifies games by interest/excitement
+### Defense 2: Notification Boundary, Not Location (ADR-002 Core, corrected 2026-07-07)
+Previously: the relay worker was described as categorically, statelessly
+incapable of ever computing, storing, or transmitting interest-level
+values, with drama scoring running "EXCLUSIVELY client-side." Corrected,
+on the same basis as Rules A/B/C/E: the patents' actual missing element
+is an autonomous notification engine acting in response to a threshold
+or change (verbatim claim text embedded in
+`docs/CC-CMD-2026-07-07-adr002-full-consistency-pass.md`) — not
+the location of computation. The relay may compute, store, and serve
+(on pull) interest-level values under Rules A/B/C/E's guardrail. It must
+never autonomously push a notification keyed to one. This remains an
+architectural choice (Rule D, unchanged) grounded in the corrected
+patent reading — not something Workers Plus CPU headroom authorizes on
+its own.
 
-Drama scoring runs EXCLUSIVELY client-side in `index.html`. The patent's
-server→client pipeline does not exist in FIELD's architecture.
-
-This is an architectural choice (Rule 47), not a capacity constraint.
-Workers Plus CPU headroom is not authorization to move drama scoring to
-the relay.
+This does NOT touch the separate, still-fully-enforced prohibition on
+displaying a raw composite number to the user — see "What is
+PROHIBITED" #3 and the Severity Classification section, both unchanged
+by this correction.
 
 ### Defense 3: Named Binary Conditions
 Instead of composite scores for game selection, FIELD uses named boolean
@@ -112,46 +118,78 @@ that the event is over.
 
 ## ADR-002 Rules
 
-### Rule A: No composite interest-level scores cross the relay wire
-The relay NEVER computes or transmits drama scores, watch values, or
-interest-level classifications. Scores, game state, and factual data only.
+### Rule A: Scalar interest-level values may be computed and served by the relay — never autonomously pushed
+The relay may compute and serve composite interest-level values (drama
+scores, watch values) in normal pull-based API responses — a client
+that requests this data and receives it does not supply the
+notification-in-response-to-threshold element the patents require. The
+relay must never autonomously transmit an unprompted alert or
+notification keyed to a computed value crossing a threshold or
+changing. Any such alert must originate from a user's own
+pre-authorized, named condition (see the SW push architecture —
+`isCrunchLikePush()`, teams-scoped via the `PREF_UPDATE`/`my_teams`
+channel, `CC-CMD-2026-07-06-sw-push-notification-scoping-complete.md`),
+never from the relay's own judgment about a scored value. This
+permission rests on the corrected patent reading (push vs. pull is the
+operative boundary — see the RUWT re-analysis session, 2026-07-07), not
+on available relay CPU headroom (see Rule D, unchanged).
 
-### Rule B: No scalar or summed interest-level value is ever computed
-or stored on the relay
-Any function that produces a single derived number representing "how
-exciting" or "how interesting" a game is (a composite score, a summed
-value, anything with multiple meaningful threshold levels) runs
-exclusively in the browser. This does NOT prohibit factual,
-independent boolean conditions from being evaluated on the relay — see
-the relay's `latePhase && closeGame` gate
-(field-relay-nba, `docs/session-2026-05-29-relay-adr002-ruleD.md`),
-which triggers a `type:SCORE_CHANGE` notification from raw game facts
-only (scores, period, clock, broadcast) — no drama field, no threshold
-on a computed value. Those are observations about raw game state, not
-a computed interest-level value, and are a structurally different
-operation (AND vs. sum).
+### Rule B: Scalar/summed interest-level values may run on the relay, subject to Rule A's pull-only guardrail
+Prior text prohibited any function producing a composite score from
+running on the relay under any circumstances. Corrected: such
+functions (e.g. `dramaScoreLive()`) may run relay-side, subject to Rule
+A — served on pull, never wired to an autonomous push. This does not
+touch the relay's existing factual, independent boolean gates (e.g.
+`latePhase && closeGame`, `field-relay-nba`,
+`docs/session-2026-05-29-relay-adr002-ruleD.md`) — those were never the
+concern, produce no scalar, and remain free to trigger the existing
+`SCORE_CHANGE` push path directly, exactly as before. The AND-vs-sum
+distinction that protected the boolean gate under the old rule remains
+true and remains a valid, independent defense; it simply no longer
+needs to be the *only* thing standing between the relay and a scalar
+value.
 
-### Rule C: Drama scoring stays client-side
-`dramaScoreLive()`, `preGameScore()`, `computeWatchValue()`, and all
-interest-level computation remains in `index.html`. Moving any of these
-to the relay would create the server→client pipeline the patent claims.
+### Rule C: dramaScoreLive() may move relay-side, subject to Rules A and B
+Prior text kept all interest-level computation client-side
+categorically, reasoning that moving it would recreate the patent's
+server→client pipeline. Corrected: the patents' actual missing element
+is the notification engine acting autonomously, not the location of
+computation — confirmed directly against the specification itself:
+"processing engine 110 and notification engine 120 may consist of
+separate hardware components, or they may be software (or firmware)
+modules that are executed by a single piece of hardware."
+`dramaScoreLive()`, `preGameScore()`, and `computeWatchValue()` may run
+relay-side, served on pull only, under Rules A and B above. **This rule
+change does not itself move any code.** Nothing currently depends on
+this being true. A real migration requires its own, separate CC-CMD,
+written and executed after this rule change lands — not bundled into
+it.
 
 ### Rule D: Relay-is-dumb is architectural, not a capacity constraint
 Workers Plus plan giving 30ms CPU does NOT authorize moving drama/interest
 computation to the relay. The constraint is legal, not technical.
 
-### Rule E: No server-side drama state rendering (Addendum)
-The relay must not render, store, or transmit any state that represents
-game drama, excitement, or interest level. This includes derived states
-like "this game is interesting" even if not called a "score."
+### Rule E: Derived drama/interest state may be rendered, stored, or served — never autonomously pushed (Addendum)
+Prior text banned the relay from rendering, storing, or transmitting
+*any* state representing game drama or interest — explicitly including
+non-numeric, categorical states ("this game is interesting") as well
+as scalars, on the theory that avoiding the word "score" wasn't
+sufficient. Corrected, same basis as Rules A/B/C: the patents' missing
+element is autonomous notification, not the existence, storage, or
+categorical/numeric shape of a derived value. The relay may render,
+store, and serve (on pull) derived drama/interest state of any shape —
+numeric or labeled — under the same guardrail as Rule A: never as the
+trigger for an unprompted, autonomously-sent notification.
 
 ---
 
 ## What is PERMITTED
 
-1. **Client-side drama scoring** — `dramaScoreLive()` in index.html is
-   permitted. STANDARDS.md explicitly allows this. The defense relies on
-   the Drama Dial (user threshold) and client-only execution (no relay).
+1. **Drama scoring** — `dramaScoreLive()` may run client-side (as
+   today) or relay-side (under Rules A/B/C/E's pull-only guardrail, if
+   a future migration CC-CMD moves it). The defense relies on the Drama
+   Dial (user-mediated authorization) and never autonomously pushing a
+   value-based notification — not on which machine runs the function.
 
 2. **Drama Dial threshold comparisons** — Code that checks
    `score >= getDramaDial()` is mitigated because the threshold is
@@ -177,8 +215,14 @@ like "this game is interesting" even if not called a "score."
 
 ## What is PROHIBITED
 
-1. **Composite interest score computed on the relay** — Hard violation.
-2. **Interest score transmitted relay → client** — Hard violation.
+1. **Composite interest score autonomously pushed to the user, from
+   any location** — Hard violation. (Was: "computed on the relay,"
+   unqualified — corrected: computation location was never the
+   element; autonomous notification is.)
+2. **Interest score transmitted relay → client as an unprompted push**
+   — Hard violation. Serving the same value in a normal pull-based API
+   response, to a client that requested it, is not this violation —
+   see Rules A/B/C/E.
 3. **Raw composite drama number displayed to user** — Bright-line violation.
    The number itself IS the "interest level" the patent claims. Even if
    computed client-side, displaying `"75"` or `"85% 🔥"` to the user
@@ -193,8 +237,12 @@ like "this game is interesting" even if not called a "score."
 
 When an audit identifies a code pattern like `score >= threshold → action`:
 
-### Step 1: Where does it run?
-- **Relay/server**: HARD VIOLATION — stop, fix immediately.
+### Step 1: Where does it run, and does it autonomously push?
+- **Relay/server, wired to an autonomous push/notification**: HARD
+  VIOLATION — stop, fix immediately.
+- **Relay/server, served only on pull (normal API response)**: Continue
+  to Step 3 (the raw-number-display question) — this is not
+  automatically clean, but it is not automatically a violation either.
 - **Client-side**: Continue to Step 2.
 
 ### Step 2: What is the threshold source?
