@@ -22038,8 +22038,11 @@ function applyNewspaperVoice(games) {
 // only ever matches a client-computed pick's own client-side _id against
 // client-rendered cards, a same-namespace lookup this new, cross-system
 // case doesn't share. Matches on team-name substring against
-// data-home/data-away instead, the same cross-referencing approach
-// already used elsewhere in this file (e.g. injectWikiChips).
+// data-home/data-away instead -- bidirectional substring match on both
+// home and away (not a reuse of an existing pattern; injectWikiChips
+// was considered but does something different -- it reads dataset
+// values directly for a lookup, it doesn't cross-reference two
+// mismatched naming schemes the way this does).
 function _wwFindCard(home, away) {
   const h = String(home||'').toLowerCase();
   const a = String(away||'').toLowerCase();
@@ -23637,7 +23640,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-07-07d';
+  const SW_VERSION = '2026-07-07e';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
