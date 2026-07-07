@@ -1,5 +1,23 @@
 # FIELD HANDOFF
 
+## MID-SESSION UPDATE — 2026-07-07 (comment-only fix: _wwFindCard's inaccurate injectWikiChips citation, 100/100)
+
+**CLIENT HEAD: 9545c77.** SW_VERSION `2026-07-07e`, confirmed synced.
+**Smoke: 890/0.**
+
+Corrected `_wwFindCard`'s comment (added in the click-to-scroll commit
+below): it claimed to "reuse" `injectWikiChips()`'s cross-referencing
+approach. Verified directly against `injectWikiChips()`
+(`index.html:23282`) before editing: it just reads
+`card.dataset.home`/`.away` off a card it's already iterating and uses
+those values as a lookup key — no searching, no substring matching, no
+cross-referencing between mismatched naming schemes. `_wwFindCard` does
+something genuinely different. Comment-only, function logic untouched
+(confirmed via diff), the rest of the comment (relay/client ID mismatch
+explanation) independently re-confirmed accurate and left as-is.
+
+---
+
 ## MID-SESSION UPDATE — 2026-07-07 (Tonight's Pick click-to-scroll, real relay/client ID mismatch found and fixed, 100/100)
 
 **CLIENT HEAD: a800e95.** SW_VERSION `2026-07-07d`, confirmed synced.
