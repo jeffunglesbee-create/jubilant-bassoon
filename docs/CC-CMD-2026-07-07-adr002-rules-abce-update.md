@@ -170,7 +170,7 @@ trigger for an unprompted, autonomously-sent notification.
 
 ## ONE-LINER
 git remote get-url origin | grep -q jubilant-bassoon || { echo "WRONG REPO -- this CC-CMD targets jubilant-bassoon"; exit 1; }
-git pull. Read docs/CC-CMD-2026-07-07-adr002-rules-abc-update.md. Replace
+git pull. Read docs/CC-CMD-2026-07-07-adr002-rules-abce-update.md. Replace
 Rules A, B, C, and E exactly as specified -- all four permit relay-side
 derived drama/interest state (scalar or categorical) under a pull-only
 guardrail, correcting text that was over-broad relative to the actual
