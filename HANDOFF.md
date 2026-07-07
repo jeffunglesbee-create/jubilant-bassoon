@@ -1,5 +1,50 @@
 # FIELD HANDOFF
 
+## MID-SESSION UPDATE — 2026-07-06 (SW push redesign: boolean gate + team scoping, spans two CC-CMDs, 100/100)
+
+**CLIENT HEAD: 9d02656.** SW_VERSION `2026-07-06f`, confirmed synced.
+**Smoke: 890/0.**
+
+**Redesigned the service worker's push trigger end to end** — full detail:
+`docs/outbox/cc-sw-push-notification-scoping-complete-2026-07-06.md`
+(covers all 3 tasks; combines two CC-CMDs run back-to-back this session).
+
+The first attempt (`CC-CMD-2026-07-06-sw-push-boolean-redesign.md`)
+**correctly scored 70/100 and correctly did not commit**: Task 1 (replace
+`computePushDrama`'s summed 0-100 scalar with `isCrunchLikePush()`, a
+factual boolean AND-gate) and Task 3 (repurpose `_swDramaDial` from a push
+threshold into a pure client-side display filter, removing its SW-side
+sync as dead code) were implemented and verified, but Task 2 (scope
+notifications to the user's followed teams) was honestly reported as
+blocked — `MY_TEAMS` had no sync path to the service worker at all.
+
+A follow-up CC-CMD corrected the premise: the sync mechanism didn't need
+to be invented — the existing keyed `PREF_UPDATE` postMessage +
+IndexedDB channel (previously used only for the dial) was always generic,
+just never extended to a second key. Extended it with `'my_teams'`.
+Found and resolved a real citation mismatch in the process: the follow-up
+CC-CMD quoted the old `drama_dial` sync code as "verified this turn,"
+which matched the last **committed** state but not this session's own
+uncommitted Task 3 work (already deleted as dead code) — resolved by
+rebuilding the generic channel *pattern* for `my_teams` specifically
+rather than reintroducing a pointless `drama_dial` case.
+
+**Verified via real IndexedDB inspection** (not code review): installed
+`fake-indexeddb`, a genuine spec-compliant implementation, into an
+isolated scratch directory (not added to this repo), and ran the actual
+`sw.js` source against it. Sent a real `PREF_UPDATE`/`my_teams` message,
+then read it back through a **second, independent** connection to the
+same database — confirmed real persistence. A fully fresh SW instance,
+loading purely from IndexedDB with zero postMessage, correctly notified
+for a followed team's game and correctly suppressed an identical payload
+for a non-followed team's game. Empty-favorites fallback (explicit
+choice, not left ambiguous): no teams followed yet → show for all
+crunch-like games. Re-ran all 8 of the prior session's Task 1 true/false
+test pairs against the final code — identical results, confirmed
+unregressed.
+
+---
+
 ## MID-SESSION UPDATE — 2026-07-06 (wiki trending client consume, race condition caught pre-ship, 100/100)
 
 **CLIENT HEAD: f486bfc.** SW_VERSION `2026-07-06e`, confirmed synced and
