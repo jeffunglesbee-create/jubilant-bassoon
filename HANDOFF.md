@@ -1,5 +1,67 @@
 # FIELD HANDOFF
 
+## MID-SESSION UPDATE — 2026-07-07 (pick'em illegible text fix, 100/100)
+
+**CLIENT HEAD: 4b5cd3a.** SW_VERSION `2026-07-07b`, confirmed synced.
+**Smoke: 890/0.**
+
+**Fixed dark-on-dark illegible pick'em text** — full detail:
+`docs/outbox/cc-pickem-illegible-text-fix-2026-07-07.md`. Two CSS rules
+(`.pick-widget .pick-choice`, `.pickem-matchup`) used
+`color:var(--ink,#e8e8f0)`; since `--ink` is defined (`#0d0d1c`,
+near-black), the light fallback never applied — CSS custom property
+fallbacks only trigger when the variable is undefined, not when its
+value is contextually wrong. Both changed to `var(--platinum)`, the
+already-established light-text variable (38 other uses). Verified no
+other context relies on the dark rendering (each class used in exactly
+one CSS rule + one HTML call site, confirmed via grep) and verified real
+computed WCAG contrast ratios against the app's three actual card
+backgrounds: `--ink` rendered at 1.04-1.19:1 (effectively invisible,
+confirming the bug was real); `--platinum` renders at 6.95-7.93:1,
+comfortably clearing WCAG AA.
+
+---
+
+## MID-SESSION UPDATE — 2026-07-07 (ADR-002 full consistency pass, 100/100 on the third attempt)
+
+**CLIENT HEAD: 01b18e6.** Docs-only, no SW_VERSION change. **Smoke: 890/0.**
+
+**Corrected ADR-002's over-broad "relay never touches interest-level
+values" claim across the whole document** — full detail:
+`docs/outbox/cc-adr002-full-consistency-pass-2026-07-07.md`. The
+corrected reading: the patents' actual missing element is an autonomous
+notification engine acting on a threshold or change, not the location of
+computation — a relay that computes/serves a derived value only on pull
+supplies no more of the claimed invention than an ordinary scoreboard
+API.
+
+**Two prior attempts this session were correctly reverted, not
+committed** (`CC-CMD-2026-07-07-adr002-rules-abc-update.md`, then
+`-abce-update.md`): each implemented a narrower version of this
+correction, and each was found — via full document reads, not
+assumption — to create a direct, severe self-contradiction with sections
+outside the CC-CMD's stated scope (most seriously "Defense 2: Stateless
+Relay Incompatibility," the document's own self-described "ADR-002
+Core"). Both times, confidence was scored honestly below 95 and the
+change was reverted rather than shipped inconsistent.
+
+The third attempt did the actual full-document read this called for (all
+355 lines) and corrected all five sections restating the old claim
+(Rules A/B/C/E, Defense 2, "What is PERMITTED" #1, "What is PROHIBITED"
+#1-2, Audit Step 1) in one pass, while **explicitly, verifiably
+preserving** the separate raw-number-display axis (confirmed
+byte-identical to HEAD via explicit diff — not left alone by omission).
+Also resolved two previously-reported verification gaps: the
+cost-measurement citation was confirmed to be a `field-relay-nba`
+artifact this session cannot access (labeled as such, not treated as
+verified-local), and the core legal theory arrived as embedded verbatim
+patent text, cross-checked against this session's own independent
+WebSearch findings from an earlier CC-CMD and found consistent — without
+this session personally certifying the underlying legal theory (Rule
+45/LEGAL-GATE-A).
+
+---
+
 ## MID-SESSION UPDATE — 2026-07-06 (SW push redesign: boolean gate + team scoping, spans two CC-CMDs, 100/100)
 
 **CLIENT HEAD: 9d02656.** SW_VERSION `2026-07-06f`, confirmed synced.
