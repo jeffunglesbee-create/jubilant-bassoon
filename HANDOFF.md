@@ -1,5 +1,47 @@
 # FIELD HANDOFF
 
+## MID-SESSION UPDATE — 2026-07-07 (Tonight's Pick click-to-scroll, real relay/client ID mismatch found and fixed, 100/100)
+
+**CLIENT HEAD: a800e95.** SW_VERSION `2026-07-07d`, confirmed synced.
+**Smoke: 890/0.**
+
+**Made each ranked row in "TONIGHT'S PICK" click-to-scroll** — full
+detail: `docs/outbox/cc-worth-watching-clickthrough-2026-07-07.md`. This
+CC-CMD had been correctly declined twice earlier this session (`.ww-row`
+wasn't live yet); now unblocked by the v2 display commit above.
+
+**Found and fixed a real, load-bearing bug before shipping, not assumed
+away.** The CC-CMD's own literal code sample matches
+`bundle.pick.ranked[].game_id` against `[data-gameid="..."]`. Tested this
+against the live app's real relay data before committing (per the
+CC-CMD's own explicit "report the actual observed behavior, not a
+hypothetical" requirement) and found **0/5 real matches** — the relay's
+`game_id` scheme (`MLB_2026-07-07_reds_phillies`-style composite
+strings) shares no namespace with the client's own internal
+`data-gameid` values (`g24`, etc.), even though every one of today's
+real ranked games genuinely exists on the page. As specified, every
+click would have silently done nothing, always — not the rare "different
+filter active" edge case the CC-CMD anticipated. The existing precedent
+this feature cites only ever matches a client-computed pick's own
+client-side `_id` against client-rendered cards, a same-namespace lookup
+that never had to solve this relay-to-client bridging problem.
+
+Fixed with `_wwFindCard(home, away)`, matching on team-name substring
+against `data-home`/`data-away` instead — the same cross-referencing
+technique already used elsewhere in this file. The `scrollIntoView`/flash
+mechanism itself is unchanged, exactly as specified. Re-verified: 5/5
+real matches after the fix.
+
+**Verified via a genuine `.click()` DOM event** against the live app:
+real scroll (`window.scrollY` 0 → 2658), target card moved toward
+viewport center, `.ww-flash` appeared within 400ms and was confirmed
+cleared 1400ms later. Soft-fail case tested with a genuinely
+non-matching team pair: zero errors, zero console noise, scroll position
+unchanged. Cards confirmed visually unchanged at rest via before/after
+class-list capture.
+
+---
+
 ## MID-SESSION UPDATE — 2026-07-07 (Tonight's Pick ranked list, worth-watching-display v2, 100/100)
 
 **CLIENT HEAD: d262d8e.** SW_VERSION `2026-07-07c`, confirmed synced.
