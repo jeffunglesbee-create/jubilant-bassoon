@@ -472,6 +472,7 @@ body::before{
 .ww-row{margin-top:.3rem;display:flex;align-items:center;gap:.4rem}
 .ww-tier-badge{font-size:.6rem;letter-spacing:.08em;text-transform:uppercase;font-weight:700;color:#fbbf24}
 .ww-matchup{font-size:.78rem;color:var(--platinum);font-weight:600}
+.ww-flash{animation:scoreFlash 1.2s ease-out}
 @media(max-width:600px){
   .np-inner{padding:.9rem .75rem}
   .np-prose{font-size:.78rem;line-height:1.55}
@@ -22026,6 +22027,30 @@ function applyNewspaperVoice(games) {
   // individual sections untouched — matches "show everything" for morning.
 }
 
+// _wwFindCard: the relay's pick.ranked[] entries use short team names
+// ("Reds") and a relay-scheme game_id ("MLB_2026-07-07_reds_phillies")
+// that shares no namespace with the client's own data-gameid values
+// ("g24") -- confirmed via live cross-reference before writing this
+// click handler, not assumed: every one of today's real ranked games
+// genuinely exists on the page, but zero relay game_ids matched any real
+// data-gameid. The existing click-to-scroll precedent this feature reuses
+// (index.html:13301) never had to bridge relay IDs to client IDs -- it
+// only ever matches a client-computed pick's own client-side _id against
+// client-rendered cards, a same-namespace lookup this new, cross-system
+// case doesn't share. Matches on team-name substring against
+// data-home/data-away instead, the same cross-referencing approach
+// already used elsewhere in this file (e.g. injectWikiChips).
+function _wwFindCard(home, away) {
+  const h = String(home||'').toLowerCase();
+  const a = String(away||'').toLowerCase();
+  if (!h || !a) return null;
+  return Array.from(document.querySelectorAll('[data-gameid][data-home][data-away]')).find(c => {
+    const ch = (c.dataset.home||'').toLowerCase();
+    const ca = (c.dataset.away||'').toLowerCase();
+    return (ch.includes(h) || h.includes(ch)) && (ca.includes(a) || a.includes(ca));
+  }) || null;
+}
+
 function renderNewspaper(bundle) {
   if (!bundle) return;
   // Stash globally so the FIELD's Pick badge hook can attach on every
@@ -22098,7 +22123,9 @@ function renderNewspaper(bundle) {
     if (Array.isArray(bundle.pick.ranked) && bundle.pick.ranked.length) {
       rankedHTML = bundle.pick.ranked.map(g => {
         const badge = g.tier === 0 ? '<span class="ww-tier-badge">ELIMINATION</span>' : '';
-        return `<div class="ww-row">${badge}<span class="ww-matchup">${g.away} @ ${g.home}</span></div>`;
+        const homeArg = String(g.home||'').replace(/'/g, "\\'");
+        const awayArg = String(g.away||'').replace(/'/g, "\\'");
+        return `<div class="ww-row" style="cursor:pointer" onclick="(()=>{const c=_wwFindCard('${homeArg}','${awayArg}');if(c){c.scrollIntoView({behavior:'smooth',block:'center'});c.classList.add('ww-flash');setTimeout(()=>c.classList.remove('ww-flash'),1200);}})()">${badge}<span class="ww-matchup">${g.away} @ ${g.home}</span></div>`;
       }).join('');
     }
     if (pickText || rankedHTML) {
@@ -23610,7 +23637,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-07-07c';
+  const SW_VERSION = '2026-07-07d';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
