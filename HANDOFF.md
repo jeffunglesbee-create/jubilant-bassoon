@@ -1,5 +1,39 @@
 # FIELD HANDOFF
 
+## MID-SESSION UPDATE — 2026-07-07 (Tonight's Pick ranked list, worth-watching-display v2, 100/100)
+
+**CLIENT HEAD: d262d8e.** SW_VERSION `2026-07-07c`, confirmed synced.
+**Smoke: 890/0.**
+
+**Folded `bundle.pick.ranked` into the existing "TONIGHT'S PICK" section**
+— full detail: `docs/outbox/cc-worth-watching-display-2026-07-07.md`. No
+new section: "What's Worth Watching" would have collided with the
+existing, differently-defined live per-card WORTH WATCHING badge. Only
+tier 0 gets a badge ("ELIMINATION"); tier 1/2 rely on list position.
+Never renders raw score — confirmed necessary, not hypothetical: fetched
+the real live relay endpoint before writing any code and found
+`ranked[]` entries genuinely carry a raw `score` field alongside `tier`.
+
+Two disclosed deviations from the CC-CMD's literal sample: dropped the
+`esc()` wrapper (the actual enclosing function, `renderNewspaper()`, has
+no such helper in scope, and its own real precedent three lines above
+already interpolates team names unescaped); used `#fbbf24` for the tier
+badge (matching an existing, closer precedent — `.field-pick-badge`, in
+the same section — rather than inventing a new accent color).
+
+Verified via real page load: fetched live relay data (5/5 rows render,
+0 badges — correct, today's real slate has no tier-0 game), built a
+synthetic tier-0/1/2 mix to directly verify the untested badge path
+(1 badge, correctly on tier 0 only, confirmed no raw score value leaks
+into the DOM), and screenshotted the actual rendered result.
+
+**A related follow-up, `CC-CMD-2026-07-07-worth-watching-clickthrough.md`,
+was correctly declined twice before this** — it depends on `.ww-row`
+existing, which it didn't until this commit. Now unblocked for a future
+session.
+
+---
+
 ## MID-SESSION UPDATE — 2026-07-07 (pick'em illegible text fix, 100/100)
 
 **CLIENT HEAD: 4b5cd3a.** SW_VERSION `2026-07-07b`, confirmed synced.
