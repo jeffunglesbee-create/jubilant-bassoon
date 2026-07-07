@@ -1,5 +1,81 @@
 # FIELD HANDOFF
 
+## MID-SESSION UPDATE — 2026-07-07 (cross-cutting summary: RUWT/ADR-002 correction, Field's Pick tiering, pick'em fix, confidence-gate detection, worth-watching + click-to-scroll)
+
+**Not a session-end entry — session is ongoing.** This is a cross-cutting
+summary of today's real work across both repos in one place (the
+per-CC-CMD entries below already cover the jubilant-bassoon side
+individually; field-relay-nba has no separate HANDOFF copy, so its work
+is recorded here). No Drive doc, no session-end ritual — written
+mid-session so a crash or restart doesn't lose today's real state.
+
+**RUWT patent re-analysis → ADR-002 correction (jubilant-bassoon).**
+Push vs. pull established as the actual claim boundary, not client vs.
+relay location — a relay that computes/serves a derived value only on
+pull, never autonomously pushing a notification from it, supplies no
+more of the claimed invention than an ordinary scoreboard API. Full
+307-line consistency pass across all 5 sections that separately restated
+the old, over-broad claim (Rules A/B/C/E, Defense 2, "What is PERMITTED"
+#1, "What is PROHIBITED" #1-2, Audit Step 1). Two narrower prior attempts
+were correctly reverted before this one landed — each found the literal,
+smaller scope would have shipped a document directly contradicting
+itself. The separate raw-number-display prohibition ("What is
+PROHIBITED" #3-4, Rule D) was explicitly, verifiably preserved untouched
+throughout (confirmed via diff against HEAD, not left alone by
+omission). Commit `01b18e6`.
+
+**Field's Pick redesign (field-relay-nba).** Evolved from single-winner
+selection to a full ranked list, then to stakes-tier ordering
+(elimination / OT-or-late-close / other, score as tiebreaker only),
+reusing the existing `SPORT_CONFIG` (hoisted to a shared constant,
+extended with WNBA/WC26). A real dispatch mixup shipped the flat-score
+v1 design instead of the tiered v2 — recovered without a revert: tier
+logic was added as a surgical upgrade on top of the already-live code
+instead of rolling back and redoing the feature. Commits `1b3c16f`,
+`0bf2ea4`.
+
+**Pick'em illegible text (jubilant-bassoon).** Real, user-reported bug,
+root-caused precisely: two CSS rules referenced `var(--ink,#e8e8f0)`
+where `--ink` was defined (not undefined) as near-black — CSS custom
+property fallbacks only trigger when a variable is undefined, not when
+its value is merely wrong for context, so the light fallback never
+applied. Fixed to `var(--platinum)`; contrast independently verified via
+real computed WCAG ratios against the app's actual card backgrounds
+(current: ~1.0-1.2:1, effectively invisible; fixed: 6.95-7.93:1,
+comfortably clears AA). Commit `4b5cd3a1`.
+
+**Confidence-gate violation detection (field-relay-nba).** Built to
+catch CC-CMDs that commit despite reporting sub-95 confidence. Found 3
+real historical violations on its first live run (70/100, 85/100,
+75/100) — plus a bug in itself: a false positive triggered by its own
+outbox's example text. Fixed by anchoring the score extraction to the
+real "## Confidence Score" heading and taking the last match in the
+file, not the first match anywhere. Commits `c96b3fc`, `12b348e`.
+
+**What's Worth Watching display + click-to-scroll (jubilant-bassoon).**
+Folded the relay's ranked list into the existing "TONIGHT'S PICK"
+section rather than creating a new, colliding section name — "What's
+Worth Watching" was already claimed by a differently-defined, live
+per-card badge. The click-to-scroll follow-up implemented the spec's own
+literal code first, tested it against real live data before committing,
+and found a real, would-have-failed-every-click bug: the relay's
+`game_id` scheme shares no namespace with the client's own internal
+`data-gameid` values, even though every real ranked game genuinely
+exists on the page. Fixed with `_wwFindCard`, a team-name
+cross-referencing helper (re-verified 5/5 real matches after the fix,
+vs. 0/5 before). Commits `d262d8ee`, `a800e954`, plus a small follow-up
+correcting an inaccurate code-comment citation (`9545c771`).
+
+**Still pending, not yet executed** — confirm current status via
+`codex_list` rather than treating this as necessarily current by the
+time this entry is read: `wp-resolution-failure-tracking.md`
+(field-relay-nba) — tracks a real, currently-silent failure path where
+win-probability resolution can fail with zero record anywhere, reusing
+the existing `codex`/`open_incidents` convention rather than new
+infrastructure.
+
+---
+
 ## MID-SESSION UPDATE — 2026-07-07 (comment-only fix: _wwFindCard's inaccurate injectWikiChips citation, 100/100)
 
 **CLIENT HEAD: 9545c77.** SW_VERSION `2026-07-07e`, confirmed synced.
