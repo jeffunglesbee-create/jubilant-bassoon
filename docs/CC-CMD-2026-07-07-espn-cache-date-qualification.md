@@ -111,6 +111,38 @@ sites, several of which are in hot, frequently-executed polling paths.
   a visible, cheap-to-verify proof point before touching anything
   higher-traffic or closer to a write.
 
+## A DISTINCT RISK CATEGORY, WORTH NAMING SEPARATELY: EDITORIAL CONTAMINATION
+
+Everything above treats the consequence of a stale match as a wrong
+badge, a wrong number, or a wrong durable record — all correctable
+once found. Night Owl's prompt-building path is a different shape of
+harm: `detectAndStoreStoryMoment()` (`index.html:39521`, confirmed
+real) derives narrative "story moments" from ESPN score deltas into an
+in-memory `_storyMoments[gameId]`. **Verified before including this:
+`_storyMoments` is a plain in-memory object — no `localStorage`, no
+relay POST, no persistence of any kind found in the function body.**
+It does not qualify for the urgent fix by the same standard applied to
+everything else in this document, and it doesn't need to — but it's
+worth naming as its own category for the consolidation sweep, because
+a stale match here doesn't just display a wrong fact, it can feed a
+wrong *narrative* into AI-generated recap text with full confidence.
+That's a different failure mode from a wrong badge, worth its own line
+in the eventual write-up even though it sits in the same
+`consumer-derived` bucket as everything else non-urgent.
+
+## EXPLICIT OUT-OF-SCOPE BOUNDARY, TO PREVENT OVER-SCOPING LATER
+
+Not every durable write in this codebase is part of this bug class.
+`recordWatchOpen()` writes real, durable watch-history state — but it
+takes only `gameId` and `sport` as inputs and does not itself read
+`espnScores` at all. Writing durable state and being vulnerable to
+this specific stale-cache bug are different properties; only the
+second one belongs in either the urgent fix or this deferred doc.
+Confirm this same distinction for any other durable-write function
+found during the full enumeration before including it — a write path
+that doesn't consume `espnScores` isn't part of this migration, no
+matter how permanent its output is.
+
 ## WHAT WOULD NEED TO HAPPEN BEFORE THIS IS EXECUTION-READY
 
 - A full, exhaustive enumeration of all 74 reference sites, each
