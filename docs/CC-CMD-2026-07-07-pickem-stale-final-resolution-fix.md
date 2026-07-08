@@ -1,9 +1,12 @@
 # CC-CMD: Close the stale-final gap in pick resolution — guard the shared matcher, not each caller
 
-**Date:** 2026-07-07 (v3 — adds a fourth target, `injectDramaBadges`'s
-localStorage peak write, found via independently-verified review of
-external suggestions; v2 corrected scope after finding the real extent
-of the vulnerability)
+**Date:** 2026-07-07 (v4 — adds a `requireSameDate` mode parameter to
+`findEspnEntry()` for forward-compatibility with the future
+consolidation sweep, and explicitly resolves a contradiction between
+two rounds of external review over whether `injectDramaBadges` belongs
+in the urgent scope; v3 added it as a fourth target, independently
+verified; v2 corrected scope after finding the real extent of the
+vulnerability)
 **Repo:** jeffunglesbee-create/jubilant-bassoon (sole)
 **Branch:** main — commit directly, do not create a feature branch or PR
 
@@ -68,14 +71,19 @@ sed -n '36175,36195p' index.html   # injectDramaBadges — its own inline match,
 ```
 Confirm all four still match before editing.
 
-## TASK 1 — Guard `findEspnEntry()` itself
+## TASK 1 — Guard `findEspnEntry()` itself, with a mode parameter for forward-compatibility
 
 Add the same stale-final check already proven in `findESPNScore()`
 (`_staleFinalGuard`) directly inside `findEspnEntry()`, so every future
-caller — not just the one migrated here — inherits the protection
-automatically:
+caller — not just the ones migrated here — inherits the protection
+automatically. **Add a second, optional parameter now, even though
+every caller in this CC-CMD uses its strict default** — the future
+consolidation sweep (a separate, later CC-CMD) will need to migrate
+genuinely display-only consumers, which should degrade gracefully to a
+stale value rather than show nothing; building the parameter in now
+avoids redesigning this function's signature later:
 ```javascript
-function findEspnEntry(game) {
+function findEspnEntry(game, { requireSameDate = true } = {}) {
   if (!game) return null;
   const h = (game.home || '').toLowerCase().replace(/[^a-z]/g, '').slice(-6);
   const a = (game.away || '').toLowerCase().replace(/[^a-z]/g, '').slice(-6);
@@ -84,15 +92,28 @@ function findEspnEntry(game) {
     const va = (v.awayName || '').toLowerCase().replace(/[^a-z]/g, '');
     return vh.endsWith(h) && va.endsWith(a);
   }) || null;
-  if (entry && entry.state === 'post' && game.start_time &&
+  if (requireSameDate && entry && entry.state === 'post' && game.start_time &&
       new Date(game.start_time).getTime() > Date.now()) {
     return null; // stale-final guard — see findESPNScore's original June 10 comment
   }
   return entry;
 }
 ```
-Reuse the exact guard condition already established, do not write a
-new variant of the check.
+Every caller migrated in this CC-CMD (Task 2, Task 2c) uses the
+default (`requireSameDate: true`) — none of them pass `false`. This
+parameter exists for the *next* CC-CMD's use, not this one's; do not
+use it to justify weakening any guard here.
+
+**A note on `injectDramaBadges`, since two different characterizations
+of it exist and only one is being followed here:** its localStorage
+peak write (`if (score > prevPeak)`) is monotonic and never resets — a
+single stale match permanently corrupts it, with no future correct
+value able to undo it. That is durable false state by any reasonable
+reading, including the "unless it triggers a permanent event"
+exception used elsewhere to justify deferring similar-looking
+display-only matches. It stays in Task 2c, using the strict default —
+this was independently verified against the actual code before being
+included, not assumed from either external suggestion.
 
 ## TASK 2 — Migrate `checkForNewFinals()` to use it
 
@@ -174,7 +195,7 @@ same pattern before touching only this one — report what you find.
 ## ONE-LINER
 git remote get-url origin | grep -q jubilant-bassoon || { echo "WRONG REPO -- this CC-CMD targets jubilant-bassoon"; exit 1; }
 git pull. Read docs/CC-CMD-2026-07-07-pickem-stale-final-resolution-fix.md
-(v3). Add the existing stale-final guard directly inside findEspnEntry()
+(v4). Add the existing stale-final guard directly inside findEspnEntry()
 (the already-existing, partially-adopted consolidation helper) rather
 than patching checkForNewFinals in isolation, then migrate
 checkForNewFinals AND injectDramaBadges (Task 2c -- its localStorage
