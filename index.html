@@ -10411,8 +10411,17 @@ function findGameById(id) {
 
 // gameNetwork(g, defaultLabel) lives in field_utils.js (pure).
 // getDramaPeak: read peak drama score for a game from localStorage.
-// Replaces 4 inline localStorage.getItem('field_drama_peak_'+gameId) patterns.
-function getDramaPeak(gameId) {
+// Optional `game` param (CC-CMD-2026-07-08-pick-cross-session-resolution
+// follow-up): when a real game object is available, tries the
+// cross-session-stable key first (injectDramaBadges now dual-writes to it),
+// so a peak accumulated before a _gid reset (midnight-crossover, goToDate)
+// is still found. Falls back to the volatile gameId-keyed value.
+function getDramaPeak(gameId, game) {
+  const stableKey = (game && typeof _pickStorageKey === 'function') ? _pickStorageKey(game) : '';
+  if (stableKey) {
+    const v = localStorage.getItem('field_drama_peak_' + stableKey);
+    if (v != null) return parseFloat(v) || 0;
+  }
   return parseFloat(localStorage.getItem('field_drama_peak_' + gameId) || '0');
 }
 
@@ -14574,7 +14583,12 @@ function injectJ1J4Badges() {
       // Stored once (first badge injection) — isScoutsPick() may not match at game-end
       // if V2 state changes, so we need the pre-game determination to survive.
       try {
-        const _spKey = 'field_scout_pick_' + (g._id || '');
+        // Cross-session-stable key (CC-CMD-2026-07-08-pick-cross-session-resolution
+        // follow-up): g._id is session-volatile, but this entry is written
+        // pre-game and read by Night Owl at game-end, which can be a later
+        // session -- the exact bug class the pick storage fix addressed.
+        // Falls back to g._id only if a stable key can't be built.
+        const _spKey = 'field_scout_pick_' + ((typeof _pickStorageKey === 'function' ? _pickStorageKey(g) : '') || g._id || '');
         if (!localStorage.getItem(_spKey)) {
           // Capture qualifying gate and stat evidence so Night Owl verdict is specific.
           // Gate C (stat anomaly) carries shortText/fullText for "graded on delivery of X" framing.
@@ -23653,7 +23667,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-07-08b';
+  const SW_VERSION = '2026-07-08c';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -27857,27 +27871,33 @@ function _savePickCache(cache) {
   try { localStorage.setItem(PICKS_KEY, JSON.stringify(cache)); } catch(_) {}
 }
 
-// _pickStorageKey: cross-session-stable pick storage/resolution key
-// (CC-CMD-2026-07-08-pick-cross-session-resolution). game._id is a
-// session-local counter ("g" + a counter reset to 0 on every page load) --
-// confirmed via real testing that it is only EMPIRICALLY stable across
-// reloads for sports whose games happen to iterate in the same relative
-// order each fetch, and confirmed UNSTABLE for at least one real path
-// (golf's Date.now()-based fallback ID changed between two reloads
-// minutes apart). A pick made in one page load and resolved in a later
-// one (the common case -- games take hours, most users don't leave the
-// tab open that long) can silently never resolve if the counter
-// reassigns differently. Keys instead on sport+date+home+away, all
-// static properties of the real-world game that don't change once
-// scheduled.
+// _pickStorageKey: cross-session-stable identifier for any game-keyed
+// persistent data (CC-CMD-2026-07-08-pick-cross-session-resolution, hour-
+// bucket hot-fix same date). game._id is a session-local counter ("g" + a
+// counter reset to 0 on every page load) -- confirmed via real testing
+// that it is only EMPIRICALLY stable across reloads for sports whose games
+// happen to iterate in the same relative order each fetch, and confirmed
+// UNSTABLE for at least one real path (golf's Date.now()-based fallback ID
+// changed between two reloads minutes apart). A pick made in one page load
+// and resolved in a later one (the common case -- games take hours, most
+// users don't leave the tab open that long) can silently never resolve if
+// the counter reassigns differently. Keys instead on sport+hour+home+away.
+// Hour-bucket, not date-only: reuses the established doubleheader-safe
+// convention already in use elsewhere (gameHourKey/keyOf in
+// fetchMLBFixtures/refreshMLBStatus, index.html ~20531/20585) -- two games
+// between the same teams on the same day are real, modeled data (see the
+// _dhCount/_subtitle "Game 2" doubleheader tagging in fetchMLBFixtures), and
+// a date-only key collapses them onto one entry. A date-only version of this
+// key shipped first and was found, via post-deploy audit, to collide on
+// exactly this case; fixed before any doubleheader occurred in practice.
 function _pickStorageKey(game) {
   if (!game) return '';
-  const dateKey = (game.start_time || '').slice(0, 10);
+  const hourKey = (game.start_time || '').slice(0, 13);
   const h = (game.home || '').toLowerCase().replace(/[^a-z]/g, '');
   const a = (game.away || '').toLowerCase().replace(/[^a-z]/g, '');
   const sp = _gameSport(game).toLowerCase().replace(/[^a-z]/g, '');
-  if (!dateKey || !h || !a) return ''; // insufficient data for a stable key
-  return `${sp}_${dateKey}_${h}_${a}`;
+  if (!hourKey || !h || !a) return ''; // insufficient data for a stable key
+  return `${sp}_${hourKey}_${h}_${a}`;
 }
 
 // Tapping a team button in the pick widget. Fires pick_made via the
@@ -36338,8 +36358,24 @@ function injectDramaBadges(){
     const tier = dramaTier(score);
     if(gid && score > 0){
       const peakKey = 'field_drama_peak_' + gid;
-      const prevPeak = parseFloat(localStorage.getItem(peakKey)||'0');
-      if(score > prevPeak) localStorage.setItem(peakKey, score.toString());
+      // Dual-write (CC-CMD-2026-07-08-pick-cross-session-resolution follow-up):
+      // gid is session-volatile, so a peak accumulated under one _id is lost
+      // if _gid resets mid-game (midnight-crossover watcher, goToDate() back
+      // to Today). `game` is a real object here (findGameById above), so also
+      // write under the cross-session-stable key; the running max considers
+      // both so a reset mid-accumulation doesn't regress the tracked peak.
+      // Same-session-only readers (ViewingConditions.evaluate, gid-only) keep
+      // working unchanged off peakKey.
+      const stableGameKey = (typeof _pickStorageKey === 'function') ? _pickStorageKey(game) : '';
+      const stablePeakKey = stableGameKey ? 'field_drama_peak_' + stableGameKey : '';
+      const prevPeak = Math.max(
+        parseFloat(localStorage.getItem(peakKey)||'0'),
+        stablePeakKey ? (parseFloat(localStorage.getItem(stablePeakKey)||'0')) : 0
+      );
+      if(score > prevPeak){
+        localStorage.setItem(peakKey, score.toString());
+        if (stablePeakKey) localStorage.setItem(stablePeakKey, score.toString());
+      }
       // ── Drama Arc: record RAW score to history ───────────────────────
       recordDramaHistory(gid, score, eData.period);
       // ── Score snapshot: records factual score changes for OTW momentum ─
@@ -38083,14 +38119,13 @@ function saveEspnFinal(game, eData){
     // same-session dedup check it's used for here, but game._id is a
     // session-local counter that resets every page load, so a pick made in
     // an earlier session could never be found by it when the game finishes
-    // in this one. _pickStorageKey() is stable across sessions (sport+date+
+    // in this one. _pickStorageKey() is stable across sessions (sport+hour+
     // home+away); falls back to `id` only if a stable key can't be built
     // (e.g. missing start_time), matching the pre-fix behavior in that
     // narrow case rather than silently doing nothing differently.
     const pickId = (typeof _pickStorageKey === 'function' ? _pickStorageKey(game) : '') || id;
     if (typeof _resolvePickIfExists === 'function') { try { _resolvePickIfExists(pickId, game, eData); } catch(_) {} }
-    const dpKey2='field_drama_peak_'+(game._id||'');
-    const dramaPeak=parseFloat(localStorage.getItem(dpKey2)||'0');
+    const dramaPeak = getDramaPeak(game._id||'', game);
     // ── Drama persistence: POST summary to relay archive (CC-CMD-2026-06-19 / Prompt 11B)
     // Fires once per game at final state — the existing-check above gates
     // this same as the entry write. Relay stores in D1 for Context Graph /
@@ -38188,6 +38223,12 @@ function saveEspnFinal(game, eData){
       matchupNote: game.matchupNote||'',
       date: today, dramaPeak,
       statCtx: statCtx || '',  // stat snapshot — survives ESPN cache clearing
+      // start_time + _sport (CC-CMD-2026-07-08-pick-cross-session-resolution
+      // follow-up): field names must match what _pickStorageKey()/_gameSport()
+      // read on a real game object (game._sport, not the `sport` field above)
+      // so downstream readers of this snapshot (Night Owl's Scout's Pick
+      // lookup) compute the identical stable key this entry was written under.
+      start_time: game.start_time || '', _sport: game._sport || '',
     };
     existing.push(entry);
     localStorage.setItem(FINALS_KEY, JSON.stringify(existing.slice(-20)));
@@ -38786,7 +38827,12 @@ async function fetchNightOwlFromClaude(topGame){
   // Item 2: read enriched payload (statShort + statFull + gate) so verdict is specific.
   let _owlScoutPickCtx = '';
   try {
-    const _gidSP = topGame.id || topGame._id || '';
+    // Cross-session-stable lookup first (matches the write in
+    // injectJ1J4Badges); topGame here is a snapshot from
+    // field_tonight_finals_* (saveEspnFinal's `entry`), which now carries
+    // start_time/_sport for exactly this purpose. Falls back to the old
+    // volatile id for entries written before this fix.
+    const _gidSP = (typeof _pickStorageKey === 'function' ? _pickStorageKey(topGame) : '') || topGame.id || topGame._id || '';
     const _spKey = 'field_scout_pick_' + _gidSP;
     const _spRaw = localStorage.getItem(_spKey);
     if (_spRaw) {
@@ -39336,7 +39382,7 @@ function buildDramaLineTiers(game, eData, sport){
     // Leader-first to match score-wrap — home–away order is wrong when away team wins
     const winS=Math.max(hS,aS),loseS=Math.min(hS,aS);
     const score=winS+'–'+loseS;
-    const peak=parseFloat(localStorage.getItem('field_drama_peak_'+gid)||'0');
+    const peak=getDramaPeak(gid, game);
     const drama=peak>=80?'\uD83D\uDD25 High drama':peak>=60?'\u26A1 Good game':'';
     const tight=trim(join([score,series]),36),mid=trim(join([score,drama,series]),52),full=join([score,drama,series,firstSentence]);
     return tight?{tight,mid:mid||tight,full:full||mid||tight}:empty;
@@ -39551,14 +39597,14 @@ function buildLifeStageContent(game, eData, stage) {
         // drama-peak score leaking to the user (parsing artifact in appearance,
         // ADR-002 violation in substance). Tier emoji conveys the same signal
         // without the number.
-        const peak = parseFloat(localStorage.getItem('field_drama_peak_'+(game._id||''))||'0');
+        const peak = getDramaPeak(game._id||'', game);
         const peakStr = peak >= 65 ? ` ${peak >= 85 ? '🔥' : '⚡'}` : '';
         const parts = [`${fLeader} ${fLS}–${fTS} ${fTrailer} F${peakStr}`];
         if (_briefLine) parts.push(_briefLine);
         return `<div class="card-stage-content card-stage-live-basic">${parts.join(' · ')}</div>`;
       }
       // No score data — fall back to drama peak and/or brief
-      const peak = parseFloat(localStorage.getItem('field_drama_peak_'+(game._id||''))||'0');
+      const peak = getDramaPeak(game._id||'', game);
       if (peak < 50 && !_briefLine) return '';
       const parts = [];
       if (peak >= 50) {
@@ -40108,7 +40154,7 @@ function openBottomSheet(gameId) {
   let _bsPostgameDrama = '';
   if (_bsIsFinal) {
     try {
-      const _peakVal = getDramaPeak(gameId);
+      const _peakVal = getDramaPeak(gameId, game);
       const _peakIcon = _peakVal >= 85 ? '🔥' : _peakVal >= 65 ? '⚡' : '';
       const _sustained = getDramaSustained(gameId, 65, 60*60*1000);
       const _trend = getDramaTrend(gameId, 6);
@@ -40423,7 +40469,7 @@ async function renderNightOwlRecap(){
           // going through findEspnEntry() instead of its own inline match.
           const eData=findEspnEntry(game);
           if(!eData || eData.state!=='post') return;
-          const dramaPeak=parseFloat(localStorage.getItem('field_drama_peak_'+(game._id||''))||'0');
+          const dramaPeak=getDramaPeak(game._id||'', game);
           // Save it properly for future page loads
           saveEspnFinal(game, eData);
           // Add to in-memory finals for this render
@@ -40433,6 +40479,11 @@ async function renderNightOwlRecap(){
               homeScore:eData.homeScore, awayScore:eData.awayScore,
               sport:game._sport||'', league:game.league||'',
               seriesRecord:game.seriesRecord||'', date:today, dramaPeak,
+              // start_time + _sport (CC-CMD-2026-07-08-pick-cross-session-
+              // resolution follow-up): matches saveEspnFinal's persisted
+              // entry shape so this in-memory-only fallback copy can also
+              // become topGame and still resolve _pickStorageKey()/scout-pick.
+              start_time: game.start_time || '', _sport: game._sport || '',
             });
           }
         });

@@ -1,5 +1,56 @@
 # FIELD HANDOFF
 
+## MID-SESSION UPDATE — 2026-07-08 (durability audit → doubleheader hot-fix + scout-pick/drama-peak follow-up)
+
+**SW_VERSION `2026-07-08b` → `2026-07-08c`. Smoke: 890/0.** Full detail:
+`docs/outbox/cc-pick-cross-session-followup-2026-07-08.md`.
+
+**Prompted by a direct question after the pick re-key shipped: "is this
+durable, and did it take a holistic approach?"** Answer was no on both
+counts, found by digging rather than asserting yes:
+
+**1. Real collision defect in the just-shipped fix.** `_pickStorageKey`
+keyed on date only. The codebase already has a doubleheader-safe
+`home|away|hour` convention elsewhere (`fetchMLBFixtures`'s `gameHourKey`,
+plus its own `_dhCount`/"Game 2" tagging proving doubleheaders are real,
+modeled data) that wasn't reused. Two games between the same teams same day
+would have collapsed onto one pick key — picking game 2 would silently
+refuse and show game 1's pick. Fixed by switching to the same hour-bucket
+convention; verified with a synthetic doubleheader test.
+
+**2. Not holistic — same `game._id`-volatility bug found in two more
+features**, from auditing every localStorage key built from `game._id`,
+not just the pick cache:
+- `field_scout_pick_*` — pre-game write, game-end read by the always-on
+  Night Owl recap (higher-impact than Pick'em, since it's not opt-in).
+  Fixing this surfaced a real field-name trap: the read-side object is a
+  *snapshot* (`saveEspnFinal`'s persisted `entry`), which stored sport as
+  `sport` not `_sport` and had no `start_time` — naively reusing
+  `_pickStorageKey()` on it would have computed a silently wrong key. Fixed
+  by adding `start_time`/`_sport` to both the persisted entry and a second,
+  independent in-memory-only snapshot constructor found in
+  `renderNightOwlRecap()`'s F5 fallback.
+- `field_drama_peak_*` — mid-game peak tracking, dual-written now (old
+  volatile-`gid` key preserved for same-session-only readers, new stable
+  key added) so a `_gid` reset mid-game (midnight-crossover watcher,
+  `goToDate()`) doesn't reset the accumulator. Lower severity than the
+  other two — the codebase's own daily pruner already treats this as
+  disposable — fixed anyway per explicit request; the one read site left
+  unmigrated (`ViewingConditions.evaluate`, gid-only, no game object
+  available) has a stated, verified reason (same-render-pass only).
+
+Both proven via real synthetic tests against the actual committed function
+source (Node `vm`), not asserted: doubleheader non-collision, scout-pick
+resolving across a simulated `_id` reset with the snapshot's corrected
+field names, and drama-peak surviving a simulated mid-game `_id` reset.
+
+Explicitly NOT touched, and why: `field_game_notes_` (has a fallback, but
+date-unqualified — lower-severity stale-content-reuse risk, out of scope
+here), `field_owl_job_`/`field_nox_secondary_` (use `sessionStorage`,
+already correctly session-scoped, not part of this bug class).
+
+---
+
 ## MID-SESSION UPDATE — 2026-07-08 (pick cross-session resolution re-key, 100/100)
 
 **SW_VERSION `2026-07-08a` → `2026-07-08b`. Smoke: 890/0.** Full detail:
