@@ -125,7 +125,29 @@ caller can invoke it standalone with just the three explicit params.
 ```
 node smoke.js index.html   → 890 passed, 0 failed
 node field_unit.js         → 66 passed, 0 failed (unaffected — tests field_utils.js only)
+node field_smoke.js index.html → 21 failed (pre-existing baseline, see below)
 ```
+
+**On `field_smoke.js`'s 21 failures — diff-confirmed, not just documented.**
+The pre-commit hook (`scripts/pre-commit`) wasn't wired up in this session's
+fresh clone (`core.hooksPath` requires `npm install`'s `prepare` script,
+which was never run here), so the commit went through without the hook's
+automatic gate. Rather than rely on `d12d2a24`'s prior documentation that
+these 21 failures are a pre-existing, unrelated baseline, ran `field_smoke.js`
+against both the pre-refactor commit (`b17ea350`, via `git show`) and the
+post-refactor working tree, and diffed the two failure lists directly:
+
+```
+diff fails_before.txt fails_after.txt
+→ (empty diff — byte-for-byte identical)
+```
+
+All 21 failures (My Teams, Scout's Pick, Anti-Hype, Drama Arc, Broadcaster
+Registry, `beatTheBook()`, etc.) are unrelated to `_bundleFinalizedAt`,
+`_sportLabelMatches`, or anything touched by this refactor, and are
+identical in both count and content before and after this change — zero
+regression, confirmed by diff rather than assumed from the prior
+session's documentation.
 
 ## Scope Discipline
 
