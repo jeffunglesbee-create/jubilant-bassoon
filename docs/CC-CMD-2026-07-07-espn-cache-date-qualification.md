@@ -79,8 +79,7 @@ sites, several of which are in hot, frequently-executed polling paths.
      survived a few real game slates on the new format alone.
 - Before writing any execution CC-CMD, classify every one of the 74
   reference sites into exactly one category, rather than the looser
-  source/consumer split used to scope tonight's urgent fix:
-  - **source**: writes fresh ESPN-polled data into the cache.
+  source/consumer split used to scope tonight's urgent fix:  - **source**: writes fresh ESPN-polled data into the cache.
   - **consumer-display**: reads only to render UI, no durable effect.
   - **consumer-derived**: reads to compute a live label, drama value,
     or alert condition that itself feeds something else — one level
@@ -98,6 +97,19 @@ sites, several of which are in hot, frequently-executed polling paths.
   use) rather than the strict default — graceful degradation to a
   possibly-stale value is the right behavior for pure display, not a
   hard failure.
+- **Within `consumer-display`, migrate `updatePinWidget()` first, as a
+  deliberate canary — not because it's the most important site, but
+  because it's low-stakes and easy to observe.** It's a real, already-
+  identified example of the fallback pattern this whole migration
+  exists to remove: `espnScores[_pinnedGameId]`, falling back to
+  scanning `Object.values(espnScores)` and matching a lowercase home
+  name against the last four characters of `_pinnedGameId` — weak
+  enough to display a genuinely wrong score if a stale entry survives.
+  If it keeps working correctly after being pointed at `findEspnEntry`
+  and having its own inline fallback removed entirely, that's real
+  evidence the rest of `consumer-display` can follow the same path —
+  a visible, cheap-to-verify proof point before touching anything
+  higher-traffic or closer to a write.
 
 ## WHAT WOULD NEED TO HAPPEN BEFORE THIS IS EXECUTION-READY
 
