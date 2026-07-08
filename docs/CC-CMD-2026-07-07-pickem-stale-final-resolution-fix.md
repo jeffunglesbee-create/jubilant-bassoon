@@ -1,11 +1,15 @@
 # CC-CMD: Close the stale-final gap in pick resolution — guard the shared matcher, not each caller
 
-**Date:** 2026-07-07 (v4 — adds a `requireSameDate` mode parameter to
-`findEspnEntry()` for forward-compatibility with the future
-consolidation sweep, and explicitly resolves a contradiction between
-two rounds of external review over whether `injectDramaBadges` belongs
-in the urgent scope; v3 added it as a fourth target, independently
-verified; v2 corrected scope after finding the real extent of the
+**Date:** 2026-07-07 (v5 — adds two checks found by following through on
+external suggestions rather than accepting them directly: confirming
+`shouldShowMLBNAlert()`, the one pre-existing caller of `findEspnEntry`,
+isn't regressed by the new guard, and auditing for existing corrupted
+`peak_missed` records rather than only preventing future ones; v4 added
+the `requireSameDate` mode parameter and resolved a contradiction
+between two rounds of external review over whether `injectDramaBadges`
+belongs in the urgent scope; v3 added it as a fourth target,
+independently verified; v2 corrected scope after finding the real
+extent of the
 vulnerability)
 **Repo:** jeffunglesbee-create/jubilant-bassoon (sole)
 **Branch:** main — commit directly, do not create a feature branch or PR
@@ -155,8 +159,31 @@ whatever existing mechanism the DO provides (check for one before
 inventing a new admin path). Confirm no other today's pick shows the
 same pattern before touching only this one — report what you find.
 
+## TASK 4b — Audit for existing corrupted `peak_missed` records
+
+`recordPeakMissed()` has been unguarded for this feature's entire
+history, the same as pick resolution was before tonight. This CC-CMD
+only prevents *future* bad writes (Task 2b) — it does not check
+whether the same class of corruption already exists in production,
+the same way real test data was found sitting live in the
+`wp-resolution-failures` codex entry earlier this session. Check
+whatever the DO's storage actually contains for `peak_missed`-type
+events (find the real read path before assuming one) for any entry
+whose recorded `gameId`/`sport` doesn't match a game that was actually
+live at the timestamp recorded — report what's found, even if the
+finding is "none, this specific corruption never actually fired."
+Do not silently skip this because Task 2b prevents it going forward;
+prevention and cleanup are different claims.
+
 ## VERIFICATION
 
+- Confirm `shouldShowMLBNAlert()` (`index.html:~10343`) — the one
+  existing, already-live caller of `findEspnEntry()` before this
+  CC-CMD — is not regressed by the new guard. It only becomes relevant
+  for in-progress games (`inningNum` checks), so the guard should only
+  ever fire in exactly the stale-cross-day scenario it's meant to
+  catch — verify this is actually true against real data, not just
+  reasoned about.
 - `node smoke.js index.html` clean.
 - **The proof test, specified precisely:** create two synthetic games
   with the same home/away teams on different dates — yesterday's,
@@ -179,32 +206,40 @@ same pattern before touching only this one — report what you find.
 - [ ] Task 2c: `injectDramaBadges()` migrated to `findEspnEntry()`, no independent inline match remaining
 - [ ] The one confirmed-affected pick reset and verified
 - [ ] Other today's picks checked for the same pattern, reported
+- [ ] Task 4b: existing `peak_missed` records audited for the same historical corruption, findings reported either way
+- [ ] `shouldShowMLBNAlert()` (the one pre-existing `findEspnEntry` caller) confirmed not regressed
 - [ ] All five proof-test cases verified individually, not just asserted
 - [ ] Smoke clean
 - [ ] Outbox explicitly notes the cache-key redesign is separate, deliberately deferred work
 
 ## CONFIDENCE SCORING TABLE
 +15  Guard correctly added to `findEspnEntry()`, reusing the existing check
-+15  `checkForNewFinals()` correctly migrated, `start_time` confirmed present
-+15  Task 2b: visibilitychange listener independently guarded, verified
-+15  Task 2c: `injectDramaBadges()` migrated, no independent inline match remaining
++10  `checkForNewFinals()` correctly migrated, `start_time` confirmed present
++10  Task 2b: visibilitychange listener independently guarded, verified
++10  Task 2c: `injectDramaBadges()` migrated, no independent inline match remaining
 +10  Affected pick reset and verified
++10  Task 4b: historical peak_missed audit completed, findings reported
++10  `shouldShowMLBNAlert()` confirmed unregressed against real data
 +15  All five proof-test cases verified individually
 +10  Outbox correctly scopes this apart from the cache-key work
 
 ## ONE-LINER
 git remote get-url origin | grep -q jubilant-bassoon || { echo "WRONG REPO -- this CC-CMD targets jubilant-bassoon"; exit 1; }
 git pull. Read docs/CC-CMD-2026-07-07-pickem-stale-final-resolution-fix.md
-(v4). Add the existing stale-final guard directly inside findEspnEntry()
+(v5). Add the existing stale-final guard directly inside findEspnEntry()
 (the already-existing, partially-adopted consolidation helper) rather
 than patching checkForNewFinals in isolation, then migrate
 checkForNewFinals AND injectDramaBadges (Task 2c -- its localStorage
 peak write is durable false state, not display-only) to call it. Also
 guard the anonymous visibilitychange peak-missed listener independently
 (Task 2b) -- it iterates espnScores directly, not through
-findEspnEntry. Reset the one confirmed-affected pick. Prove via the
-five-case synthetic test (all four guarded paths blocked on stale data,
-real same-date finals still work) that the fix is real, not asserted.
-This is deliberately scoped apart from the deeper cache-key redesign,
-which is a separate CC-CMD. Do not commit unless confidence >= 95. If
+findEspnEntry. Reset the one confirmed-affected pick, AND audit for
+existing corrupted peak_missed records from before this fix (Task 4b --
+prevention and cleanup are different claims). Confirm shouldShowMLBNAlert,
+the one pre-existing findEspnEntry caller, is not regressed by the new
+guard. Prove via the five-case synthetic test (all four guarded paths
+blocked on stale data, real same-date finals still work) that the fix
+is real, not asserted. This is deliberately scoped apart from the
+deeper cache-key redesign, which is a separate CC-CMD. Do not commit
+unless confidence >= 95. If
 score < 95, report verbatim and stop.
