@@ -1,6 +1,8 @@
 # CC-CMD: Close the stale-final gap in pick resolution — guard the shared matcher, not each caller
 
-**Date:** 2026-07-07 (v2 — corrects scope after finding the real extent
+**Date:** 2026-07-07 (v3 — adds a fourth target, `injectDramaBadges`'s
+localStorage peak write, found via independently-verified review of
+external suggestions; v2 corrected scope after finding the real extent
 of the vulnerability)
 **Repo:** jeffunglesbee-create/jubilant-bassoon (sole)
 **Branch:** main — commit directly, do not create a feature branch or PR
@@ -46,13 +48,25 @@ permanently record a missed-peak event for the wrong game. In scope
 here alongside `checkForNewFinals`, since it also writes a permanent
 record and the same investigation surfaced it.
 
+**A fourth target, confirmed via independent review before adding it —
+not accepted on description alone:** `injectDramaBadges()`
+(`index.html:~36182`) writes `localStorage.setItem(peakKey,
+score.toString())`, gated by `if (score > prevPeak)` — a monotonic peak
+tracker that only ever increases. Verified directly: if this ever
+matches a stale, high-drama entry from a previous day, it permanently
+inflates today's game's peak-drama badge, and no future correct value
+can ever bring it back down without first exceeding the false peak.
+This is durable false state, not self-correcting display — in scope
+alongside the other three.
+
 ## PROBE BLOCK
 ```bash
 sed -n '10420,10428p' index.html   # findEspnEntry — the helper to guard
 sed -n '20170,20183p' index.html   # the existing _staleFinalGuard to reuse, not duplicate
 sed -n '40687,40700p' index.html   # checkForNewFinals — the caller to migrate
+sed -n '36175,36195p' index.html   # injectDramaBadges — its own inline match, to migrate
 ```
-Confirm all three still match before editing.
+Confirm all four still match before editing.
 
 ## TASK 1 — Guard `findEspnEntry()` itself
 
@@ -101,7 +115,18 @@ still in the future. If no matching game can be found in
 it's safe — an orphaned cache entry with no current schedule match is
 exactly the kind of stale data this guard exists to catch.
 
-## TASK 3 — Salvage the one confirmed-affected pick
+## TASK 2c — Guard the drama-peak localStorage write
+
+`injectDramaBadges()` (`index.html:~36182`) does its own independent,
+unguarded `.find()` against `espnScores` before writing
+`localStorage.setItem(peakKey, score.toString())`, gated by `if (score
+> prevPeak)`. Since the peak value only ever increases, a single stale
+match permanently corrupts it — no later correct value can undo it.
+Migrate this function's matching to use `findEspnEntry()` (Task 1's
+now-guarded helper) instead of its own inline `.find()`, same pattern
+as Task 2.
+
+## TASK 4 — Salvage the one confirmed-affected pick
 
 Reset the specific pick (`gameId: MLB_2026-07-07_dodgers_rockies`) back
 to `resolved: false`, clearing `wasCorrect`/`revealedProbability`, using
@@ -112,46 +137,53 @@ same pattern before touching only this one — report what you find.
 ## VERIFICATION
 
 - `node smoke.js index.html` clean.
-- Real test: with `findEspnEntry()` guarded, confirm a synthetic
-  stale-final scenario (today's not-yet-started game, yesterday's final
-  still sitting in `espnScores`) returns `null` instead of the stale
-  entry — this is the exact scenario that just happened for real.
-- Confirm a genuinely same-day final still resolves correctly through
-  the now-shared path — this must not regress real resolutions.
+- **The proof test, specified precisely:** create two synthetic games
+  with the same home/away teams on different dates — yesterday's,
+  already final and still sitting in `espnScores`, and today's, not
+  yet started. Verify independently: (1) `checkForNewFinals()` does
+  not resolve today's pick from yesterday's final; (2) `findEspnEntry()`
+  itself refuses the stale candidate; (3) the visibilitychange/missed-
+  peak path does not record yesterday's event as today's missed peak;
+  (4) `injectDramaBadges()` does not write yesterday's peak as today's.
+  Then confirm a fifth case: a genuinely valid same-date final still
+  resolves and displays normally through all four paths — this must
+  not regress real behavior.
 - Confirm the salvaged pick shows unresolved after the reset.
 
 ## DONE CONDITIONS
-- [ ] Probe block confirms all three citations before editing
+- [ ] Probe block confirms all citations before editing
 - [ ] Guard added inside `findEspnEntry()` itself, reusing the existing check, not a new variant
 - [ ] `checkForNewFinals()` migrated to call it, `start_time` availability confirmed
 - [ ] Task 2b: visibilitychange listener guarded independently, orphaned entries skipped not assumed safe
+- [ ] Task 2c: `injectDramaBadges()` migrated to `findEspnEntry()`, no independent inline match remaining
 - [ ] The one confirmed-affected pick reset and verified
 - [ ] Other today's picks checked for the same pattern, reported
-- [ ] Real synthetic test proves the stale scenario is now blocked
-- [ ] Real same-day resolution confirmed still working
+- [ ] All five proof-test cases verified individually, not just asserted
 - [ ] Smoke clean
 - [ ] Outbox explicitly notes the cache-key redesign is separate, deliberately deferred work
 
 ## CONFIDENCE SCORING TABLE
-+20  Guard correctly added to `findEspnEntry()`, reusing the existing check
++15  Guard correctly added to `findEspnEntry()`, reusing the existing check
 +15  `checkForNewFinals()` correctly migrated, `start_time` confirmed present
 +15  Task 2b: visibilitychange listener independently guarded, verified
-+15  Affected pick reset and verified
-+15  Real synthetic test proves the fix
-+10  Real same-day resolution confirmed unaffected
++15  Task 2c: `injectDramaBadges()` migrated, no independent inline match remaining
++10  Affected pick reset and verified
++15  All five proof-test cases verified individually
 +10  Outbox correctly scopes this apart from the cache-key work
 
 ## ONE-LINER
 git remote get-url origin | grep -q jubilant-bassoon || { echo "WRONG REPO -- this CC-CMD targets jubilant-bassoon"; exit 1; }
 git pull. Read docs/CC-CMD-2026-07-07-pickem-stale-final-resolution-fix.md
-(v2). Add the existing stale-final guard directly inside findEspnEntry()
+(v3). Add the existing stale-final guard directly inside findEspnEntry()
 (the already-existing, partially-adopted consolidation helper) rather
 than patching checkForNewFinals in isolation, then migrate
-checkForNewFinals to call it. Also guard the anonymous visibilitychange
-peak-missed listener independently (Task 2b) -- it iterates espnScores
-directly, not through findEspnEntry. Reset the one confirmed-affected
-pick. Prove via a real synthetic test that the stale scenario is now
-blocked for both paths, and that real same-day resolutions still work.
+checkForNewFinals AND injectDramaBadges (Task 2c -- its localStorage
+peak write is durable false state, not display-only) to call it. Also
+guard the anonymous visibilitychange peak-missed listener independently
+(Task 2b) -- it iterates espnScores directly, not through
+findEspnEntry. Reset the one confirmed-affected pick. Prove via the
+five-case synthetic test (all four guarded paths blocked on stale data,
+real same-date finals still work) that the fix is real, not asserted.
 This is deliberately scoped apart from the deeper cache-key redesign,
 which is a separate CC-CMD. Do not commit unless confidence >= 95. If
 score < 95, report verbatim and stop.
