@@ -10419,15 +10419,28 @@ function getDramaPeak(gameId) {
 // findEspnEntry: find espnScores entry matching a FIELD game object.
 // Replaces 10 inline Object.values(espnScores).find(v => ...) patterns
 // that each had slightly different home/away matching logic.
-function findEspnEntry(game) {
+// STALE-FINAL GUARD (CC-CMD-2026-07-07-pickem-stale-final-resolution-fix
+// v6): reuses the exact check already proven in findESPNScore()'s
+// _staleFinalGuard (June 10 2026) -- a FINAL score must never match a
+// card whose start_time hasn't passed yet, since a name-only match can
+// collide across days. requireSameDate defaults true; the false path is
+// for a future, separate consolidation CC-CMD to migrate genuinely
+// display-only consumers that should degrade to a stale value rather
+// than show nothing -- no caller in this CC-CMD passes false.
+function findEspnEntry(game, { requireSameDate = true } = {}) {
   if (!game) return null;
   const h = (game.home || '').toLowerCase().replace(/[^a-z]/g, '').slice(-6);
   const a = (game.away || '').toLowerCase().replace(/[^a-z]/g, '').slice(-6);
-  return Object.values(espnScores).find(v => {
+  const entry = Object.values(espnScores).find(v => {
     const vh = (v.homeName || '').toLowerCase().replace(/[^a-z]/g, '');
     const va = (v.awayName || '').toLowerCase().replace(/[^a-z]/g, '');
     return vh.endsWith(h) && va.endsWith(a);
   }) || null;
+  if (requireSameDate && entry && entry.state === 'post' && game.start_time &&
+      new Date(game.start_time).getTime() > Date.now()) {
+    return null; // stale-final guard — see findESPNScore's original June 10 comment
+  }
+  return entry;
 }
 
 // rankGamesByDrama: sort games by preGameScore, excluding non-games (ATP field entries).
@@ -23640,7 +23653,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-07-07e';
+  const SW_VERSION = '2026-07-08a';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -27974,10 +27987,47 @@ const _missedPeakFired = new Set();
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState !== 'hidden') return;
   try {
-    // Scan live espnScores for any game above drama threshold
     if (typeof espnScores === 'undefined' || typeof getSmoothedDrama !== 'function') return;
-    for (const [, eData] of Object.entries(espnScores)) {
-      const gameId = eData?.id || eData?._id;
+    if (typeof allGamesFlat !== 'function' || typeof findEspnEntry !== 'function') return;
+    // STALE-FINAL GUARD (Task 2b, CC-CMD-2026-07-07-pickem-stale-final-
+    // resolution-fix v6). Restructured from "iterate espnScores entries,
+    // check each entry's own start_time" to "iterate today's real
+    // scheduled games, use findEspnEntry(game)" -- the same guarded
+    // helper every other caller migrated in this CC-CMD uses. This
+    // matters: an earlier version of this fix checked eData.start_time
+    // directly and was PROVEN WRONG by a real synthetic test -- a stale
+    // cache entry (still holding a previous day's already-final game
+    // under today's team-name key, the actual root cause this whole
+    // CC-CMD exists to guard against) legitimately has that previous
+    // day's own start_time in the past, so a plain "> Date.now()" check
+    // on the entry's own start_time never flags it as stale. The
+    // question that actually matters is "does TODAY's scheduled game
+    // (a reliable, current-schedule-sourced value) rule this match out,"
+    // which is exactly what findEspnEntry(game) already answers
+    // correctly for every other migrated caller. A direct ID
+    // cross-reference (the originally-sketched approach) was also
+    // confirmed unusable: espnScores' own _gameId ("espn:401857048"
+    // -style) shares no namespace with allData.sports' game._id
+    // ("g17"-style), the same class of mismatch found and fixed in the
+    // click-to-scroll feature earlier this session -- findEspnEntry()
+    // avoids this entirely by matching on team name, like it already
+    // does for every other caller.
+    for (const game of allGamesFlat()) {
+      const eData = findEspnEntry(game);
+      if (!eData) continue;
+      // Pre-existing, separate bug fixed here as a necessary prerequisite
+      // for the guard above to be observable at all: this previously
+      // read eData?.id || eData?._id, but no real espnScores entry has
+      // ever carried either field (confirmed live: 0 of 38 real entries
+      // resolve a gameId this way) -- the real field is _gameId. Means
+      // recordPeakMissed() has never actually fired via this listener in
+      // production. Fixing the field name is necessary so the staleness
+      // guard above is genuinely testable, not inert protection for
+      // unreachable code -- it does not fix getSmoothedDrama()'s own,
+      // separate key-space mismatch (it reads drama history keyed by the
+      // client's card gid, not espnScores' _gameId), which stays out of
+      // scope for this CC-CMD.
+      const gameId = eData?._gameId;
       if (!gameId || _missedPeakFired.has(gameId)) continue;
       const smoothed = getSmoothedDrama(gameId);
       if (smoothed >= 75) {
@@ -36179,13 +36229,15 @@ function injectDramaBadges(){
   cards.forEach(card => {
     const gid = card.dataset.gameid;
     if(!gid) return;
-    const eData = Object.values(espnScores).find(v => {
-      // Match by homeName+awayName against data-home/data-away
-      const h = (card.dataset.home||'').toLowerCase();
-      const a = (card.dataset.away||'').toLowerCase();
-      return (v.homeName||'').toLowerCase().includes(teamNick(h)) ||
-             h.includes(teamNick((v.homeName||'').toLowerCase()));
-    });
+    // Migrated to findEspnEntry() (Task 2c, CC-CMD-2026-07-07-pickem-
+    // stale-final-resolution-fix v6) -- inherits the stale-final guard.
+    // findEspnEntry() takes a game object (needs .home/.away/.start_time
+    // for the guard to apply), not a card's dataset, so resolves the real
+    // game via the existing findGameById() helper first rather than
+    // building a synthetic object without start_time, which would leave
+    // the guard permanently inert for this caller.
+    const game = findGameById(gid);
+    const eData = game ? findEspnEntry(game) : null;
     if(!eData) return;
     const sport = card.dataset.sport||'';
     // CC-CMD-2026-07-04-soccer-drama-scoring-fix TASK 4: thread FIFA ranks
@@ -40323,12 +40375,15 @@ async function renderNightOwlRecap(){
       (allData?.sports||[]).forEach(sec=>{
         (sec.games||[]).forEach(game=>{
           if(!game._id||!game.home) return;
-          const homeSlug=(game.home||'').toLowerCase().replace(/[^a-z]/g,'').slice(-6);
-          const eData=Object.values(espnScores).find(v=>
-            v?.state==='post' &&
-            (v.homeName||'').toLowerCase().replace(/[^a-z]/g,'').endsWith(homeSlug)
-          );
-          if(!eData) return;
+          // Migrated to findEspnEntry() (Task 2d -- CRITICAL, CC-CMD-2026-07-07-
+          // pickem-stale-final-resolution-fix v6): this fallback's own comment
+          // says it "bypasses the entire save/load/key-mismatch chain" and
+          // calls saveEspnFinal() directly -- a second, independent entry
+          // point that completely skipped every guard added to
+          // checkForNewFinals() alone. Inherits the stale-final guard by
+          // going through findEspnEntry() instead of its own inline match.
+          const eData=findEspnEntry(game);
+          if(!eData || eData.state!=='post') return;
           const dramaPeak=parseFloat(localStorage.getItem('field_drama_peak_'+(game._id||''))||'0');
           // Save it properly for future page loads
           saveEspnFinal(game, eData);
@@ -40689,10 +40744,14 @@ function checkForNewFinals(){
   allData.sports.forEach(sec=>{
     (sec.games||[]).forEach(game=>{
       if(!game._id) return;
-      const home = (game.home||'').toLowerCase().replace(/[^a-z]/g,'').slice(-5);
-      const eData = Object.values(espnScores).find(v=>
-        (v.homeName||'').toLowerCase().replace(/[^a-z]/g,'').endsWith(home)
-      );
+      // Migrated to findEspnEntry() (Task 2, CC-CMD-2026-07-07-pickem-
+      // stale-final-resolution-fix v6) -- inherits the stale-final guard
+      // automatically. Note: this also makes the match stricter (both
+      // home AND away must match, not home alone) -- confirmed this
+      // cannot cause a false negative for a real, valid game (both teams
+      // trivially match their own game); it only ever tightens against a
+      // wrong-game collision.
+      const eData = findEspnEntry(game);
       if(!eData || eData.state !== 'post') {
         // CFL fallback (CC-CMD-2026-07-05-pickem-cfl-mlb-gaps TASK 2):
         // loadCFLScoreboard() fetches once (no recurring poll) and sets
