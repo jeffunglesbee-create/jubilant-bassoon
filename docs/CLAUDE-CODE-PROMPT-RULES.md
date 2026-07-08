@@ -237,3 +237,55 @@ not guess faster. Uncertainty is not permission to shortcut.
 If quick way — stop, find the right way, then move at pace.
 
 See STANDARDS.md Rule 88 for full rationale and case study.
+
+---
+
+## Rule 89 — Legible across scope (SCOPE-LEGIBLE-A)
+
+Durability and holism are the same test applied at different radii: is a
+fact or piece of state legible to whoever needs to see it, checked BEFORE
+acting, at the boundary that fact actually crosses. Four radii, one
+required probe each — include all four in the probe block, not just
+whichever seems most relevant to the task at hand.
+
+**1. Process radius — Durability Probe.**
+For any new/touched state read across multiple invocations (gating,
+cooldown, dedup, or evidence something already happened): does it
+round-trip through a persistent store (D1/KV/DO storage) that survives a
+restart, or does it live only in a module/instance-scope variable? If
+ephemeral, state so explicitly and confirm that's correct (legitimately
+per-request state), not an oversight.
+Known live example this doc's own history missed: `AmbientDO._oddsLastFetch`
+— an in-memory cooldown wiped on every DO restart/eviction, found by a
+June 25 audit, unaddressed as of the writing of this rule.
+
+**2. Repo radius — Pipeline Sweep Probe.**
+For any changed function/variable/identifier, grep it repo-wide — not
+just the probe block's narrow target. List every hit in the outbox as
+in-scope or explicitly-excluded-with-reason. A probe that greps 1 of 3
+real call sites and calls the fix complete is a holism failure, not a
+scoping decision — the difference is whether the exclusion is stated.
+
+**3. Cross-repo radius — Contract Cross-Check.**
+If a change touches a field or event documented in `CONTRACTS.md`, state
+explicitly whether the paired repo's consumer needs a matching update in
+this CC-CMD, a follow-up CC-CMD (Rule 87 item 4), or is confirmed
+unaffected — and say which. Silence on this is not an acceptable answer.
+
+**4. Session radius — Collision Check.**
+Before pushing a new CC-CMD doc, `codex_search` (category `cc-cmd-queue`)
+and grep `docs/CC-CMD-*.md` in the target repo for any PENDING entry
+already touching the same file or function. If found: do not push a
+second doc for the same fix — either extend the existing one, or state
+explicitly why a second, narrower doc is warranted (e.g. the existing one
+is broader or stalled and this is a scoped subset). One instance of two
+sessions independently reaching the same fix is not itself a failure —
+this check exists so it's caught before both produce artifacts, not
+because parallel sessions converging is inherently wrong.
+
+**Violation signals:** state written but never reaches persistent storage
+anywhere in the diff; outbox claims a sweep count that doesn't match a
+fresh repo-wide grep at review time; a `CONTRACTS.md`-covered field
+changed in one repo with no stated position on the other; a new CC-CMD
+doc pushed for a file/function already named in an open `cc-cmd-queue`
+entry.
