@@ -1,11 +1,19 @@
 # CC-CMD: Close the stale-final gap in pick resolution — guard the shared matcher, not each caller
 
-**Date:** 2026-07-07 (v5 — adds two checks found by following through on
-external suggestions rather than accepting them directly: confirming
-`shouldShowMLBNAlert()`, the one pre-existing caller of `findEspnEntry`,
-isn't regressed by the new guard, and auditing for existing corrupted
-`peak_missed` records rather than only preventing future ones; v4 added
-the `requireSameDate` mode parameter and resolved a contradiction
+**Date:** 2026-07-07 (v6 — CRITICAL: closes a real, currently-live gap
+found by checking an external claim directly against the code rather
+than trusting an earlier conclusion. `renderNightOwlRecap()` has its
+own independent fallback path that calls `saveEspnFinal()` directly,
+completely bypassing every guard added in v1-v5. This is not a
+refinement — without Task 2d, the whole fix is incomplete, since this
+path can still trigger the exact same stale-cross-day pick resolution
+tonight's bug report showed; v5 added two checks found by following
+through on external suggestions rather than accepting them directly:
+confirming `shouldShowMLBNAlert()`, the one pre-existing caller of
+`findEspnEntry`, isn't regressed by the new guard, and auditing for
+existing corrupted `peak_missed` records rather than only preventing
+future ones; v4 added the `requireSameDate` mode parameter and resolved
+a contradiction
 between two rounds of external review over whether `injectDramaBadges`
 belongs in the urgent scope; v3 added it as a fourth target,
 independently verified; v2 corrected scope after finding the real
@@ -72,8 +80,9 @@ sed -n '10420,10428p' index.html   # findEspnEntry — the helper to guard
 sed -n '20170,20183p' index.html   # the existing _staleFinalGuard to reuse, not duplicate
 sed -n '40687,40700p' index.html   # checkForNewFinals — the caller to migrate
 sed -n '36175,36195p' index.html   # injectDramaBadges — its own inline match, to migrate
+sed -n '40307,40335p' index.html   # renderNightOwlRecap's fallback F5 block — the critical, previously-missed second entry point
 ```
-Confirm all four still match before editing.
+Confirm all five still match before editing.
 
 ## TASK 1 — Guard `findEspnEntry()` itself, with a mode parameter for forward-compatibility
 
@@ -151,6 +160,35 @@ Migrate this function's matching to use `findEspnEntry()` (Task 1's
 now-guarded helper) instead of its own inline `.find()`, same pattern
 as Task 2.
 
+## TASK 2d — Close the Night Owl fallback path (CRITICAL — this is a live gap in v5, not a nice-to-have)
+
+`renderNightOwlRecap()` (`index.html:40307`) has its own fallback block
+("Fallback path F5", the function's own comment) that fires when
+`loadTonightFinals()` returns empty. It does an independent, unguarded
+`Object.values(espnScores).find(v => v?.state==='post' && ...)` match
+and calls `saveEspnFinal(game, eData)` **directly** — completely
+bypassing `checkForNewFinals()`, and therefore bypassing Task 1's guard
+entirely. The function's own comment states this outright: "Bypasses
+the entire save/load/key-mismatch chain." This is a second, genuinely
+independent entry point into the exact same write path Task 1-2 exist
+to protect, found only by checking a specific external claim against
+the real code rather than assuming the earlier trace (which only
+covered `renderNightOwlRecap`'s normal, non-fallback invocation) was
+complete.
+
+**Confirmed via tracing, not assumed: `_resolvePickIfExists()` and
+`saveEspnFinal()` have exactly one call site each** —
+`_resolvePickIfExists` only inside `saveEspnFinal` (`index.html:38000`),
+`saveEspnFinal` called from `checkForNewFinals()`, the CFL-specific
+branch (confirmed separately as not vulnerable — matches by stable
+`_id`), and this Night Owl fallback. That means closing this one
+remaining gap, on top of Task 2, closes every currently-known path into
+`saveEspnFinal()` — not just reduces the risk.
+
+Fix: replace the inline `Object.values(espnScores).find(...)` in this
+fallback block with a call to `findEspnEntry(game)` (Task 1's guarded
+helper), matching the same migration pattern as Task 2 and Task 2c.
+
 ## TASK 4 — Salvage the one confirmed-affected pick
 
 Reset the specific pick (`gameId: MLB_2026-07-07_dodgers_rockies`) back
@@ -204,11 +242,12 @@ prevention and cleanup are different claims.
 - [ ] `checkForNewFinals()` migrated to call it, `start_time` availability confirmed
 - [ ] Task 2b: visibilitychange listener guarded independently, orphaned entries skipped not assumed safe
 - [ ] Task 2c: `injectDramaBadges()` migrated to `findEspnEntry()`, no independent inline match remaining
+- [ ] **Task 2d: Night Owl's fallback F5 block migrated to `findEspnEntry()`, confirmed as the last remaining unguarded entry point into `saveEspnFinal()`**
 - [ ] The one confirmed-affected pick reset and verified
 - [ ] Other today's picks checked for the same pattern, reported
 - [ ] Task 4b: existing `peak_missed` records audited for the same historical corruption, findings reported either way
 - [ ] `shouldShowMLBNAlert()` (the one pre-existing `findEspnEntry` caller) confirmed not regressed
-- [ ] All five proof-test cases verified individually, not just asserted
+- [ ] All five proof-test cases verified individually, not just asserted, PLUS a sixth: Night Owl's fallback path specifically tested against the same stale-cross-day scenario
 - [ ] Smoke clean
 - [ ] Outbox explicitly notes the cache-key redesign is separate, deliberately deferred work
 
@@ -217,29 +256,32 @@ prevention and cleanup are different claims.
 +10  `checkForNewFinals()` correctly migrated, `start_time` confirmed present
 +10  Task 2b: visibilitychange listener independently guarded, verified
 +10  Task 2c: `injectDramaBadges()` migrated, no independent inline match remaining
-+10  Affected pick reset and verified
-+10  Task 4b: historical peak_missed audit completed, findings reported
-+10  `shouldShowMLBNAlert()` confirmed unregressed against real data
-+15  All five proof-test cases verified individually
++15  Task 2d: Night Owl fallback migrated, confirmed as closing the last known gap
++5   Affected pick reset and verified
++5   Task 4b: historical peak_missed audit completed, findings reported
++5   `shouldShowMLBNAlert()` confirmed unregressed against real data
++15  All six proof-test cases verified individually (five plus Night Owl)
 +10  Outbox correctly scopes this apart from the cache-key work
 
 ## ONE-LINER
 git remote get-url origin | grep -q jubilant-bassoon || { echo "WRONG REPO -- this CC-CMD targets jubilant-bassoon"; exit 1; }
 git pull. Read docs/CC-CMD-2026-07-07-pickem-stale-final-resolution-fix.md
-(v5). Add the existing stale-final guard directly inside findEspnEntry()
+(v6). Add the existing stale-final guard directly inside findEspnEntry()
 (the already-existing, partially-adopted consolidation helper) rather
 than patching checkForNewFinals in isolation, then migrate
-checkForNewFinals AND injectDramaBadges (Task 2c -- its localStorage
-peak write is durable false state, not display-only) to call it. Also
+checkForNewFinals, injectDramaBadges (Task 2c), AND Night Owl's fallback
+F5 block (Task 2d -- CRITICAL, a real, currently-live second entry point
+into saveEspnFinal() that bypasses every other guard, found via
+checking an external claim against the real code) to call it. Also
 guard the anonymous visibilitychange peak-missed listener independently
-(Task 2b) -- it iterates espnScores directly, not through
-findEspnEntry. Reset the one confirmed-affected pick, AND audit for
-existing corrupted peak_missed records from before this fix (Task 4b --
-prevention and cleanup are different claims). Confirm shouldShowMLBNAlert,
-the one pre-existing findEspnEntry caller, is not regressed by the new
-guard. Prove via the five-case synthetic test (all four guarded paths
-blocked on stale data, real same-date finals still work) that the fix
-is real, not asserted. This is deliberately scoped apart from the
-deeper cache-key redesign, which is a separate CC-CMD. Do not commit
-unless confidence >= 95. If
-score < 95, report verbatim and stop.
+(Task 2b) -- it iterates espnScores directly, not through findEspnEntry.
+Reset the one confirmed-affected pick, AND audit for existing corrupted
+peak_missed records from before this fix (Task 4b -- prevention and
+cleanup are different claims). Confirm shouldShowMLBNAlert, the one
+pre-existing findEspnEntry caller, is not regressed by the new guard.
+Prove via a six-case synthetic test (all five guarded paths blocked on
+stale data including Night Owl's fallback, real same-date finals still
+work) that the fix is real, not asserted. This is deliberately scoped
+apart from the deeper cache-key redesign, which is a separate CC-CMD.
+Do not commit unless confidence >= 95. If score < 95, report verbatim
+and stop.
