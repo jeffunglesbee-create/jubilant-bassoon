@@ -43,6 +43,24 @@ sites, several of which are in hot, frequently-executed polling paths.
   session found but would leave a cross-sport gap open. `date` is the
   game's own scheduled date, not today's date, so a card's key stays
   stable regardless of when it's read.
+- **Where a stable provider event ID is already available** (ESPN's
+  own event ID, when present), prefer
+  `${sport}|${league}|${eventDate}|${providerEventId}` over
+  reconstructing a name-based composite — a real ID removes the
+  name-matching fragility entirely rather than just qualifying it. Not
+  every source may reliably carry this; confirm per-sport before
+  assuming it's universally available, and fall back to the
+  name-based key shape above where it isn't.
+- **Timezone normalization needs its own explicit step, not an
+  assumption.** `date` on the game object and whatever date a live
+  ESPN entry reports may not share a timezone convention — provider
+  timestamps are often UTC while FIELD's own schedule slate is local.
+  A late game (e.g. 11 PM ET) can fall on the *next* calendar day in
+  UTC. Before any key construction, add a normalization step that
+  resolves both the target game's date and the ESPN candidate's date
+  to the same local-slate convention FIELD already uses elsewhere —
+  do not naively string-compare two date fields that might disagree
+  by a day for a reason that has nothing to do with staleness.
 - Staged migration, five steps rather than a single cutover:
   1. **Dual-write**: every write site writes both the old and new key,
      so nothing currently reading the old format breaks.
@@ -59,10 +77,27 @@ sites, several of which are in hot, frequently-executed polling paths.
      guarded helper.
   5. **Remove the old-key fallback** only once the app has verifiably
      survived a few real game slates on the new format alone.
-- This should very likely be split into multiple smaller CC-CMDs by
-  read-site grouping (display-only vs. resolution-adjacent vs.
-  notification-triggering) rather than attempted as one large diff —
-  the exact grouping needs its own review, not assumed here.
+- Before writing any execution CC-CMD, classify every one of the 74
+  reference sites into exactly one category, rather than the looser
+  source/consumer split used to scope tonight's urgent fix:
+  - **source**: writes fresh ESPN-polled data into the cache.
+  - **consumer-display**: reads only to render UI, no durable effect.
+  - **consumer-derived**: reads to compute a live label, drama value,
+    or alert condition that itself feeds something else — one level
+    removed from display, not yet a write.
+  - **consumer-write**: reads and then writes durable state (relay
+    POST, localStorage, or anything else that outlives the current
+    page load).
+  - **delete/cleanup**: removes or resets cache entries.
+  Migrate in that priority order — `consumer-write` first (already
+  underway via tonight's urgent fix), `consumer-derived` second,
+  `consumer-display` third, `source` sites last unless one is found to
+  write a malformed or already-stale key. Display-only consumers in
+  this sweep should call `findEspnEntry(game, { requireSameDate: false
+  })` (the parameter tonight's fix adds specifically for this later
+  use) rather than the strict default — graceful degradation to a
+  possibly-stale value is the right behavior for pure display, not a
+  hard failure.
 
 ## WHAT WOULD NEED TO HAPPEN BEFORE THIS IS EXECUTION-READY
 
