@@ -1,110 +1,128 @@
-# CC-CMD: Close the stale-final gap in pick resolution, and salvage today's wrongly-resolved pick
+# CC-CMD: Close the stale-final gap in pick resolution — guard the shared matcher, not each caller
 
-**Date:** 2026-07-07
+**Date:** 2026-07-07 (v2 — corrects scope after finding the real extent
+of the vulnerability)
 **Repo:** jeffunglesbee-create/jubilant-bassoon (sole)
 **Branch:** main — commit directly, do not create a feature branch or PR
 
-## THIS IS A RECURRENCE OF A DOCUMENTED BUG, IN A DIFFERENT CODE PATH
+## WHY THIS IS v2
 
-`findESPNScore()` already has a stale-final guard, added June 10, 2026,
-with its own detailed comment explaining exactly this failure mode: a
-previous day's final score matching today's card by team name alone,
-with no time check. That fix was applied to the *display* path.
+v1 patched only `checkForNewFinals()` directly. Investigating further
+(prompted by a direct challenge before committing to it) found the
+real shape of the problem: `findEspnEntry()` already exists as a
+partial consolidation point ("Replaces 10 inline
+`Object.values(espnScores).find(...)` patterns" per its own comment)
+but carries no stale-final guard either, and `checkForNewFinals()`
+never migrated to use it — it has its own independent, unguarded copy
+of the same matching logic. **The right fix guards the shared helper
+once, then migrates the resolution-triggering caller to use it** —
+not adding a duplicate guard check at every scattered call site.
 
-**`checkForNewFinals()` — the function that actually triggers
-`pick_resolved` — never went through that fix, because it doesn't call
-`findESPNScore()` at all.** It has its own, separate matching logic
-(`index.html:~40693`): pure home-team-name substring matching against
-the global `espnScores` cache, zero date awareness, zero guard. Same
-bug class, different function, never patched.
+**Explicitly out of scope here, deliberately separate:** the deeper
+structural issue (the `espnScores` cache is keyed by team names alone,
+`${home}|${away}`, with no date — the root reason any name-only match
+can collide across days at all) is real but far larger — dozens of
+read and write sites would need to agree on a new key format
+simultaneously. That's `CC-CMD-2026-07-07-espn-cache-date-qualification.md`,
+a separate, carefully-staged piece of work, not this one.
 
-**Confirmed live, not theorized:** Rockies @ Dodgers (today, July 7,
-first pitch 10:10 PM ET per ESPN's own live gamecast) is marked
-resolved and wrong in the pick ledger, while the archive shows `null`
-scores for that exact game ID. These two teams played *yesterday*
-(July 6, Dodgers won 8-7 in extras) — consistent with exactly the
-cross-day matching failure this comment already describes.
+**Confirmed via tracing, not assumed:** `saveEspnFinal()` and
+`renderNightOwlRecap()` don't do their own independent matching — they
+receive an already-matched game as a parameter from whichever caller
+invokes them. Fixing the caller that feeds the real resolution path
+protects both transitively. The CFL-specific caller (`index.html:~22451`)
+matches by stable `_id`, not name-substring against the shared cache —
+confirmed not vulnerable to this same bug, out of scope.
 
 ## PROBE BLOCK
 ```bash
-sed -n '20170,20220p' index.html
-sed -n '40687,40700p' index.html
+sed -n '10420,10428p' index.html   # findEspnEntry — the helper to guard
+sed -n '20170,20183p' index.html   # the existing _staleFinalGuard to reuse, not duplicate
+sed -n '40687,40700p' index.html   # checkForNewFinals — the caller to migrate
 ```
-Confirm both citations still match — the existing guard, and the
-unguarded resolution-path matcher — before editing either.
+Confirm all three still match before editing.
 
-## TASK 1 — Root cause: route pick resolution through the guarded path
+## TASK 1 — Guard `findEspnEntry()` itself
 
-In `checkForNewFinals()`, replace the direct `espnScores` substring
-match with a call to `findESPNScore(game)` — the same, already-guarded
-function the display path uses. Do not duplicate the stale-final guard
-logic here; reuse the existing function so there is one guarded path,
-not two independently-maintained ones (the exact situation that let
-this gap exist for a month unnoticed).
+Add the same stale-final check already proven in `findESPNScore()`
+(`_staleFinalGuard`) directly inside `findEspnEntry()`, so every future
+caller — not just the one migrated here — inherits the protection
+automatically:
+```javascript
+function findEspnEntry(game) {
+  if (!game) return null;
+  const h = (game.home || '').toLowerCase().replace(/[^a-z]/g, '').slice(-6);
+  const a = (game.away || '').toLowerCase().replace(/[^a-z]/g, '').slice(-6);
+  const entry = Object.values(espnScores).find(v => {
+    const vh = (v.homeName || '').toLowerCase().replace(/[^a-z]/g, '');
+    const va = (v.awayName || '').toLowerCase().replace(/[^a-z]/g, '');
+    return vh.endsWith(h) && va.endsWith(a);
+  }) || null;
+  if (entry && entry.state === 'post' && game.start_time &&
+      new Date(game.start_time).getTime() > Date.now()) {
+    return null; // stale-final guard — see findESPNScore's original June 10 comment
+  }
+  return entry;
+}
+```
+Reuse the exact guard condition already established, do not write a
+new variant of the check.
 
-Confirm `findESPNScore` accepts the same shape `game` object
-`checkForNewFinals` already has in scope — check the function
-signature carefully rather than assuming the two callers pass
-equivalent objects.
+## TASK 2 — Migrate `checkForNewFinals()` to use it
 
-## TASK 2 — Salvage: reset the one wrongly-resolved pick
+Replace `checkForNewFinals()`'s own inline `Object.values(espnScores)
+.find(...)` with a call to `findEspnEntry(game)`. Confirm the `game`
+object it has in scope carries `start_time` (required for the guard to
+actually apply) — if it doesn't, that's a real, separate prerequisite
+gap to fix here, not something to silently work around.
 
-This is a real, targeted data correction, not a schema change. Using
-the relay's existing user-event mechanism (check for an existing
-admin/correction path in `UserDO` before inventing a new one — if none
-exists, this may need a small, narrowly-scoped one added here), reset
-the specific pick (`gameId: MLB_2026-07-07_dodgers_rockies`, whichever
-user made it) back to `resolved: false`, `wasCorrect` and
-`revealedProbability` cleared — so it can correctly re-resolve once
-the real game actually finishes tonight.
+## TASK 3 — Salvage the one confirmed-affected pick
 
-**Do this for the one confirmed-affected pick only.** Do not run a
-broad sweep resetting other picks without first confirming they're
-actually affected — check whether any other today's picks show a
-similar cross-day mismatch pattern before touching them, and report
-what you find either way.
+Reset the specific pick (`gameId: MLB_2026-07-07_dodgers_rockies`) back
+to `resolved: false`, clearing `wasCorrect`/`revealedProbability`, using
+whatever existing mechanism the DO provides (check for one before
+inventing a new admin path). Confirm no other today's pick shows the
+same pattern before touching only this one — report what you find.
 
 ## VERIFICATION
 
 - `node smoke.js index.html` clean.
-- Confirm the salvaged pick, once reset, correctly shows as unresolved
-  (not `✓`/`✗`) — report the actual state, not assumed.
-- Real test of the fix itself: with `checkForNewFinals()` now routing
-  through `findESPNScore()`, confirm a synthetic stale-final scenario
-  (today's not-yet-started game, yesterday's final score still in
-  `espnScores`) no longer triggers `pick_resolved` — this is the
-  scenario that just happened for real; prove it can't happen again.
-- Confirm this doesn't regress real, legitimate resolutions — a game
-  that has genuinely finished today should still resolve correctly
-  through the now-shared path.
+- Real test: with `findEspnEntry()` guarded, confirm a synthetic
+  stale-final scenario (today's not-yet-started game, yesterday's final
+  still sitting in `espnScores`) returns `null` instead of the stale
+  entry — this is the exact scenario that just happened for real.
+- Confirm a genuinely same-day final still resolves correctly through
+  the now-shared path — this must not regress real resolutions.
+- Confirm the salvaged pick shows unresolved after the reset.
 
 ## DONE CONDITIONS
-- [ ] Probe block confirms both citations before editing
-- [ ] `checkForNewFinals()` routes through `findESPNScore()`, no duplicated guard logic
-- [ ] The one confirmed-affected pick reset to unresolved, verified
-- [ ] Checked whether any other today's picks show the same pattern, reported either way
-- [ ] Real test confirms the stale-final scenario no longer triggers resolution
-- [ ] Confirmed legitimate same-day resolutions still work correctly
+- [ ] Probe block confirms all three citations before editing
+- [ ] Guard added inside `findEspnEntry()` itself, reusing the existing check, not a new variant
+- [ ] `checkForNewFinals()` migrated to call it, `start_time` availability confirmed
+- [ ] The one confirmed-affected pick reset and verified
+- [ ] Other today's picks checked for the same pattern, reported
+- [ ] Real synthetic test proves the stale scenario is now blocked
+- [ ] Real same-day resolution confirmed still working
 - [ ] Smoke clean
-- [ ] Outbox explicitly names this as a recurrence of the June 10 bug in an unpatched second path
+- [ ] Outbox explicitly notes the cache-key redesign is separate, deliberately deferred work
 
 ## CONFIDENCE SCORING TABLE
-+25  checkForNewFinals correctly routed through the existing guarded function, no duplication
-+20  The affected pick correctly reset, verified in its new state
-+15  Other today's picks checked for the same pattern, reported honestly
-+20  Real test proves the stale-final scenario is now blocked
-+10  Legitimate resolutions confirmed unaffected
-+10  Outbox correctly frames this as the same bug, second path
++25  Guard correctly added to `findEspnEntry()`, reusing the existing check
++20  `checkForNewFinals()` correctly migrated, `start_time` confirmed present
++15  Affected pick reset and verified
++15  Real synthetic test proves the fix
++10  Real same-day resolution confirmed unaffected
++15  Outbox correctly scopes this apart from the cache-key work
 
 ## ONE-LINER
 git remote get-url origin | grep -q jubilant-bassoon || { echo "WRONG REPO -- this CC-CMD targets jubilant-bassoon"; exit 1; }
-git pull. Read docs/CC-CMD-2026-07-07-pickem-stale-final-resolution-fix.md.
-This is the June 10 stale-final bug recurring in a second, unpatched
-code path -- checkForNewFinals() has its own unguarded team-name match
-instead of using findESPNScore()'s existing guard. Route it through the
-existing guarded function rather than duplicating the fix. Reset the
-one confirmed-affected pick (Dodgers/Rockies, today) to unresolved, and
-check whether any other today's picks show the same pattern before
-touching them. Prove via a real test that the stale-final scenario can
-no longer trigger resolution. Do not commit unless confidence >= 95. If
-score < 95, report verbatim and stop.
+git pull. Read docs/CC-CMD-2026-07-07-pickem-stale-final-resolution-fix.md
+(v2). Add the existing stale-final guard directly inside findEspnEntry()
+(the already-existing, partially-adopted consolidation helper) rather
+than patching checkForNewFinals in isolation, then migrate
+checkForNewFinals to call it. Reset the one confirmed-affected pick.
+Prove via a real synthetic test that the stale scenario is now blocked,
+and that real same-day resolutions still work. This is deliberately
+scoped apart from the deeper cache-key redesign, which is a separate
+CC-CMD. Do not commit unless confidence >= 95. If score < 95, report
+verbatim and stop.
