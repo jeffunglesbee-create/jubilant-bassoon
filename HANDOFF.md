@@ -1,5 +1,65 @@
 # FIELD HANDOFF
 
+## MID-SESSION UPDATE — 2026-07-08 (Truth Is / Night Stars — connect voice computation to real finalized_at, 100/100)
+
+**SW_VERSION `2026-07-08c` → `2026-07-08d`. Smoke: 890/0.** Full detail:
+`docs/outbox/cc-truth-is-night-stars-client-fix-2026-07-08.md`.
+
+**Corrects an earlier, incomplete understanding from earlier tonight**: the
+relay-side `finalized_at` prerequisite (deployed hours ago) landed on
+`bundle.completed_games`, but the voice computation
+(`getNewspaperVoice`→`getCardCircadian`→`minutesSinceFinal`) reads
+`allData.sports`-derived data — two genuinely disconnected structures.
+
+**Chose match-by-name over reading the bundle directly**, with a concrete
+reason the alternative was worse: `bundle.completed_games` has no live or
+upcoming games at all (verified live via `probe_relay_route`) —
+`getNewspaperVoice()` needs live-game detection to pick the 'minimal'
+voice, which the bundle can't provide. Swapping to bundle-only input would
+have silently broken that, a worse regression than the bug being fixed.
+
+**Found and fixed three real mismatches that would have silently broken a
+naive version of this match**, none assumed away:
+1. Client `home` is a full name ("San Francisco Giants"); relay `home` is
+   a nickname ("Giants") — confirmed both live. Used the existing
+   `teamNick()` helper instead of a raw string compare.
+2. Client MLB `_sport` is `"Baseball (MLB)"`; relay `sport` is `"MLB"` —
+   different strings, confirmed live. Used a substring-tolerant compare
+   instead of hard-coding every sport's exact pairing (some, like WNBA,
+   couldn't be directly confirmed — no live game to inspect).
+3. `finalizedAt` is a raw SQLite timestamp with no timezone marker
+   (`"2026-07-08 04:58:21"`), inconsistent with the *same response*'s
+   other timestamp field (`generated_at`, proper ISO `...Z`). Verified via
+   a real `TZ=America/New_York` test that naive parsing reads this as
+   local time, producing a **240-minute silent classification error** for
+   ET users — FIELD's own target timezone. Fixed with an explicit UTC
+   parse. This would have been a real, hard-to-notice production bug.
+
+Also verified (not assumed) that `bundle.recap_date` and `TODAY_ISO` only
+align during the actual bug window, via `TODAY_ISO`'s existing 4am-ET
+rolling cutoff (`index.html` ~6865) — not a coincidence, added an explicit
+guard rather than relying on it silently.
+
+Extended the fix to two more `getCardCircadian` call sites beyond the
+newspaper voice's own (`getCachedCircadianTier`'s sort order,
+`CARD_ATTRIBUTE_SYNC`'s live-poll sync) since `minutesSinceFinal` is
+shared — free correctness improvement, not extra invented scope. Checked
+a fourth call site (`renderPickEmSection`) and confirmed it's genuinely
+unaffected (PREVIEW-only check, never reaches NIGHT/LATE) rather than
+skipping it without looking.
+
+Verified via 7 real synthetic-test cases (Node `vm`, actual committed
+function source) including the real live relay data (WNBA Liberty/Wings,
+the one currently-populated `finalizedAt` in production) correctly
+classifying LATE at ~634 real minutes, a realistic recent-completion case
+classifying NIGHT on a simulated fresh page load, doubleheader-ambiguity
+safe fallback, and live/upcoming unregressed. `night_stars: degraded`
+re-checked via a fresh `session_health` call (still `true`, matching the
+relay's own value directly) — confirmed unaffected, not assumed, since
+this change never touches the relay.
+
+---
+
 ## MID-SESSION UPDATE — 2026-07-08 (durability audit → doubleheader hot-fix + scout-pick/drama-peak follow-up)
 
 **SW_VERSION `2026-07-08b` → `2026-07-08c`. Smoke: 890/0.** Full detail:

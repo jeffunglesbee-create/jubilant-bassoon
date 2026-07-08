@@ -6810,19 +6810,94 @@ function getCardCircadian(game) {
   return 'LATE';
 }
 
+// _bundleFinalizedAt: cross-session-accurate finalized_at lookup for
+// completed games (CC-CMD-2026-07-08-truth-is-night-stars-client-fix).
+// _finalizedAt[game._id] below only knows about games THIS session
+// actually witnessed transition to final (Date.now() at first-
+// observation) -- worthless on a fresh page load for a game that already
+// finished. The newspaper bundle (window._newspaperBundle, stashed
+// globally by renderNewspaper()) carries a real finalized_at from the
+// relay's D1 archive for recap_date's completed games -- this reads it.
+//
+// Matches by team nickname + sport, NOT any ID: confirmed live that
+// bundle.completed_games[].id embeds spaces/mixed case differently per
+// sport (not a reconstructable client-side key), and that the bundle's
+// home/away are short nicknames ("Giants") while allData.sports games
+// carry full names ("San Francisco Giants") -- a raw string compare would
+// never match. Reuses the existing teamNick() helper instead.
+// Sport comparison is substring-based, not exact-equality: confirmed live
+// that MLB's client _sport ("Baseball (MLB)") and the relay's sport
+// ("MLB") are different strings (though game.league === "MLB" does match
+// exactly) -- rather than hard-code every sport's exact relay-vs-client
+// pairing (unverifiable for sports with no live game to inspect right
+// now, e.g. WNBA), a substring check tolerates the format difference.
+//
+// Guarded on bundle.recap_date === TODAY_ISO: the two cover the same
+// calendar day only during the actual bug window (before TODAY_ISO's own
+// 4am ET rollover, index.html ~6879) -- confirmed this is not a
+// coincidence, it's the same rollover convention this whole late-night
+// classification problem exists for. Outside that window there is
+// nothing to match and this must not false-positive against an unrelated
+// night's games.
+function _bundleFinalizedAt(game) {
+  try {
+    const bundle = window._newspaperBundle;
+    if (!bundle || !bundle.completed_games || !bundle.completed_games.length) return null;
+    if (!bundle.recap_date || typeof TODAY_ISO === 'undefined' || bundle.recap_date !== TODAY_ISO) return null;
+    const h = teamNick(game.home || '').toLowerCase().trim();
+    const a = teamNick(game.away || '').toLowerCase().trim();
+    if (!h || !a) return null;
+    const spClient = _gameSport(game).toLowerCase();
+    const spLeague = (game.league || '').toLowerCase();
+    const sportOk = (bgSport) => {
+      const bs = (bgSport || '').toLowerCase().trim();
+      if (!bs) return true; // relay entry carries no sport tag -- don't over-require
+      return spClient.includes(bs) || bs.includes(spClient) || spLeague === bs || spLeague.includes(bs);
+    };
+    const matches = bundle.completed_games.filter(bg =>
+      teamNick(bg.home || '').toLowerCase().trim() === h &&
+      teamNick(bg.away || '').toLowerCase().trim() === a &&
+      sportOk(bg.sport)
+    );
+    // Doubleheader safety: the bundle carries no per-game hour, only a
+    // whole-day recap_date -- if sport+home+away matches more than one
+    // entry, this is genuinely ambiguous. Don't guess, fall back.
+    if (matches.length !== 1) return null;
+    const raw = matches[0].finalizedAt;
+    if (!raw) return null;
+    // SQLite CURRENT_TIMESTAMP format ("YYYY-MM-DD HH:MM:SS", no offset) --
+    // confirmed via real testing (TZ=America/New_York) that naive Date
+    // parsing treats this as browser-LOCAL time, not UTC, producing a
+    // 240-minute error for ET users. The relay's OTHER timestamp fields in
+    // the same response (quality_alert.generated_at) use proper ISO-8601
+    // 'Z'-suffixed strings -- this is a raw D1 column value, not an
+    // intentionally different format. Explicit UTC parse.
+    const iso = raw.includes('T') ? raw : raw.replace(' ', 'T') + 'Z';
+    const ts = new Date(iso).getTime();
+    return isNaN(ts) ? null : ts;
+  } catch (_) { return null; }
+}
+
 // No existing field carries a genuine finalized-at moment (espnScoreTs is
 // re-stamped on every poll of an already-final game; saveEspnFinal's
 // persisted entry has only a calendar-date string; _seenFinals has no
 // timestamp and resets on page load). _finalizedAt (declared next to
 // _seenFinals in checkForNewFinals) is the authorized new state that
 // fills this gap — written once, at the same firing point _seenFinals
-// already uses.
+// already uses. Now tried second, after the relay-backed
+// _bundleFinalizedAt (CC-CMD-2026-07-08-truth-is-night-stars-client-fix):
+// the bundle only covers recap_date's completed games and is
+// null-heavy for anything that finalized before the relay-side
+// finalized_at column existed, so this session-local map remains the
+// fallback for everything the bundle doesn't (yet) know about.
 function minutesSinceFinal(game) {
-  const ts = _finalizedAt[game._id];
+  const bundleTs = (typeof _bundleFinalizedAt === 'function') ? _bundleFinalizedAt(game) : null;
+  const ts = bundleTs || _finalizedAt[game._id];
   // No recorded final time (game finished before this session's
-  // checkForNewFinals ever ran, or page just loaded) — default to
-  // LATE's safe, compressed treatment rather than guessing NIGHT's
-  // enhanced one for a game we have no real timing evidence for.
+  // checkForNewFinals ever ran, or page just loaded, AND the bundle has
+  // no matching finalized_at either) — default to LATE's safe, compressed
+  // treatment rather than guessing NIGHT's enhanced one for a game we
+  // have no real timing evidence for.
   if (!ts) return Infinity;
   return (Date.now() - ts) / 60000;
 }
@@ -10860,7 +10935,11 @@ function getCachedCircadianTier(g) {
   const fp = JSON.stringify(g);
   if (cached && cached.fingerprint === fp) return cached.circadianTier;
   const eData = typeof findESPNScore === 'function' ? findESPNScore(g) : null;
-  return getCardCircadian({ state: eData ? eData.state : null, status: g.status, _aflComplete: g._aflComplete, _id: g._id });
+  // home/away/_sport/league added (CC-CMD-2026-07-08-truth-is-night-stars-
+  // client-fix): minutesSinceFinal()'s new bundle lookup needs them to
+  // match against the newspaper bundle's completed_games; g already has
+  // them in scope, no extra work to carry through.
+  return getCardCircadian({ state: eData ? eData.state : null, status: g.status, _aflComplete: g._aflComplete, _id: g._id, home: g.home, away: g.away, _sport: g._sport, league: g.league });
 }
 
 // Shared, de-duped nav-link click attachment (CC-CMD-2026-07-05-nav-mode-
@@ -11006,7 +11085,12 @@ function renderAll(skipUnchanged){
       // through; missing/unrecognized shapes (CFL, Golf) degrade to LATE
       // per the CC-CMD's own SCOPE BOUNDARY (no clock-based fallback).
       const _circEData=typeof findESPNScore==='function'?findESPNScore(g):null;
-      const _circInput={state:(_circEData?_circEData.state:null)??g.state??null,status:g.status,_aflComplete:g._aflComplete,_id:g._id};
+      // home/away/_sport/league added (CC-CMD-2026-07-08-truth-is-night-
+      // stars-client-fix): minutesSinceFinal()'s new bundle lookup needs
+      // them to match against the newspaper bundle's completed_games; this
+      // is the array applyNewspaperVoice() consumes via
+      // _renderAllCircadianGames below, the CC-CMD's primary target.
+      const _circInput={state:(_circEData?_circEData.state:null)??g.state??null,status:g.status,_aflComplete:g._aflComplete,_id:g._id,home:g.home,away:g.away,_sport:g._sport,league:g.league};
       const _circadian=getCardCircadian(_circInput);
       const _circCls="circadian-"+_circadian.toLowerCase();
       _renderAllCircadianGames.push(_circInput);
@@ -21536,8 +21620,11 @@ const CARD_ATTRIBUTE_SYNC = [
     {
         name: 'circadian',
         isClass: true,
+        // home/away/_sport/league added (CC-CMD-2026-07-08-truth-is-night-
+        // stars-client-fix): minutesSinceFinal()'s new bundle lookup needs
+        // them to match against the newspaper bundle's completed_games.
         compute: ({ game, isLive, isFinal, card }) =>
-            isFinal ? getCardCircadian({ state: 'post', _id: game._id })
+            isFinal ? getCardCircadian({ state: 'post', _id: game._id, home: game.home, away: game.away, _sport: game._sport, league: game.league })
             : isLive ? 'PRIME'
             : card.dataset.circadian || null,
     },
@@ -23667,7 +23754,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-07-08c';
+  const SW_VERSION = '2026-07-08d';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
