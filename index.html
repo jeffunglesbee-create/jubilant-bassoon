@@ -6839,6 +6839,39 @@ function getCardCircadian(game) {
 // classification problem exists for. Outside that window there is
 // nothing to match and this must not false-positive against an unrelated
 // night's games.
+// _sportLabelMatches: the canonical way to compare a client sport label
+// against any external system's short-code convention. Extracted from
+// _bundleFinalizedAt's inline sportOk() closure (CC-CMD-2026-07-08-
+// truth-is-night-stars-client-fix, d12d2a24) — this is the SECOND time a
+// client sport value crossing a system boundary has needed ad-hoc tolerance
+// logic, built independently both times: field-relay-nba's
+// resolveWinProbability() needed normalizeSportCode() for the exact same
+// reason (client "Baseball (MLB)" never matches the relay's bare 'mlb').
+// The next integration that needs this should call this instead of
+// reinventing it a third time.
+//
+// Substring-tolerant by design, not sloppiness: not every sport's exact
+// external-vs-client pairing could be verified live when this was written
+// (e.g. WNBA had no live game in that day's slate to inspect). Checks both
+// the client's general sport tag and its league field, since neither alone
+// is guaranteed to line up with every external system's convention (WC26's
+// client _sport matches the relay's "FIFA World Cup 2026" directly; MLB's
+// client _sport ("Baseball (MLB)") does not match the relay's "MLB", but
+// MLB's client league field does, exactly).
+//
+// clientLeague's comparison is intentionally asymmetric (only checks
+// spLeague.includes(bs), never bs.includes(spLeague)) — preserved exactly
+// as originally proven, not normalized to match clientSport's fully
+// bidirectional check, per this extraction's own instruction to preserve
+// existing behavior rather than reimplement it.
+function _sportLabelMatches(clientSport, clientLeague, externalSport) {
+  const bs = (externalSport || '').toLowerCase().trim();
+  if (!bs) return true; // external entry carries no sport tag -- don't over-require
+  const spClient = (clientSport || '').toLowerCase();
+  const spLeague = (clientLeague || '').toLowerCase();
+  return spClient.includes(bs) || bs.includes(spClient) || spLeague === bs || spLeague.includes(bs);
+}
+
 function _bundleFinalizedAt(game) {
   try {
     const bundle = window._newspaperBundle;
@@ -6849,11 +6882,7 @@ function _bundleFinalizedAt(game) {
     if (!h || !a) return null;
     const spClient = _gameSport(game).toLowerCase();
     const spLeague = (game.league || '').toLowerCase();
-    const sportOk = (bgSport) => {
-      const bs = (bgSport || '').toLowerCase().trim();
-      if (!bs) return true; // relay entry carries no sport tag -- don't over-require
-      return spClient.includes(bs) || bs.includes(spClient) || spLeague === bs || spLeague.includes(bs);
-    };
+    const sportOk = (bgSport) => _sportLabelMatches(spClient, spLeague, bgSport);
     const matches = bundle.completed_games.filter(bg =>
       teamNick(bg.home || '').toLowerCase().trim() === h &&
       teamNick(bg.away || '').toLowerCase().trim() === a &&
