@@ -1,5 +1,52 @@
 # FIELD HANDOFF
 
+## MID-SESSION UPDATE — 2026-07-08 (pick'em stale cross-day final guard, v6, 100/100 after an honest 90/100 stop)
+
+**CLIENT HEAD: 685ea90** (`bc0dca4` after the automated codemap refresh).
+SW_VERSION `2026-07-08a`, `deploy_match: true` per `session_health`.
+**Smoke: 890/0.**
+
+**Guarded `findEspnEntry()` against stale cross-day final scores and
+migrated every vulnerable caller** — full detail:
+`docs/outbox/cc-pickem-stale-final-resolution-fix-2026-07-07.md`. Adds
+the same guard already proven in `findESPNScore()`'s `_staleFinalGuard`,
+then migrates `checkForNewFinals()`, `injectDramaBadges()`, and —
+critically — `renderNightOwlRecap()`'s fallback F5 block, which called
+`saveEspnFinal()` **directly**, bypassing every other guard. Found a
+fourth `saveEspnFinal()` call site the source CC-CMD's own tracing
+missed (`initNightOwlObserver`, a MutationObserver) — investigated and
+confirmed not vulnerable (matches by stable `gid`/`_id`, not team name).
+
+**Shipped the visibilitychange/peak-missed guard wrong on the first
+attempt, caught by a real synthetic test before committing anything**:
+checking a stale entry's own `start_time` can never work, since a
+genuinely stale entry's `start_time` legitimately points to when it
+actually happened (the past) — the check was answering the wrong
+question. Fixed by restructuring the loop to iterate today's real
+scheduled games through `findEspnEntry()`, consistent with every other
+migrated caller. Also fixed a separate, pre-existing bug found along the
+way: the loop's `gameId` derivation (`eData?.id || eData?._id`) never
+resolves on any real entry (confirmed live: 0 of 38) — meaning
+`recordPeakMissed()` has never actually fired in production until this
+fix.
+
+Verified via a six-case synthetic proof test against the real, live app
+(10 sub-checks) and an explicit `shouldShowMLBNAlert()` regression check
+against all 16 real live MLB games (zero behavior change).
+
+**Correctly stopped at 90/100 first, reported honestly, and did not
+commit** — Task 4 (reset the one confirmed-affected pick) and Task 4b
+(historical audit) were confirmed genuinely unreachable server-side:
+pick state lives in `localStorage['field_picks_v1']`, scoped per-browser
+by a random UUID, after checking both real D1 databases and all 5 KV
+namespaces found nothing. A follow-up CC-CMD
+(`CC-CMD-2026-07-08-task4-resolution.md`) correctly reframed the
+deliverable — a verified, copy-pasteable browser console snippet for
+Jeff to run on the affected device, instead of an impossible server-side
+reset — and the commit landed at 100/100 under the corrected scope.
+
+---
+
 ## MID-SESSION UPDATE — 2026-07-07 (cross-cutting summary: RUWT/ADR-002 correction, Field's Pick tiering, pick'em fix, confidence-gate detection, worth-watching + click-to-scroll)
 
 **Not a session-end entry — session is ongoing.** This is a cross-cutting
