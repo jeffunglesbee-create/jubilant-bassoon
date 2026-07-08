@@ -36,18 +36,29 @@ sites, several of which are in hot, frequently-executed polling paths.
 
 ## PROPOSED SHAPE, FOR REVIEW BEFORE STAGING — NOT A COMMITTED DESIGN
 
-- New key format: `${date}|${home}|${away}` where `date` is the game's
-  own scheduled date (already available on every game object), not
-  today's date — so a card's key stays stable and correct regardless
-  of when it happens to be read.
-- All *write* sites updated first, in one pass, so both old- and
-  new-format keys briefly coexist without breaking anything currently
-  reading the old format.
-- All *read* sites migrated in a second pass, verified individually
-  against real data before moving to the next.
-- Old-format keys explicitly purged only after every read site is
-  confirmed migrated — not before, to avoid a window where reads
-  silently miss real data.
+- New key format: `${sport}|${league}|${date}|${home}|${away}` — date
+  alone isn't sufficient. Team *nicknames* can collide across sports
+  on the same day (e.g. a "Rangers" in NHL vs. MLB) if the key doesn't
+  also carry sport/league; date-only closes the cross-day gap this
+  session found but would leave a cross-sport gap open. `date` is the
+  game's own scheduled date, not today's date, so a card's key stays
+  stable regardless of when it's read.
+- Staged migration, five steps rather than a single cutover:
+  1. **Dual-write**: every write site writes both the old and new key,
+     so nothing currently reading the old format breaks.
+  2. **Preferred-read**: readers try the new key first, falling back
+     to the old key *only* for display-safe paths — irreversible-write
+     paths should not fall back at all once this stage begins; treat a
+     missing new-format entry as absent, not as license to trust a
+     possibly-stale old one.
+  3. **Migrate all consumers to the central helper** (`findEspnEntry`,
+     already the intended consolidation point) rather than leaving any
+     inline `.find()`/keyed access in place.
+  4. **Remove direct `espnScores.find(...)`/name-only scans** entirely
+     — by this point every consumer should be going through the
+     guarded helper.
+  5. **Remove the old-key fallback** only once the app has verifiably
+     survived a few real game slates on the new format alone.
 - This should very likely be split into multiple smaller CC-CMDs by
   read-site grouping (display-only vs. resolution-adjacent vs.
   notification-triggering) rather than attempted as one large diff —
