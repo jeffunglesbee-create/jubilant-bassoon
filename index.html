@@ -8871,9 +8871,17 @@ function buildJournalismQualitySection(){
 // streak/current-run/consecutive-day element anywhere in this section.
 function buildPickEmStatsSection(){
   const st = (typeof window !== 'undefined') ? window._userState : null;
-  const hasStats = st && (st.totalMade != null || st.totalCorrect != null || st.accuracyRate != null);
+  // Relay nests these three fields under `picks` (confirmed live,
+  // GET /user/state response shape) -- not top-level on st.
+  const picks = st && st.picks;
+  // totalMade/totalCorrect are 0 (not null/undefined) for any initialized
+  // user who hasn't picked yet -- confirmed live via /user/state -- so the
+  // "has this user made a pick" gate must check totalMade > 0, not != null,
+  // or the friendly empty-state copy below would never show for a real
+  // zero-picks user.
+  const hasStats = picks && picks.totalMade > 0;
   const body = hasStats
-    ? `<div class="jq-row"><span class="jq-k">made</span><span class="jq-v">${st.totalMade ?? 0}</span><span class="jq-k">correct</span><span class="jq-v">${st.totalCorrect ?? 0}</span><span class="jq-k">accuracy</span><span class="jq-v">${st.accuracyRate != null ? Math.round(st.accuracyRate) + '%' : '—'}</span></div>`
+    ? `<div class="jq-row"><span class="jq-k">made</span><span class="jq-v">${picks.totalMade ?? 0}</span><span class="jq-k">correct</span><span class="jq-v">${picks.totalCorrect ?? 0}</span><span class="jq-k">accuracy</span><span class="jq-v">${picks.accuracyRate != null ? (picks.accuracyRate * 100).toFixed(0) + '%' : '—'}</span></div>`
     : `<span class="jq-empty">no picks yet — make one from any upcoming game card</span>`;
   return `<div class="jq-quality-section pick-em-section">
     <div class="jq-section-title">Pick 'em</div>
@@ -28071,8 +28079,12 @@ function buildPickWidgetHTML(g, sport) {
   }
   const resultCls = pick.wasCorrect ? 'pick-correct' : 'pick-incorrect';
   const resultIcon = pick.wasCorrect ? '✓' : '✗';
-  const probLine = (pick.resolvedProbability != null && pick.probabilityLabel)
-    ? `<span class="pick-prob">${esc(pick.probabilityLabel)}: ${esc(pick.resolvedProbability)}%</span>` : '';
+  // resolvedProbability is a 0-1 fraction (relay's resolveWinProbability
+  // convention, e.g. 0.579) -- must be scaled to a percentage for display.
+  const probPct = pick.resolvedProbability != null
+    ? (pick.resolvedProbability * 100).toFixed(1) : null;
+  const probLine = (probPct != null && pick.probabilityLabel)
+    ? `<span class="pick-prob">${esc(pick.probabilityLabel)}: ${esc(probPct)}%</span>` : '';
   return `<div class="pick-widget pick-resolved ${resultCls}" data-gameid="${esc(gid)}" data-home="${esc(g.home)}" data-away="${esc(g.away)}">
     <span class="pick-label">🎯 ${esc(pick.predictedWinner)}</span> <span class="pick-result">${resultIcon}</span> ${probLine}
   </div>`;
