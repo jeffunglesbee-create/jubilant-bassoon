@@ -1,5 +1,62 @@
 # FIELD HANDOFF
 
+## MID-SESSION UPDATE — 2026-07-08 (pick cross-session resolution re-key, 100/100)
+
+**SW_VERSION `2026-07-08a` → `2026-07-08b`. Smoke: 890/0.** Full detail:
+`docs/outbox/cc-pick-cross-session-resolution-2026-07-08.md`.
+
+**The real, deeper follow-up to the pick'em stale-final fix below**:
+`game._id` is a session-local counter (`"g" + ++_gid`, reset to 0 every
+page load), and pick storage/resolution keyed on it directly
+(`_resolvePickIfExists(id, game, eData)` inside `saveEspnFinal`, `id =
+game._id || ...`). A pick made in one page load and resolved in a later
+one — the ordinary case, since games run hours and most users don't
+leave the tab open — could silently never resolve if the counter
+reassigned differently. **Confirmed real, not assumed**: 3 live captures
+minutes apart showed MLB's `_id`s coincidentally stable (upstream fetch
+order happened to match), but PGA/golf's `_id`
+(`'espn_pga_' + (d.eventId || Date.now())`) provably changed between two
+captures — an actual reproduced failure, not a theoretical one. Checked
+both candidate "more stable ID" sites named in the CC-CMD
+(`index.html:18489`, `:21812`) and ruled both out with reasons (NBA-CDN-
+specific; ephemeral-WebSocket-only use, plus the same `_gameId`/`.gameId`
+field-name bug found earlier this session).
+
+**Fix**: new `_pickStorageKey(game)` — `sport_date_home_away`, built from
+static game properties that don't change once scheduled. Threaded into
+`makePick` (widened to accept/store `home`/`away`), `buildPickWidgetHTML`
+(prefers the stable key when a real game object is given, falls back to
+`g._id` only for the two synthetic-object DOM-refresh callers), and
+`saveEspnFinal` (new `pickId` variable, the pre-existing `id`/`FINALS_KEY`
+dedup logic left untouched). `_resolvePickIfExists` itself needed no
+changes — fully generic over whatever key it's given.
+
+**Migration investigated, found genuinely impossible for existing
+unresolved picks** — the stored pick shape has no `home`/`away` fields,
+so an old `"g28"`-style key can't be reconstructed to a real matchup.
+Disclosed rather than hidden: any pick made before this deploy and still
+unresolved at deploy time keeps the old silent-miss behavior once; every
+pick made after this deploy resolves correctly across any number of
+session boundaries, permanently. Already-resolved existing picks proven
+byte-identical/untouched.
+
+**Verified via a real test**, not asserted: ran the actual extracted
+function source (not a reimplementation) in a Node `vm` against a mock
+`localStorage`, with a session-2 game object deliberately given a
+*different* `_id` than session 1 (mirroring the real bug exactly) —
+confirmed the pick resolves, the "already picked" UI state is recognized
+across the simulated boundary, and an injected old-style resolved entry
+stays untouched throughout.
+
+Two stale `smoke.js` regression guards (`A-PICKEM-4`, `A-PICKEMSURF-4`,
+written by the earlier `pick-em-reconcile` CC-CMD to block scope creep on
+these exact functions) were updated — not weakened — to check the new,
+CC-CMD-authorized shape instead of the old one; `A-PICKEMSURF-4` now
+checks `_resolvePickIfExists`'s literal body content stays byte-identical,
+the actual invariant worth protecting.
+
+---
+
 ## MID-SESSION UPDATE — 2026-07-08 (pick'em stale cross-day final guard, v6, 100/100 after an honest 90/100 stop)
 
 **CLIENT HEAD: 685ea90** (`bc0dca4` after the automated codemap refresh).

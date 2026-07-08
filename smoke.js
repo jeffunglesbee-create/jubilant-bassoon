@@ -6251,8 +6251,8 @@ assert('A-PICKEM-3 — pick_resolved sends only wasCorrect, never a client-compu
   'pick_resolved\'s request body must contain only gameId/wasCorrect — no revealedProbability or probabilitySource field computed client-side. The resolver fills those in server-side; sending a client-computed value would bypass that.');
 
 assert('A-PICKEM-4 — resolution is hooked into the existing saveEspnFinal() completion point',
-  !!html.match(/_resolvePickIfExists\(id, game, eData\)/) && html.indexOf('function saveEspnFinal') < html.indexOf('_resolvePickIfExists(id, game, eData)'),
-  'Pick resolution must fire from inside saveEspnFinal() — the established game-complete hook — not a separate polling mechanism.');
+  !!html.match(/_resolvePickIfExists\(pickId, game, eData\)/) && html.indexOf('function saveEspnFinal') < html.indexOf('_resolvePickIfExists(pickId, game, eData)'),
+  'Pick resolution must fire from inside saveEspnFinal() — the established game-complete hook — not a separate polling mechanism. (Updated by CC-CMD-2026-07-08-pick-cross-session-resolution: the resolution key is now `pickId`, derived from the cross-session-stable _pickStorageKey() instead of the session-volatile `id`; the hook point itself, inside saveEspnFinal, is unchanged.)');
 
 assert('A-PICKEM-5 — reveal displays the server-echoed probabilityLabel verbatim, not renamed',
   !!html.match(/esc\(pick\.probabilityLabel\)/) && !html.match(/'Market estimate'|'Statistical probability'/),
@@ -6294,10 +6294,12 @@ assert('A-PICKEMSURF-3 — 3-way mutual exclusion: both existing modes dismiss p
   (html.match(/classList\.remove\('pickem-mode'\)/g) || []).length >= 2,
   'toggleWCView() and toggleJournalismView() must both dismiss pickem-mode when they activate — otherwise two modes could show simultaneously, the exact stacking bug the WC/Journalism pair already guards against for each other.');
 
-assert('A-PICKEMSURF-4 — buildPickWidgetHTML/makePick/_resolvePickIfExists internal logic untouched',
-  !!html.match(/function buildPickWidgetHTML\(g, sport\) \{/) && !!html.match(/function makePick\(gameId, predictedWinner, sport\) \{/) &&
-  !!html.match(/function _resolvePickIfExists\(gameId, game, eData\) \{/),
-  'Per this CC-CMD\'s explicit scope, only the render TARGET moves — the three functions\' own signatures and bodies must be exactly as 702fb7b shipped them, not rewritten.');
+assert('A-PICKEMSURF-4 — _resolvePickIfExists internal logic untouched; makePick/buildPickWidgetHTML updated only for cross-session-stable keying',
+  !!html.match(/function buildPickWidgetHTML\(g, sport\) \{/) && !!html.match(/function makePick\(gameId, predictedWinner, sport, home, away\) \{/) &&
+  !!html.match(/function _resolvePickIfExists\(gameId, game, eData\) \{/) &&
+  !!html.match(/const winner = awayScore > homeScore \? game\.away : game\.home;/) &&
+  !!html.match(/pick\.wasCorrect = wasCorrect;/),
+  'Per CC-CMD-2026-07-08-pick-cross-session-resolution: _resolvePickIfExists\'s own winner-computation logic must stay byte-identical — it is generic over whatever key string it\'s given, so the cross-session-stable-key fix does not need to touch it. makePick\'s signature is intentionally widened to (gameId, predictedWinner, sport, home, away) to store the game\'s teams alongside the pick going forward. buildPickWidgetHTML keeps its outward (g, sport) signature but now derives a cross-session-stable key internally via _pickStorageKey().');
 
 assert('A-NAVCONSOLIDATE-1 — one shared attachNavLinkOnce() helper exists and all four nav-links use it',
   !!html.match(/function attachNavLinkOnce\(id, handler\)/) &&

@@ -23653,7 +23653,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-07-08a';
+  const SW_VERSION = '2026-07-08b';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -27857,16 +27857,44 @@ function _savePickCache(cache) {
   try { localStorage.setItem(PICKS_KEY, JSON.stringify(cache)); } catch(_) {}
 }
 
+// _pickStorageKey: cross-session-stable pick storage/resolution key
+// (CC-CMD-2026-07-08-pick-cross-session-resolution). game._id is a
+// session-local counter ("g" + a counter reset to 0 on every page load) --
+// confirmed via real testing that it is only EMPIRICALLY stable across
+// reloads for sports whose games happen to iterate in the same relative
+// order each fetch, and confirmed UNSTABLE for at least one real path
+// (golf's Date.now()-based fallback ID changed between two reloads
+// minutes apart). A pick made in one page load and resolved in a later
+// one (the common case -- games take hours, most users don't leave the
+// tab open that long) can silently never resolve if the counter
+// reassigns differently. Keys instead on sport+date+home+away, all
+// static properties of the real-world game that don't change once
+// scheduled.
+function _pickStorageKey(game) {
+  if (!game) return '';
+  const dateKey = (game.start_time || '').slice(0, 10);
+  const h = (game.home || '').toLowerCase().replace(/[^a-z]/g, '');
+  const a = (game.away || '').toLowerCase().replace(/[^a-z]/g, '');
+  const sp = _gameSport(game).toLowerCase().replace(/[^a-z]/g, '');
+  if (!dateKey || !h || !a) return ''; // insufficient data for a stable key
+  return `${sp}_${dateKey}_${h}_${a}`;
+}
+
 // Tapping a team button in the pick widget. Fires pick_made via the
 // existing _userDoRelay helper (no new relay-calling mechanism) and
 // updates the card's own pick widget in place, matching pinGame()'s
 // direct-DOM-update convention rather than forcing a full re-render.
-function makePick(gameId, predictedWinner, sport) {
+function makePick(gameId, predictedWinner, sport, home, away) {
   if (!gameId || !predictedWinner) return;
   const cache = _getPickCache();
   if (cache[gameId]) return; // already picked — no repick
   cache[gameId] = {
     predictedWinner, sport: sport || '',
+    // home/away stored from CC-CMD-2026-07-08-pick-cross-session-resolution
+    // onward -- not needed for resolution (the key itself already encodes
+    // them), but keeps this entry self-describing for any future migration,
+    // unlike pre-fix entries which cannot be identified from their data alone.
+    home: home || '', away: away || '',
     madeAt: Date.now(), resolved: false,
     wasCorrect: null, resolvedProbability: null, probabilityLabel: null,
   };
@@ -27883,7 +27911,12 @@ function makePick(gameId, predictedWinner, sport) {
 // (two team buttons), pick made but game not final (read-only), resolved
 // (correct/incorrect + the server-echoed probability label, verbatim).
 function buildPickWidgetHTML(g, sport) {
-  const gid = g._id || '';
+  // Cross-session-stable key when a real, start_time-bearing game object is
+  // given (CC-CMD-2026-07-08-pick-cross-session-resolution); falls back to
+  // g._id only for the widget-refresh callers (makePick/_resolvePickIfExists)
+  // that pass a minimal synthetic object -- in that case g._id already IS
+  // the stable key, threaded through by the caller, not recomputed here.
+  const gid = g.start_time ? (_pickStorageKey(g) || g._id || '') : (g._id || '');
   if (!gid) return '';
   const esc = s => String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
   const cache = _getPickCache();
@@ -27891,8 +27924,8 @@ function buildPickWidgetHTML(g, sport) {
   if (!pick) {
     return `<div class="pick-widget" data-gameid="${esc(gid)}" data-home="${esc(g.home)}" data-away="${esc(g.away)}">
       <span class="pick-label">🎯 Pick:</span>
-      <button class="pick-btn" onclick="event.stopPropagation();makePick('${esc(gid)}','${esc(g.away)}','${esc(sport)}')">${esc(g.away)}</button>
-      <button class="pick-btn" onclick="event.stopPropagation();makePick('${esc(gid)}','${esc(g.home)}','${esc(sport)}')">${esc(g.home)}</button>
+      <button class="pick-btn" onclick="event.stopPropagation();makePick('${esc(gid)}','${esc(g.away)}','${esc(sport)}','${esc(g.home)}','${esc(g.away)}')">${esc(g.away)}</button>
+      <button class="pick-btn" onclick="event.stopPropagation();makePick('${esc(gid)}','${esc(g.home)}','${esc(sport)}','${esc(g.home)}','${esc(g.away)}')">${esc(g.home)}</button>
     </div>`;
   }
   if (!pick.resolved) {
@@ -38044,12 +38077,18 @@ function saveEspnFinal(game, eData){
     const existing = JSON.parse(localStorage.getItem(FINALS_KEY)||'[]');
     const id = game._id || (game.home+game.away);
     if(existing.some(f=>f.id===id)) return; // already saved
-    // Pick 'em resolution (CC-CMD-2026-07-05-pick-em-ui TASK 2): fires at
-    // this exact existing game-complete hook, using the same `id` this
-    // function already resolves games by. No client-side probability
-    // computation — only wasCorrect is sent; the resolver fills in
-    // resolvedProbability/probabilityLabel server-side.
-    if (typeof _resolvePickIfExists === 'function') { try { _resolvePickIfExists(id, game, eData); } catch(_) {} }
+    // Pick 'em resolution (CC-CMD-2026-07-05-pick-em-ui TASK 2, re-keyed by
+    // CC-CMD-2026-07-08-pick-cross-session-resolution): deliberately uses a
+    // SEPARATE key from `id` above -- `id` is fine for the FINALS_KEY
+    // same-session dedup check it's used for here, but game._id is a
+    // session-local counter that resets every page load, so a pick made in
+    // an earlier session could never be found by it when the game finishes
+    // in this one. _pickStorageKey() is stable across sessions (sport+date+
+    // home+away); falls back to `id` only if a stable key can't be built
+    // (e.g. missing start_time), matching the pre-fix behavior in that
+    // narrow case rather than silently doing nothing differently.
+    const pickId = (typeof _pickStorageKey === 'function' ? _pickStorageKey(game) : '') || id;
+    if (typeof _resolvePickIfExists === 'function') { try { _resolvePickIfExists(pickId, game, eData); } catch(_) {} }
     const dpKey2='field_drama_peak_'+(game._id||'');
     const dramaPeak=parseFloat(localStorage.getItem(dpKey2)||'0');
     // ── Drama persistence: POST summary to relay archive (CC-CMD-2026-06-19 / Prompt 11B)
