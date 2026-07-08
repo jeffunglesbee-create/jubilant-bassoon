@@ -34,6 +34,18 @@ protects both transitively. The CFL-specific caller (`index.html:~22451`)
 matches by stable `_id`, not name-substring against the shared cache —
 confirmed not vulnerable to this same bug, out of scope.
 
+**A third target, found during systematic investigation of all 74
+references, not part of v1:** an anonymous `visibilitychange` listener
+(`index.html:~27974`) scans every currently-cached `espnScores` entry
+and calls `recordPeakMissed()` — a real, permanent `_userDoRelay`
+write — for any entry above a drama threshold, using whatever `id`
+happens to be sitting on that entry. This doesn't do name-matching, but
+carries a related risk from the same root cause: a stale, un-evicted
+entry from an earlier day, still present when the tab is hidden, could
+permanently record a missed-peak event for the wrong game. In scope
+here alongside `checkForNewFinals`, since it also writes a permanent
+record and the same investigation surfaced it.
+
 ## PROBE BLOCK
 ```bash
 sed -n '10420,10428p' index.html   # findEspnEntry — the helper to guard
@@ -76,6 +88,19 @@ object it has in scope carries `start_time` (required for the guard to
 actually apply) — if it doesn't, that's a real, separate prerequisite
 gap to fix here, not something to silently work around.
 
+## TASK 2b — Guard the visibilitychange peak-missed listener
+
+The anonymous listener at `index.html:~27974` iterates every
+`espnScores` entry directly rather than matching by name — it doesn't
+call `findEspnEntry`, so Task 1's guard doesn't automatically protect
+it. Add an equivalent staleness check inside the loop itself: skip any
+entry where `eData.state === 'post'` if the corresponding game's
+`start_time` (looked up from `allData.sports` by matching `gameId`) is
+still in the future. If no matching game can be found in
+`allData.sports` for a given cached entry, skip it rather than assume
+it's safe — an orphaned cache entry with no current schedule match is
+exactly the kind of stale data this guard exists to catch.
+
 ## TASK 3 — Salvage the one confirmed-affected pick
 
 Reset the specific pick (`gameId: MLB_2026-07-07_dodgers_rockies`) back
@@ -99,6 +124,7 @@ same pattern before touching only this one — report what you find.
 - [ ] Probe block confirms all three citations before editing
 - [ ] Guard added inside `findEspnEntry()` itself, reusing the existing check, not a new variant
 - [ ] `checkForNewFinals()` migrated to call it, `start_time` availability confirmed
+- [ ] Task 2b: visibilitychange listener guarded independently, orphaned entries skipped not assumed safe
 - [ ] The one confirmed-affected pick reset and verified
 - [ ] Other today's picks checked for the same pattern, reported
 - [ ] Real synthetic test proves the stale scenario is now blocked
@@ -107,12 +133,13 @@ same pattern before touching only this one — report what you find.
 - [ ] Outbox explicitly notes the cache-key redesign is separate, deliberately deferred work
 
 ## CONFIDENCE SCORING TABLE
-+25  Guard correctly added to `findEspnEntry()`, reusing the existing check
-+20  `checkForNewFinals()` correctly migrated, `start_time` confirmed present
++20  Guard correctly added to `findEspnEntry()`, reusing the existing check
++15  `checkForNewFinals()` correctly migrated, `start_time` confirmed present
++15  Task 2b: visibilitychange listener independently guarded, verified
 +15  Affected pick reset and verified
 +15  Real synthetic test proves the fix
 +10  Real same-day resolution confirmed unaffected
-+15  Outbox correctly scopes this apart from the cache-key work
++10  Outbox correctly scopes this apart from the cache-key work
 
 ## ONE-LINER
 git remote get-url origin | grep -q jubilant-bassoon || { echo "WRONG REPO -- this CC-CMD targets jubilant-bassoon"; exit 1; }
@@ -120,9 +147,11 @@ git pull. Read docs/CC-CMD-2026-07-07-pickem-stale-final-resolution-fix.md
 (v2). Add the existing stale-final guard directly inside findEspnEntry()
 (the already-existing, partially-adopted consolidation helper) rather
 than patching checkForNewFinals in isolation, then migrate
-checkForNewFinals to call it. Reset the one confirmed-affected pick.
-Prove via a real synthetic test that the stale scenario is now blocked,
-and that real same-day resolutions still work. This is deliberately
-scoped apart from the deeper cache-key redesign, which is a separate
-CC-CMD. Do not commit unless confidence >= 95. If score < 95, report
-verbatim and stop.
+checkForNewFinals to call it. Also guard the anonymous visibilitychange
+peak-missed listener independently (Task 2b) -- it iterates espnScores
+directly, not through findEspnEntry. Reset the one confirmed-affected
+pick. Prove via a real synthetic test that the stale scenario is now
+blocked for both paths, and that real same-day resolutions still work.
+This is deliberately scoped apart from the deeper cache-key redesign,
+which is a separate CC-CMD. Do not commit unless confidence >= 95. If
+score < 95, report verbatim and stop.
