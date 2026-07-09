@@ -23807,7 +23807,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-07-09f';
+  const SW_VERSION = '2026-07-09g';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -33098,22 +33098,43 @@ async function fetchWCLiveGames() {
     const live = (data.games || []).filter(g => g.state === 'live' && g.winProb);
     _wcLiveGamesCache = live;  // expose to Watch Engine
     // Merge advancementProb onto matching espnScores entries so
-    // applyQW1SituationBonus() can use it as a drama signal without
-    // a second lookup. Keyed by home team suffix (last 6 alphanum chars).
+    // applyQW1SituationBonus() can use it as a drama signal without a
+    // second lookup. This MUTATES a shared cache entry (not a display
+    // read) -- treated with write-level rigor (CC-CMD-2026-07-09-wc-
+    // advprob-and-keys-sweep): the old home-team-suffix-only scan had no
+    // away-team check, no date check, not even findEspnEntry's baseline
+    // staleness guard -- a wrong match here plants a false value that
+    // persists on that entry and can bias drama scoring for a different
+    // game until overwritten.
+    //
+    // _g's own `id`/`espnEventId` (confirmed live via probe_relay_route:
+    // "espn:760510"-style) are relay-native ESPN IDs -- a different
+    // namespace from FIELD's own game._id, no direct overlap -- so team
+    // name is the only reliable cross-reference to FIELD's own schedule.
+    // Two-stage resolution: (1) find the real FIELD game _g corresponds
+    // to by matching BOTH home and away against allData.sports (not just
+    // home), (2) pass that resolved game through the already-proven
+    // findEspnEntry(game, {requireSameDate:true}) to get the verified,
+    // stale-guarded espnScores entry. If either stage can't confirm a
+    // match, skip the merge for that live entry entirely rather than
+    // falling back to the old suffix scan.
     for (const _g of live) {
       if (!_g.advancementProb) continue;
-      const _hNorm = (_g.home?.name || '').toLowerCase().replace(/[^a-z]/g,'').slice(-6);
-      if (_hNorm.length < 4) continue;
-      const _eKey = Object.keys(espnScores).find(k => {
-        const _ed = espnScores[k];
-        if (_ed.state !== 'in') return false;
-        const _vh = (_ed.homeName || '').toLowerCase().replace(/[^a-z]/g,'');
-        return _vh.endsWith(_hNorm);
+      const _wcHome = (_g.home?.name || '').toLowerCase().replace(/[^a-z]/g,'');
+      const _wcAway = (_g.away?.name || '').toLowerCase().replace(/[^a-z]/g,'');
+      if (!_wcHome || !_wcAway) continue;
+      const _resolvedGame = (allData?.sports || []).flatMap(s => s.games || []).find(g => {
+        const gH = (g.home || '').toLowerCase().replace(/[^a-z]/g, '');
+        const gA = (g.away || '').toLowerCase().replace(/[^a-z]/g, '');
+        const homeOk = gH && (gH.endsWith(_wcHome) || _wcHome.endsWith(gH));
+        const awayOk = gA && (gA.endsWith(_wcAway) || _wcAway.endsWith(gA));
+        return homeOk && awayOk;
       });
-      if (_eKey) {
-        espnScores[_eKey]._wcAdvProb        = _g.advancementProb;
-        espnScores[_eKey]._wcOpeningAdvProb = _g.openingAdvanceProb || null;
-      }
+      if (!_resolvedGame) continue;
+      const _verifiedEntry = findEspnEntry(_resolvedGame, { requireSameDate: true });
+      if (!_verifiedEntry) continue;
+      _verifiedEntry._wcAdvProb        = _g.advancementProb;
+      _verifiedEntry._wcOpeningAdvProb = _g.openingAdvanceProb || null;
     }
     return live;
   } catch (e) { return []; }
@@ -37043,16 +37064,17 @@ function _otwFindLiveGame(minScore){
   (allData?.sports||[]).forEach(sec=>{
     (sec.games||[]).forEach(g=>{
       if(!g._id) return;
-      const eKey=Object.keys(espnScores).find(k=>{
-        const ed=espnScores[k];
-        if(ed.state!=='in') return false;
-        const hN=(g.home||'').toLowerCase().replace(/[^a-z]/g,'');
-        const eH=(ed.homeName||'').toLowerCase().replace(/[^a-z]/g,'');
-        const hL=hN.split(/\s+/).slice(-1)[0],eL=eH.split(/\s+/).slice(-1)[0];
-        return hL&&eL&&(hL===eL||eH.endsWith(hN)||hN.endsWith(eL));
-      });
-      if(!eKey) return;
-      const ed=espnScores[eKey];
+      // Migrated to findEspnEntry() (CC-CMD-2026-07-09-wc-advprob-and-
+      // keys-sweep): the old inline scan's own comment claimed "last
+      // whitespace-split word" matching, but alpha-stripping (which also
+      // removes spaces) ran before the split, making it a no-op -- the
+      // real mechanism was bidirectional endsWith() suffix matching on the
+      // full alpha-stripped name, home-only, no away check, no date guard
+      // -- the same collision class proven live against a real WC game
+      // (this CC-CMD's outbox). state==='in' is kept as an explicit
+      // follow-up check since findEspnEntry() doesn't filter by state.
+      const ed=findEspnEntry(g, { requireSameDate: true });
+      if(!ed || ed.state!=='in') return;
       const tier=fieldGameTier(g._id);
       const rank=fieldTierRank(tier);
       // Only consider tiers above plain LIVE (i.e. CLOSE_LATE+).
@@ -37376,16 +37398,10 @@ function renderMobileLiveBar(){
   (allData?.sports||[]).forEach(sec=>{
     (sec.games||[]).forEach(g=>{
       if(!g._id) return;
-      const eKey=Object.keys(espnScores).find(k=>{
-        const ed=espnScores[k];
-        if(ed.state!=='in') return false;
-        const hN=(g.home||'').toLowerCase().replace(/[^a-z]/g,'');
-        const eH=(ed.homeName||'').toLowerCase().replace(/[^a-z]/g,'');
-        const hL=hN.split(/\s+/).slice(-1)[0],eL=eH.split(/\s+/).slice(-1)[0];
-        return hL&&eL&&(hL===eL||eH.endsWith(hN)||hN.endsWith(eL));
-      });
-      if(!eKey) return;
-      const ed=espnScores[eKey];
+      // Migrated to findEspnEntry() (CC-CMD-2026-07-09-wc-advprob-and-
+      // keys-sweep) -- same fix as _otwFindLiveGame's identical inline scan.
+      const ed=findEspnEntry(g, { requireSameDate: true });
+      if(!ed || ed.state!=='in') return;
       // ADR-002 (H6): tier-driven chip, not composite drama + 4-band thresholds.
       const _mlbTier=fieldGameTier(g._id);
       liveGames.push({g,ed,sport:sec.sport,tier:_mlbTier,rank:fieldTierRank(_mlbTier)});

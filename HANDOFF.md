@@ -1,5 +1,58 @@
 # FIELD HANDOFF
 
+## MID-SESSION UPDATE — 2026-07-09 (WC advancement-prob mutation fix + .keys() sweep — the .values()-only pass missed this whole risk shape)
+
+**SW_VERSION `2026-07-09f` → `2026-07-09g`. Smoke: 899/0 (unchanged).**
+Full detail: `docs/outbox/cc-wc-advprob-and-keys-sweep-2026-07-09.md`.
+
+**Most severe finding of the night's whole espnScores sweep arc**:
+`fetchWCLiveGames()` merged `advancementProb` onto a matching `espnScores`
+entry via a home-suffix-only scan — no away check, no date check, not
+even `findEspnEntry()`'s baseline staleness guard — and this **mutates**
+the shared cache entry, feeding `applyQW1SituationBonus()` as a drama
+signal. A wrong match doesn't cause one bad display; it plants a false
+value that persists and biases drama scoring for a different game until
+overwritten.
+
+Root cause of why this (and two more real gaps) survived the earlier
+sweep: every prior pass searched `Object.values(espnScores).find(` —
+none searched `Object.keys(espnScores).find(` — the identical risk
+shape, different method name.
+
+Full fresh `.keys()` enumeration found 9 raw hits (not the doc's 3
+named): 3 real fuzzy-match risks, 6 explicitly excluded with individually
+stated reasons (`.filter()` category collection, `.length` truthiness
+gates, a property-existence search — none share the "wrong specific
+game" risk).
+
+Verified live via `probe_relay_route` (not assumed) that the WC-relay's
+own game `id` field (`"espn:760510"`-style) is a completely different
+namespace from FIELD's own `game._id` — no direct overlap, so a two-stage
+resolution was built: match team names against FIELD's own schedule
+first, then pass the resolved game through the already-proven
+`findEspnEntry()` for its independent, stale-guarded verification.
+Unresolvable entries skip the merge entirely rather than falling back to
+guessing.
+
+**Also migrated `_otwFindLiveGame()`/`renderMobileLiveBar()`** — despite
+an earlier outbox claiming "One To Watch and mobile live bar" were done,
+only a different, similarly-named WC-specific function had actually been
+migrated. Corrected the CC-CMD's own "last whitespace word" bug
+description after tracing the code directly (alpha-stripping runs before
+the whitespace split, making it a no-op — the real mechanism is the same
+suffix-matching class as the WC bug).
+
+**Live test's first attempt was inconclusive — investigated rather than
+accepted.** A synthetic name-collision didn't trigger the old bug because
+`Object.keys()` iterates in insertion order and the real entry existed
+first. Reconstructed with adversarial ordering (forcing the colliding
+entry earlier), which then genuinely reproduced the old bug picking the
+wrong entry — and confirmed the new logic resolves correctly regardless
+of ordering. Same technique proved both this fix and the sibling
+functions' fix.
+
+---
+
 ## MID-SESSION UPDATE — 2026-07-09 (espnScores display-consumer sweep — migrated 7, excluded 1 with a stated reason)
 
 **SW_VERSION `2026-07-09e` → `2026-07-09f`. Smoke: 899/0 (unchanged).**
