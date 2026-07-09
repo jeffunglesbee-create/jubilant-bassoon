@@ -23807,7 +23807,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-07-09e';
+  const SW_VERSION = '2026-07-09f';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -36600,16 +36600,12 @@ function injectDramaBadges(){
     if (spL.includes('wnba')) return;
     const gid = card.dataset.gameid;
     if (!gid) return;
-    // Find eData by matching either home OR away name (handles home/away discrepancies)
-    const eData = Object.values(espnScores).find(v => {
-      const h = (card.dataset.home||'').toLowerCase();
-      const a = (card.dataset.away||'').toLowerCase();
-      const hNick = teamNick(h) || h.split(' ').pop();
-      const aNick = teamNick(a) || a.split(' ').pop();
-      return (v.homeName||'').toLowerCase().includes(hNick) ||
-             (v.awayName||'').toLowerCase().includes(aNick) ||
-             h.includes(teamNick((v.homeName||'').toLowerCase()));
-    });
+    // Migrated to findEspnEntry() (CC-CMD-2026-07-09-espnscores-display-
+    // consumer-sweep): the old inline scan matched a loose home-OR-away
+    // substring/includes check, distinct from and weaker than
+    // findEspnEntry's stricter suffix match, with no stale-final guard.
+    const _leGame = findGameById(gid);
+    const eData = _leGame ? findEspnEntry(_leGame) : null;
     if (eData?.state === 'in') injectLineupEdge(card, eData, sport).catch(()=>{});
   });
 
@@ -36619,14 +36615,13 @@ function injectDramaBadges(){
     if (!sport.toLowerCase().includes('baseball') && !sport.toLowerCase().includes('mlb')) return;
     const gid = card.dataset.gameid;
     if (!gid) return;
-    const eData = Object.values(espnScores).find(v => {
-      const h = (card.dataset.home||'').toLowerCase();
-      return (v.homeName||'').toLowerCase().includes(teamNick(h)) ||
-             h.includes(teamNick((v.homeName||'').toLowerCase()));
-    });
+    // Find the FIELD game object for sourceId (MLB gamePk) -- moved before
+    // the eData lookup (CC-CMD-2026-07-09-espnscores-display-consumer-
+    // sweep) so findEspnEntry(game) can reuse it, replacing the old
+    // home-only substring/includes scan.
+    const game = allData?.sports?.flatMap(s=>s.games||[]).find(g=>g._id===gid);
+    const eData = game ? findEspnEntry(game) : null;
     if (eData?.state === 'in') {
-      // Find the FIELD game object for sourceId (MLB gamePk)
-      const game = allData?.sports?.flatMap(s=>s.games||[]).find(g=>g._id===gid);
       if (game?.sourceId) injectMLBPlatoon(card, eData, game).catch(()=>{});
     }
   });
@@ -36635,11 +36630,10 @@ function injectDramaBadges(){
   document.querySelectorAll('.game-card.espn-live').forEach(card => {
     const gid = card.dataset.gameid;
     if (!gid) return;
-    const eData = Object.values(espnScores).find(v => {
-      const h = (card.dataset.home||'').toLowerCase();
-      return (v.homeName||'').toLowerCase().includes(teamNick(h)) ||
-             h.includes(teamNick((v.homeName||'').toLowerCase()));
-    });
+    // Migrated to findEspnEntry() (CC-CMD-2026-07-09-espnscores-display-
+    // consumer-sweep), replacing the old home-only substring/includes scan.
+    const _cdwGame = findGameById(gid);
+    const eData = _cdwGame ? findEspnEntry(_cdwGame) : null;
     if (!eData) return;
     const cdwNote = getCDWNote(eData, card.dataset.sport||'');
     let cdwEl = card.querySelector('.cdw-note');
@@ -37931,11 +37925,10 @@ function injectBaseballSitChips(){
   cards.forEach(card => {
     // Remove existing chip
     card.querySelectorAll(".baseball-sit").forEach(c=>c.remove());
-    const home = (card.dataset.home||"").toLowerCase().replace(/[^a-z]/g,"");
-    const eData = Object.values(espnScores).find(v =>
-      (v.homeName||"").toLowerCase().replace(/[^a-z]/g,"") === home ||
-      home.includes((v.homeName||"").toLowerCase().replace(/[^a-z]/g,"").slice(-4))
-    );
+    // Migrated to findEspnEntry() (CC-CMD-2026-07-09-espnscores-display-
+    // consumer-sweep), replacing the old home-only exact/suffix scan.
+    const _bsGame = findGameById(card.dataset.gameid);
+    const eData = _bsGame ? findEspnEntry(_bsGame) : null;
     if(!eData || eData.state !== "in") return;
     const chip = renderBaseballSitChip(eData);
     if(!chip) return;
@@ -38804,20 +38797,20 @@ async function fetchNightOwlFromClaude(topGame){
     // used analytically. buildScoreNarrativeContext (injected via _owlDramaPromptCtx)
     // already provides the analytical output: lead changes, comebacks, max leads.
     // The raw per-period scores are input to that analysis, not prompt material.
+    // Migrated to findEspnEntry() (CC-CMD-2026-07-09-espnscores-display-
+    // consumer-sweep): both blocks below computed the identical home-only
+    // substring/includes lookup independently -- consolidated into one
+    // shared, correctly-guarded lookup rather than migrating the same
+    // duplicate scan twice. topGame is already a real game object here.
+    const _owlEDataShared = findEspnEntry(topGame);
     // PM-28j: soccer goal timeline
     try {
-      const _owlEData2 = Object.values(espnScores).find(v =>
-        (v.homeName||v.home||'').toLowerCase().includes((topGame.home||'').toLowerCase().slice(-5))
-      );
-      const _goalCtx = buildGoalTimeline(topGame, _owlEData2);
+      const _goalCtx = buildGoalTimeline(topGame, _owlEDataShared);
       if (_goalCtx) _owlStatCtx += (_owlStatCtx?'\n':'')+'  '+_goalCtx;
     } catch(e_) {}
     // PM-28h/j: NBA player box
     try {
-      const _owlEData3 = Object.values(espnScores).find(v =>
-        (v.homeName||v.home||'').toLowerCase().includes((topGame.home||'').toLowerCase().slice(-5))
-      );
-      const _nbaCtx = buildNBAPlayerContext(topGame, _owlEData3);
+      const _nbaCtx = buildNBAPlayerContext(topGame, _owlEDataShared);
       if (_nbaCtx) _owlStatCtx += (_owlStatCtx?'\n':'')+'  '+_nbaCtx;
     } catch(e_) {}
     // PM-30: NBA live/postgame enrichment — leaders, foul trouble, officials
@@ -40238,11 +40231,18 @@ function unpinGame() {
 }
 function updatePinWidget() {
   if (!_pinnedGameId) return;
-  const eData = espnScores[_pinnedGameId] || Object.values(espnScores)
-    .find(e => e && (e.home||'').toLowerCase().includes((_pinnedGameId||'').toLowerCase().slice(-4)));
   // Find game object
   let game = null;
   (allData?.sports||[]).forEach(s=>(s.games||[]).forEach(g=>{ if(g._id===_pinnedGameId) game=g; }));
+  // Migrated to findEspnEntry() (CC-CMD-2026-07-09-espnscores-display-
+  // consumer-sweep): the old lookup first tried espnScores[_pinnedGameId]
+  // -- a direct key lookup using the client's own volatile game._id
+  // against espnScores, which is keyed differently, so this branch could
+  // never actually hit -- then fell back to matching a team NAME against
+  // the last 4 characters of that same volatile ID string, which is not a
+  // team-matching mechanism at all and could coincidentally mismatch.
+  // game is now looked up first so findEspnEntry(game) has what it needs.
+  const eData = game ? findEspnEntry(game) : null;
   const home = eData?.homeScore ?? '--', away = eData?.awayScore ?? '--';
   const period = eData?.period ? `· ${eData.periodLabel||espnPeriodLabel(eData.periodPrefix||'Q',eData.period||0,'')}` : '';
   // Fixed 2026-07-02: this used getSmoothedDrama() to pick a fire/lightning
@@ -41201,11 +41201,13 @@ function renderHalftimeSwitch(){
   (allData?.sports||[]).forEach(sec=>{
     (sec.games||[]).forEach(game=>{
       if(!game._id) return;
-      const home = (game.home||'').toLowerCase().replace(/[^a-z]/g,'').slice(-5);
-      const eData = Object.values(espnScores).find(v=>
-        v.state==='in' && (v.homeName||'').toLowerCase().replace(/[^a-z]/g,'').endsWith(home)
-      );
-      if(!eData) return;
+      // Migrated to findEspnEntry() (CC-CMD-2026-07-09-espnscores-display-
+      // consumer-sweep), replacing the old home-only suffix scan.
+      // findEspnEntry() doesn't filter by state itself, so the state==='in'
+      // check (halftime detection only makes sense for a live game) is kept
+      // explicit here, preserving the original behavior exactly.
+      const eData = findEspnEntry(game);
+      if(!eData || eData.state!=='in') return;
       // Detect halftime: NBA/NFL (period boundary + clock 0:00), NHL between periods,
       // soccer (period===2 and clock suggests first half just ended)
       const sp = (sec.sport||'').toLowerCase();

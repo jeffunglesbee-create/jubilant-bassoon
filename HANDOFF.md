@@ -1,5 +1,44 @@
 # FIELD HANDOFF
 
+## MID-SESSION UPDATE — 2026-07-09 (espnScores display-consumer sweep — migrated 7, excluded 1 with a stated reason)
+
+**SW_VERSION `2026-07-09e` → `2026-07-09f`. Smoke: 899/0 (unchanged).**
+Full detail:
+`docs/outbox/cc-espnscores-display-consumer-sweep-2026-07-09.md`.
+
+Full fresh sweep for `Object.values(espnScores).find(...)` found 9 raw
+hits (the doc's four named functions were a floor, not a ceiling, exactly
+as instructed) — 1 is `findEspnEntry()`'s own canonical definition, 7
+genuinely needed migration, 1 (`scoreSMTCard`) explicitly excluded: it
+matches by exact `_gameId===card._gameId` equality, not a fuzzy
+team-name scan, so it doesn't share the "plausible wrong match" risk this
+sweep targets, and no `game` object exists at that call site to migrate
+to anyway.
+
+**A real gap beyond the doc's own named functions**: two of the four
+(`injectMLBPlatoon`, `injectLineupEdge`) receive `eData` as a parameter —
+they do no lookup themselves. Traced both to their real caller,
+`injectDramaBadges()`, which turned out to have **three separate,
+still-unmigrated inline scans** (one per enrichment feature) despite its
+own primary lookup already being migrated back on 2026-07-07 — a grep for
+the named functions alone would have missed all three.
+
+Migrated all 7: `updatePinWidget`, `injectDramaBadges`'s three sub-loops,
+`injectBaseballSitChips`, `fetchNightOwlFromClaude` (two duplicate scans
+consolidated into one shared lookup), `renderHalftimeSwitch` (preserved
+its original `state==='in'` filter explicitly, since `findEspnEntry()`
+doesn't filter by state itself).
+
+Live-verified `updatePinWidget`/`renderHalftimeSwitch` against real
+production data: a synthetic mismatched game correctly renders `--`
+(read from actual DOM, not just a return value) using its own team names,
+not a coincidentally wrong score; a real live game (Braves @ Pirates)
+renders its real score/tier normally. Enrichment call sites verified via
+direct code inspection, per the CC-CMD's own stated allowance for paths
+where a live rendering test isn't practical.
+
+---
+
 ## MID-SESSION UPDATE — 2026-07-09 (saveEspnFinal() internal guard — found a real third caller the CC-CMD's own premise missed)
 
 **SW_VERSION `2026-07-09d` → `2026-07-09e`. Smoke: 899/0 (unchanged).**
