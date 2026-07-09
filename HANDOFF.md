@@ -1,5 +1,42 @@
 # FIELD HANDOFF
 
+## MID-SESSION UPDATE — 2026-07-09 (broadened smoke coverage sweep, 893 → 899 — CC-CMD scope changed mid-execution, handled by rebasing not discarding)
+
+**Smoke: 899/0 (was 893/0). No SW_VERSION bump.** Full detail:
+`docs/outbox/cc-enqueue-smoke-coverage-broadened-2026-07-09.md`.
+
+**The source CC-CMD doc was amended mid-execution** — a doc-only commit
+landed on `origin/main` broadening the 3-assertion scope (already
+committed) to 6 fixes, after a fuller commit sweep found 3 more real
+runtime changes shipped in the same window with zero coverage. Rebased
+cleanly and continued rather than declaring the narrower, already-correct
+work "done" — the original 3 assertions remain valid, just incomplete
+relative to the amended spec.
+
+Added 6 more assertions, each mined directly from that fix's own
+already-written outbox proof, not independently re-derived: Truth Is/
+Night Stars' `_bundleFinalizedAt` (UTC-parse fix + both safety guards),
+the `_sportLabelMatches` extraction/wiring, Pick'em's three distinct
+claims (stats-nesting + `hasStats` gate, accuracy-rate scale, per-pick
+probability scale — kept as 3 separate assertions per the amended doc's
+own instruction not to compress distinct claims), and `getQualityTarget`'s
+`/300` scale fix.
+
+**A real false-positive in `A-JQSCALE-1`'s own first draft, caught before
+finalizing**: a blanket "`/180` must be absent" check failed against the
+correct code — the match was this session's own explanatory comment
+documenting the arithmetic, not a regression. Investigated rather than
+widened blindly; fixed to check the specific stale *runtime output
+string* instead of the bare substring.
+
+Every one of the 6 new assertions individually proven via its own
+isolated revert/restore cycle (6 total, not one shared demonstration) —
+confirming no false coupling with any of the other 8 assertions in each
+case. Final state: 899/0, `index.html` byte-identical to committed state
+after all cycles.
+
+---
+
 ## MID-SESSION UPDATE — 2026-07-09 (smoke coverage added for enqueue-context-gap fix, 890 → 893)
 
 **Smoke: 893/0 (was 890/0). No SW_VERSION bump** — `smoke.js`-only

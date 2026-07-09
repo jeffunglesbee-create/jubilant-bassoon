@@ -6398,5 +6398,73 @@ assert('A-ENQUEUECTX-3 — finals-desk enqueue sends home/homeScore/awayScore/ma
   })(),
   'Per CC-CMD-2026-07-09-finals-desk-context-gap: the finals-desk-nba/finals-desk-nhl enqueue body must carry home/homeScore/awayScore/matchupNote -- identical bug class as night-owl, fixed the same way. Unlike scouts-pick, homeScore/awayScore ARE included here (with ??null) since renderFinalsDesk() can fire on a live or finished Finals game, not only pre-game.');
 
+// ── Broadened coverage sweep (CC-CMD-2026-07-09-enqueue-smoke-coverage,
+// amended): six real runtime changes shipped in the ~26h window since
+// 6789cd8e with zero static coverage. The three A-ENQUEUECTX-* assertions
+// above cover two of the six (threshold-240/enqueue, finals-desk). The
+// following six cover the remaining four fixes -- each check is mined
+// directly from that fix's own outbox-stated proof, not independently
+// reinvented.
+
+assert('A-NIGHTSTARS-1 — _bundleFinalizedAt has the UTC-parse fix and both safety guards',
+  (() => {
+    const idx = html.indexOf('function _bundleFinalizedAt(game) {');
+    if (idx === -1) return false;
+    const block = html.slice(idx, idx + 2000);
+    return block.includes("raw.includes('T') ? raw : raw.replace(' ', 'T') + 'Z'") &&
+      block.includes('bundle.recap_date !== TODAY_ISO') &&
+      block.includes('matches.length !== 1');
+  })(),
+  'Per CC-CMD-2026-07-08-truth-is-night-stars-client-fix: three protections must all remain present. (1) The explicit UTC parse (raw SQLite CURRENT_TIMESTAMP strings have no timezone marker -- naive Date parsing was proven, via a real TZ=America/New_York test, to misread this as local time, a 240-minute silent error for ET users, FIELD\'s own target timezone). (2) The recap_date===TODAY_ISO guard (the two only refer to the same calendar day during the actual bug window, per TODAY_ISO\'s 4am-ET rollover). (3) The doubleheader-ambiguity guard (matches.length!==1 falls back rather than guessing which of two same-day entries a game corresponds to).');
+
+assert('A-SPORTLABEL-1 — _sportLabelMatches extracted and _bundleFinalizedAt genuinely calls it',
+  (() => {
+    const idx = html.indexOf('function _sportLabelMatches(clientSport, clientLeague, externalSport)');
+    if (idx === -1) return false;
+    const block = html.slice(idx, idx + 1400);
+    return block.includes('const sportOk = (bgSport) => _sportLabelMatches(spClient, spLeague, bgSport);');
+  })(),
+  'Per CC-CMD-2026-07-08-sport-label-matching-utility: the substring-tolerant sport comparison (client "Baseball (MLB)" vs relay "MLB") must live in the standalone _sportLabelMatches(clientSport, clientLeague, externalSport), and _bundleFinalizedAt\'s own sportOk closure must be the one-line wrapper calling it -- not a second, drifted-apart inline copy of the same logic.');
+
+assert('A-PICKEMFIX-1 — Pick\'em stats section reads the correctly-nested picks field and the fixed hasStats gate',
+  (() => {
+    const idx = html.indexOf('function buildPickEmStatsSection(){');
+    if (idx === -1) return false;
+    const block = html.slice(idx, idx + 1200);
+    return block.includes('const picks = st && st.picks;') &&
+      block.includes('const hasStats = picks && picks.totalMade > 0;');
+  })(),
+  'Per CC-CMD-2026-07-08-pickem-display-and-stats-fix TASK 2: the relay nests these fields under `picks` (confirmed live, not top-level on the state object) -- reading them flat silently breaks the whole section. hasStats must check totalMade > 0, not != null: the relay\'s real /user/state response returns totalMade: 0 (not null/undefined) for any initialized zero-picks user, and 0 != null is true in JS, so the != null form (the CC-CMD\'s own original, incorrect spec) would permanently hide the empty-state copy for every real user who hasn\'t picked yet.');
+
+assert('A-PICKEMFIX-2 — Pick\'em cumulative accuracy renders as a whole-percent, not the old truncating Math.round bug',
+  (() => {
+    const idx = html.indexOf('function buildPickEmStatsSection(){');
+    if (idx === -1) return false;
+    const block = html.slice(idx, idx + 1200);
+    return block.includes("(picks.accuracyRate * 100).toFixed(0) + '%'");
+  })(),
+  'Per CC-CMD-2026-07-08-pickem-display-and-stats-fix TASK 2: accuracyRate is a 0-1 fraction from the relay and must be multiplied by 100 before formatting. The pre-fix Math.round(accuracyRate)+"%" rounded a value like 0.667 straight to "1%" -- confirmed live, distinct from Task 1\'s per-pick probability bug (same root cause, two separate call sites, two separate assertions per this CC-CMD\'s own instruction not to compress distinct claims).');
+
+assert('A-PICKEMFIX-3 — Pick\'em per-pick resolved probability renders on a 0-100 scale, not the raw 0-1 fraction',
+  (() => {
+    const idx = html.indexOf('function buildPickWidgetHTML(g, sport) {');
+    if (idx === -1) return false;
+    const block = html.slice(idx, idx + 2200);
+    return block.includes('(pick.resolvedProbability * 100).toFixed(1)');
+  })(),
+  'Per CC-CMD-2026-07-08-pickem-display-and-stats-fix TASK 1: pick.resolvedProbability is a 0-1 fraction from the relay (e.g. 0.598); the pre-fix code rendered it raw, showing "0.598%" instead of "59.8%" on the live, currently-deployed app -- confirmed via a real live pick round-trip against the relay. One decimal place matches the relay\'s own precision (rounds to nearest 0.001 on the 0-1 scale).');
+
+assert('A-JQSCALE-1 — getQualityTarget uses the current 300-point scale, stale /180 genuinely gone',
+  (() => {
+    const idx = html.indexOf('function getQualityTarget(sport) {');
+    if (idx === -1) return false;
+    const block = html.slice(idx, idx + 3200);
+    return block.includes('avgScore < 217') &&
+      block.includes('/300') &&
+      block.includes('Target ≥ 240') &&
+      !block.includes('/180. Target') && !block.includes('Target ≥ 145 —');
+  })(),
+  'Per CC-CMD-2026-07-09-enqueue-context-gap TASK 5: the actual scorer (scoreProse) moved to a 10-dimension 0-300 scale on June 8, but this function\'s own comparison/display constants (avgScore<130, /180, Target≥145) were never updated -- three weeks of the coaching-hint prompt text citing a ceiling that no longer existed. Target 240 is anchored to the same canonical bar scoreThreshold now uses everywhere else in this codebase, not an independently re-derived number.');
+
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);
