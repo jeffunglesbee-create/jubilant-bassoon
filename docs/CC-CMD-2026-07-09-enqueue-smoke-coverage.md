@@ -1,85 +1,111 @@
-# CC-CMD: Add smoke coverage for the enqueue-context-gap fix — currently zero
+# CC-CMD: Mine tonight's own outbox proof into 6 missing smoke assertions
 
-**Date:** 2026-07-09
+**Date:** 2026-07-09 (amended — original scope was 3 of 6 real changes
+missing coverage; broadened after a full commit sweep found the other 3)
+
 **Repo:** jeffunglesbee-create/jubilant-bassoon (sole)
 **Branch:** main — commit directly, do not create a feature branch or PR
 
 ## CONTEXT
 
-`smoke.js` has stayed at 890/0 through the entire enqueue-context-gap
-arc tonight (client TASKS 1/2/5, the finals-desk follow-up) — confirmed
-live, freshly re-run against a real tarball, not assumed. Checked
-whether an existing assertion happens to cover this anyway: A277 is the
-closest name match ("saveEspnFinal saves sourceId + matchupNote") but
-verifies a different function's local-state persistence entirely,
-unrelated to what gets sent in the `JOURNALISM_ENQUEUE_RELAY` POST body.
+`smoke.js` has been frozen at 890/0 since `6789cd8e` (2026-07-08
+14:23:01Z) — confirmed via a full commit sweep since that timestamp,
+not assumed. Filtering out doc-only CC-CMD pushes and automated data
+crons (`oura`/`whoop`/`mlbn-schedule`/`auto-overlay`), **six real
+runtime code changes** shipped in that ~26-hour window with zero new
+static coverage:
 
-**Real, current gap:** the exact bug fixed tonight (enqueue payload
-missing `home`/`away`/`homeScore`/`awayScore`/`matchupNote`, silently
-capping Context Anchoring + Matchup Depth at zero) has zero static-check
-coverage. If a future edit to any of these three call sites drops one
-of these fields — plausible, they're easy to lose in an unrelated
-refactor — nothing in CI catches it. It would silently regress to
-exactly the state discovered and fixed tonight, and only be caught
-again by someone happening to run another live A/B test, the way it
-was found the first time.
+1. `d12d2a24` — Truth Is/Night Stars connected to real `finalized_at`
+2. `0a0034f2` — sport-label matching extracted to a shared utility
+3. `084cdf8c` — Pick'em's three display/data bugs (stats nesting,
+   two probability-scale bugs)
+4. `c6f13599` — threshold-240 migration + enqueue game/matchup data
+   (5 call sites)
+5. `7708d23c` — `getQualityTarget`'s stale `/180` scale reference
+6. `00e9cfb1` — finals-desk's identical enqueue-context-gap bug
+
+**The genuinely faster approach, not the obvious one:** every one of
+these six was already rigorously live-verified at ship time — real HTTP
+tests, real D1 queries, exact before/after values, all preserved in
+each fix's own outbox doc. Re-deriving "what should this assertion
+check" from scratch for each one is redundant work; the decision was
+already made once, correctly, under real conditions, and is sitting in
+`docs/outbox/`. Mine each outbox's own stated proof directly into an
+assertion rather than reinventing the check.
 
 ## PROBE BLOCK
 
 ```bash
 git log --oneline -5
 
-grep -n "briefType: 'night-owl'" -B3 index.html
-grep -n "briefType: 'scouts-pick'" -B3 index.html
-grep -n "briefType: /nba/i.test" -B3 index.html
-# Re-confirm the exact current enqueue bodies for all three fixed call
-# sites before writing assertions against them — do not assume tonight's
-# diffs are still byte-identical to what was committed, re-verify.
+ls docs/outbox/ | grep -E "truth-is-night-stars|sport-label|pickem|threshold-240|enqueue-context-gap|getqualitytarget"
+# Locate each of the 6 fixes' own outbox file — re-confirm exact
+# filenames, don't assume this doc's guesses are current.
+
+for f in $(ls docs/outbox/ | grep -E "truth-is-night-stars|sport-label|pickem|threshold-240|enqueue-context-gap|getqualitytarget"); do
+  echo "=== $f ==="
+  grep -A15 "TASK 4\|Live Verif\|live test\|Confirmed live" "docs/outbox/$f" | head -20
+done
+# Pull each outbox's own stated proof — exact values, exact code
+# checked — this is the actual spec for what each new assertion verifies.
 
 tail -30 smoke.js
-# Confirm the exact current highest assertion number before adding new
-# ones — continue the sequence correctly, don't guess a number.
+# Confirm the current highest assertion number, continue correctly.
 ```
 
-## TASK 1 — Add three assertions, one per fixed call site
+## TASK 1 — One assertion per fix, sourced from that fix's own outbox
 
-For each of `night-owl`, `scouts-pick`, `finals-desk-nba`/
-`finals-desk-nhl`: add an assertion checking that the literal enqueue
-body (the exact `JSON.stringify({...})` call, matched precisely enough
-that the check would fail if any of these specific fields were removed)
-includes `home`, `matchupNote`, and — for night-owl/finals-desk
-specifically, not scouts-pick, which correctly omits these since it
-fires pre-game — `homeScore`/`awayScore`. Match the existing codebase's
-own assertion style (grep-based string presence checks, per the
-existing `A277`-style pattern) rather than inventing a new assertion
-shape.
+For each of the six commits above, add exactly one smoke assertion
+whose check is derived directly from what that fix's own outbox already
+proved — not a new, independently-invented check. Examples of the
+mapping (verify each against the real outbox text via the probe, these
+are illustrative not prescriptive):
+- Truth Is/Night Stars: the outbox's own before/after evidence of what
+  `finalized_at` source got wired in — assert that source is present.
+- Sport-label matching: assert the shared utility function exists and
+  the original inline duplicate is gone (the outbox's own diff shows
+  both halves of this).
+- Pick'em: three separate assertions may be warranted here specifically
+  (stats nesting + two scale fixes are three distinct, independently
+  verified claims in that outbox, not one) — don't compress three real
+  claims into one assertion for the sake of a round number.
+- Threshold-240/enqueue: this is where TASK 1 of the prior version of
+  this doc already specified three call-site assertions (night-owl,
+  scouts-pick, finals-desk) — keep that specification, it's still
+  correct, just now explicitly one part of the full six rather than the
+  whole doc.
+- getQualityTarget: assert `/300` (or the corrected reference) is
+  present and `/180` is genuinely absent.
 
-## TASK 2 — Confirm the new assertions actually catch the regression
+## TASK 2 — Prove each new assertion actually catches a regression
 
-Before finalizing: temporarily revert one of the three fixes locally
-(remove `matchupNote` from finals-desk's enqueue body, for instance),
-run smoke.js, confirm the new assertion actually fails — then restore
-the real fix and confirm it passes again. This is the only way to prove
-the assertion detects the bug it's meant to catch, rather than just
-checking that *some* string is present that happens not to be the load-
-bearing one. Report this test cycle explicitly in the outbox.
+For every new assertion: temporarily revert that specific fix locally,
+run smoke.js, confirm the new assertion fails — then restore the fix,
+confirm it passes. Do this per-assertion, not once for the batch — a
+shared setup that only reverts one fix and calls the whole batch proven
+would leave five assertions unverified against what they're supposed to
+catch. Report each cycle explicitly in the outbox.
 
 ## DONE CONDITIONS
 
-- [x] Three new assertions added, one per fixed call site, correctly
-      distinguishing scouts-pick's legitimate score-field omission
-- [x] Each new assertion proven to actually fail when the real fix is
-      temporarily reverted, not just proven to pass on the current
-      (already-correct) code
-- [x] smoke.js count increases by exactly 3, 0 failures
+- [x] Every one of the six fixes has at least one assertion (Pick'em
+      may warrant three, per its outbox's own three distinct claims)
+- [x] Each assertion's check derived from that fix's own outbox proof,
+      cited explicitly in the new assertion's own description string
+- [x] Every new assertion individually proven to fail on a real revert
+      and pass on the real fix — not asserted, demonstrated
+- [x] smoke.js count increases by the real number added (likely 6-8
+      given Pick'em's three claims), 0 failures
 
 ## CONFIDENCE SCORING
 
-- +40 — three assertions correctly added, matching existing style,
-  correctly scoped per call site (scouts-pick's score omission respected)
-- +40 — each proven to actually catch a real revert, not just pass on
-  already-correct code
-- +20 — final count confirmed via fresh run, not assumed
+- +15 — all six fixes accounted for, none skipped
+- +25 — each assertion's check genuinely sourced from that fix's own
+  outbox proof, not independently reinvented
+- +45 — every new assertion individually proven against a real revert,
+  not just proven to pass on already-correct code
+- +15 — final count and 0-failure state confirmed via fresh full-tarball
+  run, not assumed
 
 **Do not commit unless confidence >= 95. If score < 95, report verbatim
 and stop.**
@@ -88,5 +114,5 @@ and stop.**
 
 ```
 git remote get-url origin | grep -q jubilant-bassoon || { echo "WRONG REPO"; exit 1; }
-git pull. Read docs/CC-CMD-2026-07-09-enqueue-smoke-coverage.md. Execute all tasks. Do not commit unless confidence >= 95. If score < 95, report verbatim and stop.
+git pull. Read docs/CC-CMD-2026-07-09-enqueue-smoke-coverage.md. Execute all tasks (scope now covers all 6 uncovered fixes, not just 3 -- re-read TASK 1 in full). Do not commit unless confidence >= 95. If score < 95, report verbatim and stop.
 ```
