@@ -179,6 +179,44 @@ overlap (fast path correctly does NOT engage without a real ID present);
 correctly returns `null` rather than silently falling back to fuzzy
 matching (confirming "authoritative, not a hint").
 
+## POST-DEPLOY LIVE VERIFICATION (production, not local/vm)
+
+Deployed (deploy-gate green, HEAD `0468b29`, `SW_VERSION` confirmed live
+as `2026-07-09h` via `window.SW_VERSION` in a real browser session).
+Ran the actual shipped `_resolveRealGameId` against real, currently-live
+production data — not a fixture.
+
+**First attempt surfaced a genuine confound, caught rather than
+accepted at face value (matching this session's standing discipline).**
+Picked the live France vs Morocco WC26 Quarterfinal (`state: 'in'`,
+France 2-0, 74'). Its `game._id` in production turned out to already
+equal `"espn:760510"` — the same value as the real `espnScores` entry's
+`_gameId`. That's a coincidence in this specific game's data (its
+construction path wasn't traced further, since it doesn't change the
+fix's correctness either way), **not evidence the fix matters** — the
+OLD buggy code would have accidentally "worked" for this one game too.
+Recognized this before treating it as proof.
+
+**Found a clean, unambiguous live delta instead:** Pittsburgh Pirates @
+Atlanta Braves, live in production right now (`state: 'in'`).
+`game._id` is `"g14"` (FIELD's internal per-load counter, as expected
+for a game not touched by any of the 3 migrated builder functions).
+The real `espnScores` entry's `_gameId` is `"espn:401816084"`.
+
+- `OLD_BUG_would_have_matched`: **false** — `"g14" !== "espn:401816084"`,
+  confirming the pre-fix bug was live and real, not just theoretical.
+- Ran the actual shipped `_resolveRealGameId(game)` against this real
+  game object: resolved `"espn:401816084"`, exactly matching the real
+  `espnScores` entry, and cached it onto `game._gameId` — `NEW_FIX_matches:
+  true`.
+
+Also confirmed on the France/Morocco game (after recognizing the `_id`
+confound above): `_resolveRealGameId` still correctly resolves and
+caches, `buildWCMediaCards()`'s freshly-built card carries the matching
+real `_gameId`, and `idsMatchNow: true` against the live `espnScores`
+entry — end-to-end through the real, shipped `buildWCMediaCards()` →
+`scoreSMTCard()` path, not just the isolated helper.
+
 ## VERIFICATION (repo-level)
 
 `node smoke.js index.html`: 899/0 (unchanged — no new assertions added,
