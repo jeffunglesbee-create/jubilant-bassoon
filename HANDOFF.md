@@ -1,5 +1,38 @@
 # FIELD HANDOFF
 
+## MID-SESSION UPDATE — 2026-07-09 (TASK 5 — getQualityTarget's stale /180 scale fixed)
+
+**SW_VERSION `2026-07-09b` → `2026-07-09c`. Smoke: 890/0.** Full detail:
+`docs/outbox/cc-enqueue-context-gap-task5-2026-07-09.md`.
+
+Closes the dispatch gap flagged in the prior update: `getQualityTarget()`
+(`index.html:25464`) was still comparing against the pre-June-8 180-point
+scale (`avgScore < 130`, `Target ≥ 145`) three weeks after the actual
+scorer moved to a 10-dimension 0-300 scale. Traced `renderProseScore` →
+`scoreObj.score` → `total` end-to-end and confirmed `field_jq_scores`'
+*stored* data was never stale — only this display/comparison threshold
+lagged, a single contained bug, explicitly not conflated with a second
+one.
+
+`journalism-quality.js` (the file the source CC-CMD cited for weight
+constants) doesn't exist in this repo — used the real, local `W` weight
+constants (`index.html:26818`) instead. `Target ≥ 240` anchored to the
+same canonical bar `scoreThreshold` now uses everywhere else in this
+codebase (not a literal 145→243 re-scale) so the coaching hint and the
+actual pass/fail gate agree. `Trigger < 217` preserves the original
+72.2% ratio scaled to 300. `avgStat` thresholds (a different unit,
+stats/sentence) and the `field_jq_scores` read/sport-tag logic
+confirmed untouched.
+
+Verified via 5 real synthetic tests against the actual extracted
+function, including a trigger-boundary case (avgScore=200: would NOT
+have fired under the old 130 threshold, now correctly fires under 217)
+proving the mechanism changed, not just the display string — and real
+observed data from tonight's own live A/B tests (127-141) correctly
+triggering the corrected hint.
+
+---
+
 ## MID-SESSION UPDATE — 2026-07-09 (enqueue context gap — commit threshold work + fix real root cause)
 
 **SW_VERSION `2026-07-09a` → `2026-07-09b`. Smoke: 890/0.** Full detail:

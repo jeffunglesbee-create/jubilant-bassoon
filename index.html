@@ -23803,7 +23803,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-07-09b';
+  const SW_VERSION = '2026-07-09c';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -25492,8 +25492,24 @@ function getQualityTarget(sport) {
                       key === 'hockey'     ? 'NHL' :
                       key === 'basketball' ? 'NBA/WNBA' : 'soccer');
     const lines = [];
-    if (avgScore < 130) {
-      lines.push(`- QUALITY TARGET: recent ${labelStr} briefs averaged score ${Math.round(avgScore)}/180. Target ≥ 145 — add more specific facts (names, numbers, stats with units).`);
+    // Scale fixed 2026-07-09 (CC-CMD-2026-07-09-enqueue-context-gap TASK 5):
+    // this was still comparing against the pre-June-8 180-point scale (130/145),
+    // three weeks after the actual scorer (scoreProse, ~line 26814's W weights
+    // comment) moved to a 10-dimension 0-300 scale. field_jq_scores' STORED
+    // score values were never wrong -- traced renderProseScore -> scoreObj.score
+    // -> total (~line 26845) and confirmed the scorer itself has written real
+    // 300-scale values since June 8; only this display/comparison threshold
+    // lagged. Target -> 240: not a re-scaled 145 (145/180=81%x300=243), but the
+    // SAME canonical bar generateJournalismViaRelay's scoreThreshold now uses
+    // everywhere else in this codebase (CC-CMD-2026-07-09-jq-threshold-240-
+    // migration) -- so this coaching hint and the actual pass/fail retry gate
+    // agree on what "good" means, rather than quietly disagreeing by ~3pts.
+    // Trigger -> 217: preserves the original ratio (130/180=72.2%) scaled to
+    // 300 (Math.round(0.7222*300)=217), since the CC-CMD's own instruction was
+    // to reconsider, not blindly re-derive, the relative gap -- the ~9-point
+    // trigger-to-target gap this ratio produces is unchanged from before.
+    if (avgScore < 217) {
+      lines.push(`- QUALITY TARGET: recent ${labelStr} briefs averaged score ${Math.round(avgScore)}/300. Target ≥ 240 — add more specific facts (names, numbers, stats with units).`);
     }
     if (avgStat < 1.5) {
       lines.push(`- QUALITY TARGET: recent ${labelStr} briefs averaged stat depth ${avgStat.toFixed(1)} stats/sentence. Target ≥ 1.8 — use more specific numbers (ERA, OPS, pitch counts, percentages, scores).`);
