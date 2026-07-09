@@ -1,5 +1,54 @@
 # FIELD HANDOFF
 
+## MID-SESSION UPDATE — 2026-07-09 (enqueue context gap — commit threshold work + fix real root cause)
+
+**SW_VERSION `2026-07-09a` → `2026-07-09b`. Smoke: 890/0.** Full detail:
+`docs/outbox/cc-enqueue-context-gap-2026-07-09.md`.
+
+**Committed the prior session's correct-but-held threshold work**
+(`scoreThreshold` 120/130/110→240, 5 sites) — that work was never wrong;
+it was honestly held at 60/85 because the real bottleneck was elsewhere.
+
+**Real root cause, found by tracing the actual data flow**: `night-owl`
+and `scouts-pick` both enqueue via `/journalism/enqueue` (async job), which
+never carried `home`/`away`/`homeScore`/`awayScore`/`matchupNote` in the
+queue message — the consumer's Context Anchoring (25pts) and Matchup Depth
+(30pts) were structurally unreachable regardless of threshold. This is
+why the prior session's live A/B tests were flat/negative: they exercised
+this exact broken path. A *second*, separate night-owl path
+(`fetchNightOwlFromClaude`, synchronous `/journalism/generate`) already
+had this data correctly — confirmed via tracing, not assumed.
+
+Added the missing fields to both enqueue bodies, reusing already-local
+data (nothing fetched anew). `scouts-pick` correctly omits `homeScore`/
+`awayScore` — verified it fires pre-game only, so no score data exists at
+that point; passing fabricated/null scores would have been worse than
+omitting them.
+
+**A dispatch gap in this CC-CMD flagged, not silently resolved**: the doc
+lists 5 tasks but only dispatches 4 (TASKS 1-2 to jubilant-bassoon, 3-4 to
+field-relay-nba) — TASK 5 (fix a stale `/180` scale reference in the
+client-side `getQualityTarget()`, a real, separate fossil found this
+session, distinct from both the relay's now-fixed `130` default and the
+relay's genuinely-dead `getQualityTarget()`) is jubilant-bassoon-only work
+that neither dispatch assigns. Not acted on without explicit authorization
+(Rule 69) — needs its own CC-CMD dispatch.
+
+Verified the client-side change is functionally correct via a real live
+POST (relay accepted the widened payload, 202/jobId). Could not, and did
+not claim to, verify the downstream effect — that requires field-relay-
+nba's TASK 3 (storing/forwarding the new fields), outside this session's
+scope. A polled real job scored 127, in the same range as the prior
+session's flat results — expected, since the relay hasn't started using
+these fields yet.
+
+Confidence scored against this session's actual dispatched scope (TASKS
+1-2 only), not the CC-CMD's full cross-repo table — TASKS 3/4/5 are
+structurally outside what one repo's session can deliver or verify alone.
+Both assigned deliverables complete and verified; committed.
+
+---
+
 ## MID-SESSION UPDATE — 2026-07-08 (Truth Is / Night Stars — connect voice computation to real finalized_at, 100/100)
 
 **SW_VERSION `2026-07-08c` → `2026-07-08d`. Smoke: 890/0.** Full detail:
