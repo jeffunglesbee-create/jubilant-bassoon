@@ -1,5 +1,39 @@
 # FIELD HANDOFF
 
+## MID-SESSION UPDATE — 2026-07-09 (smoke coverage added for enqueue-context-gap fix, 890 → 893)
+
+**Smoke: 893/0 (was 890/0). No SW_VERSION bump** — `smoke.js`-only
+change, not in `deploy-gate.yml`'s trigger paths. Full detail:
+`docs/outbox/cc-enqueue-smoke-coverage-2026-07-09.md`.
+
+Closed a real gap: tonight's enqueue-context-gap fix arc (night-owl,
+scouts-pick, finals-desk) had zero static-check coverage — a future
+unrelated refactor could silently drop `home`/`away`/`homeScore`/
+`awayScore`/`matchupNote` from any of the three enqueue bodies and CI
+would never catch it, only another live A/B test would.
+
+Added three assertions (`A-ENQUEUECTX-1/2/3`), each anchored on a
+substring unique to its own enqueue call — night-owl's anchor deliberately
+avoids `briefType: 'night-owl'` alone, since that string also appears in
+a second, unrelated, already-correct code path. scouts-pick's assertion
+also checks `homeScore`/`awayScore` are absent, since that omission is
+itself correct and worth protecting, not just the present fields.
+
+**A real bug in my own first-draft assertion, caught before finalizing**:
+the finals-desk window was sized too small and failed against the
+current, correct code — measured the actual distances and widened it,
+then checked the other two windows weren't also dangerously tight rather
+than assuming they were fine because they happened to pass (one had only
+47 characters of margin — widened that one too).
+
+Each assertion proven to actually catch its intended regression via
+three independent revert/restore cycles (not just shown passing on
+already-correct code), confirming no false coupling between the three —
+each isolated revert only failed its own assertion. Final restore
+verified via `git diff --stat` showing zero residual diff.
+
+---
+
 ## MID-SESSION UPDATE — 2026-07-09 (finals-desk had the identical enqueue-context-gap bug — fixed; serious fabrication finding flagged)
 
 **SW_VERSION `2026-07-09c` → `2026-07-09d`. Smoke: 890/0.** Full detail:

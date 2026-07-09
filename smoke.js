@@ -6349,5 +6349,54 @@ assert('A-GAPFIX-4 — [SERIES CONTEXT] Night Owl injection exists with 3-way ba
   !!html.match(/window\._userState\.seriesLedger\[key\]\s*\n\s*\|\| window\._userState\.seriesLedger\[`\$\{t1\}_\$\{t2\}_\$\{yr\}`\]\s*\n\s*\|\| window\._userState\.seriesLedger\[`\$\{t2\}_\$\{t1\}_\$\{yr\}`\]/),
   'Per TASK 4: seriesLedger (written but never read, per the 2026-07-05 gap-sweep addendum) must now feed a real Night Owl prompt block, matching the existing [MISSED PEAKS] pattern exactly, with a 3-way key lookup (sorted key + both unsorted orderings) so pre-TASK-3 historical entries are not silently dropped.');
 
+// ── Enqueue context-gap coverage (CC-CMD-2026-07-09-enqueue-smoke-coverage) ──
+// The bug fixed across tonight's night-owl/scouts-pick/finals-desk CC-CMDs
+// (JOURNALISM_ENQUEUE_RELAY bodies missing home/away/homeScore/awayScore/
+// matchupNote, silently capping Context Anchoring + Matchup Depth at zero)
+// had zero static-check coverage before this. A277 verifies a different
+// function's local-state persistence entirely, not what gets POSTed here.
+// Each assertion anchors on a substring unique to that ONE enqueue call
+// (night-owl has a second, unrelated, already-correct 'night-owl' briefType
+// reference inside generateJournalismViaRelay -- `prompt: _owlQ_prompt,`
+// disambiguates it) so a future edit that drops one of these fields in an
+// unrelated refactor fails here instead of silently regressing to the
+// exact state discovered and fixed tonight.
+
+assert('A-ENQUEUECTX-1 — night-owl enqueue sends home/homeScore/awayScore/matchupNote',
+  (() => {
+    const idx = html.indexOf('prompt: _owlQ_prompt,');
+    if (idx === -1) return false;
+    const block = html.slice(idx, idx + 1300);
+    return block.includes("home: game.home || ''") &&
+      block.includes('homeScore: eData.homeScore ?? null') &&
+      block.includes('awayScore: eData.awayScore ?? null') &&
+      block.includes('matchupNote: game.matchupNote || null');
+  })(),
+  'Per CC-CMD-2026-07-09-enqueue-context-gap: the night-owl enqueue body (fetch(JOURNALISM_ENQUEUE_RELAY,...) inside saveEspnFinal) must carry home/homeScore/awayScore/matchupNote alongside prompt/sport/briefType -- without these, Context Anchoring (25pts) and Matchup Depth (30pts) are structurally unreachable regardless of scoreThreshold. Anchored on `prompt: _owlQ_prompt,`, not `briefType: \'night-owl\'` alone -- that substring also appears in the separate, already-correct generateJournalismViaRelay call inside fetchNightOwlFromClaude, which never had this bug.');
+
+assert('A-ENQUEUECTX-2 — scouts-pick enqueue sends home/away/matchupNote, correctly omits score fields',
+  (() => {
+    const idx = html.indexOf("briefType: 'scouts-pick'");
+    if (idx === -1) return false;
+    const block = html.slice(idx, idx + 500);
+    return block.includes("home: g.home||''") &&
+      block.includes("away: g.away||''") &&
+      block.includes('matchupNote: g.matchupNote||null') &&
+      !block.includes('homeScore:') && !block.includes('awayScore:');
+  })(),
+  'Per CC-CMD-2026-07-09-enqueue-context-gap: scouts-pick\'s enqueue body must carry home/away/matchupNote (same bug class as night-owl/finals-desk), but must NOT carry homeScore/awayScore -- this fires pre-game only (injectJ1J4Badges skips live/final cards), so no real score data exists at this point; adding fabricated or null-masquerading-as-real score fields would be worse than omitting them.');
+
+assert('A-ENQUEUECTX-3 — finals-desk enqueue sends home/homeScore/awayScore/matchupNote',
+  (() => {
+    const idx = html.indexOf("briefType: /nba/i.test(game.league||'')");
+    if (idx === -1) return false;
+    const block = html.slice(idx, idx + 1600);
+    return block.includes("home: game.home || ''") &&
+      block.includes('homeScore: game.homeScore ?? null') &&
+      block.includes('awayScore: game.awayScore ?? null') &&
+      block.includes('matchupNote: game.matchupNote || null');
+  })(),
+  'Per CC-CMD-2026-07-09-finals-desk-context-gap: the finals-desk-nba/finals-desk-nhl enqueue body must carry home/homeScore/awayScore/matchupNote -- identical bug class as night-owl, fixed the same way. Unlike scouts-pick, homeScore/awayScore ARE included here (with ??null) since renderFinalsDesk() can fire on a live or finished Finals game, not only pre-game.');
+
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);
