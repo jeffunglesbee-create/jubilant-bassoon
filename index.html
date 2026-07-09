@@ -10588,16 +10588,39 @@ function findEspnEntry(game, { requireSameDate = true } = {}) {
 // Caches onto game._gameId so repeat calls for the same game object (and
 // any other findEspnEntry()/_eDataMatchesGame() caller that later receives
 // this same game) get the real-ID fast path for free.
+// Unambiguous-candidacy guard (CC-CMD-2026-07-09-realid-bootstrap-
+// collision-check): requireSameDate guards a wrong DATE, not a same-day
+// collision between two DISTINCT real games whose home AND away suffixes
+// both happen to match under findEspnEntry's matcher (e.g. two different
+// real franchises sharing a >=6-letter mascot -- "Panthers", "Giants",
+// "Rangers" -- on both sides at once; confirmed empirically possible:
+// a constructed Carolina Panthers/New York Giants vs Florida Panthers/
+// San Francisco Giants collision genuinely caches the wrong ID today,
+// and with both candidates present Array.find() picks by iteration
+// order, not correctness). Re-implements the same fuzzy predicate
+// findEspnEntry() uses (not a call to it) because this needs the full
+// candidate COUNT, not just the first match, to detect ambiguity before
+// caching anything permanent.
 function _resolveRealGameId(game) {
   if (!game) return null;
   if (game._gameId) return game._gameId;
   if (typeof espnScores === 'undefined') return null;
-  const entry = findEspnEntry(game, { requireSameDate: true });
-  if (entry && entry._gameId) {
-    game._gameId = entry._gameId;
-    return entry._gameId;
+  const h = (game.home || '').toLowerCase().replace(/[^a-z]/g, '').slice(-6);
+  const a = (game.away || '').toLowerCase().replace(/[^a-z]/g, '').slice(-6);
+  const candidates = Object.values(espnScores).filter(v => {
+    const vh = (v.homeName || '').toLowerCase().replace(/[^a-z]/g, '');
+    const va = (v.awayName || '').toLowerCase().replace(/[^a-z]/g, '');
+    return vh.endsWith(h) && va.endsWith(a);
+  });
+  if (candidates.length !== 1) return null; // 0 = no match yet; 2+ = ambiguous, don't guess
+  const entry = candidates[0];
+  if (!entry._gameId) return null;
+  if (entry.state === 'post' && game.start_time &&
+      new Date(game.start_time).getTime() > Date.now()) {
+    return null; // stale-final guard, same as findEspnEntry()
   }
-  return null;
+  game._gameId = entry._gameId;
+  return entry._gameId;
 }
 
 // rankGamesByDrama: sort games by preGameScore, excluding non-games (ATP field entries).
@@ -23843,7 +23866,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-07-09h';
+  const SW_VERSION = '2026-07-09i';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)

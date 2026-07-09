@@ -1,5 +1,58 @@
 # FIELD HANDOFF
 
+## MID-SESSION UPDATE — 2026-07-09 (realid-bootstrap-collision-check — hardened _resolveRealGameId against a same-day both-sides suffix collision)
+
+**SW_VERSION `2026-07-09h` → `2026-07-09i`. Smoke: 899/0 (unchanged).**
+Full detail: `docs/outbox/cc-realid-bootstrap-collision-check-2026-07-09.md`.
+
+**Follow-up hardening pass on `_resolveRealGameId` (shipped in the prior
+CC-CMD below, 100/100).** It caches `game._gameId` from one fuzzy match
+and then trusts it forever — the fast path it feeds has no fallback,
+by design, since a resolved real ID is meant to be authoritative. That
+design is only as safe as the single bootstrap match. `requireSameDate`
+guards a wrong *date*; nothing guarded two *different* real games on
+the *same* day whose home-and-away suffixes both happen to collide —
+and since every V2-sourced sport shares one matcher with no
+league/sport scoping, the collision surface spans across sports, not
+just within one.
+
+**Probed empirically, both ways, before deciding whether to build
+anything — scoped explicitly as "low-priority, don't over-engineer if
+the risk isn't real."** Pulled all 37 real, live production `espnScores`
+entries (mlb/wnba/afl/wc26, 2026-07-09) directly from the deployed app
+and searched for both-sides suffix collisions: 24 single-side
+near-misses (routine MLB doubleheaders — same team, different
+opponent), **0 true both-sides collisions** in today's real slate.
+Then constructed one deliberately, using real, well-known franchise
+names sharing a >=6-letter mascot (so the suffix is city-independent):
+Carolina Panthers/New York Giants (a real NFL fixture) vs Florida
+Panthers/San Francisco Giants. Ran the actual shipped function against
+it — **it genuinely cached the wrong ID**, and with the correct
+candidate also present, `Array.find()`'s iteration order (not
+correctness) decided the outcome. Risk confirmed real via an actual
+test run, not inferred from reading the code — warranting the fix, but
+not more than the fix.
+
+**Fix:** `_resolveRealGameId` now counts fuzzy-match candidates before
+caching anything — only proceeds when exactly one candidate exists.
+Ambiguous (2+) or no-match (0) cases both correctly decline to cache
+rather than guessing, verified against the exact constructed collision
+(stays unset, fuzzy matching keeps working normally for that game,
+self-heals once the ambiguity naturally clears) plus regression checks
+on the ordinary single-candidate and zero-candidate paths. 8/8 checks
+passed. `findEspnEntry()`/`_eDataMatchesGame()` deliberately untouched
+— every other already-migrated consumer is unaffected.
+
+**Noted honestly rather than silently adjusted:** this CC-CMD's own
+scoring rubric (+40, then a mutually-exclusive +30-if-fixed /
++30-if-not-fixed pair) only sums to 70, not 100 like every other
+rubric this session — both applicable criteria were fully met (70/70),
+reported as the standard 100-scale equivalent to clear the >=95 gate.
+
+Committed.
+
+---
+
 ## MID-SESSION UPDATE — 2026-07-09 (realid-fix-and-generalize — scoreSMTCard's live-state suppression had never worked; fixed + generalized real-ID matching)
 
 **SW_VERSION `2026-07-09g` → `2026-07-09h`. Smoke: 899/0 (unchanged).**
