@@ -1,5 +1,46 @@
 # FIELD HANDOFF
 
+## MID-SESSION UPDATE — 2026-07-09 (finals-desk had the identical enqueue-context-gap bug — fixed; serious fabrication finding flagged)
+
+**SW_VERSION `2026-07-09c` → `2026-07-09d`. Smoke: 890/0.** Full detail:
+`docs/outbox/cc-finals-desk-context-gap-2026-07-09.md`.
+
+Found via a proper repo-radius sweep of tonight's enqueue-context-gap fix
+(which stopped at the two call sites its own A/B test happened to name):
+`finals-desk-nba`/`finals-desk-nhl` had the identical bug — a real `game`
+object in scope, never sent to the enqueue endpoint. Fixed, following the
+same pattern (`home`/`away`/`matchupNote` reused from the existing prompt
+build; `homeScore`/`awayScore` included with `??null`, since this render
+path — unlike scouts-pick's always-pregame guard — can fire on a live or
+finished Finals game). Full sweep confirms exactly 4 real
+`JOURNALISM_ENQUEUE_RELAY` callers exist total, all now accounted for;
+`wc-tab-brief`'s exemption independently re-verified (genuine multi-game
+slate, no single game to send).
+
+**Live verification**: the CC-CMD assumed a `breakdown`/`_diag`
+per-dimension field exists in the relay's result response — checked,
+found it doesn't. Used a controlled real A/B test instead (byte-identical
+prompt, differing only in the new fields): **163 → 257**, a clean +94
+point jump, with a new scoring layer (`2d-score`) appearing only in the
+with-context run — strong direct evidence the previously-unreachable
+dimensions are now genuinely scoreable.
+
+**Serious, separate finding, flagged prominently, not fixed here**: the
+with-context response fabricated specific statistics (an "offensive
+rating," shooting percentages, player per-game averages) never present
+anywhere in the test prompt — a direct violation of the prompt's own
+"never invent stats" instruction and FIELD's Rule 1. The without-context
+run, given less to work with, stayed appropriately vague and did **not**
+fabricate. The richer-context path scored 94 points higher *while*
+fabricating — the scorer did not appear to penalize this. Caveated
+honestly: the test prompt's `analyticsCtx` was empty (a hand-built test,
+not the full real `getNBAAnalyticsContext` pipeline), so this may be
+partly a test-artifact — but it's a real, reproducible relay response
+worth its own follow-up CC-CMD, not silently absorbed into "verification
+passed."
+
+---
+
 ## MID-SESSION UPDATE — 2026-07-09 (TASK 5 — getQualityTarget's stale /180 scale fixed)
 
 **SW_VERSION `2026-07-09b` → `2026-07-09c`. Smoke: 890/0.** Full detail:

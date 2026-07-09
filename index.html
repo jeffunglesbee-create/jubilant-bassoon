@@ -23803,7 +23803,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-07-09c';
+  const SW_VERSION = '2026-07-09d';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -33994,6 +33994,25 @@ async function fetchFinalsDesk(game, sport) {
           // scoreThreshold 240 -- see generateJournalismViaRelay's comment
           // (CC-CMD-2026-07-09-jq-threshold-240-migration).
           scoreThreshold: 240,
+          // home/away/homeScore/awayScore/matchupNote (CC-CMD-2026-07-09-
+          // finals-desk-context-gap): identical enqueue-context-gap bug as
+          // night-owl/scouts-pick -- Context Anchoring/Matchup Depth were
+          // structurally unreachable regardless of scoreThreshold. All
+          // three text fields already used to build `prompt` above
+          // (_buildFinalsDeskPrompt reads game.home/game.away/
+          // game.matchupNote directly); homeScore/awayScore aren't in the
+          // prompt text itself (Finals Desk is a series-arc/analytics
+          // piece, not a post-game recap) but this render path doesn't
+          // gate on game state -- renderFinalsDesk() finds any NBA
+          // Finals/SCF game regardless of live/final status -- so they're
+          // included with the same ??null fallback night-owl uses, not
+          // omitted the way scouts-pick's genuinely-always-pregame case
+          // was.
+          home: game.home || '',
+          away: game.away || '',
+          homeScore: game.homeScore ?? null,
+          awayScore: game.awayScore ?? null,
+          matchupNote: game.matchupNote || null,
         }),
       });
       if (eq.ok) {
