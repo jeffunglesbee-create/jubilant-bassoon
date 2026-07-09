@@ -1,5 +1,44 @@
 # FIELD HANDOFF
 
+## MID-SESSION UPDATE — 2026-07-09 (saveEspnFinal() internal guard — found a real third caller the CC-CMD's own premise missed)
+
+**SW_VERSION `2026-07-09d` → `2026-07-09e`. Smoke: 899/0 (unchanged).**
+Full detail: `docs/outbox/cc-saveespnfinal-internal-guard-2026-07-09.md`.
+
+`saveEspnFinal(game, eData)` trusted whatever `eData` it was handed
+unconditionally for pick resolution/drama-peak/D1 writes — safe only
+because its callers happened to already verify via `findEspnEntry()`
+first, a by-convention guarantee the function never enforced itself.
+
+**The CC-CMD's own premise ("two known callers") was incomplete — found
+by actually following its own probe instruction rather than trusting the
+doc's count.** A third real caller exists: a MutationObserver-driven
+DOM-fallback path whose `eData` is built directly from `card.dataset`/
+`previousScores`, never touching `espnScores` at all. This directly
+determined the guard's design — the CC-CMD offered two options (call
+`findEspnEntry(game)` again and compare, or extract the equivalent check
+standalone); the first would have incorrectly rejected this genuinely
+legitimate caller, since its data was never `espnScores`-sourced.
+Extracted `_eDataMatchesGame(game, eData)` instead — the same home/away/
+date logic `findEspnEntry()` uses, but validating an already-given
+candidate from any source. `findEspnEntry()` itself left untouched
+(multiple other tested consumers; not what was asked).
+
+Addressed the newly-found caller's own return-value handling too, not
+just the two the CC-CMD named — going beyond its literal TASK 2 text
+where the premise itself was incomplete, per the CC-CMD's own explicit
+instruction to revisit the premise if a third caller was found.
+
+Verified via 5 real Node `vm` tests against the actual extracted
+committed source: mismatched teams → rejected, nothing written, **zero**
+pick-resolution calls (spy-confirmed, not inferred); stale-final
+(future start_time) → also rejected; correctly-matched data → saved,
+real entry confirmed via fresh read, **exactly one** pick-resolution
+call; CFL same-object case → guard bypassed by construction, still saves
+correctly.
+
+---
+
 ## MID-SESSION UPDATE — 2026-07-09 (broadened smoke coverage sweep, 893 → 899 — CC-CMD scope changed mid-execution, handled by rebasing not discarding)
 
 **Smoke: 899/0 (was 893/0). No SW_VERSION bump.** Full detail:

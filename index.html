@@ -22611,8 +22611,12 @@ async function fetchSchedule(){
             }
             return {_id:gid, home, away, _sport:sport};
           })();
-          saveEspnFinal(fullGame, syntheticEData);
-          domFinalsAdded++;
+          // Per CC-CMD-2026-07-09-saveespnfinal-internal-guard: this is the
+          // one real caller whose eData (built directly from card.dataset/
+          // previousScores, never from espnScores) the new internal guard
+          // can actually reject in practice -- don't count a rejected save
+          // as a processed final.
+          if (saveEspnFinal(fullGame, syntheticEData) !== false) domFinalsAdded++;
         });
         if(domFinalsAdded > 0 || finalCards.length > 0){
           renderNightOwlRecap().catch(e=>captureFieldError('night-owl',e,false));
@@ -23803,7 +23807,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-07-09d';
+  const SW_VERSION = '2026-07-09e';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -38282,8 +38286,52 @@ function loadEspnFinals(){
 }
 
 // Save a completed game to finals cache
+// _eDataMatchesGame: the same home/away/date-compatibility check
+// findEspnEntry() uses to confirm a candidate espnScores entry belongs to
+// a given game (CC-CMD-2026-07-09-saveespnfinal-internal-guard). Extracted
+// as a standalone function -- NOT a call to findEspnEntry(game) itself --
+// because saveEspnFinal() has a real caller (the DOM-fallback
+// MutationObserver path, ~line 22614) whose eData is built directly from
+// card.dataset/previousScores and never touches espnScores at all; calling
+// findEspnEntry(game) and requiring it to return that exact object would
+// incorrectly reject this genuinely legitimate call. This checks eData's
+// OWN homeName/awayName/state fields against game, regardless of what
+// object or data source eData actually came from. findEspnEntry() itself
+// is left untouched (multiple other, already-tested consumers; refactoring
+// it was not asked for and not needed to fix this).
+function _eDataMatchesGame(game, eData) {
+  if (!game || !eData) return false;
+  const h = (game.home || '').toLowerCase().replace(/[^a-z]/g, '').slice(-6);
+  const a = (game.away || '').toLowerCase().replace(/[^a-z]/g, '').slice(-6);
+  const vh = (eData.homeName || '').toLowerCase().replace(/[^a-z]/g, '');
+  const va = (eData.awayName || '').toLowerCase().replace(/[^a-z]/g, '');
+  if (!(vh.endsWith(h) && va.endsWith(a))) return false;
+  // Stale-final guard, matching findEspnEntry's own logic exactly.
+  if (eData.state === 'post' && game.start_time &&
+      new Date(game.start_time).getTime() > Date.now()) {
+    return false;
+  }
+  return true;
+}
+
 function saveEspnFinal(game, eData){
   try{
+    // Internal guard (CC-CMD-2026-07-09-saveespnfinal-internal-guard):
+    // saveEspnFinal() previously trusted whatever eData it was handed,
+    // unconditionally, for pick resolution/drama-peak lookup/D1 archive
+    // writes -- safe today only because its known callers happen to
+    // already verify via findEspnEntry() before calling this, a
+    // by-convention guarantee, not one this function enforces itself.
+    // eData===game (CFL: the game object carries its own scores directly,
+    // never populating espnScores) is trivially "same event" by
+    // construction and must never be blocked.
+    if (eData !== game && !_eDataMatchesGame(game, eData)) {
+      if (typeof FIELD_DEBUG !== 'undefined' && FIELD_DEBUG) {
+        console.warn('[saveEspnFinal] rejected -- eData does not match game:',
+          game?.home, game?.away, '|', eData?.homeName, eData?.awayName);
+      }
+      return false;
+    }
     // Write under both ET date and UTC date so loadTonightFinals always finds it
     // regardless of when (relative to midnight ET/UTC) the read happens.
     const etToday  = new Date().toLocaleDateString('en-CA',{timeZone:'America/New_York'});
@@ -40663,7 +40711,12 @@ async function renderNightOwlRecap(){
           if(!eData || eData.state!=='post') return;
           const dramaPeak=getDramaPeak(game._id||'', game);
           // Save it properly for future page loads
-          saveEspnFinal(game, eData);
+          // Per CC-CMD-2026-07-09-saveespnfinal-internal-guard TASK 2: eData
+          // here is already findEspnEntry()-verified (line ~40710), so the
+          // new internal guard should never reject this in practice -- still
+          // gated, not assumed, matching the CC-CMD's own explicit example
+          // of "skip adding to in-memory finals when the guard returns false."
+          if (saveEspnFinal(game, eData) === false) return;
           // Add to in-memory finals for this render
           if(!finals.some(f=>f.id===game._id)){
             finals.push({
