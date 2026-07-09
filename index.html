@@ -10550,6 +10550,18 @@ function getDramaPeak(gameId, game) {
 // than show nothing -- no caller in this CC-CMD passes false.
 function findEspnEntry(game, { requireSameDate = true } = {}) {
   if (!game) return null;
+  // Real-ID fast path (CC-CMD-2026-07-09-realid-fix-and-generalize): game
+  // construction (static schedule / ESPN fixtures) and espnScores
+  // construction (V2/mapV2ToESPN) are independent code paths -- see
+  // _resolveRealGameId. When game._gameId has already been resolved to a
+  // real external ID, matching it directly is strictly stronger evidence
+  // than fuzzy team-name matching, and inherently can't collide across
+  // dates/rematches the way name matching can -- so the stale-final guard
+  // below doesn't apply to this branch. No fuzzy fallback if the ID doesn't
+  // match: a resolved real ID is authoritative, not a hint.
+  if (game._gameId) {
+    return Object.values(espnScores).find(v => v._gameId && v._gameId === game._gameId) || null;
+  }
   const h = (game.home || '').toLowerCase().replace(/[^a-z]/g, '').slice(-6);
   const a = (game.away || '').toLowerCase().replace(/[^a-z]/g, '').slice(-6);
   const entry = Object.values(espnScores).find(v => {
@@ -10562,6 +10574,30 @@ function findEspnEntry(game, { requireSameDate = true } = {}) {
     return null; // stale-final guard — see findESPNScore's original June 10 comment
   }
   return entry;
+}
+
+// _resolveRealGameId: one-time fuzzy match to bridge a game object (built
+// by the static schedule / ESPN fixtures path) to its real external ID
+// (api-sports.io fg.id, carried on the matching espnScores entry, from the
+// independent V2/mapV2ToESPN path) -- CC-CMD-2026-07-09-realid-fix-and-
+// generalize. Game construction and espnScores construction were confirmed
+// NOT unified (buildTodaySchedule/fetchESPNFixturesForDate assign game._id
+// as FIELD's own per-load counter via "g"+_gid fallback stamping; V2
+// entries carry fg.id separately, keyed by team name in espnScores) -- so
+// this cannot be a construction-time stamp, only a lookup-then-cache.
+// Caches onto game._gameId so repeat calls for the same game object (and
+// any other findEspnEntry()/_eDataMatchesGame() caller that later receives
+// this same game) get the real-ID fast path for free.
+function _resolveRealGameId(game) {
+  if (!game) return null;
+  if (game._gameId) return game._gameId;
+  if (typeof espnScores === 'undefined') return null;
+  const entry = findEspnEntry(game, { requireSameDate: true });
+  if (entry && entry._gameId) {
+    game._gameId = entry._gameId;
+    return entry._gameId;
+  }
+  return null;
 }
 
 // rankGamesByDrama: sort games by preGameScore, excluding non-games (ATP field entries).
@@ -12821,7 +12857,7 @@ function buildDynamicPregames(){
             return _base ? _base + _statStr + _spStr : null;
           } catch(e_) { return _base; }
         })(),
-        _gameId: game._id,
+        _gameId: _resolveRealGameId(game),
         _scoutPick: !!(typeof isScoutsPick === 'function' && (() => { try { return isScoutsPick(game); } catch(e_) { return false; } })()),
       });
       const lastGame = sec.games[sec.games.length-1];
@@ -12862,7 +12898,7 @@ function buildDynamicPregames(){
             return _base ? _base + _statStr + _spStr : null;
           } catch(e_) { return _base; }
         })(),
-        _gameId: game._id,
+        _gameId: _resolveRealGameId(game),
         _scoutPick: !!(typeof isScoutsPick === 'function' && (() => { try { return isScoutsPick(game); } catch(e_) { return false; } })()),
       });
     }
@@ -13011,7 +13047,7 @@ function buildWCMediaCards() {
         desc: leagueShort + '. ' + (game.matchupNote || (game.away + ' face ' + game.home + ' in group stage action.')) ,
         link,
         journalNote,
-        _gameId: game._id,
+        _gameId: _resolveRealGameId(game),
         _scoutPick: !!(typeof isScoutsPick === 'function' && isScoutsPick(game)),
         _trapTeams,
       });
@@ -13171,7 +13207,7 @@ function buildPlayoffSpecials() {
           desc: game.away + ' @ ' + game.home + '. ' + note + (note ? '' : ' NBA Finals on ABC.'),
           link: 'https://www.espn.com/nba/playoffs/bracket',
           journalNote,
-          _gameId: game._id,
+          _gameId: _resolveRealGameId(game),
           _scoutPick: false,
         });
       }
@@ -13192,7 +13228,7 @@ function buildPlayoffSpecials() {
           desc: game.away + ' @ ' + game.home + '. ' + (game.matchupNote ? game.matchupNote.split('.')[0].slice(0,100) + '.' : 'Stanley Cup Final on ABC/ESPN.'),
           link: 'https://www.espn.com/nhl/playoffs/bracket',
           journalNote,
-          _gameId: game._id,
+          _gameId: _resolveRealGameId(game),
           _scoutPick: false,
         });
       }
@@ -23807,7 +23843,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-07-09g';
+  const SW_VERSION = '2026-07-09h';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -38310,6 +38346,12 @@ function loadEspnFinals(){
 // it was not asked for and not needed to fix this).
 function _eDataMatchesGame(game, eData) {
   if (!game || !eData) return false;
+  // Real-ID fast path, same rationale as findEspnEntry() above: when both
+  // sides carry a real external _gameId, compare directly and skip the
+  // stale-date guard (ID equality already proves same real-world event).
+  if (game._gameId && eData._gameId) {
+    return game._gameId === eData._gameId;
+  }
   const h = (game.home || '').toLowerCase().replace(/[^a-z]/g, '').slice(-6);
   const a = (game.away || '').toLowerCase().replace(/[^a-z]/g, '').slice(-6);
   const vh = (eData.homeName || '').toLowerCase().replace(/[^a-z]/g, '');

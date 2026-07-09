@@ -1,5 +1,73 @@
 # FIELD HANDOFF
 
+## MID-SESSION UPDATE — 2026-07-09 (realid-fix-and-generalize — scoreSMTCard's live-state suppression had never worked; fixed + generalized real-ID matching)
+
+**SW_VERSION `2026-07-09g` → `2026-07-09h`. Smoke: 899/0 (unchanged).**
+Full detail: `docs/outbox/cc-realid-fix-and-generalize-2026-07-09.md`.
+
+**Found by verifying an earlier sweep's own exclusion at the wrong
+depth.** Tonight's `espnScores` display-consumer sweep correctly
+excluded `scoreSMTCard`'s `v._gameId === card._gameId` check as "safe"
+because it's exact equality, not fuzzy matching — true about the code's
+*shape*, false about whether it *functions*: `card._gameId` was set to
+FIELD's own internal `game._id` counter (5 real construction sites, 2 in
+`buildDynamicPregames()`, 1 in `buildWCMediaCards()`, and **2 in
+`buildPlayoffSpecials()` the CC-CMD doc itself didn't name**), while
+`v._gameId` (from `mapV2ToESPN`) is api-sports.io's real external
+`fg.id`. Two ID spaces that can never be equal — the live-state
+suppression feature has plausibly never fired since it was built.
+
+**Central architectural question, resolved by tracing not assuming:**
+does `allData.sports[].games[]` construction share a source record with
+`espnScores` construction? Traced `buildTodaySchedule()` — its
+`nbaGames`/`nhlGames`/etc. are hand-maintained static literal arrays
+with **no inline `_id`**; IDs come from a generic fallback stamp
+(`if(!g._id) g._id="g"+(++_gid)`) found at 3 separate sites, or from
+`fetchESPNFixturesForDate`'s own `` _id:`g${_gid}` `` for the ESPN-
+scoreboard-fixture path. **Confirmed: game construction and espnScores
+construction are two independent, parallel paths, not one shared
+record** — `findEspnEntry()` exists precisely because this bridge has
+always been necessary.
+
+**Fix:** `_resolveRealGameId(game)` (index.html:10591) does a one-time
+`findEspnEntry()` fuzzy match and caches the real ID onto
+`game._gameId` (mutating the actual game object in `allData.sports`) —
+all 5 real sites now read `_gameId: _resolveRealGameId(game),` instead
+of `game._id`. **Generalized into the shared matchers** (TASK 2, not
+duplicated per caller): both `findEspnEntry()` and `_eDataMatchesGame()`
+gained a real-ID fast path — when `game._gameId` is already resolved,
+compare directly against the candidate's `_gameId` and skip fuzzy name
+matching entirely (stronger evidence, no stale-date guard needed since
+ID equality already proves the same real-world event). Every existing
+consumer migrated earlier tonight (`fetchWCLiveGames`,
+`_otwFindLiveGame`, `renderHalftimeSwitch`, `saveEspnFinal`, etc.)
+benefits automatically and is unaffected today (none of their game
+objects currently carry `_gameId`, so the fast path is a no-op for
+them until something resolves one).
+
+**4 additional `_gameId`-related sites found in the fresh sweep but not
+named in the doc** (`resolveGameIdByHome`-based, ~18714/20138/20941/
+22956, plus a local drama-tracking var ~38413) — investigated, all
+confirmed to return/use FIELD's own internal `g._id`, same class as the
+doc's explicitly-excluded FD/football-data.org writer, not the
+namespace-mismatch bug. Correctly left untouched, reported rather than
+silently skipped.
+
+**Verified via extracted-verbatim `vm` harness with negative controls**
+(not code inspection alone, matching TASK 3's requirement): proved (a)
+a game's real `_gameId` now matches its espnScores entry's exactly, (b)
+`scoreSMTCard` suppression genuinely fires under the new assignment
+where the old one never could (side-by-side old-vs-new score
+comparison), (c) the fast path is demonstrably *taken* — not just
+present — via a fixture where fuzzy matching is provably incapable of
+succeeding (mismatched team names) but the ID path still resolves
+correctly, plus two negative controls (no ID → fuzzy runs; ID set but
+unmatched → `null`, no silent fuzzy fallback). 9/9 checks passed.
+
+Confidence: 100/100 (all 4 scoring criteria met). Committed.
+
+---
+
 ## MID-SESSION UPDATE — 2026-07-09 (WC advancement-prob mutation fix + .keys() sweep — the .values()-only pass missed this whole risk shape)
 
 **SW_VERSION `2026-07-09f` → `2026-07-09g`. Smoke: 899/0 (unchanged).**
