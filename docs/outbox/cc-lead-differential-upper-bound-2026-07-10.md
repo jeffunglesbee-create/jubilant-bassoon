@@ -86,6 +86,26 @@ valid boundary value is never misreported as "impossible."
 entirely while the clamp itself still applies regardless — confirming
 the fix and the logging are independently gated as intended.
 
+## POST-DEPLOY LIVE VERIFICATION
+
+Deployed (deploy-gate green, HEAD `2040a36`, `SW_VERSION` confirmed
+live as `2026-07-10c`, `buildScoreNarrativeContext`'s ceiling clamp
+confirmed present in the running code). Ran the exact reported bug
+scenario and the real-large-lead case directly against the actual
+deployed function via `localStorage`-backed calls (real `key`,
+`FIELD_DEBUG` toggled and restored, `console.warn` intercepted then
+restored, test key removed afterward):
+
+- Impossible case (final 2-0, bad 4-run mid-game snapshot): `"[SCORE
+  NARRATIVE] Marlins led by as many as 2-runs · wire-to-wire (Mariners
+  never led)"` — no longer reports the impossible 4-run lead.
+- Real large lead (final 8-1, genuine 7-run mid-game snapshot):
+  `"[SCORE NARRATIVE] Home led by as many as 7-runs · wire-to-wire
+  (Away never led)"` — correctly not suppressed.
+- `debugWarningFired: true` for the genuinely impossible case.
+- `cleanedUp: true` — `localStorage` restored to its original state, no
+  residue left on production.
+
 ## VERIFICATION (repo-level)
 
 `node smoke.js index.html`: 899/0 (unchanged). `node field_unit.js`:
