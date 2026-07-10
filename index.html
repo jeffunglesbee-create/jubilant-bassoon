@@ -14908,7 +14908,11 @@ function injectJ1J4Badges() {
                     if (!pr.ok) continue;
                     const result = await pr.json();
                     if (result.status === 'done' && result.text && result.text.length > 40) {
-                      try { sessionStorage.setItem(spBriefKey, result.text); } catch(e_) {}
+                      // Deterministic leak strip (CC-CMD-2026-07-10-prompt-data-
+                      // separation follow-up) -- this is a relay-queue result, no
+                      // client-side quality chain runs on it otherwise.
+                      const _spCleanText = stripPromptLeaks(result.text);
+                      try { sessionStorage.setItem(spBriefKey, _spCleanText); } catch(e_) {}
                       try { sessionStorage.removeItem(spJobKey); } catch(e_) {}
                       // Inject into card (card may have re-rendered — find fresh)
                       const freshCard = document.querySelector(`[data-gameid="${g._id||''}"]`);
@@ -14920,7 +14924,7 @@ function injectJ1J4Badges() {
                           noteEl2.className = 'brief-scout-note';
                           freshBody.appendChild(noteEl2);
                         }
-                        const text = result.text;
+                        const text = _spCleanText;
                         // Option A: Scout's Pick brief footer — R2 analytics chips below brief text
                         const _spChips = (typeof _buildAnalyticsChips === 'function') ? _buildAnalyticsChips(g) : [];
                         const _spChipsHtml = (typeof _chipsHTML === 'function') ? _chipsHTML(_spChips) : '';
@@ -17272,7 +17276,7 @@ async function generateJournalismViaRelay(prompt, opts = {}) {
       final_cross_sport:   data.final_cross_sport,
     };
     if (FIELD_DEBUG) console.debug('[JQ Gate]', data.briefType, 'score:', data.score, 'retries:', data.retries, 'layers:', data.layers_fired);
-    return data.text;
+    return stripPromptLeaks(data.text);
   } catch(e) {
     if (FIELD_DEBUG) console.warn('[JQ Gate] error:', e.message);
     return null;
@@ -23901,7 +23905,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-07-10e';
+  const SW_VERSION = '2026-07-10f';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -26276,6 +26280,50 @@ async function retryWithSportVocab(originalPrompt, text, sport, proxyUrl, label)
   return text;
 }
 
+// ── Deterministic post-generation leak strip (CC-CMD-2026-07-10-
+// prompt-data-separation follow-up) ─────────────────────────────────
+// Structural prompt separation (GAME DATA:/Rules: headers) reduces how
+// OFTEN the model echoes its own instructions; this guarantees the
+// SHIPPED text never contains it, regardless of why the model produced
+// it. Same architecture the codebase already trusts for a different
+// violation class -- mirrors the Layer 2c hard-strip already live in
+// fetchNightOwlFromClaude's fallback path (sport-vocab mismatches):
+// split into sentences, drop any sentence matching a known-bad
+// signature, keep what survives. No model call, no retry -- a plain
+// string operation, so it cannot fail to apply.
+//
+// Three signatures, deliberately narrow to avoid false-positiving on
+// legitimate sports prose (no real recap describes ITSELF in terms of
+// word/sentence counts or a "Rules:" label):
+//   1. word-count leak:     \d{1,3}\s*-\s*\d{1,3}\s*words?
+//      matches "80-100 words", "50-70 words", "35-50 words", etc. --
+//      the exact shape of every word-count rule across all 9 sites.
+//   2. "Rules:" + number:   \bRules:\s*\d+(?:-\d+)?\b
+//      requires a NUMBER immediately after "Rules:" -- never matches a
+//      bare "Rules:" with nothing numeric following, so it can't fire
+//      on an unrelated, legitimate use of the word "rules" in real
+//      content. Covers both shapes actually used: the word-count-range
+//      form ("Rules: 80-100...") and Stakes Brief's single-count form
+//      ("Rules: 2 sentences...").
+//   3. sentence-count leak:  \b\d+(?:-\d+)?\s*sentences?\b
+//      matches "2-3 sentences", "1-2 sentences", "2 sentences",
+//      "4-5 sentences" -- the exact shape of every sentence-count rule.
+const _PROMPT_LEAK_SIGNATURES = [
+  /\b\d{1,3}\s*-\s*\d{1,3}\s*words?\b/i,
+  /\bRules:\s*\d+(?:-\d+)?\b/i,
+  /\b\d+(?:-\d+)?\s*sentences?\b/i,
+];
+
+function stripPromptLeaks(text) {
+  if (!text) return text;
+  const sentences = text.split(/(?<=[.!?])\s+/);
+  const clean = sentences.filter(s => !_PROMPT_LEAK_SIGNATURES.some(re => re.test(s)));
+  if (FIELD_DEBUG && clean.length !== sentences.length) {
+    console.warn('[Prompt Leak Strip] removed', sentences.length - clean.length, 'sentence(s) matching a leak signature');
+  }
+  return clean.join(' ');
+}
+
 // Layer 2: one-retry wrapper — re-prompts if clichés found
 async function retryWithoutCliches(originalPrompt,text,proxyUrl){
   const found=hasCliche(text);
@@ -27937,7 +27985,7 @@ Write this brief at the level the moment deserves. Do not undersell a championsh
       text=await checkCrossSport(prompt,text,CLAUDE_PROXY_URL);
       text=await maybeScoreRetry(prompt,text,CLAUDE_PROXY_URL,'J2 Series');
       scoreProse(text, g||null).then(s=>renderProseScore(s,'J2 Series'));
-      return text.trim();
+      return stripPromptLeaks(text.trim());
     }
   }catch(e){if(FIELD_DEBUG)console.error('[J2 Series Preview] proxy error:',e.message);}
   return null;
@@ -31006,7 +31054,7 @@ async function fetchMLBGameBriefFromClaude(g) {
       text = await maybeScoreRetry(prompt, text, CLAUDE_PROXY_URL, 'MLB Brief');
       cardBudget.inc();
       scoreProse(text, g||null).then(s=>renderProseScore(s,'MLB Brief'));
-      return text.trim();
+      return stripPromptLeaks(text.trim());
     }
   } catch(e_) {}
   return null;
@@ -31190,7 +31238,7 @@ async function fetchWNBAGameBriefFromClaude(g) {
       text = await maybeScoreRetry(prompt, text, CLAUDE_PROXY_URL, 'WNBA Brief');
       cardBudget.inc();
       scoreProse(text, g||null).then(s=>renderProseScore(s,'WNBA Brief'));
-      return text.trim();
+      return stripPromptLeaks(text.trim());
     }
   } catch(e_) {}
   return null;
@@ -31328,7 +31376,7 @@ async function fetchStakesBriefFromClaude(g) {
       text = await maybeScoreRetry(prompt, text, CLAUDE_PROXY_URL, 'Stakes Brief');
       cardBudget.inc();
       scoreProse(text, g||null).then(s=>renderProseScore(s,'Stakes Brief'));
-      return text.trim();
+      return stripPromptLeaks(text.trim());
     }
   } catch(e_) {}
   return null;
@@ -31712,7 +31760,12 @@ Write this brief at the level the moment deserves. Do not undersell a championsh
   }
 
   if (text) {
-    _gameBriefCache[game._id] = trimToCompleteSentence(text);
+    // Deterministic leak strip (CC-CMD-2026-07-10-prompt-data-separation
+    // follow-up): unified point for all three branches above (MLB/WNBA
+    // already stripped at their own return points; the generic NBA/NHL/
+    // other branch is stripped here for the first time -- idempotent on
+    // already-clean text, so no harm in the redundancy for the other two).
+    _gameBriefCache[game._id] = trimToCompleteSentence(stripPromptLeaks(text));
     return _gameBriefCache[game._id];
   }
   return null;
@@ -31788,7 +31841,7 @@ async function fetchEPLMatchBriefFromClaude(g) {
       text = await checkLeadSentence(prompt, text, CLAUDE_PROXY_URL);
       budget.inc();
       scoreProse(text, g||null).then(s=>renderProseScore(s,'EPL Brief'));
-      return text.trim();
+      return stripPromptLeaks(text.trim());
     }
   } catch(e) {}
   return null;
@@ -39508,7 +39561,7 @@ Write this Night Owl at the level the moment deserves. Do not undersell a champi
           if(FIELD_DEBUG)console.warn('[JQ Layer 2c] Hard-stripped sport vocab from',_sp);
         }
       }
-      budget.inc();text=await maybeScoreRetry(prompt,text,CLAUDE_PROXY_URL,'J5 Night Owl',topGame||null);scoreProse(text, topGame||null).then(s=>renderProseScore(s,'J5 Night Owl'));return text.trim();
+      budget.inc();text=await maybeScoreRetry(prompt,text,CLAUDE_PROXY_URL,'J5 Night Owl',topGame||null);scoreProse(text, topGame||null).then(s=>renderProseScore(s,'J5 Night Owl'));return stripPromptLeaks(text.trim());
     }
   }catch(e){if(FIELD_DEBUG)console.error('[J5 Night Owl] proxy error:',e.message);}
   return null;
@@ -41274,6 +41327,12 @@ async function renderNightOwlRecap(){
     }
     // Fallback: full-context fetchNightOwlFromClaude (live box scores, linescore, etc.)
     if (!claudeText) claudeText = await fetchNightOwlFromClaude(topGame);
+    // Deterministic leak strip (CC-CMD-2026-07-10-prompt-data-separation
+    // follow-up): unified point for BOTH the queue-job-result path (raw
+    // relay text, no client-side quality chain runs on it) and the
+    // fetchNightOwlFromClaude fallback (already stripped at its own
+    // return points -- idempotent here, harmless redundancy).
+    if (claudeText) claudeText = stripPromptLeaks(claudeText);
     if(claudeText){const textEl=el.querySelector('.night-owl-text');if(textEl){textEl.textContent=trimToCompleteSentence(claudeText);textEl.classList.remove('pending');textEl.classList.add('loaded');}sessionStorage.setItem(cacheKey,claudeText);try{archiveBrief('night_owl',(topGame&&topGame._sport)||null,topGame&&(topGame.sourceId||topGame._id||topGame.id)||null,claudeText,null);}catch(_){}}
     else{const textEl=el.querySelector('.night-owl-text');if(textEl){textEl.classList.remove('pending');textEl.classList.add('loaded');}}
   }

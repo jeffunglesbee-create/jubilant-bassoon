@@ -1,5 +1,49 @@
 # FIELD HANDOFF
 
+## MID-SESSION UPDATE — 2026-07-10 (prompt-leak-hard-strip — deterministic output-side guarantee, follow-up to prompt-data-separation)
+
+**SW_VERSION `2026-07-10e` → `2026-07-10f`. Smoke: 899/0 (unchanged).**
+Full detail: `docs/outbox/cc-prompt-leak-hard-strip-2026-07-10.md`.
+
+**Chat-directed follow-up.** Prompt restructuring reduces how often a
+leak happens; it can't guarantee it never does (probabilistic
+generation). Added `stripPromptLeaks()` — a deterministic, output-side
+check with three precisely-defined signatures (word-count leak,
+`"Rules:"` narrowed to require a trailing number so it can't false-
+positive on a bare "rules" mention, sentence-count leak) — reusing the
+SAME architecture the codebase already trusts for a different violation
+class (the Layer 2c sport-vocab hard-strip already live in
+`fetchNightOwlFromClaude`).
+
+**Investigated the real architecture before wiring it in.** Traced
+where generated text actually reaches display, not just where
+generation is called: found `generateJournalismViaRelay` is a shared
+chokepoint (one insertion covers 4 sites); found Scout's Pick and the
+Night Owl queue prompt (the exact reported-bug site) are relay-*queue*-
+based with no client-side quality chain at all — traced each to its
+real polled-result consumption point. 9 insertion points total,
+covering every one of the 9 restructured sites.
+
+**Honest, unfixed finding, not silently expanded scope:** 3 of 9 sites'
+caches use non-versioned keys (`gameid`+`status`, not `SW_VERSION`-
+embedded like the other 6) — a brief cached in an already-open tab
+before this deploy could theoretically persist past it. Flagged, not
+retrofitted (a separate change).
+
+**Verified beyond the prior rounds' bar per explicit instruction**:
+24/24 unit checks (all real signature shapes, narrowed "Rules:"
+correctly ignoring a bare match, 6 realistic clean sentences with real
+scorelines like "105-95"/"2-0" confirmed to survive untouched) plus 3
+real, deliberately-forced-leak generations against the live proxy —
+the model was instructed to embed a genuine leak phrase, producing
+real (not synthetic) leaked text, which the actual shipped function
+then removed while preserving the surrounding legitimate content in
+every case.
+
+Committed.
+
+---
+
 ## MID-SESSION UPDATE — 2026-07-10 (prompt-data-separation — closes the prompt-leakage bug across 9 real sites)
 
 **SW_VERSION `2026-07-10d` → `2026-07-10e`. Smoke: 899/0 (unchanged).**
