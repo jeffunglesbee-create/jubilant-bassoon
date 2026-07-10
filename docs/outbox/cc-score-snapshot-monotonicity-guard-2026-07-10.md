@@ -109,6 +109,23 @@ cards) and whether a separate, already-hardened final-score source
 the fact. Not built here — flagged as a real, scoped follow-up if
 wanted, not chased unprompted.
 
+## Post-deploy live verification
+
+Deployed (deploy-gate green, HEAD `c779d77`, `SW_VERSION` confirmed
+live as `2026-07-10d`, `recordScoreSnapshot`'s repair loop confirmed
+present in the running code). Ran the exact reported bug shape directly
+against the actual deployed function via real `localStorage`-backed
+calls (`FIELD_DEBUG` and `console.warn` intercepted then restored, test
+key removed afterward):
+
+`recordScoreSnapshot` fed the real sequence `0-0, 1-0, 4-0 (the bad
+spike), 2-0 (the real final)` — resulting log: `[0-0, 1-0, 2-0]`, bad
+spike does not survive. `buildScoreNarrativeContext()` on the same
+game: `"[SCORE NARRATIVE] Marlins led by as many as 2-runs · wire-to-
+wire (Mariners never led)"` — matches the local `vm` harness exactly.
+Repair warning fired as expected. `cleanedUp: true` — no residue left
+on production.
+
 ## Repo verification
 
 `node smoke.js index.html`: 899/0 (unchanged). `node field_unit.js`:
