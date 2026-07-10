@@ -10642,9 +10642,159 @@ function rankGamesByDrama(games) {
 //     directly so they respond instantly with no perceptible delay.
 // Expected effect: 4 startup re-renders → 1 final re-render after data settles.
 let _renderAllPending = null;
+// FIELD render-signature gate (CC-CMD-2026-07-10-render-signature-gate):
+// async data arrivals should not rebuild the schedule unless the visible
+// schedule/card payload actually changed. Live score changes are patched
+// by renderESPNScores() (its own DOM-equality guard, unchanged by this);
+// structural renders are reserved for new/removed/reordered games,
+// filter/date/timezone/viewport changes, and card copy/enrichment baked
+// into renderAll() output. Ported from a ChatGPT-authored proposal
+// (Drive doc "FIELD no-rerender optimization rationale — July 10
+// index.html"), adapted to this codebase's real field/variable names,
+// with a confirmed gap in the source's own implementation fixed before
+// shipping: Pick'em state lives in localStorage (_getPickCache()), not
+// on the game object, so a naive copy of g.* fields (which is all the
+// source's _fieldGameRenderPayload did) would never notice a pick being
+// made or resolved and would silently skip the structural render that
+// updates the pick widget -- exactly the failure the source document's
+// own rationale warned against.
+window.FIELD_RENDER_PIPELINE = window.FIELD_RENDER_PIPELINE || {
+  version: 'render-sig-gate-v1',
+  scheduled: 0,
+  structuralRenders: 0,
+  skippedStructuralRenders: 0,
+  lastSignature: ''
+};
+function _fieldViewportBucket(){
+  const w = window.innerWidth || document.documentElement.clientWidth || 0;
+  if (w <= 600) return 'phone';
+  if (w < 820) return 'small-landscape';
+  if (w < 1200) return 'tablet';
+  if (w < 1440) return 'desktop';
+  return 'wide';
+}
+function _fieldSafeGameBrief(g){
+  try { return (g && g._id && typeof _gameBriefCache !== 'undefined') ? (_gameBriefCache[g._id]||'') : ''; }
+  catch(_) { return ''; }
+}
+// Pick'em fix: picks are keyed in localStorage by _pickStorageKey(game)
+// (falling back to g._id), exactly mirroring buildPickWidgetHTML's own
+// lookup convention (index.html ~28314) -- not a new key scheme. Pick
+// cache is parsed ONCE per signature computation (by the caller) and
+// passed in, not re-parsed per game -- this signature runs on every
+// scheduleRenderAll debounce firing, including live-poll cycles, so a
+// per-game localStorage.getItem+JSON.parse would be real, avoidable cost.
+function _fieldGamePickSignature(g, pickCache){
+  try {
+    if (!pickCache || !g) return '';
+    const gid = g.start_time ? (_pickStorageKey(g) || g._id || '') : (g._id || '');
+    const pick = gid ? pickCache[gid] : null;
+    if (!pick) return '';
+    return `${pick.predictedWinner||''}|${pick.resolved?1:0}|${pick.wasCorrect===null?'':(pick.wasCorrect?1:0)}|${pick.probabilityLabel||''}`;
+  } catch(_) { return ''; }
+}
+// STANDING CONVENTION: any signal added to getGameReasonTags() must also
+// be mirrored here, or it will silently go stale under a skipped
+// structural render (a pregame-available fact like rivalry/national_tv/
+// weather_extreme changing state would never trigger the rebuild that
+// makes it visible). nationalBundle/weatherExtreme below were added
+// 2026-07-10 for exactly this reason -- the next signal added to
+// getGameReasonTags() is the next required edit here too.
+function _fieldGameRenderPayload(g, pickCache){
+  if(!g) return null;
+  return {
+    id:g._id||'', gid:g._gameId||g.sourceId||g.espnEventId||'',
+    home:g.home||'', away:g.away||'', league:g.league||'', sport:g._sport||'',
+    start:g.start_time||'', state:g.state||'', status:g.status||'',
+    streams:g.streams||null, venue:g.venue||'', confirmed:g.confirmed===true,
+    seriesRecord:g.seriesRecord||'', matchupNote:g.matchupNote||'', crew:g.crew||'',
+    localNote:g.localNote||'', neutral:g.neutral||'',
+    importance:g._gameImportance||'', angle:g._angle||'', narrative:g.narrative||null,
+    homeScore:g.homeScore??null, awayScore:g.awayScore??null,
+    subtitle:g._subtitle||'', round:g.round||'', leaderNote:g.leaderNote||'',
+    brief:_fieldSafeGameBrief(g),
+    myHome:(typeof MY_TEAMS !== 'undefined' && MY_TEAMS.has) ? MY_TEAMS.has(g.home) : false,
+    myAway:(typeof MY_TEAMS !== 'undefined' && MY_TEAMS.has) ? MY_TEAMS.has(g.away) : false,
+    nationalBundle: g.nationalBundle || '',
+    weatherExtreme: (typeof wxCache !== 'undefined' && g._id && wxCache[g._id]) ?
+      !!(wxCache[g._id].temp<20||wxCache[g._id].temp>100||wxCache[g._id].wind>25||wxCache[g._id].precip>0.5) : false,
+    pick: _fieldGamePickSignature(g, pickCache)
+  };
+}
+function _fieldCurrentFilteredSports(){
+  const sports = allData?.sports || [];
+  const visible = (typeof activeFilter !== 'undefined' && activeFilter !== 'all') ? sports.filter(s=>s.sport===activeFilter) : sports;
+  try {
+    if (typeof myTeamsFilter !== 'undefined' && myTeamsFilter) return visible.map(s=>({...s, games:(s.games||[]).filter(g=>MY_TEAMS.has(g.home)||MY_TEAMS.has(g.away))})).filter(s=>s.games.length);
+    if (typeof rivalsFilter !== 'undefined' && rivalsFilter) return visible.map(s=>({...s, games:(s.games||[]).filter(g=>typeof isRivalGame==='function'&&isRivalGame(g))})).filter(s=>s.games.length);
+    if (typeof freeOnlyFilter !== 'undefined' && freeOnlyFilter) return visible.map(s=>({...s, games:(s.games||[]).filter(gameHasFreeStream)}));
+  } catch(_) {}
+  return visible;
+}
+function _fieldVisibleRenderSignature(){
+  try{
+    const sports = allData?.sports || [];
+    const pickCache = (typeof _getPickCache === 'function') ? _getPickCache() : null;
+    const payload = {
+      date: (typeof viewingISO !== 'undefined' ? viewingISO : ''),
+      tz: (typeof selectedTz !== 'undefined' ? selectedTz : ''),
+      filter: (typeof activeFilter !== 'undefined' ? activeFilter : 'all'),
+      myTeamsFilter: !!(typeof myTeamsFilter !== 'undefined' && myTeamsFilter),
+      rivalsFilter: !!(typeof rivalsFilter !== 'undefined' && rivalsFilter),
+      freeOnlyFilter: !!(typeof freeOnlyFilter !== 'undefined' && freeOnlyFilter),
+      teams: (typeof MY_TEAMS !== 'undefined' && MY_TEAMS && MY_TEAMS.forEach) ? Array.from(MY_TEAMS).sort() : [],
+      viewport: _fieldViewportBucket(),
+      // Five-minute bucket preserves lifecycle/circadian transitions without
+      // making ordinary score polls rebuild the schedule every time.
+      clockBucket: Math.floor(Date.now()/300000),
+      sports: sports.map(sec => ({
+        sport: sec.sport || '', section: sec.section || '',
+        games: (sec.games||[]).map(g => _fieldGameRenderPayload(g, pickCache))
+      }))
+    };
+    return JSON.stringify(payload);
+  }catch(_){ return 'sig-error:' + Date.now(); }
+}
+// Night Owl is intentionally NOT part of this signature: confirmed via
+// direct grep that renderNightOwlRecap() is never called from inside
+// renderAll()'s own body -- it runs on its own independent 90s poll
+// (initNightOwlPoll) and its own MutationObserver (initNightOwlObserver),
+// both calling renderNightOwlRecap() directly, completely decoupled from
+// scheduleRenderAll/renderAll. A skipped structural render here has no
+// effect on Night Owl content freshness -- already covered elsewhere,
+// not a gap.
+function _fieldRefreshDynamicSurfaces(){
+  try { if (typeof renderESPNScores === 'function') renderESPNScores(); } catch(_) {}
+  try { if (typeof renderScoreTicker === 'function') renderScoreTicker(); } catch(_) {}
+  try { if (typeof renderWatchWindow === 'function') renderWatchWindow(); } catch(_) {}
+  try { if (typeof renderOneToWatch === 'function') renderOneToWatch(); } catch(_) {}
+  try { if (typeof renderRightNow === 'function' && allData?.sports) renderRightNow(_fieldCurrentFilteredSports()); } catch(_) {}
+  try { if (typeof updateConflictChip === 'function') updateConflictChip(); } catch(_) {}
+  if(typeof FIELD_DEBUG !== 'undefined' && FIELD_DEBUG) console.debug('[FIELD_RENDER] score-only refresh, structural render skipped');
+}
 function scheduleRenderAll(){
+  window.FIELD_RENDER_PIPELINE.scheduled++;
   if(_renderAllPending) clearTimeout(_renderAllPending);
-  _renderAllPending = setTimeout(()=>{ _renderAllPending=null; renderAll(true); renderESPNScores(); }, 150);
+  _renderAllPending = setTimeout(()=>{
+    _renderAllPending=null;
+    const sig = _fieldVisibleRenderSignature();
+    if(window.FIELD_RENDER_PIPELINE.lastSignature && sig === window.FIELD_RENDER_PIPELINE.lastSignature){
+      window.FIELD_RENDER_PIPELINE.skippedStructuralRenders++;
+      _fieldRefreshDynamicSurfaces();
+      return;
+    }
+    window.FIELD_RENDER_PIPELINE.structuralRenders++;
+    renderAll(true);
+    renderESPNScores();
+  }, 150);
+}
+function reportFieldRenderPipeline(){
+  const r = window.FIELD_RENDER_PIPELINE || {};
+  console.table({
+    scheduled:r.scheduled||0, structuralRenders:r.structuralRenders||0,
+    skippedStructuralRenders:r.skippedStructuralRenders||0
+  });
+  return r;
 }
 
 // ── PM-26-C5 (June 3 2026) ───────────────────────────────────────────────
@@ -11253,6 +11403,12 @@ function renderAll(skipUnchanged){
     </div>`;
   }).filter(Boolean).join("");
   applyMainHTML(_renderAllHTML);
+  // Render-signature gate (CC-CMD-2026-07-10-render-signature-gate): stamp
+  // the signature after EVERY structural render, not just ones that went
+  // through scheduleRenderAll -- direct renderAll() callers (filter clicks,
+  // date nav, TZ change) must also seed/update the baseline, or the gate
+  // has nothing correct to compare against on the next scheduleRenderAll.
+  try { if (window.FIELD_RENDER_PIPELINE) window.FIELD_RENDER_PIPELINE.lastSignature = _fieldVisibleRenderSignature(); } catch(_) {}
   if(!main.innerHTML.trim()) applyMainHTML('<div class="empty-note">No events found for today</div>');
   hydrateEspnScoresFromFinals(); // ensure known final scores are in espnScores before life-stages run
   if (typeof applyNewspaperVoice === 'function') { try { applyNewspaperVoice(_renderAllCircadianGames); } catch (_) {} }
@@ -23980,7 +24136,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-07-10g';
+  const SW_VERSION = '2026-07-10h';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)

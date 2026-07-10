@@ -1,5 +1,71 @@
 # FIELD HANDOFF
 
+## MID-SESSION UPDATE — 2026-07-10 (render-signature-gate — structural-render skip for unchanged schedule state, ported from a ChatGPT proposal with a confirmed Pick'em gap fixed)
+
+**SW_VERSION `2026-07-10g` → `2026-07-10h`. Smoke: 899/0 (one real fix:
+`A-PHASE2-6`'s character window widened 300→700 to fit the legitimately
+larger `scheduleRenderAll` body — the count-based safety invariant
+itself is unchanged).**
+Full detail: `docs/outbox/cc-render-signature-gate-2026-07-10.md`.
+
+**Ports a real, valuable idea from a ChatGPT-authored Drive proposal**
+(`index-2026-07-10-no-rerender.html` + rationale doc), retrieved and
+extracted verbatim from Drive rather than reimplemented from the
+rationale text alone. `scheduleRenderAll()` was pure timing debounce —
+the surviving call always fully rebuilt the schedule DOM regardless of
+whether anything structural changed. Now it computes a
+`_fieldVisibleRenderSignature()` fingerprint first; if unchanged since
+the last structural render, it skips `renderAll(true)` entirely and
+only refreshes score/live surfaces (`_fieldRefreshDynamicSurfaces()`).
+
+**Found and fixed a real, confirmed bug in the source proposal's own
+implementation before shipping, not after.** The source's own
+`_fieldGameRenderPayload()` — the per-game signature input — included
+no Pick'em field anywhere, because Pick'em state in THIS codebase (and
+apparently in the source's base copy too) lives in `localStorage`
+(`_getPickCache()`), not on the game object. A pick being made or
+resolved, with no other game field changing, would have silently failed
+to trigger the render that updates the pick widget — precisely the
+failure the source document's own rationale warned against. Added
+`_fieldGamePickSignature()`, fingerprinting pick state via the same
+`_pickStorageKey()` convention `buildPickWidgetHTML` already uses.
+
+**Also closed a second, pre-flagged gap** (TASK 0): mirrored
+`getGameReasonTags()`'s `nationalBundle`/weather-extreme signals into
+the payload before either function gets a real consumer, with a
+standing code comment requiring future `getGameReasonTags()` signals to
+be mirrored here too.
+
+**Verified via extracted-verbatim `vm` test against the source
+document's own 13-condition failure list**: 8 conditions tested
+directly via signature comparison (new/removed game, date, timezone,
+sport filter, Pick'em make+resolve, user-team, streams, Field Brief
+content); 5 conditions (score updates, live/final classes, score flash,
+card interactions, duplicate listeners) verified via confirmed diff
+scope — `git diff` shows exactly one removed line file-wide, meaning
+`renderESPNScores()` and all listener-attachment code are provably
+untouched, and the skip path performs zero DOM mutation by construction.
+**Caught and fixed a real bug in my own test harness** (missing
+`_getPickCache`/`_gameSport` in the extraction list caused a swallowed
+`ReferenceError`, silently returning empty for the pick fingerprint) —
+investigated before accepting the first (false) failing result.
+
+**Deliberate departure from the source, logged:** dropped the source's
+`reason` parameter and its dead (never-incremented) `scoreOnlyPatches`
+counter — this codebase has an existing smoke-enforced invariant
+(`A-PHASE2-6`) requiring `scheduleRenderAll()` to keep a literal
+zero-argument signature (protecting a different, already-shipped
+optimization, `_cardStringCache`, that the source proposal never knew
+about). Widened that assertion's character window rather than break the
+zero-arg contract.
+
+**Pre-deploy confidence: 85/100** (missing only the +15
+scroll-stability item, which requires a live deployed session to verify
+observably per TASK 3 — continuing immediately in the same session,
+not deferred).
+
+---
+
 ## MID-SESSION UPDATE — 2026-07-10 (ranked-slot-primitive — foundational top-N gating, STAGED, no caller yet)
 
 **SW_VERSION `2026-07-10f` → `2026-07-10g`. Smoke: 899/0 (unchanged).**

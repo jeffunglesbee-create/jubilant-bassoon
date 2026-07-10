@@ -6117,7 +6117,14 @@ assert('A-PHASE2-5 — renderAll clears the cache on every direct (non-scheduled
   'function renderAll(skipUnchanged){ if (!skipUnchanged) _cardStringCache.clear(); ... } must be the exact shape — every existing direct call site (boot, toggleMyTeam, TZ change, filter clicks, date nav) calls renderAll() with no argument and must keep getting a full cache-clearing rebuild with zero code changes at those call sites');
 
 assert('A-PHASE2-6 — scheduleRenderAll is the ONLY call site passing true (cache-preserving) — every other call site must default to full-clear',
-  !!html.match(/scheduleRenderAll\(\)\{[\s\S]{0,300}renderAll\(true\)/) &&
+  // Window widened 300->700 (CC-CMD-2026-07-10-render-signature-gate):
+  // scheduleRenderAll()'s body legitimately grew to include the render-
+  // signature comparison (skip structural render when the visible
+  // schedule signature is unchanged); renderAll(true) is still reached
+  // only through scheduleRenderAll's own body, still exactly once in the
+  // whole file — the widened window accommodates the real body length,
+  // it does not weaken the single-call-site invariant below.
+  !!html.match(/scheduleRenderAll\(\)\{[\s\S]{0,700}renderAll\(true\)/) &&
   (html.match(/renderAll\(true\)/g) || []).length === 1,
   'scheduleRenderAll() must call renderAll(true), and renderAll(true) must appear exactly once in the whole file — if any other call site ever passes true, cache-invalidation safety silently breaks for that path');
 
