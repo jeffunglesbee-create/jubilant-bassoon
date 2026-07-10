@@ -23866,7 +23866,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-07-09i';
+  const SW_VERSION = '2026-07-09j';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -28634,9 +28634,11 @@ document.addEventListener('visibilitychange', () => {
     if (eventType === 'all_final') {
       try {
         if (typeof fieldEvents !== 'undefined') {
-          fieldEvents.dispatchEvent(new CustomEvent('field:all_final', {
-            detail: { count: data.count, date: data.date, source: 'sse' }
-          }));
+          fieldEvents.dispatchEvent(new CustomEvent('field:all_final', { detail: {
+            type: 'field:all_final', target: 'slate', source: 'sse',
+            reason: 'sse_wrap', at: Date.now(),
+            payload: { count: data.count, date: data.date }
+          }}));
         }
       } catch (_e) {}
     }
@@ -29048,7 +29050,7 @@ fieldEvents.addEventListener('field:all_final', (e) => {
     const guardKey = 'all_final:nightly_wrap';
     if (_subscriberFired[guardKey]) return;
     _subscriberFired[guardKey] = Date.now();
-    if (FIELD_DEBUG) console.log(`[S0 bus] field:all_final → nightly wrap (${e.detail?.count} game(s))`);
+    if (FIELD_DEBUG) console.log(`[S0 bus] field:all_final → nightly wrap (${e.detail?.payload?.count} game(s))`);
     // Defer until browser is idle (2s deadline) — resilient to main-thread jank.
     // requestIdleCallback replaces the fixed 500ms timer so Night Owl render
     // doesn't compete with live-score poll cycles on Finals nights.
@@ -41252,9 +41254,11 @@ function checkForNewFinals(){
     if (liveCards.length === 0) {
       window._allFinalFired = true;
       if (typeof fieldEvents !== 'undefined') {
-        fieldEvents.dispatchEvent(new CustomEvent('field:all_final', {
-          detail: { count: _seenFinals.size, ts: Date.now() }
-        }));
+        fieldEvents.dispatchEvent(new CustomEvent('field:all_final', { detail: {
+          type: 'field:all_final', target: 'slate', source: 'poll',
+          reason: 'checkfornewfinals', at: Date.now(),
+          payload: { count: _seenFinals.size }
+        }}));
       }
       if (FIELD_DEBUG) console.log(`[checkForNewFinals] field:all_final fired — ${_seenFinals.size} game(s) final, no live cards remain`);
     }

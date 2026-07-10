@@ -1,5 +1,47 @@
 # FIELD HANDOFF
 
+## MID-SESSION UPDATE — 2026-07-09 (all-final-envelope-standardize — field:all_final's two inconsistent payload shapes unified onto PM-27)
+
+**SW_VERSION `2026-07-09i` → `2026-07-09j`. Smoke: 899/0 (unchanged).**
+Full detail: `docs/outbox/cc-all-final-envelope-standardize-2026-07-09.md`.
+
+**Schema-consistency cleanup.** `field:all_final` postdated PM-27's
+original scope (`field:crunch`/`field:otw_changed`/`field:ws_fresh`)
+and was never brought in line — its two dispatch sites (SSE handler,
+`checkForNewFinals()`) used two different, non-standard flat shapes
+(`{count, date, source:'sse'}` vs `{count, ts}`). Both now dispatch the
+identical PM-27 envelope (`{type, target:'slate', source, reason, at,
+payload:{count, date?}}`), with `source`/`reason` drawn from precise
+existing terms at each site (`sse`/`sse_wrap` vs
+`poll`/`checkfornewfinals`) — not invented generically. Site 2 correctly
+omits `payload.date` rather than fabricating one, since
+`checkForNewFinals()` has no date value available there.
+
+**Caught the CC-CMD's own premise being wrong for one subscriber, per
+this session's standing "verify, don't assume" discipline.** The doc
+claimed both subscribers read the old flat shape and needed updating.
+Reading both bodies directly: subscriber 1 (attention-bar cleanup)
+reads **nothing** from `e.detail` at all — doesn't even declare the
+event parameter — so it needed zero changes, correctly left untouched
+rather than force-edited to match the doc's generic assumption.
+Subscriber 2 ("Nightly wrap") reads `e.detail?.count` in exactly one
+place — a debug `console.log`, not functional logic — updated to
+`e.detail?.payload?.count`.
+
+**Verified via an extracted-verbatim `vm` harness** (real dispatch-site
+literals, both full subscriber bodies, a real `EventTarget` stand-in):
+13/13 checks — both envelopes structurally identical with correctly
+differing `source`/`reason`; subscriber 1's real behavior (clear
+`_attnGames`, re-render) still fires, confirmed genuinely shape-agnostic;
+subscriber 2's debug log now reads the real count instead of silently
+going `undefined`, its deferred `renderNightOwlRecap()`/
+`renderAmbientPanel()` calls still fire, and the `_subscriberFired`
+double-fire guard still holds.
+
+Confidence: 100/100 (35+35+30). Committed.
+
+---
+
 ## MID-SESSION UPDATE — 2026-07-09 (realid-bootstrap-collision-check — hardened _resolveRealGameId against a same-day both-sides suffix collision)
 
 **SW_VERSION `2026-07-09h` → `2026-07-09i`. Smoke: 899/0 (unchanged).**
