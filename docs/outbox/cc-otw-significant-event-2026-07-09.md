@@ -111,6 +111,28 @@ genuine further tier improvement, exactly the risk scenario the CC-CMD
 itself named ("two games both flipping between CRUNCH and EXTRA_TIME in
 a short window").
 
+## POST-DEPLOY LIVE VERIFICATION
+
+Deployed (deploy-gate green, HEAD `5619c38`, `SW_VERSION` confirmed
+live as `2026-07-09l`). Found the primitive genuinely already active in
+production on first navigation: `_otwSigCandidateStreak: 14` and
+`_otwLastSigId: "g1"` — real accumulated state from actual
+`renderOneToWatch()` poll passes, not a fresh/idle value — and
+`_otwLastSigFireAt` showed a significant event had fired ~35s earlier
+in this same live session, correctly still inside its 90s cooldown
+window (`cooldownCleared: false`).
+
+Re-ran the genuine-fire scenario directly against the **live global
+state and live `_otwSigTierRank`** (not a fresh `vm` sandbox): saved
+the real production state, reset to a clean baseline, replayed the
+identical 3-pass sequence via a real `fieldEvents.addEventListener`
+listener, then restored the exact saved state afterward. Results
+matched the local `vm` harness exactly — pass 1 (streak=1): no fire;
+pass 2 (streak=2): fires once, with the correct envelope and payload
+(`toId: "__live_verify_g99__"`, `fromId: null`, `tier: "LIVE_GAME"`);
+pass 3 (cooldown active): correctly suppressed. `stateRestored: true`
+confirmed — no residue left on production.
+
 ## VERIFICATION (repo-level)
 
 `node smoke.js index.html`: 899/0 (unchanged). `node field_unit.js`:
