@@ -21768,6 +21768,38 @@ function syncCardAttributes(card, game, score, isLive, isFinal) {
     }
 }
 
+// ── claimCardRegion (CC-CMD-2026-07-09-card-region-claim-primitive) ──────
+// STAGED — no caller yet. Foundational infrastructure, not a fix for a
+// live bug: nothing today exercises this. Wiring any real feature to it
+// is explicitly out of scope for this pass (none of tonight's 75
+// UI-feature-bundle ideas are built yet). The event bus (fieldEvents,
+// PM-27 envelope) is a genuine fan-out: one event firing can reach every
+// subscriber at once. If two independent listeners both react to the
+// same event by writing content into the same card region, JS doesn't
+// error -- the second write silently wins with no signal a collision
+// happened. CARD_ATTRIBUTE_SYNC
+// (above) is a different, narrower problem: one deterministic compute()
+// per boolean/dataset attribute, not multiple competing writers racing
+// for the same slot -- confirmed by reading it, not assumed.
+//
+// Kept deliberately minimal: a plain caller-supplied integer priority (no
+// derivation from fieldGameTier or any other system), ties broken by
+// "existing claim wins" (don't thrash on equal priority), and a TTL so a
+// claim doesn't hold a region forever if its owner never releases it.
+const _cardClaims = {};
+function claimCardRegion(cardId, regionKey, { source, priority, render, ttlMs = 4000 }) {
+  const key = cardId + ':' + regionKey;
+  const existing = _cardClaims[key];
+  const now = Date.now();
+  const expired = !!existing && (now - existing.at > existing.ttlMs);
+  if (!existing || expired || priority > existing.priority) {
+    render();
+    _cardClaims[key] = { source, priority, at: now, ttlMs };
+    return true;
+  }
+  return false; // lost the claim -- caller can log/observe if it wants to
+}
+
 function renderESPNScores(){
   // Prune stale entries (not updated within ESPN_SCORE_TTL) to prevent yesterday's
   // scores matching today's games by team name
@@ -23866,7 +23898,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-07-09j';
+  const SW_VERSION = '2026-07-09k';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)

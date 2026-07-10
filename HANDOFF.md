@@ -1,5 +1,50 @@
 # FIELD HANDOFF
 
+## MID-SESSION UPDATE — 2026-07-09 (card-region-claim-primitive — foundational infra, STAGED, no caller yet)
+
+**SW_VERSION `2026-07-09j` → `2026-07-09k`. Smoke: 899/0 (unchanged).**
+Full detail: `docs/outbox/cc-card-region-claim-primitive-2026-07-09.md`.
+
+**Foundational infrastructure, not a bug fix — score and report
+accordingly.** Nothing today exercises this: none of tonight's 75
+UI-feature-bundle ideas are built yet. Built ahead of the problem: the
+event bus (`fieldEvents`, PM-27 envelope) is a genuine fan-out — one
+event firing reaches every subscriber at once — and if two independent
+listeners ever both react to the same event by writing into the same
+card region, JS won't error; the second write silently wins with no
+signal a collision happened.
+
+**Checked `CARD_ATTRIBUTE_SYNC` first, not assumed separate.** Read the
+actual registry and its consumer: it's one deterministic `compute()` per
+boolean/dataset attribute (circadian state, etc.) — no concept of a
+claim, priority, or TTL, and no competing writers anywhere in it. Grepped
+all 8 real `fieldEvents` subscribers too — none implement any claim/
+priority coordination already. Confirmed this primitive is genuinely new,
+not a duplicate.
+
+**Built `claimCardRegion(cardId, regionKey, {source, priority, render,
+ttlMs=4000})`** — a shared `_cardClaims` registry, plain caller-supplied
+integer priority (no derivation from `fieldGameTier`), ties broken by
+"existing claim wins," TTL as an independent OR'd condition so an
+expired claim releases the region regardless of the challenger's
+priority. Marked `STAGED — no caller yet` in the code comment; wiring
+any real feature to it is explicitly out of scope for this pass.
+
+**Verified via a realistic constructed collision** (a high-priority
+"walkout"-style claim vs. a low-priority ambient claim on the same
+card's subline, extracted verbatim from the committed function, run
+with a controllable mocked clock): both arrival orderings correctly
+resolve to the higher-priority claim (confirmed via actual `render()`
+call counts in both directions, not just return values); equal-priority
+ties correctly favor the incumbent; TTL expiry correctly releases the
+region to a fresh *lower*-priority claim once past `ttlMs`, with a
+regression check 1ms before the boundary confirming the same claim still
+correctly loses right up to the edge. 17/17 checks passed.
+
+Confidence: 100/100 (20+30+30+20). Committed.
+
+---
+
 ## MID-SESSION UPDATE — 2026-07-09 (all-final-envelope-standardize — field:all_final's two inconsistent payload shapes unified onto PM-27)
 
 **SW_VERSION `2026-07-09i` → `2026-07-09j`. Smoke: 899/0 (unchanged).**
