@@ -1,5 +1,47 @@
 # FIELD HANDOFF
 
+## MID-SESSION UPDATE — 2026-07-10 (prompt-data-separation — closes the prompt-leakage bug across 9 real sites)
+
+**SW_VERSION `2026-07-10d` → `2026-07-10e`. Smoke: 899/0 (unchanged).**
+Full detail: `docs/outbox/cc-prompt-data-separation-2026-07-10.md`.
+
+**Real, observed production bug fixed**: a Night Owl brief leaked its
+own prompt instructions into output ("fell within the 80-100 words
+range of expected intensity"). Root cause: every prompt was a flat
+array of strings joined by `\n`, zero structural separation between
+task, data, and rules.
+
+**Probe found 11 real sites, not the doc's cited 3.** 9 use the flat,
+unstructured pattern (the actual bug — including the exact reported-bug
+site, the Night Owl queue prompt); 3 already use a genuine `"Rules:"`-
+header-with-bullets convention (J3, `wc-tab-brief`, Finals Desk) —
+confirmed and correctly left untouched. **This changed the
+implementation approach**: adopted the file's own already-live
+convention for the 9 restructured sites instead of the doc's suggested
+markdown-style template.
+
+**Caught a redundancy bug before shipping**: several sites' first rule
+is a variable whose own text already starts with `"Rules: "` — adding a
+separate header before it would have produced a literal `"Rules:\n-
+Rules: ..."` duplication. Caught while implementing, corrected: the
+existing line stands alone as header+first-rule, no wording changed.
+
+**Verified via 7 real LLM generations fired directly against the live
+`CLAUDE_PROXY_URL`** — not simulated. 5 deliberately sparse-data runs
+at the exact reported-bug site (bare final scores, no series/matchup/
+stat context, across MLB/NBA/NHL): zero format-leak matches across all
+10 leak patterns checked, word counts 88-93 (target 80-100). 1 rich-
+data regression check: zero leaks, correctly cited real facts, 89
+words. 1 additional site (Stakes Brief): correct structure; one output
+used the phrase "historical weight" — investigated and confirmed this
+is the rule's own *content-directive* being correctly fulfilled (write
+ABOUT historical weight), categorically different from the reported
+bug's *format*-leak mechanism.
+
+Confidence: 100/100 (25+20+35+20). Committed.
+
+---
+
 ## MID-SESSION UPDATE — 2026-07-10 (score-snapshot-monotonicity-guard — write-side self-healing, follow-up to lead-differential-upper-bound)
 
 **SW_VERSION `2026-07-10c` → `2026-07-10d`. Smoke: 899/0 (unchanged).**

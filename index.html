@@ -14867,15 +14867,18 @@ function injectJ1J4Badges() {
                 if (!jobId) {
                   const spPrompt = [
                     `Write a FIELD Scout's Pick brief for tonight's hidden-gem game.`,
+                    '',
+                    'GAME DATA:',
                     `${g.away||'?'} @ ${g.home||'?'}.`,
                     g.matchupNote ? `Context: ${g.matchupNote}` : '',
                     sd2 ? `Key stat: ${sd2.fullText}.` : '',
                     series2 ? `Series: ${series2}.` : '',
                     ``,
-                    `Rules: 50-70 words. One paragraph. No headers.`,
-                    `Lead with WHY this non-national game is worth watching — the specific analytical reason.`,
-                    `Cite the key stat verbatim if provided. Never use "hidden gem", "under the radar", "must-watch".`,
-                    `Write like a well-prepared friend explaining why they're skipping the national game for this one.`,
+                    `Rules:`,
+                    `- 50-70 words. One paragraph. No headers.`,
+                    `- Lead with WHY this non-national game is worth watching — the specific analytical reason.`,
+                    `- Cite the key stat verbatim if provided. Never use "hidden gem", "under the radar", "must-watch".`,
+                    `- Write like a well-prepared friend explaining why they're skipping the national game for this one.`,
                     FIELD_PROSE_STYLE,
                   ].filter(Boolean).join('\n');
                   const eq = await fetch(JOURNALISM_ENQUEUE_RELAY, {
@@ -23898,7 +23901,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-07-10d';
+  const SW_VERSION = '2026-07-10e';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -27883,6 +27886,8 @@ Write this brief at the level the moment deserves. Do not undersell a championsh
     : 'Rules: 80-100 words. 2-3 sentences. Tactical focus — what to watch tonight.';
   const prompt=[_fieldVoiceExemplarsForSport(_gameSport(g)),
     'Write a FIELD Series Brief for this playoff game.',
+    '',
+    'GAME DATA:',
     'Home: '+g.home+'. Away: '+g.away+'.'+(g.venue?' Venue: '+g.venue+'.':''),
     'Series: '+(g.seriesRecord||'')+'. Stakes: '+stakes+'.'+(gameNum?' Tonight is '+gameNum+'.':''),
     buildSeriesStateClause(g),
@@ -27893,16 +27898,16 @@ Write this brief at the level the moment deserves. Do not undersell a championsh
     _j2ChampBlock,
     ' ',
     _j2WordRule,
-    'SERIES RECORD LOCKDOWN: The series record is EXACTLY ' + (g.seriesRecord || '') + '. Do NOT write any other record. Copy the series record verbatim from the data above.',
-    'STRUCTURE: Sentence 1 = the specific stakes (clinch/elimination/advantage — cite the series record and what winning/losing means). Sentence 2 = the key tactical or narrative fact from this series (player performance, matchup, trend). Sentence 3 = what to watch tonight that decides the game.',
-    'If Context is provided, use specific facts from it — player names, stats, game results.',
-    'Write only from the data above. Never invent statistics, records, or player tendencies.',
-    'MATCHUP DEPTH: Do not default to only the two star players. If the context includes role players, secondary matchups, or non-scoring stats (assists, +/-, defensive rating, 3P%, PP%, WHIP), surface at least one of these. A brief that only discusses the two most famous names scores lower.',
-    'TEMPORAL PRECISION: Every stat must be temporally located. Not "Brunson averages 29.0 PPG" — "Brunson averaged 29.0 PPG this series." Never leave a stat in a time vacuum.',
+    '- SERIES RECORD LOCKDOWN: The series record is EXACTLY ' + (g.seriesRecord || '') + '. Do NOT write any other record. Copy the series record verbatim from the data above.',
+    '- STRUCTURE: Sentence 1 = the specific stakes (clinch/elimination/advantage — cite the series record and what winning/losing means). Sentence 2 = the key tactical or narrative fact from this series (player performance, matchup, trend). Sentence 3 = what to watch tonight that decides the game.',
+    '- If Context is provided, use specific facts from it — player names, stats, game results.',
+    '- Write only from the data above. Never invent statistics, records, or player tendencies.',
+    '- MATCHUP DEPTH: Do not default to only the two star players. If the context includes role players, secondary matchups, or non-scoring stats (assists, +/-, defensive rating, 3P%, PP%, WHIP), surface at least one of these. A brief that only discusses the two most famous names scores lower.',
+    '- TEMPORAL PRECISION: Every stat must be temporally located. Not "Brunson averages 29.0 PPG" — "Brunson averaged 29.0 PPG this series." Never leave a stat in a time vacuum.',
     FIELD_PROSE_STYLE,
     getFieldVoice(_gameSport(g)),
     getQualityTarget(_gameSport(g)),
-    'Third person only — never use "you" or address the reader directly. No markdown.'
+    '- Third person only — never use "you" or address the reader directly. No markdown.'
   ].filter(Boolean).join('\n');
   try{
     // ── WOW 6 Phase 2: route through relay quality gate
@@ -30954,16 +30959,18 @@ async function fetchMLBGameBriefFromClaude(g) {
 
   const prompt = [
     `Write a FIELD Match Brief for this MLB game.`,
+    '',
+    'GAME DATA:',
     `${g.away||'?'} @ ${g.home||'?'}${g.venue ? ' · ' + g.venue : ''}.`,
     pfLine, wxLine, pitcherLine, umpLine ? `Umpire: ${ump}` : '',
     standingsCtx || '',
     momentumCtx || '',
     analyticsCtx || '',
-    '',
     g.matchupNote ? `Matchup: ${g.matchupNote}` : '',
+    '',
     'Rules: 50-70 words. 2 sentences. Vary the angle — use whichever single fact is most interesting tonight: park factor, pitcher arsenal, expected stats luck, momentum, or standings gap. Not always standings.',
-    'Cite the exact figure if park, weather, or analytics data is provided — never paraphrase.',
-    'Write only from data above. No invented stats. Never explain what data is missing — if context is thin, write what you have.',
+    '- Cite the exact figure if park, weather, or analytics data is provided — never paraphrase.',
+    '- Write only from data above. No invented stats. Never explain what data is missing — if context is thin, write what you have.',
     FIELD_PROSE_STYLE,
     FIELD_BASEBALL_VOICE,
   ].filter(Boolean).join('\n');
@@ -31155,14 +31162,16 @@ async function fetchWNBAGameBriefFromClaude(g) {
 
   const prompt = [
     `Write a FIELD Match Brief for this WNBA game.`,
+    '',
+    'GAME DATA:',
     `${g.away||'?'} @ ${g.home||'?'}${g.venue ? ' · ' + g.venue : ''}.`,
     stream ? `Broadcast: ${stream}.` : '',
     standingsCtx || '',
     g.matchupNote ? `Matchup: ${g.matchupNote}` : '',
     '',
     'Rules: 35-50 words. 1-2 sentences. Use only facts provided above.',
-    'If standings are provided, anchor the brief in where each team sits.',
-    'Write only from data above. No invented stats. If data is thin, write one simple factual sentence about the matchup.',
+    '- If standings are provided, anchor the brief in where each team sits.',
+    '- Write only from data above. No invented stats. If data is thin, write one simple factual sentence about the matchup.',
     FIELD_PROSE_STYLE,
   ].filter(Boolean).join('\n');
 
@@ -31269,6 +31278,8 @@ async function fetchStakesBriefFromClaude(g) {
 
   const prompt = [
     `Write a FIELD Stakes Brief for this high-stakes game.`,
+    '',
+    'GAME DATA:',
     `${g.away||'?'} @ ${g.home||'?'}${g.venue ? ' · '+g.venue : ''}.`,
     impLabel,
     series ? `Series: ${series}` : '',
@@ -31278,12 +31289,12 @@ async function fetchStakesBriefFromClaude(g) {
     isMajorFinal
       ? 'Rules: 2 sentences. This is the FINAL — not a semifinal, not a knockout round. There is no next game. One match, winner takes the trophy. Lead with what the trophy means to each club (last won it, first final in X years, first ever). Cite only facts from Context above.'
       : 'Rules: 2 sentences. Lead with the historical weight — what losing or winning means beyond just tonight.',
-    'Cite specific year or franchise context if it sharpens the stakes.',
-    'If Context is provided, use only facts from it. NEVER invent round context, series history, or prior results not mentioned above.',
-    'Never explain what data is missing. If context is thin, write what you have in plain factual prose.',
-    isMajorFinal ? 'CRITICAL: Do NOT use the words semifinal, quarter-final, knockout round, or elimination. This is the FINAL — the last game of the competition.' : '',
-    g.venue ? `VENUE: The match is at ${g.venue}. This is the only correct venue — never mention a different stadium.` : '',
-    'Write only from data above. No invented stats.',
+    '- Cite specific year or franchise context if it sharpens the stakes.',
+    '- If Context is provided, use only facts from it. NEVER invent round context, series history, or prior results not mentioned above.',
+    '- Never explain what data is missing. If context is thin, write what you have in plain factual prose.',
+    isMajorFinal ? '- CRITICAL: Do NOT use the words semifinal, quarter-final, knockout round, or elimination. This is the FINAL — the last game of the competition.' : '',
+    g.venue ? `- VENUE: The match is at ${g.venue}. This is the only correct venue — never mention a different stadium.` : '',
+    '- Write only from data above. No invented stats.',
     FIELD_PROSE_STYLE,
   ].filter(Boolean).join('\n');
 
@@ -31664,6 +31675,8 @@ Write this brief at the level the moment deserves. Do not undersell a championsh
       ? buildGolfPromptContext(window._pgaDataCache) : '';
     const prompt = [
       `Write a FIELD Game Brief.`,
+      '',
+      'GAME DATA:',
       `${game.away||'?'} @ ${game.home||'?'}${game.venue ? ' · '+game.venue : ''}.`,
       game.league ? `${game.league}.` : '',
       stream ? `Broadcast: ${stream}.` : '',
@@ -31673,7 +31686,7 @@ Write this brief at the level the moment deserves. Do not undersell a championsh
       _golfCtx,
       '',
       wordRule,
-      'Write only from data above.',
+      '- Write only from data above.',
       FIELD_PROSE_STYLE,
     ].filter(Boolean).join('\n');
     try {
@@ -31743,6 +31756,8 @@ async function fetchEPLMatchBriefFromClaude(g) {
 
   const prompt = [
     'Write a FIELD Match Brief for this Premier League fixture.',
+    '',
+    'GAME DATA:',
     `${g.away} @ ${g.home}${g.venue ? ' · '+g.venue : ''}.`,
     g.league ? `${g.league}.` : '',
     stream ? `Broadcast: ${stream}.` : '',
@@ -31752,8 +31767,8 @@ async function fetchEPLMatchBriefFromClaude(g) {
     g.matchupNote ? `Context: ${g.matchupNote}` : '',
     '',
     'Rules: 40-60 words. 1-2 sentences. Use the table/form/H2H data if provided — these are concrete facts worth mentioning.',
-    'VENUE: if venue is listed above, use it — never substitute a different stadium.',
-    'No invented stats beyond what is given. No markdown. Complete every sentence.',
+    '- VENUE: if venue is listed above, use it — never substitute a different stadium.',
+    '- No invented stats beyond what is given. No markdown. Complete every sentence.',
     FIELD_PROSE_STYLE,
     FIELD_SOCCER_VOICE,
   ].filter(Boolean).join('\n');
@@ -38778,6 +38793,8 @@ function saveEspnFinal(game, eData){
             : 'point';
           const _owlQ_prompt = [
             'Write a FIELD Night Owl recap.',
+            '',
+            'GAME DATA:',
             `Game: ${game.away||'?'} @ ${game.home||'?'}`,
             `Final: ${eData.awayScore}–${eData.homeScore} (${_owlQ_winner} wins)`,
             `MARGIN: ${_owlQ_margin}-${_owlQ_unit}${_owlQ_margin===1?'':'s'} (winner ${_owlQ_winner})`,
@@ -38786,8 +38803,8 @@ function saveEspnFinal(game, eData){
             entry.statCtx || '',
             '',
             'Rules: 80-100 words. Tactical. Not emotional. Lead with the turning point.',
-            'Write only from data above — never invent statistics or play-by-play.',
-            'CRITICAL — DO NOT FABRICATE SPECIFICS: no specific inning/quarter/at-bat details unless in stat context above.',
+            '- Write only from data above — never invent statistics or play-by-play.',
+            '- CRITICAL — DO NOT FABRICATE SPECIFICS: no specific inning/quarter/at-bat details unless in stat context above.',
           ].filter(Boolean).join('\n');
           fetch(JOURNALISM_ENQUEUE_RELAY, {
             method: 'POST',
@@ -39407,6 +39424,8 @@ Path to Finals: ${_noChampCtx.pathToFinals}` : ''}
 Write this Night Owl at the level the moment deserves. Do not undersell a championship.`
     : '';
   const prompt=['Write a FIELD Night Owl recap.',
+      '',
+      'GAME DATA:',
       'Game: '+topGame.away+' @ '+topGame.home+(topGame.venue?' · '+topGame.venue:''),
       'Final: '+score+' ('+winner+' wins)'+_xiNote,
       _marginLine,
@@ -39424,29 +39443,29 @@ Write this Night Owl at the level the moment deserves. Do not undersell a champi
       standingsCtx?standingsCtx:'',
       crewCtx?'Broadcast crew: '+crewCtx:'',
       '','Rules: 80-100 words. Tactical. Not emotional. Lead with the turning point.',
-      _owlScoutPickCtx ? 'If [SCOUT\'S PICK PREDICTION] appears: end with one sentence grading delivery. Deliver on the promise (\"Delivered — high-drama playoff game as billed\") or call it out honestly (\"Fell short — low drama despite the stakes\"). Never echo the tag verbatim.' : '',
+      _owlScoutPickCtx ? '- If [SCOUT\'S PICK PREDICTION] appears: end with one sentence grading delivery. Deliver on the promise (\"Delivered — high-drama playoff game as billed\") or call it out honestly (\"Fell short — low drama despite the stakes\"). Never echo the tag verbatim.' : '',
       // PM-32-JQ: mandatory stat citation — passive rule replaced with hard requirement.
       // Scoring analysis showed J5 averaging 122/200 when stat context is present but
       // citation is optional. statDepth is the dominant gap; making citation mandatory
       // forces every sentence to carry a specific number, directly lifting statDepth.
       _owlStatCtx
-        ? 'REQUIRED — CITE ALL STATS: every stat line provided above must be referenced by its specific figure in your recap. Do NOT copy the bracket labels ([MLB BOX], [SCORE NARRATIVE], etc.) into the prose — strip all brackets and just use the numbers. Do not omit stats. Lead the first sentence with the most specific number available — player name + figure (e.g. "Brunson 32 points" not "Brunson was strong").'
-        : 'No box stats available — write from score, margin, series record, and drama context only. Every sentence must include a specific number (final score, margin, series record, or drama peak if meaningful).',
-      _owlDramaPromptCtx?'DRAMA CONTEXT (post-game amnesty — drama numbers MAY appear in prose): use tension/arc data to frame the narrative (thriller vs wire-to-wire vs late-bloomer). Paraphrase lead changes and comeback facts from SCORE NARRATIVE as natural prose. DO NOT copy bracket labels like [DRAMA TREND] or [SCORE NARRATIVE] literally into the text — use the facts they contain, not the tag names.':'',
-      'Write only from the data above — never invent statistics, player tendencies, or context.',
+        ? '- REQUIRED — CITE ALL STATS: every stat line provided above must be referenced by its specific figure in your recap. Do NOT copy the bracket labels ([MLB BOX], [SCORE NARRATIVE], etc.) into the prose — strip all brackets and just use the numbers. Do not omit stats. Lead the first sentence with the most specific number available — player name + figure (e.g. "Brunson 32 points" not "Brunson was strong").'
+        : '- No box stats available — write from score, margin, series record, and drama context only. Every sentence must include a specific number (final score, margin, series record, or drama peak if meaningful).',
+      _owlDramaPromptCtx?'- DRAMA CONTEXT (post-game amnesty — drama numbers MAY appear in prose): use tension/arc data to frame the narrative (thriller vs wire-to-wire vs late-bloomer). Paraphrase lead changes and comeback facts from SCORE NARRATIVE as natural prose. DO NOT copy bracket labels like [DRAMA TREND] or [SCORE NARRATIVE] literally into the text — use the facts they contain, not the tag names.':'',
+      '- Write only from the data above — never invent statistics, player tendencies, or context.',
       // PF-4: ban specific-inning / specific-at-bat / specific-period fabrications.
       // The LLM has ONLY the final score and any [MLB BOX], [PP/PK], standings
       // context shown above. Anything more specific (which inning was decisive,
       // which batter drove in the go-ahead run, who scored the GW goal, how
       // many strikeouts the bullpen had) is fabrication — banned outright.
-      'CRITICAL — DO NOT FABRICATE SPECIFICS: do not write about which inning/quarter/period was decisive, do not name specific at-bats or possessions, do not invent strikeout/save/turnover counts, do not describe runners on base or scoring sequences. You have the final score, the margin, the series record, and whatever stat lines appear in brackets above — nothing else. Write a recap that captures what the data says, not a play-by-play.',
-      'CRITICAL — USE THE GIVEN MARGIN: the MARGIN line above is the authoritative score difference. Never describe a 2-run game as "one-run", a 3-goal game as "one-goal", etc. Use the unit and number from the MARGIN line verbatim.',
+      '- CRITICAL — DO NOT FABRICATE SPECIFICS: do not write about which inning/quarter/period was decisive, do not name specific at-bats or possessions, do not invent strikeout/save/turnover counts, do not describe runners on base or scoring sequences. You have the final score, the margin, the series record, and whatever stat lines appear in brackets above — nothing else. Write a recap that captures what the data says, not a play-by-play.',
+      '- CRITICAL — USE THE GIVEN MARGIN: the MARGIN line above is the authoritative score difference. Never describe a 2-run game as "one-run", a 3-goal game as "one-goal", etc. Use the unit and number from the MARGIN line verbatim.',
       FIELD_PROSE_STYLE,
       getFieldVoice(_sp),
       getQualityTarget(_sp),
-      'Third person only — never use "you" or address the reader directly.',
-      'Division accuracy: teams in the same division share ONE race, not "respective" races.',
-      'Explain what tactically swung the game. Series implication. Plain prose.'
+      '- Third person only — never use "you" or address the reader directly.',
+      '- Division accuracy: teams in the same division share ONE race, not "respective" races.',
+      '- Explain what tactically swung the game. Series implication. Plain prose.'
     ].filter(Boolean).join('\n');
   try{
     // ── WOW 6: try relay quality gate first (live-path quality enforcement)
