@@ -150,6 +150,25 @@ correctly returns nothing together).
 
 **Regression:** `getGameReasonTags(null, null)` returns `[]`, no throw.
 
+## POST-DEPLOY LIVE VERIFICATION
+
+Deployed (deploy-gate green, HEAD `466cd2f`, `SW_VERSION` confirmed
+live as `2026-07-10a`, `getGameReasonTags`/`_isMyTeamGame`/
+`_isCloseAndLate` all confirmed present). Ran `getGameReasonTags()`
+against every real game in today's live production slate (16 real
+games across MLB, WC26, AFL, Golf, CFL) — all pregame, correctly
+returned `[]` for every one (no followed team, no importance, no live
+data), no throws.
+
+Then exercised the multi-tag path against a **real** live-slate game
+object (Detroit Tigers vs Philadelphia Phillies, MLB) with a synthetic
+followed-team + elimination + close-late-eData overlay (non-destructive
+— `MY_TEAMS` saved before, restored after): output
+`["user_team","elimination","CLOSE_FINISH","close_late"]` — correct
+priority order, all four signals firing simultaneously against the
+actual deployed function. `MY_TEAMS` confirmed restored to its original
+state.
+
 ## VERIFICATION (repo-level)
 
 `node smoke.js index.html`: 899/0. **One genuine smoke failure caught
