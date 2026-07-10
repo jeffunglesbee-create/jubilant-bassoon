@@ -111,6 +111,16 @@ signal is the header *text* itself ("GAME DATA:", "Rules:") appearing
 on its own adjacent line, not whitespace — confirmed by inspecting the
 actual prompt string sent to the real API, not assumed.
 
+## Post-deploy live verification
+
+Deployed (deploy-gate green, HEAD `5067005`, `SW_VERSION` confirmed
+live as `2026-07-10e`). Confirmed the `GAME DATA:` header is present in
+the actual running source of 3 of the 9 restructured functions
+(`fetchStakesBriefFromClaude`, `fetchMLBGameBriefFromClaude`,
+`fetchNightOwlFromClaude`) via `.toString()` on the live, deployed
+functions — closing the loop between the template tested against the
+real proxy pre-deploy and the code actually shipped.
+
 ## Repo verification
 
 `node smoke.js index.html`: 899/0 (unchanged). `node field_unit.js`:
