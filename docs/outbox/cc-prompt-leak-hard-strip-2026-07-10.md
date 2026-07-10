@@ -114,6 +114,17 @@ All 3 raw generations confirmed to genuinely contain the forced leak
 before stripping (`rawTextHasLeak: true`), and confirmed clean after
 (`strippedTextStillHasLeak: false`).
 
+## Post-deploy live verification
+
+Deployed (deploy-gate green, HEAD `4c77536`, `SW_VERSION` confirmed
+live as `2026-07-10f`). Re-ran the forced-leak test directly against
+the actual deployed `window.stripPromptLeaks` (not a locally-extracted
+copy): forced "Rules: 80-100 words" into a real Night Owl-shaped
+generation via the live proxy — `rawTextHasLeak: true` (the real model
+genuinely produced it, embedded mid-recap), `strippedTextStillHasLeak:
+false` (the real shipped function removed exactly that sentence,
+leaving 4 legitimate sentences intact as a coherent recap).
+
 ## Repo verification
 
 `node smoke.js index.html`: 899/0 (unchanged). `node field_unit.js`:
