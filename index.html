@@ -21807,6 +21807,81 @@ function claimCardRegion(cardId, regionKey, { source, priority, render, ttlMs = 
   return false; // lost the claim -- caller can log/observe if it wants to
 }
 
+// ── updateRankedSlots (CC-CMD-2026-07-10-ranked-slot-primitive) ────────
+// STAGED -- no caller yet. Foundational, same discipline as
+// claimCardRegion above: nothing in the 75-item UI bundle list is built
+// yet. Every real gating primitive built this session (claimCardRegion,
+// field:otw_changed_significant) resolves to exactly ONE winner. Chaos
+// Ladder, Slate DJ's Second/Background slots, and Live Window Cards all
+// need a ranked top-N -- a structurally different problem, not a bigger
+// single-winner primitive.
+//
+// Membership vs. order, not hysteresis: swapping the relative order of
+// two occupants already in the list is low-stakes and happens freely,
+// every call, no threshold. A challenger bumping an existing occupant
+// OUT of the list entirely is the high-stakes event -- structurally
+// equivalent to claimCardRegion's single-winner case -- and requires
+// clearing marginThreshold, evaluated fresh each call. No cooldown, no
+// streak-counting: hysteresis solves a temporal problem this doesn't
+// have. priorityFn is caller-supplied, same separation of concerns as
+// claimCardRegion's render callback -- this primitive arbitrates given
+// priorities, it doesn't compute them (field:otw_changed_significant's
+// own tier signal is exactly the kind of caller-supplied priority input
+// this expects, via a priorityFn like _otwSigTierRank -- not a scale
+// this primitive invents itself).
+const _rankedSlotState = {};
+function updateRankedSlots(listId, candidates, { capacity, marginThreshold, priorityFn }) {
+  const state = _rankedSlotState[listId] || (_rankedSlotState[listId] = { occupants: [] });
+  const candidateMap = new Map((candidates || []).map(c => [c.id, c]));
+  const changed = new Set(); // ids whose MEMBERSHIP changed this call
+
+  // 1. Free reorder: re-score current occupants from their LATEST
+  // candidate data, no threshold. An occupant whose candidate vanished
+  // entirely from this call's list can't have its priority re-evaluated
+  // -- treated as no longer eligible and dropped (a vacancy, not a
+  // margin-gated swap, since there's nothing to compare against).
+  let occupants = state.occupants
+    .map(o => {
+      const cand = candidateMap.get(o.id);
+      return cand ? { id: o.id, priority: priorityFn(cand), source: cand.source } : null;
+    })
+    .filter(Boolean)
+    .sort((a, b) => b.priority - a.priority);
+
+  // 2. Fill empty slots from the best non-occupant candidate -- no
+  // margin required, there's no existing occupant to protect.
+  const occupantIds = new Set(occupants.map(o => o.id));
+  const nonOccupants = (candidates || [])
+    .filter(c => !occupantIds.has(c.id))
+    .map(c => ({ id: c.id, priority: priorityFn(c), source: c.source }))
+    .sort((a, b) => b.priority - a.priority);
+
+  let ni = 0;
+  while (occupants.length < capacity && ni < nonOccupants.length) {
+    const filled = nonOccupants[ni++];
+    occupants.push(filled);
+    changed.add(filled.id);
+  }
+  occupants.sort((a, b) => b.priority - a.priority);
+
+  // 3. Margin-gated swap: only once at capacity. Compare the lowest
+  // current occupant against the best remaining non-occupant challenger.
+  if (occupants.length >= capacity && ni < nonOccupants.length) {
+    const challenger = nonOccupants[ni];
+    const lowestIdx = occupants.length - 1; // sorted descending
+    const lowest = occupants[lowestIdx];
+    if (challenger.priority > lowest.priority + marginThreshold) {
+      occupants.splice(lowestIdx, 1);
+      occupants.push(challenger);
+      changed.add(challenger.id);
+      occupants.sort((a, b) => b.priority - a.priority);
+    }
+  }
+
+  state.occupants = occupants.map(o => ({ id: o.id, priority: o.priority, source: o.source }));
+  return occupants.map(o => ({ ...o, membershipChanged: changed.has(o.id) }));
+}
+
 function renderESPNScores(){
   // Prune stale entries (not updated within ESPN_SCORE_TTL) to prevent yesterday's
   // scores matching today's games by team name
@@ -23905,7 +23980,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-07-10f';
+  const SW_VERSION = '2026-07-10g';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)

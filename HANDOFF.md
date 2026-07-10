@@ -1,5 +1,44 @@
 # FIELD HANDOFF
 
+## MID-SESSION UPDATE — 2026-07-10 (ranked-slot-primitive — foundational top-N gating, STAGED, no caller yet)
+
+**SW_VERSION `2026-07-10f` → `2026-07-10g`. Smoke: 899/0 (unchanged).**
+Full detail: `docs/outbox/cc-ranked-slot-primitive-2026-07-10.md`.
+
+**Third foundational primitive this session, same discipline as
+`claimCardRegion`/`field:otw_changed_significant`.** Every real gating
+mechanism built so far resolves to exactly one winner; Chaos Ladder,
+Slate DJ's Second/Background slots, and Live Window Cards all need a
+ranked top-N — a structurally different problem, deliberately NOT
+hysteresis-based: reordering two occupants already in the list is free
+every call; only a challenger bumping an occupant out entirely needs to
+clear a real margin, evaluated fresh each time.
+
+Added `updateRankedSlots(listId, candidates, {capacity, marginThreshold,
+priorityFn})`, STAGED, no caller yet — free reorder every call, empty
+slots fill immediately with no margin, and a margin-gated swap only
+once at capacity. `priorityFn` fully caller-supplied, matching
+`claimCardRegion`'s separation of concerns — confirmed via the probe
+that `field:otw_changed_significant`'s own payload carries a named
+tier, not a raw number, exactly the kind of caller-supplied priority
+signal this expects rather than inventing its own scale.
+
+**Verified via extracted-verbatim function, 15/15 checks** across all
+5 required scenarios — free reordering (a swing kept deliberately under
+the margin to prove reordering isn't margin-gated), a clear
+above-margin swap, a below-margin non-swap, and oscillation tested
+empirically across a real 5-call sequence including a genuine
+near-miss boundary case (margin 9 vs threshold 10, correctly doesn't
+swap) before a later candidate genuinely clears it. **Caught and fixed
+a real bug in my own test's aggregate-check array indexing** before
+accepting the result — the individual per-call checks had already
+passed; investigated rather than assumed the primitive itself was
+wrong.
+
+Confidence: 100/100 (20+25+25+20+10). Committed.
+
+---
+
 ## MID-SESSION UPDATE — 2026-07-10 (prompt-leak-hard-strip — deterministic output-side guarantee, follow-up to prompt-data-separation)
 
 **SW_VERSION `2026-07-10e` → `2026-07-10f`. Smoke: 899/0 (unchanged).**
