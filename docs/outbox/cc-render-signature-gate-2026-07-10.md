@@ -217,6 +217,64 @@ functions to the extraction list and deriving the test's pick-cache key
 via the real, extracted `_pickStorageKey()` (not a hand-typed guess at
 its format). Re-ran: 13/13 passed.
 
+## TASK 3 — Post-deploy live verification
+
+Commit `a8ca7f3` confirmed deployed via deploy-gate ("Smoke Test + Live
+Verify": success). Navigated to the live production app and confirmed
+`window.SW_VERSION === '2026-07-10h'` and
+`typeof _fieldVisibleRenderSignature === 'function'`. The pipeline
+counters were already non-zero from organic page-load activity before
+any test code ran (`scheduled:8, structuralRenders:6,
+skippedStructuralRenders:1`) — the gate was already skipping real
+redundant renders in production before I ran a single test.
+
+Ran all 4 required TASK 3 scenarios directly against the live deployed
+functions in a single evaluate call (real `allData`, real DOM, real
+localStorage — not synthetic):
+
+```json
+{
+  "a_identicalPollSkips": {"scheduledIncremented":true,"structuralUnchanged":true,"skippedIncremented":true},
+  "b_structuralChangeRenders": {"structuralIncremented":true},
+  "c_pickemChangeRenders": {"game":"Detroit Tigers vs Philadelphia Phillies","structuralIncremented":true},
+  "d_scrollAndDomStability": {"scrollBefore":400,"scrollAfter":400,"scrollPreserved":true,"cardDomNodePreserved":true},
+  "finalCounts": {"scheduled":16,"structural":11,"skipped":3}
+}
+```
+
+- **(a) identical successive polls skip structural rendering**: calling
+  `scheduleRenderAll()` with no data change incremented `scheduled` and
+  `skippedStructuralRenders` but left `structuralRenders` unchanged.
+  **PASS.**
+- **(b) a genuine structural change triggers a full render**: toggling
+  `freeOnlyFilter` (a real filter-state change) then calling
+  `scheduleRenderAll()` incremented `structuralRenders`. **PASS.**
+  Restored the original filter value afterward.
+- **(c) the previously-confirmed-broken Pick'em case now triggers an
+  update**: found a real live game (Detroit Tigers vs Philadelphia
+  Phillies), injected a real pick for it via `_savePickCache`/
+  `_pickStorageKey` (the actual production functions, not stand-ins),
+  called `scheduleRenderAll()` with every other field held identical —
+  `structuralRenders` incremented. **PASS**, confirming the exact fix
+  from TASK 1/2 against real production data, not just the `vm`
+  harness. Cleaned up the injected pick afterward (removed from cache,
+  re-rendered).
+- **(d) scroll position preserved across a skipped-render score
+  update, verified observably**: scrolled to `y=400`, captured a direct
+  reference to the live `.game-card` DOM node, called
+  `scheduleRenderAll()` with no data change (skip path), then compared.
+  `scrollY` unchanged (400 → 400) AND — a stronger check than the doc
+  asked for — `document.querySelector('.game-card')` returned the
+  **exact same DOM node reference** before and after, proving the skip
+  path never touched the DOM at all (not just that it looked visually
+  the same after a replace). **PASS**, verified observably, not assumed
+  from the code shape.
+
+All 4 scenarios pass against live production with real data. Combined
+with TASK 2's 13/13 `vm`-verified failure conditions and the confirmed
+diff scope (one line removed, everything else additive), this closes
+the one item TASK 2 could not verify pre-deploy.
+
 ## VERIFICATION (repo-level)
 
 `node smoke.js index.html`: **899/0** — includes one real, investigated
@@ -245,31 +303,26 @@ syntax-checked via `node --check` (2 real blocks confirmed via
       code-path reasoning (score/class/flash/interaction/listener
       conditions all hinge on pre-existing, provably-untouched
       infrastructure) — each with a real reported outcome
-- [ ] Scroll-stability claim — **pending live verification (TASK 3),
-      next step this session, not deferred**
+- [x] Scroll-stability claim — verified live against production
+      (TASK 3d): scrollY unchanged AND the `.game-card` DOM node
+      reference itself proven identical before/after a skipped render
 
-## CONFIDENCE SCORING (pre-deploy)
+## CONFIDENCE SCORING
 
 - +15 — nationalBundle/weatherExtreme gap closed and standing
   convention comment added: **met**
 - +20 — gate ported correctly with real field names throughout: **met**
 - +20 — the confirmed Pick'em gap genuinely fixed, verified via a real
-  test matching the exact failure mode found: **met**
+  test matching the exact failure mode found — both `vm` (C5/C5b) and
+  live against a real production game (TASK 3c): **met**
 - +10 — Night Owl coverage confirmed one way or the other: **met**
 - +20 — all 13 failure conditions tested with real reported outcomes:
   **met**
-- +15 — scroll-stability verified observably: **pending — requires a
-  live deployed session; TASK 3 continues immediately after this
-  commit, in the same session, per the established pattern for every
-  prior CC-CMD this session (deploy is the only way to reach an
-  observable-DOM scroll test).**
+- +15 — scroll-stability verified observably against live production
+  (TASK 3d), including DOM-node-identity proof beyond what was asked:
+  **met**
 
-**Subtotal: 85/100 pre-deploy.** Committing now to deploy and complete
-TASK 3 live verification in this same session; the outbox will be
-amended with a "Post-deploy live verification" section and the final
-score once TASK 3 is complete, matching this session's standing
-two-commit pattern (code commit, then a small `[skip ci]` docs-only
-verification addendum).
+**Total: 100/100.**
 
 ## Commit
 
