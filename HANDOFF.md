@@ -1,5 +1,44 @@
 # FIELD HANDOFF
 
+## MID-SESSION UPDATE — 2026-07-10 (render-gate smoke coverage — the gate itself was missed by the earlier 16-item sweep)
+
+**Smoke: 915/0 → 919/0. No SW_VERSION bump** — `smoke.js`-only change,
+same established convention as both prior sweeps.
+Full detail: `docs/outbox/cc-render-gate-smoke-coverage-2026-07-10.md`.
+
+**The render-signature gate (`a8ca7f3`) landed after the 16-item sweep
+(`0e0189f`) was written**, so it had zero standing regression
+protection despite being the newest, most consequential infrastructure
+shipped that session. Added 4 real assertions mined from the gate's own
+outbox: skip-on-unchanged (the comparison's `return` genuinely precedes
+`renderAll(true)` in source order, not just present somewhere in the
+function), rebuild-on-structural-change (the full per-game list plus
+date/filter are literally embedded in the signature, not summarized
+away), the specific confirmed-fixed Pick'em case (`pick:
+_fieldGamePickSignature(...)` reads `predictedWinner`/`resolved`/
+`wasCorrect`/`probabilityLabel`), and the `nationalBundle`/
+`weatherExtreme` TASK 0 gap-closure.
+
+**Caught and fixed a real test-harness bug before shipping**: the
+first-draft extraction window for `_fieldGameRenderPayload` (1000
+chars) cut off exactly before the `weatherExtreme`/`pick` lines,
+false-failing 2 of the 4 new assertions. Investigated via direct
+inspection rather than assumed the code was wrong — confirmed the
+source was correct, widened the window to 1300.
+
+**All 4 assertions spot-verified to genuinely fail without their
+fix** (small enough set to check exhaustively, not just a sample) —
+each done by temporarily reverting the real code in the committed
+`index.html`, confirmed red, restored cleanly (`git status --short`
+clean after every restore).
+
+`get_smoke_count` (MCP) confirmed 852 pre-push (852+63 = 915, matching
+baseline); post-push value re-confirmed below.
+
+Confidence: 100/100 (40+40+20). Committed.
+
+---
+
 ## MID-SESSION UPDATE — 2026-07-10 (smoke coverage sweep — 16 real fixes, zero prior coverage, now covered)
 
 **Smoke: 899/0 → 915/0. No SW_VERSION bump** — `smoke.js`-only change,

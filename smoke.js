@@ -6635,5 +6635,61 @@ assert('A-REASONTAGSEXT-1 — getGameReasonTags\' rivalry/national_tv/weather_ex
   })(),
   'Per CC-CMD-2026-07-10-reason-tags-siloed-signals: verified live on a real game with clinch + a real rivalry pair + a real nationalBundle simultaneously that output is exactly ["clinch","rivalry","national_tv"], and that the original 4-tag sequence (CASE F regression) is unaffected by the extension. The doc\'s own listed count for this sweep (16) only resolves if this and A-REASONTAGS-1 are counted as two separate fixes -- its prose lists them as one combined item; reported honestly rather than silently reconciled.');
 
+// ── Render-signature gate coverage (CC-CMD-2026-07-10-render-gate-smoke-coverage) ──
+// The gate (commit a8ca7f3) landed after the 16-item smoke-coverage sweep
+// (0e0189f) was written, so it was never in that sweep's scope despite
+// being the newest, most consequential infrastructure shipped that
+// session. Each assertion below is mined from the gate's own outbox
+// (docs/outbox/cc-render-signature-gate-2026-07-10.md), which documents
+// 13 tested failure conditions including the confirmed-fixed Pick'em
+// case (C5/C5b) and live scroll-stability/DOM-node-identity proof.
+
+assert('A-RENDERGATE-SKIP-1 — scheduleRenderAll skips renderAll(true) when the signature is unchanged since the last structural render',
+  (() => {
+    const idx = html.indexOf('function scheduleRenderAll()');
+    if (idx === -1) return false;
+    const block = html.slice(idx, idx + 700);
+    const iCompare = block.indexOf('sig === window.FIELD_RENDER_PIPELINE.lastSignature');
+    const iReturn = block.indexOf('return;');
+    const iRender = block.indexOf('renderAll(true)');
+    return iCompare !== -1 && iReturn !== -1 && iRender !== -1 &&
+      iCompare < iReturn && iReturn < iRender;
+  })(),
+  'Per CC-CMD-2026-07-10-render-signature-gate TASK 3a: verified live against production that calling scheduleRenderAll() twice with identical data increments scheduled and skippedStructuralRenders while structuralRenders stays flat -- the skip branch must return before ever reaching renderAll(true), not just conditionally guard it.');
+
+assert('A-RENDERGATE-REBUILD-1 — the render signature embeds the full per-game list (via _fieldGameRenderPayload) plus date/filter, so any structural change produces a different string',
+  (() => {
+    const idx = html.indexOf('function _fieldVisibleRenderSignature()');
+    if (idx === -1) return false;
+    const block = html.slice(idx, idx + 1200);
+    return block.includes('games: (sec.games||[]).map(g => _fieldGameRenderPayload(g, pickCache))') &&
+      block.includes("date: (typeof viewingISO !== 'undefined' ? viewingISO : '')") &&
+      block.includes("filter: (typeof activeFilter !== 'undefined' ? activeFilter : 'all')");
+  })(),
+  'Per CC-CMD-2026-07-10-render-signature-gate TASK 3b: verified live that toggling a real filter then calling scheduleRenderAll() increments structuralRenders. The signature can only react to a new/removed game or a date/filter change because the full mapped game list and these two fields are literally embedded in the JSON.stringify payload, not summarized away.');
+
+assert('A-RENDERGATE-PICKEM-1 — a pick being made or resolved, with no other game field different, changes the render signature (the exact bug the gate was built to fix)',
+  (() => {
+    const payloadIdx = html.indexOf('function _fieldGameRenderPayload(g, pickCache)');
+    const pickFnIdx = html.indexOf('function _fieldGamePickSignature(g, pickCache)');
+    if (payloadIdx === -1 || pickFnIdx === -1) return false;
+    const payloadBlock = html.slice(payloadIdx, payloadIdx + 1300);
+    const pickBlock = html.slice(pickFnIdx, pickFnIdx + 500);
+    return payloadBlock.includes('pick: _fieldGamePickSignature(g, pickCache)') &&
+      pickBlock.includes('pick.predictedWinner') && pickBlock.includes('pick.resolved') &&
+      pickBlock.includes('pick.wasCorrect') && pickBlock.includes('pick.probabilityLabel');
+  })(),
+  'Per CC-CMD-2026-07-10-render-signature-gate TASK 2/3c: the source ChatGPT proposal\'s own _fieldGameRenderPayload read only g.* fields, never noticing Pick\'em state (which lives in localStorage, not on the game object) -- confirmed the exact failure the source\'s own rationale warned against. Fixed and verified both locally (C5/C5b vm checks) and live against a real production game (Detroit Tigers vs Philadelphia Phillies): a pick being made, then resolving, each independently changed the signature with every other field held identical.');
+
+assert('A-RENDERGATE-NATBUNDLE-1 — nationalBundle and weatherExtreme are both present in the per-game signature payload',
+  (() => {
+    const idx = html.indexOf('function _fieldGameRenderPayload(g, pickCache)');
+    if (idx === -1) return false;
+    const block = html.slice(idx, idx + 1300);
+    return block.includes("nationalBundle: g.nationalBundle || ''") &&
+      block.includes('wxCache[g._id].temp<20||wxCache[g._id].temp>100||wxCache[g._id].wind>25||wxCache[g._id].precip>0.5');
+  })(),
+  'Per CC-CMD-2026-07-10-render-signature-gate TASK 0: getGameReasonTags() (shipped the same day) has 6 signals; 2 (nationalBundle, weather-extreme) had zero coverage in the render payload, confirmed via direct grep before this gate shipped. Added using the exact same formula already live in getGameReasonTags() itself (index.html ~36824), not a new heuristic -- closing the gap before either function gains a real consumer.');
+
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);
