@@ -134,8 +134,16 @@ identical to HEAD (`git status --short index.html` clean after each).
 `node smoke.js index.html`: **915 passed, 0 failed** (899 + 16 new).
 `get_smoke_count` (MCP) confirmed **836** immediately before this push
 (836 + 63 known undercount = 899, matching the pre-sweep baseline
-exactly — the delta has not drifted). Post-push value and delta
-re-confirmed in the "Post-deploy" section below.
+exactly — the delta has not drifted).
+
+**Post-push confirmation:** commit `0e0189f` pushed successfully (no
+deploy-gate run triggered — `smoke.js` is not in the deploy-gate's
+trigger-path list per `CLAUDE.md`, matching the two prior smoke-only
+sweeps this session cites as precedent, neither of which triggered a
+deploy either). `get_smoke_count` (MCP) re-checked immediately after
+push: **852** (836 + 16 new, exactly the 16 added this pass). 852 + 63
+= 915, matching `node smoke.js`'s real count exactly — **the known
+undercount delta is confirmed unchanged, not drifted.**
 
 ## VERIFICATION (repo-level)
 

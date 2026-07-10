@@ -45,8 +45,10 @@ the *base* function's assertion correctly kept passing when only the
 independent code, not redundant overlap.
 
 `get_smoke_count` (MCP) confirmed 836 pre-push (836+63 known undercount
-= 899, delta unchanged from baseline); post-push value re-confirmed
-below.
+= 899, delta unchanged from baseline) and 852 post-push (852+63 = 915,
+matching `node smoke.js` exactly — delta confirmed unchanged, no
+deploy-gate run triggered since `smoke.js` isn't in its trigger-path
+list).
 
 Confidence: 100/100 (40+35+25). Committed.
 
