@@ -1,5 +1,43 @@
 # FIELD HANDOFF
 
+## MID-SESSION UPDATE — 2026-07-10 (reason-tags-siloed-signals — getGameReasonTags() extended with rivalry/national_tv/weather_extreme)
+
+**SW_VERSION `2026-07-10a` → `2026-07-10b`. Smoke: 899/0 (unchanged).**
+Full detail: `docs/outbox/cc-reason-tags-siloed-signals-2026-07-10.md`.
+
+**Follow-up to yesterday's `getGameReasonTags()` build (100/100).**
+Three more real, already-computed signals — `isRivalGame(g)`,
+`isNationalGame(g)`, and the weather-intelligence `extreme` flag — each
+previously siloed to exactly one other consumer, now feed the shared
+aggregator too. Placed after `user_team`/`_gameImportance`, before the
+live-tier/`close_late` block (pregame-available facts, not live-state
+dependent).
+
+**Caught a real drift in the CC-CMD doc's own citation, exactly as its
+own probe instruction warned might have happened.** The doc's template
+read `wxCache[game._id]?.extreme` — but `wxCache[gameId]` doesn't carry
+an `.extreme` property. `computeInsights()` computes `extreme` as a
+local variable and attaches it to a separate `weather` object, never
+writing it back onto the cache entry — confirmed by grepping every
+`extreme` site in the file. Fixed by computing the exact same
+established formula inline from the raw cache fields instead of reading
+a value that was never actually stored where the doc assumed.
+
+**Verified via extracted-verbatim functions**, including the real
+`RIVALRIES`/`RIVAL_MAP` construction: each signal independently
+(rivalry-only, national-only, weather-only), a no-false-positive case,
+a multi-tag combination (`_gameImportance` + real rivalry + real
+national broadcast, correct priority order), and a regression check
+confirming the original 4-tag sequence from yesterday's build is
+unaffected. **Caught and fixed a bug in my own test extraction** (grabbed
+only the `RIVAL_MAP` declaration line, missed the separate line that
+actually populates it) rather than assuming the shipped code was broken
+— 7/7 checks pass once corrected.
+
+Confidence: 100/100 (30+20+25+25). Committed.
+
+---
+
 ## MID-SESSION UPDATE — 2026-07-09/10 (game-reason-tags — getGameReasonTags() shared reason vocabulary, STAGED)
 
 **SW_VERSION `2026-07-09l` → `2026-07-10a` (new ET day, suffix resets

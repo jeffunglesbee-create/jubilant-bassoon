@@ -23898,7 +23898,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-07-10a';
+  const SW_VERSION = '2026-07-10b';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -36650,15 +36650,37 @@ function buildViewerIntelChip(g,sections,mode){
 // exists, and _isCloseAndLate() (mirrors fieldGameTier()'s own T5
 // logic).
 //
-// Fixed, simple priority order for this first version: user_team, then
-// _gameImportance, then live tier severity, then close_late. Not a
-// scored ranking -- callers needing one tag take tags[0]; callers
-// needing several take tags.slice(0, n).
+// isRivalGame/isNationalGame/weather-extreme added (CC-CMD-2026-07-10-
+// reason-tags-siloed-signals): three more real, already-computed
+// signals, each previously feeding exactly one other consumer. Placed
+// after user_team/_gameImportance and before the live-tier/close_late
+// block -- these three are pregame-available facts, not live-state-
+// dependent. Weather note: the doc's own citation (wxCache[gameId]
+// .extreme) had drifted -- computeInsights() computes `extreme` as a
+// LOCAL variable from wx.temp/wx.wind/wx.precip and attaches it to a
+// separate `weather` object, never writes it back onto the wxCache
+// entry itself, confirmed by grepping every `.extreme`/`extreme` site
+// in the file. Mirrors that exact established formula verbatim,
+// reading wxCache[game._id] directly, rather than depending on
+// computeInsights() having already run for this game (getGameReasonTags
+// has no guaranteed call-order relative to it).
+//
+// Fixed, simple priority order for this first version: user_team,
+// _gameImportance, rivalry, national_tv, weather_extreme, then live
+// tier severity, then close_late. Not a scored ranking -- callers
+// needing one tag take tags[0]; callers needing several take
+// tags.slice(0, n).
 function getGameReasonTags(game, eData) {
   const tags = [];
   if (!game) return tags;
   if (_isMyTeamGame(game)) tags.push('user_team');
   if (game._gameImportance) tags.push(game._gameImportance);
+  if (typeof isRivalGame === 'function' && typeof MY_TEAMS !== 'undefined' && MY_TEAMS.size > 0 && isRivalGame(game)) tags.push('rivalry');
+  if (typeof isNationalGame === 'function' && isNationalGame(game)) tags.push('national_tv');
+  if (typeof wxCache !== 'undefined' && game._id) {
+    const wx = wxCache[game._id];
+    if (wx && (wx.temp<20||wx.temp>100||wx.wind>25||wx.precip>0.5)) tags.push('weather_extreme');
+  }
   if (eData) {
     const sport = _gameSport(game);
     const smoothed = getSmoothedDrama(game._id) ?? dramaScoreLive(eData, sport);
