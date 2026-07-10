@@ -33,7 +33,8 @@ each done by temporarily reverting the real code in the committed
 clean after every restore).
 
 `get_smoke_count` (MCP) confirmed 852 pre-push (852+63 = 915, matching
-baseline); post-push value re-confirmed below.
+baseline) and 856 post-push (856+63 = 919, matching `node smoke.js`
+exactly — delta confirmed unchanged).
 
 Confidence: 100/100 (40+40+20). Committed.
 

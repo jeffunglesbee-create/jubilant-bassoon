@@ -90,7 +90,13 @@ full smoke run confirms all 919 pass with `index.html` unchanged.
 `node smoke.js index.html`: **919 passed, 0 failed** (915 + 4 new).
 `get_smoke_count` (MCP) confirmed **852** immediately before push
 (852 + 63 known undercount = 915, matching the pre-this-CC-CMD baseline
-exactly — no drift). Post-push value confirmed below.
+exactly — no drift).
+
+**Post-push confirmation:** commit `a251330` pushed successfully.
+`get_smoke_count` (MCP) re-checked immediately after: **856** (852 + 4
+new, exactly the 4 added this pass). 856 + 63 = 919, matching `node
+smoke.js` exactly — **the known undercount delta is confirmed
+unchanged.**
 
 ## VERIFICATION (repo-level)
 
