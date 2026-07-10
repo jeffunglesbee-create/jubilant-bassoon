@@ -1,5 +1,72 @@
 # FIELD HANDOFF
 
+## MID-SESSION UPDATE — 2026-07-10 (golf SG research + owned-metrics spec — no code shipped, research/design only)
+
+**Not a CC-CMD arc — pure chat-side research and specification, hence
+no automatic entry above. Two Drive docs pushed:**
+`FIELD -- Golf SG Non-Commercial Sourcing Research (2026-07-10)`
+`FIELD -- Owned Golf Metrics Spec (2026-07-10)`
+
+**The question:** how to raise the existing "FIELD estimated SG" proxy
+(~70% directionally correct, GIR/PPG-based, built June 17-18) beyond
+its current accuracy, given ESPN and PGA Tour alone can't solve it.
+
+**Every remaining free/non-commercial avenue checked directly, not
+assumed, closing questions the May 31/June 28 docs left open:**
+- LIV Golf's real GPS shot data (May 31 doc: "YELLOW, ToS needs
+  investigation") — checked their actual Terms of Use. Sections 5.2.5-
+  5.2.6 explicitly prohibit automated scraping. Status corrected to
+  RED. Do not revisit without a written agreement with LIV.
+- DP World Tour's public stats pages — new check, not in prior
+  research. Confirmed career/records data only, zero playing stats.
+- ESPN's field list — confirmed exhaustive three independent ways
+  against a real live event (Genesis Scottish Open): full competitor-
+  stats enumeration, a check for a hidden play-by-play/commentary
+  endpoint (golf has none — confirmed by direct probe, not assumed),
+  and opening a previously-unexamined nested/unlabeled statistics
+  block (redundant duplicate of known counts, nothing new).
+- USGS/OpenStreetMap mapping data — a real proposal this session,
+  investigated properly. Confirmed real and free (3DEP elevation,
+  1m resolution), but answers "what terrain is here," not "where did
+  the ball land" — wrong category for shot tracking, not a weaker
+  version of a solution. Has a real, narrower use: elevation-adjusted
+  hole-difficulty baselines, unrelated to ball position.
+
+**The reframe, adopted this session:** stop chasing a closer
+approximation of PGA Tour's proprietary SG (the "white whale" framing
+— chasing it was never going to reach ShotLink parity from free
+sources). Build metrics FIELD owns outright instead — exact, not
+estimated, built only from ESPN fields already confirmed to exist.
+
+**Two things already real and unbuilt, surfaced by this research, not
+new work:** the May 31 doc's exact hole-level SG:Total method
+(`fieldAvg(hole) - playerScore(hole)` — proven mathematically exact,
+zero shot data required) was never actually built; only the weaker
+GIR/PPG proxy shipped. This is the single highest-value item in the
+new metrics spec's build queue.
+
+**8 metrics specified, in build-cost order (see spec doc for full
+detail):** Bunker Recovery (zero-cost, ESPN already computes it,
+just unsurfaced), Back-Nine Surge (pure arithmetic, extends existing
+round-momentum code), Green Light Rate / Wasted Green / Trouble
+Recovery (cross-reference hole-level GIR against hole-level scoring),
+Field-Relative Performance (the exact May 31 method, re-voiced in
+FIELD's named-tier language instead of a raw decimal, to avoid
+inviting direct comparison against DataGolf's published numbers),
+Scoring Shape (falls out once the exact method exists), Penalty-Round
+Resilience (explicitly flagged lower-confidence, round-level only).
+
+**Explicitly, permanently out of scope, stated in both docs:** SG:OTT/
+APP/ATG as PGA Tour defines them (genuinely requires shot-level data,
+confirmed unavailable from any clean source). Surface-specific trouble
+breakdown (light rough vs. heavy vs. cart path vs. woods vs. water) —
+raised and checked this session; same shot-tracking problem from a
+different angle, not a different problem. Do not attempt either
+without a genuinely new candidate source, not a new approach to the
+sources already exhausted here.
+
+────────────────────────────────────────────────────────────
+
 ## MID-SESSION UPDATE — 2026-07-10 (reason-tags-siloed-signals — getGameReasonTags() extended with rivalry/national_tv/weather_extreme)
 
 **SW_VERSION `2026-07-10a` → `2026-07-10b`. Smoke: 899/0 (unchanged).**
