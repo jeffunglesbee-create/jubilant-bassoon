@@ -94,6 +94,37 @@ genuinely empty slots immediately, no margin required — correctly
 distinct from the margin-gated swap path, which only applies once
 already at capacity.
 
+## Post-deploy live verification
+
+Commit `e74e1fa` confirmed deployed via deploy-gate (fast smoke:
+success). Navigated to the live production app and confirmed
+`window.SW_VERSION === '2026-07-10g'`.
+
+Ran all 5 required scenarios directly against the actual deployed
+`updateRankedSlots` function in the live browser session (test-list-IDs
+prefixed `__live_verify_ranked_` to avoid any collision with real
+production state):
+
+```json
+{
+ "swVersion": "2026-07-10g",
+ "S1": {"order": ["B","A"], "noMembershipChange": true},
+ "S2": {"occupants": ["A","C"], "cSwappedIn": true},
+ "S3": {"occupants": ["A","B"], "bKept": true},
+ "S4": {"sequence": [["A","B"],["A","C"],["A","C"],["A","C"],["A","B"]]},
+ "S5": {"occupants": ["A","B","C"], "allThreeFilled": true}
+}
+```
+
+Every result matches the local `vm` harness exactly: S1 flips order
+(B,A) with no membership change; S2 shows C swapping in above margin;
+S3 shows B kept below margin; S4's 5-call sequence reproduces the
+identical swap-in → no-thrash → no-thrash-at-boundary → genuine-swap
+pattern ([A,B]→[A,C]→[A,C]→[A,C]→[A,B]); S5 shows all 3 candidates
+filling previously-empty slots immediately. Live production confirms
+the same behavior as the extracted-verbatim local test — no drift
+between committed source and deployed source.
+
 ## VERIFICATION (repo-level)
 
 `node smoke.js index.html`: 899/0 (unchanged). `node field_unit.js`:
