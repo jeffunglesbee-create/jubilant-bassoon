@@ -58,6 +58,35 @@ grep -n "function.*NightOwl\|nightOwlBrief\|_owlBriefKey" index.html | head -10
 # some other mechanism, or genuinely need adding to the signature.
 ```
 
+## TASK 0 — Close a second confirmed gap: getGameReasonTags compatibility
+
+`getGameReasonTags()` (shipped earlier today, currently zero consumers)
+has 6 signals. 4 are already effectively covered by this gate's own
+signature: `user_team`/`rivalry` indirectly via the `teams` array
+tracking `MY_TEAMS`, `_gameImportance` directly via the `importance`
+field, and `liveTier`/`close_late` safely by design — they're live-
+state, and `_fieldRefreshDynamicSurfaces()` already runs on every poll
+regardless of whether structural rendering is skipped.
+
+**2 signals have zero coverage, confirmed by direct grep — neither
+`nationalBundle` nor any weather field appears anywhere in
+`_fieldGameRenderPayload()`.** Add both now, before either this gate
+or any future `getGameReasonTags` consumer ships, so the gap never
+becomes a live interaction bug:
+
+```js
+nationalBundle: g.nationalBundle || '',
+weatherExtreme: (typeof wxCache !== 'undefined' && g._id && wxCache[g._id]) ?
+  !!(wxCache[g._id].temp<20||wxCache[g._id].temp>100||wxCache[g._id].wind>25||wxCache[g._id].precip>0.5) : false,
+```
+
+**Add a standing comment at the top of `_fieldGameRenderPayload()`,
+not just the fix:** any future signal added to `getGameReasonTags()`
+must also be added here, or it will silently go stale under a skipped
+structural render. This is a process rule for whoever touches either
+function next, not just today's patch — name it explicitly in the
+code, not only in this doc.
+
 ## TASK 1 — Port the render-signature gate, with the Pick'em gap fixed
 
 Adapt `_fieldVisibleRenderSignature()`, `_fieldGameRenderPayload()`,
@@ -92,6 +121,12 @@ assume it follows from the code shape.
 
 ## DONE CONDITIONS
 
+- [x] `nationalBundle` and a weather-extreme boolean added to
+      `_fieldGameRenderPayload()`, closing the confirmed gap before
+      either function gains a real consumer
+- [x] Standing convention comment added at `_fieldGameRenderPayload()`
+      documenting that future `getGameReasonTags()` signals must be
+      mirrored here
 - [x] Render-signature gate ported using this codebase's real field
       names, not the source file's
 - [x] Pick'em field added to the per-game signature — confirmed fixed,
@@ -104,10 +139,12 @@ assume it follows from the code shape.
 
 ## CONFIDENCE SCORING
 
-- +25 — gate ported correctly with real field names throughout
-- +25 — the confirmed Pick'em gap genuinely fixed, verified via a real
+- +15 — nationalBundle/weatherExtreme gap closed and standing
+  convention comment added
+- +20 — gate ported correctly with real field names throughout
+- +20 — the confirmed Pick'em gap genuinely fixed, verified via a real
   test matching the exact failure mode found
-- +15 — Night Owl coverage confirmed one way or the other, not left
+- +10 — Night Owl coverage confirmed one way or the other, not left
   ambiguous
 - +20 — all 12 failure conditions tested with real reported outcomes
 - +15 — scroll-stability verified observably
