@@ -1,5 +1,53 @@
 # FIELD HANDOFF
 
+## MID-SESSION UPDATE — 2026-07-10 (view-transitions-render — genuine structural rebuilds cross-fade instead of instant-swap, real timing measured first)
+
+**SW_VERSION `2026-07-10h` → `2026-07-10i`. Smoke: 919/0** — two real,
+investigated fixes during implementation: a comment accidentally
+contained the literal string "renderAll(true)" (false second match
+against `A-PHASE2-6`), and both `A-PHASE2-6`/`A-RENDERGATE-SKIP-1`'s
+character windows needed widening (700→900) since `scheduleRenderAll`'s
+body legitimately grew.
+Full detail: `docs/outbox/cc-view-transitions-render-2026-07-10.md`.
+
+**The render-signature gate decides WHEN a rebuild is necessary; this
+decides HOW it presents.** `scheduleRenderAll()`'s genuine-rebuild
+branch now wraps `renderAll(true)` in `document.startViewTransition()`
+for a browser-native cross-fade instead of an instant DOM swap —
+feature-detected and reduced-motion-gated (the codebase's existing
+CSS-only reduced-motion rule doesn't reach `::view-transition-*`
+top-layer pseudo-elements, confirmed via direct inspection, so this
+needed its own JS-side check).
+
+**Real timing measured live against production before deciding this
+was safe**: 23 games / 5 sections (not the doc's stale "30 cards"
+citation), `renderAll(true)` averaged 69ms, max 80ms across 5 runs —
+well under the ~100ms perceptible-lag threshold.
+
+**Two real drifts in the CC-CMD doc's own premise, found and
+corrected rather than blindly followed:** (1) the doc's TASK 1 snippet
+referenced a `reason` parameter and `lastReason` tracking that were
+deliberately removed in the earlier render-signature-gate CC-CMD to
+preserve a smoke invariant — adapted to the real current zero-arg
+signature. (2) TASK 2 assumed direct user-interaction paths (filter
+clicks, date nav, TZ change) call `renderAll(true)` — they don't; they
+call `renderAll()` with no argument. Answered the real, adapted
+question instead: left them unwrapped, grounded in the codebase's own
+pre-existing comment stating these are meant to respond instantly, and
+in the honest limitation that "which feels correct" for a perceptual
+question can't be established via automated headless-browser testing.
+
+**Fallback path verified byte-identical both by construction and by a
+real 12/12 `vm` test** across all 4 feature-detection/reduced-motion
+combinations — every combination produces identical
+`renderAll(true)`/`renderESPNScores()` call counts.
+
+**Pre-deploy confidence: 85/100** (missing only the +15 reduced-motion-
+verified-live item, which requires a deployed session to actually set
+the preference — continuing immediately in the same session).
+
+---
+
 ## MID-SESSION UPDATE — 2026-07-10 (render-gate smoke coverage — the gate itself was missed by the earlier 16-item sweep)
 
 **Smoke: 915/0 → 919/0. No SW_VERSION bump** — `smoke.js`-only change,

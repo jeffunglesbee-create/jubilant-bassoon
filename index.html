@@ -10658,6 +10658,30 @@ let _renderAllPending = null;
 // made or resolved and would silently skip the structural render that
 // updates the pick widget -- exactly the failure the source document's
 // own rationale warned against.
+//
+// View Transitions (CC-CMD-2026-07-10-view-transitions-render): the gate
+// above decides WHEN a rebuild is necessary; scheduleRenderAll's genuine-
+// rebuild branch decides HOW it presents -- wrapped in
+// document.startViewTransition() for a browser-native cross-fade instead
+// of an instant DOM swap. Real timing measured live against production
+// (23 games / 5 sections, avg 69ms, max 80ms across 5 runs) before
+// wrapping -- well under the ~100ms perceptible-lag threshold, so the
+// callback resolving synchronously does not leave a visible frozen frame.
+// Feature-detected (unsupported engines fall through to the exact same
+// doRender() call, byte-identical to pre-this-CC-CMD behavior) and
+// reduced-motion-gated via matchMedia: the existing CSS-only reduced-
+// motion rule (index.html ~1140, `*,*::before,*::after{animation-
+// duration:0.01ms!important...}`) does NOT reach `::view-transition-*`
+// top-layer pseudo-elements, so this needs its own explicit JS check
+// rather than relying on that established pattern. Direct user-
+// interaction paths (filter clicks, date nav, TZ change) call renderAll()
+// with no argument (the skipUnchanged param is falsy there), not the
+// cache-preserving true form -- a different call shape than this doc
+// anticipated -- and are deliberately left unwrapped; see the
+// outbox for the reasoning (the codebase's own preceding comment already
+// states these are meant to respond instantly, and "genuinely better,
+// not merely different" isn't something a headless-browser probe can
+// establish for a perceptual/aesthetic question).
 window.FIELD_RENDER_PIPELINE = window.FIELD_RENDER_PIPELINE || {
   version: 'render-sig-gate-v1',
   scheduled: 0,
@@ -10784,8 +10808,16 @@ function scheduleRenderAll(){
       return;
     }
     window.FIELD_RENDER_PIPELINE.structuralRenders++;
-    renderAll(true);
-    renderESPNScores();
+    // View Transitions (CC-CMD-2026-07-10-view-transitions-render, see
+    // comment above this function for the full rationale/measurement).
+    const doRender = () => { renderAll(true); renderESPNScores(); };
+    const wantsMotion = !(typeof window.matchMedia === 'function' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+    if (typeof document.startViewTransition === 'function' && wantsMotion) {
+      document.startViewTransition(doRender);
+    } else {
+      doRender();
+    }
   }, 150);
 }
 function reportFieldRenderPipeline(){
@@ -24136,7 +24168,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-07-10h';
+  const SW_VERSION = '2026-07-10i';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)

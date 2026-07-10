@@ -6117,14 +6117,15 @@ assert('A-PHASE2-5 — renderAll clears the cache on every direct (non-scheduled
   'function renderAll(skipUnchanged){ if (!skipUnchanged) _cardStringCache.clear(); ... } must be the exact shape — every existing direct call site (boot, toggleMyTeam, TZ change, filter clicks, date nav) calls renderAll() with no argument and must keep getting a full cache-clearing rebuild with zero code changes at those call sites');
 
 assert('A-PHASE2-6 — scheduleRenderAll is the ONLY call site passing true (cache-preserving) — every other call site must default to full-clear',
-  // Window widened 300->700 (CC-CMD-2026-07-10-render-signature-gate):
-  // scheduleRenderAll()'s body legitimately grew to include the render-
-  // signature comparison (skip structural render when the visible
-  // schedule signature is unchanged); renderAll(true) is still reached
-  // only through scheduleRenderAll's own body, still exactly once in the
-  // whole file — the widened window accommodates the real body length,
-  // it does not weaken the single-call-site invariant below.
-  !!html.match(/scheduleRenderAll\(\)\{[\s\S]{0,700}renderAll\(true\)/) &&
+  // Window widened 300->700 (CC-CMD-2026-07-10-render-signature-gate),
+  // then 700->900 (CC-CMD-2026-07-10-view-transitions-render): each
+  // widening reflects scheduleRenderAll()'s body legitimately growing
+  // (render-signature comparison, then View Transitions wrapping);
+  // renderAll(true) is still reached only through scheduleRenderAll's
+  // own body, still exactly once in the whole file — the widened window
+  // accommodates the real body length, it does not weaken the single-
+  // call-site invariant below.
+  !!html.match(/scheduleRenderAll\(\)\{[\s\S]{0,900}renderAll\(true\)/) &&
   (html.match(/renderAll\(true\)/g) || []).length === 1,
   'scheduleRenderAll() must call renderAll(true), and renderAll(true) must appear exactly once in the whole file — if any other call site ever passes true, cache-invalidation safety silently breaks for that path');
 
@@ -6648,7 +6649,11 @@ assert('A-RENDERGATE-SKIP-1 — scheduleRenderAll skips renderAll(true) when the
   (() => {
     const idx = html.indexOf('function scheduleRenderAll()');
     if (idx === -1) return false;
-    const block = html.slice(idx, idx + 700);
+    // Window widened 700->900 (CC-CMD-2026-07-10-view-transitions-render):
+    // the genuine-rebuild branch grew to include View Transitions
+    // wrapping; renderAll(true) is still reached only through this
+    // function's own body.
+    const block = html.slice(idx, idx + 900);
     const iCompare = block.indexOf('sig === window.FIELD_RENDER_PIPELINE.lastSignature');
     const iReturn = block.indexOf('return;');
     const iRender = block.indexOf('renderAll(true)');
