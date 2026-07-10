@@ -23898,7 +23898,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-07-09k';
+  const SW_VERSION = '2026-07-09l';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -36299,6 +36299,24 @@ function _otwGetLiveTier(eData, sport, smoothed) {
   return null;
 }
 
+// Local tier-ordinal helper for field:otw_changed_significant's tier-
+// margin gate ONLY (CC-CMD-2026-07-09-otw-significant-event) -- never
+// displayed, never exposed in any payload, comparison only. NOT
+// fieldTierRank() below: that function's case list uses CLOSE_LATE/LIVE,
+// not CLOSE_FINISH/LIVE_GAME -- the actual names _otwGetLiveTier above
+// returns -- confirmed by reading both functions, not assumed. Reusing
+// fieldTierRank() directly here would silently rank both to its default
+// case (0), collapsing two of the four real tiers to no distinction.
+function _otwSigTierRank(tier) {
+  switch (tier) {
+    case 'CRUNCH':       return 4;
+    case 'EXTRA_TIME':   return 3;
+    case 'CLOSE_FINISH': return 2;
+    case 'LIVE_GAME':    return 1;
+    default:              return 0;
+  }
+}
+
 // Named label for the OTW header chip — factual condition string, never a score.
 // Callers: renderOneToWatch FIRE state header chip.
 function _otwTierLabel(tier) {
@@ -37145,6 +37163,24 @@ let _otwDismissedId=null;
 let _otwCountdownTimer=null;
 // PM-27: OTW changeover tracking (field:otw_changed emitter)
 let _prevOTWId=null;
+// field:otw_changed_significant gating (CC-CMD-2026-07-09-otw-
+// significant-event) -- additive to field:otw_changed above, whose
+// condition/payload/timing is completely unchanged. Three independent
+// protections for this second, ceremonial event only: streak (a
+// candidate must win 2 consecutive renderOneToWatch() evaluations),
+// tier-margin (named tier must beat the last SIGNIFICANT tier, not just
+// be a different game at the same tier), and cooldown (minimum real-time
+// gap between significant fires).
+let _otwSigCandidateId = null;
+let _otwSigCandidateStreak = 0;
+let _otwLastSigId = null;
+let _otwLastSigTier = null;
+let _otwLastSigFireAt = 0;
+// Spans several renderOneToWatch() poll cycles (~15-30s cadence per the
+// live-score poll this fires from) so cooldown is enforced beyond the
+// streak requirement alone, without suppressing a genuinely new
+// significant swap for unreasonably long.
+const OTW_SIG_COOLDOWN_MS = 90000;
 // PM-27: WS freshness tracking — Map<canonical_key, timestamp_ms> (field:ws_fresh emitter)
 const _lastWSMessageTime = new Map();
 
@@ -37343,6 +37379,34 @@ function renderOneToWatch(){
       }
       _prevOTWId = _newOTWId;
     } catch(_) {}
+
+    // ── field:otw_changed_significant (CC-CMD-2026-07-09-otw-significant-
+    // event) -- a second, independent check alongside field:otw_changed
+    // above, not a modification of it. Streak tracker updates on every
+    // pass, regardless of whether the other two gates hold.
+    try {
+      if (g._id === _otwSigCandidateId) {
+        _otwSigCandidateStreak++;
+      } else {
+        _otwSigCandidateId = g._id;
+        _otwSigCandidateStreak = 1;
+      }
+      const _streakOk = _otwSigCandidateStreak >= 2;
+      const _tierImproved = _otwLastSigId === null ||
+        _otwSigTierRank(_liveTierKey) > _otwSigTierRank(_otwLastSigTier);
+      const _cooldownCleared = (Date.now() - _otwLastSigFireAt) >= OTW_SIG_COOLDOWN_MS;
+      if (_streakOk && _tierImproved && _cooldownCleared && typeof fieldEvents !== 'undefined') {
+        fieldEvents.dispatchEvent(new CustomEvent('field:otw_changed_significant', { detail: {
+          type: 'field:otw_changed_significant', target: 'otw', source: 'render_otw',
+          reason: 'significant_momentum_swap', at: Date.now(),
+          payload: { fromId: _otwLastSigId, toId: g._id, toHome: g.home||'', toAway: g.away||'', tier: _liveTierKey }
+        }}));
+        _otwLastSigId = g._id;
+        _otwLastSigTier = _liveTierKey;
+        _otwLastSigFireAt = Date.now();
+      }
+    } catch(_) {}
+
     wire(g._id,g); return;
   }
 

@@ -1,5 +1,47 @@
 # FIELD HANDOFF
 
+## MID-SESSION UPDATE — 2026-07-09 (otw-significant-event — hysteresis-gated field:otw_changed_significant for ceremonial UI)
+
+**SW_VERSION `2026-07-09k` → `2026-07-09l`. Smoke: 899/0 (unchanged).**
+Full detail: `docs/outbox/cc-otw-significant-event-2026-07-09.md`.
+
+**Additive event, not a replacement.** `field:otw_changed` fires on a
+bare identity check — correct for its existing "JUST CHANGED ↑" chip,
+wrong for anything meant to be rare and ceremonial (OTW realistically
+oscillates between two closely-matched live games). Added
+`field:otw_changed_significant` with three independent protections raw
+identity-checking lacks: a 2-consecutive-evaluation streak requirement,
+tier-margin significance (named tier only, must beat the last
+*significant* tier), and a 90s cooldown.
+
+**Found a real drift the probe was meant to catch.** Building the
+tier-ordinal helper turned up `fieldTierRank()` — an existing "single
+source of truth" tier-ranking function the CC-CMD doc never mentioned.
+Its case list uses `CLOSE_LATE`/`LIVE`; the actual tier source for this
+event, `_otwGetLiveTier()`, returns `CLOSE_FINISH`/`LIVE_GAME`. Reusing
+`fieldTierRank()` directly would have silently collapsed 2 of the 4 real
+tiers to its default rank (0). Built a correctly-scoped local helper
+(`_otwSigTierRank`) instead.
+
+**`field:otw_changed`'s existing behavior confirmed unchanged via `git
+diff`** — zero lines modified, only pure additions before/after it, the
+strongest possible evidence.
+
+**Verified via extracted-verbatim gate logic** (state vars, tier-rank
+helper, and the gate+dispatch block, wrapped as a callable per-pass
+function, real `fieldEvents.dispatchEvent` listener): pure oscillation
+between two ids → 0 significant fires; a **stronger** oscillation where
+each side genuinely builds a 2-streak → still at most 1 fire total
+(tier-margin/cooldown doing real suppression work, not just the streak
+counter never reaching 2); a genuine held tier improvement → fires once
+with correct envelope/payload; cooldown correctly blocks even a further
+genuine tier improvement while active — directly matching the CC-CMD's
+own named risk scenario. 11/11 checks passed.
+
+Confidence: 100/100 (25+40+35). Committed.
+
+---
+
 ## MID-SESSION UPDATE — 2026-07-09 (card-region-claim-primitive — foundational infra, STAGED, no caller yet)
 
 **SW_VERSION `2026-07-09j` → `2026-07-09k`. Smoke: 899/0 (unchanged).**
