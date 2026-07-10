@@ -1,5 +1,54 @@
 # FIELD HANDOFF
 
+## MID-SESSION UPDATE — 2026-07-10 (score-snapshot-monotonicity-guard — write-side self-healing, follow-up to lead-differential-upper-bound)
+
+**SW_VERSION `2026-07-10c` → `2026-07-10d`. Smoke: 899/0 (unchanged).**
+Full detail: `docs/outbox/cc-score-snapshot-monotonicity-guard-2026-07-10.md`.
+
+**Chat-directed follow-up, not a CC-CMD dispatch.** After the
+lead-differential ceiling fix, discussed durability: that fix bounds
+`buildScoreNarrativeContext()`'s *output*, but doesn't stop a bad
+snapshot from entering the log in the first place. Traced
+`recordScoreSnapshot()`'s only caller back to its source — already
+routes through the hardened `findEspnEntry()` matcher, no separate
+undiscovered bug — but most sports never get the real-ID fast path, so
+fuzzy matching runs every poll, all game. Proposed a write-side
+monotonicity check (real scores never decrease) as a complementary,
+mathematically-checkable guard.
+
+**Caught a real design flaw in the first version before shipping —
+empirically, not by assumption.** A naive "reject the write if either
+score decreased" rule, tested directly against the *exact* originally
+reported bug shape, backfires: a same-direction bad spike (`1-0 → 4-0`)
+passes on arrival since it's still monotonic, then the real settling
+correction (`4-0 → 2-0`) looks like a decrease and gets rejected —
+permanently entrenching the bad value instead of fixing it. Ran this
+adversarial case against the actual extracted function to confirm the
+flaw before touching the design further, then rebuilt it as a
+self-healing repair: pop trailing log entries a new snapshot
+contradicts, rather than reject the new snapshot. Re-ran the same
+adversarial case against the corrected code to confirm the fix.
+
+**Verified via extracted-verbatim functions, 15/15 checks** — the exact
+bug shape (self-heals), an immediate-decrease case, the
+total-increases-but-one-team-drops case a total-only check would miss,
+regression on the existing dedup behavior, `FIELD_DEBUG` gating, and an
+end-to-end check confirming the underlying log itself is now clean, not
+just the derived narrative.
+
+**Stated the honest boundary rather than overselling it:** if a bad
+spike is the literal last-ever-recorded snapshot with no later
+correction, neither this repair nor the read-side ceiling can recover
+the true score — both treat the log's last entry as authoritative.
+Confirmed this explicitly with its own test case rather than glossing
+over it. Flagged (not built) a possible follow-up: whether a separate,
+already-hardened final-score source could backfill a correction after
+a game leaves live polling.
+
+Committed.
+
+---
+
 ## MID-SESSION UPDATE — 2026-07-10 (lead-differential-upper-bound — impossible leads no longer reported as fact)
 
 **SW_VERSION `2026-07-10b` → `2026-07-10c`. Smoke: 899/0 (unchanged).**

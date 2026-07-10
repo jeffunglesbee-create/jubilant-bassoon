@@ -23898,7 +23898,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-07-10c';
+  const SW_VERSION = '2026-07-10d';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -37223,6 +37223,27 @@ function recordScoreSnapshot(gameId, homeScore, awayScore) {
   try {
     const key = SCORE_SNAP_KEY + gameId;
     const log = JSON.parse(localStorage.getItem(key) || '[]');
+    // Monotonicity repair: real scores never decrease. If the new
+    // snapshot is lower than the trailing end of the log in either
+    // team's score, that trailing entry — not this new one — is the
+    // anomaly (findEspnEntry() re-resolves independently every poll,
+    // so a transient game-identity mismatch is exactly as likely on an
+    // earlier poll as this one; the newer read isn't inherently less
+    // trustworthy). Drop trailing entries this snapshot contradicts
+    // rather than rejecting the snapshot outright — a hard reject was
+    // tried first and found to backfire: a same-direction bad spike
+    // (e.g. a 1-run game briefly logging an impossible 4-run lead, the
+    // exact shape of the originally reported bug) passes the check
+    // unmodified when it's written, then the REAL settling value that
+    // arrives afterward looks like a decrease relative to that bad
+    // spike and would itself get permanently rejected — entrenching
+    // the bad value instead of correcting it. Popping instead of
+    // rejecting self-heals: the bad spike gets dropped the moment a
+    // later, real snapshot doesn't fit above it.
+    while (log.length && (homeScore < log[log.length - 1].h || awayScore < log[log.length - 1].a)) {
+      const dropped = log.pop();
+      if (FIELD_DEBUG) console.warn('[recordScoreSnapshot] dropped non-monotonic prior snapshot (likely game-identity mismatch):', gameId, 'dropped', dropped.h, dropped.a, 'in favor of', homeScore, awayScore);
+    }
     const last = log[log.length - 1];
     const total = homeScore + awayScore;
     // Only append when total score changes (a scoring event occurred)
