@@ -107,6 +107,31 @@ line that actually populates it — `RIVAL_MAP.size` was silently `0`,
 causing CASE A/E to fail. Investigated rather than accepted; fixed the
 extraction to capture both lines. Not a bug in the shipped code.
 
+## POST-DEPLOY LIVE VERIFICATION
+
+Deployed (deploy-gate green, HEAD `d2c6bb3`, `SW_VERSION` confirmed
+live as `2026-07-10b`, `getGameReasonTags`/`isRivalGame`/
+`isNationalGame`/`wxCache` all confirmed present). Ran the actual
+deployed function against real production data, non-destructively
+(`MY_TEAMS`/`wxCache` mutated in place — `wxCache` is a `const`
+binding, reassignment threw on the first attempt, corrected to mutate
+its contents and delete the test key afterward instead):
+
+- Baseline: every real game in today's live slate returns an array, no
+  throws, no false positives.
+- Rivalry: a real Yankees-followed context with a Red Sox/Rays game
+  (real rivalry pair) → `["rivalry"]`.
+- National: a game with a real `nationalBundle` value (`NBA_ABC`) →
+  `["national_tv"]`.
+- Weather: a real `wxCache` entry (`wind: 40`, crossing the real
+  threshold) → `["weather_extreme"]`.
+- Combo: `_gameImportance: 'clinch'` + the real rivalry + the real
+  national bundle simultaneously → `["clinch","rivalry","national_tv"]`
+  — exactly matching the local `vm` harness's CASE E.
+
+`wxCacheCleanedUp: true`, `myTeamsRestored: true` — no residue left on
+production.
+
 ## VERIFICATION (repo-level)
 
 `node smoke.js index.html`: 899/0 (unchanged). `node field_unit.js`:
