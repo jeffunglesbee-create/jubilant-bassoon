@@ -23898,7 +23898,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-07-09l';
+  const SW_VERSION = '2026-07-10a';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -36410,6 +36410,36 @@ function fieldGameTier(gameId) {
   return 'NONE';
 }
 
+// _isCloseAndLate: mirrors fieldGameTier()'s own established T5
+// CLOSE_LATE computation above verbatim (CC-CMD-2026-07-09-game-reason-
+// tags) -- not a new heuristic. A standalone helper rather than calling
+// fieldGameTier() directly, because fieldGameTier() collapses to ONE
+// tier by priority -- a game that's both ELIMINATION and genuinely
+// close-and-late right now would report only 'ELIMINATION', hiding the
+// close_late signal an independent-tag aggregator needs to surface
+// alongside other simultaneously-true tags. fieldGameTier() itself is
+// left untouched -- this doesn't refactor its 10+ existing call sites.
+function _isCloseAndLate(eData, sport) {
+  if (!eData || eData.state !== 'in') return false;
+  const periodNum = parseInt(eData.period) || 0;
+  const clockMin = parseInt(eData.clock) || 0;
+  const margin = Math.abs((eData.homeScore||0) - (eData.awayScore||0));
+  const sp = (sport||'').toLowerCase();
+  const _isSoccer = sp.includes('soccer') || sp.includes('league') || sp.includes('mls') ||
+                    sp.includes('liga')   || sp.includes('ligue')   || sp.includes('premier') ||
+                    /world.cup|fifa/i.test(sp);
+  const inLate = _isSoccer
+                   ? clockMin >= 70
+               : sp.includes('baseball') || sp.includes('mlb')
+                   ? periodNum >= 7
+               : sp.includes('nhl') || sp.includes('hockey')
+                   ? periodNum >= 3
+               : sp.includes('nfl') || sp.includes('football') || sp.includes('cfl')
+                   ? periodNum >= 4
+               : periodNum >= 3;
+  return inLate && margin <= 8;
+}
+
 // Numeric rank for sort comparisons ONLY. Higher = higher priority.
 // Never thresholded against display — use the named tier directly for that.
 function fieldTierRank(tier) {
@@ -36539,6 +36569,19 @@ function setViewerIntelMode(mode){
   });
 }
 
+// _isMyTeamGame: the single existing isMyTeam computation (CC-CMD-2026-
+// 07-09-game-reason-tags TASK 2) -- extracted from buildViewerIntelChip
+// below so getGameReasonTags() can share the identical logic instead of
+// re-inlining the same MY_TEAMS check a second time. Note, confirmed by
+// reading buildViewerIntelChip directly rather than assumed: isMyTeam
+// was already computed exactly ONCE there (one const, referenced in 3
+// mode branches) -- not triplicated as originally described; this
+// extraction is still the correct, real, in-scope cleanup the doc's
+// intent calls for, just not "3 duplicates to 1."
+function _isMyTeamGame(g) {
+  return typeof MY_TEAMS !== 'undefined' && (MY_TEAMS.has(g.home) || MY_TEAMS.has(g.away));
+}
+
 function buildViewerIntelChip(g,sections,mode){
   if(!g) return '';
   mode=mode||getViewerIntelMode();
@@ -36561,7 +36604,7 @@ function buildViewerIntelChip(g,sections,mode){
   const isOnlyGame=sportGames===1;
 
   // P: Proximity — user's saved team playing (client-side localStorage only)
-  const isMyTeam=typeof MY_TEAMS!=='undefined'&&(MY_TEAMS.has(g.home)||MY_TEAMS.has(g.away));
+  const isMyTeam=_isMyTeamGame(g);
 
   // A: Anti-hype gate — J1 flagged this game as low-stakes
   const isAntiHype=!!(g._antiHype);
@@ -36590,6 +36633,40 @@ function buildViewerIntelChip(g,sections,mode){
     if(isOnlyGame)   return `<span class="viewer-intel-chip vic-only"     data-gameid="${g._id||''}" title="Only ${sport} game tonight" onclick="event.stopPropagation();openSetup?.()">ONLY GAME</span>`;
   }
   return ''; // No signal fires — no chip (silence is information)
+}
+
+// getGameReasonTags (CC-CMD-2026-07-09-game-reason-tags) -- STAGED, no
+// caller yet. Foundational, same discipline as tonight's other two
+// primitives (claimCardRegion, field:otw_changed_significant): wiring
+// this into Coach's Clipboard, Scout Mode, Pressure Stack, Pick'em
+// Handshake, or any other bundle item is explicitly out of scope --
+// none of them are built yet.
+//
+// Aggregates only signals already verified real by this CC-CMD's own
+// probe -- no new heuristics: _isMyTeamGame (above), g._gameImportance
+// (real value pushed verbatim -- elimination/series_deciding/clinch/
+// playoff_impl/playoffs, whichever is present -- not translated into an
+// invented taxonomy), _otwGetLiveTier()'s named tier when live eData
+// exists, and _isCloseAndLate() (mirrors fieldGameTier()'s own T5
+// logic).
+//
+// Fixed, simple priority order for this first version: user_team, then
+// _gameImportance, then live tier severity, then close_late. Not a
+// scored ranking -- callers needing one tag take tags[0]; callers
+// needing several take tags.slice(0, n).
+function getGameReasonTags(game, eData) {
+  const tags = [];
+  if (!game) return tags;
+  if (_isMyTeamGame(game)) tags.push('user_team');
+  if (game._gameImportance) tags.push(game._gameImportance);
+  if (eData) {
+    const sport = _gameSport(game);
+    const smoothed = getSmoothedDrama(game._id) ?? dramaScoreLive(eData, sport);
+    const liveTier = _otwGetLiveTier(eData, sport, smoothed);
+    if (liveTier) tags.push(liveTier);
+    if (_isCloseAndLate(eData, sport)) tags.push('close_late');
+  }
+  return tags;
 }
 
 function injectDramaBadges(){

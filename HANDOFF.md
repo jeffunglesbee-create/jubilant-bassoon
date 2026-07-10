@@ -1,5 +1,53 @@
 # FIELD HANDOFF
 
+## MID-SESSION UPDATE — 2026-07-09/10 (game-reason-tags — getGameReasonTags() shared reason vocabulary, STAGED)
+
+**SW_VERSION `2026-07-09l` → `2026-07-10a` (new ET day, suffix resets
+to 'a' per Rule 23 — real wall-clock crossed midnight ET mid-session).
+Smoke: 899/0 (one genuine A515 date-drift failure caught and fixed,
+unrelated to this CC-CMD's own logic).**
+Full detail: `docs/outbox/cc-game-reason-tags-2026-07-09.md`.
+
+**Third foundational primitive tonight, same discipline as
+`claimCardRegion` and `field:otw_changed_significant`.** No shared
+function aggregated multiple simultaneous "why this game matters"
+signals — blocking two separate bundle categories on the identical
+missing piece. Added `getGameReasonTags(game, eData)`, STAGED, no
+caller yet: aggregates `_isMyTeamGame` (followed team), `_gameImportance`
+(real value pushed verbatim — 5 real values confirmed in current use,
+not the doc's assumed 3-4), `_otwGetLiveTier()`'s named tier, and a new
+`_isCloseAndLate()` helper — fixed priority order, documented.
+
+**Caught the doc's own premise being wrong again, reported honestly.**
+The CC-CMD said `isMyTeam` was "computed identically three times" —
+reading `buildViewerIntelChip()` directly showed it's computed **once**
+and referenced three times across its mode branches, already correct
+code. Still delivered the real, in-scope cleanup its intent called for:
+extracted `_isMyTeamGame()` so the new aggregator shares the identical
+logic rather than re-inlining it.
+
+**`close_late` deliberately doesn't call `fieldGameTier()` directly** —
+that function collapses to one tier by priority, so a game that's both
+`ELIMINATION` and genuinely close-and-late would report only
+`'ELIMINATION'`, hiding the independent `close_late` signal this
+aggregator needs. Mirrors `fieldGameTier()`'s own T5 `CLOSE_LATE` logic
+verbatim in a small standalone helper instead — `fieldGameTier()` itself
+untouched, its 10+ call sites unaffected.
+
+**Verified via extracted-verbatim functions, 9/9 checks**: single-tag
+(`user_team` only), multi-tag (a followed team in a real elimination
+Game 7, live and close — `user_team` first, `elimination` second,
+`close_late` also fires alongside the live tier), and zero-tag. **Caught
+and fixed my own flawed first-draft test fixture** for the zero-tag
+case — investigated an unexpected `LIVE_GAME` result rather than
+accepting it, traced it to `dramaScoreLive()`'s real composite formula
+genuinely crossing the real threshold for that margin, and corrected to
+a genuine blowout that legitimately produces zero tags.
+
+Confidence: 100/100 (30+20+25+25). Committed.
+
+---
+
 ## MID-SESSION UPDATE — 2026-07-09 (otw-significant-event — hysteresis-gated field:otw_changed_significant for ceremonial UI)
 
 **SW_VERSION `2026-07-09k` → `2026-07-09l`. Smoke: 899/0 (unchanged).**
