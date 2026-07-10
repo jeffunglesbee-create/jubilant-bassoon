@@ -23898,7 +23898,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-07-10b';
+  const SW_VERSION = '2026-07-10c';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -40303,6 +40303,21 @@ function buildScoreNarrativeContext(gameId, homeLabel, awayLabel, sport) {
     // The winner must have led by at least their final margin at game end.
     if (finalWinnerIsHome) maxHomeLead = Math.max(maxHomeLead, finalMargin);
     else maxAwayLead = Math.max(maxAwayLead, finalMargin);
+
+    // Ceiling: a team's lead at any point cannot exceed their own final
+    // score — points/runs/goals are never subtracted, so at any snapshot
+    // a team's own running score is <= their final score, and the
+    // opponent's running score is always >= 0. A bad snapshot (transient
+    // polling glitch or a mismatched score entry from a different game)
+    // must not report a mathematically impossible lead as fact.
+    if (FIELD_DEBUG && maxHomeLead > finalH) {
+      console.warn('[buildScoreNarrativeContext] impossible maxHomeLead clamped:', gameId, maxHomeLead, '-> ceiling', finalH);
+    }
+    if (FIELD_DEBUG && maxAwayLead > finalA) {
+      console.warn('[buildScoreNarrativeContext] impossible maxAwayLead clamped:', gameId, maxAwayLead, '-> ceiling', finalA);
+    }
+    maxHomeLead = Math.min(maxHomeLead, finalH);
+    maxAwayLead = Math.min(maxAwayLead, finalA);
 
     // Biggest lead for the winner
     const winnerMaxLead = finalWinnerIsHome ? maxHomeLead : maxAwayLead;

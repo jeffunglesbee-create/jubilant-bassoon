@@ -1,5 +1,44 @@
 # FIELD HANDOFF
 
+## MID-SESSION UPDATE — 2026-07-10 (lead-differential-upper-bound — impossible leads no longer reported as fact)
+
+**SW_VERSION `2026-07-10b` → `2026-07-10c`. Smoke: 899/0 (unchanged).**
+Full detail: `docs/outbox/cc-lead-differential-upper-bound-2026-07-10.md`.
+
+**Real, observed production bug fixed.** A Night Owl/Morning Report
+brief for a final 2-0 Marlins-over-Mariners game stated a 4-run lead
+occurred — mathematically impossible (scores never decrease). Root
+cause: `buildScoreNarrativeContext()` had a lower bound (final margin
+as a floor, added earlier to fix a *different* bug — artificially low
+values from 0-0-outage snapshots) but no upper bound at all. One bad
+snapshot in the log passed through with zero validity check.
+
+**Fresh sweep confirmed exactly one real implementation** — the doc's
+own speculation that Morning Report might be a separate, duplicated
+code path did not hold; multiple callers, one shared function. The
+single fix therefore covers every real call site.
+
+**Fix, mathematically provable, not just plausible:** a team's lead at
+any snapshot is bounded above by their own final score (monotonic
+scoring + opponent's running score always ≥0), so `Math.min(maxHomeLead,
+finalH)`/`Math.min(maxAwayLead, finalA)` is the tightest bound provable
+from final scores alone. Added `FIELD_DEBUG`-gated logging when a raw
+snapshot value genuinely exceeded the ceiling — a real signal that bad
+data entered the log, worth surfacing even after the display bug itself
+is fixed.
+
+**Verified via the extracted-verbatim committed function**: the exact
+reported scenario (4-run mid-game snapshot, 2-0 final) now correctly
+reports 2-run, not 4-run; a genuine large lead (7-run mid-game, 8-1
+final) is confirmed NOT suppressed; a boundary case (lead exactly equal
+to the final score) is preserved without a false-positive debug
+warning; `FIELD_DEBUG=false` correctly silences the logging while the
+clamp itself still applies. 8/8 checks passed.
+
+Confidence: 100/100 (30+20+30+20). Committed.
+
+---
+
 ## MID-SESSION UPDATE — 2026-07-10 (golf SG research + owned-metrics spec — no code shipped, research/design only)
 
 **Not a CC-CMD arc — pure chat-side research and specification, hence
