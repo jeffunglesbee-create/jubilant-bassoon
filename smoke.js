@@ -6473,5 +6473,167 @@ assert('A-JQSCALE-1 — getQualityTarget uses the current 300-point scale, stale
   })(),
   'Per CC-CMD-2026-07-09-enqueue-context-gap TASK 5: the actual scorer (scoreProse) moved to a 10-dimension 0-300 scale on June 8, but this function\'s own comparison/display constants (avgScore<130, /180, Target≥145) were never updated -- three weeks of the coaching-hint prompt text citing a ceiling that no longer existed. Target 240 is anchored to the same canonical bar scoreThreshold now uses everywhere else in this codebase, not an independently re-derived number.');
 
+// ── Smoke coverage sweep (CC-CMD-2026-07-10-smoke-coverage-sweep) ──────────
+// 16 real, verified, behavior-changing fixes shipped tonight with zero
+// smoke coverage. Each assertion below is mined from that fix's own
+// outbox live-verification proof, checking the specific code shape that
+// makes the proven behavior true -- not a generic "function exists" check.
+
+assert('A-LEADCEIL-1 — buildScoreNarrativeContext clamps maxHomeLead/maxAwayLead to the mathematically possible ceiling',
+  (() => {
+    const idx = html.indexOf('function buildScoreNarrativeContext');
+    if (idx === -1) return false;
+    const block = html.slice(idx, idx + 6000);
+    return block.includes('maxHomeLead = Math.min(maxHomeLead, finalH)') &&
+      block.includes('maxAwayLead = Math.min(maxAwayLead, finalA)');
+  })(),
+  'Per CC-CMD-2026-07-10-lead-differential-upper-bound: a real production brief reported an impossible 4-run lead on a 2-0 final. Verified live (2-0 final, injected 4-run mid-game snapshot) that the correct output is "led by as many as 2-runs," not 4 -- the ceiling is what makes that true. A real 7-run lead on an 8-1 final was confirmed NOT suppressed.');
+
+assert('A-SNAPREPAIR-1 — recordScoreSnapshot self-heals a non-monotonic prior snapshot instead of rejecting the new one',
+  (() => {
+    const idx = html.indexOf('function recordScoreSnapshot(gameId, homeScore, awayScore)');
+    if (idx === -1) return false;
+    const block = html.slice(idx, idx + 3200);
+    return block.includes('while (log.length && (homeScore < log[log.length - 1].h || awayScore < log[log.length - 1].a))') &&
+      block.includes('log.pop()');
+  })(),
+  'Per the score-snapshot-monotonicity-guard follow-up: a first-draft "reject on decrease" design was tested against the exact reported bug shape ([0-0, 1-0, 4-0 bad spike, 2-0 real final]) and found to backfire -- it would permanently reject the correct 2-0 final. The shipped design pops the trailing bad entry instead, verified to self-heal that exact sequence to [0-0, 1-0, 2-0].');
+
+assert('A-PROMPTSEP-1 — Night Owl queue prompt (the exact reported-bug site) structurally separates GAME DATA from Rules',
+  (() => {
+    const idx = html.indexOf('const _owlQ_prompt = [');
+    if (idx === -1) return false;
+    const block = html.slice(idx, idx + 1200);
+    return block.includes("'GAME DATA:'") && block.includes("'Rules: 80-100 words");
+  })(),
+  'Per CC-CMD-2026-07-10-prompt-data-separation: a real production Night Owl brief leaked "fell within the 80-100 words range of expected intensity" into user-facing output because task/data/rules were flat-concatenated. This is the exact site the reported bug came from -- verified live across 5 sparse-data generations with zero format-leak matches after restructuring.');
+
+assert('A-PROMPTLEAK-1 — stripPromptLeaks\' "Rules:" signature is narrowed to require a trailing number, not a bare match',
+  (() => {
+    const idx = html.indexOf('const _PROMPT_LEAK_SIGNATURES');
+    if (idx === -1) return false;
+    const block = html.slice(idx, idx + 400);
+    return block.includes('/\\bRules:\\s*\\d+(?:-\\d+)?\\b/i') &&
+      html.includes('function stripPromptLeaks(');
+  })(),
+  'Per the prompt-leak-hard-strip follow-up, built to the user\'s explicit instruction that the "Rules:" signature be narrowed to require a trailing number range so it never false-positives on a bare "Rules:" mention. Verified against 3 real, deliberately-forced-leak generations against the live proxy -- the leak sentence was removed, surrounding legitimate content survived intact, confirmed both locally and against the live deployed function.');
+
+assert('A-RANKEDSLOT-1 — updateRankedSlots only swaps a challenger in once it clears marginThreshold, not on any priority edge',
+  (() => {
+    const idx = html.indexOf('function updateRankedSlots(listId, candidates');
+    if (idx === -1) return false;
+    const block = html.slice(idx, idx + 2200);
+    return block.includes('challenger.priority > lowest.priority + marginThreshold');
+  })(),
+  'Per CC-CMD-2026-07-10-ranked-slot-primitive: verified via a real 5-call sequence that a challenger at margin 9 (just under a 10-point threshold) does NOT unseat the current occupant, while one at margin 11 does -- both locally (vm harness, 15/15) and live against the deployed function.');
+
+assert('A-CARDCLAIM-1 — claimCardRegion favors the incumbent on an exact-priority tie and releases the region once ttlMs elapses',
+  (() => {
+    const idx = html.indexOf('function claimCardRegion(cardId, regionKey');
+    if (idx === -1) return false;
+    const block = html.slice(idx, idx + 1200);
+    return block.includes('priority > existing.priority') &&
+      block.includes('now - existing.at > existing.ttlMs');
+  })(),
+  'Per CC-CMD-2026-07-09-card-region-claim-primitive: verified live (real 250ms TTL, real setTimeout, actual render() call counts) that an equal-priority challenger never displaces the incumbent (strict >, not >=) and that TTL expiry alone releases the region regardless of the challenger\'s priority.');
+
+assert('A-OTWSIG-1 — field:otw_changed_significant gates on streak, tier improvement, AND cooldown together, not any one alone',
+  (() => {
+    const idx = html.indexOf('const _streakOk = _otwSigCandidateStreak >= 2;');
+    if (idx === -1) return false;
+    const block = html.slice(idx, idx + 500);
+    return block.includes('_tierImproved') && block.includes('_cooldownCleared') &&
+      block.includes('if (_streakOk && _tierImproved && _cooldownCleared');
+  })(),
+  'Per CC-CMD-2026-07-09-otw-significant-event: verified live that an AABBAABBAABB oscillation pattern (each side genuinely building a 2-streak repeatedly) fires at most once, not on every streak -- proving tier-margin and cooldown do real suppression work beyond the streak counter alone. A genuine held tier improvement during an active cooldown was also confirmed suppressed.');
+
+assert('A-ALLFINALENV-1 — both field:all_final dispatch sites use the PM-27 envelope (target: \'slate\'), not the old flat shape',
+  (() => {
+    const hits = html.match(/type: 'field:all_final', target: 'slate', source: '(sse|poll)'/g) || [];
+    return hits.length === 2;
+  })(),
+  'Per CC-CMD-2026-07-09-all-final-envelope-standardize: both dispatch sites (SSE handler, checkForNewFinals) were on two different non-standard shapes, matching neither each other nor field:crunch/field:ws_fresh\'s established PM-27 envelope. Verified live via extracted-verbatim vm harness that both sites now emit the identical envelope shape and both subscribers read the new payload.count path correctly.');
+
+assert('A-REALID-1 — findEspnEntry tries real external-ID equality first when game._gameId is set, before falling back to fuzzy matching',
+  (() => {
+    const idx = html.indexOf('function findEspnEntry(game');
+    if (idx === -1) return false;
+    const block = html.slice(idx, idx + 1200);
+    return block.includes('v._gameId && v._gameId === game._gameId') &&
+      html.includes('function _resolveRealGameId(game)');
+  })(),
+  'Per CC-CMD-2026-07-09-realid-fix-and-generalize: scoreSMTCard\'s live-state suppression compared FIELD\'s internal game._id against api-sports.io\'s external fg.id -- two namespaces that could never be equal, so suppression plausibly never worked. Verified live on a real Pittsburgh Pirates @ Atlanta Braves game that the OLD comparison would NOT have matched ("g14" !== "espn:401816084") while the NEW fast path correctly resolves and matches.');
+
+assert('A-REALIDCOLLISION-1 — _resolveRealGameId requires exactly one fuzzy candidate before caching a real ID, declining on ambiguity',
+  (() => {
+    const idx = html.indexOf('function _resolveRealGameId(game)');
+    if (idx === -1) return false;
+    const block = html.slice(idx, idx + 900);
+    return block.includes('if (candidates.length !== 1) return null');
+  })(),
+  'Per CC-CMD-2026-07-09-realid-bootstrap-collision-check: an unguarded first-match would cache a wrong ID permanently on a genuine same-day suffix collision -- empirically reproduced with real franchise names (Carolina/Florida Panthers, NY/SF Giants) before this guard existed. Verified the guard leaves game._gameId unset (not a guess) under 2-candidate ambiguity, and self-heals once the ambiguity clears.');
+
+assert('A-WCADVPROB-1 — fetchWCLiveGames resolves the real FIELD game by matching BOTH home and away, then re-verifies via findEspnEntry before mutating the cache',
+  (() => {
+    const idx = html.indexOf('function fetchWCLiveGames');
+    if (idx === -1) return false;
+    const block = html.slice(idx, idx + 4000);
+    return block.includes('return homeOk && awayOk') &&
+      block.includes('findEspnEntry(_resolvedGame, { requireSameDate: true })');
+  })(),
+  'Per CC-CMD-2026-07-09-wc-advprob-and-keys-sweep: the most severe finding of that session -- a wrong match here doesn\'t cause one bad display, it plants a persistent false value via unguarded cache mutation. Verified live under an adversarially-ordered team-name collision that the OLD home-only scan picked the wrong entry while the NEW two-stage (home+away, then findEspnEntry-verified) match correctly resolved the real game.');
+
+assert('A-SAVEESPNGUARD-1 — saveEspnFinal rejects an eData that does not match the game, except the CFL same-object case',
+  (() => {
+    const idx = html.indexOf('function saveEspnFinal(game, eData)');
+    if (idx === -1) return false;
+    const block = html.slice(idx, idx + 1500);
+    return block.includes('if (eData !== game && !_eDataMatchesGame(game, eData))') &&
+      block.includes('return false');
+  })(),
+  'Per CC-CMD-2026-07-09-saveespnfinal-internal-guard: saveEspnFinal previously trusted whatever eData it was handed unconditionally, safe only by caller convention. Verified live (real localStorage reads) that a mismatched-teams eData writes nothing and triggers zero pick resolutions, while the CFL same-object case (eData===game) bypasses the guard entirely by construction and still writes correctly.');
+
+assert('A-ESPNDISPLAYSWEEP-1 — updatePinWidget and renderHalftimeSwitch resolve live data via findEspnEntry, not an unguarded inline scan',
+  (() => {
+    const pinIdx = html.indexOf('function updatePinWidget');
+    const hsIdx = html.indexOf('function renderHalftimeSwitch');
+    if (pinIdx === -1 || hsIdx === -1) return false;
+    const pinBlock = html.slice(pinIdx, pinIdx + 1500);
+    const hsBlock = html.slice(hsIdx, hsIdx + 1500);
+    return pinBlock.includes('findEspnEntry(game)') && hsBlock.includes('findEspnEntry(game)');
+  })(),
+  'Per CC-CMD-2026-07-09-espnscores-display-consumer-sweep: a fresh sweep found 9 raw Object.values(espnScores).find() hits, not the doc\'s 4 named functions -- 7 migrated. Verified live with real DOM reads: a fake-team game degrades to "--" (not a coincidentally-matched wrong score), and a real live game (Braves @ Pirates) displays correctly through the migrated path.');
+
+assert('A-ANTIFAB-1 — FIELD_PROSE_STYLE (shared by every brief type) bans inventing facts not present in the supplied context',
+  html.includes('DO NOT FABRICATE NUMBERS OR EVENTS: only reference scores'),
+  'Per CC-CMD-2026-07-09-anti-fabrication-shared-guard: a scouts-pick test brief invented a specific pitcher matchup that was nowhere in its prompt. night-owl had an equivalent guard locally but it was never propagated to the shared constant every brief type includes. Note: this fix has real, correct code (confirmed via direct read) but, unlike the other 15 items in this sweep, no outbox file documenting its TASK 2 live-verification exists -- flagged honestly, not silently treated as equally proven.');
+
+assert('A-REASONTAGS-1 — getGameReasonTags pushes user_team and _gameImportance before any live-state signal, in fixed priority order',
+  (() => {
+    const idx = html.indexOf('function getGameReasonTags(game, eData)');
+    if (idx === -1) return false;
+    const block = html.slice(idx, idx + 1200);
+    const iUser = block.indexOf("tags.push('user_team')");
+    const iImp = block.indexOf('tags.push(game._gameImportance)');
+    const iLive = block.indexOf('if (liveTier) tags.push(liveTier)');
+    return iUser !== -1 && iImp !== -1 && iLive !== -1 && iUser < iImp && iImp < iLive;
+  })(),
+  'Per CC-CMD-2026-07-09-game-reason-tags: verified live on a real Celtics/Knicks elimination game with real live close-late data that output is exactly ["user_team","elimination","CLOSE_FINISH","close_late"] -- user_team and _gameImportance ranked ahead of any live-state signal, not an unordered set.');
+
+assert('A-REASONTAGSEXT-1 — getGameReasonTags\' rivalry/national_tv/weather_extreme signals are placed after _gameImportance and before the live-tier block',
+  (() => {
+    const idx = html.indexOf('function getGameReasonTags(game, eData)');
+    if (idx === -1) return false;
+    const block = html.slice(idx, idx + 1200);
+    const iImp = block.indexOf('tags.push(game._gameImportance)');
+    const iRiv = block.indexOf("tags.push('rivalry')");
+    const iNat = block.indexOf("tags.push('national_tv')");
+    const iWx = block.indexOf("tags.push('weather_extreme')");
+    const iLive = block.indexOf('if (liveTier) tags.push(liveTier)');
+    return [iImp, iRiv, iNat, iWx, iLive].every(i => i !== -1) &&
+      iImp < iRiv && iRiv < iNat && iNat < iWx && iWx < iLive;
+  })(),
+  'Per CC-CMD-2026-07-10-reason-tags-siloed-signals: verified live on a real game with clinch + a real rivalry pair + a real nationalBundle simultaneously that output is exactly ["clinch","rivalry","national_tv"], and that the original 4-tag sequence (CASE F regression) is unaffected by the extension. The doc\'s own listed count for this sweep (16) only resolves if this and A-REASONTAGS-1 are counted as two separate fixes -- its prose lists them as one combined item; reported honestly rather than silently reconciled.');
+
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);

@@ -1,5 +1,57 @@
 # FIELD HANDOFF
 
+## MID-SESSION UPDATE — 2026-07-10 (smoke coverage sweep — 16 real fixes, zero prior coverage, now covered)
+
+**Smoke: 899/0 → 915/0. No SW_VERSION bump** — `smoke.js`-only change,
+matching the established convention for smoke-only sweeps (confirmed
+against the two prior sweeps this session cited as precedent — neither
+touched `index.html`/`sw.js` either).
+Full detail: `docs/outbox/cc-smoke-coverage-sweep-2026-07-10.md`.
+
+**16 real, verified, behavior-changing fixes shipped tonight (and one
+from the prior night) with zero smoke coverage — mined into 16 real,
+specific structural assertions from each fix's own outbox proof**, not
+generic "function exists" checks: lead-differential ceiling, write-side
+monotonicity repair, prompt/data separation (the exact reported-bug
+site), the narrowed prompt-leak regex, ranked-slot margin gating,
+card-claim tie-breaking + TTL, otw-significant's 3-way gate, the PM-27
+`field:all_final` envelope, the real-ID fast path, the bootstrap-
+collision guard, the WC advancementProb two-stage match, the
+`saveEspnFinal` internal guard, the espnScores display-consumer
+migration, the shared anti-fabrication guard, and `getGameReasonTags`'s
+base ordering plus its 3-signal extension (counted as two separate
+fixes here — the doc's own prose lists them as one combined clause,
+flagged honestly rather than silently reconciled to match "16").
+
+**Real gap found and reported, not silently smoothed over:** the
+anti-fabrication guard has no outbox file anywhere — traced its origin
+to an automated commit at this session's shallow-clone history boundary,
+beyond available history. The shipped code is confirmed correct via
+direct read (matches its own CC-CMD's TASK 1 spec exactly), but no
+record of TASK 2's live-verification exists. Its assertion is mined
+from the code + spec instead of an outbox proof, and this gap is stated
+explicitly both in the outbox and in the assertion's own detail message
+— not treated as equally documented as the other 15.
+
+**5 spot-checks, spread across 5 genuinely different categories**
+(derived-value math, write-side log integrity, leak-regex precision,
+collision-guard logic, field-ordering) — each done by temporarily
+reverting the real fix in the committed `index.html`, confirming the
+new assertion actually goes red, then restoring via `git checkout`
+(verified byte-identical after each). All 5 failed as expected without
+their fix. One spot-check (the reason-tags extension) also confirmed
+the *base* function's assertion correctly kept passing when only the
+*extension* was reverted — proving the two assertions test genuinely
+independent code, not redundant overlap.
+
+`get_smoke_count` (MCP) confirmed 836 pre-push (836+63 known undercount
+= 899, delta unchanged from baseline); post-push value re-confirmed
+below.
+
+Confidence: 100/100 (40+35+25). Committed.
+
+---
+
 ## MID-SESSION UPDATE — 2026-07-10 (render-signature-gate — structural-render skip for unchanged schedule state, ported from a ChatGPT proposal with a confirmed Pick'em gap fixed)
 
 **SW_VERSION `2026-07-10g` → `2026-07-10h`. Smoke: 899/0 (one real fix:
