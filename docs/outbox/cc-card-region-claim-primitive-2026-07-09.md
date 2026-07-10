@@ -106,10 +106,26 @@ syntax-checked via `node --check`.
 
 ## POST-DEPLOY LIVE VERIFICATION
 
-See HANDOFF.md / this commit's follow-up — the same 17-check collision
-harness re-run against the actual deployed production function
-(`window.claimCardRegion`), not just local `vm` reasoning, per TASK 3's
-explicit instruction.
+Deployed (deploy-gate green, HEAD `d528724`, `SW_VERSION` confirmed
+live as `2026-07-09k`). Re-ran the collision test directly against the
+actual deployed `window.claimCardRegion`/`window._cardClaims` in a real
+browser session on production — not local `vm` reasoning — per TASK 3's
+explicit instruction. This run used a **real** 250ms `ttlMs` and a
+**real** `setTimeout` (no mocked clock, unlike the local `vm` pass),
+against a synthetic test `cardId` cleaned up immediately after:
+
+- Ordering A (low fires first, then high) and Ordering B (high fires
+  first, then low) both correctly resolved to the higher-priority claim,
+  confirmed via actual `render()` call counts, not just return values.
+- Equal-priority tie correctly favored the incumbent.
+- TTL expiry: after genuinely waiting past the real 250ms TTL, the
+  expired high-priority claim correctly lost to a fresh lower-priority
+  claim, `render()` was actually called, and the registry reflected the
+  new claim.
+
+**13/13 checks passed against the live, deployed function.** Test
+registry entries deleted before the check resolved — no residue left on
+production.
 
 ## DONE CONDITIONS
 
