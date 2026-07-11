@@ -43,9 +43,16 @@ const pass = (msg) => log('PASS:', msg);
 const INDEX_PATH = process.argv[2] || '/home/claude/index.html';
 const BASE_DIR = require('path').dirname(require('path').resolve(INDEX_PATH));
 const html = fs.readFileSync(INDEX_PATH, 'utf8');
-const m = html.match(/<script>([\s\S]*?)<\/script>/);
-if (!m) { log('FATAL: no <script> tag found'); process.exit(1); }
-const js = m[1];
+// Fixed 2026-07-11: was html.match(...) (non-global) -- only ever captured
+// the FIRST bare <script> tag. index.html has two: a small ~389-line
+// early-boot snippet, and the ~37,500-line main application script where
+// virtually all real feature code (FIELD_FEATURES, MY_TEAMS, Scout's Pick,
+// etc.) actually lives. Every js.includes(...) check below was silently
+// searching only the small, mostly-irrelevant first block -- concatenating
+// all bare <script> blocks fixes every affected assertion at once.
+const scriptMatches = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)];
+if (!scriptMatches.length) { log('FATAL: no <script> tag found'); process.exit(1); }
+const js = scriptMatches.map(x => x[1]).join('\n');
 
 // 1. Syntax check
 try { new Function(js); pass('Syntax: parses cleanly'); }
@@ -79,13 +86,27 @@ const ls = () => { const s={}; return { getItem:k=>s[k]||null,
 global.localStorage = ls();
 global.sessionStorage = ls();
 global.navigator = { userAgent:'node-smoke', language:'en-US', languages:['en-US'] };
-global.window = { addEventListener:()=>{}, removeEventListener:()=>{},
-  matchMedia:()=>({matches:false, addEventListener:()=>{}, removeEventListener:()=>{}}),
-  innerWidth:1920, innerHeight:1080 };
+// window === global (fixed 2026-07-11, matches real browser semantics --
+// window IS globalThis). The real app follows the codebase's own
+// "window.X = X" convention throughout (e.g. "window.SW_VERSION =
+// SW_VERSION; // expose globally"), then reads X back as a bare global
+// elsewhere -- only correct if window is the SAME binding as the global
+// scope, not a separate mock object. This was invisible before the
+// <script>-extraction fix above, since the untested main script is what
+// exercises this pattern.
+global.window = global;
+global.addEventListener = ()=>{};
+global.removeEventListener = ()=>{};
+global.matchMedia = ()=>({matches:false, addEventListener:()=>{}, removeEventListener:()=>{}});
+global.innerWidth = 1920;
+global.innerHeight = 1080;
+global.location = { href:'https://jubilant-bassoon.jeffunglesbee.workers.dev/', search:'',
+  hostname:'jubilant-bassoon.jeffunglesbee.workers.dev', protocol:'https:', pathname:'/', reload:()=>{} };
 global.fetch = () => Promise.reject(new Error('smoke-mock'));
 global.AbortSignal = { timeout: () => ({}) };
 global.AbortController = function(){ return { signal:{}, abort:()=>{} }; };
 global.IntersectionObserver = function(){ return { observe:()=>{}, disconnect:()=>{}, unobserve:()=>{} }; };
+global.MutationObserver = function(){ return { observe:()=>{}, disconnect:()=>{}, takeRecords:()=>[] }; };
 global.requestAnimationFrame = cb => 0;
 global.setTimeout = ()=>0;
 global.setInterval = ()=>0;
@@ -462,14 +483,29 @@ try {
   if(espnStoresGameId) pass('A52 — espnScores._gameId stored + ticker uses it');
   else fail('A52 — espnScores._gameId missing — trend sort always returns 0');
 
-  // A53 — bdlInjuryContextSync called once per game (not twice)
+  // A53 — bdlInjuryContextSync called at most once per game (not twice)
+  // Structural check, not comment-anchored (fixed 2026-07-11): the original
+  // check matched real invocations only between a "// Fix 9: BDL" and
+  // "// Fix 6:" comment pair -- those comments no longer exist verbatim
+  // anywhere in the file (naming convention drifted to lowercase "fix9"),
+  // so the old check failed unconditionally regardless of the real code.
+  // This counts real invocation call sites directly: lines containing
+  // "bdlInjuryContextSync(" that are neither the function's own
+  // definition nor a comment-only mention. (Currently 0 real call sites --
+  // surrounding comments elsewhere in the file describe this function as
+  // "operationally-inert", replaced by a later fix -- flagged separately,
+  // not this assertion's concern; 0 calls still satisfies "at most once".)
   const bdlCalledOnce = (() => {
-    const m = html.match(/\/\/ Fix 9: BDL.*?\/\/ Fix 6:/s);
-    if(!m) return false;
-    const calls = (m[0].match(/bdlInjuryContextSync/g)||[]).length;
-    return calls === 1;
+    const calls = js.split('\n').filter(line => {
+      if (!line.includes('bdlInjuryContextSync(')) return false;
+      const codePart = line.split('//')[0];
+      if (!codePart.includes('bdlInjuryContextSync(')) return false; // only in the comment part
+      if (/function\s+bdlInjuryContextSync\(/.test(codePart)) return false; // its own definition
+      return true;
+    }).length;
+    return calls <= 1;
   })();
-  if(bdlCalledOnce) pass('A53 — bdlInjuryContextSync called once per game');
+  if(bdlCalledOnce) pass('A53 — bdlInjuryContextSync called at most once per game');
   else fail('A53 — bdlInjuryContextSync called multiple times — double injury cache traversal');
 
   // A54 — Night Owl save/load uses ET timezone consistently

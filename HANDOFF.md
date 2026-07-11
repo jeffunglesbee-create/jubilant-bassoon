@@ -1,5 +1,56 @@
 # FIELD HANDOFF
 
+## MID-SESSION UPDATE — 2026-07-11 (field_smoke.js's own test-infrastructure bugs fixed — 21 "failures" were mostly a broken checker, not the app)
+
+**No SW_VERSION bump — field_smoke.js is not a deploy-gate trigger path.**
+User asked me to actually verify what the 21 field_smoke.js "pre-existing,
+unrelated" failures I'd been citing all session actually were, rather than
+continuing to wave them away — investigated properly this time.
+
+**Root cause of 17 of 21: a non-global `<script>` extraction regex.**
+`html.match(/<script>([\s\S]*?)<\/script>/)` only ever captured the FIRST
+of two bare `<script>` tags in index.html — a small ~389-line early-boot
+snippet — never the ~37,500-line main application script where
+FIELD_FEATURES, MY_TEAMS, Scout's Pick, and everything else actually
+lives. Every `js.includes(...)` check was silently searching the wrong,
+almost-empty block. Fixed by concatenating all bare `<script>` blocks.
+
+**This surfaced a second, real gap**: `js` isn't just grepped, it's
+`new Function()`-executed to render "today" for the per-day invariant
+checks — meaning that render step had ALSO never run the real app before.
+Fixing the extraction made it try, which surfaced 3 more missing mock
+globals one at a time (`location`, then a `window`/`global` aliasing
+mismatch — the app follows a `window.X = X` convention that only works
+if `window === globalThis`, matching real browsers — then
+`MutationObserver`). All fixed; bootstrap now genuinely passes and
+`renderMedia()`/`renderStreaming()` run for the first time too.
+
+**A53 fixed separately**: its check was anchored to a `// Fix 9: BDL ...
+// Fix 6:` comment pair that no longer exists anywhere (naming drifted to
+lowercase `fix9`), so it failed unconditionally regardless of the real
+code. Replaced with a durable, structural real-call-site count. Also
+found (not fixed, flagged): `bdlInjuryContextSync` has zero real call
+sites left — comments elsewhere describe it as replaced/inert.
+
+**Result: 21 failures → 3.** The 2 remaining are genuinely real, confirmed
+via direct full-file search (zero matches anywhere): `beatTheBook()` (2
+assertions) and the Odds relay adapter (`ODDS_RELAY_BASE`/
+`fetchOddsForSport`/etc., Assertion 30) simply don't exist in the
+codebase — never built, or removed without cleaning up their assertions.
+
+**Separate, larger finding — reported, not yet fixed:** roughly 120+
+lines / ~15-20 assertions (Assertion 41 onward: Story Engine, Weather
+Intelligence, UFL 2026, etc.) sit textually AFTER `process.exit()` calls
+inside the file's async IIFE. Since that IIFE's body runs synchronously
+to completion (no real `await` pause ever triggers, given `fetch` is
+mocked to reject and `renderBetting` is undefined), `process.exit()`
+fires before the top-level code after the IIFE's closing `})();` ever
+runs. **These assertions have never executed, in any invocation of this
+file, ever** — independent of and predating the extraction-bug fix.
+Flagged for the user to decide on as a separate task.
+
+`node smoke.js`: 919/0, unaffected. `node field_unit.js`: 66/0, unaffected.
+
 ## MID-SESSION UPDATE — 2026-07-11 (Pick-resolution retry decoupled from saveEspnFinal's dedup guard — a transient failure was structurally permanent, now it isn't)
 
 **SW_VERSION 2026-07-11i → 2026-07-11j.** Full detail:
