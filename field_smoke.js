@@ -331,17 +331,24 @@ try {
       pass('Assertion 29 — Drama Arc storage + consumer API present (EMBER/J5/DRIFT/BNI/Social ready)');
   }
 
-  // Assertion 30 — Odds API relay adapter
+  // Assertion 30 — Odds API relay adapter REMOVED (ToS/patent compliance)
+  // Inverted 2026-07-11: this used to check PRESENCE. Betting-content
+  // removal confirmed deliberate, approved, permanent (matches smoke.js
+  // A243 "Betting engine REMOVED", 2026-05-29) -- but A243 only covers
+  // ODDS_RELAY_BASE, not fetchOddsForSport/getGameOdds/ODDS_SPORT_MAP.
+  // Removing this assertion outright (rather than inverting) would leave
+  // those 3 with no absence-guard anywhere in the repo -- inverted here,
+  // not removed, so a silent regression (one of these creeping back in)
+  // still gets caught.
   {
-    const hasBase     = js.includes('ODDS_RELAY_BASE');
-    const hasFetch    = js.includes('fetchOddsForSport');
-    const hasGet      = js.includes('getGameOdds');
-    const hasMap      = js.includes('ODDS_SPORT_MAP');
-    const inRegistry  = html.includes("'odds-relay-adapter'");
-    if (!hasBase || !hasFetch || !hasGet || !hasMap || !inRegistry)
-      fail('Assertion 30 — Odds relay adapter incomplete (ODDS_RELAY_BASE / fetchOddsForSport / getGameOdds / ODDS_SPORT_MAP / FIELD_FEATURES entry)');
+    const hasBase = js.includes('ODDS_RELAY_BASE');
+    const hasFetch = js.includes('fetchOddsForSport');
+    const hasGet = js.includes('getGameOdds');
+    const hasMap = js.includes('ODDS_SPORT_MAP');
+    if (hasBase || hasFetch || hasGet || hasMap)
+      fail('Assertion 30 — Odds relay adapter present but must stay removed (ODDS_RELAY_BASE / fetchOddsForSport / getGameOdds / ODDS_SPORT_MAP found — betting content removal, ToS/patent compliance, must not regress)');
     else
-      pass('Assertion 30 — Odds relay adapter present (ODDS_RELAY_BASE + fetchOddsForSport + getGameOdds + FIELD_FEATURES)');
+      pass('Assertion 30 — Odds relay adapter correctly absent (ToS/patent compliance removal holds)');
   }
 
   // Assertion 31 — Drama score smoothing
@@ -582,17 +589,22 @@ try {
   if(hasStayUp) pass('A66 — buildStayUpSignal() defined');
   else fail('A66 — buildStayUpSignal() missing');
 
-  const hasBeatTheBook = html.includes('function beatTheBook(');
-  if(hasBeatTheBook) pass('A67 — beatTheBook() defined');
-  else fail('A67 — beatTheBook() missing');
+  // A67 removed 2026-07-11: was a presence check for beatTheBook(), which
+  // was deliberately, permanently removed (ToS/patent compliance,
+  // 2026-05-29 -- matches smoke.js A243 "Betting engine REMOVED").
+  // Fully redundant with A243's existing !html.includes('function
+  // beatTheBook') absence-check -- no unique tracking value in a
+  // duplicate presence-check for something confirmed gone for good.
 
   const hasStayUpDOM = html.includes('id="stay-up"');
   if(hasStayUpDOM) pass('A68 — Stay Up Signal DOM element present');
   else fail('A68 — Stay Up #stay-up DOM element missing');
 
-  const hasBeatBookWiring = html.includes('beatTheBook(g)');
-  if(hasBeatBookWiring) pass('A69 — Beat the Book wired into card template');
-  else fail('A69 — beatTheBook not called in card template');
+  // A69 removed 2026-07-11: was a presence check for beatTheBook(g)'s
+  // card-template wiring. Once the function itself cannot exist (A243
+  // guarantees that), a call site to it structurally cannot exist
+  // either -- checking for absent wiring to an absent function is
+  // tautological, no unique tracking value.
 
   const hasPrivacyBanner = html.includes('id="privacy-banner"');
   if(hasPrivacyBanner) pass('A70 — Privacy banner DOM present');

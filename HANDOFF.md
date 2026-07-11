@@ -1,5 +1,39 @@
 # FIELD HANDOFF
 
+## MID-SESSION UPDATE — 2026-07-11 (field_smoke.js: 3 stale betting-content presence-checks resolved — asymmetric treatment, not a blanket fix)
+
+**No SW_VERSION bump — field_smoke.js is not a deploy-gate trigger
+path.** A CC-CMD landed mid-session (from a separate, parallel
+investigation) confirming `beatTheBook`/the Odds API integration was a
+*deliberate, approved* removal (ToS/patent compliance, 2026-05-29 —
+matches `smoke.js` A243), not something never built — revising the
+"never built, or removed without cleanup" hedge from the entry above.
+
+**Checked the CC-CMD's own assumption before acting on it**: it claimed
+Assertion 30 (Odds relay adapter) "has no known equivalent absence-check
+anywhere yet." Grepped `smoke.js`'s A243: it already covers
+`ODDS_RELAY_BASE` (1 of Assertion 30's 4 conditions) — partially
+contradicting the claim. The other 3 (`fetchOddsForSport`, `getGameOdds`,
+`ODDS_SPORT_MAP`) are genuinely uncovered anywhere else. This asymmetry
+drove **different treatment per assertion, not a blanket choice**:
+
+- **A67/A69** (`beatTheBook` presence + wiring) → **removed**, fully
+  redundant with `smoke.js` A243's existing absence-check.
+- **Assertion 30** → **inverted to assert absence** (not removed) —
+  the only one of the 3 with a genuine, previously-uncovered tracking
+  gap; removing it outright would leave 3 conditions with zero guard
+  against silent regression.
+
+Considered and explicitly declined (flagged for a future, properly-scoped
+task instead): extending `smoke.js` A243 to cover those 3 conditions and
+removing Assertion 30 entirely — architecturally cleaner, but out of
+this CC-CMD's stated `field_smoke.js`-only scope.
+
+`Failures: 6 → 3` (the remaining 3 are the separate, unrelated
+weather/UFL/journalism findings from the prior entry — correctly
+untouched, out of this CC-CMD's scope). Verified stable across multiple
+runs. `node smoke.js`: 919/0. `node field_unit.js`: 66/0.
+
 ## MID-SESSION UPDATE — 2026-07-11 (field_smoke.js: ~20 assertions that had NEVER executed, ever, now do — surfaced 3 more real, previously-invisible gaps)
 
 **No SW_VERSION bump — field_smoke.js is not a deploy-gate trigger path.**
