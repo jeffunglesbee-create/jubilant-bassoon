@@ -18,13 +18,32 @@ jobs:
       - name: Download Savant CSVs and process into JSON
         run: python3 scripts/mlb-weekly-update.py
 
+      # CC-CMD-2026-07-10-mlb-umpire-abs-sync: regenerates UMPIRE_ABS_RATINGS
+      # in index.html from the JSON the step above just wrote. This is the
+      # STATIC FALLBACK baked into the page, not the primary live path --
+      # mlbStatsInit() (index.html) already patches UMPIRE_ABS_RATINGS at
+      # runtime on every page load via a CF Worker (/mlb-umpire-scrape,
+      # a live Savant scrape this CI job itself cannot reach directly --
+      # CF 1010 blocks GitHub Actions IPs, only real browsers can call it).
+      # This step keeps the fallback fresh (weekly, not frozen since launch)
+      # for the window before that runtime patch completes, or if it fails.
+      - name: Sync UMPIRE_ABS_RATINGS in index.html from real weekly data
+        run: node scripts/sync-umpire-abs-ratings.js
+
       - name: Commit updated tables
         run: |
           git config user.email "mlb-stats@field"
           git config user.name "MLB-Stats-Bot"
-          git add outbox/mlb/
+          git add outbox/mlb/ index.html
           git diff --cached --quiet && echo "No changes to commit" && exit 0
-          git commit -m "MLB weekly update $(date -u +%Y-%m-%d) [skip ci]"
+          # No [skip ci] here (unlike before): index.html may now be part of
+          # this commit, and deploy-gate.yml's own paths filter is what
+          # decides whether to actually build+deploy it. [skip ci] would
+          # skip that workflow entirely, silently leaving a regenerated
+          # UMPIRE_ABS_RATINGS committed on main but never shipped to
+          # production -- deploy-gate.yml also syncs SW_VERSION itself
+          # whenever it runs, so no manual version bump is needed here.
+          git commit -m "MLB weekly update $(date -u +%Y-%m-%d) -- umpire ABS ratings synced to index.html"
           for i in 1 2 3; do
             git pull --rebase --autostash origin main && git push origin main && break
             sleep $((i * 5))

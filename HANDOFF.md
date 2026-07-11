@@ -1,5 +1,51 @@
 # FIELD HANDOFF
 
+## MID-SESSION UPDATE — 2026-07-10/11 (mlb-umpire-abs-sync — weekly workflow now regenerates UMPIRE_ABS_RATINGS, real scope correction found first)
+
+**SW_VERSION `2026-07-11b` → `2026-07-11c`. Smoke: 919/0** (one real,
+investigated fix along the way: `A206` hardcoded two specific umpire
+names as a proxy check; this week's real data doesn't include one of
+them — replaced with a structural check that doesn't depend on which
+umpires happen to be on the real weekly roster).
+Full detail: `docs/outbox/cc-mlb-umpire-abs-sync-2026-07-10.md`.
+
+**Found and reported a real correction to this CC-CMD's own premise
+before proceeding**: the doc said nothing refreshes `UMPIRE_ABS_RATINGS`
+after May 27. Reading `mlbStatsInit()` in full (not referenced anywhere
+in the doc's own probe) found a separate, already-working **runtime**
+mechanism — a CF Worker (`/mlb-umpire-scrape`) that live-scrapes Savant
+and patches `UMPIRE_ABS_RATINGS` in the browser on every page load,
+specifically because the CI pipeline itself is IP-blocked from reaching
+that same endpoint (CF 1010). The genuinely stale surface is narrower
+than the doc's framing: only the static page-load fallback (before that
+runtime patch completes, or if it fails) was actually frozen. Still real,
+valuable work — reported as a scope correction, not a reason to stop,
+and the two mechanisms don't conflict (the runtime patch still overrides
+this fallback whenever it succeeds).
+
+**TASK 1's real answer was more precise than the doc anticipated**: no
+manual `SW_VERSION` bump is needed in the new step — `deploy-gate.yml`
+already auto-syncs that on every run that fires. The actual blocker is
+the *existing* weekly commit's `[skip ci]` tag, which would silently
+skip deploy-gate entirely (and therefore never actually ship the
+regenerated data) — removed it from this one commit's message, the real
+minimal fix.
+
+New `scripts/sync-umpire-abs-ratings.js` (mirrors `rotate-schedule.js`'s
+brace-matched surgical-replacement convention) regenerates the constant
+from real `outbox/mlb/umpire_abs.json` data — 48 real umpires (vs. the
+old table's 22), `pitchesCalled` dropped after confirming via full-file
+grep it has zero real consumers (set once, read once, as a pure
+passthrough never referenced by any of the 5 real call sites). `git
+diff` confirms a single contiguous change; everything else in
+index.html is byte-identical. Re-verified `getUmpireABSRating()` against
+3 real names from the new data, including the `UMP WATCH` badge firing
+correctly for a real umpire over threshold.
+
+Confidence: 100/100 (25+30+25+10+10). Committed.
+
+---
+
 ## MID-SESSION UPDATE — 2026-07-10/11 (mlb-whos-up-next — the follow-up feature the prior SESSION END entry noted as "still pending" is now shipped)
 
 **SW_VERSION `2026-07-11a` → `2026-07-11b`. Smoke: 919/0 (unchanged).**

@@ -1018,9 +1018,22 @@ assert('A205 — MLB automation: /mlb-stats/ relay route referenced',
   html.includes('/mlb-stats/'),
   'FIELD must reference the /mlb-stats/ relay route for live table loading');
 
-assert('A206 — MLB umpire: last-name keys + CF Worker endpoint wired',
-  html.includes("'bucknor'") && html.includes("'barksdale'") && html.includes('/mlb-umpire-scrape'),
-  'Umpire keys must be last-name-only and /mlb-umpire-scrape must be in mlbStatsInit');
+assert('A206 — MLB umpire: real weekly-synced last-name-keyed ratings + CF Worker endpoint wired',
+  // Structural check, not specific umpire names (CC-CMD-2026-07-10-mlb-
+  // umpire-abs-sync): UMPIRE_ABS_RATINGS is now regenerated weekly from
+  // real Statcast data -- individual umpires (e.g. 'bucknor') rotate off
+  // the real roster week to week as officiating assignments change, so a
+  // check hardcoded to specific names is not durable against real data.
+  (() => {
+    const idx = html.indexOf('const UMPIRE_ABS_RATINGS = {');
+    if (idx === -1) return false;
+    const end = html.indexOf('\n};', idx);
+    if (end === -1) return false;
+    const block = html.slice(idx, end);
+    const entries = block.match(/'[a-z_]+':\s*\{\s*challenged:\d+,\s*overturned:\d+,\s*rate:[\d.]+,\s*weakness:/g) || [];
+    return entries.length >= 10 && html.includes('/mlb-umpire-scrape');
+  })(),
+  'UMPIRE_ABS_RATINGS must contain at least 10 real, structurally-valid last-name-keyed entries (challenged/overturned/rate/weakness), and /mlb-umpire-scrape must still be wired in mlbStatsInit');
 
 
 // ── A207-A210: NHL Wave 1 Analytics ─────────────────────────────────────────

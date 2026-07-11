@@ -7398,33 +7398,54 @@ const MLB_STATS_BASE = 'https://statsapi.mlb.com/api/v1';
 // Update: replace weekly from Savant umpire leaderboard
 // Key: last name (lowercase, spaces→underscore) | weakness: 'high'|'low'|'inside'|'outside'|null
 const UMPIRE_ABS_RATINGS = {
-  // Key: last name only, lowercase — matches getUmpireABSRating(lastName) lookup
-  // Source: ESPN ABS Tracker (automated weekly) + manual zone weakness notes
-  // League avg overturn rate: 53% (2026 regular season)
-  // Low overturn rates — calling it tight (good for pitchers)
-  'bacchus':      { challenged:5,  overturned:0,  rate:0.00, pitchesCalled:632,  weakness:null },
-  'wolcott':      { challenged:2,  overturned:0,  rate:0.00, pitchesCalled:609,  weakness:null },
-  'little':       { challenged:10, overturned:1,  rate:0.10, pitchesCalled:919,  weakness:'high' },
-  'jimenez':      { challenged:5,  overturned:1,  rate:0.20, pitchesCalled:299,  weakness:null },
-  'baker':        { challenged:8,  overturned:2,  rate:0.25, pitchesCalled:834,  weakness:'low' },
-  'tumpane':      { challenged:4,  overturned:1,  rate:0.25, pitchesCalled:321,  weakness:'outside' },
-  'may':          { challenged:4,  overturned:1,  rate:0.25, pitchesCalled:348,  weakness:null },
-  'additon':      { challenged:7,  overturned:2,  rate:0.29, pitchesCalled:649,  weakness:'low' },
-  'rackley':      { challenged:10, overturned:3,  rate:0.30, pitchesCalled:884,  weakness:'low' },
-  'ceja':         { challenged:9,  overturned:3,  rate:0.33, pitchesCalled:872,  weakness:'outside' },
-  'scheurwater':  { challenged:6,  overturned:2,  rate:0.33, pitchesCalled:581,  weakness:null },
-  'muchlinski':   { challenged:3,  overturned:1,  rate:0.33, pitchesCalled:517,  weakness:null },
-  'merzel':       { challenged:3,  overturned:1,  rate:0.33, pitchesCalled:277,  weakness:null },
-  // Mid range
-  'de_jesus':     { challenged:11, overturned:4,  rate:0.36, pitchesCalled:634,  weakness:'low' },
-  'blakney':      { challenged:8,  overturned:3,  rate:0.38, pitchesCalled:590,  weakness:'outside' },
-  'beck':         { challenged:8,  overturned:3,  rate:0.38, pitchesCalled:598,  weakness:'low' },
-  'lentz':        { challenged:13, overturned:5,  rate:0.38, pitchesCalled:729,  weakness:'low' },
-  'drake':        { challenged:13, overturned:5,  rate:0.38, pitchesCalled:903,  weakness:'outside' },
-  // High overturn rates — [UMP WATCH] threshold 65%
-  'whitson':      { challenged:14, overturned:8,  rate:0.57, pitchesCalled:621,  weakness:'low' },
-  'bucknor':      { challenged:8,  overturned:6,  rate:0.75, pitchesCalled:544,  weakness:'low' },
-  'barksdale':    { challenged:9,  overturned:6,  rate:0.67, pitchesCalled:712,  weakness:'outside' },
+  'neon': { challenged:3, overturned:0, rate:0, weakness:null },
+  'gibson': { challenged:4, overturned:0, rate:0, weakness:'down-left' },
+  'hamari': { challenged:3, overturned:0, rate:0, weakness:'up-left' },
+  'vondrak': { challenged:3, overturned:0, rate:0, weakness:'down-left' },
+  'mahrley': { challenged:3, overturned:0, rate:0, weakness:null },
+  'eddings': { challenged:5, overturned:1, rate:0.2, weakness:'down-left' },
+  'reyburn': { challenged:5, overturned:1, rate:0.2, weakness:'up-right' },
+  'parra': { challenged:4, overturned:1, rate:0.25, weakness:'down-right' },
+  'scheurwater': { challenged:10, overturned:3, rate:0.3, weakness:'up-right' },
+  'lentz': { challenged:6, overturned:2, rate:0.333, weakness:'down-right' },
+  'kulpa': { challenged:6, overturned:2, rate:0.333, weakness:'down-right' },
+  'kelley': { challenged:3, overturned:1, rate:0.333, weakness:null },
+  'hanahan': { challenged:3, overturned:1, rate:0.333, weakness:null },
+  'krupa': { challenged:8, overturned:3, rate:0.375, weakness:'down-left' },
+  'little': { challenged:5, overturned:2, rate:0.4, weakness:'down-right' },
+  'ripperger': { challenged:10, overturned:4, rate:0.4, weakness:'left' },
+  'ramos': { challenged:5, overturned:2, rate:0.4, weakness:'up-left' },
+  'wegner': { challenged:5, overturned:2, rate:0.4, weakness:'down' },
+  'dreckman': { challenged:5, overturned:2, rate:0.4, weakness:'down-left' },
+  'additon': { challenged:17, overturned:7, rate:0.412, weakness:'left' },
+  'miller': { challenged:14, overturned:6, rate:0.429, weakness:'up-left' },
+  'jimenez': { challenged:7, overturned:3, rate:0.429, weakness:'down' },
+  'fairchild': { challenged:9, overturned:4, rate:0.444, weakness:'up-left' },
+  'wolcott': { challenged:11, overturned:5, rate:0.455, weakness:'right' },
+  'visconti': { challenged:6, overturned:3, rate:0.5, weakness:'down-left' },
+  'diaz': { challenged:10, overturned:5, rate:0.5, weakness:'up-left' },
+  'bacchus': { challenged:4, overturned:2, rate:0.5, weakness:'up-right' },
+  'valentine': { challenged:11, overturned:6, rate:0.545, weakness:'up' },
+  'beck': { challenged:9, overturned:5, rate:0.556, weakness:'down-right' },
+  'estabrook': { challenged:9, overturned:5, rate:0.556, weakness:'down-right' },
+  'jones': { challenged:9, overturned:5, rate:0.556, weakness:'down-right' },
+  'moore': { challenged:9, overturned:5, rate:0.556, weakness:'up-right' },
+  'wolf': { challenged:7, overturned:4, rate:0.571, weakness:'down-left' },
+  'clemons': { challenged:7, overturned:4, rate:0.571, weakness:'down-left' },
+  'jean': { challenged:7, overturned:4, rate:0.571, weakness:'up-left' },
+  'pawol': { challenged:5, overturned:3, rate:0.6, weakness:'left' },
+  'jaschinski': { challenged:5, overturned:3, rate:0.6, weakness:'down-right' },
+  'barksdale': { challenged:3, overturned:2, rate:0.667, weakness:'down' },
+  'moscoso': { challenged:9, overturned:6, rate:0.667, weakness:'right' },
+  'muchlinski': { challenged:3, overturned:2, rate:0.667, weakness:'up-left' },
+  'hoye': { challenged:3, overturned:2, rate:0.667, weakness:null },
+  'tumpane': { challenged:7, overturned:5, rate:0.714, weakness:'down-left' },
+  'barber': { challenged:9, overturned:7, rate:0.778, weakness:'down-right' },
+  'tichenor': { challenged:10, overturned:8, rate:0.8, weakness:'left' },
+  'mackay': { challenged:8, overturned:7, rate:0.875, weakness:'up-left' },
+  'tomlinson': { challenged:3, overturned:3, rate:1, weakness:null },
+  'carapazza': { challenged:3, overturned:3, rate:1, weakness:null },
+  'ceja': { challenged:4, overturned:4, rate:1, weakness:null },
 };
 const UMP_WATCH_THRESHOLD = 0.65; // overturn rate above league avg 53% + buffer
 
@@ -24292,7 +24313,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-07-11b';
+  const SW_VERSION = '2026-07-11c';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
