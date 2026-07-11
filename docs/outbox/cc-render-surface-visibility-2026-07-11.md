@@ -143,6 +143,20 @@ nothing else on any touched line.
   pre-existing and unrelated (same count as every prior commit
   tonight, unaffected by this change).
 
+## POST-DEPLOY LIVE VERIFICATION — 2026-07-11 20:53 UTC
+
+Deploy-gate run 29167813322 (commit `d6796c6`) completed
+`status:completed conclusion:success` in 40s (20:52:52→20:53:32 UTC).
+
+Fetched the live site with a real headless browser (not asserted):
+
+- `window.SW_VERSION === "2026-07-11h"` — confirmed, matches this commit.
+- `typeof captureFieldError === "function"` — confirmed.
+- `typeof _fieldRefreshDynamicSurfaces === "function"` — confirmed.
+
+All three genuinely present and correct in the deployed production
+build, not just in source.
+
 ## DONE CONDITION
 
 Every renderer in `_fieldRefreshDynamicSurfaces` — plus the 2
