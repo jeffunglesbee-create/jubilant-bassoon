@@ -1,5 +1,42 @@
 # FIELD HANDOFF
 
+## MID-SESSION UPDATE — 2026-07-10 (mlb-pitch-pace-probe — probe-only, no code changes)
+
+**No SW_VERSION bump, no code changes — probe/report-only task.**
+Full detail: `docs/outbox/cc-mlb-pitch-pace-probe-2026-07-10.md`.
+
+**Question answered: does pitch count / batting-order pace data reach
+FIELD from MLB's source feed?** Yes, confirmed via real, live, quoted
+API responses against a genuinely in-progress game (Phillies @ Tigers,
+`gamePk 824252`), not inferred from documentation.
+
+**Two real relay paths found**, both confirmed live: (1) direct-to-
+`statsapi.mlb.com` GUMBO live feed (`fetchMLBLiveGame`, index.html:20841)
+carries `atBatIndex`, `battingOrder`, per-pitch `playEvents[].startTime/
+endTime` (quoted: an ~11s real inter-pitch gap), current batter/pitcher
+identity, and current-at-bat ball/strike count; (2) relay-proxied
+boxscore (`field-relay-nba.../mlb-stats/game/{gamePk}/boxscore`,
+consumed by `fetchMLBBoxscoreContext`) carries `numberOfPitches`/
+`pitchesThrown`/`battersFaced` — real total game pitch counts.
+
+**Same "real signal exists, never reaches the consumer" shape as
+tonight's other findings, in two forms:** `fetchMLBLiveGame()` — the
+function with the richest fields — has **zero callers anywhere in the
+file** (confirmed via full-file grep; a stale comment references it but
+no real call site exists) — dead code, not even partially wired.
+`fetchMLBBoxscoreContext()` **is** actively wired to a real journalism-
+context consumer, but discards `numberOfPitches`/`pitchesThrown`/
+`battersFaced` from a payload it already has in hand, keeping only
+IP/K/ERA/ER.
+
+**No feature designed or built** — explicitly out of scope for this
+probe. `git status --short` confirms zero changes to `index.html`/
+`sw.js`.
+
+Confidence: 100/100 (40+40+20). Committed (docs-only).
+
+---
+
 ## MID-SESSION UPDATE — 2026-07-10 (view-transitions-render — genuine structural rebuilds cross-fade instead of instant-swap, real timing measured first)
 
 **SW_VERSION `2026-07-10h` → `2026-07-10i`. Smoke: 919/0** — two real,
