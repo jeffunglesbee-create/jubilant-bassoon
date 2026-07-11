@@ -1,5 +1,46 @@
 # FIELD HANDOFF
 
+## MID-SESSION UPDATE — 2026-07-11 (Rule 89 collision resolved as Rule 91 — full sweep surfaced a much bigger, real, pre-existing problem: 5 internal STANDARDS.md rule-number collisions)
+
+**No SW_VERSION bump — governance-doc-only.** Full detail:
+`docs/outbox/cc-rule89-collision-resolution-2026-07-11.md`.
+
+**Resolved the Rule 89 collision found in the prior entry.** Moved
+`docs/CLAUDE-CODE-PROMPT-RULES.md`'s independently-minted "Rule 89 —
+Legible across scope (SCOPE-LEGIBLE-A)" into `STANDARDS.md` verbatim as
+Rule 91 (full four-radii content preserved exactly — nothing
+summarized), replaced the satellite doc's copy with a short pointer,
+registered Rule 91 in the codex (confirmed live via `codex_read`).
+
+**The required full sweep (not just re-checking 89) found something
+much larger than expected.** Confirmed zero *additional* cross-document
+collisions between the two target files (Rules 87/88 appear in both,
+confirmed as intentional same-topic mirrors, not independent
+originations). But a duplicate-count check — after catching and fixing
+a bug in my own first attempt at it (`sort -nu` deduplicated *before*
+counting, trivially reporting zero by construction) — found
+**`STANDARDS.md` itself contains 5 genuine internal rule-number
+collisions**: Rules 48, 49, 50, 51, and 52 each cover two completely
+unrelated topics under the same number (e.g. Rule 48 is both "DO NOT
+ASSUME" and "Watch Engine WC selection"; Rule 52 is both "Schedule
+Section Builder" and "Sandbox access matrix"). Two independent rule
+sequences appear to have been concatenated into `STANDARDS.md` at some
+point in this project's history without renumbering — the same root
+cause diagnosed for the cross-document case, just occurring *within*
+the canonical file itself.
+
+**Not fixed — explicitly out of scope for this task, reported in full
+rather than silently left for a future session to stumble on.**
+Resolving 5 collisions (determining which of each pair is canonical,
+renumbering the other 5 without breaking existing cross-references,
+registering the renumbered rules) is a materially larger task than
+this CC-CMD's stated scope. A dedicated follow-up CC-CMD is warranted.
+
+Confidence: 70/70 (100% of what TASKS 1-4 could achieve; TASK 5 targets
+field-relay-nba, out of scope for this repo). Committed.
+
+---
+
 ## MID-SESSION UPDATE — 2026-07-11 (STANDARDS.md Rule 89 + Rule 90 — real premise gap found, user consulted, prerequisite run first, real numbering collision surfaced)
 
 **No SW_VERSION bump — governance-doc-only, no `index.html`/`sw.js`
