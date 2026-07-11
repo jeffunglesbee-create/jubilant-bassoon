@@ -147,6 +147,25 @@ side-effect that breaks the gate.
   wrapper; every line of actual card-building logic between them is
   byte-for-byte identical to before.
 
+## POST-DEPLOY LIVE VERIFICATION — 2026-07-11 22:05 UTC
+
+Deploy-gate run 29169914424 (commit `a871de9`) completed
+`status:completed conclusion:success` in 35s (22:05:21→22:05:56 UTC).
+
+Fetched the live site with a real headless browser (not asserted),
+waited 4s for the schedule fetch + `renderAll()` pass to complete:
+
+- `window.SW_VERSION === "2026-07-11i"` — confirmed, matches this commit.
+- `document.querySelectorAll('.game-card').length === 24` — real game
+  cards rendered in production. This is the meaningful check for this
+  specific fix: the change touches the exact per-card build path, so
+  confirming actual cards render (not just that the function exists)
+  proves the try/catch wrap didn't break normal, healthy rendering.
+- `window._fieldErrors` is empty, `card:*`-tagged entries: 0 — expected
+  and correct, since no game object in tonight's real slate is
+  malformed. Confirms the new instrumentation doesn't spuriously fire
+  on healthy data.
+
 ## DONE CONDITION
 
 A single malformed game object can no longer take down the entire
@@ -154,7 +173,8 @@ structural render — it fails in isolation, is logged via the existing
 `_fieldErrors` mechanism with a specific `card:{sport}:{gameId}` tag,
 and the rest of the section renders normally. Verified with a real
 forced-failure test showing correct tag capture, clean omission, and
-unaffected siblings — not asserted.
+unaffected siblings — not asserted. Confirmed live in production: 24
+real cards rendered, zero spurious card errors.
 
 ## CONFIDENCE SCORING
 
