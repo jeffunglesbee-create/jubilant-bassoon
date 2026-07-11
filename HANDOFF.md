@@ -1,5 +1,28 @@
 # FIELD HANDOFF
 
+## MID-SESSION UPDATE — 2026-07-11 (Deploy Recovery Infrastructure Reference — the "unverified from this session" hedge resolved via cross-verified evidence from a parallel chat session)
+
+**No SW_VERSION bump — STANDARDS.md-only.** The prior entry's
+`get_deploy_status(repo:"field-relay-nba")` note was left explicitly
+hedged as "unverified from this session." User shared a screenshot
+from a separate, parallel claude.ai chat session ("Archive brief
+endpoint integration") showing a real, successful call to exactly
+that tool signature, returning live field-relay-nba workflow data.
+
+Not accepted at face value — cross-checked instead: the screenshot's
+`Post-deploy live verification | success | 76f4e71` row matches the
+exact `deployed` SHA (`76f4e71`) this session had independently pulled
+minutes earlier via `probe_relay_route("/deploy/verify")` on the same
+`match: false` incident. Two independently-obtained data points
+agreeing on a specific git SHA — updated the STANDARDS.md note to
+reflect this: confirmed for the chat surface's own connector, still
+unconfirmed for a Claude Code session in this repo (re-checked
+`get_deploy_status`'s schema directly — still no `repo` param here,
+a different tool binding than what chat has).
+
+`node smoke.js`: 919/0. `git diff --stat`: 18 insertions / 4
+deletions, targeted note update only.
+
 ## MID-SESSION UPDATE — 2026-07-11 (Deploy Recovery Infrastructure Reference added to STANDARDS.md — 2 factual corrections made before committing the source doc's claims verbatim)
 
 **No SW_VERSION bump — STANDARDS.md-only, not a deploy-gate trigger

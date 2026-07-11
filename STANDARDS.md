@@ -2574,10 +2574,24 @@ uploads) fired, the mismatch is expected, not stuck.
 [VERIFIED 2026-07-11: the `get_deploy_status` MCP tool available to a
 Claude Code session in *this* repo takes no `repo` parameter and is
 hardcoded to jubilant-bassoon only — it cannot check field-relay-nba's
-run history from here. Whether chat's own FIELD Handoff MCP connector
-exposes a field-relay-nba-scoped equivalent is unverified from this
-session; confirm the actual tool signature before relying on it,
-rather than assuming this description is current.]
+run history from here.
+
+UPDATE (same day, later): chat's own FIELD Handoff MCP connector DOES
+expose a field-relay-nba-scoped `get_deploy_status(repo:"field-relay-nba")`
+— confirmed via a screenshot from a separate, parallel claude.ai chat
+session ("Archive brief endpoint integration") showing a real call
+returning live field-relay-nba workflow rows, including a
+self-referential freshness proof (the response contained its own
+in-progress verification run). Not called directly from this Claude
+Code session — cross-verified instead: the screenshot's
+`Post-deploy live verification | success | 76f4e71` row matches the
+exact `deployed` SHA (`76f4e71`) this session independently pulled via
+`probe_relay_route("/deploy/verify")` minutes earlier, on the same
+`match: false` incident. Two independently-obtained data points
+agreeing on a specific git SHA is strong corroboration, not proof by
+mere assertion — treat this as confirmed for the chat surface, still
+unconfirmed for a Claude Code session in this repo, which is a
+different tool binding entirely.]
 
 **Current recovery paths, if a deploy is confirmed genuinely stuck**
 (real src/wrangler/workers commit, zero matching `Deploy RELAY Worker`
