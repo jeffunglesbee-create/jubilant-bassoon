@@ -1,5 +1,39 @@
 # FIELD HANDOFF
 
+## MID-SESSION UPDATE — 2026-07-10/11 (mlb-umpire-abs-sync TASK 0 — the CC-CMD was amended mid-execution; confirmed-broken client patch removed)
+
+**SW_VERSION `2026-07-11c` → `2026-07-11d`. Smoke: 919/0** (one more
+real, investigated fix: `A206` now asserts `/mlb-umpire-scrape` is
+absent, not present, matching the removal below).
+Full detail: `docs/outbox/cc-mlb-umpire-abs-sync-2026-07-10.md`
+(TASK 0 section).
+
+**The CC-CMD doc was revised mid-session, validating and extending the
+scope correction from the prior entry.** It added a required TASK 0:
+live-check `/mlb-umpire-scrape` and explicitly resolve the two-writer
+conflict, not leave it as a reported-but-unfixed finding. Executed as a
+genuine follow-up (not skipped): **4 separate real requests** to the
+relay endpoint, all identically `502 {"error":"Savant returned HTTP
+500"}`, spaced ~4s apart — confirmed stable, not a single data point
+treated as conclusive.
+
+**Removed the client-side scrape-and-patch block from `mlbStatsInit()`
+entirely** — the doc's own preferred resolution once failure is
+confirmed stable, and this project's standing instruction against
+"removed code" ghost-comments followed (a short, forward-looking
+comment explains why this table doesn't get a runtime patch like its
+5 siblings, not a history of what used to be there). Verified via a
+real `vm` test against a mocked `fetch`: exactly 5 fetch calls remain
+(the working Savant-CSV tables), `/mlb-umpire-scrape` is genuinely
+never called, and `UMPIRE_ABS_RATINGS` is left completely untouched by
+`mlbStatsInit()` — the two-writer conflict is now fully resolved, not
+reduced.
+
+Confidence: 100/100 against the revised rubric (20+15+25+20+10+10).
+Committed as a second commit on top of the already-pushed `cfba9ad`.
+
+---
+
 ## MID-SESSION UPDATE — 2026-07-10/11 (mlb-umpire-abs-sync — weekly workflow now regenerates UMPIRE_ABS_RATINGS, real scope correction found first)
 
 **SW_VERSION `2026-07-11b` → `2026-07-11c`. Smoke: 919/0** (one real,

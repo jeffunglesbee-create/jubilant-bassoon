@@ -105,6 +105,71 @@ per-umpire pitch-count equivalent (Statcast ABS tracking counts
 challenges, not total pitches called), and dropping it changes zero
 observable behavior since it was never consumed downstream.
 
+## TASK 0 — The CC-CMD was amended mid-execution to require this; executed as a genuine follow-up, not skipped
+
+**This CC-CMD doc was revised while this session's work was already in
+flight** (the original version was scoped "client only," based on the
+"scope correction" section above, found independently by this session
+before the doc itself was amended). The revised doc adds TASK 0,
+validating the same `mlbStatsInit()` finding and requiring a live check
+of `/mlb-umpire-scrape` before TASK 2 could be considered complete —
+not previously executed by this session's already-pushed work
+(`cfba9ad`), which reported the finding but did not resolve it.
+Executed here as the required follow-up.
+
+**Live-checked `/mlb-umpire-scrape` directly against the real relay —
+4 separate real requests, not one, before concluding "stable":**
+
+```json
+{"status":502,"body":"{\"error\":\"Savant returned HTTP 500\"}"}
+```
+
+Confirmed identically on 3 additional requests spaced ~4s apart
+(`2026-07-11T16:42:13.971Z` through `16:42:22.024Z`). **Genuinely
+broken, confirmed stable across repeated real checks, not a single
+data point treated as conclusive.** Consistent with the doc's own
+architectural reasoning (the same Savant-blocks-Cloudflare-Worker-IPs
+issue that motivated building the Statcast-CSV pipeline in the first
+place) — but verified directly via a live request rather than trusted
+as an inherited claim.
+
+**Resolution: removed the client-side scrape-and-patch block from
+`mlbStatsInit()` entirely** (option (b), the doc's own preferred
+outcome once failure is confirmed stable) — not left as inert dead
+weight, and not just commented out: a build-time-baked constant plus a
+silently-failing runtime patch attempt on every page load is worse than
+the constant alone, exactly as the doc's own reasoning states. This
+also fully resolves the "two active writers" risk the doc's TASK 0
+flagged as the more-serious alternative outcome (irrelevant here since
+the endpoint is confirmed broken, not merely stale) — `UMPIRE_ABS_RATINGS`
+now has exactly one writer: the weekly CI regeneration.
+
+A short, forward-looking comment replaces the removed block — not a
+"here's what used to be here" ghost-comment (avoided per this
+project's own standing instruction against such comments), but a
+genuine architectural fact a future reader needs: why this one table,
+unlike its 5 siblings in the same function, doesn't get a runtime
+patch. Also fixed the `loaded`/`6 tables` accounting in the function's
+own debug log (now correctly `5 tables`, matching the 5 remaining
+fetches) and left the 5 Savant-CSV fetches (`/mlb-stats/*.json`)
+completely untouched — confirmed via a real `vm` test below.
+
+**Verified via extracted-verbatim `vm` test against a mocked `fetch`**
+(not assumed from reading the diff): the real, committed `mlbStatsInit()`
+makes exactly 5 fetch calls (`team_abs`, `expected_stats`,
+`sprint_speed`, `pitch_tempo`, `pitch_arsenals`) — `/mlb-umpire-scrape`
+is genuinely never called. All 5 Savant tables still correctly populate
+from a mocked real-shaped response. `UMPIRE_ABS_RATINGS` is left
+completely untouched by `mlbStatsInit()` (confirmed via a pre-existing
+sentinel value in the mock, unchanged after the function runs) —
+resolving the two-writer conflict entirely, not just reducing it.
+
+**`smoke.js`'s `A206` updated to match**: previously asserted
+`/mlb-umpire-scrape` was present (checking it was wired); now asserts
+the literal fetch call is **absent** — so if a future session
+accidentally reintroduces this broken fetch, the assertion catches it
+immediately rather than silently accepting a second writer again.
+
 ## TASK 1 — Deploy-gate answer, genuinely more precise than the doc's framing
 
 **Real answer, from source, not assumed:** `.github/workflows/deploy-gate.yml`'s
@@ -196,61 +261,79 @@ real Statcast ABS challenge data simply doesn't include that umpire
 (real roster/assignment rotation, not a bug). The exact same brittle-
 hardcoded-value pattern already fixed twice this session for other
 real-data-driven features. Replaced with a structural check (≥10 real,
-shape-valid `{challenged, overturned, rate, weakness}` entries, plus
-the unrelated `/mlb-umpire-scrape` endpoint reference) that doesn't
-depend on which specific umpires happen to be in this week's real
-roster. Verified the new check still correctly requires real structural
-validity (doesn't just count `{` characters) and is not overfit to only
-the new format (confirmed it does NOT spuriously match the OLD table's
-different field order either, which is fine — the old format is gone
-for good after this ships).
+shape-valid `{challenged, overturned, rate, weakness}` entries) that
+doesn't depend on which specific umpires happen to be in this week's
+real roster. Verified the new check still correctly requires real
+structural validity (doesn't just count `{` characters) and is not
+overfit to only the new format (confirmed it does NOT spuriously match
+the OLD table's different field order either, which is fine — the old
+format is gone for good after this ships). **Updated again after
+TASK 0** to assert the confirmed-broken `/mlb-umpire-scrape` fetch is
+absent, not present — see TASK 0 above.
 
 ## Repo verification
 
-`node smoke.js index.html`: 919/0 (918/1 before the `A206` fix, 919/0
-after). `node field_unit.js`: 66/0. `node field_smoke.js index.html`:
-21 failures, matches the documented pre-existing baseline exactly.
+`node smoke.js index.html`: 919/0 (918/1 before the first `A206` fix,
+919/0 after; re-confirmed 919/0 again after TASK 0's second `A206`
+update). `node field_unit.js`: 66/0. `node field_smoke.js index.html`:
+21 failures, matches the documented pre-existing baseline exactly,
+unchanged across both rounds of changes.
 
 ## DONE CONDITION
 
 `UMPIRE_ABS_RATINGS` is generated from `outbox/mlb/umpire_abs.json` as
 part of the existing Monday weekly job, verified against real current
-data (48 umpires, not a fixture), smoke clean, and actually deployable
-(`[skip ci]` removed from the triggering commit — the real mechanism
-that made this depend on deploy-gate.yml's paths filter, not a manual
-SW_VERSION bump, which that same workflow already handles automatically).
+data (48 umpires, not a fixture), smoke clean, actually deployable
+(`[skip ci]` removed from the triggering commit), and TASK 0's conflict
+is explicitly resolved — not left as two active writers.
+`UMPIRE_ABS_RATINGS` now has exactly one writer (weekly CI), confirmed
+via a real `vm` test that `mlbStatsInit()` never touches it anymore.
 
-## CONFIDENCE SCORING
+## CONFIDENCE SCORING (revised doc's rubric)
 
-- +25 — TASK 1 deploy-gate question genuinely answered from source, not
+- +20 — TASK 0 conflict genuinely investigated (4 real live checks
+  against `/mlb-umpire-scrape`, not one) and explicitly resolved
+  (removed, not left as inert dead weight or a silent second writer) —
+  **met**
+- +15 — TASK 1 deploy-gate question genuinely answered from source, not
   assumed: real answer identified is more precise than the doc's own
   framing (the `[skip ci]` tag, not a missing version bump, is the
   actual blocker) — **met**
-- +30 — generator produces valid, verified output against real current
+- +25 — generator produces valid, verified output against real current
   JSON: 48 umpires, `node --check` clean, 3 real names re-verified
   against `getUmpireABSRating()`'s actual extracted-verbatim function —
   **met**
-- +25 — byte-identical diff outside the regenerated block, confirmed
-  via `git diff`: single contiguous change, everything else untouched —
-  **met**
+- +20 — byte-identical diff outside the regenerated block (and TASK 0's
+  `mlbStatsInit()` change), confirmed via `git diff` both times: each a
+  single contiguous change, everything else untouched — **met**
 - +10 — `pitchesCalled` gap explicitly resolved (dropped, with the
   zero-real-consumers finding stated plainly), not silently dropped —
   **met**
-- +10 — `smoke.js` clean: 919/0, including a real, investigated fix to
-  a hardcoded-name assertion that real weekly data broke — **met**
+- +10 — `smoke.js` clean: 919/0 after both rounds, including two real,
+  investigated fixes (a hardcoded-name assertion real weekly data
+  broke, then re-updated to assert the confirmed-broken endpoint's
+  absence) — **met**
 
 **Total: 100/100.**
 
 ## Commit
 
-- Bumps `SW_VERSION` `2026-07-11b` → `2026-07-11c`.
+- First commit (`cfba9ad`) bumped `SW_VERSION` `2026-07-11b` →
+  `2026-07-11c` (generator + workflow wiring, TASK 1/2 from the
+  original doc).
+- Second commit (this one) bumps `SW_VERSION` `2026-07-11c` →
+  `2026-07-11d` (TASK 0 from the revised doc: removed the confirmed-
+  broken `/mlb-umpire-scrape` client-side patch from `mlbStatsInit()`,
+  updated `A206` to assert its absence).
 - `scripts/sync-umpire-abs-ratings.js`: new generator script.
 - `.github/workflows/mlb-weekly-update.yml`: new sync step added;
   commit step extended to include `index.html`; `[skip ci]` removed
   from the commit message (the real fix needed for TASK 1's finding).
 - `index.html`: `UMPIRE_ABS_RATINGS` regenerated from real current data
-  (48 umpires, `pitchesCalled` dropped). Nothing else changed.
-- `smoke.js`: `A206` made structural instead of hardcoded-name-based,
-  fixing a real break caused by this week's real data.
-- `sw.js`: `SW_VERSION` sync bump.
+  (48 umpires, `pitchesCalled` dropped); `mlbStatsInit()`'s confirmed-
+  broken `/mlb-umpire-scrape` client-side patch removed (TASK 0).
+- `smoke.js`: `A206` made structural instead of hardcoded-name-based
+  (fixing a real break caused by this week's real data), then updated
+  again to assert the broken endpoint's absence instead of its presence.
+- `sw.js`: `SW_VERSION` sync bump (twice, once per commit).
 - This manifest.

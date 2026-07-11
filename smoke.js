@@ -1018,12 +1018,16 @@ assert('A205 — MLB automation: /mlb-stats/ relay route referenced',
   html.includes('/mlb-stats/'),
   'FIELD must reference the /mlb-stats/ relay route for live table loading');
 
-assert('A206 — MLB umpire: real weekly-synced last-name-keyed ratings + CF Worker endpoint wired',
+assert('A206 — MLB umpire: real weekly-synced last-name-keyed ratings, no dead runtime patch attempt',
   // Structural check, not specific umpire names (CC-CMD-2026-07-10-mlb-
   // umpire-abs-sync): UMPIRE_ABS_RATINGS is now regenerated weekly from
   // real Statcast data -- individual umpires (e.g. 'bucknor') rotate off
   // the real roster week to week as officiating assignments change, so a
   // check hardcoded to specific names is not durable against real data.
+  // TASK 0 (revised CC-CMD, 2026-07-11): /mlb-umpire-scrape confirmed
+  // live-broken (502, 4/4 real checks) and removed from mlbStatsInit --
+  // asserting its ABSENCE now, not presence, so it can't silently come
+  // back as a second, conflicting writer to this same constant.
   (() => {
     const idx = html.indexOf('const UMPIRE_ABS_RATINGS = {');
     if (idx === -1) return false;
@@ -1031,9 +1035,10 @@ assert('A206 — MLB umpire: real weekly-synced last-name-keyed ratings + CF Wor
     if (end === -1) return false;
     const block = html.slice(idx, end);
     const entries = block.match(/'[a-z_]+':\s*\{\s*challenged:\d+,\s*overturned:\d+,\s*rate:[\d.]+,\s*weakness:/g) || [];
-    return entries.length >= 10 && html.includes('/mlb-umpire-scrape');
+    const noDeadFetch = !html.includes("fetch(`${_MLB_RELAY}/mlb-umpire-scrape`)");
+    return entries.length >= 10 && noDeadFetch;
   })(),
-  'UMPIRE_ABS_RATINGS must contain at least 10 real, structurally-valid last-name-keyed entries (challenged/overturned/rate/weakness), and /mlb-umpire-scrape must still be wired in mlbStatsInit');
+  'UMPIRE_ABS_RATINGS must contain at least 10 real, structurally-valid last-name-keyed entries (challenged/overturned/rate/weakness), and mlbStatsInit must NOT still attempt the confirmed-broken /mlb-umpire-scrape fetch');
 
 
 // ── A207-A210: NHL Wave 1 Analytics ─────────────────────────────────────────
