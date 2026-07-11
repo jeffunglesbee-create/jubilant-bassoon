@@ -1,5 +1,42 @@
 # FIELD HANDOFF
 
+## MID-SESSION UPDATE — 2026-07-11 (field_smoke.js: ~20 assertions that had NEVER executed, ever, now do — surfaced 3 more real, previously-invisible gaps)
+
+**No SW_VERSION bump — field_smoke.js is not a deploy-gate trigger path.**
+Follow-up to the extraction-bug fix above: Assertion 41 onward (Story
+Engine, Weather Intelligence, UFL 2026, ~20 checks total, ~125 lines)
+sat textually AFTER `process.exit()` calls inside the file's async IIFE.
+Since that IIFE never hits a real `await` pause (`fetch` mocked to
+reject, `renderBetting` undefined), its body runs synchronously to
+completion and `process.exit()` fires before any code after the IIFE's
+closing `})();` ever runs — these assertions had never executed, in any
+invocation of this file, ever, independent of and predating today's
+extraction-bug fix.
+
+**Fixed by relocating**, not restructuring the exit logic: moved the
+entire Assertion 41-55 + UFL/Weather block (confirmed zero naming
+collisions with anything already in the IIFE's scope) to run inside the
+IIFE, right before the final tally — so it's counted before
+`process.exit()` fires, rather than trying to redesign when/how the
+process exits.
+
+**This is the fix doing exactly what it should — surfacing 3 more real,
+previously-invisible gaps** (not a regression): confirmed via direct
+full-file search, zero matches anywhere for `journalism-odds-context`
+(Assertion 48), `'weather-intelligence'`, and `'ufl-2026'` (both
+FIELD_FEATURES registry keys). Notably the underlying feature *code* for
+weather intelligence and UFL passes fine — all the actual helper
+functions and bundles exist and are wired — it's specifically the
+FIELD_FEATURES doc-as-code registry entries for these two that were
+never added. Not fixed here — that's real feature/registry work, out of
+this bug-fix's scope; flagged for a future session.
+
+**Total: 21 → 6 failures** (3 confirmed-real from the extraction-bug fix,
+now 3 more confirmed-real from this relocation — all 6 are genuine,
+zero remaining false positives from either bug). Verified stable across
+multiple runs. `node smoke.js`: 919/0, unaffected. `node field_unit.js`:
+66/0, unaffected.
+
 ## MID-SESSION UPDATE — 2026-07-11 (field_smoke.js's own test-infrastructure bugs fixed — 21 "failures" were mostly a broken checker, not the app)
 
 **No SW_VERSION bump — field_smoke.js is not a deploy-gate trigger path.**

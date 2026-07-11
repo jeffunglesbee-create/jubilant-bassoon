@@ -646,26 +646,15 @@ try {
   if(hasNarrativeGrade) pass('A82 — Composite narrativeGrade (semantic vocabulary mapping) present');
   else fail('A82 — narrativeGrade missing from insights composite');
 
-  // ─────────────────────────────────────────────────────────────────────
-  log('---');
-// Assertions 51-101 removed — structural feature guards now live in smoke.js (A51-A123).
-  // The pre-commit hook runs smoke.js first, then this file.
-  // CI (smoke-and-verify.yml) runs smoke.js directly.
-  // Per-day assertions (above) are unique to this file and cannot run in CI.
-
-
-  log('Failures:', failures);
-
-  if (failures > 0) {
-    console.log('SMOKE TEST FAILED (per-day) — see /tmp/field_smoke.log');
-    console.log(fs.readFileSync(LOG, 'utf8'));
-    process.exit(1);
-  } else {
-    console.log(`SMOKE TEST PASSED (${sportSections} sport sections — per-day assertions verified. Structural: see smoke.js)`);
-    process.exit(0);
-  }
-})();
-
+  // ── Assertions 41-55 + UFL/Weather (moved here 2026-07-11) ──────────────
+  // BUG FIX: these used to sit textually AFTER this async IIFE's closing
+  // ())(); and its process.exit() calls below. Since this IIFE never hits a
+  // real await pause (fetch is mocked to reject; renderBetting is
+  // undefined), its body runs synchronously to completion and
+  // process.exit() fires before any top-level code after the IIFE ever
+  // runs -- meaning these ~20 checks had NEVER executed, in any
+  // invocation of this file, ever. Moved inside the IIFE, before the
+  // final tally, so they actually run and count toward Failures.
 // Assertion 41 — Layer 1: per-league poll state tracking
 const hasLeagueState = html.includes('_espnLeagueState') && html.includes("_espnLeagueLastPoll");
 if(hasLeagueState) pass('Assertion 41 — Per-league ESPN state tracking: _espnLeagueState + _espnLeagueLastPoll declared');
@@ -791,3 +780,24 @@ if(html.includes('UFL_FOX') && html.includes('UFL_ABC') && html.includes('UFL_ES
 else fail('UFL bundles registered');
 if(html.includes("'ufl-2026'")) pass('UFL FIELD_FEATURES entry present');
 else fail('UFL FIELD_FEATURES entry present');
+
+  // ─────────────────────────────────────────────────────────────────────
+  log('---');
+// Assertions 51-101 removed — structural feature guards now live in smoke.js (A51-A123).
+  // The pre-commit hook runs smoke.js first, then this file.
+  // CI (smoke-and-verify.yml) runs smoke.js directly.
+  // Per-day assertions (above) are unique to this file and cannot run in CI.
+
+
+  log('Failures:', failures);
+
+  if (failures > 0) {
+    console.log('SMOKE TEST FAILED (per-day) — see /tmp/field_smoke.log');
+    console.log(fs.readFileSync(LOG, 'utf8'));
+    process.exit(1);
+  } else {
+    console.log(`SMOKE TEST PASSED (${sportSections} sport sections — per-day assertions verified. Structural: see smoke.js)`);
+    process.exit(0);
+  }
+})();
+
