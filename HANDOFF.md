@@ -1,5 +1,45 @@
 # FIELD HANDOFF
 
+## MID-SESSION UPDATE — 2026-07-11 (Render-surface failures made visible — same principle as the earlier relay-init fix, applied to the client render pipeline)
+
+**SW_VERSION 2026-07-11g → 2026-07-11h.** Full detail:
+`docs/outbox/cc-render-surface-visibility-2026-07-11.md`.
+
+**Problem:** `_fieldRefreshDynamicSurfaces()` independently try/catch-wraps
+6 renderers with bare `catch(_) {}` each — a real failure in one is
+completely silent while the others keep updating, creating split-brain
+UI (stale scores on cards while the ticker and One To Watch both look
+fine). Same failure shape as the relay-init fix earlier tonight, now
+applied to the client render pipeline instead of relay overlays.
+
+**Audit found 2 more genuine clusters** beyond the one named in the
+CC-CMD — not assumed isolated: the `renderAll()` tail
+(`updateConflictChip` + `applyFieldPickBadge`) and the journalism
+companion block (`renderJournalismCompanion` + 3 fire-and-forget
+loaders). Individually checked and excluded 9 single-instance call
+sites, and explicitly declined to expand into the much larger, 
+differently-shaped SSE message dispatcher (`_onMessage()`, a dozen+
+bare catches across unrelated event-type branches) — flagged as a
+separate, out-of-scope finding rather than scope-creeping into it.
+
+**Reused `captureFieldError` exactly as it already existed** — no new
+mechanism. `silent` reasoned per-function against the file's own
+precedent (every `renderNightOwlRecap` call site already uses
+`silent=false`; relay fetches use `silent=true`): all 8 primary
+render/update-surface calls got `silent=false`, the 3 secondary
+"fire-and-forget" journalism loaders got `silent=true`.
+
+Verified with a real forced-failure test (extracted verbatim source in
+a Node `vm`, not reimplemented): made `renderScoreTicker` throw a real
+error, confirmed all 6 renderers in the primary cluster still ran, and
+`window._fieldErrors` captured exactly one entry with the correct
+`surface:score-ticker` tag.
+
+`node smoke.js`: 919/0. `node field_unit.js`: 66/0. `node field_smoke.js`:
+21 pre-existing failures, unchanged.
+
+Confidence: 100/100. Committed.
+
 ## MID-SESSION UPDATE — 2026-07-11 (Resolved all 5 internal STANDARDS.md rule-number collisions flagged in the earlier Rule 89 entry — one root cause, one commit)
 
 **SW_VERSION 2026-07-11f → 2026-07-11g.** Full detail:

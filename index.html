@@ -10868,12 +10868,12 @@ function _fieldVisibleRenderSignature(){
 // effect on Night Owl content freshness -- already covered elsewhere,
 // not a gap.
 function _fieldRefreshDynamicSurfaces(){
-  try { if (typeof renderESPNScores === 'function') renderESPNScores(); } catch(_) {}
-  try { if (typeof renderScoreTicker === 'function') renderScoreTicker(); } catch(_) {}
-  try { if (typeof renderWatchWindow === 'function') renderWatchWindow(); } catch(_) {}
-  try { if (typeof renderOneToWatch === 'function') renderOneToWatch(); } catch(_) {}
-  try { if (typeof renderRightNow === 'function' && allData?.sports) renderRightNow(_fieldCurrentFilteredSports()); } catch(_) {}
-  try { if (typeof updateConflictChip === 'function') updateConflictChip(); } catch(_) {}
+  try { if (typeof renderESPNScores === 'function') renderESPNScores(); } catch(_) { captureFieldError('surface:espn-scores', _, false); }
+  try { if (typeof renderScoreTicker === 'function') renderScoreTicker(); } catch(_) { captureFieldError('surface:score-ticker', _, false); }
+  try { if (typeof renderWatchWindow === 'function') renderWatchWindow(); } catch(_) { captureFieldError('surface:watch-window', _, false); }
+  try { if (typeof renderOneToWatch === 'function') renderOneToWatch(); } catch(_) { captureFieldError('surface:one-to-watch', _, false); }
+  try { if (typeof renderRightNow === 'function' && allData?.sports) renderRightNow(_fieldCurrentFilteredSports()); } catch(_) { captureFieldError('surface:right-now', _, false); }
+  try { if (typeof updateConflictChip === 'function') updateConflictChip(); } catch(_) { captureFieldError('surface:conflict-chip', _, false); }
   if(typeof FIELD_DEBUG !== 'undefined' && FIELD_DEBUG) console.debug('[FIELD_RENDER] score-only refresh, structural render skipped');
 }
 function scheduleRenderAll(){
@@ -11717,10 +11717,10 @@ function renderAll(skipUnchanged){
   if(!window._rnIdxInit){initRightNowIndexer();window._rnIdxInit=true;}
   // CC-CMD-2026-06-15-client-features Commit 3: conflict chip on filter bar.
   // Pure client-side derivation — no relay. Idempotent.
-  try { if (typeof updateConflictChip === 'function') updateConflictChip(); } catch(_) {}
+  try { if (typeof updateConflictChip === 'function') updateConflictChip(); } catch(_) { captureFieldError('surface:conflict-chip', _, false); }
   // CC-CMD-2026-06-22 Newspaper: re-tag FIELD's Pick after every renderAll.
   // applyFieldPickBadge is idempotent — no-op when no bundle or no match.
-  try { if (typeof applyFieldPickBadge === 'function') applyFieldPickBadge(); } catch(_) {}
+  try { if (typeof applyFieldPickBadge === 'function') applyFieldPickBadge(); } catch(_) { captureFieldError('surface:field-pick-badge', _, false); }
 }
 function buildFilters(sports){
   const c=document.getElementById("sport-filters"); if(!c) return;
@@ -14175,12 +14175,12 @@ function renderJournalism() {
     renderJournalismCompanion({ briefCount, seriesCount, gameBriefCount });
     // CC-CMD-2026-06-15-client-features Commit 1: Archive timeline fire-and-forget.
     // Never blocks the main journalism render; .catch(()=>{}) in loadArchiveTimeline.
-    try { if (typeof loadArchiveTimeline === 'function') loadArchiveTimeline(); } catch(_) {}
+    try { if (typeof loadArchiveTimeline === 'function') loadArchiveTimeline(); } catch(_) { captureFieldError('surface:archive-timeline', _, true); }
     // CC-CMD-2026-06-15-client-features-2 Commit 1: Upset archaeology fire-and-forget.
-    try { if (typeof loadUpsets === 'function') loadUpsets(); } catch(_) {}
+    try { if (typeof loadUpsets === 'function') loadUpsets(); } catch(_) { captureFieldError('surface:upsets', _, true); }
     // CC-CMD-2026-06-15-client-features-2 Commit 2: Market consensus fire-and-forget.
-    try { if (typeof loadMarketConsensus === 'function') loadMarketConsensus(); } catch(_) {}
-  } catch(_) {}
+    try { if (typeof loadMarketConsensus === 'function') loadMarketConsensus(); } catch(_) { captureFieldError('surface:market-consensus', _, true); }
+  } catch(_) { captureFieldError('surface:journalism-companion', _, false); }
 }
 
 function jumpToGameCard(gameId) {
@@ -24366,7 +24366,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-07-11g';
+  const SW_VERSION = '2026-07-11h';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
