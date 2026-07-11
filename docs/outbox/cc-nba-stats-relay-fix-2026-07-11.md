@@ -99,6 +99,52 @@ earned post-deploy, in the addendum, matching the discipline
 established by the prior CC-CMD (write findings honestly as they
 stand, not pre-claim a score that hasn't been earned yet).
 
+## POST-DEPLOY LIVE VERIFICATION — 2026-07-11 19:28 UTC
+
+Deploy-gate run 29165210077 (commit `cd0010d`) completed
+`status:completed conclusion:success` in 37s (19:24:51→19:25:28 UTC).
+
+Fetched the live site with a real headless browser (not asserted),
+waited 6s past page load for the boot sequence's `setTimeout`s
+(including `nbaPlayerCluichInit` at T+4750ms) to fire:
+
+- `window.SW_VERSION === "2026-07-11f"` — confirmed, matches this commit.
+- `typeof NBA_STATS_RELAY === "string"`, value
+  `"https://field-relay-nba.jeffunglesbee.workers.dev/nba-stats"` —
+  confirmed the constant is genuinely declared and resolves correctly
+  in production, not just in source.
+- `window._relayInitStatus.nbaPlayerCluichInit`:
+  `{ok:false, error:"signal timed out"}` — **the ReferenceError is
+  gone.** This is a real network timeout (the function's own
+  `AbortSignal.timeout(6000)` firing), exactly the "at worst a real
+  HTTP/network error, never a ReferenceError again" outcome the doc's
+  DONE CONDITION specified. The fix is proven correct: the function
+  now actually attempts its fetch and fails for a legitimate runtime
+  reason, not a code defect.
+- Full live snapshot for context: `mlbStatsInit`, `mlbProbablePitcherInit`,
+  `mlbPitcherStatsInit`, `nbaCluichInit` all `ok:true`.
+  `nhlSeriesInit`/`nhlGSAXInit` still `HTTP 403` (the separate,
+  already-reported, out-of-scope TASK 2 finding — unchanged by this
+  commit, as expected, since this commit never touched those
+  functions or field-relay-nba).
+
+**DONE CONDITION met, confirmed live, not asserted.**
+
+## CONFIDENCE SCORING — FINAL
+
+- +40 — TASK 1 constant declared with correct, probe-derived value, no
+  other line touched: **met**
+- +25 — Real forced-success `vm` test constructed and passing: **met**
+- +25 — Live post-deploy verification confirms the fix in production:
+  **met** — `NBA_STATS_RELAY` resolves to the correct URL live, and
+  `nbaPlayerCluichInit` fails with a real network timeout instead of
+  the `ReferenceError`, confirmed via a real browser fetch of the
+  deployed site.
+- +10 — TASK 2 correctly reported as out of scope, not attempted:
+  **met**
+
+**Total: 100/100.**
+
 ## Commit
 
 - `index.html`: `NBA_STATS_RELAY` declared (1 line). `SW_VERSION`
@@ -107,4 +153,7 @@ stand, not pre-claim a score that hasn't been earned yet).
 - `docs/CC-CMD-2026-07-11-nba-stats-relay-fix.md`: the CC-CMD doc
   itself (written this session, self-dispatched, per Rule 87).
 - This manifest.
-- **Not touched, correctly out of scope**: field-relay-nba (TASK 2).
+- **Not touched, correctly out of scope**: field-relay-nba (TASK 2) —
+  `nhlSeriesInit`/`nhlGSAXInit` HTTP 403s remain open, unchanged by
+  this commit, and still need a companion CC-CMD run from a session
+  with field-relay-nba access.
