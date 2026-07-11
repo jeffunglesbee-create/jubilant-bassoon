@@ -5174,6 +5174,41 @@ function buildFieldHealthPanel() {
     ⏳ <b>Brief Quality</b> Loading from /archive/query…
   </div>`);
 
+  // ── Relay Init Status (relay-init-staleness-visibility) ─────────────────
+  // Reads window._relayInitStatus, populated by _recordRelayInit() at each
+  // of the 9 relay-overlay init functions' success/failure points. These
+  // functions fail silently by design (stubs/fallbacks remain in place),
+  // which is correct behavior for users but was previously invisible even
+  // for debugging. This section makes it visible without touching any of
+  // the 9 functions' existing try/catch or fallback logic.
+  {
+    const _riFns = ['mlbProbablePitcherInit','mlbPitcherStatsInit','mlbStatsInit','nbaPlayerCluichInit','nhlSeriesInit','nbaCluichInit','nhlGSAXInit','soccerFBrefInit','uflEpaInit'];
+    const _riStatus = window._relayInitStatus || {};
+    const _riFailLines = [];
+    let _riOkCount = 0, _riFailCount = 0;
+    for (const fn of _riFns) {
+      const s = _riStatus[fn];
+      if (!s) continue;
+      if (s.ok) _riOkCount++;
+      else { _riFailCount++; _riFailLines.push(`<div style="color:#ff9b6b;font-size:.55rem;margin-left:.5rem">⚠ ${fn} · ${s.error || 'failed'}</div>`); }
+    }
+    const _riPendingCount = _riFns.length - _riOkCount - _riFailCount;
+    const _riLabel = _riFailCount > 0
+      ? `<span style="color:#ff6868;font-weight:400;font-size:.55rem"> · ${_riFailCount} failing</span>`
+      : (_riPendingCount === _riFns.length ? `<span style="color:#666;font-weight:400;font-size:.55rem"> · not yet run</span>` : '');
+    rows.push(`<div id="fhp-relay-init" style="margin-top:.4rem">
+      <div style="color:#c9a84c;font-size:.6rem;font-weight:700;margin-bottom:.25rem">
+        🧩 Relay Init (9 overlays)${_riLabel}
+      </div>
+      <div style="color:#8888aa;font-size:.58rem">
+        <div style="color:#76e08a">✅ loaded <span style="color:#999;float:right">${_riOkCount}/9</span></div>
+        ${_riFailCount > 0 ? `<div style="color:#ff6868">⚠ failed <span style="color:#999;float:right">${_riFailCount}/9</span></div>` : ''}
+        ${_riPendingCount > 0 ? `<div style="color:#8888aa">· not yet run <span style="color:#999;float:right">${_riPendingCount}/9</span></div>` : ''}
+        ${_riFailLines.join('')}
+      </div>
+    </div>`);
+  }
+
   // ── Relay/CI status (async — populated after panel renders) ─────────────
   // Was 'MCP RELAY' (called auth-gated /mcp tools). Now reads CI + smoke
   // directly from public GitHub API — same data, no auth surface in client.
@@ -8170,17 +8205,22 @@ function _buildAnalyticsChips(game) {
   if (sp.includes('nba') || sp.includes('basketball')) {
     const hStats = getNBATeamAnalytics?.(game.home);
     const aStats = getNBATeamAnalytics?.(game.away);
+    // clutchDrtg can come from a hardcoded stub (OKC/NYK) rather than the
+    // nbaCluichInit relay overlay — unlike the NHL series/GSAX chips above,
+    // there's no per-team null-gate that proves this value is live, so a
+    // relay failure is otherwise invisible here. Flag it in the tooltip.
+    const _clutchStale = !_nbaCluichLoaded ? ' · unverified stub, relay data unavailable' : '';
     if (hStats?.clutchDrtg != null) {
       const elite = hStats.clutchDrtg <= 106;
       chips.push({ label: `${(game.home||'').split(' ').pop()} clutch DRTG ${hStats.clutchDrtg.toFixed(1)}`,
         cls: elite ? 'dac-blue' : 'dac-muted',
-        tip: `${hStats.clutchDrtg.toFixed(1)} defensive rating in last 5 min, within 5 pts` });
+        tip: `${hStats.clutchDrtg.toFixed(1)} defensive rating in last 5 min, within 5 pts${_clutchStale}` });
     }
     if (aStats?.clutchDrtg != null) {
       const elite = aStats.clutchDrtg <= 106;
       chips.push({ label: `${(game.away||'').split(' ').pop()} clutch DRTG ${aStats.clutchDrtg.toFixed(1)}`,
         cls: elite ? 'dac-blue' : 'dac-muted',
-        tip: `${aStats.clutchDrtg.toFixed(1)} defensive rating in late close situations` });
+        tip: `${aStats.clutchDrtg.toFixed(1)} defensive rating in late close situations${_clutchStale}` });
     }
   }
 
@@ -8212,6 +8252,21 @@ let _mlbPitcherIdCache   = {};  // { homeTeamName: { homeId, homeName, awayId, a
 let _mlbPitcherStatsCache = {};  // { pitcherId: { era, k9, whip, gamesStarted, fullName } }
 let _mlbPitcherInitPhase = 0;   // 0=uninit, 1=ids-loaded, 2=stats-loaded
 
+// _relayInitStatus (CC-CMD-2026-07-11-relay-init-staleness-visibility):
+// shared, checkable record of whether each relay-overlay function's most
+// recent attempt succeeded or failed. All 9 functions below share this
+// one pattern -- fetch fresh analytics to overlay a hardcoded stub, and
+// previously failed with zero trace anywhere. Records BOTH success and
+// failure at every real outcome point, never leaves a function's status
+// as an unknown third case. Does not change any of the 9 functions'
+// actual fetch/overlay logic or remove their try/catch -- purely
+// additive instrumentation, the graceful-degradation behavior itself is
+// unchanged and correct.
+window._relayInitStatus = window._relayInitStatus || {};
+function _recordRelayInit(name, ok, error) {
+  window._relayInitStatus[name] = { ok: !!ok, at: new Date().toISOString(), error: error || null };
+}
+
 async function mlbProbablePitcherInit() {
   if (_mlbPitcherInitPhase >= 1) return;
   try {
@@ -8220,7 +8275,7 @@ async function mlbProbablePitcherInit() {
       `${MLB_STATS_RELAY}/schedule?sportId=1&date=${today}&hydrate=probablePitcher`,
       { signal: AbortSignal.timeout(5000) }
     );
-    if (!r.ok) return;
+    if (!r.ok) { _recordRelayInit('mlbProbablePitcherInit', false, `HTTP ${r.status}`); return; }
     const data = await r.json();
     const games = data?.dates?.[0]?.games || [];
     for (const g of games) {
@@ -8238,8 +8293,9 @@ async function mlbProbablePitcherInit() {
       };
     }
     _mlbPitcherInitPhase = 1;
+    _recordRelayInit('mlbProbablePitcherInit', true);
     if (FIELD_DEBUG) console.log('[FIELD] MLB pitcher IDs loaded:', Object.keys(_mlbPitcherIdCache).length, 'games');
-  } catch(e_) {}
+  } catch(e_) { _recordRelayInit('mlbProbablePitcherInit', false, e_?.message || 'error'); }
 }
 
 async function mlbPitcherStatsInit() {
@@ -8275,8 +8331,10 @@ async function mlbPitcherStatsInit() {
       };
     }));
     _mlbPitcherInitPhase = 2;
-    if (FIELD_DEBUG) console.log('[FIELD] MLB pitcher stats loaded:', Object.keys(_mlbPitcherStatsCache).length, 'pitchers');
-  } catch(e_) {}
+    const _mlbPSLoaded = Object.keys(_mlbPitcherStatsCache).length;
+    _recordRelayInit('mlbPitcherStatsInit', _mlbPSLoaded > 0, _mlbPSLoaded > 0 ? null : `0/${ids.size} pitchers loaded`);
+    if (FIELD_DEBUG) console.log('[FIELD] MLB pitcher stats loaded:', _mlbPSLoaded, 'pitchers');
+  } catch(e_) { _recordRelayInit('mlbPitcherStatsInit', false, e_?.message || 'error'); }
 }
 
 // Returns { home, away } pitcher stats objects for a game, or null if not loaded.
@@ -8327,6 +8385,7 @@ async function mlbStatsInit() {
   // freshness now comes solely from the weekly CI regeneration
   // (scripts/sync-umpire-abs-ratings.js) into the static constant.
   _mlbStatsLoaded = true;
+  _recordRelayInit('mlbStatsInit', loaded > 0, loaded > 0 ? null : 'all 5 Savant tables failed');
   if (loaded > 0 && FIELD_DEBUG) console.log(`[FIELD] MLB stats loaded: ${loaded}/5 tables (Savant)`);
 }
 
@@ -8358,10 +8417,10 @@ async function nbaPlayerCluichInit() {
       `${NBA_STATS_RELAY}/leaguedashplayerclutch?${params}`,
       { signal: AbortSignal.timeout(6000) }
     );
-    if (!r.ok) return;
+    if (!r.ok) { _recordRelayInit('nbaPlayerCluichInit', false, `HTTP ${r.status}`); return; }
     const data = await r.json();
     const rs = data?.resultSets?.[0];
-    if (!rs) return;
+    if (!rs) { _recordRelayInit('nbaPlayerCluichInit', false, 'no resultSets in response'); return; }
 
     const hdrs = rs.headers;
     const idx = Object.fromEntries(hdrs.map((h, i) => [h, i]));
@@ -8416,8 +8475,9 @@ async function nbaPlayerCluichInit() {
     }
 
     _nbaPlayerCluichLoaded = true;
+    _recordRelayInit('nbaPlayerCluichInit', true);
     if (FIELD_DEBUG) console.log(`[FIELD] NBA player clutch loaded: ${updated} of ${Object.keys(NBA_CLUTCH_PLAYERS).length} entries updated`);
-  } catch(e_) {}
+  } catch(e_) { _recordRelayInit('nbaPlayerCluichInit', false, e_?.message || 'error'); }
 }
 
 // ── nhlSeriesInit: loads SCF series-adjusted PP%/PK% from R2 via relay ──────
@@ -8430,7 +8490,7 @@ async function nhlSeriesInit() {
   if (_nhlSeriesLoaded) return;
   try {
     const r = await fetch(_NHL_SERIES_RELAY, { signal: AbortSignal.timeout(5000) });
-    if (!r.ok) return;
+    if (!r.ok) { _recordRelayInit('nhlSeriesInit', false, `HTTP ${r.status}`); return; }
     const data = await r.json();
     const teams = data.teams || {};
     // Overlay series-adjusted rates onto NHL_SPECIAL_TEAMS
@@ -8444,8 +8504,9 @@ async function nhlSeriesInit() {
       if (s.pdoLabel) NHL_SPECIAL_TEAMS[abbr]._pdoLabel  = s.pdoLabel;
     }
     _nhlSeriesLoaded = true;
+    _recordRelayInit('nhlSeriesInit', true);
     if (FIELD_DEBUG) console.log('[FIELD] NHL series stats loaded:', Object.keys(teams));
-  } catch(e_) {}
+  } catch(e_) { _recordRelayInit('nhlSeriesInit', false, e_?.message || 'error'); }
 }
 
 // ── nbaCluichInit: loads NBA clutch DRTG from R2 via relay ───────────────────
@@ -8457,7 +8518,7 @@ async function nbaCluichInit() {
   if (_nbaCluichLoaded) return;
   try {
     const r = await fetch(_NBA_CLUTCH_RELAY, { signal: AbortSignal.timeout(5000) });
-    if (!r.ok) return;
+    if (!r.ok) { _recordRelayInit('nbaCluichInit', false, `HTTP ${r.status}`); return; }
     const data = await r.json();
     const teams = data.teams || {};
     for (const [abbr, s] of Object.entries(teams)) {
@@ -8467,8 +8528,9 @@ async function nbaCluichInit() {
       if (s.clutchNetRtg != null) entry.clutchNetRtg = s.clutchNetRtg;
     }
     _nbaCluichLoaded = true;
+    _recordRelayInit('nbaCluichInit', true);
     if (FIELD_DEBUG) console.log('[FIELD] NBA clutch stats loaded:', Object.keys(teams).length, 'teams');
-  } catch(e_) {}
+  } catch(e_) { _recordRelayInit('nbaCluichInit', false, e_?.message || 'error'); }
 }
 
 // ── nhlGSAXInit: loads MoneyPuck GSAX from R2, upgrades NHL_GOALIE_RATINGS ───
@@ -8480,7 +8542,7 @@ async function nhlGSAXInit() {
   if (_nhlGSAXLoaded) return;
   try {
     const r = await fetch(_NHL_GSAX_RELAY, { signal: AbortSignal.timeout(5000) });
-    if (!r.ok) return;
+    if (!r.ok) { _recordRelayInit('nhlGSAXInit', false, `HTTP ${r.status}`); return; }
     const data = await r.json();
     const goalies = data.goalies || {};
     for (const [lastName, g] of Object.entries(goalies)) {
@@ -8494,8 +8556,9 @@ async function nhlGSAXInit() {
       else                       NHL_GOALIE_RATINGS[lastName]._gsaxTier = 'below';
     }
     _nhlGSAXLoaded = true;
+    _recordRelayInit('nhlGSAXInit', true);
     if (FIELD_DEBUG) console.log('[FIELD] NHL GSAX loaded:', Object.keys(goalies).length, 'goalies');
-  } catch(e_) {}
+  } catch(e_) { _recordRelayInit('nhlGSAXInit', false, e_?.message || 'error'); }
 }
 
 // ── soccerFBrefInit: loads FBref xG analytics for soccer leagues ─────────────
@@ -8507,12 +8570,13 @@ async function soccerFBrefInit(leagueFile) {
   if (_soccerFBrefCache[leagueFile]) return _soccerFBrefCache[leagueFile];
   try {
     const r = await fetch(`${_SOCCER_FBREF_RELAY}/${leagueFile}`, { signal: AbortSignal.timeout(5000) });
-    if (!r.ok) return null;
+    if (!r.ok) { _recordRelayInit('soccerFBrefInit', false, `${leagueFile}: HTTP ${r.status}`); return null; }
     const data = await r.json();
     _soccerFBrefCache[leagueFile] = data;
+    _recordRelayInit('soccerFBrefInit', true);
     if (FIELD_DEBUG) console.log('[FIELD] Soccer FBref loaded:', leagueFile, Object.keys(data.teams || {}).length, 'squads');
     return data;
-  } catch(e_) { return null; }
+  } catch(e_) { _recordRelayInit('soccerFBrefInit', false, `${leagueFile}: ${e_?.message || 'error'}`); return null; }
 }
 
 // Helper: get FBref stats for a team by display name (fuzzy: last word match)
@@ -10411,10 +10475,10 @@ async function uflEpaInit(){
   const games=typeof uflGames!=='undefined'?uflGames:[];
   if(!games.length) return;
   await _loadEpTable();
-  if(!_epTable) return;
+  if(!_epTable) { _recordRelayInit('uflEpaInit', false, 'epa_table.json failed to load'); return; }
   try{
     const resp=await fetch(`${_UFL_RELAY}/sportradar-ufl/games/2026/REG/schedule.json`);
-    if(!resp.ok) return;
+    if(!resp.ok) { _recordRelayInit('uflEpaInit', false, `HTTP ${resp.status}`); return; }
     const sched=await resp.json();
     const srIdMap={};
     for(const week of(sched.weeks||[])){
@@ -10430,7 +10494,8 @@ async function uflEpaInit(){
     }
     _pollUFLEpa();
     setInterval(_pollUFLEpa,60000);
-  }catch(e){}
+    _recordRelayInit('uflEpaInit', true);
+  }catch(e){ _recordRelayInit('uflEpaInit', false, e?.message || 'error'); }
 }
 
 function getVolatilityIndex(gameId, windowSize = 10) {
@@ -24300,7 +24365,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-07-11d';
+  const SW_VERSION = '2026-07-11e';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)

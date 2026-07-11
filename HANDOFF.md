@@ -1,5 +1,47 @@
 # FIELD HANDOFF
 
+## MID-SESSION UPDATE — 2026-07-11 (Relay-init silent failures made visible across all 9 overlay functions)
+
+**SW_VERSION 2026-07-11d → 2026-07-11e.** Full detail:
+`docs/outbox/cc-relay-init-staleness-visibility-2026-07-11.md`.
+
+**Problem:** 9 functions (`mlbProbablePitcherInit`, `mlbPitcherStatsInit`,
+`mlbStatsInit`, `nbaPlayerCluichInit`, `nhlSeriesInit`, `nbaCluichInit`,
+`nhlGSAXInit`, `soccerFBrefInit`, `uflEpaInit`) fetch fresh relay data
+to overlay hardcoded stub constants; on failure they silently keep the
+stub with zero trace anywhere. Fixed the *visibility*, not the
+graceful degradation (try/catch/fallback behavior is untouched).
+
+**Added `window._relayInitStatus` + `_recordRelayInit(name, ok, error)`**,
+called at every real success and failure point in all 9 functions — a
+Health Panel section (`🧩 Relay Init (9 overlays)`) now surfaces it,
+reusing the existing grouped-row pattern.
+
+**Real per-function triage, not a blanket fix.** Only `nbaCluichInit`
+carries a genuine silent-staleness risk on an actual DOM surface (OKC/NYK
+have hardcoded clutch-DRTG stub numbers that render identically to live
+data) — added a tooltip note there. Re-derived that `nhlSeriesInit` and
+`nhlGSAXInit`, initially assumed equally high-stakes, are actually safe
+by construction (their consumer chips are gated on a per-team null-check
+that's only true after a real live overlay — a relay failure yields no
+chip, not a misleading one). The other 5 either have no stub at all
+(fail into "nothing renders") or only feed internal journalism-prompt
+text with no DOM tooltip surface to attach an indicator to — each
+reasoned individually in the outbox doc, not defaulted.
+
+**Verified live, not asserted:** forced a real 404 through the extracted
+`nbaCluichInit` source in a Node `vm` context — confirmed
+`_relayInitStatus` recorded the failure and the stub was retained; then
+forced a real success — confirmed the overlay applied and status flipped
+to `ok:true`. Exercised the Health Panel section's HTML output directly
+for both a failure state and an all-success state.
+
+`node smoke.js`: 919/0. `node field_unit.js`: 66/0. `node field_smoke.js`:
+21 failures, confirmed via `git stash` to be identical pre-existing
+failures unrelated to this change (not a regression).
+
+Confidence: 100/100. Committed.
+
 ## MID-SESSION UPDATE — 2026-07-11 (Rule 89 collision resolved as Rule 91 — full sweep surfaced a much bigger, real, pre-existing problem: 5 internal STANDARDS.md rule-number collisions)
 
 **No SW_VERSION bump — governance-doc-only.** Full detail:
