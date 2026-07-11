@@ -24372,7 +24372,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-07-11i';
+  const SW_VERSION = '2026-07-11j';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -39177,7 +39177,6 @@ function saveEspnFinal(game, eData){
     const today    = etToday; // primary key stays ET for backwards compat
     const existing = JSON.parse(localStorage.getItem(FINALS_KEY)||'[]');
     const id = game._id || (game.home+game.away);
-    if(existing.some(f=>f.id===id)) return; // already saved
     // Pick 'em resolution (CC-CMD-2026-07-05-pick-em-ui TASK 2, re-keyed by
     // CC-CMD-2026-07-08-pick-cross-session-resolution): deliberately uses a
     // SEPARATE key from `id` above -- `id` is fine for the FINALS_KEY
@@ -39188,8 +39187,29 @@ function saveEspnFinal(game, eData){
     // home+away); falls back to `id` only if a stable key can't be built
     // (e.g. missing start_time), matching the pre-fix behavior in that
     // narrow case rather than silently doing nothing differently.
+    //
+    // CC-CMD-2026-07-11-pick-resolution-retry-decouple: this call is
+    // DELIBERATELY placed BEFORE the "already saved" dedup guard below, not
+    // after it as originally written. _resolvePickIfExists() has its own
+    // idempotency (checks pick.resolved internally, no-ops if the pick
+    // doesn't exist or is already resolved) -- calling it on every
+    // saveEspnFinal invocation, including ones the dedup guard below would
+    // otherwise short-circuit, is safe: a nonexistent or already-resolved
+    // pick is a no-op, an unresolved one gets a real retry. Before this
+    // change, a transient failure here (relay/network/whatever
+    // _resolvePickIfExists could throw) was silently swallowed AND
+    // structurally permanent -- existing.push(entry) below fires
+    // unconditionally once per game, so the dedup guard would block this
+    // function from ever attempting pick-resolution again for that game.
+    // Moving the call here means the poll loop that already calls
+    // saveEspnFinal repeatedly is the retry mechanism -- no new
+    // queue/scheduler needed.
     const pickId = (typeof _pickStorageKey === 'function' ? _pickStorageKey(game) : '') || id;
-    if (typeof _resolvePickIfExists === 'function') { try { _resolvePickIfExists(pickId, game, eData); } catch(_) {} }
+    if (typeof _resolvePickIfExists === 'function') {
+      try { _resolvePickIfExists(pickId, game, eData); }
+      catch(_pickErr) { captureFieldError('pick:resolve-final', _pickErr, false); }
+    }
+    if(existing.some(f=>f.id===id)) return; // already saved -- everything below here (drama persistence, entry/D1 write, night-owl enqueue, tonight-finals write) is a genuine one-time-per-game side effect and stays correctly gated by this guard. Pick-resolution above is NOT gated by it (see comment above).
     const dramaPeak = getDramaPeak(game._id||'', game);
     // ── Drama persistence: POST summary to relay archive (CC-CMD-2026-06-19 / Prompt 11B)
     // Fires once per game at final state — the existing-check above gates

@@ -1,5 +1,53 @@
 # FIELD HANDOFF
 
+## MID-SESSION UPDATE — 2026-07-11 (Pick-resolution retry decoupled from saveEspnFinal's dedup guard — a transient failure was structurally permanent, now it isn't)
+
+**SW_VERSION 2026-07-11i → 2026-07-11j.** Full detail:
+`docs/outbox/cc-pick-resolution-retry-decouple-2026-07-11.md`.
+
+**Confirmed a ChatGPT claim was real and worse than it sounded:**
+`saveEspnFinal()`'s `_resolvePickIfExists` call (line 39192) had a
+fully silent `catch(_){}` — but the function's own dedup-marking
+`existing.push(entry)` (line 39298) fires unconditionally, regardless
+of whether pick resolution succeeded. Once a game's id lands in
+`existing`, the function's own early-return guard means it never
+attempts pick-resolution for that game again, on any future poll
+cycle. Not just unlogged — structurally permanent.
+
+**Reused the existing resolved-state mechanism, invented nothing:**
+`_resolvePickIfExists` already checks `pick.resolved` internally and
+no-ops if the pick doesn't exist or is already resolved — it's
+naturally safe to call repeatedly. Moved the whole pick-resolution
+block to run **before** the save-dedup guard instead of after it, so
+it now attempts on every `saveEspnFinal` call (the poll loop already
+calls this repeatedly — no new retry/queue mechanism needed). The
+dedup guard itself is untouched, just relocated to gate everything
+*else* (drama persistence POST, entry/D1 write, Night Owl enqueue,
+tonight-finals write) exactly as before.
+
+**Deviated from the doc's literal wording once, with reasoning:** the
+doc said log "success and failure" via `captureFieldError` — but that
+mechanism's own signature (`entry.err = err?.message||String(err)`)
+is error-tracking by design, and every other call site tonight only
+fires it on failure. Logging "success" on nearly every
+`saveEspnFinal` call (the vast majority have no pick to resolve at
+all) would be pure noise with a nonsensical `err: "null"` field.
+Kept it failure-only, matching established convention.
+
+Verified with a real forced-failure-then-retry test (extracted
+verbatim `saveEspnFinal` + `captureFieldError` in a Node `vm`,
+`_resolvePickIfExists` mocked with controllable throw-then-succeed):
+call 1 (forced throw) captured the failure with the correct tag and
+still fired the drama POST + entry/D1 write exactly once; call 2
+(simulating the poll loop retrying) genuinely re-attempted
+pick-resolution while the other one-time side effects correctly did
+NOT re-fire.
+
+`node smoke.js`: 919/0. `node field_unit.js`: 66/0. `node field_smoke.js`:
+21 pre-existing failures, unchanged.
+
+Confidence: 100/100. Committed.
+
 ## MID-SESSION UPDATE — 2026-07-11 (Per-card render failures isolated — one malformed game object can no longer take down the whole structural render)
 
 **SW_VERSION 2026-07-11h → 2026-07-11i.** Full detail:
