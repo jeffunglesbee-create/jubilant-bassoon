@@ -1,5 +1,46 @@
 # FIELD HANDOFF
 
+## MID-SESSION UPDATE — 2026-07-11 (Self-dispatched follow-up: fixed the NBA_STATS_RELAY bug the prior entry's instrumentation caught on its first live run)
+
+**SW_VERSION 2026-07-11e → 2026-07-11f.** Full detail:
+`docs/outbox/cc-nba-stats-relay-fix-2026-07-11.md`, CC-CMD:
+`docs/CC-CMD-2026-07-11-nba-stats-relay-fix.md`.
+
+**User asked to "automate follow up" on the relay-init-staleness-visibility
+entry's live finding.** Rather than wait for a manually-pasted trigger
+message, wrote the required second CC-CMD doc (Rule 87 — no deferred
+work without one) and self-dispatched/executed it immediately in the
+same session.
+
+`nbaPlayerCluichInit` was failing on every production page load with
+`"NBA_STATS_RELAY is not defined"` — a `ReferenceError`, not a network
+issue. Probed: the constant was referenced once (index.html:8417) and
+never declared. Its value was not guessed — derived from two
+independent sources already in the file (the function's own comment
+naming `/nba-stats/leaguedashplayerclutch`, and the literal base used
+by `nbaPlayoffLeadersPrefetch` for `/nba-stats/leagueLeaders`), both
+agreeing on `https://field-relay-nba.jeffunglesbee.workers.dev/nba-stats`.
+Added exactly that one `const` line — confirmed via `git diff` that
+nothing else changed.
+
+Verified with a real forced-failure/success test (extracted verbatim
+source in a Node `vm`, not reimplemented): a real 404 now records
+correctly, a real 200 with an NBA Stats API-shaped response now
+overlays live clutch data onto `NBA_CLUTCH_PLAYERS` and flips
+`_relayInitStatus` to `ok:true` — the `ReferenceError` is gone.
+
+**Also flagged, correctly NOT attempted:** `nhlSeriesInit`/`nhlGSAXInit`
+both got a real `HTTP 403` from field-relay-nba on the same live pass —
+that repo is outside this session's tool access; a companion CC-CMD
+run from a session with field-relay-nba access is needed.
+
+`node smoke.js`: 919/0. `node field_unit.js`: 66/0.
+
+Confidence at commit time: 75/100 (the 25 live-verification points are
+earned post-deploy — pending the live-verify addendum, matching the
+prior entry's discipline of not pre-claiming an unearned score).
+Committed.
+
 ## MID-SESSION UPDATE — 2026-07-11 (Relay-init silent failures made visible across all 9 overlay functions)
 
 **SW_VERSION 2026-07-11d → 2026-07-11e.** Full detail:
