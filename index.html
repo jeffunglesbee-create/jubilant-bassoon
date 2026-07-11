@@ -11429,6 +11429,11 @@ function renderAll(skipUnchanged){
         _renderAllCircadianGames.push(_cached.circInput);
         return _cached.html;
       }
+      try { // CC-CMD-2026-07-11-per-card-render-isolation: one malformed game
+            // object must not take down the whole section's render. On failure,
+            // this card is omitted (see outbox for the omit-vs-fallback-shell
+            // reasoning); captureFieldError keeps the failure visible in
+            // _fieldErrors/Health Panel even though the render itself "succeeds".
       g._insights=computeInsights(g, sec.sport); // Stage 3.5: typed data bridge
       const st=getStatus(g.start_time, g._aflComplete!==undefined?{aflComplete:g._aflComplete}:undefined);
       const timeStr=fmtTime(g.start_time);
@@ -11504,6 +11509,7 @@ function renderAll(skipUnchanged){
       </div>`;
       _cardStringCache.set(g._id, {fingerprint: _fingerprint, html: _html, circInput: _circInput, circadianTier: _circadian});
       return _html;
+      } catch(_cardErr) { captureFieldError(`card:${sec.sport}:${g._id||gi}`, _cardErr); return ''; }
     }).join("");
     return `<div class="sport-section" data-sport="${sec.sport}" style="--i:${si}">
       <div class="section-head" style="border-left:3px solid ${sportColor};padding-left:.75rem">
@@ -24366,7 +24372,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-07-11h';
+  const SW_VERSION = '2026-07-11i';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)

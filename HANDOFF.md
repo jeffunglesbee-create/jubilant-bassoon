@@ -1,5 +1,54 @@
 # FIELD HANDOFF
 
+## MID-SESSION UPDATE — 2026-07-11 (Per-card render failures isolated — one malformed game object can no longer take down the whole structural render)
+
+**SW_VERSION 2026-07-11h → 2026-07-11i.** Full detail:
+`docs/outbox/cc-per-card-render-isolation-2026-07-11.md`.
+
+**Corrected a ChatGPT claim about the render-signature gate** — traced
+directly against source (index.html:11523): the signature stamp sits
+after `applyMainHTML` succeeds, so a genuine throw during HTML-building
+leaves `lastSignature` stale and the next cycle correctly retries, not
+skips. Confirmed, not acted on.
+
+**The real, adjacent risk:** the per-card template builder
+(`games.map((g,gi)=>{...})`, ~line 11418) had 23 unwrapped function
+calls (`computeInsights`, `getStatus`, `fmtTime`, `matchupHTML`,
+`buildViewerIntelChip`, and 18 more — full list in the outbox) — any
+one throwing for a single malformed game took down the *entire*
+section's render, not just that card. Only 2 of ~25 calls
+(`buildCardTimeDisplay`, `getPulseChip`) were already correctly
+isolated.
+
+Wrapped the whole per-card build in **one** try/catch (not 23
+individual ones — matches tonight's established pattern from the
+relay-init and render-surface fixes: one shared boundary over many
+scattered ones), reusing `captureFieldError` with a
+`card:{sport}:{gameId}` tag. On failure: **card silently omitted**
+(empty string), not a fallback shell — reasoned explicitly (grid
+reflow is clean either way; a hand-built fallback risks referencing
+the same malformed input that caused the original throw, and is a
+second thing to keep in sync forever).
+
+**Real tradeoff, stated not glossed over:** before, one bad card
+blocked the whole page and forced perpetual retry (loud but with zero
+durable trace). After, the rest of the page always works, but a
+persistently malformed card can silently and durably vanish from view
+— mitigated by `captureFieldError` now making that failure visible in
+`_fieldErrors`/Health Panel for the first time, where before there was
+no trace at all.
+
+Verified with a real forced-failure test (extracted verbatim per-card
+callback in a Node `vm`, 23 mocked dependencies, one game forced to
+throw): confirmed the other 2 games in the same pass rendered
+correctly, the bad one was cleanly omitted, and `_fieldErrors` captured
+exactly one entry with the correct tag.
+
+`node smoke.js`: 919/0. `node field_unit.js`: 66/0. `node field_smoke.js`:
+21 pre-existing failures, unchanged.
+
+Confidence: 100/100. Committed.
+
 ## MID-SESSION UPDATE — 2026-07-11 (Deploy Recovery Infrastructure Reference — the "unverified from this session" hedge resolved via cross-verified evidence from a parallel chat session)
 
 **No SW_VERSION bump — STANDARDS.md-only.** The prior entry's
