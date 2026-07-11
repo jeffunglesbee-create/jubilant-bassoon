@@ -4472,3 +4472,49 @@ that correct approaches are executed fast. These are not competing values.
 - Rule 68: Probe before building — the mechanism that makes this possible
 - Rule 87: CC-CMDs must be self-completing — correct first-time is required
 - Rule 77: Failure is failure — a fast wrong answer is still wrong
+
+## Rule 89 — Scoped-tool default over credential handoff (SCOPED-TOOL-DEFAULT-A)
+
+When a session needs a new capability that requires a credential
+(GitHub, Cloudflare, or any other service the relay already holds a
+credential for), the default is a new, narrowly-scoped MCP tool on the
+relay that performs the specific action server-side and returns the
+result — never a credential, short-lived or otherwise, handed to the
+session itself.
+
+This generalizes the pattern already used for `commit_file`,
+`read_file`, `get_archive_url`, and `trigger_workflow`: each is a
+specific, auditable action reusing the relay's already-stored
+`GITHUB_PAT`, not a raw credential exposed to a session.
+
+### Why this matters
+
+A short-lived, narrowly-scoped credential (e.g. a GitHub App
+installation token, ~1hr TTL) is a smaller exposure than a long-lived
+PAT, but it is not zero exposure — it is still a credential that would
+sit in conversation context if handed to a session, subject to the
+same persistence-through-compaction risk Rule 80 exists to prevent. A
+server-side tool that performs the action and returns only the result
+has no credential in conversation context at all, at any TTL. Given
+the choice, no-exposure beats reduced-exposure.
+
+### Operational rules
+
+1. Before treating "hand the session a scoped/short-lived credential"
+   as the fix for a capability gap, first ask whether a new,
+   narrowly-scoped MCP tool on the relay — reusing the credential the
+   relay already holds — solves the same need with zero credential
+   exposure. This is the default path, not one option among several.
+2. Short-lived/scoped credential handoff (e.g. GitHub App installation
+   tokens) is a legitimate exception, not a rejected idea — but it
+   requires a stated reason the scoped-tool default doesn't work for
+   the specific case (e.g. the action space is too broad/dynamic for a
+   fixed set of tools to cover), not just convenience or speed of
+   implementation.
+3. This does not mandate a fully generic "call any API endpoint"
+   proxy tool as the way to satisfy this rule. A generic proxy
+   reintroduces a large, hard-to-audit blast radius — closer in spirit
+   to a raw credential handoff than to the specific, allow-listed
+   action pattern this rule is describing. Prefer adding specific,
+   named tools (one per real, distinct need) over one broad tool that
+   can do many things.
