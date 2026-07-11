@@ -1,5 +1,64 @@
 # FIELD HANDOFF
 
+## MID-SESSION UPDATE — 2026-07-11 (STANDARDS.md Rule 89 + Rule 90 — real premise gap found, user consulted, prerequisite run first, real numbering collision surfaced)
+
+**No SW_VERSION bump — governance-doc-only, no `index.html`/`sw.js`
+touched.** Full detail: `docs/outbox/cc-standards-rule89-2026-07-11.md`,
+`docs/outbox/cc-standards-rule90-mechanical-2026-07-11.md`.
+
+**Was asked to execute `rule90`'s TASKS 1-2. Both assumed prior state
+that didn't exist** — no "Rule 90" section anywhere in `STANDARDS.md`
+to replace, and Rule 89 (a stated precondition) didn't exist either.
+Investigated (grep, `git log -S`, codex search/list — all empty)
+rather than fabricate either rule's text or silently reinterpret
+"replace" as "add" without saying so. **Asked the user how to proceed;
+they said run the sibling `rule89` CC-CMD first** (the doc that
+actually adds Rule 89), which unblocked both of `rule90`'s tasks
+cleanly.
+
+**A real concurrent-push race surfaced mid-task**: a `git push`
+rejection revealed 3 new origin commits with names suggesting Rule
+89/90 had already been executed. Investigated what they actually
+touched before rebasing (`git show --stat`) rather than assuming
+either "safe" or "conflicting" — all three only edited the CC-CMD doc
+files themselves (the user amending instructions), not `STANDARDS.md`.
+Rebase applied cleanly, confirmed via a post-rebase duplicate-heading
+check.
+
+**Both rules added fresh** (Rule 89 — SCOPED-TOOL-DEFAULT-A — placed
+after Rule 88; Rule 90 — RULE-COMPLIANCE-FOLLOWUP-A, the mechanical
+registry-tracking version — placed after Rule 89), preserving the
+file's existing number-matches-position convention rather than wedging
+either rule mid-document to stay near a topically-related cluster.
+
+**Registered Rule 89 in the codex as required — then found a real,
+serious pre-existing numbering collision while verifying it.** The
+doc's own suggested `codex_search("rule-89")` returns nothing (the
+tool matches title/content text, not the key field, and the entry's
+text says "Rule 89" not "rule-89" — investigated, not dismissed).
+Confirmed via `codex_read` instead. Searching "Rule 89" (case-matched)
+then surfaced an existing, unrelated, already-registered "Rule 89"
+(`rule-89-scope-legible-a`, from `docs/CLAUDE-CODE-PROMPT-RULES.md`,
+2026-07-08) — a **completely different rule in a completely different
+governance document**, sharing the same number by pure coincidence.
+`STANDARDS.md` and `CLAUDE-CODE-PROMPT-RULES.md` are two independently-
+numbered rule sequences with no shared numbering authority. **Not
+fixed here** (a real renumbering decision, out of scope for this task)
+— flagged prominently for a dedicated CC-CMD. No data corruption: the
+two codex entries use distinct full keys.
+
+**Also found and reported, not fixed:** `STANDARDS.md`'s own Rule 86
+has no section of its own anywhere in the file (sequence jumps 85→87),
+and its one stray cross-reference mention doesn't match what
+`CLAUDE.md` cites as Rule 86 at all (different topics entirely).
+Pre-existing, unrelated to this task.
+
+Confidence: 100/100 in both parts (rule89: 20+40+30+10; rule90:
+35+35+30). Both committed and pushed. TASK 3 (field-relay-nba CI
+staleness check) explicitly out of scope for this repo.
+
+---
+
 ## MID-SESSION UPDATE — 2026-07-10/11 (mlb-umpire-abs-sync TASK 0 — the CC-CMD was amended mid-execution; confirmed-broken client patch removed)
 
 **SW_VERSION `2026-07-11c` → `2026-07-11d`. Smoke: 919/0** (one more

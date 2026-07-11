@@ -4518,3 +4518,50 @@ the choice, no-exposure beats reduced-exposure.
    action pattern this rule is describing. Prefer adding specific,
    named tools (one per real, distinct need) over one broad tool that
    can do many things.
+
+## Rule 90 — Mechanical rule-registry tracking (RULE-COMPLIANCE-FOLLOWUP-A)
+
+Every new rule added to STANDARDS.md gets a matching entry:
+codex_write(category:"rule-registry", key:"rule-{N}", title:"UNEXERCISED -- Rule {N}: {one-line summary}")
+committed in the SAME session that adds the rule text -- not deferred.
+
+The moment a session finds a real case where the rule applied (or was
+violated), it flips the SAME key: title:"EXERCISED -- Rule {N}: {what
+happened, date}" or title:"VIOLATED -- Rule {N}: {what happened, date}".
+
+A CI check (field-relay-nba, same mechanism and cadence as the
+existing confidence-gate scanner in post-deploy-live-verify.yml) scans
+codex for category="rule-registry" entries still titled "UNEXERCISED"
+past 14 days from their own updated_at, and fails the check if any
+exist -- surfacing the gap as a build failure, not something a future
+session has to remember to notice.
+
+### Why this matters
+
+The prior version of this rule asked a future session to remember to
+self-report compliance -- the identical structural failure the rule
+existed to fix, just relocated. A rule either produces a checkable
+artifact or it does not get enforced at all; there is no third
+category where "a session should remember" counts as enforcement.
+This generalizes the exact mechanism already proven for
+stale_pending_cc_cmds and the confidence-gate scanner -- both already
+demonstrate that a machine watching a D1-backed registry works, and
+that a session's memory is not required for it to work.
+
+### Operational rules
+
+1. Registering a new rule in the codex is not optional and is not a
+   separate step to remember later -- it happens in the same commit
+   sequence that adds the rule text, same session.
+2. The 14-day staleness window is a default, not a guarantee of
+   correctness -- if a rule genuinely has no applicable case in that
+   window, the CI failure is the correct, honest signal to surface
+   that, not a false alarm to suppress.
+3. This does not retroactively register every existing rule (1-88) --
+   explicitly out of scope, would become a task that never completes.
+   Applies from Rule 89 onward. Rule 89 itself must be registered as
+   part of TASK 2 below.
+4. If a rule is found VIOLATED (not just unexercised), record it as
+   such in the same registry entry -- do not silently correct and move
+   on, matching this document's existing incident-style rules (45, 47,
+   61, 67, 80, 81).
