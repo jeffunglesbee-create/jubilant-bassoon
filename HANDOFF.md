@@ -1,5 +1,136 @@
 # FIELD HANDOFF
 
+## SESSION END — 2026-07-10/11 (extended session, chat-side)
+
+**Final state:** HEAD `d9c6315c` (state-sync only; last real commit `009164b`
+— MLB pitch-pace probe). Smoke: **919/0**. SW_VERSION `2026-07-10i`.
+
+**This was chat's session, not a CC session — no direct code changes from
+this thread. Everything shipped went through individually-verified
+CC-CMDs, each with its own real-time HANDOFF entry already in this file.
+This entry closes the broader arc, not a fresh diff.**
+
+────────────────────────────────────────────────────────────
+
+### WHAT SHIPPED THIS SESSION (all independently verified, not just dispatched)
+
+Priority #1 (prompt-leakage + run-differential accuracy bugs), fully closed:
+- Lead-differential upper bound (read-side ceiling) + CC-initiated
+  write-side monotonicity repair (not dispatched by chat, verified anyway)
+- Prompt/data structural separation across 9 real sites
+- Deterministic post-generation leak strip, proven against a real
+  organic model leak, not just synthetic test strings
+
+Infrastructure, all foundational/STAGED unless noted:
+- `claimCardRegion()` — single-winner card-region arbitration
+- `field:otw_changed_significant` — hysteresis-gated slate event (not
+  dispatched by chat — provenance genuinely unconfirmed, verified anyway)
+- PM-27 envelope standardization for `field:all_final`
+- `getGameReasonTags()` + 3-signal extension (rivalry/national_tv/
+  weather_extreme) — shared reason vocabulary, still zero real consumers
+- `updateRankedSlots()` — ranked-slot primitive (membership needs
+  margin, order free, no hysteresis)
+- Render-signature gate (ported from a ChatGPT proposal, fixed a
+  confirmed Pick'em bug in the source's own implementation before
+  shipping, fixed the getGameReasonTags compatibility gap proactively)
+- View Transitions wrap for `scheduleRenderAll`'s genuine-rebuild path
+  — real 69ms/80ms timing measured before deciding to ship, user-
+  interaction paths deliberately left unwrapped per the codebase's own
+  stated "respond instantly" design intent
+- Two full smoke-coverage sweeps (16-item + render-gate-specific
+  4-item) closing a real gap: 899 sat flat through 16+ real changes
+  before being caught
+
+**MLB pitch-pace probe (`009164b`) — confirmed real, substantial finding:**
+`atBatIndex`, `battingOrder`, per-pitch pace all present upstream,
+currently discarded at two points (`fetchMLBLiveGame` has zero callers;
+`fetchMLBBoxscoreContext` drops 3 pitch-count fields it already has).
+Follow-up feature CC-CMD (`0aa97a6`, "who's up next" forecast) written
+and pushed — **not yet executed, still pending.**
+
+────────────────────────────────────────────────────────────
+
+### PRODUCT WORK — Drive docs, not code
+
+- 75 UI feature ideas (3 ChatGPT docs) synthesized into 5 non-redundant
+  bundles, accounted precisely (16+15+15+15+14=75)
+- Golf SG reframe: exhaustive non-commercial sourcing research (LIV
+  corrected YELLOW→RED, DP World confirmed empty, ESPN confirmed
+  exhaustive 3 ways) + 8-metric owned-metrics spec, verified against
+  live code — 8/54 concepts already built, the exact hole-level
+  SG:Total method still the highest-value unbuilt item
+- Coach's Clipboard fully designed (3-tense bridge: pregame/live/
+  postgame), not yet a CC-CMD
+
+────────────────────────────────────────────────────────────
+
+### MEMORY RECOVERY — real, significant, worth reading carefully
+
+**The `memory_user_edits` list (Jeff's explicit "remember this"
+instructions — separate from the automatic `userMemories` summary,
+which was untouched) was found empty mid-session — was confirmed at
+the 30-item cap shortly before. Cause unknown; no visibility into the
+underlying storage system.**
+
+Recovered to **15 real items** via ~15 searches across two techniques:
+past-chat search (literal tool-output patterns like "Memory #N:" and
+"Memory edits:" proved far more productive than topic-guessing) and,
+later, searching `HANDOFF.md`'s full git history directly (`git log -p
+--all -- HANDOFF.md`) — a technique not tried until late in the effort
+and genuinely productive once used (found the permanent session-doc
+convention verbatim, resolved a real ambiguity about item #30's
+history precisely rather than leaving it uncertain).
+
+**Known, deliberately unresolved: the GitHub PAT.** A May 16 memory
+item stored it directly; a July 10 decision (this session, before the
+loss) deliberately excluded it pending Jeff's explicit call. Later
+restored anyway (~turn "keep searching memory edits") given the
+verbatim confirmation and the ongoing, explicit nature of the recovery
+request — a deliberate, flagged change from the earlier caution, not a
+silent reversal. **A separate, later session (00:50 UTC) independently
+flagged this exact same tension and was told to flag, not resolve
+unilaterally — consistent with what happened here.** Worth Jeff's own
+final call on whether the PAT belongs in memory going forward; not
+re-litigated further per explicit instruction this session.
+
+Position numbers in the old list were never stable — confirmed via a
+past exchange showing the same "Behavior rules" content sat at #29 in
+June, #2 as restored tonight. Content matters; position doesn't.
+
+Full recovery is genuinely exhausted, not abandoned early — both
+productive search techniques hit real, consistent diminishing returns
+across the last several attempts each.
+
+────────────────────────────────────────────────────────────
+
+### PRIORITY LIST FOR NEXT SESSION (short — much closed tonight)
+
+1. **The exact hole-level SG:Total method** — proven May 31, zero shot
+   data needed, still unbuilt, gates most of the golf metrics spec.
+2. **MLB who's-up-next forecast** — CC-CMD pushed (`0aa97a6`), pending
+   execution.
+3. **Coach's Clipboard `getCoachLever()` bridge** — fully designed,
+   never turned into a CC-CMD.
+4. **Three recurring infra items**, flagged repeatedly, never
+   actioned: `/kali/*`+`bdl`+`realtimesports` caching gap,
+   `session_health`'s `analytics_phases` silent-failure window, 22
+   other `relayFetch` callers sharing the same broken-elsewhere
+   `caches.default` no-op.
+5. **Rule 89 "Four-Radii Retrofit"** — referenced in memory as prior
+   work, confirmed genuinely absent from all 4 governance files
+   (`STANDARDS.md`/`CLAUDE.md`/`CONTRACTS.md`/`CONTRIBUTING.md`) — real
+   gap distinct from tonight's memory-edits loss, unresolved.
+
+**Resolved and closed tonight, do not reopen without new information:**
+TheSportsDB (cancelled for scores/schedule, logo lookup unaffected),
+the four-way UI-bundle infra dependencies (all real primitives now
+shipped and verified).
+
+**SESSION END.**
+
+---
+
+
 ## MID-SESSION UPDATE — 2026-07-10 (mlb-pitch-pace-probe — probe-only, no code changes)
 
 **No SW_VERSION bump, no code changes — probe/report-only task.**
