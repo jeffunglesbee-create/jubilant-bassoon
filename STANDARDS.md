@@ -2549,6 +2549,81 @@ Contains: Event Bus (S0), VAPID keys, PUSH A client subscription,
           CI KV bootstrap, notification templates, GDPR, what's not yet built.
 
 
+## Deploy Recovery Infrastructure Reference
+
+### Current state (confirmed 2026-07-11)
+
+A commit that touches `src/**`, `wrangler.toml`, or `workers/**` on
+field-relay-nba's main branch should trigger `deploy.yml`'s push-based
+`Deploy RELAY Worker` job automatically. This can fail to fire if the
+commit message carries `[skip ci]` (which suppresses ALL workflows on
+that push, not just the intended one) or if GitHub's own webhook
+delivery is delayed/dropped.
+
+**Diagnosis:** `GET /deploy/verify` on the relay returns `{expected,
+deployed, match}` — `expected` is current git HEAD, `deployed` is what
+the Worker last actually deployed as. Verified live 2026-07-11 via
+`probe_relay_route("/deploy/verify")`: the endpoint is real and
+returns exactly this shape (plus `deployedAt`, `runId`, `checkedAt`).
+`match: false` does NOT necessarily mean a stuck deploy — some commits
+(docs-only, outbox housekeeping, scheduled-cron result commits)
+correctly never trigger a deploy at all. Before treating a mismatch as
+a real problem, check what actually ran against the `expected`
+commit's SHA — if only non-deploy workflows (cron jobs, outbox
+uploads) fired, the mismatch is expected, not stuck.
+[VERIFIED 2026-07-11: the `get_deploy_status` MCP tool available to a
+Claude Code session in *this* repo takes no `repo` parameter and is
+hardcoded to jubilant-bassoon only — it cannot check field-relay-nba's
+run history from here. Whether chat's own FIELD Handoff MCP connector
+exposes a field-relay-nba-scoped equivalent is unverified from this
+session; confirm the actual tool signature before relying on it,
+rather than assuming this description is current.]
+
+**Current recovery paths, if a deploy is confirmed genuinely stuck**
+(real src/wrangler/workers commit, zero matching `Deploy RELAY Worker`
+run for that SHA):
+1. A human manually clicking "Run workflow" on `deploy.yml` in
+   GitHub's Actions tab (works from any browser, including mobile).
+2. A Claude Code session, which holds its own separate GitHub PAT
+   access independent of chat's MCP tools, calling the same
+   `workflow_dispatch` endpoint directly.
+
+**What does NOT currently exist:** a way for chat itself (the claude.ai
+conversation, via the FIELD Handoff MCP connector) to trigger this
+recovery without going through Claude Code or a human. Chat holds no
+GitHub credential of its own (Rule 80) and had no scoped tool for this
+specific action (Rule 89) until the spec below was written.
+
+### Planned upgrade — `trigger_workflow` MCP tool
+
+Spec'd 2026-07-11: `docs/CC-CMD-2026-07-11-mcp-trigger-workflow.md`
+(field-relay-nba — not verifiable from this session, which has no
+access to that repo; noted here as reported, not independently
+confirmed). Adds a `trigger_workflow(workflow_file, ref?, repo?)`
+MCP tool reusing the exact same `GITHUB_PAT` + `ghHeaders()` pattern
+`commit_file` already uses — no new credential, matching Rule 89's
+scoped-tool-default. Includes a TASK 0 that checks the stored PAT
+actually has `workflow` OAuth scope before attempting anything, since
+`commit_file` working only proves `repo` scope, not `workflow` scope.
+
+**Status as of 2026-07-11: spec pushed, not yet executed.** Not
+currently blocking anything — as of this writing, `field-relay-nba`'s
+actual deploys are firing correctly via the normal push trigger for
+every real code change made tonight. This is durable infrastructure
+for the *next* genuine stuck-deploy incident, not an active fix for a
+current outage. Treat it as standing recovery capability to build when
+convenient, not an urgent gap.
+
+Note: Rule 89's own text (added earlier 2026-07-11) already lists
+`trigger_workflow` alongside `commit_file`, `read_file`, and
+`get_archive_url` as tools whose pattern is "already used" — that
+phrasing predates this section and overstates `trigger_workflow`'s
+actual status (spec'd, not yet executed, per above). Not corrected
+in Rule 89's own text here — out of this section's scope — but noted
+so a future reader doesn't infer `trigger_workflow` is live from
+Rule 89 alone.
+
+
 ## Architectural Decision Records (ADRs)
 
 When Opus and Sonnet disagree on an architectural approach, the resolution

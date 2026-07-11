@@ -1,5 +1,43 @@
 # FIELD HANDOFF
 
+## MID-SESSION UPDATE — 2026-07-11 (Deploy Recovery Infrastructure Reference added to STANDARDS.md — 2 factual corrections made before committing the source doc's claims verbatim)
+
+**No SW_VERSION bump — STANDARDS.md-only, not a deploy-gate trigger
+path.** Full detail: `docs/outbox/cc-deploy-recovery-reference-2026-07-11.md`.
+
+Added a new `## Deploy Recovery Infrastructure Reference` section
+(grouped with the existing MLS/Push Notification Architecture
+Reference sections), moving the "re-trigger a stuck CI workflow" chat
+memory and the spec'd-but-not-yet-built `trigger_workflow` tool's real
+status into the canonical doc.
+
+**Didn't paste the source CC-CMD's prescribed content verbatim without
+checking it first — found and fixed 2 real inaccuracies:**
+1. `GET /deploy/verify` claim — confirmed accurate via a live
+   `probe_relay_route` call (real response matched the documented
+   shape exactly). Side finding: field-relay-nba currently shows a
+   genuine `match: false` (expected `a20fced`, deployed `76f4e71`) —
+   flagged for the next session with proper access, not diagnosed
+   further here (out of scope, no field-relay-nba tool access).
+2. `get_deploy_status(repo:"field-relay-nba")` claim — verified FALSE
+   via a fresh `ToolSearch` schema fetch (the real tool takes no
+   `repo` param, hardcoded to jubilant-bassoon). Corrected the
+   Diagnosis paragraph to state what's actually true rather than
+   commit a broken operational instruction to the canonical doc.
+
+**Also flagged, not corrected (different section's scope):** Rule 89's
+own text (added earlier tonight) already lists `trigger_workflow`
+alongside 3 real, working tools as "already used" — pre-existing
+imprecision, since this new section's own content correctly says it's
+spec'd-not-executed. Noted in the new section rather than silently
+duplicated or silently left to mislead a future reader; not edited
+in Rule 89 itself (out of this task's stated scope).
+
+`node smoke.js`: 919/0 (STANDARDS.md isn't a smoke target; run anyway).
+`git diff --stat`: 75 insertions, 0 deletions, pure addition.
+
+Confidence: 100/100. Committed.
+
 ## MID-SESSION UPDATE — 2026-07-11 (Render-surface failures made visible — same principle as the earlier relay-init fix, applied to the client render pipeline)
 
 **SW_VERSION 2026-07-11g → 2026-07-11h.** Full detail:
