@@ -1,5 +1,54 @@
 # FIELD HANDOFF
 
+## MID-SESSION UPDATE — 2026-07-11 (Resolved all 5 internal STANDARDS.md rule-number collisions flagged in the earlier Rule 89 entry — one root cause, one commit)
+
+**SW_VERSION 2026-07-11f → 2026-07-11g.** Full detail:
+`docs/outbox/cc-standards-collision-resolution-2026-07-11.md`.
+
+**Root cause, confirmed independently (not trusted from the CC-CMD
+doc's own claim):** a June 1 2026 "PM-7" session renumbered 4
+pre-existing rules into slots 48/50/51/52 and separately added a new
+Rule 49, all that same day. A **different**, later session on June 4
+2026 (RUWT/patent-risk work) added 5 more rules and assigned them
+48-52 without checking PM-7 had already claimed those numbers 3 days
+earlier — one incident, five collisions. Verified this by reading each
+section's own dating comments (not by trusting the doc's assertion or
+guessing from file position).
+
+Renumbered the 5 June-4 rules to **92-96** (Watch Engine WC selection,
+OTW momentum, `_fieldDataReady` sentinel, RUWT risk register, Sandbox
+access matrix), moved to the end of the file preserving the
+strictly-increasing-position convention, full content preserved
+verbatim (confirmed via `git diff` byte-for-byte). The 5 original
+rules (48-52) are untouched at their original line numbers.
+
+**Full repo-wide cross-reference sweep** (not just STANDARDS.md) found
+and fixed 16 genuine live citations of the old "RUWT Rule 51" across
+`smoke.js`, `index.html`, `docs/ADR-002-CONTEXT.md`, and 2 outbox
+docs. Correctly excluded 3 categories of near-miss: "DO NOT ASSUME"
+hits (different, unchanged Rule 48), an unrelated never-materialized
+"Rule 50 candidate" placeholder in `smoke.js`, and — the one worth
+remembering — a **literal captured terminal transcript** in a dated
+audit doc (`outbox/rule59-audit-2026-06-15.md`) that must NOT be
+edited since it's historical evidence of a real command's output, not
+a live cross-reference.
+
+All 5 renumbered rules registered in the codex
+(`rule-92` through `rule-96`), confirmed live via both `codex_read`
+and `codex_search`.
+
+**Also flagged, not acted on:** the CC-CMD doc's own claim that a CI
+check ("`post-deploy-live-verify.yml`") already enforces Rule 90 in
+this repo is false — that check is field-relay-nba-scoped per the
+actual source doc, never targeted at jubilant-bassoon, and this
+session can't verify it either way. Reported per Rule 72, did not
+block the substantive work.
+
+`node smoke.js`: 919/0. `node field_unit.js`: 66/0. `node field_smoke.js`:
+21 pre-existing failures, unchanged.
+
+Confidence: 100/100. Committed.
+
 ## MID-SESSION UPDATE — 2026-07-11 (Self-dispatched follow-up: fixed the NBA_STATS_RELAY bug the prior entry's instrumentation caught on its first live run)
 
 **SW_VERSION 2026-07-11e → 2026-07-11f.** Full detail:

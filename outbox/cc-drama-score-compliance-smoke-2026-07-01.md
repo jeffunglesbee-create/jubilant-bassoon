@@ -24,7 +24,9 @@ function dramaTier(score){
 
 Also found relevant prior art already in `smoke.js`: `A495` already
 checks for the *absence* of one specific bad pattern
-(`dramaTier(score)||'warm'` in the OTW FIRE block, a RUWT Rule 51 fix).
+(`dramaTier(score)||'warm'` in the OTW FIRE block, a RUWT Rule 95 fix
+[renumbered 2026-07-11 from Rule 51, which collided with STANDARDS.md's
+Period Prefix Registry — see docs/outbox/cc-standards-collision-resolution-2026-07-11.md]).
 This CC-CMD's assertions are a different, more general check (the
 function's own return-set contract, and a heuristic scan across all
 `dramaScoreLive(` call sites) — not a duplicate of A495. Inserted the two

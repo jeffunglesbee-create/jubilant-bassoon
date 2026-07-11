@@ -199,7 +199,7 @@ trigger for an unprompted, autonomously-sent notification.
    factual game state observations, not interest-level scores.
 
 4. **Win probability display** — Shows P(win), a statistical measure.
-   Not an interest/excitement level. Explicitly cleared in STANDARDS Rule 51.
+   Not an interest/excitement level. Explicitly cleared in STANDARDS Rule 95.
 
 5. **Advancement probability** — Shows P(qualify). Statistical, not interest.
 
@@ -325,7 +325,7 @@ per-game detail in a floating, non-Ambient object). Fixed the same way as #1.
 EXTRA_TIME → CLOSE_FINISH → LIVE_GAME, smoothing-aware via a `smoothed`
 parameter) already existed as of **2026-06-05**, per its own changelog
 entry: *"OTW FIRE label is now factual condition, not numeric band. RUWT
-Rule 51 MODERATE → RESOLVED."* That fix was applied to a **different** OTW
+Rule 95 MODERATE → RESOLVED."* That fix was applied to a **different** OTW
 code path (~line 35678) — not `renderAmbientPanel`, which is the function
 fixed above and evidently was never migrated when the June 5 fix shipped.
 

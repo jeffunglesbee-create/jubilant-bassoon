@@ -5703,7 +5703,7 @@ const FIELD_FEATURES = {
   // PM-25 Card Render Slot (June 5 2026)
   'pm25-render-card-badges':             '2026-06-05',  // renderCardBadges(card,eData,sport,gid,smoothed) — extracted badge slot, unblocks WS Pulse + CRUNCH chip + confidence glyph
   // PM-25 Drama Dial categorical tier refactor (June 5 2026)
-  'pm25-otw-categorical-tier':           '2026-06-05',  // _otwGetLiveTier() named-condition tier + _otwTierLabel() — OTW FIRE label is now factual condition, not numeric band. RUWT Rule 51 MODERATE → RESOLVED.
+  'pm25-otw-categorical-tier':           '2026-06-05',  // _otwGetLiveTier() named-condition tier + _otwTierLabel() — OTW FIRE label is now factual condition, not numeric band. RUWT Rule 95 MODERATE → RESOLVED.
   // PM-19 retro live-card fix (June 2 2026 — observed 9:56pm Tigers-Rays "-196 min")
   'card-state-aware-time-slot':          '2026-06-02',  // buildCardTimeDisplay + time-based live fallback in computeCardStage + elapsed-in-progress for no-eData live games
   // PM-19 retro brief fix (June 2 2026 — observed 6:48pm NBA Finals G1 mis-described as "tonight")
@@ -24366,7 +24366,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-07-11f';
+  const SW_VERSION = '2026-07-11g';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -36799,7 +36799,7 @@ function _updateDialChip() {
 // Named-condition tier selector for live ESPN games — mirrors _otwFindWCLiveGame.
 // Returns a named condition string (never a numeric composite) or null.
 // Replaces the dramaTier(score) numeric path in the OTW FIRE header chip and
-// completes the RUWT Rule 51 MODERATE → RESOLVED path begun by A490.
+// completes the RUWT Rule 95 MODERATE → RESOLVED path begun by A490.
 // The FIRE callsite (getDramaDial() threshold) is already user-controlled (A490).
 // This function adds the named categorical tier on top of that selection so that
 // the label shown to the user is a factual condition, not a score band.
@@ -37984,7 +37984,7 @@ function renderOneToWatch(){
   // governs OTW selection. Dial range 45-90, default 65. User set to 80 → only
   // tightest games fire as OTW; set to 45 → more games qualify. Server cannot
   // influence this value (localStorage, client-side only). Per RUWT Deep Analysis
-  // (Rule 51): MODERATE risk resolved — threshold is now user-controlled, not fixed.
+  // (Rule 95): MODERATE risk resolved — threshold is now user-controlled, not fixed.
   const fire=_otwFindLiveGame(getDramaDial());
   if(fire&&fire.g._id!==_otwDismissedId){
     const {g,ed,sport,score}=fire;

@@ -42,7 +42,10 @@
 **197 total helper extraction candidates.** The `AbortSignal.timeout` count (95) is the most urgent — every fetch call reinvents timeout handling instead of using the centralized `fieldFetch` wrapper.
 
 ### 2. RUWT Risk Register Audit (TYPE D)
-**Rule 51 — last classified: 2026-06-04**
+**Rule 51 — last classified: 2026-06-04** [renumbered 2026-07-11 to Rule 95;
+was Rule 51 at the time this audit was written, later collided with
+STANDARDS.md's Period Prefix Registry — see
+docs/outbox/cc-standards-collision-resolution-2026-07-11.md]
 
 One MODERATE item remains deferred:
 - `_otwFindLiveGame(minScore=50)` at line 31980: uses `dramaScoreLive() > minScore` for ESPN game selection. Display is mitigated (named labels via `buildOTWStateLabel`), but selection mechanism is composite + threshold. Found at 4 call sites in current code.

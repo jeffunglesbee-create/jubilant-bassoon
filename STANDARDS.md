@@ -2892,115 +2892,6 @@ A411 verifies the existing modal trigger (`maybeShowSetup` reading `field_setup_
 
 ---
 
-## Rule 48 — Watch Engine WC selection: categorical tier hierarchy only
-
-`_otwFindWCLiveGame()` MUST use a strict categorical priority tier hierarchy for
-selecting which live WC game to surface. No composite numerical score may be
-computed for this purpose.
-
-Valid tier structure (T1-T6 precedence; within tier sort by elapsed only):
-  T1: penalty_shootout (relay binary condition)
-  T2: man_advantage | added_time (relay binary conditions)
-  T3: late_deficit (relay binary condition)
-  T4: elapsed ≥ 80 AND (draw > 20% OR max WP < 65%) — AND-gated binary checks
-  T5: elapsed ≥ 60 AND draw > 25% — AND-gated binary checks
-  T6: any live WC game (floor)
-
-Within-tier sort key: elapsed time only (single factual observable).
-
-RATIONALE: A composite sel score (e.g., sel = 55 + WP_factor + elapsed_factor) is
-the RUWT claim structure: multiple signals → composite scalar → recommendation.
-Categorical hierarchy with a single within-tier sort key is not that structure.
-RUWT patent (US 9,421,446 B2) requires a composite scalar + threshold comparison.
-
-SMOKE: A483 enforces `bestTier` variable and absence of `let sel = 55`.
-
----
-
-## Rule 49 — OTW momentum: score-event detector only (no drama score reads)
-
-`getOTWMomentum(gameId)` MUST determine momentum from `field_score_snap_{gameId}`
-(factual score-change log written by `recordScoreSnapshot`) — NOT from
-`field_drama_history_{gameId}` score values.
-
-The previous implementation read `drama_history[last].s - [prev].s >= 10`, which
-read a composite drama score and threshold-compared it. All three RUWT claim
-elements were present: composite score + threshold + display (↑ arrow).
-
-The current implementation returns 'up' if a scoring event (total score change)
-occurred within the last 3 minutes. Binary factual observable, no interest score.
-
-SMOKE: A482 enforces `SCORE_SNAP_KEY` and `recordScoreSnapshot` function presence.
-
----
-
-## Rule 50 — _fieldDataReady sentinel is a permanent contract
-
-`window._fieldDataReady = Date.now()` MUST be set immediately after the first
-`renderAll()` call in the bootstrap sequence. It is a permanent contract between
-the app startup path and CI test infrastructure.
-
-`field_browser.test.js` uses `waitForFunction(() => !!window._fieldDataReady)` as
-an event-based load sentinel instead of `waitForTimeout(15000)`. Removing this
-sentinel causes all Playwright tests to time out at 20s max, adding 5+ minutes to CI.
-
-Location: After `renderAll()` in the main `async function` that calls `buildTodaySchedule()`.
-
-SMOKE: A485 enforces the sentinel presence.
-
----
-
-## Rule 51 — RUWT risk register (US 9,421,446 B2)
-
-Current risk classification as of 2026-06-04:
-
-CLEAR (no action needed):
-  - GameDO: distributes mathematical facts (winProb, wpDelta, _crunch, openingWP)
-  - Permutations Engine: computes advancement PROBABILITIES (factual outcome math)
-  - Advancement probability display: shows P(qualify), not interest/excitement level
-  - `late_deficit` CRUNCH threshold (loserWP < 0.15): single probability → binary output
-
-MODERATE — DOCUMENTED, REFACTOR DEFERRED:
-  - `_otwFindLiveGame(minScore=50)` in Watch Engine: uses `dramaScoreLive() > 50`
-    for ESPN game selection. Display is mitigated (named labels via buildOTWStateLabel).
-    Selection mechanism is composite + threshold. Planned fix: replace with
-    `buildOTWStateLabel()` category-based selection (same session as Drama Dial build).
-
-FIXED THIS SESSION:
-  - `getOTWMomentum()`: was HIGH (drama score delta ≥ 10 → display). Fixed: score-event.
-  - `_otwFindWCLiveGame()`: was MODERATE (composite sel score). Fixed: categorical tiers.
-
-LONG-TERM FTO:
-  - Drama Dial (not yet built): client-side localStorage slider personalizes Drama Dial
-    threshold. Server never computes or transmits a composite interest score. User-set
-    threshold not a system-computed interest level. This is the primary FTO path.
-    Must be built before patent provisional filing (target June 25 2026).
-
----
-
-## Rule 52 — Sandbox access matrix (confirmed 2026-06-04)
-
-Accessible from the Claude sandbox:
-  github.com (git push/pull): ✅
-  api.github.com (REST API): ✅ confirmed May 22, was wrongly documented as blocked
-  raw.githubusercontent.com: ✅
-  Cloudflare D1 MCP (d1_database_query): ✅ confirmed June 4 2026
-  probe_relay_route MCP (GET, allow-listed paths only): ✅ confirmed
-
-Not accessible from Claude sandbox (use workarounds):
-  *.workers.dev direct HTTP: ❌ use probe_relay_route (GET) or D1 MCP
-  api.cloudflare.com: ❌ use outbox/.trigger-cf-api workflow (~40s roundtrip)
-
-probe_relay_route allow-list (GET only):
-  /health, /wc/wp/verify, /wc/standings, /wc/results, /wc/odds-probs,
-  /wc/third-place, /v2/games, /v2/standings, /squiggle/*
-
-KNOWN GAP: /nba/liveData/scoreboard/* not in allow-list — needed for Scoreboard P0
-diagnosis. Add to allow-list in the Scoreboard P0 session.
-
-GitHub Actions runners (ubuntu-latest): unrestricted internet, including *.workers.dev.
-Workers Plus confirmed active (Durable Objects, R2, Analytics Engine available).
-
 ## Rule 55 — Data overlay string typeof guard (OVERLAY-TYPEOF-A)
 
 **Established:** June 9 2026 — C1 (OTW [object Object] bug)
@@ -4615,3 +4506,137 @@ fresh repo-wide grep at review time; a `CONTRACTS.md`-covered field
 changed in one repo with no stated position on the other; a new CC-CMD
 doc pushed for a file/function already named in an open `cc-cmd-queue`
 entry.
+
+## Rule 92 — Watch Engine WC selection: categorical tier hierarchy only
+
+(Renumbered 2026-07-11 — was Rule 48 "Watch Engine WC selection", added
+June 4 2026 without checking that the June 1 2026 PM-7 renumbering session
+had already claimed Rule 48 for "DO NOT ASSUME" (originally Rule 11) at
+line 2633. Cross-reference: any prior "Rule 48 Watch Engine WC selection"
+citation refers to this rule, now Rule 92.)
+
+`_otwFindWCLiveGame()` MUST use a strict categorical priority tier hierarchy for
+selecting which live WC game to surface. No composite numerical score may be
+computed for this purpose.
+
+Valid tier structure (T1-T6 precedence; within tier sort by elapsed only):
+  T1: penalty_shootout (relay binary condition)
+  T2: man_advantage | added_time (relay binary conditions)
+  T3: late_deficit (relay binary condition)
+  T4: elapsed ≥ 80 AND (draw > 20% OR max WP < 65%) — AND-gated binary checks
+  T5: elapsed ≥ 60 AND draw > 25% — AND-gated binary checks
+  T6: any live WC game (floor)
+
+Within-tier sort key: elapsed time only (single factual observable).
+
+RATIONALE: A composite sel score (e.g., sel = 55 + WP_factor + elapsed_factor) is
+the RUWT claim structure: multiple signals → composite scalar → recommendation.
+Categorical hierarchy with a single within-tier sort key is not that structure.
+RUWT patent (US 9,421,446 B2) requires a composite scalar + threshold comparison.
+
+SMOKE: A483 enforces `bestTier` variable and absence of `let sel = 55`.
+
+## Rule 93 — OTW momentum: score-event detector only (no drama score reads)
+
+(Renumbered 2026-07-11 — was Rule 49 "OTW momentum", added June 4 2026
+without checking that the June 1 2026 PM-7 session had already claimed
+Rule 49 for "Claude is always allowed to say 'I don't know'" (added
+June 1 2026) at line 2786. Cross-reference: any prior "Rule 49 OTW
+momentum" citation refers to this rule, now Rule 93.)
+
+`getOTWMomentum(gameId)` MUST determine momentum from `field_score_snap_{gameId}`
+(factual score-change log written by `recordScoreSnapshot`) — NOT from
+`field_drama_history_{gameId}` score values.
+
+The previous implementation read `drama_history[last].s - [prev].s >= 10`, which
+read a composite drama score and threshold-compared it. All three RUWT claim
+elements were present: composite score + threshold + display (↑ arrow).
+
+The current implementation returns 'up' if a scoring event (total score change)
+occurred within the last 3 minutes. Binary factual observable, no interest score.
+
+SMOKE: A482 enforces `SCORE_SNAP_KEY` and `recordScoreSnapshot` function presence.
+
+## Rule 94 — _fieldDataReady sentinel is a permanent contract
+
+(Renumbered 2026-07-11 — was Rule 50 "_fieldDataReady sentinel", added
+June 4 2026 without checking that the June 1 2026 PM-7 renumbering session
+had already claimed Rule 50 for "Sport Display Convention Registry
+(SPORT-DISPLAY-A)" (renumbered from old Rule 39) at line 2443.
+Cross-reference: any prior "Rule 50 _fieldDataReady sentinel" citation
+refers to this rule, now Rule 94.)
+
+`window._fieldDataReady = Date.now()` MUST be set immediately after the first
+`renderAll()` call in the bootstrap sequence. It is a permanent contract between
+the app startup path and CI test infrastructure.
+
+`field_browser.test.js` uses `waitForFunction(() => !!window._fieldDataReady)` as
+an event-based load sentinel instead of `waitForTimeout(15000)`. Removing this
+sentinel causes all Playwright tests to time out at 20s max, adding 5+ minutes to CI.
+
+Location: After `renderAll()` in the main `async function` that calls `buildTodaySchedule()`.
+
+SMOKE: A485 enforces the sentinel presence.
+
+## Rule 95 — RUWT risk register (US 9,421,446 B2)
+
+(Renumbered 2026-07-11 — was Rule 51 "RUWT risk register", added June 4
+2026 without checking that the June 1 2026 PM-7 renumbering session had
+already claimed Rule 51 for "Period Prefix Registry (PERIOD-PREFIX-A)"
+(renumbered from old Rule 40) at line 2466. Cross-reference: any prior
+"Rule 51 RUWT risk register" citation refers to this rule, now Rule 95.)
+
+Current risk classification as of 2026-06-04:
+
+CLEAR (no action needed):
+  - GameDO: distributes mathematical facts (winProb, wpDelta, _crunch, openingWP)
+  - Permutations Engine: computes advancement PROBABILITIES (factual outcome math)
+  - Advancement probability display: shows P(qualify), not interest/excitement level
+  - `late_deficit` CRUNCH threshold (loserWP < 0.15): single probability → binary output
+
+MODERATE — DOCUMENTED, REFACTOR DEFERRED:
+  - `_otwFindLiveGame(minScore=50)` in Watch Engine: uses `dramaScoreLive() > 50`
+    for ESPN game selection. Display is mitigated (named labels via buildOTWStateLabel).
+    Selection mechanism is composite + threshold. Planned fix: replace with
+    `buildOTWStateLabel()` category-based selection (same session as Drama Dial build).
+
+FIXED THIS SESSION:
+  - `getOTWMomentum()`: was HIGH (drama score delta ≥ 10 → display). Fixed: score-event.
+  - `_otwFindWCLiveGame()`: was MODERATE (composite sel score). Fixed: categorical tiers.
+
+LONG-TERM FTO:
+  - Drama Dial (not yet built): client-side localStorage slider personalizes Drama Dial
+    threshold. Server never computes or transmits a composite interest score. User-set
+    threshold not a system-computed interest level. This is the primary FTO path.
+    Must be built before patent provisional filing (target June 25 2026).
+
+## Rule 96 — Sandbox access matrix (confirmed 2026-06-04)
+
+(Renumbered 2026-07-11 — was Rule 52 "Sandbox access matrix", added
+June 4 2026 without checking that the June 1 2026 PM-7 renumbering session
+had already claimed Rule 52 for "Schedule Section Builder
+(SCHEDULE-BUILDER-A)" (renumbered from old Rule 41) at line 2487.
+Cross-reference: any prior "Rule 52 Sandbox access matrix" citation
+refers to this rule, now Rule 96.)
+
+Accessible from the Claude sandbox:
+  github.com (git push/pull): ✅
+  api.github.com (REST API): ✅ confirmed May 22, was wrongly documented as blocked
+  raw.githubusercontent.com: ✅
+  Cloudflare D1 MCP (d1_database_query): ✅ confirmed June 4 2026
+  probe_relay_route MCP (GET, allow-listed paths only): ✅ confirmed
+
+Not accessible from Claude sandbox (use workarounds):
+  *.workers.dev direct HTTP: ❌ use probe_relay_route (GET) or D1 MCP
+  api.cloudflare.com: ❌ use outbox/.trigger-cf-api workflow (~40s roundtrip)
+
+probe_relay_route allow-list (GET only):
+  /health, /wc/wp/verify, /wc/standings, /wc/results, /wc/odds-probs,
+  /wc/third-place, /v2/games, /v2/standings, /squiggle/*
+
+KNOWN GAP: /nba/liveData/scoreboard/* not in allow-list — needed for Scoreboard P0
+diagnosis. Add to allow-list in the Scoreboard P0 session.
+
+GitHub Actions runners (ubuntu-latest): unrestricted internet, including *.workers.dev.
+Workers Plus confirmed active (Durable Objects, R2, Analytics Engine available).
+
