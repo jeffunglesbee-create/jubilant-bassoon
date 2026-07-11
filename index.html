@@ -1011,6 +1011,12 @@ body.wf-mode .np-inner{max-width:100%}
 .sit-count{color:var(--smoke)}
 .sit-outs{color:var(--smoke)}
 .sit-urgent{color:var(--live);font-weight:800}
+.mlb-whos-up-next{
+  margin-top:.35rem;padding:.25rem .45rem;
+  background:rgba(255,255,255,.04);border:1px solid var(--edge);
+  border-radius:5px;font-size:.62rem;font-weight:600;
+  color:var(--platinum);
+}
 
 
 /* ── Perfect Halftime Switch (Wow #30) ──────────────────────────── */
@@ -18837,7 +18843,12 @@ async function fetchMLBBoxscoreContext(gamePk) {
       const so   = s.strikeOuts != null ? `${s.strikeOuts}K` : '';
       const era  = s.era ? `${s.era} ERA` : '';
       const runs = s.earnedRuns != null ? `${s.earnedRuns} ER` : '';
-      const line = [ip ? `${ip} IP` : '', so, runs, era].filter(Boolean).join(' ');
+      // numberOfPitches/pitchesThrown are the same value in this endpoint's
+      // own response (confirmed via the prior probe's live check) -- keep
+      // one, not both, to avoid a redundant duplicate in the display line.
+      const pitches = s.numberOfPitches != null ? `${s.numberOfPitches}p` : '';
+      const bf      = s.battersFaced != null ? `${s.battersFaced}BF` : '';
+      const line = [ip ? `${ip} IP` : '', so, runs, era, pitches, bf].filter(Boolean).join(' ');
       if (name && line) parts.push(`${name}: ${line}`);
     }
     // Team batting averages
@@ -20836,8 +20847,59 @@ async function fetchMLBSchedule(date) {
   }
 }
 
+// _mlbRecentPitchPaceMs / _mlbAvgPitchesPerAtBat (CC-CMD-2026-07-10-mlb-
+// whos-up-next): real, measured inputs for the "who's up next" forecast
+// below, derived from THIS game's own recent playEvents[] -- never a
+// hardcoded pitch-clock constant or a league-average assumption. Both
+// require a real sample before returning anything; thin/missing data
+// returns null (the caller omits the forecast rather than guessing),
+// matching this codebase's established silence-over-guessing discipline.
+function _mlbRecentPitchPaceMs(feedData) {
+  try {
+    const allPlays = feedData?.liveData?.plays?.allPlays || [];
+    const currentPlay = feedData?.liveData?.plays?.currentPlay;
+    const recentPlays = allPlays.slice(-4);
+    if (currentPlay) recentPlays.push(currentPlay);
+    const pitchStarts = [];
+    for (const p of recentPlays) {
+      for (const ev of (p.playEvents || [])) {
+        if (ev.isPitch === true && ev.startTime) {
+          const t = new Date(ev.startTime).getTime();
+          if (!isNaN(t)) pitchStarts.push(t);
+        }
+      }
+    }
+    pitchStarts.sort((a, b) => a - b);
+    const gaps = [];
+    for (let i = 1; i < pitchStarts.length; i++) {
+      const gap = pitchStarts[i] - pitchStarts[i - 1];
+      // Real pitch-to-pitch pacing is seconds, not minutes -- a generous
+      // 3-minute ceiling excludes inning breaks/pitching changes/replay
+      // reviews without assuming a specific pitch-clock number.
+      if (gap > 0 && gap <= 180000) gaps.push(gap);
+    }
+    if (gaps.length < 3) return null; // genuinely thin -- omit, don't guess
+    gaps.sort((a, b) => a - b);
+    const mid = Math.floor(gaps.length / 2);
+    return gaps.length % 2 ? gaps[mid] : Math.round((gaps[mid - 1] + gaps[mid]) / 2);
+  } catch (_) { return null; }
+}
+function _mlbAvgPitchesPerAtBat(feedData) {
+  try {
+    const allPlays = feedData?.liveData?.plays?.allPlays || [];
+    const completedPlays = allPlays.filter(p => p.playEvents && p.playEvents.length);
+    if (completedPlays.length < 3) return null;
+    let totalPitches = 0;
+    for (const p of completedPlays) totalPitches += (p.playEvents || []).filter(ev => ev.isPitch === true).length;
+    if (totalPitches === 0) return null;
+    return totalPitches / completedPlays.length;
+  } catch (_) { return null; }
+}
+
 // fetchMLBLiveGame — Heat Index inputs (baserunners, outs, count) + current matchup
 // currentPlay.matchup.{batter,pitcher}.fullName added 2026-05-30
+// battingOrder/currentBatterId/playerNames/recentPitchPaceMs/avgPitchesPerAtBat
+// added 2026-07-10 (CC-CMD-2026-07-10-mlb-whos-up-next), for _mlbWhosUpNext().
 async function fetchMLBLiveGame(gamePk) {
   const url  = `${MLB_STATS_BASE.replace('v1','v1.1')}/game/${gamePk}/feed/live`;
   const r    = await fetch(url);
@@ -20845,6 +20907,11 @@ async function fetchMLBLiveGame(gamePk) {
   const data = await r.json();
   const lp   = data.liveData?.linescore ?? {};
   const play = data.liveData?.plays?.currentPlay ?? {};
+  const homeBattingOrder = data.liveData?.boxscore?.teams?.home?.battingOrder || [];
+  const awayBattingOrder = data.liveData?.boxscore?.teams?.away?.battingOrder || [];
+  const players = data.gameData?.players || {};
+  const playerNames = {};
+  [...homeBattingOrder, ...awayBattingOrder].forEach(id => { playerNames[id] = players[`ID${id}`]?.fullName || null; });
   return {
     inning:     lp.currentInning ?? 0,
     inningHalf: lp.inningHalf ?? '',
@@ -20859,7 +20926,40 @@ async function fetchMLBLiveGame(gamePk) {
     // Current at-bat matchup — journalism + situation context
     batter:  play.matchup?.batter?.fullName  || null,
     pitcher: play.matchup?.pitcher?.fullName || null,
+    // "Who's up next" forecast inputs — all real, measured from THIS
+    // game's own data, never a hardcoded/league constant.
+    currentBatterId:    play.matchup?.batter?.id ?? null,
+    battingOrder:       { home: homeBattingOrder, away: awayBattingOrder },
+    playerNames,
+    recentPitchPaceMs:  _mlbRecentPitchPaceMs(data),
+    avgPitchesPerAtBat: _mlbAvgPitchesPerAtBat(data),
   };
+}
+
+// _mlbWhosUpNext: mechanical lineup-rotation forecast from real batting
+// order + this game's own real, measured pace -- NEVER predicts an
+// outcome (hit, strikeout, etc.), matching this codebase's anti-
+// fabrication rules. aheadSlots is an explicit, documented parameter
+// (default 3), not a silently-hardcoded assumption. Returns null (the
+// caller omits the forecast) if the current batter can't be located in
+// a real, full 9-slot order, or if pace/pitches-per-AB data is thin.
+function _mlbWhosUpNext(liveGame, aheadSlots = 3) {
+  if (!liveGame) return null;
+  const { recentPitchPaceMs, avgPitchesPerAtBat, currentBatterId, inningHalf, battingOrder, playerNames } = liveGame;
+  if (recentPitchPaceMs == null || avgPitchesPerAtBat == null || !currentBatterId) return null;
+  const offenseSide = inningHalf === 'Top' ? 'away' : (inningHalf === 'Bottom' ? 'home' : null);
+  if (!offenseSide) return null;
+  const order = battingOrder?.[offenseSide] || [];
+  if (order.length !== 9) return null; // real full lineup not available -- don't guess
+  const curIdx = order.indexOf(currentBatterId);
+  if (curIdx === -1) return null; // can't locate current batter in the order -- don't guess a slot
+  const targetIdx = (curIdx + aheadSlots) % 9;
+  const targetBatterId = order[targetIdx];
+  const targetName = targetBatterId != null ? playerNames?.[targetBatterId] : null;
+  if (!targetBatterId || !targetName) return null;
+  const estMinutes = Math.round((aheadSlots * avgPitchesPerAtBat * recentPitchPaceMs) / 60000);
+  if (!(estMinutes > 0)) return null; // degenerate estimate -- don't show a bogus "0 min"
+  return { name: targetName, slot: targetIdx + 1, estMinutes };
 }
 
 // mlbBaserunnerBonus — wired into Heat Index in subsequent session
@@ -20952,6 +21052,30 @@ async function refreshMLBStatus() {
 
     if (FIELD_DEBUG) console.debug('[MLB] status refresh:', game.home, oldStatus, '->', fresh.status);
   }
+
+  // "Who's up next" forecast (CC-CMD-2026-07-10-mlb-whos-up-next): the
+  // real, existing live-MLB-card update cycle -- fetchMLBLiveGame() had
+  // zero callers before this. One extra fetch per currently-live MLB
+  // game per 90s cycle (statsapi.mlb.com is CORS-open/free, already
+  // called unguarded elsewhere in this file with no rate-limit concern
+  // on record). Silently omits per-game on any fetch error or thin data
+  // -- never blocks the status refresh above.
+  await Promise.all(mlbSec.games.filter(g => g.status === 'live' && g.sourceId).map(async game => {
+    const card = document.querySelector(`[data-gameid="${game._id}"]`);
+    if (!card) return;
+    try {
+      const liveGame = await fetchMLBLiveGame(game.sourceId);
+      const forecast = _mlbWhosUpNext(liveGame);
+      card.querySelectorAll('.mlb-whos-up-next').forEach(el => el.remove());
+      const chip = renderMLBWhosUpNextChip(forecast);
+      if (chip) {
+        const matchup = card.querySelector('.matchup');
+        if (matchup) matchup.insertAdjacentHTML('afterend', chip);
+      }
+    } catch (e) {
+      captureFieldError('mlb-whos-up-next', e, false);
+    }
+  }));
 }
 
 // Mirrors initNightOwlPoll's exact proven cadence (90s interval, first
@@ -24168,7 +24292,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-07-11a';
+  const SW_VERSION = '2026-07-11b';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -38559,6 +38683,17 @@ function injectBaseballSitChips(){
     const matchup = card.querySelector(".matchup");
     if(matchup) matchup.insertAdjacentHTML("afterend", chip);
   });
+}
+
+// renderMLBWhosUpNextChip (CC-CMD-2026-07-10-mlb-whos-up-next): mirrors
+// renderBaseballSitChip's own pattern -- pure render function, no fetch,
+// no DOM access; the caller (refreshMLBStatus) supplies a real forecast
+// object or null. Only states WHO and roughly WHEN (lineup math), never
+// an outcome, per this codebase's anti-fabrication rules.
+function renderMLBWhosUpNextChip(forecast){
+  if(!forecast) return "";
+  const esc = s => String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  return `<div class="mlb-whos-up-next">🔜 In ~${forecast.estMinutes} min: likely ${esc(forecast.name)}'s at-bat (#${forecast.slot})</div>`;
 }
 
 

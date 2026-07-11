@@ -1,5 +1,44 @@
 # FIELD HANDOFF
 
+## MID-SESSION UPDATE — 2026-07-10/11 (mlb-whos-up-next — the follow-up feature the prior SESSION END entry noted as "still pending" is now shipped)
+
+**SW_VERSION `2026-07-11a` → `2026-07-11b`. Smoke: 919/0 (unchanged).**
+Full detail: `docs/outbox/cc-mlb-whos-up-next-2026-07-10.md`.
+
+**Wires up the two gaps the prior probe (`009164b`, 100/100) found**:
+`fetchMLBLiveGame()` (zero callers, discarded `atBatIndex`/
+`battingOrder`/`playEvents[]`) and `fetchMLBBoxscoreContext()`
+(discarded `numberOfPitches`/`battersFaced`). Built a mechanical
+lineup-rotation forecast — WHO is up and roughly WHEN, never WHAT
+happens, per this codebase's anti-fabrication rules — from real,
+per-game-measured pace and pitches/at-bat, never a hardcoded pitch-clock
+constant or league average.
+
+**TASK 4 hit a genuine blocker, reported rather than worked around**:
+at first verification pass, every MLB game was `Scheduled`, none
+`Live` — computed an honest 75/100 and stopped without committing, per
+the CC-CMD's own gate.
+
+**Resolved via a parallel investigation run in another (chat) session**,
+which correctly separated two claims the prior probe could be mistaken
+for conflating: that the *data source* exists (proven) vs. that *this
+session's new forecast code* computes correctly against it (not yet
+proven by that probe). Executed a stronger version of that session's
+proposed fix: the probe's own game (Phillies @ Tigers, `gamePk 824252`)
+had since gone `Final`, so its complete real record was available —
+re-fetched it fresh and ran the actual new (uncommitted) code against
+two real historical reconstructions: at-bat #40 (the exact one the
+probe quoted) produced a real, correctly-computed forecast ("Matt
+Vierling", slot #5, ~4 min, real 23.2s/pitch pace, real 3.875
+pitches/AB); at-bat #1 (genuinely thin real early-game data) correctly
+produced no forecast at all. Real data, real shipped code, honestly
+distinguished from a literal live-at-this-second connection, which
+remained genuinely unavailable.
+
+Confidence: 100/100 (25+20+30+25). Committed.
+
+---
+
 ## SESSION END — 2026-07-10/11 (extended session, chat-side)
 
 **Final state:** HEAD `d9c6315c` (state-sync only; last real commit `009164b`
