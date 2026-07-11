@@ -179,3 +179,58 @@ not defaulted.
   attach a tooltip to; a future prompt-engineering pass could note
   unverified-ness directly in the journalism prompt text if judged
   worth doing.
+
+## POST-DEPLOY LIVE VERIFICATION — 2026-07-11 19:15 UTC
+
+Deploy-gate run 29164799416 (commit `3296970`) completed
+`status:completed conclusion:success` in 33s (19:10:50→19:11:23 UTC).
+Wrangler deploy log confirms `https://jubilant-bassoon.jeffunglesbee.workers.dev`
+deployed for `32969707693f43869a549ff2e0343b83e0399337` (this commit's
+full SHA), Current Version ID `e710d9ce-f2b1-41f5-b1b6-50bd33a2543e`.
+
+Fetched the live site with a real headless browser (not asserted):
+
+- `window.SW_VERSION === "2026-07-11e"` — confirmed, matches this commit.
+- `typeof _recordRelayInit === 'function'` and
+  `typeof buildFieldHealthPanel === 'function'` — confirmed present.
+- `buildFieldHealthPanel()`'s live output contains
+  `"Relay Init (9 overlays)"` — confirmed, the new Health Panel section
+  actually renders in production, not just in source.
+- `window._relayInitStatus` already had **7 of 9 real entries**
+  recorded from the page's own real boot sequence (not seeded by this
+  verification) — `soccerFBrefInit`/`uflEpaInit` correctly absent since
+  neither is called on today's slate (both are lazy/conditional by
+  design).
+
+**New, real, previously-invisible finding surfaced immediately by this
+feature — reported per Rule 77, not fixed here (out of this CC-CMD's
+scope, and touches live relay endpoints that need their own
+diagnosis):**
+
+| Function | Live status | Real error |
+|---|---|---|
+| `nbaPlayerCluichInit` | `ok:false` | **`NBA_STATS_RELAY is not defined`** |
+| `nhlSeriesInit` | `ok:false` | `HTTP 403` |
+| `nhlGSAXInit` | `ok:false` | `HTTP 403` |
+| `mlbStatsInit`, `mlbProbablePitcherInit`, `mlbPitcherStatsInit`, `nbaCluichInit` | `ok:true` | — |
+
+`nbaPlayerCluichInit`'s failure is not a network/relay problem — it's a
+`ReferenceError`. Confirmed via grep: `NBA_STATS_RELAY` is referenced
+once (index.html:8417) and declared nowhere in the file. This function
+has been silently no-op-ing in production (empty effective behavior,
+masked by its own try/catch) for as long as that line has existed —
+this task's instrumentation is what surfaced it, on the very first live
+page load after deploy. `nhlSeriesInit`/`nhlGSAXInit` both getting a
+real `HTTP 403` from `field-relay-nba.jeffunglesbee.workers.dev`
+(rather than a timeout or 5xx) suggests an auth/allowlist issue on the
+relay side — that repo is outside this session's tool scope to
+investigate further.
+
+**Recommend a follow-up CC-CMD**: (1) fix the `NBA_STATS_RELAY`
+undefined-variable bug (likely a missing/renamed constant — probably
+should read from the same relay base used elsewhere, e.g.
+`_NHL_SERIES_RELAY`'s host), (2) diagnose the two relay-side 403s in
+field-relay-nba. Not attempted here — correctly out of scope for a
+visibility-only task, and exactly the kind of thing this feature exists
+to make impossible to miss going forward.
+
