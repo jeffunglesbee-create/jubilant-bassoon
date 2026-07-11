@@ -153,6 +153,23 @@ logic changed.
   only new behavior is that pick-resolution itself now attempts
   again, everything else is byte-for-byte the same gating as before).
 
+## POST-DEPLOY LIVE VERIFICATION — 2026-07-11 23:01 UTC
+
+Deploy-gate run 29171456720 (commit `7c96dac`) completed
+`status:completed conclusion:success` in 38s (23:01:04→23:01:42 UTC).
+
+Fetched the live site with a real headless browser (not asserted):
+
+- `window.SW_VERSION === "2026-07-11j"` — confirmed, matches this commit.
+- `typeof saveEspnFinal === "function"` — confirmed.
+- `typeof _resolvePickIfExists === "function"` — confirmed.
+
+This fix touches a function (`saveEspnFinal`) called on every
+finished-game poll cycle — confirming both it and the pick-resolution
+function it now unconditionally attempts are genuinely deployed and
+callable in production (not just that the page loaded generically) is
+the meaningful check here.
+
 ## DONE CONDITION
 
 A pick-resolution failure for a given game can now be retried on a
@@ -161,7 +178,8 @@ produces), independent of that game's own save-dedup status —
 verified with a real forced-failure-then-retry test, not asserted.
 All other one-time side effects in `saveEspnFinal` remain correctly
 deduplicated, confirmed via the same test (fired exactly once across
-both calls) and via direct source re-read (TASK 4).
+both calls) and via direct source re-read (TASK 4). Confirmed live in
+production: both functions deployed and callable, correct SW_VERSION.
 
 ## CONFIDENCE SCORING
 
