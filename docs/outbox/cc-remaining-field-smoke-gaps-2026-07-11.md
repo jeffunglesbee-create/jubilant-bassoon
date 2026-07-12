@@ -89,15 +89,32 @@ existing format.
   before concluding, per the doc's own explicit instruction not to
   skip this because the conclusion "feels" obvious.
 
+## POST-DEPLOY LIVE VERIFICATION — 2026-07-12 00:09 UTC
+
+Deploy-gate run 29173264084 (commit `f6bb981`) completed
+`status:completed conclusion:success` in 39s (00:09:16→00:09:55 UTC).
+
+Fetched the live site with a real headless browser (not asserted):
+
+- `window.SW_VERSION === "2026-07-11l"` — confirmed, matches this commit.
+- `typeof FIELD_FEATURES === "object"` — confirmed.
+- `FIELD_FEATURES['weather-intelligence'] === "2026-06-14"` — confirmed
+  present and correctly dated in the deployed production build.
+- `FIELD_FEATURES['ufl-2026'] === "2026-06-14"` — confirmed present and
+  correctly dated in the deployed production build.
+
+Both new registry entries are genuinely live, not just committed to source.
+
 ## DONE CONDITION
 
 Assertion 48 resolved as a stale betting-content leftover, removed
 (not built as new feature work). `weather-intelligence` and `ufl-2026`
 have real registry entries matching genuinely-existing, genuinely-wired
-code, verified independently. `field_smoke.js` failure count: **0**,
-explicitly confirmed via a clean, repeated run — this is also the
-genuine end state of the entire `field_smoke.js` investigation thread
-that started tonight at 21 failures.
+code, verified independently and confirmed live in production.
+`field_smoke.js` failure count: **0**, explicitly confirmed via a
+clean, repeated run — this is also the genuine end state of the entire
+`field_smoke.js` investigation thread that started tonight at 21
+failures.
 
 ## CONFIDENCE SCORING
 
