@@ -1,5 +1,52 @@
 # FIELD HANDOFF
 
+## MID-SESSION UPDATE — 2026-07-12 (Journalism brief cards defeat card-reuse reconciliation — same data-gameid on a sibling element)
+
+**SW_VERSION 2026-07-11o → 2026-07-11p.** Full detail:
+`docs/outbox/cc-journalism-brief-card-reconciliation-collision-2026-07-12.md`.
+
+Direct request: "Find and resolve another journalism UI silent failure
+using novel thinking. No Fallbacks, only fixes."
+
+**Found**: `renderMLBGameBriefCard`/`renderWNBAGameBriefCard`/
+`renderStakesBriefCard`/`renderEPLMatchBriefCard`/`renderSeriesPreviewCard`
+all inject their card as a sibling immediately *before* the game-card
+(`insertAdjacentElement('beforebegin', ...)`) and stamp it with the
+*same* `data-gameid`. `applyMainHTML()`'s card-reuse reconciliation
+(~line 10949) queried `main.querySelectorAll('[data-gameid]')` — a bare
+attribute selector that matches either element — and kept only the
+*first* match per ID. Confirmed live in production: for every MLB game
+with a rendered brief (g17/g18/g20), the first match was the brief
+card, not the game-card.
+
+**Consequence**: the reconciliation's `existing.outerHTML ===
+newCard.outerHTML` comparison could never succeed for any
+brief-carrying game (comparing a brief-card's markup against a
+game-card's markup), permanently misclassifying it as "changed" every
+render — defeating the zero-change fast path for the whole page
+whenever it included such a game, and forcing a full
+`main.replaceChildren(...)` commit that wipes every brief/preview card
+site-wide (since `tmp` never contains them). They self-heal from
+`sessionStorage` cache via the `init*Briefs()` timers in the common
+case, but can be silently and permanently lost if the game falls
+outside its brief type's fixed DOM-order candidate slice on a later
+render.
+
+**Fix**: 2 selector strings changed from `'[data-gameid]'` to
+`'.game-card[data-gameid]'` — restores the reconciliation's own
+documented intent (only ever match real game-cards). Not a new
+fallback; a corrected selector.
+
+Real extraction test (reconciliation block pulled verbatim, run against
+a minimal DOM faithfully reproducing the live-confirmed structure): 3
+cases — fixed selector correctly recognizes an unchanged brief-carrying
+game, fixed selector still correctly flags a genuinely changed one, and
+the OLD bare selector reproduces the exact defect (proving the fix is
+what closes the gap, not just an assumption).
+
+`node smoke.js`: 919/0. `node field_unit.js`: 66/0. `node field_smoke.js`:
+Failures: 0, unaffected.
+
 ## MID-SESSION UPDATE — 2026-07-12 (MLB cards stuck at "Inn 9", never Final — two un-synced status systems, confirmed live in production)
 
 **SW_VERSION 2026-07-11n → 2026-07-11o.** Full detail:

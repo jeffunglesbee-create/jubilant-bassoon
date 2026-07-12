@@ -10949,11 +10949,24 @@ function applyMainHTML(html){
   let anyCardChanged = false;
   try {
     const existingCards = new Map();
-    main.querySelectorAll('[data-gameid]').forEach(el => {
+    // .game-card[data-gameid], not the bare [data-gameid] attribute selector:
+    // journalism brief cards (renderMLBGameBriefCard etc.) and series-preview
+    // cards are injected as siblings immediately BEFORE the game-card via
+    // insertAdjacentElement('beforebegin', ...) and deliberately carry the
+    // SAME data-gameid (so their own re-render logic can find/dedupe them).
+    // The bare selector below matched whichever sibling happened to come
+    // first in document order -- for every game with a rendered brief, that
+    // was the brief card, not the game-card -- so `existing` here silently
+    // held the wrong element's outerHTML for the byte-identical comparison
+    // below, permanently defeating reuse (and the zero-change fast path)
+    // for any game with a brief, confirmed live: g17/g18/g20's first
+    // [data-gameid] match in production was .sport-game-brief-card, not
+    // .game-card.
+    main.querySelectorAll('.game-card[data-gameid]').forEach(el => {
       if (!existingCards.has(el.dataset.gameid)) existingCards.set(el.dataset.gameid, el);
     });
     const newCardIds = new Set();
-    tmp.querySelectorAll('[data-gameid]').forEach(newCard => {
+    tmp.querySelectorAll('.game-card[data-gameid]').forEach(newCard => {
       if (newCard.hasAttribute('data-lcp-anchor')) return; // already handled above
       const gid = newCard.dataset.gameid;
       newCardIds.add(gid);
@@ -24343,7 +24356,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-07-11o';
+  const SW_VERSION = '2026-07-11p';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
