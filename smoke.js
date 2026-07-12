@@ -994,12 +994,18 @@ assert('A199 — UFL-EPA: card template EPA block present',
   html.includes('_buildUFLEpaHTML') && html.includes('ufl-epa-live'),
   'EPA block must be present in card template and CSS');
 
+// PLAYER_SPEED/getRegressionAlert dropped 2026-07-12 (Rule 63 dead-code
+// cleanup): confirmed via direct grep, zero real call sites anywhere in
+// index.html -- removed from index.html along with TEAM_ABS_RANKINGS/
+// getTeamABSRanking and PLAYER_EXPECTED_STATS (neither was ever checked
+// by these two assertions to begin with). UMPIRE_ABS_RATINGS/PARK_FACTORS
+// and their getters remain genuinely alive (real consumers confirmed).
 assert('A200 — MLB Wave 1: lookup tables present',
-  html.includes('UMPIRE_ABS_RATINGS') && html.includes('PARK_FACTORS') && html.includes('PLAYER_SPEED'),
+  html.includes('UMPIRE_ABS_RATINGS') && html.includes('PARK_FACTORS'),
   'Wave 1 MLB lookup tables must be defined');
 
 assert('A201 — MLB Wave 1: getter functions present',
-  html.includes('getUmpireABSRating') && html.includes('getParkFactor') && html.includes('getRegressionAlert'),
+  html.includes('getUmpireABSRating') && html.includes('getParkFactor'),
   'Wave 1 getter functions must be defined');
 
 assert('A202 — MLB Wave 1: analytics wired into compound prompt',
