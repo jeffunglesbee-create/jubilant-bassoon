@@ -1,5 +1,45 @@
 # FIELD HANDOFF
 
+## MID-SESSION UPDATE — 2026-07-12 (Night Owl context race — a slower final's AI text could land under a faster, more dramatic final's card)
+
+**SW_VERSION 2026-07-11q → 2026-07-11r.** Full detail:
+`docs/outbox/cc-night-owl-context-race-2026-07-12.md`.
+
+Direct request: "Find and resolve context races in prompts/briefs. No
+Fallbacks, only fixes."
+
+**Found**: `renderNightOwlRecap()` renders into ONE shared element
+(`#night-owl`), repointed at a *different* `topGame` each call, and is
+triggered from 6 independent, uncoordinated sources (90s poll, MLB-
+data-ready timeout, and — per its own comment — "the fastest possible
+trigger," a MutationObserver on `espn-final` cards) with **no
+re-entrancy guard**. Its AI completion handler does
+`el.querySelector('.night-owl-text')` fresh, 5-15+ seconds after the
+fetch started. If a *second*, more dramatic final arrives mid-fetch, it
+wins selection and replaces the slot's DOM for its own game; when the
+*first* call's AI response finally lands, it writes into whatever
+`.night-owl-text` now exists — the *second*, unrelated game's card.
+Real, user-visible bug: one game's header/score with a *different*
+game's AI prose underneath.
+
+**Fix**: reused the existing `_nightOwlGameId` singleton (already
+tracked "which game owns the slot," just wasn't used to gate the async
+writes) — `if (_nightOwlGameId !== topGame.id) return/skip` before each
+of the 2 shared-DOM writes in the function. `sessionStorage`/
+`archiveBrief` calls stay unconditional (per-game-keyed, always
+correct). Not a new fallback — makes existing state actually govern the
+write it should have all along.
+
+Real extraction test (`renderNightOwlRecap()` pulled verbatim, 383
+lines) run against BOTH the pre-fix and post-fix code in the same
+scenario (game A's fetch held pending while game B, more dramatic,
+takes over the slot, then A resolves): pre-fix code reproduces the
+misattribution exactly as described; post-fix code correctly discards
+the stale write and preserves game B's content.
+
+`node smoke.js`: 919/0. `node field_unit.js`: 66/0. `node field_smoke.js`:
+Failures: 0, unaffected.
+
 ## MID-SESSION UPDATE — 2026-07-12 ("Yesterday's FIELD" archive link falls back to the server archive — plus a pre-existing tz crash fixed)
 
 **SW_VERSION 2026-07-11p → 2026-07-11q.** Full detail:

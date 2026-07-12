@@ -24424,7 +24424,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-07-11q';
+  const SW_VERSION = '2026-07-11r';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -41831,6 +41831,14 @@ async function renderNightOwlRecap(){
       if (!_staticCtx) return;
       const _enriched = await enrichChampionshipFromArchive(topGame, _staticCtx);
       if (!_enriched || !_enriched.pathToFinals) return;
+      // Context-race guard (2026-07-12): #night-owl is a single shared slot
+      // re-used by every call to this function. If a NEWER call has since
+      // claimed the slot for a different game (a second final arriving
+      // while this archive fetch was in flight), _nightOwlGameId no longer
+      // matches topGame.id -- writing here would splice THIS game's
+      // path-to-finals text into the CURRENTLY DISPLAYED, unrelated game's
+      // brief. Discard rather than misattribute.
+      if (_nightOwlGameId !== topGame.id) return;
       const _textEl = el.querySelector('.night-owl-text');
       if (!_textEl) return;
       const _cur = _textEl.textContent || '';
@@ -41883,8 +41891,24 @@ async function renderNightOwlRecap(){
     // fetchNightOwlFromClaude fallback (already stripped at its own
     // return points -- idempotent here, harmless redundancy).
     if (claudeText) claudeText = stripPromptLeaks(claudeText);
-    if(claudeText){const textEl=el.querySelector('.night-owl-text');if(textEl){textEl.textContent=trimToCompleteSentence(claudeText);textEl.classList.remove('pending');textEl.classList.add('loaded');}sessionStorage.setItem(cacheKey,claudeText);try{archiveBrief('night_owl',(topGame&&topGame._sport)||null,topGame&&(topGame.sourceId||topGame._id||topGame.id)||null,claudeText,null);}catch(_){}}
-    else{const textEl=el.querySelector('.night-owl-text');if(textEl){textEl.classList.remove('pending');textEl.classList.add('loaded');}}
+    // Context-race guard (2026-07-12): fetchNightOwlFromClaude/the queue-job
+    // poll above can take 5-15+ seconds, and #night-owl is a single shared
+    // slot re-used by every trigger that calls this function (90s poll,
+    // MLB-data-ready timeout, MutationObserver "fastest possible trigger" --
+    // all fire-and-forget, none aware of each other). If a second, more
+    // dramatic final arrives and re-renders the slot for a DIFFERENT game
+    // while this call's AI request is still in flight, el.querySelector
+    // below would resolve to that OTHER game's DOM -- writing THIS game's
+    // brief text under the WRONG game's header/score. sessionStorage/
+    // archiveBrief stay unconditional (topGame.id-scoped, always correct
+    // and useful for next time); only the shared-DOM write is gated.
+    const _stillCurrent = _nightOwlGameId === topGame.id;
+    if(claudeText){
+      sessionStorage.setItem(cacheKey,claudeText);
+      try{archiveBrief('night_owl',(topGame&&topGame._sport)||null,topGame&&(topGame.sourceId||topGame._id||topGame.id)||null,claudeText,null);}catch(_){}
+      if(_stillCurrent){const textEl=el.querySelector('.night-owl-text');if(textEl){textEl.textContent=trimToCompleteSentence(claudeText);textEl.classList.remove('pending');textEl.classList.add('loaded');}}
+    }
+    else if(_stillCurrent){const textEl=el.querySelector('.night-owl-text');if(textEl){textEl.classList.remove('pending');textEl.classList.add('loaded');}}
   }
 
   // NOX: Secondary capsules — all other finals with drama peak ≥ 60
