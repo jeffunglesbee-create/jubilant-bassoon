@@ -143,3 +143,20 @@ relevant `briefType`s, not asserted.
   the now-instrumented `generateJournalismViaRelay`, which is where
   this fix concentrated for maximum coverage with minimal surface
   area, matching tonight's established "one shared boundary" pattern.
+
+## POST-DEPLOY LIVE VERIFICATION
+
+- Workflow run `29175551014` (deploy-gate.yml) — `head_sha:
+  ad32711877cfe091112dc19044fbd862eac2090a`, `status: completed`,
+  `conclusion: success`. Started `2026-07-12T01:38:24Z`, finished
+  `2026-07-12T01:39:06Z` (42s).
+- Live check against `https://jubilant-bassoon.jeffunglesbee.workers.dev`
+  via `browser_navigate` + `browser_extract` (mode: evaluate):
+  ```json
+  {"sw":"2026-07-11m","genFn":"function","prefetchFn":"function"}
+  ```
+  `window.SW_VERSION === '2026-07-11m'` — confirmed. `typeof
+  generateJournalismViaRelay === 'function'` — confirmed. `typeof
+  fetchPrerenderedJournalism === 'function'` — confirmed. Both
+  instrumented functions are genuinely deployed and callable in
+  production, not just present in source.
