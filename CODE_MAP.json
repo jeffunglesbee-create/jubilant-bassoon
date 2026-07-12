@@ -1,7 +1,7 @@
 {
   "file": "index.html",
-  "lineCount": 42420,
-  "generatedAt": "2026-07-12T03:12:08.830Z",
+  "lineCount": 42444,
+  "generatedAt": "2026-07-12T03:51:53.043Z",
   "summary": {
     "functionCount": 984,
     "sectionCount": 728,
@@ -11,8 +11,8 @@
       {
         "name": "RIVALRIES",
         "line": 38839,
-        "endLine": 42240,
-        "approximateBytes": 188062
+        "endLine": 42264,
+        "approximateBytes": 189544
       },
       {
         "name": "BDL_MILESTONE_THRESHOLDS",
@@ -125,10 +125,10 @@
         "lineCount": 325
       },
       {
-        "name": "══",
-        "startLine": 16333,
-        "endLine": 16629,
-        "lineCount": 297
+        "name": "J5 isBlowout gate (Combo B-1+)",
+        "startLine": 41852,
+        "endLine": 42152,
+        "lineCount": 301
       }
     ]
   },
@@ -4462,43 +4462,43 @@
     {
       "name": "Series Margins Display",
       "startLine": 41552,
-      "endLine": 41843,
-      "lineCount": 292
+      "endLine": 41851,
+      "lineCount": 300
     },
     {
       "name": "J5 isBlowout gate (Combo B-1+)",
-      "startLine": 41844,
-      "endLine": 42128,
-      "lineCount": 285
+      "startLine": 41852,
+      "endLine": 42152,
+      "lineCount": 301
     },
     {
       "name": "═",
-      "startLine": 42129,
-      "endLine": 42133,
+      "startLine": 42153,
+      "endLine": 42157,
       "lineCount": 5
     },
     {
       "name": "═",
-      "startLine": 42134,
-      "endLine": 42217,
+      "startLine": 42158,
+      "endLine": 42241,
       "lineCount": 84
     },
     {
       "name": "Bootstrap: kick off the initial schedule load ─",
-      "startLine": 42218,
-      "endLine": 42224,
+      "startLine": 42242,
+      "endLine": 42248,
       "lineCount": 7
     },
     {
       "name": "P1 — Last-Known-State Hydration (startup polish bundle, June 3 2026)",
-      "startLine": 42225,
-      "endLine": 42341,
+      "startLine": 42249,
+      "endLine": 42365,
       "lineCount": 117
     },
     {
       "name": "P5 — Anticipatory Pre-fetch (startup polish bundle, June 3 2026)",
-      "startLine": 42342,
-      "endLine": 42420,
+      "startLine": 42366,
+      "endLine": 42444,
       "lineCount": 79
     }
   ],
@@ -11274,119 +11274,119 @@
     },
     {
       "name": "_owlJobId",
-      "line": 41858,
+      "line": 41866,
       "params": "(",
       "async": false,
       "section": "J5 isBlowout gate (Combo B-1+)"
     },
     {
       "name": "renderLastNight",
-      "line": 41981,
+      "line": 42005,
       "params": "",
       "async": false,
       "section": "J5 isBlowout gate (Combo B-1+)"
     },
     {
       "name": "checkForNewFinals",
-      "line": 42019,
+      "line": 42043,
       "params": "",
       "async": false,
       "section": "J5 isBlowout gate (Combo B-1+)"
     },
     {
       "name": "toLS",
-      "line": 42075,
+      "line": 42099,
       "params": "periods",
       "async": false,
       "section": "J5 isBlowout gate (Combo B-1+)"
     },
     {
       "name": "topPlayers",
-      "line": 42079,
+      "line": 42103,
       "params": "players, teamLabel",
       "async": false,
       "section": "J5 isBlowout gate (Combo B-1+)"
     },
     {
       "name": "renderHalftimeSwitch",
-      "line": 42138,
+      "line": 42162,
       "params": "",
       "async": false,
       "section": "═"
     },
     {
       "name": "currentBucket",
-      "line": 42241,
+      "line": 42265,
       "params": "",
       "async": false,
       "section": "P1 — Last-Known-State Hydration (startup polish bundle, June 3 2026)"
     },
     {
       "name": "_snapshotOpen",
-      "line": 42248,
+      "line": 42272,
       "params": "",
       "async": false,
       "section": "P1 — Last-Known-State Hydration (startup polish bundle, June 3 2026)"
     },
     {
       "name": "idbGet",
-      "line": 42263,
+      "line": 42287,
       "params": "store, key",
       "async": true,
       "section": "P1 — Last-Known-State Hydration (startup polish bundle, June 3 2026)"
     },
     {
       "name": "idbSet",
-      "line": 42274,
+      "line": 42298,
       "params": "store, key, value",
       "async": true,
       "section": "P1 — Last-Known-State Hydration (startup polish bundle, June 3 2026)"
     },
     {
       "name": "saveSnapshot",
-      "line": 42285,
+      "line": 42309,
       "params": "",
       "async": true,
       "section": "P1 — Last-Known-State Hydration (startup polish bundle, June 3 2026)"
     },
     {
       "name": "restoreSnapshot",
-      "line": 42302,
+      "line": 42326,
       "params": "",
       "async": true,
       "section": "P1 — Last-Known-State Hydration (startup polish bundle, June 3 2026)"
     },
     {
       "name": "showFreshnessStrip",
-      "line": 42320,
+      "line": 42344,
       "params": "ageMin",
       "async": false,
       "section": "P1 — Last-Known-State Hydration (startup polish bundle, June 3 2026)"
     },
     {
       "name": "markFreshnessLive",
-      "line": 42330,
+      "line": 42354,
       "params": "",
       "async": false,
       "section": "P1 — Last-Known-State Hydration (startup polish bundle, June 3 2026)"
     },
     {
       "name": "recordOpenHour",
-      "line": 42352,
+      "line": 42376,
       "params": "",
       "async": false,
       "section": "P5 — Anticipatory Pre-fetch (startup polish bundle, June 3 2026)"
     },
     {
       "name": "predictNextOpenHour",
-      "line": 42362,
+      "line": 42386,
       "params": "",
       "async": false,
       "section": "P5 — Anticipatory Pre-fetch (startup polish bundle, June 3 2026)"
     },
     {
       "name": "registerAnticipatoryPrefetch",
-      "line": 42377,
+      "line": 42401,
       "params": "",
       "async": true,
       "section": "P5 — Anticipatory Pre-fetch (startup polish bundle, June 3 2026)"
@@ -12170,8 +12170,8 @@
     {
       "name": "RIVALRIES",
       "line": 38839,
-      "endLine": 42240,
-      "approximateBytes": 188062
+      "endLine": 42264,
+      "approximateBytes": 189544
     },
     {
       "name": "PACKAGE_INCLUDES",
@@ -12193,8 +12193,8 @@
     },
     {
       "name": "_finalizedAt",
-      "line": 42018,
-      "endLine": 42125,
+      "line": 42042,
+      "endLine": 42149,
       "approximateBytes": 5789
     }
   ],
@@ -13121,37 +13121,37 @@
     },
     {
       "call": "setTimeout",
-      "line": 41875,
+      "line": 41883,
       "context": "if (_i < 2) await new Promise(r => setTimeout(r, 2000));"
     },
     {
       "call": "setTimeout",
-      "line": 42213,
+      "line": 42237,
       "context": "setTimeout(()=>{ _htShownGames.add(htKey+'_done'); panel.style.display='none'; }, 90000);"
     },
     {
       "call": "fetchSchedule",
-      "line": 42219,
+      "line": 42243,
       "context": "// fetchSchedule() populates allData from buildTodaySchedule() then calls renderAll()"
     },
     {
       "call": "setTimeout",
-      "line": 42336,
+      "line": 42360,
       "context": "setTimeout(() => { strip.classList.remove('is-visible'); strip.classList.remove('freshness-live'); }, 2000);"
     },
     {
       "call": "setTimeout",
-      "line": 42391,
+      "line": 42415,
       "context": "setTimeout(registerAnticipatoryPrefetch, 4000);"
     },
     {
       "call": "fetchSchedule",
-      "line": 42404,
+      "line": 42428,
       "context": "// Kick: restore first (paints cached DOM if any), then fetchSchedule (which renderAll-replaces with fresh)."
     },
     {
       "call": "fetchSchedule",
-      "line": 42406,
+      "line": 42430,
       "context": "restoreSnapshot().finally(() => { fetchSchedule().then(markFreshnessLive); });"
     }
   ]
