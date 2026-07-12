@@ -4684,14 +4684,47 @@ CLEAR (no action needed):
   - `late_deficit` CRUNCH threshold (loserWP < 0.15): single probability → binary output
 
 MODERATE — DOCUMENTED, REFACTOR DEFERRED:
-  - `_otwFindLiveGame(minScore=50)` in Watch Engine: uses `dramaScoreLive() > 50`
-    for ESPN game selection. Display is mitigated (named labels via buildOTWStateLabel).
-    Selection mechanism is composite + threshold. Planned fix: replace with
-    `buildOTWStateLabel()` category-based selection (same session as Drama Dial build).
+  (none currently — the `_otwFindLiveGame` entry that lived here was stale;
+  see "CORRECTED 2026-07-12" below.)
+
+CORRECTED 2026-07-12 (documentation fix only, no code change — CC-CMD-
+2026-07-12-otw-tier-categorical flagged this while investigating a
+different, real fix below):
+  - `_otwFindLiveGame(minScore)` in Watch Engine: this entry previously read
+    "uses `dramaScoreLive() > 50` for ESPN game selection... Selection
+    mechanism is composite + threshold. Planned fix: replace with
+    `buildOTWStateLabel()` category-based selection." Direct read of current
+    HEAD shows that refactor already shipped (exact prior date not
+    determinable from the code alone — not invented here): selection is by
+    `fieldGameTier(g._id)` / `fieldTierRank(tier)` (categorical tier rank,
+    highest tier wins), not a raw `dramaScoreLive()` threshold. `minScore`
+    is accepted for signature back-compat only and is interpreted as a tier
+    floor via `fieldTierRank()`, per the function's own header comment — not
+    used as a composite-score cutoff. This risk item is CLEAR, not MODERATE;
+    the entry was simply never updated when the fix landed.
 
 FIXED THIS SESSION:
   - `getOTWMomentum()`: was HIGH (drama score delta ≥ 10 → display). Fixed: score-event.
   - `_otwFindWCLiveGame()`: was MODERATE (composite sel score). Fixed: categorical tiers.
+
+FIXED 2026-07-12 (CC-CMD-2026-07-12-otw-tier-categorical /
+-otw-live-tier-categorical):
+  - `_otwGetLiveTier(eData, sport, smoothed)`'s T3/T4 branches (CLOSE_FINISH/
+    LIVE_GAME) previously compared a temporally-smoothed composite drama
+    score against numeric thresholds (`smoothed >= 60`, `smoothed >= 40`) to
+    SELECT the tier — a second, previously-undocumented instance of this
+    risk class distinct from the `_otwFindLiveGame` game-selection entry
+    above, and not what A495's earlier "Rule 95 RESOLVED" claim actually
+    covered (that fix was display-only: `dramaTier(score)||'warm'` → named
+    label; the underlying T3/T4 SELECTION was still composite+threshold).
+    Fixed: T3/T4 now derive the tier from raw observables only (score
+    margin, period, clock) via `_otwMarginTier()`/`_otwIsFinalPeriod()`/
+    `_otwIsCrunchTime()`. `_otwGetLiveTier()` no longer accepts a smoothed-
+    drama argument at all. Calibrated against a 749-sample characterization
+    sweep of the prior behavior — 98.5% agreement, 11 documented mismatches
+    (see docs/outbox/cc-otw-tier-categorical-2026-07-12.md). The
+    `_otwFindLiveGame` game-selection entry above is unrelated and remains
+    MODERATE/deferred — not touched by this fix.
 
 LONG-TERM FTO:
   - Drama Dial (not yet built): client-side localStorage slider personalizes Drama Dial

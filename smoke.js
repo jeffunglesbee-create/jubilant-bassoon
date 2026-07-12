@@ -3830,14 +3830,18 @@ assert('A494 — PM-25 categorical tier refactor: _otwGetLiveTier + _otwTierLabe
   html.includes("return 'CRUNCH'") &&
   html.includes("return 'EXTRA_TIME'") &&
   html.includes("return 'CLOSE_FINISH'"),
-  'PM-25 categorical tier refactor (A494): _otwGetLiveTier(eData, sport, smoothed) must return named condition strings (CRUNCH/EXTRA_TIME/CLOSE_FINISH/LIVE_GAME) derived from factual game-state booleans — never a numeric composite threshold. _otwTierLabel(tier) maps condition to display string. This mirrors _otwFindWCLiveGame\'s named-condition tier architecture for the ESPN live game path. RUWT Rule 95: the WC path already used named conditions; the ESPN path previously used dramaTier(score) numeric bands. These two functions bring the ESPN path to parity.');
+  'PM-25 categorical tier refactor (A494): _otwGetLiveTier(eData, sport) must return named condition strings (CRUNCH/EXTRA_TIME/CLOSE_FINISH/LIVE_GAME) derived from factual game-state booleans — never a numeric composite threshold. _otwTierLabel(tier) maps condition to display string. This mirrors _otwFindWCLiveGame\'s named-condition tier architecture for the ESPN live game path. RUWT Rule 95: the WC path already used named conditions; the ESPN path previously used dramaTier(score) numeric bands. These two functions bring the ESPN path to parity. 2026-07-12: T3/T4 (CLOSE_FINISH/LIVE_GAME) rewritten to drop the smoothed-drama arg entirely — selection is now raw-observable-only (margin/period/clock via _otwMarginTier/_otwIsFinalPeriod/_otwIsCrunchTime), not just the display.');
 
 assert('A495 — RUWT Rule 95 RESOLVED: OTW FIRE state uses _otwGetLiveTier not raw dramaTier',
-  html.includes('_otwGetLiveTier(ed, sport,') &&
+  html.includes('_otwGetLiveTier(ed, sport)') &&
   html.includes('_otwTierLabel(_liveTierKey)') &&
   // The old pattern (dramaTier(score)||'warm' in the OTW FIRE block) must be gone
-  !html.includes("const tier=dramaTier(score)||'warm'"),
-  'RUWT Rule 95 RESOLVED (A495): OTW FIRE state must use _otwGetLiveTier() for named-condition tier derivation. The prior pattern (dramaTier(score)||\'warm\') mapped a numeric composite score to CSS tier bands — even though the threshold was user-controlled (A490), the pattern still matched RUWT claim structure for displaying a combined interest level. After this change: tier label is derived from binary factual conditions (period/margin/crunch rules) via _otwGetLiveTier(), same architectural pattern as _otwFindWCLiveGame which was already fully RUWT-compliant. Composite score is still used internally for getDramaDial() threshold gate (A490 — user-controlled) but the displayed label is now a factual named condition. Rule 95 MODERATE → RESOLVED.');
+  !html.includes("const tier=dramaTier(score)||'warm'") &&
+  // 2026-07-12: the smoothed-drama fallback arg is gone too — _otwGetLiveTier
+  // no longer accepts a 3rd param, so no call site should pass one.
+  !html.includes('_otwGetLiveTier(ed, sport, ') &&
+  !html.includes('_otwGetLiveTier(eData, sport, '),
+  'RUWT Rule 95 RESOLVED (A495): OTW FIRE state must use _otwGetLiveTier() for named-condition tier derivation. The prior pattern (dramaTier(score)||\'warm\') mapped a numeric composite score to CSS tier bands — even though the threshold was user-controlled (A490), the pattern still matched RUWT claim structure for displaying a combined interest level. After this change: tier label is derived from binary factual conditions (period/margin/crunch rules) via _otwGetLiveTier(), same architectural pattern as _otwFindWCLiveGame which was already fully RUWT-compliant. 2026-07-12: even the internal SELECTION of CLOSE_FINISH/LIVE_GAME no longer touches a composite score — _otwGetLiveTier(eData, sport) takes no smoothed-drama argument at all now. Rule 95 MODERATE → RESOLVED (now covering T3/T4 selection, not just display).');
 
 // ── Drama Score Display Compliance lock-in (DRAMA-COMPLIANCE — 2026-07-01) ──
 // Manually verified 2026-07-01 (chat-side): dramaScoreLive() computes a real

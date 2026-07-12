@@ -24469,7 +24469,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-07-12c';
+  const SW_VERSION = '2026-07-12d';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -36979,16 +36979,89 @@ function _updateDialChip() {
   chip.style.display = 'inline-flex';
   chip.style.alignItems = 'center';
 }
-// ── PM-25 / Drama Dial categorical tier refactor (June 5 2026) ───────────────
+// ── CC-CMD-2026-07-12-otw-tier-categorical / otw-live-tier-categorical ───────
+// T3/T4 margin tiers, reused verbatim from dramaScoreLive()'s own base-score
+// bucket boundaries per sport (not reinvented):
+//   TIER1 (tightest): margin alone usually clears LIVE_GAME with room to
+//     spare, and combined with ANY final-period presence clears CLOSE_FINISH.
+//   TIER2: margin alone just clears LIVE_GAME; needs crunch-time to also
+//     clear CLOSE_FINISH.
+//   TIER3 (widest still-relevant): margin alone falls short of LIVE_GAME;
+//     only clears it when crunch-time urgency is added on top.
+// Calibrated against a 749-sample characterization sweep of the OLD
+// smoothed-threshold behavior (see docs/outbox/cc-otw-tier-categorical-
+// 2026-07-12.md) — 98.5% agreement, remaining mismatches documented there.
+function _otwMarginTier(eData, sport) {
+  const diff = Math.abs((eData.homeScore||0) - (eData.awayScore||0));
+  const sp = (sport||'').toLowerCase();
+  if (sp.includes('wnba')) return diff===0?1 : diff<=3?2 : diff<=7?3 : 0;
+  if (sp.includes('tennis')||sp.includes('atp')||sp.includes('wta')) return diff===0?1 : diff===1?2 : 0;
+  if (sp.includes('australian')||sp.includes('afl')) return diff===0?1 : diff<6?2 : diff<=18?3 : 0;
+  if (sp.includes('cfl')||sp.includes('canadian football')) return diff===0?1 : diff<=3?2 : diff<=8?3 : 0;
+  if (sp.includes('mlb')||sp.includes('baseball')) return diff===0?1 : diff===1?2 : diff===2?3 : 0;
+  if (sp.includes('soccer')||sp.includes('league')||sp.includes('mls')||
+      sp.includes('liga')||sp.includes('ligue')||sp.includes('premier')||
+      sp.includes('wc26')||sp.includes('world cup')) return diff===0?1 : diff===1?3 : 0;
+  if (sp.includes('nfl')||sp.includes('football')) return diff===0?1 : diff<=3?2 : diff<=7?3 : 0;
+  if (sp.includes('nba')||sp.includes('basketball')) return diff===0?1 : diff<=3?2 : diff<=7?3 : 0;
+  if (sp.includes('nhl')||sp.includes('hockey')) return diff===0?1 : diff<=3?2 : diff<=7?3 : 0;
+  return diff===0?1 : diff<=3?2 : diff<=7?3 : 0;
+}
+
+// In the final regulation period at all (non-overtime — T2 already
+// classifies overtime as EXTRA_TIME before this is reached).
+function _otwIsFinalPeriod(eData, sport) {
+  const sp = (sport||'').toLowerCase();
+  const period = parseInt(eData.period) || 1;
+  if (sp.includes('wnba')||sp.includes('nba')||sp.includes('basketball')||
+      sp.includes('nfl')||sp.includes('football')||sp.includes('cfl')||
+      sp.includes('canadian football')||sp.includes('australian')||sp.includes('afl')) return period >= 4;
+  if (sp.includes('nhl')||sp.includes('hockey')) return period >= 3;
+  if (sp.includes('mlb')||sp.includes('baseball')) return period >= 9;
+  if (sp.includes('soccer')||sp.includes('league')||sp.includes('mls')||
+      sp.includes('liga')||sp.includes('ligue')||sp.includes('premier')||
+      sp.includes('wc26')||sp.includes('world cup')) return period >= 2;
+  if (sp.includes('tennis')||sp.includes('atp')||sp.includes('wta')) return period >= 2;
+  return false;
+}
+
+// dramaScoreLive()'s own highest non-overtime timeBonus tier per sport
+// (reused thresholds, not reinvented).
+function _otwIsCrunchTime(eData, sport) {
+  const sp = (sport||'').toLowerCase();
+  const period = parseInt(eData.period) || 1;
+  const clock = eData.clock || '';
+  const mins = parseFloat((clock.match(/^(\d+)/)||[0,0])[1]) || 12;
+  if (sp.includes('wnba')) return period>=3 && mins<2;
+  if (sp.includes('tennis')||sp.includes('atp')||sp.includes('wta')) return period>=3;
+  if (sp.includes('australian')||sp.includes('afl')) return period>=4 && mins<5;
+  if (sp.includes('cfl')||sp.includes('canadian football')) return period===4 && mins<2;
+  if (sp.includes('mlb')||sp.includes('baseball')) return period>=9;
+  if (sp.includes('soccer')||sp.includes('league')||sp.includes('mls')||
+      sp.includes('liga')||sp.includes('ligue')||sp.includes('premier')||
+      sp.includes('wc26')||sp.includes('world cup')) { const minNum=parseInt(clock)||0; return minNum>=80; }
+  if (sp.includes('nfl')||sp.includes('football')) return period===4 && mins<2;
+  if (sp.includes('nba')||sp.includes('basketball')) return period>=3 && mins<2;
+  if (sp.includes('nhl')||sp.includes('hockey')) return period===3 && mins<5;
+  return false;
+}
+
+// ── PM-25 / Drama Dial categorical tier refactor (June 5 2026), T3/T4
+// rewritten 2026-07-12 ─────────────────────────────────────────────────────
 // Named-condition tier selector for live ESPN games — mirrors _otwFindWCLiveGame.
 // Returns a named condition string (never a numeric composite) or null.
 // Replaces the dramaTier(score) numeric path in the OTW FIRE header chip and
 // completes the RUWT Rule 95 MODERATE → RESOLVED path begun by A490.
 // The FIRE callsite (getDramaDial() threshold) is already user-controlled (A490).
-// This function adds the named categorical tier on top of that selection so that
-// the label shown to the user is a factual condition, not a score band.
+// T1/T2 (CRUNCH/EXTRA_TIME) were already boolean-gated named conditions.
+// T3/T4 (CLOSE_FINISH/LIVE_GAME) used to compare a temporally-smoothed
+// composite drama score against numeric thresholds (60/40) — selection
+// logic, not just the display, was still a numeric-composite comparison.
+// Rewritten to use only raw observables (score margin, period, clock) via
+// _otwMarginTier/_otwIsFinalPeriod/_otwIsCrunchTime above — no smoothed
+// composite score anywhere in tier SELECTION now, not just display.
 // RUWT compliance: boolean-gated named conditions, never numerical threshold display.
-function _otwGetLiveTier(eData, sport, smoothed) {
+function _otwGetLiveTier(eData, sport) {
   if (!eData) return null;
   const sp = (sport || '').toLowerCase();
   const period = eData.period || '';
@@ -37005,10 +37078,25 @@ function _otwGetLiveTier(eData, sport, smoothed) {
       p.includes('so') || p.includes('shootout') || (sp.includes('baseball') && parseInt(period) > 9)) {
     return 'EXTRA_TIME';
   }
-  // T3: Final stretch, close margin
-  if (margin <= 3 && smoothed >= 60) return 'CLOSE_FINISH';
-  // T4: Late game, contested
-  if (smoothed >= 40) return 'LIVE_GAME';
+
+  const tier = _otwMarginTier(eData, sport);
+  const crunch = _otwIsCrunchTime(eData, sport);
+  const finalP = _otwIsFinalPeriod(eData, sport);
+  // AFL/CFL's tier-3 margin bucket is proportionally wide enough that just
+  // reaching the final period (not full crunch) already crosses the old
+  // LIVE_GAME threshold — confirmed against dramaScoreLive()'s real numbers
+  // for these two sports specifically via the characterization sweep, not
+  // assumed uniformly across all sports.
+  const looseTier3Sport = sp.includes('afl') || sp.includes('australian') || sp.includes('cfl') || sp.includes('canadian football');
+
+  // T3: dead-even and in the final period at all, OR a still-tight margin
+  // combined with true crunch-time urgency.
+  if ((tier === 1 && finalP) || (tier === 2 && crunch)) return 'CLOSE_FINISH';
+  // T4: a genuinely close margin on its own (tiers 1-2 clear the bar without
+  // help), OR a wider-but-still-relevant margin combined with crunch-time
+  // urgency (tier 3 needs the extra push) — or, for AFL/CFL specifically,
+  // just the final period (see looseTier3Sport above).
+  if (tier === 1 || tier === 2 || (tier === 3 && (crunch || (looseTier3Sport && finalP)))) return 'LIVE_GAME';
   return null;
 }
 
@@ -37396,8 +37484,9 @@ function getGameReasonTags(game, eData) {
   }
   if (eData) {
     const sport = _gameSport(game);
-    const smoothed = getSmoothedDrama(game._id) ?? dramaScoreLive(eData, sport);
-    const liveTier = _otwGetLiveTier(eData, sport, smoothed);
+    // 2026-07-12: _otwGetLiveTier no longer takes a smoothed-drama arg —
+    // T3/T4 selection is now raw-observable-only (see its own header comment).
+    const liveTier = _otwGetLiveTier(eData, sport);
     if (liveTier) tags.push(liveTier);
     if (_isCloseAndLate(eData, sport)) tags.push('close_late');
   }
@@ -38043,20 +38132,14 @@ function _otwFindLiveGame(minScore){
       if(rank<fieldTierRank('CLOSE_LATE')) return;
       if(rank>bestRank){
         bestRank=rank;
-        // score retained for back-compat with downstream _otwGetLiveTier call
-        // (uses it as smoothed-drama fallback). Internal sort uses tier rank.
-        // CC-CMD-2026-07-04-soccer-drama-scoring-fix TASK 4: thread FIFA
-        // ranks for soccer/WC26 only, same sync cache-only pattern as
-        // injectDramaBadges — never mutates the shared espnScores entry.
-        const _sp4b=(sec.sport||'').toLowerCase();
-        const _isSoccer4b=_sp4b.includes('soccer')||_sp4b.includes('league')||_sp4b.includes('mls')||
-          _sp4b.includes('liga')||_sp4b.includes('ligue')||_sp4b.includes('premier')||
-          _sp4b.includes('wc26')||_sp4b.includes('world cup');
-        const _dramaEd=_isSoccer4b
-          ? {...ed, homeRank:getCachedTeamRank(ed.homeName), awayRank:getCachedTeamRank(ed.awayName)}
-          : ed;
-        const _s=dramaScoreLive(_dramaEd,sec.sport);
-        best={g,ed,sport:sec.sport,tier,score:_s};
+        // 2026-07-12: dropped the score:_s (dramaScoreLive) computation that
+        // used to live here — it was retained solely "for back-compat with
+        // downstream _otwGetLiveTier call (smoothed-drama fallback)", and
+        // that downstream call site no longer accepts or uses a smoothed
+        // arg (CC-CMD-2026-07-12-otw-tier-categorical). Internal sort still
+        // uses tier rank, unaffected. The soccer FIFA-rank threading existed
+        // only to feed that now-removed computation.
+        best={g,ed,sport:sec.sport,tier};
       }
     });
   });
@@ -38171,12 +38254,14 @@ function renderOneToWatch(){
   // (Rule 95): MODERATE risk resolved — threshold is now user-controlled, not fixed.
   const fire=_otwFindLiveGame(getDramaDial());
   if(fire&&fire.g._id!==_otwDismissedId){
-    const {g,ed,sport,score}=fire;
+    const {g,ed,sport}=fire;
     // ── PM-25 categorical tier refactor: named condition replaces numeric tier ──
     // _otwGetLiveTier returns a named condition string (CRUNCH/EXTRA_TIME/CLOSE_FINISH/LIVE_GAME).
     // _otwTierLabel converts to display string. CSS class still uses the legacy tier name
     // for styling continuity — the change is that the displayed label is now factual, not numeric.
-    const _liveTierKey = _otwGetLiveTier(ed, sport, getSmoothedDrama(g._id) ?? score) || 'LIVE_GAME';
+    // 2026-07-12: dropped the smoothed-drama fallback arg (getSmoothedDrama(g._id) ?? score) —
+    // _otwGetLiveTier no longer accepts or uses it; T3/T4 are raw-observable-only now.
+    const _liveTierKey = _otwGetLiveTier(ed, sport) || 'LIVE_GAME';
     const tier = _liveTierKey === 'CRUNCH' ? 'fire' : _liveTierKey === 'EXTRA_TIME' ? 'fire' : _liveTierKey === 'CLOSE_FINISH' ? 'hot' : 'warm';
     const tierBadge = buildOTWStateLabel(g, ed, sport) || _otwTierLabel(_liveTierKey);
     const _n = (typeof computeGameNarrative==='function') ? computeGameNarrative(g,ed,null) : null;
