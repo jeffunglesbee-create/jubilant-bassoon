@@ -4952,6 +4952,51 @@ function captureFieldError(fn, err, silent=true){
     console.warn('[FIELD silent fail]',fn,entry.err);
 }
 
+// FIELD_OPERATIONS: structured success/failure telemetry, extends captureFieldError()
+// rather than replacing it — the Health Panel's window._fieldErrors keeps working.
+// CC-CMD-2026-07-12-field-operation-primitive: Chunk 1 of a multi-CC-CMD sequence
+// (see docs/CC-CMD-2026-07-12-typed-result-survey.md for Chunk 2). This chunk only
+// builds the primitive -- zero existing call sites migrated to it here.
+const FIELD_OPERATIONS = {
+  recordSuccess({ subsystem, operation, duration, context }) {
+    // additive counters/timing only — no behavior change to any caller.
+  },
+  recordFailure(failure) {
+    captureFieldError(`${failure.subsystem}:${failure.operation}`, failure.error, failure.severity !== 'trace');
+    // additive: also retain the richer failure object for future consumers
+    // (window._fieldFailures or similar) — do not remove or alter what
+    // captureFieldError() itself does.
+  },
+};
+
+async function fieldOperation({
+  subsystem,
+  operation,
+  severity = 'degraded',
+  retryable = false,
+  context = {},
+}, fn) {
+  const startedAt = performance.now();
+  try {
+    const value = await fn();
+    FIELD_OPERATIONS.recordSuccess({ subsystem, operation, duration: performance.now() - startedAt, context });
+    return { ok: true, value };
+  } catch (error) {
+    const failure = { subsystem, operation, severity, retryable, context, error, at: Date.now() };
+    FIELD_OPERATIONS.recordFailure(failure);
+    return { ok: false, code: classifyFieldError(error), ...failure };
+  }
+}
+
+function classifyFieldError(error) {
+  // Start minimal and honest — do not invent categories with no real
+  // evidence behind them yet. HTTP status, if present on the error object
+  // from this codebase's existing fetch wrappers, is the one classification
+  // that's already reliably derivable today.
+  if (error && typeof error.status === 'number') return 'HTTP_ERROR';
+  return 'UNKNOWN_ERROR';
+}
+
 // ── FIELD Health Panel ────────────────────────────────────────────────────────
 // Accessible two ways:
 //   1. Long-press settings button (⚙) for 1.5s — works on mobile without URL editing
@@ -24424,7 +24469,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-07-12b';
+  const SW_VERSION = '2026-07-12c';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
