@@ -24424,7 +24424,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-07-12a';
+  const SW_VERSION = '2026-07-12b';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -27276,7 +27276,13 @@ async function maybeScoreRetry(originalPrompt, text, proxyUrl, label, game) {
 // Spec: FIELD Journalism Quality Spec (Drive 1dS0ldiE9Y0aUu2DAl7Ez5yo5evxlMAZXtghnmdScIHw)
 // Upgraded May 27 2026: Statistical Depth added as 5th dimension.
 // Calibrated weights: spec=20, statDepth=25, variety=20, density=10, fresh=25
-// Datamuse (freshness) is blocked in claude.ai iframes → fallback fresh=83.
+// Datamuse (freshness) is proxied through field-relay-nba's /datamuse/words
+// (2026-07-12) -- a direct client-side call to api.datamuse.com fails
+// inside claude.ai's iframe sandbox (CSP blocks the cross-origin call);
+// the relay has unrestricted egress, so the iframe restriction no longer
+// applies and no fallback constant is needed for it. Transparent
+// passthrough, 30-day KV cache -- verified live: real Datamuse data,
+// identical response on a repeat query.
 // All other 4 dimensions are computed locally — no API dependency.
 const _JQ_STAT_PATTERNS = [
   /\d+\s*-\s*of\s*-\s*\d+/gi,    // 11-of-19 shooting
@@ -27538,16 +27544,25 @@ async function scoreProse(text, game){
   // 4. Density: named facts per sentence
   const density = specifics / nSent;
 
-  // 5. Freshness: Datamuse word frequency (inverted — lower freq = fresher)
-  // Fallback 83 when Datamuse blocked (e.g. claude.ai iframe CSP).
-  let freshness = 83;
+  // 5. Freshness: Datamuse word frequency (inverted — lower freq = fresher),
+  // proxied through field-relay-nba (2026-07-12) -- same relay-base
+  // fallback idiom already used by loadArchiveTimeline()/
+  // renderJournalismArchive() elsewhere in this file.
+  // Neutral default (avgFreq=50 through the same transform below, matching
+  // the per-word fallback 3 lines down) covers the one legitimate
+  // remaining case -- zero qualifying candidate words to score (short/thin
+  // text) -- not a network-availability workaround. The relay has no
+  // iframe restriction, so there is no "Datamuse blocked" case left to
+  // fall back for.
+  let freshness = Math.max(0, Math.min(100, 100 - (50 / 3)));
   try{
+    const base = (typeof V2_RELAY_BASE !== 'undefined') ? V2_RELAY_BASE : 'https://field-relay-nba.jeffunglesbee.workers.dev';
     const stopRe = /^(their|about|would|could|which|should|after|before|against|during|while|other|first|since|still|being|where|these|those|there|every|until|under|again|from|with|this|that|have|will|they|been|were|what|when|into|than|then|also|each|over|more|most|such|both|some|only|very|just|like|well|even|back|game|team|play|year|time|week|half)$/i;
     const cw = words.filter(w=>w.length>4&&!stopRe.test(w)&&/^[a-z]/i.test(w)).slice(0,5);
     if(cw.length){
       const freqs = await Promise.all(cw.map(async w=>{
         try{
-          const r=await fetch(`https://api.datamuse.com/words?sp=${encodeURIComponent(w.toLowerCase())}&md=f&max=1`);
+          const r=await fetch(`${base}/datamuse/words?sp=${encodeURIComponent(w.toLowerCase())}&md=f&max=1`);
           const d=await r.json();
           const tag=(d[0]?.tags||[]).find(t=>t.startsWith('f:'));
           return tag?parseFloat(tag.slice(2)):50;

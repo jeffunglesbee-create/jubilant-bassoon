@@ -1,5 +1,47 @@
 # FIELD HANDOFF
 
+## MID-SESSION UPDATE — 2026-07-12 (Datamuse proxied through field-relay-nba — TASK 2 of a cross-repo CC-CMD, fresh=83 iframe fallback removed)
+
+**SW_VERSION 2026-07-12a → 2026-07-12b.** Full detail:
+`docs/outbox/cc-datamuse-relay-proxy-2026-07-12.md`. Executes TASK 2 of
+`docs/CC-CMD-2026-07-12-datamuse-relay-proxy.md` (TASK 1 was
+field-relay-nba's — confirmed live via a real browser `fetch()`, not
+the `probe_relay_route` tool, whose own separate allow-list falsely
+showed the route missing).
+
+**Resolved a real discrepancy before touching code**: a shared codex
+entry claimed jubilant-bassoon's index.html had zero Datamuse
+references at all ("new-build work," per that entry) — re-verified
+directly via `grep` against a freshly-pulled HEAD and found the
+opposite: exactly one real call site
+(`scoreProse()`'s freshness dimension) with the `fresh=83` fallback,
+matching this CC-CMD's own original premise. Proceeded on direct
+verification, not the incorrect inherited claim; corrected the codex
+entry afterward for future sessions.
+
+**Fix**: the sole Datamuse call site now hits
+`{V2_RELAY_BASE}/datamuse/words` instead of `api.datamuse.com` directly
+(same relay-fallback idiom `loadArchiveTimeline()`/
+`renderJournalismArchive()` already use). `fresh=83` removed entirely —
+replaced with a neutral default derived from the *same* formula already
+used for per-word lookup failures (`avgFreq=50` through the existing
+transform), covering the one legitimate remaining edge case (zero
+candidate words), not a network-workaround.
+
+**Real end-to-end verification** (not deploy-then-hope — change wasn't
+live yet): extracted the new freshness sub-block verbatim and ran it
+inside the live browser session against the real relay. Common words
+scored 84.34, rare words scored 99.81 (correctly *higher* — rarer word
+→ lower Datamuse frequency → higher freshness, matching the dimension's
+documented inverted semantics), all-stopword input hit the new neutral
+default (83.33) exactly. Three distinct real inputs, three distinct
+real outputs in the right direction — not a stuck fallback.
+
+`smoke.js` `A149` updated (asserted the literal `api.datamuse.com`
+string, which only survived in a comment post-fix — updated to assert
+`/datamuse/words`). `node smoke.js`: 919/0. `node field_unit.js`: 66/0.
+`node field_smoke.js`: Failures: 0.
+
 ## MID-SESSION UPDATE — 2026-07-12 (Lead-sentence detector: regex replaced with per-sentence specificity scoring, reusing scoreProse()'s own formula)
 
 **SW_VERSION 2026-07-11s → 2026-07-12a** (new ET day — suffix reset per

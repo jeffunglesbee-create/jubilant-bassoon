@@ -754,8 +754,8 @@ assert('A148 — JQ Layer 2: retryWithoutCliches function defined',
   'retryWithoutCliches() one-retry wrapper must exist');
 
 assert('A149 — JQ Layer 3: scoreProse function defined',
-  html.includes('function scoreProse(') && html.includes('api.datamuse.com'),
-  'scoreProse() with Datamuse API integration must exist');
+  html.includes('function scoreProse(') && html.includes('/datamuse/words'),
+  'scoreProse() with Datamuse API integration must exist -- proxied through field-relay-nba (2026-07-12) since direct client-side calls to api.datamuse.com fail inside claude.ai\'s iframe sandbox');
 
 assert('A149b — JQ Layer 3: Statistical Depth 5th dimension present',
   html.includes('statDepth') && html.includes('_JQ_STAT_PATTERNS') && html.includes('_JQ_STAT_NOUNS'),
