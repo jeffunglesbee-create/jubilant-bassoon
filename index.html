@@ -13970,6 +13970,10 @@ function renderJournalism() {
   const content = document.getElementById('jrn-content');
   if (!sec || !content) return;
   sec.removeAttribute('hidden');
+  // Invalidate any archive-fallback fetch still in flight from
+  // renderJournalismArchive() -- see that function's own guard comment.
+  // Today's content below must never be clobbered by a late archive response.
+  delete content.dataset.jrnArchiveReq;
 
   try {
     const tz = (typeof localTz === 'function') ? localTz() : 'America/New_York';
@@ -14612,6 +14616,41 @@ function renderJournalismCompanion(counts) {
 function renderJournalismArchive() {
   const content = document.getElementById('jrn-content');
   if (!content) return;
+  // BUG FIX (2026-07-12): this function's card-rendering branch referenced
+  // a bare `tz` that was never declared in this scope (only ever declared
+  // LOCALLY inside other, unrelated functions) -- every call that reached
+  // it threw ReferenceError: tz is not defined, silently doing nothing
+  // (uncaught in an onclick handler). Declared here, same fallback idiom
+  // renderJournalism() already uses one screen over.
+  const tz = (typeof localTz === 'function') ? localTz() : 'America/New_York';
+  // Stale-response guard: renderJournalism() clears this token whenever
+  // today's view (re)renders. If the user leaves the archive (or re-opens
+  // it) while the server fallback below is still in flight, its response
+  // must not land on top of whatever's on screen by the time it resolves.
+  const _archiveReqId = 'r' + Date.now() + '_' + Math.random().toString(36).slice(2);
+  content.dataset.jrnArchiveReq = _archiveReqId;
+
+  const renderCards = (entries) => {
+    const cards = entries.map(e => {
+      const safe = e.text.replace(/</g,'&lt;').replace(/>/g,'&gt;');
+      const label = e.date
+        ? e.date.toLocaleDateString('en-US', { timeZone: tz, weekday:'long', month:'long', day:'numeric' })
+        : e.dateStr;
+      return `<article class="jrn-editorial-block">
+        <div class="jrn-editorial-label">${label}</div>
+        <div class="jrn-editorial">${safe}</div>
+      </article>`;
+    });
+    const interleaved = [];
+    cards.forEach((c, i) => { if (i > 0) interleaved.push('<div class="jrn-section-divider"></div>'); interleaved.push(c); });
+    interleaved.push('<div class="jrn-archive-link"><a href="#" onclick="event.preventDefault();renderJournalism()">← Back to Today</a></div>');
+    content.innerHTML = interleaved.join('');
+  };
+  const renderEmpty = () => {
+    content.innerHTML = `<div class="jrn-empty">No prior FIELD editorials found.<br>Archive populates as slate briefs are generated — check back after tonight's editorial runs.</div>
+      <div class="jrn-archive-link"><a href="#" onclick="event.preventDefault();renderJournalism()">← Back to Today</a></div>`;
+  };
+
   // PM-19 retro: archive keys must match the keys briefs are stored under.
   // Both ends use ET via fieldDateKey — survives users in non-ET zones.
   const today = new Date();
@@ -14626,23 +14665,52 @@ function renderJournalismArchive() {
       archiveEntries.push({ date: d, dateStr: ds, text });
     }
   }
-  if (!archiveEntries.length) {
-    content.innerHTML = `<div class="jrn-empty">No prior FIELD editorials in session storage.<br>Archive populates as you use FIELD over multiple days — the prior 7 days of editorials surface here when available.</div>
-      <div class="jrn-archive-link"><a href="#" onclick="event.preventDefault();renderJournalism()">← Back to Today</a></div>`;
-    return;
-  }
-  const cards = archiveEntries.map(e => {
-    const safe = e.text.replace(/</g,'&lt;').replace(/>/g,'&gt;');
-    const label = e.date.toLocaleDateString('en-US', { timeZone: tz, weekday:'long', month:'long', day:'numeric' });
-    return `<article class="jrn-editorial-block">
-      <div class="jrn-editorial-label">${label}</div>
-      <div class="jrn-editorial">${safe}</div>
-    </article>`;
-  });
-  const interleaved = [];
-  cards.forEach((c, i) => { if (i > 0) interleaved.push('<div class="jrn-section-divider"></div>'); interleaved.push(c); });
-  interleaved.push('<div class="jrn-archive-link"><a href="#" onclick="event.preventDefault();renderJournalism()">← Back to Today</a></div>');
-  content.innerHTML = interleaved.join('');
+  if (archiveEntries.length) { renderCards(archiveEntries); return; }
+
+  // Session storage has nothing for THIS browser (fresh session, cleared
+  // storage, or the user just hasn't had FIELD open on those specific days
+  // here) -- fall back to the server-backed archive (D1 via /archive/query)
+  // instead of silently declaring "no archive" when real archived briefs
+  // exist. Same endpoint + 30-min cache convention loadArchiveTimeline()
+  // already uses (Rule 78 -- reuse the existing pattern, don't add a
+  // second independent naked fetch against the same endpoint).
+  content.innerHTML = '<div class="jrn-empty">Loading archive…</div>';
+  const cacheKey = 'field_archive_timeline';
+  const useServerData = (data) => {
+    if (content.dataset.jrnArchiveReq !== _archiveReqId) return; // stale — see guard comment above
+    const arr = Array.isArray(data) ? data
+      : Array.isArray(data?.results) ? data.results
+      : Array.isArray(data?.briefs) ? data.briefs
+      : [];
+    const serverEntries = arr
+      .map(b => ({
+        date: b.date ? new Date(b.date + 'T12:00:00') : null, // noon local avoids UTC-midnight date-shift
+        dateStr: b.date || '',
+        text: String(b.brief_text || '').trim(),
+      }))
+      .filter(e => e.text.length > 30);
+    if (!serverEntries.length) { renderEmpty(); return; }
+    renderCards(serverEntries);
+  };
+  let cached = null;
+  try {
+    const raw = sessionStorage.getItem(cacheKey);
+    if (raw) {
+      const c = JSON.parse(raw);
+      if (c && (Date.now() - (c.ts || 0)) < 1800000 && c.data) cached = c.data;
+    }
+  } catch(_) {}
+  if (cached) { useServerData(cached); return; }
+  const base = (typeof V2_RELAY_BASE !== 'undefined')
+    ? V2_RELAY_BASE : 'https://field-relay-nba.jeffunglesbee.workers.dev';
+  fetch(base + '/archive/query?brief_type=slate&source=cron&limit=7')
+    .then(r => r.ok ? r.json() : null)
+    .then(data => {
+      if (!data) { if (content.dataset.jrnArchiveReq === _archiveReqId) renderEmpty(); return; }
+      try { sessionStorage.setItem(cacheKey, JSON.stringify({ ts: Date.now(), data })); } catch(_) {}
+      useServerData(data);
+    })
+    .catch(() => { if (content.dataset.jrnArchiveReq === _archiveReqId) renderEmpty(); });
 }
 
 
@@ -24356,7 +24424,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-07-11p';
+  const SW_VERSION = '2026-07-11q';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)

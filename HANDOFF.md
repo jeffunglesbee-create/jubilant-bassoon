@@ -1,5 +1,47 @@
 # FIELD HANDOFF
 
+## MID-SESSION UPDATE — 2026-07-12 ("Yesterday's FIELD" archive link falls back to the server archive — plus a pre-existing tz crash fixed)
+
+**SW_VERSION 2026-07-11p → 2026-07-11q.** Full detail:
+`docs/outbox/cc-journalism-archive-server-fallback-2026-07-12.md`.
+
+Direct request (option A from an earlier diagnosis this session): make
+the "Yesterday's FIELD →" archive link fall back to the server archive
+when `sessionStorage` is empty, instead of unconditionally saying "no
+prior editorials" even when the server has real archived briefs.
+
+**PRE-BUILD probe** (Rule 68): direct `curl` to field-relay-nba is
+blocked by this environment's proxy policy — used
+`probe_relay_route("/archive/query?...")` instead (bypasses the
+sandbox block) and confirmed the real response shape
+(`{ok,count,results:[{date,brief_type,brief_text,quality_score,...}]}`)
+before writing any code against it.
+
+**Found while reading the function first (Rule 71)**: a second,
+pre-existing bug — the card-rendering branch referenced a bare `tz`
+never declared in its own scope (only ever local to *other* functions),
+so any call that reached it with real session-storage data threw
+`ReferenceError: tz is not defined`, uncaught, silently doing nothing.
+Fixed in the same change since it directly blocks the requested feature
+(the new server-fallback cards render through the same code path).
+
+**Fix**: session-storage path unchanged (tried first); when empty, falls
+back to the exact same `/archive/query` endpoint + 30-min cache
+(`field_archive_timeline`) `loadArchiveTimeline()` already uses (Rule
+78 — no duplicate fetch). Added a race guard
+(`content.dataset.jrnArchiveReq`, cleared by `renderJournalism()`) so a
+late-resolving fallback fetch can never overwrite the view if the user
+already clicked back to "Today."
+
+Real extraction test (`renderJournalismArchive()` pulled verbatim): 5
+cases — session-storage entry no longer throws, server fallback fetches
+and renders correctly, warm cache skips the fetch entirely, the race
+guard holds when "Today" is clicked mid-fetch, and a thrown fetch
+resolves to the empty state instead of hanging — all passed.
+
+`node smoke.js`: 919/0. `node field_unit.js`: 66/0. `node field_smoke.js`:
+Failures: 0, unaffected.
+
 ## MID-SESSION UPDATE — 2026-07-12 (Journalism brief cards defeat card-reuse reconciliation — same data-gameid on a sibling element)
 
 **SW_VERSION 2026-07-11o → 2026-07-11p.** Full detail:
