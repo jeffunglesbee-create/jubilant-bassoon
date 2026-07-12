@@ -1,5 +1,41 @@
 # FIELD HANDOFF
 
+## MID-SESSION UPDATE — 2026-07-12 (Dead fallback clause removed — a different bug class from tonight's visibility fixes: broken logic, not missing instrumentation)
+
+**SW_VERSION 2026-07-11m → 2026-07-11n.** Full detail:
+`docs/outbox/cc-dead-fallback-clause-2026-07-12.md`.
+
+Direct request: "Find and resolve another silent failure using novel
+thinking. No Fallbacks, only fixes" — explicitly steering away from the
+`captureFieldError`-instrumentation pattern used in the 4 fixes below.
+This bug never throws, so no catch-block visibility fix could ever have
+caught it.
+
+**Found**: `getMLBAnalyticsContext()` (~line 8013) —
+`getParkFactor(game._homeAbbr || game.homeTeam || game._homeAbbr)`. The
+3rd clause duplicates the 1st — `x||y||x` ≡ `x||y` — so the function
+only ever had 2 real fallback levels while reading like 3. Confirmed no
+legitimate 3rd fallback was ever possible (no MLB-specific
+name→abbreviation converter exists anywhere in the file) and that the
+correct 2-level pattern already exists at the sibling call site
+(`buildParkFactorBadge`, ~line 8039). Fixed by removing the dead
+clause — a subtraction, not an added fallback.
+
+Currently a behavioral no-op (`getParkFactor` treats any falsy input as
+`null` regardless of which falsy value), confirmed via real extraction
+test across all reachable input combinations. The real risk was
+misleading a future reader into trusting resilience that structurally
+couldn't exist. Feeds MLB journalism context
+(`fetchCompoundEditorial`/`fetchMLBGameBriefFromClaude`) — same
+subsystem as the fix below, different bug type.
+
+Left untouched, flagged as a separate open item: the function's own
+`catch(e){}` (empty, swallows any real thrown exception) — instrumenting
+it would be the same visibility pattern this task asked to move past.
+
+`node smoke.js`: 919/0. `node field_unit.js`: 66/0. `node field_smoke.js`:
+Failures: 0, unaffected.
+
 ## MID-SESSION UPDATE — 2026-07-12 (Journalism's shared generation function made visible — the last line of defense for 5 brief types was silently failing with zero trace)
 
 **SW_VERSION 2026-07-11l → 2026-07-11m.** Full detail:
