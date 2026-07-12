@@ -1,5 +1,46 @@
 # FIELD HANDOFF
 
+## MID-SESSION UPDATE — 2026-07-12 (field_smoke.js reaches Failures: 0 — full journey: 21 → 0. Plus: 3 dead MLB Statcast tables removed, out-of-scope-item automation)
+
+**SW_VERSION 2026-07-11k → 2026-07-11l.**
+
+**field_smoke.js's full journey tonight, for the record**: 21 failures
+(17 `<script>`-extraction-bug false positives + 1 stale A53 comment
+anchor + 3 genuinely-real) → extraction+A53 fixed → 6 (3 real + 3 newly
+surfaced by relocating ~20 assertions that had never executed past
+`process.exit()`) → 3 stale betting-content assertions resolved
+(asymmetric: 2 removed, 1 inverted) → 3 (all newly-surfaced) → this
+CC-CMD resolved the last 3 (Assertion 48 confirmed as a 4th stale
+betting-content leftover via careful reading of all 12 `favored`/
+`underdog` matches in context, not just a count; `weather-intelligence`/
+`ufl-2026` FIELD_FEATURES entries added, re-verified against genuinely
+real, genuinely wired code first, dated from real `git log -S`
+archaeology not invented) → **`Failures: 0`**, confirmed stable.
+
+**Separately, a chat correction and a broader ask**: the user reported
+"chat says c6f08ba doesn't exist" — verified true: that hash was
+superseded by a rebase moments after creation (same content now lives
+at `3ab4715`, confirmed via `git diff` showing zero difference).
+Corrected. User then asked to "automate follow-ups for all out-of-scope
+items noted" — worked through the list systematically:
+
+- **Removed** `mlbStatsInit`'s 3 dead MLB Statcast tables
+  (`TEAM_ABS_RANKINGS`/`PLAYER_SPEED`/`PLAYER_EXPECTED_STATS`) and
+  their getters (`getTeamABSRanking`/`getSprintSpeed`/`getRegressionAlert`)
+  — confirmed zero real call sites via direct grep. Checked first that
+  `scripts/mlb-player-mismatch-detector.js` still has its own, separate,
+  genuinely-alive use of `sprint_speed.json` — left untouched, correctly
+  out of scope. Updated `smoke.js` A200/A201, which would have kept
+  "passing" only by coincidentally matching this commit's own
+  explanatory comment text, not by verifying anything real.
+- **Confirmed inaccessible**: `field-relay-nba` (no connector available
+  in this session) — items requiring it (the `nhlSeriesInit`/`nhlGSAXInit`
+  403s, `trigger_workflow` build, the live `match:false`) remain
+  genuinely out of reach from here, not silently dropped.
+
+`node smoke.js`: 919/0. `node field_unit.js`: 66/0. `node field_smoke.js`:
+**0/0** for the first time tonight.
+
 ## MID-SESSION UPDATE — 2026-07-11 (field_smoke.js: 3 stale betting-content presence-checks resolved — asymmetric treatment, not a blanket fix)
 
 **No SW_VERSION bump — field_smoke.js is not a deploy-gate trigger

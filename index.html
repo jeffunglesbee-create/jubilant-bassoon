@@ -5826,6 +5826,15 @@ const FIELD_FEATURES = {
   'halftime-switch-polling': '2026-05-19',  // fix4: renderHalftimeSwitch() wired to ESPN poll cycle
   'bni-strength-otw':        '2026-05-19',  // fix5: getBNIStrength() feeds OTW anti-hype framing
   'weather-drama-bonus':     '2026-05-19',  // fix6: wxAlert feeds dramaScoreLive + compound prompt
+  // Registered 2026-07-12 (real code confirmed already existing and wired;
+  // this closes a doc-as-code gap, not new feature work). Date is the
+  // earliest commit confirmed via `git log -S` to contain this code
+  // (575eb70) — a broader follow-on to weather-drama-bonus above, not
+  // the same feature: isOutdoorVenue/getVenueCoords/wxBadge/wxAlert/
+  // weatherDramaModifier/fetchAQI/windContextNote, extended fetchWeather
+  // params (wind_gusts_10m/direct_radiation,snowfall/apparent_temperature).
+  'weather-intelligence':    '2026-06-14',  // Session K: full weather system (AQI, wind context, outdoor-venue detection) beyond the May 19 drama-bonus tie-in above
+  'ufl-2026':                '2026-06-14',  // UFL 2026 season: UFL_FOX/UFL_ABC/UFL_ESPN2 broadcast bundles + schedule integration
   'ember-fields-compound':   '2026-05-19',  // fix7: EMBER tier/channel/contextFlag in compound prompt + Night Owl
   'ticker-trend-sort':       '2026-05-19',  // fix8: score ticker sorts by drama+trend momentum
   'bdl-injury-compound':     '2026-05-19',  // fix9: bdlInjuryContextSync() in compound prompt gameLines
@@ -24279,7 +24288,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-07-11k';
+  const SW_VERSION = '2026-07-11l';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)

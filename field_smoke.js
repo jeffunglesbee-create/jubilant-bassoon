@@ -702,10 +702,18 @@ const hasMisery = html.includes('FRANCHISE_MISERY') && html.includes('getFranchi
 if(hasMisery) pass('Assertion 47 — #29b franchise misery index: FRANCHISE_MISERY + getFranchiseMisery + FRANCHISE_CONTEXT in prompt');
 else fail('Assertion 47 — #29b franchise misery index missing');
 
-// Assertion 48 — Gap 9 journalism odds context
-const hasOddsCtx = html.includes('journalism-odds-context') && html.includes('favored') && html.includes('underdog');
-if(hasOddsCtx) pass('Assertion 48 — Gap 9 journalism odds context: full market context in compound prompt');
-else fail('Assertion 48 — Gap 9 journalism odds context missing');
+// Assertion 48 removed 2026-07-12: a 4th stale presence-check from the
+// same betting-content Tier-1 removal as A67/A69/Assertion 30 (confirmed
+// via chat history -- "journalism betting context" was explicitly in
+// that removal plan). Confirmed via full-file grep: 'journalism-odds-
+// context' has zero matches anywhere; all 12 'favored'/'underdog'
+// matches are unrelated (Upset Archaeology, NBA defensive-mismatch
+// analysis, WC26 ranking drama, static team-history text, and one
+// stale comment example in buildWatchWindowReason whose real
+// implementation has no odds/moneyline logic). Not inverted (unlike
+// Assertion 30): journalism-odds-context inherently requires odds data
+// to build a "favored"/"underdog" line, and smoke.js A243 already
+// guards ODDS_RELAY_BASE's absence -- transitively redundant.
 
 // Assertion 49 — Gap 8 quiet hour detection
 const hasQuiet = html.includes('_quietHourActive') && html.includes('QUIET_POLL_INTERVAL') && html.includes('QUIET_CYCLES_GATE');
