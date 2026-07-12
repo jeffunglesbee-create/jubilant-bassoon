@@ -24424,7 +24424,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-07-11r';
+  const SW_VERSION = '2026-07-11s';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -26873,7 +26873,23 @@ async function retryWithoutCliches(originalPrompt,text,proxyUrl){
 // Spec: "Lead with the specific situation, not the template."
 // Fires as a one-shot retry. Only checks first sentence of the brief.
 // Budget: 1 proxy call max. Ships original if retry also fails.
-const _LEAD_SENTENCE_RE = /^The [A-Z][a-z]+ (are|have|will|look|need|must|face|enter|hope|want|seek|open|host|visit|travel|return|aim|play|sit|stand|hold|lead|trail|take|make|get)\b/;
+//
+// BUG FIX (2026-07-12): the team-name span only ever allowed exactly ONE
+// capitalized word between "The" and the verb ([A-Z][a-z]+, no quantifier
+// on the word count) -- so it caught single-word nicknames ("The Yankees
+// are...") but silently missed every two-word nickname (Red Sox, White
+// Sox, Blue Jays, Maple Leafs, Trail Blazers), every full City+Nickname
+// lead ("The Los Angeles Dodgers...", "The New York Yankees..."), and any
+// record-prefixed lead ("The 53-43 Phillies are..." -- a real shape seen
+// in production output). Verified live: only 1 of 10 realistic generic
+// leads was caught before this fix. The rewrite-to-something-more-dynamic
+// retry below never fired for the other 9 -- the majority case -- so the
+// laziest, most repetitive opening pattern shipped uncorrected most of
+// the time. Widened to an optional record prefix + 1-3 capitalized words;
+// confirmed zero new false positives against real dynamic leads pulled
+// from the live archive (player-name leads, stat leads, "The Braves'
+// bullpen..." style leads all still correctly pass through unflagged).
+const _LEAD_SENTENCE_RE = /^The (?:\d+-\d+ )?(?:[A-Z][a-zA-Z'.]*\s+){1,3}(are|have|will|look|need|must|face|enter|hope|want|seek|open|host|visit|travel|return|aim|play|sit|stand|hold|lead|trail|take|make|get)\b/;
 async function checkLeadSentence(originalPrompt, text, proxyUrl) {
   if (!text) return text;
   const firstSentence = text.trim().split(/[.!?]/)[0];

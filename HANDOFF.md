@@ -1,5 +1,43 @@
 # FIELD HANDOFF
 
+## MID-SESSION UPDATE — 2026-07-12 (Generic-lead detector silently missed 9 of 10 realistic generic leads — a copy-editing silent failure)
+
+**SW_VERSION 2026-07-11r → 2026-07-11s.** Full detail:
+`docs/outbox/cc-lead-sentence-regex-coverage-2026-07-12.md`.
+
+Direct request, framed as senior SWE + copy editor: "what silent
+failure currently in journalism would make a brief more dynamic?"
+
+**Found**: `checkLeadSentence()` (called from 11 brief-generation
+sites — the single highest-leverage lever for lead-sentence quality
+across the whole product) exists specifically to catch and rewrite the
+laziest AI opening pattern ("The [Team] are..."). Its detector regex
+only allowed exactly ONE capitalized word between "The" and the verb.
+Verified empirically: ran it against 10 realistic generic leads, it
+caught only 1 — missing every two-word nickname (Red Sox, Blue Jays,
+White Sox, Maple Leafs, Trail Blazers), every full City+Nickname lead,
+and record-prefixed leads ("The 53-43 Phillies are...", a shape
+confirmed present in production via the live `/archive/query` probe
+run earlier tonight). The rewrite-to-something-more-dynamic retry
+never fired for 9 of the 10 real-world shapes — a silent quality
+regression with zero trace, not a crash.
+
+**Fix**: widened the regex to allow an optional record prefix + 1-3
+capitalized words instead of exactly 1. No new mechanism, no new
+retry path — the existing one-shot rewrite now actually fires on the
+cases it was always meant to catch.
+
+Real extraction test (`_LEAD_SENTENCE_RE` + `checkLeadSentence()`
+pulled verbatim, mock `fetch` reporting whether retry fired): 7 cases —
+3 previously-uncaught shapes now correctly trigger the rewrite, the
+already-working single-word case still fires (no regression), and 3
+real dynamic leads pulled from the live archive data correctly still
+pass through untouched (zero new false positives, zero wasted API
+calls).
+
+`node smoke.js`: 919/0. `node field_unit.js`: 66/0. `node field_smoke.js`:
+Failures: 0, unaffected.
+
 ## MID-SESSION UPDATE — 2026-07-12 (Night Owl context race — a slower final's AI text could land under a faster, more dramatic final's card)
 
 **SW_VERSION 2026-07-11q → 2026-07-11r.** Full detail:
