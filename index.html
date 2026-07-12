@@ -17441,10 +17441,14 @@ async function generateJournalismViaRelay(prompt, opts = {}) {
     });
     if (!r.ok) {
       if (FIELD_DEBUG) console.warn('[JQ Gate] relay returned', r.status);
+      captureFieldError('journalism:generate:' + (opts.briefType || 'generic'), new Error('HTTP ' + r.status), false);
       return null;
     }
     const data = await r.json();
-    if (!data || !data.text) return null;
+    if (!data || !data.text) {
+      captureFieldError('journalism:generate:' + (opts.briefType || 'generic'), new Error('relay 200 but no usable data.text'), false);
+      return null;
+    }
     // iPad-7: model refusal filter (CRITICAL user-facing fix). If Haiku
     // refuses to fabricate (e.g. NHL prompt sent with NBA-shaped exemplars),
     // the raw meta-commentary used to reach the user as the "brief." Detect
@@ -17469,6 +17473,7 @@ async function generateJournalismViaRelay(prompt, opts = {}) {
     return stripPromptLeaks(data.text);
   } catch(e) {
     if (FIELD_DEBUG) console.warn('[JQ Gate] error:', e.message);
+    captureFieldError('journalism:generate:' + (opts.briefType || 'generic'), e, false);
     return null;
   }
 }
@@ -17488,15 +17493,16 @@ async function fetchPrerenderedJournalism() {
       headers: {'Accept-Encoding': 'br, gzip'},
       signal: AbortSignal.timeout(4000),
     });
-    if (!r.ok) return null;
+    if (!r.ok) { captureFieldError('journalism:prerendered-fetch', new Error('HTTP ' + r.status), true); return null; }
     const data = await r.json();
-    if (!data?.brief) return null;
+    if (!data?.brief) { captureFieldError('journalism:prerendered-fetch', new Error('relay 200 but no usable data.brief'), true); return null; }
     _journalismCache = data;
     _journalismFetchedAt = now;
     if (FIELD_DEBUG) console.log(`[O(1)] Relay journalism loaded — age: ${r.headers.get('X-Journalism-Age')||'?'} cycle: ${r.headers.get('X-Journalism-Cycle')||'?'}`);
     return data;
   } catch(e) {
     if (FIELD_DEBUG) console.log('[O(1)] Relay journalism unavailable — falling back to client AI');
+    captureFieldError('journalism:prerendered-fetch', e, true);
     return null;
   }
 }
@@ -24288,7 +24294,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-07-11l';
+  const SW_VERSION = '2026-07-11m';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)

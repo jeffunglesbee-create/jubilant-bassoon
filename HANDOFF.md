@@ -1,5 +1,42 @@
 # FIELD HANDOFF
 
+## MID-SESSION UPDATE — 2026-07-12 (Journalism's shared generation function made visible — the last line of defense for 5 brief types was silently failing with zero trace)
+
+**SW_VERSION 2026-07-11l → 2026-07-11m.** Full detail:
+`docs/outbox/cc-journalism-silent-failure-visibility-2026-07-12.md`.
+
+**Found the highest-leverage silent failure, not just any one**:
+`generateJournalismViaRelay()` is a shared function called from 5
+distinct places (`briefType`: `j2-series`, `j3-brief`, `mlb-brief`,
+`stakes-brief`, `night-owl`). For FIELD's headline "Brief" feature
+specifically: if this function fails AND the upstream
+`fetchPrerenderedJournalism()` cache layer also fails, the brief never
+updates from its static/loading placeholder — with zero durable trace
+anywhere. Neither function wrote to `_fieldErrors`; both only
+`console.warn`/`console.log` gated behind `FIELD_DEBUG`.
+
+Instrumented both with `captureFieldError`, reusing the exact
+established mechanism, no new infrastructure:
+- `generateJournalismViaRelay`: 3 failure points, tagged
+  `journalism:generate:{briefType}`, `silent=false` (it's the *last*
+  generation layer for several flows — no redundant fallback beyond a
+  static placeholder, matching the `initFIELDBrief` precedent).
+- `fetchPrerenderedJournalism`: 3 failure points, tagged
+  `journalism:prerendered-fetch`, `silent=true` (has a genuine
+  redundant fallback — `generateJournalismViaRelay` — matching the
+  relay-fetch/background-source precedent).
+- Explicitly left untouched: the model-refusal quality-gate branch
+  (working as intended, not a bug).
+
+Verified with a real forced-failure-and-success test (7 cases,
+extracted verbatim functions in a Node `vm`): HTTP errors, 200-but-
+no-usable-data, and thrown exceptions all captured with the correct
+per-`briefType` tag across 4 different brief types; both real-success
+cases returned correct data with zero false-positive captures.
+
+`node smoke.js`: 919/0. `node field_unit.js`: 66/0. `node field_smoke.js`:
+0/0, unaffected.
+
 ## MID-SESSION UPDATE — 2026-07-12 (field_smoke.js reaches Failures: 0 — full journey: 21 → 0. Plus: 3 dead MLB Statcast tables removed, out-of-scope-item automation)
 
 **SW_VERSION 2026-07-11k → 2026-07-11l.**
