@@ -21055,6 +21055,55 @@ async function refreshMLBStatus() {
     if (FIELD_DEBUG) console.debug('[MLB] status refresh:', game.home, oldStatus, '->', fresh.status);
   }
 
+  // ── Correct a stuck ESPN/V2 score witness (direct user request,
+  // 2026-07-12: "MLB game cards always get stuck at INN 9, never final") ──
+  // Root cause, confirmed live in production before this fix: game.status
+  // above already flips to 'final' correctly (this function's own header
+  // comment calls it "faster, authoritative"), but nothing before this
+  // point ever touched the visible card. renderESPNScores() -- the ONLY
+  // code path that toggles the espn-live/espn-final classes and writes the
+  // score-wrap's period text -- reads exclusively from
+  // _scoresBySource/espnScores via findScore()/findESPNScore(), never from
+  // game.status. api-sports.io's own `state` field for MLB has a
+  // documented history of not resolving reliably (see mapV2ToESPN's
+  // CC-CMD-2026-07-05-pickem-cfl-mlb-gaps comment on the same variable) --
+  // when it never reports 'post' for a given game, the card stays visually
+  // frozen on its last live inning forever. Not a new fallback source:
+  // this corrects the existing, single score-witness store that
+  // renderESPNScores() already reads, using data this function already
+  // trusts as authoritative, then lets that one existing render path do
+  // the actual drawing. Runs every poll (not just on the transition above)
+  // so a witness that resists correction once keeps getting corrected
+  // until it sticks.
+  let anyWitnessCorrected = false;
+  for (const game of mlbSec.games) {
+    if (game.status !== 'final' && game.status !== 'postponed') continue;
+    for (const entry of Object.values(_scoresBySource)) {
+      if (!entry) continue;
+      const probe = entry.espn || entry.apisports;
+      if (!probe) continue;
+      const matches = (espnTeamMatch(probe.homeName, game.home) && espnTeamMatch(probe.awayName, game.away)) ||
+                      (espnTeamMatch(probe.homeName, game.away) && espnTeamMatch(probe.awayName, game.home));
+      if (!matches) continue;
+      for (const w of ['espn', 'apisports']) {
+        if (entry[w] && entry[w].state !== 'post') {
+          entry[w] = { ...entry[w], state: 'post', homeScore: game.homeScore, awayScore: game.awayScore, ts: Date.now() };
+          anyWitnessCorrected = true;
+        }
+      }
+    }
+    for (const [legacyKey, legacyEntry] of Object.entries(espnScores)) {
+      if (!legacyEntry || legacyEntry.state === 'post') continue;
+      const matches = (espnTeamMatch(legacyEntry.homeName, game.home) && espnTeamMatch(legacyEntry.awayName, game.away)) ||
+                      (espnTeamMatch(legacyEntry.homeName, game.away) && espnTeamMatch(legacyEntry.awayName, game.home));
+      if (!matches) continue;
+      espnScores[legacyKey] = { ...legacyEntry, state: 'post', homeScore: game.homeScore, awayScore: game.awayScore };
+      espnScoreTs[legacyKey] = Date.now();
+      anyWitnessCorrected = true;
+    }
+  }
+  if (anyWitnessCorrected && typeof renderESPNScores === 'function') renderESPNScores();
+
   // "Who's up next" forecast (CC-CMD-2026-07-10-mlb-whos-up-next): the
   // real, existing live-MLB-card update cycle -- fetchMLBLiveGame() had
   // zero callers before this. One extra fetch per currently-live MLB
@@ -24294,7 +24343,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-07-11n';
+  const SW_VERSION = '2026-07-11o';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)

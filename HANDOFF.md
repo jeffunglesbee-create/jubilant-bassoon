@@ -1,5 +1,50 @@
 # FIELD HANDOFF
 
+## MID-SESSION UPDATE — 2026-07-12 (MLB cards stuck at "Inn 9", never Final — two un-synced status systems, confirmed live in production)
+
+**SW_VERSION 2026-07-11n → 2026-07-11o.** Full detail:
+`docs/outbox/cc-mlb-stuck-inn9-never-final-2026-07-12.md`.
+
+Direct report: "MLB game cards always get stuck at INN 9 and never
+final." Verified live on production before touching any code (Rule 48):
+`window.allData` showed `game.status:"final"` (correct — MLB Stats API
+via `refreshMLBStatus`, 90s poll) on every finished MLB game, but the
+matching DOM card still carried `espn-live` class and `"Inn 9"` score-wrap
+text on all 7 finished games checked. One game (Reds@Cubs) even showed
+`status:"pregame"` with a leftover `"Bot 9th"` period, proving the two
+systems are fully decoupled, not just lagged.
+
+**Root cause**: two independent systems track MLB status. (1) MLB Stats
+API (`refreshMLBStatus`) correctly flips `game.status` but only ever
+touches the `circadian` class — `CARD_ATTRIBUTE_SYNC`'s own comment
+already flagged `espn-live`/`espn-final` migration as a deferred "Phase
+1.5 follow-up, not required" that was never done. (2) ESPN/V2 relay
+(`renderESPNScores`) is the *only* path that toggles `espn-live`/
+`espn-final` and writes the score-wrap — and it never reads
+`game.status` at all; its own `state` field has a documented history
+(`mapV2ToESPN`'s CC-CMD-2026-07-05 comment) of not resolving reliably
+for MLB specifically.
+
+**Fix, no new fallback**: `refreshMLBStatus()` now corrects the existing
+`_scoresBySource`/`espnScores` witness objects (the single store
+`renderESPNScores()` already reads) using the MLB Stats API data it
+already trusts, then calls the one existing `renderESPNScores()` to
+draw through FIELD's normal single rendering pipeline — no duplicate
+render logic. Runs every poll (not just on the status-transition), so a
+witness ESPN/V2 keeps re-clobbering gets re-corrected until it sticks —
+verified this matters via a real forced-scenario test (a
+transition-only version would leave the "already final, still stuck"
+case broken).
+
+Real extraction test (Node `vm`, `refreshMLBStatus`/`espnTeamMatch`
+pulled verbatim): 4 cases — transition-to-final, already-final-but-still
+-stuck (the self-healing case), and two negative controls (live game
+untouched, already-correct witness not needlessly rewritten) — all
+passed.
+
+`node smoke.js`: 919/0. `node field_unit.js`: 66/0. `node field_smoke.js`:
+Failures: 0, unaffected.
+
 ## MID-SESSION UPDATE — 2026-07-12 (Dead fallback clause removed — a different bug class from tonight's visibility fixes: broken logic, not missing instrumentation)
 
 **SW_VERSION 2026-07-11m → 2026-07-11n.** Full detail:
