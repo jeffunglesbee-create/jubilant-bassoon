@@ -18,9 +18,24 @@ CC-CMD pattern used earlier tonight for Rule 90's TASK 3).
 
 ---
 
-## ITEM 1 — `nhlSeriesInit`/`nhlGSAXInit` getting real HTTP 403 from field-relay-nba
+## ITEM 1 — `nhlSeriesInit`/`nhlGSAXInit` HTTP 403 — RESOLVED, confirmed by chat after this doc was written
 
-**Real evidence, not assumed:** confirmed live in production **twice**
+**Update from chat, 2026-07-11, later the same night:** this item was real and correctly reported — confirmed live twice, hours apart, exactly as documented below. It is now resolved. Root cause found and fixed by chat directly: the top-level `/nhl` proxy route used `pathname.startsWith('/nhl')` (no trailing slash), incorrectly intercepting `/nhl-series/*` and `/nhl-gsax/*` before they ever reached their real handlers — a simple prefix collision, not an auth/allowlist issue. Fixed with a one-character change (added the trailing slash), field-relay-nba commit `1d0934f`.
+
+**Re-verified by chat just now, live, both endpoints:**
+```
+nhl-series/scf-2026/stats  → HTTP 200
+nhl-gsax/playoffs.json     → HTTP 200 (was 404 "no GSAX data yet" right after the routing fix,
+                               now 200 with real data -- the regular-season cron wiring from
+                               ITEM 2's neighboring nhl-nba-regular-season-continuation work
+                               populated it since)
+```
+
+No action needed. Left in this doc (rather than deleted) so the original evidence and diagnosis trail stays visible — the original report below was accurate for its time, not a false alarm.
+
+**Original entry, preserved for the record:**
+
+Real evidence, not assumed: confirmed live in production **twice**
 tonight, hours apart (relay-init-staleness-visibility's initial deploy,
 and again during pick-resolution-retry-decouple's live verification) —
 both times `window._relayInitStatus` showed:
@@ -34,17 +49,8 @@ Exact endpoints (from `jubilant-bassoon/index.html`, current HEAD):
 - `https://field-relay-nba.jeffunglesbee.workers.dev/nhl-series/scf-2026/stats`
 - `https://field-relay-nba.jeffunglesbee.workers.dev/nhl-gsax/playoffs.json`
 
-**Not a network blip** — the same two routes failed identically across
-two independent checks separated by hours. Likely candidates (genuinely
-unverified from here, need field-relay-nba access to confirm):
-an auth/allowlist gate added or misconfigured for these two specific
-routes, a route removed from a router allowlist, or a rate-limit
-misconfigured as a hard block.
-
-**Suggested done condition**: both routes return real data (or a
-different, expected error like 404/5xx if the season's data genuinely
-isn't available yet) — not 403 — confirmed via a live probe from a
-session with `field-relay-nba` access, not just a code read.
+Not a network blip — the same two routes failed identically across
+two independent checks separated by hours.
 
 ## ITEM 2 — `trigger_workflow` MCP tool: spec'd, not yet built
 
@@ -68,6 +74,11 @@ trigger. This is standing recovery capability for the *next* genuine
 stuck-deploy incident, not an active fix for a live outage. Build when
 convenient, not urgently.
 
+**Update from chat, 2026-07-11:** still confirmed not yet executed as
+of the last check (no matching outbox file in field-relay-nba). Also
+now tracked in `field-relay-nba/docs/FOR-CHAT-outstanding.md` and
+codex (`cc-cmd-queue`, key `mcp-trigger-workflow`).
+
 ## ITEM 3 — field-relay-nba's live deploy state: `match: false` (as of last check — re-verify, don't assume still true)
 
 **Real evidence, timestamped, from earlier tonight** — via
@@ -89,16 +100,15 @@ scheduled-cron result commits) correctly never trigger a deploy at
 all. Check what workflow actually ran against the current `expected`
 commit's SHA before concluding anything is actually stuck.
 
+**Update from chat, 2026-07-11:** this exact pattern recurred multiple
+times later the same night with different SHAs each time, always
+traced to scheduled crons (Drama Peak Backfill, Score Fill, Auto-Merge
+Stray Branches) correctly not touching `src/**` — never a genuine
+stuck deploy on any check performed tonight. This item's own hedging
+was correct and remains the right approach going forward.
+
 ---
 
 ## Suggested handling
 
-None of these are urgent (nothing is currently broken for end users —
-items 1's affected chips simply don't render, matching the
-relay-init-staleness-visibility work's own graceful-degradation
-design). Recommend whichever of these chat picks up first: either
-diagnose Item 1 directly from chat's own confirmed field-relay-nba
-access, or draft a proper CC-CMD (probe block, done condition, real
-commands — matching this project's own Rule 75 minimum-specificity
-bar) and push an identical copy to `field-relay-nba/docs/` for a
-Claude Code session with that repo added.
+Item 1 is resolved — no action needed, kept for the record. Item 2 remains genuinely open, not urgent. Item 3's guidance (re-check before diagnosing, don't assume a mismatch means stuck) remains correct and durable advice, not a one-time finding.
