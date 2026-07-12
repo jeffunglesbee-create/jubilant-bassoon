@@ -1,5 +1,63 @@
 # FIELD HANDOFF
 
+## MID-SESSION UPDATE — 2026-07-12 (Lead-sentence detector: regex replaced with per-sentence specificity scoring, reusing scoreProse()'s own formula)
+
+**SW_VERSION 2026-07-11s → 2026-07-12a** (new ET day — suffix reset per
+Rule 23, not a continuation). Full detail:
+`docs/outbox/cc-lead-specificity-scoring-2026-07-12.md`. Executed
+`docs/CC-CMD-2026-07-12-lead-detector-team-verb-shape.md` in full,
+confidence 95+.
+
+**Trigger**: a live CFL Night Owl recap ("Montreal Alouettes secured a
+37-30 victory over the Calgary Stampeders...") is generic (no player
+name, no individual stat) but doesn't match `_LEAD_SENTENCE_RE` at all —
+a different sentence shape than "The [Team] [verb]..." the regex fix
+from earlier tonight covers. A regex can only ever enumerate known
+shapes.
+
+**Fix**: factored `scoreProse()`'s specificity formula (proper nouns +
+numbers / word count) into a shared `_computeSpecificity()`, now used
+by BOTH `scoreProse()` (whole-brief, unchanged, verified byte-identical
+output) and `checkLeadSentence()` (new: applied to the isolated lead
+sentence). Threshold: **25%** — not a new guess, the exact constant
+`maybeScoreRetry()` already uses for this dimension at whole-brief
+scope. Confirmed empirically against 18 real archived leads pulled via
+`probe_relay_route("/archive/query")`: the CFL seed scores 19%, the
+known-good MLB "Citi Field" lead scores 26%, 25% sits cleanly between
+them and classifies the other 16 real entries sensibly (validated via
+two briefs about the identical Twins/Angels matchup — the one naming
+both pitchers passes at 26%, the one naming neither flags at 19%).
+
+`_LEAD_SENTENCE_RE` removed entirely, not kept as a pre-filter: equally
+cheap/synchronous either way, and specificity is a strict superset of
+what the regex could catch — a pre-filter would be dead complexity with
+no upside.
+
+**Bug caught mid-implementation, before commit**: factoring out the
+formula initially left `density`'s calculation referencing an
+undefined `specifics` variable — caught immediately by my own
+extraction test (`ReferenceError` on the first run), fixed by having
+`_computeSpecificity()` return both the ratio and the raw count.
+Reported transparently in the outbox doc rather than omitted.
+
+**One documented, non-hidden classification change**: the earlier
+regex fix's own synthetic test sentence ("The 53-43 Phillies are
+surging...") scores exactly 25% and now passes — a genuinely borderline
+case (record + team names, zero player names), not a clear miss;
+explained in code comments rather than nudging the threshold to force
+a specific outcome on one synthetic example.
+
+Real extraction tests: full 18-entry survey classified correctly, both
+seed examples exact-match expected outcomes, 3/4 regression cases still
+flag (4th is the documented boundary case), 2 real dynamic leads
+correctly pass with zero false positives, `scoreProse()`'s whole-brief
+`specificity`/`density` output verified unchanged.
+
+`smoke.js` `A258` updated (asserted the literal `_LEAD_SENTENCE_RE`
+string, removed by design — updated to assert the new mechanism's
+markers). `node smoke.js`: 919/0. `node field_unit.js`: 66/0.
+`node field_smoke.js`: Failures: 0.
+
 ## MID-SESSION UPDATE — 2026-07-12 (Generic-lead detector silently missed 9 of 10 realistic generic leads — a copy-editing silent failure)
 
 **SW_VERSION 2026-07-11r → 2026-07-11s.** Full detail:

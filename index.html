@@ -24424,7 +24424,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-07-11s';
+  const SW_VERSION = '2026-07-12a';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -26867,40 +26867,86 @@ async function retryWithoutCliches(originalPrompt,text,proxyUrl){
   return text;
 }
 
+// ── Shared specificity formula ─────────────────────────────────────────────
+// Proper nouns (excluding sentence-starting capitalized words, which are
+// capitalized by grammar rather than being a genuine name) + numbers,
+// divided by word count. Factored out of scoreProse() (2026-07-12) so
+// checkLeadSentence() below can apply the SAME formula to an isolated
+// sentence slice instead of a whole brief -- one formula, one place;
+// scoreProse()'s own whole-brief scoring behavior is unchanged (it just
+// calls this now instead of inlining the same four lines).
+function _computeSpecificity(text) {
+  const words = text.split(/\s+/).filter(Boolean);
+  if (!words.length) return null;
+  const sentences = text.split(/[.!?]+/).filter(Boolean);
+  const sentStarts = new Set(sentences.map(s => s.trim().split(/\s+/)[0]));
+  const properNouns = words.filter(w => /^[A-Z]/.test(w) && !sentStarts.has(w) && w.length > 1);
+  const numbersAll  = words.filter(w => /\d/.test(w));
+  const specifics   = properNouns.length + numbersAll.length;
+  return { specifics, wordCount: words.length, ratio: specifics / words.length };
+}
+
 // ── Layer 2c: Lead sentence check ─────────────────────────────────────────
-// "The [Team]..." is the most common AI sports writing cliché — starts with
-// the team name as subject rather than the specific situation or fact.
-// Spec: "Lead with the specific situation, not the template."
-// Fires as a one-shot retry. Only checks first sentence of the brief.
-// Budget: 1 proxy call max. Ships original if retry also fails.
+// Detects a generic, low-information-density lead sentence and triggers a
+// one-shot rewrite retry. Spec: "Lead with the specific situation, not the
+// template." Fires as a one-shot retry. Only checks first sentence of the
+// brief. Budget: 1 proxy call max. Ships original if retry also fails.
 //
-// BUG FIX (2026-07-12): the team-name span only ever allowed exactly ONE
-// capitalized word between "The" and the verb ([A-Z][a-z]+, no quantifier
-// on the word count) -- so it caught single-word nicknames ("The Yankees
-// are...") but silently missed every two-word nickname (Red Sox, White
-// Sox, Blue Jays, Maple Leafs, Trail Blazers), every full City+Nickname
-// lead ("The Los Angeles Dodgers...", "The New York Yankees..."), and any
-// record-prefixed lead ("The 53-43 Phillies are..." -- a real shape seen
-// in production output). Verified live: only 1 of 10 realistic generic
-// leads was caught before this fix. The rewrite-to-something-more-dynamic
-// retry below never fired for the other 9 -- the majority case -- so the
-// laziest, most repetitive opening pattern shipped uncorrected most of
-// the time. Widened to an optional record prefix + 1-3 capitalized words;
-// confirmed zero new false positives against real dynamic leads pulled
-// from the live archive (player-name leads, stat leads, "The Braves'
-// bullpen..." style leads all still correctly pass through unflagged).
-const _LEAD_SENTENCE_RE = /^The (?:\d+-\d+ )?(?:[A-Z][a-zA-Z'.]*\s+){1,3}(are|have|will|look|need|must|face|enter|hope|want|seek|open|host|visit|travel|return|aim|play|sit|stand|hold|lead|trail|take|make|get)\b/;
+// REPLACED regex approach with specificity scoring (2026-07-12, CC-CMD-
+// 2026-07-12-lead-detector-team-verb-shape.md): a regex can only ever
+// enumerate known syntactic shapes ("The [Team] [verb]..."). A real CFL
+// Night Owl recap -- "Montreal Alouettes secured a 37-30 victory over the
+// Calgary Stampeders..." -- is generic in the same editorial sense (no
+// player name, no individual stat, just team names and a score) but is a
+// completely different sentence structure the widened regex from earlier
+// tonight still didn't cover. Reuses _computeSpecificity() above (the
+// SAME formula scoreProse() uses for whole-brief scoring), applied here to
+// the isolated lead sentence -- detects genericness as a property (low
+// information density), not a syntax, which generalizes to shapes nobody
+// has seen yet. The old regex check is removed entirely, not kept as a
+// pre-filter: the specificity computation is equally cheap/synchronous
+// (no network call either way), and it's a strict superset in practical
+// coverage -- 3 of the 4 sentences the regex fix from earlier tonight was
+// built to catch score 13-21% here, comfortably below the threshold. The
+// 4th ("The 53-43 Phillies are surging into a pivotal series against the
+// Braves.") scores EXACTLY 25% and now passes -- reported here rather than
+// hidden: it has a record and two team names but zero player names, which
+// makes it a genuinely borderline case under a density metric, not a
+// clear miss. Nudging the threshold up just to catch one synthetic test
+// sentence would mean picking a number to fit an example instead of
+// deriving it from real data -- the exact anti-pattern this fix is
+// replacing. A separate fast-path gate in front of an equally-cheap,
+// equally-fast, strictly-more-capable check would also just be dead
+// complexity on top of that.
+//
+// Threshold (25%) is NOT a new guess -- it's the SAME constant
+// maybeScoreRetry() already uses for this exact dimension at whole-brief
+// scope (line ~27174, `scoreObj.specificity < 25`), now confirmed against
+// real per-sentence data: pulled 18 real archived leads via /archive/query
+// (2026-07-12) across MLB/CFL/World Cup. The CFL example above scores 19%
+// in isolation; the known-good MLB "Citi Field" lead ("Citi Field
+// suppresses scoring by 5%... forces both the 45-48 Red Sox and the 40-56
+// Mets...") scores 26%. 25% sits cleanly between them. Real validation,
+// not coincidence: two briefs about the identical Twins/Angels matchup --
+// the one naming both starting pitchers (Ryan Johnson, Joe Ryan) scores
+// 26% and correctly passes; the one naming neither scores 19% and
+// correctly flags. Full survey + every classification:
+// docs/outbox/cc-lead-specificity-scoring-2026-07-12.md
+const LEAD_SPECIFICITY_THRESHOLD = 25;
 async function checkLeadSentence(originalPrompt, text, proxyUrl) {
   if (!text) return text;
-  const firstSentence = text.trim().split(/[.!?]/)[0];
-  if (!_LEAD_SENTENCE_RE.test(firstSentence.trim())) return text; // lead is fine
-  if (FIELD_DEBUG) console.warn('[JQ Layer 2c] Generic lead detected:', firstSentence.trim().slice(0, 60));
+  const firstSentence = (text.trim().split(/[.!?]+/).filter(Boolean)[0] || '').trim();
+  if (!firstSentence) return text;
+  const spec = _computeSpecificity(firstSentence);
+  const specPct = spec ? Math.round(spec.ratio * 100) : 100;
+  if (specPct >= LEAD_SPECIFICITY_THRESHOLD) return text; // lead is fine
+  if (FIELD_DEBUG) console.warn(`[JQ Layer 2c] Generic lead detected (specificity ${specPct}%):`, firstSentence.slice(0, 60));
   try {
     await _jqDelay(); // Gemini RPM guard
     const retryPrompt = originalPrompt +
       '\n\nLEAD SENTENCE REWRITE REQUIRED: Your previous draft started with "' +
-      firstSentence.trim().slice(0, 80) +
-      '..." — this is a generic team-name lead. Rewrite so the FIRST SENTENCE leads with the specific situation, stat, or stake. NOT "The [Team] are..." — start with a fact, a number, a deadline, a player, or a consequence. Keep everything else the same.';
+      firstSentence.slice(0, 80) +
+      '..." — this lead is too generic (no player name, no individual stat). Rewrite so the FIRST SENTENCE leads with the specific situation, stat, or stake — start with a fact, a number, a deadline, a player, or a consequence. Keep everything else the same.';
     const r = await fetch(proxyUrl, {
       method: 'POST', headers: {'Content-Type':'application/json'},
       body: JSON.stringify({model:'claude-haiku-4-5-20251001', max_tokens:1500,
@@ -27470,10 +27516,14 @@ async function scoreProse(text, game){
   const sentStarts = new Set(sentences.map(s => s.trim().split(/\s+/)[0]));
 
   // 1. Specificity: proper nouns (non-sentence-start) + numbers
-  const properNouns = words.filter(w => /^[A-Z]/.test(w) && !sentStarts.has(w) && w.length > 1);
-  const numbersAll  = words.filter(w => /\d/.test(w));
-  const specifics   = properNouns.length + numbersAll.length;
-  const specificity = specifics / words.length;
+  // Formula factored into _computeSpecificity() (2026-07-12) so
+  // checkLeadSentence() can reuse the exact same math on an isolated
+  // sentence slice -- this whole-brief call site is unchanged, still the
+  // same four lines, just no longer duplicated verbatim in two places.
+  // Dimension 4 (density, below) also needs the raw specifics COUNT, not
+  // just the ratio, so both are read off the one call rather than
+  // recomputed separately.
+  const { specifics, ratio: specificity } = _computeSpecificity(text);
 
   // 2. Statistical Depth: sports-specific numeric patterns per sentence
   let statCount = 0;

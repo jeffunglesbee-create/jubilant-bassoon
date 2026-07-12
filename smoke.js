@@ -1505,12 +1505,13 @@ assert('A257 — scheduleFieldDesk triggered in all 4 journalism paths (relay KV
   html.includes('scheduleFieldDesk(300)'),
   'scheduleFieldDesk must fire in every journalism resolution path — renderFieldDesk now debounced via scheduleFieldDesk');
 
-assert('A258 — Layer 2c: checkLeadSentence detects and retries "The [Team]..." leads',
+assert('A258 — Layer 2c: checkLeadSentence detects and retries generic leads via per-sentence specificity scoring',
   html.includes('async function checkLeadSentence') &&
-  html.includes('_LEAD_SENTENCE_RE') &&
+  html.includes('function _computeSpecificity') &&
+  html.includes('LEAD_SPECIFICITY_THRESHOLD') &&
   html.includes('LEAD SENTENCE REWRITE REQUIRED') &&
   html.includes('checkLeadSentence(prompt,') ,
-  'Layer 2c lead sentence check must be defined and wired into J2, J3, compound paths');
+  'Layer 2c lead sentence check must be defined and wired into J2, J3, compound paths — replaced regex-shape detection (2026-07-12) with per-sentence specificity scoring (same formula scoreProse() uses whole-brief), which generalizes to generic-lead shapes a regex can never enumerate');
 
 assert('A259 — Layer 2d: checkStatVerification ensures injected stats appear in output',
   html.includes('async function checkStatVerification') &&
