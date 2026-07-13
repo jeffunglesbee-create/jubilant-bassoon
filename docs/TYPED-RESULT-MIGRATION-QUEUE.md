@@ -148,19 +148,29 @@ re-derivation of `saveEspnFinal`, `findESPNScore`, and `fetchTeamRank`.
   call-site count.
 - **Re-verified independently this session (TASK 4 spot-check): CONFIRMED.**
 
-### 4. `generateJournalismViaRelay` (index.html ~L17544) — 5 real callers, incident history
+### 4. `generateJournalismViaRelay` (index.html ~L17548) — ✅ MIGRATED 2026-07-13
 
-- Proof-mode intentionally skips the relay path, but the function returns
-  a bare `null` for this — indistinguishable from a real HTTP/parse
-  failure. Every caller's fallback then hits the legacy direct-proxy API
-  **even when the skip was deliberate**, an unwanted live call this
-  session's own journalism-silent-failure investigation already flagged
-  as a real cost/behavior concern for this exact function.
-- HTTP-error, missing-`data.text`, and model-refusal nulls (L17571/17576/
-  17584/17603) are also all funneled into the same undifferentiated
-  legacy-proxy retry — model-refusal in particular is a content issue, not
-  an infra failure, and currently gets the same blind retry as a network
-  timeout.
+- **The original "unwanted live call" premise above was investigated and
+  found NOT to hold — do not re-attempt a fix for it.** Traced a real
+  caller (`renderSeriesPreviewCard`'s legacy-proxy fallback) end to end:
+  in proof mode, `window.fetch` is globally monkey-patched (~L4866) to
+  return `{}` for every request, including the legacy proxy's own
+  `fetch(CLAUDE_PROXY_URL, ...)` call. That fallback also gets
+  intercepted — `data.content` is undefined, `text` stays empty, the
+  caller returns `null` regardless. No real live API call occurs whether
+  or not `generateJournalismViaRelay`'s `_proofMode` skip is
+  distinguished from a real failure. Rule 72 (inherited claims must be
+  re-verified) applied here: the queue's own prior finding was wrong,
+  caught before building a fix on top of it.
+- **What WAS a real, present bug (fixed):** of this function's 3 real
+  failure causes (HTTP error, missing `data.text`, model refusal), model
+  refusal was the only one with no `captureFieldError` telemetry — despite
+  its own header comment flagging model refusal as a "CRITICAL
+  user-facing fix" (iPad-7). Added the same telemetry call the other 2
+  causes already had. Verified via a real extraction test: model refusal
+  now records exactly 1 `_fieldErrors` entry (was 0); the two
+  already-telemetered causes and genuine success are unchanged.
+  See `docs/outbox/cc-generatejournalismviarelay-typed-migration-2026-07-13.md`.
 
 ### 5. `journalismCallsToday().canCall` (index.html ~L25706-25707) — 9 real callers
 

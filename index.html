@@ -17545,6 +17545,21 @@ function _isModelRefusal(text) {
 // the same string shape that callers expect (raw prose), or null on failure.
 // Audit fields (score, retries, layers_fired) are logged when FIELD_DEBUG is on
 // and stored on window._lastJQAudit for the debug panel.
+//
+// 2026-07-13 (TYPED-RESULT-MIGRATION-QUEUE.md Bucket A #4 -- investigated,
+// original premise found NOT to hold, do not re-attempt): the queue's
+// finding claimed proof-mode's `return null;` here indistinguishably
+// triggers every caller's legacy-direct-proxy fallback, causing "an
+// unwanted live call." Traced a real caller (renderSeriesPreviewCard's
+// fallback path) end to end: in proof mode, `window.fetch` is globally
+// monkey-patched (~L4866) to return `{}` for every request, including the
+// legacy proxy's own `fetch(CLAUDE_PROXY_URL, ...)` call -- so that
+// fallback also gets intercepted, `data.content` is undefined, `text`
+// stays empty, and the caller returns null anyway. No real live API call
+// occurs either way. The claimed bug does not exist; do not re-implement
+// a fix for it. What DID need fixing (done below): the model-refusal
+// branch was the only one of this function's 3 real failure causes with
+// no captureFieldError telemetry.
 async function generateJournalismViaRelay(prompt, opts = {}) {
   if (_proofMode) return null; // proof mode: no relay calls
   if (!prompt || prompt.length < 10) return null;
@@ -17586,6 +17601,15 @@ async function generateJournalismViaRelay(prompt, opts = {}) {
     // refusal patterns and suppress — caller falls back to a factual stub.
     if (_isModelRefusal(data.text)) {
       if (FIELD_DEBUG) console.warn('[JQ Gate] model refusal detected — suppressing', data.text.slice(0, 80));
+      // 2026-07-13 (TYPED-RESULT-MIGRATION-QUEUE.md Bucket A #4): this was
+      // the only one of this function's 3 real failure causes (HTTP error,
+      // missing data.text, model refusal) with no captureFieldError
+      // telemetry -- despite its own header comment flagging model refusal
+      // as a "CRITICAL user-facing fix." Closing that asymmetry: the Health
+      // Panel can now show how often Haiku refuses to write a brief, a real
+      // content-quality signal that was previously only visible in a live
+      // FIELD_DEBUG console session.
+      captureFieldError('journalism:generate:' + (opts.briefType || 'generic'), new Error('model refusal: ' + data.text.slice(0, 80)), false);
       return null;
     }
     // Persist audit for debug panel
@@ -24571,7 +24595,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-07-12k';
+  const SW_VERSION = '2026-07-12l';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
