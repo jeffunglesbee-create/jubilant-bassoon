@@ -7219,12 +7219,21 @@ function setCached(iso,data){
 }
 
 // ── AI fetch for non-today dates ─────────────────────────────────
+// 2026-07-13 (TYPED-RESULT-MIGRATION-QUEUE.md Bucket A #11): the sole
+// caller (goToDate) showed the same "⚠️ Couldn't load schedule... Check
+// the browser console... Retry" message whether the real cause was the
+// daily AI-call budget being exhausted (retrying is futile until
+// tomorrow -- the Retry button would just fail again immediately for the
+// same reason) or a genuine transient HTTP/parse failure (retrying might
+// actually work). Migrated the return contract from `array|null` to
+// `{ok:true,sections}` / `{ok:false,reason}` so the caller can show an
+// accurate message for each case.
 async function fetchDateSchedule(iso){
   // Check cache first — zero tokens if already fetched
   const cached = getCached(iso);
   if(cached){
     if(FIELD_DEBUG) console.debug("FIELD: cache hit for",iso,"→",cached.length,"sections");
-    return cached;
+    return {ok:true, sections:cached};
   }
 
   const d   = new Date(iso+"T12:00:00Z");
@@ -7239,7 +7248,7 @@ Stream keys (pick best fit): espn,abc,nbc,tnt,tbs,fox,fs1,peacock,paramount,appl
 Return {"s":[]} if no major sport games that day. CRITICAL: If you are not highly confident a specific game is scheduled on this exact date, omit it. An empty {"s":[]} is preferable to inventing a game that is not happening.`;
 
   let rawTxt = "";
-  if(!canUseAPI()) return null;
+  if(!canUseAPI()) return {ok:false, reason:'budget-exhausted'};
   try{
     incrementUsage();
     if(FIELD_DEBUG) console.debug("FIELD: fetching schedule for",iso);
@@ -7285,7 +7294,7 @@ Return {"s":[]} if no major sport games that day. CRITICAL: If you are not highl
     if(!rows.length){
       if(FIELD_DEBUG) console.debug("FIELD: no games for",iso,"(model returned empty)");
       setCached(iso,[]); // Cache empty — correct, no games that day
-      return [];
+      return {ok:true, sections:[]};
     }
 
     // Expand compact arrays → sport sections
@@ -7306,13 +7315,13 @@ Return {"s":[]} if no major sport games that day. CRITICAL: If you are not highl
     const sections = Object.values(byLeague);
     if(FIELD_DEBUG) console.debug("FIELD: parsed",sections.length,"sections for",iso);
     setCached(iso, sections);
-    return sections;
+    return {ok:true, sections};
 
   }catch(e){
     // Don't cache errors — allow retry on next navigation
     if(FIELD_DEBUG) console.warn("FIELD date fetch error for",iso+":",e.message);
     if(FIELD_DEBUG&&rawTxt) console.warn("FIELD raw response was:",rawTxt.slice(0,300));
-    return null; // null = error, distinct from [] (no games)
+    return {ok:false, reason:'error', message:e.message}; // distinct from a legitimate {ok:true, sections:[]}
   }
 }
 
@@ -8648,18 +8657,35 @@ mvSyncMvPanel(); // Set initial empty state
 
   // Try ESPN first — free, no tokens, covers NBA/NHL/MLB + 9 soccer leagues
   const espnSections = await fetchESPNFixturesForDate(iso);
-  const sections = espnSections !== null ? espnSections : await fetchDateSchedule(iso);
+  // 2026-07-13 (TYPED-RESULT-MIGRATION-QUEUE.md Bucket A #11): wrap the
+  // ESPN success case in the same {ok,sections} shape fetchDateSchedule
+  // now returns, so both paths route through one differentiated check
+  // below instead of the old bare `sections === null` collapse.
+  const scheduleResult = espnSections !== null ? {ok:true, sections:espnSections} : await fetchDateSchedule(iso);
 
-  if(sections === null){
-    // Error — show friendly message with retry option
-    applyMainHTML(`<div class="empty-note" style="padding:3rem 2rem">
-      <div style="font-size:1.5rem;margin-bottom:.75rem">⚠️</div>
-      <div style="color:var(--white);margin-bottom:.5rem">Couldn't load ${label}'s schedule</div>
-      <div style="font-size:.72rem;color:var(--smoke);margin-bottom:1.2rem">Check the browser console for details</div>
-      <button class="refresh-btn" onclick="goToDate('${iso}')" style="font-size:.7rem">↺ Retry</button>
-    </div>`);
+  if(!scheduleResult.ok){
+    if(scheduleResult.reason === 'budget-exhausted'){
+      // Resource limit, not a failure -- retrying would just fail again
+      // for the same reason until the daily usage counter resets, so no
+      // Retry button (the old undifferentiated message offered one that
+      // could never succeed for this specific cause).
+      applyMainHTML(`<div class="empty-note" style="padding:3rem 2rem">
+        <div style="font-size:1.5rem;margin-bottom:.75rem">📅</div>
+        <div style="color:var(--white);margin-bottom:.5rem">Today's AI schedule lookups are used up</div>
+        <div style="font-size:.72rem;color:var(--smoke)">Try a date already covered by ESPN, or check back tomorrow.</div>
+      </div>`);
+    } else {
+      // Genuine failure — same friendly message with retry option as before this migration.
+      applyMainHTML(`<div class="empty-note" style="padding:3rem 2rem">
+        <div style="font-size:1.5rem;margin-bottom:.75rem">⚠️</div>
+        <div style="color:var(--white);margin-bottom:.5rem">Couldn't load ${label}'s schedule</div>
+        <div style="font-size:.72rem;color:var(--smoke);margin-bottom:1.2rem">Check the browser console for details</div>
+        <button class="refresh-btn" onclick="goToDate('${iso}')" style="font-size:.7rem">↺ Retry</button>
+      </div>`);
+    }
     return;
   }
+  const sections = scheduleResult.sections;
 
   if(!sections.length){
     applyMainHTML(`<div class="empty-note" style="padding:3rem 2rem">
@@ -16980,6 +17006,18 @@ async function fdFetch(path){
 // Fetch and cache standings for a competition code (PL, PD, SA, etc.)
 // Returns array of {pos, team, played, won, draw, lost, gf, ga, gd, pts, form}
 // form is a 5-char string like "WWDLW" (most recent last)
+// 2026-07-13 (TYPED-RESULT-MIGRATION-QUEUE.md Bucket A #10): investigated
+// the queue's "distinguish 429/rate-limit, add backoff like slashGolfFetch"
+// suggestion before building it. fdFetchStandings has exactly 1 real
+// caller (toggleStandings, a click-triggered standings-panel expand, not a
+// poll loop), and fdStandingsCache above already prevents repeat fetches
+// for the same competition within a session -- the "hammering a 10 req/min
+// free-tier limit" risk a dedicated backoff system would exist to prevent
+// is much lower here than for a function polled on an interval. Building
+// that machinery for a user-click-triggered, already-cached call would be
+// over-engineering relative to the actual risk. What WAS a real, confirmed
+// gap: this catch had zero persistent telemetry, only a FIELD_DEBUG-gated
+// console.warn. Added captureFieldError, matching the established pattern.
 async function fdFetchStandings(code){
   if(fdStandingsCache[code]) return fdStandingsCache[code];
   try{
@@ -17002,6 +17040,7 @@ async function fdFetchStandings(code){
     return rows;
   }catch(e){
     if(FIELD_DEBUG) console.warn("FD standings:", e.message);
+    captureFieldError('standings:fd', e, false);
     return null;
   }
 }
@@ -24595,7 +24634,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-07-12p';
+  const SW_VERSION = '2026-07-12q';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)

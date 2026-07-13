@@ -286,21 +286,42 @@ re-derivation of `saveEspnFinal`, `findESPNScore`, and `fetchTeamRank`.
   unaffected (0 entries, real brief text returned). See
   `docs/outbox/cc-fetchmlbgamebrieffromclaude-typed-migration-2026-07-13.md`.
 
-### 10. `fdFetchStandings` (index.html ~L17000) — 1 caller
+### 10. `fdFetchStandings` (index.html ~L16983) — ✅ MIGRATED 2026-07-13
 
-- `toggleStandings` already branches FD-fail→ESPN-fallback→stub, but
-  doesn't distinguish 429/rate-limit from a generic error. `slashGolfFetch`
-  elsewhere in this file already has a dedicated backoff pattern for
-  exactly this failure mode — reusing it here would avoid hammering the
-  FantasyData API during a rate-limit window (Rule 78 API-COST-A
-  relevance).
+- **Investigated the "add a slashGolfFetch-style backoff" suggestion
+  before building it:** `fdFetchStandings` has exactly 1 real caller
+  (`toggleStandings`, a click-triggered panel expand, not a poll loop),
+  and `fdStandingsCache` already prevents repeat fetches for the same
+  competition within a session. The "hammering a 10 req/min free-tier
+  limit" risk a dedicated backoff system exists to prevent is much lower
+  for a user-click-triggered, already-cached call than for something
+  polled on an interval — building that machinery here would be
+  over-engineering relative to the actual risk.
+- **What was real:** the catch had zero persistent telemetry (only a
+  `FIELD_DEBUG`-gated `console.warn`). Added `captureFieldError`.
 
-### 11. `fetchDateSchedule` (index.html ~L7242, L7315) — 1 caller
+### 11. `fetchDateSchedule` (index.html ~L7231) — ✅ MIGRATED 2026-07-13
 
-- Budget-exhausted vs. network/parse-failure both produce the same generic
-  "check console" caller-side message, even though the caller already has
-  a retry button that could be tailored ("AI budget reached" vs. "network
-  error, try again").
+- Confirmed real: budget-exhausted (`canUseAPI()` false — a resource
+  limit, retrying is futile until the daily counter resets) and a genuine
+  HTTP/parse failure (retrying might work) both produced the same
+  "⚠️ Couldn't load schedule... Check the browser console... Retry"
+  message, with a Retry button that would fail again immediately for the
+  budget case.
+- Migrated the return contract from `array|null` to `{ok:true,sections}`
+  / `{ok:false,reason}`. The sole caller (`goToDate`) now shows a calm,
+  non-alarming "Today's AI schedule lookups are used up... try a date
+  already covered by ESPN, or check back tomorrow" message (no Retry
+  button — retrying can't help) for budget-exhaustion, and the exact same
+  error-with-retry message as before for genuine failures. New copy was
+  required here (unlike #8) since there's no pre-existing static fallback
+  to simply leave alone — written in the app's existing calm/informational
+  tone (matching the "no major events" empty-state), not the alarming
+  ⚠️ style, since budget-exhaustion isn't a broken state.
+- Real verification: 4 forced scenarios on the function (budget-exhausted,
+  HTTP failure, no-games success, real-games success) all correctly
+  tagged; 4 caller-routing scenarios confirmed each routes to the right
+  UI outcome.
 
 ### 12. `fetchESPNFixturesForDate` (index.html ~L7461) — 1 caller
 
