@@ -1,0 +1,56 @@
+# .github/workflows/client-live-invariant.yml
+#
+# jubilant-bassoon's first client-side live invariant (CC-CMD-2026-07-13-
+# client-live-invariant). Checks the REAL deployed app's REAL rendered
+# DOM against its own already-fetched game data: no card may still show
+# 'espn-live' for a game the app's own data already says is final.
+#
+# Triggered after "Deploy gate (fast smoke)" completes (the workflow that
+# actually deploys to Cloudflare — confirmed via probe, not assumed —
+# distinct from the Drive-based field-autodeploy.yml), matching
+# field-relay-nba's post-deploy-live-verify.yml trigger pattern for that
+# repo's own layer.
+
+name: Client Live Invariant
+
+on:
+  workflow_run:
+    workflows: ["Deploy gate (fast smoke)"]
+    types: [completed]
+  workflow_dispatch:
+
+jobs:
+  client-live-invariant:
+    runs-on: ubuntu-latest
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.conclusion == 'success'
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Wait for Cloudflare propagation
+        if: github.event_name != 'workflow_dispatch'
+        run: sleep 20
+
+      - name: Run client live invariant
+        run: npx playwright test tests/client-live-invariant.js --config=tests/client-live-invariant.playwright.config.js
+
+      - name: Upload test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: client-live-invariant-report
+          path: test-results/
+          retention-days: 7
+          if-no-files-found: ignore
