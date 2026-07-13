@@ -4057,8 +4057,12 @@ assert('A503 — PM-26-P: performance.mark at load-phase transitions + CLS phase
   html.includes("performance.mark('field:cards')") &&
   html.includes("performance.mark('field:ready')") &&
   html.includes("performance.mark('field:supplemental')") &&
-  // All three are wrapped in try/catch (passive — must never throw)
-  html.includes("try { performance.mark('field:cards'); } catch(_) {}") &&
+  // All three are wrapped in try/catch (passive — must never throw).
+  // 2026-07-13 (CC-CMD-bucketb-tierb): field:cards's wrapper gained
+  // real captureFieldError telemetry (Bucket B migration) -- still passive,
+  // the mark call itself is unchanged and still cannot break anything if it
+  // throws. field:ready/field:supplemental untouched, still bare catches.
+  html.includes("try { performance.mark('field:cards'); } catch(_e) { captureFieldError('schedule:perf-mark', _e, true); }") &&
   html.includes("try { performance.mark('field:ready'); } catch(_) {}") &&
   html.includes("try { performance.mark('field:supplemental'); } catch(_) {}") &&
   // field:cards fires immediately before renderAll (not after)

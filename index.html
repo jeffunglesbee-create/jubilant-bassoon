@@ -17616,7 +17616,10 @@ function _isModelRefusal(text) {
 // no captureFieldError telemetry.
 async function generateJournalismViaRelay(prompt, opts = {}) {
   if (_proofMode) return null; // proof mode: no relay calls
-  if (!prompt || prompt.length < 10) return null;
+  if (!prompt || prompt.length < 10) {
+    captureFieldError('journalism:generate:' + (opts.briefType || 'generic'), new Error(`bad prompt: length ${prompt ? prompt.length : 0}`), true);
+    return null;
+  }
   try {
     const body = {
       prompt,
@@ -23265,7 +23268,7 @@ async function fetchSchedule(){
   // Phases: 'cards' (skeleton→real), 'ready' (overlay hydration begins),
   // 'supplemental' (rugby/afl async merge). Marks are passive — zero cost
   // unless DevTools Performance tab or __cls.events is inspected.
-  try { performance.mark('field:cards'); } catch(_) {}
+  try { performance.mark('field:cards'); } catch(_e) { captureFieldError('schedule:perf-mark', _e, true); }
   renderAll();
   // Sentinel for Playwright test optimization: tests waitForFunction(() => window._fieldDataReady)
   // instead of waitForTimeout(15000). Typically resolves in ~1.5s not 15s.
@@ -24658,7 +24661,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-07-13b';
+  const SW_VERSION = '2026-07-13c';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -24937,7 +24940,7 @@ async function fetchTeamRank(teamName) {
   if (!result.ok) return null; // failure -- do not cache, see header comment
   const rank = result.value;
   _fifaRankCache[ck] = rank;
-  try { localStorage.setItem(ck, JSON.stringify({ rank, ts: Date.now() })); } catch(_) {}
+  try { localStorage.setItem(ck, JSON.stringify({ rank, ts: Date.now() })); } catch(_e) { captureFieldError('scores:fifa-rank-persist', _e, true); }
   return rank;
 }
 // Sync cache-only read for hot render paths that cannot await a fetch
@@ -27040,7 +27043,7 @@ async function retryWithSportVocab(originalPrompt, text, sport, proxyUrl, label)
       localStorage.setItem(_reviewKey, JSON.stringify(_existing));
       if (FIELD_DEBUG) console.warn('[JQ-ACTION-C] ' + (vocab.sport || sport).toUpperCase() + ' VOICE violation logged: ' + violations.join(', ') + ' — rewrote');
     }
-  } catch(e_) {}
+  } catch(e_) { captureFieldError('journalism:sport-vocab-review-log', e_, true); }
   try {
     await _jqDelay(); // Gemini RPM guard
     const retryPrompt = originalPrompt +
@@ -27539,7 +27542,7 @@ async function maybeScoreRetry(originalPrompt, text, proxyUrl, label, game) {
         if(FIELD_DEBUG) console.warn('[JQ Tier 3] Low-score phrases flagged for review:', _candidates);
       }
     }
-  } catch(e_) {}
+  } catch(e_) { captureFieldError('journalism:score-retry-phrase-log', e_, true); }
   return text;
 }
 
@@ -29327,7 +29330,10 @@ async function fetchUserState() {
   try {
     const r = await fetch(`${base}/user/state?userId=${encodeURIComponent(userId)}`,
       { signal: AbortSignal.timeout(5000) });
-    if (!r.ok) return null;
+    if (!r.ok) {
+      captureFieldError('user:fetch-state', new Error('HTTP ' + r.status), true);
+      return null;
+    }
     const data = await r.json();
     window._userState = data || null;
     _userStateFetchedAt = Date.now();
@@ -29343,7 +29349,8 @@ async function fetchUserState() {
       window._userState._affinity = computeWatchAffinity(window._userState.watchHistory);
     }
     return window._userState;
-  } catch(_) {
+  } catch(_e) {
+    captureFieldError('user:fetch-state', _e, true);
     return null;
   } finally {
     _userStateInFlight = false;
@@ -29716,7 +29723,7 @@ document.addEventListener('visibilitychange', () => {
         }
         // After MAX_RECONN, give up gracefully — polling is the safety net.
       };
-    } catch (_e) {}
+    } catch (_e) { captureFieldError('ambient:sse-connect', _e, true); }
   }
 
   function _disconnect() {
@@ -32090,7 +32097,7 @@ async function fetchPrerenderedGameBrief(espnEventId) {
     if (!r.ok) return null;
     const data = await r.json();
     return data?.brief || null;
-  } catch(_) { return null; }
+  } catch(_e) { captureFieldError('journalism:prerendered-game-brief', _e, true); return null; }
 }
 
 async function renderMLBGameBriefCard(gameCard) {
@@ -39381,7 +39388,7 @@ function isRivalGame(g){
     const h=(g.home||'').toLowerCase(),a=(g.away||'').toLowerCase();
     for(const t of MY_TEAMS){const tl=t.toLowerCase();if(h===tl||a===tl)return false;const rivals=RIVAL_MAP.get(tl)||new Set();if(rivals.has(h)||rivals.has(a))return true;}
     return false;
-  } catch(e) { return false; } // guard: RIVAL_MAP may be in TDZ if called before line 18657
+  } catch(e) { captureFieldError('rivalry:is-rival-game', e, true); return false; } // guard: RIVAL_MAP may be in TDZ if called before line 18657
 }
 
 // ── VIBE-A helpers (2026-05-28) ──────────────────────────────────────────────
@@ -41889,7 +41896,7 @@ function openBottomSheet(gameId) {
       if (_sustained >= 5) parts.push(`${Math.round(_sustained)} min high drama`);
       if (Math.abs(_trend) >= 8) parts.push(_trend > 0 ? 'surged late ↑' : 'faded late ↓');
       if (parts.length) _bsPostgameDrama = parts.join(' · ');
-    } catch(e_) {}
+    } catch(e_) { captureFieldError('bottomsheet:postgame-drama', e_, true); }
   }
   // Standings context
   const standings = _relayStandingsCache?.[sport];
