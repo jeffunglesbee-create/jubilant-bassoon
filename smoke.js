@@ -3838,8 +3838,11 @@ assert('A494 — PM-25 categorical tier refactor: _otwGetLiveTier + _otwTierLabe
   html.includes('function _otwTierLabel(') &&
   html.includes("return 'CRUNCH'") &&
   html.includes("return 'EXTRA_TIME'") &&
-  html.includes("return 'CLOSE_FINISH'"),
-  'PM-25 categorical tier refactor (A494): _otwGetLiveTier(eData, sport) must return named condition strings (CRUNCH/EXTRA_TIME/CLOSE_FINISH/LIVE_GAME) derived from factual game-state booleans — never a numeric composite threshold. _otwTierLabel(tier) maps condition to display string. This mirrors _otwFindWCLiveGame\'s named-condition tier architecture for the ESPN live game path. RUWT Rule 95: the WC path already used named conditions; the ESPN path previously used dramaTier(score) numeric bands. These two functions bring the ESPN path to parity. 2026-07-12: T3/T4 (CLOSE_FINISH/LIVE_GAME) rewritten to drop the smoothed-drama arg entirely — selection is now raw-observable-only (margin/period/clock via _otwMarginTier/_otwIsFinalPeriod/_otwIsCrunchTime), not just the display.');
+  html.includes("return 'CLOSE_FINISH'") &&
+  html.includes('function _otwMarginTier(') &&
+  html.includes('function _otwIsFinalPeriod(') &&
+  html.includes('function _otwIsCrunchTime('),
+  'PM-25 categorical tier refactor (A494): _otwGetLiveTier(eData, sport) must return named condition strings (CRUNCH/EXTRA_TIME/CLOSE_FINISH/LIVE_GAME) derived from factual game-state booleans — never a numeric composite threshold. _otwTierLabel(tier) maps condition to display string. This mirrors _otwFindWCLiveGame\'s named-condition tier architecture for the ESPN live game path. RUWT Rule 95: the WC path already used named conditions; the ESPN path previously used dramaTier(score) numeric bands. These two functions bring the ESPN path to parity. 2026-07-12: T3/T4 (CLOSE_FINISH/LIVE_GAME) rewritten to drop the smoothed-drama arg entirely — selection is now raw-observable-only (margin/period/clock via _otwMarginTier/_otwIsFinalPeriod/_otwIsCrunchTime), not just the display. 2026-07-13 (CC-CMD-missing-july12-assertions): this rationale already named the 3 raw-observable helpers but the boolean check never verified their existence -- f2c7413c (2026-07-12 23:49 ET) shipped them with no structural check at all. Extended here rather than adding a sibling assertion: A494 already checks 2 functions + 3 string literals for this exact tier-refactor feature, and its own text already claimed to cover these 3 helpers, so 3 more existence checks is consistent with its stated scope rather than overloading it.');
 
 assert('A495 — RUWT Rule 95 RESOLVED: OTW FIRE state uses _otwGetLiveTier not raw dramaTier',
   html.includes('_otwGetLiveTier(ed, sport)') &&
@@ -6733,6 +6736,12 @@ assert('A-RENDERGATE-NATBUNDLE-1 — nationalBundle and weatherExtreme are both 
       block.includes('wxCache[g._id].temp<20||wxCache[g._id].temp>100||wxCache[g._id].wind>25||wxCache[g._id].precip>0.5');
   })(),
   'Per CC-CMD-2026-07-10-render-signature-gate TASK 0: getGameReasonTags() (shipped the same day) has 6 signals; 2 (nationalBundle, weather-extreme) had zero coverage in the render payload, confirmed via direct grep before this gate shipped. Added using the exact same formula already live in getGameReasonTags() itself (index.html ~36824), not a new heuristic -- closing the gap before either function gains a real consumer.');
+
+assert('A740 — fieldOperation()/FIELD_OPERATIONS/classifyFieldError() exist',
+  html.includes('function fieldOperation(') &&
+  html.includes('const FIELD_OPERATIONS') &&
+  html.includes('function classifyFieldError('),
+  'Per CC-CMD-2026-07-13-missing-july12-assertions: c6f632c2 (2026-07-12 23:21 ET) shipped fieldOperation()/FIELD_OPERATIONS/classifyFieldError() with zero structural existence check protecting them -- every other Bucket A migration this session (saveEspnFinal, fetchNHLRelayScores, fetchTeamRank, etc.) wraps its fix in fieldOperation(), so a silent removal/rename of any of these three would break the typed-result-migration sweep without CI ever catching it.');
 
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);
