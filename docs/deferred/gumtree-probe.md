@@ -1,5 +1,7 @@
 # Claude Code Command — GumTree feasibility probe via temporary GitHub Actions workflow
 
+**STATUS: Deferred, not superseded — real tool for a future larger/cross-language audit. Do not dispatch as-is; re-scope to the actual future need first.**
+
 **Date:** 2026-07-13
 **Repo:** jeffunglesbee-create/jubilant-bassoon (sole)
 **Branch:** main — commit directly, do not create a feature branch or PR.
