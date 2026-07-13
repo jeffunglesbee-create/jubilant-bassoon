@@ -13551,7 +13551,7 @@ function buildPlayoffSpecials() {
         try {
           const _sd = typeof getStatOfDay === 'function' ? getStatOfDay(game, 'nba') : null;
           if (_sd) journalNote += ' \u00b7 ' + _sd.shortText;
-        } catch(e_) {}
+        } catch(e_) { captureFieldError('journalism:playoff-specials-nba-statedge', e_, true); }
         cards.push({
           show: 'NBA Finals ' + game.seriesRecord,
           network: network || 'ABC',
@@ -13572,7 +13572,7 @@ function buildPlayoffSpecials() {
         try {
           const _sd = typeof getStatOfDay === 'function' ? getStatOfDay(game, 'nhl') : null;
           if (_sd) journalNote += ' \u00b7 ' + _sd.shortText;
-        } catch(e_) {}
+        } catch(e_) { captureFieldError('journalism:playoff-specials-nhl-statedge', e_, true); }
         cards.push({
           show: 'Stanley Cup Final ' + game.seriesRecord,
           network: network || 'ABC',
@@ -14275,7 +14275,7 @@ function openJournalismForGame(gameId) {
       toggleJournalismView();
     } else {
       // Already in journalism mode — ensure content is rendered fresh
-      try { renderJournalism(); } catch(_) {}
+      try { renderJournalism(); } catch(_e) { captureFieldError('journalism:reopen-rerender', _e, true); }
     }
     setTimeout(() => {
       const el = document.querySelector(`[data-gameid="${gameId}"].jrn-series, [data-gameid="${gameId}"].jrn-slate-item`);
@@ -14694,7 +14694,7 @@ function renderJournalismCompanion(counts) {
     }
     // Honest note: FIELD's schedule is today-only (buildTodaySchedule). Multi-day
     // outlook is intentionally omitted rather than fabricated.
-  } catch(_) {}
+  } catch(_e) { captureFieldError('journalism:companion-later-tonight', _e, true); }
 
   // Block 4: Active Layers (PM-19 retro) — patent-visible static surfacing of
   // the quality enforcement chain. Distinct from per-brief telemetry: this
@@ -14735,7 +14735,7 @@ function renderJournalismCompanion(counts) {
         </div>
       </div>`);
     }
-  } catch(_) {}
+  } catch(_e) { captureFieldError('journalism:companion-quality-scores', _e, true); }
 
   aside.innerHTML = blocks.join('');
 }
@@ -17132,6 +17132,7 @@ async function fdFetchH2H(matchId){
     return result;
   }catch(e){
     if(FIELD_DEBUG) console.warn('FD H2H:', e.message);
+    captureFieldError('soccer:fd-h2h', e, true);
     return null;
   }
 }
@@ -24671,7 +24672,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-07-13b';
+  const SW_VERSION = '2026-07-13c';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -28300,7 +28301,7 @@ function buildCompoundPrompt(sections) {
       // buildSeriesContextTags reads populated fields. Idempotent — safe to
       // call multiple times. STABLE data only per ADR-001 — playoff leaders
       // (subtask 9, COUNTERS) require feed integration and remain deferred.
-      (()=>{try{populateSeriesContext(g)}catch(e_){}})(),
+      (()=>{try{populateSeriesContext(g)}catch(e_){captureFieldError('journalism:compound-prompt-populate-series-context', e_, true);}})(),
       // Axis 3 Phase A: structured series-context tags from optional fields
       // (playoffLeaders / injuries / coaches / historical). Phase B populates
       // coaches/historical/injuries via populateSeriesContext above; playoff
@@ -39442,7 +39443,7 @@ function isObjectiveRival(g) {
     const h = (g.home||'').toLowerCase();
     const a = (g.away||'').toLowerCase();
     return (RIVAL_MAP.get(h) || new Set()).has(a);
-  } catch(e) { return false; }
+  } catch(e) { captureFieldError('rivalry:is-objective-rival', e, true); return false; }
 }
 
 // isGrindingGame: named game-state for GRINDING badge.
@@ -41113,7 +41114,7 @@ function buildDramaLineTiers(game, eData, sport){
     const sp=(sport||game._sport||'').toLowerCase();
     let period='';
     period=eData.period?sportContext(sp).periodFmt(eData.period,eData.clock||''):'';
-    let trend='';try{if((getDramaTrend(gid)||0)>8)trend=' \u00b7 rising';}catch(e_){}
+    let trend='';try{if((getDramaTrend(gid)||0)>8)trend=' \u00b7 rising';}catch(e_){captureFieldError('drama:line-tiers-trend', e_, true);}
     if(!moment&&!period)return empty;
     const tight=trim(moment||period,38),mid=trim(join([moment,period])+trend,52),full=join([moment,period+trend,series]);
     return tight?{tight,mid:mid||tight,full:full||mid||tight}:empty;
