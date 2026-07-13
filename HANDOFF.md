@@ -1,9 +1,30 @@
 HANDOFF
-Last commit (jubilant-bassoon): 5478adf  Smoke: 919/0, field_unit 66/0, field_smoke Failures:0
+Last commit (jubilant-bassoon): dbd91f7  Smoke: 919/0, field_unit 66/0, field_smoke Failures:0
 Last commit (field-relay-nba): 5016cc9  (deploy match:false is a known non-issue -- only
   routine crons triggered on this specific commit; the real fix commit, 8fe6875, deployed
   and is confirmed live)
 Clean state: yes -- all three test suites green on both repos' most recent real code changes.
+
+=== CONTINUATION SESSION (2026-07-12 late) — uncapped backoff audit ===
+
+Direct user request: "Verify the backoffs aren't uncapped." Full grep sweep of
+every backoff/retry-delay pattern in index.html (backoff mentions, Date.now()+var
+future-timestamp patterns, exponential-growth patterns, non-literal setTimeout/
+setInterval delays, attempt-multiplier patterns). Found one genuine gap:
+fetchCompoundEditorial's 429 handler set _compoundRetryAfter directly from the
+relay's raw Retry-After header with no client-side ceiling -- a misconfigured or
+hostile upstream (or a unit-mismatch bug) could disable compound editorial calls
+for the rest of the session or effectively permanently, since the value persists
+to localStorage across reloads. Clamped to a 30-minute ceiling (matching
+slashGolfFetch's own flat 60min 429 backoff elsewhere in this file) with a safe
+60s fallback for non-numeric/non-positive header values. Five other backoff
+mechanisms audited and confirmed already capped: slashGolfFetch (fixed 60min),
+ESPN per-league error backoff (Math.min(...,300000)), GameSocket EventSource
+reconnect (Math.min(delay,60000) + MAX_RECONN=5), BracketDO WebSocket reconnect
+(MAX_RECONN=3, small linear delay), GameSocket's fixed _retryMs. Verified via
+8-scenario forced-condition test plus full smoke/unit/field_smoke suite.
+SW_VERSION 2026-07-12s -> t. Commit dbd91f7. Doc:
+docs/outbox/cc-compound-retry-after-cap-2026-07-12.md.
 
 === CONTINUATION SESSION (2026-07-13) — full Bucket A sweep + EPL typo fix ===
 
