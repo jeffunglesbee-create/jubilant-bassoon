@@ -13785,7 +13785,7 @@ function renderFieldDesk(){
         });
       });
     }
-  }catch(e_){}
+  }catch(e_){ captureFieldError('render:field-desk-card2-series', e_, true); }
   cards.push(...seriesCards.slice(0,3));
 
   // ── Card 3: Game briefs from _gameBriefCache (WNBA/MLB) ────────────────
@@ -13808,7 +13808,7 @@ function renderFieldDesk(){
         </div>`);
       });
     }
-  }catch(e_){}
+  }catch(e_){ captureFieldError('render:field-desk-card3-briefs', e_, true); }
 
   // ── Card 4: Scout's Pick — single editorial pick of the night ──────────────
   // Uses buildSlateScoutsPick() to select ONE game from tonight's slate.
@@ -13840,7 +13840,7 @@ function renderFieldDesk(){
         ${seriesLine}${statLine}${msLine}${wcLine}${footnote}
       </div>`);
     }
-  }catch(e_){}
+  }catch(e_){ captureFieldError('render:field-desk-card4-scouts-pick', e_, true); }
 
   // ── Card 5: Analytics Edge (Option C) ────────────────────────────────────
   // Appears on playoff/Finals nights when R2 analytics data is loaded.
@@ -13886,7 +13886,7 @@ function renderFieldDesk(){
         </div>`);
       }
     }
-  } catch(e_) {}
+  } catch(e_) { captureFieldError('render:field-desk-card5-analytics', e_, true); }
 
   // ── Card 6: Anti-Hype report ─────────────────────────────────────────────
   try{
@@ -13904,7 +13904,7 @@ function renderFieldDesk(){
         <div class="desk-card-body">${flagLines}<div style="font-size:.64rem;color:var(--smoke);margin-top:.3rem">FIELD sees lower drama potential than the broadcast is suggesting.</div></div>
       </div>`);
     }
-  }catch(e_){}
+  }catch(e_){ captureFieldError('render:field-desk-card6-antihype', e_, true); }
 
   // ── Card 6: European soccer match briefs aggregated ──────────────────────
   try{
@@ -13928,7 +13928,7 @@ function renderFieldDesk(){
         <div class="desk-card-body">${_rawEpl.slice(0,250).trim()}${_rawEpl.length>250?'\u2026':''}</div>
       </div>`);
     });
-  }catch(e_){}
+  }catch(e_){ captureFieldError('render:field-desk-card6-epl', e_, true); }
 
   // P5: if no AI cards yet, show static brief text from #field-brief as a placeholder
   if(!cards.length){
@@ -13941,7 +13941,7 @@ function renderFieldDesk(){
           <div class="desk-card-body">${staticText.slice(0,300).trim()}${staticText.length>300?'\u2026':''}</div>
         </div>`);
       }
-    } catch(e_) {}
+    } catch(e_) { captureFieldError('render:field-desk-static-fallback', e_, true); }
     if(!cards.length){ if(desksec) desksec.style.display='none'; return; }
   }
   if(desksec) desksec.style.display='';
@@ -24669,7 +24669,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-07-13e';
+  const SW_VERSION = '2026-07-13f';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -28411,7 +28411,7 @@ async function fetchCompoundEditorial(sections) {
   const cacheKey = buildCompoundCacheKey(sections);
   const cached = sessionStorage.getItem(cacheKey);
   if (cached) {
-    try { return JSON.parse(cached); } catch(e) {}
+    try { return JSON.parse(cached); } catch(e) { captureFieldError('journalism:compound-cache-parse', e, true); }
   }
 
   // ── Items 4-6: pre-fetch depth data before building prompt ───────────────
@@ -31302,7 +31302,7 @@ async function fetchLeagueRSS(sport,home,away){
         return title.slice(0,150);
     }
     return null;
-  }catch(e){return null;}
+  }catch(e){ captureFieldError('journalism:league-rss', e, true); return null; }
 }
 
 // Master dispatcher — P1→P2→P3→P4
@@ -32213,7 +32213,7 @@ async function fetchWNBAGameBriefFromClaude(g) {
       scoreProse(text, g||null).then(s=>renderProseScore(s,'WNBA Brief'));
       return stripPromptLeaks(text.trim());
     }
-  } catch(e_) {}
+  } catch(e_) { captureFieldError('journalism:wnba-brief', e_, true); }
   return null;
 }
 
@@ -32351,7 +32351,7 @@ async function fetchStakesBriefFromClaude(g) {
       scoreProse(text, g||null).then(s=>renderProseScore(s,'Stakes Brief'));
       return stripPromptLeaks(text.trim());
     }
-  } catch(e_) {}
+  } catch(e_) { captureFieldError('journalism:stakes-brief', e_, true); }
   return null;
 }
 
@@ -32639,10 +32639,17 @@ async function fetchGameBriefOnDemand(game, sport) {
   // exhausted. Budget gates are now primarily a safety backstop against stuck
   // retry loops, not RPM protection. All sport paths share the same pool.
   const usesOwnBudget = sp.includes('baseball') || sp.includes('mlb') || sp.includes('wnba');
-  if (!usesOwnBudget) {
-    const budget = journalismCallsToday();
-    if (!budget.canCall()) return null;
-  }
+  // 2026-07-13 (CC-CMD-bucketb-tierc-cluster3): `budget` was previously
+  // block-scoped to this `if`, but the generic NBA/NHL/other branch below
+  // calls `budget.inc()` well outside this block -- a real ReferenceError
+  // on every successful generic-branch generation, previously invisible
+  // because it landed in that branch's own catch, which had zero telemetry
+  // until this same CC-CMD added it. Adding the telemetry surfaced this;
+  // hoisting the declaration to function scope is the real fix.
+  // journalismCallsToday() itself is a pure factory (sessionStorage reads
+  // only) -- safe to call unconditionally regardless of usesOwnBudget.
+  const budget = journalismCallsToday();
+  if (!usesOwnBudget && !budget.canCall()) return null;
 
   let text = null;
 
@@ -32729,7 +32736,7 @@ Write this brief at the level the moment deserves. Do not undersell a championsh
           budget.inc();
         }
       }
-    } catch(_) {}
+    } catch(_e) { captureFieldError('journalism:game-brief-on-demand', _e, true); }
   }
 
   if (text) {
@@ -32816,7 +32823,7 @@ async function fetchEPLMatchBriefFromClaude(g) {
       scoreProse(text, g||null).then(s=>renderProseScore(s,'EPL Brief'));
       return stripPromptLeaks(text.trim());
     }
-  } catch(e) {}
+  } catch(e) { captureFieldError('journalism:epl-brief', e, true); }
   return null;
 }
 
@@ -33683,7 +33690,7 @@ async function fetchWCTabBrief(wcGames) {
           jobId = data.jobId;
         }
       }
-    } catch(e_) {}
+    } catch(e_) { captureFieldError('journalism:wc-tab-brief-enqueue', e_, true); }
   }
   // 5. Poll for result (max 20s)
   if (jobId && JOURNALISM_RESULT_RELAY) {
@@ -33701,7 +33708,7 @@ async function fetchWCTabBrief(wcGames) {
           return result.text;
         }
         if (result.status === 'failed') break;
-      } catch(e_) {}
+      } catch(e_) { captureFieldError('journalism:wc-tab-brief-poll', e_, true); }
     }
   }
   return null;
@@ -35184,7 +35191,7 @@ async function fetchFinalsDesk(game, sport) {
           jobId = data.jobId;
         }
       }
-    } catch(e_) {}
+    } catch(e_) { captureFieldError('journalism:finals-desk-enqueue', e_, true); }
   }
 
   // 4. Poll for result (max 20s, 2s intervals)
@@ -35202,7 +35209,7 @@ async function fetchFinalsDesk(game, sport) {
           return result.text;
         }
         if (result.status === 'failed') break; // fall through to direct path
-      } catch(e_) {}
+      } catch(e_) { captureFieldError('journalism:finals-desk-poll', e_, true); }
     }
   }
 
@@ -35224,7 +35231,7 @@ async function fetchFinalsDesk(game, sport) {
       try { archiveBrief('game_ondemand', (game&&(_gameSport(game)))||null, game&&(game._id||game.id)||null, text, null); } catch(_){}
       return text;
     }
-  } catch(e_) {}
+  } catch(e_) { captureFieldError('journalism:finals-desk-fallback', e_, true); }
   return null;
 }
 
@@ -40686,7 +40693,7 @@ Write this Night Owl at the level the moment deserves. Do not undersell a champi
       }
       budget.inc();text=await maybeScoreRetry(prompt,text,CLAUDE_PROXY_URL,'J5 Night Owl',topGame||null);scoreProse(text, topGame||null).then(s=>renderProseScore(s,'J5 Night Owl'));return stripPromptLeaks(text.trim());
     }
-  }catch(e){if(FIELD_DEBUG)console.error('[J5 Night Owl] proxy error:',e.message);}
+  }catch(e){if(FIELD_DEBUG)console.error('[J5 Night Owl] proxy error:',e.message);captureFieldError('journalism:night-owl',e,true);}
   return null;
 }
 
