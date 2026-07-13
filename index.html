@@ -8616,13 +8616,21 @@ async function soccerFBrefInit(leagueFile) {
   if (_soccerFBrefCache[leagueFile]) return _soccerFBrefCache[leagueFile];
   try {
     const r = await fetch(`${_SOCCER_FBREF_RELAY}/${leagueFile}`, { signal: AbortSignal.timeout(5000) });
-    if (!r.ok) { _recordRelayInit('soccerFBrefInit', false, `${leagueFile}: HTTP ${r.status}`); return null; }
+    if (!r.ok) {
+      _recordRelayInit('soccerFBrefInit', false, `${leagueFile}: HTTP ${r.status}`);
+      captureFieldError('soccer:fbref-init', new Error(`${leagueFile}: HTTP ${r.status}`), true);
+      return null;
+    }
     const data = await r.json();
     _soccerFBrefCache[leagueFile] = data;
     _recordRelayInit('soccerFBrefInit', true);
     if (FIELD_DEBUG) console.log('[FIELD] Soccer FBref loaded:', leagueFile, Object.keys(data.teams || {}).length, 'squads');
     return data;
-  } catch(e_) { _recordRelayInit('soccerFBrefInit', false, `${leagueFile}: ${e_?.message || 'error'}`); return null; }
+  } catch(e_) {
+    _recordRelayInit('soccerFBrefInit', false, `${leagueFile}: ${e_?.message || 'error'}`);
+    captureFieldError('soccer:fbref-init', e_, true);
+    return null;
+  }
 }
 
 // Helper: get FBref stats for a team by display name (fuzzy: last word match)
@@ -18539,7 +18547,7 @@ async function fetchV2AllScores() {
               renderWCBracketImpact(gameId, wg.home || '', wg.away || '', _wcRelayBase)
                 .catch(() => {});
               if (FIELD_DEBUG) console.debug('[V2-WC] brief consumed for', gameId, brief.slice(0, 60) + '…');
-            } catch(_) { /* timeout or network — silent */ }
+            } catch(_e) { captureFieldError('journalism:v2-wc-brief-consume', _e, true); }
           })(wg._id, wcKeys.find(k => {
             const e = espnScores[k];
             return (e._gameId || e.espnEventId || k) === wg._id;
@@ -18585,7 +18593,7 @@ async function fetchV2AllScores() {
           }
           scheduleRenderAll();
           if (FIELD_DEBUG) console.debug('[V2-NBA] brief consumed for', gId, brief.slice(0, 60) + '…');
-        } catch(_) { /* timeout or network — silent */ }
+        } catch(_e) { captureFieldError('journalism:v2-nba-brief-consume', _e, true); }
       })(gameId, key);
     }
   }
@@ -18622,7 +18630,7 @@ async function fetchV2AllScores() {
           }
           scheduleRenderAll();
           if (FIELD_DEBUG) console.debug('[V2-NHL] brief consumed for', gId, brief.slice(0, 60) + '…');
-        } catch(_) { /* timeout or network — silent */ }
+        } catch(_e) { captureFieldError('journalism:v2-nhl-brief-consume', _e, true); }
       })(gameId, key);
     }
   }
@@ -24661,7 +24669,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-07-13d';
+  const SW_VERSION = '2026-07-13e';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -29301,7 +29309,7 @@ document.addEventListener('visibilitychange', () => {
         _missedPeakFired.add(gameId);
       }
     }
-  } catch(_) {}
+  } catch(_e) { captureFieldError('userdo:peak-missed-visibility', _e, true); }
 });
 
 // ── UserDO read loop (CC-CMD-2026-06-19 / Prompt 10) ─────────────────────
@@ -30713,7 +30721,8 @@ async function fetchESPNInjuries(sportKey) {
       try { localStorage.setItem('field_espn_injuries_' + slug.key, JSON.stringify({ ts: Date.now(), data })); } catch(_) {}
       if (typeof FIELD_DEBUG !== 'undefined' && FIELD_DEBUG) console.log(`[ESPN Injuries ${slug.key.toUpperCase()}] fetched ${Object.keys(data).length} teams · ${Object.values(data).reduce((a,arr)=>a+arr.length,0)} entries (FIELD_DEBUG)`);
       return data;
-    } catch(_) {
+    } catch(_e) {
+      captureFieldError('espn:injuries-prefetch', _e, true);
       return cache.data || {};
     } finally {
       cache.inFlight = null;
@@ -30875,7 +30884,8 @@ async function fetchNHLPlayoffLeaders() {
       try { localStorage.setItem('field_nhl_playoff_leaders', JSON.stringify({ ts: Date.now(), data })); } catch(_) {}
       if (typeof FIELD_DEBUG !== 'undefined' && FIELD_DEBUG) console.log('[NHL Playoff Leaders] fetched', Object.keys(data).length, 'teams (FIELD_DEBUG)');
       return data;
-    } catch(_) {
+    } catch(_e) {
+      captureFieldError('nhl:playoff-leaders-prefetch', _e, true);
       return _nhlPlayoffLeadersCache.data || {};
     } finally {
       _nhlPlayoffLeadersCache.inFlight = null;
@@ -31032,7 +31042,8 @@ async function fetchNBAPlayoffLeaders() {
       try { localStorage.setItem('field_nba_playoff_leaders', JSON.stringify({ ts: Date.now(), data })); } catch(_) {}
       if (FIELD_DEBUG) console.log('[NBA Playoff Leaders] fetched', Object.keys(data).length, 'teams (FIELD_DEBUG)');
       return data;
-    } catch(_) {
+    } catch(_e) {
+      captureFieldError('nba:playoff-leaders-prefetch', _e, true);
       return _nbaPlayoffLeadersCache.data || {};
     } finally {
       _nbaPlayoffLeadersCache.inFlight = null;
@@ -42896,7 +42907,7 @@ async function saveSnapshot(){
       savedAt:     Date.now(),
       url:         location.pathname
     });
-  } catch(_) {}
+  } catch(_e) { captureFieldError('snapshot:save', _e, true); }
 }
 async function restoreSnapshot(){
   try {
