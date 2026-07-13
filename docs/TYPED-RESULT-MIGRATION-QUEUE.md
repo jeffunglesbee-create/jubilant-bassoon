@@ -376,7 +376,7 @@ instruction. "Call Sites" = number of real callers found for that function.
 
 | Count | Function | Call Sites | Representative Reason |
 |---|---|---|---|
-| 8 | `fetchBDLRecentForm` (~L18765) | 0 | Dead code — zero call sites in file (only a stray comment mention) |
+| 8 | `fetchBDLRecentForm` (~L18765) | 0 | ✅ INVESTIGATED 2026-07-13 (CC-CMD-queue-deadcode-and-ambiguous, TASK 1b): NOT dead code — deliberate staged/gated work, own comment documents "Layer 2" of a planned 3-layer BDL momentum integration; no shipped Momentum feature found to wire it into. Left exactly as-is, untouched — not deleted, not force-wired. |
 | 8 | `fetchFinalsDesk` (~L34794) | 1 | Sole caller does if(!text){placeholder.remove();return;} regardless of which of the function's many null causes fired. |
 | 7 | `renderFieldDesk` (~L13706) | 1 | Card-2 (series briefs) build failure silently drops that card; sibling Card-1 catch in same function DOES log via window._fieldErrors, showing this is a gap not a design choice |
 | 7 | `fetchCompoundEditorial` (~L28152) | 1 | Cached-JSON parse-failure catch falls through to a live fetch attempt; same single recovery path as a cache miss. |
@@ -395,7 +395,7 @@ instruction. "Call Sites" = number of real callers found for that function.
 | 4 | `fetchEPLMatchBriefFromClaude` (~L32421) | 1 | renderEPLMatchBriefCard falls back to identical staticText for any falsy result, cause is discarded. |
 | 4 | `fetchMLBPlatoon` (~L36632) | 1 | Sole caller (injectMLBPlatoon) does if(!platoon) return; regardless of which internal guard fired. |
 | 4 | `restoreSnapshot` (~L42541) | 1 | Sole caller uses .finally() only — the false return is never read, so this branch is purely decorative. |
-| 4 | `predictNextOpenHour` (~L42600) | 0 | No call site found anywhere in index.html — function appears to be dead code, so no caller can differentiate this null. |
+| 4 | `predictNextOpenHour` (~L42600) | 0 | ✅ QUEUE CORRECTION 2026-07-13 (CC-CMD-queue-deadcode-and-ambiguous): flagged for removal by this queue's caller-census, but smoke.js A405 requires its existence as part of the documented P5 anticipatory-prefetch startup-polish bundle (patent-relevant, USPTO-filing-adjacent). Not dead code by the codebase's own definition — NOT removed. |
 | 3 | `fetchMLBTeamMomentum` (~L8565) | 2 | Both callers use `.catch(()=>null)` plus `m?.last10?.length` — unknown-team-ID, HTTP failure, and thrown exception are all treated identically today. |
 | 3 | `loadCFLScoreboard` (~L12661) | 2 | Both callers treat null and empty array identically (`!games\|\|!games.length`), discarding HTTP-not-ok vs other reasons |
 | 3 | `bdlFetch` (~L14785) | 2 | Both callers (bdlFetchInjuries/bdlFetchStats) do bare `if(!data\|\|!data.data) return []`, no distinction from missing key vs other failure. |
@@ -409,11 +409,11 @@ instruction. "Call Sites" = number of real callers found for that function.
 | 3 | `getNHLPlayoffLeadersForGame` (~L30619) | 1 | Sole caller does `if(leaders && leaders.length)` then falls to NBA check regardless of cause. |
 | 3 | `getNBAPlayoffLeadersForGame` (~L30777) | 1 | Sole caller only checks `nbaLeaders && nbaLeaders.length`; reason for null unused. |
 | 3 | `fetchNHLGameNotes` (~L30986) | 1 | Same P1-P4 cascade caller pattern; missing-id vs fetch-failure indistinguishable. |
-| 3 | `fetchLastMeeting` (~L31757) | 0 | AMBIGUOUS: zero callers found anywhere in index.html — dead code, no consumer exists to differentiate for. |
+| 3 | `fetchLastMeeting` (~L31757) | 0 | ✅ QUEUE CORRECTION 2026-07-13 (CC-CMD-queue-deadcode-and-ambiguous): flagged for removal by this queue's caller-census, but smoke.js A610 documents it as deliberately staged/gated Archive D1 work (behind `ARCHIVE_RELAY_READY`, same pattern as `fetchBDLRecentForm`) — a zero-caller count alone doesn't mean dead when the codebase's own structural checks protect it as staged. NOT removed. |
 | 3 | `fetchArchiveDate` (~L31769) | 1 | Caller does `if (!r) continue;` per date in a 14-day loop — every failure reason skipped identically. |
 | 3 | `fetchPrerenderedGameBrief` (~L31779) | 4 | All 4 callers just check `if(kvBrief)` truthy and fall through to next brief tier regardless of null cause. |
 | 3 | `fetchWCTabBrief` (~L33298) | 1 | Caller only checks `if(!brief) return;` — missing games/relay-flag null treated same as poll-timeout null. |
-| 3 | `_wcComputeAllScenarios` (~L34239) | 3 | All 3 callers use `scenarios?.field` optional-chaining, collapsing a genuine code-integrity bug (missing function) with normal "no data yet" states. AMBIGUOUS. |
+| 3 | `_wcComputeAllScenarios` (~L34239) | 3 | ✅ RESOLVED 2026-07-13 (CC-CMD-queue-deadcode-and-ambiguous, TASK 2): investigated directly against source, all 3 real callers confirmed correct as Bucket B (none need differentiation). Narrow telemetry added: `captureFieldError` on the `typeof computeGroupScenarios !== 'function'` branch only (real code-integrity failure) — the other 2 `return null;` paths (empty standings, caught exception) are genuinely benign and left untouched. Proven via forced-condition test: fires only on the missing-function branch. |
 | 3 | `fetchNBAPBP` (~L36278) | 1 | Feeds a tiered fallback (if(cdnActions)) inside fetchRosterAdvantage that only cares about truthiness to advance to the next data tier. |
 | 3 | `fetchRosterAdvantage` (~L36387) | 1 | Sole caller does if(!rai) return;; missing cacheKey indistinguishable from any other failure. |
 | 3 | `_eDataMatchesGame` (~L39398) | 1 | Invalid-input false is one of three false paths saveEspnFinal (L39429) collapses into a single reject-and-log action; no differentiation used. |
@@ -446,7 +446,7 @@ instruction. "Call Sites" = number of real callers found for that function.
 | 2 | `fetchNightOwlFromClaude` (~L40304) | 1 | !r.ok is a real HTTP failure but the sole caller (L42098) only checks truthiness of the final text, same as budget/network paths. |
 | 1 | `fetchMLBSchedule (proof-mode override)` (~L4912) | 1 | Result immediately `.filter(Boolean)`ed by the override itself; caller of real fetchMLBSchedule never sees this test-fixture path at all. |
 | 1 | `getMLBAnalyticsContext` (~L8077) | 2 | Both callers already wrap the call in their own try/catch and fall back to '' regardless of what the inner catch does — outer wrapping is fully decorative. |
-| 1 | `getStandingVelocity` (~L10310) | 2 | AMBIGUOUS: team-not-found-in-snapshot could indicate a real name/abbrev matching bug rather than genuine data absence, but both callers currently treat it identically to every other null cause via `if(!vel)`. |
+| 1 | `getStandingVelocity` (~L10310) | 2 | ✅ RESOLVED 2026-07-13 (CC-CMD-queue-deadcode-and-ambiguous, TASK 2): investigated directly against source, both real callers confirmed correct as Bucket B (cosmetic momentum note omission either way). Narrow telemetry added: `captureFieldError` on the `gbRecent === null || gbBase === null` branch only (findGB nickname/abbrev match failure — could mask a real team-name-matching bug) — the other 4 `return null;` paths (missing args, insufficient history, no baseline in window, below-threshold delta) are genuinely benign and left untouched. Proven via forced-condition test: fires only on the findGB-no-match branch. |
 | 1 | `_fetchUFLGameEpa` (~L10408) | 1 | Sole caller _pollUFLEpa awaits with no return-value check; poll loop retries every 60s regardless of failure reason |
 | 1 | `getVolatilityLabel` (~L10478) | 2 | Both callers (line 28057, 35021) just do `vL ? ... : ''` ternary, no distinction of reason |
 | 1 | `_fieldGameRenderPayload` (~L10769) | 1 | Sole caller embeds result directly into a signature array via .map with no null check |
@@ -563,7 +563,7 @@ value over the grouped view.
 | 3 | `renderWNBAGameBriefCard` (~L31927) | 1 | archiveBrief() fire-and-forget catch, same documented non-blocking analytics pattern. |
 | 3 | `renderStakesBriefCard` (~L32085) | 1 | archiveBrief() fire-and-forget catch. |
 | 3 | `loadWCMatchWP` (~L33764) | 1 | sessionStorage.getItem read guard; falls through to live fetch either way, no behavior change. |
-| 3 | `fetchESPNPlays` (~L36294) | 0 | Function has zero call sites in the file — dead code; no caller exists to differentiate behavior. |
+| 3 | `fetchESPNPlays` (~L36294) | 0 | ✅ REMOVED 2026-07-13 (CC-CMD-queue-deadcode-and-ambiguous, TASK 1): re-confirmed zero callers fresh, made obsolete by the ESPN Pivot migration. Deleted. |
 | 3 | `isGrindingGame` (~L39090) | 1 | Sole real caller (L39169) uses as pure boolean chip gate; "!eData/not live" is a correct predicate result, not an error state. |
 | 3 | `assessInjuryPriceImpact` (~L40504) | 1 | Invalid/incomplete game object correctly yields "nothing to assess"; sole caller discards on null. |
 | 2 | `diff` (~L4243) | 1 | Only caller does `if(result)`; null here (bad viewport) and null at 4275 (no movers) are both "no shift", indistinguishable and correctly so. |
@@ -658,7 +658,7 @@ value over the grouped view.
 | 1 | `getCalendarContext` (~L7923) | 5 | Final fallback of a pure date-window classifier; all 5 call sites treat null as "no seasonal context applies," a genuine answer not a failure. |
 | 1 | `calendarContextSentence` (~L7928) | 1 | Pure pass-through null-in/null-out guard on top of getCalendarContext's own legitimate null. |
 | 1 | `mlbStatsInit` (~L8339) | 1 | Per-file fetch swallow in a Promise.allSettled loop; comment documents intended fallback to hardcoded stubs, single startup call site. |
-| 1 | `formatPitcher` (~L8600) | 0 | Zero call sites found anywhere in the file — this function is dead code; null-vs-error distinction is moot. |
+| 1 | `formatPitcher` (~L8600) | 0 | ✅ REMOVED 2026-07-13 (CC-CMD-queue-deadcode-and-ambiguous, TASK 1): re-confirmed zero callers fresh, no rich chat/Drive history surfaced. Deleted. |
 | 1 | `isBigMarketGame` (~L9922) | 1 | Simple boolean membership predicate; false genuinely means "not a big-market team," used directly in a comparison expression. |
 | 1 | `isScoutsPick (wrapped in inline try/catch inside .filter)` (~L9990) | ~20 | isScoutsPick is defensively try/catch-wrapped to `false` at ~20 call sites throughout the file — this is an established, consistent codebase convention, not an anomaly. |
 | 1 | `_wcGetPAdv` (~L10087) | 4 | Missing scenario/team data lookup; all 4 call sites use `?? null` or `!= null` checks and treat absence as "no advancement signal available." |
@@ -668,7 +668,7 @@ value over the grouped view.
 | 1 | `getVolatilityLabel` (~L10481) | 2 | Mid-range/low-drama is a genuine "not distinctive enough" verdict, not a failure state |
 | 1 | `_fieldCurrentFilteredSports` (~L10796) | 1 | Sole caller renderRightNow gets `visible` (unfiltered) fallback on any filter error — already a sensible graceful degrade |
 | 1 | `renderAll` (~L11506) | 30+ | Bare catch insulates renderAll from optional newspaper-voice feature; single caller, no differentiated action possible, correct isolation |
-| 1 | `_plEuroNote` (~L12262) | 0 | Function has zero call sites anywhere in the file — dead code, no caller exists to benefit from migration |
+| 1 | `_plEuroNote` (~L12262) | 0 | ✅ REMOVED 2026-07-13 (CC-CMD-queue-deadcode-and-ambiguous, TASK 1): re-confirmed zero callers fresh — computed European-qualification stakes prose for hardcoded EPL Final Day 2026 fixtures; callers removed during routine date-schedule rotation once that day passed, normal lifecycle. Deleted. Pattern note for a future session: computing title/European/relegation stakes generically from live table position (not hardcoded to specific teams/dates) is worth rebuilding next time a similar run-in situation approaches for any league — see outbox manifest. Also found (not removed, out of this CC-CMD's scope): sibling functions `_plTotNote`/`_plWhuNote` in the same local scope are now ALSO zero-caller by the same fresh check, but were not part of this CC-CMD's named removal list — flagged as a follow-up candidate, not deleted. |
 | 1 | `elimination_boost` (~L12390) | 1 | Sole caller applyNarrativeContext does `if(ctx){...}`; null legitimately means "no narrative context applies", a real "not applicable" result |
 | 1 | `_archiveBrief` (~L13933) | 3 | Docstring states "fire-and-forget... guarantee an archive failure cannot block the visible brief render" — documented correct design |
 | 1 | `openJournalismForGame` (~L14190) | 1 | Defensive catch around closeBottomSheet(); best-effort cleanup, execution correctly proceeds to open journalism view regardless |
@@ -678,7 +678,7 @@ value over the grouped view.
 | 1 | `getUpcomingMajor` (~L15897) | 1 | null correctly means "no major within the 5-day preview window"; sole caller does `if(!major\|\|!container) return;`. |
 | 1 | `slashGolfBudgetOk` (~L16006) | 1 | Boolean predicate for a 429-backoff window; used only as `!slashGolfBudgetOk()` gate inside slashGolfFetch, false is the genuine "not ok" signal. |
 | 1 | `getActiveTournaments` (~L16151) | 1 | Array.filter predicate: false means "exclude tournament with no date", the complete correct semantic for a filter callback. |
-| 1 | `fdFetchLive` (~L17033) | 0 | Function has zero call sites anywhere in the file (dead code); no caller exists to benefit from differentiation. |
+| 1 | `fdFetchLive` (~L17033) | 0 | ✅ REMOVED 2026-07-13 (CC-CMD-queue-deadcode-and-ambiguous, TASK 1): re-confirmed zero callers fresh — superseded by a batched-fetch refactor. Traced `fdPrefetchSoccerLive`'s current body directly: it calls `fdFetch()` (the shared low-level relay wrapper), not `fdFetchLive()` — confirmed no direct or indirect call before deleting. `fdLiveCache`/`fdLiveCacheTime` (still written by `fdPrefetchSoccerLive`) left untouched; `FD_LIVE_TTL` const is now orphaned as a side effect and flagged as a follow-up candidate, not removed (out of this CC-CMD's explicit scope). Deleted. |
 | 1 | `_isModelRefusal` (~L17528) | 1 | Boolean guard `if(!text) return false` is a legitimate defensive default; sole call site already ensures text is non-empty before calling. |
 | 1 | `findScore` (~L17730) | 1 | null legitimately means "no witness score from either source yet"; sole caller (findESPNScore) falls to the legacy espnScores lookup, a genuine complete-as-is signal not an error. |
 | 1 | `ensureGameSocket` (~L17983) | 1 | Comment explicitly states "never throw from socket handler"; swallow is intentional so a downstream emitScoreEvent failure can't break the WS message pipeline. |

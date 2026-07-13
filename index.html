@@ -8629,18 +8629,6 @@ async function fetchMLBTeamMomentum(abbr){
   }catch(e){captureFieldError('mlb-momentum',e,true);return null;}
 }
 
-// ── Probable pitcher formatter ─────────────────────────────────────────────────
-// Returns: "J. Verlander (R) · 8-4 · 3.12 ERA" or "Starter TBD"
-function formatPitcher(p){
-  if(!p||!p.name) return null;
-  const nameParts=p.name.split(' ');
-  const short=(nameParts.length>1)?nameParts[0][0]+'. '+nameParts.slice(1).join(' '):p.name;
-  const hand=p.handedness?` (${p.handedness})`:'';
-  const record=(p.wins!=null&&p.losses!=null)?` · ${p.wins}-${p.losses}`:'';
-  const era=p.era?` · ${p.era} ERA`:'';
-  return `${short}${hand}${record}${era}`;
-}
-
 // ── Navigate to a date ─────────────────────────────────────────
 async function goToDate(iso){
   viewingISO = iso;
@@ -10359,7 +10347,10 @@ function getStandingVelocity(sport, division, teamName, windowDays = 7) {
     return entry ? (parseFloat(entry.gb) || 0) : null;
   };
   const gbRecent = findGB(recent), gbBase = findGB(baseline);
-  if (gbRecent === null || gbBase === null) return null;
+  if (gbRecent === null || gbBase === null) {
+    captureFieldError('standings:velocity:team-not-found', new Error(`findGB no match for "${teamName}" in ${sport}/${division}`), false);
+    return null;
+  }
   const delta = Math.round((gbBase - gbRecent) * 10) / 10; // positive = gained ground
   return Math.abs(delta) >= 0.5 ? { delta, days: windowDays } : null;
 }
@@ -12294,24 +12285,6 @@ function buildTodaySchedule(){
     if(w.pts+3<t.pts) return 'West Ham cannot catch Tottenham on points \u2014 the battle is already settled.';
     const gap=t.pts-w.pts,gdGap=t.gd-w.gd;
     return `West Ham need to win AND rely on Everton to beat Spurs at the Tottenham Hotspur Stadium simultaneously. Spurs lead by ${gap} pts and +${gdGap} GD \u2014 only maximum points across both venues saves them.`;
-  }
-  function _plEuroNote(teamA,teamB){
-    // 6th = Europa League · 7th = Conference League qualifying
-    // BOU now 56 pts (drew vs City), BHA still 53 pts — gap is 3
-    const b=PL_FD.BOU,h=PL_FD.BHA;
-    const bouIn=teamA==='AFC Bournemouth'||teamB==='AFC Bournemouth';
-    const bhaIn=teamA==='Brighton & Hove Albion'||teamB==='Brighton & Hove Albion';
-    const gap=b.pts-h.pts;
-    if(bouIn){
-      if(gap>3) return 'Bournemouth have secured 6th place and Europa League football \u2014 this one is played with Europe already confirmed.';
-      if(gap>0) return `Bournemouth hold 6th and the Europa League spot by ${gap} pts over Brighton. A point at Forest seals it regardless of Brighton\u2019s result.`;
-      return `Bournemouth and Brighton are level on points for the Europa League spot \u2014 goal difference decides 6th here.`;
-    }
-    if(bhaIn){
-      if(gap>3) return 'Brighton are confirmed in 7th and Conference League qualifying \u2014 Europa League is out of reach.';
-      return `Brighton need to win AND hope Bournemouth lose at Forest to take 6th and the Europa League spot. Currently ${gap} pts behind \u2014 achievable only if both results go their way.`;
-    }
-    return null;
   }
 
   // ── Premier League MW36 + MW37 (hardcoded fallback — fetchSoccerFixtures provides live data) ─────
@@ -17067,39 +17040,6 @@ async function fdFetchStandings(code){
   }catch(e){
     if(FIELD_DEBUG) console.warn("FD standings:", e.message);
     captureFieldError('standings:fd', e, false);
-    return null;
-  }
-}
-
-// Fetch today's live/scheduled matches for a competition
-// Returns [{id, homeTeam, awayTeam, homeScore, awayScore, minute, status}]
-async function fdFetchLive(code){
-  // 30-min TTL: matches transition SCHEDULED→IN_PLAY→FINISHED within this window
-  if(fdLiveCache[code] && (Date.now() - (fdLiveCacheTime[code]||0)) < FD_LIVE_TTL)
-    return fdLiveCache[code];
-  try{
-    const dateFrom = isoDate;
-    const dateTo   = isoDate;
-    const data = await fdFetch(`/competitions/${code}/matches?dateFrom=${dateFrom}&dateTo=${dateTo}&status=IN_PLAY,PAUSED,LIVE,FINISHED,SCHEDULED,TIMED`);
-    const matches = (data.matches||[]).map(m=>({
-      id:        m.id,
-      homeTeam:  m.homeTeam?.shortName || m.homeTeam?.name || "",
-      awayTeam:  m.awayTeam?.shortName || m.awayTeam?.name || "",
-      homeScore: m.score?.fullTime?.home ?? m.score?.halfTime?.home ?? null,
-      awayScore: m.score?.fullTime?.away ?? m.score?.halfTime?.away ?? null,
-      minute:    m.minute || null,
-      status:    m.status,   // SCHEDULED, IN_PLAY, PAUSED, FINISHED, etc.
-      goals:     (m.goals||[]).map(g=>({
-        team:   g.team?.shortName || g.team?.name || "",
-        player: teamNick(g.scorer?.name),
-        minute: g.minute
-      }))
-    }));
-    fdLiveCache[code]     = matches;
-    fdLiveCacheTime[code] = Date.now();
-    return matches;
-  }catch(e){
-    if(FIELD_DEBUG) console.warn("FD live:", e.message);
     return null;
   }
 }
@@ -24660,7 +24600,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-07-12t';
+  const SW_VERSION = '2026-07-12u';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -34543,7 +34483,10 @@ function _wcBuildGroupInput(groupLetter, groupStandings, allFixtures, nowMs, mat
 // Compute scenarios across all 12 WC groups + cross-group best-3rd ranking.
 // Returns {perGroup, best3rd} or null on failure.
 function _wcComputeAllScenarios(standings, matchResults, fairPlayPoints, oddsProbs, liveGames) {
-  if (typeof computeGroupScenarios !== 'function') return null;
+  if (typeof computeGroupScenarios !== 'function') {
+    captureFieldError('wc:compute-all-scenarios:missing-fn', new Error('computeGroupScenarios is not a function'), false);
+    return null;
+  }
   if (!standings || Object.keys(standings).length === 0) return null;
   try {
     const nowMs = Date.now();
@@ -36594,20 +36537,6 @@ async function fetchNBAPBP(homeLabel, awayLabel) {
     if (FIELD_DEBUG) console.warn('[NBA-CDN] PBP:', e.message);
     return null;
   }
-}
-
-// Tier 2: ESPN plays[] sub detection — uses existing summary relay response
-async function fetchESPNPlays(espnGameId) {
-  if (!espnGameId) return null;
-  try {
-    const r = await fetch(
-      `${ESPN_SUMMARY_RELAY}/sports/basketball/nba/summary?event=${espnGameId}`,
-      { signal: AbortSignal.timeout(4000) });
-    if (!r.ok) return null;
-    const d = await r.json();
-    // data.plays only populated on site.web.api.espn.com relay variant
-    return Array.isArray(d?.plays) && d.plays.length ? d.plays : null;
-  } catch(e) { return null; }
 }
 
 // Parse NBA CDN actions[] → exact current lineup + stint statistics per team
