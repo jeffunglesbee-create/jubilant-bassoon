@@ -935,6 +935,13 @@ body.wf-mode .np-inner{max-width:100%}
 .rn-card--condensed .rn-row2{font-size:.60rem;margin-top:.15rem;}
 .rn-card--compact{padding:.3rem .6rem;border-radius:7px;}
 .rn-card--compact .rn-row1{font-size:.72rem;}
+/* Single-day MEDIA_SPECIALS promotion card [CC-CMD-2026-07-13-media-special-
+   right-now] — visually distinct from game cards (gold left-border accent,
+   network-agnostic — this generalizes to any future special, not just
+   tonight's Netflix-branded HRD) but reuses .rn-card's base tokens. */
+.rn-card--special{border-left:3px solid var(--gold2,#c9a84c);}
+.rn-special-badge{font-size:.52rem;font-weight:700;letter-spacing:.05em;color:var(--gold2,#c9a84c);
+  background:rgba(201,168,76,.12);border:1px solid rgba(201,168,76,.3);border-radius:3px;padding:.1rem .3rem;}
 /* Featured card de-emphasis: already shown in Right Now */
 .game-card.rn-featured{opacity:.65;}
 .game-card.rn-featured .card-drama-line{display:none;}
@@ -4536,7 +4543,7 @@ var _DOM = null;
 <div id="upper-slots">
 <!-- ── One to Watch ──────────────────────────────────────────── -->
 <div id="otw-banner" aria-live="polite"><div class="otw-inner otw-quiet" aria-hidden="true"><span class="otw-label">Loading</span><span class="otw-matchup">Fetching today\u2019s schedule\u2026</span></div></div>
-<section id="field-right-now" aria-label="Right Now"><div class="rn-label" id="rn-label">RIGHT NOW</div><div id="rn-cards"></div></section>
+<section id="field-right-now" aria-label="Right Now"><div class="rn-label" id="rn-label">RIGHT NOW</div><div id="rn-cards"></div><div id="rn-special-cards"></div></section>
 <div id="mobile-live-bar" class="mobile-live-bar" style="display:none"></div>
 <!-- ── Watch Window ─────────────────────────────────────────── -->
 <div id="watch-window" style="display:none" aria-live="polite"></div>
@@ -5643,6 +5650,67 @@ function initRightNowIndexer() {
   if (screen?.orientation) {
     screen.orientation.addEventListener('change', () => requestAnimationFrame(indexRightNow));
   }
+}
+
+// renderMediaSpecialRightNow() — CC-CMD-2026-07-13-media-special-right-now.
+// Promotes genuine single-day MEDIA_SPECIALS entries into #field-right-now,
+// rendered into a separate #rn-special-cards container (never inside
+// #rn-cards, which renderRightNow() fully overwrites on every call) so it
+// coexists with whatever renderRightNow() already produces for real games
+// — this file NEVER touches selectRightNowGames/buildRightNowTiers/
+// renderRightNow to build this. Deliberately general, not an HRD-specific
+// hack: any future single-day special (Opening Night, Field of Dreams Game,
+// WBC openers, etc.) surfaces here unmodified, because the filter is a
+// generic startDate===endDate===today check, not a name/show match.
+// MEDIA_SPECIALS only carries date-level granularity (no precise start
+// times), so "genuinely single-day" is the correct, already-available
+// signal — a multi-week window (startDate !== endDate) never matches, even
+// on a date that falls inside its range.
+function renderMediaSpecialRightNow() {
+  const container = document.getElementById('rn-special-cards');
+  if (!container) return;
+  const todayStr = TODAY_ISO;
+  const matches = (typeof MEDIA_SPECIALS !== 'undefined' ? MEDIA_SPECIALS : [])
+    .filter(s => s.startDate === s.endDate && s.startDate === todayStr);
+  if (!matches.length) { container.innerHTML = ''; return; }
+
+  // P3 2-card precedent, reused from selectRightNowGames: only the P3 phone-
+  // portrait width (431-600px) allows a 2nd card. Specials have no live/tier
+  // concept to gate a 2nd card on (unlike selectRightNowGames' isLive+rank
+  // condition), so this mirrors only the viewport-conditional structure of
+  // that precedent, not an invented, unrelated cap.
+  const vw = window.innerWidth, vh = window.innerHeight;
+  const landscape = vw > vh;
+  const isP3 = !landscape && vw >= 431 && vw <= 600;
+  const shown = matches.slice(0, isP3 ? 2 : 1);
+
+  container.innerHTML = shown.map(s => {
+    const c = s.card || {};
+    const showEsc = (c.show || '').replace(/'/g, "\\'");
+    return `<div class="rn-card rn-card--special"
+      role="button" tabindex="0"
+      onclick="typeof scrollToMediaSpecial==='function'&&scrollToMediaSpecial('${showEsc}')"
+      onkeydown="event.key==='Enter'&&typeof scrollToMediaSpecial==='function'&&scrollToMediaSpecial('${showEsc}')"
+      aria-label="${(c.show||'').replace(/"/g,'&quot;')} — tap for details">
+      <div class="rn-row1"><span class="rn-special-badge">SPECIAL</span><span>${c.show||''}</span></div>
+      <div class="rn-row2"><span>${c.network||''}</span><span>${c.time||''}</span></div>
+    </div>`;
+  }).join('');
+}
+
+// scrollToMediaSpecial(showName) — click-through target for the RIGHT NOW
+// special-promotion card. #media-section lazy-renders on scroll-into-view
+// (see the IntersectionObserver below), so a user tapping this card before
+// ever scrolling that far would find no card in the DOM yet — force the
+// real render first if needed, then scroll to the real, existing card.
+// Never builds a second copy of the bracket/context UI up here.
+function scrollToMediaSpecial(showName) {
+  if (typeof mediaRendered !== 'undefined' && !mediaRendered && typeof renderMedia === 'function') {
+    try { renderMedia(); mediaRendered = true; } catch(_e) { captureFieldError('surface:media-special-force-render', _e, true); }
+  }
+  const card = document.querySelector(`.media-card[data-show="${(showName||'').replace(/"/g,'&quot;')}"]`);
+  const target = card || document.getElementById('media-section');
+  if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 // ── Relay / CI status fetcher ─────────────────────────────────────────────
@@ -10960,6 +11028,7 @@ function _fieldRefreshDynamicSurfaces(){
   try { if (typeof renderWatchWindow === 'function') renderWatchWindow(); } catch(_) { captureFieldError('surface:watch-window', _, false); }
   try { if (typeof renderOneToWatch === 'function') renderOneToWatch(); } catch(_) { captureFieldError('surface:one-to-watch', _, false); }
   try { if (typeof renderRightNow === 'function' && allData?.sports) renderRightNow(_fieldCurrentFilteredSports()); } catch(_) { captureFieldError('surface:right-now', _, false); }
+  try { if (typeof renderMediaSpecialRightNow === 'function') renderMediaSpecialRightNow(); } catch(_) { captureFieldError('surface:media-special-right-now', _, false); }
   try { if (typeof updateConflictChip === 'function') updateConflictChip(); } catch(_) { captureFieldError('surface:conflict-chip', _, false); }
   if(typeof FIELD_DEBUG !== 'undefined' && FIELD_DEBUG) console.debug('[FIELD_RENDER] score-only refresh, structural render skipped');
 }
@@ -11820,6 +11889,10 @@ function renderAll(skipUnchanged){
   setTimeout(indexDramaLines,250);
   // Right Now section — surface highest-drama game above schedule on phones
   renderRightNow(filtered);
+  // CC-CMD-2026-07-13-media-special-right-now: separate, additive promotion
+  // card for genuine single-day MEDIA_SPECIALS entries (e.g. tonight's HRD)
+  // — does not touch renderRightNow's own game-card logic.
+  try { if (typeof renderMediaSpecialRightNow === 'function') renderMediaSpecialRightNow(); } catch(_e) { captureFieldError('surface:media-special-right-now', _e, false); }
   if(!window._rnIdxInit){initRightNowIndexer();window._rnIdxInit=true;}
   // CC-CMD-2026-06-15-client-features Commit 3: conflict chip on filter bar.
   // Pure client-side derivation — no relay. Idempotent.
@@ -25014,7 +25087,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-07-13i';
+  const SW_VERSION = '2026-07-13j';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
