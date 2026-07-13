@@ -8158,7 +8158,7 @@ function getMLBAnalyticsContext(game) {
       if (arsenal) lines.push(`  ${who}: ${arsenal.context.replace('Arsenal: ','')}`);
       if (tempo?.badge) lines.push(`  ${who} pace: [${tempo.badge}] ${tempo.context}`);
     }
-  } catch(e) {}
+  } catch(e) { captureFieldError('mlb:analytics-context', e, true); }
   return lines.slice(0,4); // max 4 lines per game
 }
 
@@ -10506,7 +10506,7 @@ async function _fetchUFLGameEpa(srGameId,fieldGameId){
       const html=_buildUFLEpaHTML(state);
       if(html){ const hint=el.querySelector('.card-tap-hint'); if(hint) hint.insertAdjacentHTML('beforebegin',html); }
     }
-  }catch(e){}
+  }catch(e){captureFieldError('ufl:game-epa', e, true);}
 }
 
 function _buildUFLEpaHTML(state){
@@ -14880,6 +14880,7 @@ async function bdlFetch(path, params = {}) {
     return await r.json();
   } catch(e) {
     if(FIELD_DEBUG) console.warn("[BDL] fetch error:", e.message);
+    captureFieldError('bdl:fetch', e, true);
     return null;
   }
 }
@@ -16867,7 +16868,7 @@ async function loadPGASlate() {
       const parsed = JSON.parse(cached);
       if (parsed && parsed.ts && (Date.now() - parsed.ts) < 600000) return parsed.data;
     }
-  } catch(_) {}
+  } catch(_e) { captureFieldError('golf:pga-slate-cache-read', _e, true); }
   const base = (typeof V2_RELAY_BASE !== 'undefined')
     ? V2_RELAY_BASE : 'https://field-relay-nba.jeffunglesbee.workers.dev';
   try {
@@ -16877,10 +16878,11 @@ async function loadPGASlate() {
     if (!r.ok) return null;
     const data = await r.json();
     computeGolfDerivedMetrics(data);
-    try { sessionStorage.setItem(cacheKey, JSON.stringify({ ts: Date.now(), data })); } catch(_) {}
+    try { sessionStorage.setItem(cacheKey, JSON.stringify({ ts: Date.now(), data })); } catch(_e) { captureFieldError('golf:pga-slate-cache-write', _e, true); }
     return data;
   } catch(e) {
     if (typeof FIELD_DEBUG !== 'undefined' && FIELD_DEBUG) console.warn('[PGA] loadPGASlate', e.message);
+    captureFieldError('golf:pga-slate-fetch', e, true);
     return null;
   }
 }
@@ -17240,6 +17242,7 @@ async function fetchESPNStandings(sportName){
     return entries.length ? entries : null;
   }catch(e){
     if(FIELD_DEBUG) console.warn("[ESPN Standings] failed for "+sportName+":", e.message);
+    captureFieldError('standings:espn-fetch', e, true);
     return null;
   }
 }
@@ -22195,9 +22198,9 @@ function buildSafeScoreWrap(game, score, sportClass, sitHTML) {
       if (match && match.homeScore != null) {
         const synth = { state:'post', homeScore: match.homeScore, awayScore: match.awayScore,
                         homeName: match.home, awayName: match.away };
-        try { _n = computeGameNarrative(game, synth, _sc); } catch(e) {}
+        try { _n = computeGameNarrative(game, synth, _sc); } catch(e) { captureFieldError('scores:safe-wrap-layer3-narrative', e, true); }
       }
-    } catch(e) {}
+    } catch(e) { captureFieldError('scores:safe-wrap-layer3-finals-lookup', e, true); }
   }
 
   // Layer 4: last resort — raw numbers with no framing
@@ -24676,7 +24679,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-07-13e';
+  const SW_VERSION = '2026-07-13f';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -27978,7 +27981,7 @@ function buildLayer3Rules(games) {
           if (ext) rules.push('- EXTREME EVENT ['+name+']: '+ext+'. Feature this prominently.');
         }
       }
-    } catch(e_) {}
+    } catch(e_) { captureFieldError('journalism:layer3-rules', e_, true); }
     if (typeof isRivalGame==='function' && typeof MY_TEAMS!=='undefined' && MY_TEAMS.size>0 && isRivalGame(g))
       rules.push('- RIVALRY ['+name+']: Historic matchup. Acknowledge the history briefly.');
     // SCANDAL angle — off-pitch events define the context (Rule 38)
@@ -29052,7 +29055,7 @@ function getFieldUserId() {
       localStorage.setItem('field_user_id', id);
     }
     return id;
-  } catch(_) { return null; }
+  } catch(_e) { captureFieldError('userdo:get-field-user-id', _e, true); return null; }
 }
 
 // ── userDoRelay ──────────────────────────────────────────────────────────────
@@ -36564,6 +36567,7 @@ async function fetchNBALiveBoxscore(nbaId) {
     return result;
   } catch(e) {
     if (FIELD_DEBUG) console.warn('[PM-30] live boxscore failed:', e.message);
+    captureFieldError('nba:live-boxscore', e, true);
     return _nbaLiveBoxscoreCache[nbaId] || null;
   }
 }
