@@ -323,13 +323,27 @@ re-derivation of `saveEspnFinal`, `findESPNScore`, and `fetchTeamRank`.
   tagged; 4 caller-routing scenarios confirmed each routes to the right
   UI outcome.
 
-### 12. `fetchESPNFixturesForDate` (index.html ~L7461) — 1 caller
+### 12. `fetchESPNFixturesForDate` (index.html ~L7369) — ✅ MIGRATED 2026-07-13
 
-- `!anyData` conflates "ESPN genuinely has no games scheduled" with
-  "every per-league fetch failed or threw" — the caller burns AI budget
-  falling back to AI-generated scheduling either way, but the two causes
-  have different correctness implications (one is a real data state, the
-  other is a retryable transient failure masquerading as one).
+- **Investigated before building the suggested caller differentiation:**
+  the sole caller (`goToDate`, shared with entry #11) falls back to the
+  AI schedule generator whenever this returns `null`, regardless of
+  cause — and correctly so, since the AI prompt covers leagues (tennis,
+  rugby, cricket) this ESPN sweep doesn't fetch at all. No caller-visible
+  behavior would change from telling "genuinely empty day" apart from
+  "every per-league fetch failed" — same conclusion as `findESPNScore`
+  earlier this session.
+- **What was real:** this function fans out `Promise.all` across 15+
+  per-league ESPN endpoints, each with its own catch that silently
+  discarded any error (`FIELD_DEBUG`-gated `console.debug` only). An
+  ESPN-wide outage affecting every league would have been completely
+  invisible — indistinguishable from a genuinely quiet sports day. Added
+  a failure counter and a single summary `captureFieldError` call
+  (`"N/M per-league fetches failed for {date}"`) when any league fails.
+- Real verification: forcing every league fetch to fail now produces
+  exactly 1 summary telemetry entry (was 0); a genuinely empty day (all
+  fetches succeed, zero events) correctly produces zero telemetry — no
+  false-positive noise.
 
 ### 13. `shareGame` (index.html ~L38593) — 1 caller
 

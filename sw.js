@@ -11,7 +11,7 @@
 //
 // Bump SW_VERSION on every deploy. CI smoke.js verifies it matches index.html.
 
-const SW_VERSION = '2026-07-12q';
+const SW_VERSION = '2026-07-12r';
 const SHELL_CACHE = `field-shell-${SW_VERSION}`;
 const API_CACHE   = 'field-api-v4';
 const SHELL_URL   = '/';

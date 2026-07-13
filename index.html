@@ -7382,6 +7382,21 @@ async function fetchESPNFixturesForDate(iso){
 
   const allSections = [];
   let anyData = false;
+  // 2026-07-13 (TYPED-RESULT-MIGRATION-QUEUE.md Bucket A #12): investigated
+  // the queue's suggestion to distinguish "ESPN genuinely has no games"
+  // from "every per-league fetch failed" before building anything. The
+  // sole caller (goToDate) falls back to the AI schedule generator either
+  // way when this returns null -- AI covers leagues (tennis, rugby,
+  // cricket) this ESPN sweep doesn't, so trying it is correct regardless
+  // of WHY ESPN returned nothing. No caller-visible behavior would change
+  // from differentiating the two causes, same conclusion as findESPNScore
+  // earlier this session. What WAS a real, confirmed gap: each of the
+  // 15+ per-league fetches has its own catch that silently discards any
+  // error (FIELD_DEBUG-gated console.debug only) -- an ESPN-wide outage
+  // affecting every league would be completely invisible, indistinguishable
+  // from a genuinely empty schedule day. Tracking failure count below and
+  // recording real telemetry when any league fetch fails.
+  let _leagueFailures = 0;
 
   await Promise.all(FETCH_LEAGUES.map(async ({sport,league,section,bundle,prefix})=>{
     try{
@@ -7464,8 +7479,19 @@ async function fetchESPNFixturesForDate(iso){
         };
       }).filter(Boolean);
       if(games.length){ allSections.push({sport:section,games}); anyData=true; }
-    }catch(e){ if(FIELD_DEBUG) console.debug("FIELD ESPN fixture:",league,e.message); }
+    }catch(e){
+      if(FIELD_DEBUG) console.debug("FIELD ESPN fixture:",league,e.message);
+      _leagueFailures++;
+    }
   }));
+
+  if(_leagueFailures > 0){
+    captureFieldError(
+      'espn-fixtures:date-sweep',
+      new Error(`${_leagueFailures}/${FETCH_LEAGUES.length} per-league fetches failed for ${iso}`),
+      false
+    );
+  }
 
   if(!anyData) return null; // ESPN had nothing — let AI try
   // Inject tournament cards (WC countdown/games, French Open) into ESPN-path sections.
@@ -24634,7 +24660,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-07-12q';
+  const SW_VERSION = '2026-07-12r';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
