@@ -24660,7 +24660,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-07-12r';
+  const SW_VERSION = '2026-07-12s';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -38871,6 +38871,19 @@ function generateICS(game){
   setTimeout(()=>{URL.revokeObjectURL(url);a.remove();},1000);
 }
 
+// 2026-07-13 (TYPED-RESULT-MIGRATION-QUEUE.md Bucket A #13): two real
+// issues found reading this closely, not just the queue's original note.
+// (1) The original note: both navigator.share and the clipboard fallback
+// failing silently left the user with zero feedback -- they click Share,
+// nothing happens, no error. Fixed with a real failure toast.
+// (2) Found while fixing (1): navigator.share() throws a DOMException
+// named 'AbortError' when the user simply CANCELS the native share sheet
+// -- a deliberate choice, not a failure. The old code treated that
+// identically to a genuine share failure, silently writing the share text
+// to the clipboard anyway and showing "Copied to clipboard!" for an
+// action the user never took. Now respects a deliberate cancel: no
+// clipboard fallback, no toast, nothing happens (matching what the user
+// actually asked for by dismissing the sheet).
 async function shareGame(home, away, time, league, streams){
   const svcNames = (streams||[]).slice(0,2).map(k=>{
     const sr = (typeof SR!=='undefined'&&SR[k])||null;
@@ -38884,18 +38897,21 @@ async function shareGame(home, away, time, league, streams){
     '— via FIELD',
   ].filter(Boolean).join(' · ');
 
-  try {
-    if(navigator.share){
-      await navigator.share({title:'FIELD', text:shareText, url:location.href});
-    } else {
-      await navigator.clipboard.writeText(shareText);
-      showShareToast('Copied to clipboard!');
-    }
-  } catch(e){
+  if(navigator.share){
     try {
-      await navigator.clipboard.writeText(shareText);
-      showShareToast('Copied to clipboard!');
-    } catch(e2){}
+      await navigator.share({title:'FIELD', text:shareText, url:location.href});
+      return; // native share sheet handled it — OS shows its own confirmation, no toast needed
+    } catch(e){
+      if(e && e.name === 'AbortError') return; // user deliberately cancelled — respect it
+      // any other navigator.share failure falls through to the clipboard attempt below
+    }
+  }
+
+  try {
+    await navigator.clipboard.writeText(shareText);
+    showShareToast('Copied to clipboard!');
+  } catch(e2){
+    showShareToast("Couldn't share this game — try again.");
   }
 }
 

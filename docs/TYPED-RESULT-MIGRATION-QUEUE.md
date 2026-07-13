@@ -345,12 +345,29 @@ re-derivation of `saveEspnFinal`, `findESPNScore`, and `fetchTeamRank`.
   fetches succeed, zero events) correctly produces zero telemetry — no
   false-positive noise.
 
-### 13. `shareGame` (index.html ~L38593) — 1 caller
+### 13. `shareGame` (index.html ~L38874) — ✅ MIGRATED 2026-07-13 — LAST BUCKET A ITEM
 
-- Both `navigator.share` and the clipboard fallback fail silently — no
-  toast shown to the user, unlike the success path which does show one.
-  Smallest-leverage item on the list (pure UX polish, single caller,
-  cosmetic), included for completeness.
+- Confirmed the original finding: both `navigator.share` and the
+  clipboard fallback failing left zero user feedback — no toast, unlike
+  the success path. Fixed with a real failure toast.
+- **A second, more interesting issue found while reading closely, not in
+  the original note:** `navigator.share()` throws a `DOMException` named
+  `'AbortError'` when the user simply cancels the native share sheet — a
+  deliberate choice, not a failure. The old code treated an `AbortError`
+  identically to a genuine share failure: silently writing the share text
+  to the clipboard anyway and showing "Copied to clipboard!" for an
+  action the user never took. Fixed to respect a deliberate cancel — no
+  clipboard fallback, no toast, nothing happens, matching what the user
+  actually asked for.
+- Real verification: 5 forced scenarios (share succeeds, user cancels,
+  genuine share failure → clipboard succeeds, no share API → clipboard
+  succeeds, total failure) all produce the correct toast/no-toast/
+  clipboard-call outcome. See
+  `docs/outbox/cc-sharegame-typed-migration-2026-07-13.md`.
+
+**This closes all 13 ranked Bucket A entries in this queue.** Bucket B
+(281 sites, telemetry-only) remains a candidate for a future, separate,
+lower-priority sweep — not attempted in this pass.
 ## Bucket B — grouped by function, not itemized (281 sites across 129 functions)
 
 Batch cleanup candidate for a future, separate, lower-priority telemetry
