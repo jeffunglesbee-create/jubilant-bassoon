@@ -24669,7 +24669,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-07-13f';
+  const SW_VERSION = '2026-07-13g';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -32676,7 +32676,7 @@ async function fetchGameBriefOnDemand(game, sport) {
     let champCtx = buildChampionshipContext(game, _champEData);
     // Archive enrichment — path-to-finals narrative from D1 (cached, instant on repeat).
     if (champCtx && typeof enrichChampionshipFromArchive === 'function') {
-      try { champCtx = await enrichChampionshipFromArchive(game, champCtx); } catch(_) {}
+      try { champCtx = await enrichChampionshipFromArchive(game, champCtx); } catch(_e) { captureFieldError('journalism:champ-archive-enrich', _e, true); }
     }
     const champBlock = champCtx
       ? `[CHAMPIONSHIP CONTEXT]
@@ -32785,7 +32785,7 @@ async function fetchEPLMatchBriefFromClaude(g) {
       const parts = [fmtTeam(hRow,g.home), fmtTeam(aRow,g.away)].filter(Boolean);
       if(parts.length) formLine = 'Table: ' + parts.join('. ');
     }
-  } catch(e_) {}
+  } catch(e_) { captureFieldError('journalism:epl-brief-context', e_, true); }
 
   const prompt = [
     'Write a FIELD Match Brief for this Premier League fixture.',
