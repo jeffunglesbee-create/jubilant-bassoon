@@ -104,16 +104,135 @@ unused):
 **Synthetic characterization** (this session, prior to this doc):
 extracted `dramaScoreLive()` + the OLD `_otwGetLiveTier()` verbatim from
 HEAD, swept 749 realistic (margin, period, clock) combinations across all
-9 sports the function handles. Iterated three designs:
+9 sports the function handles.
+
+**IMPORTANT METHODOLOGY CAVEAT, added after review:** "agreement with OLD"
+is NOT the same thing as "correctness." OLD's own `smoothed>=60`/`>=40`
+thresholds were themselves arbitrary tuning constants on a composite score
+— never independently validated as the right boundaries, and exactly the
+kind of unvalidated numeric threshold this whole CC-CMD exists to replace.
+A NEW-vs-OLD mismatch is a *point of divergence requiring a judgment call
+or a bug check*, not automatically evidence the new design is wrong. The
+first pass through this analysis (below) treated "matches OLD" as the bar
+for "reverted, regressed" without doing that per-mismatch triage — that
+was too coarse, and one of the specific "reverted" changes (v3's soccer
+clock-based lateness signal) turned out to be diagnosing a real bug that
+also existed in the shipped v2 design. See "v3 mismatch autopsy" and "real
+bug found and fixed" below.
+
+Iterated four designs total (three before this doc, one after, prompted by
+re-auditing v3's mismatches instead of accepting the "reverted" summary at
+face value):
+
 - v1 (naive): unknown baseline, not measured against real behavior first.
 - v2: 97.2% agreement against the 749-sample OLD-system dataset.
-- v3: widened `_otwIsFinalPeriod` thresholds + soccer clock-based crunch
-  — **regressed to 96.5%** (e.g. NBA margin=0/period=3/clock=11:00 was
-  incorrectly promoted to CLOSE_FINISH; OLD correctly held it at
-  LIVE_GAME since period=3-without-crunch only reaches raw=57, under the
-  60 bar). Reverted.
-- **Final (shipped): v2 + the isolated AFL/CFL loose-tier3 carve-out only
-  → 98.5% agreement (738/749 match, 11 documented mismatches)**.
+- v3: widened `_otwIsFinalPeriod` thresholds toward "first period/clock
+  value where dramaScoreLive's own timeBonus table first turns nonzero"
+  (rather than "the literal last period"), plus switched soccer's
+  `_otwIsFinalPeriod` to clock-based. Dropped to 96.5% (26/749 mismatches)
+  — see full autopsy below. **Not simply discarded**: one root cause
+  (soccer) was isolated, fixed, and shipped (see "real bug found and
+  fixed"); the other root cause (the broader "how late is late enough"
+  question for NBA/MLB/AFL/WNBA/Tennis) is unresolved and tracked as an
+  explicit follow-up, not silently dropped — see
+  `docs/CC-CMD-2026-07-12-otw-finalperiod-semantics.md`.
+- Shipped-at-first-commit (this doc's original version): v2 + an isolated
+  AFL/CFL loose-tier3 carve-out → 98.5% agreement (738/749, 11 mismatches).
+- **Current (this update, same commit sequence, follow-up fix applied):**
+  shipped design + soccer `_otwIsFinalPeriod` switched to clock-based
+  (`minNum>=70`) + soccer added to the loose-tier3 sport set → **99.07%
+  agreement (742/749 match, 7 documented mismatches)**.
+
+### v3 mismatch autopsy (26 mismatches, full breakdown — not summarized away)
+
+All 26 of v3's mismatches vs. OLD, re-run and categorized by root cause
+after the fact (extraction: `/tmp/.../scratchpad/otw_new_conditions3.js`
+against the same 749-sample dataset):
+
+| Pattern | Count | Root cause | Verdict |
+|---|---|---|---|
+| NBA/MLB/AFL/WNBA/Tennis LIVE_GAME→CLOSE_FINISH at raw 54-65 (e.g. NBA margin=0/period=3, MLB margin=0/period=7-8, AFL margin=0/period=3, WNBA margin=0/period=3, Tennis margin=1/period=1) | 12 | v3 widened `_otwIsFinalPeriod` per-sport to "first period with dramaScoreLive's lowest nonzero timeBonus" instead of "the literal final period" (e.g. NBA period>=3 instead of period>=4). All 12 raw values (54-65) sit within a few points of OLD's 60-point CLOSE_FINISH cutoff. | **Genuine open design question, not a bug.** Whether "CLOSE_FINISH" should mean literal-final-period (conservative, matches OLD, currently shipped) or first-real-urgency-period (v3's idea, arguably more true to what "getting close" means to a viewer watching a tied 3rd-quarter NBA game) is a product call this session should not make unilaterally. Tracked as a follow-up CC-CMD (see below), not dropped. |
+| AFL null→LIVE_GAME (margin 7-15, period=3, raw=36) | 9 | Same `_otwIsFinalPeriod` widening for AFL (period>=3 vs shipped's period>=4) interacting with the AFL loose-tier3 carve-out — at period=3 the carve-out fired when it shouldn't have (shipped's period>=4 requirement correctly withholds it). | **Confirmed bug in v3's specific AFL threshold choice**, not a case for adopting the wider AFL finalP definition — this is the single largest mismatch cluster and it's a real defect, distinct from the genuine judgment-call cases above. |
+| Soccer LIVE_GAME→null (margin=1, minute 75, raw=42) | 2 | v3 correctly recognized soccer needed a clock-based lateness signal (not period-based) and switched `_otwIsFinalPeriod` to `minNum>=70` — **the right idea** — but did not also add soccer to the loose-tier3 sport set, so the tier=3 LIVE_GAME path still required full crunch (`minNum>=80`), which minute 75 doesn't clear. | **Confirmed bug — an incomplete fix, not a wrong direction.** Diagnosed the missing piece (see below), fixed, and shipped as its own commit — see "real bug found and fixed." |
+| Soccer LIVE_GAME→CLOSE_FINISH (margin=0, minute 75, raw=57) | 2 | Same clock-based-lateness idea correctly triggers `_otwIsFinalPeriod`, promoting to CLOSE_FINISH at raw=57 — again a boundary case near the 60 cutoff. | Same "genuine judgment call, boundary-adjacent" category as the first row — not a bug, tracked in the same follow-up. |
+| Tennis null→LIVE_GAME (margin=1, period=1, raw=36) | 1 | v3's own tier/finalP interaction promotes an early single-break tennis game. raw=36 is close to but under OLD's 40-point LIVE_GAME bar. | Boundary judgment call, same category. |
+
+**Total: 12+2 = 14 boundary/judgment-call mismatches (genuine open
+question, tracked as a follow-up, not resolved unilaterally here), 9+2 = 11
+confirmed-bug mismatches (2 fixed and shipped this session, 9 specific to
+v3's AFL threshold choice and not present in any shipped design since v3
+itself was never shipped).**
+
+### Real bug found and fixed (soccer clock-based lateness)
+
+Re-diagnosing the "Soccer LIVE_GAME→null" pair above against the *shipped*
+(non-v3) design revealed the same defect was already present in what had
+already been committed and pushed: shipped's soccer `_otwIsFinalPeriod`
+used `period >= 2` (any point in the 2nd half at all, including minute 46
+with zero real time-urgency per `dramaScoreLive`'s own soccer timeBonus
+table, whose lowest nonzero tier is `minNum>=70`). Combined with soccer
+not being in the `looseTier3Sport` set, this meant:
+
+- A margin=1 soccer game at minute 70-79 (finalP true only under v3's
+  clock-based version; false under shipped's period-based version) could
+  **never** reach LIVE_GAME under the shipped design either — it required
+  full crunch (`minNum>=80`) to clear the tier=3 LIVE_GAME path, which
+  minute 70-79 doesn't. Confirmed via direct test against the live
+  `index.html` code before touching it: `margin=1, period=2, clock=75` →
+  shipped returned `null`, OLD returned `LIVE_GAME` (raw=42, clears OLD's
+  40-point bar).
+- This was 2 of the shipped design's own 11 documented mismatches — not
+  a v3-only artifact.
+
+**Fix applied** (this update, same OTW commit sequence):
+1. `_otwIsFinalPeriod`'s soccer branch switched from `period >= 2` to
+   `minNum >= 70` — matches `dramaScoreLive()`'s own first-nonzero soccer
+   timeBonus tier exactly, the same "reuse the real function's own
+   thresholds" principle every other sport's helpers already follow.
+2. `looseTier3Sport` widened to include soccer (previously AFL/CFL only)
+   — needed because soccer's tier-3 margin bucket (`diff===1`, base=0.72)
+   is, like AFL/CFL's, high enough that reaching real lateness alone
+   (not full crunch) already crosses the old LIVE_GAME threshold in
+   `dramaScoreLive()`'s real numbers: `raw = 0.72*52 + timeBonus`; even
+   `timeBonus=0` gives raw=37, and any nonzero timeBonus (minute>=70,
+   +5) pushes it to 42, comfortably over 40.
+
+Verified this fix in isolation (own scratch file, `otw_new_conditions4.js`)
+before touching `index.html`: **99.07% agreement (742/749), 4 of the
+shipped design's 11 mismatches resolved (both soccer null-gap cases, plus
+2 more — soccer margin=0/period=2/clock=20 and clock=45 false-CLOSE_FINISH
+promotions that the old period-based finalP was ALSO causing), zero new
+mismatches introduced.** Then transplanted verbatim into `index.html` and
+re-verified the live file reproduces the exact same 742/749 result.
+
+### Remaining 7 mismatches (post-fix, all genuine boundary/judgment cases)
+
+| Sport | margin | period | clock | raw | OLD | shipped (post-fix) |
+|---|---|---|---|---|---|---|
+| NBA | 0 | 3 | 1:30 | 70 | CLOSE_FINISH | LIVE_GAME |
+| Soccer | 0 | 1 | 75 | 57 | LIVE_GAME | CLOSE_FINISH |
+| Soccer | 0 | 2 | 75 | 57 | LIVE_GAME | CLOSE_FINISH |
+| AFL | 5 | 4 | 3:00 | 65 | LIVE_GAME | CLOSE_FINISH |
+| WNBA | 0 | 3 | 1:30 | 70 | CLOSE_FINISH | LIVE_GAME |
+| Tennis | 1 | 1 | (none) | 36 | null | LIVE_GAME |
+| Tennis | 1 | 3 | (none) | 54 | LIVE_GAME | CLOSE_FINISH |
+
+All 7 are the same category as the "boundary/judgment call" rows in the
+v3 autopsy above (raw values 36-70, straddling OLD's 40/60 cutoffs) — none
+are confirmed bugs. Not fixed unilaterally in this session; see the
+follow-up CC-CMD below for the specific open question and exact test
+cases a future session (or the user) should resolve.
+
+### Follow-up tracked, not dropped
+
+Wrote `docs/CC-CMD-2026-07-12-otw-finalperiod-semantics.md` — a proper
+follow-up CC-CMD (per Rule 87, no deferred work without a second CC-CMD)
+capturing the exact open question ("final period" = literal-last-period,
+matching OLD's historical behavior and currently shipped, vs.
+first-real-urgency-period, v3's idea and arguably more accurate to what
+"the game is getting tight" means to a viewer) with the precise 7 test
+cases above, both candidate implementations, and what a resolving session
+needs to decide and verify.
 
 **Real-data check** (this doc's TASK 3 requirement — "not synthetic
 examples only"), performed via live ESPN scoreboard fetches through the

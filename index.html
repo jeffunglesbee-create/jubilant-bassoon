@@ -24469,7 +24469,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-07-12d';
+  const SW_VERSION = '2026-07-12e';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -37020,7 +37020,15 @@ function _otwIsFinalPeriod(eData, sport) {
   if (sp.includes('mlb')||sp.includes('baseball')) return period >= 9;
   if (sp.includes('soccer')||sp.includes('league')||sp.includes('mls')||
       sp.includes('liga')||sp.includes('ligue')||sp.includes('premier')||
-      sp.includes('wc26')||sp.includes('world cup')) return period >= 2;
+      sp.includes('wc26')||sp.includes('world cup')) {
+    // 2026-07-12 fix: clock-based (minNum>=70), not period>=2. period>=2 means
+    // "2nd half at all" -- at minute 46 that's true but dramaScoreLive's own
+    // soccer timeBonus is still 0 (its lowest nonzero tier is minNum>=70).
+    // Confirmed via real-game regression sweep this produced 4 of 11 known
+    // mismatches (docs/outbox/cc-otw-tier-categorical-2026-07-12.md).
+    const minNum = parseInt(eData.clock) || 0;
+    return minNum >= 70;
+  }
   if (sp.includes('tennis')||sp.includes('atp')||sp.includes('wta')) return period >= 2;
   return false;
 }
@@ -37082,12 +37090,19 @@ function _otwGetLiveTier(eData, sport) {
   const tier = _otwMarginTier(eData, sport);
   const crunch = _otwIsCrunchTime(eData, sport);
   const finalP = _otwIsFinalPeriod(eData, sport);
-  // AFL/CFL's tier-3 margin bucket is proportionally wide enough that just
-  // reaching the final period (not full crunch) already crosses the old
-  // LIVE_GAME threshold — confirmed against dramaScoreLive()'s real numbers
-  // for these two sports specifically via the characterization sweep, not
-  // assumed uniformly across all sports.
-  const looseTier3Sport = sp.includes('afl') || sp.includes('australian') || sp.includes('cfl') || sp.includes('canadian football');
+  // AFL/CFL's tier-3 margin bucket, and soccer's (margin=1, base=0.72), are
+  // proportionally high enough that just reaching the final period (not full
+  // crunch) already crosses the old LIVE_GAME threshold — confirmed against
+  // dramaScoreLive()'s real numbers for these sports specifically via the
+  // characterization sweep, not assumed uniformly across all sports. Soccer
+  // added 2026-07-12: without this, a margin=1 soccer game between minute
+  // 70-79 (finalP true, crunch false since crunch needs minute>=80) fell
+  // through to null instead of LIVE_GAME — a real, confirmed regression
+  // (docs/outbox/cc-otw-tier-categorical-2026-07-12.md).
+  const looseTier3Sport = sp.includes('afl') || sp.includes('australian') || sp.includes('cfl') ||
+    sp.includes('canadian football') || sp.includes('soccer') || sp.includes('league') ||
+    sp.includes('mls') || sp.includes('liga') || sp.includes('ligue') || sp.includes('premier') ||
+    sp.includes('wc26') || sp.includes('world cup');
 
   // T3: dead-even and in the final period at all, OR a still-tight margin
   // combined with true crunch-time urgency.
