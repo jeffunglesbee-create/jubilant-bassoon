@@ -413,8 +413,17 @@ assert('MLS excluded from match briefs', !html.includes("'MLS']") || html.includ
 assert('BRIEF_LEAGUES defined', html.includes('BRIEF_LEAGUES'));
 
 // 10. Save protocol
-assert('fetchNBARelayScores wired into ESPN cycle', 
-  html.includes('fetchNBARelayScores().catch'));
+assert('fetchNBARelayScores wired into ESPN cycle',
+  // 2026-07-13: was html.includes('fetchNBARelayScores().catch') -- that
+  // string-matched an implementation detail (a caller-side .catch chain),
+  // not the real invariant (the function is genuinely called from the
+  // ESPN poll cycle). fetchNBARelayScores() was migrated to
+  // fieldOperation() (see its own header comment), whose returned promise
+  // never rejects, so the caller's .catch() became dead code and was
+  // correctly removed -- this assertion now checks the actual invariant
+  // (the bare call exists) instead of a specific, now-intentionally-gone
+  // calling convention.
+  html.includes('fetchNBARelayScores();'));
 assert('relayHealthCheck called at session start',
   html.includes('relayHealthCheck().catch'));
 

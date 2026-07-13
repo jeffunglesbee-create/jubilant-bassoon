@@ -14897,6 +14897,15 @@ function bdlInjuryBadge(home, away, injuries) {
 // OLD: 9 sequential calls with 7s gaps = 63s minimum, 9 API quota units
 // NEW: 1 batch call via /matches?competitions=PL,PD,...  = <1s, 1 quota unit
 // Relay caches the response 60s — all users share the same upstream call
+// 2026-07-13 (follow-up to CC-CMD-2026-07-13-fetchnhlrelayscores-migration,
+// same bug pattern confirmed by direct read): migrated to fieldOperation().
+// The catch only conditionally console.debug'd and never called
+// captureFieldError -- the relay-fd caller's own
+// `.catch(e=>captureFieldError(...))` could never fire. applyFDLiveToCards()
+// moved inside the wrapped callback, as the last statement, to preserve the
+// original behavior exactly: the old catch's `return;` skipped it on
+// failure, so it only ran on success -- same here, since it's now simply
+// the last line of a callback that only completes on success.
 async function fdPrefetchSoccerLive(){
   if(!allData||!allData.sports) return;
   const soccerSections = allData.sports.filter(s => FD_LEAGUE_MAP[s.sport]);
@@ -14906,7 +14915,7 @@ async function fdPrefetchSoccerLive(){
   const codes = [...new Set(soccerSections.map(s => FD_LEAGUE_MAP[s.sport]))].join(',');
   const dateStr = isoDate; // YYYY-MM-DD current viewing date
 
-  try {
+  return fieldOperation({subsystem:'scores', operation:'fetch-fd-soccer', retryable:true}, async () => {
     // Single batch request: all competitions, today's date
     const data = await fdFetch(`/matches?competitions=${codes}&dateFrom=${dateStr}&dateTo=${dateStr}`);
     const allMatches = data.matches || [];
@@ -14951,12 +14960,8 @@ async function fdPrefetchSoccerLive(){
       fdLiveCacheTime[code] = now;
     }
     if(FIELD_DEBUG) console.debug(`[FD] batch fetched ${allMatches.length} matches across ${Object.keys(byCode).length} competitions`);
-  } catch(e){
-    if(FIELD_DEBUG) console.debug(`[FD] batch fetch failed: ${e.message}`);
-    return;
-  }
-
-  applyFDLiveToCards();
+    applyFDLiveToCards();
+  });
 }
 
 // Apply FD live scores to soccer game cards (parallel path to Fotmob)
@@ -19053,9 +19058,18 @@ async function fetchNBAChannelsViaRelay() {
   return r.json();
 }
 // Parallel validation + primary path — fires after each ESPN poll cycle
+// 2026-07-13 (follow-up to CC-CMD-2026-07-13-fetchnhlrelayscores-migration,
+// same bug pattern confirmed by direct read, not assumed): migrated to
+// fieldOperation() -- this function's own catch only conditionally
+// console.warn'd (FIELD_DEBUG-gated) and never called captureFieldError,
+// so the sole caller's `.catch(e=>captureFieldError('relay-nba',e,true))`
+// could never fire (the promise never rejected) AND the internal warn
+// itself was invisible outside a debug session. Same fix as the NHL relay:
+// fieldOperation()'s own catch is now the sole (and genuinely telemetered)
+// catcher.
 async function fetchNBARelayScores() {
   if (!RELAY_HEALTHY) return;
-  try {
+  return fieldOperation({subsystem:'scores', operation:'fetch-nba-relay', retryable:true}, async () => {
     const games = await fetchNBAScoreboardViaRelay();
     let disc = 0;
     games.forEach(g => {
@@ -19088,9 +19102,7 @@ async function fetchNBARelayScores() {
     if (FIELD_DEBUG) console.log(`[RELAY] ${games.length} games | disc=${disc} | primary=${RELAY_PRIMARY}`);
     // Rule 24: trigger drama pipeline when relay updates espnScores (matches NHL relay pattern)
     if (RELAY_PRIMARY && games.length) renderESPNScores();
-  } catch(e) {
-    if (FIELD_DEBUG) console.warn('[RELAY] poll failed:', e.message);
-  }
+  });
 }
 
 // ── Midnight crossover watcher — re-runs schedule if date changes ──────────
@@ -20585,7 +20597,10 @@ async function fetchESPNScores(){
   renderESPNScores();
 
   // Fire RELAY + FPL + FD in parallel — don't block ESPN cycle
-  fetchNBARelayScores().catch(e=>captureFieldError('relay-nba',e,true));
+  // 2026-07-13: .catch() removed -- fetchNBARelayScores() is now migrated
+  // to fieldOperation(), whose own promise never rejects (see the function's
+  // own comment). Same reasoning as the NHL relay line below.
+  fetchNBARelayScores();
   // 2026-07-13 (CC-CMD-2026-07-13-fetchnhlrelayscores-migration): the
   // .catch(e=>captureFieldError(...)) chain other fire-and-forget relay
   // calls on these lines use is removed here specifically -- now that
@@ -20601,8 +20616,12 @@ async function fetchESPNScores(){
   // fdPrefetchSoccerLive) are NOT migrated yet and correctly keep their own
   // .catch() -- out of scope for this CC-CMD, not touched.
   fetchNHLRelayScores();
-  fetchFPLLiveScores().catch(e=>captureFieldError('relay-fpl',e,true));
-  fdPrefetchSoccerLive().catch(e=>captureFieldError('relay-fd',e,true));
+  // 2026-07-13: .catch() removed -- fetchFPLLiveScores() is now migrated
+  // to fieldOperation(), whose own promise never rejects.
+  fetchFPLLiveScores();
+  // 2026-07-13: .catch() removed -- fdPrefetchSoccerLive() is now migrated
+  // to fieldOperation(), whose own promise never rejects.
+  fdPrefetchSoccerLive();
 
   // Gap 8: Quiet Hour Detection
   {
@@ -21768,6 +21787,15 @@ function soccerGoalsInjectDOM(home, away) {
   });
 }
 
+// 2026-07-13 (follow-up to CC-CMD-2026-07-13-fetchnhlrelayscores-migration,
+// same bug pattern confirmed by direct read): migrated to fieldOperation().
+// The bare `catch(e){}` swallowed every fetch/parse exception with zero
+// telemetry -- the caller at the relay-fpl call site's own
+// `.catch(e=>captureFieldError(...))` could never fire. The rate-limit
+// short-circuit and the fplLoadBootstrap dependency guard stay OUTSIDE the
+// wrap -- both are deliberate "not applicable right now" skips, not
+// failures, matching the same pattern used for fetchNHLRelayScores'
+// no-NHL-section guard.
 async function fetchFPLLiveScores() {
   // Short-circuit: relay caches 30s — skip the outbound HTTP call if last fetch was <28s ago
   const now = Date.now();
@@ -21775,7 +21803,7 @@ async function fetchFPLLiveScores() {
   if (!_fplTeamMap && !(await fplLoadBootstrap())) return;
   _fplLastFetch = Date.now();
 
-  try {
+  return fieldOperation({subsystem:'scores', operation:'fetch-fpl-live', retryable:true}, async () => {
     const r = await fetch(`${FPL_RELAY_BASE}/fixtures?event=${_fplCurrentGW}`, { signal: AbortSignal.timeout(6000) });
     if (!r.ok) return;
     const fixtures = await r.json();
@@ -21818,7 +21846,7 @@ async function fetchFPLLiveScores() {
       fplExtractScorers(f, home, away);
     }
     renderESPNScores(); // render immediately — don't wait for next ESPN poll cycle
-  } catch(e) {}
+  });
 }
 
 
@@ -24509,7 +24537,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-07-12h';
+  const SW_VERSION = '2026-07-12i';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
