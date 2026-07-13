@@ -24661,7 +24661,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-07-13c';
+  const SW_VERSION = '2026-07-13d';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -24892,7 +24892,7 @@ function _readCachedRank(ck) {
       const p = JSON.parse(cached);
       if (Date.now() - p.ts < FIFA_RANK_TTL) { _fifaRankCache[ck] = p.rank; return p.rank; }
     }
-  } catch(_) {}
+  } catch(_e) { captureFieldError('scores:fifa-rank-cache-read', _e, true); }
   return undefined;
 }
 // Async fetch + cache. Use from paths that can await (the historical/
@@ -30185,7 +30185,7 @@ async function fetchMLBStandingsParsed() {
     if (teams.length) _relayStandingsCache[key] = teams;
     if (FIELD_DEBUG) console.log(`[Standings] MLB: ${teams.length} teams from Stats API`);
     return teams.length ? teams : null;
-  } catch(e) { if (FIELD_DEBUG) console.warn('[Standings] MLB error:', e.message); return null; }
+  } catch(e) { if (FIELD_DEBUG) console.warn('[Standings] MLB error:', e.message); captureFieldError('standings:mlb-parsed', e, true); return null; }
 }
 
 async function fetchNBAStandingsParsed() {
@@ -30274,6 +30274,7 @@ async function fetchNBAStandingsParsed() {
     }
   } catch(e) { if (FIELD_DEBUG) console.warn('[Standings] NBA BDL tertiary failed:', e.message); }
 
+  captureFieldError('standings:nba-parsed', new Error('all 3 fallback sources failed (ESPN, NBA CDN relay, BDL)'), true);
   return null;
 }
 
@@ -30311,7 +30312,10 @@ async function fetchBDLSeasonAverages() {
         `${BDL_RELAY_BASE}/nba/v1/season_averages?season=2025&per_page=100`,
         { signal: AbortSignal.timeout(6000) }
       );
-      if (!r.ok) return null;
+      if (!r.ok) {
+        captureFieldError('bdl:season-averages', new Error('HTTP ' + r.status), true);
+        return null;
+      }
       const d = await r.json();
       const players = d.data || [];
       try { localStorage.setItem(lsKey, JSON.stringify(players)); } catch(e) {}
@@ -30332,6 +30336,7 @@ async function fetchBDLSeasonAverages() {
       return players;
     } catch(e) {
       if (FIELD_DEBUG) console.warn('[BDL] season averages fetch failed:', e.message);
+      captureFieldError('bdl:season-averages', e, true);
       return null;
     } finally {
       _bdlSeasonAveragesPromise = null; // clear dedup
@@ -30395,7 +30400,7 @@ async function fetchNHLStandingsParsed() {
     }
     if (FIELD_DEBUG) console.log(`[Standings] NHL: ${teams.length} teams from relay`);
     return teams.length ? teams : null;
-  } catch(e) { if (FIELD_DEBUG) console.warn('[Standings] NHL error:', e.message); return null; }
+  } catch(e) { if (FIELD_DEBUG) console.warn('[Standings] NHL error:', e.message); captureFieldError('standings:nhl-parsed', e, true); return null; }
 }
 
 async function fetchMLSStandingsParsed() {
@@ -30420,7 +30425,7 @@ async function fetchMLSStandingsParsed() {
     if (teams.length) _relayStandingsCache[key] = teams;
     if (FIELD_DEBUG) console.log(`[Standings] MLS: ${teams.length} teams from ESPN`);
     return teams.length ? teams : null;
-  } catch(e) { if (FIELD_DEBUG) console.warn("[Standings] MLS error:", e.message); return null; }
+  } catch(e) { if (FIELD_DEBUG) console.warn("[Standings] MLS error:", e.message); captureFieldError('standings:mls-parsed', e, true); return null; }
 }
 
 // Dispatcher: routes to correct source per sport, populates _relayStandingsCache
