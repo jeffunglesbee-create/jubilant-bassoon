@@ -24660,7 +24660,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-07-12s';
+  const SW_VERSION = '2026-07-12t';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -28458,7 +28458,24 @@ async function fetchCompoundEditorial(sections) {
 
     // Proxy v4 returns 429 with Retry-After — handle gracefully
     if (r.status === 429) {
-      const retryAfter = parseInt(r.headers.get('Retry-After') || '60');
+      // 2026-07-12: clamped -- this value comes directly from the relay/
+      // proxy's own response header with no client-side ceiling before
+      // this fix. A misconfigured or compromised upstream sending an
+      // unreasonably large Retry-After (or a unit mismatch bug -- e.g.
+      // milliseconds sent where seconds were expected) could set a backoff
+      // far enough in the future to disable compound editorial calls for
+      // the rest of the session, or effectively permanently (the value is
+      // also persisted to localStorage below, surviving reloads). 30
+      // minutes is a generous ceiling for a legitimate rate-limit window --
+      // in the same range as slashGolfFetch's own flat 60min 429 backoff
+      // elsewhere in this file, not an arbitrary new constant. A garbage/
+      // non-numeric header (NaN) or a negative value falls back to the
+      // existing 60s default rather than silently disabling the backoff
+      // (Date.now() < NaN is always false, which would fail open).
+      const rawRetryAfter = parseInt(r.headers.get('Retry-After') || '60');
+      const retryAfter = Number.isFinite(rawRetryAfter) && rawRetryAfter > 0
+        ? Math.min(rawRetryAfter, 1800)
+        : 60;
       _compoundRetryAfter = Date.now() + retryAfter * 1000;
       try { localStorage.setItem('field_compound_retry_after', String(_compoundRetryAfter)); } catch(_){}
       if (FIELD_DEBUG) console.log(`[COMPOUND] 429 received — retrying after ${retryAfter}s`);
