@@ -20765,6 +20765,28 @@ function resolveGameIdByHome(homeName){
 }
 
 // Find matching ESPN score for a FIELD game object
+//
+// 2026-07-13 (TYPED-RESULT-MIGRATION-QUEUE.md Bucket A #3): 25+ real
+// callers all treat a bare `null` return identically, whether it means
+// "genuinely no data yet" or "stale-final guard correctly blocked a
+// mismatched score." Read every real caller before deciding what to do
+// here (novel thinking, not a mechanical fieldOperation() wrap, which
+// doesn't fit -- this function is synchronous and never throws): NONE of
+// them would behave differently even if they COULD distinguish the two
+// cases -- the correct action for both is identical ("no live data for
+// this card right now"). Changing the return contract for 25+ call sites
+// to expose a distinction nothing would act on is exactly the kind of
+// invasive, high-risk, low-value migration Rule 69 warns against. The
+// REAL gap is observability, not caller behavior: the stale-final guard
+// firing was previously invisible outside a live FIELD_DEBUG session (one
+// of its 3 call sites didn't even have that), even though a HIGH firing
+// rate would be real evidence the underlying June 10 2026 root cause
+// (api-sports.io mistagging late games under the wrong date) is still
+// happening upstream. Fix: record real, persistent telemetry
+// (FIELD_OPERATIONS.recordFailure, severity:'trace' since this is the
+// guard working correctly, not a genuine failure) at all 3 sites where it
+// fires -- purely additive, zero change to the return contract, zero
+// caller updates needed.
 function findESPNScore(game){
   // ── STALE-FINAL GUARD (June 10 2026) ─────────────────────────────────────
   // Problem: api-sports.io returns late games (e.g. June 9 8:40pm ET =
@@ -20779,12 +20801,24 @@ function findESPNScore(game){
     if (!score || score.state !== 'post' || !g || !g.start_time) return false;
     return new Date(g.start_time).getTime() > Date.now();
   };
+  const _recordStaleFinalBlock = (path) => {
+    if (FIELD_DEBUG) console.warn('[FIELD] stale-final blocked:', game.away, '@', game.home, game.start_time, '('+path+')');
+    if (typeof FIELD_OPERATIONS !== 'undefined') {
+      FIELD_OPERATIONS.recordFailure({
+        subsystem: 'scores', operation: 'find-espn-score-stale-final-guard',
+        severity: 'trace', retryable: false,
+        context: { home: game.home, away: game.away, start_time: game.start_time, path },
+        error: new Error(`stale-final blocked (${path}): ${game.away} @ ${game.home}, start_time ${game.start_time}`),
+        at: Date.now(),
+      });
+    }
+  };
 
   // PM-20: try source-tagged store first (returns confidence-aware view)
   const tagged = typeof findScore === 'function' ? findScore(game) : null;
   if (tagged) {
     if (_staleFinalGuard(tagged, game)) {
-      if (FIELD_DEBUG) console.warn('[FIELD] stale-final blocked:', game.away, '@', game.home, game.start_time);
+      _recordStaleFinalBlock('tagged');
       return null;
     }
     return tagged;
@@ -20804,11 +20838,11 @@ function findESPNScore(game){
     if(!gameSoccer && (pp==="'"||pp==='1H'||pp==='2H')) continue;
     const [hn, an] = key.split("|").map(s=>s.toLowerCase());
     if(espnTeamMatch(hn, home) && espnTeamMatch(an, away)) {
-      if (_staleFinalGuard(score, game)) continue;
+      if (_staleFinalGuard(score, game)) { _recordStaleFinalBlock('legacy-forward'); continue; }
       return score;
     }
     if(espnTeamMatch(hn, away) && espnTeamMatch(an, home)) {
-      if (_staleFinalGuard(score, game)) continue;
+      if (_staleFinalGuard(score, game)) { _recordStaleFinalBlock('legacy-reversed'); continue; }
       return score;
     }
   }
@@ -24537,7 +24571,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-07-12j';
+  const SW_VERSION = '2026-07-12k';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
