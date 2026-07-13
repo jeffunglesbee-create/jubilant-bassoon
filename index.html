@@ -9275,6 +9275,7 @@ async function subscribeToPush(btn){
     return ok;
   } catch (err) {
     if (btn) btn.textContent = 'Retry';
+    captureFieldError('push:subscribe', err, true);
     return false;
   }
 }
@@ -12782,6 +12783,7 @@ async function loadCFLScoreboard() {
     return todays;
   } catch (e) {
     if (typeof FIELD_DEBUG !== 'undefined' && FIELD_DEBUG) console.warn('[CFL] loadCFLScoreboard', e.message);
+    captureFieldError('cfl:scoreboard-load', e, true);
     return null;
   }
 }
@@ -15341,7 +15343,7 @@ function injectJ1J4Badges() {
                     if (result.status === 'failed') break;
                   }
                 }
-              } catch(e_) {}
+              } catch(e_) { captureFieldError('journalism:scouts-pick-poll', e_, true); }
             })();
           }
         }
@@ -24674,7 +24676,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-07-13d';
+  const SW_VERSION = '2026-07-13e';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -28838,7 +28840,7 @@ async function fetchSeriesPreviewFromClaude(g){
   // Archive enrichment (parallel async — path-to-finals narrative from D1).
   // Cached in sessionStorage by fetchSeriesArchive, so repeat calls are instant.
   if (_j2ChampCtx && typeof enrichChampionshipFromArchive === 'function') {
-    try { _j2ChampCtx = await enrichChampionshipFromArchive(g, _j2ChampCtx); } catch(_) {}
+    try { _j2ChampCtx = await enrichChampionshipFromArchive(g, _j2ChampCtx); } catch(_e) { captureFieldError('journalism:series-preview-champ-archive-enrich', _e, true); }
   }
   const _j2ChampBlock = _j2ChampCtx
     ? `[CHAMPIONSHIP CONTEXT]
@@ -28908,7 +28910,7 @@ Write this brief at the level the moment deserves. Do not undersell a championsh
       scoreProse(text, g||null).then(s=>renderProseScore(s,'J2 Series'));
       return stripPromptLeaks(text.trim());
     }
-  }catch(e){if(FIELD_DEBUG)console.error('[J2 Series Preview] proxy error:',e.message);}
+  }catch(e){if(FIELD_DEBUG)console.error('[J2 Series Preview] proxy error:',e.message);captureFieldError('journalism:series-preview', e, true);}
   return null;
 }
 async function renderSeriesPreviewCard(gameCard){
@@ -31382,7 +31384,8 @@ async function fetchCountryContext(countryName) {
     };
     _countryCtxCache.set(countryName, ctx);
     return ctx;
-  } catch(_) {
+  } catch(_e) {
+    captureFieldError('wc:country-context', _e, true);
     _countryCtxCache.set(countryName, null);
     return null;
   }
@@ -32076,14 +32079,14 @@ async function fetchSeriesArchive(seriesKey) {
       const c = JSON.parse(cached);
       if (Date.now() - c.ts < 1800000) return c.data;
     }
-  } catch (_) { /* cache parse errors are non-fatal */ }
+  } catch (_e) { captureFieldError('journalism:series-archive-cache-read', _e, true); }
   try {
     const r = await fetch(`${_archiveBase}/archive/series/${encodeURIComponent(seriesKey)}`);
     if (!r.ok) return null;
     const data = await r.json();
-    try { sessionStorage.setItem(cacheKey, JSON.stringify({ ts: Date.now(), data })); } catch (_) {}
+    try { sessionStorage.setItem(cacheKey, JSON.stringify({ ts: Date.now(), data })); } catch (_e) { captureFieldError('journalism:series-archive-cache-write', _e, true); }
     return data;
-  } catch (_) { return null; }
+  } catch (_e) { captureFieldError('journalism:series-archive-fetch', _e, true); return null; }
 }
 
 async function fetchLastMeeting(teamA, teamB) {
@@ -32105,7 +32108,7 @@ async function fetchArchiveDate(iso) {
       { signal: AbortSignal.timeout(2500) });
     if (!r.ok) return null;
     return r.json();
-  } catch (_) { return null; }
+  } catch (_e) { captureFieldError('broadcast-archaeology:date-fetch', _e, true); return null; }
 }
 
 async function fetchPrerenderedGameBrief(espnEventId) {
