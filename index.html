@@ -13383,7 +13383,7 @@ function buildWCMediaCards() {
               '\uD83D\uDD0D Scout’s Pick: ' + _wcSd.shortText;
           }
         }
-      } catch(e_) {}
+      } catch(e_) { captureFieldError('wc:media-card-journal-note', e_, true); }
 
       const leagueShort = (game.league || '').replace('FIFA World Cup 2026 — ', '').replace('FIFA World Cup 2026', 'Group Stage');
 
@@ -14897,7 +14897,7 @@ function bdlLoad(key){
     const {data, ts} = JSON.parse(raw);
     if(Date.now() - ts < BDL_CACHE_TTL) return data; // fresh
     localStorage.removeItem("bdl_"+key);             // expired — clear it
-  }catch(e){if(FIELD_DEBUG)console.debug('[bdlLoad] cache error:',e.message);}
+  }catch(e){if(FIELD_DEBUG)console.debug('[bdlLoad] cache error:',e.message);captureFieldError('bdl:cache-read', e, true);}
   return null;
 }
 
@@ -21825,7 +21825,7 @@ async function fplLoadBootstrap() {
         return true;
       }
     }
-  } catch(e) {}
+  } catch(e) { captureFieldError('fpl:bootstrap-cache-parse', e, true); }
 
   try {
     const r = await fetch(`${FPL_RELAY_BASE}/bootstrap-static`, { signal: AbortSignal.timeout(6000) });
@@ -21852,7 +21852,7 @@ async function fplLoadBootstrap() {
 
     sessionStorage.setItem(_FPL_BOOTSTRAP_KEY, JSON.stringify({ map, players, gw: _fplCurrentGW, ts: Date.now() }));
     return true;
-  } catch(e) { return false; }
+  } catch(e) { captureFieldError('fpl:bootstrap-fetch', e, true); return false; }
 }
 
 // Extract goalscorer names from a fixture's stats array → store in _fplScorerCache
@@ -23547,7 +23547,7 @@ async function fetchSchedule(){
       if (!d) return;
       // Compute derived metrics on canonical-shaped data
       if (typeof computeGolfDerivedMetrics === 'function') {
-        try { computeGolfDerivedMetrics(d); } catch (_) {}
+        try { computeGolfDerivedMetrics(d); } catch (_e) { captureFieldError('schedule:golf-derived-metrics', _e, true); }
       }
       // ESPN enriched is the PRIMARY Golf section creator.
       // SlashGolf is supplemental (LIV/DP World/LPGA only, not PGA Tour).
@@ -23577,7 +23577,7 @@ async function fetchSchedule(){
           })(),
         }]});
         if (typeof scheduleRenderAll === 'function') {
-          try { scheduleRenderAll(); } catch (_) {}
+          try { scheduleRenderAll(); } catch (_e) { captureFieldError('schedule:golf-render', _e, true); }
         }
       }
       // Delay injection past scheduleRenderAll's 150ms debounce so the Golf
@@ -23588,6 +23588,7 @@ async function fetchSchedule(){
         if (typeof injectPGALeaderboard === 'function') {
           try { injectPGALeaderboard(d); } catch (e) {
             if (typeof FIELD_DEBUG !== 'undefined' && FIELD_DEBUG) console.warn('[PGA] inject', e.message);
+            captureFieldError('schedule:golf-pga-inject', e, true);
           }
         }
         // CC-CMD-2026-06-19 Prompt 12C: archive the round if it just completed.
@@ -23598,7 +23599,7 @@ async function fetchSchedule(){
               _isGolfRoundComplete(d)) {
             saveGolfRoundFinal(d);
           }
-        } catch (_) {}
+        } catch (_e) { captureFieldError('schedule:golf-round-archive', _e, true); }
       }, 300);
     }).catch(() => {});
   }, 4000);
@@ -23614,7 +23615,7 @@ async function fetchSchedule(){
       const hasCFLSection = (allData?.sports || []).some(s => s.sport === 'Canadian Football (CFL)');
       if (hasCFLSection || !games || !games.length || !allData || !allData.sports) return;
       allData.sports.push({ sport: 'Canadian Football (CFL)', games });
-      if (typeof scheduleRenderAll === 'function') { try { scheduleRenderAll(); } catch (_) {} }
+      if (typeof scheduleRenderAll === 'function') { try { scheduleRenderAll(); } catch (_e) { captureFieldError('schedule:cfl-render', _e, true); } }
     };
     loadCFLScoreboard().then(games => {
       if (games && games.length) { pushCFLSection(games); return; }
@@ -23634,7 +23635,7 @@ async function fetchSchedule(){
     try {
       const hasNBA = (allData?.sports||[]).some(s => (s.sport||'').includes('Basketball'));
       if (hasNBA) fetchBDLSeasonAverages().catch(()=>{});
-    } catch(e_) {}
+    } catch(e_) { captureFieldError('schedule:bdl-prefetch-kickoff', e_, true); }
   }, 4500);
   setTimeout(weatherPrefetchAll, 4000);  // Open-Meteo outdoor venue weather
   setTimeout(fetchATPLiveScores, 4500);  // ATP Tour live scores (CORS open, no proxy needed)
@@ -24549,7 +24550,7 @@ function loadBroadcastArchaeology() {
         return;
       }
     }
-  } catch(_) {}
+  } catch(_e) { captureFieldError('broadcast-archaeology:cache-read', _e, true); }
   const today = new Date();
   const dates = [];
   for (let i = 1; i <= 14; i++) {
@@ -24568,10 +24569,10 @@ function loadBroadcastArchaeology() {
         for (const g of arr) games.push(g);
       }
       if (!games.length) return;
-      try { sessionStorage.setItem(cacheKey, JSON.stringify({ ts: Date.now(), games })); } catch(_) {}
+      try { sessionStorage.setItem(cacheKey, JSON.stringify({ ts: Date.now(), games })); } catch(_e) { captureFieldError('broadcast-archaeology:cache-write', _e, true); }
       renderBroadcastArchaeology(games);
     })
-    .catch(() => {});
+    .catch((e_) => { captureFieldError('broadcast-archaeology:build-render', e_, true); });
 }
 
 // ── Lazy-load below-fold sections ────────────────────────────────────────────
@@ -24669,7 +24670,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-07-13h';
+  const SW_VERSION = '2026-07-13i';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -33001,6 +33002,7 @@ async function fetchWCStandings(group = null) {
     _wcStandingsTs = data.ts || Date.now();
     return _wcStandings;
   } catch(e) {
+    captureFieldError('wc:standings', e, true);
     return null;
   }
 }
@@ -34914,7 +34916,7 @@ async function renderWCBracketTree() {
       const data = await r.json();
       slots = data.bracketSlots || {};
     }
-  } catch(e_) {}
+  } catch(e_) { captureFieldError('wc:bracket-tree-fetch', e_, true); }
 
   const hasData = Object.keys(slots).length > 0;
 
@@ -39224,7 +39226,7 @@ function buildWCBars(g) {
   // renderWCTournamentBracket() — fire-and-forget here so the first paint
   // gets MC P(advance) on the next render cycle.
   if (typeof loadWCProjectionsCache === 'function') {
-    try { loadWCProjectionsCache(); } catch (_) {}
+    try { loadWCProjectionsCache(); } catch (_e) { captureFieldError('wc:projections-cache-load', _e, true); }
   }
   const _pR32H = (typeof _wcLookupAdvance === 'function') ? _wcLookupAdvance(g.home) : null;
   const _pR32A = (typeof _wcLookupAdvance === 'function') ? _wcLookupAdvance(g.away) : null;
