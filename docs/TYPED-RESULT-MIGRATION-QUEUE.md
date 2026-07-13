@@ -422,13 +422,13 @@ instruction. "Call Sites" = number of real callers found for that function.
 | 2 | `getSoccerFBrefStats` (~L8546) | 2 | Both call sites (home/away) just do `if(hStats)`; exact-match miss vs fuzzy-match miss are indistinguishable and unneeded to distinguish. |
 | 2 | `subscribeToPush` (~L9158) | 2 | Both callers (`Notification.requestPermission` handlers) fire-and-forget without reading the returned boolean at all — the real UX differentiation already happens via btn.textContent side effects inside the function. |
 | 2 | `getVolatilityIndex` (~L10465) | 1 | Sole caller getVolatilityLabel does bare `if (v === null) return null`, discarding why history was too short |
-| 2 | `renderAll` (~L11503) | 30+ | Bare catch around signature-stamp write; sibling render helpers already use captureFieldError, so this is a telemetry gap not a behavior gap |
+| 2 | `renderAll` (~L11503) | 30+ | ✅ MIGRATED 2026-07-13 (CC-CMD-bucketb-tiera): added `captureFieldError('render:all-signature-stamp', ...)` to the signature-stamp write's bare catch. Forced-tested (failure fires 1 entry, success fires none). Zero caller behavior change. |
 | 2 | `buildPlayoffSpecials` (~L13472) | 1 | journalNote stat-edge enrichment failure silently dropped, no telemetry despite established captureFieldError pattern elsewhere |
 | 2 | `renderJournalismCompanion` (~L14615) | 2 | "Later Tonight" block build failure silently omits that block from the sidebar with zero telemetry anywhere in this function |
 | 2 | `loadPGASlate` (~L16786) | 1 | `if(!r.ok) return null` collapses HTTP errors into the same null the sole caller (`if(!d) return;`) treats identically to a network exception. |
 | 2 | `fetchESPNStandings` (~L17132) | 1 | Sole caller (toggleStandings ESPN fallback) does `if(espnEntries&&espnEntries.length){...}` then falls to an identical "all sources failed" stub regardless of cause. |
 | 2 | `buildSafeScoreWrap` (~L22006) | 1 | Inner catch of Layer-3 fallback chain; whichever layer fails, function falls to Layer 4 raw numbers identically. |
-| 2 | `renderESPNScores` (~L22570) | ~15 | Fire-and-forget `loadWCMatchWP()` kick wrapped only to catch sync throws; async errors already self-handled, no branching follows. |
+| 2 | `renderESPNScores` (~L22570) | ~15 | ✅ MIGRATED 2026-07-13 (CC-CMD-bucketb-tiera): investigated directly against source — the real swallow point is NOT `renderESPNScores`' own sync-only `try{loadWCMatchWP()}catch(_){}` wrapper, it's `loadWCMatchWP()`'s own internal `.catch(() => {})` at the end of its promise chain (index.html ~L34095), which silently ate every real network/fetch failure. Added `captureFieldError('wc:match-wp-load', ...)` there instead of the redundant outer wrapper. Forced-tested (fetch rejection fires 1 entry, success fires none). Zero caller behavior change. |
 | 2 | `loadBroadcastArchaeology` (~L24352) | 1 | sessionStorage cache-read catch falls through to a fresh 14-day archive fetch; single recovery path regardless of corruption vs miss. |
 | 2 | `fetchMLBStandingsParsed` (~L29900) | 1 | Only reachable via fetchStandingsForPrompt, whose own callers discard the resolved value (Promise.allSettled/.catch(()=>{})). |
 | 2 | `fetchBDLSeasonAverages` (~L30047) | 1 | Sole consumer fetchBDLMilestones only checks `!players?.length`, never distinguishing HTTP failure from other causes. |
@@ -464,7 +464,7 @@ instruction. "Call Sites" = number of real callers found for that function.
 | 1 | `fetchV2AllScores(WC brief IIFE)` (~L18456) | 1 | Fire-and-forget IIFE, return unused; silent timeout/network catch is decorative only |
 | 1 | `fetchV2AllScores(NBA brief IIFE)` (~L18502) | 1 | Same fire-and-forget brief-fetch pattern as WC/NHL variants, result unused |
 | 1 | `fetchV2AllScores(NHL brief IIFE)` (~L18539) | 1 | Same fire-and-forget brief-fetch pattern, result unused |
-| 1 | `findESPNScore` (~L20770) | 25 | Generic "no match found" path; callers already correctly render nothing — migration would add telemetry only |
+| 1 | `findESPNScore` (~L20770) | 25 | ✅ MIGRATED 2026-07-13 (CC-CMD-bucketb-tiera): added `FIELD_OPERATIONS.recordFailure(...)` (matching this function's own existing `_recordStaleFinalBlock` convention, `severity:'trace'`) to the final generic no-match `return null;`. Forced-tested including a 75-call tight-loop stress test — collapses to 1 entry with `count:75` via the Chunk 1 rate-limit, not a flood. Success path (real match found) fires zero telemetry. Zero caller behavior change. |
 | 1 | `fetchMLBSchedule` (~L20974) | 1 | Catch returns null (vs success's possibly-empty array) but sole caller chain (loadMLBSlate→fetchMLBFixtures/refreshMLBStatus) collapses both to "skip update" regardless |
 | 1 | `_mlbAvgPitchesPerAtBat` (~L21024) | 1 | Feeds avgPitchesPerAtBat field; sole consumer _mlbWhosUpNext only checks ==null, no differentiation possible. |
 | 1 | `loadMLBSlate` (~L21133) | 2 | Both fetchMLBFixtures/refreshMLBStatus treat null as one signal (fallback/skip); no distinction between empty-slate vs fetch failure. |
@@ -477,11 +477,11 @@ instruction. "Call Sites" = number of real callers found for that function.
 | 1 | `initPWA` (~L24527) | 0 | Top-level IIFE catch around SW registration setup; app functions fully without a SW, no caller ever inspects this. |
 | 1 | `_readCachedRank` (~L24703) | 2 | Corrupt-cache catch falls through to `return undefined`, which both callers (fetchTeamRank/getCachedTeamRank) already treat identically to "not cached yet". |
 | 1 | `fetchTeamRank` (~L24728) | 3 | localStorage.setItem persist-failure catch; in-memory _fifaRankCache already holds the value for this session regardless. |
-| 1 | `dramaScoreLive` (~L24878) | 14 | Weather-lookup try/catch; sitBonus simply isn't incremented on failure, function proceeds identically either way. |
+| 1 | `dramaScoreLive` (~L24878) | 14 | ✅ MIGRATED 2026-07-13 (CC-CMD-bucketb-tiera): added `captureFieldError('drama:live-weather-lookup', ...)` to the weather-lookup catch. Forced-tested (failure fires 1 entry, sitBonus simply not incremented; no weather alert present fires zero telemetry). Zero caller behavior change. |
 | 1 | `_initBannedExtension` (~L26295) | 1 | JSON.parse catch on cached banned-phrase extension; sole caller hasCliche() reads whatever _bannedExtension ended up as, no differentiation. |
 | 1 | `retryWithSportVocab` (~L26816) | 4 | localStorage review-log write catch; the actual rewrite retry proceeds identically whether logging succeeded or not. |
 | 1 | `maybeScoreRetry` (~L27315) | 8 | Tier-3 low-score phrase logging catch; function already `return text` unconditionally right after, telemetry-only. |
-| 1 | `renderProseScore` (~L27691) | ~15 | localStorage rolling-average persist catch; function has no return value, callers never observe this failure either way. |
+| 1 | `renderProseScore` (~L27691) | ~15 | ✅ MIGRATED 2026-07-13 (CC-CMD-bucketb-tiera): added `captureFieldError('journalism:prose-score-persist', ...)` to the localStorage persist catch. Forced-tested (failure fires 1 entry, real persist success fires none, non-Brief/Night-Owl early-return path unaffected). Zero caller behavior change. |
 | 1 | `buildLayer3Rules` (~L27736) | 1 | Per-game try/catch around extra-period/extreme-event rule computation; forEach loop just skips that one optional rule and continues. |
 | 1 | `buildCompoundPrompt (populateSeriesContext wrapper)` (~L28063) | 1 | IIFE swallow around a mutation call; buildSeriesContextTags(g) right after reads whatever fields did or didn't get populated, single path. |
 | 1 | `buildFIELDBriefStatic` (~L28701) | 1 | Sole caller does `buildFIELDBriefStatic(sections)\|\|'Loading...'`; any null yields the same placeholder text. |

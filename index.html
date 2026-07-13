@@ -11592,7 +11592,7 @@ function renderAll(skipUnchanged){
   // through scheduleRenderAll -- direct renderAll() callers (filter clicks,
   // date nav, TZ change) must also seed/update the baseline, or the gate
   // has nothing correct to compare against on the next scheduleRenderAll.
-  try { if (window.FIELD_RENDER_PIPELINE) window.FIELD_RENDER_PIPELINE.lastSignature = _fieldVisibleRenderSignature(); } catch(_) {}
+  try { if (window.FIELD_RENDER_PIPELINE) window.FIELD_RENDER_PIPELINE.lastSignature = _fieldVisibleRenderSignature(); } catch(_e) { captureFieldError('render:all-signature-stamp', _e, true); }
   if(!main.innerHTML.trim()) applyMainHTML('<div class="empty-note">No events found for today</div>');
   hydrateEspnScoresFromFinals(); // ensure known final scores are in espnScores before life-stages run
   if (typeof applyNewspaperVoice === 'function') { try { applyNewspaperVoice(_renderAllCircadianGames); } catch (_) {} }
@@ -20924,6 +20924,15 @@ function findESPNScore(game){
       return score;
     }
   }
+  if (typeof FIELD_OPERATIONS !== 'undefined') {
+    FIELD_OPERATIONS.recordFailure({
+      subsystem: 'scores', operation: 'find-espn-score-no-match',
+      severity: 'trace', retryable: false,
+      context: { home: game.home, away: game.away },
+      error: new Error(`no match found: ${game.away} @ ${game.home}`),
+      at: Date.now(),
+    });
+  }
   return null;
 }
 
@@ -24649,7 +24658,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-07-13a';
+  const SW_VERSION = '2026-07-13b';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -25080,7 +25089,7 @@ function dramaScoreLive(eData, sport){
         // weatherDramaModifier: signed delta — replaces flat +10 (weather-intelligence build)
         sitBonus += weatherDramaModifier(wxEntry);
       } // weather drama modifier applied
-    }catch(e){}
+    }catch(e){ captureFieldError('drama:live-weather-lookup', e, true); }
   }
 
   // ── Upset-factor bonus (soccer only, CC-CMD-2026-07-04-soccer-drama-
@@ -27906,7 +27915,7 @@ function renderProseScore(scoreObj, label){
       const avg = Math.round(_scores.reduce((a,s)=>a+s.score,0)/_scores.length);
       console.debug(`[JQ] Rolling avg (${_scores.length} briefs): ${avg}`);
     }
-  } catch(e_) {}
+  } catch(e_) { captureFieldError('journalism:prose-score-persist', e_, true); }
 }
 
 
@@ -34092,7 +34101,7 @@ function loadWCMatchWP() {
       // next ESPN poll cycle.
       try { if (typeof renderESPNScores === 'function') renderESPNScores(); } catch (_) {}
     })
-    .catch(() => {})
+    .catch(e => { captureFieldError('wc:match-wp-load', e, true); })
     .finally(() => { _wcMatchWPInflight = null; });
   return _wcMatchWPInflight;
 }
