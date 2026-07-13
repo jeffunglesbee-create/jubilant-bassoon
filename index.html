@@ -23244,21 +23244,30 @@ async function fetchSchedule(){
       if(!hasFinal) return;
       // Debounce: batch multiple simultaneous card finalisations into one render
       clearTimeout(_observerDebounce);
-      _observerDebounce = setTimeout(() => {
+      // 2026-07-13 (CC-CMD-2026-07-13-saveespnfinal-migration): converted
+      // from finalCards.forEach(...) to a for-of loop so each card's
+      // saveEspnFinal() call can be awaited in order -- forEach cannot
+      // await an async callback, and domFinalsAdded/the post-loop
+      // renderNightOwlRecap() call both depend on every card having been
+      // processed first. Every `return;` used inside the old forEach
+      // callback as "skip to next card" is now `continue;` (a bare
+      // `return` here would exit the whole setTimeout callback instead of
+      // just skipping one card -- not the pre-migration behavior).
+      _observerDebounce = setTimeout(async () => {
         // Build finals directly from DOM — no ESPN chain needed
         const finalCards = main.querySelectorAll('.game-card.espn-final');
         let domFinalsAdded = 0;
-        finalCards.forEach(card => {
+        for (const card of finalCards) {
           const gid   = card.dataset.gameid;
           const home  = card.dataset.home;
           const away  = card.dataset.away;
           const sport = card.dataset.sport || '';
-          if(!gid || !home || !away) return;
+          if(!gid || !home || !away) continue;
           // Read scores from previousScores cache (written by renderESPNScores)
           const hScore = typeof previousScores !== 'undefined' ? (previousScores[gid+'_h'] ?? null) : null;
           const aScore = typeof previousScores !== 'undefined' ? (previousScores[gid+'_a'] ?? null) : null;
-          if(hScore === null) return; // score not yet written
-          if(_seenFinals.has(gid)) return;
+          if(hScore === null) continue; // score not yet written
+          if(_seenFinals.has(gid)) continue;
           _seenFinals.add(gid);
           // Build a minimal eData object and save it
           const syntheticEData = {
@@ -23277,9 +23286,14 @@ async function fetchSchedule(){
           // one real caller whose eData (built directly from card.dataset/
           // previousScores, never from espnScores) the new internal guard
           // can actually reject in practice -- don't count a rejected save
-          // as a processed final.
-          if (saveEspnFinal(fullGame, syntheticEData) !== false) domFinalsAdded++;
-        });
+          // as a processed final. result.ok===false means a real exception
+          // occurred (the bug this migration fixes); result.value===false
+          // means the guard deliberately rejected it (pre-existing, correct
+          // behavior) -- both must still mean "don't count it," so both are
+          // checked, not just .ok.
+          const _saveResult = await saveEspnFinal(fullGame, syntheticEData);
+          if (_saveResult.ok && _saveResult.value) domFinalsAdded++;
+        }
         if(domFinalsAdded > 0 || finalCards.length > 0){
           renderNightOwlRecap().catch(e=>captureFieldError('night-owl',e,false));
         }
@@ -24469,7 +24483,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-07-12f';
+  const SW_VERSION = '2026-07-12g';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -39430,8 +39444,21 @@ function _eDataMatchesGame(game, eData) {
   return true;
 }
 
-function saveEspnFinal(game, eData){
-  try{
+// 2026-07-13 (CC-CMD-2026-07-13-saveespnfinal-migration): migrated to
+// fieldOperation() -- a mid-function exception (e.g. JSON.parse on a
+// corrupted localStorage entry, or setItem throwing on quota) used to be
+// swallowed by this function's own outer try/catch into an implicit
+// `undefined` return, identical to the genuine success path. Both real
+// callers (~L23281, ~L41881) branch on the return value and could not
+// tell "genuinely saved" from "an exception occurred mid-save" -- a
+// broken save was silently counted as successful by both. fieldOperation()
+// is now the SOLE catcher of unexpected exceptions; a deliberate guard
+// rejection still returns `false` (not a thrown error -- see below), so
+// callers must check BOTH result.ok (no exception) AND result.value (the
+// business-logic outcome) to fully replicate the pre-migration behavior
+// for the guard-rejection case while fixing the exception-masking bug.
+async function saveEspnFinal(game, eData){
+  return fieldOperation({subsystem:'scores', operation:'save-espn-final', retryable:true, context:{gameId: game?._id||''}}, async () => {
     // Internal guard (CC-CMD-2026-07-09-saveespnfinal-internal-guard):
     // saveEspnFinal() previously trusted whatever eData it was handed,
     // unconditionally, for pick resolution/drama-peak lookup/D1 archive
@@ -39487,7 +39514,7 @@ function saveEspnFinal(game, eData){
       try { _resolvePickIfExists(pickId, game, eData); }
       catch(_pickErr) { captureFieldError('pick:resolve-final', _pickErr, false); }
     }
-    if(existing.some(f=>f.id===id)) return; // already saved -- everything below here (drama persistence, entry/D1 write, night-owl enqueue, tonight-finals write) is a genuine one-time-per-game side effect and stays correctly gated by this guard. Pick-resolution above is NOT gated by it (see comment above).
+    if(existing.some(f=>f.id===id)) return true; // already saved -- genuine success (idempotent). Everything below here (drama persistence, entry/D1 write, night-owl enqueue, tonight-finals write) is a genuine one-time-per-game side effect and stays correctly gated by this guard. Pick-resolution above is NOT gated by it (see comment above).
     const dramaPeak = getDramaPeak(game._id||'', game);
     // ── Drama persistence: POST summary to relay archive (CC-CMD-2026-06-19 / Prompt 11B)
     // Fires once per game at final state — the existing-check above gates
@@ -39678,7 +39705,8 @@ function saveEspnFinal(game, eData){
         }
       }catch(e2){}
     }
-  }catch(e){}
+    return true;
+  });
 }
 
 // Render Last Night's Results bar above the schedule
@@ -41859,9 +41887,18 @@ async function renderNightOwlRecap(){
   if(!finals.length && typeof espnScores !== 'undefined' && typeof allData !== 'undefined'){
     try{
       const today=new Date().toLocaleDateString('en-CA',{timeZone:'America/New_York'});
-      (allData?.sports||[]).forEach(sec=>{
-        (sec.games||[]).forEach(game=>{
-          if(!game._id||!game.home) return;
+      // 2026-07-13 (CC-CMD-2026-07-13-saveespnfinal-migration): converted
+      // both nested forEach loops to for-of so each saveEspnFinal() call
+      // can be awaited in order (renderNightOwlRecap is already async) --
+      // the `if(!finals.length){...return;}` check right after this block
+      // depends on `finals` being fully populated first, which forEach with
+      // an async callback cannot guarantee. Every `return;` used inside the
+      // old inner forEach callback as "skip to next game" is now
+      // `continue;` (a bare `return` here would exit the whole
+      // (sec.games||[]) loop early, not the pre-migration per-game skip).
+      for (const sec of (allData?.sports||[])) {
+        for (const game of (sec.games||[])) {
+          if(!game._id||!game.home) continue;
           // Migrated to findEspnEntry() (Task 2d -- CRITICAL, CC-CMD-2026-07-07-
           // pickem-stale-final-resolution-fix v6): this fallback's own comment
           // says it "bypasses the entire save/load/key-mismatch chain" and
@@ -41870,7 +41907,7 @@ async function renderNightOwlRecap(){
           // checkForNewFinals() alone. Inherits the stale-final guard by
           // going through findEspnEntry() instead of its own inline match.
           const eData=findEspnEntry(game);
-          if(!eData || eData.state!=='post') return;
+          if(!eData || eData.state!=='post') continue;
           const dramaPeak=getDramaPeak(game._id||'', game);
           // Save it properly for future page loads
           // Per CC-CMD-2026-07-09-saveespnfinal-internal-guard TASK 2: eData
@@ -41878,7 +41915,11 @@ async function renderNightOwlRecap(){
           // new internal guard should never reject this in practice -- still
           // gated, not assumed, matching the CC-CMD's own explicit example
           // of "skip adding to in-memory finals when the guard returns false."
-          if (saveEspnFinal(game, eData) === false) return;
+          // result.ok===false (real exception, the bug this migration
+          // fixes) and result.value===false (deliberate guard rejection,
+          // pre-existing correct behavior) both mean "don't add it" here.
+          const _saveResult2 = await saveEspnFinal(game, eData);
+          if (!_saveResult2.ok || !_saveResult2.value) continue;
           // Add to in-memory finals for this render
           if(!finals.some(f=>f.id===game._id)){
             finals.push({
@@ -41893,8 +41934,8 @@ async function renderNightOwlRecap(){
               start_time: game.start_time || '', _sport: game._sport || '',
             });
           }
-        });
-      });
+        }
+      }
     }catch(e_){
     if(typeof window._fieldErrors !== 'undefined') window._fieldErrors.push({fn:'renderNightOwlRecap',err:e_?.message||String(e_),ts:Date.now()});}
   }
