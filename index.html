@@ -24595,7 +24595,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-07-12o';
+  const SW_VERSION = '2026-07-12p';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -31896,7 +31896,21 @@ async function fetchMLBGameBriefFromClaude(g) {
         messages:[{role:'user',content:prompt}]}),
       signal: AbortSignal.timeout(10000),
     });
-    if (!r.ok) return null;
+    if (!r.ok) {
+      // 2026-07-13 (TYPED-RESULT-MIGRATION-QUEUE.md Bucket A #9): neither
+      // real caller has a "leave existing content alone" option (both show
+      // a "pending" card that must resolve to real text or removal --
+      // removing on ANY failure reason, including a hypothetical budget-
+      // exhausted differentiation, is already the correct behavior, per
+      // this function's own sibling comment elsewhere: "never leave
+      // 'Loading brief…' stuck"). So the real gap wasn't caller
+      // differentiation -- it was that this function had ZERO telemetry on
+      // any failure path, not even a console.warn. Health Panel was
+      // completely blind to MLB brief failures. Added, matching the
+      // pattern generateJournalismViaRelay already uses.
+      captureFieldError('journalism:mlb-brief', new Error('HTTP ' + r.status), false);
+      return null;
+    }
     const data = await r.json();
     let text = (data.content||[]).filter(c=>c.type==='text').map(c=>c.text).join('');
     if (text && text.length > 20) {
@@ -31910,7 +31924,9 @@ async function fetchMLBGameBriefFromClaude(g) {
       scoreProse(text, g||null).then(s=>renderProseScore(s,'MLB Brief'));
       return stripPromptLeaks(text.trim());
     }
-  } catch(e_) {}
+  } catch(e_) {
+    captureFieldError('journalism:mlb-brief', e_, false);
+  }
   return null;
 }
 

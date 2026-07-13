@@ -263,12 +263,28 @@ re-derivation of `saveEspnFinal`, `findESPNScore`, and `fetchTeamRank`.
   to the right UI outcome. See
   `docs/outbox/cc-fetchfieldbrieffromclaude-typed-migration-2026-07-13.md`.
 
-### 9. `fetchMLBGameBriefFromClaude` (index.html ~L31581-31705) — 2 callers, 4 conflated causes
+### 9. `fetchMLBGameBriefFromClaude` (index.html ~L31786) — ✅ MIGRATED 2026-07-13
 
-- Same messaging-quality issue as #8, scoped to MLB game briefs
-  specifically: budget-exceeded, legacy-proxy HTTP failure, and
-  JSON/network exceptions all collapse to the same `card.remove()` at
-  both call sites — no distinction between "retry-worthy" and "not."
+- **Investigated, found different from #8's shape:** unlike
+  `fetchFIELDBriefFromClaude`, neither real caller has a "leave existing
+  content alone" option — both show a "pending" loading card that must
+  resolve to real text or removal. A sibling comment elsewhere in the
+  codebase states the actual correct rule explicitly: "Always remove card
+  on failure — never leave 'Loading brief…' stuck." Card removal on ANY
+  failure reason (including a hypothetical budget-exhausted case) is
+  already the right behavior here — there's no better UI a caller could
+  offer. Caller-side differentiation would have been invented complexity
+  with no real behavior to attach it to.
+- **The real, confirmed gap:** this function had ZERO telemetry on either
+  failure path — not even a `console.warn`, let alone `captureFieldError`.
+  The Health Panel was completely blind to MLB brief failures. Added
+  `captureFieldError('journalism:mlb-brief', ...)` to both the HTTP-failure
+  and exception paths, matching the pattern `generateJournalismViaRelay`
+  already uses.
+- Real verification: forced HTTP failure and forced exception each now
+  produce exactly 1 `_fieldErrors` entry (was 0); genuine success
+  unaffected (0 entries, real brief text returned). See
+  `docs/outbox/cc-fetchmlbgamebrieffromclaude-typed-migration-2026-07-13.md`.
 
 ### 10. `fdFetchStandings` (index.html ~L17000) — 1 caller
 
