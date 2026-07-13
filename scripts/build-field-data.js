@@ -509,6 +509,53 @@ function parseESPNSoccer(leagueSlug, leagueName) {
   });
 }
 
+// ── Parse WNBA (V2 relay endpoint) ────────────────────────────────────────
+// Unlike NHL/NBA/MLB (pre-fetched /tmp/*.json from older dedicated relay
+// paths) or MLS (site.api.espn.com direct), WNBA has no dedicated relay
+// path -- the daily-brief.yml WNBA fetch was found broken May 23 2026
+// (appended ?leagueId=10 to an NBA-only CDN file) and was replaced with an
+// explicit empty slate + TODO rather than publish wrong data. That TODO
+// was never completed. field-relay-nba's newer V2 multi-sport endpoint
+// (/v2/games?sport=wnba&date=YYYY-MM-DD) is confirmed live and working
+// (CC-CMD-2026-07-13-wnba-daily-discovery: probed fresh, real 2 games for
+// today with real venue/team/start-time data) -- a genuinely different
+// response shape than the other parsers in this file, not the same shape
+// as parseNBA()'s pre-fetched CDN JSON.
+function parseWNBA() {
+  return new Promise((resolve) => {
+    const req = https.request({
+      hostname: 'field-relay-nba.jeffunglesbee.workers.dev',
+      path: `/v2/games?sport=wnba&date=${TODAY}`,
+      method: 'GET',
+      headers: { 'User-Agent': 'FIELD-DataBot/1.0', 'Accept': 'application/json' },
+    }, res => {
+      let data = '';
+      res.on('data', c => data += c);
+      res.on('end', () => {
+        try {
+          const parsed = JSON.parse(data);
+          const games = (parsed.games || []).map(g => {
+            const home = g.home?.name || '';
+            const away = g.away?.name || '';
+            if (!home || !away) return null;
+            return {
+              sport: 'WNBA', home, away,
+              start_time: g.start || null,
+              venue: g.venue || null,
+              league: 'WNBA',
+            };
+          }).filter(Boolean);
+          console.log(`WNBA: ${games.length} game(s) for ${TODAY}`);
+          resolve(games);
+        } catch (e) { console.warn('WNBA parse error:', e.message); resolve([]); }
+      });
+    });
+    req.on('error', (e) => { console.warn('WNBA request error:', e.message); resolve([]); });
+    req.setTimeout(10000, () => { req.destroy(); resolve([]); });
+    req.end();
+  });
+}
+
 // ── Build matchupNote prompt ──────────────────────────────────────────────
 function buildPrompt(g) {
   const lines = [
@@ -603,8 +650,9 @@ async function main() {
   const espnGotdKeys = await fetchEspnMlbGotd(TODAY);  // once per build — structural GOTD signal
   const mlbGames  = await parseMLBFull(espnGotdKeys);   // Phase 1: full MLB schedule
   const mlsGames  = await parseMLS();
+  const wnbaGames = await parseWNBA();
 
-  console.log(`Parsed: ${nhlGames.length} NHL + ${nbaGames.length} NBA + ${mlbGames.length} MLB + ${mlsGames.length} MLS game(s) for ${TODAY}`);
+  console.log(`Parsed: ${nhlGames.length} NHL + ${nbaGames.length} NBA + ${mlbGames.length} MLB + ${mlsGames.length} MLS + ${wnbaGames.length} WNBA game(s) for ${TODAY}`);
 
   // Structured schedule: full game entries for Phase 2 consumption
   // Phase 2 will use schedules.mlb, schedules.nhl, etc. to build game arrays.
@@ -637,6 +685,11 @@ async function main() {
       start_time: g.start_time, venue: g.venue,
       league: g.league, isPlayoff: g.isPlayoff,
       nationalBundle: g.nationalBundle, confirmed: true,
+    })),
+    wnba: wnbaGames.map(g => ({
+      sport: 'WNBA', home: g.home, away: g.away,
+      start_time: g.start_time, venue: g.venue,
+      league: g.league, confirmed: true,
     })),
   };
 
@@ -712,6 +765,7 @@ async function main() {
         nba: nbaGames.length,
         mlb: mlbGames.length,
         mls: mlsGames.length,
+        wnba: wnbaGames.length,
       },
       ai_notes: useAI,
       ai_backend: useGemini ? 'gemini-3.1-flash-lite' : (useClaude ? 'claude-sonnet-4' : 'none'),
