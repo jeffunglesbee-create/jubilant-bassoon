@@ -18028,9 +18028,9 @@ class GameSocket {
         headers: { 'Content-Type': 'application/json' },
         body:    JSON.stringify(detail),
         keepalive: true,
-      }).catch(()=>{});
+      }).catch((e_)=>{ captureFieldError('ws:signal-crunch-fetch', e_, true); });
       return true;
-    } catch(_) { return false; }
+    } catch(_e) { captureFieldError('ws:signal-crunch-fallback', _e, true); return false; }
   }
 }
 // Map of active GameSocket instances, keyed by `${sport}:${gameId}`.
@@ -21148,6 +21148,7 @@ async function fetchMLBSchedule(date) {
     return games.map(g => normalizeMLBGame(g, date));
   } catch (err) {
     if (FIELD_DEBUG) console.warn('[MLB Stats API] unavailable — ESPN fallback', err.message);
+    captureFieldError('mlb:schedule-fetch', err, true);
     return null;
   }
 }
@@ -21198,7 +21199,7 @@ function _mlbAvgPitchesPerAtBat(feedData) {
     for (const p of completedPlays) totalPitches += (p.playEvents || []).filter(ev => ev.isPitch === true).length;
     if (totalPitches === 0) return null;
     return totalPitches / completedPlays.length;
-  } catch (_) { return null; }
+  } catch (_e) { captureFieldError('mlb:avg-pitches-per-atbat', _e, true); return null; }
 }
 
 // fetchMLBLiveGame — Heat Index inputs (baserunners, outs, count) + current matchup
@@ -24670,7 +24671,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-07-13a';
+  const SW_VERSION = '2026-07-13b';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -37031,6 +37032,7 @@ async function fetchMLBPlatoon(gamePk) {
     return result;
   } catch(e) {
     if (FIELD_DEBUG) console.warn('[MLB-RAI]', e.message);
+    captureFieldError('mlb:platoon', e, true);
     return null;
   }
 }
@@ -40136,7 +40138,7 @@ function hydrateEspnScoresFromFinals() {
         }
       }
     }
-  } catch(e) { /* silent — non-critical */ }
+  } catch(e) { captureFieldError('scores:hydrate-espn-from-finals', e, true); }
 }
 function buildNightOwlStatic(f){
   // Story Engine — winner-first via computeGameNarrative
