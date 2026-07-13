@@ -24469,7 +24469,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-07-12e';
+  const SW_VERSION = '2026-07-12f';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -32549,7 +32549,7 @@ async function renderEPLMatchBriefCard(gameCard) {
     textEl.classList.remove('pending');
     textEl.classList.add('loaded');
     sessionStorage.setItem(cacheKey, aiText);
-    try { archiveBrief('epl_match', 'EPL', g&&(g._id||g.id)||null, aiText, null); } catch(_){}
+    try { archiveBrief('epl_match', 'EPL', game&&(game._id||game.id)||null, aiText, null); } catch(_){}
   } else if(textEl) {
     textEl.textContent = staticText;
     textEl.classList.remove('pending');
