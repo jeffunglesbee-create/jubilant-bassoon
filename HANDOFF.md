@@ -1,9 +1,93 @@
 HANDOFF
-Last commit (jubilant-bassoon): 4519884  Smoke: 919/0, field_unit 66/0, field_smoke Failures:0
+Last commit (jubilant-bassoon): 5478adf  Smoke: 919/0, field_unit 66/0, field_smoke Failures:0
 Last commit (field-relay-nba): 5016cc9  (deploy match:false is a known non-issue -- only
   routine crons triggered on this specific commit; the real fix commit, 8fe6875, deployed
   and is confirmed live)
 Clean state: yes -- all three test suites green on both repos' most recent real code changes.
+
+=== CONTINUATION SESSION (2026-07-13) — full Bucket A sweep + EPL typo fix ===
+
+Following the prior segment's typed-result survey (docs/TYPED-RESULT-MIGRATION-QUEUE.md,
+26 Bucket A candidates), executed a full sweep of the queue plus directly-flagged
+follow-ups, per an explicit "keep going, automate follow-ups, no fallbacks only fixes"
+instruction. 17 real commits, each independently verified with real forced-condition
+tests against functions extracted verbatim from the live file, not code review alone:
+
+- f72a58a -- renderEPLMatchBriefCard: fixed the undefined `g` typo (should be `game`)
+  the survey's own TASK 4 spot-check found -- archiveBrief() had never once run for an
+  EPL brief.
+- ca10d13 -- saveEspnFinal migrated to fieldOperation(): a mid-function exception was
+  silently indistinguishable from success to both real callers. Required converting two
+  synchronous forEach callers to for-of loops (fieldOperation() is async-only) --
+  caught and fixed a real subtlety: every forEach `return;`-as-skip had to become
+  `continue;`, since a bare `return` in a for-of exits the whole function instead.
+  Also caught that checking only `.ok` (as literally suggested) would have introduced a
+  new regression for the guard-rejection case -- fixed to check `.ok && .value`.
+- 08c85e1 -- fetchNHLRelayScores migrated: its own internal catch was preventing its own
+  caller's telemetry from ever firing (the promise never rejected).
+- 3a9fb8d -- found and fixed the identical bug in 3 sibling relay functions
+  (fetchNBARelayScores, fetchFPLLiveScores, fdPrefetchSoccerLive) -- flagged as a likely
+  pattern during the NHL fix, confirmed and fixed directly.
+- 94a1043 -- fetchTeamRank: the real bug wasn't just the swallowed exception, it was that
+  a transient network failure OR a bare HTTP error status both got cached as a permanent
+  "team not ranked" for the full 7-day TTL. Redesigned to only cache definitive outcomes.
+- 76864a3 -- findESPNScore (25+ callers, highest leverage by count): read every caller
+  before assuming a return-contract change was warranted -- none would behave
+  differently even if they could distinguish "stale-final guard blocked it" from
+  "genuinely no data." Fixed the REAL gap instead: purely additive telemetry at all 3
+  sites the guard fires, since it previously had zero persistent visibility (one of its
+  3 call sites had no logging at all, not even FIELD_DEBUG-gated).
+- 328fce7 -- generateJournalismViaRelay: the queue's own "unwanted live call during
+  proof-mode" premise was investigated and found FALSE -- proof mode globally
+  monkey-patches window.fetch, so the claimed fallback live-call can't actually happen.
+  Documented this correction directly in the function's own header comment. Fixed a
+  real, different gap instead: model refusal was the only one of 3 failure causes with
+  no captureFieldError telemetry, despite being flagged "CRITICAL" in an adjacent comment.
+- 0e6cbaa -- journalismCallsToday: added blockedReason() (additive). Found a confirmed
+  bug while reading all 9 real callers: fetchCompoundEditorial already had a SEPARATE,
+  more informative 429-backoff diagnostic message that could never actually fire --
+  canCall() itself already exited the function first under the identical condition. The
+  countdown message had been dead code since it was written.
+- 3a9a52a -- fetchCompoundEditorial: extended the same diagnostic to the
+  budget-exhausted case, which previously showed the Health Panel a STALE error message
+  from hours earlier and a completely different cause.
+- 448aa59 -- fetchFIELDBriefFromClaude (FIELD's flagship brief): the sole caller showed
+  the same alarming "verification chain failed" message for 6 completely different
+  causes, 4 of which are not failures at all (proof-mode, budget, no-games, deliberate
+  suppression). Found the caller already renders a sensible static fallback BEFORE this
+  function runs -- for the 4 benign causes, the fix is simply to leave that alone
+  instead of overwriting it, no new copy needed.
+- 376895e -- fetchMLBGameBriefFromClaude: investigated whether the same caller-side fix
+  applied here too -- it didn't. Neither real caller has a "leave it alone" option (both
+  must resolve to real text or card removal, and the codebase's own established rule is
+  "never leave 'Loading brief...' stuck"). Fixed the real, different gap: zero telemetry
+  on either failure path.
+- 81aa333 -- fdFetchStandings + fetchDateSchedule. Investigated the "add a
+  slashGolfFetch-style 429 backoff" suggestion for fdFetchStandings and found it didn't
+  fit (user-click-triggered, already session-cached, not a poll loop) -- added telemetry
+  instead. fetchDateSchedule got the full caller-side fix: budget-exhausted vs. genuine
+  failure now show different, accurate messages (new copy written in the app's existing
+  calm tone, no Retry button when retrying can't help).
+- 1f97d31 -- fetchESPNFixturesForDate: confirmed no caller-visible behavior would change
+  from differentiating "ESPN empty" vs "ESPN fetches failed" (same fallback either way).
+  Fixed the real gap: 15+ parallel per-league fetches each silently swallowed errors --
+  an ESPN-wide outage would have been completely invisible. Added a failure-count
+  summary telemetry call.
+- 5478adf -- shareGame, the last Bucket A entry. Fixed the queue's original finding
+  (dead silence on total failure) plus a second, more interesting bug found while
+  reading closely: navigator.share() throws AbortError on a deliberate user cancel, and
+  the old code treated that identically to a real failure -- silently copying to
+  clipboard and showing a "Copied!" toast for an action the user never took.
+
+**This closes all 13 ranked Bucket A entries from docs/TYPED-RESULT-MIGRATION-QUEUE.md.**
+Bucket B (281 sites, telemetry-only, lower priority) was not attempted -- a real
+candidate for a future, separate sweep. A recurring pattern across this whole session:
+several entries the original survey flagged for caller-side differentiation turned out,
+on actually reading every real caller, not to need it -- the caller's existing behavior
+was already correct regardless of failure cause. In every one of those cases a
+different, real, smaller-scope fix (almost always a telemetry gap) was found and
+closed instead of building unneeded complexity. Full detail and real-test verification
+for every fix is in docs/outbox/cc-*-typed-migration-2026-07-13.md (13 files).
 
 === CONTINUATION SESSION (2026-07-12 evening) — 3 approved CC-CMD items ===
 
@@ -137,20 +221,16 @@ for current state rather than trusting this list to stay accurate indefinitely:
   not CLOSE_FINISH purely on a quarter-number technicality)? Deliberately NOT decided
   unilaterally -- needs an explicit product call, not an agreement-with-old-behavior
   heuristic (the old thresholds were never validated as correct in the first place).
-- renderEPLMatchBriefCard g->game typo (jubilant-bassoon) -- NEW this session, found during
-  the typed-result survey's TASK 4 spot-check, not yet fixed. Trivial one-line fix
-  (index.html ~L32552): archiveBrief() call references undefined `g` instead of `game`,
-  throws every time, silently swallowed -- archiveBrief has never once run for an EPL match
-  brief. Documented in docs/TYPED-RESULT-MIGRATION-QUEUE.md's header.
-- TYPED-RESULT-MIGRATION-QUEUE.md Bucket A items (jubilant-bassoon) -- 26 ranked,
-  itemized real migration candidates now exist (docs/TYPED-RESULT-MIGRATION-QUEUE.md).
-  Top-ranked: saveEspnFinal (confirmed bug -- exception silently reported as success to
-  both real callers) and fetchNHLRelayScores (confirmed bug -- catch prevents its own
-  telemetry from firing) should be the next single-concern migration CC-CMDs, not the
-  highest-call-site-count entry (findESPNScore, 25+ callers) by default -- confirmed
-  incidents outrank raw leverage per the survey's own stated ranking criteria.
+- ~~renderEPLMatchBriefCard g->game typo~~ -- FIXED 2026-07-13, commit f72a58a.
+- ~~TYPED-RESULT-MIGRATION-QUEUE.md Bucket A items~~ -- ALL 13 FIXED 2026-07-13, see
+  the CONTINUATION SESSION section above for the full list and commit hashes. Bucket B
+  (281 sites, telemetry-only) remains open as a lower-priority future sweep, not
+  attempted.
 - standards-index-wiring (jubilant-bassoon) -- pushed, not yet executed, depends on
   standards-index landing first (explicit prerequisite check included in the doc).
+- otw-finalperiod-semantics remains the only genuinely open item carried over from the
+  prior session (see above) -- still correctly deferred, needs an explicit product
+  decision, not something to resolve unilaterally.
 
 Full list of everything pushed, executed, and independently verified tonight (with the
 specific verification method for each) is in the conversation transcript and in codex
@@ -174,11 +254,21 @@ KEY LEARNINGS FROM THIS SESSION (also saved to Drive as a standalone doc):
   it's the wrong tool for approximating a continuous quality dimension that has a real,
   measurable proxy available -- measure the property directly instead of enumerating shapes.
 
-Blocked on: nothing currently blocking. All four open items above are real, scoped,
-independently actionable work, not blocked on anything else.
+Blocked on: nothing currently blocking. otw-finalperiod-semantics and
+standards-index-wiring are the only two genuinely open items, both real, scoped,
+independently actionable, not blocked on anything else.
 Watch for: field-relay-nba's /deploy/verify showing match:false is routine and usually not a
 real problem -- always cross-check what workflow actually ran against the expected SHA
 (get_deploy_status) before treating it as a stuck deploy.
 
 Session docs (2026-07-12 evening continuation): docs/outbox/cc-field-operation-primitive-2026-07-12.md,
 docs/outbox/cc-otw-tier-categorical-2026-07-12.md, docs/outbox/cc-typed-result-survey-2026-07-12.md.
+
+Session docs (2026-07-13 Bucket A sweep): docs/outbox/cc-epl-brief-archive-typo-fix-2026-07-13.md,
+cc-saveespnfinal-typed-migration-2026-07-13.md, cc-fetchnhlrelayscores-typed-migration-2026-07-13.md,
+cc-relay-sibling-catch-sweep-2026-07-13.md, cc-fetchteamrank-typed-migration-2026-07-13.md,
+cc-findespnscore-typed-migration-2026-07-13.md, cc-generatejournalismviarelay-typed-migration-2026-07-13.md,
+cc-journalismcallstoday-typed-migration-2026-07-13.md, cc-fetchcompoundeditorial-typed-migration-2026-07-13.md,
+cc-fetchfieldbrieffromclaude-typed-migration-2026-07-13.md, cc-fetchmlbgamebrieffromclaude-typed-migration-2026-07-13.md,
+cc-fdstandings-datescedule-typed-migration-2026-07-13.md, cc-fetchespnfixturesfordate-typed-migration-2026-07-13.md,
+cc-sharegame-typed-migration-2026-07-13.md (all in docs/outbox/).
