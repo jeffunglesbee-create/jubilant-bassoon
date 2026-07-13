@@ -4935,6 +4935,51 @@ const _MLS_PROOF_FIXTURES = {
 // Read by: Playwright browser test, ?debug=1 panel, Night Owl diagnostics.
 // Playwright CI job checks this array is empty after 15s page load.
 window._fieldErrors = window._fieldErrors || [];
+
+// CC-CMD-2026-07-13-capturefielderror-cap: window._fieldErrors had zero size
+// cap and zero per-fn dedup before this. The general Bucket B telemetry sweep
+// is about to add captureFieldError() calls to functions with real call-site
+// counts of 30+ (renderAll), 25 (findESPNScore), etc -- a repeatedly-firing
+// failure branch on any of those would grow this array unbounded over a long
+// session, degrading memory and drowning real Health Panel signal in
+// duplicate noise. Overriding .push() here (not inside captureFieldError()
+// itself) protects every writer uniformly -- captureFieldError(), the
+// window.onerror/unhandledrejection handlers below, and every other direct
+// window._fieldErrors.push() call site in the file -- without touching any
+// of them individually. Real eviction (oldest dropped, tracked via a real
+// counter), not a silent stop-recording; real per-fn dedup with a count
+// field, not just suppression.
+window._fieldErrorsDropped = window._fieldErrorsDropped || 0;
+const FIELD_ERRORS_CAP = 500;
+const FIELD_ERROR_DEDUP_WINDOW_MS = 60000;
+const _fieldErrorsLastByFn = new Map(); // fn -> entry ref, O(1) dedup lookup regardless of interleaving
+Object.defineProperty(window._fieldErrors, 'push', {
+  value: function fieldErrorsPush(entry) {
+    const fn = entry && typeof entry === 'object' ? entry.fn : undefined;
+    const now = (entry && typeof entry === 'object' && entry.ts) || Date.now();
+    if (fn) {
+      const last = _fieldErrorsLastByFn.get(fn);
+      if (last && (now - last.ts) < FIELD_ERROR_DEDUP_WINDOW_MS) {
+        last.count = (last.count || 1) + 1;
+        last.ts = now;
+        if (entry.err !== undefined) last.err = entry.err;
+        return this.length;
+      }
+    }
+    if (this.length >= FIELD_ERRORS_CAP) {
+      const evicted = Array.prototype.shift.call(this);
+      if (evicted && evicted.fn && _fieldErrorsLastByFn.get(evicted.fn) === evicted) {
+        _fieldErrorsLastByFn.delete(evicted.fn);
+      }
+      window._fieldErrorsDropped++;
+    }
+    const len = Array.prototype.push.call(this, entry);
+    if (fn) _fieldErrorsLastByFn.set(fn, entry);
+    return len;
+  },
+  writable: true, enumerable: false, configurable: true
+});
+
 window.addEventListener('error', e => {
   window._fieldErrors.push({ fn: 'window.onerror', err: e.message, src: e.filename, ts: Date.now() });
 });
@@ -5158,8 +5203,12 @@ function buildFieldHealthPanel() {
 
   // ── Errors ────────────────────────────────────────────────────────────────
   const errors = window._fieldErrors || [];
+  const droppedCount = window._fieldErrorsDropped || 0;
+  const droppedNote = droppedCount ? ` · ${droppedCount} older suppressed (cap reached)` : '';
   if (errors.length)
-    rows.push(err('Runtime Errors', `${errors.length} captured: ${errors.slice(0,2).map(e=>e.fn+':'+e.err).join(' · ')}`));
+    rows.push(err('Runtime Errors', `${errors.length} captured: ${errors.slice(0,2).map(e=>e.fn+':'+e.err+(e.count>1?` (×${e.count})`:'')).join(' · ')}${droppedNote}`));
+  else if (droppedCount)
+    rows.push(warn('Runtime Errors', `0 currently captured${droppedNote}`));
   else
     rows.push(ok('Runtime Errors', 'None captured'));
 
@@ -24599,8 +24648,8 @@ let _pwaPrompt = null;
   // SW_VERSION — bump on every deploy to bust returning user cache
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
-  // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-07-12u';
+  // July 12 ended at 'u'. July 13 starts here.
+  const SW_VERSION = '2026-07-13a';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
