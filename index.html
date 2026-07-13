@@ -13198,6 +13198,20 @@ const MEDIA_SPECIALS = [
       link:"https://www.tennischannel.com"
     }
   },
+  {
+    // T-Mobile Home Run Derby — Mon July 13, 8 PM ET, Netflix exclusive
+    // (first time this event has ever left cable/ESPN). MLB All-Star Game
+    // is the FOLLOWING night (Tue July 14, 8 PM ET, FOX) — do not conflate;
+    // this entry is scoped to July 13 only.
+    startDate:"2026-07-13", endDate:"2026-07-13",
+    card:{
+      show:"T-Mobile Home Run Derby",network:"Netflix",chip:"netflix",
+      time:"8:00 PM ET · Citizens Bank Park, Philadelphia",
+      desc:"The 2026 Home Run Derby streams live on Netflix for the first time ever, breaking from its usual cable/ESPN home. Kyle Schwarber (Phillies) enters as the favorite off the season's MLB home run lead. Bryce Harper (Phillies) competes on his own home turf, with a Derby title (2018) and a runner-up finish (2013) already on his resume. Junior Caminero (Rays) is back after finishing runner-up to Cal Raleigh in 2025. Munetaka Murakami (White Sox) becomes only the second Japanese-born Derby participant ever, joining Shohei Ohtani (2021). Rounding out the 8-man field: Ben Rice (Yankees), Jac Caglianone (Royals, the youngest at 23), Willson Contreras (Red Sox), and first-time All-Star Jordan Walker (Cardinals). New this year: a swing-based format (20/15/15 swings per round) replaces the timed-clock system used since 2015. Pre-show coverage begins 7:00 PM ET.",
+      journalNote:"HRD streams live on Netflix tonight — first time this event has ever left cable/ESPN. 8 PM ET, Citizens Bank Park. Schwarber, Harper (home park), Caminero, and Murakami (2nd-ever Japanese-born entrant) headline the 8-man field.",
+      link:"https://www.netflix.com/browse/genre/81545700"
+    }
+  },
 ];
 
 // ── Dynamic pregame injection ───────────────────────────────────────────────
@@ -13701,7 +13715,7 @@ function renderMedia(){
   const MEDIA_CHIP_COLORS = {
     ESPN:"#ff3c3c", FS1:"#f0c040", CBS:"#a78bfa",
     TNT:"#ff6b35",  NBC:"#00b4d8", MLB:"#c9a84c",
-    prime:"#f8cf47", golazo:"#00b86b",
+    prime:"#f8cf47", golazo:"#00b86b", netflix:"#e50914",
     default:"#888"
   };
   const grid = document.getElementById("media-grid");
@@ -24914,7 +24928,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-07-13g';
+  const SW_VERSION = '2026-07-13h';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
