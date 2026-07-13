@@ -24595,7 +24595,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-07-12l';
+  const SW_VERSION = '2026-07-12m';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -25857,6 +25857,19 @@ function journalismCallsToday(){
       if(this.get()>=50) return false;
       if(typeof _compoundRetryAfter!=='undefined' && Date.now()<_compoundRetryAfter) return false;
       return true;
+    },
+    // 2026-07-13 (TYPED-RESULT-MIGRATION-QUEUE.md Bucket A #5): additive
+    // only -- canCall()'s boolean contract is unchanged, all 9 real
+    // callers keep working exactly as before. Budget-exhausted (permanent
+    // for the rest of the day, no retry-timing to offer) and 429-backoff
+    // (temporary, _compoundRetryAfter IS the known expiry, already
+    // computed elsewhere) were being collapsed to the same undifferentiated
+    // false. A caller that wants to say WHY it's blocked (fetchCompoundEditorial
+    // already tries to, see the fix on that function) can now ask.
+    blockedReason(){
+      if(this.get()>=50) return 'budget-exhausted';
+      if(typeof _compoundRetryAfter!=='undefined' && Date.now()<_compoundRetryAfter) return 'backoff';
+      return null;
     }
   };
 }
@@ -28295,20 +28308,27 @@ ${buildLayer3Rules(games)}`;
 async function fetchCompoundEditorial(sections) {
   if (_proofMode) return null; // proof mode: no AI calls — prevents _fieldErrors entries
   const budget = journalismCallsToday();
-  if (!budget.canCall()) return null;
+  if (!budget.canCall()) {
+    // 2026-07-13 (TYPED-RESULT-MIGRATION-QUEUE.md Bucket A #5): this used
+    // to be a plain `return null;`, with a SEPARATE, more informative
+    // 429-backoff check (with a countdown message) a few lines further
+    // down -- but that second check could never actually fire: canCall()
+    // above already returns false under the exact same
+    // `Date.now() < _compoundRetryAfter` condition, so this function
+    // always exited HERE first whenever backoff was active. The
+    // countdown message was confirmed dead code (nothing between here and
+    // there could change _compoundRetryAfter). Moved the diagnostic here,
+    // to the check that actually fires.
+    if (budget.blockedReason() === 'backoff' && typeof _compoundRetryAfter !== 'undefined') {
+      try { window._compoundLastError = `in 429 backoff (${Math.ceil((_compoundRetryAfter-Date.now())/1000)}s left)`; } catch(_){}
+    }
+    return null;
+  }
 
   const cacheKey = buildCompoundCacheKey(sections);
   const cached = sessionStorage.getItem(cacheKey);
   if (cached) {
     try { return JSON.parse(cached); } catch(e) {}
-  }
-
-  // Respect 429 backoff window (persisted across reloads). During backoff,
-  // don't call Gemini at all — avoids compounding the rate limit with each
-  // reload. Returns null → static placeholder shown until window clears.
-  if (Date.now() < _compoundRetryAfter) {
-    try { window._compoundLastError = `in 429 backoff (${Math.ceil((_compoundRetryAfter-Date.now())/1000)}s left)`; } catch(_){}
-    return null;
   }
 
   // ── Items 4-6: pre-fetch depth data before building prompt ───────────────

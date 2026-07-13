@@ -172,15 +172,37 @@ re-derivation of `saveEspnFinal`, `findESPNScore`, and `fetchTeamRank`.
   already-telemetered causes and genuine success are unchanged.
   See `docs/outbox/cc-generatejournalismviarelay-typed-migration-2026-07-13.md`.
 
-### 5. `journalismCallsToday().canCall` (index.html ~L25706-25707) — 9 real callers
+### 5. `journalismCallsToday().canCall` (index.html ~L25848) — ✅ MIGRATED 2026-07-13
 
-- Budget-exhausted (permanent for the rest of the day) and 429-backoff-
-  active (temporary, has a known expiry) both collapse to the same `false`
-  for all 9 callers.
-- **Target:** callers currently just skip on `false` with no retry
-  scheduling. Differentiating would let a caller schedule a retry after
-  the backoff window instead of giving up for the day on what might be a
-  brief rate-limit window.
+- Added `blockedReason()` (additive; `canCall()`'s boolean contract
+  unchanged, all 9 real callers keep working exactly as before) returning
+  `'budget-exhausted' | 'backoff' | null`.
+- **A confirmed, real bug found while surveying the 9 real callers (not
+  a hypothetical opportunity):** `fetchCompoundEditorial` already tried to
+  differentiate — it had a SEPARATE, more informative 429-backoff check
+  (setting `window._compoundLastError` with a countdown) a few lines after
+  its `canCall()` check. That second check could never fire: `canCall()`
+  already returns `false` under the exact same `Date.now() <
+  _compoundRetryAfter` condition, so the function always exited at the
+  first check whenever backoff was active — the countdown message was
+  dead code. Moved the diagnostic to the check that actually fires.
+- Surveyed the other 8 call sites: `fetchFIELDBriefFromClaude` already
+  deliberately bypasses `canCall()` for a documented reason ("J3 brief...
+  compound 429 backoff must not gate it... bypassing canCall() backoff
+  bleed" — already correct). The remaining 5
+  (`fetchSeriesPreviewFromClaude`, the MLB/WNBA-own-budget branch, `fetchEPLMatchBriefFromClaude`,
+  `fetchNightOwlFromClaude`, and the Scout's-Pick div-removal site
+  ~L42351) just do a plain `if(!budget.canCall()) return null;` with no
+  existing differentiation attempt to fix — `blockedReason()` is now
+  available to them if a future session finds real value in adding it,
+  not force-added here without a confirmed need (matching the same
+  restraint used for `findESPNScore`'s untouched callers).
+- Real verification: `journalismCallsToday()` itself (3 scenarios:
+  available, budget-exhausted, in-backoff) and `fetchCompoundEditorial`'s
+  guard specifically (backoff sets the message, budget-exhaustion does
+  NOT set a misleading one, not-blocked proceeds normally) — 6 assertions,
+  all passed. See
+  `docs/outbox/cc-journalismcallstoday-typed-migration-2026-07-13.md`.
 
 ### 6. `fetchTeamRank` (index.html ~L24710) — 3 real callers, CONFIRMED BUG
 
