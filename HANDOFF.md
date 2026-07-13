@@ -1,9 +1,61 @@
 HANDOFF
-Last commit (jubilant-bassoon): bebba522  Smoke: 919/0, field_unit 66/0, field_smoke Failures:0
+Last commit (jubilant-bassoon): 4519884  Smoke: 919/0, field_unit 66/0, field_smoke Failures:0
 Last commit (field-relay-nba): 5016cc9  (deploy match:false is a known non-issue -- only
   routine crons triggered on this specific commit; the real fix commit, 8fe6875, deployed
   and is confirmed live)
 Clean state: yes -- all three test suites green on both repos' most recent real code changes.
+
+=== CONTINUATION SESSION (2026-07-12 evening) — 3 approved CC-CMD items ===
+
+User approved three specific items from a pending-CC-CMD survey: Chunk 1
+(field-operation-primitive), Chunk 2 (typed-result-survey), and OTW tier
+categorical (merging two overlapping CC-CMD docs). All three shipped and
+pushed this session, each as its own single-concern commit:
+
+- c6f632c — fieldOperation()/FIELD_OPERATIONS/classifyFieldError() added
+  as an extension of captureFieldError() (not a replacement). Zero call
+  sites migrated -- Chunk 2 exists to rank which sites are actually worth
+  migrating first.
+- f2c7413 + e56fc55 — _otwGetLiveTier's CLOSE_FINISH/LIVE_GAME branches
+  rewritten from a composite-drama-score threshold comparison to named
+  conditions (_otwMarginTier/_otwIsFinalPeriod/_otwIsCrunchTime), the same
+  RUWT pattern already proven for the WC selector. Calibrated against a
+  749-sample real-behavior sweep (98.5% agreement) plus real live ESPN
+  data. A follow-up self-audit of an earlier rejected design iteration
+  (v3) found a genuine bug ALSO present in the shipped v2 design (soccer
+  margin=1 games between minute 70-79 fell through to no tier at all) --
+  fixed in e56fc55, improving agreement to 99.07%. Corrected STANDARDS.md
+  Rule 95's stale _otwFindLiveGame entry along the way. One genuinely open
+  design question (whether "final period" should mean literal-last-period
+  or first-real-urgency-period, a 12-case boundary disagreement, NOT a bug)
+  written up as its own follow-up CC-CMD rather than decided unilaterally:
+  docs/CC-CMD-2026-07-12-otw-finalperiod-semantics.md.
+- 4519884 — all 827 return-null/return-false/silent-catch sites in
+  index.html classified (10 parallel agents, read-every-caller discipline)
+  into docs/TYPED-RESULT-MIGRATION-QUEUE.md: 26 Bucket A (real migration
+  candidates, ranked, itemized -- top 2 are CONFIRMED bugs, not just
+  theoretical: saveEspnFinal's outer catch masks a genuine save failure as
+  success, fetchNHLRelayScores' catch prevents its own telemetry from
+  firing), 281 Bucket B (decorative-only), 519 Bucket C (correctly as-is).
+  TASK 4 spot-check (independently re-derived, not trusting the
+  classifying agents) found and corrected ONE real misclassification:
+  renderEPLMatchBriefCard's archiveBrief() call references `g`, which
+  doesn't exist in that function's scope (only `game` does) -- every
+  invocation throws, silently swallowed, archiveBrief() has never once
+  actually run for an EPL brief. One-line fix (g -> game), flagged
+  prominently at the top of the queue doc, NOT fixed in this commit
+  (survey scope only). Ready for a trivial follow-up.
+
+Also resolved (not committed -- CC-CMD's own confidence gate): investigated
+cliche-freshness-scoring (replace hasCliche()'s hardcoded phrase list with
+Datamuse word-frequency scoring). Directly tested the premise
+"word-frequency measures cliche-ness" against real Datamuse data, caught
+and corrected a proper-noun confound in the first test pass, and found the
+premise does not hold well enough to build a retry mechanism on. Declined
+to implement rather than force a technically-compliant-but-wrong
+deliverable -- reported honestly below the 95-confidence gate, zero commit,
+per the CC-CMD's own explicit instruction. If revisited, needs a different
+signal than raw word frequency.
 
 === SESSION SUMMARY (2026-07-11 evening through 2026-07-12 early morning, extended) ===
 
@@ -43,6 +95,16 @@ REAL PRODUCT FIXES SHIPPED (user-visible or user-consequential), confirmed live:
   HIT on repeat, correct inverted-frequency scoring confirmed (common words ~84, rare ~99).
 
 GOVERNANCE / INFRASTRUCTURE SHIPPED:
+- STANDARDS.md Rule 97 (CI-AS-INVARIANT-A) added: a test suite that enumerates
+  individually-authored point-checks only catches bugs someone already thought to write a
+  check for -- quantified directly against smoke.js (856 assertions at the time, only 1
+  checked a genuine cross-value invariant). Any new assertion protecting a relationship
+  between fields/systems/write-paths must be written as an invariant, not a one-off fact.
+- STANDARDS.md Rule 95 corrected this session: the stale _otwFindLiveGame MODERATE entry
+  (claimed it still used a composite-score threshold for game selection; it doesn't -- that
+  refactor already shipped, undetermined exact date, governance doc just never updated) --
+  replaced with a dated correction note, plus the real remaining risk's fix entry
+  (_otwGetLiveTier's T3/T4, see above).
 - STANDARDS.md Rules 89-96 added. 89: scoped-MCP-tool-over-credential-handoff default.
   90: mechanical D1-backed rule-registry tracking + CI staleness check (field-relay-nba).
   91: legible-across-scope (durability/holism at 4 radii). 92-96: canonicalized a real
@@ -65,24 +127,28 @@ GOVERNANCE / INFRASTRUCTURE SHIPPED:
 
 STILL GENUINELY OPEN, tracked in codex (category cc-cmd-queue) -- check codex_list there
 for current state rather than trusting this list to stay accurate indefinitely:
-- otw-tier-categorical (jubilant-bassoon) -- pushed, not yet executed. Replaces
-  _otwGetLiveTier's raw composite-drama-score threshold comparison (smoothed>=60/40) with
-  named categorical conditions, matching the pattern already proven for the Watch Engine WC
-  selector (Rules 92/93). This is higher-leverage than the journalism-prose fixes -- it
-  drives the actual tier label on FIELD's flagship One To Watch feature, and is the exact
-  RUWT composite-scalar-plus-threshold pattern the patent risk register exists to eliminate.
-  Also flags that STANDARDS.md Rule 95's entry for _otwFindLiveGame is now stale (describes
-  a refactor as "deferred" that has actually already shipped) -- needs its own small
-  correction CC-CMD.
-- cliche-freshness-scoring (jubilant-bassoon) -- pushed, not yet executed. Replaces
-  hasCliche()'s hardcoded BANNED_PHRASES list with span-level Datamuse freshness scoring,
-  same architecture problem as the lead-detector fix. Genuinely harder than that fix: the
-  retry mechanism needs a specific offending phrase to name, not just a pass/fail score, so
-  this needs sliding-window detection, not a direct port. Requires empirical validation that
-  freshness and cliche-ness actually correlate before building on that assumption. The
-  Datamuse-proxy fix shipping first removes a category of complexity this CC-CMD no longer
-  needs to design around (a permanent iframe block), though real-network-failure handling is
-  still required.
+- otw-finalperiod-semantics (jubilant-bassoon) -- NEW this session, pushed, not yet
+  executed. docs/CC-CMD-2026-07-12-otw-finalperiod-semantics.md. A genuine open product
+  question surfaced while fixing a real bug in the OTW tier work above: should
+  _otwIsFinalPeriod mean the literal last period/inning/quarter (current, conservative,
+  matches historical behavior), or the first period where dramaScoreLive's own timeBonus
+  table turns nonzero (more permissive -- e.g. a tied NBA game with 1:30 left in Q3, raw
+  drama score 70, comfortably past the composite threshold, currently still shows LIVE_GAME
+  not CLOSE_FINISH purely on a quarter-number technicality)? Deliberately NOT decided
+  unilaterally -- needs an explicit product call, not an agreement-with-old-behavior
+  heuristic (the old thresholds were never validated as correct in the first place).
+- renderEPLMatchBriefCard g->game typo (jubilant-bassoon) -- NEW this session, found during
+  the typed-result survey's TASK 4 spot-check, not yet fixed. Trivial one-line fix
+  (index.html ~L32552): archiveBrief() call references undefined `g` instead of `game`,
+  throws every time, silently swallowed -- archiveBrief has never once run for an EPL match
+  brief. Documented in docs/TYPED-RESULT-MIGRATION-QUEUE.md's header.
+- TYPED-RESULT-MIGRATION-QUEUE.md Bucket A items (jubilant-bassoon) -- 26 ranked,
+  itemized real migration candidates now exist (docs/TYPED-RESULT-MIGRATION-QUEUE.md).
+  Top-ranked: saveEspnFinal (confirmed bug -- exception silently reported as success to
+  both real callers) and fetchNHLRelayScores (confirmed bug -- catch prevents its own
+  telemetry from firing) should be the next single-concern migration CC-CMDs, not the
+  highest-call-site-count entry (findESPNScore, 25+ callers) by default -- confirmed
+  incidents outrank raw leverage per the survey's own stated ranking criteria.
 - standards-index-wiring (jubilant-bassoon) -- pushed, not yet executed, depends on
   standards-index landing first (explicit prerequisite check included in the doc).
 
@@ -108,8 +174,11 @@ KEY LEARNINGS FROM THIS SESSION (also saved to Drive as a standalone doc):
   it's the wrong tool for approximating a continuous quality dimension that has a real,
   measurable proxy available -- measure the property directly instead of enumerating shapes.
 
-Blocked on: nothing currently blocking. All three open CC-CMDs above are real, scoped,
+Blocked on: nothing currently blocking. All four open items above are real, scoped,
 independently actionable work, not blocked on anything else.
 Watch for: field-relay-nba's /deploy/verify showing match:false is routine and usually not a
 real problem -- always cross-check what workflow actually ran against the expected SHA
 (get_deploy_status) before treating it as a stuck deploy.
+
+Session docs (2026-07-12 evening continuation): docs/outbox/cc-field-operation-primitive-2026-07-12.md,
+docs/outbox/cc-otw-tier-categorical-2026-07-12.md, docs/outbox/cc-typed-result-survey-2026-07-12.md.
