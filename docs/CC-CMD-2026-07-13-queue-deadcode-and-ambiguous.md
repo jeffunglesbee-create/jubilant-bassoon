@@ -30,11 +30,29 @@ correction) confirmed 2 of them (`fetchESPNPlays`, `fdFetchLive`) are
 genuinely, safely dead for real, understood reasons (ESPN Pivot migration
 made the former obsolete; the latter was superseded by a batched-fetch
 refactor whose caller `fdPrefetchSoccerLive` is still live and scheduled
-today, just via different internal code). The remaining 4
-(`predictNextOpenHour`, `fetchLastMeeting`, `formatPitcher`,
-`_plEuroNote`) had no rich chat/Drive history surfaced — proceed on
-TASK 0's fresh code-level re-verification alone for those, as originally
-specified.
+today, just via different internal code).
+
+**Second correction, added after this one — a genuine chat-history find
+this version missed, not a contradiction of it:** `_plEuroNote` is not
+history-less. It computed European-qualification stakes prose
+("Bournemouth 6th/EL by 2pts over Brighton 7th/UECL") for specific,
+hardcoded EPL Final Day 2026 fixtures. Its callers were removed during
+routine date-schedule rotation once that day passed — normal lifecycle
+for date-pinned content, correctly safe to delete now, same as the
+`fetchESPNPlays`/`fdFetchLive` cases above. But the underlying pattern
+(turning live league-table position into stakes prose) worked and was
+real, validated value at the time. Add one paragraph to the outbox (not
+the code) documenting this pattern for a future session — computing
+title/European/relegation stakes from table position generically, not
+hardcoded to specific teams/dates, is worth rebuilding next time a
+similar run-in situation approaches for any league. Knowledge
+preservation, not a code change — delete the dead function itself as
+planned.
+
+That leaves only 3 with no rich chat/Drive history surfaced by either
+correction pass: `predictNextOpenHour`, `fetchLastMeeting`,
+`formatPitcher`. Proceed on TASK 0's fresh code-level re-verification
+alone for those, as originally specified.
 
 Everything below this point is the original spec, unchanged except for
 the TASK 1 correction above.
