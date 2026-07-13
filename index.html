@@ -1709,25 +1709,18 @@ body.wf-mode .np-inner{max-width:100%}
 .hrd-eyebrow{font-size:.6rem;color:var(--gold2);font-weight:700;letter-spacing:.07em;text-transform:uppercase;opacity:.85;margin-bottom:.18rem}
 .hrd-title{font-family:var(--ff-display);font-size:.85rem;font-weight:700;color:var(--white);letter-spacing:-.01em;line-height:1.25}
 .hrd-head{margin-bottom:.35rem}
-.hrd-leaderboard{width:100%;border-collapse:collapse;font-size:.6rem;font-family:var(--ff-mono);color:var(--muted);margin-bottom:.35rem}
-.hrd-leaderboard th{text-align:right;color:var(--gold2);font-weight:600;font-size:.55rem;letter-spacing:.05em;text-transform:uppercase;opacity:.75;padding:.15rem .25rem .2rem;border-bottom:1px solid rgba(201,168,76,.18);white-space:nowrap}
-.hrd-leaderboard th:nth-child(1){text-align:left}
-.hrd-leaderboard td{padding:.2rem .25rem;text-align:right;border-bottom:1px solid rgba(255,255,255,.03);white-space:nowrap}
-.hrd-leaderboard tr.hrd-row td.hrd-name{text-align:left;color:var(--text)}
-.hrd-leaderboard tr.hrd-row:hover td{background:rgba(255,255,255,.03)}
 .hrd-team{display:block;font-size:.52rem;color:var(--muted);opacity:.75;letter-spacing:.02em}
 .hrd-round-label{font-size:.6rem;color:var(--gold2);font-weight:700;letter-spacing:.05em;text-transform:uppercase;opacity:.85;margin:.3rem 0 .18rem}
 .hrd-bracket-rounds{display:flex;flex-direction:column;gap:.3rem}
 .hrd-semi{border:1px solid rgba(255,255,255,.06);border-radius:4px;padding:.25rem .4rem}
-.hrd-semi-label,.hrd-final-label{font-size:.55rem;color:var(--muted);letter-spacing:.03em;text-transform:uppercase;opacity:.7;margin-bottom:.12rem}
-.hrd-semi-player,.hrd-final-player{font-size:.62rem;font-family:var(--ff-mono);color:var(--muted);padding:.06rem 0}
-.hrd-semi-player.hrd-winner,.hrd-final-player.hrd-winner{color:var(--gold2);font-weight:700}
+.hrd-semi-label{font-size:.55rem;color:var(--muted);letter-spacing:.03em;text-transform:uppercase;opacity:.7;margin-bottom:.12rem}
+.hrd-semi-player{font-size:.62rem;font-family:var(--ff-mono);color:var(--muted);padding:.06rem 0}
+.hrd-semi-player.hrd-winner{color:var(--gold2);font-weight:700}
 .hrd-final{border:1px solid rgba(201,168,76,.25);border-radius:4px;padding:.25rem .4rem;margin-top:.15rem}
 .hrd-final-tbd{font-size:.6rem;color:var(--muted);opacity:.7;padding:.2rem 0}
 .hrd-champion{margin-top:.2rem;font-size:.62rem;font-weight:700;color:var(--gold2)}
 @media(max-width:600px){
   .hrd-card{padding:.25rem .65rem .35rem}
-  .hrd-leaderboard{font-size:.56rem}
 }
 .importance-badge{display:inline-flex;align-items:center;gap:.25rem;font-size:.6rem;font-weight:700;letter-spacing:.04em;padding:.15rem .4rem;border-radius:3px;margin:.1rem .85rem .15rem;width:fit-content}
 .importance-badge.series-deciding{background:rgba(251,191,36,.15);color:#fbbf24;border:1px solid rgba(251,191,36,.35)}
@@ -13722,7 +13715,7 @@ function renderMedia(){
   if(!grid) return;
   grid.innerHTML = MEDIA_TODAY.filter(m => m.show && m.network && m.time).map(m=>{
     const col = MEDIA_CHIP_COLORS[m.chip]||MEDIA_CHIP_COLORS.default;
-    return `<div class="media-card">
+    return `<div class="media-card" data-show="${(m.show||'').replace(/"/g,'&quot;')}">
       <div class="media-accent" style="background:${col}55"></div>
       <div class="media-body">
         <div class="media-show">${m.show}</div>
@@ -17127,141 +17120,132 @@ const HRD_FIELD_2026 = [
   { name: 'Jordan Walker',      team: 'Cardinals', note: '' },
 ];
 
-// buildHRDBracket(liveResults) — derives the full bracket state from the
-// real, fixed field above plus an optional liveResults object. Safe with
-// liveResults absent/undefined (pre-event, all-zero placeholder state) or
-// partially populated (Round 1 in progress, semis not yet reached, etc).
+// buildHRDBracket(apiResponse) — derives the full bracket state from the
+// REAL MLB Stats API homeRunDerby response shape (relay path
+// /mlb-stats/homeRunDerby/{gamePk}), not an invented shape.
 //
-// liveResults shape (a documented HOOK for live data to be injected later —
-// no relay wiring exists yet, this shape is not fabricated data, just the
-// contract a future live-data call site would populate):
-//   {
-//     round1: [{ name, hrTotal, longestHR }, ...]  up to 8 entries,
-//     semis:  [{ name, hrTotal, longestHR }, ...]  up to 4 entries (semi-round totals for the 4 semifinalists),
-//     final:  [{ name, hrTotal, longestHR }, ...]  up to 2 entries (final-round totals for the 2 finalists),
-//     swingOff: { winner: name } | null,             // only consulted on an exact final-round tie
-//   }
-function buildHRDBracket(liveResults) {
-  const r = liveResults || {};
-  const round1 = HRD_FIELD_2026.map(p => {
-    const live = (r.round1 || []).find(x => x.name === p.name);
-    return { name: p.name, team: p.team, note: p.note, hrTotal: live?.hrTotal ?? null, longestHR: live?.longestHR ?? null };
-  });
-  const round1Complete = round1.every(p => p.hrTotal != null);
-  const round1Ranked = round1Complete
-    ? [...round1].sort((a, b) => (b.hrTotal - a.hrTotal) || (b.longestHR - a.longestHR))
-    : null; // don't imply a ranking before real totals exist
-  const top4 = round1Ranked ? round1Ranked.slice(0, 4) : null;
+// CC-CMD-2026-07-13-hrd-live-wiring TASK 0 finding, real not guessed: a real
+// live response was captured (docs/hrd-api-response-reference-2026-07-13.json,
+// sandbox-fetched since Claude Code's own sandbox egress AND the
+// probe_relay_route tool's allow-list both confirmed blocked for this path)
+// and it revealed the tournament's real topology does NOT match this file's
+// original build (hrd-bracket-client): Round 1 is NOT "all 8 compete, top 4
+// by total HR advance" — it is a true single-elimination bracket from Round
+// 1 onward, with real seeded head-to-head matchups (1v8, 2v7, 3v6, 4v5) in
+// the captured response. rounds[1]/rounds[2] (semis/final) carry NO
+// `matchups` array until the prior round completes -- at that point the API
+// itself supplies the real pairing (topSeed/bottomSeed), so this function
+// never computes seeding itself; it only ever reads whatever matchups the
+// API has already decided, for all three rounds uniformly. Winner
+// determination also always defers to the API's own `isWinner`/`isComplete`
+// flags (real bonus-time/tiebreak rules are computed server-side; this
+// client makes no attempt to re-derive them).
+//
+// apiResponse shape (real, from the captured reference file):
+//   { status: { state }, rounds: [
+//       { round: 1, matchups: [ { topSeed: {player:{fullName,id}, seed,
+//           numHomeRuns, topDerbyHitData:{totalDistance}, isWinner,
+//           isComplete, isStarted}, bottomSeed: {...} }, ... ] },
+//       { round: 2, matchups: [...] | absent until round 1 completes },
+//       { round: 3, matchups: [...] | absent until round 2 completes },
+//   ] }
+// Safe with apiResponse absent/undefined/malformed (pre-event placeholder —
+// falls back to the known field with no matchups, never fabricates pairings).
+function _hrdMapSlot(slot) {
+  if (!slot || !slot.player) return null;
+  return {
+    name: slot.player.fullName || '',
+    playerId: slot.player.id ?? null,
+    seed: slot.seed ?? null,
+    hrTotal: slot.numHomeRuns ?? null,
+    longestHR: (slot.topDerbyHitData && slot.topDerbyHitData.totalDistance) || null,
+    isWinner: !!slot.isWinner,
+    isComplete: !!slot.isComplete,
+    isStarted: !!slot.isStarted,
+  };
+}
+function _hrdMapMatchup(m) {
+  if (!m) return null;
+  const top = _hrdMapSlot(m.topSeed);
+  const bottom = _hrdMapSlot(m.bottomSeed);
+  if (!top || !bottom) return null;
+  const winner = top.isWinner ? top : (bottom.isWinner ? bottom : null);
+  return { top, bottom, winner, complete: top.isComplete && bottom.isComplete };
+}
+function buildHRDBracket(apiResponse) {
+  const rounds = (apiResponse && Array.isArray(apiResponse.rounds)) ? apiResponse.rounds : [];
+  const byRound = (n) => rounds.find(rd => rd.round === n) || null;
+  const mapRound = (n) => {
+    const src = byRound(n);
+    return (src && Array.isArray(src.matchups)) ? src.matchups.map(_hrdMapMatchup).filter(Boolean) : [];
+  };
 
-  const semiSeeds = top4
-    ? [ { seedLabel: '1 vs 4', players: [top4[0], top4[3]] },
-        { seedLabel: '2 vs 3', players: [top4[1], top4[2]] } ]
-    : [ { seedLabel: '1 vs 4', players: null },
-        { seedLabel: '2 vs 3', players: null } ];
+  const round1 = mapRound(1);
+  const round1Complete = round1.length > 0 && round1.every(m => m.complete);
+  const round2 = mapRound(2); // semifinals — only populated by the API once round 1 completes
+  const round2Complete = round2.length > 0 && round2.every(m => m.complete);
+  const round3 = mapRound(3); // final — only populated by the API once round 2 completes
 
-  const semis = semiSeeds.map(s => {
-    if (!s.players) return { ...s, results: null, winner: null };
-    const results = s.players.map(p => {
-      const live = (r.semis || []).find(x => x.name === p.name);
-      return { name: p.name, hrTotal: live?.hrTotal ?? null, longestHR: live?.longestHR ?? null };
-    });
-    const complete = results.every(x => x.hrTotal != null);
-    const winner = complete
-      ? (results[0].hrTotal !== results[1].hrTotal
-          ? (results[0].hrTotal > results[1].hrTotal ? results[0] : results[1])
-          : (results[0].longestHR > results[1].longestHR ? results[0] : results[1]))
-      : null;
-    return { ...s, results, winner };
-  });
+  const champion = (round3.length === 1 && round3[0].complete) ? round3[0].winner : null;
 
-  const finalists = semis.every(s => s.winner) ? semis.map(s => s.winner) : null;
-  const finalResults = finalists
-    ? finalists.map(f => {
-        const live = (r.final || []).find(x => x.name === f.name);
-        return { name: f.name, hrTotal: live?.hrTotal ?? null, longestHR: live?.longestHR ?? null };
-      })
-    : null;
-  const finalComplete = !!(finalResults && finalResults.every(x => x.hrTotal != null));
-  let champion = null;
-  if (finalComplete) {
-    if (finalResults[0].hrTotal !== finalResults[1].hrTotal) {
-      champion = finalResults[0].hrTotal > finalResults[1].hrTotal ? finalResults[0] : finalResults[1];
-    } else if (r.swingOff && r.swingOff.winner) {
-      champion = finalResults.find(x => x.name === r.swingOff.winner) || null;
-    }
-    // Exact tie with no swingOff.winner yet: champion stays null — correct,
-    // not a bug — the swing-off hasn't resolved as far as this data shows.
-  }
-
-  return { field: HRD_FIELD_2026, round1, round1Complete, top4, semis, finalists, finalResults, finalComplete, champion };
+  return {
+    field: HRD_FIELD_2026,
+    hasLiveData: round1.length > 0,
+    state: (apiResponse && apiResponse.status && apiResponse.status.state) || null,
+    round1, round1Complete,
+    round2, round2Complete,
+    round3, champion,
+  };
 }
 
 // renderHRDBracket(bracket) — HTML card for the bracket. Matches
 // renderPGALeaderboard's convention: takes a derived data object, returns
 // an HTML string, renders correctly whether the bracket is all-placeholder
-// (pre-event) or partially/fully populated.
+// (pre-event, no matchups decided anywhere) or partially/fully populated.
+// All three rounds render uniformly as head-to-head matchup cards, matching
+// the real API's own uniform round shape (see buildHRDBracket's doc comment).
+function _hrdRenderMatchup(m, label, extraCls) {
+  const cls = 'hrd-semi' + (extraCls ? ' ' + extraCls : '');
+  if (!m) {
+    return `<div class="${cls}"><div class="hrd-semi-label">${label}</div><div class="hrd-semi-player">TBD</div><div class="hrd-semi-player">TBD</div></div>`;
+  }
+  const line = (slot) => {
+    const hr = slot.hrTotal != null ? ` — ${slot.hrTotal} HR` : '';
+    const seedTxt = slot.seed != null ? `(${slot.seed}) ` : '';
+    const isWin = m.winner && m.winner.name === slot.name;
+    return `<div class="hrd-semi-player${isWin ? ' hrd-winner' : ''}">${seedTxt}${slot.name}${hr}</div>`;
+  };
+  return `<div class="${cls}"><div class="hrd-semi-label">${label}</div>${line(m.top)}${line(m.bottom)}</div>`;
+}
 function renderHRDBracket(bracket) {
   if (!bracket) return '';
-  const round1Rows = bracket.round1.map(p => {
-    const hr = p.hrTotal != null ? String(p.hrTotal) : '—';
-    const dist = p.longestHR != null ? `${p.longestHR}ft` : '';
-    return `<tr class="hrd-row">
-      <td class="hrd-name">${p.name}<span class="hrd-team">${p.team}</span></td>
-      <td class="hrd-hr">${hr}</td>
-      <td class="hrd-dist">${dist}</td>
-    </tr>`;
-  }).join('');
-  const round1Table = `<table class="hrd-leaderboard">
-    <thead><tr><th>Player</th><th>HR</th><th>Longest</th></tr></thead>
-    <tbody>${round1Rows}</tbody>
-  </table>`;
+  const round1HTML = bracket.round1.length
+    ? bracket.round1.map((m, i) => _hrdRenderMatchup(m, `Round 1 · Match ${i + 1}`)).join('')
+    : HRD_FIELD_2026.map(p => `<div class="hrd-semi"><div class="hrd-semi-player">${p.name} <span class="hrd-team">${p.team}</span></div></div>`).join('');
 
-  const semiHTML = bracket.semis.map((s, i) => {
-    const line = (idx) => {
-      if (!s.players) return `<div class="hrd-semi-player">TBD</div>`;
-      const p = s.players[idx];
-      const res = s.results ? s.results[idx] : null;
-      const hr = res && res.hrTotal != null ? ` — ${res.hrTotal}` : '';
-      const isWinner = s.winner && s.winner.name === p.name;
-      return `<div class="hrd-semi-player${isWinner ? ' hrd-winner' : ''}">${p.name}${hr}</div>`;
-    };
-    return `<div class="hrd-semi">
-      <div class="hrd-semi-label">Semifinal ${i + 1} (${s.seedLabel})</div>
-      ${line(0)}
-      ${line(1)}
-    </div>`;
-  }).join('');
+  const round2HTML = bracket.round2.length
+    ? bracket.round2.map((m, i) => _hrdRenderMatchup(m, `Semifinal ${i + 1}`)).join('')
+    : [1, 2].map(i => _hrdRenderMatchup(null, `Semifinal ${i}`)).join('');
 
-  const finalHTML = (() => {
-    if (!bracket.finalists) return `<div class="hrd-final-tbd">Final: TBD (semifinals not yet complete)</div>`;
-    const [a, b] = bracket.finalists;
-    const ra = bracket.finalResults?.find(x => x.name === a.name);
-    const rb = bracket.finalResults?.find(x => x.name === b.name);
-    const champ = bracket.champion;
-    const line = (p, res) => {
-      const hr = res && res.hrTotal != null ? ` — ${res.hrTotal}` : '';
-      const isWinner = champ && champ.name === p.name;
-      return `<div class="hrd-final-player${isWinner ? ' hrd-winner' : ''}">${p.name}${hr}</div>`;
-    };
-    return `<div class="hrd-final">
-      <div class="hrd-final-label">Final</div>
-      ${line(a, ra)}
-      ${line(b, rb)}
-      ${champ ? `<div class="hrd-champion">🏆 ${champ.name} — 2026 Home Run Derby Champion</div>` : ''}
-    </div>`;
-  })();
+  const round3HTML = bracket.round3.length
+    ? _hrdRenderMatchup(bracket.round3[0], 'Final', 'hrd-final')
+    : `<div class="hrd-final-tbd">Final: TBD</div>`;
+
+  const championHTML = bracket.champion
+    ? `<div class="hrd-champion">🏆 ${bracket.champion.name} — 2026 Home Run Derby Champion</div>`
+    : '';
 
   return `<div class="hrd-card">
     <div class="hrd-head">
-      <div class="hrd-eyebrow">HOME RUN DERBY · ROUND 1</div>
-      <div class="hrd-title">2026 Field</div>
+      <div class="hrd-eyebrow">HOME RUN DERBY${bracket.state ? ' · ' + String(bracket.state).toUpperCase() : ''}</div>
+      <div class="hrd-title">2026 Bracket</div>
     </div>
-    ${round1Table}
-    <div class="hrd-round-label">Bracket</div>
-    <div class="hrd-bracket-rounds">
-      ${semiHTML}
-      ${finalHTML}
-    </div>
+    <div class="hrd-round-label">Round 1</div>
+    <div class="hrd-bracket-rounds">${round1HTML}</div>
+    <div class="hrd-round-label">Semifinals</div>
+    <div class="hrd-bracket-rounds">${round2HTML}</div>
+    <div class="hrd-round-label">Final</div>
+    <div class="hrd-bracket-rounds">${round3HTML}${championHTML}</div>
   </div>`;
 }
 
@@ -17273,7 +17257,7 @@ function renderHRDBracket(bracket) {
 function buildHRDPromptContext(bracket) {
   const b = bracket || buildHRDBracket(null);
   const parts = ['[HOME RUN DERBY CONTEXT]'];
-  parts.push('2026 Field (8 sluggers, single-night bracket — Round 1 all eight/20 swings each, top 4 HR totals advance (ties broken by longest HR distance); semis/final 15 swings each, seeded 1v4/2v3; ties broken by 3-swing swing-off):');
+  parts.push('2026 Field (8 sluggers, single-elimination bracket — Round 1: four seeded head-to-head matchups (1v8, 2v7, 3v6, 4v5), 20 swings each; Semifinals/Final: 15 swings each; official MLB bonus-time and tiebreak rules apply):');
   HRD_FIELD_2026.forEach(p => {
     parts.push(`  ${p.name} (${p.team})${p.note ? ' — ' + p.note : ''}`);
   });
@@ -17284,18 +17268,114 @@ function buildHRDPromptContext(bracket) {
   parts.push('  Munetaka Murakami becomes just the second Japanese-born Derby participant, after Shohei Ohtani in 2021.');
   parts.push('  Jac Caglianone, 23, is the youngest competitor in the field.');
   parts.push('  Format note: the swing-based, clock-free system has replaced the timed format used since 2015.');
-  if (!b.round1Complete) {
-    parts.push('Live round results: not yet available — Round 1 has not started or is still in progress.');
+  if (!b.hasLiveData) {
+    parts.push('Live bracket: not yet available — Round 1 matchups have not been set or the event has not started.');
   } else {
-    parts.push('Round 1 results (top 4 advance):');
-    b.top4.forEach((p, i) => parts.push(`  ${i + 1}. ${p.name} — ${p.hrTotal} HR${p.longestHR != null ? `, longest ${p.longestHR}ft` : ''}`));
-    if (b.finalComplete && b.champion) {
+    parts.push('Round 1 matchups:');
+    b.round1.forEach((m, i) => {
+      const status = m.complete && m.winner ? ` — ${m.winner.name} wins`
+        : (m.top.isStarted || m.bottom.isStarted) ? ' — in progress' : ' — not yet started';
+      parts.push(`  Match ${i + 1}: (${m.top.seed}) ${m.top.name} vs (${m.bottom.seed}) ${m.bottom.name}${status}`);
+    });
+    if (b.round2.length) {
+      parts.push('Semifinals:');
+      b.round2.forEach((m, i) => {
+        const status = m.complete && m.winner ? ` — ${m.winner.name} wins` : '';
+        parts.push(`  Semifinal ${i + 1}: ${m.top.name} vs ${m.bottom.name}${status}`);
+      });
+    }
+    if (b.champion) {
       parts.push(`Champion: ${b.champion.name}.`);
-    } else if (b.finalists) {
-      parts.push(`Final matchup: ${b.finalists[0].name} vs ${b.finalists[1].name}.`);
+    } else if (b.round3.length) {
+      parts.push(`Final: ${b.round3[0].top.name} vs ${b.round3[0].bottom.name}.`);
     }
   }
   return parts.join('\n');
+}
+
+// loadHRDBracket() — fetch + cache wrapper matching loadPGASlate()'s
+// established async + sessionStorage-cache convention. TTL matches
+// NBA_LIVE_BS_TTL (90s — "one per ESPN poll cycle", the same live-event
+// cadence this file already uses for other in-progress-game data), per
+// the CC-CMD's own "match it, don't invent a new interval" instruction.
+const HRD_GAME_PK = 839032;
+const HRD_LIVE_TTL = 90 * 1000;
+async function loadHRDBracket() {
+  const cacheKey = 'hrd:' + HRD_GAME_PK;
+  try {
+    const cached = sessionStorage.getItem(cacheKey);
+    if (cached) {
+      const parsed = JSON.parse(cached);
+      if (parsed && parsed.ts && (Date.now() - parsed.ts) < HRD_LIVE_TTL) return parsed.data;
+    }
+  } catch(_e) { captureFieldError('hrd:cache-read', _e, true); }
+  const base = (typeof V2_RELAY_BASE !== 'undefined')
+    ? V2_RELAY_BASE : 'https://field-relay-nba.jeffunglesbee.workers.dev';
+  try {
+    const r = await fetch(`${base}/mlb-stats/homeRunDerby/${HRD_GAME_PK}`, {
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!r.ok) return null;
+    const data = await r.json();
+    try { sessionStorage.setItem(cacheKey, JSON.stringify({ ts: Date.now(), data })); } catch(_e) { captureFieldError('hrd:cache-write', _e, true); }
+    return data;
+  } catch(e) {
+    if (typeof FIELD_DEBUG !== 'undefined' && FIELD_DEBUG) console.warn('[HRD] loadHRDBracket', e.message);
+    captureFieldError('hrd:fetch', e, true);
+    return null;
+  }
+}
+
+// injectHRDBracket(apiResponse) — finds the static "T-Mobile Home Run Derby"
+// MEDIA_SPECIALS card (hrd-entry-v2) and injects the live renderHRDBracket()
+// output into it. Adapted from injectPGALeaderboard's real mechanics
+// (TASK 0 finding): golf targets a `.game-card[data-gameid]` from
+// allData.sports, but the HRD entry is a MEDIA_SPECIALS card rendered by
+// renderMedia() into #media-grid as a plain `.media-card` with NO
+// identifying attribute at all -- renderMedia()'s template now stamps
+// `data-show` (see its own definition) so this has a stable target, mirroring
+// `.game-card[data-gameid]`'s role for golf. Idempotent — a dedicated
+// wrapper class lets repeat calls (the 90s poll) replace cleanly.
+function injectHRDBracket(apiResponse) {
+  if (!apiResponse) return;
+  const bracket = buildHRDBracket(apiResponse);
+  const html = renderHRDBracket(bracket);
+  if (!html) return;
+  const card = document.querySelector('.media-card[data-show="T-Mobile Home Run Derby"]');
+  if (!card) return; // card not rendered yet (renderMedia() hasn't fired, or lazy section not in view) — next poll retries
+  let block = card.querySelector('.hrd-bracket-block');
+  if (!block) {
+    block = document.createElement('div');
+    block.className = 'hrd-bracket-block';
+    const desc = card.querySelector('.media-desc');
+    if (desc) desc.after(block);
+    else card.querySelector('.media-body')?.appendChild(block);
+  }
+  block.innerHTML = html;
+  // Stash for buildHRDPromptContext's real journalism-context consumer
+  // (mirrors window._pgaDataCache's role for golf — see the fetchGameBriefOnDemand
+  // splice point, CC-CMD-2026-07-13-hrd-live-wiring TASK 2).
+  try { window._hrdDataCache = apiResponse; } catch(_e) {}
+}
+
+// _hrdPollLoop() — repeat-fetch cadence for the ~2-hour live window tonight.
+// Gated to the event's own date (matches hrd-entry-v2's MEDIA_SPECIALS
+// startDate/endDate scoping) and stops once the API itself reports the
+// event finalized (status.state — no longer "Preview"/"In Progress").
+function _hrdPollLoop() {
+  if (TODAY_ISO !== '2026-07-13') return; // event day only — no wasted polling any other day
+  let stopped = false;
+  const tick = () => {
+    if (stopped) return;
+    loadHRDBracket().then(data => {
+      if (!data) return;
+      injectHRDBracket(data);
+      const state = data.status && data.status.state;
+      if (state && !/preview|in.?progress|live/i.test(state)) stopped = true; // event finalized — stop polling
+    });
+  };
+  tick(); // fire immediately once the media section is visible
+  const intervalId = setInterval(() => { if (stopped) { clearInterval(intervalId); return; } tick(); }, HRD_LIVE_TTL);
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -24839,7 +24919,13 @@ let mediaRendered   = false;
 const lazyObs=new IntersectionObserver(entries=>{
   entries.forEach(e=>{
     if(!e.isIntersecting) return;
-    if(e.target.id==="media-section"&&!mediaRendered){renderMedia();mediaRendered=true;}
+    if(e.target.id==="media-section"&&!mediaRendered){
+      renderMedia();mediaRendered=true;
+      // CC-CMD-2026-07-13-hrd-live-wiring: fire-and-forget live bracket
+      // fetch + poll loop, same pattern as loadBroadcastArchaeology below —
+      // never blocks the media grid's own render.
+      try { if (typeof _hrdPollLoop === 'function') _hrdPollLoop(); } catch(_) {}
+    }
     if(e.target.id==="streaming-section"){
       renderStreaming();
       // CC-CMD-2026-06-15-client-features Commit 2: Broadcast Archaeology.
@@ -24928,7 +25014,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-07-13h';
+  const SW_VERSION = '2026-07-13i';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -32961,6 +33047,18 @@ Write this brief at the level the moment deserves. Do not undersell a championsh
     const _golfCtx = (_isGolfBrief && typeof buildGolfPromptContext === 'function'
       && typeof window !== 'undefined' && window._pgaDataCache)
       ? buildGolfPromptContext(window._pgaDataCache) : '';
+    // Home Run Derby enrichment (CC-CMD-2026-07-13-hrd-live-wiring TASK 2):
+    // mirrors the golf splice exactly. HRD isn't a schedule-grid `game` object
+    // today (it's a MEDIA_SPECIALS card — see injectHRDBracket's own doc
+    // comment), so this gate currently only fires if a future game/brief is
+    // ever sport-detected as HRD; window._hrdDataCache is populated by
+    // injectHRDBracket() the same way window._pgaDataCache is populated by
+    // the golf boot path. buildHRDPromptContext returns real content only —
+    // never fabricates a live result the cached data doesn't contain.
+    const _isHRDBrief = sp.includes('home run derby') || /home run derby/i.test(game.league || '') || /home run derby/i.test(game.home || '');
+    const _hrdCtx = (_isHRDBrief && typeof buildHRDPromptContext === 'function'
+      && typeof window !== 'undefined' && window._hrdDataCache)
+      ? buildHRDPromptContext(buildHRDBracket(window._hrdDataCache)) : '';
     const prompt = [
       `Write a FIELD Game Brief.`,
       '',
@@ -32972,6 +33070,7 @@ Write this brief at the level the moment deserves. Do not undersell a championsh
       standingsCtx || '',
       champBlock,
       _golfCtx,
+      _hrdCtx,
       '',
       wordRule,
       '- Write only from data above.',
