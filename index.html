@@ -20212,10 +20212,22 @@ function buildStatOfDayBadge(game, sport) {
   return `<span class="stat-day-badge" title="${s.fullText}">📊 ${s.shortText}</span>`;
 }
 
+// 2026-07-13 (CC-CMD-2026-07-13-fetchnhlrelayscores-migration): migrated
+// to fieldOperation(). The old internal try/catch swallowed every
+// exception (fetch failure, timeout, malformed JSON) before it could ever
+// reach the sole caller's own `.catch(e=>captureFieldError(...))` chain --
+// since this function's own catch always resolved the promise (never let
+// it reject), that caller-side catch could structurally never fire. The
+// Health Panel has been recording zero NHL-relay failures regardless of
+// how many actually occurred. fieldOperation()'s own try/catch is now the
+// sole catcher -- it never rejects either (matching the old external
+// behavior of "never throw to the caller"), but it DOES call
+// FIELD_OPERATIONS.recordFailure() -> captureFieldError() internally on
+// every real exception, which is the actual fix.
 async function fetchNHLRelayScores() {
   // Only run if there's an NHL section visible today
   if (!document.querySelector('.sport-section[data-sport="NHL Playoffs"]')) return;
-  try {
+  return fieldOperation({subsystem:'scores', operation:'fetch-nhl-relay', retryable:true}, async () => {
     const r = await fetch(`${NHL_RELAY_BASE}/v1/scoreboard/now`, {
       signal: AbortSignal.timeout(6000)
     });
@@ -20259,7 +20271,7 @@ async function fetchNHLRelayScores() {
       updated++;
     }
     if (updated) renderESPNScores();
-  } catch(e) {}
+  });
 }
 
 // #11b — Tempo-adjusted polling: cadence varies 20-45s by aggregate named tier
@@ -20574,7 +20586,21 @@ async function fetchESPNScores(){
 
   // Fire RELAY + FPL + FD in parallel — don't block ESPN cycle
   fetchNBARelayScores().catch(e=>captureFieldError('relay-nba',e,true));
-  fetchNHLRelayScores().catch(e=>captureFieldError('relay-nhl',e,true));
+  // 2026-07-13 (CC-CMD-2026-07-13-fetchnhlrelayscores-migration): the
+  // .catch(e=>captureFieldError(...)) chain other fire-and-forget relay
+  // calls on these lines use is removed here specifically -- now that
+  // fetchNHLRelayScores() is migrated to fieldOperation(), its returned
+  // promise never rejects (fieldOperation()'s own try/catch always
+  // resolves to {ok:false,...} on failure, matching this function's prior
+  // external behavior of never throwing to its caller), so a .catch() here
+  // is dead code that can structurally never fire. FIELD_OPERATIONS.recordFailure()
+  // already calls captureFieldError() internally on every real failure --
+  // the telemetry this line used to (never actually) provide is now
+  // genuinely produced, just via fieldOperation()'s own catch instead of
+  // this caller's. Sibling lines (fetchNBARelayScores/fetchFPLLiveScores/
+  // fdPrefetchSoccerLive) are NOT migrated yet and correctly keep their own
+  // .catch() -- out of scope for this CC-CMD, not touched.
+  fetchNHLRelayScores();
   fetchFPLLiveScores().catch(e=>captureFieldError('relay-fpl',e,true));
   fdPrefetchSoccerLive().catch(e=>captureFieldError('relay-fd',e,true));
 
@@ -24483,7 +24509,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-07-12g';
+  const SW_VERSION = '2026-07-12h';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
